@@ -1,4 +1,4 @@
-#	@(#)disktab	4.7 (Berkeley) %G%
+#	@(#)disktab	4.8 (Berkeley) %G%
 # Disk geometry and partition layout tables. 
 # Key:
 #	dt	controller type
@@ -29,11 +29,14 @@
 # (5 cylinders needed for maintenance + replacement sectors)
 #
 # disks on SMD/E
-#
+# controller-specific flags:
+#	d0	drive config flag, 0 for smd, 16 for esdi (autoconfigured)
+#	d1	number of bytes per track (for formatter only)
 
 eagle|egl|474 Mb Fujitsu Eagle:\
  	:ty=winchester:ns#44:nt#20:nc#842:rm#3961:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#27720:\
  	:pa#52800:oa#0:ba#4096:fa#1024:\
  	:pb#66000:ob#52800:bb#4096:fb#1024:tb=swap:\
  	:pc#617760:oc#118800:bc#4096:fc#1024:\
@@ -46,6 +49,7 @@ eagle|egl|474 Mb Fujitsu Eagle:\
 xsd|Xsd|515 Mb FSD:\
  	:ty=winchester:ns#24:nt#24:nc#711:rm#3600:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#30240:\
  	:pa#61056:oa#0:ba#8192:fa#1024:\
  	:pb#61056:ob#61056:bb#4096:fb#1024:\
  	:pc#691200:oc#122112:bc#4096:fc#1024:\
@@ -61,6 +65,7 @@ xsd|Xsd|515 Mb FSD:\
 xfd|Xfd|XFD|340 Mb FSD:\
 	:ty=winchester:ns#32:nt#24:nc#711:rm#3600:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#20160:\
 	:pa#40704:oa#0:ba#8192:fa#1024:\
 	:pb#40704:ob#40704:bb#4096:fb#1024:tb=swap:\
 	:pc#460800:oc#81408:bc#4096:fc#1024:\
@@ -73,6 +78,7 @@ xfd|Xfd|XFD|340 Mb FSD:\
 fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
  	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#40960:\
  	:pa#38400:oa#0:ba#8192:fa#1024:\
  	:pb#48000:ob#38400:bb#4096:fb#1024:\
  	:pc#437120:oc#86400:bc#4096:fc#1024:\
@@ -85,6 +91,7 @@ fuj|Fujitsu|Fujitsu 330 Mb 20mhz:\
 smd|Smd|SMD|300 Mb SMD:\
 	:ty=removable:ns#16:nt#19:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#20160:\
 	:pa#40128:oa#0:ba#8192:fa#1024:\
 	:pb#27360:ob#40128:bb#4096:fb#1024:\
 	:pc#429856:oc#67488:bc#4096:fc#1024:\
@@ -97,6 +104,7 @@ smd|Smd|SMD|300 Mb SMD:\
 fsd|Fsd|FSD|160 Mb FSD:\
 	:ty=winchester:ns#32:nt#10:nc#823:rm#3600:se#512:\
 	:dt=SMD:\
+	:d0#0:d1#20160:\
 	:pa#19200:oa#0:ba#8192:fa#1024:\
 	:pb#24000:ob#19200:bb#4096:fb#1024:tb=swap:\
 	:pc#218560:oc#43200:bc#4096:fc#1024:\
@@ -108,6 +116,8 @@ fsd|Fsd|FSD|160 Mb FSD:\
 
 mxd|Mxd|MXD|380 Mb MAXTOR:\
 	:ty=winchester:ns#18:nt#15:nc#1224:rm#3600:se#1024:\
+	:dt=ESDI:\
+	:d0#16:d1#20160:\
 	:pa#21600:oa#0:ba#8192:fa#1024:\
 	:pb#22410:ob#21600:bb#8192:fb#1024:tb=swap:\
 	:pc#285120:oc#44010:bc#8192:fc#1024:\
@@ -116,3 +126,12 @@ mxd|Mxd|MXD|380 Mb MAXTOR:\
 #	:pf#142560:of#0:bf#8192:ff#1024:\
 #	:pg#95040:og#0:bg#8192:fg#1024:\
 #	:ph#47520:oh#0:bh#8192:fh#1024:
+
+ncc|nec800|800 Mb NEC:\
+	:ty=winchester:ns#66:nt#23:nc#850:rm#3600:se#512:\
+	:dt=SMD:\
+	:d0#0:d1#40960:\
+	:pa#97152:oa#0:ba#8192:fa#1024:\
+	:pb#92598:ob#97152:bb#8192:fb#1024:tb=swap:\
+	:pc#1092960:oc#189750:bc#8192:fc#1024:\
+	:ph#1282710:oh#0:bh#8192:fh#1024:
