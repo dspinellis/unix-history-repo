@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)process.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)process.c	1.2 (Berkeley) %G%";
  *	DELETE - delete invitation
  */
 #include "ctl.h"
+#include <sys/stat.h>
 
 char *strcpy();
 CTL_MSG *find_request();
@@ -113,6 +114,8 @@ find_user(name, tty)
 {
 	struct utmp ubuf;
 	int fd, status;
+	struct stat statb;
+	char ftty[20];
 
 	if ((fd = open("/etc/utmp", 0)) == -1) {
 		perror("Can't open /etc/utmp");
@@ -120,13 +123,20 @@ find_user(name, tty)
 	}
 #define SCMPN(a, b)	strncmp(a, b, sizeof (a))
 	status = NOT_HERE;
+	(void) strcpy(ftty, "/dev/");
 	while (read(fd, (char *) &ubuf, sizeof ubuf) == sizeof(ubuf))
 		if (SCMPN(ubuf.ut_name, name) == 0) {
 			if (*tty == '\0') {
+				status = PERMISSION_DENIED;
 				/* no particular tty was requested */
-				(void) strcpy(tty, ubuf.ut_line);
-				status = SUCCESS;
-				break;
+				(void) strcpy(ftty+5, ubuf.ut_line);
+				if (stat(ftty,&statb) == 0) {
+					if (!(statb.st_mode & 02))
+						continue;
+					(void) strcpy(tty, ubuf.ut_line);
+					status = SUCCESS;
+					break;
+				}
 			}
 			if (strcmp(ubuf.ut_line, tty) == 0) {
 				status = SUCCESS;
