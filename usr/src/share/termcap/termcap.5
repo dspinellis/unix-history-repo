@@ -2,10 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	5.1 (Berkeley) %G%
+.\"	@(#)termcap.5	6.1 (Berkeley) %G%
 .\"
 .tr ||
-.TH TERMCAP 5 "10 May 1980"
+.TH TERMCAP 5 ""
 .UC 3
 .SH NAME
 termcap \- terminal capability data base
@@ -51,6 +51,7 @@ al	str	(P*)	Add new blank line
 am	bool		Terminal has automatic margins
 as	str	(P)	Start alternate character set
 bc	str		Backspace if not \fB^H\fR
+bl	str		Bell if not \fB^G\fR
 bs	bool		Terminal can backspace with \fB^H\fR
 bt	str	(P)	Back tab
 bw	bool		Backspace wraps from column 0 to last column
