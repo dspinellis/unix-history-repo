@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.11 %G%";
+static char sccsid[] = "@(#)tmps.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -135,6 +135,8 @@ tmpalloc(size, type, mode)
 #	endif PC
 	if (type == NIL) {
 	    alignment = A_STACK;
+	} else if (type == nl+TPTR) {
+	    alignment = A_POINT;
 	} else {
 	    alignment = align(type);
 	}
