@@ -20,9 +20,7 @@ static char sccsid[] = "@(#)sub.c	4.3	(Berkeley)	%G%";
 
 # include "defs.h"
 # include "config.h"
-# ifndef V6
 # include <varargs.h>
-# endif V6
 
 /* global variables */
 int debugflg = DBV;	/* debug flag */
@@ -285,7 +283,6 @@ gothru(from,to){
 	case 'n':	i = configN[chtoinx(to)]; break;
 	case 'o':	i = configO[chtoinx(to)]; break;
 	case 'p':	i = configP[chtoinx(to)]; break;
-	case 'q':	i = configQ[chtoinx(to)]; break;
 	case 'r':	i = configR[chtoinx(to)]; break;
 	case 's':	i = configS[chtoinx(to)]; break;
 	case 't':	i = configT[chtoinx(to)]; break;
