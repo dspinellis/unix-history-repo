@@ -1,4 +1,4 @@
-# @(#)leapseconds	4.1
+#	@(#)leapseconds	5.2 (Berkeley) %G%
 
 # Allowance for leapseconds added to each timezone file.
 
@@ -26,3 +26,5 @@ Leap	1982	Jun	30	23:59:60	+	S
 Leap	1983	Jun	30	23:59:60	+	S
 Leap	1985	Jun	30	23:59:60	+	S
 Leap	1987	Dec	31	23:59:60	+	S
+Leap	1989	Dec	31	23:59:60	+	S
+Leap	1990	Dec	31	23:59:60	+	S
