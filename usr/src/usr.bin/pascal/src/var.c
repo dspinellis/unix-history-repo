@@ -1,9 +1,10 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.13 %G%";
+static char sccsid[] = "@(#)var.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
+#include "objfmt.h"
 #include "align.h"
 #include "iorec.h"
 #ifdef PC
@@ -132,7 +133,7 @@ var(vline, vidl, vtype)
 #		ifdef PC
 		    if ( cbn == 1 ) {
 			putprintf( "	.data" , 0 );
-			putprintf( "	.align	%d" , 0 , dotalign(align(np)));
+			aligndot(align(np));
 			putprintf( "	.comm	" , 1 );
 			putprintf( EXTFORMAT , 1 , vidl[1] );
 			putprintf( ",%d" , 0 , w );
@@ -290,7 +291,7 @@ alignit:
 			case TNIL:
 				return A_POINT;
 			case TSTR:
-				return A_CHAR;
+				return A_STRUCT;
 			case TSET:
 				return A_SET;
 			default:
@@ -299,8 +300,13 @@ alignit:
 		    }
 	    case ARRAY:
 			/*
-			 * arrays are aligned as their component types
+			 * strings are structures, since they can get
+			 * assigned form/to as structure assignments.
+			 * other arrays are aligned as their component types
 			 */
+		    if ( p -> type == nl+T1CHAR ) {
+			return A_STRUCT;
+		    }
 		    p = p -> type;
 		    goto alignit;
 	    case PTR:
@@ -326,7 +332,10 @@ alignit:
 	    case SET:
 		    return A_SET;
 	    case STR:
-		    return A_CHAR;
+			/*
+			 * arrays of chars are structs
+			 */
+		    return A_STRUCT;
 	    case RECORD:
 			/*
 			 * the alignment of a record is in its align_info field
@@ -338,30 +347,40 @@ alignit:
 	}
     }
 
+#ifdef PC
     /*
-     *	given an alignment, return power of two for .align pseudo-op
+     *	output an alignment pseudo-op.
      */
-dotalign( alignment )
+aligndot(alignment)
     int	alignment;
+#ifdef vax
 {
-    
-    switch ( alignment ) {
-	case A_CHAR:		/*
-				 * also
-				 *	A_STRUCT
-				 */
-		return 0;
-	case A_SHORT:
-		return 1;
-	case A_LONG:		/*
-				 * also
-				 *	A_POINT, A_INT, A_FLOAT, A_DOUBLE,
-				 *	A_STACK, A_FILET, A_SET
-				 */
-		return 2;
+    switch (alignment) {
+	case 1:
+	    return;
+	case 2:
+	    putprintf("	.align 1", 0);
+	    return;
+	default:
+	case 4:
+	    putprintf("	.align 2", 0);
+	    return;
     }
 }
-
+#endif vax
+#ifdef mc68000
+{
+    switch (alignment) {
+	case 1:
+	    return;
+	default:
+	    putprintf("	.even", 0);
+	    return;
+    }
+}
+#endif mc68000
+#endif PC
+    
 /*
  * Return the width of an element
  * of a n time subscripted np.
