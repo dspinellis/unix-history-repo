@@ -15,23 +15,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	4.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	4.34 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/errno.h>
 #include <fts.h>
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
 #include "find.h"
+#include <string.h>
+#include <stdlib.h>
 
 FTS *tree;			/* pointer to top of FTS hierarchy */
 time_t now;			/* time find was run */
-int ftsoptions;			/* options passed to ftsopen() */
-int deprecated;			/* old or new syntax */
-int depth;			/* set by -depth option */
-int output_specified;		/* one of -print, -ok or -exec was specified */
+				/* options for the ftsopen(3) call */
+int ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
+int isdeprecated;		/* using deprecated syntax */
+int isdepth;			/* do directories on post-order visit */
+int isoutput;			/* user specified output operator */
+int isrelative;			/* can do -exec/ok on relative path */
+int isstopdnx;			/* don't read unsearchable directories */
 
 main(argc, argv)
 	int argc;
@@ -41,6 +45,7 @@ main(argc, argv)
 	char **p, **paths;
 	PLAN *find_formplan();
 	time_t time();
+	void newsyntax(), oldsyntax();
     
 	(void)time(&now);			/* initialize the time-of-day */
 
@@ -48,7 +53,6 @@ main(argc, argv)
 		usage();
 
 	paths = argv;
-	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
 
 	/*
 	 * if arguments start with an option, treat it like new syntax;
@@ -62,12 +66,12 @@ main(argc, argv)
 				continue;
 			}
 			if (**p == '-') {
-				deprecated = 1;
+				isdeprecated = 1;
 				oldsyntax(&argv);
 				break;
 			}
 		}
-	if (!deprecated)
+	if (!isdeprecated)
 		newsyntax(argc, &argv);
     
 	plan = find_formplan(argv);		/* execution plan */
@@ -120,7 +124,7 @@ find_formplan(argv)
 	 * the user might want the -print someplace else on the command line,
 	 * but there's no way to know that.
 	 */
-	if (!output_specified) {
+	if (!isoutput) {
 		new = c_print();
 		if (plan == NULL)
 			tail = plan = new;
@@ -168,30 +172,62 @@ find_execute(plan, paths)
 	PLAN *plan;		/* search plan */
 	char **paths;		/* array of pathnames to traverse */
 {
-	FTSENT *entry;		/* current fts entry */
+	register FTSENT *entry;
 	PLAN *p;
     
-	if (!(tree = ftsopen(paths, ftsoptions, NULL))) {
+	/*
+	 * If need stat info, might as well quit when the directory isn't
+	 * searchable.
+	 */
+	if (!(ftsoptions & FTS_NOSTAT))
+		isstopdnx = 1;
+
+	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL))) {
 		(void)fprintf(stderr, "find: ftsopen: %s.\n", strerror(errno));
 		exit(1);
 	}
-	while (entry = ftsread(tree)) {
+
+	while (entry = fts_read(tree)) {
 		switch(entry->fts_info) {
 		case FTS_DNR:
 			(void)fprintf(stderr,
 			    "find: %s: unable to read.\n", entry->fts_path);
 			continue;
-		case FTS_DNX:
-			(void)fprintf(stderr,
+		case FTS_DNX: {
+			/*
+			 * If can't search the directory, but able to read it,
+			 * and don't need stat information or to exec/ok the
+			 * file, use the fts_children list.
+			 */
+			register char *t;
+
+			if (isstopdnx)
+				goto srcherr;
+			errno = 0;
+			entry = fts_children(tree);
+			if (errno)
+				goto srcherr;
+			for (t = entry->fts_path; *t; ++t);
+			*t = '/';
+			for (; entry; entry = entry->fts_link) {
+				(void)bcopy(entry->fts_name, t + 1,
+				    entry->fts_namelen + 1);
+				for (p = plan; p && (p->eval)(p, entry);
+				    p = p->next);
+			}
+			continue;
+
+srcherr:		(void)fprintf(stderr,
 			    "find: %s: unable to search.\n", entry->fts_path);
 			continue;
+		}
 		case FTS_ERR:
 			(void)fprintf(stderr,
 			    "find: %s: %s.\n", entry->fts_path,
 			    strerror(errno));
 			continue;
 		case FTS_D:
-			if (depth)
+			if (isdepth)
 				continue;
 			break;
 		case FTS_DC:
@@ -199,7 +235,7 @@ find_execute(plan, paths)
 			    "find: directory cycle: %s.\n", entry->fts_path);
 			continue;
 		case FTS_DP:
-			if (!depth)
+			if (!isdepth)
 				continue;
 			break;
 		case FTS_NS:
@@ -218,5 +254,5 @@ find_execute(plan, paths)
 		 */
 		for (p = plan; p && (p->eval)(p, entry); p = p->next);
 	}
-	(void)ftsclose(tree);
+	(void)fts_close(tree);
 }
