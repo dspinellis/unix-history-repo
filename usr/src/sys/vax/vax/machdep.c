@@ -1,4 +1,4 @@
-/*	machdep.c	4.42	81/10/29	*/
+/*	machdep.c	4.43	81/11/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -697,7 +697,7 @@ machinecheck(cmcf)
 #if VAX750
 	case VAX_750: {
 		register struct mc750frame *mcf = (struct mc750frame *)cmcf;
-		printf("\tva %x errpc %x mdr %x smr %x tbgpar %x cacherr %x\n",
+		printf("\tva %x errpc %x mdr %x smr %x rdtimo %x tbgpar %x cacherr %x\n",
 		    mcf->mc5_va, mcf->mc5_errpc, mcf->mc5_mdr, mcf->mc5_svmode,
 		    mcf->mc5_rdtimo, mcf->mc5_tbgpar, mcf->mc5_cacherr);
 		printf("\tbuserr %x mcesr %x pc %x psl %x mcsr %x\n",

@@ -1,4 +1,4 @@
-/*	param.c	4.7	81/10/29	*/
+/*	param.c	4.8	81/11/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,7 +69,6 @@ struct	cmap *cmap, *ecmap;
 #ifdef BBNNET
 struct  ucb *contab, *conNCON;
 struct  host *host, *hostNHOST;
-struct  net netcb;
 struct  net_stat netstat;
 struct  impstat imp_stat;
 #endif BBNNET
