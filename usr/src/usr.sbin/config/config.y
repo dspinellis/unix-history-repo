@@ -63,7 +63,7 @@
 
 %{
 
-/*	config.y	1.17	83/05/18	*/
+/*	config.y	1.18	83/05/18	*/
 
 #include "config.h"
 #include <ctype.h>
@@ -131,18 +131,26 @@ Config_spec:
 	      = { yyerror("HZ specification obsolete; delete"); } |
 	TIMEZONE NUMBER
 	      = { timezone = 60 * $2; check_tz(); } |
+	TIMEZONE NUMBER DST NUMBER
+	      = { timezone = 60 * $2; dst = $4; check_tz(); } |
 	TIMEZONE NUMBER DST
 	      = { timezone = 60 * $2; dst = 1; check_tz(); } |
 	TIMEZONE FPNUMBER
 	      = { timezone = $2; check_tz(); } |
+	TIMEZONE FPNUMBER DST NUMBER
+	      = { timezone = $2; dst = $4; check_tz(); } |
 	TIMEZONE FPNUMBER DST
 	      = { timezone = $2; dst = 1; check_tz(); } |
 	TIMEZONE MINUS NUMBER
 	      = { timezone = -60 * $3; check_tz(); } |
+	TIMEZONE MINUS NUMBER DST NUMBER
+	      = { timezone = -60 * $3; dst = $5; check_tz(); } |
 	TIMEZONE MINUS NUMBER DST
 	      = { timezone = -60 * $3; dst = 1; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER
 	      = { timezone = -$3; check_tz(); } |
+	TIMEZONE MINUS FPNUMBER DST NUMBER
+	      = { timezone = -$3; dst = $5; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER DST
 	      = { timezone = -$3; dst = 1; check_tz(); } |
 	MAXUSERS NUMBER
