@@ -25,7 +25,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -430,6 +430,7 @@ get_exportlist()
 	register int i;
 	register struct grouplist *grp, *grp2;
 	register struct exportlist *ep, *ep2;
+	struct ufs_args args;
 	FILE *inf;
 	char *cp, *endcp;
 	char savedc;
@@ -468,7 +469,7 @@ get_exportlist()
 		exit(2);
 	}
 	while (fgets(line, LINESIZ, inf)) {
-		exflags = 0;
+		exflags = M_EXPORTED;
 		rootuid = def_rootuid;
 		cp = line;
 		nextfield(&cp, &endcp);
@@ -547,7 +548,10 @@ get_exportlist()
 			nextfield(&cp, &endcp);
 			len = endcp-cp;
 		}
-		if (exportfs(ep->ex_dirp, rootuid, exflags) < 0) {
+		args.fspec = 0;
+		args.exflags = exflags;
+		args.exroot = rootuid;
+		if (mount(MOUNT_UFS, ep->ex_dirp, M_UPDATE, &args) < 0) {
 			syslog(LOG_WARNING, "Can't export %s", ep->ex_dirp);
 			free((caddr_t)ep);
 		} else {
