@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -136,6 +136,10 @@ main(argc, argv)
 		strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
 		chown(ttyn, 0, 0);
 		chmod(ttyn, 0622);
+		/*
+		 * Delay the open so DTR stays down long enough to be detected.
+		 */
+		sleep(2);
 		while (open(ttyn, O_RDWR) != 0) {
 			if (repcnt % 10 == 0) {
 				syslog(LOG_ERR, "%s: %m", ttyn);
