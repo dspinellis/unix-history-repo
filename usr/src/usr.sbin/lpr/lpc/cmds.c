@@ -381,7 +381,7 @@ down(argc, argv)
 	char prbuf[100];
 
 	if (argc == 1) {
-		printf("Usage: disable {all | printer} [message ...]\n");
+		printf("Usage: down {all | printer} [message ...]\n");
 		return;
 	}
 	if (!strcmp(argv[1], "all")) {
@@ -446,8 +446,6 @@ putmsg(argc, argv)
 	/*
 	 * Write the message into the status file.
 	 */
-	if (argc <= 0)
-		return;
 	(void) sprintf(line, "%s/%s", SD, ST);
 	fd = open(line, O_WRONLY|O_CREAT, 0664);
 	if (fd < 0 || flock(fd, LOCK_EX) < 0) {
@@ -455,6 +453,11 @@ putmsg(argc, argv)
 		return;
 	}
 	(void) ftruncate(fd, 0);
+	if (argc <= 0) {
+		(void) write(fd, "\n", 1);
+		(void) close(fd);
+		return;
+	}
 	cp1 = buf;
 	while (--argc >= 0) {
 		cp2 = *argv++;
