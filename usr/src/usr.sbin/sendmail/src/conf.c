@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -290,6 +290,9 @@ host_map_init(map, mapname, args)
 setupmailers()
 {
 	char buf[100];
+
+	strcpy(buf, "prog, P=/bin/sh, F=lsD, A=sh -c $u");
+	makemailer(buf);
 
 	strcpy(buf, "*file*, P=/dev/null, F=lsDEu, A=FILE");
 	makemailer(buf);
