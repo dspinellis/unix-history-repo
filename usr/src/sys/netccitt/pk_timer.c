@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_timer.c	7.4 (Berkeley) %G%
+ *	@(#)pk_timer.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -63,8 +63,9 @@ pk_timer ()
 				switch (lcp -> lcd_state) {
 				case SENT_CALL: 
 					if (--lcp -> lcd_timer == 0) {
+					    if (lcp -> lcd_so)
 						lcp -> lcd_so -> so_error = ETIMEDOUT;
-						pk_clear (lcp, 49, 1);
+					    pk_clear (lcp, 49, 1);
 					}
 					break;
 
