@@ -1,21 +1,30 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)index.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
-
 /*
- * Return the ptr in sp at which the character c appears;
- * NULL if not found
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
-#define	NULL	0
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)index.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
+#include <stdio.h>
 
 char *
-index(sp, c)
-register char *sp, c;
+index(p, ch)
+	register char *p, ch;
 {
-	do {
-		if (*sp == c)
-			return(sp);
-	} while (*sp++);
-	return(NULL);
+	for (;; ++p) {
+		if (*p == ch)
+			return(p);
+		if (!*p)
+			return((char *)NULL);
+	}
+	/* NOTREACHED */
 }
