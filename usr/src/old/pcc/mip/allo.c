@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)allo.c	4.8 (Berkeley) %G%";
+static char *sccsid ="@(#)allo.c	4.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -44,13 +44,14 @@ allo( p, q ) NODE *p; struct optab *q; {
 
 	while( n & NACOUNT ){
 		resc[i].in.op = REG;
-		resc[i].tn.rval = freereg( p, n&NAMASK );
+		resc[i].tn.rval = freereg( p, n&(NAMASK|NEVEN) );
 		resc[i].tn.lval = 0;
 #ifdef FLEXNAMES
 		resc[i].in.name = "";
 #else
 		resc[i].in.name[0] = '\0';
 #endif
+		n &= ~NEVEN;		/* only used for first need */
 		n -= NAREG;
 		++i;
 		}
@@ -206,7 +207,7 @@ usable( p, n, r ) NODE *p; {
 	 * register must be wide.
 	 */
 	if( (n&NAMASK) &&
-	    (szty(p->in.type) == 2 ||
+	    (szty(p->in.type) == 2 || (n&NEVEN) ||
 	     (logop(p->in.op) && (szty(p->in.left->in.type) == 2 ||
 	      szty(p->in.right->in.type) == 2)) ||
 	     (asgop(p->in.op) && szty(p->in.right->in.type) == 2 &&
