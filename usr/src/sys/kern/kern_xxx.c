@@ -31,36 +31,7 @@ reboot(p, uap, retval)
 	return (0);
 }
 
-#ifdef COMPAT_43
-
-extern long hostid;
-
-struct gethostid_args {
-	int	dummy;
-};
-/* ARGSUSED */
-ogethostid(p, uap, retval)
-	struct proc *p;
-	struct gethostid_args *uap;
-	int *retval;
-{
-
-	*(long *)retval = hostid;
-	return (0);
-}
-
-struct sethostid_args {
-	long	hostid;
-};
-/* ARGSUSED */
-osethostid(p, uap, retval)
-	struct proc *p;
-	struct sethostid_args *uap;
-	int *retval;
-{
-	int error;
-
-}
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 
 struct gethostname_args {
 	char	*hostname;
@@ -92,6 +63,37 @@ osethostname(p, uap, retval)
 
 	name = KERN_HOSTNAME;
 	return (kern_sysctl(&name, 1, 0, 0, uap->hostname, uap->len));
+}
+
+extern long hostid;
+
+struct gethostid_args {
+	int	dummy;
+};
+/* ARGSUSED */
+ogethostid(p, uap, retval)
+	struct proc *p;
+	struct gethostid_args *uap;
+	int *retval;
+{
+
+	*(long *)retval = hostid;
+	return (0);
+}
+#endif /* COMPAT_43 || COMPAT_SUNOS */
+
+#ifdef COMPAT_43
+struct sethostid_args {
+	long	hostid;
+};
+/* ARGSUSED */
+osethostid(p, uap, retval)
+	struct proc *p;
+	struct sethostid_args *uap;
+	int *retval;
+{
+	int error;
+
 }
 
 oquota()
