@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.31 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.32 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.31 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.32 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -94,6 +94,8 @@ bool	OneXact = FALSE;		/* one xaction only this run */
 char	*CurSmtpClient;			/* who's at the other end of channel */
 
 static char	*skipword();
+extern char	RealUserName[];
+
 
 #define MAXBADCOMMANDS	25		/* maximum number of bad commands */
 
@@ -319,6 +321,15 @@ smtp(e)
 			p = delimptr;
 			if (p != NULL && *p != '\0')
 				*p++ = '\0';
+
+			/* check for possible spoofing */
+			if (RealUid != 0 && OpMode == MD_SMTP &&
+			    (e->e_from.q_mailer != LocalMailer &&
+			     strcmp(e->e_from.q_user, RealUserName) != 0))
+			{
+				auth_warning(e, "%s owned process doing -bs",
+					RealUserName);
+			}
 
 			/* now parse ESMTP arguments */
 			msize = 0;
