@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -225,47 +225,72 @@ int func;
 unsigned char *valp;
 unsigned char **valpp;
 {
+
+#define	setval(a, b)	*valp = termbuf.c_cc[a]; \
+			*valpp = &termbuf.c_cc[a]; \
+			return(b);
+#define	defval(a)	*valp = (a); *valpp = 0; return(SLC_DEFAULT);
+
 	switch(func) {
 	case SLC_EOF:
-		*valp = termbuf.c_cc[VEOF];
-		*valpp = &termbuf.c_cc[VEOF];
-		return(SLC_VARIABLE);
+		setval(VEOF, SLC_VARIABLE);
 	case SLC_EC:
-		*valp = termbuf.c_cc[VERASE];
-		*valpp = &termbuf.c_cc[VERASE];
-		return(SLC_VARIABLE);
+		setval(VERASE, SLC_VARIABLE);
 	case SLC_EL:
-		*valp = termbuf.c_cc[VKILL];
-		*valpp = &termbuf.c_cc[VKILL];
-		return(SLC_VARIABLE);
+		setval(VKILL, SLC_VARIABLE);
 	case SLC_IP:
-		*valp = termbuf.c_cc[VINTR];
-		*valpp = &termbuf.c_cc[VINTR];
-		return(SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
+		setval(VINTR, SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
 	case SLC_ABORT:
-		*valp = termbuf.c_cc[VQUIT];
-		*valpp = &termbuf.c_cc[VQUIT];
-		return(SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
+		setval(VQUIT, SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
 	case SLC_XON:
-		*valp = 0x13;
-		*valpp = 0;
-		return(SLC_DEFAULT);
+#ifdef	VSTART
+		setval(VSTART, SLC_VARIABLE);
+#else
+		defval(0x13);
+#endif
 	case SLC_XOFF:
-		*valp = 0x11;
-		*valpp = 0;
-		return(SLC_DEFAULT);
+#ifdef	VSTOP
+		setval(VSTOP, SLC_VARIABLE);
+#else
+		defval(0x11);
+#endif
 	case SLC_EW:
+#ifdef	VWERASE
+		setval(VWERASE, SLC_VARIABLE);
+#else
+		defval(0);
+#endif
 	case SLC_RP:
+#ifdef	VREPRINT
+		setval(VREPRINT, SLC_VARIABLE);
+#else
+		defval(0);
+#endif
 	case SLC_LNEXT:
+#ifdef	VLNEXT
+		setval(VLNEXT, SLC_VARIABLE);
+#else
+		defval(0);
+#endif
+	case SLC_AO:
+#ifdef	VFLUSHO
+		setval(VFLUSHO, SLC_VARIABLE|SLC_FLUSHOUT);
+#else
+		defval(0);
+#endif
+	case SLC_SUSP:
+#ifdef	VSUSP
+		setval(VSUSP, SLC_VARIABLE|SLC_FLUSHIN);
+#else
+		defval(0);
+#endif
+
 	case SLC_BRK:
 	case SLC_SYNCH:
 	case SLC_AYT:
 	case SLC_EOR:
-		*valp = 0;
-		*valpp = 0;
-		return(SLC_DEFAULT);
-	case SLC_AO:
-	case SLC_SUSP:
+		defval(0);
+
 	default:
 		*valp = 0;
 		*valpp = 0;
@@ -461,7 +486,7 @@ tty_isbinaryin()
 #ifndef	USE_TERMIO
 	return(termbuf.lflags & LPASS8);
 #else
-	return(!(termbuf.c_lflag & ISTRIP));
+	return(!(termbuf.c_iflag & ISTRIP));
 #endif
 }
 
@@ -470,7 +495,7 @@ tty_isbinaryout()
 #ifndef	USE_TERMIO
 	return(termbuf.lflags & LLITOUT);
 #else
-	return(mywants[TELOPT_BINARY] == OPT_YES);
+	return(!(termbuf.c_oflag&OPOST));
 #endif
 }
 

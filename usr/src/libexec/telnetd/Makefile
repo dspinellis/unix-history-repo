@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 
 DEFINES=
@@ -24,11 +24,17 @@ LIBC=	/lib/libc.a
 #		GETTYOBJ= get_date.o gettytab.o
 #		GETTYSRC= get_date.c gettytab.c
 #		LIBEXEC=${DESTDIR}/usr/libexec
+#		VPATH=../getty
+#			or
+#		VPATH=/usr/src/libexec/getty
 #
 # 4.3BSD	LIBS= -ltermcap
 #		GETTYOBJ= get_date.o gettytab.o
 #		GETTYSRC= get_date.c gettytab.c
 #		LIBEXEC=${DESTDIR}/etc
+#		VPATH=../getty
+#			or
+#		VPATH=/usr/src/etc/getty
 #
 # Cray UNICOS
 #		LIBS= -lnet -lcurses
@@ -39,7 +45,8 @@ LIBC=	/lib/libc.a
 LIBS=	-lutil -ltermcap
 GETTYOBJ= get_date.o gettytab.o
 GETTYSRC= get_date.c gettytab.c
-LIBEXEC= ${DESTDIR}/usr/libexec
+LIBEXEC=${DESTDIR}/usr/libexec
+VPATH=	../getty
 
 SRC1=	telnetd.c state.c termstat.c slc.c sys_term.c utility.c global.c
 OBJ1=	telnetd.o state.o termstat.o slc.o sys_term.o utility.o global.o
@@ -47,9 +54,16 @@ OBJ1=	telnetd.o state.o termstat.o slc.o sys_term.o utility.o global.o
 OBJS=	${OBJ1} ${GETTYOBJ}
 SRCS=	${SRC1} ${GETTYSRC}
 
-VPATH=	../getty
 MAN=	telnetd.0
 CFLAGS=	-O ${DEFINES}
+
+#
+# These next three lines are not needed in 4.4BSD
+#
+#.SUFFIXES: .0 .8
+#.8.0:
+#	nroff -man -h $< > $@
+
 
 all: telnetd
 

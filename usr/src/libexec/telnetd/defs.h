@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -49,6 +49,7 @@
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
 
 #include <netinet/in.h>
 
@@ -68,14 +69,12 @@
 # ifdef	SYSV_TERMIO
 # include <termio.h>
 # else
-# include <sys/ioctl.h>
 # include <termios.h>
 # endif
 #endif
 
 #ifdef	CRAY
 #include <sys/fcntl.h>
-#include <sys/ioctl.h>
 # ifdef	CRAY1
 # include <sys/pty.h>
 #  ifndef FD_ZERO

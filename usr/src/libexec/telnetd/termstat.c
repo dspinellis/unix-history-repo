@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -128,18 +128,18 @@ localstat()
 	 */
 	if (tty_isbinaryin()) {
 		if (hiswants[TELOPT_BINARY] == OPT_NO)
-			willoption(TELOPT_BINARY, 1);
+			send_do(TELOPT_BINARY, 1);
 	} else {
 		if (hiswants[TELOPT_BINARY] == OPT_YES)
-			wontoption(TELOPT_BINARY, 1);
+			send_dont(TELOPT_BINARY, 1);
 	}
 
 	if (tty_isbinaryout()) {
 		if (mywants[TELOPT_BINARY] == OPT_NO)
-			dooption(TELOPT_BINARY, 1);
+			send_will(TELOPT_BINARY, 1);
 	} else {
 		if (mywants[TELOPT_BINARY] == OPT_YES)
-			dontoption(TELOPT_BINARY, 1);
+			send_wont(TELOPT_BINARY, 1);
 	}
 
 	/*
@@ -190,9 +190,9 @@ localstat()
 	 * about that here.
 	 */
 	if (tty_isecho() && uselinemode)
-		dontoption(TELOPT_ECHO, 1);
+		send_wont(TELOPT_ECHO, 1);
 	else
-		dooption(TELOPT_ECHO, 1);
+		send_will(TELOPT_ECHO, 1);
 
 	/*
 	 * If linemode is being turned off, send appropriate
@@ -202,10 +202,10 @@ localstat()
 # ifdef	KLUDGELINEMODE
 		if (lmodetype == REAL_LINEMODE)
 # endif	/* KLUDGELINEMODE */
-			wontoption(TELOPT_LINEMODE, 1);
+			send_dont(TELOPT_LINEMODE, 1);
 # ifdef	KLUDGELINEMODE
 		else if (lmodetype == KLUDGE_LINEMODE)
-			dooption(TELOPT_SGA, 1);
+			send_wont(TELOPT_SGA, 1);
 # endif	/* KLUDGELINEMODE */
 		linemode = uselinemode;
 		goto done;
@@ -233,10 +233,10 @@ localstat()
 	if (uselinemode && !linemode) {
 # ifdef	KLUDGELINEMODE
 		if (lmodetype == KLUDGE_LINEMODE) {
-			dontoption(TELOPT_SGA, 1);
+			send_wont(TELOPT_SGA, 1);
 		} else if (lmodetype == REAL_LINEMODE) {
 # endif	/* KLUDGELINEMODE */
-			willoption(TELOPT_LINEMODE, 1);
+			send_do(TELOPT_LINEMODE, 1);
 			/* send along edit modes */
 			(void) sprintf(nfrontp, "%c%c%c%c%c%c%c", IAC, SB,
 				TELOPT_LINEMODE, LM_MODE, useeditmode,
@@ -337,10 +337,10 @@ register int code, parm1, parm2;
 			 * If using kludge linemode, make sure that
 			 * we can do what the client asks.
 			 * We can not turn off linemode if alwayslinemode
-			 * or if the ICANON bit is set.
+			 * and the ICANON bit is set.
 			 */
 			if (lmodetype == KLUDGE_LINEMODE) {
-				if (alwayslinemode || tty_isediting()) {
+				if (alwayslinemode && tty_isediting()) {
 					uselinemode = 1;
 				}
 			}
