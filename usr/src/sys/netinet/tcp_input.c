@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.6 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -494,6 +494,13 @@ trimthenstep6:
 		}
 		if (todrop > ti->ti_len ||
 		    todrop == ti->ti_len && (tiflags&TH_FIN) == 0) {
+#ifdef TCP_COMPAT_42
+			/*
+			 * Don't toss RST in response to 4.2-style keepalive.
+			 */
+			if (ti->ti_seq == tp->rcv_nxt - 1 && tiflags & TH_RST)
+				goto do_rst;
+#endif
 			tcpstat.tcps_rcvduppack++;
 			tcpstat.tcps_rcvdupbyte += ti->ti_len;
 			goto dropafterack;
@@ -579,6 +586,9 @@ trimthenstep6:
 		}
 	}
 
+#ifdef TCP_COMPAT_42
+do_rst:
+#endif
 	/*
 	 * If the RST bit is set examine the state:
 	 *    SYN_RECEIVED STATE:
