@@ -1,4 +1,4 @@
-#	Makefile.vax	4.2	%G%
+#	Makefile.vax	4.3	%G%
 #
 # Makefile for 4.1c bsd
 #
@@ -70,10 +70,10 @@ assym.s: ../h/param.h ../h/pte.h ../h/buf.h ../h/vmparam.h ../h/vmmeter.h \
 
 ../h/param.h: /usr/include/signal.h
 	${TOUCH} ../h/param.h
-../h/ioctl.h:  ../h/ttychars.h ../h/ttydev.h
-	${TOUCH} ../h/ioctl.h
-../h/tty.h: /usr/include/sgtty.h ../h/ioctl.h
+../h/tty.h:  ../h/ttychars.h ../h/ttydev.h
 	${TOUCH} ../h/tty.h
+../h/ioctl.h: /usr/include/sgtty.h ../h/ttychars.h ../h/ttydev.h
+	${TOUCH} ../h/ioctl.h
 ../h/user.h: ../vax/pcb.h ../h/dmap.h ../h/types.h \
     /usr/include/errno.h
 	${TOUCH} ../h/user.h
