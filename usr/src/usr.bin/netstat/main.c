@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,48 +45,42 @@ struct nlist nl[] = {
 	{ "_ifnet" },
 #define	N_IMP		7
 	{ "_imp_softc" },
-#define	N_RTHOST	8
-	{ "_rthost" },
-#define	N_RTNET		9
-	{ "_rtnet" },
-#define	N_ICMPSTAT	10
+#define	N_ICMPSTAT	8
 	{ "_icmpstat" },
-#define	N_RTSTAT	11
+#define	N_RTSTAT	9
 	{ "_rtstat" },
-#define	N_NFILE		12
-	{ "_nfile" },
-#define	N_FILE		13
-	{ "_file" },
-#define	N_UNIXSW	14
+#define	N_UNIXSW	10
 	{ "_unixsw" },
-#define N_RTHASHSIZE	15
-	{ "_rthashsize" },
-#define N_IDP		16
+#define N_IDP		11
 	{ "_nspcb"},
-#define N_IDPSTAT	17
+#define N_IDPSTAT	12
 	{ "_idpstat"},
-#define N_SPPSTAT	18
+#define N_SPPSTAT	13
 	{ "_spp_istat"},
-#define N_NSERR		19
+#define N_NSERR		14
 	{ "_ns_errstat"},
-#define	N_CLNPSTAT	20
+#define	N_CLNPSTAT	15
 	{ "_clnp_stat"},
-#define	IN_TP		21
+#define	IN_TP		16
 	{ "_tp_inpcb" },
-#define	ISO_TP		22
+#define	ISO_TP		17
 	{ "_tp_isopcb" },
-#define	N_TPSTAT	23
+#define	N_TPSTAT	18
 	{ "_tp_stat" },
-#define	N_ESISSTAT	24
+#define	N_ESISSTAT	19
 	{ "_esis_stat"},
-#define N_NIMP		25
+#define N_NIMP		20
 	{ "_nimp"},
-#define N_RTREE		26
+#define N_RTREE		21
 	{ "_radix_node_head"},
-#define N_CLTP		27
+#define N_CLTP		22
 	{ "_cltb"},
-#define N_CLTPSTAT	28
+#define N_CLTPSTAT	23
 	{ "_cltpstat"},
+#define	N_NFILE		24
+	{ "_nfile" },
+#define	N_FILE		25
+	{ "_file" },
 
     /* BBN Internet protocol implementation */
 #define	N_TCP		23
@@ -354,10 +348,7 @@ main(argc, argv)
 		if (sflag)
 			rt_stats((off_t)nl[N_RTSTAT].n_value);
 		else
-			routepr((off_t)nl[N_RTHOST].n_value, 
-				(off_t)nl[N_RTNET].n_value,
-				(off_t)nl[N_RTHASHSIZE].n_value,
-				(off_t)nl[N_RTREE].n_value);
+			routepr((off_t)nl[N_RTREE].n_value);
 		exit(0);
 	}
     if (af == AF_INET || af == AF_UNSPEC) {
