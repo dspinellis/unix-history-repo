@@ -106,6 +106,26 @@ char *name;
 	return regs.x.dx;
     }
 }
+
+#if	defined(unix)
+/*
+ * Block until the oia or ps is modified.
+ */
+
+int
+api_ps_or_oia_modified()
+{
+    union REGS regs;
+    struct SREGS sregs;
+
+    if (api_issue_regs(PS_OR_OIA_MODIFIED, 0, 0, 0, 0, 0, 0, 0, &regs, &sregs)
+		    == -1) {
+	return -1;
+    } else {
+	return 0;
+    }
+}
+#endif	/* defined(unix) */
 
 /*
  * Session Information Services
