@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.24 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -343,6 +343,16 @@ getloginshell(pwd, u, arg)
 
 	if (pwd->pw_shell == 0 || *pwd->pw_shell == '\0')
 		pwd->pw_shell = DEFSHELL;
+	if (u != 0) {
+		for (valid = getusershell(); valid; valid = getusershell())
+			if (strcmp(pwd->pw_shell, valid) == 0)
+				break;
+		if (valid == NULL) {
+			printf("Cannot change from restricted shell %s\n",
+				pwd->pw_shell);
+			exit(1);
+		}
+	}
 	if (arg != 0) {
 		(void) strncpy(newshell, arg, sizeof newshell - 1);
 		newshell[sizeof newshell - 1] = 0;
