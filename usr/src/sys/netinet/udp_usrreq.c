@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.10	81/11/24	*/
+/*	udp_usrreq.c	4.11	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,9 +7,9 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/inet.h"
-#include "../net/inet_pcb.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_pcb.h"
+#include "../net/in_systm.h"
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 #include "../net/udp.h"
@@ -22,6 +22,7 @@
 udp_init()
 {
 
+COUNT(UDP_INIT);
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
@@ -36,6 +37,7 @@ udp_input(m0)
 	register struct mbuf *m;
 	int len, ulen;
 
+COUNT(UDP_INPUT);
 	/*
 	 * Get ip and udp header together in first mbuf.
 	 */
@@ -71,7 +73,7 @@ udp_input(m0)
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
 		ui->ui_len = htons((u_short)(sizeof (struct udpiphdr) + ulen));
-		if ((ui->ui_sum = inet_cksum(m, len)) != 0xffff) {
+		if ((ui->ui_sum = in_cksum(m, len)) != 0xffff) {
 			udpstat.udps_badsum++;
 			printf("udp cksum %x\n", ui->ui_sum);
 			m_freem(m);
@@ -108,6 +110,7 @@ udp_ctlinput(m)
 	struct mbuf *m;
 {
 
+COUNT(UDP_CTLINPUT);
 	printf("udp_ctlinput\n");
 	m_freem(m);
 }
@@ -121,6 +124,7 @@ udp_output(inp, m0)
 	register struct udpiphdr *ui;
 	register int len = 0;
 
+COUNT(UDP_OUTPUT);
 	/*
 	 * Calculate data length and get a mbuf
 	 * for udp and ip headers.
@@ -153,10 +157,10 @@ udp_output(inp, m0)
 	 * Stuff checksum and output datagram.
 	 */
 	ui->ui_sum = 0;
-	ui->ui_sum = inet_cksum(m, sizeof (struct udpiphdr) + len);
+	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
-	ip_output(m);
+	ip_output(m, (struct mbuf *)0);
 	return;
 bad:
 	m_freem(m);
@@ -172,6 +176,7 @@ udp_usrreq(so, req, m, addr)
 	struct inpcb *inp = sotoinpcb(so);
 	int error;
 
+COUNT(UDP_USRREQ);
 	if (inp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 	switch (req) {
@@ -249,6 +254,7 @@ udp_sense(m)
 	struct mbuf *m;
 {
 
+COUNT(UDP_SENSE);
 	printf("udp_sense\n");
 	return (EOPNOTSUPP);
 }
