@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.77 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.78 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,6 +70,12 @@ ffs_mountroot()
 	struct ufsmount *ump;
 	u_int size;
 	int error;
+	
+	/*
+	 * Get vnodes for swapdev and rootdev.
+	 */
+	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
+		panic("ffs_mountroot: can't setup bdevvp's");
 
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
