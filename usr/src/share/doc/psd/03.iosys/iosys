@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)iosys	8.1 (Berkeley) %G%
+.\"	@(#)iosys	8.2 (Berkeley) %G%
 .\"
 .EH 'PSD:3-%''The UNIX I/O System'
 .OH 'The UNIX I/O System''PSD:3-%'
@@ -844,6 +844,7 @@ of having to call
 .I wakeup
 every time a buffer is freed on the chance that someone
 might want it.
+.ne 1i
 .IP B_AGE
 This bit may be set on buffers just before releasing them; if it
 is on,

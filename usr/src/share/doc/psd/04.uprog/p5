@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p5	8.1 (Berkeley) %G%
+.\"	@(#)p5	8.2 (Berkeley) %G%
 .\"
 .NH
 PROCESSES
@@ -378,6 +378,7 @@ does),
 and returns a file descriptor that will either
 read or write that process, according to 
 .UL mode .
+.ne 1i
 That is,
 the call
 .P1

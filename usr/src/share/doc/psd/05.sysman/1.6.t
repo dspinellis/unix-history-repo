@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.6.t	8.4 (Berkeley) %G%
+.\"	@(#)1.6.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Resource controls
 .Sh 3 "Process priorities
@@ -111,6 +111,7 @@ RLIMIT_NPROC	/* number of processes */
 RLIMIT_NOFILE	/* number of open files */
 .TE
 .DE
+.ne 1i
 Each limit has a current value and a maximum defined
 by the \fIrlimit\fP structure:
 .DS

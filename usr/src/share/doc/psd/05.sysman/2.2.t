@@ -3,8 +3,9 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.2.t	8.7 (Berkeley) %G%
+.\"	@(#)2.2.t	8.8 (Berkeley) %G%
 .\"
+.ne 1i
 .Sh 2 "Filesystem
 .Sh 3 "Overview
 .PP
@@ -466,6 +467,7 @@ char *path; u_long flags;
 fchflags(fd, flags);
 int fd; u_long flags;
 .DE
+.ne 1i
 The flags specified are formed by or'ing the following values:
 .DS
 .TS
@@ -562,6 +564,7 @@ call may be used:
 oldoffset = lseek(fd, offset, type);
 result off_t oldoffset; int fd; off_t offset; int type;
 .DE
+.ne 1i
 where \fItype\fP is defined by \fI<unistd.h>\fP as one of:
 .DS
 .TS
