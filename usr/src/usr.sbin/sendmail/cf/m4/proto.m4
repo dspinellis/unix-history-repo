@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.13 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.14 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -16,9 +16,11 @@ ifdef(`_OLD_SENDMAIL_',
 `define(`_SET_95_', 5)dnl
 define(`_SET_96_', 6)dnl
 define(`_SET_97_', 7)dnl
-define(`_SET_98_', 8)dnl',
-`# level 4 config file format
-V4
+define(`_SET_98_', 8)dnl
+define(`confDOMAIN_NAME',
+	`ifdef(`NEED_DOMAIN', `$w.$d', `$w')')dnl',
+`# level 5 config file format
+V5
 define(`_SET_95_', 95)dnl
 define(`_SET_96_', 96)dnl
 define(`_SET_97_', 97)dnl
@@ -90,9 +92,10 @@ DR`'ifdef(`LOCAL_RELAY', LOCAL_RELAY)
 # who gets all local email traffic ($R has precedence for unqualified names)
 DH`'ifdef(`MAIL_HUB', MAIL_HUB)
 
-# my official hostname ($w or $w.$D)
-Dj$w`'ifdef(`NEED_DOMAIN', .$D)
-
+ifdef(`confDOMAIN_NAME',
+`# my official domain name
+Dj`'confDOMAIN_NAME',
+	`dnl')
 # who I masquerade as (can be $j)
 DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
 
