@@ -5,7 +5,7 @@
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	5.5 (Berkeley) %G%
+.\"     @(#)glob.3	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -32,7 +32,7 @@ The include file
 defines the structure type
 .Fa glob_t ,
 which contains at least the following fields:
-.Bd -literal -offset indent
+.Bd -literal
 typedef struct {
 	int gl_pathc;		/* count of total paths so far */
 	int gl_matchc;		/* count of paths matching pattern */

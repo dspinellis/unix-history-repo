@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.10 (Berkeley) %G%
+.\"     @(#)fts.3	5.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -75,7 +75,7 @@ The
 .Fa FTSENT
 structure contains at least the following fields, which are
 described in greater detail below:
-.Bd -literal -offset indent
+.Bd -literal
 typedef struct _ftsent {
 	u_short fts_info;		/* flags for FTSENT structure */
 	char *fts_accpath;		/* access path */
