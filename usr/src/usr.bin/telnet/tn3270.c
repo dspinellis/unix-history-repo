@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -359,7 +359,7 @@ tn3270_ttype()
 }
 
 #if	defined(unix)
-	void
+	int
 settranscom(argc, argv)
 	int argc;
 	char *argv[];
@@ -370,7 +370,7 @@ settranscom(argc, argv)
 	   transcom = 0;
 	}
 	if (argc == 1) {
-	   return;
+	   return 1;
 	}
 	transcom = tline;
 	(void) strcpy(transcom, argv[1]);
@@ -378,6 +378,7 @@ settranscom(argc, argv)
 	    (void) strcat(transcom, " ");
 	    (void) strcat(transcom, argv[i]);
 	}
+	return 1;
 }
 #endif	/* defined(unix) */
 
