@@ -1,4 +1,4 @@
-/*	setjmp.s	4.3	83/06/30	*/
+/*	setjmp.s	4.4	83/07/02	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -75,6 +75,7 @@ botch:
 	calls	$3,_write
 	halt
 
+	.data
 msg:	.ascii	"longjmp botch\n"
 msgend:
 reiins:	rei
