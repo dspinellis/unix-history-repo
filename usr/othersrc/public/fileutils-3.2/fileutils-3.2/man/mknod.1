@@ -1,0 +1,38 @@
+.TH MKNOD 1L \" -*- nroff -*-
+.SH NAME
+mknod \- make special files
+.SH SYNOPSIS
+.B mknod
+[\-m mode] [\-\-mode=mode] path {bcu} major minor
+.br
+.B mknod
+[\-m mode] [\-\-mode=mode] path p
+.SH DESCRIPTION
+This manual page
+documents the GNU version of
+.BR mknod .
+.B mknod
+creates a FIFO, character special file, or block special file
+with the given pathname.  By default, the mode of
+created files is 0666 minus the bits set in the umask.
+.PP
+The argument after the path specifies the type of file to make:
+.nf
+p for a FIFO
+b for a block (buffered) special file
+c or u for a character (unbuffered) special file
+.fi
+.PP
+When making a block or character special file, the major and minor
+device numbers must be given after the file type.
+.SS OPTIONS
+.TP
+.I "\-m, \-\-mode mode"
+Set the mode of created files to
+.IR mode ,
+which is symbolic as in chmod and uses the default mode as the point of
+departure.
+.PP
+The long-named options can be introduced with `+' as well as `\-\-',
+for compatibility with previous releases.  Eventually support for `+'
+will be removed, because it is incompatible with the POSIX.2 standard.
