@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)clnp.4	8.1 (Berkeley) %G%
+.\"     @(#)clnp.4	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CLNP 4
@@ -130,11 +130,6 @@ When specifying unsupported options.
 .Xr recv 2 ,
 .Xr intro 4 ,
 .Xr iso 4
-.Sh HISTORY
-The
-.Nm
-protocol implementation
-.Ud
 .Sh BUGS
 Packets are sent with the type code of 0x1d (technically an invalid
 packet type) for lack of a better way to identify raw
