@@ -30,12 +30,12 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.42 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	5.42 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.41 (Berkeley) %G% (without NDBM)";
+static char sccsid[] = "@(#)alias.c	5.42 (Berkeley) %G% (without NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -768,7 +768,8 @@ forward(user, sendq, e)
 	ADDRESS **sendq;
 	register ENVELOPE *e;
 {
-	char buf[60];
+	char *pp;
+	char *ep;
 	extern bool safefile();
 
 	if (tTd(27, 1))
@@ -781,8 +782,26 @@ forward(user, sendq, e)
 
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home, e);
-	expand("\001z/.forward", buf, &buf[sizeof buf - 1], e);
-	include(buf, TRUE, user, sendq, e);
+	define('u', user->q_user, e);
+	define('h', user->q_host, e);
+	if (ForwardPath == NULL)
+		ForwardPath = newstr("\001z/.forward");
+
+	for (pp = ForwardPath; pp != NULL; pp = ep)
+	{
+		char buf[256];
+
+		ep = strchr(pp, ':');
+		if (ep != NULL)
+			*ep = '\0';
+		expand(pp, buf, &buf[sizeof buf - 1], e);
+		if (ep != NULL)
+			*ep++ = ':';
+		if (tTd(27, 3))
+			printf("forward: trying %s\n", buf);
+		if (include(buf, TRUE, user, sendq, e) == 0)
+			break;
+	}
 }
 /*
 **  MAPHOST -- given a host description, produce a mapping.

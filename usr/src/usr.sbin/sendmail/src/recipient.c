@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -357,7 +357,7 @@ recipient(a, sendq, e)
 			else
 			{
 				message(Arpa_Info, "including file %s", &a->q_user[9]);
-				include(&a->q_user[9], FALSE, a, sendq, e);
+				(void) include(&a->q_user[9], FALSE, a, sendq, e);
 			}
 		}
 		else
@@ -647,7 +647,7 @@ writable(s)
 **			to put these addresses in.
 **
 **	Returns:
-**		none.
+**		open error status
 **
 **	Side Effects:
 **		reads the :include: file and sends to everyone
@@ -656,6 +656,7 @@ writable(s)
 
 static jmp_buf	CtxIncludeTimeout;
 
+int
 include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
 	bool forwarding;
@@ -681,7 +682,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		ctladdr->q_flags |= QQUEUEUP|QDONTSEND;
 		errno = 0;
 		usrerr("451 open timeout on %s", fname);
-		return;
+		return ETIMEDOUT;
 	}
 	ev = setevent((time_t) 60, includetimeout, 0);
 
@@ -690,14 +691,16 @@ include(fname, forwarding, ctladdr, sendq, e)
 	{
 		/* don't use this .forward file */
 		clrevent(ev);
-		return;
+		return EPERM;
 	}
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
+		int ret = errno;
+
 		usrerr("Cannot open %s", fname);
-		return;
+		return ret;
 	}
 
 	if (getctladdr(ctladdr) == NULL)
@@ -734,6 +737,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	(void) fclose(fp);
 	FileName = oldfilename;
 	LineNumber = oldlinenumber;
+	return 0;
 }
 
 static
