@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.49 (Berkeley) %G%
+.\"	@(#)contrib	5.50 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -13,10 +13,10 @@
 .ps 16
 .ce
 \fBThe Computer Stystems Research Group 1979 \- 1993\fP
-.OH '\s10Community''- % -\s0'
-.EH '\s10- % -''Community\s0'
-.pn 4
-.af % i
+.if \n%>1 \{
+.	OH '\s10Community''- % -\s0'
+.	EH '\s10- % -''Community\s0'
+.\}
 .sp 3
 .nr PS 11
 .nr VS 12
