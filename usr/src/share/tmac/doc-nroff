@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-nroff	5.3 (Berkeley) %G%
+.\"     @(#)doc-nroff	5.4 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-nroff
 .\"     %beginstrip%
@@ -11,6 +11,7 @@
 .ds aD \fI
 .ds aR \fI
 .ds cM \fB
+.ds dF \fR
 .ds eM \fI
 .ds eR \fR
 .ds eV \fR
@@ -18,6 +19,8 @@
 .ds fD \fB
 .ds fL \fB
 .ds fN \fB
+.ds fP \fP
+.ds fS
 .ds fT \fI
 .ds Hs \fR
 .ds iC \fB
@@ -38,7 +41,8 @@
 .ds sH \fB
 .ds sY \fB
 .ds sX \fI
-.ds tN \fR
+.ds tF \fR
+.ds tN
 .ds vA \fI
 .ds Vs \fR
 .ds vT \fB
@@ -86,6 +90,7 @@
 .ds Pm +-
 .ds If infinity
 .ds Na \fINaN\fP
+.ds Ba \fR\&|\fP
 
 .\"
 .de hK
