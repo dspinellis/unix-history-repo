@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.35 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -380,9 +380,12 @@ fchdir(scp)
 	else
 		error = VOP_ACCESS(vp, VEXEC, scp->sc_cred);
 	VOP_UNLOCK(vp);
+	if (error)
+		RETURN (error);
+	VREF(vp);
 	vrele(scp->sc_cdir);
 	scp->sc_cdir = vp;
-	RETURN (error);
+	RETURN (0);
 }
 
 /*
