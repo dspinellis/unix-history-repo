@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.7 (Berkeley) %G%
+ *	@(#)conf.h	8.8 (Berkeley) %G%
  */
 
 /*
@@ -76,9 +76,10 @@
 
 # ifdef __hpux
 # define SYSTEM5	1	/* include all the System V defines */
-# define UNSETENV	1	/* need unsetenv(3) support */
 # define HASSETREUID	1	/* have setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)	
+# define LA_TYPE	LA_FLOAT
+# define _PATH_UNIX	"/hp-ux"
 # endif
 
 /*
@@ -88,8 +89,6 @@
 # ifdef _AIX3
 # define LOCKF		1	/* use System V lockf instead of flock */
 # define FORK		fork	/* no vfork primitive available */
-# define UNSETENV	1	/* need unsetenv(3) support */
-# define SYS5TZ		1	/* use System V style timezones */
 # endif
 
 /*
@@ -100,7 +99,6 @@
 
 # ifdef IRIX
 # define FORK		fork	/* no vfork primitive available */
-# define UNSETENV	1	/* need unsetenv(3) support */
 # define setpgrp	BSDsetpgrp
 # define HASSETREUID	1	/* have setreuid(2) call */
 # define GIDSET_T	gid_t
@@ -113,12 +111,17 @@
 
 #if defined(sun) && !defined(BSD)
 
-# define UNSETENV	1	/* need unsetenv(3) support */
+# define LA_TYPE	LA_INT
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
 #  define SYSTEM5	1	/* use System V definitions */
 #  include <sys/time.h>
+#  define _PATH_UNIX	"/kernel/unix"
+#  ifndef _PATH_SENDMAILCF
+#   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
+#   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
+#  endif
 
 # else
 			/* SunOS 4.1.x */
@@ -136,6 +139,10 @@
 #ifdef ultrix
 # define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETREUID	1	/* have setreuid(2) call */
+# define HASSETENV	1	/* has setenv(3) call */
+# define HASUNSETENV	1	/* has unsetenv(3) call */
+# define LA_TYPE	LA_INT
+# define LA_AVENRUN	"avenrun"
 #endif
 
 /*
@@ -143,8 +150,11 @@
 */
 
 #ifdef __osf__
+# define HASSETENV	1	/* has setenv(3) call */
+# define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* have setreuid(2) call */
-# define seteuid(uid)	setreuid(-1, uid)
+# define LA_TYPE	LA_INT
+# define LA_AVENRUN	"avenrun"
 #endif
 
 /*
@@ -153,21 +163,15 @@
 
 #ifdef __NeXT__
 # define sleep		sleepX
-# define UNSETENV	1	/* need unsetenv(3) support */
+# define LA_TYPE	LA_ZERO
 #endif
 
 /*
-**  BSD
+**  4.4 BSD
 */
 
-#ifdef BSD
-# define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
-#endif
-
-/* 4.4BSD */
 #ifdef BSD4_4
 # include <sys/cdefs.h>
-# define HASSETREUID	1	/* have setreuid(2) call */
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 #endif
 
@@ -177,9 +181,37 @@
 
 #ifdef _SCO_unix_
 # define SYSTEM5	1	/* include all the System V defines */
-# define UNSETENV	1	/* need unsetenv(3) support */
 # define FORK		fork
 # define MAXPATHLEN	PATHSIZE
+# define LA_TYPE	LA_ZERO
+#endif
+
+/*
+**  ConvexOS 11.0 and later
+*/
+
+#ifdef _CONVEX_SOURCE
+# define SYSTEM5	1	/* include all the System V defines */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASSETSID	1	/* has POSIX setsid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(2) call */
+# define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
+# define HASSETREUID	1	/* have setreuid(2) call */
+# define LA_TYPE	LA_FLOAT
+#endif
+
+/*
+**  RISC/os 4.51
+**
+**	Untested...
+*/
+
+#if defined(mips) && !defined(ultrix)
+# define HASSETENV	1	/* has setenv(3) call */
+# define HASUNSETENV	1	/* has unsetenv(3) call */
+# define LA_TYPE	LA_INT
+# define LA_AVENRUN	"avenrun"
+# define _PATH_UNIX	"/unix"
 #endif
 
 /**********************************************************************
@@ -190,12 +222,25 @@
 **  More general defines
 **********************************************************************/
 
+/* general BSD defines */
+#ifdef BSD
+# define HASSETENV	1	/* has setenv(3) call */
+# define HASUNSETENV	1	/* has unsetenv(3) call */
+# define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
+# define HASSETREUID	1	/* have setreuid(2) call */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_SUBR
+# endif
+#endif
+
 /* general System V defines */
 # ifdef SYSTEM5
 # define LOCKF		1	/* use System V locking instead of flock */
-# define SYS5TZ		1	/* use System V style timezones */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUSTAT	1	/* use System V ustat(2) syscall */
+# ifndef LA_TYPE
+#  define LA_TYPE	LA_INT
+# endif
 # define bcopy(s, d, l)		(memmove((d), (s), (l)))
 # define bzero(d, l)		(memset((d), '\0', (l)))
 # define bcmp(s, d, l)		(memcmp((s), (d), (l)))

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -536,36 +536,9 @@ rlsesigs()
 #define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
 #define LA_SUBR		4	/* call getloadavg */
 
+/* do guesses based on general OS type */
 #ifndef LA_TYPE
-#  if defined(sun) && !defined(BSD)
-#    define LA_TYPE		LA_INT
-#  endif
-#  if defined(mips) || defined(__alpha)
-     /* Ultrix or OSF/1 or RISC/os */
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__hpux)
-#    define LA_TYPE		LA_FLOAT
-#    define LA_AVENRUN		"avenrun"
-#  endif
-#  if defined(__NeXT__)
-#    define LA_TYPE		LA_ZERO
-#  endif
-
-/* now do the guesses based on general OS type */
-#  ifndef LA_TYPE
-#   if defined(SYSTEM5)
-#    define LA_TYPE		LA_INT
-#    define LA_AVENRUN		"avenrun"
-#   else
-#    if defined(BSD)
-#     define LA_TYPE		LA_SUBR
-#    else
-#     define LA_TYPE		LA_ZERO
-#    endif
-#   endif
-#  endif
+# define LA_TYPE	LA_ZERO
 #endif
 
 #if (LA_TYPE == LA_INT) || (LA_TYPE == LA_FLOAT)
@@ -573,30 +546,20 @@ rlsesigs()
 #include <nlist.h>
 
 #ifndef LA_AVENRUN
-#define LA_AVENRUN	"_avenrun"
+# ifdef SYSTEM5
+#  define LA_AVENRUN	"avenrun"
+# else
+#  define LA_AVENRUN	"_avenrun"
+# endif
 #endif
 
 /* _PATH_UNIX should be defined in <paths.h> */
 #ifndef _PATH_UNIX
-#  if defined(__hpux)
-#    define _PATH_UNIX		"/hp-ux"
-#  endif
-#  if defined(mips) && !defined(ultrix)
-     /* powerful RISC/os */
-#    define _PATH_UNIX		"/unix"
-#  endif
-#  if defined(Solaris2)
-     /* Solaris 2 */
-#    define _PATH_UNIX		"/kernel/unix"
-#  endif
-#  if defined(SYSTEM5)
-#    ifndef _PATH_UNIX
-#      define _PATH_UNIX	"/unix"
-#    endif
-#  endif
-#  ifndef _PATH_UNIX
-#    define _PATH_UNIX		"/vmunix"
-#  endif
+# if defined(SYSTEM5)
+#  define _PATH_UNIX	"/unix"
+# else
+#  define _PATH_UNIX	"/vmunix"
+# endif
 #endif
 
 struct	nlist Nl[] =
@@ -918,6 +881,41 @@ reapchild()
 # endif
 }
 /*
+**  SETENV -- set environment variable
+**
+**	Putenv is more modern, but this is a simpler interface
+**
+**	Parameters:
+**		name -- the name of the envariable.
+**		value -- the value of that envariable.
+**		overwrite -- if set, overwrite existing value
+**			(this is assumed to be set).
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		The environment is updated.
+*/
+
+#ifndef HASSETENV
+
+setenv(name, value, overwrite)
+	char *name;
+	char *value;
+	int overwrite;
+{
+	register char *p;
+
+	p = xalloc(strlen(name) + strlen(value) + 2);
+	strcpy(p, name);
+	strcat(p, "=");
+	strcat(p, value);
+	putenv(p);
+}
+
+#endif
+/*
 **  UNSETENV -- remove a variable from the environment
 **
 **	Not needed on newer systems.
@@ -936,7 +934,7 @@ reapchild()
 **		Modifies environ.
 */
 
-#ifdef UNSETENV
+#ifndef HASUNSETENV
 
 void
 unsetenv(name)
@@ -957,7 +955,7 @@ unsetenv(name)
 		*pp = pp[1];
 }
 
-#endif /* UNSETENV */
+#endif
 /*
 **  GETDTABLESIZE -- return number of file descriptors
 **
@@ -1131,7 +1129,7 @@ setsid __P ((void))
 # if defined(sgi) || defined(apollo)
 #  include <sys/statfs.h>
 # else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux)
+#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>

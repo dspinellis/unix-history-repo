@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -147,11 +147,6 @@ main(argc, argv, envp)
 	reenter = TRUE;
 	extern ADDRESS *recipient();
 	bool canrename;
-
-#ifndef SYS5TZ
-	/* enforce use of kernel-supplied time zone information */
-	unsetenv("TZ");
-#endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
 	DtableSize = getdtsize();
@@ -610,18 +605,11 @@ main(argc, argv, envp)
 	if (OpMode == MD_FREEZE || readconfig)
 		readcf(ConfFile, safecf, CurEnv);
 
-#ifdef SYS5TZ
 	/* Enforce use of local time (null string overrides this) */
 	if (TimeZoneSpec == NULL)
 		unsetenv("TZ");
 	else if (TimeZoneSpec[0] != '\0')
-	{
-		p = xalloc(strlen(TimeZoneSpec) + 4);
-		(void) strcpy(p, "TZ=");
-		(void) strcat(p, TimeZoneSpec);
-		putenv(p);
-	}
-#endif
+		setenv("TZ", TimeZoneSpec, 1);
 
 	if (ConfigLevel > MAXCONFIGLEVEL)
 	{
