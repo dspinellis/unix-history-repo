@@ -1,4 +1,4 @@
-/*	kern_acct.c	6.2	84/07/08	*/
+/*	kern_acct.c	6.3	84/07/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -70,7 +70,9 @@ acct()
 	register int i;
 	register struct inode *ip;
 	register struct fs *fs;
+	register struct rusage *ru;
 	off_t siz;
+	struct timeval t;
 	register struct acct *ap = &acctbuf;
 
 	if (savacctp) {
@@ -93,17 +95,23 @@ acct()
 	ilock(ip);
 	for (i = 0; i < sizeof (ap->ac_comm); i++)
 		ap->ac_comm[i] = u.u_comm[i];
-	ap->ac_utime = compress((long)u.u_ru.ru_utime.tv_sec);
-	ap->ac_stime = compress((long)u.u_ru.ru_stime.tv_sec);
-	ap->ac_etime = compress((long)time.tv_sec - u.u_start);
-	ap->ac_btime = u.u_start;
+	ru = &u.u_ru;
+	ap->ac_utime = compress(ru->ru_utime.tv_sec, ru->ru_utime.tv_usec);
+	ap->ac_stime = compress(ru->ru_stime.tv_sec, ru->ru_stime.tv_usec);
+	t = time;
+	timevalsub(&t, &u.u_start);
+	ap->ac_etime = compress(t.tv_sec, t.tv_usec);
+	ap->ac_btime = u.u_start.tv_sec;
 	ap->ac_uid = u.u_ruid;
 	ap->ac_gid = u.u_rgid;
-	ap->ac_mem = 0;
-	if (i = u.u_ru.ru_utime.tv_sec + u.u_ru.ru_stime.tv_sec)
-		ap->ac_mem =
-		    (u.u_ru.ru_ixrss + u.u_ru.ru_idrss + u.u_ru.ru_isrss) / i;
-	ap->ac_io = compress((long)(u.u_ru.ru_inblock + u.u_ru.ru_oublock));
+	t = ru->ru_stime;
+	timevaladd(&t, &ru->ru_utime);
+	if (i = t.tv_sec / hz + t.tv_usec / tick)
+		ap->ac_mem = (ru->ru_ixrss+ru->ru_idrss+ru->ru_isrss) / i;
+	else
+		ap->ac_mem = 0;
+	ap->ac_mem >>= CLSIZELOG2;
+	ap->ac_io = compress(ru->ru_inblock + ru->ru_oublock, 0);
 	if (u.u_ttyp)
 		ap->ac_tty = u.u_ttyd;
 	else
@@ -123,11 +131,15 @@ acct()
  * Produce a pseudo-floating point representation
  * with 3 bits base-8 exponent, 13 bits fraction.
  */
-compress(t)
+compress(t, ut)
 	register long t;
+	long ut;
 {
 	register exp = 0, round = 0;
 
+	t <<= 6;
+	if (ut)
+		t += ut / (1000000 / (1<<6));
 	while (t >= 8192) {
 		exp++;
 		round = t&04;
