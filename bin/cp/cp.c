@@ -325,7 +325,7 @@ copy_file(fs, dne)
 			checkch = ch = getchar();
 			while (ch != '\n' && ch != EOF)
 				ch = getchar();
-			if (checkch != 'y' || checkch != 'Y') {
+			if (checkch != 'y' && checkch != 'Y') {
 				(void)close(from_fd);
 				return;
 			}
