@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)exp.3	6.11 (Berkeley) %G%
+.\"     @(#)exp.3	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXP 3
@@ -197,7 +197,7 @@ cases.  Here are reasons for returning x**0 = 1 always:
 .Bl -enum -width indent
 .It
 Any program that already tests whether x is zero (or
-infinite or \*(nn) before computing x**0 cannot care
+infinite or \*(Na) before computing x**0 cannot care
 whether 0**0 = 1 or not. Any program that depends
 upon 0**0 to be invalid is dubious anyway since that
 expression's meaning and, if invalid, its consequences 
@@ -230,7 +230,7 @@ If 0**0 = 1, then
 infinity**0 = 1/0**0 = 1 too; and
 .if t \
 \(if**0 = 1/0**0 = 1 too; and
-then \*(nn**0 = 1 too because x**0 = 1 for all finite
+then \*(Na**0 = 1 too because x**0 = 1 for all finite
 and infinite x, i.e., independently of x.
 .El
 .Sh SEE ALSO
