@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -819,23 +819,30 @@ wfree()
 {
     struct Ain    o;
     struct whyle *nwp;
-    btell(&o);
 
-    if (o.type != F_SEEK)
-	return;
+    btell(&o);
 
     for (; whyles; whyles = nwp) {
 	register struct whyle *wp = whyles;
 	nwp = wp->w_next;
-	if (wp->w_start.type != F_SEEK)
-	    break;
-	if (wp->w_end.type != I_SEEK) {
-	    if (wp->w_end.type != F_SEEK)
-		break;
-	    if (o.f_seek >= wp->w_start.f_seek &&
-		(wp->w_end.f_seek == 0 || o.f_seek < wp->w_end.f_seek))
-		break;
+
+	/*
+	 * We free loops that have different seek types.
+	 */
+	if (wp->w_end.type != I_SEEK && wp->w_start.type == wp->w_end.type &&
+	    wp->w_start.type == o.type) {
+	    if (wp->w_end.type == F_SEEK) {
+		if (o.f_seek >= wp->w_start.f_seek && 
+		    (wp->w_end.f_seek == 0 || o.f_seek < wp->w_end.f_seek))
+		    break;
+	    }
+	    else {
+		if (o.a_seek >= wp->w_start.a_seek && 
+		    (wp->w_end.a_seek == 0 || o.a_seek < wp->w_end.a_seek))
+		    break;
+	    }
 	}
+
 	if (wp->w_fe0)
 	    blkfree(wp->w_fe0);
 	if (wp->w_fename)
