@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.2 1993/10/16 15:24:09 rgrimes Exp $
+ *	$Id: kern_clock.c,v 1.3 1993/10/19 01:05:36 nate Exp $
  */
 
 #include "param.h"
@@ -158,11 +158,14 @@ hardclock(frame)
 
 	/* bump the resource usage of integral space use */
 	if (p && pstats && (ru = &pstats->p_ru) && (vm = p->p_vmspace)) {
-		ru->ru_ixrss += vm->vm_tsize;
-		ru->ru_idrss += vm->vm_dsize;
-		ru->ru_isrss += vm->vm_ssize;
-		if (vm->vm_pmap.pm_stats.resident_count > ru->ru_maxrss)
-			ru->ru_maxrss = vm->vm_pmap.pm_stats.resident_count;
+		ru->ru_ixrss += vm->vm_tsize * NBPG / 1024;
+		ru->ru_idrss += vm->vm_dsize * NBPG / 1024;
+		ru->ru_isrss += vm->vm_ssize * NBPG / 1024;
+		if ((vm->vm_pmap.pm_stats.resident_count * NBPG / 1024) >
+		    ru->ru_maxrss) {
+			ru->ru_maxrss =
+			    vm->vm_pmap.pm_stats.resident_count * NBPG / 1024;
+		}
 	}
 
 	/*
