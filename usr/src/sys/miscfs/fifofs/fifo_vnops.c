@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.15 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,7 +70,6 @@ struct vnodeopv_entry_desc fifo_vnodeop_entries[] = {
 	{ &vop_islocked_desc, fifo_islocked },		/* islocked */
 	{ &vop_advlock_desc, fifo_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, fifo_blkatoff },		/* blkatoff */
-	{ &vop_vget_desc, fifo_vget },		/* vget */
 	{ &vop_valloc_desc, fifo_valloc },		/* valloc */
 	{ &vop_vfree_desc, fifo_vfree },		/* vfree */
 	{ &vop_truncate_desc, fifo_truncate },		/* truncate */
@@ -85,8 +84,12 @@ struct vnodeopv_desc fifo_vnodeop_opv_desc =
  * Trivial lookup routine that always fails.
  */
 /* ARGSUSED */
-fifo_lookup (ap)
-	struct vop_lookup_args *ap;
+fifo_lookup(ap)
+	struct vop_lookup_args /* {
+		struct vnode * a_dvp;
+		struct vnode ** a_vpp;
+		struct componentname * a_cnp;
+	} */ *ap;
 {
 	
 	*ap->a_vpp = NULL;
@@ -98,12 +101,14 @@ fifo_lookup (ap)
  * to find an active instance of a fifo.
  */
 /* ARGSUSED */
-fifo_open (ap)
-	struct vop_open_args *ap;
+fifo_open(ap)
+	struct vop_open_args /* {
+		struct vnode *a_vp;
+		int  a_mode;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
-	USES_VOP_CLOSE;
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	register struct vnode *vp = ap->a_vp;
 	register struct fifoinfo *fip;
 	struct socket *rso, *wso;
@@ -186,11 +191,14 @@ fifo_open (ap)
  * Vnode op for read
  */
 /* ARGSUSED */
-fifo_read (ap)
-	struct vop_read_args *ap;
+fifo_read(ap)
+	struct vop_read_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	register struct uio *uio = ap->a_uio;
 	register struct socket *rso = ap->a_vp->v_fifoinfo->fi_readsock;
 	int error, startresid;
@@ -222,11 +230,14 @@ fifo_read (ap)
  * Vnode op for write
  */
 /* ARGSUSED */
-fifo_write (ap)
-	struct vop_write_args *ap;
+fifo_write(ap)
+	struct vop_write_args /* {
+		struct vnode *a_vp;
+		struct uio *a_uio;
+		int  a_ioflag;
+		struct ucred *a_cred;
+	} */ *ap;
 {
-	USES_VOP_LOCK;
-	USES_VOP_UNLOCK;
 	struct socket *wso = ap->a_vp->v_fifoinfo->fi_writesock;
 	int error;
 
@@ -248,8 +259,15 @@ fifo_write (ap)
  * Device ioctl operation.
  */
 /* ARGSUSED */
-fifo_ioctl (ap)
-	struct vop_ioctl_args *ap;
+fifo_ioctl(ap)
+	struct vop_ioctl_args /* {
+		struct vnode *a_vp;
+		int  a_command;
+		caddr_t  a_data;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct file filetmp;
 	int error;
@@ -264,8 +282,14 @@ fifo_ioctl (ap)
 }
 
 /* ARGSUSED */
-fifo_select (ap)
-	struct vop_select_args *ap;
+fifo_select(ap)
+	struct vop_select_args /* {
+		struct vnode *a_vp;
+		int  a_which;
+		int  a_fflags;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct file filetmp;
 	int error;
@@ -280,8 +304,13 @@ fifo_select (ap)
 /*
  * This is a noop, simply returning what one has been given.
  */
-fifo_bmap (ap)
-	struct vop_bmap_args *ap;
+fifo_bmap(ap)
+	struct vop_bmap_args /* {
+		struct vnode *a_vp;
+		daddr_t  a_bn;
+		struct vnode **a_vpp;
+		daddr_t *a_bnp;
+	} */ *ap;
 {
 
 	if (ap->a_vpp != NULL)
@@ -295,16 +324,20 @@ fifo_bmap (ap)
  * At the moment we do not do any locking.
  */
 /* ARGSUSED */
-fifo_lock (ap)
-	struct vop_lock_args *ap;
+fifo_lock(ap)
+	struct vop_lock_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	return (0);
 }
 
 /* ARGSUSED */
-fifo_unlock (ap)
-	struct vop_unlock_args *ap;
+fifo_unlock(ap)
+	struct vop_unlock_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	return (0);
@@ -314,8 +347,13 @@ fifo_unlock (ap)
  * Device close routine
  */
 /* ARGSUSED */
-fifo_close (ap)
-	struct vop_close_args *ap;
+fifo_close(ap)
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
 {
 	register struct vnode *vp = ap->a_vp;
 	register struct fifoinfo *fip = vp->v_fifoinfo;
@@ -344,8 +382,10 @@ fifo_close (ap)
 /*
  * Print out the contents of a fifo vnode.
  */
-fifo_print (ap)
-	struct vop_print_args *ap;
+fifo_print(ap)
+	struct vop_print_args /* {
+		struct vnode *a_vp;
+	} */ *ap;
 {
 
 	printf("tag VT_NON");
@@ -378,8 +418,14 @@ fifo_ebadf()
  * Fifo advisory byte-level locks.
  */
 /* ARGSUSED */
-fifo_advlock (ap)
-	struct vop_advlock_args *ap;
+fifo_advlock(ap)
+	struct vop_advlock_args /* {
+		struct vnode *a_vp;
+		caddr_t  a_id;
+		int  a_op;
+		struct flock *a_fl;
+		int  a_flags;
+	} */ *ap;
 {
 
 	return (EOPNOTSUPP);
