@@ -1,0 +1,66 @@
+#
+# Standard DECstation 3100 or 5000
+#
+#	@(#)MAXP	7.1 (Berkeley) %G%
+#
+machine		pmax
+
+cpu		"DS5000"
+ident		MAXP
+
+timezone	8 dst
+
+# Standard 4.3-Reno options
+maxusers	48
+options		INET,MROUTING
+#options	NS
+options		QUOTA
+options		FIFO
+options		NFS
+options		MFS
+options		FFS
+options		LFS
+options		DIAGNOSTIC
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+options		KTRACE
+#options	GATEWAY		# slip needs this for packet forwarding
+#options	ULTRIXCOMPAT	# must define COMPAT_43 too
+options		DEBUG
+options		"NKMEMCLUSTERS=512"
+
+# OSI stuff:
+#options	ISO
+#options	TPIP
+#options	EON
+
+
+#config		vmunix swap generic
+config		vmunix root on rz0a swap on rz0b dumps on rz0b
+
+controller	dtop0	at nexus0 csr ?
+controller	dc0	at nexus0 csr ?
+controller	xcfb0	at nexus0 csr ?
+controller	cfb0	at nexus0 csr ?
+controller	mfb0	at nexus0 csr ?
+controller	pm0	at nexus0 csr ?
+controller	scc0	at nexus0 csr ?
+controller	le0	at nexus0 csr ?
+master		sii0	at nexus0 csr ?
+disk		rz0	at sii0 drive 0 slave 0
+master		asc0	at nexus0 csr ?
+disk		rz0	at asc0 drive 0 slave 0
+disk		rz1	at asc0 drive 1 slave 0
+disk		rz2	at asc0 drive 2 slave 0
+disk		rz3	at asc0 drive 3 slave 0
+disk		rz4	at asc0 drive 4 slave 0
+tape		tz0	at asc0 drive 5 slave 0
+tape		tz1	at asc0 drive 6 slave 0
+
+pseudo-device	ite
+pseudo-device	pty
+pseudo-device	loop
+pseudo-device	ether
+pseudo-device	swappager
+pseudo-device	vnodepager
+pseudo-device	devpager
