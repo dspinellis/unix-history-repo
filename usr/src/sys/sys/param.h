@@ -1,40 +1,44 @@
-/*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)param.h	7.21 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)param.h	7.22 (Berkeley) %G%
  */
 
 #define	BSD	199103		/* March, 1991 system version (year & month) */
 #define BSD4_3	1
 #define BSD4_4	0.5
 
-#include <sys/syslimits.h>
+#ifndef NULL
+#define	NULL	0
+#endif
 
 #ifndef LOCORE
 #include <sys/types.h>
 #endif
 
 /*
- * Machine-independent constants (some used in following include files)
+ * Machine-independent constants (some used in following include files).
+ * Redefined constants are from POSIX 1003.1 limits file.
+ *
+ * MAXCOMLEN should be >= sizeof(ac_comm) (see <acct.h>)
+ * MAXLOGNAME should be >= UT_NAMESIZE (see <utmp.h>)
  */
-#define	MAXUPRC		CHILD_MAX	/* max processes per user */
-#define	NOFILE		OPEN_MAX	/* max open files per process */
-#define	NCARGS		ARG_MAX		/* # characters in exec arglist */
+#include <sys/syslimits.h>
+
+#define	MAXCOMLEN	16		/* max command name remembered */
 #define	MAXINTERP	32		/* max interpreter file name length */
+#define	MAXLOGNAME	12		/* max login name length */
+#define	MAXUPRC		CHILD_MAX	/* max simultaneous processes */
+#define	NCARGS		ARG_MAX		/* max bytes for an exec function */
 #define	NGROUPS		NGROUPS_MAX	/* max number groups */
-#define MAXHOSTNAMELEN	256		/* maximum hostname size */
-#define	MAXCOMLEN	16		/* maximum command name remembered */
-	/* MAXCOMLEN should be >= sizeof(ac_comm) (acct.h)  */
-#define	MAXLOGNAME	12		/* maximum login name length */
-	/* MAXLOGNAME must be >= UT_NAMESIZE (<utmp.h>) */
-
+#define	NOFILE		OPEN_MAX	/* max open files per process */
 #define	NOGROUP		65535		/* marker for empty group set member */
+#define MAXHOSTNAMELEN	256		/* max hostname size */
 
-/*
- * More types and definitions used throughout the kernel
- */
+/* More types and definitions used throughout the kernel. */
 #ifdef KERNEL
 #include <sys/cdefs.h>
 #include <sys/errno.h>
@@ -44,21 +48,17 @@
 #include <sys/uio.h>
 #endif
 
-/*
- * Signals
- */
+/* Signals. */
 #include <sys/signal.h>
 
-/*
- * Machine type dependent parameters.
- */
+/* Machine type dependent parameters. */
 #include <machine/param.h>
 #include <machine/endian.h>
 #include <machine/limits.h>
 
 /*
- * Priorities.  Note that with 32 run queues,
- * differences less than 4 are insignificant.
+ * Priorities.  Note that with 32 run queues, differences less than 4 are
+ * insignificant.
  */
 #define	PSWP	0
 #define	PVM	4
@@ -66,32 +66,27 @@
 #define	PRIBIO	16
 #define	PVFS	20
 #define	PSOCK	24
-#define	PZERO	25		/* No longer magic, shouldn't be here XXX */
+#define	PZERO	25		/* No longer magic, shouldn't be here.  XXX */
 #define	PWAIT	32
 #define	PLOCK	36
 #define	PPAUSE	40
 #define	PUSER	50
-#define	MAXPRI	127		/* priorities range from 0 through MAXPRI */
+#define	MAXPRI	127		/* Priorities range from 0 through MAXPRI. */
 
 #define	PRIMASK	0x0ff
-#define	PCATCH	0x100		/* or'd with pri for tsleep to check signals */
+#define	PCATCH	0x100		/* OR'd with pri for tsleep to check signals */
 
 #define	NZERO	0		/* default "nice" */
 
-#define	NBPW	sizeof(int)	/* number of bytes in an integer */
+#define	NBPW	sizeof(int)	/* number of bytes per word (integer) */
 
-#ifndef NULL
-#define	NULL	0
-#endif
-#define	CMASK	022		/* default mask for file creation */
-#define	NODEV	(dev_t)(-1)
+#define	CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
+#define	NODEV	(dev_t)(-1)	/* non-existent device */
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
  * page sizes is done here.  The paging subsystem deals with units of
  * CLSIZE pte's describing NBPG (from machine/machparam.h) pages each.
- *
- * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
  */
 #define	CLBYTES		(CLSIZE*NBPG)
 #define	CLOFSET		(CLSIZE*NBPG-1)	/* for clusters, like PGOFSET */
@@ -103,66 +98,56 @@
 #define	clbase(i)	(i)
 #define	clrnd(i)	(i)
 #else
-/* give the base virtual address (first of CLSIZE) */
+/* Give the base virtual address (first of CLSIZE). */
 #define	clbase(i)	((i) &~ (CLSIZE-1))
-/* round a number of clicks up to a whole cluster */
+/* Round a number of clicks up to a whole cluster. */
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
 #endif
 
-/* CBLOCK is the size of a clist block, must be power of 2 */
-#define	CBLOCK	64
-#define CBQSIZE	(CBLOCK/NBBY)	/* quote bytes/cblock - can do better */
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *) - CBQSIZE) /* data chars/clist */
-#define	CROUND	(CBLOCK - 1)				/* clist rounding */
+#define	CBLOCK	64		/* Clist block size, must be a power of 2. */
+#define CBQSIZE	(CBLOCK/NBBY)	/* Quote bytes/cblock - can do better. */
+				/* Data chars/clist. */
+#define	CBSIZE	(CBLOCK - sizeof(struct cblock *) - CBQSIZE)
+#define	CROUND	(CBLOCK - 1)	/* Clist rounding. */
 
 /*
  * File system parameters and macros.
  *
- * The file system is made out of blocks of at most MAXBSIZE units,
- * with smaller units (fragments) only in the last direct block.
- * MAXBSIZE primarily determines the size of buffers in the buffer
- * pool. It may be made larger without any effect on existing
- * file systems; however making it smaller make make some file
- * systems unmountable.
+ * The file system is made out of blocks of at most MAXBSIZE units, with
+ * smaller units (fragments) only in the last direct block.  MAXBSIZE
+ * primarily determines the size of buffers in the buffer pool.  It may be
+ * made larger without any effect on existing file systems; however making
+ * it smaller make make some file systems unmountable.
  */
 #define	MAXBSIZE	8192
 #define MAXFRAG 	8
 
 /*
- * MAXPATHLEN defines the longest permissable path length
- * after expanding symbolic links. It is used to allocate
- * a temporary buffer from the buffer pool in which to do the
- * name expansion, hence should be a power of two, and must
- * be less than or equal to MAXBSIZE.
- * MAXSYMLINKS defines the maximum number of symbolic links
- * that may be expanded in a path name. It should be set high
- * enough to allow all legitimate uses, but halt infinite loops
- * reasonably quickly.
+ * MAXPATHLEN defines the longest permissable path length after expanding
+ * symbolic links. It is used to allocate a temporary buffer from the buffer
+ * pool in which to do the name expansion, hence should be a power of two,
+ * and must be less than or equal to MAXBSIZE.  MAXSYMLINKS defines the
+ * maximum number of symbolic links that may be expanded in a path name.
+ * It should be set high enough to allow all legitimate uses, but halt
+ * infinite loops reasonably quickly.
  */
 #define	MAXPATHLEN	PATH_MAX
 #define MAXSYMLINKS	8
 
-/*
- * bit map related macros
- */
+/* Bit map related macros. */
 #define	setbit(a,i)	((a)[(i)/NBBY] |= 1<<((i)%NBBY))
 #define	clrbit(a,i)	((a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
 #define	isset(a,i)	((a)[(i)/NBBY] & (1<<((i)%NBBY)))
 #define	isclr(a,i)	(((a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
 
-/*
- * Macros for counting and rounding.
- */
+/* Macros for counting and rounding. */
 #ifndef howmany
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 #define powerof2(x)	((((x)-1)&(x))==0)
 
-/*
- * Macros for fast min/max:
- * with inline expansion, the "function" is faster.
- */
+/* Macros for fast min/max: with inline expansion, the "function" is faster. */
 #ifdef KERNEL
 #define	MIN(a,b) min((a), (b))
 #define	MAX(a,b) max((a), (b))
@@ -182,8 +167,9 @@
  * memory are quite fast. Allocations greater than MAXALLOCSAVE must
  * always allocate and free physical memory; requests for these
  * size allocations should be done infrequently as they will be slow.
- * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14)
- * and MAXALLOCSIZE must be a power of two.
+ *
+ * Constraints: CLBYTES <= MAXALLOCSAVE <= 2 ** (MINBUCKET + 14), and
+ * MAXALLOCSIZE must be a power of two.
  */
 #define MINBUCKET	4		/* 4 => min allocation of 16 bytes */
 #define MAXALLOCSAVE	(2 * CLBYTES)
