@@ -1,5 +1,5 @@
+.	\" @(#)hed.ms	1.4 %G%
 .	\" letter HEad
-.	\" @(#)hed.ms	1.3 %G%
 .de HE
 .nr xx \\n(.d
 .nr xy \\n(.u
