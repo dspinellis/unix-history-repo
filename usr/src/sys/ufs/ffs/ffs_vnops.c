@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	6.2	83/09/25	*/
+/*	ffs_vnops.c	6.3	83/09/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,7 +166,6 @@ copen(mode, arg)
 	fp->f_ops = &inodeops;
 	fp->f_data = (caddr_t)ip;
 	i = u.u_r.r_val1;
-#ifdef notdef
 	if (setjmp(&u.u_qsave)) {
 		if (u.u_error == 0)
 			u.u_error = EINTR;
@@ -174,7 +173,6 @@ copen(mode, arg)
 		closef(fp);
 		return;
 	}
-#endif
 	u.u_error = openi(ip, mode);
 	if (u.u_error == 0)
 		return;
