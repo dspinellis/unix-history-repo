@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -60,7 +60,7 @@ __bt_split(t, sp, key, data, flags, ilen, skip)
 	const DBT *key, *data;
 	u_long flags;
 	size_t ilen;
-	int skip;
+	u_int skip;
 {
 	BINTERNAL *bi;
 	BLEAF *bl, *tbl;
@@ -574,10 +574,10 @@ bt_psplit(t, h, l, r, pskip, ilen)
 	RLEAF *rl;
 	EPGNO *c;
 	PAGE *rval;
-	indx_t full, half, skip, used;
-	size_t nbytes;
 	void *src;
-	int bigkeycnt, isbigkey, nxt, off, top;
+	indx_t full, half, nxt, off, skip, top, used;
+	size_t nbytes;
+	int bigkeycnt, isbigkey;
 
 	/*
 	 * Split the data to the left and right pages.  Leave the skip index
