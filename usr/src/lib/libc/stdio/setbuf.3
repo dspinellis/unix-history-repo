@@ -1,0 +1,61 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)setbuf.3	4.1 (Berkeley) %G%
+.\"
+.TH SETBUF 3S 
+.UC 4
+.SH NAME
+setbuf \- assign buffering to a stream
+.SH SYNOPSIS
+.B #include <stdio.h>
+.PP
+.B setbuf(stream, buf)
+.br
+.SM
+.B FILE
+.B *stream;
+.br
+.B char *buf;
+.SH DESCRIPTION
+.I Setbuf
+is used after a stream has been opened but before it
+is read or written.
+It causes the character array
+.I buf
+to be used instead of an automatically allocated buffer.
+If
+.I buf
+is the constant pointer
+.SM
+.B NULL,
+input/output will be completely unbuffered.
+.PP
+A manifest constant 
+.SM
+.B BUFSIZ
+tells how big an array is needed:
+.IP
+.B char
+buf[BUFSIZ];
+.PP
+A buffer is normally obtained from
+.IR  malloc (3)
+upon the first
+.I getc
+or
+.IR  putc (3)
+on the file,
+except that the standard output is line buffered when directed to a terminal.
+Other output streams directed to terminals,
+and the standard error stream
+.I stderr
+are normally not buffered.
+If the standard output is line buffered, then it is flushed each time
+data is read from the standard input by
+.IR read (2).
+.SH "SEE ALSO"
+fopen(3), getc(3), putc(3), malloc(3)
+.SH BUGS
+The standard error stream should be line buffered by default.
