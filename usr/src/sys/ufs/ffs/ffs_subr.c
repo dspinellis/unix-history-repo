@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_subr.c	6.8 (Berkeley) %G%
+ *	@(#)ffs_subr.c	6.9 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -109,7 +109,8 @@ syncip(ip)
 	register struct fs *fs;
 	register struct buf *bp;
 	struct buf *lastbufp;
-	long lbn, lastlbn, s;
+	long lbn, lastlbn;
+	int s;
 	daddr_t blkno;
 
 	fs = ip->i_fs;
@@ -125,7 +126,7 @@ syncip(ip)
 			if (bp->b_dev != ip->i_dev ||
 			    (bp->b_flags & B_DELWRI) == 0)
 				continue;
-			s = spl6();
+			s = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
 				sleep((caddr_t)bp, PRIBIO+1);
@@ -357,7 +358,7 @@ bufstats()
 		count = 0;
 		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
 			counts[j] = 0;
-		s = spl6();
+		s = splbio();
 		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
 			counts[dp->b_bufsize/CLBYTES]++;
 			count++;
