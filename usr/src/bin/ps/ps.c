@@ -1196,14 +1196,14 @@ retucomm:
 }
 
 char	*lhdr =
-"      F UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
+"      F  UID   PID  PPID CP PRI NI ADDR    SZ  RSS %*sSTAT TT  TIME";
 lpr(sp)
 	struct savcom *sp;
 {
 	register struct asav *ap = sp->ap;
 	register struct lsav *lp = sp->s_un.lp;
 
-	printf("%7x %3d %5u %5u %2d %3d %2d %4x %5d %4d",
+	printf("%7x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
 	    ap->a_flag, ap->a_uid,
 	    ap->a_pid, lp->l_ppid, lp->l_cpu&0377, ap->a_pri-PZERO,
 	    ap->a_nice-NZERO, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
@@ -1348,6 +1348,7 @@ state(ap)
 		*cp++ = 'A';
 	else if (ap->a_flag & SSEQL)
 		*cp++ = 'S';
+	*cp = '\0';
 	return (res);
 }
 
