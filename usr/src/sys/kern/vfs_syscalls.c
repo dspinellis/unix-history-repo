@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.105 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.106 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1151,17 +1151,47 @@ lstat(p, uap, retval)
 	register struct lstat_args *uap;
 	int *retval;
 {
-	struct stat sb;
 	int error;
+	struct vnode *vp, *dvp;
+	struct stat sb, sb1;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->fname, p);
+	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF | LOCKPARENT, UIO_USERSPACE,
+	    uap->fname, p);
 	if (error = namei(&nd))
 		return (error);
-	error = vn_stat(nd.ni_vp, &sb, p);
-	vput(nd.ni_vp);
-	if (error)
-		return (error);
+	/*
+	 * For symbolic links, always return the attributes of its
+	 * containing directory, except for mode, size, and links.
+	 */
+	vp = nd.ni_vp;
+	dvp = nd.ni_dvp;
+	if (vp->v_type != VLNK) {
+		if (dvp == vp)
+			vrele(dvp);
+		else
+			vput(dvp);
+		error = vn_stat(vp, &sb, p);
+		vput(vp);
+		if (error)
+			return (error);
+	} else {
+		error = vn_stat(dvp, &sb, p);
+		vput(dvp);
+		if (error) {
+			vput(vp);
+			return (error);
+		}
+		error = vn_stat(vp, &sb1, p);
+		vput(vp);
+		if (error)
+			return (error);
+		sb.st_mode &= ~S_IFDIR;
+		sb.st_mode |= S_IFLNK;
+		sb.st_nlink = sb1.st_nlink;
+		sb.st_size = sb1.st_size;
+		sb.st_blocks = sb1.st_blocks;
+	}
 	error = copyout((caddr_t)&sb, (caddr_t)uap->ub, sizeof (sb));
 	return (error);
 }
