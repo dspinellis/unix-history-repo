@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.78 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.79 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -436,15 +436,12 @@ ffs_sync(mp, waitfor, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	extern int syncprt;
 	register struct vnode *vp;
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
 	register struct fs *fs;
 	int error, allerror = 0;
 
-	if (syncprt)
-		ufs_bufstats();
 	fs = ump->um_fs;
 	/*
 	 * Write back modified superblock.
