@@ -11,17 +11,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Print system stuff
  */
 #include <sys/param.h>
-#include <sys/dir.h>
-#define	KERNEL
-#include <sys/file.h>
-#undef	KERNEL
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/text.h>
@@ -29,14 +25,22 @@ static char sccsid[] = "@(#)pstat.c	5.23 (Berkeley) %G%";
 #include <sys/vnode.h>
 #include <sys/map.h>
 #define KERNEL
+#define NFS
+#include <sys/file.h>
+#include <sys/mount.h>
+#include <ufs/inode.h>
+#include <sys/stat.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfs.h>
+#include <nfs/nfsnode.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
 #undef KERNEL
 #include <sys/conf.h>
 #include <sys/vm.h>
-#include <ufs/inode.h>
 #include <machine/pte.h>
 
+#include <kvm.h>
 #include <nlist.h>
 #include <stdio.h>
 #include "pathnames.h"
@@ -44,51 +48,39 @@ static char sccsid[] = "@(#)pstat.c	5.23 (Berkeley) %G%";
 #define mask(x)		(x&0377)
 #define	clear(x)	((int)x &~ KERNBASE)
 
-char	*fcore	= _PATH_KMEM;
-char	*fmem	= _PATH_MEM;
-char	*fnlist	= _PATH_UNIX;
-int	fc, fm;
+char	*fnlist	= NULL;
+char	*fcore	= NULL;
 
 struct nlist nl[] = {
-#define	SINODE	0
-	{ "_inode" },
-#define	STEXT	1
+#define	STEXT	0
 	{ "_text" },
+#define	SCONS	1
+	{ "_cons" },
 #define	SPROC	2
 	{ "_proc" },
-#define	SCONS	3
-	{ "_cons" },
-#define	SFIL	4
+#define	SFIL	3
 	{ "_file" },
-#define	USRPTMA	5
-	{ "_Usrptmap" },
-#define	USRPT	6
-	{ "_usrpt" },
-#define	SWAPMAP	7
+#define	SWAPMAP	4
 	{ "_swapmap" },
-#define	SNPROC	8
+#define	SNPROC	5
 	{ "_nproc" },
-#define	SNTEXT	9
+#define	SNTEXT	6
 	{ "_ntext" },
-#define	SNFILE	10
+#define	SNFILE	7
 	{ "_nfile" },
-#define	SNINODE	11
-	{ "_ninode" },
-#define	SNSWAPMAP 12
+#define	SNSWAPMAP 8
 	{ "_nswapmap" },
-#define	SPTY	13
+#define	SPTY	9
 	{ "_pt_tty" },
-#define	SDMMIN	14
+#define	SDMMIN	10
 	{ "_dmmin" },
-#define	SDMMAX	15
+#define	SDMMAX	11
 	{ "_dmmax" },
-#define	SNSWDEV	16
+#define	SNSWDEV	12
 	{ "_nswdev" },
-#define	SSWDEVT	17
+#define	SSWDEVT	13
 	{ "_swdevt" },
-#define	SYSMAP	18
-	{ "_Sysmap" },
-#define	SNPTY	19
+#define	SNPTY	14
 	{ "_npty" },
 #ifdef vax
 #define	SDZ	(SNPTY+1)
@@ -129,7 +121,7 @@ struct nlist nl[] = {
 	{ "" }
 };
 
-int	inof;
+int	vnof;
 int	txtf;
 int	prcf;
 int	ttyf;
@@ -142,11 +134,11 @@ char	partab[1];
 struct	cdevsw	cdevsw[1];
 struct	bdevsw	bdevsw[1];
 int	allflg;
-int	kflg;
-struct	pte *Usrptma;
-struct	pte *usrpt;
+int	nflg;
 u_long	getword();
 off_t	mkphys();
+
+char	*Program;
 
 main(argc, argv)
 	int argc;
@@ -156,7 +148,8 @@ main(argc, argv)
 	extern int optind;
 	int ch;
 
-	while ((ch = getopt(argc, argv, "Tafikptu:sx")) != EOF)
+        Program = argv[0];
+	while ((ch = getopt(argc, argv, "Tafvikptu:sxn")) != EOF)
 		switch((char)ch) {
 		case 'T':
 			totflg++;
@@ -170,12 +163,9 @@ main(argc, argv)
 		case 'f':
 			filf++;
 			break;
+		case 'v':
 		case 'i':
-			inof++;
-			break;
-		case 'k':			/* undocumented */
-			kflg++;
-			fcore = fmem = _PATH_CORE;
+			vnof++;
 			break;
 		case 't':
 			ttyf++;
@@ -190,6 +180,9 @@ main(argc, argv)
 		case 'x':
 			txtf++;
 			break;
+		case 'n':
+			nflg++;
+			break;
 		case '?':
 		default:
 			printf("usage: pstat -[Tafiptsx] [-u [ubase]] [system] [core]\n");
@@ -198,35 +191,26 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc>1) {
-		fcore = fmem = argv[1];
-		kflg++;
-	}
-	if ((fc = open(fcore, O_RDONLY, 0)) < 0) {
-		perror(fcore);
-		exit(1);
-	}
-	if ((fm = open(fmem, O_RDONLY, 0)) < 0) {
-		perror(fmem);
-		exit(1);
-	}
-	if (argc>0)
+	if (argc > 1)
+		fcore = argv[1];
+	if (argc > 0)
 		fnlist = argv[0];
-	nlist(fnlist, nl);
-	if (nl[0].n_type == 0) {
-		printf("pstat: no namelist.\n");
+	if (kvm_openfiles(fnlist, fcore, NULL) == -1) {
+		syserror("kvm_openfiles: %s", kvm_geterr());
 		exit(1);
 	}
-	usrpt = (struct pte *)nl[USRPT].n_value;
-	Usrptma = (struct pte *)nl[USRPTMA].n_value;
-	if (!(filf | totflg | inof | prcf | txtf | ttyf | usrf | swpf)) {
-		printf("pstat: one or more of -[aixptfsu] is required\n");
+	if (kvm_nlist(nl) != 0) {
+		syserror("kvm_nlist: %s", kvm_geterr());
+		exit(1);
+	}
+	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf)) {
+		printf("pstat: one or more of -[aivxptfsu] is required\n");
 		exit(1);
 	}
 	if (filf||totflg)
 		dofile();
-	if (inof||totflg)
-		doinode();
+	if (vnof||totflg)
+		dovnode();
 	if (prcf||totflg)
 		doproc();
 	if (txtf||totflg)
@@ -239,45 +223,71 @@ main(argc, argv)
 		doswap();
 }
 
-doinode()
+dovnode()
 {
+	register struct vnode *vp, *vnodebase, *evnode;
+	register struct mount *maddr = NULL, *mp;
 	register struct inode *ip;
-	register struct vnode *vp;
-	struct inode *xinode, *ainode;
-	register int nin;
-	int ninode;
+	int numvnodes;
+	struct vnode *loadvnodes();
+	struct mount *getmnt();
 
-	nin = 0;
-	ninode = getword(nl[SNINODE].n_value);
-	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
-	ainode = (struct inode *)getword(nl[SINODE].n_value);
-	if (ninode < 0 || ninode > 10000) {
-		fprintf(stderr, "number of inodes is preposterous (%d)\n",
-			ninode);
-		return;
-	}
-	if (xinode == NULL) {
-		fprintf(stderr, "can't allocate memory for inode table\n");
-		return;
-	}
-	lseek(fc, mkphys((off_t)ainode), 0);
-	read(fc, xinode, ninode * sizeof(struct inode));
-	for (ip = xinode; ip < &xinode[ninode]; ip++) {
-		vp = &ip->i_vnode;
-		if (vp->v_count)
-			nin++;
-	}
+	vnodebase = loadvnodes(&numvnodes);
 	if (totflg) {
-		printf("%3d/%3d inodes\n", nin, ninode);
+		printf("%7d vnodes\n", numvnodes);
 		return;
 	}
-	printf("%d/%d active inodes\n", nin, ninode);
+	evnode = vnodebase + numvnodes;
+	printf("%d active vnodes\n", numvnodes);
+
+
+#define ST	mp->m_stat
+	for (vp = vnodebase; vp < evnode; vp++) {
+		if (vp->v_mount != maddr) {
+			/*
+			 * New filesystem
+			 */
+			if ((mp = getmnt(vp->v_mount)) == NULL)
+				continue;
+			maddr = vp->v_mount;
+			mount_print(mp);
+			vnode_header();
+			switch(ST.f_type) {
+			case MOUNT_UFS:
+			case MOUNT_MFS:
+				ufs_header();
+				break;
+			case MOUNT_NFS:
+				nfs_header();
+				break;
+			case MOUNT_NONE:
+			case MOUNT_PC:
+			default:
+				break;
+			}
+			printf("\n");
+		}
+		vnode_print(vp);
+		switch(ST.f_type) {
+		case MOUNT_UFS:
+		case MOUNT_MFS:
+			ufs_print(vp);
+			break;
+		case MOUNT_NFS:
+			nfs_print(vp);
+			break;
+		case MOUNT_NONE:
+		case MOUNT_PC:
+		default:
+			break;
+		}
+		printf("\n");
+#ifdef notdef
 printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\n");
-	for (ip = xinode; ip < &xinode[ninode]; ip++) {
-		vp = &ip->i_vnode;
-		if (vp->v_count == 0)
-			continue;
-		printf("%8.1x ", ainode + (ip - xinode));
+		ip = VTOI(vp);
+		/* HOW ???  - use pointer back to vnode in data area
+			printf("%8.1x ", ainode + (ip - xinode)); 
+		*/
 		putf(ip->i_flag&ILOCKED, 'L');
 		putf(ip->i_flag&IUPD, 'U');
 		putf(ip->i_flag&IACC, 'A');
@@ -288,7 +298,7 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 		putf(ip->i_flag&ILWAIT, 'Z');
 		putf(ip->i_flag&IMOD, 'M');
 		putf(ip->i_flag&IRENAME, 'R');
-		printf("%4d", vp->v_count&0377);
+		printf("%4d", vp->v_usecount&0377);
 		printf("%4d,%3d", major(ip->i_dev), minor(ip->i_dev));
 		printf("%4d", vp->v_shlockc&0377);
 		printf("%4d", vp->v_exlockc&0377);
@@ -301,8 +311,321 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 		else
 			printf("%10ld", ip->i_size);
 		printf("\n");
+#endif
 	}
-	free(xinode);
+	free(vnodebase);
+}
+
+vnode_header()
+{
+	printf("TYP VFLAG  USE  REF");
+}
+
+vnode_print(vp)
+	struct vnode *vp;
+{
+	char *type, flags[16]; 
+	char *fp = flags;
+	register flag;
+
+	/*
+	 * set type
+	 */
+	switch(vp->v_type) {
+	case VNON:
+		type = "non"; break;
+	case VREG:
+		type = "reg"; break;
+	case VDIR:
+		type = "dir"; break;
+	case VBLK:
+		type = "blk"; break;
+	case VCHR:
+		type = "chr"; break;
+	case VLNK:
+		type = "lnk"; break;
+	case VSOCK:
+		type = "soc"; break;
+	case VFIFO:
+		type = "fif"; break;
+	case VBAD:
+		type = "bad"; break;
+	default: 
+		type = "unk"; break;
+	}
+	/*
+	 * gather flags
+	 */
+	flag = vp->v_flag;
+	if (flag & VROOT)
+		*fp++ = 'R';
+	if (flag & VTEXT)
+		*fp++ = 'T';
+	if (flag & VXLOCK)
+		*fp++ = 'L';
+	if (flag & VXWANT)
+		*fp++ = 'W';
+	if (flag & VEXLOCK)
+		*fp++ = 'E';
+	if (flag & VSHLOCK)
+		*fp++ = 'S';
+	if (flag & VLWAIT)
+		*fp++ = 'T';
+	if (flag & VALIASED)
+		*fp++ = 'A';
+	if (flag & VBWAIT)
+		*fp++ = 'B';
+	if (flag == 0)
+		*fp++ = '-';
+	*fp = '\0';
+	/*
+	 * print it
+	 */
+	printf("%s %5s %4d %4d",
+		type, flags, vp->v_usecount, vp->v_holdcnt);
+}
+
+ufs_header() 
+{
+	printf("     LOC FILEID IFLAG RDEV|SZ");
+}
+
+ufs_print(vp) 
+	struct vnode *vp;
+{
+	struct inode *ip = VTOI(vp);
+	char flagbuf[16], *flags = flagbuf;
+	register flag;
+	char *name;
+	mode_t type;
+	extern char *devname();
+
+	flag = ip->i_flag;
+	if (flag & ILOCKED)
+		*flags++ = 'L';
+	if (flag & IWANT)
+		*flags++ = 'W';
+	if (flag & IRENAME)
+		*flags++ = 'R';
+	if (flag & IUPD)
+		*flags++ = 'U';
+	if (flag & IACC)
+		*flags++ = 'A';
+	if (flag & ICHG)
+		*flags++ = 'C';
+	if (flag & IMOD)
+		*flags++ = 'M';
+	if (flag & ISHLOCK)
+		*flags++ = 'S';
+	if (flag & IEXLOCK)
+		*flags++ = 'E';
+	if (flag & ILWAIT)
+		*flags++ = 'Z';
+	if (flag == 0)
+		*flags++ = '-';
+	*flags = '\0';
+
+	printf(" %7x %6d %5s",
+		clear(ip->i_vnode), ip->i_number, flagbuf);
+	type = ip->i_mode & S_IFMT;
+	if (type == S_IFCHR || type == S_IFBLK)
+		if (nflg || ((name = devname(ip->i_rdev, type)) == NULL))
+			printf("   %2d,%-2d", 
+				major(ip->i_rdev), minor(ip->i_rdev));
+		else
+			printf(" %7s", name);
+	else
+		printf(" %7d", ip->i_size);
+}
+
+nfs_header() 
+{
+	printf("     LOC FILEID NFLAG RDEV|SZ");
+}
+
+nfs_print(vp) 
+	struct vnode *vp;
+{
+	struct nfsnode *np = VTOI(vp);
+	char flagbuf[16], *flags = flagbuf;
+	register flag;
+	char *name;
+	mode_t type;
+	extern char *devname();
+
+	flag = np->n_flag;
+	if (flag & NLOCKED)
+		*flags++ = 'L';
+	if (flag & NWANT)
+		*flags++ = 'W';
+	if (flag & NMODIFIED)
+		*flags++ = 'M';
+	if (flag & NBUFFERED)
+		*flags++ = 'B';
+	if (flag & NPAGEDON)
+		*flags++ = 'P';
+	if (flag & NWRITEERR)
+		*flags++ = 'E';
+	if (flag == 0)
+		*flags++ = '-';
+	*flags = '\0';
+
+#define VT	np->n_vattr
+	printf(" %7x %6d %5s",
+		clear(np->n_vnode), VT.va_fileid, flagbuf);
+	type = VT.va_mode & S_IFMT;
+	if (type == S_IFCHR || type == S_IFBLK)
+		if (nflg || ((name = devname(VT.va_rdev, type)) == NULL))
+			printf("   %2d,%-2d", 
+				major(VT.va_rdev), minor(VT.va_rdev));
+		else
+			printf(" %7s", name);
+	else
+		printf(" %7d", np->n_size);
+}
+	
+/*
+ * Given a pointer to a mount structure in kernel space,
+ * read it in and return a usable pointer to it.
+ */
+struct mount *
+getmnt(maddr)
+	struct mount *maddr;
+{
+	static struct mtab {
+		struct mtab *next;
+		struct mount *maddr;
+		struct mount mount;
+	} *mhead = NULL;
+	register struct mtab *mt;
+
+	for (mt = mhead; mt != NULL; mt = mt->next)
+		if (maddr == mt->maddr)
+			return (&mt->mount);
+	if ((mt = (struct mtab *)malloc(sizeof (struct mtab))) == NULL) {
+		error("out of memory");
+		exit(1);
+	}
+	if (kvm_read((off_t)maddr, &mt->mount, sizeof(struct mount)) != 
+	    sizeof(struct mount)) {
+		error("can't read mount table at %x", maddr);
+		return (NULL);
+	}
+	mt->maddr = maddr;
+	mt->next = mhead;
+	mhead = mt;
+	return (&mt->mount);
+}
+
+mount_print(mp)
+	struct mount *mp;
+{
+	char *type = "unknown";
+	register flags;
+
+#define ST	mp->m_stat
+	printf("*** MOUNT ");
+	switch (ST.f_type) {
+	case MOUNT_NONE:
+		type = "none";
+		break;
+	case MOUNT_UFS:
+		type = "ufs";
+		break;
+	case MOUNT_NFS:
+		type = "nfs";
+		break;
+	case MOUNT_MFS:
+		type = "mfs";
+		break;
+	case MOUNT_PC:
+		type = "pc";
+		break;
+	}
+	printf("%s %s on %s", type, ST.f_mntfromname, ST.f_mntonname);
+	if (flags = mp->m_flag) {
+		char *comma = "(";
+
+		putchar(' ');
+		if (flags & M_RDONLY) {
+			printf("%srdonly", comma);
+			comma = ",";
+		}
+		if (flags & M_SYNCHRONOUS) {
+			printf("%ssynchronous", comma);
+			comma = ",";
+		}
+		if (flags & M_NOEXEC) {
+			printf("%snoexec", comma);
+			comma = ",";
+		}
+		if (flags & M_NOSUID) {
+			printf("%snosuid", comma);
+			comma = ",";
+		}
+		if (flags & M_NODEV) {
+			printf("%snodev", comma);
+			comma = ",";
+		}
+		if (flags & M_EXPORTED) {
+			printf("%sexport", comma);
+			comma = ",";
+		}
+		if (flags & M_EXRDONLY) {
+			printf("%sexrdonly", comma);
+			comma = ",";
+		}
+		if (flags & M_MLOCK) {
+			printf("%slock", comma);
+			comma = ",";
+		}
+		if (flags & M_MWAIT) {
+			printf("%swait", comma);
+			comma = ",";
+		}
+		if (flags & M_UPDATE) {
+			printf("%supdate only", comma);
+			comma = ",";
+		}
+		printf(")");
+	}
+	printf("\n");
+#undef ST
+}
+
+struct vnode *
+loadvnodes(avnodes)
+	int *avnodes;
+{
+	int ret, copysize, i;
+	struct vnode *vnodebase;
+
+	if (fcore != NULL) {
+		error("vnodes on dead kernel, not impl yet\n");
+		exit(1);
+	}
+	if ((ret = getkerninfo(KINFO_VNODE, NULL, NULL, 0)) == -1) {
+		syserror("can't get estimate for kerninfo");
+		exit(1);
+	}
+	copysize = ret;
+	if ((vnodebase = (struct vnode *)malloc(copysize)) 
+	     == NULL) {
+		error("out of memory");
+		exit(1);
+	}
+	if ((ret = getkerninfo(KINFO_VNODE, vnodebase, &copysize, 0)) 
+	     == -1) {
+		syserror("can't get vnode list");
+		exit(1);
+	}
+	if (copysize % sizeof (struct vnode)) {
+		error("vnode size mismatch");
+		error(1);
+	}
+	*avnodes = copysize / sizeof (struct vnode);
+
+	return (vnodebase);
 }
 
 u_long
@@ -311,10 +634,7 @@ getword(loc)
 {
 	u_long word;
 
-	if (kflg)
-		loc = clear(loc);
-	lseek(fc, loc, 0);
-	read(fc, &word, sizeof (word));
+	kvm_read(loc, &word, sizeof (word));
 	return (word);
 }
 
@@ -346,8 +666,7 @@ dotext()
 		fprintf(stderr, "can't allocate memory for text table\n");
 		return;
 	}
-	lseek(fc, mkphys((off_t)atext), 0);
-	read(fc, xtext, ntext * sizeof (struct text));
+	kvm_read(atext, xtext, ntext * sizeof (struct text));
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
 		if (xp->x_vptr != NULL)
 			ntxca++;
@@ -406,8 +725,7 @@ doproc()
 		fprintf(stderr, "can't allocate memory for proc table\n");
 		return;
 	}
-	lseek(fc, mkphys((off_t)aproc), 0);
-	read(fc, xproc, nproc * sizeof (struct proc));
+	kvm_read(aproc, xproc, nproc * sizeof (struct proc));
 	np = 0;
 	for (pp=xproc; pp < &xproc[nproc]; pp++)
 		if (pp->p_stat)
@@ -434,14 +752,13 @@ doproc()
 		printf(" %3d", pp->p_nice);
 		printf(" %6d", pp->p_pid);
 		printf(" %6d", pp->p_ppid);
-		if (kflg)
-			pp->p_addr = (struct pte *)clear((int)pp->p_addr);
+		/* 
 		if (pp->p_flag & SLOAD) {
-			lseek(fc, (long)pp->p_addr, 0);
-			read(fc, &apte, sizeof(apte));
+			kvm_read(pp->p_addr, &apte, sizeof(apte));
 			printf(" %8x", apte.pg_pfnum);
 		} else
 			printf(" %8x", pp->p_swaddr);
+		*/
 		printf(" %4x", pp->p_rssize);
 		printf(" %4x", pp->p_swrss);
 		printf(" %5x", pp->p_dsize+pp->p_ssize);
@@ -453,23 +770,19 @@ doproc()
 	free(xproc);
 }
 
-static char mesg[] = " #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
-static int ttyspace = 128;
-static struct tty *tty;
+char mesg[] = " #  DEV RAW CAN OUT    RCC    CCC    OCC  HWT LWT     ADDR COL STATE  PGRP DISC\n";
+int ttyspace = 128;
+struct tty *tty;
 
 dotty()
 {
-	extern char *malloc();
 
 	if ((tty = (struct tty *)malloc(ttyspace * sizeof(*tty))) == 0) {
 		printf("pstat: out of memory\n");
 		return;
 	}
 	printf("1 cons\n");
-	if (kflg)
-		nl[SCONS].n_value = clear(nl[SCONS].n_value);
-	lseek(fc, (long)nl[SCONS].n_value, 0);
-	read(fc, tty, sizeof(*tty));
+	kvm_read((long)nl[SCONS].n_value, tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
 #ifdef vax
@@ -506,15 +819,9 @@ doqdss()
 	int nqd;
 	register struct tty *tp;
 
-	if (kflg) {
-		nl[SNQD].n_value = clear(nl[SNQD].n_value);
-		nl[SQD].n_value = clear(nl[SQD].n_value);
-	}
-	lseek(fc, (long)nl[SNQD].n_value, 0);
-	read(fc, &nqd, sizeof(nqd));
+	kvm_read((long)nl[SNQD].n_value, &nqd, sizeof(nqd));
 	printf("%d qd\n", nqd);
-	lseek(fc, (long)nl[SQD].n_value, 0);
-	read(fc, tty, nqd * sizeof(struct tty) * 4);
+	kvm_read((long)nl[SQD].n_value, tty, nqd * sizeof(struct tty) * 4);
 	printf(mesg);
 	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
 		ttyprt(tp, tp - tty);
@@ -530,12 +837,7 @@ char *name;
 
 	if (tty == (struct tty *)0) 
 		return;
-	if (kflg) {
-		nl[number].n_value = clear(nl[number].n_value);
-		nl[type].n_value = clear(nl[type].n_value);
-	}
-	lseek(fc, (long)nl[number].n_value, 0);
-	read(fc, &ntty, sizeof(ntty));
+	kvm_read((long)nl[number].n_value, &ntty, sizeof(ntty));
 	printf("%d %s lines\n", ntty, name);
 	if (ntty > ttyspace) {
 		ttyspace = ntty;
@@ -544,8 +846,7 @@ char *name;
 			return;
 		}
 	}
-	lseek(fc, (long)nl[type].n_value, 0);
-	read(fc, tty, ntty * sizeof(struct tty));
+	kvm_read((long)nl[type].n_value, tty, ntty * sizeof(struct tty));
 	printf(mesg);
 	for (tp = tty; tp < &tty[ntty]; tp++)
 		ttyprt(tp, tp - tty);
@@ -607,8 +908,8 @@ struct tty *atp;
 		if (tp->t_state&ttystates[i].flag)
 			state[j++] = ttystates[i].val;
 	state[j] = '\0';
-	printf("%-5s ", state);
-	printf("%5d ", tp->t_pgid);
+	printf("%-4s ", state);
+	printf("%6x ", clear(tp->t_pgrp));
 	switch (tp->t_line) {
 
 	case 0:
@@ -641,8 +942,8 @@ dousr()
 	register struct nameidata *nd = &U.u_nd;
 
 	/* This wins only if CLBYTES >= sizeof (struct user) */
-	lseek(fm, ubase * NBPG, 0);
-	read(fm, &U, sizeof(U));
+	/* (WHICH IT ISN'T, but u. is going away - so who cares */
+	kvm_read(ubase * NBPG, &U, sizeof(U));
 	printf("pcb");
 	ip = (int *)&U.u_pcb;
 	while (ip < &U.u_arg[0]) {
@@ -719,11 +1020,6 @@ dousr()
 	printf("ar0\t%.1x\n", U.u_ar0);
 	printf("prof\t%x %x %x %x\n", U.u_prof.pr_base, U.u_prof.pr_size,
 	    U.u_prof.pr_off, U.u_prof.pr_scale);
-	printf("\neosys\t%d\n", U.u_eosys);
-	printf("ttyp\t%.1x\n", U.u_ttyp);
-	printf("ttyd\t%d,%d\n", major(U.u_ttyd), minor(U.u_ttyd));
-	printf("comm %.14s\n", U.u_comm);
-	printf("logname %.12s\n", U.u_logname);
 	printf("start\t%ld\n", U.u_start.tv_sec);
 	printf("acflag\t%ld\n", U.u_acflag);
 	printf("cmask\t%ld\n", U.u_cmask);
@@ -784,8 +1080,7 @@ dofile()
 		fprintf(stderr, "can't allocate memory for file table\n");
 		return;
 	}
-	lseek(fc, mkphys((off_t)afile), 0);
-	read(fc, xfile, nfile * sizeof (struct file));
+	kvm_read(afile, xfile, nfile * sizeof (struct file));
 	for (fp=xfile; fp < &xfile[nfile]; fp++)
 		if (fp->f_count)
 			nf++;
@@ -868,14 +1163,11 @@ doswap()
 		fprintf(stderr, "can't allocate memory for swdevt table\n");
 		exit(1);
 	}
-	lseek(fc, mkphys((off_t)nl[SSWDEVT].n_value), L_SET);
-	read(fc, swdevt, nswdev * sizeof (struct swdevt));
-	lseek(fc, mkphys((off_t)getword(nl[SPROC].n_value)), 0);
-	read(fc, proc, nproc * sizeof (struct proc));
-	lseek(fc, mkphys((off_t)getword(nl[STEXT].n_value)), 0);
-	read(fc, xtext, ntext * sizeof (struct text));
-	lseek(fc, mkphys((off_t)getword(nl[SWAPMAP].n_value)), 0);
-	read(fc, swapmap, nswapmap * sizeof (struct map));
+	kvm_read(nl[SSWDEVT].n_value, swdevt, nswdev * sizeof (struct swdevt));
+	kvm_read(nl[SPROC].n_value, proc, nproc * sizeof (struct proc));
+	kvm_read(nl[STEXT].n_value, xtext, ntext * sizeof (struct text));
+	kvm_read(nl[SWAPMAP].n_value, swapmap, nswapmap * sizeof (struct map));
+
 	swapmap->m_name = "swap";
 	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
 	dmmin = getword(nl[SDMMIN].n_value);
@@ -1142,28 +1434,35 @@ done:
 badrmfree:
 	printf("bad rmfree\n");
 }
-/*
- * "addr"  is a kern virt addr and does not correspond
- * To a phys addr after zipping out the high bit..
- * since it was valloc'd in the kernel.
- *
- * We return the phys addr by simulating kernel vm (/dev/kmem)
- * when we are reading a crash dump.
- */
-off_t
-mkphys(addr)
-	off_t addr;
-{
-	register off_t o;
 
-	if (!kflg)
-		return(addr);
-	addr = clear(addr);
-	o = addr & PGOFSET;
-	addr >>= PGSHIFT;
-	addr &= PG_PFNUM;
-	addr *=  NBPW;
-	addr = getword(nl[SYSMAP].n_value + addr);
-	addr = ((addr & PG_PFNUM) << PGSHIFT) | o;
-	return(addr);
+#include <varargs.h>
+
+error(va_alist)
+	va_dcl
+{
+	char *fmt;
+	va_list ap;
+	extern errno;
+
+	fprintf(stderr, "%s: ", Program);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, "\n");
+}
+
+syserror(va_alist)
+	va_dcl
+{
+	char *fmt;
+	va_list ap;
+	extern errno;
+
+	fprintf(stderr, "%s: ", Program);
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(errno));
 }
