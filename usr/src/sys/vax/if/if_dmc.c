@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.13	82/04/20	*/
+/*	if_dmc.c	4.14	82/04/24	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -125,12 +125,13 @@ COUNT(DMCATTACH);
 	sc->sc_if.if_net = (ui->ui_flags & DMC_NET) >> 8;
 	sc->sc_if.if_host[0] = 17;	/* random number */
 	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
-	sin->sa_family = AF_INET;
+	sin->sin_family = AF_INET;
 	sin->sin_addr = if_makeaddr(sc->sc_if.if_net, sc->sc_if.if_host[0]);
 	sc->sc_if.if_init = dmcinit;
 	sc->sc_if.if_output = dmcoutput;
 	sc->sc_if.if_ubareset = dmcreset;
-	sc->sc_ifuba.ifuba_flags = UBA_NEEDBDP | UBA_CANTWAIT;
+	/* DON'T KNOW IF THIS WILL WORK WITH A BDP AT HIGH SPEEDS */
+	sc->sc_ifuba.ifu_flags = UBA_NEEDBDP | UBA_CANTWAIT;
 	if_attach(&sc->sc_if);
 }
 
@@ -222,7 +223,7 @@ COUNT(DMCSTART);
 	 * Have request mapped to UNIBUS for transmission.
 	 * Purge any stale data from this BDP and start the output.
 	 */
-	if (sc->sc_ifuba.ifuba_flags & UBA_NEEDBDP)
+	if (sc->sc_ifuba.ifu_flags & UBA_NEEDBDP)
 		UBAPURGE(sc->sc_ifuba.ifu_uba, sc->sc_ifuba.ifu_w.ifrw_bdp);
 	addr = sc->sc_ifuba.ifu_w.ifrw_info & 0x3ffff;
 	printd("  len %d, addr 0x%x, ", len, addr);
@@ -268,22 +269,14 @@ dmcrint(unit)
 	register struct dmc_softc *sc;
 	register struct dmcdevice *addr;
 	register int n;
-	int w0, w1; /* DEBUG */
 
 COUNT(DMCRINT);
 	addr = (struct dmcdevice *)dmcinfo[unit]->ui_addr;
 	sc = &dmc_softc[unit];
 	while (addr->bsel0&DMC_RDYI) {
-		w0 = getw(&sc->sc_que); /* DEBUG */
-		addr->sel4 = w0; /* DEBUG */
-		w1 = getw(&sc->sc_que); /* DEBUG */
-		addr->sel6 = w1; /* DEBUG */
-		/* DEBUG
 		addr->sel4 = getw(&sc->sc_que);
 		addr->sel6 = getw(&sc->sc_que);
-		DEBUG */
 		addr->bsel0 &= ~(DMC_IEI|DMC_RQI);
-		printd("  w0 0x%x, w1 0x%x\n", w0, w1);
 		while (addr->bsel0&DMC_RDYI)
 			;
 		if (sc->sc_que.c_cc == 0)
@@ -329,7 +322,7 @@ COUNT(DMCXINT);
 		 * higher-level input routine.
 		 */
 		sc->sc_if.if_ipackets++;
-		if (sc->sc_ifuba.ifuba_flags & UBA_NEEDBDP)
+		if (sc->sc_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(sc->sc_ifuba.ifu_uba,
 				sc->sc_ifuba.ifu_r.ifrw_bdp);
 		len = arg & DMC_CCOUNT;
