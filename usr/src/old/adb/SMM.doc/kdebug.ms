@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kdebug.ms	6.4 (Berkeley) %G%
+.\"	@(#)kdebug.ms	6.5 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -19,10 +19,11 @@
 .nr GA 1\}
 ..
 .de cw
+.nr >G \\n(.f		\" save current font
 .ft CW
 ..
 .de pw
-.ft P
+.ft \\n(>G
 ..
 .TL
 Using ADB to Debug the
@@ -570,7 +571,7 @@ The command ``1000$s'' expands the range over which addresses will be
 displayed symbolically.
 The back trace indicates that the trap occurred four frames
 from the end;
-as the frame pointer is stored at \fIrpb\fP\+1fc, the command
+as the frame pointer is stored at \fIrpb\fP+1fc, the command
 ``*(rpb+1fc),4$<frame'' prints the last four stack frames;
 ``*(rpb+1fc)'' is the initial frame pointer, and the count determines the number
 of frames to print.
@@ -684,7 +685,7 @@ and count portions of an
 .I adb
 command as parameters.  An example of
 this is the \fBsetproc\fP script used to switch to the
-context of a process with a known process-id;
+context of a process with a known process-id:
 .DS
 .cw
 0t99$<setproc
