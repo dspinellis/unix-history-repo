@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/ioctl.h>
@@ -112,10 +112,10 @@ doit(f, fromp)
 	}
 	(void) alarm(0);
 	if (port != 0) {
-		s = socket(AF_INET, SOCK_STREAM, 0, 0);
+		s = socket(AF_INET, SOCK_STREAM, 0);
 		if (s < 0)
 			exit(1);
-		if (bind(s, &asin, sizeof (asin), 0) < 0)
+		if (bind(s, &asin, sizeof (asin)) < 0)
 			exit(1);
 		(void) alarm(60);
 		fromp->sin_port = htons((u_short)port);
