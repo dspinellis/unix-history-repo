@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -81,6 +81,7 @@ unixdomainpr(so, soaddr)
 {
 	struct unpcb unpcb, *unp = &unpcb;
 	struct mbuf mbuf, *m;
+	struct sockaddr_un *sa;
 	static int first = 1;
 
 	klseek(kmem, so->so_pcb, L_SET);
@@ -91,11 +92,13 @@ unixdomainpr(so, soaddr)
 		klseek(kmem, unp->unp_addr, L_SET);
 		if (read(kmem, m, sizeof (*m)) != sizeof (*m))
 			m = (struct mbuf *)0;
+		sa = mtod(m, struct sockaddr_un *);
 	} else
 		m = (struct mbuf *)0;
 	if (first) {
+		printf("Active UNIX domain sockets\n");
 		printf(
-"%-8.8s %-6.6s %-6.6s %-6.6s %8.8s %8.8s %8.8s %8.8s Remaddr\n",
+"%-8.8s %-6.6s %-6.6s %-6.6s %8.8s %8.8s %8.8s %8.8s Addr\n",
 		    "Address", "Type", "Recv-Q", "Send-Q",
 		    "Inode", "Conn", "Refs", "Nextref");
 		first = 0;
@@ -105,6 +108,7 @@ unixdomainpr(so, soaddr)
 	    unp->unp_inode, unp->unp_conn,
 	    unp->unp_refs, unp->unp_nextref);
 	if (m)
-		printf(" %.*s", m->m_len, mtod(m, char *));
+		printf(" %.*s", m->m_len - sizeof(sa->sun_family),
+		    sa->sun_path);
 	putchar('\n');
 }
