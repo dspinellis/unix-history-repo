@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)touch.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)touch.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -146,7 +146,9 @@ boolean touchfiles(nfiles, files, r_edargc, r_edargv)
 			int		errordest;	/* where errors go*/
 			char		*sep;
 			boolean		scribbled;
-			int		n_pissed_on;	/* how many files touched*/
+			int		n_pissed_on;	/* # of file touched*/
+			int		previewed;
+
 	for (fileindex = 1; fileindex <= nfiles; fileindex++){
 		fprintf(stdout, "\nFile \"%s\" has %d total error messages.\n",
 			currentfilename = (*files[fileindex])->error_text[0],
@@ -169,9 +171,11 @@ boolean touchfiles(nfiles, files, r_edargc, r_edargv)
 		/*
 		 *	What does the operator want?
 		 */
+		previewed = 0;
 		errordest = TOSTDOUT;
 		if (oktotouch(currentfilename) && (ntrueerrors > 0) ){
 			if (query && inquire("Do you want to preview the errors first?")){
+				previewed = 1;
 				for (erpp = files[fileindex];
 				     erpp < files[fileindex + 1];
 				     erpp++){
@@ -197,12 +201,14 @@ boolean touchfiles(nfiles, files, r_edargc, r_edargv)
 				}
 			}
 		}
+		if (previewed && (errordest == TOSTDOUT))
+			continue;		/* with the next file */
 		/*
 		 *	go through and print each error message,
 		 *	diverting to the right place
 		 */
 		if ( (files[fileindex+1] - files[fileindex]) != ntrueerrors)
-			fprintf(stdout,
+			if (!previewed) fprintf(stdout,
 			    ">>Uninserted error messages for file \"%s\" follow.\n",
 			    currentfilename);
 		for (erpp = files[fileindex];erpp < files[fileindex+1];erpp++){
@@ -210,15 +216,17 @@ boolean touchfiles(nfiles, files, r_edargc, r_edargv)
 			if (errorp->error_e_class == C_TRUE){
 				switch (errordest){
 				  case TOSTDOUT:
-					errorprint(stdout, errorp, TRUE);
-					  break;
+					if (!previewed)
+						errorprint(stdout,errorp, TRUE);
+					break;
 				  case TOTHEFILE:
 					insert(errorp->error_line);
 					text(errorp, FALSE);
 					break;
 				}	/* switch */
 			} else {
-				errorprint(stdout, errorp, TRUE);
+				if (!previewed)
+					errorprint(stdout, errorp, TRUE);
 			}
 		}	/* end of walking through all errors*/
 		if (errordest == TOTHEFILE){
