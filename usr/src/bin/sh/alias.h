@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)alias.h	8.1 (Berkeley) %G%
+ *	@(#)alias.h	8.2 (Berkeley) %G%
  */
 
 #define ALIASINUSE	1
@@ -19,4 +19,7 @@ struct alias {
 	int flag;
 };
 
-struct alias *lookupalias();
+struct alias *lookupalias __P((char *, int));
+int aliascmd __P((int, char **));
+int unaliascmd __P((int, char **));
+void rmaliases __P((void));

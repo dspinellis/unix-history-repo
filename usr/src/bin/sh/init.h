@@ -7,15 +7,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init.h	8.1 (Berkeley) %G%
+ *	@(#)init.h	8.2 (Berkeley) %G%
  */
 
-#ifdef __STDC__
-void init(void);
-void reset(void);
-void initshellproc(void);
-#else
-void init();
-void reset();
-void initshellproc();
-#endif
+void init __P((void));
+void reset __P((void));
+void initshellproc __P((void));

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.h	8.1 (Berkeley) %G%
+ *	@(#)machdep.h	8.2 (Berkeley) %G%
  */
 
 /*
@@ -21,5 +21,5 @@ union align {
 	char *cp;
 };
 
-#define ALIGN(nbytes)	((nbytes) + sizeof(union align) - 1 &~ (sizeof(union align) - 1))
+#define ALIGN(nbytes)	(((nbytes) + sizeof(union align) - 1) & ~(sizeof(union align) - 1))
 #endif

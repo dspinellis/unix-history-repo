@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shell.h	8.1 (Berkeley) %G%
+ *	@(#)shell.h	8.2 (Berkeley) %G%
  */
 
 /*
