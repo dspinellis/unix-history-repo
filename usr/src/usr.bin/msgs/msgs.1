@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)msgs.1	6.1 (Berkeley) %G%
+.\"	@(#)msgs.1	6.2 (Berkeley) %G%
 .\"
 .TH MSGS 1 ""
 .UC 4
@@ -16,6 +16,15 @@ msgs \- system messages and junk mail program
 number
 ] [
 \-number
+]
+.LP
+.B msgs
+.B \-s
+.LP
+.B msgs
+.B \-c
+[
+\-days
 ]
 .SH DESCRIPTION
 .I Msgs
@@ -59,7 +68,7 @@ the next time you run the program it will pick up where you left off.
 .B s
 append the current message to the file ``Messages'' in the current directory;
 `s\-' will save the previously displayed message. A `s' or `s\-' may
-be followed by a space and a filename to receive the message replacing
+be followed by a space and a file name to receive the message replacing
 the default ``Messages''.
 .TP 7
 .B m
@@ -91,7 +100,30 @@ will make a new
 .I bounds
 file the next time it is run.
 .PP
-Options to msgs include:
+The
+.B \-s
+option is used for setting up the posting of messages.  The line
+.IP
+.DT
+msgs: "| /usr/ucb/msgs \-s"
+.PP
+should be include in
+.I /usr/lib/aliases
+to enable posting of messages.
+.PP
+The
+.B \-c
+option is used for performing cleanup on
+.I /usr/msgs.
+An entry with the
+.B \-c
+option should be placed in
+.I /usr/lib/crontab
+to run every night.  This will remove all messages over 21 days old.
+A different expiration may be specified on the command line to override
+the default.
+.PP
+Options when reading messages include:
 .TP 7
 .B \-f
 which causes it not to say ``No new messages.''.
@@ -154,5 +186,5 @@ William Joy
 .br
 David Wasley
 .SH SEE ALSO
-mail(1), more(1)
+aliases(5), crontab(5), mail(1), more(1)
 .SH BUGS
