@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	8.4 (Berkeley) %G%
+ *	@(#)nfs_subs.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -61,7 +61,6 @@ u_long nfs_vers, nfs_prog, nfs_true, nfs_false;
 static u_long nfs_xid = 0;
 enum vtype ntov_type[7] = { VNON, VREG, VDIR, VBLK, VCHR, VLNK, VNON };
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
-extern struct nfsreq nfsreqh;
 extern int nqnfs_piggy[NFS_NPROCS];
 extern struct nfsrtt nfsrtt;
 extern time_t nqnfsstarttime;
@@ -69,6 +68,9 @@ extern u_long nqnfs_prog, nqnfs_vers;
 extern int nqsrv_clockskew;
 extern int nqsrv_writeslack;
 extern int nqsrv_maxlease;
+
+LIST_HEAD(nfsnodehashhead, nfsnode);
+extern struct nfsnodehashhead *nfs_hash __P((nfsv2fh_t *));
 
 /*
  * Create the header for an rpc request packet
@@ -590,15 +592,14 @@ nfs_init()
 		NQLOADNOVRAM(nqnfsstarttime);
 		nqnfs_prog = txdr_unsigned(NQNFS_PROG);
 		nqnfs_vers = txdr_unsigned(NQNFS_VER1);
-		nqthead.th_head[0] = &nqthead;
-		nqthead.th_head[1] = &nqthead;
-		nqfhead = hashinit(NQLCHSZ, M_NQLEASE, &nqfheadhash);
+		CIRCLEQ_INIT(&nqtimerhead);
+		nqfhhashtbl = hashinit(NQLCHSZ, M_NQLEASE, &nqfhhash);
 	}
 
 	/*
 	 * Initialize reply list and start timer
 	 */
-	nfsreqh.r_prev = nfsreqh.r_next = &nfsreqh;
+	TAILQ_INIT(&nfs_reqq);
 	nfs_timer();
 }
 
@@ -626,7 +627,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
 	extern int (**spec_nfsv2nodeop_p)();
-	register struct nfsnode *np, *nq, **nhpp;
+	register struct nfsnode *np;
+	register struct nfsnodehashhead *nhpp;
 	register long t1;
 	caddr_t dpos, cp2;
 	int error = 0, isnq;
@@ -682,9 +684,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				/*
 				 * Discard unneeded vnode, but save its nfsnode.
 				 */
-				if (nq = np->n_forw)
-					nq->n_back = np->n_back;
-				*np->n_back = nq;
+				LIST_REMOVE(np, n_hash);
 				nvp->v_data = vp->v_data;
 				vp->v_data = NULL;
 				vp->v_op = spec_vnodeop_p;
@@ -694,12 +694,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 * Reinitialize aliased node.
 				 */
 				np->n_vnode = nvp;
-				nhpp = (struct nfsnode **)nfs_hash(&np->n_fh);
-				if (nq = *nhpp)
-					nq->n_back = &np->n_forw;
-				np->n_forw = nq;
-				np->n_back = nhpp;
-				*nhpp = np;
+				nhpp = nfs_hash(&np->n_fh);
+				LIST_INSERT_HEAD(nhpp, np, n_hash);
 				*vpp = vp = nvp;
 			}
 		}
@@ -1033,21 +1029,19 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	 * Check/setup credentials.
 	 */
 	if (exflags & MNT_EXKERB) {
-		uidp = slp->ns_uidh[NUIDHASH(cred->cr_uid)];
-		while (uidp) {
+		for (uidp = NUIDHASH(slp, cred->cr_uid)->lh_first; uidp != 0;
+		    uidp = uidp->nu_hash.le_next) {
 			if (uidp->nu_uid == cred->cr_uid)
 				break;
-			uidp = uidp->nu_hnext;
 		}
-		if (uidp) {
-			cred->cr_uid = uidp->nu_cr.cr_uid;
-			for (i = 0; i < uidp->nu_cr.cr_ngroups; i++)
-				cred->cr_groups[i] = uidp->nu_cr.cr_groups[i];
-			cred->cr_ngroups = uidp->nu_cr.cr_ngroups;
-		} else {
+		if (uidp == 0) {
 			vput(*vpp);
 			return (NQNFS_AUTHERR);
 		}
+		cred->cr_uid = uidp->nu_cr.cr_uid;
+		for (i = 0; i < uidp->nu_cr.cr_ngroups; i++)
+			cred->cr_groups[i] = uidp->nu_cr.cr_groups[i];
+		cred->cr_ngroups = i;
 	} else if (cred->cr_uid == 0 || (exflags & MNT_EXPORTANON)) {
 		cred->cr_uid = credanon->cr_uid;
 		for (i = 0; i < credanon->cr_ngroups && i < NGROUPS; i++)
