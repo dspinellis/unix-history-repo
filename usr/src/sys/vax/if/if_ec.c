@@ -1,4 +1,4 @@
-/*	if_ec.c	4.6	82/05/07	*/
+/*	if_ec.c	4.7	82/05/07	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -419,7 +419,7 @@ ecdocoll(unit)
 	/*
 	 * Clear the controller's collision flag, thus enabling retransmit.
 	 */
-	addr->ec_xcr = EC_JCLR;
+	addr->ec_xcr = EC_JINTEN|EC_XINTEN|EC_JCLR;
 }
 
 #ifdef notdef
