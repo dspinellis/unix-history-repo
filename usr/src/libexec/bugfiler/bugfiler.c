@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -70,7 +70,7 @@ main(argc, argv)
 	if (chdir(pwd->pw_dir))		/* change to bugs home directory */
 		error("can't chdir to %s.", pwd->pw_dir);
 
-	if (setreuid(0, pwd->pw_uid))
+	if (seteuid(pwd->pw_uid))
 		error("can't set id to %s.", BUGS_ID);
 
 	(void)umask(02);		/* everything is 664 */
@@ -84,7 +84,7 @@ main(argc, argv)
 
 	process();
 
-	if (setuid(0))
+	if (seteuid(0))
 		error("can't set id to root.", CHN);
 	if (do_ack)
 		reply();
