@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.17	82/07/03	*/
+/*	ffs_inode.c	4.18	82/07/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -159,6 +159,9 @@ loop:
 	 */
 	remque(ip);
 	insque(ip, ih);
+#ifdef	QUOTA
+	dqrele(ip->i_dquot);
+#endif
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
@@ -186,6 +189,9 @@ loop:
 		 * (probably the two methods are interchangable)
 		 */
 		ip->i_number = 0;
+#ifdef	QUOTA
+		ip->i_dquot = NODQUOT;
+#endif
 		iput(ip);
 		return(NULL);
 	}
@@ -193,6 +199,12 @@ loop:
 	dp += itoo(fs, ino);
 	ip->i_ic = dp->di_ic;
 	brelse(bp);
+#ifdef	QUOTA
+	if (ip->i_mode == 0)
+		ip->i_dquot = NODQUOT;
+	else
+		ip->i_dquot = inoquota(ip);
+#endif
 	return (ip);
 }
 
@@ -229,6 +241,11 @@ irele(ip)
 			ip->i_rdev = 0;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip, ip->i_number, mode);
+#ifdef	QUOTA
+			chkiq(ip->i_dev, ip, ip->i_uid, 0);
+			dqrele(ip->i_dquot);
+			ip->i_dquot = NODQUOT;
+#endif
 		}
 		IUPDAT(ip, &time, &time, 0);
 		iunlock(ip);
@@ -316,6 +333,10 @@ itrunc(ip)
 	daddr_t bn;
 	struct inode itmp;
 	register struct fs *fs;
+#ifdef	QUOTA
+	register long cnt = 0;
+	long tloop();
+#endif
 
 	/*
 	 * Clean inode on disk before freeing blocks
@@ -350,7 +371,10 @@ itrunc(ip)
 	bn = ip->i_ib[NIADDR-1];
 	if (bn != (daddr_t)0) {
 		ip->i_ib[NIADDR - 1] = (daddr_t)0;
-		tloop(ip, bn, 1);
+#ifdef	QUOTA
+		cnt +=
+#endif
+			tloop(ip, bn, 1);
 	}
 	/*
 	 * release single indirect blocks second
@@ -359,26 +383,40 @@ itrunc(ip)
 		bn = ip->i_ib[i];
 		if (bn != (daddr_t)0) {
 			ip->i_ib[i] = (daddr_t)0;
-			tloop(ip, bn, 0);
+#ifdef	QUOTA
+			cnt +=
+#endif
+				tloop(ip, bn, 0);
 		}
 	}
 	/*
 	 * finally release direct blocks
 	 */
 	for (i = NDADDR - 1; i>=0; i--) {
+		register size;
+
 		bn = ip->i_db[i];
 		if (bn == (daddr_t)0)
 			continue;
 		ip->i_db[i] = (daddr_t)0;
-		fre(ip, bn, (off_t)blksize(fs, ip, i));
+		fre(ip, bn, size = (off_t)blksize(fs, ip, i));
+#ifdef	QUOTA
+		cnt += size / DEV_BSIZE;
+#endif
 	}
 	ip->i_size = 0;
 	/*
 	 * Inode was written and flags updated above.
 	 * No need to modify flags here.
 	 */
+#ifdef	QUOTA
+	(void) chkdq(ip, -cnt, 0);
+#endif
 }
 
+#ifdef	QUOTA
+long
+#endif
 tloop(ip, bn, indflg)
 	register struct inode *ip;
 	daddr_t bn;
@@ -389,6 +427,9 @@ tloop(ip, bn, indflg)
 	register daddr_t *bap;
 	register struct fs *fs;
 	daddr_t nb;
+#ifdef	QUOTA
+	register long cnt = 0;
+#endif
 
 	bp = NULL;
 	fs = ip->i_fs;
@@ -404,14 +445,25 @@ tloop(ip, bn, indflg)
 		nb = bap[i];
 		if (nb == (daddr_t)0)
 			continue;
-		if (indflg)
-			tloop(ip, nb, 0);
-		else
+		if (indflg) {
+#ifdef	QUOTA
+			cnt +=
+#endif
+				tloop(ip, nb, 0);
+		} else {
 			fre(ip, nb, fs->fs_bsize);
+#ifdef	QUOTA
+			cnt += fs->fs_bsize / DEV_BSIZE;
+#endif
+		}
 	}
 	if (bp != NULL)
 		brelse(bp);
 	fre(ip, bn, fs->fs_bsize);
+#ifdef	QUOTA
+	cnt += fs->fs_bsize / DEV_BSIZE;
+	return(cnt);
+#endif
 }
 
 /*
@@ -433,6 +485,10 @@ maknode(mode)
 		iput(u.u_pdir);
 		return(NULL);
 	}
+#ifdef	QUOTA
+	if (ip->i_dquot != NODQUOT)
+		panic("maknode: dquot");
+#endif
 	ip->i_flag |= IACC|IUPD|ICHG;
 	if ((mode & IFMT) == 0)
 		mode |= IFREG;
@@ -440,6 +496,9 @@ maknode(mode)
 	ip->i_nlink = 1;
 	ip->i_uid = u.u_uid;
 	ip->i_gid = u.u_pdir->i_gid;
+#ifdef	QUOTA
+	ip->i_dquot = inoquota(ip);
+#endif
 
 	/*
 	 * Make sure inode goes to disk before directory entry.
@@ -559,14 +618,24 @@ wdir(ip)
  *
  * this is called from sumount()/sys3.c when dev is being unmounted
  */
+#ifdef	QUOTA
+iflush(dev, qi);
+	dev_t dev;
+	struct inode *qi;
+#else
 iflush(dev)
 	dev_t dev;
+#endif
 {
 	register struct inode *ip;
 	register open = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
+#ifdef	QUOTA
+		if (ip != iq && ip->i_dev == dev)
+#else
 		if (ip->i_dev == dev)
+#endif
 			if (ip->i_count)
 				return(-1);
 			else {
@@ -582,6 +651,10 @@ iflush(dev)
 				 * infrequently, we would gain very little,
 				 * while making the code bigger.
 				 */
+#ifdef	QUOTA
+				dqrele(ip->i_dquot);
+				ip->i_dquot = NODQUOT;
+#endif
 			}
 		else if (ip->i_count && (ip->i_mode&IFMT)==IFBLK &&
 		    ip->i_rdev == dev)
