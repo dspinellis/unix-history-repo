@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.37	82/03/29	*/
+/*	uipc_socket.c	4.38	82/04/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -256,22 +256,26 @@ sosend(so, asa)
 	int error = 0, space, s;
 
 COUNT(SOSEND);
-	if (so->so_state & SS_CANTSENDMORE) {
-		psignal(u.u_procp, SIGPIPE);
-		return (EPIPE);
-	}
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
+#ifdef notdef
+	/* NEED TO PREVENT BUSY WAITING IN SELECT FOR WRITING */
 	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_state & SS_NBIO))
 		return (EWOULDBLOCK);
+#endif
+restart:
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
-	s = splnet();
 again:
+	s = splnet();
+	if (so->so_state & SS_CANTSENDMORE) {
+		psignal(u.u_procp, SIGPIPE);
+		snderr(EPIPE);
+	}
 	if (so->so_error) {
 		error = so->so_error;
-		so->so_error = 0;
+		so->so_error = 0;				/* ??? */
 		splx(s);
 		goto release;
 	}
@@ -283,11 +287,11 @@ again:
 	}
 	if (top) {
 		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top, asa);
+		top = 0;
 		if (error) {
 			splx(s);
 			goto release;
 		}
-		top = 0;
 		mp = &top;
 	}
 	if (u.u_count == 0) {
@@ -301,14 +305,13 @@ again:
 		sbunlock(&so->so_snd);
 		sbwait(&so->so_snd);
 		splx(s);
-		goto again;
+		goto restart;
 	}
 	splx(s);
 	while (u.u_count && space > 0) {
 		MGET(m, 1);
 		if (m == NULL) {
-			error = ENOBUFS;
-			m_freem(top);
+			error = ENOBUFS;			/* SIGPIPE? */
 			goto release;
 		}
 		if (u.u_count >= CLBYTES && space >= CLBYTES) {
@@ -329,11 +332,12 @@ nopages:
 		mp = &m->m_next;
 		space = sbspace(&so->so_snd);
 	}
-	s = splnet();
 	goto again;
 
 release:
 	sbunlock(&so->so_snd);
+	if (top)
+		m_freem(top);
 	return (error);
 }
 
