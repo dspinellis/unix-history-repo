@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -547,6 +547,7 @@ shell()
 			cp = value(SHELL);
 		else
 			cp++;
+		shell_uid();
 		execl(value(SHELL), cp, 0);
 		printf("\r\ncan't execl!\r\n");
 		exit(1);
@@ -599,12 +600,11 @@ abort(msg)
 {
 
 	kill(pid, SIGTERM);
-	setreuid(euid, euid);
-	setregid(egid, egid);
 	disconnect(msg);
 	if (msg != NOSTR)
 		printf("\r\n%s", msg);
 	printf("\r\n[EOT]\r\n");
+	daemon_uid();
 	delock(uucplock);
 	unraw();
 	exit(0);
@@ -638,6 +638,7 @@ execute(s)
 		cp = value(SHELL);
 	else
 		cp++;
+	user_uid();
 	execl(value(SHELL), cp, "-c", s, 0);
 }
 
@@ -802,6 +803,7 @@ expand(name)
 		dup(pivec[1]);
 		close(pivec[1]);
 		close(2);
+		shell_uid();
 		execl(Shell, Shell, "-c", cmdbuf, 0);
 		_exit(1);
 	}

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -46,6 +46,10 @@ main(argc, argv)
 	register char *p;
 	char sbuf[12];
 
+	gid = getgid();
+	egid = getegid();
+	uid = getuid();
+	euid = geteuid();
 	if (equal(sname(argv[0]), "cu")) {
 		cumode = 1;
 		cumain(argc, argv);
@@ -140,12 +144,7 @@ notnumber:
 	 *  so we can get the original permissions back
 	 *  for removing the uucp lock.
 	 */
-	gid = getgid();
-	egid = getegid();
-	uid = getuid();
-	euid = geteuid();
-	setregid(egid, gid);
-	setreuid(euid, uid);
+	user_uid();
 
 	/*
 	 * Hardwired connections require the
@@ -156,8 +155,7 @@ notnumber:
 		ttysetup(i);
 	if (p = connect()) {
 		printf("\07%s\n[EOT]\n", p);
-		setreuid(uid, euid);
-		setregid(gid, egid);
+		daemon_uid();
 		delock(uucplock);
 		exit(1);
 	}
@@ -203,14 +201,47 @@ cucommon:
 cleanup()
 {
 
-	if (uid != getuid()) {
-		setreuid(uid, euid);
-		setregid(gid, egid);
-	}
+	daemon_uid();
 	delock(uucplock);
 	if (odisc)
 		ioctl(0, TIOCSETD, (char *)&odisc);
 	exit(0);
+}
+
+/*
+ * Muck with user ID's.  We are setuid to the owner of the lock
+ * directory when we start.  user_uid() reverses real and effective
+ * ID's after startup, to run with the user's permissions.
+ * daemon_uid() switches back to the privileged uid for unlocking.
+ * Finally, to avoid running a shell with the wrong real uid,
+ * shell_uid() sets real and effective uid's to the user's real ID.
+ */
+static int uidswapped;
+
+user_uid()
+{
+	if (uidswapped == 0) {
+		setregid(egid, gid);
+		setreuid(euid, uid);
+		uidswapped = 1;
+	}
+}
+
+daemon_uid()
+{
+
+	if (uidswapped) {
+		setreuid(uid, euid);
+		setregid(gid, egid);
+		uidswapped = 0;
+	}
+}
+
+shell_uid()
+{
+
+	setreuid(uid, uid);
+	setregid(gid, gid);
 }
 
 /*
@@ -338,7 +369,7 @@ escape()
 	gch = (getchar()&0177);
 	for (p = etable; p->e_char; p++)
 		if (p->e_char == gch) {
-			if ((p->e_flags&PRIV) && getuid())
+			if ((p->e_flags&PRIV) && uid)
 				continue;
 			printf("%s", ctrl(c));
 			(*p->e_func)(gch);
@@ -434,7 +465,7 @@ help(c)
 
 	printf("%c\r\n", c);
 	for (p = etable; p->e_char; p++) {
-		if ((p->e_flags&PRIV) && getuid())
+		if ((p->e_flags&PRIV) && uid)
 			continue;
 		printf("%2s", ctrl(character(value(ESCAPE))));
 		printf("%-2s %c   %s\r\n", ctrl(p->e_char),
