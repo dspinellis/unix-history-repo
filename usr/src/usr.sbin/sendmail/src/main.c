@@ -2,8 +2,9 @@
 # include <signal.h>
 # include <sys/ioctl.h>
 # include "sendmail.h"
+# include <sys/file.h>
 
-SCCSID(@(#)main.c	3.148		%G%);
+SCCSID(@(#)main.c	3.149		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -471,7 +472,7 @@ main(argc, argv)
 			MotherPid = getpid();
 
 			/* disconnect from our controlling tty */
-			disconnect();
+			disconnect(TRUE);
 		}
 
 # ifdef QUEUE
