@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	1.1 (Berkeley) %G%
+ *	@(#)dmx.c	1.2 (Berkeley) %G%
  */
 
 /*
@@ -41,11 +41,11 @@
 #include "dmreg.h"
 
 #ifndef	PORTSELECTOR
-#define	ISPEED	B9600
-#define	IFLAGS	(EVENP|ODDP|ECHO)
+#define	ISPEED	TTYDEF_SPEED
+#define	LFLAG	TTYDEF_LFLAG
 #else
 #define	ISPEED	B4800
-#define	IFLAGS	(EVENP|ODDP)
+#define	IFLAGS	(TTYDEF_LFLAG&~ECHO)
 #endif
 
 #ifndef DMX_TIMEOUT
@@ -84,7 +84,7 @@ int	ttrstrt();
 /*
  * DMF/DMZ open common code
  */
-dmxopen(tp, sc)
+dmxopen(tp, sc, flag)
 	register struct tty *tp;
 	register struct dmx_softc *sc;
 {
@@ -107,17 +107,19 @@ dmxopen(tp, sc)
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
+#endif
+			tp->t_iflag = TTYDEF_IFLAG;
+                        tp->t_oflag = TTYDEF_OFLAG;
+                        tp->t_cflag = TTYDEF_CFLAG;
+                        tp->t_lflag = LFLAG;
+                        tp->t_ispeed = tp->t_ospeed = ISPEED;
+#ifdef PORTSELECTOR
+			tp->t_cflag |= HUPCL;
 #else
-			tp->t_state |= TS_HUPCLS;
-#endif PORTSELECTOR
-			tp->t_ispeed = ISPEED;
-			tp->t_ospeed = ISPEED;
-			tp->t_flags = IFLAGS;
-#ifndef PORTSELECTOR
 		}
-#endif PORTSELECTOR
+#endif
 	}
-	dmxparam(tp);
+	dmxparam(tp, &tp->t_termios);
 
 	unit = minor(tp->t_dev) & 07;
 	/*
@@ -128,7 +130,8 @@ dmxopen(tp, sc)
 		if ((dmxmctl(tp, DMF_ON, DMSET) & DMF_CAR) ||
 		    (sc->dmx_softCAR & (1 << unit)))
 			tp->t_state |= TS_CARR_ON;
-		if (tp->t_state & TS_CARR_ON)
+		if (tp->t_state&TS_CARR_ON || flag&O_NONBLOCK ||
+		    tp->t_cflag&CLOCAL)
 			break;
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
@@ -143,7 +146,7 @@ dmxclose(tp)
 
 	(*linesw[tp->t_line].l_close)(tp);
 	(void) dmxmctl(tp, DMF_BRK, DMBIC);
-	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
+	if (tp->t_cflag & HUPCL || (tp->t_state & TS_ISOPEN) == 0)
 		(void) dmxmctl(tp, DMF_OFF, DMSET);
 	ttyclose(tp);
 }
@@ -151,7 +154,7 @@ dmxclose(tp)
 dmxrint(sc)
 	register struct dmx_softc *sc;
 {
-	register c;
+	register c, cc;
 	register struct tty *tp;
 	register struct dmx_octet *addr;
 	int unit;
@@ -163,7 +166,7 @@ dmxrint(sc)
 	 * octet until there are no more in the silo.
 	 */
 	while ((c = addr->rbuf) < 0) {
-
+		cc = c&0xff;
 		unit = (c >> 8) & 07;
 		tp = sc->dmx_tty + unit;
 		if (c & DMF_DSC) {
@@ -186,9 +189,7 @@ dmxrint(sc)
 		}
 		if (c & (DMF_PE|DMF_DO|DMF_FE)) {
 			if (c & DMF_PE)
-				if ((tp->t_flags & (EVENP|ODDP)) == EVENP
-			 	|| (tp->t_flags & (EVENP|ODDP)) == ODDP)
-					continue;
+				cc |= TTY_PE;
 			if ((c & DMF_DO) && overrun == 0) {
 				log(LOG_WARNING,
 				    "dm%c%d: silo overflow, line %d\n",
@@ -197,17 +198,9 @@ dmxrint(sc)
 				overrun = 1;
 			}
 			if (c & DMF_FE)
-				/*
-				 * At framing error (break) generate
-				 * a null (in raw mode, for getty), or an
-				 * interrupt (in cooked/cbreak mode).
-				 */
-				if (tp->t_flags & RAW)
-					c = 0;
-				else
-					c = tp->t_intrc;
+				cc |= TTY_FE;
 		}
-		(*linesw[tp->t_line].l_rint)(c, tp);
+		(*linesw[tp->t_line].l_rint)(cc, tp);
 	}
 }
 
@@ -221,12 +214,9 @@ dmxioctl(tp, cmd, data, flag)
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET)
-			dmxparam(tp);
+	if (error >= 0)
 		return (error);
-	}
+
 	switch (cmd) {
 
 	case TIOCSBRK:
@@ -354,12 +344,26 @@ dmxtodm(mstat, lcr)
 /*
  * Set parameters from open or ioctl into the hardware registers.
  */
-dmxparam(tp)
+dmxparam(tp, t)
 	register struct tty *tp;
+	register struct termios *t;
 {
 	register struct dmx_octet *addr;
 	register int lpar, lcr;
+	register int cflag = t->c_cflag;
 	int s, unit;
+	int ispeed = ttspeedtab(t->c_ispeed, dmxspeedtab);
+        int ospeed = ttspeedtab(t->c_ospeed, dmxspeedtab);
+
+        /* check requested parameters */
+        if (ospeed < 0 || ispeed < 0 || (cflag&CSIZE) == CS5)
+                return(EINVAL);
+        if (ispeed == 0)
+                ispeed = ospeed;
+        /* and copy to tty */
+        tp->t_ispeed = t->c_ispeed;
+        tp->t_ospeed = t->c_ospeed;
+        tp->t_cflag = cflag;
 
 	addr = (struct dmx_octet *)tp->t_addr;
 	unit = minor(tp->t_dev) & 07;
@@ -369,30 +373,31 @@ dmxparam(tp)
 	 */
 	s = spltty();
 	addr->csr = unit | DMFIR_LCR | DMF_IE;
-	if (tp->t_ispeed == 0) {
-		tp->t_state |= TS_HUPCLS;
+	if (ospeed == 0) {
+		tp->t_cflag |= HUPCL;
 		(void) dmxmctl(tp, DMF_OFF, DMSET);
 		splx(s);
 		return;
 	}
-	lpar = (dmx_speeds[tp->t_ospeed]<<12) | (dmx_speeds[tp->t_ispeed]<<8);
+	lpar = (ospeed<<12) | (ispeed<<8);
 	lcr = DMF_ENA;
-	if ((tp->t_ispeed) == B134)
-		lpar |= BITS6|PENABLE;
-	else if (tp->t_flags & (RAW|LITOUT|PASS8))
-		lpar |= BITS8;
-	else {
-		lpar |= BITS7|PENABLE;
-		/* CHECK FOR XON/XOFF AND SET lcr |= DMF_AUTOX; */
-	}
-	if (tp->t_flags&EVENP)
-		lpar |= EPAR;
-	if ((tp->t_ospeed) == B110)
-		lpar |= TWOSB;
+	switch (cflag&CSIZE) {
+        case CS6:       lpar |= BITS6; break;
+        case CS7:       lpar |= BITS7; break;
+        case CS8:       lpar |= BITS8; break;
+        }
+        if (cflag&PARENB)
+                lpar |= PENABLE;
+        if (!(cflag&PARODD))
+                lpar |= EPAR;
+        if (cflag&CSTOPB)
+                lpar |= TWOSB;
+
 	lpar |= (unit&07);
 	addr->lpr = lpar;
 	addr->lctms = (addr->lctms &~ 0xff) | lcr;
 	splx(s);
+	return 0;
 }
 
 /*
@@ -479,7 +484,7 @@ dmxstart(tp, sc)
 	 * If there are sleepers, and output has drained below low
 	 * water mark, wake up the sleepers.
 	 */
-	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+	if (tp->t_outq.c_cc <= tp->t_lowat) {
 		if (tp->t_state & TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
@@ -496,7 +501,7 @@ dmxstart(tp, sc)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags & (RAW|LITOUT))
+	if (1 || !(tp->t_oflag&OPOST))	/*XXX*/
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		if ((nch = ndqb(&tp->t_outq, 0200)) == 0) {

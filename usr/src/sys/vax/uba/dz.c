@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.3 (Berkeley) %G%
+ *	@(#)dz.c	7.4 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -13,10 +13,6 @@
  *
  * This driver mimics dh.c; see it for explanation of common code.
  */
-#include "bk.h"
-
-#include "machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "ioctl.h"
@@ -37,6 +33,7 @@
 #include "pdma.h"
 #include "ubavar.h"
 #include "dzreg.h"
+#include "machine/pte.h"
 
 /*
  * Driver information for auto-configuration stuff.
@@ -82,15 +79,31 @@ char	dz_timer;		/* timer started? */
  */
 struct	pdma dzpdma[NDZLINE];
 
-char	dz_speeds[] =
-	{ 0,020,021,022,023,024,0,025,026,027,030,032,034,036,037,0 };
+struct speedtab dzspeedtab[] = {
+	0,	0,
+	50,	020,
+	75,	021,
+	110,	022,
+	134,	023,
+	150,	024,
+	300,	025,
+	600,	026,
+	1200,	027,
+	1800,	030,
+	2400,	032,
+	4800,	034,
+	9600,	036,
+	19200,	037,
+	EXTA,	037,
+	-1,	-1
+};
  
 #ifndef	PORTSELECTOR
-#define	ISPEED	B9600
-#define	IFLAGS	(EVENP|ODDP|ECHO)
+#define	ISPEED	TTYDEF_SPEED
+#define	LFLAG	TTYDEF_LFLAG
 #else
 #define	ISPEED	B4800
-#define	IFLAGS	(EVENP|ODDP)
+#define	LFLAG	(TTYDEF_LFLAG&~ECHO)
 #endif
 
 dzprobe(reg)
@@ -143,6 +156,7 @@ dzopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
+	int dzparam();
  
 	unit = minor(dev);
 	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0)
@@ -150,25 +164,31 @@ dzopen(dev, flag)
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
+	tp->t_param = dzparam;
+	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 #ifndef PORTSELECTOR
 		if (tp->t_ispeed == 0) {
-#else
-			tp->t_state |= TS_HUPCLS;
-#endif PORTSELECTOR
-			tp->t_ispeed = ISPEED;
-			tp->t_ospeed = ISPEED;
-			tp->t_flags = IFLAGS;
-#ifndef PORTSELECTOR
+#endif
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_lflag = LFLAG;
+			tp->t_ispeed = tp->t_ospeed = ISPEED;
+#ifdef PORTSELECTOR
+			tp->t_cflag |= HUPCL;
+#else 
 		}
-#endif PORTSELECTOR
-		dzparam(unit);
+#endif
+		dzparam(tp, &tp->t_termios);
+		ttsetwater(tp);
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);
 	(void) dzmctl(dev, DZ_ON, DMSET);
 	(void) spl5();
-	while ((tp->t_state & TS_CARR_ON) == 0) {
+	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
+	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
@@ -194,29 +214,30 @@ dzclose(dev, flag)
 		(void) dzmctl(dev, DZ_BRK, DMBIC);
 	else
 		dzaddr->dzbrk = (dz_brk[dz] &= ~(1 << (unit&07)));
-	if ((tp->t_state&(TS_HUPCLS|TS_WOPEN)) || (tp->t_state&TS_ISOPEN) == 0)
+	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
+	    (tp->t_state&TS_ISOPEN) == 0)
 		(void) dzmctl(dev, DZ_OFF, DMSET);
 	ttyclose(tp);
 }
  
-dzread(dev, uio)
+dzread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_read)(tp, uio));
+	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
  
-dzwrite(dev, uio)
+dzwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
-	return ((*linesw[tp->t_line].l_write)(tp, uio));
+	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
  
 /*ARGSUSED*/
@@ -224,7 +245,7 @@ dzrint(dz)
 	int dz;
 {
 	register struct tty *tp;
-	register int c;
+	register int c, cc;
 	register struct dzdevice *dzaddr;
 	register struct tty *tp0;
 	register int unit;
@@ -252,6 +273,7 @@ dzrint(dz)
 			dzaddr->dzlcs = DZ_ACK|(c&7);
 	}
 	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
+		cc = c&0xff;
 		dzchars[dz]++;
 		tp = tp0 + ((c>>8)&07);
 		if (tp >= &dz_tty[dz_cnt])
@@ -264,25 +286,14 @@ dzrint(dz)
 				continue;
 		}
 		if (c&DZ_FE)
-			if (tp->t_flags & RAW)
-				c = 0;
-			else
-				c = tp->t_intrc;
+			cc |= TTY_FE;
 		if (c&DZ_DO && overrun == 0) {
 			log(LOG_WARNING, "dz%d,%d: silo overflow\n", dz, (c>>8)&7);
 			overrun = 1;
 		}
 		if (c&DZ_PE)	
-			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
-			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
-				continue;
-#if NBK > 0
-		if (tp->t_line == NETLDISC) {
-			c &= 0177;
-			BKINPUT(c, tp);
-		} else
-#endif
-			(*linesw[tp->t_line].l_rint)(c, tp);
+			cc |= TTY_PE;
+		(*linesw[tp->t_line].l_rint)(cc, tp);
 	}
 }
  
@@ -302,12 +313,9 @@ dzioctl(dev, cmd, data, flag)
 	if (error >= 0)
 		return (error);
 	error = ttioctl(tp, cmd, data, flag);
-	if (error >= 0) {
-		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
-		    cmd == TIOCLBIC || cmd == TIOCLSET)
-			dzparam(unit);
+	if (error >= 0)
 		return (error);
-	}
+
 	switch (cmd) {
 
 	case TIOCSBRK:
@@ -382,34 +390,48 @@ dztodm(bits)
 	return(b);
 }
  
-dzparam(unit)
-	register int unit;
-{
+dzparam(tp, t)
 	register struct tty *tp;
+	register struct termios *t;
+{
 	register struct dzdevice *dzaddr;
 	register int lpr;
- 
-	tp = &dz_tty[unit];
+	register int cflag = t->c_cflag;
+	int unit = minor(tp->t_dev);
+	int ospeed = ttspeedtab(t->c_ospeed, dzspeedtab);
+
+	/* check requested parameters */
+        if (ospeed < 0 || (t->c_ispeed && t->c_ispeed != t->c_ospeed) ||
+            (cflag&CSIZE) == CS5 || (cflag&CSIZE) == CS6)
+                return(EINVAL);
+        /* and copy to tty */
+        tp->t_ispeed = t->c_ispeed;
+        tp->t_ospeed = t->c_ospeed;
+        tp->t_cflag = cflag;
+
 	dzaddr = dzpdma[unit].p_addr;
 	if (dzsilos & (1 << (unit >> 3)))
 		dzaddr->dzcsr = DZ_IEN | DZ_SAE;
 	else
 		dzaddr->dzcsr = DZ_IEN;
 	dzact |= (1<<(unit>>3));
-	if (tp->t_ispeed == 0) {
+	if (ospeed == 0) {
 		(void) dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
 		return;
 	}
-	lpr = (dz_speeds[tp->t_ispeed]<<8) | (unit & 07);
-	if (tp->t_flags & (RAW|LITOUT|PASS8))
-		lpr |= BITS8;
+	lpr = (ospeed<<8) | (unit & 07);
+	if ((cflag&CSIZE) == CS7)
+		lpr |= BITS7;
 	else
-		lpr |= (BITS7|PENABLE);
-	if ((tp->t_flags & EVENP) == 0)
+		lpr |= BITS8;
+	if (cflag&PARENB)
+		lpr |= PENABLE;
+	if (cflag&PARODD)
 		lpr |= OPAR;
-	if (tp->t_ispeed == B110)
+	if (cflag&CSTOPB)
 		lpr |= TWOSB;
 	dzaddr->dzlpr = lpr;
+	return 0;
 }
  
 dzxint(tp)
@@ -452,7 +474,7 @@ dzstart(tp)
 	s = spl5();
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
-	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
+	if (tp->t_outq.c_cc <= tp->t_lowat) {
 		if (tp->t_state&TS_ASLEEP) {
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
