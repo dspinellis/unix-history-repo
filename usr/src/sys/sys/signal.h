@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.24 (Berkeley) %G%
+ *	@(#)signal.h	7.25 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNAL_H_
@@ -79,11 +79,12 @@ struct	sigaction {
 #ifndef _POSIX_SOURCE
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
 #define SA_RESTART	0x0002	/* restart system on signal return */
+#define	SA_DISABLE	0x0004	/* disable taking signals on alternate stack */
 #ifdef COMPAT_SUNOS
 #define	SA_USERTRAMP	0x0100	/* do not bounce off kernel's sigtramp */
 #endif
 #endif
-#define SA_NOCLDSTOP	0x0004	/* do not generate SIGCHLD on child stop */
+#define SA_NOCLDSTOP	0x0008	/* do not generate SIGCHLD on child stop */
 
 /*
  * Flags for sigprocmask:
@@ -99,6 +100,17 @@ struct	sigaction {
 typedef	void (*sig_t) __P((int));	/* type of signal function */
 
 /*
+ * Structure used in sigaltstack call.
+ */
+struct	sigaltstack {
+	char	*ss_base;		/* signal stack base */
+	int	ss_size;		/* signal stack length */
+	int	ss_flags;		/* SA_DISABLE and/or SA_ONSTACK */
+};
+#define	MINSIGSTKSZ	8192			/* minimum allowable stack */
+#define	SIGSTKSZ	(MINSIGSTKSZ + 32768)	/* recommended stack size */
+
+/*
  * 4.3 compatibility:
  * Signal vector "template" used in sigvec call.
  */
@@ -111,15 +123,6 @@ struct	sigvec {
 #define SV_ONSTACK	SA_ONSTACK
 #define SV_INTERRUPT	SA_RESTART	/* same bit, opposite sense */
 #define sv_onstack sv_flags	/* isn't compatibility wonderful! */
-
-/*
- * Structure used in sigaltstack call.
- */
-struct	sigaltstack {
-	char	*ss_base;		/* signal stack base */
-	int	ss_len;			/* signal stack length */
-	int	ss_onstack;		/* current status */
-};
 
 /*
  * Structure used in sigstack call.
