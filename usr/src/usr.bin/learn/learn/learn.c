@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)learn.c	4.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)learn.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -23,8 +23,13 @@ char	*dir;
 FILE	*scrin;
 int	logging	= 1;	/* set to 0 to turn off logging */
 int	ask;
+int	again;
+int	skip;
+int	teed;
+int	total;
 
 main(argc,argv)
+int argc;
 char *argv[];
 {
 	extern hangup(), intrpt();
@@ -35,7 +40,9 @@ char *argv[];
 	more = 1;
 	pwline = getlogin();
 	setbuf(stdout, malloc(BUFSIZ));
+	setbuf(stderr, malloc(BUFSIZ));
 	selsub(argc, argv);
+	chgenv();
 	signal(SIGHUP, hangup);
 	signal(SIGINT, intrpt);
 	while (more) {
@@ -62,7 +69,7 @@ intrpt()
 	while (read(0, p, 1) == 1 && *p != '\n')
 		p++;
 	if (response[0] != 'y')
-		wrapup(1);
+		wrapup(0);
 	ungetc('\n', stdin);
 	signal(SIGINT, intrpt);
 }
