@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -371,6 +371,8 @@ startup()
 	}
 }
 
+#define DUMMY ":nobody::"
+
 /*
  * Check to see if the from host has access to the line printer.
  */
@@ -379,10 +381,11 @@ chkhost(f)
 {
 	register struct hostent *hp;
 	register FILE *hostf;
-	register char *cp;
+	register char *cp, *sp;
 	char ahost[50];
 	int first = 1;
 	extern char *inet_ntoa();
+	int baselen = -1;
 
 	f->sin_port = ntohs(f->sin_port);
 	if (f->sin_family != AF_INET || f->sin_port >= IPPORT_RESERVED)
@@ -397,17 +400,24 @@ chkhost(f)
 	if (!strcmp(from, host))
 		return;
 
+	sp = fromb;
+	cp = ahost;
+	while (*sp) {
+		if (*sp == '.') {
+			if (baselen == -1)
+				baselen = sp - fromb;
+			*cp++ = *sp++;
+		} else {
+			*cp++ = isupper(*sp) ? tolower(*sp++) : *sp++;
+		}
+	}
+	*cp = '\0';
 	hostf = fopen("/etc/hosts.equiv", "r");
 again:
 	if (hostf) {
-		while (fgets(ahost, sizeof (ahost), hostf)) {
-			if (cp = index(ahost, '\n'))
-				*cp = '\0';
-			cp = index(ahost, ' ');
-			if (!strcmp(from, ahost) && cp == NULL) {
-				(void) fclose(hostf);
-				return;
-			}
+		if (!_validuser(hostf, ahost, DUMMY, DUMMY, baselen)) {
+			(void) fclose(hostf);
+			return;
 		}
 		(void) fclose(hostf);
 	}
