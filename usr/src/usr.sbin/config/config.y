@@ -9,6 +9,7 @@
 %token	ANY
 %token	ARGS
 %token	AT
+%token	BIO
 %token	COMMA
 %token	CONFIG
 %token	CONTROLLER
@@ -17,22 +18,28 @@
 %token	DEVICE
 %token	DISK
 %token	DRIVE
+%token	DRQ
 %token	DST
 %token	DUMPS
 %token	EQUALS
 %token	FLAGS
 %token	HZ
 %token	IDENT
+%token	IOMEM
+%token	IOSIZ
+%token	IRQ
 %token	MACHINE
 %token	MAJOR
 %token	MASTER
 %token	MAXUSERS
 %token	MINOR
 %token	MINUS
+%token	NET
 %token	NEXUS
 %token	ON
 %token	OPTIONS
 %token	MAKEOPTIONS
+%token	PORT
 %token	PRIORITY
 %token	PSEUDO_DEVICE
 %token	ROOT
@@ -41,6 +48,7 @@
 %token	SLAVE
 %token	SWAP
 %token	TIMEZONE
+%token	TTY
 %token	TRACE
 %token	VECTOR
 
@@ -68,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.10 (Berkeley) %G%
+ *	@(#)config.y	5.11 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -118,6 +126,9 @@ Config_spec:
 		} else if (!strcmp($2, "hp300")) {
 			machine = MACHINE_HP300;
 			machinename = "hp300";
+		} else if (!strcmp($2, "i386")) {
+			machine = MACHINE_I386;
+			machinename = "i386";
 		} else
 			yyerror("Unknown machine type");
 	      } |
@@ -414,6 +425,8 @@ Dev_name:
 			seen_uba = 1;
 		else if (eq($2, "vba"))
 			seen_vba = 1;
+		else if (eq($2, "isa"))
+			seen_isa = 1;
 		cur.d_unit = $3;
 		};
 
@@ -459,6 +472,24 @@ Info:
 		else
 			yyerror("can't specify slave--not to master");
 		} |
+	IRQ NUMBER
+	      = { cur.d_irq = $2; } |
+	DRQ NUMBER
+	      = { cur.d_drq = $2; } |
+	IOMEM NUMBER
+	      = { cur.d_maddr = $2; } |
+	IOSIZ NUMBER
+	      = { cur.d_msize = $2; } |
+	PORT device_name
+	      = { cur.d_port = ns($2); } |
+	PORT NUMBER
+	      = { cur.d_portn = $2; } |
+	TTY 
+	      = { cur.d_mask = "tty"; } |
+	BIO 
+	      = { cur.d_mask = "bio"; } |
+	NET 
+	      = { cur.d_mask = "net"; } |
 	FLAGS NUMBER
 	      = { cur.d_flags = $2; };
 
@@ -699,6 +730,13 @@ init_dev(dp)
 	dp->d_vec = 0;
 	dp->d_addr = dp->d_pri = dp->d_flags = dp->d_dk = 0;
 	dp->d_slave = dp->d_drive = dp->d_unit = UNKNOWN;
+	dp->d_port = (char *)0;
+	dp->d_portn = 0;
+	dp->d_irq = -1;
+	dp->d_drq = -1;
+	dp->d_maddr = 0;
+	dp->d_msize = 0;
+	dp->d_mask = "null";
 }
 
 /*
@@ -727,6 +765,11 @@ check_nexus(dev, num)
 	case MACHINE_HP300:
 		if (num != QUES)
 			dev->d_addr = num;
+		break;
+
+	case MACHINE_I386:
+		if (!eq(dev->d_name, "isa"))
+			yyerror("only isa's should be connected to the nexus");
 		break;
 	}
 }
