@@ -1,0 +1,7 @@
+reading symbolic information ...
+[1] stop at 10
+[1] stopped in main at line 10
+   10   }
+(a = 0, s = 65535, b = 0) 
+65535 
+
