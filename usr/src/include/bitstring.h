@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bitstring.h	8.1 (Berkeley) %G%
+ *	@(#)bitstring.h	5.6 (Berkeley) %G%
  */
 
 #ifndef _BITSTRING_H_
@@ -32,7 +32,7 @@ typedef	unsigned char bitstr_t;
 				/* allocate a bitstring */
 #define	bit_alloc(nbits) \
 	(bitstr_t *)calloc(1, \
-	    (unsigned int)_bitstr_size(nbits) * sizeof(bitstr_t))
+	    (unsigned int)bitstr_size(nbits) * sizeof(bitstr_t))
 
 				/* allocate a bitstring on the stack */
 #define	bit_decl(name, nbits) \
@@ -56,10 +56,15 @@ typedef	unsigned char bitstr_t;
 	register int _start = start, _stop = stop; \
 	register int _startbyte = _bit_byte(_start); \
 	register int _stopbyte = _bit_byte(_stop); \
-	_name[_startbyte] &= 0xff >> (8 - (_start&0x7)); \
-	while (++_startbyte < _stopbyte) \
-		_name[_startbyte] = 0; \
-	_name[_stopbyte] &= 0xff << ((_stop&0x7) + 1); \
+	if (_startbyte == _stopbyte) { \
+		_name[_startbyte] &= ((0xff >> (8 - (_start&0x7))) | \
+				      (0xff << ((_stop&0x7) + 1))); \
+	} else { \
+		_name[_startbyte] &= 0xff >> (8 - (_start&0x7)); \
+		while (++_startbyte < _stopbyte) \
+			_name[_startbyte] = 0; \
+		_name[_stopbyte] &= 0xff << ((_stop&0x7) + 1); \
+	} \
 }
 
 				/* set bits start ... stop in bitstring */
@@ -68,10 +73,15 @@ typedef	unsigned char bitstr_t;
 	register int _start = start, _stop = stop; \
 	register int _startbyte = _bit_byte(_start); \
 	register int _stopbyte = _bit_byte(_stop); \
-	_name[_startbyte] |= 0xff << ((start)&0x7); \
-	while (++_startbyte < _stopbyte) \
-	    _name[_startbyte] = 0xff; \
-	_name[_stopbyte] |= 0xff >> (7 - (_stop&0x7)); \
+	if (_startbyte == _stopbyte) { \
+		_name[_startbyte] |= ((0xff << (_start&0x7)) & \
+				    (0xff >> (7 - (_stop&0x7)))); \
+	} else { \
+		_name[_startbyte] |= 0xff << ((_start)&0x7); \
+		while (++_startbyte < _stopbyte) \
+	    		_name[_startbyte] = 0xff; \
+		_name[_stopbyte] |= 0xff >> (7 - (_stop&0x7)); \
+	} \
 }
 
 				/* find first bit clear in name */
