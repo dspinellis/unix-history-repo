@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwpty.c	3.12 %G%";
+static char sccsid[] = "@(#)wwpty.c	3.13 %G%";
 #endif
 
 /*
@@ -10,38 +10,27 @@ static char sccsid[] = "@(#)wwpty.c	3.12 %G%";
 
 #include "ww.h"
 
-/*
- * To satisfy Chris, we allocate pty's backwards, and if
- * there are more than the ptyp's (i.e. the ptyq's)
- * on the machine, we don't use the p's.
- */
 wwgetpty(w)
 register struct ww *w;
 {
-	register char c;
-	register int i;
+	register char c, *p;
 	int tty;
 	int on = 1;
-	char hasq = 0;
 #define PTY "/dev/XtyXX"
 #define _PT	5
 #define _PQRS	8
 #define _0_9	9
 
 	(void) strcpy(w->ww_ttyname, PTY);
-	for (c = 's'; c >= 'p'; c--) {
+	for (c = 'p'; c <= 'u'; c++) {
 		w->ww_ttyname[_PT] = 'p';
 		w->ww_ttyname[_PQRS] = c;
 		w->ww_ttyname[_0_9] = '0';
 		if (access(w->ww_ttyname, 0) < 0)
-			continue;
-		if (c != 'p')
-			hasq = 1;
-		else if (hasq)
 			break;
-		for (i = 15; i >= 0; i--) {
+		for (p = "0123456789abcdef"; *p; p++) {
 			w->ww_ttyname[_PT] = 'p';
-			w->ww_ttyname[_0_9] = "0123456789abcdef"[i];
+			w->ww_ttyname[_0_9] = *p;
 			if ((w->ww_pty = open(w->ww_ttyname, 2)) < 0)
 				continue;
 			w->ww_ttyname[_PT] = 't';
