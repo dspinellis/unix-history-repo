@@ -1,11 +1,10 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.9
+ * %G% (Berkeley) @(#)setterm.c	1.10
  */
 
 # include	"curses.ext"
-# include	"cr_ex.h"
 
 static bool	*sflags[]	= {
 			&AM, &BS, &EO, &HZ, &IN, &MI, &MS, &NC, &OS, &UL, &XN
@@ -13,10 +12,11 @@ static bool	*sflags[]	= {
 
 static char	*xPC,
 		**sstrs[]	= {
-			&AL, &BC,  &BT, &CD, &CE, &CL, &CM, &DC, &DL,
-			&DM, &DO,  &ED, &EI, &HO, &IC, &IM, &IP, &LL,
-			&MA, &ND, &xPC, &SE, &SF, &SO, &SR, &TA, &TE,
-			&TI, &UC,  &UE, &UP, &US, &VB, &VS, &VE
+			&AL, &BC, &BT, &CD,  &CE, &CL, &CM, &CR, &DC,
+			&DL, &DM, &DO, &ED,  &EI, &HO, &IC, &IM, &IP,
+			&LL, &MA, &ND, &NL, &xPC, &SE, &SF, &SO, &SR,
+			&TA, &TE, &TI, &UC,  &UE, &UP, &US, &VB, &VS,
+			&VE
 		},
 		*tgoto();
 
@@ -132,7 +132,7 @@ zap() {
 	/*
 	 * get string values
 	 */
-	namp = "albcbtcdceclcmdcdldmdoedeihoicimipllmandpcsesfsosrtatetiucueupusvbvsve";
+	namp = "albcbtcdceclcmcrdcdldmdoedeihoicimipllmandnlpcsesfsosrtatetiucueupusvbvsve";
 # ifdef FULLDEBUG
 	fprintf(outf, "ZAP: namp = \"%s\"\n", namp);
 # endif

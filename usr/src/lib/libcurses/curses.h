@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.9 */
+/* %G% (Berkeley) @(#)curses.h	1.10 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -31,10 +31,10 @@ typedef	struct sgttyb	SGTTY;
 
 extern bool     AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL,
 		XN;
-extern char     *AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO,
-		*ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF,
-		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE,
-		*VS, PC;
+extern char     *AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *DC, *DL, *DM,
+		*DO, *ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *NL,
+		*SE, *SF, *SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US,
+		*VB, *VE, *VS, PC;
 
 /*
  * From the tty modes...

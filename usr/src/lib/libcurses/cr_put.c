@@ -1,5 +1,4 @@
 # include	"curses.ext"
-# include	"cr_ex.h"
 
 # define	HARDTABS	8
 
@@ -12,7 +11,7 @@ int		plodput();
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
  *
- * %G% (Berkeley) @(#)cr_put.c	1.1
+ * %G% (Berkeley) @(#)cr_put.c	1.2
  */
 
 /*
@@ -22,7 +21,7 @@ int		plodput();
  * rolling up the screen to get destline on the screen.
  */
 
-static int	outcol, outline, destcol, destline, plodcnt;
+static int	outcol, outline, destcol, destline;
 
 WINDOW		*_win;
 
@@ -39,8 +38,18 @@ int	ly, lx, y, x; {
 	fgoto();
 }
 
-fgoto() {
+char
+_putchar(c)
+reg char	c; {
 
+	putchar(c);
+#ifdef DEBUG
+	fprintf(outf, "_PUTCHAR(%s)\n", unctrl(c));
+#endif
+}
+
+fgoto()
+{
 	reg char	*cgp;
 	reg int		l, c;
 
@@ -54,9 +63,15 @@ fgoto() {
 		outcol %= COLS;
 		if (AM == 0) {
 			while (l > 0) {
-				putchar('\n');
 				if (_pfast)
-					putchar('\r');
+					if (CR)
+						tputs(CR, 0, _putchar);
+					else
+						_putchar('\r');
+				if (NL)
+					tputs(NL, 0, _putchar);
+				else
+					_putchar('\n');
 				l--;
 			}
 			outcol = 0;
@@ -77,83 +92,145 @@ fgoto() {
 			destcol = c;
 		}
 		while (l > LINES - 1) {
-			putchar('\n');
+			/*
+			 * The following linefeed (or simulation thereof)
+			 * is supposed to scroll up the screen, since we
+			 * are on the bottom line.  We make the assumption
+			 * that linefeed will scroll.  If ns is in the
+			 * capability list this won't work.  We should
+			 * probably have an sc capability but sf will
+			 * generally take the place if it works.
+			 *
+			 * Superbee glitch:  in the middle of the screen we
+			 * have to use esc B (down) because linefeed screws up
+			 * in "Efficient Paging" (what a joke) mode (which is
+			 * essential in some SB's because CRLF mode puts garbage
+			 * in at end of memory), but you must use linefeed to
+			 * scroll since down arrow won't go past memory end.
+			 * I turned this off after recieving Paul Eggert's
+			 * Superbee description which wins better.
+			 */
+			if (NL /* && !XB */ && _pfast)
+				tputs(NL, 0, _putchar);
+			else
+				_putchar('\n');
 			l--;
 			if (_pfast == 0)
 				outcol = 0;
 		}
 	}
-	if (destline < outline && !(CA || UP != NULL))
+	if (destline < outline && !(CA || UP))
 		destline = outline;
-	cgp = tgoto(CM, destcol, destline);
 	if (CA)
+	{
+		cgp = tgoto(CM, destcol, destline);
 		if (plod(strlen(cgp)) > 0)
 			plod(0);
 		else
 			tputs(cgp, 0, _putchar);
+	}
 	else
 		plod(0);
 	outline = destline;
 	outcol = destcol;
 }
 
-char
-_putchar(c)
-reg char	c; {
+/*
+ * Move (slowly) to destination.
+ * Hard thing here is using home cursor on really deficient terminals.
+ * Otherwise just use cursor motions, hacking use of tabs and overtabbing
+ * and backspace.
+ */
 
-	putchar(c);
-#ifdef DEBUG
-	fprintf(outf, "_PUTCHAR(%s)\n", unctrl(c));
-#endif
+static int plodcnt, plodflg;
+
+plodput(c)
+{
+	if (plodflg)
+		plodcnt--;
+	else
+		_putchar(c);
 }
 
-extern bool	plodflg;
-extern int	plodcnt;
-
 plod(cnt)
-int	cnt; {
-
-	reg int		i, j, k;
-	reg int		soutcol, soutline;
-	reg char	c;
+{
+	register int i, j, k;
+	register int soutcol, soutline;
 
 	plodcnt = plodflg = cnt;
 	soutcol = outcol;
 	soutline = outline;
+	/*
+	 * Consider homing and moving down/right from there, vs moving
+	 * directly with local motions to the right spot.
+	 */
 	if (HO) {
+		/*
+		 * i is the cost to home and tab/space to the right to
+		 * get to the proper column.  This assumes ND space costs
+		 * 1 char.  So i+destcol is cost of motion with home.
+		 */
 		if (GT)
 			i = (destcol / HARDTABS) + (destcol % HARDTABS);
 		else
 			i = destcol;
-        if (destcol >= outcol) {
-                j = destcol / HARDTABS - outcol / HARDTABS;
-                if (GT && j)
-                        j += destcol % HARDTABS;
-		else
-			j = destcol - outcol;
-        } else
-			if (outcol - destcol <= i && (BS || BC))
-				i = j = outcol - destcol;
+		/*
+		 * j is cost to move locally without homing
+		 */
+		if (destcol >= outcol) {	/* if motion is to the right */
+			j = destcol / HARDTABS - outcol / HARDTABS;
+			if (GT && j)
+				j += destcol % HARDTABS;
 			else
-				j = i + 1;
+				j = destcol - outcol;
+		}
+		else
+			/* leftward motion only works if we can backspace. */
+			if (outcol - destcol <= i && (BS || BC))
+				i = j = outcol - destcol; /* cheaper to backspace */
+			else
+				j = i + 1; /* impossibly expensive */
+
+		/* k is the absolute value of vertical distance */
 		k = outline - destline;
 		if (k < 0)
 			k = -k;
 		j += k;
-		if (i + destline < j) {
+
+		/*
+		 * Decision.  We may not have a choice if no UP.
+		 */
+		if (i + destline < j || (!UP && destline < outline)) {
+			/*
+			 * Cheaper to home.  Do it now and pretend it's a
+			 * regular local motion.
+			 */
 			tputs(HO, 0, plodput);
 			outcol = outline = 0;
-		} else if (LL) {
+		}
+		else if (LL) {
+			/*
+			 * Quickly consider homing down and moving from there.
+			 * Assume cost of LL is 2.
+			 */
 			k = (LINES - 1) - destline;
-			if (i + k + 2 < j) {
+			if (i + k + 2 < j && (k<=0 || UP)) {
 				tputs(LL, 0, plodput);
 				outcol = 0;
 				outline = LINES - 1;
 			}
 		}
 	}
+	else
+	/*
+	 * No home and no up means it's impossible, so we return an
+	 * incredibly big number to make cursor motion win out.
+	 */
+		if (!UP && destline < outline)
+			return (500);
 	if (GT)
-        i = destcol % HARDTABS + destcol / HARDTABS;
+		i = destcol % HARDTABS
+		    + destcol / HARDTABS;
 	else
 		i = destcol;
 /*
@@ -163,7 +240,8 @@ int	cnt; {
 			j += 8 - (destcol&7);
 		else
 			j += k;
-	} else
+	}
+	else
 */
 		j = outcol - destcol;
 	/*
@@ -183,9 +261,19 @@ int	cnt; {
 	 * a return preliminarily.
 	 */
 	if (j > i + 1 || outcol > destcol && !BS && !BC) {
-		plodput('\r');
+		/*
+		 * BUG: this doesn't take the (possibly long) length
+		 * of CR into account.
+		 */
+		if (CR)
+			tputs(CR, 0, plodput);
+		else
+			plodput('\r');
 		if (NC) {
-			plodput('\n');
+			if (NL)
+				tputs(NL, 0, plodput);
+			else
+				plodput('\n');
 			outline++;
 		}
 		outcol = 0;
@@ -193,7 +281,10 @@ int	cnt; {
 dontcr:
 	while (outline < destline) {
 		outline++;
-		plodput('\n');
+		if (NL && _pfast)
+			tputs(NL, 0, plodput);
+		else
+			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || _pfast == 0)
@@ -205,7 +296,7 @@ dontcr:
 		if (plodcnt < 0)
 			goto out;
 /*
-		if (BT && outcol - destcol > 4+k) {
+		if (BT && outcol - destcol > k + 4) {
 			tputs(BT, 0, plodput);
 			outcol--;
 			outcol &= ~7;
@@ -225,10 +316,10 @@ dontcr:
 			goto out;
 	}
 	if (GT && destcol - outcol > 1) {
-        for (;;) {
-                i = (outcol / HARDTABS + 1) * HARDTABS;
-                if (i > destcol)
-                        break;
+	for (;;) {
+		i = tabcol(outcol, HARDTABS);
+		if (i > destcol)
+			break;
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
@@ -251,13 +342,18 @@ dontcr:
 		}
 	}
 	while (outcol < destcol) {
+		/*
+		 * move one char to the right.  We don't use ND space
+		 * because it's better to just print the char we are
+		 * moving over.
+		 */
 		if (_win != NULL)
 			if (plodflg)	/* avoid a complex calculation */
 				plodcnt--;
 			else {
-				c = _win->_y[outline-_win->_begy][outcol-_win->_begx];
-				if ((c&_STANDOUT) == (curscr->_flags&_STANDOUT))
-					putchar(c);
+				i = _win->_y[outline-_win->_begy][outcol-_win->_begx];
+				if ((i&_STANDOUT) == (curscr->_flags&_STANDOUT))
+					putchar(i);
 				else
 					goto nondes;
 			}
@@ -280,36 +376,20 @@ out:
 }
 
 /*
- * Move (slowly) to destination.
- * Hard thing here is using home cursor on really deficient terminals.
- * Otherwise just use cursor motions, hacking use of tabs and overtabbing
- * and backspace.
+ * Return the column number that results from being in column col and
+ * hitting a tab, where tabs are set every ts columns.  Work right for
+ * the case where col > COLS, even if ts does not divide COLS.
  */
+tabcol(col, ts)
+int col, ts;
+{
+	int offset, result;
 
-static	bool	plodflg;
-
-plodput(c)
-reg char	c; {
-
-	if (plodflg)
-		plodcnt--;
-	else {
-		putchar(c);
-#ifdef DEBUG
-		fprintf(outf, "PLODPUT(%s)\n", unctrl(c));
-#endif
+	if (col >= COLS) {
+		offset = COLS * (col / COLS);
+		col -= offset;
 	}
-}
-
-/*
- * Put with padding
- */
-putpad(cp)
-reg char	*cp; {
-
-	fflush(stdout);
-#ifdef DEBUG
-	fprintf(outf, "PUTPAD: _puts(\"%s\")\n", cp);
-#endif
-	_puts(cp);
+	else
+		offset = 0;
+	return col + ts - (col % ts) + offset;
 }
