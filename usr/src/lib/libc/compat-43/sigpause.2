@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sigpause.2	6.6 (Berkeley) %G%
+.\"     @(#)sigpause.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGPAUSE 2
@@ -12,7 +12,7 @@
 .Nm sigpause
 .Nd atomically release blocked signals and wait for interrupt
 .Sh SYNOPSIS
-.Fd #include <sys/signal.h>
+.Fd #include <signal.h>
 .Ft int
 .Fn sigpause "int sigmask"
 .Sh DESCRIPTION
