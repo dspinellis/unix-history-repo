@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	7.10 (Berkeley) %G%
+ *	@(#)ioctl.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -101,10 +101,6 @@ struct ttysize {
 #define	JUNK_TIOCSETAWS	_IOW('t', 24, struct termios) /* SETAW ign hdw state */
 #define	JUNK_TIOCSETAFS	_IOW('t', 25, struct termios) /* SETAF ign hdw state */
 /******************/
-#define TCGETA	TIOCGETA
-#define TCSETA	TIOCSETA
-#define TCSETAW	TIOCSETAW
-#define TCSETAF	TIOCSETAF
 #define	TIOCGETD	_IOR('t', 26, int)	/* get line discipline */
 #define	TIOCSETD	_IOW('t', 27, int)	/* set line discipline */
 						/* 127-124 compat */
