@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsm_subs.h	7.16 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -186,7 +186,7 @@ extern struct mbuf *nfsm_reqh();
 		}
 
 #define nfsm_srvmtofh(f) \
-		nfsm_dissecton(tl, u_long *, NFSX_FH); \
+		nfsm_dissect(tl, u_long *, NFSX_FH); \
 		bcopy((caddr_t)tl, (caddr_t)f, NFSX_FH)
 
 #define	nfsm_clget \
