@@ -1,91 +1,86 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tput.1	6.4 (Berkeley) %G%
+.\"     @(#)tput.1	6.4 (Berkeley) %G%
 .\"
-.TH TPUT 1 ""
-.UC 7
-.SH NAME
-tput \- terminal capability interface
-.SH SYNOPSIS
-.ft B
-tput [ -T term ] attribute
-.ft R
-.SH DESCRIPTION
-.I Tput
+.Dd 
+.Dt TPUT 1
+.Os
+.Sh NAME
+.Nm tput
+.Nd terminal capability interface
+.Sh SYNOPSIS
+.Nm tput
+.Op Fl T Ar term
+.Ar attribute
+.Sh DESCRIPTION
+.Nm Tput
 makes terminal-dependent information available to users or shell
 applications.
 The options are as follows:
-.TP
-\-T
+.Bl -tag -width Ds
+.It Fl T
 The terminal name as specified in the
-.I termcap
+.Xr termcap
 database, for example, ``vt100'' or ``xterm''.
 If not specified,
-.I tput
-retrieves the ``TERM'' variable from the environment.
-.PP
-.I Tput
+.Nm tput
+retrieves the
+.Dq Ev TERM
+variable from the environment.
+.El
+.Pp
+.Nm Tput
 outputs a string if the
-.I attribute
+.Ar attribute
 is of type string; a number if it is of type integer.
 Otherwise,
-.I tput
+.Nm tput
 exits 0 if the terminal has the capability and 1 if it does not,
 without further action.
-.PP
+.Pp
 The following special attributes are available:
-.TP
-clear
-.br
+.Bl -tag -width Ar
+.It Ar clear
 Clear the screen (the
-.I termcap
+.Xr termcap
 ``cl'' sequence).
-.TP
-init
-.br
+.It Ar init
 Initialize the terminal (the
-.I termcap
+.Xr termcap
 ``is'' sequence).
-.TP
-longname
+.It Ar longname
 Print the descriptive name of the user's terminal type.
-.TP
-reset
-.br
+.It Ar reset
 Reset the terminal (the
-.I termcap
+.Xr termcap
 ``rs'' sequence).
-.SH DIAGNOSTICS
+.Sh DIAGNOSTICS
 The exit value of
-.I tput
+.Nm tput
 is based on the last attribute specified.
 If the attribute is of type string or of type integer,
-.I tput
+.Nm tput
 exits 0 if the attribute is defined for this terminal type and 1
 if it is not.
 If the attribute is of type boolean,
-.I tput
+.Nm tput
 exits 0 if the terminal has this attribute, and 1 if it does not.
-.I Tput
+.Nm Tput
 exits 2 if any error occurred.
-.SH "SEE ALSO"
-termcap(3), termcap(5)
-.SH BUGS
-.I Tput
+.Sh SEE ALSO
+.Xr termcap 3 ,
+.Xr termcap 5
+.Sh BUGS
+.Nm Tput
 can't really distinguish between different types of attributes.
 This is due to the limited interface in the current version of
-.IR termcap (3),
+.Xr termcap 3 ,
 and will be fixed in the near future.
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .
