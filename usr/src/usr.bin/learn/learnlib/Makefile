@@ -1,29 +1,10 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.4	(Berkeley)	%G%
-#
-LESSONS=C editor eqn files macros morefiles
-FILES=	Linfo Xinfo
+#	@(#)Makefile	4.5 (Berkeley) %G%
 
-all:
+all learnlib clean cleandir depend lint tags:
 
-install: FRC
-	-[ -d ${DESTDIR}/usr/lib/learn ] || mkdir ${DESTDIR}/usr/lib/learn
-	-[ -d ${DESTDIR}/usr/lib/learn/log ] || mkdir ${DESTDIR}/usr/lib/learn/log
-	-[ -d ${DESTDIR}/usr/lib/learn/bin ] || mkdir ${DESTDIR}/usr/lib/learn/bin
-	chmod 755 ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
-	chown root.staff ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
-	install -c -o bin -g bin -m 644 Linfo ${DESTDIR}/usr/lib/learn/Linfo
-	install -c -o bin -g bin -m 644 Xinfo ${DESTDIR}/usr/lib/learn/Xinfo
-	tar cf - ${LESSONS} | (cd ${DESTDIR}/usr/lib/learn; tar xpf -);
+install:
+	install -c -o ${BINOWN} -g ${BINOWN} -m 444 Linfo Xinfo ${LLIB}/learn
+	cp -pr C editor eqn files macros morefiles ${LLIB}/learn
 
-clean:
-depend:
-lint:
-tags:
-FRC:
+.include "../Makefile.inc"
+.include <bsd.own.mk>
