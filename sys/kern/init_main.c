@@ -30,17 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)init_main.c	7.41 (Berkeley) 5/15/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00162
- * --------------------         -----   ----------------------
- *
- * 26 May 93	Holger Veit		Remove hard coded escapes
- *		Rodney W. Grimes	Added two more \n to clean up output
+ *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
+ *	$Id$
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/init_main.c,v 1.5 1993/09/10 20:42:02 rgrimes Exp $";
 
 #include "param.h"
 #include "filedesc.h"
@@ -93,6 +85,10 @@ extern	int (*mountroot)();
 
 struct	vnode *rootvp, *swapdev_vp;
 int	boothowto;
+
+#if __GNUC__ >= 2
+__main() {}
+#endif
 
 /*
  * System startup; initialize the world, create process 0,
