@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_xxx.c	7.7 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.8 (Berkeley) %G%
  */
 
 #include "errno.h"
@@ -69,7 +69,7 @@ ffs(mask)
 
 	if (!mask)
 		return(0);
-	for (bit = 1;; ++bit)
+	for (bit = 1;; ++bit) {
 		if (mask&0x01)
 			return(bit);
 		mask >>= 1;
