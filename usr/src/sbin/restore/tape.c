@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.8	(Berkeley)	83/03/08";
+static char sccsid[] = "@(#)tape.c	3.9	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -65,7 +65,6 @@ nohost:
 setup()
 {
 	int i, j, *ip;
-	struct mtop tcom;
 	struct stat stbuf;
 	extern char *ctime();
 	extern int xtrmap(), xtrmapskip();
@@ -82,21 +81,8 @@ setup()
 		fprintf(stderr, "%s: cannot open tape\n", magtape);
 		done(1);
 	}
-	if (dumpnum != 1) {
-		if (pipein) {
-			fprintf(stderr,
-				"Cannot have multiple dumps on pipe input\n");
-			done(1);
-		}
-		tcom.mt_op = MTFSF;
-		tcom.mt_count = dumpnum - 1;
-#ifdef RRESTOR
-		rmtioctl(MTFSF, dumpnum - 1);
-#else
-		if (ioctl(mt, MTIOCTOP, &tcom) < 0)
-			perror("ioctl MTFSF");
-#endif
-	}
+	volno = 1;
+	setdumpnum();
 	flsht();
 	if (gethead(&spcl) == FAIL) {
 		bct--; /* push back this block */
@@ -135,7 +121,6 @@ setup()
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 		done(1);
 	}
-	volno = 1;
 	if (readhdr(&spcl) == FAIL)
 		panic("no header after volume mark!\n");
 	findinode(&spcl, 1);
@@ -144,7 +129,7 @@ setup()
 		done(1);
 	}
 	maxino = (spcl.c_count * TP_BSIZE * NBBY) + 1;
-	dprintf(stderr, "maxino = %d\n", maxino);
+	dprintf(stdout, "maxino = %d\n", maxino);
 	map = calloc((unsigned)1, (unsigned)howmany(maxino, NBBY));
 	if (map == (char *)NIL)
 		panic("no memory for file removal list\n");
@@ -171,16 +156,6 @@ getvol(nextvol)
 	union u_spcl tmpspcl;
 #	define tmpbuf tmpspcl.s_spcl
 
-	if (dumpnum > 1) {
-		/*
-		 * if this is a multi-dump tape we always start with 
-		 * volume 1, so as to avoid accidentally restoring
-		 * from a different dump!
-		 */
-		if (volno != 1)
-			panic("multiple dump at volno %d\n", volno);
-		dumpnum = 1;
-	}
 	if (pipein) {
 		if (nextvol != 1)
 			panic("Changing volumes on pipe input?\n");
@@ -223,6 +198,7 @@ again:
 	}
 gethdr:
 	volno = newvol;
+	setdumpnum();
 	flsht();
 	if (readhdr(&tmpbuf) == FAIL) {
 		fprintf(stderr, "tape is not dump tape\n");
@@ -252,6 +228,30 @@ gethdr:
 		gettingfile = 0;
 		longjmp(restart, 1);
 	}
+}
+
+/*
+ * handle multiple dumps per tape by skipping forward to the
+ * appropriate one.
+ */
+setdumpnum()
+{
+	struct mtop tcom;
+
+	if (dumpnum == 1 || volno != 1)
+		return;
+	if (pipein) {
+		fprintf(stderr, "Cannot have multiple dumps on pipe input\n");
+		done(1);
+	}
+	tcom.mt_op = MTFSF;
+	tcom.mt_count = dumpnum - 1;
+#ifdef RRESTOR
+	rmtioctl(MTFSF, dumpnum - 1);
+#else
+	if (ioctl(mt, MTIOCTOP, &tcom) < 0)
+		perror("ioctl MTFSF");
+#endif
 }
 
 extractfile(name)
@@ -310,8 +310,8 @@ extractfile(name)
 			skipfile();
 			return (FAIL);
 		}
-		chown(name, curfile.dip->di_uid, curfile.dip->di_gid);
-		chmod(name, mode);
+		(void) chown(name, curfile.dip->di_uid, curfile.dip->di_gid);
+		(void) chmod(name, mode);
 		skipfile();
 		utime(name, timep);
 		return (GOOD);
@@ -323,10 +323,10 @@ extractfile(name)
 			skipfile();
 			return (FAIL);
 		}
-		fchown(ofile, curfile.dip->di_uid, curfile.dip->di_gid);
-		fchmod(ofile, mode);
+		(void) fchown(ofile, curfile.dip->di_uid, curfile.dip->di_gid);
+		(void) fchmod(ofile, mode);
 		getfile(xtrfile, xtrskip);
-		close(ofile);
+		(void) close(ofile);
 		utime(name, timep);
 		return (GOOD);
 	}
@@ -401,7 +401,7 @@ loop:
 	if (readhdr(&spcl) == GOOD && size > 0) {
 		if (checktype(&spcl, TS_ADDR) == GOOD)
 			goto loop;
-		fprintf(stderr, "Missing address (header) block for %s\n",
+		dprintf(stdout, "Missing address (header) block for %s\n",
 			curfile.name);
 	}
 	if (curblk > 0)
@@ -587,7 +587,7 @@ closemt()
 #ifdef RRESTOR
 	rmtclose();
 #else
-	close(mt);
+	(void) close(mt);
 #endif
 }
 
@@ -606,7 +606,7 @@ readhdr(b)
 {
 
 	if (gethead(b) == FAIL) {
-		dprintf(stderr, "readhdr fails at %d blocks\n", blksread);
+		dprintf(stdout, "readhdr fails at %d blocks\n", blksread);
 		return(FAIL);
 	}
 	return(GOOD);
