@@ -1,4 +1,4 @@
-\"	@(#)present.me	1.2 %G%
+\"	@(#)present.me	1.3 %G%
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -76,19 +76,23 @@ Self-recursive routines have their calls broken
 down into calls from the outside and self-recursive calls.
 Only the outside calls affect the propagation of time.
 .pp
-The following example a typical fragment of a call graph.
+The following example is a typical fragment of a call graph.
 .(b
 .TS
 center;
 c c c.
+
 Caller1		Caller2
+
 
 	Example
 
+
 Sub1	Sub2	Sub3
+
 .TE
 .)b
-This example would have the following entry
+This example would have the following form of entry
 in the profile listing.
 .(b
 .TS
@@ -217,6 +221,7 @@ in some small way,
 it is often unclear where the changes need to be made.
 By running the program on an example and then using \fBgprof\fR,
 you can get a view of the structure of the program.
+.pp
 Consider an example in which you need to change the output format
 of the program.
 For purposes of this example suppose that the call graph
@@ -225,11 +230,15 @@ of the output portion of the program has the following structure:
 .TS
 center;
 c c c.
+
 calc1	calc2	calc3
+
 
 format1		format2
 
+
 	``write''
+
 .TE
 .)b
 Initially you look through the \fBgprof\fR
@@ -269,12 +278,12 @@ and how that routine uses other abstractions.
 The profile accurately assesses the cost of routines
 at all levels of the program decomposition.
 The profiler is easily used,
-and does not require any prior planning on the part
+and can be compiled into a program without any prior planning on the part
 of the programmer.
-It does not add excessively to either the execution
-or the I/O of the program being measured,
-and allows programs to be measured in their actual
-environments.
+It adds only five to thirty percent execution overhead to a program
+being profiled,
+produces no addition output until after a program finishes,
+and allows a program to be measured in its actual environment.
 Finally, the profiler runs on a time-sharing system 
 using only the normal services provided by the operating system.
 .(q
