@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)player.h	5.4 (Berkeley) %G%
+ *	@(#)player.h	5.5 (Berkeley) %G%
  */
 
 #include <curses.h>
