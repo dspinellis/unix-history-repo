@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	1.1 83/07/28";
+static	char *sccsid = "@(#)error.c	1.2 83/07/29";
 #endif
 
 #include "defs.h"
@@ -54,7 +54,10 @@ char *fmt;
 beginerror(fn)
 char *fn;
 {
-	filename = fn;
+	char *malloc();
+
+	filename = malloc(strlen(fn) + 1);
+	strcpy(filename, fn);
 }
 
 enderror()
@@ -65,5 +68,6 @@ enderror()
 		errwin = 0;
 	}
 	baderror = 0;
+	free(filename);
 	filename = 0;
 }
