@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_inode.c	7.13 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -461,7 +461,7 @@ ufs_inactive(vp)
 	register struct inode *ip = VTOI(vp);
 	int mode, error;
 
-	if (ITOV(ip)->v_count != 0)
+	if (vp->v_count != 0)
 		panic("ufs_inactive: not inactive");
 	/*
 	 * Get rid of inodes related to stale file handles.
@@ -469,7 +469,7 @@ ufs_inactive(vp)
 	if (ip->i_mode == 0)
 		goto freeit;
 	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (ITOV(ip)->v_mount->m_flag&M_RDONLY) == 0) {
+	if (ip->i_nlink <= 0 && (vp->v_mount->m_flag & M_RDONLY) == 0) {
 		error = itrunc(ip, (u_long)0);
 		mode = ip->i_mode;
 		ip->i_mode = 0;
