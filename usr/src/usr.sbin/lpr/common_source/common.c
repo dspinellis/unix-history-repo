@@ -1,4 +1,7 @@
-/*	common.c	4.7	83/06/22	*/
+#ifndef lint
+static char sccsid[] = "@(#)common.c	4.8 (Berkeley) %G%";
+#endif
+
 /*
  * Routines and data common to all the line printer functions.
  */

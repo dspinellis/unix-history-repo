@@ -1,4 +1,7 @@
-/*	displayq.c	4.8	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)displayq.c	4.9 (Berkeley) %G%";
+#endif
+
 /*
  * Routines to display the state of the queue.
  */

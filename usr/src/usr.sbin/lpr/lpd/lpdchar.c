@@ -6,7 +6,10 @@
  *	changed to 2-dim
  */
 
-/*	lpdchar.c	4.2	83/01/05	*/
+#ifndef lint
+static char sccsid[] = "@(#)lpdchar.c	4.3 (Berkeley) %G%";
+#endif
+
 /*
  *	Character set for line printer daemon
  */

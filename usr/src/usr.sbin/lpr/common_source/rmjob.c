@@ -1,4 +1,7 @@
-/*	rmjob.c	4.6	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)rmjob.c	4.7 (Berkeley) %G%";
+#endif
+
 /*
  * rmjob - remove the specified jobs from the queue.
  */

@@ -55,7 +55,10 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.23	83/06/29	*/
+#ifndef lint
+static char sccsid[] = "@(#)lpr.c	4.24 (Berkeley) %G%";
+#endif
+
 /*
  *      lpr -- off line print
  *
