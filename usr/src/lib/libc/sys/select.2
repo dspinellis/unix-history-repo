@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)select.2	8.1 (Berkeley) %G%
+.\"     @(#)select.2	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SELECT 2
@@ -12,9 +12,9 @@
 .Nm select
 .Nd synchronous I/O multiplexing
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
 .Fd #include <sys/types.h>
 .Fd #include <sys/time.h>
+.Fd #include <unistd.h>
 .Ft int
 .Fn select "int nfds" "fd_set *readfds" "fd_set *writefds" "fd_set *exceptfds" "struct timeval *timeout"
 .Fn FD_SET fd &fdset
@@ -118,11 +118,12 @@ negative or too large.
 .Sh SEE ALSO
 .Xr accept 2 ,
 .Xr connect 2 ,
+.Xr getdtablesize 2 ,
+.Xr gettimeofday 2 ,
 .Xr read 2 ,
-.Xr write 2 ,
 .Xr recv 2 ,
 .Xr send 2 ,
-.Xr getdtablesize 2
+.Xr write 2
 .Sh BUGS
 Although the provision of
 .Xr getdtablesize 2
