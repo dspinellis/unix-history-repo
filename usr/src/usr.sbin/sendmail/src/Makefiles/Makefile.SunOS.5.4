@@ -7,7 +7,7 @@
 #
 #  This has been tested on Solaris 2.3.
 #
-#	@(#)Makefile.SunOS.5.4	8.7 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.4	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -79,6 +79,7 @@ sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
 
 sysexits.h: /usr/ucbinclude/sysexits.h
+	rm -f sysexits.h
 	ln -s /usr/ucbinclude/sysexits.h
 
 NROFF=	nroff -h
