@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: fd.c 1.3 89/12/03$
  *
- *	@(#)vn.c	7.11 (Berkeley) %G%
+ *	@(#)vn.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -33,20 +33,21 @@
 #include "vn.h"
 #if NVN > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/namei.h"
-#include "sys/proc.h"
-#include "sys/errno.h"
-#include "sys/dkstat.h"
-#include "sys/buf.h"
-#include "sys/malloc.h"
-#include "sys/ioctl.h"
-#include "sys/mount.h"
-#include "sys/vnode.h"
-#include "sys/specdev.h"
-#include "sys/file.h"
-#include "sys/uio.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/proc.h>
+#include <sys/errno.h>
+#include <sys/dkstat.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
+#include <sys/ioctl.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+
+#include <miscfs/specfs/specdev.h>
 
 #include "vnioctl.h"
 
@@ -106,7 +107,6 @@ vnopen(dev, flags, mode, p)
 vnstrategy(bp)
 	register struct buf *bp;
 {
-	USES_VOP_BMAP;
 	int unit = vnunit(bp->b_dev);
 	register struct vn_softc *vn = &vn_softc[unit];
 	register struct buf *nbp;
@@ -147,7 +147,7 @@ vnstrategy(bp)
 
 		nbp = getvnbuf();
 		off = bn % bsize;
-		sz = MIN(bsize - off, resid);
+		sz = min(bsize - off, resid);
 		(void) VOP_BMAP(vn->sc_vp, bn / bsize, &vp, &nbn);
 #ifdef DEBUG
 		if (vndebug & VDB_IO)
@@ -192,7 +192,6 @@ vnstrategy(bp)
  */
 vnstart(unit)
 {
-	USES_VOP_STRATEGY;
 	register struct vn_softc *vn = &vn_softc[unit];
 	register struct buf *bp;
 
@@ -288,8 +287,6 @@ vnioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	USES_VOP_GETATTR;
-	USES_VOP_UNLOCK;
 	int unit = vnunit(dev);
 	register struct vn_softc *vn;
 	struct vn_ioctl *vio;
@@ -372,7 +369,6 @@ vnsetcred(vn, cred)
 	register struct vn_softc *vn;
 	struct ucred cred;
 {
-	USES_VOP_READ;
 	struct uio auio;
 	struct iovec aiov;
 	char tmpbuf[DEV_BSIZE];
@@ -380,7 +376,7 @@ vnsetcred(vn, cred)
 	vn->sc_cred = crdup(cred);
 	/* XXX: Horrible kludge to establish credentials for NFS */
 	aiov.iov_base = tmpbuf;
-	aiov.iov_len = MIN(DEV_BSIZE, dbtob(vn->sc_size));
+	aiov.iov_len = min(DEV_BSIZE, dbtob(vn->sc_size));
 	auio.uio_iov = &aiov;
 	auio.uio_iovcnt = 1;
 	auio.uio_offset = 0;
@@ -421,7 +417,6 @@ vnshutdown()
 vnclear(vn)
 	register struct vn_softc *vn;
 {
-	USES_VOP_FSYNC;
 	register struct vnode *vp = vn->sc_vp;
 	struct proc *p = curproc;		/* XXX */
 
