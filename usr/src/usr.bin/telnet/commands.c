@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -213,13 +213,13 @@ register char *s;
  */
 static char *
 control(c)
-	register int c;
+	register cc_t c;
 {
 	static char buf[3];
 
 	if (c == 0x7f)
 		return ("^?");
-	if (c == '\377') {
+	if (c == (cc_t)-1) {
 		return "off";
 	}
 	if (c >= 0x20) {
@@ -758,13 +758,13 @@ struct setlist {
     char *name;				/* name */
     char *help;				/* help information */
     void (*handler)();
-    unsigned char *charp;			/* where it is located at */
+    cc_t *charp;			/* where it is located at */
 };
 
 static struct setlist Setlist[] = {
     { "echo", 	"character to toggle local echoing on/off", 0, &echoc },
     { "escape",	"character to escape back to telnet command mode", 0, &escape },
-    { "tracefile", "file to write trace intormation to", SetNetTrace, NetTraceFile},
+    { "tracefile", "file to write trace intormation to", SetNetTrace, (cc_t *)NetTraceFile},
     { " ", "" },
     { " ", "The following need 'localchars' to be toggled true", 0, 0 },
     { "flushoutput", "character to cause an Abort Oubput", 0, termFlushCharp },
@@ -879,14 +879,14 @@ char	*argv[];
 	return 0;
     } else if (ct->handler) {
 	(*ct->handler)(argv[2]);
-	printf("%s set to \"%s\".\n", ct->name, ct->charp);
+	printf("%s set to \"%s\".\n", ct->name, (unsigned char *)ct->charp);
     } else {
 	if (strcmp("off", argv[2])) {
 	    value = special(argv[2]);
 	} else {
 	    value = -1;
 	}
-	*(ct->charp) = value;
+	*(ct->charp) = (cc_t)value;
 	printf("%s character is '%s'.\n", ct->name, control(*(ct->charp)));
     }
     slc_check();
@@ -1563,6 +1563,28 @@ char	*argv[];
 }
 
 
+#if	defined(IP_TOS) && defined(NEED_GETTOS)
+struct tosent {
+	char	*t_name;	/* name */
+	char	**t_aliases;	/* alias list */
+	char	*t_proto;	/* protocol */
+	int	t_tos;		/* Type Of Service bits */
+};
+
+struct tosent *
+gettosbyname(name, proto)
+char *name, *proto;
+{
+	static struct tosent te;
+	static char *aliasp = 0;
+
+	te.t_name = name;
+	te.t_aliases = &aliasp;
+	te.t_proto = proto;
+	te.t_tos = 020; /* Low Delay bit */
+	return(&te);
+}
+#endif
 
 int
 tn(argc, argv)
@@ -1579,6 +1601,9 @@ tn(argc, argv)
     char *srp = 0, *strrchr();
     unsigned long sourceroute(), srlen;
 #endif
+#ifdef IP_TOS
+    struct tosent *tp;
+#endif /* IP_TOS */
 
 
     if (connected) {
@@ -1686,6 +1711,12 @@ tn(argc, argv)
 	if (srp && setsockopt(net, IPPROTO_IP, IP_OPTIONS, (char *)srp, srlen) < 0)
 		perror("setsockopt (IP_OPTIONS)");
 #endif
+#ifdef IP_TOS
+	if ((tp = gettosbyname("telnet", "tcp")) &&
+	    (setsockopt(net, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
+		perror("telnet: setsockopt TOS (ignored)");
+
+#endif /* IP_TOS */
 	if (debug && SetSockOpt(net, SOL_SOCKET, SO_DEBUG, 1) < 0) {
 		perror("setsockopt (SO_DEBUG)");
 	}
