@@ -1,47 +1,58 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)ls.c	7.2 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)ls.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "inode.h"
-#include "ino.h"
 #include "dir.h"
+#include "fs.h"
 #include "saio.h"
-
-char line[100];
 
 main()
 {
-	int i;
+	struct inode *ip;
+	int fd;
 
-	printf("ls\n");
-	do  {
-		printf(": "); gets(line);
-		i = open(line, 0);
-	} while (i < 0);
-
-	ls(i);
+	fd = getfile("ls", 0);
+	ip = &iob[fd - 3].i_ino;
+	if ((ip->i_mode & IFMT) != IFDIR)
+		_stop("ls: not a directory");
+	if (ip->i_size == 0)
+		_stop("ls: zero length directory");
+	ls(fd);
 }
 
-ls(io)
-register io;
+typedef struct direct	DP;
+static
+ls(fd)
+	register int fd;
 {
-	struct direct d;
-	register i;
+	register int size;
+	register char *dp;
+	char dirbuf[DIRBLKSIZ];
 
-	while (read(io, (char *)&d, sizeof d) == sizeof d) {
-		if (d.d_ino == 0)
-			continue;
-		printf("%d\t", d.d_ino);
-		for (i=0; i<DIRSIZ; i++) {
-			if (d.d_name[i] == 0)
-				break;
-			printf("%c", d.d_name[i]);
+	printf("\nname->inode\n");
+	while ((size = read(fd, dirbuf, DIRBLKSIZ)) == DIRBLKSIZ)
+		for(dp = dirbuf; (dp < (dirbuf + size)) &&
+		    (dp + ((DP *)dp)->d_reclen) < (dirbuf + size);
+		    dp += ((DP *)dp)->d_reclen) {
+			if (((DP *)dp)->d_ino == 0)
+				continue;
+			if (((DP *)dp)->d_reclen > DIRSIZ(((DP *)dp)))
+				continue;
+			if (((DP *)dp)->d_namlen > MAXNAMLEN+1)
+				_stop("Corrupt file name length!  Run fsck soon!\n");
+			printf("%s->%d\n", ((DP *)dp)->d_name,
+			    ((DP *)dp)->d_ino);
 		}
-		printf("\n");
-	}
 }
