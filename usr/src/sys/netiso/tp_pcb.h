@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.13 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.14 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -91,6 +91,11 @@ struct tp_ref {
 	struct Ccallout 	tpr_callout[N_CTIMERS]; /* C timers */
 	struct Ecallout		tpr_calltodo;			/* list of active E timers */
 	struct tp_pcb 		*tpr_pcb;	/* back ptr to PCB */
+};
+
+struct tp_refinfo {
+	struct tp_ref		*tpr_base;
+	int					tpr_size;
 };
 
 struct tp_param {
@@ -182,7 +187,6 @@ struct tp_pcb {
 										 */
 	u_short				tp_lcredit;		/* current local credit in # packets */
 	u_short				tp_maxlcredit;	/* needed for reassembly queue */
-	u_long				tp_sbmax;		/* needed for reassembly queue */
 	struct mbuf			**tp_rsyq;		/* unacked stuff recvd out of order */
 	int					tp_rsycnt;		/* number of packets */
 
@@ -332,7 +336,8 @@ u_int	tp_start_win;
 
 #ifdef KERNEL
 extern struct timeval 	time;
-extern struct tp_ref 	*tp_ref;
+extern struct tp_refinfo 	tp_refinfo;
+extern struct tp_ref *tp_ref;
 extern struct tp_param	tp_param;
 extern struct nl_protosw  nl_protosw[];
 extern struct tp_pcb	*tp_listeners;
