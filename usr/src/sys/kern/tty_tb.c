@@ -1,4 +1,4 @@
-/*	tty_tb.c	6.1	83/07/29	*/
+/*	tty_tb.c	4.9	83/08/13	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -20,19 +20,24 @@
  * Line discipline for RS232 tablets.
  * Supplies binary coordinate data.
  *
- * FIX WAY IN WHICH OVERLAYING IS DONE
  * MAKE TABLET TYPE AN ioctl TO AVOID HAVING ONE DISCIPLINE PER TABLET TYPE.
  */
 
-#define MTABCHAR 5
-#define MNTABCHAR 6
+#define NTBS		(16)
+#define MALLTABCHAR	(8)
+#define MTABCHAR 	(5)
+#define MNTABCHAR	(6)
 
-struct tbposition {
-	int	xpos;
-	int	ypos;
-	short	status;
-	short	scount;
-};
+struct tb {
+	short used;
+	char cbuf[MALLTABCHAR];
+	struct tbpos {
+		int	xpos;
+		int	ypos;
+		short	status;
+		short	scount;
+	} tbpos;
+} tb[NTBS];
 
 /*
  * Open as tablet discipline.  Called when discipline changed
@@ -44,15 +49,22 @@ tbopen(dev, tp)
 	dev_t dev;
 	register struct tty *tp;
 {
-	register struct tbposition *tbp;
+	register struct tb *tbp;
 
-	if (tp->t_line == TABLDISC || tp->t_line == NTABLDISC) {
-		return (EBUSY);
+	if (tp->t_line == TABLDISC || tp->t_line == NTABLDISC)
+		return (ENODEV);
 	ttywflush(tp);
-	tp->t_cp = (char *) &tp->t_un.T_CTLQ;	/* overlay control queue */
+	for (tbp = tb; tbp < &tb[NTBS]; tbp++)
+		if (!tbp->used)
+			break;
+	if (tbp >= &tb[NTBS])
+		return (EBUSY);
+	tbp->used++;
+	tp->t_cp = tbp->cbuf;
 	tp->t_inbuf = 0;
-	tbp = (struct tbposition *) &tp->t_rocount;
-	tbp->xpos = tbp->ypos = tbp->status = tbp->scount = 0;
+	tbp->tbpos.xpos = tbp->tbpos.ypos = 0;
+	tbp->tbpos.status = tbp->tbpos.scount = 0;
+	tp->T_LINEP = (caddr_t) tbp;
 	return (0);
 }
 
@@ -69,8 +81,6 @@ tbclose(tp)
 	tp->t_inbuf = 0;
 	tp->t_rawq.c_cc = 0;		/* clear queues -- paranoid */
 	tp->t_canq.c_cc = 0;
-	tp->t_un.T_CTLQ.c_cc = 0;	/* clear overlaid queue status */
-	tp->t_un.T_CTLQ.c_cf = tp->t_un.T_CTLQ.c_cl = NULL;
 	tp->t_line = 0;		/* paranoid: avoid races */
 	splx(s);
 }
@@ -86,11 +96,12 @@ tbread(tp, uio)
 {
 	register int i;
 	register s;
-	struct tbposition tbposition;
+	struct tbpos *tbpos;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (EIO);
-	return (iomove(&tp->t_rocount, sizeof tbposition, UIO_READ, uio));
+	tbpos = &(((struct tb *) (tp->T_LINEP))->tbpos);
+	return (uiomove(tbpos, sizeof *tbpos, UIO_READ, uio));
 }
 
 /*
@@ -107,25 +118,24 @@ tbinput(c, tp)
 	register int c;
 	register struct tty *tp;
 {
+	register struct tb *tbp = (struct tb *) tp->T_LINEP;
 
 	if (tp->t_line == TABLDISC) {
 		if ((c&0200) || (tp->t_inbuf == MTABCHAR)) {
-			tp->t_cp = (char *) &tp->t_un.T_CTLQ;
+			tp->t_cp = tbp->cbuf;
 			tp->t_inbuf = 0;
 		}
 		*tp->t_cp++ = c&0177;
 		if (++tp->t_inbuf == MTABCHAR)
-			tbdecode((char *) &tp->t_un.T_CTLQ,
-				(struct tbposition *) &tp->t_rocount);
+			tbdecode(tbp->cbuf, &tbp->tbpos);
 	} else if (tp->t_line == NTABLDISC) {
 		if ((c&0200) || (tp->t_inbuf == MNTABCHAR)) {
-			tp->t_cp = (char *) &tp->t_un.T_CTLQ;
+			tp->t_cp = tbp->cbuf;
 			tp->t_inbuf = 0;
 		}
 		*tp->t_cp++ = c&0177;
 		if (++tp->t_inbuf == MNTABCHAR)
-			tbndecode((char *) &tp->t_un.T_CTLQ,
-					(struct tbposition *) &tp->t_rocount);
+			tbndecode(tbp->cbuf, &tbp->tbpos);
 	}
 }
 
@@ -133,28 +143,28 @@ tbinput(c, tp)
  * Decode tablet coordinates from ascii to binary.
  *	(gtco 6 character format)
  */
-tbndecode(cp, tbposition)
+tbndecode(cp, tbpos)
 	register char *cp;
-	register struct tbposition *tbposition;
+	register struct tbpos *tbpos;
 {
 
-	tbposition->status = *cp>>2;	/* this needs to be decoded */
-	tbposition->xpos = ((*cp++)&03)<<14;
-	tbposition->xpos |= (*cp++)<<7;
-	tbposition->xpos |= (*cp++);
-	tbposition->ypos = ((*cp++)&03)<<14;
-	tbposition->ypos |= (*cp++)<<7;
-	tbposition->ypos |= (*cp++);
-	tbposition->scount++;
+	tbpos->status = *cp>>2;	/* this needs to be decoded */
+	tbpos->xpos = ((*cp++)&03)<<14;
+	tbpos->xpos |= (*cp++)<<7;
+	tbpos->xpos |= (*cp++);
+	tbpos->ypos = ((*cp++)&03)<<14;
+	tbpos->ypos |= (*cp++)<<7;
+	tbpos->ypos |= (*cp++);
+	tbpos->scount++;
 }
 
 /*
  * Decode tablet coordinates from ascii to binary.
  *	(hitachi 5 character format)
  */
-tbdecode(cp, tbposition)
+tbdecode(cp, tbpos)
 	register char *cp;
-	register struct tbposition *tbposition;
+	register struct tbpos *tbpos;
 {
 	register int status;
 	register char byte;
@@ -164,14 +174,14 @@ tbdecode(cp, tbposition)
 	byte &= ~0100;
 	if (byte > 036)
 		status |= 1<<((byte-040)/2);
-	tbposition->xpos = (*cp++)<<7;
-	tbposition->xpos |= (*cp++);
-	if (tbposition->xpos < 256)	/* tablet wraps around at 256 */
+	tbpos->xpos = (*cp++)<<7;
+	tbpos->xpos |= (*cp++);
+	if (tbpos->xpos < 256)		/* tablet wraps around at 256 */
 		status &= 077777;	/* make it out of proximity */
-	tbposition->ypos = (*cp++)<<7;
-	tbposition->ypos |= (*cp++);
-	tbposition->status  = status;
-	tbposition->scount++;
+	tbpos->ypos = (*cp++)<<7;
+	tbpos->ypos |= (*cp++);
+	tbpos->status  = status;
+	tbpos->scount++;
 }
 
 /*
