@@ -6,12 +6,13 @@
 .\" modification, are permitted provided that the following conditions
 .\" are met:
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)tzfile.5	5.3 (Berkeley) %G%
+.\"	@(#)tzfile.5	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TZFILE 5
+.Os
 .Sh NAME
 .Nm tzfile
 .Nd time zone information
@@ -80,7 +81,8 @@ and a one-byte value for
 .Fa tt_abbrind .
 In each structure,
 .Fa tt_gmtoff
-gives the number of seconds to be added to GMT,
+gives the number of seconds to be added to
+.Tn GMT ,
 .Fa tt_isdst
 tells whether
 .Fa tm_isdst
