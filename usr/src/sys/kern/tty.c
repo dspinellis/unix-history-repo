@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	6.24 (Berkeley) %G%
+ *	@(#)tty.c	6.25 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -290,16 +290,18 @@ ttioctl(tp, com, data, flag)
 
 		if ((unsigned) t >= nldisp)
 			return (ENXIO);
-		s = spltty();
-		(*linesw[tp->t_line].l_close)(tp);
-		error = (*linesw[t].l_open)(dev, tp);
-		if (error) {
-			(void) (*linesw[tp->t_line].l_open)(dev, tp);
+		if (t != tp->t_line) {
+			s = spltty();
+			(*linesw[tp->t_line].l_close)(tp);
+			error = (*linesw[t].l_open)(dev, tp);
+			if (error) {
+				(void) (*linesw[tp->t_line].l_open)(dev, tp);
+				splx(s);
+				return (error);
+			}
+			tp->t_line = t;
 			splx(s);
-			return (error);
 		}
-		tp->t_line = t;
-		splx(s);
 		break;
 	}
 
