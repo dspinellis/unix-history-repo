@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vis.h	5.4 (Berkeley) %G%
+ *	@(#)vis.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -42,12 +42,10 @@
  */
 #define	UNVIS_END	1	/* no more characters */
 
-#if __STDC__ || c_plusplus
-char *vis(char *, char, char, int);
-int   strvis(char *, const char *, int);
-int   strvisx(char *, const char *, size_t, int);
-#else
-char *vis();
-int   strvis();
-int   strvisx();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+char	*vis __P((char *, char, char, int));
+int	strvis __P((char *, const char *, int));
+int	strvisx __P((char *, const char *, size_t, int));
+__END_DECLS
