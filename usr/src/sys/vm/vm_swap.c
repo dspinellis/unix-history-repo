@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.8	82/08/22	*/
+/*	vm_swap.c	4.9	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -69,7 +69,7 @@ swwrite(dev, uio)
  * which must be in the swdevsw.  Return EBUSY
  * if already swapping on this device.
  */
-vswapon()
+oswapon()
 {
 	register struct inode *ip;
 	dev_t dev;
