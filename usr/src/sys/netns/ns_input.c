@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1984, 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_input.c	6.11 (Berkeley) %G%
+ *	@(#)ns_input.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,8 +34,10 @@
 union ns_host	ns_thishost;
 union ns_host	ns_zerohost;
 union ns_host	ns_broadhost;
+union ns_net	ns_zeronet;
+union ns_net	ns_broadnet;
 
-static char allones[] = {-1, -1, -1, -1, -1, -1};
+static u_short allones[] = {-1, -1, -1};
 
 struct nspcb nspcb;
 struct nspcb nsrawpcb;
@@ -51,6 +53,7 @@ ns_init()
 	extern struct timeval time;
 
 	ns_broadhost = * (union ns_host *) allones;
+	ns_broadnet = * (union ns_net *) allones;
 	nspcb.nsp_next = nspcb.nsp_prev = &nspcb;
 	nsrawpcb.nsp_next = nsrawpcb.nsp_prev = &nsrawpcb;
 	nsintrq.ifq_maxlen = nsqmaxlen;
@@ -148,9 +151,10 @@ next:
 	 * Is this a directed broadcast?
 	 */
 	if (ns_hosteqnh(ns_broadhost,idp->idp_dna.x_host)) {
-		if ((ns_netof(idp->idp_dna)!=ns_netof(idp->idp_sna)) &&
-		   (ns_netof(idp->idp_dna)!=-1) && (ns_netof(idp->idp_sna)!=0)
-		   && (ns_netof(idp->idp_dna)!=0)) {
+		if ((!ns_neteq(idp->idp_dna, idp->idp_sna)) &&
+		    (!ns_neteqnn(idp->idp_dna.x_net, ns_broadnet)) &&
+		    (!ns_neteqnn(idp->idp_sna.x_net, ns_zeronet)) &&
+		    (!ns_neteqnn(idp->idp_dna.x_net, ns_zeronet)) ) {
 			/*
 			 * Look to see if I need to eat this packet.
 			 * Algorithm is to forward all young packets

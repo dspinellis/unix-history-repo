@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.c	6.6 (Berkeley) %G%
+ *	@(#)ns.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,8 +34,13 @@ ns_hash(sns, hp)
 {
 	register long hash = 0;
 	register u_short *s =  sns->sns_addr.x_host.s_host;
+	union {
+		union ns_net	net_e;
+		long		long_e;
+	} net;
 
-	hp->afh_nethash = ns_netof(sns->sns_addr);
+	net.net_e = sns->sns_addr.x_net;
+	hp->afh_nethash = net.long_e;
 	hash = *s++; hash <<= 8; hash += *s++; hash <<= 8; hash += *s;
 	hp->afh_hosthash =  hash;
 }
@@ -45,7 +50,7 @@ ns_netmatch(sns1, sns2)
 	struct sockaddr_ns *sns1, *sns2;
 {
 
-	return (ns_netof(sns1->sns_addr) == ns_netof(sns2->sns_addr));
+	return (ns_neteq(sns1->sns_addr, sns2->sns_addr));
 }
 
 /*
@@ -265,8 +270,7 @@ ns_iaonnetof(dst)
 	register struct ns_addr *compare;
 	register struct ifnet *ifp;
 	struct ns_ifaddr *ia_maybe = 0;
-	long net = ns_netof(*dst);
-	static struct ns_addr laddr;
+	union ns_net net = dst->x_net;
 
 	for (ia = ns_ifaddr; ia; ia = ia->ia_next) {
 		if (ifp = ia->ia_ifp) {
@@ -274,12 +278,10 @@ ns_iaonnetof(dst)
 				compare = &satons_addr(ia->ia_dstaddr);
 				if (ns_hosteq(*dst, *compare))
 					return (ia);
-				laddr.x_net = ia->ia_net;
-				if (ns_netof(laddr) == net)
+				if (ns_neteqnn(net, ia->ia_net))
 					ia_maybe = ia;
 			} else {
-				laddr.x_net = ia->ia_net;
-				if (ns_netof(laddr) == net)
+				if (ns_neteqnn(net, ia->ia_net))
 					return (ia);
 			}
 		}

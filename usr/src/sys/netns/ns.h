@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1984, 1985, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.8 (Berkeley) %G%
+ *	@(#)ns.h	6.9 (Berkeley) %G%
  */
 
 /*
@@ -85,8 +85,12 @@ struct sockaddr_ns {
 };
 #define sns_port sns_addr.x_port
 
-#define ns_netof(a) (*(long *) & ((a).x_net))
-#define ns_neteq(a,b) (ns_netof(a) == ns_netof(b))
+#ifdef vax
+#define ns_netof(a) (*(long *) & ((a).x_net)) /* XXX - not needed */
+#endif
+#define ns_neteqnn(a,b) (((a).s_net[0]==(b).s_net[0]) && \
+					((a).s_net[0]==(b).s_net[0]))
+#define ns_neteq(a,b) ns_neteqnn((a).x_net, (b).x_net)
 #define satons_addr(sa)	(((struct sockaddr_ns *)&(sa))->sns_addr)
 #define ns_hosteqnh(s,t) ((s).s_host[0] == (t).s_host[0] && \
 	(s).s_host[1] == (t).s_host[1] && (s).s_host[2] == (t).s_host[2])
@@ -111,5 +115,7 @@ extern struct domain nsdomain;
 extern union ns_host ns_thishost;
 extern union ns_host ns_zerohost;
 extern union ns_host ns_broadhost;
+extern union ns_net ns_zeronet;
+extern union ns_net ns_broadnet;
 u_short ns_cksum();
 #endif
