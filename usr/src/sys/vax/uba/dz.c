@@ -1,4 +1,4 @@
-/*	dz.c	4.20	%G%	*/
+/*	dz.c	4.21	%G%	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -18,7 +18,7 @@
 #include "../h/pte.h"
 #include "../h/buf.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubavar.h"
 #include "../h/conf.h"
 #include "../h/pdma.h"
 #include "../h/bk.h"
@@ -29,7 +29,7 @@
  * Driver information for auto-configuration stuff.
  */
 int	dzprobe(), dzattach(), dzrint();
-struct	uba_dinfo *dzinfo[NDZ];
+struct	uba_device *dzinfo[NDZ];
 u_short	dzstd[] = { 0 };
 struct	uba_driver dzdriver =
 	{ dzprobe, 0, dzattach, 0, dzstd, "dz", dzinfo };
@@ -119,7 +119,7 @@ dzprobe(reg)
 }
 
 dzattach(ui)
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 {
 	register struct pdma *pdp = &dzpdma[ui->ui_unit*8];
 	register struct tty *tp = &dz_tty[ui->ui_unit*8];
@@ -475,7 +475,7 @@ dzreset(uban)
 {
 	register int unit;
 	register struct tty *tp;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 
 	for (unit = 0; unit < NDZLINE; unit++) {
 		ui = dzinfo[unit >> 3];
