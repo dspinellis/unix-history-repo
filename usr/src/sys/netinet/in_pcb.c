@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.10 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -89,7 +89,8 @@ in_pcbbind(inp, nam)
 noname:
 	if (lport == 0)
 		do {
-			if (head->inp_lport++ < IPPORT_RESERVED)
+			if (head->inp_lport++ < IPPORT_RESERVED ||
+			    head->inp_lport > IPPORT_USERRESERVED)
 				head->inp_lport = IPPORT_RESERVED;
 			lport = htons(head->inp_lport);
 		} while (in_pcblookup(head,
