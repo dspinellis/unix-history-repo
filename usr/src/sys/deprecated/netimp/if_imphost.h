@@ -1,4 +1,4 @@
-/*	if_imphost.h	6.1	83/07/29	*/
+/*	if_imphost.h	6.2	85/03/19	*/
 
 /*
  * Host structure used with IMP's.
@@ -41,7 +41,7 @@ struct host {
  */
 #define	HPMBUF	((MLEN - sizeof(int)) / sizeof(struct host))
 #if vax
-#define	HOSTHASH(a)	((((a).s_addr>>8)+(a).s_net) % HPMBUF)
+#define	HOSTHASH(a)	((((a).s_addr>>24)+(a).s_addr) % HPMBUF)
 #endif
 
 /*
