@@ -53,12 +53,14 @@ char	*argv[];
 	signal(SIGINT, bye);
 	crmode();
 	noecho();
-	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, SCORE_SZ);
-	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X + SCORE_SZ);
-	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X + SCORE_SZ);
+	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, X_SCORE_SZ);
+	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X + X_SCORE_SZ);
+	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X + X_SCORE_SZ);
+	Msgwin = subwin(stdscr, MSG_Y, MSG_X, Y_SCORE_SZ + 1, 0);
 	leaveok(Playwin, TRUE);
 	leaveok(Tablewin, TRUE);
 	leaveok(Compwin, TRUE);
+	clearok(stdscr, FALSE);
 
 	if (!quiet) {
 	    msg("Do you need instructions for cribbage? ");
@@ -153,6 +155,7 @@ game()
 	BOOLEAN			compcrib;
 
 	makeboard();
+	refresh();
 	makedeck(deck);
 	shuffle(deck);
 	if (gamecount == 0) {
@@ -245,10 +248,6 @@ BOOLEAN		mycrib;
 	extern char		Msgbuf[];
 
 	werase(Compwin);
-	wrefresh(Compwin);
-	move(CRIB_Y, SCORE_SZ);
-	clrtobot();
-	mvaddstr(LINES - 1, 0, Msgbuf);
 
 	knownum = 0;
 	deckpos = deal(mycrib);
@@ -371,15 +370,23 @@ int		pos;
 prcrib(mycrib, blank)
 BOOLEAN		mycrib, blank;
 {
-	register int	cardx;
+	register int	y, cardx;
 
 	if (mycrib)
 	    cardx = CRIB_X;
 	else
-	    cardx = SCORE_SZ;
+	    cardx = X_SCORE_SZ;
 
 	mvaddstr(CRIB_Y, cardx + 1, "CRIB");
 	prcard(stdscr, CRIB_Y + 1, cardx, turnover, blank);
+
+	if (mycrib)
+	    cardx = X_SCORE_SZ;
+	else
+	    cardx = CRIB_X;
+
+	for (y = CRIB_Y; y <= CRIB_Y + 5; y++)
+	    mvaddstr(y, cardx, "       ");
 }
 
 /*
@@ -430,7 +437,6 @@ BOOLEAN		mycrib;
 			sum = 0;
 			mego = ugo = FALSE;
 			Tcnt = 0;
-			Hasread = FALSE;
 		    }
 		}
 		else {
@@ -476,7 +482,6 @@ BOOLEAN		mycrib;
 			sum = 0;
 			mego = ugo = FALSE;
 			Tcnt = 0;
-			Hasread = FALSE;
 		    }
 		}
 		else {					/* player plays */
@@ -512,7 +517,6 @@ BOOLEAN		mycrib;
 		mego = ugo = FALSE;
 		Tcnt = 0;
 		last = FALSE;				/* disable last flag */
-		Hasread = FALSE;
 	    }
 	    if (!pnum && !cnum)
 		break;					/* both done */

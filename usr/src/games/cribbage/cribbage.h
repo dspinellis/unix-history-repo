@@ -20,7 +20,6 @@ extern  BOOLEAN		iwon;			/* if comp won last */
 extern  BOOLEAN		explain;		/* player mistakes explained */
 extern  BOOLEAN		rflag;			/* if all cuts random */
 extern  BOOLEAN		quiet;			/* if suppress random mess */
-extern  BOOLEAN		Hasread;		/* has had chance to read msg */
 extern	BOOLEAN		playing;		/* currently playing game */
 
 extern  char		expl[];			/* string for explanation */

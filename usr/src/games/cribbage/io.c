@@ -3,9 +3,13 @@
 # include	<unctrl.h>
 # include	"deck.h"
 # include	"cribbage.h"
+# include	"cribcur.h"
 
 # define	LINESIZE		128
 
+# ifdef CTRL
+# undef CTRL
+# endif
 # define	CTRL(X)			('X' - 'A' + 1)
 
 # ifndef	attron
@@ -275,7 +279,7 @@ getuchar()
 	c = readchar();
 	if (islower(c))
 	    c = toupper(c);
-	addch(c);
+	waddch(Msgwin, c);
 	return c;
 }
 
@@ -336,19 +340,6 @@ msg(fmt, args)
 char	*fmt;
 int	args;
 {
-    /*
-     * if the string is "", just clear the line
-     */
-    if (*fmt == '\0') {
-	move(LINES - 1, 0);
-	clrtoeol();
-	Mpos = 0;
-	Hasread = TRUE;
-	return;
-    }
-    /*
-     * otherwise add to the message and flush it out
-     */
     doadd(fmt, &args);
     endmsg();
 }
@@ -367,29 +358,45 @@ int	args;
 
 /*
  * endmsg:
- *	Display a new msg (giving him a chance to see the previous one
- *	if it is up there with the --More--)
+ *	Display a new msg.
  */
 endmsg()
 {
-    if (!Hasread) {
-	move(LINES - 1, Mpos);
-	addstr("--More--");
-	refresh();
-	wait_for(' ');
-    }
+    register int	len;
+    register char	*mp, *omp;
+    static int		lineno = 0;
+
     /*
      * All messages should start with uppercase, except ones that
      * start with a pack addressing character
      */
     if (islower(Msgbuf[0]) && Msgbuf[1] != ')')
 	Msgbuf[0] = toupper(Msgbuf[0]);
-    mvaddstr(LINES - 1, 0, Msgbuf);
-    clrtoeol();
+    mp = Msgbuf;
+    len = strlen(mp);
+    if (len / MSG_X + lineno > MSG_Y)
+	lineno = 0;
+    do {
+	mvwaddstr(Msgwin, lineno, 0, mp);
+	if ((len = strlen(mp)) > MSG_X) {
+	    omp = mp;
+	    for (mp = &mp[MSG_X-1]; *mp != ' '; mp--)
+	    	continue;
+	    while (*mp == ' ')
+		mp--;
+	    mp++;
+	    wmove(Msgwin, lineno, mp - omp);
+	    wclrtoeol(Msgwin);
+	}
+	if (++lineno >= MSG_Y)
+	    lineno = 0;
+    } while (len > MSG_X);
+    wclrtoeol(Msgwin);
     Mpos = Newpos;
     Newpos = 0;
+    wrefresh(Msgwin);
     refresh();
-    Hasread = FALSE;
+    wrefresh(Msgwin);
 }
 
 /*
@@ -448,7 +455,6 @@ over:
 	wrefresh(curscr);
 	goto over;
     }
-    Hasread = TRUE;
     if (c == '\r')
 	return '\n';
     else
@@ -465,7 +471,10 @@ getline()
 {
     register char	*sp;
     register int	c, oy, ox;
+    register WINDOW	*oscr;
 
+    oscr = stdscr;
+    stdscr = Msgwin;
     getyx(stdscr, oy, ox);
     refresh();
     /*
@@ -498,10 +507,10 @@ getline()
 		c = toupper(c);
 	    *sp++ = c;
 	    addstr(unctrl(c));
-/*###366 [cc] Mpos undefined %%%*/
 	    Mpos++;
 	}
     }
     *sp = '\0';
+    stdscr = oscr;
     return linebuf;
 }
