@@ -1,4 +1,4 @@
-.\"	@(#)find.1	6.1 (Berkeley) %G%
+.\"	@(#)find.1	6.2 (Berkeley) %G%
 .\"
 .TH FIND 1 ""
 .AT 3
@@ -99,10 +99,20 @@ True if the file belongs to the user
 .I uname
 (login name or numeric user ID).
 .TP
+.B \-nouser
+True if the file belongs to a user
+.I not
+in the /etc/passwd database.
+.TP
 .BR \-group " gname"
 True if the file belongs to group
 .I gname
 (group name or numeric group ID).
+.TP
+.B \-nogroup
+True if the file belongs to a group
+.I not
+in the /etc/group database.
 .TP
 .BR \-size " n"
 True if the file is
@@ -143,10 +153,40 @@ and the command executed only upon response
 Always true;
 causes the current pathname to be printed.
 .TP
+.B  \-ls
+Always true;
+causes current pathname to be printed together
+with its associated statistics.
+These include (respectively) inode number,
+size in kilobytes (1024 bytes),
+protection mode,
+number of hard links,
+user,
+group,
+size in bytes,
+and modification time.
+If the file is a special file
+the size field will instead contain the major and minor
+device numbers.
+If the file is a symbolic link the
+pathname of the linked-to file is printed preceded by ``->''.
+The format is identical to that of ``ls -gilds''
+(note however that formatting is done internally,
+without executing the ls program).
+.TP
 .BR \-newer " file"
 True if
 the current file has been modified more recently than the argument
 .I file.
+.TP
+.B \-xdev
+Always true;
+causes find
+.I not
+to traverse down into a file system different
+from the one on which current
+.I argument
+pathname resides.
 .PP
 The primaries may be combined using the following operators
 (in order of decreasing precedence):
