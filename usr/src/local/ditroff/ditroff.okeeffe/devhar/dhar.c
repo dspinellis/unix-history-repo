@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dhar.c	1.1	CWI 1.1	%G%";
+static char *sccsid = "@(#)dhar.c	1.2	CWI 1.2	%G%";
 #endif
 /*
  * Drive the Harris 7500 tyepsetter
@@ -70,7 +70,7 @@ int	spage	= 9999;	/* stop every spage pages */
 int	scount	= 0;
 
 struct	dev	dev;
-struct font *fontbase[NFONT+1];
+struct Font *fontbase[NFONT+1];
 short	*pstab;
 int	nsizes;
 int	nfonts;
@@ -419,11 +419,11 @@ fileinit()	/* read in font and code files, etc. */
 	chname = (char *) (chtab + dev.nchtab);
 	p = chname + dev.lchname;
 	for (i = 1; i <= nfonts; i++) {
-		fontbase[i] = (struct font *) p;
+		fontbase[i] = (struct Font *) p;
 		nw = *p & BMASK;	/* 1st thing is width count */
 		if (smnt == 0 && fontbase[i]->specfont == 1)
 			smnt = i;	/* first special font */
-		p += sizeof(struct font);	/* that's what's on the beginning */
+		p += sizeof(struct Font);	/* that's what's on the beginning */
 		widthtab[i] = p;
 		codetab[i] = p + 2 * nw;
 		fitab[i] = p + 3 * nw;
@@ -441,8 +441,8 @@ fileinit()	/* read in font and code files, etc. */
 	 * also reserve space for fonttable, if any is to come
          *
 	 */
-	fontbase[0] = (struct font *) malloc(3*255 + dev.nchtab + (128-32) + sizeof (struct font) + 255 * sizeof( short));
-	widthtab[0] = (char *) fontbase[0] + sizeof (struct font);
+	fontbase[0] = (struct Font *) malloc(3*255 + dev.nchtab + (128-32) + sizeof (struct Font) + 255 * sizeof( short));
+	widthtab[0] = (char *) fontbase[0] + sizeof (struct Font);
 	fontbase[0]->nwfont = 255;
 	fontbase[0]->fonttab = 2;	/* there is room for a fonttable! */
 	close(fin);
@@ -513,7 +513,7 @@ if(dbg > 3)
 	 *
 	 * first geuss there is no fonttab
 	 */
-	read(fin, fontbase[n], 3*norig + nchtab+128-32 + sizeof(struct font));
+	read(fin, fontbase[n], 3*norig + nchtab+128-32 + sizeof(struct Font));
 	if ((fontbase[n]->nwfont & BMASK) > norig || (forig == 0 && fontbase[n]->fonttab == 1))
 		error(FATAL, "Font %s too big for position %d\n", s, n);
 		/*
@@ -528,14 +528,14 @@ if(dbg > 3)
 	printf("nw %d\n", nw);
 	if(fontbase[n]->fonttab == 1) {
 		lseek(fin, 0L, 0);
-		read(fin, fontbase[n], 3*norig + nchtab+128-32 + nw*sizeof(short) + sizeof(struct font));
+		read(fin, fontbase[n], 3*norig + nchtab+128-32 + nw*sizeof(short) + sizeof(struct Font));
 		/*
 		 * There turned out to be a fonttab, so we have to read it in
 		 *MC:jna a bit stupid, but the laziest way (for me)
 		 */
 	}
 	close(fin);
-	widthtab[n] = (char *) fontbase[n] + sizeof(struct font);
+	widthtab[n] = (char *) fontbase[n] + sizeof(struct Font);
 	codetab[n] = (char *) widthtab[n] + 2 * nw;
 	fitab[n] = (char *) widthtab[n] + 3 * nw;
 	if(fontbase[n]->fonttab == 1)
