@@ -1,4 +1,3 @@
-static	char *sccsid = "@(#)unctime.c	1.1 (Berkeley) 10/13/80";
 #include <sys/types.h>
 #include <time.h>
 #include <stdio.h>
@@ -107,3 +106,4 @@ dcmp(dp, dp2)
 	DECIDE(tm_sec);
 	return(0);
 }
+static	char *sccsid = "@(#)unctime.c	1.3 (Berkeley) 81/04/18";
