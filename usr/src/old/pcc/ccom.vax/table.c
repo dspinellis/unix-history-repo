@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.18 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.19 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -565,7 +565,7 @@ DIV,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RESC1|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,A1,U1\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,A1,U1\n",
 
 ASG DIV,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TUNSIGNED|TULONG,
@@ -577,7 +577,7 @@ ASG DIV,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RLEFT|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,AL,U1\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,AL,U1\n",
 
 MOD,	INAREG|INTAREG,
 	SAREG|AWD,	TINT|TLONG,
@@ -601,13 +601,13 @@ MOD,	INAREG|FOREFF,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RESC1|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,U1,A1\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,U1,A1\n",
 
 MOD,	FORCC,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RESC1|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,U1,A1\n	tstl	A1\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,U1,A1\n	tstl	A1\n",
 
 ASG MOD,	INAREG|INTAREG|FOREFF|FORCC,
 	SAREG,	TINT|TLONG,
@@ -631,13 +631,13 @@ ASG MOD,	INAREG|FOREFF,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RLEFT|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,A1,AL\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,A1,AL\n",
 
 ASG MOD,	FORCC,
 	SAREG|AWD,	TUNSIGNED|TULONG,
 	SCON,	TANY,
 		NAREG|NEVEN,	RLEFT|RESCC,
-		"	movl	AL,A1\n	clrl	U1\n	ediv	A1,AR,A1,AL\n	tstl	AL\n",
+		"	movl	AL,A1\n	clrl	U1\n	ediv	AR,A1,A1,AL\n	tstl	AL\n",
 
 ASG OPMUL,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TINT|TUNSIGNED|TLONG|TULONG,
