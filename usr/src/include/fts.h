@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.17 (Berkeley) %G%
+ *	@(#)fts.h	5.18 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -43,7 +43,7 @@ typedef struct _ftsent {
 #define	fts_pointer	fts_local.pointer
 	char *fts_accpath;		/* access path */
 	char *fts_path;			/* root path */
-	int fts_cderr;			/* chdir failed -- errno */
+	int fts_errno;			/* errno for this node */
 	short fts_pathlen;		/* strlen(fts_path) */
 	short fts_namelen;		/* strlen(fts_name) */
 
@@ -58,6 +58,7 @@ typedef struct _ftsent {
 #define	FTS_DP		 5		/* postorder directory */
 #define	FTS_ERR		 6		/* error; errno is set */
 #define	FTS_F		 7		/* regular file */
+#define	FTS_INIT	 8		/* initialized only */
 #define	FTS_NS		 8		/* stat(2) failed */
 #define	FTS_NSOK	 9		/* no stat(2) requested */
 #define	FTS_SL		10		/* symbolic link */
