@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.26 (Berkeley) %G%
+ *	@(#)sendmail.h	6.27 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.26		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.27		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -742,6 +742,7 @@ extern EVENT	*setevent();
 extern char	*sfgets();
 extern char	*queuename();
 extern time_t	curtime();
+extern bool	transienterror();
 
 /*
 **  HACK to fix bug in C compiler on CCI
