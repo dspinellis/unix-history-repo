@@ -1,8 +1,13 @@
-static	char *sccsid = "@(#)iostat.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)iostat.c	4.3 (Berkeley) %G%";
 /*
  * iostat
  */
+#include <stdio.h>
 #include <nlist.h>
+#include <sys/types.h>
+#include <sys/buf.h>
+#include <sys/ubavar.h>
+#include <sys/mbavar.h>
 #include <sys/dk.h>
 
 struct nlist nl[] = {
@@ -24,8 +29,15 @@ struct nlist nl[] = {
 #define	X_CP_TIME	7
 	{ "_dk_mspw" },
 #define	X_DK_MSPW	8
+	{ "_mbdinit" },
+#define X_MBDINIT	9
+	{ "_ubdinit" },
+#define X_UBDINIT	10
 	{ 0 },
 };
+
+char dr_name[DK_NDRIVE][10];
+
 struct
 {
 	int	dk_busy;
@@ -69,15 +81,18 @@ char *argv[];
 	}
 	lseek(mf, (long)nl[X_DK_MSPW].n_value, 0);
 	read(mf, s.dk_mspw, sizeof s.dk_mspw);
+	for (i = 0; i < DK_NDRIVE; i++)
+		sprintf(dr_name[i], "dk%d", i);
+	read_names();
 	if(argc > 2)
 		iter = atoi(argv[2]);
 loop:
 	if (--tohdr == 0) {
-		printf("      TTY");
+		printf("      tty");
 		for (i = 0; i < DK_NDRIVE; i++)
 			if (s.dk_mspw[i] != 0.0)
-				printf("           D%d ", i);
-		printf("         CPU\n");
+				printf("          %3.3s ", dr_name[i]);
+		printf("         cpu\n");
 		printf(" tin tout");
 		for (i = 0; i < DK_NDRIVE; i++)
 			if (s.dk_mspw[i] != 0.0)
@@ -176,4 +191,51 @@ stat1(o)
 	if (time == 0.0)
 		time = 1.0;
 	printf("%3.0f", 100*s.cp_time[o]/time);
+}
+
+/*
+ * Read the drive names out of kmem.
+ * ARGH ARGH ARGH ARGH !!!!!!!!!!!!
+ */
+
+#define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
+read_names()
+{
+	struct mba_device mdev;
+	register struct mba_device *mp;
+	struct mba_driver mdrv;
+	short two_char;
+	char *cp = (char *) &two_char;
+	struct uba_device udev, *up;
+	struct uba_driver udrv;
+
+	mp = (struct mba_device *) nl[X_MBDINIT].n_value;
+	up = (struct uba_device *) nl[X_UBDINIT].n_value;
+	if (mp == 0 || up == 0)
+	{
+		fprintf(stderr, "iostat: Disk init info not in namelist\n");
+		exit(1);
+	}
+	while(1)
+	{
+		steal(mp++, mdev);
+		if (mdev.mi_driver == 0)
+			break;
+		if (mdev.mi_dk < 0 || mdev.mi_alive == 0)
+			continue;
+		steal(mdev.mi_driver, mdrv);
+		steal(mdrv.md_dname, two_char);
+		sprintf(dr_name[mdev.mi_dk], "%c%c%d", cp[0], cp[1], mdev.mi_unit);
+	}
+	while(1)
+	{
+		steal(up++, udev);
+		if (udev.ui_driver == 0)
+			break;
+		if (udev.ui_dk < 0 || udev.ui_alive == 0)
+			continue;
+		steal(udev.ui_driver, udrv);
+		steal(udrv.ud_dname, two_char);
+		sprintf(dr_name[udev.ui_dk], "%c%c%d", cp[0], cp[1], udev.ui_unit);
+	}
 }
