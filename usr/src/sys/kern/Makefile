@@ -1,8 +1,8 @@
-#	@(#)Makefile	7.13 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 
 # Makefile for kernel tags files, init_systent, etc.
 
-ARCH=	vax tahoe hp300 i386
+ARCH=	vax tahoe hp300 i386 pmax
 
 all:
 	@echo "make tags, make links or init_sysent.c only"
