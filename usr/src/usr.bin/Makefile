@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 # not working:		tn3270, uucp
 # need conversion:	tn3270
@@ -12,7 +12,7 @@ SUBDIR=	apply at awk banner basename bc biff cal calendar checknr chpass \
 	pagesize passwd paste plot pr printenv printf ptx quota \
 	rdist refer renice rlogin roff rsh ruptime rwho sccs script sed \
 	shar showmount soelim sort spell spline split su sum sysline \
-	tail talk tbl tcopy tee tftp time tip touch tput tr true \
+	tail talk tbl tcopy tee telnet tftp time tip touch tput tr true \
 	tset tty ul unexpand uniq units unvis users uudecode uuencode \
 	vacation vis vmstat w wall wc what whereis which who whoami whois \
 	window write xargs xsend yes
