@@ -13,8 +13,9 @@
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/resourcevar.h>
-#include <sys/specdev.h>
 #include <sys/trace.h>
+
+#include <miscfs/specfs/specdev.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
