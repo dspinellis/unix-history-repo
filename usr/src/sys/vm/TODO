@@ -1,0 +1,102 @@
+A random assortment of things that I have thought about from time to time.
+The biggie is:
+
+0. Merge the page and buffer caches.
+   This has been bandied about for a long time.  First need to decide
+   whether you use VFS routines to do pagein/pageout or VM routines to
+   do IO?  Lots of other things to worry about: mismatches in page/FS-block
+   sizes, how to balance their memory needs, how is anon memory represented,
+   how do you get file meta-data, etc.
+
+or more modestly:
+
+1. Use the multi-page pager interface to implement clustered pageins.
+   Probably can't be as aggressive (w.r.t. cluster size) as in clustered
+   pageout.  Maybe keep some kind of window ala the vfs_cluster routine
+   or maybe always just be conservative.
+
+2. vm_object_page_clean() needs work.
+   For one, it uses a worst-case O(N**2) algorithm.  Since we might block
+   in the pageout routine, it has to start over again afterward as things
+   may have changed in the meantime.  Someone else actively writing pages
+   in the object could keep this routine going forever also.  Note that
+   just holding the object lock would be insufficient (even if it was safe)
+   since these locks compile away on non-MP machines (i.e. always).
+   Maybe we need an OBJ_BUSY flag to be check by anyone attempting to
+   insert, modify or delete pages in the object.  This routine should also
+   use clustering like vm_pageout to speed things along.
+
+3. Do aggressive swapout.
+   Right now the swapper just unwires the u-area allowing a process to be
+   paged into oblivion.  We could use vm_map_clean() to force a process out
+   in a hurry though this should probably only be done for "private" objects
+   (i.e. refcount == 1).
+
+4. Rethink sharing maps.
+   Right now they are used inconsistently: related (via fork) processes
+   sharing memory have one, unrelated (via mmap) processes don't.  Mach
+   eliminated these a while back, I'm not sure what the right thing to do
+   here is.
+
+5. Use fictitious pages in vm_fault.
+   Right now a real page is allocated in the top level object to prevent
+   other faults from simultaneously going down the shadow chain.  Later,
+   a second real page may be allocated.  Current Mach allocates a fictitious
+   page in the top object and replaces it with a real one as necessary.
+
+6. Improve the pageout daemon.
+   It suffers from the same problem the old (4.2 vintage?) BSD one did.
+   With large physical memories, cleaned pages may not be freed for a long
+   time.  In the meantime, the daemon will continue cleaning more pages in
+   an attempt to free memory.  This can lead to bursts of paging activity
+   and erratic levels in the free list.
+
+7. Nuke MAP_COPY.
+   It isn't true anyway.  You can still get data modified after the virtual
+   copy for pages that aren't present in memory at the time of the copy.
+   The only concern with getting rid of it is that exec uses it for mapping
+   the text of an executable (to deal with the modified text problem).
+   MAP_COPY could probably be fixed but I don't think it is worth it.  If
+   you want true copy semantics, use read().
+
+8. Try harder to collapse objects.
+   Can wind up with a lot of wasted swap space in needlessly long shadow
+   chains.  The problem is that you cannot collapse an object's backing
+   object if the first object has a pager.  Since all our pagers have
+   relatively inexpensive routines to determine if a pager object has a
+   particular page, we could do a better job.  Probably don't want to go
+   as far as bringing pages in from the backing object's pager just to move
+   them to the primary object.
+
+9. Implement madvise (Sun style).
+   MADV_RANDOM: don't do clustered pageins. (like now!)
+   MADV_SEQUENTIAL: in vm_fault, deactivate cached pages with lower
+    offsets than the desired page.  Also only do forward read-ahead.
+   MADV_WILLNEED: vm_fault the range, maybe deactivate to avoid conspicuous
+    consumption.
+   MADV_DONTNEED: clean and free the range.  Is this identical to msync
+    with MS_INVALIDATE?
+
+10. Machine dependent hook for virtual memory allocation.
+   When the system gets to chose where something is placed in an address
+   space, it should call a pmap routine to choose a desired location.
+   This is useful for virtually-indexed cache machine where there are magic
+   alignments that can prevent aliasing problems.
+
+11. Allow vnode pager to be the default pager.
+   Mostly interface (how to configure a swap file) and policy (what objects
+   are backed in which files) needed.
+
+12. Keep page/buffer caches coherent.
+   Assuming #0 is not done.  Right now, very little is done.  The VM does
+   track file size changes (vnode_pager_setsize) so that mapped accesses
+   to truncated files give the correct response (SIGBUS).  It also purges
+   unmapped cached objects whenever the corresponding file is changed
+   (vnode_pager_uncache) but it doesn't maintain coherency of mapped objects
+   that are changed via read/write (or visa-versa).  Reasonable explicit
+   coherency can be maintained with msync but that is pretty feeble.
+
+----
+Mike Hibler
+University of Utah CSS group
+mike@cs.utah.edu
