@@ -1,10 +1,15 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.4);
+SCCSID(@(#)delta.c	4.5);
 USXALLOC();
 
-char	Diffpgm[]	"/usr/local/bdiff";
+# ifdef LOGDELTA
+char	LogFile[] = "/usr/adm/sccs-log";
+FILE	*Logf;
+# endif
+
+char	Diffpgm[] = "/usr/local/bdiff";
 FILE	*Diffin;
 int	Debug	0;
 struct packet gpkt;
@@ -14,7 +19,7 @@ char	had[26];
 char	*ilist, *elist, *glist;
 char	*Comments, *Mrs;
 int	Domrs;
-int verbosity;
+int	verbosity;
 int	Did_id;
 long	Szqfile;
 char	Pfilename[FILESIZE];
@@ -76,21 +81,29 @@ register char *argv[];
 		}
 		else num_files++;
 
-	if(num_files == 0)
+	if (num_files == 0)
 		fatal("missing file arg (cm3)");
 	if (!HADS)
 		verbosity = -1;
+# ifdef LOGDELTA
+	if ((Logf = fopen(LogFile, "a")) == NULL)
+		fatal("cannot open logfile");
+# endif
 	setsig();
 	Fflags =& ~FTLEXIT;
 	Fflags =| FTLJMP;
 	for (i=1; i<argc; i++)
 		if (p=argv[i])
 			do_file(p,delta);
+# ifdef LOGDELTA
+	fclose(Logf);
+# endif
 	exit(Fcnt ? 1 : 0);
 }
 
 
 delta(file)
+char *file;
 {
 	static int first 1;
 	register char *p;
@@ -322,6 +335,15 @@ int orig_nlines;
 	dt.d_type = 'D';
 	del_ba(&dt,str);
 	putline(pkt,str);
+# ifdef LOGDELTA
+	if (pkt->p_file[0] != '/') {
+		char buf[1024];
+
+		if (getwd(buf) != NULL)
+			fprintf(Logf, "%s/", buf);
+	}
+	fprintf(Logf, "%s:\n%s%s\n", pkt->p_file, str + 5, Comments);
+# endif
 	if (ilist)
 		mkixg(pkt,INCLUSER,INCLUDE);
 	if (elist)
