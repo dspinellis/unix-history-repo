@@ -1,4 +1,4 @@
-/*	conf.c	4.39	81/08/31	*/
+/*	conf.c	4.39	81/10/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -163,204 +163,209 @@ struct	tty dz_tty[];
 
 #include "lp.h"
 #if NLP > 0
-int	lpopen(),lpclose(),lpwrite(),lpreset();
+int	lpopen(),lpclose(),lpwrite(),lpreset(),lpselect();
 #else
 #define	lpopen		nodev
 #define	lpclose		nodev
 #define	lpwrite		nodev
 #define	lpreset		nulldev
+#define	lpselect	nodev
 #endif
 
-int	syopen(),syread(),sywrite(),syioctl();
+int	syopen(),syread(),sywrite(),syioctl(),syselect();
 
 int 	mmread(),mmwrite();
+#define	mmselect	seltrue
 
 #include "va.h"
 #if NVA > 0
-int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset();
+int	vaopen(),vaclose(),vawrite(),vaioctl(),vareset(),vaselect();
 #else
-#define	vaopen	nodev
-#define	vaclose	nodev
-#define	vawrite	nodev
-#define	vaopen	nodev
-#define	vaioctl	nodev
-#define	vareset	nulldev
+#define	vaopen		nodev
+#define	vaclose		nodev
+#define	vawrite		nodev
+#define	vaopen		nodev
+#define	vaioctl		nodev
+#define	vareset		nulldev
+#define	vaselect	nodev
 #endif
 
 #include "vp.h"
 #if NVP > 0
-int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset();
+int	vpopen(),vpclose(),vpwrite(),vpioctl(),vpreset(),vpselect();
 #else
-#define	vpopen	nodev
-#define	vpclose	nodev
-#define	vpwrite	nodev
-#define	vpioctl	nodev
-#define	vpreset	nulldev
+#define	vpopen		nodev
+#define	vpclose		nodev
+#define	vpwrite		nodev
+#define	vpioctl		nodev
+#define	vpreset		nulldev
+#define	vpselect	nodev
 #endif
-
-int	mxopen(),mxclose(),mxread(),mxwrite(),mxioctl();
-int	mcread();
-char	*mcwrite();
 
 #include "pty.h"
 #if NPTY > 0
-int	ptsopen(), ptsclose(), ptsread(), ptswrite();
-int	ptcopen(), ptcclose(), ptcread(), ptcwrite();
+int	ptsopen(),ptsclose(),ptsread(),ptswrite();
+int	ptcopen(),ptcclose(),ptcread(),ptcwrite(),ptcselect();
 int	ptyioctl();
 struct	tty pt_tty[];
 #else
-#define ptsopen nodev
-#define ptsclose nodev
-#define ptsread nodev
-#define ptswrite nodev
-#define ptcopen nodev
-#define ptcclose nodev
-#define ptcread nodev
-#define ptcwrite nodev
-#define ptyioctl nodev
-#define	pt_tty	0
+#define ptsopen		nodev
+#define ptsclose	nodev
+#define ptsread		nodev
+#define ptswrite	nodev
+#define ptcopen		nodev
+#define ptcclose	nodev
+#define ptcread		nodev
+#define ptcwrite	nodev
+#define ptyioctl	nodev
+#define	pt_tty		0
+#define	ptcselect	nodev
 #endif
 
 #ifdef CHAOS
-int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset();
+int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset(),chselec();
 #else
-#define	chopen	nodev
-#define	chclose	nodev
-#define	chread	nodev
-#define	chwrite	nodev
-#define	chioctl	nodev
-#define	chreset	nodev
+#define	chopen		nodev
+#define	chclose		nodev
+#define	chread		nodev
+#define	chwrite		nodev
+#define	chioctl		nodev
+#define	chreset		nodev
+#define	chselect	nodev
 #endif
 
 #include "ca.h"
 #if NCA > 0
-int	caopen(), caclose(), cawrite(), caioctl(), careset();
+int	caopen(),caclose(),cawrite(),caioctl(),careset(),caselect();
 #else
-#define	caopen	nodev
-#define	caclose	nodev
-#define	cawrite	nodev
-#define	caioctl	nodev
-#define	careset	nulldev
+#define	caopen		nodev
+#define	caclose		nodev
+#define	cawrite		nodev
+#define	caioctl		nodev
+#define	careset		nulldev
+#define	caselect	nodev
 #endif
 
 #include "dr.h"
 #if NDR > 0
-int	dropen(), drclose(), drread(), drwrite(), drioctl(), drreset();
+int	dropen(),drclose(),drread(),drwrite(),drioctl(),drreset(),drselect();
 #else
-#define	dropen	nodev
-#define	drclose	nodev
-#define drread	nodev
-#define	drwrite	nodev
-#define	drioctl	nodev
-#define	drreset	nodev
+#define	dropen		nodev
+#define	drclose		nodev
+#define drread		nodev
+#define	drwrite		nodev
+#define	drioctl		nodev
+#define	drreset		nodev
 #endif
+
+int	ttselect(), seltrue(), selectfalse();
 
 struct cdevsw	cdevsw[] =
 {
 	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
 	cnioctl,	nulldev,	nulldev,	&cons,
+	ttselect,
 	dzopen,		dzclose,	dzread,		dzwrite,	/*1*/
 	dzioctl,	dzstop,		dzreset,	dz_tty,
+	ttselect,
 	syopen,		nulldev,	syread,		sywrite,	/*2*/
 	syioctl,	nulldev,	nulldev,	0,
+	syselect,
 	nulldev,	nulldev,	mmread,		mmwrite,	/*3*/
 	nodev,		nulldev,	nulldev,	0,
+	mmselect,
 	nulldev,	nulldev,	hpread,		hpwrite,	/*4*/
 	nodev,		nodev,		nulldev,	0,
+	seltrue,
 	htopen,		htclose,	htread,		htwrite,	/*5*/
 	htioctl,	nodev,		nulldev,	0,
+	seltrue,
 	vpopen,		vpclose,	nodev,		vpwrite,	/*6*/
 	vpioctl,	nulldev,	vpreset,	0,
+	vpselect,
 	nulldev,	nulldev,	swread,		swwrite,	/*7*/
 	nodev,		nodev,		nulldev,	0,
+	nodev,
 #if VAX780
 	flopen,		flclose,	flread,		flwrite,	/*8*/
 	nodev,		nodev,		nulldev,	0,
+	seltrue,
 #else
 	nodev,		nodev,		nodev,		nodev,		/*8*/
 	nodev,		nodev,		nodev,		0,
+	nodev,
 #endif
-	mxopen,		mxclose,	mxread,		mxwrite,	/*9*/
-	mxioctl,	nulldev,	nulldev,	0,
+	nodev,		nodev,		nodev,		nodev,		/*9*/
+	nodev,		nodev,		nodev,		0,
+	nodev,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
+	vaselect,
 	nulldev,	nulldev,	rkread,		rkwrite,	/*11*/
 	nodev,		nodev,		rkreset,	0,
+	seltrue,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
+	ttselect,
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
 	nodev,		nodev,		upreset,	0,
+	seltrue,
 	tmopen,		tmclose,	tmread,		tmwrite,	/*14*/
 	tmioctl,	nodev,		tmreset,	0,
+	seltrue,
 	lpopen,		lpclose,	nodev,		lpwrite,	/*15*/
 	nodev,		nodev,		lpreset,	0,
+	seltrue,
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	tsioctl,	nodev,		tsreset,	0,
+	seltrue,
 	nodev,		nodev,		nodev,		nodev,		/*17*/
 	nodev,		nodev,		nulldev,	0,
+	nodev,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nulldev,	0,
+	seltrue,
 	chopen,		chclose,	chread,		chwrite,	/*19*/
 	chioctl,	nodev,		chreset,	0,
+	chselect,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
+	ttselect,
 	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*21*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
+	ptcselect,
 	nodev,		nodev,		nodev,		nodev,		/*22*/
 	nodev,		nodev,		accreset,	0,
+	nodev,
 	dropen,		drclose,	drread,		drwrite,	/*23*/
 	drioctl,	nodev,		drreset,	0,
+	seltrue,
 	caopen,		caclose,	nodev,		cawrite,	/*24*/
 	nodev,		nodev,		careset,	0,
+	seltrue,
 	nodev,		nodev,		nodev,		nodev,		/*25*/
 	nodev,		nodev,		nodev,		0,
+	nodev,
 /* 25-29 reserved to local sites */
 	0,	
 };
 
-int	ttyopen(),ttread(),nullioctl(),ttstart();
+int	ttyopen(),ttyclose(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
-int	ttyinput(),ttyrend();
-
-#include "bk.h"
-#if NBK > 0
-int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
-#endif
-
-int	ntyopen(),ntyclose(),ntread();
-char	*ntwrite();
-int	ntyinput(),ntyrend();
+int	ttyinput();
  
-#ifdef CHAOS
-int	ch_lopen(), ch_lclose(), ch_linput(), ch_lstart();
-#endif
-
 struct	linesw linesw[] =
 {
-	ttyopen, nulldev, ttread, ttwrite, nullioctl,
-	ttyinput, ttyrend, nulldev, nulldev, nulldev,		/* 0 */
-#if NBK > 0
-	bkopen, bkclose, bkread, ttwrite, bkioctl,
-	bkinput, nodev, nulldev, ttstart, nulldev,		/* 1 */
-#else
+	ttyopen, nodev, ttread, ttwrite, nullioctl,
+	ttyinput, nodev, nulldev, ttstart, nulldev,
 	nodev, nodev, nodev, (char *(*)())nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
-#endif
-	ntyopen, ntyclose, ntread, ntwrite, nullioctl,
-	ntyinput, ntyrend, nulldev, ttstart, nulldev,		/* 2 */
-#ifdef CHAOS
-	ch_lopen, ch_lclose, nulldev, (char *(*)())nulldev, nullioctl,
-	ch_linput, nulldev, nulldev, ch_lstart, nulldev, 	/* 3 */
-#else
-	nodev, nodev, nodev, (char *(*)())nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-	mxopen, mxclose, mcread, mcwrite, mxioctl,
-	nulldev, nulldev, nulldev, nulldev, nulldev,		/* 4 */
+	ttyopen, ttyclose, ttread, ttwrite, nullioctl,
+	ttyinput, nodev, nulldev, ttstart, nulldev,
 	0
 };
 
-int	nldisp = 4;
+int	nldisp = 3;
 
 struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
