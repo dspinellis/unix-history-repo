@@ -4,8 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.11 (Berkeley) %G%
+ *	@(#)dinode.h	7.12 (Berkeley) %G%
  */
+
+/*
+ * The root inode is the root of the file system.  Inode 0 can't be used for
+ * normal purposes and historically bad blocks were linked to inode 1, thus
+ * the root inode is 2.  (Inode 1 is no longer used for this purpose, however
+ * numerous dump tapes make this assumption, so we are stuck with it).
+ */
+#define	ROOTINO	((ino_t)2)
 
 /*
  * A dinode contains all the meta-data associated with a UFS file.
