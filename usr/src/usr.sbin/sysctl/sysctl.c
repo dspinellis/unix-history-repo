@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -45,7 +45,7 @@ struct list {
 	{ 0, 0 },			/* CTL_MACHDEP */
 };
 
-int	Aflag, aflag, wflag;
+int	Aflag, aflag, nflag, wflag;
 
 int
 main(argc, argv)
@@ -54,9 +54,9 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	int ch;
+	int ch, lvl1;
 
-	while ((ch = getopt(argc, argv, "Aaw")) != EOF) {
+	while ((ch = getopt(argc, argv, "Aanw")) != EOF) {
 		switch (ch) {
 
 		case 'A':
@@ -65,6 +65,10 @@ main(argc, argv)
 
 		case 'a':
 			aflag = 1;
+			break;
+
+		case 'n':
+			nflag = 1;
 			break;
 
 		case 'w':
@@ -79,7 +83,8 @@ main(argc, argv)
 	argv += optind;
 
 	if (Aflag || aflag) {
-		listall();
+		for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++)
+			listall(lvl1);
 		exit(0);
 	}
 	if (argc == 0)
@@ -92,23 +97,22 @@ main(argc, argv)
 /*
  * List all variables known to the system.
  */
-listall()
+listall(lvl1)
+	int lvl1;
 {
 	struct list *lp;
-	int lvl1, lvl2;
+	int lvl2;
 	char *cp, name[BUFSIZ];
 
-	for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++) {
-		lp = &secondlevel[lvl1];
-		if (lp->list == 0)
-			continue;
-		strcpy(name, topname[lvl1]);
-		cp = &name[strlen(name)];
-		*cp++ = '.';
-		for (lvl2 = 1; lvl2 < lp->size; lvl2++) {
-			strcpy(cp, lp->list[lvl2]);
-			parse(name, Aflag);
-		}
+	lp = &secondlevel[lvl1];
+	if (lp->list == 0)
+		return;
+	strcpy(name, topname[lvl1]);
+	cp = &name[strlen(name)];
+	*cp++ = '.';
+	for (lvl2 = 1; lvl2 < lp->size; lvl2++) {
+		strcpy(cp, lp->list[lvl2]);
+		parse(name, Aflag);
 	}
 }
 
@@ -160,6 +164,10 @@ parse(string, flags)
 		    topname[indx]);
 		return;
 	}
+	if (bufp == NULL) {
+		listall(indx);
+		return;
+	}
 	if ((indx = findname(string, "second", &bufp, lp)) == -1)
 		return;
 	mib[1] = indx;
@@ -198,7 +206,9 @@ parse(string, flags)
 			double loads[3];
 
 			getloadavg(loads, 3);
-			fprintf(stdout, "%s: %.2f %.2f %.2f\n", string,
+			if (!nflag)
+				fprintf(stdout, "%s: ", string);
+			fprintf(stdout, "%.2f %.2f %.2f\n", 
 			    loads[0], loads[1], loads[2]);
 			return;
 		}
@@ -249,22 +259,35 @@ parse(string, flags)
 	if (isclockrate) {
 		struct clockinfo *clkp = (struct clockinfo *)buf;
 
+		if (!nflag)
+			fprintf(stdout, "%s: ", string);
 		fprintf(stdout,
-		    "%s: hz = %d, tick = %d, profhz = %d, stathz = %d\n",
-		    string, clkp->hz, clkp->tick, clkp->profhz, clkp->stathz);
+		    "hz = %d, tick = %d, profhz = %d, stathz = %d\n",
+		    clkp->hz, clkp->tick, clkp->profhz, clkp->stathz);
 		return;
 	}
-	if (size == sizeof(int) && !isprint(buf[0]))
-		if (newsize == 0)
-			fprintf(stdout, "%s = %d\n", string, *(int *)buf);
-		else
-			fprintf(stdout, "%s: %d -> %d\n", string, *(int *)buf,
-			    *(int *)newval);
+	if (size == sizeof(int) && !(isprint(buf[0]) && isprint(buf[1]) &&
+	    isprint(buf[2]) && isprint(buf[3])))
+		if (newsize == 0) {
+			if (!nflag)
+				fprintf(stdout, "%s = ", string);
+			fprintf(stdout, "%d\n", *(int *)buf);
+		} else {
+			if (!nflag)
+				fprintf(stdout, "%s: %d -> ", string,
+				    *(int *)buf);
+			fprintf(stdout, "%d\n", *(int *)newval);
+		}
 	else
-		if (newsize == 0)
-			fprintf(stdout, "%s = %s\n", string, buf);
-		else
-			fprintf(stdout, "%s: %s -> %s\n", string, buf, newval);
+		if (newsize == 0) {
+			if (!nflag)
+				fprintf(stdout, "%s = ", string);
+			fprintf(stdout, "%s\n", buf);
+		} else {
+			if (!nflag)
+				fprintf(stdout, "%s: %s -> ", string, buf);
+			fprintf(stdout, "%s\n", newval);
+		}
 	return;
 }
 
