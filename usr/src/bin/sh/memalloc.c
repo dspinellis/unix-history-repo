@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)memalloc.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)memalloc.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -191,7 +191,7 @@ growstackblock() {
 		INTON;
 	} else {
 		p = stalloc(newlen);
-		bcopy(oldspace, p, oldlen);
+		memmove(p, oldspace, oldlen);
 		stacknxt = p;			/* free the space */
 		stacknleft += newlen;		/* we just allocated */
 	}

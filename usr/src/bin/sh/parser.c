@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -1149,7 +1149,7 @@ parsebackq: {
 	savelen = out - stackblock();
 	if (savelen > 0) {
 		str = ckmalloc(savelen);
-		bcopy(stackblock(), str, savelen);
+		memmove(str, stackblock(), savelen);
 	}
 	savehandler = handler;
 	handler = &jmploc;
@@ -1177,7 +1177,7 @@ parsebackq: {
                 savelen = out - stackblock();
                 if (savelen > 0) {
                         str = ckmalloc(savelen);
-                        bcopy(stackblock(), str, savelen);
+                        memmove(str, stackblock(), savelen);
                 }
                 setinputstring(str, 1);
         }
@@ -1198,7 +1198,7 @@ parsebackq: {
 		growstackblock();
 	STARTSTACKSTR(out);
 	if (str) {
-		bcopy(str, out, savelen);
+		memmove(out, str, savelen);
 		STADJUST(savelen, out);
 		INTOFF;
 		ckfree(str);

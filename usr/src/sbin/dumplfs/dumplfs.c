@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,13 +23,14 @@ static char sccsid[] = "@(#)dumplfs.c	8.2 (Berkeley) %G%";
 #include <ufs/ufs/dinode.h>
 #include <ufs/lfs/lfs.h>
 
+#include <err.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <fstab.h>
-#include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "extern.h"
 
 static void	addseg __P((char *));
@@ -86,7 +87,7 @@ main(argc, argv)
 
 	do_allsb = 0;
 	do_ientries = 0;
-	while ((ch = getopt(argc, argv, "ais:")) != EOF)
+	while ((ch = getopt(argc, argv, "ais:")) != -1)
 		switch(ch) {
 		case 'a':		/* Dump all superblocks */
 			do_allsb = 1;
@@ -108,7 +109,7 @@ main(argc, argv)
 
 	special = argv[0];
 	if ((fd = open(special, O_RDONLY, 0)) < 0)
-		err("%s: %s", special, strerror(errno));
+		err(1, "%s", special);
 
 	/* Read the first superblock */
 	get(fd, LFS_LABELPAD, &lfs_sb1, sizeof(struct lfs));
@@ -168,7 +169,7 @@ dump_ifile(fd, lfsp, do_ientries)
 	addr = lfsp->lfs_idaddr;
 
 	if (!(dpage = malloc(psize)))
-		err("%s", strerror(errno));
+		err(1, NULL);
 	get(fd, addr << daddr_shift, dpage, psize);
 
 	for (dip = dpage + INOPB(lfsp) - 1; dip >= dpage; --dip)
@@ -176,7 +177,7 @@ dump_ifile(fd, lfsp, do_ientries)
 			break;
 
 	if (dip < dpage)
-		err("unable to locate ifile inode");
+		errx(1, "unable to locate ifile inode");
 
 	(void)printf("\nIFILE inode\n");
 	dump_dinode(dip);
@@ -187,7 +188,7 @@ dump_ifile(fd, lfsp, do_ientries)
 
 	/* Get the direct block */
 	if ((ipage = malloc(psize)) == NULL)
-		err("%s", strerror(errno));
+		err(1, NULL);
 	for (inum = 0, addrp = dip->di_db, i = 0; i < block_limit;
 	    i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
@@ -215,7 +216,7 @@ dump_ifile(fd, lfsp, do_ientries)
 
 	/* Dump out blocks off of single indirect block */
 	if (!(indir = malloc(psize)))
-		err("%s", strerror(errno));
+		err(1, NULL);
 	get(fd, dip->di_ib[0] << daddr_shift, indir, psize);
 	block_limit = MIN(i + lfsp->lfs_nindir, nblocks);
 	for (addrp = indir; i < block_limit; i++, addrp++) {
@@ -245,7 +246,7 @@ dump_ifile(fd, lfsp, do_ientries)
 
 	/* Get the double indirect block */
 	if (!(dindir = malloc(psize)))
-		err("%s", strerror(errno));
+		err(1, NULL);
 	get(fd, dip->di_ib[1] << daddr_shift, dindir, psize);
 	for (iaddrp = dindir, j = 0; j < lfsp->lfs_nindir; j++, iaddrp++) {
 		if (*iaddrp == LFS_UNUSED_DADDR)
@@ -560,7 +561,7 @@ addseg(arg)
 	SEGLIST *p;
 
 	if ((p = malloc(sizeof(SEGLIST))) == NULL)
-		err("%s", strerror(errno));
+		err(1, NULL);
 	p->next = seglist;
 	p->num = atoi(arg);
 	seglist = p;
