@@ -1,4 +1,4 @@
-/*	makevfont.c	(Berkeley)	85/02/26	1.5
+/*	makevfont.c	(Berkeley)	85/05/03	1.6
  *
  * Font description file producer for versatec fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
@@ -6,8 +6,9 @@
  *	Use:  makevfont [ -nNAME ]  [ -s -a -o -l -c -p# -r# -f# -ddir ]
  *		[ "-xs1,s2[;s1,s2...]" ]  [ "-ys1,s2[;s1,s2...]" ]  font
  *
- *	Makefont takes the font named "font" and produces a ditroff description
- *	file from it.  The -n option takes the 1 or 2 letter troff name to put
+ *	Makefont takes the font named "font" (with or without pointsize
+ *	extension on the filename) and produces a ditroff description file
+ *	from it.  The -n option takes the 1 or 2 letter troff name to put
  *	the description (default = XX).  The -f option takes an integer per-
  *	centage factor to multiply widths by.  The -s, -o and -a options select
  *	a different character mapping than for a "roman" font.  s = special;
@@ -55,8 +56,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <vfont.h>
+#include <strings.h>
 
-char 	sccsid[] = "@(#)makevfont.c	1.5	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makevfont.c	1.6	(Berkeley)	%G%";
 
 #define MAGICN		0436	/* font file magic number */
 #define PCNTUP		62	/* percent of maximum height for an ascender */
@@ -295,14 +297,21 @@ char **argv;
 
     if (argc != 1)					/* open font file */
 	error("A vfont filename must be the last operand.");
-    for (i = 0; FID < 0 && (psize = psizelist[i]) > 0; i++) {
-	sprintf (IName, "%s/%s.%d", fontdir, *argv, psize);
+    if (ptr = rindex(*argv, '.')) ptr++;
+    if (ptr && *ptr <= '9' && *ptr >= '0') {
+	psize = atoi(ptr);
+	if (psize < MINSIZE || psize > MAXSIZE)
+	    error("point size of file \"%s\" out of range", *argv);
+	sprintf (IName, "%s/%s", fontdir, *argv);
 	FID = open (IName, 0);
+    } else {
+	for (i = 0; FID < 0 && (psize = psizelist[i]) > 0; i++) {
+	    sprintf (IName, "%s/%s.%d", fontdir, *argv, psize);
+	    FID = open (IName, 0);
+	}
     }
-    if (FID < 0) { 
-	printf ("Can't find %s\n", *argv);
-	exit (8); 
-    }
+    if (FID < 0)
+	error ("Can't open %s", *argv);
 
 						/* read font width table */
     if (read (FID, &FontHeader, sizeof FontHeader) != sizeof FontHeader)
