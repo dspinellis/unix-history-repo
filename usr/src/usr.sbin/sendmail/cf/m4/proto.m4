@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.44 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.45 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -419,7 +419,7 @@ ifdef(`_NO_UUCP_', `dnl',
 `R$* < @ localhost . UUCP > $*	$: $1 < @ $j . > $2		.UUCP domain')
 R$* < @ [ $+ ] > $*		$: $1 < @@ [ $2 ] > $3		mark [a.b.c.d]
 R$* < @@ $=w > $*		$: $1 < @ $j . > $3		self-literal
-R$* < @@ $+ > $*		$: $1 < @ $2 > $3		strip dbl @@
+R$* < @@ $+ > $*		$@ $1 < @ $2 > $3		canon IP addr
 ifdef(`DOMAIN_TABLE', `
 # look up unqualified domains in the domain table
 R$* < @ $- > $*			$: $1 < @ $(domaintable $2 $) > $3',
@@ -468,9 +468,6 @@ S4
 
 R$*<@>			$@ $1				handle <> and list:;
 
-# resolve numeric addresses to name if possible
-R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	lookup numeric internet addr
-
 # strip trailing dot off possibly canonical name
 R$* < @ $+ . > $*	$1 < @ $2 > $3
 
@@ -511,8 +508,6 @@ R<$* : $* >		$#error $@ USAGE $: "colon illegal in host name part"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
-ifdef(`_NO_CANONIFY_', `dnl',
-`R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr')
 R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
 R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 < @ [$2] > $3	still numeric: send',
 	`dnl')
