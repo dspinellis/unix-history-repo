@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.28	82/01/25	*/
+/*	uipc_mbuf.c	1.29	82/02/08	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -325,6 +325,7 @@ m_pullup(m0, len)
 	register struct mbuf *m, *n;
 	int cnt;
 
+	n = m0;
 	if (len > MLEN)
 		goto bad;
 	MGET(m, 0);
@@ -332,7 +333,6 @@ m_pullup(m0, len)
 		goto bad;
 	m->m_off = MMINOFF;
 	m->m_len = 0;
-	n = m0;
 	do {
 		cnt = MIN(MLEN - m->m_len, len);
 		if (cnt > n->m_len)
@@ -353,6 +353,6 @@ m_pullup(m0, len)
 	m->m_next = n;
 	return (m);
 bad:
-	m_freem(m0);
+	m_freem(n);
 	return (0);
 }
