@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.1 (Berkeley) %G%
+ *	@(#)READ_ME	6.2 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -29,6 +29,8 @@ mail.local	Source for mail.local(8), a local delivery program.
 		special -d flag to mean "really deliver this mail";
 		this is a completely new (and much smaller) program
 		that does absolutely nothing but deliver local mail.
+		THIS IS SPECIFIC TO 4.4BSD, and is not under my
+		control.
 mailstats	Statistics printing program.  It has the pathname of
 		sendmail.st compiled in, so if you've changed that,
 		beware.  This isn't all that useful.
@@ -43,11 +45,18 @@ praliases	A program to print the DBM version of the aliases file.
 		DB format (which we are using).
 rmail		Source for rmail(8).  This is used as a delivery
 		agent for for UUCP, and could presumably be used by
-		other non-socket oriented mailers.
+		other non-socket oriented mailers.  Older versions of
+		rmail are probably deficient.
 src		Source for the sendmail program itself.
 
+Unfortunately, for a variety of reasons the Makefiles are for the new
+Berkeley "make" and will not work on the old, traditional make.  I urge
+you to get this make from Net2 (available on many public FTP archives).
+Failing that, some directories have a "Makefile.dist" that will work on
+older versions of make (but don't have the niceties included).
+
 IF YOU WANT TO RUN THE NEW BERKELEY DB SOFTWARE:  ****  DO NOT  ****
-use the version that was on the Net/2 tape -- it has a number of
+use the version that was on the Net2 tape -- it has a number of
 nefarious bugs that were bad enough when I got them; you shouldn't have
 to go through the same thing.  Instead, get a new version via public
 FTP from okeeffe.CS.Berkeley.EDU, file pub/db.tar.Z.  This software
