@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -94,7 +94,7 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif /* SMTP */
 #endif /* DAEMON */
 
-#define MAXCONFIGLEVEL	4	/* highest config version level known */
+#define MAXCONFIGLEVEL	5	/* highest config version level known */
 
 main(argc, argv, envp)
 	int argc;
@@ -102,7 +102,6 @@ main(argc, argv, envp)
 	char **envp;
 {
 	register char *p;
-	register char *q;
 	char **av;
 	char *locname;
 	extern int finis();
@@ -336,18 +335,21 @@ main(argc, argv, envp)
 		if (tTd(0, 4))
 			printf("canonical name: %s\n", jbuf);
 		p = newstr(jbuf);
-		define('w', p, CurEnv);
+		if (ConfigLevel < 5)
+			define('w', p, CurEnv);
 		define('j', p, CurEnv);
 		setclass('w', p);
 
-		q = strchr(jbuf, '.');
-		if (q != NULL)
+		p = strchr(jbuf, '.');
+		if (p != NULL)
 		{
-			*q++ = '\0';
-			define('m', q, CurEnv);
-			p = newstr(jbuf);
-			setclass('w', p);
+			*p++ = '\0';
+			if (*p != '\0')
+				define('m', newstr(p), CurEnv);
+			setclass('w', jbuf);
 		}
+		if (ConfigLevel >= 5)
+			define('w', newstr(jbuf), CurEnv);
 
 		if (uname(&utsname) >= 0)
 			p = utsname.nodename;
@@ -500,13 +502,13 @@ main(argc, argv, envp)
 			break;
 
 		  case 'p':	/* set protocol */
-			q = strchr(optarg, ':');
-			if (q != NULL)
-				*q++ = '\0';
+			p = strchr(optarg, ':');
+			if (p != NULL)
+				*p++ = '\0';
 			if (*optarg != '\0')
 				define('r', newstr(optarg), CurEnv);
-			if (q != NULL && *q != '\0')
-				define('s', newstr(q), CurEnv);
+			if (p != NULL && *p != '\0')
+				define('s', newstr(p), CurEnv);
 			break;
 
 		  case 'q':	/* run queue files at intervals */
@@ -1362,10 +1364,10 @@ thaw(freezefile, binfile)
 
 	/* verify that the host name was correct on the freeze */
 	(void) myhostname(hbuf, sizeof hbuf);
-	p = macvalue('w', CurEnv);
+	p = macvalue('j', CurEnv);
 	if (p == NULL)
 		p = "";
-	if (strcmp(hbuf, macvalue('w', CurEnv)) == 0)
+	if (strcmp(hbuf, macvalue('j', CurEnv)) == 0)
 		return (TRUE);
 	syslog(LOG_WARNING, "Hostname changed since freeze (%s => %s)",
 		p, hbuf);
