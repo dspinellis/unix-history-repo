@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)listrefs.c	2.3	%G%";
+static char sccsid[] = "@(#)listrefs.c	2.4	%G%";
 #endif not lint
 /*
         Listrefs - list references for bib system
@@ -34,7 +34,7 @@ char reffile[] = TMPREFFILE;    /* temporary file (see bib.h) */
 struct refinfo refinfo[MAXLIST];      /* references temporary file, seek positions */
 struct refinfo *refshash[HASHSIZE];
 long int rend = 1;              /* last used position in reference file */
-int numrefs = -1;               /* number of references */
+int numrefs = 0;               /* number of references */
 extern int sort;                /* see if things are to be sorted */
 extern char bibfname[];
 extern int biblineno;
