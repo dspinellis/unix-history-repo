@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -61,7 +61,7 @@ showswap()
 	if (xtext == 0)
 		return;
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
-		if (xp->x_iptr == NULL)
+		if (xp->x_vptr == NULL)
 			continue;
 		ts = ctod(xp->x_size);
 		dp = xp->x_daddr;
@@ -73,7 +73,7 @@ showswap()
 			buckets[swatodev(*dp)][dmtoindex(j)]++;
 			dp++;
 		}
-		if ((xp->x_flag & XPAGI) && xp->x_ptdaddr)
+		if ((xp->x_flag & XPAGV) && xp->x_ptdaddr)
 			buckets[swatodev(xp->x_ptdaddr)]
 			    [dmtoindex(ctod(ctopt(xp->x_size)))]++;
 	}
