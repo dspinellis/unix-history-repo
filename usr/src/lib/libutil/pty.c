@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -42,7 +42,7 @@ openpty(amaster, aslave, name, termp, winp)
 		for (cp2 = "0123456789abcdef"; *cp2; cp2++) {
 			line[9] = *cp2;
 			if ((master = open(line, O_RDWR, 0)) == -1) {
-				if (errno != EIO)
+				if (errno == ENOENT)
 					return (-1);	/* out of ptys */
 			} else {
 				line[5] = 't';
