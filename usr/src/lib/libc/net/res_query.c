@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_query.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_query.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -42,6 +42,7 @@ int h_errno;
  * if no error is indicated and the answer count is nonzero.
  * Return the size of the response on success, -1 on error.
  * Error number is left in h_errno.
+ * Caller must parse answer and determine whether it answers the question.
  */
 res_query(name, class, type, answer, anslen)
 	char *name;		/* domain name */
@@ -89,25 +90,20 @@ res_query(name, class, type, answer, anslen)
 #endif
 		switch (hp->rcode) {
 			case NXDOMAIN:
-				/* Check if it's an authoritive answer */
-				if (hp->aa)
-					h_errno = HOST_NOT_FOUND;
-				else
-					h_errno = TRY_AGAIN;
+				h_errno = HOST_NOT_FOUND;
 				break;
 			case SERVFAIL:
 				h_errno = TRY_AGAIN;
 				break;
 			case NOERROR:
-				if (hp->aa)
-					h_errno = NO_ADDRESS;
-				else
-					h_errno = TRY_AGAIN;
+				h_errno = NO_ADDRESS;
 				break;
 			case FORMERR:
 			case NOTIMP:
 			case REFUSED:
+			default:
 				h_errno = NO_RECOVERY;
+				break;
 		}
 		return (-1);
 	}
