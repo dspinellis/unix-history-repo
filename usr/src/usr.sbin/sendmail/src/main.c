@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -890,6 +890,17 @@ main(argc, argv, envp)
 		smtp(CurEnv);
 # endif /* SMTP */
 
+	if (OpMode == MD_VERIFY)
+	{
+		CurEnv->e_sendmode = SM_VERIFY;
+		CurEnv->e_errormode = EM_QUIET;
+	}
+	else
+	{
+		/* interactive -- all errors are global */
+		CurEnv->e_flags |= EF_GLOBALERRS;
+	}
+
 	/*
 	**  Do basic system initialization and set the sender
 	*/
@@ -904,11 +915,6 @@ main(argc, argv, envp)
 		CurEnv->e_flags |= EF_GLOBALERRS;
 		usrerr("Usage: /usr/lib/sendmail [flags] addr...");
 		finis();
-	}
-	if (OpMode == MD_VERIFY)
-	{
-		CurEnv->e_sendmode = SM_VERIFY;
-		CurEnv->e_errormode = EM_QUIET;
 	}
 
 	/*
