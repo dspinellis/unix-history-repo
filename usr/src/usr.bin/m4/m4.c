@@ -1,5 +1,5 @@
 Virgin BTL M4 as sent out in 4.1
-/* @(#)m4.c	1.1 (Berkeley) %G% */
+/* @(#)m4.c	1.2 (Berkeley) %G% */
 #include <stdio.h>
 #include <signal.h>
 
@@ -57,9 +57,12 @@ char	type[] = {
 
 char	token[TOKS];
 char	eoa[]	= "\0";
+
+#define	RESERVED	01	/* This is a reserved word with side action */
 struct	nlist {
 	char	*name;
 	char	*def;
+	char	flag;
 	struct	nlist *next;
 };
 
@@ -126,69 +129,69 @@ char **argv;
 
 #ifdef gcos
 #ifdef M4
-	install("GCOS", eoa);
+	install("GCOS", eoa, 0);
 #endif
 #ifndef M4
-	install("gcos", eoa);
+	install("gcos", eoa, 0);
 #endif
 #endif
 #ifdef unix
 #ifdef M4
-	install("UNIX", eoa);
+	install("UNIX", eoa, 0);
 #endif
 #ifndef M4
-	install("unix", eoa);
+	install("unix", eoa, 0);
 #endif
 #endif
 
 #ifdef M4
-	makeloc = install("MAKETEMP", eoa);
-	ifdefloc = install("IFDEF", eoa);
-	lenloc = install("LEN", eoa);
-	undefloc = install("UNDEFINE", eoa);
-	shiftloc = install("SHIFT", eoa);
-	cqloc = install("CHANGEQUOTE", eoa);
-	defloc = install("DEFINE", eoa);
-	evaloc = install("EVAL", eoa);
-	inclloc = install("INCLUDE", eoa);
-	sinclloc = install("SINCLUDE", eoa);
-	syscmdloc = install("SYSCMD", eoa);
-	dumploc = install("DUMPDEF", eoa);
-	errploc = install("ERRPRINT", eoa);
-	incrloc = install("INCR", eoa);
-	substrloc = install("SUBSTR", eoa);
-	indexloc = install("INDEX", eoa);
-	transloc = install("TRANSLIT", eoa);
-	ifloc = install("IFELSE", eoa);
-	divloc = install("DIVERT", eoa);
-	divnumloc = install("DIVNUM", eoa);
-	undivloc = install("UNDIVERT", eoa);
-	dnlloc = install("DNL", eoa);
+	makeloc = install("MAKETEMP", eoa, RESERVED);
+	ifdefloc = install("IFDEF", eoa, RESERVED);
+	lenloc = install("LEN", eoa, RESERVED);
+	undefloc = install("UNDEFINE", eoa, RESERVED);
+	shiftloc = install("SHIFT", eoa, RESERVED);
+	cqloc = install("CHANGEQUOTE", eoa, RESERVED);
+	defloc = install("DEFINE", eoa, RESERVED);
+	evaloc = install("EVAL", eoa, RESERVED);
+	inclloc = install("INCLUDE", eoa, RESERVED);
+	sinclloc = install("SINCLUDE", eoa, RESERVED);
+	syscmdloc = install("SYSCMD", eoa, RESERVED);
+	dumploc = install("DUMPDEF", eoa, RESERVED);
+	errploc = install("ERRPRINT", eoa, RESERVED);
+	incrloc = install("INCR", eoa, RESERVED);
+	substrloc = install("SUBSTR", eoa, RESERVED);
+	indexloc = install("INDEX", eoa, RESERVED);
+	transloc = install("TRANSLIT", eoa, RESERVED);
+	ifloc = install("IFELSE", eoa, RESERVED);
+	divloc = install("DIVERT", eoa, RESERVED);
+	divnumloc = install("DIVNUM", eoa, RESERVED);
+	undivloc = install("UNDIVERT", eoa, RESERVED);
+	dnlloc = install("DNL", eoa, RESERVED);
 #endif
 
 #ifndef M4
-	makeloc = install("maketemp", eoa);
-	ifdefloc = install("ifdef", eoa);
-	lenloc = install("len", eoa);
-	undefloc = install("undefine", eoa);
-	shiftloc = install("shift", eoa);
-	cqloc = install("changequote", eoa);
-	defloc = install("define", eoa);
-	evaloc = install("eval", eoa);
-	inclloc = install("include", eoa);
-	sinclloc = install("sinclude", eoa);
-	syscmdloc = install("syscmd", eoa);
-	dumploc = install("dumpdef", eoa);
-	errploc = install("errprint", eoa);
-	incrloc = install("incr", eoa);
-	substrloc = install("substr", eoa);
-	indexloc = install("index", eoa);
-	transloc = install("translit", eoa);
-	ifloc = install("ifelse", eoa);
-	divloc = install("divert", eoa);
-	divnumloc = install("divnum", eoa);
-	undivloc = install("undivert", eoa);
-	dnlloc = install("dnl", eoa);
+	makeloc = install("maketemp", eoa, RESERVED);
+	ifdefloc = install("ifdef", eoa, RESERVED);
+	lenloc = install("len", eoa, RESERVED);
+	undefloc = install("undefine", eoa, RESERVED);
+	shiftloc = install("shift", eoa, RESERVED);
+	cqloc = install("changequote", eoa, RESERVED);
+	defloc = install("define", eoa, RESERVED);
+	evaloc = install("eval", eoa, RESERVED);
+	inclloc = install("include", eoa, RESERVED);
+	sinclloc = install("sinclude", eoa, RESERVED);
+	syscmdloc = install("syscmd", eoa, RESERVED);
+	dumploc = install("dumpdef", eoa, RESERVED);
+	errploc = install("errprint", eoa, RESERVED);
+	incrloc = install("incr", eoa, RESERVED);
+	substrloc = install("substr", eoa, RESERVED);
+	indexloc = install("index", eoa, RESERVED);
+	transloc = install("translit", eoa, RESERVED);
+	ifloc = install("ifelse", eoa, RESERVED);
+	divloc = install("divert", eoa, RESERVED);
+	divnumloc = install("divnum", eoa, RESERVED);
+	undivloc = install("undivert", eoa, RESERVED);
+	dnlloc = install("dnl", eoa, RESERVED);
 #endif
 	ap = argstk;
 #ifndef gcos
@@ -479,8 +482,9 @@ char *str;
 	return(&nodef);
 }
 
-char *install(nam, val)
+char *install(nam, val, flag)
 char *nam, *val;
+char flag;
 {
 	register struct nlist *np;
 
@@ -493,10 +497,12 @@ char *nam, *val;
 		np->name = copy(nam);
 		np->def = copy(val);
 		np->next = hshtab[hshval];
+		np->flag = flag;
 		hshtab[hshval] = np;
 		return(np->def);
 	}
 	free(np->def);
+	np->flag = flag;
 	np->def = copy(val);
 	return(np->def);
 }
@@ -516,9 +522,20 @@ char **ap;
 			;
 		tnp->next = np->next;
 	}
-	free(np->name);
-	free(np->def);
-	free((char *)np);
+	/*
+	 * If this is a reserved word, it has been removed from the
+	 * hastable.  We do not want to actually free the space because
+	 * of the code in expand.  Expand wants to to pointer compairs
+	 * to tell if this is a reserved word (e.g a special action
+	 * needs to take place).  Thus if we do not free the space,
+	 * expand will still work, but the name will never be found
+	 * because it out of the symbol table!
+	 */
+	if (np->flag&RESERVED == 0) { /* If not reserved free it */
+		free(np->name);
+		free(np->def);
+		free((char *)np);
+	}
 }
 
 char *copy(s)
@@ -543,10 +560,10 @@ char **ap;
 			fprintf(stderr, "m4: %s defined as itself\n", ap[1]);
 			delexit();
 		}
-		install(ap[1], ap[2]);
+		install(ap[1], ap[2], 0);
 	}
 	else if (c == 1)
-		install(ap[1], "");
+		install(ap[1], "", 0);
 }
 
 doifdef(ap, c)
