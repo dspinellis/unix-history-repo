@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)cmd2.c	2.11 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -8,8 +10,6 @@
  *
  * More user commands.
  */
-
-static char *SccsId = "@(#)cmd2.c	2.10 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument

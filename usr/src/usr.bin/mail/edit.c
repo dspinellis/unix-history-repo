@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)edit.c	2.5 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <stdio.h>
@@ -9,8 +11,6 @@
  *
  * Perform message editing functions.
  */
-
-static char *SccsId = "@(#)edit.c	2.4 %G%";
 
 /*
  * Edit a message list.

@@ -1,12 +1,8 @@
-#
+/*	configdefs.h	1.4	83/08/11	*/
 
 /*
  * This file contains the definitions of data structures used in
  * configuring the network behavior of Mail when replying.
- */
-
-/*
- * Sccs ID @(#)configdefs.h	1.3 %G%
  */
 
 /*
