@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.25 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1312,7 +1312,7 @@ tcp_xmit_timer(tp)
 		/* 
 		 * No rtt measurement yet - use the unsmoothed rtt.
 		 * Set the variance to half the rtt (so our first
-		 * retransmit happens at 2*rtt)
+		 * retransmit happens at 3*rtt).
 		 */
 		tp->t_srtt = tp->t_rtt << TCP_RTT_SHIFT;
 		tp->t_rttvar = tp->t_rtt << (TCP_RTTVAR_SHIFT - 1);
@@ -1398,7 +1398,11 @@ tcp_mss(tp, offer)
 	 * to scaled multiples of the slow timeout timer.
 	 */
 	if (tp->t_srtt == 0 && (rtt = rt->rt_rmx.rmx_rtt)) {
-		if (rt->rt_rmx.rmx_locks & RTV_MTU)
+		/*
+		 * XXX the lock bit for MTU indicates that the value
+		 * is also a minimum value; this is subject to time.
+		 */
+		if (rt->rt_rmx.rmx_locks & RTV_RTT)
 			tp->t_rttmin = rtt / (RTM_RTTUNIT / PR_SLOWHZ);
 		tp->t_srtt = rtt / (RTM_RTTUNIT / (PR_SLOWHZ * TCP_RTT_SCALE));
 		if (rt->rt_rmx.rmx_rttvar)
