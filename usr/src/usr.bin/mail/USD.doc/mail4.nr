@@ -199,6 +199,10 @@ field, where the same rules apply.  Another newline brings you to
 the
 .q "Cc:"
 field, which may be edited in the same fashion.  Another newline
+brings you to the
+.q "Bcc:"
+("blind" carbon copy) field, which follows the same rules as the "Cc:"
+field.  Another newline
 leaves you appending text to the end of your message.  You can use
 ~p to print the current text of the header fields and the body
 of the message.
