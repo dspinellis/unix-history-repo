@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.6 (Berkeley) %G%
+ *	@(#)sys_process.c	7.7 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -119,8 +119,13 @@ procxmt()
 		break;
 
 	case PT_READ_U:			/* read the child's u. */
+#ifdef HPUXCOMPAT
+		if (u.u_pcb.pcb_flags & PCB_HPUXTRACE)
+			i = hpuxtobsduoff(ipc.ip_addr);
+		else
+#endif
 		i = (int)ipc.ip_addr;
-		if (i<0 || i >= ctob(UPAGES))
+		if (i<0 || i > ctob(UPAGES)-sizeof(int))
 			goto error;
 		ipc.ip_data = *(int *)PHYSOFF(&u, i);
 		break;
@@ -166,6 +171,11 @@ procxmt()
 		break;
 
 	case PT_WRITE_U:		/* write the child's u. */
+#ifdef HPUXCOMPAT
+		if (u.u_pcb.pcb_flags & PCB_HPUXTRACE)
+			i = hpuxtobsduoff(ipc.ip_addr);
+		else
+#endif
 		i = (int)ipc.ip_addr;
 		p = (int *)PHYSOFF(&u, i);
 		for (i=0; i<NIPCREG; i++)
@@ -173,13 +183,20 @@ procxmt()
 				goto ok;
 		if (p == &u.u_ar0[PS]) {
 			ipc.ip_data |= PSL_USERSET;
-			ipc.ip_data &=  ~PSL_USERCLR;
+			ipc.ip_data &= ~PSL_USERCLR;
 #ifdef PSL_CM_CLR
 			if (ipc.ip_data & PSL_CM)
 				ipc.ip_data &= ~PSL_CM_CLR;
 #endif
 			goto ok;
 		}
+#if defined(hp300)
+#ifdef FPCOPROC
+		if (p >= (int *)u.u_pcb.pcb_fpregs.fpf_regs &&
+		    p <= (int *)&u.u_pcb.pcb_fpregs.fpf_fpiar)
+			goto ok;
+#endif
+#endif
 		goto error;
 
 	ok:
