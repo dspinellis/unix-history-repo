@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.15 (Berkeley) %G%
+#	@(#)Makefile	4.16 (Berkeley) %G%
 
 PROGS=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot implot atoplot plottoa grnplot
@@ -81,8 +81,7 @@ tek: driver.o ${LIB4014} ${LIBM} ${LIBCOMPAT}
 	${CC} ${CFLAGS} -o ${.TARGET} driver.o -l4014 -lm -lcompat
 
 clean:
-	rm -f a.out Errs errs mklog core ${PROGS} driver.o crtdriver.o \
-	    crtplot.o debug
+	rm -f a.out Errs errs mklog core ${PROGS} ${SRCS:.c=.o} debug
 
 cleandir: clean
 	rm -f ${MAN1} ${.CURDIR}/tags .depend
@@ -101,5 +100,7 @@ lint: ${SRCS}
 
 tags: ${SRCS}
 	ctags -f ${.CURDIR}/tags ${.ALLSRC}
+
+${PROGS}: ${LIBC}
 
 .include <bsd.prog.mk>
