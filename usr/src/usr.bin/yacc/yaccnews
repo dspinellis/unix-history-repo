@@ -1,0 +1,149 @@
+5/18/78
+A new version of Yacc has been installed which contains some new
+features relating to error recovery, detection of funny conditions in the
+grammar, and strong typing.  Existing grammars should continue to work,
+with the possible exception of somewhat better error recovery behavior.
+More details follow:
+
+***	Ratfor and EFL Yacc are dead.  Long live C!
+
+***	The y.tab.c file now uses the # line feature to reflect
+	most error conditions in actions, etc., back to the yacc source
+	file, rather than the y.tab.c file.  As always with such features,
+	lookahead may cause the line number to be one too large
+	occasionally.
+
+***	The error recovery algorithm has been changed to cause the
+	parser never to reduce on a state where there is a shift
+	on the special token `error'.  This has the effect of causing
+	the error recovery action to take place somewhat closer to the
+	location of the error than previously.  It does not affect the
+	behavior of the parser in the absence of errors.  The parse
+	tables may be 1-2% larger as a result of this change.
+
+***	Yacc now detects the existence of nonterminals in the grammar
+	which can never derive any strings of tokens (even the empty string).
+	The simplest example is the grammar:
+		%%
+		s	:	s 'a' ;
+	Here, one must reduce `s' in order to reduce `s': the
+	parser would always report error.  If such nonterminals are
+	present, Yacc reports all such, then terminates.
+
+***	There is a new reserved word, %start.  When used in the declarations
+	section, it may be used to declare the start symbol of the grammar.
+	If %start does not appear, the start symbol is, as at present, the
+	first nonterminal symbol encountered.
+
+***	Yacc produced parsers are notorious for producing many many
+	comments from lint.  The problem is the value stack of the
+	parser, which typically may contain integers, pointers, and
+	possibly even floating point, etc., values.  The lack
+	of tight specification of this stack leads to potential
+	nonportability, and considerable loss of the diagnostic power
+	of lint.  Thus, some new features have been added which make use
+	of the new structure and union facilities of C.  In effect,
+	the user of Yacc may `honestly' declare the value stack, as
+	well as the lexical interface variable, yylval, to be unions
+	of all the types desired.  Yacc will keep track of the types
+	declared for all terminals and nonterminals, and automatically
+	insert the appropriate union tag for all constructions such
+	as $1, $$, etc.  It is up to the user to supply the appropriate
+	union declaration, and to declare the type of all the terminal
+	and nonterminal symbols which will have values.  If the type
+	declaration feature is used at all, it must be used correctly;
+	if it is not used, the default values are integers, as at present.
+	The new type declaration features are described below:
+
+***	There is a new keyword, %union.  A construction such as
+		%union {
+			int inttag;
+			float floattag;
+			struct mumble *ptrtag;
+			}
+	can be used, in the declarations section, to declare
+	the type of the yacc stack.  The declaration is
+	effectively copied to the y.tab.c file, and, if the -d
+	option is present, to the y.tab.h file as well.  The
+	declaration is used to declare the typedef YYSTYPE, which is the
+	type of the value stack.  If the -d option is present,
+	the declaration
+		extern YYSTYPE yylval;
+	is also placed onto the y.tab.h file.  Note that the lexical
+	analyzer must be changed to use the appropriate union tag when
+	assigning values.  It is not necessary that the %union
+	mechanism be used, as long as there is a union type YYSTYPE
+	defined in the declarations section.
+
+***	The %token, %left, %right, and %nonassoc declarations now
+	accept a union tag, enclosed in angle brackets (<...>), immediately
+	after the keyword.  All tokens mentioned in that declaration are
+	taken to have the appropriate type.
+
+***	There is a new keyword, %type, also followed by a union tag
+	in angle brackets, which may be used in the declarations section to
+	declare nonterminal symbols to have a particular type.
+
+	In both cases, whenever a $$ or $n is encountered in an action,
+	the appropriate union tag is supplied by Yacc.  Once any type is
+	declared, it is an error to use a $$ or $n whose type is unknown.
+	It is also illegal to have a grammar rule whose LHS has a type,
+	but the rule has no action and the default action { $$ = $1; }
+	would be inapplicable because $1 had a different type.
+
+***	There are occasional times when the type of something is
+	not known (for example, when an action within a rule returns a
+	value).  In this case, the $$ and $n syntax is extended
+	to permit the declaration of the type: the syntax is
+		$<tag>$
+	and
+		$<tag>n
+	respectively.  This rather strange syntax is necessitated by the 
+	need to distinguish the <> surrounding the tag from the < and >
+	operators of C in the action.  It is anticipated that the usage
+	will be rare.
+
+***	As always, report gripes, bugs, suggestions to SCJ ***
+
+12/01/76
+A newer version of Yacc has been installed which copies the actions directly
+into the parser, rather than gathering them into a separate routine.
+The advantages include
+1.  It's faster
+2.  You can return a value from yyparse (and stop parsing...) by
+    saying `return(x);' in an action
+3.  There are macros which simulate various interesting parsing
+    actions:
+      YYERROR  causes the parser to behave as if a syntax
+               error had been encountered (i.e., do error recovery)
+      YYACCEPT causes a return from yyparse with a value of 0
+      YYABORT  causes a return from yyparse with a value of 1
+
+The repositioning of the actions may cause scope problems
+for some people who include lexical analyzers in funny places.
+This can probably be avoided by using another
+new feature: the `-d' option.
+Invoking Yacc with the -d option causes the #defines
+generated by Yacc to be written out onto a file
+called "y.tab.h".  This can then be included as desired
+in lexical analyzers, etc.
+
+11/28/76
+A new version of Yacc has been installed which permits actions within
+rules.  For such actions, $$ and $1, $2, etc. continue to have their
+usual meanings.  An error message is returned if any $n refers to
+a value lying to the right of the action in the rule.
+
+These internal actions are assumed to return a value, which is accessed
+through the $n mechanism.
+
+In the y.output file, the actions are referred to by created nonterminal
+names of the form $$nnn.
+
+All actions within rules are assumed to be distinct.  If some actions
+are the same, Yacc might report reduce/reduce conflicts which could
+be resolved by explicitly identifying identical actions; does anyone
+have a good idea for a syntax to do this?
+
+In the new Yacc, the = sign may now be omitted in action constructions
+of the form    ={  ...   }
