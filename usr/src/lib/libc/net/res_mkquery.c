@@ -1,4 +1,4 @@
-/*	res_mkquery.c	4.3	85/03/27	*/
+/*	res_mkquery.c	4.4	85/03/28	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -10,7 +10,7 @@
  * Form all types of queries.
  * Returns the size of the result or -1.
  */
-mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
+res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	int op;			/* opcode of query */
 	char *dname;		/* domain name */
 	int class, type;	/* class and type of query */
@@ -28,7 +28,7 @@ mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	extern char *index();
 
 	if (_res.options & RES_DEBUG)
-		printf("mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
+		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
 	/*
 	 * Initialize header fields.
 	 */
