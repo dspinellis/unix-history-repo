@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.4 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -46,9 +46,6 @@ struct nfsnode {
 #define	n_back		n_chain[1]
 
 #ifdef KERNEL
-extern struct vnodeops nfsv2_vnodeops;	/* vnode operations for nfsv2 */
-extern struct vnodeops nfsv2chr_vnodeops; /* vnode operations for chr devices */
-
 /*
  * Convert between nfsnode pointers and vnode pointers
  */
