@@ -1,4 +1,4 @@
-/*	sed0.c	4.5	87/12/21	*/
+/*	sed0.c	4.6	91/03/01	*/
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -979,7 +979,7 @@ char	*expbuf;
 	return(ep + 0200);
 }
 
-static char *
+char *
 newstr(buf)
 	char	*buf;
 {
