@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumpfs.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumpfs.c	1.4 (Berkeley) %G%";
 #include "../h/param.h"
 #include "../h/fs.h"
 #include "../h/inode.h"
@@ -13,8 +13,6 @@ union {
 } fsun;
 #define	afs	fsun.fs
 
-struct	csum *fscs;
-
 union {
 	struct cg cg;
 	char pad[BSIZE];
@@ -24,7 +22,7 @@ union {
 main(argc, argv)
 	char **argv;
 {
-	int i;
+	int i, j, k;
 
 	close(0);
 	if (open(argv[1], 0) != 0)
@@ -45,13 +43,27 @@ main(argc, argv)
 	    afs.fs_cpg, afs.fs_fpg, afs.fs_ipg);
 	printf("nffree\t%d\nnbfree\t%d\nnifree\t%d\n",
 	    afs.fs_nffree, afs.fs_nbfree, afs.fs_nifree);
-	printf("cs[].cs_(nbfree,ndir,nifree):\n\t");
-	fscs = (struct csum *)calloc(afs.fs_ncg, sizeof (struct csum));
-	lseek(0, csaddr(&afs)*FSIZE, 0);
-	if (read(0, fscs, cssize(&afs)) != cssize(&afs))
-		perror(argv[1]), exit(1);
+	printf("cgrotor\t%d\nblocks available in each rotational position",
+	    afs.fs_cgrotor);
+	for (i = 0; i < NRPOS; i++) {
+		if (afs.fs_postbl[i] > -1)
+			printf("\nposition %d:\t", i);
+		for (j = afs.fs_postbl[i], k = 1; j > -1;
+		     j = afs.fs_rotbl[j], k++) {
+			if (k % 15 == 0)
+				printf("\n\t\t");
+			printf("%4d", j);
+		}
+	}
+	printf("\ncs[].cs_(nbfree,ndir,nifree):\n\t");
+	for (i = 0; i < howmany(cssize(&afs), BSIZE); i++) {
+		afs.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
+		lseek(0, (csaddr(&afs) + (i * FRAG)) * FSIZE, 0);
+		if (read(0, afs.fs_csp[i], BSIZE) != BSIZE)
+			perror(argv[1]), exit(1);
+	}
 	for (i = 0; i < afs.fs_ncg; i++) {
-		struct csum *cs = fscs+i;
+		struct csum *cs = &afs.fs_cs(i);
 		if (i && i % 5 == 0)
 			printf("\n\t");
 		printf("(%d,%d,%d) ",
@@ -80,8 +92,10 @@ dumpcg(c)
 	printf("magic\t%x\ntime\t%s", acg.cg_magic, ctime(&acg.cg_time));
 	printf("cgx\t%d\nncyl\t%d\nniblk\t%d\nndblk\t%d\n",
 	    acg.cg_cgx, acg.cg_ncyl, acg.cg_niblk, acg.cg_ndblk);
-	printf("nifree\t%d\nndir\t%d\nnffree\t%d\nnbfree\t%d\nfrsum",
+	printf("nifree\t%d\nndir\t%d\nnffree\t%d\nnbfree\t%d\n",
 	    acg.cg_nifree, acg.cg_ndir, acg.cg_nffree, acg.cg_nbfree);
+	printf("rotor\t%d\nirotor\t%d\nfrotor\t%d\nfrsum",
+	    acg.cg_rotor, acg.cg_irotor, acg.cg_frotor);
 	for (i = 1, j = 0; i < FRAG; i++) {
 		printf("\t%d", acg.cg_frsum[i]);
 		j += i * acg.cg_frsum[i];

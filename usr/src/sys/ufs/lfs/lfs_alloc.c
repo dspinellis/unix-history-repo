@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.6 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.7 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -15,8 +15,12 @@ static char vers[] = "@(#)lfs_alloc.c 1.6 %G%";
 #include "../h/user.h"
 
 extern long		hashalloc();
-extern long		alloccg();
 extern long		ialloccg();
+extern daddr_t		alloccg();
+extern daddr_t		alloccgblk();
+extern daddr_t		fragextend();
+extern daddr_t		blkpref();
+extern daddr_t		mapsearch();
 extern int		inside[], around[];
 extern unsigned char	fragtbl[];
 
@@ -35,7 +39,9 @@ alloc(dev, ip, bpref, size)
 	if ((unsigned)size > BSIZE || size % FSIZE != 0)
 		panic("alloc: bad size");
 	fs = getfs(dev);
-	if (fs->fs_nbfree == 0 && size == BSIZE)
+	if (size == BSIZE &&
+	    (fs->fs_nbfree == 0 ||
+	    (!suser() && fs->fs_nbfree < fs->fs_nbfree * minfree / 100)))
 		goto nospace;
 	if (bpref == 0)
 		cg = itog(ip->i_number, fs);
@@ -55,10 +61,10 @@ nospace:
 }
 
 struct buf *
-realloccg(dev, ip, bprev, osize, nsize)
+realloccg(dev, ip, bprev, bpref, osize, nsize)
 	dev_t dev;
 	register struct inode *ip;
-	daddr_t bprev;
+	daddr_t bprev, bpref;
 	int osize, nsize;
 {
 	daddr_t bno;
@@ -82,7 +88,7 @@ realloccg(dev, ip, bprev, osize, nsize)
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return (bp);
 	}
-	bno = hashalloc(dev, fs, cg, (long)bprev, nsize, alloccg);
+	bno = hashalloc(dev, fs, cg, (long)bpref, nsize, alloccg);
 	if (bno != 0) {
 		/*
 		 * make a new copy
@@ -140,23 +146,50 @@ noinodes:
 	return (NULL);
 }
 
-dipref(dev)
+/*
+ * find a cylinder to place a directory
+ */
+dirpref(dev)
 	dev_t dev;
 {
 	register struct fs *fs;
-	int cg, minndir, mincg;
+	int cg, minndir, mincg, avgifree;
 
 	fs = getfs(dev);
-	minndir = fs->fs_cs[0].cs_ndir;
+	avgifree = fs->fs_nifree / fs->fs_ncg;
+	minndir = fs->fs_ipg;
 	mincg = 0;
-	for (cg = 1; cg < fs->fs_ncg; cg++)
-		if (fs->fs_cs[cg].cs_ndir < minndir) {
+	for (cg = 0; cg < fs->fs_ncg; cg++)
+		if (fs->fs_cs(cg).cs_ndir < minndir &&
+		    fs->fs_cs(cg).cs_nifree >= avgifree) {
 			mincg = cg;
-			minndir = fs->fs_cs[cg].cs_ndir;
-			if (minndir == 0)
-				break;
+			minndir = fs->fs_cs(cg).cs_ndir;
 		}
 	return (fs->fs_ipg * mincg);
+}
+
+/*
+ * select a cylinder to place a large block of data
+ */
+blkpref(dev)
+	dev_t dev;
+{
+	register struct fs *fs;
+	int cg, avgbfree;
+
+	fs = getfs(dev);
+	avgbfree = fs->fs_nbfree / fs->fs_ncg;
+	for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
+		if (fs->fs_cs(cg).cs_nbfree >= avgbfree) {
+			fs->fs_cgrotor = cg;
+			return (fs->fs_fpg * cg + FRAG);
+		}
+	for (cg = 0; cg <= fs->fs_cgrotor; cg++)
+		if (fs->fs_cs(cg).cs_nbfree >= avgbfree) {
+			fs->fs_cgrotor = cg;
+			return (fs->fs_fpg * cg + FRAG);
+		}
+	return (0);
 }
 
 long
@@ -270,8 +303,6 @@ alloccg(dev, fs, cg, bpref, size)
 	register struct cg *cgp;
 	int bno, frags;
 	int allocsiz;
-	int start, len, loc;
-	int blk, field, subfield, pos;
 	register int i;
 
 	bp = bread(dev, cgtod(cg, fs), BSIZE);
@@ -316,46 +347,9 @@ alloccg(dev, fs, cg, bpref, size)
 		bdwrite(bp);
 		return (bno);
 	}
-	/*
-	 * find the fragment by searching through the free block
-	 * map for an appropriate bit pattern
-	 */
-	if (bpref)
-		start = bpref % fs->fs_fpg / NBBY;
-	else
-		start = cgp->cg_frotor / NBBY;
-	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
-	loc = scanc(len, &cgp->cg_free[start], fragtbl, 1 << (allocsiz - 1));
-	if (loc == 0) {
-		len = start - 1;
-		start = (cgdmin(cg, fs) - cgbase(cg, fs)) / NBBY;
-		loc = scanc(len, &cgp->cg_free[start], fragtbl,
-			1 << (allocsiz - 1));
-		if (loc == 0)
-			panic("alloccg: can't find frag");
-	}
-	bno = (start + len - loc) * NBBY;
-	cgp->cg_frotor = bno;
-	/*
-	 * found the byte in the map
-	 * sift through the bits to find the selected frag
-	 */
-	for (i = 0; i < NBBY; i += FRAG) {
-		blk = (cgp->cg_free[bno / NBBY] >> i) & (0xff >> NBBY - FRAG);
-		blk <<= 1;
-		field = around[allocsiz];
-		subfield = inside[allocsiz];
-		for (pos = 0; pos <= FRAG - allocsiz; pos++) {
-			if ((blk & field) == subfield) {
-				bno += i + pos;
-				goto gotit;
-			}
-			field <<= 1;
-			subfield <<= 1;
-		}
-	}
-	panic("alloccg: frag not in block");
-gotit:
+	bno = mapsearch(fs, cgp, bpref, allocsiz);
+	if (bno == 0)
+		return (0);
 	for (i = 0; i < frags; i++)
 		clrbit(cgp->cg_free, bno + i);
 	cgp->cg_nffree -= frags;
@@ -374,35 +368,64 @@ alloccgblk(dev, fs, cgp, bpref)
 	register struct cg *cgp;
 	daddr_t bpref;
 {
-	register int i;
+	daddr_t bno;
+	int cylno, pos;
+	short *cylbp;
+	int i, j;
 
-	if (bpref) {
+	if (bpref == 0) {
+		bpref = cgp->cg_rotor;
+	} else {
 		bpref &= ~(FRAG - 1);
 		bpref %= fs->fs_fpg;
-		if (isblock(cgp->cg_free, bpref/FRAG))
-			goto gotit;
-	} else
-		bpref = cgp->cg_rotor;
-	for (i = 0; i < cgp->cg_ndblk; i += FRAG) {
-		bpref += FRAG;
-		if (bpref >= cgp->cg_ndblk)
-			bpref = 0;
+		/*
+		 * if the requested block is available, use it
+		 */
 		if (isblock(cgp->cg_free, bpref/FRAG)) {
-			cgp->cg_rotor = bpref;
+			bno = bpref;
 			goto gotit;
 		}
+		/*
+		 * check for a block available on the same cylinder
+		 * beginning with one which is rotationally optimal
+		 */
+		i = bpref * NSPF;
+		cylno = i / fs->fs_spc;
+		cylbp = cgp->cg_b[cylno];
+		pos = (i + (ROTDELAY == 0) ?
+			0 : 1 + ROTDELAY * HZ * fs->fs_nsect / (NSPF * 1000)) %
+			fs->fs_nsect * NRPOS / fs->fs_nsect;
+		for (i = pos; i < NRPOS; i++)
+			if (cylbp[i] > 0)
+				break;
+		if (i == NRPOS)
+			for (i = 0; i < pos; i++)
+				if (cylbp[i] > 0)
+					break;
+		if (cylbp[i] > 0) {
+			bpref = cylno * fs->fs_spc / (NSPF * FRAG);
+			for (j = fs->fs_postbl[i]; j > -1; j = fs->fs_rotbl[j]) {
+				if (isblock(cgp->cg_free, bpref + j)) {
+					bno = (bpref + j) * FRAG;
+					goto gotit;
+				}
+			}
+			panic("alloccgblk: can't find blk in cyl");
+		}
 	}
-	panic("alloccgblk: can't find a blk");
-	return (0);
+	bno = mapsearch(fs, cgp, bpref, FRAG);
+	if (bno == 0)
+		return (0);
+	cgp->cg_rotor = bno;
 gotit:
-	clrblock(cgp->cg_free, bpref/FRAG);
+	clrblock(cgp->cg_free, bno/FRAG);
 	cgp->cg_nbfree--;
 	fs->fs_nbfree--;
-	fs->fs_cs[cgp->cg_cgx].cs_nbfree--;
-	i = bpref * NSPF;
+	fs->fs_cs(cgp->cg_cgx).cs_nbfree--;
+	i = bno * NSPF;
 	cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]--;
 	fs->fs_fmod++;
-	return (cgp->cg_cgx * fs->fs_fpg + bpref);
+	return (cgp->cg_cgx * fs->fs_fpg + bno);
 }
 	
 long
@@ -446,11 +469,11 @@ gotit:
 	setbit(cgp->cg_iused, ipref);
 	cgp->cg_nifree--;
 	fs->fs_nifree--;
-	fs->fs_cs[cg].cs_nifree--;
+	fs->fs_cs(cg).cs_nifree--;
 	fs->fs_fmod++;
 	if ((mode & IFMT) == IFDIR) {
 		cgp->cg_ndir++;
-		fs->fs_cs[cg].cs_ndir++;
+		fs->fs_cs(cg).cs_ndir++;
 	}
 	bdwrite(bp);
 	return (cg * fs->fs_ipg + ipref);
@@ -484,7 +507,7 @@ fre(dev, bno, size)
 		setblock(cgp->cg_free, bno/FRAG);
 		cgp->cg_nbfree++;
 		fs->fs_nbfree++;
-		fs->fs_cs[cg].cs_nbfree++;
+		fs->fs_cs(cg).cs_nbfree++;
 		i = bno * NSPF;
 		cgp->cg_b[i/fs->fs_spc][i%fs->fs_nsect*NRPOS/fs->fs_nsect]++;
 	} else {
@@ -520,7 +543,7 @@ fre(dev, bno, size)
 			fs->fs_nffree -= FRAG;
 			cgp->cg_nbfree++;
 			fs->fs_nbfree++;
-			fs->fs_cs[cg].cs_nbfree++;
+			fs->fs_cs(cg).cs_nbfree++;
 			i = bbase * NSPF;
 			cgp->cg_b[i / fs->fs_spc]
 				 [i % fs->fs_nsect * NRPOS / fs->fs_nsect]++;
@@ -555,13 +578,73 @@ ifree(dev, ino, mode)
 	clrbit(cgp->cg_iused, ino);
 	cgp->cg_nifree++;
 	fs->fs_nifree++;
-	fs->fs_cs[cg].cs_nifree++;
+	fs->fs_cs(cg).cs_nifree++;
 	if ((mode & IFMT) == IFDIR) {
 		cgp->cg_ndir--;
-		fs->fs_cs[cg].cs_ndir--;
+		fs->fs_cs(cg).cs_ndir--;
 	}
 	fs->fs_fmod++;
 	bdwrite(bp);
+}
+
+/*
+ * find a block of the specified size in the specified cylinder group
+ * It is a panic if a request is made to find a block if none are
+ * available.
+ */
+daddr_t
+mapsearch(fs, cgp, bpref, allocsiz)
+	register struct fs *fs;
+	register struct cg *cgp;
+	daddr_t bpref;
+	int allocsiz;
+{
+	daddr_t bno;
+	int start, len, loc, i;
+	int blk, field, subfield, pos;
+
+	/*
+	 * find the fragment by searching through the free block
+	 * map for an appropriate bit pattern
+	 */
+	if (bpref)
+		start = bpref % fs->fs_fpg / NBBY;
+	else
+		start = cgp->cg_frotor / NBBY;
+	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
+	loc = scanc(len, &cgp->cg_free[start], fragtbl, 1 << (allocsiz - 1));
+	if (loc == 0) {
+		len = start - 1;
+		start = (cgdmin(cgp->cg_cgx, fs) -
+			 cgbase(cgp->cg_cgx, fs)) / NBBY;
+		loc = scanc(len, &cgp->cg_free[start], fragtbl,
+			1 << (allocsiz - 1));
+		if (loc == 0) {
+			panic("alloccg: map corrupted");
+			return (0);
+		}
+	}
+	bno = (start + len - loc) * NBBY;
+	cgp->cg_frotor = bno;
+	/*
+	 * found the byte in the map
+	 * sift through the bits to find the selected frag
+	 */
+	for (i = 0; i < NBBY; i += FRAG) {
+		blk = (cgp->cg_free[bno / NBBY] >> i) & (0xff >> NBBY - FRAG);
+		blk <<= 1;
+		field = around[allocsiz];
+		subfield = inside[allocsiz];
+		for (pos = 0; pos <= FRAG - allocsiz; pos++) {
+			if ((blk & field) == subfield) {
+				return (bno + i + pos);
+			}
+			field <<= 1;
+			subfield <<= 1;
+		}
+	}
+	panic("alloccg: block not in map");
+	return (0);
 }
 
 /*
@@ -690,7 +773,7 @@ update()
 	register struct buf *bp;
 	struct fs *fs;
 	time_t tim;
-	int i;
+	int i, blks;
 
 	if (updlock)
 		return;
@@ -713,10 +796,10 @@ update()
 			if (bp->b_un.b_fs != fs)
 				panic("update: bad b_fs");
 			bwrite(bp);
-			for (i = 0; i < cssize(fs); i += BSIZE) {
-				bp = getblk(mp->m_dev, csaddr(fs) + i / FSIZE,
+			blks = howmany(cssize(fs), BSIZE);
+			for (i = 0; i < blks; i++) {
+				bp = getblk(mp->m_dev, csaddr(fs) + (i * FRAG),
 					BSIZE);
-				bcopy(fs->fs_cs + i, bp->b_un.b_addr, BSIZE);
 				bwrite(bp);
 			}
 		}

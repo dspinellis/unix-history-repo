@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.3	%G%	*/
+/*	fs.h	1.4	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -45,7 +45,14 @@
  *
  * The file system records space availability at the fragment level;
  * to determine block availability, aligned fragments are examined.
- */ 
+ *
+ * For each cylinder we keep track of the availability of blocks at different
+ * rotational positions, so that we can lay out the data to be picked
+ * up with minimum rotational latency.  NRPOS is the number of rotational
+ * positions which we distinguish.  With NRPOS 8 the resolution of our
+ * summary information is 2ms for a typical 3600 rpm drive.
+ */
+#define	NRPOS	8		/* number distinct rotational positions */
 
 /*
  * Information per cylinder group summarized in blocks allocated
@@ -74,8 +81,8 @@ struct csum {
  */
 #define	NBPI	2048
 
-#define	DESCPG	8			/* desired fs_cpg */
-#define	MAXCPG	16			/* maximum fs_cpg */
+#define	DESCPG	16			/* desired fs_cpg */
+#define	MAXCPG	32			/* maximum fs_cpg */
 /* MAXCPG is limited only to dimension an array in (struct cg); */
 /* it can be made larger as long as that structures size remains sane. */
  
@@ -117,8 +124,15 @@ struct	fs
 	char   	fs_fmod;    		/* super block modified flag */
 	char   	fs_ronly;   		/* mounted read-only flag */
 	char	fs_fsmnt[32];		/* name mounted on */
-	struct	csum *fs_cs;
+/* these fields retain the current block allocation info */
+	short	fs_cgrotor;		/* last cg searched */
+	struct	csum *fs_csp[NBUF];	/* list of fs_cs info buffers */
+	short	fs_postbl[NRPOS];	/* head of blocks for each rotation */
+	short	fs_rotbl[1];		/* list of blocks for each rotation */
+/* actually longer */
 };
+#define fs_cs(indx) fs_csp[(indx) / (BSIZE / sizeof(struct csum))] \
+			  [(indx) % (BSIZE / sizeof(struct csum))]
 
 /*
  * Cylinder group macros to locate things in cylinder groups.
@@ -162,15 +176,6 @@ struct	fs
  */
 
 /*
- * For each cylinder we keep track of the availability of blocks at different
- * rotational positions, so that we can lay out the data to be picked
- * up with minimum rotational latency.  NRPOS is the number of rotational
- * positions which we distinguish.  With NRPOS 16 the resolution of our
- * summary information is 1ms for a typical 3600 rpm drive.
- */
-#define	NRPOS	16		/* number distinct rotational positions */
-
-/*
  * MAXIPG bounds the number of inodes per cylinder group, and
  * is needed only to keep the structure simpler by having the
  * only a single variable size element (the free bit map).
@@ -212,6 +217,4 @@ struct	cg {
 
 #ifdef KERNEL
 struct	fs *getfs();
-int inside[], around[];
-unsigned char fragtbl[];
 #endif
