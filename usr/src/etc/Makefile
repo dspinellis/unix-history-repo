@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.6 (Berkeley) %G%
+#	@(#)Makefile	8.7 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -25,11 +25,11 @@ all clean cleandir depend etc install lint:
 
 distribution:
 	# Hand-craft the password file first.
-	-mkdir /etc /dev
+	-mkdir ${DESTDIR}/etc ${DESTDIR}/dev ${DESTDIR}/tmp
 	cp master.passwd ${DESTDIR}/tmp/p
-	pwd_mkdb -p /tmp/p
-	rm -f /tmp/p
-	cp group /etc/group
+	-pwd_mkdb -p ${DESTDIR}/tmp/p
+	rm -f ${DESTDIR}/tmp/p
+	cp group ${DESTDIR}/etc/group
 	# Build the tree.
 	-mtree -def mtree/4.4BSD.dist -p ${DESTDIR}/ -u
 	# install devices
