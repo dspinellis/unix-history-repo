@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)misc.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -40,6 +41,7 @@ float getcomp(p, t)	/* return component of a position */
 		switch (p->o_type) {
 		case BOX:
 		case BLOCK:
+		case TEXT:
 			return p->o_val[0];
 		case CIRCLE:
 		case ELLIPSE:
@@ -52,6 +54,7 @@ float getcomp(p, t)	/* return component of a position */
 		switch (p->o_type) {
 		case BOX:
 		case BLOCK:
+		case TEXT:
 			return p->o_val[1];
 		case CIRCLE:
 		case ELLIPSE:
@@ -231,6 +234,7 @@ whatpos(p, corner, px, py)	/* what is the position (no side effect) */
 		break;
 	case BOX:
 	case BLOCK:
+	case TEXT:
 		switch (corner) {
 		case NORTH:	y += y1 / 2; break;
 		case SOUTH:	y -= y1 / 2; break;
@@ -357,24 +361,45 @@ obj *getfirst(n, t)	/* find n-th occurrence of type t */
 	return(NULL);
 }
 
+float getblkvar(p, s)	/* find variable s2 in block p */
+	obj *p;
+	char *s;
+{
+	YYSTYPE y, getblk();
+
+	y = getblk(p, s);
+	return y.f;
+}
+
 obj *getblock(p, s)	/* find variable s in block p */
 	obj *p;
 	char *s;
 {
+	YYSTYPE y, getblk();
+
+	y = getblk(p, s);
+	return y.o;
+}
+
+YYSTYPE getblk(p, s)	/* find union type for s in p */
+	obj *p;
+	char *s;
+{
+	static YYSTYPE bug;
 	struct symtab *stp;
 
 	if (p->o_type != BLOCK) {
 		yyerror(".%s is not in that block", s);
-		return(NULL);
+		return(bug);
 	}
 	for (stp = p->o_symtab; stp != NULL; stp = stp->s_next)
 		if (strcmp(s, stp->s_name) == 0) {
-			dprintf("getblock found x,y= %g,%g\n",
+			dprintf("getblk found x,y= %g,%g\n",
 				(stp->s_val.o)->o_x, (stp->s_val.o)->o_y);
-			return(stp->s_val.o);
+			return(stp->s_val);
 		}
 	yyerror("there is no .%s in that []", s);
-	return(NULL);
+	return(bug);
 }
 
 obj *fixpos(p, x, y)

@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)blockgen.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)blockgen.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -117,6 +118,7 @@ obj *blockgen(p, type, q)	/* handles [...] */
 			with = PLACE;
 			break;
 		case AT:
+		case FROM:
 			ppos = ap->a_val.o;
 			curx = ppos->o_x;
 			cury = ppos->o_y;

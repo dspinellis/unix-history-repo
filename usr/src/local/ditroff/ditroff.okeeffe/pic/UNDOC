@@ -1,3 +1,13 @@
+May 85:
+
+"solid" is now a valid (though uninteresting) attribute.
+
+Mar 85:
+
+Limited amount of point arithmetic:
+	point +/- point
+works
+
 Dec, 1984:
 
 reset varlist

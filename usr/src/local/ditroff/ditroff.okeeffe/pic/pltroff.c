@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)pltroff.c	2.1 (CWI) 85/07/23";
+static char sccsid[] = "@(#)pltroff.c	3.1 (CWI) 85/07/30";
 #endif lint
+
 #include <stdio.h>
 #include <math.h>
 #include "pic.h"
@@ -278,18 +279,28 @@ circle(x, y, r)
 	flyback();
 }
 
-spline(x, y, n, p)
+spline(x, y, n, p, dashed, ddval)
 	float x, y, *p;
 	float n;	/* sic */
+	int dashed;
+	float ddval;
 {
 	int i;
 	float dx, dy;
 	float xerr, yerr;
 
+	if (dashed && ddval)
+		printf(".nr 99 %.3fi\n", ddval);
 	move(x, y);
 	hvflush();
-	printf("\\D'~");
 	xerr = yerr = 0.0;
+	if (dashed) {
+		if (ddval)
+			printf("\\X'Pd \\n(99'\\D'q 0 0");
+		else
+			printf("\\X'Pd'\\D'q 0 0");
+	} else
+		printf("\\D'~");
 	for (i = 0; i < 2 * n; i += 2) {
 		dx = xsc(xerr += p[i]);
 		xerr -= dx/xscale;
@@ -297,7 +308,10 @@ spline(x, y, n, p)
 		yerr -= dy/yscale;
 		printf(" %.3fi %.3fi", dx, -dy);	/* WATCH SIGN */
 	}
-	printf("'\n");
+	if (dashed)
+		printf(" 0 0'\\X'Ps'\n");
+	else
+		printf("'\n");
 	flyback();
 }
 
