@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -947,7 +947,7 @@ buildaddr(tv, a)
 		a->q_host = NULL;
 
 	/* figure out the user */
-	if (**tv != CANONUSER)
+	if (*tv == NULL || **tv != CANONUSER)
 	{
 		syserr("buildaddr: no user");
 		return (NULL);
