@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.31 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.30 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.31 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1031,6 +1031,7 @@ readqf(e, announcefile)
 
 	/* do basic system initialization */
 	initsys(e);
+	define('i', e->e_id, e);
 
 	if (announcefile)
 		FileName = qf;
