@@ -1,3 +1,4 @@
+/*	mtio.h	4.2	%G%	*/
 /*
  * Structures and definitions for mag tape io control commands
  */
@@ -17,6 +18,7 @@ struct	mtop	{
 #define MTBSR	4	/* backward space record */
 #define MTREW	5	/* rewind */
 #define MTOFFL	6	/* rewind and put the drive offline */
+#define MTNOP	7	/* no operation, sets status only */
 
 /* structure for MTIOCGET - mag tape get status command */
 
