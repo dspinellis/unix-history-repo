@@ -9,21 +9,21 @@
  *
  * from: hp300/hp300/sys_machdep.c	7.8 (Berkeley) 6/5/92
  *
- *	@(#)sys_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.2 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/ioctl.h"
-#include "sys/file.h"
-#include "sys/time.h"
-#include "sys/proc.h"
-#include "sys/uio.h"
-#include "sys/kernel.h"
-#include "sys/mtio.h"
-#include "sys/buf.h"
-#include "sys/trace.h"
-#include "vm/vm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/mtio.h>
+#include <sys/buf.h>
+#include <sys/trace.h>
+#include <vm/vm.h>
 
 #ifdef TRACE
 int	nvualarm;
@@ -80,7 +80,7 @@ vdoualarm(arg)
 }
 #endif
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 /* XXX should be in an include file somewhere */
 #define CC_PURGE	1

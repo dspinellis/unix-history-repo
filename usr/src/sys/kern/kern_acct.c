@@ -4,23 +4,23 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_acct.c	7.25 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.26 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "resourcevar.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "termios.h"
-#include "tty.h"
-#include "vnode.h"
-#include "mount.h"
-#include "kernel.h"
-#include "file.h"
-#include "acct.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/resourcevar.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
+#include <sys/termios.h>
+#include <sys/tty.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/acct.h>
+#include <sys/syslog.h>
 
 /*
  * Values associated with enabling and disabling accounting

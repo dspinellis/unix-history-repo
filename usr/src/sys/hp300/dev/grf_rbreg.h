@@ -11,18 +11,14 @@
  *
  * from: Utah $Hdr: grf_rbreg.h 1.9 92/01/21$
  *
- *	@(#)grf_rbreg.h	7.3 (Berkeley) %G%
+ *	@(#)grf_rbreg.h	7.4 (Berkeley) %G%
  */
 
 /*
  * Map of the Renaissance frame buffer controller chip in memory ...
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
 #include <hp/dev/iotypes.h>	/* XXX */
-#endif
 
 #define rb_waitbusy(regaddr) \
 	while (((struct rboxfb *)(regaddr))->wbusy & 0x01) DELAY(100)

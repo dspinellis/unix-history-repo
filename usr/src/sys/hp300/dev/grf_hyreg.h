@@ -12,14 +12,10 @@
  *
  * from: Utah $Hdr: grf_hyreg.h 1.1 92/01/22$
  *
- *	@(#)grf_hyreg.h	7.1 (Berkeley) %G%
+ *	@(#)grf_hyreg.h	7.2 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
 #include <hp/dev/iotypes.h>	/* XXX */
-#endif
 
 struct hyboxfb {
   u_char 	:8;

@@ -4,22 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.36 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.37 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "filedesc.h"
-#include "ioctl.h"
-#include "file.h"
-#include "proc.h"
-#include "socketvar.h"
-#include "uio.h"
-#include "kernel.h"
-#include "stat.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/filedesc.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/socketvar.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/stat.h>
+#include <sys/malloc.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
 /*

@@ -7,18 +7,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kadb.c	7.4 (Berkeley) %G%
+ *	@(#)kadb.c	7.5 (Berkeley) %G%
  */
 
 /*
  * Define machine dependent primitives for kdb.
  */
 
-#include "kdb/defs.h"
+#include <kdb/defs.h>
 #undef SP
-#include "machine/reg.h"
-#include "machine/trap.h"
-#include "machine/mips_opcode.h"
+#include <machine/reg.h>
+#include <machine/trap.h>
+#include <machine/mips_opcode.h>
 
 REGLIST	kdbreglist[] = {
 	/* register_name, address */

@@ -8,16 +8,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap_bootstrap.c	7.2 (Berkeley) %G%
+ *	@(#)pmap_bootstrap.c	7.3 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "pte.h"
-#include "clockreg.h"
-#include "../include/vmparam.h"
-#include "../include/cpu.h"
+#include <sys/param.h>
 
-#include "vm/vm.h"
+#include <hp300/hp300/pte.h>
+#include <hp300/hp300/clockreg.h>
+
+#include <machine/vmparam.h>
+#include <machine/cpu.h>
+
+#include <vm/vm.h>
 
 /*
  * Allocate various and sundry SYSMAPs used in the days of old VM
@@ -43,7 +45,7 @@ extern int hppagesperpage;
 #endif
 
 #if BSDVM_COMPAT
-#include "msgbuf.h"
+#include <sys/msgbuf.h>
 
 /*
  * All those kernel PT submaps that BSD is so fond of

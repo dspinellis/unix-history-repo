@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdreg.h	7.1 (Berkeley) %G%
+ *	@(#)fdreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -12,7 +12,7 @@
  */
 
 /* uses NEC765 controller */
-#include "../i386/isa/ic/nec765.h"
+#include <i386/isa/ic/nec765.h>
 
 /* registers */
 #define	fdout	2	/* Digital Output Register (W) */

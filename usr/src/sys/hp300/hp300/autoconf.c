@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.35 92/01/22$
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -22,22 +22,22 @@
  * and the drivers are initialized.
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/map.h"
-#include "sys/buf.h"
-#include "sys/dkstat.h"
-#include "sys/conf.h"
-#include "sys/dmap.h"
-#include "sys/reboot.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/conf.h>
+#include <sys/dmap.h>
+#include <sys/reboot.h>
 
-#include "../include/vmparam.h"
-#include "../include/cpu.h"
-#include "pte.h"
-#include "isr.h"
-#include "hp/dev/device.h"
-#include "hp/dev/grfreg.h"
-#include "hp/dev/hilreg.h"
+#include <machine/vmparam.h>
+#include <machine/cpu.h>
+#include <hp300/hp300/pte.h>
+#include <hp300/hp300/isr.h>
+#include <hp/dev/device.h>
+#include <hp/dev/grfreg.h>
+#include <hp/dev/hilreg.h>
 
 /*
  * The following several variables are related to
@@ -869,7 +869,7 @@ iounmap(kva, size)
 }
 
 #if NCD > 0
-#include "dev/cdvar.h"
+#include <dev/cdvar.h>
 
 find_cdevices()
 {

@@ -1,5 +1,5 @@
 #! /bin/sh -
-#	@(#)makesyscalls.sh	7.1 (Berkeley) %G%
+#	@(#)makesyscalls.sh	7.2 (Berkeley) %G%
 
 set -e
 
@@ -49,8 +49,8 @@ awk < $1 "
 	}
 	NR == 1 {
 		printf " * created from%s\n */\n\n", $0 > sysdcl
-		printf "#include \"param.h\"\n" > sysdcl
-		printf "#include \"systm.h\"\n\n" > sysdcl
+		printf "#include <sys/param.h>\n" > sysdcl
+		printf "#include <sys/systm.h>\n\n" > sysdcl
 		printf "int\tnosys(),notimp();\n\n" > sysdcl
 
 		printf "struct sysent hpuxsysent[] = {\n" > sysent

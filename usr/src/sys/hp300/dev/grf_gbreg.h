@@ -11,14 +11,10 @@
  *
  * from: Utah $Hdr: grf_gbreg.h 1.11 92/01/21$
  *
- *	@(#)grf_gbreg.h	7.3 (Berkeley) %G%
+ *	@(#)grf_gbreg.h	7.4 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
 #include <hp/dev/iotypes.h>	/* XXX */
-#endif
 
 /*
  * Gatorbox driver regs

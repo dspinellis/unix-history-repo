@@ -4,21 +4,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.36 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.37 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "file.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "domain.h"
-#include "kernel.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/domain.h>
+#include <sys/kernel.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/resourcevar.h>
 
 /*
  * Socket operation routines.

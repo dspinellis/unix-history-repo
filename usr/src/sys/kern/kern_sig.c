@@ -4,31 +4,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.50 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.51 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
-#include "param.h"
-#include "signalvar.h"
-#include "resourcevar.h"
-#include "namei.h"
-#include "vnode.h"
-#include "proc.h"
-#include "systm.h"
-#include "timeb.h"
-#include "times.h"
-#include "buf.h"
-#include "acct.h"
-#include "file.h"
-#include "kernel.h"
-#include "wait.h"
-#include "ktrace.h"
+#include <sys/param.h>
+#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/timeb.h>
+#include <sys/times.h>
+#include <sys/buf.h>
+#include <sys/acct.h>
+#include <sys/file.h>
+#include <sys/kernel.h>
+#include <sys/wait.h>
+#include <sys/ktrace.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
-#include "vm/vm.h"
-#include "kinfo_proc.h"
-#include "user.h"		/* for coredump */
+#include <vm/vm.h>
+#include <sys/kinfo_proc.h>
+#include <sys/user.h>		/* for coredump */
 
 /*
  * Can process p, with pcred pc, send the signal signo to process q?

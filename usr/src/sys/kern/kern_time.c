@@ -4,15 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_time.c	7.19 (Berkeley) %G%
+ *	@(#)kern_time.c	7.20 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "resourcevar.h"
-#include "kernel.h"
-#include "systm.h"
-#include "proc.h"
-#include "vnode.h"
+#include <sys/param.h>
+#include <sys/resourcevar.h>
+#include <sys/kernel.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
 
 
 /* 

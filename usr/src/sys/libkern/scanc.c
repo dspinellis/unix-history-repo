@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scanc.c	7.3 (Berkeley) %G%
+ *	@(#)scanc.c	7.4 (Berkeley) %G%
  */
 
-#include "libkern.h"
+#include <libkern/libkern.h>
 
 int
 scanc(size, cp, table, mask0)

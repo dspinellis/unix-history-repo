@@ -11,33 +11,33 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.8 (Berkeley) %G%
+ *	@(#)trap.c	7.9 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "kernel.h"
-#include "signalvar.h"
-#include "syscall.h"
-#include "user.h"
-#include "buf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/kernel.h>
+#include <sys/signalvar.h>
+#include <sys/syscall.h>
+#include <sys/user.h>
+#include <sys/buf.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
-#include "net/netisr.h"
+#include <net/netisr.h>
 
-#include "../include/trap.h"
-#include "../include/psl.h"
-#include "../include/reg.h"
-#include "../include/cpu.h"
-#include "../include/pte.h"
-#include "../include/mips_opcode.h"
-#include "clockreg.h"
+#include <machine/trap.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <machine/cpu.h>
+#include <machine/pte.h>
+#include <machine/mips_opcode.h>
+#include <pmax/pmax/clockreg.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
 /*
  * This is a kludge to allow X windows to work.

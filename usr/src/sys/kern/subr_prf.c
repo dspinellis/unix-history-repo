@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.38 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.39 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,7 +29,7 @@
 #include <machine/stdarg.h>
 
 #ifdef KADB
-#include "machine/kdbparam.h"
+#include <machine/kdbparam.h>
 #endif
 
 #define TOCONS	0x01

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsswapvmunix.c	7.1 (Berkeley) %G%
+ *	@(#)nfsswapvmunix.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -16,13 +16,14 @@
  * See /sys/nfs/nfsdiskless.h for details of the fields.
  */
 
-#include "../sys/param.h"
-#include "../sys/conf.h"
-#include "../sys/socket.h"
-#include "../sys/mount.h"
-#include "../net/if.h"
-#include "../nfs/nfsv2.h"
-#include "../nfs/nfsdiskless.h"
+#include <sys/param.h>
+#include <sys/conf.h>
+#include <sys/socket.h>
+#include <sys/mount.h>
+
+#include <net/if.h>
+#include <nfs/nfsv2.h>
+#include <nfs/nfsdiskless.h>
 
 extern int nfs_mountroot();
 int (*mountroot)() = nfs_mountroot;

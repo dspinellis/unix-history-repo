@@ -7,13 +7,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	7.4 (Berkeley) %G%
+ *	@(#)cpu.h	7.5 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
 #define _CPU_H_
 
-#include "machConst.h"
+#include <machine/machConst.h>
 
 /*
  * Exported definitions unique to pmax/mips cpu support.

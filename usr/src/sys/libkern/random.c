@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)random.c	7.1 (Berkeley) %G%
+ *	@(#)random.c	7.2 (Berkeley) %G%
  */
 
-#include "libkern.h"
+#include <libkern/libkern.h>
 
 /*
  * Pseudo-random number generator for randomizing the profiling clock,

@@ -7,17 +7,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wd.c	7.3 (Berkeley) %G%
+ *	@(#)wd.c	7.4 (Berkeley) %G%
  */
 
 /*  device driver for winchester disk  */
 
-#include "param.h"
-#include "dkbad.h"
-#include "disklabel.h"
-#include "i386/isa/isa.h"
-#include "i386/isa/wdreg.h"
-#include "saio.h"
+#include <sys/param.h>
+#include <sys/dkbad.h>
+#include <sys/disklabel.h>
+
+#include <i386/isa/isa.h>
+#include <i386/isa/wdreg.h>
+#include <stand/saio.h>
 
 #define	NWD		2	/* number of hard disk units supported, max 2 */
 #define	RETRIES		5	/* number of retries before giving up */

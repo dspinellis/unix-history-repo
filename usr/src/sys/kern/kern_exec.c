@@ -4,40 +4,40 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.65 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.66 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "filedesc.h"
-#include "kernel.h"
-#include "proc.h"
-#include "mount.h"
-#include "malloc.h"
-#include "namei.h"
-#include "vnode.h"
-#include "file.h"
-#include "acct.h"
-#include "exec.h"
-#include "ktrace.h"
-#include "resourcevar.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/malloc.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/acct.h>
+#include <sys/exec.h>
+#include <sys/ktrace.h>
+#include <sys/resourcevar.h>
 
-#include "machine/cpu.h"
-#include "machine/reg.h"
+#include <machine/cpu.h>
+#include <machine/reg.h>
 
-#include "mman.h"
-#include "vm/vm.h"
-#include "vm/vm_param.h"
-#include "vm/vm_map.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_pager.h"
+#include <sys/mman.h>
+#include <vm/vm.h>
+#include <vm/vm_param.h>
+#include <vm/vm_map.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_pager.h>
 
-#include "signalvar.h"
-#include "kinfo_proc.h"
+#include <sys/signalvar.h>
+#include <sys/kinfo_proc.h>
 
 #ifdef HPUXCOMPAT
-#include "user.h"			/* for pcb */
-#include "hp/hpux/hpux_exec.h"
+#include <sys/user.h>			/* for pcb */
+#include <hp/hpux/hpux_exec.h>
 #endif
 
 #ifdef COPY_SIGCODE

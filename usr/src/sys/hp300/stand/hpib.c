@@ -4,19 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.6 (Berkeley) %G%
+ *	@(#)hpib.c	7.7 (Berkeley) %G%
  */
 
 /*
  * HPIB driver
  */
-#include "sys/param.h"
-#include "sys/reboot.h"
-#include "hp/dev/device.h"
-#include "hpibvar.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <hp/dev/device.h>
+#include <hp300/stand/hpibvar.h>
 
-#include "saio.h"
-#include "samachdep.h"
+#include <stand/saio.h>
+#include <hp300/stand/samachdep.h>
 
 int	internalhpib = IIOV(0x478000);
 int	fhpibppoll(), nhpibppoll();

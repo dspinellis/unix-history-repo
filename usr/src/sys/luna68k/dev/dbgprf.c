@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dbgprf.c	7.1 (Berkeley) %G%
+ *	@(#)dbgprf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -18,10 +18,10 @@
 
 #ifdef DEBUGPRINT
 
-#include "sys/param.h"
-#include "sys/systm.h"
+#include <sys/param.h>
+#include <sys/systm.h>
 
-#include "machine/stdarg.h"
+#include <machine/stdarg.h>
 
 static char *sprintn __P((u_long num, int base, int *len));
 

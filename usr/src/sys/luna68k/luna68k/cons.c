@@ -14,19 +14,19 @@
  *
  * from: hp300/hp300/cons.c	7.1 (Berkeley) 6/4/92
  *
- *	@(#)cons.c	7.1 (Berkeley) %G%
+ *	@(#)cons.c	7.2 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/file.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
 
-#include "cons.h"
+#include <luna68k/luna68k/cons.h>
 
 /* XXX - all this could be autoconfig()ed */
 #include "sio.h"

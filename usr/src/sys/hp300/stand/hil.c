@@ -11,20 +11,20 @@
  *
  * from: Utah $Hdr: hil.c 1.1 89/08/22$
  *
- *	@(#)hil.c	7.3 (Berkeley) %G%
+ *	@(#)hil.c	7.4 (Berkeley) %G%
  */
 
 /*
  * Keyboard routines for the standalone ITE.
  */
-#include "samachdep.h"
+#include <hp300/stand/samachdep.h>
 
 #ifdef ITECONSOLE
 
-#include "sys/param.h"
-#include "hp/dev/hilreg.h"
-#include "hp/dev/kbdmap.h"
-#include "hp/dev/itevar.h"
+#include <sys/param.h>
+#include <hp/dev/hilreg.h>
+#include <hp/dev/kbdmap.h>
+#include <hp/dev/itevar.h>
 
 #ifndef SMALL
 

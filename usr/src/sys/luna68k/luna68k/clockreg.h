@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/clockreg.h	7.3 (Berkeley) 5/7/91
  *
- *	@(#)clockreg.h	7.1 (Berkeley) %G%
+ *	@(#)clockreg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,7 @@ struct bbc_tm {
  * TIME KEEPER RAM -- (MK48T02/12(B)-12/15/20/25)
  */
 
-#include "../dev/nvram.h"
+#include <luna68k/dev/nvram.h>
 
 struct bbc {
     struct nvram 	nvram;	       	/* non-volatile RAM area */

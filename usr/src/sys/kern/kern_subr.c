@@ -4,13 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_subr.c	7.10 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.11 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
 
 uiomove(cp, n, uio)
 	register caddr_t cp;

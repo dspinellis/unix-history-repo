@@ -11,14 +11,10 @@
  *
  * from: Utah $Hdr: grf_tcreg.h 1.11 92/01/21$
  *
- *	@(#)grf_tcreg.h	7.4 (Berkeley) %G%
+ *	@(#)grf_tcreg.h	7.5 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
 #include <hp/dev/iotypes.h>	/* XXX */
-#endif
 
 #define tccm_waitbusy(regaddr) \
 	while (((struct tcboxfb *)(regaddr))->cmap_busy & 0x04) DELAY(100)

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons_conf.c 1.1 92/01/21
  *
- *	@(#)cons_conf.c	7.1 (Berkeley) %G%
+ *	@(#)cons_conf.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,8 +20,9 @@
  * the standalone boot.  I think it best that they both use the same
  * known algorithm unless we see a pressing need otherwise.
  */
-#include "sys/types.h"
-#include "hp/dev/cons.h"
+#include <sys/types.h>
+
+#include <hp/dev/cons.h>
 
 #include "ite.h"
 #include "dca.h"

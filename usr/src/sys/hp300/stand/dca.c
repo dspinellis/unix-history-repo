@@ -9,14 +9,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.4 (Berkeley) %G%
+ *	@(#)dca.c	7.5 (Berkeley) %G%
  */
 
 #ifdef DCACONSOLE
-#include "sys/param.h"
-#include "hp/dev/dcareg.h"
-#include "../include/cpu.h"
-#include "hp/dev/cons.h"
+#include <sys/param.h>
+#include <hp/dev/dcareg.h>
+#include <machine/cpu.h>
+#include <hp/dev/cons.h>
 
 struct dcadevice *dcacnaddr = 0;
 

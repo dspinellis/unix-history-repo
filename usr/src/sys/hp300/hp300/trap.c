@@ -11,34 +11,34 @@
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  *
- *	@(#)trap.c	7.24 (Berkeley) %G%
+ *	@(#)trap.c	7.25 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "acct.h"
-#include "kernel.h"
-#include "signalvar.h"
-#include "resourcevar.h"
-#include "syscall.h"
-#include "syslog.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/acct.h>
+#include <sys/kernel.h>
+#include <sys/signalvar.h>
+#include <sys/resourcevar.h>
+#include <sys/syscall.h>
+#include <sys/syslog.h>
+#include <sys/user.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
-#include "../include/psl.h"
-#include "../include/trap.h"
-#include "../include/cpu.h"
-#include "../include/reg.h"
-#include "../include/mtpr.h"
+#include <machine/psl.h>
+#include <machine/trap.h>
+#include <machine/cpu.h>
+#include <machine/reg.h>
+#include <machine/mtpr.h>
 
-#include "vm/vm.h"
-#include "vm/pmap.h"
+#include <vm/vm.h>
+#include <vm/pmap.h>
 
 #ifdef HPUXCOMPAT
-#include "hp/hpux/hpux.h"
+#include <hp/hpux/hpux.h>
 #endif
 
 struct	sysent	sysent[];

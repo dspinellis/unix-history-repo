@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_tb.c	7.7 (Berkeley) %G%
+ *	@(#)tty_tb.c	7.8 (Berkeley) %G%
  */
 
 #include "tb.h"
@@ -14,9 +14,9 @@
  * Line discipline for RS232 tablets;
  * supplies binary coordinate data.
  */
-#include "param.h"
-#include "tablet.h"
-#include "tty.h"
+#include <sys/param.h>
+#include <sys/tablet.h>
+#include <sys/tty.h>
 
 /*
  * Tablet configuration table.

@@ -4,14 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dcareg.h	7.4 (Berkeley) %G%
+ *	@(#)dcareg.h	7.5 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "hp/dev/iotypes.h"	/* XXX */
-#else
-#include <hp/dev/iotypes.h>	/* XXX */
-#endif
+#include <hp/dev/iotypes.h>			/* XXX */
 
 #ifdef hp700
 struct dcadevice {

@@ -11,43 +11,43 @@
  *
  * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.32 (Berkeley) %G%
+ *	@(#)machdep.c	7.33 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "signalvar.h"
-#include "kernel.h"
-#include "map.h"
-#include "proc.h"
-#include "buf.h"
-#include "reboot.h"
-#include "conf.h"
-#include "file.h"
-#include "clist.h"
-#include "callout.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "msgbuf.h"
-#include "mount.h"
-#include "user.h"
-#include "exec.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
+#include <sys/kernel.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/reboot.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/clist.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/msgbuf.h>
+#include <sys/mount.h>
+#include <sys/user.h>
+#include <sys/exec.h>
 #ifdef SYSVSHM
-#include "shm.h"
+#include <sys/shm.h>
 #endif
 #ifdef HPUXCOMPAT
-#include "hp/hpux/hpux.h"
+#include <hp/hpux/hpux.h>
 #endif
 
-#include "../include/cpu.h"
-#include "../include/reg.h"
-#include "../include/psl.h"
-#include "isr.h"
-#include "pte.h"
-#include "net/netisr.h"
+#include <machine/cpu.h>
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <hp300/hp300/isr.h>
+#include <hp300/hp300/pte.h>
+#include <net/netisr.h>
 
 #define	MAXMEM	64*1024*CLSIZE	/* XXX - from cmap.h */
-#include "vm/vm_kern.h"
+#include <vm/vm_kern.h>
 
 vm_map_t buffer_map;
 extern vm_offset_t avail_end;

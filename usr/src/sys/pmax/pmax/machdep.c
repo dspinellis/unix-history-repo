@@ -10,44 +10,44 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.9 (Berkeley) %G%
+ *	@(#)machdep.c	7.10 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
 
-#include "param.h"
-#include "systm.h"
-#include "signalvar.h"
-#include "kernel.h"
-#include "map.h"
-#include "proc.h"
-#include "buf.h"
-#include "reboot.h"
-#include "conf.h"
-#include "file.h"
-#include "clist.h"
-#include "callout.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "msgbuf.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
+#include <sys/kernel.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/reboot.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/clist.h>
+#include <sys/callout.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/msgbuf.h>
+#include <sys/user.h>
 #ifdef SYSVSHM
-#include "shm.h"
+#include <sys/shm.h>
 #endif
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "vm/vm_page.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <vm/vm_page.h>
 
-#include "../include/cpu.h"
-#include "../include/reg.h"
-#include "../include/psl.h"
-#include "../include/machMon.h"
-#include "../include/pte.h"
+#include <machine/cpu.h>
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <machine/machMon.h>
+#include <machine/pte.h>
 
-#include "../dev/device.h"
+#include <pmax/dev/device.h>
 
-#include "clockreg.h"
+#include <pmax/pmax/clockreg.h>
 
 vm_map_t buffer_map;
 
@@ -987,7 +987,7 @@ out:
  * rights to redistribute these changes.
  */
 
-#include "turbochannel.h"
+#include <pmax/pmax/turbochannel.h>
 
 /*
  * Driver map: associates a device driver to an option type.

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.32 92/01/21$
  *
- *	@(#)grf.c	7.13 (Berkeley) %G%
+ *	@(#)grf.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
  * Hardware access is through the machine dependent grf switch routines.
  */
 
-#include <grf.h>
+#include "grf.h"
 #if NGRF > 0
 
 #include <sys/param.h>

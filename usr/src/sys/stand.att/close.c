@@ -4,11 +4,11 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)close.c	7.1 (Berkeley) %G%
+ *	@(#)close.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 close(fdesc)
 	int fdesc;

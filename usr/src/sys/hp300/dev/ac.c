@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ac.c 1.5 92/01/21$
  *
- *	@(#)ac.c	7.1 (Berkeley) %G%
+ *	@(#)ac.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -26,18 +26,19 @@
 #include "ac.h"
 #if NAC > 0
 
-#include "param.h"
-#include "buf.h"
-#include "errno.h"
-#include "user.h"
-#include "ioctl.h"
-#include "kernel.h"
-#include "malloc.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/errno.h>
+#include <sys/user.h>
+#include <sys/ioctl.h>
+#include <sys/kernel.h>
+#include <sys/malloc.h>
 
-#include "hp/dev/device.h"
-#include "scsireg.h"
-#include "acioctl.h"
-#include "acvar.h"
+#include <hp/dev/device.h>
+
+#include <hp300/dev/scsireg.h>
+#include <hp300/dev/acioctl.h>
+#include <hp300/dev/acvar.h>
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf_tc.c 1.19 92/01/21$
  *
- *	@(#)grf_tc.c	7.5 (Berkeley) %G%
+ *	@(#)grf_tc.c	7.6 (Berkeley) %G%
  */
 
 #include "grf.h"
@@ -20,14 +20,14 @@
 /*
  * Graphics routines for TOPCAT and CATSEYE frame buffers
  */
-#include "sys/param.h"
-#include "sys/errno.h"
+#include <sys/param.h>
+#include <sys/errno.h>
 
-#include "hp/dev/grfioctl.h"
-#include "hp/dev/grfvar.h"
-#include "grf_tcreg.h"
+#include <hp/dev/grfioctl.h>
+#include <hp/dev/grfvar.h>
+#include <hp300/dev/grf_tcreg.h>
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
 /*
  * Initialize hardware.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboot.c	7.3 (Berkeley) %G%
+ *	@(#)mkboot.c	7.4 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -17,10 +17,11 @@ char copyright[] =
 static char sccsid[] = "@(#)mkboot.c	7.2 (Berkeley) 12/16/90";
 #endif /* not lint */
 
-#include "sys/param.h"
-#include "sys/exec.h"
-#include "sys/file.h"
-#include "volhdr.h"
+#include <sys/param.h>
+#include <sys/exec.h>
+#include <sys/file.h>
+
+#include <hp300/stand/volhdr.h>
 
 #include <stdio.h>
 #include <ctype.h>
@@ -225,8 +226,8 @@ lifname(str)
 	return(lname);
 }
 
-#include "sys/stat.h"
-#include "/usr/include/time.h"	/* XXX */
+#include <sys/stat.h>
+#include <time.h>	/* XXX */
 
 bcddate(fd, toc)
 	int fd;

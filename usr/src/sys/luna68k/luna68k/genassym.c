@@ -9,28 +9,30 @@
  *
  * from: hp300/hp300/genassym.c	7.11 (Berkeley) 7/8/92
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/map.h"
-#include "sys/proc.h"
-#include "sys/mbuf.h"
-#include "sys/msgbuf.h"
-#include "../include/cpu.h"
-#include "../include/trap.h"
-#include "../include/psl.h"
-#include "../include/reg.h"
-#include "../include/stinger.h"
-#include "../dev/pioreg.h"
-#include "clockreg.h"
-#include "sys/syscall.h"
-#include "vm/vm.h"
-#include "sys/user.h"
-#include "pte.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/msgbuf.h>
+#include <sys/syscall.h>
+#include <sys/user.h>
+
+#include <machine/cpu.h>
+#include <machine/trap.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <machine/stinger.h>
+
+#include <luna68k/dev/pioreg.h>
+#include <luna68k/luna68k/clockreg.h>
+#include <vm/vm.h>
+#include <luna68k/luna68k/pte.h>
 
 #include <errno.h>
 #include <stdio.h>

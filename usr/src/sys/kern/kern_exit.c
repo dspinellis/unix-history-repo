@@ -4,35 +4,35 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.49 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.50 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "ioctl.h"
-#include "proc.h"
-#include "tty.h"
-#include "time.h"
-#include "resource.h"
-#include "kernel.h"
-#include "buf.h"
-#include "wait.h"
-#include "file.h"
-#include "vnode.h"
-#include "syslog.h"
-#include "malloc.h"
-#include "resourcevar.h"
-#include "ptrace.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/map.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/kernel.h>
+#include <sys/buf.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <sys/vnode.h>
+#include <sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/resourcevar.h>
+#include <sys/ptrace.h>
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 #ifdef COMPAT_43
-#include "machine/reg.h"
-#include "machine/psl.h"
+#include <machine/reg.h>
+#include <machine/psl.h>
 #endif
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
 
 /*
  * Exit system call: pass back caller's arg

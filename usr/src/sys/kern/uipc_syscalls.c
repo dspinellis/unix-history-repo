@@ -2,21 +2,21 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.27 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.28 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "filedesc.h"
-#include "proc.h"
-#include "file.h"
-#include "buf.h"
-#include "malloc.h"
-#include "mbuf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
+#include <sys/param.h>
+#include <sys/filedesc.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/buf.h>
+#include <sys/malloc.h>
+#include <sys/mbuf.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
 /*

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.15 (Berkeley) %G%
+ *	@(#)sd.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -20,21 +20,22 @@
 static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.2 92/04/10 20:48:35 mike Exp $";
 #endif
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/dkstat.h"
-#include "sys/disklabel.h"
-#include "sys/malloc.h"
-#include "sys/proc.h"
-#include "sys/ioctl.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/dkstat.h>
+#include <sys/disklabel.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/ioctl.h>
 
-#include "hp/dev/device.h"
-#include "scsireg.h"
-#include "vm/vm_param.h"
-#include "vm/lock.h"
-#include "vm/vm_prot.h"
-#include "vm/pmap.h"
+#include <hp/dev/device.h>
+#include <hp300/dev/scsireg.h>
+
+#include <vm/vm_param.h>
+#include <vm/lock.h>
+#include <vm/vm_prot.h>
+#include <vm/pmap.h>
 
 extern int scsi_test_unit_rdy();
 extern int scsi_request_sense();

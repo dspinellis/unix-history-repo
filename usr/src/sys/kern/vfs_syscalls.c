@@ -4,22 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.99 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.100 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "filedesc.h"
-#include "kernel.h"
-#include "file.h"
-#include "stat.h"
-#include "vnode.h"
-#include "mount.h"
-#include "proc.h"
-#include "uio.h"
-#include "malloc.h"
-#include "dirent.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/namei.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/vnode.h>
+#include <sys/mount.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/malloc.h>
+#include <sys/dirent.h>
+
 #include <vm/vm.h>
 
 #ifdef REF_DIAGNOSTIC

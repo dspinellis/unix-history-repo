@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.4 (Berkeley) %G%
+ *	@(#)sii.c	7.5 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
@@ -18,17 +18,17 @@
 /*
  * SCSI interface driver
  */
-#include "param.h"
-#include "systm.h"
-#include "dkstat.h"
-#include "buf.h"
-#include "conf.h"
-#include "errno.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/dkstat.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/errno.h>
 
-#include "machine/machConst.h"
-#include "device.h"
-#include "scsi.h"
-#include "siireg.h"
+#include <machine/machConst.h>
+#include <mips/dev/device.h>
+#include <mips/dev/scsi.h>
+#include <mips/dev/siireg.h>
 
 int	siiprobe();
 void	siistart();

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sc.c	7.2 (Berkeley) %G%
+ *	@(#)sc.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -23,13 +23,13 @@
 #include "sc.h"
 #if NSC > 0
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "device.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
 
-#include "scsireg.h"
-#include "scsivar.h"
+#include <luna68k/dev/device.h>
+#include <luna68k/dev/scsireg.h>
+#include <luna68k/dev/scsivar.h>
 
 /*
  * SC Driver Options

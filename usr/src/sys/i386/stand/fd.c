@@ -7,18 +7,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.3 (Berkeley) %G%
+ *	@(#)fd.c	7.4 (Berkeley) %G%
  */
 
 /****************************************************************************/
 /*                        standalone fd driver                               */
 /****************************************************************************/
-#include "param.h"
-#include "dkbad.h"
-#include "i386/isa/disk.h"
-#include "i386/isa/fdreg.h"
-#include "i386/isa/isa.h"
-#include "saio.h"
+#include <sys/param.h>
+#include <sys/dkbad.h>
+
+#include <i386/isa/disk.h>
+#include <i386/isa/fdreg.h>
+#include <i386/isa/isa.h>
+#include <stand/saio.h>
 
 #define NUMRETRY 10
 /*#define FDDEBUG*/

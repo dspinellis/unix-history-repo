@@ -4,11 +4,11 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)lseek.c	7.1 (Berkeley) %G%
+ *	@(#)lseek.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 lseek(fdesc, addr, ptr)
 	int fdesc, ptr;

@@ -11,21 +11,21 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.5 (Berkeley) %G%
+ *	@(#)scsi.c	7.6 (Berkeley) %G%
  */
 
 /*
  * SCSI bus driver for standalone programs.
  */
 
-#include "sys/param.h"
-#include "sys/reboot.h"
-#include "hp/dev/device.h"
-#include "../dev/scsireg.h"
-#include "scsivar.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
+#include <hp/dev/device.h>
+#include <hp300/dev/scsireg.h>
+#include <hp300/stand/scsivar.h>
 
-#include "saio.h"
-#include "samachdep.h"
+#include <stand/saio.h>
+#include <hp300/stand/samachdep.h>
 
 struct	scsi_softc scsi_softc[NSCSI];
 

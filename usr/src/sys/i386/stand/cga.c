@@ -7,10 +7,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cga.c	7.3 (Berkeley) %G%
+ *	@(#)cga.c	7.4 (Berkeley) %G%
  */
 
-#include "param.h"
+#include <sys/param.h>
 
 #define	COL		80
 #define	ROW		25

@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.8 (Berkeley) %G%
+ *	@(#)locore.s	7.9 (Berkeley) %G%
  */
 
 /*
@@ -30,14 +30,15 @@
  *	assembly language support routines.
  */
 
-#include "errno.h"
+#include <sys/errno.h>
 
-#include "machine/param.h"
-#include "machine/vmparam.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
-#include "machine/machAsmDefs.h"
-#include "machine/pte.h"
+#include <machine/param.h>
+#include <machine/vmparam.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+#include <machine/machAsmDefs.h>
+#include <machine/pte.h>
+
 #include "assym.h"
 
 /*

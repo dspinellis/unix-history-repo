@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.8 (Berkeley) %G%
+ *	@(#)dc.c	7.9 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -36,23 +36,23 @@
 /*
  * DC7085 (DZ-11 look alike) Driver
  */
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "tty.h"
-#include "proc.h"
-#include "map.h"
-#include "buf.h"
-#include "conf.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/proc.h>
+#include <sys/map.h>
+#include <sys/buf.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/syslog.h>
 
-#include "machine/dc7085cons.h"
+#include <machine/dc7085cons.h>
 
-#include "device.h"
-#include "pdma.h"
+#include <mips/dev/device.h>
+#include <mips/dev/pdma.h>
 
 /*
  * Driver information for auto-configuration stuff.

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.27 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -14,16 +14,16 @@
 #include "pty.h"
 
 #if NPTY > 0
-#include "param.h"
-#include "systm.h"
-#include "ioctl.h"
-#include "proc.h"
-#include "tty.h"
-#include "conf.h"
-#include "file.h"
-#include "uio.h"
-#include "kernel.h"
-#include "vnode.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/ioctl.h>
+#include <sys/proc.h>
+#include <sys/tty.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/uio.h>
+#include <sys/kernel.h>
+#include <sys/vnode.h>
 #include "tsleep.h"
 
 #if NPTY == 1

@@ -15,22 +15,22 @@
  *
  * from: hp300/hp300/vm_machdep.c	7.12 (Berkeley) 6/5/92
  *
- *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "malloc.h"
-#include "buf.h"
-#include "vnode.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/malloc.h>
+#include <sys/buf.h>
+#include <sys/vnode.h>
+#include <sys/user.h>
 
-#include "../include/cpu.h"
+#include <machine/cpu.h>
 
-#include "vm/vm.h"
-#include "vm/vm_kern.h"
-#include "pte.h"
+#include <vm/vm.h>
+#include <vm/vm_kern.h>
+#include <pte.h>
 
 /*
  * Finish a fork operation, with process p2 nearly set up.

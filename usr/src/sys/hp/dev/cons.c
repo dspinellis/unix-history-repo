@@ -11,19 +11,19 @@
  *
  * from: Utah $Hdr: cons.c 1.7 92/01/21$
  *
- *	@(#)cons.c	7.7 (Berkeley) %G%
+ *	@(#)cons.c	7.8 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/proc.h"
-#include "sys/systm.h"
-#include "sys/buf.h"
-#include "sys/ioctl.h"
-#include "sys/tty.h"
-#include "sys/file.h"
-#include "sys/conf.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+#include <sys/file.h>
+#include <sys/conf.h>
 
-#include "cons.h"
+#include <hp/dev/cons.h>
 
 struct	tty *constty;		/* virtual console output device */
 struct	consdev *cn_tab;	/* physical console device info */

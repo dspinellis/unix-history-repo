@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsireg.h	7.1 (Berkeley) %G%
+ *	@(#)scsireg.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -400,7 +400,7 @@ struct scsi_cache {
  * Driver ioctl's for various scsi operations.
  */
 #ifndef _IOCTL_
-#include "ioctl.h"
+#include <sys/ioctl.h>
 #endif
 
 /*

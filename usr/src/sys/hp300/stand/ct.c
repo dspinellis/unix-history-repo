@@ -4,17 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.5 (Berkeley) %G%
+ *	@(#)ct.c	7.6 (Berkeley) %G%
  */
 
 /*
  * CS80 tape driver
  */
-#include "sys/param.h"
-#include "../dev/ctreg.h"
+#include <sys/param.h>
 
-#include "saio.h"
-#include "samachdep.h"
+#include <hp300/dev/ctreg.h>
+
+#include <stand/saio.h>
+#include <hp300/stand/samachdep.h>
 
 struct	ct_iocmd ct_ioc;
 struct	ct_rscmd ct_rsc;

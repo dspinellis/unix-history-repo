@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.5 (Berkeley) %G%
+ *	@(#)rz.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -18,23 +18,24 @@
 #include "rz.h"
 #if NRZ > 0
 
-#include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "errno.h"
-#include "fcntl.h"
-#include "ioctl.h"
-#include "dkstat.h"
-#include "disklabel.h"
-#include "malloc.h"
-#include "proc.h"
-#include "uio.h"
-#include "stat.h"
-#include "syslog.h"
-#include "ufs/ffs/fs.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/buf.h>
+#include <sys/errno.h>
+#include <sys/fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/dkstat.h>
+#include <sys/disklabel.h>
+#include <sys/malloc.h>
+#include <sys/proc.h>
+#include <sys/uio.h>
+#include <sys/stat.h>
+#include <sys/syslog.h>
 
-#include "device.h"
-#include "scsi.h"
+#include <ufs/ffs/fs.h>
+
+#include <mips/dev/device.h>
+#include <mips/dev/scsi.h>
 
 extern int splbio();
 extern void splx();

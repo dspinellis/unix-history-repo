@@ -11,21 +11,21 @@
  *
  * from: Utah $Hdr: ite.c 1.23 92/02/28$
  *
- *	@(#)ite.c	7.4 (Berkeley) %G%
+ *	@(#)ite.c	7.5 (Berkeley) %G%
  */
 
 /*
  * Standalone Internal Terminal Emulator (CRT and keyboard)
  */
-#include "samachdep.h"
+#include <hp300/stand/samachdep.h>
 
 #ifdef ITECONSOLE
 
-#include "sys/param.h"
-#include "hp/dev/cons.h"
-#include "hp/dev/device.h"
-#include "hp/dev/itevar.h"
-#include "hp/dev/grfreg.h"
+#include <sys/param.h>
+#include <hp/dev/cons.h>
+#include <hp/dev/device.h>
+#include <hp/dev/itevar.h>
+#include <hp/dev/grfreg.h>
 
 extern int nodev();
 extern u_char ite_readbyte();

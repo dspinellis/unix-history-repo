@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fd.c	7.7 (Berkeley) %G%
+ *	@(#)fd.c	7.8 (Berkeley) %G%
  */
 
 #include "fd.h"
@@ -16,18 +16,18 @@
  * This driver assumed that NFD == 2. Now it works for NFD == 1 or NFD == 2
  * It will probably not work for NFD > 2.
  */
-#include "param.h"
-#include "dkbad.h"
-#include "systm.h"
-#include "conf.h"
-#include "file.h"
-#include "ioctl.h"
-#include "buf.h"
-#include "uio.h"
+#include <sys/param.h>
+#include <sys/dkbad.h>
+#include <sys/systm.h>
+#include <sys/conf.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/buf.h>
+#include <sys/uio.h>
 
-#include "i386/isa/isa_device.h"
-#include "i386/isa/fdreg.h"
-#include "i386/isa/icu.h"
+#include <i386/isa/isa_device.h>
+#include <i386/isa/fdreg.h>
+#include <i386/isa/icu.h>
 
 #define	FDUNIT(s)	((s)&1)
 #define	FDTYPE(s)	(((s)>>1)&7)

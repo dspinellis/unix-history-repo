@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
  *
- *	@(#)hpux_net.c	7.7 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -20,19 +20,20 @@
 
 #ifdef HPUXCOMPAT
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/kernel.h"
-#include "sys/time.h"
-#include "sys/errno.h"
-#include "sys/proc.h"
-#include "sys/file.h"
-#include "sys/mbuf.h"
-#include "sys/socket.h"
-#include "sys/socketvar.h"
-#include "sys/uio.h"
-#include "sys/ktrace.h"
-#include "hpux.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/time.h>
+#include <sys/errno.h>
+#include <sys/proc.h>
+#include <sys/file.h>
+#include <sys/mbuf.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/uio.h>
+#include <sys/ktrace.h>
+
+#include <hp/hpux/hpux.h>
 
 #define MINBSDIPCCODE	0x3EE
 #define NUMBSDIPC	32

@@ -2,24 +2,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.37 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.38 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "filedesc.h"
-#include "domain.h"
-#include "protosw.h"
-#include "socket.h"
-#include "socketvar.h"
-#include "unpcb.h"
-#include "un.h"
-#include "namei.h"
-#include "vnode.h"
-#include "file.h"
-#include "stat.h"
-#include "mbuf.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/filedesc.h>
+#include <sys/domain.h>
+#include <sys/protosw.h>
+#include <sys/socket.h>
+#include <sys/socketvar.h>
+#include <sys/unpcb.h>
+#include <sys/un.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/mbuf.h>
 
 /*
  * Unix communications domain.

@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.5 (Berkeley) %G%
+ *	@(#)boot.c	7.6 (Berkeley) %G%
  */
 
-#include "sys/param.h"
-#include "sys/reboot.h"
+#include <sys/param.h>
+#include <sys/reboot.h>
 #include <a.out.h>
-#include "saio.h"
+#include <stand/saio.h>
 
 #ifndef INSECURE
-#include "sys/stat.h"
+#include <sys/stat.h>
 struct stat sb;
 #endif
 
@@ -33,7 +33,7 @@ extern	int noconsole;
 extern	int howto, bootdev;
 
 #ifdef PRTCPU
-#include "samachdep.h"
+#include <hp300/stand/samachdep.h>
 #endif
 
 main()

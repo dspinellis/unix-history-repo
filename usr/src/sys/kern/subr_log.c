@@ -4,20 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_log.c	7.17 (Berkeley) %G%
+ *	@(#)subr_log.c	7.18 (Berkeley) %G%
  */
 
 /*
  * Error log buffer for kernel printf's.
  */
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "vnode.h"
-#include "ioctl.h"
-#include "msgbuf.h"
-#include "file.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/msgbuf.h>
+#include <sys/file.h>
 
 #define LOG_RDPRI	(PZERO + 1)
 

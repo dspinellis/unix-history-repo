@@ -4,21 +4,22 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	7.45 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.46 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "systm.h"
-#include "kernel.h"
-#include "file.h"
-#include "stat.h"
-#include "buf.h"
-#include "proc.h"
-#include "mount.h"
-#include "namei.h"
-#include "vnode.h"
-#include "ioctl.h"
-#include "tty.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/kernel.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <sys/buf.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/tty.h>
+
 #include <vm/vm.h>
 
 struct 	fileops vnops =

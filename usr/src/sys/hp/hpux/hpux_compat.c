@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.43 92/04/23$
  *
- *	@(#)hpux_compat.c	7.31 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -20,32 +20,33 @@
 
 #ifdef HPUXCOMPAT
 
-#include "param.h"
-#include "systm.h"
-#include "signalvar.h"
-#include "kernel.h"
-#include "filedesc.h"
-#include "proc.h"
-#include "buf.h"
-#include "wait.h"
-#include "file.h"
-#include "namei.h"
-#include "vnode.h"
-#include "ioctl.h"
-#include "ptrace.h"
-#include "stat.h"
-#include "syslog.h"
-#include "malloc.h"
-#include "mount.h"
-#include "ipc.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/signalvar.h>
+#include <sys/kernel.h>
+#include <sys/filedesc.h>
+#include <sys/proc.h>
+#include <sys/buf.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <sys/namei.h>
+#include <sys/vnode.h>
+#include <sys/ioctl.h>
+#include <sys/ptrace.h>
+#include <sys/stat.h>
+#include <sys/syslog.h>
+#include <sys/malloc.h>
+#include <sys/mount.h>
+#include <sys/ipc.h>
+#include <sys/user.h>
 
-#include "machine/cpu.h"
-#include "machine/reg.h"
-#include "machine/psl.h"
-#include "machine/vmparam.h"
-#include "hpux.h"
-#include "hpux_termio.h"
+#include <machine/cpu.h>
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <machine/vmparam.h>
+
+#include <hp/hpux/hpux.h>
+#include <hp/hpux/hpux_termio.h>
 
 #ifdef DEBUG
 int unimpresponse = 0;
@@ -826,7 +827,7 @@ hpuxsetdomainname(p, uap, retval)
 }
 
 #ifdef SYSVSHM
-#include "shm.h"
+#include <sys/shm.h>
 
 hpuxshmat(p, uap, retval)
 	struct proc *p;
@@ -974,7 +975,7 @@ extern int hilopen();
 #endif
 #endif
 
-#include "conf.h"
+#include <sys/conf.h>
 
 bsdtohpuxstat(sb, hsb)
 	struct stat *sb;
@@ -1641,7 +1642,7 @@ hpuxdumpu(vp, cred)
 
 #define HPUX_HZ	50
 
-#include "sys/times.h"
+#include <sys/times.h>
 
 /* from old timeb.h */
 struct hpuxtimeb {

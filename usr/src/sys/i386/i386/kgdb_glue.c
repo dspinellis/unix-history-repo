@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_glue.c	7.2 (Berkeley) %G%
+ *	@(#)kgdb_glue.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -13,9 +13,9 @@
 
 #ifdef KGDB
 
-#include "param.h"
-#include "machine/frame.h"
-#include "machine/reg.h"
+#include <sys/param.h>
+#include <machine/frame.h>
+#include <machine/reg.h>
 
 #ifndef lint
 static char rcsid[] =

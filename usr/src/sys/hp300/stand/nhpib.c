@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nhpib.c	7.2 (Berkeley) %G%
+ *	@(#)nhpib.c	7.3 (Berkeley) %G%
  */
 
 /*
  * Internal/98624 HPIB driver
  */
 
-#include "sys/param.h"
-#include "../dev/nhpibreg.h"
-#include "hpibvar.h"
+#include <sys/param.h>
+#include <hp300/dev/nhpibreg.h>
+#include <hp300/stand/hpibvar.h>
 
 nhpibinit(unit)
 {

@@ -4,26 +4,28 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.11 (Berkeley) %G%
+ *	@(#)genassym.c	7.12 (Berkeley) %G%
  */
 
 #define KERNEL
 
-#include "sys/param.h"
-#include "sys/buf.h"
-#include "sys/map.h"
-#include "sys/proc.h"
-#include "sys/mbuf.h"
-#include "sys/msgbuf.h"
-#include "../include/cpu.h"
-#include "../include/trap.h"
-#include "../include/psl.h"
-#include "../include/reg.h"
-#include "clockreg.h"
-#include "sys/syscall.h"
-#include "vm/vm.h"
-#include "sys/user.h"
-#include "pte.h"
+#include <sys/param.h>
+#include <sys/buf.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/mbuf.h>
+#include <sys/msgbuf.h>
+#include <sys/syscall.h>
+#include <sys/user.h>
+
+#include <machine/cpu.h>
+#include <machine/trap.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
+
+#include <hp300/hp300/clockreg.h>
+#include <vm/vm.h>
+#include <hp300/hp300/pte.h>
 
 #include <errno.h>
 #include <stdio.h>

@@ -7,33 +7,33 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)trap.c	7.12 (Berkeley) %G%
+ *	@(#)trap.c	7.13 (Berkeley) %G%
  */
 
 /*
  * 386 Trap and System call handleing
  */
 
-#include "machine/cpu.h"
-#include "machine/psl.h"
-#include "machine/reg.h"
+#include <machine/cpu.h>
+#include <machine/psl.h>
+#include <machine/reg.h>
 
-#include "param.h"
-#include "systm.h"
-#include "proc.h"
-#include "user.h"
-#include "acct.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/proc.h>
+#include <sys/user.h>
+#include <sys/acct.h>
+#include <sys/kernel.h>
 #ifdef KTRACE
-#include "ktrace.h"
+#include <sys/ktrace.h>
 #endif
 
-#include "vm/vm_param.h"
-#include "vm/pmap.h"
-#include "vm/vm_map.h"
+#include <vm/vm_param.h>
+#include <vm/pmap.h>
+#include <vm/vm_map.h>
 
-#include "machine/trap.h"
-#include "machine/dbg.h"
+#include <machine/trap.h>
+#include <machine/dbg.h>
 
 
 struct	sysent sysent[];

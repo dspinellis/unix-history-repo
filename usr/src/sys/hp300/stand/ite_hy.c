@@ -12,17 +12,17 @@
  *
  * from: Utah $Hdr: ite_hy.c 1.1 92/01/22$
  *
- *	@(#)ite_hy.c	7.2 (Berkeley) %G%
+ *	@(#)ite_hy.c	7.3 (Berkeley) %G%
  */
 
-#include "samachdep.h"
+#include <hp300/stand/samachdep.h>
 
 #ifdef ITECONSOLE
-#include "sys/param.h"
+#include <sys/param.h>
 
-#include "hp/dev/itevar.h"
-#include "hp/dev/itereg.h"
-#include "../dev/grf_hyreg.h"
+#include <hp/dev/itevar.h>
+#include <hp/dev/itereg.h>
+#include <hp300/dev/grf_hyreg.h>
 
 #define REGBASE	    	((struct hyboxfb *)(ip->regbase))
 #define WINDOWMOVER     hyper_windowmove
@@ -138,7 +138,7 @@ hyper_scroll(ip, sy, sx, count, dir)
 			 ip->cols  * ip->ftwidth, RR_COPY);
 }
 
-#include "../dev/maskbits.h"
+#include <hp300/dev/maskbits.h>
 
 /* NOTE:
  * the first element in starttab could be 0xffffffff.  making it 0
