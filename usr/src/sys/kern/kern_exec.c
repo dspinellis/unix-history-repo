@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.12 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -92,8 +92,8 @@ execve()
 	bno = 0;
 	bp = 0;
 	indir = 0;
-	uid = u.u_uid;
-	gid = u.u_gid;
+	uid = u.u_cred->cr_uid;
+	gid = u.u_cred->cr_gid;
 	if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
 		goto bad;
 	if (vp->v_mount->m_flag & M_NOEXEC) {
@@ -205,8 +205,8 @@ execve()
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    MAXCOMLEN);
 		cfname[MAXCOMLEN] = '\0';
-		uid = u.u_uid;		/* shell scripts can't be setuid */
-		gid = u.u_gid;
+		uid = u.u_cred->cr_uid;	/* shell scripts can't be setuid */
+		gid = u.u_cred->cr_gid;
 		goto again;
 	}
 
@@ -374,22 +374,7 @@ badarg:
 	}
 	(void) suword((caddr_t)ap, 0);
 
-	/*
-	 * Reset caught signals.  Held signals
-	 * remain held through p_sigmask.
-	 */
-	while (u.u_procp->p_sigcatch) {
-		nc = ffs((long)u.u_procp->p_sigcatch);
-		u.u_procp->p_sigcatch &= ~sigmask(nc);
-		u.u_signal[nc] = SIG_DFL;
-	}
-	/*
-	 * Reset stack state to the user stack.
-	 * Clear set of signals caught on the signal stack.
-	 */
-	u.u_onstack = 0;
-	u.u_sigsp = 0;
-	u.u_sigonstack = 0;
+	execsigs(u.u_procp);
 
 	for (nc = u.u_lastfile; nc >= 0; --nc) {
 		if (u.u_pofile[nc] & UF_EXCLOSE) {
@@ -437,6 +422,7 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	int nargc, uid, gid;
 	struct ucred *cred;
 {
+	register struct proc *p = u.u_procp;
 	size_t ts, ds, ids, uds, ss;
 	int pagi;
 
@@ -492,18 +478,18 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	 * parent who will set SVFDONE when he has taken back
 	 * our resources.
 	 */
-	if ((u.u_procp->p_flag & SVFORK) == 0)
+	if ((p->p_flag & SVFORK) == 0)
 		vrelvm();
 	else {
-		u.u_procp->p_flag &= ~SVFORK;
-		u.u_procp->p_flag |= SKEEP;
-		wakeup((caddr_t)u.u_procp);
-		while ((u.u_procp->p_flag & SVFDONE) == 0)
-			sleep((caddr_t)u.u_procp, PZERO - 1);
-		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
+		p->p_flag &= ~SVFORK;
+		p->p_flag |= SKEEP;
+		wakeup((caddr_t)p);
+		while ((p->p_flag & SVFDONE) == 0)
+			sleep((caddr_t)p, PZERO - 1);
+		p->p_flag &= ~(SVFDONE|SKEEP);
 	}
-	u.u_procp->p_flag &= ~(SPAGV|SSEQL|SUANOM|SOUSIG);
-	u.u_procp->p_flag |= pagi | SEXEC;
+	p->p_flag &= ~(SPAGV|SSEQL|SUANOM);
+	p->p_flag |= pagi | SEXEC;
 	u.u_dmap = u.u_cdmap;
 	u.u_smap = u.u_csmap;
 	vgetvm(ts, ds, ss);
@@ -519,18 +505,18 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	/*
 	 * Define new keys.
 	 */
-	if (u.u_procp->p_textp == 0) {	/* use existing code key if shared */
-		ckeyrelease(u.u_procp->p_ckey);
-		u.u_procp->p_ckey = getcodekey();
+	if (p->p_textp == 0) {	/* use existing code key if shared */
+		ckeyrelease(p->p_ckey);
+		p->p_ckey = getcodekey();
 	}
-	mtpr(CCK, u.u_procp->p_ckey);
-	dkeyrelease(u.u_procp->p_dkey);
-	u.u_procp->p_dkey = getdatakey();
-	mtpr(DCK, u.u_procp->p_dkey);
+	mtpr(CCK, p->p_ckey);
+	dkeyrelease(p->p_dkey);
+	p->p_dkey = getdatakey();
+	mtpr(DCK, p->p_dkey);
 #endif
-	if (pagi && u.u_procp->p_textp)
-		vinifod((struct fpte *)dptopte(u.u_procp, 0),
-		    PG_FTEXT, u.u_procp->p_textp->x_vptr,
+	if (pagi && p->p_textp)
+		vinifod((struct fpte *)dptopte(p, 0),
+		    PG_FTEXT, p->p_textp->x_vptr,
 		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
 
 #if defined(vax) || defined(tahoe)
@@ -543,14 +529,16 @@ getxfile(vp, ep, nargc, uid, gid, cred)
 	/*
 	 * set SUID/SGID protections, if no tracing
 	 */
-	if ((u.u_procp->p_flag&STRC)==0) {
-		if (uid != u.u_uid || gid != u.u_gid)
+	if ((p->p_flag&STRC)==0) {
+		if (uid != u.u_cred->cr_uid || gid != u.u_cred->cr_gid)
 			u.u_cred = crcopy(u.u_cred);
-		u.u_uid = uid;
-		u.u_procp->p_uid = uid;
-		u.u_gid = gid;
+		u.u_cred->cr_uid = uid;
+		u.u_cred->cr_gid = gid;
+		p->p_uid = uid;
 	} else
-		psignal(u.u_procp, SIGTRAP);
+		psignal(p, SIGTRAP);
+	p->p_svuid = p->p_uid;
+	p->p_svgid = u.u_cred->cr_gid;
 	u.u_tsize = ts;
 	u.u_dsize = ds;
 	u.u_ssize = ss;
