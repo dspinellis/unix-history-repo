@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)cc.1	5.1 (Berkeley) %G%
+.\"	@(#)cc.1	6.1 (Berkeley) %G%
 .\"
-.TH CC 1 "9 February 1982"
+.TH CC 1 ""
 .UC 4
 .SH NAME
 cc \- C compiler
@@ -101,6 +101,13 @@ Compile the named C programs, and leave the
 assembler-language output on corresponding files suffixed `.s'.
 .TP
 .SM
+.B \-M
+Run only the macro preprocessor
+on the named C programs,
+requesting it to generate Makefile dependencies
+and send the result to the standard output.
+.TP
+.SM
 .B \-E
 Run only the macro preprocessor
 on the named C programs, and send the result to the
@@ -148,6 +155,21 @@ options,
 then in directories on a standard list.
 .TP
 .SM
+.BI \-L \*Sdir
+Library archives are sought first in
+directories named in
+.B \-L
+options,
+then in directories on a standard list.
+.TP
+.B \-f
+Use an alternate compiler which does not convert expressions involving
+only floats to double. This does not conform to the standard which states
+that all intermediate results should be converted to double but does
+provide a speed improvement for programs which don't require full double
+precision.
+.TP
+.SM
 .BI \-B \*Sstring
 Find substitute compiler passes in the files named
 .I string
@@ -191,6 +213,8 @@ a.out	loaded output
 /lib/cpp	preprocessor
 .br
 /lib/ccom	compiler
+.br
+/lib/sccom	compiler for single precision floats
 .br
 /usr/c/occom	backup compiler
 .br
