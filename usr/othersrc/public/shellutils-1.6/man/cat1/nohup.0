@@ -1,0 +1,66 @@
+
+
+
+NOHUP(1L)                                               NOHUP(1L)
+
+
+NNAAMMEE
+       nohup  - run a command immume to hangups, with output to a
+       non-tty
+
+SSYYNNOOPPSSIISS
+       nnoohhuupp command [arg...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page  documents  the  GNU  version  of  nnoohhuupp.
+       nnoohhuupp  runs  the given _c_o_m_m_a_n_d with hangup signals ignored
+       and the scheduling priority increased by 5,  so  that  the
+       command  can  continue running in the background after you
+       log out.  If the standard output is  a  tty,  it  and  the
+       standard error are redirected so that they are appended to
+       the file `nohup.out'; if that cannot be written  to,  they
+       are  appended to the file `$HOME/nohup.out'.  If that can-
+       not be written to, the command is not run.
+
+       If    nnoohhuupp    creates    the    file    `nohup.out'    or
+       `$HOME/nohup.out',  it  creates  it with no access permis-
+       sions for group or other.  It does not change the  permis-
+       sions of those files if they already existed.
+
+       nnoohhuupp  does  not  automatically put the command it runs in
+       the background; you must do that explicitly, by ending the
+       command line with an `&'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

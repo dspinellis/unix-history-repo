@@ -1,0 +1,66 @@
+
+
+
+NICE(1L)                                                 NICE(1L)
+
+
+NNAAMMEE
+       nice - run a program with modified scheduling priority
+
+SSYYNNOOPPSSIISS
+       nniiccee     [-n    adjustment]    [-adjustment]    [--adjust-
+       ment=adjustment] [command [arg...]]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of nniiccee.  If no
+       arguments  are  given,  nniiccee  prints the current sheduling
+       priority, which it inherited.  Otherwise,  nniiccee  runs  the
+       given  _c_o_m_m_a_n_d  with its scheduling priority adjusted.  If
+       no _a_d_j_u_s_t_m_e_n_t is given, the priority  of  the  command  is
+       incremented  by  10.  The superuser can specify a negative
+       adjustment.  The priority can be adjusted by nniiccee over the
+       range of -20 (the highest priority) to 19 (the lowest).
+
+   OOPPTTIIOONNSS
+       -_n _a_d_j_u_s_t_m_e_n_t, -_a_d_j_u_s_t_m_e_n_t, --_a_d_j_u_s_t_m_e_n_t=_a_d_j_u_s_t_m_e_n_t
+              Add  _a_d_j_u_s_t_m_e_n_t instead of 10 to the command's pri-
+              ority.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

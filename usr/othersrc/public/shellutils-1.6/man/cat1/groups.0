@@ -1,0 +1,66 @@
+
+
+
+GROUPS(1L)                                             GROUPS(1L)
+
+
+NNAAMMEE
+       groups - print the groups a user is in
+
+SSYYNNOOPPSSIISS
+       ggrroouuppss [username...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the  GNU version of ggrroouuppss.
+       ggrroouuppss prints the names of the supplementary  groups  that
+       each  given  _u_s_e_r_n_a_m_e,  or the current process if none are
+       given, is in.  If user names are given, the name  of  each
+       user is printed before the list of that user's groups.
+
+       The  group  lists are equivalent to the output of the com-
+       mand `id -Gn'.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

@@ -1,0 +1,66 @@
+
+
+
+YES(1L)                                                   YES(1L)
+
+
+NNAAMMEE
+       yes - output a string repeatedly until killed
+
+SSYYNNOOPPSSIISS
+       yyeess [string...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents the GNU version of yyeess.  yyeess
+       prints the command line arguments, separated by spaces and
+       followed  by a newline, forever until it is killed.  If no
+       arguments are given, it prints `y' followed by  a  newline
+       forever until killed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

@@ -1,0 +1,66 @@
+
+
+
+DIRNAME(1L)                                           DIRNAME(1L)
+
+
+NNAAMMEE
+       dirname - strip filename suffix from pathname
+
+SSYYNNOOPPSSIISS
+       ddiirrnnaammee path
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the GNU version of ddiirrnnaammee.
+       ddiirrnnaammee prints the leading path part of the pathname _p_a_t_h.
+       If  _p_a_t_h  does  not contain a leading path, ddiirrnnaammee prints
+       `.' (meaning the current directory).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

@@ -1,0 +1,66 @@
+
+
+
+TTY(1L)                                                   TTY(1L)
+
+
+NNAAMMEE
+       tty - print the path of the terminal connected to standard
+       input
+
+SSYYNNOOPPSSIISS
+       ttttyy [-s] [--silent] [--quiet]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version  of  ttttyy.   ttttyy
+       prints  the path name of the tty connected to its standard
+       input.  It prints `not a tty' if the standard input is not
+       a tty. Its exit status is:
+       0 if the standard input is a tty
+       1 if the standard input is not a tty
+       2 if given incorrect arguments
+
+   OOPPTTIIOONNSS
+       -_s, --_s_i_l_e_n_t, --_q_u_i_e_t
+              Print nothing; only return an exit status.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

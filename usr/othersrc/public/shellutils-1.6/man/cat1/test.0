@@ -1,0 +1,132 @@
+
+
+
+TEST(1L)                                                 TEST(1L)
+
+
+NNAAMMEE
+       test - check file types and compare values
+
+SSYYNNOOPPSSIISS
+       tteesstt [expr]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version of tteesstt.
+
+       tteesstt  returns  a status of 0 (true) or 1 (false) depending
+       on the evaluation  of  the  conditional  expression  _e_x_p_r.
+       Expressions may be unary or binary.  Unary expressions are
+       often used to examine the status of  a  file.   There  are
+       string operators and numeric comparison operators as well.
+
+       --bb _f_i_l_e
+              True if _f_i_l_e exists and is block special.
+       --cc _f_i_l_e
+              True if _f_i_l_e exists and is character special.
+       --dd _f_i_l_e
+              True if _f_i_l_e exists and is a directory.
+       --ee _f_i_l_e
+              True if _f_i_l_e exists
+       --ff _f_i_l_e
+              True if _f_i_l_e exists and is a regular file.
+       --gg _f_i_l_e
+              True if _f_i_l_e exists and is set-group-id.
+       --kk _f_i_l_e
+              True if _f_i_l_e has its ``sticky'' bit set.
+       --LL _f_i_l_e
+              True if _f_i_l_e exists and is a symbolic link.
+       --pp _f_i_l_e
+              True if _f_i_l_e exists and is a named pipe.
+       --rr _f_i_l_e
+              True if _f_i_l_e exists and is readable.
+       --ss _f_i_l_e
+              True if _f_i_l_e exists and has  a  size  greater  than
+              zero.
+       --SS _f_i_l_e
+              True if _f_i_l_e exists and is a socket.
+       --tt [[_f_d]]
+              True if _f_d is opened on a terminal.  If _f_d is omit-
+              ted, it defaults to 1 (standard output).
+       --uu _f_i_l_e
+              True if _f_i_l_e exists and its set-user-id bit is set.
+       --ww _f_i_l_e
+              True if _f_i_l_e exists and is writable.
+       --xx _f_i_l_e
+              True if _f_i_l_e exists and is executable.
+       --OO _f_i_l_e
+              True  if  _f_i_l_e exists and is owned by the effective
+              user id.
+       --GG _f_i_l_e
+              True if _f_i_l_e exists and is owned by  the  effective
+
+
+
+                                                                1
+
+
+
+
+
+TEST(1L)                                                 TEST(1L)
+
+
+              group id.
+       _f_i_l_e_1 -nntt _f_i_l_e_2
+              True  if  _f_i_l_e_1 is newer (according to modification
+              date) than _f_i_l_e_2.
+       _f_i_l_e_1 -oott _f_i_l_e_2
+              True if _f_i_l_e_1 is older than file2.
+       _f_i_l_e_1 --eeff _f_i_l_e
+              True if _f_i_l_e_1 and _f_i_l_e_2 have the  same  device  and
+              inode numbers.
+       --zz _s_t_r_i_n_g
+              True if the length of _s_t_r_i_n_g is zero.
+       --nn _s_t_r_i_n_g
+       _s_t_r_i_n_g True if the length of _s_t_r_i_n_g is non-zero.
+       _s_t_r_i_n_g_1 == _s_t_r_i_n_g_2
+              True if the strings are equal.
+       _s_t_r_i_n_g_1 !!== _s_t_r_i_n_g_2
+              True if the strings are not equal.
+       !! _e_x_p_r True if _e_x_p_r is false.
+       _e_x_p_r_1 -aa _e_x_p_r_2
+              True if both _e_x_p_r_1 and _e_x_p_r_2 are true.
+       _e_x_p_r_1 -oo _e_x_p_r_2
+              True if either _e_x_p_r_1 or _e_x_p_r_2 is true.
+       _a_r_g_1 OOPP _a_r_g_2
+              OOPP  is  one  of  --eeqq,  --nnee,  --lltt, --llee, --ggtt, or --ggee.
+              These arithmetic binary operators  return  true  if
+              _a_r_g_1  is equal, not-equal, less-than, less-than-or-
+              equal, greater-than, or greater-than-or-equal  than
+              _a_r_g_2,  respectively.  _a_r_g_1 and _a_r_g_2 may be positive
+              integers, negative integers, or the special expres-
+              sion  --ll  _s_t_r_i_n_g,  which evaluates to the length of
+              _s_t_r_i_n_g.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+
