@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)write.2	8.4 (Berkeley) %G%
+.\"     @(#)write.2	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WRITE 2
@@ -141,7 +141,8 @@ may return one of the following errors:
 .Bl -tag -width Er
 .It Bq Er EINVAL
 .Fa Iovcnt
-was less than or equal to 0, or greater than 16.
+was less than or equal to 0, or greater than
+.Dv UIO_MAXIOV .
 .It Bq Er EINVAL
 One of the
 .Fa iov_len
