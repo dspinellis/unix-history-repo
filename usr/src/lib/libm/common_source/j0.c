@@ -1,7 +1,12 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] =
-"@(#)j0.c	4.2 (Berkeley) 8/21/85; 5.1 (ucb.elefunt) %G%";
-#endif	/* not lint */
+static char sccsid[] = "@(#)j0.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
 	floating point Bessel's function
