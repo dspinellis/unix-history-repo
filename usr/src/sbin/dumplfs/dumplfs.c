@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,15 +66,14 @@ char *special;
 
 /* Ifile formats */
 #define print_iheader \
-	(void)printf("inum\tstatus\tversion\tdaddr\t\tatime\tfreeptr\n")
+	(void)printf("inum\tstatus\tversion\tdaddr\t\tfreeptr\n")
 #define print_ientry(i, ip) \
 	if (ip->if_daddr == LFS_UNUSED_DADDR) \
-		(void)printf("%d\tFREE\t%d\t \t\t \t%d\n", \
+		(void)printf("%d\tFREE\t%d\t \t\t%d\n", \
 		    i, ip->if_version, ip->if_nextfree); \
 	else \
-		(void)printf("%d\tINUSE\t%d\t%8X    \t%s\n", \
-		    i, ip->if_version, ip->if_daddr, \
-		    ctime((time_t *)&ip->if_st_atime))
+		(void)printf("%d\tINUSE\t%d\t%8X    \n", \
+		    i, ip->if_version, ip->if_daddr)
 int
 main(argc, argv)
 	int argc;
@@ -182,7 +181,6 @@ dump_ifile(fd, lfsp, do_ientries)
 	dump_dinode(dip);
 
 	(void)printf("\nIFILE contents\n");
-	print_suheader;
 	nblocks = dip->di_size >> lfsp->lfs_bshift;
 	block_limit = MIN(nblocks, NDADDR);
 
@@ -194,11 +192,11 @@ dump_ifile(fd, lfsp, do_ientries)
 		get(fd, *addrp << daddr_shift, ipage, psize);
 		if (i < lfsp->lfs_cleansz) {
 			dump_cleaner_info(lfsp, ipage);
+			print_suheader;
 			continue;
-		} else 
-			i -= lfsp->lfs_cleansz;
+		} 
 
-		if (i < lfsp->lfs_segtabsz) {
+		if (i < (lfsp->lfs_segtabsz + lfsp->lfs_cleansz)) {
 			inum = dump_ipage_segusage(lfsp, inum, ipage, 
 			    lfsp->lfs_sepb);
 			if (!inum)
