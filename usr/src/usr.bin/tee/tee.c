@@ -16,10 +16,13 @@ static char sccsid[] = "@(#)tee.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <sys/file.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
-#include <stdio.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 typedef struct _list {
 	struct _list *next;
@@ -37,7 +40,7 @@ main(argc, argv)
 	register int n, fd, rval, wval;
 	register char *bp;
 	int append, ch, exitval;
-	char *buf, *malloc(), *strerror();
+	char *buf;
 	off_t lseek();
 
 	append = 0;
@@ -64,7 +67,7 @@ main(argc, argv)
 	add(STDOUT_FILENO, "stdout");
 	for (; *argv; ++argv)
 		if ((fd = open(*argv, append ? O_WRONLY|O_CREAT|O_APPEND :
-		    O_WRONLY|O_CREAT|O_TRUNC, 0600)) < 0)
+		    O_WRONLY|O_CREAT|O_TRUNC, DEFFILEMODE)) < 0)
 			(void)fprintf(stderr, "tee: %s: %s.\n",
 			    *argv, strerror(errno));
 		else
@@ -96,10 +99,8 @@ add(fd, name)
 	char *name;
 {
 	LIST *p;
-	char *malloc(), *strerror();
 
-	/* NOSTRICT */
-	if (!(p = (LIST *)malloc((u_int)sizeof(LIST)))) {
+	if (!(p = malloc((u_int)sizeof(LIST)))) {
 		(void)fprintf(stderr, "tee: out of space.\n");
 		exit(1);
 	}
