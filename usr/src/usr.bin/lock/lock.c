@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lock.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -159,6 +159,7 @@ main(argc, argv)
 			continue;
 		}
 		if (usemine) {
+			s[strlen(s) - 1] = '\0';
 			if (!strcmp(mypw, crypt(s, mypw)))
 				break;
 		}
