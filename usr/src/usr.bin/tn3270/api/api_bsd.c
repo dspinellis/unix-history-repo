@@ -1,3 +1,5 @@
+#if	defined(unix)
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -168,7 +170,7 @@ int length;
 	return -1;
     }
     sd.length = htons(length);
-    sd.location = htonl(parms);
+    sd.location = (long) htonl(parms);
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
@@ -221,3 +223,5 @@ int length;
     /* YEAH */
     return 0;		/* Happiness! */
 }
+
+#endif	/* unix */
