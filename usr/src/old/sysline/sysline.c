@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -96,19 +96,10 @@ static char sccsid[] = "@(#)sysline.c	5.2 (Berkeley) %G%";
 #endif TERMINFO
 
 #ifdef RWHO
+#include <protocols/rwhod.h>
+
 #define	DOWN_THRESHOLD	(11 * 60)
 #define	RWHOLEADER	"/usr/spool/rwho/whod."
-
-struct whod {
-	char	wd_vers;
-	char	wd_type;
-	char	wd_fill[2];
-	int	wd_sendtime;
-	int	wd_recvtime;
-	char	wd_hostname[32];
-	int	wd_loadav[3];
-	int	wd_boottime;
-};
 
 struct remotehost {
 	char *rh_host;
@@ -169,7 +160,7 @@ char whofilename2[100];
 #endif
 
 #ifdef HOSTNAME
-char hostname[33];		/* one more for null termination */
+char hostname[MAXHOSTNAMELEN+1];	/* one more for null termination */
 #endif
 
 char lockfilename[100];		/* if exists, will prevent us from running */
