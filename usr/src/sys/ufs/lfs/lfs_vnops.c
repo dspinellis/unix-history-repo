@@ -1,4 +1,4 @@
-/*	lfs_vnops.c	4.33	82/08/14	*/
+/*	lfs_vnops.c	4.34	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,8 @@
 #undef iunlock
 #include "../h/quota.h"
 #include "../h/descrip.h"
+#include "../h/uio.h"
+#include "../h/socket.h"
 
 chdir()
 {
@@ -256,7 +258,6 @@ out:
 		ip->i_nlink--;
 		ip->i_flag |= ICHG;
 	}
-out1:
 	irele(ip);
 }
 
@@ -296,11 +297,7 @@ symlink()
 	ip = maknode(IFLNK | 0777);
 	if (ip == NULL)
 		return;
-	u.u_base = uap->target;
-	u.u_count = nc;
-	u.u_offset = 0;
-	u.u_segflg = 0;
-	writei(ip);
+	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, 0, 0, (int *)0);
 	iput(ip);
 }
 
@@ -315,9 +312,6 @@ unlink()
 	struct a {
 		char	*fname;
 	};
-	struct fs *fs;
-	struct buf *bp;
-	int lbn, bn, base;
 	int unlinkingdot = 0;
 
 	pp = namei(uchar, 2, 0);
@@ -525,7 +519,8 @@ readlink()
 		char	*name;
 		char	*buf;
 		int	count;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
+	int resid;
 
 	ip = namei(uchar, 0, 0);
 	if (ip == NULL)
@@ -534,11 +529,10 @@ readlink()
 		u.u_error = ENXIO;
 		goto out;
 	}
-	uap = (struct a *)u.u_ap;
-	u.u_error = readip1(ip, uap->buf, uap->count, 0, 0, 0);
+	u.u_error = rdwri(UIO_READ, ip, uap->buf, uap->count, 0, 0, &resid);
 out:
 	iput(ip);
-	u.u_r.r_val1 = uap->count - u.u_count;
+	u.u_r.r_val1 = uap->count - resid;
 }
 
 chmod()
@@ -779,7 +773,7 @@ truncate()
 	struct a {
 		char	*fname;
 		int	length;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 
 	ip = namei(uchar, 0, 1);
@@ -802,7 +796,7 @@ ftruncate()
 	struct a {
 		int	fd;
 		int	length;
-	} *uap;
+	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 	struct file *fp;
 
@@ -824,10 +818,12 @@ ftruncate()
 
 rename()
 {
+#ifdef notdef
 	struct a {
 		char	*from;
 		char	*to;
 	} *uap;
+#endif
 
 }
 
