@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xi_sink.c	7.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)xi_sink.c	7.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,8 +33,13 @@ static char sccsid[] = "@(#)xi_sink.c	7.5 (Berkeley) %G%";
 
 
 #define dbprintf if(verbose)printf
+#ifdef __STDC__
+#define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,#a,x);\
+		if(x<0) {perror(#a); myexit(0);}}
+#else
 #define try(a,b,c) {x = (a b); dbprintf("%s%s returns %d\n",c,"a",x);\
 		if(x<0) {perror("a"); myexit(0);}}
+#endif
 
 
 struct  ifreq ifr;
@@ -79,16 +84,13 @@ char *envp[];
 			intercept++;
 		}
 	}
-	tisink();
+	xisink();
 }
 #define BIG 2048
 #define MIDLIN 512
 char readbuf[BIG];
-struct iovec iov[1] = {
-	readbuf,
-	sizeof readbuf,
-};
 char name[MIDLIN];
+struct iovec iov[1];
 union {
     struct {
 	    struct cmsghdr	cmhdr;
@@ -98,13 +100,12 @@ union {
 } cbuf;
 #define control cbuf.data
 struct msghdr msghdr = {
-	name, sizeof(name),
+	0, 0,
 	iov, sizeof(iov)/sizeof(iov[1]),
-	control, sizeof(control),
-	0 /* flags */
+	0, 0, 0
 };
 
-tisink()
+xisink()
 {
 	int x, s, pid, on = 1, loop = 0, n;
 	extern int errno;
@@ -124,12 +125,13 @@ tisink()
 		int addrlen = sizeof(faddr);
 		char childname[50];
 
-		try (accept, (s, &faddr, &addrlen), "");
+		try (accept, (s, (struct sockaddr *)&faddr, &addrlen), "");
 		ns = x;
 		dumpit("connection from:", &faddr, sizeof faddr);
 		if (mynamep || intercept) {
 			addrlen = sizeof(faddr);
-			try (getsockname, (ns, &faddr, &addrlen), "");
+			try (getsockname, (ns, (struct sockaddr *)&faddr,
+				&addrlen), "");
 			dumpit("connected as:", &faddr, addrlen);
 		}
 		loop++;
@@ -142,9 +144,10 @@ tisink()
 		    long n, count = 0, cn, flags;
 		    records = 0;
 		    for (;;) {
-			msghdr.msg_iovlen = 1;
 			msghdr.msg_controllen = sizeof(control);
+			msghdr.msg_control = control;
 			iov->iov_len = sizeof(readbuf);
+			iov->iov_base = readbuf;
 			n = recvmsg(ns, &msghdr, 0);
 			flags = msghdr.msg_flags;
 			count++;
@@ -186,7 +189,7 @@ struct savebuf {
 } savebuf = {&savebuf, &savebuf};
 
 void
-savedata(n, flags)
+savedata(n)
 int n;
 {
 	register struct savebuf *s = (struct savebuf *)malloc(n + sizeof *s);
@@ -194,7 +197,8 @@ int n;
 		return;
 	insque(s, savebuf.s_prev);
 	s->s_n = n;
-	s->s_flags = flags;
+	s->s_flags = msghdr.msg_flags;
+	bcopy(readbuf, (char *)(s + 1), n);
 }
 
 answerback(ns)
@@ -202,9 +206,10 @@ answerback(ns)
 	int n;
 	register struct savebuf *s = savebuf.s_next, *t;
 	msghdr.msg_controllen = 0;
-	msghdr.msg_iovlen = 1;
+	msghdr.msg_control = 0;
 	while (s != &savebuf) {
 		iov->iov_len = s->s_n;
+		iov->iov_base = (char *)(s + 1);
 		n = sendmsg(ns, &msghdr, s->s_flags);
 		dbprintf("echoed %d\n", n);
 		t = s; s = s->s_next; remque(t); free((char *)t);
