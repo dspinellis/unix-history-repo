@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)printf.1	5.1 (Berkeley) %G%
+.\"	@(#)printf.1	5.2 (Berkeley) %G%
 .\"
 .TH PRINTF 1 "
 .AT 1
@@ -60,7 +60,7 @@ draft proposed ANSI C Standard X3J11.  The characters and their meanings
 are as follows:
 .TP
 .B \ea
-Write the ASCII ``bel'' character.
+Write a <bell> character.
 .TP
 .B \eb
 Write a <backspace> character.
@@ -79,6 +79,9 @@ Write a <tab> character.
 .TP
 .B \ev
 Write a <vertical tab> character.
+.TP
+.B \e'
+Write a <single quote> character.
 .TP
 .B \e\e
 Write a backslash character.
