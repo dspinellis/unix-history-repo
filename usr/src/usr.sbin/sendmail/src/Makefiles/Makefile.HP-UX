@@ -8,7 +8,7 @@
 #  This has been tested on HP-UX 9.05 on 7xx series and HP-UX 9.04
 #  on 8xx series.
 #
-#	@(#)Makefile.HP-UX	8.9 (Berkeley) %G%
+#	@(#)Makefile.HP-UX	8.10 (Berkeley) %G%
 #
 
 CC=	cc -Aa -D_HPUX_SOURCE
@@ -27,7 +27,7 @@ O=	+O1
 DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-DSYSV
+ENVDEF=
 
 # see also conf.h for additional compilation flags
 

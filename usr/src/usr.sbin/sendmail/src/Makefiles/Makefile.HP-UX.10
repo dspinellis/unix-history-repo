@@ -8,7 +8,7 @@
 #  This has been tested on HP-UX 10.x.  Changes for 10.0 contributed
 #  by John Beck of Hewlett-Packard.
 #
-#	@(#)Makefile.HP-UX.10	8.2 (Berkeley) %G%
+#	@(#)Makefile.HP-UX.10	8.3 (Berkeley) %G%
 #
 
 CC=	cc -Aa -D_HPUX_SOURCE
@@ -27,7 +27,7 @@ O=	+O1
 DBMDEF=	-DNDBM -DNEWDB -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-DSYSV -DV4FS
+ENVDEF=	-DV4FS
 
 # see also conf.h for additional compilation flags
 
