@@ -1,18 +1,21 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROGS=	fortune strfile unstr
 SRCS=	fortune.c strfile.c unstr.c
 MAN6=	fortune.0
 BINOWN=	games
-DATFILES=fortunes.dat fortunes-o.dat startrek.dat zippy.dat
+DATFILES=fortunes.dat startrek.dat zippy.dat fortunes-o.dat
 .PATH:	${.CURDIR} ${.CURDIR}/datfiles
+CLEANFILES+=strfile unstr
 
 all: ${PROGS} ${MAN6} ${DATFILES}
 
 ${PROGS}: ${LIBC} ${.PREFIX}.c
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${.PREFIX}.c
 
-${DATFILES}: ${.TARGET:R}
+fortunes-o.dat: ${.TARGET:R}
+	./strfile -rsx ${.CURDIR}/datfiles/${.TARGET:R} ${.TARGET}
+fortunes.dat startrek.dat zippy.dat: ${.TARGET:R}
 	./strfile -rs ${.CURDIR}/datfiles/${.TARGET:R} ${.TARGET}
 
 clean:
