@@ -1,4 +1,4 @@
-/*	llib-lc	1.22	85/10/08	*/
+/*	llib-lc	1.23	85/10/28	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -41,7 +41,7 @@ int	flock( f, o ) { return 0; }
 int	fork() { return(0); }
 int	fsync( f ) { return 0; }
 int	fstat(f, b) struct stat *b; { return(0); }
-int	ftruncate( d, l) { return 0;}
+int	ftruncate( d, l) off_t l; { return 0;}
 int	getdtablesize() { return 20 ; }
 int	getegid() { return(1); }
 int	geteuid() { return(1); }
@@ -66,7 +66,7 @@ int	kill(p, s) { return(0); }
 int	killpg( pg, s) { return 0;}
 int	link(a, b) char *a, *b; { return(0); }
 int	listen( s, b ){ return 0; }
-off_t	lseek(f, o, d) off_t o; { return(0); }
+off_t	lseek(f, o, d) off_t o; { return(o); }
 int	lstat(s, b) char *s; struct stat *b; { return(0); }
 #ifdef notdef
 int	madvise( a, l, b ) char * a; int l, b; { return 0;}
@@ -130,7 +130,7 @@ char *	sstk( a ) int a; { return (char *)0; }
 int	swapon( b, s ) char *b; { return 0;}
 int	symlink( t, f) char *t, *f; { return 0;}
 	sync(){;}
-int	truncate( p, l) char *p; { return 0;}
+int	truncate( p, l) char *p; off_t l; { return 0;}
 int	umask( n ) { return n; }
 int	unlink(s) char *s; { return(0); }
 int	utimes( f, t ) char *f; struct timeval t[2]; { return 0 ;}
