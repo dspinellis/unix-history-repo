@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vx.c	7.6 (Berkeley) %G%
+ *	@(#)vx.c	7.7 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -242,8 +242,9 @@ vxopen(dev, flag)
 	vcmodem(dev, VMOD_ON);
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) && 
 	      (tp->t_state&TS_CARR_ON) == 0)
-		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-		    ttopen, 0))
+		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				    ttopen, 0)) ||
+		    (error = ttclosed(tp)))
 			break;
 	if (error == 0)
 		error = (*linesw[tp->t_line].l_open)(dev,tp);

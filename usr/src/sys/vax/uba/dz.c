@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.7 (Berkeley) %G%
+ *	@(#)dz.c	7.8 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -189,8 +189,9 @@ dzopen(dev, flag)
 	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-		    ttopen, 0))
+		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				    ttopen, 0)) ||
+		    (error = ttclosed(tp)))
 			break;
 	}
 	(void) spl0();
