@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.21 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.22 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2275,6 +2275,10 @@ K6|mskermit22714|msk22714|UCB MS-DOS Kermit 2.27 UCB 227.14 IBM PC:\
 	:se=\E[m:so=\E[1m:ue=\E[m:us=\E[4m:\
 	:is=\EO\Eq\EG\Ev\EJ\EY7 K6 MS Kermit 2.27 UCB 227.14 IBM PC 3-5-86\n:\
 	:vs=\EO\Eq\EG\Ev\EEK6:tc=mskermit227:
+# From earle@smeagol.UUCP 29 Oct 85 05:40:18 GMT
+# MS-Kermit with Heath-19 emulation mode enabled
+Kh|h19kermit|h19k|heathkit emulation provided by Kermit (no auto margin):\
+	:am@:ta@:pt@:xt:da:db:tc=h19-u:
 #
 # END OF TERMCAP
 #  ------------------------
