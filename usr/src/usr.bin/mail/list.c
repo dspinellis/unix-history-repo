@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -667,8 +667,15 @@ matchsubj(str, mesg)
 	 * Now look, ignoring case, for the word in the string.
 	 */
 
-	cp = str;
-	cp2 = hfield("subject", mp);
+	if (value("searchheaders") && (cp = index(str, ':'))) {
+		*cp++ = '\0';
+		cp2 = hfield(str, mp);
+		cp[-1] = ':';
+		str = cp;
+	} else {
+		cp = str;
+		cp2 = hfield("subject", mp);
+	}
 	if (cp2 == NOSTR)
 		return(0);
 	backup = cp2;
