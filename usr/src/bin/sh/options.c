@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)options.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)options.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -99,13 +99,23 @@ options(cmdline) {
 	int val;
 	int c;
 
-	minusc = NULL;
+	if (cmdline)
+		minusc = NULL;
 	while ((p = *argptr) != NULL) {
 		argptr++;
 		if ((c = *p++) == '-') {
 			val = 1;
-			if (p[0] == '\0' || p[0] == '-' && p[1] == '\0')
+                        if (p[0] == '\0' || p[0] == '-' && p[1] == '\0') {
+                                if (!cmdline) {
+                                        /* "-" means turn off -x and -v */
+                                        if (p[0] == '\0')
+                                                xflag = vflag = 0;
+                                        /* "--" means reset params */
+                                        else if (*argptr == NULL)
+                                                setparam(argptr);
+                                }
 				break;	  /* "-" or  "--" terminates options */
+			}
 		} else if (c == '+') {
 			val = 0;
 		} else {
@@ -115,7 +125,7 @@ options(cmdline) {
 		while ((c = *p++) != '\0') {
 			if (c == 'c' && cmdline) {
 				char *q;
-#ifdef NOHACK
+#ifdef NOHACK	/* removing this code allows sh -ce 'foo' for compat */
 				if (*p == '\0')
 #endif
 					q = *argptr++;
@@ -312,13 +322,11 @@ out:
 	return 0;
 }
 
-
 /*
  * Standard option processing (a la getopt) for builtin routines.  The
  * only argument that is passed to nextopt is the option string; the
- * other arguments are unnecessary.  It return the character, or -1 on
- * end of input.  This routine assumes that all characters in optstring
- * are positive.
+ * other arguments are unnecessary.  It return the character, or '\0' on
+ * end of input.
  */
 
 int
@@ -331,10 +339,10 @@ nextopt(optstring)
 	if ((p = optptr) == NULL || *p == '\0') {
 		p = *argptr;
 		if (p == NULL || *p != '-' || *++p == '\0')
-			return -1;
+			return '\0';
 		argptr++;
 		if (p[0] == '-' && p[1] == '\0')	/* check for "--" */
-			return -1;
+			return '\0';
 	}
 	c = *p++;
 	for (q = optstring ; *q != c ; ) {

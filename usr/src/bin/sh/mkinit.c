@@ -15,23 +15,24 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkinit.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkinit.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- * Usage:  mkinit command sourcefile...
- *
  * This program scans all the source files for code to handle various
  * special events and combines this code into one file.  This (allegedly)
  * improves the structure of the program since there is no need for
  * anyone outside of a module to know that that module performs special
  * operations on particular events.  The command is executed iff init.c
  * is actually changed.
+ *
+ * Usage:  mkinit command sourcefile...
  */
 
 
 #include <sys/cdefs.h>
 #include <stdio.h>
+#include <fcntl.h>
 
 
 /*
@@ -133,6 +134,8 @@ main(argc, argv)
 	char **argv;
 	{
 	char **ap;
+	int fd;
+	char c;
 
 	if (argc < 2)
 		error("Usage:  mkinit command file...");
@@ -145,13 +148,14 @@ main(argc, argv)
 		unlink(OUTFILE);
 		link(OUTTEMP, OUTFILE);
 		unlink(OUTTEMP);
-		printf("%s\n", argv[1]);
-		execl("/bin/sh", "sh", "-c", argv[1], (char *)0);
-		error("Can't exec shell");
 	} else {
 		unlink(OUTTEMP);
-		exit(0);
+		if (touch(OUTOBJ))
+			exit(0);		/* no compilation necessary */
 	}
+	printf("%s\n", argv[1]);
+	execl("/bin/sh", "sh", "-c", argv[1], (char *)0);
+	error("Can't exec shell");
 }
 
 
@@ -370,8 +374,6 @@ output() {
 
 /*
  * Return true if the new output file is different from the old one.
- * Also return true if init.o has been deleted since we want to force
- * a recompilation in this case.
  */
 
 int
@@ -379,9 +381,6 @@ file_changed() {
 	register FILE *f1, *f2;
 	register int c;
 
-	if ((c = open(OUTOBJ, 0)) < 0)
-		return 1;
-	close(c);
 	if ((f1 = fopen(OUTFILE, "r")) == NULL
 	 || (f2 = fopen(OUTTEMP, "r")) == NULL)
 		return 1;
@@ -389,6 +388,30 @@ file_changed() {
 		if (c == EOF)
 			return 0;
 	}
+	return 1;
+}
+
+
+/*
+ * Touch a file.  Returns 0 on failure, 1 on success.
+ */
+
+int
+touch(file)
+	char *file;
+	{
+	int fd;
+	char c;
+
+	if ((fd = open(file, O_RDWR)) < 0)
+		return 0;
+	if (read(fd, &c, 1) != 1) {
+		close(fd);
+		return 0;
+	}
+	lseek(fd, 0L, 0);
+	write(fd, &c, 1);
+	close(fd);
 	return 1;
 }
 
@@ -433,11 +456,9 @@ addchar(c, text)
 	*text->nextc++ = c;
 }
 
-
 /*
  * Write the contents of a text structure to a file.
  */
-
 void
 writetext(text, fp)
 	struct text *text;
@@ -451,8 +472,6 @@ writetext(text, fp)
 		fwrite(bp->text, sizeof (char), BLOCKSIZE - text->nleft, fp);
 	}
 }
-
-
 
 FILE *
 ckfopen(file, mode)
@@ -468,8 +487,6 @@ ckfopen(file, mode)
 	return fp;
 }
 
-
-
 void *
 ckmalloc(nbytes) {
 	register char *p;
@@ -479,7 +496,6 @@ ckmalloc(nbytes) {
 		error("Out of space");
 	return p;
 }
-
 
 char *
 savestr(s)
@@ -491,8 +507,6 @@ savestr(s)
 	strcpy(p, s);
 	return p;
 }
-
-
 
 void
 error(msg)

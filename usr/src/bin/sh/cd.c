@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,7 +59,8 @@ cdcmd(argc, argv)  char **argv; {
 	struct stat statb;
 	char *padvance();
 
-	if ((dest = argv[1]) == NULL && (dest = bltinlookup("HOME", 1)) == NULL)
+	nextopt(nullstr);
+	if ((dest = *argptr) == NULL && (dest = bltinlookup("HOME", 1)) == NULL)
 		error("HOME not set");
 	if (*dest == '/' || (path = bltinlookup("CDPATH", 1)) == NULL)
 		path = nullstr;

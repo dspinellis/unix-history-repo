@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -155,10 +155,23 @@ retry:
 	p = parsenextc = parsefile->buf;
 	i = read(parsefile->fd, p, BUFSIZ);
 	if (i <= 0) {
-		if (i < 0 && errno == EINTR)
-			goto retry;
-		parsenleft = EOF_NLEFT;
-		return PEOF;
+                if (i < 0) {
+                        if (errno == EINTR)
+                                goto retry;
+                        if (parsefile->fd == 0 && errno == EWOULDBLOCK) {
+                                int flags = fcntl(0, F_GETFL, 0);
+                                if (flags >= 0 && flags & FNDELAY) {
+                                        flags &=~ FNDELAY;
+                                        if (fcntl(0, F_SETFL, flags) >= 0) {
+                                                out2str("sh: turning off NDELAY
+ mode\n");
+                                                goto retry;
+                                        }
+                                }
+                        }
+                }
+                parsenleft = EOF_NLEFT;
+                return PEOF;
 	}
 	parsenleft = i - 1;
 
