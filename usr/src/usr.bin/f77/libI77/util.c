@@ -1,5 +1,5 @@
 /*
-char id_util[] = "@(#)util.c	1.3";
+char id_util[] = "@(#)util.c	1.4";
  *
  * utility routines
  */
@@ -17,8 +17,8 @@ ini_std(u,F,w,i66) FILE *F;
 	p->useek = canseek(F);
 	p->ufmt = YES;
 	p->uwrt = (w==WRITE)? YES : NO;
-	p->ublnk = p->uscrtch = p->uend = NO;
-	p->uprnt = (i66!=0)? YES : NO;
+	p->uscrtch = p->uend = NO;
+	p->ublnk = p->uprnt = (i66!=0)? YES : NO;
 	p->url = 0;
 	p->uinode = finode(F);
 }
