@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_2.c	2.4 83/12/17";
+static	char *sccsid = "@(#)dr_2.c	2.5 84/01/19";
 #endif
 
 #include "driver.h"
@@ -69,21 +69,17 @@ checkup()
 prizecheck()
 {
 	register struct ship *sp;
-	register int prisoners, points;
 
 	foreachship(sp) {
 		if (sp->file->captured == 0)
 			continue;
 		if (sp->file->struck || sp->file->dir == 0)
 			continue;
-		prisoners = sp->specs->crew1 + sp->specs->crew2 + sp->specs->crew3;
-		if (prisoners > sp->file->pcrew * 6) {
-			Write(W_CAPTURED, sp, 0, -1, 0, 0, 0);
+		if (sp->specs->crew1 + sp->specs->crew2 + sp->specs->crew3 > sp->file->pcrew * 6) {
 			Write(W_SIGNAL, sp, 1,
 				(int)"prize crew overthrown", 0, 0, 0);
-			points = sp->file->captured->file->points
-				- 2 * sp->specs->pts;
-			Write(W_POINTS, sp->file->captured, 0, points, 0, 0, 0);
+			Write(W_POINTS, sp->file->captured, 0, sp->file->captured->file->points - 2 * sp->specs->pts, 0, 0, 0);
+			Write(W_CAPTURED, sp, 0, -1, 0, 0, 0);
 		}
 	}
 }
