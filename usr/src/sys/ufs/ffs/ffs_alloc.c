@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	7.21 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -89,6 +89,12 @@ alloc(ip, lbn, bpref, size, bnp)
 		*bnp = bno;
 		return (0);
 	}
+#ifdef QUOTA
+	/*
+	 * Restore user's disk quota because allocation failed.
+	 */
+	(void) chkdq(ip, (long)-btodb(size), cred, FORCE);
+#endif
 nospace:
 	fserr(fs, cred->cr_uid, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
@@ -132,10 +138,6 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("realloccg: bad bprev");
 	}
-#ifdef QUOTA
-	if (error = chkdq(ip, (long)btodb(nsize - osize), cred, 0))
-		return (error);
-#endif
 	/*
 	 * Allocate the extra space in the buffer.
 	 */
@@ -143,6 +145,12 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		brelse(bp);
 		return (error);
 	}
+#ifdef QUOTA
+	if (error = chkdq(ip, (long)btodb(nsize - osize), cred, 0)) {
+		brelse(bp);
+		return (error);
+	}
+#endif
 	allocbuf(bp, nsize);
 	bp->b_flags |= B_DONE;
 	bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
@@ -230,6 +238,12 @@ realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 		*bpp = bp;
 		return (0);
 	}
+#ifdef QUOTA
+	/*
+	 * Restore user's disk quota because allocation failed.
+	 */
+	(void) chkdq(ip, (long)-btodb(nsize - osize), cred, FORCE);
+#endif
 	brelse(bp);
 nospace:
 	/*
