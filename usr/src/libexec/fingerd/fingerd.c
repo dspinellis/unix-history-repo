@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fingerd.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fingerd.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,41 +11,49 @@ static char sccsid[] = "@(#)fingerd.c	1.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
+FILE	*popen();
+
 main(argc, argv)
 	char *argv[];
 {
-	register char **fargp;
-	register char *cp;
-	char *fargv[80], line[512];
+	register char *cp, *sp;
+	char cmdbuf[512], line[512];
 	struct sockaddr_in sin;
 	int i;
+	FILE *fp;
 
 	i = sizeof (sin);
 	if (getpeername(0, &sin, &i) < 0)
 		fatal(argv[0], "getpeername");
 	line[0] = '\0';
 	gets(line);
-	fargp = fargv;
-	*fargp++ = "finger";
-	cp = line;
+	sp = line;
+	strcpy(cmdbuf, "/usr/ucb/finger");
+	cp = cmdbuf + strlen(cmdbuf);
 	while (1) {
-		while (isspace(*cp))
-			cp++;
-		if (!*cp)
+		while (isspace(*sp))
+			sp++;
+		if (!*sp)
 			break;
-		*fargp++ = cp;
-		if (*cp == '/' && (cp[1] == 'W' || cp[1] == 'w')) {
+		*cp++ = ' ';
+		if (*sp == '/' && (sp[1] == 'W' || sp[1] == 'w')) {
+			sp += 2;
 			*cp++ = '-';
 			*cp++ = 'l';
 		}
-		while (!isspace(*cp))
-			cp++;
-		*cp++ = '\0';
+		while (!isspace(*sp))
+			*cp++ = *sp++;
 	}
-	*fargp = NULL;
-	execv("/usr/ucb/finger", fargv);
-	execvp("finger", fargv);
-	fatal(argv[0], "/usr/ucb/finger");
+	*cp++ = '\0';
+	if ((fp = popen(cmdbuf, "r")) == NULL)
+		fatal(argv[0], "/usr/ucb/finger");
+	while ((i = getc(fp)) != EOF) {
+		if (i == '\n')
+			putchar('\r');
+		putchar(i);
+	}
+	pclose(fp);
+	return(0);
 }
 
 fatal(prog, s)
