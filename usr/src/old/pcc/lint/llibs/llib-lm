@@ -1,7 +1,7 @@
-/*	llib-lm	1.3	87/04/06	*/
+/*	llib-lm	1.4	87/04/13	*/
     /* LINTLIBRARY */
 double	acos(x) double x; { return x; }
-double	acosh(x) doublex; { return x; }
+double	acosh(x) double x; { return x; }
 double	asin(x) double x; { return x; }
 double	asinh(x) double x; { return x; }
 double	atan(x) double x; { return x; }
