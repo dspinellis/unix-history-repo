@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)cmd3.c	2.14 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -8,8 +10,6 @@
  *
  * Still more user commands.
  */
-
-static char *SccsId = "@(#)cmd3.c	2.13 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,

@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)vars.c	2.5 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 
@@ -7,8 +9,6 @@
  *
  * Variable handling stuff.
  */
-
-static char *SccsId = "@(#)vars.c	2.4 %G%";
 
 /*
  * Assign a value to a variable.

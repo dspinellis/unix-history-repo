@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)fio.c	2.16 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -9,8 +11,6 @@
  *
  * File I/O.
  */
-
-static char *SccsId = "@(#)fio.c	2.15 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into

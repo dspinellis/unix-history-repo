@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)send.c	2.13 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #ifdef VMUNIX
@@ -12,8 +14,6 @@
  *
  * Mail to others.
  */
-
-static char *SccsId = "@(#)send.c	2.12 %G%";
 
 /*
  * Send message described by the passed pointer to the

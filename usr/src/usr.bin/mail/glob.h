@@ -1,10 +1,8 @@
+/*	glob.h	2.10	83/08/11	*/
+
 /*
  * A bunch of global variable declarations lie herein.
  * def.h must be included first.
- */
-
-/*
- * Sccs Id = "@(#)glob.h	2.9 %G%;
  */
 
 int	msgCount;			/* Count of messages read in */

@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)tty.c	2.7 (Berkeley) %G%";
+#endif
 
 /*
  * Mail -- a mail program
@@ -7,8 +9,6 @@
  */
 
 #include "rcv.h"
-
-static char *SccsId = "@(#)tty.c	2.6 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */

@@ -1,4 +1,4 @@
-#
+/*	def.h	2.13	83/08/11	*/
 
 #include <sys/types.h>
 #include <signal.h>
@@ -8,10 +8,6 @@
 
 #undef isalpha
 #undef isdigit
-
-/*
- * Sccs Id = "@(#)def.h	2.12 %G%";
- */
 
 /*
  * Mail -- a mail program

@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)main.c	2.12 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -8,8 +10,6 @@
  *
  * Startup -- interface with user.
  */
-
-static char *SccsId = "@(#)main.c	2.11 %G%";
 
 jmp_buf	hdrjmp;
 

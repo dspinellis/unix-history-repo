@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)names.c	2.9 (Berkeley) %G%";
+#endif
 
 /*
  * Mail -- a mail program
@@ -7,8 +9,6 @@
  */
 
 #include "rcv.h"
-
-static char *SccsId = "@(#)names.c	2.8 %G%";
 
 /*
  * Allocate a single element of a name list,

@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)aux.c	2.11 (Berkeley) %G%";
+#endif
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -9,8 +11,6 @@
  *
  * Auxiliary functions.
  */
-
-static char *SccsId = "@(#)aux.c	2.10 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.

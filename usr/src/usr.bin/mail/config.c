@@ -1,6 +1,6 @@
-#
-
-static	char	*SccsID[] = "@(#)config.c	1.7 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)config.c	1.8 (Berkeley) %G%";
+#endif
 
 /*
  * This file contains definitions of network data used by Mail

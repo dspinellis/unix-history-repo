@@ -1,4 +1,6 @@
-#
+#ifndef lint
+static char sccsid[] = "@(#)cmdtab.c	2.10 (Berkeley) %G%";
+#endif
 
 #include "def.h"
 
@@ -7,8 +9,6 @@
  *
  * Define all of the command names and bindings.
  */
-
-static char *SccsId = "@(#)cmdtab.c	2.9 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();

@@ -1,6 +1,4 @@
-/*
- * Sccs Id = "@(#)local.h	2.1 %G%";
- */
+/*	local.h	2.2	83/08/11	*/
 
 #ifdef V7
 #include "v7.local.h"
