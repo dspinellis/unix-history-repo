@@ -23,11 +23,11 @@
 static char copyright[] =
 "@(#) Copyright (c) 1984, 1985, 1986 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif	/* not lint */
 
 #ifndef lint
 static char sccsid[] = "@(#)telnet.c	3.1  10/29/86";
-#endif not lint
+#endif	/* not lint */
 
 /*
  * User telnet program, modified for use by tn3270.c.
@@ -156,7 +156,7 @@ static char	netobuf[2*BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 #define	NETROOM()	(NETMAX()-NETLOC()+1)
 static char	*neturg = 0;		/* one past last byte of urgent data */
 
-static char	subbuffer[100] = 0,
+static char	subbuffer[100] = { 0 },
 		*subpointer, *subend = 0;	 /* buffer for sub-options */
 #define	SB_CLEAR()	subpointer = subbuffer;
 #define	SB_TERM()	subend = subpointer;
@@ -171,8 +171,8 @@ static char	sb_terminal[] = { IAC, SB,
 #define	SBTERMMODEL	13
 
 
-static char	hisopts[256] = 0;
-static char	myopts[256] = 0;
+static char	hisopts[256] = { 0 };
+static char	myopts[256] = { 0 };
 
 static char	doopt[] = { IAC, DO, '%', 'c', 0 };
 static char	dont[] = { IAC, DONT, '%', 'c', 0 };
@@ -1956,7 +1956,7 @@ int	block;			/* should we block in the select ? */
 	    tcc -= c;
 	    tbp += c;
 	} else {
-#   endif defined(TN3270)
+#   endif /* defined(TN3270) */
 	    returnValue = 1;
 	    while (tcc > 0) {
 		register int sc;
@@ -2098,16 +2098,16 @@ telnet()
     setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
 #endif	/* defined(SO_OOBINLINE) */
 
+#   if !defined(TN3270)
     if (telnetport) {
 	if (!hisopts[TELOPT_SGA]) {
 	    willoption(TELOPT_SGA, 0);
 	}
-#   if !defined(TN3270)
 	if (!myopts[TELOPT_TTYPE]) {
 	    dooption(TELOPT_TTYPE, 0);
 	}
-#   endif !defined(TN3270)
     }
+#   endif /* !defined(TN3270) */
 
 #   if !defined(TN3270)
     for (;;) {
@@ -2337,13 +2337,13 @@ togdebug()
 									< 0) {
 	    perror("setsockopt (SO_DEBUG)");
     }
-#else	NOT43
+#else	/* NOT43 */
     if (debug) {
 	if (net > 0 && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
 	    perror("setsockopt (SO_DEBUG)");
     } else
 	printf("Cannot turn off socket debugging\n");
-#endif	NOT43
+#endif	/* NOT43 */
     return 1;
 }
 
@@ -2885,7 +2885,7 @@ tn(argc, argv)
     register struct hostent *host = 0;
 #if defined(msdos)
     char *cp;
-#endif /* defined(msdos) */
+#endif	/* defined(msdos) */
 
     if (connected) {
 	printf("?Already connected to %s\n", hostname);
@@ -2964,9 +2964,9 @@ tn(argc, argv)
 #ifndef	NOT43
 	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG,
 				(char *)&debug, sizeof(debug)) < 0)
-#else	NOT43
+#else	/* NOT43 */
 	if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
-#endif	NOT43
+#endif	/* NOT43 */
 		perror("setsockopt (SO_DEBUG)");
 
 	if (connect(net, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
@@ -2991,7 +2991,7 @@ tn(argc, argv)
 #if defined(unix)
 	    signal(SIGINT, SIG_DFL);
 	    signal(SIGQUIT, SIG_DFL);
-#endif /* defined(unix) */
+#endif	/* defined(unix) */
 	    return 0;
 	    }
 	connected++;
