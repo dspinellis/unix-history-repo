@@ -1,0 +1,10 @@
+Because of limited space on the 4.4BSD distribution tape, the full
+X11R5 distribution is not included. Instead, we include only that
+subset of the X11R5 distribution that is needed to build the
+applications included on 4.4BSD: the X11 include files and libX11.a.
+
+For the HP hp300 and Omron luna architectures, this distribution
+includes the additions to the X11R5 distribution needed to make it
+fully functional on the frame buffers used by these machines.  The
+README in the X11R5-hp300 explains how to integrate these changes
+into a standard X11R5 distribution.
