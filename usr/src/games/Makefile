@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.20 (Berkeley) %G%
+#	@(#)Makefile	5.21 (Berkeley) %G%
 
 # BROKEN: dungeon hunt larn
 # NOT INSTALLED: xneko
@@ -6,7 +6,7 @@
 SUBDIR=	adventure arithmetic atc backgammon battlestar bcd boggle \
 	caesar canfield chess ching cribbage dm factor fish fortune \
 	hack hangman mille monop morse number phantasia pig pom ppt \
-	primes quiz rain robots rogue sail snake trek wargames worm \
-	worms wump
+	primes quiz rain robots rogue sail snake tetris trek wargames \
+	worm worms wump
 
 .include <bsd.subdir.mk>
