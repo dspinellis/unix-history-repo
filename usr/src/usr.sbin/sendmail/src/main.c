@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.135		%G%);
+SCCSID(@(#)main.c	3.136		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -508,20 +508,9 @@ main(argc, argv)
 
 			/* get our pid right */
 			MotherPid = getpid();
-# ifdef LOG
-			if (LogLevel > 11)
-				syslog(LOG_DEBUG, "background daemon, pid=%d",
-				       MotherPid);
-# endif LOG
 
 			/* disconnect from our controlling tty */
-			i = open("/dev/tty", 2);
-			if (i >= 0)
-			{
-				(void) ioctl(i, TIOCNOTTY, 0);
-				(void) close(i);
-			}
-			errno = 0;
+			disconnect(FALSE);
 		}
 # ifdef QUEUE
 		if (queuemode)
