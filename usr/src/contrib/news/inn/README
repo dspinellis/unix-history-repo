@@ -1,0 +1,95 @@
+[   The latest version of INN can be found on
+	ftp.uu.net:networking/news/nntp/inn
+    This is a snapshot; there have certainly been bugfixes made between
+    when the BSD release was made and the time you are reading this.  ]
+$Revision: 1.28 $
+
+InterNetNews -- the Internet meets Netnews
+------------------------------------------
+"Remember to tell your kids about the days when USENET was store and
+ forward."  -- Jim Thompson, as part of a message that said he was getting
+ under 200ms propagation, disk to disk.
+
+InterNetNews is a complete Usenet system.  The cornerstone of the package
+is innd, an NNTP server that multiplexes all I/O.  Think of it as an nntpd
+merged with the B News inews, or as a C News relaynews that reads multiple
+NNTP streams.  Newsreading is handled by a separate server, nnrpd, that is
+spawned for each client.  Both innd and nnrpd have some slight variances
+from the NNTP protocol; see the manpages.
+
+The distribution is a compressed tar file.  Create a directory, cd into it,
+and unpack the tar file in that directory.  For example:
+	; mkdir inn
+	; cd inn
+	; ftp ftp.uu.net
+	ftp> user anonymous <you@your.host.name>
+	ftp> type image
+	ftp> get news/nntp/inn/inn.tar.Z inn.tar.Z
+	ftp> quit
+	; uncompress <inn.tar.Z | tar vxf -
+	; rm inn.tar.Z
+
+The installation instructions are in Install.ms.  This is an nroff/troff
+document that uses the -ms macro package, and is about 30 typeset pages.
+The distribution has this file split into two pieces; you can join them
+by typing either of the following commmands:
+	; make Install.ms
+	; cat Install.ms.? >Install.ms
+You should probably print out a copy of config/config.dist when you print
+out the installation manual.
+
+Please read the COPYRIGHT.  This package has NO WARRANTY; use at your
+own risk.
+
+When updating from a previous release, you will usually want to do "make
+update" from the top-level directory; this will only install the programs.
+To update your scripts and config files, cd into the "site" directory and
+do "make clean" -- this will remove any files that are unchanged from
+the official release.  Then do "make diff >diff"; this will show you what
+changes you will have to merge in.  Now merge in your changes (from
+where the files are, ie. /usr/lib/news...) into the files in
+$INN/site.  (You may find that due to the bug fixes and new features in
+this release, you may not need to change any of the scripts, just the
+configuration files).  Finally, doing "make install" will install
+everything.
+
+If you have a previous release you will probably also want to update the
+pathnames, etc., in the new config file from your old config.  Here is one
+way to do that:
+	% cd config
+	% make subst
+	% cp config.dist config.data
+	% ./subst -f {OLDFILE} config.data
+where "{OLDFILE}" names your old config.data file.
+
+Configuration is done using subst.   Subst is in config/subst.sh and
+doc/subst.1.  The history file is written using DBZ.  The DBZ sources and
+manual page are in the dbz directory.  Unlike subst, DBZ is kept
+separately, to make it easier to track the C News release.  The subst
+script and DBZ data utilities are currently at the "Performance Release"
+patch date.  Thanks to Henry Spencer and Geoff Collyer for permission to
+use and redistribute subst, and to Jon Zeef for permission to use DBZ as
+modified by Henry.
+
+This version includes support for Geoff Collyer's news overview package,
+known as nov.  Nov replaces the external databases used by nn, trn, etc.,
+with a common text database.  INN support includes programs to build and
+maintain the overview database, and an XOVER command added to nnrpd (the
+news-reading daemon) that is becoming a common extension to fetch the
+overview data from an NNTP connection.  Nnrpd uses the overview database
+internally, if it exists, making certain commands (e.g., XHDR) much
+faster.  The nov package includes a newsreader library that you will need,
+and some utilities that you will not; it is available on world.std.com in
+the file src/news/nov.dist.tar.Z.  Prototypes of modified newsreaders are
+in the in src/news/READER.dist.tar.Z -- most maintainers will be providing
+official support very soon.  To make it explicit:  if you already have a
+newsreader that can use the overview database, either via my NNTP xover
+command, or by reading directly from NFS, then INN has all you need.
+
+I hope you find INN useful.  If you like it, send me a postcard.
+	Rich $alz
+	Open Software Foundation
+	11 Cambridge Center
+	Cambridge, MA  02142
+	INN mail:	<rsalz@uunet.uu.net>
+	Other mail:	<rsalz@osf.org>
