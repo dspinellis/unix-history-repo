@@ -1,16 +1,21 @@
-#!/bin/sh -e
+#!/bin/sh -
 #
-# Copyright (c) 1983 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)get	1.3 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
-# Shell script to build a mini-root file system
-# in preparation for building a distribution tape.
-# The file system created here is image copied onto
-# tape, then image copied onto disk as the "first"
-# step in a cold boot of 4.3 systems.
+#	@(#)get	1.4 (Berkeley) %G%
+#
+# Shell script to build a mini-root file system in preparation for building
+# a distribution tape.  The file system created here is image copied onto
+# tape, then image copied onto disk as the "first" step in a cold boot of
+# 4.3BSD systems.
 #
 DISTROOT=/nbsd
 #
@@ -19,62 +24,67 @@ then
 	echo You just '(almost)' destroyed the root
 	exit
 fi
+
+# copy in kernel
 cp $DISTROOT/sys/GENERIC/vmunix .
-rm -rf bin; mkdir bin
-rm -rf etc; mkdir etc
-rm -rf a; mkdir a
-rm -rf tmp; mkdir tmp
-rm -rf stand; mkdir stand
-cp $DISTROOT/etc/disklabel etc
-cp $DISTROOT/etc/disktab etc
-cp $DISTROOT/etc/newfs etc
-cp $DISTROOT/etc/restore etc
-cp $DISTROOT/etc/rrestore etc
-cp $DISTROOT/etc/init etc
-cp $DISTROOT/etc/mount etc
-cp $DISTROOT/etc/mknod etc
-cp $DISTROOT/etc/fsck etc
-cp $DISTROOT/etc/umount etc
-cp $DISTROOT/etc/ifconfig etc
-cp $DISTROOT/bin/dd bin
-cp $DISTROOT/bin/ed bin
-cp $DISTROOT/bin/mt bin
-cp $DISTROOT/bin/ls bin
-cp $DISTROOT/bin/sh bin
-cp $DISTROOT/bin/mv bin
-cp $DISTROOT/bin/sync bin
-cp $DISTROOT/bin/cat bin
-cp $DISTROOT/bin/mkdir bin
-cp $DISTROOT/bin/stty bin; ln bin/stty bin/STTY
-cp $DISTROOT/bin/echo bin
-cp $DISTROOT/bin/rm bin
-cp $DISTROOT/bin/cp bin
-cp $DISTROOT/bin/expr bin
-cp $DISTROOT/bin/[ bin
-cp $DISTROOT/bin/awk bin
-cp $DISTROOT/bin/make bin
-cp $DISTROOT/bin/rcp bin
-cp $DISTROOT/stand/copy stand
-cp $DISTROOT/stand/vdformat stand
-cp $DISTROOT/boot .
-cp $DISTROOT/wcs .
-#cp $DISTROOT/fppwcs .
-#cp $DISTROOT/poc .
-#cp $DISTROOT/poc1 .
-#cp $DISTROOT/poc2 .
-#cp $DISTROOT/fppoc .
-cp $DISTROOT/.profile .profile
+
+# create necessary directories
+DIRLIST="bin dev etc a tmp stand"
+rm -rf $DIRLIST
+mkdir $DIRLIST
+
+# copy in files from /etc
+ETCFILE="disklabel disktab fsck ifconfig init mknod mount newfs restore \
+	rrestore umount"
+for i in $ETCFILE; do
+	cp $DISTROOT/etc/$i etc/$i
+done
+
+# copy in files from /bin
+BINFILE="[ awk cat cp dd echo ed expr ls make mkdir mt mv rcp rm sh stty \
+	sync"
+for i in $BINFILE; do
+	cp $DISTROOT/bin/$i bin/$i
+done
+ln bin/stty bin/STTY
+
+# copy in files from /stand
+STANDFILE="copy vdformat"
+for i in $STANDFILE; do
+	cp $DISTROOT/stand/$i stand/$i
+done
+
+# copy in files from /
+#DOTFILE=".profile boot fppoc fppwcs poc poc1 poc2 wcs"
+DOTFILE=".profile boot wcs"
+for i in $DOTFILE; do
+	cp $DISTROOT/$i $i
+done
+
+# initialize /dev
+cp $DISTROOT/dev/MAKEDEV dev/MAKEDEV
+chmod +x dev/MAKEDEV
+cp /dev/null dev/MAKEDEV.local
+(cd dev; ./MAKEDEV std dk0; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
+
+# initialize /etc/passwd
 cat >etc/passwd <<EOF
 root::0:10::/:/bin/sh
 EOF
+
+# initialize /etc/group
 cat >etc/group <<EOF
 wheel:*:0:
 staff:*:10:
 EOF
+
+# initialize /etc/fstab
 cat >etc/fstab <<EOF
 /dev/xfd0a:/a:xx:1:1
 /dev/dk0a:/a:xx:1:1
 EOF
+
+# create xtr script
 cat >xtr <<'EOF'
 #!/bin/sh -e
 : ${disk?'Usage: disk=xx0 tape=yy xtr'}
@@ -97,13 +107,8 @@ sync
 fsck /dev/r${disk}a
 echo 'Root filesystem extracted'
 EOF
+
+# make xtr script executable
 chmod +x xtr
-rm -rf dev; mkdir dev
-cp $DISTROOT/dev/MAKEDEV dev
-chmod +x dev/MAKEDEV
-cp /dev/null dev/MAKEDEV.local
-cd dev
-./MAKEDEV std dk0
-./MAKEDEV cy0; mv rmt12 cy0; rm *mt*;
-cd ..
+
 sync
