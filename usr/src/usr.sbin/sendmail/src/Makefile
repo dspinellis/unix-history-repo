@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.3 (Berkeley) %G%
+#	@(#)Makefile	6.4 (Berkeley) %G%
 
 PROG=	sendmail
 
@@ -19,8 +19,8 @@ SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	mci.c parseaddr.c queue.c readcf.c recipient.c savemail.c srvrsmtp.c \
 	stab.c stats.c sysexits.c trace.c udb.c usersmtp.c \
 	util.c version.c
-DPADD=	${LIBDBM} ${LIBCOMPAT} ${LIBUTIL}
-LDADD=	-ldbm -lcompat -lutil -lkvm
+DPADD=	${LIBDBM} ${LIBCOMPAT}
+LDADD=	-ldbm -lcompat -lkvm
 MAN1=	newaliases.0
 MAN5=	aliases.0
 MAN8=	sendmail.0 
