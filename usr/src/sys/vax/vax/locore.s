@@ -1,4 +1,4 @@
-/*	locore.s	4.53	81/08/31	*/
+/*	locore.s	4.53	81/10/10	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
