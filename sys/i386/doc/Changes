@@ -1,0 +1,42 @@
+$Id$
+
+This file is intended to keep track of important kernel and user
+changes in FreeBSD between releases.
+
+Since 1.0.2:
+
+- Added XNTPD to contrib section, and (un-compilable) kernel support for
+  same to /sys/kern.  (wollman)
+
+- Make all mandatory options ``standard''.  (wollman)
+
+Between 1.0.2 and 1.0:
+
+Between 1.0 EPSILON and 1.0 GAMMA:
+
+Between 1.0 GAMMA and 1.0 BETA:
+
+Between 1.0 BETA and 1.0 ALPHA:
+
+Between 1.0 ALPHA and Patchkit 0.2.4:
+
+Userids map as follows:
+ache		Andrew Chernov
+alm		Andrew Moore
+ats		Andreas Schultz
+chmr		Christoph Robitscho
+davidg		David Greenman
+guido		Guido van Rooij
+jkh		Jordan Hubbard
+joerg		Joerg Wunsch
+jtc		J.T. Conklin
+ljo		L. Jonas Olson
+nate		Nate Williams
+paul		Paul Richards
+proven		Chris Provenzano
+rich		Rich Murphey
+rls		Rob Shady
+smace		Scott Mace
+swallace	Steven Wallace
+wollman		Garrett Wollman
+
