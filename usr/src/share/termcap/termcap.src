@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.35	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.36	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1715,6 +1715,15 @@ l7|adm20|lear siegler adm20:\
 	:am:li#24:co#80:bs:cl=^Z:cm=\E=%i%r%+^_%+^_:nd=^L:up=^K:ho=^^:ce=\ET:\
 	:cd=\EY:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dm=:ed=:dc=\EW:so=\E):se=\E(:\
 	:bt=\EI:pt:kn#7:k1=^A:k2=^B:k3=^W:k4=^D:k5=^E:k6:^X:k7=^Z:
+# From Andrew Scott Beals <bandy@lll-crg.ARPA>
+l8|adm12|12|lsi adm12:\
+	:is=\Eq:cr=^M:do=^J:nl=^J:bl=^G:\
+	:al=\EE:am:le=^H:bs:ce=\ET:cm=\E=%+ %+ :cl=^Z:cd=\EY:\
+	:co#80:dc=\EW:dl=\ER:ei=\Er:ho=^^:im=\Eq:\
+	:k0=^A0\r:k1=^A1\r:k2=^A2\r:k3=^A3\r:k4=^A4\r:\
+	:k5=^A5\r:k6=^A6\r:k7=^A7\r:k8=^A8\r:k9=^A9\r:kd=^J:kl=^H:kr=^L:ku=^K:\
+	:li#24:ma=j^Jk^P^K^Pl ^R^L^L :mi:nd=^L:\
+	:se=\EG0:so=\EG4:up=^K:us=\EG1:ue=\EG0:
 la|adm3a|3a|lsi adm3a:\
 	:am:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:
