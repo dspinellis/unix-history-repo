@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,6 +36,7 @@ void s_stab __P((const char *, int, EXEC *));
 void s_sym __P((const char *, int, EXEC *));
 void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -104,7 +105,7 @@ s_sym(fn, fd, ep)
 	ep->a_syms = ep->a_trsize = ep->a_drsize = 0;
 
 	/* Rewrite the header and truncate the file. */
-	if (lseek(fd, 0L, SEEK_SET) == -1 ||
+	if (lseek(fd, (off_t)0, SEEK_SET) == -1 ||
 	    write(fd, ep, sizeof(EXEC)) != sizeof(EXEC) ||
 	    ftruncate(fd, fsize))
 		err("%s: %s", fn, strerror(errno)); 
@@ -116,7 +117,7 @@ s_stab(fn, fd, ep)
 	int fd;
 	EXEC *ep;
 {
-	register int cnt, len, nsymcnt;
+	register int cnt, len;
 	register char *nstr, *nstrbase, *p, *strbase;
 	register NLIST *sym, *nsym;
 	struct stat sb;
@@ -128,7 +129,7 @@ s_stab(fn, fd, ep)
 
 	/* Map the file. */
 	if (fstat(fd, &sb) ||
-	    (ep = (EXEC *)mmap(NULL, sb.st_size, PROT_READ | PROT_WRITE,
+	    (ep = (EXEC *)mmap(NULL, (int)sb.st_size, PROT_READ | PROT_WRITE,
 	    MAP_FILE | MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1)
 		err("%s: %s", fn, strerror(errno));
 
