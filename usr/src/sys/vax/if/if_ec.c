@@ -1,4 +1,4 @@
-/*	if_ec.c	4.3	82/04/11	*/
+/*	if_ec.c	4.4	82/04/12	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -442,7 +442,7 @@ COUNT(ECREAD);
 		panic("ecrint");
 	ecbuf = es->es_buf[buf];
 	ecoff = *(short *)ecbuf;
-	if (ecoff < ECRDOFF || ecoff >= ECMTU+ECRDOFF) {
+	if (ecoff <= ECRDOFF || ecoff > ECMTU+ECRDOFF) {
 		es->es_if.if_ierrors++;
 #ifdef notdef
 		if (es->es_if.if_ierrors % 100 == 0)
