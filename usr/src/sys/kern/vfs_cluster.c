@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.60 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.25 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

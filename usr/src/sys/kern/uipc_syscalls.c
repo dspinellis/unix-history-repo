@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.29 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
