@@ -36,7 +36,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.31.1.1	%G%";
+static char SccsId[] = "@(#)conf.c	3.32	%G%";
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -211,6 +211,7 @@ fdopen(fd, type)
 **		none.
 */
 
+char *
 index(s, c)
 	register char *s;
 	register char c;
@@ -384,11 +385,21 @@ bool
 checkcompat(to)
 	register ADDRESS *to;
 {
+	register STAB *s;
+
 	if (to->q_mailer != MN_LOCAL && MsgSize > 100000)
 	{
 		usrerr("Message exceeds 100000 bytes");
 		NoReturn++;
 		return (FALSE);
 	}
+# ifdef ING70
+	s = stab("arpa", ST_MAILER, ST_FIND);
+	if (s != NULL && From.q_mailer != MN_LOCAL && to->q_mailer == s->st_mailer->m_mno)
+	{
+		usrerr("No ARPA mail through this machine: see your system administration");
+		return (FALSE);
+	}
+# endif ING70
 	return (TRUE);
 }
