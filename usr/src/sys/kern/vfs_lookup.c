@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -286,7 +286,7 @@ dirloop:
 			error = ELOOP;
 			goto bad2;
 		}
-		if (ndp->ni_pathlen == 1)
+		if (ndp->ni_pathlen > 1)
 			MALLOC(cp, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 		else
 			cp = ndp->ni_pnbuf;
@@ -299,23 +299,23 @@ dirloop:
 		auio.uio_segflg = UIO_SYSSPACE;
 		auio.uio_resid = MAXPATHLEN;
 		if (error = VOP_READLINK(dp, &auio, ndp->ni_cred)) {
-			if (ndp->ni_pathlen == 1)
+			if (ndp->ni_pathlen > 1)
 				free(cp, M_NAMEI);
 			goto bad2;
 		}
 		linklen = MAXPATHLEN - auio.uio_resid;
 		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
-			if (ndp->ni_pathlen == 1)
+			if (ndp->ni_pathlen > 1)
 				free(cp, M_NAMEI);
 			error = ENAMETOOLONG;
 			goto bad2;
 		}
-		if (ndp->ni_pathlen == 1) {
+		if (ndp->ni_pathlen > 1) {
+			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
 			FREE(ndp->ni_pnbuf, M_NAMEI);
 			ndp->ni_pnbuf = cp;
-			ndp->ni_pnbuf[linklen] = '\0';
 		} else
-			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
+			ndp->ni_pnbuf[linklen] = '\0';
 		ndp->ni_ptr = cp;
 		ndp->ni_pathlen += linklen;
 		vput(dp);
