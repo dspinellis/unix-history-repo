@@ -1,4 +1,4 @@
-static char sccsid[] = "ifontinfo.c	1.5	(Berkeley)	85/02/26";
+static char sccsid[] = "ifontinfo.c	1.6	(Berkeley)	86/01/05";
 
 /* Font Information for Imagen-style fonts (RST format)
  *      taken from vfontinfo, by Andy Hertzfeld  4/79
@@ -102,8 +102,6 @@ char **argv;
 	p.p_ladv = rd1();
 	p.p_id = rd4();
 	p.p_res = rd2();
-	if (p.p_res != RES)
-	    error("wrong resolution in Font file.");
 
 	i = p.p_glyph - 44;
 	idstrings = (char *) malloc (i);
