@@ -1,6 +1,6 @@
 # include	"../hdr/defines.h"
 
-SCCSID(@(#)putline	2.1.1.1);
+static char Sccsid[] = "@(#)putline.c	1.2	%G%";
 /*
 	Routine to write out either the current line in the packet
 	(if newline is zero) or the line specified by newline.
@@ -44,7 +44,7 @@ char *newline;
 		fputs(p,Xiop);
 		if (Xcreate)
 			while (*p)
-				pkt->p_nhash =+ *p++;
+				pkt->p_nhash += *p++;
 	}
 	Xcreate = 1;
 }
@@ -67,11 +67,11 @@ register struct stats *stats;
 		sprintf(del,"%05u",stats->s_del);
 		sprintf(unc,"%05u",stats->s_unc);
 		for (p = ins; *p; p++)
-			pkt->p_nhash =+ (*p - '0');
+			pkt->p_nhash += (*p - '0');
 		for (p = del; *p; p++)
-			pkt->p_nhash =+ (*p - '0');
+			pkt->p_nhash += (*p - '0');
 		for (p = unc; *p; p++)
-			pkt->p_nhash =+ (*p - '0');
+			pkt->p_nhash += (*p - '0');
 	}
 
 	sprintf(hash,"%5u",pkt->p_nhash&0xFFFF);

@@ -1,6 +1,6 @@
 #include	"../hdr/defines.h"
 
-SCCSID(@(#)getline	2.1.1.1);
+static char Sccsid[] = "@(#)getline.c	1.2	%G%";
 /*
 	Routine to read a line into the packet.  The main reason for
 	it is to make sure that pkt->p_wrttn gets turned off,
@@ -19,7 +19,7 @@ register struct packet *pkt;
 		pkt->p_slnno++;
 		pkt->p_wrttn = 0;
 		for (p = pkt->p_line; *p; )
-			pkt->p_chash =+ *p++;
+			pkt->p_chash += *p++;
 	}
 	else {
 		if (!pkt->p_reopen) {

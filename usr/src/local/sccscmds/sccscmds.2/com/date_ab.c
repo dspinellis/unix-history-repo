@@ -1,6 +1,6 @@
 # include	"../hdr/macros.h"
 
-SCCSID(@(#)date_ab.c	4.3);
+static char Sccsid[] = "@(#)date_ab.c	4.4	%G%";
 
 /*
 	Function to convert date in the form "yymmddhhmmss" to
@@ -49,22 +49,22 @@ long *bdt;
 	if(s<0 || s>59) return(-1);
 
 	tim = 0L;
-	y =+ 1900;
+	y += 1900;
 	for(i=1970; i<y; i++)
-		tim =+ dysize(i);
+		tim += dysize(i);
 	while(--t)
-		tim =+ mosize(y,t);
-	tim =+ d - 1;
-	tim =* 24;
-	tim =+ h;
-	tim =* 60;
-	tim =+ m;
-	tim =+ timeb.timezone;			/* GMT correction */
-	tim =* 60;
-	tim =+ s;
+		tim += mosize(y,t);
+	tim += d - 1;
+	tim *= 24;
+	tim += h;
+	tim *= 60;
+	tim += m;
+	tim += timeb.timezone;			/* GMT correction */
+	tim *= 60;
+	tim += s;
 
 	if(localtime(&tim)[8])
-		tim =+ -1*60*60;		/* daylight savings */
+		tim += -1*60*60;		/* daylight savings */
 	*bdt = tim;
 	return(0);
 }
@@ -92,7 +92,7 @@ g2()
 	if (*p) {
 		c = (*p++ - '0') * 10;
 		if (*p)
-			c =+ (*p++ - '0');
+			c += (*p++ - '0');
 		else
 			c = -1;
 	}
