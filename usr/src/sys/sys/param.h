@@ -1,4 +1,4 @@
-/*	param.h	3.7	%G%	*/
+/*	param.h	3.8	%G%	*/
 
 /*
  * tunable variables
@@ -7,8 +7,8 @@
  */
 
 #define	NBUF	48		/* size of buffer cache */
-#define	NINODE	250		/* number of in core inodes */
-#define	NFILE	225		/* number of in core file structures */
+#define	NINODE	400		/* number of in core inodes */
+#define	NFILE	350		/* number of in core file structures */
 #define	NMOUNT	15		/* number of mountable file systems */
 #define	MSWAPX	15		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
@@ -18,7 +18,7 @@
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	SMAPSIZ	(4*NPROC)	/* size of swap allocation area */
 #define	NCALL	40		/* max simultaneous time callouts */
-#define	NPROC	150		/* max number of processes */
+#define	NPROC	250		/* max number of processes */
 #define	NTEXT	60		/* max number of pure texts */
 #define	NCLIST	500		/* max total clist size */
 #define	HZ	60		/* Ticks/second of the clock */
