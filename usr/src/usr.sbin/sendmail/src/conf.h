@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.189 (Berkeley) %G%
+ *	@(#)conf.h	8.190 (Berkeley) %G%
  */
 
 /*
@@ -823,6 +823,7 @@ extern void		*malloc();
 #ifdef _AUX_SOURCE
 # include <sys/sysmacros.h>
 # define BSD			/* has BSD routines */
+# define HASSETRLIMIT	0	/* ... but not setrlimit(2) */
 # define BROKEN_RES_SEARCH 1	/* res_search(unknown) returns h_errno=0 */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
@@ -835,9 +836,15 @@ extern void		*malloc();
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_ZERO
+#  define LA_TYPE	LA_INT
+#  define FSHIFT	16
 # endif
+# define LA_AVENRUN	"avenrun"
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
+# define TZ_TYPE	TZ_TZNAME
+# ifndef _PATH_UNIX
+#  define _PATH_UNIX	"/unix"		/* should be in <paths.h> */
+# endif
 # undef WIFEXITED
 # undef WEXITSTATUS
 #endif

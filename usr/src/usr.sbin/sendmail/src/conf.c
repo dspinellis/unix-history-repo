@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.196 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.197 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -949,7 +949,7 @@ setsignal(sig, handler)
 	int sig;
 	sigfunc_t handler;
 {
-#if defined(SYS5SIGNALS) || defined(BSD4_3) || defined(_AUX_SOURCE)
+#if defined(SYS5SIGNALS) || defined(BSD4_3)
 	return signal(sig, handler);
 #else
 	struct sigaction n, o;
@@ -1125,12 +1125,16 @@ init_vendor_macros(e)
 # endif
 #endif
 
+#ifdef _AUX_SOURCE
+struct nlist	Nl[2];
+#else
 struct nlist	Nl[] =
 {
 	{ LA_AVENRUN },
-#define	X_AVENRUN	0
 	{ 0 },
 };
+#endif
+#define	X_AVENRUN	0
 
 getla()
 {
@@ -1158,6 +1162,10 @@ getla()
 			return (-1);
 		}
 		(void) fcntl(kmem, F_SETFD, 1);
+
+#ifdef _AUX_SOURCE
+		strcpy(Nl[X_AVENRUN].n_name, LA_AVENRUN);
+#endif
 
 #ifdef _AIX3
 		if (knlist(Nl, 1, sizeof Nl[0]) < 0)
