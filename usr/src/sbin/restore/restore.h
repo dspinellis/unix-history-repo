@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)restore.h	5.6 (Berkeley) %G%
+ *	@(#)restore.h	5.7 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -22,8 +22,6 @@
 #include <sys/time.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
-#define _DIRENT_
-#include <ufs/dir.h>
 
 /*
  * Flags
@@ -115,17 +113,9 @@ struct context {
 /*
  * Definitions for library routines operating on directories.
  */
-typedef struct _dirdesc {
-	int	dd_fd;
-	long	dd_loc;
-	long	dd_size;
-	char	dd_buf[DIRBLKSIZ];
-} DIR;
-extern DIR *opendirfile();
+typedef struct dirdesc DIR;
 extern DIR *rst_opendir();
 extern struct direct *rst_readdir();
-extern long rst_telldir();
-extern void rst_seekdir();
 
 /*
  * Other exported routines
