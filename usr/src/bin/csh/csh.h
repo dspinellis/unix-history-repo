@@ -1,4 +1,4 @@
-/* csh.h 4.2 %G% */
+/* csh.h 4.3 %G% */
 
 #include "sh.local.h"
 #ifdef VMUNIX
@@ -16,7 +16,6 @@
  */
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
 
 #define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
 
