@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -176,6 +176,50 @@ bwrite(fcp, buf, blk, size)
 	}
 	rwerr("WRITE", blk);
 	return (0);
+}
+
+/*
+ * allocate a data block with the specified number of fragments
+ */
+allocblk(frags)
+	int frags;
+{
+	register int i, j, k;
+
+	if (frags <= 0 || frags > sblock.fs_frag)
+		return (0);
+	for (i = 0; i < fmax - sblock.fs_frag; i += sblock.fs_frag) {
+		for (j = 0; j <= sblock.fs_frag - frags; j++) {
+			if (getbmap(i + j))
+				continue;
+			for (k = 1; k < frags; k++)
+				if (getbmap(i + j + k))
+					break;
+			if (k < frags) {
+				j += k;
+				continue;
+			}
+			for (k = 0; k < frags; k++)
+				setbmap(i + j + k);
+			n_blks += frags;
+			return (i + j);
+		}
+	}
+	return (0);
+}
+
+/*
+ * Free a previously allocated block
+ */
+freeblk(blkno, frags)
+	daddr_t blkno;
+	int frags;
+{
+	struct inodesc idesc;
+
+	idesc.id_blkno = blkno;
+	idesc.id_numfrags = frags;
+	pass4check(&idesc);
 }
 
 catch()
