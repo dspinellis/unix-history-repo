@@ -1,9 +1,19 @@
-/*	ioctl.h	4.23	82/11/22	*/
+/*	ioctl.h	4.24	82/12/05	*/
 /*
- * ioctl definitions, and special character and local tty definitions
+ * Ioctl definitions
  */
 #ifndef	_IOCTL_
 #define	_IOCTL_
+#ifdef KERNEL
+#include "../h/ttychars.h"
+#include "../h/ttydev.h"
+#else
+#include <sys/ttychars.h>
+#include <sys/ttydev.h>
+#endif
+
+#ifndef NOCOMPAT
+#include <sgtty.h>
 struct tchars {
 	char	t_intrc;	/* interrupt */
 	char	t_quitc;	/* quit */
@@ -20,47 +30,7 @@ struct ltchars {
 	char	t_werasc;	/* word erase */
 	char	t_lnextc;	/* literal next character */
 };
-
-/*
- * local mode settings
- */
-#define	LCRTBS	0000001		/* correct backspacing for crt */
-#define	LPRTERA 0000002		/* printing terminal \ ... / erase */
-#define	LCRTERA	0000004		/* do " \b " to wipe out character */
-#define	LTILDE	0000010		/* IIASA - hazeltine tilde kludge */
-#define	LMDMBUF	0000020		/* IIASA - start/stop output on carrier intr */
-#define	LLITOUT	0000040		/* IIASA - suppress any output translations */
-#define	LTOSTOP	0000100		/* send stop for any background tty output */
-#define	LFLUSHO	0000200		/* flush output sent to terminal */
-#define	LNOHANG 0000400		/* IIASA - don't send hangup on carrier drop */
-#define	LETXACK 0001000		/* IIASA - diablo style buffer hacking */
-#define	LCRTKIL	0002000		/* erase whole line on kill with " \b " */
-#define	L004000	0004000
-#define	LCTLECH	0010000		/* echo control characters as ^X */
-#define	LPENDIN	0020000		/* tp->t_rawq is waiting to be reread */
-#define	LDECCTQ 0040000		/* only ^Q starts after ^S */
-#define	LNOFLSH 0100000		/* dont flush output on signals */
-
-/* local state */
-#define	LSBKSL	01		/* state bit for lowercase backslash work */
-#define	LSQUOT	02		/* last character input was \ */
-#define	LSERASE	04		/* within a \.../ for LPRTRUB */
-#define	LSLNCH	010		/* next character is literal */
-#define	LSTYPEN	020		/* retyping suspended input (LPENDIN) */
-#define	LSCNTTB	040		/* counting width of tab; leave LFLUSHO alone */
-
-/* modem control */
-#define	MLE	0001		/* line enable */
-#define	MDTR	0002		/* data terminal ready */
-#define	MRTS	0004		/* request to send */
-#define	MST	0010		/* secondary transmit */
-#define	MSR	0020		/* secondary receive */
-#define	MCTS	0040		/* clear to send */
-#define	MCAR	0100		/* carrier detect */
-#define	MCD	MCAR
-#define	MRNG	0200		/* ring */
-#define	MRI	MRNG
-#define	MDSR	0400		/* data set ready */
+#endif
 
 /*
  * Ioctl's have the command encoded in the lower word,
@@ -89,6 +59,17 @@ struct ltchars {
 #define	TIOCHPCL	_IO(t, 2)		/* hang up on last close */
 #define	TIOCMODG	_IOR(t, 3, int)		/* get modem control state */
 #define	TIOCMODS	_IOW(t, 4, int)		/* set modem control state */
+#define		TIOCM_LE	0001		/* line enable */
+#define		TIOCM_DTR	0002		/* data terminal ready */
+#define		TIOCM_RTS	0004		/* request to send */
+#define		TIOCM_ST	0010		/* secondary transmit */
+#define		TIOCM_SR	0020		/* secondary receive */
+#define		TIOCM_CTS	0040		/* clear to send */
+#define		TIOCM_CAR	0100		/* carrier detect */
+#define		TIOCM_CD	TIOCM_CAR
+#define		TIOCM_RNG	0200		/* ring */
+#define		TIOCM_RI	TIOCM_RNG
+#define		TIOCM_DSR	0400		/* data set ready */
 #define	TIOCGETP	_IOR(t, 8,struct sgttyb)/* get parameters -- gtty */
 #define	TIOCSETP	_IOW(t, 9,struct sgttyb)/* set parameters -- stty */
 #define	TIOCSETN	_IOW(t,10,struct sgttyb)/* as above, but no flushtty */
@@ -127,6 +108,58 @@ struct ltchars {
 #define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
 #define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
 #define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
+#define	TIOCSET		_IOW(t, 104, long)	/* set tty flags */
+#define	TIOCBIS		_IOW(t, 103, long)	/* bis tty flags */
+#define	TIOCBIC		_IOW(t, 102, long)	/* bic tty flags */
+#define	TIOCGET		_IOR(t, 101, long)	/* get all tty flags */
+#define		TANDEM		0x00000001	/* send stopc on out q full */
+#define		CBREAK		0x00000002	/* half-cooked mode */
+#define		LCASE		0x00000004	/* simulate lower case */
+#define		ECHO		0x00000008	/* echo input */
+#define		CRMOD		0x00000010	/* map \r to \r\n on output */
+#define		RAW		0x00000020	/* no i/o processing */
+#define		ODDP		0x00000040	/* get/send odd parity */
+#define		EVENP		0x00000080	/* get/send even parity */
+#define		ANYP		0x000000c0	/* get any parity/send none */
+#define		NLDELAY		0x00000300	/* \n delay */
+#define			NL0	0x00000000
+#define			NL1	0x00000100	/* tty 37 */
+#define			NL2	0x00000200	/* vt05 */
+#define			NL3	0x00000300
+#define		TBDELAY		0x00000c00	/* horizontal tab delay */
+#define			TAB0	0x00000000
+#define			TAB1	0x00000400	/* tty 37 */
+#define			TAB2	0x00000800
+#define		XTABS		0x00000c00	/* expand tabs on output */
+#define		CRDELAY		0x00003000	/* \r delay */
+#define			CR0	0x00000000
+#define			CR1	0x00001000	/* tn 300 */
+#define			CR2	0x00002000	/* tty 37 */
+#define			CR3	0x00003000	/* concept 100 */
+#define		VTDELAY		0x00004000	/* vertical tab delay */
+#define			FF0	0x00000000
+#define			FF1	0x00004000	/* tty 37 */
+#define		BSDELAY		0x00008000	/* \b delay */
+#define			BS0	0x00000000
+#define			BS1	0x00008000
+/* used to be local mode settings */
+#define		CRTBS		0x00010000	/* do backspacing for crt */
+#define		PRTERA		0x00020000	/* \ ... / erase */
+#define		CRTERA		0x00040000	/* " \b " to wipe out char */
+#define		TILDE		0x00080000	/* hazeltine tilde kludge */
+#define		MDMBUF		0x00100000	/* start/stop output on carrier intr */
+#define		LITOUT		0x00200000	/* literal output */
+#define		TOSTOP		0x00400000	/* SIGSTOP on background output */
+#define		FLUSHO		0x00800000	/* flush output to terminal */
+#define		NOHANG		0x01000000	/* no SIGHUP on carrier drop */
+#define		L001000		0x02000000
+#define		CRTKIL		0x04000000	/* kill line with " \b " */
+#define		L004000		0x08000000
+#define		CTLECH		0x10000000	/* echo control chars as ^X */
+#define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
+#define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
+#define		NOFLSH		0x80000000	/* no output flush on signal */
+#define 	ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
@@ -147,9 +180,8 @@ struct ltchars {
 #define	SIOCGKEEP	_IOR(s, 2, int)		/* inspect keep alive */
 #define	SIOCSLINGER	_IOW(s, 3, int)		/* set linger time */
 #define	SIOCGLINGER	_IOR(s, 4, int)		/* get linger time */
-/* these are really variable length */
-#define	SIOCSENDOOB	_IOW(s, 5, char)	/* send out of band */
-#define	SIOCRCVOOB	_IOR(s, 6, char)	/* get out of band */
+#define	SIOCSENDOOB	_IOW(s, 5, char)	/* send oob data */
+#define	SIOCRCVOOB	_IOR(s, 6, char)	/* recv oob data */
 #define	SIOCATMARK	_IOR(s, 7, int)		/* at out of band mark? */
 #define	SIOCSPGRP	_IOW(s, 8, int)		/* set process group */
 #define	SIOCGPGRP	_IOR(s, 9, int)		/* get process group */
