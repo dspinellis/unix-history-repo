@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reply.c	5.3 (Berkeley) 87/07/20";
-#endif not lint
+static char sccsid[] = "@(#)reply.c	5.4 (Berkeley) 87/11/23";
+#endif /* !lint */
 
 #include <bug.h>
 #include <sys/file.h>
@@ -67,7 +67,8 @@ gotone:	if (to = index(C, '<'))
 	fputs("Precedence: bulk\n\n", pf);	/* vacation(1) uses this... */
 	fflush(pf);
 
-	if ((afd = open(ACK_FILE, O_RDONLY, 0)) >= 0) {
+	(void)sprintf(bfr, "%s/%s", dir, ACK_FILE);
+	if ((afd = open(bfr, O_RDONLY, 0)) >= 0) {
 		while ((rval = read(afd, bfr, sizeof(bfr))) != ERR && rval)
 			(void)write(fileno(pf), bfr, rval);
 		(void)close(afd);
