@@ -1,4 +1,4 @@
-.\"     @(#)V2B.t	1.2     89/02/24
+.\"     @(#)V2B.t	1.3     89/03/09
 .nr PS 10
 .nr VS 12
 .LP
@@ -13,7 +13,7 @@ ln.
 A. SALARIES AND WAGES
 
      1. Technical (Programmer II @ 100% & Programmer III @ 100%)	$ 85,361
-     2. Clerical Assistance (Assistant III @ 10%, Assistant II @ 50%)	$ 14,769
+     2. Clerical Assistance (Assistant III @ 10%, Secretary @ 50%)	$ 14,769
      3. Administrative Services 	$ 10,227
 
      TOTAL SALARIES AND WAGES	$ 110,357
@@ -42,7 +42,7 @@ C. EQUIPMENT
 D. TRAVEL
 
      1. 10 R/Ts to the East Coast @ $700/trip
-     2. 2 R/Ts to Europe (IEEE 1003) @ $1,760/trip
+     2. 2 R/Ts to Europe (IEEE 1003 - POSIX) @ $1,760/trip
 
      TOTAL TRAVEL	$ 10,520
 
