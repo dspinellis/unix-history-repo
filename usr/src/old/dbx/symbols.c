@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)symbols.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)symbols.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,7 +63,7 @@ typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype;
 #define STK 1
 #define EXT 2
 
-typedef unsigned integer Storage;
+typedef unsigned int Storage;
 
 struct Symbol {
     Name name;
