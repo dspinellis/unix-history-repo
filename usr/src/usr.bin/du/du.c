@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -169,20 +169,20 @@ typedef struct _ID {
 
 int
 linkchk(p)
-	register FTSENT *p;
+	FTSENT *p;
 {
 	static ID *files;
 	static int maxfiles, nfiles;
-	register ID *fp, *start;
-	register ino_t ino;
-	register dev_t dev;
+	ID *fp, *start;
+	ino_t ino;
+	dev_t dev;
 
 	ino = p->fts_statp->st_ino;
 	dev = p->fts_statp->st_dev;
 	if ((start = files) != NULL)
 		for (fp = start + nfiles - 1; fp >= start; --fp)
 			if (ino == fp->inode && dev == fp->dev)
-				return(1);
+				return (1);
 
 	if (nfiles == maxfiles && (files = realloc((char *)files,
 	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL)
@@ -190,13 +190,14 @@ linkchk(p)
 	files[nfiles].inode = ino;
 	files[nfiles].dev = dev;
 	++nfiles;
-	return(0);
+	return (0);
 }
 
 void
 usage()
 {
+
 	(void)fprintf(stderr,
-"usage: du [-H | -L | -P] [-a | -s] [-x] [file ...]\n");
+		"usage: du [-H | -L | -P] [-a | -s] [-x] [file ...]\n");
 	exit(1);
 }
