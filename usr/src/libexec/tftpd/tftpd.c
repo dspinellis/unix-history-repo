@@ -1,4 +1,4 @@
-/*	tftpd.c	4.8	83/05/03	*/
+/*	tftpd.c	4.9	83/06/12	*/
 
 /*
  * Trivial file transfer protocol server.
@@ -18,16 +18,22 @@
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
+#include <setjmp.h>
+
+#define	DEBUG	1
+#define	TIMEOUT		5
 
 extern	int errno;
 struct	sockaddr_in sin = { AF_INET };
 int	f;
+int	rexmtval = TIMEOUT;
+int	maxtimeout = 5*TIMEOUT;
 char	buf[BUFSIZ];
+int	reapchild();
 
 main(argc, argv)
 	char *argv[];
 {
-	union wait status;
 	struct sockaddr_in from;
 	register struct tftphdr *tp;
 	register int n;
@@ -54,39 +60,43 @@ main(argc, argv)
 	  }
 	}
 #endif
+	signal(SIGCHLD, reapchild);
 	for (;;) {
 		int fromlen;
 
-		f = socket(AF_INET, SOCK_DGRAM, 0, 0);
+		f = socket(AF_INET, SOCK_DGRAM, 0);
 		if (f < 0) {
 			perror("tftpd: socket");
-			close(f);
 			sleep(5);
 			continue;
 		}
+		if (setsockopt(f, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
+			perror("tftpd: setsockopt (SO_REUSEADDR)");
+		sleep(1);			/* let child do connect */
 		while (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 			perror("tftpd: bind");
-			close(f);
 			sleep(5);
-			continue;
 		}
-again:
-		fromlen = sizeof (from);
-		n = recvfrom(f, buf, sizeof (buf), 0, (caddr_t)&from, &fromlen);
-		if (n <= 0) {
-			if (n < 0)
-				perror("tftpd: recvfrom");
-			goto again;
-		}
+		do {
+			fromlen = sizeof (from);
+			n = recvfrom(f, buf, sizeof (buf), 0,
+			    (caddr_t)&from, &fromlen);
+		} while (n <= 0);
 		tp = (struct tftphdr *)buf;
 		tp->th_opcode = ntohs(tp->th_opcode);
 		if (tp->th_opcode == RRQ || tp->th_opcode == WRQ)
 			if (fork() == 0)
 				tftp(&from, tp, n);
 		(void) close(f);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 int	validate_access();
@@ -195,14 +205,16 @@ validate_access(file, client, mode)
 	return (0);
 }
 
-int timeout;
+int	timeout;
+jmp_buf	timeoutbuf;
 
 timer()
 {
-	timeout += TIMEOUT;
-	if (timeout >= MAXTIMEOUT)
+
+	timeout += rexmtval;
+	if (timeout >= maxtimeout)
 		exit(1);
-	alarm(TIMEOUT);
+	longjmp(timeoutbuf, 1);
 }
 
 /*
@@ -214,45 +226,38 @@ sendfile(pf)
 	register struct tftphdr *tp;
 	register int block = 1, size, n;
 
-	sigset(SIGALRM, timer);
+	signal(SIGALRM, timer);
 	tp = (struct tftphdr *)buf;
 	do {
 		size = read(fd, tp->th_data, SEGSIZE);
 		if (size < 0) {
 			nak(errno + 100);
-			break;
+			goto abort;
 		}
 		tp->th_opcode = htons((u_short)DATA);
 		tp->th_block = htons((u_short)block);
 		timeout = 0;
-		alarm(TIMEOUT);
-rexmt:
+		(void) setjmp(timeoutbuf);
 		if (write(f, buf, size + 4) != size + 4) {
-			perror("send");
-			break;
+			perror("tftpd: write");
+			goto abort;
 		}
-again:
-		n = read(f, buf, sizeof (buf));
-		if (n <= 0) {
-			if (n == 0)
-				goto again;
-			if (errno == EINTR)
-				goto rexmt;
+		do {
+			alarm(rexmtval);
+			n = read(f, buf, sizeof (buf));
 			alarm(0);
-			perror("receive");
-			break;
-		}
-		alarm(0);
-#if vax || pdp11
-		tp->th_opcode = ntohs((u_short)tp->th_opcode);
-		tp->th_block = ntohs((u_short)tp->th_block);
-#endif
-		if (tp->th_opcode == ERROR)
-			break;
-		if (tp->th_opcode != ACK || tp->th_block != block)
-			goto again;
+			if (n < 0) {
+				perror("tftpd: read");
+				goto abort;
+			}
+			tp->th_opcode = ntohs((u_short)tp->th_opcode);
+			tp->th_block = ntohs((u_short)tp->th_block);
+			if (tp->th_opcode == ERROR)
+				goto abort;
+		} while (tp->th_opcode != ACK || tp->th_block != block);
 		block++;
 	} while (size == SEGSIZE);
+abort:
 	(void) close(fd);
 }
 
@@ -265,45 +270,38 @@ recvfile(pf)
 	register struct tftphdr *tp;
 	register int block = 0, n, size;
 
-	sigset(SIGALRM, timer);
+	signal(SIGALRM, timer);
 	tp = (struct tftphdr *)buf;
 	do {
 		timeout = 0;
-		alarm(TIMEOUT);
 		tp->th_opcode = htons((u_short)ACK);
 		tp->th_block = htons((u_short)block);
 		block++;
-rexmt:
+		(void) setjmp(timeoutbuf);
 		if (write(f, buf, 4) != 4) {
-			perror("ack");
-			break;
+			perror("tftpd: write");
+			goto abort;
 		}
-again:
-		n = read(f, buf, sizeof (buf));
-		if (n <= 0) {
-			if (n == 0)
-				goto again;
-			if (errno == EINTR)
-				goto rexmt;
+		do {
+			alarm(rexmtval);
+			n = read(f, buf, sizeof (buf));
 			alarm(0);
-			perror("receive");
-			break;
-		}
-		alarm(0);
-#if vax || pdp11
-		tp->th_opcode = ntohs((u_short)tp->th_opcode);
-		tp->th_block = ntohs((u_short)tp->th_block);
-#endif
-		if (tp->th_opcode == ERROR)
-			break;
-		if (tp->th_opcode != DATA || block != tp->th_block)
-			goto again;
+			if (n < 0) {
+				perror("tftpd: read");
+				goto abort;
+			}
+			tp->th_opcode = ntohs((u_short)tp->th_opcode);
+			tp->th_block = ntohs((u_short)tp->th_block);
+			if (tp->th_opcode == ERROR)
+				goto abort;
+		} while (tp->th_opcode != DATA || block != tp->th_block);
 		size = write(fd, tp->th_data, n - 4);
 		if (size < 0) {
 			nak(errno + 100);
-			break;
+			goto abort;
 		}
 	} while (size == SEGSIZE);
+abort:
 	tp->th_opcode = htons((u_short)ACK);
 	tp->th_block = htons((u_short)(block));
 	(void) write(f, buf, 4);
