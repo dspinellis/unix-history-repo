@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.65 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1121,6 +1121,7 @@ ufs_rmdir(ndp, p)
 
 	ip = VTOI(ndp->ni_vp);
 	dp = VTOI(ndp->ni_dvp);
+	ump = VFSTOUFS(ndp->ni_dvp->v_mount);
 	/*
 	 * No rmdir "." please.
 	 */
@@ -1166,7 +1167,6 @@ ufs_rmdir(ndp, p)
 	 * worry about them later.
 	 */
 	ip->i_nlink -= 2;
-	ump = VFSTOUFS(ndp->ni_dvp->v_mount);
 	error = (ump->um_itrunc)(ip, (u_long)0, IO_SYNC);
 	cache_purge(ITOV(ip));
 out:
