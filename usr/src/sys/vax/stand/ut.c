@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.2 (Berkeley) %G%
+ *	@(#)ut.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -23,20 +23,22 @@
 
 #define	MASKREG(reg)	((reg)&0xffff)
 
-u_short	utstd[] = { 0172440 };		/* non-standard */
+#define	MAXCTLR		1		/* all addresses must be specified */
+u_short	utstd[MAXCTLR] = { 0172440 };	/* non-standard */
 
 utopen(io)
 	register struct iob *io;
 {
-	int skip;
+	register int skip;
 
-	if (badaddr((char *)ubamem(io->i_unit, utstd[0]), sizeof(short))) {
-		printf("nonexistent device\n");
+	if ((u_int)io->i_ctlr >= MAXCTLR)
+		return (ECTLR);
+	if (badaddr((char *)ubamem(io->i_unit, utstd[io->i_ctlr]), sizeof(short))) {
+		printf("ut: nonexistent device\n");
 		return (ENXIO);
 	}
 	utstrategy(io, UT_REW);
-	skip = io->i_boff;
-	while (skip-- > 0)
+	for (skip = io->i_part; skip--;)
 		utstrategy(io, UT_SFORWF);
 	return (0);
 }
@@ -44,23 +46,26 @@ utopen(io)
 utclose(io)
 	register struct iob *io;
 {
-
 	utstrategy(io, UT_REW);
 }
 
-#define utwait(addr)	{do word=addr->utcs1; while((word&UT_RDY)==0);}
+#define	UTWAIT(addr) { \
+	do \
+		word = addr->utcs1; \
+	while((word&UT_RDY) == 0); \
+}
 
 utstrategy(io, func)
 	register struct iob *io;
 {
+	register struct utdevice *addr;
 	register u_short word;
 	register int errcnt;
-	register struct utdevice *addr =
-	    (struct utdevice *)ubamem(io->i_unit, utstd[0]);
 	int info, resid;
 	u_short dens;
 
-	dens = (io->i_unit&07) | PDP11FMT | UT_PE;
+	addr = (struct utdevice *)ubamem(io->i_unit, utstd[io->i_ctlr]);
+	dens = io->i_unit | PDP11FMT | UT_PE;
 	errcnt = 0;
 retry:
 	utquiet(addr);
@@ -79,7 +84,7 @@ retry:
 		return (0);
 	} else
 		addr->utcs1 = func | UT_GO;
-	utwait(addr);
+	UTWAIT(addr);
 	ubafree(io, info);
 	word = addr->utds;
 	if (word&(UTDS_EOT|UTDS_TM)) {
@@ -87,15 +92,13 @@ retry:
 		goto done;
 	}
 	if ((word&UTDS_ERR) || (addr->utcs1&UT_TRE)) {
-		if (errcnt == 0)
-			printf("tj error: cs1=%b er=%b cs2=%b ds=%b",
-			  addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
-			  addr->utcs2, UTCS2_BITS, word, UTDS_BITS);
-		if (errcnt == 10) {
-			printf("\n");
+		printf("ut error: cs1=%b er=%b cs2=%b ds=%b",
+		  addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
+		  addr->utcs2, UTCS2_BITS, word, UTDS_BITS);
+		if (errcnt++ == 10) {
+			printf("ut: unrecovered error\n");
 			return (-1);
 		}
-		errcnt++;
 		if (addr->utcs1&UT_TRE)
 			addr->utcs2 |= UTCS2_CLR;
 		addr->utcs1 = UT_CLEAR | UT_GO;
@@ -103,12 +106,12 @@ retry:
 		utquiet(addr);
 		if (func == WRITE) {
 			addr->utcs1 = UT_ERASE | UT_GO;
-			utwait(addr);
+			UTWAIT(addr);
 		}
 		goto retry;
 	}
 	if (errcnt)
-		printf(" recovered by retry\n");
+		printf("ut: recovered by retry\n");
 done:
 	if (func == READ) {
 		resid = 0;
@@ -119,12 +122,13 @@ done:
 	return (io->i_cc - resid);
 }
 
+static
 utquiet(addr)
 	register struct utdevice *addr;
 {
 	register u_short word;
 
-	utwait(addr);
+	UTWAIT(addr);
 	do
 		word = addr->utds;
 	while ((word&UTDS_DRY) == 0 && (word&UTDS_PIP));

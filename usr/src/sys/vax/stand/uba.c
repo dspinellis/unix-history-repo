@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.2 (Berkeley) %G%
+ *	@(#)uba.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -30,7 +30,7 @@ ubasetup(io, bdp)
 	int bdp;
 {
 	int npf;
-	unsigned v;
+	unsigned int v;
 	register struct pte *pte;
 	int o, temp, reg;
 	static int lastreg = 128+64;
@@ -44,7 +44,7 @@ ubasetup(io, bdp)
 		bdp = 0;
 	} else
 		reg = 0;
-	pte = &ubauba(io->i_unit)->uba_map[reg];
+	pte = &ubauba(io->i_adapt)->uba_map[reg];
 	temp = (bdp << 21) | UBAMR_MRV;
 	if (bdp && (o & 01))
 		temp |= UBAMR_BO;
@@ -68,17 +68,17 @@ ubafree(io, mr)
 
 #if VAX8200
 	case VAX_8200:
-		UBA_PURGEBUA(ubauba(io->i_unit), bdp);
+		UBA_PURGEBUA(ubauba(io->i_adapt), bdp);
 		break;
 #endif
 
 	case VAX_8600:
 	case VAX_780:
-		ubauba(io->i_unit)->uba_dpr[bdp] |= UBADPR_BNE;
+		ubauba(io->i_adapt)->uba_dpr[bdp] |= UBADPR_BNE;
 		break;
 
 	case VAX_750:
-		ubauba(io->i_unit)->uba_dpr[bdp] |=
+		ubauba(io->i_adapt)->uba_dpr[bdp] |=
 		     UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
 
