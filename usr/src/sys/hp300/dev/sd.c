@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.1 (Berkeley) %G%
+ *	@(#)sd.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -749,7 +749,7 @@ sdsize(dev)
 
 #include "machine/pte.h"
 #include "machine/vmparam.h"
-#include "../h/vmmac.h"
+#include "../sys/vmmac.h"
 
 /*
  * Non-interrupt driven, non-dma dump routine.
