@@ -1,0 +1,212 @@
+Current Version: 1.0.7
+See the file ChangeLog for the details of all changes.
+
+User visible changes from 1.0.6 to 1.0.7.
+
+o Allow zmore to read from standard input (like more).
+
+o Support the 68000 (Atari ST) in match.S.
+
+o Retry partial writes (required on Linux when gzip is suspended in a pipe).
+
+o Allow full pathnames and renamings in gzexe.
+  Don't let gzexe compress setuid executables or gzip itself.
+	
+o Added vms/Makefile.gcc for gcc on the Vax.
+
+o Allow installation of binaries and shell scripts in different dirs.
+
+o Allows complex PAGER variable in zmore (e.g.: PAGER="col -x | more")
+
+o Allow installation of zcat as gzcat.
+
+o Several small changes for portability to old or weird systems.
+
+o Suppress help message and send compressed data to the terminal when
+  gzip is invoked without parameters and without redirection.
+
+o  Add compile option GNU_STANDARD to respect the GNU coding standards:
+   with -DGNU_STANDARD, behave as gzip even if invoked under the name gunzip.
+
+(I don't like the last two changes, which were requested by the FSF.)
+
+
+User visible changes from 1.0.5 to 1.0.6.
+
+o Let gzexe detect executables that are already gzexe'd.
+
+o Keep file attributes in znew and gzexe if cpmod is available.
+
+o Don't try restoring record format on VMS (1.0.5 did not work correctly)
+
+o Added asm version for 68000 in amiga/match.a.
+  Use asm version for Atari TT and NeXT.
+
+o For OS/2, assume HPFS by default, add flag OS2FAT if necessary.
+
+o Fixed some bugs in zdiff and define zcmp as a link to zdiff.
+
+
+User visible changes from 1.0.4 to 1.0.5.
+
+o For VMS, restore the file type for variable record format, otherwise
+    extract in fixed length format (not perfect, but better than
+    forcing all files to be in stream_LF format).
+
+o For VMS, use "-z" default suffix and accept a version number in file names.
+
+o For Unix, allow compression of files with name ending in 'z'. Use only
+  .z, .*-z, .tgz, .taz as valid gzip extensions. In the last two cases,
+  extract to .tar by default.
+
+o On some versions of MSDOS, files with a 3 character extension could not
+  be compressed.
+
+o Garbage collect files in /tmp created by gzexe.
+
+o Fix the 'OS code' byte in the gzip header.
+
+o For the Amiga, add the missing utime.h and add support for gcc.
+
+
+User visible changes from 1.0.3 to 1.0.4.
+
+o Added optimized asm version for 68020.
+
+o Add support for DJGPP.
+	
+o Add support for the Atari ST.
+
+o Added zforce to rename gzip'ed files with truncated names.
+
+o Do not install with name uncompress (some systems rely on the
+  absence of any check in the old uncompress).
+
+o Added missing function (fcfree) in msdos/tailor.c
+
+o Let gunzip handle .tgz files, and let gzip skip them.
+
+o Added -d option (decompress) for gzexe and try preserving file permissions.
+
+o Suppress all warnings with -q.
+
+o Use GZIP_OPT for VMS to avoid conflict with program name.
+
+o ... and many other small changes (see ChangeLog)
+
+
+User visible changes from 1.0.2 to 1.0.3
+
+o Added -K option for znew to keep old .Z files if smaller
+
+o Added -q option (quiet) to cancel -v in GZIP env variable.
+
+o Made gzexe safer on systems with filename limitation to 14 chars.
+
+o Fixed bugs in handling of GZIP env variable and incorrect free with Turbo C.
+
+
+User visible changes from 1.0.1 to 1.0.2
+
+o Added env variable GZIP for default options. Example:
+   for sh:   GZIP="-8 -v"; export GZIP
+   for csh:  setenv GZIP "-8 -v"
+
+o Added support for the Amiga.
+
+O znew now keeps the old .Z if it is smaller than the .z file.
+  This can happen for some large and very redundant files.
+
+o Do not complain about trailing garbage for record oriented IO (Vax/VMS).
+  This implies however that multi-part gzip files are not supported
+  on such systems.
+
+o Added gzexe to compress rarely used executables.
+
+o Reduce memory usage (required for MSDOS and useful on all systems).
+
+o Preserve time stamp in znew -P (pipe option) if touch -r works.
+
+
+User visible changes from 1.0 to 1.0.1
+
+o fix trivial errors in the Borland makefile (msdos/Makefile.bor)
+
+
+User visible changes from 0.8.2 to 1.0
+
+o gzip now runs on Vax/VMS
+
+o gzip will not not overwrite files without -f when using /bin/sh in
+  background.
+
+o Support the test option -t for compressed (.Z) files.
+  Allow some data recovery for bad .Z files.
+
+o Added makefiles for MSDOS (Only tested for MSC, not Borland).
+
+o still more changes to configure for several systems
+
+
+User visible changes from 0.8.1 to 0.8.2:
+
+o yet more changes to configure for Linux and other systems
+
+o Allow zcat on a file with multiple links.
+
+
+User visible changes from 0.8 to 0.8.1:
+
+o znew has now a pipe option -P to reduce the disk space requirements,
+  but this option does not preserve timestamps.
+
+o Fixed some #if directives for compilation with TurboC.
+
+
+User visible changes from 0.7 to 0.8:
+
+o gzip can now extract .z files created by 'pack'.
+
+o configure should no longer believe that every machine is a 386
+
+o Fix the entry for /etc/magic in INSTALL.
+
+o Add patch for GNU tar 1.11.1 and a pointer to crypt++.el
+
+o Uncompress files with multiple links only with -f.
+
+o Fix for uncompress of .Z files on 16-bit machines
+
+o Create a correct output name for file names of exactly N-1 chars when
+  the system has a limit of N chars.
+
+
+User visible changes from 0.6 to 0.7:
+
+o Use "make check" instead of "make test".
+
+o Keep time stamp and pass options to gzip in znew.
+
+o Do not create .z.z files with gzip -r.
+
+o Allow again gunzip .zip files (was working in 0.5)
+
+o Allow again compilation with TurboC 2.0 (was working in 0.4)
+
+
+User visible changes form 0.5 to 0.6:
+
+o gunzip reported an error when extracting certain .z files. The .z files
+  produced by gzip 0.5 are correct and can be read by gunzip 0.6.
+
+o gunzip now supports multiple compressed members within a single .z file.
+
+o Fix the check for i386 in configure.
+
+o Added "make test" to check for compiler bugs. (gcc -finline-functions
+  is broken at least on the NeXT.)
+
+o Use environment variable PAGER in zmore if it is defined.
+
+o Accept gzcat in addition to zcat for people having /usr/bin before
+  /usr/local/bin in their path.

@@ -1,0 +1,43 @@
+#!/bin/sh
+
+OPTIONS=
+FILES=
+for ARG
+do
+	case "$ARG" in
+	-*)	OPTIONS="$OPTIONS $ARG";;
+	*)	FILES="$FILES $ARG";;
+	esac
+done
+if test -z "$FILES"; then
+	echo "Usage: zcmp [cmp_options] file [file]"
+	exit 1
+fi
+set $FILES
+if test $# -eq 1; then
+	FILE=`expr $1 : '\(.*\)\.Z' '|' $1`
+	gzip -cd $FILE | ${CMP-cmp} $OPTIONS - $FILE
+	STAT="$?"
+elif test $# -eq 2; then
+	case "$1" in
+	*.Z)	case "$2" in
+		*.Z)	F=`basename $2 .Z`
+			gzip -cd $2 > /tmp/$F.$$
+			gzip -cd $1 | ${CMP-cmp} $OPTIONS - /tmp/$F.$$
+			STAT="$?";;
+		*)	gzip -cd $1 | ${CMP-cmp} $OPTIONS - $2;;
+		esac;;
+	*)	case "$2" in
+		*.Z)	F=`basename $2 .Z`
+			gzip -cd $2 > /tmp/$F.$$
+			${CMP-cmp} $OPTIONS $1 /tmp/$F.$$
+			STAT="$?";;
+		*)	${CMP-cmp} $OPTIONS $1 $2
+			STAT="$?";;
+		esac;;
+	esac
+	exit "$STAT"
+else
+	echo "Usage: zcmp [cmp_options] file [file]"
+	exit 1
+fi
