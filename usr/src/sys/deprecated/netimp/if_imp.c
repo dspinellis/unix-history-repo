@@ -1,4 +1,4 @@
-/*	if_imp.c	4.29	82/04/28	*/
+/*	if_imp.c	4.30	82/05/02	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -511,15 +511,10 @@ COUNT(IMPSND);
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
 		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
-#ifdef notdef
-			error = hp->h_flags & HF_DEAD ?
-				EHOSTDEAD : EHOSTUNREACH;
-#else
-			error = ENETUNREACH;
+			error = hp->h_flags&HF_DEAD ? EHOSTDOWN : EHOSTUNREACH;
 			hp->h_timer = HOSTTIMER;
 			hp->h_flags &= ~HF_INUSE;
 			goto bad;
-#endif
 		}
 
 		/*

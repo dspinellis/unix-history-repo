@@ -1,4 +1,4 @@
-/*	ip_input.c	1.42	82/04/25	*/
+/*	ip_input.c	1.43	82/05/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -562,12 +562,8 @@ COUNT(IP_STRIPOPTIONS);
 
 u_char inetctlerrmap[] = {
 	ECONNABORTED,	ECONNABORTED,	0,		0,
-	0,
-#ifdef notdef
-	EHOSTUNREACH,	EHOSTDOWN,	ENETUNREACH,	EHOSTUNREACH,
-#else
-	ENETUNREACH,	ENETUNREACH,	ENETUNREACH,	ENETUNREACH,
-#endif
+	0,		0,
+	EHOSTDOWN,	EHOSTUNREACH,	ENETUNREACH,	EHOSTUNREACH,
 	ECONNREFUSED,	ECONNREFUSED,	EMSGSIZE,	0,
 	0,		0,		0,		0
 };
@@ -606,7 +602,7 @@ ip_forward(ip)
 	register struct ip *ip;
 {
 	register int error, type, code;
-	struct mbuf *mopt;
+	struct mbuf *mopt, *mcopy;
 
 	if (ipprintfs)
 		printf("forward: src %x dst %x ttl %x\n", ip->ip_src,
@@ -626,27 +622,46 @@ ip_forward(ip)
 		m_freem(dtom(ip));
 		return;
 	}
+
+	/*
+	 * Save at most 64 bytes of the packet in case
+	 * we need to generate an ICMP message to the src.
+	 */
+	mcopy = m_copy(dtom(ip), 0, min(ip->ip_len, 64));
 	ip_stripoptions(ip, mopt);
 
 	/* last 0 here means no directed broadcast */
-	if ((error = ip_output(dtom(ip), mopt, 0, 0)) == 0)
+	if ((error = ip_output(dtom(ip), mopt, 0, 0)) == 0) {
+		if (mcopy)
+			m_freem(mcopy);
 		return;
-#ifdef notdef
-	/*
-	 * Want to generate a message, but lower
-	 * layers assume they can free up a message
-	 * in the event of an error.  This causes
-	 * the call to icmp_error to work on ``freed''
-	 * mbuf's, and worse.
-	 */
-	type = ICMP_UNREACH, code = 0;	/* need ``undefined'' */
-	if (error == ENETUNREACH || error == ENETDOWN)
+	}
+	ip = mtod(mcopy, struct ip *);
+	type = ICMP_UNREACH, code = 0;		/* need ``undefined'' */
+	switch (error) {
+
+	case ENETUNREACH:
+	case ENETDOWN:
 		code = ICMP_UNREACH_NET;
-	else if (error == EMSGSIZE)
+		break;
+
+	case EMSGSIZE:
 		code = ICMP_UNREACH_NEEDFRAG;
-#else
-	return;
-#endif
+		break;
+
+	case EPERM:
+		code = ICMP_UNREACH_PORT;
+		break;
+
+	case ENOBUFS:
+		type = ICMP_SOURCEQUENCH;
+		break;
+
+	case EHOSTDOWN:
+	case EHOSTUNREACH:
+		code = ICMP_UNREACH_HOST;
+		break;
+	}
 sendicmp:
 	icmp_error(ip, type, code);
 }
