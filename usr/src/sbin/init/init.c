@@ -1,9 +1,10 @@
-static	char *sccsid = "@(#)init.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.4 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
 #include <setjmp.h>
 #include <sys/reboot.h>
+#include <errno.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	TABSIZ	100
@@ -41,8 +42,10 @@ int	fi;
 int	mergflag;
 char	tty[20];
 jmp_buf	sjbuf, shutpass;
+time_t	time0;
 
 int	reset();
+int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
 
@@ -51,11 +54,12 @@ main()
 	register int r11;		/* passed thru from boot */
 	int howto, oldhowto;
 
+	time0 = time(0);
 	howto = r11;
 	setjmp(sjbuf);
 	signal(SIGTERM, reset);
+	signal(SIGTSTP, idle);
 	signal(SIGSTOP, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
 	for(EVER) {
@@ -114,17 +118,31 @@ shutreset()
 
 shutend()
 {
-	register i;
+	register i, f;
 
+	acct(0);
 	signal(SIGALRM, SIG_DFL);
 	for(i=0; i<10; i++)
 		close(i);
+	f = open(wtmpf, 1);
+	if (f >= 0) {
+		lseek(f, 0L, 2);
+		SCPYN(wtmp.ut_line, "~");
+		SCPYN(wtmp.ut_name, "shutdown");
+		time(&wtmp.ut_time);
+		write(f, (char *)&wtmp, sizeof(wtmp));
+		close(f);
+	}
+	return(1);
 }
 
 single()
 {
 	register pid;
+	register xpid;
+	extern	errno;
 
+   do {
 	pid = fork();
 	if(pid == 0) {
 /*
@@ -139,8 +157,10 @@ single()
 		execl(shell, minus, (char *)0);
 		exit(0);
 	}
-	while(wait((int *)0) != pid)
-		;
+	while((xpid = wait((int *)0)) != pid)
+		if (xpid == -1 && errno == ECHILD)
+			break;
+   } while (xpid == -1);
 }
 
 runcom(oldhowto)
@@ -169,7 +189,11 @@ runcom(oldhowto)
 		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "reboot");
-		time(&wtmp.ut_time);
+		if (time0) {
+			wtmp.ut_time = time0;
+			time0 = 0;
+		} else
+			time(&wtmp.ut_time);
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
@@ -370,4 +394,26 @@ register struct tab *p;
 reset()
 {
 	longjmp(sjbuf, 1);
+}
+
+idle()
+{
+	register struct tab *p;
+	register pid;
+
+	signal(SIGTSTP, idle);
+	for (;;) {
+		pid = wait((int *) 0);
+		if (mergflag)
+			return;
+		if (pid == -1)
+			pause();
+		else {
+			for (ALL)
+				if (p->pid == pid) {
+					rmut(p);
+					p->pid = -1;
+				}
+		}
+	}
 }
