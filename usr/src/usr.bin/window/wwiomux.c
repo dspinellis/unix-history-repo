@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.14 %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.15 %G%";
 #endif
 
 /*
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)wwiomux.c	3.14 %G%";
 
 #include "ww.h"
 #include <sys/time.h>
+#include <sys/types.h>
 
 extern int _wwdtablesize;
 
@@ -28,7 +29,7 @@ wwiomux()
 {
 	register struct ww *w;
 	register struct ww *w;
-	int imask;
+	fd_set imask;
 	register n;
 	register char *p;
 	char c;
