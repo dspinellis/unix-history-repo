@@ -1,4 +1,4 @@
-/*	conf.c	4.41	81/11/08	*/
+/*	conf.c	4.42	81/11/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,7 +120,7 @@ int	upstrategy(),upread(),upwrite(),upreset(),updump();
 #define	updump		nodev
 #endif
 
-#include "ut.h"
+#include "tj.h"
 #if NUT > 0
 int	utopen(),utclose(),utstrategy(),utread(),utwrite(),utioctl();
 int	utreset(),utdump();
