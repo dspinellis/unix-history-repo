@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_get.c	7.1	%G%";
+static char *sccsid = "@(#)ex_get.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -63,7 +63,7 @@ peekcd()
 getach()
 {
 	register int c;
-	static char inline[128];
+	static char inline[BUFSIZ];
 	struct stat statb;
 
 	c = peekc;
@@ -102,12 +102,20 @@ top:
 		input = inline;
 		goto top;
 	}
+#ifdef notdef
 /* mjm:	if (read(0, (char *) &lastc, 1) != 1)	CHANGED and added else */
 	if (read(0, inline, 1) != 1)
 		lastc = EOF;
 	else				/* mjm: lastc is a short! */
 		lastc = inline[0];	/* mjm: in rightmost 8 bits ! */
 	return (lastc);
+#else
+	c = read(0, inline, sizeof inline);
+	if(c <= 0)
+		return(lastc = EOF);
+	input = inline;
+	goto top;
+#endif
 }
 
 /*
