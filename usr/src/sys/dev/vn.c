@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.8 92/12/20$
  *
- *	@(#)vn.c	8.2 (Berkeley) %G%
+ *	@(#)vn.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -166,7 +166,7 @@ vnstrategy(bp)
 	}
 	bn = dbtob(bn);
 	bsize = vn->sc_vp->v_mount->mnt_stat.f_iosize;
-	addr = bp->b_un.b_addr;
+	addr = bp->b_data;
 	flags = bp->b_flags | B_CALL;
 	for (resid = bp->b_resid; resid; resid -= sz) {
 		struct vnode *vp;
@@ -190,7 +190,7 @@ vnstrategy(bp)
 			nbp->b_dev = vp->v_rdev;
 		else
 			nbp->b_dev = NODEV;
-		nbp->b_un.b_addr = addr;
+		nbp->b_data = addr;
 		nbp->b_blkno = nbn + btodb(off);
 		nbp->b_proc = bp->b_proc;
 		nbp->b_iodone = vniodone;
@@ -254,7 +254,7 @@ vnstart(vn)
 #ifdef DEBUG
 	if (vndebug & VDB_IO)
 		printf("vnstart(%d): bp %x vp %x blkno %x addr %x cnt %x\n",
-		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
+		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_data,
 		       bp->b_bcount);
 #endif
 	if ((bp->b_flags & B_READ) == 0)
@@ -274,7 +274,7 @@ vniodone(bp)
 #ifdef DEBUG
 	if (vndebug & VDB_IO)
 		printf("vniodone(%d): bp %x vp %x blkno %x addr %x cnt %x\n",
-		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_un.b_addr,
+		       vn-vn_softc, bp, bp->b_vp, bp->b_blkno, bp->b_data,
 		       bp->b_bcount);
 #endif
 	if (bp->b_error) {
