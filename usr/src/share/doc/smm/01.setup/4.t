@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.13 (Berkeley) %G%
+.\"	@(#)4.t	6.14 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -85,7 +85,7 @@ A separate subdirectory is provided for each machine architecture
 .TS
 l l.
 hp300	HP 9000/300 series of Motorola 68000-based machines
-hp	code common to both HP 68k and (non-existant) PA-RISC ports
+hp	code common to both HP 68k and (non-existent) PA-RISC ports
 i386	Intel 386/486-based PC machines
 luna68k	Omron 68000-based workstations
 news3400	Sony News MIPS-based workstations
@@ -225,7 +225,7 @@ are one-for-one with entries in the file of current users
 .Pn /var/run/utmp ),
 and therefore it is best to make changes
 while running in single-user mode
-and to add all of the entries for a new device at once.
+and to add all the entries for a new device at once.
 .PP
 Each line in the
 .Pn /etc/ttys
