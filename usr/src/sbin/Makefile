@@ -1,15 +1,16 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 # Missing: icheck, init, ncheck
 
-SUBDIR=	XNSrouted badsect clri disklabel dmesg dump dumpfs fastboot fsck \
-	fsdb halt ifconfig mknod mount mountd newfs \
-	nfsd nfsiod ping quotacheck reboot restore route routed savecore \
-	shutdown slattach swapon tunefs umount
+SUBDIR=	XNSrouted badsect clri disklabel dmesg dump dumpfs fastboot fsck fsdb \
+	icheck ifconfig init mknod mount mount_fdesc mount_lofs mount_nfs \
+	mountd ncheck newfs nfsd nfsiod nologin ping quotacheck \
+	reboot restore route routed savecore shutdown slattach startslip \
+	swapon tunefs umount
 
-.if   make(clean) || make(cleandir)
+.if	${MACHINE} == "tahoe"
 SUBDIR+=enpload
-.elif ${MACHINE} == "tahoe"
+.elif	make(clean) || make(cleandir)
 SUBDIR+=enpload
 .endif
 
