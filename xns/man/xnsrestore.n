@@ -1,0 +1,52 @@
+.TH "XNSRESTORE" 1 "3-MAR-87" "Xerox (WRC)"
+.\" $Header: xnsrestore.n,v 1.1 87/04/01 13:57:13 ed Exp $
+.SH NAME
+xnsrestore - Restore previously archived files to XNS file servers
+.SH SYNOPSIS
+.B xnsrestore 
+[
+.B \-l log-file
+] [
+.B \-v
+]
+.B local-file remote-file
+.SH DESCRIPTION
+.I Xnsrestore
+deserializes the file named in \fIlocal-file\fR into the file on the remote
+host named by \fIremote-file\fR. If \fIremote-file\fR specifies a directory,
+then the name portion of \fIlocal-file\fR will be created in that directory.
+The serialized format of \fIlocal-file\fR will restore both content
+and attributes for the remote file and any descendant files if the file is
+a directory. 
+.PP
+If \fIlocal-file\fR is \*(lq-\*(rq, then the input will be read from 
+\fIstdin\fR. This is useful for piping input from other programs directly.
+In this case, \fIremote-file\fR must specify a complete file name or an 
+error will be posted.
+.PP
+The arguments specified in \fIremote-file1\fR may be in one
+of the following three forms, where host is a Clearinghouse name of the form 
+\fIobject:domain:organization\fR (domain and organization are optional):
+.nf
+	[host]filename
+	(host)filename
+	host:filename
+.fi
+.PP
+Credentials for accessing the remote service are determined either from the 
+environment variables XNSNAME and XNSPASSWD or, if not defined, by prompting
+the user.
+.PP
+The possible options are:
+.TP
+.BI -l \ log-file
+causes a summary of files restored to be written to \fIlog-file\fR.
+.B -v
+causes informational messages to be written to \fIstdout\fR along the way.
+.SH "SEE ALSO"
+xnsarchive(1N), xnscreds(1N)
+.br
+Filing Protocol, \s8XSIS\s0 108605 (May 1986)
+.SH AUTHORS
+Ed Flint
+
