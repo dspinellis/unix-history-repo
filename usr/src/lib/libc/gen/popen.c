@@ -19,12 +19,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)popen.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/signal.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <paths.h>
@@ -91,6 +92,7 @@ popen(program, type)
 pclose(iop)
 	FILE *iop;
 {
+	extern int errno;
 	register int fdes;
 	int omask;
 	union wait pstat;
@@ -105,7 +107,9 @@ pclose(iop)
 		return(-1);
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
-	pid = waitpid(pids[fdes], &pstat, 0);
+	do {
+		pid = waitpid(pids[fdes], &pstat, 0);
+	} while (pid == -1 && errno == EINTR);
 	(void)sigsetmask(omask);
 	pids[fdes] = 0;
 	return(pid == -1 ? -1 : pstat.w_status);
