@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	5.1 (Berkeley) %G%
+.\"	@(#)4.t	5.2 (Berkeley) %G%
 .\"
 .\".ds RH "Client/Server Model
 .bp
@@ -53,7 +53,7 @@ performing whatever appropriate actions the client requests of it.
 Alternative schemes which use a service server
 may be used to eliminate a flock of server processes clogging the
 system while remaining dormant most of the time.  For Internet
-servers in 4.3BSD,
+servers in 4.4BSD,
 this scheme has been implemented via \fIinetd\fP, the so called
 ``internet super-server.''  \fIInetd\fP listens at a variety
 of ports, determined at start-up by reading a configuration file.
@@ -78,7 +78,7 @@ to NS clients and services that do not use Courier.
 .NH 2
 Servers
 .PP
-In 4.3BSD most servers are accessed at well known Internet addresses
+In 4.4BSD most servers are accessed at well known Internet addresses
 or UNIX domain names.  For
 example, the remote login server's main loop is of the form shown
 in Figure 2.
@@ -342,6 +342,9 @@ as all hosts must process each message, whether or not using an rwho server.
 Unless such a service is sufficiently universal and is frequently used,
 the expense of periodic broadcasts outweighs the simplicity.
 .PP
+Multicasting is an alternative to broadcasting.
+Setting up multicast sockets is described in Section 5.10.
+.PP
 The rwho server, in a simplified form, is pictured in Figure
 4.  There are two separate tasks performed by the server.  The
 first task is to act as a receiver of status information broadcast
@@ -457,7 +460,7 @@ to an endless, wasteful, exchange of information.
 It is important that software operating in a distributed
 environment not have any site-dependent information compiled into it.
 This would require a separate copy of the server at each host and
-make maintenance a severe headache.  4.3BSD attempts to isolate
+make maintenance a severe headache.  4.4BSD attempts to isolate
 host-specific information from applications by providing system
 calls which return the necessary information*.
 .FS
@@ -472,7 +475,7 @@ has been implemented at the socket level.
 Combining these two features allows a process
 to broadcast on any directly connected local
 network which supports the notion of broadcasting
-in a site independent manner.  This allows 4.3BSD
+in a site independent manner.  This allows 4.4BSD
 to solve the problem of deciding how to propagate
 status information in the case of \fIrwho\fP, or
 more generally in broadcasting:

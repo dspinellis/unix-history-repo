@@ -1,12 +1,12 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	5.2 (Berkeley) %G%
 .\"
-.EH 'PS1:8-%''Advanced 4.3BSD IPC Tutorial'
-.OH 'Advanced 4.3BSD IPC Tutorial''PS1:8-%'
+.EH 'PS1:8-%''Advanced 4.4BSD IPC Tutorial'
+.OH 'Advanced 4.4BSD IPC Tutorial''PS1:8-%'
 .ds lq ``
 .ds rq ''
 .de DT
@@ -16,7 +16,7 @@
 ..
 .bd S B 3
 .TL
-An Advanced 4.3BSD Interprocess Communication Tutorial
+An Advanced 4.4BSD Interprocess Communication Tutorial
 .AU
 Samuel J. Leffler
 .AU
@@ -49,11 +49,12 @@ UNIX\\$1
 .AB
 .PP
 .FS
-* \s-2UNIX\s0 is a Trademark of Bell Laboratories.
+* \s-2UNIX\s0 is a trademark of UNIX System Laboratories, Inc.
+in the US and some other countries.
 .FE
 This document provides an introduction to the interprocess
 communication facilities included in the
-4.3BSD release of the
+4.4BSD release of the
 .UX *
 system.
 .PP
