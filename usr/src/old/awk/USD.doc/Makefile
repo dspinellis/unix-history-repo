@@ -1,10 +1,11 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 DIR=	usd/16.awk
 SRCS=	awk
 MACROS=	-msU
+REFER= refer -e -p /usr/old/dict/papers/Ind
 
 paper.ps: ${SRCS}
-	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
+	${REFER} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
