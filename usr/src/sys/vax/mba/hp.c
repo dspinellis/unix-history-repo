@@ -1,4 +1,5 @@
-/*	hp.c	4.32	81/03/16	*/
+/*	hp.c	4.33	81/03/17	*/
+int	hpdebug;
 
 #include "hp.h"
 #if NHP > 0
@@ -233,6 +234,14 @@ hpdtint(mi, mbsr)
 	int retry = 0;
 
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
+		if (hpdebug) {
+			printf("errcnt %d ", mi->mi_tab.b_errcnt);
+			printf("mbsr=%b ", mbsr, mbsr_bits);
+			printf("er1=%b er2=%b\n",
+			    hpaddr->hper1, HPER1_BITS,
+			    hpaddr->hper2, HPER2_BITS);
+			DELAY(1000000);
+		}
 		if (hpaddr->hper1&HPER1_WLE) {
 			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
@@ -266,6 +275,15 @@ hpdtint(mi, mbsr)
 		if (retry)
 			return (MBD_RETRY);
 	}
+	else
+		if (hpdebug && hprecal[mi->mi_unit]) {
+			printf("recal %d ", hprecal[mi->mi_unit]);
+			printf("errcnt %d\n", mi->mi_tab.b_errcnt);
+			printf("mbsr=%b ", mbsr, mbsr_bits);
+			printf("er1=%b er2=%b\n",
+			    hpaddr->hper1, HPER1_BITS,
+			    hpaddr->hper2, HPER2_BITS);
+		}
 	switch (hprecal[mi->mi_unit]) {
 
 	case 1:
@@ -274,7 +292,7 @@ hpdtint(mi, mbsr)
 		goto nextrecal;
 	case 2:
 		if (mi->mi_tab.b_errcnt < 16 ||
-		    (bp->b_flags & B_READ) != 0)
+		    (bp->b_flags & B_READ) == 0)
 			goto donerecal;
 		hpaddr->hpof = hp_offset[mi->mi_tab.b_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
