@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setmode.3	8.1 (Berkeley) %G%
+.\"     @(#)setmode.3	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETMODE 3
@@ -15,7 +15,7 @@
 .Sh SYNOPSIS
 .Ft mode_t
 .Fn getmode "const void *set" "mode_t mode"
-.Ft void
+.Ft void *
 .Fn setmode "const char *mode_str"
 .Sh DESCRIPTION
 The
