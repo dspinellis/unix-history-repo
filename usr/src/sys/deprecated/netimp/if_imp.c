@@ -150,7 +150,6 @@ impinput(unit, m)
 	struct ifnet *ifp;
 	register struct host *hp;
 	register struct ifqueue *inq;
-	struct mbuf *next;
 	struct sockaddr_in *sin;
 	int s;
 
@@ -316,8 +315,8 @@ impinput(unit, m)
 		sc->imp_incomplete++;
 		/* FALL THROUGH */
 	case IMPTYPE_RFNM:
-		if ((hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) == 0 ||
-		    hp->h_rfnm == 0) {
+		if ((hp = hostlookup((int)cp->dl_imp, (int)cp->dl_host,
+		    unit)) == 0 || hp->h_rfnm == 0) {
 			sc->imp_badrfnm++;
 			if (hp)
 				hostfree(hp);
@@ -335,7 +334,7 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
-		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
+		if (hp = hostlookup((int)cp->dl_imp, (int)cp->dl_host, unit)) {
 			hp->h_flags |= (1 << (int)cp->dl_mtype);
 			sc->imp_msgready -=
 			   MIN(hp->h_qcnt, IMP_MAXHOSTMSG - hp->h_rfnm);
@@ -351,7 +350,7 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_BADDATA:
 		impmsg(sc, "data error");
-		if (hp = hostlookup(cp->dl_imp, cp->dl_host, unit)) {
+		if (hp = hostlookup((int)cp->dl_imp, (int)cp->dl_host, unit)) {
 			sc->imp_msgready -=
 			   MIN(hp->h_qcnt, IMP_MAXHOSTMSG - hp->h_rfnm);
 			if (hp->h_rfnm)
@@ -450,7 +449,7 @@ impdown(sc)
 }
 
 /*VARARGS2*/
-impmsg(sc, fmt, a1, a2, a3)
+impmsg(sc, fmt, a1)
 	struct imp_softc *sc;
 	char *fmt;
 	u_int a1;
@@ -610,7 +609,8 @@ impsnd(ifp, m)
 	 */ 
 	s = splimp();
 	if (imp->dl_mtype == IMPTYPE_DATA) {
-		hp = hostenter(imp->dl_imp, imp->dl_host, ifp->if_unit);
+		hp = hostenter((int)imp->dl_imp, (int)imp->dl_host,
+		    ifp->if_unit);
 		if (hp) {
 			if (hp->h_flags & (HF_DEAD|HF_UNREACH))
 				error = hp->h_flags & HF_DEAD ?

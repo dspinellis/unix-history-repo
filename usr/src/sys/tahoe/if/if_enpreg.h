@@ -1,4 +1,6 @@
-/*	if_enpreg.h	7.1	88/05/21	*/
+/*
+ *	@(#)if_enpreg.h	1.5 (Berkeley) %G%
+ */
 
 /*	Copyright (c) 1984 by Communication Machinery Corporation
  *
@@ -157,10 +159,14 @@ struct enpdevice {
 #ifdef notdef
 #define RESET_ENP(addr)		(addr->enp_iow.hst2enp_reset = 01)
 #else
+#ifdef lint
+#define RESET_ENP(addr)		((addr) = (addr))
+#else
 #define RESET_ENP(addr)
+#endif lint
 #endif notdef
 
-#ifdef TAHOE
+#ifdef tahoe
 #define ENP_GO(addr,start) { \
 	int v = start; \
 	enpcopy((u_char *)&v, (u_char *)&addr->enp_prog_start, sizeof(v) ); \
@@ -173,7 +179,7 @@ struct enpdevice {
 	addr->enp_intrvec = (u_short) intvec; \
 	addr->enp_go = 0x80800000; \
 }
-#endif TAHOE
+#endif tahoe
 
 /*
  * State bits

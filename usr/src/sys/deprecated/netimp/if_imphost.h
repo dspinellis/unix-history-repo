@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if_imphost.h	7.4 (Berkeley) %G%
+ *	@(#)if_imphost.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -114,5 +114,4 @@ struct hmbuf {
 #ifdef KERNEL
 struct host *hostlookup();
 struct host *hostenter();
-struct mbuf *hostdeque();
 #endif
