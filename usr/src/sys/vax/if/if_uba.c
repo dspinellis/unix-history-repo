@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	7.7 (Berkeley) %G%
+ *	@(#)if_uba.c	7.8 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -21,6 +19,7 @@
 
 #include "../net/if.h"
 
+#include "../vax/pte.h"
 #include "../vax/mtpr.h"
 #include "if_uba.h"
 #include "../vaxuba/ubareg.h"
@@ -201,15 +200,14 @@ if_ubaget(ifu, ifr, totlen, off0, ifp)
 			 * as quick form of copy.  Remap UNIBUS and invalidate.
 			 */
 			pp = mtod(m, char *);
-			cpte = &Mbmap[mtocl(cp)*CLSIZE];
-			ppte = &Mbmap[mtocl(pp)*CLSIZE];
+			cpte = kvtopte(cp);
+			ppte = kvtopte(pp);
 			x = btop(cp - ifr->ifrw_addr);
 			ip = (int *)&ifr->ifrw_mr[x];
 			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
-				*ip++ =
-				    cpte++->pg_pfnum|ifr->ifrw_proto;
+				*ip++ = cpte++->pg_pfnum|ifr->ifrw_proto;
 				mtpr(TBIS, cp);
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)pp);
@@ -331,13 +329,14 @@ if_ubaput(ifu, ifw, m)
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp) &&
 		    (m->m_len == CLBYTES || m->m_next == (struct mbuf *)0)) {
-			struct pte *pte; int *ip;
-			pte = &Mbmap[mtocl(dp)*CLSIZE];
+			struct pte *pte;
+			int *ip;
+
+			pte = kvtopte(dp);
 			x = btop(cp - ifw->ifw_addr);
 			ip = (int *)&ifw->ifw_mr[x];
 			for (i = 0; i < CLSIZE; i++)
-				*ip++ =
-				    ifw->ifw_proto | pte++->pg_pfnum;
+				*ip++ = ifw->ifw_proto | pte++->pg_pfnum;
 			xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
 			mp = m->m_next;
 			m->m_next = ifw->ifw_xtofree;
