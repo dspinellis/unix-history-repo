@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.34	82/03/15	*/
+/*	uipc_socket.c	4.35	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -116,6 +116,8 @@ soclose(so, exiting)
 COUNT(SOCLOSE);
 	if (so->so_pcb == 0)
 		goto discard;
+	if (exiting)
+		so->so_options |= SO_KEEPALIVE;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
 			u.u_error = sodisconnect(so, (struct sockaddr *)0);
