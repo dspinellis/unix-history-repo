@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.16	82/08/14	*/
+/*	subr_xxx.c	4.17	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,59 +13,6 @@
 #include "../h/pte.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
-
-/*
- * Pass back  c  to the user at his location u_base;
- * update u_base, u_count, and u_offset.  Return -1
- * on the last character of the user's read.
- * u_base is in the user address space unless u_segflg is set.
- */
-passc(c)
-register c;
-{
-	register id;
-
-	if ((id = u.u_segflg) == 1)
-		*u.u_base = c;
-	else
-		if (id?suibyte(u.u_base, c):subyte(u.u_base, c) < 0) {
-			u.u_error = EFAULT;
-			return (-1);
-		}
-	u.u_count--;
-	u.u_offset++;
-	u.u_base++;
-	return (u.u_count == 0? -1: 0);
-}
-
-#include "ct.h"
-#if NCT > 0
-/*
- * Pick up and return the next character from the user's
- * write call at location u_base;
- * update u_base, u_count, and u_offset.  Return -1
- * when u_count is exhausted.  u_base is in the user's
- * address space unless u_segflg is set.
- */
-cpass()
-{
-	register c, id;
-
-	if (u.u_count == 0)
-		return (-1);
-	if ((id = u.u_segflg) == 1)
-		c = *u.u_base;
-	else
-		if ((c = id==0?fubyte(u.u_base):fuibyte(u.u_base)) < 0) {
-			u.u_error = EFAULT;
-			return (-1);
-		}
-	u.u_count--;
-	u.u_offset++;
-	u.u_base++;
-	return (c&0377);
-}
-#endif
 
 /*
  * Routine which sets a user error; placed in
@@ -112,18 +59,6 @@ max(a, b)
 {
 
 	return (a > b ? a : b);
-}
-
-struct proc *
-pfind(pid)
-	int pid;
-{
-	register struct proc *p;
-
-	for (p = &proc[pidhash[PIDHASH(pid)]]; p != &proc[0]; p = &proc[p->p_idhash])
-		if (p->p_pid == pid)
-			return (p);
-	return ((struct proc *)0);
 }
 extern	cabase, calimit;
 extern	struct pte camap[];
@@ -209,35 +144,6 @@ strlen(s1)
 }
 #endif
 
-copyuout(from, len, uio)
-	caddr_t from;
-	int len;
-	register struct uio *uio;
-{
-	register struct iovec *iov = uio->uio_iov;
-	int error = 0;
-	int count;
-
-	while (uio->uio_iovcnt > 0) {
-		count = iov->iov_len;
-		if (count > len)
-			count = len;
-		if (copyout(from, iov->iov_base, count)) {
-			error = EFAULT;
-			break;
-		}
-		iov->iov_base += len;
-		from += count;
-		uio->uio_resid -= count;
-		iov->iov_len -= len;
-		iov++;
-		uio->uio_iovcnt--;
-		if (iov->iov_len)
-			break;
-	}
-	return (error);
-}
-
 /*
  * Pass back c to the user.
  */
@@ -246,7 +152,6 @@ passuc(c, uio)
 	struct uio *uio;
 {
 	register struct iovec *iov = uio->uio_iov;
-	register id;
 
 	switch (uio->uio_segflg) {
 
