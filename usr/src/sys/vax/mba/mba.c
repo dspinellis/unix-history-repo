@@ -1,4 +1,4 @@
-/*	mba.c	4.12	81/03/03	*/
+/*	mba.c	4.13	81/03/03	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -76,9 +76,9 @@ loop:
 		 * In any case the device is ``active'' waiting for the
 		 * data to transfer.
 		 */
+		mi->mi_tab.b_active = 1;
 		if (mhp->mh_active == 0)
 			mbstart(mhp);
-		mi->mi_tab.b_active = 1;
 		return;
 
 	case MBU_STARTED:	/* driver started a non-data transfer */
@@ -135,6 +135,8 @@ loop:
 	if ((mi->mi_drv->mbd_ds & (MBD_DPR|MBD_MOL)) != (MBD_DPR|MBD_MOL)) {
 		printf("%c%d not ready\n", mi->mi_name, dkunit(bp));
 		mi->mi_tab.b_actf = bp->av_forw;
+		mi->mi_tab.b_errcnt = 0;
+		mi->mi_tab.b_active = 0;
 		bp->b_flags |= B_ERROR;
 		iodone(bp);
 		goto loop;
@@ -208,10 +210,6 @@ mbintr(mbanum)
 	 * are now finished.
 	 */
 	if (mhp->mh_active) {
-		if ((mbastat & MBS_DTCMP) == 0) {
-			printf("mb%d no DTCMP!\n", mbanum);
-			goto doattn;
-		}
 		/*
 		 * Clear attention status for drive whose data
 		 * transfer completed, and give the dtint driver
@@ -247,7 +245,7 @@ mbintr(mbanum)
 
 		case MBD_RESTARTED:	/* driver restarted op (ecc, e.g.)
 			/*
-			 * Note that mp->b_active is still on.
+			 * Note that mhp->mh_active is still on.
 			 */
 			break;
 
@@ -279,8 +277,8 @@ doattn:
 			 * interrupts, give it a chance to tell us that
 			 * the operation needs to be redone
 			 */
-			if ((mi->mi_tab.b_flags&B_BUSY) == 0 &&
-			    mi->mi_driver->md_ndint) {
+			if (mi->mi_driver->md_ndint &&
+			    (mi->mi_tab.b_flags&B_BUSY) == 0) {
 				mi->mi_tab.b_active = 0;
 				switch((*mi->mi_driver->md_ndint)(mi)) {
 
