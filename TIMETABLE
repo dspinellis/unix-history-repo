@@ -1,0 +1,112 @@
+From owner-freebsd-hackers@freefall.cdrom.com Mon Jan  3 02:23:44 1994
+Status: RO
+X-VM-v5-Data: ([nil nil nil nil nil nil nil nil nil]
+	[nil nil nil nil nil nil nil "\"Jordan K. Hubbard\"" "jkh@whisker.lotus.ie" nil nil "1.1 milestone dates and details." "^From:" nil nil nil])
+Received: from freefall.cdrom.com by uvm-gen.emba.uvm.edu with SMTP id AA09741
+  (5.65/1.08); Mon, 3 Jan 94 02:23:43 -0500
+Received: from localhost by freefall.cdrom.com (8.3/KAOS-1)
+	id XAA00705; Sun, 2 Jan 1994 23:15:02 -0800
+Received: from whisker.lotus.ie by freefall.cdrom.com (8.3/KAOS-1)
+	id XAA00695; Sun, 2 Jan 1994 23:14:50 -0800
+Received: from localhost (jkh@localhost) by whisker.lotus.ie (8.6.4/8.6.3) id BAA02386; Mon, 3 Jan 1994 01:45:00 -0800
+Message-Id: <199401030945.BAA02386@whisker.lotus.ie>
+Precedence: bulk
+From: "Jordan K. Hubbard" <jkh@whisker.lotus.ie>
+Sender: freebsd-hackers-owner@freefall.cdrom.com
+To: freebsd-hackers@freefall.cdrom.com
+Cc: freebsd-admin@freefall.cdrom.com
+Subject: 1.1 milestone dates and details.
+Date: Mon, 3 Jan 1994 01:45:00 -0800
+
+Ok, so we're getting closer on putting this all together, and I think
+that's great.
+
+However, I'd like to note that we're already pretty tight on time if we're
+going to make the March 1st release date (and I believe we should), given
+some of the many intermediate milestones that we need to hit.
+
+Assuming March 1st, the hard part is to now set down some of these more
+critical intervening dates and do whatever we need to do to ensure
+that we DO hit them.  If we fall down on our BETA test (I think ALPHA is
+almost out of the question given the time we have), we won't have any hope
+of making the 1 March target.
+
+I'll take this opportunity to fire off a set of hypothetical dates which
+we can then wrangle over and hopefully ratify.
+
+Additionally, it's now a good time to start listing the desired features
+and make some realistic time estimates for each one to be completed.
+Please add your items to this list and then we can add 'em up and
+see which ones for which we have a chance of doing in time, and for which
+we don't have a hope in hell.
+
+
+--------------------------- cut cut cut cut cut -----------------------------
+
+MILESTONE LIST
+
+
+Date			What
+-----------		------------------------------------------------------
+30 Jan 1994		FEATURE FREEZE.  No additional features added.
+05 Feb 1994		Ship BETA set to small test group.
+15 Feb 1994		End BETA - initiate CODE FREEZE; critical fixes only
+20 Feb 1994		Ship Pre-release to test group for burn-in testing.
+25 Feb 1994		Release frozen - begin packaging.
+01 Mar 1994		1.1 FCS
+
+
+
+PLANNED FEATURES AND BUG FIXES LIST
+
+Feature/Fix				Est Completion Date	Who	Detail
+------------------------------------------------------------------------------
+C++ shared lib/debugging support	10 Jan 1994		JKH	[1]
+Shared libraries			05 Jan 1994		JKH
+/usr/ports cleanup			25 Jan 1994		ALL	[2]
+Integration of `nvi' from K. Bostic	28 Jan 1994		JKH	[3]
+texinfo added to std distribution	15 Jan 1994		JKH	[4]
+
+.. (add your own entries here) ..
+
+
+
+Detail
+------
+
+[1]  Shared C++ libs require /usr/lib/crt1.so target installed, and selective
+     dependency on same.  Shared libg++ requires merging with shared curses
+     library for now (may be different ways of doing this, investigating).
+
+[2]  ports collection requires thinning, rational makefiles, and other changes
+     required to bring into line with /usr/ports/CHECKLIST document.  Everyone
+     _must_ pitch in on this or ports will remain in disarray!
+
+[3]  Keith Bostic's nvi is nearing first release date.  If stable, will
+     replace elvis.
+
+[4]  Several ports require makeinfo, info is already on its way to becoming
+     documentation format of choice (options.texi being one example), and
+     having a default info reader in /usr/bin/info would be a very nice
+     enabling technology for doing more online docs in info format.
+
+.. (add your own entries here) ..
+
+------------------------------ cut cut cut cut -------------------------
+
+
+"Enforcement":
+
+Once we've ratified it, we should check a copy of this file into
+/usr/src somewhere so that it will be more publically accessible
+during the development cycle.  If you put something on this list,
+expect periodic mail saying "how's it going?  Ahem." as your due-date
+draws near.  If you _don't_ put something you want on the list,
+then you should both not expect to see it in, and you should expect
+massive hate-mail (and its possible removal) if you come trundling
+along and suddenly commit it without warning.
+
+Does all this sound reasonable to everyone?
+
+					Jordan
+
