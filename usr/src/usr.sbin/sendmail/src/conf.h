@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.71 (Berkeley) %G%
+ *	@(#)conf.h	8.72 (Berkeley) %G%
  */
 
 /*
@@ -109,7 +109,11 @@
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)	
 # define LA_TYPE	LA_FLOAT
+# define GIDSET_T	gid_t
 # define _PATH_UNIX	"/hp-ux"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
