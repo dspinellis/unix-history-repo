@@ -1,0 +1,201 @@
+The interface between GNU Emacs and Sun windows consists of the program
+etc/emacstool, the Lisp programs lisp/sun-*.el and lisp/term/sun.el,
+and the C source file src/sunfns.c.  It is documented with a man page,
+etc/emacstool.1.
+
+To enable use of these files and programs, define the configuration
+switch HAVE_SUN_WINDOWS in src/config.h before compiling Emacs.
+The definition of HAVE_SUN_WINDOWS must precede the #include m-sun3.h
+or #include m-sun4.h.
+If you must change PURESIZE, do so after the #include m-sun3.h
+
+This software is based on SunView for Sun UNIX 4.2 Release 3.2,
+and will not work "as is" on previous releases, eg 3.0 or 3.1.
+
+Using Emacstool with GNU Emacs:
+
+   The GNU Emacs files lisp/term/sun.el, lisp/sun-mouse.el,
+lisp/sun-fns.el, and src/sunfns.c provide emacs support for the
+Emacstool and function keys.  If your terminal type is SUN (that is,
+if your environment variable TERM is set to SUN), then Emacs will
+automatically load the file lisp/term/sun.el.  This, in turn, will
+ensure that sun-mouse.el is autoloaded when any mouse events are
+detected.  It is suggested that sun-mouse and sun-fns be
+included in your site-init.el file, so that they will always be loaded
+when running on a Sun workstation.  [Increase PURESIZE to 154000].
+
+   Support for the Sun function keys requires disconnecting the standard
+Emacs command Meta-[.  Therefore, the function keys are supported only
+if you do (setq sun-esc-bracket t) in your .emacs file.
+
+   The file src/sunfns.c defines several useful functions for emacs on
+the Sun.  Among these are procedures to pop-up SunView menus, put and
+get from the SunView selection [STUFF] buffer, and a procedure for
+changing the cursor icon.  If you want to define cursor icons, try
+using the functions in lisp/sun-cursors.el.
+
+   The file lisp/sun-mouse.el includes a mass of software for defining
+bindings for mouse events.  Any function can be called or any form
+evaluated as a result of a mouse event.  If you want a pop-up menu,
+your function can call sun-menu-evaluate.  This will bring up a
+SunView walking menu of your choice.
+
+   Use the macro (defmenu menu-name &rest menu-items) to define menu
+objects.  Each menu item is a cons of ("string" . VALUE), VALUE is
+evaluated when the string item is picked.  If VALUE is a menu, then a
+pullright item is created.  
+
+   This version also includes support for copying to and from the
+sun-windows "stuff" selection.  The keyboard bindings defined in 
+lisp/sun-fns.el let you move the current region to the "STUFF"
+selection and vice versa.  Just set point with the left button, set
+mark with the middle button, (the region is automatically copied to
+"STUFF") then switch to a shelltool, and "Stuff" will work.  Going the
+other way, the main right button menu contains a "Stuff Selection"
+command that works just like in shelltool.  [The Get and Put function
+keys are also assigned to these functions, so you don't need the mouse
+or even emacstool to make this work.]
+
+   Until someone write code to read the textsw "Selection Shelf", it is
+not possible to copy directly from a textsw to emacs, you must go through
+the textsw "STUFF" selection.
+
+   The Scroll-bar region is not a SunView scrollbar.  It really should
+be called the "Right-Margin" region.  The scroll bar region is basically
+the rightmost five columns (see documentation on variable scrollbar-width).
+Mouse hits in this region can have special bindings, currently those binding
+effect scrolling of the window, and so are refered to as the "Scroll-bar"
+region.
+
+   For information on what mouse bindings are in effect, use the command
+M-x Describe-mouse-bindings, or the quick pop-up menu item "Mouse-Help".
+
+
+GNU Emacs EXAMPLES:
+   See definitions in lisp/sun-fns.el for examples.
+
+   You can redefine the cursor that is displayed in the emacs window.
+On initialization, it is set to a right arrow.  See lisp/sun-cursors.el
+for additional cursors, how to define them, how to edit them.
+
+BUGS:
+    It takes a few milliseconds to create a menu before it pops up.
+Someone who understands the GNU Garbage Collector might see if it
+is possible for defmenu to create a SunView menu struct that does
+not get destroyed by Garbage Collection.
+
+   An outline of the files used to support Sun Windows and the mouse.
+
+etc/SUN-SUPPORT.
+    This document.
+
+etc/emacstool.1:
+    Added: an nroff'able man page for emacstool.
+
+etc/emacstool.c:
+    Encodes all the function keys internally, and passes non-window 
+system arguments to emacs.
+
+etc/emacs.icon:
+    The "Kitchen Sink" GNU Emacs icon.
+
+src/sunfns.c:
+    This contains the auxilary functions that allow elisp code to interact
+with the sunwindows, selection, and menu functions.
+
+lisp/sun-mouse.el:
+    Defines the lisp function which is called when a mouse hit is found
+in the input queue.  This handler decodes the mouse hit via a keymap-like
+structure sensitive to a particular window and where in the window the
+hit occured (text-region, right-margin, mode-line).  Three variables
+are bound (*mouse-window* *mouse-x* *mouse-y*) and the selected function
+is called. 
+    See documentation on "define-mouse" or look at lisp/sun-fns.el
+to see how this is done.
+    Defines two functions to pass between region and sun-selection
+    Defines functions for interfacing with the Menu.
+During menu evaluation, the variables *menu-window* *menu-x* *menu-y* are bound.
+
+lisp/sun-fns.el
+    The definition of the default menu and mouse function bindings.
+
+lisp/sun-cursors.el
+    Defines a number of alternate cursors, and an editor for them.
+    The editor is also a demonstration of mouse/menu utilization.
+
+lisp/term/sun.el
+    Sets up the keymap to make the sun function keys do useful things.
+Also includes the setup/initialization code for running under emacstool,
+which makes "\C-Z" just close the emacstool window (-WI emacs.icon).
+
+	Jeff Peck, Sun Microsystems, Inc		<peck@sun.com>
+
+
+Subject: Making multi-line scrolling really work:
+
+In your .defaults file, include the line:
+/Tty/Retained	"Yes"
+That way, the terminal emulator can do text moves using bitblt, 
+instead of repaint.
+
+If that's not enough for you, then tell unix and emacs that 
+the sun terminal supports multi-line and multi-character insert/delete.  
+Add this patch to your /etc/termcap file:
+
+*** /etc/termcap.~1~    Mon Sep 15 12:34:23 1986
+--- /etc/termcap        Mon Feb  9 17:34:08 1987
+***************
+*** 32,39 ****
+--- 32,40 ----
+  Mu|sun|Sun Microsystems Workstation console:\
+        :am:bs:km:mi:ms:pt:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:\
+        :ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:rs=\E[s:\
+        :al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
++       :AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:\
+        :up=\E[A:nd=\E[C:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:\
+        :k1=\E[224z:k2=\E[225z:k3=\E[226z:k4=\E[227z:k5=\E[228z:\
+        :k6=\E[229z:k7=\E[230z:k8=\E[231z:k9=\E[232z:
+  M-|sun-nic|sune|Sun Microsystems Workstation console without insert character:\
+
+
+If you don't have the program "patch", just add the line:
+        :AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:\
+
+casetek@crvax.sri.com says:
+
+Those of you using GNU Emacs on Sun workstations under
+3.2 may be interested in reducing memory utilization in
+the emacstool via the Sun toolmerge facility.  The technique
+is described in the Release 3.2 Manual starting on page
+71.  The following is a summary of how it would apply
+to merging emacstool into the basetools.
+
+1) Change the main procedure declaration in emacstool.c to:
+
+   #ifdef SUN_TOOLMERGE
+   emacstool_main (argc, argv);
+   #else
+   main (argc, argv)
+   #endif
+
+   This will allow creation of either standard or toolmerge
+   versions.
+
+2) Copy emacstool.o into directory /usr/src/sun/suntool.
+3) make CFLAGS="-g -DSUN_TOOLMERGE" emacstool.o
+4) Add the following line to basetools.h
+
+  "emacstool",emacstool_main,
+
+5) Add the following line to toolmerge.c.
+
+   extern emacstool_main();
+
+6) make basetools MOREOBJS="emacstool.o"
+7) make install_bins
+
+To invoke the toolmerged version, you must exit suntools and
+re-start it.  Make sure that /usr/bin occurs before the directory
+in which you installed the standard (non-toolmerged) version.
+
+
