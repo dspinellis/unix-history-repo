@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -51,6 +51,7 @@
 #include "syslog.h"
 
 #define	TRUE	1
+#define	FALSE	0
 
 /*
  * External data, mostly RPC constants in XDR form
@@ -58,6 +59,7 @@
 extern u_long rpc_reply, rpc_msgdenied, rpc_mismatch, rpc_vers, rpc_auth_unix,
 	rpc_msgaccepted, rpc_call;
 extern u_long nfs_prog, nfs_vers;
+/* Maybe these should be bits in a u_long ?? */
 extern int nonidempotent[NFS_NPROCS];
 int	nfs_sbwait();
 void	nfs_disconnect();
@@ -142,7 +144,7 @@ nfs_connect(nmp)
 		 */
 		s = splnet();
 		while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
-			sleep((caddr_t)&so->so_timeo, PZERO-2);
+			(void) tsleep((caddr_t)&so->so_timeo, PSOCK, "nfscon", 0);
 		splx(s);
 		if (so->so_error) {
 			error = so->so_error;
@@ -150,7 +152,7 @@ nfs_connect(nmp)
 		}
 	}
 	if (nmp->nm_sotype == SOCK_DGRAM) {
-		if (nmp->nm_flag & (NFSMNT_SOFT | NFSMNT_INT)) {
+		if (nmp->nm_flag & (NFSMNT_SOFT | NFSMNT_SPONGY | NFSMNT_INT)) {
 			so->so_rcv.sb_timeo = (5 * hz);
 			so->so_snd.sb_timeo = (5 * hz);
 		} else {
@@ -158,10 +160,10 @@ nfs_connect(nmp)
 			so->so_snd.sb_timeo = 0;
 		}
 		if (error = soreserve(so, nmp->nm_wsize + NFS_MAXPKTHDR,
-		    (nmp->nm_rsize + NFS_MAXPKTHDR) * 4))
+		    nmp->nm_rsize + NFS_MAXPKTHDR))
 			goto bad;
 	} else {
-		if (nmp->nm_flag & NFSMNT_INT) {
+		if (nmp->nm_flag & (NFSMNT_SOFT | NFSMNT_SPONGY | NFSMNT_INT)) {
 			so->so_rcv.sb_timeo = (5 * hz);
 			so->so_snd.sb_timeo = (5 * hz);
 		} else {
@@ -183,7 +185,7 @@ nfs_connect(nmp)
 			sosetopt(so, IPPROTO_TCP, TCP_NODELAY, m);
 		}
 		if (error = soreserve(so,
-		    (nmp->nm_wsize + NFS_MAXPKTHDR + sizeof(u_long)) * 2,
+		    nmp->nm_wsize + NFS_MAXPKTHDR + sizeof(u_long),
 		    nmp->nm_rsize + NFS_MAXPKTHDR + sizeof(u_long)))
 			goto bad;
 	}
@@ -233,7 +235,7 @@ nfs_reconnect(rep, nmp)
 #endif /* lint */
 		if ((nmp->nm_flag & NFSMNT_INT) && nfs_sigintr(rep->r_procp))
 			return (EINTR);
-		tsleep((caddr_t)&lbolt, PSOCK, "nfscon", 0);
+		(void) tsleep((caddr_t)&lbolt, PSOCK, "nfscon", 0);
 	}
 	if (rep->r_procp)
 		tprintf(rep->r_procp->p_session,
@@ -566,7 +568,7 @@ nfs_reply(nmp, myrep)
 		 * Also necessary for connection based protocols to avoid
 		 * race conditions during a reconnect.
 		 */
-		nfs_solock(&nmp->nm_flag, 1);
+		nfs_solock(&nmp->nm_flag);
 		/* Already received, bye bye */
 		if (myrep->r_mrep != NULL) {
 			nfs_sounlock(&nmp->nm_flag);
@@ -679,12 +681,13 @@ nfs_reply(nmp, myrep)
  *	  by mrep or error
  * nb: always frees up mreq mbuf list
  */
-nfs_request(vp, mreq, xid, procnum, procp, mp, mrp, mdp, dposp)
+nfs_request(vp, mreq, xid, procnum, procp, tryhard, mp, mrp, mdp, dposp)
 	struct vnode *vp;
 	struct mbuf *mreq;
 	u_long xid;
 	int procnum;
 	struct proc *procp;
+	int tryhard;
 	struct mount *mp;
 	struct mbuf **mrp;
 	struct mbuf **mdp;
@@ -710,7 +713,8 @@ nfs_request(vp, mreq, xid, procnum, procp, mp, mrp, mdp, dposp)
 	rep->r_nmp = nmp;
 	rep->r_vp = vp;
 	rep->r_procp = procp;
-	if (nmp->nm_flag & NFSMNT_SOFT)
+	if ((nmp->nm_flag & NFSMNT_SOFT) ||
+	    ((nmp->nm_flag & NFSMNT_SPONGY) && !tryhard))
 		rep->r_retry = nmp->nm_retry;
 	else
 		rep->r_retry = NFS_MAXREXMIT + 1;	/* past clip limit */
@@ -721,7 +725,7 @@ nfs_request(vp, mreq, xid, procnum, procp, mp, mrp, mdp, dposp)
 	 * - idempotent requests on SOCK_DGRAM use 0
 	 * - Reliable transports, NFS_RELIABLETIMEO
 	 *   Timeouts are still done on reliable transports to ensure detection
-	 *   of connection loss.
+	 *   of excessive connection delay.
 	 */
 	if (nmp->nm_sotype != SOCK_DGRAM)
 		rep->r_timerinit = -NFS_RELIABLETIMEO;
@@ -777,7 +781,7 @@ nfs_request(vp, mreq, xid, procnum, procp, mp, mrp, mdp, dposp)
 		splx(s);
 		m = m_copym(mreq, 0, M_COPYALL, M_WAIT);
 		if (nmp->nm_soflags & PR_CONNREQUIRED)
-			nfs_solock(&nmp->nm_flag, 1);
+			nfs_solock(&nmp->nm_flag);
 		error = nfs_send(nmp->nm_so, nmp->nm_nam, m, rep);
 		if (nmp->nm_soflags & PR_CONNREQUIRED)
 			nfs_sounlock(&nmp->nm_flag);
@@ -868,7 +872,7 @@ nfsmout:
  * - fill in the cred struct.
  */
 nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
-	lockp, msk, mtch)
+	msk, mtch)
 	struct socket *so;
 	u_long prog;
 	u_long vers;
@@ -880,7 +884,6 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	u_long *retxid;
 	u_long *procnum;
 	register struct ucred *cr;
-	int *lockp;
 	struct mbuf *msk, *mtch;
 {
 	register int i;
@@ -892,9 +895,7 @@ nfs_getreq(so, prog, vers, maxproc, nam, mrp, mdp, dposp, retxid, procnum, cr,
 	int len;
 
 	if (so->so_proto->pr_flags & PR_CONNREQUIRED) {
-		nfs_solock(lockp, 0);
 		error = nfs_receive(so, nam, &mrep, (struct nfsreq *)0);
-		nfs_sounlock(lockp);
 	} else {
 		mrep = (struct mbuf *)0;
 		do {
@@ -1074,18 +1075,9 @@ nfs_timer()
 		}
 		if (rep->r_flags & R_TIMING)	/* update rtt in mount */
 			nmp->nm_rtt++;
-		if (nmp->nm_sotype != SOCK_DGRAM)
-			continue;
 		/* If not timed out */
 		if (++rep->r_timer < nmp->nm_rto)
 			continue;
-#ifdef notdef
-		if (nmp->nm_sotype != SOCK_DGRAM) {
-			rep->r_flags |= R_MUSTRESEND;
-			rep->r_timer = rep->r_timerinit;
-			continue;
-		}
-#endif
 		/* Do backoff and save new timeout in mount */
 		if (rep->r_flags & R_TIMING) {
 			nfs_backofftimer(nmp);
@@ -1108,7 +1100,7 @@ nfs_timer()
 		 * Check for server not responding
 		 */
 		if ((rep->r_flags & R_TPRINTFMSG) == 0 &&
-		     rep->r_rexmit > 8) {
+		     rep->r_rexmit > NFS_FISHY) {
 			if (rep->r_procp && rep->r_procp->p_session)
 				tprintf(rep->r_procp->p_session,
 					"Nfs server %s, not responding\n",
@@ -1119,11 +1111,13 @@ nfs_timer()
 					nmp->nm_mountp->mnt_stat.f_mntfromname);
 			rep->r_flags |= R_TPRINTFMSG;
 		}
-		if (rep->r_rexmit > rep->r_retry) {	/* too many */
+		if (rep->r_rexmit >= rep->r_retry) {	/* too many */
 			nfsstats.rpctimeouts++;
 			rep->r_flags |= R_SOFTTERM;
 			continue;
 		}
+		if (nmp->nm_sotype != SOCK_DGRAM)
+			continue;
 
 		/*
 		 * If there is enough space and the window allows..
@@ -1294,17 +1288,13 @@ nfs_sigintr(p)
  * and also to avoid race conditions between the processes with nfs requests
  * in progress when a reconnect is necessary.
  */
-nfs_solock(flagp, cant_intr)
-	int *flagp;
-	int cant_intr;
+nfs_solock(flagp)
+	register int *flagp;
 {
 
 	while (*flagp & NFSMNT_SCKLOCK) {
 		*flagp |= NFSMNT_WANTSCK;
-		if (cant_intr)
-			(void) sleep((caddr_t)flagp, PZERO-7);
-		else
-			(void) tsleep((caddr_t)flagp, PZERO+1, "nfssolck", 0);
+		(void) tsleep((caddr_t)flagp, PZERO-1, "nfsolck", 0);
 	}
 	*flagp |= NFSMNT_SCKLOCK;
 }
@@ -1313,7 +1303,7 @@ nfs_solock(flagp, cant_intr)
  * Unlock the stream socket for others.
  */
 nfs_sounlock(flagp)
-	int *flagp;
+	register int *flagp;
 {
 
 	if ((*flagp & NFSMNT_SCKLOCK) == 0)

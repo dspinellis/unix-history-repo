@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -166,13 +166,13 @@ struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
  */
 nfsm_mbuftouio(mrep, uiop, siz, dpos)
 	struct mbuf **mrep;
-	struct uio *uiop;
+	register struct uio *uiop;
 	int siz;
 	caddr_t *dpos;
 {
+	register char *mbufcp, *uiocp;
 	register int xfer, left, len;
 	register struct mbuf *mp;
-	register char *mbufcp, *uiocp;
 	long uiosiz, rem;
 	int error = 0;
 
@@ -244,12 +244,11 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 	int siz;
 	caddr_t *bpos;
 {
-	register struct mbuf *mp;
-	struct mbuf *mp2;
-	long xfer, left, uiosiz;
-	int clflg;
-	int rem, len;
-	char *cp, *uiocp;
+	register char *uiocp;
+	register struct mbuf *mp, *mp2;
+	register int xfer, left, len;
+	int uiosiz, clflg, rem;
+	char *cp;
 
 	if (siz > MLEN)		/* or should it >= MCLBYTES ?? */
 		clflg = 1;

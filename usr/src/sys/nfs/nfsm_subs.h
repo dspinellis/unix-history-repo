@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.8 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -178,8 +178,8 @@ extern struct mbuf *nfsm_reqh();
 
 #define nfsm_rndup(a)	(((a)+3)&(~0x3))
 
-#define	nfsm_request(v, t, p)	\
-		if (error = nfs_request((v), mreq, xid, (t), (p), \
+#define	nfsm_request(v, t, p, h)	\
+		if (error = nfs_request((v), mreq, xid, (t), (p), (h), \
 		   (v)->v_mount, &mrep, &md, &dpos)) \
 			goto nfsmout
 

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,11 +42,12 @@
  */
 nfs_bioread(vp, uio, ioflag, cred)
 	register struct vnode *vp;
-	struct uio *uio;
+	register struct uio *uio;
 	int ioflag;
 	struct ucred *cred;
 {
 	register struct nfsnode *np = VTONFS(vp);
+	register int biosize;
 	struct buf *bp;
 	struct vattr vattr;
 	daddr_t lbn, bn, rablock;
@@ -62,6 +63,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 		return (0);
 	if (uio->uio_offset < 0 && vp->v_type != VDIR)
 		return (EINVAL);
+	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
 	/*
 	 * If the file's modify time on the server has changed since the
 	 * last read rpc or you have written to the file,
@@ -72,7 +74,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 	 * NB: This implies that cache data can be read when up to
 	 * NFS_ATTRTIMEO seconds out of date. If you find that you need current
 	 * attributes this could be forced by setting n_attrstamp to 0 before
-	 * the nfs_getattr() call.
+	 * the nfs_dogetattr() call.
 	 */
 	if (vp->v_type != VLNK) {
 		if (np->n_flag & NMODIFIED) {
@@ -80,11 +82,11 @@ nfs_bioread(vp, uio, ioflag, cred)
 			vinvalbuf(vp, TRUE);
 			np->n_attrstamp = 0;
 			np->n_direofoffset = 0;
-			if (error = nfs_getattr(vp, &vattr, cred))
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
 				return (error);
 			np->n_mtime = vattr.va_mtime.tv_sec;
 		} else {
-			if (error = nfs_getattr(vp, &vattr, cred))
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
 				return (error);
 			if (np->n_mtime != vattr.va_mtime.tv_sec) {
 				np->n_direofoffset = 0;
@@ -97,26 +99,26 @@ nfs_bioread(vp, uio, ioflag, cred)
 	    switch (vp->v_type) {
 	    case VREG:
 		nfsstats.biocache_reads++;
-		lbn = uio->uio_offset >> NFS_BIOSHIFT;
-		on = uio->uio_offset & (NFS_BIOSIZE-1);
-		n = MIN((unsigned)(NFS_BIOSIZE - on), uio->uio_resid);
+		lbn = uio->uio_offset / biosize;
+		on = uio->uio_offset & (biosize-1);
+		n = MIN((unsigned)(biosize - on), uio->uio_resid);
 		diff = np->n_size - uio->uio_offset;
 		if (diff <= 0)
 			return (error);
 		if (diff < n)
 			n = diff;
-		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
-		rablock = (lbn+1)*(NFS_BIOSIZE/DEV_BSIZE);
+		bn = lbn*(biosize/DEV_BSIZE);
+		rablock = (lbn+1)*(biosize/DEV_BSIZE);
 		if (vp->v_lastr + 1 == lbn &&
 		    np->n_size > (rablock * DEV_BSIZE))
-			error = breada(vp, bn, NFS_BIOSIZE, rablock, NFS_BIOSIZE,
+			error = breada(vp, bn, biosize, rablock, biosize,
 				cred, &bp);
 		else
-			error = bread(vp, bn, NFS_BIOSIZE, cred, &bp);
+			error = bread(vp, bn, biosize, cred, &bp);
 		vp->v_lastr = lbn;
 		if (bp->b_resid) {
-		   diff = (on >= (NFS_BIOSIZE-bp->b_resid)) ? 0 :
-			(NFS_BIOSIZE-bp->b_resid-on);
+		   diff = (on >= (biosize-bp->b_resid)) ? 0 :
+			(biosize-bp->b_resid-on);
 		   n = MIN(n, diff);
 		}
 		break;
@@ -141,7 +143,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
 	    switch (vp->v_type) {
 	    case VREG:
-		if (n+on == NFS_BIOSIZE || uio->uio_offset == np->n_size)
+		if (n+on == biosize || uio->uio_offset == np->n_size)
 			bp->b_flags |= B_AGE;
 		break;
 	    case VLNK:
@@ -165,6 +167,7 @@ nfs_write(vp, uio, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
+	register int biosize;
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
 	struct vattr vattr;
@@ -176,15 +179,17 @@ nfs_write(vp, uio, ioflag, cred)
 	if (vp->v_type != VREG)
 		return (EIO);
 	/* Should we try and do this ?? */
-	if (ioflag & IO_APPEND) {
+	if (ioflag & (IO_APPEND | IO_SYNC)) {
 		if (np->n_flag & NMODIFIED) {
 			np->n_flag &= ~NMODIFIED;
 			vinvalbuf(vp, TRUE);
 		}
-		np->n_attrstamp = 0;
-		if (error = nfs_getattr(vp, &vattr, cred))
-			return (error);
-		uio->uio_offset = np->n_size;
+		if (ioflag & IO_APPEND) {
+			np->n_attrstamp = 0;
+			if (error = nfs_dogetattr(vp, &vattr, cred, 1))
+				return (error);
+			uio->uio_offset = np->n_size;
+		}
 		return (nfs_writerpc(vp, uio, cred, u.u_procp));
 	}
 #ifdef notdef
@@ -204,17 +209,23 @@ nfs_write(vp, uio, ioflag, cred)
 		psignal(u.u_procp, SIGXFSZ);
 		return (EFBIG);
 	}
+	/*
+	 * I use nm_rsize, not nm_wsize so that all buffer cache blocks
+	 * will be the same size within a filesystem. nfs_writerpc will
+	 * still use nm_wsize when sizing the rpc's.
+	 */
+	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
 	np->n_flag |= NMODIFIED;
 	do {
 		nfsstats.biocache_writes++;
-		lbn = uio->uio_offset >> NFS_BIOSHIFT;
-		on = uio->uio_offset & (NFS_BIOSIZE-1);
-		n = MIN((unsigned)(NFS_BIOSIZE - on), uio->uio_resid);
+		lbn = uio->uio_offset / biosize;
+		on = uio->uio_offset & (biosize-1);
+		n = MIN((unsigned)(biosize - on), uio->uio_resid);
 		if (uio->uio_offset+n > np->n_size)
 			np->n_size = uio->uio_offset+n;
-		bn = lbn*(NFS_BIOSIZE/DEV_BSIZE);
+		bn = lbn*(biosize/DEV_BSIZE);
 again:
-		bp = getblk(vp, bn, NFS_BIOSIZE);
+		bp = getblk(vp, bn, biosize);
 		if (bp->b_wcred == NOCRED) {
 			crhold(cred);
 			bp->b_wcred = cred;
@@ -242,7 +253,7 @@ again:
 			brelse(bp);
 			return (error);
 		}
-		if ((n+on) == NFS_BIOSIZE) {
+		if ((n+on) == biosize) {
 			bp->b_flags |= B_AGE;
 			bp->b_proc = (struct proc *)0;
 			bawrite(bp);

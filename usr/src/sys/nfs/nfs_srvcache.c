@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_srvcache.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -159,7 +159,7 @@ loop:
 		    nfs_netaddr_match(nam, &rp->rc_nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
-				sleep((caddr_t)rp, PZERO-1);
+				(void) tsleep((caddr_t)rp, PZERO-1, "nfsrc", 0);
 				goto loop;
 			}
 			rp->rc_flag |= RC_LOCKED;
@@ -199,7 +199,7 @@ loop:
 	rp = nfsrvcachehead.rc_prev;
 	while ((rp->rc_flag & RC_LOCKED) != 0) {
 		rp->rc_flag |= RC_WANTED;
-		sleep((caddr_t)rp, PZERO-1);
+		(void) tsleep((caddr_t)rp, PZERO-1, "nfsrc", 0);
 	}
 	remque(rp);
 	put_at_head(rp);
@@ -239,7 +239,7 @@ loop:
 		    nfs_netaddr_match(nam, &rp->rc_nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
-				sleep((caddr_t)rp, PZERO-1);
+				(void) tsleep((caddr_t)rp, PZERO-1, "nfsrc", 0);
 				goto loop;
 			}
 			rp->rc_flag |= RC_LOCKED;
