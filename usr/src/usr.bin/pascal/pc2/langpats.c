@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.1 %G%";
+static char sccsid[] = "@(#)langpats.c 1.2 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -48,10 +48,10 @@ struct pats {
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	(sp),r0\n\
-	bleq	1f\n\
+	jleq	1f\n\
 	subl2	r0,(sp)\n\
 	movc3	r0,(r1),(r3)\n\
-	brb	1b\n\
+	jbr	1b\n\
 1:\n\
 	movl	(sp)+,r0\n\
 	addl2	$8,sp\n\
@@ -62,10 +62,10 @@ struct pats {
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	(sp),r0\n\
-	bleq	1f\n\
+	jleq	1f\n\
 	subl2	r0,(sp)\n\
 	movc5	$0,(r1),$0,r0,(r3)\n\
-	brb	1b\n\
+	jbr	1b\n\
 1:\n\
 	movl	(sp)+,r0\n\
 	addl2	$4,sp\n\
@@ -78,12 +78,12 @@ struct pats {
 1:\n\
 	movzwl	$65535,r0\n\
 	cmpl	r4,r0\n\
-	bleq	1f\n\
+	jleq	1f\n\
 	subl2	r0,r4\n\
 	locc	r5,r0,(r1)\n\
-	beql	1b\n\
+	jeql	1b\n\
 	addl2	r4,r0\n\
-	brb	2f\n\
+	jbr	2f\n\
 1:\n\
 	locc	r5,r4,(r1)\n\
 2:\n" },
@@ -118,64 +118,132 @@ struct pats {
 	movl	(sp)+,r0\n" },
 
 	{ "RELEQ\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	beql	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
-	movl	$1,r0\n\
-2:\n" },
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+	jneq	3f\n\
+	incl	r0\n\
+	jbr	4f\n\
+3:\n\
+	clrl	r0\n\
+4:\n" },
 
 	{ "RELNE\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	bneq	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+	jeql	4f\n\
+3:\n\
 	movl	$1,r0\n\
-2:\n" },
+4:\n" },
 
 	{ "RELSLT\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	blss	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+3:\n\
+	jlss	4f\n\
+	clrl	r0\n\
+	jbr	5f\n\
+4:\n\
 	movl	$1,r0\n\
-2:\n" },
+5:\n" },
 
 	{ "RELSLE\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	bleq	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+3:\n\
+	jleq	4f\n\
+	clrl	r0\n\
+	jbr	5f\n\
+4:\n\
 	movl	$1,r0\n\
-2:\n" },
+5:\n" },
 
 	{ "RELSGT\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	bgtr	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+3:\n\
+	jgtr	4f\n\
+	clrl	r0\n\
+	jbr	5f\n\
+4:\n\
 	movl	$1,r0\n\
-2:\n" },
+5:\n" },
 
 	{ "RELSGE\n",
-"	movl	(sp)+,r1\n\
-	cmpc3	r1,*(sp)+,*(sp)+\n\
-	bgeq	1f\n\
-	clrl	r0\n\
-	brb	2f\n\
+"	movl	(sp)+,r4\n\
+	movl	(sp)+,r1\n\
+	movl	(sp)+,r3\n\
 1:\n\
+	movzwl	$65535,r0\n\
+	cmpl	r4,r0\n\
+	jleq	2f\n\
+	subl2	r0,r4\n\
+	cmpc3	r0,(r1),(r3)\n\
+	jeql	1b\n\
+	jbr	3f\n\
+2:\n\
+	cmpc3	r4,(r1),(r3)\n\
+3:\n\
+	jgeq	4f\n\
+	clrl	r0\n\
+	jbr	5f\n\
+4:\n\
 	movl	$1,r0\n\
-2:\n" },
+5:\n" },
 
 	{ "ADDT\n",
 "	movl	(sp)+,r0\n\
@@ -213,8 +281,8 @@ struct pats {
 	movl	(sp)+,r1\n\
 	subl2	(sp)+,r1\n\
 	cmpl	r1,(sp)+\n\
-	bgtru	1f\n\
-	bbc	r1,*(sp)+,1f\n\
+	jgtru	1f\n\
+	jbc	r1,*(sp)+,1f\n\
 	movl	$1,r0\n\
 1:\n" }
 };
