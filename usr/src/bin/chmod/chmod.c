@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	5.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -86,7 +86,7 @@ chmodr(dir, mode)
 {
 	register DIR *dirp;
 	register struct direct *dp;
-	register struct stat st;
+	struct stat st;
 	char savedir[1024];
 	int ecode;
 
