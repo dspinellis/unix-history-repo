@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	7.3 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
  */
@@ -274,7 +274,7 @@ fdesc_setattr(ap)
 		break;
 
 	case DTYPE_SOCKET:
-		error = EOPNOTSUPP;
+		error = 0;
 		break;
 
 	default:
