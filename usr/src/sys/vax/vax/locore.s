@@ -1,4 +1,4 @@
-/*	locore.s	4.63	82/03/19	*/
+/*	locore.s	4.64	82/04/11	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -343,7 +343,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*MAXNNEXUS	)
-	SYSMAP(UMEMmap	,umem		,16*MAXNUBA	)
+	SYSMAP(UMEMmap	,umem		,512*MAXNUBA	)
 	SYSMAP(UMBAend	,umbaend	,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)

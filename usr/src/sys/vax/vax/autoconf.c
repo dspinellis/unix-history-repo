@@ -1,4 +1,4 @@
-/*	autoconf.c	4.34	82/03/31	*/
+/*	autoconf.c	4.35	82/04/11	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -401,8 +401,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	uhp->uh_lastiv = 0x200;
 
-	/* THIS IS A CHEAT: USING THE FACT THAT UMEM and NEXI ARE SAME SIZE */
-	nxaccess((struct nexus *)pumem, memmap);
+	ubaaccess(pumem, memmap);
 #if VAX780
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
@@ -417,7 +416,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
 
-#define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x1fff))
+#define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x3ffff))
 	/*
 	 * Check each unibus mass storage controller.
 	 * For each one which is potentially on this uba,
@@ -428,7 +427,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		if (um->um_ubanum != numuba && um->um_ubanum != '?')
 			continue;
 		addr = (u_short)um->um_addr;
-		reg = ubaddr(addr);
+		reg = ubaddr(addr|0x3e000);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
@@ -502,7 +501,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		    ui->ui_alive || ui->ui_slave != -1)
 			continue;
 		addr = (u_short)ui->ui_addr;
-		reg = ubaddr(addr);
+		reg = ubaddr(addr|0x3e000);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
 #if VAX780
@@ -573,6 +572,19 @@ nxaccess(physa, pte)
 {
 	register int i = btop(sizeof (struct nexus));
 	register unsigned v = btop(physa);
+	
+	do
+		*(int *)pte++ = PG_V|PG_KW|v++;
+	while (--i > 0);
+	mtpr(TBIA, 0);
+}
+
+ubaaccess(pumem, pte)
+	caddr_t pumem;
+	register struct pte *pte;
+{
+	register int i = 512;
+	register unsigned v = btop(pumem);
 	
 	do
 		*(int *)pte++ = PG_V|PG_KW|v++;
