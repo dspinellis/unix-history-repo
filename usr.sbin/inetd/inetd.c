@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)inetd.c	5.30 (Berkeley) 6/3/91";*/
-static char rcsid[] = "$Id: inetd.c,v 1.3 1993/10/11 21:47:50 jkh Exp $";
+static char rcsid[] = "$Id: inetd.c,v 1.4 1993/10/18 23:03:20 rgrimes Exp $";
 #endif /* not lint */
 
 /*
@@ -634,7 +634,8 @@ setsockopt(fd, SOL_SOCKET, opt, (char *)&on, sizeof (on))
 		return;
 	}
         if (sep->se_rpc) {
-                int i, len;
+                int i, len = sizeof(struct sockaddr);
+
                 if (getsockname(sep->se_fd, (struct sockaddr *)&sep->se_ctrladdr,
                                 &len) < 0) {
                         syslog(LOG_ERR, "%s/%s: getsockname: %m",
