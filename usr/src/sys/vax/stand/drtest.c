@@ -11,6 +11,8 @@
 #define CHUNK	32
 #define SECTSIZ	512
 
+char diskname[] = "xx(00,0)";
+
 main()
 {
 	char buf[50], buffer[CHUNK*SECTSIZ];
@@ -20,15 +22,14 @@ main()
 
 	printf("Testprogram for stand-alone hp or up driver\n");
 askunit:
-	printf("Enter device name (e.g, hp(0,0) ) or q to quit >");
+	printf("Enter disk name [ type(adapter,unit), e.g, hp(1,3) ] > ");
 	gets(buf);
-	unit = (int)*(buf+3) - '0';
-	if (unit <0 || unit > 3 ) {
-		printf("unit number out of range\n");
-		goto askunit;
-	}
-	if ((fd=open(buf,0)) < 0) {
-	     printf("Can't open %s \n",buf);
+	unit = (*(buf+3) - '0')*8 + *(buf+5)-'0';
+	diskname[0] = *buf;
+	diskname[1] = *(buf+1);
+	diskname[3] = '0' + unit/10;
+	diskname[4] = '0' + unit%10;
+	if ((fd=open(diskname,0)) < 0) {
 		goto askunit;
 	}
 	ioctl(fd,SAIODEVDATA,&st);
