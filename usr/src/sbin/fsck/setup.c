@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)setup.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)setup.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -65,7 +65,7 @@ setup(dev)
 	/*
 	 * Read in the super block and its summary info.
 	 */
-	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) == 0)
+	if (bread(&dfile, (char *)&sblock, super, (long)SBSIZE) != 0)
 		return (0);
 	sblk.b_bno = super;
 	sblk.b_size = SBSIZE;
@@ -90,8 +90,8 @@ setup(dev)
 	 */
 	if (bflag)
 		goto sbok;
-	if (getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1),
-	    sblock.fs_sbsize) == 0)
+	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
+	if (asblk.b_errs != NULL)
 		return (0);
 	altsblock.fs_link = sblock.fs_link;
 	altsblock.fs_rlink = sblock.fs_rlink;
@@ -124,7 +124,7 @@ sbok:
 		sblock.fs_csp[j] = (struct csum *)calloc(1, (unsigned)size);
 		if (bread(&dfile, (char *)sblock.fs_csp[j],
 		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
-		    size) == 0)
+		    size) != 0)
 			return (0);
 	}
 	/*

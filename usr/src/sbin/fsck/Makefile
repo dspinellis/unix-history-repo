@@ -1,8 +1,7 @@
-#	@(#)Makefile	5.5	(Berkeley)	85/02/08
+#	@(#)Makefile	5.6	(Berkeley)	85/05/31
 #
 DESTDIR=
 CFLAGS=	-O
-INCPATH= -I/usr/include/sys
 LFLAGS=	
 
 # The program itself
@@ -30,13 +29,13 @@ ${PROG}: ${OBJS} ${HDRS}
 	cc ${LFLAGS} -o ${PROG} ${OBJS}
 
 ${LOCOBJS}:
-	cc ${CFLAGS} ${INCPATH} -c $*.c
+	cc ${CFLAGS} -c $*.c
 
 ufs_subr.o:
-	cc ${CFLAGS} ${INCPATH} -c /sys/sys/ufs_subr.c
+	cc ${CFLAGS} -c /sys/sys/ufs_subr.c
 
 ufs_tables.o:
-	cc ${CFLAGS} ${INCPATH} -c /sys/sys/ufs_tables.c
+	cc ${CFLAGS} -I/usr/include/sys -c /sys/sys/ufs_tables.c
 
 install: ${PROG}
 	install ${PROG} ${DESTDIR}/etc/${PROG}

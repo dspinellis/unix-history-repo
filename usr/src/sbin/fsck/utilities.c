@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)utilities.c	3.5 (Berkeley) %G%";
+static char version[] = "@(#)utilities.c	3.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -90,13 +90,10 @@ getblk(bp, blk, size)
 	if (bp->b_bno == dblk)
 		return (bp);
 	flush(fcp, bp);
-	if (bread(fcp, bp->b_un.b_buf, dblk, size) != 0) {
-		bp->b_bno = dblk;
-		bp->b_size = size;
-		return (bp);
-	}
-	bp->b_bno = (daddr_t)-1;
-	return (NULL);
+	bp->b_errs = bread(fcp, bp->b_un.b_buf, dblk, size);
+	bp->b_bno = dblk;
+	bp->b_size = size;
+	return (bp);
 }
 
 flush(fcp, bp)
@@ -107,7 +104,10 @@ flush(fcp, bp)
 
 	if (!bp->b_dirty)
 		return;
+	if (bp->b_errs != 0)
+		pfatal("WRITING ZERO'ED BLOCK %d TO DISK\n", bp->b_bno);
 	bp->b_dirty = 0;
+	bp->b_errs = 0;
 	(void)bwrite(fcp, bp->b_un.b_buf, bp->b_bno, (long)bp->b_size);
 	if (bp != &sblk)
 		return;
@@ -153,12 +153,25 @@ bread(fcp, buf, blk, size)
 	daddr_t blk;
 	long size;
 {
+	char *cp;
+	int i, errs;
+
 	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
 		rwerr("SEEK", blk);
 	else if (read(fcp->rfdes, buf, (int)size) == size)
-		return (1);
+		return (0);
 	rwerr("READ", blk);
-	return (0);
+	if (lseek(fcp->rfdes, (long)dbtob(blk), 0) < 0)
+		rwerr("SEEK", blk);
+	errs = 0;
+	for (cp = buf, i = 0; i < size; i += DEV_BSIZE, cp += DEV_BSIZE) {
+		if (read(fcp->rfdes, cp, DEV_BSIZE) < 0) {
+			bzero(cp, DEV_BSIZE);
+			errs++;
+		}
+	}
+	pwarn("%d SECTORS REPLACED WITH ZERO'ED BLOCKS\n", errs);
+	return (errs);
 }
 
 bwrite(fcp, buf, blk, size)
