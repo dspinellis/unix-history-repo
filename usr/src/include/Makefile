@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.13 (Berkeley) 86/05/11
+#	@(#)Makefile	5.14 (Berkeley) 86/05/28
 #
 # Doing a make install builds /usr/include
 #
@@ -48,7 +48,7 @@ install: ${SHARED}
 			install -c -m 444 $$j ${DESTDIR}/usr/include/$$i/$$j; \
 		done); \
 	done
-	cmp -s Makefile.install ${DESTDIR}/usr/include/Makefile || \
+	-cmp -s Makefile.install ${DESTDIR}/usr/include/Makefile || \
 	    install -c -m 444 Makefile.install ${DESTDIR}/usr/include/Makefile
 	-for i in ${LINKS}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
