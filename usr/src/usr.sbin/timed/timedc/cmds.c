@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "timedc.h"
@@ -16,13 +16,10 @@ static char sccsid[] = "@(#)cmds.c	1.1 (Berkeley) %G%";
 #include <protocols/timed.h>
 #include <sys/file.h>
 
-#define OFF	0
-#define ON	1
-
 int id;
 int sock;
 int sock_raw;
-char hostname[32];
+char hostname[MAXHOSTNAMELEN];
 struct hostent *hp, *gethostbyname();
 struct sockaddr_in server;
 extern int measure_delta;
@@ -133,12 +130,6 @@ int argc;
 		return;
 	}
 
-	(void) open("/etc/timed", O_WRONLY, 01700);
-	if (errno != ETXTBSY) {
-		printf("No timed on this machine\n");
-		return;
-	}
-
 	srvp = getservbyname("timed", "udp");
 	if (srvp == 0) {
 		fprintf(stderr, "udp/timed: unknown service\n");
@@ -220,12 +211,6 @@ char *argv[];
 		return;
 	}
 
-	(void) open("/etc/timed", O_WRONLY, 01700);
-	if (errno != ETXTBSY) {
-		printf("No timed on this machine\n");
-		return;
-	}
-
 	srvp = getservbyname("timed", "udp");
 	if (srvp == 0) {
 		fprintf(stderr, "udp/timed: unknown service\n");
@@ -282,12 +267,6 @@ char *argv[];
 
 	if (argc != 2) {
 		printf("Usage: tracing { on | off }\n");
-		return;
-	}
-
-	(void) open("/etc/timed", O_WRONLY, 01700);
-	if (errno != ETXTBSY) {
-		printf("No timed on this machine\n");
 		return;
 	}
 
