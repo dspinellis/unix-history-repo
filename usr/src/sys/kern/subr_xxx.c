@@ -1,4 +1,4 @@
-/*	subr_xxx.c	6.2	83/09/09	*/
+/*	subr_xxx.c	6.3	84/07/28	*/
 
 #include "../machine/pte.h"
 
@@ -95,6 +95,16 @@ calloc(size)
 	res = cacur;
 	cacur += size;
 	return (res);
+}
+
+/*
+ * Stub routine in case it is ever possible to free space.
+ */
+cfreemem(cp, size)
+	caddr_t cp;
+	int size;
+{
+	printf("freeing %x, size %d\n", cp, size);
 }
 
 #ifndef vax
