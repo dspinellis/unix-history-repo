@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.26 (Berkeley) %G%
+ *	@(#)malloc.h	7.27 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -64,8 +64,9 @@
 #define	M_LOCKF		40	/* Byte-range locking structures */
 #define	M_PROC		41	/* Proc structures */
 #define	M_SUBPROC	42	/* Proc sub-structures */
+#define	M_SEGMENT	43	/* Segment for LFS */
 #define	M_TEMP		49	/* misc temporary data buffers */
-#define	M_LAST		50
+#define	M_LAST		50	/* Must be last type + 1 */
 
 #define INITKMEMNAMES { \
 	"free",		/* 0 M_FREE */ \
@@ -111,7 +112,8 @@
 	"lockf",	/* 40 M_LOCKF */ \
 	"proc",		/* 41 M_PROC */ \
 	"subproc",	/* 42 M_SUBPROC */ \
-	0, 0, 0, 0, 0, 0, \
+	"LFS segment",	/* 43 M_SEGMENT */ \
+	NULL, NULL, NULL, NULL, NULL, \
 	"temp",		/* 49 M_TEMP */ \
 }
 
