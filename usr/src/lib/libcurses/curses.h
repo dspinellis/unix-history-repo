@@ -14,14 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)curses.h	5.4 (Berkeley) %G%
+ *	@(#)curses.h	5.5 (Berkeley) %G%
  */
 
 # ifndef WINDOW
 
 # include	<stdio.h>
  
-# include	<sgtty.h>
+# include	<sys/ioctl.h>
 
 # define	bool	char
 # define	reg	register
@@ -158,18 +158,28 @@ int	__void__;
 #define	getyx(win,y,x)	 y = win->_cury, x = win->_curx
 #define	winch(win)	 (win->_y[win->_cury][win->_curx] & 0177)
 
-#define raw()	 (_tty.sg_flags|=RAW, _pfast=_rawmode=TRUE, stty(_tty_ch,&_tty))
-#define noraw()	 (_tty.sg_flags&=~RAW,_rawmode=FALSE,_pfast=!(_tty.sg_flags&CRMOD),stty(_tty_ch,&_tty))
-#define cbreak() (_tty.sg_flags |= CBREAK, _rawmode = TRUE, stty(_tty_ch,&_tty))
-#define nocbreak() (_tty.sg_flags &= ~CBREAK,_rawmode=FALSE,stty(_tty_ch,&_tty))
+#define raw()	 (_tty.sg_flags|=RAW, _pfast=_rawmode=TRUE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define noraw()	 (_tty.sg_flags&=~RAW,_rawmode=FALSE,\
+	_pfast=!(_tty.sg_flags&CRMOD),ioctl(_tty_ch, TIOCSETP, &_tty))
+#define cbreak() (_tty.sg_flags |= CBREAK, _rawmode = TRUE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define nocbreak() (_tty.sg_flags &= ~CBREAK,_rawmode=FALSE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
 #define crmode() cbreak()	/* backwards compatability */
 #define nocrmode() nocbreak()	/* backwards compatability */
-#define echo()	 (_tty.sg_flags |= ECHO, _echoit = TRUE, stty(_tty_ch, &_tty))
-#define noecho() (_tty.sg_flags &= ~ECHO, _echoit = FALSE, stty(_tty_ch, &_tty))
-#define nl()	 (_tty.sg_flags |= CRMOD,_pfast = _rawmode,stty(_tty_ch, &_tty))
-#define nonl()	 (_tty.sg_flags &= ~CRMOD, _pfast = TRUE, stty(_tty_ch, &_tty))
-#define	savetty() ((void) gtty(_tty_ch, &_tty), _res_flg = _tty.sg_flags)
-#define	resetty() (_tty.sg_flags = _res_flg, (void) stty(_tty_ch, &_tty))
+#define echo()	 (_tty.sg_flags |= ECHO, _echoit = TRUE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define noecho() (_tty.sg_flags &= ~ECHO, _echoit = FALSE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define nl()	 (_tty.sg_flags |= CRMOD,_pfast = _rawmode, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define nonl()	 (_tty.sg_flags &= ~CRMOD, _pfast = TRUE, \
+	ioctl(_tty_ch, TIOCSETP, &_tty))
+#define	savetty() ((void) ioctl(_tty_ch, TIOCGETP, &_tty), \
+	_res_flg = _tty.sg_flags)
+#define	resetty() (_tty.sg_flags = _res_flg, \
+	(void) ioctl(_tty_ch, TIOCSETP, &_tty))
 
 #define	erasechar()	(_tty.sg_erase)
 #define	killchar()	(_tty.sg_kill)
