@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	5.1 (Berkeley) %G%
+.\"	@(#)intro.3	6.1 (Berkeley) %G%
 .\"
-.TH INTRO 3F "26 July 1983"
+.TH INTRO 3F ""
 .UC 5
 .SH NAME
 intro \- introduction to FORTRAN library functions
@@ -50,9 +50,11 @@ dffrac	flmin.3f	return extreme values
 dflmax	flmin.3f	return extreme values
 dflmin	flmin.3f	return extreme values
 drand	rand.3f	return random values
+drandm	random.3f	better random number generator
 dtime	etime.3f	return elapsed execution time
 etime	etime.3f	return elapsed execution time
 exit	exit.3f	terminate process with status
+falloc	malloc.3f	memory allocator
 fdate	fdate.3f	return date and time in an ASCII string
 ffrac	flmin.3f	return extreme values
 fgetc	getc.3f	get a character from a logical unit
@@ -62,6 +64,7 @@ flush	flush.3f	flush output to a logical unit
 fork	fork.3f	create a copy of this process
 fpecnt	trpfpe.3f	trap and repair floating point faults
 fputc	putc.3f	write a character to a fortran logical unit
+free	malloc.3f	memory allocator
 fseek	fseek.3f	reposition a file on a logical unit
 fstat	stat.3f	get file status
 ftell	fseek.3f	reposition a file on a logical unit
@@ -84,6 +87,7 @@ inmax	flmin.3f	return extreme values
 intro	intro.3f	introduction to FORTRAN library functions
 ioinit	ioinit.3f	change f77 I/O initialization
 irand	rand.3f	return random values
+irandm	random.3f	better random number generator
 isatty	ttynam.3f	find name of a terminal port
 itime	idate.3f	return date or time in numerical form
 kill	kill.3f	send a signal to a process
@@ -94,10 +98,12 @@ loc	loc.3f	return the address of an object
 long	long.3f	integer object conversion
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
+malloc	malloc.3f	memory allocator
 perror	perror.3f	get system error messages
 putc	putc.3f	write a character to a fortran logical unit
 qsort	qsort.3f	quick sort
 rand	rand.3f	return random values
+random	random.3f	better random number generator
 rename	rename.3f	rename a file
 rindex	index.3f	tell about character objects
 short	long.3f	integer object conversion
