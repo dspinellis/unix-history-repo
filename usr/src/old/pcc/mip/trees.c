@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.15 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.16 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -771,12 +771,16 @@ chkpun(p) register NODE *p; {
 	t2 = p->in.right->in.type;
 
 	if( t1==ENUMTY || t2==ENUMTY ) { /* check for enumerations */
+		/* rob pike says this is obnoxious...
 		if( logop( p->in.op ) && p->in.op != EQ && p->in.op != NE )
-			werror( "comparison of enums" );
-		if( t1==ENUMTY && t2==ENUMTY &&
-		    p->in.left->fn.csiz!=p->in.right->fn.csiz )
-			werror( "enumeration type clash, operator %s", opst[p->in.op] );
-		return;
+			werror( "comparison of enums" ); */
+		if( t1==ENUMTY && t2==ENUMTY ) {
+			if ( p->in.left->fn.csiz!=p->in.right->fn.csiz )
+				werror( "enumeration type clash, operator %s", opst[p->in.op] );
+			return;
+			}
+		if ( t1 == ENUMTY ) t1 = INT;
+		if ( t2 == ENUMTY ) t2 = INT;
 		}
 
 	if( ISPTR(t1) || ISARY(t1) ) q = p->in.right;
