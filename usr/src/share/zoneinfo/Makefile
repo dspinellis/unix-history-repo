@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -96,9 +96,9 @@ REDO=		right_only
 # to the end of the "CFLAGS=" line
 
 .PATH:	${.CURDIR}/datfiles
-CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone -DNOSOLAR \
-	-DTZDIR=\"$(TZDIR)\"
-MAN=	tzfile.0
+CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone
+PROG=	zic
+MAN5=	tzfile.0
 
 SRCS=	zic.c scheck.c ialloc.c
 OBJS=	${SRCS:.c=.o}
@@ -107,52 +107,34 @@ YDATA=	africa antarctica asia australasia europe northamerica \
 	southamerica pacificnew etcetera factory
 NDATA=	systemv
 #SDATA=	solar87 solar88 solar89
-TDATA=	$(YDATA) $(NDATA) $(SDATA)
-DATA=	$(YDATA) $(NDATA) $(SDATA) leapseconds
+TDATA=	${YDATA} ${NDATA} ${SDATA}
+DATA=	${YDATA} ${NDATA} ${SDATA} leapseconds
 USNO=	usno1988 usno1989
 
-all: zic ${MAN}
-
-zic: $(OBJS) ${MAN}
-	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -o $@
-
-posix_only: $(TDATA)
+posix_only: ${TDATA}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d $(TZDIR) -L /dev/null $(TDATA))
+	    ../obj/zic -d ${TZDIR} -L /dev/null ${TDATA})
 
-right_only: leapseconds $(TDATA)
+right_only: leapseconds ${TDATA}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d $(TZDIR) -L leapseconds $(TDATA))
+	    ../obj/zic -d ${TZDIR} -L leapseconds ${TDATA})
 
-other_two: leapseconds $(TDATA)
+other_two: leapseconds ${TDATA}
 	(cd ${.CURDIR}/datfiles;
-	    ../obj/zic -d $(TZDIR)/posix -L /dev/null $(TDATA))
+	    ../obj/zic -d ${TZDIR}/posix -L /dev/null ${TDATA})
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d $(TZDIR)/right -L leapseconds $(TDATA))
+	    ../obj/zic -d ${TZDIR}/right -L leapseconds ${TDATA})
 
 posix_right: posix_only other_two
 
 right_posix: right_only other_two
 
-install: ${MAN} $(DATA) $(REDO)
+install: maninstall ${DATA} ${REDO}
 	(cd ${.CURDIR}/datfiles; \
-	    ../obj/zic -d $(TZDIR) -p $(POSIXRULES))
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 tzfile.0 \
-	    ${DESTDIR}/usr/share/man/cat5
+	    ../obj/zic -d ${TZDIR} -p ${POSIXRULES})
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
-	chown -R ${BINOWN}.${BINGRP} $(TZDIR)
-	chmod -R a-w $(TZDIR)
-
-clean:
-	rm -f core *.o zic
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: $(SRCS)
-	mkdep ${CFLAGS} ${.ALLSRC}
-
-lint tags:
+	chown -R ${BINOWN}.${BINGRP} ${TZDIR}
+	chmod -R a-w ${TZDIR}
 
 .include <bsd.prog.mk>
