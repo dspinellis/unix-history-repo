@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.19 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -274,9 +274,12 @@ ufs_getattr(ap)
 	vap->va_gid = ip->i_gid;
 	vap->va_rdev = (dev_t)ip->i_rdev;
 	vap->va_size = ip->i_din.di_size;
-	vap->va_atime = ip->i_atime;
-	vap->va_mtime = ip->i_mtime;
-	vap->va_ctime = ip->i_ctime;
+	vap->va_atime.ts_sec = ip->i_atime;
+	vap->va_atime.ts_nsec = ip->i_atimensec;
+	vap->va_mtime.ts_sec = ip->i_mtime;
+	vap->va_mtime.ts_nsec = ip->i_mtimensec;
+	vap->va_ctime.ts_sec = ip->i_ctime;
+	vap->va_ctime.ts_nsec = ip->i_ctimensec;
 	vap->va_flags = ip->i_flags;
 	vap->va_gen = ip->i_gen;
 	/* this doesn't belong here */
