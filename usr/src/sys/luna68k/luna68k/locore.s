@@ -15,7 +15,7 @@
  *
  * from: hp300/hp300/locore.s   7.16 (Berkeley) 7/8/92
  *
- *	@(#)locore.s	7.4 (Berkeley) %G%
+ *	@(#)locore.s	7.5 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -478,7 +478,7 @@ Lstackok:
         tstl	_clock_on		| system-clock started?
         jeq	Lnottimer		| no, skip hardclock
 	addql	#1,_intrcnt+28		| count hardclock interrupt
-	movl	a1@,sp@-
+	movl	a1,sp@-
 	jbsr	_hardclock		| hardclock(&frame)
 	addql	#4,sp
 Lnottimer:
