@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id: vfs_syscalls.c,v 1.9 1994/01/19 20:27:38 guido Exp $
+ *	$Id: vfs_syscalls.c,v 1.10 1994/01/19 21:09:13 jtc Exp $
  */
 
 #include "param.h"
@@ -841,8 +841,7 @@ link(p, uap, retval)
 	if (error = namei(ndp, p))
 		return (error);
 	vp = ndp->ni_vp;
-	if (vp->v_type == VDIR &&
-	    (error = suser(p->p_ucred, &p->p_acflag)))
+	if (vp->v_type == VDIR)
 		goto out1;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	ndp->ni_dirp = (caddr_t)uap->linkname;
