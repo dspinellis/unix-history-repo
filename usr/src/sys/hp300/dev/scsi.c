@@ -1,6 +1,3 @@
-#ifndef DEBUG
-#define DEBUG
-#endif
 /*
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -10,9 +7,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	8.1 (Berkeley) %G%
+ *	@(#)scsi.c	7.9 (Berkeley) %G%
  */
 
+#ifndef DEBUG
+#define DEBUG
+#endif
 /*
  * HP9000/3xx 98658 SCSI host adaptor driver.
  */
