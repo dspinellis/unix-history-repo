@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.34 (Berkeley) %G%
+ *	@(#)proc.h	7.35 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -64,7 +64,7 @@ struct	proc {
 
 	int	p_flag;
 	char	p_stat;
-/*	char	p_space; */
+	char	p_pad1;
 
 	pid_t	p_pid;		/* unique process id */
 	struct	proc *p_hash;	/* hashed based on p_pid for kill+exit+... */
@@ -76,23 +76,32 @@ struct	proc {
 #define	p_startzero	p_ysptr
 	struct	proc *p_ysptr;	/* pointer to younger siblings */
 	struct	proc *p_cptr;	/* pointer to youngest living child */
+	pid_t	p_oppid;	/* save parent pid during ptrace XXX */
+	short	p_dupfd;	/* sideways return value from fdopen XXX */
 
 	/* scheduling */
 	u_int	p_cpu;		/* cpu usage for scheduling */
 	int	p_cpticks;	/* ticks of cpu time */
 	fixpt_t	p_pctcpu;	/* %cpu for this process during p_time */
 	caddr_t p_wchan;	/* event process is awaiting */
+	char	*p_wmesg;	/* reason for sleep */
 	u_int	p_time;		/* resident/nonresident time for swapping */
 	u_int	p_slptime;	/* time since last block */
 
 	struct	itimerval p_realtimer;	/* alarm timer */
-	struct	timeval p_utime;	/* user time */
-	struct	timeval p_stime;	/* system time */
+	struct	timeval p_rtime;	/* real time */
+	u_quad_t p_uticks;		/* statclock hits in user mode */
+	u_quad_t p_sticks;		/* statclock hits in system mode */
+	u_quad_t p_iticks;		/* statclock hits processing intr */
 
 	int	p_traceflag;	/* kernel trace points */
 	struct	vnode *p_tracep;/* trace to vnode */
 
 	int	p_sig;		/* signals pending to this process */
+
+	struct	timeval p_utime; /* user time */
+	struct	timeval p_stime; /* system time */
+	long	p_spare[2];	/* tmp spares to avoid shifting eproc */
 
 /* end area that is zeroed on creation */
 #define	p_endzero	p_startcopy
@@ -106,26 +115,20 @@ struct	proc {
 	u_char	p_pri;		/* priority, negative is high */
 	u_char	p_usrpri;	/* user-priority based on p_cpu and p_nice */
 	char	p_nice;		/* nice for cpu usage */
-/*	char	p_space1; */
-
-	struct 	pgrp *p_pgrp;	/* pointer to process group */
 	char	p_comm[MAXCOMLEN+1];
 
+	struct 	pgrp *p_pgrp;	/* pointer to process group */
+
 /* end area that is copied on creation */
-#define	p_endcopy	p_wmesg
-	char	*p_wmesg;	/* reason for sleep */
+#define	p_endcopy	p_thread
 	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
 	struct	user *p_addr;	/* kernel virtual addr of u-area (PROC ONLY) */
-	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	struct	mdproc p_md;	/* any machine-dependent fields */
 
 	u_short	p_xstat;	/* Exit status for wait; also stop signal */
-	short	p_dupfd;	/* sideways return value from fdopen XXX */
 	u_short	p_acflag;	/* accounting flags */
-/*	short	p_space2; */
 	struct	rusage *p_ru;	/* exit information XXX */
 
-	long	p_spare[4];	/* tmp spares to avoid shifting eproc */
 };
 
 #define	p_session	p_pgrp->pg_session
@@ -171,7 +174,9 @@ struct	pcred {
 #define	SPHYSIO	0x0001000	/* doing physical i/o */
 #define	STRC	0x0004000	/* process is being traced */
 #define	SWTED	0x0008000	/* another tracing flag */
+#define	SUGID	0x0020000	/* had set id privileges since last exec */
 #define	SADVLCK	0x0040000	/* process may hold a POSIX advisory lock */
+#define	SPROFIL	0x0080000	/* has started profiling */
 /* the following should be moved to machine-dependent areas */
 #define	SOWEUPC	0x0002000	/* owe process an addupc() call at next ast */
 #ifdef HPUXCOMPAT
@@ -179,8 +184,6 @@ struct	pcred {
 #else
 #define	SHPUX	0		/* not HP-UX process (HPUXCOMPAT) */
 #endif
-/* not currently in use (never set) */
-#define	SPAGE	0x0020000	/* process in page wait state */
 
 #ifdef KERNEL
 /*
@@ -204,7 +207,8 @@ extern	struct proc *pidhash[];		/* in param.c */
 struct	proc *pfind();			/* find process by id */
 extern	struct pgrp *pgrphash[];	/* in param.c */
 struct 	pgrp *pgfind();			/* find process group by id */
-struct	proc *zombproc, *allproc;	/* lists of procs in various states */
+struct	proc *allproc;			/* list of active procs */
+struct	proc *zombproc;			/* list of zombie procs */
 extern	struct proc proc0;		/* process slot for swapper */
 struct	proc *initproc, *pageproc;	/* process slots for init, pager */
 extern	struct proc *curproc;		/* current running proc */
