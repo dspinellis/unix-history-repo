@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)dosys.c	4.12 (Berkeley) %G%";
 #include "defs"
 #include <signal.h>
 
@@ -44,9 +44,9 @@ if((waitpid = vfork()) == 0)
 #ifdef SHELLENV
 	if (shellcom == 0) shellcom = SHELLCOM;
 	shellstr = rindex(shellcom, '/') + 1;
-	execl(shellcom, shellstr, (nohalt ? "-c" : "-ce"), comstring, 0);
+	execl(shellcom, shellstr, (nohalt ? "-c" : "-ec"), comstring, 0);
 #else
-	execl(SHELLCOM, "sh", (nohalt ? "-c" : "-ce"), comstring, 0);
+	execl(SHELLCOM, "sh", (nohalt ? "-c" : "-ec"), comstring, 0);
 #endif
 	fatal("Couldn't load Shell");
 	}
