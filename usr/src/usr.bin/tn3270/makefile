@@ -50,15 +50,38 @@ X	=
 PC_X	= .exe
 
 CC	= cc
+PC_CC	= cl
+
+MV	= mv
+PC_MV	= rename
+
+RM	= rm -f
+PC_RM= erase
+
+LINT_ARGS =
+PC_LINT_ARGS = -DLINT_ARGS
+
+DEBUG_FLAGS = -g
+PC_DEBUG_FLAGS = -Zi -Od
+
+AR	= ar
+C	=
+PC_AR	= lib
+PC_C	= +
+
+RANLIB	= ranlib
+PC_RANLIB = echo "Done with "
+
+
 PRINT	= print
 ACTION = sccs tell
 
-DEFINES =
+DEFINES = ${LINT_ARGS}
 
 INCLUDES = -I. -I..
 
 OPTIMIZE = -O
-OPTIMIZE = -g
+OPTIMIZE = ${DEBUG_FLAGS}
 
 CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 
@@ -91,9 +114,12 @@ ALLPRINT =	${ALLH} ${ALLC}
 
 ALLSOURCE =	${ALLPRINT} makefile makefile.mak README
 
+SYS	= sys
+PC_SYS	= sys_dos
+
 # The places where the various components live...
 
-SUBDIR =	api apilib ascii ctlr general sys
+SUBDIR =	api apilib ascii ctlr general ${SYS}
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
@@ -103,12 +129,15 @@ EXTRADIR =	arpa sys_dos tools utilities
 # The libraries we use.  The order here is important.
 # ctlrlib.a and syslib.a should come first, then apilib.a
 # then the rest.
-SUBLIB =	ctlr/ctlrlib.a sys/syslib.a \
+SUBLIB =	ctlr/ctlrlib.a ${SYS}/syslib.a \
 		api/apilib.a \
 		ascii/asciilib.a general/generallib.a
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
+
+.c.obj:
+	${CC} ${CFLAGS} -c $<
 
 all:	FRC tn3270$X mset$X
 
@@ -148,10 +177,16 @@ everywhere:	action
 						"ACTION=${ACTION}"); done
 
 clean:
-	rm -f $(ALLO) mset tn3270 errs makefile.bak
+	for i in $(ALLO) mset tn3270 errs makefile.bak; \
+			do (${RM} $$i); done
+	for i in ${SUBDIR} ${EXTRADIR}; \
+			do (cd $$i; make ${MFLAGS} clean); done
+
+sccsclean:
 	-sccs clean
 	-sccs get makefile
-	for i in ${SUBDIR} ${EXTRADIR}; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${SUBDIR} ${EXTRADIR}; \
+			do (cd $$i; make ${MFLAGS} sccsclean); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -198,6 +233,7 @@ thisdepend:
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
+	-rm -f makefile.bak
 	cp makefile makefile.bak
 	ed - makefile < eddep
 	rm eddep makedep eddep.c

@@ -1,10 +1,41 @@
+# msdos versus unix defines
+O	= .o
+PC_O	= .obj
+
+X	=
+PC_X	= .exe
+
 CC	= cc
+PC_CC	= cl
+
+MV	= mv
+PC_MV	= rename
+
+RM	= rm -f
+PC_RM= erase
+
+LINT_ARGS =
+PC_LINT_ARGS = -DLINT_ARGS
+
+DEBUG_FLAGS = -g
+PC_DEBUG_FLAGS = -Zi -Od
+
+AR	= ar
+C	=
+PC_AR	= lib
+PC_C	= +
+
+RANLIB	= ranlib
+PC_RANLIB = echo "Done with "
+
 PRINT	= print
+
+DEFINES	= ${LINT_ARGS}
 
 INCLUDES = -I.
 
 OPTIMIZE = -O
-OPTIMIZE = -g
+OPTIMIZE = ${DEBUG_FLAGS}
 
 CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 
@@ -16,8 +47,8 @@ ALLH = dohits.h ectype.h
 ALLC = dohits.c ectype.c mkastods.c mkastosc.c mkdctype.c \
 		mkdstoas.c mkhits.c prt3270.c
 
-ALLO =	prt3270.o mkdctype.o ectype.o \
-		mkastods.o mkdstoas.o mkhits.o dohits.o mkastosc.o
+ALLO =	prt3270$O mkdctype$O ectype$O \
+		mkastods$O mkdstoas$O mkhits$O dohits$O mkastosc$O
 
 ALLPRINT =	${ALLH} ${ALLC}
 
@@ -25,50 +56,53 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 
 ALLEXE	=	mkastods mkastosc mkdctype mkdstoas mkhits prt3270
 
+.c.obj:
+	${CC} ${CFLAGS} -c $<
+
 tools:
 	@echo Need to specify WHICH tool ...
 
 all:	${ALLEXE}
 	@echo done.
 
-prt3270:	prt3270.o ../general/globals.o ../apilib/asc_ebc.o \
-				../apilib/astosc.o ../ctlr/kbd.out
-	${CC} ${CFLAGS} -o prt3270 prt3270.o ../general/globals.o \
-					../apilib/asc_ebc.o ../apilib/astosc.o
+prt3270:	prt3270$O ../general/globals$O ../apilib/asc_ebc$O \
+				../apilib/astosc$O ../ctlr/kbd.out
+	${CC} ${CFLAGS} -o prt3270 prt3270$O ../general/globals$O \
+					../apilib/asc_ebc$O ../apilib/astosc$O
 
-mkastosc:	mkastosc.o dohits.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkastosc mkastosc.o dohits.o \
-			../apilib/asc_ebc.o ../apilib/ebc_disp.o
+mkastosc:	mkastosc$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+	$(CC) $(CFLAGS) -o mkastosc mkastosc$O dohits$O \
+			../apilib/asc_ebc$O ../apilib/ebc_disp$O
 
-mkastods:	mkastods.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkastods mkastods.o ../apilib/asc_ebc.o \
-						../apilib/ebc_disp.o
+mkastods:	mkastods$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+	$(CC) $(CFLAGS) -o mkastods mkastods$O ../apilib/asc_ebc$O \
+						../apilib/ebc_disp$O
 
-mkdstoas:	mkdstoas.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkdstoas mkdstoas.o ../apilib/asc_ebc.o \
-						../apilib/ebc_disp.o
+mkdstoas:	mkdstoas$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+	$(CC) $(CFLAGS) -o mkdstoas mkdstoas$O ../apilib/asc_ebc$O \
+						../apilib/ebc_disp$O
 
-mkhits:	mkhits.o dohits.o ../apilib/asc_ebc.o ../apilib/ebc_disp.o
-	$(CC) $(CFLAGS) -o mkhits mkhits.o dohits.o ../apilib/asc_ebc.o \
-						../apilib/ebc_disp.o
+mkhits:	mkhits$O dohits$O ../apilib/asc_ebc$O ../apilib/ebc_disp$O
+	$(CC) $(CFLAGS) -o mkhits mkhits$O dohits$O ../apilib/asc_ebc$O \
+						../apilib/ebc_disp$O
 
-mkdctype:	mkdctype.o ../apilib/ebc_disp.o ectype.o
-	$(CC) $(CFLAGS) -o mkdctype mkdctype.o ../apilib/ebc_disp.o ectype.o
+mkdctype:	mkdctype$O ../apilib/ebc_disp$O ectype$O
+	$(CC) $(CFLAGS) -o mkdctype mkdctype$O ../apilib/ebc_disp$O ectype$O
 
-../apilib/astosc.o:
-	(cd ../apilib; make astosc.o)
+../apilib/astosc$O:
+	(cd ../apilib; make astosc$O)
 
-../apilib/asc_ebc.o:
-	(cd ../apilib; make asc_ebc.o)
+../apilib/asc_ebc$O:
+	(cd ../apilib; make asc_ebc$O)
 
 ../ctlr/kbd.out:
 	(cd ../ctlr; make kbd.out)
 
-../apilib/ebc_disp.o:
-	(cd ../apilib; make ebc_disp.o)
+../apilib/ebc_disp$O:
+	(cd ../apilib; make ebc_disp$O)
 
-../general/globals.o:
-	(cd ../general; make globals.o)
+../general/globals$O:
+	(cd ../general; make globals$O)
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
@@ -84,7 +118,10 @@ action:
 	${ACTION}
 
 clean:
-	-rm -f errs makefile.bak ${ALLO} ${ALLEXE}
+	for i in errs makefile.bak ${ALLO} ${ALLEXE}; \
+		do (${RM} $$i); done
+
+sccsclean:
 	-sccs clean
 	-sccs get makefile
 
@@ -99,7 +136,7 @@ lint:
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
 	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' | \
+	    -e 's/\.c/$$O/' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
@@ -108,20 +145,21 @@ depend:
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
+	-rm -f makefile.bak
 	cp makefile makefile.bak
 	ed - makefile < eddep
 	rm eddep makedep
 
 # DO NOT DELETE THIS LINE
 
-dohits.o: ../general/general.h ../apilib/asc_ebc.h ../apilib/ebc_disp.h
-dohits.o: ../ctlr/function.h dohits.h
-ectype.o: ectype.h
-mkastods.o: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
-mkastosc.o: ../general/general.h ../ctlr/function.h dohits.h
-mkdctype.o: ../apilib/ebc_disp.h ectype.h
-mkdstoas.o: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
-mkhits.o: ../ctlr/function.h dohits.h
-prt3270.o: ../general/general.h ../apilib/asc_ebc.h ../ctlr/hostctlr.h
-prt3270.o: ../ctlr/screen.h ../ctlr/function.h ../apilib/astosc.h
-prt3270.o: ../general/globals.h ../ctlr/kbd.out
+dohits$O: ../general/general.h ../apilib/asc_ebc.h ../apilib/ebc_disp.h
+dohits$O: ../ctlr/function.h dohits.h
+ectype$O: ectype.h
+mkastods$O: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
+mkastosc$O: ../general/general.h ../ctlr/function.h dohits.h
+mkdctype$O: ../apilib/ebc_disp.h ectype.h
+mkdstoas$O: ../apilib/asc_ebc.h ../apilib/ebc_disp.h
+mkhits$O: ../ctlr/function.h dohits.h
+prt3270$O: ../general/general.h ../apilib/asc_ebc.h ../ctlr/hostctlr.h
+prt3270$O: ../ctlr/screen.h ../ctlr/function.h ../apilib/astosc.h
+prt3270$O: ../general/globals.h ../ctlr/kbd.out
