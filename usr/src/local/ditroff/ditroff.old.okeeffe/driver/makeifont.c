@@ -1,7 +1,7 @@
-/* Font description file producer:  David Slattengren
+/* Font description file producer for imagen fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
  *
- *	Use:  mkfnt [ -nNAME ]  [ -smial ]  [ "-xs1,s2[;s1,s2...]" ]
+ *	Use:  mifnt [ -nNAME ]  [ -smial ]  [ "-xs1,s2[;s1,s2...]" ]
  *		[ "-ys1,s2[;s1,s2...]" ]  [ -p# ]  [ -r# ]  [ -ddir ]  font
  *
  *	Mkfnt takes the font named "font" and produces a ditroff description
@@ -14,7 +14,7 @@
  *	Both -x and -y options allow character name mapping.  A semi-colon
  *	separated list of comma-separated character-name pairs follows the
  *	x or y.  Notice that there are no spaces in the -x or -y command.  It
- *	is also IMPORTANT to enclose these arguments in double quotes to stop
+ *	is also IMPORTANT to enclose these arguments in single quotes to stop
  *	the cshell from interpretting the contents.  A -x pair REPLACES the
  *	definition for s1 by s2.  A -y pair creates a synonym for s1 and calls
  *	it s2.  -x and -y MUST be sent after -s, -m, -i, or -a  if one of them
@@ -22,7 +22,7 @@
  *	acter, leave out s2.
  *
  *	The -p# option tells what point size the DESC file has
- *	as it's "unitwidth" argument (default: 36).  The -r# option is the
+ *	as it's "unitwidth" argument (default: 40).  The -r# option is the
  *	resolution of the device (default: 240, in units/inch).  The -d option
  *	tells where to find fonts (default: /usr/src/local/imagen/fonts/raster).
  */
@@ -54,7 +54,7 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.2	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.3	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
@@ -128,7 +128,7 @@ char *iascii[] = {
 	"<", "=", ">", "?",
 	"@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 	"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[",
-	"\\", "]", "^", "_", "`", "a", "b", "c", "d", "e", "f", "g", "h", "i",
+	"\\", "]", "^", "em", "`", "a", "b", "c", "d", "e", "f", "g", "h", "i",
 	"j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w",
 	"x", "y", "z", "{", "|", "}", "~", "dm"
 };
@@ -157,7 +157,7 @@ char *sspecial[SYNON] = {
 
 char *imath[] = {
 	"", "", "", "", "lf", "rf", "lc", "rc", "", "", "", "",
-	"", "", "/", "", "", "", "", "", "", "", "",
+	"", "", "", "", "", "", "", "", "", "", "",
 	"", "", "", "", "", "", "", "", "", "", "", "",
 	"", "", "", "", "", "", "", "", "", "", "", "Bl", "Br",
 	"", "", "", "", "", "", "", "", "lt", "rt", "lb", "rb",
