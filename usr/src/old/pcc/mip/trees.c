@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.13 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.14 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1505,11 +1505,35 @@ moditype( ty ) TWORD ty; {
 		}
 	}
 
+int	nsizeof;
+
+static
+haseffects(p)
+register NODE *	p;
+{
+	register	o, ty;
+
+	o = p->in.op;
+	ty = optype(o);
+	if (ty == LTYPE)
+		return 0;
+	if (asgop(o) || callop(o))
+		return 1;
+	if (haseffects(p->in.left))
+		return 1;
+	if (ty == UTYPE)
+		return 0;
+	return haseffects(p->in.right);
+}
+
 NODE *
 doszof( p )  register NODE *p; {
 	/* do sizeof p */
 	int i;
 
+	--nsizeof;
+	if (haseffects(p))
+		werror( "operations in object of sizeof are skipped" );
 	/* whatever is the meaning of this if it is a bitfield? */
 	i = tsize( p->in.type, p->fn.cdim, p->fn.csiz )/SZCHAR;
 
