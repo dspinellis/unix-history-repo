@@ -65,6 +65,8 @@ static char sccsid[] = "@(#)disklabel.c	5.20 (Berkeley) 2/9/91";
 #include <ctype.h>
 #include "pathnames.h"
 
+extern off_t lseek();
+
 /*
  * Disklabel: read and write disklabels.
  * The label is usually placed on one of the first sectors of the disk.
@@ -367,7 +369,6 @@ writelabel(f, boot, lp)
 {
 	register int i;
 	int flag;
-	off_t lseek();
 #ifdef	__386BSD__
 	off_t lbl_off; struct partition *pp = lp->d_partitions;
 #endif
