@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)cltp_usrreq.c	7.2 (Berkeley) %G%
+ *	@(#)cltp_usrreq.c	7.3 (Berkeley) %G%
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
@@ -246,21 +246,17 @@ u_long	cltp_recvspace = 40 * (1024 + sizeof(struct sockaddr_iso));
 
 
 /*ARGSUSED*/
-cltp_usrreq(so, req, m, nam, rights, control)
+cltp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	struct isopcb *isop = sotoisopcb(so);
 	int s, error = 0;
 
 	if (req == PRU_CONTROL)
 		return (iso_control(so, (int)m, (caddr_t)nam,
-			(struct ifnet *)rights));
-	if (rights && rights->m_len) {
-		error = EINVAL;
-		goto release;
-	}
+			(struct ifnet *)control));
 	if (isop == NULL && req != PRU_ATTACH) {
 		error = EINVAL;
 		goto release;
