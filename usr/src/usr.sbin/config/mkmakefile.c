@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	1.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	1.32 (Berkeley) %G%";
 #endif
 
 /*
@@ -430,7 +430,10 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 	fprintf(f, "%so: ../%s%c\n", tail(np), np, och);
 	tp = tail(np);
 	if (och == 's') {
-		fprintf(f, "\t${AS} -o %so ../%ss\n\n", tp, np);
+		fprintf(f, "\t-ln -s ../%ss %sc\n", np, tp);
+		fprintf(f, "\t${CC} -I. -E ${COPTS} %sc | ${AS} -o %so\n",
+			tp, tp);
+		fprintf(f, "\trm -f %sc\n\n", tp);
 		continue;
 	}
 	if (ftp->f_flags & CONFIGDEP)
