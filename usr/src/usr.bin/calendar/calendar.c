@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)calendar.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)calendar.c	4.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -133,7 +133,7 @@ settime()
 		cumdays = daytab[0];
 	}
 	/* Friday displays Monday's events */
-	offset = tp->tm_wday == 6 ? 3 : 1;
+	offset = tp->tm_wday == 5 ? 3 : 1;
 	header[5].iov_base = dayname;
 	header[5].iov_len = strftime(dayname, sizeof(dayname), "%A", tp);
 }
