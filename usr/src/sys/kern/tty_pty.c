@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.25	82/09/12	*/
+/*	tty_pty.c	4.26	82/10/13	*/
 
 /*
  * Pseudo-teletype Driver
@@ -88,6 +88,7 @@ ptsread(dev, uio)
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	int error = 0;
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
@@ -98,36 +99,35 @@ again:
 			    (u.u_procp->p_flag&SDETACH) ||
 	*/
 			    u.u_procp->p_flag&SVFORK)
-				return;
+				return (EIO);
 			gsignal(u.u_procp->p_pgrp, SIGTTIN);
 			sleep((caddr_t)&lbolt, TTIPRI);
 		}
 		if (tp->t_rawq.c_cc == 0) {
-			if (tp->t_state & TS_NBIO) {
-				u.u_error = EWOULDBLOCK;
-				return;
-			}
+			if (tp->t_state & TS_NBIO)
+				return (EWOULDBLOCK);
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
 			goto again;
 		}
 		while (tp->t_rawq.c_cc > 1 && uio->uio_resid > 0)
 			if (ureadc(getc(&tp->t_rawq), uio) < 0) {
-				u.u_error = EFAULT;
+				error = EFAULT;
 				break;
 			}
 		if (tp->t_rawq.c_cc == 1)
 			(void) getc(&tp->t_rawq);
 		if (tp->t_rawq.c_cc)
-			return;
+			return (error);
 	} else
 		if (tp->t_oproc)
-			(*linesw[tp->t_line].l_read)(tp, uio);
+			error = (*linesw[tp->t_line].l_read)(tp, uio);
 	wakeup((caddr_t)&tp->t_rawq.c_cf);
 	if (pti->pt_selw) {
 		selwakeup(pti->pt_selw, pti->pt_flags & PF_WCOLL);
 		pti->pt_selw = 0;
 		pti->pt_flags &= ~PF_WCOLL;
 	}
+	return (error);
 }
 
 /*
@@ -142,8 +142,9 @@ ptswrite(dev, uio)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
-	if (tp->t_oproc)
-		(*linesw[tp->t_line].l_write)(tp, uio);
+	if (tp->t_oproc == 0)
+		return (EIO);
+	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
 
 /*
@@ -220,31 +221,31 @@ ptcread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct tty *tp;
+	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti;
+	int error = 0;
 
-	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return;
 	pti = &pt_ioctl[minor(dev)];
 	if (pti->pt_flags & PF_PKT) {
 		if (pti->pt_send) {
-			(void) ureadc(pti->pt_send, uio);
+			error = ureadc(pti->pt_send, uio);
+			if (error)
+				return (error);
 			pti->pt_send = 0;
-			return;
+			return (0);
 		}
-		(void) ureadc(0, uio);
+		error = ureadc(0, uio);
 	}
 	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
-		if (pti->pt_flags&PF_NBIO) {
-			u.u_error = EWOULDBLOCK;
-			return;
-		}
+		if (pti->pt_flags&PF_NBIO)
+			return (EWOULDBLOCK);
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
 	}
 	while (tp->t_outq.c_cc && uio->uio_resid > 0)
 		if (ureadc(getc(&tp->t_outq), uio) < 0) {
-			u.u_error = EFAULT;
+			error = EFAULT;
 			break;
 		}
 	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
@@ -258,6 +259,7 @@ ptcread(dev, uio)
 			tp->t_state &= ~TS_WCOLL;
 		}
 	}
+	return (error);
 }
 
 ptsstop(tp, flush)
@@ -321,16 +323,16 @@ ptcwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register struct tty *tp;
+	register struct tty *tp = &pt_tty[minor(dev)];
 	register char *cp, *ce;
 	register int cc;
 	char locbuf[BUFSIZ];
 	int cnt = 0;
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
+	int error = 0;
 
-	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
-		return;
+		return (EIO);
 	do {
 		register struct iovec *iov;
 
@@ -346,8 +348,8 @@ ptcwrite(dev, uio)
 		}
 		cc = MIN(iov->iov_len, BUFSIZ);
 		cp = locbuf;
-		u.u_error = uiomove(cp, cc, UIO_WRITE, uio);
-		if (u.u_error)
+		error = uiomove(cp, cc, UIO_WRITE, uio);
+		if (error)
 			break;
 		ce = cp + cc;
 again:
@@ -358,8 +360,7 @@ again:
 					iov->iov_len += ce - cp;
 					uio->uio_resid += ce - cp;
 					uio->uio_offset -= ce - cp;
-					u.u_error = EWOULDBLOCK;
-					return;
+					return (EWOULDBLOCK);
 				}
 				sleep((caddr_t)&tp->t_rawq.c_cf, TTOPRI);
 				goto again;
@@ -367,7 +368,7 @@ again:
 			(void) b_to_q(cp, cc, &tp->t_rawq);
 			(void) putc(0, &tp->t_rawq);
 			wakeup((caddr_t)&tp->t_rawq);
-			return;
+			return (0);
 		}
 		while (cp < ce) {
 			while (tp->t_delct && tp->t_rawq.c_cc >= TTYHOG - 2) {
@@ -378,8 +379,8 @@ again:
 					uio->uio_resid += ce - cp;
 					uio->uio_offset -= ce - cp;
 					if (cnt == 0)
-						u.u_error = EWOULDBLOCK;
-					return;
+						return (EWOULDBLOCK);
+					return (0);
 				}
 				/* Better than just flushing it! */
 				/* Wait for something to be read */
@@ -390,6 +391,7 @@ again:
 			cnt++;
 		}
 	} while (uio->uio_resid);
+	return (error);
 }
 
 /*ARGSUSED*/

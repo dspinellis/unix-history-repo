@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.15	82/10/10	*/
+/*	sys_generic.c	5.16	82/10/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -219,10 +219,10 @@ rwip(ip, uio, rw)
 		register c = uio->uio_resid;
 #endif
 		if (rw == UIO_READ)
-			(*cdevsw[major(dev)].d_read)(dev, uio);
+			u.u_error = (*cdevsw[major(dev)].d_read)(dev, uio);
 		else {
 			ip->i_flag |= IUPD|ICHG;
-			(*cdevsw[major(dev)].d_write)(dev, uio);
+			u.u_error = (*cdevsw[major(dev)].d_write)(dev, uio);
 		}
 		CHARGE(sc_tio * (c - uio->uio_resid));
 		return (u.u_error);

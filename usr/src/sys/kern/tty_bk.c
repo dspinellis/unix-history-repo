@@ -1,4 +1,4 @@
-/*	tty_bk.c	4.4	82/08/22	*/
+/*	tty_bk.c	4.5	82/10/13	*/
 
 #include "bk.h"
 
@@ -89,8 +89,8 @@ bkread(tp, uio)
 	register struct tty *tp;
 	struct uio *uio;
 {
-	register int i;
-	register s;
+	register int i, s;
+	int error;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (-1);
@@ -100,11 +100,11 @@ bkread(tp, uio)
 	splx(s);
 	if (tp->t_line != NETLDISC)
 		return (-1);
-	u.u_error = uiomove(tp->t_bufp->b_un.b_addr, tp->t_inbuf, UIO_READ, uio);
+	error = uiomove(tp->t_bufp->b_un.b_addr, tp->t_inbuf, UIO_READ, uio);
 	tp->t_cp = (char *)tp->t_bufp->b_un.b_addr;
 	tp->t_inbuf = 0;
 	tp->t_rec = 0;
-	return (0);
+	return (error);
 }
 
 /*

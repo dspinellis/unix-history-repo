@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.4	82/08/22	*/
+/*	tty_tb.c	4.5	82/10/13	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -17,28 +17,20 @@
 
 /*
  * Line discipline for RS232 tablets.
+ * Supplies binary coordinate data.
  *
- * This supplies binary coordinate data to a user level program
- * with a minimum of fuss.
- *
- * This discipline requires that tty device drivers call
- * the line specific l_ioctl routine from their ioctl routines,
- * assigning the result to cmd so that we can refuse most tty specific
- * ioctls which are unsafe because we have ambushed the
- * teletype input queues and other data, overlaying them with
- * the following information: the tty queue header, t_un.T_CTLQ,
- * is overlaid with a MTABCHAR character buffer -- the raw input
- * chars. The local characters (t_rocount on) are overlaid with
- * the current coordinate position.
+ * FIX WAY IN WHICH OVERLAYING IS DONE
+ * MAKE TABLET TYPE AN ioctl TO AVOID HAVING ONE DISCIPLINE PER TABLET TYPE.
  */
 
 #define MTABCHAR 5
 #define MNTABCHAR 6
+
 struct tbposition {
-	int xpos;
-	int ypos;
-	short int status;
-	short int scount;
+	int	xpos;
+	int	ypos;
+	short	status;
+	short	scount;
 };
 
 /*
@@ -100,11 +92,8 @@ tbread(tp, uio)
 	struct tbposition tbposition;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
-		return (-1);
-	u.u_error = iomove(&tp->t_rocount, sizeof tbposition, UIO_READ, uio);
-	if (u.u_error)
-		return (-1);
-	return (0);
+		return (EIO);
+	return (iomove(&tp->t_rocount, sizeof tbposition, UIO_READ, uio));
 }
 
 /*
@@ -115,28 +104,29 @@ tbread(tp, uio)
  * This routine could be expanded in-line in the receiver
  * interrupt routine of the dh-11 to make it run as fast as possible.
  */
-int LASTTABC;
+int	LASTTABC;
+
 tbinput(c, tp)
-register c;
-register struct tty *tp;
+	register int c;
+	register struct tty *tp;
 {
 
-	if(tp->t_line == TABLDISC) {
-		if((c&0200) || (tp->t_inbuf == MTABCHAR)) {
+	if (tp->t_line == TABLDISC) {
+		if ((c&0200) || (tp->t_inbuf == MTABCHAR)) {
 			tp->t_cp = (char *) &tp->t_un.T_CTLQ;
 			tp->t_inbuf = 0;
 		}
 		*tp->t_cp++ = c&0177;
-		if(++tp->t_inbuf == MTABCHAR)
+		if (++tp->t_inbuf == MTABCHAR)
 			tbdecode((char *) &tp->t_un.T_CTLQ,
-					(struct tbposition *) &tp->t_rocount);
-	} else if(tp->t_line == NTABLDISC) {
-		if((c&0200) || (tp->t_inbuf == MNTABCHAR)) {
+				(struct tbposition *) &tp->t_rocount);
+	} else if (tp->t_line == NTABLDISC) {
+		if ((c&0200) || (tp->t_inbuf == MNTABCHAR)) {
 			tp->t_cp = (char *) &tp->t_un.T_CTLQ;
 			tp->t_inbuf = 0;
 		}
 		*tp->t_cp++ = c&0177;
-		if(++tp->t_inbuf == MNTABCHAR)
+		if (++tp->t_inbuf == MNTABCHAR)
 			tbndecode((char *) &tp->t_un.T_CTLQ,
 					(struct tbposition *) &tp->t_rocount);
 	}
@@ -175,11 +165,11 @@ tbdecode(cp, tbposition)
 	byte = *cp++;
 	status = (byte&0100) ? 0100000 : 0;
 	byte &= ~0100;
-	if(byte > 036)
+	if (byte > 036)
 		status |= 1<<((byte-040)/2);
 	tbposition->xpos = (*cp++)<<7;
 	tbposition->xpos |= (*cp++);
-	if(tbposition->xpos < 256)	/* tablet wraps around at 256 */
+	if (tbposition->xpos < 256)	/* tablet wraps around at 256 */
 		status &= 077777;	/* make it out of proximity */
 	tbposition->ypos = (*cp++)<<7;
 	tbposition->ypos |= (*cp++);
