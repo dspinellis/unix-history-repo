@@ -1,0 +1,27 @@
+.TS
+center, allbox;
+cw(15)
+c
+l
+l.
+\s-2CASEOP\s0
+No. of cases
+T{
+.sp
+.nf
+.ce 3
+Case
+transfer
+table
+.fi
+T}
+T{
+.sp
+.nf
+.ce 2
+Array of case
+label values
+.fi
+.sp
+T}
+.TE

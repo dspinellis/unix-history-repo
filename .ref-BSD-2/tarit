@@ -1,0 +1,3 @@
+#
+tar cr0 tar tar.1 tar.ms install.ms READ_ME bin create doc man misc setup src tarit upgrade
+echo tar done

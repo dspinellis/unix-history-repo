@@ -1,0 +1,7 @@
+1,$s/^/#define /
+w E.h
+e Edata
+1,$s/ / = /
+1,$s/$/./
+w E.s
+q

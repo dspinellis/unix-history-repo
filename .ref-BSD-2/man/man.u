@@ -1,0 +1,80 @@
+.TH MAN UCB 2/24/79 UCB
+.SH NAME
+man \- run of section of UNIX manual
+.SH SYNOPSIS
+.B man
+[
+.B \-
+] [
+.B \-t
+] [
+section
+]
+title ...
+.SH DESCRIPTION
+.I Man
+is a program which prints sections of the manual.
+.I Section
+is an option arabic section number, i.e. 3,
+which may be followed by a single letter classifier, i.e. 1m
+indicating a maintenance type program in section 1.
+It may also be
+``ucb'',
+``sccs'',
+or
+``public''.
+If a section specifier is given
+.I man
+looks in the that section of the manual for the given
+.I titles.
+If
+.I section
+is omitted,
+.I man
+searches all sections of the manual, giving preference to commands
+over subroutines in system libraries, and printing the first section
+it finds, if any.
+The command
+.IR apropos (UCB)
+can help find a command whose name has been forgotten,
+looking it up by kewords in its ``one line'' description.
+.PP
+If the standard output is a teletype, or if the flag
+.B \-
+is given, then
+.I man
+pipes its output through
+.IR  ssp (UCB)
+to crush out useless blank lines,
+and through
+.IR cr3 (UCB)
+to stop after each page on the screen.
+Hit a carriage return to continue,
+a control-D to scroll 12 more lines when the output stops.
+.PP
+The
+.B \-t
+flag causes
+.I man
+to arrange for the specified section to be
+.I troff'ed
+to the Versatec.
+.SH FILES
+/usr/man/man?/*
+.SH SEE\ ALSO
+apropos(UCB), cr3(UCB), ssp(UCB), whereis(UCB)
+.SH AUTHOR
+Bill Joy
+.SH BUGS
+The manual is supposed to be reproducible either on the phototypesetter
+or on a typewriter.
+However, on a typewriter some information is necessarily lost.
+.PP
+If multiple sections of the manual are to be
+.I troff'ed
+then it is better to run them off with
+.IR vtroff (UCB) using a sequence like
+.IP
+cd /usr/man/mann; vtroff -man mail.n msgs.n
+.PP
+since the pages will then be run in one Versatec job using less paper.

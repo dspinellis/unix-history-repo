@@ -1,0 +1,60 @@
+#
+# Version 6 UNIX
+#
+CFLAGS=-O -I/usr/include/retrofit -Iv6hdr
+XSTR=/usr/ucb/xstr
+ED=-ed
+RM=-rm
+AS=-as
+OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
+	getname.o head.o v6.local.o names.o lex.o list.o main.o quit.o send.o \
+	strings.o temp.o tty.o vars.o \
+	errlst.o str.o version.o
+
+#
+# Special massaging of C files for sharing of strings
+#
+.c.o:
+	${CC} -E ${CFLAGS} $*.c | ${XSTR} -c -
+	${CC} -c ${CFLAGS} x.c 
+	mv x.o $*.o
+
+all: Mail fmt
+
+Mail:	$(OBJS)
+	$(CC) -n -o Mail $(OBJS) -lS -lretro
+
+install: all
+	cp Mail /usr/ucb/Mail
+	cp fmt /usr/ucb/fmt
+	cp Mail.help /usr/lib/Mail.help
+	cp Mail.help.~ /usr/lib/Mail.help.~
+	cat /dev/null >> /usr/lib/Mail.rc
+
+clean:
+	$(RM) -f *.o
+	$(RM) -f Mail a.out strings fmt x.c xs.c
+
+fmt:	fmt.c head.c
+	$(CC) $(CFLAGS) fmt.c head.c -o fmt -lretro -lS
+	$(RM) fmt.o head.o
+
+str.o: strings
+	$(XSTR)
+	$(CC) -S xs.c
+	$(ED) - <:rofix xs.s
+	$(AS) -o str.o xs.s
+	$(RM) xs.s
+
+cmdtab.o: cmdtab.c
+	$(CC) -S $(CFLAGS) cmdtab.c
+	$(ED) - <:rofix cmdtab.s
+	$(AS) - -o cmdtab.o cmdtab.s
+	$(RM) cmdtab.s
+
+errlst.o:	errlst.c
+	${CC} -E ${CFLAGS} errlst.c | ${XSTR} -c -
+	${CC} ${CFLAGS} -S x.c
+	${ED} - <:rofix x.s
+	${AS} -o errlst.o x.s
+	${RM} x.s

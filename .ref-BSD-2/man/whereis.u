@@ -1,0 +1,82 @@
+.TH WHEREIS UCB 2/24/79 UCB
+.SH NAME
+whereis \- locate source/binary/manual for program
+.SH SYNOPSIS
+.B whereis
+[
+.B \-sbmu
+] [
+.B \-SBM
+dir ... [ -f ]
+]
+name ...
+.SH DESCRIPTION
+.I Whereis
+locates source/binary and manuals sections for specified files.
+The supplied names are first stripped of leading pathname components
+and any (single) trailing extension of the form `.ext', e.g. `.c'.
+Prefixes of `s.' resulting from use of source code control are also
+dealt with.
+.I Whereis
+then attempts to locate the desired program in a list of standard places.
+If any of the
+.B \-b,
+.B \-s
+or
+.B \-m
+flags are given then
+.I whereis
+searches only for binaries, sources or manual sections
+(or any two thereof).
+.sp
+The
+.B \-u
+flag may be used to search for unusual entries.
+A file is said to be unusual if it does not have one entry of
+each requested type.
+Thus `whereis -m -u *' asks for those files in the current
+directory which have no documentation.
+.sp
+Finally, the
+.B \-B
+.B \-M
+and
+.B \-S
+flags may be used to change the places where
+.I whereis
+searches to the specified directories only.
+The
+.B \-f
+file flags may be used to terminate the last such directory list
+and signal the start of file names.
+.SH EXAMPLE
+The following finds all the files in /usr/ucb which are not documented
+in /usr/man/mann with source in /usr/ucb/src/ucb:
+.sp
+.ti +5
+cd /usr/ucb
+.ti +5
+whereis -u -M /usr/man/mann -S /usr/ucb/src/ucb -f *
+.SH FILES
+/usr/src/*
+.br
+/usr/ucb/src/*
+.br
+/usr/man/*
+.br
+/bin, /etc, /usr/{bin,ucb}
+.SH AUTHOR
+Bill Joy
+.SH DIAGNOSTICS
+None.
+.SH BUGS
+This program makes it too easy to find out what needs to be done.
+.sp
+Since the program uses
+.IR chdir (1)
+to run faster, pathnames given with the
+.B \-M
+.B \-S
+and
+.B \-B
+flags should start at the root or they will not work.

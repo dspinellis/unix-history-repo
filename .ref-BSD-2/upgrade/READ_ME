@@ -1,0 +1,25 @@
+Sun Apr  8 20:54:23 PST 1979
+
+Files here supplement those in subdirectories of .. for version 6 systems.
+
+include		Header files for libretro.  These must be installed in
+		/usr/include/retrofit and /usr/include/retrofit/sys.
+
+src		Programs replacing some of those in those in ../src for 
+		version 6 systems, plus a few ones which are needed only on 
+		version 6, (such as ``setenv'').
+
+man		Manual stuff for things in src and parts of libretro, and to
+		fit manual sections onto old systems.
+
+libretro	A library which maps version 7 onto version 6 for some
+		of the system calls.  If your system doesn't correspond
+		to a standard v6 system you may have to change this and
+		recompile most programs.  This is generally necessary only
+		if you have 16 bit user id's returning from getuid().
+
+c		This details the changes made to the C compiler locally
+		to compile some of the the binaries on this tape.
+		These are not necessary unless you need to recompile ex,
+		and then you really only need a C compiler with a larger
+		symbol table.

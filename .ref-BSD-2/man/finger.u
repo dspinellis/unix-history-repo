@@ -1,0 +1,116 @@
+.TH FINGER UCB 2/24/79 UCB
+.SH NAME
+finger  \-  user information lookup program
+.SH SYNOPSIS
+.B finger
+[
+.B \-bfhilmpqsw
+] login ...
+.SH DESCRIPTION
+.I Finger
+lists the login name, full name, terminal name and write status
+(as a '*' before the terminal name if write permission is denied),
+idle time, login time, and office location and phone number
+(if they are known) for each current UNIX user,
+examining the /etc/utmp, /etc/passwd, and /usr/adm/lastlog
+files to obtain its information.
+.PP
+.I Finger
+takes control arguments, preceded by a dash, followed by an
+optional list of login names.  With no list of login names,
+the list of users currently logged on is used.
+.PP
+.I Finger
+has three output modes \- quick, short and long.  In quick mode, data
+is only retrieved from /etc/utmp, providing only login name, terminal name,
+and login time in a format similar to 
+.IR who (1).
+In short mode,
+.I finger
+gives a one line per user output containing login name, full name,
+terminal name and write status (a '*' before the terminal
+name indicates write permission is denied), idle time (the time since
+the user last typed anything meaningful), login time, and office location
+and phone number (if the user is logged in on a dialup, her home phone
+number is printed instead of office and office phone).
+Any items not found are omitted.  The format for the
+idle time is minutes, if it is a single integer, hours and minutes if a ':'
+is present, or days and hours if a 'd' is present.  Long mode causes
+.I finger
+to print all the information that short mode gives in a multi-line,
+easy to read format.  In addition, it also prints the users home
+directory and login shell, and, if a file .plan exists in her home
+directory, it is printed in its entirety; if a file .project exits in her
+home directory its first line is printed.
+.PP
+The control arguments to
+.I finger
+have the following effect:
+.TP
+.B  \-b
+When doing long format output, suppress the printing of the home
+directory and shell fields.
+.TP
+.B  \-f
+Suppress the printing of the header line when doing quick or short style
+outputs.
+.TP
+.B  \-h
+Suppress the printing of .project files when doing long style outputs.
+.TP
+.B  \-i
+Do a quick style output, but also lookup idle times and terminal status.
+.TP
+.B  \-l
+Force long style format; this option only has effect if no login name list
+is given (since it is the default if a list is given).
+.TP
+.B  \-m
+Instead of just comparing the listed names with all login names, the "-m"
+option also forces comparison with the user's real names stored in the gecos
+field of /etc/passwd.  This allows you, for example, to find all users
+that have a first name of ``bill'' or a last name of ``cooper'', for example.
+.TP
+.B  \-p
+Suppress the printing of .plan files when doing long style outputs.
+.TP
+.B  \-q
+Force quick style outputs.
+.TP
+.B  \-s
+Force short style outputs; this option only has effect if a name list is
+given (since it is the default if none is given).
+.TP
+.B  \-w
+Decrease the width of short style outputs (by removing the name field) for
+narrow displays.
+.PP
+.I Finger
+is smart about a user being logged in more than once, and will do separate
+lookups for each terminal on which a user is logged in.
+.PP
+The only problem with
+.I finger
+is one of unportability; the source of the information
+.I finger
+uses is the gecos field of /etc/passwd, which UCB VAX/UNIX
+uses for comment information on the user.
+.SH FILES
+.DT
+/etc/utmp		who file
+.br
+/etc/passwd		for users names, offices, phones, directories and shells
+.br
+/usr/adm/lastlog	last login times
+.br
+~/.plan		plans
+.br
+~/.project		projects
+.SH "SEE ALSO"
+who(1)
+.SH BUGS
+/usr/adm/lastlog is a local addition at UCB.  If no equivalent is present
+then finger would have to look backwards through /usr/adm/wtmp, which
+would be very slow.
+.SH AUTHOR
+Earl T. Cohen

@@ -1,0 +1,311 @@
+.TL
+Network System Manual
+.AU
+Eric Schmidt
+.SH
+Introduction
+.LP
+This documentation should be read by people responsible for
+maintaining the network (and the systems it runs on).
+It is divided into the following sections:
+.DS
+Maintaining the Network
+Setting up the Network
+Future Plans
+For Berkeley
+Bugs
+.DE
+Besides the commands described in the net introduction,
+there are a number of network-internal commands and
+statistics files.
+.SH
+Maintaining the Network
+.IP 1.
+To check the network,
+.RS
+.IP a)
+see if the network daemons are running with the command
+.DS
+ps ax | grep net
+.DE
+If not running, see below.
+.IP b)
+Check the network queue to see how long commands have been waiting to
+be sent.
+.RE
+.IP 2.
+To restart the network daemons, try
+.RS
+.IP a)
+See if they are running, as above.
+.IP b)
+If so, there should be two net daemon processes per machine connection\(em
+``kill -9'' the child named ``netdaemon'' and the parent ``netstart'' will start
+a new one.
+.IP c)
+If there are no ``netstart's'' or ``netdaemon's'', executing
+.DS
+.B
+/usr/net/bin/start
+.R
+.DE
+will start up all the daemons on your machine.
+.IP d)
+To have two ``netdaemons'' pointing to the same machine is to invite disaster.
+What happens is that a few small requests get through,
+and then the error rate goes up by a factor of a hundred.
+The first thing to do when you see this is to check the
+number of net daemons.
+.LP
+(All this must be done as super-user).
+.RE
+.IP 3.
+There are files /usr/net/plogfile? with a log for each
+directly-connected machine.
+Example:
+.DS
+tail /usr/net/plogfiley
+.DE
+will tell you in a cryptic form what the network
+has done on the Cory machine.
+This is a good file to inspect to see if transmissions
+are failing, etc.
+It is readable only by ``schmidt'' and ``root'' (and ``staff'' on Cory).
+.IP
+Basically, ``sends'' begin ``^S'' and end ``^T''.
+If a send fails for some reason, ``^F'' is printed instead of ``^T''.
+``^R'' is printed when a receive begins.
+``RCV'' is entered when the command is received and executed.
+``^P'' indicates a pass through.
+.IP
+The file /usr/net/netstat?, one per directly-connected machine,
+have various statistics about the usage of the network, and
+the system load.
+.IP 4.
+The overloading on various machines is causing high error rates.
+If these rates persist, the network can overload to the point
+where the queues are immense and nothing gets through.
+The only thing that can be done at this point is to remove the files (using
+.I netrm
+as super-user) and adjust the delay times in the `initfile'.
+.IP 5.
+If free space is a scarce commodity, truncate logfile and plogfile?,
+and check /usr/net/send and /usr/net/rcv.
+If there are any files there which are quite old,
+use your judgement to remove them.
+.IP 6.
+Net news should be provided periodically
+(usually in `/usr/help' or `/usr/news').
+.SH
+Setting up the Network
+.IP 1.
+Hardware
+.RS
+.PP
+For another machine to join the network, there must be some hardware link,
+such as tty lines, special character-oriented
+hardware, or DMA lines between the two machines.
+The software does not require the link to be reliable or fast.
+The best way to start is with slow-speed TTY lines
+(say 1200 baud) which demonstrate the network's usefulness at low cost.
+The highest transfer speed on a TTY link is about
+one-half the link speed (at best),
+because of processing time, the 3 \(-> 4 character
+expansion from 8 bits to 6, and the responses.
+.RE
+.IP 2.
+Software
+.RS
+.PP
+There is an archive file ``net.a''
+with all the network source files and a ``makefile''.
+The file ``README'' has information about
+the different conditional compilation
+option available, and table entries which must be made in the `.c' files.
+.PP
+Assuming the options have been specified in the makefile, the command
+.DS
+make all
+.DE
+will make all the necessary files.
+Then the command
+.DS
+make install DESTDIR=
+.DE
+will install the user commands and service programs.
+The directories are specified as options in the makefile.
+Finally,
+.DS
+make clean
+.DE
+removes all the `.o' and executable files.
+.PP
+There is also an archive file ``othernet.a'' which
+has little-used programs for testing out links, etc.
+Included are programs to send and receive packets and files, and a program
+to simulate TTY lines using pipes.
+It should not be necessary to run these.
+.RE
+.IP 3.
+Directories and Files.
+.RS
+.PP
+The central directory is `/usr/net',
+which has subdirectories `bin', `rcv', and `send?', where
+the `?' represents the one-letter codes of the directly-connected machines.
+For various reasons, the support programs
+.I
+(netdaemon, netstart, mmail, mwrite,
+.R
+etc.) must be in `bin'.
+The user programs may be anywhere but the pathnames in "Paths.h"
+must be reset correctly.
+.PP
+The logfiles are `logfile' and `plogfile?',
+one for each directly-connected machine.
+If not present in `/usr/net', they are not created.
+.PP
+The file `bin/start' should start up all the net daemons on the current machine.
+This file is normally executed by `/etc/rc'.
+The file `initfile' has a format similar to `.netrc'
+but is read by the net daemons when they are started.
+It has the network device names, speed and various tuning parameters.
+The complete list is in the source file `sub.c'.
+It is generally possible to change almost anything about the network
+through the `initfile' and restarting the daemon.
+.PP
+The program `bin/netstart' is a simple program to
+start up a net daemon, and if it should abort for any reason, restart it.
+.PP
+There must be an account `network', which executes
+all responses and the free commands.
+Its login directory should be `/usr/net/network' and
+login shell should be `nsh' in that directory.
+The list of free commands can be changed in `nsh.c'.
+.PP
+The `cat' command must be in `/bin' (used by
+.I netcp).
+.PP
+At Berkeley, we follow the convention that the TTY
+special files are named `/dev/net-X', where `X'
+is the remote machine name.
+.RE
+.SH
+Future Plans
+.PP
+It is important to understand the scope of this network;
+what it is and what it is not.
+Since it is ``batched'', there are a lot of things it cannot do.
+Our experience is that remote file copying, mailing and printing
+between U\s-2NIX\s0 machines are adequate for our immediate needs.
+.PP
+In the future, we will concentrate on improving
+the hardware and speeding up the network, rather than major user-interface
+changes.
+.PP
+This is a list of the things that have been planned for the future
+for the network.
+.IP 1.
+Use Bill Joy's retrofit library to simulate the version 7 system calls.
+This would reduce the dependence on conditional compilation for V6 code.
+.IP 2.
+The file length restriction is a major inconvenience.
+One way to allow large files would be to
+send large files (over 100,000 chars) only when there are no smaller ones.
+This would be non-preemptive, but might be workable.
+Another way would be to have two hardware links,
+and two sets of daemons, one for large files and one for small ones.
+.IP 3.
+Bob Fabry has suggested generalizing the machine name to
+be user-definable as a login/machine pair, to
+make it easier for people with multiple accounts on multiple machines.
+.IP 4.
+It is possible to share binaries between all
+the similar machine configurations (e.g. the Comp. Center machines).
+This involves ``patching'' the local machine in the binary.
+.IP 5.
+Ed Gould suggested that the notion of ``default'' machine
+was too restrictive\(em
+that an appropriate default for, say, ``netlpr'' was a
+nearby machine with a quality printer, whereas the default for ``net''
+should be the logical most useful machine.
+.IP 6.
+Security \(em
+I have just recently bullet-proofed the network
+so `root' commands are very restricted.
+However, the presence of passwords in the `.netrc' files
+poses a hazard to other machines when one machine is broken into.
+As long as the root password is not in a file, the root is safe.
+I am fairly convinced there is no way using encryption
+to handle the `.netrc' files.
+The introductory documentation is very explicit about
+the threat these passwords pose.
+.IP 7.
+Certain other more exotic requests are unlikely
+to get done until things change:
+.RS
+.IP a)
+Having the same user-id's across machines.
+.IP b)
+Adding an option to ``net'' to wait until a response has been received.
+.IP c)
+There should be a net status command which would
+give things like load averages, the number of users, etc.
+.IP d)
+The notion of a local queue is not general enough\(em
+.I netq
+should print out relevant queues on other machines.
+.IP e)
+Files on intermediate machines can't be \fInetrm\fP'ed.
+.RE
+.SH
+For Berkeley
+.IP 1.
+The root-ownership of
+.I netlpr
+queue files is a problem.
+No easy solution to this problem is known at this time.
+.IP 2.
+There are hooks in for the B, INGRES, and Q
+machines, and I would love to have them added to the network.
+.IP 3.
+I'd like to see the following things happen:
+.RS
+.LP
+A driver for the network links to avoid character
+processing, which would make 9600-baud practical.
+.LP
+On the Computer Center machines:
+.IP a)
+The mail program should be modified as it was
+on Cory and V\s-2AX\s0 to handle remote names (this is high priority).
+.IP b)
+A high speed link through the Bussiplexor.
+.IP c)
+The remote
+.I troff
+command should be modified to work on Cory and VAX.
+.RE
+.IP
+It has also been suggested that all the mail programs
+look at a file to see if they should forward
+this message to an account on another machine.
+This would allow people to get all their mail on one machine.
+.SH
+Bugs
+.IP 1.
+Extra files beginning with `df...' are created in the `send?'
+directories, with no control files (`cf...').
+They should be removed periodically.
+.I netrm
+will remove them.
+.IP 2.
+.I Netcp
+creates files with filenames as login names.
+They will never be sent and subsequent requests
+will be blocked.
+Their net queue files should be removed.
+.IP 3.
+In general, some requests can block the queue until removed.
+Shorter requests will get through, and longer ones will not.
+Again, their net queue files should be removed.

@@ -1,0 +1,33 @@
+cp ex2.0preserve /usr/lib/ex2.0preserve
+cp ex2.0recover /usr/lib/ex2.0recover
+cp ex2.0strings /usr/lib/ex2.0strings
+cp how_pi /usr/lib/how_pi
+cp how_pix /usr/lib/how_pix
+cp how_pxp /usr/lib/how_pxp
+cp libretro.a /usr/lib/libretro.a
+cp libtermlib.a /usr/lib/libtermlib.a
+cp Mail.help /usr/lib/Mail.help
+cp Mail.help.~ /usr/lib/Mail.help.~
+cp Mail.rc /usr/lib/Mail.rc
+cp npx_header /usr/lib/npx_header
+cp pi1.2strings /usr/lib/pi1.2strings
+cp px_header /usr/lib/px_header
+cp tmac.e /usr/lib/tmac.e
+mkdir /usr/lib/me
+cp acm.me /usr/lib/me/acm.me
+cp chars.me /usr/lib/me/chars.me
+cp deltext.me /usr/lib/me/deltext.me
+cp eqn.me /usr/lib/me/eqn.me
+cp float.me /usr/lib/me/float.me
+cp footnote.me /usr/lib/me/footnote.me
+cp index.me /usr/lib/me/index.me
+cp local.me /usr/lib/me/local.me
+cp null.me /usr/lib/me/null.me
+cp revisions /usr/lib/me/revisions
+cp sh.me /usr/lib/me/sh.me
+cp tbl.me /usr/lib/me/tbl.me
+cp thesis.me /usr/lib/me/thesis.me
+mkdir /usr/lib/tabset
+cp dtc /usr/lib/tabset/dtc
+cp owl /usr/lib/tabset/owl
+cp teleray /usr/lib/tabset/teleray

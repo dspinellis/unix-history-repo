@@ -1,0 +1,40 @@
+.TH HTMP UCB 4/19/79 UCB
+.SH NAME
+htmp \- home directory and teletype data base
+.SH DESCRIPTION
+The home directory and teletype data base
+.I htmp
+is used to partially simulate version 7 environments, by
+.I setenv (UCB),
+and the
+.I getenv
+subroutine of
+.IR libretro (UCB).
+The file consists of an array of structures of the form:
+.PP
+.DT
+	\fBstruct\fR htmp {
+.br
+		\fBshort\fR	uid;
+.br
+		\fBchar\fR	home[28];
+.br
+		\fBshort\fR	ttytype;
+.br
+	};
+.PP
+The
+.it ttytype
+is actually a two character code, and is defined by
+.IR termcap (UCB).
+.PP
+The file is indexed by the various teletypes in a system dependent fashion,
+using the result of a call to ttyn (3).
+.PP
+A set of routines internal to
+.IR libretro (UCB)
+allows easy access to this data base.
+.sh "SEE ALSO"
+printenv (UCB), setenv (in csh (UCB))
+.sh AUTHOR
+William Joy

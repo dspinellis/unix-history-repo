@@ -1,0 +1,15 @@
+.TH LOCK UCB 2/24/79 UCB
+.SH NAME
+lock \- reserve a terminal
+.SH SYNOPSIS
+.B lock
+.SH DESCRIPTION
+.I Lock
+requests a password from the user, then prints "LOCKED" on
+the terminal and refuses to relinquish the terminal until
+the password is repeated.  If the user forgets the password,
+he has no other recourse but to login elsewhere and kill
+the lock process.
+.SH AUTHOR
+Kurt Shoens
+.SH BUGS

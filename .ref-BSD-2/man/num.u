@@ -1,0 +1,17 @@
+.TH NUM UCB 2/24/79 UCB
+.SH NAME
+num \- number lines
+.SH SYNOPSIS
+.B num
+[
+file ...
+]
+.SH DESCRIPTION
+The lines in the specified files, or the standard input,
+are copied to the standard output preceded by line numbers.
+Tabs remain aligned in the output as the lines are printed
+preceded by the number blank padded to six digits and then 2 spaces.
+.SH SEE\ ALSO
+see(UCB)
+.SH AUTHOR
+William Joy

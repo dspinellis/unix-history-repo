@@ -1,0 +1,42 @@
+.TH CTAGS UCB 2/24/79 UCB
+.SH NAME
+ctags \- compute a tags file for a C program
+.SH SYNOPSIS
+.B ctags
+name ...
+.SH DESCRIPTION
+.I Ctags
+makes a tags file for
+.IR ex (UCB)
+from the specified C programs.
+A tags file gives the locations of specified objects (in this case
+functions) in a group of files.
+Each line of the tags file contains the function name,
+the file in which it is defined, and a scanning pattern used to find
+the function definition.  These are given in separate fields on the line,
+separated by blanks or tabs.
+.SH FILES
+.DT
+tags	output tags file
+.SH SEE ALSO
+astags(UCB), ex(UCB), vi(UCB)
+.SH BUGS
+This tags program is a primitive shell script, and requires functions
+to be recognizable by their starting in the first column of
+input lines on lines ending with a `)'.
+.PP
+No way to use it to incrementally update a tags file.
+In a 
+.I makefile,
+we could move the
+.I tags
+file away and then use
+.I sort
+and
+.I uniq
+to get around this.
+.PP
+For tags to be more useful, a good
+.I ctags
+program is needed which references external and macro definitions in
+header files as well as being less sensitive to formatting.
