@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.3 (Berkeley) %G%
+ *	@(#)autoconf.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -90,17 +90,17 @@ configure()
 	}
 
 	switch (fpu.cpu.cp_imp) {
-	    case MIPS_R2010_FPU:
+	    case MIPS_R2010:
 		printf("fpu0 (MIPS R2010 revision %d.%d)\n",
 			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
 		break;
 
-	    case MIPS_R3010_FPU:
+	    case MIPS_R3010:
 		printf("fpu0 (MIPS R3010 revision %d.%d)\n",
 			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
 		break;
 
-	    case MIPS_R4000_FPU:
+	    case MIPS_R4010:
 		printf("fpu0 (MIPS R4000 revision %d.%d)\n",
 			fpu.cpu.cp_majrev, fpu.cpu.cp_minrev);
 		break;
