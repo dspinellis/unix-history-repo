@@ -4,13 +4,40 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.26 (Berkeley) %G%
+ *	@(#)systm.h	7.27 (Berkeley) %G%
  */
 
+/*
+ * The `securelevel' variable controls the security level of the system.
+ * It can only be decreased by process 1 (/sbin/init).
+ *
+ * Security levels are as follows:
+ *   -1	permannently insecure mode - always run system in level 0 mode.
+ *    0	insecure mode - immutable and append-only flags make be turned off.
+ *	All devices may be read or written subject to permission modes.
+ *    1	secure mode - immutable and append-only flags may not be changed;
+ *	raw disks of mounted filesystems, /dev/mem, and /dev/kmem are
+ *	read-only.
+ *    2	highly secure mode - same as (1) plus raw disks are always
+ *	read-only whether mounted or not. This level precludes tampering 
+ *	with filesystems by unmounting them, but also inhibits running
+ *	newfs while the system is secured.
+ *
+ * In normal operation, the system runs in level 0 mode while single user
+ * and in level 1 mode while multiuser. If level 2 mode is desired while
+ * running multiuser, it can be set in the multiuser startup script
+ * (/etc/rc.local) using sysctl(1). If it is desired to run the system
+ * in level 0 mode while multiuser, initialize the variable securelevel
+ * in /sys/kern/kern_sysctl.c to -1. Note that it is NOT initialized to
+ * zero as that would allow the vmunix binary to be patched to -1.
+ * Without initialization, securelevel loads in the BSS area which only
+ * comes into existence when the kernel is loaded and hence cannot be
+ * patched by a stalking hacker.
+ */
+extern int securelevel;		/* system security level */
 extern const char *panicstr;	/* panic message */
 extern char version[];		/* system version */
 extern char copyright[];	/* system copyright */
-extern int securelevel;		/* system security level */
 
 extern int nblkdev;		/* number of entries in bdevsw */
 extern int nchrdev;		/* number of entries in cdevsw */
