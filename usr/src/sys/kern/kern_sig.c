@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.35 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.36 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -818,8 +818,17 @@ issig(p)
 			/*
 			 * Don't take default actions on system processes.
 			 */
-			if (p->p_pid <= 1)
+			if (p->p_pid <= 1) {
+#ifdef DIAGNOSTIC
+				/*
+				 * Are you sure you want to ignore SIGSEGV
+				 * in init? XXX
+				 */
+				printf("Process (pid %d) got signal %d\n",
+					p->p_pid, sig);
+#endif
 				break;		/* == ignore */
+			}
 			/*
 			 * If there is a pending stop signal to process
 			 * with default action, stop here,
