@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -334,8 +334,10 @@ macro() {
 					;
 				putback(l);
 				pushs(ep);
-			}
+			} else
+				chrsave(t);
 			break;
+
 		default:
 			chrsave(t);			/* stack the char */
 			break;
