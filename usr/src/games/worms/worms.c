@@ -5,8 +5,10 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)worms.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)worms.c	5.3 (Berkeley) %G%";
 #endif not lint
+
+#define BSD
 
 /*
 
@@ -26,12 +28,13 @@ static char sccsid[] = "@(#)worms.c	5.2 (Berkeley) %G%";
 
 */
 #include <stdio.h>
+#ifdef USG
+#include <termio.h>
+#else
 #include <sgtty.h>
-#define cursor(col,row) tputs(tgoto(CM,col,row),1,outc)
-outc(c)
-{
-	putchar(c);
-}
+#endif
+#include <signal.h>
+#define cursor(col,row) tputs(tgoto(CM,col,row),1,fputchar)
 extern char *UP;
 extern short ospeed;
 int Wrap;
@@ -135,6 +138,7 @@ static struct options {
     { 0, { 0, 0, 0 } },
     { 0, { 0, 0, 0 } }
 };
+char *TE;
 main(argc,argv)
 int argc;
 char *argv[];
@@ -143,6 +147,7 @@ char *argv[];
     char *malloc();
     char *getenv();
     char *tgetstr(), *tgoto();
+    int quit();
     float ranf();
     register int x, y;
     register int n;
@@ -155,7 +160,11 @@ char *argv[];
     char *tcp;
     register char *term;
     char tcb[100];
+#ifdef USG
+    struct termio sg;
+#else
     struct sgttyb sg;
+#endif
     setbuf(stdout,malloc(BUFSIZ));
     for (x=1;x<argc;x++) {
 	register char *p;
@@ -216,9 +225,15 @@ char *argv[];
     if ((LI=tgetnum("li"))<=0) LI=24;
     bottom=LI-1;
     SR=tgetstr("sr",&tcp);
+    TE=tgetstr("te",&tcp);
     UP=tgetstr("up",&tcp);
+#ifdef USG
+    ioctl(fileno(stdout),TCGETA,&sg);
+    ospeed=sg.c_cflag&CBAUD;
+#else
     gtty(fileno(stdout),&sg);
     ospeed=sg.sg_ospeed;
+#endif
     Wrap=tgetflag("am");
     ip=(short *)malloc(LI*CO*sizeof (short));
     for (n=0;n<LI;) {
@@ -241,6 +256,8 @@ char *argv[];
 	w->ypos=ip;
 	for (y=length;--y>=0;) *ip++ = -1;
     }
+    signal(SIGINT, quit);
+    tputs(tgetstr("ti",&tcp),1,fputchar);
     tputs(tgetstr("cl",&tcp),1,fputchar);
     if (field) {
 	register char *p;
@@ -261,16 +278,16 @@ char *argv[];
 		}
 		y= *p++; if (!*p) p=field;
 		putchar(*p);
-		if (BC) fputs(BC,stdout);
+		if (BC) tputs(BC,1,fputchar);
 		else cursor(last-1,bottom);
-		fputs(IM,stdout);
+		tputs(IM,1,fputchar);
 		if (IC) tputs(IC,1,fputchar);
 		putchar(y);
 		if (IP) tputs(IP,1,fputchar);
-		fputs(EI,stdout);
+		tputs(EI,1,fputchar);
 	    }
 	    else if (SR||AL) {
-		if (HO) fputs(HO,stdout);
+		if (HO) tputs(HO,1,fputchar);
 		else cursor(0,0);
 		if (SR) tputs(SR,1,fputchar);
 		else tputs(AL,LI,fputchar);
@@ -327,11 +344,21 @@ char *argv[];
 	fflush(stdout);
     }
 }
+quit()
+{
+    signal(SIGINT, SIG_IGN);
+    tputs(TE,1,fputchar);
+    exit(0);
+}
 fputchar(c)
 char c;
 {
     putchar(c);
 }
 float ranf() {
+#ifdef BSD
     return((float)rand()/2147483647.);
+#else
+    return((float)rand()/32767.);
+#endif
 }
