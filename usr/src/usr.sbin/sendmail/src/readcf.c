@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)readcf.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)readcf.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -832,6 +832,10 @@ setoption(opt, val, sticky)
 
 	  case 'X':		/* load avg at which to auto-reject connections */
 		RefuseLA = atoi(val);
+		break;
+
+	  case 'z':		/* fork jobs during queue runs */
+		ForkQueueRuns = atobool(val);
 		break;
 
 	  default:
