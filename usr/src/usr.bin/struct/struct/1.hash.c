@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)1.hash.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)1.hash.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
