@@ -1,9 +1,17 @@
-/*	in_cksum.c	1.2	86/01/05	*/
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ * from tahoe:	in_cksum.c	1.2	86/01/05
+ *	@(#)in_cksum.c	1.3 (Berkeley) %G%
+ */
 
-#include "../h/types.h"
-#include "../h/mbuf.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
+#include "param.h"
+#include "sys/mbuf.h"
+#include "netinet/in.h"
+#include "netinet/in_systm.h"
 
 /*
  * Checksum routine for Internet Protocol family headers.
@@ -11,7 +19,7 @@
  * This routine is very heavily used in the network
  * code and should be modified for each CPU to be as fast as possible.
  * 
- * This implementation is TAHOE version.
+ * This implementation is 386 version.
  */
 
 #undef	ADDCARRY
