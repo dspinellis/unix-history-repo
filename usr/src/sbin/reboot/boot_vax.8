@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)boot_vax.8	6.4 (Berkeley) %G%
+.\"	@(#)boot_vax.8	6.5 (Berkeley) %G%
 .\"
 .TH REBOOT 8 ""
 .UC 4
@@ -103,13 +103,12 @@ It reads from the console a device specification (see below) followed
 immediately by a pathname.
 .PP
 The scripts may be modified for local configuration if necessary.
-The boot device type is set in register 10 as the device major number.
-The flags and minor device are placed in register 11.
-The register is used in four one-byte fields; from least to most significant,
-they are boot flags (as defined in
-.IR <sys/reboot.h> ),
-disk partition, drive unit, and adaptor number (UNIBUS or MASSBUS as
-appropriate).
+The flags are placed in register 11 (as defined in
+.IR <sys/reboot.h> ).
+The boot device is specified in register 10.  This register is used
+as four one-byte fields; from least to most significant, they are the
+boot device type (the device major number), disk partition, drive unit,
+and adaptor number (UNIBUS or MASSBUS as appropriate).
 .PP
 On an 11/750, the reset button will boot from the device
 selected by the front panel boot device switch.  In systems
