@@ -1,12 +1,14 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.7 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)gram.y	4.8 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
 
-struct	block *lastn;
-struct	block *lastc;
+struct	cmd *cmds = NULL;
+struct	cmd *last_cmd;
+struct	namelist *last_n;
+struct	subcmd *last_sc;
 
 %}
 
@@ -25,15 +27,16 @@ struct	block *lastc;
 %term OPTION	13
 
 %union {
-	struct block *blk;
 	int intval;
 	char *string;
+	struct subcmd *subcmd;
+	struct namelist *namel;
 }
 
-%type <blk> NAME, INSTALL, NOTIFY, EXCEPT, SPECIAL
-%type <blk> namelist, names, opt_name, opt_namelist, cmdlist, cmd
 %type <intval> OPTION, options
-%type <string> STRING
+%type <string> NAME, STRING
+%type <subcmd> INSTALL, NOTIFY, EXCEPT, SPECIAL, cmdlist, cmd
+%type <namel> namelist, names, opt_namelist
 
 %%
 
@@ -42,20 +45,19 @@ file:		  /* VOID */
 		;
 
 command:	  NAME EQUAL namelist = {
-			$1->b_args = $3;
-			(void) lookup($1->b_name, $1, 1);
+			(void) lookup($1, INSERT, $3);
 		}
 		| namelist ARROW namelist cmdlist = {
-			dohcmds($1, $3, $4);
+			insert($1, $3, $4);
 		}
 		| namelist DCOLON NAME cmdlist = {
-			dofcmds($1, $3, $4);
+			append($1, $3, $4);
 		}
 		| error
 		;
 
 namelist:	  NAME = {
-			$$ = $1;
+			$$ = makenl($1);
 		}
 		| LP names RP = {
 			$$ = $2;
@@ -63,57 +65,60 @@ namelist:	  NAME = {
 		;
 
 names:		  /* VOID */ {
-			$$ = lastn = NULL;
+			$$ = last_n = NULL;
 		}
 		| names NAME = {
-			if (lastn == NULL)
-				$$ = lastn = $2;
+			if (last_n == NULL)
+				$$ = last_n = makenl($2);
 			else {
-				lastn->b_next = $2;
-				lastn = $2;
+				last_n->n_next = makenl($2);
+				last_n = last_n->n_next;
 				$$ = $1;
 			}
 		}
 		;
 
 cmdlist:	  /* VOID */ {
-			$$ = lastc = NULL;
+			$$ = last_sc = NULL;
 		}
 		| cmdlist cmd = {
-			if (lastc == NULL)
-				$$ = lastc = $2;
+			if (last_sc == NULL)
+				$$ = last_sc = $2;
 			else {
-				lastc->b_next = $2;
-				lastc = $2;
+				last_sc->sc_next = $2;
+				last_sc = $2;
 				$$ = $1;
 			}
 		}
 		;
 
-cmd:		  INSTALL options opt_name SM = {
-			register struct block *b;
+cmd:		  INSTALL options opt_namelist SM = {
+			register struct namelist *nl;
 
-			$1->b_options = $2 | options;
+			$1->sc_options = $2 | options;
 			if ($3 != NULL) {
-				b = expand($3, E_VARS|E_SHELL);
-				if (b->b_next != NULL)
+				nl = expand($3, E_VARS);
+				if (nl->n_next != NULL)
 					yyerror("only one name allowed\n");
-				$1->b_name = b->b_name;
+				$1->sc_name = nl->n_name;
+				free(nl);
 			}
 			$$ = $1;
 		}
 		| NOTIFY namelist SM = {
-			$1->b_args = expand($2, E_VARS);
+			if ($2 != NULL)
+				$1->sc_args = expand($2, E_VARS);
 			$$ = $1;
 		}
 		| EXCEPT namelist SM = {
-			$1->b_args = $2;
+			if ($2 != NULL)
+				$1->sc_args = expand($2, E_ALL);
 			$$ = $1;
 		}
 		| SPECIAL opt_namelist STRING SM = {
 			if ($2 != NULL)
-				$1->b_args = expand($2, E_ALL);
-			$1->b_name = $3;
+				$1->sc_args = expand($2, E_ALL);
+			$1->sc_name = $3;
 			$$ = $1;
 		}
 		;
@@ -123,14 +128,6 @@ options:	  /* VOID */ = {
 		}
 		| options OPTION = {
 			$$ |= $2;
-		}
-		;
-
-opt_name:	  /* VOID */ = {
-			$$ = NULL;
-		}
-		| NAME = {
-			$$ = $1;
 		}
 		;
 
@@ -212,13 +209,8 @@ again:
 		}
 		if (c != '"')
 			yyerror("missing closing '\"'\n");
-		*cp1++ = '\0';
-		yylval.string = cp2 = malloc(cp1 - yytext);
-		if (cp2 == NULL)
-			fatal("ran out of memory\n");
-		cp1 = yytext;
-		while (*cp2++ = *cp1++)
-			;
+		*cp1 = '\0';
+		yylval.string = makestr(yytext);
 		return(STRING);
 
 	case ':':  /* :: */
@@ -282,9 +274,11 @@ again:
 		c = EXCEPT;
 	else if (!strcmp(yytext, "special"))
 		c = SPECIAL;
-	else
-		c = NAME;
-	yylval.blk = makeblock(c, yytext);
+	else {
+		yylval.string = makestr(yytext);
+		return(NAME);
+	}
+	yylval.subcmd = makesubcmd(c);
 	return(c);
 }
 
@@ -299,6 +293,80 @@ any(c, str)
 }
 
 /*
+ * Insert or append ARROW command to list of hosts to be updated.
+ */
+insert(files, hosts, subcmds)
+	struct namelist *files, *hosts;
+	struct subcmd *subcmds;
+{
+	register struct cmd *c, *prev, *nc;
+	register struct namelist *h;
+
+	files = expand(files, E_VARS|E_SHELL);
+	hosts = expand(hosts, E_ALL);
+	for (h = hosts; h != NULL; free(h), h = h->n_next) {
+		/*
+		 * Search command list for an update to the same host.
+		 */
+		for (prev = NULL, c = cmds; c!=NULL; prev = c, c = c->c_next) {
+			if (strcmp(c->c_name, h->n_name) == 0) {
+				do {
+					prev = c;
+					c = c->c_next;
+				} while (c != NULL &&
+					strcmp(c->c_name, h->n_name) == 0);
+				break;
+			}
+		}
+		/*
+		 * Insert new command to update host.
+		 */
+		nc = ALLOC(cmd);
+		if (nc == NULL)
+			fatal("ran out of memory\n");
+		nc->c_type = ARROW;
+		nc->c_name = h->n_name;
+		nc->c_files = files;
+		nc->c_cmds = subcmds;
+		nc->c_next = c;
+		if (prev == NULL)
+			cmds = nc;
+		else
+			prev->c_next = nc;
+		/* update last_cmd if appending nc to cmds */
+		if (c == NULL)
+			last_cmd = nc;
+	}
+}
+
+/*
+ * Append DCOLON command to the end of the command list since these are always
+ * executed in the order they appear in the distfile.
+ */
+append(files, stamp, subcmds)
+	struct namelist *files;
+	char *stamp;
+	struct subcmd *subcmds;
+{
+	register struct cmd *c;
+
+	c = ALLOC(cmd);
+	if (c == NULL)
+		fatal("ran out of memory\n");
+	c->c_type = DCOLON;
+	c->c_name = stamp;
+	c->c_files = expand(files, E_ALL);
+	c->c_cmds = subcmds;
+	c->c_next = NULL;
+	if (cmds == NULL)
+		cmds = last_cmd = c;
+	else {
+		last_cmd->c_next = c;
+		last_cmd = c;
+	}
+}
+
+/*
  * Error printing routine in parser.
  */
 yyerror(s)
@@ -306,7 +374,62 @@ yyerror(s)
 {
 	extern int yychar;
 
-	errs++;
+	nerrs++;
 	fflush(stdout);
 	fprintf(stderr, "rdist: line %d: %s\n", yylineno, s);
+}
+
+/*
+ * Return a copy of the string.
+ */
+char *
+makestr(str)
+	char *str;
+{
+	register char *cp, *s;
+
+	str = cp = malloc(strlen(s = str) + 1);
+	if (cp == NULL)
+		fatal("ran out of memory\n");
+	while (*cp++ = *s++)
+		;
+	return(str);
+}
+
+/*
+ * Allocate a namelist structure.
+ */
+struct namelist *
+makenl(name)
+	char *name;
+{
+	register struct namelist *nl;
+
+	nl = ALLOC(namelist);
+	if (nl == NULL)
+		fatal("ran out of memory\n");
+	nl->n_name = name;
+	nl->n_next = NULL;
+	return(nl);
+}
+
+/*
+ * Make a sub command for lists of variables, commands, etc.
+ */
+struct subcmd *
+makesubcmd(type, name)
+	int type;
+	register char *name;
+{
+	register char *cp;
+	register struct subcmd *sc;
+
+	sc = ALLOC(subcmd);
+	if (sc == NULL)
+		fatal("ran out of memory\n");
+	sc->sc_type = type;
+	sc->sc_args = NULL;
+	sc->sc_next = NULL;
+	sc->sc_name = NULL;
+	return(sc);
 }

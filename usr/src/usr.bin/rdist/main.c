@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.9 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)main.c	4.10 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
@@ -21,9 +21,9 @@ int	iamremote;	/* act as remote server for transfering files */
 int	filec;		/* number of files to update */
 char	**filev;	/* list of files/directories to update */
 FILE	*fin = NULL;	/* input file pointer */
-int	rem = 0;	/* file descriptor to remote source/sink process */
+int	rem = -1;	/* file descriptor to remote source/sink process */
 char	host[32];	/* host name */
-int	errs;		/* number of errors while sending/receiving */
+int	nerrs;		/* number of errors while sending/receiving */
 char	user[10];	/* user's name */
 char	homedir[128];	/* user's home directory */
 int	userid;		/* user's user ID */
@@ -31,9 +31,6 @@ int	groupid;	/* user's group ID */
 
 struct	passwd *pw;	/* pointer to static area used by getpwent */
 struct	group *gr;	/* pointer to static area used by getgrent */
-
-int	cleanup();
-int	lostconn();
 
 main(argc, argv)
 	int argc;
@@ -123,30 +120,25 @@ main(argc, argv)
 	}
 
 	mktemp(tmpfile);
-	signal(SIGPIPE, lostconn);
+
 	if (iamremote) {
 		server();
-		exit(errs);
+		exit(nerrs);
 	}
-
-	signal(SIGHUP, cleanup);
-	signal(SIGINT, cleanup);
-	signal(SIGQUIT, cleanup);
-	signal(SIGTERM, cleanup);
 
 	if (cmdargs)
 		docmdargs(argc, argv);
 	else {
-		filec = argc;
-		filev = argv;
 		if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
 			perror(distfile);
 			exit(1);
 		}
 		yyparse();
+		if (nerrs == 0)
+			docmds(argc, argv);
 	}
 
-	exit(errs);
+	exit(nerrs);
 }
 
 usage()
@@ -163,45 +155,40 @@ docmdargs(nargs, args)
 	int nargs;
 	char *args[];
 {
-	struct block *bp, *files, *hosts, *cmds, *prev;
+	register struct namelist *nl, *prev;
+	register char *cp;
+	struct namelist *files, *hosts;
+	struct subcmd *cmds;
+	char *dest;
+	static struct namelist tnl = { NULL, NULL };
 	int i;
-	char *pos, dest[BUFSIZ];
 
 	if (nargs < 2)
 		usage();
 
 	prev = NULL;
-	bp = files = ALLOC(block);
-	for (i = 0; i < nargs - 1; bp = ALLOC(block), i++) {
-		bp->b_type = NAME;
-		bp->b_name = args[i];
-		if (prev != NULL)
-			prev->b_next = bp;
-		bp->b_next = bp->b_args = NULL;
-		prev = bp;
+	for (i = 0; i < nargs - 1; i++) {
+		nl = makenl(args[i]);
+		if (prev == NULL)
+			files = prev = nl;
+		else {
+			prev->n_next = nl;
+			prev = nl;
+		}
 	}
 
-	hosts = ALLOC(block);
-	hosts->b_type = NAME;
-	hosts->b_name = args[i];
-	hosts->b_name = args[i];
-	hosts->b_next = hosts->b_args = NULL;
-	if ((pos = index(hosts->b_name, ':')) != NULL) {
-		*pos++ = '\0';
-		strcpy(dest, pos);
-	} else
-		dest[0] = '\0';
+	cp = args[i];
+	if ((dest = index(cp, ':')) != NULL)
+		*dest++ = '\0';
+	tnl.n_name = cp;
+	hosts = expand(&tnl, E_ALL);
 
-	hosts = expand(hosts, 1);
-
-	if (dest[0] == '\0')
+	if (dest == NULL || *dest == '\0')
 		cmds = NULL;
 	else {
-		cmds = ALLOC(block);
-		cmds->b_type = INSTALL;
-		cmds->b_options = options;
-		cmds->b_name = dest;
-		cmds->b_next = cmds->b_args = NULL;
+		cmds = makesubcmd(INSTALL);
+		cmds->sc_options = options;
+		cmds->sc_name = dest;
 	}
 
 	if (debug) {
@@ -210,28 +197,20 @@ docmdargs(nargs, args)
 		printf("hosts = ");
 		prnames(hosts);
 	}
-	dohcmds(files, hosts, cmds);
-}
-
-/*
- * Remove temporary files and do any cleanup operations before exiting.
- */
-cleanup()
-{
-	(void) unlink(tmpfile);
-	exit(1);
+	insert(files, hosts, cmds);
+	docmds(0, NULL);
 }
 
 /*
  * Print a list of NAME blocks (mostly for debugging).
  */
-prnames(bp)
-	register struct block *bp;
+prnames(nl)
+	register struct namelist *nl;
 {
 	printf("( ");
-	while (bp != NULL) {
-		printf("%s ", bp->b_name);
-		bp = bp->b_next;
+	while (nl != NULL) {
+		printf("%s ", nl->n_name);
+		nl = nl->n_next;
 	}
 	printf(")\n");
 }

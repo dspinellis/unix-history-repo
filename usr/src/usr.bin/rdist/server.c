@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.14 (Berkeley) 84/01/04";
+static	char *sccsid = "@(#)server.c	4.15 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
@@ -16,6 +16,8 @@ int	oumask;			/* old umask for creating files */
 
 extern	FILE *lfp;		/* log file for mailing changes */
 
+int	cleanup();
+
 /*
  * Server routine to read requests and process them.
  * Commands are:
@@ -28,6 +30,13 @@ server()
 	char cmdbuf[BUFSIZ];
 	register char *cp;
 
+	signal(SIGHUP, cleanup);
+	signal(SIGINT, cleanup);
+	signal(SIGQUIT, cleanup);
+	signal(SIGTERM, cleanup);
+	signal(SIGPIPE, cleanup);
+
+	rem = 0;
 	oumask = umask(0);
 	(void) sprintf(buf, "V%d\n", VERSION);
 	(void) write(rem, buf, strlen(buf));
@@ -42,7 +51,7 @@ server()
 		}
 		do {
 			if (read(rem, cp, 1) != 1)
-				lostconn();
+				cleanup();
 		} while (*cp++ != '\n' && cp < &cmdbuf[BUFSIZ]);
 		*--cp = '\0';
 		cp = cmdbuf;
@@ -137,7 +146,7 @@ server()
 #endif
 
 		case '\1':
-			errs++;
+			nerrs++;
 			continue;
 
 		case '\2':
@@ -222,11 +231,11 @@ sendf(rname, opts)
 	char *rname;
 	int opts;
 {
-	register struct block *c;
+	register struct subcmd *sc;
 	struct stat stb;
 	int sizerr, f, u;
 	off_t i;
-	extern struct block *special;
+	extern struct subcmd *special;
 
 	if (debug)
 		printf("sendf(%s, %x)\n", rname, opts);
@@ -319,15 +328,15 @@ sendf(rname, opts)
 	if (response() == 0 && (opts & COMPARE))
 		return;
 dospecial:
-	for (c = special; c != NULL; c = c->b_next) {
-		if (c->b_type != SPECIAL)
+	for (sc = special; sc != NULL; sc = sc->sc_next) {
+		if (sc->sc_type != SPECIAL)
 			continue;
-		if (!inlist(c->b_args, target))
+		if (!inlist(sc->sc_args, target))
 			continue;
-		log(lfp, "special \"%s\"\n", c->b_name);
+		log(lfp, "special \"%s\"\n", sc->sc_name);
 		if (opts & VERIFY)
 			continue;
-		(void) sprintf(buf, "S%s\n", c->b_name);
+		(void) sprintf(buf, "S%s\n", sc->sc_name);
 		if (debug)
 			printf("buf = %s", buf);
 		(void) write(rem, buf, strlen(buf));
@@ -419,7 +428,7 @@ update(rname, opts, st)
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
-			lostconn();
+			cleanup();
 	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 	switch (*s++) {
@@ -430,7 +439,7 @@ update(rname, opts, st)
 		return(1);
 
 	case '\1':
-		errs++;
+		nerrs++;
 		if (*s != '\n') {
 			if (!iamremote) {
 				fflush(stdout);
@@ -874,7 +883,7 @@ rmchk(opts)
 		cp = s = buf;
 		do {
 			if (read(rem, cp, 1) != 1)
-				lostconn();
+				cleanup();
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 		switch (*s++) {
@@ -909,7 +918,7 @@ rmchk(opts)
 
 		case '\1':
 		case '\2':
-			errs++;
+			nerrs++;
 			if (*s != '\n') {
 				if (!iamremote) {
 					fflush(stdout);
@@ -979,7 +988,7 @@ clean(cp)
 		cp = buf;
 		do {
 			if (read(rem, cp, 1) != 1)
-				lostconn();
+				cleanup();
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 		*--cp = '\0';
 		cp = buf;
@@ -1153,7 +1162,7 @@ error(fmt, a1, a2, a3)
 	char *fmt;
 	int a1, a2, a3;
 {
-	errs++;
+	nerrs++;
 	strcpy(buf, "\1rdist: ");
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
 	if (!iamremote) {
@@ -1170,7 +1179,7 @@ fatal(fmt, a1, a2,a3)
 	char *fmt;
 	int a1, a2, a3;
 {
-	errs++;
+	nerrs++;
 	strcpy(buf, "\2rdist: ");
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
 	if (!iamremote) {
@@ -1193,7 +1202,7 @@ response()
 	cp = s = buf;
 	do {
 		if (read(rem, cp, 1) != 1)
-			lostconn();
+			cleanup();
 	} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 	switch (*s++) {
@@ -1210,7 +1219,7 @@ response()
 		/* fall into... */
 	case '\1':
 	case '\2':
-		errs++;
+		nerrs++;
 		if (*s != '\n') {
 			if (!iamremote) {
 				fflush(stdout);
@@ -1225,11 +1234,11 @@ response()
 	}
 }
 
-lostconn()
+/*
+ * Remove temporary files and do any cleanup operations before exiting.
+ */
+cleanup()
 {
-	if (!iamremote) {
-		fflush(stdout);
-		fprintf(stderr, "rdist: lost connection\n");
-	}
-	cleanup();
+	(void) unlink(tmpfile);
+	exit(1);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.9 (Berkeley) 83/12/19";
+static	char *sccsid = "@(#)expand.c	4.10 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
@@ -9,22 +9,21 @@ static	char *sccsid = "@(#)expand.c	4.9 (Berkeley) 83/12/19";
 
 static char	shchars[] = "${[*?";
 
-static int	which;		/* bit mask of types to expand */
-static int	argc;		/* expanded arg count */
-static char	**argv;		/* expanded arg vectors */
-static char	*path;
-static char	*pathp;
-static char	*lastpathp;
-static char	*tilde;		/* "~user" if not expanding tilde, else "" */
-static char	*tpathp;
-static int	nleft;
+int	which;		/* bit mask of types to expand */
+int	eargc;		/* expanded arg count */
+char	**eargv;	/* expanded arg vectors */
+char	*path;
+char	*pathp;
+char	*lastpathp;
+char	*tilde;		/* "~user" if not expanding tilde, else "" */
+char	*tpathp;
+int	nleft;
 
-static int	expany;		/* any expansions done? */
-static char	*entp;
-static char	**sortbase;
+int	expany;		/* any expansions done? */
+char	*entp;
+char	**sortbase;
 
 char	*index();
-struct block *copy();
 
 /*
  * Take a list of names and expand any macros, etc.
@@ -33,12 +32,12 @@ struct block *copy();
  * wh = E_TILDE if expanding `~'.
  * or any of these or'ed together.
  */
-struct block *
+struct namelist *
 expand(list, wh)
-	struct block *list;
+	struct namelist *list;
 	int wh;
 {
-	register struct block *bp, *prev;
+	register struct namelist *nl, *prev;
 	register int n;
 	char pathbuf[BUFSIZ];
 	char *argvbuf[GAVSIZ];
@@ -56,34 +55,27 @@ expand(list, wh)
 	*pathp = '\0';
 	lastpathp = &path[sizeof pathbuf - 2];
 	tilde = "";
-	argc = 0;
-	argv = sortbase = argvbuf;
-	*argv = 0;
+	eargc = 0;
+	eargv = sortbase = argvbuf;
+	*eargv = 0;
 	nleft = NCARGS - 4;
 	/*
-	 * Walk the block list and expand names into argv[];
+	 * Walk the name list and expand names into eargv[];
 	 */
-	for (bp = list; bp != NULL; bp = bp->b_next) {
-		expstr(bp->b_name);
-		free(bp->b_name);
-		free(bp);
-	}
+	for (nl = list; nl != NULL; nl = nl->n_next)
+		expstr(nl->n_name);
 	/*
-	 * Take expanded list of names from argv[] and build a block list.
+	 * Take expanded list of names from eargv[] and build a new list.
 	 */
 	list = prev = NULL;
-	for (n = 0; n < argc; n++) {
-		bp = ALLOC(block);
-		if (bp == NULL)
-			fatal("ran out of memory\n");
-		bp->b_type = NAME;
-		bp->b_next = bp->b_args = NULL;
-		bp->b_name = argv[n];
+	for (n = 0; n < eargc; n++) {
+		nl = makenl(NULL);
+		nl->n_name = eargv[n];
 		if (prev == NULL)
-			list = prev = bp;
+			list = prev = nl;
 		else {
-			prev->b_next = bp;
-			prev = bp;
+			prev->n_next = nl;
+			prev = nl;
 		}
 	}
 	if (debug) {
@@ -97,10 +89,10 @@ expstr(s)
 	char *s;
 {
 	register char *cp, *cp1;
-	register struct block *tp;
+	register struct namelist *tp;
 	char *tail;
 	char buf[BUFSIZ];
-	int savec, oargc;
+	int savec, oeargc;
 	extern char homedir[];
 
 	if (s == NULL || *s == '\0')
@@ -131,9 +123,9 @@ expstr(s)
 		tp = lookup(cp, NULL, 0);
 		if (savec != '\0')
 			*tail = savec;
-		if ((tp = tp->b_args) != NULL) {
-			for (; tp != NULL; tp = tp->b_next) {
-				sprintf(buf, "%s%s%s", s, tp->b_name, tail);
+		if (tp != NULL) {
+			for (; tp != NULL; tp = tp->n_next) {
+				sprintf(buf, "%s%s%s", s, tp->n_name, tail);
 				expstr(buf);
 			}
 			return;
@@ -184,10 +176,10 @@ expstr(s)
 		sort();
 		return;
 	}
-	oargc = argc;
+	oeargc = eargc;
 	expany = 0;
 	expsh(s);
-	if (argc != oargc)
+	if (eargc != oeargc)
 		sort();
 }
 
@@ -197,7 +189,7 @@ expstr(s)
 sort()
 {
 	register char **p1, **p2, *c;
-	char **ap = &argv[argc];
+	char **ap = &eargv[eargc];
 
 	p1 = sortbase;
 	while (p1 < ap-1) {
@@ -532,10 +524,10 @@ Cat(s1, s2)
 	register char *s;
 
 	nleft -= len;
-	if (nleft <= 0 || ++argc >= GAVSIZ)
+	if (nleft <= 0 || ++eargc >= GAVSIZ)
 		error("Arguments too long\n");
-	argv[argc] = 0;
-	argv[argc - 1] = s = malloc(len);
+	eargv[eargc] = 0;
+	eargv[eargc - 1] = s = malloc(len);
 	if (s == NULL)
 		fatal("ran out of memory\n");
 	while (*s++ = *s1++ & TRIM)
