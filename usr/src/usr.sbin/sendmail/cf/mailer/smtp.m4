@@ -14,11 +14,13 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.2 (Berkeley) %G%')
 
-Msmtp,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=21, E=\r\n,
+Msmtp,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=ifdef(`_ALL_MASQUERADE_', `11', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
-Mrelay,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=19, E=\r\n,
+Mesmtp,		P=[IPC], F=CONCAT(mDFMueXCa, SMTP_MAILER_FLAGS), S=11, R=ifdef(`_ALL_MASQUERADE_', `11', `21'), E=\r\n,
+		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
+Mrelay,		P=[IPC], F=CONCAT(mDFMueXCa, SMTP_MAILER_FLAGS), S=11, R=19, E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=2040, ')A=IPC $h
 
 S11
@@ -37,7 +39,8 @@ R$=E			$@ $1 < @ $j>			show exposed names
 R$+			$: $1 < @ $M >			user w/o host
 R$+ <@>			$: $1 < @ $j >			in case $M undefined
 
-S21
+ifdef(`_ALL_MASQUERADE_', `dnl',
+`S21
 
 # do sender/recipient common rewriting
 R$+			$: $>19 $1
@@ -49,7 +52,7 @@ R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
 R$* :; <@>		$@ $1 :;
 
 # unqualified names (e.g., "eric") are qualified by local host
-R$+			$: $1 < @ $j >
+R$+			$: $1 < @ $j >')
 
 S19
 

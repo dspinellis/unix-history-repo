@@ -8,6 +8,7 @@ PUSHDIVERT(-1)
 #
 ifdef(`LOCAL_MAILER_FLAGS',, `define(`LOCAL_MAILER_FLAGS', `rn')')
 ifdef(`LOCAL_MAILER_PATH',, `define(`LOCAL_MAILER_PATH', /bin/mail)')
+ifdef(`LOCAL_MAILER_ARGS',, `define(`LOCAL_MAILER_ARGS', `mail -d $u')')
 ifdef(`LOCAL_SHELL_PATH',, `define(`LOCAL_SHELL_PATH', /bin/sh)')
 POPDIVERT
 
@@ -15,10 +16,10 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.2 (Berkeley) %G%')
 
 Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMm', LOCAL_MAILER_FLAGS), S=10, R=20,
-		A=mail -d $u
+		A=LOCAL_MAILER_ARGS
 Mprog,		P=LOCAL_SHELL_PATH, F=lsDFMeu, S=10, R=20, D=$z:/,
 		A=sh -c $u
 
