@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.8 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -752,13 +752,13 @@ caddr_t	buf;
 int		len;
 {
 	int		i,j;
-
+#define Buf ((u_char *)buf)
 	printf("Dump buf 0x%x len 0x%x\n", buf, len);
 	for (i = 0; i < len; i += MAX_COLUMNS) {
 		printf("+%d:\t", i);
 		for (j = 0; j < MAX_COLUMNS; j++) {
 			if (i + j < len) {
-				printf("%x/%d\t", buf[i+j]&0xff, buf[i+j]);
+				printf("%x/%d\t", Buf[i+j], Buf[i+j]);
 			} else {
 				printf("	");
 			}
@@ -766,8 +766,8 @@ int		len;
 
 		for (j = 0; j < MAX_COLUMNS; j++) {
 			if (i + j < len) {
-				if (((buf[i+j]) > 31) && ((buf[i+j]) < 128))
-					printf("%c", buf[i+j]&0xff);
+				if (((Buf[i+j]) > 31) && ((Buf[i+j]) < 128))
+					printf("%c", Buf[i+j]);
 				else
 					printf(".");
 			}
