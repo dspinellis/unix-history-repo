@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dumprestore.h	5.8 (Berkeley) %G%
+ *	@(#)dumprestore.h	5.9 (Berkeley) %G%
  */
 
 #ifndef _DUMPRESTORE_H_
@@ -37,8 +37,8 @@ union u_spcl {
 	char dummy[TP_BSIZE];
 	struct	s_spcl {
 		long	c_type;		    /* record type (see below) */
-		time_t	c_date;		    /* date of previous dump */
-		time_t	c_ddate;	    /* date of this dump */
+		time_t	c_date;		    /* date of this dump */
+		time_t	c_ddate;	    /* date of previous dump */
 		long	c_volume;	    /* dump volume number */
 		daddr_t	c_tapea;	    /* logical block of this record */
 		ino_t	c_inumber;	    /* number of inode */
