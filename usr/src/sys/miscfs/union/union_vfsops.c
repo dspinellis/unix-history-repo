@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.13 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.14 (Berkeley) %G%
  */
 
 /*
@@ -428,16 +428,20 @@ union_statfs(mp, sbp, p)
 	 * kind of sense.  none of this makes sense though.
 	 */
 
-	if (mstat.f_bsize != lbsize) {
+	if (mstat.f_bsize != lbsize)
 		sbp->f_blocks = sbp->f_blocks * lbsize / mstat.f_bsize;
-		sbp->f_bfree = sbp->f_bfree * lbsize / mstat.f_bsize;
-		sbp->f_bavail = sbp->f_bavail * lbsize / mstat.f_bsize;
-	}
+
+	/*
+	 * The "total" fields count total resources in all layers,
+	 * the "free" fields count only those resources which are
+	 * free in the upper layer (since only the upper layer
+	 * is writeable).
+	 */
 	sbp->f_blocks += mstat.f_blocks;
-	sbp->f_bfree += mstat.f_bfree;
-	sbp->f_bavail += mstat.f_bavail;
+	sbp->f_bfree = mstat.f_bfree;
+	sbp->f_bavail = mstat.f_bavail;
 	sbp->f_files += mstat.f_files;
-	sbp->f_ffree += mstat.f_ffree;
+	sbp->f_ffree = mstat.f_ffree;
 
 	if (sbp != &mp->mnt_stat) {
 		bcopy(&mp->mnt_stat.f_fsid, &sbp->f_fsid, sizeof(sbp->f_fsid));
