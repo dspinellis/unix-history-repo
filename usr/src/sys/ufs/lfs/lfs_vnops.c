@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vnops.c	7.23 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,12 +105,12 @@ struct vnodeops ufs_vnodeops = {
 
 int	spec_lookup(),
 	spec_open(),
-	spec_read(),
-	spec_write(),
+	ufsspec_read(),
+	ufsspec_write(),
 	spec_strategy(),
 	spec_ioctl(),
 	spec_select(),
-	spec_close(),
+	ufsspec_close(),
 	spec_badop(),
 	spec_nullop();
 
@@ -119,12 +119,12 @@ struct vnodeops spec_inodeops = {
 	spec_badop,		/* create */
 	spec_badop,		/* mknod */
 	spec_open,		/* open */
-	spec_close,		/* close */
+	ufsspec_close,		/* close */
 	ufs_access,		/* access */
 	ufs_getattr,		/* getattr */
 	ufs_setattr,		/* setattr */
-	spec_read,		/* read */
-	spec_write,		/* write */
+	ufsspec_read,		/* read */
+	ufsspec_write,		/* write */
 	spec_ioctl,		/* ioctl */
 	spec_select,		/* select */
 	spec_badop,		/* mmap */
@@ -1295,6 +1295,57 @@ ufs_strategy(bp)
 {
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 	return (0);
+}
+
+/*
+ * Read wrapper for special devices.
+ */
+ufsspec_read(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+
+	/*
+	 * Set access flag.
+	 */
+	VTOI(vp)->i_flag |= IACC;
+	return (spec_read(vp, uio, ioflag, cred));
+}
+
+/*
+ * Write wrapper for special devices.
+ */
+ufsspec_write(vp, uio, ioflag, cred)
+	struct vnode *vp;
+	struct uio *uio;
+	int ioflag;
+	struct ucred *cred;
+{
+
+	/*
+	 * Set update and change flags.
+	 */
+	VTOI(vp)->i_flag |= IUPD|ICHG;
+	return (spec_write(vp, uio, ioflag, cred));
+}
+
+/*
+ * Close wrapper for special devices.
+ *
+ * Update the times on the inode then do device close.
+ */
+ufsspec_close(vp, fflag, cred)
+	struct vnode *vp;
+	int fflag;
+	struct ucred *cred;
+{
+	register struct inode *ip = VTOI(vp);
+
+	if (vp->v_count > 1 && !(ip->i_flag & ILOCKED))
+		ITIMES(ip, &time, &time);
+	return (spec_close(vp, fflag, cred));
 }
 
 /*
