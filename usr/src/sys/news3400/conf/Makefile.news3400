@@ -1,4 +1,4 @@
-#	@(#)Makefile.news3400	7.7 (Berkeley) %G%
+#	@(#)Makefile.news3400	7.8 (Berkeley) %G%
 
 # Makefile for 4.4 BSD
 #
@@ -72,9 +72,11 @@ SYSTEM_LD_TAIL= @echo done
 
 newvers vers.c:
 	sh $S/conf/newvers.sh
+	${CC} $(CFLAGS) -c vers.c
 
 clean:
 	rm -f eddep *vmunix tags *.o locore.i [a-tv-z]*.s assym.h \
+		vnode_if.c vnode_if.h \
 		Errs errs linterrs makelinks
 
 lint: /tmp param.c
