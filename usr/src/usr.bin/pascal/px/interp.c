@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.29 %G%";
+static char sccsid[] = "@(#)interp.c 1.30 %G%";
 
 #include <math.h>
 #include <signal.h>
@@ -136,8 +136,10 @@ interpreter(base)
 	register struct formalrtn *tfp;
 	union progcntr tpc;
 	struct iorec **ip;
+	int mypid;
 
 	pcaddrp = &pc;
+	mypid = getpid();
 
 	/*
 	 * Setup sets up any hardware specific parameters before
@@ -175,7 +177,7 @@ interpreter(base)
 		switch (*pc.ucp++) {
 		case O_BPT:			/* breakpoint trap */
 			PFLUSH();
-			kill(getpid(), SIGILL);
+			kill(mypid, SIGILL);
 			pc.ucp--;
 			continue;
 		case O_NODUMP:
@@ -1259,106 +1261,70 @@ interpreter(base)
 			popsp((long)(sizeof(long)+sizeof(char *)));
 			continue;
 		case O_FOR1U:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
 			tcp = popaddr();	/* tcp = ptr to index var */
-			tl = pop4();
-			if (*tcp < tl) {	/* still going up */
-				tl = *tcp + 1;	/* inc index var */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tcp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tcp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 2;		/* else fall through */
+			*tcp += 1;		/* inc index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_FOR2U:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
 			tsp = (short *)popaddr(); /* tsp = ptr to index var */
-			tl = pop4();
-			if (*tsp < tl) {	/* still going up */
-				tl = *tsp + 1;	/* inc index var */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tsp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tsp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 2;		/* else fall through */
+			*tsp += 1;		/* inc index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_FOR4U:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
-				tl1 = *pc.lp++;
+				tl1 = *pc.sp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			tl = pop4();
-			if (*tlp < tl) {	/* still going up */
-				tl = *tlp + 1;	/* inc index var */
-				tl2 = *pc.lp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tlp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tlp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 3;		/* else fall through */
+			*tlp += 1;		/* inc index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_FOR1D:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
 			tcp = popaddr();	/* tcp = ptr to index var */
-			tl = pop4();
-			if (*tcp > tl) {	/* still going down */
-				tl = *tcp - 1;	/* inc index var */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tcp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tcp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 2;		/* else fall through */
+			*tcp -= 1;		/* dec index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_FOR2D:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
 				tl1 = *pc.sp++;
 			tsp = (short *)popaddr(); /* tsp = ptr to index var */
-			tl = pop4();
-			if (*tsp > tl) {	/* still going down */
-				tl = *tsp - 1;	/* inc index var */
-				tl2 = *pc.sp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tsp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tsp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 2;		/* else fall through */
+			*tsp -= 1;		/* dec index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_FOR4D:
-			tl1 = *pc.cp++;		/* tl1 index lower bound */
+			tl1 = *pc.cp++;		/* tl1 loop branch */
 			if (tl1 == 0)
-				tl1 = *pc.lp++;
+				tl1 = *pc.sp++;
 			tlp = (long *)popaddr(); /* tlp = ptr to index var */
-			tl = pop4();
-			if (*tlp > tl) {	/* still going down */
-				tl = *tlp - 1;	/* inc index var */
-				tl2 = *pc.lp++;	/* index upper bound */
-				if (_runtst)
-					RANG4(tl, tl1, tl2);
-				*tlp = tl;	/* update index var */
-				pc.cp += *pc.sp;/* return to top of loop */
+			tl = pop4();		/* tl upper bound */
+			if (*tlp == tl)		/* loop is done, fall through */
 				continue;
-			}
-			pc.sp += 3;		/* else fall through */
+			*tlp -= 1;		/* dec index var */
+			pc.cp += tl1;		/* return to top of loop */
 			continue;
 		case O_READE:
 			pc.cp++;
