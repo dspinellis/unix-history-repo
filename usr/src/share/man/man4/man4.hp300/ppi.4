@@ -1,0 +1,39 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ppi.4	5.1 (Berkeley) %G%
+.\"
+.TH PPI 4 ""
+.UC 7
+.SH NAME
+ppi \- HPIB printer/plotter interface
+.SH SYNOPSIS
+.B "device ppi0 at hpib0 slave 5"
+.PP
+.B "crw-rw-rw-  1 root      11,   0 Dec 21 11:22 /dev/ppi"
+.SH DESCRIPTION
+The ppi interface provides a means of communication with HP-IB
+printers and plotters.
+.PP
+Special files
+.I ppi0
+through
+.I ppi7
+are used to access the devices, with the digit at the end
+of the filename referring to the bus address of the device.
+Current versions of the autoconf code can not probe for these
+devices, so the device entry in the configuration file must be
+fully qualified.
+.SH DIAGNOSTICS
+None.
+.SH BUGS
+This driver is very primitive, it handshakes data out byte by byte.
+It should use DMA if possible.
+.SH "SEE ALSO"
+hpib(4).
