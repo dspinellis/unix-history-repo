@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.22 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.23 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -739,16 +739,16 @@ conval( p, o, q ) register NODE *p, *q; {
 		p->tn.lval = p->tn.lval >= val;
 		break;
 	case ULT:
-		p->tn.lval = (p->tn.lval-val)<0;
+		p->tn.lval = p->tn.lval < (unsigned) val;
 		break;
 	case ULE:
-		p->tn.lval = (p->tn.lval-val)<=0;
-		break;
-	case UGE:
-		p->tn.lval = (p->tn.lval-val)>=0;
+		p->tn.lval = p->tn.lval <= (unsigned) val;
 		break;
 	case UGT:
-		p->tn.lval = (p->tn.lval-val)>0;
+		p->tn.lval = p->tn.lval > (unsigned) val;
+		break;
+	case UGE:
+		p->tn.lval = p->tn.lval >= (unsigned) val;
 		break;
 	case EQ:
 		p->tn.lval = p->tn.lval == val;
