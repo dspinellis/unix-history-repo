@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.72		%G%);
+SCCSID(@(#)deliver.c	3.73		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -212,13 +212,6 @@ deliver(firstto, editfcn)
 		}
 # endif DEBUG
 
-		/* link together the chain of recipients */
-		if (!bitset(QDONTSEND, to->q_flags))
-		{
-			to->q_tchain = tochain;
-			tochain = to;
-		}
-
 		/* compute effective uid/gid when sending */
 		if (to->q_mailer == ProgMailer)
 			ctladdr = getctladdr(to);
@@ -257,6 +250,34 @@ deliver(firstto, editfcn)
 		{
 			stripquotes(user, FALSE);
 			stripquotes(host, FALSE);
+		}
+
+		/*
+		**  Pass it to the other host if we are running SMTP.
+		*/
+
+		if (clever)
+		{
+# ifdef SMTP
+			i = smtprcpt(to);
+			if (i != EX_OK)
+			{
+# ifdef QUEUE
+				if (i == EX_TEMPFAIL)
+				{
+					QueueUp = TRUE;
+					to->q_flags |= QQUEUEUP;
+				}
+				else
+# endif QUEUE
+				{
+					to->q_flags |= QBADADDR;
+					giveresponse(i, TRUE, m);
+				}
+			}
+# else SMTP
+			syserr("trying to be clever");
+# endif SMTP
 		}
 
 		/*
@@ -300,6 +321,13 @@ deliver(firstto, editfcn)
 		**  argv, and add it to the print list of recipients.
 		*/
 
+		/* link together the chain of recipients */
+		if (!bitset(QDONTSEND, to->q_flags))
+		{
+			to->q_tchain = tochain;
+			tochain = to;
+		}
+
 		/* create list of users for error messages */
 		if (tobuf[0] != '\0')
 			(void) strcat(tobuf, ",");
@@ -308,34 +336,10 @@ deliver(firstto, editfcn)
 		define('z', to->q_home);	/* user's home */
 
 		/*
-		**  Expand out this user into argument list or
-		**  send it to our SMTP server.
+		**  Expand out this user into argument list.
 		*/
 
-		if (clever)
-		{
-# ifdef SMTP
-			i = smtprcpt(to);
-			if (i != EX_OK)
-			{
-# ifdef QUEUE
-				if (i == EX_TEMPFAIL)
-				{
-					QueueUp = TRUE;
-					to->q_flags |= QQUEUEUP;
-				}
-				else
-# endif QUEUE
-				{
-					to->q_flags |= QBADADDR;
-					giveresponse(i, TRUE, m);
-				}
-			}
-# else SMTP
-			syserr("trying to be clever");
-# endif SMTP
-		}
-		else
+		if (!clever)
 		{
 			(void) expand(*mvp, buf, &buf[sizeof buf - 1]);
 			*pvp++ = newstr(buf);
