@@ -1,202 +1,265 @@
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kim Letkeman.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	4.4 (Berkeley) 87/05/28";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)cal.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
-#include <time.h>
+#include <sys/time.h>
 #include <stdio.h>
+#include <ctype.h>
 
-char	dayw[] = {
-	" S  M Tu  W Th  F  S"
+#define	THURSDAY		4		/* for reformation */
+#define	SATURDAY 		6		/* 1 Jan 1 was a Saturday */
+#define	FIRST_MISSING_DAY 	639787		/* 3 Sep 1752 */
+#define	NUMBER_MISSING_DAYS 	11		/* 11 day correction */
+#define	SPACE			99		/* used in day array */
+
+static int days_in_month[2][13] = {
+	{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+	{0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
 };
-char	*smon[]= {
-	"January", "February", "March", "April",
-	"May", "June", "July", "August",
-	"September", "October", "November", "December",
+
+static int sep1752[42] = {
+	SPACE, SPACE,     1,     2,    14,    15,    16,
+	   17,    18,    19,    20,    21,    22,    23,
+	   24,    25,    26,    27,    28,    29,    30,
+	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
+	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
+	SPACE, SPACE, SPACE, SPACE, SPACE, SPACE, SPACE,
 };
-char	string[432];
+
+static char *month_names[12] = {
+	"January", "February", "March", "April", "May", "June",
+	"July", "August", "September", "October", "November", "December",
+};
+
+static char *day_headings = " S  M Tu  W Th  F  S";
+
+/* leap year -- account for gregorian reformation in 1752 */
+#define	leap_year(yr) \
+	((yr) <= 1752 ? !((yr) % 4) : \
+	!((yr) % 4) && ((yr) % 100) || !((yr) % 400))
+
+/* number of centuries since 1700, not inclusive */
+#define	centuries_since_1700(yr) \
+	((yr) > 1700 ? (yr) / 100 - 17 : 0)
+
+/* number of centuries since 1700 whose modulo of 400 is 0 */
+#define	quad_centuries_since_1700(yr) \
+	((yr) > 1600 ? ((yr) - 1600) / 400 : 0)
+
+/* number of leap years between year 1 and this year, not inclusive */
+#define	leap_years_since_year_1(yr) \
+	((yr) / 4 - centuries_since_1700(yr) + quad_centuries_since_1700(yr))
+
 main(argc, argv)
-char *argv[];
+	int argc;
+	char **argv;
 {
-	register y, i, j;
-	int m;
+	struct tm *local_time;
+	time_t now, time();
+	int month, year;
 
-	if(argc == 2)
-		goto xlong;
-	/*
-	 * print out just month
-	 */
-	if(argc < 2) {			/* current month */
-		time_t t;
-		struct tm *tm;
-
-		t = time(0);
-		tm = localtime(&t);
-		m = tm->tm_mon + 1;
-		y = tm->tm_year + 1900;
-	} else {
-		m = atoi(argv[1]);
-		if(m<1 || m>12) {
-			fprintf(stderr, "cal: %s: Bad month.\n", argv[1]);
+	++argv;
+	switch(argc) {
+	case 3:
+		if ((month = atoi(*argv++)) <= 0 || month > 12) {
+			(void)fprintf(stderr, "cal: illegal month value.\n");
 			exit(1);
 		}
-		y = atoi(argv[2]);
-		if(y<1 || y>9999) {
-			fprintf(stderr, "cal: %s: Bad year.\n", argv[2]);
-			exit(2);
-		}
-	}
-	printf("   %s %u\n", smon[m-1], y);
-	printf("%s\n", dayw);
-	cal(m, y, string, 24);
-	for(i=0; i<6*24; i+=24)
-		pstr(string+i, 24);
-	exit(0);
-
-xlong:
-	/*
-	 * print out complete year
-	 */
-	y = atoi(argv[1]);
-	if(y<1 || y>9999) {
-		fprintf(stderr, "cal: %s: Bad year.\n", argv[1]);
-		exit(2);
-	}
-	printf("\n\n\n");
-	printf("				%u\n", y);
-	printf("\n");
-	for(i=0; i<12; i+=3) {
-		for(j=0; j<6*72; j++)
-			string[j] = '\0';
-		printf("	 %.3s", smon[i]);
-		printf("			%.3s", smon[i+1]);
-		printf("		       %.3s\n", smon[i+2]);
-		printf("%s   %s   %s\n", dayw, dayw, dayw);
-		cal(i+1, y, string, 72);
-		cal(i+2, y, string+23, 72);
-		cal(i+3, y, string+46, 72);
-		for(j=0; j<6*72; j+=72)
-			pstr(string+j, 72);
-	}
-	printf("\n\n\n");
-	exit(0);
-}
-
-pstr(str, n)
-char *str;
-{
-	register i;
-	register char *s;
-
-	s = str;
-	i = n;
-	while(i--)
-		if(*s++ == '\0')
-			s[-1] = ' ';
-	i = n+1;
-	while(i--)
-		if(*--s != ' ')
-			break;
-	s[1] = '\0';
-	printf("%s\n", str);
-}
-
-char	mon[] = {
-	0,
-	31, 29, 31, 30,
-	31, 30, 31, 31,
-	30, 31, 30, 31,
-};
-
-cal(m, y, p, w)
-char *p;
-{
-	register d, i;
-	register char *s;
-
-	s = p;
-	d = jan1(y);
-	mon[2] = 29;
-	mon[9] = 30;
-
-	switch((jan1(y+1)+7-d)%7) {
-
-	/*
-	 *	non-leap year
-	 */
-	case 1:
-		mon[2] = 28;
-		break;
-
-	/*
-	 *	1752
-	 */
-	default:
-		mon[9] = 19;
-		break;
-
-	/*
-	 *	leap year
-	 */
+		/* FALLTHROUGH */
 	case 2:
-		;
+		if ((year = atoi(*argv)) <= 0 || year > 9999) {
+			(void)fprintf(stderr, "cal: illegal year value.\n");
+			exit(1);
+		}
+		break;
+	case 1:
+		(void)time(&now);
+		local_time = localtime(&now);
+		month = local_time->tm_mon + 1;
+		year = local_time->tm_year + 1900;
+		break;
+	default:
+		(void)fprintf(stderr, "usage: cal [[month] year]\n");
+		exit(1);
 	}
-	for(i=1; i<m; i++)
-		d += mon[i];
-	d %= 7;
-	s += 3*d;
-	for(i=1; i<=mon[m]; i++) {
-		if(i==3 && mon[m]==19) {
-			i += 11;
-			mon[m] += 11;
+	if (month)
+		print_monthly_calendar(month, year);
+	else
+		print_yearly_calendar(year);
+	exit(0);
+}
+
+print_monthly_calendar(month, year)
+	int month, year;
+{
+	register int col, row;
+	register char *p;
+	int days[42];
+	char lineout[30];
+
+	generate_day_array(month, year, days);
+	(void)printf("   %s %d\n%s\n",
+	    month_names[month - 1], year, day_headings);
+	for (row = 0; row < 6; row++) {
+		for (col = 0, p = lineout; col < 7; col++, p += 3)
+			ascii_day(p, days[row * 7 + col]);
+		trim_trailing_spaces(lineout);
+		(void)printf("%s\n", lineout);
+	}
+}
+
+print_yearly_calendar(year)
+	int year;
+{
+	register int col, *dp, i, month, row, which_cal;
+	register char *p;
+	int days[12][42];
+	char lineout[80];
+
+	(void)printf("\n\n\n\t\t\t\t%d\n\n", year);
+	for (i = 0; i < 12; i++)
+		generate_day_array(i + 1, year, &days[i][0]);
+	(void)memset(lineout, ' ', sizeof(lineout) - 1);
+	lineout[sizeof(lineout) - 1] = '\0';
+	for (month = 0; month < 12; month += 3) {
+		(void)printf("\t %.3s\t\t\t%.3s\t\t       %.3s\n",
+		    month_names[month], month_names[month + 1],
+		    month_names[month + 2]);
+		for (i = 0; i < 3; i++) {
+			(void)printf("%s", day_headings);
+			if (i < 2)
+				(void)printf("   ");
 		}
-		if(i > 9)
-			*s = i/10+'0';
-		s++;
-		*s++ = i%10+'0';
-		s++;
-		if(++d == 7) {
-			d = 0;
-			s = p+w;
-			p = s;
+		(void)printf("\n");
+		for (row = 0; row < 6; row++) {
+			for (which_cal = 0; which_cal < 3; which_cal++) {
+				p = lineout + which_cal * 23;
+				dp = &days[month + which_cal][row * 7];
+				for (col = 0; col < 7; col++, p += 3)
+					ascii_day(p, *dp++);
+			}
+			trim_trailing_spaces(lineout);
+			(void)printf("%s\n", lineout);
 		}
+	}
+	(void)printf("\n\n\n");
+}
+
+/*
+ * generate_day_array --
+ *	Fill in an array of 42 integers with a calendar.  Assume for a moment
+ *	that you took the (maximum) 6 rows in a calendar and stretched them
+ *	out end to end.  You would have 42 numbers or spaces.  This routine
+ *	builds that array for any month from Jan. 1 through Dec. 9999.
+ */
+generate_day_array(month, year, days)
+	int month, year, *days;
+{
+	register int i, day, dw, dm;
+
+	dm = days_in_month[leap_year(year)][month];
+	dw = day_in_week(1, month, year);
+	if (month == 9 && year == 1752)
+		for (i = 0; i < 42; i++)
+			days[i] = sep1752[i];
+	else {
+		for (i = 0; i < 42; i++)
+			days[i] = SPACE;
+		for (day = 1, i = dw; day <= dm; ++day, ++i)
+			days[i] = day;
 	}
 }
 
 /*
- *	return day of the week
- *	of jan 1 of given year
+ * day_in_year --
+ *	return the 1 based day number within the year
  */
-
-jan1(yr)
+day_in_year(day, month, year)
+	register int day, month;
+	int year;
 {
-	register y, d;
+	register int i, leap;
+
+	leap = leap_year(year);
+	for (i = 1; i < month; i++)
+		day += days_in_month[leap][i];
+	return(day);
+}
 
 /*
- *	normal gregorian calendar
- *	one extra day per four years
+ * day_in_week
+ *	return the 0 based day number for any date from 1 Jan. 1 to
+ *	31 Dec. 9999.  Assumes the Gregorian reformation eliminates
+ *	3 Sep. 1752 through 13 Sep. 1752.  Returns Thursday for all
+ *	missing days.
  */
+day_in_week(day, month, year)
+	int day, month, year;
+{
+	long temp;
 
-	y = yr;
-	d = 4+y+(y+3)/4;
+	temp = (long)(year - 1) * 365 + leap_years_since_year_1(year - 1)
+	    + day_in_year(day, month, year);
+	if (temp < FIRST_MISSING_DAY)
+		return((temp - 1 + SATURDAY) % 7);
+	if (temp >= (FIRST_MISSING_DAY + NUMBER_MISSING_DAYS))
+		return(((temp - 1 + SATURDAY) - NUMBER_MISSING_DAYS) % 7);
+	return(THURSDAY);
+}
 
-/*
- *	julian calendar
- *	regular gregorian
- *	less three days per 400
- */
+ascii_day(p, day)
+	register char *p;
+	register int day;
+{
+	register int ten;
 
-	if(y > 1800) {
-		d -= (y-1701)/100;
-		d += (y-1601)/400;
+	if (day == SPACE) {
+		*p++ = ' ';
+		*p++ = ' ';
 	}
+	else {
+		ten = day / 10;
+		*p++ = ten ? ten + '0' : ' ';
+		*p++ = day % 10 + '0';
+	}
+	*p = ' ';
+}
 
-/*
- *	great calendar changeover instant
- */
+trim_trailing_spaces(s)
+	register char *s;
+{
+	register char *p;
 
-	if(y > 1752)
-		d += 3;
-
-	return(d%7);
+	for (p = s; *p; ++p);
+	while (p > s && isspace(*--p));
+	if (p > s)
+		++p;
+	*p = '\0';
 }
