@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 4.1'DRAFT'Last Mod %G%'
+.fo 'Version 4.2''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,17 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.1
-.)l
-.sp
-.(l F
-.b NOTE:
-.i
-This is a working paper, not a specification.
-Details of operation of
-.r sendmail
-may change as necessary
-before final release.
+Version 4.2
 .)l
 .sp 2
 .pp
@@ -168,36 +158,12 @@ These are
 in
 .i m4
 format.
-There are two parameters you will have to adjust
-in each of these files.
-The line beginning
-.q DH
-defines the canonical name of your host.
-The line beginning
-.q CH
-defines the names that your host might be known by;
-it should include the name listed in the
-.q DH
-line
-and any aliases that your host goes by.
-For example, a configuration might include the lines:
+The file you need should be copied to a file with the same name
+as your system,
+e.g.,
 .(b
-DHucsfcgl
-CHucsfcgl cgl
+cp uucpproto.cf ucsfcgl.cf
 .)b
-This would indicate that the
-.q standard
-name for the host is
-.q ucsfcgl
-and that it is known by the names
-.q ucsfcgl
-and
-.q cgl.
-.pp
-The changed file should be renamed;
-in the above example,
-the file might be renamed
-.i ucsfcgl.cf.
 This file
 is now ready for installation as
 .i /usr/lib/sendmail.cf .
@@ -226,6 +192,12 @@ you can use the declaration
 on the
 .i make \|(1)
 command line.
+You should also examine the file
+.i md/config.m4
+and change the
+.i m4
+macros there to reflect any libraries and compilation flags
+you may need.
 .pp
 The basic installation procedure is to type:
 .(b
@@ -384,8 +356,8 @@ as appropriate)
 in the area where it is starting up the daemons:
 .(b
 if [ \-f /usr/lib/sendmail ]; then
-	(cd /usr/spool/mqueue; rm \-f lf*)
-	/usr/lib/sendmail \-bd \-q10m &
+	(cd /usr/spool/mqueue; rm \-f [lnx]f*)
+	/usr/lib/sendmail \-bd \-q30m &
 	echo \-n ' sendmail' >/dev/console
 fi
 .)b
@@ -402,8 +374,8 @@ has two flags:
 .q \-bd
 causes it to listen on the SMTP port,
 and
-.q \-q10m
-causes it to run the queue every ten minutes.
+.q \-q30m
+causes it to run the queue every half hour.
 .pp
 If you are not running a version of UNIX
 that supports Berkeley TCP/IP,
@@ -659,7 +631,7 @@ This is used to compute when to time out the job.
 The current message priority.
 This is used to order the queue.
 Higher numbers mean lower priorities.
-The priority drops
+The priority increases
 as the message sits in the queue.
 The initial priority depends on the message class
 and the size of the message.
@@ -948,22 +920,22 @@ Others have interpretations built into
 .i sendmail
 that cannot be changed without changing the code.
 These builtins are described here.
-.sh 3 "Return-receipt-to"
+.sh 3 "Return-Receipt-To:"
 .pp
 If this header is sent,
 a message will be sent to any specified addresses
 when the final delivery is complete.
-This is determined by the
+if the mailer has the
 .b l
-flag in the mailer descriptor.
-.sh 3 "Errors-to"
+flag (local delivery) set in the mailer descriptor.
+.sh 3 "Errors-To:"
 .pp
 If errors occur anywhere during processing,
 this header will cause error messages to go to
 the listed addresses
 rather than to the sender.
 This is intended for mailing lists.
-.sh 3 "Apparently-To:
+.sh 3 "Apparently-To:"
 .pp
 If a message comes in with no recipients listed in the message
 (in a To:, Cc:, or Bcc: line)
@@ -1017,7 +989,7 @@ flag and the
 .b \-q
 flag may be combined in one call:
 .(b
-/usr/lib/sendmail \-bd \-q10m
+/usr/lib/sendmail \-bd \-q30m
 .)b
 .sh 2 "Forcing the Queue"
 .pp
@@ -1026,7 +998,7 @@ You can force a queue run
 using the
 .b \-q
 flag (with no value).
-It is frequently entertaining to use the
+It is entertaining to use the
 .b \-v
 flag (verbose)
 when this is done to watch what happens:
@@ -3155,21 +3127,30 @@ There are some configuration changes that can be made by
 recompiling
 .i sendmail .
 These are located in three places:
-.ip Makefile
-Changes in the makefile are operating-system dependent.
-These include information about what version of UNIX
-you are running, etc.
-.ip conf.h
+.ip md/config.m4
+These contain operating-system dependent descriptions.
+They are interpolated into the Makefiles in the
+.i src
+and
+.i aux
+directories.
+This includes information about what version of UNIX
+you are running,
+what libraries you have to include, etc.
+.ip src/conf.h
 Configuration parameters that may be tweaked by the installer
 are included in conf.h.
-.ip conf.c
+.ip src/conf.c
 Some special routines and a few variables
 may be defined in conf.c.
 For the most part these are selected from the settings
 in conf.h.
-.uh "Changes to the Makefile"
+.uh "Parameters in md/config.m4"
 .pp
-The following compilation flags may be defined in the makefile
+The following compilation flags may be defined in the
+.i m4CONFIG
+macro in
+.i md/config.m4
 to define the environment in which you are operating.
 .ip V6
 If set,
@@ -3189,7 +3170,16 @@ etc.
 .lp
 If none of these flags are set,
 a version 7 system is assumed.
-.uh "Parameters in conf.h"
+.pp
+You will also have to specify what libraries to link with
+.i sendmail
+in the
+.i m4LIBS
+macro.
+Most notably, you will have to include
+.B \-ljobs
+if you are running a 4.1BSD system.
+.uh "Parameters in src/conf.h"
 .pp
 Parameters and compilation options
 are defined in conf.h.
@@ -3322,7 +3312,7 @@ you can set this flag to turn off special processing
 of UNIX-style
 .q "From "
 lines.
-.uh "Configuration in conf.c"
+.uh "Configuration in src/conf.c"
 .pp
 Not all header semantics are defined in the configuration file.
 Header lines that should only be included by certain mailers
@@ -3652,10 +3642,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 4.1
-.sp 2
-.sz 14
-DRAFT
+Version 4.2
 .ce 0
 .bp 1
 .ce
