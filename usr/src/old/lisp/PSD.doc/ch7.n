@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch7.n	6.1 (Berkeley) %G%
+.\"	@(#)ch7.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch7.n,v 1.3 83/07/01 11:22:58 layer Exp $
 .Lc The\ Lisp\ Reader 7
@@ -362,10 +362,12 @@ More information about each syntax class can be found under the
 description of the syntax class's character class.
 .de Sy
 .sp 1v
+.(b
 .tl '\fB\\$1\fP''raw readtable:\\$2'
 .tl '\fI\\$4\fP''standard readtable:\\$3'
 .tl '\fI\\$5\fP'''
-.tl '\fI\\$6\fP'''
+.if \n(.$>5 .tl '\fI\\$6\fP'''
+.)b
 ..
 .pc
 .Sy vcharacter A-Z\ a-z\ ^H\ !#$%&*,/:;<=>?@^_`{}~ A-Z\ a-z\ ^H\ !$%&*/:;<=>?@^_{}~  ccharacter
