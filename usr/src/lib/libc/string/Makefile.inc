@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.2 (Berkeley) %G%
 
 # string sources
 .PATH: ${.CURDIR}/${MACHINE}/string ${.CURDIR}/string
@@ -89,6 +89,5 @@ strrchr.po: rindex.c
 MAN3+=	bcmp.0 bcopy.0 bstring.0 bzero.0 ffs.0 index.0 memccpy.0 memchr.0 \
 	memcmp.0 memcpy.0 memmove.0 memset.0 rindex.0 strcasecmp.0 strcat.0 \
 	strchr.0 strcmp.0 strcoll.0 strcpy.0 strcspn.0 strftime.0 string.0 \
-	strlen.0 strmode.0 strdup.0 strncasecmp.0 strncat.0 strncmp.0 \
-	strncpy.0 strpbrk.0 strrchr.0 strsep.0 strspn.0 strstr.0 strtok.0 \
-	strxfrm.0 swab.0
+	strlen.0 strmode.0 strdup.0 strpbrk.0 strrchr.0 strsep.0 strspn.0 \
+	strstr.0 strtok.0 strxfrm.0 swab.0
