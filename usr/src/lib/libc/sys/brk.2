@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)brk.2	6.3 (Berkeley) %G%
+.\"	@(#)brk.2	6.4 (Berkeley) %G%
 .\"
 .TH BRK 2 ""
 .UC 4
@@ -49,6 +49,9 @@ Ordinarily, therefore, only programs with growing
 data areas need to use
 .IR sbrk .
 .PP
+The current value of the program break is reliably returned by
+``sbrk(0)'' (see also 
+.IR end (3)).
 The
 .IR getrlimit (2)
 system call may be used to determine
