@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -459,6 +459,7 @@ returntosender(msg, returnq, sendbody, e)
 	addheader("Subject", buf, ee);
 	if (SendMIMEErrors)
 	{
+		addheader("MIME-Version", "1.0", ee);
 		(void) sprintf(buf, "%s.%ld/%s",
 			ee->e_id, curtime(), MyHostName);
 		ee->e_msgboundary = newstr(buf);
@@ -630,7 +631,7 @@ errbody(fp, m, e)
 		if (SendBody)
 			putline("   ----- Unsent message follows -----\n", fp, m);
 		else
-			putline("  ----- Message header follows -----\n", fp, m);
+			putline("   ----- Message header follows -----\n", fp, m);
 		(void) fflush(fp);
 
 		if (e->e_msgboundary != NULL)
@@ -638,17 +639,18 @@ errbody(fp, m, e)
 			putline("", fp, m);
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
 			putline(buf, fp, m);
-			(void) sprintf(buf, "Content-Type: %s/rfc822",
-				SendBody ? "message" : "X-message-header");
-			putline(buf, fp, m);
+			putline("Content-Type: message/rfc822", fp, m);
 			putline("", fp, m);
 		}
 		putheader(fp, m, e->e_parent);
 		putline("", fp, m);
 		if (SendBody)
 			putbody(fp, m, e->e_parent, e->e_msgboundary);
+		else
+			putline("", fp, m);
 		if (e->e_msgboundary != NULL)
 		{
+			putline("", fp, m);
 			(void) sprintf(buf, "--%s--", e->e_msgboundary);
 			putline(buf, fp, m);
 		}
