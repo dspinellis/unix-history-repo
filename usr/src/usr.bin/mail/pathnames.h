@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.10 (Berkeley) %G%
+ *	@(#)pathnames.h	5.11 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -24,5 +24,5 @@
 #define	_PATH_TILDE	"/usr/share/misc/Mail.tildehelp"
 #define	_PATH_MAIL_LOG	"/var/log/maillog"
 #define	_PATH_MASTER_RC	"/usr/share/misc/Mail.rc"
-#define	_PATH_MBOX	"/var/spool/mail/"
+#define	_PATH_MBOX	"/var/mail/"
 #define	_PATH_MORE	"/usr/bin/more"
