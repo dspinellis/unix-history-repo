@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.8 83/06/10";
+static char sccsid[] = "@(#)rsh.c	4.9 84/12/03";
 #endif
 
 #include <sys/types.h>
@@ -120,9 +120,9 @@ another:
 		exit(2);
 	}
 	if (options & SO_DEBUG) {
-		if (setsockopt(rem, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		if (setsockopt(rem, SOL_SOCKET, SO_DEBUG, &one, sizeof (one)) < 0)
 			perror("setsockopt (stdin)");
-		if (setsockopt(rfd2, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+		if (setsockopt(rfd2, SOL_SOCKET, SO_DEBUG, &one, sizeof (one)) < 0)
 			perror("setsockopt (stderr)");
 	}
 	(void) setuid(getuid());
