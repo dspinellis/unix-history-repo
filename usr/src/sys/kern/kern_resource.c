@@ -1,4 +1,4 @@
-/*	kern_resource.c	6.3	84/08/29	*/
+/*	kern_resource.c	6.4	84/11/20	*/
 
 #include "param.h"
 #include "systm.h"
@@ -23,9 +23,8 @@ getpriority()
 		int	who;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p;
+	int low = PRIO_MAX + 1;
 
-	u.u_r.r_val1 = NZERO+20;
-	u.u_error = ESRCH;
 	switch (uap->which) {
 
 	case PRIO_PROCESS:
@@ -35,8 +34,7 @@ getpriority()
 			p = pfind(uap->who);
 		if (p == 0)
 			return;
-		u.u_r.r_val1 = p->p_nice;
-		u.u_error = 0;
+		low = p->p_nice;
 		break;
 
 	case PRIO_PGRP:
@@ -44,10 +42,8 @@ getpriority()
 			uap->who = u.u_procp->p_pgrp;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_pgrp == uap->who &&
-			    p->p_nice < u.u_r.r_val1) {
-				u.u_r.r_val1 = p->p_nice;
-				u.u_error = 0;
-			}
+			    p->p_nice < low)
+				low = p->p_nice;
 		}
 		break;
 
@@ -56,18 +52,20 @@ getpriority()
 			uap->who = u.u_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_uid == uap->who &&
-			    p->p_nice < u.u_r.r_val1) {
-				u.u_r.r_val1 = p->p_nice;
-				u.u_error = 0;
-			}
+			    p->p_nice < low)
+				low = p->p_nice;
 		}
 		break;
 
 	default:
 		u.u_error = EINVAL;
-		break;
+		return;
 	}
-	u.u_r.r_val1 -= NZERO;
+	if (low == PRIO_MAX + 1) {
+		u.u_error = ESRCH;
+		return;
+	}
+	u.u_r.r_val1 = low;
 }
 
 setpriority()
@@ -78,8 +76,8 @@ setpriority()
 		int	prio;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p;
+	int found = 0;
 
-	u.u_error = ESRCH;
 	switch (uap->which) {
 
 	case PRIO_PROCESS:
@@ -90,28 +88,35 @@ setpriority()
 		if (p == 0)
 			return;
 		donice(p, uap->prio);
+		found++;
 		break;
 
 	case PRIO_PGRP:
 		if (uap->who == 0)
 			uap->who = u.u_procp->p_pgrp;
 		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_pgrp == uap->who)
+			if (p->p_pgrp == uap->who) {
 				donice(p, uap->prio);
+				found++;
+			}
 		break;
 
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = u.u_uid;
 		for (p = allproc; p != NULL; p = p->p_nxt)
-			if (p->p_uid == uap->who)
+			if (p->p_uid == uap->who) {
 				donice(p, uap->prio);
+				found++;
+			}
 		break;
 
 	default:
 		u.u_error = EINVAL;
-		break;
+		return;
 	}
+	if (found == 0)
+		u.u_error = ESRCH;
 }
 
 donice(p, n)
@@ -124,19 +129,16 @@ donice(p, n)
 		u.u_error = EACCES;
 		return;
 	}
-	n += NZERO;
-	if (n >= 2*NZERO)
-		n = 2*NZERO - 1;
-	if (n < 0)
-		n = 0;
+	if (n > PRIO_MAX)
+		n = PRIO_MAX;
+	if (n < PRIO_MIN)
+		n = PRIO_MIN;
 	if (n < p->p_nice && !suser()) {
 		u.u_error = EACCES;
 		return;
 	}
 	p->p_nice = n;
 	(void) setpri(p);
-	if (u.u_error == ESRCH)
-		u.u_error = 0;
 }
 
 setrlimit()
