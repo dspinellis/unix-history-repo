@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumprmt.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.8 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mtio.h>
