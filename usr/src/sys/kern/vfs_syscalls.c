@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.8 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1050,6 +1050,8 @@ mkdir()
 	vattr.va_type = VDIR;
 	vattr.va_mode = (uap->dmode & 0777) &~ u.u_cmask;
 	error = VOP_MKDIR(ndp, &vattr);
+	if (!error)
+		vput(ndp->ni_vp);
 	RETURN (error);
 }
 
