@@ -1,4 +1,4 @@
-/*	machdep.c	4.73	83/01/12	*/
+/*	machdep.c	4.74	83/01/16	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -69,6 +69,7 @@ int	szmcode = sizeof(mcode);
  */
 int	nbuf = 0;
 int	nswbuf = 0;
+int	bufpages = 0;
 
 /*
  * Machine-dependent startup code
@@ -81,6 +82,8 @@ startup(firstaddr)
 	register struct pte *pte;
 	int mapaddr, j;
 	register caddr_t v;
+	int maxbufs, base, residual;
+	extern char etext;
 
 	/*
 	 * Initialize error message buffer (at end of core).
@@ -100,11 +103,17 @@ startup(firstaddr)
 	/*
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
+	maxbufs = ((SYSPTSIZE * NBPG) - (5 * (int)(&etext - 0x80000000))) /
+	    MAXBSIZE;
+	if (bufpages == 0)
+		bufpages = (physmem * NBPG) / 10 / CLBYTES;
 	if (nbuf == 0) {
 		nbuf = (32 * physmem) / btoc(1024*1024);
 		if (nbuf < 32)
 			nbuf = 32;
 	}
+	if (bufpages > nbuf * (MAXBSIZE / CLBYTES))
+		bufpages = nbuf * (MAXBSIZE / CLBYTES);
 	if (nswbuf == 0) {
 		nswbuf = (nbuf / 2) &~ 1;	/* force even */
 		if (nswbuf > 256)
@@ -191,6 +200,8 @@ startup(firstaddr)
 	meminit(firstaddr, maxmem);
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
+	printf("using %d buffers containing %d bytes of memory\n",
+		nbuf, bufpages * CLBYTES);
 	rminit(kernelmap, (long)USRPTSIZE, (long)1,
 	    "usrpt", nproc);
 	rminit(mbmap, (long)((nmbclusters - 1) * CLSIZE), (long)CLSIZE,
