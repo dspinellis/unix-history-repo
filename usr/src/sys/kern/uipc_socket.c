@@ -4,10 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.34 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "file.h"
 #include "malloc.h"

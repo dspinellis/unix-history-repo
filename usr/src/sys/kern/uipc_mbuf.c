@@ -3,10 +3,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.23 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "malloc.h"
 #include "map.h"
