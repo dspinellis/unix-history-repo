@@ -32,10 +32,13 @@ int nfiles;		/* actual number of open files */
 /*
  * System calls on descriptors.
  */
+struct getdtablesize_args {
+	int	dummy;
+};
 /* ARGSUSED */
 getdtablesize(p, uap, retval)
 	struct proc *p;
-	struct args *uap;
+	struct getdtablesize_args *uap;
 	int *retval;
 {
 
@@ -46,12 +49,13 @@ getdtablesize(p, uap, retval)
 /*
  * Duplicate a file descriptor.
  */
+struct dup_args {
+	int	i;
+};
 /* ARGSUSED */
 dup(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	i;
-	} *uap;
+	struct dup_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -80,13 +84,14 @@ dup(p, uap, retval)
 /*
  * Duplicate a file descriptor to a particular value.
  */
+struct dup2_args {
+	u_int	from;
+	u_int	to;
+};
 /* ARGSUSED */
 dup2(p, uap, retval)
 	struct proc *p;
-	struct args {
-		u_int	from;
-		u_int	to;
-	} *uap;
+	struct dup2_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -125,14 +130,15 @@ dup2(p, uap, retval)
 /*
  * The file control system call.
  */
+struct fcntl_args {
+	int	fd;
+	int	cmd;
+	int	arg;
+};
 /* ARGSUSED */
 fcntl(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	cmd;
-		int	arg;
-	} *uap;
+	register struct fcntl_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -273,12 +279,13 @@ fcntl(p, uap, retval)
 /*
  * Close a file descriptor.
  */
+struct close_args {
+	int	fd;
+};
 /* ARGSUSED */
 close(p, uap, retval)
 	struct proc *p;
-	struct args {
-		int	fd;
-	} *uap;
+	struct close_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -305,13 +312,14 @@ close(p, uap, retval)
 /*
  * Return status information about a file descriptor.
  */
+struct ofstat_args {
+	int	fd;
+	struct	ostat *sb;
+};
 /* ARGSUSED */
 ofstat(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		struct	ostat *sb;
-	} *uap;
+	register struct ofstat_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -347,13 +355,14 @@ ofstat(p, uap, retval)
 /*
  * Return status information about a file descriptor.
  */
+struct fstat_args {
+	int	fd;
+	struct	stat *sb;
+};
 /* ARGSUSED */
 fstat(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		struct	stat *sb;
-	} *uap;
+	register struct fstat_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -676,14 +685,14 @@ closef(fp, p)
  * Just attempt to get a record lock of the requested type on
  * the entire file (l_whence = SEEK_SET, l_start = 0, l_len = 0).
  */
-
+struct flock_args {
+	int	fd;
+	int	how;
+};
 /* ARGSUSED */
 flock(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		int	how;
-	} *uap;
+	register struct flock_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;

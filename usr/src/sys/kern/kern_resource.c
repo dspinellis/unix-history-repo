@@ -19,12 +19,13 @@
  * Resource controls and accounting.
  */
 
+struct getpriority_args {
+	int	which;
+	int	who;
+};
 getpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-	} *uap;
+	register struct getpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -75,14 +76,15 @@ getpriority(curp, uap, retval)
 	return (0);
 }
 
+struct setpriority_args {
+	int	which;
+	int	who;
+	int	prio;
+};
 /* ARGSUSED */
 setpriority(curp, uap, retval)
 	struct proc *curp;
-	register struct args {
-		int	which;
-		int	who;
-		int	prio;
-	} *uap;
+	register struct setpriority_args *uap;
 	int *retval;
 {
 	register struct proc *p;
@@ -155,13 +157,14 @@ donice(curp, chgp, n)
 }
 
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+struct setrlimit_args {
+	u_int	which;
+	struct	orlimit *lim;
+};
 /* ARGSUSED */
 setrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	orlimit *lim;
-	} *uap;
+	register struct setrlimit_args *uap;
 	int *retval;
 {
 	struct orlimit olim;
@@ -176,13 +179,14 @@ setrlimit(p, uap, retval)
 	return (dosetrlimit(p, uap->which, &lim));
 }
 
+struct getrlimit_args {
+	u_int	which;
+	struct	orlimit *rlp;
+};
 /* ARGSUSED */
 getrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	orlimit *rlp;
-	} *uap;
+	register struct getrlimit_args *uap;
 	int *retval;
 {
 	struct orlimit olim;
@@ -199,13 +203,14 @@ getrlimit(p, uap, retval)
 }
 #endif /* COMPAT_43 || COMPAT_SUNOS */
 
+struct __setrlimit_args {
+	u_int	which;
+	struct	rlimit *lim;
+};
 /* ARGSUSED */
 __setrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *lim;
-	} *uap;
+	register struct __setrlimit_args *uap;
 	int *retval;
 {
 	struct rlimit alim;
@@ -286,13 +291,14 @@ dosetrlimit(p, which, limp)
 	return (0);
 }
 
+struct __getrlimit_args {
+	u_int	which;
+	struct	rlimit *rlp;
+};
 /* ARGSUSED */
 __getrlimit(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		u_int	which;
-		struct	rlimit *rlp;
-	} *uap;
+	register struct __getrlimit_args *uap;
 	int *retval;
 {
 
@@ -358,13 +364,14 @@ calcru(p, up, sp, ip)
 	}
 }
 
+struct getrusage_args {
+	int	who;
+	struct	rusage *rusage;
+};
 /* ARGSUSED */
 getrusage(p, uap, retval)
 	register struct proc *p;
-	register struct args {
-		int	who;
-		struct	rusage *rusage;
-	} *uap;
+	register struct getrusage_args *uap;
 	int *retval;
 {
 	register struct rusage *rup;

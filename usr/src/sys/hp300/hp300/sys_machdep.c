@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.8 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -23,12 +23,13 @@
 #ifdef TRACE
 int	nvualarm;
 
+struct vtrace_args {
+	int	request;
+	int	value;
+};
 vtrace(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	request;
-		int	value;
-	} *uap;
+	register struct vtrace_args *uap;
 	int *retval;
 {
 	int vdoualarm();

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.29 (Berkeley) %G%
+ *	@(#)machdep.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -724,12 +724,13 @@ sendsig(catcher, sig, mask, code)
  * psl to gain improper priviledges or to cause
  * a machine fault.
  */
+struct sigreturn_args {
+	struct sigcontext *sigcntxp;
+};
 /* ARGSUSED */
 sigreturn(p, uap, retval)
 	struct proc *p;
-	struct args {
-		struct sigcontext *sigcntxp;
-	} *uap;
+	struct sigreturn_args *uap;
 	int *retval;
 {
 	register struct sigcontext *scp;
