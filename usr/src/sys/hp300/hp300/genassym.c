@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.2 (Berkeley) %G%
+ *	@(#)genassym.c	7.3 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -164,6 +164,7 @@ main()
 	printf("#define\tB_READ %d\n", B_READ);
 	printf("#define\tENOENT %d\n", ENOENT);
 	printf("#define\tEFAULT %d\n", EFAULT);
+	printf("#define\tENAMETOOLONG %d\n", ENAMETOOLONG);
 	printf("#define\tCLKCR1 %d\n", CLKCR1);
 	printf("#define\tCLKCR2 %d\n", CLKCR2);
 	printf("#define\tCLKCR3 %d\n", CLKCR3);
