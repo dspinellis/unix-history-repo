@@ -1,4 +1,4 @@
-/*	dinode.h	4.11	82/04/19	*/
+/*	dinode.h	4.12	82/06/29	*/
 
 /*	inode.h	2.1	3/25/82	*/
 
@@ -14,6 +14,7 @@
 #define	NIADDR	2		/* indirect addresses in inode */
 
 struct inode {
+	struct	inode *i_chain[2];	/* must be first */
 	char	i_flag;
 	char	i_count;	/* reference count */
 	dev_t	i_dev;		/* device where inode resides */
@@ -23,6 +24,10 @@ struct inode {
 	union {
 		daddr_t	if_lastr;	/* last read (read-ahead) */
 		struct	socket *is_socket;
+		struct	{
+			struct inode  *if_freef;	/* free list forward */
+			struct inode **if_freeb;	/* free list back */
+		} i_fr;
 	} i_un;
 	struct 	icommon
 	{
@@ -59,6 +64,10 @@ struct dinode {
 #define	i_rdev		i_ic.ic_db[0]
 #define	i_lastr		i_un.if_lastr
 #define	i_socket	is_socket
+#define	i_forw		i_chain[0]
+#define	i_back		i_chain[1]
+#define	i_freef		i_un.i_fr.if_freef
+#define	i_freeb		i_un.i_fr.if_freeb
 
 #define di_ic		di_un.di_icom
 #define	di_mode		di_ic.ic_mode
