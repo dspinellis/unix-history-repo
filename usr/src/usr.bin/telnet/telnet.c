@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -111,6 +111,30 @@ char
 
 static int	telrcv_state;
 
+/*
+ * This is all for our adaptive algorithm for dealing with
+ * hosts which send CR with no following character.
+ * We start off not knowing whether our peer does CR
+ * legallly.  If our first isolated CR comes, we pretend
+ * our peer does it wrong.  After this, we know that the
+ * peer does it right ("yes") or wrong ("no").
+ *
+ * If our peer does it right, then we don't second-guess isolated
+ * CR's (ie: we wait for the next character, even if it is in another
+ * buffer).
+ *
+ * If our peer does it wrong, we pretend that the CR is followed
+ * by whatever followed the last CR (XXX last isolated CR?).
+ *
+ * If our peer EVER does it wrong (isolated or not), we declare
+ * our peer to be a wrong-doer (even if after that our peer
+ * does it right for the rest of eternity [or this connection]).
+ */
+
+static enum	{ unknown, yes, no } peer_does_legal_CR;
+static enum	{ didnt_guess, already_guessed } CR_substate;
+static char	last_legal_CR_followed_by;
+
 jmp_buf	toplevel = { 0 };
 jmp_buf	peerdied;
 
@@ -159,6 +183,8 @@ init_telnet()
 
     flushline = 1;
     telrcv_state = TS_DATA;
+    peer_does_legal_CR = unknown;
+    last_legal_CR_followed_by = 0;
 }
 
 
@@ -381,7 +407,24 @@ suboption()
     }
 }
 
+/*
+ * What to do with CR's in the input data stream which are
+ * followed by a null.
+ */
+#define	CR_FOLLOWED_BY_NULL() \
+		    TTYADD('\r');
 
+/*
+ * What to do with CR's in the input data stream which are
+ * followed by a line feed.
+ */
+#define	CR_FOLLOWED_BY_LF() \
+		    if (!hisopts[TELOPT_ECHO]) { \
+			TTYADD('\n'); \
+		    } else { \
+			TTYADD('\r'); \
+			TTYADD('\n'); \
+		    }
 int
 telrcv()
 {
@@ -414,15 +457,41 @@ telrcv()
 
 	case TS_CR:
 	    telrcv_state = TS_DATA;
-	    if (c == '\0') {
-		break;	/* Ignore \0 after CR */
-	    } else if (c == '\n') {
-		if ((!hisopts[TELOPT_ECHO]) && !crmod) {
-		    TTYADD(c);
+	    switch (c) {
+	    case '\0':
+		if (peer_does_legal_CR == unknown) {
+		    peer_does_legal_CR = yes;
 		}
-		break;
+		if (CR_substate != already_guessed) {
+			/* a "true" CR */
+		    CR_FOLLOWED_BY_NULL();
+		}
+		last_legal_CR_followed_by = 0;	/* Adaptive if bad */
+		continue;	/* Continue while loop */
+	    case '\n':
+		if (peer_does_legal_CR == unknown) {
+		    peer_does_legal_CR = yes;
+		}
+		if (CR_substate != already_guessed) {
+		    CR_FOLLOWED_BY_LF();
+		}
+		last_legal_CR_followed_by = '\n';	/* Adaptive if bad */
+		continue;	/* Continue while loop */
+	    default:
+		peer_does_legal_CR = no;
+		if (CR_substate != already_guessed) {
+		    if (crmod) {
+			TTYADD('\r');
+			TTYADD('\n');
+		    } else if (last_legal_CR_followed_by == 0) {
+			CR_FOLLOWED_BY_NULL();
+		    } else {
+			CR_FOLLOWED_BY_LF();
+		    }
+		}
+		break;	/* Out of this switch, but fall through ... */
 	    }
-	    /* Else, fall through */
+	    /* fall through (from default above) */
 
 	case TS_DATA:
 	    if (c == IAC) {
@@ -442,35 +511,26 @@ telrcv()
 		}
 	    } else
 #	    endif /* defined(TN3270) */
-		    /*
-		     * The 'crmod' hack (see following) is needed
-		     * since we can't * set CRMOD on output only.
-		     * Machines like MULTICS like to send \r without
-		     * \n; since we must turn off CRMOD to get proper
-		     * input, the mapping is done here (sigh).
-		     */
 	    if ((c == '\r') && !hisopts[TELOPT_BINARY]) {
-		if (scc > 0) {
-		    c = *sbp&0xff;
-		    if (c == 0) {
-			sbp++, scc--; count++;
-			/* a "true" CR */
-			TTYADD('\r');
-		    } else if (!hisopts[TELOPT_ECHO] &&
-					(c == '\n')) {
-			sbp++, scc--; count++;
-			TTYADD('\n');
-		    } else {
-			TTYADD('\r');
-			if (crmod) {
-				TTYADD('\n');
-			}
-		    }
-		} else {
-		    telrcv_state = TS_CR;
-		    TTYADD('\r');
+		telrcv_state = TS_CR;
+		CR_substate = didnt_guess;
+		if ((scc <= 0) && (count == ring_full_count(&netiring)))  {
+		    /* We're here if this is an isolated CR */
 		    if (crmod) {
-			    TTYADD('\n');
+			/*
+			 * crmod means do this regardless of
+			 * our estimation of the remote.
+			 */
+			TTYADD('\r');
+			TTYADD('\n');
+			CR_substate = already_guessed;
+		    } else if (peer_does_legal_CR != yes) {
+			if (last_legal_CR_followed_by == 0) {
+			    CR_FOLLOWED_BY_NULL();
+			} else {
+			    CR_FOLLOWED_BY_LF();
+			}
+			CR_substate = already_guessed;
 		    }
 		}
 	    } else {
