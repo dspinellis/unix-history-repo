@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -79,6 +79,7 @@ main(argc, argv)
 	int fts_options;
 	int type;
 	FTS *ftsp;
+	int hflag;
 
 	/*
 	 * The utility cp(1) is used by mv(1) -- except for usage statements,
@@ -92,10 +93,13 @@ main(argc, argv)
          * 1.  Follow all symbolic links on the argument line.
          * 2.  Otherwise, don't follow symbolic links UNLESS options -h 
          *     (in conjuction with -R) or -r (for backward compatibility) are 
-         *     set.
+         *     set, in which case follow all symbolic links, or when the -H
+         *     option is set (in conjuction with -R), in which case follow 
+         *     all symbolic links on the command line.
+         * 
          */
-	rflag = orflag = 0;
-	fts_options = FTS_NOCHDIR | FTS_PHYSICAL;
+	hflag = rflag = orflag = 0;
+	fts_options = FTS_NOCHDIR | FTS_LOGICAL;
 	while ((c = getopt(argc, argv, "HRfhipr")) != EOF) 
 		switch ((char)c) {
 		case 'H':
@@ -105,8 +109,7 @@ main(argc, argv)
 			iflag = 0;
 			break;
 		case 'h':
-			fts_options &= ~FTS_PHYSICAL;
-			fts_options |= FTS_LOGICAL;
+			hflag = 1;
 			break;
 		case 'i':
 			iflag = isatty(fileno(stdin));
@@ -115,6 +118,8 @@ main(argc, argv)
 			pflag = 1;
 			break;
 		case 'R':
+			fts_options &= ~FTS_LOGICAL;
+			fts_options |= FTS_PHYSICAL;
 			rflag = 1;
 			break;
 		case 'r':
@@ -132,6 +137,11 @@ main(argc, argv)
 
 	if (argc < 2)
 		usage();
+
+	if (hflag) {
+		fts_options &= ~FTS_PHYSICAL;
+		fts_options |= FTS_LOGICAL;
+	}
 
 	if (rflag && orflag) {
 		(void)fprintf(stderr,
@@ -317,18 +327,16 @@ copy(type, ftsp)
 			break;
 		case S_IFCHR:
 		case S_IFBLK:
-			if (rflag) {
+			if (rflag)
 				copy_special(curr->fts_statp, !dne);
-				return;
-			}
-			copy_file(curr, dne);
+			else
+				copy_file(curr, dne);
 			break;
 		case S_IFIFO:
-			if (rflag) {
+			if (rflag)
 				copy_fifo(curr->fts_statp, !dne);
-				return;
-			}
-			copy_file(curr, dne);
+			else 
+				copy_file(curr, dne);
 			break;
 		default:
 			copy_file(curr, dne);
