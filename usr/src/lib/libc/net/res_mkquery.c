@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_mkquery.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -84,7 +84,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		cp += sizeof(u_short);
 		putshort(class, cp);
 		cp += sizeof(u_short);
-		hp->qdcount = HTONS(1);
+		hp->qdcount = htons(1);
 		if (op == QUERY || data == NULL)
 			break;
 		/*
@@ -103,7 +103,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 		cp += sizeof(u_long);
 		putshort(0, cp);
 		cp += sizeof(u_short);
-		hp->arcount = HTONS(1);
+		hp->arcount = htons(1);
 		break;
 
 	case IQUERY:
@@ -125,7 +125,7 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 			bcopy(data, cp, datalen);
 			cp += datalen;
 		}
-		hp->ancount = HTONS(1);
+		hp->ancount = htons(1);
 		break;
 
 #ifdef notdef
