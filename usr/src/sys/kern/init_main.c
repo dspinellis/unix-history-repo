@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	6.11 (Berkeley) %G%
+ *	@(#)init_main.c	6.12 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -25,9 +25,7 @@
 #include "cmap.h"
 #include "text.h"
 #include "clist.h"
-#ifdef INET
 #include "protosw.h"
-#endif
 #include "quota.h"
 #include "../machine/reg.h"
 #include "../machine/cpu.h"
@@ -109,7 +107,6 @@ main(firstaddr)
 	 */
 	mbinit();
 	cinit();
-#ifdef INET
 #if NLOOP > 0
 	loattach();			/* XXX */
 #endif
@@ -119,11 +116,8 @@ main(firstaddr)
 	 */
 	s = splimp();
 	ifinit();
-#endif
 	domaininit();
-#ifdef INET
 	splx(s);
-#endif
 	pqinit();
 	ihinit();
 	bhinit();

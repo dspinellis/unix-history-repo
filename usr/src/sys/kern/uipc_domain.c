@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_domain.c	6.7 (Berkeley) %G%
+ *	@(#)uipc_domain.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,7 +26,7 @@ domaininit()
 
 #ifndef lint
 	ADDDOMAIN(unix);
-#ifdef INET
+#if defined(INET) || defined(BBNNET)
 	ADDDOMAIN(inet);
 #endif
 #ifdef NS
@@ -96,9 +96,9 @@ found:
 	return (maybe);
 }
 
-pfctlinput(cmd, arg)
+pfctlinput(cmd, sa)
 	int cmd;
-	caddr_t arg;
+	struct sockaddr *sa;
 {
 	register struct domain *dp;
 	register struct protosw *pr;
@@ -106,7 +106,7 @@ pfctlinput(cmd, arg)
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_ctlinput)
-				(*pr->pr_ctlinput)(cmd, arg);
+				(*pr->pr_ctlinput)(cmd, sa);
 }
 
 pfslowtimo()
