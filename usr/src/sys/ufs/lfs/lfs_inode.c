@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.70 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -132,6 +132,7 @@ lfs_truncate(ap)
 	register struct vnode *vp = ap->a_vp;
 	off_t length = ap->a_length;
 	struct buf *bp, *sup_bp;
+	struct timeval tv;
 	struct ifile *ifp;
 	struct inode *ip;
 	struct lfs *fs;
@@ -157,9 +158,10 @@ lfs_truncate(ap)
 	}
 
 	/* If length is larger than the file, just update the times. */
+	tv = time;
 	if (ip->i_size <= length) {
 		ip->i_flag |= ICHG|IUPD;
-		return (VOP_UPDATE(vp, &time, &time, 1));
+		return (VOP_UPDATE(vp, &tv, &tv, 1));
 	}
 
 	/*
@@ -281,6 +283,6 @@ lfs_truncate(ap)
 		ip->i_blocks = 0;
 	ip->i_flag |= ICHG|IUPD;
 	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
-	e2 = VOP_UPDATE(vp, &time, &time, MNT_WAIT);
+	e2 = VOP_UPDATE(vp, &tv, &tv, MNT_WAIT);
 	return (e1 ? e1 : e2 ? e2 : 0);
 }
