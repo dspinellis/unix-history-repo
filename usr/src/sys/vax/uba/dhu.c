@@ -1,4 +1,10 @@
-/*	dhu.c	4.1	85/05/20	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)dhu.c	4.2 (Berkeley) %G%
+ */
 
 /*
  * based on	dh.c 6.3	84/03/15

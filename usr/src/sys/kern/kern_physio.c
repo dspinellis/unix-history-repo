@@ -1,4 +1,10 @@
-/*	kern_physio.c	6.5	85/03/12	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kern_physio.c	6.6 (Berkeley) %G%
+ */
 
 #include "../machine/pte.h"
 

@@ -1,4 +1,10 @@
-/*	trace.h	6.2	84/01/03	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)trace.h	6.3 (Berkeley) %G%
+ */
 
 /*
  * File system buffer tracing points; all trace <pack(dev, size), bn>

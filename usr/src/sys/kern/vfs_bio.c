@@ -1,4 +1,10 @@
-/*	vfs_bio.c	6.4	84/08/29	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)vfs_bio.c	6.5 (Berkeley) %G%
+ */
 
 #include "../machine/pte.h"
 

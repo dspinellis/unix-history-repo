@@ -1,4 +1,10 @@
-/*	subr_log.c	6.4	85/03/18	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)subr_log.c	6.5 (Berkeley) %G%
+ */
 
 /*
  * Error log buffer for kernel printf's.

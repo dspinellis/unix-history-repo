@@ -1,5 +1,11 @@
-/*	@(#)if_exreg.h	6.1 (Berkeley) %G% */
-/*	from @(#)if_exreg.h	1.2 (Excelan)	84/10/12 */
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)if_exreg.h	6.2 (Berkeley) %G%
+ */
+
 
 struct	exdevice {
 	char	xd_porta;	/* write on porta resets EXOS */

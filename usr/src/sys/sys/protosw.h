@@ -1,4 +1,10 @@
-/*	protosw.h	6.4	85/03/07	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)protosw.h	6.5 (Berkeley) %G%
+ */
 
 /*
  * Protocol switch table.

@@ -1,4 +1,10 @@
-/*	kern_clock.c	6.12	85/04/05	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kern_clock.c	6.13 (Berkeley) %G%
+ */
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"

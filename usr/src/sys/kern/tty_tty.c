@@ -1,4 +1,10 @@
-/*	tty_tty.c	6.2	84/08/29	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tty_tty.c	6.3 (Berkeley) %G%
+ */
 
 /*
  * Indirect driver for controlling tty.

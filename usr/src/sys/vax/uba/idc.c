@@ -1,4 +1,10 @@
-/*	idc.c	6.5	85/05/02	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)idc.c	6.6 (Berkeley) %G%
+ */
 
 #include "rb.h"
 #if NIDC > 0

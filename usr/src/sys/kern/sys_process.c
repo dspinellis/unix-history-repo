@@ -1,4 +1,10 @@
-/*	sys_process.c	6.3	84/11/20	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)sys_process.c	6.4 (Berkeley) %G%
+ */
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"

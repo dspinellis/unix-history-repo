@@ -1,4 +1,10 @@
-/*	if_hyreg.h	6.2	85/05/28	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)if_hyreg.h	6.3 (Berkeley) %G%
+ */
 
 /*
  * Network Systems Corporation Hyperchannel interface

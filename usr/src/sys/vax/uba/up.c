@@ -1,4 +1,10 @@
-/*	up.c	6.4	85/06/04	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)up.c	6.5 (Berkeley) %G%
+ */
 
 #include "up.h"
 #if NSC > 0

@@ -1,4 +1,10 @@
-/*	mba.c	6.3	84/09/25	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)mba.c	6.4 (Berkeley) %G%
+ */
 
 #include "mba.h"
 #if NMBA > 0

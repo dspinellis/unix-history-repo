@@ -1,4 +1,10 @@
-/*	tty_conf.c	6.4	84/12/21	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)tty_conf.c	6.5 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"
