@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	neqn
 CFLAGS+=-DNEQN -I. -I${.CURDIR}/../common_source
@@ -15,6 +15,9 @@ e.c:
 	${YACC} ${YFLAGS} ${.CURDIR}/../common_source/e.y
 	mv y.tab.c e.c
 	mv y.tab.h e.def
+
+e.def: e.c
+.depend: e.def
 
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>

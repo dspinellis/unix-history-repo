@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	eqn
 CFLAGS+=-I. -I${.CURDIR}/../common_source
@@ -15,6 +15,9 @@ e.c:
 	${YACC} ${YFLAGS} ${.CURDIR}/../common_source/e.y
 	mv y.tab.c e.c
 	mv y.tab.h e.def
+
+e.def: e.c
+.depend: e.def
 
 eqn.0:
 	eqn ${.CURDIR}/eqn.1 | nroff -h -man > ${.TARGET}
