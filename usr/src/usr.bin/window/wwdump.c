@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.3 83/08/15";
+static	char *sccsid = "@(#)wwdump.c	3.4 83/08/19";
 #endif
 
 #include "ww.h"
@@ -12,7 +12,6 @@ register struct ww *w;
 {
 	register i, j;
 
-	(*tt.tt_setinsert)(0);
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < w->ww_w.nr; i++) {
@@ -27,7 +26,6 @@ register struct ww *w;
 {
 	register i, j;
 
-	(*tt.tt_setinsert)(0);
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < w->ww_w.nr; i++) {
@@ -42,7 +40,6 @@ register struct ww *w;
 {
 	register i;
 
-	(*tt.tt_setinsert)(0);
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < w->ww_w.nr; i++) {
@@ -57,7 +54,6 @@ wwdumpsmap()
 {
 	register i, j;
 
-	(*tt.tt_setinsert)(0);
 	(*tt.tt_setmodes)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < wwnrow; i++) {
@@ -72,7 +68,6 @@ wwdumpns()
 {
 	register i, j;
 
-	(*tt.tt_setinsert)(0);
 	(*tt.tt_clear)();
 	for (i = 0; i < wwnrow; i++) {
 		(*tt.tt_move)(i, 0);
@@ -87,8 +82,7 @@ wwdumpos()
 {
 	register i, j;
 
-	(*tt.tt_setinsert)(0);
-	(*tt.tt_clreos)();
+	(*tt.tt_clear)();
 	for (i = 0; i < wwnrow; i++) {
 		(*tt.tt_move)(i, 0);
 		for (j = 0; j < wwncol; j++) {
