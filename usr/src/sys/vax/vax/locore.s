@@ -1,4 +1,4 @@
-/*	locore.s	4.58	81/11/29	*/
+/*	locore.s	4.59	82/01/12	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -396,7 +396,7 @@ start:
 /* count up memory */
 	clrl	r7
 1:	pushl	$4; pushl r7; calls $2,_badaddr; tstl r0; bneq 9f
-	acbl	$8096*1024-1,$64*1024,r7,1b
+	acbl	$8192*1024-1,$64*1024,r7,1b
 9:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6
