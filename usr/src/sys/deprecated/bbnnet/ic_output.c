@@ -38,7 +38,9 @@ struct ip	*ip;
 {
     struct in_ifaddr *ia;
 
+/*
 #ifdef bsd42
+*/
     /* don't want broadcasts to match */
     if (! (ia = in_iawithaddr(ip->ip_dst, FALSE)))
     {
@@ -56,8 +58,10 @@ struct ip	*ip;
 	    return (l);
 	}
     }
+/*
 #endif
     ia = in_iafromif(inetifp);
+*/
     return (IA_INADDR(ia));
 }
 
@@ -73,7 +77,9 @@ struct ip	*ip;
 {
     register struct in_ifaddr *ia;
 
+/*
 #ifdef bsd42
+*/
     /* note we use ip_src, not ip_dst here */
     if ((ia = in_iawithnet(ip->ip_src)) == NULL)
     {
@@ -82,8 +88,10 @@ struct ip	*ip;
 	l.s_addr = INADDR_ANY;
 	return (l);
     }
+/*
 #endif
     ia = in_iafromif(inetifp);
+*/
     return (IA_INADDR(ia));
 }
 
