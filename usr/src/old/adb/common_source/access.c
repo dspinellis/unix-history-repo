@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)access.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)access.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -35,8 +35,8 @@ adbio(rw, space, rmtaddr, localaddr, cnt)
 	register struct map *mp;
 	struct m1 *mm;
 
-	static char derr[] = "data address not found";
-	static char terr[] = "text address not found";
+	static char *derr = "data address not found";
+	static char *terr = "text address not found";
 #define rwerr() errflag = space & SP_DATA ? derr : terr
 #define	within(which) (rmtaddr >= which.b && rmtaddr < which.e)
 
