@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.120		%G%);
+SCCSID(@(#)deliver.c	3.121		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -972,6 +972,8 @@ putheader(fp, m, e)
 	register char *obp;
 	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 
+	if (bitset(M_LOCAL, m->m_flags) && fullsmtp)
+		fprintf(fp, "Return-Path: <%s>\n", e->e_from);
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
 		register char *p;

@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.24		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.25		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.24		%G%);
+SCCSID(@(#)usersmtp.c	3.25		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -98,7 +98,16 @@ smtpinit(m, pvp, ctladdr)
 	*/
 
 	expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
-	smtpmessage("MAIL From:<%s>", canonname(buf, 1));
+	if (CurEnv->e_from.q_mailer == LocalMailer ||
+	    !bitset(M_FULLSMTP, m->m_flags))
+	{
+		smtpmessage("MAIL From:<%s>", canonname(buf, 1));
+	}
+	else
+	{
+		smtpmessage("MAIL From:<@%s%c%s>", HostName,
+			    buf[0] == '@' ? ',' : ':', canonname(buf, 1));
+	}
 	r = reply();
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
