@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -601,12 +601,13 @@ bt_psplit(t, h, l, r, pskip)
 		bcopy(src, (char *)l + l->upper, nbytes);
 
 		/* There's no empirical justification for the '3'. */
-		if (half < nbytes && skip != off + 1)
-			if (!isbigkey || bigkeycnt == 3)
-				break;
-			else
-				++bigkeycnt;
-		else
+		if (half < nbytes) {
+			if (skip != off + 1)
+				if (!isbigkey || bigkeycnt == 3)
+					break;
+				else
+					++bigkeycnt;
+		} else
 			half -= nbytes;
 	}
 	l->lower += (off + 1) * sizeof(index_t);
