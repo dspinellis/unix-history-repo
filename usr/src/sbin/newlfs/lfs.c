@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -374,7 +374,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	/* Compute a checksum across all the data you're writing */
 	dp = datasump = malloc (blocks_used * sizeof(u_long));
-	*dp++ = ((u_long *)dip)[0];		/* inode block */
+	*dp++ = ((u_long *)dpagep)[0];		/* inode block */
 	for (i = 0; i < lfsp->lfs_cleansz; i++)
 		*dp++ = ((u_long *)cleaninfo)[(i << lfsp->lfs_bshift) / 
 		    sizeof(u_long)];		/* Cleaner info */
