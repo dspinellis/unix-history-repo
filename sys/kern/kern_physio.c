@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_physio.c,v 1.3 1994/03/19 22:13:37 davidg Exp $
+ *	$Id: kern_physio.c,v 1.4 1994/03/19 22:55:43 wollman Exp $
  */
 
 #include "param.h"
@@ -58,6 +58,8 @@
 #include "vm/vm.h"
 #include "vm/vm_page.h"
 #include "specdev.h"
+
+#define HOLD_WORKS_FOR_SHARING
 
 /*
  * Driver interface to do "raw" I/O in the address space of a
@@ -134,15 +136,22 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 	do {
 		bp->b_flags &= ~B_DONE;
 		bp->b_un.b_addr = base;
-		/* XXX limit */
+		/*
+		 * Notice that b_bufsize is more owned by the buffer
+		 * allocating entity, while b_bcount might be modified
+		 * by the called I/O routines.  So after I/O is complete
+		 * the only thing guaranteed to be unchanged is
+		 * b_bufsize.
+		 */
 		bp->b_bcount = min (256*1024, amttodo);
+		bp->b_bufsize = bp->b_bcount;
 
 		/* first, check if accessible */
-		if (rw == B_READ && !useracc(base, bp->b_bcount, B_WRITE)) {
+		if (rw == B_READ && !useracc(base, bp->b_bufsize, B_WRITE)) {
 			error = EFAULT;
 			goto errrtn;
 		}
-		if (rw == B_WRITE && !useracc(base, bp->b_bcount, B_READ)) {
+		if (rw == B_WRITE && !useracc(base, bp->b_bufsize, B_READ)) {
 			error = EFAULT;
 			goto errrtn;
 		}
@@ -154,7 +163,7 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 			ftype = VM_PROT_READ;
 
 		lastv = 0;
-		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
+		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bufsize;
 			adr += NBPG) {
 	
 /*
@@ -192,19 +201,31 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 		}
 
 #if !defined(HOLD_WORKS_FOR_SHARING)
-		vslock(base, bp->b_bcount);
+		vslock(base, bp->b_bufsize);
 #endif
+
+		vmapbuf(bp);
+
 		/* perform transfer */
-		physstrat(bp, strat, PRIBIO);
+		(*strat)(bp);
+
+		/* pageout daemon doesn't wait for pushed pages */
+		s = splbio();
+		while ((bp->b_flags & B_DONE) == 0)
+			tsleep((caddr_t)bp, PRIBIO, "physstr", 0);
+		splx(s);
+
+		vunmapbuf(bp);
+
 #if !defined(HOLD_WORKS_FOR_SHARING)
-		vsunlock(base, bp->b_bcount);
+		vsunlock(base, bp->b_bufsize);
 #endif
 
 /*
  * unhold the pde, and data pages
  */
 		lastv = 0;
-		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bcount;
+		for (adr = (caddr_t)trunc_page(base); adr < base + bp->b_bufsize;
 			adr += NBPG) {
 			v = trunc_page(((vm_offset_t)vtopte(adr)));
 			if (v != lastv) {
@@ -219,6 +240,10 @@ int physio(strat, dev, bp, off, rw, base, len, p)
 		}
 			
 
+		/*
+		 * in this case, we need to use b_bcount instead of
+		 * b_bufsize.
+		 */
 		amtdone = bp->b_bcount - bp->b_resid;
 		amttodo -= amtdone;
 		base += amtdone;
