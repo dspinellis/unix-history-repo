@@ -1,4 +1,13 @@
 #	@(#)Makefile	5.8.1.1 (Berkeley) 5/8/91
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00087
+# --------------------         -----   ----------------------
+#
+# 09 Mar 93	Rodney W. Grimes	Added netstat, rwho, and ruptime
+#					to SUBDIR
+#
 
 SUBDIR=	ar awk biff basename cal calendar \
 	checknr chpass cksum cmp col colcrt colrm column comm compress \
@@ -7,9 +16,9 @@ SUBDIR=	ar awk biff basename cal calendar \
 	g++ gas gcc gdb grep groff groups head hexdump id join \
 	ktrace last ld leave lex locate lock logger \
 	login logname lorder m4 machine mail make man mesg mkdep mkfifo \
-	mkstr more nfsstat nice nm nohup pagesize \
+	mkstr more netstat nfsstat nice nm nohup pagesize \
 	passwd paste pr printenv printf ranlib rcs \
-	rdist renice rlogin rsh script sed \
+	rdist renice rlogin rsh ruptime rwho script sed \
 	shar showmount size soelim sort split strings \
 	strip su symorder tail talk tar tee telnet tftp time \
 	tip tn3270 touch tput tr true tsort tty ul unexpand unifdef uniq \
