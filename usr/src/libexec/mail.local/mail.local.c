@@ -9,7 +9,7 @@
 #include <whoami.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.2	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.3	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -671,14 +671,18 @@ char *fromaddr;
 		strcat(file, name);
 	}
 	mask = umask(MAILMODE);
+	if (stat(file, &stat) >= 0 && stat.st_nlink != 1) {
+		fprintf(stdout, "mail: %s's mail file has more than one link\n", name);
+		return(0);
+	}
 	malf = fopen(file, "a");
+	chown(file, pw->pw_uid, pw->pw_gid);
 	umask(mask);
 	if (malf == NULL) {
 		fprintf(stdout, "mail: cannot append to %s\n", file);
 		return(0);
 	}
 	lock(file);
-	chown(file, pw->pw_uid, pw->pw_gid);
 	{
 		f = open("/dev/mail", 1);
 		sprintf(buf, "%s@%d\n", name, ftell(malf)); 
