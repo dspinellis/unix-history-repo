@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)fifo_vnops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,7 @@
 #include "systm.h"
 #include "ioctl.h"
 #include "file.h"
+#include "fifo.h"
 #include "errno.h"
 #include "malloc.h"
 
@@ -31,65 +32,50 @@ struct fifoinfo {
 	long		fi_writers;
 };
 
-int	fifo_lookup(),
-	fifo_open(),
-	fifo_read(),
-	fifo_write(),
-	fifo_strategy(),
-	fifo_bmap(),
-	fifo_ioctl(),
-	fifo_select(),
-	fifo_lock(),
-	fifo_unlock(),
-	fifo_close(),
-	fifo_print(),
-	fifo_advlock(),
-	fifo_ebadf(),
-	fifo_badop(),
-	nullop();
-
 struct vnodeops fifo_vnodeops = {
 	fifo_lookup,		/* lookup */
-	fifo_badop,		/* create */
-	fifo_badop,		/* mknod */
+	fifo_create,		/* create */
+	fifo_mknod,		/* mknod */
 	fifo_open,		/* open */
 	fifo_close,		/* close */
-	fifo_ebadf,		/* access */
-	fifo_ebadf,		/* getattr */
-	fifo_ebadf,		/* setattr */
+	fifo_access,		/* access */
+	fifo_getattr,		/* getattr */
+	fifo_setattr,		/* setattr */
 	fifo_read,		/* read */
 	fifo_write,		/* write */
 	fifo_ioctl,		/* ioctl */
 	fifo_select,		/* select */
-	fifo_badop,		/* mmap */
-	nullop,			/* fsync */
-	fifo_badop,		/* seek */
-	fifo_badop,		/* remove */
-	fifo_badop,		/* link */
-	fifo_badop,		/* rename */
-	fifo_badop,		/* mkdir */
-	fifo_badop,		/* rmdir */
-	fifo_badop,		/* symlink */
-	fifo_badop,		/* readdir */
-	fifo_badop,		/* readlink */
-	fifo_badop,		/* abortop */
-	nullop,			/* inactive */
-	nullop,			/* reclaim */
+	fifo_mmap,		/* mmap */
+	fifo_fsync,		/* fsync */
+	fifo_seek,		/* seek */
+	fifo_remove,		/* remove */
+	fifo_link,		/* link */
+	fifo_rename,		/* rename */
+	fifo_mkdir,		/* mkdir */
+	fifo_rmdir,		/* rmdir */
+	fifo_symlink,		/* symlink */
+	fifo_readdir,		/* readdir */
+	fifo_readlink,		/* readlink */
+	fifo_abortop,		/* abortop */
+	fifo_inactive,		/* inactive */
+	fifo_reclaim,		/* reclaim */
 	fifo_lock,		/* lock */
 	fifo_unlock,		/* unlock */
 	fifo_bmap,		/* bmap */
-	fifo_badop,		/* strategy */
+	fifo_strategy,		/* strategy */
 	fifo_print,		/* print */
-	nullop,			/* islocked */
+	fifo_islocked,		/* islocked */
 	fifo_advlock,		/* advlock */
 };
 
 /*
  * Trivial lookup routine that always fails.
  */
-fifo_lookup(vp, ndp)
+/* ARGSUSED */
+fifo_lookup(vp, ndp, p)
 	struct vnode *vp;
 	struct nameidata *ndp;
+	struct proc *p;
 {
 
 	ndp->ni_dvp = vp;
@@ -102,10 +88,11 @@ fifo_lookup(vp, ndp)
  * to find an active instance of a fifo.
  */
 /* ARGSUSED */
-fifo_open(vp, mode, cred)
+fifo_open(vp, mode, cred, p)
 	register struct vnode *vp;
 	int mode;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct fifoinfo *fip;
 	struct socket *rso, *wso;
@@ -171,7 +158,7 @@ fifo_open(vp, mode, cred)
 		}
 	}
 	if (error)
-		fifo_close(vp, mode, cred);
+		fifo_close(vp, mode, cred, p);
 	return (error);
 }
 
@@ -188,8 +175,10 @@ fifo_read(vp, uio, ioflag, cred)
 	register struct socket *rso = vp->v_fifoinfo->fi_readsock;
 	int error, startresid;
 
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_READ)
 		panic("fifo_read mode");
+#endif
 	if (uio->uio_resid == 0)
 		return (0);
 	if (ioflag & IO_NDELAY)
@@ -222,8 +211,10 @@ fifo_write(vp, uio, ioflag, cred)
 	struct socket *wso = vp->v_fifoinfo->fi_writesock;
 	int error;
 
+#ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
 		panic("fifo_write mode");
+#endif
 	if (ioflag & IO_NDELAY)
 		wso->so_state |= SS_NBIO;
 	VOP_UNLOCK(vp);
@@ -238,12 +229,13 @@ fifo_write(vp, uio, ioflag, cred)
  * Device ioctl operation.
  */
 /* ARGSUSED */
-fifo_ioctl(vp, com, data, fflag, cred)
+fifo_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
 	caddr_t data;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	struct file filetmp;
 	int error;
@@ -254,14 +246,15 @@ fifo_ioctl(vp, com, data, fflag, cred)
 		filetmp.f_data = (caddr_t)vp->v_fifoinfo->fi_readsock;
 	else
 		filetmp.f_data = (caddr_t)vp->v_fifoinfo->fi_writesock;
-	return (soo_ioctl(&filetmp, com, data));
+	return (soo_ioctl(&filetmp, com, data, p));
 }
 
 /* ARGSUSED */
-fifo_select(vp, which, fflag, cred)
+fifo_select(vp, which, fflag, cred, p)
 	struct vnode *vp;
 	int which, fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	struct file filetmp;
 	int error;
@@ -270,7 +263,7 @@ fifo_select(vp, which, fflag, cred)
 		filetmp.f_data = (caddr_t)vp->v_fifoinfo->fi_readsock;
 	else
 		filetmp.f_data = (caddr_t)vp->v_fifoinfo->fi_writesock;
-	return (soo_select(&filetmp, which));
+	return (soo_select(&filetmp, which, p));
 }
 
 /*
@@ -313,10 +306,11 @@ fifo_unlock(vp)
  * Device close routine
  */
 /* ARGSUSED */
-fifo_close(vp, fflag, cred)
+fifo_close(vp, fflag, cred, p)
 	register struct vnode *vp;
 	int fflag;
 	struct ucred *cred;
+	struct proc *p;
 {
 	register struct fifoinfo *fip = vp->v_fifoinfo;
 	int error1, error2;
@@ -377,6 +371,7 @@ fifo_ebadf()
 /*
  * Fifo advisory byte-level locks.
  */
+/* ARGSUSED */
 fifo_advlock(vp, id, op, fl, flags)
 	struct vnode *vp;
 	caddr_t id;
