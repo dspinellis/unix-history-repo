@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.12 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -376,13 +376,22 @@ _gethtbyname(name)
 {
 	register struct hostent *p;
 	register char **cp;
+	char lowname[128];
+	register char *lp = lowname;
+	
+	while (*name)
+		if (isupper(*name))
+			*lp++ = tolower(*name++);
+		else
+			*lp++ = *name++;
+	*lp = '\0';
 
 	_sethtent(0);
 	while (p = _gethtent()) {
-		if (strcmp(p->h_name, name) == 0)
+		if (strcmp(p->h_name, lowname) == 0)
 			break;
 		for (cp = p->h_aliases; *cp != 0; cp++)
-			if (strcmp(*cp, name) == 0)
+			if (strcmp(*cp, lowname) == 0)
 				goto found;
 	}
 found:
