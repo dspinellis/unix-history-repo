@@ -1,4 +1,4 @@
-/*	proc.h	3.1	%H%	*/
+/*	proc.h	3.2	%H%	*/
 
 /*
  * One structure allocated per active
@@ -99,6 +99,7 @@ struct	proc *runq;
 #define	SPAGI	0x08000		/* init data space on demand, from inode */
 #define	SANOM	0x10000		/* system detected anomalous vm behavior */
 #define	SUANOM	0x20000		/* user warned of anomalous vm behavior */
+#define	STIMO	0x40000		/* timing out during sleep */
 
 /*
  * parallel proc structure
