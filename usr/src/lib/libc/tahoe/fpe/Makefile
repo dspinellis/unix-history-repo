@@ -1,7 +1,13 @@
-#	Makefile	5.4	86/08/01
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
 DESTDIR=
 FLAGS=	-I.. ${DEFS}
+CFLAGS=	-O ${FLAGS}
 SRCS=	addd.s addf.s cmpd.s cmpf.s cvtdl.s cvtfl.s cvtld.s cvtlf.s cvtud.s \
 	cvtuf.s divd.s divf.s fnorm.s fp_exp.s modf.s muld.s mulf.s negd.s \
 	negf.s sfnorm.s sfp_exp.s subd.s subf.s
@@ -28,26 +34,13 @@ tags:
 	echo "no tags here"
 
 clean:
-	rm -f ${OBJS} profiled/*.o errs a.out core fpelib fpelib_p Makefile.bak
+	rm -f ${OBJS} profiled/*.o errs a.out core fpelib fpelib_p
 
 depend:
-	for i in ${SRCS}; do \
-	    cc -M ${FLAGS} $$i | awk ' { if ($$1 != prev) \
-		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
-		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
-		else rec = rec " " $$2 } } \
-		END { print rec } ' >> makedep; done
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+	mkdep ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- make depend uses it
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
 addd.o: addd.s /usr/include/tahoemath/fp.h ../DEFS.h
 addf.o: addf.s /usr/include/tahoemath//fp.h ../DEFS.h
@@ -72,6 +65,5 @@ sfnorm.o: sfnorm.s /usr/include/tahoemath/fp.h ../DEFS.h
 sfp_exp.o: sfp_exp.s /usr/include/tahoemath/fp.h ../DEFS.h
 subd.o: subd.s /usr/include/tahoemath/fp.h ../DEFS.h
 subf.o: subf.s /usr/include/tahoemath/fp.h ../DEFS.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
