@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ptrace.h	7.3 (Berkeley) %G%
+ *	@(#)ptrace.h	7.4 (Berkeley) %G%
  */
 
 #ifndef	_PTRACE_H_
@@ -20,5 +20,15 @@
 #define	PT_CONTINUE	7	/* continue the child */
 #define	PT_KILL		8	/* kill the child process */
 #define	PT_STEP		9	/* single step the child */
+
+#ifndef KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	ptrace __P((int _request, pid_t _pid, caddr_t _addr, int _data));
+__END_DECLS
+
+#endif /* !KERNEL */
 
 #endif	/* !_PTRACE_H_ */
