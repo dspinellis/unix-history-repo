@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.3 (Berkeley) %G%
+ *	@(#)mp.c	7.4 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -203,12 +203,8 @@ mpopen(dev, mode)
 		error = ENOBUFS;
 		goto bad;
 	}
+	mpmodem(unit, MMOD_ON);
 	mpcmd(ev, EVCMD_OPEN, 0, ms->ms_mb, port);
-	while ((tp->t_state & TS_CARR_ON) == 0)
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
-	error = mpmodem(unit, MMOD_ON);
-	if (error)
-		goto bad;
 	while ((tp->t_state & TS_CARR_ON) == 0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
@@ -254,20 +250,18 @@ mpclose(dev, flag)
 	error = 0;
 	mp->mp_flags |= MP_PROGRESS;
 	(*linesw[tp->t_line].l_close)(tp);
-	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0) 
-		if (error = mpmodem(unit, MMOD_OFF)) {
-			mp->mp_flags &= ~MP_PROGRESS;
-			goto out;
-		}
-	while (tp->t_state & TS_FLUSH)			/* ??? */
-		sleep((caddr_t)&tp->t_state, TTOPRI);	/* ??? */
-	ttyclose(tp);
 	ev = mp_getevent(mp, unit);
 	if (ev == 0) {
-		 error = ENOBUFS;
-		 goto out;
+		error = ENOBUFS;
+		mp->mp_flags &= ~MP_PROGRESS;
+		goto out;
 	}
+	if (tp->t_state & TS_HUPCLS || (tp->t_state & TS_ISOPEN) == 0)
+		mpmodem(unit, MMOD_OFF);
+	else
+		mpmodem(unit, MMOD_ON);
 	mpcmd(ev, EVCMD_CLOSE, 0, mb, port);
+	ttyclose(tp);
 out:
 	if (mp->mp_flags & MP_REMBSY)
 		mpclean(mb, port);
@@ -661,14 +655,9 @@ mpmodem(unit, flag)
 	struct mpsoftc *ms = &mp_softc[MPUNIT(unit)];
 	int port = MPPORT(unit);
 	register struct mpport *mp;
-	register struct mpevent *ev;
 	register struct asyncparam *asp;
 
 	mp = &ms->ms_mb->mb_port[port];
-	ev = mp_getevent(mp, unit);
-	if (ev == 0)
-		return (ENOBUFS);
-	/* YUCK */
 	asp = &ms->ms_async[port][mp->mp_on?mp->mp_on-1:MPINSET-1];
 	if (flag == MMOD_ON) {
 		if (ms->ms_softCAR & (1 << port))
@@ -680,8 +669,6 @@ mpmodem(unit, flag)
 		setm(&asp->ap_modem, 0, DROP);
 		seti(&asp->ap_intena, 0);
 	}
-	mpcmd(ev, EVCMD_IOCTL, A_MDMCHG, ms->ms_mb, port);
-	return (0);
 }
 
 /*
