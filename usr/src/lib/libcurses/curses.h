@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.6 */
+/* %G% (Berkeley) @(#)curses.h	1.7 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -95,6 +95,7 @@ int	__void__;
 # define	refresh()	VOID(wrefresh(stdscr))
 # define	inch()		VOID(winch(stdscr))
 # define	insch(c)	VOID(winsch(stdscr,c))
+# define	delch()		VOID(wdelch(stdscr))
 # define	standout()	VOID(wstandout(stdscr))
 # define	standend()	VOID(wstandend(stdscr))
 
@@ -106,12 +107,14 @@ int	__void__;
 #define	mvwaddstr(win,y,x,str)	VOID(wmove(win,y,x)==ERR?ERR:waddstr(win,str))
 #define	mvwgetstr(win,y,x)	VOID(wmove(win,y,x)==ERR?ERR:wgetstr(win))
 #define	mvwinch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : winch(win))
+#define	mvwdelch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : wdelch(win))
 #define	mvwinsch(win,y,x,c)	VOID(wmove(win,y,x) == ERR ? ERR:winsch(win,c))
 #define	mvaddch(y,x,ch)		mvwaddch(stdscr,y,x,ch)
 #define	mvgetch(y,x)		mvwgetch(stdscr,y,x)
 #define	mvaddstr(y,x,str)	mvwaddstr(stdscr,y,x,str)
 #define	mvgetstr(y,x)		mvwgetstr(stdscr,y,x)
 #define	mvinch(y,x)		mvwinch(stdscr,y,x)
+#define	mvdelch(y,x)		mvwdelch(stdscr,y,x)
 #define	mvinsch(y,x,c)		mvwinsch(stdscr,y,x,c)
 
 /*
