@@ -34,8 +34,9 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 boggle ${DESTDIR}/usr/games/boggle
-	install -o bin -g bin -m 444 bogdict ${DESTDIR}/usr/games/bogdict
+	install -s -o games -g bin -m 4700 boggle ${DESTDIR}/usr/games/hide/boggle
+	install -o games -g bin -m 400 bogdict ${DESTDIR}/usr/games/lib/bogdict
+	(cd ${DESTDIR}/usr/games; rm -f boggle; ln -s dm boggle; chown games.bin boggle)
 
 lint: FRC
 	lint ${CFLAGS} ${CSRCS}

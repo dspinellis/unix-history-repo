@@ -96,12 +96,12 @@ phant.help:	phant.nr
 install: FRC
 	-mkdir /usr/games/lib/phantasia
 	chmod 700 /usr/games/lib/phantasia
-	chown bin /usr/games/lib/phantasia
-	install -s -o bin -g bin -m 4711 phantasia ${DESTDIR}/usr/games/phantasia
-	install -c -o bin -g bin -m 444 phant.help ${DESTDIR}/usr/games/lib/phantasia/phant.help
+	chown games.bin /usr/games/lib/phantasia
+	install -s -o games -g bin -m 4700 phantasia ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f phantasia; ln -s dm phantasia; chown games.bin phantasia)
+	install -c -o games -g bin -m 400 phant.help ${DESTDIR}/usr/games/lib/phantasia/phant.help
 	./setup
-	chgrp bin /usr/games/lib/phantasia/*
-	chown bin /usr/games/lib/phantasia/*
+	chown games.bin /usr/games/lib/phantasia/*
 
 # Make Phantasia map.
 # Change the map commands reflect your installation.

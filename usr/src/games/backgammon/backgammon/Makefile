@@ -41,8 +41,10 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 backgammon ${DESTDIR}/usr/games/backgammon
-	install -s -o bin -g bin -m 755 teachgammon ${DESTDIR}/usr/games/teachgammon
+	install -s -o games -g bin -m 700 backgammon ${DESTDIR}/usr/games/hide
+	install -s -o games -g bin -m 700 teachgammon ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f backgammon; ln -s dm backgammon; chown games.bin backgammon)
+	(cd ${DESTDIR}/usr/games; rm -f teachgammon; ln -s dm teachgammon; chown games.bin teachgammon)
 
 lint: FRC
 	lint ${CFLAGS} ${BRCS}

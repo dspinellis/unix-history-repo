@@ -86,14 +86,14 @@ distribution: Makefile
 # the distribution directory also contains the empty files perm and record.
 
 install:
-	install -s -o bin -g bin -m 4511 hack ${DESTDIR}/usr/games/hack
-	-mkdir ${DESTDIR}/usr/games/lib/hackdir
+	install -s -o games -g bin -m 4700 hack ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f hack; ln -s dm hack; chown games.bin hack)
+	-mkdir ${DESTDIR}/usr/games/lib/hackdir > /dev/null 2>&1
 	chmod 700 ${DESTDIR}/usr/games/lib/hackdir
-	chown bin ${DESTDIR}/usr/games/lib/hackdir
-	chgrp bin ${DESTDIR}/usr/games/lib/hackdir
-	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/hackdir/perm
-	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/hackdir/record
-	install -c -o bin -g bin -m 666 hh ${DESTDIR}/usr/games/lib/hackdir/hh
+	chown games.bin ${DESTDIR}/usr/games/lib/hackdir
+	install -c -o games -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/hackdir/perm
+	install -c -o games -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/hackdir/record
+	install -c -o games -g bin -m 666 hh ${DESTDIR}/usr/games/lib/hackdir/hh
 	rm -f ${DESTDIR}/usr/games/lib/hackdir/bones*
 
 clean:

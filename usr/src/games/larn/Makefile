@@ -89,13 +89,15 @@ larn: $(OBJS) ${LIBC}
 	$(CC) $(CFLAGS) $(OBJS) -o $@ $(TERMLIB)
 
 install:
-	-mkdir ${DESTDIR}/usr/games/lib/larnfiles
-	chmod 777 ${DESTDIR}/usr/games/lib/larnfiles
-	install -s -o bin -g bin -m 755 larn ${DESTDIR}/usr/games/larn
-	install -c -o bin -g bin -m 444 .larn.help ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o bin -g bin -m 444 .larnmaze ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o bin -g bin -m 444 .larnopts ${DESTDIR}/usr/games/lib/larnfiles
-	install -c -o bin -g bin -m 444 .lfortune ${DESTDIR}/usr/games/lib/larnfiles
+	-mkdir ${DESTDIR}/usr/games/lib/larnfiles > /dev/null 2>&1
+	chmod 700 ${DESTDIR}/usr/games/lib/larnfiles
+	chown games.src ${DESTDIR}/usr/games/lib/larnfiles
+	install -s -o games -g bin -m 4700 larn ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f larn; ln -s dm larn; chown games.bin larn)
+	install -c -o games -g bin -m 444 .larn.help ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o games -g bin -m 444 .larnmaze ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o games -g bin -m 444 .larnopts ${DESTDIR}/usr/games/lib/larnfiles
+	install -c -o games -g bin -m 444 .lfortune ${DESTDIR}/usr/games/lib/larnfiles
 
 clean: FRC
 	rm -f ${OBJS} core larn

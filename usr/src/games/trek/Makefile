@@ -37,7 +37,8 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 trek ${DESTDIR}/usr/games/trek
+	install -s -o games -g bin -m 700 trek ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f trek; ln -s dm trek; chown games.bin trek)
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}

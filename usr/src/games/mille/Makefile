@@ -32,7 +32,8 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 mille ${DESTDIR}/usr/games/mille
+	install -s -o games -g bin -m 700 mille ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f mille; ln -s dm mille; chown games.bin mille)
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
