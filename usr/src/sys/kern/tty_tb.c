@@ -1,4 +1,4 @@
-/*	tty_tb.c	6.1	83/08/13	*/
+/*	tty_tb.c	6.2	83/09/22	*/
 
 #include "tb.h"
 #if NTB > 0
@@ -77,11 +77,12 @@ tbclose(tp)
 {
 	register int s = spl5();
 
+	((struct tb *) tp->T_LINEP)->used = 0;
 	tp->t_cp = 0;
 	tp->t_inbuf = 0;
 	tp->t_rawq.c_cc = 0;		/* clear queues -- paranoid */
 	tp->t_canq.c_cc = 0;
-	tp->t_line = 0;		/* paranoid: avoid races */
+	tp->t_line = 0;			/* paranoid: avoid races */
 	splx(s);
 }
 
@@ -94,8 +95,6 @@ tbread(tp, uio)
 	register struct tty *tp;
 	struct uio *uio;
 {
-	register int i;
-	register s;
 	struct tbpos *tbpos;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
