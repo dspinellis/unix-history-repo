@@ -1,5 +1,22 @@
 INSTALLATION GUIDE
-README	5.2	83/07/19
+README	5.3	85/01/22
+
+This version is based on the "rti uucp" that was on the 4.2BSD tape.
+It contains many additional  features and fixes from Usenet,
+Tom Truscott, Guy Harris, and many others.
+
+A few new subdirectories have been added. Do a "make mkdirs" to make
+sure that you have all of them.
+
+The man pages now describe all the options for the various commands.
+make sure you read them. A complete list of differences is too big to consider.
+
+You should also look through the UUAIDS directory. There are some useful
+programs and hints therein.
+
+Rick Adams
+rick@seismo.ARPA
+January 14, 1985
 
 Tom Truscott, rti!trt,decvax!duke!trt (919)541-6488 Research Triangle Institute
 Bob Gray, gray@berkeley, duke!adiron!bob (315) 336-4989
@@ -35,8 +52,7 @@ uusnap			Displays spooled files, and pending uuxqts.
 This version runs on all VAXen and PDPs under UNIX-V7 and 4.1bsd, 4.2BSD.
 It also runs on Gould/SEL Concept series machines (e.g. 32/8750), 
 DUAL 68000 unisoft.
-It should not be hard to get it running on BTL system III, IV, and V.
-On such systems, put "#define SYSIII" in uucp.h and pray.
+It also runns on BTL system III, IV, and V.
 
 UUCP installers should read the two papers (by Dave Nowitz)
 in Vol 2B of version 7 manuals and UUAIDS/setup.tblms.
@@ -63,7 +79,7 @@ Some steps will vary slightly from system to system.
 
 	non-4.2
 		a) sites need to install the Berkeley directory reading library.
-			Try (cd LIBNDIR; make install).
+			Try (cd libndir; make install).
 			Edit Makefile to have LIBNDIR= -lndir
 			define NDIR in uucp.h.
 		b) Check LDFLAGS, OWNER, GROUP, and LIBUUCICO.
@@ -156,24 +172,9 @@ Some steps will vary slightly from system to system.
 	uu.weekly		Renames SYSLOG to SYSLOG.old.
 	The above scripts should be run via cron.
 
-	uuq
-		Reports number of command ('C.') files queued for each system,
-		number of remote executions ('XQT') pending,
-		and with what systems uucico is currently conversing.
-		(It would also be handy to know the status of each site
-		such as 'decvax: last connection 03:00 Fri Jan 20' and
-		failures such as 'harpo: no answer 07:00 Fri Jan 20'.
-		It would also be handy to have a manual page for this thing.)
-
-	uuusage, uuusage.1, uutbl
-		Summarizes SYSLOG.  Very handy.  (Alan S. Watt).
-		Works best if you use uucp.daily.  Slow if SYSLOG is big.
-
-	uurate
-		More detailed summary of SYSLOG.  Useful for checking
-		throughput.  Modified from program provided by ittvax!swatt.
-		Slow if SYSLOG is big.
-
+	uucpsummary
+		Summarizes LOGFILE and SYSLOG. It's very helpful in telling
+		what is going on and who is calling who.
 	uucp.daily
 		Daily shell script run at ittvax.  Manages SYSLOG files in
 		a convenient form for uuusage.  Not integrated in time
