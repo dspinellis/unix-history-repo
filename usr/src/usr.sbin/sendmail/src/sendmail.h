@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.30 (Berkeley) %G%
+ *	@(#)sendmail.h	5.30.1.1 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.30		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.30.1.1		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -354,29 +354,26 @@ struct metamac
 	char	metaval;	/* internal code (as above) */
 };
 /*
-**  Information about hosts that we have looked up recently.
-**
-**	This stuff is 4.2/3bsd specific.
+**  Information about currently open connections to mailers, or to
+**  hosts that we have looked up recently.
 */
 
-# ifdef DAEMON
+# define MCONINFO	struct mailer_con_info
 
-# define HOSTINFO	struct hostinfo
-
-HOSTINFO
+MCONINFO
 {
-	char		*ho_name;	/* name of this host */
-	struct in_addr	ho_inaddr;	/* internet address */
-	short		ho_flags;	/* flag bits, see below */
-	short		ho_errno;	/* error number on last connection */
-	short		ho_exitstat;	/* exit status from last connection */
+	short		mci_flags;	/* flag bits, see below */
+	short		mci_errno;	/* error number on last connection */
+	short		mci_exitstat;	/* exit status from last connection */
+	FILE		*mci_in;	/* input side of connection */
+	FILE		*mci_out;	/* output side of connection */
+	int		mci_pid;	/* process id of subordinate proc */
+	short		mci_state;	/* SMTP state */
 };
 
 
 /* flag bits */
-#define HOF_VALID	00001		/* this entry is valid */
-
-# endif DAEMON
+#define MCIF_VALID	00001		/* this entry is valid */
 /*
 **  Symbol table definitions
 */
@@ -392,9 +389,7 @@ struct symtab
 		ADDRESS		*sv_addr;	/* pointer to address header */
 		MAILER		*sv_mailer;	/* pointer to mailer */
 		char		*sv_alias;	/* alias */
-# ifdef HOSTINFO
-		HOSTINFO	sv_host;	/* host information */
-# endif HOSTINFO
+		MCONINFO	sv_mci;		/* mailer connection info */
 	}	s_value;
 };
 
@@ -406,14 +401,13 @@ typedef struct symtab	STAB;
 # define ST_ADDRESS	2	/* an address in parsed format */
 # define ST_MAILER	3	/* a mailer header */
 # define ST_ALIAS	4	/* an alias */
-# define ST_HOST	5	/* host information */
+# define ST_MCONINFO	5	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
 # define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
-# undef s_host
-# define s_host		s_value.sv_host
+# define s_mci		s_value.sv_mci
 
 extern STAB	*stab();
 
