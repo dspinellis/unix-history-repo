@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.2	%G%
+#	@(#)MAKEDEV	4.3	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -189,7 +189,7 @@ pty*)
 
 dn*)
 	unit=`expr $i : 'dn\(.*\)'`
-	case $i in
+	case $unit in
 	0|1|2|3|4|5|6|7)
 		umask 0
 		/etc/mknod cu${unit} c 24 ${unit}
