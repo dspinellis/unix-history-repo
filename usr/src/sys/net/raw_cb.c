@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.6	82/03/28	*/
+/*	raw_cb.c	4.7	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,6 +62,7 @@ COUNT(RAW_ATTACH);
 		struct sockaddr_in inpup;
 
 		bzero((caddr_t)&inpup, sizeof(inpup));
+		inpup.sin_family = AF_INET;
 		inpup.sin_addr.s_net = spup->sp_net;
 		inpup.sin_addr.s_impno = spup->sp_host;
 		if (inpup.sin_addr.s_addr &&
@@ -87,7 +88,8 @@ COUNT(RAW_ATTACH);
 	so->so_pcb = (caddr_t)rp;
 	rp->rcb_pcb = 0;
 	if (addr)
-		bcopy((caddr_t)addr, (caddr_t)&so->so_addr, sizeof(*addr));
+		bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof(*addr));
+	rp->rcb_flags |= RAW_LADDR;
 	return (0);
 bad2:
 	sbrelease(&so->so_snd);
@@ -119,7 +121,7 @@ raw_disconnect(rp)
 	struct rawcb *rp;
 {
 COUNT(RAW_DISCONNECT);
-	rp->rcb_flags &= ~RAW_ADDR;
+	rp->rcb_flags &= ~RAW_FADDR;
 	if (rp->rcb_socket->so_state & SS_USERGONE)
 		raw_detach(rp);
 }
@@ -133,6 +135,6 @@ raw_connaddr(rp, addr)
 	struct sockaddr *addr;
 {
 COUNT(RAW_CONNADDR);
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_addr, sizeof(*addr));
-	rp->rcb_flags |= RAW_ADDR;
+	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_faddr, sizeof(*addr));
+	rp->rcb_flags |= RAW_FADDR;
 }

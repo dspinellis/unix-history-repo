@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.66	82/04/01	*/
+/*	tcp_input.c	1.67	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -216,7 +216,6 @@ COUNT(TCP_INPUT);
 			tp = 0;
 			goto drop;
 		}
-		in_setsockaddr(inp);
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);

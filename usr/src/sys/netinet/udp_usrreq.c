@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.25	82/04/10	*/
+/*	udp_usrreq.c	4.26	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -234,7 +234,6 @@ COUNT(UDP_USRREQ);
 		if (addr) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
-			in_setsockaddr(inp);
 		}
 		}
 		break;
@@ -247,6 +246,10 @@ COUNT(UDP_USRREQ);
 
 	case PRU_CONTROL:
 		return (EOPNOTSUPP);
+
+	case PRU_SOCKADDR:
+		in_setsockaddr((struct sockaddr_in *)addr, inp);
+		break;
 
 	default:
 		panic("udp_usrreq");

@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.55	82/04/10	*/
+/*	tcp_usrreq.c	1.56	82/04/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -251,6 +251,10 @@ printf("sendoob seq now %x oobc %x\n", tp->t_oobseq, tp->t_oobc);
 		tp->t_force = 1;
 		error = tcp_output(tp);
 		tp->t_force = 0;
+		break;
+
+	case PRU_SOCKADDR:
+		in_setsockaddr((struct sockaddr_in *)addr, inp);
 		break;
 
 	/*
