@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)creat.2	6.10 (Berkeley) %G%
+.\"     @(#)creat.2	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CREAT 2
@@ -12,6 +12,8 @@
 .Nm creat
 .Nd create a new file
 .Sh SYNOPSIS
+.Fd #include <fcntl.h>
+.Ft int
 .Fn creat "char *path" "mode_t mode"
 .Sh DESCRIPTION
 .Bf -symbolic
