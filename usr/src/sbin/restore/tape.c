@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -872,6 +872,10 @@ gethead(buf)
 	struct s_spcl *buf;
 {
 	long i;
+	union {
+		quad_t	qval;
+		long	val[2];
+	} qcvt;
 	union u_ospcl {
 		char dummy[TP_BSIZE];
 		struct	s_ospcl {
@@ -945,16 +949,17 @@ gethead(buf)
 good:
 	if (buf->c_dinode.di_size == 0 &&
 	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt == 0) {
-		if (buf->c_dinode.di_qsize.val[0] ||
-		    buf->c_dinode.di_qsize.val[1]) {
+		qcvt.qval = buf->c_dinode.di_size;
+		if (qcvt.val[0] || qcvt.val[1]) {
 			printf("Note: Doing Quad swapping\n");
 			Qcvt = 1;
 		}
 	}
 	if (Qcvt) {
-		i = buf->c_dinode.di_qsize.val[1];
-		buf->c_dinode.di_qsize.val[1] = buf->c_dinode.di_qsize.val[0];
-		buf->c_dinode.di_qsize.val[0] = i;
+		qcvt.qval = buf->c_dinode.di_size;
+		i = qcvt.val[1];
+		qcvt.val[1] = qcvt.val[0];
+		qcvt.val[0] = i;
 	}
 
 	switch (buf->c_type) {
