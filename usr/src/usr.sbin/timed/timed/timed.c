@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.5 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -45,6 +45,11 @@ int nnets;		/* Number of networks I am connected to */
 struct netinfo *slavenet;
 struct netinfo *firstslavenet();
 int Mflag;
+struct nets {
+	char *name;
+	long net;
+	struct nets *next;
+} *nets = (struct nets *)0;
 
 /*
  * The timedaemons synchronize the clocks of hosts in a local area network.
@@ -67,12 +72,9 @@ char **argv;
 	int on;
 	int ret;
 	long seed;
-	int nflag;
-	char *netname;
+	int nflag, iflag;
 	struct timeval time;
 	struct servent *srvp;
-	struct netent *getnetent();
-	struct netent *localnet;
 	struct tsp resp, conflict, *answer, *readmsg(), *acksend();
 	long casual();
 	char *date();
@@ -97,6 +99,7 @@ char **argv;
 	backoff = 1;
 	trace = OFF;
 	nflag = OFF;
+	iflag = OFF;
 	openlog("timed", LOG_ODELAY, LOG_DAEMON);
 
 	if (getuid() != 0) {
@@ -117,8 +120,24 @@ char **argv;
 				break;
 			case 'n':
 				argc--, argv++;
-				nflag = ON;
-				netname = *argv;
+				if (iflag) {
+					fprintf(stderr,
+				    "timed: -i and -n make no sense together\n");
+				} else {
+					nflag = ON;
+					addnetname(*argv, &nets);
+				}
+				while (*(++(*argv)+1)) ;
+				break;
+			case 'i':
+				argc--, argv++;
+				if (nflag) {
+					fprintf(stderr,
+				    "timed: -i and -n make no sense together\n");
+				} else {
+					iflag = ON;
+					addnetname(*argv, &nets);
+				}
 				while (*(++(*argv)+1)) ;
 				break;
 			default:
@@ -200,12 +219,18 @@ char **argv;
 	}
 	hp[0].name = hostname;
 
-	if (nflag) {
-		localnet = getnetbyname(netname);
-		if (localnet == NULL) {
-			syslog(LOG_ERR, "getnetbyname: unknown net %s",
-				netname);
-			exit(1);
+	if (nflag || iflag) {
+		struct netent *getnetent();
+		struct netent *n;
+		struct nets *np;
+		for ( np = nets ; np ; np = np->next) {
+			n = getnetbyname(np->name);
+			if (n == NULL) {
+				syslog(LOG_ERR, "getnetbyname: unknown net %s",
+					np->name);
+				exit(1);
+			}
+			np->net = n->n_net;
 		}
 	}
 	ifc.ifc_len = sizeof(buf);
@@ -261,8 +286,9 @@ char **argv;
 			ntp->dest_addr = *(struct sockaddr_in *)&ifreq.ifr_dstaddr;
 		}
 		ntp->dest_addr.sin_port = port;
-		if (nflag) {
+		if (nflag || iflag) {
 			u_long addr, mask;
+			struct nets *n;
 
 			addr = ntohl(ntp->dest_addr.sin_addr.s_addr);
 			mask = ntohl(ntp->mask);
@@ -270,7 +296,10 @@ char **argv;
 				addr >>= 1;
 				mask >>= 1;
 			}
-			if (addr != localnet->n_net)
+			for (n = nets ; n ; n = n->next)
+				if (addr == n->net)
+					break;
+			if (nflag && !n || iflag && n)
 				continue;
 		}
 		ntp->net = ntp->mask & ntp->dest_addr.sin_addr.s_addr;
@@ -564,4 +593,19 @@ date()
 	(void)gettimeofday(&tv, (struct timezone *)0);
 	ret = ctime(&tv.tv_sec);
 	return(ret);
+}
+
+addnetname(name)
+	char *name;
+{
+	struct nets **netlist = &nets;
+	while (*netlist)
+		netlist = &((*netlist)->next);
+	*netlist = (struct nets *)malloc(sizeof **netlist);
+	if (*netlist == (struct nets *)0) {
+		syslog(LOG_ERR, "malloc failed");
+		exit(1);
+	}
+	bzero(*netlist, sizeof(**netlist));
+	(*netlist)->name = name;
 }
