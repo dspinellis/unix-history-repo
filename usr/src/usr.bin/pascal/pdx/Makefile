@@ -1,18 +1,18 @@
 #/* Copyright (c) 1982 Regents of the University of California */
 #
-# static char sccsid[] = "@(#)Makefile 1.1 %G%";
+# static char sccsid[] = "@(#)Makefile 1.2 %G%";
 #
 # make file for pdx
+#
+# For best results edit this file in vi with tabstop=4.
 #
 # The file "defs.h" is included by all, it has most of the type
 # declarations (since you can't have forward type references in C).
 # It also defines various things of general use and includes <stdio.h>.
 #
-# Library files:
-#
-#	error.c, erecover.c	- error handling
-#	pwait.c			- wait for a specific process
-#	syserr.c, cerror.s	- low level error handling
+# The subdirectory "library" contains routines which are generally useful
+# and are independent from pdx.  These are compiled into a separate archive
+# and they must be made independently from pdx.
 #
 # N.B.: My version of cerror automatically catches certain erros
 #	such as out of memory, I/O error.  If you re-make pdx with
@@ -23,15 +23,15 @@
 #	to touch the C files that include it.
 #
 
-HOME	= /vb/arpa/linton
-LIB	= ${HOME}/lib/libc.a
-INSTALL	= ${HOME}/bin/pdx
+HOME	= /usr/src/cmd/pdx
+LIB		= ${HOME}/library/pdxlib
+INSTALL	= /usr/ucb/pdx
 
 #
 # LDFLAGS should be -i for pdp-11
 #
 
-CFLAGS	= -Disvaxpx -I.. -O
+CFLAGS	= -Disvaxpx -I.. -I../../pascal -DOBJ -O
 LDFLAGS	=
 
 #
@@ -52,7 +52,7 @@ SYMTAB		= symtab/
 SOURCE		= source/
 COMMAND		= command/
 TREE		= tree/
-SYM		= sym/
+SYM			= sym/
 BREAKPOINT	= breakpoint/
 RUNTIME		= runtime/
 OBJECT		= object/
@@ -154,13 +154,13 @@ profile: ${OBJS}
 	@echo "linking with -p"
 	@cc ${LDFLAGS} -p ${OBJS} ${LIB}
 
-${COMMAND}lex.yy.o: ${COMMAND}token.lex ${COMMAND}y.tab.h
-	chdir ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
-	rm ${COMMAND}lex.yy.c
-
 ${COMMAND}y.tab.o: ${COMMAND}grammar.yacc
 	chdir ${COMMAND}; yacc -d grammar.yacc; cc -c ${CFLAGS} y.tab.c
 	rm ${COMMAND}y.tab.c
+
+${COMMAND}lex.yy.o: ${COMMAND}token.lex ${COMMAND}y.tab.h
+	chdir ${COMMAND}; lex token.lex; cc -c ${CFLAGS} lex.yy.c
+	rm ${COMMAND}lex.yy.c
 
 ${BPOBJ}:	${BREAKPOINT}bp.rep
 ${RUNTIMEOBJ}:	${RUNTIME}frame.rep
@@ -170,5 +170,4 @@ ${TREEOBJ}:	${TREE}tree.rep
 ${OBJOBJ}:	${OBJECT}objsym.rep
 
 install:
-	cp a.out ${INSTALL}
-	strip ${INSTALL}
+	mv a.out ${INSTALL}
