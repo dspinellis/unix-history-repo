@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	8.2 (Berkeley) %G%
+ *	@(#)iso_snpac.c	8.3 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -152,7 +152,8 @@ struct sockaddr *sa;
 		 */
 		if (rt->rt_flags & RTF_CLONING) {
 			iso_setmcasts(ifp, req);
-			rt_setgate(rt, rt_key(rt), &blank_dl);
+			rt_setgate(rt, rt_key(rt),
+			    (struct sockaddr *)&blank_dl);
 			return;
 		}
 		if (lc != 0)
@@ -398,7 +399,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 		if (nsellength && (rt->rt_flags & RTF_HOST)) {
 			if (rt->rt_refcnt == 0) {
 				rtrequest(RTM_DELETE, S(dst), (struct sockaddr *)0,
-					(struct sockaddr *)0, 0, (struct rtentry *)0);
+					(struct sockaddr *)0, 0, (struct rtentry **)0);
 				rt = 0;
 				goto add;
 			} else {
