@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -17,13 +17,10 @@ static char sccsid[] = "@(#)klogin.c	5.7 (Berkeley) %G%";
 #include <pwd.h>
 #include <netdb.h>
 
-#define	PRINCIPAL_NAME	pw->pw_name
-#define	PRINCIPAL_INST	(rootlogin ? "root" : "")
 #define	INITIAL_TICKET	"krbtgt"
 #define	VERIFY_SERVICE	"rcmd"
 
 extern int notickets;
-extern int rootlogin;
 
 /*
  * Attempt to log the user in using Kerberos authentication
@@ -32,9 +29,9 @@ extern int rootlogin;
  *	  1 if Kerberos failed (try local password in login)
  */
 
-klogin(pw, localhost, password)
+klogin(pw, instance, localhost, password)
 	struct passwd *pw;
-	char *localhost, *password;
+	char *instance, *localhost, *password;
 {
 	int kerror;
 	AUTH_DAT authdata;
@@ -45,24 +42,26 @@ klogin(pw, localhost, password)
 	char tkt_location[MAXPATHLEN];
 
 	/*
-	 * If we aren't Kerberos-authenticated, try the normal pw file
-	 * for a password.  If that's ok, log the user in without issueing
-	 * any tickets.
+	 * Root logins don't use Kerberos.
+	 * If we have a realm, try getting a ticket-granting ticket
+	 * and using it to authenticate.  Otherwise, return
+	 * failure so that we can try the normal passwd file
+	 * for a password.  If that's ok, log the user in
+	 * without issuing any tickets.
 	 */
-	if (krb_get_lrealm(realm, 0) != KSUCCESS) {
-		syslog(LOG_ERR, "couldn't get local Kerberos realm");
-		return(1);
-	}
+	if (strcmp(pw->pw_name, "root") == 0 ||
+	    krb_get_lrealm(realm, 0) != KSUCCESS)
+		return (1);
 
 	/*
 	 * get TGT for local realm
-	 * tickets are stored in a file determined by calling tkt_string()
+	 * tickets are stored in a file named TKT_ROOT plus uid
 	 */
 
 	(void)sprintf(tkt_location, "%s%d", TKT_ROOT, pw->pw_uid);
 	(void)krb_set_tkt_string(tkt_location);
 
-	kerror = krb_get_pw_in_tkt(PRINCIPAL_NAME, PRINCIPAL_INST,
+	kerror = krb_get_pw_in_tkt(pw->pw_name, instance,
 		    realm, INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, password);
 	/*
 	 * If we got a TGT, get a local "rcmd" ticket and check it so as to
@@ -74,13 +73,12 @@ klogin(pw, localhost, password)
 	 *	   return value of RD_AP_UNDEC from krb_rd_req().
 	 */
 	if (kerror != INTK_OK) {
-		if (kerror != INTK_BADPW && kerror != KDC_PR_UNKNOWN &&
-		    kerror != KFAILURE) {
+		if (kerror != INTK_BADPW && kerror != KDC_PR_UNKNOWN) {
 			syslog(LOG_ERR, "Kerberos intkt error: %s",
 			    krb_err_txt[kerror]);
 			dest_tkt();
 		}
-		return(1);
+		return (1);
 	}
 
 	if (chown(TKT_FILE, pw->pw_uid, pw->pw_gid) < 0)
@@ -96,8 +94,9 @@ klogin(pw, localhost, password)
 
 	kerror = krb_mk_req(&ticket, VERIFY_SERVICE, savehost, realm, 33);
 	if (kerror == KDC_PR_UNKNOWN) {
-		syslog(LOG_NOTICE, "warning: TGT not verified (%s)",
-		    krb_err_txt[kerror]);
+		syslog(LOG_NOTICE,
+    		    "warning: TGT not verified (%s); %s.%s not registered, or srvtab is wrong?",
+		    krb_err_txt[kerror], VERIFY_SERVICE, savehost);
 		notickets = 0;
 		return(0);
 	}
