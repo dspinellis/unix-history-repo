@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sin.3	6.5 (Berkeley) %G%
+.\"	@(#)sin.3	6.6 (Berkeley) %G%
 .\"
 .TH SIN 3M  ""
 .UC 4
@@ -74,8 +74,6 @@ atan2(y,x) := 	atan(y/x)	if x > 0,
 	sign(y)\(**\(*p/2	if x = 0 \(!= y.  \}
 .ta
 .fi
-.SH SEE ALSO
-intro(3M), hypot(3M), sqrt(3M), infnan(3M)
 .SH DIAGNOSTICS
 On a VAX, if |x| > 1 then asin(x) and acos(x)
 will return reserved operands and \fIerrno\fR will be set to EDOM.
@@ -192,6 +190,8 @@ and sin(2x)\0=\02\|sin(x)cos(x) to within a few \*(ups no matter how big
 x may be.  Therefore the difference between P and
 .Pi
 is most unlikely to affect scientific and engineering computations.
+.SH SEE ALSO
+math(3M), hypot(3M), sqrt(3M), infnan(3M)
 .SH AUTHOR
 Robert P. Corbett, W. Kahan, Stuart\0I.\0McDonald, Peter\0Tang and,
 for the codes for IEEE 754, Dr. Kwok\-Choi\0Ng.

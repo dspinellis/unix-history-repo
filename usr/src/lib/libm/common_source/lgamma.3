@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lgamma.3	6.1 (Berkeley) %G%
+.\"	@(#)lgamma.3	6.2 (Berkeley) %G%
 .\"
 .TH LGAMMA 3M  ""
 .UC 6
@@ -79,9 +79,9 @@ double x;
 }\fR
 .RE
 .fi
-.SH SEE ALSO
-intro(3M), infnan(3M)
 .SH DIAGNOSTICS
 The reserved operand is returned on a VAX for negative integer arguments,
 \fIerrno\fR is set to ERANGE; for very large arguments over/underflows will
-occur inside the program lgamma.
+occur inside the \fIlgamma\fP routine.
+.SH SEE ALSO
+math(3M), infnan(3M)
