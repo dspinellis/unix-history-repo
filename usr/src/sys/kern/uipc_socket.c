@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.48	82/08/22	*/
+/*	uipc_socket.c	4.49	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -272,6 +272,7 @@ restart:
 	sblock(&so->so_snd);
 #define	snderr(errno)	{ error = errno; splx(s); goto release; }
 
+	u.u_ru.ru_msgsnd++;
 again:
 	s = splnet();
 	if (so->so_state & SS_CANTSENDMORE) {
@@ -391,6 +392,7 @@ restart:
 		splx(s);
 		goto restart;
 	}
+	u.u_ru.ru_msgrcv++;
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive");
