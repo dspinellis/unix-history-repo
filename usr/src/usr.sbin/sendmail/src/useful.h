@@ -1,11 +1,11 @@
 /*
 **  USEFUL.H -- Some useful stuff.
 **
-**	@(#)useful.h	3.8		%G%
+**	@(#)useful.h	3.9		%G%
 */
 
 # ifndef makedev
-# include <sys/types.h>
+# include <sys/param.h>
 # endif
 
 /* support for bool type */
