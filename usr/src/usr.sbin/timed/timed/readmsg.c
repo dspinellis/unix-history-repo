@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -161,6 +161,8 @@ struct netinfo *netfrom;
 					msgin.tsp_type == TSP_TEST ||
 #endif
 					msgin.tsp_type == TSP_MSITE ||
+					(msgin.tsp_type == TSP_LOOP &&
+					msgin.tsp_hopcnt != 10) ||
 					msgin.tsp_type == TSP_TRACEON ||
 					msgin.tsp_type == TSP_TRACEOFF)) {
 				if (trace) {
@@ -341,12 +343,22 @@ print(msg, addr)
 struct tsp *msg;
 struct sockaddr_in *addr;
 {
- 	fprintf(fd, "%s %d %d (%d, %d) %s %s\n",
-		tsptype[msg->tsp_type],
-		msg->tsp_vers,
-		msg->tsp_seq,
-		msg->tsp_time.tv_sec, 
-		msg->tsp_time.tv_usec, 
-		msg->tsp_name,
-		inet_ntoa(addr->sin_addr));
+	if (msg->tsp_type == TSP_LOOP) {
+		fprintf(fd, "%s %d %d (#%d) %s %s\n",
+			tsptype[msg->tsp_type],
+			msg->tsp_vers,
+			msg->tsp_seq,
+			msg->tsp_hopcnt,
+			msg->tsp_name,
+			inet_ntoa(addr->sin_addr));
+	} else {
+		fprintf(fd, "%s %d %d (%d, %d) %s %s\n",
+			tsptype[msg->tsp_type],
+			msg->tsp_vers,
+			msg->tsp_seq,
+			msg->tsp_time.tv_sec, 
+			msg->tsp_time.tv_usec, 
+			msg->tsp_name,
+			inet_ntoa(addr->sin_addr));
+	}
 }
