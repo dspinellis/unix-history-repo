@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aix3.h	5.4 (Berkeley) %G%
+ *	@(#)os-aix3.h	5.5 (Berkeley) %G%
  *
- * $Id: os-aix3.h,v 5.2.2.1 1992/02/09 15:10:03 jsp beta $
+ * $Id: os-aix3.h,v 5.2.2.2 1992/05/31 16:38:49 jsp Exp $
  *
  * AIX 3.1 definitions for Amd (automounter)
  */
@@ -47,8 +47,9 @@
 
 /*
  * Pick up BSD bits from include files
+ * Try for 4.4 compatibility if available (AIX 3.2 and later)
  */
-#define	_BSD
+#define	_BSD 44
 
 /*
  * No mntent info on AIX 3

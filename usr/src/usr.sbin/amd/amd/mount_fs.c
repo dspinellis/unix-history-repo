@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_fs.c	5.4 (Berkeley) %G%
+ *	@(#)mount_fs.c	5.5 (Berkeley) %G%
  *
- * $Id: mount_fs.c,v 5.2.2.1 1992/02/09 15:08:43 jsp beta $
+ * $Id: mount_fs.c,v 5.2.2.2 1992/05/31 16:35:45 jsp Exp $
  *
  */
 
@@ -119,7 +119,7 @@ MTYPE_TYPE type;
 		/*
 		 * Try it with the normal name
 		 */
-		mnt->mnt_type = MNTTYPE_NFS;
+		mnt->mnt_type = FASCIST_DF_COMMAND;
 	}
 #endif /* FASCIST_DF_COMMAND */
 

@@ -10,9 +10,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)arch	5.4 (Berkeley) %G%
+#	@(#)arch	5.5 (Berkeley) %G%
 #
-# $Id: arch,v 5.2.2.1 1992/02/09 15:11:21 jsp beta $
+# $Id: arch,v 5.2.2.2 1992/05/31 16:45:35 jsp Exp $
 #
 # Figure out machine architecture
 #
@@ -53,6 +53,7 @@ then
 		*) MACH="`uname -m`"
 			case "$MACH" in
 			IP6) echo mips; exit 0;;
+			IP7) echo mips; exit 0;;
 			*) ;;
 			esac
 			;;

@@ -11,7 +11,7 @@
  *
  *	@(#)opts.c	1.3 (Berkeley) 6/26/91
  *
- * $Id: opts.c,v 5.2.2.1 1992/02/09 15:08:54 jsp beta $
+ * $Id: opts.c,v 5.2.2.3 1992/05/31 16:34:13 jsp Exp $
  *
  */
 
@@ -320,11 +320,12 @@ void normalize_slash(p)
 char *p;
 {
 	char *f = strchr(p, '/');
+	char *f0 = f;
 	if (f) {
 		char *t = f;
 		do {
 			/* assert(*f == '/'); */
-			if (f == t && f[0] == '/' && f[1] == '/') {
+			if (f == f0 && f[0] == '/' && f[1] == '/') {
 				/* copy double slash iff first */
 				*t++ = *f++;
 				*t++ = *f++;
@@ -340,9 +341,9 @@ char *p;
 
 			/* assert(*f != '/'); */
 			/* keep copying up to next / */
-			do {
+			while (*f && *f != '/') {
 				*t++ = *f++;
-			} while (*f && *f != '/');
+			}
 
 			/* assert(*f == 0 || *f == '/'); */
 

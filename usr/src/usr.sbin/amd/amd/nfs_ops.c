@@ -11,11 +11,12 @@
  *
  *	@(#)nfs_ops.c	1.3 (Berkeley) 6/26/91
  *
- * $Id: nfs_ops.c,v 5.2.2.1 1992/02/09 15:08:47 jsp beta $
+ * $Id: nfs_ops.c,v 5.2.2.2 1992/05/31 16:35:05 jsp Exp $
  *
  */
 
 #include "am.h"
+#include <sys/stat.h>
 
 #ifdef HAS_NFS
 
@@ -363,6 +364,17 @@ voidp wchan;
 	} else {
 		error = -len;
 	}
+/*
+ * It may be the case that we're sending to the wrong MOUNTD port.  This
+ * occurs if mountd is restarted on the server after the port has been
+ * looked up and stored in the filehandle cache somewhere.  The correct
+ * solution, if we're going to cache port numbers is to catch the ICMP
+ * port unreachable reply from the server and cause the portmap request
+ * to be redone.  The quick solution here is to invalidate the MOUNTD
+ * port.
+ */
+      fp->fh_sin.sin_port = 0;
+
 	return error;
 }
 
@@ -715,6 +727,31 @@ am_node *mp;
 		*colon = ':';
 	}
 #endif /* INFORM_MOUNTD */
+
+#ifdef KICK_KERNEL
+	/* This should go into the mainline code, not in nfs_ops... */
+
+	/*
+	 * Run lstat over the underlying directory in
+	 * case this was a direct mount.  This will
+	 * get the kernel back in sync with reality.
+	 */
+	if (mp->am_parent && mp->am_parent->am_path &&
+	    STREQ(mp->am_parent->am_mnt->mf_ops->fs_type, "direct")) {
+		struct stat stb;
+		int pid;
+		if ((pid = background()) == 0) {
+			if (lstat(mp->am_parent->am_path, &stb) < 0) {
+				plog(XLOG_ERROR, "lstat(%s) after unmount: %m", mp->am_parent->am_path);
+#ifdef DEBUG
+			} else {
+				dlog("hack lstat(%s): ok", mp->am_parent->am_path);
+#endif /* DEBUG */
+			}
+			_exit(0);
+		}
+	}
+#endif /* KICK_KERNEL */
 }
 
 /*

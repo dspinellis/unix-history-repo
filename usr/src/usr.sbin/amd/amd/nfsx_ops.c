@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsx_ops.c	1.2 (Berkeley) 6/25/91
+ *	@(#)nfsx_ops.c	5.5 (Berkeley) %G%
  *
- * $Id: nfsx_ops.c,v 5.2.2.1 1992/02/09 15:08:49 jsp beta $
+ * $Id: nfsx_ops.c,v 5.2.2.3 1992/05/31 16:13:07 jsp Exp $
  *
  */
 
@@ -82,8 +82,11 @@ am_opts *fo;
 	if (ptr = strchr(fo->opt_fs, ','))
 		*ptr = '\0';
 	deslashify(fo->opt_fs);
+	/*
+	 * Bump string length to allow trailing /
+	 */
 	len = strlen(fo->opt_fs);
-	fo->opt_fs = xrealloc(fo->opt_fs, len + 1);
+	fo->opt_fs = xrealloc(fo->opt_fs, len + 1 + 1);
 	ptr = fo->opt_fs + len;
 	/*
 	 * Make unique...
@@ -94,8 +97,7 @@ am_opts *fo;
 	/*
 	 * Determine magic cookie to put in mtab
 	 */
-	xmtab = (char *) xmalloc(strlen(fo->opt_rhost) + strlen(fo->opt_rfs) + 2);
-	sprintf(xmtab, "%s:%s", fo->opt_rhost, fo->opt_rfs);
+	xmtab = str3cat((char *) 0, fo->opt_rhost, ":", fo->opt_rfs);
 #ifdef DEBUG
 	dlog("NFS: mounting remote server \"%s\", remote fs \"%s\" on \"%s\"",
 		fo->opt_rhost, fo->opt_rfs, fo->opt_fs);

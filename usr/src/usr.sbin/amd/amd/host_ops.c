@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)host_ops.c	5.4 (Berkeley) %G%
+ *	@(#)host_ops.c	5.5 (Berkeley) %G%
  *
- * $Id: host_ops.c,v 5.2.2.1 1992/02/09 15:08:24 jsp beta $
+ * $Id: host_ops.c,v 5.2.2.2 1992/05/31 16:36:08 jsp Exp $
  *
  */
 
@@ -478,6 +478,73 @@ mntfs *mf;
 	return xerror;
 }
 
+/*
+ * Tell mountd we're done.
+ * This is not quite right, because we may still
+ * have other filesystems mounted, but the existing
+ * mountd protocol is badly broken anyway.
+ */
+static void host_umounted(mp)
+am_node *mp;
+{
+#ifdef INFORM_MOUNTD
+	mntfs *mf = mp->am_mnt;
+	char *host;
+	CLIENT *client;
+	enum clnt_stat clnt_stat;
+	struct sockaddr_in sin;
+	int sock = RPC_ANYSOCK;
+	struct timeval tv;
+	tv.tv_sec = 10; tv.tv_usec = 0;
+
+	if (mf->mf_error || mf->mf_refc > 1 || ! mf->mf_server)
+		return;
+
+	host = mf->mf_server->fs_host;
+	sin = *mf->mf_server->fs_ip;
+
+	/*
+	 * Zero out the port - make sure we recompute
+	 */
+	sin.sin_port = 0;
+	/*
+	 * Make a client end-point.
+	 * Try TCP first
+	 */
+	if ((client = clnttcp_create(&sin, MOUNTPROG, MOUNTVERS, &sock, 0, 0)) == NULL &&
+		(client = clntudp_create(&sin, MOUNTPROG, MOUNTVERS, tv, &sock)) == NULL) {
+		plog(XLOG_ERROR, "Failed to make rpc connection to mountd on %s", host);
+		goto out;
+	}
+
+	if (!nfs_auth) {
+		if (make_nfs_auth())
+			goto out;
+	}
+
+	client->cl_auth = nfs_auth;
+
+#ifdef DEBUG
+	dlog("Unmounting all from %s", host);
+#endif /* DEBUG */
+
+	clnt_stat = clnt_call(client, MOUNTPROC_UMNTALL, xdr_void, 0, xdr_void, 0, tv);
+	if (clnt_stat != RPC_SUCCESS && clnt_stat != RPC_SYSTEMERROR) {
+		/* RPC_SYSTEMERROR seems to be returned for no good reason ...*/
+		extern char *clnt_sperrno();
+		char *msg = clnt_sperrno(clnt_stat);
+		plog(XLOG_ERROR, "unmount all from %s rpc failed: %s", host, msg, clnt_stat);
+		goto out;
+	}
+
+out:
+	if (client)
+		clnt_destroy(client);
+
+#endif /* INFORM_MOUNTD */
+}
+
+
 #else /* HOST_EXEC */
 
 static int host_exec P((char*op, char*host, char*fs, char*opts));
@@ -576,7 +643,11 @@ am_ops host_ops = {
 	efs_readdir,
 	0, /* host_readlink */
 	0, /* host_mounted */
+#ifdef HOST_EXEC
 	0, /* host_umounted */
+#else
+	host_umounted,
+#endif
 	find_nfs_srvr,
 	FS_MKMNT|FS_BACKGROUND|FS_AMQINFO
 };

@@ -1,4 +1,38 @@
+Sun May 31 17:28:52 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* (afs_ops.c) make sure error code is returned to user if there
+	is an immediate error in afs_lookuppn.
+
+	* (nfs_ops.c) clear out mountd port number after use.
+
+	* (nfs_ops.c) optionally (KICK_KERNEL) run lstat over the old
+	mount point.  This should go somewhere else more appropriate.
+
+Sun Mar 29 16:22:01 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* (mount_fs.c) FASCIST_DF_COMMAND is now defined as the fstype
+	you want df to see.
+
+	* (opts.c) fix buffer overrun in slash munging.
+
+	* (host_ops.c) add support for INFORM_MOUNTD.
+
+Sat Mar  7 10:23:04 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* (nfsx_ops.c) fix buffer overrun problem by allocating sufficient
+	memory.
+
+	* (afs_ops.c) fix dereference of free'ed memory when calling
+	assign_error_mntfs.
+
+	* (xutil.c) fix xmalloc and xrealloc to allow zero sized
+	allocation.
+
+	* (os-type) make it recognise aix3.2
+
 Sun Feb  9 13:14:54 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* Release 5.3 Beta
 
 	* hpux 8 support is still missing.
 

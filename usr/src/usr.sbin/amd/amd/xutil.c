@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)xutil.c	5.4 (Berkeley) %G%
+ *	@(#)xutil.c	5.5 (Berkeley) %G%
  *
- * $Id: xutil.c,v 5.2.2.1 1992/02/09 15:09:13 jsp beta $
+ * $Id: xutil.c,v 5.2.2.3 1992/03/07 10:36:09 jsp Exp $
  *
  */
 
@@ -52,6 +52,12 @@ int len;
 	voidp p;
 	int retries = 600;
 
+	/*
+	 * Avoid malloc's which return NULL for malloc(0)
+	 */
+	if (len == 0)
+		len = 1;
+
 	do {
 		p = (voidp) malloc((unsigned) len);
 		if (p) {
@@ -81,6 +87,9 @@ int len;
 #if defined(DEBUG) && defined(DEBUG_MEM)
 	Debug(D_MEM) plog(XLOG_DEBUG, "Reallocated size %d; block %#x", len, ptr);
 #endif /* defined(DEBUG) && defined(DEBUG_MEM) */
+
+	if (len == 0)
+		len = 1;
 
 	if (ptr)
 		ptr = (voidp) realloc(ptr, (unsigned) len);
