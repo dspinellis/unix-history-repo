@@ -40,6 +40,7 @@ main()
 	printf("#define\tP_STAT %d\n", &p->p_stat);
 	printf("#define\tP_WCHAN %d\n", &p->p_wchan);
 	printf("#define\tP_TSIZE %d\n", &p->p_tsize);
+	printf("#define\tP_DSIZE %d\n", &p->p_dsize);
 	printf("#define\tP_SSIZE %d\n", &p->p_ssize);
 	printf("#define\tP_P0BR %d\n", &p->p_p0br);
 	printf("#define\tP_SZPT %d\n", &p->p_szpt);
