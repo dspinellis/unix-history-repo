@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)syslog.h	7.1 (Berkeley) %G%
+ *	@(#)syslog.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -17,6 +17,7 @@
 #define LOG_AUTH	(4<<3)	/* security/authorization messages */
 #define LOG_SYSLOG	(5<<3)	/* messages generated internally by syslogd */
 #define LOG_LPR		(6<<3)	/* line printer subsystem */
+#define LOG_NEWS	(7<<3)	/* network news subsystem */
 	/* other codes through 15 reserved for system use */
 #define LOG_LOCAL0	(16<<3)	/* reserved for local use */
 #define LOG_LOCAL1	(17<<3)	/* reserved for local use */
