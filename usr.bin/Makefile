@@ -2,7 +2,7 @@
 #
 
 SUBDIR=	ar basename bdes biff cal calendar checknr chpass cksum cmp col \
-	colcrt colrm column comm compress cpio crontab ctags cut dirname \
+	colcrt colrm column comm compress crontab ctags cut dirname \
 	du elvis elvisrecover env error expand false file find finger fmt \
 	fold fpr from fsplit fstat ftp getopt gprof groups head hexdump id \
 	indent join ktrace last lastcomm leave lex locate lock logger \
