@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)iso_errno.h	7.3 (Berkeley) %G% */
+/*	@(#)iso_errno.h	7.4 (Berkeley) %G% */
 
 #ifndef __ISO_ERRNO__
 #define __ISO_ERRNO__
@@ -34,6 +34,7 @@ SOFTWARE.
 #define	TP_ERROR_MASK	0x8800	/* transport layer */
 #define	CONL_ERROR_MASK	0x8400	/* co network layer */ 
 #define	CLNL_ERROR_MASK	0x8200	/* cl network layer */
+#define TP_ERROR_SNDC	0x10000	/* kludge to force DC's on certain errors */
 
 #define E_CO_NOERROR	(CONL_ERROR_MASK | 0x0)	/* no add'l info */
 
