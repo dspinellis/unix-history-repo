@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)char.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)char.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "char.h"
@@ -37,10 +37,10 @@ unsigned short _cmap[256] = {
 	_CTR,		_CTR,		_CTR,		_CTR,
 
 /*	sp		!		"		#	*/
-	_SP|_META,	0,		_Q,		_META,
+	_SP|_META,	0,		_QF,		_META,
 
 /*	$		%		&		'	*/
-	_DOL,		0,		_META|_CMD,	_Q,
+	_DOL,		0,		_META|_CMD,	_QF,
 
 /*	(		)		*		+	*/
 	_META|_CMD,	_META,		_GLOB,		0,
@@ -85,7 +85,7 @@ unsigned short _cmap[256] = {
 	_ESC,		0,		0,		0,
 
 /*	`		a		b		c	*/
-  _Q1|_GLOB|_META,	_LET|_LOW|_XD,	_LET|_LOW|_XD,	_LET|_LOW|_XD,
+  _QB|_GLOB|_META,	_LET|_LOW|_XD,	_LET|_LOW|_XD,	_LET|_LOW|_XD,
 
 /*	d		e		f		g	*/
 	_LET|_LOW|_XD,	_LET|_LOW|_XD,	_LET|_LOW|_XD,	_LET|_LOW,
