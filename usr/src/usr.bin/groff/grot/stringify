@@ -1,0 +1,5 @@
+# `stringify foo bar' should output `"foo","bar",' (without any newlines).
+for arg
+do
+	echo \"$arg\",
+done | tr -d "\012"
