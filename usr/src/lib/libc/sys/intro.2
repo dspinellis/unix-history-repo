@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.7 (Berkeley) %G%
+.\"	@(#)intro.2	6.8 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -323,7 +323,8 @@ A socket operation was attempted to an unreachable host.
 A directory with entries other than \*(lq.\*(rq and \*(lq..\*(rq
 was supplied to a remove directory or rename call.
 ...en 67 EPROCLIM "Too many processes"
-...en 68 EUSERS "Too many users"
+.en 68 EUSERS "Too many users"
+The quota system ran out of table entries.
 .en 69 EDQUOT "Disc quota exceeded"
 A 
 .I write
