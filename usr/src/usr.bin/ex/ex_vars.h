@@ -1,4 +1,11 @@
-/*  sccs id  @(#)ex_vars.h	7.2	%G% */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ex_vars.h	7.3 (Berkeley) %G%
+ */
+
 #define AUTOINDENT      0
 #define AUTOPRINT       1
 #define AUTOWRITE       2
@@ -12,32 +19,33 @@
 #define LIST            10
 #define MAGIC           11
 #define MESG            12
-#define NUMBER          13
-#define OPEN            14
-#define OPTIMIZE        15
-#define PARAGRAPHS      16
-#define PROMPT          17
-#define READONLY        18
-#define REDRAW          19
-#define REMAP           20
-#define REPORT          21
-#define SCROLL          22
-#define SECTIONS        23
-#define SHELL           24
-#define SHIFTWIDTH      25
-#define SHOWMATCH       26
-#define SLOWOPEN        27
-#define TABSTOP         28
-#define TAGLENGTH       29
-#define TAGS            30
-#define TERM            31
-#define TERSE           32
-#define TIMEOUT         33
-#define TTYTYPE         34
-#define WARN            35
-#define WINDOW          36
-#define WRAPSCAN        37
-#define WRAPMARGIN      38
-#define WRITEANY        39
+#define MODELINE        13
+#define NUMBER          14
+#define OPEN            15
+#define OPTIMIZE        16
+#define PARAGRAPHS      17
+#define PROMPT          18
+#define READONLY        19
+#define REDRAW          20
+#define REMAP           21
+#define REPORT          22
+#define SCROLL          23
+#define SECTIONS        24
+#define SHELL           25
+#define SHIFTWIDTH      26
+#define SHOWMATCH       27
+#define SLOWOPEN        28
+#define TABSTOP         29
+#define TAGLENGTH       30
+#define TAGS            31
+#define TERM            32
+#define TERSE           33
+#define TIMEOUT         34
+#define TTYTYPE         35
+#define WARN            36
+#define WINDOW          37
+#define WRAPSCAN        38
+#define WRAPMARGIN      39
+#define WRITEANY        40
 
-#define	NOPTS	40
+#define	NOPTS	41
