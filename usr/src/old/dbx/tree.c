@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)tree.c 5.1 %G%";
+static char sccsid[] = "@(#)tree.c 5.2 %G%";
 /*
  * Parse tree management.
  */
@@ -385,7 +385,7 @@ Command cmd;
 		    fprintf(f, ";");
 		}
 	    endfor
-	    fprintf(f, " }", opinfo[ord(cmd->op)].opstring);
+	    fprintf(f, "%s }", opinfo[ord(cmd->op)].opstring);
 	    break;
 
 	case O_TRACEON:

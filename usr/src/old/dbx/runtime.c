@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)runtime.c 5.2 %G%";
+static char sccsid[] = "@(#)runtime.c 5.3 %G%";
 
 static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
 
@@ -699,7 +699,7 @@ Symbol f;
     } else {
 	putchar('\n');
 	printname(stdout, f);
-	printf(" returns successfully\n", symname(f));
+	printf("%s returns successfully\n", symname(f));
     }
     erecover();
 }

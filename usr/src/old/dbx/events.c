@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)events.c 5.1 %G%";
+static char sccsid[] = "@(#)events.c 5.2 %G%";
 /*
  * Event/breakpoint managment.
  */
@@ -431,7 +431,7 @@ Cmdlist actions;
     p->temporary = false;
     if (tracebpts) {
 	if (e == nil) {
-	    printf("new bp at 0x%x for event ??\n", addr, e->id);
+	    printf("new bp at 0x%x for event ??\n", addr);
 	} else {
 	    printf("new bp at 0x%x for event %d\n", addr, e->id);
 	}

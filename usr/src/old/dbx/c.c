@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.4 %G%";
+static char sccsid[] = "@(#)c.c 5.5 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -287,7 +287,7 @@ Integer indent;
 		    printf("%s ", p);
 		}
 	    }
-	    printf("{\n", t->class == RECORD ? "struct" : "union");
+	    printf("%s {\n", t->class == RECORD ? "struct" : "union");
 	    for (i = t->chain; i != nil; i = i->chain) {
 		assert(i->class == FIELD);
 		printdecl(i, indent+4);
