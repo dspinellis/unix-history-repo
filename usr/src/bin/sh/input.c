@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -160,8 +160,8 @@ retry:
                                 goto retry;
                         if (parsefile->fd == 0 && errno == EWOULDBLOCK) {
                                 int flags = fcntl(0, F_GETFL, 0);
-                                if (flags >= 0 && flags & FNDELAY) {
-                                        flags &=~ FNDELAY;
+                                if (flags >= 0 && flags & O_NONBLOCK) {
+                                        flags &=~ O_NONBLOCK;
                                         if (fcntl(0, F_SETFL, flags) >= 0) {
 						out2str("sh: turning off NDELAY mode\n");
                                                 goto retry;
