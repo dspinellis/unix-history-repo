@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.6 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -184,11 +184,12 @@ main(argc, argv)
 		read(kmem, &bootime, sizeof (bootime));
 
 		uptime = now - bootime;
+		uptime += 30;
 		days = uptime / (60*60*24);
 		uptime %= (60*60*24);
 		hrs = uptime / (60*60);
 		uptime %= (60*60);
-		mins = DIV60(uptime);
+		mins = uptime / 60;
 
 		printf("  up");
 		if (days > 0)
