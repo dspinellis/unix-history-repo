@@ -11,17 +11,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/fs.h>
 #include <sys/stat.h>
 #include <errno.h>
-
 #include <stdio.h>
 #include <fstab.h>
 #include <mtab.h>
+#include "pathnames.h"
 
 /*
  * df
@@ -46,32 +46,35 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int i;
+	extern int errno, optind;
+	int ch, i;
+	char *strerror();
 
-	while (argc > 1 && argv[1][0]=='-') {
-		switch (argv[1][1]) {
-
+	while ((ch = getopt(argc, argv, "i")) != EOF)
+		switch(ch) {
 		case 'i':
 			iflag++;
 			break;
-
+		case '?':
 		default:
-			fprintf(stderr, "usage: df [ -i ] [ filsys... ]\n");
-			exit(0);
+			fprintf(stderr, "usage: df [-i] [filsys ...]\n");
+			exit(1);
 		}
-		argc--, argv++;
+	argc -= optind;
+	argv += optind;
+
+	if ((i = open(_PATH_MTAB, 0)) < 0) {
+		fprintf(stderr, "df: %s: %s\n", _PATH_MTAB, strerror(errno));
+		exit(1);
 	}
-	i = open("/etc/mtab", 0);
-	if (i >= 0) {
-		(void) read(i, (char *)mtab, sizeof (mtab));
-		(void) close(i);
-	}
+	(void) read(i, (char *)mtab, sizeof (mtab));
+	(void) close(i);
 	sync();
 	printf("Filesystem    kbytes    used   avail capacity");
 	if (iflag)
 		printf(" iused   ifree  %%iused");
 	printf("  Mounted on\n");
-	if (argc <= 1) {
+	if (!*argv) {
 		struct fstab *fsp;
 
 		if (setfsent() == 0)
@@ -88,17 +91,19 @@ main(argc, argv)
 		(void)endfsent();
 		exit(0);
 	}
-	for (i=1; i<argc; i++)
-		dfree(argv[i], 0);
+	while (*argv)
+		dfree(*argv++, 0);
 }
 
 dfree(file, infsent)
 	char *file;
 	int infsent;
 {
+	extern int errno;
 	long totalblks, availblks, avail, free, used;
 	struct stat stbuf;
 	struct fstab *fsp;
+	char *strerror();
 
 	if (stat(file, &stbuf) == 0 &&
 	    (stbuf.st_mode&S_IFMT) != S_IFCHR &&
@@ -123,9 +128,8 @@ dfree(file, infsent)
 		return;
 	}
 found:
-	fi = open(file, 0);
-	if (fi < 0) {
-		perror(file);
+	if ((fi = open(file, 0)) < 0) {
+		fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
 		return;
 	}
 	if (bread((long)SBOFF, (char *)&sblock, SBSIZE) == 0) {
@@ -139,7 +143,7 @@ found:
 	used = totalblks - free;
 	availblks = totalblks * (100 - sblock.fs_minfree) / 100;
 	avail = availblks > used ? availblks - used : 0;
-	printf("%8d%8d%8d", totalblks * sblock.fs_fsize / 1024,
+	printf("%8ld%8ld%8ld", totalblks * sblock.fs_fsize / 1024,
 	    used * sblock.fs_fsize / 1024, avail * sblock.fs_fsize / 1024);
 	printf("%6.0f%%",
 	    availblks == 0 ? 0.0 : (double) used / (double) availblks * 100.0);
