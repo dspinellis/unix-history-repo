@@ -1,4 +1,4 @@
-/*	machdep.c	6.11	85/03/01	*/
+/*	machdep.c	6.12	85/03/03	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -125,11 +125,16 @@ startup(firstaddr)
 	
 	/*
 	 * Determine how many buffers to allocate.
-	 * Use 10% of memory, with min of 16.
+	 * Use 10% of memory for the first 2 Meg, 5% of the remaining
+	 * memory. Insure a minimum of 16 buffers.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	if (bufpages == 0)
-		bufpages = physmem / 10 / CLSIZE;
+		if (physmem < (2 * 1024 * 1024))
+			bufpages = physmem / 10 / CLSIZE;
+		else
+			bufpages =
+			    ((2 * 1024 * 1024) / 5 + physmem / 5) / CLSIZE;
 	if (nbuf == 0) {
 		nbuf = bufpages / 2;
 		if (nbuf < 16)
