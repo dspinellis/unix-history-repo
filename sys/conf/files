@@ -1,0 +1,75 @@
+sys/acct.c		standard
+sys/alloc.c		standard
+sys/calloc.c		standard
+sys/clock.c		standard
+sys/fio.c		standard
+sys/iget.c		standard
+sys/ioctl.c		standard
+sys/machdep.c		standard
+sys/main.c		standard
+sys/nami.c		standard
+sys/partab.c		standard
+sys/pipe.c		standard
+sys/prf.c		standard
+sys/prim.c		standard
+sys/rdwri.c		standard
+sys/rmap.c		standard
+sys/sig.c		standard
+sys/slp.c		standard
+sys/subr.c		standard
+sys/sys.c		standard
+sys/sys1.c		standard
+sys/sys2.c		standard
+sys/sys3.c		standard
+sys/sys4.c		standard
+sys/sysent.c		standard
+sys/text.c		standard
+sys/trap.c		standard
+sys/vmdrum.c		standard
+sys/vmmem.c		standard
+sys/vmmon.c		standard
+sys/vmpage.c		standard
+sys/vmproc.c		standard
+sys/vmpt.c		standard
+sys/vmsched.c		standard
+sys/vmsubr.c		standard
+sys/vmswap.c		standard
+sys/vmsys.c		standard
+sys/udiv.s		standard
+sys/urem.s		standard
+dev/autoconf.c		standard device-driver
+dev/bio.c		standard
+dev/bk.c		optional bk device-driver
+dev/conf.c		standard
+dev/cons.c		standard
+dev/ct.c		optional ct device-driver
+dev/dh.c		optional dh device-driver
+dev/dkbad.c		standard
+dev/dkleave.c		standard
+dev/dn.c		optional dn device-driver
+dev/dsort.c		standard
+dev/dz.c		optional dz device-driver
+dev/flp.c		standard
+dev/hp.c		optional hp device-driver
+dev/ht.c		optional tu device-driver
+dev/lp.c		optional lp device-driver
+dev/mba.c		optional mba device-driver
+dev/mem.c		standard
+dev/mx1.c		standard
+dev/mx2.c		standard
+dev/mt.c		optional mu device-driver
+dev/pty.c		optional pty
+dev/rk.c		optional rk device-driver
+dev/sw.c		standard
+dev/tm.c		optional te device-driver
+dev/ts.c		optional ts device-driver
+dev/tty.c		standard
+dev/ttynew.c		standard
+dev/ttyold.c		standard
+dev/tu.c		standard
+dev/uba.c		standard device-driver
+dev/uda.c		optional ra device-driver
+dev/up.c		optional up device-driver
+dev/va.c		optional va device-driver
+dev/vaxcpu.c		standard
+dev/vp.c		optional vp device-driver
