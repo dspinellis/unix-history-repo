@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-	.asciz	"@(#)_setjmp.s	5.2 (Berkeley) %G%"
+	.asciz	"@(#)_setjmp.s	5.3 (Berkeley) %G%"
 #endif not lint
 
 
@@ -68,13 +68,5 @@ done:
 	jmp	*4(r1)			# done, return....
 
 botch:
-	pushl	$msgend-msg
-	pushl	$msg
-	pushl	$2
-	calls	$3,_write
+	calls	$0,_longjmperror
 	halt
-
-	.data
-msg:	.ascii	"_longjmp botch\n"
-msgend:
-reiins:	rei

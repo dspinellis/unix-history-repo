@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-	.asciz	"@(#)setjmp.s	5.3 (Berkeley) %G%"
+	.asciz	"@(#)setjmp.s	5.4 (Berkeley) %G%"
 #endif not lint
 
 /*
@@ -87,12 +87,5 @@ done:
 	calls	$1,_sigreturn		# restore previous context
 					# we should never return
 botch:
-	pushl	$msgend-msg
-	pushl	$msg
-	pushl	$2
-	calls	$3,_write
+	calls	$0,_longjmperror
 	halt
-
-	.data
-msg:	.ascii	"longjmp botch\n"
-msgend:
