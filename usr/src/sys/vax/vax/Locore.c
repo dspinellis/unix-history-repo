@@ -1,4 +1,4 @@
-/*	Locore.c	4.17	81/12/02	*/
+/*	Locore.c	4.18	82/06/27	*/
 
 #include "dz.h"
 #include "mba.h"
@@ -159,7 +159,7 @@ setrq(p) struct proc *p; { }
 /*ARGSUSED*/
 remrq(p) struct proc *p; { }
 
-swtch() { if (whichqs) whichqs = 0; masterpaddr = 0; }
+swtch() { if (whichqs) whichqs = 0; if (masterpaddr) masterpaddr = 0; }
 
 /*ARGSUSED*/
 resume(pcbpf) unsigned pcbpf; { }
