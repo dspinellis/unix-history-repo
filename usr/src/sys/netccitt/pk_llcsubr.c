@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_llcsubr.c	8.1 (Berkeley) %G%
+ *	@(#)pk_llcsubr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -96,7 +96,7 @@
 #define XIFA(rt) ((struct x25_ifaddr *)((rt)->rt_ifa))
 #define SA(s) ((struct sockaddr *)s)
 
-int
+void
 cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 {
 	register struct pkcb *pkp;
@@ -111,13 +111,13 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 	case RTM_RESOLVE:
 	case RTM_ADD:
 		if (pkp) 
-			return(EEXIST);
+			return; /* XXX: EEXIST */
 
 		if (rt->rt_flags & RTF_GATEWAY) {
 			if (rt->rt_llinfo)
 				RTFREE((struct rtentry *)rt->rt_llinfo);
 			rt->rt_llinfo = (caddr_t) rtalloc1(rt->rt_gateway, 1);
-			return(0);
+			return; /* XXX: OK */
 		}
 		/*
 		 * Assumptions:	(1) ifnet structure is filled in
@@ -131,7 +131,7 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 		 *
 		 */
 		if (!rt->rt_ifa)
-			return (ENETDOWN);
+			return; /* XXX: ENETDOWN */
 	
 		/*	
 		 * We differentiate between dealing with a many-to-one
@@ -172,7 +172,7 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 		}
 		rt->rt_llinfo = (caddr_t) pkp;
 
-		return(0);
+		return; /* XXX: OK */
 
 	case RTM_DELETE:
 	{
@@ -185,7 +185,7 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 			if ( rt->rt_flags & RTF_GATEWAY ) {
 				if (rt->rt_llinfo)
 					RTFREE((struct rtentry *)rt->rt_llinfo);
-				return(0);
+				return; /* XXX: OK */
 			}
 			
 			if (pkp->pk_llrt)
@@ -193,7 +193,7 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 
 			pk_dellink (pkp);
 			
-			return(0);
+			return; /* XXX: OK */
 		}
 	}
 	}
