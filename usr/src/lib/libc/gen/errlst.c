@@ -1,4 +1,4 @@
-/* @(#)errlst.c	4.6 (Berkeley) 82/12/19 */
+/* @(#)errlst.c	4.7 (Berkeley) 84/12/04 */
 char	*sys_errlist[] = {
 	"Error 0",
 	"Not owner",				/* 1 - EPERM */
@@ -12,11 +12,11 @@ char	*sys_errlist[] = {
 	"Bad file number",			/* 9 - EBADF */
 	"No children",				/* 10 - ECHILD */
 	"No more processes",			/* 11 - EAGAIN */
-	"Not enough core",			/* 12 - ENOMEM */
+	"Not enough memory",			/* 12 - ENOMEM */
 	"Permission denied",			/* 13 - EACCES */
 	"Bad address",				/* 14 - EFAULT */
 	"Block device required",		/* 15 - ENOTBLK */
-	"Mount device busy",			/* 16 - EBUSY */
+	"Device busy",				/* 16 - EBUSY */
 	"File exists",				/* 17 - EEXIST */
 	"Cross-device link",			/* 18 - EXDEV */
 	"No such device",			/* 19 - ENODEV */
@@ -25,7 +25,7 @@ char	*sys_errlist[] = {
 	"Invalid argument",			/* 22 - EINVAL */
 	"File table overflow",			/* 23 - ENFILE */
 	"Too many open files",			/* 24 - EMFILE */
-	"Not a typewriter",			/* 25 - ENOTTY */
+	"Inappropriate ioctl for device",	/* 25 - ENOTTY */
 	"Text file busy",			/* 26 - ETXTBSY */
 	"File too large",			/* 27 - EFBIG */
 	"No space left on device",		/* 28 - ENOSPC */
@@ -50,7 +50,7 @@ char	*sys_errlist[] = {
 	"Destination address required",		/* 39 - EDESTADDRREQ */
 	"Message too long",			/* 40 - EMSGSIZE */
 	"Protocol wrong type for socket",	/* 41 - EPROTOTYPE */
-	"Protocol not available",		/* 42 - ENOPROTOOPT */
+	"Option not supported by protocol",	/* 42 - ENOPROTOOPT */
 	"Protocol not supported",		/* 43 - EPROTONOSUPPORT */
 	"Socket type not supported",		/* 44 - ESOCKTNOSUPPORT */
 	"Operation not supported on socket",	/* 45 - EOPNOTSUPP */
