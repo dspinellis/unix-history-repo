@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regalloc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)regalloc.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,14 @@ static char sccsid[] = "@(#)regalloc.c	5.4 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	regalloc.c,v $
+ * Revision 5.7  86/04/21  18:23:08  donn
+ * Still more hacking with GOTOs and loops!  What a mess.  This time we
+ * complete the illusion that adjacent loops are actually embedded loops.
+ * Without this hack, variables which are in one loop but not in another
+ * adjacent loop cause severe confusion.  A routine varloopset() is added
+ * to re-implement the loopset hack; I'm not certain that this is really
+ * needed at all, now.
+ * 
  * Revision 5.6  86/01/04  22:35:44  donn
  * More hacking on GOTOs and loops.  Fixed a bug in rev 5.4.  Changed
  * regalloc() so that sibling loops behave like nested loops, eliminating
@@ -458,6 +466,18 @@ LOCAL freevartab()
       }
 }
 
+LOCAL varloopset()
+
+{
+  register ADDRNODE *p;
+  register int i;
+
+  for (i = 0; i < VARTABSIZE; i++)
+    if (p = vartable[i])
+      if (p->isset == YES)
+	p->loopset = YES;
+}
+
 
 
 LOCAL insertset(vstg, memno, memoffset)
@@ -547,41 +567,55 @@ LOCAL alreg()
   docount = 0;
 
   for (sp = dohead; sp != doend->next; sp = sp->next)
-    switch (sp->type)
-      {
-      case SKLABEL:
-	insertlabel(sp->label);
-	break;
+    if (docount > 1)
+      switch (sp->type)
+	{
+	case SKDOHEAD:
+	  docount++;
+	  break;
 
-      case SKARIF:
-      case SKASGOTO:
-      case SKCALL:
-      case SKCMGOTO:
-      case SKEQ:
-      case SKIFN:
-      case SKIOIFN:
-      case SKSTOP:
-      case SKPAUSE:
-      case SKRETURN:
-	scanvars(sp->expr);
-	break;
+	case SKENDDO:
+	  docount--;
 
-      case SKDOHEAD:
-	++docount;
-	break;
+	default:
+	  break;
+	}
+    else
+      switch (sp->type)
+	{
+	case SKLABEL:
+	  insertlabel(sp->label);
+	  break;
 
-      case SKENDDO:
-	--docount;
-	break;
+	case SKARIF:
+	case SKASGOTO:
+	case SKCALL:
+	case SKCMGOTO:
+	case SKEQ:
+	case SKIFN:
+	case SKIOIFN:
+	case SKSTOP:
+	case SKPAUSE:
+	case SKRETURN:
+	  scanvars(sp->expr);
+	  break;
 
-      case SKNULL:
-      case SKGOTO:
-      case SKASSIGN:
-	break;
+	case SKDOHEAD:
+	  ++docount;
+	  break;
 
-      default:
-	badthing ("SKtype", "alreg-1", sp->type);
-      }
+	case SKENDDO:
+	  --docount;
+	  break;
+
+	case SKNULL:
+	case SKGOTO:
+	case SKASSIGN:
+	  break;
+
+	default:
+	  badthing ("SKtype", "alreg-1", sp->type);
+	}
 
   loopcost = 0;
   docount = 1;
@@ -1058,8 +1092,7 @@ L1:;
 
   while (tabletop >= 0)
     free((char *) rt[tabletop--]);
-  freelabtab();
-  freevartab();
+  varloopset();
   return;
 }
 
@@ -2193,6 +2226,8 @@ for (sl1 = firstslot; sl1; sl1 = nextslot)
 			while (dqtop)
 				popq (dqtop->dohead);
 			docount = 0;
+			freelabtab();
+			freevartab();
 			}
 		break;
 
