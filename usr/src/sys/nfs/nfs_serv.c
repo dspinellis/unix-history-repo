@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.61 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.62 (Berkeley) %G%
  */
 
 /*
@@ -417,7 +417,8 @@ nfsrv_read(nfsd, mrep, md, dpos, cred, nam, mrq)
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred, nfsd->nd_slp, nam, &rdonly))
 		nfsm_reply(0);
 	nqsrv_getl(vp, NQL_READ);
-	if (error = nfsrv_access(vp, VREAD | VEXEC, cred, rdonly, nfsd->nd_procp)) {
+	if ((error = nfsrv_access(vp, VREAD, cred, rdonly, nfsd->nd_procp)) &&
+	    (error = nfsrv_access(vp, VEXEC, cred, rdonly, nfsd->nd_procp))) {
 		vput(vp);
 		nfsm_reply(0);
 	}
