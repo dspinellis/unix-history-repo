@@ -46,7 +46,7 @@
  *					Avoid sleeping on lbolt, it slows down
  *					output unnecessarily.
  */
-static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty.c,v 1.3 92/01/21 21:31:11 william Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/kern/tty.c,v 1.1.1.1 1993/06/12 14:57:31 rgrimes Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -316,6 +316,7 @@ ttioctl(tp, com, data, flag)
 	case TIOCSETA:
 	case TIOCSETAW:
 	case TIOCSETAF:
+	case TIOCSTAT:
 #ifdef COMPAT_43
 	case TIOCSETP:
 	case TIOCSETN:
@@ -513,6 +514,14 @@ ttioctl(tp, com, data, flag)
 		splx(s);
 		break;
 	}
+
+	/*
+	 * Give load average stats if requested (tcsh uses raw mode
+	 * and directly sends the ioctl() to the tty driver)
+	 */
+	case TIOCSTAT:
+		ttyinfo(tp);
+		break;
 
 	/*
 	 * Set controlling terminal.
