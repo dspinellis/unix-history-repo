@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.3 (Berkeley) 85/11/04";
+static char sccsid[] = "@(#)bugfiler.c	4.15.2.1 (Berkeley) 85/11/04";
 #endif not lint
 
 /*
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)bugfiler.c	5.3 (Berkeley) 85/11/04";
 #endif
 #define	MAILCMD		"/usr/lib/sendmail -i -t"
 
-char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
+char	unixtomh[] = "/ra/bugs/bin/unixtomh";
 char	*bugperson = "bugs";
 char	*maildir = "mail";
 char	ackfile[] = ".ack";
@@ -421,8 +421,10 @@ chkfrom(hp)
 	register char c;
 
 	if (debug)
-		printf("chkindex(%s)\n", hp->h_info);
+		printf("chkfrom(%s)\n", hp->h_info);
 
+	if (substr(hp->h_info, BUGS_NAME))
+		return(-1);
 	if (substr(hp->h_info, "MAILER-DAEMON"))
 		return(-1);
 	return(0);
@@ -625,7 +627,7 @@ again:
 		if (debug)
 			printf("copy to %s\n", user);
 		if (first) {
-			fprintf(ftemp, "To: %s", user);
+			fprintf(ftemp, "Resent-To: %s", user);
 			first = 0;
 		} else
 			fprintf(ftemp, ", %s", user);
@@ -643,12 +645,10 @@ again:
 	fclose(fredist);
 	if (redistcnt == 0)
 		goto cleanup;
-	fprintf(ftemp, "Subject: ");
-	if (SUBJECT_I)
-		fprintf(ftemp, "%s\n", SUBJECT_I);
-	else
+	if (! SUBJECT_I) {
+		fprintf(ftemp, "Subject: ");
 		fprintf(ftemp, "Untitled bug report\n");
-	fprintf(ftemp, "\nRedistributed-by: %s%s\n", BUGS_NAME, BUGS_HOME);
+	}
 	/*
 	 * Create copy of bug report.  Perhaps we should
 	 * truncate large messages and just give people
@@ -666,7 +666,6 @@ again:
 		/* first blank line indicates start of mesg */
 		if (first && line[0] == '\n') {
 			first = 0;
-			continue;
 		}
 		fputs(line, ftemp);
 	}
