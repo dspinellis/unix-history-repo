@@ -231,7 +231,8 @@ static int
 	autoflush = 0,		/* flush output when interrupting? */
 	autosynch,		/* send interrupt characters with SYNCH? */
 	localchars,		/* we recognize interrupt/quit */
-	donelclchars,	/* the user has set "localchars" */
+	donelclchars,		/* the user has set "localchars" */
+	donebinarytoggle,	/* the user has put us in binary */
 	dontlecho,		/* do we suppress local echoing right now? */
 	globalmode;
 
@@ -980,7 +981,7 @@ tninit()
     sbp = sibuf;
     tbp = tibuf;
 
-    connected = net = scc = tcc = In3270 = ISend = 0;
+    connected = net = scc = tcc = In3270 = ISend = donebinarytoggle = 0;
     telnetport = 0;
 #if	defined(unix)
     HaveInput = 0;
@@ -1887,7 +1888,7 @@ static void
 SetIn3270()
 {
     if (Sent3270TerminalType && myopts[TELOPT_BINARY]
-					&& hisopts[TELOPT_BINARY]) {
+			    && hisopts[TELOPT_BINARY] && !donebinarytoggle) {
 	if (!In3270) {
 	    In3270 = 1;
 	    Init3270();		/* Initialize 3270 functions */
@@ -2762,7 +2763,7 @@ telnet()
     for (;;) {
 	int schedValue;
 
-	while (!In3270) {
+	while (!In3270 && !shell_active) {
 	    if (Scheduler(SCHED_BLOCK) == -1) {
 		setcommandmode();
 		return;
@@ -2782,25 +2783,10 @@ telnet()
 	    schedValue = 1;
 	} else {
 	    if (shell_active) {
-#if	defined(MSDOS)
-		static int haventstopped = 1;
-
-		setcommandmode();
-		if (haventstopped) {
-		    StopScreen(1);
-		    haventstopped = 0;
-		}
-#endif	/* defined(MSDOS) */
 		if (shell_continue() == 0) {
 		    ConnectScreen();
-#if	defined(MSDOS)
-		    haventstopped = 1;
-#endif	/* defined(MSDOS) */
 		}
-#if	defined(MSDOS)
-		setconnmode();
-#endif	/* defined(MSDOS) */
-	    } else {
+	    } else if (In3270) {
 		schedValue = DoTerminalOutput();
 	    }
 	}
@@ -3010,6 +2996,34 @@ togdebug()
 }
 
 
+static int
+togbinary()
+{
+    donebinarytoggle = 1;
+
+    if (myopts[TELOPT_BINARY] == 0) {	/* Go into binary mode */
+	NET2ADD(IAC, DO);
+	NETADD(TELOPT_BINARY);
+	printoption("<SENT", doopt, TELOPT_BINARY, 0);
+	NET2ADD(IAC, WILL);
+	NETADD(TELOPT_BINARY);
+	printoption("<SENT", doopt, TELOPT_BINARY, 0);
+	hisopts[TELOPT_BINARY] = myopts[TELOPT_BINARY] = 1;
+	printf("Negotiating binary mode with remote host.\n");
+    } else {				/* Turn off binary mode */
+	NET2ADD(IAC, DONT);
+	NETADD(TELOPT_BINARY);
+	printoption("<SENT", dont, TELOPT_BINARY, 0);
+	NET2ADD(IAC, DONT);
+	NETADD(TELOPT_BINARY);
+	printoption("<SENT", dont, TELOPT_BINARY, 0);
+	hisopts[TELOPT_BINARY] = myopts[TELOPT_BINARY] = 0;
+	printf("Negotiating network ascii mode with remote host.\n");
+    }
+    return 1;
+}
+
+
 
 extern int togglehelp();
 
@@ -3035,6 +3049,12 @@ static struct togglelist Togglelist[] = {
 		1,
 		    &autosynch,
 			"send interrupt characters in urgent mode" },
+    { "binary",
+	"toggle sending and receiving of binary data",
+	    togbinary,
+		1,
+		    0,
+			"send and receive network data in binary mode" },
     { "crmod",
 	"toggle mapping of received carriage returns",
 	    0,
