@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.32 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -371,7 +371,7 @@ dirloop:
 mntloop:
 	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
 	       (ndp->ni_nameiop & NOCROSSMOUNT) == 0) {
-		while(mp->mnt_flag & MNT_MLOCK) {
+		if (mp->mnt_flag & MNT_MLOCK) {
 			mp->mnt_flag |= MNT_MWAIT;
 			sleep((caddr_t)mp, PVFS);
 			goto mntloop;
