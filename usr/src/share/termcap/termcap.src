@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.7 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.8 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1472,7 +1472,7 @@ do|vt200-ws|vt220-ws|dec vt200 series; 132 col.; smooth scroll:\
 	:co#132:tc=vt200:
 vs|xterm|vs100|xterm terminal emulator (X window system):\
 	:do=^J:le=^H:ho=\E[H:\
-	:co#80:li#65:cl=\E[H\E[2J:bs:am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:co#80:li#65:cl=\E[H\E[2J:bs:.am:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=2\E[m:us=\E[4m:ue=\E[m:\
 	:md=\E[1m:mr=\E[7m:me=2\E[m:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^H:\
