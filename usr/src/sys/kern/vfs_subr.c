@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.29 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.30 (Berkeley) %G%
  */
 
 /*
@@ -93,7 +93,17 @@ vfs_busy(mp, flags, interlkp, p)
 		if (flags & LK_NOWAIT)
 			return (ENOENT);
 		mp->mnt_flag |= MNT_MWAIT;
+		if (interlkp)
+			simple_unlock(interlkp);
+		/*
+		 * Since all busy locks are shared except the exclusive
+		 * lock granted when unmounting, the only place that a
+		 * wakeup needs to be done is at the release of the
+		 * exclusive lock at the end of dounmount.
+		 */
 		sleep((caddr_t)mp, PVFS);
+		if (interlkp)
+			simple_lock(interlkp);
 		return (ENOENT);
 	}
 	lkflags = LK_SHARED;
@@ -106,7 +116,6 @@ vfs_busy(mp, flags, interlkp, p)
 
 /*
  * Free a busy filesystem.
- * Panic if filesystem is not busy.
  */
 void
 vfs_unbusy(mp, p)
@@ -712,8 +721,9 @@ int bug_refs = 0;
 
 /*
  * Stubs to use when there is no locking to be done on the underlying object.
- *
- * Getting a lock just clears the interlock if necessary.
+ * A minimal shared lock is necessary to ensure that the underlying object
+ * is not revoked while an operation is in progress. So, an active shared
+ * count is maintained in an auxillary vnode lock structure.
  */
 int
 vop_nolock(ap)
@@ -723,19 +733,63 @@ vop_nolock(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+#ifdef notyet
+	/*
+	 * This code cannot be used until all the non-locking filesystems
+	 * (notably NFS) are converted to properly lock and release nodes.
+	 * Also, certain vnode operations change the locking state within
+	 * the operation (create, mknod, remove, link, rename, mkdir, rmdir,
+	 * and symlink). Ideally these operations should not change the
+	 * lock state, but should be changed to let the caller of the
+	 * function unlock them. Otherwise all intermediate vnode layers
+	 * (such as union, umapfs, etc) must catch these functions to do
+	 * the necessary locking at their layer. Note that the inactive
+	 * and lookup operations also change their lock state, but this 
+	 * cannot be avoided, so these two operations will always need
+	 * to be handled in intermediate layers.
+	 */
 	struct vnode *vp = ap->a_vp;
+	int vnflags, flags = ap->a_flags;
 
+	if (vp->v_vnlock == NULL) {
+		if ((flags & LK_TYPE_MASK) == LK_DRAIN)
+			return (0);
+		MALLOC(vp->v_vnlock, struct lock *, sizeof(struct lock),
+		    M_VNODE, M_WAITOK);
+		lockinit(vp->v_vnlock, PVFS, "vnlock", 0, 0);
+	}
+	switch (flags & LK_TYPE_MASK) {
+	case LK_DRAIN:
+		vnflags = LK_DRAIN;
+		break;
+	case LK_EXCLUSIVE:
+	case LK_SHARED:
+		vnflags = LK_SHARED;
+		break;
+	case LK_UPGRADE:
+	case LK_EXCLUPGRADE:
+	case LK_DOWNGRADE:
+		return (0);
+	case LK_RELEASE:
+	default:
+		panic("vop_nolock: bad operation %d", flags & LK_TYPE_MASK);
+	}
+	if (flags & LK_INTERLOCK)
+		vnflags |= LK_INTERLOCK;
+	return(lockmgr(vp->v_vnlock, vnflags, &vp->v_interlock, ap->a_p));
+#else /* for now */
 	/*
 	 * Since we are not using the lock manager, we must clear
 	 * the interlock here.
 	 */
 	if (ap->a_flags & LK_INTERLOCK)
-		simple_unlock(&vp->v_interlock);
+		simple_unlock(&ap->a_vp->v_interlock);
 	return (0);
+#endif
 }
 
 /*
- * Unlock has nothing to do.
+ * Decrement the active use count.
  */
 int
 vop_nounlock(ap)
@@ -745,12 +799,15 @@ vop_nounlock(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
+	struct vnode *vp = ap->a_vp;
 
-	return (0);
+	if (vp->v_vnlock == NULL)
+		return (0);
+	return (lockmgr(vp->v_vnlock, LK_RELEASE, NULL, ap->a_p));
 }
 
 /*
- * Nothing is ever locked.
+ * Return whether or not the node is in use.
  */
 int
 vop_noislocked(ap)
@@ -758,8 +815,11 @@ vop_noislocked(ap)
 		struct vnode *a_vp;
 	} */ *ap;
 {
+	struct vnode *vp = ap->a_vp;
 
-	return (0);
+	if (vp->v_vnlock == NULL)
+		return (0);
+	return (lockstatus(vp->v_vnlock));
 }
 
 /*
@@ -1051,6 +1111,12 @@ vclean(vp, flags, p)
 	if (active)
 		vrele(vp);
 	cache_purge(vp);
+	if (vp->v_vnlock) {
+		if ((vp->v_vnlock->lk_flags & LK_DRAINED) == 0)
+			vprint("vclean: lock not drained", vp);
+		FREE(vp->v_vnlock, M_VNODE);
+		vp->v_vnlock = NULL;
+	}
 
 	/*
 	 * Done with purge, notify sleepers of the grim news.
