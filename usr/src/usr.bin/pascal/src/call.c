@@ -41,11 +41,11 @@ static	char sccsid[] = "@(#)call.c 1.18 %G%";
  *	structure FUNCs look like
  *		(temp = p(...args...),&temp)
  *	formal FPROCs look like
- *		( t=p,( t -> entryaddr )(...args...,t),FRTN( t ))
+ *		( t=p,( t -> entryaddr )(...args...,t,s),FRTN(t,s))
  *	formal scalar FFUNCs look like
- *		( t=p,temp=( t -> entryaddr )(...args...,t),FRTN( t ),temp)
+ *		( t=p,temp=( t -> entryaddr )(...args...,t,s),FRTN(t,s),temp)
  *	formal structure FFUNCs look like
- *		(t=p,temp = ( t -> entryaddr )(...args...,t),FRTN( t ),&temp)
+ *		(t=p,temp = ( t -> entryaddr )(...args...,t,s),FRTN(t,s),&temp)
  */
 struct nl *
 call(p, argv, porf, psbn)
@@ -56,6 +56,7 @@ call(p, argv, porf, psbn)
 	int *r;
 	struct nl	*p_type_class = classify( p -> type );
 	bool chk = TRUE;
+ 	struct nl	*savedispnp;	/* temporary to hold saved display */
 #	ifdef PC
 	    long	p_p2type = p2type( p );
 	    long	p_type_p2type = p2type( p -> type );
@@ -72,8 +73,16 @@ call(p, argv, porf, psbn)
 	    struct nl	*tempdescrp;
 #	endif PC
 
+         if (p->class == FFUNC || p->class == FPROC) {
+ 	    /*
+ 	     * allocate space to save the display for formal calls
+ 	     */
+	    savedispnp = tmpalloc( sizeof display , NIL , NOREG );
+ 	}
 #	ifdef OBJ
 	    if (p->class == FFUNC || p->class == FPROC) {
+ 		put(2, O_LV | cbn << 8 + INDX ,
+ 			(int) savedispnp -> value[ NL_OFFS ] );
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
 	    }
 	    if (porf == FUNC) {
@@ -305,6 +314,8 @@ call(p, argv, porf, psbn)
 #	ifdef OBJ
 	    if ( p -> class == FFUNC || p -> class == FPROC ) {
 		put(2, PTR_RV | psbn << 8+INDX, (int)p->value[NL_OFFS]);
+ 		put(2, O_LV | cbn << 8 + INDX ,
+ 			(int) savedispnp -> value[ NL_OFFS ] );
 		put(1, O_FCALL);
 		put(2, O_FRTN, even(width(p->type)));
 	    } else {
@@ -326,6 +337,9 @@ call(p, argv, porf, psbn)
 		    putop( P2LISTOP , P2INT );
 		}
 		noarguments = FALSE;
+ 		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+ 			savedispnp -> extra_flags , P2PTR | P2STRTY );
+ 		putop( P2LISTOP , P2INT );
 	    }
 		/*
 		 *	do the actual call:
@@ -367,6 +381,9 @@ call(p, argv, porf, psbn)
 			"_FRTN" );
 		putRV( 0 , cbn , tempdescrp -> value[ NL_OFFS ] ,
 			tempdescrp -> extra_flags , P2PTR | P2STRTY );
+ 		putLV( 0 , cbn , savedispnp -> value[ NL_OFFS ] ,
+ 			savedispnp -> extra_flags , P2PTR | P2STRTY );
+ 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putop( P2COMOP , P2INT );
 	    }
