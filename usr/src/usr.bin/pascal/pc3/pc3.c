@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.1 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.2 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -714,19 +714,16 @@ time_t
 mtime( filename )
     char	*filename;
     {
-	int		file;
 	struct stat	filestat;
 
 #	ifdef DEBUG
 	    fprintf( stderr , "[mtime] filename %s\n"
 		    , filename );
 #	endif DEBUG
-	file = open( filename , 0 );
-	if ( file == -1 ) {
+	if ( stat( filename , &filestat ) != 0 ) {
 	    error( WARNING , "%s: cannot open" , filename );
 	    return ( (time_t) time( 0 ) );
 	}
-	fstat( file , &filestat );
 	return filestat.st_mtime;
     }
 
