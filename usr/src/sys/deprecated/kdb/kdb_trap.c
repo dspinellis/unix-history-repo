@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_trap.c	7.6 (Berkeley) %G%
+ *	@(#)kdb_trap.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -28,14 +28,20 @@ long	maxpos = MAXPOS;
  * Kdb trap handler; entered on all fatal
  * and/or debugger related traps or faults.
  */
-kdb(type, code, curproc)
+kdb(type, code, curproc, kstack)
 	int type, code;
 	struct proc *curproc;
+	int kstack;
 {
 
 	var[varchk('t')] = type;
 	var[varchk('c')] = code;
 	var[varchk('p')] = (int)curproc;
+	if (executing)
+		delbp();
+	executing = 0;
+	if (kstack)
+		printf("(from kernel stack)\n"); /* after delbp() */
 	printtrap((long)type, (long)code);
 	userpc = dot = pcb.pcb_pc;
 	switch (setexit()) {
