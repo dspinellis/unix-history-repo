@@ -1,4 +1,4 @@
-.\"	@(#)sort.1	6.2 (Berkeley) %G%
+.\"	@(#)sort.1	6.3 (Berkeley) %G%
 .\"
 .TH SORT 1 ""
 .AT 3
@@ -44,7 +44,8 @@ Ignore characters outside the ASCII range 040-0176 in nonnumeric comparisons.
 .B  n
 An initial numeric string, consisting of optional blanks, optional minus sign,
 and zero or more digits with optional decimal point,
-is sorted by arithmetic value.  Option
+is sorted by arithmetic value.  (Note that \fB-0\fP is considered equal
+to \fB0\fP.) Option
 .B n
 implies option
 .B b.
