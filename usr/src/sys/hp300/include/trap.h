@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.h 1.1 90/07/09$
  *
- *	@(#)trap.h	7.4 (Berkeley) %G%
+ *	@(#)trap.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -33,3 +33,6 @@
 #define T_COPERR	12
 #define T_ASTFLT	13
 #define T_TRAP15	15
+
+#define	T_USER		0x80		/* user-mode flag or'ed with type */
+
