@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.48		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.49		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.48		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.48		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.49		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -128,14 +128,14 @@ getrequests()
 
 	for (;;)
 	{
+		auto int lotherend;
+		struct sockaddr_in otherend;
+
 		/* wait for a connection */
 		register int pid;
 
 		do
 		{
-			auto int lotherend;
-			struct sockaddr otherend;
-
 			errno = 0;
 			lotherend = sizeof otherend;
 			t = accept(DaemonSocket, &otherend, &lotherend, 0);
@@ -167,10 +167,25 @@ getrequests()
 
 		if (pid == 0)
 		{
+			extern struct hostent *gethostbyaddr();
+			register struct hostent *hp;
+			extern char *RealHostName;	/* srvrsmtp.c */
+			char buf[MAXNAME];
+
 			/*
 			**  CHILD -- return to caller.
+			**	Collect verified idea of sending host.
 			**	Verify calling user id if possible here.
 			*/
+
+			/* determine host name */
+			hp = gethostbyaddr(&otherend.sin_addr, sizeof otherend.sin_addr, AF_INET);
+			if (hp != NULL)
+				(void) sprintf(buf, "%s.ARPA", hp->h_name);
+			else
+				/* this should produce a dotted quad */
+				(void) sprintf(buf, "%lx", otherend.sin_addr.s_addr);
+			RealHostName = newstr(buf);
 
 			(void) close(DaemonSocket);
 			InChannel = fdopen(t, "r");
@@ -261,20 +276,16 @@ makeconnection(host, port, outfile, infile)
 
 	if (host[0] == '[')
 	{
-		long hid = 0;
-		int i, j;
-		register char *p = host;
+		long hid;
+		register char *p = index(host, ']');
 
-		for (i = 3; i >= 0 && *p != ']' && *p != '\0'; i--)
+		if (p != NULL)
 		{
-			j = 0;
-			while (isdigit(*++p))
-				j = j * 10 + (*p - '0');
-			if (*p != (i == 0 ? ']' : '.') || j > 255 || j < 0)
-				break;
-			hid |= j << ((3 - i) * 8);
+			*p = '\0';
+			hid = inet_addr(&host[1]);
+			*p = ']';
 		}
-		if (i >= 0 || *p != ']' || *++p != '\0')
+		if (p == NULL || hid == -1)
 		{
 			usrerr("Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
@@ -285,7 +296,7 @@ makeconnection(host, port, outfile, infile)
 	{
 		register struct hostent *hp = gethostbyname(host);
 
-		if (hp == 0)
+		if (hp == NULL)
 			return (EX_NOHOST);
 		bmove(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
 	}
@@ -342,7 +353,6 @@ makeconnection(host, port, outfile, infile)
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #else NVMUNIX
 	SendmailAddress.sin_family = AF_INET;
-	/* bind(s, &SendmailAddress, sizeof SendmailAddress, 0); */
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #endif NVMUNIX
 	{
@@ -364,6 +374,12 @@ makeconnection(host, port, outfile, infile)
 		  case ENETUNREACH:
 			/* there are others, I'm sure..... */
 			return (EX_TEMPFAIL);
+
+		  case EPERM:
+			/* why is this happening? */
+			syserr("makeconnection: funny failure, addr=%lx, port=%x",
+				SendmailAddress.sin_addr.s_addr, SendmailAddress.sin_port);
+			/* explicit fall-through */
 
 		  default:
 			return (EX_UNAVAILABLE);
@@ -394,12 +410,12 @@ myhostname(hostbuf)
 	char hostbuf[];
 {
 	extern struct hostent *gethostbyname();
-	struct hostent *hent;
+	struct hostent *hp;
 
 	gethostname(hostbuf, sizeof hostbuf);
-	hent = gethostbyname(hostbuf);
-	if (hent != NULL)
-		return (hent->h_aliases);
+	hp = gethostbyname(hostbuf);
+	if (hp != NULL)
+		return (hp->h_aliases);
 	else
 		return (NULL);
 }
