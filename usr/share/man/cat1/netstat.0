@@ -1,0 +1,158 @@
+NETSTAT(1)                   BSD Reference Manual                   NETSTAT(1)
+
+NNAAMMEE
+     nneettssttaatt - show network status
+
+SSYYNNOOPPSSIISS
+     nneettssttaatt [--AAaann] [--ff _a_d_d_r_e_s_s___f_a_m_i_l_y] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m]
+     nneettssttaatt [--ddgghhiimmnnrrss] [--ff _a_d_d_r_e_s_s___f_a_m_i_l_y] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m]
+     nneettssttaatt [--ddnn] [--II _i_n_t_e_r_f_a_c_e] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m] [--ww _w_a_i_t]
+     nneettssttaatt [--pp _p_r_o_t_o_c_o_l] [--MM _c_o_r_e] [--NN _s_y_s_t_e_m]
+
+DDEESSCCRRIIPPTTIIOONN
+     The nneettssttaatt command symbolically displays the contents of various net-
+     work-related data structures.  There are a number of output formats, de-
+     pending on the options for the information presented.  The first form of
+     the command displays a list of active sockets for each protocol.  The
+     second form presents the contents of one of the other network data struc-
+     tures according to the option selected.  Using the third form, with a
+     _w_a_i_t interval specified, nneettssttaatt will continuously display the informa-
+     tion regarding packet traffic on the configured network interfaces.  The
+     fourth form displays statistics about the named protocol.
+
+     The options have the following meaning:
+
+     --AA    With the default display, show the address of any protocol control
+           blocks associated with sockets; used for debugging.
+
+     --aa    With the default display, show the state of all sockets; normally
+           sockets used by server processes are not shown.
+
+     --dd    With either interface display (option --ii or an interval, as de-
+           scribed below), show the number of dropped packets.
+
+     --ff _a_d_d_r_e_s_s___f_a_m_i_l_y
+           Limit statistics or address control block reports to those of the
+           specified _a_d_d_r_e_s_s _f_a_m_i_l_y. The following address families are recog-
+           nized: _i_n_e_t, for AF_INET, _n_s, for AF_NS, _i_s_o, for AF_ISO, and _u_n_i_x,
+           for AF_UNIX.
+
+     --gg    Show information related to multicast (group address) routing.  By
+           default, show the IP Multicast virtual-interface and routing ta-
+           bles.  If the --ss option is also present, show multicast routing
+           statistics.
+
+     --hh    Show the state of the IMP host table (obsolete).
+
+     --II _i_n_t_e_r_f_a_c_e
+           Show information about the specified interface; used with a _w_a_i_t
+           interval as described below.
+
+     --ii    Show the state of interfaces which have been auto-configured (in-
+           terfaces statically configured into a system, but not located at
+           boot time are not shown).  If the --aa options is also present, mul-
+           ticast addresses currently in use are shown for each Ethernet in-
+           terface and for each IP interface address.  Multicast addresses are
+           shown on separate lines following the interface address with which
+           they are associated.
+
+     --MM    Extract values associated with the name list from the specified
+           core instead of the default _/_d_e_v_/_k_m_e_m.
+
+     --mm    Show statistics recorded by the memory management routines (the
+           network manages a private pool of memory buffers).
+
+     --NN    Extract the name list from the specified system instead of the de-
+
+           fault _/_v_m_u_n_i_x.
+
+     --nn    Show network addresses as numbers (normally nneettssttaatt interprets ad-
+           dresses and attempts to display them symbolically).  This option
+           may be used with any of the display formats.
+
+     --pp _p_r_o_t_o_c_o_l
+           Show statistics about _p_r_o_t_o_c_o_l, which is either a well-known name
+           for a protocol or an alias for it.  Some protocol names and aliases
+           are listed in the file _/_e_t_c_/_p_r_o_t_o_c_o_l_s. A null response typically
+           means that there are no interesting numbers to report.  The program
+           will complain if _p_r_o_t_o_c_o_l is unknown or if there is no statistics
+           routine for it.
+
+     --ss    Show per-protocol statistics.  If this option is repeated, counters
+           with a value of zero are suppressed.
+
+     --rr    Show the routing tables.  When --ss is also present, show routing
+           statistics instead.
+
+     --ww _w_a_i_t
+           Show network interface statistics at intervals of _w_a_i_t seconds.
+
+     The default display, for active sockets, shows the local and remote ad-
+     dresses, send and receive queue sizes (in bytes), protocol, and the in-
+     ternal state of the protocol.  Address formats are of the form
+     ``host.port'' or ``network.port'' if a socket's address specifies a net-
+     work but no specific host address.  When known the host and network ad-
+     dresses are displayed symbolically according to the data bases _/_e_t_c_/_h_o_s_t_s
+     and _/_e_t_c_/_n_e_t_w_o_r_k_s, respectively.  If a symbolic name for an address is
+     unknown, or if the --nn option is specified, the address is printed numeri-
+     cally, according to the address family.  For more information regarding
+     the Internet ``dot format,'' refer to inet(3)).  Unspecified, or ``wild-
+     card'', addresses and ports appear as ``*''.
+
+     The interface display provides a table of cumulative statistics regarding
+     packets transferred, errors, and collisions.  The network addresses of
+     the interface and the maximum transmission unit (``mtu'') are also dis-
+     played.
+
+     The routing table display indicates the available routes and their sta-
+     tus.  Each route consists of a destination host or network and a gateway
+     to use in forwarding packets.  The flags field shows a collection of in-
+     formation about the route stored as binary choices.  The individual flags
+     are discussed in more detail in the route(8) and route(4) manual pages.
+     The mapping between letters and flags is:
+
+     1       RTF_PROTO2       Protocol specific routing flag #1
+     2       RTF_PROTO1       Protocol specific routing flag #2
+     B       RTF_BLACKHOLE    Just discard pkts (during updates)
+     C       RTF_CLONING      Generate new routes on use
+     D       RTF_DYNAMIC      Created dynamically (by redirect)
+     G       RTF_GATEWAY      Destination requires forwarding by intermediary
+     H       RTF_HOST         Host entry (net otherwise)
+     L       RTF_LLINFO       Valid protocol to link address translation.
+     M       RTF_MODIFIED     Modified dynamically (by redirect)
+     R       RTF_REJECT       Host or net unreachable
+     S       RTF_STATIC       Manually added
+     U       RTF_UP           Route usable
+     X       RTF_XRESOLVE     External daemon translates proto to link address
+
+     Direct routes are created for each interface attached to the local host;
+     the gateway field for such entries shows the address of the outgoing in-
+     terface.  The refcnt field gives the current number of active uses of the
+     route.  Connection oriented protocols normally hold on to a single route
+     for the duration of a connection while connectionless protocols obtain a
+     route while sending to the same destination.  The use field provides a
+     count of the number of packets sent using that route.  The interface en-
+     try indicates the network interface utilized for the route.
+
+     When nneettssttaatt is invoked with the --ww option and a _w_a_i_t interval argument,
+     it displays a running count of statistics related to network interfaces.
+     An obsolescent version of this option used a numeric parameter with no
+     option, and is currently supported for backward compatibility.  This dis-
+     play consists of a column for the primary interface (the first interface
+     found during autoconfiguration) and a column summarizing information for
+     all interfaces.  The primary interface may be replaced with another in-
+     terface with the --II option.  The first line of each screen of information
+     contains a summary since the system was last rebooted.  Subsequent lines
+     of output show values accumulated over the preceding interval.
+
+SSEEEE AALLSSOO
+     iostat(1),  nfsstat(1),  ps(1),  vmstat(1),  hosts(5),  networks(5),
+     protocols(5),  services(5),  trpt(8),  trsp(8)
+
+HHIISSTTOORRYY
+     The nneettssttaatt command appeared in 4.2BSD.
+
+BBUUGGSS
+     The notion of errors is ill-defined.
+
+4.2 Berkeley Distribution       April 18, 1994                               3

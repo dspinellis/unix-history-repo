@@ -1,0 +1,34 @@
+LOCATE(1)                    BSD Reference Manual                    LOCATE(1)
+
+NNAAMMEE
+     llooccaattee - find files
+
+SSYYNNOOPPSSIISS
+     _l_o_c_a_t_e pattern
+
+DDEESSCCRRIIPPTTIIOONN
+     LLooccaattee searches a database for all pathnames which match the specified
+     _p_a_t_t_e_r_n. The database is recomputed periodically, and contains the path-
+     names of all files which are publicly accessible.
+
+     Shell globbing and quoting characters (``*'', ``?'', ``\'', ``['' and
+     ``]'') may be used in _p_a_t_t_e_r_n, although they will have to be escaped from
+     the shell.  Preceding any character with a backslash (``\'') eliminates
+     any special meaning which it may have.  The matching differs in that no
+     characters must be matched explicitly, including slashes (``/'').
+
+     As a special case, a pattern containing no globbing characters (``foo'')
+     is matched as though it were ``*foo*''.
+
+FFIILLEESS
+     /var/db/locate.database
+
+SSEEEE AALLSSOO
+     find(1),  fnmatch(3)
+
+     Woods, James A., "Finding Files Fast", _;_l_o_g_i_n, 8:1, pp. 8-10, 1983.
+
+HHIISSTTOORRYY
+     The llooccaattee command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1
