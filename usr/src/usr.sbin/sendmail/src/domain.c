@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.16 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.17 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.16 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.17 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -137,6 +137,10 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 			goto punt;
 
 		  case HOST_NOT_FOUND:
+#ifdef BROKEN_RES_SEARCH
+			/* Ultrix resolver returns failure w/ h_errno=0 */
+		  case 0:
+#endif
 			/* the host just doesn't exist */
 			*rcode = EX_NOHOST;
 

@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.54 (Berkeley) %G%
+#	@(#)READ_ME	8.55 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -292,6 +292,12 @@ SYSLOG_BUFSIZE	You can define this to be the size of the buffer that
 		e-mail message will log many more messages, since it
 		will log each piece of information as a separate line
 		in syslog.
+BROKEN_RES_SEARCH
+		On Ultrix (and maybe other systems?) if you use the
+		res_search routine with an unknown host name, it returns
+		-1 but sets h_errno to 0 instead of HOST_NOT_FOUND.  If
+		you set this, sendmail considers 0 to be the same as
+		HOST_NOT_FOUND.
 
 
 +-----------------------+
@@ -775,4 +781,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.54, last update %G% 08:35:14)
+(Version 8.55, last update %G% 09:06:08)
