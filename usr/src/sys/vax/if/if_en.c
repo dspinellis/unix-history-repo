@@ -1,4 +1,4 @@
-/*	if_en.c	4.34	82/02/21	*/
+/*	if_en.c	4.35	82/03/03	*/
 
 #include "en.h"
 
@@ -364,7 +364,7 @@ COUNT(ENRINT);
 #endif
 
 	default:
-		printf("en%d: unknow pkt type 0x%x\n", en->en_type);
+		printf("en%d: unknown pkt type 0x%x\n", unit, en->en_type);
 		goto setup;
 	}
 	if (len == 0)
