@@ -1,6 +1,7 @@
-#	Makefile	5.2	86/07/02
+#	Makefile	5.3	86/08/01
 #
 DESTDIR=
+FLAGS=	-I.. ${DEFS}
 SRCS=	addd.s addf.s cmpd.s cmpf.s cvtdl.s cvtfl.s cvtld.s cvtlf.s cvtud.s \
 	cvtuf.s divd.s divf.s fnorm.s fp_exp.s modf.s muld.s mulf.s negd.s \
 	negf.s sfnorm.s sfp_exp.s subd.s subf.s
@@ -10,10 +11,10 @@ OBJS=	addd.o addf.o cmpd.o cmpf.o cvtdl.o cvtfl.o cvtld.o cvtlf.o cvtud.o \
 TAGSFILE=tags
 
 .s.o:
-	/lib/cpp -E ${DEFS} -DPROF $*.s | ${AS} -o $*.o
+	/lib/cpp -E ${FLAGS} -DPROF $*.s | ${AS} -o $*.o
 	ld -X -r $*.o
 	mv a.out profiled/$*.o
-	/lib/cpp -E ${DEFS} $*.s | ${AS} -o $*.o
+	/lib/cpp -E ${FLAGS} $*.s | ${AS} -o $*.o
 	ld -x -r $*.o
 	mv a.out $*.o
 
@@ -31,7 +32,7 @@ clean:
 
 depend:
 	for i in ${SRCS}; do \
-	    cc -M ${CFLAGS} $$i | awk ' { if ($$1 != prev) \
+	    cc -M ${FLAGS} $$i | awk ' { if ($$1 != prev) \
 		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		else rec = rec " " $$2 } } \
