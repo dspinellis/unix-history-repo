@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	8.1 (Berkeley) %G%
+#	@(#)daily	8.2 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname`
@@ -44,17 +44,17 @@ cd /tmp
 TMP=daily.$$
 find / \( ! -fstype local -o -fstype rdonly \) -a -prune -o \
 	-name 'lost+found' -a -prune -o \
-	-name 'core.*' -a -print -o \
+	-name '*.core' -a -print -o \
 	\( -name '[#,]*' -o -name '.#*' -o -name a.out \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
 		-a -atime +3 -a -exec rm -f -- {} \; -a -print > $TMP
 echo ""
 echo "Possible core dumps:"
-egrep 'core\.' $TMP | sed '/core.[05cho]$/d'
+egrep '\.core' $TMP
 
 echo ""
 echo "Deleted files:"
-egrep -v 'core\.' $TMP
+egrep -v '\.core' $TMP
 
 rm -f $TMP
 	
