@@ -2,7 +2,7 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.38		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.39		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -10,7 +10,7 @@ SCCSID(@(#)daemon.c	3.38		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <wait.h>
 
-SCCSID(@(#)daemon.c	3.38		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.39		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -263,7 +263,9 @@ makeconnection(host, port, outfile, infile)
 	**  Determine the port number.
 	*/
 
-	if (port == 0)
+	if (port != 0)
+		SendmailAddress.sin_port = htons(port);
+	else
 	{
 		register struct servent *sp = getservbyname("smtp", "tcp");
 
@@ -272,9 +274,8 @@ makeconnection(host, port, outfile, infile)
 			syserr("makeconnection: server \"smtp\" unknown");
 			return (EX_OSFILE);
 		}
-		port = sp->s_port;
+		SendmailAddress.sin_port = sp->s_port;
 	}
-	SendmailAddress.sin_port = htons(port);
 
 	/*
 	**  Try to actually open the connection.
