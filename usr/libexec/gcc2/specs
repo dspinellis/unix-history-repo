@@ -1,0 +1,39 @@
+*asm:
+
+
+*asm_final:
+
+
+*cpp:
+%{!msoft-float:-D__HAVE_68881__ -D__HAVE_FPU__}
+
+*cc1:
+
+
+*cc1plus:
+
+
+*endfile:
+
+
+*link:
+
+
+*lib:
+%{g:-lgnulib} %{!p:%{!pg:-lc}}%{p:-lc_p}%{pg:-lc_p}
+
+*startfile:
+%{pg:gcrt0.o%s}%{!pg:%{p:gcrt0.o%s}%{!p:crt0.o%s}}
+
+*switches_need_spaces:
+
+
+*signed_char:
+%{funsigned-char:-D__CHAR_UNSIGNED__}
+
+*predefines:
+-Dmc68000 -Dmc68020 -Dhp300 -Dhp9000 -Dunix
+
+*cross_compile:
+0
+
