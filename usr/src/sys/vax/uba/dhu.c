@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.9 (Berkeley) %G%
+ *	@(#)dhu.c	4.10 (Berkeley) %G%
  */
 
 /*
@@ -305,6 +305,9 @@ dhurint(dhu)
 	register line;
 	int overrun = 0;
 
+#ifdef VAX630
+	(void) spl5();
+#endif
 	ui = dhuinfo[dhu];
 	if (ui == 0 || ui->ui_alive == 0)
 		return;
@@ -511,6 +514,9 @@ dhuxint(dhu)
 	register int line, t;
 	u_short cntr;
 
+#ifdef VAX630
+	(void) spl5();
+#endif
 	ui = dhuinfo[dhu];
 	tp0 = &dhu_tty[dhu<<4];
 	addr = (struct dhudevice *)ui->ui_addr;

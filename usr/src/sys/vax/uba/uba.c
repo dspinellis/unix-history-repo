@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.10 (Berkeley) %G%
+ *	@(#)uba.c	6.11 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -120,8 +120,8 @@ ubasetup(uban, bp, flags)
 	struct proc *rp;
 	int a, o, ubinfo;
 
-#if VAX730
-	if (cpu == VAX_730)
+#if defined(VAX730) || defined(VAX630)
+	if (cpu == VAX_730 || cpu == VAX_630)
 		flags &= ~UBA_NEEDBDP;
 #endif
 	v = btop(bp->b_un.b_addr);
@@ -314,8 +314,9 @@ ubainitmaps(uhp)
 		uhp->uh_bdpfree = (1<<NBDP750) - 1;
 		break;
 #endif
-#if VAX730
+#if defined(VAX730) || defined(VAX630)
 	case VAX_730:
+	case VAX_630:
 		break;
 #endif
 	}
@@ -381,7 +382,10 @@ ubainit(uba)
 #if VAX730
 	case VAX_730:
 #endif
-#if defined(VAX750) || defined(VAX730)
+#if VAX630
+	case VAX_630:
+#endif
+#if defined(VAX750) || defined(VAX730) || defined(VAX630)
 		mtpr(IUR, 0);
 		/* give devices time to recover from power fail */
 /* THIS IS PROBABLY UNNECESSARY */

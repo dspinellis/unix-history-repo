@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	6.9 (Berkeley) %G%
+ *	@(#)ts.c	6.10 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -524,7 +524,9 @@ tsintr(ts11)
 	register struct ts_softc *sc;
 	int tsunit;
 	register state;
-
+#if VAX630
+	spl5();
+#endif
 	if ((bp = um->um_tab.b_actf->b_actf) == NULL)
 		return;
 	tsunit = TSUNIT(bp->b_dev);

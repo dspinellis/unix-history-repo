@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ubareg.h	6.6 (Berkeley) %G%
+ *	@(#)ubareg.h	6.7 (Berkeley) %G%
  */
 
 /*
@@ -154,11 +154,16 @@ struct uba_regs
 #define	NBDP780	15
 #define	NBDP750	3
 #define	NBDP730	0
+#define	NBDP630	0
 #define	MAXNBDP	15
 
 /*
  * Symbolic BUS addresses for UBAs.
  */
+
+#if VAX630
+#define	UMEM630		((u_short *)(0x1ffc2000))
+#endif
 
 #if VAX730
 #define	UMEM730		((u_short *)(0xfc0000))
@@ -183,3 +188,4 @@ struct uba_regs
  * space.
  */
 #define	ubdevreg(addr)	(0760000|((addr)&017777))
+
