@@ -1,10 +1,7 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.2	(Berkeley)	%G%
+#	@(#)Makefile	4.3	(Berkeley)	%G%
 #
-NETSER=	/usr/src/ucb/netser
-
-OBJS=	dumprmt.o ${NETSER}/rcmd.o
 CFLAGS=
 
 all: rrestor restor
@@ -12,8 +9,8 @@ all: rrestor restor
 restor: restor.c
 	cc -o restor restor.c
 
-rrestor: ${OBJS} rrestor.o
-	cc -o rrestor ${OBJS} rrestor.o -ljobs
+rrestor: dumprmt.o rrestor.o
+	cc -o rrestor dumprmt.o rrestor.o -ljobs
 
 rrestor.o: restor.c
 	cc -c -DRRESTOR restor.c
