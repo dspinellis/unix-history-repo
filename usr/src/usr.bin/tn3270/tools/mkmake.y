@@ -44,6 +44,7 @@ typedef struct same {
     int	intval;
     }
 
+%start makefile
 %token <string> TOKEN QUOTED_STRING
 %token <intval> MACRO_CHAR BREAK_CHAR WHITE_SPACE NL END_OF_FILE
 %token <intval> ':' '=' '$' '{' '}'
@@ -143,7 +144,7 @@ token: TOKEN
     }
     | '$' '{' token '}'
     {
-	$$ = same_copy(value_of($3));
+	$$ = value_of($3);
     }
     ;
 
@@ -194,7 +195,7 @@ struct {
 
 #define	visit(what,via) \
 	(visit_stack[++clock].next = 0, visit_stack[clock].first = via = what)
-#define	visited(via)	(((via) == 0) \
+#define	visited(via)	(visitcheck(via) || ((via) == 0) \
 	|| (visit_stack[clock].next && (via == visit_stack[clock].first)))
 #define	visit_next(via)	(visit_stack[clock].next = 1, (via) = (via)->nexttoken)
 #define	visit_end()	(clock--)
@@ -204,6 +205,17 @@ char *s;
 {
     fprintf(stderr, "line %d, character %d: %s\n", lineno, column, s);
     do_dump();
+}
+
+int
+visitcheck(same)
+same_t *same;
+{
+    if (same->string == 0) {
+	yyerror("BUG - freed 'same' in use...");
+	exit(1);
+    }
+    return 0;
 }
 
 int
@@ -348,6 +360,7 @@ same_t *list;
     token = list;
     do {
 	ptr = token->nexttoken;
+	token->string = 0;
 	(void) free((char *)token);
 	token = ptr;
     } while (token != list);
@@ -364,7 +377,6 @@ same_t
     token->lasttoken->nexttoken = token->nexttoken;
     token->nexttoken->lasttoken = token->lasttoken;
     token->nexttoken = token->lasttoken = token;
-    (void) free((char *) token);
 }
 
 same_t *
@@ -390,7 +402,7 @@ same_t
     *target,
     *actions;
 {
-    same_t *ptr, *original = target;
+    same_t *ptr;
 
     if (target == 0) {
 	return 0;
@@ -398,11 +410,13 @@ same_t
     do {
 	target->action_list = same_cat(target->action_list,
 						same_copy(actions));
-	ptr = target->nexttoken;
+	if ((ptr = target->nexttoken) == target) {
+	    ptr = 0;
+	}
 	same_unlink(target);
 	add_target(target);
 	target = ptr;
-    } while (target != original);
+    } while (target);
 
     same_free(actions);
     return 0;
@@ -605,6 +619,17 @@ main()
 }
 
 #if	defined(YYDEBUG)
+dump_same(same)
+same_t *same;
+{
+    same_t *same2;
+
+    for (visit(same, same2); !visited(same2); visit_next(same2)) {
+	printf(same2->string->string);
+    }
+    visit_end();
+}
+
 do_dump()
 {
     string_t *string;
