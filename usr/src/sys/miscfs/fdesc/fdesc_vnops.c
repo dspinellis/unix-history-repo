@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.2 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -429,7 +429,7 @@ fdesc_getattr(ap)
 		vap->va_atime.ts_sec = boottime.tv_sec;
 		vap->va_atime.ts_nsec = 0;
 		vap->va_mtime = vap->va_atime;
-		vap->va_ctime = vap->va_ctime;
+		vap->va_ctime = vap->va_mtime;
 		vap->va_gen = 0;
 		vap->va_flags = 0;
 		vap->va_rdev = 0;
@@ -586,13 +586,13 @@ fdesc_readdir(ap)
 			case FD_STDIN:
 			case FD_STDOUT:
 			case FD_STDERR:
-				if ((i-FD_STDIN) >= fdp->fd_nfiles)
+				if ((dt->d_fileno-FD_STDIN) >= fdp->fd_nfiles)
 					continue;
-				if (fdp->fd_ofiles[i-FD_STDIN] == NULL)
+				if (fdp->fd_ofiles[dt->d_fileno-FD_STDIN] == NULL)
 					continue;
 				break;
 			}
-			bzero(dp, UIO_MX);
+			bzero((caddr_t) dp, UIO_MX);
 			dp->d_fileno = dt->d_fileno;
 			dp->d_namlen = dt->d_namlen;
 			dp->d_type = DT_UNKNOWN;
