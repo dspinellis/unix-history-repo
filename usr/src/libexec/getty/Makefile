@@ -1,8 +1,8 @@
-#	Makefile	4.1	83/07/06
+#	Makefile	4.2	85/02/05
 #
 DESTDIR=
 CFLAGS=	-O
-OBJS=	main.o init.o subr.o gettytab.o
+OBJS=	main.o init.o subr.o gettytab.o get_date.o
 
 all:	getty
 
@@ -11,6 +11,7 @@ getty:	${OBJS}
 
 install: all
 	install -s getty ${DESTDIR}/etc/getty
+	install -c -m 444 gettytab ${DESTDIR}/etc/gettytab
 
 clean:
 	rm -f getty ${OBJS} a.out core errs
