@@ -1,98 +1,101 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)getty.8	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-.TH GETTY 8  ""
-.UC 4
-.SH NAME
-getty  \- set terminal mode
-.SH SYNOPSIS
-.B /etc/getty
-[ type [ tty ] ]
-.SH DESCRIPTION
-.I Getty
-is usually invoked by
-.IR  init (8)
-to open and initialize the tty line, read a login name, and invoke
-.IR login (1).
-.I getty
-attempts to adapt the system to the speed and type of terminal
-being used.
-.PP
-The argument
-.I tty
-is the special device file in /dev to open for the terminal (e.g., ``ttyh0'').
-If there is no argument or the argument is
-``\-'', the tty line is assumed to be open as file descriptor 0.
-.PP
+.\"     @(#)getty.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETTY 8
+.Os BSD 4
+.Sh NAME
+.Nm getty
+.Nd set terminal mode
+.Sh SYNOPSIS
+.Nm getty
+.Oo 
+.Ar type
+.Op Ar tty
+.Oc
+.Sh DESCRIPTION
 The
-.I type
+.Nm getty
+program
+is called by
+.Xr init 8
+to open and initialize the tty line, read a login name, and invoke
+.Xr login 1 .
+.Pp
+The argument
+.Ar tty
+is the special device file in
+.Pa /dev
+to open for the terminal (for example, ``ttyh0'').
+If there is no argument or the argument is
+.Ql Fl ,
+the tty line is assumed to be open as file descriptor 0.
+.Pp
+The
+.Ar type
 argument can be used to make
-.I getty
+.Nm getty
 treat the terminal line specially.
 This argument is used as an index into the
-.IR gettytab (5)
+.Nm gettytab 5
 database, to determine the characteristics of the line.
 If there is no argument, or there is no such table, the
-.B default
+.Em default
 table is used.
 If there is no
-.B /etc/gettytab
+.Pa /etc/gettytab
 a set of system defaults is used.
 If indicated by the table located,
-.I getty
+.Nm getty
 will clear the terminal screen,
 print a banner heading,
 and prompt for a login name.
 Usually either the banner or the login prompt will include
 the system hostname.
-Then the user's name is read, a character at a time.
-If a null character is received, it is assumed to be the result
-of the user pushing the `break' (`interrupt') key.
-The speed is usually then
-changed and the `login:' is typed again;
-a second `break' changes the speed again and the `login:'
-is typed once more.
-Successive `break' characters cycle through the
-same standard set of speeds.
-.PP
-The user's name is terminated by a new-line or
-carriage-return character.
-The latter results in the system being set to
-treat carriage returns appropriately (see
-.IR  tty (4)).
-.PP
-The user's name is scanned to see if
-it contains any lower-case alphabetic characters; if not,
-and if the name is nonempty, the
-system is told to map any future upper-case characters
-into the corresponding lower-case characters.
-.PP
-Finally,
-.I login
-is called with the user's name as an argument.
-.PP
+.Pp
 Most of the default actions of
-.I getty
+.Nm getty
 can be circumvented, or modified, by a suitable
-.I gettytab
+.Nm gettytab
 table.
-.PP
-.I Getty
+.Pp
+The
+.Nm getty
+program
 can be set to timeout after some interval,
 which will cause dial up lines to hang up
 if the login name is not entered reasonably quickly.
-.SH DIAGNOSTICS
-\fIttyxx\fR\|\fB: No such device or address\fR.
-\fIttyxx\fR\|\fB: No such file or address\fR.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It "ttyxx: No such device or address."
+.It "ttyxx: No such file or address."
 A terminal which is turned
-on in the \fIttys\fR file cannot be opened, likely because the requisite
+on in the
+.Xr ttys
+file cannot be opened, likely because the requisite
 lines are either not configured into the system, the associated device
 was not attached during boot-time system configuration,
-or the special file in /dev does not exist.
-.SH FILES
-/etc/gettytab
-.SH "SEE ALSO"
-gettytab(5), init(8), login(1), ioctl(2), tty(4), ttys(5)
+or the special file in
+.Pa /dev
+does not exist.
+.El
+.Sh FILES
+.Bl -tag -width /etc/gettytab -compact
+.It Pa /etc/gettytab
+.El
+.Sh SEE ALSO
+.Xr gettytab 5 ,
+.Xr init 8 ,
+.Xr login 1 ,
+.Xr ioctl 2 ,
+.Xr tty 4 ,
+.Xr ttys 5
+.Sh HISTORY
+A
+.Nm getty
+program appeared in
+.At v6 .
