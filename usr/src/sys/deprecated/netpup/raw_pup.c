@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.6	82/03/05	*/
+/*	raw_pup.c	4.7	82/03/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -60,7 +60,7 @@ COUNT(RPUP_OUTPUT);
 	/*
 	 * Insure proper source address is included.
 	 */
-	spup = (struct sockadrr_pup *)&(rp->rcb_socket->so_addr);
+	spup = (struct sockaddr_pup *)&(rp->rcb_socket->so_addr);
 	pup->pup_sport = spup->spup_addr;
 	/* for now, assume user generates PUP checksum. */
 
