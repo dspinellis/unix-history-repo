@@ -35,7 +35,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -552,7 +552,8 @@ forkshell(jp, n, mode)
 		} else if (mode == FORK_BG) {
 			ignoresig(SIGINT);
 			ignoresig(SIGQUIT);
-			if (jp == NULL || jp->nprocs == 0) {
+			if ((jp == NULL || jp->nprocs == 0) &&
+			    ! fd0_redirected_p ()) {
 				close(0);
 				if (open("/dev/null", O_RDONLY) != 0)
 					error("Can't open /dev/null");
@@ -562,7 +563,8 @@ forkshell(jp, n, mode)
 		if (mode == FORK_BG) {
 			ignoresig(SIGINT);
 			ignoresig(SIGQUIT);
-			if (jp == NULL || jp->nprocs == 0) {
+			if ((jp == NULL || jp->nprocs == 0) &&
+			    ! fd0_redirected_p ()) {
 				close(0);
 				if (open("/dev/null", O_RDONLY) != 0)
 					error("Can't open /dev/null");
