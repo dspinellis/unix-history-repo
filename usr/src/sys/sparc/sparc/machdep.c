@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  *
- * from: $Header: machdep.c,v 1.32 92/07/13 01:41:14 torek Exp $
+ * from: $Header: machdep.c,v 1.33 92/08/05 04:20:03 torek Exp $
  */
 
 #include "param.h"
@@ -325,12 +325,13 @@ sendsig(catcher, sig, mask, code)
 	register struct sigacts *psp = p->p_sigacts;
 	register struct sigframe *fp;
 	register struct trapframe *tf;
-	register int addr, oonstack;
+	register int addr, oonstack, oldsp, newsp;
 	struct sigframe sf;
 	extern char sigcode[], esigcode[];
 #define	szsigcode	(esigcode - sigcode)
 
 	tf = p->p_md.md_tf;
+	oldsp = tf->tf_out[6];
 	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
 	/*
 	 * Compute new user stack addresses, subtract off
@@ -342,7 +343,7 @@ sendsig(catcher, sig, mask, code)
 					 psp->ps_sigstk.ss_size);
 		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else
-		fp = (struct sigframe *)tf->tf_out[6];
+		fp = (struct sigframe *)oldsp;
 	fp = (struct sigframe *)((int)(fp - 1) & ~7);
 
 #ifdef DEBUG
@@ -367,7 +368,7 @@ sendsig(catcher, sig, mask, code)
 	 */
 	sf.sf_sc.sc_onstack = oonstack;
 	sf.sf_sc.sc_mask = mask;
-	sf.sf_sc.sc_sp = tf->tf_out[6];
+	sf.sf_sc.sc_sp = oldsp;
 	sf.sf_sc.sc_pc = tf->tf_pc;
 	sf.sf_sc.sc_npc = tf->tf_npc;
 	sf.sf_sc.sc_psr = tf->tf_psr;
@@ -378,9 +379,15 @@ sendsig(catcher, sig, mask, code)
 	 * Put the stack in a consistent state before we whack away
 	 * at it.  Note that write_user_windows may just dump the
 	 * registers into the pcb; we need them in the process's memory.
+	 * We also need to make sure that when we start the signal handler,
+	 * its %i6 (%fp), which is loaded from the newly allocated stack area,
+	 * joins seamlessly with the frame it was in when the signal occurred,
+	 * so that the debugger and _longjmp code can back up through it.
 	 */
+	newsp = (int)fp - sizeof(struct rwindow);
 	write_user_windows();
-	if (rwindow_save(p) || copyout((caddr_t)&sf, (caddr_t)fp, sizeof sf)) {
+	if (rwindow_save(p) || copyout((caddr_t)&sf, (caddr_t)fp, sizeof sf) ||
+	    suword(&((struct rwindow *)newsp)->rw_in[6], oldsp)) {
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -412,7 +419,7 @@ sendsig(catcher, sig, mask, code)
 	}
 	tf->tf_pc = addr;
 	tf->tf_npc = addr + 4;
-	tf->tf_out[6] = (int)fp - sizeof(struct rwindow);
+	tf->tf_out[6] = newsp;
 #ifdef DEBUG
 	if ((sigdebug & SDB_KSTACK) && p->p_pid == sigpid)
 		printf("sendsig: about to return to catcher\n");
