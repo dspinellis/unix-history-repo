@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.6 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -28,18 +28,19 @@ struct mfsnode {
 
 /* Prototypes for MFS operations on vnodes. */
 #define mfs_lookup ((int (*) __P(( \
-		struct vnode *vp, \
-		struct nameidata *ndp, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp))) mfs_badop)
 #define mfs_create ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+ 		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) mfs_badop)
 #define mfs_mknod ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct ucred *cred, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) mfs_badop)
 #define mfs_access ((int (*) __P(( \
 		struct vnode *vp, \
 		int mode, \
@@ -88,28 +89,35 @@ struct mfsnode {
 		off_t newoff, \
 		struct ucred *cred))) mfs_badop)
 #define mfs_remove ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+	        struct vnode *vp, \
+		struct componentname *cnp))) mfs_badop)
 #define mfs_link ((int (*) __P(( \
-		struct vnode *vp, \
-		struct nameidata *ndp, \
-		struct proc *p))) mfs_badop)
+		register struct vnode *vp, \
+		struct vnode *tdvp, \
+		struct componentname *cnp))) mfs_badop)
 #define mfs_rename ((int (*) __P(( \
-		struct nameidata *fndp, \
-		struct nameidata *tdnp, \
-		struct proc *p))) mfs_badop)
+		struct vnode *fdvp, \
+	        struct vnode *fvp, \
+		struct componentname *fcnp, \
+		struct vnode *tdvp, \
+		struct vnode *tvp, \
+		struct componentname *tcnp))) mfs_badop)
 #define mfs_mkdir ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct vattr *vap, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
+		struct vattr *vap))) mfs_badop)
 #define mfs_rmdir ((int (*) __P(( \
-		struct nameidata *ndp, \
-		struct proc *p))) mfs_badop)
+		struct vnode *dvp, \
+		struct vnode *vp, \
+		struct componentname *cnp))) mfs_badop)
 #define mfs_symlink ((int (*) __P(( \
-		struct nameidata *ndp, \
+		struct vnode *dvp, \
+		struct vnode **vpp, \
+		struct componentname *cnp, \
 		struct vattr *vap, \
-		char *target, \
-		struct proc *p))) mfs_badop)
+		char *target))) mfs_badop)
 #define mfs_readdir ((int (*) __P(( \
 		struct vnode *vp, \
 		struct uio *uio, \
@@ -120,7 +128,8 @@ struct mfsnode {
 		struct uio *uio, \
 		struct ucred *cred))) mfs_badop)
 #define mfs_abortop ((int (*) __P(( \
-		struct nameidata *ndp))) mfs_badop)
+		struct vnode *dvp, \
+		struct componentname *cnp))) mfs_badop)
 #define mfs_lock ((int (*) __P(( \
 		struct vnode *vp))) nullop)
 #define mfs_unlock ((int (*) __P(( \
