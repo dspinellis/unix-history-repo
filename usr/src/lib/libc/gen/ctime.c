@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	4.6 (Berkeley) %G%";
 #endif
 /*
  * This routine converts time as follows.
@@ -28,8 +28,8 @@ static char sccsid[] = "@(#)ctime.c	4.5 (Berkeley) %G%";
  * where tvec is produced by localtime
  * returns a ptr to a character string
  * that has the ascii time in the form
- *	Thu Jan 01 00:00:00 1970n0\\
- *	01234567890123456789012345
+ *	Thu Jan 01 00:00:00 1970\n\0
+ *	0123456789012345678901234 5
  *	0	  1	    2
  *
  * ctime(t) just calls localtime, then asctime.
@@ -126,14 +126,14 @@ char	*asctime();
 
 char *
 ctime(t)
-unsigned long *t;
+time_t *t;
 {
 	return(asctime(localtime(t)));
 }
 
 struct tm *
 localtime(tim)
-unsigned long *tim;
+time_t *tim;
 {
 	register int dayno;
 	register struct tm *ct;
@@ -141,12 +141,12 @@ unsigned long *tim;
 	register struct dayrules *dr;
 	register struct dstab *ds;
 	int year;
-	unsigned long copyt;
+	time_t copyt;
 	struct timeval curtime;
 	struct timezone zone;
 
 	gettimeofday(&curtime, &zone);
-	copyt = *tim - (unsigned long)zone.tz_minuteswest*60;
+	copyt = *tim - (time_t)zone.tz_minuteswest*60;
 	ct = gmtime(&copyt);
 	dayno = ct->tm_yday;
 	for (dr = dayrules; dr->dst_type >= 0; dr++)
@@ -203,7 +203,7 @@ register int d;
 
 struct tm *
 gmtime(tim)
-unsigned long *tim;
+time_t *tim;
 {
 	register int d0, d1;
 	long hms, day;
@@ -289,7 +289,7 @@ struct tm *t;
 	cp = ct_numb(cp, *--tp+100);
 	if (t->tm_year>=100) {
 		cp[1] = '2';
-		cp[2] = '0' + t->tm_year >= 200;
+		cp[2] = '0' + (t->tm_year-100) / 100;
 	}
 	cp += 2;
 	cp = ct_numb(cp, t->tm_year+100);
