@@ -1,8 +1,8 @@
 # include <stdio.h>
 # include <ctype.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	2.5	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.1	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -10,7 +10,7 @@ static char	SccsId[] = "@(#)parseaddr.c	2.5	%G%";
 **	Parses an address and breaks it up into three parts: a
 **	net to transmit the message on, the host to transmit it
 **	to, and a user on that host.  These are loaded into an
-**	addrq header with the values squirreled away if necessary.
+**	ADDRESS header with the values squirreled away if necessary.
 **	The "user" part may not be a real user; the process may
 **	just reoccur on that machine.  For example, on a machine
 **	with an arpanet connection, the address
@@ -49,10 +49,10 @@ static char	SccsId[] = "@(#)parseaddr.c	2.5	%G%";
 # define DELIMCHARS	"()<>@!.,;:\\\" \t\r\n"	/* word delimiters */
 # define SPACESUB	('.'|0200)		/* substitution for <lwsp> */
 
-addrq *
+ADDRESS *
 parse(addr, a, copyf)
 	char *addr;
-	register addrq *a;
+	register ADDRESS *a;
 	int copyf;
 {
 	register char *p;
@@ -64,6 +64,7 @@ parse(addr, a, copyf)
 	bool got_one;
 	extern char *prescan();
 	extern char *xalloc();
+	extern char *newstr();
 	char **pvp;
 
 	/*
@@ -105,29 +106,29 @@ parse(addr, a, copyf)
 				got_one = TRUE;
 
 				/* do mapping as appropriate */
-				if (flagset(P_MAP, t->p_flags))
+				if (bitset(P_MAP, t->p_flags))
 				{
 					*p = t->p_arg[0];
-					if (flagset(P_ONE, t->p_flags))
+					if (bitset(P_ONE, t->p_flags))
 						goto rescan;
 					else
 						continue;
 				}
 
 				/* arrange for q to point to it */
-				if (q != NULL && flagset(P_ONE, t->p_flags))
+				if (q != NULL && bitset(P_ONE, t->p_flags))
 				{
 					usrerr("multichar error");
 					ExitStat = EX_USAGE;
 					return (NULL);
 				}
-				if (q == NULL || flagset(P_HLAST, t->p_flags))
+				if (q == NULL || bitset(P_HLAST, t->p_flags))
 					q = p;
 			}
 			else
 			{
 				/* insist that host name is atomic */
-				if (flagset(P_HLAST, t->p_flags))
+				if (bitset(P_HLAST, t->p_flags))
 					q = NULL;
 				else
 					break;
@@ -167,27 +168,19 @@ parse(addr, a, copyf)
 	*/
 
 	if (a == NULL)
-		a = (addrq *) xalloc(sizeof *a);
+		a = (ADDRESS *) xalloc(sizeof *a);
 	if (copyf > 0)
-	{
-		p = xalloc((unsigned) strlen(addr) + 1);
-		strcpy(p, addr);
-		a->q_paddr = p;
-	}
+		a->q_paddr = newstr(addr);
 	else
 		a->q_paddr = addr;
 	a->q_mailer = &Mailer[t->p_mailer];
 
-	if (flagset(P_MOVE, t->p_flags))
+	if (bitset(P_MOVE, t->p_flags))
 	{
 		/* send the message to another host & retry */
 		a->q_host = t->p_arg;
 		if (copyf >= 0)
-		{
-			p = xalloc((unsigned) strlen(buf) + 1);
-			strcpy(p, buf);
-			a->q_user = p;
-		}
+			a->q_user = newstr(buf);
 		else
 			a->q_user = buf;
 	}
@@ -199,7 +192,7 @@ parse(addr, a, copyf)
 		*/
 
 		*q++ = '\0';
-		if (flagset(P_HLAST, t->p_flags))
+		if (bitset(P_HLAST, t->p_flags))
 		{
 			a->q_host = q;
 			a->q_user = buf;
@@ -228,7 +221,7 @@ parse(addr, a, copyf)
 				auto char buf2[MAXNAME];
 
 				strcpy(buf2, a->q_host);
-				if (!flagset(P_HST_UPPER, t->p_flags))
+				if (!bitset(P_HST_UPPER, t->p_flags))
 					makelower(buf2);
 				if (strcmp(*pvp++, buf2) == 0)
 				{
@@ -248,12 +241,8 @@ parse(addr, a, copyf)
 		/* make copies if specified */
 		if (copyf >= 0)
 		{
-			p = xalloc((unsigned) strlen(a->q_host) + 1);
-			strcpy(p, a->q_host);
-			a->q_host = p;
-			p = xalloc((unsigned) strlen(a->q_user) + 1);
-			strcpy(p, a->q_user);
-			a->q_user = p;
+			a->q_host = newstr(a->q_host);
+			a->q_user = newstr(a->q_user);
 		}
 	}
 
@@ -261,9 +250,9 @@ parse(addr, a, copyf)
 	**  Do UPPER->lower case mapping unless inhibited.
 	*/
 
-	if (!flagset(P_HST_UPPER, t->p_flags))
+	if (!bitset(P_HST_UPPER, t->p_flags))
 		makelower(a->q_host);
-	if (!flagset(P_USR_UPPER, t->p_flags))
+	if (!bitset(P_USR_UPPER, t->p_flags))
 		makelower(a->q_user);
 
 	/*
@@ -363,7 +352,7 @@ prescan(addr, buf, buflim, delim)
 	int brccnt;
 	register char c;
 	register char *q;
-	extern bool any();
+	extern char *index();
 
 	space = FALSE;
 	delimmode = TRUE;
@@ -458,13 +447,13 @@ prescan(addr, buf, buflim, delim)
 
 		if (delimmode && (c == 'a' || c == 'A') &&
 		    (p[0] == 't' || p[0] == 'T') &&
-		    (any(p[1], DELIMCHARS) || p[1] <= 040))
+		    (index(DELIMCHARS, p[1]) != NULL || p[1] <= 040))
 		{
 			c = '@';
 			p++;
 		}
 
-		if (delimmode = any(c, DELIMCHARS))
+		if (delimmode = (index(DELIMCHARS, c) != NULL))
 			space = FALSE;
 
 		/* if not a space, squirrel it away */

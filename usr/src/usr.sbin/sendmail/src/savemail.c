@@ -1,8 +1,8 @@
 # include <stdio.h>
 # include <pwd.h>
-# include "dlvrmail.h"
+# include "postbox.h"
 
-static char	SccsId[] = "@(#)savemail.c	2.2	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.1	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -32,7 +32,7 @@ savemail()
 	register FILE *xfile;
 	char buf[MAXLINE+1];
 	extern errhdr();
-	auto addrq to_addr;
+	auto ADDRESS to_addr;
 	extern struct passwd *getpwnam();
 	register char *p;
 	register int i;
@@ -40,7 +40,7 @@ savemail()
 	extern int errno;
 	extern char *ttypath();
 	extern char *ctime();
-	extern addrq *parse();
+	extern ADDRESS *parse();
 	static int exclusive;
 	extern char *DaemonName;
 
