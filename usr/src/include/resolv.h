@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)resolv.h	5.13 (Berkeley) %G%
+ *	@(#)resolv.h	5.14 (Berkeley) %G%
  */
 
 /*
@@ -58,13 +58,32 @@ struct state {
 extern struct state _res;
 
 #include <sys/cdefs.h>
+#include <stdio.h>
 
+/* Private routines shared between libc/net, named, nslookup and others. */
+#define	dn_skipname	__dn_skipname
+#define	fp_query	__fp_query
+#define	hostalias	__hostalias
+#define	putlong		__putlong
+#define	putshort	__putshort
+#define p_class		__p_class
+#define p_time		__p_time
+#define p_type		__p_type
 __BEGIN_DECLS
-int	dn_comp __P((const u_char *, u_char *, int, u_char **, u_char **));
-int	dn_expand __P((const u_char *, const u_char *, const u_char *,
+int	 __dn_skipname __P((const u_char *, const u_char *));
+void	 __fp_query __P((char *, FILE *));
+char	*__hostalias __P((const char *));
+void	 __putlong __P((u_long, u_char *));
+void	 __putshort __P((u_short, u_char *));
+char	*__p_class __P((int));
+char	*__p_time __P((u_long));
+char	*__p_type __P((int));
+
+int	 dn_comp __P((const u_char *, u_char *, int, u_char **, u_char **));
+int	 dn_expand __P((const u_char *, const u_char *, const u_char *,
 		u_char *, int));
-int	res_init __P((void));
-int	res_mkquery __P((int, const char *, int, int, const char *, int,
+int	 res_init __P((void));
+int	 res_mkquery __P((int, const char *, int, int, const char *, int,
 		const struct rrec *, char *, int));
-int	res_send __P((const char *, int, char *, int));
+int	 res_send __P((const char *, int, char *, int));
 __END_DECLS
