@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.9 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.7.1.1 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -8,7 +8,7 @@ static char *sccsid = "@(#)find.c	4.9 (Berkeley) %G%";
 #define EQ(x, y)	(strcmp(x, y)==0)
 
 int	Randlast;
-char	Pathname[200];
+char	Pathname[MAXPATHLEN+1];
 
 struct anode {
 	int (*F)();
@@ -240,6 +240,7 @@ struct anode *e3() { /* parse parens and predicates */
 		    s=='c' ? S_IFCHR :
 		    s=='f' ? S_IFREG :
 		    s=='l' ? S_IFLNK :
+		    s=='s' ? S_IFSOCK :
 		    0;
 		return(mk(type, (struct anode *)i, (struct anode *)0));
 	}
