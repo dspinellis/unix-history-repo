@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_cons.c	7.7 (Berkeley) %G%
+ *	@(#)tp_cons.c	7.8 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -229,7 +229,7 @@ tpcons_output(isop, m0, datalen, nochksum)
 	ENDDEBUG
 	if (m == MNULL)
 		return 0;
-	if (m->m_flags & M_PKTHDR == 0) {
+	if ((m->m_flags & M_PKTHDR) == 0) {
 		MGETHDR(m, M_DONTWAIT, MT_DATA);
 		if (m == 0)
 			return ENOBUFS;
