@@ -2,14 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vfork.2	4.1 (Berkeley) %G%
+.\"	@(#)vfork.2	5.1 (Berkeley) %G%
 .\"
-.TH VFORK 2V
+.TH VFORK 2 "2 July 1983"
 .UC 4
 .SH NAME
 vfork \- spawn new process in a virtual memory efficient way
 .SH SYNOPSIS
-.B vfork()
+.B pid = vfork()
+.br
+.B int pid;
 .SH DESCRIPTION
 .I Vfork
 can be used to create new processes without fully copying the address
@@ -17,13 +19,13 @@ space of the old process, which is horrendously inefficient in a paged
 environment.  It is useful when the purpose of
 .IR fork (2)
 would have been to create a new system context for an
-.I exec.
+.IR execve .
 .I Vfork
 differs from
 .I fork
 in that the child borrows the parent's memory and thread of
 control until a call to
-.IR exec (2)
+.IR execve (2)
 or an exit (either by a call to
 .IR exit (2)
 or abnormally.)
@@ -47,7 +49,7 @@ Be careful, also, to call
 rather than
 .I exit
 if you can't
-.I exec,
+.IR execve ,
 since
 .I exit
 will flush and close standard I/O channels, and thereby mess up the
@@ -57,26 +59,19 @@ parent processes standard I/O data structures.
 it is wrong to call
 .I exit
 since buffered data would then be flushed twice.)
-.PP
-Similarly when using the new signal mechanism of
-.IR sigset (3)
-mechanism be sure to call
-.I sigsys
-rather than
-.IR signal (2).
 .SH SEE ALSO
-fork(2), exec(2), sigsys(2), wait(2),
+fork(2), execve(2), sigvec(2), wait(2),
 .SH DIAGNOSTICS
 Same as for
 .IR fork .
 .SH BUGS
-This system call may be unnecessary if the system sharing mechanisms allow
-.I fork
-to be implemented more efficiently; users should not depend on the memory
+This system call will be eliminated when proper system sharing
+mechanisms are implemented. 
+Users should not depend on the memory
 sharing semantics of
 .I vfork
-as it could, in that case, be made synonymous to
-.I fork.
+as it will, in that case, be made synonymous to
+.IR fork .
 .PP
 To avoid a possible deadlock situation,
 processes which are children in the middle
@@ -87,5 +82,3 @@ output or
 .IR ioctl s
 are allowed
 and input attempts result in an end-of-file indication.
-.PP
-This call is peculiar to this version of UNIX.
