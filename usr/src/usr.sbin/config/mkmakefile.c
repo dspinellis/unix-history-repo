@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -158,8 +158,11 @@ makefile()
 		maxusers = up->u_min;
 	} else if (maxusers > up->u_max)
 		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
-	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d\n",
+	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d",
 	    zone, dst, maxusers);
+	if (hz > 0)
+		fprintf(ofp, " -DHZ=%d", hz);
+	fprintf(ofp, "\n");
 	for (op = mkopt; op; op = op->op_next)
 		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
 	if (debugging)
