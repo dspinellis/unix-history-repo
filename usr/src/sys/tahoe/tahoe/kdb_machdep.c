@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_machdep.c	7.8 (Berkeley) %G%
+ *	@(#)kdb_machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,6 +27,8 @@
 #define	KDBSPACE	1024	/* 1K of memory for breakpoint table */
 static	char kdbbuf[KDBSPACE];
 static	char *kdbend = kdbbuf;
+int	kdb_escape;		/* allow kdb to be entered on console escape */
+int	kdb_panic;		/* allow kdb to be entered on panic/trap */
 /*
  * Dynamically allocate space for the debugger.
  */
@@ -68,6 +70,17 @@ kdb_init()
 			    bootesym, strtab + strsize);
 	}
 	/*
+	 * Transfer control to the debugger when magic console sequence
+	 * is typed only if the system was booted with RB_KDB and the trap
+	 * enable flag (RB_NOYSNC) set.
+	 */
+	if ((boothowto&(RB_KDB|RB_NOSYNC)) == (RB_KDB|RB_NOSYNC))
+		kdb_escape = 1;
+
+	if (boothowto&RB_KDB)
+		kdb_panic = 1;
+
+	/*
 	 * If boot flags indicate, force entry into the debugger.
 	 */
 	if ((boothowto&(RB_HALT|RB_KDB)) == (RB_HALT|RB_KDB))
@@ -93,7 +106,7 @@ kdbrintr(c, tp)
 	 * system was booted with RB_KDB and the trap
 	 * enable flag (RB_NOYSNC) is set.
 	 */
-	if ((boothowto&(RB_KDB|RB_NOSYNC)) != (RB_KDB|RB_NOSYNC))
+	if (kdb_escape == 0)
 		return (0);
 	c &= 0177;			/* strip parity also */
 	if (!escape)
@@ -119,14 +132,14 @@ kdb_trap(apsl)
 	register int *apsl;
 {
 	register int *locr0, type;
-	int code, retval;
+	int code, retval, kstack = 0;
 	static int prevtype = -1, prevcode;
 	extern char *trap_type[];
 
 	/*
 	 * Allow panic if the debugger is not enabled.
 	 */
-	if ((boothowto&RB_KDB) == 0)
+	if (kdb_panic == 0)
 		return (0);
 	locr0 = apsl - PS;
 	type = locr0[TYPE];
@@ -167,7 +180,7 @@ kdb_trap(apsl)
 			return (1);
 		}
 		splx(s);
-		printf("(from kernel stack)\n");
+		kstack++;
 	}
 	getpcb(locr0);
 	/*
@@ -175,7 +188,7 @@ kdb_trap(apsl)
 	 * polling in the console device driver.
 	 */
 	cnpoll(kdbactive = 1);
-	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp);
+	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp, kstack);
 	cnpoll(kdbactive = 0);
 	setpcb(locr0);
 	/*
