@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.8 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -72,6 +72,11 @@ static	char *sccsid = "@(#)mkfs.c	2.7 (Berkeley) %G%";
  */
 #define	NBPI		2048
 
+/*
+ * Disks are assumed to rotate at 60HZ, unless otherwise specified.
+ */
+#define	DEFHZ		60
+
 #ifndef STANDALONE
 #include <stdio.h>
 #include <a.out.h>
@@ -123,7 +128,7 @@ main(argc, argv)
 	argc--, argv++;
 	time(&utime);
 	if (argc < 2) {
-		printf("usage: mkfs special size [ nsect ntrak bsize fsize cpg ]\n");
+		printf("usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps ]\n");
 		exit(1);
 	}
 	fsys = argv[0];
@@ -430,10 +435,21 @@ next:
 	fscs = (struct csum *)calloc(1, sblock.fs_cssize);
 	sblock.fs_magic = FS_MAGIC;
 	sblock.fs_rotdelay = ROTDELAY;
-	sblock.fs_minfree = MINFREE;
+	if (argc > 7) {
+		sblock.fs_minfree = atoi(argv[7]);
+		if (sblock.fs_minfree < 0 || sblock.fs_minfree > 99) {
+			printf("%s: bogus minfree reset to %d%%\n", argv[7],
+				MINFREE);
+			sblock.fs_minfree = MINFREE;
+		}
+	} else
+		sblock.fs_minfree = MINFREE;
 	sblock.fs_maxcontig = MAXCONTIG;
 	sblock.fs_maxbpg = MAXBLKPG(&sblock);
-	sblock.fs_rps = 60;	/* assume disk speed == 60 HZ */
+	if (argc > 8)
+		sblock.fs_rps = atoi(argv[8]);
+	else
+		sblock.fs_rps = DEFHZ;
 	sblock.fs_cgrotor = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
 	sblock.fs_cstotal.cs_nbfree = 0;
