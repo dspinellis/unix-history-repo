@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.38	83/06/10	*/
+/*	sys_generic.c	5.39	83/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
