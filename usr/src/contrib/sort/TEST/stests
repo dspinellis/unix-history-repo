@@ -1,4 +1,4 @@
-#	@(#)stests	5.3 (Berkeley) %G%
+#	@(#)stests	8.1 (Berkeley) %G%
 
 #Latest version.  My sort passes all tests because I wrote it.
 #We differ only on 25E and 25H.
