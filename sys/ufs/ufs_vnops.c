@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_vnops.c	7.64 (Berkeley) 5/16/91
- *	$Id: ufs_vnops.c,v 1.8 1993/11/25 01:38:40 wollman Exp $
+ *	$Id: ufs_vnops.c,v 1.9 1993/12/19 00:55:49 wollman Exp $
  */
 
 #include "param.h"
@@ -237,7 +237,7 @@ ufs_getattr(vp, vap, cred, p)
 	vap->va_size = ip->i_size;
 	vap->va_size_rsv = 0;
 #else
-	vap->va_qsize = ip->i_din.di_qsize;
+	vap->va_qsize.v = ip->i_din.di_qsize.v;
 #endif
 	vap->va_atime.tv_sec = ip->i_atime;
 	vap->va_atime.tv_usec = 0;
