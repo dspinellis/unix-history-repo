@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.10 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.11 (Berkeley) %G%
  */
 
 /*
@@ -565,7 +565,7 @@ vget(vp, lockflag)
 	}
 	if (vp->v_usecount == 0) {
 #ifdef DIAGNOSTIC
-		if (vp->v_freelist.tqe_prev == 0xdeadb)
+		if (vp->v_freelist.tqe_prev == (struct vnode **)0xdeadb)
 			panic("vget: race with getnewvnode");
 #endif
 		TAILQ_REMOVE(&vnode_free_list, vp, v_freelist);
