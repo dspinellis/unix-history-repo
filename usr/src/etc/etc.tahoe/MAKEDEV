@@ -1,5 +1,21 @@
-#! /bin/sh
-#	@(#)MAKEDEV	5.7	%G%
+#!/bin/sh -
+#
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)MAKEDEV	5.7 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -80,7 +96,7 @@ dk*)
 	dk*) name=dk; blk=1; chr=5;;
 	esac
 	case $unit in
-	0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f)
+	0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f|g|h)
 		case $unit in
 		a) u=10 ;;
 		b) u=11 ;;
@@ -88,6 +104,8 @@ dk*)
 		d) u=13 ;;
 		e) u=14 ;;
 		f) u=15 ;;
+		g) u=16 ;;
+		h) u=17 ;;
 		*) u=$unit ;;
 		esac
 
@@ -97,17 +115,21 @@ dk*)
 		/etc/mknod ${name}${unit}d	b $blk `expr $u '*' 8 + 3`
 		/etc/mknod ${name}${unit}e	b $blk `expr $u '*' 8 + 4`
 		/etc/mknod ${name}${unit}f	b $blk `expr $u '*' 8 + 5`
+		/etc/mknod ${name}${unit}g	b $blk `expr $u '*' 8 + 6`
+		/etc/mknod ${name}${unit}h	b $blk `expr $u '*' 8 + 7`
 		/etc/mknod r${name}${unit}a	c $chr `expr $u '*' 8 + 0`
 		/etc/mknod r${name}${unit}b	c $chr `expr $u '*' 8 + 1`
 		/etc/mknod r${name}${unit}c	c $chr `expr $u '*' 8 + 2`
 		/etc/mknod r${name}${unit}d	c $chr `expr $u '*' 8 + 3`
 		/etc/mknod r${name}${unit}e	c $chr `expr $u '*' 8 + 4`
 		/etc/mknod r${name}${unit}f	c $chr `expr $u '*' 8 + 5`
+		/etc/mknod r${name}${unit}g	c $chr `expr $u '*' 8 + 6`
+		/etc/mknod r${name}${unit}h	c $chr `expr $u '*' 8 + 7`
 
-		chmod 640 ${name}${unit}[a-f]
-		chgrp operator ${name}${unit}[a-f]
-		chmod 640 r${name}${unit}[a-f]
-		chgrp operator r${name}${unit}[a-f]
+		chmod 640 ${name}${unit}[a-h]
+		chgrp operator ${name}${unit}[a-h]
+		chmod 640 r${name}${unit}[a-h]
+		chgrp operator r${name}${unit}[a-h]
 		;;
 	*)
 		echo bad unit for disk in: $i
