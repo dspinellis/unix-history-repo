@@ -1,0 +1,16 @@
+Mat	at.c	/^main(argc, argv)$/
+cleanup	at.c	/^cleanup()$/
+copyenvironment	at.c	/^copyenvironment(spoolfile)$/
+countdays	at.c	/^countdays()$/
+getdateindex	at.c	/^getdateindex(date)$/
+getname	at.c	/^getname(uid)$/
+getnowtime	at.c	/^getnowtime(nowtime, attime)$/
+isleap	at.c	/^isleap(year)$/
+isnextyear	at.c	/^isnextyear()$/
+isprefix	at.c	/^isprefix(prefix, fullname)$/
+istomorrow	at.c	/^istomorrow()$/
+makeatfile	at.c	/^makeatfile(atfile,year,dayofyear,hour,minute)$/
+makedayofyear	at.c	/^makedayofyear(dateindex, av, ac)$/
+maketime	at.c	/^maketime(attime,ptr)$/
+printit	at.c	/^printit()$/
+usage	at.c	/^usage()$/

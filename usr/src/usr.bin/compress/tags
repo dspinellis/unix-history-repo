@@ -1,0 +1,8 @@
+Mcompress	compress.c	/^main(argc, argv)$/
+compress	compress.c	/^compress(in, out, bits)$/
+cwarn	compress.c	/^cwarn(fmt, va_alist)$/
+cwarnx	compress.c	/^cwarnx(fmt, va_alist)$/
+decompress	compress.c	/^decompress(in, out, bits)$/
+permission	compress.c	/^permission(fname)$/
+setfile	compress.c	/^setfile(name, fs)$/
+usage	compress.c	/^usage(iscompress)$/

@@ -1,0 +1,13 @@
+Matq	atq.c	/^main(argc,argv)$/
+countfiles	atq.c	/^countfiles(namelist)$/
+creation	atq.c	/^creation(d1, d2)$/
+filewanted	atq.c	/^filewanted(direntry)$/
+get_mth_day	atq.c	/^get_mth_day(year,dayofyear,month,day)$/
+isowner	atq.c	/^isowner(name,job)$/
+plastrun	atq.c	/^plastrun()$/
+powner	atq.c	/^powner(file)$/
+printdate	atq.c	/^printdate(filename)$/
+printjobname	atq.c	/^printjobname(file)$/
+printqueue	atq.c	/^printqueue(namelist)$/
+printrank	atq.c	/^printrank(n)$/
+usage	atq.c	/^usage() $/
