@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.5	6.4 (Berkeley) %G%
+.\"	@(#)intro.5	6.5 (Berkeley) %G%
 .\"
 .sh 1 "Character Output and Scrolling"
 .pp
@@ -29,6 +29,36 @@ actually needed (the old package used to scroll when the bottom right position
 was output a character).  As a precendent, it models the 
 .i xterm
 character output conventions.
+.sh 1 "Terminal State Handling"
+.pp
+The variable
+.Vn origtermio
+contains the terminal state of the terminal.  Certain historical routines 
+return information:
+.Fn baudrate , 
+.Fn erasechar ,
+.Fn killchar ,
+and 
+.Fn ospeed .
+These routines are obsolete and exist only for backward compatibility.  If
+you wish to use the information in the 
+.Vn origtermio
+structure, you should use the
+.I tsetattr(3) 
+routines.
+.sh 1 "Subwindows"
+.pp
+Subwindows are windows which do not have an independent text structure, 
+.i i.e. , 
+they are windows whose text is a subset of the text of a larger window: the
+.i parent 
+window.  One consequence of this is that changes to either the parent or the
+child window are destructive to the other, 
+.i i.e. , 
+a change to the subwindow is also a change to the parent window and a change 
+to the parent window in the region defined by the subwindow is implicitly a 
+change to the subwindow as well.
+Apart from this detail, subwindows function like any other window.
 
 
 
