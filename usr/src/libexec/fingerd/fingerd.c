@@ -22,83 +22,78 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fingerd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fingerd.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * Finger server.
- */
-#include <sys/types.h>
-#include <netinet/in.h>
 #include <stdio.h>
-#include <ctype.h>
 
-main(argc, argv)
-	int argc;
-	char *argv[];
+main()
 {
-	register char *sp;
-	char line[512];
-	struct sockaddr_in sin;
-	int i, p[2], pid, status;
-	FILE *fp;
-	char *av[4];
+	register FILE *fp;
+	register int ch;
+	register char *lp;
+	int p[2];
+#define	ENTRIES	50
+	char **ap, *av[ENTRIES + 1], line[1024], *strtok();
 
-	i = sizeof (sin);
-	if (getpeername(0, &sin, &i) < 0)
-		fatal(argv[0], "getpeername");
-	if (fgets(line, sizeof(line), stdin) == NULL)
+#ifdef LOGGING					/* unused for now */
+#include <netinet/in.h>
+	struct sockaddr_in sin;
+	int sval;
+
+	sval = sizeof(sin);
+	if (getpeername(0, &sin, &sval) < 0)
+		fatal("getpeername");
+#endif
+
+	if (!fgets(line, sizeof(line), stdin))
 		exit(1);
-	sp = line;
+
 	av[0] = "finger";
-	for (i = 1;;) {
-		while (isspace(*sp))
-			sp++;
-		if (!*sp)
+	for (lp = line, ap = &av[1];;) {
+		*ap = strtok(lp, " \t\r\n");
+		if (!*ap)
 			break;
-		if (*sp == '/' && (sp[1] == 'W' || sp[1] == 'w')) {
-			sp += 2;
-			av[i++] = "-l";
-		}
-		if (*sp && !isspace(*sp)) {
-			av[i++] = sp;
-			while (*sp && !isspace(*sp))
-				sp++;
-			*sp = '\0';
-		}
+		/* RFC742: "/[Ww]" == "-l" */
+		if ((*ap)[0] == '/' && ((*ap)[1] == 'W' || (*ap)[1] == 'w'))
+			*ap = "-l";
+		if (++ap == av + ENTRIES)
+			break;
+		lp = NULL;
 	}
-	av[i] = 0;
+
 	if (pipe(p) < 0)
-		fatal(argv[0], "pipe");
-	if ((pid = fork()) == 0) {
-		close(p[0]);
+		fatal("pipe");
+
+	switch(fork()) {
+	case 0:
+		(void)close(p[0]);
 		if (p[1] != 1) {
-			dup2(p[1], 1);
-			close(p[1]);
+			(void)dup2(p[1], 1);
+			(void)close(p[1]);
 		}
 		execv("/usr/ucb/finger", av);
 		_exit(1);
+	case -1:
+		fatal("fork");
 	}
-	if (pid == -1)
-		fatal(argv[0], "fork");
-	close(p[1]);
-	if ((fp = fdopen(p[0], "r")) == NULL)
-		fatal(argv[0], "fdopen");
-	while ((i = getc(fp)) != EOF) {
-		if (i == '\n')
+	(void)close(p[1]);
+	if (!(fp = fdopen(p[0], "r")))
+		fatal("fdopen");
+	while ((ch = getc(fp)) != EOF) {
+		if (ch == '\n')
 			putchar('\r');
-		putchar(i);
+		putchar(ch);
 	}
-	fclose(fp);
-	while ((i = wait(&status)) != pid && i != -1)
-		;
-	return(0);
+	exit(0);
 }
 
-fatal(prog, s)
-	char *prog, *s;
+fatal(msg)
+	char *msg;
 {
-	fprintf(stderr, "%s: ", prog);
-	perror(s);
+	extern int errno;
+	char *strerror();
+
+	fprintf(stderr, "fingerd: %s: %s\r\n", msg, strerror(errno));
 	exit(1);
 }
