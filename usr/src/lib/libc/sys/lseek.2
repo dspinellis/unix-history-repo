@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lseek.2	6.3 (Berkeley) %G%
+.\"	@(#)lseek.2	6.4 (Berkeley) %G%
 .\"
 .TH LSEEK 2 ""
 .UC 4
@@ -11,16 +11,8 @@ lseek \- move read/write pointer
 .SH SYNOPSIS
 .nf
 .ft B
-#include <sys/file.h>
-.PP
-.nf
-.ft B
-.ta 1.25i 1.6i 1.8i
-#define L_SET	0	/* set the seek pointer */
-#define L_INCR	1	/* increment the seek pointer */
-#define L_XTND	2	/* extend the file size */
-.PP
-.ft B
+#include <unistd.h>
+
 pos = lseek(d, offset, whence)
 off_t pos;
 int d;
@@ -39,18 +31,18 @@ as follows:
 .IP
 If
 .I whence
-is L_SET, the pointer is set to
+is SEEK_SET, the pointer is set to
 .I offset
 bytes.
 .IP
 If
 .I whence
-is L_INCR, the pointer is set to its current location plus
+is SEEK_CUR, the pointer is set to its current location plus
 .IR offset .
 .IP
 If
 .I whence
-is L_XTND, the pointer is set to the size of the
+is SEEK_END, the pointer is set to the size of the
 file plus
 .IR offset .
 .PP
