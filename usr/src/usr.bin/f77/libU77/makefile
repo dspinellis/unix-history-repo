@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.14	%G%
+#	@(#)makefile	1.15	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -59,6 +59,7 @@ SOURCES = \
 	signal_.c \
 	sleep_.c \
 	stat_.c \
+	symlnk_.c \
 	system_.c \
 	tapeio.c \
 	time_.c \
@@ -109,6 +110,7 @@ OBJECTS = \
 	signal_.o \
 	sleep_.o \
 	stat_.o \
+	symlnk_.o \
 	system_.o \
 	tapeio.o \
 	time_.o \
