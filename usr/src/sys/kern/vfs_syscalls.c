@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.78 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.78.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,16 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+
+#ifdef REF_DIAGNOSTIC
+#define CURCOUNT (curproc ? curproc->p_spare[0] : 0)
+#define CHECKPOINTREF int oldrefcount = CURCOUNT;
+#define CHECKREFS(F) if (oldrefcount != CURCOUNT) \
+	printf("REFCOUNT: %s, old=%d, new=%d\n", (F), oldrefcount, CURCOUNT);
+#else
+#define CHECKPOINTREF
+#define CHECKREFS(D)
+#endif
 
 /*
  * Virtual File System System Calls
@@ -629,6 +639,7 @@ mknod(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->fname, p);
@@ -670,6 +681,7 @@ out:
 		if (vp)
 			vrele(vp);
 	}
+	CHECKREFS("mknod");
 	return (error);
 }
 
@@ -728,6 +740,7 @@ link(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->target, p);
 	if (error = namei(&nd))
 		return (error);
@@ -764,6 +777,7 @@ out:
 	}
 out1:
 	vrele(vp);
+	CHECKREFS("link");
 	return (error);
 }
 
@@ -784,6 +798,7 @@ symlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	MALLOC(target, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (error = copyinstr(uap->target, target, MAXPATHLEN, (u_int *)0))
 		goto out;
@@ -806,6 +821,7 @@ symlink(p, uap, retval)
 	error = VOP_SYMLINK(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr, target);
 out:
 	FREE(target, M_NAMEI);
+	CHECKREFS("symlink");
 	return (error);
 }
 
@@ -824,6 +840,7 @@ unlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->name, p);
 	if (error = namei(&nd))
 		return (error);
@@ -852,6 +869,7 @@ out:
 			vput(nd.ni_dvp);
 		vput(vp);
 	}
+	CHECKREFS("unlink");
 	return (error);
 }
 
@@ -1023,6 +1041,7 @@ readlink(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	NDINIT(&nd, LOOKUP, NOFOLLOW | LOCKLEAF, UIO_USERSPACE, uap->name, p);
 	if (error = namei(&nd))
 		return (error);
@@ -1044,6 +1063,7 @@ readlink(p, uap, retval)
 out:
 	vput(vp);
 	*retval = uap->count - auio.uio_resid;
+	CHECKREFS("readlink");
 	return (error);
 }
 
@@ -1411,6 +1431,7 @@ rename(p, uap, retval)
 	struct nameidata fromnd, tond;
 	int error;
 
+	CHECKPOINTREF;
 	NDINIT(&fromnd, DELETE, WANTPARENT | SAVESTART, UIO_USERSPACE,
 		uap->from, p);
 	if (error = namei(&fromnd))
@@ -1483,6 +1504,7 @@ out1:
 	p->p_spare[1]--;
 	vrele(fromnd.ni_startdir);
 	FREE(fromnd.ni_cnd.cn_pnbuf, M_NAMEI);
+	CHECKREFS("rename");
 	if (error == -1)
 		return (0);
 	return (error);
@@ -1505,6 +1527,7 @@ mkdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	NDINIT(&nd, CREATE, LOCKPARENT, UIO_USERSPACE, uap->name, p);
 	if (error = namei(&nd))
 		return (error);
@@ -1516,6 +1539,7 @@ mkdir(p, uap, retval)
 		else
 			vput(nd.ni_dvp);
 		vrele(vp);
+		CHECKREFS("mkdir1");
 		return (EEXIST);
 	}
 	VATTR_NULL(&vattr);
@@ -1525,6 +1549,7 @@ mkdir(p, uap, retval)
 	error = VOP_MKDIR(nd.ni_dvp, &nd.ni_vp, &nd.ni_cnd, &vattr);
 	if (!error)
 		vput(nd.ni_vp);
+	CHECKREFS("mkdir2");
 	return (error);
 }
 
@@ -1543,6 +1568,7 @@ rmdir(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
+	CHECKPOINTREF;
 	NDINIT(&nd, DELETE, LOCKPARENT | LOCKLEAF, UIO_USERSPACE, uap->name, p);
 	if (error = namei(&nd))
 		return (error);
@@ -1576,6 +1602,7 @@ out:
 			vput(nd.ni_dvp);
 		vput(vp);
 	}
+	CHECKREFS("rmdir");
 	return (error);
 }
 
