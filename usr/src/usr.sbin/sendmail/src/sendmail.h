@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.22	%G%
+**	@(#)sendmail.h	3.23	%G%
 */
 
 
@@ -85,6 +85,8 @@ struct mailer
 	ADDRESS	*m_sendq;	/* list of addresses to send to */
 };
 
+typedef struct mailer	MAILER;
+
 # define M_FOPT		000001	/* mailer takes picky -f flag */
 # define M_ROPT		000002	/* mailer takes picky -r flag */
 # define M_QUIET	000004	/* don't print error on bad status */
@@ -102,13 +104,12 @@ struct mailer
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_NEEDDATE)
 
-extern struct mailer *Mailer[];
+extern MAILER *Mailer[];
 
 /* special mailer numbers */
 # define M_LOCAL	0	/* local mailer */
 # define M_PROG		1	/* program mailer */
-# define M_PRIVATE	2	/* user's private mailer */
-/* mailers from 3 on are arbitrary */
+/* mailers from 2 on are arbitrary */
 
 
 
@@ -184,12 +185,30 @@ extern struct rewrite	*RewriteRules[];
 struct symtab
 {
 	char		*s_name;	/* name to be entered */
-	char		s_type;		/* general type (unused) */
-	long		s_class;	/* bit-map of word classes */
+	char		s_type;		/* general type (see below) */
 	struct symtab	*s_next;	/* pointer to next in chain */
+	union
+	{
+		long	sv_class;	/* bit-map of word classes */
+		ADDRESS	*sv_addr;	/* pointer to address header */
+		MAILER	*sv_mailer;	/* pointer to mailer */
+		char	*sv_alias;	/* alias */
+	}	s_value;
 };
 
 typedef struct symtab	STAB;
+
+/* symbol types */
+# define ST_UNDEF	0	/* undefined type */
+# define ST_CLASS	1	/* class map */
+# define ST_ADDRESS	2	/* an address in parsed format */
+# define ST_MAILER	3	/* a mailer header */
+# define ST_ALIAS	4	/* an alias */
+
+# define s_class	s_value.sv_class
+# define s_addr		s_value.sv_addr
+# define s_mailer	s_value.sv_mailer
+# define s_alias	s_value.sv_alias
 
 extern STAB	*stab();
 
@@ -225,6 +244,7 @@ extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */
 extern long	CurTime;	/* time of this message */
 extern char	FromLine[];	/* a UNIX-style From line for this message */
+extern int	AliasLevel;	/* depth of aliasing */
 
 
 # include	<sysexits.h>

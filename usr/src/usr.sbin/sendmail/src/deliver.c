@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.17	%G%";
+static char SccsId[] = "@(#)deliver.c	3.18	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -32,7 +32,6 @@ deliver(to, editfcn)
 {
 	char *host;
 	char *user;
-	extern struct passwd *getpwnam();
 	char **pvp;
 	register char **mvp;
 	register char *p;
@@ -151,23 +150,19 @@ deliver(to, editfcn)
 		}
 
 		/*
-		**  Remove quote bits from user/host.
-		*/
-
-		for (p = user; (*p++ &= 0177) != '\0'; )
-			continue;
-		if (host != NULL)
-			for (p = host; (*p++ &= 0177) != '\0'; )
-				continue;
-		
-		/*
-		**  Strip quote bits from names if the mailer wants it.
+		**  Strip quote bits from names if the mailer is dumb
+		**	about them.
 		*/
 
 		if (bitset(M_STRIPQ, m->m_flags))
 		{
-			stripquotes(user);
-			stripquotes(host);
+			stripquotes(user, TRUE);
+			stripquotes(host, TRUE);
+		}
+		else
+		{
+			stripquotes(user, FALSE);
+			stripquotes(host, FALSE);
 		}
 
 		/*
@@ -254,11 +249,6 @@ deliver(to, editfcn)
 
 	if (editfcn == NULL)
 		editfcn = putmessage;
-	if (m == Mailer[M_PRIVATE])
-	{
-		(void) expand("$z/.mailer", buf, &buf[sizeof buf - 1]);
-		m->m_mailer = buf;
-	}
 	i = sendoff(m, pv, editfcn);
 
 	return (i);
@@ -599,6 +589,8 @@ pipesig()
 **		none.
 */
 
+# define MAXRCRSN	10
+
 sendto(list, copyf)
 	char *list;
 	int copyf;
@@ -651,7 +643,7 @@ recipient(a)
 {
 	register ADDRESS *q;
 	register struct mailer *m;
-	extern bool forward();
+	char buf[MAXNAME];
 
 	To = a->q_paddr;
 	m = Mailer[a->q_mailer];
@@ -660,6 +652,13 @@ recipient(a)
 	if (Debug)
 		printf("recipient(%s)\n", To);
 # endif DEBUG
+
+	/* break aliasing loops */
+	if (AliasLevel > MAXRCRSN)
+	{
+		usrerr("aliasing/forwarding loop broken");
+		return;
+	}
 
 	/*
 	**  Do sickly crude mapping for program mailing, etc.
@@ -672,27 +671,6 @@ recipient(a)
 			a->q_mailer = M_PROG;
 			m = Mailer[M_PROG];
 			a->q_user++;
-		}
-		else
-		{
-			register struct passwd *pw;
-
-			pw = getpwnam(a->q_user);
-			if (pw == NULL)
-				a->q_flags |= QBADADDR;
-			else
-			{
-				char xbuf[60];
-
-				a->q_home = newstr(pw->pw_dir);
-				define('z', a->q_home);
-				(void) expand("$z/.mailer", xbuf, &xbuf[sizeof xbuf - 1]);
-				if (access(xbuf, 1) == 0)
-				{
-					a->q_mailer = M_PRIVATE;
-					m = Mailer[M_PROG];
-				}
-			}
 		}
 	}
 
@@ -731,12 +709,37 @@ recipient(a)
 	a->q_next = NULL;
 
 	/*
-	**  See if the user wants hir mail forwarded.
-	**	`Forward' must do the forwarding recursively.
+	**  Alias the name.
 	*/
 
-	if (m == Mailer[M_LOCAL] && !NoAlias && forward(a))
-		a->q_flags |= QDONTSEND;
+	if (a->q_mailer == M_LOCAL)
+		alias(a);
+
+	/*
+	**  If the user is local and still being sent, verify that
+	**  the address is good.  If it is, try to forward.
+	**  If the address is already good, we have a forwarding
+	**  loop.  This can be broken by just sending directly to
+	**  the user (which is probably correct anyway).
+	*/
+
+	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == M_LOCAL &&
+	    a->q_home == NULL)
+	{
+		register struct passwd *pw;
+		extern struct passwd *getpwnam();
+		char buf[MAXNAME];
+
+		strcpy(buf, a->q_user);
+		stripquotes(buf, TRUE);
+		pw = getpwnam(buf);
+		if (pw == NULL)
+			a->q_flags |= QBADADDR;
+		else
+			a->q_home = newstr(pw->pw_dir);
+		if (strcmp(buf, a->q_user) == 0)
+			forward(a);
+	}
 
 	return;
 }
