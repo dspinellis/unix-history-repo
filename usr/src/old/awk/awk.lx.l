@@ -1,4 +1,4 @@
-/*	awk.lx.l	4.2	83/02/09	*/
+/*	awk.lx.l	4.3	84/12/08	*/
 
 %Start A str chc sc reg comment
 
@@ -8,13 +8,10 @@
 #undef	input	/* defeat lex */
 extern int	yylval;
 extern int	mustfld;
+extern int	ldbg;
 
 int	lineno	= 1;
-#ifdef	DEBUG
-#	define	RETURN(x)	{if (dbg) ptoken(x); return(x); }
-#else
-#	define	RETURN(x)	return(x)
-#endif
+#define	RETURN(x)	{if (ldbg) ptoken(x); return(x); }
 #define	CADD	cbuf[clen++]=yytext[0]; if(clen>=CBUFLEN-1) {yyerror("string too long", cbuf); BEGIN A;}
 #define	CBUFLEN	150
 char	cbuf[CBUFLEN];
@@ -172,4 +169,43 @@ input()
 startreg()
 {
 	BEGIN reg;
+}
+
+ptoken(n)
+{
+	extern struct tok {
+		char *tnm;
+		int yval;
+	} tok[];
+	extern char yytext[];
+	extern int yylval;
+
+	printf("lex:");
+	if (n < 128) {
+		printf(" %c\n",n);
+		return;
+	}
+	if (n <= 256 || n >= LASTTOKEN) {
+		printf("? %o\n",n);
+		return;
+	}
+	printf(" %s",tok[n-257].tnm);
+	switch (n) {
+
+	case RELOP:
+	case MATCHOP:
+	case ASGNOP:
+	case STRING:
+	case FIELD:
+	case VAR:
+	case NUMBER:
+	case FNCN:
+		printf(" (%s)", yytext);
+		break;
+
+	case CHAR:
+		printf(" (%o)", yylval);
+		break;
+	}
+	putchar('\n');
 }
