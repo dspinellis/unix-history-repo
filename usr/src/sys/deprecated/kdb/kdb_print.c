@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.9 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.10 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
 #undef ISP
 #include "../kdb/defs.h"
 #undef CTRL
+#include "ioctl.h"
 #include "tty.h"
 #include "vnode.h"
 #include "../ufs/inode.h"
@@ -41,7 +42,7 @@ printtrace(modif)
 	register ADDR argp, frame;
 	register struct nlist *sp;
 	int ntramp;
-	register struct  proc *p;
+	register struct proc *p;
 	extern struct proc *allproc;
 
 	if (cntflg==0)
@@ -195,15 +196,15 @@ printtrace(modif)
 
 		savemmap = mmap[0];
 		for (p = allproc; p; p = p->p_nxt) {
-			printf("%X pid %5d %5d %c", p, p->p_pid, p->p_ppid,
+			printf("%X pid %5d%c%5d %c ", p, p->p_pid,
+				p == (struct proc *)var[varchk('p')]? '*' : ' ',
+				p->p_ppid,
 				p->p_stat == SSLEEP ? 'S' :
 				p->p_stat == SRUN ? 'R':
 				p->p_stat == SIDL ? 'I':
 				p->p_stat == SSTOP ? 'T' : '?');
-			if (p->p_wchan) {
-				printf(" wait ");
+			if (p->p_wchan)
 				psymoff((long)p->p_wchan, ISYM, "");
-			}
 			if ((p->p_flag & SLOAD) && p->p_addr) {
 				int i;
 				*(int *)mmap = *(int *)p->p_addr;
