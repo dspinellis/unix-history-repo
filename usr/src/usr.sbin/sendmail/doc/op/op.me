@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.47 (Berkeley) %G%
+.\"	@(#)op.me	8.48 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.47
+Version 8.48
 .sp
 For Sendmail Version 8.7
 .)l
@@ -79,7 +79,7 @@ RFC822 (Internet Mail Format Protocol),
 RFC821 (Simple Mail Transport Protocol),
 RFC1123 (Internet Host Requirements),
 and
-RFC1425 (SMTP Service Extensions).
+RFC1651 (SMTP Service Extensions).
 However, since
 .i sendmail
 is designed to work in a wider world,
@@ -389,12 +389,15 @@ referenced using the
 .sm MAILER
 .b m4
 macro.
-Defined mailer types in this distribution are
+The mailer types that are known in this distribution are
 fax,
 local,
 smtp,
 uucp,
 and usenet.
+For example, to include support for the UUCP-based mailers,
+use
+.q MAILER(uucp) .
 .ip ostype
 Definitions describing various operating system environments
 (such as the location of support files).
@@ -2151,7 +2154,7 @@ but can be useful to note if your queue appears to be clogged.
 Lost locks (only if using lockf instead of flock).
 .lp
 Additionally,
-values above 64 are reserved for extremely verbose debuggging output.
+values above 64 are reserved for extremely verbose debugging output.
 No normal site would ever set these.
 .sh 2 "File Modes"
 .pp
@@ -3645,7 +3648,7 @@ apply to the mailers for the sender address
 rather than the usual recipient mailers.
 .nr ii 4n
 .ip a
-Run Extended SMTP (ESMTP) protocol (defined in RFCs 1425, 1426, and 1427).
+Run Extended SMTP (ESMTP) protocol (defined in RFCs 1651, 1652, and 1653).
 This flag defaults on if the SMTP greeting message includes the word
 .q ESMTP .
 .ip A
@@ -4546,6 +4549,7 @@ The units default to minutes.
 Send to me too,
 even if I am in an alias expansion.
 .ip MaxMessageSize=\fIN\fP
+[no short name]
 Specify the maximum message size
 to be advertised in the ESMTP EHLO response.
 Messages larger than this will be rejected.
@@ -4819,7 +4823,7 @@ and discarded.
 .ip SendMIMEErrors
 [j]
 If set, send error messages in MIME format
-(see RFC1341 and RFC1344 for details).
+(see RFC1521 and RFC1344 for details).
 .ip ServiceSwitchFile=\fIfilename\fP
 [no short name]
 If your host operating system has a service switch abstraction
@@ -6493,8 +6497,8 @@ doesn't always provide adequate concurrency limits.
 .sh 2 "Extended SMTP Support"
 .pp
 Version 8 includes both sending and receiving support for Extended
-SMTP support as defined by RFC 1425 (basic) and RFC 1427 (SIZE);
-and limited support for RFC 1426 (BODY).
+SMTP support as defined by RFC 1651 (basic) and RFC 1653 (SIZE);
+and limited support for RFC 1652 (BODY).
 .sh 2 "Eight-Bit Clean"
 .pp
 Previous versions of
@@ -7353,7 +7357,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.47
+.\"Version 8.48
 .\".ce 0
 .bp 2
 .rs
