@@ -1,4 +1,4 @@
-/*	@(#)disklabel.c	4.1 (Berkeley) %G%	*/
+/*	@(#)disklabel.c	4.2 (Berkeley) %G%	*/
 
 #include <disktab.h>
 #include <stdio.h>
@@ -12,7 +12,9 @@ getdiskbyname(name)
 	static struct disktab disk;
 	static char localbuf[100], *cp = localbuf;
 	register struct	disktab *dp = &disk;
-	char p, part[3], buf[BUFSIZ];
+	register struct partition *pp;
+	char p, psize[3], pbsize[3], pfsize[3];
+	char buf[BUFSIZ];
 
 	if (dgetent(buf, name) <= 0)
 		return ((struct disktab *)0);
@@ -29,10 +31,15 @@ getdiskbyname(name)
 	dp->d_rpm = dgetnum("rm");
 	if (dp->d_rpm < 0)
 		dp->d_rpm = 3600;
-	strcpy(part, "px");
+	strcpy(psize, "px");
+	strcpy(pbsize, "bx");
+	strcpy(pfsize, "fx");
 	for (p = 'a'; p < 'i'; p++) {
-		part[1] = p;
-		dp->d_partitions[p - 'a'] = dgetnum(part);
+		psize[1] = pbsize[1] = pfsize[1] = p;
+		pp = &dp->d_partitions[p - 'a'];
+		pp->p_size = dgetnum(psize);
+		pp->p_bsize = dgetnum(pbsize);
+		pp->p_fsize = dgetnum(pfsize);
 	}
 	return (dp);
 }
