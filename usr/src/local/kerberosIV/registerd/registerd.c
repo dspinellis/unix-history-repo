@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)registerd.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)registerd.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -29,8 +29,9 @@ static char sccsid[] = "@(#)registerd.c	1.6 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <stdio.h>
 #include <syslog.h>
-#include <krb.h>
-#include <krb_db.h>
+#include <kerberosIV/des.h>
+#include <kerberosIV/krb.h>
+#include <kerberosIV/krb_db.h>
 #include "pathnames.h"
 #include "register_proto.h"
 
