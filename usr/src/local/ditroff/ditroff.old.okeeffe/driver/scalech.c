@@ -1,4 +1,4 @@
-/*	scalech.c	(Berkeley)	1.6	85/02/01
+/*	scalech.c	(Berkeley)	1.6	85/02/04
  *
  * Font scaling for character format fonts.
  *
