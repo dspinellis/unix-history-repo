@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.9 (Berkeley) %G%
+#	@(#)daily	5.10 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -38,7 +38,8 @@ if [ -d /var/rwho ] ; then
 fi
 
 cd /tmp
-find /	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
+find /  ! -fstype local -a -prune -o \
+	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
 		-a -atime +3 -exec rm -f {} \;
 msgs -c
