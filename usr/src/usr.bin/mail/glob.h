@@ -4,7 +4,7 @@
  */
 
 /*
- * Sccs Id = "@(#)glob.h	1.3 %G%";
+ * Sccs Id = "@(#)glob.h	1.4 %G%";
  */
 
 int	msgCount;			/* Count of messages read in */
@@ -37,7 +37,7 @@ int	uid;				/* The invoker's user id */
 char	mailrc[PATHSIZE];		/* Name of startup file */
 char	deadletter[PATHSIZE];		/* Name of #/dead.letter */
 char	homedir[PATHSIZE];		/* Path name of home directory */
-char	myname[9];			/* My login id */
+char	myname[PATHSIZE];		/* My login id */
 off_t	mailsize;			/* Size of system mailbox */
 int	lexnumber;			/* Number of TNUMBER from scan() */
 char	lexstring[STRINGLEN];		/* String from TSTRING, scan() */
