@@ -11,9 +11,9 @@
  * %sccs.include.redist.c%
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
- * from: hp300/hp300/clock.c	7.17 (Berkeley) 12/27/92
+ * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.5 (Berkeley) %G%
+ *	@(#)clock.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
