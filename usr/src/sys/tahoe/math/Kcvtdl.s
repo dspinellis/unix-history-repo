@@ -1,12 +1,16 @@
+/*	Kcvtdl.s	1.2	86/01/03	*/
 
-#include	"fp.h"
-#include	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
+
  
 	.text
 	.globl	_Kcvtdl
 	.globl	_Kcvtdu
 _Kcvtdu:
-_Kcvtdl:	.word	0x003c		# we use r2,r3,r4,r5
+_Kcvtdl:
+	.word	R5|R4|R3|R2
 
  #
  #Some initializations:

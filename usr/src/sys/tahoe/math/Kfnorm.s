@@ -1,11 +1,11 @@
+/*	Kfnorm.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
-
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
 	.text
-	.globl	Kfnorm		# Kfnorm(hfs)
-Kfnorm:	.word	0x007c
+ENTRY(Kfnorm, R6|R5|R4|R3|R2)
 				# clrl	r1
 	movl	r0,r4		# copy to temporary.
 	jneq	inr0
@@ -58,4 +58,3 @@ retzero:
 	clrl	r0
 	clrl	r1
 	ret
-	

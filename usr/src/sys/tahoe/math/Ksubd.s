@@ -1,11 +1,17 @@
-	.data
+/*	Ksubd.s	1.2	86/01/03	*/
+
+#include "SYS.h"
+
+/*
+ * double 
+ * Ksubd(d1,d2)
+ * double d1,d2;
+ * {
+ * 	return(d1+(-d2));
+ * }
+ */
 	.text
-LL0:	.align	1
-	.globl	_Ksubd
-	.set	L12,0x0
-	.data
-	.text
-_Ksubd:	.word	L12	# _Ksubd(acc_most,acc_least,op_most,op_least,hfs)
+ENTRY(Ksubd, 0)
 	tstl	4(fp)
 	jneq	next
 	movl	16(fp),r1
@@ -27,13 +33,3 @@ doit:
 	pushl	4(fp)		# acc
 	callf	$24,_Kaddd
 	ret
-
-
-/*
- * double 
- * subd(d1,d2)
- * double d1,d2;
- * {
- * 	return(d1+(-d2));
- * }
-*/

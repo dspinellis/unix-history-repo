@@ -1,56 +1,15 @@
-	.data
-	.comm	_errno,4
-	.align	2
-_log2:	.long	0x40317217, 0xf7d1cf7a # .double 0.69314718055994531
-	.align	2
-_ln10:	.long	0x41135d8d, 0xddaaa8ac # .double 2.3025850929940457
-	.align	2
-_sqrto2:
-	.long	0x403504f3, 0x33f9de65 # .double 0.70710678118654753
-	.align	2
-_p0:	.long	0xc154114d, 0xeb0ba468 # .double -3.31355617479
-	.align	2
-_p1:	.long	0x40654226, 0x56bd0c4c # .double 0.89554061525
-	.align	2
-_q0:	.long	0xc0d4114c, 0xfdc7df02 # .double -1.65677797691
-	.align	2
-_q1:	.long	0x40800000, 0x00000000 # .double 1
+/*	Klogf.s	1.2	86/01/03	*/
+
+#include "SYS.h"
+
 	.text
-LL0:	.align	1
-	.globl	_Klogf
-	.data
-	.align	2
-L54:	.long	0xfffffffe, 0xfffffffe # .double -1.7014117331926443e+38
-	.text
-	.data
-	.align	2
-L57:	.long	0x40000000, 0x00000000 # .double 0.5
-	.text
-	.data
-	.align	2
-L58:	.long	0x41000000, 0x00000000 # .double 2
-	.text
-	.data
-	.align	2
-L60:	.long	0x41000000, 0x00000000 # .double 2
-	.text
-	.data
-	.align	2
-L61:	.long	0x40800000, 0x00000000 # .double 1
-	.align	2
-L62:	.long	0x40800000, 0x00000000 # .double 1
-	.text
-	.set	L49,0x3c		# Using registers 2,3,4,5
-	.data
-	.text
-_Klogf:	.word	L49
+ENTRY(Klogf, R5|R4|R3|R2)
 	subl3	$88,fp,sp
 	clrl	8(fp)
 	tstl	4(fp)
 	jgtr	L53
-	movl	$33,_errno
-	movl	L54+4,r1
-	movl	L54,r0
+	movl	small+4,r1
+	movl	small,r0
 	ret
 L53:	pushl	20(fp)			# hfs
 	subl3	$88,fp,-(sp)		# &exp
@@ -63,7 +22,7 @@ L53:	pushl	20(fp)			# hfs
 	jbr	L55
 L2000001:
 	pushl	20(fp)			# hfs
-	ldd	L58			# 2.0
+	ldd	two			# 2.0
 	pushd
 	ldd	-60(fp)			# x
 	pushd	
@@ -71,21 +30,21 @@ L2000001:
 	ldd	r0
 	std	-60(fp)
 	subl2	$1,-88(fp)
-L55:	cmpd2	-60(fp),L57
+L55:	cmpd2	-60(fp),half
 	jlss	L2000001
 	cmpd2	-60(fp),_sqrto2
 	jgeq	L59
 	pushl	20(fp)			# hfs
 	ldd	-60(fp)			# x
 	pushd
-	ldd	L60			# 2.0
+	ldd	two			# 2.0
 	pushd
 	callf	$24,_Kmuld
 	ldd	r0
 	std	-60(fp)
 	subl2	$1,-88(fp)
 L59:	pushl	20(fp)			# hfs
-	ldd	L61			# 1.0
+	ldd	one			# 1.0
 	pushd
 	ldd	-60(fp)			# x
 	pushd
@@ -93,7 +52,7 @@ L59:	pushl	20(fp)			# hfs
 	ldd	r0
 	std	r2
 	pushl	20(fp)			# hfs
-	ldd	L62			# 1.0
+	ldd	one			# 1.0
 	pushd
 	ldd	-60(fp)			# x
 	pushd
@@ -187,3 +146,17 @@ L59:	pushl	20(fp)			# hfs
 	stf	r0
 	clrl	r1
 	ret
+
+	.data
+	.align	2
+_log2:	.long	0x40317217, 0xf7d1cf7a # .double 0.69314718055994531
+_ln10:	.long	0x41135d8d, 0xddaaa8ac # .double 2.3025850929940457
+_sqrto2:.long	0x403504f3, 0x33f9de65 # .double 0.70710678118654753
+_p0:	.long	0xc154114d, 0xeb0ba468 # .double -3.31355617479
+_p1:	.long	0x40654226, 0x56bd0c4c # .double 0.89554061525
+_q0:	.long	0xc0d4114c, 0xfdc7df02 # .double -1.65677797691
+_q1:	.long	0x40800000, 0x00000000 # .double 1
+small:	.long	0xfffffffe, 0xfffffffe # .double -1.7014117331926443e+38
+half:	.long	0x40000000, 0x00000000 # .double 0.5
+two:	.long	0x41000000, 0x00000000 # .double 2
+one:	.long	0x40800000, 0x00000000 # .double 1

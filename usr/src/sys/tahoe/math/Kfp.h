@@ -1,4 +1,8 @@
-/* opcodes to be simulated by kernel software: */
+/*	Kfp.h	1.2	86/01/03	*/
+
+/*
+ * Opcodes to be emulated by kernel software.
+ */
 #define	CVLF	0x76
 #define	CVLD	0x77
 #define	CVFL	0x86
@@ -19,7 +23,6 @@
 #define	LOGF	0x35
 #define	SQRTF	0x45
 #define	EXPF	0x55
-
 
 /* HFS bits:	*/
 #define HFS_UNDF	0x008	/* float underflow */

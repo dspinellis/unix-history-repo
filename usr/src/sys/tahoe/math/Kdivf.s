@@ -1,14 +1,13 @@
+/*	Kdivf.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
-
- 			# here we count from 0 not from 1 as in fp.h
-#define	HIDDEN	23	
+#define	HIDDEN	23	 	# here we count from 0 not from 1 as in fp.h
 
 	.text
-	.globl	_Kdivf	    # _Kdivf(acc_most,acc_least,op_most,op_least,hfs)
-_Kdivf:	.word	0xffc
+ENTRY(Kdivf, R9|R8|R7|R6|R5|R4|R3|R2)
 	clrl	r1
 	clrl	r3		# r3 - sign: 0 for positive,1 for negative.
 	movl	4(fp),r0
@@ -53,7 +52,7 @@ _Kdivf:	.word	0xffc
 	
 over:
 	pushl	20(fp)
-	callf	$8,Kfnorm	# we can use fnorm because we have data
+	callf	$8,_Kfnorm	# we can use fnorm because we have data
 				# at r1 as well.(sfnorm takes care only 
 				# of r0).
 sign:

@@ -1,14 +1,16 @@
+/*	Kmulf.s	1.2	86/01/03	*/
 
-#include 	"fp.h"
-#include 	"fp_in_krnl.h"
+#include "fp.h"
+#include "Kfp.h"
+#include "SYS.h"
 
+#define	HIDDEN	23	/* here we count from 0 not from 1 as in fp.h */
 
- 			/* here we count from 0 not from 1 as in fp.h */
-#define	HIDDEN	23	
-
+/* 
+ * _Kmulf(acc_most,acc_least,op_most,op_least,hfs)
+ */
 	.text
-	.globl	_Kmulf	# _Kmulf(acc_most,acc_least,op_most,op_least,hfs)
-_Kmulf:	.word	0xffc
+ENTRY(Kmulf, R5|R4|R3|R2)
 	clrl	r3		/* r3 - sign: 0 for positive,1 for negative. */
 	movl	4(fp),r0
 	jgeq	1f
