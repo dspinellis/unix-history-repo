@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.18	82/02/27	*/
+/*	ufs_vnops.c	4.19	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -72,7 +72,7 @@ lstat()
 	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return;
-	stat1(ip, uap->sb, (off_t)0);
+	stat1(ip, uap->sb);
 	iput(ip);
 }
 

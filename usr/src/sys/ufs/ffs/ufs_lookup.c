@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.11	82/03/06	*/
+/*	ufs_lookup.c	4.12	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,7 +32,6 @@ namei(func, flag, follow)
 	struct inode *pdp;
 	int i, nlink;
 	dev_t d;
-	ino_t ino;
 	off_t eo;
 
 	/*
@@ -180,7 +179,6 @@ dirloop:
 			}
 		}
 		d = dp->i_dev;
-		ino = dp->i_number;
 		irele(dp);
 		pdp = dp;
 		dp = iget(d, u.u_dent.d_ino);
