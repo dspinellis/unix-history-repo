@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)z.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)z.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -55,7 +55,7 @@ z(inputt, errnum)
 			if (rol(inputt, errnum))
 				return;
 		}
-	if (start == NULL) {
+	if (top == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		ungetc('\n', inputt);
@@ -72,6 +72,12 @@ z(inputt, errnum)
 		}
 	} else
 		start = End;
+	if (start == NULL) {
+		strcpy(help_msg, "bad address");
+		*errnum = -1;
+		ungetc('\n', inputt);
+		return;
+	}
 	start_default = End_default = 0;
 
 	current = start;
