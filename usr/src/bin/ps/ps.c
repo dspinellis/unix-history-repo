@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.30 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.31 (Berkeley) %G%";
 #endif
 
 /*
@@ -150,14 +150,13 @@ int	npr;
 
 int	cmdstart;
 int	twidth;
-struct winsize win;
+struct	winsize win;
 char	*kmemf, *memf, *swapf, *nlistf;
 int	kmem, mem, swap = -1;
 int	rawcpu, sumcpu;
 
 int	pcbpf;
 int	argaddr;
-extern	char _sobuf[];
 
 #define	pgtok(a)	((a)/(1024/NBPG))
 
@@ -596,8 +595,8 @@ maybetty()
 	case 'r':
 		cp++;
 #define is(a,b) cp[0] == 'a' && cp[1] == 'b'
-		if (is(h,p) || is(r,a) || is(u,p) || is(r,k) 
-		    || is(r,m) || is(m,t)) {
+		if (is(h,p) || is(r,a) || is(u,p) || is(h,k) 
+		    || is(r,b) || is(m,t)) {
 			cp += 2;
 			if (isdigit(*cp) && cp[2] == 0)
 				return;
@@ -614,6 +613,13 @@ trymem:
 
 	case 'n':
 		if (!strcmp(cp, "null"))
+			return;
+		if (!strncmp(cp, "nrmt", 4))
+			return;
+		break;
+
+	case 'p':
+		if (cp[1] && cp[1] == 't' && cp[2] == 'y')
 			return;
 		break;
 
