@@ -64,6 +64,7 @@ sys/tty_pty.c		optional pty
 sys/tty_subr.c		standard
 sys/tty_tb.c		optional tb device-driver
 sys/tty_tty.c		standard
+sys/tty_xxx.c		standard
 sys/ufs_alloc.c		standard
 sys/ufs_bio.c		standard
 sys/ufs_bmap.c		standard
