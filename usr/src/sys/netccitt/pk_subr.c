@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_subr.c	7.9 (Berkeley) %G%
+ *	@(#)pk_subr.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,6 +32,8 @@
 int     pk_sendspace = 1024 * 2 + 8;
 int     pk_recvspace = 1024 * 2 + 8;
 
+struct pklcd_q pklcd_q = {&pklcd_q, &pklcd_q};
+
 /* 
  *  Attach X.25 protocol to socket, allocate logical channel descripter
  *  and buffer space, and enter LISTEN state if we are to accept
@@ -46,9 +48,10 @@ struct socket *so;
 	register struct pklcd *lcp;
 	register int error = ENOBUFS;
 
-	MALLOC(lcp, struct pklcd *, sizeof(*lcp), M_PCB, M_NOWAIT);
+	MALLOC(lcp, struct pklcd *, sizeof (*lcp), M_PCB, M_NOWAIT);
 	if (lcp) {
-		bzero((caddr_t)lcp, sizeof(*lcp));
+		bzero ((caddr_t)lcp, sizeof (*lcp));
+		insque (&lcp -> lcd_q, &pklcd_q);
 		if (so) {
 			error = soreserve (so, pk_sendspace, pk_recvspace);
 			lcp -> lcd_so = so;
@@ -195,7 +198,7 @@ int restart_cause;
 				pk_flush (lcp);
 				lcp -> lcd_state = READY;
 				if (lcp -> lcd_upper)
-					lcp -> lcd_upper(lcp, 0);
+					lcp -> lcd_upper (lcp, 0);
 			}
 		}
 
@@ -206,8 +209,8 @@ int restart_cause;
 	lcp = pkp -> pk_chan[0];
 	m = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESTART);
 	m -> m_len += 2;
-	mtod(m, struct x25_packet *) -> packet_data = 0;	/* DTE only */
-	mtod(m, octet *)[4]  = restart_cause;
+	mtod (m, struct x25_packet *) -> packet_data = 0;	/* DTE only */
+	mtod (m, octet *)[4]  = restart_cause;
 	pk_output (lcp);
 }
 
@@ -225,8 +228,9 @@ register struct pklcd *lcp;
 	if (lcp -> lcd_lcn > 0)
 		lcp -> lcd_pkp -> pk_chan[lcp -> lcd_lcn] = NULL;
 
-	pk_flush(lcp);
-	free((caddr_t)lcp, M_PCB);
+	pk_flush (lcp);
+	remque (&lcp -> lcd_q);
+	free ((caddr_t)lcp, M_PCB);
 }
 
 
@@ -310,7 +314,7 @@ register struct pklcd *lcp;
  * Include a listening control block for the benefit of other protocols.
  */
 pk_protolisten (spi, spilen, callee)
-int (*callee)();
+int (*callee) ();
 {
 	register struct pklcd *lcp = pk_attach ((struct socket *)0);
 	register struct mbuf *nam;
@@ -318,8 +322,8 @@ int (*callee)();
 	int error = ENOBUFS;
 
 	if (lcp) {
-		if (nam = m_getclr(MT_SONAME, M_DONTWAIT)) {
-			sa = mtod(nam, struct sockaddr_x25 *);
+		if (nam = m_getclr (MT_SONAME, M_DONTWAIT)) {
+			sa = mtod (nam, struct sockaddr_x25 *);
 			sa -> x25_family = AF_CCITT;
 			sa -> x25_len = nam -> m_len = sizeof (*sa);
 			sa -> x25_udlen = spilen;
@@ -330,7 +334,7 @@ int (*callee)();
 			(void) m_free (nam);
 		}
 		if (error)
-			pk_freelcd(lcp);
+			pk_freelcd (lcp);
 	}
 	return error; /* Hopefully Zero !*/
 }
@@ -400,7 +404,7 @@ register struct sockaddr_x25 *sa;
 		soisconnecting (lcp -> lcd_so);
 	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL);
 	pk_callrequest (lcp, lcp -> lcd_ceaddr, pkp -> pk_xcp);
-	return (*pkp -> pk_start)(lcp);
+	return (*pkp -> pk_start) (lcp);
 }
 
 /* 
@@ -415,7 +419,7 @@ register struct x25config *xcp;
 {
 	register struct x25_calladdr *a;
 	register struct mbuf *m = lcp -> lcd_template;
-	register struct x25_packet *xp = mtod(m, struct x25_packet *);
+	register struct x25_packet *xp = mtod (m, struct x25_packet *);
 	unsigned posn = 0;
 	octet *cp;
 
@@ -432,13 +436,13 @@ register struct x25config *xcp;
 	m -> m_len += cp - (octet *) a;
 
 	if (lcp -> lcd_facilities) {
-		m -> m_next = lcp -> lcd_facilities;
+		m -> m_pkthdr.len += 
+			(m -> m_next = lcp -> lcd_facilities) -> m_len;
 		lcp -> lcd_facilities = 0;
-		m -> m_pkthdr.len += m -> m_next -> m_len;
 	} else
 		build_facilities (m, sa, (int)xcp -> xc_type);
 
-	m_copyback(m, m -> m_pkthdr.len, sa -> x25_udlen, sa -> x25_udata);
+	m_copyback (m, m -> m_pkthdr.len, sa -> x25_udlen, sa -> x25_udata);
 #ifdef ANDREW
 	printf ("call: ");
 	for (cp = mtod (m, octet *), posn = 0; posn < m -> m_len; ++posn)
@@ -447,6 +451,7 @@ register struct x25config *xcp;
 #endif
 }
 
+static
 build_facilities (m, sa, type)
 register struct mbuf *m;
 struct sockaddr_x25 *sa;
@@ -455,7 +460,7 @@ struct sockaddr_x25 *sa;
 	register octet *fcp;
 	register int revcharge;
 
-	cp = mtod(m, octet *) + m -> m_len;
+	cp = mtod (m, octet *) + m -> m_len;
 	fcp = cp + 1;
 	revcharge = sa -> x25_opts.op_flags & X25_REVERSE_CHARGE ? 1 : 0;
 	/*
@@ -526,8 +531,8 @@ register struct pklcd *lcp;
 	register struct mbuf *m = pk_template (lcp -> lcd_lcn, X25_CLEAR);
 
 	m -> m_len += 2;
-	mtod(m, struct x25_packet *) -> packet_data = 0;
-	mtod(m, octet *)[4] = diagnostic;
+	mtod (m, struct x25_packet *) -> packet_data = 0;
+	mtod (m, octet *)[4] = diagnostic;
 	if (lcp -> lcd_facilities) {
 		m -> m_next = lcp -> lcd_facilities;
 		m -> m_pkthdr.len += m -> m_next -> m_len;
@@ -538,14 +543,31 @@ register struct pklcd *lcp;
 	else {
 		struct socket *so = lcp -> lcd_so;
 		struct sockbuf *sb = so ? & so -> so_snd : & lcp -> lcd_sb;
-		sbappendrecord(sb, m);
+		sbappendrecord (sb, m);
 	}
 	pk_output (lcp);
 
 }
 
+/*
+ * This procedure generates RNR's or RR's to inhibit or enable
+ * inward data flow, if the current state changes (blocked ==> open or
+ * vice versa), or if forced to generate one.  One forces RNR's to ack data.  
+ */
+pk_flowcontrol (lcp, inhibit, forced)
+register struct pklcd *lcp;
+{
+	inhibit = (inhibit != 0);
+	if (lcp == 0 || lcp -> lcd_state != DATA_TRANSFER ||
+	    (forced == 0 && lcp -> lcd_rxrnr_condition == inhibit))
+		return;
+	lcp -> lcd_rxrnr_condition = inhibit;
+	lcp -> lcd_template = pk_template (lcp -> lcd_lcn, inhibit ? RNR : RR);
+	pk_output (lcp);
+}
+
 /* 
- *  This procedure sends a RESET request packet. It re-intializes 
+ *  This procedure sends a RESET request packet. It re-intializes
  *  virtual circuit.
  */
 
@@ -573,8 +595,8 @@ register struct pklcd *lcp;
 		lcp -> lcd_last_transmitted_pr = 0;
 	m = lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_RESET);
 	m -> m_len += 2;
-	mtod(m, struct x25_packet *) -> packet_data = 0;
-	mtod(m, octet *)[4] = diagnostic;
+	mtod (m, struct x25_packet *) -> packet_data = 0;
+	mtod (m, octet *)[4] = diagnostic;
 	pk_output (lcp);
 
 }
@@ -593,16 +615,19 @@ register struct pklcd *lcp;
 		m_freem (lcp -> lcd_template);
 
 	if (lcp -> lcd_cps) {
-		m_freem(lcp -> lcd_cps);
+		m_freem (lcp -> lcd_cps);
 		lcp -> lcd_cps = 0;
 	}
-	if (so = lcp -> lcd_so)  {
+	if (lcp -> lcd_facilities) {
+		m_freem (lcp -> lcd_facilities);
+		lcp -> lcd_facilities = 0;
+	}
+	if (so = lcp -> lcd_so) {
 		sbflush (&so -> so_rcv);
 		sbflush (&so -> so_snd);
 	} else 
 		sbflush (&lcp -> lcd_sb);
 }
-
 
 /* 
  *  This procedure handles all local protocol procedure errors.
@@ -653,7 +678,7 @@ unsigned pr;
 	else {
 		if (pr < lcp -> lcd_output_window && pr > lcp -> lcd_ssn) {
 			pk_procerror (RESET, lcp,
-				"p(r) flow control error", 2);
+				"p(r) flow control error #2", 2);
 			return (ERROR_PACKET);
 		}
 	}
@@ -665,7 +690,7 @@ unsigned pr;
 	if (so && ((so -> so_snd.sb_flags & SB_WAIT) || so -> so_snd.sb_sel))
 		sowwakeup (so);
 	if (lcp -> lcd_upper)
-		(*lcp -> lcd_upper)(lcp, 0);
+		(*lcp -> lcd_upper) (lcp, 0);
 
 	return (PACKET_OK);
 }
@@ -700,10 +725,14 @@ register struct x25_packet *xp;
 	 *  Test if flow control packet (RR or RNR).
 	 */
 	if (!(xp -> packet_type & RR_OR_RNR_PACKET_DESIGNATOR))
-		if (!(xp -> packet_type & RR_PACKET_DESIGNATOR))
+		switch (xp -> packet_type & 0x1f) {
+		case X25_RR:
 			return (RR);
-		else
+		case X25_RNR:
 			return (RNR);
+		case X25_REJECT:
+			return (REJECT);
+		}
 
 	/* 
 	 *  Determine the rest of the packet types.
@@ -747,6 +776,10 @@ register struct x25_packet *xp;
 
 	case X25_RESTART_CONFIRM: 
 		type = RESTART_CONF;
+		break;
+
+	case X25_DIAGNOSTIC:
+		type = DIAGNOSTIC;
 		break;
 
 	default: 
@@ -806,6 +839,9 @@ register struct x25_packet *xp;
 	if (code > MAXRESETCAUSE)
 		code = 7;	/* EXRNCG */
 
+	pk_message(LCN(xp), lcp -> lcd_pkp, "reset code 0x%x, diagnostic 0x%x",
+			xp -> packet_data, 4[(u_char *)xp]);
+			
 	lcp -> lcd_so -> so_error = Reset_cause[code];
 }
 
@@ -863,9 +899,9 @@ char *fmt;
 	printf ("\n");
 }
 
-pk_ifattach(ia, lloutput, llnext)
+pk_ifattach (ia, lloutput, llnext)
 register struct x25_ifaddr *ia;
-int (*lloutput)();
+int (*lloutput) ();
 caddr_t llnext;
 {
 	/* this is here because you can't include both pk_var and hd_var */
@@ -874,26 +910,26 @@ caddr_t llnext;
 	ia -> ia_pkcb.pk_llnext = llnext;
 }
 
-pk_fragment(lcp, m0, qbit, mbit, wait)
+pk_fragment (lcp, m0, qbit, mbit, wait)
 struct mbuf *m0;
 register struct pklcd *lcp;
 {
 	register struct mbuf *m = m0;
 	register struct x25_packet *xp;
 	register struct sockbuf *sb;
-	struct mbuf *head = 0, *next, **mp = &head, *m_split();
+	struct mbuf *head = 0, *next, **mp = &head, *m_split ();
 	int totlen, psize = 1 << (lcp -> lcd_packetsize);
 
 	if (m == 0)
 		return;
 	if (m -> m_flags & M_PKTHDR == 0)
-		panic("pk_fragment");
+		panic ("pk_fragment");
 	totlen = m -> m_pkthdr.len;
 	m -> m_act = 0;
 	sb = lcp -> lcd_so ? &lcp -> lcd_so -> so_snd : & lcp -> lcd_sb;
 	do {
 		if (totlen > psize) {
-			if ((next = m_split(m, psize, wait)) == 0)
+			if ((next = m_split (m, psize, wait)) == 0)
 				goto abort;
 			totlen -= psize;
 		} else
@@ -904,7 +940,7 @@ register struct pklcd *lcp;
 		*mp = m;
 		mp = & m -> m_act;
 		*mp = 0;
-		xp = mtod(m, struct x25_packet *);
+		xp = mtod (m, struct x25_packet *);
 		0[(char *)xp] = 0;
 		if (qbit)
 			xp -> q_bit = 1;
@@ -920,23 +956,23 @@ register struct pklcd *lcp;
 	for (m = head; m; m = next) {
 		next = m -> m_act;
 		m -> m_act = 0;
-		sbappendrecord(sb, m);
+		sbappendrecord (sb, m);
 	}
 	return 0;
 abort:
 	if (wait)
-		panic("pk_fragment null mbuf after wait");
+		panic ("pk_fragment null mbuf after wait");
 	if (next)
-		m_freem(next);
+		m_freem (next);
 	for (m = head; m; m = next) {
 		next = m -> m_act;
-		m_freem(m);
+		m_freem (m);
 	}
 	return ENOBUFS;
 }
 
 struct mbuf *
-m_split(m0, len0, wait)
+m_split (m0, len0, wait)
 register struct mbuf *m0;
 int len0;
 {
@@ -959,9 +995,9 @@ int len0;
 		if (len > MHLEN) {
 			/* m can't be the lead packet */
 			MH_ALIGN(n, 0);
-			n -> m_next = m_split(m, len, wait);
+			n -> m_next = m_split (m, len, wait);
 			if (n -> m_next == 0) {
-				(void) m_free(n);
+				(void) m_free (n);
 				return (0);
 			} else
 				return (n);
@@ -978,7 +1014,7 @@ extpacket:
 	if (m -> m_flags & M_EXT) {
 		n -> m_flags |= M_EXT;
 		n -> m_ext = m -> m_ext;
-		mclrefcnt[mtocl(m -> m_ext.ext_buf)]++;
+		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
 		n -> m_data = m -> m_data + m -> m_len;
 	} else {
 		MGET(n, wait, m -> m_type);
@@ -987,7 +1023,7 @@ extpacket:
 			return (0);
 		}
 		M_ALIGN(n, len);
-		bcopy(mtod(m, caddr_t), mtod(n, caddr_t), len);
+		bcopy (mtod (m, caddr_t), mtod (n, caddr_t), len);
 	}
 	n -> m_len = len;
 	n -> m_next = m -> m_next;
