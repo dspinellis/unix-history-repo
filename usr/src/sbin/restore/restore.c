@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.12	(Berkeley)	83/04/19";
+static char sccsid[] = "@(#)restore.c	3.13	(Berkeley)	83/05/03";
 #endif
 
 #include "restore.h"
@@ -52,8 +52,6 @@ addfile(name, ino, type)
 			return (descend);
 		}
 	}
-	if (ino == ROOTINO)
-		return (descend);
 	ep = lookupino(ino);
 	if (ep != NIL) {
 		if (strcmp(name, myname(ep)) == 0) {
@@ -262,7 +260,7 @@ nodeupdates(name, ino, type)
 			renameit(myname(ip), name);
 			moveentry(ip, name);
 			ip->e_flags |= KEEP;
-			dprintf(stdout, "[%s] %s: %s\n", keyval(key),
+			dprintf(stdout, "[%s] %s: %s\n", keyval(key), name,
 				flagvalues(ip));
 			break;
 		}
@@ -408,7 +406,7 @@ findunreflinks()
 	vprintf(stdout, "Find unreferenced names.\n");
 	for (i = ROOTINO; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL || ep->e_type == LEAF || !BIT(i, dumpmap) == 0)
+		if (ep == NIL || ep->e_type == LEAF || BIT(i, dumpmap) == 0)
 			continue;
 		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
 			if (np->e_flags == 0) {
