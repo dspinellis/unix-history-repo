@@ -52,7 +52,7 @@ int drop;
 	}
     }
     if (n >= 0) {
-	ring_sent(&ttyoring, n);
+	ring_sent_acked(&ttyoring, n);
     }
     return n > 0;
 }
