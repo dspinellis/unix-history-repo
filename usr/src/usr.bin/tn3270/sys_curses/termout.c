@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	3.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	3.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -45,6 +45,7 @@ static char sccsid[] = "@(#)termout.c	3.7 (Berkeley) %G%";
 #include "../ctlr/declare.h"
 #include "../ctlr/oia.h"
 #include "../ctlr/screen.h"
+#include "../ctlr/scrnctlr.h"
 
 #include "../general/globals.h"
 
@@ -182,15 +183,32 @@ static void
 #endif	/* defined(NOT43) */
 SlowScreen()
 {
+    register int is, shouldbe, isattr, shouldattr;
     register int pointer;
-    register int c;
-    register int fieldattr;
+    register int fieldattr, termattr;
     register int columnsleft;
 
-#   define  SetHighlightMode(p) { \
-		if (!IsStartField(p) && IsHighlightedAttr(fieldattr)) { \
+#define	HIGHLIGHT	1		/* Mask bits */
+#define	NONDISPLAY	4		/* Mask bits */
+
+#define	DoAttributes(x) \
+	    switch (x&ATTR_DSPD_MASK) { \
+	    case ATTR_DSPD_NONDISPLAY: \
+		x = NONDISPLAY; \
+		break; \
+	    case ATTR_DSPD_HIGH: \
+		x = HIGHLIGHT; \
+		break; \
+	    default: \
+		x = 0; \
+		break; \
+	    }
+
+#   define  SetHighlightMode(x) \
+	    { \
+		if ((x)&HIGHLIGHT) { \
 		    if (!inHighlightMode) { \
-			inHighlightMode = 1; \
+			inHighlightMode = HIGHLIGHT; \
 			standout(); \
 		    } \
 		} else { \
@@ -202,10 +220,8 @@ SlowScreen()
 	    }
 
 #   define  DoCharacterAt(c,p) { \
-		SetTerminal(p, c); \
 		if (p != HighestScreen()) { \
-		    c = TerminalCharacterAttr(disp_asc[c&0xff], p, \
-								fieldattr); \
+		    c = disp_asc[c&0xff]; \
 		    if (terminalCursorAddress != p) { \
 			if (ERR == mvaddch(ScreenLine(p), \
 						ScreenLineOffset(p), c)) {\
@@ -271,7 +287,8 @@ SlowScreen()
 	    pointer += (bunequal(Host+pointer, Terminal+pointer,
 			(Highest-pointer+1)*sizeof Host[0])/sizeof Host[0]);
 
-		/* how many characters to change until the end of the
+		/*
+		 * How many characters to change until the end of the
 		 * current line
 		 */
 	    columnsleft = NumberColumns - ScreenLineOffset(pointer);
@@ -281,137 +298,109 @@ SlowScreen()
 	    move(ScreenLine(pointer), ScreenLineOffset(pointer));
 
 		/* what is the field attribute of the current position */
-	    fieldattr = FieldAttributes(WhereAttrByte(pointer));
+	    fieldattr = FieldAttributes(pointer);
+	    DoAttributes(fieldattr);
+	    termattr = TermAttributes(pointer);
+	    DoAttributes(termattr);
 
-	    if ((IsStartField(pointer) != TermIsStartField(pointer)) ||
-		    (IsStartField(pointer) &&
-			fieldattr != TermAttributes(pointer))) {
-
-		int oldterm;
-
-		oldterm = TermAttributes(pointer);
+	    SetHighlightMode(fieldattr);
+	    /*
+	     * The following will terminate at least when we get back
+	     * to the original 'pointer' location (since we force
+	     * things to be equal).
+	     */
+	    for (;;) {
 		if (IsStartField(pointer)) {
-		    TermNewField(pointer, fieldattr);
-		    SetTerminal(pointer, 0);
+		    shouldbe = DISP_BLANK;
+		    shouldattr = 0;
+		    fieldattr = GetHost(pointer);
+		    DoAttributes(fieldattr);
 		} else {
-		    TermDeleteField(pointer);
+		    if (fieldattr&NONDISPLAY) {
+			shouldbe = DISP_BLANK;
+		    } else {
+			shouldbe = GetHost(pointer);
+		    }
+		    shouldattr = fieldattr;
 		}
-		    /* We always do the first character in a divergent
-		     * field, since otherwise the start of a field in
-		     * the Host structure may leave a highlighted blank
-		     * on the screen, and the start of a field in the
-		     * Terminal structure may leave a non-highlighted
-		     * something in the middle of a highlighted field
-		     * on the screen.
-		     */
-		SetHighlightMode(pointer);
-		c = GetHost(pointer);
-		DoCharacterAt(c,pointer);		/* MACRO */
-
-		if (NotVisuallyCompatibleAttributes
-				(pointer, fieldattr, oldterm)) {
-		    int j;
-
-		    j = pointer;
-
-		    pointer = ScreenInc(pointer);
-		    if (!(--columnsleft)) {
-			DoARefresh();
-			EmptyTerminal();
-			move(ScreenLine(pointer), 0);
-			columnsleft = NumberColumns;
+		if (TermIsStartField(pointer)) {
+		    is = DISP_BLANK;
+		    isattr = 0;
+		    termattr = GetTerminal(pointer);
+		    DoAttributes(termattr);
+		} else {
+		    if (termattr&NONDISPLAY) {
+			is = DISP_BLANK;
+		    } else {
+			is = GetTerminal(pointer);
 		    }
-		    SetHighlightMode(pointer);	/* Turn on highlighting */
-		    while ((!IsStartField(pointer)) &&
-				(!TermIsStartField(pointer))) {
-			c = GetHost(pointer);
-			DoCharacterAt(c,pointer);	/* MACRO */
-			pointer = ScreenInc(pointer);
-			if (!(--columnsleft)) {
-			    DoARefresh();
-			    EmptyTerminal();
-			    move(ScreenLine(pointer), 0);
-			    columnsleft = NumberColumns;
-				/* We don't look at HaveInput here, since
-				 * if we leave this loop before the end of
-				 * the 3270 field, we could have pointer
-				 * higher than Highest.  This would cause
-				 * us to end the highest "while" loop,
-				 * but we may, in fact, need to go around the
-				 * screen once again.
-				 */
-			}
-			/*		The loop needs to be protected
-			 *	from the situation where there had been only
-			 *	one field on the Terminal, and none on the Host.
-			 *	In this case, we have just deleted our last
-			 *	field.	Hence, the break.
-			 */
-			if (j == pointer) {
-			    break;
-			}
-		    }
-		    if (IsStartField(pointer) && !TermIsStartField(pointer)) {
-			    /* Remember what the terminal looked like */
-			TermNewField(pointer, oldterm);
-			    /*
-			     * The danger here is that the current position may
-			     * be the start of a Host field.  If so, and the
-			     * field is highlighted, and our terminal was
-			     * highlighted, then we will leave a highlighted
-			     * blank at this position.
-			     */
-			SetHighlightMode(pointer);
-			c = GetHost(pointer);
-			DoCharacterAt(c,pointer);
-		    }
-			/* We could be in the situation of needing to exit.
-			 * This could happen if the current field wrapped around
-			 * the end of the screen.
-			 */
-		    if (j > pointer) {
+		    isattr = termattr;
+		}
+		if ((shouldbe == is) && (shouldattr == isattr)
+			&& (GetHost(pointer) == GetTerminal(pointer))
+			&& (GetHost(ScreenInc(pointer))
+					== GetTerminal(ScreenInc(pointer)))) {
+		    break;
+		}
+
+		if (shouldattr^inHighlightMode) {
+		    SetHighlightMode(shouldattr);
+		}
+
+		DoCharacterAt(shouldbe, pointer);
+		if (IsStartField(pointer)) {
+		    TermNewField(pointer, FieldAttributes(pointer));
+		} else {
+		    SetTerminal(pointer, GetHost(pointer));
+		}
+		pointer = ScreenInc(pointer);
+		if (!(--columnsleft)) {
+		    DoARefresh();
+		    EmptyTerminal();
+		    if (HaveInput) {	/* if input came in, take it */
+			int c, j;
+
 			/*
-			 * pointer is guaranteed to be higher than Highest...
+			 * We need to start a new terminal field
+			 * at this location iff the terminal attributes
+			 * of this location are not what we have had
+			 * them as (ie: we've overwritten the terminal
+			 * start field, a the previous field had different
+			 * display characteristics).
 			 */
-			pointer = Highest+1;	/* We did the highest thing */
+
+			isattr = TermAttributes(pointer);
+			DoAttributes(isattr);
+			if ((!TermIsStartField(pointer)) &&
+					(isattr != termattr)) {
+			    /*
+			     * Since we are going to leave a new field
+			     * at this terminal position, we
+			     * need to make sure that we get an actual
+			     * non-highlighted blank on the screen.
+			     */
+			    if ((is != DISP_BLANK) || (termattr&HIGHLIGHT)) {
+				SetHighlightMode(0);	/* Turn off highlight */
+				c = ScreenInc(pointer);
+				j = DISP_BLANK;
+				DoCharacterAt(j, c);
+			    }
+			    if (termattr&HIGHLIGHT) {
+				termattr = ATTR_DSPD_HIGH;
+			    } else if (termattr&NONDISPLAY) {
+				termattr = ATTR_DSPD_NONDISPLAY;
+			    } else {
+				termattr = 0;
+			    }
+			    TermNewField(pointer, termattr);
+			}
 			break;
 		    }
-		} else {
-		    c = GetHost(pointer);
-			/* We always do the first character in a divergent
-			 * field, since otherwise the start of a field in
-			 * the Host structure may leave a highlighted blank
-			 * on the screen, and the start of a field in the
-			 * Terminal structure may leave a non-highlighted
-			 * something in the middle of a highlighted field
-			 * on the screen.
-			 */
-		    SetHighlightMode(pointer);
-		    DoCharacterAt(c,pointer);
+		    move(ScreenLine(pointer), 0);
+		    columnsleft = NumberColumns;
 		}
-	    } else {
-		SetHighlightMode(pointer);
-		/*
-		 * The following will terminate at least when we get back
-		 * to the original 'pointer' location (since we force
-		 * things to be equal).
-		 */
-		while (((c = GetHost(pointer)) != GetTerminal(pointer)) &&
-			!IsStartField(pointer) && !TermIsStartField(pointer)) {
-		    DoCharacterAt(c, pointer);
-		    pointer = ScreenInc(pointer);
-		    if (!(--columnsleft)) {
-			DoARefresh();
-			EmptyTerminal();
-			if (HaveInput) {	/* if input came in, take it */
-			    break;
-			}
-			move(ScreenLine(pointer), 0);
-			columnsleft = NumberColumns;
-		    }
-		}
-	    }
-	}
+	    }	/* end of for (;;) */
+	} /* end of while (...) */
     }
     DoARefresh();
     Lowest = pointer;
