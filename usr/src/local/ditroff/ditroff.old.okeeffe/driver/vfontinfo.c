@@ -41,11 +41,10 @@ char **argv;
 
 	while (argc > 1 && argv[1][0] == '-') {
 		switch(argv[1][1]) {
+		case 'z':
+			zoom = argv[1][2] - '0';  /* zoom implies verbose */
 		case 'v':
 			verbose++;
-			break;
-		case 'z':
-			zoom = argv[1][2] - '0';
 			break;
 		case 'm':
 			msgflag = 1;
@@ -124,29 +123,12 @@ char **argv;
 				W = (disptable[j].left) + (disptable[j].right);
 				base = disptable[j].up;
 				WB = (W+7)/8;
-				if (zoom < 0) {
-					/*
-					 * Old 1 for 1 code.  The aspect ratio
-					 * is awful, so we don't use it.
-					 */
-					for (k=0; k<H; k++) {
-						for (last=W-1; last >= 0; last--)
-							if (fbit(k, last))
-								break;
-						for (l=0; l<=W-1; l++) {
-							printf("%c", fbit(k,l)?'M':' ');
-						}
-						printf("\n");
-					}
-					printf("\n");
-				} else {
-					shozoom();
-					if (msgflag) {
-						k = disptable[j].width;
-						if (zoom == 0) k *= 2;
-						else if (zoom == 2) k /= 2;
-						curcol += k;
-					}
+				shozoom();
+				if (msgflag) {
+					k = disptable[j].width;
+					if (zoom == 0) k *= 2;
+					else if (zoom == 2) k /= 2;
+					curcol += k;
 				}
 			}
 		}
