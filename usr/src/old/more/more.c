@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -54,7 +54,7 @@ static char sccsid[] = "@(#)more.c	5.3 (Berkeley) %G%";
 struct sgttyb	otty, savetty;
 long		file_pos, file_size;
 int		fnum, no_intty, no_tty, slow_tty;
-int		dum_opt, dlines, onquit(), end_it();
+int		dum_opt, dlines, onquit(), end_it(), chgwinsz();
 int		onsusp();
 int		nscroll = 11;	/* Number of lines scrolled by 'd' */
 int		fold_opt = 1;	/* Fold long lines */
@@ -180,6 +180,7 @@ char *argv[];
     if (!no_tty) {
 	signal(SIGQUIT, onquit);
 	signal(SIGINT, end_it);
+	signal(SIGWINCH, chgwinsz);
 	if (signal (SIGTSTP, SIG_IGN) == SIG_DFL) {
 	    signal(SIGTSTP, onsusp);
 	    catch_susp++;
@@ -488,6 +489,29 @@ onquit()
 	notell = 0;
     }
     signal(SIGQUIT, onquit);
+}
+
+/*
+** Come here if a signal for a window size change is received
+*/
+
+chgwinsz()
+{
+    struct winsize win;
+
+    (void) signal(SIGWINCH, SIG_IGN);
+    if (ioctl(fileno(stdout), TIOCGWINSZ, &win) != -1) {
+	if (win.ws_row != 0) {
+	    Lpp = win.ws_row;
+	    nscroll = Lpp/2 - 1;
+	    if (nscroll <= 0)
+		nscroll = 1;
+	    dlines = Lpp - (noscroll ? 1 : 2);
+	}
+	if (win.ws_col != 0)
+	    Mcol = win.ws_col;
+    }
+    (void) signal(SIGWINCH, chgwinsz);
 }
 
 /*
@@ -1084,7 +1108,7 @@ register FILE *f;
 		error ("Can't open help file");
 	    if (noscroll) doclear ();
 	    copy_file (helpf);
-	    close (helpf);
+	    fclose (helpf);
 	    prompt (filename);
 	    break;
 	case 'v':	/* This case should go right before default */
@@ -1514,7 +1538,7 @@ retry:
     savetty = otty;
     ospeed = otty.sg_ospeed;
     slow_tty = ospeed < B1200;
-    hardtabs =  !(otty.sg_flags & XTABS);
+    hardtabs = (otty.sg_flags & TBDELAY) != XTABS;
     if (!no_tty) {
 	otty.sg_flags &= ~ECHO;
 	if (MBIT == CBREAK || !slow_tty)
