@@ -78,7 +78,6 @@ sys/ufs_tables.c	standard
 sys/ufs_xxx.c		standard
 sys/uipc_domain.c	standard
 sys/uipc_mbuf.c		standard
-sys/uipc_pipe.c		standard
 sys/uipc_proto.c	standard
 sys/uipc_socket.c	standard
 sys/uipc_socket2.c	standard
