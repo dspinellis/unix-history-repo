@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -39,6 +39,19 @@ int	vddump(),vdsize();
 #define	vdsize		0
 #endif
 
+#include "hd.h"
+#if NHD > 0
+int	hdopen(),hdclose(),hdstrategy(),hdioctl();
+int	hddump(),hdsize();
+#else
+#define	hdopen		nodev
+#define	hdclose		nodev
+#define	hdstrategy	nodev
+#define	hdioctl		nodev
+#define	hddump		nodev
+#define	hdsize		0
+#endif
+
 #include "yc.h"
 #if NCY > 0
 int	cyopen(),cyclose(),cystrategy(),cydump();
@@ -58,8 +71,8 @@ struct bdevsw	bdevsw[] =
 	  nodev,	0,		0 },
 	{ vdopen,	vdclose,	vdstrategy,	vdioctl,	/*1*/
 	  vddump,	vdsize,		0 },
-	{ nodev,	nulldev,	nodev,		nodev,		/*2*/
-	  nodev,	0,		0 },
+	{ hdopen,	hdclose,	hdstrategy,	hdioctl,	/*2*/
+	  hddump,	hdsize,		0 },
 	{ cyopen,	cyclose,	cystrategy,	cyioctl,	/*3*/
 	  cydump,	0,		B_TAPE },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
@@ -174,6 +187,8 @@ int     ikopen(),ikclose(),ikread(),ikwrite(),ikioctl();
 
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
+int	fdopen();
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -196,9 +211,9 @@ struct cdevsw	cdevsw[] =
 	vdopen,		vdclose,	rawread,	rawwrite,	/*5*/
 	vdioctl,	nodev,		nulldev,	NULL,
 	seltrue,	nodev,		vdstrategy,
-	nodev,		nulldev,	nodev,		nodev,		/*6*/
-	nodev,		nodev,		nulldev,	NULL,
-	seltrue,	nodev,		NULL,
+	hdopen,		hdclose,	rawread,	rawwrite,	/*6*/
+	hdioctl,	nodev,		nulldev,	NULL,
+	seltrue,	nodev,		hdstrategy,
 	cyopen,		cyclose,	rawread,	rawwrite,	/*7*/
 	cyioctl,	nodev,		cyreset,	NULL,
 	seltrue,	nodev,		cystrategy,
@@ -241,6 +256,9 @@ struct cdevsw	cdevsw[] =
 /* 20-30 are reserved for local use */
 	ikopen,		ikclose,	ikread,		ikwrite,	/*20*/
 	ikioctl,	nodev,		nulldev,	NULL,
+	nodev,		nodev,		NULL,
+	fdopen,		nodev,		nodev,		nodev,		/*21*/
+	nodev,		nodev,		nodev,		NULL,
 	nodev,		nodev,		NULL,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
