@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	7.4 (Berkeley) %G%
+ *	@(#)vm_map.h	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -63,8 +63,6 @@ union vm_map_object {
 	struct vm_map		*sub_map;	/* belongs to another map */
 };
 
-typedef union vm_map_object	vm_map_object_t;
-
 /*
  *	Address map entries consist of start and end addresses,
  *	a VM object (or sharing map) and offset into that object,
@@ -90,8 +88,6 @@ struct vm_map_entry {
 	int			wired_count;	/* can be paged if = 0 */
 };
 
-typedef struct vm_map_entry	*vm_map_entry_t;
-
 /*
  *	Maps are doubly-linked lists of map entries, kept sorted
  *	by address.  A single hint is provided to start
@@ -116,8 +112,6 @@ struct vm_map {
 #define max_offset		header.end
 };
 
-typedef	struct vm_map	*vm_map_t;
-
 /*
  *	Map versions are used to validate a previous lookup attempt.
  *
@@ -139,32 +133,13 @@ typedef struct {
  *		Perform locking on the data portion of a map.
  */
 
-#define		vm_map_lock(map)	{ lock_write(&(map)->lock); (map)->timestamp++; }
-#define		vm_map_unlock(map)	lock_write_done(&(map)->lock)
-#define		vm_map_lock_read(map)	lock_read(&(map)->lock)
-#define		vm_map_unlock_read(map)	lock_read_done(&(map)->lock)
-
-/*
- *	Exported procedures that operate on vm_map_t.
- */
-
-void		vm_map_init();
-vm_map_t	vm_map_create();
-void		vm_map_deallocate();
-void		vm_map_reference();
-int		vm_map_findspace __P((vm_map_t, vm_offset_t, vm_size_t,
-				      vm_offset_t *));
-int		vm_map_find();
-int		vm_map_remove();
-int		vm_map_lookup();
-void		vm_map_lookup_done();
-int		vm_map_protect();
-int		vm_map_inherit();
-int		vm_map_copy();
-void		vm_map_print();
-void		vm_map_copy_entry();
-boolean_t	vm_map_verify();
-void		vm_map_verify_done();
+#define	vm_map_lock(map) { \
+	lock_write(&(map)->lock); \
+	(map)->timestamp++; \
+}
+#define	vm_map_unlock(map)	lock_write_done(&(map)->lock)
+#define	vm_map_lock_read(map)	lock_read(&(map)->lock)
+#define	vm_map_unlock_read(map)	lock_read_done(&(map)->lock)
 
 /*
  *	Functions implemented as macros
@@ -177,4 +152,51 @@ void		vm_map_verify_done();
 #define MAX_KMAP	10
 #define	MAX_KMAPENT	500
 
+#ifdef KERNEL
+boolean_t	 vm_map_check_protection __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, vm_prot_t));
+int		 vm_map_copy __P((vm_map_t, vm_map_t, vm_offset_t,
+		    vm_size_t, vm_offset_t, boolean_t, boolean_t));
+void		 vm_map_copy_entry __P((vm_map_t,
+		    vm_map_t, vm_map_entry_t, vm_map_entry_t));
+struct pmap;
+vm_map_t	 vm_map_create __P((struct pmap *,
+		    vm_offset_t, vm_offset_t, boolean_t));
+void		 vm_map_deallocate __P((vm_map_t));
+int		 vm_map_delete __P((vm_map_t, vm_offset_t, vm_offset_t));
+vm_map_entry_t	 vm_map_entry_create __P((vm_map_t));
+void		 vm_map_entry_delete __P((vm_map_t, vm_map_entry_t));
+void		 vm_map_entry_dispose __P((vm_map_t, vm_map_entry_t));
+void		 vm_map_entry_unwire __P((vm_map_t, vm_map_entry_t));
+int		 vm_map_find __P((vm_map_t, vm_object_t,
+		    vm_offset_t, vm_offset_t *, vm_size_t, boolean_t));
+int		 vm_map_findspace __P((vm_map_t,
+		    vm_offset_t, vm_size_t, vm_offset_t *));
+int		 vm_map_inherit __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, vm_inherit_t));
+void		 vm_map_init __P((struct vm_map *,
+		    vm_offset_t, vm_offset_t, boolean_t));
+int		 vm_map_insert __P((vm_map_t,
+		    vm_object_t, vm_offset_t, vm_offset_t, vm_offset_t));
+boolean_t	 vm_map_is_allocated __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, boolean_t));
+int		 vm_map_lookup __P((vm_map_t *, vm_offset_t, vm_prot_t,
+		    vm_map_entry_t *, vm_object_t *, vm_offset_t *, vm_prot_t *,
+		    boolean_t *, boolean_t *));
+void		 vm_map_lookup_done __P((vm_map_t, vm_map_entry_t));
+boolean_t	 vm_map_lookup_entry __P((vm_map_t,
+		    vm_offset_t, vm_map_entry_t *));
+int		 vm_map_pageable __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, boolean_t));
+void		 vm_map_print __P((vm_map_t, boolean_t));
+int		 vm_map_protect __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, vm_prot_t, boolean_t));
+void		 vm_map_reference __P((vm_map_t));
+int		 vm_map_remove __P((vm_map_t, vm_offset_t, vm_offset_t));
+void		 vm_map_simplify __P((vm_map_t, vm_offset_t));
+void		 vm_map_simplify_entry __P((vm_map_t, vm_map_entry_t));
+void		 vm_map_startup __P((void));
+int		 vm_map_submap __P((vm_map_t,
+		    vm_offset_t, vm_offset_t, vm_map_t));
+#endif
 #endif	_VM_MAP_
