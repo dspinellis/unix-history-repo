@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.4 83/08/18";
+static	char *sccsid = "@(#)cmd1.c	3.5 83/08/18";
 #endif
 
 #include "defs.h"
@@ -157,6 +157,8 @@ int id, nrow, ncol, row, col;
 	w->ww_hasframe = 1;
 	wwadd(w, (selwin ? selwin : wwhead.ww_back));
 	setselwin(w);
+	wwupdate();
+	wwflush();
 	switch (wwfork(w)) {
 	case -1:
 		c_close(w);
