@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	7.3 (Berkeley) %G%
+ *	@(#)device_pager.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -129,7 +129,7 @@ dev_pager_alloc(handle, size, prot)
 		for (page = devp->devp_pages;
 		     page < &devp->devp_pages[npages]; page++) {
 			vm_object_lock(object);
-			vm_page_init(page, object, off);
+			VM_PAGE_INIT(page, object, off);
 			page->phys_addr =
 				pmap_phys_address((*mapfunc)(dev, off, nprot));
 			page->wire_count = 1;
