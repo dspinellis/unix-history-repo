@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)netdaemon.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)netdaemon.c	4.3	(Berkeley)	%G%";
 
 /* sccs id variable */
 static char *netdaemon_sid = "@(#)netdaemon.c	1.10";
@@ -147,7 +147,7 @@ netsend(){
 	static char nleft = 1;
 	long lFileLen,diff;
 	double drate;
-	register unsigned uid,uidBest;
+	register int uid,uidBest;
 	char *sdate,*sn,*swait;
 	long ot,nt,filesize;
 	register int i;
@@ -251,6 +251,8 @@ day()
 	else
 		return( 1 );		/* day */
 }
+
+int subs;
 
 send(jname)
 	char *jname;
@@ -435,9 +437,7 @@ forw:
 			dump.elaptot += diff;
 			while((pid = fork()) == -1)sleep(2);
 			if(pid == 0){
-# ifndef V6
 				RENICE0();
-# endif V6
 #ifdef CCV7
 				/* make sure the spawned child has it's own
 					group process to avoid the nasty
@@ -454,7 +454,7 @@ forw:
 			unlink(tempfile);
 			rcode >>= 8;
 			if(rcode != 0)
-				error("pass-thru rcode %d");
+				error("pass-thru rcode %d", rcode);
 			debug("passthru to %c code %c rcode %d",
 				hd.hd_mchto,hd.hd_code,rcode);
 			return(1);
@@ -465,22 +465,24 @@ forw:
 
 	while((pid = fork()) == -1)sleep(2);
 	if(pid > 0){
-		wait(&dummy);
+		if (++subs > 10)
+			while( wait(&dummy) != -1) --subs;
 		return(1);	/* normal return */
 	}
 	/* this is a child, who will go ahead and execute the command */
 	/* running uid=0 at this point */
-# ifndef V6
 	RENICE0();
-# endif V6
 	/* nice(0 set back to 0 */
 #ifdef CCV7
 	/* separate group process */
 	setpgrp();
 #endif CCV7
 
+
+	/*
 	while((pid = fork()) == -1)sleep(2);
 	if(pid != 0)exit(EX_OK);
+	*/
 
 	/* child process which forks and waits */
 	mktemp(resfile);
