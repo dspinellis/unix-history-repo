@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	4.1		%G%);
+SCCSID(@(#)recipient.c	4.2		%G%);
 
 /*
 **  SENDTOLIST -- Designate a send list.
@@ -402,9 +402,10 @@ struct passwd *
 finduser(name)
 	char *name;
 {
-	extern struct passwd *getpwent();
 	register struct passwd *pw;
 	register char *p;
+	extern struct passwd *getpwent();
+	extern struct passwd *getpwnam();
 
 	/*
 	**  Make name canonical.
