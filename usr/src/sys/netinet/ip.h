@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip.h	7.2 (Berkeley) %G%
+ *	@(#)ip.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -112,7 +112,7 @@ struct	ip_timestamp {
  * Internet implementation parameters.
  */
 #define	MAXTTL		255		/* maximum time to live (seconds) */
-#define	IPFRAGTTL	15		/* time to live for frag chains */
+#define	IPFRAGTTL	60		/* time to live for frags, slowhz */
 #define	IPTTLDEC	1		/* subtracted when forwarding */
 
 #define	IP_MSS		576		/* default maximum segment size */
