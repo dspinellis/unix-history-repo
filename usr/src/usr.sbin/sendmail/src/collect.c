@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -70,7 +70,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 	register char *bp;
 	int c = '\0';
 	bool inputerr = FALSE;
-	bool headeronly = FALSE;
+	bool headeronly;
 	char *buf;
 	int buflen;
 	int istate;
@@ -84,10 +84,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 	extern void eatheader();
 	extern void tferror();
 
-	if (hdrp == NULL)
-		hdrp = &e->e_header;
-	else
-		headeronly = TRUE;
+	headeronly = hdrp != NULL;
 
 	/*
 	**  Create the temp file name and create the file.
@@ -122,6 +119,9 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 
 	if (smtpmode)
 		message("354 Enter mail, end with \".\" on a line by itself");
+
+	if (tTd(30, 2))
+		printf("collect\n");
 
 	/*
 	**  Read the message.
@@ -170,16 +170,16 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 				c = *--pbp;
 			else
 			{
-				while (!feof(InChannel) && !ferror(InChannel))
+				while (!feof(fp) && !ferror(fp))
 				{
 					errno = 0;
-					c = fgetc(InChannel);
+					c = fgetc(fp);
 					if (errno != EINTR)
 						break;
-					clearerr(InChannel);
+					clearerr(fp);
 				}
 				CollectProgress = TRUE;
-				if (TrafficLogFile != NULL)
+				if (TrafficLogFile != NULL && !headeronly)
 				{
 					if (istate == IS_BOL)
 						fprintf(TrafficLogFile, "%05d <<< ",
@@ -316,7 +316,7 @@ nextstate:
 			if (*--bp != '\n' || *--bp != '\r')
 				bp++;
 			*bp = '\0';
-			if (bitset(H_EOH, chompheader(buf, FALSE, e)))
+			if (bitset(H_EOH, chompheader(buf, FALSE, hdrp, e)))
 				mstate = MS_BODY;
 			break;
 
