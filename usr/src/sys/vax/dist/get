@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)get	4.4	%G%
+#	@(#)get	4.5	%G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -22,7 +22,7 @@ rm -fr tmp; mkdir tmp
 rm -fr usr; mkdir usr usr/mdec
 rm -fr floppy; mkdir floppy
 cp $DISTROOT/etc/disktab etc
-cp $DISTROOT/etc/makefs etc; strip etc/makefs
+cp $DISTROOT/etc/newfs etc; strip etc/newfs
 cp $DISTROOT/etc/mkfs etc; strip etc/mkfs
 cp $DISTROOT/etc/restor etc; strip etc/restor
 cp $DISTROOT/etc/init etc; strip etc/init
@@ -66,11 +66,11 @@ cat >etc/fstab <<EOF
 /dev/rb0a:/a:xx:1:1
 EOF
 cat >xtr <<'EOF'
-disc=${disc-$disk}
-: ${disc?'Usage: disc=xx tape=xx xtr'}
-: ${tape?'Usage: disc=xx tape=xx xtr'}
+: ${disc?'Usage: disc=xx type=tt tape=yy xtr'}
+: ${type?'Usage: disc=xx type=tt tape=yy xtr'}
+: ${tape?'Usage: disc=xx type=tt tape=yy xtr'}
 set -x
-/etc/mkfs /dev/${disc}0a 15884
+/etc/newfs ${disc}0a ${type}
 sync
 /etc/fsck /dev/r${disc}0a
 /etc/mount /dev/${disc}0a /a
@@ -79,7 +79,6 @@ cd /a
 cd /
 sync
 /etc/umount /dev/${disc}0a
-/usr/mdec/installboot /usr/mdec/${disc}boot /usr/mdec/boot${disc} /dev/${disc}0a
 sync
 /etc/fsck /dev/r${disc}0a
 echo 'Root filesystem extracted'

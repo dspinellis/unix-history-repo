@@ -1,10 +1,10 @@
-#	@(#)maketape	4.5	%G%
+#! /bin/sh
+#	@(#)maketape	4.6	%G%
 #
-machine=arpa
 miniroot=hp1a
 #
 trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
-${machine} rewind
+rewind
 date
 umount /dev/hp2g /dev/hp2h
 umount /dev/hp2a
@@ -16,17 +16,17 @@ tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot noboot noboot noboot /tmp/tape.$$ | \
-	${machine} dd of=/dev/rmt12 bs=512 conv=sync
+	dd of=/dev/rmt12 bs=512 conv=sync
 cd /nbsd
 sync
 echo "Add dump of mini-root file system"
-dd if=/dev/r${miniroot} bs=8k count=130 | \
-	${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+dd if=/dev/r${miniroot} of=/dev/rmt12 bs=20b count=205 conv=sync
 echo "Add full dump of real file system"
-/etc/rdump 0uf ${machine}:/dev/rmt12 /nbsd
+/etc/dump 0uf /dev/rmt12 /nbsd
 echo "Add tar image of system sources"
-cd /nbsd/a/sys; tar cf - . | ${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+cd /nbsd/a/sys; tar cf /dev/rmt12 .
 echo "Add tar image of /usr"
-cd /nbsd/usr; tar cf - adm bill bin dict doc games hosts include ingres lib local man mdec msgs net new preserve pub spool tmp ucb | ${machine} dd of=/dev/rmt12 ibs=20b obs=20b
+cd /nbsd/usr; tar c adm bill bin dict doc games \
+	hosts include ingres lib local man mdec msgs net new \
+	preserve pub spool tmp ucb
 echo "Done, rewind"
-${machine} rewind
