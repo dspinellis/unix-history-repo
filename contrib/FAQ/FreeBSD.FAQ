@@ -5,30 +5,26 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.8 1994/04/19 18:08:21 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.9 1994/04/19 20:01:42 csgr Exp $
 
 
 Table of Contents
 -----------------
 
-0.0 Preface
-1.0 Installation
-2.0 Hardware Compatibility
-3.0 Commercial applications
-4.0 User Applications
-5.0 Misc Questions
-6.0 Kernel Configuration 
-7.0 System Admin
-8.0 Networking
-9.0 Serial Communications
+0 Preface
+1 Installation
+2 Hardware Compatibility
+3 Commercial applications
+4 User Applications
+5 Misc Questions
+6 Kernel Configuration 
+7 System Admin
+8 Networking
+9 Serial Communications
 
 
-
-
-
-
-0.0 Preface
------------
+0 Preface
+---------
 
 Welcome to the FreeBSD 1.1 FAQ!  This document tries to answer some of
 the most frequently asked questions about FreeBSD 1.1 (or later, unless
@@ -50,7 +46,7 @@ FreeBSD-current distribution in:
 
 	freebsd.cdrom.com:~ftp/pub/FreeBSD/FreeBSD-current/src
 
-0.0.1 What is FreeBSD?  
+0.1 What is FreeBSD?  
 
 FreeBSD is a UN*X type operating system based on William Jolitz's port
 of UCB's Networking Release 2 to the i386, 386BSD.  It is no longer
@@ -70,7 +66,7 @@ some of the highlights of which are:
    Too many additional utilities and applications to mention
  
 
-0.0.2 What are the FreeBSD mailing lists, and how can I get on them? 
+0.2 What are the FreeBSD mailing lists, and how can I get on them? 
 
 The following mailing lists are provided for FreeBSD users and developers.
 For more information, send to majordomo@freefall.cdrom.com and include a
@@ -89,7 +85,7 @@ Please see also the FreeBSD mailing list FAQ in:
 
 	/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.mailing-list.FAQ
 
-0.0.3 What are the various FreeBSD news groups? 
+0.3 What are the various FreeBSD news groups? 
 
 While there are no groups currently dedicated to FreeBSD, you may find the 
 following groups useful.  
@@ -104,19 +100,17 @@ NOTE: These groups cover all the *BSDs (FreeBSD, NetBSD, 386BSD).
 
 
 
-1.0 Installation
-----------------
+1 Installation
+--------------
 
-1.0.1:	I just installed my system and rebooted.  Now I can't find the
+1.1:	I just installed my system and rebooted.  Now I can't find the
 	extract or configure programs, where did they go?
 
 These two commands are just shell functions defined in /.profile.  To
-get these back, either create a account [adding a user] with / as its
-home directory and /bin/sh as its shell, or boot FreeBSD with a `-s'
-at the boot prompt.
+get these back, or boot FreeBSD with a `-s' at the boot prompt.
 
 
-1.0.2:  I want to install FreeBSD unto a SCSI disk that has more than
+1.2:  I want to install FreeBSD unto a SCSI disk that has more than
         1024 cylinders.  How do I do it?
 
 This depends.  If you don't have DOS (or another operating system) on the
@@ -131,15 +125,15 @@ There is a freely available utility distributed with FreeBSD called `pfdisk'
 (located in the tools/ subdirectory) which can be used for this purpose.
 
 
-1.0.3:	When I boot FreeBSD it says "Missing Operating System".
+1.3:	When I boot FreeBSD it says "Missing Operating System".
 
-See above (1.0.2).  This is classicaly a case of FreeBSD and DOS or some other
+See above (1.2).  This is classicaly a case of FreeBSD and DOS or some other
 OS conflicting over their ideas of disk geometry.  You will have to reinstall
 FreeBSD, but obeying the instructions given above will almost always get you
 going.
 
 
-1.0.4:	I have an IDE drive with lots of bad blocks on it and FreeBSD doesn't
+1.4:	I have an IDE drive with lots of bad blocks on it and FreeBSD doesn't
 	seem to install properly.
 
 FreeBSD's bad block (bad144) handling is still not 100% (to put it charitably)
@@ -154,7 +148,7 @@ feature has been disabled on your drive.  However, ESDI, RLL, and
 ST-506 drives normally do not do this.
 
 
-1.0.5:	I have 32MB of memory, should I expect any special problems?
+1.5:	I have 32MB of memory, should I expect any special problems?
 
 If you have an IDE controller, no.  Likewise, if you have a full EISA
 system with EISA disk controller or a working local bus controller
@@ -172,7 +166,26 @@ memory out, install, and then see about upgrading to FreeBSD-current
 or FreeBSD 1.2 (when it comes out) so that you can put it back.
 
 
-1.0.6:	DES encryption software can not be exported from the United
+1.6:	Do I need to install the complete sources?
+
+In general, no.  However, we would strongly recommend that you
+install, at a minimum, the `base' source kit, which includes several
+of the files mentioned here, and the `sys' (kernel) source kit, which
+includes sources for the kernel.  There is nothing in the system which
+requires the presence of the sources to operate, however, except for
+the kernel-configuration program config(8).  With the exception of the
+kernel sources, our build structure is set up so that you can
+read-only mount the sources from elsewhere via NFS and still be able
+to make new binaries.  (Because of the kernel-source restriction, we
+recommend that you not mount this on /usr/src directly, but rather in
+some other location with appropriate symbolic links to duplicate the
+top-level structure of the source tree.)
+
+Having the sources on-line and knowing how to build a system with them
+will make it much easier for you to upgrade to future releases of
+FreeBSD.
+
+1.7:	DES encryption software can not be exported from the United
 	States.  If I live outside the US, how can I encrypt passwords?
 
 Since the DES encryption algorithm, which is used by passwd(1) and
@@ -206,26 +219,23 @@ software.  For maore information, send an email message with a single
 line saying "help" in the body of your message to majordomo@braae.ru.ac.za.
 
 
+2 Hardware compatibility
+------------------------
 
-
-2.0 Hardware compatibility
---------------------------
-
-2.0.1:	What kind of hard drives does FreeBSD run on?
+2.1:	What kind of hard drives does FreeBSD run on?
 
 FreeBSD supports ST-506 (sometimes called ``MFM''), RLL, and ESDI
 drives, which are usually connected to WD-1002, WD-1003, or WD-1006
 controllers (although clones should also work).  FreeBSD also supports
 IDE and SCSI hard drives.
 
-
-2.0.2:	What SCSI controllers are supported?
+2.2:	What SCSI controllers are supported?
 
 FreeBSD supports the following SCSI controllers:
 
 Adaptec              AH-1542 Series <ISA>
                      AH-1742 Series <EISA>
-Buslogic             BT-445 Series <VLB> (but see section 1.0.5)
+Buslogic             BT-445 Series <VLB> (but see section 1.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
 UltraStor            UH-14f Series <ISA>
@@ -239,7 +249,7 @@ buy a more mainstream (and capable) SCSI controller.  The Buslogic
 controllers are currently the easiest to get.
 
 
-2.0.3:	What CD-ROM drives are supported by FreeBSD?
+2.3:	What CD-ROM drives are supported by FreeBSD?
 
 Any SCSI drive connected to a supported controller.
 Mitsumi LU002(8bit), LU005(16bit) and FX001D(16bit 2x Speed).
@@ -255,20 +265,20 @@ The Mitsumi driver is known to be extremely slow compared to SCSI
 drives.
 
 
-2.0.4:	What multi-port serial cards are supported by FreeBSD?
+2.4:	What multi-port serial cards are supported by FreeBSD?
 
 AST/4 and BOCA 4/8 port cards.  Some unnamed clone cards have also been
 known to work, especially those that claim to be AST compatible.  Check
 the man page for `sio' to get more information on configuring such cards.
 
 
-2.0.5:	Does FreeBSD support the AHA-2742 SCSI adapter from Adaptec?
+2.5:	Does FreeBSD support the AHA-2742 SCSI adapter from Adaptec?
 
 No, FreeBSD does not.  This is due to Adaptec's unwillingness to supply
 programing information under other than non-disclosure.  This is unfortunate.
 
  
-2.0.6:	I have a XXXX bus mouse.  Is it supported and if so, how do I set
+2.6:	I have a XXXX bus mouse.  Is it supported and if so, how do I set
 	it up for XFree86?
 
 FreeBSD supports the Logitech and ATI Inport bus mice.  You need to
@@ -278,7 +288,7 @@ Logitech and ATI mice:
 	device        mse0    at isa? port 0x23c tty irq6 vector mseintr
 
 
-2.0.7:	I have a PS/2 mouse (`keyboard' mouse) [Alternatively:  I have a
+2.7:	I have a PS/2 mouse (`keyboard' mouse) [Alternatively:  I have a
 	laptop with a trackball mouse].  How do I use it?
 
 For the PS/2 mouse you need to look in /usr/src/contrib/FAQ/programs/psm,
@@ -288,13 +298,13 @@ Follow the directions in the package.  You will also need to change your
 Xconfig file to point to the mouse.
 
 
-2.0.8:	What types of tape drives are supported under FreeBSD?
+2.8:	What types of tape drives are supported under FreeBSD?
 
 FreeBSD supports SCSI, QIC-02 and QIC-40/80 (Floppy based) tape drives.
 This includes Exabyte and DAT drives.
 
 
-2.0.9:	What sound cards are supported by FreeBSD?
+2.9:	What sound cards are supported by FreeBSD?
 
 FreeBSD supports the SoundBlaster, SoundBlaster Pro, Pro Audio Spectrum 16,
 AdLib and Gravis UltraSound sound cards. There is also limited support
@@ -304,7 +314,7 @@ NOTE:  This is only for sound!  This driver does not support CD-ROMs, SCSI
 or joysticks on these cards.
 
 
-2.0.10:	What network cards does FreeBSD support?
+2.10:	What network cards does FreeBSD support?
 
 There is support for the following cards:
 
@@ -329,12 +339,12 @@ There is support for the following cards:
 /usr/src/KNOWNBUGS file for more details.
 
 
-2.0.11:	I have a 386/486sx/486SLC machine without a math co-processor.
+2.11:	I have a 386/486sx/486SLC machine without a math co-processor.
 	Will this cause me any problems?
 
 Generally no, but there are circumstances where you will take a hit,
 either in performance or accuracy of the math emulation code (see
-section 4.0.1).  In particular, drawing arcs in X will be VERY slow.
+section 4.1).  In particular, drawing arcs in X will be VERY slow.
 It is highly recommended that you lay out the $50 or so for a math
 co-processor; it's well worth it.  NOTE:  Some math co-processors
 are better than others.  It pains us to say it, but nobody ever got
@@ -342,8 +352,8 @@ fired for buying Intel.  Unless you're sure it works with FreeBSD,
 beware of clones.
 
 
-3.0 Commercial Applications
----------------------------
+3 Commercial Applications
+-------------------------
 
 Note: This section is still very sparse, though we're hoping, of
 course, that companies will add to it! :) The FreeBSD group has no
@@ -354,7 +364,7 @@ viability).  We encourage commercial software vendors to send their
 entries here for inclusion.
 
 
-3.0.1	Where can I get Motif for FreeBSD?
+3.1	Where can I get Motif for FreeBSD?
 
 Sequoia International provides commercial quality Motif 1.2.3
 development kits for FreeBSD 1.1 (with full shared library support) under
@@ -364,7 +374,7 @@ nonetheless quite reasonably priced in comparison to many other commercial
 Motif distributions.  Send electronic mail to `info@seq.com' for further
 information.
 
-3.0.8	What about other commercial quality development systems for FreeBSD?
+3.2	What about other commercial quality development systems for FreeBSD?
 
 ParcPlace Systems, Inc. provides their excellent `Object Interface & Object
 Builder' GUI development environment free of charge to FreeBSD users.  Using
@@ -375,10 +385,10 @@ made available as part of the FreeBSD distribution very soon.
 
 
 
-4.0 User Applications
----------------------
+4 User Applications
+-------------------
 
-4.0.1:	I want to run X, how do I go about it?
+4.1:	I want to run X, how do I go about it?
 
 First, get the XFree86 distribution of X11R5 from XFree86.cdrom.com.  The
 version you want for FreeBSD 1.1 and later is XFree86 2.1.  Follow the
@@ -387,7 +397,7 @@ documentation for the ConfigXF86 tool, which assists you in configuring
 XFree86 for your particular graphics card/mouse/etc.
 
 
-4.0.1:	I've been trying to run ghostscript on a 386 (or 486sx) with no
+4.1:	I've been trying to run ghostscript on a 386 (or 486sx) with no
 	math co-processor and I keep getting errors.  Whats up?
 
 The problem here is due to the current FreeBSD math-emulator.  You need to
@@ -402,7 +412,7 @@ default math emulator will be good enough that you can forget about
 having to do this.
 
 
-4.0.2:	If I want something like seyon, term, kermit, emacs or any one of
+4.2:	If I want something like seyon, term, kermit, emacs or any one of
 	hundreds of popular freeware utilities, is there a good place to
 	search through first?
 
@@ -420,7 +430,7 @@ Note that freebsd's ftp server permits getting entire directories as one
 carefully for details.
 
 
-4.0.3:	I want all this neat software, but I haven't got the space or
+4.3:	I want all this neat software, but I haven't got the space or
 	CPU power to compile it all myself.  Is there any way of getting
 	binaries?
 
@@ -440,17 +450,17 @@ file in the packages directory provides more details on the care
 and feeding of the package software, so no explicit details will
 be given here.
 
-5.0 Misc Questions
-------------------
+5 Misc Questions
+----------------
 
-5.0.1:	I've heard of something called FreeBSD-current.  How do I run it, and
+5.1:	I've heard of something called FreeBSD-current.  How do I run it, and
 	where can I get more information?
 
 Read the file /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.current.policy, it
 will tell you all you need to know.
 
 
-5.0.2:	What is this thing called `sup', and how do I use it?
+5.2:	What is this thing called `sup', and how do I use it?
 
 SUP stands for Software Update Protocol, and was developed by CMU for
 keeping their development trees in sync.  We use it to keep remote sites
@@ -468,9 +478,28 @@ want to look at /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.*.supfile,
 which are a set of supfiles for supping from freefall.cdrom.com
 
 
-6.0 Kernel Configuration
+5.3:	How do I create customized installation disks that I can give
+	out to other people at my site?
 
-6.0.1:  When I compile a kernel with multi-port serial code, it tells me
+The entire process of creating installation disks and source and
+binary archives is automated by various targets in
+/usr/src/etc/Makefile.  The information there should be enough to get
+you started.
+
+5.4:	How do I re-build my system without clobbering the existing
+	installed binaries?
+
+If you define the environment variable DESTDIR while running `make
+world' or `make install', the newly-created binaries will be deposited
+in a directory tree identical to the installed one, rooted at
+${DESTDIR}.  Some random combination of shared libraries modifications
+and program rebuilds can cause this to fail in `make world', however.
+
+
+6 Kernel Configuration
+----------------------
+
+6.1:  When I compile a kernel with multi-port serial code, it tells me
         that only the first port is probed and the rest skiped due to
         interupt conflicts.  How do I fix this?
 
@@ -491,7 +520,7 @@ You may also want to look at the multi-port serial FAQ in
 /usr/src/contrib/FAQ/OTHER-FAQS/multi-port.serial.FAQ.
 
 
-6.0.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
+6.2:  FreeBSD is supposed to come with support for QIC-40/80 drives but
         when I look, I can't find it.
 
 You need to uncomment the following line in the generic config file (or add
@@ -504,7 +533,7 @@ disk            fd1     at fdc0 drive 1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-6.0.3:  Does FreeBSD support IPC primitives like those in System V?
+6.3:  Does FreeBSD support IPC primitives like those in System V?
 
 Yes, FreeBSD supports SYSV IPC.  This includes shared memory, messages and
 semaphores.  You need to add the following lines to your kernel config to
@@ -518,18 +547,40 @@ options         SYSVMSG                 # enable for messaging
 Recompile and install.
 
 
-6.0.4:	Are there any utilities that make configuring a kernel easier?
+6.4:	Are there any utilities that make configuring a kernel easier?
 
 Well, yes and no.  Look in /sys/i386/doc/options.doc (/sys/doc on post 1.1
 systems) for a list of kernel options you can set, and what they do.  For
 a friendlier front-end to the process, see /usr/src/contrib/configit
 
 
+6.5:	Will FreeBSD ever support other architectures?
 
-7.0 System Administration
--------------------------
+Several different groups have expressed interest in working on
+multi-architecture support for FreeBSD.  If you are interested in
+doing so, please contact the developers at
+<FreeBSD-hackers@freefall.cdrom.com> for more information on our
+strategy for porting.
 
-7.0.1:	How do I add a user easily?  I read the man page and am more confused
+6.6:	I just wrote a device driver for a Foobar Systems, Inc.
+	Integrated Adaptive Gronkulator card.  How do I get the
+	appropriate major numbers assigned?
+
+This depends on whether or not you plan on making the driver
+publically available.  If you do, then please send us a copy of the
+driver source code, plus the appropriate modifications to files.i386,
+a sample configuration file entry, and the appropriate MAKEDEV code to
+create any special files your device uses.  If you do not, or are
+unable to because of licensing restrictions, then character major
+number 32 and block major number 8 have been reserved specifically for
+this purpose; please use them.  In any case, we'd appreciate hearing
+about your driver on <FreeBSD-hackers@freefall.cdrom.com>.
+
+
+7 System Administration
+-----------------------
+
+7.1:	How do I add a user easily?  I read the man page and am more confused
         than ever!  [Alternatively:  I didn't read the man page, I never read
 	man pages! :-) ]
 
@@ -538,18 +589,18 @@ Look at Gary Clark's perl package "AddIt", which may be found in
 and may be replaced with a more complex but capable solution later.
 
 
-7.0.2: I'm trying to use my printer and keep running into problems.  I tried
+7.2: I'm trying to use my printer and keep running into problems.  I tried
         looking at /etc/printcap, but it's close to useless.  Any ideas?
 
 Yes, you can pick up Andreas Klemm's apsfilter package from:
 
-ftp.germany.eu.net:~ftp/pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
+ftp.germany.eu.net:pub/comp/i386/Linux/Local.EUnet/People/akl/apsfilter-1.11.gz
 
 This is a complete package for printing text, PS and DVI files.  It
 requires ghostscript and dvips.
 
-If you are looking for a simple printcap just for PS and text files, try picking
-up the printcap01 sources in:
+If you are looking for a simple printcap just for PS and text files,
+try picking up the printcap01 sources in:
 
       /usr/src/contrib/FAQ/programs/printcap01 
 
@@ -558,17 +609,17 @@ one, or a filter for one, please send it or mail us a pointer to
 FreeBSD-FAQ@freefall.cdrom.com.  Thanks!
 
 
-8.0 Networking
---------------
+8 Networking
+------------
 
-8.0.1:	Where can I get information booting FreeBSD `diskless', that is
+8.1:	Where can I get information booting FreeBSD `diskless', that is
 	booting and running a FreeBSD box from a server rather than having
 	a local disk?
 
 Please read /sys/i386/netboot/netboot.doc.
 
 
-8.0.2:	I've heard that you can use a FreeBSD box as a dedicated network
+8.2:	I've heard that you can use a FreeBSD box as a dedicated network
 	router - is there any easy support for this?
 
 Internet standards and good engineering practice prohibit us from
@@ -590,16 +641,16 @@ machine to configure it as a network router.  Please look in:
 
 	freefall.cdrom.com:~ftp/pub/incoming/freertr
 
-And follow the instructions.
+and follow the instructions.
 
 
-8.0.3:	Does FreeBSD support SLIP and PPP?
+8.3:	Does FreeBSD support SLIP and PPP?
 
 Yes.  See the man pages for slattach and/or pppd if you're using FreeBSD
 to connect to another site.  If you're using FreeBSD as a server for other
 machines, look at the man page for `sliplogin'.
 
-8.0.4:  How do I set up NTP?
+8.4:	How do I set up NTP?
 
 NTP configuration is so complex and widely variable from site to site
 that it would be impossible to make a blanket statement here.  Your
@@ -613,11 +664,29 @@ If you can't find anyone in charge, you should examine the files in
 could ask on the comp.protocols.time.ntp newsgroup, or the
 `ntp@ni.umd.edu' mailing-list.
 
+8.5:	How do I get my network set up?  I don't see how to make my
+	/dev/ed0 device!
 
-9.0 Serial Communications
--------------------------
+In the Berkeley networking framework, network interfaces are only
+accessible directly by kernel code.  Please see the /etc/netstart file
+and the manual pages for the various network programs mentioned there
+for more information.  If this leaves you totally confused, then you
+should pick up a book describing network administration on another
+BSD-related operating system; with few significant exceptions,
+administering networking on FreeBSD is basically the same as on SunOS
+4.0 or Ultrix.
 
-9.0.1: When I do a set line in kermit it locks up, whats the problem?
+8.6:	How do I get my 3C503 to use the other network port?
+
+Use `ifconfig ed0' to see whether the ALTPHYS flag is set, and then
+use either `ifconfig ed0 altphys' if it was off, or `ifconfig ed0
+-altphys' if it was on.
+
+
+9 Serial Communications
+-----------------------
+
+9.1: When I do a set line in kermit it locks up, whats the problem?
 
 The problem here is that FreeBSD thinks it's talking to a incoming
 modem connection, and is waiting for carrier to come up on it before
