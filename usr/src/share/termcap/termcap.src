@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.62 (Berkeley) %G%
+#	@(#)termcap.src	5.63 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -204,13 +204,27 @@ Ba|5410|4410|tty5410|att4410|AT&T Teletype 5410 terminal with 80 columns:\
 	:KM=/usr/lib/ua/kmap.5410:is=\E[0m^O\E[?6l:kn#8:\
 	:k1=\EOc:k2=\EOd:k3=\EOe:k4=\EOf:k4=\EOg:k6=\EOh:\
 	:k7=\EOi:k8=\EOj:ko=nd,up,ho:
-Bi|att630|ATT630|630DMD|630MTG|AT&T 630 windowing terminal:\
-	:am:da:db:mi:ms:xo:pt:bs:\
-	:co#80:li#60:cr=\r:up=\E[A:do=\E[B:nd=\E[C:cm=\E[%i%d;%dH:\
-	:ho=\E[H:bt=\E[Z:sf=\E[S:sr=\E[T:us=\E[4m:ue=\E[m:so=\E[7m:se=\E[m:\
-	:ce=\E[K:cd=\E[J:cl=\E[H\E[J:al=\E[L:dl=\E[M:\
-	:im=:ei=:ic=\E[@:dm=:ed=:dc=\E[P:\
-	:kb=\b:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:
+# AT&T 630 MTG DMD from muller%sdcc7@ucsd.edu (Keith Muller)
+Bi|att630|dmd630|ATT630|630DMD|630dmd|630MTG|AT&T 630 windowing terminal:\
+	:am:da:db:ms:bs:co#80:it#8:li#60:lm#0:\
+	:up=\E[A:do=\E[B:nd=\E[C:le=\b:UP=\E[%dA:DO=\E[%dB:RI=\E[%dC:\
+	:LE=\E[%dD:cm=\E[%i%d;%dH:ho=\E[H:bt=\E[Z:\
+	:sf=\n:sr=\EM:SF=\E[%dS:SR=\E[%dT:us=\E[4m:ue=\E[m:so=\E[7m:se=\E[m:\
+	:mr=\E[7m:mh=\E[2m:mb=\E[5m:me=\E[m:ce=\E[K:cd=\E[J:cl=\E[H\E[J:\
+	:dc=\E[P:dl=\E[M:al=\E[L:DC=\E[%dP:DL=\E[%dM:AL=\E[%dL:\
+	:ic=\E[@:IC=\E[%d@:im=:ei=:sc=\E7:rc=\E8:i2=\E[m:rs=\Ec:\
+	:pf=\E[?4i:po=\E[?5i:\
+	:kb=\b:kC=\E[2J:kh=\E[H:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:
+Bj|dmd630-24|att630-24|ATT630-24|630DMD-24|630MTG-24|AT&T 630 windowing terminal 24 lines:\
+	:li#24:tc=att630:
+Bk|dmd615|att615|ATT615|615DMD|615MTG|AT&T 615 windowing terminal 80 column:\
+	:li#24:tc=att630:
+Bl|dmd615-w|att615-w|ATT615-w|615DMD-w|615MTG-w|AT&T 615 windowing terminal 132 column:\
+	:li#24:co#132:tc=att630:
+Bm|dmd620|att620|ATT620|620DMD|620MTG|AT&T 620 windowing terminal 80 column:\
+	:li#24:tc=att630:
+Bn|dmd620-w|att620-w|ATT620-w|620DMD-w|620MTG-w|AT&T 620 windowing terminal 132 column:\
+	:li#24:co#132:tc=att630:
 # AT&T Teletype 5420 Terminal (a.k.a. 4415) June 5, 1985
 Bb|5420|4415|tty5420|att4415|AT&T Teletype 5420 terminal:\
 	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[H\E[J:\
