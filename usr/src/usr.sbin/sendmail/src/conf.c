@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -780,8 +780,10 @@ refuseconnections()
 **  SETPROCTITLE -- set process title for ps
 **
 **	Parameters:
-**		fmt -- a printf style format string.
-**		a, b, c -- possible parameters to fmt.
+**		fmt -- a printf style format string.  If NULL, the first
+**			parameter is a literal proctitle previously
+**			returned by getproctitle.
+**		va_alist -- possible parameters to fmt.
 **
 **	Returns:
 **		none.
@@ -790,6 +792,8 @@ refuseconnections()
 **		Clobbers argv of our main procedure so ps(1) will
 **		display the title.
 */
+
+char	ProcTitleBuf[MAXLINE];
 
 /*VARARGS1*/
 #ifdef __STDC__
@@ -803,29 +807,36 @@ setproctitle(fmt, va_alist)
 # ifdef SETPROCTITLE
 	register char *p;
 	register int i;
-	char buf[MAXLINE];
 	VA_LOCAL_DECL
 	extern char **Argv;
 	extern char *LastArgv;
 
-	p = buf;
-
-	/* print sendmail: heading for grep */
-	(void) strcpy(p, "sendmail: ");
-	p += strlen(p);
-
-	/* print the argument string */
 	VA_START(fmt);
-	(void) vsprintf(p, fmt, ap);
+	if (fmt == NULL)
+	{
+		/* restore old proctitle */
+		(void) strcpy(ProcTitleBuf, va_arg(ap, char *));
+	}
+	else
+	{
+		p = ProcTitleBuf;
+
+		/* print sendmail: heading for grep */
+		(void) strcpy(p, "sendmail: ");
+		p += strlen(p);
+
+		/* print the argument string */
+		(void) vsprintf(p, fmt, ap);
+	}
 	VA_END;
 
-	i = strlen(buf);
+	i = strlen(ProcTitleBuf);
 	if (i > LastArgv - Argv[0] - 2)
 	{
 		i = LastArgv - Argv[0] - 2;
-		buf[i] = '\0';
+		ProcTitleBuf[i] = '\0';
 	}
-	(void) strcpy(Argv[0], buf);
+	(void) strcpy(Argv[0], ProcTitleBuf);
 	p = &Argv[0][i];
 	while (p < LastArgv)
 		*p++ = ' ';
