@@ -1,4 +1,4 @@
-#	Makefile	4.1	81/11/29
+#	Makefile	4.2	81/11/29
 #
 # makefile for intermachine communications package
 #
@@ -11,7 +11,8 @@
 # Presently supports:
 #	BIZCOMP
 #	DEC DF02-AC, DF03-AC
-#	DEC DN-11/Able Quadracall {untested}
+#	DEC DN-11/Able Quadracall
+#	VENTEL intelligent modem
 #
 # Configuration defines:
 #	DF02, DF03, DN11	ACU's supported
