@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.68 92/01/20$
  *
- *	@(#)machdep.c	7.31 (Berkeley) %G%
+ *	@(#)machdep.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -901,7 +901,7 @@ boot(howto)
 		savectx(curproc->p_addr, 0);
 
 	boothowto = howto;
-	if ((howto&RB_NOSYNC) == 0 && waittime < 0 && bfreelist[0].b_forw) {
+	if ((howto&RB_NOSYNC) == 0 && waittime < 0) {
 		register struct buf *bp;
 		int iter, nbusy;
 
