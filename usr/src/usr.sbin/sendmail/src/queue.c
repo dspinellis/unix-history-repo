@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.58 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.57 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.58 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -269,6 +269,8 @@ queueup(e, queueall, announce)
 		    (queueall && !bitset(QDONTSEND|QBADADDR|QSENT, q->q_flags)))
 		{
 			printctladdr(q, tfp);
+			if (q->q_orcpt != NULL)
+				fprintf(tfp, "Q%s\n", q->q_orcpt);
 			putc('R', tfp);
 			if (bitset(QPRIMARY, q->q_flags))
 				putc('P', tfp);
@@ -1189,6 +1191,7 @@ readqf(e)
 	char *bp;
 	int qfver = 0;
 	register char *p;
+	char *orcpt = NULL;
 	char qf[20];
 	char buf[MAXLINE];
 	extern long atol();
@@ -1307,6 +1310,10 @@ readqf(e)
 
 		  case 'C':		/* specify controlling user */
 			ctladdr = setctluser(&bp[1]);
+			break;
+
+		  case 'Q':		/* original recipient */
+			orcpt = newstr(&bp[1]);
 			break;
 
 		  case 'R':		/* specify recipient */

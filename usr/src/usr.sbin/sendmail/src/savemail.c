@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -442,9 +442,14 @@ returntosender(msg, returnq, sendbody, e)
 
 	if (tTd(6, 1))
 	{
-		printf("Return To Sender: msg=\"%s\", depth=%d, e=%x, returnq=",
+		printf("\n*** Return To Sender: msg=\"%s\", depth=%d, e=%x, returnq=",
 		       msg, returndepth, e);
 		printaddr(returnq, TRUE);
+		if (tTd(6, 20))
+		{
+			printf("Sendq=");
+			printaddr(e->e_sendqueue, TRUE);
+		}
 	}
 
 	if (++returndepth >= MAXRETURNS)
