@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -371,6 +371,8 @@ deliver(e, firstto)
 	**	If we are running SMTP, we just need to clean up.
 	*/
 
+	if (ctladdr == NULL)
+		ctladdr = &e->e_from;
 #ifdef NAMED_BIND
 	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
 #endif
