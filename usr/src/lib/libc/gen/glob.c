@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -56,7 +56,9 @@ static char sccsid[] = "@(#)glob.c	5.11 (Berkeley) %G%";
 #define	M_QUOTE		0x8000
 #define	M_PROTECT	0x4000
 #define	M_MASK		0xffff
+#define	M_ASCII		0x00ff
 
+#define	CHAR(c)		((c)&M_ASCII)
 #define	META(c)		((c)|M_QUOTE)
 #define	M_ALL		META('*')
 #define	M_END		META(']')
@@ -95,11 +97,11 @@ glob(pattern, flags, errfunc, pglob)
 	int flags, (*errfunc) __P((char *, int));
 	glob_t *pglob;
 {
-	const char *compilepat, *patnext;
+	const u_char *compilepat, *patnext;
 	int c, err, oldpathc;
 	Char *bufnext, *bufend, *compilebuf, *qpatnext, patbuf[MAXPATHLEN+1];
 
-	patnext = pattern;
+	patnext = (u_char *) pattern;
 	if (!(flags & GLOB_APPEND)) {
 		pglob->gl_pathc = 0;
 		pglob->gl_pathv = NULL;
@@ -155,11 +157,11 @@ glob(pattern, flags, errfunc, pglob)
 				*bufnext++ = M_NOT;
 			c = *qpatnext++;
 			do {
-				*bufnext++ = c;
+				*bufnext++ = CHAR(c);
 				if (*qpatnext == RANGE &&
 				    (c = qpatnext[1]) != RBRACKET) {
 					*bufnext++ = M_RNG;
-					*bufnext++ = c;
+					*bufnext++ = CHAR(c);
 					qpatnext += 2;
 				}
 			} while ((c = *qpatnext++) != RBRACKET);
@@ -174,7 +176,7 @@ glob(pattern, flags, errfunc, pglob)
 			*bufnext++ = M_ALL;
 			break;
 		default:
-			*bufnext++ = c;
+			*bufnext++ = CHAR(c);
 			break;
 		}
 	}
@@ -189,8 +191,8 @@ glob(pattern, flags, errfunc, pglob)
 	if (pglob->gl_pathc == oldpathc && flags & GLOB_NOCHECK) {
 		if (!(flags & GLOB_QUOTE)) {
 			Char *dp = compilebuf;
-			const char *sp = compilepat;
-			while (*dp++ = (u_char)*sp++);
+			const u_char *sp = compilepat;
+			while (*dp++ = *sp++);
 		}
 		else {
 			/*
@@ -315,14 +317,14 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 
 	/* Search directory for matching names. */
 	while ((dp = readdir(dirp))) {
-		register char *sc;
+		register u_char *sc;
 		register Char *dc;
 
 		/* Initial DOT must be matched literally. */
 		if (dp->d_name[0] == DOT && *pattern != DOT)
 			continue;
-		for (sc = dp->d_name, dc = pathend; 
-		     *dc++ = (u_char)*sc++;);
+		for (sc = (u_char *) dp->d_name, dc = pathend; 
+		     *dc++ = *sc++;);
 		if (!match(pathend, pattern, restpattern)) {
 			*pathend = EOS;
 			continue;
