@@ -1,4 +1,4 @@
-/* in.h 4.9 82/02/27 */
+/* in.h 4.10 82/03/05 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -65,6 +65,8 @@ struct in_addr {
 #define	s_host	S_un.S_un_b.s_b2	/* host on imp */
 #define	s_net	S_un.S_un_b.s_b1	/* network */
 #define	s_imp	S_un.S_un_w.s_w2	/* imp */
+#define	s_impno	S_un.S_un_b.s_b4	/* imp # */
+#define	s_lh	S_un.S_un_b.s_b3	/* logical host */
 #endif
 };
 

@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.6	82/02/16	*/
+/*	raw_imp.c	4.7	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,7 +10,7 @@
 #include "../net/if.h"
 #include "../net/if_imp.h"
 #include "../net/raw_cb.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Raw interface to IMP.

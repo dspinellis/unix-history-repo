@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.7	82/02/02	*/
+/*	raw_usrreq.c	4.8	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -10,7 +10,7 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Initialize raw connection block q.
@@ -102,9 +102,10 @@ next:
 		so = rp->rcb_socket;
 		pr = so->so_proto;
 		if (pr->pr_family != sp->sp_family ||
-		    pr->pr_protocol != sp->sp_protocol)
+		    (pr->pr_protocol && pr->pr_protocol != sp->sp_protocol))
 			continue;
-		if (sa->sa_family != so->so_addr.sa_family)
+		if (so->so_addr.sa_family && 
+		    sa->sa_family != so->so_addr.sa_family)
 			continue;
 		/*
 		 * We assume the lower level routines have
@@ -145,7 +146,10 @@ nospace:
 	if (last == 0)
 		goto drop;
 	if (sbappendaddr(&last->so_rcv, &rawp->raw_src, m->m_next) == 0)
+{
+printf("rawintr: sbappendaddr failed\n");
 		goto drop;
+}
 	(void) m_free(m);	/* generic header */
 	sorwakeup(last);
 	goto next;

@@ -1,4 +1,4 @@
-/*	if_imp.c	4.10	82/02/27	*/
+/*	if_imp.c	4.11	82/03/05	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -87,7 +87,7 @@ COUNT(IMPATTACH);
 	ifp->if_mtu = IMP_MTU;
 	ifp->if_net = ui->ui_flags;
 	/* the host and imp fields will be filled in by the imp */
-	ifp->if_addr.s_addr = if_makeaddr(ifp->if_net, 0);
+	ifp->if_addr = if_makeaddr(ifp->if_net, 0);
 	ifp->if_init = impinit;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
@@ -215,7 +215,7 @@ COUNT(IMPINPUT);
 			hostreset(sc->imp_if.if_net);	/* XXX */
 			impnoops(sc);
 		}
-		goto drop;
+		goto rawlinkin;
 
 	/*
 	 * IMP going down.  Print message, and if not immediate,
@@ -228,7 +228,7 @@ COUNT(IMPINPUT);
 			timeout(impdown, sc, 30 * hz);
 		}
 		impmsg(sc, "going down %s", impmessage[ip->il_link&IMP_DMASK]);
-		goto drop;
+		goto rawlinkin;
 
 	/*
 	 * A NOP usually seen during the initialization sequence.
@@ -243,9 +243,9 @@ COUNT(IMPINPUT);
 			sc->imp_dropcnt = IMP_DROPCNT;
 		}
 		if (sc->imp_state != IMPS_INIT)
-			goto drop;
+			goto rawlinkin;
 		if (--sc->imp_dropcnt > 0)
-			goto drop;
+			goto rawlinkin;
 		sc->imp_state = IMPS_UP;
 		sin = &sc->imp_if.if_addr;
 		sc->imp_if.if_host[0] = sin->s_host = ip->il_host;
@@ -254,7 +254,7 @@ COUNT(IMPINPUT);
 			ntohs(ip->il_imp));
 		/* restart output in case something was q'd */
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
-		goto drop;
+		goto rawlinkin;
 	}
 
 	/*
@@ -305,11 +305,11 @@ COUNT(IMPINPUT);
 	case IMPTYPE_RESET:
 		impmsg(sc, "interface reset");
 		impnoops(sc);
-		goto drop;
+		goto rawlinkin;
 
 	default:
 		sc->imp_if.if_collisions++;		/* XXX */
-		goto drop;
+		goto rawlinkin;
 	}
 
 	/*

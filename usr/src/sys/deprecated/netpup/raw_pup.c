@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.5	82/03/05	*/
+/*	raw_pup.c	4.6	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -9,6 +9,7 @@
 #include "../net/in_systm.h"
 #include "../net/pup.h"
 #include "../net/raw_cb.h"
+#include "../net/if.h"
 #include "../errno.h"
 
 /*
@@ -26,8 +27,8 @@ COUNT(RPUP_CTLINPUT);
  * Encapsulate packet in PUP header which is supplied by the
  * user.  This is done to allow user to specify PUP identifier.
  */
-rpup_output(m0, so)
-	struct mbuf *m0;
+rpup_output(m, so)
+	register struct mbuf *m;
 	struct socket *so;
 {
 	register struct rawcb *rp = sotorawcb(so);
@@ -43,7 +44,7 @@ COUNT(RPUP_OUTPUT);
 	 * for the header and check parameters in it.
 	 */
 	if ((m->m_off > MMAXOFF || m->m_len < sizeof(struct pup_header)) &&
-	    (m = m_pullup(m, sizeof(struct pup_header)) == 0) {
+	    (m = m_pullup(m, sizeof(struct pup_header))) == 0)
 		goto bad;
 	pup = mtod(m, struct pup_header *);
 	if (pup->pup_type == 0)
@@ -59,7 +60,7 @@ COUNT(RPUP_OUTPUT);
 	/*
 	 * Insure proper source address is included.
 	 */
-	spup = (struct sockadrr_pup *)rp->rcb_socket->so_addr;
+	spup = (struct sockadrr_pup *)&(rp->rcb_socket->so_addr);
 	pup->pup_sport = spup->spup_addr;
 	/* for now, assume user generates PUP checksum. */
 
