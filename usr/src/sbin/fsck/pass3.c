@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass3.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass3.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,6 +34,8 @@ pass3()
 		inp = *inpp;
 		if (inp->i_number == ROOTINO ||
 		    !(inp->i_parent == 0 || statemap[inp->i_number] == DSTATE))
+			continue;
+		if (statemap[inp->i_number] == DCLEAR)
 			continue;
 		for (loopcnt = 0; ; loopcnt++) {
 			orphan = inp->i_number;
