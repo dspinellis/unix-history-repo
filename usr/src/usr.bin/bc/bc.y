@@ -1,5 +1,5 @@
 %{
-static	char *sccsid = "@(#)bc.y	4.2 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)bc.y	4.3 (Berkeley) 85/11/28";
 	int *getout();
 %}
 %right '='
@@ -549,8 +549,10 @@ yyinit(argc,argv) int argc; char *argv[];{
 	sargv=argv;
 	sargc= -- argc;
 	if(sargc == 0)in=stdin;
-	else if((in = fopen(sargv[1],"r")) == NULL)
+	else if((in = fopen(sargv[1],"r")) == NULL) {
 		yyerror("cannot open input file");
+		in = stdin;
+	}
 	ifile = 1;
 	ln = 0;
 	ss = sargv[1];
