@@ -35,6 +35,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)pmap.c	7.7 (Berkeley)	5/12/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00063
+ * --------------------         -----   ----------------------
+ *
+ * 28 Nov 1991	Poul-Henning Kamp	Speedup processing.
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/pmap.c,v 1.3 92/01/21 14:26:44 william Exp Locker: root $";
 
@@ -536,17 +543,17 @@ pmap_reference(pmap)
  */
 void
 pmap_remove(pmap, sva, eva)
-	register struct pmap *pmap;
-	vm_offset_t sva, eva;
+	struct pmap *pmap;
+	register vm_offset_t sva;
+	register vm_offset_t eva;
 {
-	register vm_offset_t pa, va;
-	register pt_entry_t *pte;
-	register pv_entry_t pv, npv;
-	register int ix;
-	pmap_t ptpmap;
-	int *pde, s, bits;
-	boolean_t firstpage = TRUE;
-	boolean_t flushcache = FALSE;
+	register pt_entry_t *ptp,*ptq;
+	vm_offset_t va;
+	vm_offset_t pa;
+	pt_entry_t *pte;
+	pv_entry_t pv, npv;
+	int ix;
+	int s, bits;
 #ifdef DEBUG
 	pt_entry_t opte;
 
@@ -557,24 +564,60 @@ pmap_remove(pmap, sva, eva)
 	if (pmap == NULL)
 		return;
 
+	/* are we current address space or kernel? */
+	if (pmap->pm_pdir[PTDPTDI].pd_pfnum == PTDpde.pd_pfnum
+		|| pmap == kernel_pmap)
+		ptp=PTmap;
+
+	/* otherwise, we are alternate address space */
+	else {
+		if (pmap->pm_pdir[PTDPTDI].pd_pfnum
+			!= APTDpde.pd_pfnum) {
+			APTDpde = pmap->pm_pdir[PTDPTDI];
+			tlbflush();
+		}
+		ptp=APTmap;
+	     }
 #ifdef DEBUG
 	remove_stats.calls++;
 #endif
-	for (va = sva; va < eva; va += PAGE_SIZE) {
+	
+	/* this is essential since we must check the PDE(sva) for precense */
+	while (sva <= eva && !pmap_pde_v(pmap_pde(pmap, sva)))
+		sva = (sva & PD_MASK) + (1<<PD_SHIFT);
+	sva = i386_btop(sva);
+	eva = i386_btop(eva);
+
+	for (; sva < eva; sva++) {
 		/*
 		 * Weed out invalid mappings.
 		 * Note: we assume that the page directory table is
 	 	 * always allocated, and in kernel virtual.
 		 */
-		if (!pmap_pde_v(pmap_pde(pmap, va)))
-			continue;
+		ptq=ptp+sva;
+		while((sva & 0x3ff) && !pmap_pte_pa(ptq))
+		    {
+		    if(++sva >= eva)
+		        return;
+		    ptq++;
+		    }		    
 
-		pte = pmap_pte(pmap, va);
-		if (pte == 0)
+
+		if(!(sva & 0x3ff)) /* Only check once in a while */
+ 		    {
+		    if (!pmap_pde_v(pmap_pde(pmap, i386_ptob(sva))))
+			{
+			/* We can race ahead here, straight to next pde.. */
+			sva = (sva & 0xffc00) + (1<<10) -1 ;
 			continue;
+			}
+		    }
+	        if(!pmap_pte_pa(ptp+sva))
+		    continue;
+
+		pte = ptp + sva;
 		pa = pmap_pte_pa(pte);
-		if (pa == 0)
-			continue;
+		va = i386_ptob(sva);
 #ifdef DEBUG
 		opte = *pte;
 		remove_stats.removes++;
@@ -743,6 +786,7 @@ pmap_protect(pmap, sva, eva, prot)
 	register int ix;
 	int i386prot;
 	boolean_t firstpage = TRUE;
+	register pt_entry_t *ptp;
 
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_PROTECT))
@@ -758,6 +802,20 @@ pmap_protect(pmap, sva, eva, prot)
 	if (prot & VM_PROT_WRITE)
 		return;
 
+	/* are we current address space or kernel? */
+	if (pmap->pm_pdir[PTDPTDI].pd_pfnum == PTDpde.pd_pfnum
+		|| pmap == kernel_pmap)
+		ptp=PTmap;
+
+	/* otherwise, we are alternate address space */
+	else {
+		if (pmap->pm_pdir[PTDPTDI].pd_pfnum
+			!= APTDpde.pd_pfnum) {
+			APTDpde = pmap->pm_pdir[PTDPTDI];
+			tlbflush();
+		}
+		ptp=APTmap;
+	     }
 	for (va = sva; va < eva; va += PAGE_SIZE) {
 		/*
 		 * Page table page is not allocated.
@@ -772,8 +830,7 @@ pmap_protect(pmap, sva, eva, prot)
 			continue;
 		}
 
-		pte = pmap_pte(pmap, va);
-		if (pte == 0) panic("pmap_protect: cannot happen");
+		pte = ptp + i386_btop(va);
 
 		/*
 		 * Page not valid.  Again, skip it.

@@ -60,6 +60,13 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00063
+ * --------------------         -----   ----------------------
+ *
+ * 28 Nov 1991	Poul-Henning Kamp	Speedup processing
  */
 
 /*
@@ -232,7 +239,6 @@ vm_pager_unmap_page(kva)
 
 	m = PHYS_TO_VM_PAGE(pmap_extract(vm_map_pmap(pager_map), kva));
 #endif
-	pmap_remove(vm_map_pmap(pager_map), kva, kva + PAGE_SIZE);
 	kmem_free_wakeup(pager_map, kva, PAGE_SIZE);
 #ifdef DEBUG
 	if (m->pagerowned)
