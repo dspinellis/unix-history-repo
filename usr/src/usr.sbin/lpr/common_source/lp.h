@@ -2,9 +2,9 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.h%
+ * %sccs.include.redist.c%
  *
- * 	@(#)lp.h	5.8 (Berkeley) %G%
+ * 	@(#)lp.h	5.9 (Berkeley) %G%
  */
 
 
