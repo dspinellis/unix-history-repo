@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	3.27 %G%";
+static char sccsid[] = "@(#)cmd1.c	3.28 %G%";
 #endif
 
 #include "defs.h"
@@ -13,7 +13,7 @@ c_window()
 	if ((id = findid()) < 0)
 		return;
 	if (!terse)
-		wwputs("Upper left corner: ", cmdwin);
+		wwputs("New window (upper left corner): ", cmdwin);
 	col = 0;
 	row = 1;
 	wwadd(boxwin, framewin->ww_back);
@@ -39,7 +39,7 @@ c_window()
 		break;
 	}
 	if (!terse)
-		wwputs("\nLower right corner: ", cmdwin);
+		wwputs("\nNew window (lower right corner): ", cmdwin);
 	xcol = col;
 	xrow = row;
 	for (;;) {
