@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)clri.c 2.1 %G%";
+static char sccsid[] = "@(#)clri.c 2.2 %G%";
 
 /* static char *sccsid = "@(#)clri.c	4.1 (Berkeley) 10/1/80"; */
 
@@ -52,6 +52,10 @@ main(argc, argv)
 	lseek(f, SBLOCK * DEV_BSIZE, 0);
 	if (read(f, &sblock, SBSIZE) != SBSIZE) {
 		printf("cannot read %s\n", argv[1]);
+		exit(4);
+	}
+	if (sblock.fs_magic != FS_MAGIC) {
+		printf("bad super block magic number\n");
 		exit(4);
 	}
 	for (i = 2; i < argc; i++) {
