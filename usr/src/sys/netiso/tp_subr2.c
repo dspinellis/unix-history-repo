@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
- *	@(#)tp_subr2.c	7.4 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.5 (Berkeley) %G%
  *
  * Some auxiliary routines:
  * 		tp_protocol_error: required by xebec- called when a combo of state,
@@ -42,8 +42,6 @@ SOFTWARE.
 #ifndef lint
 static char *rcsid = "$Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $";
 #endif lint
-
-#include "argoxtwentyfive.h"
 
 /* this def'n is to cause the expansion of this macro in the
  * routine tp_local_credit :
@@ -75,6 +73,15 @@ static char *rcsid = "$Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $";
 #include "tp_trace.h"
 #include "tp_user.h"
 #include "cons.h"
+
+#include "../net/if.h"
+#ifdef TRUE
+#undef FALSE
+#undef TRUE
+#endif
+#include "../netccitt/x25.h"
+#include "../netccitt/pk.h"
+#include "../netccitt/pk_var.h"
 
 /*
  * NAME: 	tp_local_credit()
@@ -340,24 +347,31 @@ tp_netcmd( tpcb, cmd )
 	struct tp_pcb *tpcb;
 	int cmd;
 {
-#if NARGOXTWENTYFIVE > 0
+#ifdef TPCONS
+	struct isopcb *isop;
+	struct pklcd *lcp;
+
+	if (tpcb->tp_netservice != ISO_CONS)
+		return;
+	isop = (struct isopcb *)tpcb->tp_npcb;
+	lcp = (struct pklcd *)isop->isop_chan;
 	switch (cmd) {
 
 	case CONN_CLOSE:
 	case CONN_REFUSE:
-		cons_netcmd( cmd, tpcb->tp_npcb, 0, tpcb->tp_class == TP_CLASS_4);
-		/* TODO: can this last param be replaced by 
-	 	*	tpcb->tp_netserv != ISO_CONS?)
-		*/
+		if (isop->isop_refcnt == 1)
+			pk_disconnect(lcp);
+		isop->isop_chan = 0;
+		isop->isop_refcnt = 0;
 		break;
 
 	default:
 		printf("tp_netcmd(0x%x, 0x%x) NOT IMPLEMENTED\n", tpcb, cmd);
 		break;
 	}
-#else NARGOXTWENTYFIVE
+#else TPCONS
 	printf("tp_netcmd(): X25 NOT CONFIGURED!!\n");
-#endif NARGOXTWENTYFIVE > 0
+#endif
 }
 /*
  * CALLED FROM:
@@ -433,12 +447,12 @@ int
 tp_route_to( m, tpcb, channel)
 	struct mbuf					*m;
 	register struct tp_pcb		*tpcb;
-	u_int 						channel;
+	caddr_t 					channel;
 {
 	register struct sockaddr_iso *siso;	/* NOTE: this may be a sockaddr_in */
 	extern struct tp_conn_param tp_conn_param[];
+	struct pklcd *lcp = (struct pklcd *)channel;
 	int error = 0;
-	int	vc_to_kill = 0; /* kludge */
 
 	siso = mtod(m, struct sockaddr_iso *);
 	IFTRACE(D_CONN)
@@ -453,7 +467,7 @@ tp_route_to( m, tpcb, channel)
 		printf("m->mlen x%x, m->m_data:\n", m->m_len);
 		dump_buf(mtod(m, caddr_t), m->m_len);
 	ENDDEBUG
-	if( siso->siso_family != tpcb->tp_domain ) {
+	if (siso->siso_family != tpcb->tp_domain) {
 		error = EAFNOSUPPORT;
 		goto done;
 	}
@@ -461,7 +475,25 @@ tp_route_to( m, tpcb, channel)
 		printf("tp_route_to  calling nlp_pcbconn, netserv %d\n",
 			tpcb->tp_netservice);
 	ENDDEBUG
-	error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_sock->so_pcb, m);
+#ifdef TPCONS
+	if (lcp) {
+		struct isopcb *isop = (struct isopcb *)lcp->lcd_upnext,
+			*isop_new = (struct isopcb *)tpcb->tp_sock->so_pcb;
+		remque(isop_new);
+		free(isop_new, M_PCB);
+		tpcb->tp_sock->so_pcb = (caddr_t)isop;
+		if (isop->isop_refcnt == 0) {
+			extern struct isopcb tp_isopcb;
+			remque(isop);
+			insque(isop, &tp_isopcb);
+			isop->isop_head = &tp_isopcb;
+			iso_putsufx(isop, tpcb->tp_lsuffix, tpcb->tp_lsuffixlen, TP_LOCAL);
+		}
+		/* else there are already connections sharing this */
+		isop->isop_refcnt++;
+	} else
+#endif
+		error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_sock->so_pcb, m);
 	if( error )
 		goto done;
 
@@ -495,7 +527,7 @@ tp_route_to( m, tpcb, channel)
 			break;
 
 		case ISO_CONS:
-#if NARGOXTWENTYFIVE > 0
+#ifdef TPCONS
 			tpcb->tp_flags |= TPF_NLQOS_PDN;
 			if( tpcb->tp_dont_change_params == 0 ) {
 				copyQOSparms( &tp_conn_param[ISO_CONS],
@@ -513,18 +545,6 @@ tp_route_to( m, tpcb, channel)
 			tpcb->tp_rx_strat =  TPRX_USE_CW;
 
 			if( (tpcb->tp_nlproto != &nl_protosw[ISO_CONS]) ) {
-				/* if the listener was restricting us to clns,
-				 * ( we never get here if the listener isn't af_iso )
-				 * refuse the connection :
-				 * but we don't have a way to restrict thus - it's
-				 * utterly permissive.
-					if(channel)  {
-						(void) cons_netcmd(CONN_REFUSE, tpcb->tp_npcb, 
-								channel, tpcb->tp_class == TP_CLASS_4);
-						error = EPFNOSUPPORT;
-						goto done;
-					}
-				 */
 				IFDEBUG(D_CONN)
 					printf(
 					"tp_route_to( CHANGING nlproto old 0x%x new 0x%x)\n", 
@@ -532,29 +552,12 @@ tp_route_to( m, tpcb, channel)
 				ENDDEBUG
 				tpcb->tp_nlproto = &nl_protosw[ISO_CONS];
 			}
-			/* Now we've got the right nl_protosw. 
-			 * If we already have a channel (we were called from tp_input())
-			 * tell cons that we'll hang onto this channel.
-			 * If we don't already have one (we were called from usrreq())
-			 * -and if it's TP0 open a net connection and wait for it to finish.
-			 */
-			if( channel ) {
-				error = cons_netcmd( CONN_CONFIRM, tpcb->tp_npcb, 
-								channel, tpcb->tp_class == TP_CLASS_4);
-				vc_to_kill ++;
-			} else if( tpcb->tp_class != TP_CLASS_4 /* class 4 only */) {
-				/* better open vc if any possibility of ending up 
-				 * in non-multiplexing class
-				 */
-				error = cons_openvc(tpcb->tp_npcb, siso, tpcb->tp_sock);
-				vc_to_kill ++;
-			}
 			/* class 4 doesn't need to open a vc now - may use one already 
 			 * opened or may open one only when it sends a pkt.
 			 */
-#else NARGOXTWENTYFIVE > 0
+#else TPCONS
 			error = ECONNREFUSED;
-#endif NARGOXTWENTYFIVE > 0
+#endif TPCONS
 			break;
 		default:
 			error = EPROTOTYPE;
@@ -562,7 +565,7 @@ tp_route_to( m, tpcb, channel)
 
 		ASSERT( save_netservice == tpcb->tp_netservice);
 	}
-	if( error && vc_to_kill ) {
+	if (error) {
 		tp_netcmd( tpcb, CONN_CLOSE);
 		goto done;
 	} 

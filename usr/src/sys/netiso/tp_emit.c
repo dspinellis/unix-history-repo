@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_emit.c,v $
- *	@(#)tp_emit.c	7.5 (Berkeley) %G% *
+ *	@(#)tp_emit.c	7.6 (Berkeley) %G% *
  *
  * This file contains tp_emit() and tp_error_emit(), which
  * form TPDUs and hand them to ip.
@@ -50,7 +50,6 @@ static char *rcsid = "$Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $";
 #endif lint
 
 
-#include "argoxtwentyfive.h"
 #include "param.h"
 #include "mbuf.h"
 #include "socket.h"
@@ -60,6 +59,7 @@ static char *rcsid = "$Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $";
 #include "types.h"
 #include "time.h"
 #include "iso.h"
+#include "iso_pcb.h"
 #include "argo_debug.h"
 #include "tp_timer.h"
 #include "tp_param.h"
@@ -70,6 +70,15 @@ static char *rcsid = "$Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $";
 #include "tp_meas.h"
 #include "tp_seq.h"
 #include "iso_errno.h"
+
+#include "../net/if.h"
+#ifdef TRUE
+#undef FALSE
+#undef TRUE
+#endif
+#include "../netccitt/x25.h"
+#include "../netccitt/pk.h"
+#include "../netccitt/pk_var.h"
 
 void iso_gen_csum();
 
@@ -225,6 +234,13 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 					tpcb->tp_sent_lcdt = tpcb->tp_lcredit;
 					hdr->tpdu_cdt = tpcb->tp_lcredit;
 				} else {
+#ifdef TPCONS
+					if (tpcb->tp_netservice == ISO_CONS) {
+						struct isopcb *isop = (struct isopcb *)tpcb->tp_npcb;
+						struct pklcd *lcp = (struct pklcd *)(isop->isop_chan);
+						lcp->lcd_flags &= ~X25_DG_CIRCUIT;
+					}
+#endif
 					hdr->tpdu_cdt = 0;
 				}
 				hdr->tpdu_CCclass = tp_mask_to_num(tpcb->tp_class);
@@ -882,21 +898,17 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 					/* no route */	(caddr_t)0, !tpcb->tp_use_checksum); 
 	} else  {
 		if( cons_channel ) {
-#if NARGOXTWENTYFIVE > 0
-#include "cons.h"
-			/* This is unfortunate...
-				cons_send_on_vc(cons_channel, m, datalen);
-			*/
-			cons_netcmd( CONN_CLOSE, (struct isopcb *)0, 
-				cons_channel, CONS_NOT_DGM);
+#ifdef TPCONS
+			tpcons_dg_output(cons_channel, m, datalen);
+			pk_disconnect((struct pklcd *)cons_channel);
 			IFDEBUG(D_ERROR_EMIT)
 				printf("OUTPUT: dutype 0x%x channel 0x%x\n",
 					dutype, cons_channel);
 			ENDDEBUG
-#else NARGOXTWENTYFIVE
+#else
 			printf("TP panic! cons channel 0x%x but not cons configured\n",
 				cons_channel);
-#endif NARGOXTWENTYFIVE > 0
+#endif
 		} else {
 #ifndef notdef
 			IFDEBUG(D_ERROR_EMIT)
