@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.21 (Berkeley) %G%
+ *	@(#)stdlib.h	5.22 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
 #define _STDLIB_H_
-#include <sys/types.h>
+#include <machine/ansi.h>
 
 #ifdef	_BSD_SIZE_T_
 typedef	_BSD_SIZE_T_	size_t;
@@ -111,15 +111,19 @@ void	*alloca __P((size_t));	/* built-in for gcc */
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
-int	 radixsort __P((const u_char **, int, const u_char *, u_int));
-int	 sradixsort __P((const u_char **, int, const u_char *, u_int));
+int	 radixsort __P((const unsigned char **, int, const unsigned char *,
+	    unsigned));
+int	 sradixsort __P((const unsigned char **, int, const unsigned char *,
+	    unsigned));
 long	 random __P((void));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));
+#ifndef __STRICT_ANSI__
 long long
 	 strtoq __P((const char *, char **, int));
 unsigned long long
 	 strtouq __P((const char *, char **, int));
+#endif
 void	 unsetenv __P((const char *));
 #endif
 __END_DECLS
