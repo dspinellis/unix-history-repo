@@ -1,6 +1,6 @@
-static	char sccsid[] = "@(#)ld.c 3.2 %G%";
+static	char sccsid[] = "@(#)ld.c 3.3 %G%";
 /*
- * VAX VM/UNIX ld - string table version
+ * ld - string table version for VAX
  */
 
 #include <sys/types.h>
@@ -217,6 +217,7 @@ int	Sflag;		/* discard all except locals and globals*/
 int	rflag;		/* preserve relocation bits, don't define common */
 int	arflag;		/* original copy of rflag */
 int	sflag;		/* discard all symbols */
+int	Mflag;		/* print rudimentary load map */
 int	nflag;		/* pure procedure */
 int	dflag;		/* define common even with rflag */
 int	zflag;		/* demand paged  */
@@ -224,6 +225,8 @@ long	hsize;		/* size of hole at beginning of data to be squashed */
 int	Aflag;		/* doing incremental load */
 int	Nflag;		/* want impure a.out */
 int	funding;	/* reading fundamental file for incremental load */
+int	yflag;		/* number of symbols to be traced */
+char	**ytab;		/* the symbols */
 
 /*
  * These are the cumulative sizes, set in pass 1, which
@@ -393,6 +396,9 @@ char **argv;
 			load1arg(&ap[i]); 
 			ap[i]=save;
 			goto next;
+		case 'M':
+			Mflag++;
+			continue;
 		case 'x':
 			xflag++;
 			continue;
@@ -427,6 +433,16 @@ char **argv;
 		case 't':
 			trace++;
 			continue;
+		case 'y':
+			if (ap[i+1] == 0)
+				error(1, "-y: symbol name missing");
+			if (yflag == 0) {
+				ytab = (char **)calloc(argc, sizeof (char **));
+				if (ytab == 0)
+					error(1, "ran out of memory (-y)");
+			}
+			ytab[yflag++] = &ap[i+1];
+			goto next;
 		case 'z':
 			zflag++;
 			Nflag = nflag = 0;
@@ -525,6 +541,8 @@ endload(argc, argv)
 			funding = 0;
 			c++;
 			continue;
+		case 'y':
+			goto next;
 		case 'l':
 			ap[--i]='-'; 
 			load2arg(&ap[i]);
@@ -544,8 +562,12 @@ load1arg(cp)
 {
 	register struct ranlib *tp;
 	off_t nloc;
+	int kind;
 
-	switch (getfile(cp)) {
+	kind = getfile(cp);
+	if (Mflag)
+		printf("%s\n", filname);
+	switch (kind) {
 
 	/*
 	 * Plain file.
@@ -559,7 +581,8 @@ load1arg(cp)
 	 * (Slowly) process each member.
 	 */
 	case 1:
-		error(-1, "warning: archive has no table of contents");
+		error(-1,
+"warning: archive has no table of contents; add one using ranlib(1)");
 		nloc = SARMAG;
 		while (step(nloc))
 			nloc += sizeof(archdr) +
@@ -611,7 +634,8 @@ load1arg(cp)
 	 * as a normal library (but skip the __.SYMDEF file).
 	 */
 	case 3:
-		error(-1, "warning: table of contents is out of date");
+		error(-1,
+"warning: table of contents for archive is out of date; rerun ranlib(1)");
 		nloc = SARMAG;
 		do
 			nloc += sizeof(archdr) +
@@ -660,6 +684,8 @@ nextlibp(val)
 			error(1, "ran out of memory (nextlibp)");
 	}
 	clibseg->li_first[clibseg->li_used++] = val;
+	if (val != -1 && Mflag)
+		printf("\t%s\n", archdr.ar_name);
 }
 
 /*
@@ -941,10 +967,15 @@ struct	biobuf toutb;
 setupout()
 {
 	int bss;
+	extern char *sys_errlist[];
+	extern int errno;
 
 	biofd = creat(ofilename, 0666);
-	if (biofd < 0)
-		error(1, "cannot create output");
+	if (biofd < 0) {
+		filname = ofilename;		/* kludge */
+		archdr.ar_name[0] = 0;		/* kludge */
+		error(1, sys_errlist[errno]);	/* kludge */
+	}
 	tout = &toutb;
 	bopen(tout, 0);
 	filhdr.a_magic = nflag ? NMAGIC : (zflag ? ZMAGIC : OMAGIC);
@@ -1098,6 +1129,14 @@ long loc;
 		}
 /* end inline expansion of symreloc() */
 		type = cursym.n_type;
+		if (yflag && cursym.n_un.n_name)
+			for (i = 0; i < yflag; i++)
+				/* fast check for 2d character! */
+				if (ytab[i][1] == cursym.n_un.n_name[1] &&
+				    !strcmp(ytab[i], cursym.n_un.n_name)) {
+					tracesym();
+					break;
+				}
 		if ((type&N_EXT) == 0) {
 			if (!sflag&&!xflag&&
 			    (!Xflag||cursym.n_un.n_name[0]!='L'||type&N_STAB))
@@ -1151,6 +1190,45 @@ long loc;
 	dorigin += filhdr.a_data;
 	borigin += filhdr.a_bss;
 	free(curstr);
+}
+
+struct tynames {
+	int	ty_value;
+	char	*ty_name;
+} tynames[] = {
+	N_UNDF,	"undefined",
+	N_ABS,	"absolute",
+	N_TEXT,	"text",
+	N_DATA,	"data",
+	N_BSS,	"bss",
+	N_COMM,	"common",
+	0,	0,
+};
+
+tracesym()
+{
+	register struct tynames *tp;
+
+	if (cursym.n_type & N_STAB)
+		return;
+	printf("%s", filname);
+	if (archdr.ar_name[0])
+		printf("(%s)", archdr.ar_name);
+	printf(": ");
+	if ((cursym.n_type&N_TYPE) == N_UNDF && cursym.n_value) {
+		printf("definition of common %s size %d\n",
+		    cursym.n_un.n_name, cursym.n_value);
+		return;
+	}
+	for (tp = tynames; tp->ty_name; tp++)
+		if (tp->ty_value == (cursym.n_type&N_TYPE))
+			break;
+	printf((cursym.n_type&N_TYPE) ? "definition of" : "reference to");
+	if (cursym.n_type&N_EXT)
+		printf(" external");
+	if (tp->ty_name)
+		printf(" %s", tp->ty_name);
+	printf(" %s\n", cursym.n_un.n_name);
 }
 
 /*
@@ -1318,7 +1396,8 @@ finishout()
 	}
 	if (!ofilfnd) {
 		unlink("a.out");
-		link("l.out", "a.out");
+		if (link("l.out", "a.out") < 0)
+			error(1, "cannot move l.out to a.out");
 		ofilename = "a.out";
 	}
 	delarg = errlev;
@@ -1480,10 +1559,10 @@ char *acp;
 	archdr.ar_name[0] = '\0';
 	filname = cp;
 	if (cp[0]=='-' && cp[1]=='l') {
-		char *locfilname = "/usr/local/new/libxxxxxxxxxxxxxxx";
+		char *locfilname = "/usr/local/lib/libxxxxxxxxxxxxxxx";
 		if(cp[2] == '\0')
 			cp = "-la";
-		filname = "/usr/new/libxxxxxxxxxxxxxxx";
+		filname = "/usr/lib/libxxxxxxxxxxxxxxx";
 		for(c=0; cp[c+2]; c++) {
 			filname[c+12] = cp[c+2];
 			locfilname[c+18] = cp[c+2];
@@ -1677,6 +1756,7 @@ symreloc()
 error(n, s)
 char *s;
 {
+
 	if (errlev==0)
 		printf("ld:");
 	if (filname) {
