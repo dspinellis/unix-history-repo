@@ -1,4 +1,4 @@
-/*	mba.c	4.20	81/05/09	*/
+/*	mba.c	4.21	81/10/27	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -134,7 +134,11 @@ loop:
 	/*
 	 * If this device isn't present and on-line, then
 	 * we screwed up, and can't really do the operation.
+	 * Only check for non-tapes because tape drivers check
+	 * ONLINE themselves and because TU78 registers are
+	 * different.
 	 */
+	if ((mi->mi_drv->mbd_dt & MBDT_TAP) == 0)
 	if ((mi->mi_drv->mbd_ds & MBDS_DREADY) != MBDS_DREADY) {
 		printf("%s%d: not ready\n", mi->mi_driver->md_dname,
 		    dkunit(bp));

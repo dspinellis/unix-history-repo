@@ -1,8 +1,7 @@
-/*	ut.c	4.2	81/11/06	*/
+/*	ut.c	4.3	81/11/07	*/
 
 #include "ut.h"
 #if NUT > 0
-#define UTDEBUG	1
 /*
  * System Industries Model 9700 Tape Drive
  *   emulates a TU45 on the UNIBUS
@@ -73,13 +72,6 @@ struct	tj_softc {
 #define	SREW		4	/* doing a rewind op */
 #define	SERASE		5	/* erase inter-record gap */
 #define	SERASED		6	/* erased inter-record gap */
-
-#if UTDEBUG
-int	utdebug;
-#define printd	if (utdebug) printf
-#else
-#define	printd
-#endif
 
 /*
  * A NOP should get an interrupt back, if the
@@ -302,8 +294,6 @@ loop:
 	 * if we do a write command we will notice this in utintr().
 	 */
 	sc->sc_lastiow = 0;
-	printd("utstart: cmd=%o openf=%d ds=%b\n", bp->b_command>>1,
-		sc->sc_openf, addr->utds, UTDS_BITS);
 	if (sc->sc_openf < 0 || (addr->utds&UTDS_MOL) == 0) {
 		/*
 		 * Have had a hard error on a non-raw tape
@@ -367,13 +357,11 @@ loop:
 			 * inter-record gap before rewriting.
 			 */
 			if (um->um_tab.b_errcnt) {
-				printd("utstart: erase\n");
 				if (um->um_tab.b_state != SERASED) {
-					um->um_tab.b_state = SERASED;
+					um->um_tab.b_state = SERASE;
 					addr->utcs1 = UT_ERASE|UT_IE|UT_GO;
 					return;
 				}
-				printd("utstart: erased\n");
 			}
 			um->um_cmd = UT_WCOM;
 		} else
@@ -387,8 +375,6 @@ loop:
 	 * backwards to the correct spot.  This happens for
 	 * raw tapes only on error retries.
 	 */
-	printd("utstart: seek, blkno=%d dbtofsb=%d\n", blkno,
-		dbtofsb(bp->b_blkno));
 	um->um_tab.b_state = SSEEK;
 	if (blkno < dbtofsb(bp->b_blkno)) {
 		addr->utfc = blkno - dbtofsb(bp->b_blkno);
@@ -402,7 +388,6 @@ dobpcmd:
 	/*
 	 * Perform the command setup in bp.
 	 */
-	printd("utstart: dobpcmd\n");
 	addr->utcs1 = bp->b_command|UT_IE|UT_GO;
 	return;
 next:
@@ -410,7 +395,6 @@ next:
 	 * Advance to the next command in the slave queue,
 	 * posting notice and releasing resources as needed.
 	 */
-	printd("utstart: next\n");
 	if (um->um_ubinfo)
 		ubadone(um);
 	um->um_tab.b_errcnt = 0;
@@ -430,8 +414,6 @@ utdgo(um)
 
 	addr->utba = (u_short) um->um_ubinfo;
 	addr->utcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x30)|UT_IE|UT_GO;
-	printd("utdgo: cs1=%b fc=%x wc=%x\n", addr->utcs1, UT_BITS,
-		addr->utfc, addr->utwc);
 }
 
 /*
@@ -462,12 +444,6 @@ utintr(ut11)
 	sc->sc_erreg = addr->uter;
 	sc->sc_resid = bp->b_flags&B_READ ?
 		bp->b_bcount - (-addr->utfc)&0xffff : -addr->utwc<<1;
-	printd("utintr: state=%d cs1=%b cs2=%b ds=%b er=%b\n",
-		um->um_tab.b_state,
-		((struct utdevice *) addr)->utcs1, UT_BITS,
-		((struct utdevice *) addr)->utcs2, UTCS2_BITS,
-		((struct utdevice *) addr)->utds, UTDS_BITS,
-		((struct utdevice *) addr)->uter, UTER_BITS);
 	if ((bp->b_flags&B_READ) == 0)
 		sc->sc_lastiow = 1;
 	state = um->um_tab.b_state;
@@ -477,11 +453,23 @@ utintr(ut11)
 	 */
 	if ((addr->utds&UTDS_ERR) || (addr->utcs1&UT_TRE)) {
 		/*
+		 * To clear the ERR bit, we must issue a drive clear
+		 * command, and to clear the TRE bit we must set the
+		 * controller clear bit.
+		 */
+		cs2 = addr->utcs2;
+		if ((cs1 = addr->utcs1)&UT_TRE)
+			addr->utcs2 |= UTCS2_CLR;
+		/* is this dangerous ?? */
+		while ((addr->utcs1&UT_RDY) == 0)
+			;
+		addr->utcs1 = UT_CLEAR|UT_GO;
+		/*
 		 * If we hit a tape mark or EOT update our position.
 		 */
-		if (addr->utds&(UTDS_TM|UTDS_EOT)) {
+		if (sc->sc_dsreg&(UTDS_TM|UTDS_EOT)) {
 			/*
-			 * Set blkno and nxrec 
+			 * Set blkno and nxrec
 			 */
 			if (bp == &cutbuf[UTUNIT(bp->b_dev)]) {
 				if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
@@ -496,7 +484,6 @@ utintr(ut11)
 			} else
 				sc->sc_nxrec = dbtofsb(bp->b_blkno);
 			state = SCOM;		/* force completion */
-			addr->utcs1 = UT_CLEAR|UT_GO;
 			/*
 			 * Stuff so we can unstuff later
 			 * to get the residual.
@@ -507,13 +494,6 @@ utintr(ut11)
 				goto harderror;
 			goto opdone;
 		}
-		cs2 = addr->utcs2;		/* save it for printf below */
-		if ((cs1 = addr->utcs1)&UT_TRE)
-			addr->utcs2 |= UTCS2_CLR;
-		addr->utcs1 = UT_CLEAR|UT_GO;	/* must clear ERR bit */
-		printd("after clear: cs1=%b er=%b cs2=%b ds=%b\n",
-			addr->utcs1, UT_BITS, addr->uter, UTER_BITS,
-			addr->utcs2, UTCS2_BITS, addr->utds, UTDS_BITS);
 		/*
 		 * If we were reading from a raw tape and the only error
 		 * was that the record was too long, then we don't consider

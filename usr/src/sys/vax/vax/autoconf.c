@@ -1,4 +1,4 @@
-/*	autoconf.c	4.31	81/07/05	*/
+/*	autoconf.c	4.32	81/11/07	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -231,10 +231,6 @@ mbafind(nxv, nxp)
 		dt = mbd->mbd_dt & 0xffff;
 		if (dt == 0)
 			continue;
-		if ((dt&MBDT_TYPE) == MBDT_TU78) {
-			printf("tm04/tu78 unsupported\n");
-			continue;
-		}
 		if (dt == MBDT_MOH)
 			continue;
 		fnd.mi_drive = dn;
@@ -400,6 +396,13 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	for (i = 0; i < 128; i++)
 		uhp->uh_vec[i] =
 		    scbentry(&catcher[i*2], SCB_ISTACK);
+	/*
+	 * Set last free interrupt vector for devices with
+	 * programmable interrupt vectors.  Use is to decrement
+	 * this number and use result as interrupt vector.
+	 */
+	uhp->uh_lastiv = 0x200;
+
 	/* THIS IS A CHEAT: USING THE FACT THAT UMEM and NEXI ARE SAME SIZE */
 	nxaccess((struct nexus *)pumem, memmap);
 #if VAX780
@@ -511,7 +514,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		}
 #endif
 		cvec = 0x200;
-		i = (*udp->ud_probe)(reg);
+		i = (*udp->ud_probe)(reg, um->um_ctlr);
 #if VAX780
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;

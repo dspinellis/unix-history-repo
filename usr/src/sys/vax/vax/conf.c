@@ -1,4 +1,4 @@
-/*	conf.c	4.39	81/10/11	*/
+/*	conf.c	4.40	81/11/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -83,6 +83,32 @@ int	tsioctl(),tsdump(),tsreset();
 #define	tsreset		nodev
 #endif
 
+#include "mu.h"
+#if NMT > 0
+int	mtopen(),mtclose(),mtstrategy(),mtread(),mtwrite();
+int	mtioctl(),mtdump();
+#else
+#define	mtopen		nodev
+#define	mtclose		nodev
+#define	mtstrategy	nodev
+#define	mtread		nodev
+#define	mtwrite		nodev
+#define	mtioctl		nodev
+#define	mtdump		nodev
+#endif
+
+#include "ra.h"
+#if NUDA > 0
+int	udopen(),udstrategy(),udread(),udwrite(),udreset(),uddump();
+#else
+#define	udopen		nodev
+#define	udstrategy	nodev
+#define	udread		nodev
+#define	udwrite		nodev
+#define	udreset		nulldev
+#define	uddump		nodev
+#endif
+
 #include "up.h"
 #if NSC > 0
 int	upstrategy(),upread(),upwrite(),upreset(),updump();
@@ -92,6 +118,29 @@ int	upstrategy(),upread(),upwrite(),upreset(),updump();
 #define	upwrite		nodev
 #define	upreset		nulldev
 #define	updump		nodev
+#endif
+
+#include "ut.h"
+#if NUT > 0
+int	utopen(),utclose(),utstrategy(),utread(),utwrite(),utioctl();
+int	utreset(),utdump();
+#else
+#define	utopen		nodev
+#define	utclose		nodev
+#define	utread		nodev
+#define	utstrategy	nodev
+#define	utwrite		nodev
+#define	utreset		nulldev
+#define	utioctl		nodev
+#define	utdump		nodev
+#endif
+
+#if defined(VAX750) || defined(VAX7ZZ)
+int	tuopen(),tuclose(),tustrategy();
+#else
+#define	tuopen		nodev
+#define	tuclose		nodev
+#define	tustrategy	nodev
 #endif
 
 int	swstrategy(),swread(),swwrite();
@@ -105,6 +154,10 @@ struct bdevsw	bdevsw[] =
 	nodev,		nodev,		swstrategy,	nodev,	0,	/*4*/
 	tmopen,		tmclose,	tmstrategy,	tmdump,	B_TAPE,	/*5*/
 	tsopen,		tsclose,	tsstrategy,	tsdump,	B_TAPE,	/*6*/
+	mtopen,		mtclose,	mtstrategy,	mtdump,	B_TAPE,	/*7*/
+	tuopen,		tuclose,	tustrategy,	nodev,	B_TAPE,	/*8*/
+	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
+	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
 	0,
 };
 
@@ -222,28 +275,14 @@ struct	tty pt_tty[];
 #define	ptcselect	nodev
 #endif
 
-#ifdef CHAOS
-int	chopen(),chclose(),chread(),chwrite(),chioctl(),chreset(),chselec();
+#include "dn.h"
+#if NDN > 0
+int	dnopen(), dnclose(), dnwrite(), dnselect();
 #else
-#define	chopen		nodev
-#define	chclose		nodev
-#define	chread		nodev
-#define	chwrite		nodev
-#define	chioctl		nodev
-#define	chreset		nodev
-#define	chselect	nodev
-#endif
-
-#include "ca.h"
-#if NCA > 0
-int	caopen(),caclose(),cawrite(),caioctl(),careset(),caselect();
-#else
-#define	caopen		nodev
-#define	caclose		nodev
-#define	cawrite		nodev
-#define	caioctl		nodev
-#define	careset		nulldev
-#define	caselect	nodev
+#define	dnopen		nodev
+#define	dnclose		nodev
+#define	dnwrite		nodev
+#define	dnselect	selecttrue
 #endif
 
 #include "dr.h"
@@ -256,6 +295,7 @@ int	dropen(),drclose(),drread(),drwrite(),drioctl(),drreset(),drselect();
 #define	drwrite		nodev
 #define	drioctl		nodev
 #define	drreset		nodev
+#define	drselect	selecttrue
 #endif
 
 int	ttselect(), seltrue(), selectfalse();
@@ -319,15 +359,15 @@ struct cdevsw	cdevsw[] =
 	tsopen,		tsclose,	tsread,		tswrite,	/*16*/
 	tsioctl,	nodev,		tsreset,	0,
 	seltrue,
-	nodev,		nodev,		nodev,		nodev,		/*17*/
-	nodev,		nodev,		nulldev,	0,
-	nodev,
+	utopen,		utclose,	utread,		utwrite,	/*17*/
+	utioctl,	nodev,		utreset,	0,
+	seltrue,
 	ctopen,		ctclose,	nodev,		ctwrite,	/*18*/
 	nodev,		nodev,		nulldev,	0,
 	seltrue,
-	chopen,		chclose,	chread,		chwrite,	/*19*/
-	chioctl,	nodev,		chreset,	0,
-	chselect,
+	nodev,		nodev,		nodev,		nodev,		/*19*/
+	nodev,		nodev,		nulldev,	0,
+	nodev,
 	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*20*/
 	ptyioctl,	nulldev,	nodev,		pt_tty,
 	ttselect,
@@ -340,8 +380,8 @@ struct cdevsw	cdevsw[] =
 	dropen,		drclose,	drread,		drwrite,	/*23*/
 	drioctl,	nodev,		drreset,	0,
 	seltrue,
-	caopen,		caclose,	nodev,		cawrite,	/*24*/
-	nodev,		nodev,		careset,	0,
+	dnopen,		dnclose,	nodev,		dnwrite,	/*24*/
+	nodev,		nodev,		nodev,		0,
 	seltrue,
 	nodev,		nodev,		nodev,		nodev,		/*25*/
 	nodev,		nodev,		nodev,		0,
@@ -353,7 +393,7 @@ struct cdevsw	cdevsw[] =
 int	ttyopen(),ttyclose(),ttread(),nullioctl(),ttstart();
 char	*ttwrite();
 int	ttyinput();
- 
+
 struct	linesw linesw[] =
 {
 	ttyopen, nodev, ttread, ttwrite, nullioctl,
