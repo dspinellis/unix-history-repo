@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.73 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.74 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -304,7 +304,7 @@ lfs_write(vp, uio, ioflag, cred)
 		bn = bp->b_blkno;
 		if (uio->uio_offset + n > ip->i_size) {
 			ip->i_size = uio->uio_offset + n;
-			vnode_pager_setsize(vp, ip->i_size);
+			vnode_pager_setsize(vp, (u_long)ip->i_size);
 		}
 		size = blksize(fs);
 		(void) vnode_pager_uncache(vp);
