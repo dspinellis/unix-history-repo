@@ -1,0 +1,15 @@
+controller	vd0	at vba? csr 0xffff2000		vector vdintr
+disk		dk0	at vd0 drive 0
+disk		dk1	at vd0 drive 1
+disk		dk2	at vd0 drive 2
+disk		dk3	at vd0 drive 3
+controller	vd1	at vba? csr 0xffff2100		vector vdintr
+disk		dk4	at vd1 drive 0
+disk		dk5	at vd1 drive 1
+disk		dk6	at vd1 drive 2
+disk		dk7	at vd1 drive 3
+controller	vd2	at vba? csr 0xffff2200		vector vdintr
+disk		dk8	at vd2 drive 0
+disk		dk9	at vd2 drive 1
+disk		dk10	at vd2 drive 2
+disk		dk11	at vd2 drive 3
