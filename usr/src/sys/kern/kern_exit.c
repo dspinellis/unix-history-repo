@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.23 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -350,7 +350,6 @@ loop:
 			/*p->p_pgrp = 0;*/
 			p->p_flag = 0;
 			p->p_wchan = 0;
-			p->p_cursig = 0;
 			RETURN (0);
 		}
 		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
@@ -359,12 +358,12 @@ loop:
 			retval[0] = p->p_pid;
 #ifdef COMPAT_43
 			if (uap->compat) {
-				retval[1] = W_STOPCODE(p->p_cursig);
+				retval[1] = W_STOPCODE(p->p_xstat);
 				error = 0;
 			} else
 #endif
 			if (uap->status) {
-				status = W_STOPCODE(p->p_cursig);
+				status = W_STOPCODE(p->p_xstat);
 				error = copyout((caddr_t)&status,
 				    (caddr_t)uap->status, sizeof(status));
 			} else

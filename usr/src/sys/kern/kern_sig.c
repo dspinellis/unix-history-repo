@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.20 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -523,7 +523,7 @@ trapsignal(sig, code)
 		sendsig(u.u_signal[sig], sig, p->p_sigmask, code);
 		p->p_sigmask |= u.u_sigmask[sig] | mask;
 	} else {
-		u.u_arg[1] = code;	/* XXX for core dump/debugger */
+		u.u_code = code;	/* XXX for core dump/debugger */
 		psignal(p, sig);
 	}
 }
@@ -639,7 +639,7 @@ psignal(p, sig)
 			if (p->p_flag&SVFORK)
 				goto out;
 			p->p_sig &= ~mask;
-			p->p_cursig = sig;
+			p->p_xstat = sig;
 			if ((p->p_pptr->p_flag & SNOCLDSTOP) == 0)
 				psignal(p->p_pptr, SIGCHLD);
 			stop(p);
@@ -674,7 +674,6 @@ psignal(p, sig)
 			 * an event, then it goes back to run state.
 			 * Otherwise, process goes back to sleep state.
 			 */
-			p->p_cursig = 0;	/* ??? XXX */
 			if (action == SIG_DFL)
 				p->p_sig &= ~mask;
 			if (action == SIG_CATCH)
@@ -767,7 +766,7 @@ issig()
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
 			 */
-			p->p_cursig = sig;
+			p->p_xstat = sig;
 			psignal(p->p_pptr, SIGCHLD);
 			do {
 				stop(p);
@@ -784,11 +783,11 @@ issig()
 
 			/*
 			 * If parent wants us to take the signal,
-			 * then it will leave it in p->p_cursig;
+			 * then it will leave it in p->p_xstat;
 			 * otherwise we just look for signals again.
 			 */
 			p->p_sig &= ~mask;	/* clear the old signal */
-			sig = p->p_cursig;
+			sig = p->p_xstat;
 			if (sig == 0)
 				continue;
 
@@ -828,7 +827,7 @@ issig()
 		    		    (p->p_pgrp->pg_jobc == 0 &&
 				    mask & ttystopsigmask))
 					break;	/* == ignore */
-				p->p_cursig = sig;
+				p->p_xstat = sig;
 				stop(p);
 				if ((p->p_pptr->p_flag & SNOCLDSTOP) == 0)
 					psignal(p->p_pptr, SIGCHLD);
@@ -912,7 +911,6 @@ psig(sig)
 			if (action == SIG_IGN || (p->p_sigmask & mask))
 				panic("psig action");
 #endif
-			u.u_error = 0;
 			/*
 			 * Set the new mask value and also defer further
 			 * occurences of this signal.
@@ -946,7 +944,7 @@ psig(sig)
 		case SIGFPE:
 		case SIGSEGV:
 		case SIGSYS:
-			u.u_arg[0] = sig;
+			u.u_sig = sig;
 			if (core() == 0)
 				sig |= WCOREFLAG;
 		}

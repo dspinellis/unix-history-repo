@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.10 (Berkeley) %G%
+ *	@(#)sys_process.c	7.11 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -209,7 +209,7 @@ procxmt(p)
 			u.u_ar0[PC] = (int)ipc.ip_addr;
 		if ((unsigned)ipc.ip_data > NSIG)
 			goto error;
-		p->p_cursig = ipc.ip_data;	/* see issig */
+		p->p_xstat = ipc.ip_data;	/* see issig */
 		if (i == PT_STEP) 
 			u.u_ar0[PS] |= PSL_T;
 		wakeup((caddr_t)&ipc);
@@ -217,7 +217,7 @@ procxmt(p)
 
 	case PT_KILL:			/* kill the child process */
 		wakeup((caddr_t)&ipc);
-		exit(p, p->p_cursig);
+		exit(p, p->p_xstat);
 
 	default:
 	error:
