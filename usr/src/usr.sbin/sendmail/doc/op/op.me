@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.7'DRAFT'Last Mod %G%'
+.fo 'Version 3.8'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.7
+Version 3.8
 .)l
 .sp 3
 .pp
@@ -117,7 +117,7 @@ The configuration files
 are all in the subdirectory
 .i cf
 of the sendmail directory.
-They are in
+The ones used at Berkeley are in
 .i m4 (1)
 format;
 files with names ending
@@ -138,11 +138,16 @@ file.
 .pp
 Two off the shelf configuration files are supplied
 to handle the basic cases:
-.i cf/arpa.mc
-for Arpanet sites
+.i cf/arpaproto.cf
+for Arpanet (TCP) sites
 and
-.i cf/uucp.mc
+.i cf/uucpproto.cf
 for UUCP sites.
+These are
+.i not
+in
+.i m4
+format.
 There are two parameters you will have to adjust
 in each of these files.
 The line beginning
@@ -172,16 +177,8 @@ and
 The changed file should be renamed;
 in the above example,
 the file might be renamed
-.i ucsfcgl.mc.
-To create the actual configuration file,
-type the command:
-.(b
-cd cf
-m4 ucsfcgl.mc > ucsfcgl.cf
-.)b
-using whatever name is appropriate for your site.
-The file
-.q ucsfcgl.cf
+.i ucsfcgl.cf.
+This file
 is now ready for installation as
 .i /usr/lib/sendmail.cf :
 .(b
@@ -3493,7 +3490,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.7
+Version 3.8
 .ce 0
 .bp 1
 .ce
