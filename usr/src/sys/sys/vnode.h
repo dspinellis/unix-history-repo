@@ -164,6 +164,7 @@ extern int		vttoif_tab[];
 #define	DOCLOSE		0x0008		/* vclean: close active files */
 #define	V_SAVE		0x0001		/* vinvalbuf: sync file first */
 #define	V_SAVEMETA	0x0002		/* vinvalbuf: leave indirect blocks */
+#define	REVOKEALL	0x0001		/* vop_revoke: revoke all aliases */
 
 #ifdef DIAGNOSTIC
 #define	HOLDRELE(vp)	holdrele(vp)
@@ -341,7 +342,6 @@ void 	vattr_null __P((struct vattr *vap));
 int 	vcount __P((struct vnode *vp));
 int 	vget __P((struct vnode *vp, int lockflag));
 void 	vgone __P((struct vnode *vp));
-void 	vgoneall __P((struct vnode *vp));
 int	vinvalbuf __P((struct vnode *vp, int save, struct ucred *cred,
 	    struct proc *p, int slpflag, int slptimeo));
 void	vprint __P((char *label, struct vnode *vp));
@@ -359,6 +359,7 @@ int	vn_read __P((struct file *fp, struct uio *uio, struct ucred *cred));
 int	vn_select __P((struct file *fp, int which, struct proc *p));
 int	vn_stat __P((struct vnode *vp, struct stat *sb, struct proc *p));
 int	vn_write __P((struct file *fp, struct uio *uio, struct ucred *cred));
+int	vop_revoke __P((struct vop_revoke_args *));
 struct vnode *
 	checkalias __P((struct vnode *vp, dev_t nvp_rdev, struct mount *mp));
 void 	vput __P((struct vnode *vp));
