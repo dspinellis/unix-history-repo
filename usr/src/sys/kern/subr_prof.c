@@ -3,13 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prof.c	7.2 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.3 (Berkeley) %G%
  */
 
 #ifdef GPROF
 #include "gprof.h"
 #include "param.h"
 #include "systm.h"
+#include "malloc.h"
 
 /*
  * Froms is actually a bunch of unsigned shorts indexing tos
@@ -47,16 +48,16 @@ kmstartup()
 	printf("Profiling kernel, s_textsize=%d [%x..%x]\n",
 		s_textsize, s_lowpc, s_highpc);
 	ssiz = (s_textsize / HISTFRACTION) + sizeof (struct phdr);
-	sbuf = (u_short *)calloc(ssiz);
+	sbuf = (u_short *)malloc(ssiz, M_GPROF, M_WAITOK);
 	if (sbuf == 0) {
 		printf("No space for monitor buffer(s)\n");
 		return;
 	}
 	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)calloc(fromssize);
+	froms = (u_short *)malloc(fromssize, M_GPROF, M_WAITOK);
 	if (froms == 0) {
 		printf("No space for monitor buffer(s)\n");
-		cfreemem(sbuf, ssiz);
+		free(sbuf, M_GPROF);
 		sbuf = 0;
 		return;
 	}
@@ -66,11 +67,11 @@ kmstartup()
 	else if (tolimit > (0xffff - 1))
 		tolimit = 0xffff - 1;
 	tossize = tolimit * sizeof (struct tostruct);
-	tos = (struct tostruct *)calloc(tossize);
+	tos = (struct tostruct *)malloc(tossize, M_GPROF, M_WAITOK);
 	if (tos == 0) {
 		printf("No space for monitor buffer(s)\n");
-		cfreemem(sbuf, ssiz), sbuf = 0;
-		cfreemem(froms, fromssize), froms = 0;
+		free(sbuf, M_GPROF), sbuf = 0;
+		free(froms, M_GPROF), froms = 0;
 		return;
 	}
 	tos[0].link = 0;
