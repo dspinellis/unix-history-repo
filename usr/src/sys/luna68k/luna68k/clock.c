@@ -13,14 +13,16 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * OMRON: $Id: clock.c,v 1.1 92/05/27 14:24:06 moti Exp $
  *
- * from: hp300/hp300/clock.c	7.8 (Berkeley) 2/25/92
+ * from: hp300/hp300/clock.c    7.14 (Berkeley) 7/8/92
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "kernel.h"
 #include "clockreg.h"
+
+extern int clock_on;
 
 static int month_days[12] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -50,7 +52,7 @@ int battery_chkfg;
 /*
  * Start the real-time clock.
  */
-startrtclock()
+cpu_initclocks()
 {
 	static char *rtcstrings = "RTC";     /* For compat */
 
@@ -72,17 +74,29 @@ startrtclock()
 	bbc->cal_hour &= ~BBC_KICK;
 	bbc->cal_ctl &= ~BBC_WRT;
 	strcpy(bbc->nvram,rtcstrings);
-}
-
-/* 
- * Enable clock intrruupt.
- */
-enablertclock()
-{
-        extern int clock_on;
 
 	/* set flag for clockintr. */
 	clock_on = 1;
+}
+
+void
+setstatclockrate(newhz)
+        int newhz;
+{
+}
+
+microtime(tvp)
+        register struct timeval *tvp;
+{
+        int s = splhigh();
+
+        *tvp = time;
+        tvp->tv_usec += tick;
+        while (tvp->tv_usec > 1000000) {
+                tvp->tv_sec++;
+                tvp->tv_usec -= 1000000;
+        }
+        splx(s);
 }
 
 /*

@@ -13,9 +13,9 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * OMRON: $Id: machdep.c,v 1.3 92/06/14 06:17:12 moti Exp $
  *
- * from: hp300/hp300/machdep.c	7.28 (Berkeley) 6/5/92
+ * from: hp300/hp300/machdep.c  7.29 (Berkeley) 7/8/92
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -761,20 +761,6 @@ dumpsys()
 	}
 }
 
-microtime(tvp)
-	register struct timeval *tvp;
-{
-	int s = splhigh();
-
-	*tvp = time;
-	tvp->tv_usec += tick;
-	while (tvp->tv_usec > 1000000) {
-		tvp->tv_sec++;
-		tvp->tv_usec -= 1000000;
-	}
-	splx(s);
-}
-
 initcpu()
 {
 	parityenable();
@@ -901,8 +887,11 @@ int panicbutton = 1;	/* non-zero if panic buttons are enabled */
 int crashandburn = 0;
 int candbdelay = 50;	/* give em half a second */
 
-candbtimer()
+void
+candbtimer(arg)
+	void *arg;
 {
+
 	crashandburn = 0;
 }
 #endif
@@ -932,7 +921,7 @@ nmihand(frame)
        			      "forced crash, nosync" : "forced crash");
        		}
        		crashandburn++;
-       		timeout(candbtimer, (caddr_t)0, candbdelay);
+       		timeout(candbtimer, (void *)0, candbdelay);
        	}
 #endif
        	return;
