@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,10 +19,8 @@
 #include "reg.h"
 #include "pte.h"
 #include "mtpr.h"
-
-#define	SYSCALLTRACE
-#ifdef SYSCALLTRACE
-#include "../sys/syscalls.c"
+#ifdef KTRACE
+#include "ktrace.h"
 #endif
 
 #include "../tahoe/trap.h"
@@ -217,7 +215,7 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
-	register struct proc *p;
+	register struct proc *p = u.u_procp;
 	struct timeval syst;
 	int opc;
 
@@ -268,24 +266,9 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 			u.u_error = EINTR;
 	} else {
 		u.u_eosys = NORMALRETURN;
-#ifdef SYSCALLTRACE
-		if (syscalltrace) {
-			register int a;
-			char *cp;
-
-			if (code >= nsysent)
-				printf("0x%x", code);
-			else
-				printf("%s", syscallnames[code]);
-			cp = "(";
-			for (a = 0; a < callp->sy_narg; a++) {
-				printf("%s%x", cp, u.u_arg[a]);
-				cp = ", ";
-			}
-			if (a)
-				printf(")");
-			printf("\n");
-		}
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_SYSCALL))
+			ktrsyscall(p->p_tracep, code, callp->sy_narg);
 #endif
 		(*callp->sy_call)();
 	}
@@ -302,6 +285,10 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		pc = opc;
 	/* else if (u.u_eosys == JUSTRETURN) */
 		/* nothing to do */
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_SYSRET))
+		ktrsysret(p->p_tracep, code);
+#endif
 done:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
