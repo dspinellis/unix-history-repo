@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.14 (Berkeley) %G%
+.\"     @(#)fts.3	5.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -84,6 +84,7 @@ typedef struct _ftsent {
 	char *fts_name;			/* file name */
 	short fts_namelen;		/* strlen(fts_name) */
 	short fts_level;		/* depth (\-1 to N) */
+	int fts_error;			/* node errno */
 	long fts_number;		/* local numeric value */
 	void *fts_pointer;		/* local address value */
 	struct ftsent *fts_parent;	/* parent directory */
@@ -124,9 +125,9 @@ by one of the other
 values.
 .It Dv FTS_DNR
 A directory which cannot be read.
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_DP
 A directory being visited in post-order.
 The contents of the
@@ -137,9 +138,9 @@ it was returned in pre-order, i.e. with the
 field set to
 .Dv FTS_D .
 .It Dv FTS_ERR
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_F
 A regular file.
 .It Dv FTS_NS
@@ -149,9 +150,9 @@ information was available.
 The contents of the
 .Fa fts_statb
 field are undefined.
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_NSOK
 A file for which no
 .Xr stat 2
@@ -193,6 +194,25 @@ of the traversal is numbered \-1, and the
 .Fa FTSENT
 structure for the root
 itself is numbered 0.
+.It Fa fts_errno
+Upon return of a node from the
+.Fn fts_children
+or
+.Fn fts_read
+functions, with its
+.Fa fts_info
+field set to 
+.Dv FTS_ERR
+or
+.Dv FTS_NS ,
+the
+.Fa fts_errno
+field contains the value of the external variable
+.Va errno
+specifying the cause of the error.
+Otherwise, the contents of the
+.Fa fts_errno
+field are undefined.
 .It Fa fts_number
 This field is provided for the use of the application program and is
 not modified by the
@@ -258,6 +278,33 @@ field are undefined.
 .Xr Stat 2
 information for the file.
 .El
+.Pp
+A single buffer is used for all of the paths of all of the files in the
+file hierarchy.
+Therefore, the
+.Fa fts_path
+and
+.Fa fts_accpath
+fields are guaranteed to be
+.Dv NULL Ns -terminated
+.Em only
+for the file most recently returned by
+.Fn fts_read .
+To use these fields to reference any files represented by other
+.Fa FTSENT
+structures will require that the path buffer be modified using the
+information contained in that
+.Fa FTSENT
+structure's
+.Fa fts_pathlen
+field.
+Any such modifications should be undone before further calls to
+.Fn fts_read
+are attempted.
+The
+.Fa fts_name
+field is always
+.Dv NULL Ns -terminated.
 .Sh FTS_OPEN
 The
 .Fn fts_open
@@ -463,9 +510,8 @@ The
 .Fn fts_children
 function returns a pointer to an
 .Fa FTSENT
-structure describing the first
-entry in a NULL-terminated linked list of the files in the directory
-represented by the
+structure describing the first entry in a NULL-terminated linked list of
+the files in the directory represented by the
 .Fa FTSENT
 structure most recently returned by
 .Fn fts_read .
@@ -473,13 +519,20 @@ The list is linked through the
 .Fa fts_link
 field of the
 .Fa FTSENT
-structure, and is ordered by the user-specified
-comparison function, if any.
+structure, and is ordered by the user-specified comparison function, if any.
 Repeated calls to
 .Fn fts_children
 will recreate this linked list.
 .Pp
-If the
+As a special case, if
+.Fn fts_read
+has not yet been called for a hierarchy,
+.Fn fts_children
+will return a pointer to the files in the logical directory specified to
+.Fn fts_open ,
+i.e. the arguments specified to
+.Fn fts_open .
+Otherwise, if the
 .Fa FTSENT
 structure most recently returned by
 .Fn fts_read
@@ -509,33 +562,6 @@ may be overwritten after a call to
 or
 .Fn fts_read
 on the same file hierarchy stream.
-.Pp
-A single buffer is used for all of the paths of all of the files in the
-file hierarchy.
-Therefore, the
-.Fa fts_path
-and
-.Fa fts_accpath
-fields are guaranteed to be
-.Dv NULL Ns -terminated
-.Em only
-for the file most recently returned by
-.Fn fts_read .
-To use these fields to reference any files represented by other
-.Fa FTSENT
-structures will require that the path buffer be modified using the
-information contained in that
-.Fa FTSENT
-structure's
-.Fa fts_pathlen
-field.
-Any such modifications should be undone before further calls to
-.Fn fts_read
-are attempted.
-The
-.Fa fts_name
-field is always
-.Dv NULL Ns -terminated.
 .Sh FTS_SET
 The function
 .Fn fts_set
