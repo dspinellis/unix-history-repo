@@ -9,7 +9,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sigprocmask.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sigprocmask.s	5.2 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -19,7 +19,7 @@ err:
 
 ENTRY(sigprocmask)
 	movl	8(%esp),%ecx		# fetch new sigset pointer
-	cmpl	$0,(%ecx)		# check new sigset pointer
+	cmpl	$0,%ecx			# check new sigset pointer
 	jne	1f			# if not null, indirect
 /*	movl	$0,8(%esp)		# null mask pointer: block empty set */
 	movl	$1,4(%esp)		# SIG_BLOCK

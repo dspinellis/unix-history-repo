@@ -9,7 +9,7 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)brk.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)brk.s	5.2 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -24,7 +24,7 @@ ENTRY(_brk)
 ENTRY(brk)
 	movl	4(%esp),%eax
 	cmpl	%eax,minbrk
-	jge	ok
+	jl	ok
 	movl	minbrk,%eax
 	movl	%eax,4(%esp)
 ok:
