@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.8 (Berkeley) %G%
+ *	@(#)clock.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -240,7 +240,7 @@ clockunmmap(dev, addr, p)
 
 	if (addr == 0)
 		return(EINVAL);		/* XXX: how do we deal with this? */
-	rv = vm_deallocate(p->p_vmspace->vm_map, (vm_offset_t)addr, PAGE_SIZE);
+	rv = vm_deallocate(&p->p_vmspace->vm_map, (vm_offset_t)addr, PAGE_SIZE);
 	return(rv == KERN_SUCCESS ? 0 : EINVAL);
 }
 
