@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in_pcb.h	7.4 (Berkeley) %G%
+ *	@(#)in_pcb.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -36,8 +36,16 @@ struct inpcb {
 	struct	socket *inp_socket;	/* back pointer to socket */
 	caddr_t	inp_ppcb;		/* pointer to per-protocol pcb */
 	struct	route inp_route;	/* placeholder for routing entry */
+	int	inp_flags;		/* generic IP/datagram flags */
+	struct	ip inp_ip;		/* header prototype; should have more */
 	struct	mbuf *inp_options;	/* IP options */
 };
+
+/* flags in inp_flags: */
+#define	INP_RECVOPTS		0x01	/* receive incoming IP options */
+#define	INP_RECVRETOPTS		0x02	/* receive IP options for reply */
+#define	INP_RECVDSTADDR		0x04	/* receive IP dst address */
+#define	INP_CONTROLOPTS		(INP_RECVOPTS|INP_RECVRETOPTS|INP_RECVDSTADDR)
 
 #ifdef sotorawcb
 /*
