@@ -1,6 +1,6 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.1	%G%
+#	@(#)makefile	1.2	%G%
 
 LIBDIR = /usr/cc/lib
 TAPE = /dev/nrmt1
@@ -12,7 +12,7 @@ TAPE = /dev/nrmt1
 	mv a.out $*.o
 
 MISC =	main.o s_rnge.o abort_.o getarg_.o iargc_.o signal_.o s_stop.o \
-	s_paus.o system_.o getenv_.o rand_.o bit.o range.o \
+	s_paus.o system_.o getenv_.o rand_.o range.o \
 	dbesj0_.o dbesj1_.o dbesjn_.o dbesy0_.o dbesy1_.o dbesyn_.o \
 	besj0_.o besj1_.o besjn_.o besy0_.o besy1_.o besyn_.o
 POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o  pow_ri.o pow_zi.o pow_zz.o
