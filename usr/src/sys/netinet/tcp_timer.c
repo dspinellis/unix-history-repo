@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -159,7 +159,7 @@ tcp_timers(tp, timer)
 		rexmt *= tcp_backoff[tp->t_rxtshift];
 		tp->t_rxtshift++;
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT], rexmt,
-			    TCPTV_MIN, TCPTV_MAX);
+			    TCPTV_MIN, TCPTV_REXMTMAX);
 		/*
 		 * If losing, let the lower level know
 		 * and try for a better route.
