@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexec.c	4.5 82/12/17";
+static char sccsid[] = "@(#)rexec.c	4.6 83/03/19";
 #endif
 
 #include <sys/types.h>
@@ -59,7 +59,7 @@ retry:
 		port = 0;
 	} else {
 		char num[8];
-		int s2;
+		int s2, sin2len;
 		
 		s2 = socket(0, SOCK_STREAM, 0, 0);
 		if (s2 < 0) {
@@ -67,7 +67,13 @@ retry:
 			return (-1);
 		}
 		listen(s2, 1);
-		socketaddr(s2, &sin2);
+		sin2len = sizeof (sin2);
+		if (getsockname(s2, (char *)&sin2, &sin2len) < 0 ||
+		  sin2len != sizeof (sin2)) {
+			perror("getsockname");
+			(void) close(s2);
+			goto bad;
+		}
 		port = ntohs((u_short)sin2.sin_port);
 		(void) sprintf(num, "%d", port);
 		(void) write(s, num, strlen(num)+1);

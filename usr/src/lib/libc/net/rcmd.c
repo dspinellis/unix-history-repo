@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.7 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.8 %G%";
 #endif
 
 #include <stdio.h>
@@ -175,10 +175,4 @@ again:
 		goto again;
 	}
 	return (-1);
-}
-
-socketaddr(x, y)
-{
-
-	syscall(103,x,y);
 }
