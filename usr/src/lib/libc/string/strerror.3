@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)strerror.3	6.9 (Berkeley) %G%
+.\"     @(#)strerror.3	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt STRERROR 3
@@ -19,11 +19,16 @@
 .Nm sys_nerr
 .Nd system error messages
 .Sh SYNOPSIS
+.Fd #include <errno.h>
 .Vt extern int errno;
+.Fd #include <stdio.h>
+.Vt extern int sys_nerr;
 .Vt extern char *sys_errlist[];
 .Fd #include <stdio.h>
 .Ft void
 .Fn perror "const char *string"
+.Fd #include <errno.h>
+.Fd #include <string.h>
 .Ft char *
 .Fn strerror "int errnum"
 .Sh DESCRIPTION
