@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.17 (Berkeley) %G%";
 #endif
 
 #include <ctype.h>
@@ -81,7 +81,7 @@ char **argv;
 			my_name = pwent->pw_name;
 	}
 	if(setjmp(sjbuf)) done();
-	for (i=0; i<20; i++)
+	for (i=SIGHUP; i<=SIGTERM; i++)
 		setsig(i, delete);
 	tmpf = fopen(lettmp, "w");
 	if (tmpf == NULL) {
