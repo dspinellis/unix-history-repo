@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.3	%G%	*/
+/*	vfs_cluster.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/seg.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
+#include "../h/trace.h"
 
 /*
  * The following several routines allocate and free
@@ -99,6 +100,9 @@ daddr_t blkno;
 
 	bp = getblk(dev, blkno);
 	if (bp->b_flags&B_DONE) {
+#ifdef	EPAWNJ
+		trace(TR_BREAD|TR_HIT, dev, blkno);
+#endif
 #ifdef	DISKMON
 		io_info.ncache++;
 #endif
@@ -107,6 +111,9 @@ daddr_t blkno;
 	bp->b_flags |= B_READ;
 	bp->b_bcount = BSIZE;
 	(*bdevsw[major(dev)].d_strategy)(bp);
+#ifdef	EPAWNJ
+	trace(TR_BREAD|TR_MISS, dev, blkno);
+#endif
 #ifdef	DISKMON
 	io_info.nread++;
 #endif
@@ -133,20 +140,33 @@ daddr_t blkno, rablkno;
 			bp->b_flags |= B_READ;
 			bp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(bp);
+#ifdef	EPAWNJ
+			trace(TR_BREAD|TR_MISS, dev, blkno);
+#endif
 #ifdef	DISKMON
 			io_info.nread++;
 #endif
 			u.u_vm.vm_inblk++;		/* pay for read */
 		}
+#ifdef	EPAWNJ
+		else
+			trace(TR_BREAD|TR_HIT, dev, blkno);
+#endif
 	}
 	if (rablkno && !incore(dev, rablkno)) {
 		rabp = getblk(dev, rablkno);
-		if (rabp->b_flags & B_DONE)
+		if (rabp->b_flags & B_DONE) {
 			brelse(rabp);
-		else {
+#ifdef	EPAWNJ
+			trace(TR_BREAD|TR_HIT|TR_RA, dev, blkno);
+#endif
+		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
 			rabp->b_bcount = BSIZE;
 			(*bdevsw[major(dev)].d_strategy)(rabp);
+#ifdef	EPAWNJ
+			trace(TR_BREAD|TR_MISS|TR_RA, dev, rablock);
+#endif
 #ifdef	DISKMON
 			io_info.nreada++;
 #endif
@@ -176,6 +196,9 @@ register struct buf *bp;
 #endif
 	if ((flag&B_DELWRI) == 0)
 		u.u_vm.vm_oublk++;		/* noone paid yet */
+#ifdef	EPAWNJ
+	trace(TR_BWRITE, bp->b_dev, dbtofsb(bp->b_blkno));
+#endif
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 	if ((flag&B_ASYNC) == 0) {
 		iowait(bp);
@@ -352,6 +375,9 @@ daddr_t blkno;
 	if (bp->b_dev == NODEV)
 		goto done;
 	/* INLINE EXPANSION OF bunhash(bp) */
+#ifdef EPAWNJ
+	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
+#endif
 	(void) spl6();
 	i = BUFHASH(dbtofsb(bp->b_blkno));
 	x = bp - buf;
@@ -408,8 +434,12 @@ loop:
 		bwrite(bp);
 		goto loop;
 	}
-	if (bp->b_dev != NODEV)
+	if (bp->b_dev != NODEV) {
+#ifdef EPAWNJ
+		trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
+#endif
 		bunhash(bp);
+	}
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
