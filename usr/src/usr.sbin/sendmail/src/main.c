@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.3	%G%";
+static char	SccsId[] = "@(#)main.c	3.4	%G%";
 
 /*
 **  POSTBOX -- Post mail to a set of destinations.
@@ -153,6 +153,7 @@ main(argc, argv)
 	extern char *Macro[];
 	extern char *index();
 	extern char *strcpy(), *strcat();
+	extern char *makemsgid();
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, finis);
@@ -302,6 +303,8 @@ main(argc, argv)
 	p = collect();
 	if (from == NULL)
 		from = p;
+	if (MsgId == NULL)
+		MsgId = makemsgid();
 # ifdef DEBUG
 	if (Debug)
 		printf("Message-Id: %s\n", MsgId);
