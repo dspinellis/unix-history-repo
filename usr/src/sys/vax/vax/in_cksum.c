@@ -1,4 +1,4 @@
-/* in_cksum.c 1.11 81/11/26 */
+/* in_cksum.c 1.12 82/06/20 */
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
@@ -19,7 +19,6 @@ in_cksum(m, len)
 	register u_short *w;		/* known to be r9 */
 	register int sum = 0;		/* known to be r8 */
 	register int mlen = 0;
-COUNT(IN_CKSUM);
 
 	for (;;) {
 		/*

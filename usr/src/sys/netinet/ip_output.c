@@ -1,4 +1,4 @@
-/*	ip_output.c	1.34	82/06/13	*/
+/*	ip_output.c	1.35	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -27,7 +27,6 @@ ip_output(m, opt, ro, allowbroadcast)
 	struct route iproute;
 	struct sockaddr *dst;
 
-COUNT(IP_OUTPUT);
 	if (opt)				/* XXX */
 		(void) m_free(opt);		/* XXX */
 	/*
@@ -193,7 +192,6 @@ ip_optcopy(ip, jp, off)
 	register u_char *cp, *dp;
 	int opt, optlen, cnt;
 
-COUNT(IP_OPTCOPY);
 	cp = (u_char *)(ip + 1);
 	dp = (u_char *)(jp + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);

@@ -1,4 +1,4 @@
-/*	if_vv.c	4.4	82/06/15	*/
+/*	if_vv.c	4.5	82/06/20	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -112,7 +112,6 @@ vvattach(ui)
 {
 	register struct vv_softc *vs = &vv_softc[ui->ui_unit];
 	register struct sockaddr_in *sin;
-COUNT(VVATTACH);
 
 	vs->vs_if.if_unit = ui->ui_unit;
 	vs->vs_if.if_name = "vv";
@@ -144,7 +143,6 @@ vvreset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui;
-COUNT(VVRESET);
 
 	if (unit >= NVV || (ui = vvinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
@@ -312,7 +310,6 @@ vvstart(dev)
 	struct mbuf *m;
 	int ubainfo;
 	int dest;
-COUNT(VVSTART);
 
 	if (vs->vs_oactive)
 		goto restart;
@@ -358,7 +355,6 @@ vvxint(unit)
 	register struct vv_softc *vs = &vv_softc[unit];
 	register struct vvreg *addr;
 	register int oc;
-COUNT(ENXINT);
 
 	addr = (struct vvreg *)ui->ui_addr;
 	oc = 0xffff & (addr->vvocsr);
@@ -416,7 +412,6 @@ vvrint(unit)
 	register struct ifqueue *inq;
     	struct mbuf *m;
 	int ubainfo, len, off;
-COUNT(VVRINT);
 
 	vs->vs_if.if_ipackets++;
 	/*

@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.11	82/04/10	*/
+/*	raw_pup.c	4.12	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -31,7 +31,6 @@ rpup_output(m, so)
 	struct sockaddr_pup *dst;
 	struct ifnet *ifp;
 
-COUNT(RPUP_OUTPUT);
 	/*
 	 * Verify user has supplied necessary space
 	 * for the header and check parameters in it.

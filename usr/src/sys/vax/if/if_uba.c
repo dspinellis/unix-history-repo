@@ -1,4 +1,4 @@
-/*	if_uba.c	4.11	82/05/19	*/
+/*	if_uba.c	4.12	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,6 @@ if_ubainit(ifu, uban, hlen, nmr)
 	register caddr_t cp;
 	int i, ncl;
 
-COUNT(IF_UBAINIT);
 	ncl = clrnd(nmr + CLSIZE) / CLSIZE;
 	if (ifu->ifu_r.ifrw_addr)
 		cp = ifu->ifu_r.ifrw_addr - (CLBYTES - hlen);
@@ -81,7 +80,6 @@ if_ubaalloc(ifu, ifrw, nmr)
 {
 	register int info;
 
-COUNT(IF_UBAALLOC);
 	info =
 	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->ifu_hlen,
 	        ifu->ifu_flags);
@@ -113,7 +111,6 @@ if_rubaget(ifu, totlen, off0)
 	int off = off0, len;
 	register caddr_t cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
 
-COUNT(IF_RUBAGET);
 
 	top = 0;
 	mp = &top;
@@ -202,7 +199,6 @@ if_wubaput(ifu, m)
 	int xswapd = 0;
 	int x, cc;
 
-COUNT(IF_WUBAPUT);
 	cp = ifu->ifu_w.ifrw_addr;
 	while (m) {
 		dp = mtod(m, char *);

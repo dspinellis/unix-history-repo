@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.41	82/06/12	*/
+/*	tcp_output.c	4.42	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,7 +51,6 @@ tcp_output(tp)
 	unsigned optlen = 0;
 	int sendalot;
 
-COUNT(TCP_OUTPUT);
 
 	/*
 	 * Determine length of data that should be transmitted,

@@ -1,4 +1,4 @@
-/*	in_systm.h	4.11	82/05/31	*/
+/*	in_systm.h	4.12	82/06/20	*/
 
 /*
  * Miscellaneous internetwork
@@ -54,18 +54,6 @@ typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
 #ifndef LOCORE
 #ifdef KERNEL
 int	netisr;				/* scheduling bits for network */
-#endif
-
-
-#ifdef	KERNEL
 n_time	iptime();
-#endif
-
-#ifdef KPROF
-#include "../inet/count.h"
-#define	COUNT(i)	nrcount[i]++
-int	nrcount[NCOUNTERS+1];
-#else
-#define	COUNT(i)
 #endif
 #endif

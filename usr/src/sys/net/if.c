@@ -1,4 +1,4 @@
-/*	if.c	4.16	82/06/13	*/
+/*	if.c	4.17	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,7 +53,6 @@ if_attach(ifp)
 {
 	register struct ifnet **p = &ifnet;
 
-COUNT(IF_ATTACH);
 	while (*p)
 		p = &((*p)->if_next);
 	*p = ifp;
@@ -69,7 +68,6 @@ if_ifwithaddr(addr)
 {
 	register struct ifnet *ifp;
 
-COUNT(IF_IFWITHADDR);
 #define	equal(a1, a2) \
 	(bcmp((caddr_t)((a1)->sa_data), (caddr_t)((a2)->sa_data), 14) == 0)
 	for (ifp = ifnet; ifp; ifp = ifp->if_next) {

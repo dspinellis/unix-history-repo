@@ -1,4 +1,4 @@
-/*	if_en.c	4.66	82/06/14	*/
+/*	if_en.c	4.67	82/06/20	*/
 
 #include "en.h"
 
@@ -74,7 +74,6 @@ enprobe(reg)
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct endevice *addr = (struct endevice *)reg;
 
-COUNT(ENPROBE);
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
 	enrint(0); enxint(0); encollide(0);
@@ -101,7 +100,6 @@ enattach(ui)
 {
 	register struct en_softc *es = &en_softc[ui->ui_unit];
 	register struct sockaddr_in *sin;
-COUNT(ENATTACH);
 
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
@@ -131,7 +129,6 @@ enreset(unit, uban)
 	int unit, uban;
 {
 	register struct uba_device *ui;
-COUNT(ENRESET);
 
 	if (unit >= NEN || (ui = eninfo[unit]) == 0 || ui->ui_alive == 0 ||
 	    ui->ui_ubanum != uban)
@@ -197,7 +194,6 @@ enstart(dev)
 	register struct endevice *addr;
 	struct mbuf *m;
 	int dest;
-COUNT(ENSTART);
 
 	if (es->es_oactive)
 		goto restart;
@@ -254,7 +250,6 @@ enxint(unit)
 	register struct uba_device *ui = eninfo[unit];
 	register struct en_softc *es = &en_softc[unit];
 	register struct endevice *addr = (struct endevice *)ui->ui_addr;
-COUNT(ENXINT);
 
 	if (es->es_oactive == 0)
 		return;
@@ -287,7 +282,6 @@ encollide(unit)
 	int unit;
 {
 	struct en_softc *es = &en_softc[unit];
-COUNT(ENCOLLIDE);
 
 	es->es_if.if_collisions++;
 	if (es->es_oactive == 0)
@@ -341,7 +335,6 @@ enrint(unit)
 	int len, plen; short resid;
 	register struct ifqueue *inq;
 	int off;
-COUNT(ENRINT);
 
 	es->es_if.if_ipackets++;
 
@@ -454,7 +447,6 @@ enoutput(ifp, m0, dst)
 	register struct en_header *en;
 	register int off;
 
-COUNT(ENOUTPUT);
 	switch (dst->sa_family) {
 
 #ifdef INET

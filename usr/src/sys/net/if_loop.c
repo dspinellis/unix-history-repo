@@ -1,4 +1,4 @@
-/*	if_loop.c	4.12	82/06/12	*/
+/*	if_loop.c	4.13	82/06/20	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -28,7 +28,6 @@ loattach()
 	register struct ifnet *ifp = &loif;
 	register struct sockaddr_in *sin;
 
-COUNT(LOATTACH);
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
 	ifp->if_net = LONET;
@@ -49,7 +48,6 @@ looutput(ifp, m0, dst)
 	int s = splimp();
 	register struct ifqueue *ifq;
 
-COUNT(LOOUTPUT);
 	ifp->if_opackets++;
 	switch (dst->sa_family) {
 

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.29	82/06/12	*/
+/*	udp_usrreq.c	4.30	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -26,7 +26,6 @@
 udp_init()
 {
 
-COUNT(UDP_INIT);
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
@@ -41,7 +40,6 @@ udp_input(m0)
 	register struct mbuf *m;
 	int len, ulen;
 
-COUNT(UDP_INPUT);
 	/*
 	 * Get IP and UDP header together in first mbuf.
 	 */
@@ -133,7 +131,6 @@ udp_ctlinput(cmd, arg)
 {
 	struct in_addr *sin;
 	extern u_char inetctlerrmap[];
-COUNT(UDP_CTLINPUT);
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
@@ -166,7 +163,6 @@ udp_output(inp, m0)
 	register struct socket *so;
 	register int len = 0;
 
-COUNT(UDP_OUTPUT);
 	/*
 	 * Calculate data length and get a mbuf
 	 * for UDP and IP headers.
@@ -222,7 +218,6 @@ udp_usrreq(so, req, m, addr)
 	struct inpcb *inp = sotoinpcb(so);
 	int error = 0;
 
-COUNT(UDP_USRREQ);
 	if (inp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 	switch (req) {

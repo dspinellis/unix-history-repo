@@ -1,4 +1,4 @@
-/*	in.c	4.2	82/06/13	*/
+/*	in.c	4.3	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,7 +16,6 @@ inet_hash(sin, hp)
 	register struct sockaddr_in *sin;
 	struct afhash *hp;
 {
-COUNT(INET_HASH);
 	hp->afh_nethash = in_netof(sin->sin_addr);
 	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
 	if (hp->afh_hosthash < 0)
@@ -26,7 +25,6 @@ COUNT(INET_HASH);
 inet_netmatch(sin1, sin2)
 	struct sockaddr_in *sin1, *sin2;
 {
-COUNT(INET_NETMATCH);
 	return (sin1->sin_addr.s_net == sin2->sin_addr.s_net);
 }
 
@@ -40,7 +38,6 @@ if_makeaddr(net, host)
 {
 	u_long addr;
 
-COUNT(IF_MAKEADDR);
 	if (net < 128)
 		addr = (net << 24) | host;
 	else if (net < 65536)
@@ -87,7 +84,6 @@ if_rtinit(ifp, flags)
 {
 	struct sockaddr_in sin;
 
-COUNT(IF_RTINIT);
 	if (ifp->if_flags & IFF_ROUTE)
 		return;
 	bzero((caddr_t)&sin, sizeof (sin));

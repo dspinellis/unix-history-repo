@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.16	82/05/02	*/
+/*	ip_icmp.c	4.17	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,6 @@ icmp_error(oip, type, code)
 	register struct icmp *icp;
 	struct mbuf *m;
 	struct ip *nip;
-COUNT(ICMP_ERROR);
 
 	if (icmpprintfs)
 		printf("icmp_error(%x, %d, %d)\n", oip, type, code);
@@ -106,7 +105,6 @@ icmp_input(m)
 	register struct ip *ip = mtod(m, struct ip *);
 	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2, i, (*ctlfunc)();
 	extern u_char ip_protox[];
-COUNT(ICMP_INPUT);
 
 	/*
 	 * Locate icmp structure in mbuf, and check
@@ -199,7 +197,6 @@ icmp_reflect(ip)
 	struct ip *ip;
 {
 	struct in_addr t;
-COUNT(ICMP_REFLECT);
 
 	t = ip->ip_dst;
 	ip->ip_dst = ip->ip_src;
@@ -220,7 +217,6 @@ icmp_send(ip)
 	register struct icmp *icp;
 	register struct mbuf *m = dtom(ip);
 
-COUNT(ICMP_SEND);
 	if (!generateicmpmsgs)
 		return;
 	icp = mtod(m, struct icmp *);
@@ -239,7 +235,6 @@ iptime()
 	int s = spl6();
 	u_long t;
 
-COUNT(IPTIME);
 	t = (time % SECDAY) * 1000 + lbolt * hz;
 	splx(s);
 	return (htonl(t));

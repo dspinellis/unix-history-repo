@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.12	82/05/11	*/
+/*	if_imphost.c	4.13	82/06/20	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -32,7 +32,6 @@ hostlookup(addr)
 	register int hash = HOSTHASH(addr);
 	int s = splnet();
 
-COUNT(HOSTLOOKUP);
 	for (m = hosts; m; m = m->m_next) {
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 	        if (hp->h_addr.s_addr == addr.s_addr) {
@@ -60,7 +59,6 @@ hostenter(addr)
 	register int hash = HOSTHASH(addr);
 	int s = splnet();
 
-COUNT(HOSTENTER);
 	mprev = &hosts;
 	while (m = *mprev) {
 		mprev = &m->m_next;
@@ -112,7 +110,6 @@ hostfree(hp)
 {
 	int s = splnet();
 
-COUNT(HOSTFREE);
 	hp->h_flags &= ~HF_INUSE;
 	hp->h_timer = HOSTTIMER;
 	hp->h_rfnm = 0;
@@ -130,7 +127,6 @@ hostreset(net)
 	struct hmbuf *hm;
 	int s = splnet();
 
-COUNT(HOSTRESET);
 	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
@@ -156,7 +152,6 @@ hostrelease(hp)
 {
 	register struct mbuf *m, **mprev, *mh = dtom(hp);
 
-COUNT(HOSTRELEASE);
 	/*
 	 * Discard any packets left on the waiting q
 	 */
@@ -212,7 +207,6 @@ hostslowtimo()
 	struct hmbuf *hm;
 	int s = splnet();
 
-COUNT(HOSTSLOWTIMO);
 	for (m = hosts; m; m = m->m_next) {
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 

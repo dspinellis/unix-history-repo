@@ -1,4 +1,4 @@
-/*	ip_input.c	1.44	82/06/13	*/
+/*	ip_input.c	1.45	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,7 +28,6 @@ ip_init()
 	register struct protosw *pr;
 	register int i;
 
-COUNT(IP_INIT);
 	pr = pffindproto(PF_INET, IPPROTO_RAW);
 	if (pr == 0)
 		panic("ip_init");
@@ -62,7 +61,6 @@ ipintr()
 	register struct ipq *fp;
 	int hlen, s;
 
-COUNT(IPINTR);
 next:
 	/*
 	 * Get next datagram off input queue and get IP header
@@ -220,7 +218,6 @@ ip_reass(ip, fp)
 	struct mbuf *t;
 	int hlen = ip->ip_hl << 2;
 	int i, next;
-COUNT(IP_REASS);
 
 	/*
 	 * Presence of header sizes in mbufs
@@ -350,7 +347,6 @@ ip_freef(fp)
 {
 	register struct ipasfrag *q;
 	struct mbuf *m;
-COUNT(IP_FREEF);
 
 	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next)
 		m_freem(dtom(q));
@@ -369,7 +365,6 @@ ip_enq(p, prev)
 	register struct ipasfrag *p, *prev;
 {
 
-COUNT(IP_ENQ);
 	p->ipf_prev = prev;
 	p->ipf_next = prev->ipf_next;
 	prev->ipf_next->ipf_prev = p;
@@ -383,7 +378,6 @@ ip_deq(p)
 	register struct ipasfrag *p;
 {
 
-COUNT(IP_DEQ);
 	p->ipf_prev->ipf_next = p->ipf_next;
 	p->ipf_next->ipf_prev = p->ipf_prev;
 }
@@ -398,7 +392,6 @@ ip_slowtimo()
 	register struct ipq *fp;
 	int s = splnet();
 
-COUNT(IP_SLOWTIMO);
 	fp = ipq.next;
 	if (fp == 0) {
 		splx(s);
@@ -418,7 +411,6 @@ COUNT(IP_SLOWTIMO);
 ip_drain()
 {
 
-COUNT(IP_DRAIN);
 	while (ipq.next != &ipq)
 		(void) ip_freef(ipq.next);
 }
@@ -438,7 +430,6 @@ ip_dooptions(ip)
 	register struct ifnet *ifp;
 	struct in_addr t;
 
-COUNT(IP_DOOPTIONS);
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
 	for (; cnt > 0; cnt -= optlen, cp += optlen) {
@@ -545,7 +536,6 @@ ip_stripoptions(ip, mopt)
 	register int i;
 	register struct mbuf *m;
 	int olen;
-COUNT(IP_STRIPOPTIONS);
 
 	olen = (ip->ip_hl<<2) - sizeof (struct ip);
 	m = dtom(ip);

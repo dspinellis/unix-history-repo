@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.16	82/04/25	*/
+/*	raw_usrreq.c	4.17	82/06/20	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -20,7 +20,6 @@ int	rawqmaxlen = IFQ_MAXLEN;
 raw_init()
 {
 
-COUNT(RAW_INIT);
 	rawcb.rcb_next = rawcb.rcb_prev = &rawcb;
 	rawintrq.ifq_maxlen = IFQ_MAXLEN;
 }
@@ -37,7 +36,6 @@ raw_input(m0, proto, src, dst)
 	struct raw_header *rh;
 	int s;
 
-COUNT(RAW_INPUT);
 	/*
 	 * Rip off an mbuf for a generic header.
 	 */
@@ -84,7 +82,6 @@ rawintr()
 	register struct raw_header *rh;
 	struct socket *last;
 
-COUNT(RAWINTR);
 next:
 	s = splimp();
 	IF_DEQUEUE(&rawintrq, m);
@@ -143,7 +140,6 @@ raw_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-COUNT(RAW_CTLINPUT);
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
@@ -159,7 +155,6 @@ raw_usrreq(so, req, m, addr)
 	register struct rawcb *rp = sotorawcb(so);
 	int error = 0;
 
-COUNT(RAW_USRREQ);
 	if (rp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 
