@@ -1,4 +1,4 @@
-/*	uba.c	4.33	81/06/30	*/
+/*	uba.c	4.34	81/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -367,6 +367,7 @@ unhang()
 
 		if (up->uba_sr == 0)
 			return;
+		up->uba_sr = UBASR_CRD|UBASR_LEB;
 		uh->uh_hangcnt++;
 		if (uh->uh_hangcnt > 5*hz) {
 			uh->uh_hangcnt = 0;
