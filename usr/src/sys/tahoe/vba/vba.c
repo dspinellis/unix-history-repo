@@ -1,4 +1,4 @@
-/*	vba.c	1.2	86/01/05	*/
+/*	vba.c	1.3	86/01/24	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
@@ -15,6 +15,7 @@
 #include "vmparam.h"
 #include "vmmac.h"
 #include "proc.h"
+#include "syslog.h"
 
 #include "../tahoevba/vbavar.h"
 
@@ -39,11 +40,10 @@
  */
 
 /*
- * IO buffer preparation for possible buffered transfer.
- * The relevant page table entries are kept in the 'buf' structure,
- * for later use by the driver's 'start' routine or 'interrupt'
- * routine, when user's data has to be moved to the intermediate
- * buffer.
+ * I/O buffer preparation for possible buffered transfer.
+ * The relevant page table entries are kept in the buf structure,
+ * for later use by the driver's start or interrupt routine
+ * when user's data has to be moved to the intermediate buffer.
  */
 vbasetup(bp, sectsize)
 	register struct buf *bp;
@@ -67,8 +67,8 @@ vbasetup(bp, sectsize)
 }
 
 /*
- * This routine is usually called by the 'start' routine. It
- * returns the physical address of the first byte for IO, to
+ * This routine is usually called by the start routine. It
+ * returns the physical address of the first byte for i/o, to
  * be presented to the controller. If intermediate buffering is
  * needed and a write out is done, now is the time to get the
  * original user's data in the buffer.
@@ -84,7 +84,7 @@ vbastart(bp, v, map, utl)
 	if (bp->b_flags & B_NOT1K) {
 		phadr = vtoph(bp->b_proc, (unsigned)v);
 		if ((bp->b_flags & B_READ) == 0) {
-			for (i=0; i<bp->b_ptecnt; i++) {
+			for (i = 0; i < bp->b_ptecnt; i++) {
 				map[i] = bp->b_upte[i] 
 					& ~PG_PROT | PG_V | PG_KR;
 				mtpr(TBIS, utl + i*NBPG);
@@ -114,7 +114,7 @@ vbadone(bp, v, map, utl)
 
 	if (bp->b_flags & B_READ)
 		if (bp->b_flags & B_NOT1K) {
-			for (cnt = bp->b_bcount ; cnt >= 0; cnt -= NBPG) {
+			for (cnt = bp->b_bcount; cnt >= 0; cnt -= NBPG) {
 				mtpr(P1DC, (int)v + cnt-1);
 				mtpr(P1DC, (caddr_t)bp->b_un.b_addr + cnt-1);
 			}
@@ -122,13 +122,16 @@ vbadone(bp, v, map, utl)
 				mtpr(P1DC, v);
 			if (((int)bp->b_un.b_addr & PGOFSET) != 0)
 				mtpr(P1DC, (caddr_t)bp->b_un.b_addr);
-			for (i=0; i<bp->b_ptecnt; i++) {
+			for (i = 0; i < bp->b_ptecnt; i++) {
 				map[i] = bp->b_upte[i] 
 					& ~PG_PROT | PG_V | PG_KW;
 				mtpr(TBIS, utl + i*NBPG);
 			}
+if (bp->b_resid != 0)
+	log(LOG_NOTICE, "vbadone: dev %o bcount %d resid %d\n",
+	    bp->b_dev, bp->b_bcount, bp->b_resid);
 			bcopy(v, ((int)bp->b_un.b_addr & PGOFSET)+utl,
-			    (unsigned)bp->b_bcount);
+			    (unsigned)(bp->b_bcount - bp->b_resid));
 		} else
 			mtpr(P1DC, bp->b_un.b_addr);
 	bp->b_flags &= ~B_NOT1K;
