@@ -1,154 +1,274 @@
-.\"	@(#)NASA.proposal	1.2	91/04/02
-.if n \{\
-.ND
-.rm CH
-.ll 7i
-.nr LL 7i
-.ad l
-.\}
-.so HEADERS
-.HE D
+.\"	@(#)NASA.proposal	1.3	91/06/26
+.fo +CSRG NASA proposal++%
+.nr si 3n
 .nr PS 11
 .nr VS 13
 .nr LL 6i
 .nr OI 0.5i
 .in 0.5i
 .ps 11p
-.LP
+.sh 1 Summary
+.sp
+The attached is an unsolicited proposal for NASA requesting funding
+for the support of the 4.4BSD project.
+This proposal has not been submitted to any other organization or NASA
+installation.
+.sh 2 Organization
+.sp
 .nf
-Mr. Tom Woodrow
-NASA Research Center
-.sp 2
-.LP
-Dear Mr. Woodrow
-.PP
-I am writing to you in my role as the head of operating
-system and networking research for the \s-1UNIX\s0 project in the Computer
-Science Division of the University of California, Berkeley, known as
-the Computer Systems Research Group (\s-1CSRG\s0).
-Current funding for \s-1CSRG\s0 is provided by the Open Software
-Foundation (\s-1OSF\s0), Hewlett-Packard (HP), and Cray Research.
-Because of the current economic climate,
-these organizations have had to reduce their support of \s-1CSRG\s0, 
-and we are seeking additional funding from other sources so that we
-may continue our research.
-.PP
-Our strategy is to add an additional source of funding to our current
-three, and have each of the additional sources provide about one fourth
-of our annual budget.
-Annual grants of about $400,000 or annual gifts of about $200,000 would
-provide roughly a quarter of the budget needed by \s-1CSRG\s0
-for salaries and benefits, maintenance and network access fees,
-travel and other expenses.
-I realize that \s-1NASA\s0 cannot provide funding at this level in the
-current year, however, I would hope that a successful year at a lower
-level of funding would promote us to consideration for a larger grant
-in future years.
-.PP
-The goal of the \s-1CSRG\s0 project
-is to use leading edge research ideas in a stable and reliable
-implementation that solves current problems in operating systems research.
-The project also includes incorporation of network protocols and other
-subsystems into the operating system while maintaining consistency
-with the existing system call interface.
-The resulting system is widely used by other
-researchers in operating systems and network protocols.
-The most recent two releases, \s-14.2BSD\s0
-and \s-14.3BSD\s0, provide the
-core of the standard networking and/or operating system software for
-nearly all vendors of \s-1UNIX\s0-based workstations and minicomputers.
-The network support in the current systems released by both \s-1OSF\s0
-(\s-1OSF-1\s0) and \s-1AT&T\s0 (System V, Release 4) is based
-\s-14.3BSD\s0.
-.PP
-\s-1CSRG\s0 includes four full-time research staff (Mike Karels,
-Keith Bostic, Marc Teitelbaum and myself),
-and one three-quarter-time programmer on loan
-from another group (Keith Sklower).
-In addition, two full-time administrative and secretarial people
-handle licensing and software distribution as well as office support.
-.PP
-\s-1CSRG\s0 anticipates that its next major release, tentatively called
-\s-14.4BSD\s0, will be completed and begin shipment late in 1991.
-Although \s-14.4BSD\s0 will still require an AT&T source license,
-we plan to put together a subset release,
-nicknamed \s-14.4BSD\s0-Lite,
-that will not contain any proprietary code and hence will be
-available without any licenses.
-The only restriction on use or redistribution will be a requirement
-that due credit be given to the Regents of the University of California
-(except for the GNU software, currently the compiler and debugger,
-that have more stringent release requirements).
-At present, 80% of the utilities, and nearly all the kernel
-is non-proprietary.
-We expect that \s-14.4BSD\s0-Lite will contain a bootable system
-and have all the important utilities.
-We will have machine support for 386/486 based PCs,
-Hewlett-Packard's Motorola 68000 based workstations,
-and Sun 4 workstations, as well as the traditional support for VAXes
-and machines based on Computer Consoles' 6/32 architecture.
-We are moderately confident of having support for \s-1MIPS\s0 workstations
-and DEC \s-1SPIM\s0 (byte reversed \s-1MIPS\s0) workstations, and may have
-support for other architectures.
-.PP
-The file system interface
-has been extended to allow greater flexibility and performance,
-and a freely redistributable version of \s-1NFS\s0 is included.
-The new system integrates an implementation of the
-\s-1ISO OSI\s0 networking protocols into the existing
-socket interface and internal network architecture.
-This work will include a revised internal network
-architecture incorporating the best features of both the existing
-socket support and the ``streams'' layering of the Ninth Edition
-research version of \s-1UNIX\s0.
-Both filesystem and networking interfaces
-improve on previous work with better support for caching in layered
+Computer Systems Research Group
+455 Evans Hall
+University of California
+Berkeley CA 94720
+.fi
+.sh 2 "Type of organization"
+.sp
+Educational
+.sh 2 "Principal Investigator"
+.sp
+.nf
+Dr. Marshall Kirk McKusick
+455 Evans Hall
+Computer Systems Research Group
+Computer Science Division
+University of California
+Berkeley, CA 94720
+415-642-4948
+.fi
+.sh 2 "Preliminary Discussions"
+.pp
+Preliminary discussions have been held with:
+.sp
+.nf
+Thomas Woodrow
+Numerical Aerodynamic Simulation Division
+Systems Development Branch
+NASA Ames Research Center
+Mail Stop 258-5
+Moffett Field, CA 94035
+415-604-3966
+.fi
+.sh 2 Funding
+.pp
+The funding requested is $100,000.
+The project will start September 1, 1991, and will last for one year.
+.bp
+.sh 1 Abstract
+.pp
+The primary goal of the 4.4BSD project is to incorporate leading edge
+research ideas in a stable and reliable implementation dealing with
+current problems in operating systems research.
+These research areas include networking protocols, virtual
+memory, shared memory, threads and multi-processing.
+The resulting system is widely used by other researchers in operating
+systems and network protocols and by vendor organizations.
+The most recent two releases made by the Computer Systems Research Group
+(CSRG), 4.2BSD and 4.3BSD, provide the core of the standard networking
+and/or operating system software for nearly all vendors of UNIX-based
+workstations and minicomputers.
+The network support in the current systems released by both the Open
+Software Foundation (OSF), OSF-1, and AT&T, System V Release 4, is
+based on that found in 4.3BSD.
+.pp
+A secondary goal of our research is to make an inexpensive, cutting-edge
+research system available to anyone without restrictions based on
+the inclusion of proprietary software or restrictive licensing.
+CSRG is unquestionably the largest current distributor of technologically
+advanced, freely redistributable software.
+.sh 1 "Project Description"
+.pp
+During the funding period, CSRG anticipates that it will complete
+its next major release, 4.4BSD.
+As soon as this release is complete, CSRG will begin work on a
+follow-on release, tentatively named 5BSD.
+The requested funding will support the development of software for
+both releases.
+.pp
+Current development efforts in the CSRG include many different areas.
+Some of them are as follows:
+.sh 2 "New Architecture Support"
+.pp
+The 4.4BSD release will support the 386/486 based PC architectures,
+Hewlett-Packard's (HP) Motorola 68000 based workstations and 9000/7000
+RISC workstations, Digital Equipment
+Corporation's (DEC) DECstation, and
+Sun Microsystem's Sparcstations, as well as the traditional BSD
+platforms, DEC's VAX architectures and Computer Consoles' 6/32
 architectures.
-These caching techniques are based on work done by Van
-Jacobson at the Lawrence Berkeley Laboratory,
-and will be fully exploited by the \s-1TCP/IP\s0 networking protocols.
-The applicability of
-these techniques in the \s-1OSI\s0 protocol suite
-will be investigated as well.
-.PP
-The system will also include an \s-1IEEE\s0 P1003.1 \s-1(POSIX)\s0 standard
-operating system interface integrated with the existing system
-interface in such a way that both interfaces are fully supported and
-interoperate fully.
-We have also been closely tracking the P1003.2 and P1003.2a shell
+We are moderately confident of having support for various MIPS workstations
+and the Data General Avion workstations as well.
+.sh 2 "New Virtual Memory"
+.pp
+We have already integrated and are currently testing a new virtual
+memory system derived from that of the Mach operating system distributed
+by Carnegie-Mellon University and ported to 4.3BSD by the University
+of Utah.
+Among the many new features provided by the new virtual memory implementation
+will be an integration of the buffer cache and virtual memory, shared memory,
+semaphores and memory mapped I/O.
+.sh 2 "File Systems"
+.pp
+The fast file system interface has been extended to allow greater flexibility
+and performance.
+We have also included a freely redistributable implementation of Sun
+Microsystem's Network File System (NFS), including the ability to
+run NFS over TCP.
+.sh 2 "Networking"
+We are in the process of integrating an implementation of the ISO OSI
+networking protocols into the existing socket interface and internal
+network architecture.
+This work includes a revised internal network architecture incorporating
+the best features of both the existing socket support and the ``streams''
+layering presented in the Ninth Edition research version of UNIX.
+Both the local filesystem and networking interfaces improve on previous
+work with enhanced support for caching in layered architectures.
+These caching techniques are based, in part, on work done by Van Jacobson
+at the Lawrence Berkeley Laboratory, and will be fully exploited by the
+TCP/IP networking protocols.
+We are investigating the applicability of these techniques to the OSI
+protocol suite as well.
+.sh 2 "Standards"
+.pp
+Members of the CSRG have been closely tracking industry standards,
+including ANSI C and the IEEE POSIX standards.
+In addition, members of the CSRG have served as technical reviewers
+for several of the IEEE POSIX standards groups.
+The 4.4BSD release will include ANSI C support as well as an IEEE
+POSIX 1003.1 standard operating system interface integrated with
+the existing system interface in such a way that both interfaces
+fully interoperate.
+We have also been closely tracking the POSIX 1003.2 and 1003.2a shell
 and utility standards, and have been updating our utilities to reflect
 that proposed standard.
-If the standard has been ratified by the time that we prepare to
-ship \s-14.4BSD\s0, we expect to be compliant with it, as well.
-We have been attending the meetings of several other \s-1POSIX\s0
-working groups, including P1003.4 (real-time) P1003.4a (multiprocessing),
-P1003.8 (networked filesystems), and P1003.12 (networking interfaces).
-We hope to prototype and eventually incorporate
-support for these standards as they come into existence.
-.PP
-The system is expected to include a new
-virtual memory system derived from that of the
-public domain portion of the Mach operating system
-from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
-The virtual memory system already contains support for multiprocessors.
-In the future, we will extend this multiprocessor support to the
-other major kernel subsystems including the networking, filesystem,
-and terminal handling.
-The kernel level multiprocessing support will also be exported from
-the kernel through the P1003.4a multiprocessing interface to
-user programs that wish to exploit it.
-We expect that the products of this work will become the interfaces and
-implementations of choice for other operating systems and networking
-researchers in the near future.
-.sp 2
-.in +3i
-Sincerely,
-.sp .65i
-Dr. Marshall Kirk McKusick
-.in -3i
-.sp 2
-.nf
-cc:	Mike Karels
-.fi
+If these standards have been ratified by the time that we prepare to
+ship 4.4BSD, we expect to be compliant with them as well.
+We have been monitoring several other POSIX working groups, including
+POSIX 1003.4 (real-time), 1003.4a (multiprocessing), 1003.8 (networked
+filesystems), and 1003.12 (networking interfaces).
+We expect to prototype and eventually incorporate support for these
+standards as they come into existence.
+.sh 2 "Open Systems"
+.pp
+In an effort to make this research as widely available as
+possible, the CSRG is actively replacing the portions of the system that
+are proprietary with implementations that are freely redistributable.
+While it is expected that 4.4BSD will still require an AT&T source
+license, CSRG will offer a subset release which will not contain
+any proprietary source code and which will not require licenses other
+than the University of California's.
+(The only restriction on use or redistribution will be a requirement
+that due credit be given to the Regents of the University of California,
+except for any included Free Software Foundation software, which has
+more restrictive release requirements.)
+This subset release will be a bootable, usable system and will contain
+approximately 95% of the source code in the full release.
+At present, 75% of the utilities and much of the kernel is non-proprietary.
+.sh 2 "After 4.4BSD"
+.pp
+The first major project that will be done as part of the release after
+4.4BSD will be support for multi-processors.
+The virtual memory system we are currently integrating already contains
+support for multiprocessors.
+The new internal network architecture, streams, will also be designed
+with multiprocessors in mind.
+As part of this future release, we will extend this support to the other
+major kernel subsystems including the networking, filesystem, and terminal
+handling.
+Appropriate user interfaces to multiprocessing, perhaps modeled on the
+POSIX 1003.4a interfaces, will be designed and implemented as well.
+.bp
+.sh 1 "Personnel"
+.pp
+There are five members of the CSRG research staff: Kirk McKusick,
+Mike Karels, Keith Bostic, Keith Sklower and Marc Teitelbaum.
+.pp
+Dr. McKusick received his undergraduate degree in Electrical Engineering
+from Cornell University.
+His graduate work was done at the University of California, where he
+received Masters degrees in Computer Science and Business Administration,
+and a Ph.D. in the area of programming languages.
+While at Berkeley he implemented the 4.2BSD fast file system and was
+involved in implementing the Berkeley Pascal system.
+He currently is the Research Computer Scientist at the Berkeley Computer
+Systems Research Group.
+He is president of the Usenix Association, a member of the editorial board
+of UNIX Review Magazine, and a member of ACM and IEEE.
+He is a co-author of the book ``The Design and Implementation of the
+4.3BSD UNIX Operating System.''
+.pp
+Michael J. Karels is the Principal Programmer of the Computer Systems
+Research Group at the University of California, Berkeley.
+Since the release of 4.2BSD, he has been the primary system architect
+for Berkeley UNIX, continuing the development of new versions of BSD.
+Michael Karels received his B.S. in Microbiology from the University of
+Notre Dame.
+He was the principal developer of the 2.9BSD UNIX release of the Berkeley
+Software Distribution for the PDP-11.
+He is a member of the ACM, the IEEE and the Internet Engineering Task
+force.
+He is a co-author of the book ``The Design and Implementation of the
+4.3BSD UNIX Operating System.''
+.pp
+A representative selection of CSRG's relevant publications are as follows:
 .sp
-MKM/tl
+M. McKusick, M. Karels, K. Bostic,
+``A Pageable Memory-Based Filesystem'',
+\fIProceedings of the Anaheim Usenix Conference\fP,
+pp 137-144, June 1990.
+.sp
+.lp
+M. McKusick, M. Karels, K. Bostic,
+``The Release Engineering of 4.3BSD'',
+\fIProceedings of the New Orleans Usenix Workshop on Software Management\fP,
+pp 95-100, April 1989.
+.sp
+.lp
+M. McKusick, M. Karels,
+``Design of a General Purpose Memory Allocator for the 4.3BSD UNIX Kernel'',
+\fIProceedings of the San Francisco Usenix Conference\fP,
+pp 295-304, June 1988.
+.sp
+.lp
+M. McKusick, M. Karels,
+``Directions of UNIX at Berkeley'',
+\fIDigest of Papers of the Thirty-second IEEE Computer Society
+International Conference\fP,
+Compcon, San Francisco, pp. 196-199, February 23-27, 1987.
+.sp
+.lp
+M. McKusick, M. Karels,
+``A New Virtual Memory Implementation for Berkeley UNIX'',
+\fIProceedings of the European UNIX Users Group Meeting\fP,
+Manchester, England, pp. 451-460, September 1986.
+.sp
+.lp
+M. Karels, M. McKusick,
+``Towards a Compatible Filesystem Interface'',
+\fIProceedings of the European UNIX Users Group Meeting\fP,
+Manchester, England, pp. 481-496, September 1986.
+.bp
+.sh 1 "Facilities and Equipment"
+.pp
+Equipment for the CSRG is currently being provided by Computer Consoles
+Inc., Hewlett-Packard Corp. and Compaq Corporation.  No additional equipment is required for the proposed project.
+.sh 1 "Proposed Costs"
+.pp
+The CSRG currently requires funding at a level of $31,179 per month
+for salaries and $6,800 for supplies and expenses such as equipment
+maintenance and power.
+Of the requested funding of $100,000, $48,000 will go directly
+to the University of California as overhead.
+The remaining $52,000 of funding will fund the CSRG for slightly under
+1.5 months.
+Of course, NASA is not the only source of funding for the CSRG.
+Current funding is provided by the Open Software Foundation,
+Hewlett-Packard Corp. and Cray Research.
+.sh 1 "Current Projects"
+.pp
+No other current projects are being conducted by the principal
+investigator, or by other members of CSRG.
+.sp 8
+.nf
+.in +1.0i
+Marshall Kirk McKusick
+Research Computer Scientist, CSRG
