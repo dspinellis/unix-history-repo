@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.52 82/02/27 */
+/* tcp_usrreq.c 1.53 82/03/11 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -153,7 +153,16 @@ COUNT(TCP_USRREQ);
 	 * done at higher levels; just return the address
 	 * of the peer, storing through addr.
 	 */
-	case PRU_ACCEPT:
+	case PRU_ACCEPT: {
+		struct sockaddr_in *sin = (struct sockaddr_in *)addr;
+
+		if (sin) {
+			bzero((caddr_t)sin, sizeof (*sin));
+			sin->sin_family = AF_INET;
+			sin->sin_port = inp->inp_fport;
+			sin->sin_addr = inp->inp_faddr;
+		}
+		}
 		break;
 
 	/*

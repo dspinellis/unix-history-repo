@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.15	82/02/15	*/
+/*	tcp_subr.c	4.16	82/03/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,6 +111,7 @@ COUNT(TCP_RESPOND);
 		m = dtom(ti);
 		m_freem(m->m_next);
 		m->m_next = 0;
+		m->m_off = (int)ti - (int)m;
 		m->m_len = sizeof (struct tcpiphdr);
 #define xchg(a,b,type) { type t; t=a; a=b; b=t; }
 		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
