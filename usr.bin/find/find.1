@@ -1,5 +1,5 @@
-.\" Copyright (c) 1990 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This code is derived from software contributed to Berkeley by
 .\" the Institute of Electrical and Electronics Engineers, Inc.
@@ -32,9 +32,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)find.1	6.30 (Berkeley) 2/27/92
+.\"	@(#)find.1	8.1 (Berkeley) 6/6/93
 .\"
-.Dd February 27, 1992
+.Dd June 6, 1993
 .Dt FIND 1
 .Os
 .Sh NAME
@@ -42,7 +42,7 @@
 .Nd walk a file hierarchy
 .Sh SYNOPSIS
 .Nm find
-.Op Fl dsXx
+.Op Fl HdhXx
 .Op Fl f Ar file
 .Op Ar file ...
 .Ar expression
@@ -55,14 +55,19 @@ listed, evaluating an
 (composed of the ``primaries'' and ``operands'' listed below) in terms
 of each file in the tree.
 .Pp
-If
-.Ar file
-is a symbolic link referencing an existing file, the directory tree
-referenced by the link is descended instead of the link itself.
-.Pp
 The options are as follows:
 .Pp
 .Bl -tag -width Ds
+.It Fl H
+The
+.Fl H
+option causes the file information and file type (see
+.Xr stat  2  ) ,
+returned for each symbolic link encountered on the command line to be 
+those of the file referenced by the link, not the link itself.
+If the referenced file does not exist, the file information and type will
+be for the link itself.  File information of all symbolic links not on 
+the command line is that of the link itself.
 .It Fl d
 The
 .Fl d
@@ -85,9 +90,9 @@ option specifies a file hierarchy for
 to traverse.
 File hierarchies may also be specified as the operands immediately
 following the options.
-.It Fl s
+.It Fl h
 The
-.Fl s
+.Fl h
 option causes the file information and file type (see
 .Xr stat  2  ) ,
 returned for each symbolic link to be those of the file referenced by the
@@ -374,11 +379,12 @@ that are newer than ``ttt''.
 .Sh SEE ALSO
 .Xr chmod 1 ,
 .Xr locate 1 ,
-.Xr test 1 ,
 .Xr stat 2 ,
+.Xr fts 3 ,
 .Xr getpwent 3 ,
 .Xr getgrent 3 ,
-.Xr strmode 3
+.Xr strmode 3 ,
+.Xr symlink 7
 .Sh STANDARDS
 The
 .Nm find

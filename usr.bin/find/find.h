@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Cimarron D. Taylor of the University of California, Berkeley.
@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)find.h	5.9 (Berkeley) 7/19/91
+ *	@(#)find.h	8.1 (Berkeley) 6/6/93
  */
 
 /* node type */
@@ -48,7 +48,8 @@ enum ntype {
 /* node definition */
 typedef struct _plandata {
 	struct _plandata *next;			/* next node */
-	int (*eval)();				/* node evaluation function */
+	int (*eval)				/* node evaluation function */
+	    __P((struct _plandata *, FTSENT *));
 #define	F_EQUAL		1			/* [acm]time inum links size */
 #define	F_LESSTHAN	2
 #define	F_GREATER	3
@@ -91,5 +92,16 @@ typedef struct _plandata {
 #define	e_argv	p_un.ex._e_argv
 #define	e_orig	p_un.ex._e_orig
 #define	e_len	p_un.ex._e_len
+
+typedef struct _option {
+	char *name;			/* option name */
+	enum ntype token;		/* token type */
+	PLAN *(*create)();		/* create function: DON'T PROTOTYPE! */
+#define	O_NONE		0x01		/* no call required */
+#define	O_ZERO		0x02		/* pass: nothing */
+#define	O_ARGV		0x04		/* pass: argv, increment argv */
+#define	O_ARGVP		0x08		/* pass: *argv, N_OK || N_EXEC */
+	int flags;
+} OPTION;
 
 #include "extern.h"
