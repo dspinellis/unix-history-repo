@@ -759,7 +759,7 @@ bitopt(p) register struct node *p; {
 isfield(n) register long n; {/* -1 -> no; else -> position of low bit */
 	register int pos; register long t;
 	t= ((n-1)|n) +1;
-	if (n!=0 && (0==t || 0==n || 0<=ispow2(t))) {
+	if (n!=0 && (0==t || 0<=ispow2(t))) {
 		pos=0; while(!(n&1)) {n >>= 1; ++pos;} return(pos);
 	} else return(-1);
 }
@@ -802,7 +802,8 @@ bicopt(p) register struct node *p; {
 				splitrand(p->back); cp1=regs[RT1]; cp2=regs[RT3];
 				if (*cp1++=='$' && *(regs[RT2])!='$' && !indexa(regs[RT2])
 				  && 0>(f=getnum(cp1)) && equstr(src,cp2)
-				  && 0<=(r=isreg(cp2)) && r<NUSE) {/* a good ASH */
+				  && 0<=(r=isreg(cp2)) && r<NUSE
+				  && siz-f <= 32) {	/* a good ASH */
 					pos -= f; cp1=regs[RT2]; cp2=src; while (*cp2++= *cp1++);
 					delnode(p->back);
 				}
