@@ -45,6 +45,7 @@ int pipeout=0;
 	} else {
 		script = fopen(scriptname,"w");
 	}
+	fprintf(script,"$ SET NOON\n");
 	for(j=1;j<argc;j++) {
 		if(j==1 && *argv[j]=='-') continue;
 		release = argv[j];
@@ -52,7 +53,7 @@ int pipeout=0;
 		for(k=index(dirname,'/');k;k=index(k+1,'/')) {
 			*k='\0';
 			fprintf(script,"$ CREATE/DIR [.%s] \n",dirname);
-			strcpy(dirname,release);
+			*k='.';
 		}
 		sprintf(cmd,
 			"find %s \\! \\( -name RCS -o -name \\*,v -o -name SCCS -o -name s.\\* \\) -type d -print\n", release);
