@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -31,22 +31,16 @@ static char sccsid[] = "@(#)aux.c	5.14 (Berkeley) %G%";
 /*
  * Return a pointer to a dynamic copy of the argument.
  */
-
 char *
 savestr(str)
 	char *str;
 {
-	register char *cp, *cp2, *top;
+	char *new;
+	int size = strlen(str) + 1;
 
-	for (cp = str; *cp; cp++)
-		;
-	top = salloc(cp-str + 1);
-	if (top == NOSTR)
-		return(NOSTR);
-	for (cp = str, cp2 = top; *cp; cp++)
-		*cp2++ = *cp;
-	*cp2 = 0;
-	return(top);
+	if ((new = salloc(size)) != NOSTR)
+		bcopy(str, new, size);
+	return new;
 }
 
 /*
@@ -68,14 +62,10 @@ panic(fmt, a, b)
  * Touched messages have the effect of not being sent
  * back to the system mailbox on exit.
  */
-
-touch(mesg)
-{
+touch(mp)
 	register struct message *mp;
+{
 
-	if (mesg < 1 || mesg > msgCount)
-		return;
-	mp = &message[mesg-1];
 	mp->m_flag |= MTOUCH;
 	if ((mp->m_flag & MREAD) == 0)
 		mp->m_flag |= MREAD|MSTATUS;
@@ -85,7 +75,6 @@ touch(mesg)
  * Test to see if the passed file name is a directory.
  * Return true if it is.
  */
-
 isdir(name)
 	char name[];
 {
@@ -99,7 +88,6 @@ isdir(name)
 /*
  * Count the number of arguments in the given string raw list.
  */
-
 argcount(argv)
 	char **argv;
 {
@@ -114,7 +102,6 @@ argcount(argv)
  * Return the desired header line from the passed message
  * pointer (or NOSTR if the desired header field is not available).
  */
-
 char *
 hfield(field, mp)
 	char field[];
@@ -146,7 +133,6 @@ hfield(field, mp)
  * "colon" is set to point to the colon in the header.
  * Must deal with \ continuations & other such fraud.
  */
-
 gethfield(f, linebuf, rem, colon)
 	register FILE *f;
 	char linebuf[];
@@ -213,7 +199,7 @@ ishfield(linebuf, colon, field)
 	register char *cp = colon;
 
 	*cp = 0;
-	if (!icequal(linebuf, field)) {
+	if (strcasecmp(linebuf, field) != 0) {
 		*cp = ':';
 		return 0;
 	}
@@ -221,29 +207,6 @@ ishfield(linebuf, colon, field)
 	for (cp++; *cp == ' ' || *cp == '\t'; cp++)
 		;
 	return cp;
-}
-
-/*
- * Compare two strings, ignoring case.
- */
-
-icequal(s1, s2)
-	register char *s1, *s2;
-{
-	register c1, c2;
-
-	for (;;) {
-		if ((c1 = (unsigned char)*s1++) !=
-		    (c2 = (unsigned char)*s2++)) {
-			if (isupper(c1))
-				c1 = tolower(c1);
-			if (c1 != c2)
-				return 0;
-		}
-		if (c1 == 0)
-			return 1;
-	}
-	/*NOTREACHED*/
 }
 
 /*
@@ -311,7 +274,6 @@ source(arglist)
  * Pop the current input back to the previous level.
  * Update the "sourcing" flag as appropriate.
  */
-
 unstack()
 {
 	if (ssp <= 0) {
@@ -335,7 +297,6 @@ unstack()
  * Touch the indicated file.
  * This is nifty for the shell.
  */
-
 alter(name)
 	char name[];
 {
@@ -354,7 +315,6 @@ alter(name)
  * Examine the passed line buffer and
  * return true if it is all blanks and tabs.
  */
-
 blankline(linebuf)
 	char linebuf[];
 {
@@ -519,7 +479,6 @@ done:
  *	1 -- get sender's name for reply
  *	2 -- get sender's name for Reply
  */
-
 char *
 name1(mp, reptype)
 	register struct message *mp;
@@ -593,7 +552,6 @@ charcount(str, c)
 /*
  * Are any of the characters in the two strings the same?
  */
-
 anyof(s1, s2)
 	register char *s1, *s2;
 {
@@ -607,7 +565,6 @@ anyof(s1, s2)
 /*
  * Convert c to upper case
  */
-
 raise(c)
 	register c;
 {
@@ -620,7 +577,6 @@ raise(c)
 /*
  * Copy s1 to s2, return pointer to null in s2.
  */
-
 char *
 copy(s1, s2)
 	register char *s1, *s2;

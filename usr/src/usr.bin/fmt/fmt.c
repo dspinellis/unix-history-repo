@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -263,7 +263,7 @@ split(line)
 		 */
 		if (*cp == '\0') {
 			*cp2++ = ' ';
-			if (any(cp[-1], ".:!"))
+			if (index(".:!", cp[-1]))
 				*cp2++ = ' ';
 		}
 		while (*cp == ' ')
@@ -370,7 +370,7 @@ oflush()
 tabulate(line)
 	char line[];
 {
-	register char *cp, *cp2;
+	register char *cp;
 	register int b, t;
 
 	/*

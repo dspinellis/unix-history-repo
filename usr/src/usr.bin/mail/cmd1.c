@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -267,7 +267,6 @@ type1(msgvec, doign, page)
 {
 	register *ip;
 	register struct message *mp;
-	register int mesg;
 	register char *cp;
 	int nlines;
 	int brokpipe();
@@ -304,12 +303,11 @@ type1(msgvec, doign, page)
 		}
 	}
 	for (ip = msgvec; *ip && ip - msgvec < msgCount; ip++) {
-		mesg = *ip;
-		touch(mesg);
-		mp = &message[mesg-1];
+		mp = &message[*ip - 1];
+		touch(mp);
 		dot = mp;
 		if (value("quiet") == NOSTR)
-			fprintf(obuf, "Message %d:\n", mesg);
+			fprintf(obuf, "Message %d:\n", *ip);
 		(void) send(mp, obuf, doign ? ignore : 0, NOSTR);
 	}
 	if (obuf != stdout) {
@@ -341,7 +339,6 @@ top(msgvec)
 {
 	register int *ip;
 	register struct message *mp;
-	register int mesg;
 	int c, topl, lines, lineb;
 	char *valtop, linebuf[LINESIZE];
 	FILE *ibuf;
@@ -355,12 +352,11 @@ top(msgvec)
 	}
 	lineb = 1;
 	for (ip = msgvec; *ip && ip-msgvec < msgCount; ip++) {
-		mesg = *ip;
-		touch(mesg);
-		mp = &message[mesg-1];
+		mp = &message[*ip - 1];
+		touch(mp);
 		dot = mp;
 		if (value("quiet") == NOSTR)
-			printf("Message %d:\n", mesg);
+			printf("Message %d:\n", *ip);
 		ibuf = setinput(mp);
 		c = mp->m_lines;
 		if (!lineb)
@@ -379,7 +375,6 @@ top(msgvec)
  * Touch all the given messages so that they will
  * get mboxed.
  */
-
 stouch(msgvec)
 	int msgvec[];
 {

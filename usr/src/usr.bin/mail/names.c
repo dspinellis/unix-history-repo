@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)names.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -176,7 +176,7 @@ yankword(ap, wbuf)
 		for (cp2 = wbuf; *cp && (*cp2++ = *cp++) != '>';)
 			;
 	else
-		for (cp2 = wbuf; *cp && !any(*cp, " \t,("); *cp2++ = *cp++)
+		for (cp2 = wbuf; *cp && !index(" \t,(", *cp); *cp2++ = *cp++)
 			;
 	*cp2 = '\0';
 	return cp;
@@ -500,7 +500,7 @@ elide(names)
 	new->n_flink = NIL;
 	while (np != NIL) {
 		t = new;
-		while (nstrcmp(t->n_name, np->n_name) < 0) {
+		while (strcasecmp(t->n_name, np->n_name) < 0) {
 			if (t->n_flink == NIL)
 				break;
 			t = t->n_flink;
@@ -511,7 +511,7 @@ elide(names)
 		 * the current value of t.
 		 */
 
-		if (nstrcmp(t->n_name, np->n_name) < 0) {
+		if (strcasecmp(t->n_name, np->n_name) < 0) {
 			t->n_flink = np;
 			np->n_blink = t;
 			t = np;
@@ -557,8 +557,8 @@ elide(names)
 	np = new;
 	while (np != NIL) {
 		t = np;
-		while (t->n_flink!=NIL &&
-		    icequal(np->n_name,t->n_flink->n_name))
+		while (t->n_flink != NIL &&
+		       strcasecmp(np->n_name, t->n_flink->n_name) == 0)
 			t = t->n_flink;
 		if (t == np || t == NIL) {
 			np = np->n_flink;
@@ -576,21 +576,6 @@ elide(names)
 		np = np->n_flink;
 	}
 	return(new);
-}
-
-/*
- * Version of strcmp which ignores case differences.
- */
-nstrcmp(s1, s2)
-	register char *s1, *s2;
-{
-	register int c1, c2;
-
-	do {
-		c1 = *s1++;
-		c2 = *s2++;
-	} while (c1 && c1 == c2);
-	return(c1 - c2);
 }
 
 /*
@@ -624,19 +609,17 @@ count(np)
 }
 
 /*
- * Delete the given name from a namelist, using the passed
- * function to compare the names.
+ * Delete the given name from a namelist.
  */
 struct name *
-delname(np, name, cmpfun)
+delname(np, name)
 	register struct name *np;
 	char name[];
-	int (* cmpfun)();
 {
 	register struct name *p;
 
 	for (p = np; p != NIL; p = p->n_flink)
-		if ((* cmpfun)(p->n_name, name)) {
+		if (strcasecmp(p->n_name, name) == 0) {
 			if (p->n_blink == NIL) {
 				if (p->n_flink != NIL)
 					p->n_flink->n_blink = NIL;
@@ -651,7 +634,7 @@ delname(np, name, cmpfun)
 			p->n_blink->n_flink = p->n_flink;
 			p->n_flink->n_blink = p->n_blink;
 		}
-	return(np);
+	return np;
 }
 
 /*

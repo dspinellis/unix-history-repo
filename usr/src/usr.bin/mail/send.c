@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -121,7 +121,7 @@ send(mp, obuf, doign, prefix)
 				if (doign && isign(line, doign))
 					ignoring = 1;
 				else if ((line[0] == 's' || line[0] == 'S') &&
-					 icequal(line, "status")) {
+					 strcasecmp(line, "status") == 0) {
 					/*
 					 * If the field is "status," go compute
 					 * and print the real Status: field
