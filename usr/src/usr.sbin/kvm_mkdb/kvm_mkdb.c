@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -55,7 +55,7 @@ main(argc, argv)
 		exit(0);
 
 #define	basename(cp)	((p = rindex((cp), '/')) != NULL ? p + 1 : (cp))
-	nlistpath = argc > 1 ? argv[0] : _PATH_UNIX;
+	nlistpath = argc > 0 ? argv[0] : _PATH_UNIX;
 	nlistname = basename(nlistpath);
 
 	(void)snprintf(dbtemp, sizeof(dbtemp), "%skvm_%s.tmp",
