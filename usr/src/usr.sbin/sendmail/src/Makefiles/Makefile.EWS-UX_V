@@ -7,14 +7,15 @@
 #
 #  This has been tested on NEC EWS-UX/V 4.2
 #
-#	@(#)Makefile.EWS-UX_V	8.1 (Berkeley) %G%
+#	@(#)Makefile.EWS-UX_V	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
 O=	-O
 
 # make sure that /bin/cc is used (do not use /usr/ucb/cc).
-CC=	/bin/cc
+#CC=	/bin/cc
+CC=	/usr/abiccs/bin/cc
 
 # define the database mechanism used for alias lookups:
 #	-DNDBM -- use new DBM
@@ -26,7 +27,7 @@ CC=	/bin/cc
 DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF= -KOlimit=900
+ENVDEF=	-Dnec_ews_svr4 -KOlimit=900
 
 # see also conf.h for additional compilation flags
 
@@ -80,27 +81,34 @@ sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
 
 sysexits.h:
-	ln -s /usr/ucbinclude/sysexits.h .
+	echo '#ifndef _LOCAL_SYSEXITS_H_' > sysexits.h;
+	echo '#define _LOCAL_SYSEXITS_H_' >> sysexits.h;
+	cat /usr/abiccs/ucbinclude/sysexits.h >> sysexits.h;
+	echo '#endif /* _LOCAL_SYSEXITS_H_ */' >> sysexits.h;
+#	ln -s /usr/abiccs/ucbinclude/sysexits.h .
 
 ndbm.h:
-	ln -s /usr/ucbinclude/ndbm.h .
+	ln -s /usr/abiccs/ucbinclude/ndbm.h .
 
 ndbm.o:
-	ar x /usr/ucblib/libucb.a ndbm.o
+	ar x /usr/abiccs/ucblib/libucb.a ndbm.o
+#	ar x /usr/ucblib/libucb.a ndbm.o
 
-NROFF=	nroff -h
+#NROFF=	nroff -h
+NROFF=	groff -Tascii
+MANDOC=	-mandoc
 
 aliases.0: aliases.5
-	${NROFF} -mandoc aliases.5 > aliases.0
+	${NROFF} ${MANDOC} aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	${NROFF} -mandoc mailq.1 > mailq.0
+	${NROFF} ${MANDOC} mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
-	${NROFF} -mandoc newaliases.1 > newaliases.0
+	${NROFF} ${MANDOC} newaliases.1 > newaliases.0
 
 sendmail.0: sendmail.8
-	${NROFF} -mandoc sendmail.8 > sendmail.0
+	${NROFF} ${MANDOC} sendmail.8 > sendmail.0
 
 install: install-sendmail install-docs
 
