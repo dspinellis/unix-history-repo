@@ -1,0 +1,21 @@
+/* LINTLIBRARY */
+
+#include "../bboards/bboards.h"
+#include <pwd.h>
+
+int	endbbent() { return endbbent(); }
+struct bboard *getbbaka (a) char *a; { return getbbaka (a); }
+struct bboard *getbbcpy (b) struct bboard *b; { return getbbcpy (b); }
+int	getbbdist(b,a) struct bboard *b; int (*a) ();{ return getbbdist(b,a); }
+struct bboard *getbbent () { return getbbent (); }
+char   *getbberr () { return getbberr (); }
+struct bboard *getbbnam (n) char *n; { return getbbnam (n); }
+long	getbbtime () { return getbbtime (); }
+int	ldrbb(b) struct bboard *b; { return ldrbb(b); }
+int	ldrchk(b) struct bboard *b; { return ldrchk(b); }
+void	make_lower (a,b) char *a, *b; { make_lower (a, b); }
+int	setbbent(f) { return setbbent(f); }
+int	setbbfile(g,f) char *g; { return setbbfile(g,f); }
+int	setbbinfo(u,g,f) char *u,*g; { return setbbinfo(u,g,f); }
+int	setpwinfo(p,g,f) struct passwd *p; char *g;
+	{ return setpwinfo(p,g,f); }
