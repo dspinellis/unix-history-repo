@@ -7,6 +7,8 @@
 #
 # 27 Apr 93	Rodney W. Grimes	Break up cleandir so that we do not
 #					overflow shell args
+# $History$
+# $Log$
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -85,8 +87,9 @@ llib-l${LIB}.ln: ${SRCS}
 
 .if !target(clean)
 clean:
-	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} ${POBJS} \
-	    ${MANALL} profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
+	rm -f a.out Errs errs mklog core ${CLEANFILES} ${OBJS} \
+	    lib${LIB}.a llib-l${LIB}.ln ${MANALL}
+	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 .endif
 
 .if !target(cleandir)
