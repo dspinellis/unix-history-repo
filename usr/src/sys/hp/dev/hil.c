@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.33 89/12/22$
  *
- *	@(#)hil.c	7.7 (Berkeley) %G%
+ *	@(#)hil.c	7.8 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -136,7 +136,7 @@ hilopen(dev, flags, mode, p)
 			return(EBUSY);
 		dptr->hd_flags |= HIL_QUEUEIN;
 	}
-	if (flags & FNDELAY)
+	if (flags & FNONBLOCK)
 		dptr->hd_flags |= HIL_NOBLOCK;
 	/*
 	 * It is safe to flush the read buffer as we are guarenteed
