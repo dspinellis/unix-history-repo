@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.36 (Berkeley) %G%
+ *	@(#)conf.h	8.1 (Berkeley) %G%
  */
 
 /*
