@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.49 %G%";
+static char SccsId[] = "@(#)sccs.c	1.50 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -107,6 +107,10 @@ static char SccsId[] = "@(#)sccs.c	1.49 %G%";
 # ifdef INGVAX
 # define PROGPATH(name)	"/usr/local/name"
 # endif INGVAX
+
+# ifdef CORY
+# define PROGPATH(name)	"/usr/eecs/bin/name"
+# endif CORY
 
 /* end of berkeley systems defines */
 
