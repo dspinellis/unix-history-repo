@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printf.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -182,7 +182,8 @@ escape(fmt)
 			*++store = '\0';
 			return;
 		case '\\':		/* backslash */
-			*store = '\\';
+		case '\'':		/* single quote */
+			*store = *fmt;
 			break;
 		case 'a':		/* bell/alert */
 			*store = '\7';
