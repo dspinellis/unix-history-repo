@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)find.1	8.3 (Berkeley) %G%
+.\"	@(#)find.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FIND 1
@@ -16,7 +16,8 @@
 .Nd walk a file hierarchy
 .Sh SYNOPSIS
 .Nm find
-.Op Fl HdhXx
+.Op Fl H | Fl L | Fl P
+.Op Fl Xdx
 .Op Fl f Ar file
 .Op Ar file ...
 .Ar expression
@@ -36,12 +37,40 @@ The options are as follows:
 The
 .Fl H
 option causes the file information and file type (see
-.Xr stat  2  ) ,
-returned for each symbolic link encountered on the command line to be 
+.Xr stat 2)
+returned for each symbolic link specified on the command line to be 
 those of the file referenced by the link, not the link itself.
 If the referenced file does not exist, the file information and type will
 be for the link itself.  File information of all symbolic links not on 
 the command line is that of the link itself.
+.It Fl L
+The
+.Fl L
+option causes the file information and file type (see
+.Xr stat 2)
+returned for each symbolic link to be those of the file referenced by the
+link, not the link itself.
+If the referenced file does not exist, the file information and type will
+be for the link itself.
+.It Fl P
+The
+.Fl P
+option causes the file information and file type (see
+.Xr stat 2)
+returned for each symbolic link to be those of the link itself.
+.It Fl X
+The
+.Fl X
+option is a modification to permit
+.Nm
+to be safely used in conjunction with
+.Xr xargs 1 .
+If a file name contains any of the delimiting characters used by
+.Xr xargs ,
+a diagnostic message is displayed on standard error, and the file
+is skipped.
+The delimiting characters include single (`` ' '') and double (`` " '')
+quotes, backslash (``\e''), space, tab and newline characters.
 .It Fl d
 The
 .Fl d
@@ -64,28 +93,6 @@ option specifies a file hierarchy for
 to traverse.
 File hierarchies may also be specified as the operands immediately
 following the options.
-.It Fl h
-The
-.Fl h
-option causes the file information and file type (see
-.Xr stat  2  ) ,
-returned for each symbolic link to be those of the file referenced by the
-link, not the link itself.
-If the referenced file does not exist, the file information and type will
-be for the link itself.
-.It Fl X
-The
-.Fl X
-option is a modification to permit
-.Nm
-to be safely used in conjunction with
-.Xr xargs 1 .
-If a file name contains any of the delimiting characters used by
-.Xr xargs ,
-a diagnostic message is displayed on standard error, and the file
-is skipped.
-The delimiting characters include single (`` ' '') and double (`` " '')
-quotes, backslash (``\e''), space, tab and newline characters.
 .It Fl x
 The
 .Fl x
@@ -355,8 +362,8 @@ that are newer than ``ttt''.
 .Xr locate 1 ,
 .Xr stat 2 ,
 .Xr fts 3 ,
-.Xr getpwent 3 ,
 .Xr getgrent 3 ,
+.Xr getpwent 3 ,
 .Xr strmode 3 ,
 .Xr symlink 7
 .Sh STANDARDS

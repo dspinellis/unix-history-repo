@@ -1,12 +1,21 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Cimarron D. Taylor of the University of California, Berkeley.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+char copyright[] =
+"@(#) Copyright (c) 1990, 1993, 1994\n\
+	The Regents of the University of California.  All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,29 +47,35 @@ main(argc, argv)
 	char *argv[];
 {
 	register char **p, **start;
-	int ch;
+	int Hflag, Lflag, Pflag, ch;
 
 	(void)time(&now);	/* initialize the time-of-day */
 
 	p = start = argv;
-	ftsoptions = FTS_NOSTAT|FTS_PHYSICAL;
-	while ((ch = getopt(argc, argv, "Hdf:hXx")) != EOF)
-		switch(ch) {
+	Hflag = Lflag = Pflag = 0;
+	ftsoptions = FTS_NOSTAT | FTS_PHYSICAL;
+	while ((ch = getopt(argc, argv, "HLPXdf:x")) != EOF)
+		switch (ch) {
 		case 'H':
-			ftsoptions |= FTS_COMFOLLOW;
+			Hflag = 1;
+			Lflag = Pflag = 0;
+			break;
+		case 'L':
+			Lflag = 1;
+			Hflag = Pflag = 0;
+			break;
+		case 'P':
+			Pflag = 1;
+			Hflag = Lflag = 0;
+			break;
+		case 'X':
+			isxargs = 1;
 			break;
 		case 'd':
 			isdepth = 1;
 			break;
 		case 'f':
 			*p++ = optarg;
-			break;
-		case 'h':
-			ftsoptions &= ~FTS_PHYSICAL;
-			ftsoptions |= FTS_LOGICAL;
-			break;
-		case 'X':
-			isxargs = 1;
 			break;
 		case 'x':
 			ftsoptions |= FTS_XDEV;
@@ -73,37 +88,32 @@ main(argc, argv)
 	argc -= optind;	
 	argv += optind;
 
+	if (Hflag)
+		ftsoptions |= FTS_COMFOLLOW;
+	if (Lflag) {
+		ftsoptions &= ~FTS_PHYSICAL;
+		ftsoptions |= FTS_LOGICAL;
+	}
+
 	/* Find first option to delimit the file list. */
-	while (*argv) {
+	for (; *argv != NULL; *p++ = *argv++)
 		if (option(*argv))
 			break;
-		*p++ = *argv++;
-	}
 
 	if (p == start)
 		usage();
 	*p = NULL;
 
 	if ((dotfd = open(".", O_RDONLY, 0)) < 0)
-		err(1, ".:");
+		err(1, ".");
 
-	find_execute(find_formplan(argv), start);
-	exit(0);
+	exit(find_execute(find_formplan(argv), start));
 }
 
 static void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: find [-HdhXx] [-f file] [file ...] expression\n");
+"usage: find [-H | -L | -P] [-Xdx] [-f file] [file ...] [expression]\n");
 	exit(1);
 }
-
-
-
-
-
-
-
-
-

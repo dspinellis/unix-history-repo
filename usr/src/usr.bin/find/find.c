@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)find.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -114,19 +114,20 @@ FTS *tree;			/* pointer to top of FTS hierarchy */
  *	take a search plan and an array of search paths and executes the plan
  *	over all FTSENT's returned for the given search paths.
  */
-void
+int
 find_execute(plan, paths)
 	PLAN *plan;		/* search plan */
 	char **paths;		/* array of pathnames to traverse */
 {
 	register FTSENT *entry;
 	PLAN *p;
+	int rval;
     
-	if (!(tree = fts_open(paths, ftsoptions, (int (*)())NULL)))
+	if ((tree = fts_open(paths, ftsoptions, (int (*)())NULL)) == NULL)
 		err(1, "ftsopen");
 
-	while (entry = fts_read(tree)) {
-		switch(entry->fts_info) {
+	for (rval = 0; (entry = fts_read(tree)) != NULL;) {
+		switch (entry->fts_info) {
 		case FTS_D:
 			if (isdepth)
 				continue;
@@ -139,22 +140,27 @@ find_execute(plan, paths)
 		case FTS_ERR:
 		case FTS_NS:
 			(void)fflush(stdout);
+			errno = entry->fts_errno;
 			warn("%s", entry->fts_path);
+			rval = 1;
 			continue;
 		}
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
 			(void)fflush(stdout);
 			warnx("%s: illegal path", entry->fts_path);
+			rval = 1;
 			continue;
 		}
 		 
 		/*
-		 * call all the functions in the execution plan until one is
+		 * Call all the functions in the execution plan until one is
 		 * false or all have been executed.  This is where we do all
 		 * the work specified by the user on the command line.
 		 */
 		for (p = plan; p && (p->eval)(p, entry); p = p->next);
 	}
-	(void)fts_close(tree);
+	if (errno)
+		err(1, "fts_read");
+	return (rval);
 }
