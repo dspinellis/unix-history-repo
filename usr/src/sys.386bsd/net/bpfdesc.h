@@ -4,7 +4,8 @@
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
- * to Berkeley by Steven McCanne of Lawrence Berkeley Laboratory.
+ * to Berkeley by Steven McCanne and Van Jacobson both of Lawrence 
+ * Berkeley Laboratory.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,7 +37,14 @@
  *
  *	@(#)bpfdesc.h	7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: bpfdesc.h,v 1.7 90/12/04 01:05:01 mccanne Exp $ (LBL)
+ * @(#) $Header: bpfdesc.h,v 1.10 92/02/24 21:28:24 mccanne Exp $ (LBL)
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00112
+ * --------------------         -----   ----------------------
+ *
+ * 14 Mar 93    David Greenman		Upgrade bpf to match tcpdump 2.2.1
  */
 
 /*
@@ -66,12 +74,13 @@ struct bpf_d {
 	struct bpf_insn *bd_filter; 	/* filter code */
 	u_long		bd_rcount;	/* number of packets received */
 	u_long		bd_dcount;	/* number of packets dropped */
-	struct proc *	bd_selproc;	/* process that last selected us */
 
 	u_char		bd_promisc;	/* true if listening promiscuously */
 	u_char		bd_state;	/* idle, waiting, or timed out */
-	u_char		bd_selcoll;	/* true if selects collide */
 	u_char		bd_immediate;	/* true to return on packet arrival */
+	u_char		bd_selcoll;	/* true if selects collide */
+	int		bd_timedout;
+	struct proc *	bd_selproc;	/* process that last selected us */
 };
 
 /*
