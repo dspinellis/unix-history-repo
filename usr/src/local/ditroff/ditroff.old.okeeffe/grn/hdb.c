@@ -1,4 +1,4 @@
-/*	hdb.c	1.4	(Berkeley) 83/07/25
+/*	hdb.c	1.5	(Berkeley) 84/03/15
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -99,9 +99,9 @@ register FILE *file;
 		savebounds(nx, y);
                 do
 		    (void) fscanf(file, "%f%f", &x, &y);
-		while ((x >= 0.0) && (y >= 0.0));
+		while ((x >= 0.0) || (y >= 0.0));
 	    } else {
-		while ((x >= 0.0) && (y >= 0.0)) {
+		while ((x >= 0.0) || (y >= 0.0)) {
 		    nx = xorn(x,y);
 		    (void) PTMakePoint(nx, y = yorn(x,y), &plist);
 		    savebounds(nx, y);
