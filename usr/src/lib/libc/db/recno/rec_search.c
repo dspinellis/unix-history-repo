@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_search.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_search.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -49,6 +49,7 @@ __rec_search(t, recno, op)
 	recno_t total;
 	int serrno;
 
+	BT_CLR(t);
 	for (pg = P_ROOT, total = 0;;) {
 		if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
 			goto err;
