@@ -1,3 +1,7 @@
+/*	@(#)ld.c	6.2 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* Linker `ld' for GNU
    Copyright (C) 1988 Free Software Foundation, Inc.
 
@@ -19,25 +23,6 @@
    Set, indirect, and warning symbol features added by Randy Smith.  */
    
 /* Define how to initialize system-dependent header fields.  */
-#ifdef sun
-/* Use Sun's TARGET convention.  */
-#ifndef TARGET
-#define SUN2 2
-#define SUN3 3
-#define SUN4 4
-#if defined(sparc)
-#define TARGET SUN4
-#else
-#if defined(mc68020) || defined(m68020)
-#define TARGET SUN3
-#else
-#define TARGET SUN2
-#endif
-#endif
-#else
-#define _CROSS_TARGET_ARCH TARGET  /* locate the correct a.out.h file */
-#endif
-#endif
 
 #include <ar.h>
 #include <stdio.h>
@@ -46,42 +31,20 @@
 #include <sys/file.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#ifndef sony_news
 #include <fcntl.h>
-#endif
-
-#ifdef COFF_ENCAPSULATE
-#include "a.out.encap.h"
-#else
 #include <a.out.h>
-#endif
+#include <stab.h>
+#include <string.h>
 
-#ifndef N_SET_MAGIC
+/* symseg.h defines the obsolete GNU debugging format; we should nuke it.  */
+#define CORE_ADDR unsigned long	/* For symseg.h */
+#include "symseg.h"
+
 #define N_SET_MAGIC(exec, val)  ((exec).a_magic = val)
-#endif
 
 /* If compiled with GNU C, use the built-in alloca */
 #ifdef __GNUC__
 #define alloca __builtin_alloca
-#endif
-
-/* Always use the GNU version of debugging symbol type codes, if possible.  */
-
-#include "stab.h"
-#define CORE_ADDR unsigned long	/* For symseg.h */
-#include "symseg.h"
-
-#ifdef USG
-#include <string.h>
-#else
-#include <strings.h>
-#endif
-
-/* Determine whether we should attempt to handle (minimally)
-   N_BINCL and N_EINCL.  */
-
-#if defined (__GNU_STAB__) || defined (N_BINCL)
-#define HAVE_SUN_STABS
 #endif
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
@@ -99,18 +62,7 @@ char *progname;
 
 /* System dependencies */
 
-/* Define this if names etext, edata and end should not start with `_'.  */
-/* #define nounderscore 1 */
-
-/* Define NON_NATIVE if using BSD or pseudo-BSD file format on a system
-   whose native format is different.  */
-/* #define NON_NATIVE */
-
 /* Define this to specify the default executable format.  */
-
-#ifdef hpux
-#define DEFAULT_MAGIC NMAGIC  /* hpux bugs screw ZMAGIC */
-#endif
 
 #ifndef DEFAULT_MAGIC
 #define DEFAULT_MAGIC ZMAGIC
@@ -118,84 +70,13 @@ char *progname;
 
 /* Ordinary 4.3bsd lacks these macros in a.out.h.  */
 
-#ifndef N_TXTADDR
-#if defined(vax) || defined(sony_news) || defined(hp300) || defined(pyr)
 #define N_TXTADDR(X) 0
-#endif
-#ifdef is68k
-#define N_TXTADDR(x)  (sizeof (struct exec))
-#endif
-#ifdef sequent
-#define	N_TXTADDR(x) (N_ADDRADJ(x))
-#endif
-#endif
-
-#ifndef N_DATADDR
-#if defined(vax) || defined(sony_news) || defined(hp300) || defined(pyr)
 #define N_DATADDR(x) \
     (((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
     : (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
-#endif
-#ifdef is68k
-#define SEGMENT_SIZE 0x20000
-#define N_DATADDR(x) \
-(((x).a_magic==Omagic)? (N_TXTADDR(x)+(x).a_text) \
- : (SEGMENT_SIZE + ((N_TXTADDR(x)+(x).a_text-1) & ~(SEGMENT_SIZE-1))))
-#endif
-#ifdef sequent
-#define N_DATADDR(x) \
-    (((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
-    : (page_size+(((x).a_text-1) & ~(page_size-1))))
-#endif
-#endif
 
-#ifdef sun
-#if TARGET == SUN4
-#define INITIALIZE_HEADER \
-{outheader.a_machtype = M_SPARC; outheader.a_toolversion = 1;}
-#endif
-#if TARGET == SUN2
-#define INITIALIZE_HEADER outheader.a_machtype = M_68010
-#endif
-#ifndef INITIALIZE_HEADER
-#define INITIALIZE_HEADER outheader.a_machtype = M_68020
-#endif
-#define TEXT_START(x) N_PAGSIZ(x)
-#endif
-#ifdef ALTOS
-#define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_68020)
-#endif
-#ifdef is68k
-#ifdef M_68020
-/* ISI rel 4.0D doesn't use it, and rel 3.05 doesn't have an
-   a_machtype field and so won't recognize the magic number.  To keep
-   binary compatibility for now, just ignore it */
-#define INITIALIZE_HEADER outheader.a_machtype = 0;
-#endif
-#endif
-#ifdef hpux
-#define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, HP9000S200_ID)
-#endif
-#if defined(i386) && !defined(sequent)
-#define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
-#endif
-
-#ifdef is68k
-/* This enables code to take care of an ugly hack in the ISI OS.
-   If a symbol beings with _$, then the object file is included only
-   if the rest of the symbol name has been referenced. */
-#define DOLLAR_KLUDGE
-#endif
-
-/*
- * Alloca include.
- */
-#if defined(sun) && defined(sparc) && !defined(__GNUC__)
-#include "alloca.h"
-#endif
-
-#ifndef L_SET
-#define L_SET 0
+#ifdef hp300
+#define	INITIALIZE_HEADER	outheader.a_mid = MID_HP300
 #endif
 
 /*
@@ -302,20 +183,6 @@ static int reloc_target_bitsize[] = {
 };
 
 #define	MAX_ALIGNMENT	(sizeof (double))
-#endif
-#ifdef sequent
-#define RELOC_ADDRESS(r)		((r)->r_address)
-#define RELOC_EXTERN_P(r)		((r)->r_extern)
-#define RELOC_TYPE(r)		((r)->r_symbolnum)
-#define RELOC_SYMBOL(r)		((r)->r_symbolnum)
-#define RELOC_MEMORY_SUB_P(r)	((r)->r_bsr)
-#define RELOC_MEMORY_ADD_P(r)	1
-#undef RELOC_ADD_EXTRA
-#define RELOC_PCREL_P(r)		((r)->r_pcrel || (r)->r_bsr)
-#define RELOC_VALUE_RIGHTSHIFT(r)	0
-#define RELOC_TARGET_SIZE(r)		((r)->r_length)
-#define RELOC_TARGET_BITPOS(r)	0
-#define RELOC_TARGET_BITSIZE(r)	32
 #endif
 
 /* Default macros */
