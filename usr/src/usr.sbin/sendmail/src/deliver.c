@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.67		%G%);
+SCCSID(@(#)deliver.c	3.68		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -934,9 +934,28 @@ putmessage(fp, m, xdot)
 				char savechar;
 
 				/* find the end of the name */
-				while (*p != '\0' && *p != ',' &&
-				       (OldStyle ? (!isspace(*p)) : TRUE))
-					p++;
+				while (*p != '\0' && *p != ',')
+				{
+					extern bool isatword();
+					char *oldp;
+
+					if (!OldStyle || !isspace(*p))
+					{
+						p++;
+						continue;
+					}
+					oldp = p;
+					while (*p != '\0' && isspace(*p))
+						p++;
+					if (*p != '@' && !isatword(p))
+					{
+						p = oldp;
+						break;
+					}
+					p += *p == '@' ? 1 : 2;
+					while (*p != '\0' && isspace(*p))
+						p++;
+				}
 				savechar = *p;
 				*p = '\0';
 
@@ -1026,6 +1045,31 @@ putmessage(fp, m, xdot)
 		setstat(EX_IOERR);
 	}
 	errno = 0;
+}
+/*
+**  ISATWORD -- tell if the word we are pointing to is "at".
+**
+**	Parameters:
+**		p -- word to check.
+**
+**	Returns:
+**		TRUE -- if p is the word at.
+**		FALSE -- otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+isatword(p)
+	register char *p;
+{
+	extern char lower();
+
+	if (lower(p[0]) == 'a' && lower(p[1]) == 't' &&
+	    p[2] != '\0' && isspace(p[2]))
+		return (TRUE);
+	return (FALSE);
 }
 /*
 **  REMOTENAME -- return the name relative to the current mailer
