@@ -1,4 +1,4 @@
-#	Makefile	5.1	86/08/01
+#	Makefile	5.2	87/06/06
 #
 DESTDIR=
 CFLAGS=	-O
