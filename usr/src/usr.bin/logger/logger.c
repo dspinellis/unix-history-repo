@@ -12,31 +12,40 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <ctype.h>
+#include <string.h>
+
+#define	SYSLOG_NAMES
+#include <syslog.h>
+
+int	decode __P((char *, CODE *));
+int	pencode __P((char *));
+void	usage __P((void));
 
 /*
-**  LOGGER -- read and log utility
-**
-**	This routine reads from an input and arranges to write the
-**	result on the system log, along with a useful tag.
-*/
-
+ * logger -- read and log utility
+ *
+ *	Reads from an input and arranges to write the result on the system
+ *	log.
+ */
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int errno, optind;
-	int pri = LOG_NOTICE;
-	int ch, logflags = 0;
-	char *tag, buf[1024], *getlogin(), *strerror();
+	int ch, logflags, pri;
+	char *tag, buf[1024];
 
 	tag = NULL;
+	pri = LOG_NOTICE;
+	logflags = 0;
 	while ((ch = getopt(argc, argv, "f:ip:st:")) != EOF)
 		switch((char)ch) {
 		case 'f':		/* file to log */
@@ -91,22 +100,16 @@ main(argc, argv)
 		}
 		if (p != buf)
 			syslog(pri, "%s", buf);
-		exit(0);
-	}
-
-	/* main loop */
-	while (fgets(buf, sizeof(buf), stdin) != NULL)
-		syslog(pri, "%s", buf);
-
+	} else
+		while (fgets(buf, sizeof(buf), stdin) != NULL)
+			syslog(pri, "%s", buf);
 	exit(0);
 }
-
-#define	SYSLOG_NAMES
-#include <syslog.h>
 
 /*
  *  Decode a symbolic name to a numeric value
  */
+int
 pencode(s)
 	register char *s;
 {
@@ -137,6 +140,7 @@ pencode(s)
 	return ((lev & LOG_PRIMASK) | (fac & LOG_FACMASK));
 }
 
+int
 decode(name, codetab)
 	char *name;
 	CODE *codetab;
@@ -153,9 +157,10 @@ decode(name, codetab)
 	return (-1);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
-	    "logger: [-i] [-f file] [-p pri] [-t tag] [ message ... ]\n");
+	    "logger: [-is] [-f file] [-p pri] [-t tag] [ message ... ]\n");
 	exit(1);
 }
