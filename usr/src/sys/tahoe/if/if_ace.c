@@ -1,4 +1,4 @@
-/*	if_ace.c	1.6	86/01/21	*/
+/*	if_ace.c	1.7	86/01/24	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -474,7 +474,7 @@ aceoutput(ifp, m0, dst)
 	register struct ether_header *ace;
 	register int off;
 	struct mbuf *mcopy = (struct mbuf *)0;
-	int type, s, error;
+	int type, s, error, usetrailers;
 	u_char edst[6];
 	struct in_addr idst;
 
@@ -487,15 +487,14 @@ aceoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&is->is_ac, m, &idst, edst))
+		if (!arpresolve(&is->is_ac, m, &idst, edst, &usetrailers))
 			return (0);	/* if not yet resolved */
 		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
 		    sizeof (edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
-		if ((ifp->if_flags & IFF_NOTRAILERS) == 0 && off > 0 &&
-		    (off & 0x1ff) == 0 &&
+		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
