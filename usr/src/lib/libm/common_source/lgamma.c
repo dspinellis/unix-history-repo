@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -277,10 +277,6 @@ neg_lgam(double x)
 	else
 		z = cos(M_PI*(0.5-z));
 	z = log(M_PI/(z*x));
-
-	if (x > 6. + RIGHT)
-		y = large_lgam(x);
-	else
-		y = small_lgam (x);
+	y = large_lgam(x);
 	return (z - y);
 }
