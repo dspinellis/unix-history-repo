@@ -5,9 +5,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/hp300/conf.c	7.13 (Berkeley) 7/9/92
+ * from: hp300/hp300/conf.c	7.15 (Berkeley) 12/27/92
  *
- *	@(#)conf.c	7.7 (Berkeley) %G%
+ *	@(#)conf.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -44,8 +44,15 @@ int	ttselect	__P((dev_t, int, struct proc *));
 	dev_decl(n,open); dev_decl(n,close); dev_decl(n,strategy); \
 	dev_decl(n,ioctl); dev_decl(n,dump); dev_decl(n,size)
 
+/* disk without close routine */
 #define	bdev_disk_init(c,n) { \
 	dev_init(c,n,open), (dev_type_close((*))) nullop, \
+	dev_init(c,n,strategy), dev_init(c,n,ioctl), \
+	dev_init(c,n,dump), dev_size_init(c,n), 0 }
+
+/* disk with close routine */
+#define	bdev_ldisk_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), \
 	dev_init(c,n,strategy), dev_init(c,n,ioctl), \
 	dev_init(c,n,dump), dev_size_init(c,n), 0 }
 
@@ -75,9 +82,9 @@ struct bdevsw	bdevsw[] =
 {
 	bdev_notdef(),		/* 0 */
 	bdev_notdef(),		/* 1 */
-	bdev_notdef(),		/* 2: ram disk */
+	bdev_notdef(),		/* 2 */
 	bdev_swap_init(),	/* 3: swap pseudo-device */
-	bdev_disk_init(NSD,sd),	/* 4: scsi disk */
+	bdev_ldisk_init(NSD,sd),/* 4: scsi disk */
 	bdev_notdef(),		/* 5 */
 	bdev_disk_init(NVN,vn),	/* 6: vnode disk driver (swap to files) */
 	bdev_tape_init(NST,st),	/* 7: scsi tape */
@@ -104,6 +111,13 @@ int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 /* open, read, write, ioctl, strategy */
 #define	cdev_disk_init(c,n) { \
 	dev_init(c,n,open), (dev_type_close((*))) nullop, dev_init(c,n,read), \
+	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
+	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, \
+	dev_init(c,n,strategy) }
+
+/* open, close, read, write, ioctl, strategy */
+#define	cdev_ldisk_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
 	dev_init(c,n,write), dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
 	(dev_type_reset((*))) nullop, 0, seltrue, (dev_type_map((*))) enodev, \
 	dev_init(c,n,strategy) }
@@ -247,7 +261,7 @@ struct cdevsw	cdevsw[] =
 	cdev_ptc_init(NPTY,ptc),	/* 5: pseudo-tty master */
 	cdev_log_init(1,log),		/* 6: /dev/klog */
 	cdev_notdef(),			/* 7 */
-	cdev_disk_init(NSD,sd),		/* 8: scsi disk */
+	cdev_ldisk_init(NSD,sd),	/* 8: scsi disk */
 	cdev_notdef(),			/* 9 */
 	cdev_fb_init(1,fb),		/* 10: frame buffer */
 	cdev_notdef(),			/* 11 */
