@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigvec.2	6.1 (Berkeley) %G%
+.\"	@(#)sigvec.2	6.2 (Berkeley) %G%
 .\"
 .TH SIGVEC 2 ""
 .UC 4
@@ -212,7 +212,7 @@ Either
 .I vec
 or 
 .I ovec
-points to memory which is not a valid part of the process
+points to memory that is not a valid part of the process
 address space.
 .TP 15
 [EINVAL]
@@ -243,7 +243,7 @@ Here
 is the signal number, into which the hardware faults and traps are
 mapped as defined below. 
 .I Code
-is a parameter which is either a constant
+is a parameter that is either a constant
 as given below or, for compatibility mode faults, the code provided by
 the hardware (Compatibility mode faults are distinguished from the
 other SIGILL traps by having PSL_CM set in the psl).

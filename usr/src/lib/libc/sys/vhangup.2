@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vhangup.2	6.1 (Berkeley) %G%
+.\"	@(#)vhangup.2	6.2 (Berkeley) %G%
 .\"
 .TH VHANGUP 2 ""
 .UC 4
@@ -21,7 +21,7 @@ To effect this,
 .I vhangup
 searches the system tables for references to the control terminal
 of the invoking process, revoking access permissions
-on each instance of the terminal which it finds.
+on each instance of the terminal that it finds.
 Further attempts to access the terminal by the affected processes
 will yield i/o errors (EBADF).
 Finally,
@@ -35,5 +35,5 @@ the control terminal via
 .B /dev/tty
 is still possible.
 .PP
-This call should be replaced by an automatic mechanism which
+This call should be replaced by an automatic mechanism that
 takes place on process exit.

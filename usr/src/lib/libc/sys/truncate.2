@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)truncate.2	6.2 (Berkeley) %G%
+.\"	@(#)truncate.2	6.3 (Berkeley) %G%
 .\"
 .TH TRUNCATE 2 ""
 .UC 5
@@ -93,7 +93,7 @@ open(2)
 .SH BUGS
 Partial blocks discarded as the result of truncation
 are not zero filled; this can result in holes in files
-which do not read as zero.
+that do not read as zero.
 .PP
 These calls should be generalized to allow ranges
 of bytes in a file to be discarded.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vfork.2	6.1 (Berkeley) %G%
+.\"	@(#)vfork.2	6.2 (Berkeley) %G%
 .\"
 .TH VFORK 2 ""
 .UC 4
@@ -39,7 +39,7 @@ the parent's context.
 can normally be used just like
 .I fork.
 It does not work, however, to return while running in the childs context
-from the procedure which called
+from the procedure that called
 .I vfork
 since the eventual return from
 .I vfork
@@ -74,7 +74,7 @@ as it will, in that case, be made synonymous to
 .IR fork .
 .PP
 To avoid a possible deadlock situation,
-processes which are children in the middle
+processes that are children in the middle
 of a
 .I vfork
 are never sent SIGTTOU or SIGTTIN signals; rather,

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wait.2	6.1 (Berkeley) %G%
+.\"	@(#)wait.2	6.2 (Berkeley) %G%
 .\"
 .TH WAIT 2 ""
 .UC 4
@@ -65,14 +65,14 @@ word is given in
 .PP
 .I Wait3
 provides an alternate interface for programs
-which must not block when collecting the status
+that must not block when collecting the status
 of child processes.  The
 .I status
 parameter is defined as above.  The
 .I options
 parameter is used to indicate the call should not block if
-there are no processes which wish to report status (WNOHANG),
-and/or that children of the current process which are stopped
+there are no processes that wish to report status (WNOHANG),
+and/or that children of the current process that are stopped
 due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal should also have
 their status reported (WUNTRACED).  If
 .I rusage
@@ -95,7 +95,7 @@ See
 for a list of termination statuses (signals);
 0 status indicates normal termination.
 A special status (0177) is returned for a stopped process
-which has not terminated and can be restarted;
+that has not terminated and can be restarted;
 see
 .IR ptrace (2).
 If the 0200 bit of the termination status
