@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.7 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.8 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -190,11 +190,9 @@ pccaseop( tcase )
 	 *	default action is to call error
 	 */
     putlab( ctab[0].clabel );
-    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_ERROR" );
-    putleaf( P2ICON , ECASE , 0 , P2INT , 0 );
+    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CASERNG" );
     putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
 		    exprnlp -> extra_flags , P2INT );
-    putop( P2LISTOP , P2INT );
     putop( P2CALL , P2INT );
     putdot( filename , line );
 	/*
