@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esp.c	7.5 (Berkeley) %G%
+ *	@(#)esp.c	7.6 (Berkeley) %G%
  *
- * from: $Header: esp.c,v 1.27 93/04/20 11:20:38 torek Exp $ (LBL)
+ * from: $Header: esp.c,v 1.28 93/04/27 14:40:44 torek Exp $ (LBL)
  *
  * Loosely derived from Mary Baker's devSCSIC90.c from the Berkeley
  * Sprite project, which is:
@@ -100,6 +100,9 @@ int espdebug = 1;
 struct dma_softc {
 	struct	device	sc_dev;		/* base device */
 	volatile struct dmareg *sc_dma;	/* register virtual address */
+	int	sc_dmarev;		/* revision */
+	char	*sc_dmafmt;		/* format for error messages */
+
 };
 void	dmaattach(struct device *, struct device *, void *);
 struct cfdriver dmacd =
@@ -288,14 +291,23 @@ dmaattach(parent, dev, args)
 	switch (rev = DMA_REV(dma->dma_csr)) {
 	case DMAREV_1:
 		printf(": rev 1\n");
+		dsc->sc_dmafmt = DMA_REV1_BITS;
 		break;
 	case DMAREV_2:
 		printf(": rev 2\n");
+		dsc->sc_dmafmt = DMA_REV2_BITS;
+		break;
+	case DMAREV_3:
+		printf(": rev 3\n");
+		printf("WARNING: esp.c not yet updated for rev 3\n");
+		dsc->sc_dmafmt = DMA_REV3_BITS;
 		break;
 	default:
-		printf(": unknown revision %d\n", rev);
+		printf(": unknown revision code 0x%x\n", rev);
+		dsc->sc_dmafmt = DMA_REV3_BITS;	/* cross fingers */
 		break;
 	}
+	dsc->sc_dmarev = rev;
 	espdoattach(dsc->sc_dev.dv_unit);
 }
 
@@ -474,6 +486,8 @@ dmareset(sc)
 	dma->dma_csr &= ~DMA_RESET;	/* ??? */
 	sc->sc_state = S_IDLE;
 	sc->sc_dmaactive = 0;
+	if (sc->sc_dsc->sc_dmarev == DMAREV_2 && sc->sc_esptype != ESP100)
+		dma->dma_csr |= DMA_TURBO;
 	dma->dma_csr |= DMA_IE;		/* enable interrupts */
 	DELAY(200);
 }
@@ -571,7 +585,8 @@ esperror(sc, err)
 	printf("%s: %s (target=%d): stat=%b step=%x dmacsr=%b intr=%b\n",
 	    sc->sc_hba.hba_dev.dv_xname, err, sc->sc_targ,
 	    sc->sc_espstat, ESPSTAT_BITS, sc->sc_espstep,
-	    sc->sc_dmacsr, DMA_BITS, sc->sc_espintr, ESPINTR_BITS);
+	    sc->sc_dmacsr, sc->sc_dsc->sc_dmafmt,
+	    sc->sc_espintr, ESPINTR_BITS);
 }
 
 /*
