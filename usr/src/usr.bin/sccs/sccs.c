@@ -100,7 +100,7 @@ char	MyName[] = "sccs";	/* name used in messages */
 
 /****************  End of Configuration Information  ****************/
 
-static char SccsId[] = "@(#)sccs.c	1.32 %G%";
+static char SccsId[] = "@(#)sccs.c	1.33 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -147,12 +147,12 @@ struct sccsprog SccsProg[] =
 	"chghist",	PROG,	0,		"",		PROGPATH(rmdel),
 	"comb",		PROG,	0,		"",		PROGPATH(comb),
 	"delta",	PROG,	0,		"mysrp",	PROGPATH(delta),
-	"get",		PROG,	0,		"ixbeskc",	PROGPATH(get),
+	"get",		PROG,	0,		"ixbeskcl",	PROGPATH(get),
 	"help",		PROG,	NO_SDOT,	"",		PROGPATH(help),
 	"prt",		PROG,	0,		"",		PROGPATH(prt),
 	"rmdel",	PROG,	REALUSER,	"",		PROGPATH(rmdel),
 	"what",		PROG,	NO_SDOT,	"",		PROGPATH(what),
-	"edit",		CMACRO,	NO_SDOT,	"ixbsc",	"get -e",
+	"edit",		CMACRO,	NO_SDOT,	"ixbscl",	"get -e",
 	"delget",	CMACRO,	NO_SDOT,	"",		"delta/get -t",
 	"deledit",	CMACRO,	NO_SDOT,	"",		"delta/get -e -t",
 	"fix",		FIX,	NO_SDOT,	"",		NULL,
