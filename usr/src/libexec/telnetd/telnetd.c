@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -298,14 +298,9 @@ telrcv()
 
 		case TS_CR:
 			state = TS_DATA;
-			if (c == 0) {
-				*pfrontp++ = '\r';
+			if ((c == 0) || (c == '\n')) {
 				break;
-			} else if (c == '\n') {
-				*pfrontp++ = c;
-				break;
-			} else
-				*pfrontp++ = '\r';
+			}
 			/* FALL THROUGH */
 
 		case TS_DATA:
@@ -315,10 +310,10 @@ telrcv()
 			}
 			if (inter > 0)
 				break;
-			if (!myopts[TELOPT_BINARY] && c == '\r')
+			if (!myopts[TELOPT_BINARY] && c == '\r') {
 				state = TS_CR;
-			else
-				*pfrontp++ = c;
+			}
+			*pfrontp++ = c;
 			break;
 
 		case TS_IAC:
