@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)ttymsg.c	5.4 (Berkeley) %G%";
 #include <dirent.h>
 #include <errno.h>
 #include <paths.h>
+#include <stdio.h>
 
 /*
  * display the contents of a uio structure on a terminal.  Used by
@@ -36,48 +37,69 @@ static char sccsid[] = "@(#)ttymsg.c	5.4 (Berkeley) %G%";
  * are ignored (exclusive-use, lack of permission, etc.).
  */
 char *
-ttymsg(iov, iovcnt, line, nonblock)
+ttymsg(iov, iovcnt, line)
 	struct iovec *iov;
 	int iovcnt;
 	char *line;
-	int nonblock;
 {
 	extern int errno;
 	static char device[MAXNAMLEN] = _PATH_DEV;
 	static char errbuf[1024];
-	register int cnt, fd, total, wret;
+	register int cnt, fd, left, wret;
 	char *strcpy(), *strerror();
+	struct iovec localiov[6];
+	int forked = 0;
 
+	if (iovcnt > 6)
+		return ("too many iov's (change code in wall/ttymsg.c)");
 	/*
 	 * open will fail on slip lines or exclusive-use lines
 	 * if not running as root; not an error.
 	 */
 	(void) strcpy(device + sizeof(_PATH_DEV) - 1, line);
-	if ((fd = open(device, O_WRONLY|(nonblock ? O_NONBLOCK : 0), 0)) < 0)
+	if ((fd = open(device, O_WRONLY|O_NONBLOCK, 0)) < 0) {
 		if (errno != EBUSY && errno != EACCES) {
 			(void) sprintf(errbuf, "open %s: %s", device,
 			    strerror(errno));
 			return (errbuf);
 		} else
 			return (NULL);
+	}
 
-	for (cnt = total = 0; cnt < iovcnt; ++cnt)
-		total += iov[cnt].iov_len;
+	for (cnt = left = 0; cnt < iovcnt; ++cnt)
+		left += iov[cnt].iov_len;
 
-	for (;;)
-		if ((wret = writev(fd, iov, iovcnt)) < 0)
+	for (;;) {
+		if ((wret = writev(fd, iov, iovcnt)) < 0) {
 			if (errno == EWOULDBLOCK) {
-				if (fork()) {
+				int off = 0;
+				int cpid;
+
+				if (forked) {
+					(void) close(fd);
+					/* return ("already forked"); */
+					/* "can't happen" */
+					exit(1);
+				}
+				cpid = fork();
+				if (cpid < 0) {
+					(void) sprintf(errbuf, "can't fork: %s",
+						strerror(errno));
+					(void) close(fd);
+					return (errbuf);
+				}
+				if (cpid) {	/* parent */
 					(void) close(fd);
 					return (NULL);
 				}
+				forked++;
 				/* wait at most 5 minutes */
 				(void) signal(SIGALRM, SIG_DFL);
 				(void) signal(SIGTERM, SIG_DFL); /* XXX */
 				(void) sigsetmask(0);
 				(void) alarm((u_int)(60 * 5));
-				(void) ttymsg(iov, iovcnt, line, 0);
-				exit(0);
+				(void) fcntl(fd, FNDELAY, &off);
+				continue;
 			} else {
 				/*
 				 * we get ENODEV on a slip line if we're
@@ -91,9 +113,14 @@ ttymsg(iov, iovcnt, line, nonblock)
 				(void) close(fd);
 				return (errbuf);
 			}
-		else if (wret) {
-			if (wret == total)
-				break;
+		} 
+		if (wret < left) {
+			left -= wret;
+			if (iov != localiov) {
+				bcopy(iov, localiov, 
+					iovcnt * sizeof (struct iovec));
+				iov = localiov;
+			}
 			for (cnt = 0; wret >= iov->iov_len; ++cnt) {
 				wret -= iov->iov_len;
 				++iov;
@@ -103,7 +130,11 @@ ttymsg(iov, iovcnt, line, nonblock)
 				iov->iov_base += wret;
 				iov->iov_len -= wret;
 			}
-		}
+		} else
+			break;
+	}
+	if (forked)
+		exit(0);
 	(void) close(fd);
 	return (NULL);
 }
