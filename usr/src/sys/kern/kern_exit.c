@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.8	85/05/22	*/
+/*	kern_exit.c	6.9	85/05/27	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -72,13 +72,15 @@ exit(rv)
 			sleep((caddr_t)p, PZERO - 1);
 		p->p_flag &= ~SVFDONE;
 	}
-	for (i = 0; i < NOFILE; i++) {
+	for (i = 0; i <= u.u_lastfile; i++) {
 		struct file *f;
 
 		f = u.u_ofile[i];
-		u.u_ofile[i] = NULL;
-		u.u_pofile[i] = 0;
-		closef(f);
+		if (f) {
+			u.u_ofile[i] = NULL;
+			u.u_pofile[i] = 0;
+			closef(f);
+		}
 	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);
@@ -115,16 +117,19 @@ exit(rv)
 			}
 		panic("exit");
 	}
-	if (p->p_pid == 1)
-		panic("init died");
+	if (p->p_pid == 1) {
+		if (p->p_dsize == 0) {
+			printf("Can't exec /etc/init\n");
+			for (;;)
+				;
+		} else
+			panic("init died");
+	}
 done:
 	p->p_xstat = rv;
-	if (m) {
-		p->p_ru = mtod(m, struct rusage *);
-		*p->p_ru = u.u_ru;
-		ruadd(p->p_ru, &u.u_cru);
-	} else
-		log(KERN_ALERT, "exit: pid %d: no mbuf", p->p_pid);
+	p->p_ru = mtod(m, struct rusage *);
+	*p->p_ru = u.u_ru;
+	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
 	for (q = p->p_cptr; q != NULL; q = nq) {
