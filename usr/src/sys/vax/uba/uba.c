@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	6.7 (Berkeley) %G%
+ *	@(#)uba.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -568,7 +568,8 @@ ubamem(uban, addr, npg, doalloc)
 }
 
 #include "ik.h"
-#if NIK > 0
+#include "vs.h"
+#if NIK > 0 || NVS > 0
 /*
  * Map a virtual address into users address space. Actually all we
  * do is turn on the user mode write protection bits for the particular
