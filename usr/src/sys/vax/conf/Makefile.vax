@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.5 (Berkeley) %G%
+#	@(#)Makefile.vax	7.6 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -126,7 +126,7 @@ links:
 	sh makelinks && rm -f dontlink
 
 tags:
-	/usr/ucb/ctags ${CFILES}
+	@echo "see ../sys/Makefile for tags"
 
 print:
 	@pr -f Makefile ../sys/TODO linterrs
