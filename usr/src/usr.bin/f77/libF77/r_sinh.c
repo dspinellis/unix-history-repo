@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_sinh.c	5.1	%G%
+ *	@(#)r_sinh.c	5.2	%G%
  */
 
-double r_sinh(x)
+float r_sinh(x)
 float *x;
 {
 double sinh();

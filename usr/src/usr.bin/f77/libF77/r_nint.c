@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_nint.c	5.1	%G%
+ *	@(#)r_nint.c	5.2	%G%
  */
 
-double r_nint(x)
+float r_nint(x)
 float *x;
 {
 double floor();

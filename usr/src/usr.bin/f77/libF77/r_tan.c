@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_tan.c	5.1	%G%
+ *	@(#)r_tan.c	5.2	%G%
  */
 
-double r_tan(x)
+float r_tan(x)
 float *x;
 {
 double tan();

@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_imag.c	5.1	%G%
+ *	@(#)r_imag.c	5.2	%G%
  */
 
 #include "complex"
 
-double r_imag(z)
+float r_imag(z)
 complex *z;
 {
 return(z->imag);

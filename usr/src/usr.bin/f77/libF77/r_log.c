@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_log.c	5.1	%G%
+ *	@(#)r_log.c	5.2	%G%
  */
 
-double r_log(x)
+float r_log(x)
 float *x;
 {
 double log();

@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_sin.c	5.1	%G%
+ *	@(#)r_sin.c	5.2	%G%
  */
 
-double r_sin(x)
+float r_sin(x)
 float *x;
 {
 double sin();

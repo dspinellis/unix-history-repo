@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)r_mod.c	5.1	%G%
+ *	@(#)r_mod.c	5.2	%G%
  */
 
-double r_mod(x,y)
+float r_mod(x,y)
 float *x, *y;
 {
 double floor(), quotient = *x / *y;
