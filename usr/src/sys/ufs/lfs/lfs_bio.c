@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.5 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -34,6 +34,7 @@ int
 lfs_bwrite(bp)
 	register BUF *bp;
 {
+	int s;
 #ifdef VERBOSE
 printf("lfs_bwrite\n");
 #endif
@@ -50,7 +51,9 @@ printf("lfs_bwrite\n");
 		++locked_queue_count;
 	bp->b_flags |= B_DELWRI | B_LOCKED;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR);
+	s = splbio();
 	reassignbuf(bp, bp->b_vp);
+	splx(s);
 	brelse(bp);
 	return (0);
 }
@@ -81,12 +84,18 @@ lfs_flush()
 		if (mp->mnt_stat.f_type == MOUNT_LFS &&
 		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
 		    !vfs_busy(mp)) {
+			/*
+			 * We set the queue to 0 here because we are about to
+			 * write all the dirty buffers we have.  If more come
+			 * in while we're writing the segment, they may not
+			 * get written, so we want the count to reflect these
+			 * new writes after the segwrite completes.
+			 */
+			locked_queue_count = 0;
 			lfs_segwrite(mp, 0);
 			omp = mp;
 			mp = mp->mnt_next;
 			vfs_unbusy(omp);
-			/* Not exact, but it doesn't matter. */
-			locked_queue_count = 0;
 		} else
 			mp = mp->mnt_next;
 	} while (mp != rootfs);
