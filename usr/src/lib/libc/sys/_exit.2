@@ -2,50 +2,45 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)_exit.2	4.1 (Berkeley) %G%
+.\"	@(#)_exit.2	5.1 (Berkeley) %G%
 .\"
-.TH EXIT 2 
+.TH EXIT 2 "27 July 1983"
 .UC 4
 .SH NAME
-exit \- terminate process
+_exit \- terminate a process
 .SH SYNOPSIS
 .nf
-.B exit(status)
-.B int status;
-.PP
-.B _exit(status)
-.B int status;
+.ft B
+_exit(status)
+int status;
 .fi
 .SH DESCRIPTION
-.I Exit
-is the normal means of terminating a process.
-.I Exit
-closes all the process's files and notifies the parent process
-if it is executing a
-.IR wait .
-The low-order 8 bits of 
-.I status
-are available to the parent process.
-.PP
-This call can never return.
-.PP
-The C function
-.I exit
-may cause cleanup actions before the
-final `sys exit'.
-The function
 .I _exit
-circumvents all cleanup, and should be used to terminate a child
-process after a
-.IR fork (2)
-or
-.IR vfork (2)
-to avoid flushing buffered output twice.
+terminates a process with the following consequences:
+.in +5n
+.PP
+All of the descriptors open in the calling process are closed.
+.PP
+If the parent process of the calling process is executing a
+.I wait
+or is interested in the SIGCHLD signal,
+then it is notified of the calling process's termination and
+the low-order eight bits of \fIstatus\fP are made available to it;
+see
+.IR wait (2).
+.PP
+The parent process ID of all of the calling process's existing child
+processes are also set to 1.  This means that the initialization process
+(see 
+.IR intro (2))
+inherits each of these processes as well.
+.in -5n
+.PP
+Most C programs call the library routine
+.IR exit (3)
+which performs cleanup actions in the standard i/o library before
+calling \fI_exit\fP\|.
+.SH "RETURN VALUE"
+This call never returns.
 .SH "SEE ALSO"
-fork(2), vfork(2), wait(2)
-.SH "ASSEMBLER (PDP-11)"
-(exit = 1.)
-.br
-(status in r0)
-.br
-.B sys exit
+fork(2), wait(2), exit(3)
