@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.39	82/09/08	*/
+/*	kern_clock.c	4.40	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,24 +16,41 @@
 #include "../h/share.h"
 #endif
 
-#include "dh.h"
-#include "dz.h"
-#include "ps.h"
+/*
+ * Clock handling routines.
+ *
+ * This code is written for a machine with only one interval timer,
+ * and does timing and resource utilization estimation statistically
+ * based on the state of the machine hz times a second.  A machine
+ * with proper clocks (running separately in user state, system state,
+ * interrupt state and idle state) as well as a time-of-day clock
+ * would allow a non-approximate implementation.
+ */
 
-#ifdef GPROF
-extern	int profiling;
-extern	char *s_lowpc;
-extern	u_long s_textsize;
-extern	u_short *kcount;
-#endif
+/*
+ * TODO:
+ *	* Keep more accurate statistics by simulating good interval timers.
+ *	* Use the time-of-day clock on the VAX to keep more accurate time
+ *	  than is possible by repeated use of the interval timer.
+ *	* Allocate more timeout table slots when table overflows.
+ */
 
-#define	bumptime(tp)	\
-	(tp)->tv_usec += tick; \
+/* bump a timeval by a small number of usec's */
+#define	bumptime(tp, usec) \
+	(tp)->tv_usec += usec; \
 	if ((tp)->tv_usec >= 1000000) { \
 		(tp)->tv_usec -= 1000000; \
 		(tp)->tv_sec++; \
 	}
 
+/*
+ * The (single) hardware interval timer.
+ * We update the events relating to real time, and then
+ * make a gross assumption: that the system has been in the
+ * state it is in (user state, kernel state, interrupt state,
+ * or idle state) for the entire last time interval, and
+ * update statistics accordingly.
+ */
 /*ARGSUSED*/
 hardclock(pc, ps)
 	caddr_t pc;
@@ -43,17 +60,29 @@ hardclock(pc, ps)
 	register int s, cpstate;
 	extern double avenrun[];
 
-#if NPS > 0
-	psextsync(pc, ps);
-#endif
-
-/* update callout times */
+	/*
+	 * Update real-time timeout queue.
+	 * At front of queue are some number of events which are ``due''.
+	 * The time to these is <= 0 and if negative represents the
+	 * number of ticks which have passed since it was supposed to happen.
+	 * The rest of the q elements (times > 0) are events yet to happen,
+	 * where the time for each is given as a delta from the previous.
+	 * Decrementing just the first of these serves to decrement the time
+	 * to all events.
+	 */
 	for (p1 = calltodo.c_next; p1 && p1->c_time <= 0; p1 = p1->c_next)
 		--p1->c_time;
 	if (p1)
 		--p1->c_time;
 
-/* charge process for resource usage... statistically! */
+	/*
+	 * If the cpu is currently scheduled to a process, then
+	 * charge it with resource utilization for a tick, updating
+	 * statistics which run in (user+system) virtual time,
+	 * such as the cpu time limit and profiling timers.
+	 * This assumes that the current process has been running
+	 * the entire last tick.
+	 */
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
 		u.u_ru.ru_idrss += s; u.u_ru.ru_isrss += 0;	/* XXX */
@@ -77,9 +106,19 @@ hardclock(pc, ps)
 			psignal(u.u_procp, SIGPROF);
 	}
 
-/* charge for cpu */
+	/*
+	 * Charge the time out based on the mode the cpu is in.
+	 * Here again we fudge for the lack of proper interval timers
+	 * assuming that the current state has been around at least
+	 * one tick.
+	 */
 	if (USERMODE(ps)) {
-		bumptime(&u.u_ru.ru_utime);
+		/*
+		 * CPU was in user state.  Increment
+		 * user time counter, and process process-virtual time
+		 * interval timer.
+		 */
+		bumptime(&u.u_ru.ru_utime, tick);
 		if (timerisset(&u.u_timer[ITIMER_VIRTUAL].it_value) &&
 		    itimerdecr(&u.u_timer[ITIMER_VIRTUAL], tick) == 0)
 			psignal(u.u_procp, SIGVTALRM);
@@ -88,6 +127,17 @@ hardclock(pc, ps)
 		else
 			cpstate = CP_USER;
 	} else {
+		/*
+		 * CPU was in system state.  If profiling kernel
+		 * increment a counter.  If no process is running
+		 * then this is a system tick if we were running
+		 * at a non-zero IPL (in a driver).  If a process is running,
+		 * then we charge it with system time even if we were
+		 * at a non-zero IPL, since the system often runs
+		 * this way during processing of system calls.
+		 * This is approximate, but the lack of true interval
+		 * timers makes doing anything else difficult.
+		 */
 #ifdef GPROF
 		int k = pc - s_lowpc;
 		if (profiling < 2 && k < s_textsize)
@@ -98,17 +148,34 @@ hardclock(pc, ps)
 			if ((ps&PSL_IPL) != 0)
 				cpstate = CP_IDLE;
 		} else {
-			bumptime(&u.u_ru.ru_stime);
+			bumptime(&u.u_ru.ru_stime, tick);
 		}
 	}
 
-/* iostat statistics */
+	/*
+	 * We maintain statistics shown by user-level statistics
+	 * programs:  the amount of time in each cpu state, and
+	 * the amount of time each of DK_NDRIVE ``drives'' is busy.
+	 */
 	cp_time[cpstate]++;
 	for (s = 0; s < DK_NDRIVE; s++)
 		if (dk_busy&(1<<s))
 			dk_time[s]++;
 
-/* adjust priority of current process */
+	/*
+	 * We adjust the priority of the current process.
+	 * The priority of a process gets worse as it accumulates
+	 * CPU time.  The cpu usage estimator (p_cpu) is increased here
+	 * and the formula for computing priorities (in kern_synch.c)
+	 * will compute a different value each time the p_cpu increases
+	 * by 4.  The cpu usage estimator ramps up quite quickly when
+	 * the process is running (linearly), and decays away exponentially,
+	 * at a rate which is proportionally slower when the system is
+	 * busy.  The basic principal is that the system will 90% forget
+	 * that a process used a lot of CPU time in 5*loadav seconds.
+	 * This causes the system to favor processes which haven't run
+	 * much recently, and to round-robin among other processes.
+	 */
 	if (!noproc) {
 		p = u.u_procp;
 		p->p_cpticks++;
@@ -119,55 +186,49 @@ hardclock(pc, ps)
 		    (shconsts.sc_tic * ((2*NZERO)-p->p_nice)) / NZERO :
 		    shconsts.sc_tic) * (((int)avenrun[0]+2)/3);
 #endif
-		if (p->p_cpu % 4 == 0) {
+		if ((p->p_cpu&3) == 0) {
 			(void) setpri(p);
 			if (p->p_pri >= PUSER)
 				p->p_pri = p->p_usrpri;
 		}
 	}
-	bumptime(&time);
+
+	/*
+	 * Increment the time-of-day, and schedule
+	 * processing of the callouts at a very low cpu priority,
+	 * so we don't keep the relatively high clock interrupt
+	 * priority any longer than necessary.
+	 */
+	bumptime(&time, tick);
 	setsoftclock();
 }
 
+/*
+ * Software priority level clock interrupt.
+ * Run periodic events from timeout queue.
+ */
 /*ARGSUSED*/
 softclock(pc, ps)
 	caddr_t pc;
 {
-	register struct callout *p1;
-	register int a, s;
-	caddr_t arg;
-	int (*func)();
 
-	if (panicstr)
-		goto nocallout;
 	for (;;) {
+		register struct callout *p1;
+		register caddr_t arg;
+		register int (*func)();
+		register int a, s;
+
 		s = spl7();
 		if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
 			splx(s);
 			break;
 		}
+		arg = p1->c_arg; func = p1->c_func; a = p1->c_time;
 		calltodo.c_next = p1->c_next;
-		arg = p1->c_arg;
-		func = p1->c_func;
-		a = p1->c_time;
 		p1->c_next = callfree;
 		callfree = p1;
 		(void) splx(s);
 		(*func)(arg, a);
-	}
-nocallout:
-
-#if NDH > 0
-	s = spl5(); dhtimer(); splx(s);
-#endif
-#if NDZ > 0
-	s = spl5(); dztimer(); splx(s);
-#endif
-
-/* if nothing to do, try swapin */
-	if (noproc && runin) {
-		runin = 0;
-		wakeup((caddr_t)&runin);
 	}
 }
 
@@ -226,14 +287,35 @@ untimeout(fun, arg)
 	splx(s);
 }
 
+/*
+ * Compute number of hz until specified time.
+ * Used to compute third argument to timeout() from an
+ * absolute time.
+ */
 hzto(tv)
 	struct timeval *tv;
 {
-	register int ticks;
+	register long ticks;
+	register long sec;
 	int s = spl7();
 
-	ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
-		(tv->tv_usec - time.tv_usec) / 1000) / (tick / 1000);
+	/*
+	 * If number of milliseconds will fit in 32 bit arithmetic,
+	 * then compute number of milliseconds to time and scale to
+	 * ticks.  Otherwise just compute number of hz in time, rounding
+	 * times greater than representible to maximum value.
+	 *
+	 * Delta times less than 25 days can be computed ``exactly''.
+	 * Maximum value for any timeout in 10ms ticks is 250 days.
+	 */
+	sec = tv->tv_sec - time.tv_sec;
+	if (sec <= 0x7fffffff / 1000 - 1000)
+		ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
+			(tv->tv_usec - time.tv_usec) / 1000) / (tick / 1000);
+	else if (sec <= 0x7fffffff / hz)
+		ticks = sec * hz;
+	else
+		ticks = 0x7fffffff;
 	splx(s);
 	return (ticks);
 }
