@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)externs.h	1.14 (Berkeley) %G%
+ *	@(#)externs.h	1.15 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -58,10 +58,32 @@ extern char
     dont[],
     will[],
     wont[],
-    hisopts[],
-    myopts[],
+    options[],		/* All the little options */
     *hostname,		/* Who are we connected to? */
     *prompt;		/* Prompt for command. */
+
+/*
+ * We keep track of each side of the option negotiation.
+ */
+
+#define	OPT_HE_SAID_DO		0x01
+#define	OPT_HE_SAID_WILL	0x02
+#define	OPT_I_SAID_DO		0x04
+#define	OPT_I_SAID_WILL		0x08
+
+/*
+ * Macros to check out what has been said.
+ */
+
+#define	did_he_say_do(opt)	(options[opt]&OPT_HE_SAID_DO)
+#define	did_he_say_will(opt)	(options[opt]&OPT_HE_SAID_WILL)
+#define	did_I_say_do(opt)	(options[opt]&OPT_I_SAID_DO)
+#define	did_I_say_will(opt)	(options[opt]&OPT_I_SAID_WILL)
+
+#define	should_he(opt) \
+	    (did_he_say_will(opt) && did_I_say_do(opt))
+#define	should_I(opt) \
+	    (did_I_say_will(opt) && did_he_say_do(opt))
 
 extern FILE
     *NetTrace;		/* Where debugging output goes */

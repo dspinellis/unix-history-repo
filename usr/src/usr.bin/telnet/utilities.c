@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -111,7 +111,11 @@ int	length;
 	    fprintf(NetTrace, "%.2x", (*pThis)&0xff);
 	    pThis++;
 	}
-	fprintf(NetTrace, "\n");
+	if (NetTrace == stdout) {
+	    fprintf(NetTrace, "\n");
+	} else {
+	    fprintf(NetTrace, "\r\n");
+	}
 	length -= BYTES_PER_LINE;
 	offset += BYTES_PER_LINE;
 	if (length < 0) {
@@ -124,34 +128,24 @@ int	length;
 }
 
 
-/*VARARGS*/
 void
-printoption(direction, fmt, option, what)
+printoption(direction, fmt, option)
 	char *direction, *fmt;
-	int option, what;
+	int option;
 {
 	if (!showoptions)
 		return;
-	fprintf(NetTrace, "%s ", direction+1);
-	if (fmt == doopt)
-		fmt = "do";
-	else if (fmt == dont)
-		fmt = "dont";
-	else if (fmt == will)
-		fmt = "will";
-	else if (fmt == wont)
-		fmt = "wont";
-	else
-		fmt = "???";
+	fprintf(NetTrace, "%s ", direction);
 	if (option < (sizeof telopts/sizeof telopts[0]))
 		fprintf(NetTrace, "%s %s", fmt, telopts[option]);
 	else
 		fprintf(NetTrace, "%s %d", fmt, option);
-	if (*direction == '<') {
-		fprintf(NetTrace, "\r\n");
-		return;
+	if (NetTrace == stdout) {
+	    fprintf(NetTrace, "\r\n");
+	} else {
+	    fprintf(NetTrace, "\n");
 	}
-	fprintf(NetTrace, " (%s)\r\n", what ? "reply" : "don't reply");
+	return;
 }
 
 void

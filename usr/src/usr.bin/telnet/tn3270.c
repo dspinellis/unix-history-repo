@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -292,8 +292,8 @@ char c;
 void
 SetIn3270()
 {
-    if (Sent3270TerminalType && myopts[TELOPT_BINARY]
-			    && hisopts[TELOPT_BINARY] && !donebinarytoggle) {
+    if (Sent3270TerminalType && should_I(TELOPT_BINARY)
+			    && should_he(TELOPT_BINARY) && !donebinarytoggle) {
 	if (!In3270) {
 	    In3270 = 1;
 	    Init3270();		/* Initialize 3270 functions */

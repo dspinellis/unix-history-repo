@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -432,24 +432,13 @@ togbinary()
 {
     donebinarytoggle = 1;
 
-    if (myopts[TELOPT_BINARY] == 0) {	/* Go into binary mode */
-	NET2ADD(IAC, DO);
-	NETADD(TELOPT_BINARY);
-	printoption("<SENT", doopt, TELOPT_BINARY, 0);
-	NET2ADD(IAC, WILL);
-	NETADD(TELOPT_BINARY);
-	printoption("<SENT", doopt, TELOPT_BINARY, 0);
-	hisopts[TELOPT_BINARY] = myopts[TELOPT_BINARY] = 1;
-	printf("Negotiating binary mode with remote host.\n");
-    } else {				/* Turn off binary mode */
-	NET2ADD(IAC, DONT);
-	NETADD(TELOPT_BINARY);
-	printoption("<SENT", dont, TELOPT_BINARY, 0);
-	NET2ADD(IAC, DONT);
-	NETADD(TELOPT_BINARY);
-	printoption("<SENT", dont, TELOPT_BINARY, 0);
-	hisopts[TELOPT_BINARY] = myopts[TELOPT_BINARY] = 0;
+    if (did_he_say_will(TELOPT_BINARY) || did_I_say_will(TELOPT_BINARY)) {
+	/* leave binary mode */
 	printf("Negotiating network ascii mode with remote host.\n");
+	tel_leave_binary();
+    } else {				/* Turn off binary mode */
+	printf("Negotiating binary mode with remote host.\n");
+	tel_enter_binary();
     }
     return 1;
 }
@@ -699,11 +688,11 @@ char	*argv[];
 static
 dolinemode()
 {
-    if (hisopts[TELOPT_SGA]) {
-	wontoption(TELOPT_SGA, 0);
+    if (did_I_say_do(TELOPT_SGA)) {
+	send_dont(TELOPT_SGA);
     }
-    if (hisopts[TELOPT_ECHO]) {
-	wontoption(TELOPT_ECHO, 0);
+    if (did_I_say_do(TELOPT_ECHO)) {
+	send_dont(TELOPT_ECHO);
     }
     return 1;
 }
@@ -711,11 +700,11 @@ dolinemode()
 static
 docharmode()
 {
-    if (!hisopts[TELOPT_SGA]) {
-	willoption(TELOPT_SGA, 0);
+    if (!did_I_say_do(TELOPT_SGA)) {
+	send_do(TELOPT_SGA);
     }
-    if (!hisopts[TELOPT_ECHO]) {
-	willoption(TELOPT_ECHO, 0);
+    if (!did_I_say_do(TELOPT_ECHO)) {
+	send_do(TELOPT_ECHO);
     }
     return 1;
 }
