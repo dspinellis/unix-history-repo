@@ -5,7 +5,7 @@
  * %sccs.include.redist.c%
  */
 
-static char sccsid[] = "@(#)coredump.c 5.5 %G%";
+static char sccsid[] = "@(#)coredump.c 5.6 %G%";
 /*
  * Deal with the core dump anachronism.
  *
@@ -107,7 +107,7 @@ short *signo;
 	    *mask = savreg[PS];
 #       endif
 	copyregs(savreg, reg);
-	*signo = up->u_arg[0];
+	*signo = up->u_sig;
 	datamap.seekaddr = ctob(UPAGES);
 	stkmap.begin = USRSTACK - ctob(up->u_ssize);
 	stkmap.end = USRSTACK;
