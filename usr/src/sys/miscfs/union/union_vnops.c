@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1233,7 +1233,8 @@ start:
 	un = VTOUNION(vp);
 
 	if (un->un_uppervp != NULLVP) {
-		if ((un->un_flags & UN_ULOCK) == 0) {
+		if (((un->un_flags & UN_ULOCK) == 0) &&
+		    (vp->v_usecount != 0)) {
 			un->un_flags |= UN_ULOCK;
 			VOP_LOCK(un->un_uppervp);
 		}
