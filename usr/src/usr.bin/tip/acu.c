@@ -1,7 +1,8 @@
-/*	acu.c	4.7	82/07/29	*/
+/*	acu.c	4.8	83/06/15	*/
 #include "tip.h"
 #include <setjmp.h>
 
+static char *sccsid = "@(#)acu.c	4.8 %G%";
 static acu_t *acu = NOACU;
 static int conflag;
 static int acuabort();
@@ -33,7 +34,7 @@ connect()
 
 	if (!DU) {		/* regular connect message */
 		if (CM != NOSTR)
-			write(FD, cp, size(CM));
+			pwrite(FD, cp, size(CM));
 		return (NOSTR);
 	}
 	/*
@@ -61,7 +62,7 @@ connect()
 		return ("unknown ACU type");
 	if (*cp != '@') {
 		while (*cp) {
-			for (phnum = cp; any(*cp, "0123456789-*=&%"); cp++)
+			for (phnum = cp; any(*cp, "0123456789-*=K"); cp++)
 				;
 			if (*cp)
 				*cp++ = '\0';
@@ -96,7 +97,7 @@ connect()
 				fclose(fd);
 				return ("missing phone number");
 			}
-			for (phnum = cp; any(*cp, "0123456789-*=&%"); cp++)
+			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
 				;
 			*cp = '\0';
 			
@@ -114,6 +115,8 @@ connect()
 	}
 	if (!tried)
 		logent(value(HOST), "", acu->acu_name, "missing phone number");
+	else
+		(*acu->acu_abort)();
 	return (tried ? "no answer" : "missing phone number");
 }
 
