@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.7	(Berkeley)	83/03/06";
+static char sccsid[] = "@(#)tape.c	3.8	(Berkeley)	83/03/08";
 #endif
 
 #include "restore.h"
@@ -135,6 +135,7 @@ setup()
 		fprintf(stderr, "Tape is not volume 1 of the dump\n");
 		done(1);
 	}
+	volno = 1;
 	if (readhdr(&spcl) == FAIL)
 		panic("no header after volume mark!\n");
 	findinode(&spcl, 1);
