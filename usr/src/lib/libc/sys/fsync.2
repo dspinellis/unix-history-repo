@@ -1,0 +1,42 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)fsync.2	5.1 (Berkeley) %G%
+.\"
+.TH FSYNC 2 "12 February 1983"
+.UC 5
+.SH NAME
+fsync \- synchronize a file's in-core state with that on disk
+.SH SYNOPSIS
+.ft B
+fsync(fd)
+.br
+int fd;
+.ft R
+.SH DESCRIPTION
+.I Fsync
+causes all modified data and attributes of \fIfd\fP
+to be moved to a permanent storage device.
+This normally results in all in-core modified copies
+of buffers for the associated file to be written to a disk.
+.PP
+.I Fsync
+should be used by programs which require a file to be
+in a known state; for example in building a simple transaction
+facility.
+.SH "RETURN VALUE
+A 0 value is returned on success.  A \-1 value indicates
+an error.
+.SH "ERRORS
+The \fIfsync\fP fails if:
+.TP 15
+[EBADF]
+\fIFd\fP is not a valid descriptor.
+.TP 15
+[EINVAL]
+\fIFd\fP refers to a socket, not to a file.
+.SH "SEE ALSO"
+sync(2), sync(8), update(8)
+.SH BUGS
+The current implementation of this call is expensive for large files.
