@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.21	81/12/22	*/
+/*	uipc_socket.c	4.22	82/01/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -393,13 +393,13 @@ restart:
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
 			sbfree(&so->so_rcv, m);
+			so->so_rcv.sb_mb = m->m_next;
 		}
 		splx(s);
 		iomove(mtod(m, caddr_t), len, B_READ);
 		s = splnet();
 		if (len == m->m_len) {
 			MFREE(m, n);
-			so->so_rcv.sb_mb = n;
 		} else {
 			m->m_off += len;
 			m->m_len -= len;
@@ -432,7 +432,7 @@ soioctl(so, cmd, cmdp)
 {
 
 COUNT(SOIOCTL);
-	switch (cmdp) {
+	switch (cmd) {
 
 	case SIOCDONE: {
 		int flags;
@@ -446,7 +446,7 @@ COUNT(SOIOCTL);
 			sbflush(&so->so_rcv);
 		}
 		if (flags & FWRITE)
-			(*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, (struct mbuf *)0, 0);
+			u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, (struct mbuf *)0, 0);
 		return;
 	}
 
