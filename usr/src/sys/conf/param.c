@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.14 (Berkeley) %G%
+ *	@(#)param.c	7.15 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -18,12 +18,10 @@ char copyright[] =
 #include "../sys/socket.h"
 #include "../sys/user.h"
 #include "../sys/proc.h"
-#include "../sys/text.h"
 #include "../sys/vnode.h"
 #include "../sys/file.h"
 #include "../sys/callout.h"
 #include "../sys/clist.h"
-#include "../sys/cmap.h"
 #include "../sys/mbuf.h"
 #include "../ufs/quota.h"
 #include "../sys/kernel.h"
@@ -51,8 +49,7 @@ int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
-#define	NTEXT (36 + MAXUSERS)
-int	ntext = NTEXT;
+#define NTEXT 100			/* actually the object cache */
 #define NVNODE (NPROC + NTEXT + 300)
 long	desiredvnodes = NVNODE;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
@@ -92,13 +89,11 @@ int	nbuf, nswbuf;
  * (if they've been externed everywhere else; hah!).
  */
 struct	proc *proc, *procNPROC;
-struct	text *text, *textNTEXT;
 struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
 struct	buf *buf, *swbuf;
 char	*buffers;
-struct	cmap *cmap, *ecmap;
 
 /*
  * Proc/pgrp hashing.
