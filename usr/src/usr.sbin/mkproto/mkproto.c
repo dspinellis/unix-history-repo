@@ -11,18 +11,20 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Make a file system prototype.
  * usage: mkproto filsys proto
  */
-#include <stdio.h>
 #include <sys/param.h>
-#include <sys/inode.h>
-#include <sys/fs.h>
+#include <sys/time.h>
+#include <sys/vnode.h>
 #include <sys/dir.h>
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#include <stdio.h>
 
 union {
 	struct	fs fs;

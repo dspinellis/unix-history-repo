@@ -22,16 +22,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)quota.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * Disk quota reporting program.
  */
 #include <sys/param.h>
-#include <sys/quota.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <ufs/quota.h>
 #include <stdio.h>
 #include <fstab.h>
 #include <ctype.h>
