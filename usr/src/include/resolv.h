@@ -14,8 +14,18 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)resolv.h	5.6 (Berkeley) %G%
+ *	@(#)resolv.h	5.7 (Berkeley) %G%
  */
+
+/*
+ * Resolver configuration file.
+ * Normally not present, but may contain the address of the
+ * inital name server(s) to query and the domain search list.
+ */
+
+#ifndef _PATH_RESCONF
+#define _PATH_RESCONF        "/etc/resolv.conf"
+#endif
 
 /*
  * Global defines and variables for resolver stub.
@@ -24,7 +34,7 @@
 #define	MAXDNSRCH	3		/* max # default domain levels to try */
 #define	LOCALDOMAINPARTS 2		/* min levels in name that is "local" */
 
-#define	RES_TIMEOUT	4		/* seconds between retries */
+#define	RES_TIMEOUT	5		/* min. seconds between retries */
 
 struct state {
 	int	retrans;	 	/* retransmition time interval */
