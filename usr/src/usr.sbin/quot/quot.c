@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)quot.c	4.18 (Berkeley) 90/04/30";
+static char *sccsid = "@(#)quot.c	4.19 (Berkeley) 90/06/23";
 #endif
 
 /*
@@ -53,7 +53,7 @@ long	now;
 unsigned	ino;
 
 char	*malloc();
-char	*getname();
+char	*user_from_uid();
 
 main(argc, argv)
 	int argc;
@@ -253,7 +253,7 @@ acct(ip)
 			fino = 0;
 			continue;
 		}
-		if (np = getname(dp->uid))
+		if (np = user_from_uid(dp->uid, 1))
 			printf("%.7s\t", np);
 		else
 			printf("%u\t", ip->di_uid);
@@ -291,10 +291,10 @@ qcmp(p1, p2)
 		return (-1);
 	if (p1->blocks < p2->blocks)
 		return (1);
-	s1 = getname(p1->uid);
+	s1 = user_from_uid(p1->uid, 1);
 	if (s1 == 0)
 		return (0);
-	s2 = getname(p2->uid);
+	s2 = user_from_uid(p2->uid, 1);
 	if (s2 == 0)
 		return (0);
 	return (strcmp(s1, s2));
@@ -328,7 +328,7 @@ report()
 		printf("%5D\t", dp->blocks);
 		if (fflg)
 			printf("%5D\t", dp->nfiles);
-		if (cp = getname(dp->uid))
+		if (cp = user_from_uid(dp->uid, 1))
 			printf("%-8.8s", cp);
 		else
 			printf("#%-8d", dp->uid);
@@ -337,40 +337,4 @@ report()
 			    dp->blocks30, dp->blocks60, dp->blocks90);
 		printf("\n");
 	}
-}
-
-/* rest should be done with nameserver or database */
-
-#include <pwd.h>
-#include <grp.h>
-#include <utmp.h>
-
-struct	utmp utmp;
-#define	NMAX	(sizeof (utmp.ut_name))
-#define SCPYN(a, b)	strncpy(a, b, NMAX)
-
-#define NUID	64	/* power of 2 */
-#define UIDMASK	0x3f
-
-struct ncache {
-	int	uid;
-	char	name[NMAX+1];
-} nc[NUID];
-
-char *
-getname(uid)
-{
-	register struct passwd *pw;
-	struct passwd *getpwent();
-	register int cp;
-
-	cp = uid & UIDMASK;
-	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
-		return (nc[cp].name);
-	pw = getpwuid(uid);
-	if (!pw)
-		return (0);
-	nc[cp].uid = uid;
-	SCPYN(nc[cp].name, pw->pw_name);
-	return (nc[cp].name);
 }
