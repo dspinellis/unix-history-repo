@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_imp.h	7.5 (Berkeley) %G%
+ *	@(#)if_imp.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -78,6 +78,13 @@ struct imp_leader {
 #define	IMPTYPE_NOTIFY		12	/* IMP refused, will notify */
 #define	IMPTYPE_TRYING		13	/* IMP refused, still rexmt'ng */
 #define	IMPTYPE_READY		14	/* ready for next message */
+
+/*
+ * Link numbers
+ */
+#define	IMPLINK_IP		155
+#define	IMPLINK_LOWEXPER	156
+#define	IMPLINK_HIGHEXPER	158
 
 /*
  * IMPTYPE_DOWN subtypes, in link number field.
