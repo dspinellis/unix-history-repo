@@ -5,8 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.9 (Berkeley) 6/8/85";
-#endif not lint
+static char sccsid[] = "@(#)langpats.c	1.2 (Berkeley) %G%";
+#endif
 
 #include "inline.h"
 
@@ -16,7 +16,7 @@ static char sccsid[] = "@(#)langpats.c	2.9 (Berkeley) 6/8/85";
  */
 struct pats language_ptab[] = {
 
-#ifdef vax
+#if defined(vax)
 	{ "0,_spl0\n",
 "	mfpr	$18,r0\n\
 	mtpr	$0,$18\n" },
@@ -247,11 +247,162 @@ struct pats language_ptab[] = {
 	bgequ	1f\n\
 	movl	r5,r0\n\
 1:\n" },
-#endif vax
+#endif
 
-#ifdef mc68000
+#if defined(tahoe)
+	{ "4,_spl0\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0,$8\n" },
+
+	{ "4,_spl1\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x11,$8\n" },
+
+	{ "4,_spl3\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x13,$8\n" },
+
+	{ "4,_spl7\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x17,$8\n" },
+
+	{ "4,_spl8\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "4,_splimp\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "4,_splsoftclock\n",
+"	mfpr	$18,r0\n\
+	mtpr	$0x8,$8\n" },
+
+	{ "4,_splnet\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0xc,$8\n" },
+
+	{ "4,_splbio\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "4,_spltty\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "4,_splclock\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "4,_splhigh\n",
+"	mfpr	$8,r0\n\
+	mtpr	$0x18,$8\n" },
+
+	{ "8,_splx\n",
+"	movl	(sp)+,r1\n\
+	mfpr	$8,r0\n\
+	mtpr	r1,$8\n" },
+
+	{ "8,_mfpr\n",
+"	movl	(sp)+,r1\n\
+	mfpr	r1,r0\n" },
+
+	{ "12,_mtpr\n",
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r0\n\
+	mtpr	r0,r1\n" },
+
+#ifdef notdef
+	{ "8,_uncache\n",
+"	movl	(sp)+,r1\n\
+	mtpr	r1,$0x1c\n" },
+#endif
+
+	{ "4,_setsoftclock\n",
+"	mtpr	$0x8,$0x10\n" },
+
+	{ "8,_fuibyte\n",
+"	callf	$8,_fubyte\n" },
+
+	{ "8,_fuiword\n",
+"	callf	$8,_fuword\n" },
+
+	{ "12,_suibyte\n",
+"	callf	$12,_subyte\n" },
+
+	{ "12,_suiword\n",
+"	callf	$12,_suword\n" },
+
+	{ "8,_setjmp\n",
+"	movl	(sp)+,r1\n\
+	clrl	r0\n\
+	movab	(fp),(r1)\n\
+	addl2	$4,r1\n\
+	movab	1(pc),(r1)\n" },
+
+	{ "8,_ffs\n",
+"	movl	(sp)+,r1\n\
+	ffs	r1,r0\n\
+	bgeq	1f\n\
+	mnegl	$1,r0\n\
+1:\n\
+	incl	r0\n" },
+
+	{ "12,__insque\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	insque	(r0),(r1)\n" },
+
+	{ "8,__remque\n",
+"	movl	(sp)+,r1\n\
+	remque	(r1)\n" },
+
+	{ "12,_imin\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	bleq	1f\n\
+	movl	r1,r0\n\
+1:\n" },
+
+	{ "12,_imax\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	bgeq	1f\n\
+	movl	r1,r0\n\
+1:\n" },
+
+	{ "12,_min\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	blequ	1f\n\
+	movl	r1,r0\n\
+1:\n" },
+
+	{ "12,_max\n",
+"	movl	(sp)+,r0\n\
+	movl	(sp)+,r1\n\
+	cmpl	r0,r1\n\
+	bgequ	1f\n\
+	movl	r1,r0\n\
+1:\n" },
+
+	{ "12,__movow\n",
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r0\n\
+	movow	r0,(r1)\n" },
+
+	{ "12,__movob\n",
+"	movl	(sp)+,r1\n\
+	movl	(sp)+,r0\n\
+	movob	r0,(r1)\n" },
+#endif
+
+#if defined(mc68000)
 /* someday... */
-#endif mc68000
+#endif
 
 	{ "", "" }
 };
