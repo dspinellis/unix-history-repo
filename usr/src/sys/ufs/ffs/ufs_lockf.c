@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.6 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -145,8 +145,8 @@ lf_setlock(lock)
 	block = ip->i_lockf;
 	needtolink = 1;
 	for (;;) {
-		ovcase = lf_findoverlap(block, lock, SELF, &prev, &overlap);
-		block = overlap->lf_next;
+		if (ovcase = lf_findoverlap(block, lock, SELF, &prev, &overlap))
+			block = overlap->lf_next;
 		/*
 		 * Six cases:
 		 *	0) no overlap
@@ -247,7 +247,6 @@ lf_setlock(lock)
 		}
 		break;
 	}
-out:
 #ifdef LOCKF_DEBUG
 	if (lockf_debug & 1) {
 		lf_print("lf_setlock: got the lock", lock);
