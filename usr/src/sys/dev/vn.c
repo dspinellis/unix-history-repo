@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vn.c 1.8 92/12/20$
  *
- *	@(#)vn.c	8.1 (Berkeley) %G%
+ *	@(#)vn.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -202,6 +202,22 @@ vnstrategy(bp)
 		nbp->b_dirtyend = bp->b_dirtyend;
 		nbp->b_validoff = bp->b_validoff;
 		nbp->b_validend = bp->b_validend;
+		/*
+		 * There is a hole in the file...punt.
+		 * Note that we deal with this after the nbp allocation.
+		 * This ensures that we properly clean up any operations
+		 * that we have already fired off.
+		 *
+		 * XXX we could deal with this but it would be
+		 * a hassle (in the write case).
+		 */
+		if ((long)nbn == -1) {
+			nbp->b_error = EIO;
+			nbp->b_flags |= B_ERROR;
+			bp->b_resid -= (resid - sz);
+			biodone(nbp);
+			return;
+		}
 		/*
 		 * Just sort by block number
 		 */
