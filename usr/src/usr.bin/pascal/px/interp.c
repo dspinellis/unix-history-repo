@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.5 %G%";
+static char sccsid[] = "@(#)interp.c 1.6 %G%";
 
 #include <math.h>
 #include "vars.h"
@@ -1048,7 +1048,7 @@ interpreter(base)
 				if (tl1 == *tcp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl2);
+				ERROR(ECASE, tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE2OP:
@@ -1062,7 +1062,7 @@ interpreter(base)
 				if (tl1 == *tsp1++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl2);
+				ERROR(ECASE, tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE4OP:
@@ -1076,7 +1076,7 @@ interpreter(base)
 				if (tl1 == *tlp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR(ECASE, tl2);
+				ERROR(ECASE, tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_ADDT:
