@@ -5,6 +5,7 @@
 
 /*
  *	defines.h 2.3 of 5/18/78
+ *	defines.h 1.2 of %G%
  */
 
 # define CTLSTR		"%c%c\n"
@@ -182,8 +183,8 @@ struct packet {
 /*
 	size of login name
 */
-# define SZLNAM	(8)	/* size of login name */
-# define LNLNAM	(7)	/* length of login name */
+# define SZLNAM	(9)	/* size of login name */
+# define LNLNAM	(8)	/* length of login name */
 
 
 struct	stats {
