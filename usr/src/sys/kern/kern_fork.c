@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.9 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -179,7 +179,7 @@ again:
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & SPAGV);
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SCTTY));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
