@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
-MAN5=	a.out.0 acct.0 core.0 dbx.0 dir.0 disktab.0 dump.0 fs.0 fstab.0 \
+MAN5=	a.out.0 acct.0 core.0 dir.0 disktab.0 dump.0 fs.0 fstab.0 \
 	group.0 hosts.0 networks.0 passwd.0 phones.0 plot.0 printcap.0 \
 	protocols.0 remote.0 resolver.0 services.0 shells.0 stab.0 types.0 \
 	utmp.0
