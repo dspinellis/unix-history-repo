@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.15	(Berkeley)	83/05/15";
+static char sccsid[] = "@(#)restore.c	3.16	(Berkeley)	83/05/15";
 #endif
 
 #include "restore.h"
@@ -358,7 +358,8 @@ nodeupdates(name, ino, type)
 			newnode(ip);
 		} else {
 			/* changing from node to leaf */
-			mktempname(ip);
+			if ((ip->e_flags & TMPNAME) == 0)
+				mktempname(ip);
 			deleteino(ip->e_ino);
 			ip->e_next = removelist;
 			removelist = ip;
@@ -439,6 +440,22 @@ findunreflinks()
 			continue;
 		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
 			if (np->e_flags == 0) {
+				dprintf(stdout,
+				    "%s: remove unreferenced name\n",
+				    myname(np));
+				removeleaf(np);
+				freeentry(np);
+			}
+		}
+	}
+	/*
+	 * Any leaves remaining in removed directories is unreferenced.
+	 */
+	for (ep = removelist; ep != NIL; ep = ep->e_next) {
+		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
+			if (np->e_type == LEAF) {
+				if (np->e_flags != 0)
+					badentry(np, "unreferenced with flags");
 				dprintf(stdout,
 				    "%s: remove unreferenced name\n",
 				    myname(np));
