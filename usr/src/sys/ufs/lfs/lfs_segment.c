@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.9 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,6 +76,83 @@ void	 lfs_writesuper __P((struct lfs *, struct segment *));
 
 int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 
+/*
+ * Ifile and meta data blocks are not marked busy, so segment writes MUST be
+ * single threaded.  Currently, there are two paths into lfs_segwrite, sync()
+ * and getnewbuf().  They both mark the file system busy.  Lfs_vflush()
+ * explicitly marks the file system busy.  So lfs_segwrite is safe.  I think.
+ */
+
+int
+lfs_vflush(vp)
+	struct vnode *vp;
+{
+	struct inode *ip;
+	struct lfs *fs;
+	struct mount *mp;
+	struct segment *sp;
+	int error, s;
+
+#ifdef VERBOSE
+	printf("lfs_vflush\n");
+#endif
+	mp = vp->v_mount;
+	fs = VFSTOUFS(mp)->um_lfs;
+
+	/*
+	 * XXX
+	 * check flags?
+	 * mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY) ||
+	 */
+	if (vfs_busy(mp))
+		return (0);
+
+	/*
+	 * Allocate a segment structure and enough space to hold pointers to
+	 * the maximum possible number of buffers which can be described in a
+	 * single summary block.
+	 */
+	sp = malloc(sizeof(struct segment), M_SEGMENT, M_WAITOK);
+	sp->bpp = malloc(((LFS_SUMMARY_SIZE - sizeof(SEGSUM)) /
+	    sizeof(daddr_t) + 1) * sizeof(struct buf *), M_SEGMENT, M_WAITOK);
+	sp->seg_flags = SEGM_CKP;
+	lfs_initseg(fs, sp);
+
+	/*
+	 * Keep a cumulative count of the outstanding I/O operations.  If the
+	 * disk drive catches up with us it could go to zero before we finish,
+	 * so we artificially increment it by one until we've scheduled all of
+	 * the writes we intend to do.
+	 */
+	s = splbio();
+	fs->lfs_iocount = 1;
+	splx(s);
+
+	if (vp->v_dirtyblkhd != NULL)
+		lfs_writefile(fs, sp, vp);
+	ip = VTOI(vp);
+	lfs_writeinode(fs, sp, ip);
+	ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
+
+	lfs_writeseg(fs, sp);
+
+	/*
+	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
+	 * moment, the user's process hangs around so we can sleep.
+	 */
+	s = splbio();
+	if (--fs->lfs_iocount && (error =
+	    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs vflush", 0)))
+		return (error);
+	splx(s);
+	vfs_unbusy(mp);
+
+	free(sp->bpp, M_SEGMENT);
+	free(sp, M_SEGMENT);
+
+	return (0);
+}
+
 int
 lfs_segwrite(mp, do_ckp)
 	struct mount *mp;
@@ -85,30 +162,12 @@ lfs_segwrite(mp, do_ckp)
 	struct lfs *fs;
 	struct segment *sp;
 	struct vnode *vp;
-	int s, error;
+	int error, islocked, s;
 
-	/*
-	 * Ifile and meta data blocks are not marked busy, so segment writes
-	 * must be single threaded.  Currently, there are two paths into this
-	 * code, sync() and getnewbuf().  They both mark the file system busy,
-	 * so lfs_segwrite is safe.  I think.
-	 */
 #ifdef VERBOSE
 	printf("lfs_segwrite\n");
 #endif
-
-	/*
-	 * If doing a checkpoint, we keep a cumulative count of the outstanding
-	 * I/O operations.  If the disk drive catches up with us it could go to
-	 * zero before we finish, so we artificially increment it by one until
-	 * we've scheduled all of the writes we intend to do.
-	 */
 	fs = VFSTOUFS(mp)->um_lfs;
-	if (do_ckp) {
-		s = splbio();
-		fs->lfs_iocount = 1;
-		splx(s);
-	}
 
 	/*
 	 * Allocate a segment structure and enough space to hold pointers to
@@ -120,26 +179,28 @@ lfs_segwrite(mp, do_ckp)
 	    sizeof(daddr_t) + 1) * sizeof(struct buf *), M_SEGMENT, M_WAITOK);
 	sp->seg_flags = do_ckp ? SEGM_CKP : 0;
 	lfs_initseg(fs, sp);
-loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+
+	/*
+	 * If doing a checkpoint, we keep a cumulative count of the outstanding
+	 * I/O operations.  If the disk drive catches up with us it could go to
+	 * zero before we finish, so we artificially increment it by one until
+	 * we've scheduled all of the writes we intend to do.
+	 */
+	if (do_ckp) {
+		s = splbio();
+		fs->lfs_iocount = 1;
+		splx(s);
+	}
+
+loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
 		 */
 		if (vp->v_mount != mp)
 			goto loop;
-		if (VOP_ISLOCKED(vp))
-			continue;
 
-		/*
-		 * Write the inode/file if dirty and it's not the
-		 * the IFILE.
-		 */
-		ip = VTOI(vp);
-		if (ip->i_flag & (IMOD | IACC | IUPD | ICHG) == 0 &&
-		    vp->v_dirtyblkhd == NULL ||
-		    ip->i_number == LFS_IFILE_INUM)
-			continue;
+		islocked = VOP_ISLOCKED(vp);
 
 		/*
 		 * XXX
@@ -147,17 +208,30 @@ loop:
 		 * get the vnode and go on.  Probably going to reschedule
 		 * all of the writes we already scheduled...
 		 */
-		if (vget(vp))
+		if (islocked)
+			VREF(vp);
+		else if (vget(vp))
 {
 printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 			goto loop;
 }
-
-		if (vp->v_dirtyblkhd != NULL)
-			lfs_writefile(fs, sp, vp);
-		lfs_writeinode(fs, sp, ip);
-		ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
-		vput(vp);
+		/*
+		 * Write the inode/file if dirty and it's not the
+		 * the IFILE.
+		 */
+		ip = VTOI(vp);
+		if ((ip->i_flag & (IMOD | IACC | IUPD | ICHG) ||
+		    vp->v_dirtyblkhd != NULL) &&
+		    ip->i_number != LFS_IFILE_INUM) {
+			if (vp->v_dirtyblkhd != NULL)
+				lfs_writefile(fs, sp, vp);
+			lfs_writeinode(fs, sp, ip);
+			ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
+		}
+		if (islocked)
+			vrele(vp);
+		else
+			vput(vp);
 	}
 	if (do_ckp) {
 		vp = fs->lfs_ivnode;
@@ -341,17 +415,15 @@ lfs_gather(fs, sp, vp, match)
 		 * Should probably sleep on any BUSY buffer if
 		 * doing an fsync?
 		 */
-		if (bp->b_flags & B_BUSY)
+		if (bp->b_flags & B_BUSY || !match(fs, bp))
 			continue;
+
 #ifdef DIAGNOSTIC
 		if (!(bp->b_flags & B_DELWRI))
 			panic("lfs_gather: bp not B_DELWRI");
 		if (!(bp->b_flags & B_LOCKED))
 			panic("lfs_gather: bp not B_LOCKED");
 #endif
-		if (!match(fs, bp))
-			continue;
-
 		/* Insert into the buffer list, update the FINFO block. */
 		*sp->cbpp++ = bp;
 		++fip->fi_nblocks;
