@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.5 (Berkeley) %G%
+	@(#)syscalls.master	7.6 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -187,15 +187,35 @@
 148	STD	2 setquota
 149	STD	4 qquota quota
 150	COMPAT	3 getsockname
-151	STD	2 getlogname
-152	STD	2 setlogname
-153	UNIMPL	0 nosys
-154	UNIMPL	0 nosys
-155	UNIMPL	0 nosys
-156	STD	4 getdirentries
-157	STD	2 statfs
-158	STD	2 fstatfs
 
 ; Syscalls 151-180 inclusive are reserved for vendor-specific
 ; system calls.  (This includes various calls added for compatibity
 ; with other Unix variants.)
+151	UNIMPL	0 nosys
+152	UNIMPL	0 nosys
+153	UNIMPL	0 nosys
+154	UNIMPL	0 nosys
+#ifdef NFS
+155	STD	1 nfssvc
+#else
+155	UNIMPL	0 nosys
+#endif
+156	STD	4 getdirentries
+157	STD	2 statfs
+158	STD	2 fstatfs
+159	UNIMPL	0 nosys
+160	UNIMPL	0 nosys
+#ifdef NFS
+161	STD	2 getfh
+#else
+161	UNIMPL	0 nosys
+#endif
+162	UNIMPL	0 nosys
+163	UNIMPL	0 nosys
+164	UNIMPL	0 nosys
+165	UNIMPL	0 nosys
+#ifdef NFS
+166	STD	3 exportfs
+#else
+166	UNIMPL	0 nosys
+#endif
