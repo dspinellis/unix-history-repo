@@ -780,8 +780,8 @@ ENTRY(copyinstr, R6)
 	movl	12(ap),r6		# r6 = max length
 	jlss	8f
 	movl	4(ap),r1		# r1 = user address
-	bicl3	$~(NBPG-1),r1,r2	# r2 = bytes on first page
-	subl3	r2,$NBPG,r2
+	bicl3	$~(NBPG*CLSIZE-1),r1,r2	# r2 = bytes on first page
+	subl3	r2,$NBPG*CLSIZE,r2
 	movl	8(ap),r3		# r3 = kernel address
 1:
 	cmpl	r6,r2			# r2 = min(bytes on page, length left);
@@ -795,7 +795,7 @@ ENTRY(copyinstr, R6)
 	jneq	3f
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
-	movl	$NBPG,r2		# check next page
+	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r6			# run out of space?
 	jneq	1b
 	movl	$ENOENT,r0		# set error code and return
@@ -833,8 +833,8 @@ ENTRY(copyoutstr, R6)
 	jlss	8b
 	movl	4(ap),r1		# r1 = kernel address
 	movl	8(ap),r3		# r3 = user address
-	bicl3	$~(NBPG-1),r3,r2	# r2 = bytes on first page
-	subl3	r2,$NBPG,r2
+	bicl3	$~(NBPG*CLSIZE-1),r3,r2	# r2 = bytes on first page
+	subl3	r2,$NBPG*CLSIZE,r2
 1:
 	cmpl	r6,r2			# r2 = min(bytes on page, length left);
 	jgeq	2f
@@ -847,7 +847,7 @@ ENTRY(copyoutstr, R6)
 	jneq	3b
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
-	movl	$NBPG,r2		# check next page
+	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r6			# run out of space?
 	jneq	1b
 	movl	$ENOENT,r0		# set error code and return
@@ -967,12 +967,14 @@ coloop:
 /*
  * non-local goto's
  */
+#ifdef notdef		/* this is now expanded completely inline */
 	.align	1
 JSBENTRY(Setjmp)
 	movl	fp,(r0)+	# current stack frame
 	movl	(sp),(r0)	# resuming pc
 	clrl	r0
 	rsb
+#endif
 
 #define PCLOC 16
 	.align	1
