@@ -7,41 +7,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)isa.h	5.8 (Berkeley) %G%
+ *	@(#)isa.h	5.9 (Berkeley) %G%
  */
 
 /*
  * ISA Bus conventions
  */
 
-/*#ifndef LOCORE
+#ifndef LOCORE
 unsigned char inb(), rtcin();
 void outb();
-#endif*/
-
-#ifndef LOCORE
-unsigned char rtcin();
-
-#define inb(io) ({u_short iop; register u_char rtn; \
-	iop = (io); \
-	asm (" movl %1,%%edx; inb %%al,%%dx; movzbl %%al,%0 " \
-		: "=r" (rtn) \
-		: "g" (iop) \
-		: "ax,dx"); \
-	rtn; \
-})
-
-#define outb(io, v) ({u_short iop; u_char val; \
-	iop = (io); \
-	val = (v); \
-	asm (" movl %1,%%edx; movl %0,%%eax; outb %%dx,%%al " \
-		:  \
-		: "g" (val) \
-		: "g" (iop) \
-		: "ax,dx"); \
-})
-
 #endif
+
 /*
  * Input / Output Port Assignments
  */
