@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)null_vnops.c	8.3 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -222,7 +222,8 @@ null_bypass(ap)
 		 * are of our type.  Check for and don't map any
 		 * that aren't.  (We must always map first vp or vclean fails.)
 		 */
-		if (i && (*this_vp_p)->v_op != null_vnodeop_p) {
+		if (i && (*this_vp_p == NULL ||
+		    (*this_vp_p)->v_op != null_vnodeop_p)) {
 			old_vps[i] = NULL;
 		} else {
 			old_vps[i] = *this_vp_p;
