@@ -1,6 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.8 (Berkeley) %G%";
 #endif
+
+/*
+ * This file contains no ATT code and is not subject to the ATT
+ * license provisions regarding redistribution.
+ * 	Rick Adams 2/23/88
+ */
 
 /*
  * uuq - looks at uucp queues
@@ -61,8 +67,8 @@ int hflag;
 int lflag;
 
 char *malloc(), *calloc();
-double atof();
-float baudrate = 1200.;
+float atof();
+float baudrate = 2400.;
 char Username[BUFSIZ];
 char Filename[BUFSIZ];
 int Maxulen = 0;
@@ -115,7 +121,7 @@ char **argv;
 
 	subchdir(Spool);
 	baudrate *= 0.7;	/* reduce speed because of protocol overhead */
-	baudrate *= 6.; 	/* convert to chars/minute (60/10) */
+	baudrate *= 7.5; 	/* convert to chars/minute (60/8) */
 	gather();
 	nsys = 0;
 	for (sp = syshead; sp; sp = sp->s_sysp) {
@@ -131,7 +137,7 @@ char **argv;
 			/* The 80 * njobs is because of the uucp handshaking */
 			minutes = (float)(sp->s_bytes + 80 * sp->s_njobs)/baudrate;
 			hours = minutes/60;
-			printf(", %d bytes, ", sp->s_bytes);
+			printf(", %ld bytes, ", sp->s_bytes);
 			if (minutes > 60){
 				printf("%d hour%s, ",hours,
 					hours > 1 ? "s": "");
@@ -144,15 +150,14 @@ char **argv;
 		if (hflag)
 			continue;
 		/* sort them babies! */
-		sortjob = (struct job **)calloc(sp->s_njobs, sizeof (struct job
- *));
+		sortjob = (struct job **)calloc(sp->s_njobs, sizeof (struct job *));
 		for (i=0, jp=sp->s_jobp; i < sp->s_njobs; i++, jp=jp->j_jobp)
 			sortjob[i] = jp;
 		qsort(sortjob, sp->s_njobs, sizeof (struct job *), jcompare);
 		for (i = 0; i < sp->s_njobs; i++) {
 			jp = sortjob[i];
 			if (lflag) {
-				printf("%s %2d %-*s%7d%5.1f %-12.12s %c %.*s\n",
+				printf("%s %2d %-*s%7ld%5.1f %-12.12s %c %.*s\n",
 	jp->j_jobno, jp->j_files, Maxulen, jp->j_user, jp->j_bytes, jp->j_bytes/baudrate,
 	ctime(&jp->j_date) + 4, jp->j_flags, sizeof (jp->j_fname), jp->j_fname
 				);
@@ -163,8 +168,10 @@ char **argv;
 			/* There's no need to keep the force poll if jobs > 1*/
 			if (sp->s_njobs > 1 && strcmp("POLL", jp->j_jobno)==0) {
 				char pbuf[BUFSIZ];
-				sprintf(pbuf,"%s/%c.%szPOLL", subdir(Spool, CMDPRE), CMDPRE,sp->s_name);
-				unlink(pbuf);
+				sprintf(pbuf,"%s/%c.%s%cPOLL",
+					subdir(Spool, CMDPRE), CMDPRE,
+					sp->s_name, jp->j_grade);
+				(void) unlink(pbuf);
 			}
 		}
 		if (!lflag && (sp->s_njobs%10))
