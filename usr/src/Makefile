@@ -1,11 +1,11 @@
-#	@(#)Makefile	4.1	(Berkeley)	%G%
+#	@(#)Makefile	4.2	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	bin etc games lib ucb usr.bin usr.lib local
+SUBDIR=	lib usr.lib bin usr.bin etc ucb games local
 
 all:	${SUBDIR}
 
