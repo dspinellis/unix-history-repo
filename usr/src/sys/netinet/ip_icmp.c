@@ -58,12 +58,13 @@ icmp_error(oip, type, code, ifp, dest)
 		icmpstat.icps_error++;
 	/*
 	 * Don't send error if not the first fragment of message.
-	 * Don't EVER error if the old packet protocol was ICMP.
-	 * (Could do ECHO, etc, but not error indications.)
+	 * Don't error if the old packet protocol was ICMP
+	 * error message, only known informational types.
 	 */
 	if (oip->ip_off &~ (IP_MF|IP_DF))
 		goto free;
-	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT) {
+	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT &&
+	  !ICMP_INFOTYPE(((struct icmp *)((caddr_t)oip + oiplen))->icmp_type)) {
 		icmpstat.icps_oldicmp++;
 		goto free;
 	}
