@@ -75,15 +75,15 @@ assym.s machdep.o: Makefile
 # depends on KDB (cons.o also depends on GENERIC)
 trap.o cons.o: Makefile
 
-assym.s: ../sys/param.h ../tahoe/pte.h ../sys/buf.h ../sys/vmparam.h \
-    ../sys/vmmeter.h ../ufs/dir.h ../sys/cmap.h ../sys/map.h \
-    ../tahoevba/vbaparam.h ../sys/proc.h ../sys/msgbuf.h ../tahoe/scb.h \
-    machine/vmparam.h
-	${CC} ${INCLUDES} -DKERNEL ${IDENT} ${PARAM} ../tahoe/genassym.c
-	./a.out >assym.s; rm -f a.out
+assym.s: genassym
+	./genassym >assym.s
 
-depend:	assym.s
+genassym:
+	cc ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../tahoe/genassym.c
+
+depend: assym.s
 	mkdep ${COPTS} ${CFILES} ioconf.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ../tahoe/genassym.c
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \

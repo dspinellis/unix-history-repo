@@ -91,15 +91,15 @@ trap.o:	Makefile
 # depend on maxusers
 assym.s: Makefile
 
-assym.s: ../sys/param.h machine/pte.h ../sys/buf.h ../sys/vmparam.h \
-    ../sys/vmmeter.h ../ufs/dir.h ../sys/cmap.h ../sys/map.h \
-    ../vaxuba/ubavar.h ../vaxuba/ubareg.h ../sys/proc.h ../sys/msgbuf.h \
-    ../sys/text.h ../sys/user.h ../vax/rpb.h machine/vmparam.h
-	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
-	./a.out >assym.s; rm -f a.out
+assym.s: genassym
+	./genassym >assym.s
 
-depend:	assym.s
+genassym:
+	cc ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../vax/genassym.c
+
+depend: assym.s
 	mkdep ${COPTS} ${CFILES} ioconf.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
