@@ -9,8 +9,7 @@
 
 #include "include.h"
 
-char		GAMES[] =	"Game_List",
-		LOG[] =		"ATC_scores";
+char		GAMES[] =	"Game_List";
 
 int		clock, safe_planes, start_time, test_mode;
 

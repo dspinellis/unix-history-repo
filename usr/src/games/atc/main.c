@@ -8,6 +8,7 @@
  */
 
 #include "include.h"
+#include "pathnames.h"
 
 main(ac, av)
 	char	*av[];
@@ -81,7 +82,7 @@ main(ac, av)
 	if (f_printpath) {
 		char	buf[100];
 
-		strcpy(buf, SPECIAL_DIR);
+		strcpy(buf, _PATH_GAMES);
 		buf[strlen(buf) - 1] = '\0';
 		puts(buf);
 	}
@@ -199,7 +200,7 @@ default_game()
 	static char	file[256];
 	char		line[256], games[256];
 
-	strcpy(games, SPECIAL_DIR);
+	strcpy(games, _PATH_GAMES);
 	strcat(games, GAMES);
 
 	if ((fp = fopen(games, "r")) == NULL) {
@@ -212,7 +213,7 @@ default_game()
 	}
 	fclose(fp);
 	line[strlen(line) - 1] = '\0';
-	strcpy(file, SPECIAL_DIR);
+	strcpy(file, _PATH_GAMES);
 	strcat(file, line);
 	return (file);
 }
@@ -225,7 +226,7 @@ okay_game(s)
 	static char	file[256];
 	char		*ret = NULL, line[256], games[256];
 
-	strcpy(games, SPECIAL_DIR);
+	strcpy(games, _PATH_GAMES);
 	strcat(games, GAMES);
 
 	if ((fp = fopen(games, "r")) == NULL) {
@@ -235,7 +236,7 @@ okay_game(s)
 	while (fgets(line, sizeof(line), fp) != NULL) {
 		line[strlen(line) - 1] = '\0';
 		if (strcmp(s, line) == 0) {
-			strcpy(file, SPECIAL_DIR);
+			strcpy(file, _PATH_GAMES);
 			strcat(file, line);
 			ret = file;
 			break;
@@ -258,7 +259,7 @@ list_games()
 	char		line[256], games[256];
 	int		num_games = 0;
 
-	strcpy(games, SPECIAL_DIR);
+	strcpy(games, _PATH_GAMES);
 	strcat(games, GAMES);
 
 	if ((fp = fopen(games, "r")) == NULL) {

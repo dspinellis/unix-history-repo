@@ -8,10 +8,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
+#include "pathnames.h"
 
 compar(a, b)
 	SCORE	*a, *b;
@@ -56,19 +57,16 @@ log_score(list_em)
 	register int	i, fd, num_scores = 0, good, changed = 0, found = 0;
 	struct passwd	*pw;
 	FILE		*fp;
-	char		*cp, logstr[BUFSIZ], *index(), *rindex();
+	char		*cp, *index(), *rindex();
 	SCORE		score[100], thisscore;
 #ifdef SYSV
 	struct utsname	name;
 #endif
 
-	strcpy(logstr, SPECIAL_DIR);
-	strcat(logstr, LOG);
-
 	umask(0);
-	fd = open(logstr, O_CREAT|O_RDWR, 0644);
+	fd = open(_PATH_SCORE, O_CREAT|O_RDWR, 0644);
 	if (fd < 0) {
-		perror(logstr);
+		perror(_PATH_SCORE);
 		return (-1);
 	}
 	/*
@@ -77,7 +75,7 @@ log_score(list_em)
 	 */
 	fp = fdopen(fd, "r+");
 	if (fp == NULL) {
-		perror(logstr);
+		perror(_PATH_SCORE);
 		return (-1);
 	}
 #ifdef BSD

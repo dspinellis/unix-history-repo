@@ -7,16 +7,6 @@
  * For more info on this and all of my stuff, mail edjames@berkeley.edu.
  */
 
-#include "pathnames.h"
-
-/*
- * SPECIAL_DIR - Where the special files are kept.
- * Change this to whatever you want.  Be sure to have to path end 
- * with a '/', like "/usr/games/lib/atc/".
- */
-
-char	SPECIAL_DIR[] = _PATH_SPECIAL_DIR;
-
 /*
  * NUM_SCORES - Number of scores that are kept track of.
  * Keep this greater than 0, but less than 100.

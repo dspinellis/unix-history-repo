@@ -7,7 +7,7 @@
  * For more info on this and all of my stuff, mail edjames@berkeley.edu.
  */
 
-extern char		GAMES[], LOG[], *file;
+extern char		GAMES[], *file;
 
 extern int		clock, safe_planes, start_time, test_mode;
 
