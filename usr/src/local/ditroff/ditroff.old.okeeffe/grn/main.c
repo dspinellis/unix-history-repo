@@ -1,4 +1,4 @@
-/*	main.c	1.3	(Berkeley) 83/07/22
+/*	main.c	1.4	(Berkeley) 83/08/12
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -18,7 +18,7 @@
  *		is set to.
  *
  *	-n #	set narrow line thickness to # pixels.  Also for -m (medium)
- *		and -t (thick).
+ *		and -t (thick).  Defaults are 1, 3, and 5 pixels.
  *
  *	-x #	scale the picture by x (integer or decimal).
  *
@@ -29,10 +29,11 @@
  */
 
 
+#include <ctype.h>
 #include "gprint.h"
 #include "dev.h"
 
-extern char *malloc();
+extern char *calloc();
 extern char *rindex();
 
 /* database imports */
@@ -60,7 +61,7 @@ char *doinput();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.3	83/07/22";
+char	SccsId[] = "main.c	1.4	83/08/12";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -100,6 +101,7 @@ int	thick[STYLES];	/* thicknesses set by defaults, then by commands */
 char	*tfont[FONTS];	/* fonts originally set to defstring values, then */
 char 	*tsize[SIZES];	/*    optionally changed by commands inside grn */
 
+double	xscale;		/* scaling factor from individual pictures */
 double	troffscale;	/* scaling factor at output time */ 
 double	width;		/* user-request maximum width for picture (in inches) */
 double	height;		/* user-request height */
@@ -165,22 +167,22 @@ char **argv;
 		case 'r':	/* select Roman font */
 			if (*++arg == '\0' && argc--)
 			    arg = *argv++;
-			strcpy(string[0], arg);
+			strcpy(defstring[0], arg);
 			break;
 		case 'i':	/* select italics font */
 			if (*++arg == '\0' && argc--)
 			    arg = *argv++;
-			strcpy(string[1], arg);
+			strcpy(defstring[1], arg);
 			break;
 		case 'b':	/* select bold font */
 			if (*++arg == '\0' && argc--)
 			    arg = *argv++;
-			strcpy(string[2], arg);
+			strcpy(defstring[2], arg);
 			break;
 		case 's':	/* select special font */
 			if (*++arg == '\0' && argc--)
 			    arg = *argv++;
-			strcpy(string[3], arg);
+			strcpy(defstring[3], arg);
 			break;
 		case 'n':	/* select narrow brush width */
 			if (*++arg == '\0' && argc--)
@@ -352,6 +354,7 @@ initpic()
     leftpoint = BIG;		/* by "savebounds" on input */
     rightpoint = 0.0;
 
+    xscale = scale;		/* default scale of individual pictures */
     width = 0.0;		/* size specifications input by user */
     height = 0.0;
 
@@ -382,7 +385,8 @@ int baseline;
 	POINT ptr;
 
 
-	strcpy (GScommand, inputline);		/* save ".GS" line for later */
+	initpic();			/* set defaults, ranges, etc. */
+	strcpy (GScommand, inputline);	/* save ".GS" line for later */
 	do {
 	    done = (doinput(fp) == NULL);		     /* test for EOF */
 	    done |= (*c1 == '.' && *c2 == 'G' && *c3 == 'E');	 /*  and .GE */
@@ -402,8 +406,6 @@ int baseline;
 			return;
 		    }
 		}
-		initpic();		/* set defaults, ranges, etc. */
-
 		PICTURE = DBRead(gfp);			/* read picture file */
 		fclose(gfp);
 		if (DBNullelt(PICTURE))
@@ -416,7 +418,7 @@ int baseline;
 		troffscale = (width != 0.0)  ?
 			SCREENtoINCH * (rightpoint - leftpoint) / width  : BIG;
 		if (temp == BIG && troffscale == BIG) {
-		    troffscale = scale;
+		    troffscale = xscale;
 		} else {
 		    if (temp < troffscale) troffscale = temp;
 		}
@@ -433,10 +435,10 @@ int baseline;
 					/*   and break (to make sure picture */
 					/*   starts on left), and put out the */
 					/*   user's ".GS" line. */
-		printf(".nr g1 \\n(.f\n.nr g2 \\n(.s\n");
-		printf(".nr g3 \\n(.v\n.nr g4 \\n(.u\n");
 		printf(".nr gw %d\n.nr gh %d\n", xright-xleft, ybottom-ytop);
-		printf("%s.br\n.nf\n.vs 0", GScommand);
+		printf(".br\n%s", GScommand);
+		printf(".nr g1 \\n(.f\n.nr g2 \\n(.s\n");
+		printf(".nr g3 \\n(.v\n.nr g4 \\n(.u\n.nf\n.vs 0");
 
 		lastx = xleft;		/* note where we are, (upper left */
 		lastyline = lasty = ytop;	/* corner of the picture) */
@@ -454,8 +456,8 @@ int baseline;
 					/* then restore everything to the way */
 					/* it was before the .GS */
 		printf("\\D't %du'\\D's %du'\n", DEFTHICK, DEFSTYLE);
-		printf("%s.ft \\n(g1\n.ps \\n(g2\n", inputline);
-		printf(".vs \\n(g3u\n.if \\n(g4 .fi\n");
+		printf(".ft \\n(g1\n.ps \\n(g2\n");
+		printf(".vs \\n(g3u\n.if \\n(g4 .fi\n%s", inputline);
 	    } else {
 		interpret(inputline);	/* take commands from the input file */
 	    }
@@ -493,14 +495,90 @@ float y;
  | Routine:	interpret (character_string)
  |
  | Results:	commands are taken from the input string and performed.
- |		the commands are separated by the endofline or a semicolon.
+ |		Commands are separated by the endofline, and are of the
+ |		format:
+ |			string1 string2
+ |
+ |		where string1 is the command and string2 is the argument.
  |
  | Side Efct:	font and size strings, plus the gremlin file name and the
  |		width and height variables are set by this routine.
  *----------------------------------------------------------------------------*/
 
 interpret (line)
-register char *line;
+char *line;
 {
-    sscanf(line, "%s", gremlinfile);
+    char str1[MAXINLINE];
+    char str2[MAXINLINE];
+    register char *chr;
+
+    sscanf(line, "%s%s", &str1[0], &str2[0]);
+    for (chr = &str1[0]; *chr; chr++)		/* convert command to */
+	if(isupper(*chr) *chr = tolower(*chr);		/* lower case */
+    switch (str1[0]) {
+
+	case '1':
+	case '2':	/* font sizes */
+	case '3':
+	case '4':
+	    tsize[str1[0] - '1'] = calloc(strlen(str2) + 1);
+	    strcpy(tsize[str1[0] - '1'], str2);
+	    break;
+
+	case 'r':	/* roman */
+	    tfont[0] = calloc(strlen(str2) + 1);
+	    strcpy(tfont[0], str2);
+	    break;
+
+	case 'i':	/* italics */
+	    tfont[1] = calloc(strlen(str2) + 1);
+	    strcpy(tfont[1], str2);
+	    break;
+
+	case 'b':	/* bold */
+	    tfont[2] = calloc(strlen(str2) + 1);
+	    strcpy(tfont[2], str2);
+	    break;
+
+	case 's':	/* special */
+	    if (str1[1] == 'c') goto scalecommand;
+	    tfont[3] = calloc(strlen(str2) + 1);
+	    strcpy(tfont[3], str2);
+	    break;
+
+	case 't':	/* thick */
+	    thick[2] = atoi(str2);
+	    break;
+
+	case 'm':	/* medium */
+	    thick[5] = atoi(str2);
+	    break;
+
+	case 'n':	/* narrow */
+	    thick[0] = thick[1] = thick[3] = thick[4] = atoi(str2);
+	    break;
+
+	case 'x':	/* x */
+	scalecommand:	/* scale */
+	    xscale *= atof(str2);
+	    if (xscale < 0.0) xscale = -xscale;
+	    break;
+
+	case 'f':	/* file */
+	    strcpy(gremlinfile, str2);
+	    break;
+
+	case 'w':	/* width */
+	    width = atof(str2);
+	    if (width < 0.0) width = -width;
+	    break;
+
+	case 'h':	/* height */
+	    height = atof(str2);
+	    if (height < 0.0) height = -height;
+	    break;
+
+	default: 
+	    break;
+    };
 }
