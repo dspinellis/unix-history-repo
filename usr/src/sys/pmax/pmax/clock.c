@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.3 (Berkeley) %G%
+ *	@(#)clock.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,9 +34,10 @@
  */
 
 /*
- * Start the real-time clock.
+ * Start the real-time and statistics clocks. Leave stathz 0 since there
+ * are no other timers available.
  */
-startrtclock()
+cpu_initclocks()
 {
 	register volatile struct chiptime *c;
 	extern int tickadj;
@@ -47,6 +48,17 @@ startrtclock()
 	c = (volatile struct chiptime *)MACH_CLOCK_ADDR;
 	c->rega = REGA_TIME_BASE | SELECTED_RATE;
 	c->regb = REGB_PER_INT_ENA | REGB_DATA_MODE | REGB_HOURS_FORMAT;
+}
+
+/*
+ * We assume newhz is either stathz or profhz, and that neither will
+ * change after being set up above.  Could recalculate intervals here
+ * but that would be a drag.
+ */
+void
+setstatclockrate(newhz)
+	int newhz;
+{
 }
 
 /*
