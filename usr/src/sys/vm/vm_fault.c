@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_fault.c	7.7 (Berkeley) %G%
+ *	@(#)vm_fault.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -86,7 +86,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_page_t		old_m;
 	vm_object_t		next_object;
 
-	vm_stat.faults++;		/* needs lock XXX */
+	cnt.v_vm_faults++;		/* needs lock XXX */
 /*
  *	Recovery actions
  */
@@ -278,15 +278,15 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				queue_remove(&vm_page_queue_inactive, m,
 						vm_page_t, pageq);
 				m->inactive = FALSE;
-				vm_stat.inactive_count--;
-				vm_stat.reactivations++;
+				cnt.v_inactive_count--;
+				cnt.v_reactivated++;
 			} 
 
 			if (m->active) {
 				queue_remove(&vm_page_queue_active, m,
 						vm_page_t, pageq);
 				m->active = FALSE;
-				vm_stat.active_count--;
+				cnt.v_active_count--;
 			}
 			vm_page_unlock_queues();
 
@@ -347,7 +347,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				 */
 				m = vm_page_lookup(object, offset);
 
-				vm_stat.pageins++;
+				cnt.v_pageins++;
 				m->fake = FALSE;
 				pmap_clear_modify(VM_PAGE_TO_PHYS(m));
 				break;
@@ -418,7 +418,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			first_m = NULL;
 
 			vm_page_zero_fill(m);
-			vm_stat.zero_fill_count++;
+			cnt.v_zfod++;
 			m->fake = FALSE;
 			m->absent = FALSE;
 			break;
@@ -513,7 +513,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	Only use the new page below...
 			 */
 
-			vm_stat.cow_faults++;
+			cnt.v_cow_faults++;
 			m = first_m;
 			object = first_object;
 			offset = first_offset;

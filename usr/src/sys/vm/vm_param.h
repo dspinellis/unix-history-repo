@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_param.h	7.3 (Berkeley) %G%
+ *	@(#)vm_param.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -67,7 +67,7 @@ typedef int	boolean_t;
  *	or PAGE_SHIFT.  The fact they are variables is hidden here so that
  *	we can easily make them constant if we so desire.
  */
-#define	PAGE_SIZE	vm_stat.page_size	/* size of page */
+#define	PAGE_SIZE	cnt.v_page_size		/* size of page */
 #define PAGE_SHIFT	page_shift		/* bits to shift for pages */
 
 /* 
@@ -110,7 +110,7 @@ typedef int	boolean_t;
 #endif	KERNEL
 
 #ifdef	KERNEL
-extern vm_size_t	page_mask;	/* vm_stat.page_size - 1; mask for
+extern vm_size_t	page_mask;	/* cnt.v_page_size - 1; mask for
 						   offset within page */
 extern int		page_shift;	/* shift to use for page size */
 
