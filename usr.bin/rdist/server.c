@@ -760,7 +760,7 @@ recvf(cmd, type)
 			errno = ENOTDIR;
 		} else if (errno == ENOENT && (mkdir(target, mode) == 0 ||
 		    chkparent(target) == 0 && mkdir(target, mode) == 0)) {
-			if (chog(target, owner, group, mode) == 0)
+			if (fchog(-1, target, owner, group, mode) == 0)
 				ack();
 			return;
 		}
@@ -819,6 +819,9 @@ recvf(cmd, type)
 		goto fixup;
 	}
 
+	if (stat(target, &stb) != 0)
+		stb.st_atime = 0;
+
 	if ((f = creat(new, mode)) < 0) {
 		if (errno != ENOENT || chkparent(new) < 0 ||
 		    (f = creat(new, mode)) < 0)
@@ -852,14 +855,15 @@ recvf(cmd, type)
 			wrerr++;
 		}
 	}
-	(void) close(f);
 	if (response() < 0) {
 		err();
+		(void) close(f);
 		(void) unlink(new);
 		return;
 	}
 	if (wrerr) {
 		error("%s:%s: %s\n", host, new, strerror(errno));
+		(void) close(f);
 		(void) unlink(new);
 		return;
 	}
@@ -872,6 +876,7 @@ recvf(cmd, type)
 		if ((f2 = fopen(new, "r")) == NULL) {
 		badn:
 			error("%s:%s: %s\n", host, new, strerror(errno));
+			(void) close(f);
 			(void) unlink(new);
 			return;
 		}
@@ -879,6 +884,7 @@ recvf(cmd, type)
 			if (c == EOF) {
 				(void) fclose(f1);
 				(void) fclose(f2);
+				(void) close(f);
 				(void) unlink(new);
 				ack();
 				return;
@@ -887,6 +893,7 @@ recvf(cmd, type)
 		(void) fclose(f2);
 		if (opts & VERIFY) {
 		differ:
+			(void) close(f);
 			(void) unlink(new);
 			buf[0] = '\0';
 			(void) sprintf(buf + 1, "need to update: %s\n",target);
@@ -895,20 +902,13 @@ recvf(cmd, type)
 		}
 	}
 
-	/*
-	 * Set last modified time
-	 */
-	tvp[0].tv_sec = stb.st_atime;	/* old atime from target */
-	tvp[0].tv_usec = 0;
-	tvp[1].tv_sec = mtime;
-	tvp[1].tv_usec = 0;
-	if (utimes(new, tvp) < 0) {
-		note("%s:utimes failed %s: %s\n", host, new, strerror(errno));
-	}
-	if (chog(new, owner, group, mode) < 0) {
+	if (fchog(f, new, owner, group, mode) < 0) {
+		(void) close(f);
 		(void) unlink(new);
 		return;
 	}
+	(void) close(f);
+
 fixup:
 	if (rename(new, target) < 0) {
 badt:
@@ -916,6 +916,20 @@ badt:
 		(void) unlink(new);
 		return;
 	}
+
+	if (type == S_IFREG) {
+		/*
+		 * Set last modified time
+		 */
+		tvp[0].tv_sec = stb.st_atime;   /* old atime from target */
+		tvp[0].tv_usec = 0;
+		tvp[1].tv_sec = mtime;
+		tvp[1].tv_usec = 0;
+		if (utimes(target, tvp) < 0) {
+			note("%s:utimes failed %s: %s\n", host, target, strerror(errno));
+		}
+	}
+
 	if (opts & COMPARE) {
 		buf[0] = '\0';
 		(void) sprintf(buf + 1, "updated %s\n", target);
@@ -1011,12 +1025,12 @@ chkparent(name)
 /*
  * Change owner, group and mode of file.
  */
-chog(file, owner, group, mode)
+fchog(fd, file, owner, group, mode)
 	char *file, *owner, *group;
 	int mode;
 {
 	register int i;
-	int uid, gid;
+	int uid, gid, ret;
 	extern char user[];
 	extern int userid;
 
@@ -1032,6 +1046,9 @@ chog(file, owner, group, mode)
 					mode &= ~04000;
 					uid = 0;
 				}
+				else
+					note("%s:%s: unknown login name",
+						host, owner);
 			} else
 				uid = pw->pw_uid;
 		} else
@@ -1040,16 +1057,20 @@ chog(file, owner, group, mode)
 			gid = atoi(group + 1);
 			goto ok;
 		}
-	} else if ((mode & 04000) && strcmp(user, owner) != 0)
+	} else if ((mode & 04000) && strcmp(user, owner) != 0) {
+		note("%s:%s not owner, clearing setuid", host, user);
 		mode &= ~04000;
+	}
 	gid = -1;
 	if (gr == NULL || strcmp(group, gr->gr_name) != 0) {
 		if ((*group == ':' && (getgrgid(gid = atoi(group + 1)) == NULL))
 		   || ((gr = getgrnam(group)) == NULL)) {
 			if (mode & 02000) {
-				note("%s:%s: unknown group", host, group);
+				note("%s:%s: unknown group, clearing setgid", host, group);
 				mode &= ~02000;
 			}
+			else
+				note("%s:%s: unknown group", host, group);
 		} else
 			gid = gr->gr_gid;
 	} else
@@ -1058,15 +1079,37 @@ chog(file, owner, group, mode)
 		if (gr) for (i = 0; gr->gr_mem[i] != NULL; i++)
 			if (!(strcmp(user, gr->gr_mem[i])))
 				goto ok;
+		note("%s:%s not in group %s, clearing setgid", host, user, group);
 		mode &= ~02000;
 		gid = -1;
 	}
 ok:
-	if (chown(file, uid, gid) < 0 ||
-	    (mode & 07000) && chmod(file, mode) < 0) {
-		note("%s: chown or chmod failed: file %s:  %s",
-			     host, file, strerror(errno));
+	if (getuid() != 0)
+		uid = -1;
+	if (   (uid != -1 || gid != -1)
+	    && (   fd != -1 && fchown(fd, uid, gid) < 0
+		|| fd == -1 && chown(file, uid, gid) < 0
+	       )
+	   ) {
+		if (mode & 04000) {
+			note("%s:chown failed, clearing setuid", host);
+			mode &= ~04000;
+		}
+		if (mode & 02000) {
+			note("%s:chown failed, clearing setgid", host);
+			mode &= ~02000;
+		}
 	}
+	ret = 0;
+	if (mode & 07000) {
+		if (   fd != -1 && fchmod(fd, mode) < 0
+		    || fd == -1 && chmod(file, mode) < 0
+		   ) {
+			ret = -1;
+			note("%s:chmod failed: file %s:  %s",
+			    host, file, strerror(errno));
+		}
+  	}
 	return(0);
 }
 
