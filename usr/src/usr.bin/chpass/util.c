@@ -1,22 +1,12 @@
-/*
+/*-
  * Copyright (c) 1988 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,7 +14,7 @@ static char sccsid[] = "@(#)util.c	5.12 (Berkeley) %G%";
 #include <tzfile.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <ctype.h>
 #include "chpass.h"
 #include "pathnames.h"
@@ -116,6 +106,7 @@ print(fp, pw)
 {
 	register char *p;
 	int shellval;
+	char *bp;
 	char *getusershell(), *ok_shell(), *ttoa();
 
 	shellval = 1;
@@ -141,13 +132,14 @@ print(fp, pw)
 		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	else
 		shellval = 0;
-	p = strsep(pw->pw_gecos, ",");
+	bp = pw->pw_gecos;
+	p = strsep(&bp, ",");
 	(void)fprintf(fp, "Full Name: %s\n", p ? p : "");
-	p = strsep((char *)NULL, ",");
+	p = strsep(&bp, ",");
 	(void)fprintf(fp, "Location: %s\n", p ? p : "");
-	p = strsep((char *)NULL, ",");
+	p = strsep(&bp, ",");
 	(void)fprintf(fp, "Office Phone: %s\n", p ? p : "");
-	p = strsep((char *)NULL, ",");
+	p = strsep(&bp, ",");
 	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
 	return(shellval);
 }
