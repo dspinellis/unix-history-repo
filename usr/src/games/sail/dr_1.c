@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.7 84/01/27";
+static	char *sccsid = "@(#)dr_1.c	2.8 84/02/23";
 #endif
 
 #include "driver.h"
@@ -32,7 +32,7 @@ char **argv;
 		sp->file = (struct File *) calloc(1, sizeof (struct File));
 		if (sp == NULL) {
 			(void) printf("driver: OUT OF MEMORY\n");
-			exit(0);
+			exit(1);
 		}
 		sp->file->index = sp - SHIP(0);
 		sp->file->loadL = L_ROUND;
@@ -48,7 +48,10 @@ char **argv;
 	winddir = cc->winddir;
 	for (;;) {
 		sleep(7);
-		Sync();
+		if (Sync() < 0) {
+			sync_close(1);
+			exit(1);
+		}
 		next();
 		unfoul();
 		checkup();
@@ -60,7 +63,10 @@ char **argv;
 		resolve();
 		reload();
 		checksails();
-		Sync();
+		if (Sync() < 0) {
+			sync_close(1);
+			exit(1);
+		}
 	}
 }
 
@@ -418,6 +424,25 @@ next()
 		else
 			people = 0;
 	if (people <= 0 || windspeed == 7) {
+		register struct ship *s;
+		struct ship *bestship;
+		float net, best = 0.0;
+		foreachship(s) {
+			if (*s->file->captain)
+				continue;
+			net = (float)s->file->points / s->specs->pts;
+			if (net > best) {
+				best = net;
+				bestship = s;
+			}
+		}
+		if (best > 0.0) {
+			char *p = getenv("WOTD");
+			if (p == 0)
+				p = "Driver";
+			strcpy(bestship->file->captain, p);
+			log(bestship);
+		}
 		sync_close(1);
 		exit(0);
 	}
