@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -115,6 +115,10 @@ map_parseargs(map, ap)
 			map->map_mflags |= MF_MATCHONLY;
 			break;
 
+		  case 'A':
+			map->map_mflags |= MF_APPEND;
+			break;
+
 		  case 'a':
 			map->map_app = ++p;
 			break;
@@ -151,6 +155,15 @@ map_parseargs(map, ap)
 				}
 			}
 			break;
+#ifdef RESERVED_FOR_SUN
+		  case 'd':
+			map->map_mflags |= MF_DOMAIN_WIDE;
+			break;
+
+		  case 's':
+			/* info type */
+			break;
+#endif
 		}
 		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
@@ -588,7 +601,32 @@ ndbm_map_store(map, lhs, rhs)
 	stat = dbm_store((DBM *) map->map_db1, key, data, DBM_INSERT);
 	if (stat > 0)
 	{
-		usrerr("050 Warning: duplicate alias name %s", lhs);
+		if (!bitset(MF_APPEND, map->map_mflags))
+			usrerr("050 Warning: duplicate alias name %s", lhs);
+		else
+		{
+			static char *buf = NULL;
+			static int bufsiz = 0;
+			datum old;
+
+			old.dptr = ndbm_map_lookup(map, key.dptr, NULL);
+			if (old.dptr != NULL && *old.dptr != '\0')
+			{
+				old.dsize = strlen(old.dptr);
+				if (data.dsize + old.dsize + 2 > bufsiz)
+				{
+					if (buf != NULL)
+						(void) free(buf);
+					bufsiz = data.dsize + old.dsize + 2;
+					buf = xalloc(bufsiz);
+				}
+				sprintf(buf, "%s,%s", data.dptr, old.dptr);
+				data.dsize = data.dsize + old.dsize + 1;
+				data.dptr = buf;
+				if (tTd(38, 9))
+					printf("ndbm_map_store append=%s\n", data.dptr);
+			}
+		}
 		stat = dbm_store((DBM *) map->map_db1, key, data, DBM_REPLACE);
 	}
 	if (stat != 0)
@@ -923,7 +961,32 @@ db_map_store(map, lhs, rhs)
 	stat = db->put(db, &key, &data, R_NOOVERWRITE);
 	if (stat > 0)
 	{
-		usrerr("050 Warning: duplicate alias name %s", lhs);
+		if (!bitset(MF_APPEND, map->map_mflags))
+			usrerr("050 Warning: duplicate alias name %s", lhs);
+		else
+		{
+			static char *buf = NULL;
+			static int bufsiz = 0;
+			DBT old;
+
+			old.data = db_map_lookup(map, key.data, NULL, &stat);
+			if (old.data != NULL)
+			{
+				old.size = strlen(old.data);
+				if (data.size + old.size + 2 > bufsiz)
+				{
+					if (buf != NULL)
+						(void) free(buf);
+					bufsiz = data.size + old.size + 2;
+					buf = xalloc(bufsiz);
+				}
+				sprintf(buf, "%s,%s", data.data, old.data);
+				data.size = data.size + old.size + 1;
+				data.data = buf;
+				if (tTd(38, 9))
+					printf("db_map_store append=%s\n", data.data);
+			}
+		}
 		stat = db->put(db, &key, &data, 0);
 	}
 	if (stat != 0)
