@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)job.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)job.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -94,43 +94,6 @@ static char sccsid[] = "@(#)job.c	5.4 (Berkeley) %G%";
 extern int  errno;
 #include    "make.h"
 #include    "job.h"
-
-/*
- * Some systems define the fd_set we use, but not the macros to deal with it
- * (SunOS 3.5, e.g.)
- */
-#ifndef FD_SET
-
-# ifdef NEED_FD_SET
-/*
- * Then there are the systems that don't even define fd_set...
- */
-#  ifndef	FD_SETSIZE
-#  define	FD_SETSIZE	256
-#  endif
-#  ifndef NBBY
-#  define NBBY 8
-#  endif
-
-typedef long	fd_mask;
-#define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
-#ifndef howmany
-#define	howmany(x, y)	((unsigned int)(((x)+((y)-1)))/(unsigned int)(y))
-#endif
-
-typedef	struct fd_set {
-	fd_mask	fds_bits[howmany(FD_SETSIZE, NFDBITS)];
-} fd_set;
-
-# endif /* NEED_FD_SET */
-
-#define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
-#define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
-#define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
-
-#endif /* FD_SET */
-
 
 /*
  * error handling variables 

@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -70,12 +70,13 @@ static char sccsid[] = "@(#)arch.c	5.3 (Berkeley) %G%";
  *	Arch_Init 	    	Initialize this module.
  */
 
-#include    <stdio.h>
 #include    <sys/types.h>
 #include    <sys/stat.h>
 #include    <sys/time.h>
 #include    <ctype.h>
 #include    <ar.h>
+#include <ranlib.h>
+#include    <stdio.h>
 #include    "make.h"
 #include    "hash.h"
 
@@ -685,7 +686,7 @@ Arch_Touch (gn)
  *	None.
  *
  * Side Effects:
- *	Both the modification time of the library and of the LIBTOC
+ *	Both the modification time of the library and of the RANLIBMAG
  *	member are set to 'now'.
  *
  *-----------------------------------------------------------------------
@@ -698,7 +699,7 @@ Arch_TouchLib (gn)
     struct ar_hdr   arh;      	/* Header describing table of contents */
     struct timeval  times[2];	/* Times for utimes() call */
 
-    arch = ArchFindMember (gn->path, LIBTOC, &arh, "r+");
+    arch = ArchFindMember (gn->path, RANLIBMAG, &arh, "r+");
     sprintf(arh.ar_date, "%-12d", now);
 
     if (arch != (FILE *) NULL) {
@@ -866,7 +867,7 @@ Arch_FindLib (gn, path)
  *	    	  make began (i.e. it's been modified in the course
  *	    	  of the make, probably by archiving).
  *	    Its modification time doesn't agree with the modification
- *	    	  time of its LIBTOC member (i.e. its table of contents
+ *	    	  time of its RANLIBMAG member (i.e. its table of contents
  *	    	  is out-of-date).
  *
  *
@@ -892,13 +893,13 @@ Arch_LibOODate (gn)
 	struct ar_hdr  	*arhPtr;    /* Header for __.SYMDEF */
 	int 	  	modTimeTOC; /* The table-of-contents's mod time */
 
-	arhPtr = ArchStatMember (gn->path, LIBTOC, FALSE);
+	arhPtr = ArchStatMember (gn->path, RANLIBMAG, FALSE);
 
 	if (arhPtr != (struct ar_hdr *)NULL) {
 	    (void)sscanf (arhPtr->ar_date, "%12d", &modTimeTOC);
 
 	    if (DEBUG(ARCH) || DEBUG(MAKE)) {
-		printf("%s modified %s...", LIBTOC, Targ_FmtTime(modTimeTOC));
+		printf("%s modified %s...", RANLIBMAG, Targ_FmtTime(modTimeTOC));
 	    }
 	    oodate = (gn->mtime > modTimeTOC);
 	} else {

@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)config.h	5.4 (Berkeley) %G%
+ *	@(#)config.h	5.5 (Berkeley) %G%
  */
 
 #define	DEFSHELL	1			/* Bourne shell */
@@ -67,27 +67,6 @@
 /*#define DEF_OLD_VARS*/
 
 /*
- * NEED_FD_SET
- *	Define this if your system doesn't define the fd_set type for select
- *	masks in <sys/types.h>
- *
- * FD_SETSIZE
- *	Define this to be the maximum number of files a process can have
- *	open at once. It defaults to 256.
- *
- * NO_WAIT3
- *	Define this if your system doesn't support the non-blocking wait3
- *	system call of BSD UNIX. This is not implemented yet.
- *
- * NO_VFORK
- *	Define this if your system doesn't support (or you shouldn't use)
- *	the vfork system call found in BSD UNIX.
- *
- * LIBTOC
- *	This is the name by which the table of contents in a ranlib'ed
- *	library is known. Some systems have changed it from __.SYMDEF,
- *	for whatever reason.
- *
  * LIBSUFF
  *	Is the suffix used to denote libraries and is used by the Suff module
  *	to find the search path on which to seek any -l<xx> targets.
@@ -106,11 +85,6 @@
  *	If the POSIX standard for Make is to be followed. There are
  *	several areas that I dislike, hence this constant.
  */
-/*#define NEED_FD_SET*/
-/*#define FD_SETSIZE 32*/
-/*#define NO_WAIT3*/
-/*#define NO_VFORK*/
-#define LIBTOC	"__.SYMDEF"
-#define LIBSUFF	".a"
-#define RECHECK
+#define	LIBSUFF	".a"
+#define	RECHECK
 /*#define POSIX*/

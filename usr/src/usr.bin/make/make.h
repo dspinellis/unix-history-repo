@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.3 (Berkeley) %G%
+ *	@(#)make.h	5.4 (Berkeley) %G%
  */
 
 /*-
@@ -36,16 +36,6 @@
 #include "sprite.h"
 #include "lst.h"
 #include "config.h"
-
-#ifdef NO_VFORK
-#define vfork fork
-#else
-
-#ifdef sparc
-#include    <vfork.h>
-#endif
-
-#endif /* NO_VFORK */
 
 /*-
  * The structure for an individual graph node. Each node has several
