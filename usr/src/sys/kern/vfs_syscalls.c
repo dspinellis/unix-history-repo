@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.27 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.28 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1188,12 +1188,16 @@ fsync(scp)
 	struct a {
 		int	fd;
 	} *uap = (struct a *)scp->sc_ap;
+	register struct vnode *vp;
 	struct file *fp;
 	int error;
 
 	if (error = getvnode(scp->sc_ofile, uap->fd, &fp))
 		RETURN (error);
-	error = VOP_FSYNC((struct vnode *)fp->f_data, fp->f_flag, fp->f_cred);
+	vp = (struct vnode *)fp->f_data;
+	VOP_LOCK(vp);
+	error = VOP_FSYNC(vp, fp->f_flag, fp->f_cred, MNT_WAIT);
+	VOP_UNLOCK(vp);
 	RETURN (error);
 }
 
@@ -1356,6 +1360,7 @@ getdirentries(scp)
 		unsigned count;
 		long	*basep;
 	} *uap = (struct a *)scp->sc_ap;
+	register struct vnode *vp;
 	struct file *fp;
 	struct uio auio;
 	struct iovec aiov;
@@ -1366,6 +1371,9 @@ getdirentries(scp)
 		RETURN (error);
 	if ((fp->f_flag & FREAD) == 0)
 		RETURN (EBADF);
+	vp = (struct vnode *)fp->f_data;
+	if (vp->v_type != VDIR)
+		RETURN (EINVAL);
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->count;
 	auio.uio_iov = &aiov;
@@ -1373,12 +1381,14 @@ getdirentries(scp)
 	auio.uio_rw = UIO_READ;
 	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_resid = uap->count;
-	off = fp->f_offset;
-	if (error = VOP_READDIR((struct vnode *)fp->f_data, &auio,
-	    &(fp->f_offset), fp->f_cred))
+	VOP_LOCK(vp);
+	auio.uio_offset = off = fp->f_offset;
+	error = VOP_READDIR(vp, &auio, fp->f_cred);
+	fp->f_offset = auio.uio_offset;
+	VOP_UNLOCK(vp);
+	if (error)
 		RETURN (error);
-	error = copyout((caddr_t)&off, (caddr_t)uap->basep,
-		sizeof(long));
+	error = copyout((caddr_t)&off, (caddr_t)uap->basep, sizeof(long));
 	scp->sc_retval1 = uap->count - auio.uio_resid;
 	RETURN (error);
 }
