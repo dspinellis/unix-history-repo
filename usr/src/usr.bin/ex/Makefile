@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	7.35 (Berkeley) %G%
 
 # Things that can be turned off to save space:
 #	LISPCODE (-l flag, showmatch and lisp options)
@@ -23,6 +23,7 @@ BINMODE=1755
 DPADD=	${LIBTERMCAP}
 LDADD=	-ltermcap
 MAN1=	ex.0 vi.0
+MLINKS=	ex.1 edit.1 vi.1 view.1
 LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 	${BINDIR}/ex ${BINDIR}/edit
 
