@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<curses.h>
@@ -353,8 +353,9 @@ int		Mpos = 0;
 static int	Newpos = 0;
 
 /* VARARGS1 */
+void
 #if __STDC__
-msg(char *fmt, ...)
+msg(const char *fmt, ...)
 #else
 msg(fmt, va_alist)
 	char *fmt;
@@ -378,8 +379,9 @@ msg(fmt, va_alist)
  *	Add things to the current message
  */
 /* VARARGS1 */
+void
 #if __STDC__
-addmsg(char *fmt, ...)
+addmsg(const char *fmt, ...)
 #else
 addmsg(fmt, va_alist)
 	char *fmt;
