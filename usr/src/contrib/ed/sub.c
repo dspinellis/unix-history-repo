@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sub.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -46,16 +46,16 @@ s(inputt, errnum)
 	size_t l_offset = 0;
 #endif
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	l_sl = ss = getc(inputt);
 	if (l_first_pass_flag == 0)
@@ -175,7 +175,7 @@ bcg1:
 	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;
 bcg2:
-	current = start;
+	current = Start;
 	l_s_flag = 0;
 	do {
 		RE_match[0].rm_eo = 0;
@@ -297,7 +297,7 @@ bcg2:
 	} while (current != (End->below));
 
 	if (l_s_flag == 0) {
-		current = start;
+		current = Start;
 		strcpy(help_msg, "no matches found for substitution");
 		*errnum = -1;
 		ungetc('\n', inputt);
@@ -307,7 +307,7 @@ bcg2:
 	current = l_last;
 
 	if (l_print > 0) {
-		start = End = current;
+		Start = End = current;
 		ungetc(ss, inputt);
 		if (l_print == (l_print | (int) 1))
 			p(inputt, errnum, 0);

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)d.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)d.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ static void d_add __P((LINE *, LINE *));
 /*
  * This removes lines in the buffer from user access. The specified
  * lines are not really deleted yet(!) as they might be called back
- * by an undo. So the pointers from start, End, and neighbours are placed
+ * by an undo. So the pointers from Start, End, and neighbours are placed
  * in a stack for deletion later when no undo can be performed on these lines.
  * The lines in the buffer are freed then as well.
  */
@@ -42,17 +42,17 @@ d(inputt, errnum)
 {
 	LINE *l_temp1, *l_temp2;
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	if (join_flag == 0) {
 		if (rol(inputt, errnum))
@@ -64,42 +64,42 @@ d(inputt, errnum)
 	if ((u_set == 0) && (g_flag == 0))
 		u_clr_stk();	/* for undo */
 
-	if ((start == NULL) && (End == NULL)) {	/* nothing to do... */
+	if ((Start == NULL) && (End == NULL)) {	/* nothing to do... */
 		*errnum = 1;
 		return;
 	}
 
-	d_add(start, End);	/* for buffer clearing later(!) */
+	d_add(Start, End);	/* for buffer clearing later(!) */
 
 	/*
 	 * Now change & preserve the pointers in case of undo and then adjust
 	 * them.
 	 */
 	sigspecial++;
-	if (start == top) {
+	if (Start == top) {
 		top = End->below;
 		if (top != NULL) {
 			u_add_stk(&(top->above));
 			(top->above) = NULL;
 		}
 	} else {
-		l_temp1 = start->above;
+		l_temp1 = Start->above;
 		u_add_stk(&(l_temp1->below));
 		(l_temp1->below) = End->below;
 	}
 
 	if (End == bottom) {
-		bottom = start->above;
+		bottom = Start->above;
 		current = bottom;
 	} else {
 		l_temp2 = End->below;
 		u_add_stk(&(l_temp2->above));
-		(l_temp2->above) = start->above;
+		(l_temp2->above) = Start->above;
 		current = l_temp2;
 	}
 
 	/* To keep track of the marks. */
-	ku_chk(start, End, NULL);
+	ku_chk(Start, End, NULL);
 	change_flag = 1L;
 
 	*errnum = 1;

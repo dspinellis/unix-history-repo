@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input_lines.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)input_lines.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -46,20 +46,20 @@ input_lines(fp, errnum)
 	char *l_text2;
 
 	if (End_default)
-		start = current;
+		Start = current;
 	else
-		start = End;
-	start_default = End_default = 0;
+		Start = End;
+	Start_default = End_default = 0;
 
 	sigspecial++;
-	/* start == NULL means line 0 which is legal for this function only. */
-	nn_max_end = l_temp_line = start;
-	if (start == NULL) {
+	/* Start == NULL means line 0 which is legal for this function only. */
+	nn_max_end = l_temp_line = Start;
+	if (Start == NULL) {
 		l_temp1 = top;
 		u_add_stk(&(top->above));
 	} else {
-		u_add_stk(&(start->below));
-		l_temp1 = start->below;
+		u_add_stk(&(Start->below));
+		l_temp1 = Start->below;
 	}
 	sigspecial--;
 	if (sigint_flag && (!sigspecial))

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)p.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)p.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -38,14 +38,14 @@ p(inputt, errnum, flag)
 {
 	int l_ln=0;
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
-	start_default = End_default = 0;
+		if (Start_default)
+			Start = End;
+	Start_default = End_default = 0;
 
-	if (start == NULL) {
+	if (Start == NULL) {
 		strcpy(help_msg, "buffer empty");
 		*errnum = -1;
 		return;
@@ -54,8 +54,8 @@ p(inputt, errnum, flag)
 		return;
 
 	if (flag == 1)
-		l_ln = line_number(start);
-	current = start;
+		l_ln = line_number(Start);
+	current = Start;
 	for (;;) {
 		/* Print out the lines. */
 		if (current == NULL)

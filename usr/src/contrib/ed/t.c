@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)t.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)t.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -63,24 +63,24 @@ t(inputt, errnum)
 	if (rol(inputt, errnum))
 		return;
 
-	if (start_default && End_default)
-		start = End = current;
+	if (Start_default && End_default)
+		Start = End = current;
 	else
-		if (start_default)
-			start = End;
-	if (start == NULL) {
+		if (Start_default)
+			Start = End;
+	if (Start == NULL) {
 		strcpy(help_msg, "empty buffer");
 		*errnum = -1;
 		return;
 	}
-	start_default = End_default = 0;
+	Start_default = End_default = 0;
 
 	if (g_flag == 0)
 		u_clr_stk();
 
 	sigspecial++;
 
-	for (l_ptr = start; l_ptr != (End->below); l_ptr = (l_ptr->below)) {
+	for (l_ptr = Start; l_ptr != (End->below); l_ptr = (l_ptr->below)) {
 		get_line(l_ptr->handle, l_ptr->len);
 		if (sigint_flag && (!sigspecial))
 			break;
