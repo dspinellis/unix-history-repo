@@ -1,4 +1,4 @@
-/*	tty.c	4.21	82/01/30	*/
+/*	tty.c	4.22	82/03/15	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -376,6 +376,19 @@ caddr_t addr;
 			tp->t_state |= TS_NBIO;
 		else
 			tp->t_state &= ~TS_NBIO;
+		break;
+	}
+
+	case FIOASYNC: {
+		int async;
+		if (copyin(addr, (caddr_t)&async, sizeof (async))) {
+			u.u_error = EFAULT;
+			return(1);
+		}
+		if (async)
+			tp->t_state |= TS_ASYNC;
+		else
+			tp->t_state &= ~TS_ASYNC;
 		break;
 	}
 
