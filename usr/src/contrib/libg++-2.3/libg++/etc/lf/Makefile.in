@@ -1,0 +1,115 @@
+#
+#  Makefile for lf
+#
+#  If you move this makefile, update the variable below
+#  or else depend won't work.
+
+MAKEFILE	= Makefile
+
+srcdir = .
+
+prefix = /usr/local
+
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+
+datadir = $(prefix)/lib
+mandir = $(prefix)/man
+man1dir = $(mandir)/man1
+man2dir = $(mandir)/man2
+man3dir = $(mandir)/man3
+man4dir = $(mandir)/man4
+man5dir = $(mandir)/man5
+man6dir = $(mandir)/man6
+man7dir = $(mandir)/man7
+man8dir = $(mandir)/man8
+man9dir = $(mandir)/man9
+infodir = $(prefix)/info
+includedir = $(prefix)/include
+docdir = $(datadir)/doc
+
+SHELL = /bin/sh
+
+INSTALL = install -c
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_DATA = $(INSTALL)
+
+AR = `if [ -f ../../binutils/ar ] ; \
+	then echo ../../binutils/ar ; \
+	else echo ar ; fi`
+
+AR_FLAGS = qc
+RANLIB = `if [ -f ../../binutils/ranlib ] ; \
+	then echo ../../binutils/ranlib ; \
+	else echo ranlib ; fi`
+
+MAKEINFO = `if [ -f ../../texinfo/C/makeinfo ] ; \
+	then echo ../../texinfo/C/makeinfo ; \
+	else echo makeinfo ; fi`
+
+IO_DIR = iostream
+
+CC = `if [ -f ../../../gcc/gcc ] ; \
+	then echo ../../../gcc/gcc -B../../../gcc/ ; \
+	else echo cc ; fi`
+CXX = `if [ -f ../../../gcc/gcc ] ; \
+	then echo ../../../gcc/gcc -B../../../gcc/ ; \
+	else echo gcc ; fi`
+
+CFLAGS = -g
+CXXFLAGS = -g -O
+XTRAFLAGS = `if [ -f ../../../gcc/gcc ] ; \
+	then echo -I../../../gcc/include ; \
+	else echo ; fi`
+
+LIBS = ../../libg++.a
+WRAP_C_INCLUDES = -I$(srcdir)/../../g++-include
+
+#### host and target dependent Makefile fragments come in here.
+##
+
+.SUFFIXES: .o .cc
+
+.cc.o:
+	$(CXX) $(CXXFLAGS) $(NOSTDINC) -I. -I$(srcdir) -I../.. \
+	-I$(srcdir)/../../$(IO_DIR) -I$(srcdir)/../../src \
+	$(WRAP_C_INCLUDES) $(XTRAFLAGS) -c $<
+
+CFILES		= lf.cc entry.cc screen.cc option.cc \
+                  directory.cc sort.cc Dirent.cc
+HFILES		= entry.h screen.h option.h \
+                  directory.h Dirent.h
+OFILES		= lf.o entry.o screen.o option.o \
+                  directory.o sort.o Dirent.o
+PROGRAM		= lf
+DEPEND_SOURCES	= $(srcdir)/*.cc
+
+.PHONY: all
+all:
+
+$(PROGRAM): $(OFILES)
+	$(CXX) $(OFILES) -o $(PROGRAM) $(LIBS) -ltermcap
+
+check: lf
+	@true
+# lf dies on Irix.  Perhaps incompatible directory routines?
+#	./lf
+
+run_tests: check
+
+.PHONY: mostlyclean clean distclean realclean
+mostlyclean:
+	rm -f *.o \#* core lf
+clean: mostlyclean
+distclean: clean
+	rm -f *~ config.status Makefile
+realclean: distclean
+	rm -f depend
+
+force:
+
+# with the gnu make, this is done automatically.
+
+Makefile: $(srcdir)/Makefile.in $(host_makefile_frag) $(target_makefile_frag)
+	$(SHELL) ./config.status
