@@ -1,10 +1,23 @@
-.\"	@(#)dbx.ms	6.3 (Berkeley) %G%
+.\"	@(#)dbx.ms	6.4 (Berkeley) %G%
 .\"
 .\" modified by mark seiden in cosmetic ways.
 .\" examples VAXinated by Kevin Dunlap
 .\" dtbl | ditroff -ms
 .OH 'Debugging with dbx''PS1:11-%'
 .EH 'PS1:11-%''Debugging with dbx'
+.de BE
+.DS
+.ft CW
+.ps -1
+..
+.de EE
+.ft P
+.ps +1
+.DE
+..
+.de UL
+\f(CW\s-1\\$1\fP\s0
+..
 .TL
 Debugging with dbx
 .AU
@@ -97,8 +110,7 @@ which dereferences a NULL pointer.
 This is a legal operation on VAX/UNIX,
 but not on VAX/VMS or on MC68000-based UNIX systems, on one of
 which this example was run:
-.DS
-.ft CW
+.BE
 #include <stdio.h> 
 .sp.5
 #define LIMIT 5
@@ -122,20 +134,21 @@ int lim;
 	if (lim >= LIMIT)
 		*ip = lim;
 } 
-.ft P
-.DE
+.EE
 The program core dumps because of a
 segmentation violation or memory fault \(em
 on most machines it is illegal to assign to address zero.
 Once the program has produced a core dump,
 here's how you can find out why the program died:
 .DS
-% \f(CWdbx dumpcore\fP
+%\c
+.UL " dbx dumpcore"
 dbx version 3.17 of 4/24/86 15:04 (monet.Berkeley.EDU).
 Type 'help' for help.
 reading symbolic information ...
 [using memory image in core]
-(dbx) \f(CWwhere\fP
+(dbx)\c
+.UL " where"
 dumpcore.dumpcore(lim = 5), line 22 in "dumpcore.c"
 main(0x1, 0x7fffe904, 0x7fffe90c), line 11 in "dumpcore.c"
 .DE
@@ -153,7 +166,8 @@ procedure by invoking the
 .I list
 request as follows:
 .DS
-(dbx) \f(CWlist dumpcore\fP
+(dbx)\c
+.UL " list dumpcore"
    18   dumpcore(lim)           /* dereference NULL pointer */
    19   int lim;
    20   {
@@ -167,9 +181,11 @@ so we use the
 .I print
 request to retrieve the value of the pointer and what it points to:
 .DS
-(dbx) \f(CWprint *ip\fP
+(dbx)\c
+.UL " print *ip"
 reference through nil pointer
-(dbx) \f(CWprint ip\fP
+(dbx)\c
+.UL " print ip"
 (nil)
 .DE
 This tells us the program has dereferenced a null pointer.
@@ -177,7 +193,8 @@ It is possible to run the program again from inside the debugger.
 The first line tells you name of the running program,
 and successive lines give output from the program:
 .DS
-(dbx) \f(CWrun\fP
+(dbx)\c
+.UL " run"
 Goodbye world! (1)
 Goodbye world! (2)
 Goodbye world! (3)
@@ -186,7 +203,8 @@ Goodbye world! (5)
 .sp.5
 Bus error in dumpcore.dumpcore at line 22
    22		*ip = lim;
-(dbx) \f(CWquit\fP
+(dbx)\c
+.UL " quit"
 .DE
 In this example the program dies with a Bus error at line 22. 
 This method of running the program
@@ -239,26 +257,32 @@ This sample session shows a mixture of requests
 as we verify that the program fails when it tries to assign to
 .I *ip :
 .DS
-(dbx) \f(CWstop at 10 if (i == 5)\fP
+(dbx)\c
+.UL " stop at 10 if (i == 5)"
 [1] if i = 5 { stop } at 10
-(dbx) \f(CWrun\fP
+(dbx)\c
+.UL " run"
 Goodbye world! (1)
 Goodbye world! (2)
 Goodbye world! (3)
 Goodbye world! (4)
 [1] stopped in main at line 10
    10                   printf("Goodbye world! (%d)\en", i);
-(dbx) \f(CWnext\fP
+(dbx)\c
+.UL " next"
 Goodbye world! (5)
 stopped in main at line 11
    11                   dumpcore(i);
-(dbx) \f(CWstep\fP
+(dbx)\c
+.UL " step"
 stopped in dumpcore at line 21
    21           if (lim >= LIMIT)
-(dbx) \f(CWstep\fP
+(dbx)\c
+.UL " step"
 stopped in dumpcore at line 22
    22                   *ip = lim;
-(dbx) \f(CWstep\fP
+(dbx)\c
+.UL " step"
 Bus error in dumpcore.dumpcore at line 22
    22		*ip = lim;
 .DE
@@ -276,23 +300,29 @@ It is possible to set variables from inside
 The previous breakpoint session, for example,
 could have gone like this:
 .DS
-% \f(CWdbx dumpcore\fP
+%\c
+.UL " dbx dumpcore"
 dbx version 3.17 of 4/24/86 15:04 (monet.Berkeley.EDU).
 Type 'help' for help.
 reading symbolic information ...
 [using memory image in core]
-(dbx) \f(CWstop at 10\fP
+(dbx)\c
+.UL " stop at 10"
 [1] stop at 10
-(dbx) \f(CWrun\fP
+(dbx)\c
+.UL " run"
 Running: dumpcore 
 stopped in main at line 10
    10                   printf("Goodbye world! (%d)\en", i);
-(dbx) \f(CWassign i = 5\fP
-(dbx) \f(CWnext\fP
+(dbx)\c
+.UL " assign i = 5"
+(dbx)\c
+.UL " next"
 Goodbye world! (5)
 stopped in main at line 11
    11                   dumpcore(i);
-(dbx) \f(CWnext\fP
+(dbx)\c
+.UL " next"
 Bus error in dumpcore.dumpcore at line 22
    22		*ip = lim;
 .DE
@@ -361,7 +391,7 @@ cf s.
 _
 .T&
 l lfI
-lfCW l.
+lp-1fCW l.
 	execution and tracing
 _
 run	execute object file
@@ -376,7 +406,7 @@ step	execute the next source line, stepping into functions
 next	execute the next source line, even if it's a function
 .T&
 l lfI
-lfCW l.
+lp-1fCW l.
 _
 	displaying data
 _
@@ -387,7 +417,7 @@ whereis	print all symbols matching identifier
 assign	set the value of a variable
 .T&
 l lfI
-lfCW l.
+lp-1fCW l.
 _
 	function and procedure handling
 _
@@ -398,7 +428,7 @@ call	call the named function or procedure
 dump	display names and values of all local variables
 .T&
 l lfI
-lfCW l.
+lp-1fCW l.
 _
 	accessing source files and directories
 _
@@ -411,7 +441,7 @@ use	set directory list to search for source files
 ?...?	search up in file to match regular expression
 .T&
 l lfI
-lfCW l.
+lp-1fCW l.
 _
 	miscellaneous commands
 _
