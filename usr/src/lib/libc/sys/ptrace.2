@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ptrace.2	6.1 (Berkeley) %G%
+.\"	@(#)ptrace.2	6.2 (Berkeley) %G%
 .\"
 .TH PTRACE 2 ""
 .UC 4
@@ -75,7 +75,7 @@ If I and D space are separated (e.g. historically
 on a pdp-11), request PT_READ_I indicates I space,
 PT_READ_D D space.
 .I Addr
-must be even.
+must be even on some machines.
 The child must be stopped.
 The input
 .I data
@@ -87,7 +87,7 @@ of the system's per-process data area corresponding to
 .I addr
 is returned.
 .I Addr
-must be even and less than 512.
+must be even on some machines and less than 512.
 This space contains the registers and other information about
 the process;
 its layout corresponds to the
@@ -100,7 +100,7 @@ given
 .I data
 is written at the word in the process's address space corresponding to
 .I addr,
-which must be even.
+which must be even on some machines.
 No useful value is returned.
 If I and D space are separated, request PT_WRITE_I indicates I space, 
 PT_WRITE_D D space.
@@ -198,7 +198,7 @@ The specified process cannot be traced.
 wait(2), sigvec(2), adb(1)
 .SH BUGS
 .I Ptrace
-is unique and arcane; it should be replaced with a special file which
+is unique and arcane; it should be replaced with a special file that
 can be opened and read and written.  The control functions could then
 be implemented with
 .IR ioctl (2)
@@ -206,7 +206,7 @@ calls on this file.  This would be simpler to understand and have much
 higher performance.
 .PP
 The request PT_TRACE_ME call should be able to specify
-signals which are to be treated normally and not cause a stop.
+signals that are to be treated normally and not cause a stop.
 In this way, for example,
 programs with simulated floating point (which
 use \*(lqillegal instruction\*(rq signals at a very high rate)
