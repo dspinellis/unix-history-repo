@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_loop.c	7.13 (Berkeley) 4/26/91
- *	$Id: if_loop.c,v 1.2 1993/10/16 17:43:19 rgrimes Exp $
+ *	$Id: if_loop.c,v 1.3 1993/11/14 00:13:16 wollman Exp $
  */
 
 /*
@@ -83,9 +83,12 @@ static caddr_t lo_bpf;
 #endif /* reasonable MTU */
 
 struct	ifnet loif;
-int	looutput(), loioctl();
+int looutput(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
+int	loioctl(struct ifnet *, int, caddr_t);
+int lortrequest(int, struct rtentry *, struct sockaddr *);
 
-loattach()
+void
+loattach(void)
 {
 	register struct ifnet *ifp = &loif;
 
@@ -103,6 +106,7 @@ loattach()
 #endif
 }
 
+int
 looutput(ifp, m, dst, rt)
 	struct ifnet *ifp;
 	register struct mbuf *m;
@@ -183,18 +187,26 @@ looutput(ifp, m, dst, rt)
 }
 
 /* ARGSUSED */
+int
 lortrequest(cmd, rt, sa)
+int cmd;
 struct rtentry *rt;
 struct sockaddr *sa;
 {
-	if (rt)
+	if (rt) {
+#ifdef DEBUG
+		printf("lo0: lortrequest: setting route MTU to %u\n",
+		       LOMTU);
+#endif
 		rt->rt_rmx.rmx_mtu = LOMTU;
+	}
 }
 
 /*
  * Process an ioctl request.
  */
 /* ARGSUSED */
+int
 loioctl(ifp, cmd, data)
 	register struct ifnet *ifp;
 	int cmd;
