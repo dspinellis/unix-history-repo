@@ -25,10 +25,13 @@ MAN3+=	stdlib/abort.3 stdlib/abs.3 stdlib/alloca.3 stdlib/atexit.3 \
 	stdlib/calloc.3 stdlib/div.3 stdlib/exit.3 stdlib/free.3 \
 	stdlib/getenv.3 stdlib/getopt.3 stdlib/labs.3 stdlib/ldiv.3 \
 	stdlib/malloc.3 stdlib/memory.3 stdlib/qsort.3 stdlib/radixsort.3 \
-	stdlib/rand.3 stdlib/random.3 stdlib/realloc.3 \
+	stdlib/rand.3 stdlib/rand48.3 stdlib/random.3 stdlib/realloc.3 \
 	stdlib/strtod.3 stdlib/strtol.3 stdlib/strtoul.3 stdlib/system.3
 
 MLINKS+=getenv.3 setenv.3 getenv.3 unsetenv.3 getenv.3 putenv.3
 MLINKS+=qsort.3 heapsort.3
 MLINKS+=rand.3 srand.3
 MLINKS+=random.3 initstate.3 random.3 setstate.3 random.3 srandom.3
+MLINKS+=rand48.3 drand48.3 rand48.3 erand48.3 rand48.3 lrand48.3
+MLINKS+=rand48.3 mrand48.3 rand48.3 nrand48.3 rand48.3 jrand48.3
+MLINKS+=rand48.3 srand48.3 rand48.3 seed48.3 rand48.3 lcong48.3
