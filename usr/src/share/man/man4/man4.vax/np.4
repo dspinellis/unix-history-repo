@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)np.4	6.2 (Berkeley) %G%
+.\"	@(#)np.4	6.3 (Berkeley) %G%
 .\"
 .TH NP 4 ""
 .UC 5
@@ -61,7 +61,7 @@ run out of buffers before it finished the operation.
 This indicates a kernel failure rather than a device failure.
 .PP
 \fBNP100 unit %d not found!\fP.
-A failure occured during initialization, such that the unibus
+A failure occurred during initialization, such that the unibus
 address expected for the board was found to be bad.
 Probably indicates hardware problems with the board, as do the following:
 \fB
@@ -74,11 +74,11 @@ Status from CSR0: %x.\fP
 .fi
 .PP
 \fBPanic from NP100 unit %d!\\nPanic Message: %s\fP.
-An occurance on the board was deemed serious enough
+An occurrence on the board was deemed serious enough
 to have the vax print it out.  
 .PP
 \fBNP100 unit #%d available!\fP.
-The board was succesfully loaded and started.
+The board was successfully loaded and started.
 .PP
 \fBnp%d: Bad Req: %x.\fP.
 The board made a maintenance request to the vax that it did not
