@@ -76,7 +76,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)config.y	5.12 (Berkeley) %G%
+ *	@(#)config.y	5.13 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -151,29 +151,29 @@ Config_spec:
 	HZ NUMBER
 	      = { yyerror("HZ specification obsolete; delete"); } |
 	TIMEZONE NUMBER
-	      = { timezone = 60 * $2; check_tz(); } |
+	      = { zone = 60 * $2; check_tz(); } |
 	TIMEZONE NUMBER DST NUMBER
-	      = { timezone = 60 * $2; dst = $4; check_tz(); } |
+	      = { zone = 60 * $2; dst = $4; check_tz(); } |
 	TIMEZONE NUMBER DST
-	      = { timezone = 60 * $2; dst = 1; check_tz(); } |
+	      = { zone = 60 * $2; dst = 1; check_tz(); } |
 	TIMEZONE FPNUMBER
-	      = { timezone = $2; check_tz(); } |
+	      = { zone = $2; check_tz(); } |
 	TIMEZONE FPNUMBER DST NUMBER
-	      = { timezone = $2; dst = $4; check_tz(); } |
+	      = { zone = $2; dst = $4; check_tz(); } |
 	TIMEZONE FPNUMBER DST
-	      = { timezone = $2; dst = 1; check_tz(); } |
+	      = { zone = $2; dst = 1; check_tz(); } |
 	TIMEZONE MINUS NUMBER
-	      = { timezone = -60 * $3; check_tz(); } |
+	      = { zone = -60 * $3; check_tz(); } |
 	TIMEZONE MINUS NUMBER DST NUMBER
-	      = { timezone = -60 * $3; dst = $5; check_tz(); } |
+	      = { zone = -60 * $3; dst = $5; check_tz(); } |
 	TIMEZONE MINUS NUMBER DST
-	      = { timezone = -60 * $3; dst = 1; check_tz(); } |
+	      = { zone = -60 * $3; dst = 1; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER
-	      = { timezone = -$3; check_tz(); } |
+	      = { zone = -$3; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER DST NUMBER
-	      = { timezone = -$3; dst = $5; check_tz(); } |
+	      = { zone = -$3; dst = $5; check_tz(); } |
 	TIMEZONE MINUS FPNUMBER DST
-	      = { timezone = -$3; dst = 1; check_tz(); } |
+	      = { zone = -$3; dst = 1; check_tz(); } |
 	MAXUSERS NUMBER
 	      = { maxusers = $2; };
 
@@ -779,7 +779,7 @@ check_nexus(dev, num)
 
 check_tz()
 {
-	if (abs(timezone) > 12 * 60)
+	if (abs(zone) > 12 * 60)
 		yyerror("timezone is unreasonable");
 	else
 		hadtz = 1;
