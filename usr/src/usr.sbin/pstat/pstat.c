@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.28 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.29 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -78,6 +78,8 @@ struct nlist nl[] = {
 	{ "_dmf_tty" },
 #define	SNDMF	23
 	{ "_ndmf" },
+#define	SNPTY	24
+	{ "_npty" },
 	{ "" }
 };
 
@@ -376,19 +378,24 @@ doproc()
 
 dotty()
 {
-	struct tty dz_tty[128];
-	int ndz;
+	struct tty *tty;
+	int ntty, ttyspace = 128;
 	register struct tty *tp;
+	extern char *malloc(), *realloc();
 	static char mesg[] =
 	" # RAW CAN OUT     MODE     ADDR DEL COL     STATE  PGRP DISC\n";
 
+	if ((tty = (struct tty *)malloc(ttyspace * sizeof(*tty))) == 0) {
+		printf("pstat: out of memory\n");
+		return;
+	}
 	printf("1 cons\n");
 	if (kflg)
 		nl[SKL].n_value = clear(nl[SKL].n_value);
 	lseek(fc, (long)nl[SKL].n_value, 0);
-	read(fc, dz_tty, sizeof(dz_tty[0]));
+	read(fc, tty, sizeof(*tty));
 	printf(mesg);
-	ttyprt(&dz_tty[0], 0);
+	ttyprt(&tty[0], 0);
 	if (nl[SNDZ].n_type == 0)
 		goto dh;
 	if (kflg) {
@@ -396,13 +403,20 @@ dotty()
 		nl[SDZ].n_value = clear(nl[SDZ].n_value);
 	}
 	lseek(fc, (long)nl[SNDZ].n_value, 0);
-	read(fc, &ndz, sizeof(ndz));
-	printf("%d dz lines\n", ndz);
+	read(fc, &ntty, sizeof(ntty));
+	printf("%d dz lines\n", ntty);
+	if (ntty > ttyspace) {
+		ttyspace = ntty;
+		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
+			printf("pstat: out of memory\n");
+			return;
+		}
+	}
 	lseek(fc, (long)nl[SDZ].n_value, 0);
-	read(fc, dz_tty, ndz * sizeof (struct tty));
+	read(fc, tty, ntty * sizeof (struct tty));
 	printf(mesg);
-	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
-		ttyprt(tp, tp - dz_tty);
+	for (tp = tty; tp < &tty[ntty]; tp++)
+		ttyprt(tp, tp - tty);
 dh:
 	if (nl[SNDH].n_type == 0)
 		goto dmf;
@@ -411,13 +425,20 @@ dh:
 		nl[SDH].n_value = clear(nl[SDH].n_value);
 	}
 	lseek(fc, (long)nl[SNDH].n_value, 0);
-	read(fc, &ndz, sizeof(ndz));
-	printf("%d dh lines\n", ndz);
+	read(fc, &ntty, sizeof(ntty));
+	printf("%d dh lines\n", ntty);
+	if (ntty > ttyspace) {
+		ttyspace = ntty;
+		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
+			printf("pstat: out of memory\n");
+			return;
+		}
+	}
 	lseek(fc, (long)nl[SDH].n_value, 0);
-	read(fc, dz_tty, ndz * sizeof(struct tty));
+	read(fc, tty, ntty * sizeof(struct tty));
 	printf(mesg);
-	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
-		ttyprt(tp, tp - dz_tty);
+	for (tp = tty; tp < &tty[ntty]; tp++)
+		ttyprt(tp, tp - tty);
 dmf:
 	if (nl[SNDMF].n_type == 0)
 		goto pty;
@@ -426,25 +447,42 @@ dmf:
 		nl[SDMF].n_value = clear(nl[SDMF].n_value);
 	}
 	lseek(fc, (long)nl[SNDMF].n_value, 0);
-	read(fc, &ndz, sizeof(ndz));
-	printf("%d dmf lines\n", ndz);
+	read(fc, &ntty, sizeof(ntty));
+	printf("%d dmf lines\n", ntty);
+	if (ntty > ttyspace) {
+		ttyspace = ntty;
+		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
+			printf("pstat: out of memory\n");
+			return;
+		}
+	}
 	lseek(fc, (long)nl[SDMF].n_value, 0);
-	read(fc, dz_tty, ndz * sizeof(struct tty));
+	read(fc, tty, ntty * sizeof(struct tty));
 	printf(mesg);
-	for (tp = dz_tty; tp < &dz_tty[ndz]; tp++)
-		ttyprt(tp, tp - dz_tty);
+	for (tp = tty; tp < &tty[ntty]; tp++)
+		ttyprt(tp, tp - tty);
 pty:
 	if (nl[SPTY].n_type == 0)
 		return;
 	if (kflg) {
 		nl[SPTY].n_value = clear(nl[SPTY].n_value);
+		nl[SNPTY].n_value = clear(nl[SNPTY].n_value);
 	}
-	printf("32 pty lines\n");
+	lseek(fc, (long)nl[SNPTY].n_value, 0);
+	read(fc, &ntty, sizeof(ntty));
+	printf("%d pty lines\n", ntty);
+	if (ntty > ttyspace) {
+		ttyspace = ntty;
+		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
+			printf("pstat: out of memory\n");
+			return;
+		}
+	}
 	lseek(fc, (long)nl[SPTY].n_value, 0);
-	read(fc, dz_tty, 32*sizeof(struct tty));
+	read(fc, tty, ntty*sizeof(struct tty));
 	printf(mesg);
-	for (tp = dz_tty; tp < &dz_tty[32]; tp++)
-		ttyprt(tp, tp - dz_tty);
+	for (tp = tty; tp < &tty[ntty]; tp++)
+		ttyprt(tp, tp - tty);
 }
 
 ttyprt(atp, line)
@@ -739,7 +777,7 @@ doswap()
 		used += sb;
 		waste += sb - db;
 		if ((pp->p_flag&SLOAD) == 0)
-			used += vusize(pp);
+			used += ctod(vusize(pp));
 	}
 	if (totflg) {
 #define	btok(x)	((x) / (1024 / DEV_BSIZE))
