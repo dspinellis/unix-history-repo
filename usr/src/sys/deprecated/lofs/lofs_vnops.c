@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	7.3 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	7.4 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -852,7 +852,16 @@ lofs_lock(ap)
 	} */ *ap;
 {
 	int error;
-	struct vnode *targetvp = LOFSVP(ap->a_vp);
+	register struct vnode *vp = ap->a_vp;
+	struct vnode *targetvp;
+
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+	}
+	if (vp->v_tag == VT_NON)
+		return (ENOENT);
+	targetvp = LOFSVP(ap->a_vp);
 
 #ifdef LOFS_DIAGNOSTIC
 	printf("lofs_lock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
@@ -863,12 +872,8 @@ lofs_lock(ap)
 		printf("lofs_lock ->ap->a_vp = NIL\n");*/
 #endif
 
-	if (targetvp) {
-		error = VOP_LOCK(targetvp);
-		if (error)
-			return (error);
-	}
-
+	if (targetvp && (error = VOP_LOCK(targetvp)))
+		return (error);
 	return (0);
 }
 
