@@ -26,6 +26,9 @@
 #include "dkkmc.h"
 #include "dk.h"
 
+#define KMXSMALL	0
+#define KMXBIG		1
+
 #define	MONITOR	1
 
 #ifdef	MONITOR
@@ -295,10 +298,10 @@ int (*supfcn)() ;
 	 * Finish setting up dkp struct.
 	 */
 	if ((dkp->dk_state & DK_OPEN) ==0) {
-		dkcmd(KC_XINIT, chan, (caddr_t)0, (unsigned) 0, 0, 0) ;
+		dkcmd(KC_XINIT, chan, (caddr_t)0, (unsigned) 0, KMXBIG, 0);
 		flushall(dkp, 0);
 		dkp->dk_state |= DK_OPEN;
-		dkp->dk_state &= ~DK_LINGR;
+		dkp->dk_state &= ~(DK_LINGR | DK_RESET);
 		dkactive++ ;
 	}
 	dkp->dk_supfcn = supfcn ;
@@ -370,7 +373,7 @@ dk_free(chan)
 {
 	if (chan > dkdebug)
 		log(LOG_ERR, "dk_free %d\n", chan) ;
-	dkit[chan].dk_state &= ~DK_LINGR ;
+	dkit[chan].dk_state &= ~(DK_LINGR | DK_RESET);
 }
 
 
@@ -554,7 +557,7 @@ dk_cmd(chan, cmd)
 		 * and no send complete for flush
 		 */
 		s = splimp() ;
-		dkcmd(KC_XINIT, chan, (caddr_t)0, (unsigned) 0, 0, 0) ;
+		dkcmd(KC_XINIT, chan, (caddr_t)0, (unsigned) 0, KMXBIG, 0) ;
 		flushall(dkp, -1) ;
 		dkcmd(KC_CMD, chan, (caddr_t)0, (unsigned) DKC_FLUSH, 0, 0) ;
 		splx(s);
@@ -813,6 +816,7 @@ unsigned len ;
 	register struct dkkin *sp;
 	register s;
 	register next;
+	register loop;
 	struct timeval tv1, tv2;
 
 	M_ON(Mcmd) ;
@@ -822,16 +826,16 @@ unsigned len ;
 
 	s = splimp();
 	next = (csr4+1)%dkk_ncmd;
-	if (csr5 == next) {
-		struct dkchan *dkp;
-
-		csr0 = 3;
-		for (dkp = &dkit[1]; dkp < &dkit[dk_nchan]; dkp++)
-			if (dkp->dk_state & (DK_OPEN|DK_BUSY|DK_RCV))
-				dkp->dk_state |= DK_RESET;
-		splx(s);
-		log(LOG_ERR, "KMC RESET\n");
-		return;
+	loop = 0;
+	while (csr5 == next) {
+		/* give it a chance to empty the buffer */
+		if (loop++>10000000) {
+			log(LOG_ERR, "KMC DIED, restart\n");
+			dk_close(0);
+			splx(s);
+			return;
+		}
+		log(LOG_ERR, "KMC cmd overrun for %ld\n", loop);
 	}
 
 	sp = cmd4 ;

@@ -210,8 +210,7 @@ register caddr_t data;
 			    3*sizeof (short));
 			if (u.u_error) return u.u_error;
 			tp->dc_state |= DKSETUP ;
-			chanstat = dk_setup(minor(dev), cmd, tp->d_param[0],
-				tp->d_param[1], tp->d_param[2],
+			chanstat = dk_setup(minor(dev), cmd, 0, 0, 0,
 				(int) u.u_uid, dkidone, (caddr_t)tp) ;
 		}
 		if (chanstat) {

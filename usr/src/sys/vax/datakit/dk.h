@@ -12,30 +12,30 @@
  * Note: these take paramters, but the copyin-copyout must be handled in
  * the driver.
  */
-#define	DKIODIAL	_IO(k, 0) /* dial out */
-#define	DKIOCNEW	_IO(k, 1) /* offer a service */
-#define	DKIOCREQ	_IO(k, 2) /* request service (SU only) */
-#define	DKIOCSPL	_IO(s, 1) /* splice two circuits (SU only) */
-#define	DIOCSWAIT	_IO(s, 2) /* wait for splice to take place */
+#define	DKIODIAL	_IO('k', 0) /* dial out */
+#define	DKIOCNEW	_IO('k', 1) /* offer a service */
+#define	DKIOCREQ	_IO('k', 2) /* request service (SU only) */
+#define	DKIOCSPL	_IO('s', 1) /* splice two circuits (SU only) */
+#define	DIOCSWAIT	_IO('s', 2) /* wait for splice to take place */
 
 /*     driver control        */
 
-#define DIOCEXCL	_IO(d, 1)	/* exclusive use */
-#define DIOCNXCL	_IO(d, 2)	/* reset exclusive use */
-#define	DIOCRMODE	_IOW(d, 3, short) /* set receiver termination modes */
-#define	DIOCQQABO	_IOR(d, 4, struct dkqqabo) /* inquire status of last read */
-#define	DIOCXCTL	_IOW(d, 8, short) /* send ctl envelope on next write */
-#define DIOCFLUSH	_IO(d, 9)	/* flush output */
-#define DIOCSETK	_IOW(d, 10, short) /* debug info from kmc xmit&recv */
-#define	DIOCXWIN	_IOW(d, 11, struct diocxwin)	/* Set window size */
-#define	KIOCINIT	_IO(d, 12)	/* Reinitialize transmitter */
-#define	DIOCRESET	_IOW(d, 13, short)	/* Reset a channel */
-#define	DIOCCTYPE	_IOW(d, 14, struct diocctype)	/* Set conn type */
-#define	DIOCINFO	_IOR(d, 15, struct diocinfo)	/* Get chan #, max # */
-#define	DIOCSTAT	_IOWR(d, 16, int)	/* Check if channel open */
+#define DIOCEXCL	_IO('d', 1)	/* exclusive use */
+#define DIOCNXCL	_IO('d', 2)	/* reset exclusive use */
+#define	DIOCRMODE	_IOW('d', 3, short) /* set receiver termination modes */
+#define	DIOCQQABO	_IOR('d', 4, struct dkqqabo) /* inquire status of last read */
+#define	DIOCXCTL	_IOW('d', 8, short) /* send ctl envelope on next write */
+#define DIOCFLUSH	_IO('d', 9)	/* flush output */
+#define DIOCSETK	_IOW('d', 10, short) /* debug info from kmc xmit&recv */
+#define	DIOCXWIN	_IOW('d', 11, struct diocxwin)	/* Set window size */
+#define	KIOCINIT	_IO('d', 12)	/* Reinitialize transmitter */
+#define	DIOCRESET	_IOW('d', 13, short)	/* Reset a channel */
+#define	DIOCCTYPE	_IOW('d', 14, struct diocctype)	/* Set conn type */
+#define	DIOCINFO	_IOR('d', 15, struct diocinfo)	/* Get chan #, max # */
+#define	DIOCSTAT	_IOWR('d', 16, int)	/* Check if channel open */
 
 /*	special codes used by dkxstdio	*/
-#define	DXIOEXIT	_IOW(D, 'T', int)  /* process exit code */
+#define	DXIOEXIT	_IOW('D', 'T', int)  /* process exit code */
 
 /*
  *	structure returned from DIOCQQABO giving receive status
