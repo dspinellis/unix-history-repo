@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /* Many bug fixes are from Jim Guyton <guyton@rand-unix> */
@@ -15,7 +15,6 @@ static char sccsid[] = "@(#)tftp.c	5.4 (Berkeley) %G%";
  */
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
@@ -93,25 +92,6 @@ sendfile(fd, name, mode)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 send_data:
-		/* Now, we flush anything pending to be read */
-		/* This is to try to keep in synch between the two sides */
-		while (1) {
-			int i, j = 0;
-			char rbuf[PKTSIZE];
-
-			(void) ioctl(f, FIONREAD, &i);
-			if (i) {
-				j++;
-				fromlen = sizeof from;
-				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
-					(caddr_t)&from, &fromlen);
-			} else {
-				if (j && trace) {
-					printf("discarded %d packets\n", j);
-				}
-				break;
-			}
-		}
 		if (trace)
 			tpacket("sent", dp, size + 4);
 		n = sendto(f, dp, size + 4, 0, (caddr_t)&sin, sizeof (sin));
@@ -144,10 +124,21 @@ send_data:
 				goto abort;
 			}
 			if (ap->th_opcode == ACK) {
+				int j;
+
 				if (ap->th_block == block) {
 					break;
-				} else if (ap->th_block == (block-1)) {
-					goto send_data;	/* resend packet */
+				}
+				/* On an error, try to synchronize
+				 * both sides.
+				 */
+				j = synchnet(f);
+				if (j && trace) {
+					printf("discarded %d packets\n",
+							j);
+				}
+				if (ap->th_block == (block-1)) {
+					goto send_data;
 				}
 			}
 		}
@@ -199,25 +190,6 @@ recvfile(fd, name, mode)
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 send_ack:
-		/* Now, we flush anything pending to be read */
-		/* This is to try to keep in synch between the two sides */
-		while (1) {
-			int i, j = 0;
-			char rbuf[PKTSIZE];
-
-			(void) ioctl(f, FIONREAD, &i);
-			if (i) {
-				j++;
-				fromlen = sizeof from;
-				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
-					(caddr_t)&from, &fromlen);
-			} else {
-				if (j && trace) {
-					printf("discarded %d packets\n", j);
-				}
-				break;
-			}
-		}
 		if (trace)
 			tpacket("sent", ap, size);
 		if (sendto(f, ackbuf, size, 0, (caddr_t)&sin,
@@ -251,10 +223,21 @@ send_ack:
 				goto abort;
 			}
 			if (dp->th_opcode == DATA) {
-				if (dp->th_block == block)
+				int j;
+
+				if (dp->th_block == block) {
 					break;          /* have next packet */
-				if (dp->th_block == (block-1))
+				}
+				/* On an error, try to synchronize
+				 * both sides.
+				 */
+				j = synchnet(f);
+				if (j && trace) {
+					printf("discarded %d packets\n", j);
+				}
+				if (dp->th_block == (block-1)) {
 					goto send_ack;  /* resend ack */
+				}
 			}
 		}
 	/*      size = write(fd, dp->th_data, n - 4); */

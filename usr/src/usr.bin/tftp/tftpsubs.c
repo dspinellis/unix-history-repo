@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpsubs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpsubs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /* Simple minded read-ahead/write-behind subroutines for tftp user and
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)tftpsubs.c	5.1 (Berkeley) %G%";
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <arpa/tftp.h>
 #include <stdio.h>
@@ -203,3 +204,35 @@ skipit:
 }
 
 
+/* When an error has occurred, it is possible that the two sides
+ * are out of synch.  Ie: that what I think is the other side's
+ * response to packet N is really their response to packet N-1.
+ *
+ * So, to try to prevent that, we flush all the input queued up
+ * for us on the network connection on our host.
+ *
+ * We return the number of packets we flushed (mostly for reporting
+ * when trace is active).
+ */
+
+int
+synchnet(f)
+int	f;		/* socket to flush */
+{
+	int i, j = 0;
+	char rbuf[PKTSIZE];
+	struct sockaddr_in from;
+	int fromlen;
+
+	while (1) {
+		(void) ioctl(f, FIONREAD, &i);
+		if (i) {
+			j++;
+			fromlen = sizeof from;
+			(void) recvfrom(f, rbuf, sizeof (rbuf), 0,
+				(caddr_t)&from, &fromlen);
+		} else {
+			return(j);
+		}
+	}
+}
