@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.6 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -466,7 +466,7 @@ next:
 	/* 
 	 * Write out the duplicate super blocks
 	 */
-	for (cylno = 1; cylno < sblock.fs_ncg; cylno++)
+	for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
 		wtfs(fsbtodb(&sblock, cgsblock(&sblock, cylno)),
 		    SBSIZE, (char *)&sblock);
 #ifndef STANDALONE
