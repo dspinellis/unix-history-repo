@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dmesg.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dmesg.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -40,7 +40,7 @@ char **argv;
 {
 	int mem;
 	register char *mp, *omp, *mstart;
-	int samef, sawnl, ignore;
+	int samef, sawnl, ignore = 0;
 
 	if (argc>1 && argv[1][0] == '-') {
 		sflg++;
@@ -108,8 +108,6 @@ char **argv;
 done(s)
 char *s;
 {
-	register char *p, *q;
-
 	if (s) {
 		pdate();
 		printf(s);
