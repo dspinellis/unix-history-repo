@@ -1,4 +1,4 @@
-/*	user.h	4.19	82/09/08	*/
+/*	user.h	4.20	82/09/12	*/
 
 #include <sys/pcb.h>
 #include <sys/dmap.h>
@@ -18,7 +18,7 @@ struct	user {
 	char	u_comm[MAXNAMLEN + 1];
 
 /* syscall parameters, results and catches */
-	int	u_arg[5];		/* arguments to current system call */
+	int	u_arg[8];		/* arguments to current system call */
 	int	*u_ap;			/* pointer to arglist */
 	label_t	u_qsave;		/* for non-local gotos on interrupts */
 	char	u_error;		/* return error code */
@@ -55,9 +55,10 @@ struct	user {
 
 /* 1.3 - signal management */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
-	int	u_sigmask[NSIG];	/* signals to be blocked */
+	long	u_sigmask[NSIG];	/* signals to be blocked */
 	int	u_code;			/* ``code'' to trap */
 	caddr_t	u_sigstack;		/* 0 means no sigstack */
+	int	u_onsigstack;
 /* on SIGILL code passes compatibility mode fault address  */
 /* on SIGFPE code passes more specific kind of floating point fault */
 
@@ -82,7 +83,7 @@ struct	user {
 	short	u_acflag;
 
 /* 1.6 - resource controls */
-	struct	rlimit u_rlimit[5];
+	struct	rlimit u_rlimit[RLIM_NLIMITS];
 	struct	quota *u_quota;	/* user's quota structure */
 	int	u_qflags;		/* per process quota flags */
 
@@ -116,6 +117,7 @@ struct	user {
 	struct	direct u_dent;		/* current directory entry */
 	struct	inode *u_pdir;		/* inode of parent directory of dirp */
 /* END TRASH */
+	int	u_stack[1];
 };
 
 /* u_eosys values */
