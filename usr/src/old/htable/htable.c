@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -236,11 +236,9 @@ do_entry(keyword, addrlist, namelist, cputype, opsys, protos)
 		for (al = addrlist; al; al = al->addr_link) {
 			register int net;
 
-			if (al == connect_addr)
-				continue;
 			/* suppress duplicates -- not optimal */
 			net = inet_netof(al->addr_val);
-			if (gatewayto(net))
+			if (connectedto(net) || gatewayto(net))
 				continue;
 			printgateway(net, namelist->name_val, 1);
 			(void) savegateway(namelist, net, al->addr_val, 1);
