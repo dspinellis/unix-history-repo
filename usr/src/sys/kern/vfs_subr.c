@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.31 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -654,6 +654,15 @@ void vgone(vp)
 	struct vnode *vx;
 	long count;
 
+	/*
+	 * If a vgone (or vclean) is already in progress,
+	 * wait until it is done and return.
+	 */
+	if (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+		return;
+	}
 	/*
 	 * Clean out the filesystem specific data.
 	 */
