@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.45 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1036,6 +1036,16 @@ ufs_rename(fndp, tndp)
 		}
 		if (error = dirrewrite(dp, ip, tndp))
 			goto bad;
+		/*
+		 * If the target directory is in the same
+		 * directory as the source directory,
+		 * decrement the link count on the parent
+		 * of the target directory.
+		 */
+		 if (doingdirectory && !newparent) {
+			dp->i_nlink--;
+			dp->i_flag |= ICHG;
+		}
 		vput(ITOV(dp));
 		/*
 		 * Adjust the link count of the target to
