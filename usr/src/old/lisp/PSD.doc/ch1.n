@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch1.n	6.1 (Berkeley) %G%
+.\"	@(#)ch1.n	6.2 (Berkeley) %G%
 .\"
 .\" $Header: ch1.n,v 1.3 83/07/27 15:11:17 layer Exp $
 .Lc \s+2F\s-2RANZ\s0\ L\s-2ISP\s0\s-2 1
@@ -50,7 +50,7 @@ Some parts will be of interest primarily to those maintaining
 .Fr
 at their computer site.
 There is an additional document entitled
-\fIThe Franz Lisp System,\fp
+\fIThe Franz Lisp System,\fP
 by John Foderaro, which partially describes the system implementation.
 .Fr ,
 as delivered by Berkeley, includes all source code
