@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.32 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,9 +47,8 @@ long addrmask[] = { 0,
  */
 struct freelist {
 	long	spare0;
-	long	spare1;
 	short	type;
-	short	spare2;
+	long	spare1;
 	caddr_t	next;
 };
 #else /* !DIAGNOSTIC */
@@ -83,7 +82,6 @@ malloc(size, type, flags)
 	if (((unsigned long)type) > M_LAST)
 		panic("malloc - bogus type");
 #endif
-
 	indx = BUCKETINDX(size);
 	kbp = &bucket[indx];
 	s = splimp();
@@ -169,7 +167,10 @@ malloc(size, type, flags)
 #if BYTE_ORDER == LITTLE_ENDIAN
 	freep->type = WEIRD_ADDR;
 #endif
-	freep->next = (caddr_t)WEIRD_ADDR;
+	if (((long)(&freep->next)) & 0x2)
+		freep->next = (caddr_t)((WEIRD_ADDR >> 16)|(WEIRD_ADDR << 16));
+	else
+		freep->next = (caddr_t)WEIRD_ADDR;
 	end = (long *)&va[copysize];
 	for (lp = (long *)va; lp < end; lp++) {
 		if (*lp == WEIRD_ADDR)
