@@ -1,0 +1,28 @@
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../netinet/tcp_input.c
+/lib/c2 tcp_input.s | sed -f ../vax/asm.sed | as -o tcp_input.o
+rm -f tcp_input.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/sys_domain.c
+/lib/c2 sys_domain.s | sed -f ../vax/asm.sed | as -o sys_domain.o
+rm -f sys_domain.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/ufs_bmap.c
+/lib/c2 ufs_bmap.s | sed -f ../vax/asm.sed | as -o ufs_bmap.o
+rm -f ufs_bmap.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/ufs_inode.c
+/lib/c2 ufs_inode.s | sed -f ../vax/asm.sed | as -o ufs_inode.o
+rm -f ufs_inode.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/ufs_subr.c
+/lib/c2 ufs_subr.s | sed -f ../vax/asm.sed | as -o ufs_subr.o
+rm -f ufs_subr.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/ufs_syscalls.c
+/lib/c2 ufs_syscalls.s | sed -f ../vax/asm.sed | as -o ufs_syscalls.o
+rm -f ufs_syscalls.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../sys/uipc_usrreq.c
+/lib/c2 uipc_usrreq.s | sed -f ../vax/asm.sed | as -o uipc_usrreq.o
+rm -f uipc_usrreq.s
+cc -I. -c -S -DGENERIC -DMAXUSERS=8 -DVAX730 -DVAX750 -DVAX780 -DPUP -DINET -DKERNEL ../vaxmba/hp.c
+/lib/c2 -i hp.s | sed -f ../vax/asm.sed | as -o hp.o
+rm -f hp.s
+loading vmunix
+rearranging symbols
+text	data	bss	dec	hex
+215688	63964	69764	349416	554e8
