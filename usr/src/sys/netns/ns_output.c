@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.7 (Berkeley) %G%
+ *	@(#)ns_output.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -78,6 +78,7 @@ ns_output(m0, ro, flags)
 		 * The old route has gone away; try for a new one.
 		 */
 		rtfree(ro->ro_rt);
+		ro->ro_rt = NULL;
 		rtalloc(ro);
 	}
 	if (ro->ro_rt == 0 || (ifp = ro->ro_rt->rt_ifp) == 0) {
