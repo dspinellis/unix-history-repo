@@ -1,0 +1,65 @@
+# Last updated 19940220 phk@login.dkuug.dk
+# These are patches to  FreeBSD-current, to make it compile with gcc-2.5.8
+# Eventually these, or maybe better ones should make it into the FreeBSD
+# source tree.
+
+./gnu/usr.bin/cc/lib/tm.h
+	Define ____386BSD____ __FreeBSD__ if not so already.
+./gnu/usr.bin/rcs/lib/conf.h
+	make compilable by gcc2.5.8
+./sys/kern/subr_prf.c
+	volatile (func) removed.
+
+diff -U3 /usr/src-current/./gnu/usr.bin/cc/lib/tm.h ./gnu/usr.bin/cc/lib/tm.h
+--- /usr/src-current/./gnu/usr.bin/cc/lib/tm.h	Mon Jan 10 23:48:12 1994
++++ ./gnu/usr.bin/cc/lib/tm.h	Fri Feb 18 00:54:15 1994
+@@ -2,6 +2,13 @@
+ 
+ /* This is tested by i386gas.h.  */
+ #define YES_UNDERSCORES
++#ifndef ____386BSD____
++#define ____386BSD____
++#endif
++
++#ifndef __FreeBSD__
++#define __FreeBSD__
++#endif
+ 
+ #include "i386/gstabs.h"
+ 
+diff -U3 /usr/src-current/./gnu/usr.bin/rcs/lib/conf.h ./gnu/usr.bin/rcs/lib/conf.h
+--- /usr/src-current/./gnu/usr.bin/rcs/lib/conf.h	Fri Jun 18 06:22:13 1993
++++ ./gnu/usr.bin/rcs/lib/conf.h	Fri Feb 18 00:54:17 1994
+@@ -219,7 +219,7 @@
+ /* Adjust the following declarations as needed.  */
+ 
+ 
+-#if __GNUC__ && !__STRICT_ANSI__
++#if __GNUC__ && !__STRICT_ANSI__ && !__FreeBSD__
+ #	define exiting volatile /* GCC extension: function cannot return */
+ #else
+ #	define exiting
+diff -U3 /usr/src-current/./sys/kern/subr_prf.c ./sys/kern/subr_prf.c
+--- /usr/src-current/./sys/kern/subr_prf.c	Sun Dec 19 02:08:34 1993
++++ ./sys/kern/subr_prf.c	Fri Feb 18 00:54:23 1994
+@@ -80,7 +80,7 @@
+ static void  putchar __P((int ch, int flags, struct tty *tp));
+ static char *ksprintn __P((u_long num, int base, int *len));
+ void  kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
+-volatile void boot(int bootopt);
++void boot(int bootopt);
+ 
+ /*
+  * Variable panicstr contains argument to first call to panic; used
+@@ -100,10 +100,9 @@
+  * the disks as this often leads to recursive panics.
+  */
+ #ifdef __STDC__
+-volatile void
++void
+ panic(const char *msg)
+ #else
+-void
+ panic(msg)
+ 	char *msg;
+ #endif
