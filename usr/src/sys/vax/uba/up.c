@@ -1,4 +1,4 @@
-/*	up.c	4.37	81/04/09	*/
+/*	up.c	4.38	81/04/18	*/
 
 #include "up.h"
 #if NSC > 0
@@ -156,7 +156,7 @@ upattach(ui)
 	upaddr->upcs1 = 0;
 	upaddr->upcs2 = ui->ui_slave;
 	upaddr->uphr = UPHR_MAXTRAK;
-	if (upaddr->uphr == 10)
+	if (upaddr->uphr == 9)
 		ui->ui_type = 1;		/* fujitsu hack */
 	upaddr->upcs2 = UPCS2_CLR;
 /*
