@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -147,6 +147,7 @@ main(argc, argv)
 nextopt:
 		argc--, argv++;
 	}
+	(void) freopen("/dev/null", "w", stderr);
 	(void) signal(SIGPIPE, lostconn);
 	(void) signal(SIGCHLD, SIG_IGN);
 	if (signal(SIGURG, myoob) < 0) {
