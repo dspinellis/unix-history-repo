@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)buf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)buf.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -165,7 +165,7 @@ Buf_UngetByte (buf, byte)
 	int 	  numBytes = bp->inPtr - bp->outPtr;
 	Byte	  *newBuf;
 
-	newBuf = (Byte *) malloc (bp->size + BUF_UNGET_INC);
+	newBuf = (Byte *)emalloc(bp->size + BUF_UNGET_INC);
 	bcopy ((Address)bp->outPtr,
 			(Address)(newBuf+BUF_UNGET_INC), numBytes+1);
 	bp->outPtr = newBuf + BUF_UNGET_INC;
@@ -209,7 +209,7 @@ Buf_UngetBytes (buf, numBytes, bytesPtr)
 	Byte	  *newBuf;
 	int 	  newBytes = max(numBytes,BUF_UNGET_INC);
 
-	newBuf = (Byte *) malloc (bp->size + newBytes);
+	newBuf = (Byte *)emalloc (bp->size + newBytes);
 	bcopy((Address)bp->outPtr, (Address)(newBuf+newBytes), curNumBytes+1);
 	bp->outPtr = newBuf + newBytes;
 	bp->inPtr = bp->outPtr + curNumBytes;
@@ -387,13 +387,13 @@ Buf_Init (size)
 {
     BufPtr  bp;	  	/* New Buffer */
 
-    bp = (Buf *) malloc(sizeof(Buf));
+    bp = (Buf *)emalloc(sizeof(Buf));
 
     if (size <= 0) {
 	size = BUF_DEF_SIZE;
     }
     bp->size = size;
-    bp->buffer = (Byte *) malloc (size);
+    bp->buffer = (Byte *)emalloc (size);
     bp->inPtr = bp->outPtr = bp->buffer;
     *bp->inPtr = 0;
 

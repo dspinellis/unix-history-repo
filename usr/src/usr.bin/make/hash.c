@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hash.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /* hash.c --
@@ -111,7 +111,7 @@ Hash_InitTable(tablePtr, numBuckets, keyType)
 	tablePtr->downShift--;
     }
 
-    tablePtr->bucketPtr = (List_Links *) malloc(sizeof(List_Links)
+    tablePtr->bucketPtr = (List_Links *) emalloc(sizeof(List_Links)
 	    * tablePtr->size);
     for (i=0, bucketPtr = tablePtr->bucketPtr; i < tablePtr->size;
 	    i++, bucketPtr++) {
@@ -255,17 +255,17 @@ Hash_CreateEntry(tablePtr, key, newPtr)
 
     switch (tablePtr->keyType) {
 	case HASH_STRING_KEYS:
-	    hashEntryPtr = (Hash_Entry *) malloc(sizeof(Hash_Entry) + 
+	    hashEntryPtr = (Hash_Entry *) emalloc(sizeof(Hash_Entry) + 
 		    strlen((char *) keyPtr) - 3);
 	    strcpy(hashEntryPtr->key.name, (char *) keyPtr);
 	    break;
 	case HASH_ONE_WORD_KEYS:
-	    hashEntryPtr = (Hash_Entry *) malloc(sizeof(Hash_Entry));
+	    hashEntryPtr = (Hash_Entry *) emalloc(sizeof(Hash_Entry));
 	    hashEntryPtr->key.ptr = (Address) keyPtr;
 	    break;
 	case 2:
 	    hashEntryPtr = 
-		(Hash_Entry *) malloc(sizeof(Hash_Entry) + sizeof(int));
+		(Hash_Entry *) emalloc(sizeof(Hash_Entry) + sizeof(int));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    *hashKeyPtr++ = *keyPtr++;
 	    *hashKeyPtr = *keyPtr;
@@ -275,7 +275,7 @@ Hash_CreateEntry(tablePtr, key, newPtr)
 
 	    n = tablePtr->keyType;
 	    hashEntryPtr = (Hash_Entry *) 
-		    malloc(sizeof(Hash_Entry) + (n - 1) * sizeof(int));
+		    emalloc(sizeof(Hash_Entry) + (n - 1) * sizeof(int));
 	    hashKeyPtr = hashEntryPtr->key.words;
 	    do { 
 		*hashKeyPtr++ = *keyPtr++; 
