@@ -1,0 +1,206 @@
+############################################################
+#
+#	General configuration information
+#
+#	This information is basically just "boiler-plate"; it must be
+#	there, but is essentially constant.
+#
+#	Information in this file should be independent of location --
+#	i.e., although there are some policy decisions made, they are
+#	not specific to Berkeley per se.
+#
+#		%W%	%Y%	%G%
+#
+############################################################
+
+include(version.m4)
+
+##########################
+###   Special macros   ###
+##########################
+
+# my name
+DnMAILER-DAEMON
+# UNIX header format
+DlFrom $g  $d
+# delimiter (operator) characters
+Do.:%@!^=/[]
+# format of a total name
+Dq$g$?x ($x)$.
+# my official hostname
+Dj$H.ARPA
+# SMTP login message
+De$j Sendmail $v/$V ready at $b
+
+###################
+###   Options   ###
+###################
+
+# location of alias file
+OA/usr/lib/aliases
+# default delivery mode (deliver in background)
+Odbackground
+# (don't) connect to "expensive" mailers
+#Oc
+# temporary file mode
+OF0644
+# default GID
+Og1
+# location of help file
+OH/usr/lib/sendmail.hf
+# log level
+OL9
+# default messages to old style
+Oo
+# queue directory
+OQ/usr/spool/mqueue
+# read timeout -- violates protocols
+Or2h
+# status file
+OS/usr/lib/sendmail.st
+# queue up everything before starting transmission
+Os
+# default timeout interval
+OT3d
+# time zone names (V6 only)
+OtPST,PDT
+# default UID
+Ou1
+# wizard's password
+OWa/FjIfuGKXyc2
+
+###############################
+###   Message precedences   ###
+###############################
+
+Pfirst-class=0
+Pspecial-delivery=100
+Pjunk=-100
+
+#########################
+###   Trusted users   ###
+#########################
+
+Troot
+Tdaemon
+Tuucp
+Teric
+Tnetwork
+
+#############################
+###   Format of headers   ###
+#############################
+
+H?D?Date: $a
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+H?P?Return-Path: <$g>
+# HPosted-Date: $a
+# H?l?Received-Date: $b
+H?M?Message-Id: <$t.$p@$j>
+HReceived: $?sfrom $s $.by $j ($v/$V)
+	id $i; $b
+
+###########################
+###   Rewriting rules   ###
+###########################
+
+# rules marked with "*" are removed or different when 819 becomed effective
+
+################################
+#  Sender Field Pre-rewriting  #
+################################
+S1
+
+R@$+			$@@$1				handle route-addr
+R$+@$+@$=R		$>3$1@$2			u@h@gateway -> u@h
+R$-!$+@$=R		$>3$1!$2			h!u@relay -> h!u
+
+###################################
+#  Recipient Field Pre-rewriting  #
+###################################
+S2
+
+#################################
+#  Final Output Post-rewriting  #
+#################################
+S4
+
+R@			$@				handle <> error addr
+
+# externalize local domain info
+R$+@$*LOCAL		$1@$2$D.ARPA			convert local domain
+
+# turn user@@e@@d@@c@@b@@a back into @a,@b,@c,@d:user@e form
+R$+@$+@@$+		$:@$3:$1@$2			@d@@c@@b@@a:u@e
+R@$+@@$+:$+		$:@$2:@$1:$3			@c@@b@@a:@d:u@e
+R@$+@@$+:@$+:$+		@$2:@$1,@$3:$4			@a:@b,@c,@d:u@e
+R@$+:@$+:$+		@$1,@$2:$3			@a,@b,@c,@d:u@e
+
+###########################
+#  Name Canonicalization  #
+###########################
+S3
+
+# handle "from:<>" special case
+R<>			$@@				turn into magic token
+
+# basic textual canonicalization
+R$*<$+>$*		$2				basic RFC821/822 parsing
+R$+ at $+		$1@$2				"at" -> "@" for RFC 822
+
+# make sure <@a,@b,@c:user@d> syntax is canonical
+R@$+,$+			@$1:$2				change all "," to ":"
+R@$+:$+:$+		@$1,$2:$3			all but last back to ","
+
+# convert <@a,@b,@c:user@d> syntax into user@d@@c@@b@@a
+R@$+:$+			$2,@@$1				move path to RHS
+R$+,@$+,@$+,@$+		$1,@@$3@$2,@$4			inside out convert
+R$+,@$+,@$+		$1@@$3@$2			final twist
+R$+,@$+			$1@@$2				for u@b,@a case
+
+# identify local domain on end of address
+R$+@$+			$:$>6$1@$2			localize name
+
+# delete multiple host specs and extra net info -- dangerous business here
+R$-:$-:$+		$2:$3				drop multiple old-style
+R$+@$=H.LOCAL		$1@$2				canonical form
+R$-:$+@LOCAL		$1:$2				drop @UCB on berknet
+R$-:$+@$=H		$1:$2				drop @local on berknet
+R$-:$*;@$+		$@$1:$2;@$3			try to handle lists
+R$-:$+@$+		$2@$3				drop forwarding host
+R$-!$+@LOCAL		$1!$2				drop @UCB on uucp
+R$-!$+@$=H		$1!$2				drop @local on uucp
+R$+@$+@LOCAL		$1@$2				drop @UCB on arpanet
+R$+@$+@$=H		$1@$2				drop @local on arpanet
+R$+			$:$>8$1				host dependent cleanup
+
+# hack attack!!  make sure local host "arpa" doesn't look like domain name
+R$+@arpa		$2@$1.LOCAL			add domain
+
+# the heart of canonicalization....
+R$+			$:$>8$1				host dependent cleanup
+R$+:$*;@$+		$@$1:$2;@$3			list syntax
+R$+:$+			$1.$2				colons => dots
+R$+@$+			$@$1@$2				already canonical
+R$-.$+			$2@$1				host.user
+R$+^$+			$1!$2				convert ^ to !
+R$-!$+			$@$2@$1.UUCP			resolve uucp names
+
+
+#########################################
+###  Strip local info from addresses  ###
+###	(This ruleset is recursive)   ###
+#########################################
+
+S9
+
+R$+			$:$>3$1				make canonical
+R$+@$*$=H.LOCAL		$1@$2				user@thishost.LOCAL
+R$+@$*$=H.ARPA		$1@$2				user@thishost.ARPA
+R$+@$*$=H.UUCP		$1@$2				user@thishost.UUCP
+R$+@$*$=H		$1@$2				user@thishost
+R$+@$+.			$1@$2				for subhost.thishost
+R$+@@			$1@				handle doubled @@
+R$+@			$>9$1				strip null trash
