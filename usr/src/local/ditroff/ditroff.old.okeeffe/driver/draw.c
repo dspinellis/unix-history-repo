@@ -1,4 +1,4 @@
-/*	draw.c	1.7	84/04/13
+/*	draw.c	1.8	84/05/09
  *
  *	This file contains the functions for producing the graphics
  *   images in the canon/imagen driver for ditroff.
@@ -46,6 +46,7 @@ extern putint();
 
 int	linethickness = -1;	/* number of pixels wide to make lines */
 int	linmod = SOLID;		/* type of line (SOLID, DOTTED, DASHED...) */
+int	polyborder = 1;		/* flag for whether or not to draw a border */
 
 
 
@@ -305,8 +306,10 @@ int npts;
 		word(xbound(x[i]));
 		word(ybound(y[i]));
 	}
-	byte(ADRAW);
-	byte(15);
+	if (polyborder) {
+		byte(ADRAW);	/* draw the border, if requested */
+		byte(15);
+	}
 	if (laststipmem) {	/* draw a filled path, if requested */
 		byte(AFPATH);
 		byte(7);
