@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)call.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)call.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)call.c	5.2 (Berkeley) %G%";
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "align.h"
 #ifdef PC
 #   include "pc.h"
 #   include <pcc.h>

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stkrval.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stkrval.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)stkrval.c	5.1 (Berkeley) %G%";
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "align.h"
 #ifdef PC
 #   include <pcc.h>
 #endif PC
@@ -257,7 +258,8 @@ cstrng:
 			    q = p->type;
 			    if (classify(q) == TSTR) {
 				    c = width(q);
-				    (void) put(2, O_LVCON, even(c+1));
+				    (void) put(2, O_LVCON,
+					roundup(c+1, (long) A_SHORT));
 				    putstr("", c);
 				    (void) put(1, PTR_DUP);
 				    p = funccod(r);
