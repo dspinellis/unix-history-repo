@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.18	82/03/13	*/
+/*	uipc_proto.c	4.19	82/03/28	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -31,14 +31,14 @@ int	udp_init();
 int	tcp_input(),tcp_ctlinput();
 int	tcp_usrreq();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
-int	rip_input(),rip_output(),rip_ctlinput(),rip_usrreq();
+int	rip_input(),rip_output();
 
 /*
  * IMP protocol family: raw interface
  */
 #include "imp.h"
 #if NIMP > 0
-int	rimp_usrreq(),rimp_output(),rimp_ctlinput();
+int	rimp_output();
 #endif
 
 /*
@@ -46,7 +46,7 @@ int	rimp_usrreq(),rimp_output(),rimp_ctlinput();
  */
 #include "pup.h"
 #if NPUP > 0
-int	rpup_output(),rpup_ctlinput();
+int	rpup_output();
 #endif
 
 /*
@@ -101,22 +101,22 @@ struct protosw protosw[] = {
   raw_init,	0,		0,		0,
 },
 { SOCK_RAW,	PF_INET,	IPPROTO_RAW,	PR_ATOMIC|PR_ADDR,
-  rip_input,	rip_output,	rip_ctlinput,	0,
-  rip_usrreq,
+  rip_input,	rip_output,	0,		0,
+  raw_usrreq,
   0,		0,		0,		0,
 }
 #if NIMP > 0
 ,
 { SOCK_RAW,	PF_IMPLINK,	0,		PR_ATOMIC|PR_ADDR,
-  0,		rimp_output,	rimp_ctlinput,	0,
-  rimp_usrreq,
+  0,		rimp_output,	0,		0,
+  raw_usrreq,
   0,		0,		0,		0,
 }
 #endif
 #if NPUP > 0
 ,
 { SOCK_RAW,	PF_PUP,		0,		PR_ATOMIC|PR_ADDR,
-  0,		rpup_output,	rpup_ctlinput,	0,
+  0,		rpup_output,	0,		0,
   raw_usrreq,
   0,		0,		0,		0,
 }
