@@ -1,4 +1,4 @@
-/*	subr_prf.c	6.4	84/12/21	*/
+/*	subr_prf.c	6.5	84/12/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -45,7 +45,7 @@ char	*panicstr;
  * a character <= 32), give the name of the register.  Thus
  *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
  * would produce output:
- *	reg=2<BITTWO,BITONE>
+ *	reg=3<BITTWO,BITONE>
  */
 /*VARARGS1*/
 printf(fmt, x1)
@@ -58,8 +58,7 @@ printf(fmt, x1)
 }
 
 /*
- * Uprintf prints to the current user's terminal,
- * guarantees not to sleep (so can be called by interrupt routines)
+ * Uprintf prints to the current user's terminal
  * and does no watermark checking - (so no verbose messages).
  */
 /*VARARGS1*/
@@ -83,8 +82,7 @@ tprintf(ttyp, fmt, x1)
 
 /*
  * Log writes to the log buffer,
- * guarantees not to sleep (so can be called by interrupt routines)
- * and does no watermark checking - (so no verbose messages).
+ * and guarantees not to sleep (so can be called by interrupt routines).
  */
 /*VARARGS2*/
 log(level, fmt, x1)
@@ -147,11 +145,9 @@ number:
 		printn((u_long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
-			putchar('<', flags, ttyp);
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
-					if (any)
-						putchar(',', flags, ttyp);
+					putchar(any? ',' : '<', flags, ttyp);
 					any = 1;
 					for (; (c = *s) > 32; s++)
 						putchar(c, flags, ttyp);
@@ -252,14 +248,15 @@ harderr(bp, cp)
  * are saved in msgbuf for inspection later.
  */
 /*ARGSUSED*/
-putchar(c, flags, ttyp)
+putchar(c, flags, tp)
 	register int c;
-	struct tty *ttyp;
+	struct tty *tp;
 {
+	extern struct tty cons;
 
 	if (flags & TOTTY) {
-		register struct tty *tp = ttyp;
-
+		if (tp == (struct tty *)NULL && (flags & TOCONS) == 0)
+			tp = &cons;
 		if (tp && (tp->t_state & TS_CARR_ON)) {
 			register s = spl6();
 			if (c == '\n')
