@@ -3,13 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.7 (Berkeley) %G%
+#	@(#)Makefile	6.8 (Berkeley) %G%
 #
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
 COPTS=	-DVAX780 -DVAX750 -DVAX730 -DVAX8600
 730OPTS=-O -DSTANDALONE -DVAX730
 RELOC=	70000
+
 SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
 	rl.c tm.c ts.c \
@@ -22,16 +23,17 @@ DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 # they are placed in the file system boot area for 750's.  If your
 # root has bad sectors you can try and squeeze the newer drivers in...
 ODRIVERS=hp.old.o up.old.o
+LIBSA=	libsa.a
 
-ALL=	/usr/lib/libsa.a srt0.o boot tpboot copy tpcopy \
+ALL=	${LIBSA} srt0.o boot tpboot copy tpcopy \
 	format tpformat drtest boothp boothk bootup bootra bootrl \
 	730boot 730copy 730format 730drtest
 
 all: ${ALL}
 
-/usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
-	ar crv /usr/lib/libsa.a $?
-	ranlib /usr/lib/libsa.a
+${LIBSA}: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
+	ar crv ${LIBSA} $?
+	ranlib ${LIBSA}
 
 ${ODRIVERS} ${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
@@ -54,8 +56,8 @@ relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 
 # bootable from tape
 
-tpboot:	tpboot.o relsrt0.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o tpboot.o -lsa -lc
+tpboot:	tpboot.o relsrt0.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o tpboot.o ${LIBSA} -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpboot ibs=32 skip=1; rm -f b.out
 
 tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
@@ -64,23 +66,23 @@ tpboot.o: saio.h ../h/reboot.h ../h/vm.h
 	cc -c -O -DJUSTASK tpboot.c
 	rm -f tpboot.c
 
-tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
-	ld -N tpsrt0.o copy.o -lsa -lc
+tpcopy:	copy.o tpsrt0.o ${LIBSA}
+	ld -N tpsrt0.o copy.o ${LIBSA} -lc
 	cp a.out b.out; strip b.out; \
 		dd if=b.out of=tpcopy ibs=32 skip=1; rm -f b.out
 
-tpformat: format.o tpsrt0.o confhpup.o /usr/lib/libsa.a
+tpformat: format.o tpsrt0.o confhpup.o ${LIBSA}
 	cp format.c tpformat.c; chmod +w tpformat.c
 	cc -c -O -DJUSTEXIT tpformat.c
 	rm -f tpformat.c
-	ld -N tpsrt0.o tpformat.o confhpup.o -lsa -lc
+	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBSA} -lc
 	cp a.out b.out; strip b.out; \
 		dd if=b.out of=tpformat ibs=32 skip=1; rm -f b.out
 
 # bootable from floppy or real disks
 
-boot:	boot.o relsrt0.o bootconf.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o -lsa -lc
+boot:	boot.o relsrt0.o bootconf.o ${LIBSA}
+	ld -N -T ${RELOC} -o boot relsrt0.o boot.o bootconf.o ${LIBSA} -lc
 
 bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
@@ -88,14 +90,14 @@ bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 	cc -c ${COPTS} -DBOOT bootconf.c
 	rm -f bootconf.c
 
-copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
-	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
+copy:	copy.o srt0.o conf.o ${LIBSA}
+	ld -N -o copy srt0.o copy.o conf.o ${LIBSA} -lc
 
-format:	format.o srt0.o confhpup.o /usr/lib/libsa.a
-	ld -N -o format srt0.o format.o confhpup.o -lsa -lc
+format:	format.o srt0.o confhpup.o ${LIBSA}
+	ld -N -o format srt0.o format.o confhpup.o ${LIBSA} -lc
 
-drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
-	ld -N -o drtest srt0.o drtest.o confhpup.o -lsa -lc
+drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
+	ld -N -o drtest srt0.o drtest.o confhpup.o ${LIBSA} -lc
 
 # for 730s minimize size to avoid microcode botch
 # (won't load files larger than 12.5 Kbytes)
@@ -106,8 +108,8 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 	cc -c ${730OPTS} 730boot.c
 	rm -f 730boot.c
 
-730boot: 730boot.o relsrt0.o 730bootconf.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o -lsa -lc
+730boot: 730boot.o relsrt0.o 730bootconf.o ${LIBSA}
+	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o ${LIBSA} -lc
 
 730bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 730bootconf.o: ../h/fs.h saio.h
@@ -115,14 +117,14 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 	cc -c ${730OPTS} -DBOOT 730bootconf.c
 	rm -f 730bootconf.c
 
-730copy: copy.o srt0.o 730conf.o /usr/lib/libsa.a
-	ld -N -o 730copy srt0.o copy.o 730conf.o -lsa -lc
+730copy: copy.o srt0.o 730conf.o ${LIBSA}
+	ld -N -o 730copy srt0.o copy.o 730conf.o ${LIBSA} -lc
 
-730drtest: drtest.o srt0.o confup.o /usr/lib/libsa.a
-	ld -N -o 730drtest srt0.o drtest.o confup.o -lsa -lc
+730drtest: drtest.o srt0.o confup.o ${LIBSA}
+	ld -N -o 730drtest srt0.o drtest.o confup.o ${LIBSA} -lc
 
-730format: format.o srt0.o confup.o /usr/lib/libsa.a
-	ld -N -o 730format srt0.o format.o confup.o -lsa -lc
+730format: format.o srt0.o confup.o ${LIBSA}
+	ld -N -o 730format srt0.o format.o confup.o ${LIBSA} -lc
 
 730conf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 730conf.o: ../h/fs.h saio.h
@@ -136,24 +138,24 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 
 # getting booted from disc
 
-boothk: relsrt0.o boothk.o confrk.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
+boothk: relsrt0.o boothk.o confrk.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o ${LIBSA} -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm -f b.out
 
-boothp: relsrt0.o boothp.o confhp.o hp.old.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o -lsa -lc
+boothp: relsrt0.o boothp.o confhp.o hp.old.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o ${LIBSA} -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm -f b.out
 
-bootup: relsrt0.o bootup.o confup.o up.old.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o -lsa -lc
+bootup: relsrt0.o bootup.o confup.o up.old.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o ${LIBSA} -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm -f b.out
 
-bootra: relsrt0.o bootra.o confra.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o -lsa -lc
+bootra: relsrt0.o bootra.o confra.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o ${LIBSA} -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm -f b.out
 
-bootrl: relsrt0.o bootrl.o confrl.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o -lsa -lc
+bootrl: relsrt0.o bootrl.o confrl.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o ${LIBSA} -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm -f b.out
 
 boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
