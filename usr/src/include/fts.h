@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fts.h	5.21 (Berkeley) %G%
+ *	@(#)fts.h	5.22 (Berkeley) %G%
  */
 
 #ifndef	_FTS_H_
@@ -27,9 +27,12 @@ typedef struct {
 #define	FTS_NOSTAT	0x008		/* don't get stat info */
 #define	FTS_PHYSICAL	0x010		/* physical walk */
 #define	FTS_SEEDOT	0x020		/* return dot and dot-dot */
-#define	FTS_STOP	0x040		/* (private) unrecoverable error */
-#define	FTS_XDEV	0x080		/* don't cross devices */
-	int fts_options;		/* openfts() options */
+#define	FTS_XDEV	0x040		/* don't cross devices */
+#define	FTS_OPTIONMASK	0x07f		/* valid user option mask */
+
+#define	FTS_NAMEONLY	0x080		/* (private) child names only */
+#define	FTS_STOP	0x100		/* (private) unrecoverable error */
+	int fts_options;		/* fts_open options, global flags */
 } FTS;
 
 typedef struct _ftsent {
@@ -89,7 +92,7 @@ typedef struct _ftsent {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-FTSENT	*fts_children __P((FTS *));
+FTSENT	*fts_children __P((FTS *, int));
 int	 fts_close __P((FTS *));
 FTS	*fts_open __P((char * const *, int,
 	    int (*)(const FTSENT **, const FTSENT **)));
