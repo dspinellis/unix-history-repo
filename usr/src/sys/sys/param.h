@@ -1,4 +1,4 @@
-/*	param.h	4.23	82/10/31	*/
+/*	param.h	4.24	82/10/31	*/
 
 /*
  * Macine type dependent parameters.
