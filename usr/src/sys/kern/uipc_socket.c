@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.35	82/03/19	*/
+/*	uipc_socket.c	4.36	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -147,22 +147,6 @@ discard:
 	so->so_state |= SS_USERGONE;
 	sofree(so);
 	splx(s);
-}
-
-sosplice(pso, so)
-	struct socket *pso, *so;
-{
-
-COUNT(SOSPLICE);
-	if (pso->so_proto->pr_family != PF_UNIX) {
-		struct socket *tso;
-		tso = pso; pso = so; so = tso;
-	}
-	if (pso->so_proto->pr_family != PF_UNIX)
-		return (EOPNOTSUPP);
-	/* check types and buffer space */
-	/* merge buffers */
-	return (0);
 }
 
 /*ARGSUSED*/
