@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.13 (Berkeley) %G%
+#	@(#)Makefile	4.14 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -50,7 +50,7 @@ deliv: ${DLOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${DLOBJS} -o $@
 
 hunt: ${HTOBJS} ${LIBC}
-	${CC} ${CFLAGS} ${HTOBJS} -o $@
+	${CC} ${CFLAGS} ${HTOBJS} -o $@ -lcompat
 
 inv: ${INOBJS} ${LIBC}
 	${CC} ${CFLAGS} ${INOBJS} -o $@
@@ -71,7 +71,7 @@ refer: ${RFOBJS} ${LIBC}
 #	${CC} ${CFLAGS} ${RPOBJS} -o $@
 
 whatabout: ${WHOBJS} ${LIBC}
-	${CC} ${CFLAGS} ${WHOBJS} -o $@
+	${CC} ${CFLAGS} ${WHOBJS} -o $@ -lcompat
 
 clean:
 	rm -f ${OBJS} core addbib deliv hunt inv lookbib mkey refer \
@@ -94,7 +94,7 @@ install: ${MAN}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/indxbib.0
 	ln ${DESTDIR}/usr/man/cat1/lookbib.0 ${DESTDIR}/usr/man/cat1/indxbib.0
-	sh runinv /usr/share/dict/papers
+	sh runinv ${DESTDIR}/usr/share/dict/papers
 
 lint: FRC
 	lint ${CFLAGS} ${DLSRCS}
