@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1565,6 +1565,11 @@ sendall(e, mode)
 						xfbuf1, xfbuf2);
 				}
 			}
+#ifdef LOG
+			if (LogLevel > 4)
+				syslog(LOG_INFO, "%s: clone %s",
+					ee->e_id, e->e_id);
+#endif
 		}
 	}
 
@@ -1702,6 +1707,10 @@ sendenvelope(e, mode)
 		    fcntl(fileno(e->e_lockfp), F_SETLK, &lfd) < 0)
 		{
 			/* oops....  lost it */
+			if (tTd(13, 1))
+				printf("sendenvelope: %s lost lock: lockfp=%x, %s\n",
+					e->e_id, e->e_lockfp, errstring(errno));
+
 # ifdef LOG
 			if (LogLevel > 29)
 				syslog(LOG_NOTICE, "%s: lost lock: %m",
