@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <ctype.h>
 
-static char SccsId[] = "@(#)readcf.c	3.3	%G%";
+static char SccsId[] = "@(#)readcf.c	3.4	%G%";
 
 /*
 **  READCF -- read control file.
@@ -35,6 +35,7 @@ readcf(cfname)
 	extern char **copyplist();
 	extern char *rindex();
 	extern char *newstr();
+	int class;
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
@@ -94,7 +95,40 @@ readcf(cfname)
 			chompheader(&buf[1], TRUE);
 			break;
 
+		  case 'C':		/* word class */
+			class = buf[1];
+			if (!isalpha(class))
+				goto badline;
+			if (isupper(class))
+				class -= 'A';
+			else
+				class -= 'a';
+
+			/* scan the list of words and set class 'i' for all */
+			for (p = &buf[2]; *p != '\0'; )
+			{
+				register char *wd;
+				char delim;
+				register STAB *s;
+
+				while (*p != '\0' && isspace(*p))
+					p++;
+				wd = p;
+				while (*p != '\0' && !isspace(*p))
+					p++;
+				delim = *p;
+				*p = '\0';
+				if (wd[0] != '\0')
+				{
+					s = stab(wd, ST_ENTER);
+					s->s_class |= 1 << class;
+				}
+				*p = delim;
+			}
+			break;
+
 		  default:
+		  badline:
 			syserr("unknown control line \"%s\"", buf);
 		}
 	}

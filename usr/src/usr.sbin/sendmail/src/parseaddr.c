@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.12	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.13	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -282,6 +282,11 @@ prescan(addr, delim)
 					state = GETONE;
 					break;
 
+				  case '=':		/* match one token of class */
+					c = MATCHCLASS;
+					state = GETONE;
+					break;
+
 				  case '#':		/* canonical net name */
 					c = CANONNET;
 					break;
@@ -483,6 +488,7 @@ rewrite(pvp)
 	struct rewrite *rwr;
 	struct match mlist[MAXMATCH];
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
+	extern bool sameword();
 
 # ifdef DEBUGX
 	if (Debug)
@@ -522,6 +528,9 @@ rewrite(pvp)
 
 			switch (*rp)
 			{
+				register STAB *s;
+				register int class;
+
 			  case MATCHONE:
 				/* match exactly one token */
 				setmatch(mlist, rp[1], avp, avp);
@@ -532,14 +541,24 @@ rewrite(pvp)
 				setmatch(mlist, rp[1], NULL, avp);
 				break;
 
+			  case MATCHCLASS:
+				/* match any token in a class */
+				class = rp[1];
+				if (!isalpha(class))
+					goto fail;
+				if (isupper(class))
+					class -= 'A';
+				else
+					class -= 'a';
+				s = stab(ap, ST_FIND);
+				if (s == NULL || (s->s_class & (1 << class)) == 0)
+					goto fail;
+				break;
+
 			  default:
 				/* must have exact match */
-				/* can scribble rp & ap here safely */
-				while (*rp != '\0' || *ap != '\0')
-				{
-					if (*rp++ != lower(*ap++))
-						goto fail;
-				}
+				if (!sameword(rp, ap))
+					goto fail;
 				break;
 			}
 
