@@ -1,26 +1,32 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.6	(Berkeley)	83/03/08";
+static char sccsid[] = "@(#)symtab.c	3.7	(Berkeley)	83/03/23";
 #endif
+
+/*
+ * These routines maintain the symbol table which tracks the state
+ * of the file system being restored. They provide lookup by either
+ * name or inode number. They also provide for creation, deletion,
+ * and renaming of entries. Because of the dynamic nature of pathnames,
+ * names should not be saved, but always constructed just before they
+ * are needed, by calling "myname".
+ */
 
 #include "restore.h"
 #include <sys/stat.h>
+#include <dir.h>
 
-struct symtableheader {
-	long	volno;
-	long	stringsize;
-	long	entrytblsize;
-	time_t	dumptime;
-	time_t	dumpdate;
-	ino_t	maxino;
-};
-
-static struct entry *freelist = NIL;
+/*
+ * The following variables define the inode symbol table.
+ * The primary hash table is dynamically allocated based on
+ * the number of inodes in the file system (maxino), scaled by
+ * HASHFACTOR. The variable "entry" points to the hash table;
+ * the variable "entrytblsize" indicates its size (in entries).
+ */
+#define HASHFACTOR 5
 static struct entry **entry;
 static long entrytblsize;
-/* used to scale maxino to get inode hash table size */
-#define HASHFACTOR 5
 
 /*
  * Look up an entry by inode number
@@ -92,7 +98,7 @@ lookupname(name)
 {
 	register struct entry *ep;
 	register char *np, *cp;
-	char buf[BUFSIZ];
+	char buf[MAXPATHLEN];
 
 	cp = name;
 	for (ep = lookupino(ROOTINO); ep != NIL; ep = ep->e_entries) {
@@ -141,9 +147,9 @@ myname(ep)
 	register struct entry *ep;
 {
 	register char *cp;
-	static char namebuf[BUFSIZ];
+	static char namebuf[MAXPATHLEN];
 
-	for (cp = &namebuf[BUFSIZ - 2]; cp > &namebuf[ep->e_namlen]; ) {
+	for (cp = &namebuf[MAXPATHLEN - 2]; cp > &namebuf[ep->e_namlen]; ) {
 		cp -= ep->e_namlen;
 		bcopy(ep->e_name, cp, (long)ep->e_namlen);
 		if (ep == lookupino(ROOTINO))
@@ -154,6 +160,12 @@ myname(ep)
 	panic("%s: pathname too long\n", cp);
 	return(cp);
 }
+
+/*
+ * Unused symbol table entries are linked together on a freelist
+ * headed by the following pointer.
+ */
+static struct entry *freelist = NIL;
 
 /*
  * add an entry to the symbol table
@@ -239,6 +251,7 @@ freeentry(ep)
 		}
 	}
 	removeentry(ep);
+	freename(ep->e_name);
 	ep->e_next = freelist;
 	freelist = ep;
 }
@@ -264,16 +277,10 @@ moveentry(ep, newname)
 		np->e_entries = ep;
 	}
 	cp = rindex(newname, '/') + 1;
-	len = strlen(cp);
-	if (ep->e_flags & TMPNAME)
-		ep->e_namlen--;
-	if (ep->e_namlen >= len) {
-		strcpy(ep->e_name, cp);
-	} else {
-		ep->e_name = savename(cp);
-	}
-	ep->e_namlen = len;
-	if (cp[len - 1] == TMPCHAR)
+	freename(ep->e_name);
+	ep->e_name = savename(cp);
+	ep->e_namlen = strlen(cp);
+	if (strcmp(gentempname(ep), ep->e_name) == 0)
 		ep->e_flags |= TMPNAME;
 	else
 		ep->e_flags &= ~TMPNAME;
@@ -303,23 +310,80 @@ removeentry(ep)
 }
 
 /*
- * allocate space for a name
+ * Table of unused string entries, sorted by length.
+ * 
+ * Entries are allocated in STRTBLINCR sized pieces so that names
+ * of similar lengths can use the same entry. The value of STRTBLINCR
+ * is chosen so that every entry has at least enough space to hold
+ * a "struct strtbl" header. Thus every entry can be linked onto an
+ * apprpriate free list.
+ *
+ * NB. The macro "allocsize" below assumes that "struct strhdr"
+ *     has a size that is a power of two.
+ */
+struct strhdr {
+	struct strhdr *next;
+};
+
+#define STRTBLINCR	(sizeof(struct strhdr))
+#define allocsize(size)	(((size) + 1 + STRTBLINCR - 1) & ~(STRTBLINCR - 1))
+
+static struct strhdr strtblhdr[allocsize(MAXNAMLEN) / STRTBLINCR];
+
+/*
+ * Allocate space for a name. It first looks to see if it already
+ * has an appropriate sized entry, and if not allocates a new one.
  */
 char *
 savename(name)
 	char *name;
 {
+	struct strhdr *np;
 	long len;
 	char *cp;
 
 	if (name == NULL)
 		panic("bad name\n");
-	len = strlen(name) + 2;
-	len = (len + sizeof(int) - 1) & ~(sizeof(int) - 1);
-	cp = malloc((unsigned)len);
+	len = strlen(name);
+	np = strtblhdr[len / STRTBLINCR].next;
+	if (np != NULL) {
+		strtblhdr[len / STRTBLINCR].next = np->next;
+		cp = (char *)np;
+	} else {
+		cp = malloc((unsigned)allocsize(len));
+		if (cp == NULL)
+			panic("no space for string table\n");
+	}
 	(void) strcpy(cp, name);
 	return (cp);
 }
+
+/*
+ * Free space for a name. The resulting entry is linked onto the
+ * appropriate free list.
+ */
+freename(name)
+	char *name;
+{
+	struct strhdr *tp, *np;
+	
+	tp = &strtblhdr[strlen(name) / STRTBLINCR];
+	np = (struct strhdr *)name;
+	np->next = tp->next;
+	tp->next = np;
+}
+
+/*
+ * Useful quantities placed at the end of a dumped symbol table.
+ */
+struct symtableheader {
+	long	volno;
+	long	stringsize;
+	long	entrytblsize;
+	time_t	dumptime;
+	time_t	dumpdate;
+	ino_t	maxino;
+};
 
 /*
  * dump a snapshot of the symbol table
@@ -349,14 +413,10 @@ dumpsymtable(filename, checkpt)
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
 			ep->e_index = mynum++;
-			fwrite(ep->e_name, sizeof(char), ep->e_namlen + 2, fd);
-			stroff += ep->e_namlen + 2;
+			fwrite(ep->e_name, sizeof(char),
+			       allocsize(ep->e_namlen), fd);
 		}
 	}
-	/*
-	 * start entries on aligned boundry
-	 */
-	fseek(fd, ((stroff + 3) & ~3), 0);
 	/*
 	 * Convert pointers to indexes, and output
 	 */
@@ -366,7 +426,7 @@ dumpsymtable(filename, checkpt)
 		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
 			bcopy((char *)ep, (char *)tep, sizeof(struct entry));
 			tep->e_name = (char *)stroff;
-			stroff += ep->e_namlen + 2;
+			stroff += allocsize(ep->e_namlen);
 			tep->e_parent = (struct entry *)ep->e_parent->e_index;
 			if (ep->e_links != NIL)
 				tep->e_links =
@@ -396,7 +456,7 @@ dumpsymtable(filename, checkpt)
 	hdr.volno = checkpt;
 	hdr.maxino = maxino;
 	hdr.entrytblsize = entrytblsize;
-	hdr.stringsize = (stroff + 3) & ~3;
+	hdr.stringsize = stroff;
 	hdr.dumptime = dumptime;
 	hdr.dumpdate = dumpdate;
 	fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
