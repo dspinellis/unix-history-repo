@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.2	%G%	*/
+/*	vfs_syscalls.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -209,6 +209,8 @@ sumount()
 	register struct inode *ip;
 	register struct mount *mp;
 	struct buf *bp;
+	int flag;
+	int stillopen = 0;
 	register struct a {
 		char	*fspec;
 	};
@@ -229,16 +231,22 @@ found:
 		if(ip->i_number != 0 && dev == ip->i_dev) {
 			u.u_error = EBUSY;
 			return;
-		}
-	mpurge(mp - &mount[0]);
-	(*bdevsw[major(dev)].d_close)(dev, 0);
+		} else if (ip->i_number != 0 && (ip->i_mode&IFMT) == IFBLK
+			&& ip->i_un.i_rdev == dev)
+				stillopen++;
 	ip = mp->m_inodp;
 	ip->i_flag &= ~IMOUNT;
 	plock(ip);
 	iput(ip);
 	bp = mp->m_bufp;
+	flag = !bp->b_un.b_filsys->s_ronly;
 	mp->m_bufp = NULL;
 	brelse(bp);
+	if (!stillopen) {
+		mpurge(mp - &mount[0]);
+		(*bdevsw[major(dev)].d_close)(dev, flag);
+		binval(dev);
+	}
 }
 
 /*
