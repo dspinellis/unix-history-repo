@@ -62,6 +62,10 @@ static char sccsid[] = "@(#)sys_bsd.c	5.2 (Berkeley) 3/1/91";
 #else
 #define	SIG_FUNC_RET	int
 #endif
+#ifdef	SIGINFO
+extern	SIG_FUNC_RET ayt_status();
+#endif
+extern void intp(), sendbrk();
 
 int
 	tout,			/* Output file descriptor */
@@ -175,7 +179,7 @@ extern int kludgelinemode;
 TerminalSpecialChars(c)
     int	c;
 {
-    void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
+    void xmitAO(), xmitEL(), xmitEC();
 
     if (c == termIntChar) {
 	intp();
@@ -649,7 +653,6 @@ TerminalNewMode(f)
 #endif
     } else {
 #ifdef	SIGINFO
-	SIG_FUNC_RET ayt_status();
 
 	(void) signal(SIGINFO, ayt_status);
 #endif	SIGINFO
