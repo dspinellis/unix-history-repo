@@ -1,0 +1,3 @@
+default ucbvax
+machine ucbvax local r link /dev/ttynk speed 13 time 3 count 1 length 758
+machine ucbarpa local r link /dev/null speed 13 time 3 count 1 length 758
