@@ -1,4 +1,4 @@
-/*	t7.c	4.1	83/02/12	*/
+/*	t7.c	4.2	83/02/12	*/
 
  /* t7.c: control to write table entries */
 # include "t..c"
@@ -60,6 +60,7 @@ fprintf(tabout, "\n");
 ifline(s)
 	char *s;
 {
+if (!point(s)) return(0);
 if (s[0] == '\\') s++;
 if (s[1] ) return(0);
 if (s[0] == '_') return('-');
