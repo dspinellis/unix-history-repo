@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.4.1.1 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -31,6 +31,8 @@ static char sccsid[] = "@(#)more.c	5.6 (Berkeley) %G%";
 #include <sgtty.h>
 #include <setjmp.h>
 #include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/exec.h>
 
 #define HELPFILE	"/usr/lib/more.help"
 #define VI		"/usr/ucb/vi"
@@ -72,7 +74,7 @@ int		bad_so;	/* True if overwriting does not turn off standout */
 int		inwait, Pause, errors;
 int		within;	/* true if we are within a file,
 			false if we are between files */
-int		hard, dumb, noscroll, hardtabs, clreol, eatnl;
+int		hard, dumb, noscroll, hardtabs, clreol;
 int		catch_susp;	/* We should catch the SIGTSTP signal */
 char		**fnames;	/* The list of file names */
 int		nfiles;		/* Number of files left to process */
@@ -349,23 +351,13 @@ int *clearfirst;
 	perror(fs);
 	return (NULL);
     }
-    c = Getc(f);
-
     /* Try to see whether it is an ASCII file */
-
-    switch ((c | *f->_ptr << 8) & 0177777) {
-    case 0405:
-    case 0407:
-    case 0410:
-    case 0411:
-    case 0413:
-    case 0177545:
+    if (magic(f)) {
 	printf("\n******** %s: Not a text file ********\n\n", fs);
 	fclose (f);
 	return (NULL);
-    default:
-	break;
     }
+    c = Getc(f);
     if (c == '\f')
 	*clearfirst = 1;
     else {
@@ -375,6 +367,22 @@ int *clearfirst;
     if ((file_size = stbuf.st_size) == 0)
 	file_size = 0x7fffffffffffffffL;
     return (f);
+}
+
+/*
+ * Check for file magic numbers. This code would best
+ * be shared with the file(1) program or, perhaps, more
+ * should not try and be so smart?
+ */
+magic(f)
+    FILE *f;
+{
+    long magic;
+
+    magic = getw(f);
+    fseek(f, -sizeof (magic), L_INCR);		/* reset file position */
+    return (magic == 0405 || magic == OMAGIC || magic == NMAGIC ||
+	magic == 0411 || magic == ZMAGIC || magic == 0177545);
 }
 
 /*
@@ -732,17 +740,15 @@ int *length;
 	}
 	*p++ = c;
 	if (c == '\t')
-	    if (!hardtabs || column < promptlen && !hard) {
-		if (hardtabs && eraseln && !dumb) {
+	    if (hardtabs && column < promptlen && !hard) {
+		if (eraseln && !dumb) {
 		    column = 1 + (column | 7);
 		    tputs (eraseln, 1, putch);
 		    promptlen = 0;
 		}
 		else {
-		    for (--p; p < &Line[LINSIZ - 1];) {
+		    for (--p; column & 7 && p < &Line[LINSIZ - 1]; column++) {
 			*p++ = ' ';
-			if ((++column & 7) == 0)
-			    break;
 		    }
 		    if (column >= promptlen) promptlen = 0;
 		}
@@ -774,9 +780,6 @@ int *length;
 	}
     }
     colflg = column == Mcol && fold_opt;
-    if (colflg && eatnl && Wrap) {
-	*p++ = '\n'; /* simulate normal wrap */
-    }
     *length = p - Line;
     *p = 0;
     return (column);
@@ -1481,8 +1484,6 @@ retry:
 		hard++;	/* Hard copy terminal */
 		Lpp = 24;
 	    }
-	    if (tgetflag("xn"))
-		eatnl++; /* Eat newline at last column + 1; dec, concept */
 	    if (Mcol <= 0)
 		Mcol = 80;
 
