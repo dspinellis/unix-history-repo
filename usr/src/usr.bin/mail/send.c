@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	1.5 %G%";
+static char *SccsId = "@(#)send.c	1.6 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -187,7 +187,7 @@ mail1(hp)
 {
 	register char *cp;
 	int pid, i, s, p, gotcha;
-	char **namelist;
+	char **namelist, *deliver;
 	struct name *to, *np;
 	FILE *mtf, *postage;
 	int remote = rflag != NOSTR || rmail;
@@ -326,7 +326,9 @@ topdog:
 		submit(getpid());
 #endif CC
 #ifdef DELIVERMAIL
-		execv(DELIVERMAIL, namelist);
+		if ((deliver = value("sendmail")) == NOSTR)
+			deliver = DELIVERMAIL;
+		execv(deliver, namelist);
 #endif DELIVERMAIL
 		execv(MAIL, namelist);
 		perror(MAIL);
