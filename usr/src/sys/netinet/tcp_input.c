@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.35 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.36 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -39,8 +39,6 @@ int	tcppreddat;	/* XXX # times header prediction ok for data packets */
 int	tcppcbcachemiss;
 struct	tcpiphdr tcp_saveti;
 struct	inpcb *tcp_last_inpcb = &tcb;
-
-struct	tcpcb *tcp_newtcpcb();
 
 extern u_long sb_max;
 
@@ -80,6 +78,7 @@ extern u_long sb_max;
 }
 #ifndef TUBA_INCLUDE
 
+int
 tcp_reass(tp, ti, m)
 	register struct tcpcb *tp;
 	register struct tcpiphdr *ti;
@@ -187,6 +186,7 @@ present:
  * TCP input routine, follows pages 65-76 of the
  * protocol specification dated September, 1981 very closely.
  */
+void
 tcp_input(m, iphlen)
 	register struct mbuf *m;
 	int iphlen;
@@ -1324,6 +1324,7 @@ drop:
 #ifndef TUBA_INCLUDE
 }
 
+void
 tcp_dooptions(tp, cp, cnt, ti, ts_present, ts_val, ts_ecr)
 	struct tcpcb *tp;
 	u_char *cp;
@@ -1399,6 +1400,7 @@ tcp_dooptions(tp, cp, cnt, ti, ts_present, ts_val, ts_ecr)
  * It is still reflected in the segment length for
  * sequencing purposes.
  */
+void
 tcp_pulloutofband(so, ti, m)
 	struct socket *so;
 	struct tcpiphdr *ti;
@@ -1429,9 +1431,10 @@ tcp_pulloutofband(so, ti, m)
  * Collect new round-trip time estimate
  * and update averages and current timeout.
  */
+void
 tcp_xmit_timer(tp, rtt)
 	register struct tcpcb *tp;
-	short	rtt;
+	short rtt;
 {
 	register short delta;
 
@@ -1513,7 +1516,7 @@ tcp_xmit_timer(tp, rtt)
  * While looking at the routing entry, we also initialize other path-dependent
  * parameters from pre-set or cached values in the routing entry.
  */
-
+int
 tcp_mss(tp, offer)
 	register struct tcpcb *tp;
 	u_short offer;

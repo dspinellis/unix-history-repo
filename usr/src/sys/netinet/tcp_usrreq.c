@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_usrreq.c	7.19 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,7 +37,6 @@
  * TCP protocol interface to socket abstraction.
  */
 extern	char *tcpstates[];
-struct	tcpcb *tcp_newtcpcb();
 
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
@@ -45,6 +44,7 @@ struct	tcpcb *tcp_newtcpcb();
  * (called from the software clock routine), then timertype tells which timer.
  */
 /*ARGSUSED*/
+int
 tcp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
@@ -310,6 +310,7 @@ tcp_usrreq(so, req, m, nam, control)
 	return (error);
 }
 
+int
 #if BSD>=43
 tcp_ctloutput(op, so, level, optname, mp)
 	int op;
@@ -396,6 +397,7 @@ u_long	tcp_recvspace = 1024*8;
  * internet protocol control block, tcp control block,
  * bufer space, and entering LISTEN state if to accept connections.
  */
+int
 tcp_attach(so)
 	struct socket *so;
 {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.h	7.8 (Berkeley) %G%
+ *	@(#)in_pcb.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,18 @@ struct inpcb {
 #define	sotoinpcb(so)	((struct inpcb *)(so)->so_pcb)
 
 #ifdef KERNEL
-struct	inpcb *in_pcblookup __P((struct inpcb *, struct in_addr, int,
-				 struct in_addr,  int, int));
+int	 in_losing __P((struct inpcb *));
+int	 in_pcballoc __P((struct socket *, struct inpcb *));
+int	 in_pcbbind __P((struct inpcb *, struct mbuf *));
+int	 in_pcbconnect __P((struct inpcb *, struct mbuf *));
+int	 in_pcbdetach __P((struct inpcb *));
+int	 in_pcbdisconnect __P((struct inpcb *));
+struct inpcb *
+	 in_pcblookup __P((struct inpcb *,
+	    struct in_addr, u_int, struct in_addr, u_int, int));
+int	 in_pcbnotify __P((struct inpcb *, struct sockaddr *,
+	    u_int, struct in_addr, u_int, int, void (*)(struct inpcb *, int)));
+void	 in_rtchange __P((struct inpcb *, int));
+int	 in_setpeeraddr __P((struct inpcb *, struct mbuf *));
+int	 in_setsockaddr __P((struct inpcb *, struct mbuf *));
 #endif

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	7.28 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,6 +42,7 @@ extern struct mbuf *m_copypack();
 /*
  * Tcp output routine: figure out what should be sent and send it.
  */
+int
 tcp_output(tp)
 	register struct tcpcb *tp;
 {
@@ -494,7 +495,7 @@ send:
 	if (error) {
 out:
 		if (error == ENOBUFS) {
-			tcp_quench(tp->t_inpcb);
+			tcp_quench(tp->t_inpcb, 0);
 			return (0);
 		}
 		if ((error == EHOSTUNREACH || error == ENETDOWN)
@@ -521,6 +522,7 @@ out:
 	return (0);
 }
 
+void
 tcp_setpersist(tp)
 	register struct tcpcb *tp;
 {

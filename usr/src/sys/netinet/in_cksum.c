@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_cksum.c	7.5 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@
 #define ADDCARRY(x)  (x > 65535 ? x -= 65535 : x)
 #define REDUCE {l_util.l = sum; sum = l_util.s[0] + l_util.s[1]; ADDCARRY(sum);}
 
+int
 in_cksum(m, len)
 	register struct mbuf *m;
 	register int len;

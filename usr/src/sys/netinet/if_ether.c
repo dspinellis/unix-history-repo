@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.27 (Berkeley) %G%
+ *	@(#)if_ether.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -53,8 +53,9 @@ int	arpt_down = 20;		/* once declared down, don't send for 20 secs */
 
 static	void arprequest __P((struct arpcom *, u_long *, u_long *, u_char *));
 static	void arptfree __P((struct llinfo_arp *));
+static	void arptimer __P((void *));
 static	struct llinfo_arp *arplookup __P((u_long, int, int));
-static	void arpcatchme __P(());
+static	void in_arpinput __P((struct mbuf *));
 
 extern	struct ifnet loif;
 extern	struct timeval time;
@@ -68,8 +69,10 @@ int	arpinit_done = 0;
 /*
  * Timeout routine.  Age arp_tab entries periodically.
  */
-void
-arptimer()
+/* ARGSUSED */
+static void
+arptimer(ignored_arg)
+	void *ignored_arg;
 {
 	int s = splnet();
 	register struct llinfo_arp *la = llinfo_arp.la_next;
@@ -118,7 +121,8 @@ arp_rtrequest(req, rt, sa)
 			/*
 			 * Case 1: This route should come from a route to iface.
 			 */
-			rt_setgate(rt, rt_key(rt), &null_sdl);
+			rt_setgate(rt, rt_key(rt),
+					(struct sockaddr *)&null_sdl);
 			gate = rt->rt_gateway;
 			SDL(gate)->sdl_type = rt->rt_ifp->if_type;
 			SDL(gate)->sdl_index = rt->rt_ifp->if_index;
@@ -369,7 +373,7 @@ arpintr()
  * We no longer reply to requests for ETHERTYPE_TRAIL protocol either,
  * but formerly didn't normally send requests.
  */
-void
+static void
 in_arpinput(m)
 	struct mbuf *m;
 {

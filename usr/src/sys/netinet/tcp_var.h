@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_var.h	7.12 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -273,7 +273,44 @@ struct	tcpstat {
 struct	inpcb tcb;		/* head of queue of active tcpcb's */
 struct	tcpstat tcpstat;	/* tcp statistics */
 u_long	tcp_now;		/* for RFC 1323 timestamps */
-struct	tcpiphdr *tcp_template();
-struct	tcpcb *tcp_close(), *tcp_drop();
-struct	tcpcb *tcp_timers(), *tcp_disconnect(), *tcp_usrclosed();
+
+int	 tcp_attach __P((struct socket *));
+void	 tcp_canceltimers __P((struct tcpcb *));
+struct tcpcb *
+	 tcp_close __P((struct tcpcb *));
+void	 tcp_ctlinput __P((int, struct sockaddr *, struct ip *));
+int	 tcp_ctloutput __P((int, struct socket *, int, int, struct mbuf **));
+struct tcpcb *
+	 tcp_disconnect __P((struct tcpcb *));
+struct tcpcb *
+	 tcp_drop __P((struct tcpcb *, int));
+void	 tcp_dooptions __P((struct tcpcb *,
+	    u_char *, int, struct tcpiphdr *, int *, u_long *, u_long *));
+void	 tcp_drain __P((void));
+void	 tcp_fasttimo __P((void));
+void	 tcp_init __P((void));
+void	 tcp_input __P((struct mbuf *, int));
+int	 tcp_mass __P((struct tcpcb *, u_int));
+struct tcpcb *
+	 tcp_newtcpcb __P((struct inpcb *));
+void	 tcp_notify __P((struct inpcb *, int));
+int	 tcp_output __P((struct tcpcb *));
+void	 tcp_pulloutofband __P((struct socket *,
+	    struct tcpiphdr *, struct mbuf *));
+void	 tcp_quench __P((struct inpcb *, int));
+int	 tcp_reass __P((struct tcpcb *, struct tcpiphdr *, struct mbuf *));
+void	 tcp_respond __P((struct tcpcb *,
+	    struct tcpiphdr *, struct mbuf *, u_long, u_long, int));
+void	 tcp_setpersist __P((struct tcpcb *));
+void	 tcp_slowtimo __P((void));
+struct tcpiphdr *
+	 tcp_template __P((struct tcpcb *));
+struct tcpcb *
+	 tcp_timers __P((struct tcpcb *, int));
+void	 tcp_trace __P((int, int, struct tcpcb *, struct tcpiphdr *, int));
+struct tcpcb *
+	 tcp_usrclosed __P((struct tcpcb *));
+int	 tcp_usrreq __P((struct socket *,
+	    int, struct mbuf *, struct mbuf *, struct mbuf *));
+void	 tcp_xmit_timer __P((struct tcpcb *, int));
 #endif

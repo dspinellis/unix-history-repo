@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_var.h	7.11 (Berkeley) %G%
+ *	@(#)udp_var.h	7.12 (Berkeley) %G%
  */
 
 /*
@@ -54,4 +54,13 @@ struct	udpstat {
 #ifdef KERNEL
 struct	inpcb udb;
 struct	udpstat udpstat;
+
+void	 udp_ctlinput __P((int, struct sockaddr *, struct ip *));
+void	 udp_init __P((void));
+void	 udp_input __P((struct mbuf *, int));
+int	 udp_output __P((struct inpcb *,
+	    struct mbuf *, struct mbuf *, struct mbuf *));
+int	 udp_sysctl __P((int *, u_int, void *, size_t *, void *, size_t));
+int	 udp_usrreq __P((struct socket *,
+	    int, struct mbuf *, struct mbuf *, struct mbuf *));
 #endif
