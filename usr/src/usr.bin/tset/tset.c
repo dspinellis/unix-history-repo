@@ -1,5 +1,5 @@
 #
-	char	id_tset[] = "@(#)tset.c	1.2";
+	char	id_tset[] = "@(#)tset.c	1.4 %G%";
 
 /*
 **  TSET -- set terminal modes
@@ -845,7 +845,7 @@ mapold:				Map->Ident = NewType;
 	 */
 	bufp = getenv("TERMCAP");
 	if (bufp && *bufp != '/')
-		strcpy(bufp-8, "NOTHING=nothing");
+		strcpy(bufp-8, "NOTHING");	/* overwrite only "TERMCAP" */
 	/* get current idea of terminal type from environment */
 	if (!Dash_h && !Mapped && TtyType == 0)
 		TtyType = getenv("TERM");
@@ -1539,7 +1539,7 @@ int	len;
 	p = a;
 	q = b;
 
-	while (*p && *q && (*p == *q) && --i > 0)
+	while ((*p == *q) && --i > 0)
 	{
 		p++; q++;
 	}
