@@ -1,4 +1,4 @@
-/*	tu.c	4.21	83/07/07	*/
+/*	tu.c	4.22	83/07/18	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -682,10 +682,10 @@ tu_vee(cp)
 		wakeup(cp);
 	splx(s);
 }
-#endif
 
 tu_restart()
 {
 	tureset();
 	timeout(tustart(), (caddr_t)0, hz * 3);
 }
+#endif
