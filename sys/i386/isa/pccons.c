@@ -54,7 +54,7 @@
  *					to eliminate ESC sequence in 
  *					init_main.c
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/i386/isa/pccons.c,v 1.3 1993/07/24 10:46:18 davidg Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/i386/isa/pccons.c,v 1.4 1993/08/28 13:26:28 rgrimes Exp $";
 
 /*
  * code to work keyboard & display for PC-style console
@@ -130,9 +130,9 @@ struct	isa_driver pcdriver = {
 #define	ROW		25
 #define	CHR		2
 #define MONO_BASE	0x3B4
-#define MONO_BUF	0xfe0B0000
+#define MONO_BUF	(KERNBASE + 0xB0000)
 #define CGA_BASE	0x3D4
-#define CGA_BUF		0xfe0B8000
+#define CGA_BUF		(KERNBASE + 0xB8000)
 #define IOPHYSMEM	0xA0000
 
 static unsigned int addr_6845 = MONO_BASE;
