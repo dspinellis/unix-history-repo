@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1993, 1994
+ * Copyright (c) 1982, 1986, 1993, 1994, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_var.h	8.3 (Berkeley) %G%
+ *	@(#)tcp_var.h	8.4 (Berkeley) %G%
  */
 
 /*
@@ -124,7 +124,7 @@ struct tcpcb {
  * transmit timing stuff.  See below for scale of srtt and rttvar.
  * "Variance" is actually smoothed difference.
  */
-	short	t_idle;			/* inactivity time */
+	u_short	t_idle;			/* inactivity time */
 	short	t_rtt;			/* round trip time */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	short	t_srtt;			/* smoothed round-trip time */
@@ -270,6 +270,8 @@ struct	tcpstat {
 	u_long	tcps_predack;		/* times hdr predict ok for acks */
 	u_long	tcps_preddat;		/* times hdr predict ok for data pkts */
 	u_long	tcps_pcbcachemiss;
+	u_long	tcps_persistdrop;	/* timeout in persist state */
+	u_long	tcps_badsyn;		/* bogus SYN, e.g. premature ACK */
 };
 
 #ifdef KERNEL
