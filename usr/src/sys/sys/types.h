@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	6.5 (Berkeley) %G%
+ *	@(#)types.h	6.6 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
@@ -45,24 +45,22 @@ typedef	int	off_t;
 typedef	u_short	uid_t;
 typedef	u_short	gid_t;
 
+#define	NBBY	8		/* number of bits in a byte */
 /*
  * Select uses bit masks of file descriptors in longs.
  * These macros manipulate such bit fields (the filesystem macros use chars).
+ * FD_SETSIZE may be defined by the user, but the default here
+ * should be >= NOFILE (param.h).
  */
-#ifndef	NBBY
-#ifdef KERNEL
-#include "param.h"
-#else	KERNEL
-#include <sys/param.h>
-#endif	KERNEL
-#endif	NBBY
-
 #ifndef	FD_SETSIZE
-#define	FD_SETSIZE	NOFILE
+#define	FD_SETSIZE	256
 #endif
 
 typedef long	fd_mask;
 #define NFDBITS	(sizeof(fd_mask) * NBBY)	/* bits per mask */
+#ifndef howmany
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+#endif
 
 typedef	struct fd_set {
 	fd_mask	fds_bits[howmany(FD_SETSIZE, NFDBITS)];
