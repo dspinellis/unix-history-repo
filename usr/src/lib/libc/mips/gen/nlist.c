@@ -1,4 +1,4 @@
-/* @(#)nlist.c	4.5 (Berkeley) %G% */
+/* @(#)nlist.c	4.6 (Berkeley) %G% */
 
 #include <sys/types.h>
 #include <a.out.h>
@@ -87,5 +87,5 @@ nlist(name, list)
 alldone:
 	fclose(f);
 	fclose(sf);
-	return (0);
+	return (nreq);
 }
