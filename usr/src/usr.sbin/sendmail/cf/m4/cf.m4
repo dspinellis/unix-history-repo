@@ -24,6 +24,7 @@ syscmd(rm -f TEMPFILE)dnl
 divert(-1)
 
 changecom()
+ifdef(`pushdef', `', `errprint(`You need a newer version of M4')m4exit(70)')
 define(`PUSHDIVERT', `pushdef(`__D__', divnum)divert($1)')
 define(`POPDIVERT', `divert(__D__)popdef(`__D__')')
 define(`OSTYPE', `include(../ostype/$1.m4)')
@@ -56,4 +57,4 @@ define(`DOIT', ifdef(`m4wrap', ``dnl'', ``include(`../m4/proto.m4')''))
 m4wrap(`include(`../m4/proto.m4')')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	2.17 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	2.18 (Berkeley) %G%')
