@@ -1,7 +1,6 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 # 08.mh		doesn't work right
-# 11.notes	deprecate
 BINDIR=	/usr/share/doc/usd
 FILES=	00.contents Makefile Title
 SUBDIR=	01.begin 02.learn 03.shell 04.csh 05.dc 06.bc 07.Mail \
