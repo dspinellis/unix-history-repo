@@ -1,4 +1,4 @@
-/*	socket.h	4.22	82/11/13	*/
+/*	socket.h	4.23	83/01/08	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -25,6 +25,8 @@
 #define	SO_KEEPALIVE	0x08		/* keep connections alive */
 #define	SO_DONTROUTE	0x10		/* just use interface addresses */
 #define	SO_NEWFDONCONN	0x20		/* give new fd on connection */
+#define	SO_USELOOPBACK	0x40		/* bypass hardware when possible */
+#define	SO_LINGER	0x80		/* ~SO_DONTLINGER */
 
 /*
  * Generic socket protocol format.
@@ -88,10 +90,40 @@ struct sockaddr {
 
 #define	AF_MAX		11
 
+/*
+ * Structure passed in at system call level.
+ */
 struct	socketopt {
-	int	so_optlen;
-	char	*so_optdata;
+	int	so_optlen;		/* total size of options */
+	struct	sotemplate *so_optdata;	/* option records */
 };
 
-#define	SOF_OOB		0x1
-#define	SOF_PREVIEW	0x2
+/*
+ * Options are specified as an array of records,
+ * each of the following structure.  opt_level
+ * indicates who's options are being specified.
+ * Only SOL_SOCKET is globally known, other levels
+ * use protocol numbers to tag options.  The 
+ * opt_size field does not include the space
+ * occupied by opt_level and opt_size.  opt_data
+ * is usually structured differently at each level.
+ */
+struct	sotemplate {
+	u_short	opt_level;		/* level for which options are for */
+#define	SOL_SOCKET	0xffff		/* options for socket level */
+	u_short	opt_size;		/* amount of data in opt_data */
+	u_char	opt_data[1];		/* acutally longer */
+};
+
+/*
+ * Structure used in specifying socket
+ * level (SOL_SOCKET) options.
+ */
+struct	sooptions {
+	int	sop_name;		/* defined above */
+	int	sop_val;		/* optional value */
+};
+
+#define	SOF_OOB		0x1		/* send/recv out-of-band data */
+#define	SOF_PREVIEW	0x2		/* look at data, but don't read */
+#define	SOF_DONTROUTE	0x4		/* send without routing data */
