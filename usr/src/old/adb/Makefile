@@ -14,20 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-MAN=	adb.0
-
-all depend clean lint tags: FRC
-	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
+all depend clean cleandir lint tags: FRC
 	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 
 SCRIPTDIR=	/usr/lib/adb
 
-install: ${MAN}
+install:
 	rm -rf ${DESTDIR}/${SCRIPTDIR}
 	mkdir ${DESTDIR}/${SCRIPTDIR}
 	chown bin.bin ${DESTDIR}/${SCRIPTDIR}
@@ -35,6 +29,5 @@ install: ${MAN}
 	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 	cd scripts; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 	cd scripts.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 FRC:

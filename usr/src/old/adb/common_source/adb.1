@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adb.1	5.2 (Berkeley) %G%
+.\"	@(#)adb.1	5.3 (Berkeley) %G%
 .\"
 .TH ADB 1 ""
 .UC 4
@@ -10,7 +10,7 @@
 adb \- debugger
 .SH SYNOPSIS
 .B adb
-[\fB\-w\fR] [ \fB\-k\fR ] [ \fB-I\fRdir ] [ objfil [ corfil ] ]
+[ \fB\-w\fR ] [ \fB\-k\fR ] [ \fB-I\fRdir ] [ objfil [ corfil ] ]
 .ds TW \v'.25m'\s+2~\s-2\v'-.25m'
 .ds ST *
 .ds IM \v'.1m'=\v'-.1m'\s-2\h'-.1m'>\h'.1m'\s+2
@@ -26,27 +26,27 @@ a controlled environment for the execution of UNIX programs.
 .I Objfil
 is normally an executable program file, preferably
 containing a symbol table; if not then the symbolic features of
-.I  adb
+.I adb
 cannot be used although the file can still be examined.
 The default for
 .I objfil
 is
-.B  a.out.
+.B a.out.
 .I Corfil
 is assumed to be a core image file produced after executing
 .IR objfil ;
 the default for
 .I corfil
 is
-.B  core.
+.B core.
 .PP
 Requests to
-.I  adb
+.I adb
 are read from the standard input and responses are to the standard output.
 If the
-.B  \-w
+.B \-w
 flag is present then both
-.I  objfil
+.I objfil
 and
 .I corfil
 are created if necessary and opened for reading and writing
@@ -67,7 +67,7 @@ ignores QUIT; INTERRUPT causes return to the next
 command.
 .PP
 In general requests to
-.I  adb
+.I adb
 are of the form
 .PP
 .if n .ti 16
@@ -79,7 +79,7 @@ are of the form
 If
 .I address
 is present then
-.I  dot
+.I dot
 is set to
 .IR address .
 Initially
@@ -101,7 +101,7 @@ If the operating system is being debugged either post-mortem or using
 the special file
 .I /dev/mem
 to interactive examine and/or modify memory the maps are set to map
-the kernel virtual addresses which start at 0x80000000 (on the VAX).
+the kernel virtual addresses which start at 0x80000000 (on the VAX); see
 .SM ADDRESSES.
 .SH EXPRESSIONS
 .TP 7.2n
@@ -188,20 +188,25 @@ and
 are
 .IR symbols .
 If
-.I name
-is omitted the value is the address of the most recently activated C stack frame
-corresponding to
-.IR routine .
-(This form is currently broken on the VAX; local variables can be examined
+.I routine
+is omitted, the currently active frame is used.
+(This form is currently broken; local variables can be examined
 only with
 .IR dbx (1).)
+If
+.I name
+is omitted the value is the address
+of the most recently activated C stack frame
+corresponding to
+.I routine
+(this much works).
 .TP 7.2n
 .RI ( exp \|)
 The value of the expression
 .IR exp .
 .LP
 .SM
-.B  "Monadic\ operators"
+.B "Monadic\ operators"
 .TP 7.2n
 .RI \*(ST exp
 The contents of the location addressed by
@@ -225,7 +230,7 @@ Bitwise complement.
 Logical negation.
 .LP
 .tr ''
-.B  "Dyadic\ operators"
+.B "Dyadic\ operators"
 are left associative and are less binding than monadic operators.
 .TP 7.2n
 .IR e1 + e2
@@ -262,7 +267,7 @@ for further details.)
 Locations starting at
 .I address
 in
-.I  objfil
+.I objfil
 are printed according to the format
 .IR f .
 .I dot
@@ -272,21 +277,22 @@ is incremented by the sum of the increments for each format letter (q.v.).
 Locations starting at
 .I address
 in
-.I  corfil
+.I corfil
 are printed according to the format
 .I f
 and
 .I dot
 is incremented as for `?'.
 .TP
-.RI  = f
+.RI = f
 The value of
 .I address
 itself is printed in the styles indicated by the format
 .IR f .
 (For
 .B i 
-format `?' is printed for the parts of the instruction that reference
+format zero values are assumed
+for the parts of the instruction that reference
 subsequent words.)
 .PP
 A
@@ -298,117 +304,99 @@ While stepping through a format
 .I dot
 is incremented by the amount given for each format letter.
 If no format is given then the last format is used.
-The format letters available are as follows.
+The format characters available are as follows.
+Note that a backslash (\e) must be used
+to quote the three numeric formats.
+.de f1
+.TP
+.BR "\\$1" "	\\$2"
+..
+.de fR
+.br
+.ns
+.TP
+.BR "\\$1" "	\\$2"
+..
+.de fI
+.br
+.ns
+.TP
+.BI "\\$1" "	\\$2"
+..
+.de f
+.br
+.ns
+.TP
+\\$1
+..
 .ta 2.5n .5i
 .RS
-.TP
-.BR o "	2"
-Print 2 bytes in octal.  All octal numbers output by
+.f1 1 1
+Print 1 byte in the current radix
+(which may be either signed or unsigned; see the $d command).
+.fR 2 2
+Print 2 bytes in the current radix.
+.fR 4 4
+Print 4 bytes in the current radix.
+.fR v 2
+Print 2 bytes in the signed variant of the current radix.
+.fR V 4
+Print 4 bytes in the signed variant of the current radix.
+.fR o 2
+Print 2 bytes in unsigned octal.  All octal numbers output by
 .I adb
 are preceded by 0.
-.br
-.ns
-.TP
-.BR O "	4"
-Print 4 bytes in octal.
-.br
-.ns
-.TP
-.BR q "	2"
-Print in signed octal.
-.br
-.ns
-.TP
-.BR Q "	4"
-Print long signed octal.
-.br
-.ns
-.TP
-.BR d "	2"
-Print in decimal.
-.br
-.ns
-.TP
-.BR D "	4"
-Print long decimal.
-.br
-.ns
-.TP
-.BR x "	2"
-Print 2 bytes in hexadecimal.
-.br
-.ns
-.TP
-.BR X "	4"
-Print 4 bytes in hexadecimal.
-.br
-.ns
-.TP
-.BR u "	2"
-Print as an unsigned decimal number.
-.br
-.ns
-.TP
-.BR U "	4"
-Print long unsigned decimal.
-.br
-.ns
-.TP
-.BR f "	4"
-Print the 32 bit value as a floating point number.
-.br
-.ns
-.TP
-.BR F "	8"
-Print double floating point.
-.br
-.ns
-.TP
-.BR b "	1"
-Print the addressed byte in octal.
-.br
-.ns
-.TP
-.BR c "	1"
-Print the addressed character.
-.br
-.ns
-.TP
-.BR C "	1"
-Print the addressed character using
+.fR O 4
+Print 4 bytes in unsigned octal.
+.fR q 2
+Print 2 bytes in signed octal.
+.fR Q 4
+Print 4 bytes in signed octal.
+.fR u 2
+Print 2 bytes in unsigned decimal.
+.fR U 4
+Print 4 bytes in long unsigned decimal.
+.fR d 2
+Print 2 bytes in signed decimal.
+.fR D 4
+Print 4 bytes in long signed decimal.
+.fR x 2
+Print 2 bytes in unsigned hexadecimal.
+.fR X 4
+Print 4 bytes in unsigned hexadecimal.
+.fR z 2
+Print 2 bytes in signed hexadecimal.
+.fR Z 4
+Print 4 bytes in signed hexadecimal.
+.fR f 4
+Print 4 bytes as a floating point number.
+.fR F 8
+Print 8 bytes as a double floating point number.
+.fR b 1
+Print 1 byte in unsigned octal.
+.fR c 1
+Print 1 byte as a character.
+.fR C 1
+Print 1 byte as a character, using
 the standard escape convention where control characters
 are printed as ^X and the delete character is printed as ^?.
-.br
-.ns
-.TP
-.BI s "	n"
+.fI s n
 Print the addressed characters until a zero character is reached.
-.br
-.ns
-.TP
-.BI S "	n"
+.fI S n
 Print a string using the ^\fIX\fR escape convention (see \fBC\fR above).
 .I n
 is the length of the string including its zero terminator.
-.br
-.ns
-.TP
-.BR Y "	4"
+.fR Y 4
 Print 4 bytes in date format (see
 .IR ctime (3)).
-.br
-.ns
-.TP
-.BR i "	n"
+.fR i n
 Print as machine instructions.
 .I n
 is the number of bytes occupied by the instruction.
-This style of printing causes variables 1 and 2 to be set
-to the offset parts of the source and destination respectively.
-.br
-.ns
-.TP
-.BR a "	0"
+This style of printing causes the numeric variables 1, 2, ... to be set
+according to the offset parts of the arguments, if any, of the instruction
+(up to 6 on the VAX).
+.fR a 0
 Print the value of
 .I dot
 in symbolic form.
@@ -420,54 +408,30 @@ type as indicated below.
 	?	local or global text symbol
 .br
 	=	local or global absolute symbol
-.TP
-.BR p "	4"
+.f1 p 4
 Print the addressed value in symbolic form using
 the same rules for symbol lookup as
 .BR a .
-.br
-.tr ''
-.ns
-.TP
-.BR t "	0"
+.fR t 0
 When preceded by an integer tabs to the next appropriate tab stop.
 For example,
 .B 8t 
 moves to the next 8-space tab stop.
-.br
-.ns
-.TP
-.BR r "	0"
+.fR r 0
 Print a space.
-.br
-.ns
-.TP
-.BR n "	0"
+.fR n 0
 Print a newline.
-.br
-.ns
 .tr '"
-.TP
-.BR '...' " 0"
+.fR '...' 0
 Print the enclosed string.
-.br
 .tr ''
-.br
-.ns
-.TP
-.B ^
+.f ^
 .I Dot
 is decremented by the current increment.  Nothing is printed.
-.br
-.ns
-.TP
-+
+.f +
 .I Dot
 is incremented by 1.  Nothing is printed.
-.br
-.ns
-.TP
-\-
+.f \-
 .I Dot
 is decremented by 1.  Nothing is printed.
 .RE
@@ -476,10 +440,14 @@ newline
 Repeat the previous command with a
 .I count
 of 1.
+.rm f
+.rm fI
+.rm fB
+.rm f1
 .TP
 .RB [ ?/ ] l "\fI value mask\fR"
 Words starting at
-.I  dot
+.I dot
 are masked with
 .I mask
 and compared with
@@ -495,7 +463,7 @@ is unchanged; otherwise
 is set to the matched location.
 If
 .I mask
-is omitted then \-1 is used.
+is omitted then all bits are compared.
 .TP
 .RB [ ?/ ] w "\fI value ...\fR"
 Write the 2-byte
@@ -503,7 +471,8 @@ Write the 2-byte
 into the addressed location.  If the command is
 .BR W ,
 write 4 bytes.
-Odd addresses are not allowed when writing to the subprocess address space.
+Odd addresses \fIare\fP allowed
+when writing to the subprocess address space.
 .TP
 [\fB?/\fR]\fBm\fI b1 e1 f1\fR[\fB?/\fR]
 .br
@@ -517,8 +486,8 @@ of the mapping is changed.
 If the list is terminated by `?' or `/' then the file (\fIobjfil\fR or
 .I corfil
 respectively) is used for subsequent requests.
-(So that, for example, `/m?' will cause `/' to refer to
-.IR objfil .)
+For example, `/m?' will cause `/' to refer to
+.IR objfil .
 .TP
 .BI \*(GT name
 .I Dot
@@ -531,6 +500,11 @@ A shell (/bin/sh) is called to read the rest of the line following `!'.
 Miscellaneous commands.  The available 
 .I modifiers 
 are:
+.de f
+.br
+.ns
+.TP
+..
 .RS
 .TP
 .BI < f
@@ -548,9 +522,7 @@ The value of the count will be placed in variable
 before the first command in
 .I f
 is executed.
-.br
-.ns
-.TP
+.f
 .BI << f
 Similar to
 .B <
@@ -561,38 +533,28 @@ is saved during the execution of this command, and restored when it completes.
 There is a (small) finite limit to the number of
 .B <<
 files that can be open at once.
-.br
-.ns
-.TP
+.f
 .BI > f
 Append output to the file
 .IR f ,
 which is created if it does not exist.  If
 .I f
 is omitted, output is returned to the terminal.
-.br
-.ns
-.TP
+.f
 .B ?
 Print process id, the signal which caused stoppage or termination,
 as well as the registers as \fB$r\fR.  This is the default if
 \fImodifier\fR is omitted.
-.br
-.ns
-.TP
+.f
 .B r
 Print the general registers and the instruction addressed by
 .BR pc .
 .I Dot
 is set to \fBpc\fR.
-.br
-.ns
-.TP
+.f
 .B b
 Print all breakpoints and their associated counts and commands.
-.br
-.ns
-.TP
+.f
 .B c
 C stack backtrace.  If
 .I address
@@ -600,66 +562,52 @@ is given then it is taken as the address of the current frame
 instead of the contents of the frame\-pointer register.  If
 .B C 
 is used then the names and (32 bit) values of all automatic
-and static variables are printed for each active function. (broken
-on the VAX).  If
+and static variables are printed for each active function
+(this is partially broken; the names are not now available).  If
 .I count
 is given then only the first
 .I count
 frames are printed.
-.br
-.ns
-.TP
+.f
 .B d
 Set the default radix to
 .I address
-and report the new value.  Note that
+and report the new value.  If no
+.I address
+is given, the default radix is not changed.
+The new radix must be between -16 (decimal) and 16 (decimal)
+and must not be 0, 1, or -1.
+A negative radix implies that numbers printed in that radix
+will be treated as signed; otherwise they are treated as unsigned.
+Note that
 .I address
 is interpreted in the (old) current radix.
-Thus \*(lq10$d\*(rq never changes the default radix.
-To make decimal the default radix, use \*(lq0t10$d\*(rq.
-.br
-.ns
-.TP
+Thus \*(lq10$d\*(rq simply changes the default radix to unsigned.
+To make signed decimal the default radix, use \*(lq-0t10$d\*(rq.
+.f
 .B e
 The names and values of external variables are printed.
-.br
-.ns
-.TP
+.f
 .B w
 Set the page width for output to
 .I address
 (default 80).
-.br
-.ns
-.TP
+.f
 .B s
 Set the limit for symbol matches to
 .I address
 (default 255).
-.br
-.ns
-.TP
-.B o
-All integers input are regarded as octal.
-.br
-.ns
-.TP
+.f
 .B q
 Exit from
 .IR adb .
-.br
-.ns
-.TP
+.f
 .B v
 Print all non zero variables in octal.
-.br
-.ns
-.TP
+.f
 .B m
 Print the address map.
-.br
-.ns
-.TP
+.f
 .B p
 .RI ( "Kernel debugging" )
 Change the current kernel memory mapping to map the designated 
@@ -668,8 +616,7 @@ to the address given by the symbol
 .I "_u."
 The
 .I address
-argument is the address of the user's user page table entries (on
-the VAX).
+argument is the address of the user's user page table entries.
 .RE
 .TP
 .BI : modifier
@@ -691,6 +638,9 @@ to zero then the breakpoint causes a stop.
 .B d
 Delete breakpoint at
 .IR address .
+.TP
+.B D
+Delete all breakpoints.
 .TP
 .B r
 Run
@@ -737,25 +687,19 @@ The current subprocess, if any, is terminated.
 .I Adb
 provides a number of variables.
 Named variables are set initially by
-.I  adb
+.I adb
 but are not used subsequently.
 Numbered variables are reserved for communication as follows.
 .TP
 0
 The last value printed.
-.br
-.ns
-.TP
+.f
 1
 The last offset part of an instruction source.
-.br
-.ns
-.TP
-2
-The previous value of variable 1.
-.br
-.ns
-.TP
+This continues up through at most 6 on the VAX.
+For a three-operand instruction, variable 2 is the second source offset
+and variable 3 the destination offset part.
+.f
 9
 The count on the last $< or $<< command.
 .PP
@@ -770,29 +714,19 @@ file then these values are set from
 .TP
 b
 The base address of the data segment.
-.br
-.ns
-.TP
+.f
 d
 The data segment size.
-.br
-.ns
-.TP
+.f
 e
 The entry point.
-.br
-.ns
-.TP
+.f
 m
 The `magic' number (0407, 0410 or 0413).
-.br
-.ns
-.TP
+.f
 s
 The stack segment size.
-.br
-.ns
-.TP
+.f
 t
 The text segment size.
 .SH ADDRESSES
