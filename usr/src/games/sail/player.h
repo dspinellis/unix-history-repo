@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)player.h	8.1 (Berkeley) %G%
+ *	@(#)player.h	8.2 (Berkeley) %G%
  */
 
 #include <curses.h>
-#include "externs.h"
+#include "extern.h"
 
 /* sizes and coordinates for the screen */
 
