@@ -1,4 +1,12 @@
-/*	strncmp.s	4.5	84/12/06	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)strncmp.s	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Compare at most n characters of string

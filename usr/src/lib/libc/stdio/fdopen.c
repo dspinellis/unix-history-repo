@@ -1,4 +1,13 @@
-/* @(#)fdopen.c	4.5 (Berkeley) %G% */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)fdopen.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Unix routine to do an "fopen" on file descriptor
  * The mode has to be repeated because you can't query its

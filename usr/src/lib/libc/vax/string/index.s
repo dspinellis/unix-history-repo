@@ -1,4 +1,12 @@
-/*	index.s	4.3	84/11/04	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)index.s	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Find the first occurence of c in the string cp.

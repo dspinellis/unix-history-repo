@@ -1,4 +1,12 @@
-/*	strlen.s	4.3	84/11/07	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)strlen.s	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Return the length of cp (not counting '\0').
