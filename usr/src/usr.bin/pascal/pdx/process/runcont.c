@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runcont.c 1.3 %G%";
+static char sccsid[] = "@(#)runcont.c 1.4 %G%";
 
 /*
  * Execution management.
@@ -117,6 +117,9 @@ initstart()
     process = &pbuf;
     initcache(process);
     start(argv, infile, outfile);
+    if (process->status != STOPPED) {
+	panic("could not start program");
+    }
 }
 
 /*
@@ -129,9 +132,13 @@ run()
     curline = 0;
     argv[argc] = NIL;
     start(argv, infile, outfile);
-    just_started = TRUE;
-    isstopped = FALSE;
-    cont();
+    if (process->status == STOPPED) {
+	just_started = TRUE;
+	isstopped = FALSE;
+	cont();
+    } else if (option('r')) {
+	panic("could not start program");
+    }
 }
 
 /*
