@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.8	6.4 (Berkeley) %G%
+.\"	@(#)mount.8	6.5 (Berkeley) %G%
 .\"
 .TH MOUNT 8 ""
 .UC 4
@@ -95,9 +95,7 @@ all of the file systems described in
 .I fstab
 are mounted or unmounted.
 .PP
-These commands
-maintain a list of currently mounted file systems in
-.I /etc/mtab.
+The system maintains a list of currently mounted filesystems.
 If invoked without an argument,
 .I mount
 prints the list.
@@ -107,11 +105,9 @@ systems must be mounted read-only
 or errors will occur when access times are updated,
 whether or not any explicit write is attempted.
 .SH FILES
-/etc/mtab		mount table
-.br
 /etc/fstab	file system table
 .SH "SEE ALSO"
-mount(2), fstab(5), mtab(5)
+mount(2), fstab(5)
 .SH BUGS
 Mounting garbaged file systems will crash the system.
 .PP
