@@ -1,4 +1,4 @@
-/*	va.c	4.13.1.3	82/11/27	*/
+/*	va.c	4.17	82/11/27	*/
 
 #include "va.h"
 #if NVA > 0
@@ -102,17 +102,16 @@ vaprobe(reg)
 	vaaddr->vacsl = VA_IENABLE;
 	vaaddr->vaba = 0;
 	vaaddr->vacsh = VAPLOT;
-#ifndef VARIANGOBIT
 	vaaddr->vacsl = VA_IENABLE|VA_DMAGO;
 	vaaddr->vawc = -1;
 	DELAY(10000);
 	vaaddr->vacsl = 0;
-	return (sizeof (struct vadevice));
 	vaaddr->vawc = 0;
 #else
 	br=0x14;
 	cvec=0170;
 #endif
+	return (sizeof (struct vadevice));
 }
 
 /*ARGSUSED*/
@@ -318,6 +317,7 @@ vacmd(dev, vcmd)
 		wakeup((caddr_t)&sc->sc_iostate);
 	}
 	splx(s);
+	return (error);
 }
 
 vadopio(dev, cmd)
