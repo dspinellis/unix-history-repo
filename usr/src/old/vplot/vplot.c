@@ -1,155 +1,277 @@
-/*
- * Reads standard graphics input
- * Makes a plot on a 200 dot-per-inch 11" wide
- * Versatek plotter.
+/*  VPLOT: version 4.1				updated %G%
  *
- * Creates and leaves /usr/tmp/raster (1000 blocks)
- * which is the bitmap
+ *  Reads standard graphics input and produces a plot on the
+ *  Varian or Versatec
+ *  -- creates in /usr/tmp a raster file of 500 1K-blocks.
  */
-#include "stdio.h"
+#include <stdio.h>
 #include <signal.h>
+#include <vfont.h>
 
-#define	NB	88
-#define BSIZ	512
-#define	mapx(x)	((1536*((x)-botx)/del)+centx)
-#define	mapy(y)	((1536*(del-(y)+boty)/del)-centy)
+#define LPR "/usr/ucb/lpr"
+#define VAX		/* Machine Flag (don't simulate VM on vax) */
+
+#ifdef VAX
+#define NB	1024		/* Number of blocks in virtual memory */
+#else
+#define	NB	88		/* Number of blocks kept in memory */
+#endif
+#define BSIZ	512		/* Size of blocks */
+#define LOGBSIZ	9		/* log base 2 of BSIZ */
+
+#define	mapx(x)	((DevRange*((x)-botx)/del)+centx)
+#define	mapy(y)	((DevRange*(del-(y)+boty)/del)-centy)
 #define SOLID -1
 #define DOTTED 014
 #define SHORTDASHED 034
 #define DOTDASHED 054
 #define LONGDASHED 074
-#define	SETSTATE	(('v'<<8)+1)
+
+char *Sid = "@(#)\t%G%";
 
 int	linmod	= SOLID;
-int	again;
 int	done1;
 char	chrtab[][16];
-int	plotcom[]	= { 0200, 0, 0};
-int	eotcom[]		= { 0210, 0, 0};
-char	blocks	[NB][BSIZ];
-int	obuf[264];
+char	blocks[NB][BSIZ];
 int	lastx;
 int	lasty;
-double	topx	= 1536;
-double	topy	= 1536;
-double	botx	= 0;
-double	boty	= 0;
-int	centx;
-int	centy;
-double	delx	= 1536;
-double	dely	= 1536;
-double	del	= 1536;
+int	radius, startx, starty, endx, endy;
+double	topx;
+double	topy;
+double	botx;
+double	boty;
+int	centx = 0;
+int	centy = 0;
+double	delx;
+double	dely;
+double	del;
 
+int	warned = 0;	/* Indicates whether the warning message about
+			 * unimplemented routines has been printed */
+
+#ifdef VAX
+char	dirty[NB];		/* marks if a block has been written into */
+#else
 struct	buf {
 	int	bno;
 	char	*block;
-};
-struct	buf	bufs[NB];
+} bufs[NB];
+#endif
 
-int	in, out;
-char *picture = "/usr/tmp/raster";
+FILE	*infile;
+int	fd;
+char	picture[] = "/usr/tmp/rastAXXXXXX";
+int	run = 13;		/* index of 'a' in picture[] */
+int	DevRange = 1536;	/* output array size (square) in pixels */
+int	BytesPerLine = 264;	/* Bytes per raster line (physical) */
+int	lparg = 7;		/* index into lpargs */
+
+char	*lpargs[50] = { "lpr", "-Pvarian", "-v", "-s", "-r", "-J", "vplot" };
+
+/* variables for used to print from font file */
+int	fontSet = 0;		/* Has the font file been read */
+struct	header header;
+struct	dispatch dispatch[256];
+char	*bits;
+char	*fontFile = "/usr/lib/vfont/R.6";
 
 main(argc, argv)
+int argc;
 char **argv;
 {
-	extern int onintr();
-	register i;
+	extern int cleanup();
+	extern char *malloc();
+	register i, j;
+	register char *arg;
+	int again;
 
-	if (argc>1) {
-		in = open(argv[1], 0);
-		putpict();
-		exit(0);
-	}
-	signal(SIGTERM, onintr);
-	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
-		signal(SIGINT, onintr);
-another:
-	for (i=0; i<NB; i++) {
-		bufs[i].bno = -1;
-		bufs[i].block = blocks[i];
-	}
-	out = creat(picture, 0666);
-	in = open(picture, 0);
-	zseek(out, 32*32);
-	write(out, blocks[0], BSIZ);
-/*delete following code when filsys deals properly with
-holes in files*/
-	for(i=0;i<512;i++)
-		blocks[0][i] = 0;
-	zseek(out, 0);
-	for(i=0;i<32*32;i++)
-		write(out,blocks[0],512);
-/**/
-	getpict();
-	for (i=0; i<NB; i++)
-		if (bufs[i].bno != -1) {
-			zseek(out, bufs[i].bno);
-			write(out, bufs[i].block, BSIZ);
+	infile = stdin;
+	while (argc > 1 && argv[1][0] == '-') {
+		argc--;
+		arg = *++argv;
+		switch (*++arg) {
+		case 'W':
+			DevRange = 2047;
+			BytesPerLine = 880;
+			lpargs[1] = "-Pversatec";
+			break;
+		case 'V':
+			DevRange = 1536;
+			BytesPerLine = 264;
+			lpargs[1] = "-Pvarian";
+			break;
+		case 'b':
+			if (argc-- > 1)
+				lpargs[lparg-1] = *++argv;
+			break;
+		default:
+			fprintf(stderr, "vplot: %s option unknown\n", *argv);
+			break;
 		}
-	putpict();
-	if (again) {
-		close(in);
-		close(out);
-		goto another;
 	}
-	exit(0);
+	if (argc > 1) {
+		if ((infile = fopen(*++argv, "r")) == NULL) {
+			perror(*argv);
+			cleanup();
+		}
+	}
+
+	/* init constants for scaling */
+	topx = topy = DevRange;
+	botx = boty = 0;
+	delx = dely = del = DevRange;
+	centx = (DevRange - mapx(topx))/2;
+	centy = mapy(topy)/2;
+	signal(SIGTERM, cleanup);
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		signal(SIGINT, cleanup);
+	mktemp(picture);
+	do {
+		if ((fd = creat(picture, 0666)) < 0) {
+			fprintf(stderr, "can't create %s\n", picture);
+			cleanup();
+		}
+#ifndef VAX
+		close(fd);
+		if ((fd = open(picture, 2)) < 0) {
+			fprintf(stderr, "can't reopen %s\n", picture);
+			cleanup();
+		}
+#endif
+		i = strlen(picture) + 1;
+		if ((arg = malloc(i)) == NULL) {
+			fprintf(stderr, "ran out of memory\n");
+			cleanup();
+		}
+		strcpy(arg, picture);
+		lpargs[lparg++] = arg;
+		picture[run]++;
+		for (i=0; i<NB; i++) {
+#ifdef VAX
+			dirty[i] = 0;
+			for (j=0; j<BSIZ; ++j)
+				blocks[i][j] = 0;
+#else
+			bufs[i].bno = -1;
+			bufs[i.block = blocks[i];
+#endif
+		}
+#ifdef NOHOLES
+		/* clear the entire file */
+		for (i=0; i<BSIZ; i++)
+			blocks[0][i] = '\0';
+		for (i=0; i<1024; i++)
+			write(fd, blocks[0], BSIZ);
+#endif
+
+		again = getpict();
+
+		for (i=0; i<NB; i++) {
+#ifdef VAX
+			if (dirty[i]) {		/* write out non-zero blocks */
+				zseek(fd, i);
+				write(fd, blocks[i], BSIZ);
+			}
+#else
+			if (bufs[i].bno != -1) {
+				zseek(fd, bufs[i].bno);
+				write(fd, bufs[i].blocks[i], BSIZ);
+			}
+#endif
+		}
+		close(fd);
+	} while (again);
+	lpargs[lparg] = 0;
+	execv(LPR, lpargs);
+	fprintf(stderr, "can't exec %s\n", LPR);
+	cleanup();
 }
 
 getpict()
 {
 	register x1, y1;
 
-	again = 0;
-	for (;;) switch (x1 = getc(stdin)) {
+	for (;;) switch (x1 = getc(infile)) {
+
+	case '\n':
+		continue;
 
 	case 's':
-		botx = getw(stdin);
-		boty = getw(stdin);
-		topx = getw(stdin);
-		topy = getw(stdin);
+		botx = getinteger(infile);
+		boty = getinteger(infile);
+		topx = getinteger(infile);
+		topy = getinteger(infile);
 		delx = topx-botx;
 		dely = topy-boty;
 		if (dely/delx > 1536./2048.)
 			del = dely;
 		else
-			del = delx * (1566./2048.);
+			del = delx;
 		centx = 0;
-		centx = (2048 - mapx(topx)) / 2;
+		centx = (DevRange - mapx(topx))/2;
 		centy = 0;
 		centy = mapy(topy) / 2;
 		continue;
 
+	case 'b':
+		x1 = getc(infile);
+		continue;
+
 	case 'l':
 		done1 |= 01;
-		x1 = mapx(getw(stdin));
-		y1 = mapy(getw(stdin));
-		lastx = mapx(getw(stdin));
-		lasty = mapy(getw(stdin));
+		x1 = mapx(getinteger(infile));
+		y1 = mapy(getinteger(infile));
+		lastx = mapx(getinteger(infile));
+		lasty = mapy(getinteger(infile));
 		line(x1, y1, lastx, lasty);
 		continue;
 
+	case 'c':
+		x1 = mapx(getinteger(infile));
+		y1 = mapy(getinteger(infile));
+		radius = mapx(getinteger(infile));
+		if (!warned) {
+			fprintf(stderr,"Circles are Implemented\n");
+			warned++;
+		}
+		circle(x1, y1, radius);
+		continue;
+		
+	case 'a':
+		x1 = mapx(getinteger(infile));
+		y1 = mapy(getinteger(infile));
+		startx = mapx(getinteger(infile));
+		starty = mapy(getinteger(infile));
+		endx = mapx(getinteger(infile));
+		endy = mapy(getinteger(infile));
+		if (!warned) {
+			fprintf(stderr,"Circles and Arcs are unimplemented\n");
+			warned++;
+		}
+		continue;
+
 	case 'm':
-		lastx = mapx(getw(stdin));
-		lasty = mapy(getw(stdin));
+		lastx = mapx(getinteger(infile));
+		lasty = mapy(getinteger(infile));
 		continue;
 
 	case 't':
+		lastx = lastx - 6;
+		lasty = lasty + 6;
 		done1 |= 01;
-		while ((x1 = getc(stdin)) != '\n')
+		while ((x1 = getc(infile)) != '\n')
 			plotch(x1);
 		continue;
 
 	case 'e':
-		if (done1) {
-			again++;
-			return;
-		}
+		if (done1)
+			return(1);
 		continue;
 
 	case 'p':
 		done1 |= 01;
-		lastx = mapx(getw(stdin));
-		lasty = mapy(getw(stdin));
+		lastx = mapx(getinteger(infile));
+		lasty = mapy(getinteger(infile));
 		point(lastx, lasty);
 		point(lastx+1, lasty);
 		point(lastx, lasty+1);
@@ -158,17 +280,17 @@ getpict()
 
 	case 'n':
 		done1 |= 01;
-		x1 = mapx(getw(stdin));
-		y1 = mapy(getw(stdin));
+		x1 = mapx(getinteger(infile));
+		y1 = mapy(getinteger(infile));
 		line(lastx, lasty, x1, y1);
 		lastx = x1;
 		lasty = y1;
 		continue;
 
 	case 'f':
-		getw(stdin);
-		getc(stdin);
-		switch(getc(stdin)) {
+		getinteger(infile);
+		getc(infile);
+		switch (getc(infile)) {
 		case 't':
 			linmod = DOTTED;
 			break;
@@ -186,85 +308,102 @@ getpict()
 			linmod = DOTDASHED;
 			break;
 		}
-		while((x1=getc(stdin))!='\n')
-			if(x1==-1) return;
+		while ((x1 = getc(infile)) != '\n')
+			if (x1 == EOF)
+				return(0);
 		continue;
 
 	case 'd':
-		getw(stdin);
-		getw(stdin);
-		getw(stdin);
-		x1 = getw(stdin);
+		getinteger(infile);
+		getinteger(infile);
+		getinteger(infile);
+		x1 = getinteger(infile);
 		while (--x1 >= 0)
-			getw(stdin);
+			getinteger(infile);
 		continue;
 
-	case -1:
-		return;
+	case 0:		/* ignore null characters */
+		continue;
+
+	case 255:
+	case EOF:
+		return(0);
 
 	default:
-		printf("Botch\n");
-		return;
+		fprintf(stderr, "Input format error %c(%o)\n",x1,x1);
+		cleanup();
 	}
 }
 
-plotch(c)
-register c;
+plotch(ch)
+char ch;
 {
-	register j;
-	register char *cp;
+	register int i,j,k;
+	register char *ptr,c;
+	int nbytes;
+
+	if (!fontSet)
+		InitFont();	/* Read font if not already read */
+
+	ptr = bits + dispatch[ch].addr;
+
+	for (i = dispatch[ch].up; i > -dispatch[ch].down; --i) {
+		nbytes = (dispatch[ch].right + dispatch[ch].left + 7)/8;
+		for (j = 0; j < nbytes; j++) {
+			c = *ptr++;
+			for (k = 7; k >= 0; k--)
+				if ((c >> k) & 1)
+					point(lastx+7-k+j*8-dispatch[ch].left, lasty-i);
+		}
+	}
+	if (ch != ' ')
+		lastx += dispatch[ch].width;
+	else
+		lastx += dispatch['a'].width;
+}
+
+InitFont()
+{
+	char *s;
+	int fonts;
 	int i;
 
-	if (c<' ' || c >0177)
-		return;
-	cp = chrtab[c-' '];
-	for (i = -16; i<16; i += 2) {
-		c = *cp++;
-		for (j=7; j>=0; --j)
-			if ((c>>j)&1) {
-				point(lastx+6-j*2, lasty+i);
-				point(lastx+7-j*2, lasty+i);
-				point(lastx+6-j*2, lasty+i+1);
-				point(lastx+7-j*2, lasty+i+1);
-			}
+	fontSet = 1;
+	/* Get the font file */
+	s = fontFile;
+	if ((fonts = open(s, 0)) == -1) {
+		perror(s);
+		fprintf(stderr, "Can't get font file");
+		cleanup();
 	}
-	lastx += 16;
-}
-
-int	f; /* versatec file number */
-putpict()
-{
-	register x, *ip, *op;
-	int y;
-
-	if (f==0){
-		f = open("/dev/vp0", 1);
-		if (f < 0) {
-			printf("Cannot open vp\n");
-			exit(1);
-		}
-		ioctl(f, SETSTATE, plotcom);
+	/* Get the header and check magic number */
+	if (read(fonts, &header, sizeof(header)) != sizeof(header)) {
+		perror(s);
+		fprintf(stderr, "Bad read in font file");
+		cleanup();
 	}
-	op = obuf;
-	lseek(in, 0L, 0);
-	for (y=0; y<2048; y++) {
-		if ((y&077) == 0)
-			read(in, blocks[0], 32*BSIZ);
-		for (x=0; x<32; x++)  {
-			ip = (int *)&blocks[x][(y&077)<<3];
-			*op++ = *ip++;
-			*op++ = *ip++;
-			*op++ = *ip++;
-			*op++ = *ip++;
-		}
-		*op++ = 0;
-		*op++ = 0;
-		*op++ = 0;
-		*op++ = 0;
-		if (y&1) {
-			write(f, (char *)obuf, sizeof(obuf));
-			op = obuf;
-		}
+	if (header.magic != 0436) {
+		fprintf(stderr,"Bad magic numer in font file");
+		cleanup();
+	}
+	/* Get dispatches */
+	if (read(fonts, dispatch, sizeof(dispatch)) != sizeof(dispatch)) {
+		perror(s);
+		fprintf(stderr, "Bad read in font file");
+		cleanup();
+	}
+	/* Allocate space for bit map and read in bits */
+	bits = (char *) malloc(header.size);
+	if (read(fonts, bits, header.size) != header.size) {
+		perror(s);
+		fprintf(stderr,"Can't read bit map in font file");
+		cleanup();
+	}
+	/* Close font file */
+	if (close(fonts) != 0) {
+		perror(s);
+		fprintf(stderr,"Can't close font file");
+		cleanup();
 	}
 }
 
@@ -291,11 +430,8 @@ register x0, y0;
 	res1 = 0;
 	res2 = 0;
 	if (dx >= dy) while (x0 != x1) {
-	if((x0+slope*y0)&linmod)
-	if (((x0>>6) + ((y0&~077)>>1)) == bufs[0].bno)
-		bufs[0].block[((y0&077)<<3)+((x0>>3)&07)] |= 1 << (7-(x0&07));
-	else
-		point(x0, y0);
+		if ((x0+slope*y0) & linmod)
+			point(x0, y0);
 		if (res1 > res2) {
 			res2 += dx - res1;
 			res1 = 0;
@@ -304,10 +440,7 @@ register x0, y0;
 		res1 += dy;
 		x0 += xinc;
 	} else while (y0 != y1) {
-	if((x0+slope*y0)&linmod)
-	if (((x0>>6) + ((y0&~077)>>1)) == bufs[0].bno)
-		bufs[0].block[((y0&077)<<3)+((x0>>3)&07)] |= 1 << (7-(x0&07));
-	else
+		if ((x0+slope*y0) & linmod)
 		point(x0, y0);
 		if (res1 > res2) {
 			res2 += dy - res1;
@@ -317,60 +450,119 @@ register x0, y0;
 		res1 += dx;
 		y0 += yinc;
 	}
-	if((x1+slope*y1)&linmod)
-	if (((x1>>6) + ((y1&~077)>>1)) == bufs[0].bno)
-		bufs[0].block[((y1&077)<<3)+((x1>>3)&07)] |= 1 << (7-(x1&07));
-	else
+	if ((x1+slope*y1) & linmod)
 		point(x1, y1);
 }
 
-point(x, y)
-register x, y;
-{
-	register bno;
+#define labs(a) (a >= 0 ? a : -a)
 
-	bno = ((x&03700)>>6) + ((y&03700)>>1);
-	if (bno != bufs[0].bno) {
-		if (bno < 0 || bno >= 1024)
-			return;
-		getblk(bno);
+circle(x,y,c)
+{
+	register dx, dy;
+	long ep;
+	int de;
+
+	dx = 0;
+	ep = 0;
+	for (dy=c; dy>=dx; dy--) {
+		for (;;) {
+			point(x+dx, y+dy);
+			point(x-dx, y+dy);
+			point(x+dx, y-dy);
+			point(x-dx, y-dy);
+			point(x+dy, y+dx);
+			point(x-dy, y+dx);
+			point(x+dy, y-dx);
+			point(x-dy, y-dx);
+			ep += 2*dx + 1;
+			de = -2*dy + 1;
+			dx++;
+			if (labs(ep) >= labs(ep+de)) {
+				ep += de;
+				break;
+			}
+		}
 	}
-	bufs[0].block[((y&077)<<3)+((x>>3)&07)] |= 1 << (7-(x&07));
 }
 
+/*
+ * Points should be in the range 0 <= x (or y) <= DevRange.
+ * The origin is the top left-hand corner with increasing x towards the
+ * right and increasing y going down.
+ */
+point(x, y)
+register int x, y;
+{
+	register unsigned bno, byte;
+
+	byte = y * BytesPerLine + (x >> 3);
+	bno = byte >> LOGBSIZ;
+	byte &= BSIZ - 1;
+	if (bno >= 1024)
+		return;
+#ifndef VAX
+	if (bno != bufs[0].bno)
+		getblk(bno);
+	bufs[0].block[byte] |= 1 << (7 - (x & 07));
+#else
+	blocks[bno][byte] |= 1 << (7 - (x & 07));
+	dirty[bno] = 1;
+#endif
+}
+
+#ifndef VAX
 getblk(b)
 register b;
 {
-	register struct buf *bp1, *bp2;
+	register struct buf *bp1;
 	register char *tp;
 
 loop:
 	for (bp1 = bufs; bp1 < &bufs[NB]; bp1++) {
 		if (bp1->bno == b || bp1->bno == -1) {
 			tp = bp1->block;
-			for (bp2 = bp1; bp2>bufs; --bp2) {
-				bp2->bno = (bp2-1)->bno;
-				bp2->block = (bp2-1)->block;
+			while (bp1 > bufs) {
+				bp1->bno = (bp1-1)->bno;
+				bp1->block = (bp1-1)->block;
+				bp1--;
 			}
-			bufs[0].bno = b;
-			bufs[0].block = tp;
+			bp1->bno = b;
+			bp1->block = tp;
 			return;
 		}
 	}
-	zseek(out, bufs[NB-1].bno);
-	write(out, bufs[NB-1].block, BSIZ);
-	zseek(in, b);
-	read(in, bufs[NB-1].block, BSIZ);
+	zseek(fd, bufs[NB-1].bno);
+	write(fd, bufs[NB-1].block, BSIZ);
+	zseek(fd, b);
+	read(fd, bufs[NB-1].block, BSIZ);
 	bufs[NB-1].bno = b;
 	goto loop;
 }
+#endif
 
-onintr()
+cleanup()
 {
+	while (picture[run] != 'a') {
+		unlink(picture);
+		picture[run]--;
+	}
 	exit(1);
 }
 
 zseek(a, b)
 {
-	return(lseek(a, (long)b*512, 0));
+	return(lseek(a, (long)b*BSIZ, 0));
+}
+
+getinteger(f)
+FILE *f;
+{
+	register int low, high, result;
+
+	low = getc(f);
+	high = getc(f);
+	result = ((high << 8) | low);
+	if (high > 127)
+		result |= ~0xffff;
+	return(result);
 }
