@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)siginterrupt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)siginterrupt.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <signal.h>
@@ -28,14 +28,18 @@ static char sccsid[] = "@(#)siginterrupt.c	5.3 (Berkeley) %G%";
 siginterrupt(sig, flag)
 	int sig, flag;
 {
-	struct sigvec sv;
+	extern sigset_t _sigintr;
+	struct sigaction sa;
 	int ret;
 
-	if ((ret = sigvec(sig, (struct sigvec *)0, &sv)) < 0)
+	if ((ret = sigaction(sig, (struct sigaction *)0, &sa)) < 0)
 		return (ret);
-	if (flag)
-		sv.sv_flags |= SV_INTERRUPT;
-	else
-		sv.sv_flags &= ~SV_INTERRUPT;
-	return (sigvec(sig, &sv, (struct sigvec *)0));
+	if (flag) {
+		sigaddset(&_sigintr, sig);
+		sa.sa_flags &= ~SA_RESTART;
+	} else {
+		sigdelset(&_sigintr, sig);
+		sa.sa_flags |= SA_RESTART;
+	}
+	return (sigaction(sig, &sa, (struct sigaction *)0));
 }
