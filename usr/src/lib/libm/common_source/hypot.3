@@ -1,9 +1,7 @@
-.\"	@(#)hypot.3	6.1 (Berkeley) %G%
-.\"
-.TH HYPOT 3M  ""
-.AT 3
+.TH HYPOT 3M  "8 May 1985"
+.UC 4
 .SH NAME
-hypot, cabs \- Euclidean distance
+hypot, cabs \- Euclidean distance, complex absolute value
 .SH SYNOPSIS
 .nf
 .B #include <math.h>
@@ -21,9 +19,10 @@ and
 return
 .PP
 .IP
-sqrt(x*x + y*y),
+.I sqrt(x*x+y*y),
 .LP
 taking precautions against unwarranted overflows.
 .SH SEE ALSO
-exp(3M) for
-.I sqrt
+intro(3M), sqrt(3M)
+.SH AUTHOR
+W. Kahan
