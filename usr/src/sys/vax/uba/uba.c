@@ -1,4 +1,4 @@
-/*	uba.c	6.2	84/08/29	*/
+/*	uba.c	6.3	85/01/18	*/
 
 #include "../machine/pte.h"
 
@@ -128,6 +128,15 @@ ubasetup(uban, bp, flags)
 		uh->uh_mrwant++;
 		sleep((caddr_t)&uh->uh_mrwant, PSWP);
 	}
+	if ((flags & UBA_NEED16) && reg + npf > 128) {
+		/*
+		 * Could hang around and try again (if we can ever succeed).
+		 * Won't help any current device...
+		 */
+		rmfree(uh->uh_map, (long)npf, (long)reg);
+		splx(a);
+		return (0);
+	}
 	bdp = 0;
 	if (flags & UBA_NEEDBDP) {
 		while ((bdp = ffs(uh->uh_bdpfree)) == 0) {
@@ -211,7 +220,6 @@ ubarelse(uban, amr)
 		return;
 	}
 	*amr = 0;
-	splx(s);		/* let interrupts in, we're safe for a while */
 	bdp = (mr >> 28) & 0x0f;
 	if (bdp) {
 		switch (cpu) {
@@ -235,12 +243,12 @@ ubarelse(uban, amr)
 	}
 	/*
 	 * Put back the registers in the resource map.
-	 * The map code must not be reentered, so we do this
-	 * at high ipl.
+	 * The map code must not be reentered,
+	 * nor can the registers be freed twice.
+	 * Unblock interrupts once this is done.
 	 */
 	npf = (mr >> 18) & 0x3ff;
 	reg = ((mr >> 9) & 0x1ff) + 1;
-	s = spl6();
 	rmfree(uh->uh_map, (long)npf, (long)reg);
 	splx(s);
 
@@ -324,6 +332,7 @@ ubareset(uban)
 	wakeup((caddr_t)&uh->uh_mrwant);
 	printf("uba%d: reset", uban);
 	ubainit(uh->uh_uba);
+	ubameminit(uban);
 	for (cdp = cdevsw; cdp < cdevsw + nchrdev; cdp++)
 		(*cdp->d_reset)(uban);
 #ifdef INET
@@ -374,6 +383,9 @@ ubainit(uba)
 #ifdef VAX780
 int	ubawedgecnt = 10;
 int	ubacrazy = 500;
+int	zvcnt_max = 5000;	/* in 8 sec */
+int	zvcnt_total;
+long	zvcnt_time;
 /*
  * This routine is called by the locore code to
  * process a UBA error on an 11/780.  The arguments are passed
@@ -383,21 +395,32 @@ int	ubacrazy = 500;
  * It must not be declared register.
  */
 /*ARGSUSED*/
-ubaerror(uban, uh, xx, uvec, uba)
+ubaerror(uban, uh, ipl, uvec, uba)
 	register int uban;
 	register struct uba_hd *uh;
-	int uvec;
+	int ipl, uvec;
 	register struct uba_regs *uba;
 {
 	register sr, s;
 
 	if (uvec == 0) {
-		uh->uh_zvcnt++;
-		if (uh->uh_zvcnt > 250000) {
-			printf("uba%d: too many zero vectors\n");
+		long	dt = time.tv_sec - zvcnt_time;
+		zvcnt_total++;
+		if (dt > 8) {
+			zvcnt_time = time.tv_sec;
+			uh->uh_zvcnt = 0;
+		}
+		if (++uh->uh_zvcnt > zvcnt_max) {
+			printf("uba%d: too many zero vectors (%d in <%d sec)\n",
+				uban, uh->uh_zvcnt, dt + 1);
+			printf("\tIPL 0x%x\n\tcnfgr: %b  Adapter Code: 0x%x\n",
+				ipl, uba->uba_cnfgr&(~0xff), UBACNFGR_BITS,
+				uba->uba_cnfgr&0xff);
+			printf("\tsr: %b\n\tdcr: %x (MIC %sOK)\n",
+				uba->uba_sr, ubasr_bits, uba->uba_dcr,
+				(uba->uba_dcr&0x8000000)?"":"NOT ");
 			ubareset(uban);
 		}
-		uvec = 0;
 		return;
 	}
 	if (uba->uba_cnfgr & NEX_CFGFLT) {
@@ -428,42 +451,104 @@ ubaerror(uban, uh, xx, uvec, uba)
 #endif
 
 /*
+ * Look for devices with unibus memory, allow them to configure, then disable
+ * map registers as necessary.  Called during autoconfiguration and ubareset.
+ * The device ubamem routine returns 0 on success, 1 on success if it is fully
+ * configured (has no csr or interrupt, so doesn't need to be probed),
+ * and -1 on failure.
+ */
+ubameminit(uban)
+{
+	register struct uba_device *ui;
+	register struct uba_hd *uh = &uba_hd[uban];
+	caddr_t umembase = umem[uban] + 0x3e000, addr;
+#define	ubaoff(off)	((int)(off) & 0x1fff)
+
+	uh->uh_lastmem = 0;
+	for (ui = ubdinit; ui->ui_driver; ui++) {
+		if (ui->ui_ubanum != uban && ui->ui_ubanum != '?')
+			continue;
+		if (ui->ui_driver->ud_ubamem) {
+			/*
+			 * During autoconfiguration, need to fudge ui_addr.
+			 */
+			addr = ui->ui_addr;
+			ui->ui_addr = umembase + ubaoff(addr);
+			switch ((*ui->ui_driver->ud_ubamem)(ui, uban)) {
+			case 1:
+				ui->ui_alive = 1;
+				/* FALLTHROUGH */
+			case 0:
+				ui->ui_ubanum = uban;
+				break;
+			}
+			ui->ui_addr = addr;
+		}
+	}
+#if VAX780
+	/*
+	 * On a 780, throw away any map registers disabled by rounding
+	 * the map disable in the configuration register
+	 * up to the next 8K boundary, or below the last unibus memory.
+	 */
+	if (cpu == VAX_780) {
+		register i;
+
+		i = btop(((uh->uh_lastmem + 8191) / 8192) * 8192);
+		while (i)
+			(void) rmget(uh->uh_map, 1, i--);
+	}
+#endif
+}
+
+/*
  * Allocate UNIBUS memory.  Allocates and initializes
  * sufficient mapping registers for access.  On a 780,
  * the configuration register is setup to disable UBA
  * response on DMA transfers to addresses controlled
  * by the disabled mapping registers.
+ * On a 780, should only be called from ubameminit, or in ascending order
+ * from 0 with 8K-sized and -aligned addresses; freeing memory that isn't
+ * the last unibus memory would free unusable map registers.
+ * Doalloc is 1 to allocate, 0 to deallocate.
  */
 ubamem(uban, addr, npg, doalloc)
 	int uban, addr, npg, doalloc;
 {
 	register struct uba_hd *uh = &uba_hd[uban];
 	register int a;
+	int s;
 
-	if (doalloc) {
-		int s = spl6();
-		a = rmget(uh->uh_map, npg, (addr >> 9) + 1);
-		splx(s);
-	} else
-		a = (addr >> 9) + 1;
+	a = (addr >> 9) + 1;
+	s = spl6();
+	if (doalloc)
+		a = rmget(uh->uh_map, npg, a);
+	else
+		rmfree(uh->uh_map, (long)npg, (long)a);
+	splx(s);
 	if (a) {
 		register int i, *m;
 
 		m = (int *)&uh->uh_uba->uba_map[a - 1];
 		for (i = 0; i < npg; i++)
 			*m++ = 0;	/* All off, especially 'valid' */
+		i = addr + npg * 512;
+		if (doalloc && i > uh->uh_lastmem)
+			uh->uh_lastmem = i;
+		else if (doalloc == 0 && i == uh->uh_lastmem)
+			uh->uh_lastmem = addr;
 #if VAX780
 		/*
 		 * On a 780, set up the map register disable
 		 * field in the configuration register.  Beware
-		 * of callers that request memory ``out of order''.
+		 * of callers that request memory ``out of order''
+		 * or in sections other than 8K multiples.
+		 * Ubameminit handles such requests properly, however.
 		 */
 		if (cpu == VAX_780) {
-			int cr = uh->uh_uba->uba_cr;
-
-			i = (addr + npg * 512 + 8191) / 8192;
-			if (i > (cr >> 26))
-				uh->uh_uba->uba_cr |= i << 26;
+			i = uh->uh_uba->uba_cr &~ 0x7c000000;
+			i |= ((uh->uh_lastmem + 8191) / 8192) << 26;
+			uh->uh_uba->uba_cr = i;
 		}
 #endif
 	}
