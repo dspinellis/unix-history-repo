@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.9 %G%";
+static char sccsid[] = "@(#)eval.c 1.10 %G%";
 
 /*
  * Parse tree evaluation.
@@ -108,11 +108,11 @@ register NODE *p;
 	}
 
 	case O_INDEX: {
-	    int n;
-	    long i;
+	    long n;	/* base address for array */
+	    long i;	/* index - lower bound */
 
 	    n = pop(long);
-	    i = evalindex(p->left->nodetype, popsmall(p->right->nodetype));
+	    i = evalindex(p->left->nodetype, p->right);
 	    push(long, n + i*size(p->nodetype));
 	    break;
 	}
