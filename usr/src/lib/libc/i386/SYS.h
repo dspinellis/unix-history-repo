@@ -7,10 +7,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.5 (Berkeley) %G%
+ *	@(#)SYS.h	5.6 (Berkeley) %G%
  */
 
-#include <syscall.h>
+#include <sys/syscall.h>
 
 #ifdef PROF
 #define	ENTRY(x)	.globl _/**/x; \
