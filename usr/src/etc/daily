@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.14 (Berkeley) %G%
+#	@(#)daily	5.15 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin
 host=`hostname -s`
@@ -183,4 +183,4 @@ if [ -f /etc/Distfile ]; then
 	fi
 fi
 
-sh /etc/security | mail -s "daily insecurity output" root
+sh /etc/security 2>&1 | mail -s "$host daily insecurity output" root
