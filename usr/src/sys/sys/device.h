@@ -13,10 +13,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	8.1 (Berkeley) %G%
- *
- * from: $Header: device.h,v 1.9 93/02/01 19:34:50 torek Exp $ (LBL)
+ *	@(#)device.h	8.2 (Berkeley) %G%
  */
+
+#ifndef _SYS_DEVICE_H_
+#define	_SYS_DEVICE_H_
 
 /*
  * Minimal device structures.
@@ -113,3 +114,4 @@ int config_found __P((struct device *, void *, cfprint_t));
 int config_rootfound __P((char *, void *));
 void config_attach __P((struct device *, struct cfdata *, void *, cfprint_t));
 void evcnt_attach __P((struct device *, const char *, struct evcnt *));
+#endif /* !_SYS_DEVICE_H_ */
