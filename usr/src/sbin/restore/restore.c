@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	3.18	(Berkeley)	83/12/30";
+static char sccsid[] = "@(#)restore.c	3.19	(Berkeley)	84/03/22";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -660,6 +660,8 @@ createfiles()
 				panic("corrupted symbol table\n");
 			(void) extractfile(myname(ep));
 			ep->e_flags &= ~NEW;
+			if (volno != curvol)
+				skipmaps();
 		}
 	}
 }
