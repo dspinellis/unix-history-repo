@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.17 (Berkeley) %G%
+ *	@(#)db.h	5.18 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
 #define	_DB_H_
 
+#include <sys/types.h>
 #include <sys/cdefs.h>
 
 #define	RET_ERROR	-1		/* Return values. */
