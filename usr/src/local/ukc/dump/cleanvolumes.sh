@@ -1,10 +1,13 @@
 #!/bin/sh
-#	cleanvolumes.sh	1.4	%G%
-#	shell script to clean dumplog file
+#	cleanvolumes.sh	1.5	%G%
+#	shell script to clean dumpvolumes file
+#	This ensures that only the last entry for a
+#	particular tape is retained on the log
+#	Caveat Tape labels MUST not contain a colon
 #
 PATH=:/etc/:/bin:/usr/bin:
 #	Name of	logfile
-DL=/etc/dumplog
+DL=/etc/dumpvolumes
 #	Name of tmp files
 DT=/tmp/dumpclean$$
 DE=/tmp/dumpedit$$
