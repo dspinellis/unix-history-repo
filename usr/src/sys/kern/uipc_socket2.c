@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket2.c	7.15 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -438,12 +438,12 @@ sbappend(sb, m)
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
-		while (n->m_next)
+		do {
 			if (n->m_flags & M_EOR) {
 				sbappendrecord(sb, m); /* XXXXXX!!!! */
 				return;
-			} else
-				n = n->m_next;
+			}
+		} while (n->m_next && (n = n->m_next));
 	}
 	sbcompress(sb, m, n);
 }
@@ -636,10 +636,14 @@ sbcompress(sb, m, n)
 	register struct mbuf *m, *n;
 {
 	register int eor = 0;
+	register struct mbuf *o;
 
 	while (m) {
 		eor |= m->m_flags & M_EOR;
-		if (m->m_len == 0) {
+		if (m->m_len == 0 &&
+		    (eor == 0 ||
+		     (((o = m->m_next) || (o = n)) &&
+		      o->m_type == m->m_type))) {
 			m = m_free(m);
 			continue;
 		}
@@ -663,8 +667,12 @@ sbcompress(sb, m, n)
 		m = m->m_next;
 		n->m_next = 0;
 	}
-	if (n)
-		n->m_flags |= eor;
+	if (eor) {
+		if (n)
+			n->m_flags |= eor;
+		else
+			printf("semi-panic: sbcompress\n");
+	}
 }
 
 /*
