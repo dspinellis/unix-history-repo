@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.5 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -32,7 +32,7 @@ char    *conffile = "/etc/resolv.conf";
  */
 
 #ifndef RES_TIMEOUT
-#define RES_TIMEOUT 10
+#define RES_TIMEOUT 4
 #endif
 
 struct state _res = {
