@@ -14,7 +14,7 @@
  *   -f[orce]	- no message printed at all 
  */
 
-#include <mit-copyright.h>
+#include <kerberos/mit-copyright.h>
 
 #ifndef	lint
 static char rcsid_kdestroy_c[] =
@@ -22,19 +22,11 @@ static char rcsid_kdestroy_c[] =
 #endif	lint
 
 #include <stdio.h>
-#include <krb.h>
-#ifdef BSD42
+#include <kerberos/krb.h>
 #include <strings.h>
-#endif BSD42
-
 
 static char *pname;
 
-static usage()
-{
-    fprintf(stderr, "Usage: %s [-f] [-q]\n", pname);
-    exit(1);
-}
 
 main(argc, argv)
     char   *argv[];
@@ -61,12 +53,12 @@ main(argc, argv)
     k_errno = dest_tkt();
 
     if (fflag) {
-	if (k_errno != 0 && k_errno != RET_TKFIL)
+	if (k_errno != KSUCCESS && k_errno != RET_TKFIL)
 	    exit(1);
 	else
 	    exit(0);
     } else {
-	if (k_errno == 0)
+	if (k_errno == KSUCCESS)
 	    printf("Tickets destroyed.\n");
 	else if (k_errno == RET_TKFIL)
 	    fprintf(stderr, "No tickets to destroy.\n");
@@ -78,4 +70,10 @@ main(argc, argv)
 	}
     }
     exit(0);
+}
+
+static usage()
+{
+    fprintf(stderr, "Usage: %s [-f] [-q]\n", pname);
+    exit(1);
 }
