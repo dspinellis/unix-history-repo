@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -414,6 +414,12 @@ sendenvelope(e, mode)
 	e->e_flags |= EF_GLOBALERRS;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
+#ifdef XDEBUG
+		char wbuf[MAXNAME + 20];
+
+		(void) sprintf(wbuf, "sendall(%s)", q->q_paddr);
+		checkfd012(wbuf);
+#endif
 		if (mode == SM_VERIFY)
 		{
 			e->e_to = q->q_paddr;
@@ -442,6 +448,10 @@ sendenvelope(e, mode)
 		}
 	}
 	Verbose = oldverbose;
+
+#ifdef XDEBUG
+	checkfd012("end of sendenvelope");
+#endif
 
 	if (mode == SM_FORK)
 		finis();
