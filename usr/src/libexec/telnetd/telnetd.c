@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.15 83/01/07";
+static char sccsid[] = "@(#)telnetd.c	4.16 83/01/18";
 #endif
 
 /*
@@ -40,6 +40,7 @@ int	pcc, ncc;
 
 int	pty, net;
 int	inter;
+int	reapchild();
 extern	int errno;
 char	line[] = "/dev/ptyp0";
 
@@ -48,8 +49,7 @@ struct	sockaddr_in sin = { AF_INET };
 main(argc, argv)
 	char *argv[];
 {
-	int s, pid;
-	union wait status;
+	int s, pid, options;
 	struct servent *sp;
 
 	sp = getservbyname("telnet", "tcp");
@@ -59,6 +59,10 @@ main(argc, argv)
 	}
 	sin.sin_port = sp->s_port;
 	argc--, argv++;
+	if (argc > 0 && !strcmp(*argv, "-d")) {
+		options |= SO_DEBUG;
+		argc--, argv++;
+	}
 	if (argc > 0) {
 		sin.sin_port = atoi(*argv);
 		if (sin.sin_port <= 0) {
@@ -89,16 +93,26 @@ again:
 		sleep(5);
 		goto again;
 	}
+	if (options & SO_DEBUG)
+		if (setsockopt(s, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+			perror("telnetd: setsockopt (SO_DEBUG)");
+#ifdef notdef
+	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
+		perror("telnetd: setsockopt (SO_KEEPALIVE)");
+#endif
 	while (bind(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("telnetd: bind");
 		sleep(5);
 	}
+	signal(SIGCHLD, reapchild);
 	listen(s, 10);
 	for (;;) {
 		int s2;
 
 		s2 = accept(s, (caddr_t)0, 0, 0);
 		if (s2 < 0) {
+			if (errno == EINTR)
+				continue;
 			perror("telnetd: accept");
 			sleep(1);
 			continue;
@@ -108,10 +122,16 @@ again:
 		else if (pid == 0)
 			doit(s2);
 		close(s2);
-		while (wait3(status, WNOHANG, 0) > 0)
-			continue;
 	}
 	/*NOTREACHED*/
+}
+
+reapchild()
+{
+	union wait status;
+
+	while (wait3(&status, WNOHANG, 0) > 0)
+		;
 }
 
 int	cleanup();
