@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.79		%G%);
+SCCSID(@(#)main.c	3.80		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -296,9 +296,9 @@ main(argc, argv)
 
 		  case 'Q':	/* select queue dir */
 			if (p[2] == '\0')
-				AliasFile = "mqueue";
+				QueueDir = "mqueue";
 			else
-				AliasFile = &p[2];
+				QueueDir = &p[2];
 			break;
 
 		  case 'T':	/* set timeout interval */
