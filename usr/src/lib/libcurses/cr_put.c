@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)cr_put.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include	"curses.ext"
 
 # define	HARDTABS	8
@@ -10,8 +20,6 @@ int		plodput();
  * Basic motion optimizations are done here as well
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
- *
- * @(#)cr_put.c	1.6 (Berkeley) %G%
  */
 
 /*
