@@ -53,6 +53,17 @@
 #include "config.h"
 #include "vi.h"
 
+/* We include ctype.c here (instead of including just ctype.h and linking
+ * with ctype.o) because on some systems ctype.o will have been compiled in
+ * "large model" and the elvprsv program is to be compiled in "small model" 
+ * You can't mix models.  By including ctype.c here, we can avoid linking
+ * with ctype.o.
+ */
+#include "ctype.c"
+
+void preserve P_((char *, char *));
+void main P_((int, char **));
+
 #if AMIGA
 BLK tmpblk;
 # include "amiwild.c"
@@ -121,7 +132,7 @@ void preserve(tname, when)
 	 || read(infd, name.c, BLKSIZE) != BLKSIZE)
 	{
 		/* something wrong with the file - sorry */
-		fprintf(stderr, "%s: trucated header blocks\n", tname);
+		fprintf(stderr, "%s: truncated header blocks\n", tname);
 		close(infd);
 		return;
 	}
@@ -138,6 +149,16 @@ void preserve(tname, when)
 		return;
 	}
 
+	/* If there are no text blocks in the file, then we must've never
+	 * really started editing.  Discard the file.
+	 */
+	if (hdr.n[1] == 0)
+	{
+		close(infd);
+		unlink(tname);
+		return;
+	}
+
 	if (rewrite_now)
 	{
 		/* we don't need to open the index file */
@@ -147,7 +168,8 @@ void preserve(tname, when)
 		for (i = 1; i < MAXBLKS && hdr.n[i]; i++)
 		{
 			lseek(infd, (long)hdr.n[i] * (long)BLKSIZE, 0);
-			if (read(infd, buf.c, BLKSIZE) != BLKSIZE)
+			if (read(infd, buf.c, BLKSIZE) != BLKSIZE
+			 || buf.c[0] == '\0')
 			{
 				/* messed up header */
 				fprintf(stderr, "%s: unrecoverable -- header trashed\n", name.c);
@@ -172,8 +194,11 @@ void preserve(tname, when)
 		if (!index)
 		{
 			perror(PRSVINDEX);
-			exit(1);
+			exit(2);
 		}
+
+		/* should be at the end of the file already, but MAKE SURE */
+		fseek(index, 0L, 2);
 
 		/* create the recovery file in the PRESVDIR directory */
 #if AMIGA
@@ -199,7 +224,8 @@ void preserve(tname, when)
 	for (i = 1; i < MAXBLKS && hdr.n[i]; i++)
 	{
 		lseek(infd, (long)hdr.n[i] * (long)BLKSIZE, 0);
-		if (read(infd, buf.c, BLKSIZE) != BLKSIZE)
+		if (read(infd, buf.c, BLKSIZE) != BLKSIZE
+		 || buf.c[0] == '\0')
 		{
 			/* messed up header */
 			fprintf(stderr, "%s: unrecoverable -- header trashed\n", name.c);
@@ -242,7 +268,7 @@ void preserve(tname, when)
 	}
 }
 
-main(argc, argv)
+void main(argc, argv)
 	int	argc;
 	char	**argv;
 {
@@ -251,10 +277,11 @@ main(argc, argv)
 
 #if MSDOS || TOS
 	/* expand any wildcards in the command line */
+	_ct_init("");
 	argv = wildexpand(&argc, argv);
 #endif
 
-	/* do we have a "when" argument? */
+	/* do we have a "-c", "-R", or "-when elvis died" argument? */
 	i = 1;
 	if (argc >= i + 1 && !strcmp(argv[i], "-R"))
 	{
