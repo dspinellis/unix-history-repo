@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -531,13 +531,15 @@ Dir_Expand (word, path, expansions)
 		    cp--;
 		}
 		if (cp != word) {
+		    char sc;
 		    /*
 		     * If the glob isn't in the first component, try and find
 		     * all the components up to the one with a wildcard.
 		     */
-		    *cp = '\0';
+		    sc = cp[1];
+		    cp[1] = '\0';
 		    dirpath = Dir_FindFile(word, path);
-		    *cp = '/';
+		    cp[1] = sc;
 		    /*
 		     * dirpath is null if can't find the leading component
 		     * XXX: Dir_FindFile won't find internal components.
@@ -546,6 +548,9 @@ Dir_Expand (word, path, expansions)
 		     * Probably not important.
 		     */
 		    if (dirpath != (char *)NULL) {
+			char *dp = &dirpath[strlen(dirpath) - 1];
+			if (*dp == '/')
+			    *dp = '\0';
 			path = Lst_Init(FALSE);
 			Dir_AddDir(path, dirpath);
 			DirExpandInt(cp+1, path, expansions);
