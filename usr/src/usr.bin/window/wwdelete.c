@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwdelete.c	3.13 %G%";
+static char sccsid[] = "@(#)wwdelete.c	3.14 %G%";
 #endif
 
 /*
@@ -21,7 +21,7 @@ register struct ww *w;
 	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
 		register j;
 		register char *smap = wwsmap[i];
-		register struct ww_char *ns = wwns[i];
+		register union ww_char *ns = wwns[i];
 		register int nchanged = 0;
 
 		for (j = w->ww_i.l; j < w->ww_i.r; j++)

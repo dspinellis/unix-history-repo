@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwunframe.c	3.14 %G%";
+static char sccsid[] = "@(#)wwunframe.c	3.15 %G%";
 #endif
 
 /*
@@ -20,7 +20,7 @@ register struct ww *w;
 		register char *win = w->ww_win[i];
 		register char *fmap = w->ww_fmap ? w->ww_fmap[i] : 0;
 		register char *smap = wwsmap[i];
-		register struct ww_char *ns = wwns[i];
+		register union ww_char *ns = wwns[i];
 		int nchanged = 0;
 
 		for (j = w->ww_i.l; j < w->ww_i.r; j++) {
