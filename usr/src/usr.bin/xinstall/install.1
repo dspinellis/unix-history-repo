@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)install.1	6.2 (Berkeley) %G%
+.\"	@(#)install.1	6.3 (Berkeley) %G%
 .\"
 .TH INSTALL 1 ""
 .UC 5
@@ -20,49 +20,26 @@ owner ] [
 .B \-g
 group ] [
 .B \-s
-] binary destination
+] file1 file2; or file1 ... fileN directory
 .SH DESCRIPTION
-.I Binary
-is moved (or copied if 
-.B \-c
-is specified) to
-.IR destination .
-If
-.I destination
-already exists,
-it is removed before
-.I binary
-is moved.
-If the destination is a directory then
-.I binary
-is moved into the
-.I destination
-directory with its original file-name.
+The file(s) are moved (or copied if the \fB-c\fP option is specified)
+to the target file or directory.  If the destination is a directory, then
+the \fIfile\fP is moved into \fIdirectory\fP with its original file-name.
+If the target file already exists, it is overwritten.
 .PP
-The mode for
-.I Destination
-is set to 755; the
-.B \-m
-.I mode
-option may be used to specify a different mode.
+The mode is set to 755; the \fB-m\fP option may be used to specify
+an alternate mode.
 .PP
-.I Destination
-is changed to owner root; the
-.B \-o
-.I owner
-option may be used to specify a different owner.
+The \fB-o\fP and \fB-g\fP options may be used to specify an alternate
+owner and/or group, respectively.
 .PP
-.I Destination
-is changed to group staff; the
-.B \-g
-.I group
-option may be used to specify a different group.
+The \fB-s\fP option causes the file to be stripped.  It is an error
+to attempt to strip a file not in the \fIa.out\fP format, but not to
+attempt to strip a file that has already been stripped.
 .PP
-If the
-.B \-s
-option is specified the binary is stripped.
-.PP
-.I Install
-refuses to move a file onto itself.
+\fIInstall\fP refuses to move a file onto itself.
+.SH "RETURN VALUE"
+Upon successful completion a value of 0 is returned.  Otherwise, a
+value of 1 is returned.
 .SH "SEE ALSO"
-chgrp(1), chmod(1), cp(1), mv(1), strip(1), chown(8)
+chgrp(1), chmod(1), cp(1), mv(1), strip(1), a.out(5), chown(8)
