@@ -3,20 +3,13 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_resource.c	7.1 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "systm.h"
 #include "dir.h"
 #include "user.h"
-#include "inode.h"
 #include "proc.h"
-#include "seg.h"
-#include "fs.h"
-#include "uio.h"
-#include "vm.h"
-#include "kernel.h"
 
 /*
  * Resource controls and accounting.
