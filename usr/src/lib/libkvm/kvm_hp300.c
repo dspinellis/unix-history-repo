@@ -617,10 +617,6 @@ kvm_getargs(p, up)
 	struct dblock db;
 	char *file;
 
-	if (p->p_stat == SZOMB)
-		return ("<defunct>");
-	if (p->p_flag & SWEXIT)
-		return ("<exiting>");
 	if (up == NULL || p->p_pid == 0 || p->p_pid == 2)
 		goto retucomm;
 	if ((p->p_flag & SLOAD) == 0 || argaddr1 == 0) {
