@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -191,13 +191,9 @@ clearenvelope(e)
 		(void) fclose(e->e_xfp);
 	if (e->e_dfp != NULL)
 		(void) fclose(e->e_dfp);
-	e->e_xfp = e->e_dfp = NULL;
 
-	/* now expunge names of objects */
-	e->e_df = e->e_id = NULL;
-
-	/* and the flags which are now meaningless */
-	e->e_flags = 0;
+	/* now clear out the data */
+	bzero((char *) e, sizeof *e);
 }
 /*
 **  INITSYS -- initialize instantiation of system
