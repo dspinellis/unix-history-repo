@@ -1,0 +1,6 @@
+HOSTS = ( lapis opal )
+
+FILES = ( /usr/lib/help/src )
+
+${FILES} -> ${HOSTS}
+	install -R ;
