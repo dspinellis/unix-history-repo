@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -418,6 +418,12 @@ readcf(cfname)
 				*p = delim;
 			}
 			break;
+
+#ifdef XLA
+		  case 'L':		/* extended load average description */
+			xla_init(&bp[1]);
+			break;
+#endif
 
 		  case 'M':		/* define mailer */
 			makemailer(&buf[1]);
