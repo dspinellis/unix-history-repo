@@ -1,4 +1,4 @@
-/*	displayq.c	4.7	83/06/17	*/
+/*	displayq.c	4.8	83/06/29	*/
 /*
  * Routines to display the state of the queue.
  */
@@ -116,39 +116,40 @@ displayq(format)
 		return(0);
 	}
 	fp = fopen(LO, "r");
-	if (fp == NULL || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
-		if (fp != NULL)
-			fclose(fp);	/* unlocks as well */
-		garbage = nitems;
-		if (sendtorem)
-			printf("\n%s: ", host);
-		if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100))
-			printf("Warning: %s is down\n", printer);
-		else
-			printf("Warning: no daemon present\n");
-	} else {
-		register char *cp = current;
+	if (fp == NULL)
+		warn();
+	else {
+		register char *cp;
 
-		/* skip daemon pid */
-		while ((*cp = getc(fp)) != EOF && *cp != '\n');
-		/* read current file name */
+		/* get daemon pid */
+		cp = current;
 		while ((*cp = getc(fp)) != EOF && *cp != '\n')
 			cp++;
 		*cp = '\0';
-		fclose(fp);
-		/*
-		 * Print the status file to show what the daemon is doing.
-		 */
-		if (sendtorem)
-			printf("\n%s: ", host);
-		fd = open(ST, O_RDONLY);
-		if (fd >= 0) {
-			(void) flock(fd, LOCK_SH);
-			while ((i = read(fd, line, sizeof(line))) > 0)
-				(void) fwrite(line, 1, i, stdout);
-			(void) close(fd);	/* unlocks as well */
-		} else
-			putchar('\n');
+		i = atoi(current);
+		if (kill(i, 0) < 0)
+			warn();
+		else {
+			/* read current file name */
+			cp = current;
+			while ((*cp = getc(fp)) != EOF && *cp != '\n')
+				cp++;
+			*cp = '\0';
+			/*
+			 * Print the status file.
+			 */
+			if (sendtorem)
+				printf("\n%s: ", host);
+			fd = open(ST, O_RDONLY);
+			if (fd >= 0) {
+				(void) flock(fd, LOCK_SH);
+				while ((i = read(fd, line, sizeof(line))) > 0)
+					(void) fwrite(line, 1, i, stdout);
+				(void) close(fd);	/* unlocks as well */
+			} else
+				putchar('\n');
+		}
+		(void) fclose(fp);
 	}
 	/*
 	 * Now, examine the control files and print out the jobs to
@@ -163,6 +164,22 @@ displayq(format)
 	}
 	free(queue);
 	return(nitems-garbage);
+}
+
+/*
+ * Print a warning message if there is no daemon present.
+ */
+warn()
+{
+	struct stat statb;
+
+	if (sendtorem)
+		printf("\n%s: ", host);
+	if (stat(LO, &statb) >= 0 && (statb.st_mode & 0100))
+		printf("Warning: %s is down\n", printer);
+	else
+		printf("Warning: no daemon present\n");
+	current[0] = '\0';
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	rmjob.c	4.5	83/06/15	*/
+/*	rmjob.c	4.6	83/06/29	*/
 /*
  * rmjob - remove the specified jobs from the queue.
  */
@@ -108,11 +108,15 @@ lockchk(s)
 			fatal("can't access lock file");
 		else
 			return(0);
-	if (!getline(fp) || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
+	if (!getline(fp)) {
 		(void) fclose(fp);
 		return(0);		/* no daemon present */
 	}
 	cur_daemon = atoi(line);
+	if (kill(cur_daemon, 0) < 0) {
+		(void) fclose(fp);
+		return(0);		/* no daemon present */
+	}
 	for (i = 1; (n = fread(current, sizeof(char), sizeof(current), fp)) <= 0; i++) {
 		if (i > 5) {
 			n = 1;
