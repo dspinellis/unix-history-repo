@@ -1,4 +1,6 @@
-.\"	@(#)refer	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)refer	6.2 (Berkeley) %G%
 .\"
 .... refer | tbl | nroff -ms
 .EH 'USD:30-%''Some Applications of Inverted Indexes on the UNIX System'
