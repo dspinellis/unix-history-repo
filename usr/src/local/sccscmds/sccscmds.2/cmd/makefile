@@ -1,4 +1,4 @@
-#	makefile	4.5	87/02/15
+#	makefile	4.6	90/04/08
 #
 CFLAGS=	-O -w
 LIBS=	../libpw.a ../libPW.a ../libwrt.a
@@ -7,13 +7,13 @@ all:	admin bdiff chghist comb delta get help prt rmdel sccsdiff.sh \
 	what val snull cmt prs
 
 admin:	admin.o ../com/comobj.a alloc.o
-	$(CC) -o admin admin.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o admin admin.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 admin.o:	admin.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) admin.c
 
 cmt:	cmt.o ../com/comobj.a alloc.o
-	$(CC) -o cmt cmt.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o cmt cmt.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 cmt.o:	cmt.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) cmt.c
@@ -25,7 +25,7 @@ bdiff.o:	bdiff.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) bdiff.c
 
 comb:	comb.o ../com/comobj.a alloc.o
-	$(CC) -o comb comb.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o comb comb.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 comb.o:		comb.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) comb.c
@@ -37,19 +37,19 @@ scv.o:		scv.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) scv.c
 
 snull:	snull.o ../com/comobj.a alloc.o
-	$(CC) -o snull snull.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o snull snull.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 snull.o:		snull.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) snull.c
 
 delta:	delta.o ../com/comobj.a alloc.o
-	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 delta.o:	delta.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) -DLOGDELTA delta.c
 
 get:	get.o ../com/comobj.a alloc.o
-	$(CC) -o get get.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o get get.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 get.o:		get.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) get.c
@@ -61,13 +61,13 @@ help.o:		help.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) help.c
 
 prt:	prt.o ../com/comobj.a alloc.o
-	$(CC) -o prt prt.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o prt prt.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 prt.o:		prt.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) prt.c
 
 prs:	prs.o ../com/comobj.a alloc.o
-	$(CC) -o prs prs.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o prs prs.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 prs.o:		prs.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) prs.c
@@ -81,7 +81,7 @@ rmdel:	rmchg
 	ln rmchg rmdel
 
 rmchg:	rmchg.o ../com/comobj.a alloc.o
-	$(CC) -o rmchg rmchg.o ../com/comobj.a $(LIBS) alloc.o
+	$(CC) -o rmchg rmchg.o ../com/comobj.a $(LIBS) alloc.o -lcompat
 
 rmchg.o:	rmchg.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) rmchg.c
