@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.4 (Berkeley) %G%
+ *	@(#)style	1.5 (Berkeley) %G%
  */
 
 /*
@@ -28,10 +28,12 @@
 /*
  * All ANSI function decls go at the top of the source module.  Use the
  * __P macro from include file <sys/cdefs.h>.  Only the kernel has a name
- * associated with the types, i.e. unless you're in the kernel use:
+ * associated with the types, i.e. in the kernel use:
  *
  *	void function __P((int));
- * not:
+ *
+ * in user land use:
+ *
  *	void function __P((int a));
  */
 void function __P((int, const char *));
@@ -182,7 +184,8 @@ function(a1, a2, a3, a4)
 
 	/*
 	 * Casts and sizeof's are not followed by a space.  NULL is any
-	 * pointer type, and doesn't need to be cast.  Also, test pointers
+	 * pointer type, and doesn't need to be cast, so use NULL instead
+	 * of (struct foo *)0 or (struct foo *)NULL.  Also, test pointers
 	 * against NULL, i.e. use:
 	 *
 	 * 	(p = f()) == NULL
