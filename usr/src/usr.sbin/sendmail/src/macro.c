@@ -1,7 +1,7 @@
 # include "useful.h"
 # include "conf.h"
 
-static char SccsId[] = "@(#)macro.c	3.4.1.1	%G%";
+static char SccsId[] = "@(#)macro.c	3.5	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -156,4 +156,23 @@ define(n, v)
 		printf("define(%c as %s)\n", n, v);
 # endif DEBUG
 	Macro[n & 0177] = v;
+}
+/*
+**  MACVALUE -- return uninterpreted value of a macro.
+**
+**	Parameters:
+**		n -- the name of the macro.
+**
+**	Returns:
+**		The value of n.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+macvalue(n)
+	char n;
+{
+	return (Macro[n & 0177]);
 }

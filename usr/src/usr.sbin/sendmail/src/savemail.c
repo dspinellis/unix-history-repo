@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.18	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.19	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -209,11 +209,29 @@ errhdr(fp, m)
 {
 	char buf[MAXLINE];
 	register FILE *xfile;
+	extern char *macvalue();
+	char *oldfmac;
+	char *oldgmac;
+
+	oldfmac = macvalue('f');
+	define('f', "$n");
+	oldgmac = macvalue('g');
+	define('g', m->m_from);
 
 	(void) fflush(stdout);
 	if ((xfile = fopen(Transcript, "r")) == NULL)
 		syserr("Cannot open %s", Transcript);
 	errno = 0;
+
+	/*
+	**  Output "From" line unless supressed
+	*/
+
+	if (!bitset(M_NHDR, m->m_flags))
+	{
+		(void) expand("$l", buf, &buf[sizeof buf - 1]);
+		fprintf(fp, "%s\n", buf);
+	}
 
 	/*
 	**  Output header of error message.
@@ -231,6 +249,13 @@ errhdr(fp, m)
 	}
 	fprintf(fp, "To: %s\n", To);
 	fprintf(fp, "Subject: Unable to deliver mail\n");
+
+	/*
+	**  End of error message header
+	*/
+
+	define('f', oldfmac);
+	define('g', oldgmac);
 
 	/*
 	**  Output transcript of errors
