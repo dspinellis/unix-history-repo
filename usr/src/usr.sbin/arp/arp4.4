@@ -3,88 +3,96 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)arp4.4	6.4 (Berkeley) %G%
+.\"	@(#)arp4.4	6.5 (Berkeley) %G%
 .\"
-.TH ARP 4 ""
-.UC 5
-.SH NAME
-arp \- Address Resolution Protocol
-.SH SYNOPSIS
-.B "pseudo-device ether"
-.SH DESCRIPTION
-The Address Resolution Protocol
-(ARP) is a protocol used to dynamically map between Internet host addresses
-and 10Mb/s Ethernet addresses.  It is
-used by all the 10Mb/s Ethernet interface drivers.
+.Dd 
+.Dt ARP 4
+.Os BSD 4
+.Sh NAME
+.Nm arp
+.Nd Address Resolution Protocol
+.Sh SYNOPSIS
+.Em "pseudo-device ether"
+.Sh DESCRIPTION
+The Address Resolution Protocol (ARP) is a protocol used to dynamically
+map between Internet host addresses and 10Mb/s Ethernet addresses.
+It is used by all the 10Mb/s Ethernet interface drivers.
 It is not specific to Internet protocols or to 10Mb/s Ethernet,
 but this implementation currently supports only that combination.
-.PP
-ARP caches Internet-Ethernet address mappings.  When an interface
-requests a mapping for an address not in the cache, ARP queues the
-message which requires the mapping and broadcasts
+.Pp
+ARP caches Internet-Ethernet address mappings. 
+When an interface requests a mapping for an address not in the cache,
+ARP queues the message which requires the mapping and broadcasts
 a message on the associated network requesting the address mapping.
 If a response is provided, the new mapping is cached and any pending
 message is transmitted.
-ARP will queue
-at most one packet while waiting for a response to a mapping request;
+ARP will queue at most one packet while waiting for a response to a
+mapping request;
 only the most recently ``transmitted'' packet is kept.
 If the target host does not respond after several requests,
 the host is considered to be down for a short period (normally 20 seconds),
-allowing an error to be returned to transmission attempts
-during this interval.
+allowing an error to be returned to transmission attempts during this
+interval.
 The error is
 .Li EHOSTDOWN
 for a non-responding destination host, and
 .Li EHOSTUNREACH
 for a non-responding router.
-.PP
-The ARP cache is stored in the system routing table
-as dynamically-created host routes.
-The route to a directly-attached Ethernet network is installed
-as a
-.\"XXX want macro for "quoted string"
-.quote cloning
-route
-(one with the
+.Pp
+The ARP cache is stored in the system routing table as
+dynamically-created host routes.
+The route to a directly-attached Ethernet network is installed as a
+.Dq cloning
+route (one with the
 .Li RTF_CLONING
 flag set),
-causing routes to individual hosts on that network to be created on demand.
-These routes time out periodically (normally 20 minutes after
-validated; entries are not validated when not in use).
+causing routes to individual hosts on that network to be created on
+demand.
+These routes time out periodically (normally 20 minutes after validated;
+entries are not validated when not in use).
 An entry for a host which is not responding is a
-.\"XXX want macro for "quoted string"
-.quote reject
-route
-(one with the
+.Dq reject
+route (one with the
 .Li RTF_REJECT
 flag set).
-.PP
-ARP entries may be added, deleted or changed with
-.Xr arp 8 .
+.Pp
+ARP entries may be added, deleted or changed with the
+.Xr arp 8
+utility.
 Manually-added entries may be temporary or permanent,
 and may be
-.\" XXX
-.quote published ,
+.Dq published ,
 in which case the system will respond to ARP requests for that host
 as if it were the target of the request.
-.PP
-In the past, ARP was used to negotiate the use of a trailer encapsulation.
+.Pp
+In the past,
+ARP was used to negotiate the use of a trailer encapsulation.
 This is no longer supported.
-.PP
+.Pp
 ARP watches passively for hosts impersonating the local host (i.e. a host
 which responds to an ARP mapping request for the local host's address).
-.SH DIAGNOSTICS
-.B "duplicate IP address %x!! sent from ethernet address: %x:%x:%x:%x:%x:%x."
+.Sh DIAGNOSTICS
+.Em "duplicate IP address %x!! sent from ethernet address: %x:%x:%x:%x:%x:%x."
 ARP has discovered another host on the local network which responds to
-mapping requests for its own Internet address with a different
-Ethernet address, generally indicating that two hosts are attempting
-to use the same Internet address.
-.SH SEE ALSO
-inet(4), route(4), arp(8), ifconfig(8), route(8)
-.br
-``An Ethernet Address Resolution Protocol,'' RFC826, Dave Plummer,
-Network Information Center.
-.br
-``Trailer Encapsulations,'' RFC893, S.J. Leffler and M.J. Karels,
-Network Information Center.
+mapping requests for its own Internet address with a different Ethernet
+address, generally indicating that two hosts are attempting to use the
+same Internet address.
+.Sh SEE ALSO
+.Xr inet 4 ,
+.Xr route 4 ,
+.Xr arp 8 ,
+.Xr ifconfig 8 ,
+.Xr route 8
+.sp
+.Rs
+.%A Plummer, D.
+.%B "An Ethernet Address Resolution Protocol"
+.%T RFC826
+.Re
+.Rs
+.%A Leffler, S.J.
+.%A Karels, M.J.
+.%B "Trailer Encapsulations
+.%T RFC893
+.Re
 
