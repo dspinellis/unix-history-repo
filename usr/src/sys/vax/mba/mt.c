@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.2 (Berkeley) %G%
+ *	@(#)mt.c	7.3 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -139,8 +139,10 @@ mtslave(mi, ms, sn)
 		printf("mt: controller hung\n");
 	else if ((mtaddr->mtner & MTER_INTCODE) != MTER_DONE)
 		(void) mtndtint(mi);
-	else if (mtaddr->mtds & MTDS_PRES)
+	else if (mtaddr->mtds & MTDS_PRES) {
+		muinfo[ms->ms_unit] = ms;
 		rtn = 1;
+	}
 
 	/* cancel the interrupt, then wait a little while for it to go away */
 	mtaddr->mtas = mtaddr->mtas;
