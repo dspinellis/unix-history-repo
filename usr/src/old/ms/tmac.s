@@ -1264,7 +1264,6 @@ Piscataway, New Jersey 08854
 .	\"FS - begin footnote
 .de FJ
 'ce 0
-.di
 .ev1
 .ll \\n(FLu
 .da FF
