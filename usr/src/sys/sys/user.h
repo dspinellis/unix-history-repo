@@ -1,4 +1,4 @@
-/*	user.h	3.3	%H%	*/
+/*	user.h	3.4	%H%	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -116,6 +116,7 @@ struct	user
 /* u_eosys values */
 #define	JUSTRETURN	0
 #define	RESTARTSYS	1
+#define	SIMULATERTI	2
 
 /* u_error codes */
 #include <errno.h>
