@@ -12,23 +12,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+
 #include <netinet/in.h>
-#include <signal.h>
-#include <netdb.h>
-#include <pwd.h>
+
 #include <errno.h>
-#include <unistd.h>
+#include <netdb.h>
+#include <paths.h>
+#include <pwd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <paths.h>
+#include <unistd.h>
 
 /*VARARGS1*/
 int error();
@@ -190,7 +192,7 @@ doit(f, fromp)
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
 	strncat(username, pwd->pw_name, sizeof(username)-6);
-	cp = rindex(pwd->pw_shell, '/');
+	cp = strrchr(pwd->pw_shell, '/');
 	if (cp)
 		cp++;
 	else
