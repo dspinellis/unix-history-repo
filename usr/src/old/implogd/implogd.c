@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)implogd.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)implogd.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <time.h>
@@ -71,13 +71,15 @@ main(argc, argv)
 		sleep(5);
 	}
 	for (;;) {
-		int len = sizeof (request);
+		int fromlen = sizeof (from), len;
 
-		if (recvfrom(s, request, &len, 0, &from, sizeof (from)) < 0) {
+		len = recvfrom(s, request, sizeof (request), 0,
+			&from, &fromlen);
+		if (len < 0) {
 			perror("implogd: recvfrom");
 			continue;
 		}
-		if (len <= 0 || len > IMPMTU)	/* sanity */
+		if (len == 0 || len > IMPMTU)	/* sanity */
 			continue;
 		from.sin_len = len;
 		from.sin_time = time(0);
