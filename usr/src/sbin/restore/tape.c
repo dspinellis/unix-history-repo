@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.11	(Berkeley)	83/04/18";
+static char sccsid[] = "@(#)tape.c	3.12	(Berkeley)	83/04/19";
 #endif
 
 #include "restore.h"
@@ -50,9 +50,19 @@ nohost:
 		done(1);
 	setuid(getuid());	/* no longer need or want root privileges */
 #else
-	if (strcmp(source, "-") == 0) {
+	if (strcmp(source, "-") != 0) {
+		terminal = stdin;
+	} else {
+		/*
+		 * Since input is coming from a pipe we must establish
+		 * our own connection to the terminal.
+		 */
+		terminal = fopen("/dev/tty", "r");
+		if (terminal == NULL) {
+			perror("open(\"/dev/tty\")");
+			done(1);
+		}
 		pipein++;
-		yflag++;
 	}
 	magtape = source;
 #endif RRESTOR
@@ -172,11 +182,12 @@ again:
 	else 
 		newvol = 0;
 	while (newvol <= 0) {
-		fprintf(stderr, "Specify next volume #: ");
 		do	{
-			(void) fgets(tbf, BUFSIZ, stdin);
-		} while (!feof(stdin) && tbf[0] == '\n');
-		if (feof(stdin))
+			fprintf(stderr, "Specify next volume #: ");
+			(void) fflush(stderr);
+			(void) fgets(tbf, BUFSIZ, terminal);
+		} while (!feof(terminal) && tbf[0] == '\n');
+		if (feof(terminal))
 			done(1);
 		newvol = atoi(tbf);
 		if (newvol <= 0) {
@@ -188,7 +199,8 @@ again:
 		return;
 	closemt();
 	fprintf(stderr, "Mount tape volume %d then type return ", newvol);
-	while (getchar() != '\n')
+	(void) fflush(stderr);
+	while (getc(terminal) != '\n')
 		;
 #ifdef RRESTOR
 	if ((mt = rmtopen(magtape, 0)) == -1)
@@ -849,33 +861,6 @@ checksum(b)
 		return(FAIL);
 	}
 	return(GOOD);
-}
-
-/*
- * respond to interrupts
- */
-onintr()
-{
-	if (pipein || reply("restore interrupted, continue") == FAIL)
-		done(1);
-	if (signal(SIGINT, onintr) == SIG_IGN)
-		(void) signal(SIGINT, SIG_IGN);
-	if (signal(SIGTERM, onintr) == SIG_IGN)
-		(void) signal(SIGTERM, SIG_IGN);
-}
-
-/*
- * handle unexpected inconsistencies
- */
-/* VARARGS1 */
-panic(msg, d1, d2)
-	char *msg;
-	long d1, d2;
-{
-
-	fprintf(stderr, msg, d1, d2);
-	if (pipein || reply("abort") == GOOD)
-		abort();
 }
 
 #ifdef RRESTOR
