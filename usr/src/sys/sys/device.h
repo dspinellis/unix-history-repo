@@ -2,13 +2,13 @@
  * Copyright (c) 1992 Regents of the University of California.
  * All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
- * the Computer Systems Engineering group at Lawrence Berkeley
- * Laboratory under DARPA contract BG 91-66.
+ * This code is derived from software developed by the Computer Systems
+ * Engineering group at Lawrence Berkeley Laboratory under DARPA
+ * contract BG 91-66 and contributed to Berkeley.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.1 (Berkeley) %G%
+ *	@(#)device.h	7.2 (Berkeley) %G%
  *
  * from: $Header: device.h,v 1.3 92/01/15 18:25:53 torek Exp $ (LBL)
  */
