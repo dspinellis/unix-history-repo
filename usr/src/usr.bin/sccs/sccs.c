@@ -6,6 +6,7 @@
 # include <signal.h>
 # include <sysexits.h>
 # include <whoami.h>
+# include <pwd.h>
 
 /*
 **  SCCS.C -- human-oriented front end to the SCCS system.
@@ -92,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.57 %G%";
+static char SccsId[] = "@(#)sccs.c	1.58 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -133,10 +134,6 @@ typedef char	bool;
 # define FALSE	0
 
 # define bitset(bit, word)	((bool) ((bit) & (word)))
-
-# ifdef UIDUSER
-# include <pwd.h>
-# endif UIDUSER
 
 struct sccsprog
 {
@@ -237,15 +234,41 @@ main(argc, argv)
 	register char *p;
 	extern struct sccsprog *lookup();
 	register int i;
-
 # ifndef V6
 # ifndef SCCSDIR
+	register struct passwd *pw;
+	extern struct passwd *getpwnam();
+	char buf[100];
+
 	/* pull "SccsDir" out of the environment (possibly) */
 	p = getenv("PROJECT");
-	if (p[0] == '/')
-		SccsDir = p;
-	else
-		fprintf(stderr, "PROJECT must be a full pathname\n");
+	if (p != NULL && p[0] != '\0')
+	{
+		if (p[0] == '/')
+			SccsDir = p;
+		else
+		{
+			pw = getpwnam(p);
+			if (pw == NULL)
+			{
+				usrerr("user %s does not exist", p);
+				exit(EX_USAGE);
+			}
+			strcpy(buf, pw->pw_dir);
+			strcat(buf, "/src");
+			if (access(buf, 0) < 0)
+			{
+				strcpy(buf, pw->pw_dir);
+				strcat(buf, "/source");
+				if (access(buf, 0) < 0)
+				{
+					usrerr("project %s has no source!", p);
+					exit(EX_USAGE);
+				}
+			}
+			SccsDir = buf;
+		}
+	}
 # endif SCCSDIR
 # endif V6
 
@@ -833,6 +856,7 @@ clean(mode, argv)
 {
 	struct direct dir;
 	char buf[100];
+	char *bufend;
 	register FILE *dirfd;
 	register char *basefile;
 	bool gotedit;
@@ -844,12 +868,15 @@ clean(mode, argv)
 	register char **ap;
 	extern char *username();
 	char *usernm = NULL;
+	char *subdir = NULL;
+	char *cmdname;
 
 	/*
 	**  Process the argv
 	*/
 
-	for (ap = argv; *ap != NULL; ap++)
+	cmdname = *argv;
+	for (ap = argv; *++ap != NULL; )
 	{
 		if (**ap == '-')
 		{
@@ -870,6 +897,13 @@ clean(mode, argv)
 				break;
 			}
 		}
+		else
+		{
+			if (subdir != NULL)
+				usrerr("too many args");
+			else
+				subdir = *ap;
+		}
 	}
 
 	/*
@@ -879,7 +913,13 @@ clean(mode, argv)
 	strcpy(buf, SccsDir);
 	if (buf[0] != '\0')
 		strcat(buf, "/");
+	if (subdir != NULL)
+	{
+		strcat(buf, subdir);
+		strcat(buf, "/");
+	}
 	strcat(buf, SccsPath);
+	bufend = &buf[strlen(buf)];
 
 	dirfd = fopen(buf, "r");
 	if (dirfd == NULL)
@@ -901,12 +941,8 @@ clean(mode, argv)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
-		strcpy(buf, SccsDir);
-		if (buf[0] != '\0')
-			strcat(buf, "/");
-		strcat(buf, SccsPath);
-		strcat(buf, "/p.");
-		basefile = &buf[strlen(buf)];
+		strcpy(bufend, "/p.");
+		basefile = bufend + 3;
 		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
 		basefile[sizeof dir.d_name - 2] = '\0';
 
