@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -182,24 +182,8 @@ main(argc, argv, envp)
 
 	if (argc > 0)
 		CONFIG = argv[0];
-	if (debug == 0) {
-		if (fork())
-			exit(0);
-		for (tmpint = 0; tmpint < 10; tmpint++)
-			(void) close(tmpint);
-		(void) open("/", O_RDONLY);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
-		tmpint = open(_PATH_TTY, O_RDWR);
-		if (tmpint > 0) {
-			ioctl(tmpint, TIOCNOTTY, (char *)0);
-			close(tmpint);
-		}
-		(void) setpgrp(0, 0);
-		(void) signal(SIGTSTP, SIG_IGN);
-		(void) signal(SIGTTIN, SIG_IGN);
-		(void) signal(SIGTTOU, SIG_IGN);
-	}
+	if (debug == 0)
+		daemon(0, 0);
 	openlog("inetd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
 	bzero((char *)&sv, sizeof(sv));
 	sv.sv_mask = SIGBLOCK;
@@ -306,17 +290,8 @@ main(argc, argv, envp)
 		}
 		sigsetmask(0L);
 		if (pid == 0) {
-			if (debug) {
-				if (dofork &&
-				    (tmpint = open(_PATH_TTY, O_RDWR)) > 0) {
-					ioctl(tmpint, TIOCNOTTY, 0);
-					close(tmpint);
-				}
-				(void) setpgrp(0, 0);
-				(void) signal(SIGTSTP, SIG_IGN);
-				(void) signal(SIGTTIN, SIG_IGN);
-				(void) signal(SIGTTOU, SIG_IGN);
-			}
+			if (debug && dofork)
+				setsid();
 			if (dofork)
 				for (tmpint = getdtablesize(); --tmpint > 2; )
 					if (tmpint != ctrl)
