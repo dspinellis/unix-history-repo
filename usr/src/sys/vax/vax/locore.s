@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.20 (Berkeley) %G%
+ *	@(#)locore.s	7.21 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -1113,7 +1113,7 @@ start:
 sigcode:
 	calls	$4,8(pc)	# params pushed by sendsig
 	movl	sp,ap		# calls frame built by sendsig
-	chmk	$SYS_sigcleanup	# cleanup mask and onsigstack
+	chmk	$SYS_sigreturn	# cleanup mask and onsigstack
 	halt			# sigreturn() does not return!
 	.word	0x3f		# registers 0-5
 	callg	(ap),*16(ap)	# call the signal handler
@@ -1131,7 +1131,7 @@ _icode:
 l0:	pushab	b`init-l1(pc)
 l1:	pushl	$2
 	movl	sp,ap
-	chmk	$SYS_exec
+	chmk	$SYS_execv
 	pushl	r0
 	chmk	$SYS_exit
 
