@@ -4,71 +4,75 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ctype.3	6.5 (Berkeley) %G%
+.\"     @(#)ctype.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CTYPE 3
 .Os
 .Sh NAME
-.Nm isalpha ,
-.Nm isupper ,
-.Nm islower ,
-.Nm isdigit ,
-.Nm isxdigit ,
 .Nm isalnum ,
-.Nm isspace ,
-.Nm ispunct ,
-.Nm isprint ,
-.Nm isgraph ,
-.Nm iscntrl ,
+.Nm isalpha ,
 .Nm isascii ,
-.Nm toupper ,
-.Nm tolower ,
+.Nm isblank ,
+.Nm iscntrl ,
+.Nm isdigit ,
+.Nm isgraph ,
+.Nm islower ,
+.Nm isprint ,
+.Nm ispunct ,
+.Nm isspace ,
+.Nm isupper ,
+.Nm isxdigit ,
 .Nm toascii
+.Nm tolower ,
+.Nm toupper ,
 .Nd character classification macros
 .Sh SYNOPSIS
 .Fd #include <ctype.h>
 .Fa int c
 .br
-.Fn isalpha c
-.Fn isupper c
-.Fn islower c
-.Fn isdigit c
-.Fn isxdigit c
 .Fn isalnum c
-.Fn isspace c
-.Fn ispunct c
-.Fn isprint c
-.Fn isgraph c
-.Fn iscntrl c
+.Fn isalpha c
 .Fn isascii c
-.Fn toupper c
-.Fn tolower c
+.Fn iscntrl c
+.Fn isdigit c
+.Fn isgraph c
+.Fn islower c
+.Fn isprint c
+.Fn ispunct c
+.Fn isspace c
+.Fn isupper c
+.Fn isxdigit c
 .Fn toascii c
+.Fn tolower c
+.Fn toupper c
 .Sh DESCRIPTION
-The above macros perform character tests and conversions on the integer
+The above fucntions perform character tests and conversions on the integer
 .Ar c .
-.Pp
+They are available as macros, defined in the include file <ctype.h>, and
+as true functions in the C library.
 See the specific manual pages for more information.
 .Sh SEE ALSO
-.Xr isalpha 3 ,
-.Xr isupper 3 ,
-.Xr islower 3 ,
-.Xr isdigit 3 ,
-.Xr isxdigit 3 ,
 .Xr isalnum 3 ,
-.Xr isspace 3 ,
-.Xr ispunct 3 ,
-.Xr isprint 3 ,
-.Xr isgraph 3 ,
-.Xr iscntrl 3 ,
+.Xr isalpha 3 ,
 .Xr isascii 3 ,
-.Xr toupper 3 ,
-.Xr tolower 3 ,
+.Xr isblank 3 ,
+.Xr iscntrl 3 ,
+.Xr isdigit 3 ,
+.Xr isgraph 3 ,
+.Xr islower 3 ,
+.Xr isprint 3 ,
+.Xr ispunct 3 ,
+.Xr isspace 3 ,
+.Xr isupper 3 ,
+.Xr isxdigit 3 ,
 .Xr toascii 3 ,
+.Xr tolower 3 ,
+.Xr toupper 3 ,
 .Xr ascii 7
 .Sh STANDARDS
 These functions, except for
+.Fn isblank ,
 .Fn toupper ,
 .Fn tolower
 and
