@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	7.1 (Berkeley) %G%
+ *	@(#)exec.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@
 	    __N_TXTOFF_ROUND(ex)) & ~__N_TXTOFF_ROUND(ex))
 
 /* Data segment offset. */
-#define N_DATAOFF(ex) \
+#define N_DATOFF(ex) \
 	(N_TXTOFF(ex) + (ex).ex_aout.codeSize)
 
 /* Symbol table offset. */
