@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)resume.c 1.2 %G%";
+static char sccsid[] = "@(#)resume.c 1.3 %G%";
 
 /*
  * resume execution, first setting appropriate registers
@@ -40,13 +40,11 @@ resume()
 		pcont(p);
 #		if (isvaxpx)
 			if (p->status == STOPPED) {
-				if (pcframe == NIL) {
-					dread(&pcframe, PCADDRP, sizeof(pcframe));
-					pcframe++;
-				}
 				if (isbperr()) {
 					pc = p->reg[11];
 				} else {
+					dread(&pcframe, PCADDRP, sizeof(pcframe));
+					pcframe++;
 					pc = fetchpc(pcframe);
 				}
 				pc -= (sizeof(char) + ENDOFF);
@@ -153,12 +151,15 @@ LOCAL choose()
 	if (c == 'n') {
 		unsetsigtraces(process);
 		pcont(process);
-		exit(0);
+		quit(process->exitval);
 	}
 	while (c != '\n') {
 		c = getchar();
 	}
-	fprintf(stderr, "\nEntering debugger, type 'help' for help\n");
+	fprintf(stderr, "\nEntering debugger ...");
+	init();
+	option('r') = FALSE;
+	fprintf(stderr, " type 'help' for help.\n");
 }
 
 # endif
