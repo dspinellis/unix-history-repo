@@ -4,18 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.20 (Berkeley) %G%
+ *	@(#)signal.h	7.21 (Berkeley) %G%
  */
 
-#ifndef	_SIGNAL_H_
-#define	_SIGNAL_H_
+#ifndef	_SYS_SIGNAL_H_
+#define	_SYS_SIGNAL_H_
 
 #define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
-#ifndef KERNEL
-#include <sys/types.h>
-#include <sys/cdefs.h>
-#endif
 #include <machine/signal.h>	/* sigcontext; codes for SIGILL, SIGFPE */
 
 #define	SIGHUP	1	/* hangup */
@@ -67,6 +63,7 @@
 #define	SIG_IGN		(void (*)())1
 #define	SIG_ERR		(void (*)())-1
 
+#ifndef _ANSI_SOURCE
 typedef unsigned int sigset_t;
 
 /*
@@ -91,6 +88,9 @@ struct	sigaction {
 #define	SIG_SETMASK	3	/* set specified signal set */
 
 #ifndef _POSIX_SOURCE
+#ifndef KERNEL
+#include <sys/cdefs.h>
+#endif
 typedef	void (*sig_t) __P((int));	/* type of signal function */
 
 /*
@@ -131,42 +131,7 @@ struct	sigstack {
 #define sigmask(m)	(1 << ((m)-1))
 
 #define	BADSIG		SIG_ERR
+
 #endif	/* !_POSIX_SOURCE */
-
-#ifndef KERNEL
-__BEGIN_DECLS
-void	(*signal __P((int, void (*) __P((int))))) __P((int));
-int	raise __P((int));
-#ifndef	_ANSI_SOURCE
-int	kill __P((pid_t, int));
-int	sigaction __P((int, const struct sigaction *, struct sigaction *));
-int	sigpending __P((sigset_t *));
-int	sigprocmask __P((int, const sigset_t *, sigset_t *));
-int	sigsuspend __P((const sigset_t *));
 #endif	/* !_ANSI_SOURCE */
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-int	killpg __P((pid_t, int));
-void	psignal __P((unsigned int, const char *));
-int	sigblock __P((int));
-int	siginterrupt __P((int, int));
-int	sigpause __P((int));
-int	sigreturn __P((struct sigcontext *));
-int	sigsetmask __P((int));
-int	sigstack __P((const struct sigstack *, struct sigstack *));
-int	sigvec __P((int, struct sigvec *, struct sigvec *));
-#endif /* !_ANSI_SOURCE && !_POSIX_SOURCE */
-int	sigaddset __P((sigset_t *, int));
-int	sigdelset __P((sigset_t *, int));
-int	sigemptyset __P((sigset_t *));
-int	sigfillset __P((sigset_t *));
-int	sigismember __P((const sigset_t *, int));
-__END_DECLS
-#endif	/* !KERNEL */
-
-#define sigemptyset(set)	( *(set) = 0 )
-#define sigfillset(set)		( *(set) = ~(sigset_t)0, 0 )
-#define sigaddset(set, signo)	( *(set) |= 1 << ((signo) - 1), 0)
-#define sigdelset(set, signo)	( *(set) &= ~(1 << ((signo) - 1)), 0)
-#define sigismember(set, signo)	( (*(set) & (1 << ((signo) - 1))) != 0)
-
-#endif	/* !_SIGNAL_H_ */
+#endif	/* !_SYS_SIGNAL_H_ */
