@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1128,7 +1128,7 @@ char	**nargv,
 		place = EMSG;
 	}
 	if(!*place) {			/* update scanning pointer */
-		if(optind >= nargc || *(place = nargv[optind]) != '-' || !*++place) {
+		if (optind >= nargc || *(place = nargv[optind]) != '-' || !*++place) {
 			atend++;
 			return(EOF);
 		}
@@ -1139,7 +1139,7 @@ char	**nargv,
 		}
 	}				/* option letter okay? */
 	if ((optopt = (int)*place++) == (int)':' || !(oli = strchr(ostr,optopt))) {
-		if(!*place) ++optind;
+		if (!*place) ++optind;
 		tell(": illegal option -- ");
 	}
 	if (*++oli != ':') {		/* don't need argument */
@@ -1452,6 +1452,18 @@ lockfile(fd, filename, type)
 		action = F_SETLKW;
 
 	if (fcntl(fd, action, &lfd) >= 0)
+		return TRUE;
+
+	/*
+	**  On SunOS, if you are testing using -oQ/tmp/mqueue or
+	**  -oA/tmp/aliases or anything like that, and /tmp is mounted
+	**  as type "tmp" (that is, served from swap space), the
+	**  previous fcntl will fail with "Invalid argument" errors.
+	**  Since this is fairly common during testing, we will assume
+	**  that this indicates that the lock is successfully grabbed.
+	*/
+
+	if (errno == EINVAL)
 		return TRUE;
 
 	if (!bitset(LOCK_NB, type) || (errno != EACCES && errno != EAGAIN))
