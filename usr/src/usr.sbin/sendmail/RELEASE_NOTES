@@ -1051,6 +1051,7 @@ summary of the changes in that release.
 		cf/ostype/hpux.m4 =>		cf/ostype/hpux9.m4
 		cf/ostype/ultrix4.1.m4 =>	cf/ostype/ultrix4.m4
 		src/Makefile.* =>		src/Makefiles/Makefile.*
+		src/Makefile.BSDI =>		src/Makefiles/Makefile.BSD-OS
 		src/Makefile.SunOS.4.0.3 =>	src/Makefiles/Makefile.SunOS.4.0
 	OBSOLETED FILES:
 		cf/cf/cogsci.mc
