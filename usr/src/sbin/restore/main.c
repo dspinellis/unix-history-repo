@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.4 %G%";
+char version[] = "@(#)main.c 1.5 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -16,7 +16,6 @@ char version[] = "@(#)main.c 1.4 %G%";
 #define MAXINO	3000
 #define BITS	8
 #define NCACHE	3
-#define NSIZE   100
 #define SIZEINC 10
 
 #ifndef STANDALONE
@@ -37,14 +36,11 @@ char version[] = "@(#)main.c 1.4 %G%";
 #define	BIC(i,w)	(MWORD(w,i) &= ~MBIT(i))
 #define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
 
-struct  direct	dir;
-
-int	fi;
 ino_t	ino, maxi;
 
 int	mt;
 
-int	eflag, hflag, mflag;
+int	eflag, hflag, mflag, vflag;
 
 char	mounted = 0;
 dev_t	dev = 0;
@@ -55,34 +51,35 @@ char	*magtape = tapename;
 char	mbuf[50];
 #endif
 
-#ifndef STANDALONE
 daddr_t	seekpt;
-int	df, ofile;
+FILE	*df;
+int	ofile;
 char	dirfile[] = "rstXXXXXX";
 
-struct {
+#define INOHASH(val) (val % MAXINO)
+struct inotab {
+	struct inotab *t_next;
 	ino_t	t_ino;
 	daddr_t	t_seekpt;
-} inotab[MAXINO];
-int	ipos;
+} *inotab[MAXINO];
+struct inotab *getinotab();
 
-#define ONTAPE	1
+#define XISDIR	1
 #define XTRACTD	2
 #define XINUSE	4
-#define LINKED	8
+#define XLINKED	8
 struct xtrlist {
-	ino_t	x_ino;
-	int	x_linkedto;
-	char	x_flags;
-	char 	*x_name;
-} *xtrlist;
+	struct xtrlist	*x_next;
+	struct xtrlist	*x_linkedto;
+	char 		*x_name;
+	ino_t		x_ino;
+	time_t		x_timep[2];
+	char		x_flags;
+} *xtrlist[MAXINO];
+struct xtrlist *getxtr();
 int xtrcnt = 0;
 
-char	name[100];
-
-char	drblock[BSIZE];
-int	bpt, nread, xsize,
-	init = 1;
+char	name[BUFSIZ + 1];
 
 #include <sys/mtio.h>
 struct mtop tcom;
@@ -101,6 +98,7 @@ int curblk = 0;
 int bct = NTREC+1;
 char tbf[NTREC*TP_BSIZE];
 
+extern char *ctime();
 char **envp;
 
 main(argc, argv, arge)
@@ -118,7 +116,7 @@ main(argc, argv, arge)
 	mktmp(dirfile);
 	if (argc < 2) {
 usage:
-		fprintf(stderr, "Usage: restor x[s|m|h] file file..., restor r filesys, or restor t\n");
+		fprintf(stderr, "Usage: restor x[s|m|h|v] file file..., restor r|R filesys, or restor t\n");
 		done(1);
 	}
 	argv++;
@@ -152,6 +150,9 @@ usage:
 		case 'x':
 			command = *cp;
 			break;
+		case 'v':
+			vflag++;
+			break;
 		default:
 			fprintf(stderr, "Bad key character %c\n", *cp);
 			goto usage;
@@ -163,15 +164,13 @@ usage:
 		if (signal(SIGTERM, done) == SIG_IGN)
 			signal(SIGTERM, SIG_IGN);
 
-		df = creat(dirfile, 0666);
-		if (df < 0) {
+		df = fopen(dirfile, "w");
+		if (df == 0) {
 			fprintf(stderr, "restor: %s - cannot create directory temporary\n", dirfile);
 			done(1);
 		}
-		close(df);
 		xmount(envp);
 		mounted++;
-		df = open(dirfile, 2);
 	}
 	doit(command, argc, argv);
 	if (command == 'x')
@@ -188,24 +187,7 @@ doit(command, argc, argv)
 	int	argc;
 	char	*argv[]; 
 {
-	extern char *ctime();
-	char *ststore();
-	register int k;
-	register struct xtrlist *xp;
-	int i;
-	ino_t	d;
 #ifndef STANDALONE
-	int	xtrfile(), skip(), null();
-#endif
-	int	rstrfile(), rstrskip();
-	register struct dinode *dp;
-	register struct inode *ip;
-	struct fs *fs;
-	int mode;
-	time_t timep[2];
-
-#ifndef STANDALONE
-	getxtrlist();
 	if ((mt = open(magtape, 0)) < 0) {
 		fprintf(stderr, "%s: cannot open tape\n", magtape);
 		done(1);
@@ -236,308 +218,346 @@ doit(command, argc, argv)
 		fprintf(stderr, "Dumped from: %s", ctime(&spcl.c_ddate));
 		return;
 	case 'x':
-		if (readhdr(&spcl) == 0) {
-			fprintf(stderr, "Tape is not a dump tape\n");
-			done(1);
+		extractfiles(argc, argv);
+		return;
+	case 'r':
+	case 'R':
+		restorfiles(command, argv);
+		return;
+	}
+#endif
+}
+
+#ifndef STANDALONE
+extractfiles(argc, argv)
+	int argc;
+	char **argv;
+{
+	char *ststore();
+	register struct xtrlist *xp;
+	struct xtrlist **xpp;
+	ino_t	d;
+	int	xtrfile(), skip(), null();
+	int mode;
+	time_t timep[2];
+
+	if (readhdr(&spcl) == 0) {
+		fprintf(stderr, "Tape is not a dump tape\n");
+		done(1);
+	}
+	if (checkvol(&spcl, 1) == 0) {
+		fprintf(stderr, "Tape is not volume 1 of the dump\n");
+	}
+	pass1();  /* This sets the various maps on the way by */
+	while( argc-- ) {
+		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
+			fprintf(stderr,  "%s: not on tape\n", *argv++ );
+			continue;
 		}
-		if (checkvol(&spcl, 1) == 0) {
-			fprintf(stderr, "Tape is not volume 1 of the dump\n");
+		if(hflag)
+			getleaves(d, *argv++);
+		else {
+			xp = getxtr(d);
+			xp->x_flags |= XINUSE;
+			if( mflag )
+				xp->x_name = ststore( *argv );
+			fprintf(stderr,  "%s: inode %u\n", *argv, d );
+			argv++;
 		}
-		pass1();  /* This sets the various maps on the way by */
-		while( argc-- ) {
-			if(hflag)
-				getleaves( *argv++ );
-			else {
-				if( (d = psearch(*argv)) == 0 ||
-							BIT(d,dumpmap) == 0 ) {
-					fprintf(stderr,  "%s: not on tape\n", *argv++ );
-					continue;
-				}
-				xtrlist[xtrcnt].x_ino = d;
-				xtrlist[xtrcnt].x_flags |= XINUSE;
-				if( mflag )
-					xtrlist[xtrcnt].x_name = ststore( *argv );
-				fprintf(stderr,  "%s: inode %u\n", *argv, d );
-				argv++;
-				if( ++xtrcnt >= xsize ) getxtrlist();
-			}
-		}
+	}
 
 
-		if(dumpnum > 1)
-			tcom.mt_op = MTBSF;
-		else	tcom.mt_op = MTREW;
-		tcom.mt_count = 1;
+	if(dumpnum > 1)
+		tcom.mt_op = MTBSF;
+	else	tcom.mt_op = MTREW;
+	tcom.mt_count = 1;
 
 newvol:
-		flsht();
+	flsht();
+	ioctl(mt,MTIOCTOP,&tcom);
+	if( dumpnum > 1 ) {
+		tcom.mt_op = MTFSF;
+		tcom.mt_count = 1;
 		ioctl(mt,MTIOCTOP,&tcom);
-		if( dumpnum > 1 ) {
-			tcom.mt_op = MTFSF;
-			tcom.mt_count = 1;
-			ioctl(mt,MTIOCTOP,&tcom);
-		}
-		lseek(mt, 0, 0);
+	}
+	lseek(mt, (long)0, 0);
 
 
 getvol:
-		fprintf(stderr, "Mount desired tape volume: Specify volume #: ");
-		if (gets(tbf) == NULL)
-			return;
-		volno = atoi(tbf);
-		if (volno <= 0) {
-			fprintf(stderr, "Volume numbers are positive numerics\n");
-			goto getvol;
-		}
-		if (readhdr(&spcl) == 0) {
-			fprintf(stderr, "tape is not dump tape\n");
-			goto newvol;
-		}
-		if (checkvol(&spcl, volno) == 0) {
-			fprintf(stderr, "Wrong volume (%d)\n", spcl.c_volume);
-			goto newvol;
-		}
+	fprintf(stderr, "Mount desired tape volume: Specify volume #: ");
+	if (gets(tbf) == NULL)
+		return;
+	volno = atoi(tbf);
+	if (volno <= 0) {
+		fprintf(stderr, "Volume numbers are positive numerics\n");
+		goto getvol;
+	}
+	if (readhdr(&spcl) == 0) {
+		fprintf(stderr, "tape is not dump tape\n");
+		goto newvol;
+	}
+	if (checkvol(&spcl, volno) == 0) {
+		fprintf(stderr, "Wrong volume (%d)\n", spcl.c_volume);
+		goto newvol;
+	}
 rbits:
-		while (gethead(&spcl) == 0)
-			;
-		if (checktype(&spcl, TS_INODE) == 1) {
-			fprintf(stderr, "Can't find inode mask!\n");
-			goto newvol;
-		}
-		if (checktype(&spcl, TS_BITS) == 0)
-			goto rbits;
-		readbits(dumpmap);
-		i = 0;
-		for (k = 0; xtrlist[k].x_flags; k++) {
-			if (BIT(xtrlist[k].x_ino, dumpmap)) {
-				xtrlist[k].x_flags |= ONTAPE;
-				i++;
-			}
-		}
-		while (i > 0) {
+	while (gethead(&spcl) == 0)
+		;
+	if (checktype(&spcl, TS_INODE) == 1) {
+		fprintf(stderr, "Can't find inode mask!\n");
+		goto newvol;
+	}
+	if (checktype(&spcl, TS_BITS) == 0)
+		goto rbits;
+	readbits(dumpmap);
+	while (xtrcnt > 0) {
 again:
-			if (ishead(&spcl) == 0)
-				while(gethead(&spcl) == 0)
-					;
-			if (checktype(&spcl, TS_END) == 1) {
-				fprintf(stderr, "end of tape\n");
-checkdone:
-				for (xp = xtrlist; xp->x_flags; xp++) {
-					if ((xp->x_flags&XTRACTD) == 0)
-						if ((xp->x_flags&LINKED) == 0) {
-							fprintf(stderr, "cannot find file %s\n",
-								xp->x_name);
-					} else {
-						fprintf(stderr, "link %s to %s\n",
-							xtrlist[xp->x_linkedto].x_name,
-							xp->x_name);
-						if (xlink(xtrlist[xp->x_linkedto].x_name, xp->x_name) < 0)
-							fprintf(stderr, "link failed\n");
-					}
-				}
-				return;
-			}
-			if (checktype(&spcl, TS_INODE) == 0) {
-				gethead(&spcl);
-				goto again;
-			}
-			d = spcl.c_inumber;
-			for (k = 0; xtrlist[k].x_flags; k++) {
-				if (d == xtrlist[k].x_ino) {
-					if( mflag ) {
-						sprintf(name, "%s", xtrlist[k].x_name);
-						fprintf(stderr, "extract file %s\n",name);
-						checkdir( name );
-					}
-					else {
-						fprintf(stderr, "extract file %u\n", xtrlist[k].x_ino );
-						sprintf(name, "%u", xtrlist[k].x_ino);
-					}
-					timep[0] = spcl.c_dinode.di_atime;
-					timep[1] = spcl.c_dinode.di_mtime;
-					mode = spcl.c_dinode.di_mode;
-					switch (mode & IFMT) {
-					default:
-						fprintf(stderr, "%s: unknown file type\n");
-						i--;
-						continue;
-					case IFDIR:
-						fprintf(stderr, "%s: missing directory\n", name);
-						i--;
-						continue;
-					case IFCHR:
-					case IFBLK:
-						if (xmknod(name, mode, spcl.c_dinode.di_rdev)) {
-							fprintf(stderr, "%s: cannot create special file\n", name);
-							i--;
-							continue;
-						}
-						break;
-					case IFREG:
-						if ((ofile = xcreat(name, 0666)) < 0) {
-							fprintf(stderr, "%s: cannot create file\n", name);
-							i--;
-							continue;
-						}
-						getfile(xtrfile, skip, spcl.c_dinode.di_size);
-						xclose(ofile);
-						break;
-					}
-					xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
-					xutime(name, timep);
-					xtrlist[k].x_flags |= XTRACTD;
-					i--;
-					goto finished;
-				}
-			}
-			getfile(null, null, spcl.c_dinode.di_size);
-finished:
-			;
+		if (ishead(&spcl) == 0)
+			while(gethead(&spcl) == 0)
+				;
+		if (checktype(&spcl, TS_END) == 1) {
+			fprintf(stderr, "end of tape\n");
+			break;
 		}
-		goto checkdone;
-#endif
-	case 'r':
-	case 'R':
-#ifndef STANDALONE
-		{
-			char mount[80];
-			char *ptr[2];
-
-			strcpy(mount, "MOUNT=");
-			strcat(mount, *argv);
-			ptr[0] = mount;
-			ptr[1] = 0;
-			xmount(ptr);
-			iput(u.u_cdir); /* release root inode */
-			iput(u.u_rdir); /* release root inode */
-			mounted++;
+		if (checktype(&spcl, TS_INODE) == 0) {
+			gethead(&spcl);
+			goto again;
 		}
-#else
-		do {
-			char charbuf[50];
-
-			fprintf(stderr, "Disk? ");
-			gets(charbuf);
-			fi = open(charbuf, 2);
-		} while (fi == -1);
-#endif
-#ifndef STANDALONE
-		if (command == 'R') {
-			fprintf(stderr, "Enter starting volume number: ");
-			if (gets(tbf) == EOF) {
-				volno = 1;
-				fprintf(stderr, "\n");
-			}
+		d = spcl.c_inumber;
+		for (xp = xtrlist[INOHASH(d)]; xp; xp = xp->x_next) {
+			if (d != xp->x_ino)
+				continue;
+			if (xp->x_flags & XLINKED)
+				continue;
+			xp->x_timep[0] = spcl.c_dinode.di_atime;
+			xp->x_timep[1] = spcl.c_dinode.di_mtime;
+			mode = spcl.c_dinode.di_mode;
+			if (mflag)
+				sprintf(name, "%s", xp->x_name);
 			else
-				volno = atoi(tbf);
+				sprintf(name, "%u", xp->x_ino);
+			switch (mode & IFMT) {
+			default:
+				fprintf(stderr, "%s: unknown file type\n");
+				xp->x_flags |= XTRACTD;
+				xtrcnt--;
+				goto skipfile;
+			case IFCHR:
+			case IFBLK:
+				if (vflag)
+					fprintf(stderr, "extract special file %s\n", name);
+				if (xmknod(name, mode, spcl.c_dinode.di_rdev)) {
+					fprintf(stderr, "%s: cannot create special file\n", name);
+					xp->x_flags |= XTRACTD;
+					xtrcnt--;
+					goto skipfile;
+				}
+				getfile(null, null, spcl.c_dinode.di_size);
+				break;
+			case IFDIR:
+				if (mflag) {
+					if (vflag)
+						fprintf(stderr, "extract directory %s\n", name);
+					strncat(name, "/.", BUFSIZ);
+					checkdir( name );
+					xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
+					getfile(null, null, spcl.c_dinode.di_size);
+					break;
+				}
+				/* else fall through */
+			case IFREG:
+				if (vflag)
+					fprintf(stderr, "extract file %s\n", name);
+				if ((ofile = xcreat(name, 0666)) < 0) {
+					fprintf(stderr, "%s: cannot create file\n", name);
+					xp->x_flags |= XTRACTD;
+					xtrcnt--;
+					goto skipfile;
+				}
+				xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
+				getfile(xtrfile, skip, spcl.c_dinode.di_size);
+				xclose(ofile);
+				break;
+			}
+			xchmod(name, mode);
+			xutime(name, xp->x_timep);
+			xp->x_flags |= XTRACTD;
+			xtrcnt--;
+			goto finished;
+		}
+skipfile:
+		getfile(null, null, spcl.c_dinode.di_size);
+finished:
+		;
+	}
+	if (xtrcnt == 0 && !mflag)
+		return;
+	for (xpp = xtrlist; xpp < &xtrlist[MAXINO]; xpp++) {
+		for (xp = *xpp; xp; xp = xp->x_next) {
+			if (mflag && (xp->x_flags & XISDIR))
+				xutime(xp->x_name, xp->x_timep);
+			if (xp->x_flags & XTRACTD)
+				continue;
+			if ((xp->x_flags & XLINKED) == 0) {
+				fprintf(stderr, "cannot find file %s\n",
+					xp->x_name);
+				continue;
+			}
+			if (vflag)
+				fprintf(stderr, "link %s to %s\n",
+					xp->x_linkedto->x_name, xp->x_name);
+			if (xlink(xp->x_linkedto->x_name, xp->x_name) < 0)
+				fprintf(stderr, "link failed\n");
+		}
+	}
+}
+#endif
+
+restorfiles(command, argv)
+	char command;
+	char **argv;
+{
+	int	rstrfile(), rstrskip();
+	register struct dinode *dp;
+	register struct inode *ip;
+	struct fs *fs;
+	int mode;
+	char mount[BUFSIZ + 1];
+	char *ptr[2];
+
+#ifndef STANDALONE
+	mount[0] = '\0';
+	strcpy(mount, "MOUNT=");
+	strncat(mount, *argv, BUFSIZ);
+	ptr[0] = mount;
+	ptr[1] = 0;
+	xmount(ptr);
+	iput(u.u_cdir); /* release root inode */
+	iput(u.u_rdir); /* release root inode */
+	mounted++;
+#else
+	do {
+		fprintf(stderr, "Disk? ");
+		gets(mount);
+		fi = open(mount, 2);
+	} while (fi == -1);
+#endif
+#ifndef STANDALONE
+	if (command == 'R') {
+		fprintf(stderr, "Enter starting volume number: ");
+		if (gets(tbf) == EOF) {
+			volno = 1;
+			fprintf(stderr, "\n");
 		}
 		else
+			volno = atoi(tbf);
+	}
+	else
 #endif
-			volno = 1;
-		fprintf(stderr, "Last chance before scribbling on %s. ",
+		volno = 1;
+	fprintf(stderr, "Last chance before scribbling on %s. ",
 #ifdef STANDALONE
-								"disk");
+							"disk");
 #else
-								*argv);
+							*argv);
 #endif
-		while (getchar() != '\n');
-		fs = getfs(dev);
-		maxi = fs->fs_ipg * fs->fs_ncg;
-		if (readhdr(&spcl) == 0) {
-			fprintf(stderr, "Missing volume record\n");
-			done(1);
-		}
-		if (checkvol(&spcl, volno) == 0) {
-			fprintf(stderr, "Tape is not volume %d\n", volno);
-			done(1);
-		}
-		gethead(&spcl);
-		for (;;) {
+	while (getchar() != '\n');
+	fs = getfs(dev);
+	maxi = fs->fs_ipg * fs->fs_ncg;
+	if (readhdr(&spcl) == 0) {
+		fprintf(stderr, "Missing volume record\n");
+		done(1);
+	}
+	if (checkvol(&spcl, volno) == 0) {
+		fprintf(stderr, "Tape is not volume %d\n", volno);
+		done(1);
+	}
+	gethead(&spcl);
+	for (;;) {
 ragain:
-			if (ishead(&spcl) == 0) {
-				fprintf(stderr, "Missing header block\n");
-				while (gethead(&spcl) == 0)
-					;
-				eflag++;
-			}
-			if (checktype(&spcl, TS_END) == 1) {
-				fprintf(stderr, "End of tape\n");
-				close(mt);
-				return;
-			}
-			if (checktype(&spcl, TS_CLRI) == 1) {
-				readbits(clrimap);
-				for (ino = 1; ino <= maxi; ino++)
-					if (BIT(ino, clrimap) == 0) {
-						if (!iexist(dev, ino))
-							continue;
-						ip = iget(dev, ino);
-						if (ip == NULL) {
-							fprintf(stderr, "can't find inode %u\n", ino);
-							done(1);
-						}
-						ip->i_nlink = 0;
-						ip->i_flag |= ICHG;
-						iput(ip);
+		if (ishead(&spcl) == 0) {
+			fprintf(stderr, "Missing header block\n");
+			while (gethead(&spcl) == 0)
+				;
+			eflag++;
+		}
+		if (checktype(&spcl, TS_END) == 1) {
+			fprintf(stderr, "End of tape\n");
+			close(mt);
+			return;
+		}
+		if (checktype(&spcl, TS_CLRI) == 1) {
+			readbits(clrimap);
+			for (ino = 1; ino <= maxi; ino++)
+				if (BIT(ino, clrimap) == 0) {
+					if (!iexist(dev, ino))
+						continue;
+					ip = iget(dev, ino);
+					if (ip == NULL) {
+						fprintf(stderr, "can't find inode %u\n", ino);
+						done(1);
 					}
-				goto ragain;
-			}
-			if (checktype(&spcl, TS_BITS) == 1) {
-				readbits(dumpmap);
-				goto ragain;
-			}
-			if (checktype(&spcl, TS_INODE) == 0) {
-				fprintf(stderr, "Unknown header type\n");
-				eflag++;
-				gethead(&spcl);
-				goto ragain;
-			}
-			ino = spcl.c_inumber;
-			if (eflag)
-				fprintf(stderr, "Resynced at inode %u\n", ino);
-			eflag = 0;
-			if (ino > maxi) {
-				fprintf(stderr, "%u: ilist too small\n", ino);
-				gethead(&spcl);
-				goto ragain;
-			}
-			if (iexist(dev, ino)) {
-				ip = iget(dev, ino);
-				if (ip == NULL) {
-					fprintf(stderr, "can't find inode %u\n",
-						ino);
-					done(1);
+					ip->i_nlink = 0;
+					ip->i_flag |= ICHG;
+					iput(ip);
 				}
-				ip->i_nlink = 0;
-				ip->i_flag |= ICHG;
-				iput(ip);
-			}
-			dp = &spcl.c_dinode;
-			ip = ialloc(dev, ino, dp->di_mode);
-			if (ip == NULL || ip->i_number != ino) {
-				fprintf(stderr, "can't create inode %u\n", ino);
+			goto ragain;
+		}
+		if (checktype(&spcl, TS_BITS) == 1) {
+			readbits(dumpmap);
+			goto ragain;
+		}
+		if (checktype(&spcl, TS_INODE) == 0) {
+			fprintf(stderr, "Unknown header type\n");
+			eflag++;
+			gethead(&spcl);
+			goto ragain;
+		}
+		ino = spcl.c_inumber;
+		if (eflag)
+			fprintf(stderr, "Resynced at inode %u\n", ino);
+		eflag = 0;
+		if (ino > maxi) {
+			fprintf(stderr, "%u: ilist too small\n", ino);
+			gethead(&spcl);
+			goto ragain;
+		}
+		if (iexist(dev, ino)) {
+			ip = iget(dev, ino);
+			if (ip == NULL) {
+				fprintf(stderr, "can't find inode %u\n",
+					ino);
 				done(1);
 			}
-			ip->i_mode = mode = dp->di_mode;
-			ip->i_nlink = dp->di_nlink;
-			ip->i_uid = dp->di_uid;
-			ip->i_gid = dp->di_gid;
-			ip->i_atime = dp->di_atime;
-			ip->i_mtime = dp->di_mtime;
-			ip->i_ctime = dp->di_ctime;
-			if ((ip->i_mode & IFMT) == IFCHR ||
-			    (ip->i_mode & IFMT) == IFBLK)
-				ip->i_rdev = dp->di_rdev;
-			ip->i_size = 0;
-			cur_ip = ip;
-			u.u_offset = 0;
-			u.u_segflg = 1;
-			getfile(rstrfile, rstrskip, dp->di_size);
-			ip->i_mode = mode;
-			ip->i_flag &= ~(IUPD|IACC);
+			ip->i_nlink = 0;
 			ip->i_flag |= ICHG;
 			iput(ip);
 		}
+		dp = &spcl.c_dinode;
+		ip = ialloc(dev, ino, dp->di_mode);
+		if (ip == NULL || ip->i_number != ino) {
+			fprintf(stderr, "can't create inode %u\n", ino);
+			done(1);
+		}
+		ip->i_mode = mode = dp->di_mode;
+		ip->i_nlink = dp->di_nlink;
+		ip->i_uid = dp->di_uid;
+		ip->i_gid = dp->di_gid;
+		ip->i_atime = dp->di_atime;
+		ip->i_mtime = dp->di_mtime;
+		ip->i_ctime = dp->di_ctime;
+		if ((ip->i_mode & IFMT) == IFCHR ||
+		    (ip->i_mode & IFMT) == IFBLK)
+			ip->i_rdev = dp->di_rdev;
+		ip->i_size = 0;
+		cur_ip = ip;
+		u.u_offset = 0;
+		u.u_segflg = 1;
+		getfile(rstrfile, rstrskip, dp->di_size);
+		ip->i_mode = mode;
+		ip->i_flag &= ~(IUPD|IACC);
+		ip->i_flag |= ICHG;
+		iput(ip);
 	}
 }
 
@@ -549,9 +569,13 @@ ragain:
 pass1()
 {
 	register int i;
-	struct dinode *ip;
+	register struct dinode *ip;
+	struct direct nulldir;
+	register struct inotab *itp;
 	int	putdir(), null();
 
+	nulldir.d_ino = 0;
+	strncpy(nulldir.d_name, "/", DIRSIZ);
 	while (gethead(&spcl) == 0) {
 		fprintf(stderr, "Can't find directory header!\n");
 	}
@@ -566,10 +590,10 @@ pass1()
 		}
 		if (checktype(&spcl, TS_INODE) == 0) {
 finish:
-			flsh();
 /*	
 			close(mt);
 */
+			freopen(dirfile, "r", df);
 			return;
 		}
 		ip = &spcl.c_dinode;
@@ -577,10 +601,10 @@ finish:
 		if (i != IFDIR) {
 			goto finish;
 		}
-		inotab[ipos].t_ino = spcl.c_inumber;
-		inotab[ipos++].t_seekpt = seekpt;
+		itp = getinotab(spcl.c_inumber);
+		itp->t_seekpt = seekpt;
 		getfile(putdir, null, spcl.c_dinode.di_size);
-		putent("\000\000/");
+		putent(&nulldir);
 	}
 }
 #endif
@@ -594,13 +618,14 @@ getfile(f1, f2, size)
 	long	size;
 {
 	register int i;
-	union u_spcl addrblock;
 	char buf[BLKING * FRAG][TP_BSIZE];
+	union u_spcl addrblk;
+#	define addrblock addrblk.s_spcl
 
-	addrblock.s_spcl = spcl;
+	addrblock = spcl;
 	for (;;) {
-		for (i = 0; i < addrblock.s_spcl.c_count; i++) {
-			if (addrblock.s_spcl.c_addr[i]) {
+		for (i = 0; i < addrblock.c_count; i++) {
+			if (addrblock.c_addr[i]) {
 				readtape(&buf[curblk++][0]);
 				if (curblk == BLKING * FRAG) {
 					(*f1)(buf, size > TP_BSIZE ?
@@ -627,12 +652,12 @@ eloop:
 				goto out;
 			}
 		}
-		if (gethead(&addrblock.s_spcl) == 0) {
+		if (gethead(&addrblock) == 0) {
 			fprintf(stderr, "Missing address (header) block, ino%u\n", ino);
 			goto eloop;
 		}
-		if (checktype(&addrblock.s_spcl, TS_ADDR) == 0) {
-			spcl = addrblock.s_spcl;
+		if (checktype(&addrblock, TS_ADDR) == 0) {
+			spcl = addrblock;
 			goto out;
 		}
 	}
@@ -651,7 +676,7 @@ readtape(b)
 	char *b;
 {
 	register int i;
-	union u_spcl tmpbuf;
+	struct s_spcl tmpbuf;
 
 	if (bct >= NTREC) {
 		for (i = 0; i < NTREC; i++)
@@ -706,83 +731,27 @@ copy(f, t, s)
 	while (--i);
 }
 
-clearbuf(cp)
-	register char *cp;
-{
-	register int i;
-
-	i = BSIZE;
-	do
-		*cp++ = 0;
-	while (--i);
-}
-
 /*
- * Put and get the directory entries from the compressed
- * directory file
+ * Put the directory entries in the directory file
  */
 #ifndef STANDALONE
-putent(cp)
-	char	*cp;
+putdir(buf, size)
+	char *buf;
+	int size;
 {
+	register struct direct *dp;
 	register int i;
 
-	for (i = 0; i < sizeof(ino_t); i++)
-		writec(*cp++);
-	for (i = 0; i < DIRSIZ; i++) {
-		writec(*cp);
-		if (*cp++ == 0)
-			return;
-	}
-	return;
+	for (dp = (struct direct *)buf, i = 0; i < size; dp++, i += sizeof(*dp))
+		if (dp->d_ino != 0)
+			putent(dp);
 }
 
-getent(bf)
-	register char *bf;
+putent(dp)
+	struct direct *dp;
 {
-	register int i;
-
-	for (i = 0; i < sizeof(ino_t); i++)
-		*bf++ = readc();
-	for (i = 0; i < DIRSIZ; i++)
-		if ((*bf++ = readc()) == 0)
-			return;
-	return;
-}
-
-/*
- * read/write the directory file
- */
-writec(c)
-	char c;
-{
-	drblock[bpt++] = c;
-	seekpt++;
-	if (bpt >= BSIZE) {
-		bpt = 0;
-		write(df, drblock, BSIZE);
-	}
-}
-
-readc()
-{
-	if (bpt >= BSIZE) {
-		nread = read(df, drblock, BSIZE);
-		bpt = 0;
-	}
-	return(drblock[bpt++]);
-}
-
-mseek(pt)
-	daddr_t pt;
-{
-	bpt = BSIZE;
-	lseek(df, pt, 0);
-}
-
-flsh()
-{
-	write(df, drblock, bpt+1);
+	fwrite(dp, 1, sizeof(struct direct), df);
+	seekpt = ftell(df);
 }
 
 /*
@@ -795,19 +764,20 @@ search(inum, cp)
 	char	*cp;
 {
 	register int i;
+	struct direct dir;
+	register struct inotab *itp;
 
-	for (i = 0; i < MAXINO; i++)
-		if (inotab[i].t_ino == inum) {
+	for (itp = inotab[INOHASH(inum)]; itp; itp = itp->t_next)
+		if (itp->t_ino == inum)
 			goto found;
-		}
 	return(0);
 found:
-	mseek(inotab[i].t_seekpt);
+	fseek(df, itp->t_seekpt, 0);
 	do {
-		getent((char *)&dir);
-		if (direq(dir.d_name, "/"))
+		fread(&dir, 1, sizeof(struct direct), df);
+		if (!strncmp(dir.d_name, "/", DIRSIZ))
 			return(0);
-	} while (direq(dir.d_name, cp) == 0);
+	} while (strncmp(dir.d_name, cp, DIRSIZ));
 	return(dir.d_ino);
 }
 
@@ -842,20 +812,6 @@ next:
 	}
 	return(ino);
 }
-
-direq(s1, s2)
-	register char *s1, *s2;
-{
-	register int i;
-
-	for (i = 0; i < DIRSIZ; i++)
-		if (*s1++ == *s2) {
-			if (*s2++ == 0)
-				return(1);
-		} else
-			return(0);
-	return(1);
-}
 #endif
 
 /*
@@ -863,12 +819,10 @@ direq(s1, s2)
  * or not it is a header block.
  */
 gethead(buf)
-	union u_spcl *buf;
+	struct s_spcl *buf;
 {
-	int i;
-
 	readtape((char *)buf);
-	if (buf->s_spcl.c_magic != MAGIC || checksum((int *) &buf->s_spcl) == 0)
+	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
 		return(0);
 	return(1);
 }
@@ -877,18 +831,18 @@ gethead(buf)
  * return whether or not the buffer contains a header block
  */
 ishead(buf)
-	union u_spcl *buf;
+	struct s_spcl *buf;
 {
-	if (buf->s_spcl.c_magic != MAGIC || checksum((int *) &buf->s_spcl) == 0)
+	if (buf->c_magic != MAGIC || checksum((int *)buf) == 0)
 		return(0);
 	return(1);
 }
 
 checktype(b, t)
-	union u_spcl *b;
+	struct s_spcl *b;
 	int	t;
 {
-	return(b->s_spcl.c_type == t);
+	return(b->c_type == t);
 }
 
 
@@ -910,16 +864,16 @@ checksum(b)
 }
 
 checkvol(b, t)
-	union u_spcl *b;
+	struct s_spcl *b;
 	int t;
 {
-	if (b->s_spcl.c_volume == t)
+	if (b->c_volume == t)
 		return(1);
 	return(0);
 }
 
 readhdr(b)
-	union u_spcl *b;
+	struct s_spcl *b;
 {
 	if (gethead(b) == 0)
 		return(0);
@@ -937,7 +891,10 @@ xtrfile(buf, size)
 	char	*buf;
 	long	size;
 {
-	xwrite(ofile, buf, (int) size);
+	if (xwrite(ofile, buf, (int) size) == -1) {
+		perror("extract write:");
+		done(1);
+	}
 }
 
 null() {;}
@@ -946,7 +903,10 @@ skip(buf, size)
 	char *buf;
 	long size;
 {
-	xseek(ofile, size, 1);
+	if (xseek(ofile, size, 1) == -1) {
+		perror("extract seek:");
+		done(1);
+	}
 }
 #endif
 
@@ -958,6 +918,10 @@ rstrfile(buf, size)
 	u.u_base = buf;
 	u.u_count = size;
 	writei(cur_ip);
+	if (u.u_error) {
+		perror("restor write:");
+		done(1);
+	}
 }
 
 rstrskip(buf, size)
@@ -997,22 +961,6 @@ iexist(dev, ino)
 	return (1);
 }
 
-#ifndef STANDALONE
-putdir(buf, size)
-	char *buf;
-	int size;
-{
-	register struct direct *dp;
-	register int i;
-
-	for (dp = (struct direct *) buf, i = 0; i < size; dp++, i += sizeof(*dp)) {
-		if (dp->d_ino == 0)
-			continue;
-		putent((char *) dp);
-	}
-}
-#endif
-
 /*
  * read a bit mask from the tape into m.
  */
@@ -1042,65 +990,31 @@ done(exitcode)
 	exit(exitcode);
 }
 
-stcopy( sourcep, destp, max )
-	char *sourcep, *destp;
-	int max;
+struct inotab *
+getinotab(ino)
+	ino_t ino;
 {
-	int i;
+	register struct inotab	*itp;
 
-	for( i = 1; i <= max && (*destp++ = *sourcep++); i++ )
-		;
-	if( i > max )	return( 0 );
-	else		return( 1 );
+	itp = (struct inotab *)calloc(1, sizeof(struct inotab));
+	itp->t_next = inotab[INOHASH(ino)];
+	inotab[INOHASH(ino)] = itp;
+	itp->t_ino = ino;
+	return itp;
 }
 
-append( sourcep, destp, max )
-	char *sourcep, *destp;
-	int max;
+struct xtrlist *
+getxtr(ino)
+	ino_t ino;
 {
-	int i;
+	struct xtrlist	*xp;
 
-	for( i=0; *destp; i++ )
-		*destp++;
-	if( ++i <= max ) *destp++ = '/';
-	while( ++i<=max && (*destp++ = *sourcep++) )
-		;
-	if( i > max )	return( 0 );
-	else		return( 1 );
-}
-/*
- *	Truncate the rightmost file or directory name from a pathname      
- */
-
-trunc( cp )
-	char *cp;
-{
-	char *lstslsh;
-	lstslsh = 0;
-	while( *cp++ )
-		if( *cp == '/' ) lstslsh = cp;
-	if( lstslsh == 0 )
-		return( 0 );
-	else {
-		*lstslsh = '\0';
-		return( 1 );
-	}
-}
-getxtrlist() {
-	struct xtrlist	*malloc(),
-			*realloc();
-
-	if( init ) {
-		init = 0;
-		xtrlist = malloc( SIZEINC*sizeof(struct xtrlist) );
-		xsize = SIZEINC;
-	}
-	else {
-		xtrlist = realloc( xtrlist, (SIZEINC+xsize) *
-						sizeof(struct xtrlist) );
-		xsize += SIZEINC;
-	}
-
+	xp = (struct xtrlist *)calloc(1, sizeof(struct xtrlist));
+	xp->x_next = xtrlist[INOHASH(ino)];
+	xtrlist[INOHASH(ino)] = xp;
+	xp->x_ino = ino;
+	xtrcnt++;
+	return xp;
 }
 
 /*
@@ -1131,7 +1045,6 @@ checkdir(name)
 				while ((rp = wait(&i)) >= 0 && rp != pid)
 					;
 				xmount(envp);
-				xchown(name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
 			}
 			*cp = '/';
 		}
@@ -1156,7 +1069,7 @@ ststore( stringp )
 	if( spaceleft >= 0 )
 		return( rtnp );
 	else {
-		spaceleft = 10 * NSIZE;
+		spaceleft = 10 * BUFSIZ;
 		spacep = (char *)malloc( spaceleft );
 		return( ststore(savep) );
 	}
@@ -1166,92 +1079,86 @@ ststore( stringp )
  *	Recursively find names and inumbers of all files in subtree 
  *	pname and put them in xtrlist[]
  */
-getleaves( pname )
+getleaves(ino, pname)
+	ino_t ino;
 	char *pname;
 {
-	static int xtrcnt = 0;	/* number of entries to extract */
-	int 	n, 		/* loop counter */
-		bptsave, 	/* placeholder for pointer into drblock */
-		readsize;	/* nbytes read into drblock at cur level
-				   of recursion */
-	char 	locname[NSIZE];	/* pname + an entry from drblock */
-	daddr_t dptsave, 	/* disk loc where cur drblock came from */
-		disk_loc;	/* used to see if getent() causes a phys read */
-	ino_t 	d;		/* inode no of pname */
+	register struct xtrlist *xp, *pxp;
+	register struct inotab *itp;
+	int namelen;
+	daddr_t	bpt;
+	char 	locname[BUFSIZ];
+	struct direct dir;
 
-	stcopy( pname, locname, NSIZE );
-	if( (d = psearch(locname)) == 0 || BIT( d, dumpmap) == 0 ) {
-		fprintf(stderr, "%s: not on the tape\n", locname );
+	if (BIT(ino, dumpmap) == 0) {
+		fprintf(stderr, "%s: not on the tape\n", pname);
 		return;
 	}
-
-	for( n=0; n<MAXINO; n++ ) {
-		if( inotab[n].t_ino == d ) {
-			/*
-			 * locname is a directory name 
-			 */
-				/* phys disk read forced so reset readsize */
-			mseek( inotab[n].t_seekpt);
-			getent( (char *)&dir );
-			readsize = nread;
-	
-				/* "/" signals end of directory */
-			while( !direq(dir.d_name,"/") ) {
-
-				if( direq(dir.d_name,".") ) {
-					getent( (char *)&dir );
-					continue;
-				}
-
-				if( direq(dir.d_name,"..") ) {
-					getent( (char *)&dir );
-					continue;
-				}
-
-				if( append(dir.d_name,locname,NSIZE) == 0 ) {
-					fprintf(stderr, "name exceedes %d char\n",NSIZE);
-					continue;
-				}
-
-					/* info for rereading drblock later */
-				dptsave = lseek( df, 0L, 1 ) - readsize;
-				bptsave = bpt;
-
-				getleaves( locname );
-	
-					/* reread drblock after recursion rtn */
-				lseek( df, dptsave, 0 );
-				read( df, drblock, BSIZE );
-				bpt = bptsave;
-
-				if( trunc(locname) == 0 ) {
-					fprintf(stderr,  "Trouble with name trunc\n" );
-					abort();
-				}
-					/* get next entry from drblock; reset
-					 * readsize iff physical disk read */
-				disk_loc = lseek( df, 0L, 1 );
-				getent( (char *)&dir );
-				if( lseek(df,0L,1) != disk_loc )
-					readsize = nread;
+	for (itp = inotab[INOHASH(ino)]; itp; itp = itp->t_next) {
+		if (itp->t_ino != ino)
+			continue;
+		/*
+		 * pname is a directory name 
+		 */
+		xp = getxtr(ino);
+		xp->x_flags |= (XINUSE | XISDIR);
+		xp->x_name = ststore(pname);
+		if (vflag)
+			fprintf(stderr, "%s: directory inode %u\n", pname, ino);
+		/*
+		 * begin search through the directory
+		 * skipping over "." and ".."
+		 */
+		strncpy(locname, pname, BUFSIZ);
+		strncat(locname, "/", BUFSIZ);
+		namelen = strlen(locname);
+		bpt = itp->t_seekpt;
+		fseek(df, bpt, 0);
+		fread(&dir, 1, sizeof(struct direct), df);
+		fread(&dir, 1, sizeof(struct direct), df);
+		fread(&dir, 1, sizeof(struct direct), df);
+		bpt = ftell(df);
+		/*
+		 * "/" signals end of directory
+		 */
+		while (strncmp(dir.d_name, "/", DIRSIZ)) {
+			locname[namelen] = '\0';
+			strncat(locname, dir.d_name, DIRSIZ);
+			if (strlen(locname) >= BUFSIZ) {
+				fprintf(stderr, "%s: name exceedes %d char\n",
+					locname, BUFSIZ);
+				continue;
 			}
-			return;
+			/*
+			 * info for rereading drblock later
+			 */
+			getleaves(dir.d_ino, locname);
+			/*
+			 * get next entry from drblock; reset
+			 * readsize iff physical disk read
+			 */
+			fseek(df, bpt, 0);
+			fread(&dir, 1, sizeof(struct direct), df);
+			bpt = ftell(df);
 		}
+		return;
 	}
 	/*
 	 * locname is name of a simple file 
 	 */
-	xtrlist[xtrcnt].x_ino = d;
-	xtrlist[xtrcnt].x_flags |= XINUSE;
-	xtrlist[xtrcnt].x_name = (char *)ststore( locname );
-	for (n = 0; n < xtrcnt; n++)
-		if (xtrlist[n].x_ino == d) {
-			xtrlist[xtrcnt].x_flags |= LINKED;
-			xtrlist[xtrcnt].x_linkedto = n;
+	xp = getxtr(ino);
+	xp->x_flags |= XINUSE;
+	xp->x_name = ststore(pname);
+	for (pxp = xp->x_next; pxp; pxp = pxp->x_next)
+		if (pxp->x_ino == ino && (pxp->x_flags & XLINKED) == 0) {
+			xp->x_flags |= XLINKED;
+			xp->x_linkedto = pxp;
+			break;
 		}
-	if( ++xtrcnt >= xsize ) getxtrlist();
-	fprintf(stderr,  "%s: inode %u\n", locname, d );
-
+	if (!vflag)
+		return;
+	if (xp->x_flags & XLINKED)
+		fprintf(stderr, "%s: linked to %s\n", xp->x_name, pxp->x_name);
+	else
+		fprintf(stderr, "%s: inode %u\n", xp->x_name, ino);
 }
-
-
