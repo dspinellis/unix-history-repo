@@ -1,4 +1,4 @@
-/*	routed.h	82/06/10	4.7	*/
+/*	routed.h	82/08/18	4.8	*/
 /*
  * Routing Information Protocol
  *
@@ -33,7 +33,6 @@ char *ripcmds[RIPCMD_MAX] =
   { "#0", "REQUEST", "RESPONSE", "TRACEON", "TRACEOFF" };
 #endif
 
-#define IPPORT_ROUTESERVER 	520	/* well-known port */
 #define	HOPCNT_INFINITY		16	/* per Xerox NS */
 #define	MAXPACKETSIZE		512	/* max broadcast size */
 
