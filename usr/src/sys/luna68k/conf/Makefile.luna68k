@@ -1,6 +1,6 @@
-#	@(#)Makefile.luna68k	7.4 (Berkeley) %G%
+#	@(#)Makefile.luna68k	7.5 (Berkeley) %G%
 #
-# From: hp300/conf/Makefile.luna68k	7.13 (Berkeley) 2/24/92
+# from: hp300/conf/Makefile.hp300	7.21 (Berkeley) 2/12/93
 #
 # Makefile for 4.4 BSD
 #
@@ -34,7 +34,7 @@ S=	../..
 LUNA68K=	$S/luna68k
 
 INCLUDES= -I. -I$S -I$S/sys
-COPTS=	${INCLUDES} ${IDENT} -DKERNEL -Dmc68020 -Dluna68k -DFPCOPROC -DREFBIT
+COPTS=	${INCLUDES} ${IDENT} -DKERNEL -Dmc68020 -Dluna68k -DFPCOPROC
 CFLAGS=	-O ${COPTS}
 
 # compile rules: rules are named ${TYPE}_${SUFFIX}${CONFIG_DEP}
@@ -66,27 +66,18 @@ NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
 #	${SYSTEM_LD} swapxxx.o
 #	${SYSTEM_LD_TAIL}
 SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o vnode_if.o
-#SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
-SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
+SYSTEM_DEP=	Makefile ${SYSTEM_OBJ} libkern.a
 SYSTEM_LD_HEAD=	rm -f $@
-#SYSTEM_LD=	@if [ X${DEBUG} = X-g ]; \
-#		then strip=-X; \
-#		else strip=-x; \
-#		fi; \
-#		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o ../../libkern/obj/libkern.a; \
-#		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
 SYSTEM_LD=	@strip=-x; \
-		echo ${LD} $$strip -n -o $@ '$${SYSTEM_OBJ}' vers.o ../../libkern/obj/libkern.a; \
-		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
-#SYSTEM_LD_TAIL= @echo rearranging symbols;\
-#		symorder symbols.sort $@;\
-#SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
-#		[ X${DEBUG} = X-g ] && { \
-#		echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
-#		echo strip -d $@; strip -d $@; } || true
+		echo ${LD} $$strip -n -o $@ '$${SYSTEM_OBJ}' vers.o libkern.a; \
+		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o libkern.a
 SYSTEM_LD_TAIL=	@size $@; chmod 755 $@
 
 %LOAD
+
+libkern.a:
+	ln -s $S/libkern/obj/libkern.a libkern.a; \
+	echo ln -s $S/libkern/obj/libkern.a libkern.a
 
 newvers:
 	sh $S/conf/newvers.sh
@@ -117,10 +108,10 @@ autoconf.o: Makefile
 
 # the following are necessary because the files depend on the types of
 # hp cpu's included in the system configuration
-clock.o machdep.o autoconf.o conf.o: Makefile
+machdep.o sys_machdep.o pmap.o pmap_bootstrap.o trap.o: Makefile
 
-# depend on network configuration
-af.o uipc_proto.o locore.o: Makefile
+# depend on network or filesystem configuration
+af.o uipc_proto.o vfs_conf.o locore.o: Makefile
 
 # depend on maxusers
 assym.s: Makefile
