@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tc.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)tc.c	4.4 (Berkeley) %G%";
 /*
  * Simulate typesetter on 4014
 */
@@ -53,8 +53,7 @@ int alpha;
 extern char *asctab[128];
 extern char *spectab[128];
 int erase = 1;
-int	(*sigint)();
-int	(*sigquit)();
+sig_t sigint, sigquit;
 
 main(argc,argv)
 int argc;
@@ -62,7 +61,7 @@ char **argv;
 {
 	register i, j;
 	register char *k;
-	extern ex();
+	extern void ex();
 
 	while((--argc > 0) && ((++argv)[0][0]=='-')){
 		switch(argv[0][1]){
@@ -262,6 +261,8 @@ init(){
 	skip = 0;
 	sendpt();
 }
+
+void
 ex(){
 	yy = MAXY;
 	xx = 0;

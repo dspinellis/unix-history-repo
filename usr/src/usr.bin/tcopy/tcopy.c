@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -48,8 +48,10 @@ main(argc, argv)
 	extern int optind, errno;
 	register int lastnread, nread, nw, inp, outp;
 	enum {READ, VERIFY, COPY, COPYVERIFY} op = READ;
-	int ch, needeof, intr(), (*oldsig)();
+	sig_t oldsig;
+	int ch, needeof;
 	char *buff, *inf, *getspace();
+	void intr();
 
 	guesslen = 1;
 	while ((ch = getopt(argc, argv, "cs:v")) != EOF)
@@ -248,6 +250,7 @@ r2:		if (inn != outn) {
 	exit(1);
 }
 
+void
 intr()
 {
 	if (record)

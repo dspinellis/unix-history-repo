@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -1341,7 +1341,7 @@ dodiff(getv, gfile)
 	register int pid;
 	auto int st;
 	extern int errno;
-	int (*osig)();
+	sig_t osig;
 
 	printf("\n------- %s -------\n", gfile);
 	fflush(stdout);
