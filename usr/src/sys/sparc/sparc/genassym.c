@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.3 (Berkeley) %G%
+ *	@(#)genassym.c	7.4 (Berkeley) %G%
  *
  * from: $Header: genassym.c,v 1.12 92/06/28 10:13:01 mccanne $ (LBL)
  */
