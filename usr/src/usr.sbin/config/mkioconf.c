@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -133,7 +133,7 @@ vax_ioconf()
 			}
 			fprintf(fp, ";\n");
 			fprintf(fp, "int\t (*%sint%d[])() = { ", dp->d_name,
-			    dp->d_unit, dp->d_unit);
+			    dp->d_unit);
 			ip = dp->d_vec;
 			for (;;) {
 				fprintf(fp, "X%s%d", ip->id, dp->d_unit);
