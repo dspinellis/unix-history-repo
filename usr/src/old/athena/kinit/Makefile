@@ -38,7 +38,7 @@ cleandir: clean
 depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: ${MAN}
+install: ${MAN} kinit
 	install -s -o bin -g bin -m 755 kinit ${DESTDIR}/usr/athena
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
