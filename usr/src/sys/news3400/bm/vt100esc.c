@@ -9,7 +9,7 @@
  *
  * from: $Hdr: vt100esc.c,v 4.300 91/06/09 06:14:59 root Rel41 $ SONY
  *
- *	@(#)vt100esc.c	7.1 (Berkeley) %G%
+ *	@(#)vt100esc.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,9 +20,11 @@
 
 #ifdef IPC_MRX
 #include "../../h/param.h"
+#include "../../h/systm.h"
 #include "../../iop/framebuf.h"
 #else
 #include "param.h"
+#include "systm.h"
 #include "../iop/framebuf.h"
 #endif
 
@@ -259,10 +261,10 @@ esc_csi_ansi(sp, esc_bp, terminator)
 	switch (terminator) {
 	case 'A':		/*  CUU	 */
 		if (spc->csr_y < sp->s_region.top_margin) {
-			spc->csr_y = MAX(spc->csr_y - MAX(*cp, 1)
+			spc->csr_y = max(spc->csr_y - max(*cp, 1)
 					,TOP_M);
 		} else {
-			spc->csr_y = MAX(spc->csr_y - MAX(*cp, 1)
+			spc->csr_y = max(spc->csr_y - max(*cp, 1)
 					,sp->s_region.top_margin);
 		}
 		spc->csr_p.y = (spc->csr_y - 1) * char_h + y_ofst;
@@ -270,22 +272,22 @@ esc_csi_ansi(sp, esc_bp, terminator)
 		break;
 	case 'B':		/*  CUD	 */
 		if (spc->csr_y > sp->s_region.btm_margin) {
-			spc->csr_y = MIN(spc->csr_y + MAX(*cp, 1)
+			spc->csr_y = min(spc->csr_y + max(*cp, 1)
 					,btm_m);
 		} else {
-			spc->csr_y = MIN(spc->csr_y + MAX(*cp, 1)
+			spc->csr_y = min(spc->csr_y + max(*cp, 1)
 					,sp->s_region.btm_margin);
 		}
 		spc->csr_p.y = (spc->csr_y - 1) * char_h + y_ofst;
 		sp->s_current_stat &= ~WRAP;
 		break;
 	case 'C':		/*  CUF	 */
-		spc->csr_x = MIN(spc->csr_x + MAX(*cp, 1), rit_m);
+		spc->csr_x = min(spc->csr_x + max(*cp, 1), rit_m);
 		spc->csr_p.x = (spc->csr_x - 1) * char_w + x_ofst;
 		sp->s_current_stat &= ~WRAP;
 		break;
 	case 'D':		/*  CUB	 */
-		spc->csr_x = MAX(spc->csr_x - MAX(*cp, 1), LFT_M);
+		spc->csr_x = max(spc->csr_x - max(*cp, 1), LFT_M);
 		spc->csr_p.x = (spc->csr_x - 1) * char_w + x_ofst;
 		sp->s_current_stat &= ~WRAP;
 		break;
@@ -326,8 +328,8 @@ esc_csi_ansi(sp, esc_bp, terminator)
 		sp->s_current_stat &= ~WRAP;
 		break;
 	case 'r':		/*  DECSTBM	*/
-		cp[2] = MAX(cp[0] == 0 ? TOP_M: cp[0], TOP_M);
-		cp[3] = MIN(cp[1] == 0 ? btm_m: cp[1], btm_m);
+		cp[2] = max(cp[0] == 0 ? TOP_M: cp[0], TOP_M);
+		cp[3] = min(cp[1] == 0 ? btm_m: cp[1], btm_m);
 		if (cp[2] >= cp[3])
 			break;
 
@@ -476,12 +478,12 @@ csr_pos(sp, x, y)
 	register int x, y;
 {
 	if (sp->s_term_mode & DECOM) {
-		sp->s_csr.csr_y = MIN(sp->s_region.top_margin +
-				MAX(y, 1) - 1, sp->s_region.btm_margin);
+		sp->s_csr.csr_y = min(sp->s_region.top_margin +
+				max(y, 1) - 1, sp->s_region.btm_margin);
 	} else {
-		sp->s_csr.csr_y = MIN(TOP_M + MAX(y, 1) - 1, btm_m);
+		sp->s_csr.csr_y = min(TOP_M + max(y, 1) - 1, btm_m);
 	}
-	sp->s_csr.csr_x = MAX(MIN(x, rit_m), LFT_M);
+	sp->s_csr.csr_x = max(min(x, rit_m), LFT_M);
 	sp->s_csr.csr_p.x = (sp->s_csr.csr_x -1) * char_w + x_ofst;
 	sp->s_csr.csr_p.y = (sp->s_csr.csr_y -1) * char_h + y_ofst;
 }
@@ -502,7 +504,7 @@ erase_disp(sp, pn)
 	switch (pn) {
 	case 0:		/*  cursor to end	*/
 		erase_line(sp, 0);
-		clear_lines(MIN(spc->csr_y + 1, btm_m),
+		clear_lines(min(spc->csr_y + 1, btm_m),
 			btm_m - spc->csr_y, sp->s_term_mode & DECSCNM,
 			sp->s_plane, sp->s_bgcol);
 		break;
@@ -566,7 +568,7 @@ insert_line(sp, pn)
 	register struct cursor *spc = &sp->s_csr;
 	register struct region *spr = &sp->s_region;
 
-	pn = MAX(pn, 1);
+	pn = max(pn, 1);
 	if (spc->csr_y < spr->top_margin || spc->csr_y > spr->btm_margin) 
 		return;
 	if (pn <= spr->btm_margin - spc->csr_y) {
@@ -574,7 +576,7 @@ insert_line(sp, pn)
 			spc->csr_y + pn);
 	}
 	clear_lines(spc->csr_y,
-		MIN(spc->csr_y + pn - 1, spr->btm_margin) - spc->csr_y + 1,
+		min(spc->csr_y + pn - 1, spr->btm_margin) - spc->csr_y + 1,
 		sp->s_term_mode & DECSCNM, sp->s_plane, sp->s_bgcol);
 	spc->csr_x = LFT_M;
 	spc->csr_p.x = x_ofst;
@@ -592,14 +594,14 @@ delete_line(sp, pn)
 	register struct region *spr = &sp->s_region;
 	register int aux;
 
-	pn = MAX(pn, 1);
+	pn = max(pn, 1);
 	if (spc->csr_y < spr->top_margin || spc->csr_y > spr->btm_margin)
 		return;
 	if (pn <= spr->btm_margin - spc->csr_y) {
 		aux = spc->csr_y + pn;
 		move_lines(aux, spr->btm_margin - aux + 1, spc->csr_y);
 	}
-	aux = MAX(spr->btm_margin - pn + 1, spc->csr_y);
+	aux = max(spr->btm_margin - pn + 1, spc->csr_y);
 	clear_lines(aux, spr->btm_margin - aux + 1, sp->s_term_mode & DECSCNM,
 		sp->s_plane, sp->s_bgcol);
 	spc->csr_x = LFT_M;
@@ -617,12 +619,12 @@ delete_char(sp, pn)
 	register struct cursor *spc = &sp->s_csr;
 	register int aux;
 
-	pn = MAX(pn, 1);
+	pn = max(pn, 1);
 	if (pn < rit_m - spc->csr_x + 1) {
 		move_chars(spc->csr_x + pn, spc->csr_y,
 			rit_m - spc->csr_x - pn + 1 ,spc->csr_x);
 	}
-	aux = MAX(rit_m - pn + 1, spc->csr_x);
+	aux = max(rit_m - pn + 1, spc->csr_x);
 	clear_chars(aux, spc->csr_y, rit_m - aux + 1,
 		sp->s_term_mode & DECSCNM, sp->s_plane, sp->s_bgcol);
 }

@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.2 (Berkeley) %G%
+ *	@(#)trap.c	7.3 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -68,7 +68,7 @@ extern void MachKernIntr();
 extern void MachUserIntr();
 extern void MachTLBModException();
 extern void MachTLBMissException();
-extern void MemErrorInterrupt();
+static void MemErrorInterrupt();
 extern unsigned MachEmulateBranch();
 
 void (*machExceptionTable[])() = {
@@ -160,7 +160,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 	register int type, i;
 	unsigned ucode = 0;
 	register struct proc *p = curproc;
-	struct timeval syst;
+	u_quad_t sticks;
 	vm_prot_t ftype;
 	extern unsigned onfault_table[];
 
@@ -180,7 +180,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 	type = (causeReg & MACH_CR_EXC_CODE) >> MACH_CR_EXC_CODE_SHIFT;
 	if (USERMODE(statusReg)) {
 		type |= T_USER;
-		syst = p->p_stime;
+		sticks = p->p_sticks;
 	}
 
 	/*
@@ -192,6 +192,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 
 	switch (type) {
 	case T_TLB_MOD:
+		/* check for kernel address */
 		if ((int)vadr < 0) {
 			register pt_entry_t *pte;
 			register unsigned entry;
@@ -268,6 +269,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 	case T_TLB_LD_MISS:
 	case T_TLB_ST_MISS:
 		ftype = (type == T_TLB_ST_MISS) ? VM_PROT_WRITE : VM_PROT_READ;
+		/* check for kernel address */
 		if ((int)vadr < 0) {
 			register vm_offset_t va;
 			int rv;
@@ -283,6 +285,9 @@ trap(statusReg, causeReg, vadr, pc, args)
 			}
 			goto err;
 		}
+		/* check for fuswintr() or suswintr() getting a page fault */
+		if ((i = ((struct pcb *)UADDR)->pcb_onfault) == 4)
+			return (onfault_table[i]);
 		goto dofault;
 
 	case T_TLB_LD_MISS+T_USER:
@@ -654,10 +659,11 @@ out:
 	/*
 	 * Note: we should only get here if returning to user mode.
 	 */
-	astpending = 0;
-	while (i = CURSIG(p))
+	/* take pending signals */
+	while ((i = CURSIG(p)) != 0)
 		psig(i);
 	p->p_pri = p->p_usrpri;
+	astpending = 0;
 	if (want_resched) {
 		int s;
 
@@ -669,23 +675,19 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		s = splclock();
+		s = splstatclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
 		splx(s);
-		while (i = CURSIG(p))
+		while ((i = CURSIG(p)) != 0)
 			psig(i);
 	}
-	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
-
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
-		if (ticks)
-			addupc(pc, &p->p_stats->p_prof, ticks);
-	}
+	/*
+	 * If profiling, charge system time to the trapped pc.
+	 */
+	if (p->p_flag & SPROFIL)
+		addupc_task(p, pc, (int)(p->p_sticks - sticks));
 	curpri = p->p_pri;
 	return (pc);
 }
@@ -701,7 +703,7 @@ interrupt(statusReg, causeReg, pc)
 	unsigned pc;		/* program counter where to continue */
 {
 	register unsigned mask;
-	clockframe cf;
+	struct clockframe cf;
 
 #ifdef DEBUG
 	trp->status = statusReg;
@@ -758,8 +760,8 @@ interrupt(statusReg, causeReg, pc)
 
 			*(volatile u_char *)INTCLR0 = INTCLR0_TIMINT;
 			cf.pc = pc;
-			cf.ps = statusReg;
-			hardclock(cf);
+			cf.sr = statusReg;
+			hardclock(&cf);
 			if (++led_count > hz) {
 				led_count = 0;
 				*(volatile u_char *)DEBUG_PORT ^= DP_LED1;
@@ -797,8 +799,8 @@ interrupt(statusReg, causeReg, pc)
 
 			*(volatile u_char *)INTCLR0 = INTCLR0_TIMINT;
 			cf.pc = pc;
-			cf.ps = statusReg;
-			hardclock(cf);
+			cf.sr = statusReg;
+			hardclock(&cf);
 			if (++led_count > hz) {
 				led_count = 0;
 				*(volatile u_char *)DEBUG_PORT ^= DP_LED1;
@@ -853,13 +855,13 @@ interrupt(statusReg, causeReg, pc)
 		level0_intr();
 #endif /* NOPRIORITY */
 	if (mask & MACH_SOFT_INT_MASK_0) {
-		clockframe cf;
+		struct clockframe cf;
 
 		clearsoftclock();
 		cnt.v_soft++;
 		cf.pc = pc;
-		cf.ps = statusReg;
-		softclock(cf);
+		cf.sr = statusReg;
+		softclock();
 	}
 	/* process network interrupt if we trapped or will very soon */
 	if ((mask & MACH_SOFT_INT_MASK_1) ||
@@ -900,13 +902,18 @@ softintr(statusReg, pc)
 	unsigned pc;		/* program counter where to continue */
 {
 	register struct proc *p = curproc;
-	register int i;
+	int sig;
 
 	cnt.v_soft++;
-	astpending = 0;
-	while (i = CURSIG(p))
-		psig(i);
+	/* take pending signals */
+	while ((sig = CURSIG(p)) != 0)
+		psig(sig);
 	p->p_pri = p->p_usrpri;
+	astpending = 0;
+	if (p->p_flag & SOWEUPC) {
+		p->p_flag &= ~SOWEUPC;
+		ADDUPROF(p);
+	}
 	if (want_resched) {
 		int s;
 
@@ -918,13 +925,13 @@ softintr(statusReg, pc)
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		s = splclock();
+		s = splstatclock();
 		setrq(p);
 		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
 		splx(s);
-		while (i = CURSIG(p))
-			psig(i);
+		while ((sig = CURSIG(p)) != 0)
+			psig(sig);
 	}
 	curpri = p->p_pri;
 }

@@ -9,18 +9,19 @@
  *
  * from: $Hdr: fb_start.c,v 4.300 91/06/27 20:42:40 root Rel41 $ SONY
  *
- *	@(#)fb_start.c	7.1 (Berkeley) %G%
+ *	@(#)fb_start.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
 
-#ifdef IPC_MRX
 #include "param.h"
+#include "systm.h"
+
+#ifdef IPC_MRX
 #include "../../iop/framebuf.h"
 #include "../../iop/fbreg.h"
 #include "page.h"
 #else
-#include "param.h"
 #include "../iop/framebuf.h"
 #include "../iop/fbreg.h"
 #endif
@@ -1045,7 +1046,7 @@ bitblt_tofb(fb, sbp, srp, dbp, dpp, crp)
 		}
 		break;
 	case MODE_NtoN:
-		n = MIN(sbp->depth, fb->fbNplane);
+		n = min(sbp->depth, fb->fbNplane);
 		m = sbp->width * sbp->rect.extent.y;
 		p += (m << 1) * n;
 		wplane = 1 << (n - 1);
@@ -1142,7 +1143,7 @@ bitblt_tomem(fb, sbp, srp, dbp, dpp, crp)
 		break;
 
 	case MODE_NtoN:
-		n = MIN(dbp->depth, fb->fbNplane);
+		n = min(dbp->depth, fb->fbNplane);
 		m = (dbp->width * dbp->rect.extent.y) << 1;
 		for (i = 0; i < n; i++) {
 			if (fb->Pmask & plane)
@@ -1774,7 +1775,7 @@ batch_bitblt_tofb(fb, sbp, dbp, crp, sdp, n)
 			}
 			break;
 		case MODE_NtoN:
-			j = MIN(sbp->depth, fb->fbNplane);
+			j = min(sbp->depth, fb->fbNplane);
 			m = sbp->width * sbp->rect.extent.y;
 			p += (m << 1) * j;
 			wplane = 1 << (j - 1);
@@ -1923,12 +1924,12 @@ tilebitbltcmd(fb, cmd)
 	while (dy > 0) {
 		if (first) {	/* for the first time */
 			ylen = prect.extent.y - offy;
-			ylen = MIN(ylen, dy);
+			ylen = min(ylen, dy);
 			trect.extent.y = ylen;
 			trect.origin.y = prect.origin.y + offy;
 			first = 0;
 		} else {
-			ylen = MIN(prect.extent.y, dy);
+			ylen = min(prect.extent.y, dy);
 			trect.extent.y = ylen;
 			trect.origin.y = prect.origin.y;
 		}
@@ -1948,7 +1949,7 @@ tilebitbltcmd(fb, cmd)
 			dx -= xlen;
 			trect.origin.x = prect.origin.x;
 			while (dx > 0) {
-				xlen = MIN(dx, prect.extent.x);
+				xlen = min(dx, prect.extent.x);
 				trect.extent.x = xlen;
 				(*blt)(fb, &cmd->ptnBitmap, &trect, &cmd->destBitmap, &dp, (lRectangle *)0);
 				dp.x += xlen;
@@ -2025,12 +2026,12 @@ draw_rectangle(fb, dp)
 	while (dy > 0) {
 		if (first) {	/* for the first time */
 			ylen = prect.extent.y - offy;
-			ylen = MIN(ylen, dy);
+			ylen = min(ylen, dy);
 			trect.extent.y = ylen;
 			trect.origin.y = prect.origin.y + offy;
 			first = 0;
 		} else {
-			ylen = MIN(prect.extent.y, dy);
+			ylen = min(prect.extent.y, dy);
 			trect.extent.y = ylen;
 			trect.origin.y = prect.origin.y;
 		}
@@ -2050,7 +2051,7 @@ draw_rectangle(fb, dp)
 			dx -= xlen;
 			trect.origin.x = prect.origin.x;
 			while (dx > 0) {
-				xlen = MIN(dx, prect.extent.x);
+				xlen = min(dx, prect.extent.x);
 				trect.extent.x = xlen;
 				(*blt)(fb, &dp->ptnBM, &trect, &dp->drawBM, &p, (lRectangle *)0);
 				p.x += xlen;
@@ -2148,7 +2149,7 @@ int offx, offy;
 	plen = patternwidth;
 
 	while (len > 0) {
-		srec.extent.x = MIN(plen, len);
+		srec.extent.x = min(plen, len);
 		(*blt)(fb, pbm, &srec, drawbm, dp, (lRectangle *)0);
 		dp->x += plen;
 		len -= plen;
@@ -2220,9 +2221,9 @@ fill_scan(fb, fdata)
 		while (--nscan >= 0) {
 			if ((dr.origin.y = ls->y) >= miny &&
 			    dr.origin.y <= maxy) {
-				dr.origin.x = MAX(ls->x0, minx);
+				dr.origin.x = max(ls->x0, minx);
 				if ((dr.extent.x =
-				    MIN(ls->x1, maxx) - dr.origin.x + 1) > 0)
+				    min(ls->x1, maxx) - dr.origin.x + 1) > 0)
 					(*rop_clear)(fb, &dr);
 			}
 			ls++;
@@ -2248,8 +2249,8 @@ fill_scan(fb, fdata)
 
 		while (--nscan >= 0) {
 			if ((dp.y = ls->y) >= miny && dp.y <= maxy) {
-				dp.x = MAX(ls->x0, minx);
-				if ((len = MIN(ls->x1, maxx) - dp.x + 1) > 0)
+				dp.x = max(ls->x0, minx);
+				if ((len = min(ls->x1, maxx) - dp.x + 1) > 0)
 					fill_line(fb, len, &dp,
 					    MOD((dp.x - refx), sizex, t),
 					    MOD((dp.y - refy), sizey, t));

@@ -9,19 +9,21 @@
  *
  * from: $Hdr: kb_encode.c,v 4.300 91/06/09 06:14:51 root Rel41 $ SONY
  *
- *	@(#)kb_encode.c	7.1 (Berkeley) %G%
+ *	@(#)kb_encode.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
 
 #ifdef IPC_MRX
 #include "../../h/param.h"
+#include "../../h/systm.h"
 #include "../../h/types.h"
 #include "../../h/ioctl.h"
 #include "../../iop/keyboard.h"
 #include "../../iop/kbreg.h"
 #else
 #include "param.h"
+#include "systm.h"
 #include "types.h"
 #include "ioctl.h"
 #include "../iop/keyboard.h"
@@ -281,7 +283,7 @@ kbd_string(cmd, p)
 
 	case KIOCGETS:
 		p->pfk_string.key_length =
-		    MIN(p->pfk_string.key_length, pk->key_length);
+		    min(p->pfk_string.key_length, pk->key_length);
 		bcopy(pk->key_string, p->pfk_string.key_string,
 		    p->pfk_string.key_length);
 		break;
