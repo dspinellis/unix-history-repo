@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.63 (Berkeley) %G%
+ *	@(#)sendmail.h	6.64 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.63		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.64		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -351,9 +351,6 @@ struct metamac
 	char	metaname;	/* external code (after $) */
 	char	metaval;	/* internal code (as above) */
 };
-
-
-#define ALIASCLASS	struct _aliasclass
 /*
 **  Symbol table definitions
 */
@@ -639,28 +636,28 @@ EXTERN u_char	tTdvect[100];
 **  Declarations of useful functions
 */
 
-extern ADDRESS	*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
-extern char	*xalloc __P((int));
-extern bool	sameaddr __P((ADDRESS *, ADDRESS *));
-extern FILE	*dfopen __P((char *, int, int));
-extern EVENT	*setevent __P((time_t, int(*)(), int));
-extern char	*sfgets __P((char *, int, FILE *, time_t));
-extern char	*queuename __P((ENVELOPE *, int));
-extern time_t	curtime __P(());
-extern bool	transienterror __P((int));
-extern char	*errstring __P((int));
+extern ADDRESS		*parseaddr __P((char *, ADDRESS *, int, int, char **, ENVELOPE *));
+extern char		*xalloc __P((int));
+extern bool		sameaddr __P((ADDRESS *, ADDRESS *));
+extern FILE		*dfopen __P((char *, int, int));
+extern EVENT		*setevent __P((time_t, int(*)(), int));
+extern char		*sfgets __P((char *, int, FILE *, time_t));
+extern char		*queuename __P((ENVELOPE *, int));
+extern time_t		curtime __P(());
+extern bool		transienterror __P((int));
+extern const char	*errstring __P((int));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
-extern void	auth_warning(ENVELOPE *, char *, ...);
-extern void	syserr(char *, ...);
-extern void	usrerr(char *, ...);
-extern void	message(char *, ...);
-extern void	nmessage(char *, ...);
+extern void		auth_warning(ENVELOPE *, char *, ...);
+extern void		syserr(char *, ...);
+extern void		usrerr(char *, ...);
+extern void		message(char *, ...);
+extern void		nmessage(char *, ...);
 #else
-extern void	auth_warning();
-extern void	syserr();
-extern void	usrerr();
-extern void	message();
-extern void	nmessage();
+extern void		auth_warning();
+extern void		syserr();
+extern void		usrerr();
+extern void		message();
+extern void		nmessage();
 #endif

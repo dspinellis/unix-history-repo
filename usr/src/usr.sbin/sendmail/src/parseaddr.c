@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.53 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1047,29 +1047,13 @@ rewrite(pvp, ruleset, e)
 			argvect[0] = buf;
 			if (map != NULL && bitset(MF_VALID, map->s_map.map_flags))
 			{
-				int bsize = sizeof buf - 1;
 				auto int stat = EX_OK;
 
-				if (map->s_map.map_app != NULL)
-					bsize -= strlen(map->s_map.map_app);
 				if (tTd(60, 1))
 					printf("map_lookup(%s, %s) => ",
 						mapname, buf);
 				replac = (*map->s_map.map_class->map_lookup)(&map->s_map,
-						buf, bsize, argvect,
-						&stat);
-				if (replac != NULL && map->s_map.map_app != NULL)
-				{
-					if (replac != buf)
-					{
-						if (strlen(replac) > bsize)
-							strncpy(buf, replac, bsize);
-						else
-							strcpy(buf, replac);
-						replac = buf;
-					}
-					strcat(replac, map->s_map.map_app);
-				}
+						buf, argvect, &stat);
 				if (tTd(60, 1))
 					printf("%s (%d)\n",
 						replac ? replac : "NOT FOUND",
@@ -1085,12 +1069,8 @@ rewrite(pvp, ruleset, e)
 			/* if no replacement, use default */
 			if (replac == NULL && default_rvp != NULL)
 			{
-				char buf2[sizeof buf];
-
-				/* rewrite the default with % translations */
-				cataddr(default_rvp, NULL, buf2, sizeof buf2, '\0');
-				map_rewrite(buf2, sizeof buf2, buf, sizeof buf,
-					argvect);
+				/* create the default */
+				cataddr(default_rvp, NULL, buf, sizeof buf, '\0');
 				replac = buf;
 			}
 
@@ -1758,8 +1738,7 @@ dequote_init(map, mapname, args)
 **
 **	Parameters:
 **		map -- the internal map structure (ignored).
-**		buf -- the buffer to dequote.
-**		bufsiz -- the size of that buffer.
+**		name -- the name to dequote.
 **		av -- arguments (ignored).
 **		statp -- pointer to status out-parameter.
 **
@@ -1770,10 +1749,9 @@ dequote_init(map, mapname, args)
 */
 
 char *
-dequote_map(map, buf, bufsiz, av, statp)
+dequote_map(map, name, av, statp)
 	MAP *map;
-	char buf[];
-	int bufsiz;
+	char *name;
 	char **av;
 	int *statp;
 {
@@ -1794,7 +1772,7 @@ dequote_map(map, buf, bufsiz, av, statp)
 	quotemode = FALSE;
 	bslashmode = FALSE;
 
-	for (p = q = buf; (c = *p++) != '\0'; )
+	for (p = q = name; (c = *p++) != '\0'; )
 	{
 		if (bslashmode)
 		{
@@ -1852,5 +1830,5 @@ dequote_map(map, buf, bufsiz, av, statp)
 	    quotemode || quotecnt <= 0 || spacecnt != 0)
 		return NULL;
 	*q++ = '\0';
-	return buf;
+	return name;
 }
