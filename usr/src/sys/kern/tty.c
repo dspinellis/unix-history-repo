@@ -1,4 +1,4 @@
-/*	tty.c	4.41	83/05/27	*/
+/*	tty.c	4.42	83/06/13	*/
 
 #include "../machine/reg.h"
 
@@ -249,9 +249,6 @@ ttioctl(tp, com, data, flag)
 	case TIOCLBIS:
 	case TIOCLBIC:
 	case TIOCLSET:
-	case TIOCBIS:
-	case TIOCBIC:
-	case TIOCSET:
 	case TIOCSTI:
 		while (tp->t_line == NTTYDISC &&
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
@@ -307,19 +304,6 @@ ttioctl(tp, com, data, flag)
 		tp->t_state &= ~TS_XCLUDE;
 		break;
 
-
-	case TIOCGET:
-		*(int *)data = tp->t_flags;
-		break;
-
-	case TIOCCGET:
-		bcopy((caddr_t)&tp->t_chars, data, sizeof (struct ttychars));
-		break;
-
-	case TIOCCSET:
-		bcopy(data, (caddr_t)&tp->t_chars, sizeof (struct ttychars));
-		break;
-
 	/* hang up line on last close */
 	case TIOCHPCL:
 		tp->t_state |= TS_HUPCLS;
@@ -339,6 +323,10 @@ ttioctl(tp, com, data, flag)
 	/* return number of characters immediately available */
 	case FIONREAD:
 		*(off_t *)data = ttnread(tp);
+		break;
+
+	case TIOCOUTQ:
+		*(int *)data = tp->t_outq.c_cc;
 		break;
 
 	case TIOCSTOP:
@@ -369,16 +357,6 @@ ttioctl(tp, com, data, flag)
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
 		break;
 
-	case TIOCSET:
-	case TIOCBIS:
-	case TIOCBIC:
-		newflags = *(int *)data;
-		if (com == TIOCBIS)
-			newflags |= tp->t_flags;
-		else if (com == TIOCBIC)
-			newflags = tp->t_flags &~ newflags;
-		goto setin;
-
 	case TIOCSETP:
 	case TIOCSETN: {
 		register struct sgttyb *sg = (struct sgttyb *)data;
@@ -388,7 +366,6 @@ ttioctl(tp, com, data, flag)
 		tp->t_ispeed = sg->sg_ispeed;
 		tp->t_ospeed = sg->sg_ospeed;
 		newflags = (tp->t_flags&0xffff0000) | (sg->sg_flags&0xffff);
-setin:
 		s = spl5();
 		if (tp->t_flags&RAW || newflags&RAW || com == TIOCSETP) {
 			ttywait(tp);
@@ -439,6 +416,14 @@ setin:
 			tp->t_state |= TS_ASYNC;
 		else
 			tp->t_state &= ~TS_ASYNC;
+		break;
+
+	case TIOCGETC:
+		bcopy((caddr_t)&tp->t_intrc, data, sizeof (struct tchars));
+		break;
+
+	case TIOCSETC:
+		bcopy(data, (caddr_t)&tp->t_intrc, sizeof (struct tchars));
 		break;
 
 	/* set/get local special characters */
