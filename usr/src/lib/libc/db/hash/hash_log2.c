@@ -9,15 +9,22 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_log2.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_log2.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-__log2( num )
-int	num;
-{
-    register int	i;
-    register int	limit = 1;
+#include <sys/types.h>
+#include <db.h>
+#include "hash.h"
+#include "page.h"
+#include "extern.h"
 
-    for ( i = 0; limit < num; limit = limit << 1, i++ );
-    return (i);
+int
+__log2(num)
+	int num;
+{
+	register int i, limit;
+
+	limit = 1;
+	for (i = 0; limit < num; limit = limit << 1, i++);
+	return (i);
 }

@@ -7,13 +7,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)search.h	5.1 (Berkeley) %G%
+ *	@(#)search.h	5.2 (Berkeley) %G%
  */
 
-/* Backward compatibility to hsearch interface */
-typedef struct entry { 
-	char	*key; 
-	char	*data; 
+/* Backward compatibility to hsearch interface. */
+typedef struct entry {
+	char *key;
+	char *data;
 } ENTRY;
 
-typedef enum { FIND, ENTER } ACTION;
+typedef enum {
+	FIND, ENTER
+} ACTION;
+
+int	 hcreate __P((unsigned int));
+void	 hdestroy __P((void));
+ENTRY	*hsearch __P((ENTRY, ACTION));

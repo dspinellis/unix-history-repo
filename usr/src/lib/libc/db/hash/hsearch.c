@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hsearch.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)hsearch.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -18,72 +18,62 @@ static char sccsid[] = "@(#)hsearch.c	5.5 (Berkeley) %G%";
 #include <db.h>
 #include "search.h"
 
-static	DB	*dbp = NULL;
-static	ENTRY	retval;
+static DB *dbp = NULL;
+static ENTRY retval;
 
-extern	int
-hcreate ( nel )
-unsigned	nel;
+extern int
+hcreate(nel)
+	u_int nel;
 {
-    int	status;
-    HASHINFO	info;
+	HASHINFO info;
 
-    info.nelem = nel;
-    info.bsize = 256;
-    info.ffactor = 8;
-    info.cachesize = NULL;
-    info.hash = NULL;
-    info.lorder = 0;
-    dbp = hash_open ( NULL, O_CREAT|O_RDWR, 0600, &info );
-    return ( (int) dbp );
+	info.nelem = nel;
+	info.bsize = 256;
+	info.ffactor = 8;
+	info.cachesize = NULL;
+	info.hash = NULL;
+	info.lorder = 0;
+	dbp = (DB *)__hash_open(NULL, O_CREAT | O_RDWR, 0600, &info);
+	return ((int)dbp);
 }
 
-
-extern ENTRY	*
-hsearch ( item, action )
-ENTRY	item;
-ACTION	action;
+extern ENTRY *
+hsearch(item, action)
+	ENTRY item;
+	ACTION action;
 {
-    int	status;
-    DBT	key, val;
+	DBT key, val;
+	int status;
 
-    if ( !dbp ) {
-	return(NULL);
-    }
+	if (!dbp)
+		return (NULL);
+	key.data = (u_char *)item.key;
+	key.size = strlen(item.key) + 1;
 
-    key.data = (u_char *)item.key;
-    key.size = strlen(item.key) + 1;
-
-    if ( action == ENTER ) {
-	val.data = (u_char *)item.data;
-	val.size = strlen(item.data) + 1;
-	status = (dbp->put) ( dbp, &key, &val, R_NOOVERWRITE );
-	if ( status ) {
-	    return(NULL);
-	} 
-    } else {
-	/* FIND */
-	status = (dbp->get) ( dbp, &key, &val, 0 );
-	if ( status ) {
-	    return ( NULL );
+	if (action == ENTER) {
+		val.data = (u_char *)item.data;
+		val.size = strlen(item.data) + 1;
+		status = (dbp->put)(dbp, &key, &val, R_NOOVERWRITE);
+		if (status)
+			return (NULL);
 	} else {
-	    item.data = (char *)val.data;
+		/* FIND */
+		status = (dbp->get)(dbp, &key, &val, 0);
+		if (status)
+			return (NULL);
+		else
+			item.data = (char *)val.data;
 	}
-    }
-    retval.key = item.key;
-    retval.data = item.data;
-    return ( &retval );
+	retval.key = item.key;
+	retval.data = item.data;
+	return (&retval);
 }
-
 
 extern void
-hdestroy ()
+hdestroy()
 {
-    if (dbp) {
-	(void)(dbp->close) (dbp);
-	dbp = NULL;
-    }
-    return;
+	if (dbp) {
+		(void)(dbp->close)(dbp);
+		dbp = NULL;
+	}
 }
-
-
