@@ -109,7 +109,7 @@ MAN5=	tzfile.5
 SRCS=	zic.c scheck.c ialloc.c
 
 YDATA=	africa antarctica asia australasia europe northamerica \
-	southamerica pacificnew etcetera factory
+	southamerica pacificnew russia etcetera factory
 NDATA=	systemv
 #SDATA=	solar87 solar88 solar89
 TDATA=	${YDATA} ${NDATA} ${SDATA}
