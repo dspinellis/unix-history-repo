@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.6 82/12/25";
+static char sccsid[] = "@(#)rlogind.c	4.7 82/12/29";
 #endif
 
 #include <stdio.h>
@@ -269,6 +269,7 @@ cleanup()
 	int how = 2;
 
 	rmut();
+	vhangup();		/* XXX */
 	ioctl(netf, SIOCDONE, &how);
 	kill(0, SIGKILL);
 	exit(1);
