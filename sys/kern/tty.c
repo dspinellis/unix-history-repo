@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.20 1994/02/24 16:13:09 phk Exp $
+ *	$Id: tty.c,v 1.21 1994/03/02 20:28:48 guido Exp $
  */
 
 #include "param.h"
@@ -51,8 +51,10 @@
 #include "vnode.h"
 #include "syslog.h"
 #include "signalvar.h"
-
 #include "vm/vm.h"
+#include "kinfo.h"
+#include "kinfo_proc.h"
+
 
 /*
  * Input control starts when we would not be able to fit the maximum
@@ -2100,14 +2102,14 @@ ttyinfo(tp)
 {
 	register struct proc *p, *pick;
 	struct timeval utime, stime;
-	int tmp;
+	int loadtmp;
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
 
 	/* Print load average. */
-	tmp = (averunnable[0] * 100 + FSCALE / 2) >> FSHIFT;
-	ttyprintf(tp, "load: %d.%02d ", tmp / 100, tmp % 100);
+	loadtmp = (averunnable[0] * 100 + FSCALE / 2) >> FSHIFT;
+	ttyprintf(tp, "load: %d.%02d ", loadtmp / 100, loadtmp % 100);
 
 	if (tp->t_session == NULL)
 		ttyprintf(tp, "not a controlling terminal\n");
@@ -2116,25 +2118,47 @@ ttyinfo(tp)
 	else if ((p = tp->t_pgrp->pg_mem) == NULL)
 		ttyprintf(tp, "empty foreground process group\n");
 	else {
+		int kspace;
+		int s;
+		pid_t pid;
+		char wmesg[WMESGLEN+1];
+		char comm[MAXCOMLEN+1];
 		/* Pick interesting process. */
 		for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
 			if (proc_compare(pick, p))
 				pick = p;
 
-		ttyprintf(tp, " cmd: %s %d [%s] ", pick->p_comm, pick->p_pid,
+		if( pick == NULL) {
+			ttyprintf(tp, "process went away\n");
+			goto finish;
+		}
+
+#define	pgtok(a)	(((a) * NBPG) / 1024)
+
+		if( (pick->p_flag & SLOAD) && (pick->p_vmspace)) 
+			kspace = pgtok(pick->p_vmspace->vm_pmap.pm_stats.resident_count);
+		else
+			kspace = 0;
+		strncpy(wmesg, ((pick->p_flag & SLOAD) == 0 ? "swapped":
 		    pick->p_stat == SRUN ? "running" :
-		    pick->p_wmesg ? pick->p_wmesg : "iowait");
+		    pick->p_wmesg ? pick->p_wmesg : "iowait"), WMESGLEN);
+		wmesg[WMESGLEN] = 0;
+
+		strncpy(comm, pick->p_comm ? pick->p_comm : "", MAXCOMLEN);
+		comm[MAXCOMLEN] = 0;
+
+		loadtmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
+
+		pid = pick->p_pid;
 
 		/*
 		 * Lock out clock if process is running; get user/system
 		 * cpu time.
 		 */
-		if (curproc == pick)
-			tmp = splclock();
 		utime = pick->p_utime;
 		stime = pick->p_stime;
-		if (curproc == pick)
-			splx(tmp);
+
+		ttyprintf(tp, " cmd: %s %d [%s] ", comm, pid, wmesg);
 
 		/* Print user time. */
 		ttyprintf(tp, "%d.%02du ",
@@ -2144,12 +2168,10 @@ ttyinfo(tp)
 		ttyprintf(tp, "%d.%02ds ",
 		    stime.tv_sec, (stime.tv_usec + 5000) / 10000);
 
-#define	pgtok(a)	(((a) * NBPG) / 1024)
 		/* Print percentage cpu, resident set size. */
-		tmp = (pick->p_pctcpu * 10000 + FSCALE / 2) >> FSHIFT;
-		ttyprintf(tp, "%d%% %dk\n",
-		   tmp / 100, pgtok(pick->p_vmspace->vm_pmap.pm_stats.resident_count));
+		ttyprintf(tp, "%d%% %dk\n", loadtmp / 100, kspace);
 	}
+finish:
 	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
 }
 
