@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.6 (Berkeley) %G%
+ *	@(#)hpib.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -33,7 +33,7 @@ struct	isr hpib_isr[NHPIB];
 int	nhpibppoll(), fhpibppoll();
 
 int	hpibtimeout = 100000;	/* # of status tests before we give up */
-int	hpibidtimeout = 100000;	/* # of status tests for hpibid() calls */
+int	hpibidtimeout = 10000;	/* # of status tests for hpibid() calls */
 int	hpibdmathresh = 3;	/* byte count beyond which to attempt dma */
 
 hpibinit(hc)
@@ -93,10 +93,11 @@ hpibid(unit, slave)
 	int ohpibtimeout;
 
 	/*
-	 * XXX: shorten timeout value (so autoconfig doesn't take forever)
+	 * XXX shorten timeout value so autoconfig doesn't
+	 * take forever on slow CPUs.
 	 */
 	ohpibtimeout = hpibtimeout;
-	hpibtimeout = hpibidtimeout;
+	hpibtimeout = hpibidtimeout * cpuspeed;
 	if (hpibrecv(unit, 31, slave, &id, 2) != 2)
 		id = 0;
 	hpibtimeout = ohpibtimeout;
