@@ -1,0 +1,34 @@
+.TH RRESTOR 1 "18 January 1983"
+.UC 4
+.SH NAME
+rrestor \- file system dump across the network
+.SH SYNOPSIS
+.B /etc/rrestor
+[ key [
+name ... ]
+.SH DESCRIPTION
+.I Rrestor
+obtains from magnetic tape files
+saved by a previous
+.IR dump (8).
+The command is identical in operation to
+.IR restor (8)
+except the 
+.I f
+key should be specified and the file
+supplied should be of the form
+.IR machine:device .
+.PP
+.I Rrestor
+creates a remote server,
+.IR /etc/rmt ,
+on the client machine to access the tape
+device.
+.SH "SEE ALSO"
+restor(8),
+rmt(8C)
+.SH DIAGNOSTICS
+Same as 
+.IR restor (8)
+with a few extra related to the network.
+.SH BUGS
