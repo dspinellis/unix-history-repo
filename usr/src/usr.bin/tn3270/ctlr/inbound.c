@@ -52,8 +52,12 @@ static	char	sccsid[] = "@(#)inbound.c	3.1  10/29/86";
  * loop, then use XIsProtected().
  */
 
-#define	SetXIsProtected()	XFormattedScreen = FormattedScreen()
-#define	XIsProtected(p)		(XFormattedScreen && IsProtected(p))
+#define	SetXIsProtected()	(XWasSF = 1)
+#define	XIsProtected(p)	(IsStartField(p)? \
+			    XWasSF = 1 : \
+			    (XWasSF? \
+				(XWasSF = 0, XProtected = IsProtected(p))  : \
+				XProtected))
 
 static char	ourBuffer[400];
 
@@ -67,7 +71,7 @@ static int shifted,			/* Shift state of terminal */
 
 static int InsertMode;			/* is the terminal in insert mode? */
 
-static int	XFormattedScreen;	/* For optimizations */
+static int	XWasSF, XProtected;	/* For optimizations */
 #if	!defined(PURE3274)
 extern int TransparentClock, OutputClock;
 #endif	/* !defined(PURE3274) */
