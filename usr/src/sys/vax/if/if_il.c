@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.8 (Berkeley) %G%
+ *	@(#)if_il.c	6.9 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -27,12 +27,14 @@
 #include "../net/netisr.h"
 #include "../net/route.h"
 
+#ifdef	BBNNET
+#define	INET
+#endif
 #ifdef INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
 #endif
 
@@ -419,12 +421,16 @@ ilrint(unit)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = if_rubaget(&is->is_ifuba, len, off);
+	m = if_rubaget(&is->is_ifuba, len, off, &is->is_if);
 	if (m == 0)
 		goto setup;
 	if (off) {
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
 		m->m_off += 2 * sizeof (u_short);
 		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 	switch (il->ilr_type) {
 

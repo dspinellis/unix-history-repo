@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_pcl.c	6.4 (Berkeley) %G%
+ *	@(#)if_pcl.c	6.5 (Berkeley) %G%
  */
 
 #include "pcl.h"
@@ -28,10 +28,13 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef	BBNNET
+#define	INET
+#endif
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -433,7 +436,7 @@ pclrint(unit)
 	/*
 	 * Pull packet off interface.
 	 */
-	m = if_rubaget(&sc->sc_ifuba, len, 0);
+	m = if_rubaget(&sc->sc_ifuba, len, 0, &sc->sc_if);
 	if (m == 0)
 		goto setup;
 
@@ -469,9 +472,9 @@ pclioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
+		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			pclinit(ifp->if_unit);
-		ifp->if_flags |= IFF_UP;
 		break;
 
 	default:
