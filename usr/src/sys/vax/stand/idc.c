@@ -115,7 +115,7 @@ retry:
 	if (errcnt)
 		printf("idc: recovered by retry\n");
 	if (ccleft) {
-		bn += thiscc/(idc_type[dn]?512:256);
+		bn += thiscc/NBPG;
 		ubinfo += thiscc;
 		goto retry;
 	}
