@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -730,7 +730,7 @@ setsender(from, e, delimptr, internal)
 	(void) rewrite(pvp, 4, 0, e);
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
-	if (*bp == '@')
+	if (*bp == '@' && !bitnset(M_NOBRACKET, e->e_from.q_mailer->m_flags))
 	{
 		/* heuristic: route-addr: add angle brackets */
 		strcat(bp, ">");
