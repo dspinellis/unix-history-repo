@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ar.c 4.1 %G%";
+static	char sccsid[] = "@(#)ar.c 4.2 %G%";
 /*
  * ar - portable (ascii) format version
  */
@@ -26,7 +26,7 @@ struct	lar_hdr {
 #define	HEAD	8
 
 char	*man	=	{ "mrxtdpq" };
-char	*opt	=	{ "uvnbail" };
+char	*opt	=	{ "uvnbailo" };
 
 int	signum[] = {SIGHUP, SIGINT, SIGQUIT, 0};
 int	sigdone();
@@ -59,6 +59,7 @@ int	tf2;
 int	qf;
 int	bastate;
 char	buf[BUFSIZ];
+time_t	timep[2];
 
 char	*trim();
 char	*mktemp();
@@ -78,6 +79,7 @@ char *argv[];
 	cp = argv[1];
 	for(cp = argv[1]; *cp; cp++)
 	switch(*cp) {
+	case 'o':
 	case 'l':
 	case 'v':
 	case 'u':
@@ -227,6 +229,10 @@ xcmd()
 			mesg('x');
 			copyfil(af, f, IODD);
 			close(f);
+			if (flg['o'-'a']) {
+				timep[0] = timep[1] = (time_t) larbuf.lar_date;
+				utime(file, timep);
+			}
 			continue;
 		}
 	sk:
@@ -375,7 +381,7 @@ getqf()
 
 usage()
 {
-	printf("usage: ar [%s][%s] archive files ...\n", opt, man);
+	printf("usage: ar [%s][%s] archive files ...\n", man, opt);
 	done(1);
 }
 
