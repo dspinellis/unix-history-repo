@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.18 (Berkeley) 83/06/30";
+static char sccsid[] = "@(#)rwhod.c	4.19 (Berkeley) 83/07/01";
 #endif
 
 #include <sys/types.h>
@@ -18,7 +18,7 @@ static char sccsid[] = "@(#)rwhod.c	4.18 (Berkeley) 83/06/30";
 #include <utmp.h>
 #include <ctype.h>
 #include <netdb.h>
-#include <rwhod.h>
+#include "rwhod.h"
 
 struct	sockaddr_in sin = { AF_INET };
 
