@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)var.c 1.12 %G%";
+static char sccsid[] = "@(#)var.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -329,26 +329,10 @@ alignit:
 		    return A_CHAR;
 	    case RECORD:
 			/*
-			 * follow chain through all fields in record,
-			 * taking max of alignments of types of fields.
-			 * short circuit out if i reach the maximum alignment.
-			 * this is pretty likely, as A_MAX is only 4.
+			 * the alignment of a record is in its align_info field
+			 * why don't we use this for the rest of the namelist?
 			 */
-		    {
-			register long recalign;
-			register long fieldalign;
-			
-			recalign = A_MIN;
-			p = p -> chain;
-			while ( ( p != NIL ) && ( recalign < A_MAX ) ) {
-			    fieldalign = align( p -> type );
-			    if ( fieldalign > recalign ) {
-				recalign = fieldalign;
-			    }
-			    p = p -> chain;
-			}
-			return recalign;
-		    }
+		    return p -> align_info;
 	    default:
 		    panic( "align" );
 	}

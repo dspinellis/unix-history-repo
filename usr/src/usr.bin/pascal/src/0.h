@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.15 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.16 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -249,15 +249,16 @@ struct	nl {
 #	endif PTREE
 };
 
-#define class info[0]
-#define nl_flags info[1]
-#define nl_block info[1]
-#define extra_flags info[2]
+#define class		info[0]
+#define nl_flags	info[1]
+#define nl_block	info[1]
+#define extra_flags	info[2]
+#define align_info	info[3]
 
-#define range nl_un.un_range
-#define value nl_un.un_value
-#define ptr nl_un.un_ptr
-#define real nl_un.un_real
+#define range	nl_un.un_range
+#define value	nl_un.un_value
+#define ptr	nl_un.un_ptr
+#define real	nl_un.un_real
 
 extern struct nl *nlp, *disptab[077+1], *Fp;
 extern struct nl nl[INL];
@@ -314,10 +315,23 @@ extern struct nl nl[INL];
 #define NL_GOLINE 3
 #define NL_FORV 1
 
-#define	NL_FLDSZ 1
-#define	NL_VARNT 2
-#define	NL_VTOREC 2
-#define	NL_TAG	3
+    /*
+     *	nlp -> nl_un.un_ptr[] subscripts for records
+     *	NL_FIELDLIST	the chain of fixed fields of a record, in order.
+     *			the fields are also chained through ptr[NL_FIELDLIST].
+     *			this does not include the tag, or fields of variants.
+     *	NL_VARNT	pointer to the variants of a record,
+     *			these are then chained through the .chain field.
+     *	NL_VTOREC	pointer from a VARNT to the RECORD that is the variant.
+     *	NL_TAG		pointer from a RECORD to the tagfield
+     *			if there are any variants.
+     *	align_info	the alignment of a RECORD is in info[3].
+     */
+#define	NL_FIELDLIST	1
+#define	NL_VARNT	2
+#define	NL_VTOREC	2
+#define	NL_TAG		3
+/* and align_info is info[3].  #defined above */
 
 #define	NL_ELABEL 4	/* SCAL - ptr to definition of enums */
 
@@ -732,10 +746,8 @@ struct nl	*hdefnl();
 struct nl	*defnl();
 struct nl	*enter();
 struct nl	*nlcopy();
-struct nl	*tyrecl();
+struct nl	*tyrec();
 struct nl	*tyary();
-struct nl	*fields();
-struct nl	*variants();
 struct nl	*deffld();
 struct nl	*defvnt();
 struct nl	*tyrec1();
