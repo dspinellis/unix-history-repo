@@ -17,7 +17,7 @@
 #include <sendmail.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)domain.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)domain.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,7 +53,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 			    errno, h_errno);
 #endif
 		switch(h_errno) {
-		case NO_ADDRESS:
+		case NO_DATA:
 		case NO_RECOVERY:
 			goto punt;
 		case HOST_NOT_FOUND:
