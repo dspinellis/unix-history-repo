@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in.h	7.11 (Berkeley) 4/20/91
- *	$Id: in.h,v 1.5 1994/05/17 22:31:04 jkh Exp $
+ *	$Id: in.h,v 1.6 1994/05/18 00:04:14 jkh Exp $
  */
 
 #ifndef _NETINET_IN_H_
@@ -41,6 +41,9 @@
  * Constants and structures defined by the internet system,
  * Per RFC 790, September 1981.
  */
+
+/* Enable this if you don't want to be IP_TOS compatible with BSDI/NetBSD */
+/* #define NO_VAT_COMPAT	1 */
 
 /*
  * Protocols
@@ -159,7 +162,7 @@ struct ip_opts {
  * First word of comment is data type; bool is stored in int.
  */
 #define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
-#ifdef IP_VAT_COMPAT
+#ifndef NO_VAT_COMPAT
 #define	IP_MULTICAST_IF	2	/* set/get IP multicast interfcae */
 #define	IP_MULTICAST_TTL 3	/* set/get IP multicast timetolive */
 #define	IP_MULTICAST_LOOP 4	/* set/get IP m'cast loopback */
