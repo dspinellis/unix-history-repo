@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chown.8	6.5 (Berkeley) %G%
+.\"     @(#)chown.8	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHOWN 8
@@ -14,8 +14,11 @@
 .Sh SYNOPSIS
 .Nm chown
 .Op Fl Rf
-.Op Ar owner
-.Op Ar group
+.Ar owner Op Ar :group
+.Ar file ...
+.Nm chown
+.Op Fl Rf
+.Ar :group
 .Ar file ...
 .Sh DESCRIPTION
 .Nm Chown
@@ -35,9 +38,10 @@ The
 .Ar owner
 and
 .Ar group
-operands are both optional, but at least one must be specified; if
-the group operand is specified, it must be preceded by a colon (``:'')
-character.
+operands are both optional, however, one must be specified.
+If the
+.Ar group
+operand is specified, it must be preceded by a colon (``:'') character.
 .Pp
 The
 .Ar owner
