@@ -1,0 +1,127 @@
+.LP
+.sp 2
+.ce
+.B
+\s+2Berkeley Network Quick Reference\s0
+.R
+.sp
+.ce 2
+May 1979
+(updated March 1980)
+.sp 1
+.ds a \fR[\fP
+.ds b \fR]\fP
+.TS
+l l l.
+\fBCommand Summary	Example	Explanation\fP
+
+\fBnetcp\fI fromfile tofile\fR	% netcp\ \ defs.h\ \ C:defs.h	copy defs.h to C machine
+	% netcp\ \ A:fig1\ \ fig1	copy from A to here
+	% netcp\ \ Cory:q1\ \ D:q1	copy from Cory to D
+\fBmail\fI mach:user\fR	% mail\ \ A:alan	send mail to ``alan'' on A
+	% mail\ \ A:alan\ \ C:george	multiple recipients
+\fBnetmail \*a\-c\*b \*a\fImach\*b\fR	% netmail\ \ Cory	read mail on Cory machine
+	% netmail\ \-c\ Cory:usern	check mail on Cory machine
+\fBnetlpr \*a\-m \fImach\*b file\fR	% netlpr\ \ \-m D\ \ p1.p	print p1.p on D lineprinter
+\fBnetq \*a\-a\*b \*a\fImach\*b\fR	% netq	list network queue
+	% netq\ \ \-a\ \ Cory	... all files to Cory
+\fBnetrm \*a\-\*b \*a\fIcode\*b\fR	% netrm\ \ \-	remove the user's requests
+\fBnet \*a\-m \fImach\fB\*b \*a\-\*b \fIcommand\fR	% net\ \ \-m A\ \ who	send who to A machine
+	% net\ \ \-\ \ \-mA\ \ lpr\ \ <f1	\fIlpr\fP file ``f1'' on A
+.TE
+.LP
+The
+.I netcp,
+.I netmail,
+.I netlpr,
+and
+.I net
+commands need remote login names
+and passwords.
+They may be provided when prompted-for on the terminal,
+on the command line, or in a ``.netrc'' file in the user's login directory.
+.LP
+\fBOther Options\fP
+.TS
+l l.
+\fB\-l\fP \fIlogin\fP 	login name on remote machine
+\fB\-p\fP \fIpassword\fP	password on remote machine
+\fB\-f\fP	prompt for login name and password
+\fB\-n\fP	mail back rather than write back
+\fB\-q\fP	silent mode\- no messages sent back
+\fB\-m\fP \fImach\fP	send to \fImach\fR (only for \fInet, netlpr\fP)
+\fB\-\fP	input from standard input (only for \fInet\fP)
+.TE
+.SH
+Example .netrc file:
+.DS
+default Z
+machine Y login dracula
+machine Z login schmidt, quiet yes
+.DE
+.LP
+.TS
+center box;
+cB s s s
+l l l l.
+ .netrc options for each machine
+Option	Parameter	Default	Comment
+_
+\fBlogin\fP	name	localname	login name for remote machine
+\fBpassword\fP	password	(none)	password for remote login name
+\fBcommand\fP	command	(none)	default command to be executed
+\fBwrite\fP	yes/no	yes	if possible, write to user
+\fBforce\fP	yes/no	no	always prompt for name and password
+\fBquiet\fP	yes/no	no	like the \fB\-q\fR option
+.TE
+.ds RH Berkeley Network Quick Reference, Page 2
+.ds CH 
+.bp
+.TS
+center box;
+cB s s s s
+l l l l l.
+               The Current State of the Berkeley \s-2UNIX\s0 Network
+Machine	Internal	Run	Default	Other
+Name	Name	By	Machine	Name(s)
+_
+A	A	Computer Center	C
+B	B	Computer Center	D
+C	C	Computer Center	A
+D	D	Computer Center	C
+E	E	Computer Center	C
+Ing70	I	I\s-2NGRES\s0 Group	IngVAX	Ingres
+IngVAX	J	I\s-2NGRES\s0 Group	Ing70
+Image	M	Sakrison	ESVAX
+ESVAX	O	EE-CE Research	CSVAX
+SRC	S	Survey Res. Cent.	D
+CSVAX	V	CS Research	Cory
+Cory	Y	EECS Dept.	CSVAX
+EECS40	Z	EECS Dept.	ESVAX
+.TE
+.DS L
+\fBTopology\fR
+.sp 3i
+.DE
+.LP
+The links between 
+Ing70\-IngVAX, Ing70\-CSVAX, A\-C, C\-D, C\-E, and B\-D run at 9600 Baud,
+the other links run at 1200 Baud.
+.LP
+.DS L
+\fBFree Commands\fR \ \ (login as ``network'', no password).
+.DE
+.TS
+l l l l l.
+bpq 	netlog 	rcs	vpq	whom
+epq 	netq 	rcslog	w	write
+finger	ps	rcsq	where	yank
+lpq	pstat	trq	who
+.TE	
+Mail is free to any machine.
+.I netlpr
+is free between Computer Center machines.
+The
+.I lpr
+command is free on the I\s-2NGRES\s0 machines.
+The EECS40 has no free commands (except for remote mail).

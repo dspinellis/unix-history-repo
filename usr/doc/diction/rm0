@@ -1,0 +1,38 @@
+.RP
+.TM 79-1271-13 39199 39199-11
+.TL
+Writing Tools - The STYLE and DICTION
+Programs
+.AU "MH 2C-516" 6067
+L. L. Cherry
+.AI
+.MH
+.AU
+W. Vesterman
+.AI
+Livingston College
+Rutgers University
+.OK
+readability
+
+.AB
+Text processing systems are now in heavy use in many companies
+to format documents.
+With many documents stored
+on line, it has become possible to use computers
+to study writing style itself and to help writers
+produce better written and more readable prose.
+The system of programs described here is an initial step
+toward such help.
+It includes programs and a data base designed
+to produce a stylistic profile of writing at the word and
+sentence level.
+The system measures read\%ability, sentence and word length,
+sentence type, word usage, and sentence openers.
+It also locates common examples of wordy phrasing and bad diction.
+The system is useful for evaluating a document's style,
+locating sentences that may be difficult to read or
+excessively wordy, and determining
+a particular writer's style over several documents.
+.AE
+.CS 11 4 15 1 2 12

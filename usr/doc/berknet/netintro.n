@@ -1,0 +1,1068 @@
+.ds X X
+.ds Y Y
+.ds Z Z
+.TL
+An Introduction to the Berkeley Network
+.AU
+Eric Schmidt
+.AI
+Computer Science Division
+Department of Electrical Engineering and Computer Science
+University of California, Berkeley
+Berkeley, California 94720
+.sp
+May 1979
+(revised March 1980)
+.AB
+This document describes the use of a network
+between a number of
+.UX
+machines on the Berkeley campus.
+This network can execute commands on other machines,
+including file transfers, sending and receiving mail,
+remote printing, and shell-scripts.
+.PP
+The network operates in a batch-request mode.
+Network requests are queued up at the source and sent in shortest-first
+order to the destination machine.
+To do this, the requests are forwarded through a network
+of inter-connected machines until they arrive at their destination
+where they are executed.
+The time this requires depends on system load, inter-machine transfer speed,
+and quantity of data being sent.
+.PP
+The network enforces normal
+.UX
+security and
+demands a remote account with a password for most commands.
+Information can be returned to the user in files, for later
+processing, or on the terminal for immediate viewing.
+.AE
+.SH
+Introduction
+.PP
+A network between a number of
+.UX
+machines on the Berkeley campus has been implemented.
+This document is a brief introduction to the use of this network.
+Information which is specific to the local network has been
+gathered into Appendix A.
+The new user should read both this introduction and Appendix A in order
+to learn to use the network effectively.
+.PP
+This document is subdivided into the following sections:
+.ds c Copying Files over the Network
+.ds d Listing Requests in the Network Queue
+.ds e Removing Requests from the Network Queue
+.ds f Sending Mail over the Network
+.ds g Reading Mail over the Network
+.ds h Using the Lineprinter over the Network
+.DS
+Use of the Network
+	1) \*c
+	2) \*d
+	3) \*e
+	4) \*f
+	5) \*g
+	6) \*h
+	7) Net Prototype Command
+Setting Defaults
+How to Specify Remote Passwords
+Appendix A: The Network at Berkeley
+Appendix B: Getting Started \(em An Example
+.DE
+.PP
+This manual is written in terms of three mythical machines,
+named \*X, \*Y, and \*Z.
+Specific names at Berkeley are in Appendix A,
+along with more local information.
+.SH
+Use of the Network
+.PP
+The network provides facilities for issuing a command on one
+machine (the
+.I local
+machine) which is to be executed on another (the
+.I remote
+machine).
+Network commands are available to transfer files from one machine
+to another, to send mail to a user on a remote machine,
+to retrieve one's mail from a remote account,
+or to print a file on a remote lineprinter.
+These commands are described below, as is the more general
+.I net
+command which allows users to specify the name of some command
+or shell script to be executed on a remote machine.
+Network requests are queued on the local machine and sent to the remote
+machine, forwarded through intermediate machines if necessary.
+.PP
+Most of the network commands require that you have an account on
+the remote machine.
+If a remote account is not needed for a particular command,
+it will be noted in the following discussion.
+The first example introduces procedures and responses which are applicable
+to all network commands.
+.sp 1.5
+.NH
+\*c
+.PP
+Suppose that you have accounts on both the \*X and \*Y machines and that you are
+presently logged into the \*X machine.
+If you want to copy a file named `file1' from your current
+directory on machine \*X to machine \*Y (the
+.I remote
+machine), use the command:
+.DS
+% netcp file1 \*Y:file1
+.DE
+The net will make a copy of `file1' in your login directory
+on the \*Y machine.
+(The `\*Y:' will not be part of the filename on the \*Y machine.)
+In order to verify your permission to write into the \*Y account, the
+.I netcp
+command will prompt you with:
+.DS
+Name (\*Y:your-name):
+.DE
+You should respond with your login name on the Y machine,
+followed by a carriage-return.
+If you have the same login name on both machines, just type a carriage-return.
+Next a password will be requested:
+.DS
+Password (\*Y:remote-name):
+.DE
+Now type in your password followed by a carriage-return (you must type
+it even if your passwords are the same on both machines).
+The
+.I netcp
+command will make a copy of your `file1' in a queue destined
+for the \*Y machine, and will then return you to the shell.
+.PP
+Likewise if you wanted to transfer a file named `scan.p' from \*Y to \*X,
+.DS
+% netcp \*Y:scan.p scan.p
+.DE
+would place that file in your current directory on \*X.
+.PP
+The network will ``write'' you when it has executed
+your request (if you are still logged in),
+or will ``mail'' you a message (if you are not).
+You may use the
+.B
+\-n
+.R
+option (described later) to disallow the interruption and thus force
+mail to be sent.
+A typical message might look like this:
+.DS
+Message from \*Y:your-name at time ...
+(command: netcp file1 \*Y:file1, R: 0, sent April 1 18:03, took 10 min 3 sec)
+-------
+.DE
+The message includes the current time, the time you sent the
+command on machine \*X,
+and the exit code of the command (zero normally means success).
+.PP
+The network response will tell you if it was unable to execute the
+remote command successfully by returning an error message some time later.
+If, for example, you type the wrong password, you will get the response
+.DS
+Message from \*Y:your-name at time ...
+(command: netcp file1 \*Y:file1, sent April 1 18:03, took 10 min 3 sec)
+Error: bad login/password your-name
+------
+.DE
+.PP
+The
+.I netcp
+command is actually a generalization of the
+.UX
+.I cp
+command, similar to
+.I uucp\fP\(dg.
+.FS
+\(dg See the
+.UX
+Programmers Manual (Version 7 only).
+.FE
+Its syntax is:
+.DS
+\fBnetcp\fR [\fB\-l\fI login\fR] [\fB\-p\fI password\fR] [\fB\-n\fR] [\fB\-q\fR] [\fB\-f\fR] \fIfromfile tofile\fR
+.DE
+where
+.I fromfile
+and
+.I tofile
+can be local or remote files.
+A filename which is not a full pathname
+is either from the current directory on the local machine
+or your login directory on the remote machine.
+The
+.B
+\-l
+.R
+and
+.B
+\-p
+.R
+options may be used to specify your remote login name and password
+on the command line.
+If the password contains shell meta-characters, it must be in quotes.
+(These options are useful in shell scripts,
+but be sure to make the shell script readable only
+by yourself if you've got passwords in it!)
+The
+.B
+\-n
+.R
+option forces any responses from the remote machine to be mailed
+rather than written to you.
+The
+.B
+\-f
+.R
+option forces prompting for a remote user name and password,
+even if they are set by other options or are in the ``.netrc'' file
+(see ``Setting Defaults'' below).
+Finally, the
+.B
+\-q
+.R
+option prevents any confirmation messages from being sent back to you,
+if there were no errors, the exit code of the command is zero,
+and the command had no output.
+.PP
+Transferred files may or may not have the correct file protection mode;
+use the
+.I chmod
+(I) command to reset it.
+When files are to be brought from a remote machine,
+they are created zero-length at the time the command is issued;
+when they arrive, they assume their true length.
+Unlike
+.I cp,
+.I netcp
+does not allow the 
+.I tofile
+to be simplified to a directory,
+if the files have the same name.
+.LP
+Examples:
+.RS
+.TS
+l l.
+% netcp\ \ file1\ \ \*Y:file1	copy `file1' from the current directory to \*Y
+% netcp\ \ \*Y:file1\ \ file1	copy `file1' from \*Y to the current directory
+% netcp\ \ \*Z:file1\ \ \*Z:file2	\fIcp\fP command on remote machine
+% netcp\ \ \*X:lex.c\ \ \*Y:lex.c	copy from \*X to \*Y 
+% netcp\ \ \*Y:subdir/file1\ \ file1	copy from a sub-directory
+% netcp\ \ file1\ \ file2	an error\(em use the \fIcp\fP command
+.TE
+.RE
+.sp 1.5
+.NH
+\*d
+.PP
+To see where your command is in the queue, type
+.DS
+% netq
+.DE
+A typical output of which looks like:
+.DS L
+.cs R 23
+ From       To         Len  Code    Time         Command
+\*X:your-name \*Y:remote-name  100 b99999  Mar 23 18:05  netcp file1 \*Y:file1
+.cs R
+.DE
+The format is similar to that of the
+.I lpq
+command.
+The files are sent one at a time, in the order listed.
+If
+.I netq
+tells you the queue is empty, your request has been sent already.
+The queues for different destinations are totally separate.
+.DS
+% netq \*Y
+.DE
+will list just the queue destined for the \*Y machine.
+.I Netq
+summarizes requests from other users.
+The command
+.DS
+% netq \-a
+.DE
+will print the requests from all users.
+.sp 1.5
+.NH
+\*e
+.PP
+If you want to cancel your net request, and ``b99999''
+(see the
+.I netq
+example above) is your ``Code,'' use the command
+.DS
+% netrm b99999
+.DE
+which will remove the request (if it hasn't already been sent).
+Furthermore,
+.DS
+% netrm \-
+.DE
+will remove all your net requests in the queues on the local machine
+(you must have made the request in order to remove it).
+.sp 1.5
+.NH
+\*f
+.PP
+To send mail to remote machines, use the
+.I mail
+command with the remote account prefixed by the destination machine's
+name and a `:'.
+``\*Y:schmidt'', for example, refers to an account ``schmidt'' on the \*Y machine.
+The full sequence is illustrated below:
+.DS
+% mail \*Y:schmidt
+\ \ \ \ {your message to user ``schmidt'' }
+{control-d}
+.DE
+This will send to user ``schmidt'' on the \*Y machine the text you type in.
+As with intra-machine mail, the message is terminated by a control-d.
+.PP
+You do not need an account on a remote machine to send mail to a user there.
+.ne 9v
+.sp 1.5
+.NH
+\*g
+.PP
+It is also possible to read your mail on remote machines.
+From the \*X machine, the command
+.DS
+% netmail \*Y
+.DE
+sends a command to the \*Y machine to take any mail you may have and mail
+it back to you.
+As a precaution, the mail on the remote machine (\*Y in this example)
+is appended to the file ``mbox''.
+Netmail has
+\fB\-l\fP, \fB\-p\fP, \fB\-n\fP and \fB\-f\fP options just like
+.I netcp.
+If a machine is not specified, the default machine\(dg is used.
+.FS
+\(dg (see ``Setting Defaults'' below)
+.FE
+If the 
+.B
+\-q
+.R
+option is specified (like
+.I netcp)
+no message is sent back if there is no mail.
+.PP
+Netmail also takes a
+.B
+\-c
+.R
+option:
+.DS
+% netmail\ \-c\ \*Y:username
+.DE
+which turns the command into a ``mail check'' command.
+A message is sent back telling the user whether the specified username
+has mail.
+No password is required.
+As above, the
+.B
+\-q
+.R
+option suppresses the message if there is no mail.
+This command was designed to be put in C shell ``.login'' files.
+.sp 1.5
+.NH
+\*h
+.PP
+Remote lineprinters can be used with the
+.I netlpr
+command:
+.DS
+\fBnetlpr\fR [\fB\-m\fI machine\fR] [\fB\-c\fI command\fR] \fIfile1 file2 ... filen\fR
+.DE
+which sends the files its arguments represent to the lineprinter on
+.I machine.
+It will prompt you for an account and password.
+The \fB\-l\fR, \fB\-p\fR, \fB\-n\fR and \fB\-f\fR options may be supplied,
+as in the
+.I netcp
+command.
+If the 
+.B
+\-c
+.R
+option is specified, a different printing
+.I command
+(default is ``lpr'') can be specified;
+see Appendix A for the list of printers allowed.
+Copies of the files are not made in the remote account.
+.sp 1.5
+.NH
+Net Prototype Command
+.PP
+The above commands all use internally one more general command\(emthe
+.I net
+command which has the following form:
+.DS
+.ds a \fR[\fP
+.ds b \fR]\fP
+\fBnet \*a\-m\fI machine\*b \*a\fB\-l\fI login\*b \*a\fB\-p\fI password\*b \*a\fB\-r\fI file\*b \*a\fB\-\*b \*a\-n\*b \*a\-q\*b \*a\-f\*b\fI command\fR
+.DE
+.I Net
+sends the given command to a remote machine.
+The machine may be specified either with the
+.B
+\-m
+.R
+option or in the ``.netrc'' file
+(for the specific names, see Appendix A).
+If not specified, a default is used.
+\fB\-l\fP, \fB\-p\fP, \fB\-n\fP, \fB\-q\fP and \fB\-f\fP are as explained above for the
+.I netcp
+command.
+The \fB\-r\fP option indicates the local
+.I file
+which will receive the output (the standard output and standard error files) of
+.I command
+when it is executed on the remote machine.
+By default this output is written or mailed to you.
+Thus, for example, to find out who is on the \*Y machine when you are
+logged in on the \*X machine,
+execute the following command:
+.DS
+% net \-m \*Y "who"
+.DE
+which will run the
+.I who
+command on the \*Y machine;
+the response will be written or mailed to you.
+Similarly,
+.DS
+% net \-m \*Y \-r resp "who"
+.DE
+will take the output (result)
+and return it to you in file `resp' on the local machine.
+If instead you want the result of the
+.I who
+command to remain on the \*Y machine the command
+.DS
+% net \-m \*Y "who >resp"
+.DE
+will create a file `resp' in your login directory on the \*Y machine.
+It is a good idea to put the command in quotes, and it
+.I must
+be in quotes if I/O redirection
+(<, >, or other syntax special to the shell) is used.
+.PP
+If you do not specify the remote machine explicitly (or in the ``.netrc''
+file, explained below), the default machine will be used (see Appendix A).
+.PP
+The
+.B
+\-
+.R
+option indicates that standard input from the
+local machine is to be supplied to the command executing remotely
+as standard input, thus if defaults for the login name and password
+are set up correctly as described below,
+.DS
+% net \-m \*Y \- "mail ripper"
+\ \ \ \ { message to ripper }
+{control-d}
+.DE
+is equivalent to
+.DS
+% mail \*Y:ripper
+\ \ \ \ { message to ripper }
+{control-d}
+.DE
+.PP
+The net command also has other options not documented here.
+See the
+.UX
+Programmer's Manual sections for more details.
+.SH
+Setting Defaults
+.PP
+Instead of repeatedly typing frequently-needed options
+for every invocation of the various network commands, the user may supply
+in his login directory a file ``.netrc'', which contains the repeated
+information.
+The ``.netrc'' file is typically used to specify login names
+on remote machines, as well as other options.
+An example of such a file is given below:
+.DS
+default \*Y
+machine \*Y, login dracula
+machine \*Z login dracula, quiet yes
+.DE
+.LP
+This example sets the default machine to \*Y
+so that for net commands where a remote machine is not explicitly specified,
+the command will then be executed on the \*Y machine.
+The second and third lines indicate
+for the \*Y and \*Z machines a login name of ``dracula''
+should be used to network commands, and to assume the ``quiet''
+option on all commands destined for the \*Z machine.
+The complete list of options that may follow the machine indication is:
+.sp 1
+.TS
+center box;
+cB s s s
+l l l l.
+ .netrc options for each machine
+Option	Parameter	Default	Comment
+_
+\fBlogin\fP	name	localname	login name for remote machine
+\fBpassword\fP	password	(none)	password for remote login name
+\fBcommand\fP	command	(none)	default command to be executed
+\fBwrite\fP	yes/no	yes	if possible, write to user
+\fBforce\fP	yes/no	no	always prompt for name and password
+\fBquiet\fP	yes/no	no	like the \fB\-q\fR option
+.TE
+.sp 1
+.PP
+In setting up the ``.netrc'' file, if the ``default'' option is present,
+it must be the first line of the file.
+The information for each machine starts with the word
+``machine'' and the machine name and continues
+one or more lines up to another machine indication
+(or the end of the file).
+Input is free-format.
+Multiple spaces, tabs, newlines, and commas
+serve as separators between words.
+Double quotes (") must surround passwords with blanks or special
+characters in them.
+.SH 
+How to Specify Remote Passwords
+.PP
+For the commands which require the password for the account on the remote
+machine, there are a number of ways to specify the password:
+.IP 1)
+letting the command ask you, as in the
+.I netcp
+example in Section 1,
+.IP 2)
+specifying it with an alias (if using the C shell),
+.IP 3)
+putting it into the current environment if the local machine is running 
+.UX
+Version 7,
+.IP 4)
+specifying it on the command line with the
+.B
+\-p
+.R
+option,
+.IP 5)
+storing it in the ``.netrc'' file, described in the previous section.
+.PP
+These can be ranked in order of security, from 1 = greatest security
+to 5 = lowest security, from the point of view of security of passwords
+from unauthorized use by other users and possibly an illicit super-user.
+Each is described in turn:
+.IP 1)
+If you make no effort to specify the remote password elsewhere,
+the network commands will prompt you with:
+.DS
+Password(mach:username):
+.DE
+Type your password, followed by a carriage return.
+This is the most secure mode of specifying passwords.
+If the net command is executed in the background
+(i.e. with ``&'') then the command can't read the password from
+your terminal and one of options 2-5 below must be used.
+.IP 2)
+The alias feature of the C shell can be used to specify the remote password.
+The command
+.DS
+% alias\ netcp\ netcp\ \-l\ godzilla\ \-p\ $pass
+.DE
+in the ``.cshrc'' file, followed by
+.DS
+% set\ path=your-passwd
+.DE
+right before using the network will set for subsequent 
+.I netcp
+commands the login name ``godzilla'' and password ``passwd''.
+This alias command must be given everytime you login (see the 
+.UX
+Programmers Manual section for the C shell
+(csh (1)) for more information about
+.I alias.
+Do
+.I not
+put this alias command in your ``.login'' file.
+.IP 3)
+If running on a Version 7 
+.UX
+system, the password can be put in the current environment.
+The command (to the C shell)
+.DS
+% setenv\ MACH\fImch\fR\ \(ganetlogin\ \-m\ \fImch\fR\(ga
+.DE
+or (to the default Version 7 ``Bourne'' shell)
+.DS
+% MACH\fImch\fR=\(ganetlogin\ \-m\ \fImch\fR\(ga
+% export MACH\fImch\fR
+.DE
+will prompt you for a login name and password for the remote machine
+.I mch
+and put an encrypted copy of the password in your environment.
+(Note the back-quotes to the shell.)
+Subsequent network commands will find it in your environment and
+not prompt you for it.
+These encrypted passwords are invalidated after the user logs out.
+Type ``man netlogin'' for more information on the 
+.I netlogin
+command.
+.IP 4)
+Each net command takes a 
+.B
+\-p
+.R
+option on the command line to specify the password.
+These are usually put in shell command scripts.
+These shell script files should have file mode 0600 \-
+use the chmod(I) command to set the mode.
+.IP 5)
+The remote password can be specified in the user's ``.netrc'' file.
+If passwords are present, the ``.netrc'' file must have mode 0600
+(as in #4 above).
+.LP
+The system managers recommend options 1-3 and warn against 4 and 5.
+Should someone break into your account on one machine, and you use option
+4 or 5, you will have to 
+change your passwords on all net machines for which your
+passwords have been stored in shell script files or in the ``.netrc'' file.
+.SH
+Log File
+.PP
+The file ``/usr/spool/berknet/logfile'' has a record of the most recent
+requests and responses, each line of which is dated.
+Lines indicating ``sent'' show the file name sent;
+lines indicating ``rcv'' show commands executed on the local machine (C: ),
+their return code (R: ), and their originator.
+For example, on the \*Y machine, the logfile:
+.DS
+.cs R 23
+Feb 28 10:29: rcv \*X: neil (neil) R: 0 C: netcp design \*Y:design
+Feb 28 10:43: sent tuck to \*Z (z00466, 136 bytes, wait 2 min 3 sec)
+Feb 28 11:05: rcv \*X: bill (bill) R: 0 C: netcp structures \*Y:structures
+.cs R
+.DE
+shows three entries.
+In this example, there are two
+.I netcp
+commands sending files from the \*X machine to \*Y, each from a different user.
+The second command sent was originated here by ``tuck'' and is 136 bytes long;
+the command that was sent is not shown.
+The command
+.DS
+% netlog
+.DE
+will print the last few lines of this file.
+Its prototype is
+.DS
+\fBnetlog \-\fInum\fR
+.DE
+where
+.I num
+is an integer will print the last
+.I num
+lines from the file.
+.SH
+Acknowledgements
+.PP
+Special thanks go to
+Bob Fabry, Bill Joy, Vance Vaughan, Ed Gould, Robyn Allsman,
+Bob Kridle, Jeff Schriebman, Kirk Thege and Ricki Blau of Berkeley,
+and Dave Boggs of X\s-2EROX\s0 P\s-2ARC\s0
+for their help in making this network possible.
+.bp
+.ce
+.I "Appendix A"
+.sp 2
+.ce
+The Network at Berkeley
+.sp 2
+.NH 0
+The Configuration (March 1, 1980)
+.sp
+.R
+.TS
+center box;
+cB s s s s
+l l l l l.
+               The Current State of the Berkeley \s-2UNIX\s0 Network
+Machine	Internal	Run	Default	Other
+Name	Name	By	Machine	Name(s)
+_
+A	A	Computer Center	C
+B	B	Computer Center	D
+C	C	Computer Center	A
+D	D	Computer Center	C
+E	E	Computer Center	C
+Ing70	I	I\s-2NGRES\s0 Group	IngVAX	Ingres
+IngVAX	J	I\s-2NGRES\s0 Group	Ing70
+Image	M	Sakrison	ESVAX
+ESVAX	O	EE-CE Research	CSVAX
+SRC	S	Survey Res. Cent.	D
+CSVAX	V	CS Research	Cory
+Cory	Y	EECS Dept.	CSVAX
+EECS40	Z	EECS Dept.	ESVAX
+.TE
+.sp 3i
+.LP
+If a path exists from the local machine to the requested remote
+machine, the network will forward the request to the correct machine.
+Thus Cory users may communicate with all the other machines on the network
+as well as C and CSVAX (with a degradation in speed
+because of the intermediate machine(s)).
+The links between 
+Ing70\-IngVAX, Ing70\-CSVAX, A\-C, C\-D, C\-E, and B\-D run at 9600 Baud,
+the other links run at 1200 Baud.
+.NH
+Documentation
+.PP
+The network commands
+.I
+(net, netq, netrm, netlog, netcp, netmail, netlpr, netlogin)
+.R
+are all documented in the
+.UX
+Programmers Manual.
+For example,
+.DS L
+	% man netq
+.DE
+will print the
+.I netq
+manual section.
+.PP
+There are two more documents available:
+.DS
+Network System Manual
+Berkeley Network Retrospective
+.DE
+The Manual is intended for the systems staff who will maintain the network.
+The Retrospective is my Master's report and details
+the history of the project, discusses the design, and lists future plans.
+.PP
+There is an up-to-date news file:
+.DS L
+	% news net
+or
+	% help net
+or
+	% cat /usr/net/news	{if those fail}
+.DE
+which prints news about the network, dated and with the most recent news first.
+.PP
+The
+.UX
+Programmer's Manual, section I, has information on the
+.I
+chmod, cp, mail, who,
+.R
+and
+.I write
+commands mentioned in the text.
+Also, the
+.I help
+command has information about file protections:
+.DS L
+	% news access		{on the Cory machine}
+or
+	% help permissions	{on the CC machines}
+.DE
+.NH
+Features at Berkeley
+.IP a)
+There is a built-in character limit
+of 100,000 characters per single transmission, which cannot be overridden.
+The limit is 500,000 characters between the I\s-2NGRES\s0 machines.
+Longer files must be split into smaller ones in order to be sent.
+.IP b)
+The 1200 Baud links between machines seldom transmit
+any faster than 50 characters per second
+(for 9600 Baud links, 350 characters a second),
+and can slow to a fraction of that in peak system loading periods.
+This is due to an expansion of
+the data packets to accomodate a seven-bit data path,
+wakeup time on the machines, and the packet sent in acknowledgement.
+Heavy file transfer is faster by magnetic tape.
+.IP c)
+On the CSVAX, IngVAX, and ESVAX the net commands are all in `/usr/ucb'.
+Your search path on these VAX's should be set to include the
+directory `/usr/ucb';
+otherwise you will have to prefix all net commands by `/usr/ucb',
+as in `/usr/ucb/netcp'.
+.IP d)
+Limited Free Commands
+.RS
+.PP
+Users who do not have accounts on remote machines may still execute
+certain commands by giving a remote login name of ``network'',
+and no remote password.
+The commands currently allowed are:
+.KS
+.TS
+l l l l l.
+bpq 	netlog 	rcs	vpq	whom
+epq 	netq 	rcslog	w	write
+finger	ps	rcsq	where	yank
+lpq	pstat	trq	who
+.TE	
+.KE
+.LP
+The
+.I lpr
+command is allowed on the I\s-2NGRES\s0 machine.
+Also,
+.I mail
+to remote machines and
+.I netlpr
+between Computer Center machines do not require a remote account.
+The EECS40 machine allows no free commands (but allows the sending of mail).
+.PP
+.LP
+For example, to execute an
+.I lpq
+command on the A machine, the user would type:
+.DS
+% net\ \-l\ network\ \-m\ A\ ``who''
+.DE
+.RE
+.IP e)
+If no machine name specification is in the front of a full path name,
+the first four characters are checked and the machine
+is inferred from that if possible.
+In the command
+.DS
+% netcp file1 /ca/schmidt/file1
+.DE
+the second file name is equivalent to ``C:file1'', if you are ``schmidt''
+on the C machine.
+.IP f)
+The network can only send files in one direction at a time.
+Thus confirmations can slow down heavy file transfer.
+If you regularly use a shell script to transfer a set of files, the
+.B
+\-q
+.R
+option to
+.I netcp
+will improve transfer time.
+.IP g)
+The network creates a heavy load on the system and thus is expensive to
+run. If general user throughput is adversely affected, a charge will be
+implemented on the Computer Center machines.
+.IP h)
+When transferring files, quota overflow will result in a partial copy,
+so you should check the space requirements of the file being sent.
+.IP i)
+The Computer Center ``A'' machine's phototypesetter is usable from other
+network machines.
+If on one of the B-E machines, you do not need an account on the A machine.
+You simply type
+.DS
+% troff\ \-Q\ other-options\ file(s)
+.DE
+instead of the normal
+.DS
+% troff\ other-options\ file(s)
+.DE
+The troff command is executed on the local machine and the phototypesetter
+instructions are sent to the A machine.
+You will be sent mail both when the file is queued and when it is finally
+typeset.
+To see your place in the 
+.I troff
+queue, type:
+.DS
+% trq
+.DE
+on any Computer Center machine.
+There is a command
+.DS
+% trrm\ code
+.DE
+(where
+.I code
+is the code from the 
+.I trq
+command)
+to remove queue files before they have been typeset.
+.I Trrm
+must be executed on the same machine from which the job was submitted.
+.RS
+.PP
+If you are on a non-Computer Center machine, you may use the
+.I nettroff 
+command:
+.DS
+% nettroff\ options\ file(s)
+.DE
+which is similar to the ``troff \-Q'' command earlier.
+You will need an account on the A machine and the 
+.I trrm
+command doesn't work from a non-Computer Center machine.
+.PP
+If using
+.I nettroff,
+no more than 15 pages may be sent to the typesetter.
+If using
+.I troff
+more than 15 pages may be sent only if the
+.B
+\-s
+.R
+option is specified (see troff(1) for more information).
+The network will not transfer any file longer than
+100,000 characters to the A machine.
+(It is best to aim for files of 25,000 characters or less)\(dg.
+.FS
+\(dg Characters from 
+.I troff\fR's
+output, not the user's source files.
+It is our general experience that
+.I troff
+outputs roughly twice as many characters as are in the source file
+(before any
+.I eqn
+or
+.I tbl
+preprocessing.)
+.FE
+For more information, type
+.DS L
+	man troff		{on the Computer Center machines}
+or
+	man nettroff	{on the other machines}
+.DE
+The
+.I nettroff
+command is not supported by the Computer Center.
+.RE
+.IP j)
+The 
+.I netlpr
+command allows ``epr'', ``bpr'', and ``vpr'' as alternate lineprinters
+(using the \fB\-c\fP option).
+.NH
+Bugs in systems at Berkeley (As of March 1, 1980)
+.IP a)
+If you are on the Computer Center machines
+using obsolete shells (/usr/pascal/sh, /usr/pascal/nsh)
+and have a ``.profile'' or ``.shrc'' file to change your
+shell prompt, you must make sure that you don't turn on ``prompting''
+for non-interactive shells.
+This will interfere with the net commands.
+You should use this shell command to change your prompt:
+.DS
+${prompt?prompt=P}
+.DE
+where ``P'' is the prompt desired.
+This will avoid the problem.
+.IP
+If you set the variable
+.I time
+in the C shell, extraneous time stamps may appear in response messages.
+The correct way to set the variable 
+.I time
+in the C shell is
+.DS
+if ($?prompt) then
+	set time=\fInum\fP
+endif
+.DE
+where 
+.I num
+is the time interval in seconds.
+.IP b)
+The file mode should be preserved by
+.I netcp
+and it should be possible to default the second file name to a directory
+as in cp(I).
+.IP c)
+Various response messages are lost.
+This includes ``fetching'' files when the file being retrieved never arrives.
+I suspect this has something to do with unreliable delivery of error messages,
+but this is not reliably reproducible.
+.IP d)
+The network makes no provision for errors in transit on intermediate
+machines, such as ``No more processes'' or ``File System Overflow''.
+While these occur only rarely, when they do, no message or
+notification is sent to anyone.
+.IP e)
+The network commands are too slow on heavily-loaded instructional machines.
+The
+.I net
+command has to read the password file, ``.netrc'' file and the
+``/etc/utmp'' file.
+.IP f)
+The queue files are normally sent shortest-job first.
+Unfortunately, under heavy loading the queue-search becomes
+too expensive and the network will choose the next file
+to send from the first 35 queue entries it finds in the queue directory,
+so the user should not depend on the requests being sent shortest-first.
+.IP g)
+Comments and bug discoveries are encouraged and can be sent by
+local or remote mail to ``csvax:schmidt''.
+.bp
+.ce
+.I "Appendix B"
+.sp 2
+.ce
+Getting Started \(em An Example
+.sp
+.LP
+The best way to start out is to follow this example.
+Suppose you're a Cory user, and you have accounts on the A and CSVAX machines.
+.IP 1)
+Add a file ``.netrc'' (mode 600) to your login directory, as in
+the following example:
+.DS L
+default CSVAX
+machine A login \fIyourNameOnA\fP
+machine CSVAX login \fIyourNameOnCSVax\fP
+.DE
+(If ``default'' occurs, it must be the first line of the file.)
+.IP 2)
+Make sure that
+.RS
+.IP a)
+if you are on one of the VAX's, you have in your search path
+the directory `/usr/ucb'.
+Otherwise, on those machines you will have to prefix all commands by `/usr/ucb/'
+(e.g. `/usr/ucb/netcp').
+.IP b)
+on the Computer Center machines, if you choose to set your shell prompt,
+you have done so correctly (details in Appendix A).
+.RE
+.IP 3)
+Then type
+.DS L
+% net\ ``who''
+% netq
+.DE
+which will send a
+.I w
+command to the CSVAX; some undetermined time later you will
+have written (or mailed) to you the output from the command
+executed on the CSVAX machine.
+.IP
+The adventuresome may try:
+.DS L
+% net\ \-m\ A\ ``who''
+.DE
+with the effect of being routed more slowly through an intermediate link in the
+net.
