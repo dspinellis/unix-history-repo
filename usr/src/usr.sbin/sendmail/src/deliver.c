@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.105		%G%);
+SCCSID(@(#)deliver.c	3.106		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -35,7 +35,6 @@ deliver(firstto)
 	register char **mvp;
 	register char *p;
 	register struct mailer *m;	/* mailer for this recipient */
-	register int i;
 	extern bool checkcompat();
 	char *pv[MAXPV+1];
 	char tobuf[MAXLINE];		/* text line of to people */
@@ -48,6 +47,7 @@ deliver(firstto)
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	bool notopen = TRUE;		/* set if connection not quite open */
+	register int rcode;		/* response code */
 
 	errno = 0;
 	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
@@ -241,7 +241,7 @@ deliver(firstto)
 			if (clever)
 			{
 				/* send the initial SMTP protocol */
-				i = smtpinit(m, pv, (ADDRESS *) NULL);
+				rcode = smtpinit(m, pv, (ADDRESS *) NULL);
 			}
 # ifdef SMTP
 			notopen = FALSE;
@@ -254,16 +254,15 @@ deliver(firstto)
 		if (clever)
 		{
 # ifdef SMTP
-			i = smtprcpt(to);
-			if (i != EX_OK)
+			if (rcode == EX_OK)
+				rcode = smtprcpt(to);
+			if (rcode != EX_OK)
 			{
-# ifdef QUEUE
-				if (i == EX_TEMPFAIL)
+				if (rcode == EX_TEMPFAIL)
 					to->q_flags |= QQUEUEUP;
 				else
-# endif QUEUE
 					to->q_flags |= QBADADDR;
-				giveresponse(i, TRUE, m);
+				giveresponse(rcode, TRUE, m);
 			}
 # else SMTP
 			syserr("trying to be clever");
@@ -298,8 +297,8 @@ deliver(firstto)
 		{
 			if (user[0] == '/')
 			{
-				i = mailfile(user, getctladdr(to));
-				giveresponse(i, TRUE, m);
+				rcode = mailfile(user, getctladdr(to));
+				giveresponse(rcode, TRUE, m);
 				continue;
 			}
 		}
@@ -376,31 +375,29 @@ deliver(firstto)
 # ifdef SMTP
 	if (clever)
 	{
-		i = smtpfinish(m, CurEnv);
-		if (i != EX_OK)
-			giveresponse(i, TRUE, m);
-		smtpquit(pv[0], i == EX_OK);
+		rcode = smtpfinish(m, CurEnv);
+		if (rcode != EX_OK)
+			giveresponse(rcode, TRUE, m);
+		smtpquit(pv[0], rcode == EX_OK);
 	}
 	else
 # endif SMTP
-		i = sendoff(m, pv, ctladdr);
+		rcode = sendoff(m, pv, ctladdr);
 
 	/*
 	**  If we got a temporary failure, arrange to queue the
 	**  addressees.
 	*/
 
-# ifdef QUEUE
-	if (i == EX_TEMPFAIL)
+	if (rcode == EX_TEMPFAIL)
 	{
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
 	}
-# endif QUEUE
 
 	errno = 0;
 	define('g', (char *) NULL);
-	return (i);
+	return (rcode);
 }
 /*
 **  DOFORK -- do a fork, retrying a couple of times on failure.
@@ -827,15 +824,13 @@ giveresponse(stat, force, m)
 		statmsg = SysExMsg[i];
 	if (stat == 0)
 	{
-		statmsg = "sent";
-		message(Arpa_Info, statmsg);
+		statmsg = "250 sent";
+		message(Arpa_Info, &statmsg[4]);
 	}
-# ifdef QUEUE
 	else if (stat == EX_TEMPFAIL)
 	{
 		message(Arpa_Info, "deferred");
 	}
-# endif QUEUE
 	else
 	{
 		Errors++;
@@ -854,9 +849,9 @@ giveresponse(stat, force, m)
 		if (statmsg == NULL)
 			usrerr("unknown mailer response %d", stat);
 		else if (force || !bitset(M_QUIET, m->m_flags) || Verbose)
-			usrerr("%s", statmsg);
+			usrerr(statmsg);
 		else
-			fprintf(Xscript, "%s\n", statmsg);
+			fprintf(Xscript, "%s\n", &statmsg[4]);
 	}
 
 	/*
@@ -868,7 +863,7 @@ giveresponse(stat, force, m)
 
 	if (statmsg == NULL)
 	{
-		(void) sprintf(buf, "error %d", stat);
+		(void) sprintf(buf, "554 error %d", stat);
 		statmsg = buf;
 	}
 
@@ -879,12 +874,10 @@ giveresponse(stat, force, m)
 
 		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s", CurEnv->e_id,
 		       CurEnv->e_to, pintvl(curtime() - CurEnv->e_ctime, TRUE),
-		       statmsg);
+		       &statmsg[4]);
 	}
 # endif LOG
-# ifdef QUEUE
 	if (stat != EX_TEMPFAIL)
-# endif QUEUE
 		setstat(stat);
 }
 /*
