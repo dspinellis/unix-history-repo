@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include	"gprof.h"
@@ -210,7 +210,7 @@ findcalls( parentp , p_lowpc , p_highpc )
 	p_highpc = s_highpc;
     }
 #   ifdef DEBUG
-	if ( debug & CALLSDEBUG ) {
+	if ( debug & CALLDEBUG ) {
 	    printf( "[findcalls] %s: 0x%x to 0x%x\n" ,
 		    parentp -> name , p_lowpc , p_highpc );
 	}
@@ -225,7 +225,7 @@ findcalls( parentp , p_lowpc , p_highpc )
 		 *	skip the count of the number of arguments.
 		 */
 #	    ifdef DEBUG
-		if ( debug & CALLSDEBUG ) {
+		if ( debug & CALLDEBUG ) {
 		    printf( "[findcalls]\t0x%x:calls" , instructp - textspace );
 		}
 #	    endif DEBUG
@@ -240,7 +240,7 @@ findcalls( parentp , p_lowpc , p_highpc )
 	    length += operandlength( (struct modebyte *) (instructp+length) );
 	    mode = operandmode( (struct modebyte *) ( instructp + length ) );
 #	    ifdef DEBUG
-		if ( debug & CALLSDEBUG ) {
+		if ( debug & CALLDEBUG ) {
 		    printf( "\tfirst operand is %s", operandname( firstmode ) );
 		    printf( "\tsecond operand is %s\n" , operandname( mode ) );
 		}
@@ -278,7 +278,7 @@ findcalls( parentp , p_lowpc , p_highpc )
 		    if ( destpc >= s_lowpc && destpc <= s_highpc ) {
 			childp = nllookup( destpc );
 #			ifdef DEBUG
-			    if ( debug & CALLSDEBUG ) {
+			    if ( debug & CALLDEBUG ) {
 				printf( "[findcalls]\tdestpc 0x%x" , destpc );
 				printf( " childp->name %s" , childp -> name );
 				printf( " childp->value 0x%x\n" ,
@@ -308,7 +308,7 @@ findcalls( parentp , p_lowpc , p_highpc )
 			 *	something funny going on.
 			 */
 #		    ifdef DEBUG
-			if ( debug & CALLSDEBUG ) {
+			if ( debug & CALLDEBUG ) {
 			    printf( "[findcalls]\tbut it's a botch\n" );
 			}
 #		    endif DEBUG
