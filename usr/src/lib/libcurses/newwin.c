@@ -114,16 +114,18 @@ int	num_lines, num_cols, begy, begx; {
 # endif
 	if ((win->_y = (char **) calloc(nl, sizeof (char *))) == NULL) {
 		cfree(win);
-		return (WINDOW *) NULL;
+		return NULL;
 	}
 	if ((win->_firstch = calloc(nl, sizeof (short))) == NULL) {
 		cfree(win);
 		cfree(win->_y);
+		return NULL;
 	}
 	if ((win->_lastch = calloc(nl, sizeof (short))) == NULL) {
 		cfree(win);
 		cfree(win->_y);
 		cfree(win->_firstch);
+		return NULL;
 	}
 # ifdef DEBUG
 	fprintf(outf, "MAKENEW: nc = %d\n", nc);
