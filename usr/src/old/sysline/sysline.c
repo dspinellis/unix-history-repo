@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -256,11 +256,14 @@ main(argc,argv)
 	register char *cp;
 	char *home;
 	extern char _sobuf[];
+	extern char *index();
 
 	setbuf(stdout, _sobuf);
 
 #ifdef HOSTNAME
 	gethostname(hostname, sizeof hostname - 1);
+	if ((cp = index(hostname, '.')) != NULL)
+		*cp = '\0';
 #endif
 
 	for (argv++; *argv != 0; argv++)
