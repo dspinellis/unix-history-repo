@@ -1,4 +1,4 @@
-/*	rx.c	6.1	83/07/29	*/
+/*	rx.c	6.2	84/07/09	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -190,6 +190,7 @@ rxopen(dev, flag)
 		iowait(bp);
 		if (bp->b_flags & B_ERROR) {
 			sc->sc_csbits = 0;
+			sc->sc_flags &= ~RXF_LOCK;
 			return (bp->b_error);
 		}
 		if (rxwstart++ == 0) {
@@ -205,7 +206,7 @@ rxopen(dev, flag)
 		if (sc->sc_flags & RXF_LOCK)
 			return(EBUSY);
 	}
-	sc->sc_open++;
+	sc->sc_open = 1;
 	return (0);
 }
 
@@ -215,7 +216,7 @@ rxclose(dev, flag)
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 
-	--sc->sc_open;
+	sc->sc_open = 0;
 #ifdef RXDEBUG
 	printf("rxclose: dev=0x%x, sc_open=%d\n", dev, sc->sc_open);
 #endif
