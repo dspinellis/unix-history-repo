@@ -1,4 +1,4 @@
-.\"	@(#)implement	5.1 (Berkeley) %G%
+.\"	@(#)implement	6.1 (Berkeley) %G%
 .\"
 .de P1
 .DS
@@ -24,6 +24,8 @@
 .de SP
 .sp \\$1
 ..
+.EH 'PS2:4-%''UNIX Implementation'
+.OH 'UNIX Implementation''PS2:4-%'
 .hw device
 .TL
 UNIX Implementation
