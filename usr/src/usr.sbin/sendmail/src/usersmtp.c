@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.34 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.35 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.34 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.35 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -517,12 +517,6 @@ smtprcpt(to, m, mci, e)
 			strcat(optbuf, " ORCPT=");
 			strcat(optbuf, to->q_orcpt);
 		}
-	}
-	else if (bitset(QPINGONSUCCESS, to->q_flags))
-	{
-		to->q_flags |= QRELAYED;
-		fprintf(e->e_xfp, "%s... relayed; expect no further notifications\n",
-			to->q_paddr);
 	}
 
 	smtpmessage("RCPT To:<%s>%s", m, mci, to->q_user, optbuf);

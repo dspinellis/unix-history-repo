@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.121 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.122 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1578,7 +1578,7 @@ tryhost:
 	{
 		if (rcode != EX_OK)
 			markfailure(e, to, mci, rcode);
-		else
+		else if (!bitset(QBADADDR|QQUEUEUP, to->q_flags))
 		{
 			to->q_flags |= QSENT;
 			to->q_statdate = curtime();
@@ -1589,6 +1589,13 @@ tryhost:
 			{
 				to->q_flags |= QREPORT;
 				fprintf(e->e_xfp, "%s... Successfully delivered\n",
+					to->q_paddr);
+			}
+			else if (bitset(QPINGONSUCCESS, to->q_flags) &&
+				 !bitset(MCIF_DSN, mci->mci_flags))
+			{
+				to->q_flags |= QRELAYED;
+				fprintf(e->e_xfp, "%s... relayed; expect no further notifications\n",
 					to->q_paddr);
 			}
 		}
