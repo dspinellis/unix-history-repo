@@ -1,4 +1,14 @@
-/*	Acasel.c	1.2	90/12/04	*/
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)Acasel.c	7.1 (Berkeley) %G%
+ */
 
 #include "align.h" 
 casel(infop)	process_info *infop;
