@@ -1,0 +1,47 @@
+.\" remove cut-marks
+.de @m
+..
+.de CM
+..
+.\" set-up some strings
+.ds TR "Troff
+.ds IP "Interpress
+.\"
+.\" set-up indent macros
+.de RS
+.br
+.ba +5n
+..
+.\"
+.de RE
+.br
+.ba -5n
+..
+.\" set up PIC macros
+.de PS
+.if t .sp .3
+.in (\\n(.lu-\\$2u)/2u
+.ne \\$1u
+..
+.de PE
+.in
+.if t .sp .6
+..
+.\"
+.\" Automagic section indexer
+.de $0
+.if \\$3=1 \{\
+.(x
+.sp
+.b
+\\$2. \\$1
+.r
+.)x
+.	\}
+.. \" end automagic section indexer
+.\"
+.\" set physical offset
+.po 1.25i
+.nr PO 1.25i
+.nr sp 12	\" set point size of section titles
+.nr si 3n	\" set indent for sections
