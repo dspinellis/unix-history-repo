@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.10 (Berkeley) %G%
+ *	@(#)mp.c	7.11 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -210,8 +210,12 @@ mpopen(dev, mode)
 	 * serialize open and close events
 	 */
 	while ((mp->mp_flags & MP_PROGRESS) || ((tp->t_state & TS_WOPEN) && 
-		!(mode&O_NONBLOCK) && !(tp->t_cflag&CLOCAL)))
-		sleep((caddr_t)&tp->t_canq, TTIPRI);
+	    !(mode&O_NONBLOCK) && !(tp->t_cflag&CLOCAL)))
+		if (error = tsleep((caddr_t)&tp->t_canq, TTIPRI | PCATCH,
+		    ttopen, 0)) {
+			splx(s);
+			return (error);
+		}
 restart:
 	tp->t_state |= TS_WOPEN;
 	tp->t_addr = (caddr_t)ms;
@@ -221,12 +225,12 @@ restart:
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
-		tp->t_ispeed = TTYDEF_SPEED;
-		tp->t_ospeed = TTYDEF_SPEED;
-		tp->t_iflag = TTYDEF_IFLAG;
-		tp->t_oflag = TTYDEF_OFLAG;
-		tp->t_lflag = TTYDEF_LFLAG;
-		tp->t_cflag = TTYDEF_CFLAG;
+			tp->t_ispeed = TTYDEF_SPEED;
+			tp->t_ospeed = TTYDEF_SPEED;
+			tp->t_iflag = TTYDEF_IFLAG;
+			tp->t_oflag = TTYDEF_OFLAG;
+			tp->t_lflag = TTYDEF_LFLAG;
+			tp->t_cflag = TTYDEF_CFLAG;
 		}
 		/*
 		 * Initialize port state: init MPCC interface
@@ -246,13 +250,17 @@ restart:
 		 * wait for port to start
 		 */
 		while (mp->mp_proto != MPPROTO_ASYNC)
-			sleep((caddr_t)&tp->t_canq, TTIPRI);
+			if (error = tsleep((caddr_t)&tp->t_canq,
+			    TTIPRI | PCATCH, ttopen, 0))
+				goto bad;
 		ttsetwater(tp);
 		mp->mp_flags &= ~MP_PROGRESS;
 	}
-	while (!(mode&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&  
-	       (tp->t_state & TS_CARR_ON) == 0) {
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+	while ((mode&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&  
+	    (tp->t_state & TS_CARR_ON) == 0) {
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			goto bad;
 		/*
 		 * a mpclose() might have disabled port. if so restart
 		 */
@@ -283,7 +291,7 @@ mpclose(dev, flag)
 	register struct tty *tp;
 	register struct mpport *mp;
 	register struct mpevent *ev;
-	int s, port, unit, error;
+	int s, port, unit, error = 0;
 	struct mblok *mb;
 
 	unit = minor(dev);
@@ -299,9 +307,12 @@ mpclose(dev, flag)
 			return (0);
 		}
 		while (mp->mp_flags & MP_PROGRESS)
-			sleep((caddr_t)&tp->t_canq, TTIPRI);
+			if (error = tsleep((caddr_t)&tp->t_canq,
+			    TTIPRI | PCATCH, ttclos, 0)) {
+				splx(s);
+				return (error);
+			}
 	}
-	error = 0;
 	mp->mp_flags |= MP_PROGRESS;
 	(*linesw[tp->t_line].l_close)(tp);
 	ev = mp_getevent(mp, unit, 1);
@@ -315,13 +326,14 @@ mpclose(dev, flag)
 	else
 		mpmodem(unit, MMOD_ON);
 	mpcmd(ev, EVCMD_CLOSE, 0, mb, port);
-	ttyclose(tp);
+	error = ttyclose(tp);
 out:
 	if (mp->mp_flags & MP_REMBSY)
 		mpclean(mb, port);
 	else
-		while (mp->mp_flags & MP_PROGRESS)
-			sleep((caddr_t)&tp->t_canq,TTIPRI);
+		while (mp->mp_flags & MP_PROGRESS && error == 0)
+			error = tsleep((caddr_t)&tp->t_canq, TTIPRI | PCATCH,
+			    ttclos, 0);
 	splx(s);
 	return (error);
 }
@@ -385,11 +397,14 @@ mpioctl(dev, cmd, data, flag)
 	case TIOCCBRK:			/* clear break */
 		s = spl8();
 		while (mp->mp_flags & MP_IOCTL) {
-			sleep((caddr_t)&tp->t_canq, TTIPRI);
-			if (mp->mp_proto != MPPROTO_ASYNC) {
-				mp->mp_flags &= ~MP_IOCTL;
+			if (error = tsleep((caddr_t)&tp->t_canq,
+			    TTIPRI | PCATCH, ttyout, 0)) {
 				splx(s);
-				return(ENXIO);
+				return (error);
+			}
+			if (mp->mp_proto != MPPROTO_ASYNC) {
+				splx(s);
+				return (ENXIO);
 			}
 		}
 		ev = mp_getevent(mp, unit, 0);
@@ -1335,8 +1350,6 @@ mpdlclose(dev)
 	return (0);
 }
 
-int	mpdltimeout();
-
 /* ARGSUSED */
 mpdlioctl(dev, cmd, data, flag)
 	dev_t dev;
@@ -1344,11 +1357,11 @@ mpdlioctl(dev, cmd, data, flag)
 {
 	register struct mblok *mb;
 	register struct mpdl *dl;
-	int unit, error, s, i;
+	int unit, error = 0, s, i;
 
 	mb = mp_softc[unit=MPUNIT(minor(dev))].ms_mb;
 	if (mb == 0)
-		return (EEXIST);
+		 return (EEXIST);
 	dl = &mb->mb_dl;
 	error = 0;
 	switch (cmd) {
@@ -1381,8 +1394,14 @@ mpdlioctl(dev, cmd, data, flag)
 		error = mpdlwait(dl);
 		break;
 	case MPIOSTARTDL:
+		s = spl8();
 		while (mpdlbusy)
-			sleep((caddr_t)&mpdlbusy, PZERO+1);
+			if (error = tsleep((caddr_t)&mpdlbusy,
+			    (PZERO+1) | PCATCH, devioc, 0))
+				break;
+		splx(s);
+		if (error)
+			break;
 		mpdlbusy++;
 		/* initialize the downloading interface */
 		mpbogus.magic = MPMAGIC;
@@ -1400,20 +1419,13 @@ mpdlioctl(dev, cmd, data, flag)
 		mb->mb_diagswitch[1] = 'P';
 		s = spl8();
 		*(u_short *)mpinfo[unit]->ui_addr = 2;
-		timeout(mpdltimeout, (caddr_t)mb, 30*hz);
-		sleep((caddr_t)&mb->mb_status, PZERO+1);
+		error = tsleep((caddr_t)&mb->mb_status, (PZERO+1) | PCATCH,
+		    devio, 30*hz);
 		splx(s);
-		if (mb->mb_status == MP_DLOPEN) {
-			untimeout(mpdltimeout, (caddr_t)mb);
-		} else if (mb->mb_status == MP_DLTIME) {
-			mpbogus.status = 0;
+		if (error == EWOULDBLOCK)
 			error = ETIMEDOUT;
-		} else {
+		if (error)
 			mpbogus.status = 0;
-			error = ENXIO;
-			log(LOG_ERR, "mp%d: start download: unknown status %x",
-			    unit, mb->mb_status);
-		}
 		bzero((caddr_t)mb->mb_port, sizeof (mb->mb_port));
 		break;
 	case MPIORESETBOARD:
@@ -1503,14 +1515,6 @@ mpdlintr(mpcc)
 	}
 }
 
-mpdltimeout(mp)
-	struct mblok *mp;
-{
-
-	mp->mb_status = MP_DLTIME;
-	wakeup((caddr_t)&mp->mb_status);
-}
-
 /* 
  * Wait for a transfer to complete or a timeout to occur.
  */
@@ -1522,9 +1526,12 @@ mpdlwait(dl)
 	s = spl8();
 	dl->mpdl_status = EVSTATUS_GO;
 	while (dl->mpdl_status != EVSTATUS_FREE) {
-		sleep((caddr_t)&dl->mpdl_status, PZERO+1);
+		error = tsleep((caddr_t)&dl->mpdl_status, (PZERO+1) | PCATCH,
+		    devout, 0);
 		if (mpdlerr == MP_DLERROR)
 			error = EIO;
+		if (error)
+			break;
 	}
 	splx(s);
 	return (error);

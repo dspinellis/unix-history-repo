@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ik.c	7.4 (Berkeley) %G%
+ *	@(#)ik.c	7.5 (Berkeley) %G%
  */
 
 #include "ik.h"
@@ -194,6 +194,7 @@ ikclose(dev, flag)
 		(void) ikcommand(dev, PS_DETACH, 1);	/* auto detach */
 	sc->is_uid = -1;
 	untimeout(iktimer, (caddr_t)unit);
+	return (0);
 }
 
 ikread(dev, uio)
