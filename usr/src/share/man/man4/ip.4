@@ -1,0 +1,70 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ip.4	5.1 (Berkeley) %G%
+.\"
+.TH IP 4P "25 March 1982"
+.UC 5
+.SH NAME
+ip \- Internet Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netinet/in.h>
+.PP
+.B s = socket(AF_INET, SOCK_RAW, 0);
+.SH DESCRIPTION
+IP is the transport layer protocol used
+by the Internet protocol family.  It may be accessed
+through a \*(lqraw socket\*(rq when developing new protocols, or
+special purpose applications.  IP sockets are connectionless,
+and are normally used with the
+.I sendto 
+and
+.I recvfrom 
+calls, though the
+.IR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the 
+.IR read (2)
+or
+.IR recv (2)
+and 
+.IR write (2)
+or
+.IR send (2)
+system calls may be used).
+.PP
+Outgoing packets automatically have an IP header prepended to
+them (based on the destination address and the protocol
+number the socket is created with).
+Likewise, incoming packets have their IP header stripped
+before being sent to the user.
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 15
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP 15
+[ENOTCONN]
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP 15
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 15
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.SH SEE ALSO
+send(2), recv(2), intro(4N), inet(4F)
+.SH BUGS
+One should be able to send and receive ip options.
+.PP
+The protocol should be settable after socket creation.
