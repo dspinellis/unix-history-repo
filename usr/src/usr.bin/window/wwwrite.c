@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.6 83/08/19";
+static	char *sccsid = "@(#)wwwrite.c	3.7 83/08/23";
 #endif
 
 #include "ww.h"
@@ -32,6 +32,7 @@ int n;
 				register char *win;
 				char *touched;
 
+				c |= w->ww_modes << WWC_MSHIFT;
 				if (w->ww_insert) {
 					wwinschar(w, w->ww_scroll + w->ww_cur.r,
 						w->ww_cur.c, c);
@@ -40,7 +41,7 @@ int n;
 				i = w->ww_w.nc - w->ww_cur.c - 1;
 				bp = bq = &w->ww_buf[w->ww_scroll+w->ww_cur.r]
 					[w->ww_cur.c];
-				bp++->c_w = c | w->ww_modes << WWC_MSHIFT;
+				bp++->c_w = c;
 				while (n > 0 && --i >= 0 && !ISCTRL(*p)) {
 					n--;
 					bp++->c_w = *p++ & 0x7f
