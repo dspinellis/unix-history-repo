@@ -223,6 +223,11 @@ try_connect:
 		}
 		if((rem < 0) && errno == ECONNREFUSED) {
 			use_kerberos = 0;
+			sp = getservbyname("shell", "tcp");
+			if(sp == NULL) {
+				fprintf(stderr, "unknown service shell/tcp\n");
+				exit(1);
+			}
 			old_warning("remote host doesn't support Kerberos");
 			goto try_connect;
 		}
@@ -361,6 +366,6 @@ int
 old_warning(str)
 	char	*str;
 {
-	fprintf(stderr,"Warning: %s, using standard rsh", str);
+	fprintf(stderr,"Warning: %s, using standard rsh\n", str);
 }
 #endif
