@@ -1,0 +1,851 @@
+\input texinfo.tex @c -*- texinfo -*-
+@c %**start of header
+@setfilename features.info
+@settitle Bash Features
+@c %**end of header
+
+@setchapternewpage odd
+@synindex fn cp
+@set BashFeatures
+@ifinfo
+@format
+This text is a cursory description of the features that are present in
+the Bash shell.
+
+Copyright (C) 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Bash; see the file COPYING.  If not, write to the Free
+Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+@end format
+@end ifinfo
+
+@titlepage
+@sp 10
+@center @titlefont{Bash Features}
+@center Cursory Documentation for Bash
+@center Brian Fox, Free Software Foundation
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1991 Free Software Foundation, Inc.
+@end titlepage
+
+@ifinfo
+@node Top
+@top Bash Features
+
+Bash contains features that appear in other popular shells, and some
+features that only appear in Bash.  Some of the shells that Bash has
+borrowed concepts from are the Bourne Shell (@file{sh}), the Korn Shell
+(@file{ksh}), and the C-shell (@file{csh} and its successor,
+@file{tcsh}). The following menu breaks the features up into
+categories based upon which one of these other shells inspired the
+feature.
+
+@menu
+* Bourne Shell Features::	Features originally found in the
+				Bourne shell.
+
+* T-Csh Features::		Features originally found in the
+				Berkeley C-Shell.
+
+* Korn Shell Features::		Features originally found in the Korn
+				Shell.
+
+* Bash Specific Features::	Features found only in the Bash Shell.
+
+* Using History Interactively::	Chapter dealing with history expansion
+				rules.
+
+* Command Line Editing::	Chapter describing the command line
+				editing features.
+
+* Variable Index::		Quick reference helps you find the
+				variable you want.
+
+* Concept Index::		General index for this manual.
+@end menu
+@end ifinfo
+
+@node Bourne Shell Features
+@chapter Bourne Shell Style Features
+
+Bash is an acronym for Bourne Again SHell, the traditional Unix shell
+written by Stephen Bourne.  All of the Bourne shell builtin commands are
+available in Bash, and the rules for evaluation and quoting are taken
+from the Posix 1003 specification for the `standard' Unix shell.
+
+The shell builtin control features are briefly discussed here.
+
+@menu
+* Looping Constructs::		Shell commands for iterative action.
+* Conditional Constructs::	Shell commands for conditional execution.
+@end menu
+
+@node Looping Constructs
+@section Looping Constructs
+
+Note that wherever you see an @samp{;} in the description of a
+command's syntax, it can be replaced indiscriminately with newlines.
+
+Bash supports the following looping constructs.
+
+@ftable @code
+@item until
+The syntax of the @code{until} command is:
+@example
+until @var{test-commands}; do @var{consequent-commands}; done
+@end example
+Execute @var{consequent-commands} as long as the final command in
+@var{test-commands} has an exit status which is not zero.
+
+@item while
+The syntax of the @code{while} command is:
+@example
+while @var{test-commands}; do @var{consequent-commands}; done
+@end example
+
+Execute @var{consequent-commands} as long as the final command in
+@var{test-commands} has an exit status of zero.
+
+@item for
+The syntax of the for command is:
+
+@example
+for @var{name} [in @var{words} ...]; do @var{commands}; done
+@end example
+Execute @var{commands} for each member in @var{words}, with @var{name}
+bound to the current member.  If ``@code{in @var{words}}'' is not
+present, ``@code{in "$@@"}'' is assumed.
+
+@end ftable
+
+@node Conditional Constructs
+@section Conditional Constructs
+
+@ftable @code
+@item if
+The syntax of the @code{if} command is:
+
+@example
+if @var{test-commands}; then
+  @var{consequent-commands};
+[else @var{alternate-consequents};]
+fi
+@end example
+
+Execute @var{consequent-commands} only if the final command in
+@var{test-commands} has an exit status of zero.  If ``@code{else
+@var{alternate-consequents}}'' is present, and the final command in
+@var{test-commands} has a non-zero exit status, then execute
+@var{alternate-consequents}.
+
+@item case
+The syntax of the @code{case} command is:
+
+@example
+@code{case @var{word} in [@var{pattern} [| @var{pattern}]...) @var{commands} ;;]... esac}
+@end example
+
+Selectively execute @var{commands} based upon @var{word} matching
+@var{pattern}.  The `@code{|}' is used to separate multiple patterns.
+
+Here is an example using @code{case} in a script that could be used to
+describe an interesting feature of an animal:
+
+@example
+echo -n "Enter the name of an animal:"
+read ANIMAL
+echo -n "The $ANIMAL has "
+case $ANIMAL in
+  horse | dog | cat) echo -n "four";;
+  man | kangaroo ) echo -n "two";;
+  *) echo -n "an unknown number of";;
+esac
+echo "legs."
+@end example
+
+@end ftable
+
+
+@node T-Csh Features
+@chapter (T)C-Shell Style Features
+
+The C-Shell @dfn{@code{csh}} was created by Bill Joy at UC Berkeley.  It
+is generally considered to have better features for interactive use than
+the Bourne shell.  Some of the @code{csh} features present in Bash
+include job control, history expansion, `protected' redirection, and
+several variables for controlling the interactive behaviour of the shell
+(e.g. @code{ignoreeof}).
+
+For details on history expansion, @pxref{Using History Interactively}.
+
+Bash has tilde (~) expansion, similar, but not identical, to that of
+@code{csh}.  The following table shows what unquoted words beginning
+with a tilde expand to.
+
+@table @code
+@item ~
+The current value of @code{$HOME}.
+@item ~/foo
+@code{$HOME}/foo
+
+@item ~fred/foo
+The subdirectory @code{foo} of the home directory of the user named
+@code{fred}.
+
+@item ~+/foo
+@code{$PWD}/foo
+
+@item ~-
+@code{$OLDPWD}/foo
+@end table
+
+Here is a list of the commands and variables whose meanings were taken
+from @code{csh}.
+
+@ftable @code
+@item pushd
+@example
+pushd [@var{dir} | @var{+n}]
+@end example
+
+Save the current directory on a list and then CD to DIR.  With no
+arguments, exchanges the top two directories.
+
+@table @code
+@item +@var{n}
+Brings the @var{n}th directory to the top of the list by rotating.
+@item @var{dir}
+Makes the current working directory be the top of the stack, and then
+cd's to DIR.  You can see the saved directory list with the `dirs'
+command.
+@end table
+
+@item popd
+@example
+popd [+@var{n}]
+@end example
+
+Pops the directory stack, and cd's to the new top directory.  The
+elements are numbered from 0 starting at the first directory listed with
+@code{dirs}; i.e. @code{popd} is equivalent to @code{popd 0}.
+
+@item dirs
+@example
+dirs
+@end example
+Display the list of currently remembered directories.  Directories
+find their way onto the list with the @code{pushd} command; you can get
+back up through the list with the @code{popd} command.
+
+@item history
+@example
+history [@var{n}] [ [-w -r] [@var{filename}]]
+@end example
+
+Display the history list with line numbers.  Lines listed with
+with a @code{*} have been modified.  Argument of @var{n} says to list only
+the last @var{n} lines.  Argument @code{-w} means write out the current
+history file.  @code{-r} means to read it instead.  If @var{filename} is
+given, then use that file, else if @code{$HISTFILE} has a value, use
+that, else use @file{~/.bash_history}.
+
+@item ignoreeof
+If this variable is set, it represents the number of consecutive
+@code{EOF}s Bash will read before exiting.  By default, Bash will exit
+upon reading an @code{EOF} character.
+@end ftable
+
+@node Korn Shell Features
+@chapter Korn Shell Style Features
+
+@ftable @code
+@item fc
+
+@example
+@code{fc [-e @var{ename}] [-nlr] [@var{first}] [@var{last}]}
+@code{fc -s [@var{pat=rep}] [@var{command}]}
+@end example
+
+Fix Command.  In the first form, a range of commands from @var{first} to
+@var{last} is selected from the history list.  @var{First} and/or
+@var{last} may be specified as a string (to locate the most recent
+command beginning with that string) or as a number (an index into the
+history list, where a negative number is used as an offset from the
+current command number).  If @var{last} is not specified it is set to
+@var{first}.  If @var{first} is not specified it is set to the previous
+command for editing and -16 for listing.  If the @code{-l} flag is
+given, the commands are listed on standard output.  The @code{-n} flag
+suppresses the command numbers when listing.  The @code{-r} flag
+reverses the order of the listing.  Otherwise, the editor given by
+@var{ename} is invoked on a file containing those commands.  If
+@var{ename} is not given, the value of the following variable expansion
+is used: @code{$@{FCEDIT:-$@{EDITOR:-vi@}}.  This says to use the
+value of the @code{FCEDIT} variable if set, or the value of the
+@code{EDITOR} variable if that is set, or @code{vi} if neither is set.
+When editing is complete, the edited commands are echoed and executed.
+
+In the second form, @var{command} is re-executed after the substitution
+@var{old=new} is performed.
+
+A useful alias to use with the @code{fc} command is @code{r='fc -s'}, so
+that typing @code{r cc} runs the last command beginning with @code{cc}
+and typing @code{r} re-executes the last command.
+
+@item typeset
+The @code{typeset} command is supplied for compatibility with the Korn
+shell; however, it has been made obsolete by the presence of the
+@code{declare} command, documented with the Bash specific features.
+
+@item type
+Bash's @code{type} command is a superset of the @code{type} found in
+Korn shells; @xref{Bash Builtins} for details.
+
+@end ftable
+
+@node Bash Specific Features
+@chapter Bash Specific Features
+
+@menu
+* Command Line Options::	Command line options that you can give
+				to Bash.
+* The Set Builtin::		This builtin is so overloaded it
+				deserves its own section.
+* Is This Shell Interactive?::	Determining the state of a running Bash.
+* Printing a Prompt::		Controlling the PS1 string.
+* Bash Startup Files::		When and how Bash executes scripts.
+* Bash Builtins::		Table of builtins specific to Bash.
+* Bash Variables::		List of variables that exist in Bash.
+@end menu
+
+@node Command Line Options
+@section Shell Command Line Options
+
+Along with the single character shell command-line options (@xref{The
+Set Builtin,,,}) there are several other options that you can use.
+These options must appear on the command line before the single
+character command options to be recognized.
+
+@table @code
+@item -norc
+Don't load ~/.bashrc init file. (Default if shell name is `sh').
+
+@item -rcfile @var{filename}
+Load @var{filename} init file (instead @file{~/.bashrc}).
+
+@item -noprofile
+Don't load @file{~/.bash_profile} (nor @file{/etc/profile}).
+
+@item -version
+Display the version number of this shell.
+
+@item -login
+Make this shell act as if it were directly invoked from login.
+This is equivalent to ``exec - bash'' but can be issued from
+another shell, such as csh.  If you wanted to replace your
+current login shell with a bash login shell, you would say
+``exec bash -login''.
+
+@item -nobraceexpansion
+Do not perform curly brace expansion (foo@{a,b@} @var{->} fooa foob).
+
+@item -nolinediting
+Do not use the GNU Readline library to read interactive text lines.
+
+@end table
+
+@node The Set Builtin
+@section The Set Builtin
+
+This builtin is so overloaded that it deserves its own section.  So here
+it is.
+
+@ftable @code
+@item set
+@example
+set [-aefhknotuvxldH] [@var{arg} ...]
+@end example
+
+@table @code
+@item -a
+Mark variables which are modified or created for export.
+
+@item -e
+Exit immediately if a command exits with a non-zero status.
+
+@item -f
+Disable file name generation (globbing).
+
+@item -k
+All keyword arguments are placed in the environment for a command, not
+just those that precede the command name.
+
+@item -m
+Job control is enabled.
+
+@item -n
+Read commands but do not execute them.
+
+@item -o @var{option-name}
+
+Set the variable corresponding to @var{option-name}:
+
+@table @code
+@item allexport
+same as -a.
+
+@item braceexpand
+the shell will perform brace expansion.
+
+@item emacs
+use an emacs-style line editing interface.
+
+@item errexit
+same as -e.
+
+@item histexpand
+same as -H.
+
+@item ignoreeof
+the shell will not exit upon reading EOF.
+
+@item monitor
+same as -m.
+
+@item noclobber
+disallow redirection to existing files.
+
+@item noexec
+same as -n.
+
+@item noglob
+same as -f.
+
+@item nohash
+same as -d.
+
+@item notify
+notify of job termination immediately.
+
+@item nounset
+same as -u.
+
+@item verbose
+same as -v.
+
+@item vi
+use a vi-style line editing interface.
+
+@item xtrace
+same as -x.
+@end table
+
+@item -t
+Exit after reading and executing one command.
+
+@item -u
+Treat unset variables as an error when substituting.
+
+@item -v
+Print shell input lines as they are read.
+
+@item -x
+Print commands and their arguments as they are executed.
+
+@item -l
+Save and restore the binding of the @var{name} in a @code{for} command.
+
+@item -d
+Disable the hashing of commands that are looked up for execution.
+Normally, commands are remembered in a hash table, and once found, do
+not have to be looked up again.
+
+@item -H
+Enable ! style history substitution.  This flag is on by default.
+@end table
+
+Using @samp{+} rather than @samp{-} causes these flags to be turned off.
+The flags can also be used upon invocation of the shell.  The current
+set of flags may be found in @code{$-}.  The remaining @var{arg}s are
+positional parameters and are assigned, in order, to @code{$1},
+@code{$2}, .. @code{$9}.  If no @var{arg}s are given, all shell
+variables are printed.
+@end ftable
+
+@node Is This Shell Interactive?
+@section Is This Shell Interactive?
+
+You may wish to determine within a startup script whether Bash is
+running interactively or not.  To do this, you examine the variable
+@code{$PS1}; it is unset in non-interactive shells, and set in
+interactive shells.  Thus:
+
+@example
+if [ "$PS1" = "" ]; then
+  echo "This shell is not interactive"
+else
+  echo "This shell is interactive"
+fi
+@end example
+
+You can ask an interactive Bash to not run your @file{~/.bashrc} file
+with the @code{-norc} flag.  You can change the name of the
+@file{~/.bashrc} file to any other file name with @code{-rcfile
+@var{filename}}.  You can ask Bash to not run your
+@file{~/.bash_profile} file with the @code{-noprofile} flag.
+
+@node Printing a Prompt
+@section Controlling the Prompt
+
+The value of the variable @code{$PROMPT_COMMAND} is examined just before
+Bash prints each toplevel prompt.  If it is set and non-null, then the
+value is executed just as if you had typed it on the command line.
+
+In addition, the following table describes the special characters which
+can appear in the @code{PS1} variable:
+
+@table @code
+@item \t
+the time.
+@item \d
+the date.
+@item \n
+CRLF.
+@item \s
+the name of the shell.
+@item \w
+the current working directory.
+@item \W
+the last element of PWD.
+@item \u
+your username.
+@item \h
+the hostname.
+@item \#
+the command number of this command.
+@item \!
+the history number of this command.
+@item \<octal>
+the character code in octal.
+@item \\
+a backslash.
+@end table
+
+@node Bash Startup Files
+@section Bash Startup Files
+
+When and how Bash executes @file{~/.bash_profile}, @file{~/.bashrc}, and
+@file{~/.bash_logout}.
+
+@example
+For Login shells:
+
+    On logging in:
+       If @file{/etc/profile} exists, then source it.
+
+       If @file{~/.bash_profile} exists, then source it,
+          else if @file{~/.bash_login} exists, then source it,
+             else if @file{~/.profile} exists, then source it.
+
+    On logging out:
+       If @file{~/.bash_logout} exists, source it.
+
+For non-login interactive shells:
+    On starting up:
+       If @file{~/.bashrc} exists, then source it.
+
+For non-interactive shells:
+    On starting up:
+       If the environment variable @code{ENV} is non-null, source the
+       file mentioned there.
+@end example
+
+So, typically, your @code{~/.bash_profile} contains the line
+@example
+@code{if [ -f @file{~/.bashrc} ]; then source @file{~/.bashrc}; fi}
+@end example
+@noindent
+after (or before) any login specific initializations.
+
+@node Bash Builtins
+@section Bash Builtin Commands
+
+@ftable @code
+@item builtin
+@example
+builtin [@var{shell-builtin} [@var{args}]]
+@end example
+Run a shell builtin.  This is useful when you wish to rename a
+shell builtin to be a function, but need the functionality of the
+builtin within the function itself.
+
+@item declare
+@example
+declare [-[frxi]] @var{name}[=@var{value}]
+@end example
+Declare variables and/or give them attributes.  If no @var{name}s are
+given, then display the values of variables instead.  @code{-f} means to
+use function names only.  @code{-r} says to make @var{name}s readonly.
+@code{-x} says to make @var{name}s export.  @code{-i} says that the variable
+is to be treated as an integer; arithmetic evaluation (see @code{let}) will
+be done when the variable is assigned to.  Using @code{+} instead of @code{-}
+turns off the attribute instead.  When used in a function, makes @var{name}s
+local, as with the @code{local} command.
+
+@item type
+@example
+type [-all] [-type | -path] [@var{name} ...]
+@end example
+For each @var{name}, indicate how it would be interpreted if used as a
+command name.
+
+If the @code{-type} flag is used, @code{type} returns a single word
+which is one of ``alias'', ``function'', ``builtin'', ``file'' or
+``'', if @var{name} is an alias, shell function, shell builtin, disk
+file, or unfound, respectively.
+
+If the @code{-path} flag is used, @code{type} either returns the name
+of the disk file that would be exec'ed, or nothing if @code{-type} wouldn't
+return ``file''.
+
+If the @code{-all} flag is used, returns all of the places that contain
+an executable named @var{file}.  This includes aliases and functions,
+if and only if the @code{-path} flag is not also used.
+
+@item enable
+@example
+enable [-n] [@var{name} ...]
+@end example
+Enable and disable builtin shell commands.  This allows you to use a
+disk command which has the same name as a shell builtin.  If @code{-n}
+is used, the @var{name}s become disabled.  Otherwise @var{name}s are
+enabled.  For example, to use the @code{test} found on your path instead
+of the shell builtin version, you type @w{@code{enable -n test}}.
+
+@item help
+@example
+help [@var{pattern}]
+@end example
+Display helpful information about builtin commands.  If
+@var{pattern} is specified, gives detailed help on all commands
+matching @var{pattern}, otherwise a list of the builtins is
+printed.
+
+@item command
+@example
+command [@var{command} [@var{args} ...]]
+@end example
+Runs @var{command} with @var{arg} ignoring shell functions.  If you have
+a shell function called @code{ls}, and you wish to call the command
+@code{ls}, you can say ``command ls''.
+
+@item hash
+@example
+hash [-r] [@var{name}]
+@end example
+For each @var{name}, the full pathname of the command is determined
+and remembered.  The @code{-r} option causes the shell to forget all
+remembered locations.  If no arguments are given, information
+about remembered commands is presented.
+
+@item local
+@example
+local @var{name}[=@var{value}]
+@end example
+Create a local variable called @var{name}, and give it @var{value}.
+@code{local} can only be used within a function; it makes the variable
+@var{name} have a visible scope restricted to that function and its
+children.
+
+@item readonly
+@example
+readonly [-f] [@var{name} ...]
+@end example
+The given @var{name}s are marked readonly and the values of these
+@var{name}s may not be changed by subsequent assignment.  If the -f
+option is given, the functions corresponding to the @var{name}s are so
+marked.  If no arguments are given, a list of all readonly names is
+printed.
+
+@item ulimit
+@example
+ulimit [-acdmstfpn [limit]]
+@end example
+Ulimit provides control over the resources available to processes
+started by the shell, on systems that allow such control.  If an
+option is given, it is interpreted as follows:
+@table @code
+@item -a
+all current limits are reported.
+
+@item -c
+the maximum size of core files created.
+
+@item -d
+the maximum size of a process's data segment.
+
+@item -m
+the maximum resident set size.
+
+@item -s
+the maximum stack size.
+
+@item -t
+the maximum amount of cpu time in seconds.
+
+@item -f
+the maximum size of files created by the shell.
+
+@item -p
+the pipe buffer size.
+
+@item -n
+the maximum number of open file descriptors.
+
+@end table
+
+If @var{limit} is given, it is the new value of the specified resource.
+Otherwise, the current value of the specified resource is printed.  If
+no option is given, then @code{-f} is assumed.  Values are in 1k
+increments, except for @code{-t}, which is in seconds, and @code{-p},
+which is in increments of 512 bytes.
+
+@end ftable
+
+@node Bash Variables
+@section Bash Variables
+@table @code
+
+@vindex history_control
+@item history_control
+
+Set to a value of "ignorespace", it means don't enter lines which begin
+with a SPC on the history list.  Set to a value of "ignoredups", it
+means don't enter lines which match the last entered line.  Unset, or
+any other value than those above mean to save all lines on the history
+list.
+
+@vindex HISTFILE
+@item HISTFILE
+The name of the file that the command history is saved in.
+
+@vindex HISTSIZE
+@item HISTSIZE
+If set, this is the maximum number of commands to remember in the
+history.
+
+@vindex histchars
+@item histchars
+Up to three characters which control history expansion, quick
+substitution, and tokenization.  The first character is the
+@dfn{history-expansion-char}, that is, the character which signifies the
+start of a history expansion, normally `!'.  The second character is the
+character which signifies `quick substitution' when seen as the first
+character on a line, normally `^'.  The optional third character is the
+character which signifies the remainder of the line is a comment, when
+found as the first character of a word, usually `#'.
+
+@vindex hostname_completion_file
+@item hostname_completion_file
+Contains the name of a file in the same format as @file{/etc/hosts} that
+should be read when the shell needs to complete a hostname.  You can
+change the file interactively; the next time you want to complete a
+hostname Bash will add the contents of the new file to the already
+existing database.
+
+@vindex MAILCHECK
+@item MAILCHECK
+How often (in seconds) that the shell should check for mail
+in the file(s) specified in @code{MAILPATH}.
+
+@vindex MAILPATH
+@item MAILPATH
+Colon separated list of pathnames to check for mail in.  You can
+also specify what message is printed by separating the pathname from
+the message with a @samp{?}.  @code{$_} stands for the name of the current
+mailfile.  For example:
+
+@example
+MAILPATH='/usr/spool/mail/bfox?"You have mail":~/shell-mail?"$_ has mail!"'
+@end example
+
+@vindex ignoreeof
+@item ignoreeof
+@vindex  IGNOREEOF
+@itemx IGNOREEOF
+Controls the action of the shell on receipt of an @code{EOF} character
+as the sole input.  If set, then the value of it is the number
+of @code{EOF} characters that can be seen in a row as sole input characters
+before the shell will exit.  If the variable exists but does not
+have a numeric value (or has no value) then the default is 10.
+if the variable does not exist, then @code{EOF} signifies the end of 
+input to the shell.  This is only in effect for interactive shells.
+
+@vindex auto_resume
+@item auto_resume
+This variable controls how the shell interacts with the user and
+job control.  If this variable exists then single word simple
+commands without redirects are treated as candidates for resumption
+of an existing job.  There is no ambiguity allowed; if you have
+more than one job beginning with the string that you have typed, then
+the most recently accessed job will be selected.
+
+@vindex no_exit_on_failed_exec
+@item no_exit_on_failed_exec
+If this variable exists, the shell will not exit in the case that it
+couldn't execute the file specified in the @code{exec} command.
+
+@vindex PROMPT_COMMAND
+@item PROMPT_COMMAND
+If present, this contains a string which is a command to execute
+before the printing of each toplevel prompt.
+
+@vindex nolinks
+@item nolinks
+If present, says not to follow symbolic links when doing commands
+that change the current working directory.  By default, bash follows
+the logical chain of directories when performing @code{cd} type commands.
+
+For example, if @file{/usr/sys} is a link to @file{/usr/local/sys} then:
+
+@example
+cd /usr/sys; echo $PWD -> /usr/sys
+cd ..; pwd -> /usr
+@end example
+
+@noindent
+If @code{nolinks} exists, then:
+
+@example
+cd /usr/sys; echo $PWD -> /usr/local/sys
+cd ..; pwd -> /usr/local
+@end example
+@end table
+@cindex History, how to use
+@include ../lib/readline/doc/hsuser.texinfo
+@cindex Readline, how to use
+@include ../lib/readline/doc/rluser.texinfo
+
+@node Variable Index
+@appendix Variable Index
+@printindex vr
+
+@node Concept Index
+@appendix Concept Index
+@printindex cp
+
+@contents
+@bye
