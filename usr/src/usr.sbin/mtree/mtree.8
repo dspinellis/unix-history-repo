@@ -1,12 +1,10 @@
 .\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mtree.8	5.8 (Berkeley) %G%
+.\"     @(#)mtree.8	5.9 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt MTREE 8
 .Os
@@ -19,7 +17,8 @@
 .Op Fl f Ar spec
 .Op Fl p Ar path
 .Sh DESCRIPTION
-.Nm Mtree
+The utility
+.Nm mtree
 compares a directory hierarchy against a specification for a
 directory hierarchy.
 By default, the specification is read from the standard input.
@@ -32,31 +31,32 @@ characteristics do not match those of the specification, or which are
 missing from either the specification or the tree.
 .Pp
 The options are as follows:
-.Tp Fl c
+.Bl -tag -width Fl c
+.It Fl c
 Print a specification for the tree to standard output.
-.Tp Fl d
+.It Fl d
 Ignore everything except directory type files.
-.Tp Fl e
+.It Fl e
 Don't object to files that are in the tree but not in the specification.
-.Tp Fl f
+.It Fl f
 Read the specification from
 .Ar file  ,
 instead of from standard input.
-.Tp Fl p
+.It Fl p
 Traverse the tree rooted in
 .Ar path  ,
 instead of the current directory.
-.Tp Fl r
+.It Fl r
 Remove any files in the tree that are not described in the
 specification.
-.Tp Fl u
+.It Fl u
 Modify the owner, group, and permissions of existing files to match
 the specification, as well as create any missing directories.
 Owner, group, and permissions must all be specified for missing
 directories to be created.
-.Tp Fl x
+.It Fl x
 Don't descend below any mount points.
-.Tp
+.El
 .Pp
 Specifications are mostly composed of ``keywords'', i.e. strings that
 that specify values relating to files.
@@ -64,48 +64,48 @@ No keywords have default values, and if a keyword has no set value no
 checks based on it are performed.
 .Pp
 Currently supported keywords are as follows:
-.Tw Cm
-.Tp Cm cksum
+.Bl -tag -width Cm
+.It Cm cksum
 The checksum of the file using the algorithm specified by
 the program
 .Xr cksum  1  .
-.Tp Cm ignore
+.It Cm ignore
 Causes the hierarchy below the file to be ignored.
-.Tp Cm group
+.It Cm group
 The group of the file; may be either numeric or symbolic.
-.Tp Cm mode
+.It Cm mode
 The current file's permissions as an absolute (octal) or symbolic
 value (see
 .Xr chmod  1  ) .
-.Tp Cm nlink
+.It Cm nlink
 The number of hard links the file is expected to have.
-.Tp Cm owner
+.It Cm owner
 The owner of the file; may be either numeric or symbolic.
-.Tp Cm size
+.It Cm size
 The size, in bytes, of the file.
-.Tp Cm link
+.It Cm link
 The file a symbolic link is expected to reference.
-.Tp Cm time
+.It Cm time
 The last modification time of the file.
-.Tp Cm type
+.It Cm type
 The type of the file; may be set to any one of the following:
-.Tw Cm
-.Tp Cm block
+.Bl -tag -width Cm
+.It Cm block
 block special device
-.Tp Cm char
+.It Cm char
 character special device
-.Tp Cm dir
+.It Cm dir
 directory
-.Tp Cm fifo
+.It Cm fifo
 fifo
-.Tp Cm file
+.It Cm file
 regular file
-.Tp Cm link
+.It Cm link
 symbolic link
-.Tp Cm socket
+.It Cm socket
 socket
-.Tp
-.Tp
+.El
+.El
 .Pp
 There are four types of lines in a specification.
 .Pp
@@ -152,11 +152,10 @@ mark (``#'') are ignored.
 exits with a status of 0 on success and >0 if an error occurred or the
 tree did not match the specification.
 .Sh FILES
-.Dw /etc/mtree
-.Di L
-.Dp Pa /etc/mtree
+.Bl -tag -width /etc/mtree -compact
+.It Pa /etc/mtree
 system specification directory
-.Dp
+.El
 .Sh SEE ALSO
 .Xr chmod 1 ,
 .Xr chown 1 ,
@@ -175,11 +174,11 @@ The
 .Cm time
 keyword should be specifiable in human readable terms.
 .Sh EXAMPLE
-.Ds I
+.Bd -literal -offset indent -compact
 #	  fs: /a/staff/rick/mybin
 #	  by: rick
 #	date: Fri May 25 12:26:57 1990
-.sp
+
 /set group=staff mode=0555 nlink=1 owner=rick type=file
 [ 		nlink=2 size=6144
 adb		size=53248
@@ -187,13 +186,16 @@ df		group=operator mode=02555 size=20480
 ps		group=kmem mode=02555 size=54272
 rcp		owner=root mode=04555 size=79872
 test		nlink=2 size=6144
-.sp
+
 /set group=wheel mode=0444 nlink=1 owner=rick type=file
 manpages	type=dir mode=0775 nlink=2 size=1024
 adb.man	size=9473
 df.man	size=5263
 tar.man	size=3324
 \&..
-.De
+.Ed
 .Sh HISTORY
-4.3 Reno BSD.
+The
+.Nm mtree
+utility appeared in
+.Bx 4.3 Reno .
