@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.7 %G%";
+static char *SccsId = "@(#)lex.c	1.8 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -69,6 +69,8 @@ setfile(name, isedit)
 	edit = isedit;
 	strncpy(efile, name, 128);
 	editfile = efile;
+	if (name != mailname)
+		strcpy(mailname, name);
 	mailsize = fsize(ibuf);
 	if ((otf = fopen(tempMesg, "w")) == NULL) {
 		perror(tempMesg);
@@ -245,6 +247,15 @@ execute(linebuf)
 	}
 
 	/*
+	 * See if we should execute the command -- if a conditional
+	 * we always execute it, otherwise, check the state of cond.
+	 */
+
+	if ((com->c_argtype & C) == 0)
+		if (cond == CRCV && !rcvmode || cond == CSEND && rcvmode)
+			return(0);
+
+	/*
 	 * Special case so that quit causes a return to
 	 * main, who will call the quit code directly.
 	 * If we are in a source file, just unstack.
@@ -286,7 +297,7 @@ execute(linebuf)
 		return(0);
 	}
 	e = 1;
-	switch (com->c_argtype & ~(P|I|M|W)) {
+	switch (com->c_argtype & ~(C|P|I|M|T|W)) {
 	case MSGLIST:
 		/*
 		 * A message list defaulting to nearest forward
@@ -372,7 +383,7 @@ execute(linebuf)
 			muvec[1] = 0;
 			type(muvec);
 		}
-	if (!sourcing)
+	if (!sourcing && (com->c_argtype & T) == 0)
 		sawcom = 1;
 	return(0);
 }
@@ -482,6 +493,7 @@ announce(pr)
 	int vec[2], mdot;
 	extern char *version;
 	register struct message *mp;
+	register int u, n;
 
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MNEW)
@@ -504,6 +516,16 @@ announce(pr)
 		printf("%d messages", msgCount);
 	if (readonly)
 		printf(" [Read only]");
+	for (mp = &message[0], n = 0, u = 0; mp < &message[msgCount]; mp++) {
+		if (mp->m_flag & MNEW)
+			n++;
+		if ((mp->m_flag & MREAD) == 0)
+			u++;
+	}
+	if (n > 0)
+		printf(" %d new", n);
+	if (u-n > 0)
+		printf(" %d unread", u);
 	printf("\n");
 	headers(vec);
 	dot = &message[mdot - 1];
