@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.16	82/02/15	*/
+/*	uipc_proto.c	4.17	82/03/03	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -47,7 +47,7 @@ int	rimp_usrreq(),rimp_output(),rimp_ctlinput();
  */
 #include "pup.h"
 #if NPUP > 0
-int	rpup_usrreq(),rpup_output(),rpup_ctlinput();
+int	rpup_output(),rpup_ctlinput();
 #endif
 
 /*
@@ -118,7 +118,7 @@ struct protosw protosw[] = {
 ,
 { SOCK_RAW,	PF_PUP,		0,		PR_ATOMIC|PR_ADDR,
   0,		rpup_output,	rpup_ctlinput,	0,
-  rpup_usrreq,
+  raw_usrreq,
   0,		0,		0,		0,
 }
 #endif
