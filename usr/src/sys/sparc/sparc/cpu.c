@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.c	8.2 (Berkeley) %G%
+ *	@(#)cpu.c	8.3 (Berkeley) %G%
  *
- * from: $Header: cpu.c,v 1.15.1.1 93/09/27 20:59:04 torek Exp $ (LBL)
+ * from: $Header: cpu.c,v 1.16.1.1 93/09/30 22:38:50 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -132,9 +132,6 @@ cpu_attach(parent, dev, aux)
 		panic("bad cache line size %d", l);
 	cacheinfo.c_l2linesize = i;
 	vactype = VAC_WRITETHROUGH;
-	printf("%s: %d byte write-through cache, %d bytes/line, %cw flush\n",
-	    dev->dv_xname, cacheinfo.c_totalsize, l,
-	    cacheinfo.c_hwflush ? 'h' : 's');
 
 	/*
 	 * Machines with "buserr-type" 1 have a bug in the cache
@@ -146,6 +143,11 @@ cpu_attach(parent, dev, aux)
 		printf("%s: cache chip bug; trap page uncached\n",
 		    dev->dv_xname);
 	}
+
+	printf("%s: %d byte write-through, %d bytes/line, %cw flush ",
+	    dev->dv_xname, cacheinfo.c_totalsize, l,
+	    cacheinfo.c_hwflush ? 'h' : 's');
+	cache_enable();
 }
 
 /*
