@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.31 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.32 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -162,6 +162,7 @@ printf("lfs_ifind: inode %d\n", ino);
 }
 
 /* Create a new vnode/inode pair and initialize what fields we can. */
+int
 lfs_vcreate(mp, ino, vpp)
 	MOUNT *mp;
 	ino_t ino;

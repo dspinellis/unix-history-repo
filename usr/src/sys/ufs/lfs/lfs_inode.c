@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.43 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.44 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -46,6 +46,7 @@ lock_data_t lfs_sync_lock;
 /*
  * Initialize hash links for inodes.
  */
+int
 lfs_init()
 {
 	register int i;
@@ -68,8 +69,10 @@ printf("lfs_init\n");
 	dqinit();
 #endif /* QUOTA */
 #endif
+	return (0);
 }
 
+void
 lfs_hqueue(ip)
 	struct inode *ip;
 {
@@ -88,6 +91,7 @@ lfs_hqueue(ip)
  * return the inode locked. Detection and handling of mount
  * points must be done by the calling routine.
  */
+int
 lfs_iget(xp, ino, ipp)
 	struct inode *xp;
 	ino_t ino;
@@ -96,13 +100,13 @@ lfs_iget(xp, ino, ipp)
 	dev_t dev = xp->i_dev;
 	struct mount *mntp = ITOV(xp)->v_mount;
 	register LFS *fs = VFSTOUFS(mntp)->um_lfs;		/* LFS */
-	extern struct vnodeops ufs_vnodeops, spec_inodeops;
+	extern struct vnodeops spec_inodeops;
 	register struct inode *ip, *iq;
 	register struct vnode *vp;
 	struct vnode *nvp;
 	struct buf *bp;
 	union lfsihead *ih;
-	int i, error;
+	int error;
 
 printf("lfs_iget ino %d\n", ino);
 	ih = &lfsihead[INOHASH(dev, ino)];
@@ -211,6 +215,7 @@ loop:
  * Last reference to an inode, write the inode out and if necessary,
  * truncate and deallocate the file.
  */
+int
 lfs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
