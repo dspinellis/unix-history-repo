@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.7 %G%";
+static char sccsid[] = "@(#)forop.c 1.8 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -282,8 +282,8 @@ nogood:
 		precheck( fortype , "_RANG4" , "_RSNG4" );
 	    }
 	    rvalue( lhs , NIL , RREQ );
-	    putleaf( P2ICON , 1 , 0 , forctype , 0 );
-	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , forctype );
+	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
+	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
 	    if ( opt( 't' ) ) {
 		postcheck( fortype );
 	    }
