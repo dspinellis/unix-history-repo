@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.28 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.27.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -503,8 +503,10 @@ restart:
 	 */
 	while (m == 0 || so->so_rcv.sb_cc < uio->uio_resid &&
 	    (so->so_rcv.sb_cc < so->so_rcv.sb_lowat ||
-	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)) &&
-	    m->m_nextpkt == 0) {
+	    ((flags & MSG_WAITALL) && uio->uio_resid <= so->so_rcv.sb_hiwat)))
+		if (m && (m->m_nextpkt || (m->m_flags & M_EOR) ||
+		          m->m_type == MT_OOBDATA || m->m_type == MT_CONTROL))
+			break;
 #ifdef DIAGNOSTIC
 		if (m == 0 && so->so_rcv.sb_cc)
 			panic("receive 1");
@@ -523,11 +525,6 @@ restart:
 			else
 				goto release;
 		}
-		for (; m; m = m->m_next)
-			if (m->m_type == MT_OOBDATA  || (m->m_flags & M_EOR)) {
-				m = so->so_rcv.sb_mb;
-				goto dontblock;
-			}
 		if ((so->so_state & (SS_ISCONNECTED|SS_ISCONNECTING)) == 0 &&
 		    (so->so_proto->pr_flags & PR_CONNREQUIRED)) {
 			error = ENOTCONN;
@@ -546,9 +543,9 @@ restart:
 			return (error);
 		goto restart;
 	}
-dontblock:
 	p->p_stats->p_ru.ru_msgrcv++;
 	nextrecord = m->m_nextpkt;
+	record_eor = m->m_flags & M_EOR;
 	if (pr->pr_flags & PR_ADDR) {
 #ifdef DIAGNOSTIC
 		if (m->m_type != MT_SONAME)
@@ -635,8 +632,6 @@ dontblock:
 		} else
 			uio->uio_resid -= len;
 		if (len == m->m_len - moff) {
-			if (m->m_flags & M_EOR)
-				flags |= MSG_EOR;
 			if (flags & MSG_PEEK) {
 				m = m->m_next;
 				moff = 0;
@@ -676,8 +671,10 @@ dontblock:
 			} else
 				offset += len;
 		}
-		if (flags & MSG_EOR)
+		if (m == 0 && record_eor) {
+			flags |= record_eor;
 			break;
+		}
 		/*
 		 * If the MSG_WAITALL flag is set (for non-atomic socket),
 		 * we must not quit until "uio->uio_resid == 0" or an error
@@ -686,7 +683,7 @@ dontblock:
 		 * Keep sockbuf locked against other readers.
 		 */
 		while (flags & MSG_WAITALL && m == 0 && uio->uio_resid > 0 &&
-		    !sosendallatonce(so)) {
+		   !(flags & MSG_OOB) && !sosendallatonce(so)) {
 			if (so->so_error || so->so_state & SS_CANTRCVMORE)
 				break;
 			error = sbwait(&so->so_rcv);
@@ -695,8 +692,10 @@ dontblock:
 				splx(s);
 				return (0);
 			}
-			if (m = so->so_rcv.sb_mb)
+			if (m = so->so_rcv.sb_mb) {
 				nextrecord = m->m_nextpkt;
+				record_eor |= m->m_flags & M_EOR;
+			}
 		}
 	}
 	if ((flags & MSG_PEEK) == 0) {
