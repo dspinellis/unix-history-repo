@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -103,6 +103,7 @@ static struct lfs lfs_default =  {
 	/* lfs_fbmask */	0,
 	/* lfs_fbshift */	0,
 	/* lfs_fsbtodb */	0,
+	/* lfs_sushift */	0,
 	/* lfs_sboffs */	{ 0 },
 	/* lfs_ivnode */	NULL,
 	/* lfs_seglock */	0,
@@ -217,6 +218,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	 */
 	db_per_fb = bsize/lp->d_secsize;
 	lfsp->lfs_fsbtodb = log2(db_per_fb);
+	lfsp->lfs_sushift = log2(lfsp->lfs_sepb);
 	lfsp->lfs_size = partp->p_size >> lfsp->lfs_fsbtodb;
 	lfsp->lfs_dsize = lfsp->lfs_size - (LFS_LABELPAD >> lfsp->lfs_bshift);
 	lfsp->lfs_nseg = lfsp->lfs_dsize / lfsp->lfs_ssize;
@@ -224,11 +226,11 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	/* 
 	 * The number of free blocks is set from the total data size (lfs_dsize)
-	 * minus one block for each segment (for the segment summary).  Then 
+	 * minus one sector for each segment (for the segment summary).  Then 
 	 * we'll subtract off the room for the superblocks, ifile entries and
 	 * segment usage table.
 	 */
-	lfsp->lfs_bfree = lfsp->lfs_dsize - lfsp->lfs_nseg;
+	lfsp->lfs_bfree = lfsp->lfs_dsize * db_per_fb - lfsp->lfs_nseg;
 	lfsp->lfs_segtabsz = SEGTABSIZE_SU(lfsp);
 	lfsp->lfs_cleansz = CLEANSIZE_SU(lfsp);
 	if ((lfsp->lfs_tstamp = time(NULL)) == -1)
@@ -279,8 +281,11 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	blocks_used = lfsp->lfs_segtabsz + lfsp->lfs_cleansz + 4;
 	segp->su_nbytes = blocks_used << lfsp->lfs_bshift;
 	segp->su_lastmod = lfsp->lfs_tstamp;
+	segp->su_nsums = 1;	/* 1 summary blocks */
+	segp->su_ninos = 1;	/* 1 inode block */
 	segp->su_flags = SEGUSE_SUPERBLOCK | SEGUSE_DIRTY;
-	lfsp->lfs_bfree -= lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4;
+	lfsp->lfs_bfree -= db_per_fb *
+	     (lfsp->lfs_cleansz + lfsp->lfs_segtabsz + 4);
 
 	/* 
 	 * Now figure out the address of the ifile inode. The inode block
@@ -292,11 +297,13 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 	for (segp = segtable + 1, i = 1; i < lfsp->lfs_nseg; i++, segp++) {
 		if ((i % sb_interval) == 0) {
 			segp->su_flags = SEGUSE_SUPERBLOCK;
-			lfsp->lfs_bfree -= (LFS_SBPAD >> lfsp->lfs_bshift);
+			lfsp->lfs_bfree -= (LFS_SBPAD / lp->d_secsize);
 		} else
 			segp->su_flags = 0;
 		segp->su_lastmod = 0;
 		segp->su_nbytes = 0;
+		segp->su_ninos = 0;
+		segp->su_nsums = 1;
 	}
 
 	/*
