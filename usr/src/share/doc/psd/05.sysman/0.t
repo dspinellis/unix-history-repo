@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.5 (Berkeley) %G%
+.\"	@(#)0.t	6.6 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -216,7 +216,7 @@ TABLE OF CONTENTS
 .PP
 ..
 .bp
-.nr ss 1
+.ds ss 1
 .de _d
 .if t .ta .6i 2.1i 2.6i
 .\" 2.94 went to 2.6, 3.64 to 3.30
