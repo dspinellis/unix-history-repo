@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -648,7 +648,7 @@ sink(argc, argv)
 		}
 
 		if (ch == '\n')
-			--cp;
+			*--cp = 0;
 
 #define getnum(t) (t) = 0; while (isdigit(*cp)) (t) = (t) * 10 + (*cp++ - '0');
 		cp = buf;
