@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_var.h	7.5 (Berkeley) %G%
+ *	@(#)ip_var.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -96,6 +96,14 @@ struct	ipstat {
 	long	ips_forward;		/* packets forwarded */
 	long	ips_cantforward;	/* packets rcvd for unreachable dest */
 	long	ips_redirectsent;	/* packets forwarded on same net */
+	long	ips_noproto;		/* unknown or unsupported protocol */
+	long	ips_delivered;		/* packets consumed here */
+	long	ips_localout;		/* total ip packets generated here */
+	long	ips_odropped;		/* lost packets due to nobufs, etc. */
+	long	ips_reassembled;	/* total packets reassembled ok */
+	long	ips_fragmented;		/* output packets fragmented ok */
+	long	ips_ofragments;		/* output fragments created */
+	long	ips_cantfrag;		/* don't fragment flag was set, etc. */
 };
 
 #ifdef KERNEL

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_input.c	7.13 (Berkeley) %G%
+ *	@(#)ip_input.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -289,6 +289,8 @@ found:
 			ip = ip_reass((struct ipasfrag *)ip, fp);
 			if (ip == 0)
 				goto next;
+			else
+				ipstat.ips_reassembled++;
 			m = dtom(ip);
 		} else
 			if (fp)
@@ -299,6 +301,7 @@ found:
 	/*
 	 * Switch out to protocol's input routine.
 	 */
+	ipstat.ips_delivered++;
 	(*inetsw[ip_protox[ip->ip_p]].pr_input)(m, hlen);
 	goto next;
 bad:
@@ -988,6 +991,7 @@ ip_forward(m)
 
 	case EMSGSIZE:
 		code = ICMP_UNREACH_NEEDFRAG;
+		ipstat.ips_cantfrag++;
 		break;
 
 	case EPERM:
