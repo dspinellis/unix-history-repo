@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.2 8/15/80";
+static	char sccsid[] = "@(#)assyms.c 4.4 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "as.h"
