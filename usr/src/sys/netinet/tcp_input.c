@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.65	82/03/29	*/
+/*	tcp_input.c	1.66	82/04/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -501,7 +501,7 @@ trimthenstep6:
 			tp->snd_wnd -= acked;
 			acked = 0;
 		}
-		if (so->so_snd.sb_flags & SB_WAIT)
+		if ((so->so_snd.sb_flags & SB_WAIT) || so->so_snd.sb_sel)
 			sowwakeup(so);
 		tp->snd_una = ti->ti_ack;
 		if (SEQ_LT(tp->snd_nxt, tp->snd_una))
