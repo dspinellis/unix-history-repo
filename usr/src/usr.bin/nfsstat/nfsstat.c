@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsstat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsstat.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -257,7 +257,7 @@ sidewaysintpr(interval, off)
 	struct nfsstats nfsstats, lastst;
 	register int line;
 	int oldmask;
-	int catchalarm();
+	void catchalarm();
 
 	klseek(kmem, off, 0);
 
@@ -312,6 +312,7 @@ loop:
  * Called if an interval expires before sidewaysintpr has completed a loop.
  * Sets a flag to not wait for the alarm.
  */
+void
 catchalarm()
 {
 	signalled = YES;

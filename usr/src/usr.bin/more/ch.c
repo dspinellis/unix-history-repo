@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -393,7 +393,6 @@ ch_init(want_nbufs, keep)
  * Allocate some new buffers.
  * The buffers are added to the tail of the buffer chain.
  */
-static
 ch_addbuf(nnew)
 	int nnew;
 {

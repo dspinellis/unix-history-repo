@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -25,7 +25,7 @@ int	oumask;			/* old umask for creating files */
 
 extern	FILE *lfp;		/* log file for mailing changes */
 
-int	cleanup();
+void	cleanup();
 struct	linkbuf *savelink();
 
 /*
@@ -1461,6 +1461,7 @@ response()
 /*
  * Remove temporary files and do any cleanup operations before exiting.
  */
+void
 cleanup()
 {
 	(void) unlink(tempfile);

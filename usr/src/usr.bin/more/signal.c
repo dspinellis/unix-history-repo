@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)signal.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)signal.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -46,7 +46,7 @@ extern int reading;
 /*
  * "Stop" (^Z) signal handler.
  */
-static
+static void
 stop()
 {
 	(void)signal(SIGTSTP, stop);
@@ -60,6 +60,7 @@ stop()
 /*
  * "Window" change handler
  */
+void
 winch()
 {
 	(void)signal(SIGWINCH, winch);
@@ -82,7 +83,7 @@ winch()
 #endif
 #endif
 
-static int
+static void
 purgeandquit()
 {
 
@@ -96,8 +97,6 @@ purgeandquit()
 init_signals(on)
 	int on;
 {
-	int quit();
-
 	if (on)
 	{
 		/*

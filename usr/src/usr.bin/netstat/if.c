@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,6 +33,7 @@ extern	int nflag;
 extern	char *interface;
 extern	int unit;
 extern	char *routename(), *netname(), *ns_phost();
+char *index();
 
 /*
  * Print a description of the network interfaces.
@@ -75,7 +76,6 @@ intpr(interval, ifnetaddr)
 		struct sockaddr_in *sin;
 		register char *cp;
 		int n, m;
-		char *index();
 		struct in_addr inet_makeaddr();
 
 		if (ifaddraddr == 0) {
@@ -205,7 +205,7 @@ sidewaysintpr(interval, off)
 	register int line;
 	struct iftot *lastif, *sum, *interesting;
 	int oldmask;
-	int catchalarm();
+	void catchalarm();
 
 	kvm_read(off, (char *)&firstifnet, sizeof (off_t));
 	lastif = iftot;
@@ -327,6 +327,7 @@ loop:
  * Called if an interval expires before sidewaysintpr has completed a loop.
  * Sets a flag to not wait for the alarm.
  */
+void
 catchalarm()
 {
 	signalled = YES;

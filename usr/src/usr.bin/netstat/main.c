@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -322,7 +322,7 @@ main(argc, argv)
 		}
 	}
 	if (kvm_openfiles(system, kmemf, (char *)0) == -1) {
-		fprintf("netstat(kvm_openfiles): %s\n", kvm_geterr());
+		fprintf(stderr, "netstat(kvm_openfiles): %s\n", kvm_geterr());
 		exit(1);
 	}
 	if (kvm_nlist(nl) < 0 || nl[0].n_type == 0) {

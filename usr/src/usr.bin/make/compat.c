@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compat.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)compat.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -64,7 +64,7 @@ static int  	    CompatRunCommand();
  *
  *-----------------------------------------------------------------------
  */
-static int
+static void
 CompatInterrupt (signo)
     int	    signo;
 {
@@ -244,7 +244,7 @@ CompatRunCommand (cmd, gn)
 	    id = 0;
 	}
 
-	while ((stat = wait(&reason)) != cpid) {
+	while ((stat = wait((int *)&reason)) != cpid) {
 	    if (stat == -1 && errno != EINTR) {
 		break;
 	    }

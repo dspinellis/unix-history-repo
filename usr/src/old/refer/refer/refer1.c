@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer1.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)refer1.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -135,10 +135,10 @@ char *argv[];
 	exit(0);
 }
 
-extern int intr();
-
 signals()
 {
+	void intr();
+
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, intr);
 	signal(SIGHUP, intr);
@@ -146,6 +146,7 @@ signals()
 	signal(SIGTERM, intr);
 }
 
+void
 intr()
 {
 	signal(SIGINT, SIG_IGN);

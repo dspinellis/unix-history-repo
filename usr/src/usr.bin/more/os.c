@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)os.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)os.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -245,7 +245,6 @@ bad_file(filename, message, len)
  * Copy a string, truncating to the specified length if necessary.
  * Unlike strncpy(), the resulting string is guaranteed to be null-terminated.
  */
-static
 strtcpy(to, from, len)
 	char *to, *from;
 	int len;
