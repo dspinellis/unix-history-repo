@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.15 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -429,7 +429,7 @@ lfs_gather(fs, sp, vp, match)
 	fip = sp->fip;
 	start_lbp = lbp = &fip->fi_blocks[fip->fi_nblocks];
 
-	s = splbio();
+loop:	s = splbio();
 	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
 		nbp = bp->b_blockf;
 		/*
@@ -470,7 +470,7 @@ lfs_gather(fs, sp, vp, match)
 			    sizeof(struct finfo) - sizeof(daddr_t);
 
 			bpp = sp->cbpp;
-			s = splbio();
+			goto loop;
 		}
 
 		/* Insert into the buffer list, update the FINFO block. */
