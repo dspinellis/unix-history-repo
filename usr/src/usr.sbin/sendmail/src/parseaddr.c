@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.55 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1048,6 +1048,8 @@ rewrite(pvp, ruleset, e)
 			if (map != NULL && bitset(MF_VALID, map->s_map.map_mflags))
 			{
 				auto int stat = EX_OK;
+
+				/* XXX should try to auto-open the map here */
 
 				if (tTd(60, 1))
 					printf("map_lookup(%s, %s) => ",
