@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)format.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)format.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -34,20 +34,16 @@ format()
 		_longjmp(quit_environ, 1);
 
 	/* format the disk surface */
-printf("Starting format on system areas\n");
 	format_relocation_area();
 	format_maintainence_area();
-printf("Starting format on data area\n");
 	format_users_data_area();
 	if(kill_processes == true)
 		_longjmp(quit_environ, 1);
 
 
 	/* verify the surface */
-printf("Starting verify on system areas\n");
 	verify_relocation_area();
 	verify_maintainence_area();
-printf("Starting verify on data area\n");
 	verify_users_data_area();
 }
 
