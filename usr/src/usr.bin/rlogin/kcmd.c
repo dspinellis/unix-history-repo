@@ -7,58 +7,57 @@
 
 #ifndef lint
 static char Xsccsid[] = "derived from @(#)rcmd.c 5.17 (Berkeley) 6/27/88";
-static char sccsid[] = "@(#)kcmd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)kcmd.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
-
-/*
- *	$Source: /mit/kerberos/src/appl/bsd/RCS/kcmd.c,v $
- *	$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $
- *
- * static char *rcsid_kcmd_c =
- * "$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $";
- */
 
 #include <sys/param.h>
 #include <sys/file.h>
-#include <sys/signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
-#include <netdb.h>
-#include <errno.h>
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #include <kerberosIV/kparse.h>
-#include <pwd.h>
-#include <stdio.h>
-#include <ctype.h>
 
-#ifndef MAXHOSTNAMELEN 
+#include <ctype.h>
+#include <errno.h>
+#include <netdb.h>
+#include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "krb.h"
+
+#ifndef MAXHOSTNAMELEN
 #define MAXHOSTNAMELEN 64
 #endif
 
-extern	errno;
-char	*index(), *malloc(), *krb_realmofhost();
-
 #define	START_PORT	5120	 /* arbitrary */
 
+int	getport __P((int *));
+
+int
 kcmd(sock, ahost, rport, locuser, remuser, cmd, fd2p, ticket, service, realm,
-      cred, schedule, msg_data, laddr, faddr, authopts)
-int *sock;
-char **ahost;
-u_short rport;
-char *locuser, *remuser, *cmd;
-int *fd2p;
-KTEXT ticket;
-char *service;
-char *realm;
-CREDENTIALS *cred;
-Key_schedule schedule;
-MSG_DAT *msg_data;
-struct sockaddr_in *laddr, *faddr;
-long authopts;
+    cred, schedule, msg_data, laddr, faddr, authopts)
+	int *sock;
+	char **ahost;
+	u_short rport;
+	char *locuser, *remuser, *cmd;
+	int *fd2p;
+	KTEXT ticket;
+	char *service;
+	char *realm;
+	CREDENTIALS *cred;
+	Key_schedule schedule;
+	MSG_DAT *msg_data;
+	struct sockaddr_in *laddr, *faddr;
+	long authopts;
 {
 	int s, timo = 1, pid;
 	long oldmask;
@@ -68,7 +67,7 @@ long authopts;
 	int lport = IPPORT_RESERVED - 1;
 #else
 	int lport = START_PORT;
-#endif ATHENA_COMPAT
+#endif
 	struct hostent *hp;
 	int rc;
 	char *host_save;
@@ -76,19 +75,18 @@ long authopts;
 
 	pid = getpid();
 	hp = gethostbyname(*ahost);
-	if (hp == 0) {
+	if (hp == NULL) {
 		/* fprintf(stderr, "%s: unknown host\n", *ahost); */
 		return (-1);
 	}
 
-    host_save = malloc(strlen(hp->h_name) + 1);
-    strcpy(host_save, hp->h_name);
-    *ahost = host_save;
+	host_save = malloc(strlen(hp->h_name) + 1);
+	strcpy(host_save, hp->h_name);
+	*ahost = host_save;
 
-    /* If realm is null, look up from table */
-    if ((realm == NULL) || (realm[0] == '\0')) {
-	realm = krb_realmofhost(host_save);
-    }
+	/* If realm is null, look up from table */
+	if (realm == NULL || realm[0] == '\0')
+		realm = krb_realmofhost(host_save);
 
 	oldmask = sigblock(sigmask(SIGURG));
 	for (;;) {
@@ -108,9 +106,9 @@ long authopts;
 		bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
 #else
 		bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr, hp->h_length);
-#endif /* defined(ultrix) || defined(sun) */
+#endif
 		sin.sin_port = rport;
-		if (connect(s, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
+		if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) >= 0)
 			break;
 		(void) close(s);
 		if (errno == EADDRINUSE) {
@@ -133,7 +131,7 @@ long authopts;
 			    "kcmd: connect to address %s: ",
 			    inet_ntoa(sin.sin_addr));
 			errno = oerrno;
-			perror(0);
+			perror(NULL);
 			hp->h_addr_list++;
 			bcopy(hp->h_addr_list[0], (caddr_t)&sin.sin_addr,
 			    hp->h_length);
@@ -153,19 +151,19 @@ long authopts;
 		lport = 0;
 	} else {
 		char num[8];
-	int s2 = getport(&lport), s3;
-		int len = sizeof (from);
+		int s2 = getport(&lport), s3;
+		int len = sizeof(from);
 
-	if (s2 < 0) {
-	    status = -1;
+		if (s2 < 0) {
+			status = -1;
 			goto bad;
-	}
+		}
 		listen(s2, 1);
 		(void) sprintf(num, "%d", lport);
-		if (write(s, num, strlen(num)+1) != strlen(num)+1) {
+		if (write(s, num, strlen(num) + 1) != strlen(num) + 1) {
 			perror("kcmd(write): setting up stderr");
 			(void) close(s2);
-	    status = -1;
+			status = -1;
 			goto bad;
 		}
 		s3 = accept(s2, (struct sockaddr *)&from, &len);
@@ -182,69 +180,70 @@ long authopts;
 		    from.sin_port >= IPPORT_RESERVED) {
 			fprintf(stderr,
 			 "kcmd(socket): protocol failure in circuit setup.\n");
+			status = -1;
 			goto bad2;
 		}
 	}
-    /*
-     * Kerberos-authenticated service.  Don't have to send locuser,
-     * since its already in the ticket, and we'll extract it on
-     * the other side.
-     */
-    /* (void) write(s, locuser, strlen(locuser)+1); */
+	/*
+	 * Kerberos-authenticated service.  Don't have to send locuser,
+	 * since its already in the ticket, and we'll extract it on
+	 * the other side.
+	 */
+	/* (void) write(s, locuser, strlen(locuser)+1); */
 
-    /* set up the needed stuff for mutual auth, but only if necessary */
-    if (authopts & KOPT_DO_MUTUAL) {
-	int sin_len;
-	*faddr = sin;
+	/* set up the needed stuff for mutual auth, but only if necessary */
+	if (authopts & KOPT_DO_MUTUAL) {
+		int sin_len;
+		*faddr = sin;
 
-	sin_len = sizeof (struct sockaddr_in);
-	if (getsockname(s, (struct sockaddr *)laddr, &sin_len) < 0) {
-	    perror("kcmd(getsockname)");
-	    status = -1;
-	    goto bad2;
+		sin_len = sizeof(struct sockaddr_in);
+		if (getsockname(s, (struct sockaddr *)laddr, &sin_len) < 0) {
+			perror("kcmd(getsockname)");
+			status = -1;
+			goto bad2;
+		}
 	}
-    }
-    if ((status = krb_sendauth(authopts, s, ticket, service, *ahost,
+	if ((status = krb_sendauth(authopts, s, ticket, service, *ahost,
 			       realm, (unsigned long) getpid(), msg_data,
 			       cred, schedule,
 			       laddr,
 			       faddr,
 			       "KCMDV0.1")) != KSUCCESS)
-	goto bad2;
+		goto bad2;
 
 	(void) write(s, remuser, strlen(remuser)+1);
 	(void) write(s, cmd, strlen(cmd)+1);
 
-    if ((rc=read(s, &c, 1)) != 1) {
-	if (rc==-1) {
-		perror(*ahost);
-	} else {
-	    fprintf(stderr,"kcmd: bad connection with remote host\n");
-	}
-	status = -1;
+	if ((rc = read(s, &c, 1)) != 1) {
+		if (rc == -1)
+			perror(*ahost);
+		else
+			fprintf(stderr,"kcmd: bad connection with remote host\n");
+		status = -1;
 		goto bad2;
 	}
-	if (c != 0) {
+	if (c != '\0') {
 		while (read(s, &c, 1) == 1) {
 			(void) write(2, &c, 1);
 			if (c == '\n')
 				break;
 		}
-	status = -1;
+		status = -1;
 		goto bad2;
 	}
 	sigsetmask(oldmask);
-    *sock = s;
-    return (KSUCCESS);
+	*sock = s;
+	return (KSUCCESS);
 bad2:
 	if (lport)
 		(void) close(*fd2p);
 bad:
 	(void) close(s);
 	sigsetmask(oldmask);
-    return (status);
+	return (status);
 }
 
+int
 getport(alport)
 	int *alport;
 {
@@ -258,7 +257,7 @@ getport(alport)
 		return (-1);
 	for (;;) {
 		sin.sin_port = htons((u_short)*alport);
-		if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
+		if (bind(s, (struct sockaddr *)&sin, sizeof(sin)) >= 0)
 			return (s);
 		if (errno != EADDRINUSE) {
 			(void) close(s);
@@ -269,11 +268,10 @@ getport(alport)
 		if (*alport == IPPORT_RESERVED/2) {
 #else
 		if (*alport == IPPORT_RESERVED) {
-#endif ATHENA_COMPAT
+#endif
 			(void) close(s);
 			errno = EAGAIN;		/* close */
 			return (-1);
 		}
 	}
 }
-

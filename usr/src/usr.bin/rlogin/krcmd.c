@@ -6,11 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krcmd.c	1.6.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)krcmd.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- *	$Source: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v $
+ *	$Source: /usr/src/usr.bin/rlogin/RCS/krcmd.c,v $
  *	$Header: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v 5.1
  *		89/07/25 15:38:44 kfall Exp Locker: kfall $
  * static char *rcsid_kcmd_c =
@@ -20,11 +20,22 @@ static char sccsid[] = "@(#)krcmd.c	1.6.1.1 (Berkeley) %G%";
 
 #ifdef KERBEROS
 #include <sys/types.h>
-#include <stdio.h>
+#ifdef CRYPT
+#include <sys/socket.h>
+#endif
+
+#include <netinet/in.h>
+
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 
+#include <stdio.h>
+
 #define	SERVICE_NAME	"rcmd"
+
+int	kcmd __P((int *, char **, u_short, char *, char *, char *, int *,
+	    KTEXT, char *, char *, CREDENTIALS *, Key_schedule, MSG_DAT *,
+	    struct sockaddr_in *, struct sockaddr_in *, long));
 
 /*
  * krcmd: simplified version of Athena's "kcmd"
