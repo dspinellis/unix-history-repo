@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)subr_mcount.c	7.10 (Berkeley) 5/7/91
- *	$Id: subr_mcount.c,v 1.4 1993/12/12 12:23:20 davidg Exp $
+ *	$Id: subr_mcount.c,v 1.5 1993/12/20 16:23:51 davidg Exp $
  */
 
 #ifdef GPROF
@@ -47,9 +47,10 @@ int	profiling = 3;
 u_short	*froms;
 struct	tostruct *tos = 0;
 long	tolimit = 0;
-char	*s_lowpc = (char *)KERNBASE;
-extern	char etext;
-char	*s_highpc = &etext;
+extern	char btext[];
+char	*s_lowpc = btext;
+extern	char etext[];
+char	*s_highpc = etext;
 u_long	s_textsize = 0;
 int	ssiz;
 u_short	*sbuf;
