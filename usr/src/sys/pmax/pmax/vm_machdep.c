@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	8.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -49,10 +49,10 @@ cpu_fork(p1, p2)
 	p2->p_md.md_flags = p1->p_md.md_flags & (MDP_FPUSED | MDP_ULTRIX);
 
 	/*
-	 * Convert the user struct virtual address to a physical one
-	 * and cache it in the proc struct. Note: if the phyical address
-	 * can change (due to memory compaction in kmem_alloc?),
-	 * we will have to update things.
+	 * Cache the PTEs for the user area in the machine dependent
+	 * part of the proc struct so cpu_switch() can quickly map in
+	 * the user struct and kernel stack. Note: if the virtual address
+	 * translation changes (e.g. swapout) we have to update this.
 	 */
 	pte = kvtopte(up);
 	for (i = 0; i < UPAGES; i++) {
@@ -91,6 +91,31 @@ cpu_fork(p1, p2)
 		return (1);
 	}
 	return (0);
+}
+
+/*
+ * Finish a swapin operation.
+ * We neded to update the cached PTEs for the user area in the
+ * machine dependent part of the proc structure.
+ */
+void
+cpu_swapin(p)
+	register struct proc *p;
+{
+	register struct user *up = p->p_addr;
+	register pt_entry_t *pte;
+	register int i;
+
+	/*
+	 * Cache the PTEs for the user area in the machine dependent
+	 * part of the proc struct so cpu_switch() can quickly map in
+	 * the user struct and kernel stack.
+	 */
+	pte = kvtopte(up);
+	for (i = 0; i < UPAGES; i++) {
+		p->p_md.md_upte[i] = pte->pt_entry & ~PG_G;
+		pte++;
+	}
 }
 
 /*
