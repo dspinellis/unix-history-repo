@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ioctl.h	7.19 (Berkeley) 6/26/91
- *	$Id: ioctl.h,v 1.5 1993/11/14 23:29:49 ache Exp $
+ *	$Id: ioctl.h,v 1.6 1993/12/19 00:55:15 wollman Exp $
  */
 
 #ifndef	_IOCTL_H_
@@ -151,6 +151,8 @@ struct ttysize {
 #define	TIOCMGBIDIR	_IOR('t', 92, int)	/* modem: get bidir cap. */
 #define TIOCMSDTRWAIT	_IOW('t', 91, int)	/* modem: set wait on close */
 #define TIOCMGDTRWAIT	_IOR('t', 90, int)	/* modem: get wait on close */
+#define TIOCTIMESTAMP	_IOR('t', 89, struct timeval)	/* get timestamp of 
+						 last interrupt for xntp. */
 
 #define	TTYDISC		0		/* termios tty line discipline */
 #define	NETLDISC	1		/* line discip for berk net */
