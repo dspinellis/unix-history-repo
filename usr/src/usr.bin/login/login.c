@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)login.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)login.c	4.2 (Berkeley) %G%";
 /*
  * login [ name ]
  */
@@ -39,6 +39,23 @@ char	*rindex();
 char	*stypeof();
 extern	char **environ;
 
+#define	CTRL(c)	('c'&037)
+#define	CERASE	'#'
+#define	CEOT	CTRL(d)
+#define	CKILL	'@'
+#define	CQUIT	034		/* FS, cntl shift L */
+#define	CINTR	0177		/* DEL */
+#define	CSTOP	CTRL(s)
+#define	CSTART	CTRL(q)
+#define	CBRK	0377
+struct	tchars tc = {
+	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
+};
+struct	ltchars ltc = {
+	CTRL(z), CTRL(y), CTRL(r), CTRL(o), CTRL(w), CTRL(v), CTRL(h), CTRL(u),
+	CTRL(c)
+};
+
 main(argc, argv)
 char **argv;
 {
@@ -53,12 +70,14 @@ char **argv;
 	nice(-100);
 	nice(20);
 	nice(0);
+	ioctl(0, TIOCSETD, &ldisc);
 	ioctl(0, TIOCLSET, 0);
-	ioctl(0, TIOCNXCL, 0);
 	gtty(0, &ttyb);
 	ttyb.sg_erase = '#';
 	ttyb.sg_kill = '@';
 	stty(0, &ttyb);
+	ioctl(0, TIOCSETC, &tc);
+	ioctl(0, TIOCSLTC, &ltc);
 	for (t=3; t<20; t++)
 		close(t);
 	ttyn = ttyname(0);
@@ -66,8 +85,6 @@ char **argv;
 		ttyn = "/dev/tty??";
 
     loop:
-	ldisc = 0;
-	ioctl(0, TIOCSETD, &ldisc);
 	SCPYN(utmp.ut_name, "");
 	if (argc>1) {
 		SCPYN(utmp.ut_name, argv[1]);
@@ -89,14 +106,8 @@ char **argv;
 	if ((pwd = getpwnam(utmp.ut_name)) == NULL)
 		pwd = &nouser;
 	endpwent();
-	if (!strcmp(pwd->pw_shell, "/bin/csh")) {
-		ldisc = NTTYDISC;
-		ioctl(0, TIOCSETD, &ldisc);
-	}
 	if (*pwd->pw_passwd != '\0') {
-		nice(-4);
 		namep = crypt(getpass("Password:"),pwd->pw_passwd);
-		nice(4);
 		if (strcmp(namep, pwd->pw_passwd)) {
 bad:
 			printf("Login incorrect\n");
