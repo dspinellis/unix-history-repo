@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.18 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.19 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -51,7 +51,8 @@ MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
 all: lib${LIB}.a lib${LIB}_p.a ${MANALL}# llib-l${LIB}.ln
 
-OBJS+=	${SRCS:S/.c$/.o/g:S/.f$/.o/g:S/.s$/.o/g}
+OBJS+=	${SRCS:R:S/$/.o/g}
+
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.a
