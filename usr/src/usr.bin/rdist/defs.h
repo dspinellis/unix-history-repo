@@ -1,4 +1,10 @@
-/*	defs.h	4.15	85/02/04	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)defs.h	5.1 (Berkeley) %G%
+ */
 
 #include <stdio.h>
 #include <ctype.h>
