@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.6 (Berkeley) %G%
+.\"	@(#)4.t	8.1 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
