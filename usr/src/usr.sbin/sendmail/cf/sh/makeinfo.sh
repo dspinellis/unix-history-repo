@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makeinfo.sh	8.4 (Berkeley) %G%
+#	@(#)makeinfo.sh	8.5 (Berkeley) %G%
 #
 
 usewhoami=0
@@ -49,3 +49,4 @@ else
 fi
 echo '#####' built by $user@$host on `date`
 echo '#####' in `pwd` | sed 's/\/tmp_mnt//'
+echo "define(\`__HOST__', $host)dnl"
