@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -44,8 +44,9 @@ wwupdate1(top, bot)
 			;
 		scan_top = top = t1 - wwtouched - 1;
 		scan_bot = bot = t2 - wwtouched + 1;
-		if (tt.tt_clreos != 0 || tt.tt_clear != 0) {
-			int st = tt.tt_clreos == 0 ? scan_top : 0;
+		if (scan_bot - scan_top > 1 &&
+		    (tt.tt_clreos != 0 || tt.tt_clear != 0)) {
+			int st = tt.tt_clreos != 0 ? scan_top : 0;
 
 			for (n = 1; t1 < t2;)
 				if (*t1++)
@@ -143,7 +144,7 @@ wwupdate1(top, bot)
 
 				for (j = wwncol - j; --j >= 0;)
 					os++->c_w = ' ';
-				wwtouched[i++] = WWU_TOUCHED;
+				wwtouched[i++] |= WWU_TOUCHED;
 				u++->best_gain = 0;
 				j = 0;
 			}
