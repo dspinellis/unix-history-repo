@@ -11,31 +11,32 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.9 (Berkeley) %G%
+ *	@(#)trap.c	7.10 (Berkeley) %G%
  */
 
+#include "param.h"
+#include "systm.h"
+#include "proc.h"
+#include "seg.h"
+#include "acct.h"
+#include "kernel.h"
+#include "signalvar.h"
+#include "resourcevar.h"
+#include "syslog.h"
+#include "user.h"
+#ifdef KTRACE
+#include "ktrace.h"
+#endif
+
+#include "../include/trap.h"
 #include "../include/cpu.h"
 #include "../include/psl.h"
 #include "../include/reg.h"
 #include "../include/mtpr.h"
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/proc.h"
-#include "sys/seg.h"
-#include "../include/trap.h"
-#include "sys/acct.h"
-#include "sys/kernel.h"
-#include "sys/syslog.h"
-#ifdef KTRACE
-#include "sys/ktrace.h"
-#endif
-
-#include "vm/vm_param.h"
+#include "vm/vm.h"
 #include "vm/pmap.h"
-#include "vm/vm_map.h"
-#include "sys/vmmeter.h"
+#include "vmmeter.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
@@ -80,24 +81,20 @@ trap(type, code, v, frame)
 {
 	register int i;
 	unsigned ucode = 0;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 	struct timeval syst;
 	unsigned ncode;
 
 	cnt.v_trap++;
-	syst = u.u_ru.ru_stime;
+	syst = p->p_stime;
 	if (USERMODE(frame.f_sr)) {
 		type |= USER;
-		u.u_ar0 = frame.f_regs;
+		p->p_regs = frame.f_regs;
 	}
 	switch (type) {
 
 	default:
 dopanic:
-#ifdef KGDB
-		if (!panicstr && kgdb_trap(type, code, v, &frame))
-			return;
-#endif
 		printf("trap type %d, code = %x, v = %x\n", type, code, v);
 		regdump(frame.f_regs, 128);
 		type &= ~USER;
@@ -133,9 +130,9 @@ copyfault:
 	 * in the stack frame of a signal handler.
 	 */
 		type |= USER;
-		printf("pid %d: kernel %s exception\n", u.u_procp->p_pid,
+		printf("pid %d: kernel %s exception\n", p->p_pid,
 		       type==T_COPERR ? "coprocessor" : "format");
-		u.u_signal[SIGILL] = SIG_DFL;
+		p->p_sigacts->ps_sigact[SIGILL] = SIG_DFL;
 		i = sigmask(SIGILL);
 		p->p_sigignore &= ~i;
 		p->p_sigcatch &= ~i;
@@ -168,7 +165,7 @@ copyfault:
 
 	case T_ILLINST+USER:	/* illegal instruction fault */
 #ifdef HPUXCOMPAT
-		if (u.u_procp->p_flag & SHPUX) {
+		if (p->p_flag & SHPUX) {
 			ucode = HPUX_ILL_ILLINST_TRAP;
 			i = SIGILL;
 			break;
@@ -177,7 +174,7 @@ copyfault:
 #endif
 	case T_PRIVINST+USER:	/* privileged instruction fault */
 #ifdef HPUXCOMPAT
-		if (u.u_procp->p_flag & SHPUX)
+		if (p->p_flag & SHPUX)
 			ucode = HPUX_ILL_PRIV_TRAP;
 		else
 #endif
@@ -187,7 +184,7 @@ copyfault:
 
 	case T_ZERODIV+USER:	/* Divide by zero */
 #ifdef HPUXCOMPAT
-		if (u.u_procp->p_flag & SHPUX)
+		if (p->p_flag & SHPUX)
 			ucode = HPUX_FPE_INTDIV_TRAP;
 		else
 #endif
@@ -197,7 +194,7 @@ copyfault:
 
 	case T_CHKINST+USER:	/* CHK instruction trap */
 #ifdef HPUXCOMPAT
-		if (u.u_procp->p_flag & SHPUX) {
+		if (p->p_flag & SHPUX) {
 			/* handled differently under hp-ux */
 			i = SIGILL;
 			ucode = HPUX_ILL_CHK_TRAP;
@@ -210,7 +207,7 @@ copyfault:
 
 	case T_TRAPVINST+USER:	/* TRAPV instruction trap */
 #ifdef HPUXCOMPAT
-		if (u.u_procp->p_flag & SHPUX) {
+		if (p->p_flag & SHPUX) {
 			/* handled differently under hp-ux */
 			i = SIGILL;
 			ucode = HPUX_ILL_TRAPV_TRAP;
@@ -227,19 +224,14 @@ copyfault:
 	 *	HP-UX uses trap #1 for breakpoints,
 	 *	HPBSD uses trap #2,
 	 *	SUN 3.x uses trap #15,
-	 *	KGDB uses trap #15 (for kernel breakpoints).
+	 *	KGDB uses trap #15 (for kernel breakpoints; handled elsewhere).
 	 *
 	 * HPBSD and HP-UX traps both get mapped by locore.s into T_TRACE.
 	 * SUN 3.x traps get passed through as T_TRAP15 and are not really
-	 * supported yet.  KGDB traps are also passed through as T_TRAP15
-	 * and are not used yet.
+	 * supported yet.
 	 */
 	case T_TRACE:		/* kernel trace trap */
-	case T_TRAP15:		/* SUN (or KGDB) kernel trace trap */
-#ifdef KGDB
-		if (kgdb_trap(type, code, v, &frame))
-			return;
-#endif
+	case T_TRAP15:		/* SUN trace trap */
 		frame.f_sr &= ~PSL_T;
 		i = SIGTRAP;
 		break;
@@ -287,9 +279,9 @@ copyfault:
 		}
 		spl0();
 #ifndef PROFTIMER
-		if ((u.u_procp->p_flag&SOWEUPC) && u.u_prof.pr_scale) {
-			addupc(frame.f_pc, &u.u_prof, 1);
-			u.u_procp->p_flag &= ~SOWEUPC;
+		if ((p->p_flag&SOWEUPC) && p->p_stats->p_prof.pr_scale) {
+			addupc(frame.f_pc, &p->p_stats->p_prof, 1);
+			p->p_flag &= ~SOWEUPC;
 		}
 #endif
 		goto out;
@@ -300,6 +292,7 @@ copyfault:
 	case T_MMUFLT+USER:	/* page fault */
 	    {
 		register vm_offset_t va;
+		register struct vmspace *vm = p->p_vmspace;
 		register vm_map_t map;
 		int rv;
 		vm_prot_t ftype;
@@ -319,7 +312,7 @@ copyfault:
 		     (code & (SSW_DF|FC_SUPERD)) == (SSW_DF|FC_SUPERD)))
 			map = kernel_map;
 		else
-			map = u.u_procp->p_map;
+			map = &vm->vm_map;
 		if ((code & (SSW_DF|SSW_RW)) == SSW_DF)	/* what about RMW? */
 			ftype = VM_PROT_READ | VM_PROT_WRITE;
 		else
@@ -335,9 +328,9 @@ copyfault:
 		 * XXX: rude hack to make stack limits "work"
 		 */
 		nss = 0;
-		if ((caddr_t)va >= u.u_maxsaddr && map != kernel_map) {
+		if ((caddr_t)va >= vm->vm_maxsaddr && map != kernel_map) {
 			nss = clrnd(btoc(USRSTACK-(unsigned)va));
-			if (nss > btoc(u.u_rlimit[RLIMIT_STACK].rlim_cur)) {
+			if (nss > btoc(p->p_rlimit[RLIMIT_STACK].rlim_cur)) {
 				rv = KERN_FAILURE;
 				goto nogo;
 			}
@@ -347,8 +340,8 @@ copyfault:
 			/*
 			 * XXX: continuation of rude stack hack
 			 */
-			if (nss > u.u_ssize)
-				u.u_ssize = nss;
+			if (nss > vm->vm_ssize)
+				vm->vm_ssize = nss;
 			if (type == T_MMUFLT)
 				return;
 			goto out;
@@ -363,21 +356,21 @@ nogo:
 			       type, code);
 			goto dopanic;
 		}
+		ucode = v;
 		i = (rv == KERN_PROTECTION_FAILURE) ? SIGBUS : SIGSEGV;
 		break;
 	    }
 	}
-	trapsignal(i, ucode);
+	trapsignal(p, i, ucode);
 	if ((type & USER) == 0)
 		return;
 out:
-	p = u.u_procp;
-	if (i = CURSIG(p))
+	while (i = CURSIG(p))
 		psig(i);
 	p->p_pri = p->p_usrpri;
-	if (runrun) {
+	if (want_resched) {
 		/*
-		 * Since we are u.u_procp, clock will normally just change
+		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we setrq ourselves but before we
@@ -386,23 +379,24 @@ out:
 		 */
 		(void) splclock();
 		setrq(p);
-		u.u_ru.ru_nivcsw++;
+		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
-		if (i = CURSIG(p))
+		while (i = CURSIG(p))
 			psig(i);
 	}
-	if (u.u_prof.pr_scale) {
+	if (p->p_stats->p_prof.pr_scale) {
 		int ticks;
-		struct timeval *tv = &u.u_ru.ru_stime;
+		struct timeval *tv = &p->p_stime;
 
 		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
 			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks) {
 #ifdef PROFTIMER
 			extern int profscale;
-			addupc(frame.f_pc, &u.u_prof, ticks * profscale);
+			addupc(frame.f_pc, &p->p_stats->p_prof,
+			    ticks * profscale);
 #else
-			addupc(frame.f_pc, &u.u_prof, ticks);
+			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
 #endif
 		}
 	}
@@ -420,7 +414,7 @@ syscall(code, frame)
 	register caddr_t params;
 	register int i;
 	register struct sysent *callp;
-	register struct proc *p = u.u_procp;
+	register struct proc *p = curproc;
 	int error, opc, numsys;
 	struct args {
 		int i[8];
@@ -434,10 +428,10 @@ syscall(code, frame)
 #endif
 
 	cnt.v_syscall++;
-	syst = u.u_ru.ru_stime;
+	syst = p->p_stime;
 	if (!USERMODE(frame.f_sr))
 		panic("syscall");
-	u.u_ar0 = frame.f_regs;
+	p->p_regs = frame.f_regs;
 	opc = frame.f_pc - 2;
 	systab = sysent;
 	numsys = nsysent;
@@ -479,10 +473,10 @@ syscall(code, frame)
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
-		error = notimp(u.u_procp, args.i, rval, code, callp->sy_narg);
+		error = notimp(p, args.i, rval, code, callp->sy_narg);
 	else
 #endif
-	error = (*callp->sy_call)(u.u_procp, &args, rval);
+	error = (*callp->sy_call)(p, &args, rval);
 	if (error == ERESTART)
 		frame.f_pc = opc;
 	else if (error != EJUSTRETURN) {
@@ -507,7 +501,7 @@ done:
 	 * Reinitialize proc pointer `p' as it may be different
 	 * if this is a child returning from fork syscall.
 	 */
-	p = u.u_procp;
+	p = curproc;
 	/*
 	 * XXX the check for sigreturn ensures that we don't
 	 * attempt to set up a call to a signal handler (sendsig) before
@@ -517,12 +511,13 @@ done:
 	 * so that this is not a problem.
 	 */
 #include "sys/syscall.h"
-	if (code != SYS_sigreturn && (i = CURSIG(p)))
-		psig(i);
+	if (code != SYS_sigreturn)
+		while (i = CURSIG(p))
+			psig(i);
 	p->p_pri = p->p_usrpri;
-	if (runrun) {
+	if (want_resched) {
 		/*
-		 * Since we are u.u_procp, clock will normally just change
+		 * Since we are curproc, clock will normally just change
 		 * our priority without moving us from one queue to another
 		 * (since the running process is not on a queue.)
 		 * If that happened after we setrq ourselves but before we
@@ -531,23 +526,25 @@ done:
 		 */
 		(void) splclock();
 		setrq(p);
-		u.u_ru.ru_nivcsw++;
+		p->p_stats->p_ru.ru_nivcsw++;
 		swtch();
-		if (code != SYS_sigreturn && (i = CURSIG(p)))
-			psig(i);
+		if (code != SYS_sigreturn)
+			while (i = CURSIG(p))
+				psig(i);
 	}
-	if (u.u_prof.pr_scale) {
+	if (p->p_stats->p_prof.pr_scale) {
 		int ticks;
-		struct timeval *tv = &u.u_ru.ru_stime;
+		struct timeval *tv = &p->p_stime;
 
 		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
 			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks) {
 #ifdef PROFTIMER
 			extern int profscale;
-			addupc(frame.f_pc, &u.u_prof, ticks * profscale);
+			addupc(frame.f_pc, &p->p_stats->p_prof,
+			    ticks * profscale);
 #else
-			addupc(frame.f_pc, &u.u_prof, ticks);
+			addupc(frame.f_pc, &p->p_stats->p_prof, ticks);
 #endif
 		}
 	}
