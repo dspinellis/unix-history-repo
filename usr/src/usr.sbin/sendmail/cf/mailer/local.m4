@@ -15,7 +15,7 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	6.9 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	6.10 (Berkeley) %G%')
 
 Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMm', LOCAL_MAILER_FLAGS), S=10, R=20,
 		A=mail -d $u
@@ -26,5 +26,6 @@ S10
 R<@>			$n			errors to mailer-daemon
 ifdef(`_ALWAYS_ADD_DOMAIN_',
 `R$* < @ $* > $*		$@ $1 < @ $2 > $3	already fully qualified
-R$*			$@ $1 @ $j		add local qualification',
+R$*			$: $1 @ $M		add local qualification
+R$* @			$: $1 @ $j		if $M not defined',
 `dnl')
