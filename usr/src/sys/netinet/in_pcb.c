@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.9 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,6 +13,7 @@
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "ioctl.h"
 #include "in.h"
 #include "in_systm.h"
 #include "../net/if.h"
@@ -274,11 +275,34 @@ in_pcbnotify(head, dst, errno, notify)
 }
 
 /*
+ * Check for alternatives when higher level complains
+ * about service problems.  For now, invalidate cached
+ * routing information.  If the route was created dynamically
+ * (by a redirect), time to try a default gateway again.
+ */
+in_losing(inp)
+	struct inpcb *inp;
+{
+	register struct rtentry *rt;
+
+	if ((rt = inp->inp_route.ro_rt)) {
+		if (rt->rt_flags & RTF_DYNAMIC)
+			rtrequest(SIOCDELRT, rt);
+		rtfree(rt);
+		inp->inp_route.ro_rt = 0;
+		/*
+		 * A new route can be allocated
+		 * the next time output is attempted.
+		 */
+	}
+}
+
+/*
  * After a routing change, flush old routing
  * and allocate a (hopefully) better one.
  */
 in_rtchange(inp)
-	struct inpcb *inp;
+	register struct inpcb *inp;
 {
 	if (inp->inp_route.ro_rt) {
 		rtfree(inp->inp_route.ro_rt);
