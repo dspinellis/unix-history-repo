@@ -22,47 +22,26 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <ufs/dinode.h>
 #include <ufs/fs.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
 #include <fstab.h>
 #include <strings.h>
 #include <ctype.h>
 #include "fsck.h"
 
-char	*rawname(), *unrawname(), *blockcheck(), *malloc();
 void	catch(), catchquit(), voidquit();
 int	returntosingle;
-
-struct part {
-	char	*name;			/* device name */
-	char	*fsname;		/* mounted filesystem name */
-	struct	part *next;		/* forward link of partitions on disk */
-} *badlist, **badnext = &badlist;
-
-struct disk {
-	char	*name;			/* disk base name */
-	struct	disk *next;		/* forward link for list of disks */
-	struct	part *part;		/* head of list of partitions on disk */
-	int	pid;			/* If != 0, pid of proc working on */
-} *disks;
-
-int	nrun, ndisks, maxrun;
 
 main(argc, argv)
 	int	argc;
 	char	*argv[];
 {
-	struct fstab *fsp;
-	int pid, passno, sumstatus;
-	char *name;
-	register struct disk *dk, *nextdisk;
-	register struct part *pt;
+	int ret, maxrun = 0;
+	extern int (docheck)(), (checkfilesys)();
 
 	sync();
 	while (--argc > 0 && **++argv == '-') {
@@ -134,195 +113,47 @@ main(argc, argv)
 		}
 		exit(0);
 	}
-	sumstatus = 0;
-	for (passno = 1; passno <= 2; passno++) {
-		if (setfsent() == 0)
-			errexit("Can't open checklist file: %s\n", _PATH_FSTAB);
-		while ((fsp = getfsent()) != 0) {
-			if (strcmp(fsp->fs_type, FSTAB_RW) &&
-			    strcmp(fsp->fs_type, FSTAB_RO) &&
-			    strcmp(fsp->fs_type, FSTAB_RQ))
-				continue;
-			if (strcmp(fsp->fs_vfstype, "ufs"))
-				continue;
-			if (preen == 0 ||
-			    passno == 1 && fsp->fs_passno == 1) {
-				name = blockcheck(fsp->fs_spec);
-				if (name != NULL)
-					checkfilesys(name);
-				else if (preen)
-					exit(8);
-			} else if (passno == 2 && fsp->fs_passno > 1) {
-				name = blockcheck(fsp->fs_spec);
-				if (name == NULL) {
-					pwarn("BAD DISK NAME %s\n",
-						fsp->fs_spec);
-					sumstatus |= 8;
-					continue;
-				}
-				addpart(name, fsp->fs_file);
-			}
-		}
-	}
-	if (preen) {
-		union wait status;
-
-		if (maxrun == 0)
-			maxrun = ndisks;
-		if (maxrun > ndisks)
-			maxrun = ndisks;
-		nextdisk = disks;
-		for (passno = 0; passno < maxrun; ++passno) {
-			startdisk(nextdisk);
-			nextdisk = nextdisk->next;
-		}
-		while ((pid = wait(&status)) != -1) {
-			for (dk = disks; dk; dk = dk->next)
-				if (dk->pid == pid)
-					break;
-			if (dk == 0) {
-				printf("Unknown pid %d\n", pid);
-				continue;
-			}
-			if (status.w_termsig) {
-				printf("%s (%s): EXITED WITH SIGNAL %d\n",
-					dk->part->name, dk->part->fsname,
-					status.w_termsig);
-				status.w_retcode = 8;
-			}
-			if (status.w_retcode != 0) {
-				sumstatus |= status.w_retcode;
-				*badnext = dk->part;
-				badnext = &dk->part->next;
-				dk->part = dk->part->next;
-				*badnext = NULL;
-			} else
-				dk->part = dk->part->next;
-			dk->pid = 0;
-			nrun--;
-			if (dk->part == NULL)
-				ndisks--;
-
-			if (nextdisk == NULL) {
-				if (dk->part)
-					startdisk(dk);
-			} else if (nrun < maxrun && nrun < ndisks) {
-				for ( ;; ) {
-					if ((nextdisk = nextdisk->next) == NULL)
-						nextdisk = disks;
-					if (nextdisk->part != NULL &&
-					    nextdisk->pid == 0)
-						break;
-				}
-				startdisk(nextdisk);
-			}
-		}
-	}
-	if (sumstatus) {
-		if (badlist == 0)
-			exit(8);
-		printf("THE FOLLOWING FILE SYSTEM%s HAD AN %s\n\t",
-			badlist->next ? "S" : "", "UNEXPECTED INCONSISTENCY:");
-		for (pt = badlist; pt; pt = pt->next)
-			printf("%s (%s)%s", pt->name, pt->fsname,
-			    pt->next ? ", " : "\n");
-		exit(8);
-	}
-	(void)endfsent();
+	ret = checkfstab(preen, maxrun, docheck, checkfilesys);
 	if (returntosingle)
 		exit(2);
-	exit(0);
+	exit(ret);
 }
 
-struct disk *
-finddisk(name)
-	char *name;
-{
-	register struct disk *dk, **dkp;
-	register char *p;
-	int len;
-
-	for (p = name + strlen(name) - 1; p >= name; --p)
-		if (isdigit(*p)) {
-			len = p - name + 1;
-			break;
-		}
-	if (p < name)
-		len = strlen(name);
-
-	for (dk = disks, dkp = &disks; dk; dkp = &dk->next, dk = dk->next) {
-		if (strncmp(dk->name, name, len) == 0 &&
-		    dk->name[len] == 0)
-			return (dk);
-	}
-	if ((*dkp = (struct disk *)malloc(sizeof(struct disk))) == NULL)
-		errexit("out of memory");
-	dk = *dkp;
-	if ((dk->name = malloc((unsigned int)len + 1)) == NULL)
-		errexit("out of memory");
-	strncpy(dk->name, name, len);
-	dk->name[len] = '\0';
-	dk->part = NULL;
-	dk->next = NULL;
-	dk->pid = 0;
-	ndisks++;
-	return (dk);
-}
-
-addpart(name, fsname)
-	char *name, *fsname;
-{
-	struct disk *dk = finddisk(name);
-	register struct part *pt, **ppt = &dk->part;
-
-	for (pt = dk->part; pt; ppt = &pt->next, pt = pt->next)
-		if (strcmp(pt->name, name) == 0) {
-			printf("%s in fstab more than once!\n", name);
-			return;
-		}
-	if ((*ppt = (struct part *)malloc(sizeof(struct part))) == NULL)
-		errexit("out of memory");
-	pt = *ppt;
-	if ((pt->name = malloc((unsigned int)strlen(name) + 1)) == NULL)
-		errexit("out of memory");
-	strcpy(pt->name, name);
-	if ((pt->fsname = malloc((unsigned int)strlen(fsname) + 1)) == NULL)
-		errexit("out of memory");
-	strcpy(pt->fsname, fsname);
-	pt->next = NULL;
-}
-
-startdisk(dk)
-	register struct disk *dk;
+/*
+ * Determine whether a filesystem should be checked.
+ */
+docheck(fsp)
+	register struct fstab *fsp;
 {
 
-	nrun++;
-	dk->pid = fork();
-	if (dk->pid < 0) {
-		perror("fork");
-		exit(8);
-	}
-	if (dk->pid == 0) {
-		(void)signal(SIGQUIT, voidquit);
-		checkfilesys(dk->part->name);
-		exit(0);
-	}
+	if (strcmp(fsp->fs_vfstype, "ufs") ||
+	    (strcmp(fsp->fs_type, FSTAB_RW) &&
+	     strcmp(fsp->fs_type, FSTAB_RO)) ||
+	    fsp->fs_passno == 0)
+		return (0);
+	return (1);
 }
 
-checkfilesys(filesys)
-	char *filesys;
+/*
+ * Check the specified filesystem.
+ */
+/* ARGSUSED */
+checkfilesys(filesys, mntpt, auxdata)
+	char *filesys, *mntpt;
+	long auxdata;
 {
 	daddr_t n_ffree, n_bfree;
 	struct dups *dp;
 	struct zlncnt *zlnp;
 
+	(void)signal(SIGQUIT, voidquit);
 	devname = filesys;
 	if (debug && preen)
 		pwarn("starting\n");
 	if (setup(filesys) == 0) {
 		if (preen)
 			pfatal("CAN'T CHECK FILE SYSTEM.");
-		return;
+		return (0);
 	}
 	/*
 	 * 1: scan inodes tallying blocks used
@@ -417,7 +248,7 @@ checkfilesys(filesys)
 	free(statemap);
 	free((char *)lncntp);
 	if (!fsmodified)
-		return;
+		return (0);
 	if (!preen) {
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 		if (hotroot)
@@ -425,86 +256,7 @@ checkfilesys(filesys)
 	}
 	if (hotroot) {
 		sync();
-		exit(4);
+		return (4);
 	}
-}
-
-char *
-blockcheck(name)
-	char *name;
-{
-	struct stat stslash, stblock, stchar;
-	char *raw;
-	int retried = 0;
-
-	hotroot = 0;
-	if (stat("/", &stslash) < 0) {
-		perror("/");
-		printf("Can't stat root\n");
-		return (0);
-	}
-retry:
-	if (stat(name, &stblock) < 0) {
-		perror(name);
-		printf("Can't stat %s\n", name);
-		return (0);
-	}
-	if ((stblock.st_mode & S_IFMT) == S_IFBLK) {
-		if (stslash.st_dev == stblock.st_rdev)
-			hotroot++;
-		raw = rawname(name);
-		if (stat(raw, &stchar) < 0) {
-			perror(raw);
-			printf("Can't stat %s\n", raw);
-			return (name);
-		}
-		if ((stchar.st_mode & S_IFMT) == S_IFCHR) {
-			return (raw);
-		} else {
-			printf("%s is not a character device\n", raw);
-			return (name);
-		}
-	} else if ((stblock.st_mode & S_IFMT) == S_IFCHR && !retried) {
-		name = unrawname(name);
-		retried++;
-		goto retry;
-	}
-	printf("Can't make sense out of name %s\n", name);
 	return (0);
-}
-
-char *
-unrawname(name)
-	char *name;
-{
-	char *dp;
-	struct stat stb;
-
-	if ((dp = rindex(name, '/')) == 0)
-		return (name);
-	if (stat(name, &stb) < 0)
-		return (name);
-	if ((stb.st_mode & S_IFMT) != S_IFCHR)
-		return (name);
-	if (*(dp + 1) != 'r')
-		return (name);
-	(void)strcpy(dp + 1, dp + 2);
-	return (name);
-}
-
-char *
-rawname(name)
-	char *name;
-{
-	static char rawbuf[32];
-	char *dp;
-
-	if ((dp = rindex(name, '/')) == 0)
-		return (0);
-	*dp = 0;
-	(void)strcpy(rawbuf, name);
-	*dp = '/';
-	(void)strcat(rawbuf, "/r");
-	(void)strcat(rawbuf, dp + 1);
-	return (rawbuf);
 }
