@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.2 82/04/06";
+static char sccsid[] = "@(#)rlogin.c	4.3 82/11/14";
 #endif
 
 #include <stdio.h>
 #include <sgtty.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <net/in.h>
+#include <netinet/in.h>
 #include <errno.h>
 #include <pwd.h>
 
@@ -467,7 +467,7 @@ oob()
 			break;
 		cc = read(rem, waste, 512);
 	}
-	ioctl(rem, SIOCRCVOOB, &mark);
+	recv(rem, &mark, 1, SOF_OOB);
 	if (mark & TIOCPKT_NOSTOP) {
 		notchars.t_stopc = 0377;
 		notchars.t_startc = 0377;
