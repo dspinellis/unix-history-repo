@@ -1,4 +1,4 @@
-/*	if_en.c	4.21	81/12/12	*/
+/*	if_en.c	4.22	81/12/12	*/
 
 #include "en.h"
 
@@ -348,7 +348,6 @@ COUNT(ENRINT);
 		len = htons((u_short)endataaddr(en, off ? off+2 : 0, struct ip *)->ip_len);
 		if (off)
 			len += 2;
-printf("enet rcvd len %d\n", len);
 		setipintr();
 		inq = &ipintrq;
 		break;

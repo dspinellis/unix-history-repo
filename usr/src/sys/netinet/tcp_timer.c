@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.6 81/12/12 */
+/* tcp_timer.c 4.7 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -75,7 +75,6 @@ tcp_canceltimers(tp)
 	register int i;
 
 COUNT(TCP_CANCELTIMERS);
-printf("tcp_canceltimers %x\n", tp);
 	for (i = 0; i < TCPT_NTIMERS; i++)
 		tp->t_timer[i] = 0;
 }
@@ -89,7 +88,6 @@ tcp_timers(tp, timer)
 {
 
 COUNT(TCP_TIMERS);
-printf("tcp_timers %x %d\n", tp, timer);
 	switch (timer) {
 
 	/*
@@ -111,7 +109,6 @@ printf("tcp_timers %x %d\n", tp, timer);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    ((int)(2 * tp->t_srtt)) << tp->t_rxtshift,
 		    TCPTV_MIN, TCPTV_MAX);
-printf("rexmt timer now %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
@@ -127,7 +124,6 @@ printf("rexmt timer now %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->t_force = 0;
 		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
 		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
-printf("persist timer now %d\n", tp->t_timer[TCPT_PERSIST]);
 		return;
 
 	/*
@@ -137,11 +133,9 @@ printf("persist timer now %d\n", tp->t_timer[TCPT_PERSIST]);
 	case TCPT_KEEP:
 		if (tp->t_state < TCPS_ESTABLISHED ||
 		    tp->t_idle >= TCPTV_MAXIDLE) {
-printf("drop because of keep alive\n");
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-printf("send keep alive\n");
 		tcp_respond(tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;

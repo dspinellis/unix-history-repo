@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.40 81/12/12 */
+/* tcp_usrreq.c 1.41 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,7 +43,6 @@ COUNT(TCP_USRREQ);
 	 * Make sure attached.  If not,
 	 * only PRU_ATTACH is valid.
 	 */
-printf("tcp_usrreq %d so %x inp %x\n", req, so, inp);
 	if (inp == 0 && req != PRU_ATTACH) {
 		splx(s);
 		return (EINVAL);
@@ -174,19 +173,10 @@ badcon:
 	return (error);
 }
 
-pseqno(tp)
-struct tcpcb *tp;
-{
-printf("tp %x state %s rcv_nxt %x rcv_wnd %d irs %x\n", tp, tcpstates[tp->t_state],tp->rcv_nxt, tp->rcv_wnd, tp->irs);
-printf("snd_una %x snd_nxt %x snd_wnd %d snd_wl1 %x snd_wl2 %x iss %x\n",
-tp->snd_una, tp->snd_nxt, tp->snd_wnd, tp->snd_wl1, tp->snd_wl2, tp->iss);
-}
-
 tcp_usrclosed(tp)
 	struct tcpcb *tp;
 {
 
-printf("usrclosed in %s\n", tcpstates[tp->t_state]);
 	switch (tp->t_state) {
 
 	case TCPS_LISTEN:
@@ -204,5 +194,4 @@ printf("usrclosed in %s\n", tcpstates[tp->t_state]);
 		tp->t_state = TCPS_LAST_ACK;
 		break;
 	}
-printf("after usrclosed state %s\n", tcpstates[tp->t_state]);
 }

@@ -1,4 +1,4 @@
-/* ip_input.c 1.26 81/12/12 */
+/* ip_input.c 1.27 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -176,7 +176,6 @@ found:
 	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
 	goto next;
 bad:
-printf("ip_input bad!\n");
 	m_freem(m);
 	goto next;
 }
