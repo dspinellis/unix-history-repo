@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.3 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -247,8 +247,7 @@ send:
 	 * window for use in delaying messages about window sizes.
 	 * If resending a FIN, be sure not to use a new sequence number.
 	 */
-	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN &&
-	    tp->snd_nxt != tp->snd_una)
+	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && len == 0)
 		tp->snd_nxt--;
 	ti->ti_seq = htonl(tp->snd_nxt);
 	ti->ti_ack = htonl(tp->rcv_nxt);
