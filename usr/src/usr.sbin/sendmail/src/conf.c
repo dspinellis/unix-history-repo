@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.95 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.96 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1632,7 +1632,7 @@ freespace(dir, bsize)
 #  if defined(ultrix)
 	struct fs_data fs;
 #   define f_bavail	fd_bfreen
-#   define FSBLOCKSIZE	fs.fd_bsize
+#   define FSBLOCKSIZE	1024L
 #  else
 #   if SFS_TYPE == SFS_STATVFS
 	struct statvfs fs;
