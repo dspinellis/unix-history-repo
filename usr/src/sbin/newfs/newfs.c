@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.9 %G%";
+static char sccsid[] = "@(#)newfs.c	4.10 %G%";
 #endif
 
 /*
@@ -44,6 +44,7 @@ char	*rindex();
 char	*sprintf();
 
 main(argc, argv)
+	int argc;
 	char *argv[];
 {
 	char *cp, *special;
@@ -161,20 +162,18 @@ next:
 		exit(1);
 	}
 	special = argv[0];
-again:
+	cp = rindex(special, '/');
+	if (cp != 0)
+		special = cp + 1;
+	if (*special == 'r')
+		special++;
+	special = sprintf(device, "/dev/r%s", special);
 	if (stat(special, &st) < 0) {
-		if (*special != '/') {
-			if (*special == 'r')
-				special++;
-			special = sprintf(device, "/dev/r%s", special);
-			goto again;
-		}
 		fprintf(stderr, "newfs: "); perror(special);
 		exit(2);
 	}
-	if ((st.st_mode & S_IFMT) != S_IFBLK &&
-	    (st.st_mode & S_IFMT) != S_IFCHR)
-		fatal("%s: not a block or character device", special);
+	if ((st.st_mode & S_IFMT) != S_IFCHR)
+		fatal("%s: not a character device", special);
 	dp = getdiskbyname(argv[1]);
 	if (dp == 0)
 		fatal("%s: unknown disk type", argv[1]);
