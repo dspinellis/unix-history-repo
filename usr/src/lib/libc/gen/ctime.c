@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -159,9 +159,13 @@ time_t *tim;
 	int year;
 	time_t copyt;
 	struct timeval curtime;
-	struct timezone zone;
+	static struct timezone zone;
+	static int init = 0;
 
-	gettimeofday(&curtime, &zone);
+	if (!init) {
+		gettimeofday(&curtime, &zone);
+		init++;
+	}
 	copyt = *tim - (time_t)zone.tz_minuteswest*60;
 	ct = gmtime(&copyt);
 	dayno = ct->tm_yday;
