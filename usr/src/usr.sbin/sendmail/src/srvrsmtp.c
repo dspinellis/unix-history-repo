@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.9 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.10 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.10 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -214,6 +214,8 @@ smtp()
 			if (runinchild("SMTP-MAIL") > 0)
 				break;
 			initsys();
+			(void) sprintf(state, "srvrsmtp %s", CurEnv->e_id);
+			setproctitle(state);
 
 			/* child -- go do the processing */
 			p = skipword(p, "from");
@@ -339,6 +341,7 @@ smtp()
 		  case CMDVRFY:		/* vrfy -- verify address */
 			if (runinchild("SMTP-VRFY") > 0)
 				break;
+			setproctitle("SMTP-VRFY");
 				paddrtree(a);
 			break;
 
