@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mkboottape.c	7.6 (Berkeley) %G%
+ *	@(#)mkboottape.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,15 +20,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <err.h>
 
 #include <pmax/stand/dec_boot.h>
 #include <pmax/stand/dec_exec.h>
 
-void err __P((const char *, ...));
 void usage __P((void));
 
 struct	Dec_DiskBoot decBootInfo;
 struct	coff_exec dec_exec;
+extern char *__progname;		/* Program name, from crt0. */
 
 /*
  * This program takes a kernel and the name of the special device file that
@@ -48,7 +49,7 @@ main(argc, argv)
 	struct exec aout;
 	long loadAddr;
 	long execAddr;
-	long textoff;
+	off_t textoff;
 	long length;
 	long rootsize;
 	int ifd, ofd, rfd;
@@ -77,13 +78,13 @@ main(argc, argv)
 	else
 		ofd = open(argv[0], O_RDWR, 0);
 	if (ofd < 0)
-deverr:		err("%s: %s", argv[0], strerror(errno));
+deverr:		err(1, "%s", argv[0]);
 
 	if ((ifd = open(argv[1], O_RDONLY, 0)) < 0)
-bootferr:	err("%s: %s", argv[1], strerror(errno));
+bootferr:	err(1, "%s", argv[1]);
 
 	if ((rfd = open(argv[2], O_RDONLY, 0)) < 0)
-rooterr:	err("%s: %s", argv[2], strerror(errno));
+rooterr:	err(1, "%s", argv[2]);
 
 	rootsize = atoi(argv[3]);
 
@@ -91,8 +92,11 @@ rooterr:	err("%s: %s", argv[2], strerror(errno));
 	 * Check for exec header and skip to code segment.
 	 */
 	if (read(ifd, &aout, sizeof(aout)) != sizeof(aout) ||
-	    aout.a_magic != OMAGIC)
-		err("%s: need impure text format (OMAGIC) file", argv[1]);
+	    aout.a_magic != OMAGIC) {
+		fprintf(stderr, "%s: %s: need old text format (OMAGIC) file\n",
+			__progname, argv[1]);
+		exit(1);
+	}
 
 	loadAddr = aout.a_entry;
 	execAddr = aout.a_entry;
@@ -194,7 +198,7 @@ rooterr:	err("%s: %s", argv[2], strerror(errno));
 			goto deverr;
 	}
 
-	(void)printf("mkboottape: wrote %d sectors\n", nsectors);
+	(void)printf("%s: wrote %d sectors\n", __progname, nsectors);
 	exit(0);
 }
 
@@ -202,35 +206,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: mkboottape [-b] tapedev vmunix minirootdev size\n");
+	    "usage: %s [-b] tapedev vmunix minirootdev size\n", __progname);
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "mkboottape: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
