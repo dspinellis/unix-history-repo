@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.2	83/10/01	*/
+/*	kern_clock.c	6.3	83/10/08	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -192,6 +192,7 @@ hardclock(pc, ps)
 	setsoftclock();
 }
 
+int	dk_ndrive = DK_NDRIVE;
 /*
  * Gather statistics on resource utilization.
  *
