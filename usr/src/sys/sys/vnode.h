@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.44 (Berkeley) %G%
+ *	@(#)vnode.h	7.45 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -119,18 +119,21 @@ struct vattr {
 #ifdef __STDC__
 struct flock;
 struct nameidata;
+struct componentname;
 #endif
 
 struct vnodeops {
-#define	VOP_LOOKUP(v,n,p)	(*((v)->v_op->vop_lookup))(v,n,p)
-	int	(*vop_lookup)	__P((struct vnode *vp, struct nameidata *ndp,
-				    struct proc *p));
-#define	VOP_CREATE(n,a,p)	(*((n)->ni_dvp->v_op->vop_create))(n,a,p)
-	int	(*vop_create)	__P((struct nameidata *ndp, struct vattr *vap,
-				    struct proc *p));
-#define	VOP_MKNOD(n,a,c,p)	(*((n)->ni_dvp->v_op->vop_mknod))(n,a,c,p)
-	int	(*vop_mknod)	__P((struct nameidata *ndp, struct vattr *vap,
-				    struct ucred *cred, struct proc *p));
+#define	VOP_LOOKUP(d,v,c)	(*((d)->v_op->vop_lookup))(d,v,c)
+	int	(*vop_lookup)	__P((struct vnode *dvp, struct vnode **vpp,
+				     struct componentname *cnp));
+#define	VOP_CREATE(d,v,c,a)	(*((d)->v_op->vop_create))(d,v,c,a)
+	int	(*vop_create)	__P((struct vnode *dvp, struct vnode **vpp,
+				     struct componentname *cnp,
+				     struct vattr *vap));
+#define	VOP_MKNOD(d,v,c,a)	(*((d)->v_op->vop_mknod))(d,v,c,a)
+	int	(*vop_mknod)	__P((struct vnode *dvp, struct vnode **vpp,
+				     struct componentname *cnp,
+				     struct vattr *vap));
 #define	VOP_OPEN(v,f,c,p)	(*((v)->v_op->vop_open))(v,f,c,p)
 	int	(*vop_open)	__P((struct vnode *vp, int mode,
 				    struct ucred *cred, struct proc *p));
@@ -169,30 +172,37 @@ struct vnodeops {
 #define	VOP_SEEK(v,p,o,w)	(*((v)->v_op->vop_seek))(v,p,o,w)
 	int	(*vop_seek)	__P((struct vnode *vp, off_t oldoff,
 				    off_t newoff, struct ucred *cred));
-#define	VOP_REMOVE(n,p)		(*((n)->ni_dvp->v_op->vop_remove))(n,p)
-	int	(*vop_remove)	__P((struct nameidata *ndp, struct proc *p));
-#define	VOP_LINK(v,n,p)		(*((n)->ni_dvp->v_op->vop_link))(v,n,p)
-	int	(*vop_link)	__P((struct vnode *vp, struct nameidata *ndp,
-				    struct proc *p));
-#define	VOP_RENAME(s,t,p)	(*((s)->ni_dvp->v_op->vop_rename))(s,t,p)
-	int	(*vop_rename)	__P((struct nameidata *fndp,
-				    struct nameidata *tdnp, struct proc *p));
-#define	VOP_MKDIR(n,a,p)	(*((n)->ni_dvp->v_op->vop_mkdir))(n,a,p)
-	int	(*vop_mkdir)	__P((struct nameidata *ndp, struct vattr *vap,
-				    struct proc *p));
-#define	VOP_RMDIR(n,p)		(*((n)->ni_dvp->v_op->vop_rmdir))(n,p)
-	int	(*vop_rmdir)	__P((struct nameidata *ndp, struct proc *p));
-#define	VOP_SYMLINK(n,a,m,p)	(*((n)->ni_dvp->v_op->vop_symlink))(n,a,m,p)
-	int	(*vop_symlink)	__P((struct nameidata *ndp, struct vattr *vap,
-				    char *target, struct proc *p));
+#define	VOP_REMOVE(d,v,c)	(*((d)->v_op->vop_remove))(d,v,c)
+	int	(*vop_remove)	__P((struct vnode *dvp, struct vnode *vp,
+				     struct componentname *cnp));
+#define	VOP_LINK(v,d,c)		(*((v)->v_op->vop_link))(v,d,c)
+	int	(*vop_link)	__P((struct vnode *vp, struct vnode *tdvp,
+				     struct componentname *cnp));
+#define	VOP_RENAME(fd,fv,fc,td,tv,tc) (*((fd)->v_op->vop_rename))(fd,fv,fc,td,tv,tc)
+	int	(*vop_rename)	__P((struct vnode *fdvp, struct vnode *fvp,
+				     struct componentname *fcnp,
+				     struct vnode *tdvp, struct vnode *tvp,
+				     struct componentname *tcnp));
+#define	VOP_MKDIR(d,v,c,a)	(*((d)->v_op->vop_mkdir))(d,v,c,a)
+	int	(*vop_mkdir)	__P((struct vnode *dvp, struct vnode **vpp,
+				     struct componentname *cnp,
+				     struct vattr *vap));
+#define	VOP_RMDIR(d,v,c)	(*((d)->v_op->vop_rmdir))(d,v,c)
+	int	(*vop_rmdir)	__P((struct vnode *dvp, struct vnode *vp,
+				     struct componentname *cnp));
+#define	VOP_SYMLINK(d,v,c,a,t)	(*((d)->v_op->vop_symlink))(d,v,c,a,t)
+	int	(*vop_symlink)	__P((struct vnode *dvp, struct vnode **vpp,
+				     struct componentname *cnp,
+				     struct vattr *vap, char *target));
 #define	VOP_READDIR(v,u,c,e)	(*((v)->v_op->vop_readdir))(v,u,c,e)
 	int	(*vop_readdir)	__P((struct vnode *vp, struct uio *uio,
 				    struct ucred *cred, int *eofflagp));
 #define	VOP_READLINK(v,u,c)	(*((v)->v_op->vop_readlink))(v,u,c)
 	int	(*vop_readlink)	__P((struct vnode *vp, struct uio *uio,
 				    struct ucred *cred));
-#define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vop_abortop))(n)
-	int	(*vop_abortop)	__P((struct nameidata *ndp));
+#define	VOP_ABORTOP(d,c)	(*((d)->v_op->vop_abortop))(d,c)
+	int	(*vop_abortop)	__P((struct vnode *dvp,
+				     struct componentname *cnp));
 #define	VOP_INACTIVE(v,p)	(*((v)->v_op->vop_inactive))(v,p)
 	int	(*vop_inactive)	__P((struct vnode *vp, struct proc *p));
 #define	VOP_RECLAIM(v)		(*((v)->v_op->vop_reclaim))(v)
