@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id$
+ * $Id: swap_pager.c,v 1.12 1994/01/14 16:27:12 davidg Exp $
  */
 
 /*
@@ -961,6 +961,7 @@ retrygetspace:
 	bp = getpbuf();
 	bp->b_flags = B_BUSY | (flags & B_READ);
 	bp->b_proc = &proc0;	/* XXX (but without B_PHYS set this is ok) */
+	bp->b_rcred = bp->b_wcred = bp->b_proc->p_ucred;
 	bp->b_un.b_addr = (caddr_t) kva;
 	bp->b_blkno = swb->swb_block[off];
 	VHOLD(swapdev_vp);
@@ -982,6 +983,8 @@ retrygetspace:
 		spc->spc_m = m[reqpage];
 		bp->b_flags |= B_CALL;
 		bp->b_iodone = swap_pager_iodone;
+		bp->b_dirtyoff = 0;
+		bp->b_dirtyend = bp->b_bcount;
 		bp->b_spc = (void *) spc;
 		swp->sw_poip++;
 		queue_enter(&swap_pager_inuse, spc, swp_clean_t, spc_list);
