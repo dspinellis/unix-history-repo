@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sed0.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)sed0.c	4.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ char	*argv[];
 	spend = linebuf;
 	hspend = holdsp;
 	fcode[0] = stdout;
+	fname[0] = "";
 	nfiles = 1;
 
 	if(eargc == 1)
