@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 1988 Mark Nudleman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)position.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)position.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
