@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)optr.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)optr.c	1.5 (Berkeley) %G%";
+
 #include "dump.h"
 
 /*
@@ -184,7 +185,7 @@ broadcast(message)
 }
 
 sendmes(tty, message)
-char *tty, *message;
+	char *tty, *message;
 {
 	char t[50], buf[BUFSIZ];
 	register char *cp;
@@ -254,6 +255,7 @@ int blocksontape()
 	/* ARGSUSED */
 msg(fmt, a1, a2, a3, a4, a5)
 	char	*fmt;
+	int	a1, a2, a3, a4, a5;
 {
 	fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
@@ -268,6 +270,7 @@ msg(fmt, a1, a2, a3, a4, a5)
 	/* ARGSUSED */
 msgtail(fmt, a1, a2, a3, a4, a5)
 	char	*fmt;
+	int	a1, a2, a3, a4, a5;
 {
 	fprintf(stderr, fmt, a1, a2, a3, a4, a5);
 }
@@ -399,10 +402,12 @@ int	idatesort(p1, p2)
 }
 
 int max(a,b)
+	int a, b;
 {
 	return(a>b?a:b);
 }
 int min(a,b)
+	int a, b;
 {
 	return(a<b?a:b);
 }
