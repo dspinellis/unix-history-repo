@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.25 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,7 +90,7 @@ namei(ndp)
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
 	getbuf = (ndp->ni_nameiop & HASBUF) ^ HASBUF;
-	if (flag == DELETE || wantparent)
+	if (flag == DELETE || (wantparent && flag != CREATE))
 		docache = 0;
 	rdonly = MNT_RDONLY;
 	if (ndp->ni_nameiop & REMOTE)
