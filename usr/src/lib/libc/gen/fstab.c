@@ -22,75 +22,52 @@ static char sccsid[] = "@(#)fstab.c	5.5 (Berkeley) %G%";
 #include <fstab.h>
 #include <stdio.h>
 
-static	struct fstab fs;
-static	FILE *fs_file = NULL;
-static	char line[BUFSIZ+1];
+static FILE *_fs_fp;
+static struct fstab _fs_fstab;
 
 static
-fstabscan(fsp)
-	register struct fstab *fsp;
+fstabscan()
 {
 	register char *cp;
-	char *fgets(), *strtok();
+#define	MAXLINELENGTH	100
+	static char line[MAXLINELENGTH];
+	char *fgets(), *strsep();
 
 	for (;;) {
-		if (!(cp = fgets(line, sizeof(line), fs_file)))
-			return(1);
-		fsp->fs_spec = strtok(cp, ":\n");
-		fsp->fs_file = strtok((char *)NULL, ":\n");
-		fsp->fs_type = strtok((char *)NULL, ":\n");
-		if (fsp->fs_type && strcmp(fsp->fs_type, FSTAB_XX)) {
-			if (!(cp = strtok((char *)NULL, ":\n")))
-				continue;
-			fsp->fs_freq = atoi(cp);
-			if (!(cp = strtok((char *)NULL, ":\n")))
-				continue;
-			fsp->fs_passno = atoi(cp);
+		if (!(cp = fgets(line, sizeof(line), _fs_fp)))
 			return(0);
+		_fs_fstab.fs_spec = strsep(cp, ":\n");
+		_fs_fstab.fs_file = strsep((char *)NULL, ":\n");
+		_fs_fstab.fs_type = strsep((char *)NULL, ":\n");
+		if (_fs_fstab.fs_type && strcmp(_fs_fstab.fs_type, FSTAB_XX)) {
+			if (!(cp = strsep((char *)NULL, ":\n")))
+				continue;
+			_fs_fstab.fs_freq = atoi(cp);
+			if (!(cp = strsep((char *)NULL, ":\n")))
+				continue;
+			_fs_fstab.fs_passno = atoi(cp);
+			return(1);
 		}
 	}
 	/* NOTREACHED */
 }
 
-setfsent()
-{
-	if (fs_file)
-		(void)endfsent();
-	if ((fs_file = fopen(FSTAB, "r")) == NULL) {
-		fs_file = NULL;
-		return(0);
-	}
-	return(1);
-}
-
-endfsent()
-{
-	if (fs_file) {
-		(void)fclose(fs_file);
-		fs_file = NULL;
-	}
-	return(1);
-}
-
 struct fstab *
 getfsent()
 {
-	if (fs_file == NULL && !setfsent() || fstabscan(&fs))
+	if (!_fs_fp && !setfsent() || !fstabscan())
 		return((struct fstab *)NULL);
-	return(&fs);
+	return(&_fs_fstab);
 }
 
 struct fstab *
 getfsspec(name)
 	register char *name;
 {
-	register struct fstab *fsp;
-
-	if (!setfsent())		/* start from the beginning */
-		return((struct fstab *)NULL);
-	while (fsp = getfsent())
-		if (!strcmp(fsp->fs_spec, name))
-			return(fsp);
+	if (setfsent())
+		while (fstabscan())
+			if (!strcmp(_fs_fstab.fs_spec, name))
+				return(&_fs_fstab);
 	return((struct fstab *)NULL);
 }
 
@@ -98,12 +75,27 @@ struct fstab *
 getfsfile(name)
 	register char *name;
 {
-	register struct fstab *fsp;
-
-	if (!setfsent())		/* start from the beginning */
-		return((struct fstab *)NULL);
-	while (fsp = getfsent())
-		if (!strcmp(fsp->fs_file, name))
-			return(fsp);
+	if (setfsent())
+		while (fstabscan())
+			if (!strcmp(_fs_fstab.fs_file, name))
+				return(&_fs_fstab);
 	return((struct fstab *)NULL);
+}
+
+setfsent()
+{
+	if (_fs_fp) {
+		rewind(_fs_fp);
+		return(1);
+	}
+	return((_fs_fp = fopen(FSTAB, "r")) != NULL);
+}
+
+void
+endfsent()
+{
+	if (_fs_fp) {
+		(void)fclose(_fs_fp);
+		_fs_fp = NULL;
+	}
 }
