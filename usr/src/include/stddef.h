@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stddef.h	5.6 (Berkeley) %G%
+ *	@(#)stddef.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _STDDEF_H_
@@ -21,6 +21,7 @@ typedef	_BSD_SIZE_T_	size_t;
 
 #ifdef	_BSD_WCHAR_T_
 typedef	_BSD_WCHAR_T_	wchar_t;
+typedef	_BSD_WCHAR_T_	rune_t;
 #undef	_BSD_WCHAR_T_
 #endif
 
