@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -120,27 +120,25 @@ enter_lastlog(pn)
 	register PERSON *pn;
 {
 	register WHERE *w;
-	static int fd;
+	static int opened;
 	struct lastlog ll;
+	int fd;
 	char doit = 0;
 	off_t lseek();
 
-	/*
-	 * Some systems may choose not to keep lastlog,
-	 * so we don't report any errors.
-	 * Not only that, we leave fd at -1 so lseek and read
-	 * will fail and act like there were no last logins.
-	 * Not the fastest way to do it, but what the hell.
-	 */
-	if (fd == 0)
+	/* some systems may not maintain lastlog, don't report errors. */
+	if (!opened) {
 		fd = open(_PATH_LASTLOG, O_RDONLY, 0);
-	(void) lseek(fd, (long) (pn->uid * sizeof ll), L_SET);
-	if (read(fd, (char *)&ll, sizeof ll) != sizeof ll) {
-		/* same as never logged in */
-		ll.ll_line[0] = 0;
-		ll.ll_host[0] = 0;
-		ll.ll_time = 0;
+		opened = 1;
 	}
+	if (fd == -1 ||
+	    lseek(fd, (long)pn->uid * sizeof(ll), L_SET) !=
+	    (long)pn->uid * sizeof(ll) ||
+	    read(fd, (char *)&ll, sizeof(ll)) != sizeof(ll)) {
+			/* as if never logged in */
+			ll.ll_line[0] = ll.ll_host[0] = NULL;
+			ll.ll_time = 0;
+		}
 	if ((w = pn->whead) == NULL)
 		doit = 1;
 	else {
