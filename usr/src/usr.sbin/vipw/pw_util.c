@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_util.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_util.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,6 +34,17 @@ static char sccsid[] = "@(#)pw_util.c	8.3 (Berkeley) %G%";
 #include "pw_util.h"
 
 extern char *tempname;
+static pid_t editpid = -1;
+static int lockfd;
+
+void
+pw_cont(sig)
+	int sig;
+{
+
+	if (editpid != -1)
+		kill(editpid, sig);
+}
 
 void
 pw_init()
@@ -59,14 +70,11 @@ pw_init()
 	(void)signal(SIGPIPE, SIG_IGN);
 	(void)signal(SIGQUIT, SIG_IGN);
 	(void)signal(SIGTERM, SIG_IGN);
-	(void)signal(SIGTSTP, SIG_IGN);
-	(void)signal(SIGTTOU, SIG_IGN);
+	(void)signal(SIGCONT, pw_cont);
 
 	/* Create with exact permissions. */
 	(void)umask(0);
 }
-
-static int lockfd;
 
 int
 pw_lock()
@@ -127,7 +135,6 @@ pw_edit(notsetuid)
 	int notsetuid;
 {
 	int pstat;
-	pid_t pid;
 	char *p, *editor;
 
 	if (!(editor = getenv("EDITOR")))
@@ -137,7 +144,7 @@ pw_edit(notsetuid)
 	else 
 		p = editor;
 
-	if (!(pid = vfork())) {
+	if (!(editpid = vfork())) {
 		if (notsetuid) {
 			(void)setgid(getgid());
 			(void)setuid(getuid());
@@ -145,9 +152,18 @@ pw_edit(notsetuid)
 		execlp(editor, p, tempname, NULL);
 		_exit(1);
 	}
-	pid = waitpid(pid, (int *)&pstat, 0);
-	if (pid == -1 || !WIFEXITED(pstat) || WEXITSTATUS(pstat) != 0)
-		pw_error(editor, 1, 1);
+	for (;;) {
+		editpid = waitpid(editpid, (int *)&pstat, WUNTRACED);
+		if (editpid == -1)
+			pw_error(editor, 1, 1);
+		else if (WIFSTOPPED(pstat))
+			raise(WSTOPSIG(pstat));
+		else if (WIFEXITED(pstat) && WEXITSTATUS(pstat) == 0)
+			break;
+		else
+			pw_error(editor, 1, 1);
+	}
+	editpid = -1;
 }
 
 void
