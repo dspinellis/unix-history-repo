@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)directory.3	6.2 (Berkeley) %G%
+.\"	@(#)directory.3	6.3 (Berkeley) %G%
 .\"
 .TH DIRECTORY 3 ""
 .UC 5
 .SH NAME
-opendir, readdir, telldir, seekdir, rewinddir, closedir \- directory operations
+opendir, readdir, telldir, seekdir, rewinddir, closedir, dirfd \- directory operations
 .SH SYNOPSIS
 .B #include <sys/types.h>
 .br
@@ -48,6 +48,12 @@ opendir, readdir, telldir, seekdir, rewinddir, closedir \- directory operations
 .B *dirp;
 .PP
 .B closedir(dirp)
+.br
+.SM
+.B DIR
+.B *dirp;
+.PP
+.B dirfd(dirp)
 .br
 .SM
 .B DIR
@@ -113,6 +119,11 @@ to the beginning of the directory.
 closes the named
 .I directory stream
 and frees the structure associated with the DIR pointer.
+.PP
+.I Dirfd
+returns the integer file descriptor associated with the named
+.I directory stream,
+see open(2).
 .PP
 Sample code which searchs a directory for entry ``name'' is:
 .PP
