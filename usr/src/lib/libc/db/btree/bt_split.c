@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -84,14 +84,10 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 	 */
 	h->linp[skip] = h->upper -= nbytes;
 	dest = (char *)h + h->upper;
-	if (ISSET(t, BTF_RECNO)) {
+	if (ISSET(t, BTF_RECNO))
 		WR_RLEAF(dest, data, flags)
-		++t->bt_nrecs;
-		SET(t, BTF_METADIRTY | BTF_MODIFIED);
-	} else {
+	else
 		WR_BLEAF(dest, key, data, flags)
-		SET(t, BTF_MODIFIED);
-	}
 
 	/*
 	 * Now we walk the parent page stack -- a LIFO stack of the pages that
@@ -130,14 +126,13 @@ __bt_split(t, h, key, data, flags, nbytes, skip)
 		/*
 		 * Calculate the space needed on the parent page.
 		 *
-		 * Space hack when insertin into BINTERNAL pages.  Only need to
+		 * Space hack when inserting into BINTERNAL pages.  Only need to
 		 * retain the number of bytes that will distinguish between the
-		 * new entry and the LAST entry on the page to its left.  If
-		 * the keys compare equal, only need to retain one byte as a
-		 * placeholder.  Special cases are that the entire key must be
-		 * retained for the next-to-leftmost key on the leftmost page
-		 * of each level, or the search will fail, and can't mess with
-		 * overflow keys.
+		 * new entry and the LAST entry on the page to its left.  If the
+		 * keys compare equal, retain the entire key.  Note, we don't
+		 * touch overflow keys and the entire key must be retained for
+		 * the next-to-leftmost key on the leftmost page of each level,
+		 * or the search will fail.
 		 */
 		switch (rchild->flags & P_TYPE) {
 		case P_BINTERNAL:
@@ -215,7 +210,7 @@ prefix:				nksize = t->bt_pfx(&a, &b);
 			h->linp[skip] = h->upper -= nbytes;
 			dest = (char *)h + h->linp[skip];
 			WR_BINTERNAL(dest, nksize ? nksize : bl->ksize,
-			    rchild->pgno, rchild->flags & P_OVERFLOW);
+			    rchild->pgno, bl->flags & P_BIGKEY);
 			bcopy(bl->bytes, dest, nksize ? nksize : bl->ksize);
 			if (bl->flags & P_BIGKEY &&
 			    bt_preserve(t, *(pgno_t *)bl->bytes) == RET_ERROR)
@@ -256,19 +251,8 @@ prefix:				nksize = t->bt_pfx(&a, &b);
 	mpool_put(t->bt_mp, l, MPOOL_DIRTY);
 	mpool_put(t->bt_mp, r, MPOOL_DIRTY);
 
-	/*
-	 * If it's a recno tree, increment the count on all remaining parent
-	 * pages.  Otherwise, clear the stack.
-	 */
-	if (ISSET(t, BTF_RECNO))
-		while  ((parent = BT_POP(t)) != NULL) {
-			if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
-				return (RET_ERROR);
-			++GETRINTERNAL(h, parent->index)->nrecs;
-			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
-		}
-	else
-		BT_CLR(t);
+	/* Clear any pages left on the stack. */
+	BT_CLR(t);
 	return (RET_SUCCESS);
 
 	/*
@@ -386,7 +370,7 @@ bt_page(t, h, lp, rp, skip)
 }
 
 /*
- * BT_RSPLIT -- Split the root page of a btree.
+ * BT_ROOT -- Split the root page of a btree.
  *
  * Parameters:
  *	t:	tree
@@ -559,17 +543,17 @@ bt_broot(t, h, l, r)
  *	Pointer to page in which to insert.
  */
 static PAGE *
-bt_psplit(t, h, l, r, skip)
+bt_psplit(t, h, l, r, pskip)
 	BTREE *t;
 	PAGE *h, *l, *r;
-	int *skip;
+	int *pskip;
 {
 	BINTERNAL *bi;
 	BLEAF *bl;
 	RLEAF *rl;
 	EPGNO *c;
 	PAGE *rval;
-	index_t half, sval;
+	index_t half, skip;
 	size_t nbytes;
 	void *src;
 	int bigkeycnt, isbigkey, nxt, off, top;
@@ -583,10 +567,10 @@ bt_psplit(t, h, l, r, skip)
 	 * keys used by internal pages are never deleted.
 	 */
 	bigkeycnt = 0;
-	sval = *skip;
+	skip = *pskip;
 	half = (t->bt_psize - BTDATAOFF) / 2;
 	for (nxt = off = 0, top = NEXTINDEX(h); nxt < top; ++off) {
-		if (sval == off)
+		if (skip == off)
 			continue;
 		switch (h->flags & P_TYPE) {
 		case P_BINTERNAL:
@@ -626,15 +610,30 @@ bt_psplit(t, h, l, r, skip)
 	l->lower += (off + 1) * sizeof(index_t);
 
 	/*
-	 * If we're splitting the page that the cursor was on, have to adjust
-	 * the cursor to point to the same record as before the split.
+	 * If splitting the page that the cursor was on, the cursor has to be
+	 * adjusted to point to the same record as before the split.  If the
+	 * skipped slot and the cursor are both on the left page and the cursor
+	 * is on or past the skipped slot, the cursor is incremented by one.
+	 * If the skipped slot and the cursor are both on the right page and
+	 * the cursor is on or past the skipped slot, the cursor is incremented
+	 * by one.  If the skipped slot and the cursor aren't on the same page,
+	 * the cursor isn't changed.  Regardless of the relationship of the
+	 * skipped slot and the cursor, if the cursor is on the right page it
+	 * is decremented by the number of records split to the left page.
+	 *
+	 * Don't bother checking for the BTF_SEQINIT flag, the page number will
+	 * be P_INVALID.
 	 */
 	c = &t->bt_bcursor;
 	if (c->pgno == h->pgno)
-		if (c->index < off)
+		if (c->index < off) {			/* left page */
 			c->pgno = l->pgno;
-		else {
+			if (c->index >= skip)
+				++c->index;
+		} else {				/* right page */
 			c->pgno = r->pgno;
+			if (c->index >= skip && skip > off)
+				++c->index;
 			c->index -= off;
 		}
 
@@ -642,15 +641,15 @@ bt_psplit(t, h, l, r, skip)
 	 * Decide which page to return, and adjust the skip index if the
 	 * to-be-inserted-upon page has changed.
 	 */
-	if (sval > off) {
+	if (skip > off) {
 		rval = r;
-		*skip -= off + 1;
+		*pskip -= off + 1;
 	} else
 		rval = l;
 
 	for (off = 0; nxt < top; ++off) {
-		if (sval == nxt) {
-			sval = 0;
+		if (skip == nxt) {
+			skip = 0;
 			continue;
 		}
 		switch (h->flags & P_TYPE) {
@@ -678,7 +677,7 @@ bt_psplit(t, h, l, r, skip)
 	r->lower += off * sizeof(index_t);
 
 	/* If the key is being appended to the page, adjust the index. */
-	if (sval == top)
+	if (skip == top)
 		r->lower += sizeof(index_t);
 
 	return (rval);
