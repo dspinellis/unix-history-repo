@@ -35,15 +35,15 @@ char type;
 			if (timediff > ONEYEAR && pkt->p_verbose)
 				fprintf(stderr,"Clock may be set wrong! (co11)\n");
 			pkt->p_idel = alloc(n = ((dt.d_serial + 1) * sizeof(*pkt->p_idel)));
-			zero(pkt->p_idel,n);
+			bzero(pkt->p_idel,n);
 			pkt->p_apply = alloc(n = ((dt.d_serial + 1) * sizeof(*pkt->p_apply)));
-			zero(pkt->p_apply,n);
+			bzero(pkt->p_apply,n);
 			pkt->p_idel->i_pred = dt.d_serial;
 		}
 		if (dt.d_type == 'D') {
 			if (sidp && eqsid(&dt.d_sid,sidp)) {
 				copy(dt.d_pgmr,Pgmr);	/* for rmchg */
-				zero(sidp,sizeof(*sidp));
+				bzero(sidp,sizeof(*sidp));
 				founddel = 1;
 				First_esc = 1;
 				for (p = pkt->p_line; *p && *p != 'D'; p++)
@@ -127,5 +127,5 @@ struct ixg *ixgp;
 	cur->i_next = 0;
 	cur->i_type = type;
 	cur->i_cnt = cnt;
-	move(v,cur->i_ser,cnt * sizeof(cur->i_ser[0]));
+	bcopy(v,cur->i_ser,cnt * sizeof(cur->i_ser[0]));
 }

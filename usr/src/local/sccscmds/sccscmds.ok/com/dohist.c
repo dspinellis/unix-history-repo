@@ -54,7 +54,7 @@ getresp(repstr,result)
 char *repstr;
 char *result;
 {
-	char line[BUFSIZ];
+	char line[BUFSIZ], *index();
 	register int done, sz;
 	register char *p;
 
@@ -63,7 +63,7 @@ char *result;
 	setbuf(stdin,NULL);
 	sz = sizeof(line) - size(repstr);
 	while (!done && fgets(line,sz,stdin) != NULL) {
-		p = strend(line);
+		p = index(line, '\0');
 		if (*--p == '\n') {
 			if (*--p == '\\') {
 				copy(repstr,p);

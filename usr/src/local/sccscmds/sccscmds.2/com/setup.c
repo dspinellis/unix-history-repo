@@ -21,7 +21,7 @@ int serial;
 				condset(rap,NOAPPLY,CUTOFF);
 			else {
 				if (first_app)
-					move(&pkt->p_idel[n].i_sid,
+					bcopy(&pkt->p_idel[n].i_sid,
 					     &pkt->p_gotsid,
 					     sizeof(pkt->p_gotsid));
 				first_app = 0;
