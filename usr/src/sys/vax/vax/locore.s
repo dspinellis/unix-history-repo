@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.27 (Berkeley) %G%
+ *	@(#)locore.s	6.28 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -219,7 +219,10 @@ SCBVEC(softclock):
 	.globl	_netisr
 SCBVEC(netintr):
 	PUSHR
-	bbcc	$NETISR_RAW,_netisr,1f; calls $0,_rawintr; 1:
+#include "imp.h"
+#if NIMP > 0
+	bbcc	$NETISR_IMP,_netisr,1f; calls $0,_impintr; 1:
+#endif
 #ifdef INET
 #include "../netinet/in_systm.h"
 	bbcc	$NETISR_IP,_netisr,1f; calls $0,_ipintr; 1:
@@ -227,6 +230,7 @@ SCBVEC(netintr):
 #ifdef NS
 	bbcc	$NETISR_NS,_netisr,1f; calls $0,_nsintr; 1:
 #endif
+	bbcc	$NETISR_RAW,_netisr,1f; calls $0,_rawintr; 1:
 	POPR
 	incl	_cnt+V_SOFT
 	rei
