@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	1.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -137,6 +137,10 @@ struct pats {
 	{ "_scanc\n",
 "	popr	$0xf\n\
 	scanc	r0,(r1),(r2),r3\n" },
+
+	{ "_skpc\n",
+"	popr	$0x7\n\
+	skpc	r0,r1,(r2)\n" },
 
 	{ "_copyin\n",
 "	jsb	_Copyin\n\
