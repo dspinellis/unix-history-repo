@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)func.c	4.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)func.c	4.16 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -761,10 +761,22 @@ char	**environ;
 dosetenv(v)
 	register char **v;
 {
-	char *lp = globone(v[2]);
+	char *vp, *lp;
 
-	setenv(v[1], lp);
-	if (eq(v[1], "PATH")) {
+	v++;
+	if ((vp = *v++) == 0) {
+		register char **ep;
+
+		if (setintr)
+			(void) sigsetmask(sigblock(0) & ~ sigmask(SIGINT));
+		for (ep = environ; *ep; ep++)
+			printf("%s\n", *ep);
+		return;
+	}
+	if ((lp = *v++) == 0)
+		lp = "";
+	setenv(vp, lp = globone(lp));
+	if (eq(vp, "PATH")) {
 		importpath(lp);
 		dohash();
 	}

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.7 (Berkeley) %G%";
 #endif
 
 #include "sh.local.h"
@@ -131,7 +131,7 @@ struct	biltins {
 	"rehash",	dohash,		0,	0,
 	"repeat",	dorepeat,	2,	INF,
 	"set",		doset,		0,	INF,
-	"setenv",	dosetenv,	2,	2,
+	"setenv",	dosetenv,	0,	2,
 	"shift",	shift,		0,	1,
 	"source",	dosource,	1,	2,
 	"stop",		dostop,		1,	INF,
