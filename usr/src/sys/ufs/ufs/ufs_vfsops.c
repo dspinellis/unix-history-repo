@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.47 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.48 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -746,11 +746,8 @@ getmdev(devvpp, fname, ndp)
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = fname;
-	if (error = namei(ndp)) {
-		if (error == ENOENT)
-			return (ENODEV);	/* needs translation */
+	if (error = namei(ndp))
 		return (error);
-	}
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
 		vrele(vp);
