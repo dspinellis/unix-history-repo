@@ -1,0 +1,1 @@
+define(WHOAMI, KIM)dnl
