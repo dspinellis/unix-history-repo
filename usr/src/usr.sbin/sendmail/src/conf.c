@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -370,19 +370,19 @@ username()
 		myname = getlogin();
 		if (myname == NULL || myname[0] == '\0')
 		{
-
 			pw = getpwuid(getruid());
 			if (pw != NULL)
 				myname = newstr(pw->pw_name);
 		}
 		else
 		{
+			uid_t uid = getuid();
 
 			myname = newstr(myname);
 			if ((pw = getpwnam(myname)) == NULL ||
-			      getuid() != pw->pw_uid)
+			      (uid != 0 && uid != pw->pw_uid))
 			{
-				pw = getpwuid(getuid());
+				pw = getpwuid(uid);
 				if (pw != NULL)
 					myname = newstr(pw->pw_name);
 			}
