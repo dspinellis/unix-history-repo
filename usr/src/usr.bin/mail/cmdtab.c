@@ -8,7 +8,7 @@
  * Define all of the command names and bindings.
  */
 
-static char *SccsId = "@(#)cmdtab.c	1.1 %G%";
+static char *SccsId = "@(#)cmdtab.c	1.2 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
@@ -22,17 +22,17 @@ struct cmd cmdtab[] = {
 	"alias",	group,		M|RAWLIST,	0,	1000,
 	"print",	type,		MSGLIST,	0,	MMNDEL,
 	"type",		type,		MSGLIST,	0,	MMNDEL,
-	"visual",	visual,		I|MSGLIST,	0,	MMNORM,
+	"visual",	visual,		W|I|MSGLIST,	0,	MMNORM,
 	"top",		top,		MSGLIST,	0,	MMNDEL,
-	"touch",	stouch,		MSGLIST,	0,	MMNDEL,
-	"preserve",	preserve,	MSGLIST,	0,	MMNDEL,
-	"delete",	delete,		P|MSGLIST,	0,	MMNDEL,
-	"dp",		deltype,	MSGLIST,	0,	MMNDEL,
-	"dt",		deltype,	MSGLIST,	0,	MMNDEL,
+	"touch",	stouch,		W|MSGLIST,	0,	MMNDEL,
+	"preserve",	preserve,	W|MSGLIST,	0,	MMNDEL,
+	"delete",	delete,		W|P|MSGLIST,	0,	MMNDEL,
+	"dp",		deltype,	W|MSGLIST,	0,	MMNDEL,
+	"dt",		deltype,	W|MSGLIST,	0,	MMNDEL,
 	"undelete",	undelete,	P|MSGLIST,	MDELETED,MMNDEL,
 	"unset",	unset,		M|RAWLIST,	1,	1000,
 	"mail",		sendmail,	M|I|STRLIST,	0,	0,
-	"mbox",		stouch,		MSGLIST,	0,	0,
+	"mbox",		stouch,		W|MSGLIST,	0,	0,
 	"!",		shell,		I|STRLIST,	0,	0,
 	"chdir",	schdir,		M|STRLIST,	0,	0,
 	"cd",		schdir,		M|STRLIST,	0,	0,
@@ -44,7 +44,7 @@ struct cmd cmdtab[] = {
 	"group",	group,		M|RAWLIST,	0,	1000,
 	"write",	swrite,		STRLIST,	0,	0,
 	"from",		from,		MSGLIST,	0,	MMNORM,
-	"file",		file,		M|NOLIST,	0,	0,
+	"file",		file,		M|RAWLIST,	0,	1,
 	"?",		help,		M|NOLIST,	0,	0,
 	"z",		scroll,		M|STRLIST,	0,	0,
 	"headers",	headers,	MSGLIST,	0,	MMNDEL,
@@ -54,14 +54,14 @@ struct cmd cmdtab[] = {
 	"Respond",	Respond,	I|MSGLIST,	0,	MMNDEL,
 	"reply",	respond,	I|MSGLIST,	0,	MMNDEL,
 	"respond",	respond,	I|MSGLIST,	0,	MMNDEL,
-	"edit",		editor,		I|MSGLIST,	0,	MMNORM,
+	"edit",		editor,		W|I|MSGLIST,	0,	MMNORM,
 	"echo",		echo,		RAWLIST,	0,	1000,
 	"quit",		edstop,		NOLIST, 	0,	0,
 	"list",		pcmdlist,	M|NOLIST,	0,	0,
 	"xit",		exit,		M|NOLIST,	0,	0,
 	"exit",		exit,		M|NOLIST,	0,	0,
 	"size",		messize,	MSGLIST,	0,	MMNDEL,
-	"hold",		preserve,	MSGLIST,	0,	MMNDEL,
+	"hold",		preserve,	W|MSGLIST,	0,	MMNDEL,
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,
 	0,		0,		0,		0,	0
