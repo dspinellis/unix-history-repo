@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1984, 1985, 1986, 1987 Regents of the University of California.
+ * Copyright (c) 1984, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -38,6 +38,26 @@
  */
 int	ns_errprintfs = 0;
 #endif
+
+ns_error_x(c)
+{
+	register u_short *w, *lim, *base = ns_errstat.ns_es_codes;
+	u_short x = c;
+
+	/*
+	 * zero is a legit error code, handle specially
+	 */
+	if (x == 0)
+		return (0);
+	lim = base + NS_ERR_MAX - 1;
+	for (w = base + 1; w < lim; w++) {
+		if (*w == 0)
+			*w = x;
+		if (*w == x)
+			break;
+	}
+	return (w - base);
+}
 
 /*
  * Generate an error packet of type error
