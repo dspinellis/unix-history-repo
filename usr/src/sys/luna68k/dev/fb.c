@@ -8,7 +8,7 @@
  *
  * from: hp/dev/grf.c		7.13 (Berkeley) 7/12/92
  *
- *	@(#)fb.c	7.1 (Berkeley) %G%
+ *	@(#)fb.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,6 +20,8 @@
 #include <sys/proc.h>
 #include <sys/ioctl.h>
 #include <luna68k/dev/fbio.h>
+
+#include "bmc.h"
 
 volatile struct fb_rfc *rfcPtr = (struct fb_rfc *) 0xB1000000;
 static   struct fb_rfc  rfcVal;
@@ -56,8 +58,19 @@ fbioctl(dev, cmd, data, flags, p)
 	error = 0;
 	switch (cmd) {
 
-	case FBIOPUTRFCT:
+	case FBIO_ON:
+#if NBMC > 0
+		bmd_off();
+#endif
+		break;
 
+	case FBIO_OFF:
+#if NBMC > 0
+		bmd_on();
+#endif
+		break;
+
+	case FBIOSETRFCT:
 		*rfcPtr = rfcVal = *((struct fb_rfc *) data);
 		break;
 
@@ -65,23 +78,6 @@ fbioctl(dev, cmd, data, flags, p)
                 *(struct fb_rfc *)data = rfcVal;
 		break;
 
-/*
-	case GRFIOCON:
-		error = grfon(dev);
-		break;
-
-	case GRFIOCOFF:
-		error = grfoff(dev);
-		break;
-
-	case GRFIOCMAP:
-		error = grfmmap(dev, (caddr_t *)data, p);
-		break;
-
-	case GRFIOCUNMAP:
-		error = grfunmmap(dev, *(caddr_t *)data, p);
-		break;
- */
 	default:
 		error = EINVAL;
 		break;

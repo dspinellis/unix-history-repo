@@ -12,7 +12,7 @@
  *
  * from: sys/fbio.h		7.2 (Berkeley) 4/1/92
  *
- *	@(#)fbio.h	7.1 (Berkeley) %G%
+ *	@(#)fbio.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,8 @@ struct fbtype {
 };
 
 #define	FBIOGTYPE	_IOR('F', 0, struct fbtype)
+#define	FBIO_ON		_IO('F', 1)
+#define	FBIO_OFF	_IO('F', 2)
 
 
 /*
@@ -50,8 +52,8 @@ struct fb_rfc {
 	short	rfc_vcnt;
 };
 
-#define	FBIOPUTRFCT	_IOW('F', 1, struct fb_rfc)
-#define	FBIOGETRFCT	_IOR('F', 2, struct fb_rfc)
+#define	FBIOSETRFCT	_IOW('F', 3, struct fb_rfc)
+#define	FBIOGETRFCT	_IOR('F', 4, struct fb_rfc)
 
 
 /*
@@ -67,6 +69,6 @@ struct fb_palette {
 	u_char	*blue;		/* blue color map elements */
 };
 
-#define	FBIOPUTPALT	_IOW('F', 3, struct fb_palette)
-#define	FBIOGETPALT	_IOR('F', 4, struct fb_palette)
+#define	FBIOSETPALT	_IOW('F', 5, struct fb_palette)
+#define	FBIOGETPALT	_IOR('F', 6, struct fb_palette)
 #endif
