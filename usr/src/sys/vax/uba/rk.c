@@ -1,4 +1,4 @@
-/*	rk.c	4.21	%G%	*/
+/*	rk.c	4.22	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -461,7 +461,7 @@ rkecc(ui)
 	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("rk%d%c: soft ecc bn%d\n", dkunit(bp),
+	printf("rk%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rk->rkec2;
 	ubapurge(um);
