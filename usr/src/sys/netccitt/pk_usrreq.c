@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.18 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 
 #include <net/if.h>
+#include <net/if_types.h>
 #include <net/route.h>
 
 #include <netccitt/x25.h>
