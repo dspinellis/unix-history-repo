@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -33,7 +33,6 @@ static void	islogin __P((void));
 static void	reexecute __P((struct command *));
 static void	preread __P((void));
 static void	doagain __P((void));
-static char    *isrchx __P((int));
 static void	search __P((int, int, Char *));
 static int	getword __P((Char *));
 static int	keyword __P((Char *));
