@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.16 (Berkeley) %G%
+#	@(#)security	5.17 (Berkeley) %G%
 #
 
 # Script to check basic system security.  Checks included are:
@@ -393,13 +393,14 @@ if [ -s $TMP1 ] ; then
 		fi
 	else
 		printf "Setuid additions:\n"
-		cat $TMP1
+		column -t $TMP1
 		printf "\n"
 		cp $TMP1 $CUR
 	fi
 fi
 
-# Check for readable/writeable block and character disk devices.
+# Check for block and character disk devices, that are readable or writeable
+# or not owned by root.operator.
 egrep '^b' $LIST > $TMP1
 egrep '^c.*/rdk[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
 egrep '^c.*/rfd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
@@ -418,17 +419,16 @@ egrep '^c.*/rsd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
 egrep '^c.*/rup[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
 egrep '^c.*/rwd[0-9][0-9]*[a-h]$'  $LIST >> $TMP1
 
-awk '$4 != "operator" \
-	{ print "Disk " $11 " not owned by group operator." }
-     $1 !~ /.rw-r-----/ \
-	{ print "Disk " $11 " is " $1 ", group " $4 }' < $TMP1 > $OUTPUT
+awk '$3 != "root" || $4 != "operator" || $1 !~ /.rw-r-----/ \
+	{ printf("Disk %s is user %s, group %s, permissions %s.\n", \
+	    $11, $3, $4, $1); }' < $TMP1 > $OUTPUT
 if [ -s $OUTPUT ] ; then
 	printf "\nChecking disk ownership and permissions.\n"
 	cat $OUTPUT
 	printf "\n"
 fi
 
-egrep '^[bcs]' $LIST | sort +10 > $TMP1
+egrep '^[bc]' $LIST | sort +10 > $TMP1
 # Display any changes in the device file list.
 if [ -s $TMP1 ] ; then
 	CUR=/var/backups/device.current
@@ -453,18 +453,15 @@ if [ -s $TMP1 ] ; then
 				printf "\n"
 			fi
 
-			sort +10 $TMP2 $CUR $TMP1 | \
+			# Report any block device change.  Ignore character
+			# devices, only the name is significant.
+			cat $TMP2 $CUR $TMP1 | \
+			sed -e '/^c/d' | \
+			sort +10 | \
 			sed -e 's/[	 ][	 ]*/ /g' | \
-			awk '{ \
-			    printf("%s %s %s %s %s %s %s %s %s %s %s\n", \
-			    $7, $8, $9, $10, $1, $2, $3, $4, $5, $6, $11); \
-			    }' | uniq -f 4 -u | \
-			awk '{ \
-			    printf("%s %s %s %s %s %s %s %s %s %s %s\n", \
-			    $5, $6, $7, $8, $9, $10, $1, $2, $3, $4, $11); \
-			    }' > $OUTPUT
+			uniq -u > $OUTPUT
 			if [ -s $OUTPUT ] ; then
-				printf "Device changes:\n"
+				printf "Block device changes:\n"
 				column -t $OUTPUT
 				printf "\n"
 			fi
@@ -474,7 +471,7 @@ if [ -s $TMP1 ] ; then
 		fi
 	else
 		printf "Device additions:\n"
-		cat $TMP1
+		column -t $TMP1
 		printf "\n"
 		cp $TMP1 $CUR
 	fi
