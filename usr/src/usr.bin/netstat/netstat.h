@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netstat.h	5.6 (Berkeley) %G%
+ *	@(#)netstat.h	8.1 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
