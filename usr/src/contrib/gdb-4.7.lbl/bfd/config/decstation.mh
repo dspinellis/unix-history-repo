@@ -1,0 +1,2 @@
+HDEFINES=-DTRAD_CORE -G 4
+HDEPFILES=trad-core.o
