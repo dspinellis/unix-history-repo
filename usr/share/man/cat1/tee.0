@@ -1,0 +1,32 @@
+TEE(1)                       BSD Reference Manual                       TEE(1)
+
+NNAAMMEE
+     tteeee - pipe fitting
+
+SSYYNNOOPPSSIISS
+     tteeee [--aaii] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The tteeee utility copies standard input to standard output, making a copy
+     in zero or more files.  The output is unbuffered.
+
+     The following options are available:
+
+     --aa      Append the output to the files rather than overwriting them.
+
+     --ii      Ignore the SIGINT signal.
+
+     The following operands are available:
+
+     file  A pathname of an output _f_i_l_e.
+
+     The tteeee utility takes the default action for all signals, except in the
+     event of the --ii option.
+
+     The tteeee utility exits 0 on success, and >0 if an error occurs.
+
+SSTTAANNDDAARRDDSS
+     The tteeee function is expected to be POSIX IEEE Std1003.2 (``POSIX'') com-
+     patible.
+
+4.4BSD                           June 6, 1993                                1

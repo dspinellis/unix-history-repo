@@ -1,0 +1,54 @@
+UNIQ(1)                      BSD Reference Manual                      UNIQ(1)
+
+NNAAMMEE
+     uunniiqq - report or filter out repeated lines in a file
+
+SSYYNNOOPPSSIISS
+     uunniiqq [--cc | --dd | --uu] [--ff _f_i_e_l_d_s] [--ss _c_h_a_r_s] [_i_n_p_u_t___f_i_l_e [_o_u_t_p_u_t___f_i_l_e]]
+
+DDEESSCCRRIIPPTTIIOONN
+     The uunniiqq utility reads the standard input comparing adjacent lines, and
+     writes a copy of each unique input line to the standard output.  The sec-
+     ond and succeeding copies of identical adjacent input lines are not writ-
+     ten.  Repeated lines in the input will not be detected if they are not
+     adjacent, so it may be necessary to sort the files first.
+
+     The following options are available:
+
+     --cc      Precede each output line with the count of the number of times
+             the line occurred in the input, followed by a single space.
+
+     --dd      Don't output lines that are not repeated in the input.
+
+     --ff _f_i_e_l_d_s
+             Ignore the first _f_i_e_l_d_s in each input line when doing compar-
+             isons.  A field is a string of non-blank characters separated
+             from adjacent fields by blanks.  Field numbers are one based,
+             i.e. the first field is field one.
+
+     --ss _c_h_a_r_s
+             Ignore the first _c_h_a_r_s characters in each input line when doing
+             comparisons.  If specified in conjunction with the --ff option, the
+             first _c_h_a_r_s characters after the first _f_i_e_l_d_s fields will be ig-
+             nored.  Character numbers are one based, i.e. the first character
+             is character one.
+
+     --uu      Don't output lines that are repeated in the input.
+
+     If additional arguments are specified on the command line, the first such
+     argument is used as the name of an input file, the second is used as the
+     name of an output file.
+
+     The uunniiqq utility exits 0 on success, and >0 if an error occurs.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The historic ++_n_u_m_b_e_r and --_n_u_m_b_e_r options have been deprecated but are
+     still supported in this implementation.
+
+SSEEEE AALLSSOO
+     sort(1)
+
+SSTTAANNDDAARRDDSS
+     The uunniiqq utility is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4.4BSD                           June 6, 1993                                1

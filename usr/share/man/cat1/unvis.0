@@ -1,0 +1,19 @@
+UNVIS(1)                     BSD Reference Manual                     UNVIS(1)
+
+NNAAMMEE
+     uunnvviiss - revert a visual representation of data back to original form
+
+SSYYNNOOPPSSIISS
+     uunnvviiss [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUnnvviiss is the inverse function of vis(1).  It reverts a visual representa-
+     tion of data back to its original form on standard output.
+
+SSEEEE AALLSSOO
+     vis(1),  unvis(3),  vis(3)
+
+HHIISSTTOORRYY
+     The uunnvviiss command appears in 4.4BSD.
+
+4.4BSD                           June 6, 1993                                1
