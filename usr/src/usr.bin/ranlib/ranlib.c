@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ranlib.c 4.7 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.8 %G%";
 #endif
 /*
  * ranlib - create table of contents for archive; string table version
@@ -36,9 +36,22 @@ char **argv;
 	/* magbuf must be an int array so it is aligned on an int-ish
 	   boundary, so that we may access its first word as an int! */
 	int magbuf[(SARMAG+sizeof(int))/sizeof(int)];
+	register int just_touch = 0;
+
+	/* check for the "-t" flag" */
+	if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+		just_touch++;
+		argc--;
+		argv++;
+	}
 
 	--argc;
 	while(argc--) {
+		if (just_touch) {
+			fixdate(*++argv);
+			continue;
+		}
+
 		fi = fopen(*++argv,"r");
 		if (fi == NULL) {
 			fprintf(stderr, "ranlib: cannot open %s\n", *argv);
