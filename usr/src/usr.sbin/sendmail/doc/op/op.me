@@ -1,6 +1,6 @@
 .if n .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 5.1''Last Mod %G%'
+.fo 'Version 5.2''Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -28,7 +28,7 @@
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.1
+Version 5.2
 .)l
 .sp 2
 .pp
@@ -1089,6 +1089,16 @@ sets option
 to the value
 .q 3d
 (three days).
+.pp
+Most of these options default appropriately for most sites.
+However,
+sites having very high mail loads may find they need to tune them
+as appropriate for their mail load.
+In particular,
+sites experiencing a large number of small messages,
+many of which are delivered to many recipients,
+may find that they need to adjust the parameters
+dealing with queue priorities.
 .sh 2 "Timeouts"
 .pp
 All time intervals are set
@@ -1113,8 +1123,8 @@ The argument to the
 .b \-q
 flag
 specifies how often a subdaemon will run the queue.
-This is typically set to between five minutes
-and one half hour.
+This is typically set to between fifteen minutes
+and one hour.
 .sh 3 "Read timeouts"
 .pp
 It is possible to time out when reading the standard input
@@ -1153,6 +1163,116 @@ For example,
 .)b
 will run the queue
 and flush anything that is one day old.
+.sh 2 "Forking During Queue Runs"
+.pp
+By setting the
+.b Y
+option,
+.i sendmail
+will fork before each individual message
+while running the queue.
+This will prevent
+.i sendmail
+from consuming large amounts of memory,
+so it may be useful in memory-poor environments.
+However, if the
+.b Y
+option is not set,
+.i sendmail
+will keep track of hosts that are down during a queue run,
+which can improve performance dramatically.
+.sh 2 "Queue Priorities"
+.pp
+Every message is assigned a priority when it is first instantiated,
+consisting of the message size (in bytes)
+offset by the message class times the
+.q "work class factor"
+and the number of recipients times the
+.q "work recipient factor."
+The priority plus the creation time of the message
+(in seconds since January 1, 1970)
+are used to order the queue.
+Higher numbers for the priority mean that the message will be processed later
+when running the queue.
+.pp
+The message size is included so that large messages are penalized
+relative to small messages.
+The message class allows users to send
+.q "high priority"
+messages by including a
+.q Precedence:
+field in their message;
+the value of this field is looked up in the
+.b P
+lines of the configuration file.
+Since the number of recipients affects the amount of load a message presents
+to the system,
+this is also included into the priority.
+.pp
+The recipient and class factors
+can be set in the configuration file using the
+.b y
+and
+.b z
+options respectively.
+They default to 1000 (for the recipient factor)
+and 1800
+(for the class factor).
+.pp
+The priority of a job can also be adjusted each time it is processed
+(that is, each time an attempt is made to deliver it)
+using the
+.q "work time factor,"
+set by the
+.b Z
+option.
+This is added to the priority,
+so it normally decreases the precedence of the job,
+on the grounds that jobs that have failed many times
+will tend to fail again in the future.
+.sh 2 "Load Limiting"
+.pp
+.i Sendmail
+can be asked to queue (but not deliver)
+mail if the system load average gets too high
+using the
+.b x
+option.
+When the load average exceeds the value of the
+.b x
+option,
+the delivery mode is set to
+.b q
+(queue only)
+if the
+.i "Queue Factor"
+(\c
+.b q
+option)
+divided by the difference in the current load average and the
+.b x
+option
+plus one
+exceeds the priority of the message \(em
+that is, the message is queued iff:
+.EQ
+pri > QF over { LA - x + 1 }
+.EN
+The
+.b q
+option defaults to 10000,
+so each point of load average is worth 10000
+priority points
+(as described above, that is, bytes + seconds + offsets).
+.pp
+For drastic cases,
+the
+.b X
+option defines a load average at which sendmail will refuse
+to accept network connections.
+Locally generated mail
+(including incoming UUCP mail)
+is still accepted.
 .sh 2 "Delivery Mode"
 .pp
 There are a number of delivery modes that
@@ -1215,30 +1335,6 @@ Several messages that are basically only of interest
 when debugging.
 .ip 16
 Verbose information regarding the queue.
-.sh 2 "Load Limiting"
-.pp
-.i Sendmail
-can be asked to queue (but not deliver)
-mail if the system load average gets too high
-using the
-.b x
-option.
-When the load average exceeds the value of the
-.b x
-option,
-the delivery mode is set to
-.b q
-(queue only)
-until the load drops.
-.pp
-For drastic cases,
-the
-.b X
-option defines a load average at which sendmail will refuse
-to connect network connections.
-Locally generated mail
-(including incoming UUCP mail)
-is still accepted.
 .sh 2 "File Modes"
 .pp
 There are a number of files
@@ -3072,12 +3168,40 @@ just queue messages
 When the system load average exceeds
 .i LA ,
 refuse incoming SMTP connections.
-.ip z
+.ip y\fIfact\fP
+The indicated
+.i fact or
+is added to the priority (thus
+.i lowering
+the priority of the job)
+for each recipient,
+i.e., this value penalizes jobs with large numbers of recipients.
+.ip Y
 If set,
 deliver each job that is run from the queue in a separate process.
 Use this option if you are short of memory,
 since the default tends to consume considerable amounts of memory
 while the queue is being processed.
+.ip z\fIfact\fP
+The indicated
+.i fact or
+is multiplied by the message class
+(determined by the Precedence: field in the user header
+and the
+.b P
+lines in the configuration file)
+and subtracted from the priority.
+Thus, messages with a higher Priority: will be favored.
+.ip Z\fIfact\fP
+The
+.i fact or
+is added to the priority
+every time a job is processed.
+Thus,
+each time a job is processed,
+its priority will be decreased by the indicated value.
+In most environments this should be positive,
+since hosts that are down are all too often down for a long time.
 .+c "MAILER FLAGS"
 The following flags may be set in the mailer description.
 .nr ii 4n
@@ -3748,7 +3872,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 5.1
+Version 5.2
 .ce 0
 .bp 1
 .ce
