@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_subr.c	7.4 (Berkeley) %G%
+ *	@(#)hd_subr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,44 +35,45 @@ hd_init ()
 }
 
 hd_ctlinput (prc, addr)
-caddr_t addr;
+struct sockaddr *addr;
 {
 	register struct x25config *xcp = (struct x25config *)addr;
-	register struct ifnet *ifp;
 	register struct hdcb *hdp;
 	register struct ifaddr *ifa;
+	struct ifnet *ifp;
 
-	if (xcp->xc_addr.x25_family != AF_CCITT)
+	if (addr->sa_family != AF_CCITT)
 		return (EAFNOSUPPORT);
 	if (xcp->xc_lptype != HDLCPROTO_LAPB)
 		return (EPROTONOSUPPORT);
-	for (ifa = ifa_ifwithaddr ((struct sockaddr *)xcp); ifa; ifa = ifa->ifa_next)
-		if (ifa->ifa_addr->sa_family == AF_CCITT)
-			break;
-	if (ifa == 0 || (ifp = ifa->ifa_ifp) == 0)
+	ifa = ifa_ifwithaddr(addr);
+	if (ifa == 0 || ifa->ifa_addr->sa_family != AF_CCITT ||
+	    (ifp = ifa->ifa_ifp) == 0)
 		panic ("hd_ctlinput");
 	for (hdp = hdcbhead; hdp; hdp = hdp->hd_next)
 		if (hdp->hd_ifp == ifp)
 			break;
 
 	if (hdp == 0) {		/* new interface */
-		register int error;
-		register struct mbuf *m;
+		int error, hd_ifoutput(), hd_output();
 
-		m = m_getclr (M_DONTWAIT, MT_PCB);
-		if (m == 0)
+		/* an hdcb is now too big to fit in an mbuf */
+		MALLOC(hdp, struct hdcb *, sizeof (*hdp), M_PCB, M_DONTWAIT);
+		if (hdp == 0)
 			return (ENOBUFS);
+		bzero((caddr_t)hdp, sizeof(*hdp));
 		if (error = pk_ctlinput (PRC_LINKDOWN, xcp)) {
-			m_freem (m);
+			free((caddr_t)hdp, M_PCB);
 			return (error);
 		}
-
-		hdp = mtod (m, struct hdcb *);
-		hdp->hd_ifp = ifp;
-		hdp->hd_xcp = xcp;
 		hdp->hd_next = hdcbhead;
 		hdcbhead = hdp;
+		hdp->hd_ifp = ifp;
+		hdp->hd_ifa = ifa;
+		hdp->hd_xcp = xcp;
 		hdp->hd_state = INIT;
+		hdp->hd_output = hd_ifoutput;
+		pk_ifattach((struct x25_ifaddr *)ifa, hd_output, (caddr_t)hdp);
 	}
 
 	switch (prc) {
@@ -195,7 +196,7 @@ register int frametype, pf;
 	register struct Hdlc_sframe *sframe;
 	register struct Hdlc_uframe *uframe;
 
-	MGET (buf, M_DONTWAIT, MT_HEADER);
+	MGETHDR (buf, M_DONTWAIT, MT_HEADER);
 	if (buf == 0)
 		return;
 	frame = mtod (buf, struct Hdlc_frame *);
@@ -229,6 +230,12 @@ register int frametype, pf;
 		break;
 
 	case DISC: 
+		if ((hdp->hd_ifp->if_flags & IFF_UP) == 0) {
+			hdp->hd_state = DISCONNECTED;
+			(void) m_freem (buf);
+			hd_flush (hdp->hd_ifp);
+			return;
+		}
 		frame -> control = DISC_CONTROL;
 		frame -> address = ADDRESS_B;
 		break;
@@ -260,7 +267,8 @@ register int frametype, pf;
 		uframe -> pf = pf;
 
 	hd_trace (hdp, TX, frame);
-	(*hdp->hd_output)(hdp, buf);
+	buf -> m_pkthdr.len = buf -> m_len;
+	(*hdp->hd_output) (hdp, buf);
 }
 
 struct mbuf *
@@ -298,7 +306,7 @@ struct ifnet *ifp;
 	register int s;
 
 	while (1) {
-		s = spl6 ();		/* XXX SHOULDN'T THIS BE splimp? */
+		s = splimp ();
 		IF_DEQUEUE (&ifp->if_snd, m);
 		splx (s);
 		if (m == 0)
