@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.4	(CWI)	85/10/25
+#	@(#)Makefile	1.5	(CWI)	86/08/14
 #
 CFLAGS= -DINCORE -g
 DESTDIR=
@@ -10,7 +10,7 @@ TFILES=n1.o n2.o n3.o n4.o n5.o t6.o n7.o n8.o n9.o t10.o ni.o nii.o hytab.o suf
 all:	ditroff ${SUBDIR}
 
 ditroff:	${TFILES}
-	${CC} -o ditroff -n ${CFLAGS} ${TFILES} 
+	${CC} -o ditroff  ${CFLAGS} ${TFILES} 
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
