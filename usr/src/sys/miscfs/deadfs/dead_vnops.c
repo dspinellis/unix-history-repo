@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.4 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -106,18 +106,8 @@ dead_read(vp, uio, offp, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		locked = 1;
-	}
-	if (!locked)
+	if (!chkvnlock(vp))
 		return (EIO);
 	return (VOP_READ(vp, uio, offp, ioflag, cred));
 }
@@ -132,18 +122,8 @@ dead_write(vp, uio, offp, ioflag, cred)
 	int ioflag;
 	struct ucred *cred;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		locked = 1;
-	}
-	if (!locked)
+	if (!chkvnlock(vp))
 		return (EIO);
 	return (VOP_WRITE(vp, uio, offp, ioflag, cred));
 }
@@ -159,18 +139,8 @@ dead_ioctl(vp, com, data, fflag, cred)
 	int fflag;
 	struct ucred *cred;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		locked = 1;
-	}
-	if (!locked)
+	if (!chkvnlock(vp))
 		return (EBADF);
 	return (VOP_IOCTL(vp, com, data, fflag, cred));
 }
@@ -194,18 +164,8 @@ dead_select(vp, which, cred)
 dead_strategy(bp)
 	register struct buf *bp;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (bp->b_vp->v_flag & VXLOCK) {
-		bp->b_vp->v_flag |= VXWANT;
-		sleep((caddr_t)bp->b_vp, PINOD);
-		locked = 1;
-	}
-	if (!locked) {
+	if (bp->b_vp == NULL || !chkvnlock(bp->b_vp)) {
 		bp->b_flags |= B_ERROR;
 		return (EIO);
 	}
@@ -218,18 +178,8 @@ dead_strategy(bp)
 dead_lock(vp)
 	struct vnode *vp;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		locked = 1;
-	}
-	if (!locked)
+	if (!chkvnlock(vp))
 		return (0);
 	return (VOP_LOCK(vp));
 }
@@ -243,18 +193,8 @@ dead_bmap(vp, bn, vpp, bnp)
 	struct vnode **vpp;
 	daddr_t *bnp;
 {
-	int locked = 0;
 
-	/*
-	 * We have to wait during times when the vnode is
-	 * in a state of change.
-	 */
-	while (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		locked = 1;
-	}
-	if (!locked)
+	if (!chkvnlock(vp))
 		return (EIO);
 	return (VOP_BMAP(vp, bn, vpp, bnp));
 }
@@ -285,4 +225,21 @@ dead_nullop()
 {
 
 	return (0);
+}
+
+/*
+ * We have to wait during times when the vnode is
+ * in a state of change.
+ */
+chkvnlock(vp)
+	register struct vnode *vp;
+{
+	int locked = 0;
+
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+		locked = 1;
+	}
+	return (locked);
 }
