@@ -1,4 +1,4 @@
-/*	telnet.h	4.7	85/03/24	*/
+/*	telnet.h	4.8	85/03/27	*/
 /*
  * Definitions for the TELNET protocol.
  */
@@ -18,6 +18,7 @@
 #define	DM	242		/* data mark--for connect. cleaning */
 #define	NOP	241		/* nop */
 #define	SE	240		/* end sub negotiation */
+#define EOR     239             /* end of record (transparent mode) */
 
 #define SYNCH	242		/* for telfunc calls */
 
@@ -64,9 +65,8 @@ char *telopts[NTELOPTS] = {
 	"STATUS", "TIMING MARK", "RCTE", "NAOL", "NAOP",
 	"NAOCRD", "NAOHTS", "NAOHTD", "NAOFFD", "NAOVTS",
 	"NAOVTD", "NAOLFD", "EXTEND ASCII", "LOGOUT", "BYTE MACRO",
-	"DATA ENTRY TERMINAL", "SUPDUP", "SUPDUP OUTPUT", "SEND LOCATION",
-	    "TERMINAL TYPE",
-	"END OF RECORD",
+	"DATA ENTRY TERMINAL", "SUPDUP", "SUPDUP OUTPUT",
+	"SEND LOCATION", "TERMINAL TYPE", "END OF RECORD",
 };
 #endif
 
