@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.5 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -60,6 +60,7 @@ static char sccsid[] = "@(#)acucntrl.c	5.4 (Berkeley) %G%";
 #include <utmp.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <sys/file.h>
 
 #define NDZLINE	8	/* lines/dz */
 #define NDHLINE	16	/* lines/dh */
@@ -111,6 +112,7 @@ struct nlist nl[] = {
 char Etcutmp[] = "/etc/utmp";
 char Etcttys[] = "/etc/ttys";
 #ifdef BSD4_3
+FILE *ttysfile, *nttysfile;
 char NEtcttys[] = "/etc/ttys.new";
 extern long ftell();
 #endif BSD4_3
@@ -309,7 +311,7 @@ int argc; char *argv[];
 			pokeinit(device, Uname, enable);
 		}
 		post(device, Uname);
-		if((devfile = open(device, 1)) < 0) {
+		if((devfile = open(device, O_RDWR|O_NDELAY)) < 0) {
 			fprintf(stderr, "On %s open: %s\n",
 				device, sys_errlist[errno]);
 		} else {
@@ -341,10 +343,10 @@ char *device, *name;
 	(void)time((time_t *)&utmp.ut_time);
 	strncpy(utmp.ut_line, device, LINSIZ);
 	strncpy(utmp.ut_name, name,  NAMSIZ);
-	if (lseek(etcutmp, utmploc, 0)<0)
+	if (lseek(etcutmp, utmploc, 0) < 0)
 		fprintf(stderr, "on lseek in /etc/utmp: %s",
 			sys_errlist[errno]);
-	if (write(etcutmp, (char *)&utmp, sizeof(utmp))<0)
+	if (write(etcutmp, (char *)&utmp, sizeof(utmp)) < 0)
 		fprintf(stderr, "on write in /etc/utmp: %s",
 			sys_errlist[errno]);
 }
@@ -372,13 +374,13 @@ char *uname, *device; int enable;
 		return;
 
 	/* wait till init has responded, clearing the utmp entry */
-	i=100;
+	i = 100;
 	do {
 		sleep(1);
-		if (lseek(etcutmp, utmploc, 0)<0)
+		if (lseek(etcutmp, utmploc, 0) < 0)
 			fprintf(stderr, "On lseek in /etc/utmp: %s",
 				sys_errlist[errno]);
-		if (read(etcutmp, (char *)&utmp, sizeof utmp)<0)
+		if (read(etcutmp, (char *)&utmp, sizeof utmp) < 0)
 			fprintf(stderr, "On read from /etc/utmp: %s",
 				sys_errlist[errno]);
 	} while (utmp.ut_name[0] != '\0' && --i > 0);
@@ -389,18 +391,24 @@ char *uname, *device; int enable;
 opnttys(device)
 char *device;
 {
-	register FILE *ttysfile, *nttysfile;
 	register int  ndevice; 
 	register char *p;
 	char *index();
 	char linebuf[BUFSIZ];
 
-	ttysfile = fopen(Etcttys, "r");
-	if(ttysfile == NULL) {
-		fprintf(stderr, "Cannot open %s: %s\n", Etcttys,
-			sys_errlist[errno]);
-		exit(1);
-	}
+	ttysfile = NULL;
+	do {
+		if (ttysfile != NULL) {
+			fclose(ttysfile);
+			sleep(5);
+		}
+		ttysfile = fopen(Etcttys, "r");
+		if(ttysfile == NULL) {
+			fprintf(stderr, "Cannot open %s: %s\n", Etcttys,
+				sys_errlist[errno]);
+			exit(1);
+		}
+	} while (flock(fileno(ttysfile), LOCK_NB|LOCK_EX) < 0);
 	nttysfile = fopen(NEtcttys, "w");
 	if(nttysfile == NULL) {
 		fprintf(stderr, "Cannot open %s: %s\n", Etcttys,
@@ -409,17 +417,13 @@ char *device;
 	}
 
 	ndevice = strlen(device);
-	utmploc = 0;
+	utmploc = sizeof(utmp);
 
-	ttyslnbeg = 0;
 	while(fgets(linebuf, sizeof(linebuf) - 1, ttysfile) != NULL) {
-		utmploc += sizeof(utmp);
-		if(strncmp(device, linebuf, ndevice) == 0) {
-			fclose(ttysfile);
-			fclose(nttysfile);
+		if(strncmp(device, linebuf, ndevice) == 0)
 			return;
-		}
-		ttyslnbeg = ftell(ttysfile);
+		ttyslnbeg += strlen(linebuf);
+		utmploc += sizeof(utmp);
 		if (fputs(linebuf, nttysfile) == NULL) {
 			fprintf(stderr, "On %s write: %s\n",
 				Etcttys, sys_errlist[errno]);
@@ -436,25 +440,12 @@ settys(enable)
 int enable;
 {
 	register char *cp, *cp2;
-	FILE *ittysfil, *nttysfil;
 	char lbuf[BUFSIZ];
 	int i;
 	char c1, c2;
 
-	ittysfil = fopen(Etcttys, "r");
-	if(ittysfil == NULL) {
-		fprintf(stderr, "Cannot open %s for output: %s\n",
-			Etcttys, sys_errlist[errno]);
-		exit(1);
-	}
-	nttysfil = fopen(NEtcttys, "a");
-	if(nttysfil == NULL) {
-		fprintf(stderr, "Cannot open %s for output: %s\n",
-			NEtcttys, sys_errlist[errno]);
-		exit(1);
-	}
-	(void)fseek(ittysfil, ttyslnbeg, 0);
-	if(fgets(lbuf, BUFSIZ, ittysfil) == NULL) {
+	(void) fseek(ttysfile, ttyslnbeg, 0);
+	if(fgets(lbuf, BUFSIZ, ttysfile) == NULL) {
 		fprintf(stderr, "On %s read: %s\n",
 			Etcttys, sys_errlist[errno]);
 		exit(1);
@@ -486,14 +477,14 @@ int enable;
 	while (*cp && (*cp == ' ' || *cp == '\t'))
 		cp++;
 	resettty = strcmp("on", cp2) != 0;
-	fprintf(nttysfil,"%s%c%s%c%s", lbuf, c1, enable ? "on" : "off", c2, cp);
-	if (ferror(nttysfil)) {
+	fprintf(nttysfile,"%s%c%s%c%s", lbuf, c1, enable ? "on" : "off", c2, cp);
+	if (ferror(nttysfile)) {
 		fprintf(stderr, "On %s fprintf: %s\n",
 			NEtcttys, sys_errlist[errno]);
 		exit(1);
 	}
-	while(fgets(lbuf, sizeof(lbuf) - 1, ittysfil) != NULL) {
-		if (fputs(lbuf, nttysfil) == NULL) {
+	while(fgets(lbuf, sizeof(lbuf) - 1, ttysfile) != NULL) {
+		if (fputs(lbuf, nttysfile) == NULL) {
 			fprintf(stderr, "On %s write: %s\n",
 				NEtcttys, sys_errlist[errno]);
 			exit(1);
@@ -505,13 +496,13 @@ int enable;
 	else {
 		struct stat statb;
 		if (stat(Etcttys, &statb) == 0) {
-			fchmod(fileno(nttysfil) ,statb.st_mode);
-			fchown(fileno(nttysfil), statb.st_uid, statb.st_gid);
+			fchmod(fileno(nttysfile) ,statb.st_mode);
+			fchown(fileno(nttysfile), statb.st_uid, statb.st_gid);
 		}
 		(void) rename(NEtcttys, Etcttys);
 	}
-	(void) fclose(ittysfil);
-	(void) fclose(nttysfil);
+	(void) fclose(nttysfile);
+	(void) fclose(ttysfile);
 	return enable^resettty;
 }
 
@@ -539,7 +530,6 @@ char *device;
 	utmploc = 0;
 
 	while(fgets(linebuf, sizeof(linebuf) - 1, ttysfile) != NULL) {
-		utmploc += sizeof(utmp);
 		lnsiz = strlen(linebuf);
 		if ((p = index(linebuf, '\n')) != NULL)
 			*p = '\0';
@@ -548,6 +538,7 @@ char *device;
 			return;
 		}
 		ttyslnbeg += lnsiz;
+		utmploc += sizeof(utmp);
 	}
 	fprintf(stderr, "%s not found in %s\n", device, Etcttys);
 	exit(1);
