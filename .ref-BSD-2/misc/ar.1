@@ -1,0 +1,105 @@
+.th AR I 7/14/75
+.sh NAME
+ar \*- archive and library maintainer
+.sh SYNOPSIS
+.bd ar
+key [ posname ] afile name ...
+.sh DESCRIPTION
+.it Ar
+maintains groups of files
+combined into a single archive file.
+Its main use
+is to create and update library files as used by the loader.
+It can be used, though, for any similar purpose.
+.s3
+.it Key
+is one character from the set
+.bd drtpmx,
+optionally concatenated with
+.bd vuai.
+.it Afile
+is the archive file.
+The
+.it names
+are constituent files in the archive file.
+The meanings of the
+.it key
+characters are:
+.s3
+.bd d
+means delete the named files from the archive file.
+.s3
+.bd r
+means replace the named files in the archive file.
+If the optional character
+.bd u
+is used with
+.bd r,
+then only those files with
+modified dates later than
+the archive files are replaced.
+If the optional positioning character
+.bd a
+(also
+.bd i
+)
+is used, then the
+.it posname
+argument must be present
+and specifies a file in the archive
+after (before for
+.bd i
+)
+which new files are placed.
+Without
+.bd a
+or
+.bd i,
+new files are placed at the end.
+.s3
+.bd t
+prints a table of contents of the archive file.
+If no names are given, all files in the archive are tabled.
+If names are given, only those files are tabled.
+.s3
+.bd p
+prints the named files in the archive.
+.s3
+.bd m
+moves the named files to the end of the archive.
+If the options
+.bd i
+or
+.bd b
+are used, then the
+.it posname
+argument must be present and,
+as in
+.bd r,
+specifies where the files are to be moved
+.s3
+.bd x
+extracts the named files.
+If no names are given, all files in the archive are
+extracted.
+In neither case does
+.bd x
+alter the archive file.
+.s3
+.bd v
+means verbose.
+Under the verbose option,
+.it ar
+gives a file-by-file
+description of the making of a
+new archive file from the old archive and the constituent files.
+When used with
+.bd t,
+it gives a long listing of all information about the files.
+.sh FILES
+/tmp/vtm?	temporary
+.sh "SEE ALSO"
+ld (I), archive (V)
+.sh BUGS
+If the same file is mentioned twice in an argument list,
+it may be put in the archive twice.

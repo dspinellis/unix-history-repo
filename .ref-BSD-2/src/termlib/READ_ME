@@ -1,0 +1,8 @@
+Sun Apr  8 15:27:01 PST 1979
+
+This directory makes the terminal description library -ltermlib
+needed by ex and tset, and installs the library in /usr/lib and the
+terminal database in /etc.
+
+The files in tabset define terminal initialization sequences
+for tset.

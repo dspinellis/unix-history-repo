@@ -1,0 +1,441 @@
+.if !\n(xx .so tmac.p
+.ND
+'nr H1 2
+.NH
+Automatic program formatting
+.NH 2
+Motivation
+.PP
+Just as software packages to automatically format documents 
+aid the construction of readable and accurate documents,
+packages which aid the construction of programs by helping prepare
+and maintain the text in a standard and easily readable format
+can aid the entire programming process.
+With an automatically structured listing, the reader can trust the
+textual display of the program to be accurate and can concentrate
+on understanding the program, rather than deciphering the style in
+which it is written.
+Even when
+.I "programming secretaries"
+are available, an automated preparation system can improve the
+programming process by defining a standard format for programs,
+making them easier to read.
+After programs are completed, and modifications to provide new features
+or to correct bugs are required, an automatic formatting system
+can work with an intelligently designed source code control
+system to help maintain clean programs with their histories.
+.PP
+The first version of
+.I pxp
+took a step toward the goal of machine aided program formatting
+by formatting the code of the program.
+It did not, however, in any way help with the annotation of
+the program with comments.
+The following sections describe a comment processing
+facility design which was added to
+.I pxp.
+.NH 2
+Implementation
+.PP
+When parsing the program information is saved in the parse tree which
+tells the source text coordinates (sequence numbers and columns)
+for the input tokens at the boundaries of chosen productions.
+The comments from the source program are saved in a separate data
+structure together with information about their source text locations and a
+classification of their ``type.''
+The comment reformatting process proceeds by printing out the parsed program
+and periodically flushing out comments.
+.NH 3
+The kinds of comments
+.PP
+.I Pxp
+distinguishes several types of comments in the input thereby varying
+their placement in the output.
+The four basic kinds of comments are:
+.IP
+.B
+Left marginal.
+.R
+At the left margin on input these comments are retained at the
+left margin in the output.
+.IP
+.B
+Aligned.
+.R
+Comments which are not at the left margin on input but which have no tokens
+preceding them on the input line are aligned with the program text on output.
+.IP
+.B
+Trailing.
+.R
+Comments appearing after tokens in the input line but separated from the
+last token on the line by only a small amount of white space are placed
+similarly in the output.
+.IP
+.B
+Right marginal.
+.R
+Comments which are more than a small amount of white space past the last
+token on a line are aligned about 35 spaces to the right of the running
+program text.
+.PP
+In addition to these comments, other formatting features of the input
+are preserved to the output.
+These include blank lines, form ejects, and
+.B include
+directives.
+.NH 2
+Examples of comment types
+.PP
+Consider the following example:
+.LS
+{ Factorial program - Assigment 1
+  John Jones, CS 153, Fall 1977 }
+
+\fBprogram\fP fact(output);
+\fBconst\fP maxfact = 20; {last factorial to be computed}
+
+        \fBfunction\fP rfact(i: integer): integer;
+        \fBbegin\fP
+               \fBif\fP i <= 1 \fBthen\fP         {terminate}
+                      fact := 1
+               \fBelse\fP                   {recurse}
+                      fact := i * fact(i - 1)
+        \fBend\fP;
+
+\fBbegin\fP
+        i := 1;
+        j := 1;
+        {iterative factorial}
+        \fBrepeat\fP
+               writeln(i, j);
+               j := j * i;
+               i := i + 1;
+        \fBuntil\fP i > maxfact;
+
+        {recursive factorial}
+        \fBfor\fP i := 1 \fBto\fP maxfact \fBdo\fP
+               writeln(i, rfact(i))
+\fBend\fP.
+.LE
+.PP
+This program has all four basic comment types.
+The first comment is
+.I marginal
+(and is followed by a blank line which is also preserved in a
+reformatted listing.)
+The comments in the text ``iterative factorial''
+and ``recursive factorial'' are 
+.I aligned
+comments.
+The comment on the declaration of
+.I maxfact
+is a
+.I trailing
+comment while the comments in
+.I rfact
+are
+.I "right marginal."
+.PP
+Since the objective of the program reformatting is to not require the
+saving of the raw programs which produced the restructured programs,
+it is necessary for the reformatting to produce programs which are
+.I "fixed points"
+with respect to the comment processing;
+that is the form of restructured programs must be preserved under
+repeated reformatting.
+The above types of comments have been carefully chosen so that
+this occurs.
+.NH 3
+Data structures (overview)
+.PP
+The following sections provide a brief descriptions of the data structures
+used by the comment formatting cluster and the method used by the cluster
+itself.
+The actual reformatting process involves a number of complications not
+detailed here, necessary to discern as much as possible from the source
+text in order to reasonably classify comments into one of the four available
+types, and in order to live with the existing structure of the parser of
+.I pi .
+.PP
+As each comment is encountered in the source text it is chained 
+onto a singly linked list recording the kind of comment involved;
+the comment delimiter, either `{' or `(*';
+the source text coordinates of the comment;
+and a linked list of lines of comment text.
+.PP
+The other data structure used to gather information is a stack parallel to the
+parse stack.
+For each element of the parse stack this stack contains the source text
+coordinates of the leftmost token shifted over in creating the associated
+state.
+Thus, when a reduction occurs, it is possible to identify the portion of the
+input text which was reduced.
+At numerous points in the parse tree where comment text is to be processed
+we save the source coordinates of the first and last token in the reduced
+production as well as the coordinates of the following (lookahead) token.
+.NH 3
+Comment processing (overview)
+.PP
+Formatting of the comments back into the program uses the source text
+coordinates embedded in the parse tree and attached to comments to construct
+a formatted listing.
+The ideas involved are quite simple.
+When we begin to print out a statement level subtree we first print out
+comments which precede this statement.
+We then print out the statement itself,
+possible invoking this process recursively.
+In recursive declarations provisions are made for embedded comments also.
+.PP
+The most important complication is that comments which appear after the last
+token of a
+.B procedure
+or
+.B function
+must be associated with this routine rather than being printed before the
+next.
+This requires a special ``to end of line'' kind of comment flushing.
+Other complications arise because of the pre-existing data structures in
+.I pxp .
+The code for
+.I pxp
+contains a number of comments detailing the resolution of these and other
+problems.
+.bp
+.NH
+Conclusions
+.NH 2
+Design
+.PP
+In retrospect, most of the design decisions were well-made.
+The counter placement rules resulted in a small number of counters.
+The reparsing of the program runs at a reasonable rate,
+approximately twice the speed of compilation.
+The inaccurate counts which may be generated with non-local
+.B goto
+statements have as yet caused no problems.
+The biggest deficiency in the design is, in fact, the lack of a debugger
+implementation to complement the profiling facilities.
+.NH 2
+Implementation
+.PP
+The implementation proved to be quite simple.
+The design choices allowing
+.I pxp
+to use the framework of
+.I pi
+were well taken.
+The largest weakness of the implementation may be the fact that
+the print cluster structure may not necessarily be the best one for
+doing long statement folding across line boundaries, and for
+processing the placement of multiple statements per line.
+Whether or not this is true would be seen if such a implementation
+modification were attempted.
+.NH 2
+Profiling
+.PP
+The format of the profile worked out quite well.
+Basing the format on [9] was an excellent choice.
+For initialization procedures and some others, multiple
+statement per line placements is noticeably needed.
+It is felt that languages which offer initialization facilities
+for structured statements will likewise need more complex format
+processing in such declarations.
+With comment reformatting a profile can substitute
+for a program listing.
+In this case the philosophy of suppressing unexecuted
+.B procedure
+and
+.B function
+bodies as well as declaration parts
+might be re-examined.
+.NH 2
+Reformatting
+.PP
+For program formatting, a comment formatting facility is a must.
+The author feels that the basic format of programs is well chosen,
+but most persons would prefer an (at least slightly) different format.
+Again, long statement folding and the placement of multiple statements
+per line would be a plus here.
+Even in its present state, the formatting facilities are judged to be
+useful, especially for showing students with no perceivable style
+one plausible way of formatting Pascal programs.
+.NH 2
+Future systems
+.PP
+Execution profiling is an important tool because it provides feedback at the
+source program level.
+A number of systems including such facilities exist or are proposed
+[10] [11] [12] [13].
+The author expects the following to be components of future systems:
+.HP
+.RS
+.IP 1)
+Source language editors [16] [17]
+.IP 2)
+Symbolic source language debuggers [8] [16]
+.IP 3)
+Source code control systems [18]
+.RE
+.PP
+A well-designed programming language system with these components could provide
+systems programmers with a powerful set of system construction tools,
+similar to those available in excellent \s-2LISP\s0 systems such as [16].
+.bp
+.SH
+References
+.PP
+.IP [1]
+Charles B. Haley
+.br
+Master's Project Report
+.br
+U.C. Berkeley, June, 1977.
+.IP [2]
+William N. Joy
+.br
+.I "PX 1.1 Implementation Notes"
+.br
+October, 1978.
+.IP [3]
+William N. Joy, Susan L. Graham, and Charles B. Haley
+.br
+.I "Berkeley Pascal User's Manual"
+.br
+Version 1.0 \- November, 1977.
+.IP [4]
+K. Thompson and D. M. Ritchie
+.br
+.I
+UNIX
+Programmers Manual
+.R
+.br
+Version 6.7
+(revised at University of California)
+.br
+June 1977.
+.IP [5]
+Kathleen Jensen and Niklaus Wirth
+.br
+.I
+Pascal \- User Manual and Report
+.R
+.br
+Springer-Verlag, New York
+.br
+1975.
+.IP [6]
+William N. Joy
+.br
+.I "PDB Design notes and draft manual"
+.br
+January, 1977.
+.IP [7]
+D. E. Knuth and F. R. Stevenson
+.br
+.I "Optimal measurement points for program frequency counts"
+.br
+BIT 13 (1973) 313-322.
+.IP [8]
+Edwin H. Satterthwaite
+.br
+.I "Source Language Debugging Tools"
+.br
+STAN-CS-75-494, May, 1975.
+.IP [9]
+Edwin H. Satterthwaite
+.br
+.I "Debugging Tools for High Level Languages"
+.br
+Software, Practice and Experience
+.br
+Vol. 2, 197-217, 1972.
+.IP [10]
+J. D. Ichbiah, J, C. H\*'eliard, J. P. Rissen, P. Cousot
+.br
+.I "The Systems Implementation Language LIS - Reference Manual"
+.br
+Technical Report 4549 E1/EN.
+.br
+Compagnie Internationale pour l\(aaInformatique
+.br
+68, route de Versailles \- 78430 LOUVECIENNES
+.br
+December 1974. Revised January 1976.
+.IP [11]
+B. W. Lampson, J. J. Horning, R. L. London, J. G. Mitchell, G. L. Popek
+.br
+.I "Report on the Programming Language Euclid"
+.br
+Sigplan Notices, Volume 12, Number 2.
+.br
+February 1977.
+.br
+Pp. 64-65.
+.IP [12]
+D. T. Barnard
+.br
+.I "Automatic generation of syntax-repairing and paragraphing parsers"
+.br
+Technical Report CSRG-52.
+.br
+Computer Systems Research Group
+.br
+University of Toronto, Toronto, Ontario.
+.br
+April 1975.
+.IP [13]
+R. C. Holt and D. T. Barnard
+.br
+.I "Syntax directed error repair and paragraphing"
+.br
+Computer Systems Research Group.
+.br
+University of Toronto, Toronto, Ontario.
+.br
+June, 1976.
+.IP [14]
+A. van Wijngaarden, et. al.
+.br
+.I "Revised Report on the algorithmic language ALGOL 68"
+.br
+Sigplan Notices, Volume 12, Number 5.
+.br
+May 1977.
+.IP [15]
+Niklaus Wirth
+.br
+.I "Modula: A language for modular multiprogramming"
+.br
+Institut f\*:ur Informatik
+.br
+ETH, CH 8092 Z\*:urich
+.br
+March, 1976.
+.IP [16]
+Warren Teitleman
+.br
+.I "Interlisp Reference Manual"
+.br
+Xerox Palo Alto Research Center
+.br
+Palo Alto, California
+.br
+December 1974.
+.IP [17]
+Steve German
+.br
+.I
+ECL in-core editor
+.R
+.br
+Documentation dated 10/20/1973.
+.IP [18]
+Rochkind, Marc J.
+.br
+The Source Code Control System
+.br
+IEEE TOSE Vol SE-1 #4
+.br
+Dec. 1975, 364-370

@@ -1,0 +1,6 @@
+pr printopcodes
+pr READ_ME
+pr make*
+pr picture
+pr -2 trdata
+pr -3 opc.d

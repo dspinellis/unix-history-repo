@@ -1,0 +1,45 @@
+cp opc.d junk
+ed - junk >junk2
+g/^...[ 	]*$/d
+=
+v/\*/d
+=
+v/.........../s/$/	/
+g/^0*/s//0/
+g/\(.*\)\*\(.*\)/s//#define O\2	\1/
+1i
+/*
+ * operations
+ */
+.
+w opcode.h
+q
+ed - junk
+g/^\(23.\).*/s//\1/
+g/_/s/..../	/
+v/_/s/.*/	badop/
+1s/^/optab:\
+/
+130,$m0
+1i
+.data
+.
+$a
+.text
+.
+/NULL/c
+	badop
+.
+w opcode.s
+q
+ed - opcode.h >>opcode.s
+/WRITC/s/#define //
+s/[ 	]/ = /p
+w /dev/null
+q
+ed - junk2
+-s/$/\/256 opcodes assigned/p
++s/$/\/256 opcodes #defined/p
+w
+q
+rm junk junk2

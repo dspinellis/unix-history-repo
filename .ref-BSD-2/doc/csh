@@ -1,0 +1,3504 @@
+.RP
+.TL
+An introduction to the C shell
+.AU
+William Joy
+.AI
+Computer Science Division
+.br
+Department of Electrical Engineering and Computer Science
+.br
+University of California, Berkeley
+.br
+Berkeley, California 94720
+.AB
+.I Csh
+is a new command language interpreter for \s-2UNIX\s0
+systems.
+It incorporates good features of other shells and a
+.I history
+mechanism similar to the
+.I redo
+of \s-2INTERLISP\s0.
+While incorporating many features of other shells which make
+writing shell programs (shell scripts) easier,
+most of the features unique to
+.I csh
+are designed more for the interactive \s-2UNIX\s0 user.
+.PP
+\s-2UNIX\s0
+users who have read a general introduction to the system
+will find a valuable basic explanation of the shell here.
+Simple terminal interaction with
+.I csh
+is possible after reading just the first section of this document.
+The second section describes the shells capabilities which you can
+explore after you have begun to become acquainted with the shell.
+Later sections introduce features which are useful, but not necessary
+for all users of the shell.
+.PP
+Back matter includes an appendix listing special characters of the shell
+and a glossary of terms and commands introduced in this manual.
+.AE
+.SH
+.if n .ND
+Introduction
+.PP
+A
+.I shell
+is a command language interpreter.
+.I Csh
+is the name of one particular command interpreter on
+\s-2UNIX\s0.
+The primary purpose of
+.I csh
+is to translate command lines typed at a terminal into
+system actions, such as invocation of other programs.
+.I Csh
+is a user program just like any you might write.
+Hopefully,
+.I csh
+will be a very useful program for you
+in interacting with the \s-2UNIX\s0 system.
+.PP
+In addition to this document, you will want to refer to a copy
+of the ``\s-2UNIX\s0 Programmers Manual.''
+The
+.I csh
+documentation in the manual provides a full description of all
+features of the shell and is a final reference for questions
+about the shell.
+.PP
+Many words in this document are shown in
+.I italics.
+These are important words;
+names of commands, and words which have special meaning in discussing
+the shell and \s-2UNIX\s0.
+Many of the words are defined in a glossary at the end of this document.
+If you don't know what is meant by a word, you should look
+for it in the glossary.
+.SH
+Acknowledgements
+.PP
+Numerous people have provided good input about previous versions
+of 
+.I csh
+and aided in its debugging and in the debugging of its documentation.
+I would especially like to thank Michael Ubell
+who made the crucial observation that history commands could be
+done well over the word structure of input text, and implemented
+a prototype history mechanism in an older version of the shell.
+Eric Allman has also provided a large number of useful comments on the
+shell, helping to unify those concepts which are present and to identify
+and eliminate useless and marginally useful features.
+.br
+.bp
+.NH
+Terminal usage of the shell
+.NH 2
+The basic notion of commands
+.PP
+A
+.I shell
+in
+\s-2UNIX\s0
+acts mostly as a medium through which other
+.I commands
+are invoked.
+While it has a set of
+.I builtin
+commands which it performs directly,
+most useful commands are, in fact, external to the shell.
+The shell is thus distinguished from the command interpreters of other
+systems both by the fact that it is just a user program, and by the fact
+that it is used almost exclusively as a mechanism for invoking other programs.
+.PP
+Commands in the \s-2UNIX\s0 system expect a list of strings or
+.I words
+as arguments.
+Thus the command
+.DS
+mail bill
+.DE
+consists of two words.
+The first word
+.I mail
+names the command to be executed, in this case the
+mail program which sends messages to other users.
+The shell uses the name of the command in attempting to run it for you.
+It will look in a number of
+.I directories
+for a file with the name
+.I mail
+which is expected to contain the mail program.
+.PP
+The rest of the words of the command are given to the command itself to execute.
+In this case we specified also the word
+.I bill
+which is interpreted by the
+.I mail
+program to be the name of a user to whom mail is to be sent.
+In normal terminal usage we might use the
+.I mail
+command as follows.
+.DS
+% mail bill
+I have a question about the csh documentation.
+My document seems to be missing page 5.
+Does a page five exist?
+	Bill
+%
+.DE
+.PP
+Here we typed a message to send to
+.I bill
+and ended this message with a control-d which sent an end-of-file to
+the mail program.
+The mail program
+then transmitted our message.
+The characters `% ' were printed before and after the mail command 
+by the shell to indicate that input was needed.
+.PP
+After typing the `% ' prompt the shell was reading command input from
+our terminal.
+We typed a complete command `mail bill'.
+The shell then executed the
+.I mail
+program with argument
+.I bill
+and went dormant waiting for it to complete.
+The mail program then read input from our terminal until we signalled
+an end-of-file after which the shell noticed that mail had completed
+and signaled us that it was ready to read from the terminal again by
+printing another `% ' prompt.
+.PP
+This is the essential pattern of all interaction with \s-2UNIX\s0
+through the shell.
+A complete command is typed at the terminal, the shell executes
+the command and when this execution completes prompts for a new command.
+If you run the editor for an hour, the shell will patiently wait for
+you to finish editing and obediently prompt you again whenever you finish
+editing.
+.NH 2
+Flag arguments
+.PP
+A useful notion in \s-2UNIX\s0 is that of a
+.I flag
+argument.
+While many arguments to commands specify file names or user names
+some arguments rather specify an optional capability of the command
+which you wish to invoke.
+By convention, such arguments begin with the character `\-'.
+Thus the command
+.DS
+ls
+.DE
+will produce a list of the files in the current directory.
+The option
+.I \-s
+is the size option, and
+.DS
+ls \-s
+.DE
+causes
+.I ls
+to also give, for each file the size of the file in blocks of 512
+characters.
+The manual page for each command in the \s-2UNIX\s0 programmers manual
+gives the available options for each command.
+The
+.I ls
+command has a large number of useful and interesting options.
+Most other commands have either no options or only one or two options.
+It is hard to remember options of commands which are not used very
+frequently, so most \s-2UNIX\s0 utilities perform only one or two functions
+rather than having a large number of hard to remember options.
+.NH 2
+Output to files
+.PP
+Many commands may read input or write output to files rather
+than simply taking input and output from the terminal.
+Each such command could take special words as arguments indicating
+where the output is to go.
+It is simpler, and usually
+sufficient, to connect these commands to files to which they wish to 
+write, within the shell itself, and just before they are executed.
+.PP
+Thus suppose we wish to save the current date in a file called `now'.
+The command
+.DS
+date
+.DE
+will print the current date on our terminal.
+This is because our terminal is the default
+.I "standard output"
+for the date command and the date command prints the date on its
+standard output.
+The shell lets us redirect the
+.I "standard output"
+of a command through a
+notation using the
+.I metacharacter
+`>' and the name of the file where output is to be placed.
+Thus the command
+.DS
+date > now
+.DE
+runs the
+.I date
+command in an environment where its standard output is
+the file `now' rather than our terminal.
+Thus this command places the current date and time in the file `now'.
+It is important to know that the
+.I date
+command was unaware that its output was going to a file rather than
+to our terminal.
+The shell performed this
+.I redirection
+before the command began executing.
+.PP
+One other thing to note here is that the file `now'
+need not have existed before the
+.I date
+command was executed; the shell would have created the file if it did
+not exist.
+And if the file did exist?
+If it had existed previously these previous contents would have been discarded!
+A shell option
+.I noclobber
+exists to prevent this from happening accidentally;
+it is discussed in section 2.2.
+.NH 2
+Metacharacters in the shell
+.PP
+The shell has a large number of
+special characters (like `>')
+which indicate special functions.
+We say that these notations have
+.I syntactic
+and
+.I semantic
+meaning to the shell.
+In general, most characters which are neither letters nor digits
+have special meaning to the shell.
+We shall shortly learn a means of
+.I quotation
+which allows us to create words which contain
+.I metacharacters
+and to thus work without constantly worrying about whether certain
+characters are metacharacters.
+.PP
+Note that the shell is only reading input when it has prompted with
+`% '.
+Thus metacharacters will normally have effect only then.
+We need not worry about placing shell metacharacters in a letter
+we are sending via
+.I mail.
+.NH 2
+Input from files; pipelines
+.PP
+We learned above how to route the standard output of a command
+to a file.
+It is also possible to route the standard input of a command from a file.
+This is not often necessary since most commands will read from
+a file name given as argument.
+We can give the command
+.DS
+sort < data
+.DE
+to run the
+.I sort
+command with standard input, where the command normally
+reads, from the file
+`data'.
+We would more likely say
+.DS
+sort data
+.DE
+letting the
+.I sort
+command open the file
+`data'
+for input itself since this is less to type.
+.PP
+We should note that if we just typed
+.DS
+sort
+.DE
+then the sort program would sort lines from its
+.I "standard input."
+Since we did not
+.I redirect
+the standard input, it would sort lines as we typed them on the terminal
+until we typed a control-d to generate an end-of-file.
+.PP
+A most useful capability is the ability to combine the standard output
+of one command with the standard input of the next, i.e. to run the
+commands in a sequence known as a
+.I pipeline.
+For instance the command
+.DS
+ls \-s
+.DE
+normally produces a list of the files in our directory with the size
+of each in blocks of 512 characters.
+If we are interested in learning which of our files is largest we
+may wish to have this sorted by size rather than by name, which is
+the default way in which
+.I ls
+sorts.
+We could look at the many options of
+.I ls
+to see if there was an option to do this but would eventually discover
+that there is not.
+Instead we can use a couple of simple options of the
+.I sort
+command, combining it with
+.I ls
+to get what we want.
+.PP
+The
+.I \-n
+option of sort specifies a numeric sort rather than an alphabetic sort.
+Thus
+.DS
+ls \-s | sort \-n
+.DE
+specifies that the output of the
+.I ls
+command run with the option
+.I \-s
+is to be
+.I piped
+to the command
+.I sort
+run with the numeric sort option.
+This would give us a sorted list of our files by size, but with the
+smallest first.
+We could then use the
+.I \-r
+reverse sort option and the
+.I head
+command in combination with the previous command doing
+.DS
+ls \-s | sort \-n \-r | head \-5
+.DE
+Here we have taken a list of our files sorted alphabetically,
+each with the size in blocks.
+We have run this to the standard input of the
+.I sort
+command asking it to sort numerically in reverse order (largest first).
+This output has then been run into the command
+.I head
+which gives us the first few lines out.
+In this case we have asked
+.I head
+for the first 5 lines.
+Thus this command gives us the names and sizes of our 5 largest files.
+.PP
+The metanotation introduced above is called the
+.I pipe
+mechanism.
+Commands separated by `\||\|' characters are connected together by the
+shell and the output of each is run into the input of the next.
+The leftmost command in a pipeline will normally take its standard
+input from the terminal and the rightmost will place its standard
+output on the terminal.
+Other examples of pipelines will be given later when we discuss the
+history mechanism;
+one important use of pipes which is illustrated there is in the
+routing of information to the line printer.
+.NH 2
+Filenames
+.PP
+Many commands to be executed will need the names of files as arguments.
+\s-2UNIX\s0 pathnames consist of a number of components separated by `/'.
+Each component except the last names a directory in which the next
+component resides.
+Thus the pathname
+.DS
+/etc/motd
+.DE
+specifies a file in the directory
+`etc'
+which is a subdirectory of the
+.I root
+directory `/'.
+Within this directory the file named is `motd' which stands
+for `message of the day'.
+Filenames which do not begin with `/' are interpreted starting at
+the current 
+.I working
+directory.
+This directory is, by default, your
+.I home
+directory and can be changed dynamically by the
+.I chdir
+change directory command.
+.PP
+Most filenames consist of a number of alphanumeric characters and `.'s.
+In fact, all printing characters except `/' may appear in filenames.
+It is inconvenient to have most non-alphabetic characters in filenames
+because many of these have special meaning to the shell.
+The character `.' is not a shell-metacharacter and is often used as
+the prefix with an
+.I extension
+of a base name.
+Thus
+.DS
+prog.c prog.o prog.errs prog.output
+.DE
+are four related files.
+They share a
+.I root
+portion of a name
+(a root portion being that part of the name that is left when a trailing
+`.' and following characters which are not `.' are stripped off).
+The file
+`prog.c'
+might be the source for a C program,
+the file `prog.o' the corresponding object file,
+the file
+`prog.errs' the errors resulting from a compilation of the program
+and the file
+`prog.output' the output of a run of the program.
+.PP
+If we wished to refer to all four of these files in a command, we could
+use the metanotation
+.DS
+prog.*
+.DE
+This word is expanded by the shell, before the command to which it is
+an argument is executed, into a list of names which begin with `prog.'.
+The character `*' here matches any sequence (including the empty sequence)
+of characters in a file name.
+The names which match are sorted into the argument list to the command
+alphabetically.
+Thus the command
+.DS
+echo prog.*
+.DE
+will echo the names
+.DS
+prog.c prog.errs prog.o prog.output
+.DE
+Note that the names are in lexicographic order here, and a different
+order than we listed them above.
+The
+.I echo
+command receives four words as arguments, even though we only typed
+one word as as argument directly.
+The four words were generated by filename expansion of the metasyntax
+in the one input word.
+.PP
+Other metanotations for
+.I "filename expansion"
+are also available.
+The character `?' matches any single character in a filename.
+Thus
+.DS
+echo ? \|?? \|???
+.DE
+will echo a line of filenames; first those with one character names,
+then those with two character names, and finally those with three
+character names.
+The names of each length will be independently lexicographically sorted.
+.PP
+Another mechanism consists of a sequence of characters between `[' and `]'.
+This metasequence matches any single character from the enclosed set.
+Thus
+.DS
+prog.[co]
+.DE
+will match
+.DS
+prog.c prog.o
+.DE
+in the example above.
+We can also place two characters astride a `\-' in this notation to denote
+a range.
+Thus
+.DS
+chap.[1\-5]
+.DE
+might match files
+.DS
+chap.1 chap.2 chap.3 chap.4 chap.5
+.DE
+if they existed.
+This is shorthand for
+.DS
+chap.[12345]
+.DE
+and otherwise equivalent.
+.PP
+An important point to note is that if a list of argument words to
+a command (an
+.I "argument list)"
+contains filename expansion syntax, and if this filename expansion syntax
+fails to match any existing file names, then the shell considers this
+to be an error and prints a diagnostic
+.DS
+No match.
+.DE
+.PP
+Another very important point is that the character `.' at the beginning
+of a filename is treated specially.
+Neither `*' or `?' or the `[' `]' mechanism will match it.
+This prevents accidental matching of the filenames `.' and `..'
+in the current directory which have special meaning to the system,
+as well as other files such as 
+.I \&.cshrc
+which are not normally
+visible.
+We will discuss the special role of the file
+.I \&.cshrc
+later.
+.PP
+Another filename expansion mechanism gives access to the pathname of
+the
+.I home
+directory of other users.
+This notation consists of the character `~' followed by another users
+login name.
+For instance the word `~bill' would map to the pathname `/mnt/bill'
+if the home directory for `bill' was in the directory `/mnt/bill'.
+Since, on large systems, users may have login directories scattered over
+many different disk volumes with different prefix directory names,
+this notation provides a reliable way of accessing the files
+of other users.
+.PP
+A special case of this notation consists of a `~' alone, e.g. `~/mbox'.
+This notation is expanded by the shell into the file `mbox' in your
+.I home
+directory, i.e. into `/mnt/bill/mbox' for me on the Cory Hall \s-2UNIX\s0
+system.
+This can be very useful if you have used
+.I chdir
+to change to another users directory and have found a file you wish to
+copy using
+.I cp.
+You can do
+.DS
+cp thatfile ~
+.DE
+which will be expanded by the shell to
+.DS
+cp thatfile /mnt/bill
+.DE
+e.g., which the copy command will interpret as a request to make a copy of
+`thatfile'
+in the directory `/mnt/bill'.
+The `~' notation doesn't, by itself, force named files to exist.
+This is useful, for example, when using the
+.I cp
+command,
+e.g.
+.DS
+cp thatfile ~/saveit
+.DE
+.PP
+There also exists a mechanism using the characters `{' and `}' for
+abbreviating a set of word which have common parts but cannot
+be abbreviated by the above mechanisms because they are not files,
+are the names of files which do not yet exist,
+are not thus conveniently described.
+This mechanism will be described much later,
+in section 4.1,
+as it is used much less frequently.
+.NH 2
+Quotation
+.PP
+We have already seen a number of metacharacters used by the shell.
+These metacharacter pose a problem in that we cannot use them directly 
+as parts of words.
+Thus the command
+.DS
+echo *
+.DE
+will not echo the character `*'.
+It will either echo an sorted list of filenames in the
+current directory, or print the message `No match' if there are 
+no files in the current directory.
+.PP
+The recommended mechanism for placing characters which are neither numbers,
+digits, `/', `.' or `\-' in an argument word to a command is to enclose
+it with single quotation characters `\'', i.e.
+.DS
+echo \'*\'
+.DE
+There is one special character `!' which is used by the
+.I history
+mechanism of the shell and which cannot be
+.I escaped
+in this way.
+It and the character `\'' itself can be preceded by a single `\e'
+to prevent their special meaning.
+These two mechanisms suffice to place any printing character into a word
+which is an argument to a shell command.
+.NH 2
+Terminating commands
+.PP
+When you are running a command from the shell and the shell is
+dormant waiting for it to complete there are a couple of ways in
+which you can force such a command to complete.
+For instance if you type the command
+.DS
+cat /etc/passwd
+.DE
+the system will print a copy of a list of all users of the system
+on your terminal.
+This is likely to continue for several minutes unless you stop it.
+You can send an
+\s-2INTERRUPT\s0
+signal to the
+.I cat
+command by hitting the
+\s-2DEL\s0 or \s-2RUBOUT\s0
+key on your terminal.
+Actually, hitting this key sends this
+\s-2INTERRUPT\s0
+signal to all programs running on your terminal, including your shell.
+The shell normally ignores such signals however, so that the only
+program affected by the
+\s-2INTERRUPT\s0
+will be
+.I cat.
+Since
+.I cat
+does not take any precautions to catch this signal
+the
+\s-2INTERRUPT\s0
+will cause it to terminate.
+The shell notices that
+.I cat
+has died and prompts you again with `% '.
+If you hit \s-2INTERRUPT\s0 again, the shell will just
+repeat its prompt since it catches \s-2INTERRUPT\s0 signals
+and chooses to continue to execute commands rather than going away
+like
+.I cat
+did, which would have the effect of logging you out.
+.PP
+Another way in which many programs terminate is when they get an end-of-file
+from their standard input.
+Thus the
+.I mail
+program in the first example above was terminated when we hit a control-d
+which generates and end-of-file from the standard input.
+The shell also terminates when it gets an end-of-file printing `logout';
+\s-2UNIX\s0 then logs you off the system.
+Since this means that typing too many control-d's can accidentally log us off,
+the shell has a mechanism for preventing this.
+This 
+.I ignoreeof
+option will be discussed in section 2.2.
+.PP
+If a command has its standard input redirected from a file, then it will
+normally terminate when it reaches the end of this file.
+Thus if we execute
+.DS
+mail bill < prepared.text
+.DE
+the mail command will terminate without our typing a control-d.
+This is because it read to the end-of-file of our file
+`prepared.text' in which we placed a message for `bill' with an editor.
+We could also have done
+.DS
+cat prepared.text \||\| mail bill
+.DE
+since the
+.I cat
+command would then have written the text through the pipe to the
+standard input of the mail command.
+When the
+.I cat
+command completed it would have terminated,
+closing down the pipeline
+and the
+.I mail
+command would have received an end-of-file from it and terminated.
+Using a pipe here is more complicated than redirecting input
+so we would more likely use the first form.
+These commands could also have been stopped by sending an \s-2INTERRUPT\s0.
+.PP
+If you write or run programs which are not fully debugged then it may
+be necessary to stop them somewhat ungracefully.
+This can be done by sending them a \s-2QUIT\s0
+signal, generated by a control-\e.
+This will usually provoke the shell to produce a message like:
+.DS
+a.out: Quit \-\- Core dumped
+.DE
+indicating that a file
+`core' has been created containing information about the program `a.out's
+state when it ran amuck.
+You can examine this file yourself, or forward information to the
+maintainer of the program telling him/her where the
+.I "core file"
+is.
+.PP
+If you run background commands (as explained in section 2.6) then these
+commands will ignore \s-2INTERRUPT\s0 and \s-2QUIT\s0 signals at the
+terminal.  To stop them you must use the
+.I kill
+program.  See section 2.6 for an example.
+.NH 2
+What now?
+.PP
+We have so far seen a number of mechanisms of the shell and learned a lot
+about the way in which it operates.
+The remaining sections will go yet further into the internals of the
+shell, but you will surely want to try using the shell before you go any further.
+To try it you can log in to \s-2UNIX\s0 and type the following
+command to the system:
+.DS
+chsh myname /bin/csh
+.DE
+Here
+`myname'
+should be replaced by the name you typed to
+the system prompt of
+`login:' to get onto the system.
+Thus I would use `chsh bill /bin/csh'.
+.B
+You only have to do this once; it takes effect at next login.
+.R
+You are now ready to try using
+.I csh.
+.PP
+Before you do the `chsh' command, the shell you are using when
+you log into the system is `/bin/sh'.
+In fact, much of the above discussion is applicable to `/bin/sh'.
+The next section will introduce many features particular to
+.I csh
+so you should change your shell to
+.I csh
+before you begin reading it.
+.bp
+.NH
+Details on the shell for terminal users
+.NH 2
+Shell startup and termination
+.PP
+When you login, the shell is placed by the system in your
+.I home
+directory and begins by reading commands from a file
+.I \&.cshrc
+in this directory.
+All shells which you may create during your terminal session will
+read from this file.
+We will later see what kinds of commands are usefully placed there.
+For now we need not have this file and the shell does not complain about
+its absence.
+.PP
+A 
+.I login
+shell, executed after you login to the system,
+will, after it reads commands from
+.I \&.cshrc,
+read commands from a file
+.I \&.login
+also in your home directory.
+This file contains commands which you wish to do each time you login
+to the \s-2UNIX\s0 system.
+My
+.I \&.login
+file looks something like:
+.DS
+tset \-d adm3a \-p adm3a
+fixexrc
+set history=20
+set time=3
+.DE
+on the \s-2CORY\s0 Hall \s-2UNIX\s0 system.
+This file contains four commands to be executed by \s-2UNIX\s0
+each time I login.
+The first is a
+.I tset
+command which informs the system that I usually dial in on a Lear-Siegler
+\s-2ADM\-3A\s0 terminal and that if I am on a patchboard port on the
+fifth floor of Evans Hall I am probably also on an \s-2ADM\-3A\s0.
+The second command is a
+.I fixexrc
+which manipulates my
+.I ex
+startup file
+in certain ways if I am on a dialup port.
+We need not be concerned with exactly what this command does.
+In general you may have certain commands in your
+.I \&.login
+which are particular to you.
+.PP
+The next two
+.I set
+commands are interpreted directly by the shell and affect the values
+of certain shell variables to modify the future behavior of the shell.
+Setting the variable
+.I time
+tells the shell to print time statistics on commands which take more
+than a certain threshold of machine time (in this case 3 \s-2CPU\s0
+seconds).
+Setting the variable
+.I history
+tells the shell how much history of previous command words it should
+save in case I wish to repeat or rerun modified versions of previous
+commands.
+Since there is a certain overhead in this mechanism the shell does
+not set this variable by default, but rather lets users who wish to
+use the mechanism set it themselves.
+The value of 20 is a reasonably large value to assign to
+.I history.
+More casual users of the
+.I history
+mechanism
+would probably set a value of 5 or 10.
+The use of the
+.I history
+mechanism will be described subsequently.
+.PP
+After executing commands from
+.I \&.login
+the shell reads commands from your terminal, prompting for each with
+`% '.
+When it receives an end-of-file from the terminal, the shell
+will print `logout' and execute commands from the file `.logout'
+in your home directory.
+After that the shell will die and \s-2UNIX\s0 will log you off the system.
+If the system is not going down, you will receive a new login message.
+In any case, after the `logout' message the shell is doomed
+and will take no further input from the terminal.
+.NH 2
+Shell variables
+.PP
+The shell maintains a set of
+.I variables.
+We saw above the variables
+.I history
+and
+.I time
+which had values `20' and `3'.
+In fact, each shell variable has as value an array of
+zero or more
+.I strings.
+Shell variables may be assigned values by the set command.  It has
+several forms, the most useful of which was given above and is
+.DS
+set name=value
+.DE
+.PP
+Shell variables may be used to store values which are to
+be reintroduced into commands later through a substitution mechanism.
+The shell variables most commonly referenced are, however, those which the
+shell itself refers to.
+By changing the values of these variables one can directly affect the
+behavior of the shell.
+.PP
+One of the most important variables is the variable
+.I path.
+This variable contains a sequence of directory names where the shell
+searches for commands.
+The
+.I set
+command
+shows the value of all variables currently defined (we usually say
+.I set)
+in the shell.
+The default value for path will be shown by
+.I set
+to be
+.DS
+% set
+argv
+home	/mnt/bill
+path	(. /bin /usr/bin)
+prompt	%
+shell	/bin/csh
+status	0
+%
+.DE
+This notation indicates that the variable path points to the current
+directory `.' and then `/bin' and `/usr/bin'.
+Commands which you may write might be in `.' (usually one of
+your directories).
+The most heavily used system commands live in `/bin'.
+Less heavily used system commands live in `/usr/bin'.
+.PP
+A number of new programs on the system live in the directory
+`/usr/new'.
+If we wish, as well we might, all shells which we invoke to have
+access to these new programs we can place the command
+.DS
+set path=(. /usr/new /bin /usr/bin)
+.DE
+in our file
+.I \&.cshrc
+in our home directory.
+Try doing this and then logging out and back in and do
+.DS
+set
+.DE
+again to see that the value assigned to
+.I path
+has changed.
+.PP
+Other useful built in variables are the variable
+.I home
+which shows your home directory,
+the variable
+.I ignoreeof
+which can be set in your
+.I \&.login
+file to tell the shell not to exit when it receives an end-of-file from
+a terminal.
+To logout from \s-2UNIX\s0
+with
+.I ignoreeof
+set you must type
+.DS
+logout
+.DE
+This is one of several variables which the shell does not care about the
+value of, only whether they are
+.I set
+or
+.I unset.
+Thus to set this variable you simply do
+.DS
+set ignoreeof
+.DE
+and to unset it do
+.DS
+unset ignoreeof
+.DE
+Both
+.I set
+and
+.I unset
+are built-in commands of the shell.
+.PP
+Finally, some other built-in shell variables of use are the
+variables
+.I noclobber
+and
+.I mail.
+The metasyntax
+.DS
+> filename
+.DE
+which redirects the output of a command
+will overwrite and destroy the previous contents of the named file.
+In this way you may accidentally overwrite a file which is valuable.
+If you would prefer that the shell not overwrite files in this
+way you can
+.DS
+set noclobber
+.DE
+in your
+.I \&.login
+file.
+Then trying to do
+.DS
+date > now
+.DE
+would cause a diagnostic if `now' existed already.
+You could type
+.DS
+date >! now
+.DE
+if you really wanted to overwrite the contents of `now'.
+The `>!' is a special metasyntax indicating that clobbering the
+file is ok.
+.PP
+If you receive mail frequently while you are logged in and wish to
+be informed of the arrival of this mail you can put a command
+.DS
+set mail=/usr/mail/yourname
+.DE
+in your
+.I \&.login
+file.
+Here you should change `yourname' to your login name.
+The shell will look at this file every 10 minutes to see if new mail has arrived.
+If you receive mail only infrequently you are better off not
+setting this variable.  In this case it will only serve to delay the shells
+response to you when it checks for mail.
+.PP
+The use of shell variables to introduce text into commands, which is
+most useful in shell command scripts, will be introduced in section 2.4.
+.NH 2
+The shell's history list
+.PP
+The shell can maintain a history list into which it places the words
+of previous commands.
+It is possible to use a metanotation to reintroduce commands or words
+from commands in forming new commands.
+This mechanism can be used to repeat previous commands or to
+correct minor typing mistakes in commands.
+.PP
+Consider the following transcript:
+.DS
+% where michael
+michael is on tty0    dialup        300 baud      642-7927
+% write !$
+write michael
+Long time no see michael.
+Why don't you call me at 524-4510.
+EOF
+% 
+.DE
+Here we asked the system where
+.I michael
+was logged in.
+It told us he was on `tty0'
+and we told the shell to invoke a `write' command to
+`!$'.
+This is a history notation which means the last word of the last
+command executed, in this case `michael'.
+The shell performed this substitution and then echoed the command
+as it would execute it.
+Let us assume that we don't hear anything from michael.
+We might do
+.DS
+% ps t0
+  PID TTY TIME COMMAND
+ 4808  0    0:05 \-
+% !!
+ps t0
+  PID TTY TIME COMMAND
+ 5104  0    0:00 \- 7
+% !where
+where michael
+michael is not logged in
+%
+.DE
+Here we ran a
+.I ps
+on the teletype
+.I michael
+was logged in on to see that he had a shell.
+Repeating this command via the history substitution `!!'
+we saw that he had logged out and that only a
+.I getty
+process was running on his terminal.
+Repeating the
+.I where
+command
+showed that he was indeed gone, most likely having
+hung up the phone in order to be able to call.
+.PP
+This illustrates several useful features of the history mechanism.
+The form `!!' repeats the last command execution.
+The form `!string' repeats the last command which began with
+a word of which `string' is a prefix.
+Another useful command form is `\(ualhs\(uarhs' performing a substitute
+similar to that in
+.I ed
+or
+.I ex.
+Thus after
+.DS
+% cat ~bill/csh/sh..c
+/mnt/bill/csh/sh..c: No such file or directory
+% \(ua..(ua.
+cat ~bill/csh/sh.c
+#include "sh.h"
+
+/*
+ * C Shell
+ *
+ * Bill Joy, UC Berkeley
+ * October, 1978
+ */
+
+char	*pathlist[] =	{ SRCHP
+%
+.DE
+here we used the substitution to correct a typing mistake,
+and then rubbed the command out after we saw that we had found the
+file that we wanted.
+The substitution changed the two `.' characters to a single `.'
+character.
+.PP
+After this command we might do
+.DS
+% !! \||\| lpr
+cat ~bill/csh/sh.c \||\| lpr
+.DE
+to put a copy of this file on the line printer, or (immediately
+after the 
+.I cat
+which worked above)
+.DS
+% pr !$ \||\| lpr
+pr ~bill/csh/sh.c \||\| lpr
+%
+.DE
+to print a copy on the printer using
+.I pr.
+.PP
+More advanced forms of the history mechanism are also possible.
+A notion of modification on substitutions allows one to say
+(after the first successful
+.I cat
+above).
+.DS
+% cd !$:h
+cd ~bill/csh
+%
+.DE
+The trailing `:h' on the history substitution here causes only
+the head portion of the pathname reintroduced by the history
+mechanism to be substituted.
+This mechanism and related mechanisms are used less often than
+the forms above.
+.PP
+A complete description of history mechanism
+features is given in the C shell manual pages in the \s-2UNIX\s0 Programmers Manual.
+.NH 2
+Aliases
+.PP
+The shell has an
+.I alias
+mechanism which can be used to make transformations on input commands.
+This mechanism can be used to simplify the commands you type,
+to supply default arguments to commands,
+or to perform transformations on commands and their arguments.
+The alias facility is similar to the macro facility of many assemblers.
+.PP
+Some of the features obtained by aliasing can be obtained also
+using shell command files, but these take place in another instance
+of the shell and cannot directly affect the current shells environment
+and commands such as
+.I chdir
+which must be done in the current shell.
+.PP
+As an example, suppose that there is a new version of the mail program
+on the system called `Mail'
+you wish to use, rather than the standard mail program which is called `mail'.
+If you place the shell command
+.DS
+alias mail Mail
+.DE
+in your
+.I \&.login
+file, the shell will transform an input line of the form
+.DS
+mail bill
+.DE
+into a call on `Mail'.
+More generally, suppose we wish the command `ls' to always show
+sizes of files, that is to always do `\-s'.
+We can do
+.DS
+alias ls ls \-s
+.DE
+or even
+.DS
+alias dir ls \-s
+.DE
+creating a new command syntax `dir'
+which does an `ls \-s'.
+If we say
+.DS
+dir ~bill
+.DE
+then the shell will translate this to
+.DS
+ls \-s /mnt/bill
+.DE
+.PP
+Thus the
+.I alias
+mechanism can be used to provide short names for commands,
+to provide default arguments,
+and to define new short commands in terms of other commands.
+It is also possible to define aliases which contain multiple
+commands or pipelines, showing where the arguments to the original
+command are to be substituted using the facilities of the
+history mechanism.
+Thus the definition
+.DS
+alias cd \'cd \e!* ; ls \'
+.DE
+would do an
+.I ls
+command after each change directory
+.I cd
+command.
+We enclosed the entire alias definition in `\'' characters to prevent
+most substitutions from occuring and the character `;' from being
+recognized as a parser metacharacter.
+The `!' here is escaped with a `\e' to prevent it from being interpreted
+when the alias command is typed in.
+The `\e!*' here substitutes the entire argument list to the pre-aliasing
+.I cd
+command, without giving an error if there were no arguments.
+The `;' separating commands is used here
+to indicate that one command is to be done and then the next.
+Similarly the definition
+.DS
+alias whois \'grep \e!\(ua /etc/passwd\'
+.DE
+defines a command which looks up its first argument in the password file.
+.NH 2
+Detached commands; >> and >& redirection
+.PP
+There are a few more metanotations useful to the terminal user
+which have not been introduced yet.
+The metacharacter `&' may be placed after a command, or after a sequence
+of commands separated by `;' or `|'.
+This causes the shell to not wait for the commands to terminate before
+prompting again.
+We say that they are
+.I detached
+or
+.I background
+processes.  Thus
+.DS
+% pr ~bill/csh/sh.c \||\| lpr &
+5120
+5121
+%
+.DE
+Here the shell printed two numbers and came back very quickly rather
+than waiting for the
+.I pr
+and
+.I lpr
+commands to finish.
+These numbers are the process numbers assigned by the system to the
+.I pr
+and
+.I lpr
+commands.\(dg
+.FS
+\(dgRunning commands in the background like this tends to slow down
+the system and is not a good idea if the system is overloaded.
+When overloaded, the system will just bog down more if you run a large
+number of processes at once.
+.FE
+.PP
+Since havoc would result if a command run in the background were to
+read from your terminal at the same time as the shell does, the
+default standard input for a command run in the background is
+not your terminal, but an empty file called `/dev/null'.
+Commands run in the background are also made immune to
+\s-2INTERRUPT\s0 and \s-2QUIT\s0 signals which you may subsequently
+generate at your terminal.*
+.FS
+*If a background command stops suddenly when you hit \s-2INTERRUPT\s0
+or \s-2QUIT\s0 it is likely a bug in the background program.
+.FE
+.PP
+If you intend to log off the system before the command completes you
+must run the command immune to
+\s-2HANGUP\s0
+signals.
+This is done by placing the word
+`nohup' before each program in the command, i.e.:
+.DS
+nohup man csh \||\| nohup lpr &
+.DE
+.PP
+In addition to the standard output, commands also have a
+diagnostic output
+which is normally directed to the terminal even when the standard output
+is directed to a file or a pipe.
+It is occasionally desirable to direct the diagnostic output along with
+the standard output.
+For instance if you want to redirect the output of a long running command
+into a file and wish to have a record of any error diagnostic it produces
+you can do
+.DS
+command >& file
+.DE
+The `>&' here tells the shell to route both the diagnostic output and the
+standard output into `file'.
+of the standard output.
+Similarly you can give the command
+.DS
+command |\|& lpr
+.DE
+to route both standard and diagnostic output through the pipe
+to the line printer daemon
+.I lpr.#
+.FS
+#A command form
+.DS
+command >&! file
+.DE
+exists, and is used when
+.I noclobber
+is set and
+.I file
+already exists.
+.FE
+.PP
+Finally, it is possible to use the form
+.DS
+command >> file
+.DE
+to place output at the end of an existing file.\(dg
+.FS
+\(dgIf
+.I noclobber
+is set, then an error will result if
+.I file
+does not exist, otherwise the shell will create
+.I file
+if it doesn't exist.
+A form
+.DS
+command >>! file
+.DE
+makes it not be an error for file to not exist when
+.I noclobber
+is set.
+.FE
+.NH 2
+Useful built-in commands
+.PP
+We now give a few of the useful built-in commands of the shell describing
+how they are used.
+.PP
+The
+.I alias
+command described above is used to assign new aliases and to show the
+existing aliases.
+With no arguments it prints the current aliases.
+It may also be given an argument such as
+.DS
+alias ls
+.DE
+to show the current alias for, e.g., `ls'.
+.PP
+The
+.I cd
+and
+.I chdir
+commands are equivalent, and change the working directory of the shell.
+It is useful to make a directory for each project you wish to work on
+and to place all files related to that project in that directory.
+Thus after you login you can do
+.DS
+% pwd
+/mnt/bill
+% mkdir newpaper
+% chdir newpaper
+% pwd
+/mnt/bill/newpaper
+%
+.DE
+after which you will be in the directory
+.I newpaper.
+You can place a group of related files there.
+You can return to your `home' login directory by doing just
+.DS
+chdir
+.DE
+with no arguments.
+We used the
+.I pwd
+print working directory command to show the name of the current
+directory here.
+The current directory will usually be a subdirectory of your
+home directory, and have it (here `/mnt/bill') at the start of it.
+.PP
+The
+.I echo
+command prints its arguments.
+It is often used in shell scripts or as an interactive command
+to see what filename expansions will yield.
+.PP
+The
+.I history
+command will show the contents of the history list.
+The numbers given with the history events can be used to reference
+previous events which are difficult to reference using the
+contextual mechanisms introduced above.
+There is also a shell variable called
+.I prompt.
+By placing a `!' character in its value the shell will there substitute
+the index of the current command in the history list.
+You can use this number to refer to this command in a history substitution.
+Thus you could
+.DS
+set prompt=\'\e! % \'
+.DE
+Note that the `!' character had to be escaped here even within `\'' characters.
+.PP
+The
+.I logout
+command can be used to terminate a login shell which has
+.I ignoreeof
+set.
+.PP
+The
+.I repeat
+command can be used to repeat a command several times.
+Thus to make 5 copies of the file
+.I one
+in the file
+.I five
+you could do
+.DS
+repeat 5 cat one >> five
+.DE
+.PP
+The
+.I setenv
+command can be used, on version 7 \s-2UNIX\s0 systems,
+to set variables in the environment.
+Thus
+.DS
+setenv TERM adm3a
+.DE
+will set the value of the environment variable \s-2TERM\s0
+to
+`adm3a'.
+A user program
+.I printenv
+exists which will print out the environment.
+It might then show:
+.DS
+% printenv
+HOME	/usr/bill
+SHELL	/bin/csh
+TERM	adm3a
+%
+.DE
+.PP
+The
+.I source
+command can be used to force the current shell to read commands from
+a file.
+Thus
+.DS
+source .cshrc
+.DE
+can be used after editing in a change to the
+.I \&.cshrc
+file which you wish to take effect before the next time you login.
+.PP
+The
+.I time
+command can be used to cause a command to be timed no matter how much
+\s-2CPU\s0 time it takes.
+Thus
+.DS
+% time cp five five.save
+0.0u 0.3s 0:01 26%
+% time wc five.save
+   1200    6300   37650 five.save
+1.2u 0.5s 0:03 55%
+%
+.DE
+indicates that the
+.I cp
+command used less that 1/10th of a second of user time and only
+3/10th of a second of system time in copying the file `five' to
+`five.save'.
+The command word count
+`wc'
+on the other hand used 1.2 seconds of user time and 0.5 seconds of system
+time in 3 seconds of elapsed time in counting the number of words,
+character and lines in `five.save'.
+The percentage `55%' indicates that over this period of 3 seconds,
+our command `wc' used an average of 55 percent of the available \s-2CPU\s0
+cycles of the machine.
+This is a very high percentage and indicates that the system is lightly
+loaded.
+.PP
+The
+.I unalias
+and
+.I unset
+commands can be used
+to remove aliases and variable definitions from the shell.
+.PP
+The
+.I wait
+command can be used after starting processes with `&'
+to quickly see if they have finished.
+If the shell responds immediately with another prompt, they have.
+Otherwise you can wait for the shell to prompt at which point they
+will have finished, or interrupt the shell by sending a \s-2RUB\s0
+or \s-2DELETE\s0 character.
+If the shell is interrupted, it will print the names and numbers of the
+processes it knows to be unfinished.
+Thus:
+.DS
+% nroff paper \||\| lpr &
+2450
+2451
+% wait
+  2451  lpr
+  2450  nroff
+wait: Interrupted.
+%
+.DE
+.PP
+You can check again later by doing another
+.I wait,
+or see which commands are still running by doing a
+.I ps.
+As `time'
+will show you,
+.I ps
+is fairly expensive.
+It is thus counterproductive to run many
+.I ps
+commands to see how a background process is doing.\(dg
+.FS
+\(dgIf you do you are usurping with these
+.I ps
+commands the processor time the job needs to finish, thereby delaying its
+completion!
+.FE
+.PP
+If you run a background process and decide you want to stop it for whatever
+reason you must use the
+.I kill
+program.
+You must use the number of the processes you wish to kill.
+Thus to stop the
+.I nroff
+in the above pipeline you would do
+.DS
+% kill 2450
+% wait
+2450: nroff: Terminated.
+%
+.DE
+Here the shell printed a diagnostic that we terminated `nroff' only
+after we did a
+.I wait.
+If we want the shell to discover the termination of all processes
+it has created we must, in general, use
+.I wait.
+.NH 2
+What else?
+.PP
+This concludes the basic discussion of the shell for terminal users.
+There are more features of the shell to be discussed here, and all
+features of the shell are discussed in its manual pages.
+One useful feature which is discussed later is the
+.I foreach
+built-in command which can be used to run the same command
+sequence with a number of different arguments.
+.PP
+If you intend to use \s-2UNIX\s0 a lot you you should look through
+the rest of this document and the shell manual pages to become familiar
+with the other facilities which are available to you.
+.bp
+.NH
+Shell control structures and command scripts
+.NH 2
+Introduction
+.PP
+It is possible to place commands in files and to cause shells to be
+invoked to read and execute commands from these files,
+which are called
+.I "shell scripts."
+We here detail those features of the shell useful to the writers of such
+scripts.
+.NH 2
+Make
+.PP
+It is important to first note what shell scripts are
+.I not
+useful for.
+There is a program called
+.I make
+which is very useful for maintaining a group of related files
+or performing sets of operations on related files.
+For instance a large program consisting of one or more files
+can have its dependencies described in a
+.I makefile
+which contains definitions of the commands used to create these
+different files when changes occur.
+Definitions of the means for printing listings, cleaning up the directory
+in which the files reside, and installing the resultant programs
+are easily, and most appropriately placed in this
+.I makefile.
+This format is superior and preferable to maintaining a group of shell
+procedures to maintain these files.
+.PP
+Similarly when working on a document a
+.I makefile
+may be created which defines how different versions of the document
+are to be created and which options of
+.I nroff
+or
+.I troff
+are appropriate.
+.NH 2
+Invocation and the argv variable
+.PP
+A
+.I csh
+command script may be interpreted by saying
+.DS
+% csh script ...
+.DE
+where
+.I script
+is the name of the file containing a group of
+.I csh
+commands and
+`\&...' is replaced by a sequence of arguments.
+The shell places these arguments in the variable
+.I argv
+and then begins to read commands from the script.
+These parameters are then available through the same mechanisms
+which are used to reference any other shell variables.
+.PP
+If you make the file
+`script'
+executable by doing
+.DS
+chmod 755 script
+.DE
+and place a shell comment at the beginning of the shell script
+(i.e. begin the file with a `#' character)
+then a `/bin/csh' will automatically be invoked to execute `script' when
+you type
+.DS
+script
+.DE
+If the file does not begin with a `#' then the standard shell
+`/bin/sh' will be used to execute it.
+This allows you to convert your older shell scripts to use
+.I csh
+at your convenience.
+.NH 2
+Variable substitution
+.PP
+After each input line is broken into words and history substitutions
+are done on it, the input line is parsed into distinct commands.
+Before each command is executed a mechanism know as
+.I "variable substitution"
+is done on these words.
+Keyed by the character `$' this substitution replaces the names
+of variables by their values.
+Thus
+.DS
+echo $argv
+.DE
+when placed in a command script would cause the current value of the
+variable
+.I argv
+to be echoed to the output of the shell script.
+It is an error for
+.I argv
+to be unset at this point.
+.PP
+A number of notations are provided for accessing components and attributes
+of variables.
+The notation
+.DS
+$?name
+.DE
+expands to `1' if name is
+.I set
+or to `0'
+if name is not
+.I set.
+It is the fundamental mechanism used for checking whether particular
+variables have been assigned values.
+All other forms of reference to undefined variables cause errors.
+.PP
+The notation
+.DS
+$#name
+.DE
+expands to the number of elements in the variable
+.I name.
+Thus
+.DS
+% set argv=(a b c)
+% echo $?argv
+1
+% echo $#argv
+3
+% unset argv
+% echo $?argv
+0
+% echo $argv
+Undefined variable: argv.
+%
+.DE
+.PP
+It is also possible to access the components of a variable
+which has several values.
+Thus
+.DS
+$argv[1]
+.DE
+gives the first component of
+.I argv
+or in the example above `a'.
+Similarly
+.DS
+$argv[$#argv]
+.DE
+would give `c',
+and
+.DS
+$argv[1\-2]
+.DE
+Other notations useful in shell scripts are
+.DS
+$\fIn\fR
+.DE
+where
+.I n
+is an integer as a shorthand for
+.DS
+$argv[\fIn\fR\|]
+.DE
+the
+.I n\|th
+parameter and
+.DS
+$*
+.DE
+which is a shorthand for
+.DS
+$argv
+.DE
+The form
+.DS
+$$
+.DE
+expands to the process number of the current shell.
+Since this process number is unique in the system it can
+be used in generation of unique temporary file names.
+.PP
+One minor difference between `$\fIn\fR\|' and `$argv[\fIn\fR\|]'
+should be noted here.
+The form
+`$argv[\fIn\fR\|]'
+will yield an error if
+.I n
+is not in the range
+`1\-$#argv'
+while `$n'
+will never yield an out of range subscript error.
+This is for compatibility with the way older shells handled parameters.
+.PP
+Another important point is that it is never an error to give a subrange
+of the form `n\-'; if there are less than
+.I n
+components of the given variable then no words are substituted.
+A range of the form `m\-n' likewise returns an empty vector without giving
+an error when \fIm\fR exceeds the number of elements of the given variable,
+provided the subscript \fIn\fR is in range.
+.NH 2
+Expressions
+.PP
+In order for interesting shell scripts to be constructed it
+must be possible to evaluate expressions in the shell based on the
+values of variables.
+In fact, all the arithmetic operations of the language C are available
+in the shell
+with the same precedence that they have in C.
+In particular, the operations `==' and `!=' compare strings
+and the operators `&&' and `|\|\||' implement the boolean and/or operations.
+.PP
+The shell also allows file enquiries of the form
+.DS
+\-? filename
+.DE
+where `?' is replace by a number of single characters.
+For instance the expression primitive
+.DS
+\-e filename
+.DE
+tell whether the file
+`filename'
+exists.
+Other primitives test for read, write and execute access to the file,
+whether it is a directory, or has non-zero length.
+.PP
+It is possible to test whether a command terminates normally,
+by a primitive of the
+form `{ command }' which returns true, i.e. `1' if the command
+succeeds exiting normally with exit status 0, or `0' if the command
+terminates abnormally or with exit status non-zero.
+If more detailed information about the execution status of a command
+is required, it can be executed and the variable `$status' examined
+in the next command.
+Since `$status' is set by every command, it is very transient.
+It can be saved if it is inconvenient to use it only in the single
+immediately following command.
+.PP
+For a full list of expression components available see the manual
+section for the shell.
+.NH 2
+Sample shell script
+.PP
+A sample shell script which makes use of the expression mechanism
+of the shell and some of its control structure follows:
+.DS
+% cat copyc
+#
+# Copyc copies those C programs in the specified list
+# to the directory ~/backup if they differ from the files
+# already in ~/backup
+#
+set noglob
+foreach i ($argv) 
+
+	if ($i:r.c != $i) continue	# not a .c file so do nothing
+
+	if (! \-r ~/backup/$i:t) then
+		echo $i:t not in backup... not cp\e\'ed
+		continue
+	endif
+
+	cmp \-s $i ~/backup/$i:t		# to set $status
+
+	if ($status != 0) then
+		echo new backup of $i
+		cp $i ~/backup/$i:t
+	endif
+end
+.DE
+.PP
+This script makes use of the
+.I foreach
+command, which causes the shell to execute the commands between the
+.I foreach
+and the matching
+.I end
+for each of the values given between `(' and `)' with the named
+variable, in this case `i' set to successive values in the list.
+Within this loop we may use the command
+.I break
+to stop executing the loop 
+and
+.I continue
+to prematurely terminate one iteration
+and begin the next.
+After the
+.I foreach
+loop the iteration variable
+(\fIi\fR in this case)
+has the value at the last iteration.
+.PP
+We set the variable
+.I noglob
+here to prevent filename expansion of the members of
+.I argv.
+This is a good idea, in general, if the arguments to a shell script
+are filenames which have already been expanded or if the arguments
+may contain filename expansion metacharacters.
+It is also possible to quote each use of a `$' variable expansion,
+but this is harder and less reliable.
+.PP
+The other control construct used here is a statement of the form
+.DS
+\fBif\fR ( expression ) \fBthen\fR
+	command
+	...
+\fBendif\fR
+.DE
+The placement of the keywords here is
+.B not
+flexible due to the current implementation of the shell.\(dg
+.FS
+\(dgThe following two formats are not currently acceptable to the shell:
+.DS
+\fBif\fR ( expression )		# \fBWon't work!\fR
+\fBthen\fR
+	command
+	...
+\fBendif\fR
+.DE
+and
+.DS
+\fBif\fR ( expression ) \fBthen\fR command \fBendif\fR		# \fBWon't work\fR
+.DE
+.FE
+.PP
+The shell does have another form of the if statement of the form
+.DS
+\fBif\fR ( expression ) \fBcommand\fR
+.DE
+which can be written
+.DS
+\fBif\fR ( expression ) \e
+	command
+.DE
+Here we have escaped the newline for the sake of appearance,
+and the `\e' must \fBimmediately\fR.
+The command must not involve `\||\|', `&' or `;'
+and must not be another control command.
+The second form requires the final `\e' to
+.B immediately
+precede the end-of-line.
+.PP
+The more general
+.I if
+statements above also admit a sequence of
+.I else\-if
+pairs followed by a single
+.I else
+and an
+.I endif,
+e.g.:
+.DS
+\fBif\fR ( expression ) \fBthen\fR
+	commands
+\fBelse\fR \fBif\fR (expression ) \fBthen\fR
+	commands
+\&...
+
+\fBelse\fR
+	commands
+\fBendif\fR
+.DE
+.PP
+Another important mechanism used in shell scripts is `:' modifiers.
+We can use the modifier `:r' here to extract a root of a filename.
+Thus if the variable
+.I i
+has the value
+`foo.bar'
+then
+.DS
+% echo $i $i:r
+foo.bar foo
+%
+.DE
+shows how the `:r' modifier strips off the trailing `.bar'.
+Other modifiers will take off the last component of a pathname leaving
+the head `:h' or all but the last component of a pathname leaving the
+tail `:t'.
+These modifiers are fully described in the
+.I csh
+manual pages in the programmers manual.
+It is also possible to use the
+.I "command substitution"
+mechanism described in the next major section to perform modifications
+on strings to then reenter the shells environment.
+Since each usage of this mechanism involves the creation of a new process,
+it is much more expensive to use than the `:' modification mechanism.#
+.FS
+#It is also important to note that
+the current implementation of the shell limits the number of `:' modifiers
+on a `$' substitution to 1.
+Thus
+.DS
+% echo $i $i:h:t
+/a/b/c /a/b:t
+%
+.DE
+does not do what one would expect.
+.FE
+Finally, we note that the character `#' lexically introduces a shell
+comment in shell scripts (but not from the terminal).
+All subsequent characters on the input line after a `#' are discarded
+by the shell.
+This character can be quoted using `\'' or `\e' to place it in
+an argument word.
+.NH 2
+Other control structures
+.PP
+The shell also has control structures
+.I while
+and
+.I switch
+similar to those of C.
+These take the forms
+.DS
+\fBwhile\fR ( expression )
+	commands
+\fBend\fR
+.DE
+and
+.DS
+\fBswitch\fR ( word )
+
+\fBcase\fR str1:
+	commands
+	\fBbreaksw\fR
+
+\& ...
+
+\fBcase\fR strn:
+	commands
+	\fBbreaksw\fR
+
+\fBdefault:\fR
+	commands
+	\fBbreaksw\fR
+
+\fBendsw\fR
+.DE
+For details see the manual section for
+.I csh.
+C programmers should note that we use
+.I breaksw
+to exit from a
+.I switch
+while
+.I break
+exits a
+.I while
+or
+.I foreach
+loop.
+A common mistake to make in
+.I csh
+scripts is to use
+.I break
+rather than
+.I breaksw
+in switches.
+.PP
+Finally,
+.I csh
+allows a
+.I goto
+statement, with labels looking like they do in C, i.e.:
+.DS
+loop:
+	commands
+	\fBgoto\fR loop
+.DE
+.NH 2
+Supplying input to commands
+.PP
+Commands run from shell scripts receive by default the standard
+input of the shell which is running the script.
+This it is different from previous shells running
+under \s-2UNIX\s0.  It allowing shell scripts to fully participate
+in pipelines, but mandates extra notation for commands which are to take
+inline data.
+.PP
+Thus we need a metanotation for supplying inline data to commands in
+shell scripts.
+As an example, consider this script which runs the editor to
+delete leading blanks from the lines in each argument file
+.DS
+% cat deblank
+# deblank \-\- remove leading blanks
+foreach i ($argv)
+ed \- $i << \'EOF\'
+1,$s/\(ua[ ]*//
+w
+q
+\&\'EOF\'
+end
+%
+.DE
+The notation `<< \'EOF\''
+means that the standard input for the
+.I ed
+command is to come from the text in the shell script file
+up to the next line consisting of exactly `\'EOF\''.
+The fact that the `EOF' is enclosed in `\'' characters, i.e. quoted,
+causes the shell to not perform variable substitution on the
+intervening lines.
+In general, if any part of the word following the `<<' which the
+shell uses to terminate the text to be given to the command is quoted
+then these substitutions will not be performed.
+In this case since we used the form `1,$' in our editor script
+we needed to insure that this `$' was not variable substituted.
+We could also have insured this by preceding the `$' here with a `\e',
+i.e.:
+.DS
+1,\e$s/\(ua[ ]*//
+.DE
+but quoting the `EOF' terminator is a more reliable way of achieving the
+same thing.
+.NH 2
+Catching interrupts
+.PP
+If our shell script creates temporary files, we may wish to catch
+interruptions of the shell script so that we can clean up
+these files.
+We can then do
+.DS
+onintr label
+.DE
+where
+.I label
+is a label in our program.
+If an interrupt is received the shell will do a
+`goto label'
+and we can remove the temporary files and then do a
+.I exit
+command (which is built in to the shell)
+to exit from the shell script.
+If we wish to exit with a non-zero status we can do
+.DS
+exit(1)
+.DE
+e.g. to exit with status `1'.
+.NH 2
+What else?
+.PP
+There are other features of the shell useful to writers of shell
+procedures.
+The
+.I verbose
+and
+.I echo
+options and the related
+.I \-v
+and
+.I \-x
+command line options can be used to help trace the actions of the shell.
+The
+.I \-n
+option causes the shell only to read commands and not to execute
+them and may sometimes be of use.
+.PP
+One other thing to note is that
+.I csh
+will not execute shell scripts which do not begin with the
+character `#', that is shell scripts that do not begin with a comment.
+Similarly, the `/bin/sh' on your system may well defer to `csh'
+to interpret shell scripts which begin with `#'.
+This allows shell scripts for both shells to live in harmony.
+.PP
+There is also another quotation mechanism using `"' which allows
+only some of the expansion mechanisms we have so far discussed to occur
+on the quoted string and serves to make this string into a single word
+as `\'' does.
+.bp
+.NH 1
+Miscellaneous, less generally useful, shell mechanisms
+.NH 2
+Loops at the terminal; variables as vectors
+.PP
+It is occasionally useful to use the
+.I foreach
+control structure at the terminal to aid in performing a number
+of similar commands.
+For instance, there were at one point three shells in use on the Cory \s-2UNIX\s0
+system at Cory Hall,
+`/bin/sh',
+`/bin/nsh',
+and
+`/bin/csh'.
+To count the number of persons using each shell one could issue the commands
+.DS
+% grep \-c csh$ /etc/passwd
+27
+% grep \-c nsh$ /etc/passwd
+128
+% grep \-c \-v sh$ /etc/passwd
+430
+%
+.DE
+Since these commands are very similar we can use
+.I foreach
+to do this more easily.
+.DS
+% foreach i (\'sh$\' \'csh$\' \'\-v sh$\')
+? grep \-c $i /etc/passwd
+? end
+27
+128
+430
+%
+.DE
+Note here that the shell prompts for
+input with `? ' when reading the body of the loop.
+.PP
+Very useful with loops are variables which contain lists of filenames
+or other words.
+You can, for example, do
+.DS
+% set a=(`ls`)
+% echo $a
+csh.n csh.rm
+% ls
+csh.n
+csh.rm
+% echo $#a
+2
+%
+.DE
+The
+.I set
+command here gave the variable
+.I a
+a list of all the filenames in the current directory as value.
+We can then iterate over these names to perform any chosen function.
+.PP
+The output of a command within `\`' characters is converted by
+the shell to a list of words.
+You can also place the `\`' quoted string within `"' characters
+to take each (non-empty) line as a component of the variable;
+preventing the lines from being split into words at blanks and tabs.
+A modifier `:x' exists which can be used later to expand each component
+of the variable into another variable splitting it into separate words
+at embedded blanks and tabs.
+.NH 2
+Braces { ... } in argument expansion
+.PP
+Another form of filename expansion, alluded
+to before involves the characters `{' and `}'.
+These characters specify that the contained strings, separated by `,'
+are to be consecutively substituted into the containing characters
+and the results expanded left to right.
+Thus
+.DS
+A{str1,str2,...strn}B
+.DE
+expands to
+.DS
+Astr1B Astr2B ... AstrnB
+.DE
+This expansion occurs before the other filename expansions, and may
+be applied recursively (i.e. nested).
+The results of each expanded string are sorted separately, left
+to right order being preserved.
+The resulting filenames are not required to exist if no other expansion
+mechanisms are used.
+This means that this mechanism can be used to generate arguments which are
+not filenames, but which have common parts.
+.PP
+A typical use of this would be
+.DS
+mkdir ~/{hdrs,retrofit,csh}
+.DE
+to make subdirectories `hdrs', `retrofit' and `csh'
+in your home directory.
+This mechanism is most useful when the common prefix is longer
+than in this example, i.e.
+.DS
+chown bin /usr/{bin/{ex,edit},lib/{ex1.1strings,how_ex}}
+.DE
+.NH 2
+Command substitution
+.PP
+A command enclosed in `\`' characters is replaced, just before
+filenames are expanded, by the output from that command.
+Thus it is possible to do
+.DS
+set pwd=\`pwd\`
+.DE
+to save the current directory in the variable
+.I pwd
+or to do
+.DS
+ex \`grep -l TRACE *.c\`
+.DE
+to run the editor
+.I ex
+suppling as arguments those files whose names end in `.c'
+which have the string `TRACE' in them.*
+.FS
+*Command expansion also occurs in input redirected with `<<'
+and within `"' quotations.
+Refer to the shell manual section for full details.
+.FE
+.NH 2
+Other details not covered here
+.PP
+In particular circumstances it may be necessary to know the exact
+nature and order of different substitutions performed by the shell.
+The exact meaning of certain combinations of quotations is also
+occasionally important.
+These are detailed fully in its manual section.
+.PP
+The shell has a number of command line option flags mostly of use
+in writing \s-2UNIX\s0 programs,
+and debugging shell scripts.
+See the shells manual section for a list of these options.
+.bp
+.SH
+Appendix \- Special characters
+.LP
+The following table lists the special characters of
+.I csh
+and the \s-2UNIX\s0 system, giving for each the section(s) in which it
+is discussed.
+A number of these characters also have special meaning in expressions.
+See the
+.I csh
+manual section
+for a complete list.
+.LP
+Syntactic metacharacters
+.DS
+;	2.4	separates commands to be executed sequentially
+|	1.5	separates commands in a pipeline
+( )	2.2,3.6	brackets expressions and variable values
+&	2.5	follows commands to be executed without waiting for completion
+.DE
+.LP
+Filename metacharacters
+.DS
+/	1.6	separates components of a file's pathname
+\.	1.6	separates root parts of a file name from extensions
+?	1.6	expansion character matching any single character
+*	1.6	expansion character matching any sequence of characters
+[ ]	1.6	expansion sequence matching any single character from a set
+~	1.6	used at the beginning of a filename to indicate home directories
+{ }	4.2	used to specify groups of arguments with common parts
+.DE
+.LP
+Quotation metacharacters
+.DS
+\e	1.7	prevents meta-meaning of following single character
+\'	1.7	prevents meta-meaning of a group of characters
+"	4.3	like \', but allows variable and command expansion
+.DE
+.LP
+Input/output metacharacters
+.DS
+<	1.3	indicates redirected input
+>	1.5	indicates redirected output
+.DE
+.LP
+Expansion/substitution metacharacters
+.DS
+$	3.4	indicates variable substitution
+!	2.3	indicates history substitution
+:	3.6	precedes substitution modifiers
+\(ua	2.3	used in special forms of history substitution
+\`	4.3	indicates command substitution
+.DE
+.LP
+Other metacharacters
+.DS
+#	3.6	begins a shell comment
+\-	1.2	prefixes option (flag) arguments to commands
+.DE
+.bp
+.SH
+Glossary
+.PP
+This glossary lists the most important terms introduced in the
+introduction to the
+shell and gives references to sections of the shell
+document for further information about them.
+References of the form
+`pr (1)'
+indicate that the command
+.I pr
+is in the \s-2UNIX\s0 programmers manual in section 1.
+You can get an online copy of its manual page by doing
+.DS
+man 1 pr
+.DE
+References of the form (2.5)
+indicate that more information can be found in section 2.5 of this
+manual.
+.IP \&\fB.\fR 15n
+Your current directory has the name `.' as well as the name printed
+by the command
+.I pwd.
+The current directory `.' is usually the first component of the search
+path contained in the variable
+.I path,
+thus commands which are in `.' are found first (2.2).
+The character `.' is also used in separating components of filenames
+(1.6).
+The character `.' at the beginning of a component of a pathname is
+treated specially and not matched by the filename expansion
+metacharacters `?', `*', and `[' `]' pairs (1.6).
+.IP \&\fB..\fR
+Each directory has a file `..' in it which is a reference to its
+.I parent
+directory.
+After changing into the directory with
+.I chdir,
+i.e.
+.DS
+chdir paper
+.DE
+you can return to the parent directory by doing
+.DS
+chdir ..
+.DE
+The current directory is printed by
+.I pwd
+(2.6).
+.IP alias
+An
+.I alias
+specifies a shorter or different name for a \s-2UNIX\s0
+command, or a transformation on a command to be performed in
+the shell.
+The shell has a
+command
+.I alias
+which establishes aliases and can print their current values.
+The command
+.I unalias
+is used to remove aliases (2.6).
+.IP argument
+Commands in \s-2UNIX\s0 receive a list of argument words.
+Thus the command
+.DS
+echo a b c
+.DE
+consists of a command name `echo' and three argument words `a', `b' and `c' (1.1).
+.IP argv
+The list of arguments to a command written in the shell language
+(a shell script or shell procedure) is stored in a variable called
+.I argv
+within the shell.
+This name is taken from the conventional name in the
+C programming language (3.4).
+.IP background
+Commands started without waiting for them to complete are called
+.I background
+commands (1.5).
+.IP bin
+A directory containing binaries of programs and shell scripts to be
+executed is typically called a `bin' directory.
+The standard system `bin' directories are `/bin' containing the most
+heavily used commands and `/usr/bin' which contains most other user
+programs.
+Other binaries are contained in directories such as `/usr/new' where
+new programs are placed.
+You can place binaries in any directory.
+If you wish to execute them often, the name of the directories
+should be a component of the variable
+.I path.
+.IP break
+.I Break
+is a built-in command used to exit from loops within the control
+structure of the shell (3.6).
+.IP builtin
+A command executed directly by the shell is called a
+.I builtin
+command.
+Most commands in \s-2UNIX\s0 are not built into the shell,
+but rather exist as files in `bin' directories.
+These commands are accessible because the directories in which
+they reside are named in the
+.I path
+variable.
+.IP case
+A
+.I case
+command is used as a label in a
+.I switch
+statement in the shells control structure, similar to that of the
+language C.
+Details are given in the shells documentation `csh (NEW)' (3.7).
+.IP cat
+The
+.I cat
+program catenates a list of specified files on the standard output.
+It is usually used to look at the contents of a single file on the terminal,
+to `cat a file' (1.8, 2.3). 
+.IP cd
+The
+.I cd
+command is used to change the working directory.
+With no arguments,
+.I cd
+changes your working directory to be your
+.I home
+directory (2.3) (2.6).
+.IP chdir
+The
+.I chdir
+command is a synonym for
+.I cd.
+.I Cd
+is usually used because it is easier to type.
+.IP chsh
+The
+.I chsh
+command is used to change the shell which you use on \s-2UNIX\s0.
+By default, you use an older `standard' version of the shell
+which resides in `/bin/sh'.
+You can change your shell to `/bin/csh' by doing
+.DS
+chsh your-login-name /bin/csh
+.DE
+Thus I would do
+.DS
+chsh bill /bin/csh
+.DE
+It is only necessary to do this once.
+The next time you log in to \s-2UNIX\s0 after doing this command,
+you will be using
+.I csh
+rather than the shell in `/bin/sh' (1.9).
+.IP cmp
+.I Cmp
+is a program which compares files.
+It is usually used on binary files, or to see if two files are identical (3.6).
+For comparing text files the program
+.I diff,
+described in `diff (1)' is used.
+.IP command
+A function performed by the system, either by the shell
+(a builtin command) or by a program residing in a file in
+a directory within the \s-2UNIX\s0 system is called a
+.I command
+(1.1).
+.IP "command substitution"
+.br
+The replacement of a command enclosed in `\`' characters
+by the text output by that command 
+is called
+.I "command substitution"
+(3.6, 4.3).
+.IP component
+A part of a
+.I pathname
+between `/' characters is called a
+.I component
+of that pathname.
+A
+.I variable
+which has multiple strings as value is said to have
+several
+.I components,
+each string is a
+.I component
+of the variable.
+.IP continue
+A builtin command which causes execution of the enclosing
+.I foreach
+or
+.I while
+loop to cycle prematurely.
+Similar to the
+.I continue
+command in the programming language C (3.6).
+.IP "core dump"
+When a program terminates abnormally, the system places an image
+of its current state in a file named `core'.
+This `core dump' can be examined with the system debuggers `db (1)'
+and `cdb (1)' in order to determine what went wrong with the program (1.8).
+If the shell produces a message of the form:
+.DS
+commandname: Illegal instruction \-\- Core dumped
+.DE
+(where `Illegal instruction' is only one of several possible
+messages) you should report this to the author of the program
+and save the `core' file.
+If this was a system program you should report this with the
+.I trouble
+command `trouble (1)'.
+.IP cp
+The
+.I cp
+(copy) program is used to copy the contents of one file into another
+file.
+It is one of the most commonly used \s-2UNIX\s0 commands (2.6).
+.IP \&.cshrc
+The file
+.I \&.cshrc
+in your
+.I home
+directory is read by each shell as it begins execution.
+It is usually used to change the setting of the variable
+.I path
+and to set
+.I alias
+parameters which are to take effect globally (2.1).
+.IP date
+The
+.I date
+command prints the current date and time (1.3).
+.IP debugging
+.I Debugging
+is the process of correcting mistakes in programs and shell scripts.
+The shell has several options and variables which may be used
+to aid in shell debugging (4.4).
+.IP default
+The label
+.I default:
+is used within shell
+.I switch
+statements, as it is in the C language
+to label the code to be executed if none of the
+.I case
+labels matches the value switched on (3.7).
+.IP \s-2DELETE\s0
+The
+\s-2DELETE\s0
+or
+\s-2RUBOUT\s0
+key on the terminal is used to generate an
+\s-2INTERRUPT\s0
+signal in \s0UNIX\s0
+which stops the execution of most programs (2.6).
+.IP detached
+A command run without waiting for it to complete is said to be detached
+(2.5).
+.IP diagnostic
+An error message produced by a program is often referred to as a
+.I diagnostic.
+Most error messages are not written to the standard output,
+since that is often directed away from the terminal (1.3, 1.5).
+Error messsages are instead written to the
+.I "diagnostic output"
+which may be directed away from the terminal, but usually is not.
+Thus diagnostics will usually appear on the terminal (2.5).
+.IP directory
+A structure which contains files.
+At any time you are in one particular directory whose
+names can be printed by the command `pwd'.
+The
+.I chdir
+command will change you to another directory, and make the files
+in that directory visible.
+The directory in which you are when you first login is your
+.I home
+directory (1.1, 1.6).
+.IP echo
+The
+.I echo
+command prints its arguments (1.6, 2.6, 3.6, 3.10).
+.IP else
+The
+.I else
+command is part of the `if-then-else-endif' control
+command construct (3.6).
+.IP \s-2EOF\s0
+An
+.I "end-of-file"
+is generated by the terminal by a control-d,
+and whenever a command reads to the end of a file which
+it has been given as input.
+Commands receiving input from a
+.I pipe
+receive an end-of-file when the command sending them
+input completes.
+Most commands terminate when they receive an end-of-file.
+The shell has an option to ignore end-of-file from a terminal
+input which may help you keep from logging out accidentally
+by typing too many control-d's (1.1, 1.8, 3.8).
+.IP escape
+A character \e used to prevent the special meaning of a metacharacter
+is said to
+.I escape
+the character from its special meaning.
+Thus
+.DS
+echo \e*
+.DE
+will echo the character `*' while just
+.DS
+echo *
+.DE
+will echo the names of the file in the current directory.
+In this example, \e
+.I escapes
+`*' (1.7).
+There is also a non-printing character called
+.I escape, 
+usually labelled
+\s-2ESC\s0
+or
+\s-2ALTMODE\s0
+on terminal keyboards.
+Some \s-2UNIX\s0 systems use this character to indicate that
+output is to be suspended. 
+Other systems use control-s.
+.IP /etc/passwd
+This file contains information about the accounts currently on the
+system.
+If consists of a line for each account with fields separated by
+`:' characters (2.3).
+You can look at this file by saying
+.DS
+cat /etc/passwd
+.DE
+The command
+.I grep
+is often used to search for information in this file.
+See `passwd (5)' and `grep (1)' for more details.
+.IP exit
+The
+.I exit
+command is used to force termination of a shell script,
+and is built into the shell (3.9).
+.IP "exit status"
+A command which discovers a problem may reflect this back to the command
+(such as a shell) which invoked (executed) it.
+It does this by returning a non-zero number as its
+.I "exit status,"
+a status of zero being considered
+`normal termination'.
+The
+.I exit
+command can be used to force a shell command script to give a non-zero
+exit status (3.5).
+.IP expansion
+The replacement of strings in the shell input which contain metacharacters
+by other strings is referred to as the process of
+.I expansion.
+Thus the replacement of the word `*' by a sorted list of files
+in the current directory is a `filename expansion'.
+Similarly the replacement of the characters `!!' by the text of
+the last command is a `history expansion'.
+Expansions are also referred to as
+.I substitutions
+(1.6, 3.4, 4.2).
+.IP expressions
+Expressions are used in the shell
+to control the conditional structures used in the writing of shell
+scripts and in calculating values for these scripts.
+The operators available in shell expressions are those of the language
+C (3.5).
+.IP extension
+Filenames often consist of a
+.I root
+name and an
+.I extension
+separated by the character `.'.
+By convention, groups of related files often share the same root name.
+Thus if `prog.c' were a C program, then the object file for this
+program would be stored in `prog.o'.
+Similarly a paper written with the
+`\-me'
+nroff macro package might be stored in
+`paper.me'
+while a formatted version of this paper might be kept in
+`paper.out' and a list of spelling errors in
+`paper.errs' (1.6).
+.IP filename
+Each file in \s-2UNIX\s0 has a name consisting of up to 14 characters
+and not including the character `/' which is used in
+.I pathname
+building.
+Most file names do not begin with the character `.', and contain
+only letters and digits with perhaps a `.' separating the root
+portion of the filename from an extension (1.6).
+.IP "filename expansion"
+.br
+Filename expansion uses the metacharacters `*', `?' and `[' and `]'
+to provide a convenient mechanism for naming files.
+Using filename expansion it is easy to name all the files in
+the current directory, or all files which have a common root name.
+Other filename expansion mechanisms use the metacharacter `~' and allow
+files in other users directories to be named easily (1.6, 4.2).
+.IP flag
+Many \s-2UNIX\s0 commands accept arguments which are not the names
+of files or other users but are used to modify the action of the commands.
+These are referred to as
+.I flag
+options, and by convention consists of one or more letters preceded by
+the character `\-' (1.2).
+Thus the
+.I ls
+list file commands has an option
+`\-s' to list the sizes of files.
+This is specified
+.DS
+ls \-s
+.DE
+.IP foreach
+The
+.I foreach
+command is used in shell scripts and at the terminal to specify
+repitition of a sequence of commands while the value of a certain
+shell variable ranges through a specified list (3.6, 4.1).
+.IP getty
+The
+.I getty
+program is part of the system which determines the speed at which
+your terminal is to run when you first log in.
+It types the initial system banner and `login:'.
+When no one is logged in on a terminal a
+.I ps
+command shows a command of the form
+`- 7'
+where `7' here is often some other single letter or digit.
+This `7' is an option to the
+.I getty
+command, indicating the type of port which it is running on.
+If you see a
+.I getty
+command running on a terminal in the output of
+.I ps
+you know that no one is logged in on that terminal (2.3).
+.IP goto
+The shell has a command
+.I goto
+used in shell scripts to transfer control to a given label (3.7).
+.IP grep
+The
+.I grep
+command searches through a list of argument files for a specified string.
+Thus
+.DS
+grep bill /etc/passwd
+.DE
+will print each line in the file
+`/etc/passwd'
+which contains the string `bill'.
+Actually,
+.I grep
+scans for
+.I "regular expressions"
+in the sense of the editors
+`ed (1)' and `ex (1)' (2.3).
+.I Grep
+stands for
+`globally find regular expression and print.'
+.IP hangup
+When you hangup a phone line, a \s-2HANGUP\s0 signal
+is sent to all running processes on your terminal, causing
+them to terminate execution prematurely.  If you wish
+to start commands to run after you log off a dialup you must
+use the command
+.I nohup
+(2.6).
+.IP head
+The
+.I head
+command prints the first few lines of one or more files.
+If you have a bunch of files containing text which you are wondering
+about it is sometimes is useful to run
+.I head
+with these files as arguments.
+This will usually show enough of what is in these files to let you decide
+which you are interested in (1.5, 2.3).
+.IP history
+The
+.I history
+mechanism of the shell allows previous commands to be repeated,
+possibly after modification to correct typing mistakes or to change
+the meaning of the command.
+The shell has a
+.I "history list"
+where these commands are kept, and a
+.I history
+variable which controls how large this list is (1.7, 2.6).
+.IP "home directory"
+Each user has a home directory, which is given in your entry
+in the password file,
+.I /etc/passwd.
+This is the directory which you are placed in when you first log in.
+The
+.I cd
+or
+.I chdir
+command with no arguments takes you back to this directory, whose
+name is recorded in the shell variable
+.I home.
+You can also access the home directories of other users in forming
+filenames using a file expansion notation and the character `~' (1.6).
+.IP if
+A conditional command within the shell, the
+.I if
+command is used in shell command scripts to make decisions
+about what course of action to take next (3.6).
+.IP ignoreeof
+Normally, your shell will exit, printing
+`logout'
+if you type a control-d at a prompt of `% '.
+This is the way you usually log off the system.
+You can
+.I set
+the
+.I ignoreeof
+variable if you wish in your
+.I \&.login
+file and then use the command
+.I logout
+to logout.
+This is useful if you sometimes accidentally type too many control-d
+characters, logging yourself off.
+If the system is slow, this can waste much time, as it may
+take a long time to log in again (2.2, 2.6).
+.IP input
+Many commands on \s-2UNIX\s0 take information from the terminal or from
+files which they then act on.
+This information is called
+.I input.
+Commands normally read for input from their
+.I "standard input"
+which is, by default, the terminal.
+This standard input can be redirected from a file using a shell metanotation
+with the character `<'.
+Many commands will also read from a file specified as argument.
+Commands placed in pipelines will read from the output of the previous
+command in the pipeline.
+The leftmost command in a pipeline reads from the terminal if
+you neither redirect its input nor give it a file name to use as
+standard input.
+Special mechanisms exist for suppling input to commands in shell
+scripts (1.2, 1.6, 3.8).
+.IP interrupt
+An
+.I interrupt
+is a signal to a program that is generated by hitting the
+\s-2RUBOUT\s0 or \s-2DELETE\s0 key.
+It causes most programs to stop execution.
+Certain programs such as the shell and the editors
+handle an interrupt in special ways, usually by stopping what they
+are doing and prompting for another command.
+While the shell is executing another command and waiting for it
+to finish, the shell does not listen to interrupts.
+The shell often wakes up when you hit interrupt because many commands
+die when they receive an interrupt (1.8, 2.6, 3.9).
+.IP kill
+A program which terminates processes run without waiting for them to
+complete. (2.6)
+.IP \&.login
+The file
+.I \&.login
+in your
+.I home
+directory is read by the shell each time you log in to \s-2UNIX\s0
+and the commands there are executed.
+There are a number of commands which are usefully placed here
+especially
+.I tset
+commands and
+.I set
+commands to the shell itself (2.1).
+.IP logout
+The
+.I logout
+command causes a login shell to exit.
+Normally, a login shell will exit when you hit control-d
+generating an end-of-file, but if you have set
+.I ignoreeof
+in you
+.I \&.login
+file then this will not work and you must use
+.I logout
+to log off the \s-2UNIX\s0 system (2.2).
+.IP \&.logout
+When you log off of \s-2UNIX\s0 the shell will execute commands from
+the file
+.I \&.logout
+in your
+.I home
+directory after it prints `logout'.
+.IP lpr
+The command
+.I lpr
+is the line printer daemon.
+The standard input of
+.I lpr
+is spooled and printed on the \s-2UNIX\s0 line printer.
+You can also give
+.I lpr
+a list of filenames as arguments to be printed.
+It is most common to use
+.I lpr
+as the last component of a
+.I pipeline
+(2.3).
+.IP ls
+The
+.I ls
+list files command is one of the most commonly used \s-2UNIX\s0
+commands.
+With no argument filenames it prints the names of the files in the
+current directory.
+It has a number of useful
+.I flag
+arguments, and can also be given the names of directories
+as arguments, in which case it lists the names of the files in these
+directories (1.2).
+.IP mail
+The
+.I mail
+program is used to send and receive messages from other \s-2UNIX\s0
+users (1.1, 2.2).
+.IP make
+The
+.I make
+command is used to maintain one or more related files and to
+organize functions to be performed on these files. 
+In many ways
+.I make
+is easier to use, and more helpful
+than
+shell command scripts (3.2).
+.IP makefile
+The file containing command for
+.I make
+is called
+`makefile' (3.2).
+.IP manual
+The `manual' often referred to is the
+`\s-2UNIX\s0 programmers manual.'
+It contains a number of sections and a description of each \s-2UNIX\s0
+program.
+An online version of the manual is accessible through the
+.I man
+command.
+Its documentation can be obtained online via
+.DS
+man man
+.DE
+.IP metacharacter
+Many characters which are neither letters nor digits have special meaning
+either to the shell or to \s-2UNIX\s0.
+These characters are called
+.I metacharacters.
+If it is necessary to place these characters in arguments to commands
+without them having their special meaning then they must be
+.I quoted.
+An example of a metacharacter is the character `>' which is used
+to indicate placement of output into a file.
+For the purposes of the
+.I history
+mechanism,
+most unquoted metacharacters form separate words (1.4).
+The appendix to this user's manual lists the metacharacters
+in groups by their function.
+.IP mkdir
+The
+.I mkdir
+command is used to create a new directory (2.6).
+.IP modifier
+Substitutions with the history mechanism, keyed by the character `!'
+or of variables using the metacharacter `$' are often subjected
+to modifications, indicated by placing the character `:' after the
+substitution and following this with the modifier itself.
+The
+.I "command substitution"
+mechanism can also be used to perform modification in a similar way,
+but this notation is less clear (3.6).
+.IP noclobber
+The shell has a variable
+.I noclobber
+which may be set in the file
+.I \&.login
+to prevent accidental destruction of files by the `>' output redirection
+metasyntax of the shell (2.2, 2.5).
+.IP nohup
+A shell command used to allow background commands to run to completion
+even if you log off a dialup before they complete. (2.5)
+.IP nroff
+The standard text formatter on \s-2UNIX\s0 is the program
+.I nroff.
+Using
+.I nroff
+and one of the available
+.I macro
+packages for it, it is possible to have documents automatically
+formatted and to prepare them for phototypesetting using the
+typesetter program
+.I troff
+(3.2).
+.IP onintr
+The
+.I onintr
+command is built into the shell and is used to control the action
+of a shell command script when an interrupt signal is received (3.9).
+.IP output
+Many commands in \s-2UNIX\s0 result in some lines of text which are
+called their
+.I output.
+This output is usually placed on what is known as the
+.I "standard output"
+which is normally connected to the users terminal.
+The shell has a syntax using the metacharacter `>' for redirecting
+the standard output of a command to a file (1.3).
+Using the
+.I pipe
+mechanism and the metacharacter `|' it is also possible for
+the standard output of one command to become the standard input of another
+command (1.5).
+Certain commands such as the line printer daemon
+.I lpr
+do not place their results on the standard output but rather in more
+useful places such as on the line printer (2.3).
+Similarly the
+.I write
+command places its output on another users terminal rather than its
+standard output (2.3).
+Commands also have a
+.I "diagnostic output"
+where they write their error messages.
+Normally these go to the terminal even if the standard output has
+been sent to a file or another command, but it is possible
+to direct error diagnostics along with standard output using
+a special metanotation (2.5).
+.IP path
+The shell has a variable
+.I path
+which gives the names of the directories in which it searches for
+the commands which it is given.
+It always checks first to see if the command it is given is
+built into the shell.
+If it is, then it need not search for the command as it can do it internally.
+If the command is not builtin, then the shell searches for a file
+with the name given in each of the directories in the
+.I path
+variable, left to right.
+Since the normal definition of the
+.I path
+variable is
+.DS
+path	(. /bin /usr/bin)
+.DE
+the shell normally looks in the current directory, and then in
+the standard system directories `/bin' and `/usr/bin' for the named
+command (2.2).
+If the command cannot be found the shell will print an error diagnostic.
+Scripts of shell commands will be executed using another shell to interpret
+them if they have `execute' bits set.
+This is normally true because a command of the form
+.DS
+chmod 755 script
+.DE
+was executed to turn these execute bits on (3.3).
+.IP pathname
+A list of names, separated by `/' characters forms a
+.I pathname.
+Each
+.I component,
+between successive `/' characters, names a directory
+in which the next component file resides.
+Pathnames which begin with the character `/' are interpreted relative
+to the
+.I root
+directory in the filesystem.
+Other pathnames are interpreted relative to the current directory
+as reported by
+.I pwd.
+The last component of a pathname may name a directory, but
+usually names a file.
+.IP pipeline
+A group of commands which are connected together, the standard
+output of each connected to the standard input of the next
+is called a
+.I pipeline.
+The
+.I pipe
+mechanism used to connect these commands is indicated by
+the shell metacharacter `|' (1.5, 2.3).
+.IP pr
+The
+.I pr
+command is used to prepare listings of the contents of files
+with headers giving the name of the file and the date and
+time at which the file was last modified (2.3).
+.IP printenv
+The
+.I printenv
+command is used on version 7 \s-2UNIX\s0 systems
+to print the current setting of variables in the environment.
+As of this writing, only the \s-2VAX/UNIX\s0 system on the fifth
+floor of Evans Hall is running a version 7 \s-2UNIX\s0 system.
+The other systems are running version 6, which does not have
+or need
+.I printenv
+(2.6).
+.IP process
+A instance of a running program is called a process (2.6).
+The
+numbers used by
+.I kill
+and printed by 
+.I wait
+are unique numbers generated for these processes by \s-2UNIX\s0.
+They are useful in
+.I kill
+commands which can be used to stop background processes. (2.6)
+.IP program
+Usually synonymous with
+.I command;
+a binary file or shell command script
+which performs a useful function is often
+called a program.
+.IP "programmers manual"
+.br
+Also referred to as the
+.I manual.
+See the glossary entry for `manual'.
+.IP prompt
+Many programs will print a prompt on the terminal when they expect
+input.
+Thus the editor
+`ex (NEW)' will print a `:' when it expects input.
+The shell prompts for input with `% ' and occasionally with `? ' when
+reading commands from the terminal (1.1).
+The shell has a variable
+.I prompt
+which may be set to a different value to change the shells main prompt.
+This is mostly used when debugging the shell (2.6).
+.IP ps
+The
+.I ps
+command is used to show the processes you are currently running.
+Each process is shown with its unique process number,
+an indication of the terminal name it is attached to,
+and the amount of \s-2CPU\s0 time it has used so far.
+The command is identified by printing some of the words used
+when it was invoked (2.3, 2.6).
+Login shells, such as the
+.I csh
+you get when you login are shown as `\-'.
+.IP pwd
+The
+.I pwd
+command prints the full pathname of the current (working)
+directory.
+.IP quit
+The
+.I quit
+signal,
+generated by a control-\e
+is used to terminate programs which are behaving unreasonably.
+It normally produces a core image file (1.8).
+.IP quotation
+The process by which metacharacters are prevented their special
+meaning, usually by using the character `\' in pairs, or by
+using the character `\e' is referred to as
+.I quotation
+(1.4).
+.IP redirection
+The routing of input or output from or to a file is known
+as
+.I redirection
+of input or output (1.3).
+.IP repeat
+The
+.I repeat
+command iterates another command a specified number of times (2.6).
+.IP \s-2RUBOUT\s0
+The \s-2RUBOUT\s0 or \s-2DELETE\s0
+key generates an interrupt signal which is used to stop programs
+or to cause them to return and prompt for more input (2.6).
+.IP script
+Sequences of shell commands placed in a file are called shell command 
+scripts.
+It is often possible to perform simple tasks using these scripts without
+writing a program in a language such as C, by
+using the shell to selectively run other programs (3.2, 3.3, 3.10).
+.IP set
+The builtin
+.I set
+command is used to assign new values to shell variables
+and to show the values of the current variables.
+Many shell variables have special meaning to the shell itself.
+Thus by using the set command the behavior of the shell can be affected (2.1).
+.IP setenv
+On version 7 systems variables in the environment `environ (5)'
+can be changed by using the
+.I setenv
+builtin command (2.6).
+The
+.I printenv
+command can be used to print the value of the variables in the environment.
+Currently, only the \s-2VAX/UNIX\s0 system on the fifth floor of Evans Hall
+is running version 7 \s-2UNIX\s0.
+The other systems are running version 6, where
+.I setenv
+is not necessary and does not exist.
+.IP shell
+A shell is a command language interpreter.
+It is possible to write and run your own shell,
+as shells are no different than any other programs as far as the
+system is concerned.
+This manual deals with the details of one particular shell,
+called
+.I csh.
+.IP "shell script"
+See
+.I script
+(3.2, 3.3, 3.10).
+.IP sort
+The
+.I sort
+program sorts a sequence of lines in ways that can be controlled
+by argument flags (1.5).
+.IP source
+The
+.I source
+command causes the shell to read commands from a specified file.
+It is most useful for reading files such as
+.I \&.cshrc
+after changing them (2.6).
+.IP "special character"
+.br
+See
+.I metacharacters
+and the
+appendix to this manual.
+.IP standard
+We refer often to the
+.I "standard input"
+and
+.I "standard output"
+of commands.
+See
+.I input
+and
+.I output
+(1.3, 3.8).
+.IP status
+A command normally returns a
+.I status
+when it finishes.
+By convention a
+.I status
+of zero indicates that the command succeeded.
+Commands may return non-zero status to indicate that some abnormal
+event has occurred.
+The shell variable
+.I status
+is set to the status returned by the last command.
+It is most useful in shell commmand scripts (3.5, 3.6).
+.IP substitution
+The shell implements a number of
+.I substitutions
+where sequences indicated by metacharacters are replaced by other sequences.
+Notable examples of this are history substitution keyed by the
+metacharacter `!' and variable substitution indicated by `$'.
+We also refer to substitutions as
+.I expansions
+(3.4).
+.IP switch
+The
+.I switch
+command of the shell allows the shell
+to select one of a number of sequences of commands based on an
+argument string.
+It is similar to the
+.I switch
+statement in the language C (3.7).
+.IP termination
+When a command which is being executed finished we say it undergoes
+.I termination
+or
+.I terminates.
+Commands normally terminate when they read an end-of-file
+from their standard input.
+It is also possible to terminate commands by sending them
+an
+.I interrupt
+or
+.I quit
+signal (1.8).
+The
+.I kill
+program terminates specified command whose numbers are given (2.6).
+.IP then
+The
+.I then
+command is part of the shells
+`if-then-else-endif' control construct used in command scripts (3.6).
+.IP time
+The
+.I time
+command can be used to measure the amount of \s-2CPU\s0
+and real time consumed by a specified command (2.1, 2.6).
+.IP troff
+The
+.I troff
+program is used to typeset documents.
+See also
+.I nroff
+(3.2).
+.IP tset
+The
+.I tset
+program is used to set standard erase and kill characters
+and to tell the system what kind of terminal you are using.
+It is often invoked in a
+.I \&.login
+file (2.1).
+.IP unalias
+The
+.I unalias
+command removes aliases (2.6).
+.IP \s-2UNIX\s0
+\s-2UNIX\s0 is an operating system on which
+.I csh
+runs.
+\s-2UNIX\s0 provides facilities which allow
+.I csh
+to invoke other programs such as editors and text formatters which
+you may wish to use.
+.IP unset
+The
+.I unset
+command removes the definitions of shell variables (2.2, 2.6).
+.IP "variable expansion"
+.br
+See
+.I variables
+and
+.I expansion
+(2.2, 3.4).
+.IP variables
+Variables in
+.I csh
+hold one or more strings as value.
+The most common use of variables is in controlling the behavior
+of the shell.
+See
+.I path,
+.I noclobber,
+and
+.I ignoreeof
+for examples.
+Variables such as
+.I argv
+are also used in writing shell programs (shell command scripts)
+(2.2).
+.IP verbose
+The
+.I verbose
+shell variable can be set to cause commands to be echoed
+after they are history expanded.
+This is often useful in debugging shell scripts.
+The
+.I verbose
+variable is set by the shells
+.I \-v
+command line option (3.10).
+.IP wait
+The builtin command
+.I wait
+causes the shell to pause, and not prompt,
+until all commands run in the background have terminated (2.6).
+.IP where
+The
+.I where
+command shows where the users named as arguments are logged into the
+system (2.3).
+.IP while
+The
+.I while
+builtin control construct is used in shell command scripts (3.7).
+.IP word
+A sequence of characters which forms an argument to a command is called
+a
+.I word.
+Many characters which are neither letters, digits, `\-', `.' or `/'
+form words all by themselves even if they are not surrounded
+by blanks.
+Any sequence of character may be made into a word by surrounding it
+with `\'' characters
+except for the characters `\'' and `!' which require special treatment
+(1.1, 1.6).
+This process of placing special characters
+in words without their special meaning is called
+.I quoting.
+.IP "working directory"
+.br
+At an given time you are in one particular directory, called
+your working directory.
+This directories name is printed by the
+.I pwd
+command and the files listed by
+.I ls
+are the ones in this directory.
+You can change working directories using
+.I chdir.
+.IP write
+The
+.I write
+command is used to communicate with other users who are logged in to
+\s-2UNIX\s0 (2.3).

@@ -1,0 +1,3 @@
+dd if=px_header of=/usr/lib/npx_header bs=1b conv=sync
+chmod 644 /usr/lib/npx_header
+chown bin /usr/lib/npx_header

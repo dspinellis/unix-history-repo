@@ -1,0 +1,114 @@
+
+.so tmac.p
+'nr H1 -1
+.RP
+.TL
+Berkeley
+Pascal
+PXP Implementation Notes
+.br
+Version 1.1 \- April, 1979
+.AU
+William N. Joy*
+.AI
+Computer Science Division
+.br
+Department of Electrical Engineering and Computer Science
+.br
+University of California, Berkeley
+.br
+Berkeley, California 94720
+.AB
+.PP
+Berkeley
+Pascal is designed for interactive instructional use and runs
+on the
+\s-2PDP\s0 11 family of computers.
+..A version of
+...I pxp
+..for the \s-2VAX\s0 11/780 is nearly complete.
+The Pascal execution profiler
+.XP
+can be used to generate restructured source program listings
+which are annotated with counts of the number of times each statement
+in the profiled parts of the program was executed for a
+particular run of the program.
+A number of options of
+.XP
+provide easy control over the parts of the program to be profiled.
+.Xp
+can also be used to produce restructured program listings,
+i.e. as a pretty-printer.
+.PP
+The
+.I "PXP Implementation Notes"
+describe the design decisions which lead to the present form of
+.XP
+and give details of the internal organization.
+The notes conclude with thoughts on similar facilities for future systems.
+.AE
+.if n 'ND
+.SH
+Introduction
+.PP
+This
+.I "PXP Implementation Notes"
+consists of four major sections.
+In the first section we outline the design considerations which led to the
+present
+.XP .
+Section 2 describes the implementation, with
+the comment reformatting process described separately in section 3.
+Comments on the viability of the current approach and the
+possible shape of future systems are given in section 4.
+.SH 2
+Related
+.SM
+UNIX
+.NL
+Pascal documents
+.PP
+The Pascal translator
+.I pi
+shares with
+.I pxp
+a common parser and error recovery routines, which is described in
+[1].
+.PP
+Pascal programs are currently interpreted by a program
+.X
+as described in the
+.I "PX Implementation Notes"
+[2].
+An understanding of the particular details of the interpreter is not, however,
+necessary to understand the workings of
+.XP .
+.PP
+The
+.I "Berkeley Pascal User's Manual"
+[3]
+gives examples of using
+.XP
+and is the general reference guide for the system.
+.SH
+Acknowledgements
+.PP
+Ken Thompson wrote the first version of
+Berkeley
+Pascal without which none of this would have been.
+Chuck Haley collaborated with the author on the Pascal system
+development and his help in teaching the author the ins and outs
+of
+.UX
+was indispensable.
+The author's faculty advisor,
+Susan L. Graham,
+has been a source of much encouragement, support,
+and many helpful comments and suggestions.
+.FS
+* The financial support of an \s-2IBM\s0 Graduate Fellowship
+and the National Science Foundation under grants
+MCS74-07644-A03 and MCS78-07291
+are gratefully acknowledged.
+.FE
+.bp

@@ -1,0 +1,22 @@
+.TH HEAD UCB 2/24/79 UCB
+.SH NAME
+head \- give first few lines of a stream
+.SH SYNOPSIS
+.B head
+[
+.BR \- count
+] [
+file ...
+]
+.SH DESCRIPTION
+This filter gives the first
+.I count
+lines of each of the specified files, or of the standard input.
+If
+.I count
+is omitted it defaults to
+10.
+.SH SEE\ ALSO
+tail(1)
+.SH AUTHOR
+Bill Joy

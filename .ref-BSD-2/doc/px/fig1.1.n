@@ -1,0 +1,45 @@
+.KF
+.TS
+center;
+c l
+l l
+_ l
+| l |
+| cw(18) | aw(28)
+| _ | l
+| c |
+| _ | a
+| c |
+| l |
+| _ | l
+c l.
+Base of stack frame
+
+
+
+Block mark	Positive offsets
+.sp
+	\(<- Display entry points here
+T{
+.sp
+Local variables
+T}
+	Negative offsets
+T{
+.sp
+Temporary
+.br
+expression
+.br
+space
+T}
+
+
+.sp
+Top of stack frame
+.sp
+.TE
+.ce
+Figure 1.1 \- Structure of stack frame
+.sp
+.KE

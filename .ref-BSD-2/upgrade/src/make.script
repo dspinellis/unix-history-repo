@@ -1,0 +1,23 @@
+mkdir /usr/ucb
+cc -I/usr/include/retrofit -O from.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/from
+cc -I/usr/include/retrofit -O last.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/last
+cc -O ls.c -s
+cp a.out /usr/ucb/ls
+cc -I/usr/include/retrofit -O mkstr.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/mkstr
+cc -I/usr/include/retrofit -O msgs.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/msgs
+cc -I/usr/include/retrofit -O printenv.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/printenv
+cc -O reset.c -s
+cp a.out /usr/ucb/reset
+cc -I/usr/include/retrofit -O setenv.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/setenv
+cc -I/usr/include/retrofit -O strings.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/strings
+cc -I/usr/include/retrofit -O tset.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/tset
+cc -I/usr/include/retrofit -O whereis.c -lretro -ltermlib -lS -s
+cp a.out /usr/ucb/whereis

@@ -1,0 +1,8 @@
+Fri Apr 20 18:50:29 PST 1979
+
+The makefiles copy the macros to their final resting places and then
+strip the comments from them to make them load faster.
+
+You should put local additions and changes to me in local.me
+
+The file ``install.nr'' contains some facts about -me which may be useful.

@@ -1,0 +1,66 @@
+cc -I/usr/include/retrofit -O apropos.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/apropos
+cp astags.sh /usr/ucb/astags
+cc -I/usr/include/retrofit -O ckdir.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/ckdir
+cc -I/usr/include/retrofit -O clear.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/clear
+cc -I/usr/include/retrofit -O clock.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/clock
+cc -I/usr/include/retrofit -O cr3.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/cr3
+cp ctags.sh /usr/ucb/ctags
+cp cxref.sh /usr/ucb/cxref
+cc -I/usr/include/retrofit -O daytime.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/daytime
+cc -I/usr/include/retrofit -O diffdir.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/diffdir
+cc -I/usr/include/retrofit -O double.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/double
+cc -I/usr/include/retrofit -O dribble.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/dribble
+cc -I/usr/include/retrofit -O expand.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/expand
+cc -I/usr/include/retrofit -O fleece.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/fleece
+cc -I/usr/include/retrofit -O fold.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/fold
+cc -I/usr/include/retrofit -O funny.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/funny
+cc -I/usr/include/retrofit -O getNAME.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/getNAME
+cc -I/usr/include/retrofit -O gets.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/gets
+cc -I/usr/include/retrofit -O grep.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/grep
+cc -I/usr/include/retrofit -O head.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/head
+cc -I/usr/include/retrofit -O iul.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/iul
+cc -I/usr/include/retrofit -O lock.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/lock
+cp makewhatis.sh /usr/ucb/makewhatis
+cc -I/usr/include/retrofit -O man.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/man
+cc -I/usr/include/retrofit -O num.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/num
+cp print.sh /usr/ucb/print
+cc -I/usr/include/retrofit -O see.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/see
+cc -I/usr/include/retrofit -O soelim.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/soelim
+cc -I/usr/include/retrofit -O ssp.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/ssp
+cc -I/usr/include/retrofit -O tod.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/tod
+cc -I/usr/include/retrofit -O tra.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/tra
+cc -I/usr/include/retrofit -O untmp.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/untmp
+cp w.sh /usr/ucb/w
+cc -I/usr/include/retrofit -O whatis.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/whatis
+cc -I/usr/include/retrofit -O whoami.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/whoami
+cc -I/usr/include/retrofit -O xstr.c -ltermlib -lretro -lS -s
+cp a.out /usr/ucb/xstr

@@ -1,0 +1,154 @@
+.TH MAIL UCB 2/24/79 UCB
+.SH NAME
+Mail \- interactive mail processing system
+.SH SYNOPSIS
+.B Mail
+[
+.B \-f
+[
+name
+]
+]
+[
+people ...
+]
+.SH DESCRIPTION
+.I Mail
+is a intelligent mail processing system, which has
+a command syntax reminiscent of
+.I ed
+with lines replaced by messages.
+In normal usage, it is given no arguments and checks your mail out of the
+post office, then
+printing out a one line header of each message there.
+The current message is initially the first message (numbered 1)
+and can be printed using the
+.B print
+command (which can be abbreviated \fBp\fR).
+You can move among the messages much as you move between lines in
+.I ed,
+with the commands `+' and `-' moving backwards and forwards, and
+simple numbers typing the addressed message.
+.PP
+After examining a message you can
+.B delete
+(\fBd\fR)
+the message or
+.B reply
+(\fBr\fR)
+to it.
+Deletion causes the
+.I Mail
+program to forget about the message.
+This is not irreversible, the message can be
+.B undeleted
+(\fBu\fR)
+by giving its number, or
+the
+.I Mail
+session can be aborted by giving the
+.B exit
+(\fBx\fR)
+command.
+Deleted messages will, however, usually disappear never to be seen again.
+.PP
+When you give the
+.B reply
+command,
+.I Mail
+sets up a response to the original message, sending it back to the
+person who it was from.
+Text you then type in, up to an end-of-file, defines the contents of
+the message.
+While you are composing a message,
+.I Mail
+treats lines beginning with the character `~' specially.
+The following `~' escapes are the most useful:
+.TP 5
+.B ~m
+Places a copy of the current message in the response message text,
+right shifting it by a tab stop.
+.TP 5
+.B ~s
+Sets a subject for the message.  The subject follows the `~s' on
+the same line, and appears in the header for the message when received
+with
+.I Mail.
+If there was a subject in the mail being responded to, then this is the
+subject of the response unless you give a new one.
+.TP 5
+.B ~c
+Adds carbon copies, users who will receive the message also.
+By default, only the originator of the message receives a
+.B reply.
+.TP 5
+.B ~e
+Invokes an editor on the response composed so far.
+When editing terminates, message composition continues.
+.TP 5
+.B ~p
+Prints the message composed so far.
+.PP
+You can end a
+.I Mail
+session with the
+.B quit
+(\fBq\fR)
+command.
+Messages which have been examined go to your
+.I mbox
+file unless they have been deleted in which case they are discarded.
+Unexamined messages go back to the post office.
+.PP
+By giving `people' arguments to
+.I Mail
+on the command line, or by using the internal
+.B mail
+(\fBm\fR)
+command you can originate mail.
+The escapes available during
+.I reply
+commands are available here also.
+.PP
+The
+.B \-f
+option causes
+.I Mail
+to read in the contents of your
+.I mbox
+(or the specified file)
+for processing; when you
+.B quit
+.I Mail
+writes undeleted messages back to this file.
+.PP
+.I Mail
+has a number of other facilities as well as options which can be set
+in the file
+.I \&.mailrc
+in your home directory.
+See the `Mail Reference Manual' for details.
+.SH FILES
+.if n .ta 2.5i
+.if t .ta 1.8i
+/usr/spool/mail/*	post office
+.br
+~/mbox	your old mail
+.br
+~/.mailrc	file giving initial mail commands
+.br
+/tmp/R#	temporary for editor escape
+.br
+/usr/lib/Mail.groups	named groupings for bulk mailing
+.br
+/usr/lib/Mail.help*	help files
+.br
+/usr/lib/Mail.rc	system-wide initialization file
+.br
+/bin/mail		to do actual mailing
+.SH "SEE ALSO"
+mail(1),
+`The Mail Reference Manual'
+.SH AUTHOR
+Kurt Shoens
+.SH BUGS

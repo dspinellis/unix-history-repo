@@ -1,0 +1,24 @@
+cc -O -I/usr/include/retrofit -c getenv.c
+cc -O -I/usr/include/retrofit -c getpwuid.c
+cc -O -I/usr/include/retrofit -c getpwent.c
+cc -O -I/usr/include/retrofit -c _getuid.c
+cc -O -I/usr/include/retrofit -c _sgtty.c
+cc -O -I/usr/include/retrofit -c htmpg.c
+cc -O -I/usr/include/retrofit -c htmps.c
+cc -O -I/usr/include/retrofit -c ttyname.c
+cc -O -I/usr/include/retrofit -c ttyn.c
+cc -O -I/usr/include/retrofit -c isatty.c
+cc -O -I/usr/include/retrofit -c _stat.c
+as -o setjmp.o setjmp.s
+as -o wait.o wait.s
+as -o ilongops.o ilongops.s
+cc -I/usr/include/retrofit -S ctype.c
+ed <:cfix ctype.s
+as -o ctype.o ctype.s
+cc -O -I/usr/include/retrofit -c typeof.c
+cc -O -I/usr/include/retrofit -c lseek.c
+rm -f libretro.a
+ar r libretro.a getenv.o getpwuid.o getpwent.o _getuid.o _sgtty.o htmpg.o htmps.o ttyname.o ttyn.o isatty.o _stat.o setjmp.o wait.o ilongops.o ctype.o typeof.o lseek.o
+cat /dev/null >> /etc/htmp
+mv libretro.a /usr/lib/libretro.a
+chmod 644 /usr/lib/libretro.a
