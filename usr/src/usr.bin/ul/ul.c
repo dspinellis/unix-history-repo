@@ -1,4 +1,6 @@
 /*	@(#)vcrt.c	3.13	*/
+static char SccsId[] =	"@(#)ul.c	4.3	(Berkeley)	%G%";
+
 #include <stdio.h>
 
 #define	IESC	'\033'
@@ -424,6 +426,9 @@ setmode(newmode)
 int newmode;
 {
 	if (!iflag)
+	{
+		if (curmode != NORMAL && newmode != NORMAL)
+			setmode(NORMAL);
 		switch (newmode) {
 		case NORMAL:
 			switch(curmode) {
@@ -466,6 +471,7 @@ int newmode;
 			puts(ENTER_STANDOUT);
 			break;
 		}
+	}
 	curmode = newmode;
 }
 /*	@(#)getopt.c	3.2	*/
