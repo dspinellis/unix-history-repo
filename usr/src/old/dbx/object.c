@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.6 %G%";
+static char sccsid[] = "@(#)object.c 1.7 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -40,7 +40,7 @@ private Symbol curparam;
 private Boolean warned;
 
 private Filetab *filep;
-private Linetab *linep;
+private Linetab *linep, *prevlinep;
 private Address curfaddr;
 
 #define curfilename() (filep-1)->filename
@@ -64,6 +64,11 @@ private Integer curlevel;
 }
 
 #define exitblock() { \
+    if (curblock->class == FUNC or curblock->class == PROC) { \
+	if (prevlinep != linep) { \
+	    curblock->symvalue.funcv.src = true; \
+	} \
+    } \
     --curlevel; \
     curblock = blkstack[curlevel]; \
 }
@@ -245,7 +250,7 @@ register struct nlist *np;
 {
     register Symbol s;
     String mname, suffix;
-    register Name n;
+    register Name n, nn;
 
     s = nil;
     if (name == nil) {
@@ -293,11 +298,16 @@ register struct nlist *np;
 		    exitblock();
 		}
 	    }
-	    s = insert(identname(mname, true));
+	    nn = identname(mname, true);
+	    if (curmodule == nil or curmodule->name != nn) {
+		s = insert(nn);
+		s->class = MODULE;
+		s->symvalue.funcv.beginaddr = 0;
+		findbeginning(s);
+	    } else {
+		s = curmodule;
+	    }
 	    s->language = curlang;
-	    s->class = MODULE;
-	    s->symvalue.funcv.beginaddr = 0;
-	    findbeginning(s);
 	    enterblock(s);
 	    curmodule = s;
 	    if (program->language == nil) {
@@ -386,6 +396,7 @@ register struct nlist *np;
 		t->type = t_int;
 		t->block = curblock;
 		t->level = program->level;
+		t->symvalue.funcv.src = false;
 	    }
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t);
@@ -430,6 +441,7 @@ register struct nlist *np;
 	t->level = cur->level;
 	if ((np->n_type&N_TYPE) == N_TEXT) {
 	    t->class = FUNC;
+	    t->symvalue.funcv.src = false;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t);
 	    findbeginning(t);
@@ -599,6 +611,7 @@ struct nlist *np;
 	    }
 	    curparam = s;
 	    if (isnew) {
+		s->symvalue.funcv.src = false;
 		s->symvalue.funcv.beginaddr = np->n_value;
 		newfunc(s);
 		findbeginning(s);
