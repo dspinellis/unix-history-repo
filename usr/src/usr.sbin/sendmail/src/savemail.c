@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -791,10 +791,17 @@ errbody(mci, e, separator, flags)
 				continue;
 			putline("", mci);
 
-			/* Recipient: -- the name from the RCPT command */
-			for (r = q; r->q_alias != NULL; r = r->q_alias)
-				continue;
-			(void) sprintf(buf, "Recipient: %s", r->q_paddr);
+			/* Recipient: -- use name of alias */
+			r = q;
+			if (r->q_alias != NULL)
+				r = r->q_alias;
+			p = r->q_user;
+			if (strchr(p, '@') == NULL)
+				(void) sprintf(buf, "Recipient: %s@%s",
+					p, MyHostName);
+			else
+				(void) sprintf(buf, "Recipient: %s",
+					p);
 			putline(buf, mci);
 
 			/* Action: -- what happened? */
@@ -809,10 +816,10 @@ errbody(mci, e, separator, flags)
 
 			/* Status: -- what _really_ happened? */
 			strcpy(buf, "Status: ");
+			if (q->q_status == NULL)
+				q->q_status = q->q_fstatus;
 			if (q->q_status != NULL)
 				strcat(buf, q->q_status);
-			else if (q->q_fstatus != NULL)
-				strcat(buf, q->q_fstatus);
 			else if (bitset(QBADADDR, q->q_flags))
 				strcat(buf, "500");
 			else if (bitset(QQUEUEUP, q->q_flags))
@@ -854,16 +861,14 @@ errbody(mci, e, separator, flags)
 				putline(buf, mci);
 			}
 
-			/* Final-Recipient: -- if through alias */
-			if (q->q_alias != NULL)
-			{
-				(void) sprintf(buf, "Final-Recipient: %s",
-					q->q_paddr);
-				putline(buf, mci);
-			}
+			/* Final-Recipient: -- the name from the RCPT command */
+			for (r = q; r->q_alias != NULL; r = r->q_alias)
+				continue;
+			(void) sprintf(buf, "Final-Recipient: %s", r->q_paddr);
+			putline(buf, mci);
 
 			/* Final-Status: -- same as Status?  XXX */
-			if (q->q_fstatus != NULL && q->q_status != NULL)
+			if (q->q_fstatus != NULL && q->q_fstatus != q->q_status)
 			{
 				(void) sprintf(buf, "Final-Status: %s",
 					q->q_fstatus);
@@ -885,9 +890,15 @@ errbody(mci, e, separator, flags)
 					q->q_statmta);
 				putline(buf, mci);
 			}
+			else if (q->q_host != NULL)
+			{
+				(void) sprintf(buf, "Remote-MTA: %s",
+					q->q_host);
+				putline(buf, mci);
+			}
 
-			/* Remote-Recipient: -- same as Final-Recipient?  XXX */
-			if (strcmp(q->q_user, q->q_paddr) != 0)
+			/* Remote-Recipient: -- recipient passed to far end */
+			if (strcmp(q->q_user, r->q_paddr) != 0)
 			{
 				(void) sprintf(buf, "Remote-Recipient: %s",
 					q->q_user);

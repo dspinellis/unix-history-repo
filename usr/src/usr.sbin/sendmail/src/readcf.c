@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -683,12 +683,18 @@ fileclass(class, filename, fmt, safe, optional)
 **	Parameters:
 **		line -- description of mailer.  This is in labeled
 **			fields.  The fields are:
-**			   P -- the path to the mailer
-**			   F -- the flags associated with the mailer
 **			   A -- the argv for this mailer
-**			   S -- the sender rewriting set
-**			   R -- the recipient rewriting set
+**			   C -- the character set for MIME conversions
+**			   D -- the directory to run in
 **			   E -- the eol string
+**			   F -- the flags associated with the mailer
+**			   L -- the maximum line length
+**			   M -- the maximum message size
+**			   P -- the path to the mailer
+**			   R -- the recipient rewriting set
+**			   S -- the sender rewriting set
+**			   T -- the mailer type (for DSNs)
+**			   U -- the uid to run as
 **			The first word is the canonical name of the mailer.
 **
 **	Returns:
@@ -875,15 +881,6 @@ makemailer(line)
 		p = delimptr;
 	}
 
-	/* do some heuristic cleanup for back compatibility */
-	if (bitnset(M_LIMITS, m->m_flags))
-	{
-		if (m->m_linelimit == 0)
-			m->m_linelimit = SMTPLINELIM;
-		if (ConfigLevel < 2)
-			setbitn(M_7BITS, m->m_flags);
-	}
-
 	/* do some rationality checking */
 	if (m->m_argv == NULL)
 	{
@@ -902,6 +899,21 @@ makemailer(line)
 		return;
 	}
 
+	/* do some heuristic cleanup for back compatibility */
+	if (bitnset(M_LIMITS, m->m_flags))
+	{
+		if (m->m_linelimit == 0)
+			m->m_linelimit = SMTPLINELIM;
+		if (ConfigLevel < 2)
+			setbitn(M_7BITS, m->m_flags);
+	}
+
+	if (ConfigLevel < 6 && m->m_mtstype == NULL &&
+	    (strcmp(m->m_mailer, "[IPC]") == 0 ||
+	     strcmp(m->m_mailer, "[TCP]") == NULL)))
+		m->m_mtstype = "Internet";
+
+	/* enter the mailer into the symbol table */
 	s = stab(m->m_name, ST_MAILER, ST_ENTER);
 	if (s->s_mailer != NULL)
 	{

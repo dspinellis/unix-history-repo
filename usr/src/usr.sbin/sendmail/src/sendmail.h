@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.76 (Berkeley) %G%
+ *	@(#)sendmail.h	8.77 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.76		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.77		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -299,6 +299,7 @@ MCI
 	char		*mci_phase;	/* SMTP phase string */
 	struct mailer	*mci_mailer;	/* ptr to the mailer for this conn */
 	char		*mci_host;	/* host name */
+	char		*mci_status;	/* DSN status to be copied to addrs */
 	time_t		mci_lastuse;	/* last usage time */
 };
 

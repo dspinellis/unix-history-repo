@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.115 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.116 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -845,7 +845,7 @@ deliver(e, firstto)
 		rcode = checkcompat(to, e);
 		if (rcode != EX_OK)
 		{
-			markfailure(e, to, rcode);
+			markfailure(e, to, NULL, rcode);
 			giveresponse(rcode, m, NULL, ctladdr, e);
 			continue;
 		}
@@ -994,7 +994,7 @@ deliver(e, firstto)
 	h_errno = 0;
 #endif
 
-	CurHostName = m->m_mailer;
+	CurHostName = NULL;
 
 	/*
 	**  Deal with the special case of mail handled through an IPC
@@ -1505,7 +1505,7 @@ tryhost:
 				e->e_to = to->q_paddr;
 				if ((i = smtprcpt(to, m, mci, e)) != EX_OK)
 				{
-					markfailure(e, to, i);
+					markfailure(e, to, mci, i);
 					giveresponse(i, m, mci, ctladdr, e);
 				}
 				else
@@ -1574,7 +1574,7 @@ tryhost:
 	for (to = tochain; to != NULL; to = to->q_tchain)
 	{
 		if (rcode != EX_OK)
-			markfailure(e, to, rcode);
+			markfailure(e, to, mci, rcode);
 		else
 		{
 			to->q_flags |= QSENT;
@@ -1617,6 +1617,7 @@ tryhost:
 **	Parameters:
 **		e -- the envelope we are sending.
 **		q -- the address to mark.
+**		mci -- mailer connection information.
 **		rcode -- the code signifying the particular failure.
 **
 **	Returns:
@@ -1628,12 +1629,13 @@ tryhost:
 **			the message will be queued, as appropriate.
 */
 
-markfailure(e, q, rcode)
+markfailure(e, q, mci, rcode)
 	register ENVELOPE *e;
 	register ADDRESS *q;
+	register MCI *mci;
 	int rcode;
 {
-	char buf[MAXLINE];
+	char *stat = NULL;
 
 	switch (rcode)
 	{
@@ -1650,8 +1652,56 @@ markfailure(e, q, rcode)
 		q->q_flags |= QBADADDR;
 		break;
 	}
+
+	if (q->q_status == NULL && mci != NULL)
+		q->q_status = mci->mci_status;
+	switch (rcode)
+	{
+	  case EX_USAGE:
+		stat = "550";
+		break;
+
+	  case EX_DATAERR:
+		stat = "501";
+		break;
+
+	  case EX_NOINPUT:
+	  case EX_NOUSER:
+	  case EX_NOHOST:
+	  case EX_CANTCREAT:
+	  case EX_NOPERM:
+		stat = "550";
+		break;
+
+	  case EX_UNAVAILABLE:
+	  case EX_SOFTWARE:
+	  case EX_OSFILE:
+	  case EX_PROTOCOL:
+	  case EX_CONFIG:
+		stat = "554";
+		break;
+
+	  case EX_OSERR:
+	  case EX_IOERR:
+		stat = "451";
+		break;
+
+	  case EX_TEMPFAIL:
+		stat = "426";
+		break;
+	}
+	if (stat != NULL && q->q_status == NULL)
+		q->q_status = stat;
+
 	q->q_statdate = curtime();
 	q->q_statmta = newstr(CurHostName);
+	if (rcode != EX_OK && q->q_rstatus == NULL)
+	{
+		char buf[30];
+
+		(void) sprintf(buf, "%d", rcode);
+		q->q_rstatus = newstr(buf);
+	}
 }
 /*
 **  ENDMAILER -- Wait for mailer to terminate.

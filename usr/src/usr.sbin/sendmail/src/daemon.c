@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.60 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.61 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.60 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.61 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -280,12 +280,13 @@ gothostent:
 		if (hp == NULL)
 		{
 #if NAMED_BIND
-			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
+			/* check for name server timeouts */
+			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN ||
+			    (errno == ECONNREFUSED && UseNameServer))
+			{
+				mci->mci_status = "466";
 				return (EX_TEMPFAIL);
-
-			/* if name server is specified, assume temp fail */
-			if (errno == ECONNREFUSED && UseNameServer)
-				return (EX_TEMPFAIL);
+			}
 #endif
 			return (EX_NOHOST);
 		}
