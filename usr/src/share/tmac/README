@@ -3,7 +3,7 @@ All rights reserved.
 
 %sccs.include.redist.man%
 
-    @(#)README	1.1 (Berkeley) %G%
+    @(#)README	5.1 (Berkeley) %G%
 
 -mdoc stuff
 	doc-* files are unstripped tmac.doc-* files
