@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.3 (Berkeley) %G%
+ *	@(#)glob.h	5.4 (Berkeley) %G%
  */
 
 typedef struct {
@@ -35,6 +35,6 @@ typedef struct {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int glob __P((const char *, int, const int (*)(char *, int), glob_t *));
+int glob __P((const char *, int, int (*)(char *, int), glob_t *));
 void globfree __P((glob_t *));
 __END_DECLS
