@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	87/02/15
+#	@(#)Makefile	4.4	(Berkeley)	87/07/27
 #
 all:
 	cd util; make $(MFLAGS)
@@ -7,6 +7,7 @@ all:
 
 install:
 	cd cmd; make $(MFLAGS) DESTDIR=$(DESTDIR) install
+	cd doc; make ${MFLAGS} DESTDIR=${DESTDIR} install
 	install -c -m 644 sccs.hf ${DESTDIR}/usr/local/lib/sccs.hf
 
 clean:
