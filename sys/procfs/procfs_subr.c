@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_subr.c,v 1.1 1993/12/12 12:26:40 davidg Exp $
+ *	$Id: procfs_subr.c,v 1.2 1993/12/19 00:54:35 wollman Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -289,13 +289,23 @@ pfs_doio(vp, uio, ioflag, cred)
 
 		offset = trunc_page((vm_offset_t)uio->uio_offset);
 
+/*
+ * This code *fakes* the existance of the UPAGES at the address USRSTACK
+ * in the process address space for versions of the kernel where the
+ * UPAGES do not exist in the process map.  
+ */
 #ifndef FULLSWAP
 		if( offset >= USRSTACK) {
-			error = EINVAL;
-			break;
+			caddr_t paddr;
+			if( offset >= USRSTACK + NBPG*UPAGES) {
+				error = EINVAL;
+				break;
+			}
+			paddr = (caddr_t) procp->p_addr;
+			error = uiomove(paddr + (offset - USRSTACK), (int)n, uio);
+			continue;
 		}
 #endif
-		
 
 		/* make sure that the offset exists in the procs map */
 		rv = vm_region(map, &offset, &size, &prot, &maxprot,
@@ -417,4 +427,3 @@ pfs_doio(vp, uio, ioflag, cred)
 
 	return (error);
 }
-
