@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)arff.c	4.13 (Berkeley) 83/04/22";
+static	char sccsid[] = "@(#)arff.c	4.14 (Berkeley) 83/06/07";
 #endif
 
 #include <sys/types.h>
@@ -114,7 +114,7 @@ main(argc, argv)
 			continue;
 		case 'c':
 			{
-#define SURE	"Last chance before clobbering floppy?"
+#define SURE	"Are you sure you want to clobber the floppy?"
 				int tty;
 				char response[128];
 
