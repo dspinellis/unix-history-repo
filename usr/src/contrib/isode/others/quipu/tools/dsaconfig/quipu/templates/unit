@@ -1,0 +1,53 @@
+###############################################################################
+#
+# How to fill this template in:
+#
+# 1. Substitute the name of your organization for each occurrence of
+#	o=O_i -> o=Performance Systems International
+#
+# 2. Substitute the name of your organizationalUnit for each occurrence of
+#	ou=U_j -> ou=Development
+#
+# 3. Fill-in the name of the DSA which masters this organizationalUnit.
+#    This will be the name of your Level-1 DSA or a subordinate Level-2 DSA.
+#
+# 4. If this is mastered by a Level-1 DSA, you will need to add this line to
+#    that DSA's entry
+#
+#	eDBinfo= c=country@o=O_i@u=U_j # #
+#
+#   Instead, if this is mastered by a Level-2 DSA, you will need to add this 
+#   line to that DSA's entry
+#
+#	eDBinfo= c=country@o=O_i@u=U_j # # c=country@cn=Level-1 DSA
+#
+#   Further, to your Level-1 DSA's entry you will need to add
+#
+#	eDBinfo= c=country@o=O_i@u=U_j # c=country@o=O_i@cn=Level-2 DSA #
+#
+#   Finally, if a Level-2 DSA is mastering this entry, then to the entry
+#   below you need to add another line after the masterDSA attribute:
+#
+#	slaveDSA= c=country@cn=level-1 DSA
+#
+# 4. Optional attributes (put any of these before the objectClass attribute)
+#	postalAddress= line1 $ line2 $ line3 $ ... $ line6
+#	streetAddress= number and street, e.g., 420 Whisman Court
+#	physicalDeliveryOfficeName= postal area, e.g., Mountain View
+#	stateOrProvinceName= state, e.g., California
+#	postalCode= zip code, e.g., 94043-2112
+#	telephoneNumber= +1 aaa-bbb-cccc xDDDD, e.g., +1 415-961-3380
+#	facsimileTelephoneNumber= +1 aaa-bbb-cccc, e.g., +1 415-961-3282
+#	l= regional area, e.g., Mountain View, California
+#	description= fill this in, e.g., blah, blah
+#
+# 5. Delete this message (the first 46 lines of this file)
+#
+###############################################################################
+ou=U_j
+acl=
+masterDSA= c=country@cn=wildlife name#
+ou= U_j
+objectClass= top & quipuObject & quipuNonLeafObject
+objectClass= organizationalUnit
+
