@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.25 (Berkeley) %G%
+ *	@(#)locore.s	7.26 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -1345,7 +1345,7 @@ ENTRY(copyinstr, R6)
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r6			# run out of space?
 	jneq	1b
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	9f
 3:
 	tstl	16(ap)			# return length?
@@ -1411,7 +1411,7 @@ ENTRY(copyoutstr, R6)
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r6			# run out of space?
 	jneq	1b
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	9b
 
 /*
@@ -1452,7 +1452,7 @@ ENTRY(copystr, R6)
 	movc3	r2,(r1),(r3)		# copy in next piece
 	tstl	r6			# run out of space?
 	jneq	1b
-	movl	$ENOENT,r0		# set error code and return
+	movl	$ENAMETOOLONG,r0	# set error code and return
 	jbr	9b
 
 /* 

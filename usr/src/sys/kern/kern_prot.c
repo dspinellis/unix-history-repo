@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	7.15 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -483,7 +483,7 @@ setlogin(p, uap, retval)
 		return (error);
 	error = copyinstr((caddr_t)uap->namebuf, (caddr_t)p->p_logname,
 	    sizeof (p->p_logname) - 1, (int *) 0);
-	if (error == ENOENT)		/* name too long */
+	if (error == ENAMETOOLONG)		/* name too long */
 		error = EINVAL;
 	return (error);
 }
