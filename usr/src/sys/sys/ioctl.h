@@ -1,4 +1,4 @@
-/*	ioctl.h	4.31	83/05/18	*/
+/*	ioctl.h	4.32	83/05/27	*/
 /*
  * Ioctl definitions
  */
@@ -192,6 +192,8 @@ struct ltchars {
 #define	FIONREAD	_IOR(f, 127, int)	/* get # bytes to read */
 #define	FIONBIO		_IOW(f, 126, int)	/* set/clear non-blocking i/o */
 #define	FIOASYNC	_IOW(f, 125, int)	/* set/clear async i/o */
+#define	FIOSETOWN	_IOW(f, 124, int)	/* set owner */
+#define	FIOGETOWN	_IOR(f, 123, int)	/* get owner */
 
 /* socket i/o controls */
 #define	SIOCSHIWAT	_IOW(s,  0, int)		/* set high watermark */
