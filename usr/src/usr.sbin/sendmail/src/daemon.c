@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.43 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.44 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.43 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.44 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -761,7 +761,13 @@ maphostname(map, hbuf, hbsize, avp, statp)
 			{
 			  case TRY_AGAIN:
 				if (UseNameServer)
-					message("Recipient domain nameserver timed out");
+				{
+					char *msg = "Recipient domain nameserver timed out";
+
+					message(msg);
+					if (CurEnv->e_message == NULL)
+						CurEnv->e_message = msg;
+				}
 				*statp = EX_TEMPFAIL;
 				break;
 
