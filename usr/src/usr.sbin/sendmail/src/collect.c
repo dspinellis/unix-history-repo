@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>

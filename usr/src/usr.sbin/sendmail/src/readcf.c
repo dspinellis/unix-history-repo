@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -463,9 +463,22 @@ makemailer(line)
 		  case 'M':		/* maximum message size */
 			m->m_maxsize = atol(p);
 			break;
+
+		  case 'L':		/* maximum line length */
+			m->m_linelimit = atoi(p);
+			break;
 		}
 
 		p = DelimChar;
+	}
+
+	/* do some heuristic cleanup for back compatibility */
+	if (bitnset(M_LIMITS, m->m_flags))
+	{
+		if (m->m_linelimit == 0)
+			m->m_linelimit = SMTPLINELIM;
+		if (!bitnset(M_8BITS, m->m_flags))
+			setbitn(M_7BITS, m->m_flags);
 	}
 
 	/* now store the mailer away */
@@ -637,7 +650,6 @@ printrules()
 */
 
 static BITMAP	StickyOpt;		/* set if option is stuck */
-extern char	*NetName;		/* name of home (local) network */
 
 setoption(opt, val, sticky)
 	char opt;
@@ -672,6 +684,10 @@ setoption(opt, val, sticky)
 	{
 	  case '=':		/* config file generation level */
 		ConfigLevel = atoi(val);
+		break;
+
+	  case '8':		/* allow eight-bit input */
+		EightBit = atobool(val);
 		break;
 
 	  case 'A':		/* set default alias file */
@@ -794,12 +810,6 @@ setoption(opt, val, sticky)
 		CheckAliases = atobool(val);
 		break;
 
-# ifdef DAEMON
-	  case 'N':		/* home (local?) network name */
-		NetName = newstr(val);
-		break;
-# endif DAEMON
-
 	  case 'o':		/* assume old style headers */
 		if (atobool(val))
 			CurEnv->e_flags |= EF_OLDSTYLE;
@@ -842,6 +852,7 @@ setoption(opt, val, sticky)
 		/*FALLTHROUGH*/
 
 	  case 't':		/* time zone name */
+		TimeZoneSpec = newstr(val);
 		break;
 
 	  case 'U':		/* location of user database */

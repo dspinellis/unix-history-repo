@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.41 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.41 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -46,7 +46,7 @@ static char sccsid[] = "@(#)daemon.c	5.41 (Berkeley) %G% (without daemon mode)";
 **		etc., to avoid having extra file descriptors during
 **		the queue run and to avoid confusing the network
 **		code (if it cares).
-**	makeconnection(host, port, outfile, infile)
+**	makeconnection(host, port, outfile, infile, usesecureport)
 **		Make a connection to the named host on the given
 **		port.  Set *outfile and *infile to the files
 **		appropriate for communication.  Returns zero on
@@ -76,16 +76,14 @@ static FILE	*MailPort;	/* port that mail comes in on */
 **		to the communication channel.
 */
 
-struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
-
 int	DaemonSocket	= -1;		/* fd describing socket */
-char	*NetName;			/* name of home (local?) network */
 
 getrequests()
 {
 	int t;
 	register struct servent *sp;
 	int on = 1;
+	struct sockaddr_in srvraddr;
 	extern void reapchild();
 
 	/*
@@ -98,16 +96,16 @@ getrequests()
 		syserr("server \"smtp\" unknown");
 		goto severe;
 	}
-	SendmailAddress.sin_family = AF_INET;
-	SendmailAddress.sin_addr.s_addr = INADDR_ANY;
-	SendmailAddress.sin_port = sp->s_port;
+	srvraddr.sin_family = AF_INET;
+	srvraddr.sin_addr.s_addr = INADDR_ANY;
+	srvraddr.sin_port = sp->s_port;
 
 	/*
 	**  Try to actually open the connection.
 	*/
 
 	if (tTd(15, 1))
-		printf("getrequests: port 0x%x\n", SendmailAddress.sin_port);
+		printf("getrequests: port 0x%x\n", srvraddr.sin_port);
 
 	/* get a socket for the SMTP connection */
 	DaemonSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,8 +127,7 @@ getrequests()
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
 	(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
 
-	if (bind(DaemonSocket,
-	    (struct sockaddr *)&SendmailAddress, sizeof SendmailAddress) < 0)
+	if (bind(DaemonSocket, (struct sockaddr *)&srvraddr, sizeof srvraddr) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
@@ -165,6 +162,8 @@ getrequests()
 **		outfile -- a pointer to a place to put the outfile
 **			descriptor.
 **		infile -- ditto for infile.
+**		usesecureport -- if set, use a low numbered (reserved)
+**			port to provide some rudimentary authentication.
 **
 **	Returns:
 **		An exit code telling whether the connection could be
@@ -174,16 +173,18 @@ getrequests()
 **		none.
 */
 
-makeconnection(host, port, outfile, infile)
+makeconnection(host, port, outfile, infile, usesecureport)
 	char *host;
 	u_short port;
 	FILE **outfile;
 	FILE **infile;
+	bool usesecureport;
 {
 	register int i, s;
 	register struct hostent *hp = (struct hostent *)NULL;
-	extern char *inet_ntoa();
+	struct sockaddr_in addr;
 	int sav_errno;
+	extern char *inet_ntoa();
 #ifdef NAMED_BIND
 	extern int h_errno;
 #endif
@@ -214,7 +215,7 @@ makeconnection(host, port, outfile, infile)
 			usrerr("Invalid numeric domain spec \"%s\"", host);
 			return (EX_NOHOST);
 		}
-		SendmailAddress.sin_addr.s_addr = hid;
+		addr.sin_addr.s_addr = hid;
 	}
 	else
 	{
@@ -237,7 +238,7 @@ makeconnection(host, port, outfile, infile)
 
 			return (EX_NOHOST);
 		}
-		bcopy(hp->h_addr, (char *) &SendmailAddress.sin_addr, hp->h_length);
+		bcopy(hp->h_addr, (char *) &addr.sin_addr, hp->h_length);
 		i = 1;
 	}
 
@@ -246,7 +247,7 @@ makeconnection(host, port, outfile, infile)
 	*/
 
 	if (port != 0)
-		SendmailAddress.sin_port = htons(port);
+		addr.sin_port = htons(port);
 	else
 	{
 		register struct servent *sp = getservbyname("smtp", "tcp");
@@ -256,7 +257,7 @@ makeconnection(host, port, outfile, infile)
 			syserr("makeconnection: server \"smtp\" unknown");
 			return (EX_OSFILE);
 		}
-		SendmailAddress.sin_port = sp->s_port;
+		addr.sin_port = sp->s_port;
 	}
 
 	/*
@@ -266,17 +267,26 @@ makeconnection(host, port, outfile, infile)
 again:
 	if (tTd(16, 1))
 		printf("makeconnection (%s [%s])\n", host,
-		    inet_ntoa(SendmailAddress.sin_addr));
+		    inet_ntoa(addr.sin_addr));
 
 #ifdef NVMUNIX
 	s = socket(AF_INET, SOCK_STREAM, 0, 0);
 #else NVMUNIX
-	s = socket(AF_INET, SOCK_STREAM, 0);
+	if (usesecureport)
+	{
+		int rport = IPPORT_RESERVED - 1;
+
+		s = rresvport(&rport);
+	}
+	else
+	{
+		s = socket(AF_INET, SOCK_STREAM, 0);
+	}
 #endif NVMUNIX
 	if (s < 0)
 	{
-		syserr("makeconnection: no socket");
 		sav_errno = errno;
+		syserr("makeconnection: no socket");
 		goto failure;
 	}
 
@@ -296,17 +306,16 @@ again:
 	bind(s, &SendmailAddress, sizeof SendmailAddress, 0);
 	if (connect(s, &SendmailAddress, sizeof SendmailAddress, 0) < 0)
 #else NVMUNIX
-	SendmailAddress.sin_family = AF_INET;
-	if (connect(s,
-	    (struct sockaddr *)&SendmailAddress, sizeof SendmailAddress) < 0)
+	addr.sin_family = AF_INET;
+	if (connect(s, (struct sockaddr *) &addr, sizeof addr) < 0)
 #endif NVMUNIX
 	{
 		sav_errno = errno;
 		(void) close(s);
 		if (hp && hp->h_addr_list[i])
 		{
-			bcopy(hp->h_addr_list[i++],
-			    (char *)&SendmailAddress.sin_addr, hp->h_length);
+			bcopy(hp->h_addr_list[i++], (char *) &addr.sin_addr,
+					hp->h_length);
 			goto again;
 		}
 
@@ -336,7 +345,7 @@ again:
 		  case EPERM:
 			/* why is this happening? */
 			syserr("makeconnection: funny failure, addr=%lx, port=%x",
-				SendmailAddress.sin_addr.s_addr, SendmailAddress.sin_port);
+				addr.sin_addr.s_addr, addr.sin_port);
 			return (EX_TEMPFAIL);
 
 		  default:

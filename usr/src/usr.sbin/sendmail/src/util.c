@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -495,8 +495,6 @@ dfopen(filename, mode)
 **		output of l to fp.
 */
 
-# define SMTPLINELIM	990	/* maximum line length */
-
 putline(l, fp, m)
 	register char *l;
 	FILE *fp;
@@ -506,7 +504,7 @@ putline(l, fp, m)
 	register char svchar;
 
 	/* strip out 0200 bits -- these can look like TELNET protocol */
-	if (bitnset(M_LIMITS, m->m_flags))
+	if (bitnset(M_7BITS, m->m_flags))
 	{
 		for (p = l; svchar = *p; ++p)
 			if (svchar & 0200)
@@ -521,9 +519,9 @@ putline(l, fp, m)
 			p = &l[strlen(l)];
 
 		/* check for line overflow */
-		while ((p - l) > SMTPLINELIM && bitnset(M_LIMITS, m->m_flags))
+		while (m->m_linelimit > 0 && (p - l) > m->m_linelimit)
 		{
-			register char *q = &l[SMTPLINELIM - 1];
+			register char *q = &l[m->m_linelimit - 1];
 
 			svchar = *q;
 			*q = '\0';
@@ -642,8 +640,9 @@ sfgets(buf, siz, fp)
 		buf[0] = '\0';
 		return (NULL);
 	}
-	for (p = buf; *p != '\0'; p++)
-		*p &= ~0200;
+	if (!EightBit)
+		for (p = buf; *p != '\0'; p++)
+			*p &= ~0200;
 	return (buf);
 }
 
@@ -702,6 +701,13 @@ fgetfolded(buf, n, f)
 			if (i != ' ' && i != '\t')
 			{
 				*--p = '\0';
+				if (!EightBit)
+				{
+					/* headers always have to be 7-bit */
+					for (p = buf; (i = *p) != '\0'; *p++)
+						if (bitset(0200, i))
+							*p = i & ~0200;
+				}
 				return (buf);
 			}
 		}

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.22 (Berkeley) %G%
+ *	@(#)conf.h	5.23 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,7 @@
 # define MAXUSERENVIRON	40		/* max # of items in user environ */
 # define QUEUESIZE	600		/* max # of jobs per queue run */
 # define MAXMXHOSTS	10		/* max # of MX records */
+# define SMTPLINELIM	990		/* maximum SMTP line length */
 
 /*
 **  Compilation options.

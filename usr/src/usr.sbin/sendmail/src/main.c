@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -144,10 +144,11 @@ main(argc, argv, envp)
 	extern ADDRESS *recipient();
 	bool canrename;
 
-# ifndef SYSTEM5
-	/* Enforce use of local time */
-	unsetenv("TZ");
-# endif
+	/* Enforce use of local time (null string overrides this) */
+	if (TimeZoneSpec == NULL)
+		unsetenv("TZ");
+	else if (TimeZoneSpec[0] != '\0')
+		setenv("TZ", TimeZoneSpec);
 
 	/*
 	**  Be sure we have enough file descriptors.
