@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.36 (Berkeley) %G%
+ *	@(#)sendmail.h	6.37 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.36		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.37		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -382,6 +382,9 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 
 /* macro substitution character */
 # define MACROEXPAND	0201	/* macro expansion */
+
+/* to make the code clearer */
+# define MATCHZERO	CANONHOST
 
 /* external <==> internal mapping table */
 struct metamac
