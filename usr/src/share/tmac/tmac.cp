@@ -1,9 +1,9 @@
-.\" Copyright (c) 1981 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1981, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tmac.cp	5.2 (Berkeley) %G%
+.\"	@(#)tmac.cp	8.1 (Berkeley) %G%
 .\"
 
 .nr PS 9
