@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.1 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -191,6 +191,7 @@ lfs_segclean(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	CLEANERINFO *cip;
 	SEGUSE *sup;
 	struct buf *bp;
 	struct mount *mntp;
@@ -204,9 +205,16 @@ lfs_segclean(p, uap, retval)
 		return (EINVAL);
 
 	fs = VFSTOUFS(mntp)->um_lfs;
+
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
 	sup->su_flags &= ~SEGUSE_DIRTY;
 	brelse(bp);
+
+	LFS_CLEANERINFO(cip, fs, bp);
+	++cip->clean;
+	--cip->dirty;
+	brelse(bp);
+
 	return (0);
 }
 
