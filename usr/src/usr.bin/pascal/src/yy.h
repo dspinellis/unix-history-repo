@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)yy.h 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)yy.h 1.4 %G%"; */
 
 #include "y.tab.h"
 /*

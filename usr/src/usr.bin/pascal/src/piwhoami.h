@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)piwhoami.h 1.3 %G%"; */
+/* static	char sccsid[] = "@(#)piwhoami.h 1.4 %G%"; */
 
 /*
  *	am i generating an obj file (OBJ),
@@ -50,3 +50,4 @@
 #define	PI01
 #undef	PI0
 #undef	PI1
+#define DEBUG
