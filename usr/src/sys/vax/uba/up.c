@@ -1,4 +1,4 @@
-/*	up.c	4.53	82/05/27	*/
+/*	up.c	4.54	82/06/05	*/
 
 #include "up.h"
 #if NSC > 0
@@ -419,6 +419,7 @@ loop:
 	 */
 	waitdry = 0;
 	while ((upaddr->upds&UPDS_DRY) == 0) {
+		printf("up%d: ds wait ds=%o\n",dkunit(bp),upaddr->upds);
 		if (++waitdry > 512)
 			break;
 		upwaitdry++;
