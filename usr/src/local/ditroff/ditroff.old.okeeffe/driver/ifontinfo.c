@@ -1,4 +1,4 @@
-static char sccsid[] = "ifontinfo.c	1.1	(Berkeley)	83/08/17";
+static char sccsid[] = "ifontinfo.c	1.2	(Berkeley)	83/10/22";
 
 /* Font Information for Imagen-style fonts (RST format)
  *      taken from vfontinfo, by Andy Hertzfeld  4/79
@@ -13,8 +13,8 @@ static char sccsid[] = "ifontinfo.c	1.1	(Berkeley)	83/08/17";
 char *	rdchar();
 char *	malloc();
 
-unsigned char *idstrings;	/* place for identifying strings */
-unsigned char *endstring;	/* points to the end of the id strings */
+char *idstrings;		/* place for identifying strings */
+char *endstring;		/* points to the end of the id strings */
 double	fixtowdth;		/* "fix" and magnification conversion factor */
 glyph_dir g[DIRSIZ];		/* directory of glyph definitions */
 preamble p;			/* set of variables for preamble */
@@ -22,9 +22,9 @@ preamble p;			/* set of variables for preamble */
 char	*fontdir = FONTDIR;	/* place to look for fonts */
 char	IName[100];		/* input file name put here */
 char	*rdchar ();		/* function makes strings for ascii */
-int	FID = -1;		/* input file number */
+FILE *	FID;			/* input file number */
 
-char	defascii[256];		/* list of ascii characters - in order */
+char	defascii[DIRSIZ];	/* list of ascii characters - in order */
 char	*charswanted = defascii;/* list of characters to print info for */
 int	verbose = 0;		/* flag - whether to actually show chars */
 char	charbits[10000];	/* place to store bits for a glyph */
@@ -64,35 +64,31 @@ char **argv;
 			curline = 5; curcol = 0;
 			break;
 		default:
-			printf("Bad flag: %s\n", argv[1]);
+			error("bad flag: %s", argv[1]);
 		}
 		argc--; argv++;
 	}
-	if (argc < 2) {
-		fprintf(stderr,"Usage: %s filename", argv[0]);
-		exit(2);
-	}
+	if (argc < 2)
+		error("usage: %s filename", argv[0]);
 
-	for (i=0; i<256; i++)
+	for (i=0; i<DIRSIZ; i++)
 		defascii[i] = i;
 	if (argc >= 3)
 		charswanted = argv[2];
 
 	sprintf(IName, "%s/%s", fontdir, argv[1]);
-	if ((FID = open(argv[1], 0)) < 0)
-		if ((FID = open(IName,0)) < 0) { 
-			printf("Can't find %s\n",argv[1]);
-			exit(8); 
-		};
+	if ((FID = fopen(argv[1], "r")) == NULL)
+		if ((FID = fopen(IName, "r")) == NULL)
+			error("can't find %s",argv[1]);
 
-	i = read(FID, &filemark[0], FMARK);
-	if (strncmp(filemark, "Rast", 4) || i != FMARK)
-	    error("Bad File Mark in Font file.");
+	for (i = 0; i < FMARK; filemark[i++] = getc(FID));
+	if (strncmp(filemark, "Rast", 4))
+	    error("bad File Mark in Font file.");
 
 	p.p_size = rd2();
 	p.p_version = rd1();
 	if (p.p_version)
-	    error("Wrong version of Font file.");
+	    error("wrong version of Font file.");
 	p.p_glyph = rd3();
 	p.p_first = rd2();
 	p.p_last = rd2();
@@ -106,13 +102,13 @@ char **argv;
 	p.p_id = rd4();
 	p.p_res = rd2();
 	if (p.p_res != RES)
-	    error("Wrong resolution in Font file.");
+	    error("wrong resolution in Font file.");
 
 	i = p.p_glyph - 44;
-	idstrings = (unsigned char *) malloc (i);
-	endstring = idstrings + i;
-	if (read(FID, idstrings, i) != i)
-	    error("Bad preamble in Font file.");
+	idstrings = (char *) malloc (i);
+	endstring = idstrings;
+	while (i--) if ((*(endstring++) = getc(FID)) == EOF)
+	    error("bad preamble in Font file.");
 
 	for (i = p.p_first; i <= p.p_last; i++) {
 	    g[i].g_height = rd2();
@@ -134,8 +130,9 @@ char **argv;
 		p.p_wordsp * fixtowdth, p.p_rot, p.p_cadv, p.p_ladv);
 	while (idstrings < endstring) {
 	    for (i = *(idstrings++); i--; ) putchar (*(idstrings++));
-	    putchar('\n');
+	    putchar(':');
 	}
+	putchar('\n');
 
 	for (i = strlen(argv[1]) + 1; i > 0; --i) putchar(' ');
 	printf("ASCII     addr  height  width   up   left   pwidth\n");
@@ -156,8 +153,8 @@ char **argv;
 
 				H = g[j].g_height;
 				W = g[j].g_width;
-				lseek(FID, (long) gbase, 0);
-				read(FID, charbits, (WB = (W+7)/8) * H);
+				lseek(fileno(FID), (long) gbase, 0);
+				read(fileno(FID), charbits, (WB = (W+7)/8) * H);
 				base = g[j].g_up;
 				shozoom();
 				if (msgflag) {
@@ -178,11 +175,13 @@ char **argv;
 	}
 }
 
-error(string)
+/*VARARGS1*/
+error(string, a1, a2, a3, a4)
 char *string;
-
 { 
-	printf("\nifontinfo: %s\n",string);
+	fprintf(stderr, "ifontinfo: ");
+	fprintf(stderr, string, a1, a2, a3, a4);
+	fprintf(stderr, "\n");
 	exit(8);
 };
 
@@ -351,10 +350,10 @@ sho2()
 
 rd1()
 {
-    unsigned char i;
+    int i;
 
-    if(read (FID, &i, 1) != 1) error("File read error");
-    return (int) i;
+    if((i = getc(FID)) == EOF) error("file read error");
+    return i;
 }
 
 rd2()
