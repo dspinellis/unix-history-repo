@@ -5,7 +5,7 @@
      */
 
 #ifndef lint
-static	char *sccsid = "@(#)CONFIG.c	2.5 (Berkeley) 83/09/19";
+static	char *sccsid = "@(#)CONFIG.c	2.6 (Berkeley) 84/02/08";
 #endif
 
     /*
@@ -37,7 +37,7 @@ int	how_pathlen = sizeof("LIBDIR/")-1;
 char	*px_header = "LIBDIR/px_header";	/* px_header's name */
 #endif
 
-#ifdef PXP
+#ifndef PXP
 char	*pi_comp = "INSTALLDIR/pi";		/* the compiler's name */
 char	*px_intrp = "INSTALLDIR/px";		/* the interpreter's name */
 char	*px_debug = "INSTALLDIR/pdx";		/* the debugger's name */
