@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locc.c	7.4 (Berkeley) %G%
+ *	@(#)locc.c	8.1 (Berkeley) %G%
  */
 
 #include <libkern/libkern.h>
