@@ -238,12 +238,12 @@ owait(p, uap, retval)
 {
 
 #ifdef PSL_ALLCC
-	if ((p->p_regs[PS] & PSL_ALLCC) != PSL_ALLCC) {
+	if ((p->p_md.md_regs[PS] & PSL_ALLCC) != PSL_ALLCC) {
 		uap->options = 0;
 		uap->rusage = 0;
 	} else {
-		uap->options = p->p_regs[R0];
-		uap->rusage = (struct rusage *)p->p_regs[R1];
+		uap->options = p->p_md.md_regs[R0];
+		uap->rusage = (struct rusage *)p->p_md.md_regs[R1];
 	}
 #else
 	uap->options = 0;
