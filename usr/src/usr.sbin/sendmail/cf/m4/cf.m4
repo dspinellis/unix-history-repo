@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.11 (Berkeley) %G%
+#	@(#)cf.m4	2.12 (Berkeley) %G%
 #
 
 
@@ -37,6 +37,7 @@ define(`HACK', `include(../hack/$1.m4)')
 define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
+define(`LOCAL_CONFIG', `divert(6)')
 define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')

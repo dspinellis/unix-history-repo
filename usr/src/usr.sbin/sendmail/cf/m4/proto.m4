@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.16 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.17 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -16,8 +16,9 @@ MAILER(local)dnl
 #   local info   #
 ##################
 
+Cwlocalhost
 ifdef(`USE_CW_FILE',
-`# file containing internet aliases in our primary domain
+`# file containing names of hosts for which we receive email
 Fw/etc/sendmail.cw', `dnl')
 
 ifdef(`UUCP_RELAY',
@@ -44,6 +45,7 @@ CONCAT(DR, ifdef(`LOCAL_RELAY', LOCAL_RELAY))
 # names that should be delivered locally, even if we have a relay
 CLroot
 undivert(5)dnl
+undivert(6)dnl
 
 ifdef(`UUCP_NAME',
 `# uucp hostnames
@@ -69,10 +71,6 @@ ifdef(`_NO_WILDCARD_MX_', `', `#')Ow
 ifdef(`NEWSENDMAIL',
 `# level 2 config file format
 O=2', `dnl')
-
-# if new sendmail and we want to ignore UDB for fully qualified user names
-# (e.g., "user@thishost" instead of "user"), set this to "@", else set to null
-CONCAT(`DO', ifdef(`NEWSENDMAIL', ifdef(`ALWAYS_USE_UDB', `', `@')))
 
 include(`../m4/version.m4')
 
@@ -138,11 +136,11 @@ R$*@$*			$@$>6$1<@$2>			Insert < > and finish
 #  At this point, everything should be in a local_part@domain format.
 
 S6
-undivert(2)dnl
 
 # handle special cases for local names
 R$* < @ $=w > $*		$: $1 < @ $j . > $3		no domain at all
 R$* < @ $=w .UUCP> $*		$: $1 < @ $j . > $3		.UUCP domain
+undivert(2)dnl
 
 ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
@@ -167,6 +165,11 @@ ifdef(`NEWSENDMAIL',
 
 # pass to name server to make hostname canonical
 R$* < @ $* $~. > $*		$: $1 < @ $[ $2 $3 $] > $4
+
+# handle possible alternate names
+R$* < @ $=w . $m . > $*		$: $1 < @ $j . > $3
+R$* < @ $=w . $m > $*		$: $1 < @ $j . > $3
+undivert(8)dnl
 
 # if this is the local hostname, make sure we treat is as canonical
 R$* < @ $j > $*			$: $1 < @ $j . > $2
@@ -224,10 +227,10 @@ R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-R$+ < @ $j . >		$#local $: $O $1		local address
-
+ifdef(`NEWSENDMAIL',
+`R$+ < @ $j . >		$#local $: @ $1			local address',
+`R$+ < @ $j . >		$#local $: $1			local address')
 undivert(3)dnl
-
 undivert(4)dnl
 
 # resolve remotely connected UUCP links
@@ -260,7 +263,7 @@ R$* < @ $* > $*		$# smtp $@ $2 $: $1 < @ $2 > $3		user@host.domain
 
 ifdef(`NEWSENDMAIL',
 `# handle locally delivered names
-R$=L			$# local $: $O $1		special local names
+R$=L			$# local $: @ $1		special local names
 R$+			$# local $: $1			regular local names
 ',
 `# forward remaining names to local relay, if any
@@ -285,5 +288,4 @@ R$+ < @ $+ >		$# smtp $@ $2 $: $1		send to relay')
 #####
 ######################################################################
 ######################################################################
-
 undivert(7)dnl
