@@ -1,4 +1,4 @@
-/*	reg.h	3.1	%H%	*/
+/*	reg.h	3.2	%G%	*/
 /*
  * Location of the users' stored
  * registers relative to R0.

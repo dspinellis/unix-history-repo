@@ -1,4 +1,4 @@
-/*	ht.c	3.3	%H%	*/
+/*	ht.c	3.4	%G%	*/
 
 /*
  * TJU16 tape driver

@@ -1,5 +1,5 @@
 #
-#	pcb.m	3.1	%H%
+#	pcb.m	3.2	%G%
 #
 #
 #	VAX process control block

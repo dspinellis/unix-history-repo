@@ -1,4 +1,4 @@
-/*	tty.h	3.3	%H%	*/
+/*	tty.h	3.4	%G%	*/
 
 #include <sgtty.h>
 #include <sys/ioctl.h>

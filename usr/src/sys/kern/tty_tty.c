@@ -1,4 +1,4 @@
-/*	tty_tty.c	3.1	%H%	*/
+/*	tty_tty.c	3.2	%G%	*/
 
 /*
  *	indirect driver for controlling tty.

@@ -1,4 +1,4 @@
-/*	ufsmount.h	3.1	%H%	*/
+/*	ufsmount.h	3.2	%G%	*/
 
 /*
  * Mount structure.
