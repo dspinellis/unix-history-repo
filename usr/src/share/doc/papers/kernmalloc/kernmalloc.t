@@ -1,4 +1,4 @@
-.\"	@(#)kernmalloc.t	1.4	(Copyright 1988 M. K. McKusick)	88/04/21
+.\"	@(#)kernmalloc.t	1.5	(Copyright 1988 M. K. McKusick)	88/04/21
 .\" reference a system routine name
 .de RN
 \fI\\$1\fP\^()\\$2
@@ -299,15 +299,16 @@ The kernel memory allocator that we ended up with is a hybrid
 of the fast memory allocator found in the 4.2BSD C library
 and a slower but more memory efficient first-fit allocator.
 .PP
-For maximum speed,
-small allocations are done using the 4.2BSD power-of-two list strategy.
-To avoid the cost of a subroutine call,
-macros are provided to compute the list to use and remove an
-element if it is available.
+Small allocations are done using the 4.2BSD power-of-two list strategy;
+the typical allocation requires only a computation of
+the list to use and the removal of an element if it is available,
+so it is quite fast.
+Macros are provided to avoid the cost of a subroutine call.
 Only if the request cannot be fulfilled from a list is a call
 made to the allocator itself.
 To ensure that the allocator is always called for large requests,
 the lists corresponding to large allocations are always empty.
+Appendix 1 shows the data structures and implementation of the macros.
 .PP
 Similarly, freeing a block of memory can be done with a macro.
 The macro computes the list on which to place the request
@@ -368,7 +369,7 @@ Because the size is not specified when a block of memory is freed,
 the allocator must keep track of the sizes of the pieces it has handed out.
 The 4.2BSD user-level allocator stores the size of each block
 in a header just before the allocation.
-However, this strategy degrades memory efficiency for allocations that
+However, this strategy doubles the memory requirement for allocations that
 require a power-of-two-sized block.
 Therefore,
 instead of storing the size of each piece of memory with the piece itself,
@@ -428,7 +429,46 @@ Indeed, the allocation is about the same as the previous cost of
 allocating buffers from the network pool (``mbufs'').
 Consequently applications that used to allocate network
 buffers for their own uses have been switched over to using
-the general purpose allocator without loss in performance.
+the general purpose allocator without increasing their running time.
+.PP
+Quantifying the performance of the allocator is difficult because
+it is hard to measure the amount of time spent allocating
+and freeing memory in the kernel.
+The usual approach is to compile a kernel for profiling
+and then compare the running time of the routines that
+implemented the old abstraction versus those that implement the new one.
+The old routines are difficult to quantify because
+individual routines were used for more than one purpose.
+For example, the
+.RN geteblk
+routine was used both to allocate one kilobyte memory blocks
+and for its intended purpose of providing buffers to the filesystem.
+Differentiating these uses is often difficult.
+To get a measure of the cost of memory allocation before
+putting in our new allocator,
+we summed up the running time of all the routines whose
+exclusive task was memory allocation.
+To this total we added the fraction
+of the running time of the multi-purpose routines that could
+clearly be identified as memory allocation usage.
+This number showed that approximately three percent of
+the time spent in the kernel could be accounted to memory allocation.
+.PP
+The new allocator is difficult to measure
+because the usual case of the memory allocator is implemented as a macro.
+Thus, its running time is a small fraction of the running time of the
+numerous routines in the kernel that use it.
+To get a bound on the cost,
+we changed the macro to always call the memory allocation routine.
+Running in this mode, the memory allocator accounted for six percent
+of the time spent in the kernel.
+Factoring out the cost of the statistics collection and the
+subroutine call overhead for the cases that could
+normally be handled by the macro,
+we estimate that the allocator would account for
+approximate four percent of time in the kernel.
+These measurements show that the new allocator does not introduce
+significant new run-time costs.
 .PP
 The other major success has been in keeping the size information
 on a per page basis.
@@ -494,6 +534,8 @@ we have made various versions of our allocator available to our test sites.
 They have been busily burning it in and giving
 us feedback on their experiences.
 We acknowledge their invaluable input.
+The feedback from the Usenix program committee on the initial draft of
+our paper suggested numerous important improvements.
 .H 1 "References
 .sp
 .IP Korn85 \w'Rodriguez88\0\0'u
