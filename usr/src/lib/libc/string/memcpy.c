@@ -9,13 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memcpy.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)memcpy.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <string.h>
 #include <sys/stdc.h>
-
-#undef memcpy
 
 /*
  * Copy a block of memory.
@@ -26,5 +24,6 @@ memcpy(dst, src, n)
 	const void *src;
 	size_t n;
 {
-	return (memmove(dst, src, n));
+	bcopy((const char *)src, (char *)dst, n);
+	return(dst);
 }
