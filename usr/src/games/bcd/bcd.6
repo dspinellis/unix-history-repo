@@ -1,16 +1,25 @@
-.\"	@(#)bcd.6	6.1 (Berkeley) %G%
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH BCD 6  ""
-.AT 3
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific prior written permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)bcd.6	6.2 (Berkeley) %G%
+.\"
+.TH "BCD PPT" 6 ""
+.UC 7
 .SH NAME
-bcd \- convert to antique media
+bcd \- format input as punch cards
+.br
+ppt \- format input as paper tape
 .SH SYNOPSIS
-.B /usr/games/bcd
-text
+\fBbcd\fP [ string ]
+.br
+\fBppt\fP [ string ]
 .SH DESCRIPTION
-.I Bcd
-converts the literal
-.I text
-into a form familiar to old-timers.
-.SH "SEE ALSO"
-dd(1)
+\fIBcd\fP and \fIppt\fP convert command line arguments, if
+provided, or standard input into a form familiar to old-timers.
