@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chgrp.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)chgrp.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -92,7 +92,7 @@ ok:
 			status += error("You are not the owner of %s", argv[c]);
 			continue;
 		}
-		if (rflag && (stbuf.st_mode & S_IFMT) == S_IFDIR) {
+		if (rflag && ((stbuf.st_mode & S_IFMT) == S_IFDIR)) {
 			status += chownr(argv[c], stbuf.st_uid, gid);
 			continue;
 		}
@@ -154,7 +154,7 @@ chownr(dir, uid, gid)
 				dp->d_name);
 			continue;
 		}
-		if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+		if ((st.st_mode & S_IFMT) == S_IFDIR) {
 			ecode = chownr(dp->d_name, st.st_uid, gid);
 			if (ecode)
 				break;
