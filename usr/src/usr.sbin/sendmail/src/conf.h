@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.46 (Berkeley) %G%
+ *	@(#)conf.h	8.47 (Berkeley) %G%
  */
 
 /*
@@ -154,8 +154,8 @@
 #  define SYSTEM5	1	/* use System V definitions */
 #  define setreuid(r, e)	seteuid(e)
 #  include <sys/time.h>
-#  define gethostbyname	__switch_gethostbyname	/* get working version */
-#  define gethostbyaddr	__switch_gethostbyaddr	/* get working version */
+#  define gethostbyname	solaris_gethostbyname	/* get working version */
+#  define gethostbyaddr	solaris_gethostbyaddr	/* get working version */
 #  define _PATH_UNIX	"/kernel/unix"
 #  ifndef _PATH_SENDMAILCF
 #   define _PATH_SENDMAILCF	"/etc/mail/sendmail.cf"
