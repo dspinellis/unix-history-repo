@@ -1,19 +1,19 @@
 # include	"curses.ext"
 # include	<signal.h>
-# include	<sys/param.h>
 
 extern char	*getenv();
 
 /*
  *	This routine initializes the current and standard screen.
  *
- * @(#)initscr.c	1.4 (Berkeley) %G%
+ * @(#)initscr.c	1.5 (Berkeley) %G%
  */
 WINDOW *
 initscr() {
 
 	reg char	*sp;
 	int		tstp();
+	int 		nfd;
 
 # ifdef DEBUG
 	fprintf(outf, "INITSCR()\n");
@@ -24,7 +24,8 @@ initscr() {
 		if (isatty(2))
 			_tty_ch = 2;
 		else {
-			for (_tty_ch = 0; _tty_ch < NOFILE; _tty_ch++)
+			nfd = getdtablesize();
+			for (_tty_ch = 0; _tty_ch < nfd; _tty_ch++)
 				if (isatty(_tty_ch))
 					break;
 		}
