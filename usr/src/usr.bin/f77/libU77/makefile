@@ -1,7 +1,8 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.2	%G%
+#	@(#)makefile	1.3	%G%
 
 LIB = libU77.a
+LPR = lpr
 
 # for 11's
 #LIBDIR = /usr/ucb/lib
@@ -35,10 +36,11 @@ SOURCES = \
 	getlog_.c \
 	getpid_.c \
 	getuid_.c \
-	iargc_.c \
 	gmtime_.c \
+	iargc_.c \
 	idate_.c \
 	ierrno_.c \
+	isatty_.c \
 	itime_.c \
 	kill_.c \
 	loc_.c \
@@ -52,6 +54,7 @@ SOURCES = \
 	stat_.c \
 	system_.c \
 	time_.c \
+	ttynam_.c \
 	unlink_.c \
 	wait_.c
 
@@ -81,6 +84,7 @@ OBJECTS = \
 	iargc_.o \
 	idate_.o \
 	ierrno_.o \
+	isatty_.o \
 	itime_.o \
 	kill_.o \
 	loc_.o \
@@ -94,6 +98,7 @@ OBJECTS = \
 	stat_.o \
 	system_.o \
 	time_.o \
+	ttynam_.o \
 	unlink_.o \
 	wait_.o
 
@@ -110,6 +115,7 @@ install:	$(LIB)
 	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
 	cp $(LIB) $(LIBDIR)/$(LIB)
 	ranlib $(LIBDIR)/$(LIB)
+	@chmod 644 $(LIBDIR)/$(LIB)
 
 
 #compile and strip unnecessary symbols
@@ -128,7 +134,7 @@ mkvers:	mkvers.c
 	@cc mkvers.c -o mkvers
 
 print:	index
-	@pr index Makefile `ls $(SOURCES)` | lpr
+	@pr index Makefile `ls $(SOURCES)` | $(LPR)
 
 index:	$(SOURCES) mkindx
 	@mkindx "f77 $(LIB) Source Listing " Makefile $(SOURCES)
