@@ -11,7 +11,7 @@
 #  Makefile is likely to require a lot of customization.  Read it over
 #  carefully before proceeding.
 #
-#	@(#)Makefile.Linux	8.6 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.7 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -90,7 +90,7 @@ aliases.0: aliases.5
 	${NROFF} -mandoc aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	nroff -h -mandoc mailq.1 > mailq.0
+	${NROFF} -mandoc mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
 	${NROFF} -mandoc newaliases.1 > newaliases.0
