@@ -1,0 +1,56 @@
+A10	gcos.c	/^# define A10(x,y) 10*x + y$/
+Mmain	main.c	/^main(argc,argv)$/
+amatch	files.c	/^static amatch(s, p)$/
+appendq	misc.c	/^struct chain *appendq(head, tail)$/
+await	dosys.c	/^await()$/
+ckalloc	misc.c	/^int *ckalloc(n)$/
+clarch	files.c	/^clarch()$/
+concat	misc.c	/^char *concat(a,b,c)   \/* c = concatenation of a an/
+copys	misc.c	/^char *copys(s)$/
+day6	gcos.c	/^static day6( d6word ){ \/* return the day number of/
+day9	gcos.c	/^static day9( p ) register int *p; {$/
+dfold	gcos.c	/^static int dfold( dayno, timeno ){$/
+doclose	dosys.c	/^doclose()	\/* Close open directory files before exe/
+docom	doname.c	/^docom(q)$/
+docom1	doname.c	/^docom1(comstring, nohalt, noprint)$/
+doexec	dosys.c	/^doexec(str)$/
+doname	doname.c	/^doname(p, reclevel, tval)$/
+doshell	dosys.c	/^doshell(comstring,nohalt)$/
+dosys	dosys.c	/^dosys(comstring,nohalt)$/
+enbint	main.c	/^enbint(k)$/
+eqsign	misc.c	/^eqsign(a)   \/*look for arguments with equal signs /
+eqstr	files.c	/^eqstr(a,b,n)$/
+exists	files.c	/^TIMETYPE exists(filename)$/
+expand	doname.c	/^expand(q)$/
+fatal	misc.c	/^fatal(s)$/
+fatal1	misc.c	/^fatal1(s, t)$/
+getarch	files.c	/^getarch()$/
+getcat	gcos.c	/^getcat() {$/
+getobj	files.c	/^getobj()$/
+hashloc	misc.c	/^hashloc(s)$/
+hasslash	misc.c	/^hasslash(s)$/
+intrupt	main.c	/^intrupt()$/
+isprecious	main.c	/^isprecious(p)$/
+lookarch	files.c	/^TIMETYPE lookarch(filename)$/
+makename	misc.c	/^struct nameblock *makename(s)$/
+metas	dosys.c	/^metas(s)   \/* Are there are any  Shell meta-charac/
+meter	files.c	/^meter(file)$/
+mkqlist	misc.c	/^char *mkqlist(p)$/
+nextlin	gram.c	/^nextlin()$/
+openarch	files.c	/^openarch(f)$/
+prestime	files.c	/^TIMETYPE prestime()$/
+printdesc	main.c	/^printdesc(prntflag)$/
+rdd1	main.c	/^rdd1(k)$/
+rddescf	main.c	/^rddescf(descfile)$/
+retsh	gram.c	/^retsh(q)$/
+setvar	misc.c	/^setvar(v,s)$/
+srchdir	files.c	/^struct depblock *srchdir(pat, mkchain, nextdbl)$/
+srchname	misc.c	/^struct nameblock *srchname(s)$/
+subst	misc.c	/^char *subst(a,b)$/
+suffix	misc.c	/^suffix(a,b,p)  \/* is b the suffix of a?  if so, se/
+touch	dosys.c	/^touch(force, name)$/
+umatch	files.c	/^static umatch(s, p)$/
+varptr	misc.c	/^struct varblock *varptr(v)$/
+yyerror	misc.c	/^yyerror(s)$/
+yylex	gram.c	/^yylex()$/
+yyparse	gram.c	/^yyparse() {$/
