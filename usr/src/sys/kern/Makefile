@@ -1,6 +1,6 @@
-#	@(#)Makefile	7.14 (Berkeley) %G%
+#	@(#)Makefile	7.15 (Berkeley) %G%
 
-# Makefile for kernel tags files, init_systent, etc.
+# Makefile for kernel tags files, init_sysent, etc.
 
 ARCH=	vax tahoe hp300 i386 pmax
 
@@ -14,6 +14,10 @@ init_sysent.c syscalls.c ../sys/syscall.h: makesyscalls.sh syscalls.master
 	sh makesyscalls.sh syscalls.master
 
 # Kernel tags:
+# Tags files are built in the top-level directory for each architecture,
+# with a makefile listing the architecture-dependent files, etc.
+# The list of common files is in ./Make.tags.inc.  Links to the
+# correct tags file are placed in each source directory.
 # We need to have links to tags files from the generic directories
 # that are relative to the machine type, even via remote mounts;
 # therefore we use symlinks to $SYSTAGS, which points at
@@ -21,14 +25,6 @@ init_sysent.c syscalls.c ../sys/syscall.h: makesyscalls.sh syscalls.master
 
 SYSTAGS=/var/db/sys_tags
 SYSDIR=/sys
-
-# Put the ../sys stuff near the end so that subroutine definitions win when
-# there is a struct tag with the same name (eg., vmmeter).  The real
-# solution would probably be for ctags to generate "struct vmmeter" tags.
-
-COMM=	../net/*.[ch] ../netimp/*.[ch] ../netinet/*.[ch] ../netns/*.[ch] \
-	../netiso/*.[ch] ../netccitt/*.[ch] \
-	../kern/*.c ../ufs/*.[ch] ../nfs/*.[ch] ../vm/*.[ch] ../sys/*.h
 
 # Directories in which to place tags links (other than machine-dependent)
 DGEN=	kern sys net netimp netinet netns netccitt nfs ufs vm
@@ -39,7 +35,7 @@ tags: FRC
 
 links: ${SYSTAGS}
 	-for i in ${DGEN}; do \
-	    cd $$i && rm -f tags; ln -s ${SYSTAGS} tags; done
+	    cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; } done
 	-for i in ${ARCH}; do \
 	    cd ../$$i && make ${MFLAGS} links; done
 
