@@ -3,7 +3,7 @@
 #	@(#)weekly	5.7 (Berkeley) %G%
 #
 
-PATH=/bin:/sbin:/usr/sbin:/usr/bin
+PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
 export PATH
 
 host=`hostname | sed -e 's/\..*//'`
@@ -47,5 +47,5 @@ kill -1 `cat /var/run/syslog.pid`
 cd /
 
 echo ""
-echo "Rebuilding find database:"
-echo /usr/libexec/find.updatedb | nice -5 su -m nobody 2>/dev/null
+echo "Rebuilding locate database:"
+echo locate.updatedb | nice -5 su -m nobody 2>/dev/null
