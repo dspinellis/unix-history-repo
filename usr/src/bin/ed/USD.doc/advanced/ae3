@@ -1,4 +1,4 @@
-.\"	@(#)ae3	5.1 (Berkeley) %G%
+.\"	@(#)ae3	6.1 (Berkeley) %G%
 .\"
 .NH
 LINE ADDRESSING IN THE EDITOR
@@ -148,7 +148,7 @@ To go backwards and change a line, say
 Of course, you can still use the `&' on the right hand side of a substitute to stand for
 whatever got matched:
 .P1
-//s//&\*B&/p
+//s//&\*(BL&/p
 .P2
 finds the next occurrence of whatever you searched for last,
 replaces it by two copies of itself,
