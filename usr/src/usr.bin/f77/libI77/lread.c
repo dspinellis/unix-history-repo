@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.4";
+char id_lread[] = "@(#)lread.c	1.5";
  *
  * list directed read
  */
@@ -299,6 +299,7 @@ l_L()
 	}
 	ltype=TYLOGICAL;
 	while(!issep(GETC(ch)) && !isblnk(ch) && ch!='\n' && ch!=EOF);
+	(*ungetn)(ch,cf);
 	return(OK);
 }
 
