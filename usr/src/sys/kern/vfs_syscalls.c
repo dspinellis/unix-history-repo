@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.5 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -595,13 +595,14 @@ open(p, uap, retval)
 		type = F_FLOCK;
 		if ((flags & FNONBLOCK) == 0)
 			type |= F_WAIT;
+		VOP_UNLOCK(vp);
 		if (error = VOP_ADVLOCK(vp, (caddr_t)fp, F_SETLK, &lf, type)) {
-			VOP_UNLOCK(vp);
 			(void) vn_close(vp, fp->f_flag, fp->f_cred, p);
 			ffree(fp);
 			fdp->fd_ofiles[indx] = NULL;
 			return (error);
 		}
+		VOP_LOCK(vp);
 		fp->f_flag |= FHASLOCK;
 	}
 	VOP_UNLOCK(vp);
