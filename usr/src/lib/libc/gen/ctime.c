@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ctime.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	4.5 (Berkeley) %G%";
 #endif
 /*
  * This routine converts time as follows.
@@ -206,7 +206,7 @@ gmtime(tim)
 unsigned long *tim;
 {
 	register int d0, d1;
-	unsigned long hms, day;
+	long hms, day;
 	register int *tp;
 	static struct tm xtime;
 
