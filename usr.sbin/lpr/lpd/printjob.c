@@ -265,9 +265,15 @@ printit(file)
 	 */
 	for (i = 0; i < 4; i++)
 		strcpy(fonts[i], ifonts[i]);
+/*
+ * XXX
+ * I don't know why these are here.  They screw up the printcap
+ * initializations already done by init() -- EWS
+ *
+
 	strcpy(width+2, "0");
 	strcpy(indent+2, "0");
-
+ */
 	/*
 	 *      read the control file for work to do
 	 *
@@ -481,9 +487,10 @@ print(format, file)
 			av[0] = "pr";
 			av[1] = width;
 			av[2] = length;
-			av[3] = "-h";
-			av[4] = *title ? title : " ";
-			av[5] = 0;
+			av[3] = "-f"; /* XXX use form feeds */
+			av[4] = "-h";
+			av[5] = *title ? title : " ";
+			av[6] = 0;
 			fo = ofd;
 			goto start;
 		}
@@ -494,7 +501,7 @@ print(format, file)
 			for (n = 3; n < NOFILE; n++)
 				(void) close(n);
 			execl(_PATH_PR, "pr", width, length,
-			    "-h", *title ? title : " ", 0);
+			    "-f", "-h", *title ? title : " ", 0);
 			syslog(LOG_ERR, "cannot execl %s", _PATH_PR);
 			exit(2);
 		}
