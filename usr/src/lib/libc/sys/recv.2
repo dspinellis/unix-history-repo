@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)recv.2	6.4 (Berkeley) %G%
+.\"	@(#)recv.2	6.5 (Berkeley) %G%
 .\"
 .TH RECV 2 ""
 .UC 5
@@ -140,6 +140,9 @@ which has length
 Access rights are currently limited to file descriptors,
 which each occupy the size of an
 .BR int .
+If access rights are not being transferred, the 
+.I msg_accrights
+field should be set to NULL.
 .SH "RETURN VALUE
 These calls return the number of bytes received, or \-1
 if an error occurred.
