@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)stab.c	3.2	%G%";
+static char SccsId[] = "@(#)stab.c	3.3	%G%";
 
 /*
 **  STAB -- manage the symbol table
@@ -36,13 +36,34 @@ stab(name, op)
 	extern char *newstr();
 	extern bool sameword();
 
-	while (s != NULL && sameword(name, s->s_name))
+# ifdef DEBUG
+	if (Debug > 4)
+		printf("STAB: %s ", name);
+# endif DEBUG
+
+	while (s != NULL && !sameword(name, s->s_name))
 	{
 		ps = &s->s_next;
 		s = s->s_next;
 	}
 	if (s != NULL || op == ST_FIND)
+	{
+# ifdef DEBUG
+		if (Debug > 4)
+		{
+			if (s == NULL)
+				printf("not found\n");
+			else
+				printf("type %d class %x\n", s->s_type, s->s_class);
+		}
+# endif DEBUG
 		return (s);
+	}
+
+# ifdef DEBUG
+	if (Debug > 4)
+		printf("entered\n");
+# endif DEBUG
 
 	/* make new entry */
 	s = (STAB *) xalloc(sizeof *s);
