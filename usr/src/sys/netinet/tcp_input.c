@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.68	82/06/20	*/
+/*	tcp_input.c	1.69	82/06/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -581,7 +581,8 @@ step6:
 	/*
 	 * Process segments with URG.
 	 */
-	if ((tiflags & TH_URG) && TCPS_HAVERCVDFIN(tp->t_state) == 0) {
+	if ((tiflags & TH_URG) && ti->ti_urp &&
+	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		/*
 		 * If this segment advances the known urgent pointer,
 		 * then mark the data stream.  This should not happen
