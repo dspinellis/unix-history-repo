@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hd_output.c	7.4 (Berkeley) %G%
+ *	@(#)hd_output.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,7 @@
 #include "mbuf.h"
 #include "domain.h"
 #include "socket.h"
+#include "syslog.h"
 #include "protosw.h"
 #include "errno.h"
 #include "time.h"
@@ -36,15 +37,18 @@
  *      by the input and control routines of the HDLC layer.
  */
 
-hd_output (m, info)
-register struct mbuf *m;
-caddr_t	info;
+hd_output (hdp, m0)
+register struct hdcb *hdp;
+struct mbuf *m0;
 {
-	register struct hdcb *hdp = (struct hdcb *)info;
 	struct x25config *xcp;
+	register struct mbuf *m = m0;
+	int len;
 
 	if (m == NULL)
 		panic ("hd_output");
+	if (m->m_flags & M_PKTHDR == 0)
+		panic ("hd_output 2");
 
 	if (hdp->hd_state != ABM) {
 		m_freem (m);
@@ -57,9 +61,13 @@ caddr_t	info;
 	 * of the first mbuf in the mbuf chain.
 	 */
 
-	M_PREPEND(m, M_DONTWAIT, HDHEADERLN);
+	M_PREPEND(m, HDHEADERLN, M_DONTWAIT);
 	if (m == NULL)
 		return;
+	for (len = 0; m; m = m->m_next)
+		len += m->m_len;
+	m = m0;
+	m->m_pkthdr.len = len;
 
 	hd_append (&hdp->hd_txq, m);
 	hd_start (hdp);
@@ -158,8 +166,8 @@ int poll_bit;
 }
 
 hd_ifoutput(hdp, m)
-register struct hdcb *hdp;
 register struct mbuf *m;
+register struct hdcb *hdp;
 {
 	/*
 	 * Queue message on interface, and start output if interface
@@ -167,10 +175,11 @@ register struct mbuf *m;
 	 */
 	register struct ifnet *ifp = hdp->hd_ifp;
 	int s = splimp();
+
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-		printf("%s%d: HDLC says OK to send but queue full, may hang\n",
-			ifp->if_name, ifp->if_unit);
+	    /* printf("%s%d: HDLC says OK to send but queue full, may hang\n",
+			ifp->if_name, ifp->if_unit);*/
 		m_freem(m);
 	} else {
 		IF_ENQUEUE(&ifp->if_snd, m);
