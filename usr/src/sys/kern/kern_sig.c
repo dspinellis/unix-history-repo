@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.6	84/08/29	*/
+/*	kern_sig.c	6.7	84/09/04	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -22,8 +22,7 @@
 #include "uio.h"
 #include "kernel.h"
 
-#define	mask(s)	(1 << ((s)-1))
-#define	cantmask	(mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP))
+#define	cantmask	(sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP))
 
 /*
  * Quick interface to signal handler.
@@ -74,7 +73,7 @@ sigvec()
 	if (uap->osv) {
 		sv->sv_handler = u.u_signal[sig];
 		sv->sv_mask = u.u_sigmask[sig];
-		sv->sv_onstack = (u.u_sigonstack & mask(sig)) != 0;
+		sv->sv_onstack = (u.u_sigonstack & sigmask(sig)) != 0;
 		u.u_error =
 		    copyout((caddr_t)sv, (caddr_t)uap->osv, sizeof (vec));
 		if (u.u_error)
@@ -100,12 +99,12 @@ setsigvec(sig, sv)
 	register struct proc *p;
 	register int bit;
 
-	bit = mask(sig);
+	bit = sigmask(sig);
 	p = u.u_procp;
 	/*
 	 * Change setting atomically.
 	 */
-	(void) spl6();
+	(void) splhigh();
 	u.u_signal[sig] = sv->sv_handler;
 	u.u_sigmask[sig] = sv->sv_mask &~ cantmask;
 	if (sv->sv_onstack)
@@ -129,33 +128,33 @@ setsigvec(sig, sv)
 sigblock()
 {
 	struct a {
-		int	sigmask;
+		int	mask;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
 
-	(void) spl6();
+	(void) splhigh();
 	u.u_r.r_val1 = p->p_sigmask;
-	p->p_sigmask |= uap->sigmask &~ cantmask;
+	p->p_sigmask |= uap->mask &~ cantmask;
 	(void) spl0();
 }
 
 sigsetmask()
 {
 	struct a {
-		int	sigmask;
+		int	mask;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
 
-	(void) spl6();
+	(void) splhigh();
 	u.u_r.r_val1 = p->p_sigmask;
-	p->p_sigmask = uap->sigmask &~ cantmask;
+	p->p_sigmask = uap->mask &~ cantmask;
 	(void) spl0();
 }
 
 sigpause()
 {
 	struct a {
-		int	sigmask;
+		int	mask;
 	} *uap = (struct a *)u.u_ap;
 	register struct proc *p = u.u_procp;
 
@@ -168,13 +167,12 @@ sigpause()
 	 */
 	u.u_oldmask = p->p_sigmask;
 	p->p_flag |= SOMASK;
-	p->p_sigmask = uap->sigmask &~ cantmask;
+	p->p_sigmask = uap->mask &~ cantmask;
 	for (;;)
 		sleep((caddr_t)&u, PSLEP);
 	/*NOTREACHED*/
 }
 #undef cantmask
-#undef mask
 
 sigstack()
 {
@@ -296,11 +294,11 @@ psignal(p, sig)
 {
 	register int s;
 	register int (*action)();
-	int sigmask;
+	int mask;
 
 	if ((unsigned)sig >= NSIG)
 		return;
-	sigmask = 1 << (sig-1);
+	mask = sigmask(sig);
 
 	/*
 	 * If proc is traced, always give parent a chance.
@@ -312,19 +310,19 @@ psignal(p, sig)
 		 * If the signal is being ignored,
 		 * then we forget about it immediately.
 		 */
-		if (p->p_sigignore & sigmask)
+		if (p->p_sigignore & mask)
 			return;
-		if (p->p_sigmask & sigmask)
+		if (p->p_sigmask & mask)
 			action = SIG_HOLD;
-		else if (p->p_sigcatch & sigmask)
+		else if (p->p_sigcatch & mask)
 			action = SIG_CATCH;
 		else
 			action = SIG_DFL;
 	}
-#define mask(sig)	(1<<(sig-1))
-#define	stops	(mask(SIGSTOP)|mask(SIGTSTP)|mask(SIGTTIN)|mask(SIGTTOU))
+#define	stops	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \
+			sigmask(SIGTTIN)|sigmask(SIGTTOU))
 	if (sig) {
-		p->p_sig |= sigmask;
+		p->p_sig |= mask;
 		switch (sig) {
 
 		case SIGTERM:
@@ -345,18 +343,17 @@ psignal(p, sig)
 		case SIGTSTP:
 		case SIGTTIN:
 		case SIGTTOU:
-			p->p_sig &= ~mask(SIGCONT);
+			p->p_sig &= ~sigmask(SIGCONT);
 			break;
 		}
 	}
-#undef mask
 #undef stops
 	/*
 	 * Defer further processing for signals which are held.
 	 */
 	if (action == SIG_HOLD)
 		return;
-	s = spl6();
+	s = splhigh();
 	switch (p->p_stat) {
 
 	case SSLEEP:
@@ -393,7 +390,7 @@ psignal(p, sig)
 			 */
 			if (sig != SIGSTOP && p->p_pptr == &proc[1]) {
 				psignal(p, SIGKILL);
-				p->p_sig &= ~sigmask;
+				p->p_sig &= ~mask;
 				splx(s);
 				return;
 			}
@@ -403,7 +400,7 @@ psignal(p, sig)
 			 */
 			if (p->p_flag&SVFORK)
 				goto out;
-			p->p_sig &= ~sigmask;
+			p->p_sig &= ~mask;
 			p->p_cursig = sig;
 			stop(p);
 			goto out;
@@ -418,7 +415,7 @@ psignal(p, sig)
 			 */
 			if (action != SIG_DFL)
 				goto run;
-			p->p_sig &= ~sigmask;		/* take it away */
+			p->p_sig &= ~mask;		/* take it away */
 			goto out;
 
 		default:
@@ -464,7 +461,7 @@ psignal(p, sig)
 			 * Already stopped, don't need to stop again.
 			 * (If we did the shell could get confused.)
 			 */
-			p->p_sig &= ~sigmask;		/* take it away */
+			p->p_sig &= ~mask;		/* take it away */
 			goto out;
 
 		default:
@@ -526,7 +523,7 @@ issig()
 {
 	register struct proc *p;
 	register int sig;
-	int sigbits, sigmask;
+	int sigbits, mask;
 
 	p = u.u_procp;
 	for (;;) {
@@ -539,8 +536,8 @@ issig()
 		if (sigbits == 0)
 			break;
 		sig = ffs(sigbits);
-		sigmask = 1 << (sig-1);
-		p->p_sig &= ~sigmask;		/* take the signal! */
+		mask = sigmask(sig);
+		p->p_sig &= ~mask;		/* take the signal! */
 		p->p_cursig = sig;
 		if (p->p_flag&STRC && (p->p_flag&SVFORK) == 0) {
 			/*
@@ -559,7 +556,7 @@ issig()
 			 * This ensures that p_sig* and u_signal are consistent.
 			 */
 			if ((p->p_flag&STRC) == 0) {
-				p->p_sig |= sigmask;
+				p->p_sig |= mask;
 				continue;
 			}
 
@@ -576,9 +573,9 @@ issig()
 			 * If signal is being masked put it back
 			 * into p_sig and look for other signals.
 			 */
-			sigmask = 1 << (sig-1);
-			if (p->p_sigmask & sigmask) {
-				p->p_sig |= sigmask;
+			mask = sigmask(sig);
+			if (p->p_sigmask & mask) {
+				p->p_sig |= mask;
 				continue;
 			}
 		}
@@ -692,14 +689,14 @@ psig()
 {
 	register struct proc *p = u.u_procp;
 	register int sig = p->p_cursig;
-	int sigmask = 1 << (sig - 1), returnmask;
+	int mask = sigmask(sig), returnmask;
 	register int (*action)();
 
 	if (sig == 0)
 		panic("psig");
 	action = u.u_signal[sig];
 	if (action != SIG_DFL) {
-		if (action == SIG_IGN || (p->p_sigmask & sigmask))
+		if (action == SIG_IGN || (p->p_sigmask & mask))
 			panic("psig action");
 		u.u_error = 0;
 		/*
@@ -712,20 +709,20 @@ psig()
 		 * mask from before the sigpause is what we want restored
 		 * after the signal processing is completed.
 		 */
-		(void) spl6();
+		(void) splhigh();
 		if (p->p_flag & SOUSIG) {
 			if (sig != SIGILL && sig != SIGTRAP) {
 				u.u_signal[sig] = SIG_DFL;
-				p->p_sigcatch &= ~sigmask;
+				p->p_sigcatch &= ~mask;
 			}
-			sigmask = 0;
+			mask = 0;
 		}
 		if (p->p_flag & SOMASK) {
 			returnmask = u.u_oldmask;
 			p->p_flag &= ~SOMASK;
 		} else
 			returnmask = p->p_sigmask;
-		p->p_sigmask |= u.u_sigmask[sig] | sigmask;
+		p->p_sigmask |= u.u_sigmask[sig] | mask;
 		(void) spl0();
 		u.u_ru.ru_nsignals++;
 		sendsig(action, sig, returnmask);
