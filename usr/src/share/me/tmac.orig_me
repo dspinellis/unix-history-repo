@@ -14,7 +14,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tmac.orig_me	2.33 (Berkeley) %G%
+.\"	@(#)tmac.orig_me	2.34 (Berkeley) %G%
 .\"
 .\"	%beginstrip%
 .\"
@@ -31,7 +31,7 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.33	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.34	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
@@ -45,6 +45,10 @@
 .\"		$$$	a macro which may be redefined by the user
 .\"			to provide variant functions.
 .\"		---	an internal macro.
+.\"
+.\" library directory for sourced files:
+.ds || /usr/share/me
+.if \n@>0 .ds || .
 .\"
 .if !\n(.V .tm You are using the wrong version of NROFF/TROFF!!
 .if !\n(.V .tm This macro package works only on the version seven
@@ -1085,8 +1089,6 @@
 .nr ii 5n			\" indent for .ip's and .np's
 .nr $m 1			\" max number of columns
 .nr $s 4n			\" column separation
-.ds || /usr/lib/me
-.if \n@>0 .ds || .
 .bd S B 3
 .\"		*** OTHER INITIALIZATION ***
 .ds [ \u\x'-0.25v'
