@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 all depend clean cleandir lint tags: FRC
 	cd adb.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} $@
 
-SCRIPTDIR=	/usr/lib/adb
+SCRIPTDIR=	/usr/libdata/adb
 
 install:
 	rm -rf ${DESTDIR}/${SCRIPTDIR}

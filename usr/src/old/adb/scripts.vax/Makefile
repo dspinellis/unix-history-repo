@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 LIST=	dirblk dmcstats findproc.nxt frame ifuba ifubinfo ifxmt \
 	mba_device mba_hd pcb proc setproc.nxt stacktrace trapframe \
@@ -23,13 +23,7 @@ LIST=	dirblk dmcstats findproc.nxt frame ifuba ifubinfo ifxmt \
 all:
 
 install: FRC
-	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/lib/adb
+	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/libdata/adb
 
-clean:
-depend:
-lint:
-tags:
-FRC:
-
-# DO NOT DELETE THIS LINE -- make depend uses it
+clean depend lint tags FRC:
 

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 	dmap file filsys findinode findinode.nxt findproc host.nxt hosts \
@@ -28,13 +28,6 @@ LIST=	buf callout callout.next clist clist.nxt dino dir dir.nxt \
 all:
 
 install: FRC
-	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/lib/adb
+	install -c -o bin -g bin -m 444 ${LIST} ${DESTDIR}/usr/libdata/adb
 
-clean:
-depend:
-lint:
-tags:
-FRC:
-
-# DO NOT DELETE THIS LINE -- make depend uses it
-
+clean depend lint tags FRC:
