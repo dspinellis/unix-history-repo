@@ -13,7 +13,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mbuf.h	7.8.1.3 (Berkeley) %G%
+ *	@(#)mbuf.h	7.12 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -21,34 +21,12 @@
 #endif
 
 /*
- * Constants related to network buffer management.
- * Mbufs are of a single size, MSIZE, which includes overhead.
- * An mbuf may add a single "mbuf cluster" of size MCLBYTES,
- * which has no additional overhead and is used instead of the internal
- * data area; this is done when at least MINCLSIZE of data must be stored.
- * MCLBYTES must be no larger than CLBYTES (the software page size), and,
- * on machines that exchange pages of input or output buffers with mbuf
- * clusters (MAPPED_MBUFS), MCLBYTES must also be an integral multiple
- * of the hardware page size.
+ * Mbufs are of a single size, MSIZE (machine/machparam.h), which
+ * includes overhead.  An mbuf may add a single "mbuf cluster" of size
+ * MCLBYTES (also in machine/machparam.h), which has no additional overhead
+ * and is used instead of the internal data area; this is done when
+ * at least MINCLSIZE of data must be stored.
  */
-/* BEGIN SHOULD MOVE TO MACHINE-SPECIFIC FILE (machparam.h) */
-#define	MSIZE		128			/* size of an mbuf */
-#define	MAPPED_MBUFS
-#if CLBYTES > 1024
-#define	MCLBYTES	1024
-#define	MCLSHIFT	10
-#define	MCLOFSET	(MCLBYTES - 1)
-#else
-#define	MCLBYTES	CLBYTES
-#define	MCLSHIFT	CLSHIFT
-#define	MCLOFSET	CLOFSET
-#endif
-#ifdef GATEWAY
-#define	NMBCLUSTERS	512
-#else
-#define	NMBCLUSTERS	256
-#endif
-/* END SHOULD MOVE TO MACHINE-SPECIFIC FILE (machparam.h) */
 
 #define	MLEN		(MSIZE - sizeof(struct m_hdr))	/* normal data len */
 #define	MHLEN		(MLEN - sizeof(struct pkthdr))	/* data len w/pkthdr */
@@ -329,6 +307,9 @@ union mcluster {
 /* length to m_copy to copy all */
 #define	M_COPYALL	1000000000
 
+/* compatiblity with 4.3 */
+#define  m_copy(m, o, l)	m_copym((m), (o), (l), M_DONTWAIT)
+
 /*
  * Mbuf statistics.
  */
@@ -348,7 +329,6 @@ extern	char mbutl[][MCLBYTES];		/* virtual address of mclusters */
 extern	struct pte Mbmap[];		/* page tables to map mbutl */
 struct	mbstat mbstat;
 int	nmbclusters;
-struct	mbuf *mfree;
 union	mcluster *mclfree;
 char	mclrefcnt[NMBCLUSTERS + CLBYTES/MCLBYTES];
 int	max_linkhdr;			/* largest link-level header */
@@ -356,12 +336,12 @@ int	max_protohdr;			/* largest protocol header */
 int	max_hdr;			/* largest link+protocol header */
 int	max_datalen;			/* MHLEN - max_hdr */
 struct	mbuf *m_get(), *m_gethdr(), *m_getclr(), *m_retry(), *m_retryhdr();
-struct	mbuf *m_free(), *m_copy(), *m_pullup(), *m_prepend();
+struct	mbuf *m_free(), *m_copym(), *m_pullup(), *m_prepend();
 int	m_clalloc();
 extern	int mbtypes[];			/* XXX */
 
 #ifdef MBTYPES
-int mbtypes[] = {
+int mbtypes[] = {				/* XXX */
 	M_FREE,		/* MT_FREE	0	/* should be on free list */
 	M_MBUF,		/* MT_DATA	1	/* dynamic (data) allocation */
 	M_MBUF,		/* MT_HEADER	2	/* packet header */
@@ -371,12 +351,16 @@ int mbtypes[] = {
 	M_HTABLE,	/* MT_HTABLE	6	/* IMP host tables */
 	0,		/* MT_ATABLE	7	/* address resolution tables */
 	M_MBUF,		/* MT_SONAME	8	/* socket name */
+	0,		/* 		9 */
 	M_SOOPTS,	/* MT_SOOPTS	10	/* socket options */
 	M_FTABLE,	/* MT_FTABLE	11	/* fragment reassembly header */
 	M_MBUF,		/* MT_RIGHTS	12	/* access rights */
 	M_IFADDR,	/* MT_IFADDR	13	/* interface address */
 	M_MBUF,		/* MT_CONTROL	14	/* extra-data protocol message */
 	M_MBUF,		/* MT_OOBDATA	15	/* expedited data  */
+#ifdef DATAKIT
+	25, 26, 27, 28, 29, 30, 31, 32		/* datakit ugliness */
+#endif
 };
 #endif
 #endif
