@@ -8,7 +8,7 @@
  *
  *
  */
-#if	defined(msdos)
+#if	defined(MSDOS)
 "tn3270pc{\
   ENTER='^M';CLEAR='^Z'|'^Aw';NL='^N'|'^AO';TAB='^I';DP='^U';FM='^Y';\
   BTAB='^B'|'^[^I'|'^A^O';LEFT='^H'|'^AK';RIGHT='^L'|'^AM';UP='^K'|'^AH';\
@@ -28,7 +28,7 @@
   PFK23='^A`'|'^F23';PFK24='^Aa'|'^F24';PA1='^Ah'|'^P1';PA2='^Ai'|'^P2';\
   MASTER_RESET='^G';RESHOW='^V';DELTAB='^[\\\'';ESCAPE='^C';\
 }"
-#else	/* defined(msdos) */
+#else	/* defined(MSDOS) */
 "3a { clear = '^z'; flinp = '^x'; enter = '^m'; delete = '^d' | '^?';\
 	synch = '^r'; reshow = '^v'; eeof = '^e'; tab = '^i';\
 	btab = '^b'; nl = '^n'; left = '^h'; right = '^l';\
@@ -43,4 +43,4 @@
 	pfk17 = '\\E%'; pfk18 = '\\E\\^'; pfk19 = '\\E&'; pfk20 = '\\E*';\
 	pfk21 = '\\E('; pfk22 = '\\E)'; pfk23 = '\\E_'; pfk24 = '\\E+';\
 }"
-#endif	/* defined(msdos) */
+#endif	/* defined(MSDOS) */
