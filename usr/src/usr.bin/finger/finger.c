@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)finger.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)finger.c	4.6 (Berkeley) %G%";
 #endif
 
 /*  This is a finger program.  It prints out useful information about users
@@ -48,6 +48,9 @@ static char *sccsid = "@(#)finger.c	4.5 (Berkeley) %G%";
 #include	<stdio.h>
 #include	<lastlog.h>
 #include	<sys/time.h>
+#include	<sys/socket.h>
+#include	<netinet/in.h>
+#include	<netdb.h>
 
 struct	utmp	utmp;	/* for sizeof */
 #define NMAX sizeof(utmp.ut_name)
@@ -215,7 +218,7 @@ main( argc, argv )
 		user.ut_name[0] = NULL;
 		while( user.ut_name[0] == NULL )  {
 		    if( read( uf, (char *) &user, usize ) != usize )  {
-			printf( "\nNo one logged on\n" );
+			printf( "No one logged on\n" );
 			exit( 0 );
 		    }
 		}
@@ -283,7 +286,12 @@ main( argc, argv )
 
 	else  {
 	    unshort = ( small == 1 ? 0 : 1 );
-	    i++;
+	    while (i <= argc && netfinger(*argv)) {
+		i++;
+		argv++;
+	    }
+	    if (i++ > argc)
+		exit(0);
 	    person1 = (struct person  *) malloc( persize );
 	    strcpy(  person1->name, (argv++)[ 0 ]  );
 	    person1->loggedin = 0;
@@ -291,6 +299,10 @@ main( argc, argv )
 	    numnames++;
 	    p = person1;
 	    while( i++ <= argc )  {
+		if (netfinger(*argv)) {
+		    argv++;
+		    continue;
+		}
 		p->link = (struct person  *) malloc( persize );
 		p = p->link;
 		strcpy(  p->name, (argv++)[ 0 ]  );
@@ -1372,4 +1384,89 @@ char  *strsave( s )
 
 	p = malloc( strlen( s ) + 1 );
 	strcpy( p, s );
+}
+
+netfinger(name)
+char *name;
+{
+	char *host;
+	char fname[100];
+	struct hostent *hp;
+	struct servent *sp;
+	struct	sockaddr_in sin;
+	int s;
+	char *rindex();
+	register FILE *f;
+	register int c;
+	register int lastc;
+
+	if (name == NULL)
+		return(0);
+	host = rindex(name, '@');
+	if (host == NULL)
+		return(0);
+	*host++ = 0;
+	hp = gethostbyname(host);
+	if (hp == NULL) {
+		static struct hostent def;
+		static struct in_addr defaddr;
+		static char namebuf[128];
+		int inet_addr();
+
+		defaddr.s_addr = inet_addr(host);
+		if (defaddr.s_addr == -1) {
+			printf("unknown host: %s\n", host);
+			return(1);
+		}
+		strcpy(namebuf, host);
+		def.h_name = namebuf;
+		def.h_addr = (char *)&defaddr;
+		def.h_length = sizeof (struct in_addr);
+		def.h_addrtype = AF_INET;
+		def.h_aliases = 0;
+		hp = &def;
+	}
+	printf("[%s]", hp->h_name);
+	sp = getservbyname("finger", "tcp");
+	if (sp == 0) {
+		printf("tcp/finger: unknown service\n");
+		return(1);
+	}
+	sin.sin_family = hp->h_addrtype;
+	bcopy(hp->h_addr, (char *)&sin.sin_addr, hp->h_length);
+	sin.sin_port = sp->s_port;
+	s = socket(hp->h_addrtype, SOCK_STREAM, 0);
+	if (s < 0) {
+		fflush(stdout);
+		perror("socket");
+		return(1);
+	}
+	if (connect(s, (char *)&sin, sizeof (sin)) < 0) {
+		fflush(stdout);
+		perror("connect");
+		close(s);
+		return(1);
+	}
+	printf("\n");
+	if (large) write(s, "/W ", 3);
+	write(s, name, strlen(name));
+	write(s, "\r\n", 2);
+	f = fdopen(s, "r");
+	while ((c = getc(f)) != EOF) {
+		switch(c) {
+		case 0210:
+		case 0211:
+		case 0212:
+		case 0214:
+			c -= 0200;
+			break;
+		case 0215:
+			c = '\n';
+			break;
+		}
+		putchar(lastc = c);
+	}
+	if (lastc != '\n')
+		putchar('\n');
+	return(1);
 }
