@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -72,7 +72,7 @@ main(argc, argv)
 {
 	extern int optind;
 	struct servent *sp;
-	int ch;
+	int ch, fflag, tflag;
 	char *targ, *colon();
 	struct passwd *getpwuid();
 	int lostconn();
@@ -98,17 +98,15 @@ main(argc, argv)
 		exit(1);
 	}
 
+	fflag = tflag = 0;
 	while ((ch = getopt(argc, argv, "dfkprtx")) != EOF)
 		switch(ch) {
 		case 'd':
 			targetshouldbedirectory = 1;
 			break;
 		case 'f':			/* "from" */
-			iamremote = 1;
-			(void)response();
-			(void)setuid(userid);
-			source(--argc, ++argv);
-			exit(errs);
+			fflag = 1;
+			break;
 #ifdef KERBEROS
 		case 'k':
 			strncpy(krb_realm, ++argv, REALM_SZ);
@@ -121,10 +119,8 @@ main(argc, argv)
 			++iamrecursive;
 			break;
 		case 't':			/* "to" */
-			iamremote = 1;
-			(void)setuid(userid);
-			sink(--argc, ++argv);
-			exit(errs);
+			tflag = 1;
+			break;
 #ifdef KERBEROS
 		case 'x':
 			encrypt = 1;
@@ -137,6 +133,21 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
+
+	if (fflag) {
+		iamremote = 1;
+		(void)response();
+		(void)setuid(userid);
+		source(argc, argv);
+		exit(errs);
+	}
+
+	if (tflag) {
+		iamremote = 1;
+		(void)setuid(userid);
+		sink(argc, argv);
+		exit(errs);
+	}
 
 	if (argc < 2)
 		usage();
