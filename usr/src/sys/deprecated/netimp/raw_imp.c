@@ -1,4 +1,4 @@
-/*	raw_imp.c	6.3	85/02/28	*/
+/*	raw_imp.c	6.4	85/03/19	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -13,6 +13,7 @@
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "if_imp.h"
 
 /*
@@ -35,7 +36,7 @@ rimp_output(m, so)
 	register struct imp_leader *ip;
 	register struct sockaddr_in *sin;
 	register struct rawcb *rp = sotorawcb(so);
-	struct ifnet *ifp;
+	struct in_ifaddr *ia;
 	struct control_leader *cp;
 
 	/*
@@ -76,11 +77,11 @@ rimp_output(m, so)
 		len += n->m_len;
 	ip->il_length = htons((u_short)(len << 3));
 	sin = (struct sockaddr_in *)&rp->rcb_faddr;
-	imp_addr_to_leader( ip, sin->sin_addr.s_addr );	/* BRL */
+	imp_addr_to_leader(ip, sin->sin_addr.s_addr);	/* BRL */
 	/* no routing here */
-	ifp = if_ifonnetof(in_netof(sin->sin_addr));
-	if (ifp)
-		return (impoutput(ifp, m, (struct sockaddr *)sin));
+	ia = in_iaonnetof(in_netof(sin->sin_addr));
+	if (ia)
+		return (impoutput(ia->ia_ifp, m, (struct sockaddr *)sin));
 	error = ENETUNREACH;
 bad:
 	m_freem(m);

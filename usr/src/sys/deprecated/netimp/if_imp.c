@@ -1,4 +1,4 @@
-/*	if_imp.c	6.3	85/02/28	*/
+/*	if_imp.c	6.4	85/03/19	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -33,6 +33,7 @@
 #include "../net/netisr.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 /* define IMPLEADERS here to get leader printing code */
@@ -113,10 +114,8 @@ impinit(unit)
 {
 	int s = splimp();
 	register struct imp_softc *sc = &imp_softc[unit];
-	struct sockaddr_in *sin;
 
-	sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
-	if (in_netof(sin->sin_addr) == 0)
+	if (sc->imp_if.if_addrlist == 0)
 		return;
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
@@ -124,7 +123,6 @@ impinit(unit)
 		splx(s);
 		return;
 	}
-	sc->imp_if.if_flags |= IFF_RUNNING;
 	sc->imp_state = IMPS_INIT;
 	impnoops(sc);
 	splx(s);
@@ -180,7 +178,7 @@ impinput(unit, m)
 
 	if (ip->il_mtype != IMPTYPE_DATA) {
 		/* If not data packet, build IP addr from leader (BRL) */
-		imp_leader_to_addr( &addr, ip, &sc->imp_if );
+		imp_leader_to_addr(&addr, ip, &sc->imp_if);
 	}
 	switch (ip->il_mtype) {
 
@@ -199,7 +197,7 @@ impinput(unit, m)
 		 */
 		if (sc->imp_state != IMPS_INIT) {
 			impmsg(sc, "leader error");
-			hostreset(sc->imp_if.if_net);
+			hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
 			impnoops(sc);
 		}
 		goto drop;
@@ -232,22 +230,20 @@ impinput(unit, m)
 		}
 		if (sc->imp_state == IMPS_INIT && --sc->imp_dropcnt > 0)
 			goto drop;
-		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
-		if( ip->il_imp != 0 )  {	/* BRL */
+		sin = (struct sockaddr_in *)&sc->imp_if.if_addrlist->ifa_addr;
+		if (ip->il_imp != 0) {	/* BRL */
 			struct in_addr leader_addr;
-			imp_leader_to_addr( &leader_addr, ip, &sc->imp_if );
-			if( sin->sin_addr.s_addr != leader_addr.s_addr )  {
-				impmsg(sc, "address x%x (%d/%d)",
-					htonl( leader_addr.s_addr ),
+			imp_leader_to_addr(&leader_addr, ip, &sc->imp_if);
+			if (sin->sin_addr.s_addr != leader_addr.s_addr) {
+				impmsg(sc, "address reset to x%x (%d/%d)",
+					htonl(leader_addr.s_addr),
 					(u_int)ip->il_host,
-					htons(ip->il_imp) );
+					htons(ip->il_imp));
 				sin->sin_addr.s_addr = leader_addr.s_addr;
-				sc->imp_if.if_host[0] = in_lnaof( leader_addr.s_addr );
 			}
 		}
 		sc->imp_state = IMPS_UP;
 		sc->imp_if.if_flags |= IFF_UP;
-		if_rtinit(&sc->imp_if, RTF_UP);
 		goto drop;
 
 	/*
@@ -273,7 +269,7 @@ impinput(unit, m)
 	case IMPTYPE_HOSTDEAD:
 	case IMPTYPE_HOSTUNREACH:
 		impnotify((int)ip->il_mtype, (struct control_leader *)ip,
-		    hostlookup(addr), sc->imp_if);
+		    hostlookup(addr), &sc->imp_if);
 		goto rawlinkin;
 
 	/*
@@ -292,7 +288,8 @@ impinput(unit, m)
 	 */
 	case IMPTYPE_RESET:
 		impmsg(sc, "interface reset");
-		hostreset(sc->imp_if.if_net);	/* clear RFNM counts */
+		/* clear RFNM counts */
+		hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
 		impnoops(sc);
 		goto drop;
 
@@ -321,9 +318,9 @@ impinput(unit, m)
 	default:
 	rawlinkin:
 		impproto.sp_protocol = ip->il_link;
-		sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
+		sin = (struct sockaddr_in *)&sc->imp_if.if_addrlist->ifa_addr;
 		impdst.sin_addr = sin->sin_addr;
-		imp_leader_to_addr( &impsrc.sin_addr, ip, &sc->imp_if );
+		imp_leader_to_addr(&impsrc.sin_addr, ip, &sc->imp_if);
 		raw_input(m, &impproto, (struct sockaddr *)&impsrc,
 		  (struct sockaddr *)&impdst);
 		return;
@@ -349,7 +346,7 @@ impdown(sc)
 
 	sc->imp_state = IMPS_DOWN;
 	impmsg(sc, "marked down");
-	hostreset(sc->imp_if.if_net);
+	hostreset(((struct in_ifaddr *)&sc->imp_if.if_addrlist)->ia_net);
 	if_down(&sc->imp_if);
 	splx(s);
 }
@@ -378,7 +375,7 @@ impnotify(what, cp, hp, ifp)
 {
 	struct in_addr in;
 
-	imp_leader_to_addr( &in, (struct imp_leader *) cp, ifp );  /* BRL */
+	imp_leader_to_addr(&in, (struct imp_leader *)cp, ifp);  /* BRL */
 
 	if (cp->dl_link != IMPLINK_IP)
 		raw_ctlinput(what, (caddr_t)&in);
@@ -404,7 +401,7 @@ impoutput(ifp, m0, dst)
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
-	int dhost, dimp, dlink, len, dnet;
+	int dlink, len;
 	int error = 0;
 
 	/*
@@ -422,10 +419,7 @@ impoutput(ifp, m0, dst)
 		struct ip *ip = mtod(m0, struct ip *);
 		struct sockaddr_in *sin = (struct sockaddr_in *)dst;
 
-		dhost = sin->sin_addr.s_host;
-		dimp = sin->sin_addr.s_impno;
 		dlink = IMPLINK_IP;
-		dnet = 0;
 		len = ntohs((u_short)ip->ip_len);
 		break;
 	}
@@ -462,8 +456,8 @@ impoutput(ifp, m0, dst)
 	imp->il_format = IMP_NFF;
 	imp->il_mtype = IMPTYPE_DATA;
 	imp_addr_to_leader(imp,
-		((struct sockaddr_in *) dst)->sin_addr.s_addr ); /* BRL */
-	imp->il_length = htons( (u_short) len << 3 );		/* BRL */
+		((struct sockaddr_in *)dst)->sin_addr.s_addr); /* BRL */
+	imp->il_length = htons((u_short)len << 3);		/* BRL */
 	imp->il_link = dlink;
 	imp->il_flags = imp->il_htype = imp->il_subtype = 0;
 
@@ -498,7 +492,7 @@ impsnd(ifp, m)
 	if (ip->il_mtype == IMPTYPE_DATA) {
 		struct in_addr addr;
 
-		imp_leader_to_addr( &addr, ip, ifp );	/* BRL */
+		imp_leader_to_addr(&addr, ip, ifp);	/* BRL */
 		if ((hp = hostlookup(addr)) == 0)
 			hp = hostenter(addr);
 		if (hp && (hp->h_flags & (HF_DEAD|HF_UNREACH))) {
@@ -561,7 +555,7 @@ impnoops(sc)
 	register struct control_leader *cp;
 
 	sc->imp_dropcnt = IMP_DROPCNT;
-	for (i = 0; i < IMP_DROPCNT + 1; i++ ) { 
+	for (i = 0; i < IMP_DROPCNT + 1; i++) { 
 		if ((m = m_getclr(M_DONTWAIT, MT_HEADER)) == 0) 
 			return;
 		m->m_len = sizeof(struct control_leader);
@@ -583,24 +577,17 @@ impioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr = (struct ifreq *)data;
-	struct sockaddr_in *sin;
+	struct ifaddr *ifa = (struct ifaddr *) data;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
-		ifp->if_net = in_netof(sin->sin_addr);
-		sin = (struct sockaddr_in *)&ifp->if_addr;
-		sin->sin_family = AF_INET;
-		/* host number filled in already, or filled in later */
-		sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, RTF_UP);
-		else
+		if (ifa->ifa_addr.sa_family != AF_INET) {
+			error = EINVAL;
+			break;
+		}
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			impinit(ifp->if_unit);
 		break;
 
@@ -664,46 +651,47 @@ printbyte(cp, n)
  * Class B:	Net.net.Host.Imp
  * Class C:	Net.net.net.(Host4|Imp4)
  */
-imp_leader_to_addr( ap, ip, ifp )
-register struct in_addr *ap;
-register struct imp_leader *ip;
-register struct ifnet *ifp;
+imp_leader_to_addr(ap, ip, ifp)
+	struct in_addr *ap;
+	register struct imp_leader *ip;
+	struct ifnet *ifp;
 {
 	register long final;
+	struct in_ifaddr *ia;
 	register struct sockaddr_in *sin;
 	int imp = htons(ip->il_imp);
 
-	sin = (struct sockaddr_in *) (&ifp->if_addr);
-	final = htonl( sin->sin_addr.s_addr );		/* host order */
+	sin = (struct sockaddr_in *)(&ifp->if_addrlist->ifa_addr);
+	final = htonl(sin->sin_addr.s_addr);
 
-	if( IN_CLASSA( final ) )  {
+	if (IN_CLASSA(final)) {
 		final &= IN_CLASSA_NET;
 		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<16);
-	} else if( IN_CLASSB( final ) )  {
+	} else if (IN_CLASSB(final)) {
 		final &= IN_CLASSB_NET;
 		final |= (imp & 0xFF) | ((ip->il_host & 0xFF)<<8);
 	} else {
 		final &= IN_CLASSC_NET;
 		final |= (imp & 0x0F) | ((ip->il_host & 0x0F)<<4);
 	}
-	ap->s_addr = htonl( final );
+	ap->s_addr = htonl(final);
 }
 
 /*
  * Function to take InterNet address and fill in IMP leader fields.
  */
-imp_addr_to_leader( imp, a )
-register struct imp_leader *imp;
-long a;
+imp_addr_to_leader(imp, a)
+	register struct imp_leader *imp;
+	long a;
 {
-	register long addr = htonl( a );		/* host order */
+	register long addr = htonl(a);		/* host order */
 
 	imp->il_network = 0;	/* !! */
 
-	if( IN_CLASSA( addr ) )  {
+	if (IN_CLASSA(addr)) {
 		imp->il_host = ((addr>>16) & 0xFF);
 		imp->il_imp = addr & 0xFF;
-	} else if ( IN_CLASSB( addr ) )  {
+	} else if (IN_CLASSB(addr)) {
 		imp->il_host = ((addr>>8) & 0xFF);
 		imp->il_imp = addr & 0xFF;
 	} else {
