@@ -10,7 +10,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)parseaddr.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)parseaddr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -212,7 +212,7 @@ loweraddr(a)
 **		NULL on error.
 **
 **	Side Effects:
-**		none.
+**		sets DelimChar to point to the character matching 'delim'.
 */
 
 /* states and character types */
