@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) 4/27/91
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 PROG=	gcore
 SRCS=	gcore.c md-${MACHINE}.c
