@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	8.8 (Berkeley) %G%
+ *	@(#)ffs_inode.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -135,10 +135,9 @@ ffs_truncate(ap)
 	int aflags, error, allerror;
 	off_t osize;
 
-	oip = VTOI(ovp);
-	fs = oip->i_fs;
-	if (length < 0 || length > fs->fs_maxfilesize)
+	if (length < 0)
 		return (EINVAL);
+	oip = VTOI(ovp);
 	tv = time;
 	if (ovp->v_type == VLNK &&
 	    oip->i_size < ovp->v_mount->mnt_maxsymlinklen) {
@@ -160,13 +159,16 @@ ffs_truncate(ap)
 		return (error);
 #endif
 	vnode_pager_setsize(ovp, (u_long)length);
+	fs = oip->i_fs;
 	osize = oip->i_size;
 	/*
 	 * Lengthen the size of the file. We must ensure that the
 	 * last byte of the file is allocated. Since the smallest
-	 * value of oszie is 0, length will be at least 1.
+	 * value of osize is 0, length will be at least 1.
 	 */
 	if (osize < length) {
+		if (length > fs->fs_maxfilesize)
+			return (EFBIG);
 		offset = blkoff(fs, length - 1);
 		lbn = lblkno(fs, length - 1);
 		aflags = B_CLRBUF;
