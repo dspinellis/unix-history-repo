@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.8 83/08/25";
+static	char *sccsid = "@(#)cmd2.c	3.9 83/08/26";
 #endif
 
 #include "defs.h"
@@ -205,11 +205,7 @@ char *label;
 waitnl(w)
 register struct ww *w;
 {
-	if (w->ww_back != framewin) {
-		wwdelete(w);
-		wwadd(w, framewin);
-		reframe();
-	}
+	front(w);
 	(void) wwputs("\nType return to continue: ", w);
 	wwcurtowin(w);
 	while (bgetc() < 0)

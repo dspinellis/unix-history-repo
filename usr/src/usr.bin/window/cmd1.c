@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.7 83/08/25";
+static	char *sccsid = "@(#)cmd1.c	3.8 83/08/26";
 #endif
 
 #include "defs.h"
@@ -156,8 +156,9 @@ int id, nrow, ncol, row, col;
 	window[id] = w;
 	w->ww_hasframe = 1;
 	wwcursor(w, 1);
-	wwadd(w, (selwin ? selwin : wwhead.ww_back));
-	setselwin(w);
+	wwadd(w, framewin);
+	selwin = w;
+	reframe();			/* setselwin() won't do it */
 	wwupdate();
 	wwflush();
 	switch (wwfork(w)) {
@@ -170,16 +171,4 @@ int id, nrow, ncol, row, col;
 		exit(1);
 	}
 	return w;
-}
-
-reframe()
-{
-	register struct ww *w;
-
-	wwunframe(framewin);
-	for (w = wwhead.ww_back; w != &wwhead; w = w->ww_back)
-		if (w->ww_hasframe) {
-			wwframe(w, framewin);
-			labelwin(w);
-		}
 }

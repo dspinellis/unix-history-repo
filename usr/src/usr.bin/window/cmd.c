@@ -1,10 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.6 83/08/23";
+static	char *sccsid = "@(#)cmd.c	3.7 83/08/26";
 #endif
 
 #include "defs.h"
-
-struct ww *getwin();
 
 docmd()
 {
@@ -221,21 +219,35 @@ getwin()
 }
 
 setselwin(w)
+struct ww *w;
+{
+	if ((selwin = w) != 0)
+		front(w);
+}
+
+front(w)
 register struct ww *w;
 {
-	register struct ww *oldselwin = selwin;
+	char moved = 0;
 
-	if (w == oldselwin)
-		return;
-	if (selwin = w) {
-		wwdelete(w);
-		/*
-		 * Stick it in front of the old selected window,
-		 * or behind the frame window.
-		 */
-		wwadd(w, oldselwin ? oldselwin->ww_back : framewin);
+	while (w->ww_back != framewin) {
+		wwmoveup(w);
+		moved = 1;
 	}
-	reframe();
+	if (moved)
+		reframe();
+}
+
+reframe()
+{
+	register struct ww *w;
+
+	wwunframe(framewin);
+	for (w = wwhead.ww_back; w != &wwhead; w = w->ww_back)
+		if (w->ww_hasframe) {
+			wwframe(w, framewin);
+			labelwin(w);
+		}
 }
 
 labelwin(w)
