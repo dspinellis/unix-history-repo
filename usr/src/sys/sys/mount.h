@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.2 (Berkeley) %G%
+ *	@(#)mount.h	7.3 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -96,8 +96,8 @@ struct vfsops {
 	int	(*vfs_root)(	/* mp, vpp */ );
 	int	(*vfs_statfs)(	/* mp, sbp */ );
 	int	(*vfs_sync)(	/* mp, waitfor */ );
-	int	(*vfs_fhtovp)(	/* mp, fhp, vpp */ );
-	int	(*vfs_vptofh)(	/* vp, fhp */ );
+	int	(*vfs_fhtovp)(	/* mp, fidp, vpp */ );
+	int	(*vfs_vptofh)(	/* vp, fidp */ );
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP) \
@@ -106,8 +106,8 @@ struct vfsops {
 #define VFS_ROOT(MP, VPP)	  (*(MP)->m_op->vfs_root)(MP,VPP)
 #define VFS_STATFS(MP, SBP)	  (*(MP)->m_op->vfs_statfs)(MP, SBP)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->m_op->vfs_sync)(MP, WAITFOR)
-#define VFS_FHTOVP(MP, FHP, VPP)  (*(MP)->m_op->vfs_fhtovp)(MP, FHP, VPP)
-#define	VFS_VPTOFH(VP, FHP)	  (*(VP)->v_mount->m_op->vfs_vptofh)(VP, FHP)
+#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->m_op->vfs_fhtovp)(MP, FIDP, VPP)
+#define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->m_op->vfs_vptofh)(VP, FIDP)
 
 /*
  * forcibly flags for vfs_umount().
@@ -155,21 +155,30 @@ struct ufs_args {
 	char	*fspec;
 };
 
+/*
+ * Generic file handle
+ */
+struct fhandle {
+	fsid_t	fh_fsid;	/* File system id of mount point */
+	struct	fid fh_fid;	/* Id of file */
+};
+typedef struct fhandle	fhandle_t;
+
 #ifdef NFS
 /*
  * File Handle (32 bytes for version 2), variable up to 1024 for version 3
  */
-struct fhandle {
+struct nfsv2fh {
 	u_char	fh_bytes[32];
 };
-typedef struct fhandle fhandle_t;
+typedef struct nfsv2fh nfsv2fh_t;
 
 /*
  * Arguments to mount NFS
  */
 struct nfs_args {
 	struct sockaddr_in	*addr;		/* file server address */
-	fhandle_t		*fh;		/* File handle to be mounted */
+	nfsv2fh_t		*fh;		/* File handle to be mounted */
 	int			flags;		/* flags */
 	int			wsize;		/* write size in bytes */
 	int			rsize;		/* read size in bytes */
