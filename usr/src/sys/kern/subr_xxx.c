@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.17	82/08/22	*/
+/*	subr_xxx.c	4.18	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,13 +15,12 @@
 #include "../h/uio.h"
 
 /*
- * Routine which sets a user error; placed in
- * illegal entries in the bdevsw and cdevsw tables.
+ * Routine placed in illegal entries in the bdevsw and cdevsw tables.
  */
 nodev()
 {
 
-	u.u_error = ENODEV;
+	return (ENODEV);
 }
 
 /*
@@ -31,6 +30,7 @@ nodev()
 nulldev()
 {
 
+	return (0);
 }
 
 imin(a, b)
