@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cache.c	7.2 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -76,6 +76,7 @@ cache_lookup(ndp)
 	register struct namecache *ncp;
 	union nchash *nhp;
 
+	return (0);		/* XXX for now */
 	if (ndp->ni_dent.d_namlen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		ndp->ni_makeentry = 0;
@@ -152,6 +153,7 @@ cache_enter(ndp)
 	register struct namecache *ncp;
 	union nchash *nhp;
 
+	return;		/* XXX for now */
 	/*
 	 * Free the cache slot at head of lru chain.
 	 */
