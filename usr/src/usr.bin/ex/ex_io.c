@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.16 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.17 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -13,9 +13,8 @@ static char *sccsid = "@(#)ex_io.c	7.16 (Berkeley) %G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
-#ifdef	FLOCKFILE
 #include <sys/file.h>
-#endif	FLOCKFILE
+#include <sys/exec.h>
 
 /*
  * File input/output, source, preserve and recover
@@ -369,11 +368,11 @@ rop(c)
 {
 	register int i;
 	struct stat stbuf;
-	short magic;
+	struct exec head;
 	static int ovro;	/* old value(READONLY) */
 	static int denied;	/* 1 if READONLY was set due to file permissions */
 #ifdef	FLOCKFILE
-	int *lp, *iop ;
+	int *lp, *iop;
 #endif	FLOCKFILE
 
 	io = open(file, 0);
@@ -411,18 +410,18 @@ rop(c)
 		error(" Directory");
 
 	case S_IFREG:
-		i = read(io, (char *) &magic, sizeof(magic));
-		lseek(io, 0l, 0);
-		if (i != sizeof(magic))
+		i = read(io, (char *)&head, sizeof(head));
+		(void)lseek(io, 0L, L_SET);
+		if (i != sizeof(head))
 			break;
 #ifndef vms
-		switch (magic) {
+		switch ((int)head.a_magic) {
 
 		case 0405:	/* data overlay on exec */
-		case 0407:	/* unshared */
-		case 0410:	/* shared text */
+		case OMAGIC:	/* unshared */
+		case NMAGIC:	/* shared text */
 		case 0411:	/* separate I/D */
-		case 0413:	/* VM/Unix demand paged */
+		case ZMAGIC:	/* VM/Unix demand paged */
 		case 0430:	/* PDP-11 Overlay shared */
 		case 0431:	/* PDP-11 Overlay sep I/D */
 			error(" Executable");
@@ -438,16 +437,19 @@ rop(c)
 		case 0177545:
 		case 0177555:
 			error(" Archive");
+		case 070707:
+			error(" Cpio file");
 
 		default:
-#ifdef mbb
-			/* C/70 has a 10 bit byte */
-			if (magic & 03401600)
-#else
-			/* Everybody else has an 8 bit byte */
-			if (magic & 0100200)
-#endif
-				error(" Non-ascii file");
+			{
+				char *bp = (char *)&head;
+				if ((u_char)bp[0] == (u_char)'\037' &&
+				    (u_char)bp[1] == (u_char)'\235')
+					error(" Compressed file");
+				if (!strncmp(bp, "!<arch>\n__.SYMDEF", 17)
+				    || !strncmp(bp, "!<arch>\n", 8))
+					error(" Archive");
+			}
 			break;
 		}
 #endif
@@ -1034,17 +1036,17 @@ iostats()
 # define rindex strrchr
 #endif
 
-checkmodeline(line)
-char *line;
+checkmodeline(l)
+char *l;
 {
 	char *beg, *end;
 	char cmdbuf[1024];
 	char *index(), *rindex(), *strncpy();
 
-	beg = index(line, ':');
+	beg = index(l, ':');
 	if (beg == NULL)
 		return;
-	if (&beg[-3] < line)
+	if (&beg[-3] < l)
 		return;
 	if (!(  ( (beg[-3] == ' ' || beg[-3] == '\t')
 	        && beg[-2] == 'e'
