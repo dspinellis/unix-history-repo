@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_output.c	7.14 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.13.1.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -296,6 +296,8 @@ send:
 		win = 0;
 	if (win < (int)(tp->rcv_adv - tp->rcv_nxt))
 		win = (int)(tp->rcv_adv - tp->rcv_nxt);
+	if (win > IP_MAXPACKET)
+		win = IP_MAXPACKET;
 	ti->ti_win = htons((u_short)win);
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = htons((u_short)(tp->snd_up - tp->snd_nxt));
@@ -387,8 +389,13 @@ send:
 	 */
 	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + optlen + len;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
+#if BSD>=43
 	error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
 	    so->so_options & SO_DONTROUTE);
+#else
+	error = ip_output(m, (struct mbuf *)0, &tp->t_inpcb->inp_route, 
+			  so->so_options & SO_DONTROUTE);
+#endif
 	if (error) {
 		if (error == ENOBUFS) {
 			tcp_quench(tp->t_inpcb);
