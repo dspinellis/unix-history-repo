@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -352,8 +352,10 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc != 2)
+	if (argc != 2) {
 		usage();
+		/* NOTREACHED */
+	}
 
 	spec = *argv++;
 	name = *argv;
