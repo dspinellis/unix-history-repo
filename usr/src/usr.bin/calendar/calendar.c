@@ -1,11 +1,11 @@
-static	char *sccsid = "@(#)calendar.c	4.3 (Berkeley) 82/06/28";
+static	char *sccsid = "@(#)calendar.c	4.4 (Berkeley) 83/07/03";
 /* /usr/lib/calendar produces an egrep -f file
    that will select today's and tomorrow's
    calendar entries, with special weekend provisions
 
    used by calendar command
 */
-#include <time.h>
+#include <sys/time.h>
 
 #define DAY (3600*24L)
 
