@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.13 %G%";
+static char sccsid[] = "@(#)fend.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -56,6 +56,7 @@ funcend(fp, bundle, endline)
 	    int		toplabel = getlab();
 	    int		botlabel = getlab();
 	    int		proflabel = getlab();
+	    int		skip = getlab();
 	    char	extname[ BUFSIZ ];
 #	endif PC
 
@@ -203,17 +204,6 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.text" , 0 );
 	}
 	    /*
-	     *	set up unwind exception vector.
-	     */
-	putprintf( "	moval	%s,%d(%s)" , 0
-		, UNWINDNAME , UNWINDOFFSET , P2FPNAME );
-	    /*
-	     *	save address of display entry, for unwind.
-	     */
-	putprintf( "	moval	%s+%d,%d(%s)" , 0
-		, DISPLAYNAME , cbn * sizeof(struct dispsave)
-		, DPTROFFSET , P2FPNAME );
-	    /*
 	     *	save old display 
 	     */
 	putprintf( "	movq	%s+%d,%d(%s)" , 0
@@ -249,6 +239,20 @@ funcend(fp, bundle, endline)
 	    putop( P2CALL , P2INT );
 	    putdot( filename , line );
 	}
+	    /*
+	     *  set up goto vector in case of non-local goto to this frame
+	     */
+	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		, "_setjmp" );
+	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+	putop( P2CALL , P2INT );
+	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+	putop( P2NE , P2INT );
+	putleaf( P2ICON , skip , 0 , P2INT , 0 );
+	putop( P2CBRANCH , P2INT );
+	putdot( filename , line );
+	putprintf( "	jmp	(r0)" , 0 );
+	putlab(skip);
 #endif PC
 	if ( monflg ) {
 		if ( fp -> value[ NL_CNTR ] != 0 ) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.13 %G%";
+static char sccsid[] = "@(#)lab.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -136,22 +136,44 @@ gotoop(s)
 #	ifdef PC
 	    if ( cbn != bn ) {
 		    /*
-		     *	call goto to unwind the stack to the destination level
+		     *  Close all active files between top of stack and
+		     *  frame at the destination level.	Then call longjmp
+		     *	to unwind the stack to the destination level.
 		     */
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			, "_GOTO" );
-		putLV( DISPLAYNAME , 0 , bn * sizeof( struct dispsave ) ,
+			, "_PCLOSE" );
+		putRV( DISPLAYNAME , 0 ,
+			bn * sizeof( struct dispsave ) + sizeof ( char * ) ,
 			NGLOBAL , P2PTR | P2INT );
+		if ( bn > 1 ) {
+		    p = lookup( enclosing[ bn - 1 ] );
+		    sprintf( extname, "LF%d+%d", p -> value[ NL_ENTLOC ]
+			, sizeof( int ) );
+		    putleaf( P2ICON , 0 , 0 , P2INT , extname );
+		    p = lookup(s);
+		} else {
+		    putleaf( P2ICON , DPOFF1 + sizeof( int ) , 0 , P2INT , 0 );
+		}
+		putop( P2MINUS , P2PTR | P2CHAR );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
+		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+			, "_longjmp" );
+		putLV( 0 , bn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+		extlabname( extname , p -> symbol , bn );
+		putLV( extname , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
+		putop( P2LISTOP , P2INT );
+		putop( P2CALL , P2INT );
+		putdot( filename , line );
+	    } else {
+		extlabname( extname , p -> symbol , bn );
+		    /*
+		     *	this is a jmp because it's a jump to a global
+		     *	and the assembler doesn't change jbr's into jmp's
+		     *	if the destination is a global symbol.
+		     */
+		putprintf( "	jmp	%s" , 0 , extname );
 	    }
-	    extlabname( extname , p -> symbol , bn );
-		/*
-		 *	this is a jmp because it's a jump to a global
-		 *	and the assembler doesn't change jbr's into jmp's
-		 *	if the destination is a global symbol.
-		 */
-	    putprintf( "	jmp	%s" , 0 , extname );
 #	endif PC
 	if (bn == cbn)
 		if (p->nl_flags & NFORWD) {
