@@ -138,8 +138,45 @@ loop:
 			refusetime = 0;
 			break;
 		case TSP_MASTERREQ:
-			(void)gettimeofday(&time, (struct timezone *)0);
-			electiontime = time.tv_sec + delay2;
+			for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
+				if ((ntp->mask & from.sin_addr.s_addr) ==
+				    ntp->net) {
+					if (ntp->status == MASTER)
+						break;
+				}
+			}
+			if (!(status & MASTER) || ntp == NULL) {
+				(void)gettimeofday(&time, (struct timezone *)0);
+				electiontime = time.tv_sec + delay2;
+				break;
+			}
+			ind = addmach(msg->tsp_name, &from);
+			if (trace)
+				prthp();
+			if (hp[ind].seq !=  msg->tsp_seq) {
+				hp[ind].seq = msg->tsp_seq;
+				to.tsp_type = TSP_SETTIME;
+				(void)strcpy(to.tsp_name, hostname);
+				/*
+				 * give the upcoming slave the time
+				 * to check its input queue before
+				 * setting the time
+				 */
+				sleep(1);
+				to.tsp_time.tv_usec = 0;
+				(void) gettimeofday(&mytime,
+				    (struct timezone *)0);
+				to.tsp_time.tv_sec = mytime.tv_sec;
+				answer = acksend(&to, &hp[ind].addr,
+				    hp[ind].name, TSP_ACK,
+				    (struct netinfo *)NULL);
+				if (answer == NULL) {
+					syslog(LOG_ERR,
+					    "ERROR ON SETTIME machine: %s",
+					    hp[ind].name);
+					slvcount--;
+				}
+			}
 			break;
 		case TSP_DATE:
 			saveaddr = from;
