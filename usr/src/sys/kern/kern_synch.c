@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.12	81/04/15	*/
+/*	kern_synch.c	4.13	81/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -173,9 +173,12 @@ restart:
 					runrun++;
 					aston();
 				}
-				if(runout != 0 && (p->p_flag&SLOAD) == 0) {
-					runout = 0;
-					wakeup((caddr_t)&runout);
+				if ((p->p_flag&SLOAD) == 0) {
+					if (runout != 0) {
+						runout = 0;
+						wakeup((caddr_t)&runout);
+					}
+					wantin++;
 				}
 				/* END INLINE EXPANSION */
 				goto restart;
@@ -233,9 +236,12 @@ register struct proc *p;
 		runrun++;
 		aston();
 	}
-	if(runout != 0 && (p->p_flag&SLOAD) == 0) {
-		runout = 0;
-		wakeup((caddr_t)&runout);
+	if ((p->p_flag&SLOAD) == 0) {
+		if(runout != 0) {
+			runout = 0;
+			wakeup((caddr_t)&runout);
+		}
+		wantin++;
 	}
 }
 

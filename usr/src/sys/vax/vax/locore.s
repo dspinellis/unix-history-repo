@@ -1,4 +1,4 @@
-/*	locore.s	4.43	81/04/15	*/
+/*	locore.s	4.44	81/04/17	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -770,12 +770,9 @@ _Subyte:
  */
 _copyseg: 	.globl	_copyseg
 	.word	0x0
-	mfpr	$IPL,r0		# get current pri level
-	mtpr	$HIGH,$IPL	# turn off interrupts
 	bisl3	$PG_V|PG_KW,8(ap),_CMAP2
 	mtpr	$_CADDR2,$TBIS	# invalidate entry for copy 
 	movc3	$NBPG,*4(ap),_CADDR2
-	mtpr	r0,$IPL		# restore pri level
 	ret
 
 /*
@@ -784,12 +781,9 @@ _copyseg: 	.globl	_copyseg
  */
 _clearseg: 	.globl	_clearseg
 	.word	0x0
-	mfpr	$IPL,r0		# get current pri level
-	mtpr	$HIGH,$IPL	# extreme pri level
 	bisl3	$PG_V|PG_KW,4(ap),_CMAP1
 	mtpr	$_CADDR1,$TBIS
 	movc5	$0,(sp),$0,$NBPG,_CADDR1
-	mtpr	r0,$IPL		# restore pri level
 	ret
 
 /*
