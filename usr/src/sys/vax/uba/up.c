@@ -1,4 +1,4 @@
-/*	up.c	4.34	81/03/10	*/
+/*	up.c	4.35	81/04/01	*/
 
 #include "up.h"
 #if NSC > 0
@@ -463,10 +463,6 @@ upintr(sc21)
 		goto doattn;
 	}
 	/*
-	 * Release unibus resources and flush data paths.
-	 */
-	ubadone(um);
-	/*
 	 * Get device and block structures, and a pointer
 	 * to the uba_device for the drive.  Select the drive.
 	 */
@@ -592,6 +588,10 @@ upintr(sc21)
 				needie = 0;
 	}
 	as &= ~(1<<ui->ui_slave);
+	/*
+	 * Release unibus resources and flush data paths.
+	 */
+	ubadone(um);
 doattn:
 	/*
 	 * Process other units which need attention.
@@ -671,6 +671,8 @@ upecc(ui)
 	printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
+	printf("npf %d reg %x o %d mask %o pos %d\n", npf, reg, o, mask,
+	    up->upec1);
 	/*
 	 * Flush the buffered data path, and compute the
 	 * byte and bit position of the error.  The variable i
@@ -691,7 +693,11 @@ upecc(ui)
 	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
 		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
 		    (byte & PGOFSET);
+		printf("addr %x map reg %x\n",
+		    addr, *(int *)(&ubp->uba_map[reg+btop(byte)]));
+		printf("old: %x, ", getmemc(addr));
 		putmemc(addr, getmemc(addr)^(mask<<bit));
+		printf("new: %x\n", getmemc(addr));
 		byte++;
 		i++;
 		bit -= 8;
