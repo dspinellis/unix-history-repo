@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap.h	1.2 (Berkeley) %G%
+ *	@(#)umap.h	7.1 (Berkeley) %G%
  *
  * @(#)null_vnops.c       1.5 (Berkeley) 7/10/92
  */
@@ -63,4 +63,3 @@ extern struct vnode *umap_checkvp __P((struct vnode *vp, char *fil, int lno));
 extern int (**umap_vnodeop_p)();
 extern struct vfsops umap_vfsops;
 #endif /* KERNEL */
-
