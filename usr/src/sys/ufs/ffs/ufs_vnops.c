@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.24 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,39 +68,41 @@ int	ufs_lookup(),
 	ufs_lock(),
 	ufs_unlock(),
 	ufs_bmap(),
-	ufs_strategy();
+	ufs_strategy(),
+	ufs_print();
 
 struct vnodeops ufs_vnodeops = {
-	ufs_lookup,
-	ufs_create,
-	ufs_mknod,
-	ufs_open,
-	ufs_close,
-	ufs_access,
-	ufs_getattr,
-	ufs_setattr,
-	ufs_read,
-	ufs_write,
-	ufs_ioctl,
-	ufs_select,
-	ufs_mmap,
-	ufs_fsync,
-	ufs_seek,
-	ufs_remove,
-	ufs_link,
-	ufs_rename,
-	ufs_mkdir,
-	ufs_rmdir,
-	ufs_symlink,
-	ufs_readdir,
-	ufs_readlink,
-	ufs_abortop,
-	ufs_inactive,
-	ufs_reclaim,
-	ufs_lock,
-	ufs_unlock,
-	ufs_bmap,
-	ufs_strategy,
+	ufs_lookup,		/* lookup */
+	ufs_create,		/* create */
+	ufs_mknod,		/* mknod */
+	ufs_open,		/* open */
+	ufs_close,		/* close */
+	ufs_access,		/* access */
+	ufs_getattr,		/* getattr */
+	ufs_setattr,		/* setattr */
+	ufs_read,		/* read */
+	ufs_write,		/* write */
+	ufs_ioctl,		/* ioctl */
+	ufs_select,		/* select */
+	ufs_mmap,		/* mmap */
+	ufs_fsync,		/* fsync */
+	ufs_seek,		/* seek */
+	ufs_remove,		/* remove */
+	ufs_link,		/* link */
+	ufs_rename,		/* rename */
+	ufs_mkdir,		/* mkdir */
+	ufs_rmdir,		/* rmdir */
+	ufs_symlink,		/* symlink */
+	ufs_readdir,		/* readdir */
+	ufs_readlink,		/* readlink */
+	ufs_abortop,		/* abortop */
+	ufs_inactive,		/* inactive */
+	ufs_reclaim,		/* reclaim */
+	ufs_lock,		/* lock */
+	ufs_unlock,		/* unlock */
+	ufs_bmap,		/* bmap */
+	ufs_strategy,		/* strategy */
+	ufs_print,		/* print */
 };
 
 int	spec_lookup(),
@@ -108,6 +110,7 @@ int	spec_lookup(),
 	ufsspec_read(),
 	ufsspec_write(),
 	spec_strategy(),
+	spec_bmap(),
 	spec_ioctl(),
 	spec_select(),
 	ufsspec_close(),
@@ -143,8 +146,9 @@ struct vnodeops spec_inodeops = {
 	ufs_reclaim,		/* reclaim */
 	ufs_lock,		/* lock */
 	ufs_unlock,		/* unlock */
-	spec_badop,		/* bmap */
+	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
+	ufs_print,		/* print */
 };
 
 enum vtype iftovt_tab[8] = {
@@ -318,7 +322,7 @@ ufs_setattr(vp, vap, cred)
 	if (vap->va_size != VNOVAL) {
 		if (vp->v_type == VDIR)
 			return (EISDIR);
-		if (error = itrunc(ip, vap->va_size))
+		if (error = itrunc(ip, vap->va_size, 0)) /* XXX IO_SYNC? */
 			return (error);
 	}
 	if (vap->va_atime.tv_sec != VNOVAL || vap->va_mtime.tv_sec != VNOVAL) {
@@ -471,17 +475,14 @@ ufs_read(vp, uio, ioflag, cred)
 			return (0);
 		if (diff < n)
 			n = diff;
-		if (error = bmap(ip, lbn, &bn, &rablock, &rasize))
-			return (error);
 		size = blksize(fs, ip, lbn);
-		if ((long)bn < 0) {
-			bp = geteblk(size);
-			clrbuf(bp);
-		} else if (ip->i_lastr + 1 == lbn)
-			error = breada(ip->i_devvp, bn, size, rablock, rasize,
+		rablock = lbn + 1;
+		rasize = blksize(fs, ip, rablock);
+		if (ip->i_lastr + 1 == lbn)
+			error = breada(ITOV(ip), lbn, size, rablock, rasize,
 				NOCRED, &bp);
 		else
-			error = bread(ip->i_devvp, bn, size, NOCRED, &bp);
+			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
 		ip->i_lastr = lbn;
 		n = MIN(n, size - bp->b_resid);
 		if (error) {
@@ -548,31 +549,27 @@ ufs_write(vp, uio, ioflag, cred)
 	resid = uio->uio_resid;
 	osize = ip->i_size;
 	fs = ip->i_fs;
+	flags = 0;
+	if (ioflag & IO_SYNC)
+		flags = B_SYNC;
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = MIN((unsigned)(fs->fs_bsize - on), uio->uio_resid);
 		if (n < fs->fs_bsize)
-			flags = B_CLRBUF;
+			flags |= B_CLRBUF;
 		else
-			flags = 0;
-		if (error = balloc(ip, lbn, (int)(on + n), &bn, flags))
+			flags &= ~B_CLRBUF;
+		if (error = balloc(ip, lbn, (int)(on + n), &bp, flags))
 			break;
+		bn = bp->b_blkno;
 		if (uio->uio_offset + n > ip->i_size)
 			ip->i_size = uio->uio_offset + n;
 		size = blksize(fs, ip, lbn);
 		count = howmany(size, CLBYTES);
 		for (i = 0; i < count; i++)
 			munhash(ip->i_devvp, bn + i * CLBYTES / DEV_BSIZE);
-		if (n == fs->fs_bsize)
-			bp = getblk(ip->i_devvp, bn, size);
-		else
-			error = bread(ip->i_devvp, bn, size, NOCRED, &bp);
 		n = MIN(n, size - bp->b_resid);
-		if (error) {
-			brelse(bp);
-			break;
-		}
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
 		if (ioflag & IO_SYNC)
 			(void) bwrite(bp);
@@ -586,7 +583,7 @@ ufs_write(vp, uio, ioflag, cred)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
 	if (error && (ioflag & IO_UNIT)) {
-		(void) itrunc(ip, osize);
+		(void) itrunc(ip, osize, ioflag & IO_SYNC);
 		uio->uio_offset -= resid - uio->uio_resid;
 		uio->uio_resid = resid;
 	}
@@ -644,7 +641,8 @@ ufs_fsync(vp, fflags, cred, waitfor)
 
 	if (fflags&FWRITE)
 		ip->i_flag |= ICHG;
-	return (syncip(ip, waitfor));
+	vflushbuf(vp, waitfor == MNT_WAIT ? B_SYNC : 0);
+	return (iupdat(ip, &time, &time, waitfor == MNT_WAIT));
 }
 
 /*
@@ -902,7 +900,7 @@ ufs_rename(fndp, tndp)
 		if (doingdirectory) {
 			if (--xp->i_nlink != 0)
 				panic("rename: linked directory");
-			error = itrunc(xp, (u_long)0);
+			error = itrunc(xp, (u_long)0, IO_SYNC);
 		}
 		xp->i_flag |= ICHG;
 		iput(xp);
@@ -1162,7 +1160,7 @@ ufs_rmdir(ndp)
 	 * worry about them later.
 	 */
 	ip->i_nlink -= 2;
-	error = itrunc(ip, (u_long)0);
+	error = itrunc(ip, (u_long)0, IO_SYNC);
 	cache_purge(ITOV(ip));
 out:
 	if (ndp->ni_dvp)
@@ -1290,11 +1288,66 @@ ufs_bmap(vp, bn, vpp, bnp)
 /*
  * Just call the device strategy routine
  */
+int checkoverlap = 1;
+
 ufs_strategy(bp)
 	register struct buf *bp;
 {
-	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
+	register struct inode *ip = VTOI(bp->b_vp);
+	register struct buf *ep;
+	struct vnode *vp;
+	struct buf *ebp;
+	daddr_t start, last;
+	int error;
+
+	if (bp->b_vp->v_type == VBLK || bp->b_vp->v_type == VCHR)
+		panic("ufs_strategy: spec");
+	if (bp->b_blkno == bp->b_lblkno) {
+		if (error = bmap(ip, bp->b_lblkno, &bp->b_blkno))
+			return (error);
+		if ((long)bp->b_blkno == -1) {
+			clrbuf(bp);
+			biodone(bp);
+		}
+	}
+	if ((long)bp->b_blkno == -1)
+		return (0);
+	if (checkoverlap) {
+		ebp = &buf[nbuf];
+		start = bp->b_blkno;
+		last = start + btodb(bp->b_bcount) - 1;
+		for (ep = buf; ep < ebp; ep++) {
+			if (ep == bp || (ep->b_flags & B_INVAL) ||
+			    ep->b_vp == (struct vnode *)0)
+				continue;
+			if (VOP_BMAP(ep->b_vp, (daddr_t)0, &vp, (daddr_t)0))
+				continue;
+			if (vp != ip->i_devvp)
+				continue;
+			/* look for overlap */
+			if (ep->b_bcount == 0 || ep->b_blkno > last ||
+			    ep->b_blkno + btodb(ep->b_bcount) <= start)
+				continue;
+			panic("Disk overlap");
+		}
+	}
+	vp = ip->i_devvp;
+	bp->b_dev = vp->v_rdev;
+	(*(vp->v_op->vn_strategy))(bp);
 	return (0);
+}
+
+/*
+ * Print out the contents of an inode.
+ */
+ufs_print(vp)
+	struct vnode *vp;
+{
+	register struct inode *ip = VTOI(vp);
+
+	printf("tag VT_UFS, ino %d, on dev %d, %d%s\n", ip->i_number,
+		major(ip->i_dev), minor(ip->i_dev),
+		(ip->i_flag & ILOCKED) ? " (LOCKED)" : "");
 }
 
 /*
