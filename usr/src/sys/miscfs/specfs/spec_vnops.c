@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)spec_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -148,6 +148,8 @@ spec_open(ap)
 					return (EPERM);
 			}
 		}
+		if (istty(dev))
+			vp->v_flag |= VISTTY;
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[maj].d_open)(dev, ap->a_mode, S_IFCHR, ap->a_p);
 		VOP_LOCK(vp);
