@@ -1,0 +1,70 @@
+.TH ACCEPT 2 2/12/83
+.SH NAME
+accept \- accept a connection on a socket
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/socket.h>
+.PP
+.ft B
+ns = accept(s, addr, addrlen)
+int ns, s;
+struct sockaddr *addr;
+int *addrlen;
+.fi
+.SH DESCRIPTION
+The argument
+.I s
+is a socket which has been created with
+.IR socket (2),
+bound to an address with
+.IR bind (2)
+and is listening for connections after a
+.IR listen (2).
+The first queued connection
+is extracted from the queue with
+.I accept.
+.PP
+The argument
+.I addr
+is a result indicating the address of the entity which
+connected, as known to the communications layer.
+The exact format of the
+.I addr
+parameter is determined by the domain in which the communication
+is occurring.
+The 
+.I addrlen
+is a value-result parameter; it should initially contain the
+amount of space pointed to by
+.IR addr ;
+on return it will contain the actual length (in bytes) of the
+address returned.
+This call
+is used with connection-based socket types, currently with SOCK_STREAM.
+.PP
+It is possible to
+.IR select (2)
+a socket for the purposes of doing an
+.I accept
+by selecting it for read.
+.SH "RETURN VALUE
+The call returns \-1 on error.  If it succeeds it returns a non-negative
+descriptor.
+.SH ERRORS
+The \fIaccept\fP will fail if:
+.TP 20
+[EBADF]
+The descriptor is invalid.
+.TP 20
+[ENOTSOCK]
+The descriptor references a file, not a socket.
+.TP 20
+[EOPNOTSUPP]
+The referenced socket is not of type SOCK_STREAM.
+.TP 20
+[EFAULT]
+The \fIaddr\fP parameter is not in a writeable part of the
+user address space.
+.SH SEE ALSO
+bind(2), connect(2), listen(2), select(2), socket(2)

@@ -1,0 +1,39 @@
+.TH GETSOCKOPT 2 2/13/83
+.SH NAME
+getsockopt, setsockopt \- get and set options on sockets
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/socket.h>
+.PP
+.ft B
+getsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int *optlen;
+.sp
+setsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int optlen;
+.fi
+.SH DESCRIPTION
+To be supplied.
+.SH DIAGNOSTICS
+A 0 is returned if the call succeeds, \-1 if it fails.
+.SH ERRORS
+The call succeeds unless:
+.TP 15
+[EBADF]
+The argument \fIs\fP is not a valid descriptor.
+.TP 15
+[ENOTSOCK]
+The argument \fIs\fP is a file, not a socket.
+.TP 15
+???
+.TP 15
+[EFAULT]
+The options are not in a valid part of the
+process address space.
+.SH "SEE ALSO"
+socket(2)

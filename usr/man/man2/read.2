@@ -1,0 +1,87 @@
+.TH READ 2 2/12/83
+.SH NAME
+read, readv \- read input
+.SH SYNOPSIS
+.nf
+.ft B
+read(d, buf, nbytes)
+int d;
+char *buf;
+int nbytes;
+.PP
+.ft B
+#include <sys/types.h>
+.PP
+.ft B
+readv(d, iov, iovlen)
+int d;
+struct iovec *iov;
+int iovlen;
+.fi
+.SH DESCRIPTION
+.I Read
+attempts to read
+.I nbytes
+of data from the object referenced by the descriptor
+.I d
+into the buffer pointed to by
+.I buf.
+.I Readv
+performs the same action, but scatters the input data
+into the \fIiovlen\fP buffers specified by the members of
+the \fIiovec\fP array: iov[0], iov[1], etc.
+.PP
+On objects capable of seeking, the \fIread\fP starts at a position
+given by the pointer associated with
+.IR d ,
+see
+.IR lseek (2).
+Upon return from
+.IR read ,
+the pointer is incremented by the number of bytes actually read.
+.PP
+Objects that are not capable of seeking always read from the current
+position.  The value of the pointer associated with such a 
+object is undefined.
+.PP
+Upon successful completion,
+.I read
+returns the number of bytes actually read and placed in the buffer.
+The system guarantees to read the number of bytes requested if
+the descriptor references a file which has that many bytes left
+before the end-of-file, but in no other cases.
+.PP
+If the returned value is 0, then
+end-of-file has been reached.
+.SH "RETURN VALUE
+Upon successful completion an integer is returned indicating the
+number of bytes actually read.  Othewise, a \-1 is returned
+and the global variable
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+\fIRead\fP will fail if one or more of the following are true:
+.TP 15
+[EBADF]
+\fIFildes\fP is not a valid file descriptor open for reading.
+.TP 15
+[EFAULT]
+\fIBuf\fP points outside the allocated address space.
+.TP 15
+[EINTR]
+A read from a slow device was interrupted before
+any data arrived by the delivery of a signal.
+.SH "SEE ALSO"
+dup(2), open(2), pipe(2), socket(2), socketpair(2)
+.SH DIAGNOSTICS
+As mentioned,
+0 is returned when the end of the file has been reached.
+If the read was otherwise unsuccessful
+the return value is \-1.
+Many conditions
+can generate an error:
+physical I/O errors, bad buffer address,
+preposterous
+.I nbytes,
+file descriptor not that of
+an input file.

@@ -1,0 +1,20 @@
+.TH GETPID 2 2/12/83
+.SH NAME
+getpid \- get process identification
+.SH SYNOPSIS
+.ft B
+.nf
+pid = getpid()
+long pid;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Getpid
+returns
+the process ID of
+the current process.
+Most often it is used with the host identifier
+\fIgethosid\fP\|(2) to generate
+uniquely-named
+temporary files.
+.SH "SEE ALSO

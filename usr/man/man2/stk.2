@@ -1,0 +1,59 @@
+.TH STK 2 2/12/83
+.SH NAME
+stk, sstk \- change stack segment size
+.SH SYNOPSIS
+.nf
+.ft B
+caddr_t stk(addr)
+caddr_t addr;
+.PP
+.ft B
+caddr_t sstk(incr)
+int incr;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Stk
+sets the system's idea of the lowest stack segment
+location not used by the program to
+.I addr
+(rounded up to the next multiple of the system's page size).
+Locations less than
+.I addr
+and above the break (the end of the data segment)
+are not in the address space and will
+cause a memory violation if accessed.
+.PP
+In the alternate function
+.IR sstk ,
+.I incr
+more bytes are added to the
+program's stack segment and a pointer to the
+start of the new area is returned.
+.PP
+The
+.IR setrlimit (2)
+system call may be used to determine
+the maximum permissible size of the
+.I stack
+segment;
+it will not be possible to expand the stack to
+be larger than the
+.I rlimit_max
+value returned by
+\*(lqsetrlimit(RLIMIT_STACK, rlp)\*(rq.
+.PP
+By default the system expands the stack as required.
+This call is useful mainly in conjunction with the 
+.IR mmap (2)
+call.
+.SH "RETURN VALUE
+Zero is returned if the allocation was successful;
+\-1 if the program requests more memory than the system limit.
+.I Sstk
+returns \-1 if the allocation failed.
+.SH ERRORS
+???
+.SH "SEE ALSO"
+getpagesize(2), exec(2), getrlimit(2)

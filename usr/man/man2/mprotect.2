@@ -1,0 +1,41 @@
+.TH MPROTECT 2 2/12/83
+.SH NAME
+mprotect \- change memory protection
+.SH SYNOPSIS
+.nf
+.ft B
+#include <mman.h>
+#include <sys/types.h>
+.PP
+.ft B
+mprotect(addr, len, prot)
+caddr_t addr; int len, prot;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Mprotect
+causes the pages starting at
+.I addr
+and continuing for 
+.I len
+bytes to be protected with protection
+.I prot,
+which specifies some (inclusive-or) combination of
+PROT_READ,
+PROT_WRITE
+and
+PROT_EXEC.
+.I Addr
+and
+.I len
+parameters must be multiples of the software page size
+(obtained with the 
+.IR getpagesize (2)
+call).
+.SH "RETURN VALUE
+???
+.SH ERRORS
+???
+.SH "SEE ALSO"
+getpagesize(2), madvise(2), mmap(2), munmap(2)

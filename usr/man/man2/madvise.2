@@ -1,0 +1,71 @@
+.TH MADVISE 2 2/12/83
+.SH NAME
+madvise \- give advice to the paging system
+.SH SYNOPSIS
+.nf
+.ft B
+#include <mman.h>
+#include <sys/types.h>
+.PP
+.ft B
+madvise(addr, len, behavior)
+caddr_t addr; int len, behavior;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Madvise
+is used to inform the system that process paging
+behavior merits special consideration.  The call
+specifies that memory starting at
+.I addr
+and continuing for
+.I len
+bytes will exhibit a particular
+.IR behavior .
+The system may use this information to alter its
+paging policy as best suits this behavior, though
+nothing is guaranteed.
+.TP 5
+MADV_RANDOM
+advises that the paging behavior is not likely to
+be well handled by the system's default algorithm,
+since reference information collected over macroscopic
+intervals (e.g. 10-20 seconds) will not serve to indicate
+future page references.  The system in this case will
+choose to replace pages with little emphasis placed
+on recent usage, and more emphasis on referenceless
+circular behavior.  It is 
+.I essential
+that processes which have very random paging behavior
+(such as LISP during garbage collection of very large
+address spaces) call
+.I madvise,
+as otherwise the system has great difficulty dealing
+with their page-consumptive demands.
+.TP 5
+MADV_NORMAL
+restores default paging replacement behavior.
+.TP 5
+MADV_SEQUENTIAL
+indicates sequential access should be expected
+in the area of memory indicated.  The system should try
+and prepage
+.I forward
+of the current reference, where possible.
+.TP 5
+MADVISE_WILLNEED
+advises the system that the memory
+indicated will be needed in the future and the associated pages
+should not be, if possible, reclaimed.
+.TP 5
+MADVISE_WONTNEED
+tells the system that the process has
+no further need for the memory indicated and the associated
+pages may be immediately reclaimed.
+.SH "RETURN VALUE"
+???
+.SH ERRORS
+???
+.SH "SEE ALSO"
+mmap(2), mincore(2), mremap(2), munmap(2)

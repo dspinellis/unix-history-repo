@@ -1,0 +1,51 @@
+.TH MAP 2 2/13/83
+.SH NAME
+map \- map pages of memory
+.SH SYNOPSIS
+.nf
+.ft B
+#include <mman.h>
+#include <sys/types.h>
+.PP
+.ft B
+map(addr, len, prot, share, fd, off)
+caddr_t addr; int len, prot, share, fd; off_t off;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Mmap
+causes the pages starting at
+.I addr
+and continuing for 
+.I len
+bytes to be mapped from the object represented by the
+descriptor
+.IR fd ,
+at offset
+.IR off .
+The parameter 
+.I share
+specifies whether modifications made to this mapped
+copy of the page are to be kept
+.I private 
+or are to be 
+.I shared
+with other references.
+The parameter
+.I prot
+specifies the accessibility of the mapped pages.
+The
+.I addr
+and
+.I len
+parameters and the sum of the current position in
+.I fd
+and the
+.I off
+parameters must be multiples of the page size (found using
+the 
+.IR getpagesize (2)
+call).
+.SH "SEE ALSO"
+getpagesize(2), madvise(2), mremap(2), munmap(2)
