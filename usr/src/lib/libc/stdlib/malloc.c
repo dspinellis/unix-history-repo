@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)malloc.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)malloc.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -163,9 +163,9 @@ malloc(nbytes)
 	 * Record allocated size of block and
 	 * bound space with magic numbers.
 	 */
-	op->ov_size = nbytes;
+	op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
 	op->ov_rmagic = RMAGIC;
-  	*(u_short *)((caddr_t)(op + 1) + nbytes) = RMAGIC;
+  	*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
   	return ((char *)(op + 1));
 }
@@ -298,7 +298,7 @@ realloc(cp, nbytes)
 		}
 		if (nbytes <= onb && nbytes > i) {
 #ifdef RCHECK
-			op->ov_size = nbytes;
+			op->ov_size = (nbytes + RSLOP - 1) & ~(RSLOP - 1);
 			*(u_short *)((caddr_t)(op + 1) + op->ov_size) = RMAGIC;
 #endif
 			return(cp);
