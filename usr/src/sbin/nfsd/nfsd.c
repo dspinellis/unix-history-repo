@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nfsd.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfsd.c	8.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -75,6 +75,7 @@ AUTH_DAT	auth;
 char		inst[INST_SZ];
 #endif
 
+void	nonfs __P((int));
 void	reapchild __P((int));
 void	setproctitle __P((char *));
 void	usage __P((void));
@@ -197,6 +198,7 @@ main(argc, argv, envp)
 		(void)signal(SIGTERM, SIG_IGN);
 		(void)signal(SIGHUP, SIG_IGN);
 	}
+	(void)signal(SIGSYS, nonfs);
 	(void)signal(SIGCHLD, reapchild);
 
 	if (reregister) {
@@ -528,6 +530,13 @@ usage()
 {
 	(void)fprintf(stderr, "nfsd %s\n", USAGE);
 	exit(1);
+}
+
+void
+nonfs(signo)
+	int signo;
+{
+	syslog(LOG_ERR, "missing system call: NFS not available.");
 }
 
 void
