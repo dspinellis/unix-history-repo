@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readobj.c 1.1 %G%";
+static char sccsid[] = "@(#)readobj.c 1.2 %G%";
 
 /*
  * Read in the namelist from the obj file.
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)readobj.c 1.1 %G%";
 #include "sym.h"
 #include "symtab.h"
 #include "object.h"
+#include "objfmt.h"
 #include "mappings.h"
 #include "mappings/filetab.h"
 #include "mappings/linetab.h"
@@ -24,13 +25,15 @@ readobj(file)
 char *file;
 {
 	register FILE *fp;
+	struct pxhdr hdr;
 
 	if ((fp = fopen(file, "r")) == NIL) {
 		panic("can't open %s", file);
 	}
-	fseek(fp, (long) SIZELOC, 0);
-	objsize = getw(fp);
-	fseek(fp, (long) objsize + 4, 1);
+	fseek(fp, (long) (HEADER_BYTES - sizeof(struct pxhdr)), 0);
+	get(fp, hdr);
+	objsize = hdr.objsize;
+	fseek(fp, (long) objsize, 1);
 	if (get(fp, nlhdr) != 1) {
 		panic("readobj:  get failed");
 	}

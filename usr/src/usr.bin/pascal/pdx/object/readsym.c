@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readsym.c 1.1 %G%";
+static char sccsid[] = "@(#)readsym.c 1.2 %G%";
 
 /*
  * SYM representation dependent routines for reading in the
@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)readsym.c 1.1 %G%";
 #include "sym.h"
 #include "symtab.h"
 #include "object.h"
+#include "objfmt.h"
 #include "process.h"
 #include "sym/classes.h"
 #include "objsym.rep"
@@ -37,7 +38,7 @@ FILE *fp;
 	if (isblock(t)) {
 #		if (isvaxpx)
 			if (t->class == PROG) {
-				t->symvalue.funcv.codeloc = BASEADDR;
+				t->symvalue.funcv.codeloc = HEADER_BYTES;
 			}
 #		endif
 		s = findblock(t);
@@ -132,7 +133,7 @@ SYM *t;
 	}
 	t->next_sym = s->next_sym;
 	*s = *t;
-	s->symvalue.funcv.codeloc -= BASEADDR;
+	s->symvalue.funcv.codeloc -= HEADER_BYTES;
 	findbeginning(s);
 	newfunc(s);
 	return(s);
