@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.23 (Berkeley) 85/02/04";
+static	char *sccsid = "@(#)docmd.c	4.24 (Berkeley) 85/02/05";
 #endif
 
 #include "defs.h"
@@ -35,7 +35,7 @@ docmds(dhosts, argc, argv)
 	signal(SIGTERM, cleanup);
 
 	for (c = cmds; c != NULL; c = c->c_next) {
-		if (dhosts != NULL) {
+		if (dhosts != NULL && *dhosts != NULL) {
 			for (cpp = dhosts; *cpp; cpp++)
 				if (strcmp(c->c_name, *cpp) == 0)
 					goto fndhost;
