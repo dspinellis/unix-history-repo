@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,8 +36,7 @@ printlong(stats, num)
 	register int num;
 {
 	extern int errno;
-	static char *modep;
-	char *user_from_uid(), *group_from_gid(), *strerror();
+	char modep[15], *user_from_uid(), *group_from_gid(), *strerror();
 
 	if (f_total)
 		(void)printf("total %lu\n", f_kblocks ?
@@ -50,10 +49,7 @@ printlong(stats, num)
 			(void)printf("%4ld ", f_kblocks ?
 			    howmany(stats->lstat.st_blocks, 2) :
 			    stats->lstat.st_blocks);
-		if (strmode(stats->lstat.st_mode, &modep)) {
-			(void)fprintf(stderr, "ls: %s.\n", strerror(errno));
-			exit(1);
-		}
+		(void)strmode(stats->lstat.st_mode, modep);
 		(void)printf("%s %3u %-*s ", modep, stats->lstat.st_nlink,
 		    UT_NAMESIZE, user_from_uid(stats->lstat.st_uid, 0));
 		if (f_group)
