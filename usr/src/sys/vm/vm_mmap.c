@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.24 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -164,11 +164,12 @@ smmap(p, uap, retval)
 	caddr_t handle;
 	int flags, error;
 
+	prot = uap->prot & VM_PROT_ALL;
 	flags = uap->flags;
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
 		printf("mmap(%d): addr %x len %x pro %x flg %x fd %d pos %x\n",
-		       p->p_pid, uap->addr, uap->len, uap->prot,
+		       p->p_pid, uap->addr, uap->len, prot,
 		       flags, uap->fd, (vm_offset_t)uap->pos);
 #endif
 	/*
@@ -176,8 +177,8 @@ smmap(p, uap, retval)
 	 * Size is implicitly rounded to a page boundary.
 	 */
 	addr = (vm_offset_t) uap->addr;
-	if (((flags & MAP_FIXED) && (addr & PAGE_MASK)) || uap->len < 0 ||
-	    ((flags & MAP_ANON) && uap->fd != -1))
+	if (((flags & MAP_FIXED) && (addr & PAGE_MASK)) ||
+	    (ssize_t)uap->len < 0 || ((flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
 	/*
@@ -201,53 +202,52 @@ smmap(p, uap, retval)
 	 */
 	if (addr == 0 && (flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
-	/*
-	 * If we are mapping a file we need to check various
-	 * file/vnode related things.
-	 */
 	if (flags & MAP_ANON) {
+		/*
+		 * Mapping blank space is trivial.
+		 */
 		handle = NULL;
 		maxprot = VM_PROT_ALL;
 	} else {
 		/*
 		 * Mapping file, get fp for validation.
-		 * Obtain vnode and make sure it is of appropriate type
+		 * Obtain vnode and make sure it is of appropriate type.
 		 */
 		if (((unsigned)uap->fd) >= fdp->fd_nfiles ||
 		    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
-			return(EBADF);
+			return (EBADF);
 		if (fp->f_type != DTYPE_VNODE)
-			return(EINVAL);
+			return (EINVAL);
 		vp = (struct vnode *)fp->f_data;
 		if (vp->v_type != VREG && vp->v_type != VCHR)
-			return(EINVAL);
+			return (EINVAL);
 		/*
-		 * Ensure that file protection and desired protection
-		 * are compatible.  Note that we only worry about writability
-		 * if mapping is shared.
-		 */
-		if ((uap->prot & PROT_READ) && (fp->f_flag & FREAD) == 0 ||
-		    ((flags & MAP_SHARED) &&
-		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
-			return(EACCES);
-		handle = (caddr_t)vp;
-		/*
-		 * Set maximum protection as dictated by the open file.
+		 * Ensure that file and memory protections are compatible.
+		 * Note that we only worry about writability if mapping is
+		 * shared; in this case, current and max prot are dictated
+		 * by the open file.
 		 * XXX use the vnode instead?  Problem is: what credentials
 		 * do we use for determination?  What if proc does a setuid?
 		 */
-		maxprot = 0;
+		maxprot = VM_PROT_EXECUTE;	/* ??? */
 		if (fp->f_flag & FREAD)
-			maxprot |= VM_PROT_READ|VM_PROT_EXECUTE;
-		if (fp->f_flag & FWRITE)
+			maxprot |= VM_PROT_READ;
+		else if (prot & PROT_READ)
+			return (EACCES);
+		if (flags & MAP_SHARED) {
+			if (fp->f_flag & FWRITE)
+				maxprot |= VM_PROT_WRITE;
+			else if (prot & PROT_WRITE)
+				return (EACCES);
+		} else
 			maxprot |= VM_PROT_WRITE;
+		handle = (caddr_t)vp;
 	}
-	prot = uap->prot & VM_PROT_ALL;
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
-			flags, handle, (vm_offset_t)uap->pos);
+	    flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
-		*retval = (int) addr;
-	return(error);
+		*retval = (int)addr;
+	return (error);
 }
 
 struct msync_args {
