@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)vnode_if.src	7.5 (Berkeley) %G%
+#	@(#)vnode_if.src	7.6 (Berkeley) %G%
 #
 vop_lookup {
 	IN struct vnode *dvp;
@@ -208,6 +208,12 @@ vop_print {
 
 vop_islocked {
 	IN struct vnode *vp;
+};
+
+vop_pathconf {
+	IN struct vnode *vp;
+	IN int name;
+	OUT int *retval;
 };
 
 vop_advlock {
