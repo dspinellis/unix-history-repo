@@ -1,0 +1,5 @@
+%4(msg)%<(cur)+%| %>%<{replied}-%| %>\
+%02(mon{date})/%02(mday{date})%<{date} %|*%>\
+%5(size) \
+%<(mymbox{from})To:%14(friendly{to})%|%17(friendly{from})%>  \
+%{subject}%<{body}<<%{body}%>
