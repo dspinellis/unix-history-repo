@@ -14,13 +14,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.9 (Berkeley) %G%
+#	@(#)Makefile	4.10 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
 MAN=	adventure.0
+
+all: adventure
 
 adventure: ${OBJS} ${LIBC}
 	${CC} -n ${CFLAGS} ${OBJS}
