@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.16 (Berkeley) %G%
+		@(#)README	8.17 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -256,6 +256,8 @@ usenet		Usenet (network news) delivery.  If this is specified,
 fax		Facsimile transmission.  This is experimental and based
 		on Sam Leffler's FlexFAX software.  For more information,
 		see below.
+
+pop		Post Office Protocol.
 
 
 +----------+
