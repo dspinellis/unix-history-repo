@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	8.1 (Berkeley) %G%
+ *	@(#)ct.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -133,6 +133,7 @@ ctopen(io)
 	unit = io->i_ctlr;
 	if (unit >= NCT)
 		return(ECTLR);
+	rs = &ct_softc[ctlr][unit];
 	if (rs->sc_alive == 0)
 		if (ctinit(ctlr, unit) == 0)
 			return(ENXIO);
