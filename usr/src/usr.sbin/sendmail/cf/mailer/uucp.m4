@@ -16,7 +16,7 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	8.7 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	8.8 (Berkeley) %G%')
 
 # old UUCP mailer
 Muucp,		P=UUCP_MAILER_PATH, F=CONCAT(DFMhuU, UUCP_MAILER_FLAGS), S=12, R=22, M=UUCP_MAX_SIZE,
@@ -44,7 +44,7 @@ R<@>				$n			errors to mailer-daemon
 R$* :; <@>			$@ $1 :;
 
 R$* < @ $* . >			$1 < @ $2 >		strip trailing dots
-R$* < @ $j >			$1			strip local name
+R$* < @ $=w >			$1			strip local name
 R$* < @ $- . UUCP >		$2 ! $1			convert to UUCP format
 R$* < @ $+ >			$2 ! $1			convert to UUCP format
 R$+				$: $U ! $1		prepend our name
@@ -77,10 +77,10 @@ R$*				$@ $>11 $1
 
 PUSHDIVERT(4)
 # resolve locally connected UUCP links
-R< @ $=Z . UUCP > : $+		$#uucp-dom $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=Z . UUCP >		$#uucp-dom $@ $2 $: $1	user@host.UUCP
-R< @ $=Y . UUCP > : $+		$#suucp $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=Y . UUCP >		$#suucp $@ $2 $: $1	user@host.UUCP
-R< @ $=U . UUCP > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
-R$+ < @ $=U . UUCP >		$#uucp $@ $2 $: $1	user@host.UUCP
+R< @ $=Z . UUCP. > : $+		$#uucp-dom $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=Z . UUCP. >		$#uucp-dom $@ $2 $: $1	user@host.UUCP
+R< @ $=Y . UUCP. > : $+		$#suucp $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=Y . UUCP. >		$#suucp $@ $2 $: $1	user@host.UUCP
+R< @ $=U . UUCP. > : $+		$#uucp $@ $1 $: $2	@host.UUCP: ...
+R$+ < @ $=U . UUCP. >		$#uucp $@ $2 $: $1	user@host.UUCP
 POPDIVERT

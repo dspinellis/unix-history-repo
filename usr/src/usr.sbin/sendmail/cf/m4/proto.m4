@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.22 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.23 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -435,30 +435,34 @@ undivert(2)dnl
 ifdef(`_NO_UUCP_', `dnl',
 `ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
-R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP > $3',
+R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP . > $3',
 `# if really UUCP, handle it immediately
 ifdef(`_CLASS_U_',
-`R$* < @ $=U . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=U . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=V . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=W . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=X . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_Y_',
-`R$* < @ $=Y . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=Y . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 
 # try UUCP traffic as a local address
-R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP > $3
+R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP . > $3
 ifdef(`_OLD_SENDMAIL_',
-`R$* < @ $+ . $+ . UUCP > $*		$@ $1 < @ $2 . $3 . > $4',
-`R$* < @ $+ . . UUCP > $*		$@ $1 < @ $2 . > $3')')
+`R$* < @ $+ . $+ . UUCP . > $*		$@ $1 < @ $2 . $3 . > $4',
+`R$* < @ $+ . . UUCP . > $*		$@ $1 < @ $2 . > $3')')
 ')
 ifdef(`_NO_CANONIFY_',
 `# make sure local host names appear canonical
 R$* < @ $=w > $*		$: $1 < @ $2 . > $3',
 `# pass to name server to make hostname canonical
 R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4')
+
+# pseudo-domains are always canonical
+R$* < @ $* $=P > $*		$: $1 < @ $2 $3 . > $4
+R$* < @ $* . . > $*		$: $1 < @ $2 . > $3
 
 undivert(8)dnl
 
@@ -537,7 +541,7 @@ R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
 ifdef(`_LOCAL_NOT_STICKY_',
 `R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
 R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
-`R$+ < @ $=w . >		$: $1 < @ $2 @ $H >		first try hub
+`R$+ < @ $=w . >		$: $1 < @ $2 . @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 $2		yep ....
 R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
@@ -566,7 +570,7 @@ ifdef(`CSNET_RELAY',
 `R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 @ $2 . CSNET $3	user@host.CSNET',
 	`dnl')
 ifdef(`_MAILER_fax_',
-`R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1		user@host.FAX',
+`R$+ < @ $+ .FAX. >	$#fax $@ $2 $: $1		user@host.FAX',
 `ifdef(`FAX_RELAY',
 `R$*<@$+.FAX>$*		$#smtp $@ $F $: $1 @ $2 . FAX $3		user@host.FAX',
 	`dnl')')
@@ -576,12 +580,12 @@ ifdef(`UUCP_RELAY',
 R$*<@$*.UUCP>$*		$#smtp $@ $Y $: @ $Y : $1 @ $2.UUCP $3	uucp mail',
 `ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
-R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
-R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1		user@host.UUCP',
+R< @ $+ .UUCP. > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
+R$+ < @ $+ .UUCP. >	$#uucp $@ $2 $: $1		user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET		$#usenet $: $1',
+R$+ . USENET.		$#usenet $: $1',
 	`dnl')
 
 ifdef(`_LOCAL_RULES_',
