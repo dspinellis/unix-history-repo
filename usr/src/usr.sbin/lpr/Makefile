@@ -16,7 +16,7 @@ ROOT=root
 DAEMON=daemon
 SPGRP=daemon
 
-all: lpd lpr sq dq lpdrestart filters
+all: lpd lpr lpq lprm lpdrestart filters
 
 filters: necf lpf laf
 
@@ -26,11 +26,11 @@ lpd:	lpd.o lpdchar.o printcap.o getqueue.o
 lpr:	lpr.o printcap.o
 	${CC} -o lpr ${LDFLAGS} lpr.o printcap.o
 
-sq:	sq.o printcap.o getqueue.o
-	${CC} -o sq ${LDFLAGS} sq.o -ltermcap printcap.o getqueue.o
+lpq:	lpq.o printcap.o getqueue.o
+	${CC} -o lpq ${LDFLAGS} lpq.o -ltermcap printcap.o getqueue.o
 
-dq:	dq.o printcap.o
-	${CC} -o dq ${LDFLAGS} dq.o printcap.o
+lprm:	lprm.o printcap.o
+	${CC} -o lprm ${LDFLAGS} lprm.o printcap.o
 
 lpdrestart: lpdrestart.o
 	${CC} -o lpdrestart ${LDFLAGS} lpdrestart.o
@@ -44,13 +44,13 @@ lpf:	lpf.c
 necf:	necf.c
 	${CC} -o necf ${CFLAGS} ${LDFLAGS} necf.c
 
-lpr.o lpd.o sq.o dq.o lpdrestart.o: lp.local.h
-lpd.o sq.o getqueue.o: getqueue.h
+lpr.o lpd.o lpq.o lprm.o lpdrestart.o: lp.local.h
+lpd.o lpq.o getqueue.o: getqueue.h
 
 install: all
 	cp lpd ${LIBDIR}/lpd
-	cp sq ${BINDIR}/lpq
-	cp dq ${BINDIR}/lprm
+	cp lpq ${BINDIR}/lpq
+	cp lprm ${BINDIR}/lprm
 	cp lpr ${BINDIR}/lpr
 #	rm -f ${BINDIR}/opr ${BINDIR}/print
 #	ln ${BINDIR}/lpr ${BINDIR}/print
@@ -65,7 +65,7 @@ install: all
 	chmod 775 ${SPOOLDIR}
 
 clean:
-	rm -f laf dq sq lpd lpr necf lpf *.o
+	rm -f laf lprm lpq lpd lpr necf lpf *.o
 
 print:
 	@pr makefile
