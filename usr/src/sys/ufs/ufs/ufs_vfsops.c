@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	7.65 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.66 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -141,6 +141,7 @@ ufs_hang_addrlist(mp, argp)
 	struct domain *dom;
 	int error;
 
+	ump = VFSTOUFS(mp);
 	if (argp->slen == 0) {
 		if (mp->mnt_flag & MNT_DEFEXPORTED)
 			return (EPERM);
@@ -166,7 +167,6 @@ ufs_hang_addrlist(mp, argp)
 		if (smask->sa_len > argp->msklen)
 			smask->sa_len = argp->msklen;
 	}
-	ump = VFSTOUFS(mp);
 	i = saddr->sa_family;
 	if ((rnh = ump->um_rtable[i]) == 0) {
 		/*
@@ -257,17 +257,14 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	 */
 	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
 		return (EACCES);
-	if (nam == NULL) {
-		np = NULL;
-	} else {
+	np = NULL;
+	if (nam != NULL) {
 		saddr = mtod(nam, struct sockaddr *);
 		rnh = ump->um_rtable[saddr->sa_family];
-		if (rnh == NULL) {
-			np = NULL;
-		} else {
+		if (rnh != NULL) {
 			np = (struct netcred *)
 			    (*rnh->rnh_match)((caddr_t)saddr, rnh->rnh_treetop);
-			if (np->netc_rnodes->rn_flags & RNF_ROOT)
+			if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
 				np = NULL;
 		}
 	}
