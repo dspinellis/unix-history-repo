@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -488,10 +488,10 @@ extractfile(name)
 
 	curfile.name = name;
 	curfile.action = USING;
-	timep[0].tv_sec = curfile.dip->di_atime.ts_sec;
-	timep[0].tv_usec = curfile.dip->di_atime.ts_nsec / 1000;
-	timep[1].tv_sec = curfile.dip->di_mtime.ts_sec;
-	timep[1].tv_usec = curfile.dip->di_mtime.ts_nsec / 1000;
+	timep[0].tv_sec = curfile.dip->di_atime;
+	timep[0].tv_usec = curfile.dip->di_atimensec / 1000;
+	timep[1].tv_sec = curfile.dip->di_mtime;
+	timep[1].tv_usec = curfile.dip->di_mtimensec / 1000;
 	mode = curfile.dip->di_mode;
 	flags = curfile.dip->di_flags;
 	switch (mode & IFMT) {
@@ -1028,9 +1028,9 @@ gethead(buf)
 	buf->c_dinode.di_gid = u_ospcl.s_ospcl.c_dinode.odi_gid;
 	buf->c_dinode.di_size = u_ospcl.s_ospcl.c_dinode.odi_size;
 	buf->c_dinode.di_rdev = u_ospcl.s_ospcl.c_dinode.odi_rdev;
-	buf->c_dinode.di_atime.ts_sec = u_ospcl.s_ospcl.c_dinode.odi_atime;
-	buf->c_dinode.di_mtime.ts_sec = u_ospcl.s_ospcl.c_dinode.odi_mtime;
-	buf->c_dinode.di_ctime.ts_sec = u_ospcl.s_ospcl.c_dinode.odi_ctime;
+	buf->c_dinode.di_atime = u_ospcl.s_ospcl.c_dinode.odi_atime;
+	buf->c_dinode.di_mtime = u_ospcl.s_ospcl.c_dinode.odi_mtime;
+	buf->c_dinode.di_ctime = u_ospcl.s_ospcl.c_dinode.odi_ctime;
 	buf->c_count = u_ospcl.s_ospcl.c_count;
 	memmove(buf->c_addr, u_ospcl.s_ospcl.c_addr, (long)256);
 	if (u_ospcl.s_ospcl.c_magic != OFS_MAGIC ||
