@@ -1,0 +1,313 @@
+#! file
+# Magic data for file(1) command.
+# Machine-genererated from src/cmd/file/magdir/*; edit there only!
+# Format is described in magic(files), where:
+# files is 4 on V7 and BSD, 4 on SV, and ?? in the SVID.
+#	Add any locally-observed files here.  Remember:
+#	text if readable, executable if runnable binary, data if unreadable.
+22	short	023000		core dump data
+0	byte		26		'arc' archive
+>1	byte		0		(empty)
+>1	byte		1		(old format)
+0	short		070707		cpio archive
+0	string		070707		ASCII cpio archive
+0	long		0177555		very old archive
+0	short		0177555		very old PDP-11 archive
+0	long		0177545		old archive
+0	short		0177545		old PDP-11 archive
+0	long		0100554		apl workspace
+0	string		=<ar>		archive
+0	string		!<arch>		archive
+>8	string		__.SYMDEF	random library
+0	string		-h-		archive (Software Tools format) text
+#	this first will upset you if you're a PL/1 shop...
+#	in which case rm it; ascmagic will catch real C programs
+0	string		/*		c program text
+#	check for various C program generators...
+#	offsets derived empirically, your offsets may vary!
+#	(this obviously belongs in ascmagic.c/names.h!).
+53	string		yyprevious	c program text (from lex)
+0	string		#!\ /bin/sh	commands text
+0	string		#!/bin/sh	commands text
+0	string		#!\ /bin/csh	C shell commands text
+0	string		#!/bin/csh	C shell commands text
+0	string		#!\ /bin/awk	awk commands text
+0	string		#!/bin/awk	awk commands text
+0	string		#!\ /		some kinda commands text
+0	string		#!/		some kinda commands text
+0	string		#!\ 		commands text
+>3	string		>\0		 for %s
+#	An "antique" kernel is either unmodified early V7,
+#	without DMR's 1979 mod for #!, or any kernel
+#	derived from a pre-v7 kernel (i.e., System V)
+0	string		:\ 		shell archive or commands for antique kernel text
+0	short		017037		packed data
+# CPL 	- added pack to /etc/magic
+0	short		017436		packed data
+0	short		0145405		huf output
+
+0	string		\037\235	compressed data
+# non block compressed
+>2	byte		12		- with 12 bits
+>2	byte		13		- with 13 bits
+>2	byte		14		- with 14 bits
+>2	byte		15		- with 15 bits
+>2	byte		16		- with 16 bits
+# block compressed
+>2	byte		140		- with 12 bits
+>2	byte		141		- with 13 bits
+>2	byte		142		- with 14 bits
+>2	byte		143		- with 15 bits
+>2	byte		144		- with 16 bits
+0	long		0513		Convex executable
+#
+# magic file lines for output from "diff"...
+0	string		diff\ 	'diff' output text
+0	string		***\ 		'diff' output text
+0	string		Only\ in\ 	'diff' output text
+0	string		Common\ subdirectories:\ 	'diff' output text
+# Magic numbers for ditroff intermediate language
+0	string		x\ T\ cat	titroff output for the C/A/T text
+0	string		x\ T\ ps	titroff output for PostScript
+0	string		x\ T 		titroff output text
+0	string	FONT	ASCII vfont text
+0	short	0436	Berkeley vfont data
+0	short	017001	byte-swapped Berkeley vfont data
+# Magic number for FrameMaker files
+# Thanks to Berry Kercheval
+#
+0	string		\<MakerFile	FrameMaker document
+# Tell file about magic for IMAGEN printer-ready files:
+0	string	@document(		Imagen printer
+# this only works if "language xxx" is first item in Imagen header.
+>10	string	language\ impress	(imPRESS data)
+>10	string	language\ daisy		(daisywheel text)
+>10	string	language\ diablo		(daisywheel text)
+>10	string	language\ printer	(line printer emulation)
+>10	string	language\ tektronix	(Tektronix 4014 emulation)
+# Add any other languages that your Imagen uses - remember
+# to keep the word `text' if the file is human-readable.
+#
+# Now magic for IMAGEN font files...
+0	string		Rast		RST-format raster font data
+>45	string		>0		face %
+# various intel-CPU magic numbers
+0	short		01006		80286 executable (STL)
+>31	byte		<0x040		small model
+>31	byte		=0x048		large model	
+>31	byte		=0x049		huge model 
+>16	long		>0		not stripped
+0	string		MZ		DOS executable (EXE)
+0	string		LZ		DOS executable (built-in)
+0	byte		0xe9		DOS executable (COM)
+0	byte		0xeb		DOS executable (COM)
+0	short		=0512		80286 executable small model (COFF)
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+0	short		=0522		80286 executable large model (COFF)
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+0	short		=0514		80386 executable
+>12	long		>0		not stripped
+>22	short		>0		- version %ld
+
+0	string		#magic		magic text file for file(1) cmd
+# Unfortunately, saved netnews also has From line added in some news software.
+#0	string		From 		mail text
+# There are tests to ascmagic.c to cope with mail and news.
+0	string		Relay-Version: 	old news text
+0	string		#!\ rnews	batched news text
+0	string		N#!\ rnews	mailed, batched news text
+0	string		Forward\ to 	mail forwarding text
+0	string		Pipe\ to 	mail piping text
+0	string		Return-Path:	smtp mail text
+0	string		Path:		news text
+0	string		Xref:		news text
+0	string		From:		news or mail text
+0	string		Article 	saved news text
+0	long	31415		Mirage Assembler m.out executable
+0	string		begin 		uuencoded mail text
+#	derived empirically, your offsets may vary!
+53	string		yyprevious	c program text (from lex)
+0	long		0407		executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0407		PDP-11 executable
+>8	short		>0		not stripped
+0	short		0401		unix-rt ldp
+0	short		0405		old overlay
+0	long		0410		pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0410		PDP-11 pure executable
+>8	short		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0411		PDP-11 separate I&D executable
+>8	short		>0		not stripped
+#>2	short		>0		- version %ld
+0	long		0413		demand paged pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	long		0420		demand paged (first page unmapped) pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0437		pdp11 kernel overlay
+#
+# Let us not forget PostScript
+0	string	%!			PostScript text
+>2	string	PS-Adobe-		conforming
+>11	string	1.0			at level %s
+# Sun rasterfiles
+0	string	\x59\xa6\x6a\x95	rasterfile
+>4	long	>0		%d
+>8	long	>0		x %d
+>12	long	>0		x %d
+>20	long	0		old format
+>20	long	2		compressed
+>24	long	1		with color map
+# SCCS archive structure:
+# \001h01207
+# \001s 00276/00000/00000
+# \001d D 1.1 87/09/23 08:09:20 ian 1 0
+# \001c date and time created 87/09/23 08:09:20 by ian
+# \001e
+# \001u
+# \001U
+# ... etc.
+# Now '\001h' happens to be the same as the 3B20's a.out magic number (0550).
+# *Sigh*. And these both came from various parts of the USG.
+# Maybe we should just switch everybody from SCCS to RCS!
+# Further, you can't just say '\001h0', because the five-digit number
+# is a checksum that could (presumably) have any leading digit,
+# and we don't have regular expression matching yet. 
+# Hence the following official kludge:
+8	string		\001s\ 			SCCS archive.
+# For Sequent's multiprocessor systems (incomplete).
+0	long	000352		BALANCE NS32000 .o
+0	long	010352		BALANCE NS32000 executable (0 @ 0)
+>16	long	>0		not stripped
+0	long	020352		BALANCE NS32000 executable (invalid @ 0)
+>16	long	>0		not stripped
+0	long	030352		BALANCE NS32000 standalone executable
+>16	long	>0		not stripped
+# Also need info on Sequent "Symmetry" series...
+# SoftQuad troff magic numbers
+# SoftQuad @(#)magic	1.2 86/09/15
+0	short		0125252		SoftQuad DESC or font file binary
+>2	short		>0		- version %d
+# Values for Sun MC680x0 binaries
+0	short		2		mc68020
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	short		1		mc68010
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	short		0		old sun-2
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	long		0x080456	core file
+>128	string		>0		from '%s'
+#
+0	short		05401		byte-swapped demand paged executable
+0	short		010001		byte-swapped demand paged executable
+# NCR Tower objects, contributed by
+# Michael R. Wayne  ***  TMC & Associates  ***  INTERNET: wayne@ford-vax.arpa
+# uucp: {philabs | pyramid} !fmsrl7!wayne   OR   wayne@fmsrl7.UUCP
+#
+0	short		000610	Tower/XP rel 2 object
+>12	   long			>0	not stripped
+>20	   short		0407	executable
+>20	   short		0410	pure executable
+>22	   short		>0	-version %ld
+0	short		000615	Tower/XP rel 2 object
+>12	   long			>0	not stripped
+>20	   short		0407	executable
+>20	   short		0410	pure executable
+>22	   short		>0	-version %ld
+0	short		000620	Tower/XP rel 3 object
+>12	   long			>0	not stripped
+>20	   short		0407	executable
+>20	   short		0410	pure executable
+>22	   short		>0	-version %ld
+0	short		000625	Tower/XP rel 3 object
+>12	   long			>0	not stripped
+>20	   short		0407	executable
+>20	   short		0410	pure executable
+>22	   short		>0	-version %ld
+0	short		000630	Tower32/600/400 68020 object
+>12	   long			>0	not stripped
+>20	   short		0407	executable
+>20	   short		0410	pure executable
+>22	   short		>0	-version %ld
+0	short		000640	Tower32/800 68020
+>18	   short		&020000	w/68881 object
+>18	   short		&040000	compatible object
+>18	   short		&~060000	object
+>20	   short		0407	executable
+>20	   short		0413	pure executable
+>12	   long			>0	not stripped
+>22	   short		>0	-version %ld
+0	short		000645	Tower32/800 68010
+>18	   short		&040000	compatible object
+>18	   short		&~060000 object
+>20	   short		0407	executable
+>20	   short		0413	pure executable
+>12	   long			>0	not stripped
+>22	   short		>0	-version %ld
+# other typesetting magic
+0	string		\100\357	very old (C/A/T) troff output data
+0	string		Interpress/Xerox	Xerox InterPress data
+#	Herewith many of the object file formats used by USG systems.
+#	The `versions' should be un-commented if they work for you.
+0	short		0570		SysV executable
+>12	long		>0		not stripped
+#>22	short		>0		- version %ld
+0	short		0575		SysV pure executable
+>12	long		>0		not stripped
+#>22	short		>0		- version %ld
+0	short		0502		basic-16 executable
+>12	long		>0		not stripped
+0	short		0503		basic-16 executable (TV)
+>12	long		>0		not stripped
+0	short		0510		x86 executable
+>12	long		>0		not stripped
+0	short		0511		x86 executable (TV)
+>12	long		>0		not stripped
+0	short		0550		3b20 executable
+>12	long		>0		not stripped
+0	short		0551		3b20 executable (TV)
+>12	long		>0		not stripped
+0	short		0560		WE32000 executable
+>12	long		>0		not stripped
+0	short		0561		WE32000 executable (TV)
+>12	long		>0		not stripped
+0	short		0610		Perkin-Elmer executable
+
+# Byte-swapped VAXen
+# From: dupuy@amsterdam.columbia.edu (Alexander Dupuy)
+# 
+# Here are a few lines you can add to /etc/magic on your sun workstations in
+# order to recognize VAX executables and objects.... you could do something
+# similar (in reverse) for your vaxen, but since 4.3+NFS' file(1) doesn't look
+# for /etc/magic, I've never bothered.  It really should be built in to file(1)
+# so you would see the state of setuid/setgid/sticky bits.  Or actually, there
+# should be support for checking that sort of thing in /etc/magic.
+#
+0	long		00700200000	VAX executable
+>16	long		&0x7fffffff	not stripped
+0	long		01000200000	VAX pure executable
+>16	long		&0x7fffffff	not stripped
+0	long		01300200000	VAX demand-paged pure executable
+>16	long		&0x7fffffff	not stripped
+0	long		01100200000	PDP-11 executable
+# XENIX executable formats: derived empirically; treat as folklore until proven0	short	01006		XENIX (x.out) executable
+>8	short	1		Middle model
+>16	short	>0		not stripped
+0	short	02600		XENIX 8086 relocatable or 80286 small model
+
