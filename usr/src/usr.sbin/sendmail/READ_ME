@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.1 (Berkeley) %G%
+ *	@(#)READ_ME	8.2 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -92,3 +92,4 @@ rmail		Source for rmail(8).  This is used as a delivery
 		other non-socket oriented mailers.  Older versions of
 		rmail are probably deficient.
 src		Source for the sendmail program itself.
+test		Some test scripts (currently only for compilation aids).
