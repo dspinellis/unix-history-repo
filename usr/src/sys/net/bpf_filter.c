@@ -23,7 +23,9 @@ static char rcsid[] =
     "@(#) $Header: bpf_filter.c,v 1.9 91/01/30 18:21:54 mccanne Exp $ (LBL)";
 #endif
 
+#include <sys/param.h>
 #include <sys/types.h>
+#include <protosw.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <net/bpf.h>

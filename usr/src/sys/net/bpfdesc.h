@@ -38,21 +38,24 @@ struct bpf_d {
 	 *   fbuf (free) - When read is done, put cluster here.
 	 * On receiving, if sbuf is full and fbuf is 0, packet is dropped.
 	 */
-	struct mbuf *	bd_sbuf;	/* store slot */
-	struct mbuf *	bd_hbuf;	/* hold slot */
-	struct mbuf *	bd_fbuf;	/* free slot */
+	caddr_t		bd_sbuf;	/* store slot */
+	caddr_t		bd_hbuf;	/* hold slot */
+	caddr_t		bd_fbuf;	/* free slot */
+	int 		bd_slen;	/* current length of store buffer */
+	int 		bd_hlen;	/* current length of hold buffer */
+
+	int		bd_bufsize;	/* absolute length of buffers */
 
 	struct bpf_if *	bd_bif;		/* interface descriptor */
 	u_long		bd_rtout;	/* Read timeout in 'ticks' */
-	struct mbuf *	bd_filterm;	/* Packet filter mbuf */
-	struct bpf_insn *bd_filter; 	/* precomputed pointer to fcode */
+	struct bpf_insn *bd_filter; 	/* filter code */
 	u_long		bd_rcount;	/* number of packets received */
 	u_long		bd_dcount;	/* number of packets dropped */
-	struct proc *	bd_SelProc;	/* process that last selected us */
+	struct proc *	bd_selproc;	/* process that last selected us */
 
 	u_char		bd_promisc;	/* true if listening promiscuously */
 	u_char		bd_state;	/* idle, waiting, or timed out */
-	u_char		bd_SelColl;	/* true if selects collide */
+	u_char		bd_selcoll;	/* true if selects collide */
 	u_char		bd_immediate;	/* true to return on packet arrival */
 };
 
