@@ -7,10 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	8.3 (Berkeley) %G%
+ *	@(#)vfs_bio.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/buf.h>
 #include <sys/vnode.h>
@@ -18,7 +19,6 @@
 #include <sys/trace.h>
 #include <sys/malloc.h>
 #include <sys/resourcevar.h>
-#include <libkern/libkern.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
 
@@ -27,14 +27,14 @@
  */
 #define	BUFHASH(dvp, lbn)	\
 	(&bufhashtbl[((int)(dvp) / sizeof(*(dvp)) + (int)(lbn)) & bufhash])
-struct	list_entry *bufhashtbl, invalhash;
+LIST_HEAD(bufhashhdr, buf) *bufhashtbl, invalhash;
 u_long	bufhash;
 
 /*
  * Insq/Remq for the buffer hash lists.
  */
-#define	binshash(bp, dp)	list_enter_head(dp, bp, struct buf *, b_hash)
-#define	bremhash(bp)		list_remove(bp, struct buf *, b_hash)
+#define	binshash(bp, dp)	LIST_INSERT_HEAD(dp, bp, b_hash)
+#define	bremhash(bp)		LIST_REMOVE(bp, b_hash)
 
 /*
  * Definitions for the buffer free lists.
@@ -46,36 +46,36 @@ u_long	bufhash;
 #define	BQ_AGE		2		/* rubbish */
 #define	BQ_EMPTY	3		/* buffer headers with no memory */
 
-struct queue_entry bufqueues[BQUEUES];
+TAILQ_HEAD(bqueues, buf) bufqueues[BQUEUES];
 int needbuffer;
 
 /*
  * Insq/Remq for the buffer free lists.
  */
-#define	binsheadfree(bp, dp) \
-	queue_enter_head(dp, bp, struct buf *, b_freelist)
-#define	binstailfree(bp, dp) \
-	queue_enter_tail(dp, bp, struct buf *, b_freelist)
+#define	binsheadfree(bp, dp)	TAILQ_INSERT_HEAD(dp, bp, b_freelist)
+#define	binstailfree(bp, dp)	TAILQ_INSERT_TAIL(dp, bp, b_freelist)
 
 void
 bremfree(bp)
 	struct buf *bp;
 {
-	struct queue_entry *dp;
+	struct bqueues *dp = NULL;
 
 	/*
 	 * We only calculate the head of the freelist when removing
 	 * the last element of the list as that is the only time that
 	 * it is needed (e.g. to reset the tail pointer).
+	 *
+	 * NB: This makes an assumption about how tailq's are implemented.
 	 */
-	if (bp->b_freelist.qe_next == NULL) {
+	if (bp->b_freelist.tqe_next == NULL) {
 		for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
-			if (dp->qe_prev == &bp->b_freelist.qe_next)
+			if (dp->tqh_last == &bp->b_freelist.tqe_next)
 				break;
 		if (dp == &bufqueues[BQUEUES])
 			panic("bremfree: lost tail");
 	}
-	queue_remove(dp, bp, struct buf *, b_freelist);
+	TAILQ_REMOVE(dp, bp, b_freelist);
 }
 
 /*
@@ -85,13 +85,13 @@ void
 bufinit()
 {
 	register struct buf *bp;
-	struct queue_entry *dp;
+	struct bqueues *dp;
 	register int i;
 	int base, residual;
 
 	for (dp = bufqueues; dp < &bufqueues[BQUEUES]; dp++)
-		queue_init(dp);
-	bufhashtbl = (struct list_entry *)hashinit(nbuf, M_CACHE, &bufhash);
+		TAILQ_INIT(dp);
+	bufhashtbl = hashinit(nbuf, M_CACHE, &bufhash);
 	base = bufpages / nbuf;
 	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
@@ -352,7 +352,7 @@ bawrite(bp)
 brelse(bp)
 	register struct buf *bp;
 {
-	register struct queue_entry *flist;
+	register struct bqueues *flist;
 	int s;
 
 	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
@@ -416,7 +416,7 @@ incore(vp, blkno)
 {
 	register struct buf *bp;
 
-	for (bp = BUFHASH(vp, blkno)->le_next; bp; bp = bp->b_hash.qe_next)
+	for (bp = BUFHASH(vp, blkno)->lh_first; bp; bp = bp->b_hash.le_next)
 		if (bp->b_lblkno == blkno && bp->b_vp == vp &&
 		    (bp->b_flags & B_INVAL) == 0)
 			return (bp);
@@ -441,7 +441,7 @@ getblk(vp, blkno, size, slpflag, slptimeo)
 #endif SECSIZE
 {
 	register struct buf *bp;
-	struct list_entry *dp;
+	struct bufhashhdr *dp;
 	int s, error;
 
 	if (size > MAXBSIZE)
@@ -453,7 +453,7 @@ getblk(vp, blkno, size, slpflag, slptimeo)
 	 */
 	dp = BUFHASH(vp, blkno);
 loop:
-	for (bp = dp->le_next; bp; bp = bp->b_hash.qe_next) {
+	for (bp = dp->lh_first; bp; bp = bp->b_hash.le_next) {
 		if (bp->b_lblkno != blkno || bp->b_vp != vp)
 			continue;
 		s = splbio();
@@ -566,7 +566,7 @@ allocbuf(tp, size)
 	 * extra space in the present buffer.
 	 */
 	if (sizealloc < tp->b_bufsize) {
-		if ((ep = bufqueues[BQ_EMPTY].qe_next) == NULL)
+		if ((ep = bufqueues[BQ_EMPTY].tqh_first) == NULL)
 			goto out;
 		s = splbio();
 		bremfree(ep);
@@ -622,7 +622,7 @@ getnewbuf(slpflag, slptimeo)
 	int slpflag, slptimeo;
 {
 	register struct buf *bp;
-	register struct queue_entry *dp;
+	register struct bqueues *dp;
 	register struct ucred *cred;
 	int s;
 	struct buf *abp;
@@ -743,8 +743,8 @@ count_lock_queue()
 	register struct buf *bp;
 	register int ret;
 
-	for (ret = 0, bp = (struct buf *)bufqueues[BQ_LOCKED].qe_next;
-	    bp; bp = (struct buf *)bp->b_freelist.qe_next)
+	for (ret = 0, bp = (struct buf *)bufqueues[BQ_LOCKED].tqh_first;
+	    bp; bp = (struct buf *)bp->b_freelist.tqe_next)
 		++ret;
 	return(ret);
 }
@@ -760,7 +760,7 @@ vfs_bufstats()
 {
 	int s, i, j, count;
 	register struct buf *bp;
-	register struct queue_entry *dp;
+	register struct bqueues *dp;
 	int counts[MAXBSIZE/CLBYTES+1];
 	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
 
@@ -769,7 +769,7 @@ vfs_bufstats()
 		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
 			counts[j] = 0;
 		s = splbio();
-		for (bp = dp->qe_next; bp; bp = bp->b_freelist.qe_next) {
+		for (bp = dp->tqh_first; bp; bp = bp->b_freelist.tqe_next) {
 			counts[bp->b_bufsize/CLBYTES]++;
 			count++;
 		}

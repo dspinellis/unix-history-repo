@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_subr.c	8.1 (Berkeley) %G%
+ *	@(#)kern_subr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/malloc.h>
+#include <sys/queue.h>
 
 uiomove(cp, n, uio)
 	register caddr_t cp;
@@ -162,15 +163,17 @@ hashinit(elements, type, hashmask)
 	u_long *hashmask;
 {
 	long hashsize;
-	void *hashtbl;
+	LIST_HEAD(generic, generic) *hashtbl;
+	int i;
 
 	if (elements <= 0)
 		panic("hashinit: bad cnt");
 	for (hashsize = 1; hashsize <= elements; hashsize <<= 1)
 		continue;
 	hashsize >>= 1;
-	hashtbl = malloc((u_long)hashsize * sizeof(void *), type, M_WAITOK);
-	bzero(hashtbl, hashsize * sizeof(void *));
+	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
+	for (i = 0; i < hashsize; i++)
+		LIST_INIT(&hashtbl[i]);
 	*hashmask = hashsize - 1;
 	return (hashtbl);
 }
