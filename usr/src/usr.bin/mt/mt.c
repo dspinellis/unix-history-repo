@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mt.c	4.3 (Berkeley) 81/07/05";
+static	char *sccsid = "@(#)mt.c	4.2 (Berkeley) 81/07/05";
 
 /*
  * mt
@@ -13,14 +13,15 @@ static	char *sccsid = "@(#)mt.c	4.3 (Berkeley) 81/07/05";
 struct commands {
 	char *c_name;
 	int c_code;
+	int c_ronly;
 } com[] = {
-	"eof",	MTWEOF,
-	"fsf",	MTFSF,
-	"bsf",	MTBSF,
-	"fsr",	MTFSR,
-	"bsr",	MTBSR,
-	"rewind",	MTREW,
-	"offline",	MTOFFL,
+	"eof",	MTWEOF,	0,
+	"fsf",	MTFSF,	1,
+	"bsf",	MTBSF,	1,
+	"fsr",	MTFSR,	1,
+	"bsr",	MTBSR,	1,
+	"rewind",	MTREW,	1,
+	"offline",	MTOFFL,	1,
 	0,0
 };
 
@@ -46,19 +47,16 @@ char **argv;
 	} else
 		if ((tape = getenv("TAPE")) == NULL)
 			tape = "/dev/rmt12";
-	if ((mtfd = open(tape, 2)) < 0) {
-		if ((mtfd = open(tape, 0)) < 0) {
-			perror(tape);
-			exit(1);
-		}
-	}
-
 	cp = argv[1];
 	for (comp = com; comp->c_name != NULL; comp++)
 		if (strncmp(cp, comp->c_name, strlen(cp)) == 0)
 			break;
 	if (comp->c_name == NULL) {
 		fprintf(stderr, "mt: don't grok \"%s\"\n", cp);
+		exit(1);
+	}
+	if ((mtfd = open(tape, comp->c_ronly ? 0 : 2)) < 0) {
+		perror(tape);
 		exit(1);
 	}
 	mt_com.mt_count = (argc > 2 ? atoi(argv[2]) : 1);
