@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffh.c 4.2 %G%";
+static	char sccsid[] = "@(#)diffh.c 4.3 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -77,6 +77,8 @@ char **argv;
 {
 	char *s0,*s1;
 	FILE *dopen();
+	register int status = 0;
+
 	while(*argv[1]=='-') {
 		argc--;
 		argv++;
@@ -96,17 +98,19 @@ char **argv;
 		if(cmp(s0,s1)!=0) {
 			if(!easysynch()&&!hardsynch())
 				progerr("5");
+			status = 1;
 		} else {
 			clrl(0,n0);
 			clrl(1,n1);
 		}
 	}
 	if(s0==NULL&&s1==NULL)
-		return;
+		return(status);
 	if(s0==NULL)
 		output(-1,INF);
 	if(s1==NULL)
 		output(INF,-1);
+	return(1);
 }
 
 	/* synch on C successive matches*/
@@ -251,7 +255,7 @@ error(s,t)
 char *s,*t;
 {
 	fprintf(stderr,"diffh: %s%s\n",s,t);
-	exit(1);
+	exit(2);
 }
 
 	/*stub for resychronization beyond limits of text buf*/
