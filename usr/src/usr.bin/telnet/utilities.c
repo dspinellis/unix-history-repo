@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS

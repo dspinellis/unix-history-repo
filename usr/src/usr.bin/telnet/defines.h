@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defines.h	1.10 (Berkeley) %G%
+ *	@(#)defines.h	5.1 (Berkeley) %G%
  */
 
 #define	settimer(x)	clocks.x = clocks.system++
