@@ -152,6 +152,12 @@ makeconnection(host, port, outfile, infile)
 		{
 		  case EISCONN:
 		  case ETIMEDOUT:
+		  case EINPROGRESS:
+		  case EALREADY:
+		  case EADDRINUSE:
+		  case ENETDOWN:
+		  case ENETRESET:
+		  case ENOBUFS:
 			/* there are others, I'm sure..... */
 			return (EX_TEMPFAIL);
 
