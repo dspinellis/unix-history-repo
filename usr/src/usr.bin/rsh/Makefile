@@ -14,22 +14,24 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.2 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) 5/11/89
 #
 
-CFLAGS=	-O
+
+CFLAGS=	-O -DKERBEROS
 LIBC=	/lib/libc.a
-SRCS=	rsh.c
-OBJS=
+SRCS=	rsh.c krcmd.c kcmd.c des_rw.c
+OBJS=	rsh.o krcmd.o kcmd.o des_rw.o
 MAN=	rsh.0
+VPATH=	../rlogin/kcmd:../rlogin/des
 
 all: rsh
 
-rsh: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+rsh: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} $@.c ${OBJS} -lkrb -ldes
 
 clean:
-	rm -f ${OBJS} core rsh
+	rm -f core rsh ${OBJS}
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
