@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.2	82/02/02	*/
+/*	raw_pup.c	4.3	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -24,7 +24,7 @@ static struct sockproto pupproto = { PF_PUP };
  * for raw_input routine, then pass them along with
  * mbuf chain.
  */
-rawpup_input(m)
+rpup_input(m)
 	struct mbuf *m;
 {
 	register struct pup_header *pup = mtod(m, struct pup_header *);
@@ -37,17 +37,17 @@ COUNT(RAWPUP_INPUT);
 }
 
 /*ARGSUSED*/
-rawpup_ctlinput(m)
+rpup_ctlinput(m)
 	struct mbuf *m;
 {
-COUNT(RAWPUP_CTLINPUT);
+COUNT(RPUP_CTLINPUT);
 }
 
 /*
  * Encapsulate packet in PUP header which is supplied by the
  * user.  This is done to allow user to specify PUP identifier.
  */
-rawpup_output(m0, so)
+rpup_output(m0, so)
 	struct mbuf *m0;
 	struct socket *so;
 {
@@ -57,7 +57,7 @@ rawpup_output(m0, so)
 	struct mbuf *n;
 	struct sockaddr_pup *spup;
 
-COUNT(RAWPUP_OUTPUT);
+COUNT(RPUP_OUTPUT);
 	/*
 	 * Verify user has supplied necessary space
 	 * for the header and check parameters in it.
@@ -97,7 +97,7 @@ bad:
  * exists for destination address.  Disconnects are
  * also looked at to insure pointer is invalidated.
  */
-rawpup_usrreq(so, req, m, addr)
+rpup_usrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
 	struct mbuf *m;
@@ -105,7 +105,7 @@ rawpup_usrreq(so, req, m, addr)
 {
 	register struct rawcb *rp = sotorawcb(so);
 
-COUNT(RAWPUP_USRREQ);
+COUNT(RPUP_USRREQ);
 	if (rp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 

@@ -1,4 +1,4 @@
-/*	raw_imp.c	4.3	82/02/12	*/
+/*	raw_imp.c	4.4	82/02/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -17,10 +17,10 @@
  */
 
 /*ARGSUSED*/
-imp_ctlinput(m)
+rimp_ctlinput(m)
 	struct mbuf *m;
 {
-COUNT(IMP_CTLINPUT);
+COUNT(RIMP_CTLINPUT);
 }
 
 /*
@@ -30,7 +30,7 @@ COUNT(IMP_CTLINPUT);
  * We fill in holes where needed and verify parameters
  * supplied by user.
  */
-imp_output(m, so)		/* too close to impoutput */
+rimp_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
 {
@@ -42,7 +42,7 @@ imp_output(m, so)		/* too close to impoutput */
 	struct ifnet *ifp;
 	struct control_leader *cp;
 
-COUNT(IMP_OUTPUT);
+COUNT(RIMP_OUTPUT);
 	/*
 	 * Verify user has supplied necessary space
 	 * for the leader and check parameters in it.
@@ -93,7 +93,7 @@ bad:
  * Intercept operations required to
  * maintain interface pointer used on output.
  */
-imp_usrreq(so, req, m, addr)
+rimp_usrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
 	struct mbuf *m;
@@ -103,7 +103,7 @@ imp_usrreq(so, req, m, addr)
 	register struct sockaddr_in *sin;
 	register struct ifnet *ifp;
 
-COUNT(IMP_USRREQ);
+COUNT(RIMP_USRREQ);
 	if (rp == 0 && req != PRU_ATTACH)
 		return (EINVAL);
 
