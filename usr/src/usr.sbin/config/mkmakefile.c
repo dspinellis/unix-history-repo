@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980,1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkmakefile.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkmakefile.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -600,7 +600,7 @@ do_systemspec(f, fl, first)
 	int first;
 {
 
-	fprintf(f, "%s: Makefile ../%s/symbols.sort", machinename, machinename);
+	fprintf(f, "%s: Makefile machine/symbols.sort", fl->f_needs);
 	if (machine == MACHINE_VAX)
 		fprintf(f, " ${INLINECMD} locore.o emulate.o");
 	else if (machine == MACHINE_TAHOE)
@@ -631,8 +631,7 @@ do_systemspec(f, fl, first)
 	}
 	fprintf(f, "swap%s.o\n", fl->f_fn);
 	fprintf(f, "\t@echo rearranging symbols\n");
-	fprintf(f, "\t@-symorder ../%s/symbols.sort %s\n",
-	    machinename, fl->f_needs);
+	fprintf(f, "\t@-symorder machine/symbols.sort %s\n", fl->f_needs);
 	fprintf(f, "\t@size %s\n", fl->f_needs);
 	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
 	do_swapspec(f, fl->f_fn);
