@@ -69,6 +69,11 @@ union ns_net {
 	u_short	s_net[2];
 };
 
+union ns_net_u {
+	union ns_net	net_e;
+	u_long		long_e;
+};
+
 struct ns_addr {
 	union ns_net	x_net;
 	union ns_host	x_host;
