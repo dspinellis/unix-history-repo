@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_close.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_close.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -37,18 +37,18 @@ __rec_close(dbp)
 	BTREE *t;
 	int rval;
 
-	if (__rec_sync(dbp) == RET_ERROR)
+	if (__rec_sync(dbp, 0) == RET_ERROR)
 		return (RET_ERROR);
 
 	/* Committed to closing. */
 	t = dbp->internal;
 
 	rval = RET_SUCCESS;
-	if (ISSET(t, BTF_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
+	if (ISSET(t, R_MEMMAPPED) && munmap(t->bt_smap, t->bt_msize))
 		rval = RET_ERROR;
 
-	if (!ISSET(t, BTF_RINMEM))
-		if (ISSET(t, BTF_CLOSEFP)) {
+	if (!ISSET(t, R_INMEM))
+		if (ISSET(t, R_CLOSEFP)) {
 			if (fclose(t->bt_rfp))
 				rval = RET_ERROR;
 		} else
@@ -71,8 +71,9 @@ __rec_close(dbp)
  *	RET_SUCCESS, RET_ERROR.
  */
 int
-__rec_sync(dbp)
+__rec_sync(dbp, flags)
 	const DB *dbp;
+	u_int flags;
 {
 	struct iovec iov[2];
 	BTREE *t;
@@ -83,11 +84,14 @@ __rec_sync(dbp)
 
 	t = dbp->internal;
 
-	if (ISSET(t, BTF_RDONLY | BTF_RINMEM) || !ISSET(t, BTF_MODIFIED))
+	if (flags == R_RECNOSYNC)
+		return (__bt_sync(dbp, 0));
+
+	if (ISSET(t, R_RDONLY | R_INMEM) || !ISSET(t, R_MODIFIED))
 		return (RET_SUCCESS);
 
 	/* Read any remaining records into the tree. */
-	if (!ISSET(t, BTF_EOF) && t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
+	if (!ISSET(t, R_EOF) && t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
 		return (RET_ERROR);
 
 	/* Rewind the file descriptor. */
@@ -116,6 +120,6 @@ __rec_sync(dbp)
 		return (RET_ERROR);
 	if (ftruncate(t->bt_rfd, off))
 		return (RET_ERROR);
-	CLR(t, BTF_MODIFIED);
+	CLR(t, R_MODIFIED);
 	return (RET_SUCCESS);
 }
