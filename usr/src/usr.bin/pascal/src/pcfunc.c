@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.2 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.3 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -12,8 +12,6 @@ static	char sccsid[] = "@(#)pcfunc.c 1.2 %G%";
 #include "opcode.h"
 #include	"pc.h"
 #include	"pcops.h"
-
-bool cardempty = FALSE;
 
 /*
  * Funccod generates code for
@@ -329,25 +327,16 @@ mathfunc:
 			}
 			return nl + TCHAR;
 	    case O_CARD:
-			if ( p1 != nl + TSET ) {
-			    if (isnta(p1, "t")) {
-				error("Argument to card must be a set, not %s", nameof(p1));
-				return (NIL);
-			    }
-			    putleaf( P2ICON , 0 , 0
-				, ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CARD" );
-			    p1 = stkrval( (int *) argv[1] , NLNIL , LREQ );
-			    putleaf( P2ICON , lwidth( p1 ) , 0 , P2INT , 0 );
-			    putop( P2LISTOP , P2INT );
-			    putop( P2CALL , P2INT );
-			} else {
-			    if ( !cardempty ) {
-				warning();
-				error("Cardinality of the empty set is 0." );
-				cardempty = TRUE;
-			    }
-			    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+			if (isnta(p1, "t")) {
+			    error("Argument to card must be a set, not %s", nameof(p1));
+			    return (NIL);
 			}
+			putleaf( P2ICON , 0 , 0
+			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_CARD" );
+			p1 = stkrval( (int *) argv[1] , NLNIL , LREQ );
+			putleaf( P2ICON , lwidth( p1 ) , 0 , P2INT , 0 );
+			putop( P2LISTOP , P2INT );
+			putop( P2CALL , P2INT );
 			return nl + T2INT;
 	    case O_EOLN:
 			if (!text(p1)) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.3 %G%";
+static	char sccsid[] = "@(#)rval.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -13,7 +13,6 @@ static	char sccsid[] = "@(#)rval.c 1.3 %G%";
 #endif PC
 
 extern	char *opnames[];
-bool	inempty = FALSE;
 
 #ifdef PC
     char	*relts[] =  {
@@ -487,23 +486,28 @@ cstrng:
 	case T_SUB:
 #		ifdef OBJ
 		    /*
-		     * If the context hasn't told us
-		     * the type and a constant set is
-		     * present on the left we need to infer
-		     * the type from the right if possible
-		     * before generating left side code.
+		     * If the context hasn't told us the type
+		     * and a constant set is present
+		     * we need to infer the type 
+		     * before generating code.
 		     */
-		    if (contype == NIL && (rt = r[2]) != NIL && rt[1] == SAWCON) {
+		    if ( contype == NIL ) {
 			    codeoff();
-			    contype = rvalue(r[3], NIL , RREQ );
+			    contype = rvalue( r[3] , NIL , RREQ );
 			    codeon();
-			    if (contype == NIL)
-				    return (NIL);
+			    if ( contype == lookup( intset ) -> type ) {
+				codeoff();
+				contype = rvalue( r[2] , NIL , RREQ );
+				codeon();
+			    }
 		    }
-		    p = rvalue(r[2], contype , RREQ );
-		    p1 = rvalue(r[3], p , RREQ );
-		    if (p == NIL || p1 == NIL)
-			    return (NIL);
+		    if ( contype == NIL ) {
+			return NIL;
+		    }
+		    p = rvalue( r[2] , contype , RREQ );
+		    p1 = rvalue( r[3] , p , RREQ );
+		    if ( p == NIL || p1 == NIL )
+			    return NIL;
 		    if (isa(p, "id") && isa(p1, "id"))
 			return (gen(NIL, r[0], width(p), width(p1)));
 		    if (isa(p, "t") && isa(p1, "t")) {
@@ -555,17 +559,28 @@ cstrng:
 			    , ADDTYPE( ADDTYPE( P2PTR | P2STRTY , P2FTN )
 					, P2PTR )
 			    , setop[ r[0] - T_MULT ] );
-			/*
-			 *	allocate a temporary and use it
-			 */
-			sizes[ cbn ].om_off -= lwidth( p1 );
+			if ( contype == NIL ) {
+			    contype = p1;
+			    if ( contype == lookup( intset ) -> type ) {
+				codeoff();
+				contype = rvalue( r[2] , NIL , LREQ );
+				codeon();
+			    }
+			}
+			if ( contype == NIL ) {
+			    return NIL;
+			}
+			    /*
+			     *	allocate a temporary and use it
+			     */
+			sizes[ cbn ].om_off -= lwidth( contype );
 			tempoff = sizes[ cbn ].om_off;
 			putlbracket( ftnno , -tempoff );
 			if ( tempoff < sizes[ cbn ].om_max ) {
 			    sizes[ cbn ].om_max = tempoff;
 			}
 			putLV( 0 , cbn , tempoff , P2PTR|P2STRTY );
-			p = rvalue( r[2] , p1 , LREQ );
+			p = rvalue( r[2] , contype , LREQ );
 			if ( isa( p , "t" ) ) {
 			    putop( P2LISTOP , P2INT );
 			    if ( p == NIL || p1 == NIL ) {
@@ -651,7 +666,7 @@ cstrng:
 			return (NIL);
 		contype = p1;
 #		ifdef OBJ
-		    if (p1 == nl+TSET || p1->class == STR) {
+		    if (p1->class == STR) {
 			    /*
 			     * For constant strings we want
 			     * the longest type so as to be
@@ -664,8 +679,17 @@ cstrng:
 			    codeon();
 			    if (p == NIL)
 				    return (NIL);
-			    if (p1 == nl+TSET || width(p) > width(p1))
+			    if (width(p) > width(p1))
 				    contype = p;
+		    } else if ( isa( p1 , "t" ) ) {
+			if ( contype == lookup( intset ) -> type ) {
+			    codeoff();
+			    contype = rvalue( r[2] , NIL , RREQ );
+			    codeon();
+			    if ( contype == NIL ) {
+				return NIL;
+			    }
+			}
 		    }
 		    /*
 		     * Now we generate code for
@@ -693,22 +717,28 @@ cstrng:
 			     *	what type it is based on the type of the right.
 			     *	(this matters for intsets).
 			     */
-			if ( p1 == nl + TSET || c1 == TSTR ) {
+			if ( c1 == TSTR ) {
 			    codeoff();
 			    p = rvalue( r[ 2 ] , NIL , LREQ );
 			    codeon();
-			    if (   p1 == nl + TSET
-				|| lwidth( p ) > lwidth( p1 ) ) {
+			    if ( p == NIL ) {
+				return NIL;
+			    }
+			    if ( lwidth( p ) > lwidth( p1 ) ) {
+				contype = p;
+			    }
+			} else if ( c1 == TSET ) {
+			    if ( contype == lookup( intset ) -> type ) {
+				codeoff();
+				p = rvalue( r[ 2 ] , NIL , LREQ );
+				codeon();
+				if ( p == NIL ) {
+				    return NIL;
+				}
 				contype = p;
 			    }
 			} else {
-			    codeoff();
-			    p = rvalue( r[ 2 ] , contype , LREQ );
-			    codeon();
 			    contype = p;
-			}
-			if ( p == NIL ) {
-			    return NIL;
 			}
 			    /*
 			     *	put out the width of the comparison.
@@ -828,15 +858,6 @@ nonident:
 			p1 = csetd.csettype;
 			if (p1 == NIL)
 			    return NIL;
-			if (p1 == nl+TSET) {
-			    if ( !inempty ) {
-				warning();
-				error("... in [] makes little sense, since it is always false!");
-				inempty = TRUE;
-			    }
-			    put(1, O_CON1, 0);
-			    return (nl+T1BOOL);
-			}
 			postcset( rt, &csetd);
 		    } else {
 			p1 = stkrval(r[3], NIL , RREQ );
@@ -846,11 +867,9 @@ nonident:
 #		ifdef PC
 		    if (rt != NIL && rt[0] == T_CSET) {
 			if ( precset( rt , NIL , &csetd ) ) {
-			    if ( csetd.csettype != nl + TSET ) {
-				putleaf( P2ICON , 0 , 0
-					, ADDTYPE( P2FTN | P2INT , P2PTR )
-					, "_IN" );
-			    }
+			    putleaf( P2ICON , 0 , 0
+				    , ADDTYPE( P2FTN | P2INT , P2PTR )
+				    , "_IN" );
 			} else {
 			    putleaf( P2ICON , 0 , 0
 				    , ADDTYPE( P2FTN | P2INT , P2PTR )
@@ -859,15 +878,6 @@ nonident:
 			p1 = csetd.csettype;
 			if (p1 == NIL)
 			    return NIL;
-			if ( p1 == nl + TSET ) {
-			    if ( !inempty ) {
-				warning();
-				error("... in [] makes little sense, since it is always false!");
-				inempty = TRUE;
-			    }
-			    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
-			    return (nl+T1BOOL);
-			}
 		    } else {
 			putleaf( P2ICON , 0 , 0
 				, ADDTYPE( P2FTN | P2INT , P2PTR )

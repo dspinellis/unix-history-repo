@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.2 %G%";
+static	char sccsid[] = "@(#)func.c 1.3 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -10,8 +10,6 @@ static	char sccsid[] = "@(#)func.c 1.2 %G%";
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
-
-bool cardempty = FALSE;
 
 /*
  * Funccod generates code for
@@ -203,20 +201,11 @@ funccod(r)
 			put1(op + (width(p1) >> 2));
 			return (nl+TCHAR);
 		case O_CARD:
-			if ( p1 != nl + TSET ) {
-			    if (isnta(p1, "t")) {
-				error("Argument to card must be a set, not %s", nameof(p1));
-				return (NIL);
-			    }
-			    put2(O_CARD, width(p1));
-			} else {
-			    if ( !cardempty ) {
-				warning();
-				error("Cardinality of the empty set is 0." );
-				cardempty = TRUE;
-			    }
-			    put(1, O_CON1, 0);
+			if (isnta(p1, "t")) {
+			    error("Argument to card must be a set, not %s", nameof(p1));
+			    return (NIL);
 			}
+			put2(O_CARD, width(p1));
 			return (nl+T2INT);
 		case O_EOLN:
 			if (!text(p1)) {
