@@ -8,6 +8,7 @@
 #include <kerberos/krb.h>
 #include <sys/param.h>
 #include <sys/file.h>
+#include <sys/signal.h>
 #include "register_proto.h"
 
 #define	SERVICE	"krbupdate"
