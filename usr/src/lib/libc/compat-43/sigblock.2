@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sigblock.2	6.5 (Berkeley) %G%
+.\"	@(#)sigblock.2	6.6 (Berkeley) %G%
 .\"
 .TH SIGBLOCK 2 ""
 .UC 5
@@ -18,6 +18,8 @@ sigblock \- block signals
 
 .B mask = sigmask(signum)
 .SH DESCRIPTION
+.B "This interface is made obsolete by sigprocmask(2).
+.LP
 .I Sigblock
 causes the signals specified in
 .I mask
@@ -31,10 +33,10 @@ is a 1; the macro
 is provided to construct the mask for a given
 .IR signum .
 .PP
-It is not possible to block SIGKILL,
-SIGSTOP, or SIGCONT;  this restriction is silently
+It is not possible to block SIGKILL
+or SIGSTOP; this restriction is silently
 imposed by the system.
 .SH "RETURN VALUE
 The previous set of masked signals is returned.
 .SH "SEE ALSO"
-kill(2), sigvec(2), sigsetmask(2)
+kill(2), sigprocmask(2), sigaction(2), sigsetmask(2), sigsetops(3)
