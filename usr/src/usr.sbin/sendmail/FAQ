@@ -1,6 +1,6 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.9 of %G%
+		         Version 8.10 of %G%
 
 
 This FAQ is specific to Version 8 of sendmail.  Other questions,
@@ -95,6 +95,21 @@ COMPILING AND INSTALLING SENDMAIL 8
 	(see above).
 
 	This macro set is also available with newer versions of groff.
+----------------------------------------------------------------------
+  * What modes should be used when installing sendmail?
+
+	The sendmail binary should be owned by root, mode 4755.
+	The queue directory should be owned by root, with a mode
+		between 700 and 755.  Under no circumstances
+		should it be group or other writable!
+	The sendmail config file should be owned by root, mode 644.
+	The aliases file should generally be owned by one trusted
+		user and writable only by that user, although it
+		is not unreasonable to have it group writable by
+		a "sysadmin" group.  It should not be world writable.
+	The aliases database files (aliases.db or aliases.{pag,dir}
+		depending on what database format you compile with)
+		should be owned by root, mode 644.
 
 ======================================================================
 CONFIGURATION QUESTIONS
