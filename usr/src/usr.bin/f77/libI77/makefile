@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.8	%G%
+#	@(#)makefile	1.9	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -18,13 +18,14 @@ TAPE = /dev/rnmt0.1600
 SOURCES = backspace.c close.c dballoc.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
 	rdfmt.c rewind.c sfe.c sue.c douio.c util.c wrtfmt.c \
-	dofio.c f_errlist.c f_errno.h fiodefs.h fio.h format.h lio.h
+	dofio.c f_errlist.c yes_66.c no_66.c \
+	f_errno.h fiodefs.h fio.h format.h lio.h
 
 OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	dofio.o douio.o dolio.o \
 	rdfmt.o wrtfmt.o fmt.o fmtlib.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
-	dballoc.o err.o util.o f_errlist.o
+	dballoc.o yes_66.o err.o no_66.o util.o f_errlist.o
 
 all:	$(LIB)
 
