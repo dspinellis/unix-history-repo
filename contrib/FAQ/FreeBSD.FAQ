@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.4 1994/04/18 10:21:11 jkh Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.5 1994/04/18 20:32:09 gclarkii Exp $
 
 
 Table of Contents
@@ -20,7 +20,7 @@ Table of Contents
 6.0 Kernel Configuration 
 7.0 System Admin
 8.0 Networking
-9.0 Communications
+9.0 Serial Communications
 
 
 
@@ -110,9 +110,10 @@ NOTE: These groups cover all the *BSDs (FreeBSD, NetBSD, 386BSD).
 1.0.1:	I just installed my system and rebooted.  Now I can't find the
 	extract or configure programs, where did they go?
 
-These two commands are just shell builtins.  To get these back, either
-create a account [adding a user] with /.profile as its profile or
-boot FreeBSD with a '-s' at the boot prompt.
+These two commands are just shell functions defined in /.profile.  To
+get these back, either create a account [adding a user] with / as its
+home directory and /bin/sh as its shell, or boot FreeBSD with a `-s'
+at the boot prompt.
 
 
 1.0.2:  I want to install FreeBSD unto a SCSI disk that has more than
@@ -147,22 +148,28 @@ with lots of bad blocks, then FreeBSD is probably not for you!  That said, it
 does work on thousands of IDE based systems, so you'd do well to try it first
 before simply giving up.
 
+IDE drives are *supposed* to come with built-in bad-block remapping;
+if you have documentation for your drive, you may want to see if this
+feature has been disabled on your drive.  However, ESDI, RLL, and
+ST-506 drives normally do not do this.
+
 
 1.0.5:	I have 32MB of memory, should I expect any special problems?
 
-If you have an IDE controller, no.  Likewise, if you have a full EISA system
-with EISA disk controller or a working local bus controller (read further)
-you'll have no problems. If you have an ISA system, or an EISA system with an
-ISA disk controller then you will most certainly have problems with the upper
-16MB of memory due to the ISA 24 bit DMA limitation (which ISA cards in EISA
-systems will also exhibit).  If you have a local bus disk controller, and it's
-NOT a Buslogic Bt445S with a revision less than `D' (BIOS 3.36 or earlier),
-then you should be OK.  Never fear, however, as all is not lost.
-FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer support that
-make all of the above scenarios work with a full 32MB of memory or more.  You
-are therefore advised to simply pull 16MB of memory out, install, and then see
-about upgrading to FreeBSD-current or FreeBSD 1.2 (when it comes out) so that
-you can put it back. 
+If you have an IDE controller, no.  Likewise, if you have a full EISA
+system with EISA disk controller or a working local bus controller
+(read further) you'll have no problems. If you have an ISA system, or
+an EISA system with an ISA disk controller then you will most
+certainly have problems with the upper 16MB of memory due to the ISA
+24 bit DMA limitation (which ISA cards in EISA systems will also
+exhibit).  If you have a local bus disk controller, then you should be
+OK, UNLESS it's a Buslogic Bt445S with a revision less than `D' (BIOS
+3.36 or earlier).  Never fear, however, as all is not lost.
+FreeBSD-current (and the upcoming FreeBSD 1.2) have bounce-buffer
+support that make all of the above scenarios work with a full 32MB of
+memory or more.  You are therefore advised to simply pull 16MB of
+memory out, install, and then see about upgrading to FreeBSD-current
+or FreeBSD 1.2 (when it comes out) so that you can put it back.
 
 
 
@@ -172,16 +179,19 @@ you can put it back.
 
 2.0.1:	What kind of hard drives does FreeBSD run on?
 
-FreeBSD supports MFM, RLL, ESDI, IDE and SCSI hard drives.
+FreeBSD supports ST-506 (sometimes called ``MFM''), RLL, and ESDI
+drives, which are usually connected to WD-1002, WD-1003, or WD-1006
+controllers (although clones should also work).  FreeBSD also IDE and
+SCSI hard drives.
 
 
 2.0.2:	What SCSI controllers are supported?
 
 FreeBSD supports the following SCSI controllers:
 
-Adaptec              AH-1542 Series (ISA>
+Adaptec              AH-1542 Series <ISA>
                      AH-1742 Series <EISA>
-Buslogic             BT-445 Series <VLB> (*)
+Buslogic             BT-445 Series <VLB> (but see section 1.0.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
 UltraStor            UH-14f Series <ISA>
@@ -191,9 +201,8 @@ There is supposed to be a UltraStor 24f driver floating around, but we're
 not sure where (could someone please point us at it?).  Note that we do
 NOT support `Future Domain' or `IN2000' SCSI controllers, typically
 the little $50 specials you get with some CDROM drives.  You will have to
-buy a more mainstream (and capable) SCSI controller.
-
-(*)  See section 1.0.5.
+buy a more mainstream (and capable) SCSI controller.  The Buslogic
+controllers are currently the easiest to get.
 
 
 2.0.3:	What CD-ROM drives are supported by FreeBSD?
@@ -201,12 +210,15 @@ buy a more mainstream (and capable) SCSI controller.
 Any SCSI drive connected to a supported controller.
 Mitsumi LU002(8bit), LU005(16bit) and FX001D(16bit 2x Speed).
 
-FreeBSD does NOT support drives connected to a Sound Blaster or non-SCSI
-SONY or Panasonic drives.  A general rule of thumb when selecting a CDROM
-drive for FreeBSD use is to buy a very standard SCSI model; they cost more,
-but deliver very solid performance in return.  Do not be fooled by very cheap
-Mitsumi solutions that, in turn, deliver VERY LOW performance!  As always,
-you get what you pay for.
+FreeBSD does NOT support drives connected to a Sound Blaster or
+non-SCSI SONY or Panasonic drives.  A general rule of thumb when
+selecting a CDROM drive for FreeBSD use is to buy a very standard SCSI
+model; they cost more, but deliver very solid performance in return.
+Do not be fooled by very cheap drives that, in turn, deliver VERY LOW
+performance!  As always, you get what you pay for.
+
+The Mitsumi driver is known to be extremely slow compared to SCSI
+drives.
 
 
 2.0.4:	What multi-port serial cards are supported by FreeBSD?
@@ -225,9 +237,9 @@ programing information under other than non-disclosure.  This is unfortunate.
 2.0.6:	I have a XXXX bus mouse.  Is it supported and if so, how do I set
 	it up for XFree86?
 
-FreeBSD supports the Logitech, ATI Inport and PS/2 bus mice.  You need to add
-the following line to the kernel config file and recompile for the Logitech
-and ATI mice:  
+FreeBSD supports the Logitech and ATI Inport bus mice.  You need to
+add the following line to the kernel config file and recompile for the
+Logitech and ATI mice:
 
 	device        mse0    at isa? port 0x23c tty irq6 vector mseintr
 
@@ -261,26 +273,38 @@ or joysticks on these cards.
 2.0.10:	What network cards does FreeBSD support?
 
 There is support for the following cards:
-NE2000 and 1000
-WD/SMC 8003,8013 and Elite Ultra (8216)
-3Com 3c503 
-And clones of the above
-AT&T EN100/StarLAN 10
-Isolan AT 4141-0
-Isolink 4110
-3com 3c509 (BETA)
 
+`ed' driver:
+	NE2000 and 1000
+	WD/SMC 8003,8013 and Elite Ultra (8216)
+	3Com 3c503 
+	And clones of the above
+
+`ie' driver:
+	AT&T EN100/StarLAN 10
+
+`il' driver:
+	Isolan AT 4141-0
+	Isolink 4110
+
+`ep' driver:
+	3com 3c509 (*)
+
+
+(*)The `ep' driver is known to have some problems; see the
+/usr/src/KNOWNBUGS file for more details.
 
 
 3.0 Commercial Applications
 ---------------------------
 
-Note:  This section is still very sparse, though we're hoping, of course,
-that companies will add to it! :)  The FreeBSD group has no ties with any
-of the companies listed here but simply lists them as a public service
-(and feels that commercial interest in FreeBSD can have very positive
-effects on FreeBSD's long-term viability).  We encourage commercial software
-vendors to send their entries here for inclusion.
+Note: This section is still very sparse, though we're hoping, of
+course, that companies will add to it! :) The FreeBSD group has no
+financial interest in any of the companies listed here but simply
+lists them as a public service (and feels that commercial interest in
+FreeBSD can have very positive effects on FreeBSD's long-term
+viability).  We encourage commercial software vendors to send their
+entries here for inclusion.
 
 
 3.0.1	Where can I get Motif for FreeBSD?
@@ -295,8 +319,8 @@ information.
 
 3.0.8	What about other commercial quality development systems for FreeBSD?
 
-ParcPlace Systems, Inc. provides their excellent "Object Interface & Object
-Builder" GUI development environment free of charge to FreeBSD users.  Using
+ParcPlace Systems, Inc. provides their excellent `Object Interface & Object
+Builder' GUI development environment free of charge to FreeBSD users.  Using
 OI, you can develop Motif or OpenLook compliant applications in C++ with all
 the benefits of a true GUI object hierarchy.  This will be announced and
 made available as part of the FreeBSD distribution very soon.
@@ -351,13 +375,12 @@ carefully for details.
 	CPU power to compile it all myself.  Is there any way of getting
 	binaries?
 
-Yes.  FreeBSD supports the concept of a `package', which is
-essentially a gzip'd binary distribution with a little extra
-intelligence imbeded in it for doing any custom installation work
-required.  Packages can also be installed or deinstalled again easily
-without having to know the gory details.  CDROM people will have a
-packages/ directory on their CD, others can get the currently
-available packages from:
+Yes.  We support the concept of a `package', which is essentially a
+gzip'd binary distribution with a little extra intelligence imbeded in
+it for doing any custom installation work required.  Packages can also
+be installed or deinstalled again easily without having to know the
+gory details.  CDROM people will have a packages/ directory on their
+CD, others can get the currently available packages from:
 
 	freebsd.cdrom.com:~ftp/pub/FreeBSD/packages-1.1
 
@@ -392,7 +415,7 @@ mail or news).  First, pick up the sup_bin.tgz package from:
 Second, read the file /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.sup.faq.
 
 This file describes how to setup sup on your machine.  You may also
-want to look at `/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.*.supfile',
+want to look at /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.*.supfile,
 which are a set of supfiles for supping from freefall.cdrom.com
 
 
@@ -432,7 +455,7 @@ disk            fd1     at fdc0 drive 1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-6.0.3:  Does FreeBSD support SYSV IPC, shared memory, etc?
+6.0.3:  Does FreeBSD support IPC primitives like those in System V?
 
 Yes, FreeBSD supports SYSV IPC.  This includes shared memory, messages and
 semaphores.  You need to add the following lines to your kernel config to
@@ -491,15 +514,29 @@ FreeBSD-FAQ@freefall.cdrom.com.  Thanks!
 	booting and running a FreeBSD box from a server rather than having
 	a local disk?
 
-Look in the directory /src/sys/i386/netboot for the file netboot.doc.
+Look in the directory /sys/i386/netboot for the file netboot.doc.
 
 
 8.0.2:	I've heard that you can use a FreeBSD box as a dedicated network
 	router - is there any easy support for this?
 
-After a fashion, yes.  There is a standard `router floppy' that you can
-boot on a FreeBSD machine to configure it as a network router.  [>>>> put
-pointer to router floppy image here ]
+Internet standards and good engineering practice prohibit us from
+providing packet forwarding by default in FreeBSD.  You can enable
+this support by adding `options GATEWAY' to your kernel configuration
+file and recompiling.  In most cases, you will also need to run a
+routing process to tell other systems on your network about your
+router; FreeBSD comes with the standard BSD routing daemon routed(8),
+or for more complex situations you may want to try GateD (available by
+FTP from gated.cornell.edu).
+
+It is our duty to warn you that, even when FreeBSD is configured in
+this way, it does not completely comply with the Internet standard
+requirements for routers; however, it comes close enough for ordinary
+usage.
+
+There is a standard `router floppy' that you can boot on a FreeBSD
+machine to configure it as a network router.  [>>>> put pointer to
+router floppy image here ]
 
 
 8.0.3:	Does FreeBSD support SLIP and PPP?
@@ -508,8 +545,23 @@ Yes.  See the man pages for slattach and/or pppd if you're using FreeBSD
 to connect to another site.  If you're using FreeBSD as a server for other
 machines, look at the man page for `sliplogin'.
 
-9.0 Communications
-------------------
+8.0.4:  How do I set up NTP?
+
+NTP configuration is so complex and widely variable from site to site
+that it would be impossible to make a blanket statement here.  Your
+best bet is to ask whoever's in charge of NTP at your site or network
+provider; chances are that they are running a similar version of NTP
+to the one that we provide, and they can probably provide you with the
+right configuration files to get things going.
+
+If you can't find anyone in charge, you should examine the files in
+/usr/src/contrib/xntpd/doc and see if they help any.  If not, you
+could ask on the comp.protocols.time.ntp newsgroup, or the
+`ntp@ni.umd.edu' mailing-list.
+
+
+9.0 Serial Communications
+-------------------------
 
 9.0.1: When I do a set line in kermit it locks up, whats the problem?
 
