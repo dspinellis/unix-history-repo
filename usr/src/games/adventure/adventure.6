@@ -7,22 +7,28 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)adventure.6	6.3 (Berkeley) %G%
+.\"	@(#)adventure.6	6.4 (Berkeley) %G%
 .\"
-.TH ADVENTURE 6 ""
-.UC 3
-.SH NAME
-adventure \- an exploration game
-.SH SYNOPSIS
-.B adventure
-.SH DESCRIPTION
+.Dd 
+.Dt ADVENTURE 6
+.Os BSD 3
+.Sh NAME
+.Nm adventure
+.Nd "an exploration game"
+.Sh SYNOPSIS
+.Nm adventure
+.Sh DESCRIPTION
 The object of the game is to locate and explore Colossal Cave, find the
 treasures hidden there, and bring them back to the building with you.
-The program is self-descriptive to a point, but part of the game is to
+The program is self-descriptive
+to a point, but part of the game is to
 discover its rules.
-.PP
-To terminate a game, enter ``quit''; to save a game for later resumption,
-enter ``suspend''.
-.SH BUGS
+.Pp
+To terminate a game, enter
+.Ql quit ;
+to save a game for later resumption,
+enter
+.Ql suspend .
+.Sh BUGS
 Saving a game creates a large executable file instead of just
 the information needed to resume the game.
