@@ -1,24 +1,19 @@
-#        @(#)Makefile	1.3 (Berkeley) %G%
+#        @(#)Makefile	1.4 (Berkeley) %G%
 
 
-PROG= test
-CFLAGS = -O
-CC= cc
-OBJS= error.o stalloc.o operators.o 
+PROG=	test
+SRCS=	test.c error.c stalloc.c operators.c
+CFLAGS += -I{.CURDIR} -I.
+CLEANFILES+= operators.c operators.h unary_op binary_op
 
-$(PROG): test.c operators.h extern.h $(OBJS)
-	$(CC) $(CFLAGS) -o $@ test.c operators.o error.o stalloc.o
+.PATH: /usr/src/bin/test/obj
+
+afterinstall:
 	-rm -f '['
 	ln test '['
 
 operators.c operators.h: unary_op binary_op mkops
-	chmod 555 ./mkops
-	./mkops
+	cp ${.CURDIR}/unary_op ${.CURDIR}/binary_op .
+	sh ${.CURDIR}/mkops
 
-operators.o: operators.h
-
-clean:
-	rm -f core.* *.o $(PROG) operators.h operators.c
-
-tags:
-	ctags -t -d *.[ch]
+.include <bsd.prog.mk>
