@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Determine the unique two positive integers whose squares sum to the
+ * specified prime.  This is always possible for all primes of the form
+ * 4N+1, and always impossible for primes of the form 4N-1.
+ */
+
+define ss(p)
+{
+	local a, b, i, p4;
+
+	if (p == 2) {
+		print "1^2 + 1^2 = 2";
+		return;
+	}
+	if ((p % 4) != 1) {
+		print p, "is not of the form 4N+1";
+		return;
+	}
+	if (!ptest(p, min(p-2, 10))) {
+		print p, "is not a prime";
+		return;
+	}
+	p4 = (p - 1) / 4;
+	i = 2;
+	do {
+		a = pmod(i++, p4, p);
+	} while ((a^2 % p) == 1);
+	b = p;
+	while (b^2 > p) {
+		i = b % a;
+		b = a;
+		a = i;
+	}
+	print a : "^2 +" , b : "^2 =" , a^2 + b^2;
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "ss(p) defined";
+}

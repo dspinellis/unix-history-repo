@@ -1,0 +1,1276 @@
+/*
+ * Copyright (c) 1994 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Test the correct execution of the calculator by reading this library file.
+ * Errors are reported with '****' messages, or worse.  :-)
+ *
+ * NOTE: Unlike most calc lib files, this one performs its work when
+ *       it is read.  Normally one would just define functions and
+ *	 values for later use.  In the case of the regression test,
+ *	 we do not want to do this.
+ */
+
+print '000: Beginning regression tests';
+print '001: Beginning regression test suite read';
+print '002: Within each section, output should be numbered sequentially';
+
+
+static err;
+lib_debug = -1;		/* disable lib startup messages */
+print '003: parsed variable definitions';
+
+
+define verify(test, str)
+{
+	if (test != 1) {
+		print '**** Non-true result (' : test : '): ' : str;
+		++err;
+		return;
+	}
+	print str;
+}
+print '004: parsed verify()';
+
+
+define error(str)
+{
+	print '****' , str;
+	++err;
+}
+print '005: parsed error(str)';
+
+
+define getglobalvar()
+{
+	global	globalvar;
+
+	return globalvar;
+}
+print '006: parsed getglobalvar()';
+
+
+/*
+ * Test boolean operations and IF tests.
+ *
+ * Some of these tests are done twice, once to print the message and
+ * once to count any errors.  This means that some successful tests
+ * will display a passing message twice.  Oh well, no biggie.
+ */
+define test_booleans()
+{
+	local	x;
+	local	y;
+	local	t1, t2, t3;
+
+	print '100: Beginning test_booleans';
+
+	if (0)
+		print '**** if (0)';
+	if (0)
+		err = err + 1;
+
+	if (1)
+		print '101: if (1)';
+
+	if (2)
+		print '102: if (2)';
+
+	if (1)
+		print '103: if (1) else';
+	else
+		print '**** if (1) else';
+	if (1)
+		print '104: if (1) else';
+	else
+		err = err + 1;
+
+	if (0)
+		print '**** if (0) else';
+	else
+		print '105: if (0) else';
+	if (0)
+		err = err + 1;
+	else
+		print '106: if (0) else';
+
+	if (1 == 1)
+		print '107: if 1 == 1';
+	else
+		print '**** if 1 == 1';
+	if (1 == 1)
+		print '108: if 1 == 1';
+	else
+		err = err + 1;
+
+	if (1 != 2)
+		print '109: if 1 != 2';
+	else
+		print '**** if 1 != 2';
+	if (1 != 2)
+		print '110: if 1 != 2';
+	else
+		err = err + 1;
+
+	verify(1,      '111: verify 1');
+	verify(2 == 2, '112: verify 2 == 2');
+	verify(2 != 3, '113: verify 2 != 3');
+	verify(2 <  3, '114: verify 2 <  3');
+	verify(2 <= 2, '115: verify 2 <= 2');
+	verify(2 <= 3, '116: verify 2 <= 3');
+	verify(3 >  2, '117: verify 3 >  2');
+	verify(2 >= 2, '118: verify 2 >= 2');
+	verify(3 >= 2, '119: verify 3 >= 2');
+	verify(!0,     '120: verify !0');
+	verify(!1 == 0,'121: verify !1 == 0');
+	print '122: Ending test_booleans';
+}
+print '007: parsed test_booleans()';
+
+
+/*
+ * Test variables and simple assignments.
+ */
+define test_variables()
+{
+	local	x1, x2, x3;
+	global	g1, g2;
+	local	t;
+	global	globalvar;
+
+	print '200: Beginning test_variables';
+	x1 = 5;
+	x3 = 7 * 2;
+	x2 = 9 + 1;
+	globalvar = 22;
+	g1 = 19 - 3;
+	g2 = 79;
+	verify(x1 == 5,  '201: x1 == 5');
+	verify(x2 == 10, '202: x2 == 10');
+	verify(x3 == 14, '203: x3 == 14');
+	verify(g1 == 16, '204: g1 == 16');
+	verify(g2 == 79, '205: g2 == 79');
+	verify(globalvar == 22, '204: globalvar == 22');
+	verify(getglobalvar() == 22, '205: getglobalvar() == 22');
+	x1 = x2 + x3 + g1;
+	verify(x1 == 40, '206: x1 == 40');
+	g1 = x3 + g2;
+	verify(g1 == 93, '207: g1 == 207');
+	x1 = 5;
+	verify(x1++ == 5, '208: x1++ == 5');
+	verify(x1 == 6, '209: x1 == 6');
+	verify(++x1 == 7, '210: ++x1 == 7');
+	x1 += 3;
+	verify(x1 == 10, '211: x1 == 10');
+	x1 -= 6;
+	verify(x1 == 4, '212: x1 == 4');
+	x1 *= 3;
+	verify(x1 == 12, '213: x1 == 12');
+	x1 /= 4;
+	verify(x1 == 3, '214: x1 == 3');
+	x1 = x2 = x3;
+	verify(x2 == 14, '215: x2 == 14');
+	verify(x1 == 14, '216: x1 == 14');
+	print '217: Ending test_variables';
+}
+print '008: parsed test_variables()';
+
+
+/*
+ * Test logical AND and OR operators and short-circuit evaluation.
+ */
+define test_logicals()
+{
+	local	x;
+
+	print '300: Beginning test_logicals';
+
+	if (2 && 3) {
+		print '301: if (2 && 3)';
+	} else {
+		print '**** if (2 && 3)';
+		++err;
+	}
+
+	if (2 && 0) {
+		print '**** if (2 && 0)';
+		++err;
+	} else {
+		print '302: if (2 && 0)';
+	}
+
+	if (0 && 2) {
+		print '**** if (0 && 2)';
+		++err;
+	} else {
+		print '303: if (0 && 2)';
+	}
+
+	if (0 && 0) {
+		print '**** if (0 && 0)';
+		++err;
+	} else {
+		print '304: if (0 && 0)';
+	}
+
+	if (2 || 0) {
+		print '305: if (2 || 0)';
+	} else {
+		print '**** if (2 || 0)';
+		++err;
+	}
+	
+	if (0 || 2) {
+		print '306: if (0 || 2)';
+	} else {
+		print '**** if (0 || 2)';
+		++err;
+	}
+
+	if (0 || 0) {
+		print '**** if (0 || 0)';
+		++err;
+	} else {
+		print '307: if (0 || 0)';
+	}
+
+	x = 2 || 3; verify(x == 2, '308: (2 || 3) == 2');
+	x = 2 || 0; verify(x == 2, '309: (2 || 0) == 2');
+	x = 0 || 3; verify(x == 3, '310: (0 || 3) == 3');
+	x = 0 || 0; verify(x == 0, '311: (0 || 0) == 0');
+	x = 2 && 3; verify(x == 3, '312: (2 && 3) == 3');
+	x = 2 && 0; verify(x == 0, '313: (2 && 0) == 0');
+	x = 0 && 3; verify(x == 0, '314: (0 && 3) == 0');
+	x = 2 || error('2 || error()');
+	x = 0 && error('0 && error()');
+	print '315: Ending test_logicals';
+}
+print '009: parsed test_logicals()';
+
+
+/*
+ * Test simple arithmetic operations and expressions.
+ */
+define test_arithmetic()
+{
+	print '400: Beginning test_arithmetic';
+	verify(3+4==7, '401: 3 + 4 == 7');
+	verify(4-1==3, '402: 4 - 1 == 3');
+	verify(2*3==6, '403: 2 * 3 == 6');
+	verify(8/4==2, '404: 8 / 4 == 2');
+	verify(2^3==8, '405: 2 ^ 3 == 8');
+	verify(9-4-2==3, '406: 9-4-2 == 3');
+	verify(9-4+2==7, '407: 9-4+2 == 6');
+	verify(-5+2==-3,  '408: -5+2 == -3');
+	verify(2*3+1==7, '409: 2*3+1 == 7');
+	verify(1+2*3==7, '410: 1+2*3 == 7');
+	verify((1+2)*3==9, '411: (1+2)*3 == 9');
+	verify(2*(3+1)==8, '412: 2*(3+1) == 8');
+	verify(9-(2+3)==4, '413: 9-(2+3) == 4');
+	verify(9+(2-3)==8, '414: 9+(2-3) == 8');
+	verify((2+3)*(4+5)==45, '415: (2+3)*(4+5) == 45');
+	verify(10/(2+3)==2, '416: 10/(2+3) == 2');
+	verify(12/3+4==8, '417: 12/3+4 == 8');
+	verify(6+12/3==10, '418: 6+12/3 == 10');
+	verify(2+3==1+4, '419: 2+3 == 1+4');
+	verify(-(2+3)==-5, '420: -(2+3) == -5');
+	verify(7&18==2,    '421: 7&18 == 2');
+	verify(3|17==19,   '422: 3|17 == 19');
+	verify(2&3|1==3,   '423: 2&3|1 == 3');
+	verify(2&(3|1)==2, '424: 2&(3|1) == 2');
+	verify(3<<4==48,   '425: 3<<4 == 48');
+	verify(5>>1==2,    '426: 5>>1 == 2');
+	verify(3<<-1==1,   '427: 3<<-1 == 1');
+	verify(5>>-2==20,  '428: 5>>-2 == 20');
+	verify(1<<2<<3==65536, '429: 1<<2<<3 == 65536');
+	verify((1<<2)<<3==32, '430: (1<<2)<<3 == 32');
+	verify(2^3^2==512, '431: 2^3^2 == 512');
+	verify((2^3)^2==64,'432: (2^3)^2 == 64');
+	verify(4//3==1, '433: 4//3==1');
+	verify(4//-3==-1, '434: 4//-3==-1');
+	verify(0.75//-0.51==-1, '435: 0.75//-0.51==-1');
+	verify(0.75//-0.50==-1, '436: 0.75//-0.50==-1');
+	verify(0.75//-0.49==-1, '437: 0.75//-0.49==-1');
+	verify((3/4)//(-1/4)==-3, '438: (3/4)//(-1/4)==-3');
+	verify(7%3==1,     '439: 7%3==1');
+	verify(0-.5==-.5, '440: 0-.5==-.5');
+	verify(0^0 == 1,  '441: 0^0 == 1');
+	verify(0^1 == 0,  '442: 0^1 == 0');
+	verify(1^0 == 1,  '443: 1^0 == 1');
+	verify(1^1 == 1,  '444: 1^1 == 1');
+	verify(1/(.8+.8i)==.625-.625i, '445: 1/(.8+.8i)==.625-.625i');
+	verify((.6+.8i)*(3.6-4.8i)==6, '446: (.6+.8i)*(3.6-4.8i)==6');
+	print '447: Ending test_arithmetic';
+}
+print '010: parsed test_arithmetic()';
+
+
+/*
+ * Test string constants and comparisons
+ */
+define test_strings()
+{
+	local x, y, z;
+
+	print '500: Beginning test_strings';
+	x = 'string';
+	y = "string";
+	z = x;
+	verify(z == "string", '501: z == "string"');
+	verify(z != "foo", '502: z != "foo"');
+	verify(z != 3, '503: z != 3');
+	verify('' == "", '504: \'\' == ""');
+	verify("a" == "a", '505: "a" == "a"');
+	verify("c" != "d", '506: "c" != "d"');
+	verify("" != "a", '507: "" != "a"');
+	verify("rs" < "rt", '508: "rs" < "rt"');
+	verify("rs" < "ss", '509: "rs < "ss"');
+	verify("rs" <= "rs", '510: "rs" <= "rs"');
+	verify("rs" <= "tu", '511: "rs" <= "tu"');
+	verify("rs" > "cd", '512: "rs" > "cd"');
+	verify("rs" >= "rs", '513: "rs" >= "rs"');
+	verify("rs" >= "cd", '514: "rs" >= "cd"'); 
+	verify("abc" > "ab", '515: "abc" > "ab"');
+	print '516: Ending test_strings';
+}
+print '011: parsed test_strings()';
+
+
+/*
+ * Do multiplication and division on three numbers in various ways
+ * and verify the results agree.
+ */
+define muldivcheck(a, b, c, str)
+{
+	local	abc, acb, bac, bca, cab, cba;
+
+	abc = (a * b) * c;
+	acb = (a * c) * b;
+	bac = (b * a) * c;
+	bca = (b * c) * a;
+	cab = (c * a) * b;
+	cba = (c * b) * a;
+
+	if (abc != acb) {print '**** abc != acb:', str; ++err;}
+	if (acb != bac) {print '**** acb != bac:', str; ++err;}
+	if (bac != bca) {print '**** bac != bca:', str; ++err;}
+	if (bca != cab) {print '**** bca != cab:', str; ++err;}
+	if (cab != cba) {print '**** cab != cba:', str; ++err;}
+	if (abc/a != b*c) {print '**** abc/a != bc:', str; ++err;}
+	if (abc/b != a*c) {print '**** abc/b != ac:', str; ++err;}
+	if (abc/c != a*b) {print '**** abc/c != ab:', str; ++err;}
+	print str;
+}
+print '012: parsed muldivcheck(a, b, c, str)';
+
+
+/*
+ * Use the identity for squaring the sum of two squares to check
+ * multiplication and squaring.
+ */
+define squarecheck(a, b, str)
+{
+	local	a2, b2, tab, apb, apb2, t;
+
+	a2 = a^2;
+	b2 = b^2;
+	tab = a * b * 2;
+	apb = a + b;
+	apb2 = apb^2;
+	if (a2 != a*a) {print '**** a^2 != a*a:', str; ++err;}
+	if (b2 != b*b) {print '**** b^2 != b*b:', str; ++err;}
+	if (apb2 != apb*apb) {
+		print '**** (a+b)^2 != (a+b)*(a+b):', str; 
+		++err;
+	}
+	if (a2+tab+b2 != apb2) {
+		print '**** (a+b)^2 != a^2 + 2ab + b^2:', str; 
+		++err;
+	}
+	if (a2/a != a) {print '**** a^2/a != a:', str; ++err;}
+	if (b2/b != b) {print '**** b^2/b != b:', str; ++err;}
+	if (apb2/apb != apb) {print '**** (a+b)^2/(a+b) != a+b:', str; ++err;}
+	if (a2*b2 != (a*b)^2) {print '**** a^2*b^2 != (ab)^2:', str; ++err;}
+	print str;
+}
+print '013: parsed squarecheck(a, b, str)';
+
+
+/*
+ * Use the raising of numbers to large powers to check multiplication
+ * and exponentiation.
+ */
+define powercheck(a, p1, p2, str)
+{
+	local	a1, a2, a3;
+
+	a1 = (a^p1)^p2;
+	a2 = (a^p2)^p1;
+	a3 = a^(p1*p2);
+	if (a1 != a2) {print '**** (a^p1)^p2 != (a^p2)^p1:', str; ++err;}
+	if (a1 != a3) {print '**** (a^p1)^p2 != a^(p1*p2):', str; ++err;}
+	print str;
+}
+print '014: parsed powercheck(a, p1, p2, str)';
+
+
+/*
+ * Test fraction reductions.
+ * Arguments MUST be relatively prime.
+ */
+define fraccheck(a, b, c, str)
+{
+	local	ab, bc, ca, aoc, boc, aob;
+
+	ab = a * b;
+	bc = b * c;
+	ca = c * a;
+	aoc = ab / bc;
+	if (num(aoc) != a) {print '**** num(aoc) != a:', str; ++err;}
+	if (den(aoc) != c) {print '**** den(aoc) != c:', str; ++err;}
+	boc = ab / ca;
+	if (num(boc) != b) {print '**** num(boc) != b:', str; ++err;}
+	if (den(boc) != c) {print '**** den(boc) != c:', str; ++err;}
+	aob = ca / bc;
+	if (num(aob) != a) {print '**** num(aob) != a:', str; ++err;}
+	if (den(aob) != b) {print '**** den(aob) != b:', str; ++err;}
+	if (aob*boc != aoc) {print '**** aob*boc != aoc;', str; ++err;}
+	print str;
+}
+print '015: parsed fraccheck(a, b, c, str)';
+
+
+/*
+ * Test multiplication and squaring algorithms.
+ */
+define algcheck(a, b, str)
+{
+	local	ss, ms, t1, t2, t3, t4, t5, t6, t7;
+	local	a1, a2, a3, a4, a5, a6, a7;
+	local	oldmul2, oldsq2;
+
+	oldmul2 = config("mul2", 2);
+	oldsq2 = config("sq2", 2);
+	a1 = a * b;
+	a2 = a * a;
+	a3 = b * b;
+	a4 = a^2;
+	a5 = b^2;
+	a6 = a2^2;
+	a7 = pmod(3,a-1,a);
+	for (ms = 2; ms < 20; ms++) {
+		for (ss = 2; ss < 20; ss++) {
+			config("mul2", ms);
+			config("sq2", ss);
+			t1 = a * b;
+			t2 = a * a;
+			t3 = b * b;
+			t4 = a^2;
+			t5 = b^2;
+			t6 = t2^2;
+			if (((ms + ss) % 37) == 4)
+				t7 = pmod(3,a-1,a);
+			if (t1 != a1) {print '**** t1 != a1:', str; ++err;}
+			if (t2 != a2) {print '**** t2 != a2:', str; ++err;}
+			if (t3 != a3) {print '**** t3 != a3:', str; ++err;}
+			if (t4 != a4) {print '**** t4 != a4:', str; ++err;}
+			if (t5 != a5) {print '**** t5 != a5:', str; ++err;}
+			if (t6 != a6) {print '**** t6 != a6:', str; ++err;}
+			if (t7 != a7) {print '**** t7 != a7:', str; ++err;}
+		}
+	}
+	config("mul2", oldmul2);
+	config("sq2", oldsq2);
+	print str;
+}
+print '016: parsed algcheck(a, b, str)';
+
+
+/*
+ * Test big numbers using some identities.
+ */
+define test_bignums()
+{
+	local	a, b, c, d;
+
+	print '600: Beginning test_bignums';
+	a = 64357824568234938591;
+	b = 12764632632458756817;
+	c = 43578234973856347982;
+	muldivcheck(a, b, c, '601: muldivcheck 1');
+	a = 3^100;
+	b = 5^97;
+	c = 7^88;
+	muldivcheck(a, b, c, '602: muldivcheck 2');
+	a = 2^160 - 1;
+	b = 2^161 - 1;
+	c = 2^162 - 1;
+	muldivcheck(a, b, c, '603: muldivcheck 3');
+	a = 3^35 / 5^35;
+	b = 7^35 / 11^35;
+	c = 13^35 / 17^35;
+	muldivcheck(a, b, c, '604: muldivcheck 4');
+	a = (10^97-1) / 9;
+	b = (10^53-1) / 9;
+	c = (10^37-1) / 9;
+	muldivcheck(a, b, c, '605: muldivcheck 5');
+	a = 17^50;
+	b = 19^47;
+	squarecheck(a, b, '606: squarecheck 1');
+	a = 2^111-1;
+	b = 2^17;
+	squarecheck(a, b, '607: squarecheck 2');
+	a = 23^43 / 29^43;
+	b = 31^42 / 37^29;
+	squarecheck(a, b, '608: squarecheck 3');
+	a = 4657892345743659834657238947854639;
+	b = 43784356784365893467659347867689;
+	squarecheck(a, b, '609: squarecheck 4');
+	a = (10^80-1) / 9;
+	b = (10^50-1) / 9;
+	squarecheck(a, b, '610: squarecheck 5');
+	a = 101^99;
+	b = 2 * a;
+	squarecheck(a, b, '611: squarecheck 6');
+	a = (10^19-1) / 9;
+	verify(ptest(a, 20), '612: primetest R19');
+	a = (10^23-1) / 9;
+	verify(ptest(a, 20), '613: primetest R23');
+	a = 2^127 - 1;
+	verify(ptest(a, 1), '614: primetest M127');
+	a = 2^521 - 1;
+	verify(ptest(a, 1), '615: primetest M521');
+	powercheck(17, 127, 30, '616: powercheck 1');
+	powercheck(111, 899, 6, '617: powercheck 2');
+	powercheck(3, 87, 89, '618: powercheck 3');
+	fraccheck(3^200, 5^173, 7^138, '619: fraccheck 1');
+	fraccheck(11^100, 12^98, 13^121, '620: fraccheck 2');
+	fraccheck(101^270, 103^111, 105^200, '621: fraccheck 3');
+	a = 0xffff0000ffffffff00000000ffff0000000000000000ffff;
+	b = 0x555544440000000000000000000000000000000011112222333344440000;
+	c = 0x999911113333000011111111000022220000000000000000333300000000ffff;
+	d = 0x3333ffffffff0000000000000000ffffffffffffffff000000000000;
+	algcheck(a, a, '622: algcheck 1');
+	algcheck(a, b, '623: algcheck 2');
+	algcheck(a, c, '624: algcheck 3');
+	algcheck(a, d, '625: algcheck 4');
+	algcheck(b, b, '626: algcheck 5');
+	algcheck(b, c, '627: algcheck 6');
+	algcheck(b, d, '628: algcheck 7');
+	algcheck(c, c, '629: algcheck 8');
+	algcheck(c, d, '630: algcheck 9');
+	algcheck(d, d, '631: algcheck 10');
+/* The following are pending consideration of the 'nearest' arg to sqrt()
+	a = 2e150;
+	b = 0x3206aa0707c6c1d483b62c784c9371eb507e3ab9b2d511c4bd648e52a5277fe;
+	verify(sqrt(a,1) == b, '632: sqrt(a,1) == b');
+	verify(sqrt(4e1000,1) == 2e500, '633: sqrt(4e1000,1) == 2e500');
+ */
+	print '634: Ending test_bignums';
+}
+print '017: parsed test_bignums()';
+
+
+/*
+ * Test many of the built-in functions.
+ */
+define test_functions()
+{
+	print '700: Beginning test_functions';
+	verify(abs(3) == 3,    '701: abs(3) == 3');
+	verify(abs(-4) == 4,   '702: abs(-4) == 4');
+	verify(avg(7) == 7,    '703: avg(7) == 7');
+	verify(avg(3,5) == 4,  '704: avg(3,5) == 4');
+	verify(cmp(2,3) == -1, '705: cmp(2,3) == -1');
+	verify(cmp(6,6) == 0,  '706: cmp(6,6) == 0');
+	verify(cmp(7,4) == 1,  '707: cmp(7,4) == 1');
+	verify(comb(9,9) == 1, '708: comb(9,9) == 1');
+	verify(comb(5,2) == 10,'709: comb(5,2) == 10');
+	verify(conj(4) == 4,   '710: conj(4) == 4');
+	verify(conj(2-3i) == 2+3i, '711: conj(2-3i) == 2+3i');
+	verify(den(17) == 1,   '712: den(17) == 1');
+	verify(den(3/7) == 7,  '713: den(3/7) == 7');
+	verify(den(-2/3) == 3, '714: den(-2/3) == 3');
+	verify(digits(0) == 1, '715: digits(0) == 1');
+	verify(digits(9) == 1, '716: digits(9) == 1');
+	verify(digits(10) == 2,'717: digits(10) == 2');
+	verify(digits(-691) == 3, '718: digits(-691) == 3');
+	verify(eval('2+3') == 5, "719: eval('2+3') == 5");
+	verify(fcnt(11,3) == 0,'720: fcnt(11,3) == 0');
+	verify(fcnt(18,3) == 2,'721: fcnt(18,3) == 2');
+	verify(fib(0) == 0,    '722: fib(0) == 0');
+	verify(fib(1) == 1,    '723: fib(1) == 1');
+	verify(fib(9) == 34,   '724: fib(9) == 34');
+	verify(frem(12,5) == 12, '725: frem(12,5) == 12');
+	verify(frem(45,3) == 5, '726: frem(45,3) == 5');
+	verify(fact(0) == 1,   '727: fact(0) == 1');
+	verify(fact(1) == 1,   '728: fact(1) == 1');
+	verify(fact(5) == 120, '729: fact(5) == 120');
+	verify(frac(3) == 0,   '730: frac(3) == 0');
+	verify(frac(2/3) == 2/3, '731: frac(2/3) == 2/3');
+	verify(frac(17/3) == 2/3, '732: frac(17/3) == 2/3');
+	verify(gcd(0,3) == 3,  '733: gcd(0,3) == 3');
+	verify(gcd(1,12) == 1, '734: gcd(1,12) == 1');
+	verify(gcd(11,7) == 1, '735: gcd(11,7) == 1');
+	verify(gcd(20,65) == 5, '736: gcd(20,65) == 5');
+	verify(gcdrem(20,3) == 20, '737: gcdrem(20,3) == 20');
+	verify(gcdrem(100,6) == 25, '738: gcdrem(100,6) == 25');
+	verify(highbit(1) == 0, '739: highbit(1) == 0');
+	verify(highbit(15) == 3, '740: highbit(15) == 3');
+	verify(hypot(3,4) == 5, '741: hypot(3,4) == 5');
+	verify(ilog(90,3) == 4, '742: ilog(90,3) == 4');
+	verify(ilog10(123) == 2, '743: ilog10(123) == 2');
+	verify(ilog2(17) == 4, '744: ilog2(17) == 4');
+	verify(im(3) == 0,     '745: im(3) == 0');
+	verify(im(2+3i) == 3,  '746: im(2+3i) == 3');
+	verify(int(5) == 5,    '757: int(5) == 5');
+	verify(int(19/3) == 6, '758: int(19/3) == 6');
+	verify(inverse(3/2) == 2/3, '759: inverse(3/2) == 2/3');
+	verify(iroot(18,2) == 4, '760: iroot(18,2) == 4');
+	verify(iroot(100,3) == 4, '761: iroot(100,3) == 4');
+	verify(iseven(10) == 1, '762: iseven(10) == 1');
+	verify(iseven(13) == 0, '763: iseven(13) == 0');
+	verify(iseven('a') == 0, "764: iseven('a') == 0");
+	verify(isint(7) == 1,  '765: isint(7) == 1');
+	verify(isint(19/2) == 0, '766: isint(19/2) == 0');
+	verify(isint('a') == 0, "767: isint('a') == 0");
+	verify(islist(3) == 0, '768: islist(3) == 0');
+	verify(islist(list(2,3)) == 1, '769: islist(list(2,3)) == 1');
+	verify(ismat(3) == 0, '770: ismat(3) == 0');
+	verify(ismult(7,3) == 0, '771: ismult(7,3) == 0');
+	verify(ismult(15,5) == 1, '772: ismult(15,5) == 1');
+	verify(isnull(3) == 0, '773: isnull(3) == 0');
+	verify(isnull(null()) == 1, '774: isnull(null()) == 1');
+	verify(isnum(2/3) == 1, '775: isnum(2/3) == 1');
+	verify(isnum('xx') == 0, "776: isnum('xx') == 0");
+	verify(isobj(3) == 0, '777: isobj(3) == 0');
+	verify(isodd(7) == 1, '778: isodd(7) == 1');
+	verify(isodd(8) == 0, '779: isodd(8) == 0');
+	verify(isodd('x') == 0, "780: isodd('a') == 0");
+	verify(isqrt(27) == 5, '781: isqrt(27) == 5');
+	verify(isreal(3) == 1, '782: isreal(3) == 1');
+	verify(isreal('x') == 0, "783: isreal('x') == 0");
+	verify(isreal(2+3i) == 0, '784: isreal(2+3i) == 0');
+	verify(isstr(5) == 0,  '785: isstr(5) == 0');
+	verify(isstr('foo') == 1, "786: isstr('foo') == 1");
+	verify(isrel(10,14) == 0, '787: isrel(10,14) == 0');
+	verify(isrel(15,22) == 1, '788: isrel(15,22) == 1');
+	verify(issimple(6) == 1, '789: issimple(6) == 1');
+	verify(issimple(3-2i) == 1, '790: issimple(3-2i) == 1');
+	verify(issimple(list(5)) == 0, '791: issimple(list(5)) == 0');
+	verify(issq(26) == 0, '792: issq(26) == 0');
+	verify(issq(9/4) == 1, '793: issq(9/4) == 1');
+	verify(istype(9,4) == 1, '795: istype(9,4) == 1');
+	verify(istype(3,'xx') == 0, "796: istype(3,'xx') == 0");
+	verify(jacobi(5,11) == 1, '797: jacobi(2,7) == 1');
+	verify(jacobi(6,13) == -1, '798: jacobi(6,13) == 0');
+	verify(lcm(3,4,5,6) == 60, '799: lcm(3,4,5,6) == 60');
+	verify(lcmfact(8) == 840, '800: lcmfact(8) == 840');
+	verify(lfactor(21,5) == 3, '801: lfactor(21,5) == 3');
+	verify(lfactor(97,20) == 1, '802: lfactor(97,20) == 1');
+	verify(lowbit(12) == 2, '803: lowbit(12) == 2');
+	verify(lowbit(17) == 0, '804: lowbit(17) == 0');
+	verify(ltol(1) == 0, '805: ltol(1) == 0');
+	verify(max(3,-9,7,4) == 7, '806: max(3,-9,7,4) == 7');
+	verify(meq(13,33,10) == 1, '807: meq(13,33,10) == 1');
+	verify(meq(7,19,11) == 0, '808: meq(7,19,11) == 0');
+	verify(min(9,5,12) == 5, '809: min(9,5,12) == 5');
+	verify(minv(13,97) == 15, '810: minv(13,97) == 15');
+	verify(mne(16,37,10) == 1, '811: mne(16,37,10) == 1');
+	verify(mne(46,79,11) == 0, '812: mne(46,79,11) == 0');
+	verify(norm(4) == 16,   '813: norm(4) == 16');
+	verify(norm(2-3i) == 13, '814: norm(2-3i) == 13');
+	verify(num(7) == 7,     '815: num(7) == 7');
+	verify(num(11/4) == 11, '816: num(11/4) == 11');
+	verify(num(-9/5) == -9, '817: num(-9/5) == -9');
+	verify(char(ord('a')+2) == 'c', "818: char(ord('a')+2) == 'c'");
+	verify(perm(7,3) == 210, '819: perm(7,3) == 210');
+	verify(pfact(10) == 210, '820: pfact(10) == 210');
+	verify(places(3/7) == -1, '821: places(3/7) == -1');
+	verify(places(.347) == 3, '822: places(.347) == 3');
+	verify(places(17) == 0, '823: places(17) == 0');
+	verify(pmod(3,36,37) == 1, '824: pmod(3,36,37) == 1');
+	verify(poly(2,3,5,2) == 19, '825; poly(2,3,5,2) == 19');
+	verify(ptest(101,10) == 1, '826: ptest(101,10) == 1');
+	verify(ptest(221,30) == 0, '827: ptest(221,30) == 0');
+	verify(re(9) == 9,       '828: re(9) == 9');
+	verify(re(-7+3i) == -7,  '829: re(-7+3i) == -7');
+	verify(scale(3,4) == 48, '830: scale(3,4) == 48');
+	verify(sgn(-4) == -1,    '831: sgn(-4) == -1');
+	verify(sgn(0) == 0,      '832: sgn(0) == 0');
+	verify(sgn(3) == 1,      '833: sgn(3) == 1');
+	verify(size(7) == 1,     '834: size(7) == 1');
+	verify(sqrt(121) == 11,  '835: sqrt(121) == 11');
+	verify(ssq(2,3,4) == 29, '836: ssq(2,3,4) == 29');
+	verify(str(45) == '45',  "837; str(45) == '45'");
+	verify(strcat('a','bc','def')=='abcdef',"838; strcat('a','bc','def')=='abcdef'");
+	verify(strlen('') == 0,  "839: strlen('') == 0");
+	verify(strlen('abcd') == 4, "840: strlen('abcd') == 4");
+	verify(substr('abcd',2,1) == 'b', "841: substr('abcd',2,1) == 'b'");
+	verify(substr('abcd',3,4) == 'cd', "842: substr('abcd',3,4) == 'cd'");
+	verify(substr('abcd',1,3) == 'abc', "843: substr('abcd',1,3) == 'abc'");
+	verify(xor(17,17) == 0,  '844: xor(17,17) == 0');
+	verify(xor(12,5) == 9,   '845: xor(12,5) == 9');
+	verify(mmin(3,7) == 3, '846: mmin(3,7) == 3');
+	verify(mmin(4,7) == -3, '847: mmin(4,7) == -3');
+	verify(digit(123,2) == 1, '848: digit(123,2) == 1');
+	verify(ismult(3/4, 1/7) == 0, '849: ismult(3/4, 1/7) == 0');
+	verify(gcd(3/4, 1/7) == 1/28, '850: gcd(3/4,1/7) == 1/28');
+	verify(gcd(2,3,1/2) == 1/2,	'851: gcd(2,3,1/2) == 1/2');
+	verify(gcd(17,7,1/7) == 1/7,	'852: gcd(17,7,1/7) == 1/7');
+	verify(gcd(2) == 2,		'853: gcd(2) == 2');
+	verify(gcd(-2) == 2,		'854: gcd(-2) == 2');
+	verify(floor(1.5) == 1,		'855: floor(1.5) == 1');
+	verify(floor(.5) == 0,		'856: floor(.5) == 0');
+	verify(floor(-.5) == -1,	'857: floor(-.5) == -1');
+	verify(floor(-1.5) == -2,	'858: floor(-1.5) == -2');
+	verify(ceil(1.5) == 2,		'859: floor(1.5) == 2');
+	verify(ceil(.5) == 1,		'860: floor(.5) == 1');
+	verify(ceil(-.5) == 0,		'861: floor(-.5) == 0');
+	verify(ceil(-1.5) == -1,	'862: floor(-1.5) == -1');
+	verify(frac(-7.2) == -.2,	'863: frac(-7.2) == -.2');
+	verify(gcd(4, 5, 1/3) == 1/3,	'864: gcd(4, 5, 1/3) == 1/3');
+	verify(ltol(7/25) == 24/25,	'865: ltol(7/25) == 24/25');
+	verify(hmean(1,2,3) == 18/11,	'866: hmean(1,2,3) == 18/11');
+	print '867: Ending test_functions';
+}
+print '018: parsed test_functions()';
+
+
+/*
+ * Test matrix operations
+ */
+define test_matrix()
+{
+	static mat b[4,4];
+	static mat binv[4,4] = {
+	    0, 1, 0, 0, 2, -3/2, 2, -1/2, -3,
+	    0.5, -1.0, 0.5, 1.0, 0.0, 0.0, 0.0
+	};
+
+	print '900: Beginning test_matrix';
+
+	b[0,0] = 0;
+	verify(b[0,0] == 0,	'901: b[0,0] == 0');
+	b[0,1] = 0;
+	verify(b[0,1] == 0,	'902: b[0,1] == 0');
+	b[0,2] = 0;
+	verify(b[0,2] == 0,	'903: b[0,2] == 0');
+	b[0,3] = 1;
+	verify(b[0,3] == 1,	'904: b[0,3] == 1');
+	b[1,0] = 1;
+	verify(b[1,0] == 1,	'905: b[1,0] == 1');
+	b[1,1] = 0;
+	verify(b[1,1] == 0,	'906: b[1,1] == 0');
+	b[1,2] = 0;
+	verify(b[1,2] == 0,	'907: b[1,2] == 0');
+	b[1,3] = 0;
+	verify(b[1,3] == 0,	'908: b[1,3] == 0');
+	b[2,0] = 1;
+	verify(b[2,0] == 1,	'909: b[2,0] == 1');
+	b[2,1] = 1;
+	verify(b[2,1] == 1,	'910: b[2,1] == 1');
+	b[2,2] = 1;
+	verify(b[2,2] == 1,	'911: b[2,2] == 1');
+	b[2,3] = 1;
+	verify(b[2,3] == 1,	'912: b[2,3] == 1');
+	b[3,0] = 1;
+	verify(b[3,0] == 1,	'913: b[3,0] == 1');
+	b[3,1] = 2;
+	verify(b[3,1] == 2,	'914: b[3,1] == 2');
+	b[3,2] = 4;
+	verify(b[3,2] == 4,	'915: b[3,2] == 4');
+	b[3,3] = 8;
+	verify(b[3,3] == 8,	'916: b[3,3] == 8');
+	verify(det(b) == -2,	'917: det(b) == -2');
+	verify(binv[0,0] == 0,	'918: binv[0,0] == 0');
+	verify(binv[0,1] == 1,	'919: binv[0,1] == 1');
+	verify(binv[0,2] == 0,	'920: binv[0,2] == 0');
+	verify(binv[0,3] == 0,	'921: binv[0,3] == 0');
+	verify(binv[1,0] == 2,	'922: binv[1,0] == 2');
+	verify(binv[1,1] == -3/2,	'923: binv[1,1] == -3/2');
+	verify(binv[1,2] == 2,	'924: binv[1,2] == 2');
+	verify(binv[1,3] == -1/2,	'925: binv[1,3] == -1/2');
+	verify(binv[2,0] == -3,	'926: binv[2,0] == -3');
+	verify(binv[2,1] == 1/2,	'927: binv[2,1] == 1/2');
+	verify(binv[2,2] == -1,	'928: binv[2,2] == -1');
+	verify(binv[2,3] == 1/2,	'929: binv[2,3] == 1/2');
+	verify(binv[3,0] == 1,	'930: binv[3,0] == 1');
+	verify(binv[3,1] == 0,	'931: binv[3,1] == 0');
+	verify(binv[3,2] == 0,	'932: binv[3,2] == 0');
+	verify(binv[3,3] == 0,	'933: binv[3,3] == 0');
+	verify(inverse(b) == binv,	'934: inverse(b) == binv');
+
+	print '999: Ending mat_functions';
+}
+print '019: parsed test_matrix()';
+
+
+read -once "lucas_chk";		/* obtain our needed Lucas library */
+print '020: read lucas_chk';
+
+/*
+ * Test the Lucas primality test library
+ */
+define test_lucas()
+{
+	print '1100: Beginning lucas check test';
+
+	verify(lucas_chk(100,1) == 1,	'1101: lucas_chk(100,1) == 1');
+
+	print '1102: Ending lucas check test';
+}
+print '021: parsed test_lucas()';
+
+
+read -once "surd";		/* obtain our needed surd library */
+print '022: read surd';
+
+/*
+ * Test objects
+ */
+define test_obj()
+{
+	static obj surd a;
+	static obj surd b;
+
+	print '1200: Beginning object test';
+
+	surd_type = -1;
+	verify(surd_type == -1,		'1201: surd_type == -1');
+	a = surd(2,3);
+	print				'1202: a = surd(2,3)';
+	verify(a == surd(2,3),		'1203: a == surd(2,3)');
+	verify(surd_value(a) == 2+3i,	'1204: surd_value(a) == 2+3i');
+	verify(conj(a) == surd(2,-3),	'1205: conj(a) == surd(2,-3)');
+	verify(norm(a) == 13,		'1206: norm(a) == 13');
+	verify(a+1 == surd(3,3),	'1207: a+1 == surd(3,3)');
+	b = surd(3,4);
+	print				'1208: b = surd(3,4)';
+	verify(a+b == surd(5,7),	'1209: a+b == surd(5,7)');
+	verify(a-b == surd(-1,-1),	'1210: a-b == surd(-1,-1)');
+	verify(++a == surd(3,3),	'1211: ++a == surd(3,3)');
+	verify(--a == surd(2,3),	'1212: --a == surd(2,3)');
+	verify(-a == surd(-2,-3),	'1213: -a == surd(-2,-3)');
+	verify(a*2 == surd(4,6),	'1214: a*2 == surd(4,6)');
+	verify(a*b == surd(-6,17),	'1215: a*b == surd(-6,17)');
+	verify(a^2 == surd(-5,12),	'1216: a^2 == surd(-5,12)');
+	verify(scale(a,2) == surd(8,12),'1217: scale(a,2) == surd(8,12)');
+	verify(a<<3 == surd(16,24),	'1218: a<<3 == surd(16,24)');
+	verify(a/2 == surd(1,1.5),	'1219: a/2 == surd(1,1.5)');
+	verify(a/b == surd(0.72,0.04),	'1220: a/b == surd(0.72,0.04)');
+	verify(1/b == surd(0.12,-0.16),	'1221: 1/b == surd(0.12,-0.16)');
+	verify(inverse(b) == 1/b,	'1222: inverse(b) == 1/b');
+	verify(a != b,			'1223: a != b');
+	surd_type = 2;
+	print				'1224: surd_type = 2';
+	verify(surd_type == 2,		'1225: surd_type == 2');
+	verify(sgn(a) == 1,		'1226: sgn(a) == 1');
+	verify(a < b,			'1227: a < b');
+	verify(a <= a,			'1228: a < a');
+
+	print '1229: Ending object test';
+}
+print '023: parsed test_obj()';
+
+
+/*
+ * Test associations
+ */
+define test_assoc()
+{
+	static a;
+	static b;
+
+	print '1300: Beginning associations test';
+
+	a = assoc();
+	verify(size(a) == 0,		'1301: size(a) == 0');
+	a["curds"] = 13;
+	print				'1302: a["curds"] = 13';
+	verify(a["curds"] == 13,	'1303: a["curds"] == 13');
+	a[13] = 17;
+	print				'1304: a[13] = 17';
+	verify(a[13] == 17,		'1305: a[13] == 17');
+	verify(a[a["curds"]] == 17,	'1306: a[a["curds"]] == 17');
+	a[17] = 19;
+	print				'1307: a[17] = 19';
+	verify(a[17] == 19,		'1308: a[17] == 19');
+	verify(a[a["curds"]+4] == 19,	'1309: a[a["curds"]+4] == 19');
+	verify(size(a) == 3,		'1310: size(a) == 3');
+	verify(a[[search(a,17)]] == 17,	'1311: (a[[search(a,17)]] == 17');
+	verify(isnull(search(a,16)),	'1312: isnull(search(a,16))');
+	a["curds","whey"] = "spider";
+	print				'1313: a["curds","whey"] = "spider"';
+	verify(a["curds","whey"] == "spider", '1314: a["curds","whey"] == "spider"');
+	verify(a[[rsearch(a,"spider")]] == "spider", '1315: a[[search(a,"spider")]] == "spider"');
+	b = a;
+	print				'1316: b = a';
+	verify(b[17] == 19,		'1317: b[17] == 19');
+	verify(a == b,			'1318: a == b');
+
+	print '1319: Ending associations test';
+}
+print '024: parsed test_assoc()';
+
+
+/*
+ * Test lists
+ */
+define test_list()
+{
+	static a;
+	static b;
+
+	print '1400: Beginning list test';
+
+	a = list(2,3,5);
+	verify(a == list(2,3,5),	'1401: a == list(2,3,5)');
+	verify(a[[0]] == 2,		'1402: a[[0]] == 2');
+	verify(a[[1]] == 3,		'1403: a[[1]] == 3');
+	verify(a[[2]] == 5,		'1404: a[[2]] == 5');
+	verify(size(a) == 3,		'1405: size(a) == 3');
+	verify(search(a,3) == 1,	'1406: search(a,3) == 1');
+	verify(isnull(search(a,3,2)),	'1407: isnull(search(a,3,2))');
+	verify(rsearch(a,3,2) == 1,	'1408: rsearch(a,3,2) == 1');
+	push(a,7);
+	print 				'1409: push(a,7)';
+	verify(search(a,7) == 0,	'1410: search(a,7) == 0');
+	verify(pop(a) == 7,		'1411: pop(a) == 7');
+	verify(size(a) == 3,		'1412: size(a) == 3');
+	append(a,7);
+	print				'1413: append(a,7)';
+	verify(search(a,7) == 3,	'1414: search(a,7) == 3');
+	verify(size(a) == 4,		'1415: size(a) == 4');
+	verify(remove(a) == 7,		'1416: remove(a) == 7');
+	verify(size(a) == 3,		'1417: size(a) == 3');
+	b = a;
+	print				'1418: b = a';
+	insert(a,1,7);
+	print				'1410: insert(a,1,7)';
+	verify(search(a,2) == 0,	'1420: search(a,2) == 0');
+	verify(search(a,7) == 1,	'1421: search(a,7) == 1');
+	verify(search(a,3) == 2,	'1422: search(a,3) == 2');
+	verify(search(a,5) == 3,	'1423: search(a,5) == 3');
+	verify(size(a) == 4,		'1424: size(a) == 4');
+	verify(delete(a,1) == 7,	'1425: remove(a) == 7');
+	verify(search(a,2) == 0,	'1426: search(a,2) == 0');
+	verify(search(a,3) == 1,	'1427: search(a,3) == 1');
+	verify(search(a,5) == 2,	'1428: search(a,5) == 2');
+	verify(size(a) == 3,		'1429: size(a) == 3');
+	verify(a == b,			'1430: a == b');
+
+	print '1431: Ending list test';
+}
+print '025: parsed test_list()';
+
+
+read -once "cryrand";		/* obtain our needed cryrand library */
+print '026: read cryrand';
+
+/*
+ * Test cryrand
+ */
+define test_cryrand()
+{
+	local init;		/* initial generator state */
+	local state0;		/* a generator state */
+	local state1;		/* a generator state */
+	local state2;		/* a generator state */
+	local tmp;
+
+	print '1500: Beginning cryrand test';
+
+	/* test save and restore of the initial state */
+	tmp = scryrand(0);
+	print				  '1501: tmp = scryrand(0)';
+	init = randstate();
+	print				  '1502: init = randstate()';
+	state0 = randstate(0);
+	print				  '1503: state0 = randstate(0)';
+	verify(state0 == init,		  '1504: state0 == init');
+
+	/* test the crypto generator and save/restore of non-initial states */
+	verify(cryrand(40) == 0x9325e63866, 
+		'1505: cryrand(40) == 0x9325e63866');
+	state1 = randstate();
+	print				  '1506: state1 = randstate()';
+	verify(cryrand(36) == 0x4a171a7ff,  
+		'1507: cryrand(36) == 0x4a171a7ff');
+	state2 = randstate(state1);
+	print				  '1508: state2 = randstate(state1)';
+	verify(randstate() == state1,	  '1509: randstate() == state1');
+	verify(cryrand(36) == 0x4a171a7ff,  
+		'1510: cryrand(36) == 0x4a171a7ff');
+	verify(state2 == randstate(),	  '1511: state2 == randstate()');
+	state0 = randstate(init);
+	print				  '1512: state0 = randstate(init)';
+	verify(cryrand(40) == 0x9325e63866, 
+		'1513: cryrand(40) == 0x9325e63866');
+	verify(cryrand(18)<<18 | cryrand(18) == 0x4a171a7ff, \
+		'1514: cryrand(18)<<18 | cryrand(18) == 0x4a171a7ff');
+
+	/* test different forms of seeding the initial state */
+	tmp = srandom(0);
+	print				  '1515: tmp = srandom(0)';
+	verify(randstate() == init,	  '1516: randstate() == init');
+	tmp = scryrand(0,-1,-1);
+	print				  '1517: tmp = scryrand(0,-1,-1)';
+	verify(randstate() == init,	  '1518: randstate() == init');
+	tmp = sa55rand(0);
+	print				  '1519: tmp = sa55rand(0)';
+	verify(randstate() == init,	  '1520: randstate() == init');
+	tmp = sshufrand(0);
+	print				  '1521: tmp = sshufrand(0)';
+	verify(randstate() == init,	  '1522: randstate() == init');
+	tmp = srand(0);
+	print				  '1523: tmp = srand(0)';
+	verify(randstate() == init,	  '1524: randstate() == init');
+
+	/* test the additive 55 and save/restore of initial state */
+	verify(a55rand() == 0xd83f26be64f3e34c, \
+		'1525: a55rand() == 0xd83f26be64f3e34c');
+	verify(a55rand() == 0x892d51655e2cfadf, \
+		'1526: a55rand() == 0x892d51655e2cfadf');
+	tmp = sa55rand(0);
+	print				  '1527: tmp = sa55rand(0)';
+	verify(a55rand() == 0xd83f26be64f3e34c, \
+		'1528: a55rand() == 0xd83f26be64f3e34c');
+
+	/* test the shuffle generator */
+	tmp = sshufrand(0);
+	print				  '1529: tmp = sshufrand(0)';
+	verify(shufrand() == 0x6a879c9a9cd4111c, \
+		'1530: shufrand() == 0x6a879c9a9cd4111c');
+	verify(shufrand() == 0xedd15f14a5c488c4, \
+		'1531: shufrand() == 0xedd15f14a5c488c4');
+	tmp = sshufrand(0);
+	print				  '1532: tmp = sshufrand(0)';
+	verify(shufrand() == 0x6a879c9a9cd4111c, \
+		'1533: shufrand() == 0x6a879c9a9cd4111c');
+	tmp = srand(0);
+	print				  '1534: tmp = srand(0)';
+	verify(shufrand() == 0x6a879c9a9cd4111c, \
+		'1535: shufrand() == 0x6a879c9a9cd4111c');
+
+	/* test the shuffle and additive 55 generator interaction */
+	tmp = sshufrand(0);
+	print				  '1536: tmp = sshufrand(0)';
+	verify(a55rand() == 0xd83f26be64f3e34c, \
+		'1537: a55rand() == 0xd83f26be64f3e34c');
+	tmp = sa55rand(0);
+	print				  '1538: tmp = sa55rand(0)';
+	verify(shufrand() == 0x6a879c9a9cd4111c, \
+		'1539: shufrand() == 0x6a879c9a9cd4111c');
+
+	/* test the crypto, shuffle and additive 55 interaction */
+	tmp = scryrand(0);
+	print				  '1540: tmp = scryrand(0)';
+	verify(a55rand() == 0xd83f26be64f3e34c, \
+		'1541: a55rand() == 0xd83f26be64f3e34c');
+	verify(cryrand(40) == 0x9325e63866, 
+		'1542: cryrand(40) == 0x9325e63866');
+	tmp = scryrand(0);
+	print				  '1543: tmp = scryrand(0)';
+	verify(shufrand() == 0x6a879c9a9cd4111c, \
+		'1544: shufrand() == 0x6a879c9a9cd4111c');
+	verify(cryrand(40)==0x9325e63866, '1545: cryrand(40) == 0x9325e63866');
+
+	/* test some of the misc generator interfaces */
+	/*scryrand(seed,len1,len2,arg4)
+	random(a,b)
+	nxtprime(n_arg, modval, modulus)*/
+	tmp = srand(0);
+	print				  '1546: tmp = srand(0)';
+	verify(rand(12345678901234567890) == 0x6a879c9a9cd4111c, \
+		'1547: rand(12345678901234567890) == 0x6a879c9a9cd4111c');
+	verify(rand(216091) == 0x880f,	  '1548: rand(216091) == 0x880f');
+	tmp = scryrand(12,34,56);
+	print				  '1549: tmp = scryrand(12,34,56)';
+	verify(cryrand(40)==0xf23ddd31f4, '1550: cryrand(40) == 0xf23ddd31f4');
+	tmp = scryrand(78);
+	print				  '1551: tmp = scryrand(78)';
+	verify(cryrand(40)==0xac2b19be92, '1552: cryrand(40) == 0xac2b19be92');
+	tmp = scryrand(78^20+1);
+	print				  '1553: tmp = scryrand(78^20+1)';
+	verify(cryrand(40)==0xff80f86b37, '1554: cryrand(40) == 0xff80f86b37');
+	tmp = scryrand(0,1000,2000,345678);
+	print   '1555: tmp = scryrand(0,1000,2000,345678)';
+	verify(cryrand(40)==0xffd1ced04,  '1556: cryrand(40) == 0xffd1ced04');
+	tmp = scryrand(1,1000,2000,345678);
+	print   '1557: tmp = scryrand(1,1000,2000,345678)';
+	verify(cryrand(40)==0x4539c3849b, '1558: cryrand(40) == 0x4539c3849b');
+	tmp = scryrand(-1,0x5a7,0x8ef,0x936d4);
+	print   '1559: tmp = scryrand(-1,0x5a7,0x8ef,0x936d4)';
+	verify(cryrand(40)==0x4539c3849b, '1560: cryrand(40) == 0x4539c3849b');
+	verify(random() == 0xa5df751ccf2b5a01, \
+		'1561: random() == 0xa5df751ccf2b5a01');
+	tmp = srandom(0);
+	print				  '1562: tmp = srandom(0)';
+	verify(random() == 0x9325e638664a171a, \
+		'1563: random() == 0x9325e638664a171a');
+	verify(random(100) == 0x3f,	  '1564: random(100) == 0x3f');
+	verify(random(-46,46) == -1,	  '1565: random(-46,46) == -1');
+
+	/* verify nxtprime */
+	verify(nxtprime(100000)==100003,  '1566: nxtprime(100000) == 100003');
+	verify(nxtprime(100000,3,4)==100003,  \
+		'1567: nxtprime(100000,3,4) == 100003');
+	verify(nxtprime(100000,4,7)==100069,  \
+		'1568: nxtprime(100000,4,7) == 100069');
+
+	print '1569: Ending cryrand test';
+}
+print '027: parsed test_cryrand()';
+
+
+/*
+ * Config mode/base testing
+ */
+define test_mode()
+{
+	local tmp;
+
+	print '1600: Beginning cryrand test';
+
+	tmp = config("mode", "frac");
+	print			  '1601: tmp = config("mode", "frac")';
+	tmp = config("mode", "frac");
+	print			  '1602: tmp = config("mode", "frac")';
+	verify(base() == 1/3,	  '1603: base() == 1/3');
+
+	tmp = config("mode", "int");
+	print			  '1604: tmp = config("mode", "int")';
+	verify(tmp == "frac",	  '1605: tmp == "frac"');
+	verify(base() == -10,	  '1606: base() == -10');
+
+	tmp = config("mode", "real");
+	print			  '1607: tmp = config("mode", "real")';
+	verify(tmp == "int",	  '1608: tmp == "int"');
+	verify(base() == 10,	  '1609: base() == 10');
+
+	tmp = config("mode", "exp");
+	print			  '1610: tmp = config("mode", "exp")';
+	verify(tmp == "real",	  '1611: tmp == "real"');
+	verify(base() == 1e20,	  '1612: base() == 1e20');
+
+	tmp = config("mode", "hex");
+	print			  '1613: tmp = config("mode", "hex")';
+	verify(tmp == "exp",	  '1614: tmp == "exp"');
+	verify(base() == 16,	  '1615: base() == 16');
+
+	tmp = config("mode", "oct");
+	print			  '1616: tmp = config("mode", "oct")';
+	verify(tmp == "hexadecimal", \
+		'1617: tmp == "hexadecimal"');
+	verify(base() == 8,	  '1618: base() == 8');
+
+	tmp = config("mode", "bin");
+	print			  '1619: tmp = config("mode", "bin")';
+	verify(tmp == "octal",	  '1620: tmp == "octal"');
+	verify(base() == 2,	  '1621: base() == 2');
+
+	tmp = config("mode", "real");
+	print			  '1621: tmp = config("mode", "real")';
+	verify(tmp == "binary",	  '1622: tmp == "binary"');
+
+	tmp = base(1/3);
+	print			  '1623: tmp = base(1/3)';
+	verify(config("mode") == "frac",   '1624: config("mode") == "frac"');
+
+	tmp = base(-10);
+	print			  '1625: tmp = base(-10)';
+	verify(config("mode") == "int",    '1626: config("mode") == "int"');
+
+	tmp = base(10);
+	print			  '1627: tmp = base(10)';
+	verify(config("mode") == "real",   '1628: config("mode") == "real"');
+
+	tmp = base(1e20);
+	print			  '1629: tmp = base(1e20)';
+	verify(config("mode") == "exp",    '1630: config("mode") == "exp"');
+
+	tmp = base(16);
+	print			  '1631: tmp = base(16)';
+	verify(config("mode") == "hexadecimal", \
+		'1632: config("mode") == "hexadecimal"');
+
+	tmp = base(8);
+	print			  '1633: tmp = base(16)';
+	verify(config("mode") == "octal",    '1634: config("mode") == "octal"');
+
+	tmp = base(2);
+	print			  '1635: tmp = base(16)';
+	verify(config("mode") == "binary", \
+		'1636: config("mode") == "binary"');
+
+	tmp = base(10);
+	print			  '1637: tmp = base(10)';
+
+	print '1638: Ending cryrand test';
+}
+print '028: parsed test_mode()';
+
+
+/*
+ * Report the number of errors found.
+ */
+define count_errors()
+{
+	if (err  ==  0) {
+		print "9998: passed all tests  /\\../\\";
+	} else {
+		print "****", err, "error(s) found  \\/++\\/";
+	}
+}
+print '029: parsed count_errors()';
+
+
+print '030: Ending main part of regression test suite read';
+print;
+return test_booleans();
+print;
+return test_variables();
+print;
+return test_logicals();
+print;
+return test_arithmetic();
+print;
+return test_strings();
+print;
+return test_bignums();
+print;
+return test_functions();
+print;
+return test_matrix();
+print;
+print '1000: Beginning read test';
+value = 0;
+verify(value == 0,	'1001: value == 0');
+read "test1000";
+verify(value == 1,	'1002: value == 1');
+read -once "test1000";
+verify(value == 1,	'1003: value == 1');
+read "test1000.cal";
+verify(value == 2,	'1004: value == 2');
+read -once "test1000.cal";
+verify(value == 2,	'1005: value == 2');
+read "test1000.cal";
+verify(value == 3,	'1006: value == 3');
+print '1007: Ending read test';
+print;
+return test_lucas();
+print;
+return test_obj();
+print;
+return test_assoc();
+print;
+return test_list();
+print;
+return test_cryrand();
+print;
+return test_mode();
+print;
+return count_errors();
+print '9999: Ending regression tests';

@@ -1,0 +1,82 @@
+Variable declarations
+
+	Variables can be declared as either being global, local, or static.
+	Global variables are visible to all functions and on the command
+	line, and are permanent.  Local variables are visible only within
+	a single function or command sequence.  When the function or command
+	sequence returns, the local variables are deleted.  Static variables
+	are permanent like global variables, but are only visible within the
+	same input file or function where they are defined.
+
+	To declare one or more variables, the 'local', 'global', or 'static'
+	keywords are used, followed by the desired list of variable names,
+	separated by commas.  The definition is terminated with a semicolon.
+	Examples of declarations are:
+
+		local	x, y, z;
+		global	fred;
+		local	foo, bar;
+		static	var1, var2, var3;
+
+	Variables may have initializations applied to them.  This is done
+	by following the variable name by an equals sign and an expression.
+	Global and local variables are initialized each time that control
+	reaches them (e.g., at the entry to a function which contains them).
+	Static variables are initialized once only, at the time that control
+	first reaches them (but in future releases the time of initialization
+	may change).  Unlike in C, expressions for static variables may
+	contain function calls and refer to variables.  Examples of such
+	initializations are:
+
+		local	a1 = 7, a2 = 3;
+		static	b = a1 + sin(a2);
+
+	Within function declarations, all variables must be defined.
+	But on the top level command line, assignments automatically define
+	global variables as needed.  For example, on the top level command
+	line, the following defines the global variable x if it had not
+	already been defined:
+
+		x = 7
+
+	The static keyword may be used at the top level command level to
+	define a variable which is only accessible interactively, or within
+	functions defined interactively.
+
+	Variables have no fixed type, thus there is no need or way to
+	specify the types of variables as they are defined.  Instead, the
+	types of variables change as they are assigned to or are specified
+	in special statements such as 'mat' and 'obj'.  When a variable is
+	first defined using 'local', 'global', or 'static', it has the
+	value of zero.
+
+	If a procedure defines a local or static variable name which matches
+	a global variable name, or has a parameter name which matches a
+	global variable name, then the local variable or parameter takes
+	precedence within that procedure, and the global variable is not
+	directly accessible.
+
+	The MAT and OBJ keywords may be used within a declaration statement
+	in order to initially define variables as that type.  Initialization
+	of these variables are also allowed.  Examples of such declarations
+	are:
+
+		static mat table[3] = {5, 6, 7};
+		local obj point p1, p2;
+
+	There are no pointers in the calculator language, thus all
+	arguments to user-defined functions are normally passed by value.
+	This is true even for matrices, strings, and lists.  In order
+	to circumvent this, the '&' operator is allowed before a variable
+	when it is an argument to a function.  When this is done, the
+	address of the variable is passed to the function instead of its
+	value.  This is true no matter what the type of the variable is.
+	This allows for fast calls of functions when the passed variable
+	is huge (such as a large array).  However, the passed variable can
+	then be changed by the function if the parameter is assigned into.
+	The function being called does not need to know if the variable
+	is being passed by value or by address.
+
+	Built-in functions and object functions always accept their
+	arguments as addresses, thus there is no need to use '&' when
+	calling built-in functions.

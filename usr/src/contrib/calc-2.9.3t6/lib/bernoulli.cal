@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Calculate the Nth Bernoulli number B(n).
+ * This uses the following symbolic formula to calculate B(n):
+ *
+ *	(b+1)^(n+1) - b^(n+1) = 0
+ *
+ * where b is a dummy value, and each power b^i gets replaced by B(i).
+ * For example, for n = 3:
+ *	(b+1)^4 - b^4 = 0
+ *	b^4 + 4*b^3 + 6*b^2 + 4*b + 1 - b^4 = 0
+ *	4*b^3 + 6*b^2 + 4*b + 1 = 0
+ *	4*B(3) + 6*B(2) + 4*B(1) + 1 = 0
+ *	B(3) = -(6*B(2) + 4*B(1) + 1) / 4
+ *
+ * The combinatorial factors in the expansion of the above formula are
+ * calculated interatively, and we use the fact that B(2i+1) = 0 if i > 0.
+ * Since all previous B(n)'s are needed to calculate a particular B(n), all
+ * values obtained are saved in an array for ease in repeated calculations.
+ */
+static Bnmax;
+static mat Bn[1001];
+
+
+define B(n)
+{
+	local	nn, np1, i, sum, mulval, divval, combval;
+
+	if (!isint(n) || (n < 0))
+		quit "Non-negative integer required for Bernoulli";
+
+	if (n == 0)
+		return 1;
+	if (n == 1)
+		return -1/2;
+	if (isodd(n))
+		return 0;
+	if (n > 1000)
+		quit "Very large Bernoulli";
+
+	if (n <= Bnmax)
+		return Bn[n];
+
+	for (nn = Bnmax + 2; nn <= n; nn+=2) {
+		np1 = nn + 1;
+		mulval = np1;
+		divval = 1;
+		combval = 1;
+		sum = 1 - np1 / 2;
+		for (i = 2; i < np1; i+=2) {
+			combval = combval * mulval-- / divval++;
+			combval = combval * mulval-- / divval++;
+			sum += combval * Bn[i];
+		}
+		Bn[nn] = -sum / np1;
+	}
+	Bnmax = n;
+	return Bn[n];
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "B(n) defined";
+}

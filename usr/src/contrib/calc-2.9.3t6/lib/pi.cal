@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 1993 David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ *
+ * Calculate pi within the specified epsilon using the quartic convergence
+ * iteration.
+ */
+
+define qpi(epsilon)
+{
+	local niter, yn, ym, tm, an, am, t, tn, sqrt2, epsilon2, count, digits;
+	local bits, bits2;
+
+	if (isnull(epsilon))
+		epsilon = epsilon();
+	digits = digits(1/epsilon);
+	if	(digits <=  8) { niter = 1; epsilon =	1e-8; }
+	else if (digits <= 40) { niter = 2; epsilon =  1e-40; }
+	else if (digits <= 170) { niter = 3; epsilon = 1e-170; }
+	else if (digits <= 693) { niter = 4; epsilon = 1e-693; }
+	else {
+		niter = 4;
+		t = 693;
+		while (t < digits) {
+			++niter;
+			t *= 4;
+		}
+	}
+	epsilon2 = epsilon/(digits/10 + 1);
+	digits = digits(1/epsilon2);
+	sqrt2 = sqrt(2, epsilon2);
+	bits = abs(ilog2(epsilon)) + 1;
+	bits2 = abs(ilog2(epsilon2)) + 1;
+	yn = sqrt2 - 1;
+	an = 6 - 4 * sqrt2;
+	tn = 2;
+	for (count = 0; count < niter; count++) {
+		ym = yn;
+		am = an;
+		tn *= 4;
+		t = sqrt(sqrt(1-ym^4, epsilon2), epsilon2);
+		yn = (1-t)/(1+t);
+		an = (1+yn)^4*am-tn*yn*(1+yn+yn^2);
+		yn = bround(yn, bits2);
+		an = bround(an, bits2);
+	}
+	return (bround(1/an, bits));
+}
+
+global lib_debug;
+if (lib_debug >= 0) {
+    print "qpi(epsilon) defined";
+}
