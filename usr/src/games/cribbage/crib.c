@@ -53,9 +53,9 @@ char	*argv[];
 	signal(SIGINT, bye);
 	crmode();
 	noecho();
-	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, 0);
-	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X);
-	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X);
+	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, SCORE_SZ);
+	Tablewin = subwin(stdscr, TABLE_Y, TABLE_X, 0, PLAY_X + SCORE_SZ);
+	Compwin = subwin(stdscr, COMP_Y, COMP_X, 0, TABLE_X + PLAY_X + SCORE_SZ);
 	leaveok(Playwin, TRUE);
 	leaveok(Tablewin, TRUE);
 	leaveok(Compwin, TRUE);
@@ -246,7 +246,7 @@ BOOLEAN		mycrib;
 
 	werase(Compwin);
 	wrefresh(Compwin);
-	move(CRIB_Y, 0);
+	move(CRIB_Y, SCORE_SZ);
 	clrtobot();
 	mvaddstr(LINES - 1, 0, Msgbuf);
 
@@ -376,7 +376,7 @@ BOOLEAN		mycrib, blank;
 	if (mycrib)
 	    cardx = CRIB_X;
 	else
-	    cardx = 0;
+	    cardx = SCORE_SZ;
 
 	mvaddstr(CRIB_Y, cardx + 1, "CRIB");
 	prcard(stdscr, CRIB_Y + 1, cardx, turnover, blank);

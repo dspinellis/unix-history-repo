@@ -325,7 +325,7 @@ char		*prompt;
  * msg:
  *	Display a message at the top of the screen.
  */
-char		Msgbuf[BUFSIZ] = "";
+char		Msgbuf[BUFSIZ] = { '\0' };
 
 int		Mpos = 0;
 
