@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	2.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	2.3 (Berkeley) %G%";
 
 /*
  * icheck
