@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -557,6 +557,7 @@ rlsesigs()
 #define LA_INT		2	/* read kmem for avenrun; interpret as int */
 #define LA_FLOAT	3	/* read kmem for avenrun; interpret as float */
 #define LA_SUBR		4	/* call getloadavg */
+#define LA_MACH		5	/* MACH load averages (as on NeXT boxes) */
 
 /* do guesses based on general OS type */
 #ifndef LA_TYPE
@@ -700,6 +701,37 @@ getla()
 }
 
 #else
+#if LA_TYPE == LA_MACH
+
+/*
+**  This has been tested on NeXT release 2.1.
+*/
+
+#include <mach.h>
+
+getla()
+{
+	processor_set_t default_set;
+	kern_return_t error;
+	unsigned int info_count;
+	struct processor_set_basic_info info;
+	host_t host;
+
+	error = processor_set_default(host_self(), &default_set);
+	if (error != KERN_SUCCESS)
+		return -1;
+	info_count = PROCESSOR_SET_BASIC_INFO_COUNT;
+	if (processor_set_info(default_set, PROCESSOR_SET_BASIC_INFO,
+			       &host, (processor_set_info_t)&info,
+			       &info_count) != KERN_SUCCESS)
+	{
+		return -1;
+	}
+	return (int) (info.load_average + (LOAD_SCALE / 2)) / LOAD_SCALE;
+}
+
+
+#else
 
 getla()
 {
@@ -708,6 +740,7 @@ getla()
 	return (0);
 }
 
+#endif
 #endif
 #endif
 /*
