@@ -1,4 +1,4 @@
-.\"	@(#)m4	6.1 (Berkeley) %G%
+.\"	@(#)m4	6.2 (Berkeley) %G%
 .\"
 .tr |
 .mh
@@ -25,10 +25,10 @@ are \fIalways\fR subject to splitting after those characters,
 whether or not automatic hyphenation is on or off.
 .h1
 .bt
-\fB&nh\fR	nohyphenate	-	E	\
+\fB&nh\fR	hyphenate	-	E	\
 Automatic hyphenation is turned off.
 .bt
-\fB&hy\fIN\fR	off,\fIN=\fR1	on,\fIN=\fR1	E	\
+\fB&hy\fIN\fR	on,\fIN=\fR1	on,\fIN=\fR1	E	\
 Automatic hyphenation is turned on
 for \fIN\fR\|\(>=1, or off for \fIN=\fR\|0.
 If \fIN=\fR\|2, \fIlast\fR lines (ones that will cause a trap)
@@ -42,7 +42,7 @@ i.|e. \fIN=\fR\|14 will invoke all three restrictions.
 to \fIc\fR or to the default \fB\e%\fR.
 The indicator does not appear in the output.
 .bt
-\fB&hw\fI|word1|...\fR	ignored	-	Specify hyphenation points in words
+\fB&hw\fI|word1|...\fR		ignored	-	Specify hyphenation points in words
 with imbedded minus signs.
 Versions of a word with terminal \fIs\fR are implied;
 i.|e. \fIdig\-it\fR implies \fIdig\-its\fR.
@@ -150,7 +150,7 @@ and
 \fIanything\fR represents what is conditionally accepted.
 .h1
 .bt
-\fB&if\fI|c|anything\fR		-	-	If condition \fIc\fR true, accept \fIanything\fR as input;
+\fB&if\fI|c|anything\fR	-	-	If condition \fIc\fR true, accept \fIanything\fR as input;
 in multi-line case use \fI\e{anything\|\e}\fR.
 .bt
 \fB&if|!\fIc|anything\fR	-	-	If condition \fIc\fR false, accept \fIanything\fR.
@@ -251,7 +251,7 @@ On \s-1UNIX\s+1, the \fIstandard input\fR can be the user's keyboard,
 a \fIpipe\fR, or a \fIfile\fR.
 .h1
 .bt
-\fB&rd\fI|prompt\fR	-	\fIprompt=\fR\s-1BEL\s+1	-	\
+\fB&rd\fI|prompt\fR	-	\fIprompt=\fR\s-1BEL\s+1	\
 Read insertion from the standard input until two newlines in a row are found.
 If the standard input is the user's keyboard, \fIprompt\fR (or a \s-1BEL\s+1)
 is written onto the user's terminal.

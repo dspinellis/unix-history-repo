@@ -1,4 +1,4 @@
-.\"	@(#)m0a	6.1 (Berkeley) %G%
+.\"	@(#)m0a	6.2 (Berkeley) %G%
 .\"
 .pn3
 .br
@@ -150,7 +150,7 @@ Macros, Strings, Diversion, and Position Traps
 .mh
 Number Registers
 .bt
-\fB&nr\fI|R|\(+-N|M\fR	-	\fBu\fR	Define and set number register \fIR\fR; auto-increment by \fIM\fR.
+\fB&nr\fI|R|\(+-N|M\fR	-	-	\fBu\fR	Define and set number register \fIR\fR; auto-increment by \fIM\fR.
 .b1
 \fB&af\fI|R|c\fR	arabic	-	-	Assign format to register \fIR\fR (\fIc=\fB1\fR, \fBi\fR, \fBI\fR, \fBa\fR, \fBA\fR).
 .b1
@@ -193,13 +193,13 @@ Overstrike, Bracket, Line-drawing, and Zero-width Functions
 .mh
 Hyphenation.
 .bt
-\fB&nh\fR	nohyphenate	-	E	No hyphenation.
+\fB&nh\fR	hyphenate	-	E	No hyphenation.
 .b1
-\fB&hy\fI|N\fR	nohyphenate	hyphenate	E	Hyphenate; \fIN =\fR mode.
+\fB&hy\fI|N\fR	hyphenate	hyphenate	E	Hyphenate; \fIN =\fR mode.
 .b1
 \fB&hc\fI|c\fR	\fB\e%	\e%\fR	E	Hyphenation indicator character \fIc\fR.
 .b1
-\fB&hw\fI|word1|...\fR	ignored	-	Exception words.
+\fB&hw\fI|word1|...\fR		ignored	-	Exception words.
 .mh
 Three Part Titles.
 .bt
@@ -217,7 +217,7 @@ Output Line Numbering.
 .mh
 Conditional Acceptance of Input
 .bt
-\fB&if\fI|c|anything\fR		-	-	If condition \fIc\fR true, accept \fIanything\fR as input,
+\fB&if\fI|c|anything\fR	-	-	If condition \fIc\fR true, accept \fIanything\fR as input,
 .b1
 				for multi-line use \fI\e{anything\|\e}\fR.
 .b1
@@ -243,7 +243,7 @@ Environment Switching.
 .mh
 Insertions from the Standard Input
 .bt
-\fB&rd\fI|prompt\fR\fR	-	\fIprompt=\s-1\fRBEL\s+1	-	Read insertion.
+\fB&rd\fI|prompt\fR\fR	-	\fIprompt=\s-1\fRBEL\s+1	Read insertion.
 .b1
 \fB&ex\fR	-	-	-	\
 Exit from \*(NR\(sl\*(TR.
