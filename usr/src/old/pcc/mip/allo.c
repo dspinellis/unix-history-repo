@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)allo.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)allo.c	4.2 (Berkeley) %G%";
 # include "mfile2"
 
 NODE resc[3];
@@ -198,7 +198,9 @@ usable( p, n, r ) NODE *p; {
 		if( n & NBMASK ) return(0);
 		}
 	if( (n&NAMASK) && (szty(p->in.type) == 2) ){ /* only do the pairing for real regs */
+#ifndef NOEVENODD
 		if( r&01 ) return(0);
+#endif
 		if( !istreg(r+1) ) return( 0 );
 		if( busy[r+1] > 1 ) return( 0 );
 		if( busy[r] == 0 && busy[r+1] == 0  ||
@@ -292,7 +294,11 @@ rfree( r, t ) TWORD t; {
 	if( istreg(r) ){
 		if( --busy[r] < 0 ) cerror( "register overfreed");
 		if( szty(t) == 2 ){
+#ifdef NOEVENODD
+			if( istreg(r) ^ istreg(r+1) ) cerror( "illegal free" );
+#else
 			if( (r&01) || (istreg(r)^istreg(r+1)) ) cerror( "illegal free" );
+#endif
 			if( --busy[r+1] < 0 ) cerror( "register overfreed" );
 			}
 		}
@@ -313,7 +319,11 @@ rbusy(r,t) TWORD t; {
 	if( istreg(r) ) ++busy[r];
 	if( szty(t) == 2 ){
 		if( istreg(r+1) ) ++busy[r+1];
+#ifdef NOEVENODD
+		if( istreg(r) ^ istreg(r+1) ) cerror( "illegal register pair freed" );
+#else
 		if( (r&01) || (istreg(r)^istreg(r+1)) ) cerror( "illegal register pair freed" );
+#endif
 		}
 	}
 # endif
@@ -461,7 +471,9 @@ reclaim( p, rw, cookie ) NODE *p; {
 			/* the "T" command in match supresses this type changing */
 			if( p->in.type == CHAR || p->in.type == SHORT ) p->in.type = INT;
 			else if( p->in.type == UCHAR || p->in.type == USHORT ) p->in.type = UNSIGNED;
+#ifndef FORT
 			else if( p->in.type == FLOAT ) p->in.type = DOUBLE;
+#endif
 			}
 		if( ! (p->in.rall & MUSTDO ) ) return;  /* unless necessary, ignore it */
 		i = p->in.rall & ~MUSTDO;
