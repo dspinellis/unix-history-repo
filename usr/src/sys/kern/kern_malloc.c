@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.26 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,6 +35,24 @@ long addrmask[] = { WEIRD_ADDR,
 	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
 	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
 };
+
+/*
+ * Normally the first word of the structure is used to hold the list
+ * pointer for free objects. However, when running with diagnostics,
+ * we use the third and fourth fields, so as to catch modifications
+ * in the most commonly trashed first two words.
+ */
+struct freelist {
+	long	spare0;
+	long	spare1;
+	short	type;
+	short	spare2;
+	caddr_t	next;
+};
+#else /* !DIAGNOSTIC */
+struct freelist {
+	caddr_t	next;
+};
 #endif /* DIAGNOSTIC */
 
 /*
@@ -47,11 +65,13 @@ malloc(size, type, flags)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
+	register struct freelist *freep;
 	long indx, npg, alloc, allocsize;
 	int s;
 	caddr_t va, cp, savedlist;
 #ifdef DIAGNOSTIC
 	int i, copysize;
+	short savedtype;
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -115,31 +135,39 @@ malloc(size, type, flags)
 		savedlist = kbp->kb_next;
 		kbp->kb_next = va + (npg * NBPG) - allocsize;
 		for (cp = kbp->kb_next; ; cp -= allocsize) {
+			freep = (struct freelist *)cp;
 #ifdef DIAGNOSTIC
 			/*
 			 * Copy in known text to detect modification
 			 * after freeing.
 			 */
 			bcopy(addrmask, cp, copysize);
+			freep->type = M_FREE;
 #endif /* DIAGNOSTIC */
 			if (cp <= va)
 				break;
-			*(caddr_t *)cp = cp - allocsize;
+			freep->next = cp - allocsize;
 		}
-		*(caddr_t *)cp = savedlist;
+		freep->next = savedlist;
 	}
 	va = kbp->kb_next;
-	kbp->kb_next = *(caddr_t *)va;
+	kbp->kb_next = ((struct freelist *)va)->next;
 #ifdef DIAGNOSTIC
-	*(caddr_t *)va = (char *)WEIRD_ADDR;
+	freep = (struct freelist *)va;
+	savedtype = freep->type;
+	freep->type = ((struct freelist *)addrmask)->type;
+	freep->next = ((struct freelist *)addrmask)->next;
 	if (bcmp(addrmask, va, copysize)) {
 		copysize >>= 2;
 		for (i = 0; i < copysize && addrmask[i] == ((int *)va)[i]; i++)
 			/* void */;
-		printf("Word %d %s 0x%x of size %d modified (0x%x != 0x%x)\n",
-		    i, "of object", va, size, ((int *)va)[i], addrmask[i]);
+		printf("%s %d of object 0x%x size %d %s %s (0x%x != 0x%x)\n",
+		    "Data modified on freelist: word", i, va, size,
+		    "previous type", memname[savedtype], ((int *)va)[i],
+		    addrmask[i]);
 		panic("malloc: data modified on freelist");
 	}
+	freep->spare0 = 0;
 #endif /* DIAGNOSTIC */
 #ifdef KMEMSTATS
 	kup = btokup(va);
@@ -173,6 +201,7 @@ free(addr, type)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
+	register struct freelist *freep;
 	long size;
 	int s;
 #ifdef DIAGNOSTIC
@@ -218,26 +247,34 @@ free(addr, type)
 		splx(s);
 		return;
 	}
+	freep = (struct freelist *)addr;
 #ifdef DIAGNOSTIC
 	/*
 	 * Check for multiple frees. Use a quick check to see if
 	 * it looks free before laboriously searching the freelist.
 	 */
-	*(caddr_t *)addr = (char *)WEIRD_ADDR;
 	copysize = size < sizeof addrmask ? size : sizeof addrmask;
-	if (!bcmp(addrmask, addr, copysize)) {
-		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
-			if (addr == cp) {
-				printf("multiply freed item 0x%x\n", addr);
-				panic("free: duplicated free");
+	if (freep->spare0 == WEIRD_ADDR) {
+		freep->type = ((struct freelist *)addrmask)->type;
+		freep->next = ((struct freelist *)addrmask)->next;
+		if (!bcmp(addrmask, addr, copysize)) {
+			for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+				if (addr == cp) {
+					printf("multiply freed item 0x%x\n",
+					    addr);
+					panic("free: duplicated free");
+				}
 			}
 		}
 	}
 	/*
 	 * Copy in known text to detect modification after freeing
-	 * and to make it look free.
+	 * and to make it look free. Also, save the type being freed
+	 * so we can list likely culprit if modification is detected
+	 * when the object is reallocated.
 	 */
 	bcopy(addrmask, addr, copysize);
+	freep->type = type;
 #endif /* DIAGNOSTIC */
 #ifdef KMEMSTATS
 	kup->ku_freecnt++;
@@ -253,7 +290,7 @@ free(addr, type)
 		wakeup((caddr_t)ksp);
 	ksp->ks_inuse--;
 #endif
-	*(caddr_t *)addr = kbp->kb_next;
+	freep->next = kbp->kb_next;
 	kbp->kb_next = addr;
 	splx(s);
 }
