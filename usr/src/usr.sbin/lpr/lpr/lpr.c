@@ -55,7 +55,7 @@
 
 char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
-/*	lpr.c	4.9	83/03/07	*/
+/*	lpr.c	4.10	83/03/09	*/
 /*
  *      lpr -- off line print
  *
@@ -250,7 +250,7 @@ main(argc, argv)
 	 * control file.
 	 */
 	userid = getuid();
-	if ((person = getlogin()) == NULL) {
+	if ((person = getlogin()) == NULL || strlen(person) == 0) {
 		if ((pw = getpwuid(userid)) == NULL)
 			person = "Unknown User";
 		else
