@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	5.1 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.1 (Berkeley) %G%
 .\"
-.TH GETHOSTENT 3N "9 February 1983"
+.TH GETHOSTENT 3N ""
 .UC 5
 .SH NAME
-gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent \- get network host entry
+gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent, sethostfile \- get network host entry
 .SH SYNOPSIS
 .B "#include <netdb.h>
 .PP
@@ -23,9 +23,13 @@ gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent \- get network 
 .PP
 .B "sethostent(stayopen)
 .br
-.B "int stayopen
+.B "int stayopen;
 .PP
 .B "endhostent()
+.PP
+.B "sethostfile(name)
+.br
+.B "char *name;
 .SH DESCRIPTION
 .IR Gethostent ,
 .IR gethostbyname ,
@@ -84,6 +88,17 @@ the host data base will not be closed after each call to
 .PP
 .I Endhostent
 closes the file.
+.PP
+.I Sethostfile
+changes the default host table file to
+.I name
+thus allowing these routines to be used with alternate host tables.
+Note that it does
+.I not 
+close the previous file.
+If this is desired,
+.I endhostent
+should be called prior to it.
 .PP
 .I Gethostbyname
 and
