@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.9 (Berkeley) %G%
+ *	@(#)pk_input.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
