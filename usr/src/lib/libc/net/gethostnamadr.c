@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -42,8 +42,10 @@ getanswer(msg, msglen, iquery)
 
 	n = res_send(msg, msglen, answer, sizeof(answer));
 	if (n < 0) {
+#ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("res_send failed\n");
+#endif
 		return (NULL);
 	}
 	eom = answer + n;
@@ -53,8 +55,10 @@ getanswer(msg, msglen, iquery)
 	hp = (HEADER *) answer;
 	ancount = ntohs(hp->ancount);
 	if (hp->rcode != NOERROR || ancount == 0) {
+#ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
+#endif
 		return (NULL);
 	}
 	bp = hostbuf;
@@ -99,9 +103,11 @@ getanswer(msg, msglen, iquery)
 			continue;
 		}
 		if (type != T_A)  {
+#ifdef DEBUG
 			if (_res.options & RES_DEBUG)
 				printf("unexpected answer type %d, size %d\n",
 					type, n);
+#endif
 			cp += n;
 			continue;
 		}
@@ -124,8 +130,10 @@ getanswer(msg, msglen, iquery)
 			}
 		}
 		if (bp + n >= &hostbuf[sizeof(hostbuf)]) {
+#ifdef DEBUG
 			if (_res.options & RES_DEBUG)
 				printf("size (%d) too big\n", n);
+#endif
 			break;
 		}
 		bcopy(cp, *hap++ = bp, n);
@@ -151,8 +159,10 @@ gethostbyname(name)
 	n = res_mkquery(QUERY, name, C_ANY, T_A, (char *)NULL, 0, NULL,
 		buf, sizeof(buf));
 	if (n < 0) {
+#ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
+#endif
 		return (NULL);
 	}
 	return(getanswer(buf, n, 0));
@@ -171,8 +181,10 @@ gethostbyaddr(addr, len, type)
 	n = res_mkquery(IQUERY, (char *)NULL, C_IN, T_A, addr, len, NULL,
 		buf, sizeof(buf));
 	if (n < 0) {
+#ifdef DEBUG
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
+#endif
 		return (NULL);
 	}
 	return(getanswer(buf, n, 1));

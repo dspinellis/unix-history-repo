@@ -5,8 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.6 (Berkeley) %G%";
 #endif not lint
+
+#if defined(lint) && !defined(DEBUG)
+#define DEBUG
+#endif
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -57,7 +61,9 @@ char *rcodes[] = {
 p_query(msg)
 	char *msg;
 {
+#ifdef DEBUG
 	fp_query(msg,stdout);
+#endif
 }
 
 /*
@@ -68,6 +74,7 @@ fp_query(msg,file)
 	char *msg;
 	FILE *file;
 {
+#ifdef DEBUG
 	register char *cp;
 	register HEADER *hp;
 	register int n;
@@ -150,6 +157,7 @@ fp_query(msg,file)
 				return;
 		}
 	}
+#endif
 }
 
 char *
@@ -157,6 +165,7 @@ p_cdname(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
+#ifdef DEBUG
 	char name[MAXDNAME];
 	int n;
 
@@ -168,6 +177,7 @@ p_cdname(cp, msg, file)
 	}
 	fputs(name, file);
 	return (cp + n);
+#endif
 }
 
 /*
@@ -178,6 +188,7 @@ p_rr(cp, msg, file)
 	char *cp, *msg;
 	FILE *file;
 {
+#ifdef DEBUG
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
 	char *cp1;
@@ -304,6 +315,7 @@ p_rr(cp, msg, file)
 		fprintf(file,"packet size error (%#x != %#x)\n", cp, cp1+dlen);
 	fprintf(file,"\n");
 	return (cp);
+#endif
 }
 
 static	char nbuf[20];
@@ -316,7 +328,7 @@ char *
 p_type(type)
 	int type;
 {
-
+#ifdef DEBUG
 	switch (type) {
 	case T_A:
 		return("A");
@@ -363,6 +375,7 @@ p_type(type)
 	default:
 		return (sprintf(nbuf, "%d", type));
 	}
+#endif
 }
 
 /*
@@ -372,6 +385,7 @@ char *
 p_class(class)
 	int class;
 {
+#ifdef DEBUG
 
 	switch (class) {
 	case C_IN:		/* internet class */
@@ -383,5 +397,5 @@ p_class(class)
 	default:
 		return (sprintf(nbuf, "%d", class));
 	}
+#endif
 }
-
