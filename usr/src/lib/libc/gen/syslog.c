@@ -16,21 +16,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
  * SYSLOG -- print message on log file
  *
- * This routine looks a lot like printf, except that it
- * outputs to the log file instead of the standard output.
- * Also:
+ * This routine looks a lot like printf, except that it outputs to the
+ * log file instead of the standard output.  Also:
  *	adds a timestamp,
  *	prints the module name in front of the message,
  *	has some other formatting types (or will sometime),
  *	adds a newline on the end of the message.
  *
- * The output of this routine is intended to be read by /etc/syslogd.
+ * The output of this routine is intended to be read by syslogd(8).
  *
  * Author: Eric Allman
  * Modified to use UNIX domain IPC by Ralph Campbell
@@ -43,41 +42,30 @@ static char sccsid[] = "@(#)syslog.c	5.16 (Berkeley) %G%";
 #include <sys/syslog.h>
 #include <netdb.h>
 #include <strings.h>
+#include <stdio.h>
 
-#define	MAXLINE	1024			/* max message size */
-#define NULL	0			/* manifest */
-
-#define IMPORTANT 	LOG_ERR
-
-static char	logname[] = "/dev/log";
-static char	ctty[] = "/dev/console";
+#define	LOGNAME	"/dev/log"
+#define	CONSOLE	"/dev/console"
 
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
-static int	LogStat	= 0;		/* status bits, set by openlog() */
+static int	LogStat = 0;		/* status bits, set by openlog() */
 static char	*LogTag = "syslog";	/* string to tag the entry with */
-static int	LogMask = 0xff;		/* mask of priorities to be logged */
 static int	LogFacility = LOG_USER;	/* default facility code */
 
-static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
-
-extern	int errno, sys_nerr;
-extern	char *sys_errlist[];
-
-syslog(pri, fmt, p0, p1, p2, p3, p4)
-	int pri;
+syslog(pri, fmt, args)
+	int pri, args;
 	char *fmt;
 {
-	char buf[MAXLINE + 1], outline[MAXLINE + 1];
-	register char *b, *f, *o;
-	register int c;
-	long now;
-	int pid, olderrno = errno;
+	register int cnt;
+	register char *p;
+	time_t now, time();
+	int pid;
+	char tbuf[2048], *ctime();
 
 	/* see if we should just throw out this message */
-	if ((unsigned) LOG_FAC(pri) >= LOG_NFACILITIES ||
-	    LOG_MASK(LOG_PRI(pri)) == 0 ||
-	    (pri &~ (LOG_PRIMASK|LOG_FACMASK)) != 0)
+	if ((u_int)LOG_FAC(pri) >= LOG_NFACILITIES ||
+	    !LOG_MASK(LOG_PRI(pri)) || (pri &~ (LOG_PRIMASK|LOG_FACMASK)))
 		return;
 	if (LogFile < 0 || !connected)
 		openlog(LogTag, LogStat | LOG_NDELAY, 0);
@@ -87,54 +75,27 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		pri |= LogFacility;
 
 	/* build the message */
-	o = outline;
-	(void)sprintf(o, "<%d>", pri);
-	o += strlen(o);
-	time(&now);
-	(void)sprintf(o, "%.15s ", ctime(&now) + 4);
-	o += strlen(o);
+	(void)time(&now);
+	(void)sprintf(tbuf, "<%d>%.15s ", pri, ctime(&now) + 4);
+	for (p = tbuf; *p; ++p);
 	if (LogTag) {
-		strcpy(o, LogTag);
-		o += strlen(o);
+		(void)strcpy(p, LogTag);
+		for (; *p; ++p);
 	}
 	if (LogStat & LOG_PID) {
-		(void)sprintf(o, "[%d]", getpid());
-		o += strlen(o);
+		(void)sprintf(p, "[%d]", getpid());
+		for (; *p; ++p);
 	}
 	if (LogTag) {
-		strcpy(o, ": ");
-		o += 2;
+		*p++ = ':';
+		*p++ = ' ';
 	}
 
-	b = buf;
-	f = fmt;
-	while ((c = *f++) != '\0' && c != '\n' && b < &buf[MAXLINE]) {
-		if (c != '%') {
-			*b++ = c;
-			continue;
-		}
-		if ((c = *f++) != 'm') {
-			*b++ = '%';
-			*b++ = c;
-			continue;
-		}
-		if ((unsigned)olderrno > sys_nerr)
-			(void)sprintf(b, "error %d", olderrno);
-		else
-			strcpy(b, sys_errlist[olderrno]);
-		b += strlen(b);
-	}
-	*b++ = '\n';
-	*b = '\0';
-	(void)sprintf(o, buf, p0, p1, p2, p3, p4);
-	c = strlen(outline);
-	if (c > MAXLINE)
-		c = MAXLINE;
+	(void)vsprintf(p, fmt, &args);
 
 	/* output the message to the local logger */
-	if (send(LogFile, outline, c, 0) >= 0)
-		return;
-	if (!(LogStat & LOG_CONS))
+	if (send(LogFile, tbuf, cnt = strlen(tbuf), 0) >= 0 ||
+	    !(LogStat&LOG_CONS))
 		return;
 
 	/* output the message to the console */
@@ -143,27 +104,28 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		return;
 	if (pid == 0) {
 		int fd;
+		long sigsetmask();
 
-		signal(SIGALRM, SIG_DFL);
-		sigsetmask(sigblock(0L) & ~sigmask(SIGALRM));
-		alarm(5);
-		fd = open(ctty, O_WRONLY);
-		alarm(0);
-		strcat(o, "\r");
-		o = index(outline, '>') + 1;
-		write(fd, o, c + 1 - (o - outline));
-		close(fd);
+		(void)signal(SIGALRM, SIG_DFL);
+		sigsetmask((long)~sigmask(SIGALRM));
+		(void)alarm((u_int)5);
+		if ((fd = open(CONSOLE, O_WRONLY, 0)) < 0)
+			return;
+		(void)alarm((u_int)0);
+		(void)strcat(tbuf, "\r");
+		p = index(tbuf, '>') + 1;
+		(void)write(fd, p, cnt + 1 - (p - tbuf));
+		(void)close(fd);
 		_exit(0);
 	}
 	if (!(LogStat & LOG_NOWAIT))
-		while ((c = wait((int *)0)) > 0 && c != pid)
-			;
+		while ((cnt = wait((int *)0)) > 0 && cnt != pid);
 }
 
+static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
 /*
  * OPENLOG -- open system log
  */
-
 openlog(ident, logstat, logfac)
 	char *ident;
 	int logstat, logfac;
@@ -175,7 +137,7 @@ openlog(ident, logstat, logfac)
 		LogFacility = logfac;
 	if (LogFile == -1) {
 		SyslogAddr.sa_family = AF_UNIX;
-		strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
+		strncpy(SyslogAddr.sa_data, LOGNAME, sizeof SyslogAddr.sa_data);
 		if (LogStat & LOG_NDELAY) {
 			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
 			fcntl(LogFile, F_SETFD, 1);
@@ -189,15 +151,14 @@ openlog(ident, logstat, logfac)
 /*
  * CLOSELOG -- close the system log
  */
-
 closelog()
 {
-
 	(void) close(LogFile);
 	LogFile = -1;
 	connected = 0;
 }
 
+static int	LogMask = 0xff;		/* mask of priorities to be logged */
 /*
  * SETLOGMASK -- set the log mask level
  */
