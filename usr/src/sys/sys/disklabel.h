@@ -1,5 +1,5 @@
 /*
- *	@(#)disklabel.h	7.2 (Berkeley) %G%
+ *	@(#)disklabel.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -85,10 +85,11 @@ struct disklabel {
 	u_long	d_checksum;		/* xor of data incl. partitions */
 
 			/* filesystem and partition information: */
-	u_long	d_npartitions;		/* number of partitions in following */
 	u_long	d_bbsize;		/* size of boot area at sn0, bytes */
 	u_long	d_sbsize;		/* max size of fs superblock, bytes */
 #define	d_swablast d_sbsize
+	u_char	d_unused[3];		/* padding */
+	u_char	d_npartitions;		/* number of partitions in following */
 	struct	partition {		/* the partition table */
 		u_long	p_size;		/* number of sectors in partition */
 		u_long	p_offset;	/* starting sector */
