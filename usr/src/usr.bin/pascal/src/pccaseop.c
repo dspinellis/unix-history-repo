@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.9 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.8.1.1 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -105,7 +105,6 @@ pccaseop( tcase )
 	putRV( 0 , cbn , exprnlp -> value[ NL_OFFS ] ,
 			exprnlp -> extra_flags , P2INT );
 	(void) rvalue( (int *) tcase[2] , NIL , RREQ );
-	sconv(exprctype, P2INT);
 	putop( P2ASSIGN , P2INT );
 	putop( P2FORCE , P2INT );
 	putdot( filename , line );
