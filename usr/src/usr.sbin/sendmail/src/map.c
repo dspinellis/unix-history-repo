@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1900,6 +1900,9 @@ void
 impl_map_close(map)
 	MAP *map;
 {
+	if (tTd(38, 20))
+		printf("impl_map_close(%s, %s, %x)\n",
+			map->map_mname, map->map_file, map->map_mflags);
 #ifdef NEWDB
 	if (bitset(MF_IMPL_HASH, map->map_mflags))
 	{
