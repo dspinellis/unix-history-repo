@@ -1,12 +1,10 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)make.1	5.6 (Berkeley) %G%
+.\"	@(#)make.1	5.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt MAKE 1
 .Os
@@ -20,7 +18,9 @@
 .Op Fl d Ar flags
 .Op Fl f Ar makefile
 .Op Fl I Ar directory
+.Bk -words
 .Op Fl j Ar max_jobs
+.Ek
 .Op Ar variable=value
 .Op Ar target ...
 .Sh DESCRIPTION
@@ -28,116 +28,121 @@
 is a program designed to simplify the maintenance of other programs.
 Its input is a list of specifications as to the files upon which programs
 and other files depend.
-If the file ``makefile'' exists, it is read for this list of specifications.
-If it does not exist, the file ``Makefile'' is read.
-If the file ``.depend'' exists, it is read (see
+If the file
+.Ql Pa makefile
+exists, it is read for this list of specifications.
+If it does not exist, the file
+.Ql Pa Makefile
+is read.
+If the file
+.Ql Pa .depend
+exists, it is read (see
 .Xr mkdep 1) .
 .Pp
 This manual page is intended as a reference document only.
 For a more thorough description of
 .Nm make
 and makefiles, please refer to
-.Em Make \-\- A Tutorial .
+.%T "Make \- A Tutorial" .
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Cx Fl D
-.Ar variable
-.Cx
-Define
-.Ar variable
+.Bl -tag -width Ds
+.It Fl D Ar variable
+Define Ar variable
 to be 1, in the global context.
-.Tp Cx Fl d
-.Ar flags
-.Cx
+.It Fl d Ar flags
 Turn on debugging, and specify which portions of
 .Nm make
 are to print debugging information.
 .Ar Flags
 is one or more of the following:
-.Tw Ds
-.Tp Ic A
-Print all possible debugging information; equivalent to specifying
-all of the debugging flags.
-.Tp Ic a
+.Bl -tag -width Ds
+.It Ar A
+Print all possible debugging information;
+equivalent to specifying all of the debugging flags.
+.It Ar a
 Print debugging information about archive searching and caching.
-.Tp Ic c
+.It Ar c
 Print debugging information about conditional evaluation.
-.Tp Ic d
+.It Ar d
 Print debugging information about directory searching and caching.
-.Tp Ic g1
+.It Ar "g1"
 Print the input graph before making anything.
-.Tp Ic g2
+.It Ar "g2"
 Print the input graph after making everything, or before exiting
 on error.
-.Tp Ic j
+.It Ar j
 Print debugging information about running multiple shells.
-.Tp Ic m
+.It Ar m
 Print debugging information about making targets, including modification
 dates.
-.Tp Ic s
+.It Ar s
 Print debugging information about suffix-transformation rules.
-.Tp Ic t
+.It Ar t
 Print debugging information about target list maintenance.
-.Tp Ic v
+.It Ar v
 Print debugging information about variable assignment.
-.Tp
-.Tp Fl e
+.El
+.It Fl e
 Specify that environmental variables override macro assignments within
 makefiles.
-.Tp Cx Fl f
-.Ar makefile
-.Cx
-Specify a makefile to read instead of the default ``makefile'' and ``Makefile''.
+.It Fl f Ar makefile
+Specify a makefile to read instead of the default
+.Ql Pa makefile
+and
+.Ql Pa Makefile .
 If
 .Ar makefile
-is ``\-'', standard input is read.
+is
+.Ql Fl ,
+standard input is read.
 Multiple makefile's may be specified, and are read in the order specified.
-.Tp Cx Fl I
-.Ar directory
-.Cx
+.It Fl I Ar directory
 Specify a directory in which to search for makefiles and included makefiles.
 The system makefile directory is automatically included as part of this
 list.
-.Tp Fl i
+.It Fl i
 Ignore non-zero exit of shell commands in the makefile.
-Equivalent to specifying ``\-'' before each command line in the makefile.
-.Tp Cx Fl j 
-.Ar max_jobs
-.Cx
+Equivalent to specifying
+.Ql Fl
+before each command line in the makefile.
+.It Fl j Ar max_jobs
 Specify the maximum number of jobs that
 .Nm make
 may have running at any one time.
-.Tp Fl k
+.It Fl k
 Continue processing after errors are encountered, but only on those targets
 that do not depend on the target whose creation caused the error.
-.Tp Fl n
+.It Fl n
 Display the commands that would have been executed, but do not actually
 execute them.
-.Tp Fl q
+.It Fl q
 Do not execute any commands, but exit 0 if the specified targets are
 up-to-date and 1, otherwise.
-.Tp Fl r
+.It Fl r
 Do not use the built-in rules specified in the system makefile.
-.Tp Fl s
+.It Fl s
 Do not echo any commands as they are executed.
-Equivalent to specifying ``@'' before each command line in the makefile.
-.Tp Fl t
+Equivalent to specifying
+.Ql Ic @
+before each command line in the makefile.
+.It Fl t
 Rather than re-building a target as specified in the makefile, create it
 or update its modification time to make it appear up-to-date.
-.Tp Ar variable=value
+.It Ar variable=value
 Set the value of the variable
 .Ar variable
 to
-.Ar value  .
-.Tp
+.Ar value .
+.El
 .Pp
 There are six different types of lines in a makefile: file dependency
 specifications, shell commands, variable assignments, include statements,
 conditional directives, and comments.
 .Pp
 In general, lines may be continued from one line to the next by ending
-them with a backslash (``\e'').
+them with a backslash
+.Pq Ql \e .
 The trailing newline character and initial whitespace on the following
 line are compressed into a single space.
 .Sh FILE DEPENDENCY SPECIFICATIONS
@@ -148,8 +153,8 @@ and are usually created from them.
 The exact relationship between the target and the source is determined
 by the operator that separates them.
 The three operators are as follows:
-.Tw Ds
-.Tp Ic \&:
+.Bl -tag -width flag
+.It Ic \&:
 A target is considered out-of-date if its modification time is less than
 those of any of its sources.
 Sources for a target accumulate over dependency lines when this operator
@@ -157,7 +162,7 @@ is used.
 The target is removed if
 .Nm make
 is interrupted.
-.Tp Ic \&!
+.It Ic \&!
 Targets are always re-created, but not until all sources have been
 examined and re-created as necessary.
 Sources for a target accumulate over dependency lines when this operator
@@ -165,7 +170,7 @@ is used.
 The target is removed if
 .Nm make
 is interrupted.
-.Tp Ic \&::
+.It Ic \&::
 If no sources are specified, the target is always re-created.
 Otherwise, a target is considered out-of-date if any of its sources has
 been modified more recently than the target.
@@ -174,17 +179,25 @@ operator is used.
 The target will not be removed if
 .Nm make
 is interrupted.
-.Tp
+.El
 .Pp
-Targets and sources may contain the shell wildcard values ``?'', ``*'',
-.Dq Op
-and ``{}''.
-The values ``?'', ``*'' and
-.Dq Op
+Targets and sources may contain the shell wildcard values
+.Ql ? ,
+.Ql * ,
+.Ql []
+and
+.Ql {} .
+The values
+.Ql ? ,
+.Ql *
+and
+.Ql []
 may only be used as part of the final
 component of the target or source, and must be used to describe existing
 files.
-The value ``{}'' need not necessarily be used to describe existing files.
+The value
+.Ql {}
+need not necessarily be used to describe existing files.
 Expansion is in directory order, not alphabetically as done in the shell.
 .Sh SHELL COMMANDS
 Each target may have associated with it a series of shell commands, normally
@@ -193,35 +206,43 @@ Each of the commands in this script
 .Em must
 be preceded by a tab.
 While any target may appear on a dependency line, only one of these
-dependencies may be followed by a creation script, unless the ``::''
+dependencies may be followed by a creation script, unless the
+.Ql Ic ::
 operator is used.
 .Pp
-If the first or first two characters of the command line are ``@'' and/or
-``\-'', the command is treated specially.
-A ``@'' causes the command not to be echoed before it is executed.
-A ``\-'' causes any non-zero exit status of the command line to be ignored.
+If the first or first two characters of the command line are
+.Ql Ic @
+and/or
+.Ql Ic \- ,
+the command is treated specially.
+A
+.Ql Ic @
+causes the command not to be echoed before it is executed.
+A
+.Ql Ic \-
+causes any non-zero exit status of the command line to be ignored.
 .Sh VARIABLE ASSIGNMENTS
 Variables in make are much like variables in the shell, and, by tradition,
 consist of all upper-case letters.
 The five operators that can be used to assign values to variables are as
 follows:
-.Tw Ds
-.Tp Ic \&=
+.Bl -tag -width Ds
+.It Ic \&=
 Assign the value to the variable.
 Any previous value is overridden.
-.Tp Ic \&+=
+.It Ic \&+=
 Append the value to the current value of the variable.
-.Tp Ic \&?=
+.It Ic \&?=
 Assign the value to the variable if it is not already defined.
-.Tp Ic \&:=
+.It Ic \&:=
 Assign with expansion, i.e. expand the value before assigning it
 to the variable.
 Normally, expansion is not done until the variable is referenced.
-.Tp Ic \&!=
+.It Ic \&!=
 Expand the value and pass it to the shell for execution and assign
 the result to the variable.
 Any newlines in the result are replaced with spaces.
-.Tp
+.El
 .Pp
 Any white-space before the assigned
 .Ar value
@@ -229,8 +250,13 @@ is removed; if the value is being appended, a single space is inserted
 between the previous contents of the variable and the appended value.
 .Pp
 Variables are expanded by surrounding the variable name with either
-curly braces (``{}'') or parenthesis (``()'') and preceding it with
-a dollar sign (``$'').
+curly braces
+.Pq Ql {}
+or parenthesis
+.Pq Ql ()
+and preceding it with
+a dollar sign
+.Pq Ql \&$ .
 If the variable name contains only a single letter, the surrounding
 braces or parenthesis are not required.
 This shorter form is not recommended.
@@ -243,83 +269,109 @@ executed.
 .Pp
 The four different classes of variables (in order of increasing precedence)
 are:
-.Tw Ds
-.Tp environment variables
+.Bl -tag -width Ds
+.It Environment variables
 Variables defined as part of
-.Cx Nm make
-.Cx \'s
-.Cx
+.Nm make Ns 's
 environment.
-.Tp global variables
+.It Global variables
 Variables defined in the makefile or in included makefiles.
-.Tp command line variables
+.It Command line variables
 Variables defined as part of the command line.
-.Tp local variables
+.It Local variables
 Variables that are defined specific to a certain target.
 The seven local variables are as follows:
-.Tw Ds
-.Tp Va \&.ALLSRC
-The list of all sources for this target; also known as ``>''.
-.Tp Va \&.ARCHIVE
+.Bl -tag -width ".ARCHIVE"
+.It Va .ALLSRC
+The list of all sources for this target; also known as
+.Ql Va \&> .
+.It Va .ARCHIVE
 The name of the archive file.
-.Tp Va \&.IMPSRC
+.It Va .IMPSRC
 The name/path of the source from which the target is to be transformed
-(the ``implied'' source); also known as ``<''.
-.Tp Va \&.MEMBER
+(the ``implied'' source); also known as
+.Ql Va \&< .
+.It Va .MEMBER
 The name of the archive member.
-.Tp Va \&.OODATE
+.It Va .OODATE
 The list of sources for this target that were deemed out-of-date; also
-known as ``?''.
-.Tp Va \&.PREFIX
+known as
+.Ql Va \&? .
+.It Va .PREFIX
 The file prefix of the file, containing only the file portion, no suffix
-or preceding directory components; also known as ``*'.
-.Tp Va \&.TARGET
-The name of the target; also known as ``@''.
-.Tp
+or preceding directory components; also known as
+.Ql Va * .
+.It Va .TARGET
+The name of the target; also known as
+.Ql Va @ .
+.El
 .Pp
-The shorter forms ``@'', ``?'', ``>'' and ``*'' are permitted for backward
+The shorter forms
+.Ql Va @ ,
+.Ql Va ? ,
+.Ql Va \&>
+and
+.Ql Va *
+are permitted for backward
 compatibility with historical makefiles and are not recommended.
-The six variables ``@F'', ``@D'', ``<F'', ``<D'', ``*F'' and ``*D'' are
-permitted for compatibility with System V makefiles and are not recommended.
+The six variables
+.Ql Va "@F" ,
+.Ql Va "@D" ,
+.Ql Va "<F" ,
+.Ql Va "<D" ,
+.Ql Va "*F"
+and
+.Ql Va "*D"
+are
+permitted for compatibility with
+.At V
+makefiles and are not recommended.
 .Pp
 Four of the local variables may be used in sources on dependency lines
 because they expand to the proper value for each target on the line.
-These variables are ``.TARGET'', ``.PREFIX'', ``.ARCHIVE'', and ``.MEMBER''.
+These variables are
+.Ql Va .TARGET ,
+.Ql Va .PREFIX ,
+.Ql Va .ARCHIVE ,
+and
+.Ql Va .MEMBER .
 .Pp
 In addition,
 .Nm make
 sets or knows about the following variables:
-.Tw MAKEFLAGS
-.Tp Va \&$
-A single dollar sign (``$''), i.e. ``$$'' expands to a single dollar
+.Bl -tag -width MAKEFLAGS
+.It Va \&$
+A single dollar sign
+.Ql \&$ ,
+i.e.
+.Ql \&$$
+expands to a single dollar
 sign.
-.Tp Va \&.MAKE
+.It Va .MAKE
 The name that
 .Nm make
 was executed with
-.Pq Cx Va argv
-.Op 0
-.Cx
-.Tp Va \&.CURDIR
+.Pq Va argv Op 0
+.It Va .CURDIR
 A path to the directory where
 .Nm make
 was executed.
-.Tp Va MAKEFLAGS
-The environment variable ``MAKEFLAGS'' may contain anything that
+.It Ev MAKEFLAGS
+The environment variable
+.Ql Ev MAKEFLAGS
+may contain anything that
 may be specified on
-.Cx Nm make
-.Cx \'s
-.Cx
+.Nm make Ns 's
 command line.
 Anything specified on
-.Cx Nm make
-.Cx \'s
-.Cx
-command line is appended to the ``MAKEFLAGS'' variable which is then
+.Nm make Ns 's
+command line is appended to the
+.Ql Ev MAKEFLAGS
+variable which is then
 entered into the environment for all programs which
 .Nm make
 executes.
-.Tp
+.El
 .Pp
 Variable expansion may be modified to select or modify each word of the
 variable (where a ``word'' is white-space delimited sequence of characters).
@@ -329,80 +381,99 @@ The general format of a variable expansion is as follows:
 .Pp
 Each modifier begins with a colon and one of the following
 special characters.
-The colon may be escaped with a backslash (``\e'').
-.Tp Cm E\&
+The colon may be escaped with a backslash
+.Pq Ql \e .
+.Bl -tag -width Cm E\&
+.It Cm E
 Replaces each word in the variable with its suffix.
-.Tp Cm \&H
+.It Cm H
 Replaces each word in the variable with everything but the last component.
-.Tp Cx Ic M
-.Ar pattern
-.Cx
+.It Cm M Ns Ar pattern
 Select only those words that match the rest of the modifier.
-The standard shell wildcard characters (``*'', ``?'', and
-.Dq Op )
+The standard shell wildcard characters
+.Pf ( Ql * ,
+.Ql ? ,
+and
+.Ql Op )
 may
 be used.
-The wildcard characters may be escaped with a backslash (``\e'').
-.Tp Cx Ic N
-.Ar pattern
-.Cx
-This is identical to ``M'', but selects all words which do not match
+The wildcard characters may be escaped with a backslash
+.Pq Ql \e .
+.It Cm N Ns Ar pattern
+This is identical to
+.Ql Cm M ,
+but selects all words which do not match
 the rest of the modifier.
-.Tp Cm R
+.It Cm R
 Replaces each word in the variable with everything but its suffix.
-.Tp Cx Cm S
-.Cx \&/
-.Ar old_pattern
-.Cx \&/
-.Ar new_pattern
-.Cx \&/
-.Op Cm g
-.Cx
+.Sm off
+.It Cm S No \&/ Ar old_pattern Xo
+.No \&/ Ar new_pattern
+.No \&/ Op Cm g
+.Xc
+.Sm on
 Modify the first occurrence of
 .Ar old_pattern
 in each word to be replaced with
-.Ar new_pattern  .
-If a ``g'' is appended to the last slash of the pattern, all occurrences
+.Ar new_pattern .
+If a
+.Ql g
+is appended to the last slash of the pattern, all occurrences
 in each word are replaced.
 If
 .Ar old_pattern
-begins with a carat (``^''),
+begins with a carat
+.Pq Ql ^ ,
 .Ar old_pattern
 is anchored at the beginning of each word.
 If
 .Ar old_pattern
-ends with a dollar sign (``$''), it is anchored at the end of each word.
+ends with a dollar sign
+.Pq Ql \&$ ,
+it is anchored at the end of each word.
 Inside
-.Ar new_string  ,
-an ampersand (``&'') is replaced by
+.Ar new_string ,
+an ampersand
+.Pq Ql &
+is replaced by
 .Ar old_pattern .
 Any character may be used as a delimiter for the parts of the modifier
 string.
 The anchoring, ampersand and delimiter characters may be escaped with a
-backslash (``\e'').
+backslash
+.Pq Ql \e .
 .Pp
 Variable expansion occurs in the normal fashion inside both
 .Ar old_string
 and
 .Ar new_string
 with the single exception that a backslash is used to prevent the expansion
-of a dollar sign (``$''), not a preceding dollar sign as is usual.
-.Tp Cm T
+of a dollar sign
+.Pq Ql \&$
+not a preceding dollar sign as is usual.
+.It Cm T
 Replaces each word in the variable with its last component.
-.Tp Ar old_string=new_string
-This is the System V style variable substitution.
+.It Ar old_string=new_string
+This is the
+.At V
+style variable substitution.
 It must be the last modifier specified.
 .Ar Old_string
 is anchored at the end of each word, so only suffixes or entire
 words may be replaced.
-.Tp
+.El
 .Sh INCLUDE STATEMENTS AND CONDITIONALS
 Makefile inclusion and conditional structures reminiscent of the C
 programming language are provided in
-.Nm make  .
+.Nm make .
 All such structures are identified by a line beginning with a single
-dot (``.'') character.
-Files are included with either ``.include <file>'' or ``.include "file"''.
+dot
+.Pq Ql \&.
+character.
+Files are included with either
+.Ql .include <file>
+or
+.Ql .include \*qfile\*q .
 Variables between the angle brackets or double quotes are expanded
 to form the file name.
 If angle brackets are used, the included makefile is expected to be in
@@ -416,149 +487,142 @@ makefile directory.
 Conditional expressions are also preceded by a single dot as the first
 chraracter of a line.
 The possible conditionals are as follows:
-.Tw Ds
-.Tp Cx Ic \&.undef
-.Cx \&\ \&
-.Ar variable
-.Cx
+.Bl -tag -width Ds
+.It Ic .undef Ar variable
 Un-define the specified global variable.
 Only global variables may be un-defined.
-.Tp Cx Ic \&.if
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar expression
-.Cx \&\ \&
+.It Xo
+.Ic \&.if
+.Oo \&! Oc Ns Ar expression
 .Op Ar operator expression ...
-.Cx
+.Xc
 Test the value of an expression.
-.Tp Cx Ic \&.ifdef
-.Cx \&\ \&
-.Op \&!
-.Ar variable
-.Cx \&\ \&
-.Op Ar  operator variable ...
-.Cx
-Test the value of an variable.
-.Tp Cx Ic \&.ifndef
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar variable
-.Cx \&\ \&
+.It Xo
+.Ic .ifdef
+.Oo \&! Oc Ns Ar variable
 .Op Ar operator variable ...
-.Cx
+.Xc
 Test the value of an variable.
-.Tp Cx Ic \&.ifmake
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar target
-.Cx \&\ \&
+.It Xo
+.Ic .ifndef
+.Oo \&! Oc Ns Ar variable
+.Op Ar operator variable ...
+.Xc
+Test the value of an variable.
+.It Xo
+.Ic .ifmake
+.Oo \&! Oc Ns Ar target
 .Op Ar operator target ...
-.Cx
+.Xc
 Test the the target being built.
-.Tp Cx Ic \&.ifnmake
-.Cx \&\ \&
-.Op \&!
-.Ar target
-.Cx \&\ \&
+.It Xo
+.Ic .ifnmake
+.Oo \&! Oc Ar target
 .Op Ar operator target ...
-.Cx
+.Xc
 Test the target being built.
-.Tp Ic \&.else
+.It Ic .else
 Reverse the sense of the last conditional.
-.Tp Cx Ic \&.elif
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar expression
-.Cx \&\ \&
+.It Xo
+.Ic .elif
+.Oo \&! Oc Ar expression
 .Op Ar operator expression ...
-.Cx
-A combination of ``.else'' followed by ``.if''.
-.Tp Cx Ic \&.elifdef
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar variable
-.Cx \&\ \&
+.Xc
+A combination of
+.Ql Ic .else
+followed by
+.Ql Ic .if .
+.It Xo
+.Ic .elifdef
+.Oo \&! Oc Ns Ar variable
 .Op Ar operator variable ...
-.Cx
-A combination of ``.else'' followed by ``.ifdef''.
-.Tp Cx Ic \&.elifndef
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar variable
-.Cx \&\ \&
+.Xc
+A combination of
+.Ql Ic .else
+followed by
+.Ql Ic .ifdef .
+.It Xo
+.Ic .elifndef
+.Oo \&! Oc Ns Ar variable
 .Op Ar operator variable ...
-.Cx
-A combination of ``.else'' followed by ``.ifndef''.
-.Tp Cx Ic \&.elifmake
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar target
-.Cx \&\ \&
+.Xc
+A combination of
+.Ql Ic .else
+followed by
+.Ql Ic .ifndef .
+.It Xo
+.Ic .elifmake
+.Oo \&! Oc Ns Ar target
 .Op Ar operator target ...
-.Cx
-A combination of ``.else'' followed by ``.ifmake''.
-.Tp Cx Ic \&.elifnmake
-.Cx \&\ \&
-.Op \&!
-.Cx \&\ \&
-.Ar target
-.Cx \&\ \&
+.Xc
+A combination of
+.Ql Ic .else
+followed by
+.Ql Ic .ifmake .
+.It Xo
+.Ic .elifnmake
+.Oo \&! Oc Ns Ar target
 .Op Ar operator target ...
-.Cx
-A combination of ``.else'' followed by ``.ifnmake''.
-.Tp Ic \&.endif
+.Xc
+A combination of
+.Ql Ic .else
+followed by
+.Ql Ic .ifnmake .
+.It Ic .endif
 End the body of the conditional.
-.Tp
+.El
 .Pp
 The
 .Ar operator
 may be any one of the following:
-.Tp Cm \&|\&|
+.Bl -tag -width "Cm XX"
+.It Cm \&|\&|
 logical OR
-.Tp Cm \&&&
-Logical AND; of higher precedence than ``''.
-.Tp
+.It Cm \&&&
+Logical
+.Tn AND ;
+of higher precedence than
+.Dq .
+.El
 .Pp
 As in C,
 .Nm make
 will only evaluate a conditional as far as is necessary to determine
 its value.
 Parenthesis may be used to change the order of evaluation.
-The boolean operator ``!'' may be used to logically negate an entire
+The boolean operator
+.Ql Ic \&!
+may be used to logically negate an entire
 conditional.
-It is of higher precendence than ``&&''.
+It is of higher precendence than
+.Ql Ic \&&& .
 .Pp
 The value of
 .Ar expression
 may be any of the following:
-.Tp Ic defined
+.Bl -tag -width Ic defined
+.It Ic defined
 Takes a variable name as an argument and evaluates to true if the variable
 has been defined.
-.Tp Ic make
+.It Ic make
 Takes a target name as an argument and evaluates to true if the target
 was specified as part of
-.Cx Nm make
-.Cx \'s
-.Cx
+.Nm make Ns 's
 command line or was declared the default target (either implicitly or
-explicitly, see .MAIN) before the line containing the conditional.
-.Tp Ic empty
+explicitly, see
+.Va .MAIN )
+before the line containing the conditional.
+.It Ic empty
 Takes a variable, with possible modifiers, and evalutes to true if
 the expansion of the variable would result in an empty string.
-.Tp Ic exists
+.It Ic exists
 Takes a file name as an argument and evaluates to true if the file exists.
-The file is searched for on the system search path (see .PATH).
-.Tp Ic target
+The file is searched for on the system search path (see
+.Va .PATH ) .
+.It Ic target
 Takes a target name as an argument and evaluates to true if the target
 has been defined.
-.Tp
+.El
 .Pp
 .Ar Expression
 may also be an arithmetic or string comparison, with the left-hand side
@@ -566,8 +630,14 @@ being a variable expansion.
 The standard C relational operators are all supported, and the usual
 number/base conversion is performed.
 Note, octal numbers are not supported.
-If the righthand value of a ``=='' or ``!='' operator begins with a
-quotation mark (``"'') a string comparison is done between the expanded
+If the righthand value of a
+.Ql Ic ==
+or
+.Ql Ic "!="
+operator begins with a
+quotation mark
+.Pq Ql \*q
+a string comparison is done between the expanded
 variable and the text between the quotation marks.
 If no relational operator is given, it is assumed that the expanded
 variable is being compared against 0.
@@ -577,111 +647,150 @@ When
 is evaluating one of these conditional expression, and it encounters
 a word it doesn't recognize, either the ``make'' or ``defined''
 expression is applied to it, depending on the form of the conditional.
-If the form is ``.ifdef'' or ``.ifndef'', the ``defined'' expression
+If the form is
+.Ql Ic .ifdef
+or
+.Ql Ic .ifndef ,
+the ``defined'' expression
 is applied.
-Similarly, if the form is ``.ifmake'' or ``.ifnmake'', the ``make''
+Similarly, if the form is
+.Ql Ic .ifmake
+or
+.Ql Ic .ifnmake , the ``make''
 expression is applied.
 .Pp
 If the conditional evaluates to true the parsing of the makefile continues
 as before.
 If it evaluates to false, the following lines are skipped.
-In both cases this continues until a ``.else'' or ``.endif'' is found.
+In both cases this continues until a
+.Ql Ic .else
+or
+.Ql Ic .endif
+is found.
 .Sh COMMENTS
-Comments begin with a hash (``#'') character, anywhere but in a shell
+Comments begin with a hash
+.Pq Ql \&#
+character, anywhere but in a shell
 command line, and continue to the end of the line.
 .Sh SPECIAL SOURCES
-.Tp Ic \&.IGNORE
+.Bl -tag -width Ic .IGNORE
+.It Ic .IGNORE
 Ignore any errors from the commands associated with this target, exactly
-as if they all were preceded by a dash (``\-'').
-.Tp Ic \&.MAKE
-Execute the commands associated with this target even if the -n or -t
+as if they all were preceded by a dash
+.Pq Ql \- .
+.It Ic .MAKE
+Execute the commands associated with this target even if the
+.Fl n
+or
+.Fl t
 options were specified.
 Normally used to mark recursive
-.Cx Nm make
-.Cx \'s .
-.Cx
-.Tp Ic \&.NOTMAIN
+.Nm make Ns 's .
+.It Ic .NOTMAIN
 Normally
 .Nm make
 selects the first target it encounters as the default target to be built
 if no target was specified.
 This source prevents this target from being selected.
-.Tp Ic \&.OPTIONAL
+.It Ic .OPTIONAL
 If a target is marked with this attribute and
 .Nm make
 can't figure out how to create it, it will ignore this fact and assume
 the file isn't needed or already exists.
-.Tp Ic \&.PRECIOUS
+.It Ic .PRECIOUS
 When
 .Nm make
 is interrupted, it removes any partially made targets.
 This source prevents the target from being removed.
-.Tp Ic \&.SILENT
+.It Ic .SILENT
 Do not echo any of the commands associated with this target, exactly
-as if they all were preceded by an at sign (``@'').
-.Tp Ic \&.USE
+as if they all were preceded by an at sign
+.Pq Ql @ .
+.It Ic .USE
 Turn the target into
-.Cx Nm make
-.Cx \'s .
-.Cx
+.Nm make Ns 's .
 version of a macro.
 When the target is used as a source for another target, the other target
-acquires the commands, sources, and attributes (except for .USE) of the
+acquires the commands, sources, and attributes (except for
+.Ic .USE )
+of the
 source.
-If the target already has commands, the .USE target's commands are appended
+If the target already has commands, the
+.Ic .USE
+target's commands are appended
 to them.
-.Tp
+.El
 .Sh "SPECIAL TARGETS"
 Special targets may not be included with other targets, i.e. they must be
 the only target specified.
-.Tp Ic \&.BEGIN
+.Bl -tag -width Ic .BEGIN
+.It Ic .BEGIN
 Any command lines attached to this target are executed before anything
 else is done.
-.Tp Ic \&.DEFAULT
-This is sort of a .USE rule for any target (that was used only as a
+.It Ic .DEFAULT
+This is sort of a
+.Ic .USE
+rule for any target (that was used only as a
 source) that
 .Nm make
 can't figure out any other way to create.
 Only the shell script is used.
-The .IMPSRC variable of a target that inherits .DEFAULT's commands is set
+The
+.Ic .IMPSRC
+variable of a target that inherits
+.Ic .DEFAULT Ns 's
+commands is set
 to the target's own name.
-.Tp Ic \&.END
+.It Ic .END
 Any command lines attached to this target are executed after everything
 else is done.
-.Tp Ic \&.IGNORE
-Mark each of the sources with the .IGNORE attribute.
-If no sources are specified, this is the equivalent of specifying the -i
+.It Ic .IGNORE
+Mark each of the sources with the
+.Ic .IGNORE
+attribute.
+If no sources are specified, this is the equivalent of specifying the
+.Fl i
 option.
-.Tp Ic \&.INTERRUPT
+.It Ic .INTERRUPT
 If
 .Nm make
 is interrupted, the commands for this target will be executed.
-.Tp Ic \&.MAIN
+.It Ic .MAIN
 If no target is specified when
 .Nm make
 is invoked, this target will be built.
-.Tp Ic \&.MAKEFLAGS
+.It Ic .MAKEFLAGS
 This target provides a way to specify flags for
 .Nm make
 when the makefile is used.
-The flags are as if typed to the shell, though the -f option will have
+The flags are as if typed to the shell, though the
+.Fl f
+option will have
 no effect.
-.Tp Ic \&.PATH
+.It Ic .PATH
 The sources are directories which are to be searched for files not
 found in the current directory.
 If no sources are specified, any previously specified directories are
 deleted.
-.Tp Ic \&.PRECIOUS
-Apply the .PRECIOUS attribute to any specified sources.
-If no sources are specified, the .PRECIOUS attribute is applied to every
+.It Ic .PRECIOUS
+Apply the
+.Ic .PRECIOUS
+attribute to any specified sources.
+If no sources are specified, the
+.Ic .PRECIOUS
+attribute is applied to every
 target in the file.
-.Tp Ic \&.SILENT
-Apply the .SILENT attribute to any specified sources.
-If no sources are specified, the .SILENT attribute is applied to every
+.It Ic .SILENT
+Apply the
+.Ic .SILENT
+attribute to any specified sources.
+If no sources are specified, the
+.Ic .SILENT
+attribute is applied to every
 command in the file.
-.Tp Ic \&.SUFFIXES
+.It Ic .SUFFIXES
 Each source specifies a suffix to
-.Nm make  .
+.Nm make .
 If no sources are specified, any previous specifies suffices are deleted.
 .Sh ENVIRONMENT
 .Nm Make
@@ -691,21 +800,22 @@ utilizes the following environment variables, if they exist:
 and
 .Ev MAKEOBJDIR .
 .Sh FILES
-.Dw /usr/share/mk
-.Di L
-.Dp /usr/share/mk
-system makefile directory
-.Dp .depend
+.Bl -tag -width /usr/share/mk -compact
+.It .depend
 list of dependencies
-.Dp Makefile
+.It Makefile
 list of dependencies
-.Dp makefile
+.It makefile
 list of dependencies
-.Dp sys.mk
+.It sys.mk
 system makefile
-.Dp
+.It /usr/share/mk
+system makefile directory
+.El
 .Sh SEE ALSO
 .Xr mkdep 1
 .Sh HISTORY
+A
 .Nm Make
-appeared in Version 7 AT&T UNIX.
+command appeared in
+.At v7 .
