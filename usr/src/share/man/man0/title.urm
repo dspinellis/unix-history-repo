@@ -2,15 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)title.urm	6.1 (Berkeley) %G%
+.\"	@(#)title.urm	6.2 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
 .sp 2.75i
 .ft B
-.ce 3
-UNIX User's Manual
-Reference Guide
+.ce 2
+UNIX User's Reference Manual
 (URM)
 .ps 14
 .vs 16
