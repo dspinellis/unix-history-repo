@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.53 (Berkeley) %G%
+#	@(#)READ_ME	8.54 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -244,19 +244,25 @@ ARBPTR_T	The type of an arbitrary pointer -- defaults to "void *".
 		If you are an very old compiler you may need to define
 		this to be "char *".
 LA_TYPE		The type of load average your kernel supports.  These
-		can be LA_SUBR (4) if you have the getloadavg(3) routine,
+		can be one of:
+		LA_ZERO (1) -- it always returns the load average as
+			"zero" (and does so on all architectures).
+		LA_SUBR (4) if you have the getloadavg(3) routine,
 		LA_MACH (5) to use MACH-style load averages (calls
-		processor_set_info()), LA_FLOAT (3) if you read kmem and
-		interpret the value as a floating point number, LA_INT (2)
-		to interpret as a long integer, or LA_SHORT (6) to
-		interpret as a short integer.  These last three have
-		several other parameters that they try to divine: the
-		name of your kernel, the name of the variable in the
-		kernel to examine, the number of bits of precision in
-		a fixed point load average, and so forth.  In desperation,
-		use LA_ZERO (1) -- it always returns the load average as
-		"zero" (and does so on all architectures).  The actual
-		code is in conf.c -- it can be tweaked if you are brave.
+			processor_set_info()),
+		LA_PROCSTR (7) to read /proc/loadavg and interpret it
+			as a string representing a floating-point
+			number (Linux-style),
+		LA_FLOAT (3) if you read kmem and interpret the value
+			as a floating point number,
+		LA_INT (2) to interpret as a long integer,
+		LA_SHORT (6) to interpret as a short integer.
+		These last three have several other parameters that they
+		try to divine: the name of your kernel, the name of the
+		variable in the kernel to examine, the number of bits of
+		precision in a fixed point load average, and so forth.
+		In desperation, use LA_ZERO.  The actual code is in
+		conf.c -- it can be tweaked if you are brave.
 SFS_TYPE	Encodes how your kernel can locate the amount of free
 		space on a disk partition.  This can be set to SFS_NONE
 		(0) if you have no way of getting this information,
@@ -769,4 +775,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.53, last update %G% 09:44:04)
+(Version 8.54, last update %G% 08:35:14)

@@ -7,7 +7,7 @@
 #
 #  This has been tested on Linux 0.99p10.
 #
-#	@(#)Makefile.Linux	8.1 (Berkeley) %G%
+#	@(#)Makefile.Linux	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -23,18 +23,18 @@ O=	-O
 DBMDEF=	-DNDBM
 
 # environment definitions (e.g., -D_AIX3)
-ENVDEF=	-D__USE_BSD
+ENVDEF=
 
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/include/bsd
+INCDIRS=-I/usr/LOCAL/include
 
 # library directories
-LIBDIRS=-L/usr/local/lib
+LIBDIRS=-L/usr/LOCAL/lib
 
 # libraries required on your system
-LIBS=	-lbsd -ldbm
+LIBS=	-lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
@@ -49,7 +49,7 @@ HFDIR=	${DESTDIR}/usr/lib
 OBJADD=
 
 # additional pseudo-sources needed
-BEFORE=	features.h
+BEFORE=
 
 ###################  end of user configuration flags  ######################
 
@@ -79,9 +79,6 @@ unistd.h:
 dirent.h:
 	echo "#include <sys/dir.h>" > dirent.h
 	echo "#define dirent	direct" >> dirent.h
-
-features.h:
-	ln features.linux.h $@
 
 NROFF=	nroff
 
