@@ -1,4 +1,4 @@
-/*	mba.c	4.30	82/12/17	*/
+/*	mba.c	4.31	83/05/18	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -214,6 +214,7 @@ mbintr(mbanum)
 	register int drive;
 	int mbasr, as;
 	extern struct mba_device *mbaconfig();
+	static mbaddtape();
 	
 	/*
 	 * Read out the massbus status register
@@ -292,7 +293,6 @@ mbintr(mbanum)
 		mi = mhp->mh_mbip[drive];
 		if (mi == NULL || mi->mi_alive == 0) {
 			struct mba_device fnd;
-			struct mba_slave *ms;
 			struct mba_drv *mbd = &mhp->mh_mba->mba_drv[drive];
 			int dt = mbd->mbd_dt & 0xffff;
 
@@ -303,24 +303,17 @@ mbintr(mbanum)
 			fnd.mi_drive = drive;
 			if ((mi = mbaconfig(&fnd, dt)) == NULL)
 				continue;
-			if (dt & MBDT_TAP) {
-				for (ms = mbsinit; ms->ms_driver; ms++)
-				if (ms->ms_driver == mi->mi_driver &&
-				    ms->ms_alive == 0 && 
-				    (ms->ms_ctlr == mi->mi_unit ||
-				     ms->ms_ctlr == '?')) {
-					if ((*ms->ms_driver->md_slave)(mi, ms)) {
-						printf("%s%d at %s%d slave %d\n",
-						    ms->ms_driver->md_sname,
-						    ms->ms_unit,
-						    mi->mi_driver->md_dname,
-						    mi->mi_unit,
-						    ms->ms_slave);
-						ms->ms_alive = 1;
-						ms->ms_ctlr = mi->mi_unit;
-					}
-				}
-			}
+			/*
+			 * If a tape, poke the slave attach routines.
+			 * Otherwise, could be a disk which we want
+			 * to swap on, so make a pass over the swap
+			 * configuration table in case the size of
+			 * the swap area must be determined by drive type.
+			 */
+			if (dt & MBDT_TAP)
+				mbaddtape(mi, drive);
+			else
+				swapconf();
 		}
 		/*
 		 * If driver has a handler for non-data transfer
@@ -360,6 +353,33 @@ mbintr(mbanum)
 	if (mhp->mh_actf && !mhp->mh_active)
 		mbstart(mhp);
 	/* THHHHATS all folks... */
+}
+
+/*
+ * For autoconfig'ng tape drives on the fly.
+ */
+static
+mbaddtape(mi, drive)
+	struct mba_device *mi;
+	int drive;
+{
+	register struct mba_slave *ms;
+
+	for (ms = mbsinit; ms->ms_driver; ms++)
+		if (ms->ms_driver == mi->mi_driver && ms->ms_alive == 0 && 
+		    (ms->ms_ctlr == mi->mi_unit ||
+		     ms->ms_ctlr == '?')) {
+			if ((*ms->ms_driver->md_slave)(mi, ms, drive)) {
+				printf("%s%d at %s%d slave %d\n",
+				    ms->ms_driver->md_sname,
+				    ms->ms_unit,
+				    mi->mi_driver->md_dname,
+				    mi->mi_unit,
+				    ms->ms_slave);
+				ms->ms_alive = 1;
+				ms->ms_ctlr = mi->mi_unit;
+			}
+		}
 }
 
 /*
