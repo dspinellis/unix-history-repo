@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printsym.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)printsym.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $";
@@ -27,6 +27,7 @@ static char rcsid[] = "$Header: printsym.c,v 1.5 84/12/26 10:41:28 linton Exp $"
 #include "names.h"
 #include "keywords.h"
 #include "main.h"
+#include <ctype.h>
 
 #ifndef public
 #endif
@@ -656,7 +657,7 @@ char c;
     } else if (c >= ' ' && c <= '~') {
 	putchar(c);
     } else {
-	printf("\\0%o",c);
+	printf("\\0%o",c&0xff);
     }
 }
 
@@ -725,6 +726,8 @@ boolean quotes;
     register Address a;
     register integer i, len;
     register boolean endofstring;
+    register int unprintables;
+#define	MAXGARBAGE	4
     union {
 	char ch[sizeof(Word)];
 	int word;
@@ -737,6 +740,7 @@ boolean quotes;
 	    putchar('"');
 	}
 	a = addr;
+	unprintables = 0;
 	endofstring = false;
 	while (not endofstring) {
 	    dread(&u, a, sizeof(u));
@@ -746,6 +750,10 @@ boolean quotes;
 		    endofstring = true;
 		} else {
 		    printchar(u.ch[i]);
+		    if (!isascii(u.ch[i]) and ++unprintables > MAXGARBAGE) {
+			endofstring = true;
+			printf("...");
+		    }
 		}
 		++i;
 	    } while (i < sizeof(Word) and not endofstring);
