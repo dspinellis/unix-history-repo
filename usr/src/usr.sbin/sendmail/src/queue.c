@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.68 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.69 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.68 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.69 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -194,18 +194,8 @@ queueup(df)
 	if (e->e_envid != NULL)
 		fprintf(tfp, "Z%s\n", denlstring(e->e_envid, TRUE, FALSE));
 
-	/* output list of error recipients */
-	printctladdr(NULL, NULL);
-	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
-	{
-		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-		{
-			printctladdr(q, tfp);
-			fprintf(tfp, "E%s\n", denlstring(q->q_paddr));
-		}
-	}
-
 	/* output list of recipient addresses */
+	printctladdr(NULL, NULL);
 	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags) ||
@@ -1189,7 +1179,7 @@ readqf(e)
 			break;
 
 		  case 'E':		/* specify error recipient */
-			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, 0, e);
+			/* no longer used */
 			break;
 
 		  case 'H':		/* header */
