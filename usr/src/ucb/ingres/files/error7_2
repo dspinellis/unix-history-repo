@@ -1,0 +1,109 @@
+2000	%0 errors were found in quel program~
+2100	line %0, Attribute '%1' not in relation '%2'~
+2103	line %0, Result domain type does not match type of expression~
+2106	line %0, Data base utility command buffer overflow~
+2107	line %0, You are not allowed to update this relation: %1~
+2108	line %0, Result relation (%1) for APPEND does not
+exist or cannot be accessed by you~
+2109	line %0, Variable '%1' not declared in RANGE statement~
+2111	line %0, Too many attributes in key for INDEX~
+2117	line %0, Invalid relation name '%1' in RANGE statement~
+2118	line %0, Out of space in query tree - Query too long~
+2119	line %0, MOD operator not defined for floating point
+or character attributes~
+2120	line %0, no pattern match operators allowed in the target list~
+2121	line %0, Only character type domains are allowed in CONCAT operator~
+2123	line %0, '%1.all' not defined for replace~
+2125	line %0, Cannot use aggregates ("avg" or "avgu") on character values~
+2126	line %0, Cannot use aggregates ("sum" or "sumu") on character values~
+2127	line %0, Cannot use numerical functions (ATAN, COS, LOG,
+SIN, SQRT, EXP, ABS) on character values~
+2128	line %0, Cannot use unary operators ("+" or "-") on character values~
+2129	line %0, Numeric operations (+ - * /) not allowed on character values~
+2130	line %0, Too many result domains in target list~
+2131	line %0, Target list too wide~
+2132	line %0, Too many aggregates in this query~
+2133	line %0, Type conflict on relative operator~
+2134	line %0, '%1' is not a constant operator.
+Only 'dba' or 'usercode' are allowed.~
+2135	line %0, You cannot duplicate the name of an existing relation(%1)~
+2136	line %0, There is no such hour as %1, use a 24 hour clock system~
+2137	line %0, There is no such minute as %1, use a 24 hour clock system~
+2138	line %0, There is no such time as 24:%1, use a 24 hour clock system~
+2139	line %0, Your database does not support query modification~
+2500	line %0, The word '%1', cannot follow this command~
+2501	line %0, The word '%1', cannot follow a RETRIEVE command.~
+2502	line %0, The word '%1', cannot follow an APPEND command.~
+2503	line %0, The word '%1', cannot follow a REPLACE command.~
+2504	line %0, The word '%1', cannot follow a DELETE command.~
+2507	line %0, The word '%1', cannot follow a DESTROY command.~
+2508	line %0, The word '%1', cannot follow a HELP command.~
+2510	line %0, The word '%1', cannot follow a MODIFY command.~
+2511	line %0, The word '%1', cannot follow a PRINT command.~
+2515	line %0, The word '%1', cannot follow a RETRIEVE UNIQUE command.~
+2516	line %0, The word '%1', cannot follow a DEFINE VIEW command.~
+2519	line %0, The word '%1', cannot follow a HELP VIEW, HELP INTEGRITY,
+or HELP PERMIT command.~
+2522	line %0, The word '%1', cannot follow a DEFINE PERMIT command.~
+2523	line %0, The word '%1', cannot follow a DEFINE INTEGRITY command.~
+2526	line %0, The word '%1', cannot follow a DESTROY INTEGRITY or
+DESTROY PERMIT command.~
+2600	syntax error on line %0
+last symbol read was: %1~
+2601	line %0, Syntax error on '%1', the correct syntax is: 
+	RETRIEVE [[INTO]relname] (target_list) [WHERE qual]
+	RETRIEVE UNIQUE (target_list) [WHERE qual]~
+2602	line %0, Syntax error on '%1', the correct syntax is: 
+	APPEND [TO] relname (target_list) [WHERE qual]~
+2603	line %0, Syntax error on '%1', the correct syntax is: 
+	REPLACE tuple_variable (target_list) [WHERE qual]~
+2604	line %0, Syntax error on '%1', the correct syntax is: 
+	DELETE tuple_variable [WHERE qual]~
+2605	line %0, Syntax error on '%1', the correct syntax is: 
+	COPY relname (domname = format {, domname = format}) direction "filename"~
+2606	line %0, Syntax error on '%1', the correct syntax is: 
+	CREATE relname (domname1 = format{, domname2 = format})~
+2607	line %0, Syntax error on '%1', the correct syntax is: 
+	DESTROY relname {,relname}
+	DESTROY [PERMIT | INTEGRITY] relname [integer{, integer} | ALL]~
+2609	line %0, Syntax error on '%1', the correct syntax is: 
+	INDEX ON relname IS indexname (domain1{, domain2}) ~
+2610	line %0, Syntax error on '%1', the correct syntax is: 
+	MODIFY relname TO storage-structure [ON key1 [: sortorder] [{, key2 [:sortorder]}]]
+		[WHERE [FILLFACTOR = n] [, MINPAGES = n] [, MAXPAGES = n]]~
+2611	line %0, Syntax error on '%1', the correct syntax is: 
+	PRINT relname{, relname}~
+2612	line %0, Syntax error on '%1', the correct syntax is: 
+	RANGE OF variable IS relname~
+2613	line %0, Syntax error on '%1', the correct syntax is: 
+	SAVE relname UNTIL month day year~
+2614	line %0, Syntax error on '%1', the correct syntax is: 
+	DEFINE VIEW name (target list) [WHERE qual]
+	DEFINE PERMIT oplist {ON|OF|TO} var [(attlist]
+		TO name [AT term] [FROM time TO time]
+		[ON day TO day] [WHERE qual]
+	DEFINE INTEGRITY ON var IS qual~
+2615	line %0, Syntax error on '%1', the correct syntax is: 
+	RETRIEVE UNIQUE (target_list) [WHERE qual]~
+2616	line %0, Syntax error on '%1', the correct syntax is:
+	DEFINE VIEW name (target_list) [WHERE qual]~
+2619	line %0, Syntax error on '%1', the correct syntax is:
+	HELP VIEW relname[, relname]
+	HELP PERMIT relname[, relname]
+	HELP INTEGRITY relname[, relname]~
+2622	line %0, Syntax error on '%1', the correct syntax is:
+	DEFINE PERMIT oplist {ON|OF|TO} var [(attlist)]
+		TO name [AT term] [FROM time TO time]
+		[ON day TO day] [WHERE qual]~
+2623	line %0, Syntax error on '%1', the correct syntax is:
+	DEFINE INTEGRITY ON var IS qual~
+2700	line %0, non-terminated string~
+2701	line %0, string too long~
+2702	line %0, invalid operator~
+2703	line %0, Name too long '%1'~
+2704	line %0, Out of space in symbol table - Query too long~
+2705	line %0, non-terminated comment~
+2707	line %0, bad floating constant: %1~
+2708	line %0, control character passed in pre-converted string~
+2709	line %0, buffer overflow in converting a number~
+2800	line %0, yacc stack overflow in parsing query~

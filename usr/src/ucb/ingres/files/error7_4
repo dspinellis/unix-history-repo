@@ -1,0 +1,24 @@
+4100	ovqp query list overflowed~
+4106	the interpreters stack overflowed -- query too long~
+4107	the buffer for ASCII and CONCAT commands overflowed~
+4108	cannot use arithmetic operators on two character fields~
+4109	cannot use numeric values with CONCAT operator~
+4110	floating point exception occured.~
+4111	character value cannot be converted to numeric
+	due to incorrect syntax.~
+4112	ovqp query vector overflowed~
+4113	compiler text space ran out.~
+4114	compiler ran out of registers.~
+4199	you must convert your 6.0 secondary index before
+	running this query!~
+4602	query involves too many relations to create
+	aggregate function intermediate result.~
+4610	Query too long for available buffer space (qbufsize)~
+4611	Query too long for available buffer space (varbufsiz)~
+4612	Query too long for available buffer space (sqsiz)~
+4613	Query too long for available buffer space (stacksiz)~
+4614	Query too long for available buffer space (agbufsiz)~
+4615	Aggregate function is too wide or has too many domains.~
+4616	Too many aggregates~
+4620	Target list for "retrieve unique" has more than 49
+	domains or is wider than 498 bytes.~
