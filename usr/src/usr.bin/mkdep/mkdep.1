@@ -10,16 +10,21 @@
 mkdep \- construct Makefile dependency list
 .SH SYNOPSIS
 .B mkdep
+[
+.B \-f makefile
+] [
+.B \-p
+]
 flags file ...
 .SH DESCRIPTION
 \fIMkdep\fP takes a set of flags for the C compiler and a list of C
-sources as arguments and constructs a set of include file dependencies.
-It attaches this dependency list to the end of the file \fIMakefile\fP.
-An example of its use in a Makefile might be:
+source files as arguments and constructs a set of include file dependencies.
+It attaches this dependency list to the end of the file ``Makefile''.
+An example of its use in a makefile might be:
 .nf
 .RS
 
-CFLAGS= -I../include -I.
+CFLAGS= -O -I../include -I.
 SRCS= file1.c file2.c
 
 depend:
@@ -27,6 +32,13 @@ depend:
 .RE
 .PP
 where the macro SRCS is the list of C source files and the macro
-CFLAGS is the list of flags for the C compiler.
+CFLAGS is the list of flags for the C compiler.  The \fB-f\fP option
+provides \fImkdep\fP with a name other than ``Makefile'' to be edited.
+If the \fB-p\fP option is provided, \fImkdep\fP produces dependencies
+of the form ``program: program.c'' so that subsequent makes will
+produce \fIprogram\fP directly from its C module rather than using an
+intermediate \fI.o\fP module.  This is useful in directories that
+contain many programs, each of whose source is contained in a single
+C module.
 .SH "SEE ALSO"
 cc(1), make(1)
