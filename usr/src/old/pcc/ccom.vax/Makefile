@@ -1,22 +1,15 @@
 #
-#	Makefile	1.16	87/07/06
+#	Makefile	1.17	87/12/11
 #
 # Makefile for PCC
-#
-# These symbols are used to configure the compiler:
-#	ASSTRINGS	assembler handles string initializations
-#	STABDOT		assembler understands .stabd
-#	LCOMM		assembler supports .lcomm
-#	FIXSTRUCT	no trickery (just output structure)
 #
 # Some symbols are specific to certain compilers:
 #	ONEPASS		compile pass 1 and pass 2 together
 #	SPRECC		do single precision in single not double
 #	FORT		get f77-style pass 2
 #
-CONFIG=	-DASSTRINGS -DSTABDOT -DLCOMM "-DFIXSTRUCT=outstruct"
 O = -O
-CFLAGS = $(O) -I. -I$(M) $(CONFIG)
+CFLAGS = $(O) -I. -I$(M)
 
 COPTS = -DONEPASS $(CFLAGS)
 SCOPTS = -DONEPASS -DSPRECC $(CFLAGS)
@@ -170,13 +163,13 @@ install: all
 
 GREP=	egrep
 
-pcclocal.h: localdefs.h /usr/include/pcc.h
+pcclocal.h: ../localdefs.h /usr/include/pcc.h
 	$(RM) pcclocal.h
-	cat /usr/include/pcc.h localdefs.h | $(GREP) '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
+	cat /usr/include/pcc.h ../localdefs.h | $(GREP) '^#[ 	]*(define[ 	][ 	]*PCC(F|T|TM|OM)?_|ifdef|ifndef|endif)' | sed -e 's/PCC[A-Z]*_//' > pcclocal.h 
 
-pcctokens: localdefs.h /usr/include/pcc.h
+pcctokens: ../localdefs.h /usr/include/pcc.h
 	$(RM) pcctokens
-	cat /usr/include/pcc.h localdefs.h | $(GREP) '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
+	cat /usr/include/pcc.h ../localdefs.h | $(GREP) '^#[ 	]*define[ 	][ 	]*PCC_' | sed -e 's/^#[ 	]*define[ 	][ 	]*PCC_/%term	/' > pcctokens
 
 DUMMIES=	$(SFILES) $(FFILES)
 
@@ -193,10 +186,12 @@ ffix:
 fclean:
 	$(RM) $(FOBJS) $(FFILES)
 
+# Should use -a, but the situation is too confusing to fix at the moment...
 lintall:
-	lint -hax -I. -I$M  cgram.c $M/xdefs.c $M/scan.c $M/pftn.c \
-		$M/trees.c $M/optim.c code.c local.c stab.c $M/reader.c \
-		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
+	lint -hx $(COPTS) -DPASS1COMMON cgram.c $M/xdefs.c $M/scan.c \
+		$M/pftn.c $M/trees.c $M/optim.c code.c local.c stab.c \
+		$M/reader.c local2.c order.c $M/match.c $M/allo.c \
+		$M/common.c table.c rodata.c rel.c
 
 depend:
 tags:
