@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)assyms.c 4.4 %G%";
+static	char sccsid[] = "@(#)assyms.c 4.5 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include "as.h"
@@ -479,14 +479,6 @@ char *savestr(str)
 }
 
 /*
- *	The following two tables are indexed by
- *		{LEN1,LEN2,LEN4,LEN8} | {PCREL,0}
- *	Note that PCREL = 1
- */
-int	reflen[] = 	{0,   0, 1, 1, 2, 2, 4, 4, 8, 8};	
-int	lgreflen[] = 	{-1, -1, 0, 0, 1, 1, 2, 2, 3, 3};
-
-/*
  *	The relocation information is saved internally in an array of
  *	lists of relocation buffers.  The relocation buffers are
  *	exactly the same size as a token buffer; if we use VM for the
@@ -521,40 +513,39 @@ initoutrel()
 	r_can_1PC.r_pcrel = 1;
 }
 
-outrel(pval,reftype,reltype,xsym)
-	long 		*pval;
-	register int 	reftype,reltype;
-	struct symtab 	*xsym;
+outrel(xp, reloc_how)
+	register	struct	exp	*xp;
+	int		reloc_how;	/* TYPB..TYPD + (possibly)RELOC_PCREL */
 {
-/*
- *	reftype: PCREL or not, plus length LEN1, LEN2, LEN4, LEN8
- *	reltype: csect ("segment") number (XTEXT, XDATA, ...) associated with 'val'
- * 	xsym: symbol table pointer
- */
-	short	this_reflen;
-	struct	relocation_info	reloc;
+	struct		relocation_info	reloc;
+	register	int	x_type_mask;	
+	int		pcrel;
 
-	this_reflen = reflen[reftype];
+	x_type_mask = xp->e_xtype & ~XFORW;
+	pcrel = reloc_how & RELOC_PCREL;
+	reloc_how &= ~RELOC_PCREL;
+	
 	if (bitoff&07)
 		yyerror("Padding error");
-	reltype &= ~XFORW;
-	if (reltype == XUNDEF)
+	if (x_type_mask == XUNDEF)
 		yyerror("Undefined reference");
 
-	if (reltype != XABS || reftype & PCREL) {
-		reloc = (reftype & PCREL)? r_can_1PC : r_can_0PC;
+	if ( (x_type_mask != XABS) || pcrel ) {
+		if (ty_NORELOC[reloc_how])
+			yyerror("Illegal Relocation of float, double or quad.");
+		reloc = pcrel ? r_can_1PC : r_can_0PC;
 		reloc.r_address = dotp->e_xvalue -
 		    ( (dotp < &usedot[NLOC] || readonlydata) ? 0 : datbase );
-		reloc.r_length = lgreflen[reftype];
-		switch(reltype){
+		reloc.r_length = ty_nlg[reloc_how];
+		switch(x_type_mask){
 			case XXTRN | XUNDEF:
-				reloc.r_symbolnum = xsym->s_index;
+				reloc.r_symbolnum = xp->e_xname->s_index;
 				reloc.r_extern = 1;
 				break;
 			default:
-				if (readonlydata && (reltype&~XXTRN) == XDATA)
-					reltype = XTEXT | (reltype&XXTRN);
-				reloc.r_symbolnum = reltype;
+				if (readonlydata && (x_type_mask&~XXTRN) == XDATA)
+					x_type_mask = XTEXT | (x_type_mask&XXTRN);
+				reloc.r_symbolnum = x_type_mask;
 				break;
 		}
 		if ( (relfil == 0) || (relfil->rel_count >= NRELOC) ){
@@ -574,10 +565,10 @@ outrel(pval,reftype,reltype,xsym)
 	/*
 	 *	write the unrelocated value to the text file
 	 */
-	dotp->e_xvalue += this_reflen;
-	if (reftype & PCREL)
-		*pval -= dotp->e_xvalue;
-	bwrite((char *)pval, this_reflen, txtfil);
+	dotp->e_xvalue += ty_nbyte[reloc_how];
+	if (pcrel)
+		xp->e_xvalue -= dotp->e_xvalue;
+	bwrite((char *)&(xp->e_xvalue), ty_nbyte[reloc_how], txtfil);
 }
 /*
  *	Flush out all of the relocation information.

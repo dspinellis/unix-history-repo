@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.6 %G%" */
+/* "@(#)as.h 4.7 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
@@ -98,33 +98,42 @@
 #define	ACCM	(ACCR | ACCW)			/* modify */
 #define	ACCI	(ACCB | ACCR)			/* XFC code */
 
-#define AMASK	(ACCA | ACCR | ACCW | ACCB)	/* the mask */
+#define ACCESSMASK	(ACCA | ACCR | ACCW | ACCB)	/* the mask */
 
 /*
- * Argument data types
+ *	Argument data types
+ *	Also used to tell outrel what it is relocating
+ *	(possibly in combination with RELOC_PCREL and TYPNONE)
  */
-#define	TYPB	0	/* byte */
-#define	TYPW	1	/* word */
-#define	TYPL	2	/* long */
-#define	TYPQ	3	/* quad */
-#define	TYPF	4	/* floating */
-#define	TYPD	5	/* double floating */
+#define	TYPB		0	/* byte */
+#define	TYPW		1	/* word */
+#define	TYPL		2	/* long */
+#define	TYPQ		3	/* quad */
+#define	TYPF		4	/* floating */
+#define	TYPD		5	/* double floating */
+#define	TYPNONE		6	/* when nothing */
+#define	RELOC_PCREL	8	/* implicit argument to outrel; ==> PCREL */
 
 #define	TYPMASK	7
 
-/* reference types for loader */
+/*
+ *	reference types for loader
+ */
 #define	PCREL	1
 #define	LEN1	2
 #define	LEN2	4
 #define	LEN4	6
 #define	LEN8	8
-	/*
-	 *	reflen table converts between LEN* and PCREL to numbers
-	 *		of bytes.
-	 *	lgreflen table is the lg base 2 of the values in reflen.
-	 */
-	extern	int	reflen[];	/* reference lengths */
-	extern	int	lgreflen[];	/* lg reference lengths */
+
+extern	int	reflen[];	/* {LEN*+PCREL} ==> number of bytes */
+extern	int	lgreflen[];	/* {LEN*+PCREL} ==> lg number of bytes */
+extern	int	len124[];	/* {1,2,4,8} ==> {LEN1, LEN2, LEN4, LEN8} */
+extern	char	mod124[];	/* {1,2,4,8} ==> {bits to construct operands */
+extern	int	type_124[];	/* {1,2,4,8} ==> {TYPB, TYPW, TYPL, TYPQ} */
+extern	int	ty_NORELOC[];	/* {TYPB..TYPD} ==> {1 if relocation not OK */
+extern	int	ty_LEN[];	/* {TYPB..TYPD} ==> {LEN1..LEN8} */
+extern	int	ty_nbyte[];	/* {TYPB..TYPD} ==> {1,2,4,8} */
+extern	int	ty_nlg[];	/* {TYPB..TYPD} ==> lg{1,2,4,8} */
 
 #define	TMPC	7	
 #define	HW	01
