@@ -35,6 +35,7 @@ vaxuba/dn.c		optional dn device-driver
 vaxuba/dz.c		optional dz device-driver
 vaxuba/gpib.c		optional gpib device-driver
 vaxuba/ib.c		optional ib device-driver
+vaxuba/kgclock.c	optional kg device-driver
 vaxuba/idc.c		optional rb device-driver
 vaxuba/ik.c		optional ik device-driver
 vaxuba/lp.c		optional lp device-driver
