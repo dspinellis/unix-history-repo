@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fread.3	6.3 (Berkeley) %G%
+.\"	@(#)fread.3	6.4 (Berkeley) %G%
 .\"
 .TH FREAD 3 ""
 .UC 7
@@ -41,6 +41,13 @@ in the event of an
 .B EOF
 or error).
 .PP
+Fread does not distinguish between end-of-file and error, and callers
+must use
+.IR feof (3)
+and
+.IR ferror (3)
+to determine which occurred.
+.PP
 .I Fwrite
 writes
 .I count
@@ -54,4 +61,4 @@ It returns the actual count of items written.
 .SH "RETURN VALUE"
 These functions return 0 (or a short count) upon end of file or error.
 .SH "SEE ALSO"
-read(2), write(2), fopen(3), getc(3), putc(3), stdio(3)
+read(2), write(2)

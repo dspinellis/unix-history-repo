@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setbuf.3	6.6 (Berkeley) %G%
+.\"	@(#)setbuf.3	6.7 (Berkeley) %G%
 .\"
 .TH SETBUF 3
 .UC 4
@@ -117,13 +117,13 @@ fopen(3), fclose(3), fread(3), malloc(3), puts(3), printf(3)
 .I Setbuf  
 and
 .I setvbuf
-onform to ANSI X3.159-1989 (``ANSI C'').
+conform to ANSI X3.159-1989 (``ANSI C'').
 .SH BUGS
 The
 .I setbuffer
 and
 .I setlinebuf
-functions are not portable to non-4.2BSD versions of UNIX.
+functions are not portable to versions of BSD UNIX before 4.2BSD.
 On 4.2BSD and 4.3BSD systems,
 .I setbuf
 always uses a suboptimal buffer size and should be avoided.

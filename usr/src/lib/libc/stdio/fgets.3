@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fgets.3	6.6 (Berkeley) %G%
+.\"	@(#)fgets.3	6.7 (Berkeley) %G%
 .\"
 .TH FGETS 3 ""
 .UC 7
@@ -59,10 +59,13 @@ return
 .IR s .
 If end-of-file or an error occurs before any characters are read, 
 they return NULL.
-Callers must use
-.I feof
+.I Fgets
 and
-.I ferror
+.I gets
+do not distinguish between end-of-file and error, and callers must use
+.IR feof (3)
+and
+.I ferror (3)
 to determine which occurred.
 .SH ERRORS
 .TP 15
