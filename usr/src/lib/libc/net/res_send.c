@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.24 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -105,7 +105,7 @@ res_send(buf, buflen, answer, anslen)
 					terrno = errno;
 #ifdef DEBUG
 					if (_res.options & RES_DEBUG)
-					    perror("socket failed");
+					    perror("socket (vc) failed");
 #endif DEBUG
 					continue;
 				}
@@ -217,8 +217,17 @@ res_send(buf, buflen, answer, anslen)
 			/*
 			 * Use datagrams.
 			 */
-			if (s < 0)
+			if (s < 0) {
 				s = socket(AF_INET, SOCK_DGRAM, 0);
+				if (s < 0) {
+					terrno = errno;
+#ifdef DEBUG
+					if (_res.options & RES_DEBUG)
+					    perror("socket (dg) failed");
+#endif DEBUG
+					continue;
+				}
+			}
 #if	BSD >= 43
 			/*
 			 * I'm tired of answering this question, so:
