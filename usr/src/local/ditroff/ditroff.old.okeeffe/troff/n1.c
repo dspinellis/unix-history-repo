@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include "tdef.h"
 extern
 #include "d.h"
@@ -284,26 +285,15 @@ init2()
 cvtime()
 {
 	long	tt;
-	register i;
-	static int ms[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+	struct tm	*date;
+	extern struct tm	*localtime();
 
 	time(&tt);
-	tt -= 3600 * ZONE;	/* 5hrs for EST */
-	v.dy = (tt / 86400L) + 1;
-	v.dw = (v.dy + 3) % 7 + 1;
-	for (v.yr = 70; ; v.yr++) {
-		if ((v.yr) % 4)
-			ms[1] = 28;
-		else 
-			ms[1] = 29;
-		for (i = 0; i < 12; ) {
-			if (v.dy <= ms[i]) {
-				v.mo = i + 1;
-				return;
-			}
-			v.dy -= ms[i++];
-		}
-	}
+	date = localtime(&tt);
+	v.dy = date->tm_mday;
+	v.dw = date->tm_wday + 1;
+	v.yr = date->tm_year;
+	v.mo = date->tm_mon + 1;
 }
 
 
