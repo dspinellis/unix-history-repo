@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.17	81/11/18	*/
+/*	vfs_vnops.c	4.18	82/01/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,7 +60,7 @@ closef(fp)
 	}
 	flag = fp->f_flag;
 	if (flag & FSOCKET) {
-		soclose(fp->f_socket);
+		soclose(fp->f_socket, u.u_procp->p_flag&SWEXIT);
 		fp->f_socket = 0;
 		fp->f_count = 0;
 		return;
