@@ -1,4 +1,4 @@
-/*	hp.c	6.4	84/07/31	*/
+/*	hp.c	6.5	84/08/29	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -248,6 +248,8 @@ struct	hpsoftc {
 	u_char	sc_hdr;		/* next i/o includes header */
 	u_char	sc_doseeks;	/* perform explicit seeks */
 	daddr_t	sc_mlsize;	/* ML11 size */
+	int	sc_pgdone;	/* amount sucessfully transfered */
+	daddr_t	sc_badbn;	/* replacement block number */
 } hpsoftc[NHP];
 
 #define	b_cylin b_resid
@@ -529,7 +531,10 @@ hpstart(mi)
 	daddr_t bn;
 	int sn, tn;
 
-	bn = dkblock(bp);
+	if (bp->b_flags & B_BAD)
+		bn = sc->sc_badbn;
+	else
+		bn = dkblock(bp) + sc->sc_pgdone;
 	if (ML11)
 		hpaddr->hpda = bn;
 	else {
@@ -560,8 +565,6 @@ hpdtint(mi, mbsr)
 	int retry = 0;
 
 	st = &hpst[mi->mi_type];
-	if (bp->b_flags&B_BAD && hpecc(mi, CONT))
-		return (MBD_RESTARTED);
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;
@@ -589,6 +592,9 @@ hpdtint(mi, mbsr)
 			bp->b_flags |= B_ERROR;
 		} else if (sc->sc_hdr) {
 			goto hard;
+		} else if (RM80 && er2&HPER2_SSE) {
+			(void) hpecc(mi, SSE);
+			return (MBD_RESTARTED);
 		} else if ((er2 & HPER2_BSE) && !ML11) {
 			if (hpecc(mi, BSE))
 				return (MBD_RESTARTED);
@@ -597,10 +603,8 @@ hpdtint(mi, mbsr)
 			if (hpecc(mi, BSE))
 				return (MBD_RESTARTED);
 			goto hard;
-		} else if (RM80 && er2&HPER2_SSE) {
-			(void) hpecc(mi, SSE);
-			return (MBD_RESTARTED);
-		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK) {
+		} else if ((er1 & (HPER1_DCK | HPER1_ECH)) == HPER1_DCK &&
+		    mi->mi_tab.b_errcnt > 7) {
 			if (hpecc(mi, ECC))
 				return (MBD_RESTARTED);
 			/* else done */
@@ -617,20 +621,12 @@ hpdtint(mi, mbsr)
  			if ((er1 & HPER1_HCRC) && !ML11 && hpecc(mi, BSE))
 				return (MBD_RESTARTED);
 hard:
-			if (ML11)
-				bp->b_blkno = MASKREG(hpaddr->hpda);
+			if (bp->b_flags & B_BAD)
+				bp->b_blkno = sc->sc_badbn;
 			else
-				bp->b_blkno = MASKREG(hpaddr->hpdc) * st->nspc +
-				   (MASKREG(hpaddr->hpda) >> 8) * st->nsect +
-				   (hpaddr->hpda&0xff);
-			/*
-			 * If we have a data check error or a hard
-			 * ecc error the bad sector has been read/written,
-			 * and the controller registers are pointing to
-			 * the next sector...
-			 */
-			 if (er1&(HPER1_DCK|HPER1_ECH) || sc->sc_hdr)
-				bp->b_blkno--;
+				bp->b_blkno = dkblock(bp) + sc->sc_pgdone;
+ 			if (hpaddr->hpof & HPOF_SSEI)
+ 				bp->b_blkno++;
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
@@ -645,6 +641,7 @@ hard:
 				printf(" (hdr i/o)");
 			printf("\n");
 			bp->b_flags |= B_ERROR;
+			bp->b_flags &= ~B_BAD;
 		} else
 			retry = 1;
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
@@ -689,8 +686,6 @@ hard:
 		}
 		return (MBD_RETRY);
 	}
-	sc->sc_hdr = 0;
-	bp->b_resid = MASKREG(-mi->mi_mba->mba_bcr);
 	if (mi->mi_tab.b_errcnt >= 16) {
 		/*
 		 * This is fast and occurs rarely; we don't
@@ -701,6 +696,11 @@ hard:
 			DELAY(10);
 		mbclrattn(mi);
 	}
+	if ((bp->b_flags & B_BAD) && hpecc(mi, CONT))
+		return (MBD_RESTARTED);
+	sc->sc_hdr = 0;
+	sc->sc_pgdone = 0;
+	bp->b_resid = MASKREG(-mi->mi_mba->mba_bcr);
 	if (!ML11) {
 		hpaddr->hpof = HPOF_FMT22;
 		hpaddr->hpcs1 = HP_RELEASE|HP_GO;
@@ -757,6 +757,7 @@ hpecc(mi, flag)
 	register struct hpdevice *rp = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct hpst *st = &hpst[mi->mi_type];
+	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
 	int npf, o;
 	int bn, cn, tn, sn;
 	int bcr;
@@ -764,14 +765,14 @@ hpecc(mi, flag)
 	bcr = MASKREG(mbp->mba_bcr);
 	if (bcr)
 		bcr |= 0xffff0000;		/* sxt */
-	if (flag == CONT)
+	if (bp->b_flags & B_BAD)
 		npf = bp->b_error;
 	else
 		npf = btop(bcr + bp->b_bcount);
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	bn = dkblock(bp);
+	bn = dkblock(bp) + npf;
 	cn = bp->b_cylin;
-	sn = bn%(st->nspc) + npf;
+	sn = bn%(st->nspc);
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	cn += tn/st->ntrak;
@@ -784,8 +785,10 @@ hpecc(mi, flag)
 		int bit, byte, mask;
 
 		npf--;		/* because block in error is previous block */
+		if (bp->b_flags & B_BAD)
+			bn = sc->sc_badbn;
 		printf("hp%d%c: soft ecc sn%d\n", dkunit(bp),
-		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
+		    'a'+(minor(bp->b_dev)&07), bn);
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;		/* -1 makes 0 origin */
 		bit = i&07;
@@ -799,7 +802,7 @@ hpecc(mi, flag)
 			i++;
 			bit -= 8;
 		}
-		if (bcr == 0)
+		if ((bp->b_flags & B_BAD) || bcr == 0)
 			return (0);
 		npf++;
 		break;
@@ -807,27 +810,35 @@ hpecc(mi, flag)
 
 	case SSE:
 		rp->hpof |= HPOF_SSEI;
+		if (bp->b_flags & B_BAD) {
+			bn = sc->sc_badbn;
+			goto fixregs;
+		}
 		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
 		break;
 
 	case BSE:
+ 		if (rp->hpof & HPOF_SSEI)
+ 			sn++;
 #ifdef HPBDEBUG
 		if (hpbdebug)
 		printf("hpecc, BSE: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
 #endif
- 		if (rp->hpof&HPOF_SSEI)
- 			sn++;
+		if (bp->b_flags & B_BAD)
+			return (0);
 		if ((bn = isbad(&hpbad[mi->mi_unit], cn, tn, sn)) < 0)
 			return (0);
 		bp->b_flags |= B_BAD;
 		bp->b_error = npf + 1;
+ 		rp->hpof &= ~HPOF_SSEI;
 		bn = st->ncyl*st->nspc - st->nsect - 1 - bn;
+		sc->sc_badbn = bn;
+	fixregs:
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
 		sn %= st->nsect;
 		mbp->mba_bcr = -512;
- 		rp->hpof &= ~HPOF_SSEI;
 #ifdef HPBDEBUG
 		if (hpbdebug)
 		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
@@ -839,7 +850,6 @@ hpecc(mi, flag)
 		if (hpbdebug)
 		printf("hpecc, CONT: bn %d cn %d tn %d sn %d\n", bn,cn,tn,sn);
 #endif
-		npf = bp->b_error;
 		bp->b_flags &= ~B_BAD;
 		mbp->mba_bcr = -(bp->b_bcount - (int)ptob(npf));
 		if (MASKREG(mbp->mba_bcr) == 0)
@@ -847,7 +857,7 @@ hpecc(mi, flag)
 		break;
 	}
 	rp->hpcs1 = HP_DCLR|HP_GO;
-	if (rp->hpof&HPOF_SSEI)
+	if (rp->hpof & HPOF_SSEI)
 		sn++;
 	rp->hpdc = cn;
 	rp->hpda = (tn<<8) + sn;
@@ -855,6 +865,7 @@ hpecc(mi, flag)
 	mbp->mba_var = (int)ptob(npf) + o;
 	rp->hpcs1 = bp->b_flags&B_READ ? HP_RCOM|HP_GO : HP_WCOM|HP_GO;
 	mi->mi_tab.b_errcnt = 0;	/* error has been corrected */
+	sc->sc_pgdone = npf;
 	return (1);
 }
 
