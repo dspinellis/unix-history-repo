@@ -46,6 +46,7 @@ kern/vfs_vnops.c	standard
 kern/uipc_domain.c	standard
 kern/uipc_mbuf.c	standard
 kern/uipc_proto.c	standard
+kern/uipc_shm.c		optional sysvshm
 kern/uipc_socket.c	standard
 kern/uipc_socket2.c	standard
 kern/uipc_syscalls.c	standard
