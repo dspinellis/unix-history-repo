@@ -3,7 +3,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)alias.c	3.4	%G%";
+static char SccsId[] = "@(#)alias.c	3.5	%G%";
 
 /*
 **  ALIAS -- Compute aliases.
@@ -181,6 +181,8 @@ alias()
 				    q->q_paddr, q->q_host, q->q_user,
 				    p, al.q_paddr, al.q_host, al.q_user);
 # endif
+			if (Verbose)
+				message("050", "aliased to %s", p);
 			q->q_flags |= QDONTSEND;
 			didalias++;
 			gotmatch++;
@@ -200,6 +202,8 @@ alias()
 	{
 		for (q = Mailer[mno]->m_sendq; q != NULL; q = q->q_next)
 		{
+			To = q->q_paddr;
+
 			/* don't realias already aliased names */
 			if (bitset(QDONTSEND, q->q_flags))
 				continue;
@@ -230,6 +234,8 @@ alias()
 				printf("%s (%s, %s) aliased to %s\n",
 				    q->q_paddr, q->q_host, q->q_user, p);
 # endif
+			if (Verbose)
+				message("050", "aliased to %s", p);
 			q->q_flags |= QDONTSEND;
 			sendto(p, 1);
 		}

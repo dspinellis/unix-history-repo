@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.13	%G%";
+static char SccsId[] = "@(#)deliver.c	3.14	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -445,7 +445,11 @@ giveresponse(stat, force, m)
 	else
 		statmsg = SysExMsg[i];
 	if (stat == 0)
+	{
 		statmsg = "ok";
+		if (Verbose)
+			message("050", "ok");
+	}
 	else
 	{
 		Errors++;
@@ -462,7 +466,7 @@ giveresponse(stat, force, m)
 		}
 		if (statmsg == NULL)
 			usrerr("unknown mailer response %d", stat);
-		else if (force || !bitset(M_QUIET, m->m_flags))
+		else if (force || !bitset(M_QUIET, m->m_flags) || Verbose)
 			usrerr("%s", statmsg);
 	}
 
@@ -691,6 +695,8 @@ recipient(a)
 				if (Debug)
 					printf("(%s in sendq)\n", a->q_paddr);
 # endif DEBUG
+				if (Verbose)
+					message("050", "duplicate supressed");
 				return;
 			}
 		}
