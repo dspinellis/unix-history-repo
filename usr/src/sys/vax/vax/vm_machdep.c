@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_machdep.c	6.7 (Berkeley) %G%
+ *	@(#)vm_machdep.c	6.8 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -71,9 +71,9 @@ mapout(pte, size)
 chksize(ts, ids, uds, ss)
 	unsigned ts, ids, uds, ss;
 {
-	extern int maxtsize;
+	extern unsigned maxtsize;
 
-	if (ts > maxtsize ||
+	if (ctob(ts) > maxtsize ||
 	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
