@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)at.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)at.c	4.5 (Berkeley) %G%";
 /*
  * at time mon day
  * at time wday
@@ -95,7 +95,7 @@ char **argv;
 	if (argc > larg)
 		ifile = fopen(argv[larg], "r");
 	if (ifile == NULL) {
-		fprintf(stderr, "at: cannot open input: %s\n", argv[larg]);
+		perror(argv[larg]);
 		exit(1);
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
