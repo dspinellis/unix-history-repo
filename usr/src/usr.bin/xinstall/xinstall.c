@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,7 +49,6 @@ main(argc, argv)
 	struct stat from_sb, to_sb;
 	int ch, no_target;
 	char *to_name;
-	mode_t setmode();
 
 	while ((ch = getopt(argc, argv, "cg:m:o:s")) != EOF)
 		switch((char)ch) {
@@ -60,12 +59,12 @@ main(argc, argv)
 			group = optarg;
 			break;
 		case 'm':
-			mode = setmode(optarg, (mode_t)0, 0);
-			if (mode == (mode_t)-1) {
+			if (setmode(optarg) == -1) {
 				(void)fprintf(stderr,
 				    "install: invalid file mode.\n");
 				exit(1);
 			}
+			mode = getmode(0);
 			break;
 		case 'o':
 			owner = optarg;
