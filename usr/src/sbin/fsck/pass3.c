@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass3.c	3.2 (Berkeley) %G%";
+static char version[] = "@(#)pass3.c	3.3 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -29,8 +29,9 @@ pass3()
 			loopcnt = 0;
 			do {
 				orphan = idesc.id_parent;
-				if ((dp = ginode(orphan)) == NULL)
+				if (orphan < ROOTINO || orphan > imax)
 					break;
+				dp = ginode(orphan);
 				idesc.id_parent = 0;
 				idesc.id_filesize = dp->di_size;
 				idesc.id_number = orphan;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.3 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.4 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -28,8 +28,7 @@ descend(parentino, inumber)
 	if (statemap[inumber] != DSTATE)
 		errexit("BAD INODE %d TO DESCEND", statemap[inumber]);
 	statemap[inumber] = DFOUND;
-	if ((dp = ginode(inumber)) == NULL)
-		return;
+	dp = ginode(inumber);
 	if (dp->di_size == 0) {
 		direrr(inumber, "ZERO LENGTH DIRECTORY");
 		if (reply("REMOVE") == 1)
@@ -176,7 +175,12 @@ direrr(ino, s)
 	pwarn("%s ", s);
 	pinode(ino);
 	printf("\n");
-	if ((dp = ginode(ino)) != NULL && ftypeok(dp))
+	if (ino < ROOTINO || ino > imax) {
+		pfatal("NAME=%s\n", pathname);
+		return;
+	}
+	dp = ginode(ino);
+	if (ftypeok(dp))
 		pfatal("%s=%s\n", DIRCT(dp) ? "DIR" : "FILE", pathname);
 	else
 		pfatal("NAME=%s\n", pathname);
@@ -188,8 +192,7 @@ adjust(idesc, lcnt)
 {
 	register DINODE *dp;
 
-	if ((dp = ginode(idesc->id_number)) == NULL)
-		return;
+	dp = ginode(idesc->id_number);
 	if (dp->di_nlink == lcnt) {
 		if (linkup(idesc->id_number, (ino_t)0) == 0)
 			clri(idesc, "UNREF", 0);
@@ -259,8 +262,7 @@ linkup(orphan, pdir)
 	struct inodesc idesc;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
-	if ((dp = ginode(orphan)) == NULL)
-		return (0);
+	dp = ginode(orphan);
 	lostdir = DIRCT(dp);
 	pwarn("UNREF %s ", lostdir ? "DIR" : "FILE");
 	pinode(orphan);
@@ -275,22 +277,24 @@ linkup(orphan, pdir)
 	*pathp++ = '/';
 	*pathp = '\0';
 	if (lfdir == 0) {
-		if ((dp = ginode(ROOTINO)) == NULL)
-			return (0);
+		dp = ginode(ROOTINO);
 		idesc.id_name = lfname;
 		idesc.id_type = DATA;
 		idesc.id_func = findino;
 		idesc.id_number = ROOTINO;
 		idesc.id_filesize = dp->di_size;
 		(void)ckinode(dp, &idesc);
-		if ((lfdir = idesc.id_parent) == 0) {
+		lfdir = idesc.id_parent;
+		if (lfdir < ROOTINO || lfdir > imax)
+			lfdir = 0;
+		if (lfdir == 0) {
 			pfatal("SORRY. NO lost+found DIRECTORY");
 			printf("\n\n");
 			return (0);
 		}
 	}
-	if ((dp = ginode(lfdir)) == NULL ||
-	     !DIRCT(dp) || statemap[lfdir] != DFOUND) {
+	dp = ginode(lfdir);
+	if (!DIRCT(dp) || statemap[lfdir] != DFOUND) {
 		pfatal("SORRY. NO lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
@@ -324,11 +328,10 @@ linkup(orphan, pdir)
 		idesc.id_filesize = dp->di_size;
 		idesc.id_fix = DONTKNOW;
 		(void)ckinode(dp, &idesc);
-		if ((dp = ginode(lfdir)) != NULL) {
-			dp->di_nlink++;
-			inodirty();
-			lncntp[lfdir]++;
-		}
+		dp = ginode(lfdir);
+		dp->di_nlink++;
+		inodirty();
+		lncntp[lfdir]++;
 		pwarn("DIR I=%u CONNECTED. ", orphan);
 		printf("PARENT WAS I=%u\n", pdir);
 		if (preen == 0)
