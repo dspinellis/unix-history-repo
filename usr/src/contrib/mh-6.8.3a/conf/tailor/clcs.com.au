@@ -1,0 +1,11 @@
+mmdfldir:	/var/mail
+mmdflfil:	
+hostable:	/usr/local/lib/mh/hosts
+sendmail:	/usr/ucblib/sendmail
+okhosts:	/usr/local/lib/mh/Rmail.OKHosts
+okdests:	/usr/local/lib/mh/Rmail.OKDests
+
+systemname:	mars
+localname:	mars
+servers:	mars \01localnet
+

@@ -1,0 +1,20 @@
+[ TODO - Sun Jun 23 20:37:46 1985 - conf/doc/TODO - /mtr ]
+
+
+			    All documentation
+
+    Separate "Profile Components" into "Profile Components" and "Context
+    Components".
+
+
+			      User's Manual
+
+    New manual entries:  mh-address(7) (like mailaddr(7)),
+    mh-sequences(5), mh-folder(5), mh-format(5). 
+
+    Describe relation between comp, et.  al., whatnow, send, and post.  
+
+    Describe the invocation environment when an MH program runs another
+    program.  
+
+    Figure out how to get "man -k mh" to list all MH commands.  

@@ -1,0 +1,19 @@
+#!/bin/sh
+: mhn-show-text/plain: mimeless "%d" text/%s '%F'
+
+if [ $# != 3 ]; then
+  echo "usage: $0 message-1 message-2 file-name" 1>&2
+  exit 1
+fi
+
+if [ ! -r $3 ]; then
+  echo "File does not exist." 1>&2
+  exit 1
+fi
+
+msg1=`echo $1 | sed -e 's/\%/\\\%/g' -e 's/\?/\\\?/g' -e 's/:/\\:/g' \
+		-e 's/\./\\\./g' -e 's/\"/\\\"/g'`
+msg2=`echo $2 | sed -e 's/\%/\\\%/g' -e 's/\?/\\\?/g' -e 's/:/\\:/g' \
+		-e 's/\./\\\./g' -e 's/\"/\\\"/g'`
+
+exec less -P"\"${msg1}\" ${msg2} ?pB%pB\%.%t" $3

@@ -1,0 +1,55 @@
+% table 4
+
+\def\entry#1#2#3{&#1&	&#2&	&#3&\cr}
+
+\centerline{\vbox{%
+    \offinterlineskip
+    \halign{\vrule#&	\strut\enskip\hfil#\hfil\enskip&
+	    \vrule#&	\strut\enskip#\hfil\enskip&
+	    \vrule#&	\strut\enskip\hfil#\hfil\enskip&
+	    \vrule#\cr
+\noalign{\hrule}
+height2pt&\omit&	&\omit&	&\omit&\cr
+	\entry	{\bf Abbrev.}{\hfil\bf Term}{\bf Context}
+height2pt&\omit&	&\omit&	&\omit&\cr
+\noalign{\hrule}
+height2pt&\omit&	&\omit&	&\omit&\cr
+	\entry	{CBC}{Cipher Block Chaining}{DES}
+	\entry	{CBMS}{Computer Based Message System}{}
+	\entry	{CKD}{Key Distribution Center}{EFT}
+	\entry	{CKS}{Checksumming}{DES}
+	\entry	{CSM}{Cryptographic Service Message}{}
+	\entry	{DEA}{Data Encryption Algorithm}{}
+	\entry	{DES}{Data Encryption Standard}{}
+	\entry	{DSM}{Disconnect Service Message}{MCL}
+	\entry	{ECB}{Electronic Code Book}{DES}
+	\entry	{EFT}{Electronic Funds Transfer}{}
+	\entry	{IDK}{Key Identifier}{CSM}
+	\entry	{ID}{Identifier}{KDS}
+	\entry	{IP}{Internet Protocol}{}
+	\entry	{IV}{Initialization Vector}{CSM}
+	\entry	{KA}{Authentication Key}{CSM}
+	\entry	{KDC}{Key Distribution Center}{CBMS}
+	\entry	{KDS}{Key Distribution Server}{CBMS}
+	\entry	{KD}{Data-encrypting Key}{CSM}
+	\entry	{KK}{Key-encrypting Key}{CSM}
+	\entry	{MAC}{Message Authentication Code}{CSM}
+	\entry	{MCL}{Message Class}{CSM}
+	\entry	{MH}{The Rand Message Handling System}{}
+	\entry	{MIC}{Message Integrity Code}{CSM}
+	\entry	{MK}{Master Key}{CSM}
+	\entry	{MTA}{Message Transport Agent}{CBMS}
+	\entry	{MTS}{Message Transport System}{CBMS}
+	\entry	{ORG}{Message Originator}{CSM}
+	\entry	{RCV}{Message Receiver}{CSM}
+	\entry	{RIU}{Request Identified User}{MCL}
+	\entry	{RSI}{Request Service Initialization}{MCL}
+	\entry	{RUI}{Request User Identification}{MCL}
+	\entry	{TCP}{Transmission Control Protocol}{}
+	\entry	{TMA}{Trusted Mail Agent}{CBMS}
+	\entry	{TTI}{Trusted Technologies, Inc.}{}
+	\entry	{UA}{User Agent}{CBMS}
+height2pt&\omit&	&\omit&	&\omit&\cr
+\noalign{\hrule}
+    }%
+}}

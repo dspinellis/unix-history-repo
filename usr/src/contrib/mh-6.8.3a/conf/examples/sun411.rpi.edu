@@ -1,0 +1,36 @@
+# sun411.rpi.edu - MH 6.8, Sparcstation SunOS 4.1.1 with AFS Kerberos
+# Thu, 03 Dec 1992 13:45:09
+# James Ault <aultj@rpi.EDU>
+#
+bin	/campus/other/mh/6.7.1k/@sys/bin
+etc	/campus/other/mh/6.7.1k/@sys/lib
+mail	/usr/spool/mail
+mailgroup	off
+mandir	/campus/other/mh/6.7.1k/@sys/man
+manuals	standard
+chown	/etc/chown
+editor	prompter
+remove	mv -f
+mts	sendmail
+bboards	off
+bbdelivery	off
+mf	off
+pop	on
+kpop	on
+hesiod	off
+options	ATHENA ATTVIBUG ATZ BIND BSD42 BSD43 DBM DUMB 
+options	FOLDPROT='"0711"' FLOCK MHE MHRC MSGPROT='"0600"' 
+options	NOMHSEQ OVERHEAD POP2 POPSERVICE='"kpop"' RPATHS
+options	RPOP KPOP TRANSARC_KAS SBACKUP='"\\043"' 
+options	SUN40 SUN41 TZNAME ZONEINFO 
+options	ISI WP YP_LOOKUP
+ccoptions	-O -I/campus/athena/kerberos/V4/@sys/include 
+curses		-lcurses -ltermcap
+ldoptions	-n 
+ldoptlibs	-L/campus/athena/kerberos/V4/@sys/lib -lkrb -ldes
+ldoptlibs	-L/campus/bsd/bind/4.8.3/@sys/lib -lresolv
+lex	lex -nt
+sprintf	int
+signal	void
+ranlib	on
+sharedlib	off
