@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.13 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -400,7 +400,6 @@ found:
 		if (dp->i_number == ndp->ni_dent.d_ino) {
 			VREF(vdp);
 		} else {
-			pdp = dp;
 			if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))
 				return (error);
 			vdp = ITOV(tdp);
@@ -410,17 +409,17 @@ found:
 			 * may not delete it (unless he's root). This
 			 * implements append-only directories.
 			 */
-			if ((pdp->i_mode & ISVTX) &&
+			if ((dp->i_mode & ISVTX) &&
 			    ndp->ni_cred->cr_uid != 0 &&
-			    ndp->ni_cred->cr_uid != pdp->i_uid &&
+			    ndp->ni_cred->cr_uid != dp->i_uid &&
 			    tdp->i_uid != ndp->ni_cred->cr_uid) {
 				iput(tdp);
 				return (EPERM);
 			}
+			if (!lockparent)
+				IUNLOCK(dp);
 		}
 		ndp->ni_vp = vdp;
-		if (!lockparent)
-			IUNLOCK(pdp);
 		return (0);
 	}
 
