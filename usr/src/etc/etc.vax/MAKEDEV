@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)MAKEDEV	4.26 (Berkeley) %G%
+#	@(#)MAKEDEV	4.27 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -56,7 +56,7 @@ std)
 	/etc/mknod crl		c 35 0
 	/etc/mknod tu0		b 8 0
 	/etc/mknod tu1		b 8 1
-	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem ; :untested
+	/etc/mknod kUmem	c 3 3	; chmod 600 kUmem ;: untested
 	/etc/mknod kmem		c 3 1	; chmod 640 kmem ; chgrp kmem kmem
 	/etc/mknod mem		c 3 0	; chmod 640 mem ; chgrp kmem mem
 	/etc/mknod null		c 3 2	; chmod 666 null
