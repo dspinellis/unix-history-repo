@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)termcap.5	6.3 (Berkeley) %G%
+.\"	@(#)termcap.5	6.4 (Berkeley) %G%
 .\"
 .ie n \{\
 .	ds lq \&"\"
@@ -128,7 +128,7 @@ ch	str	(NP)	Set cursor column (horizontal position)
 cl	str	(P*)	Clear screen and home cursor
 CM	str	(NP)	Memory-relative cursor addressing
 cm	str	(NP)	Screen-relative cursor motion
-co	num		Number of columns in a line
+co	num		Number of columns in a line (See BUGS section below)
 cr	str	(P)	Carriage return
 cs	str	(NP)	Change scrolling region (VT100)
 ct	str	(P)	Clear all tab stops
@@ -212,7 +212,7 @@ l0-l9	str		Labels on function keys if not \*(lqf\fIn\^\fP\*(rq
 LC	bool	(o)	Lower-case only
 LE	str	(NP)	Move cursor left \fIn\^\fP positions
 le	str	(P)	Move cursor left one position
-li	num		Number of lines on screen or page
+li	num		Number of lines on screen or page (See BUGS section below)
 ll	str		Last line, first column
 lm	num		Lines of memory if > \fBli\fP (0 means varies)
 ma	str	(o)	Arrow key map (used by \fIvi\^\fP version 2 only)
@@ -1666,6 +1666,11 @@ was replaced by
 in UNIX System V Release 2.0.
 The transition will be relatively painless if capabilities flagged as
 \*(lqobsolete\*(rq are avoided.
+.PP
+Lines and columns are now stored by the kernel as well as in the termcap
+entry.
+Most programs now use the kernel information primarily; the information
+in this file is used only if the kernel does not have any information.
 .PP
 .I Vi\^
 allows only 256 characters for string capabilities, and the routines
