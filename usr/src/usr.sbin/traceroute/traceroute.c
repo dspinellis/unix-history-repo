@@ -1,7 +1,22 @@
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Van Jacobson.
+ *
+ * %sccs.include.redist.c%
+ */
+
 #ifndef lint
-static char *rcsid =
-	"@(#)$Header: traceroute.c,v 1.17 89/02/28 21:01:13 van Exp $ (LBL)";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)traceroute.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * traceroute host  - trace the route ip packets follow going to "host".
@@ -172,21 +187,6 @@ static char *rcsid =
  *
  *  -- Van Jacobson (van@helios.ee.lbl.gov)
  *     Tue Dec 20 03:50:13 PST 1988
- *
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #include <stdio.h>
