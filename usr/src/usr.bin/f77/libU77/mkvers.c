@@ -1,4 +1,4 @@
-char id_mkvers[] = "@(#)mkvers.c	1.1";
+char id_mkvers[] = "@(#)mkvers.c	1.2";
 /*
  * extract sccs id strings from source files
  * first arg is lib name.
@@ -25,7 +25,15 @@ int argc; char **argv;
 		perror("mkvers");
 		exit(1);
 	}
-	fprintf(V, "char *sccs_id[] = {\n");
+	if (argc > 1 && argv[1][0] != '.')
+	{
+		fprintf(V, "char *");
+		for (s = argv[1]; *s && *s != '.'; s++)
+			fputc(*s, V);
+		fprintf(V, "_id[] = {\n");
+	}
+	else
+		fprintf(V, "char *sccs_id[] = {\n");
 	if (argc-- > 1)
 	{
 		time(&t);
