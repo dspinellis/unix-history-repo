@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	8.1 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.71 (Berkeley) %G%
  */
 
 /*
@@ -395,18 +395,14 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 /*
  * Help break down an mbuf chain by setting the first siz bytes contiguous
  * pointed to by returned val.
- * If Updateflg == True we can overwrite the first part of the mbuf data
- * (in this case it can never sleep, so it can be called from interrupt level)
- * it may however block when Updateflg == False
  * This is used by the macros nfsm_dissect and nfsm_dissecton for tough
  * cases. (The macros use the vars. dpos and dpos2)
  */
-nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
+nfsm_disct(mdp, dposp, siz, left, cp2)
 	struct mbuf **mdp;
 	caddr_t *dposp;
 	int siz;
 	int left;
-	int updateflg;
 	caddr_t *cp2;
 {
 	register struct mbuf *mp, *mp2;
@@ -429,16 +425,11 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 	} else if (siz > MHLEN) {
 		panic("nfs S too big");
 	} else {
-		/* Iff update, you can overwrite, else must alloc new mbuf */
-		if (updateflg) {
-			NFSMINOFF(mp);
-		} else {
-			MGET(mp2, M_WAIT, MT_DATA);
-			mp2->m_next = mp->m_next;
-			mp->m_next = mp2;
-			mp->m_len -= left;
-			mp = mp2;
-		}
+		MGET(mp2, M_WAIT, MT_DATA);
+		mp2->m_next = mp->m_next;
+		mp->m_next = mp2;
+		mp->m_len -= left;
+		mp = mp2;
 		*cp2 = p = mtod(mp, caddr_t);
 		bcopy(*dposp, p, left);		/* Copy what was left */
 		siz2 = siz-left;
@@ -652,7 +643,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	dpos = *dposp;
 	t1 = (mtod(md, caddr_t) + md->m_len) - dpos;
 	isnq = (VFSTONFS(vp->v_mount)->nm_flag & NFSMNT_NQNFS);
-	if (error = nfsm_disct(&md, &dpos, NFSX_FATTR(isnq), t1, TRUE, &cp2))
+	if (error = nfsm_disct(&md, &dpos, NFSX_FATTR(isnq), t1, &cp2))
 		return (error);
 	fp = (struct nfsv2_fattr *)cp2;
 	vtyp = nfstov_type(fp->fa_type);
