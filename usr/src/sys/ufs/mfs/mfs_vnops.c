@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vnops.c	7.14 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -33,9 +33,11 @@
 #include "machine/pte.h"
 #include "machine/mtpr.h"
 
+#if !defined(hp300)
 static int mfsmap_want;		/* 1 => need kernel I/O resources */
 struct map mfsmap[MFS_MAPSIZE];
 extern char mfsiobuf[];
+#endif
 
 /*
  * mfs vnode operations.
@@ -155,11 +157,16 @@ mfs_doio(bp, base)
 	register struct buf *bp;
 	caddr_t base;
 {
+#if !defined(hp300)
 	register struct pte *pte, *ppte;
 	register caddr_t vaddr;
 	int off, npf, npf2, reg;
+#endif
 	caddr_t kernaddr, offset;
 
+#if defined(hp300)
+	kernaddr = bp->b_un.b_addr;
+#else
 	/*
 	 * For phys I/O, map the b_addr into kernel virtual space using
 	 * the Mfsiomap pte's.
@@ -198,6 +205,7 @@ mfs_doio(bp, base)
 			vaddr += NBPG;
 		}
 	}
+#endif /* !defined(hp300) */
 	offset = base + (bp->b_blkno << DEV_BSHIFT);
 	if (bp->b_flags & B_READ)
 		bp->b_error = copyin(offset, kernaddr, bp->b_bcount);
@@ -205,6 +213,7 @@ mfs_doio(bp, base)
 		bp->b_error = copyout(kernaddr, offset, bp->b_bcount);
 	if (bp->b_error)
 		bp->b_flags |= B_ERROR;
+#if !defined(hp300)
 	/*
 	 * Release pte's used by physical I/O.
 	 */
@@ -215,6 +224,7 @@ mfs_doio(bp, base)
 			wakeup((caddr_t)&mfsmap_want);
 		}
 	}
+#endif
 	biodone(bp);
 }
 
@@ -329,5 +339,7 @@ mfs_nullop()
 mfs_init()
 {
 
+#if !defined(hp300)
 	rminit(mfsmap, (long)MFS_MAPREG, (long)1, "mfs mapreg", MFS_MAPSIZE);
+#endif
 }
