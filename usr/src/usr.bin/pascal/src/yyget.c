@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyget.c 1.5 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yyget.c 1.4.1.1 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 #ifdef PXP
@@ -19,7 +22,7 @@ int	yytokcnt;
  */
 readch()
 {
-	register i, c;
+	register c;
 
 	if (*bufp == '\n' && bufp >= charbuf) {
 #ifdef PXP
@@ -116,7 +119,7 @@ top:
 				goto top;
 #ifdef PXP
 			if (ateof == 0 && bracket) {
-				strcpy(charbuf, "begin end.\n");
+				(void) pstrcpy(charbuf, "begin end.\n");
 				ateof = 1;
 				goto out;
 			}
@@ -154,7 +157,9 @@ top:
 #endif
 	if (opt('u'))
 		setuflg();
+#ifdef PXP
 out:
+#endif
 	bufp = charbuf - 1;
 	yycol = 8;
 	return (1);
@@ -194,7 +199,7 @@ includ()
 	for (dp = cp; *dp != ch; dp++)
 		if (*dp == 0) {
 			line = yyline;
-			error("Missing closing %c for include file name - QUIT", ch);
+			error("Missing closing %c for include file name - QUIT", (char *) ch);
 			pexit(DIED);
 		}
 	*dp++ = 0;
@@ -276,6 +281,7 @@ includ()
 	return (1);
 }
 
+char *
 skipbl(ocp)
 	char *ocp;
 {
@@ -304,11 +310,11 @@ uninclud()
 /*
  *	left over from before stdio: becomes fclose ( ibp )
  *
- *	close(ibp[0]);
+ *	(void) close(ibp[0]);
  *	free(ibp);
  *
  */
-	fclose ( ibp );
+	(void) fclose ( ibp );
 	ip = &incs[inclev];
 	ibp = ip->ibp;
 	yyline = ip->yyline;

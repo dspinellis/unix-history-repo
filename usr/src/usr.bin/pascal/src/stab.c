@@ -1,6 +1,8 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.9 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)stab.c 1.8.1.1 %G%";
+#endif
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -33,6 +35,7 @@ static	char sccsid[] = "@(#)stab.c 1.9 %G%";
     /*
      *	global variables
      */
+/*ARGSUSED*/
 stabgvar( name , type , offset , length , line )
     char	*name;
     int		type;
@@ -45,7 +48,7 @@ stabgvar( name , type , offset , length , line )
 	     *	for separate compilation
 	     */
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , name , N_PC , N_PGVAR , ABS( line ) );
+		    , (int) name , N_PC , N_PGVAR , ABS( line ) );
 	    /*
 	     *	for sdb
 	     */
@@ -53,16 +56,17 @@ stabgvar( name , type , offset , length , line )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0" , 0 , N_GSYM , type );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
 }
 
     /*
      *	local variables
      */
+/*ARGSUSED*/
 stablvar( name , type , level , offset , length )
     char	*name;
     int		type;
@@ -75,10 +79,10 @@ stablvar( name , type , level , offset , length )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , -offset );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
 }
 
@@ -97,33 +101,16 @@ stabparam( name , type , offset , length )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_PSYM , type , offset );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
     }
 
     /*
      *	fields
      */
-stabfield( name , type , offset , length )
-    char	*name;
-    int		type;
-    int		offset;
-    int		length;
-    {
-	
-	if ( ! opt('g') ) {
-		return;
-	}
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_SSYM , type , offset );
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
-    }
 
     /*
      *	left brackets
@@ -160,8 +147,6 @@ stabfunc( name , typeclass , line , level )
     int		line;
     long	level;
     {
-	int	type;
-	long	i;
 	char	extname[ BUFSIZ ];
 
 	    /*
@@ -170,10 +155,10 @@ stabfunc( name , typeclass , line , level )
 	if ( level == 1 ) {
 	    if ( typeclass == FUNC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			    , name , N_PC , N_PGFUNC , ABS( line ) );
+			    , (int) name , N_PC , N_PGFUNC , ABS( line ) );
 	    } else if ( typeclass == PROC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			    , name , N_PC , N_PGPROC , ABS( line ) );
+			    , (int) name , N_PC , N_PGPROC , ABS( line ) );
 	    }
 	}
 	    /*
@@ -183,9 +168,9 @@ stabfunc( name , typeclass , line , level )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	sextname( extname , name , level );
-	putprintf( "\",0x%x,0,0x%x,%s" , 0 , N_FUN , line , extname );
+	putprintf( NAMEFORMAT , 1 , (int) name );
+	sextname( extname , name , (int) level );
+	putprintf( "\",0x%x,0,0x%x,%s" , 0 , N_FUN , line , (int) extname );
     }
 
     /*
@@ -319,7 +304,7 @@ stabglabel( label , line )
     {
 
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , label , N_PC , N_PGLABEL , ABS( line ) );
+		    , (int) label , N_PC , N_PGLABEL , ABS( line ) );
     }
 
     /*
@@ -331,7 +316,7 @@ stabgconst( const , line )
     {
 
 	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			, const , N_PC , N_PGCONST , ABS( line ) );
+			, (int) const , N_PC , N_PGCONST , ABS( line ) );
     }
 
     /*
@@ -343,7 +328,7 @@ stabgtype( type , line )
     {
 
 	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			, type , N_PC , N_PGTYPE , ABS( line ) );
+			, (int) type , N_PC , N_PGTYPE , ABS( line ) );
     }
 
 
@@ -365,7 +350,7 @@ stabefunc( name , typeclass , line )
 	    return;
 	}
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , name , N_PC , type , ABS( line ) );
+		    , (int) name , N_PC , type , ABS( line ) );
     }
 
 #endif PC
