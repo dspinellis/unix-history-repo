@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)llc_var.h	7.1 (Berkeley) %G%
+ *	@(#)llc_var.h	7.2 (Berkeley) %G%
  */
 
 #ifdef __STDC__
@@ -555,6 +555,15 @@ extern int llc_REJ_timer;
 extern int llc_BUSY_timer;
 extern int llc_AGE_timer;
 extern int llc_DACTION_timer;
+
+extern int af_link_rts_init_done;
+
+#define USES_AF_LINK_RTS { \
+	if (!af_link_rts_init_done) { \
+	       rn_inithead((void **)&rt_tables[AF_LINK], 32); \
+	       af_link_rts_init_done++; \
+	       } \
+	 }
 
 struct ifqueue llcintrq;
 

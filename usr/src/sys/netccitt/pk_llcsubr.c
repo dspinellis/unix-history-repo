@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_llcsubr.c	7.1 (Berkeley) %G%
+ *	@(#)pk_llcsubr.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -198,7 +198,127 @@ cons_rtrequest(int cmd, struct rtentry *rt, struct sockaddr *dst)
 	}
 }
 
+/*
+ * Network Protocol Addressing Information DataBase (npaidb) 
+ * 
+ * To speed up locating the entity dealing with an LLC packet use is made 
+ * of a routing tree. This npaidb routing tree is handled 
+ * by the normal rn_*() routines just like (almost) any other routing tree. 
+ * 
+ * The mapping being done by the npaidb_*() routines is as follows: 
+ * 
+ *     Key:       MAC,LSAP (enhancing struct sockaddr_dl) 
+ *     Gateway:   sockaddr_x25 (i.e. X.25 address - X.121 or NSAP) 
+ *     Llinfo:    npaidbentry { 
+ *                         struct llc_linkcb *npaidb_linkp; 
+ *                         struct rtentry *npaidb_rt; 
+ *                } 
+ * 
+ * Using the npaidbentry provided by llinfo we can then access 
+ * 
+ *       o the pkcb by using (struct pkcb *) (npaidb_rt->rt_llinfo)
+ *       o the linkcb via npaidb_linkp 
+ * 
+ * The following functions are provided 
+ * 
+ *       o npaidb_enter(struct sockaddr_dl *sdl, struct sockaddr_x25 *sx25, 
+ *                      struct struct llc_linkcb *link, struct rtentry *rt) 
+ * 
+ *       o npaidb_enrich(short type, caddr_t info) 
+ * 
+ */
 
+struct sockaddr_dl npdl_netmask = {
+ sizeof(struct sockaddr_dl),					/* _len */
+ 0,								/* _family */
+ 0,								/* _index */
+ 0,								/* _type */
+ -1,								/* _nlen */
+ -1,								/* _alen */
+ -1,								/* _slen */
+ { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},		/* _data */
+}; 
+struct sockaddr npdl_dummy;
+
+int npdl_datasize = sizeof(struct sockaddr_dl)-
+		((int)((caddr_t)&((struct sockaddr_dl *)0)->sdl_data[0]));
+
+struct rtentry *
+npaidb_enter(struct sockaddr_dl *key, struct sockaddr *value,
+	     struct rtentry *rt, struct llc_linkcb *link)
+{
+	struct rtentry *nprt; register int i;
+
+	USES_AF_LINK_RTS;
+
+	if ((nprt = rtalloc1(key, 0)) == 0) {
+		register u_int size = sizeof(struct npaidbentry);
+		register u_char saploc = LLSAPLOC(key, rt->rt_ifp);
+
+		/* 
+		 * set up netmask: LLC2 packets have the lowest bit set in
+		 * response packets (e.g. 0x7e for command packets, 0x7f for
+		 * response packets), to facilitate the lookup we use a netmask
+		 * of 11111110 for the SAP position. The remaining positions 
+		 * are zeroed out.
+		 */
+		npdl_netmask.sdl_data[saploc] = NPDL_SAPNETMASK;
+		bzero((caddr_t)&npdl_netmask.sdl_data[saploc+1], 
+		      npdl_datasize-saploc-1);
+
+		if (value == 0)
+			value = &npdl_dummy;
+
+		/* now enter it */
+		rtrequest(RTM_ADD, key, value, &npdl_netmask, 0, &nprt);
+
+		/* and reset npdl_netmask */
+		for (i = saploc; i < npdl_datasize; i++)
+			npdl_netmask.sdl_data[i] = -1;
+
+		nprt->rt_llinfo = malloc(size , M_PCB, M_WAITOK);
+		if (nprt->rt_llinfo) {
+			bzero (nprt->rt_llinfo, size);
+			((struct npaidbentry *) (nprt->rt_llinfo))->np_rt = rt;
+		}
+	} else nprt->rt_refcnt--;
+	return nprt;
+}
+
+struct rtentry *
+npaidb_enrich(short type, caddr_t info, struct sockaddr_dl *sdl)
+{
+	struct rtentry *rt;
+
+	USES_AF_LINK_RTS;
+
+	if (rt = rtalloc1(sdl, 0)) {
+		rt->rt_refcnt--;
+		switch (type) {
+		case NPAIDB_LINK:
+			((struct npaidbentry *)(rt->rt_llinfo))->np_link = 
+				(struct llc_linkcb *) info;
+			break;
+		}
+		return rt;
+	}		
+
+	return ((struct rtentry *) 0);
+
+}
+
+npaidb_destroy(struct rtentry *rt)
+{
+	USES_AF_LINK_RTS;
+
+	if (rt->rt_llinfo) 
+		free((caddr_t) rt->rt_llinfo, M_PCB);
+	return(rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway, rt_mask(rt), 
+			 0, 0));
+}
+
+
+#ifdef LLC
 /*
  * Glue between X.25 and LLC2
  */
@@ -218,3 +338,4 @@ x25_llcglue(int prc, struct sockaddr *addr)
 
 	return ((int)llc_ctlinput(prc, addr, (caddr_t)&ctlinfo));
 }
+#endif /* LLC */
