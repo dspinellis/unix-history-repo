@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.12 (Berkeley) %G%
+ *	@(#)btree.h	5.13 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -235,7 +235,7 @@ typedef struct BTMETA {
 	u_long	m_nrecs;		/* R: number of records */
 #define	SAVEMETA	(BTF_NODUPS | BTF_RECNO)
 	u_long	m_flags;		/* bt_flags & SAVEMETA */
-	u_long	m_lorder;		/* byte order */
+	u_long	m_unused;		/* unused */
 } BTMETA;
 
 /* The in-memory btree/recno data structure. */
@@ -287,19 +287,25 @@ typedef struct BTREE {
 	size_t	bt_reclen;		/* R: fixed record length */
 	u_char	bt_bval;		/* R: delimiting byte/pad character */
 
+/*
+ * NB:
+ * BTF_NODUPS and BTF_RECNO are stored on disk, and may not be changed.
+ */
 #define	BTF_CLOSEFP	0x0001		/* R: opened a file pointer */
 #define	BTF_DELCRSR	0x0002		/* cursor has been deleted */
 #define	BTF_EOF		0x0004		/* R: end of input file reached. */
 #define	BTF_FIXEDLEN	0x0008		/* R: fixed length records */
 #define	BTF_INMEM	0x0010		/* B: in-memory tree */
-#define	BTF_MEMMAPPED	0x0020		/* R: memory mapped file. */
-#define	BTF_METADIRTY	0x0040		/* B: need to write metadata */
-#define	BTF_MODIFIED	0x0080		/* tree modified */
-#define	BTF_NODUPS	0x0100		/* B: no duplicate keys permitted */
-#define	BTF_RDONLY	0x0200		/* read-only tree */
-#define	BTF_RECNO	0x0400		/* R: record oriented tree */
-#define	BTF_RINMEM	0x0800		/* R: in-memory tree */
-#define	BTF_SEQINIT	0x1000		/* sequential scan initialized */
+#define	BTF_NODUPS	0x0020		/* B: no duplicate keys permitted */
+#define	BTF_MEMMAPPED	0x0040		/* R: memory mapped file. */
+#define	BTF_RECNO	0x0080		/* R: record oriented tree */
+#define	BTF_METADIRTY	0x0100		/* B: need to write metadata */
+#define	BTF_MODIFIED	0x0200		/* tree modified */
+#define	BTF_NEEDSWAP	0x0400		/* if byte order requires swapping */
+#define	BTF_RDONLY	0x0800		/* read-only tree */
+#define	BTF_RINMEM	0x1000		/* R: in-memory tree */
+#define	BTF_SEQINIT	0x2000		/* sequential scan initialized */
+
 	u_long		bt_flags;	/* btree state */
 } BTREE;
 
