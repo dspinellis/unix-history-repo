@@ -1,7 +1,11 @@
 /*
- *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asscan.h 4.9 %G%
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)asscan.h	5.1 (Berkeley) %G%
  */
+
 /*
  *	The character scanner is called to fill up one token buffer
  *
