@@ -1,4 +1,4 @@
-/*	dz.c	6.1	83/07/29	*/
+/*	dz.c	6.2	84/03/15	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -41,12 +41,19 @@ struct	uba_driver dzdriver =
 	{ dzprobe, 0, dzattach, 0, dzstd, "dz", dzinfo };
 
 #define	NDZLINE 	(NDZ*8)
+#define	FASTTIMER	(hz/30)		/* rate to drain silos, when in use */
 
 int	dzstart(), dzxint(), dzdma();
 int	ttrstrt();
 struct	tty dz_tty[NDZLINE];
 int	dz_cnt = { NDZLINE };
 int	dzact;
+int	dzsilos;			/* mask of dz's with silo in use */
+int	dzchars[NDZ];			/* recent input count */
+int	dzrate[NDZ];			/* smoothed input count */
+int	dztimerintvl;			/* time interval for dztimer */
+int	dzhighrate = 100;		/* silo on if dzchars > dzhighrate */
+int	dzlowrate = 75;			/* silo off if dzrate < dzlowrate */
 
 #define dzwait(x)	while (((x)->dzlcs & DZ_ACK) == 0)
 
@@ -119,6 +126,7 @@ dzattach(ui)
 	if (dz_timer == 0) {
 		dz_timer++;
 		timeout(dzscan, (caddr_t)0, hz);
+		dztimerintvl = FASTTIMER;
 	}
 }
 
@@ -135,7 +143,6 @@ dzopen(dev, flag)
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
 	tp->t_oproc = dzstart;
-	tp->t_state |= TS_WOPEN;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
 		tp->t_ospeed = tp->t_ispeed = ISPEED;
@@ -239,6 +246,7 @@ dzrint(dz)
 		}
 	}
 	while ((c = dzaddr->dzrbuf) < 0) {	/* char present */
+		dzchars[dz]++;
 		tp = tp0 + ((c>>8)&07);
 		if (tp >= &dz_tty[dz_cnt])
 			continue;
@@ -376,7 +384,10 @@ dzparam(unit)
  
 	tp = &dz_tty[unit];
 	dzaddr = dzpdma[unit].p_addr;
-	dzaddr->dzcsr = DZ_IEN;
+	if (dzsilos & (1 << (unit >> 3)))
+		dzaddr->dzcsr = DZ_IEN | DZ_SAE;
+	else
+		dzaddr->dzcsr = DZ_IEN;
 	dzact |= (1<<(unit>>3));
 	if (tp->t_ispeed == 0) {
 		(void) dzmctl(unit, DZ_OFF, DMSET);	/* hang up line */
@@ -398,9 +409,8 @@ dzxint(tp)
 	register struct tty *tp;
 {
 	register struct pdma *dp;
-	register s, dz, unit;
+	register dz, unit;
  
-	s = spl5();		/* block pdma interrupts */
 	dp = (struct pdma *)tp->t_addr;
 	tp->t_state &= ~TS_BUSY;
 	if (tp->t_state & TS_FLUSH)
@@ -420,7 +430,6 @@ dzxint(tp)
 			dp->p_addr->dzlnen = (dz_lnen[dz] &= ~(1<<unit));
 		else
 			dp->p_addr->dztcr &= ~(1<<unit);
-	splx(s);
 }
 
 dzstart(tp)
@@ -549,6 +558,7 @@ dzmctl(dev, bits, how)
 	return(mbits);
 }
  
+int dztransitions, dzfasttimers;		/*DEBUG*/
 dzscan()
 {
 	register i;
@@ -556,6 +566,8 @@ dzscan()
 	register bit;
 	register struct tty *tp;
 	register car;
+	int olddzsilos = dzsilos;
+	int dztimer();
  
 	for (i = 0; i < dz_cnt ; i++) {
 		dzaddr = dzpdma[i].p_addr;
@@ -592,17 +604,37 @@ dzscan()
 			}
 		}
 	}
-	timeout(dzscan, (caddr_t)0, 2*hz);
+	for (i = 0; i < NDZ; i++) {
+		ave(dzrate[i], dzchars[i], 8);
+		if (dzchars[i] > dzhighrate && ((dzsilos & (1 << i)) == 0)) {
+			dzpdma[i].p_addr->dzcsr = DZ_IEN | DZ_SAE;
+			dzsilos |= (1 << i);
+			dztransitions++;		/*DEBUG*/
+		} else if ((dzsilos & (1 << i)) && (dzrate[i] < dzlowrate)) {
+			dzpdma[i].p_addr->dzcsr = DZ_IEN;
+			dzsilos &= ~(1 << i);
+		}
+		dzchars[i] = 0;
+	}
+	if (dzsilos && !olddzsilos)
+		timeout(dztimer, (caddr_t)0, dztimerintvl);
+	timeout(dzscan, (caddr_t)0, hz);
 }
 
 dztimer()
 {
 	register int dz;
-	register int s = spl5();
+	register int s;
 
+	if (dzsilos == 0)
+		return;
+	s = spl5();
+	dzfasttimers++;		/*DEBUG*/
 	for (dz = 0; dz < NDZ; dz++)
-		dzrint(dz);
+		if (dzsilos & (1 << dz))
+		    dzrint(dz);
 	splx(s);
+	timeout(dztimer, (caddr_t) 0, dztimerintvl);
 }
 
 /*
@@ -630,6 +662,5 @@ dzreset(uban)
 			dzstart(tp);
 		}
 	}
-	dztimer();
 }
 #endif
