@@ -16,20 +16,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)readdir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)readdir.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/dir.h>
+#include <dirent.h>
 
 /*
  * get next entry in a directory.
  */
-struct direct *
+struct dirent *
 readdir(dirp)
 	register DIR *dirp;
 {
-	register struct direct *dp;
+	register struct dirent *dp;
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
@@ -42,7 +42,7 @@ readdir(dirp)
 			dirp->dd_loc = 0;
 			continue;
 		}
-		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
+		dp = (struct dirent *)(dirp->dd_buf + dirp->dd_loc);
 		if ((int)dp & 03)	/* bogus pointer check */
 			return NULL;
 		if (dp->d_reclen <= 0 ||
