@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -606,7 +606,7 @@ setup_term(fd)
 	tt.c_iflag = TTYDEF_IFLAG;
 	tt.c_oflag = TTYDEF_OFLAG;
 	tt.c_lflag = TTYDEF_LFLAG;
-	tcsetattr(fd, TCSADFLUSH, &tt);
+	tcsetattr(fd, TCSAFLUSH, &tt);
 #else
 	if (cp) {
 		*cp++ = '\0';
@@ -616,7 +616,7 @@ setup_term(fd)
 			*cp++ = '\0';
 		tcgetattr(fd, &tt);
 		cfsetspeed(&tt, atoi(speed));
-		tcsetattr(fd, TCSADFLUSH, &tt);
+		tcsetattr(fd, TCSAFLUSH, &tt);
 	}
 #endif
 
