@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trpt.c	4.7 %G%";
+static char sccsid[] = "@(#)trpt.c	4.8 %G%";
 #endif
 
 #include <sys/param.h>
@@ -249,7 +249,7 @@ tcp_trace(act, ostate, atp, tp, ti, req)
 	/* print out internal state of tp !?! */
 	printf("\n");
 	if (sflag) {
-		printf("\trcv_nxt %x rcv_wnd %d snd_una %x snd_nxt %x snd_max %x\n",
+		printf("\trcv_nxt %x rcv_wnd %x snd_una %x snd_nxt %x snd_max %x\n",
 		    tp->rcv_nxt, tp->rcv_wnd, tp->snd_una, tp->snd_nxt,
 		    tp->snd_max);
 		printf("\tsnd_wl1 %x snd_wl2 %x snd_wnd %x\n", tp->snd_wl1,
