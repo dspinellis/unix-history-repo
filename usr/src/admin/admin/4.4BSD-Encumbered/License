@@ -1,4 +1,4 @@
-.\" @(#)License	1.6 (CSRG - distribution) %G%
+.\" @(#)License	1.7 (CSRG - distribution) %G%
 .ND
 .po +0.34375i
 .nr PO +0.34375i
@@ -63,9 +63,9 @@ UNIX/32V, SYSTEM-III, or SYSTEM-V; and
 licensee for
 UNIX/32V, SYSTEM-III, or SYSTEM-V; and
 .PP
-\fI WHEREAS, \fR LICENSEE desires to obtain from The Regents of the
-University of California, and The Regents of the University of
-California desires to grant to LICENSEE, a license to use the computer
+\fI WHEREAS, \fR LICENSEE desires to obtain from THE REGENTS, 
+and THE REGENTS 
+desires to grant to LICENSEE, a license to use the computer
 programs and documentation comprising the Fourth Berkeley Software
 Distribution;
 .PP
@@ -85,8 +85,8 @@ UNIX/32V, SYSTEM-III, or SYSTEM-V
 license terminates.
 Either THE REGENTS or LICENSEE may terminate this Agreement upon thirty 
 (30) days' written notice to the other party.
-This license shall terminate thirty (30) days after notice from The
-Regents of the University of California to LICENSEE that LICENSEE
+This license shall terminate thirty (30) days after notice from THE
+REGENTS to LICENSEE that LICENSEE
 is in breach of this Agreement unless within that time LICENSEE gives
 notice satisfactory to THE REGENTS
 that such breach has been corrected.
@@ -97,15 +97,15 @@ and shall cease use and sublicensing thereof.
 .PP
 \02.\ \ \fBFees. \fRThe distribution fee for this license and delivery
 of one physical copy of the Fourth Berkeley Software Distribution is
-two thousand dollars ($2,000.00), unless indicated otherwise on
+two thousand dollars ($2,000.00), as indicated on
 Exhibit A, which is incorporated into this Agreement. LICENSEE may
 obtain additional copies 
 and new releases
-of the Fourth Berkeley Software Distribution which The Regents of
-the University of California may choose to make available
+of the Fourth Berkeley Software Distribution which THE REGENTS 
+may choose to make available
 under the terms of this Agreement by paying an additional
-distribution fee determined by The Regents of the University of
-California.  Distribution fees are due and payable in advance.
+distribution fee determined by THE REGENTS. 
+Distribution fees are due and payable in advance.
 Distribution fees do not include local, state or federal taxes, and LICENSEE
 hereby agrees to pay all such taxes as may be imposed upon LICENSEE or
 THE REGENTS
@@ -113,13 +113,13 @@ with respect to the distribution, possession, use, or sublicensing
 of the Fourth Berkeley Software Distribution pursuant to this Agreement.
 .PP
 \03.\ \ \fBTitle. \fR LICENSEE agrees that the Fourth Berkeley Software
-Distribution is, and shall at all times remain the property of The
-Regents of the University of California.  LICENSEE shall have no right,
+Distribution is, and shall at all times remain the property of THE
+REGENTS.  LICENSEE shall have no right,
 title or interest therein or thereto except as expressly set forth in
 this Agreement.
 .PP
-\04.\ \ \fBAT&T Proprietary Software. \fR LICENSEE and The Regents of
-the University of California agree that the Fourth Berkeley Software
+\04.\ \ \fBAT&T Proprietary Software. \fR LICENSEE and THE REGENTS 
+agree that the Fourth Berkeley Software
 Distribution contains proprietary software belonging to AT&T and
 licensed by AT&T as UNIX/32V.  LICENSEE represents and warrants that it
 has obtained and currently holds a valid license from AT&T to use
@@ -190,8 +190,8 @@ Software Distribution for those portions of said Distribution
 used by LICENSEE].''
 .PP
 \08.\ \ \fBDisclaimer of Warranties. \fR
-The Fourth Berkeley Software Distribution is provided by The Regents
-of the University of California and the Other Contributors
+The Fourth Berkeley Software Distribution is provided by THE REGENTS 
+and the Other Contributors
 on an ``As Is'' basis.
 Neither THE REGENTS nor the Other Contributors
 warrant that the
@@ -249,12 +249,12 @@ subject to the claim of infringement.
 .RE
 .PP
 12.\ \ \fBIndemnification. \fR LICENSEE agrees to
-indemnify, defend, and hold harmless The Regents of the University
-of California and the Other Contributors,
+indemnify, defend, and hold harmless THE REGENTS
+and the Other Contributors,
 their successors, agents,
 officers, and employees, either in their individual capacities or
-by reason of their relationship to The Regents of the University
-of California or the Other Contributors, with respect to any expense,
+by reason of their relationship to THE REGENTS 
+or the Other Contributors, with respect to any expense,
 claim, liability, loss or
 damages, including direct, indirect, special, incidental, or consequential
 (including lost profits) damages, whether incurred, made or suffered by
