@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,13 +31,6 @@ static char sccsid[] = "@(#)process.c	5.5 (Berkeley) %G%";
 #include "defs.h"
 #include "extern.h"
 
-typedef struct {
-	char *space;		/* Current space pointer. */
-	size_t len;		/* Current length. */
-	int deleted;		/* If deleted. */
-	char *back;		/* Backing memory. */
-	size_t blen;		/* Backing memory length. */
-} SPACE;
 static SPACE HS, PS, SS;
 #define	pd		PS.deleted
 #define	ps		PS.space
@@ -46,12 +39,11 @@ static SPACE HS, PS, SS;
 #define	hsl		HS.len
 
 static inline int	 applies __P((struct s_command *));
-static void		 cspace __P((SPACE *, char *, size_t, int));
+static void		 cspace __P((SPACE *, char *, size_t, enum e_spflag));
 static void		 flush_appends __P((void));
 static void		 lputs __P((char *));
-static inline int	 regexec_e __P((regex_t *, const char *,
-			    size_t, regmatch_t [], int));
-static void		 regsub __P((regmatch_t *, char *, char *, SPACE *));
+static inline int	 regexec_e __P((regex_t *, const char *, int, int));
+static void		 regsub __P((SPACE *, char *, char *));
 static int		 substitute __P((struct s_command *));
 
 struct s_appends *appends;	/* Array of pointers to strings to append. */
@@ -64,7 +56,8 @@ static int sdone;		/* If any substitutes since last line input. */
 static struct iovec iov[2] = { NULL, 0, "\n", 1 };
 
 static regex_t *defpreg;
-static size_t defnmatch;
+size_t maxnsub;
+regmatch_t *match;
 
 void
 process()
@@ -72,9 +65,10 @@ process()
 	struct s_command *cp;
 	SPACE tspace;
 	size_t len;
+	int r;
 	char oldc, *p;
 
-	for (linenum = 0; ps = mf_fgets(&psl);) {
+	for (linenum = 0; mf_fgets(&PS, REPLACE);) {
 		pd = 0;
 		cp = prog;
 redirect:
@@ -119,17 +113,16 @@ redirect:
 				}
 				goto new;
 			case 'g':
-				ps = hs;
-				psl = hsl;
+				cspace(&PS, hs, hsl, REPLACE);
 				break;
 			case 'G':
-				cspace(&PS, hs, hsl, 1);
+				cspace(&PS, hs, hsl, APPENDNL);
 				break;
 			case 'h':
-				cspace(&HS, ps, psl, 0);
+				cspace(&HS, ps, psl, REPLACE);
 				break;
 			case 'H':
-				cspace(&HS, ps, psl, 1);
+				cspace(&HS, ps, psl, APPENDNL);
 				break;
 			case 'i':
 				(void)printf("%s", cp->t);
@@ -141,23 +134,20 @@ redirect:
 				if (!nflag && !pd)
 					(void)printf("%s\n", ps);
 				flush_appends();
-				ps = mf_fgets(&psl);
+				r = mf_fgets(&PS, REPLACE);
 #ifdef HISTORIC_PRACTICE
-				if (ps == NULL)
+				if (!r)
 					exit(0);
 #endif
 				pd = 0;
 				break;
 			case 'N':
 				flush_appends();
-				if (ps != PS.back)
-					cspace(&PS, NULL, 0, 0);
-				if ((p = mf_fgets(&len)) == NULL) {
+				if (!mf_fgets(&PS, APPENDNL)) {
 					if (!nflag && !pd)
 						(void)printf("%s\n", ps);
 					exit(0);
 				}
-				cspace(&PS, p, len, 1);
 				break;
 			case 'p':
 				if (pd)
@@ -244,8 +234,7 @@ new:		if (!nflag && !pd)
  * (lastline, linenumber, ps).
  */
 #define	MATCH(a)							\
-	(a)->type == AT_RE ?						\
-	    regexec_e((a)->u.r, ps, 0, NULL, 0) :			\
+	(a)->type == AT_RE ? regexec_e((a)->u.r, ps, 0, 1) :		\
 	    (a)->type == AT_LINE ? linenum == (a)->u.l : lastline
 
 /*
@@ -300,22 +289,19 @@ substitute(cp)
 {
 	SPACE tspace;
 	regex_t *re;
-	size_t nsub;
 	int n, re_off;
 	char *endp, *s;
 
 	s = ps;
 	re = cp->u.s->re;
 	if (re == NULL) {
-		nsub = 1;
-		if (defpreg != NULL && cp->u.s->maxbref > defnmatch) {
+		if (defpreg != NULL && cp->u.s->maxbref > defpreg->re_nsub) {
 			linenum = cp->u.s->linenum;
 			err(COMPILE, "\\%d not defined in the RE",
 			    cp->u.s->maxbref);
 		}
-	} else
-		nsub = re->re_nsub + 1;
-	if (!regexec_e(re, s, nsub, cp->u.s->pmatch, 0))
+	}
+	if (!regexec_e(re, s, 0, 0))
 		return (0);
 
 	SS.len = 0;				/* Clean substitute space. */
@@ -324,37 +310,36 @@ substitute(cp)
 	case 0:					/* Global */
 		do {
 			/* Locate start of replaced string. */
-			re_off = cp->u.s->pmatch[0].rm_so;
+			re_off = match[0].rm_so;
 			/* Locate end of replaced string + 1. */
-			endp = s + cp->u.s->pmatch[0].rm_eo;
+			endp = s + match[0].rm_eo;
 			/* Copy leading retained string. */
-			cspace(&SS, s, re_off, 0);
+			cspace(&SS, s, re_off, APPEND);
 			/* Add in regular expression. */
-			regsub(cp->u.s->pmatch, s, cp->u.s->new, &SS);
+			regsub(&SS, s, cp->u.s->new);
 			/* Move past this match. */
-			s += cp->u.s->pmatch[0].rm_eo;
-		} while(regexec_e(re, s, nsub, cp->u.s->pmatch, REG_NOTBOL));
+			s += match[0].rm_eo;
+		} while(regexec_e(re, s, REG_NOTBOL, 0));
 		/* Copy trailing retained string. */
-		cspace(&SS, s, strlen(s), 0);
+		cspace(&SS, s, strlen(s), APPEND);
 		break;
 	default:				/* Nth occurrence */
 		while (--n) {
-			s += cp->u.s->pmatch[0].rm_eo;
-			if (!regexec_e(re,
-			    s, nsub, cp->u.s->pmatch, REG_NOTBOL))
+			s += match[0].rm_eo;
+			if (!regexec_e(re, s, REG_NOTBOL, 0))
 				return (0);
 		}
 		/* FALLTHROUGH */
 	case 1:					/* 1st occurrence */
 		/* Locate start of replaced string. */
-		re_off = cp->u.s->pmatch[0].rm_so + s - ps;
+		re_off = match[0].rm_so + (s - ps);
 		/* Copy leading retained string. */
-		cspace(&SS, ps, re_off, 0);
+		cspace(&SS, ps, re_off, APPEND);
 		/* Add in regular expression. */
-		regsub(cp->u.s->pmatch, s, cp->u.s->new, &SS);
+		regsub(&SS, s, cp->u.s->new);
 		/* Copy trailing retained string. */
-		s += cp->u.s->pmatch[0].rm_eo;
-		cspace(&SS, s, strlen(s), 0);
+		s += match[0].rm_eo;
+		cspace(&SS, s, strlen(s), APPEND);
 		break;
 	}
 
@@ -467,25 +452,21 @@ lputs(s)
 }
 
 static inline int
-regexec_e(preg, string, nmatch, pmatch, eflags)
+regexec_e(preg, string, eflags, nomatch)
 	regex_t *preg;
 	const char *string;
-	size_t nmatch;
-	regmatch_t pmatch[];
-	int eflags;
+	int eflags, nomatch;
 {
 	int eval;
 
 	if (preg == NULL) {
 		if (defpreg == NULL)
 			err(FATAL, "first RE may not be empty");
-	} else {
+	} else
 		defpreg = preg;
-		defnmatch = nmatch;
-	}
 
-	eval = regexec(defpreg,
-	    string, pmatch == NULL ? 0 : defnmatch, pmatch, eflags);
+	eval = regexec(defpreg, string,
+	    nomatch ? 0 : maxnsub + 1, match, eflags);
 	switch(eval) {
 	case 0:
 		return (1);
@@ -501,10 +482,9 @@ regexec_e(preg, string, nmatch, pmatch, eflags)
  * Based on a routine by Henry Spencer
  */
 static void
-regsub(pmatch, string, src, sp)
-	regmatch_t *pmatch;
-	char *string, *src;
+regsub(sp, string, src)
 	SPACE *sp;
+	char *string, *src;
 {
 	register int len, no;
 	register char c, *dst;
@@ -530,10 +510,10 @@ regsub(pmatch, string, src, sp)
 			NEEDSP(1);
  			*dst++ = c;
 			++sp->len;
- 		} else if (pmatch[no].rm_so != -1 && pmatch[no].rm_eo != -1) {
-			len = pmatch[no].rm_eo - pmatch[no].rm_so;
+ 		} else if (match[no].rm_so != -1 && match[no].rm_eo != -1) {
+			len = match[no].rm_eo - match[no].rm_so;
 			NEEDSP(len);
-			memmove(dst, string + pmatch[no].rm_so, len);
+			memmove(dst, string + match[no].rm_so, len);
 			dst += len;
 			sp->len += len;
 		}
@@ -547,45 +527,33 @@ regsub(pmatch, string, src, sp)
  *	Append the source space to the destination space, allocating new
  *	space as necessary.
  */
-static void
-cspace(sp, p, len, append)
+void
+cspace(sp, p, len, spflag)
 	SPACE *sp;
 	char *p;
 	size_t len;
-	int append;
+	enum e_spflag spflag;
 {
 	size_t tlen;
-	int needcopy;
-
-	/* Current pointer may point to something else at the moment. */
-	needcopy = sp->space != sp->back;
 
 	/*
-	 * Make sure SPACE has enough memory and ramp up quickly.
-	 * Add in two extra bytes, one for the newline, one for a
-	 * terminating NULL.
+	 * Make sure SPACE has enough memory and ramp up quickly.  Appends
+	 * need two extra bytes, one for the newline, one for a terminating
+	 * NULL.
 	 */
-	tlen = sp->len + len + 2;
+	tlen = sp->len + len + spflag == APPENDNL ? 2 : 1;
 	if (tlen > sp->blen) {
 		sp->blen = tlen + 1024;
-		sp->back = xrealloc(sp->back, sp->blen);
+		sp->space = sp->back = xrealloc(sp->back, sp->blen);
 	}
 
-	if (needcopy)
-		memmove(sp->back, sp->space, sp->len + 1);
-	sp->space = sp->back;
-
-	/* May just be copying out of a stdio buffer. */
-	if (len == NULL)
-		return;
-
-	/* Append a separating newline. */
-	if (append)
+	if (spflag == APPENDNL)
 		sp->space[sp->len++] = '\n';
+	else if (spflag == REPLACE)
+		sp->len = 0;
 
-	/* Append the new stuff, plus its terminating NULL. */
-	memmove(sp->space + sp->len, p, len + 1);
-	sp->len += len;
+	memmove(sp->space + sp->len, p, len);
+	sp->space[sp->len += len] = '\0';
 }
 
 /*
