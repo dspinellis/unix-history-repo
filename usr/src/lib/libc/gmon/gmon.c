@@ -1,8 +1,10 @@
-static	char *sccsid = "@(#)gmon.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)gmon.c	1.7 (Berkeley) %G%";
 
+#ifdef DEBUG
 #include <stdio.h>
+#endif DEBUG
 
-#include "gmcrt0.h"
+#include "gcrt0.h"
 
     /*
      *	C start up routines, for monitoring
@@ -72,7 +74,6 @@ exit( code )
     register int	code;	/* r11 */
 {
 
-    fflush( stdout );
     _mcleanup();
     _cleanup();
     asm( "	movl r11, r0" );
@@ -138,21 +139,22 @@ _mstartup(lowpc, highpc)
 
 _mcleanup()
 {
-    FILE	*fd;
-    int		fromindex;
-    char	*frompc;
-    int		toindex;
+    int			fd;
+    int			fromindex;
+    char		*frompc;
+    int			toindex;
+    struct rawarc	rawarc;
 
     monitor( (int (*)()) 0 );
-    fd = fopen( "gmon.out" , "w" );
-    if ( fd == NULL ) {
+    fd = creat( "gmon.out" , 0666 );
+    if ( fd < 0 ) {
 	perror( "mcount: gmon.out" );
 	return;
     }
 #   ifdef DEBUG
 	fprintf( stderr , "[mcleanup] sbuf 0x%x ssiz %d\n" , sbuf , ssiz );
 #   endif DEBUG
-    fwrite( sbuf , 1 , ssiz , fd );
+    write( fd , sbuf , ssiz );
     for ( fromindex = 0 ; fromindex < s_textsize>>1 ; fromindex++ ) {
 	if ( froms[fromindex] == 0 ) {
 	    continue;
@@ -164,12 +166,13 @@ _mcleanup()
 			"[mcleanup] frompc 0x%x selfpc 0x%x count %d\n" ,
 			frompc , tos[toindex].selfpc , tos[toindex].count );
 #	    endif DEBUG
-	    fwrite( &frompc, 1, sizeof frompc, fd );
-	    fwrite( &tos[toindex].selfpc, 1, sizeof tos[toindex].selfpc, fd );
-	    fwrite( &tos[toindex].count, 1, sizeof tos[toindex].count, fd );
+	    rawarc.raw_frompc = (unsigned long) frompc;
+	    rawarc.raw_selfpc = (unsigned long) tos[toindex].selfpc;
+	    rawarc.raw_count = tos[toindex].count;
+	    write( fd , &rawarc , sizeof rawarc );
 	}
     }
-    fclose( fd );
+    close( fd );
 }
 
     /*
@@ -183,7 +186,7 @@ mcount()
     register struct tostruct	*top;		/* r9 */
     static int			profiling = 0;
 
-    asm( "	forgot to run ex script on gmcrt0.s" );
+    asm( "	forgot to run ex script on gcrt0.s" );
     asm( "#define r11 r5" );
     asm( "#define r10 r4" );
     asm( "#define r9 r3" );
