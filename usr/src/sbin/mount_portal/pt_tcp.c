@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_tcp.c	1.2 (Berkeley) %G%
+ *	@(#)pt_tcp.c	5.1 (Berkeley) %G%
  *
  * $Id: pt_tcp.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */

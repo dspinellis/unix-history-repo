@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)activate.c	1.2 (Berkeley) %G%
+ *	@(#)activate.c	5.1 (Berkeley) %G%
  *
  * $Id: activate.c,v 1.2 1992/05/27 07:09:27 jsp Exp jsp $
  */
