@@ -15,14 +15,15 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)vgrind.sh	5.4 (Berkeley) %G%
+#	@(#)vgrind.sh	5.5 (Berkeley) %G%
 #
-set b=/usr/lib
 set voptions=
 set options=
 set files=
 set f=''
 set head=""
+set vf=/usr/libexec/vfontedpr
+set tm=/usr/share/lib/tmac
 top:
 if ($#argv > 0) then
     switch ($1:q)
@@ -91,17 +92,17 @@ if (-r index) then
     sed -f nindex index >xindex
     if ($f == 'filter') then
 	if ("$head" != "") then
-	    $b/vfontedpr $options -h "$head" $files | cat $b/tmac/tmac.vgrind -
+	    $vf $options -h "$head" $files | cat $tm/tmac.vgrind -
 	else
-	    $b/vfontedpr $options $files | cat $b/tmac/tmac.vgrind -
+	    $vf $options $files | cat $tm/tmac.vgrind -
 	endif
     else
 	if ("$head" != "") then
-	    $b/vfontedpr $options -h "$head" $files | \
-		/bin/sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
+	    $vf $options -h "$head" $files | \
+		sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
 	else
-	    $b/vfontedpr $options $files | \
-		/bin/sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
+	    $vf $options $files | \
+		sh -c "vtroff -rx1 $voptions -i -mvgrind 2>> xindex"
 	endif
     endif
     sort -df +0 -2 xindex >index
@@ -109,17 +110,15 @@ if (-r index) then
 else
     if ($f == 'filter') then
 	if ("$head" != "") then
-	    $b/vfontedpr $options -h "$head" $files | cat $b/tmac/tmac.vgrind -
+	    $vf $options -h "$head" $files | cat $tm/tmac.vgrind -
 	else
-	    $b/vfontedpr $options $files | cat $b/tmac/tmac.vgrind -
+	    $vf $options $files | cat $tm/tmac.vgrind -
 	endif
     else
 	if ("$head" != "") then
-	    $b/vfontedpr $options -h "$head" $files \
-		| vtroff -i $voptions -mvgrind
+	    $vf $options -h "$head" $files | vtroff -i $voptions -mvgrind
 	else
-	    $b/vfontedpr $options $files \
-		| vtroff -i $voptions -mvgrind
+	    $vf $options $files | vtroff -i $voptions -mvgrind
 	endif
     endif
 endif
