@@ -1,4 +1,4 @@
-/*	param.h	6.1	83/07/29	*/
+/*	param.h	6.2	83/09/24	*/
 
 /*
  * Machine type dependent parameters.
@@ -15,7 +15,8 @@
  * Machine-independent constants
  */
 #define	NMOUNT	15		/* number of mountable file systems */
-#define	MSWAPX	15		/* pseudo mount table index for swapdev */
+/* NMOUNT must be <= 15 unless c_mdev (cmap.h) is expanded */
+#define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
 #define	NOFILE	20		/* max open files per process */
 /* NOFILE MUST NOT BE >= 31; SEE pte.h */
