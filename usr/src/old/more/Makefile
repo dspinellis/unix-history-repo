@@ -14,46 +14,39 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	more.c
-OBJS=	more.o
+OBJS=
+MAN=	more.0
 
 all: more
 
-more:	${OBJS} ${LIBC}
+more: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core more
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 more ${DESTDIR}/usr/ucb/more
 	rm -f ${DESTDIR}/usr/ucb/page
 	ln ${DESTDIR}/usr/ucb/more ${DESTDIR}/usr/ucb/page
 	install -c -o bin -g bin -m 644 more.help ${DESTDIR}/usr/lib/more.help
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/page.0
+	ln ${DESTDIR}/usr/man/cat1/more.0 ${DESTDIR}/usr/man/cat1/page.0
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-more.o: more.c /usr/include/stdio.h /usr/include/sys/types.h
-more.o: /usr/include/ctype.h /usr/include/signal.h /usr/include/errno.h
-more.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-more.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-more.o: /usr/include/setjmp.h /usr/include/sys/stat.h /usr/include/sys/file.h
-more.o: /usr/include/sys/exec.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
