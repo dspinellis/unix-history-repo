@@ -1,3 +1,4 @@
+.\" @(#)fsinterface.ms	1.3 %G%
 .if \nv .rm CM
 .de UX
 .ie \\n(UX \s-1UNIX\s0\\$1
@@ -26,6 +27,13 @@ As network or remote filesystems have been implemented for
 .UX ,
 several stylized interfaces between the filesystem implementation
 and the rest of the kernel have been developed.
+.FS
+This is an update of a paper originally presented
+at the September 1986 conference of the European
+.UX
+Users' Group.
+Last modified .
+.FE
 Notable among these are Sun Microsystems' Virtual Filesystem interface (VFS)
 using vnodes, Digital Equipment's Generic File System (GFS) architecture,
 and AT&T's File System Switch (FSS).
@@ -820,6 +828,24 @@ struct statfs {
 typedef long fsid_t[2];			/* file system id type */
 .DE
 .LP
+The modifications to Sun's interface at this level are minor.
+Additional arguments are present for the \fIvfs_mount\fP and \fIvfs_umount\fP
+entries.
+\fIvfs_statfs\fP accepts a vnode as well as filesystem identifier,
+as the information may not be uniform throughout a filesystem.
+For example,
+if a client may mount a file tree that spans multiple physical
+filesystems on a server, different sections may have different amounts
+of free space.
+(NFS does not allow remotely-mounted file trees to span physical filesystems
+on the server.)
+The final additions are the entries that support file handles.
+\fIvfs_vptofh\fP is provided for the use of file servers,
+which need to obtain an opaque
+file handle to represent the current vnode for transmission to clients.
+This file handle may later be used to relocate the vnode using \fIvfs_fhtovp\fP
+without requiring the vnode to remain in memory.
+.PP
 Finally, the external form of a filesystem object, the \fIvnode\fP, is:
 .DS
 .ta .5i +\w'struct vnodeops\0\0'u +\w'*v_vfsmountedhere;\0\0\0'u
@@ -888,6 +914,8 @@ struct vnodeops {
 	int	(*vn_readlink)(		/* vp, uiop, ioflag, cred */ );
 
 \fB+\fP	int	(*vn_abortop)(		/* ndp */ );
+\fB+\fP	int	(*vn_lock)(		/* vp */ );
+\fB+\fP	int	(*vn_unlock)(		/* vp */ );
 \fB!\fP	int	(*vn_inactive)(		/* vp */ );
 };
 .DE
@@ -983,11 +1011,13 @@ simple arithmetic.
 Another new entry point is \fIvn_mmap\fP, for use in mapping device memory
 into a user process address space.
 Its semantics are not yet decided.
-The final addition is the \fIvn_vptofh\fP entry.
-It is provided for the use of file servers, which need to obtain an opaque
-file handle to represent the current vnode for transmission to clients.
-This file handle may later be used to relocate the vnode using the vfs
-entry \fIvfs_fhtovp\fP.
+The final additions are the \fIvn_lock\fP and \fIvn_unlock\fP entries.
+These are used to request that the underlying file be locked against
+changes for short periods of time if the filesystem implementation allows it.
+They are used to maintain consistency
+during internal operations such as \fIexec\fP,
+and may not be used to construct atomic operations from other filesystem
+operations.
 .PP
 The attributes of a vnode are not stored in the vnode,
 as they might change with time and may need to be read from a remote
