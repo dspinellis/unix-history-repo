@@ -12,7 +12,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "tsleep.h"
 
 /*
  * System call interface to the socket abstraction.
@@ -153,7 +154,7 @@ noname:
 			so->so_error = ECONNABORTED;
 			break;
 		}
-		sleep((caddr_t)&so->so_timeo, PZERO+1);
+		tsleep((caddr_t)&so->so_timeo, PZERO+1, SLP_SO_ACCEPT, 0);
 	}
 	if (so->so_error) {
 		u.u_error = so->so_error;
@@ -234,7 +235,7 @@ connect()
 		goto bad2;
 	}
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
-		sleep((caddr_t)&so->so_timeo, PZERO+1);
+		tsleep((caddr_t)&so->so_timeo, PZERO+1, SLP_SO_ACCEPT2, 0);
 	u.u_error = so->so_error;
 	so->so_error = 0;
 bad2:
@@ -394,16 +395,15 @@ sendmsg()
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN];
 
-	u.u_error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg));
-	if (u.u_error)
+	if (u.u_error = copyin(uap->msg, (caddr_t)&msg, sizeof (msg)))
 		return;
 	if ((u_int)msg.msg_iovlen >= sizeof (aiov) / sizeof (aiov[0])) {
 		u.u_error = EMSGSIZE;
 		return;
 	}
-	u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
-		(unsigned)(msg.msg_iovlen * sizeof (aiov[0])));
-	if (u.u_error)
+	if (msg.msg_iovlen &&
+	    (u.u_error = copyin((caddr_t)msg.msg_iov, (caddr_t)aiov,
+				(unsigned)(msg.msg_iovlen * sizeof (aiov[0])))))
 		return;
 	msg.msg_iov = aiov;
 	sendit(uap->s, &msg, uap->flags);
@@ -474,6 +474,7 @@ sendit(s, mp, flags)
 				u.u_error = EINTR;
 			else
 				u.u_eosys = RESTARTSYS;
+			return;
 		}
 	} else
 		u.u_error = sosend((struct socket *)fp->f_data, to, &auio,
@@ -554,7 +555,6 @@ orecv()
 	msg.msg_iovlen = 1;
 	aiov.iov_base = uap->buf;
 	aiov.iov_len = uap->len;
-	msg.msg_accrights = 0;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
 	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
@@ -606,6 +606,7 @@ recvmsg()
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
 	struct iovec aiov[MSG_MAXIOVLEN], *uiov;
+	register int error1;
 
 	u.u_error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg));
 	if (u.u_error)
@@ -635,7 +636,9 @@ recvmsg()
 		}
 	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
 	msg.msg_iov = uiov;
-	u.u_error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
+	error1 = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
+	if (error1 && u.u_error == 0)
+		u.u_error = error1;
 }
 
 /* ARGSUSED */
@@ -681,6 +684,7 @@ recvit(s, mp, namelenp, rightslenp, compat_43)
 				u.u_error = EINTR;
 			else
 				u.u_eosys = RESTARTSYS;
+			return;
 		}
 	} else
 		u.u_error = soreceive((struct socket *)fp->f_data, &from, &auio,
@@ -837,7 +841,7 @@ pipe()
 {
 	struct file *rf, *wf;
 	struct socket *rso, *wso;
-	int fd, r;
+	int fd;
 
 	u.u_error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0);
 	if (u.u_error)
@@ -968,7 +972,7 @@ getpeername()
 	if (fp == 0)
 		return;
 	so = (struct socket *)fp->f_data;
-	if ((so->so_state & SS_ISCONNECTED) == 0) {
+	if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0) {
 		u.u_error = ENOTCONN;
 		return;
 	}
@@ -1006,8 +1010,14 @@ sockargs(aname, name, namelen, type)
 	register struct mbuf *m;
 	int error;
 
-	if ((u_int)namelen > MLEN)
+	if ((u_int)namelen > MLEN) {
+#ifdef COMPAT_43
+		if (type == MT_SONAME && (u_int)namelen <= 112)
+			namelen = MLEN;		/* unix domain compat. hack */
+		else
+#endif
 		return (EINVAL);
+	}
 	m = m_get(M_WAIT, type);
 	if (m == NULL)
 		return (ENOBUFS);
