@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_subr.c	7.5 (Berkeley) %G%
+ *	@(#)tty_subr.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,23 @@ char	cwaiting;
 	isset(((char *)((int)(cp)&~CROUND)+sizeof(struct cblock *)), \
 		(int)(cp)&CROUND)
 #define cbptr(x) ((struct cblock *)(x))
+
+/*
+ * Initialize clist by freeing all character blocks.
+ */
+cinit()
+{
+	register int ccp;
+	register struct cblock *cp;
+
+	ccp = (int) cfree;
+	ccp = (ccp + CROUND) & ~CROUND;
+	for(cp = (struct cblock *) ccp; cp < &cfree[nclist - 1]; cp++) {
+		cp->c_next = cfreelist;
+		cfreelist = cp;
+		cfreecount += CBSIZE;
+	}
+}
 
 /*
  * Character list get/put

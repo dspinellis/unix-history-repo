@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.12 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,11 +31,11 @@ getkerninfo(p, uap, retval)
 	int *retval;
 {
 
-	int	bufsize,	/* max size of users buffer */
-		needed,	locked, (*server)(), error = 0;
+	int bufsize;		/* max size of users buffer */
+	int needed, locked, (*server)(), error = 0;
 
-	if (error = copyin((caddr_t)uap->size,
-				(caddr_t)&bufsize, sizeof (bufsize)))
+	if (error = copyin((caddr_t)uap->size, (caddr_t)&bufsize,
+	    sizeof (bufsize)))
 		goto done;
 
 	switch (ki_type(uap->op)) {
@@ -139,12 +139,12 @@ again:
 			break;
 
 		case KINFO_PROC_UID:
-			if (p->p_uid != (uid_t)arg)
+			if (p->p_ucred->cr_uid != (uid_t)arg)
 				continue;
 			break;
 
 		case KINFO_PROC_RUID:
-			if (p->p_ruid != (uid_t)arg)
+			if (p->p_cred->p_ruid != (uid_t)arg)
 				continue;
 			break;
 		}
@@ -156,6 +156,9 @@ again:
 				return (error);
 			eproc.e_paddr = p;
 			eproc.e_sess = p->p_pgrp->pg_session;
+			eproc.e_pcred = *p->p_cred;
+			eproc.e_ucred = *p->p_ucred;
+			eproc.e_vm = *p->p_vmspace;
 			eproc.e_pgid = p->p_pgrp->pg_id;
 			eproc.e_jobc = p->p_pgrp->pg_jobc;
 			if ((p->p_flag&SCTTY) && 

@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	7.33 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
+#include "proc.h"
 #include "buf.h"
 #include "vnode.h"
 #include "specdev.h"
@@ -31,6 +32,7 @@ bread(vp, blkno, size, cred, bpp)
 	long secsize;
 #endif SECSIZE
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp;
 
 	if (size == 0)
@@ -53,7 +55,7 @@ bread(vp, blkno, size, cred, bpp)
 	}
 	VOP_STRATEGY(bp);
 	trace(TR_BREADMISS, pack(vp, size), blkno);
-	u.u_ru.ru_inblock++;		/* pay for read */
+	p->p_stats->p_ru.ru_inblock++;		/* pay for read */
 	return (biowait(bp));
 }
 
@@ -71,6 +73,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	struct ucred *cred;
 	struct buf **bpp;
 {
+	struct proc *p = curproc;		/* XXX */
 	register struct buf *bp, *rabp;
 
 	bp = NULL;
@@ -91,7 +94,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 			}
 			VOP_STRATEGY(bp);
 			trace(TR_BREADMISS, pack(vp, size), blkno);
-			u.u_ru.ru_inblock++;		/* pay for read */
+			p->p_stats->p_ru.ru_inblock++;	/* pay for read */
 		} else
 			trace(TR_BREADHIT, pack(vp, size), blkno);
 	}
@@ -115,7 +118,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 			}
 			VOP_STRATEGY(rabp);
 			trace(TR_BREADMISSRA, pack(vp, rabsize), rablkno);
-			u.u_ru.ru_inblock++;		/* pay in advance */
+			p->p_stats->p_ru.ru_inblock++;	/* pay in advance */
 		}
 	}
 
@@ -139,13 +142,14 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 bwrite(bp)
 	register struct buf *bp;
 {
+	struct proc *p = curproc;		/* XXX */
 	register int flag;
 	int s, error;
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
 	if ((flag & B_DELWRI) == 0)
-		u.u_ru.ru_oublock++;		/* noone paid yet */
+		p->p_stats->p_ru.ru_oublock++;		/* no one paid yet */
 	else
 		reassignbuf(bp, bp->b_vp);
 	trace(TR_BWRITE, pack(bp->b_vp, bp->b_bcount), bp->b_lblkno);
@@ -185,11 +189,12 @@ bwrite(bp)
 bdwrite(bp)
 	register struct buf *bp;
 {
+	struct proc *p = curproc;		/* XXX */
 
 	if ((bp->b_flags & B_DELWRI) == 0) {
 		bp->b_flags |= B_DELWRI;
 		reassignbuf(bp, bp->b_vp);
-		u.u_ru.ru_oublock++;		/* noone paid yet */
+		p->p_stats->p_ru.ru_oublock++;		/* no one paid yet */
 	}
 	/*
 	 * If this is a tape drive, the write must be initiated.
