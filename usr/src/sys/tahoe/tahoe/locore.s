@@ -1,4 +1,4 @@
-/*	locore.s	1.21.1.2	88/02/24	*/
+/*	locore.s	1.24	88/02/28	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -609,18 +609,24 @@ _/**/mname:	.globl	_/**/mname;		\
 #include "yc.h"
 #include "yc.h"
 	SYSMAP(_cymap	,_cybase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
+#include "mp.h"
+	SYSMAP(_mpmap	,_mpbase	,NMP*14		)
 	SYSMAP(ecamap	,calimit	,0		)
 	SYSMAP(ekmempt	,kmemlimit	,0		)
+
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
 	SYSMAP(VMEMmap1	,vmem1		,0		)
 #include "ace.h"
 	SYSMAP(_acemap1	,_acemem	,NACE*32	)
 	SYSMAP(VMEMend	,vmemend	,0		)
+
 	SYSMAP(VBmap	,vbbase		,CLSIZE		)
 	SYSMAP(_vdbmap	,_vdbbase	,NVD*(MAXPHYS/NBPG+CLSIZE) )
 	SYSMAP(_cybmap	,_cybbase	,NCY*(MAXPHYS/NBPG+CLSIZE) )
+	SYSMAP(_mpbmap	,_mpbbase	,NMP*14		)
 	SYSMAP(eVBmap	,vbend		,0		)
+
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 eSysmap:
 	.globl	_Syssize
