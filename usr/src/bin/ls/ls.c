@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.16 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.17 (Berkeley) %G%";
 #endif
 
 /*
@@ -282,8 +282,10 @@ gstat(fp, file, statarg, pnb)
 		struct stat stb, stb1;
 
 		if ((*statf)(file, &stb) < 0) {
-			fprintf(stderr, "%s not found\n", file);
-			return (0);
+			if (statf == stat && lstat(file, &stb) < 0) {
+				fprintf(stderr, "%s not found\n", file);
+				return (0);
+			}
 		}
 		fp->fblks = stb.st_blocks;
 		fp->fsize = stb.st_size;
