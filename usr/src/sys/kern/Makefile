@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.15 (Berkeley) %G%
+#	@(#)Makefile	7.16 (Berkeley) %G%
 
 # Makefile for kernel tags files, init_sysent, etc.
 
@@ -27,17 +27,18 @@ SYSTAGS=/var/db/sys_tags
 SYSDIR=/sys
 
 # Directories in which to place tags links (other than machine-dependent)
-DGEN=	kern sys net netimp netinet netns netccitt nfs ufs vm
+DGEN=	kern sys net netimp netinet netns netccitt nfs ufs/ffs ufs/lfs \
+	ufs/mfs ufs/ufs vm
 
 tags: FRC
 	-for i in ${ARCH}; do \
-	    cd ../$$i && make ${MFLAGS} tags; done
+	    (cd ../$$i && make ${MFLAGS} tags); done
 
 links: ${SYSTAGS}
 	-for i in ${DGEN}; do \
-	    cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; } done
+	    (cd ../$$i && { rm -f tags; ln -s ${SYSTAGS} tags; }) done
 	-for i in ${ARCH}; do \
-	    cd ../$$i && make ${MFLAGS} links; done
+	    (cd ../$$i && make ${MFLAGS} links); done
 
 ${SYSTAGS}:
 	ln -s ${SYSDIR}/${MACHINE}/tags ${SYSTAGS}
