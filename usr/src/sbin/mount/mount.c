@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,6 +37,7 @@ int	badvfstype __P((int, const char **));
 char   *catopt __P((char *, const char *));
 struct statfs
        *getmntpt __P((const char *));
+int	hasopt __P((const char *, const char *));
 const char
       **makevfslist __P((char *));
 void	mangle __P((char *, int *, const char **));
@@ -138,6 +139,8 @@ main(argc, argv)
 					continue;
 				if (badvfsname(fs->fs_vfstype, vfslist))
 					continue;
+				if (hasopt(fs->fs_mntops, "noauto"))
+					continue;
 				if (mountfs(fs->fs_vfstype, fs->fs_spec,
 				    fs->fs_file, init_flags, options,
 				    fs->fs_mntops))
@@ -215,6 +218,31 @@ main(argc, argv)
 }
 
 int
+hasopt(mntopts, option)
+	const char *mntopts, *option;
+{
+	int negative, found;
+	char *opt, *optbuf;
+
+	if (option[0] == 'n' && option[1] == 'o') {
+		negative = 1;
+		option += 2;
+	} else
+		negative = 0;
+	optbuf = strdup(mntopts);
+	found = 0;
+	for (opt = optbuf; (opt = strtok(opt, ",")) != NULL; opt = NULL) {
+		if (opt[0] == 'n' && opt[1] == 'o') {
+			if (!strcasecmp(opt + 2, option))
+				found = negative;
+		} else if (!strcasecmp(opt, option))
+			found = !negative;
+	}
+	free(optbuf);
+	return (found);
+}
+
+int
 mountfs(vfstype, spec, name, flags, options, mntopts)
 	const char *vfstype, *spec, *name, *options, *mntopts;
 	int flags;
@@ -232,18 +260,21 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 	char *optbuf, execname[MAXPATHLEN + 1], mntpath[MAXPATHLEN];
 
 	if (realpath(name, mntpath) == NULL) {
-		warn("%s", mntpath);
+		warn("realpath %s", mntpath);
 		return (1);
 	}
 
 	name = mntpath;
 
-	if (options == NULL) {
-		if (mntopts == NULL || *mntopts == '\0')
-			options = "rw";
-		else
-			options = mntopts;
+	if (mntopts == NULL)
 		mntopts = "";
+	if (options == NULL) {
+		if (*mntopts == '\0') {
+			options = "rw";
+		} else {
+			options = mntopts;
+			mntopts = "";
+		}
 	}
 	optbuf = catopt(strdup(mntopts), options);
 
@@ -318,7 +349,7 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 
 		if (verbose) {
 			if (statfs(name, &sf) < 0) {
-				warn("%s", name);
+				warn("statfs %s", name);
 				return (1);
 			}
 			prmount(sf.f_mntfromname, sf.f_mntonname, sf.f_flags);
