@@ -16,16 +16,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termcap.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)termcap.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	BUFSIZ		1024
 #define MAXHOP		32	/* max number of tc= indirections */
 #define	PBUFSIZ		512	/* max length of filename path */
 #define	PVECSIZ		32	/* max number of names in path */
-#define DEF_PATH	".termcap /etc/termcap"
 
 #include <ctype.h>
+#include "pathnames.h"
+
 /*
  * termcap - routines for dealing with the terminal capability data base
  *
@@ -65,7 +66,6 @@ tgetent(bp, name)
 	pvec = pathvec;
 	tbuf = bp;
 	p = pathbuf;
-#ifndef V6
 	cp = getenv("TERMCAP");
 	/*
 	 * TERMCAP can have one of two things in it. It can be the
@@ -86,14 +86,12 @@ tgetent(bp, name)
 				strcpy(pathbuf, home);	/* $HOME first */
 				*p++ = '/';
 			}	/* if no $HOME look in current directory */
-			strncpy(p, DEF_PATH, PBUFSIZ - (p - pathbuf));
+			strncpy(p, _PATH_DEF, PBUFSIZ - (p - pathbuf));
 		}
 	}
 	else				/* user-defined name in TERMCAP */
 		strncpy(pathbuf, cp, PBUFSIZ);	/* still can be tokenized */
-#else
-	strncpy(pathbuf, "/etc/termcap", PBUFSIZ);
-#endif
+
 	*fname++ = pathbuf;	/* tokenize path into vector of names */
 	while (*++p)
 		if (*p == ' ' || *p == ':') {
