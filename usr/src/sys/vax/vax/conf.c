@@ -1,4 +1,4 @@
-/*	conf.c	4.30	81/03/21	*/
+/*	conf.c	4.31	81/04/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -302,7 +302,7 @@ struct	linesw linesw[] =
 	0
 };
  
-int	nldisp = 4;
+int	nldisp = 3;
  
 struct	buf	bfreelist[BQUEUES];	/* buffer chain headers */
 struct	buf	bswlist;	/* free list of swap headers */
