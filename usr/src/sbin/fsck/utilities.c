@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -364,7 +364,7 @@ getpathname(namebuf, curdir, ino)
 	}
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	idesc.id_type = DATA;
-	cp = &namebuf[BUFSIZ - 1];
+	cp = &namebuf[MAXPATHLEN - 1];
 	*cp = '\0';
 	if (curdir != ino) {
 		idesc.id_parent = curdir;
@@ -395,7 +395,7 @@ getpathname(namebuf, curdir, ino)
 		strcpy(namebuf, "?");
 		return;
 	}
-	bcopy(cp, namebuf, &namebuf[BUFSIZ] - cp);
+	bcopy(cp, namebuf, &namebuf[MAXPATHLEN] - cp);
 }
 
 void
