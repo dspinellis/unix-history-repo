@@ -3,16 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.28 (Berkeley) %G%
+#	@(#)Makefile	7.29 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.28 (Berkeley) %G%
+#	@(#)Makefile	7.29 (Berkeley) %G%
 #
-#	@(#)Makefile	7.28 (Berkeley) %G%
+#	@(#)Makefile	7.29 (Berkeley) %G%
 
 VERSION=3.7
 
@@ -43,7 +43,7 @@ LINKS=	${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/view \
 	${BINDIR}/ex ${BINDIR}/edit
 
 # If we don't have ex we can't make ex_vars.h, so don't remove it!
-CLEANFILES+=	strings
+CLEANFILES+=	strings xs.c strings.o
 
 SHAREDSTRINGS=	sharedstrings
 
