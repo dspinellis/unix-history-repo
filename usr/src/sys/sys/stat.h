@@ -4,11 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	8.2 (Berkeley) %G%
+ *	@(#)stat.h	8.3 (Berkeley) %G%
  */
+
+#ifndef _STAT_H_
+#define	_STAT_H_
 
 #include <sys/time.h>
 
+#ifndef _POSIX_SOURCE
 struct ostat {
 	unsigned short	st_dev;		/* inode's device */
 	ino_t	st_ino;			/* inode's number */
@@ -26,6 +30,7 @@ struct ostat {
 	unsigned long	st_flags;	/* user defined flags for file */
 	unsigned long	st_gen;		/* file generation number */
 };
+#endif /* !_POSIX_SOURCE */
 
 struct stat {
 	dev_t	st_dev;			/* inode's device */
@@ -153,3 +158,4 @@ int	lstat __P((const char *, struct stat *));
 #endif
 __END_DECLS
 #endif
+#endif /* !_STAT_H_ */
