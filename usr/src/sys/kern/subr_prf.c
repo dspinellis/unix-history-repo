@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.10 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -346,19 +346,6 @@ tablefull(tab)
 {
 
 	log(LOG_ERR, "%s: table is full\n", tab);
-}
-
-/*
- * Hard error is the preface to plaintive error messages
- * about failing disk transfers.
- */
-harderr(bp, cp)
-	struct buf *bp;
-	char *cp;
-{
-
-	printf("%s%d%c: hard error sn%d ", cp,
-	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev)&07), bp->b_blkno);
 }
 
 /*
