@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	7.4 (Berkeley) %G%
+ *	@(#)fifo.h	7.5 (Berkeley) %G%
  */
 
 #ifdef FIFO
@@ -181,7 +181,8 @@ int	fifo_advlock __P((
 #define fifo_truncate ((int (*) __P(( \
 		struct vnode *vp, \
 		off_t length, \
-		int flags))) nullop)
+		int flags, \
+		struct ucred *cred))) nullop)
 #define fifo_update ((int (*) __P(( \
 		struct vnode *vp, \
 		struct timeval *ta, \
