@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	5.25 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	5.26 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	5.25 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	5.26 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -23,6 +23,10 @@ static char sccsid[] = "@(#)domain.c	5.25 (Berkeley) %G% (without name server)";
 #include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
+
+#ifndef BSD4_4
+#define __dn_skipname	dn_skipname
+#endif
 
 typedef union {
 	HEADER qb1;
@@ -242,38 +246,6 @@ loop:
 		}
 	}
 }
-
-#ifndef BSD
-
-/*
- * Skip over a compressed domain name. Return the size or -1.
- */
-__dn_skipname(comp_dn, eom)
-	u_char *comp_dn, *eom;
-{
-	register u_char *cp;
-	register int n;
-
-	cp = (u_char *)comp_dn;
-	while (cp < eom && (n = *cp++)) {
-		/*
-		 * check for indirection
-		 */
-		switch (n & INDIR_MASK) {
-		case 0:		/* normal case, n == len */
-			cp += n;
-			continue;
-		default:	/* illegal type */
-			return (-1);
-		case INDIR_MASK:	/* indirection */
-			cp++;
-		}
-		break;
-	}
-	return (cp - comp_dn);
-}
-
-#endif /* not BSD */
 
 #else /* not NAMED_BIND */
 
