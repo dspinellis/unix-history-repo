@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -73,44 +73,35 @@ ftsopen(argv, options, compar)
 	parent->fts_level = ROOTPARENTLEVEL;
 
 	/* allocate/initialize root(s) */
-	if (options & FTS_MULTIPLE) {
-		maxlen = -1;
-		for (root = NULL, nitems = 0; *argv; ++argv, ++nitems) {
-			if (!(p = fts_root(*argv)))
-				goto mem2;
-			if (maxlen < p->fts_namelen)
-				maxlen = p->fts_namelen;
-			/*
-			 * if comparison routine supplied, traverse in sorted
-			 * order; otherwise traverse in the order specified.
-			 */
-			if (compar) {
-				p->fts_link = root;
-				root = p;
-				p->fts_accpath = p->fts_name;
-				p->fts_info = fts_stat(p, 0);
-			} else {
-				p->fts_link = NULL;
-				if (!root)
-					tmp = root = p;
-				else {
-					tmp->fts_link = p;
-					tmp = p;
-				}
-			}
-			p->fts_level = ROOTLEVEL;
-			p->fts_parent = parent;
-		}
-		if (compar && nitems > 1)
-			root = fts_sort(root, nitems);
-	} else {
-		if (!(root = fts_root((char *)argv)))
+	maxlen = -1;
+	for (root = NULL, nitems = 0; *argv; ++argv, ++nitems) {
+		if (!(p = fts_root(*argv)))
 			goto mem2;
-		maxlen = root->fts_namelen;
-		root->fts_link = NULL;
-		root->fts_level = ROOTLEVEL;
-		root->fts_parent = parent;
+		if (maxlen < p->fts_namelen)
+			maxlen = p->fts_namelen;
+		/*
+		 * if comparison routine supplied, traverse in sorted
+		 * order; otherwise traverse in the order specified.
+		 */
+		if (compar) {
+			p->fts_link = root;
+			root = p;
+			p->fts_accpath = p->fts_name;
+			p->fts_info = fts_stat(p, 0);
+		} else {
+			p->fts_link = NULL;
+			if (!root)
+				tmp = root = p;
+			else {
+				tmp->fts_link = p;
+				tmp = p;
+			}
+		}
+		p->fts_level = ROOTLEVEL;
+		p->fts_parent = parent;
 	}
+	if (compar && nitems > 1)
+		root = fts_sort(root, nitems);
 
 	/*
 	 * allocate a dummy pointer and make ftsread think that we've just
