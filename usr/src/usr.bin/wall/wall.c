@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -179,13 +179,14 @@ sendmsg(line, nonblock, left)
 			(void)alarm((u_int)(60 * 5));
 			sendmsg(line, 0, left);
 			exit(0);
-		} else if (errno != ENODEV) {
+		} else {
 			/*
 			 * We get ENODEV on a slip line
 			 * if we're running as root
 			 */
-			(void)fprintf(stderr, "wall: %s: %s\n",
-			    device, strerror(errno));
+			if (errno != ENODEV)
+				(void)fprintf(stderr, "wall: %s: %s\n",
+				    device, strerror(errno));
 			break;
 		}
 	}
