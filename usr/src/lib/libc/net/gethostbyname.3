@@ -1,8 +1,8 @@
-.\" Copyright (c) 1983 Regents of the University of California.
+.\" Copyright (c) 1983,1987 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.6 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.7 (Berkeley) %G%
 .\"
 .TH GETHOSTBYNAME 3N ""
 .UC 5
@@ -28,6 +28,10 @@ gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent \- get network 
 .B "int stayopen;
 .PP
 .B "endhostent()
+.PP
+.B "herror(string)
+.br
+.B "char *string;
 .PP
 .SH DESCRIPTION
 .I Gethostbyname
@@ -102,6 +106,13 @@ The external integer
 .IR h_errno
 may then be checked to see whether this is a temporary failure
 or an invalid or unknown host.
+The routine
+.I herror
+can be used to print an error message describing the failure.
+If its argument
+.I string
+is non-NULL, it is printed, followed by a colon and a space.
+The error message is printed with a trailing newline.
 .PP
 .IR h_errno
 can have the following values:
@@ -114,17 +125,19 @@ and means that the local server did not receive
 a response from an authoritative server.
 A retry at some later time may succeed.
 .IP NO_RECOVERY \w'HOST_NOT_FOUND'u+2n
+Some unexpected server failure was encountered.
 This is a non-recoverable error.
 .IP NO_ADDRESS \w'HOST_NOT_FOUND'u+2n
 The requested name is valid but does not have an IP address; 
 this is not a temporary error.  
-This means another type
-of request to the name server will result in an answer.
+This means another type of request to the name server using this domain name
+will result in an answer;
+for example, a mail-forwarder may be registered for this domain.
 .RE
 .SH FILES
 /etc/hosts
 .SH "SEE ALSO"
-hosts(5), resolver(3), named(8)
+resolver(3), hosts(5), hostname(7), named(8)
 .SH CAVEAT
 .PP
 .I Gethostent
