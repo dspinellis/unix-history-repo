@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tcsetpgrp.3	5.2 (Berkeley) %G%
+.\"	@(#)tcsetpgrp.3	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt TCSETPGRP
@@ -13,6 +13,7 @@
 .Nd set foreground process group ID
 .Sh SYNOPSIS
 .Fd #include <sys/types.h>
+.Fd #include <unistd.h>
 .Ft int
 .Fn tcsetpgrp "int fd" "pid_t pgrp_id"
 .Sh DESCRIPTION
