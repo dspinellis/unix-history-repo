@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.20	81/04/17	*/
+/*	kern_clock.c	4.21	81/04/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,7 +66,6 @@ hardclock(pc, ps)
 		;
 	if (p1)
 		p1->c_time--;
-out:
 
 	/*
 	 * Maintain iostat and per-process cpu statistics
@@ -164,7 +163,7 @@ double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 softclock(pc, ps)
 	caddr_t pc;
 {
-	register struct callout *p1, *p2;
+	register struct callout *p1;
 	register struct proc *pp;
 	register int a, s;
 	caddr_t arg;
