@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.9	84/08/29	*/
+/*	kern_clock.c	6.10	84/11/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -230,7 +230,20 @@ hardclock(pc, ps)
 		}
 	}
 #else
-	BUMPTIME(&time, tick);
+	if (adjtimedelta == 0)
+		BUMPTIME(&time, tick)
+	else {
+		register delta;
+
+		if (adjtimedelta < 0) {
+			delta = tick - tickadj;
+			adjtimedelta += tickadj;
+		} else {
+			delta = tick + tickadj;
+			adjtimedelta -= tickadj;
+		}
+		BUMPTIME(&time, delta);
+	}
 #endif
 	setsoftclock();
 }
