@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1709,7 +1709,7 @@ lockfile(fd, filename, ext, type)
 	char *ext;
 	int type;
 {
-# ifndef HASFLOCK
+# if !HASFLOCK
 	int action;
 	struct flock lfd;
 

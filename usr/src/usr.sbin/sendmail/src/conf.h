@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.78 (Berkeley) %G%
+ *	@(#)conf.h	8.79 (Berkeley) %G%
  */
 
 /*
@@ -200,7 +200,9 @@ extern int	syslog(int, char *, ...);
 # else
 			/* SunOS 4.0.3 or 4.1.x */
 #  define HASSETREUID	1	/* has setreuid(2) call */
-#  define HASFLOCK	1	/* has flock(2) call */
+#  ifndef HASFLOCK
+#   define HASFLOCK	1	/* has flock(2) call */
+#  endif
 #  define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 #  include <vfork.h>
 
@@ -260,7 +262,9 @@ extern long	dgux_inet_addr();
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # ifdef vax
 #  define LA_TYPE	LA_FLOAT
@@ -283,7 +287,9 @@ extern long	dgux_inet_addr();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifdef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define LA_TYPE	LA_INT
 # define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
 # ifndef _PATH_SENDMAILPID
@@ -298,7 +304,9 @@ extern long	dgux_inet_addr();
 
 #ifdef NeXT
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define sleep		sleepX
@@ -368,7 +376,9 @@ typedef int		pid_t;
 # define MACH386	1
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifdef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define NEEDSTRTOL	1	/* need the strtol() function */
 # define setpgid	setpgrp
@@ -474,7 +484,9 @@ extern int		errno;
 #ifdef RISCOS
 
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifdef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 # define WAITUNION	1	/* use "union wait" as wait argument type */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define LA_TYPE	LA_INT
@@ -501,6 +513,9 @@ extern void		*malloc();
 
 #ifdef __linux__
 # define BSD		1	/* pretend to be BSD based today */
+# ifndef HASFLOCK
+#  define HASFLOCK	0	/* don't have a functioning flock(2) */
+# endif
 # undef  NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
@@ -695,7 +710,9 @@ typedef int		pid_t;
 # define HASGETDTABLESIZE 1	/* has getdtablesize(2) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
-# define HASFLOCK	1	/* has flock(2) call */
+# ifndef HASFLOCK
+#  define HASFLOCK	1	/* has flock(2) call */
+# endif
 #endif
 
 /* general System V Release 4 defines */
@@ -763,6 +780,7 @@ typedef int		pid_t;
 # undef HASINITGROUPS		/* doesn't have initgroups(3) call */
 #endif
 
+
 /*
 **  Due to a "feature" in some operating systems such as Ultrix 4.3 and
 **  HPUX 8.0, if you receive a "No route to host" message (ICMP message
@@ -780,6 +798,10 @@ typedef int		pid_t;
 
 #ifndef HASGETUSERSHELL
 # define HASGETUSERSHELL 1	/* libc has getusershell(3) call */
+#endif
+
+#ifndef HASFLOCK
+# define HASFLOCK	0	/* assume no flock(2) support */
 #endif
 
 
