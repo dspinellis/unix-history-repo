@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_output.c	7.2 (Berkeley) %G%
+ *	@(#)ip_output.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,7 +105,7 @@ ip_output(m, opt, ro, flags)
 			goto bad;
 		}
 		ro->ro_rt->rt_use++;
-		if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
+		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 			dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
 	}
 #ifndef notdef
