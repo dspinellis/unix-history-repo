@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.58 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -69,10 +69,6 @@ char *months[] =
 	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
 	  "Sep", "Oct", "Nov", "Dec" };
 
-char *months[] =
-	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug",
-	  "Sep", "Oct", "Nov", "Dec" };
-
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -82,7 +78,6 @@ main(argc, argv)
 	struct timeval tp;
 	struct tm *ttp;
 	struct timeval tp;
-	struct tm *ttp;
 	struct group *gr;
 	register int ch;
 	register char *p;
@@ -361,24 +356,18 @@ main(argc, argv)
 			sleepexit(1);
 		}
 		else if (pwd->pw_change - tp.tv_sec <
-		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog) {
-			ttp = localtime(&pwd->pw_change);
-			(void)printf("Warning: your password expires on %s %d, %d\n",
-			    months[ttp->tm_mon], ttp->tm_mday,
-			    TM_YEAR_BASE + ttp->tm_year);
-		}
+		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog)
+			(void)printf("Warning: your password expires on %s",
+			    ctime(&pwd->pw_expire));
 	if (pwd->pw_expire)
 		if (tp.tv_sec >= pwd->pw_expire) {
 			(void)printf("Sorry -- your account has expired.\n");
 			sleepexit(1);
 		}
 		else if (pwd->pw_expire - tp.tv_sec <
-		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog) {
-			ttp = localtime(&pwd->pw_expire);
-			(void)printf("Warning: your account expires on %s %d, %d\n",
-			    months[ttp->tm_mon], ttp->tm_mday,
-			    TM_YEAR_BASE + ttp->tm_year);
-		}
+		    2 * DAYSPERWEEK * SECSPERDAY && !quietlog)
+			(void)printf("Warning: your account expires on %s",
+			    ctime(&pwd->pw_expire));
 
 	/* nothing else left to fail -- really log in */
 	{
