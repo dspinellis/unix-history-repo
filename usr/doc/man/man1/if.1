@@ -1,0 +1,86 @@
+.th IF I 5/2/74
+.sh NAME
+if \*-  conditional command
+.sh SYNOPSIS
+.bd if
+expr command [ arg ... ]
+.sh DESCRIPTION
+.it If
+evaluates the expression
+.it expr,
+and if its value is
+true,
+executes the given
+.it command
+with the given arguments.
+.s3
+The following primitives are used to construct
+the
+.it expr:
+.s3
+.lp +13 13
+\fB\*-r\fR file	true if the file exists and is readable.
+.s3
+.lp +13 13
+\fB\*-w \fRfile	true if the file exists and is writable.
+.s3
+.lp +13 13
+s1 \fB= \fRs2	true
+if the strings
+.it s1
+and
+.it s2
+are equal.
+.s3
+.lp +13 13
+s1 \fB!= \fRs2	true
+if the strings
+.it s1
+and
+.it s2
+are not equal.
+.s3
+.lp +13 13
+\fB{ \fRcommand \fB}\fR	The bracketed command is
+executed to obtain the
+exit status.
+Status zero is considered
+.it true.
+The command must
+not
+be another
+.it if.
+.s3
+.i0
+These primaries may be combined with the
+following operators:
+.s3
+.lp +13 13
+\fB!\fR	unary negation operator
+.s3
+.lp +13 13
+\fB\*-a\fR	binary
+.it and
+operator
+.s3
+.lp +13 13
+\fB\*-o\fR	binary
+.it or
+operator
+.s3
+.lp +13 13
+\fB( \fRexpr\fB )\fR	parentheses for grouping.
+.s3
+.i0
+.bd \*-a
+has higher precedence than
+.bd \*-o.
+Notice that all the operators and flags are separate
+arguments to
+.it if
+and hence must be surrounded by spaces.
+Notice also that parentheses are meaningful
+to the Shell and must be escaped.
+.sh "SEE ALSO"
+sh (I), find (I)
+.sh BUGS
