@@ -31,6 +31,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)mount.h	7.22 (Berkeley) 6/3/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00129
+ * --------------------         -----   ----------------------
+ *
+ * 02 Apr 93	Paul Popelka		Added support for PCFS
+ *
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -260,6 +268,17 @@ struct nfs_args {
 #define	NFSMNT_COMPRESS	0x0800	/* Compress nfs rpc xdr */
 #define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
 #endif NFS
+
+#ifdef PCFS
+/*
+ *  Arguments to mount MSDOS filesystems.
+ */
+struct pcfs_args {
+	char *fspec;		/* blocks special holding the fs to mount */
+	int exflags;		/* mount flags				*/
+	uid_t exroot;		/* mapping for root uid			*/
+};
+#endif /* PCFS */
 
 #ifdef KERNEL
 /*
