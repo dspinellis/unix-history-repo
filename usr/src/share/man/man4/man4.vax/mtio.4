@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mtio.4	6.1 (Berkeley) %G%
+.\"	@(#)mtio.4	6.2 (Berkeley) %G%
 .\"
 .TH MTIO 4 ""
 .UC 5
@@ -25,11 +25,11 @@ or
 The following description applies to any of the transport/controller pairs.
 The files
 .I "mt0, ..., mt7"
-are 800bpi, 
+are 800bpi (or the transport's lowest density), 
 .I "mt8, ..., mt15"
-are 1600bpi, and
+are 1600bpi (or the transport's second density), and
 .I "mt16, ..., mt23"
-are 6250bpi.
+are 6250bpi (or the transport's third density).
 (But note that only 1600 bpi is available with the TS11.)
 The files
 .IR "mt0, ..., mt3" ,
@@ -51,7 +51,7 @@ the tape like any other file.
 Seeks have their usual meaning and it is possible
 to read or write a byte at a time.
 Writing in very small units is inadvisable,
-however, because it tends to create monstrous record
+however, because it uses most of the tape in record
 gaps.
 .PP
 The
@@ -90,6 +90,8 @@ struct	mtop	{
 #define MTREW	5	/* rewind */
 #define MTOFFL	6	/* rewind and put the drive offline */
 #define MTNOP	7	/* no operation, sets status only */
+#define MTCACHE	8	/* enable controller cache */
+#define MTNOCACHE	9	/* disable controller cache */
 
 /* structure for MTIOCGET - mag tape get status command */
 
@@ -107,19 +109,23 @@ struct	mtget	{
 };
 
 /*
- * Constants for mt_type byte
+ * Constants for mt_type byte.  These are the same
+ * for other controllers compatible with the types listed.
  */
-#define	MT_ISTS		0x01
-#define	MT_ISHT		0x02
-#define	MT_ISTM		0x03
-#define	MT_ISMT		0x04
-#define	MT_ISUT		0x05
-#define	MT_ISCPC	0x06
-#define	MT_ISAR		0x07
+#define	MT_ISTS		0x01		/* TS-11 */
+#define	MT_ISHT		0x02		/* TM03 Massbus: TE16, TU45, TU77 */
+#define	MT_ISTM		0x03		/* TM11/TE10 Unibus */
+#define	MT_ISMT		0x04		/* TM78/TU78 Massbus */
+#define	MT_ISUT		0x05		/* SI TU-45 emulation on Unibus */
+#define	MT_ISCPC	0x06		/* SUN */
+#define	MT_ISAR		0x07		/* SUN */
+#define	MT_ISTMSCP	0x08		/* DEC TMSCP protocol (TU81, TK50) */
 
 /* mag tape io control commands */
 #define	MTIOCTOP	_IOW(m, 1, struct mtop)		/* do a mag tape op */
 #define	MTIOCGET	_IOR(m, 2, struct mtget)	/* get tape status */
+#define MTIOCIEOT	_IO(m, 3)			/* ignore EOT error */
+#define MTIOCEEOT	_IO(m, 4)			/* enable EOT error */
 
 #ifndef KERNEL
 #define	DEFTAPE	"/dev/rmt12"
@@ -157,3 +163,6 @@ mt(4),
 ut(4)
 .SH BUGS
 The status should be returned in a device independent format.
+.PP
+The special file naming should be redone in a more consistent and
+understandable manner.
