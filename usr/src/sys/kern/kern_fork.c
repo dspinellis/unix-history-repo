@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_fork.c	7.4 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -209,6 +209,19 @@ again:
 		forkstat.cntfork++;
 		forkstat.sizfork += rip->p_dsize + rip->p_ssize;
 	}
+#ifdef KTRACE
+	if (rip->p_flag&SKTR) {
+		rpp->p_flag |= SKTR;
+		if ((rpp->p_tracep = rip->p_tracep) != NULL) {
+			igrab(rpp->p_tracep);
+			iunlock(rpp->p_tracep);
+		}
+		rpp->p_traceflag = rip->p_traceflag;
+	} else {
+		rpp->p_tracep = NULL;
+		rpp->p_traceflag = 0;
+	}
+#endif
 	rpp->p_rssize = 0;
 	rpp->p_maxrss = rip->p_maxrss;
 	rpp->p_wchan = 0;
