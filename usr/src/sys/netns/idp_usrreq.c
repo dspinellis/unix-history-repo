@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.8 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -52,7 +52,7 @@ idp_input(m, nsp, ifp)
 	if (ns_netof(idp->idp_sna)==0) {
 		register struct ifaddr *ia;
 
-		for (ia = ifp->if_addrlist; ia; ia->ifa_next) {
+		for (ia = ifp->if_addrlist; ia; ia = ia->ifa_next) {
 			if (ia->ifa_addr.sa_family == AF_NS) {
 				idp_ns.sns_addr.x_net =
 					IA_SNS(ia)->sns_addr.x_net;
