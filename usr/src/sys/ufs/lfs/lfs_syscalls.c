@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.13 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
