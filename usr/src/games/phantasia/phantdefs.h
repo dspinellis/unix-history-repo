@@ -128,9 +128,6 @@
 #define N_AGE		500		/* age to degenerate ratio */
 #define	N_GEMVALUE	(1000.0)	/* number of gold pieces to gem ratio */
 #define	N_TAXAMOUNT	(7.0)		/* tax percent */
-#ifdef OK_TO_PLAY
-#define	N_MAXUSERS	30		/* max. number of users allowed on system */
-#endif
 
 #define	D_BEYOND	(1.1e6)		/* distance to beyond point of no return */
 #define D_EXPER		(2000.0)	/* distance experimentos are allowed */

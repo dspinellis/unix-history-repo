@@ -177,12 +177,6 @@ static char *files[] =		/* all files to create */
     printf("Phantasia destination directory:  %s\n", DEST");
     printf("Wizard:  %s   UID:  %d\n", WIZARD, UID);
 
-#ifdef OK_TO_PLAY
-    printf("Restricted playing enabled.\n");
-#else
-    printf("Playing unrestricted.\n");
-#endif
-
 #ifdef ENEMY
     printf("Enemy list enabled.\n");
 #else
