@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rvcat.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rvcat.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -86,11 +86,11 @@ struct point_sizes {
 
 int	lines;
 
-int	vc = 1;		/* varian/versatec output file descriptor */
-int	varian;		/* 0 for versatec, 1 for varian. */
-int	BYTES_PER_LINE;	/* number of bytes per raster line. */
-int	PAGE_LINES;	/* number of raster lines per page. */
-int	BUFFER_SIZE;	/* buffer size. */
+int	vc = 1;			/* varian/versatec output file descriptor */
+int	varian = 1;		/* 0 for versatec, 1 for varian. */
+int	BYTES_PER_LINE = 264;	/* number of bytes per raster line. */
+int	PAGE_LINES = 1700;	/* number of raster lines per page. */
+int	BUFFER_SIZE = NLINES * 264;	/* buffer size. */
 int	cfnum = -1;
 int	cpsize = 10;
 int	cfont = 1;
@@ -359,7 +359,6 @@ main(argc, argv)
 			case 'x':
 				BYTES_PER_LINE = atoi(&argv[0][2]) / 8;
 				BUFFER_SIZE = NLINES * BYTES_PER_LINE;
-				varian = 1;	/* Default is the varian */
 				break;
 
 			case 'y':
