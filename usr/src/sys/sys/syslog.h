@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)syslog.h	7.17 (Berkeley) %G%
+ *	@(#)syslog.h	7.18 (Berkeley) %G%
  */
 
 #define	_PATH_LOG	"/dev/log"
@@ -135,3 +135,18 @@ CODE facilitynames[] = {
 #define	LOG_NDELAY	0x08	/* don't delay open */
 #define	LOG_NOWAIT	0x10	/* don't wait for console forks: DEPRECATED */
 #define	LOG_PERROR	0x20	/* log to stderr as well */
+
+#ifndef KERNEL
+
+#include <sys/cdefs.h>
+#include <varargs.h>
+
+__BEGIN_DECLS
+void	closelog __P((void));
+void	openlog __P((const char *, int, int));
+void	setlogmask __P((int));
+void	syslog __P((int, const char *, ...));
+void	vsyslog __P((int, const char *, va_list));
+__END_DECLS
+
+#endif /* !KERNEL */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	7.20 (Berkeley) %G%
+ *	@(#)termios.h	7.21 (Berkeley) %G%
  */
 
 /*
@@ -150,6 +150,7 @@
 
 typedef unsigned long	tcflag_t;
 typedef unsigned char	cc_t;
+typedef long		speed_t;
 
 struct termios {
 	tcflag_t	c_iflag;	/* input flags */
@@ -194,6 +195,31 @@ struct termios {
 #define EXTA	19200
 #define EXTB	38400
 #endif  /*_POSIX_SOURCE */
+
+#ifndef KERNEL
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+speed_t	cfgetispeed __P((const struct termios *));
+speed_t	cfgetospeed __P((const struct termios *));
+int	cfsetispeed __P((struct termios *, speed_t));
+int	cfsetospeed __P((struct termios *, speed_t));
+int	tcdrain __P((int));
+int	tcflow __P((int, int));
+int	tcflush __P((int, int));
+int	tcgetattr __P((int, struct termios *));
+int	tcsendbreak __P((int, int));
+int	tcsetattr __P((int, int, const struct termios *));
+
+#ifndef _POSIX_SOURCE
+void	cfmakeraw __P((struct termios *));
+void	cfsetspeed __P((struct termios *, speed_t));
+#endif /* !POSIX */
+__END_DECLS
+
+#endif /* !KERNEL */
+
 /*
  * END OF PROTECTED INCLUDE.
  */
