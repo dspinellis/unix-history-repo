@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	7.7 (Berkeley) %G%
+ *	@(#)vm_kern.c	7.8 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -446,7 +446,7 @@ vm_offset_t kmem_alloc_wait(map, size)
 		 * use the map's lock to lock out sleepers/wakers.
 		 */
 		vm_map_lock(map);
-		if (vm_map_findspace(map, 0, size, &addr))
+		if (vm_map_findspace(map, 0, size, &addr) == 0)
 			break;
 		/* no space now; see if we can ever get space */
 		if (vm_map_max(map) - vm_map_min(map) < size) {
