@@ -1,4 +1,4 @@
-/*	ip_output.c	1.47	83/05/12	*/
+/*	ip_output.c	1.48	83/05/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -14,7 +14,9 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
-#include "../machine/mtpr.h"
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
 
 int	ipnorouteprint = 0;
 

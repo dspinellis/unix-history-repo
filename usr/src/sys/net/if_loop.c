@@ -1,4 +1,4 @@
-/*	if_loop.c	4.16	83/02/11	*/
+/*	if_loop.c	4.17	83/05/15	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -19,7 +19,9 @@
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 
-#include "../machine/mtpr.h"
+#ifdef vax
+#include "../vax/mtpr.h"
+#endif
 
 #define	LONET	127
 #define	LOMTU	(1024+512)
