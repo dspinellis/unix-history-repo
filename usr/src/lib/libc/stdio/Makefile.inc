@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.4 (Berkeley) %G%
+#	@(#)Makefile.inc	5.5 (Berkeley) %G%
 
 # stdio sources
 .PATH: ${.CURDIR}/${MACHINE}/stdio ${.CURDIR}/stdio
@@ -31,7 +31,7 @@ MLINKS+=printf.3 fprintf.3 printf.3 snprintf.3 printf.3 sprintf.3 \
 	printf.3 vfprintf.3 printf.3 vprintf.3 printf.3 vsnprintf.3 \
 	printf.3 vsprintf.3 
 MLINKS+=putc.3 fputc.3 putc.3 putchar.3 putc.3 putw.3
-MLINKS+=scanf.3 fscanf.3 scanf.3 sscanf.3 vfscanf.3
+MLINKS+=scanf.3 fscanf.3 scanf.3 sscanf.3 scanf.3 vfscanf.3
 MLINKS+=setbuf.3 setbuffer.3 setbuf.3 setlinebuf.3 setbuf.3 setvbuf.3
 MLINKS+=strerror.3 perror.3
 MLINKS+=tmpnam.3 tempnam.3 tmpnam.3 tmpfile.3
