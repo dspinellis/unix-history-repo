@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.39 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.40 (Berkeley) %G%
  */
 
 /*
@@ -74,11 +74,47 @@ vfs_unlock(mp)
 {
 
 	if ((mp->m_flag & M_MLOCK) == 0)
-		panic("vfs_unlock: locked fs");
+		panic("vfs_unlock: not locked");
 	mp->m_flag &= ~M_MLOCK;
 	if (mp->m_flag & M_MWAIT) {
 		mp->m_flag &= ~M_MWAIT;
 		wakeup((caddr_t)mp);
+	}
+}
+
+/*
+ * Mark a mount point as busy.
+ * Used to synchronize access and to delay unmounting.
+ */
+vfs_busy(mp)
+	register struct mount *mp;
+{
+
+	if (mp->m_flag & M_UNMOUNT)
+		return (1);
+	while(mp->m_flag & M_MPBUSY) {
+		mp->m_flag |= M_MPWANT;
+		sleep((caddr_t)&mp->m_flag, PVFS);
+	}
+	mp->m_flag |= M_MPBUSY;
+	return (0);
+}
+
+/*
+ * Free a busy filesystem.
+ * Panic if filesystem is not busy.
+ */
+void
+vfs_unbusy(mp)
+	register struct mount *mp;
+{
+
+	if ((mp->m_flag & M_MPBUSY) == 0)
+		panic("vfs_unbusy: not busy");
+	mp->m_flag &= ~M_MPBUSY;
+	if (mp->m_flag & M_MPWANT) {
+		mp->m_flag &= ~M_MPWANT;
+		wakeup((caddr_t)&mp->m_flag);
 	}
 }
 
@@ -492,13 +528,19 @@ vflush(mp, skipvp, flags)
 	register struct vnode *vp, *nvp;
 	int busy = 0;
 
+	if ((mp->m_flag & M_MPBUSY) == 0)
+		panic("vflush: not busy");
 	for (vp = mp->m_mounth; vp; vp = nvp) {
 		nvp = vp->v_mountf;
 		/*
 		 * Skip over a selected vnode.
-		 * Used by ufs to skip over the quota structure inode.
 		 */
 		if (vp == skipvp)
+			continue;
+		/*
+		 * Skip over a vnodes marked VSYSTEM.
+		 */
+		if ((flags & SKIPSYSTEM) && (vp->v_flag & VSYSTEM))
 			continue;
 		/*
 		 * With v_usecount == 0, all we need to do is clear
@@ -512,7 +554,7 @@ vflush(mp, skipvp, flags)
 		 * For block or character devices, revert to an
 		 * anonymous device. For all other files, just kill them.
 		 */
-		if (flags & MNT_FORCE) {
+		if (flags & FORCECLOSE) {
 			if (vp->v_type != VBLK && vp->v_type != VCHR) {
 				vgone(vp);
 			} else {
@@ -534,9 +576,9 @@ vflush(mp, skipvp, flags)
 /*
  * Disassociate the underlying file system from a vnode.
  */
-void vclean(vp, doclose)
+void vclean(vp, flags)
 	register struct vnode *vp;
-	long doclose;
+	long flags;
 {
 	struct vnodeops *origops;
 	int active;
@@ -564,7 +606,7 @@ void vclean(vp, doclose)
 	 * occur while the buffer list is being cleaned out.
 	 */
 	VOP_LOCK(vp);
-	if (doclose)
+	if (flags & DOCLOSE)
 		vinvalbuf(vp, 1);
 	/*
 	 * Prevent any further operations on the vnode from
@@ -579,7 +621,7 @@ void vclean(vp, doclose)
 	 */
 	(*(origops->vn_unlock))(vp);
 	if (active) {
-		if (doclose)
+		if (flags & DOCLOSE)
 			(*(origops->vn_close))(vp, 0, NOCRED);
 		(*(origops->vn_inactive))(vp);
 	}
@@ -666,7 +708,7 @@ void vgone(vp)
 	/*
 	 * Clean out the filesystem specific data.
 	 */
-	vclean(vp, 1);
+	vclean(vp, DOCLOSE);
 	/*
 	 * Delete from old mount point vnode list, if on one.
 	 */
@@ -795,20 +837,22 @@ vprint(label, vp)
 		strcat(buf, "|VROOT");
 	if (vp->v_flag & VTEXT)
 		strcat(buf, "|VTEXT");
-	if (vp->v_flag & VXLOCK)
-		strcat(buf, "|VXLOCK");
-	if (vp->v_flag & VXWANT)
-		strcat(buf, "|VXWANT");
+	if (vp->v_flag & VSYSTEM)
+		strcat(buf, "|VSYSTEM");
 	if (vp->v_flag & VEXLOCK)
 		strcat(buf, "|VEXLOCK");
 	if (vp->v_flag & VSHLOCK)
 		strcat(buf, "|VSHLOCK");
 	if (vp->v_flag & VLWAIT)
 		strcat(buf, "|VLWAIT");
-	if (vp->v_flag & VALIASED)
-		strcat(buf, "|VALIASED");
+	if (vp->v_flag & VXLOCK)
+		strcat(buf, "|VXLOCK");
+	if (vp->v_flag & VXWANT)
+		strcat(buf, "|VXWANT");
 	if (vp->v_flag & VBWAIT)
 		strcat(buf, "|VBWAIT");
+	if (vp->v_flag & VALIASED)
+		strcat(buf, "|VALIASED");
 	if (buf[0] != '\0')
 		printf(" flags (%s)", &buf[1]);
 	printf("\n\t");
@@ -828,6 +872,7 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 {
 	register struct mount *mp = rootfs;
 	register struct vnode *nextvp;
+	struct mount *omp;
 	struct vnode *vp;
 	register needed = 0;
 	register char *bp = where, *savebp;
@@ -843,6 +888,10 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 		
 #define RETRY	bp = savebp ; goto again
 	do {
+		if (vfs_busy(mp)) {
+			mp = mp->m_next;
+			continue;
+		}
 		/*
 		 * A vget can fail if the vnode is being
 		 * recycled.  In this (rare) case, we have to start
@@ -878,7 +927,9 @@ again:
 			nextvp = vp->v_mountf;
 			vput(vp);
 		}
+		omp = mp;
 		mp = mp->m_next;
+		vfs_unbusy(omp);
 	} while (mp != rootfs);
 
 	*aneeded = bp - where;
