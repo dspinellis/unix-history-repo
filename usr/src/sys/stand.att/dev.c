@@ -4,17 +4,20 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dev.c	7.10 (Berkeley) %G%
+ *	@(#)dev.c	7.11 (Berkeley) %G%
  */
 
 #include "sys/param.h"
 #include "stand/saio.h"			/* used from machine/stand dir */
+#include <setjmp.h>
 
 /*
- * NB: the value "io->i_dev", used to offset the devsw[] array
- * in the routines below, is munged by the vaxstand Makefile to work
- * for certain boots.
+ * NB: the value "io->i_dev", used to offset the devsw[] array in the
+ * routines below, is munged by the machine specific stand Makefiles
+ * to work for certain boots.
  */
+
+jmp_buf exception;
 
 devread(io)
 	register struct iob *io;
@@ -25,6 +28,8 @@ devread(io)
 	io->i_error = 0;
 	cc = (*devsw[io->i_dev].dv_strategy)(io, F_READ);
 	io->i_flgs &= ~F_TYPEMASK;
+	if (scankbd())
+		_longjmp(&exception, 1);
 	return (cc);
 }
 
@@ -35,8 +40,10 @@ devwrite(io)
 
 	io->i_flgs |= F_WRDATA;
 	io->i_error = 0;
-	cc = (*devsw[io->i_dev].dv_strategy)(io, WRITE);
+	cc = (*devsw[io->i_dev].dv_strategy)(io, F_WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
+	if (scankbd())
+		_longjmp(&exception, 1);
 	return (cc);
 }
 
@@ -94,19 +101,19 @@ devioctl(io, cmd, arg)
 	return ((*devsw[io->i_dev].dv_ioctl)(io, cmd, arg));
 }
 
-/*ARGSUSED*/
+/* ARGSUSED */
 nullsys(io)
 	struct iob *io;
 {}
 
-/*ARGSUSED*/
+/* ARGSUSED */
 nodev(io)
 	struct iob *io;
 {
 	errno = EBADF;
 }
 
-/*ARGSUSED*/
+/* ARGSUSED */
 noioctl(io, cmd, arg)
 	struct iob *io;
 	int cmd;
