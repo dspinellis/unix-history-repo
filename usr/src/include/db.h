@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.24 (Berkeley) %G%
+ *	@(#)db.h	5.25 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -53,6 +53,7 @@ typedef struct __db {
 	DBTYPE type;			/* underlying db type */
 	int (*close)	__P((struct __db *));
 	int (*del)	__P((const struct __db *, const DBT *, u_int));
+	int (*fd)	__P((const struct __db *));
 	int (*get)	__P((const struct __db *, const DBT *, DBT *, u_int));
 	int (*put)	__P((const struct __db *, DBT *, const DBT *, u_int));
 	int (*seq)	__P((const struct __db *, DBT *, DBT *, u_int));
