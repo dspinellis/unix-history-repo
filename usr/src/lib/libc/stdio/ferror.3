@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ferror.3	4.1 (Berkeley) %G%
+.\"	@(#)ferror.3	5.1 (Berkeley) %G%
 .\"
-.TH FERROR 3S 
+.TH FERROR 3S  "19 January 1983"
 .UC 4
 .SH NAME
-feof, ferror, clearerr, fileno \- stream status inquiries
+ferror, feof, clearerr, fileno \- stream status inquiries
 .SH SYNOPSIS
 .B #include <stdio.h>
 .PP
@@ -37,27 +37,27 @@ feof, ferror, clearerr, fileno \- stream status inquiries
 .SH DESCRIPTION
 .I Feof
 returns non-zero when end of file is read on the named input
-.I stream,
+.IR stream ,
 otherwise zero.
 .PP
 .I Ferror
 returns non-zero when an error has occurred reading or writing
 the named
-.I stream,
+.IR stream ,
 otherwise zero.
 Unless cleared by
-.I clearerr,
+.IR clearerr ,
 the error indication lasts until
 the stream is closed.
 .PP
 .I Clrerr
 resets the error indication on the named
-.I stream.
+.IR stream .
 .PP
 .I Fileno
 returns the integer file descriptor
 associated with the
-.I stream,
+.IR stream ,
 see
 .IR  open (2).
 .PP
@@ -65,4 +65,5 @@ These functions
 are implemented as macros;
 they cannot be redeclared.
 .SH "SEE ALSO"
-fopen(3), open(2)
+fopen(3S),
+open(2)
