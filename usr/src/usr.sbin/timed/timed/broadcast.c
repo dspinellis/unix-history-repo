@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)broadcast.c	1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)broadcast.c	1.4 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -23,11 +23,8 @@ broadcast(msg)
 struct tsp *msg;
 {
 	extern struct in_addr broadcastaddr;
-	int bytenetorder();
 
 	msg->tsp_vers = TSPVERSION;
-	bytenetorder(msg);
-
 	server.sin_addr = broadcastaddr;
 	if (sendto(sock, (char *)msg, sizeof(struct tsp), 0, 
 	    &server, sizeof(struct sockaddr_in)) < 0) {

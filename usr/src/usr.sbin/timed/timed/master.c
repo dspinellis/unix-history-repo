@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	1.5 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -439,6 +439,7 @@ masterup()
 
 	to.tsp_type = TSP_MASTERUP;
 	(void)strcpy(to.tsp_name, hostname);
+	bytenetorder(&msg);
 	broadcast(&to);
 
 	for (;;) {
