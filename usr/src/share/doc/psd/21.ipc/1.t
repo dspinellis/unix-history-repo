@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	5.2 (Berkeley) %G%
+.\"	@(#)1.t	8.1 (Berkeley) %G%
 .\"
 .\".ds LH "4.4BSD IPC Primer
 .\".ds RH Introduction

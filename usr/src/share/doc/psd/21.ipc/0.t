@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986, 1993 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1986, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	5.3 (Berkeley) %G%
+.\"	@(#)0.t	8.1 (Berkeley) %G%
 .\"
 .EH 'PSD:21-%''Advanced 4.4BSD IPC Tutorial'
 .OH 'Advanced 4.4BSD IPC Tutorial''PSD:21-%'
