@@ -1,4 +1,4 @@
-/*	@(#)inet_network.c	4.1	%G%	*/
+/*	@(#)inet_network.c	4.2	%G%	*/
 
 #include <sys/types.h>
 #include <ctype.h>
@@ -15,6 +15,7 @@ inet_network(cp)
 	register u_long val, base, n;
 	register char c;
 	u_long parts[4], *pp = parts;
+	register int i;
 
 again:
 	val = 0; base = 10;
