@@ -1,4 +1,4 @@
-.\"	@(#)NBSproposal.11.88	1.3	88/12/06
+.\"	@(#)NBSproposal.11.88	1.4	88/12/06
 .\" *troff -ms
 .de CO
 .br
@@ -18,6 +18,7 @@
 .ce 4
 Marshall Kirk McKusick
 Michael J Karels
+Keith Sklower
 Susan L. Graham
 Domenico Ferrari
 .sp 2
@@ -47,18 +48,17 @@ named for the CCI Power 6/32 processor for which support was added.
 Proposed Research
 .PP
 Since the 4.3BSD release,
-we have been working on five major new areas of research:
+we have been working on four major new areas of research:
 .IP 1)
 Integration of an OSI network protocol suite and
 existing ISO applications into Berkeley UNIX.
 Several protocol layers were originally implemented
 at the University of Wisconsin.
-The network architecture and system interface of 4.2BSD
-was designed to accommodate
+The network architecture and system interface of 4.2BSD accommodates
 multiple network protocol families and address formats,
 although some extensions have been required to accommodate
 certain protocol features.
-This work includes development of those interfaces
+Ongoing work includes development of those interfaces
 and a more flexible kernel routing interface.
 .IP 2)
 Support for an interface compliant
@@ -67,7 +67,7 @@ Converting the kernel to be POSIX compliant requires
 the completion of several new kernel facilities including
 a new terminal driver and job control facilities.
 .IP 3)
-Refinement of the network achitecture
+Refinement of the network architecture
 and implementation to improve
 its performance and functionality.
 Since the most recent networking release,
@@ -83,6 +83,9 @@ The proposal currently under development
 adopts the 4.3BSD calling convention for file name lookup
 but otherwise is closely related to Sun's VFS.
 We ultimately hope to support a public domain implementation of Sun's NFS.
+.LP
+In addition to the four projects already underway,
+we propose a fifth additional project:
 .IP 5)
 The recent invasion of the DARPA Internet by a quickly reproducing worm
 highlighted the need for a through review of the access
@@ -92,26 +95,23 @@ utilities to check for and eliminate unintended system access mechanisms.
 Part of this proposal would include the addition of a real
 authentication mechanism for utilities such as
 telnet, login, remote shell, etc.
-.PP
-We are planning to implement prototypes for each of these
-five main areas of work over the period of this proposal.
-We plan to do an informal release
-to interested developers during the proposal period.
-After incorporating feedback and refinements from the testers,
-the work will appear in the next full Berkeley release, which typically
-is made six months to a year after the test release.
+.LP
+An expanded description of each of these projects is provided
+in the following five subsections.
 .NH 2
 OSI Network Protocol Development
 .PP
 The network architecture of 4.2BSD was designed to accommodate
 multiple network protocol families and address formats.
 The current prototype implementation of the ISO OSI network protocols
-makes use of all of the existing facilities, but will be aided by
-some architectural changes described below.
+makes use of all the existing facilities, but will be aided by
+some architectural changes.
 .PP
-To this end, we have already changed network buffer layouts,
-allowed variable length network addresses, and contructed a uniform
-hierchical routing lookup algorithm.
+The architectural changes that have already been completed include
+improved network buffer layouts,
+changes to allow variable length network addresses,
+and the construction of a uniform
+hierarchical routing lookup algorithm.
 We have made alterations to the socket interface to allow
 transmission of record boundaries,
 distinction between dequeueing connection requests and explicit
@@ -143,7 +143,7 @@ interoperability tests with vendors and users on OSINET.
 .PP
 We are designing additional structures (analogous to the ``Streams''
 concept of Bell Laboratories 9th Edition UNIX or System V.3)
-which will make uniform the processing of serial data,
+which will allow uniform the processing of serial data,
 improve communication between protocol layers,
 and provide a more natural framework for
 devices already providing virtual circuit services
@@ -165,6 +165,7 @@ This interface will be based on the UNI interface proposed by Marshall Rose.
 .[
 UNI Rose
 .]
+\&
 .NH 2
 Compliance with POSIX 1003
 .PP
@@ -196,7 +197,7 @@ This work will involve coordination with other groups
 intending to support both POSIX and BSD interfaces.
 .PP
 We intend to remain involved with the IEEE P1003.1 committee
-which will work on corrections and extensions to the existing standard.
+that will work on corrections and extensions to the existing standard.
 We will also continue to work actively with the 1003.2 committee
 developing a shell and utilities POSIX standard.
 .NH 2
@@ -214,16 +215,16 @@ of the existing implementations suggest some refinements to the framework
 and its implementation.
 One refinement is the use of structuring techniques similar to those
 of the Stream I/O system, described in section 2.1,
-in some parts of the system, unifying two existing interfaces.
+unifying two existing interfaces.
 In addition to providing additional flexibility, careful structuring
 will allow improved pipelining of the network protocols using upcalls.
 .[
 Clark SOSP upcalls
 .]
 Such pipelining has been prototyped by Van Jacobson of the Lawrence
-Berkeley Laboratory, along with a number of caching strategies
+Berkeley Laboratory, along with several caching strategies
 that will also be incorporated.
-In conjunction with this work, it will be necessary to improve
+With this work, it will be necessary to improve
 communication among the levels of the system to improve performance.
 In particular, the transport protocols must influence the way in which
 data are bufferred by higher layers for optimal performance.
@@ -237,7 +238,7 @@ The communication mechanisms between the layers must also be extended
 for robustness of the network: the transport level must be able to notify
 the network and link levels of failures detected by timeouts;
 the link level must be able to inform the network level of failures
-that it detects, and the routing layer needs to use all of this information.
+that it detects, and the routing layer needs to use all this information.
 .PP
 The Internet and the Berkeley collection of local-area networks
 have both grown at high rates in the last year.
@@ -291,17 +292,17 @@ but otherwise is closely related to Sun's virtual file system interface.
 This interface has been advanced (to Sun, DEC, AT&T and others)
 as a potential standard;
 when the implementation has been completed, we intend to explore
-consensus in this area, so that filesystem implementations could
+consensus in this area, so that file system implementations could
 be as portable as device drivers.
-We do not intend to develop our own remote file system protocol,
-but rather intend to support the full semantics of existing file systems,
+We do not intend to develop our own remote file system protocol;
+instead we will support the full semantics of existing file systems,
 including the local UNIX file system
 and Sun's network file system (NFS).
 We are currently negotiating with several groups that have
 developed their own implementations of NFS to convince them to
 contribute their code to Berkeley so that BSD
 will not require a Sun NFS license.
-We currently anticipate receipt of an NFS implementation from Apollo
+We currently expect receipt of an NFS implementation from Apollo
 that uses a different system interface; if feasible, we will adapt it
 to our file system interface. 
 .NH 2
@@ -324,7 +325,7 @@ However, we feel that it would be useful to take a more active
 role in identifying problems before they are reported (or exploited).
 We are proposing that a complete audit be made of the system
 utilities to find unintended system access mechanisms.
-Once identified, we anticipate that they could be corrected
+Once identified, we expect that they could be corrected
 through the existing mechanism.
 .PP
 In addition, we have been discussing possible plans for response
@@ -343,8 +344,8 @@ For the most part, the existing Berkeley TCP/IP and networking application
 software conforms with the draft.
 We propose to review conformance with the Host Requirements standard
 at the same time that we review the robustness of the network software.
-Some additions will have to be made in the kernel network protocols
-at this time as well.
+We expect that some additions will have to be made
+in the kernel network protocols to become compliant.
 In particular, support for IP type-of-service options and routing needs
 to be added, and recent proposals for gateway monitoring should be implemented
 and tested.
@@ -370,13 +371,11 @@ protocol.
 We propose to add support for telnet (eventually replacing rlogin),
 the X window system, and the mail system within an authentication
 domain (a Kerberos \fIrealm\fP).
-
-The new authentication mechanism would then be fully integrated
-with the system and utilities in future Berkeley software releases.
+.PP
 Another subject of active work, at MIT and elsewhere, is the interaction
 between servers for different realms.
-The servers for two realms may be mutually authenticated only by
-a manual exchange of keys currently.
+Currently, the servers for two realms may be mutually authenticated only by
+a manual exchange of keys.
 We would like to add a mechanism for a user in two realms to establish
 a (semi-)permanent equivalence between his identities in the two realms.
 Such a facility could greatly reduce the need to transmit passwords
@@ -384,13 +383,58 @@ in the clear over wide-area networks.
 .ne 10
 .sp 2
 .NH
-Project Schedule
+Milestones
 .PP
 The first four points outlined above are already underway.
-We anticipate that we will have working prototypes early in 1989.
+We expect that we will have working prototypes early in 1989.
 When the prototypes are moderately stable and functional,
-we will produce a test release which we will distribute to
+we will produce a test release that we will distribute to
 our alpha sites for testing and feedback.
 If major design flaws turn up during the alpha testing,
-we will reenter the development phase to resolve the problems.
-Otherwise, we will proceed to put together a polished distribution.
+we will reenter the development phase to resolve the problems
+resulting in another test release.
+Otherwise, we will incorporate feedback from the testing
+and produce a revised distribution.
+.NH
+Statement of Work
+.PP
+The University of California at Berkeley,
+during the proposed one-year period,
+shall do work involving several parallel but related threads:
+.IP \(bu
+Integration of an OSI network protocol suite and
+existing ISO applications into Berkeley UNIX.
+.IP \(bu
+Support for an interface compliant
+with the P1003.1 POSIX standard recently approved by the IEEE.
+.IP \(bu
+Refinement of the network architecture
+and implementation to improve
+its performance and functionality.
+.IP \(bu
+Provide a standard interface to file systems
+so that multiple local and remote file systems can be supported.
+Pursue the acquisition of a public domain implementation of Sun's NFS.
+.IP \(bu
+Do a complete audit of the system
+utilities to check for and eliminate unintended system access mechanisms.
+.IP \(bu
+Find, evaluate, and incorporate an authentication mechanism into the system.
+.NH
+Deliverables
+.PP
+We are planning to implement prototypes for each of these
+outlined areas of work over the period of this proposal.
+We plan to do an informal release
+to interested developers during the proposal period.
+In particular, the informal release will be made available
+to the group at Mt Xinu that is producing a commercially
+supported MACH release.
+After incorporating feedback and refinements from the testers,
+another release will be made to interested parties
+at the end of the proposal period.
+.NH
+References
+.[
+$LIST$
+.]
