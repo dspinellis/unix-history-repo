@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -75,6 +75,7 @@ void		oob __P((int));
 int		reader __P((sigset_t *));
 void		sendwindow __P((void));
 void		setsignal __P((int));
+int		speed __P((int));
 void		sigwinch __P((int));
 void		stop __P((char));
 __dead void	usage __P((void));
@@ -204,12 +205,43 @@ main(argc, argv)
 
 	(void)snprintf(term, sizeof(term), "%s/%d",
 			((p = getenv("TERM")) ? p : "network"),
-			cfgetispeed(0));
+			speed(0));
 	if (rem < 0)
 		exit(1);
 
 	/*NOTREACHED*/
 }
+
+#if BSD >= 198810
+int
+speed(fd)
+	int fd;
+{
+	struct termios tt;
+
+	(void)tcgetattr(fd, &tt);
+
+	return ((int) cfgetispeed(&tt));
+}
+#else
+int    speeds[] = {	/* for older systems, B0 .. EXTB */
+	0, 50, 75, 110,
+	134, 150, 200, 300,
+	600, 1200, 1800, 2400,
+	4800, 9600, 19200, 38400
+};
+
+int
+speed(fd)
+	int fd;
+{
+	struct termios tt;
+
+	(void)tcgetattr(fd, &tt);
+
+	return (speeds[(int)cfgetispeed(&tt)]);
+}
+#endif
 
 pid_t child;
 struct termios deftt;
@@ -528,7 +560,7 @@ oob(signo)
 	}
 	if (!eight && (mark & TIOCPKT_NOSTOP)) {
 		tcgetattr(0, &tt);
-		tt.c_iflag &= ~(IXON|IXOFF);
+		tt.c_iflag &= ~(IXON | IXOFF);
 		tt.c_cc[VSTOP] = _POSIX_VDISABLE;
 		tt.c_cc[VSTART] = _POSIX_VDISABLE;
 		tcsetattr(0, TCSANOW, &tt);
@@ -647,12 +679,13 @@ mode(f)
 		break;
 	case 1:
 		tt = deftt;
-		tt.c_oflag &= ~OPOST;
+		tt.c_oflag &= ~(OPOST);
 		tt.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+		tt.c_iflag &= ~(ICRNL);
 		tt.c_cc[VMIN] = 1;
 		tt.c_cc[VTIME] = 0;
 		if (eight) {
-			tt.c_iflag &= ~(IXON | IXOFF);
+			tt.c_iflag &= ~(IXON | IXOFF | ISTRIP);
 			tt.c_cc[VSTOP] = _POSIX_VDISABLE;
 			tt.c_cc[VSTART] = _POSIX_VDISABLE;
 		}
