@@ -19,13 +19,14 @@
 ScreenImage Host[MAXSCREENSIZE];
 
 static char
-    a_send_sequence[SMALL_LENGTH+1],
-    a_ack_sequence[SMALL_LENGTH+1],
-    a_checksum[SMALL_LENGTH+1],
-    data_array[LARGE_LENGTH+1];
+    a_send_sequence[SEND_SEQUENCE_LENGTH+1],
+    a_ack_sequence[ACK_SEQUENCE_LENGTH+1],
+    a_checksum[CHECKSUM_LENGTH+1],
+    data_array[DATA_LENGTH+1];
 
 static int
     verbose,
+    blocks,
     enter_index,
     clear_index,
     ScreenSize,
@@ -33,7 +34,7 @@ static int
 
 static unsigned int
     send_sequence,
-    ack_sequence,
+    ack_sequence = -1,
     checksum;
 
 api_perror(string)
@@ -66,10 +67,20 @@ int	type;
 }
 
 static int
+wait_for_ps_or_oia()
+{
+#if	defined(unix)
+    return api_ps_or_oia_modified();
+#endif	/* defined(unix) */
+}
+
+
+static int
 wait_for_unlock()
 {
     OIA oia;
     ReadOiaGroupParms re;
+    static char zeroes[sizeof oia.input_inhibited] = { 0 };
 
     do {
 	re.rc = re.function_id = 0;
@@ -97,7 +108,14 @@ wait_for_unlock()
 	    }
 	    printf("are some bits from the OIA.\n");
 	}
-    } while (IsOiaSystemLocked(&oia) || IsOiaTWait(&oia));
+	/* We turned this on, so turn it off now */
+	ResetOiaApiInhibit(&oia);
+	if (memcmp(zeroes, oia.input_inhibited, sizeof oia.input_inhibited)) {
+	    if (wait_for_ps_or_oia() == -1) {
+		return -1;
+	    }
+	}
+    } while (memcmp(zeroes, oia.input_inhibited, sizeof oia.input_inhibited));
     return 0;
 }
 
@@ -253,6 +271,9 @@ int	index;
     } else if (verbose) {
 	printf("Keystroke sent.\n");
     }
+    if (wait_for_ps_or_oia() == -1) {
+	return -1;
+    }
     return 0;
 }
 
@@ -317,13 +338,14 @@ get_screen()
     }
     return 0;
 }
-put_at(offset, from, length)
+
+
+put_at(offset, from, length, attribute)
 int	offset;
 char	*from;
 int	length;
 {
     CopyStringParms copy;
-    /* Time copy services */
 
     wait_for_unlock();
 
@@ -363,12 +385,13 @@ int length;
 }
 
 static int
-find_input_area()
+find_input_area(from)
+int	from;
 {
 #define	FieldDec()	(0)		/* We don't really use this */
     register int i, attr;
 
-    for (i = 0; i < MAXSCREENSIZE; ) {
+    for (i = from; i < MAXSCREENSIZE; ) {
 	if (IsStartField(i)) {
 	    attr = FieldAttributes(i);
 	    i++;
@@ -393,13 +416,15 @@ int	length;				/* Where to put it */
 }
 
 static int
-putascii(offset, from, length)
+putascii(offset, from, length, before)
 int	offset;				/* Where in screen */
 char	*from;				/* Where it comes from */
 int	length;				/* Where to put it */
+int	before;				/* How much else should go */
 {
     translate(from, Host+offset, asc_disp, length);
-    if (put_at(offset, (char *) Host+offset, length) == -1) {
+    if (put_at(offset-before,
+			(char *) Host+offset-before, length+before) == -1) {
 	return -1;
     }
     return 0;
@@ -408,15 +433,40 @@ int	length;				/* Where to put it */
 static int
 ack()
 {
+    static char ack_blanks[sizeof a_ack_sequence] = {0};
+
+    if (ack_blanks[0] == 0) {
+	int i;
+
+	for (i = 0; i < sizeof ack_blanks; i++) {
+	    ack_blanks[i] = ' ';
+	}
+    }
+
+    memcpy(a_ack_sequence, ack_blanks, sizeof a_ack_sequence);
     sprintf(a_ack_sequence, "%d", ack_sequence);
     a_ack_sequence[strlen(a_ack_sequence)] = ' ';
-    translate(a_ack_sequence, a_ack_sequence, asc_disp, SMALL_LENGTH);
-    if (put_at(ACK_SEQUENCE, a_ack_sequence, SMALL_LENGTH) == -1) {
+    Host[ACK_SEQUENCE-1] |= ATTR_MDT;
+    if (putascii(ACK_SEQUENCE, a_ack_sequence, ACK_SEQUENCE_LENGTH, 1) == -1) {
 	return -1;
     }
     return 0;
 }
-	
+
+static int
+formatted_correct()
+{
+    if ((find_input_area(SEND_SEQUENCE-1) != SEND_SEQUENCE) ||
+	    (find_input_area(SEND_SEQUENCE) != ACK_SEQUENCE) ||
+	    (find_input_area(ACK_SEQUENCE) != CHECKSUM) ||
+	    (find_input_area(CHECKSUM) != DATA)) {
+	return -1;
+    } else {
+	return 0;
+    }
+}
+
+
 main(argc, argv)
 int	argc;
 char	*argv[];
@@ -429,10 +479,14 @@ char	*argv[];
     extern int optind;
 
     /* Process any flags */
-    while ((i = getopt(argc, argv, "v")) != EOF) {
+    while ((i = getopt(argc, argv, "vb")) != EOF) {
 	switch (i) {
 	case 'v':
 	    verbose = 1;
+	    break;
+	case 'b':
+	    blocks = 1;
+	    break;
 	}
     }
 
@@ -473,12 +527,17 @@ char	*argv[];
 	if (send_key(clear_index) == -1) {
 	    return -1;
 	}
-	if ((i = find_input_area()) == -1) {		/* Try again */
+	if ((i = find_input_area(0)) == -1) {		/* Try again */
 	    fprintf(stderr, "Unable to enter command line.\n");
 	    return -1;
 	}
     }
-    if (putascii(i, data_array, data_length) == -1) {
+    if (i == 0) {
+	Host[ScreenSize-1] |= ATTR_MDT;
+    } else {
+	Host[i-1] |= ATTR_MDT;
+    }
+    if (putascii(i, data_array, data_length, 1) == -1) {
 	return -1;
     }
     if (send_key(enter_index) == -1) {
@@ -488,19 +547,34 @@ char	*argv[];
 	if (get_screen() == -1) {
 	    return -1;
 	}
-	i = find_input_area();
-    } while (i != SEND_SEQUENCE);
+    } while (formatted_correct() == -1);
 
     do {
+	if (get_screen() == -1) {
+	    return -1;
+	}
 	/* For each screen */
-	getascii(SEND_SEQUENCE, a_send_sequence, SMALL_LENGTH);
+	if (formatted_correct() == -1) {
+	    fprintf(stderr, "Bad screen written by host.\n");
+	    return -1;
+	}
+	/* If MDT isn't reset in the sequence number, go around again */
+	if (Host[ACK_SEQUENCE-1]&ATTR_MDT) {
+	    if (wait_for_ps_or_oia() == -1) {
+		return -1;
+	    }
+	    continue;
+	}
+	getascii(SEND_SEQUENCE, a_send_sequence, SEND_SEQUENCE_LENGTH);
 	send_sequence = atoi(a_send_sequence);
-	getascii(CHECKSUM, a_checksum, SMALL_LENGTH);
+	getascii(CHECKSUM, a_checksum, CHECKSUM_LENGTH);
 	checksum = atoi(a_checksum);
-	getascii(DATA, data_array, LARGE_LENGTH);
+	getascii(DATA, data_array, DATA_LENGTH);
 	data = data_array;
 	if (send_sequence != (ack_sequence+1)) {
-	    ack();
+	    if (ack() == -1) {
+		return -1;
+	    }
 	    data = "1234";		/* Keep loop from failing */
 	    if (send_key(enter_index) == -1) {
 		return -1;
@@ -511,15 +585,19 @@ char	*argv[];
 	    continue;
 	}
 
-	while (data_length && !memcmp(data, " EOF", 4)) {
+	data_length = DATA_LENGTH;
+	while (data_length && memcmp(data, " EOF", 4)
+						&& memcmp(data, "    ", 4)) {
 	    memcpy(ascii, data, 4);
-	    data+= 4;
-	    data -= 4;
+	    data += 4;
+	    data_length -= 4;
 	    ascii[4] = 0;
 	    input_length = atoi(ascii);
-	    if ((input_length > 1) || (input_length != 1) || (data[0] != ' ')) {
+	    /* CMS can't live with zero length records */
+	    if ((input_length > 1) ||
+			((input_length == 1) && (data[0] != ' '))) {
 		if (fwrite(data, sizeof (char),
-					input_length, outfile) == NULL) {
+					input_length, outfile) == 0) {
 		    perror("fwrite");
 		    exit(9);
 		}
@@ -528,14 +606,23 @@ char	*argv[];
 	    data += input_length;
 	    data_length -= input_length;
 	}
+
+	ack_sequence = send_sequence;
+	if (blocks) {
+	    printf("#");
+	    fflush(stdout);
+	}
+	if (ack() == -1) {
+	    return -1;
+	}
 	if (send_key(enter_index) == -1) {
 	    return -1;
 	}
-	if (get_screen() == -1) {
-	    return -1;
-	}
-    } while (!memcmp(data, " EOF", 4));
+    } while (memcmp(data, " EOF", 4));
 
+    if (blocks) {
+	printf("\n");
+    }
     if (terminate() == -1) {
 	return -1;
     }
