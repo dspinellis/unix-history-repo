@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.3 83/11/23";
+static	char *sccsid = "@(#)parser1.c	3.4 83/12/06";
 #endif
 
 #include <stdio.h>
@@ -403,6 +403,7 @@ p_expr0(v, flag)
 register struct value *v;
 char flag;
 {
+	struct value t;
 	char true;
 
 	if (p_expr1(v, flag) < 0)
@@ -422,14 +423,14 @@ char flag;
 		break;
 	}
 	(void) s_gettok();
-	if (p_expr1(v, flag && true) < 0)
+	if ((flag && true ? p_expr1(v, 1) : p_expr1(&t, 0)) < 0)
 		return -1;
 	if (token != T_COLON) {
 		p_synerror();
 		return -1;
 	}
 	(void) s_gettok();
-	return p_expr1(v, flag && !true);
+	return flag && !true ? p_expr1(v, 1) : p_expr1(&t, 0);
 }
 
 /*
@@ -585,20 +586,13 @@ char flag;
 			if (p_expr3_10(level + 1, &t, flag) < 0)
 				return -1;
 		}
-		if (t.v_type == V_ERR) {
+
+		if (t.v_type == V_ERR)
 			flag = 0;
-			v->v_type = V_ERR;
-		}
-
-		if (!flag)
-			return 0;
-
-		if (t.v_type != v->v_type) {
+		else if (t.v_type != v->v_type) {
 			p_error("Type mismatch.");
-			v->v_type = V_ERR;
-			return 0;
-		}
-		switch (op) {
+			flag = 0;
+		} else switch (op) {
 		case T_EQ:
 		case T_NE:
 		case T_LT:
@@ -618,12 +612,17 @@ char flag;
 		default:
 			if (v->v_type == V_STR) {
 				p_error("Numeric value required.");
-				str_free(v->v_str);
-				str_free(t.v_str);
-				v->v_type = V_ERR;
-				return 0;
+				flag = 0;
 			}
 		}
+
+		if (!flag) {
+			p_varfree(*v);
+			p_varfree(t);
+			v->v_type = V_ERR;
+			continue;
+		}
+
 		switch (op) {
 		case T_OR:
 			v->v_num |= t.v_num;
