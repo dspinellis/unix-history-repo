@@ -2,41 +2,56 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.4 (Berkeley) %G%
+.\"	@(#)ctime.3	6.5 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
 .SH NAME
-ctime, localtime, gmtime, asctime, timezone \-  convert date and time to ASCII
+ctime, localtime, gmtime, asctime, timezone, tzset, tzsetwall \-  convert date and time to ASCII
 .SH SYNOPSIS
 .nf
+.B extern char *tzname[2];
+.PP
+.B void tzset()
+.PP
+.B void tzsetwall()
+.PP
 .B char *ctime(clock)
-.B long *clock;
+.B time_t *clock;
 .PP
 .B #include <time.h>
-.PP
-.B struct tm *localtime(clock)
-.B long *clock;
-.PP
-.B struct tm *gmtime(clock)
-.B long *clock;
 .PP
 .B char *asctime(tm)
 .B struct tm *tm;
 .PP
+.B struct tm *localtime(clock)
+.B time_t *clock;
+.PP
+.B struct tm *gmtime(clock)
+.B time_t *clock;
+.PP
 .B char *timezone(zone, dst)
 .fi
+.fi
 .SH DESCRIPTION
-.I Ctime
-converts a time pointed to by
-.I clock
-such as returned by
-.IR time (2)
-into ASCII
-and returns a pointer to a
-26-character string
-in the following form.
-All the fields have constant width.
+\fITzset\fP uses the value of the environment variable \fBTZ\fP to set time
+conversion information used by \fIlocaltime\fP.  If \fBTZ\fP does not appear
+in the environment, the best available approximation to local wall clock
+time is used by \fIlocaltime\fP.  If \fBTZ\fP appears in the environment
+but its value is a null string, Greenwich Mean Time is used; if \fBTZ\fP
+appears and begins with a slash, it is used as the absolute pathname of the
+\fItzfile\fP(5)-format file from which to read the time conversion
+information; if \fBTZ\fP appears and begins with a character other than a
+slash, it's used as a pathname relative to a system time conversion
+information directory.
+.PP
+\fITzsetwall\fP sets things up so that \fIlocaltime\fP returns the best
+available approximation of local wall clock time.
+.PP
+\fICtime\fP converts a long integer, pointed to by \fIclock\fP,
+such as returned by \fItime\fP(2) into ASCII adn returns a pointer
+to a 26-character string in the following form.  All the fields
+have constant width.
 .PP
     Sun Sep 16 01:03:52 1973\\n\\0
 .PP
@@ -69,34 +84,35 @@ struct tm {
 	int tm_wday;	/* 0-6	day of week (Sunday = 0) */
 	int tm_yday;	/* 0-365	day of year */
 	int tm_isdst;	/* flag:	daylight savings time in effect */
+	char **tm_zone;	/* abbreviation of timezone name */
+	long tm_gmtoff;	/* offset from GMT in seconds */
 };
 .fi
 .RE
 .PP
-When local time is called for,
-the program consults the system to determine the time zone and
-whether the U.S.A., Australian, Eastern European, Middle European,
-or Western European daylight saving time adjustment is appropriate.
-The program knows about various peculiarities in time conversion
-over the past 10-20 years; if necessary, this understanding can
-be extended.
+\fITm_isdst\fP is non-zero if a time zone adjustment such as Daylight
+Savings time is in effect.
 .PP
-.I Timezone
-returns the name of the time zone associated with its first argument,
-which is measured in minutes westward from Greenwich.
-If the second argument is 0, the standard name is used,
-otherwise the Daylight Saving version.
-If the required name does not appear in a table
-built into the routine,
-the difference from GMT is produced; e.g.,
-in Afghanistan
-.I timezone(-(60*4+30), 0)
-is appropriate because it is 4:30 ahead of GMT
-and the string
-.B GMT+4:30
-is produced.
-.SH "SEE ALSO"
-gettimeofday(2), time(3)
-.SH BUGS
-The return values point to static data
-whose content is overwritten by each call.
+\fITm_gmtoff\fP is the offset (in seconds) of the time represented
+from GMT, with positive values indicating East of Greenwich.
+.PP
+\fITimezone\fP remains for compatibility reasons only; it's impossible
+to reliably map timezone's arguments (a "minutes west of GMT" value and
+a "daylight saving time in effect" flag) to a time zone abbreviation.
+Its current effect is to return the time zone abbreviation associated
+with local time no matter what its arguments, which is probably  what people
+wanted anyway.  Programs that in the past used the timezone function
+should examine \fIlocaltime(&clock)->tm_zone\fP to find the correct time
+zone abbreviation to use.
+.SH FILES
+.ta \w'/etc/zoneinfo/localtime\0\0'u
+/etc/zoneinfo	time zone information directory
+.br
+/etc/zoneinfo/localtime	local time zone file
+.SH SEE ALSO
+gettimeofday(2), getenv(3), time(3), tzfile(5)
+.SH NOTE
+The return values point to static data whose content is overwritten by
+each call.  The \fBtm_zone\fP field of a returned \fBstruct tm\fP
+points to a static array of characters, which will also be overwritten
+at the next call (and by calls to \fItzset\fP or \fItzsetwall\fP).
