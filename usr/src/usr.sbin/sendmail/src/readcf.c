@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1063,11 +1063,6 @@ struct resolverflags
 
 #endif
 
-/* codes for options that have no short name */
-/* NOTE: some of these values may be in the list of "safe" options below */
-#define O_BSP		0x80	/* have broken SMTP peers */
-#define O_SQBH		0x81	/* sort queue by host */
-
 struct optioninfo
 {
 	char	*o_name;	/* long name of option */
@@ -1075,59 +1070,68 @@ struct optioninfo
 	bool	o_safe;		/* safe for random people to use */
 } OptionTab[] =
 {
-	"SevenBitInput",	'7',	TRUE,
-	"EightBitMode",		'8',	TRUE,
-	"AliasFile",		'A',	FALSE,
-	"AliasWait",		'a',	FALSE,
-	"BlankSub",		'B',	FALSE,
-	"MinFreeBlocks",	'b',	TRUE,
-	"CheckpointInterval",	'C',	TRUE,
-	"HoldExpensive",	'c',	FALSE,
-	"AutoRebuildAliases",	'D',	FALSE,
-	"DeliveryMode",		'd',	TRUE,
-	"ErrorHeader",		'E',	FALSE,
-	"ErrorMode",		'e',	TRUE,
-	"TempFileMode",		'F',	FALSE,
-	"SaveFromLine",		'f',	FALSE,
-	"MatchGECOS",		'G',	FALSE,
-	"HelpFile",		'H',	FALSE,
-	"MaxHopCount",		'h',	FALSE,
-	"NameServerOptions",	'I',	FALSE,
-	"IgnoreDots",		'i',	TRUE,
-	"ForwardPath",		'J',	FALSE,
-	"SendMimeErrors",	'j',	TRUE,
-	"ConnectionCacheSize",	'k',	FALSE,
-	"ConnectionCacheTimeout", 'K',	FALSE,
-	"UseErrorsTo",		'l',	FALSE,
-	"LogLevel",		'L',	FALSE,
-	"MeToo",		'm',	TRUE,
-	"CheckAliases",		'n',	FALSE,
-	"OldStyleHeaders",	'o',	TRUE,
-	"DaemonPortOptions",	'O',	FALSE,
-	"PrivacyOptions",	'p',	TRUE,
-	"PostmasterCopy",	'P',	FALSE,
-	"QueueFactor",		'q',	FALSE,
-	"QueueDirectory",	'Q',	FALSE,
-	"DontPruneRoutes",	'R',	FALSE,
-	"ReadTimeout",		'r',	TRUE,
-	"StatusFile",		'S',	FALSE,
-	"SuperSafe",		's',	TRUE,
-	"QueueTimeout",		'T',	FALSE,
-	"TimeZoneSpec",		't',	FALSE,
-	"UserDatabaseSpec",	'U',	FALSE,
-	"DefaultUser",		'u',	FALSE,
-	"FallbackMXhost",	'V',	FALSE,
-	"Verbose",		'v',	TRUE,
-	"TryNullMXList",	'w',	TRUE,
-	"QueueLA",		'x',	FALSE,
-	"RefuseLA",		'X',	FALSE,
-	"RecipientFactor",	'y',	FALSE,
-	"ForkQueueRuns",	'Y',	FALSE,
-	"ClassFactor",		'z',	FALSE,
-	"TimeFactor",		'Z',	FALSE,
-	"BrokenSmtpPeers",	O_BSP,	TRUE,
-	"SortQueueByHost",	O_SQBH,	TRUE,
-	NULL,			'\0',	FALSE,
+	"SevenBitInput",	'7',		TRUE,
+	"EightBitMode",		'8',		TRUE,
+	"AliasFile",		'A',		FALSE,
+	"AliasWait",		'a',		FALSE,
+	"BlankSub",		'B',		FALSE,
+	"MinFreeBlocks",	'b',		TRUE,
+	"CheckpointInterval",	'C',		TRUE,
+	"HoldExpensive",	'c',		FALSE,
+	"AutoRebuildAliases",	'D',		FALSE,
+	"DeliveryMode",		'd',		TRUE,
+	"ErrorHeader",		'E',		FALSE,
+	"ErrorMode",		'e',		TRUE,
+	"TempFileMode",		'F',		FALSE,
+	"SaveFromLine",		'f',		FALSE,
+	"MatchGECOS",		'G',		FALSE,
+	"HelpFile",		'H',		FALSE,
+	"MaxHopCount",		'h',		FALSE,
+	"NameServerOptions",	'I',		FALSE,
+	"IgnoreDots",		'i',		TRUE,
+	"ForwardPath",		'J',		FALSE,
+	"SendMimeErrors",	'j',		TRUE,
+	"ConnectionCacheSize",	'k',		FALSE,
+	"ConnectionCacheTimeout", 'K',		FALSE,
+	"UseErrorsTo",		'l',		FALSE,
+	"LogLevel",		'L',		FALSE,
+	"MeToo",		'm',		TRUE,
+	"CheckAliases",		'n',		FALSE,
+	"OldStyleHeaders",	'o',		TRUE,
+	"DaemonPortOptions",	'O',		FALSE,
+	"PrivacyOptions",	'p',		TRUE,
+	"PostmasterCopy",	'P',		FALSE,
+	"QueueFactor",		'q',		FALSE,
+	"QueueDirectory",	'Q',		FALSE,
+	"DontPruneRoutes",	'R',		FALSE,
+	"ReadTimeout",		'r',		TRUE,
+	"StatusFile",		'S',		FALSE,
+	"SuperSafe",		's',		TRUE,
+	"QueueTimeout",		'T',		FALSE,
+	"TimeZoneSpec",		't',		FALSE,
+	"UserDatabaseSpec",	'U',		FALSE,
+	"DefaultUser",		'u',		FALSE,
+	"FallbackMXhost",	'V',		FALSE,
+	"Verbose",		'v',		TRUE,
+	"TryNullMXList",	'w',		TRUE,
+	"QueueLA",		'x',		FALSE,
+	"RefuseLA",		'X',		FALSE,
+	"RecipientFactor",	'y',		FALSE,
+	"ForkQueueRuns",	'Y',		FALSE,
+	"ClassFactor",		'z',		FALSE,
+	"TimeFactor",		'Z',		FALSE,
+#define O_BSP		0x80
+	"BrokenSmtpPeers",	O_BSP,		TRUE,
+#define O_SQBH		0x81
+	"SortQueueByHost",	O_SQBH,		TRUE,
+#define O_DNICE		0x82
+	"DeliveryNiceness",	O_DNICE,	TRUE,
+#define O_MQA		0x83
+	"MinQueueAge",		O_MQA,		TRUE,
+#define O_MHSA		0x84
+	"MaxHostStatAge",	O_MHSA,		TRUE,
+
+	NULL,			'\0',		FALSE,
 };
 
 
@@ -1613,6 +1617,18 @@ setoption(opt, val, sticky)
 
 	  case O_SQBH:		/* sort work queue by host first */
 		SortQueueByHost = atobool(val);
+		break;
+
+	  case O_DNICE:		/* delivery nice value */
+		DeliveryNiceness = atoi(val);
+		break;
+
+	  case O_MQA:		/* minimum queue age between deliveries */
+		MinQueueAge = convtime(val, 'm');
+		break;
+
+	  case O_MHSA:		/* maximum age of cached host status */
+		MaxHostStatAge = convtime(val, 'm');
 		break;
 
 	  default:
