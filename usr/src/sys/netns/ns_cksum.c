@@ -9,13 +9,12 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)ns_cksum.c	1.2 (Berkeley) %G%
+ *      @(#)ns_cksum.c	1.3 (Berkeley) %G%
  */
 #include "types.h"
 #include "mbuf.h"
-
 /*
- * Checksum routine for Network Systems Protocol Packets.
+ * Checksum routine for Network Systems Protocol Packets (Big-Endian).
  *
  * This routine is very heavily used in the network
  * code and should be modified for each CPU to be as fast as possible.
@@ -101,9 +100,9 @@ ns_cksum(m, len)
 		}
 		goto commoncase;
 uuuuglyy:
-#define ww(n) (((char *)w)[n + n])
-#define vv(n) (((char *)w)[n + n + 1])
 /* Big-Endian; else reverse ww and vv */
+#define ww(n) (((u_char *)w)[n + n + 1])
+#define vv(n) (((u_char *)w)[n + n])
 		sum2 = 0;
 #ifndef TINY
 		while ((mlen -= 32) >= 0) {
