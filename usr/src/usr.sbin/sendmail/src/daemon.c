@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.47 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.46 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.47 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -316,81 +316,98 @@ getrequests()
 **		Exits if the socket cannot be created.
 */
 
+#define MAXOPENTRIES	10	/* maximum number of tries to open connection */
+
 int
 opendaemonsocket(firsttime)
 	bool firsttime;
 {
 	int on = 1;
 	int socksize;
+	int ntries = 0;
+	int saveerrno;
 
 	if (tTd(15, 2))
 		printf("opendaemonsocket()\n");
 
-	if (firsttime || DaemonSocket < 0)
+	do
 	{
-		DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
-		if (DaemonSocket < 0)
+		if (firsttime || DaemonSocket < 0)
 		{
-			/* probably another daemon already */
-			syserr("opendaemonsocket: can't create server SMTP socket");
-		  severe:
+			DaemonSocket = socket(DaemonAddr.sa.sa_family, SOCK_STREAM, 0);
+			if (DaemonSocket < 0)
+			{
+				/* probably another daemon already */
+				saveerrno = errno;
+				syserr("opendaemonsocket: can't create server SMTP socket");
+			  severe:
 # ifdef LOG
-			if (LogLevel > 0)
-				syslog(LOG_ALERT, "problem creating SMTP socket");
+				if (LogLevel > 0)
+					syslog(LOG_ALERT, "problem creating SMTP socket");
 # endif /* LOG */
-			finis();
-		}
+				DaemonSocket = -1;
+				continue;
+			}
 
-		/* turn on network debugging? */
-		if (tTd(15, 101))
-			(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG, (char *)&on, sizeof on);
+			/* turn on network debugging? */
+			if (tTd(15, 101))
+				(void) setsockopt(DaemonSocket, SOL_SOCKET,
+						  SO_DEBUG, (char *)&on,
+						  sizeof on);
 
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof on);
-		(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_KEEPALIVE, (char *)&on, sizeof on);
+			(void) setsockopt(DaemonSocket, SOL_SOCKET,
+					  SO_REUSEADDR, (char *)&on, sizeof on);
+			(void) setsockopt(DaemonSocket, SOL_SOCKET,
+					  SO_KEEPALIVE, (char *)&on, sizeof on);
 
 #ifdef SO_RCVBUF
-		if (TcpRcvBufferSize > 0)
-		{
-			if (setsockopt(DaemonSocket, SOL_SOCKET, SO_RCVBUF,
-				       (char *) &TcpRcvBufferSize,
-				       sizeof(TcpRcvBufferSize)) < 0)
-				syserr("getrequests: setsockopt(SO_RCVBUF)");
-		}
+			if (TcpRcvBufferSize > 0)
+			{
+				if (setsockopt(DaemonSocket, SOL_SOCKET,
+					       SO_RCVBUF,
+					       (char *) &TcpRcvBufferSize,
+					       sizeof(TcpRcvBufferSize)) < 0)
+					syserr("getrequests: setsockopt(SO_RCVBUF)");
+			}
 #endif
 
-		switch (DaemonAddr.sa.sa_family)
-		{
+			switch (DaemonAddr.sa.sa_family)
+			{
 # ifdef NETINET
-		  case AF_INET:
-			socksize = sizeof DaemonAddr.sin;
-			break;
+			  case AF_INET:
+				socksize = sizeof DaemonAddr.sin;
+				break;
 # endif
 
 # ifdef NETISO
-		  case AF_ISO:
-			socksize = sizeof DaemonAddr.siso;
-			break;
+			  case AF_ISO:
+				socksize = sizeof DaemonAddr.siso;
+				break;
 # endif
 
-		  default:
-			socksize = sizeof DaemonAddr;
-			break;
-		}
+			  default:
+				socksize = sizeof DaemonAddr;
+				break;
+			}
 
-		if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
+			if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
+			{
+				saveerrno = errno;
+				syserr("getrequests: cannot bind");
+				(void) close(DaemonSocket);
+				goto severe;
+			}
+		}
+		if (!firsttime && listen(DaemonSocket, ListenQueueSize) < 0)
 		{
-			syserr("getrequests: cannot bind");
+			saveerrno = errno;
+			syserr("getrequests: cannot listen");
 			(void) close(DaemonSocket);
 			goto severe;
 		}
-	}
-	if (!firsttime && listen(DaemonSocket, ListenQueueSize) < 0)
-	{
-		syserr("getrequests: cannot listen");
-		(void) close(DaemonSocket);
-		goto severe;
-	}
-	return socksize;
+		return socksize;
+	} while (ntries++ < MAXOPENTRIES && transienterror(saveerrno));
+	finis();
 }
 /*
 **  CLRDAEMON -- reset the daemon connection
@@ -786,7 +803,7 @@ gothostent:
 		if (tTd(16, 101))
 		{
 			int on = 1;
-			(void) setsockopt(DaemonSocket, SOL_SOCKET, SO_DEBUG,
+			(void) setsockopt(s, SOL_SOCKET, SO_DEBUG,
 					  (char *)&on, sizeof on);
 		}
 		if (CurEnv->e_xfp != NULL)
