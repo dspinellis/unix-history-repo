@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.7 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.8 %G%";
 
     /*
      *	functions to help pi put out
@@ -219,11 +219,16 @@ putRV( name , level , offset , type )
     {
 	char	extname[ BUFSIZ ];
 	char	*printname;
+	int	regnumber;
 
 	if ( !CGENNING )
 	    return;
 	if (whereis(offset) == REGVAR) {
-	    putleaf( P2REG , 0 , (-offset) >> 1 , type , 0 );
+	    regnumber = ( - offset ) >> 1;
+	    if ( ( regnumber < 0 ) || ( regnumber > P2FP ) ) {
+		panic( "putRV regnumber" );
+	    }
+	    putleaf( P2REG , 0 , regnumber , type , 0 );
 	    return;
 	}
 	if ( ( level <= 1 ) && ( name != 0 ) ) {
@@ -293,7 +298,7 @@ putLV( name , level , offset , type )
 	    putop( P2MINUS , P2PTR | P2CHAR );
 	    break;
 	case REGVAR:
-	    panic("lval of reg");
+	    panic("putLV regvar");
     }
     return;
 }
