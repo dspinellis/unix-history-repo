@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.5 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -343,7 +343,9 @@ print(msg, addr)
 struct tsp *msg;
 struct sockaddr_in *addr;
 {
-	if (msg->tsp_type == TSP_LOOP) {
+	switch (msg->tsp_type) {
+
+	case TSP_LOOP:
 		fprintf(fd, "%s %d %d (#%d) %s %s\n",
 			tsptype[msg->tsp_type],
 			msg->tsp_vers,
@@ -351,7 +353,11 @@ struct sockaddr_in *addr;
 			msg->tsp_hopcnt,
 			msg->tsp_name,
 			inet_ntoa(addr->sin_addr));
-	} else {
+		break;
+
+	case TSP_ADJTIME:
+	case TSP_SETDATE:
+	case TSP_SETDATEREQ:
 		fprintf(fd, "%s %d %d (%d, %d) %s %s\n",
 			tsptype[msg->tsp_type],
 			msg->tsp_vers,
@@ -360,5 +366,15 @@ struct sockaddr_in *addr;
 			msg->tsp_time.tv_usec, 
 			msg->tsp_name,
 			inet_ntoa(addr->sin_addr));
+		break;
+
+	default:
+		fprintf(fd, "%s %d %d %s %s\n",
+			tsptype[msg->tsp_type],
+			msg->tsp_vers,
+			msg->tsp_seq,
+			msg->tsp_name,
+			inet_ntoa(addr->sin_addr));
+		break;
 	}
 }
