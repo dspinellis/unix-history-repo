@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lookbib.1	6.4 (Berkeley) %G%
+.\"     @(#)lookbib.1	6.5 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LOOKBIB 1
 .Os BSD 4.2
@@ -53,20 +51,11 @@ document by Mike Lesk (See the SEE ALSO section below).
 The second program,
 .Nm inv ,
 creates an entry file
-.Cx \&(
-.Ar file
-.Cx .ia),
-.Cx
+.Pq Ar file Ns .ia ,
 a posting file
-.Cx \&(
-.Ar file
-.Cx .ib),
-.Cx
+.Pq Ar file Ns .ib ,
 and a tag file
-.Cx \&(
-.Ar file
-.Cx .ic),
-.Cx
+.Pq Ar file Ns .ic ,
 all in the working directory.
 .Pp
 .Nm Lookbib
@@ -93,11 +82,8 @@ is specified to
 .Pp
 If
 .Nm lookbib
-does not find the index files (the 
-.Cx \&(
-.Ar file
-.Cx .i[abc]
-.Cx
+does not find the index files (the
+.Ar file Ns .i[abc]
 files),
 it looks for a reference file with the same name as the argument,
 without the suffixes.
@@ -105,32 +91,27 @@ It creates a file with a
 `.ig' suffix, suitable for use with
 .Xr fgrep 1 .
 It then uses this fgrep file to find references.
-This method is simpler to use, but the 
-.Cx Ar file
-.Cx .ig
-.Cx
+This method is simpler to use, but the
+.Ar file Ns ig
 is slower to use
-than the 
-.Cx Ar file
-.Cx .i[abc]
-.Cx
+than the
+.Ar file Ns .i[abc]
 files, and does not allow the use of multiple reference files.
 .Sh FILES
-.Dw /usr/libexec/mkey
-.Di L
-.Dp Pa \&*.ia
-entry file
-.Dp Pa \&*.ib
-posting file
-.Dp Pa \&*.ic
-tag file
-.Dp Pa \&*.ig
-ascii file created if index files not found.
-.Dp Pa /usr/libexec/mkey
-make keys program
-.Dp Pa /usr/libexec/inv
-hash and invert program
-.Dp
+.Bl -tag -width /usr/libexec/mkey -compact
+.It Pa \&*.ia
+Entry file.
+.It Pa \&*.ib
+Posting file.
+.It Pa \&*.ic
+Tag file.
+.It Pa \&*.ig
+Ascii file created if index files not found.
+.It Pa /usr/libexec/mkey
+Make keys program.
+.It Pa /usr/libexec/inv
+Hash and invert program.
+.El
 .Sh SEE ALSO
 .Xr refer 1 ,
 .Xr addbib 1 ,
@@ -147,4 +128,5 @@ written in the 1800s or earlier.
 .Sh HISTORY
 A
 .Nm lookbib
-appeared in Version 32 AT&T Unix.
+command appeared in
+.At 32v .

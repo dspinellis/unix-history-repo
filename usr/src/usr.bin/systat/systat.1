@@ -1,12 +1,10 @@
 .\" Copyright (c) 1985, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)systat.1	6.10 (Berkeley) %G%
+.\"	@(#)systat.1	6.11 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt SYSTAT 1
 .Os BSD 4.3
@@ -35,7 +33,8 @@ input and error messages.
 By default
 .Nm systat
 displays the processes getting the largest percentage of the processor
-in the lower window.  Other displays show swap space usage, disk i/o
+in the lower window.  Other displays show swap space usage, disk
+.Tn I/O
 statistics (a la
 .Xr iostat  1  ) ,
 virtual memory statistics (a la
@@ -50,11 +49,8 @@ input line is passed to a per-display command interpreter.  This
 allows each display to have certain display-specific commands.
 .Pp
 Command line options:
-.Pp
-.Tw refresh_interval
-.Tp Cx Fl
-.Ar display
-.Cx
+.Bl -tag -width "refresh_interval"
+.It Fl Ns Ar display
 The
 .Fl
 flag expects
@@ -71,65 +67,67 @@ These displays can also be requested interactively (without the
 .Dq Fl )
 and are described in
 full detail below.
-.Tp Ar refresh-interval
+.It Ar refresh-interval
 The
 .Ar refresh-value
 specifies the screen refresh time interval in seconds.
-.Tp
+.El
 .Pp
 Certain characters cause immediate action by
 .Nm systat  .
 These are
-.Tw Fl
-.Tp Ic \&^L
+.Bl -tag -width Fl
+.It Ic \&^L
 Refresh the screen.
-.Tp Ic \&^G
+.It Ic \&^G
 Print the name of the current ``display'' being shown in
 the lower window and the refresh interval.
-.Tp Ic \&^Z
+.It Ic \&^Z
 Stop
 .Nm systat  .
-.Tp Ic \&:
+.It Ic \&:
 Move the cursor to the command line and interpret the input
 line typed as a command.  While entering a command the
 current character erase, word erase, and line kill characters
 may be used.
+.El
 .Pp
 The following commands are interpreted by the ``global''
 command interpreter.
-.Tp Ic \&help
+.Bl -tag -width Fl
+.It Ic help
 Print the names of the available displays on the command line.
-.Tp Ic \&load
+.It Ic load
 Print the load average over the past 1, 5, and 15 minutes
 on the command line.
-.Tp Ic \&stop
+.It Ic stop
 Stop refreshing the screen.
-.Tp Cx Op Ic start
-.Cx \&\ \&
+.It Xo
+.Op Ic start
 .Op Ar number
-.Cx
+.Xc
 Start (continue) refreshing the screen.  If a second, numeric,
 argument is provided it is interpreted as a refresh interval
 (in seconds).
 Supplying only a number will set the refresh interval to this
 value.
-.Tp Ic \&quit
+.It Ic quit
 Exit
 .Nm systat  .
 (This may be abbreviated to
 .Ic q  . )
-.Tp
+.El
 .Pp
 The available displays are:
-.Tw Ic
-.Tp Ic pigs
+.Bl -tag -width Ic
+.It Ic pigs
 Display, in the lower window, those processes resident in main
 memory and getting the
 largest portion of the processor (the default display).
 When less than 100% of the
 processor is scheduled to user processes, the remaining time
 is accounted to the ``idle'' process.
-.Tp Ic iostat
+.It Ic iostat
 Display, in the lower window, statistics about processor use
 and disk throughput.  Statistics on processor use appear as
 bar graphs of the amount of time executing in user mode (``user''),
@@ -139,23 +137,26 @@ on disk throughput show, for each drive, kilobytes of data transferred,
 number of disk transactions performed, and average seek time
 (in milliseconds).  This information may be displayed as
 bar graphs or as rows of numbers which scroll downward.  Bar
-graphs are shown by default; 
+graphs are shown by default;
 .Pp
 The following commands are specific to the
 .Ic iostat
 display; the minimum unambiguous prefix may be supplied.
-.Dw Fl
-.Dp Cm numbers
-Show the disk i/o statistics in numeric form.  Values are
+.Pp
+.Bl -tag -width Fl -compact
+.It Cm numbers
+Show the disk
+.Tn I/O statistics in numeric form.  Values are
 displayed in numeric columns which scroll downward.
-.Dp Cm bars
-Show the disk i/o statistics in bar graph form (default).
-.Dp Cm msps
+.It Cm bars
+Show the disk
+.Tn I/O
+statistics in bar graph form (default).
+.It Cm msps
 Toggle the display of average seek time (the default is to
 not display seek times).
-.Dp
-.Pp
-.Tp Ic swap
+.El
+.It Ic swap
 Display, in the lower window, swap space in use on each swap
 device configured.  Two sets of bar graphs are shown.  The
 upper graph displays swap space allocated to pure text segments
@@ -167,13 +168,15 @@ is displayed along the left hand side of the text,
 and data and stack graphs.
 Space allocated to the user structure and page
 tables is not currently accounted for.
-.Tp Ic mbufs
+.It Ic mbufs
 Display, in the lower window, the number of mbufs allocated
 for particular uses, i.e. data, socket structures, etc.
-.Tp Ic vmstat
+.It Ic vmstat
 Take over the entire display and show a (rather crowded) compendium
 of statistics related to virtual memory usage, process scheduling,
-device interrupts, system name translation cacheing, disk i/o, etc.
+device interrupts, system name translation cacheing, disk
+.Tn I/O
+etc.
 .Pp
 The upper left quadrant of the screen shows the number
 of users logged in and the load average over the last one, five,
@@ -235,7 +238,8 @@ total reclaims ('Rec'),
 intransit blocking page faults (`It'),
 swap text pages found in free list (`F/S'),
 file system text pages found in free list (`F/F'),
-reclaims from free list (`RFL'),
+reclaims from free list
+.Pp Sq RFL ,
 pages freed by the clock daemon (`Fre'),
 and sequential process pages freed (`SFr')
 per second over the refresh interval.
@@ -258,7 +262,9 @@ a long time period, such as from boot time
 Below the page fill statistics is a column that
 lists the average number of context switches (`Csw'),
 traps (`Trp'; includes page faults), system calls (`Sys'), interrupts (`Int'),
-characters output to DZ ports using pseudo-DMA (`Pdm'),
+characters output to DZ ports using
+.No pseudo Ns -DMA
+(`Pdm'),
 network software interrupts (`Sof'),
 page faults (`Flt'), pages scanned by the page daemon (`Scn'),
 and revolutions of the page daemon's hand (`Rev')
@@ -275,17 +281,19 @@ Only devices that have interrupted at least once since boot time are shown.
 The following commands are specific to the
 .Ic vmstat
 display; the minimum unambiguous prefix may be supplied.
-.Dp Cm boot
+.Pp
+.Bl -tag -width Ar -compact
+.It Cm boot
 Display cumulative statistics since the system was booted.
-.Dp Cm run
+.It Cm run
 Display statistics as a running total from the point this
 command is given.
-.Dp Cm time
+.It Cm time
 Display statistics averaged over the refresh interval (the default).
-.Dp Cm zero
+.It Cm zero
 Reset running statistics to zero.
-.Dp
-.Tp Ic netstat
+.El
+.It Ic netstat
 Display, in the lower window, network connections.  By default,
 network servers awaiting requests are not displayed.  Each address
 is displayed in the format ``host.port'', with each shown symbolically,
@@ -293,43 +301,34 @@ when possible.  It is possible to have addresses displayed numerically,
 limit the display to a set of ports, hosts, and/or protocols
 (the minimum unambiguous prefix may be supplied):
 .Pp
-.Dw Ar
-.Dp Cm all
+.Bl -tag -width Ar -compact
+.It Cm all
 Toggle the displaying of server processes awaiting requests (this
 is the equivalent of the
 .Fl a
 flag to
 .Ar netstat  1  ) .
-.Dp Cm numbers
+.It Cm numbers
 Display network addresses numerically.
-.Dp Cm names
+.It Cm names
 Display network addresses symbolically.
-.Dp Ar protocol
+.It Ar protocol
 Display only network connections using the indicated protocol
 (currently either ``tcp'' or ``udp'').
-.Dp Cx Cm ignore
-.Cx \&\ \&
-.Op Ar items
-.Cx
+.It Cm ignore Op Ar items
 Do not display information about connections associated with
 the specified hosts or ports.  Hosts and ports may be specified
 by name (``ucbmonet'', ``ftp''), or numerically.  Host addresses
 use the Internet dot notation (``128.32.0.9'').  Multiple items
 may be specified with a single command by separating them with
 spaces.
-.Dp Cx Cm display
-.Cx \&\ \&
-.Op Ar items
-.Cx
+.It Cm display Op Ar items
 Display information about the connections associated with the
 specified hosts or ports.  As for
 .Ar ignore  ,
 .Op Ar items
 may be names or numbers.
-.Dp Cx Cm show
-.Cx \&\ \&
-.Op Ar ports\&|hosts
-.Cx
+.It Cm show Op Ar ports\&|hosts
 Show, on the command line, the currently selected protocols,
 hosts, and ports.  Hosts and ports which are being ignored
 are prefixed with a `!'.  If
@@ -339,11 +338,11 @@ or
 is supplied as an argument to
 .Cm show  ,
 then only the requested information will be displayed.
-.Dp Cm reset
+.It Cm reset
 Reset the port, host, and protocol matching mechanisms to the default
 (any protocol, port, or host).
-.Dp
-.Tp
+.El
+.El
 .Pp
 Commands to switch between displays may be abbreviated to the
 minimum unambiguous prefix; for example, ``io'' for ``iostat''.
@@ -360,44 +359,35 @@ information about disk drives.  These commands are used to
 select a set of drives to report on, should your system have
 more drives configured than can normally be displayed on the
 screen.
-.Dw Tx
-.Dp Cx Cm ignore
-.Cx \&\ \&
-.Op Ar drives
-.Cx
+.Pp
+.Bl -tag -width Tx -compact
+.It Cm ignore Op Ar drives
 Do not display information about the drives indicated.  Multiple
 drives may be specified, separated by spaces.
-.Dp Cx Cm display
-.Cx \&\ \&
-.Op Ar drives
-.Cx
+.It Cm display Op Ar drives
 Display information about the drives indicated.  Multiple drives
 may be specified, separated by spaces.
-.Dp
+.El
 .Sh FILES
-.Dw /etc/networks
-.Di L
-.Dp Pa /vmunix
-for the namelist
-.Dp Pa /dev/kmem
-for information in main memory
-.Dp Pa /dev/drum
-for information about swapped out processes
-.Dp Pa /etc/hosts
-for host names
-.Dp Pa /etc/networks
-for network names
-.Dp Pa /etc/services
-for port names
-.Dp
-.Sh AUTHOR
-The unknown hacker.  The
-.Ic pigs
-display is derived from a program of the same name
-written by Bill Reeves.
+.Bl -tag -width /etc/networks -compact
+.It Pa /vmunix
+For the namelist.
+.It Pa /dev/kmem
+For information in main memory.
+.It Pa /dev/drum
+For information about swapped out processes.
+.It Pa /etc/hosts
+For host names.
+.It Pa /etc/networks
+For network names.
+.It Pa /etc/services
+For port names.
+.El
 .Sh HISTORY
-.Nm
-appeared in 4.3 BSD.
+The
+.Nm systat
+program appeared in
+.Bx 4.3 .
 .Sh BUGS
 Takes 2-10 percent of the cpu.  Certain displays presume
 a 24 line by 80 character terminal.  The swap space display
