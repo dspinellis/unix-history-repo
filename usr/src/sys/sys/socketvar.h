@@ -1,4 +1,4 @@
-/*	socketvar.h	4.10	81/12/02	*/
+/*	socketvar.h	4.11	82/01/13	*/
 
 /*
  * Kernel structure per socket.
@@ -9,6 +9,7 @@
 struct socket {
 	short	so_type;		/* generic type, see socket.h */
 	short	so_options;		/* from socket call, see socket.h */
+	short	so_linger;		/* time to linger while closing */
 	short	so_state;		/* internal state flags SS_*, below */
 	caddr_t	so_pcb;			/* protocol control block */
 	struct	protosw *so_proto;	/* protocol handle */
@@ -55,7 +56,7 @@ struct socket {
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
-    (((so)->so_options & SO_NBIO) || ((so)->so_proto->pr_flags & PR_ATOMIC))
+    (((so)->so_options & SO_NONBLOCKING) || ((so)->so_proto->pr_flags & PR_ATOMIC))
 
 /* can we read something from so? */
 #define	soreadable(so) \
