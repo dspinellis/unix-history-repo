@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -494,7 +494,7 @@ newroute(argc, argv)
 				aflen = sizeof(struct sockaddr_x25);
 				break;
 			case K_SA:
-				af = 0;
+				af = PF_ROUTE;
 				aflen = sizeof(union sockunion);
 				break;
 			case K_XNS:
@@ -749,7 +749,7 @@ getaddr(which, s, hpp)
 		goto do_link;
 	if (af == AF_CCITT)
 		goto do_ccitt;
-	if (af == 0)
+	if (af == PF_ROUTE)
 		goto do_sa;
 	if (hpp == NULL)
 		hpp = &hp;
@@ -1158,6 +1158,7 @@ register struct sockaddr *sa;
 	register int byte = 0, state = VIRGIN, new;
 
 	bzero(cp, size);
+	cp++;
 	do {
 		if ((*addr >= '0') && (*addr <= '9')) {
 			new = *addr - '0';
