@@ -12,16 +12,17 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mesg.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mesg.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <errno.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void err __P((const char *fmt, ...));
 void usage __P((void));
@@ -31,12 +32,12 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	struct stat sbuf;
+	struct stat sb;
 	char *tty;
 	int ch;
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
-		switch(ch) {
+		switch (ch) {
 		case '?':
 		default:
 			usage();
@@ -44,27 +45,26 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
-	if (!(tty = ttyname(2)))
+	if ((tty = ttyname(STDERR_FILENO)) == NULL)
 		err("ttyname: %s", strerror(errno));
-	if (stat(tty, &sbuf) < 0)
+	if (stat(tty, &sb) < 0)
 		err("%s: %s", strerror(errno));
 
 	if (*argv == NULL) {
-		if (sbuf.st_mode & 020) {
+		if (sb.st_mode & S_IWGRP) {
 			(void)fprintf(stderr, "is y\n");
 			exit(0);
 		}
 		(void)fprintf(stderr, "is n\n");
 		exit(1);
 	}
-#define	OTHER_WRITE	020
-	switch(*argv[0]) {
+	switch (*argv[0]) {
 	case 'y':
-		if (chmod(tty, sbuf.st_mode | OTHER_WRITE) < 0)
+		if (chmod(tty, sb.st_mode | S_IWGRP) < 0)
 			err("%s: %s", strerror(errno));
 		exit(0);
 	case 'n':
-		if (chmod(tty, sbuf.st_mode &~ OTHER_WRITE) < 0)
+		if (chmod(tty, sb.st_mode & ~S_IWGRP) < 0)
 			err("%s: %s", strerror(errno));
 		exit(1);
 	}
