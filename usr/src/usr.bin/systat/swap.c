@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -175,7 +175,7 @@ dmtoindex(dm)
 #endif
 }
 
-static struct nlist nlst[] = {
+static struct nlist nl[] = {
 #define X_FIRST		0
 #define X_NSWAP         0
 	{ "_nswap" },
@@ -200,12 +200,12 @@ int
 initswap()
 {
 #ifdef notdef	
-	if (nlst[X_FIRST].n_type == 0) {
-		if (kvm_nlist(kd, nlst)) {
-			nlsterr(nlst);
+	if (nl[X_FIRST].n_type == 0) {
+		if (kvm_nlist(kd, nl)) {
+			nlsterr(nl);
 			return(0);
 		}
-		if (nlst[X_FIRST].n_type == 0) {
+		if (nl[X_FIRST].n_type == 0) {
 			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
 		}
@@ -232,7 +232,7 @@ void
 fetchswap()
 {
 #ifdef notdef	
-	if (nlst[X_FIRST].n_type == 0)
+	if (nl[X_FIRST].n_type == 0)
 		return;
 	/*
 	 * TODO - read procs
