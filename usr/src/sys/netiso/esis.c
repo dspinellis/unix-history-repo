@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	8.2 (Berkeley) %G%
+ *	@(#)esis.c	8.3 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -89,6 +89,7 @@ extern char		all_es_snpa[], all_is_snpa[];
 	} else {\
 		(m) = (m)->m_next;\
 		(cp) = mtod((m), caddr_t);\
+		(m)->m_len = 0;\
 	}
 /*
  * FUNCTION:		esis_init
