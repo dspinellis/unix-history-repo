@@ -1,41 +1,79 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)who.1	6.4 (Berkeley) %G%
+.\"     @(#)who.1	6.5 (Berkeley) %G%
 .\"
-.TH WHO 1 "%Q"
-.AT 3
-.SH NAME
-who \- who is on the system
-.SH SYNOPSIS
-.B who
-[ who-file ] [
-.B "am I"
-]
-.SH DESCRIPTION
-\fIWho,\fP without any argument, reads the /var/run/utmp file,
-and lists the login name, terminal name, and login time for each
-user currently logged into the system.  If a single argument is
-given, \fIwho\fP uses that file instead of /var/run/utmp.  Typically,
-that file will be /var/log/wtmp, which contains a record of all
-the logins, logouts, crashes, shutdowns and time changes since it
-was created.  In either case, each login will be listed with the
-user name, the terminal name (with "/dev/" suppressed), login date
-and time, and, if applicable, the host logged in from.
-.PP
-If /var/log/wtmp is being used as the file, the user name may be empty
+.Dd 
+.Dt WHO 1
+.Os
+.Sh NAME
+.Nm who
+.Nd display who is logged in
+.Sh SYNOPSIS
+.Nm who
+.Op Ar am I
+.Op Ar file 
+.Sh DESCRIPTION
+The utility
+.Nm who
+displays
+a list of all users currently logged on, showing for each user
+the login name,
+tty name, the date and time of login, and hostname if not local.
+.Pp
+Available options:
+.Pp
+.Bl -tag -width file
+.It Ar \&am I
+Returns the invoker's real user name. 
+.It Ar file
+By default,
+.Nm who
+gathers information from the file
+.Pa /var/run/utmp .
+An alternate
+.Ar file
+may be specified which is usually
+.Pa /var/run/wtmp
+(or
+.Pa /var/run/wtmp.[0-6]
+depending on site policy as
+.Pa wtmp
+can grow quite large and daily versions may or may not
+kept around after compression by
+.Xr ac 8 ) .
+The
+.Pa wtmp
+file contains a record of every login, logout,
+crash, shutdown and date change
+since
+.Pa wtmp
+was last truncated or
+created.
+.El
+.Pp
+If
+.Pa /var/log/wtmp
+is being used as the file, the user name may be empty
 or one of the special characters '|', '}' and '~'.  Logouts produce
 an output line without any user name.  For more information on the
-special characters, see utmp(5).
-.PP
-With two arguments, as in `who am I' (and also `who are you'),
-\fIwho\fP tells you who you are logged in as.
-.SH FILES
-.DT
-/var/run/utmp
-.br
-/var/log/wtmp
-.SH "SEE ALSO"
-last(1), users(1), getuid(2), utmp(5)
+special characters, see
+.Xr utmp 5 .
+.Sh FILES
+.Bl -tag -width /var/log/wtmp.[0-6] -compact
+.It Pa /var/run/utmp
+.It Pa /var/log/wtmp
+.It Pa /var/log/wtmp.[0-6]
+.El
+.Sh SEE ALSO
+.Xr last 1 ,
+.Xr users 1 ,
+.Xr getuid 2 ,
+.Xr utmp 5
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
