@@ -1,4 +1,4 @@
-.\"	"@(#)bmac.open	2.3	%G%";
+.\"	"@(#)bmac.open	2.4	%G%";
 .\" open format troff macros
 .\" citation formatting strings
 .ds [[ [
@@ -29,6 +29,7 @@
 .ds c] , \&
 .ds n] "" and \&
 .ds m] "" and \&
+.ds e] \\fIet al.\\fP
 .ds p] .
 .\" reference formatting macros
 .de s[   \" start reference
