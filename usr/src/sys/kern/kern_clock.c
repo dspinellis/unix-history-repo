@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.55	83/05/30	*/
+/*	kern_clock.c	4.56	83/06/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -301,11 +301,29 @@ softclock()
 		(*func)(arg, a);
 	}
 	/*
-	 * If trapped user-mode, give it a profiling tick.
+	 * If trapped user-mode and profiling, give it
+	 * a profiling tick.
 	 */
-	if (USERMODE(ps) && u.u_prof.pr_scale) {
-		u.u_procp->p_flag |= SOWEUPC;
-		aston();
+	if (USERMODE(ps)) {
+		register struct proc *p = u.u_procp;
+
+		if (u.u_prof.pr_scale) {
+			p->p_flag |= SOWEUPC;
+			aston();
+		}
+#ifdef vax
+		/*
+		 * Check to see if process has accumulated
+		 * more than 10 minutes of user time.  If so
+		 * reduce priority to give others a chance.
+		 */
+		if (p->p_uid && p->p_nice == NZERO &&
+		    u.u_ru.ru_utime.tv_sec > 10 * 60) {
+			p->p_nice = NZERO+4;
+			(void) setpri(p);
+			p->p_pri = p->p_usrpri;
+		}
+#endif
 	}
 }
 
