@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.16 (Berkeley) %G%
+ *	@(#)autoconf.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -115,8 +115,8 @@ configure()
 #if VAX8600
 	case VAX_8600:
 		printf("VAX 8600, serial# %d(%d), hardware ECO level %d(%d)\n",
-			cpusid.cpu780.cp_sno, cpusid.cpu780.cp_plant,
-			cpusid.cpu780.cp_eco >> 4, cpusid.cpu780.cp_eco);
+			cpusid.cpu8600.cp_sno, cpusid.cpu8600.cp_plant,
+			cpusid.cpu8600.cp_eco >> 4, cpusid.cpu8600.cp_eco);
 		break;
 #endif
 #if VAX8200
@@ -1230,7 +1230,7 @@ swapconf()
 			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
+	if (dumplo == 0 && dumpdev != NODEV && bdevsw[major(dumpdev)].d_psize)
 		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
 	if (dumplo < 0)
 		dumplo = 0;
