@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.12	(Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.13	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -40,7 +40,7 @@ int nonzero = 0;
 
 struct timeb Now;
 
-char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin:/usr/ucb";
+char PATH[MAXFULLNAME] = "PATH=/bin:/usr/bin";
 char UU_MACHINE[MAXFULLNAME];
 char Shell[MAXFULLNAME];
 char HOME[MAXFULLNAME];

@@ -1,4 +1,4 @@
-/*	@(#)uucp.h	5.16	%G%	*/
+/*	@(#)uucp.h	5.17	%G%	*/
 
 #include <stdio.h>
 
@@ -162,7 +162,7 @@
 #define NOSTRANGERS	/**/
 
 /*
- * Traditionally LCK (lock) files have been kept in /usr/spool/uucp.
+ * Traditionally LCK (lock) files have been kept in /var/spool/uucp.
  * If you want that define LOCKDIR to be ".".
  * If you want the locks kept in a subdirectory, define LOCKDIR as "LCK".
  * Good news about LCK. subdirectory: the directory can be mode 777 so
@@ -195,11 +195,11 @@
  * of one file
  * define LOGBYSITE as the directory to put the files in
  */
-/* #define LOGBYSITE	"/usr/spool/uucp/LOG" /**/
+/* #define LOGBYSITE	"/var/spool/uucp/LOG" /**/
 
 /*
  * define USE_SYSLOG if you want error messages to use SYSLOG instead
- * of being written to /usr/spool/log/ERRLOG
+ * of being written to /var/spool/log/ERRLOG
  */
 #define USE_SYSLOG	/**/
 
@@ -207,9 +207,9 @@
  * If you are doing rebilling and need connect accounting,
  * define DO_CONNECT_ACCOUNTING to be the accounting file name
  */
-/*#define DO_CONNECT_ACCOUNTING	"/usr/spool/uucp/CONNECT"	/**/
+/*#define DO_CONNECT_ACCOUNTING	"/var/spool/uucp/CONNECT"	/**/
 
-#define XQTDIR		"/usr/spool/uucp/XTMP"
+#define XQTDIR		"/var/spool/uucp/XTMP"
 #define SQFILE		"/usr/lib/uucp/SQFILE"
 #define SQTMP		"/usr/lib/uucp/SQTMP"
 #define SLCKTIME	5400	/* system/device timeout (LCK.. files) */
@@ -221,9 +221,9 @@
 #define	CMDFILE		"/usr/lib/uucp/L.cmds"
 #define	ALIASFILE	"/usr/lib/uucp/L.aliases"
 
-#define SPOOL		"/usr/spool/uucp"
-#define SYSLOG		"/usr/spool/uucp/SYSLOG"
-#define PUBDIR		"/usr/spool/uucppublic"
+#define SPOOL		"/var/spool/uucp"
+#define SYSLOG		"/var/spool/uucp/SYSLOG"
+#define PUBDIR		"/var/spool/uucppublic"
 
 #define SQLOCK		"SQ"
 #define SEQLOCK		"SEQL"
@@ -231,11 +231,11 @@
 #define DATAPRE		'D'
 #define XQTPRE		'X'
 
-#define LOGFILE		"/usr/spool/uucp/LOGFILE"
-#define ERRLOG		"/usr/spool/uucp/ERRLOG"
-#define CMDSDIR		"/usr/spool/uucp/C."
-#define DATADIR		"/usr/spool/uucp/D."
-#define XEQTDIR		"/usr/spool/uucp/X."
+#define LOGFILE		"/var/spool/uucp/LOGFILE"
+#define ERRLOG		"/var/spool/uucp/ERRLOG"
+#define CMDSDIR		"/var/spool/uucp/C."
+#define DATADIR		"/var/spool/uucp/D."
+#define XEQTDIR		"/var/spool/uucp/X."
 
 #define RMTDEBUG	"AUDIT"
 #define CORRUPT		"CORRUPT"
