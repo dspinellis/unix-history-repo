@@ -1,13 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)tac.c	1.1 %G%";
+static char sccsid[] = "@(#)tac.c	1.2 %G%";
 #endif
 
 /*
  * tac.c - Print file segments in reverse order
  *
  * Original line-only version by unknown author off the net.
- * 1985 mods by Jay Lepreau, Univ of Utah, to allocate memory dynamically
- * and handle string bounded segments.
+ * 1985 mods by Jay Lepreau, Univ of Utah, to allocate memory
+ * dynamically and handle string bounded segments (latter idea
+ * suggested by Rob Pike).
  */
 
 #include <sys/types.h>
@@ -98,7 +99,7 @@ main(argc, argv)
 	 * Since readsize can change, this may not always hold during
 	 * the pgm run, but since it usually will, leave it here
 	 * for i/o efficiency (page/sector boundaries and all that).
-	 * Note: Above statement has never been verified!
+	 * Note: the efficiency gain has never been verified...
 	 */
 	if ((i = off % readsize) == 0)
 	    i = readsize;
