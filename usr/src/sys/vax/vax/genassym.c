@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.3 (Berkeley) %G%
+ *	@(#)genassym.c	7.4 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -78,6 +78,7 @@ main()
 	printf("#define\tV_FASTPGREC %d\n", &vm->v_fastpgrec);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
+	printf("#define\tMAXPHYS %d\n", MAXPHYS);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
