@@ -1,4 +1,4 @@
-/*	cons.c	4.17	82/10/17	*/
+/*	cons.c	4.18	82/10/17	*/
 
 /*
  * Vax console driver and floppy interface
@@ -14,6 +14,7 @@
 #include "../h/proc.h"
 #include "../h/tty.h"
 #include "../h/systm.h"
+#include "../h/uio.h"
 
 #include "../vax/cpu.h"
 #include "../vax/cons.h"

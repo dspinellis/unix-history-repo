@@ -1,4 +1,4 @@
-/*	trap.c	4.18	82/10/13	*/
+/*	trap.c	4.19	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -177,12 +177,16 @@ syscall(sp, type, code, pc, psl)
 		callp = (code >= nsysent) ? &sysent[63] : &sysent[code];
 	}
 	if (i = callp->sy_narg * sizeof (int)) {
+#ifndef lint
 		asm("prober $3,r9,(r10)");		/* GROT */
 		asm("bnequ ok");			/* GROT */
 		u.u_error = EFAULT;			/* GROT */
 		goto bad;				/* GROT */
 asm("ok:");						/* GROT */
 		asm("movc3 r9,(r10),_u+U_ARG");		/* GROT */
+#else
+		bcopy(params, u.u_arg, i);
+#endif
 	}
 	u.u_ap = u.u_arg;
 	u.u_dirp = (caddr_t)u.u_arg[0];

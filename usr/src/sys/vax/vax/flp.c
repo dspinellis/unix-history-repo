@@ -1,4 +1,4 @@
-/*	flp.c	4.9	82/10/17	*/
+/*	flp.c	4.10	82/10/17	*/
 
 #if VAX780
 #include "../h/param.h"
@@ -80,12 +80,8 @@ floperation(rw, uio)
 	error = 0;
 	while ((i = imin(RXBYSEC, uio->uio_resid)) > 0) {
 		bp->b_blkno = uio->uio_offset>>7;
-		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0) {
-			/* block number out of range */
-			/* or offset in middle of block */
+		if (bp->b_blkno >= MAXSEC || (uio->uio_offset & 0177) != 0)
 			return (ENXIO);
-			break;	
-		}
 		if (rw == UIO_WRITE) {
 			error = uiomove(bp->b_un.b_addr, i, UIO_WRITE, uio);
 			if (error)
