@@ -1,4 +1,4 @@
-/*	strncmp.s	4.3	84/11/14	*/
+/*	strncmp.s	4.4	84/12/02	*/
 
 /*
  * Compare at most n characters of string
@@ -30,8 +30,8 @@ ENTRY(strncmp, 0)
 	subl2	r5,r1		# check if found null yet
 	locc	$0,r5,(r1)
 	beql	1b		# not yet done, continue checking
-	subl2	r5,r0
-	mnegb	(r0)[r3],r0	# r0 = $0 - *s2
+	subl2	r0,r3
+	mnegb	(r3),r0		# r0 = '\0' - *s2
 	cvtbl	r0,r0
 	ret
 3:
@@ -39,7 +39,7 @@ ENTRY(strncmp, 0)
 	subl2	r5,r1
 	locc	$0,r5,(r1)
 	bneq	4f
-	subb3	(r3),-(r1),r0	# r0 = *s1 - *s2
+	subb3	(r3),(r1),r0	# r0 = *s1 - *s2
 	cvtbl	r0,r0
 	ret
 4:
