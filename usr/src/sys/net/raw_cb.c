@@ -1,4 +1,4 @@
-/*	raw_cb.c	6.1	83/07/29	*/
+/*	raw_cb.c	6.2	84/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

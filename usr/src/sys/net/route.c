@@ -1,4 +1,4 @@
-/*	route.c	6.5	84/07/08	*/
+/*	route.c	6.6	84/08/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
