@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -162,7 +162,10 @@ main(argc, argv)
 		if (preen) {
 			union wait status;
 			while ((pid = wait(&status)) != -1) {
-				sumstatus |= status.w_retcode;
+				if (status.w_termsig)
+					sumstatus |= 8;
+				else
+					sumstatus |= status.w_retcode;
 				pwp = 0;
 				for (wp = listhead; wp; pwp = wp, wp = wp->next)
 					if (wp->pid == pid)
@@ -175,6 +178,11 @@ main(argc, argv)
 					listhead = wp->next;
 				else
 					pwp->next = wp->next;
+				if (status.w_termsig) {
+					printf("%s: EXITED WITH SIGNAL %d\n",
+						wp->name, status.w_termsig);
+					status.w_retcode = 8;
+				}
 				if (status.w_retcode != 0) {
 					wp->next = badlist;
 					badlist = wp;
