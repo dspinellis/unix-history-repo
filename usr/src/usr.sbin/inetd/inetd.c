@@ -31,6 +31,7 @@ static	char sccsid[] = "@(#)inetd.c	4.4 (Berkeley) %G%";
  *	socket type			stream/dgram/raw/rdm/seqpacket
  *	protocol			must be in /etc/protocols
  *	wait/nowait			single-threaded/multi-threaded
+ *	user				user to run daemon as
  *	server program			full path name
  *	server program arguments	maximum of MAXARGS (5)
  *
@@ -51,6 +52,7 @@ static	char sccsid[] = "@(#)inetd.c	4.4 (Berkeley) %G%";
 #include <signal.h>
 #include <netdb.h>
 #include <syslog.h>
+#include <pwd.h>
 
 extern	int errno;
 
@@ -69,6 +71,7 @@ struct	servtab {
 	char	*se_proto;		/* protocol used */
 	short	se_wait;		/* single threaded server */
 	short	se_checked;		/* looked at during merge */
+	char	*se_user;		/* user name to run as */
 	char	*se_server;		/* server program */
 #define MAXARGV 5
 	char	*se_argv[MAXARGV+1];	/* program arguments */
@@ -85,6 +88,7 @@ main(argc, argv)
 {
 	int ctrl;
 	register struct servtab *sep;
+	register struct passwd *pwd;
 	char *cp, buf[50];
 	int pid, i;
 
@@ -183,6 +187,14 @@ nextopt:
 			dup2(ctrl, 0), close(ctrl), dup2(0, 1);
 			for (i = getdtablesize(); --i > 2; )
 				close(i);
+			if ((pwd = getpwnam(sep->se_user)) == NULL) {
+				syslog(LOG_ERR, "getpwnam: %s: No such user"
+					,sep->se_user);
+				exit(1);
+			}
+			(void) setgid(pwd->pw_gid);
+			initgroups(pwd->pw_name, pwd->pw_gid);
+			(void) setuid(pwd->pw_uid);
 			if (debug)
 				fprintf(stderr, "%d execl %s\n",
 				    getpid(), sep->se_server);
@@ -385,6 +397,7 @@ getconfigent()
 	sep->se_proto = strdup(skip(&cp));
 	arg = skip(&cp);
 	sep->se_wait = strcmp(arg, "wait") == 0;
+	sep->se_user = strdup(skip(&cp));
 	sep->se_server = strdup(skip(&cp));
 	argc = 0;
 	for (arg = skip(&cp); cp; arg = skip(&cp))
