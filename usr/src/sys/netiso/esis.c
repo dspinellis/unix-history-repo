@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.12 (Berkeley) %G% */
+/*	@(#)esis.c	7.13 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -885,9 +885,8 @@ struct mbuf		*m0;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
 {
 	register int type;
-	struct rawcb *rp;
+	register struct rawcb *rp, *first_rp = 0;
 	struct ifnet *ifp = shp->snh_ifp;
-	struct sockbuf *sb = 0;
 	char workbuf[16];
 	struct mbuf *mm;
 
@@ -907,8 +906,8 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 	esis_dl.sdl_index = ifp->if_index;
 	bcopy(shp->snh_shost, (caddr_t)esis_dl.sdl_data, esis_dl.sdl_alen);
 	for (rp = esis_pcb.rcb_next; rp != &esis_pcb; rp = rp->rcb_next) {
-		if (sb == 0) {
-			sb = &rp->rcb_socket->so_rcv;
+		if (first_rp == 0) {
+			first_rp = rp;
 			continue;
 		}
 		if (mm = m_copy(m0, 0, M_COPYALL)) { /*can't block at interrupt level */
@@ -923,13 +922,12 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 			}
 		}
 	}
-	if (sb) {
-		if (sbappendaddr(&rp->rcb_socket->so_rcv,
-							  &esis_dl, mm, (struct mbuf *)0) != 0)
-			sorwakeup(rp->rcb_socket);
-		else
-			m_freem(m0);
+	if (first_rp && sbappendaddr(&first_rp->rcb_socket->so_rcv,
+							  &esis_dl, mm, (struct mbuf *)0) != 0) {
+		sorwakeup(first_rp->rcb_socket);
+		return;
 	}
+	m_freem(m0);
 }
 
 isis_output(sdl, m)
