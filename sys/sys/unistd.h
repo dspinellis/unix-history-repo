@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)unistd.h	5.14 (Berkeley) 4/1/91
- *	$Id: unistd.h,v 1.2 1993/10/16 17:18:18 rgrimes Exp $
+ *	$Id: unistd.h,v 1.3 1994/01/28 23:54:57 ache Exp $
  */
 
 #ifndef _SYS_UNISTD_H_
@@ -48,10 +48,7 @@
 #define	_POSIX_CHOWN_RESTRICTED	/* chown requires appropriate privileges */
 #define	_POSIX_NO_TRUNC		/* too-long path components generate errors */
 				/* may disable terminal special characters */
-/* XXX: can be defined in <termios.h> */
-#ifndef _POSIX_VDISABLE
-#define _POSIX_VDISABLE 0xFF
-#endif
+#define _POSIX_VDISABLE         0xFF
 
 /* access function */
 #define	F_OK		0	/* test for existence of file */
