@@ -1,4 +1,4 @@
-/*	common.c	4.3	87/12/09	*/
+/*	common.c	4.4	87/12/09	*/
 
 #ifdef PASS1COMMON
 #include "pass1.h"
@@ -101,7 +101,8 @@ talloc(){
 
 	q = lastfree;
 	for( p = TNEXT(q); p!=q; p= TNEXT(p))
-		if( p->in.op ==FREE ) return(lastfree=p);
+		if( p->in.op ==FREE )
+			return(lastfree=p);
 
 	cerror( "out of tree space; simplify expression");
 	/* NOTREACHED */
@@ -113,7 +114,8 @@ tcheck(){ /* ensure that all nodes have been freed */
 
 	if( !nerrors )
 		for( p=node; p<= &node[TREESZ-1]; ++p )
-			if( p->in.op != FREE ) cerror( "wasted space: %o", p );
+			if( p->in.op != FREE )
+				cerror( "wasted space: %o", p );
 	tinit();
 #ifdef FLEXNAMES
 	freetstr();
