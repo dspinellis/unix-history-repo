@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.h	7.4 (Berkeley) %G%
+ *	@(#)conf.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -49,6 +49,10 @@ struct cdevsw
 };
 #ifdef KERNEL
 struct	cdevsw cdevsw[];
+
+/* symbolic sleep message strings */
+extern	 char devopn[], devio[], devwait[];
+extern	 char devin[], devout[], devioc[], devcls[];
 #endif
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.5 (Berkeley) %G%
+ *	@(#)tty.h	7.6 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -73,7 +73,7 @@ struct tty {
 /* limits */
 #define	TTMASK	15
 #define	OBUFSIZ	100
-#define	TTYHOG	255
+#define	TTYHOG	1024
 #ifdef KERNEL
 #define TTMAXHIWAT	roundup(2048, CBSIZE)
 #define TTMINHIWAT	roundup(100, CBSIZE)
@@ -143,3 +143,8 @@ struct speedtab {
 #define	DMBIS		1
 #define	DMBIC		2
 #define	DMGET		3
+
+#ifdef KERNEL
+/* symbolic sleep message strings */
+extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
+#endif
