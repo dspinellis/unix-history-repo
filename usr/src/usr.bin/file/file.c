@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)file.c	4.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)file.c	4.13 (Berkeley) %G%";
 #endif
 /*
  * file - determine type of file
@@ -10,9 +10,11 @@ static	char sccsid[] = "@(#)file.c	4.12 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <a.out.h>
-int	errno;
-int	sys_nerr;
-char	*sys_errlist[];
+
+extern int	errno;
+extern int	sys_nerr;
+extern char	*sys_errlist[];
+
 int in;
 int i  = 0;
 char buf[BUFSIZ];
