@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -19,14 +19,13 @@ SCRIPT=	false true
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
-	grep hostid hostname kill ld ln login ls mail mkdir mt nice \
-	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
-	tar tee test time wall who write
+STD=	ar cat cc chmod cmp dd du echo ed expr grep hostid hostname \
+	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
+	rmdir size strip stty sync tar tee test time wall who write
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	ps
+NSTD=	
 
 # Programs that must run setuid to root
 #
@@ -41,7 +40,7 @@ all:	${SUBDIR} ${STD} ${NSTD} cp mv
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-${STD} mv cp:
+${STD} ${SETUID} mv cp:
 	${CC} ${CFLAGS} -o $@ $@.c
 
 # take care with cp and mv, install uses them
@@ -54,10 +53,10 @@ install:
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
 	-for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/bin/$$i); done
 	-for i in ${STD} ${NSTD}; do (install -s $$i ${DESTDIR}/bin/$$i); done
-	-for i in ${SETUID}; do (chown root ${DESTDIR}/bin/$$i; \
-		chmod 4755 ${DESTDIR}/bin/$$i); done
-	-for i in ${KMEM}; do (chgrp kmem ${DESTDIR}/bin/$$i; \
-		chmod 2755 ${DESTDIR}/bin/$$i); done
+	-for i in ${SETUID}; do \
+		(install -o root -m 4755 -s $$i ${DESTDIR}/bin/$$i); done
+	-for i in ${KMEM}; do \
+		(install -g kmem -m 2755 -s $$i ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
 	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chfn
@@ -124,10 +123,6 @@ chmod: /usr/include/sys/stat.h
 cmp: cmp.c
 cmp: /usr/include/stdio.h
 cmp: /usr/include/ctype.h
-date: date.c
-date: /usr/include/stdio.h
-date: /usr/include/sys/time.h
-date: /usr/include/utmp.h
 dd: dd.c
 dd: /usr/include/stdio.h
 dd: /usr/include/signal.h
