@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.15 (Berkeley) %G%
+ *	@(#)if.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "mbuf.h"
 #include "systm.h"
+#include "proc.h"
 #include "socket.h"
 #include "socketvar.h"
 #include "protosw.h"
-#include "proc.h"
 #include "kernel.h"
 #include "ioctl.h"
 
