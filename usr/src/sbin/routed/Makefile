@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	routed
 SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c \
