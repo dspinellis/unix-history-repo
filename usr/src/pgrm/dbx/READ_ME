@@ -1,0 +1,23 @@
+This is a modified version of the 4.2BSD debugger dbx.  It is intended
+to be able to handle Modula-2, Pascal, C and Fortran.
+
+The source is written in C, with interface files (names ending in ".h")
+automatically generated from implementation files (names ending in ".c")
+so they (the ".h" files) should NOT be modified.
+
+The subdirectory "tests" contains some test cases for Modula-2, C, and Pascal.
+These tests should be run successfully before installing dbx.
+
+Makefile contains the relevant information for building, testing, and
+installing dbx.  Running "make" will build dbx, "make test" will test it, and
+"make install" will install it after first checking to make sure it has
+passed all the available tests.
+
+Please reports problems, comments, and suggestions to:
+
+	Mark Linton
+	Computer Systems Laboratory
+	Stanford University
+
+	ARPA:	linton@su-shasta
+	UUCP:	Shasta!linton or ucbvax!linton
