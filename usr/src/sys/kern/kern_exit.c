@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.32 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 #include "malloc.h"
 #include "resourcevar.h"
 
+#include "machine/cpu.h"
 #ifdef COMPAT_43
 #include "machine/reg.h"
 #include "machine/psl.h"
@@ -82,13 +83,10 @@ exit(p, rv)
 	 * This may block!
 	 */
 	fdfree(p);
-p->p_fd = 0;
 #ifdef SYSVSHM
 	if (p->p_vmspace->vm_shm)
 		shmexit(p);
 #endif
-	vmspace_free(p->p_vmspace);
-p->p_vmspace = 0;
 
 	if (p->p_pid == 1)
 		panic("init died");
@@ -98,12 +96,16 @@ p->p_vmspace = 0;
 		if (sp->s_ttyvp) {
 			/*
 			 * Controlling process.
-			 * Signal foreground pgrp and revoke access
-			 * to controlling terminal.
+			 * Signal foreground pgrp,
+			 * drain controlling terminal
+			 * and revoke access to controlling terminal.
 			 */
-			if (sp->s_ttyp->t_pgrp)
-				pgsignal(sp->s_ttyp->t_pgrp, SIGHUP, 1);
-			vgoneall(sp->s_ttyvp);
+			if (sp->s_ttyp->t_session == sp) {
+				if (sp->s_ttyp->t_pgrp)
+					pgsignal(sp->s_ttyp->t_pgrp, SIGHUP, 1);
+				(void) ttywait(sp->s_ttyp);
+				vgoneall(sp->s_ttyvp);
+			}
 			vrele(sp->s_ttyvp);
 			sp->s_ttyvp = NULL;
 			/*
@@ -112,7 +114,7 @@ p->p_vmspace = 0;
 			 * (for logging and informational purposes)
 			 */
 		}
-		sp->s_leader = 0;
+		sp->s_leader = NULL;
 	}
 	fixjobc(p, p->p_pgrp, 0);
 	p->p_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
@@ -191,19 +193,19 @@ done:
 	psignal(p->p_pptr, SIGCHLD);
 	wakeup((caddr_t)p->p_pptr);
 #if defined(tahoe)
-	u.u_pcb.pcb_savacc.faddr = (float *)NULL;
+	/* move this to cpu_exit */
+	p->p_addr->u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif
 	/*
-	 * Free the memory for the user structure and kernel stack.
-	 * As we continue using it until the swtch completes
-	 * (or switches to an interrupt stack), we need to block
-	 * memory allocation by raising priority until we are gone.
+	 * Finally, call machine-dependent code to release the remaining
+	 * resources including address space, the kernel stack and pcb.
+	 * The address space is released by "vmspace_free(p->p_vmspace)";
+	 * This is machine-dependent, as we may have to change stacks
+	 * or ensure that the current one isn't reallocated before we
+	 * finish.  cpu_exit will end with a call to swtch(), finishing
+	 * our execution (pun intended).
 	 */
-	(void) splimp();
-	/* I don't think this will cause a sleep/realloc anywhere... */
-	kmem_free(kernel_map, (vm_offset_t)p->p_addr,
-	    round_page(ctob(UPAGES)));
-	swtch();
+	cpu_exit(p);
 	/* NOTREACHED */
 }
 
