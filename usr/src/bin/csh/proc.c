@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -565,7 +565,7 @@ pprint(pp, flag)
 				printf("%5d ", pp->p_pid);
 			if (flag&(REASON|AREASON)) {
 				if (flag&NAME)
-					format = "%-21s";
+					format = "%-23s";
 				else
 					format = "%s";
 				if (pstatus == status)
@@ -839,7 +839,7 @@ pkill(v, signum)
 			case SIGTTIN:
 			case SIGTTOU:
 				if ((jobflags & PRUNNING) == 0) {
-					printf("%s: Already stopped\n", cp);
+					printf("%s: Already suspended\n", cp);
 					err++;
 					goto cont;
 				}
@@ -914,7 +914,7 @@ panystop(neednl)
 	chkstop = 2;
 	for (pp = proclist.p_next; pp; pp = pp->p_next)
 		if (pp->p_flags & PSTOPPED)
-			error("\nThere are stopped jobs" + 1 - neednl);
+			error("\nThere are suspended jobs" + 1 - neednl);
 }
 
 struct process *
