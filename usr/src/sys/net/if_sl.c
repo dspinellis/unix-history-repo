@@ -1,4 +1,4 @@
-/*	@(#)if_sl.c	5.5 (Berkeley) %G% */
+/*	@(#)if_sl.c	5.6 (Berkeley) %G% */
 
 /*
  * Serial Line interface
@@ -400,7 +400,7 @@ sl_btom(sc, len, ifp)
 			if (m->m_len == CLBYTES) {
 				cp = mtod(m, char *);
 				m->m_off = (int)sc->sc_buf - (int)m;
-				sc->sc_buf = mtod(m, char *);
+				sc->sc_buf = cp;
 				if (ifp) {
 					m->m_off += sizeof(ifp);
 					count = MIN(len,
@@ -496,7 +496,7 @@ slinput(c, tp)
 			return;
 		}
 	}
-	if (++sc->sc_ilen >= SLMTU) {
+	if (sc->sc_ilen++ >= SLMTU) {
 		sc->sc_if.if_ierrors++;
 		sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 		sc->sc_ilen = 0;
