@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.8 (Berkeley) 83/11/30";
+static	char *sccsid = "@(#)expand.c	4.9 (Berkeley) 83/12/19";
 #endif
 
 #include "defs.h"
@@ -98,7 +98,7 @@ expstr(s)
 {
 	register char *cp, *cp1;
 	register struct block *tp;
-	char *tail, *opathp;
+	char *tail;
 	char buf[BUFSIZ];
 	int savec, oargc;
 	extern char homedir[];
@@ -187,7 +187,6 @@ expstr(s)
 	oargc = argc;
 	expany = 0;
 	expsh(s);
-	pathp = opathp;
 	if (argc != oargc)
 		sort();
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.10 (Berkeley) 83/11/29";
+static	char *sccsid = "@(#)docmd.c	4.11 (Berkeley) 83/12/19";
 #endif
 
 #include "defs.h"
@@ -89,7 +89,6 @@ dohcmds(files, hosts, cmds)
 makeconn(rhost)
 	char *rhost;
 {
-	register struct block *c;
 	register char *ruser, *cp;
 	int n;
 	extern char user[];
@@ -418,7 +417,6 @@ mkexceptlist(cmds)
 	struct block *cmds;
 {
 	register struct block *f, *a, *c;
-	register char *cp;
 
 	if (debug)
 		printf("mkexceptlist()\n");
