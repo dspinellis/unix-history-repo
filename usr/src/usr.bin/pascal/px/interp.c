@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.17 %G%";
+static char sccsid[] = "@(#)interp.c 1.18 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1090,7 +1090,7 @@ interpreter(base)
 				if (tl1 == *tcp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR("Label of %D not found in case\n", tl1);
+				CASERNG(tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE2OP:
@@ -1104,7 +1104,7 @@ interpreter(base)
 				if (tl1 == *tsp1++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR("Label of %D not found in case\n", tl1);
+				CASERNG(tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_CASE4OP:
@@ -1118,7 +1118,7 @@ interpreter(base)
 				if (tl1 == *tlp++)
 					break;
 			if (tl == 0)		/* default case => error */
-				ERROR("Label of %D not found in case\n", tl1);
+				CASERNG(tl1);
 			pc.cp += *(tsp - tl);
 			continue;
 		case O_ADDT:
