@@ -17,14 +17,9 @@
 #include "sendmail.h"
 
 #ifndef lint
-#ifdef MXDOMAIN
-static char sccsid[] = "@(#)domain.c	5.10 (Berkeley) %G% (with MXDOMAIN)";
-#else
-static char sccsid[] = "@(#)domain.c	5.10 (Berkeley) %G% (without MXDOMAIN)";
-#endif
+static char sccsid[] = "@(#)domain.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifdef MXDOMAIN
 # include <sys/param.h>
 # include <arpa/nameser.h>
 # include <resolv.h>
@@ -105,14 +100,14 @@ getmxrr(host, mxhosts, maxmx, localhost)
 			 * NOERROR.
 			 */
 			case FORMERR:
-#endif OLDJEEVES
+#endif
 			case NOERROR:
 				(void) strcpy(hostbuf, host);
 				mxhosts[0] = hostbuf;
 				return(1);
 #ifndef OLDJEEVES
 			case FORMERR:
-#endif OLDJEEVES
+#endif
 			case NOTIMP:
 			case REFUSED:
 				h_errno = NO_RECOVERY;
@@ -296,4 +291,3 @@ getcanonname(host, hbsize)
 	}
 	return;
 }
-#endif MXDOMAIN
