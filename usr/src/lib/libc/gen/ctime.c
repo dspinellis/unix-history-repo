@@ -4,9 +4,9 @@
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)ctime.c	5.7 (Berkeley) %G%";
-#endif
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)ctime.c	5.8 (Berkeley) %G%";
+#endif LIBC_SCCS and not lint
 
 #include "sys/param.h"
 #include "sys/time.h"
