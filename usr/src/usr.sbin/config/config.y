@@ -27,7 +27,6 @@
 %token	MAJOR
 %token	MASTER
 %token	MAXUSERS
-%token	MBA
 %token	MINOR
 %token	MINUS
 %token	NEXUS
@@ -43,8 +42,6 @@
 %token	SWAP
 %token	TIMEZONE
 %token	TRACE
-%token	UBA
-%token	VBA
 %token	VECTOR
 
 %token	<str>	ID
@@ -67,10 +64,16 @@
 
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
  *
- *	@(#)config.y	5.6 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ *
+ *	@(#)config.y	5.7 (Berkeley) %G%
  */
 
 #include "config.h"
@@ -378,12 +381,6 @@ Mkoption:
 	      } ;
 
 Dev:
-	UBA
-	      = { $$ = ns("uba"); } |
-	VBA
-	      = { $$ = ns("vba"); } |
-	MBA
-	      = { $$ = ns("mba"); } |
 	ID
 	      = { $$ = ns($1); }
 	;
@@ -572,7 +569,7 @@ mkswap(system, fl, size)
 	int size;
 {
 	register struct file_list **flp;
-	char *cp, name[80];
+	char name[80];
 
 	if (system == 0 || system->f_type != SYSTEMSPEC) {
 		yyerror("\"swap\" spec precedes \"config\" specification");
@@ -717,8 +714,9 @@ check_nexus(dev, num)
 	switch (machine) {
 
 	case MACHINE_VAX:
-		if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba"))
-			yyerror("only uba's and mba's should be connected to the nexus");
+		if (!eq(dev->d_name, "uba") && !eq(dev->d_name, "mba") &&
+		    !eq(dev->d_name, "bi"))
+			yyerror("only uba's, mba's, and bi's should be connected to the nexus");
 		if (num != QUES)
 			yyerror("can't give specific nexus numbers");
 		break;
@@ -906,6 +904,7 @@ deverror(systemname, devtype)
  * configured hardware devices.  Must
  * take into account stuff wildcarded.
  */
+/*ARGSUSED*/
 finddev(dev)
 	dev_t dev;
 {

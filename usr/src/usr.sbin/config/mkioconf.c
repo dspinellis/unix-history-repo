@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -123,7 +123,7 @@ vax_ioconf()
 			struct idlst *ip;
 			mp = dp->d_conn;
 			if (mp == 0 || mp == TO_NEXUS ||
-			    !eq(mp->d_name, "uba"))
+			    (!eq(mp->d_name, "uba") && !eq(mp->d_name, "bi")))
 				continue;
 			fprintf(fp,
 			    "extern struct uba_driver %sdriver;\n",
