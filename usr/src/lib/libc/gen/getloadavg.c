@@ -6,14 +6,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getloadavg.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getloadavg.c	6.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/kernel.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
+#include <vm/vm_param.h>
 #include <nlist.h>
 
 static struct nlist nl[] = {
@@ -38,10 +39,12 @@ getloadavg(loadavg, nelem)
 	struct loadavg loadinfo;
 	int size, kmemfd, i;
 	int alreadyopen = 1;
-	int fscale;
+	int mib[2], fscale;
 
 	size = sizeof(loadinfo);
-	if (getkerninfo(KINFO_LOADAVG, &loadinfo, &size, 0) < 0) {
+	mib[0] = CTL_VM;
+	mib[1] = VM_LOADAVG;
+	if (sysctl(mib, 2, &loadinfo, &size, NULL, 0) < 0) {
 		if ((alreadyopen = kvm_openfiles(NULL, NULL, NULL)) == -1)
 			return (-1);
 		/* 
