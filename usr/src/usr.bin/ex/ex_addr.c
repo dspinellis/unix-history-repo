@@ -1,5 +1,5 @@
-/* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_addr.c	4.2 %G%";
+/* Copyright (c) 1979 Regents of the University of California */
+static char *sccsid = "@(#)ex_addr.c	4.3 %G%";
 #include "ex.h"
 #include "ex_re.h"
 
@@ -198,3 +198,108 @@ address(inline)
 							loc2++;
 						if (!execute(1))
 							goto nope;
+					}
+					break;
+				} else if (loc1 < inline) {
+					char *last;
+doques:
+
+					do {
+						last = loc1;
+						if (loc1 == loc2)
+							loc2++;
+						if (!execute(1))
+							break;
+					} while (loc1 < inline);
+					loc1 = last;
+					break;
+				}
+			}
+nope:
+			for (;;) {
+				if (c == '/') {
+					addr++;
+					if (addr > dol) {
+						if (value(WRAPSCAN) == 0)
+error("No match to BOTTOM|Address search hit BOTTOM without matching pattern");
+						addr = zero;
+					}
+				} else {
+					addr--;
+					if (addr < zero) {
+						if (value(WRAPSCAN) == 0)
+error("No match to TOP|Address search hit TOP without matching pattern");
+						addr = dol;
+					}
+				}
+				if (execute(0, addr)) {
+					if (inline && c == '?') {
+						inline = &linebuf[LBSIZE];
+						goto doques;
+					}
+					break;
+				}
+				if (addr == dot)
+					error("Fail|Pattern not found");
+			}
+			continue;
+
+		case '$':
+			addr = dol;
+			continue;
+
+		case '.':
+			addr = dot;
+			continue;
+
+		case '\'':
+			c = markreg(getchar());
+			if (c == 0)
+				error("Marks are ' and a-z");
+			addr = getmark(c);
+			if (addr == 0)
+				error("Undefined mark@referenced");
+			break;
+
+		default:
+			ungetchar(c);
+			if (offset) {
+				if (addr == 0)
+					addr = dot;
+				addr += offset;
+				loc1 = 0;
+			}
+			if (addr == 0) {
+				bigmove = 0;
+				return (0);
+			}
+			if (addr != zero)
+				notempty();
+			addr += lastsign;
+			if (addr < zero)
+				error("Negative address@- first buffer line is 1");
+			if (addr > dol)
+				error("Not that many lines@in buffer");
+			return (addr);
+		}
+	}
+}
+
+/*
+ * Abbreviations to make code smaller
+ * Left over from squashing ex version 1.1 into
+ * 11/34's and 11/40's.
+ */
+setCNL()
+{
+
+	setcount();
+	newline();
+}
+
+setNAEOL()
+{
+
+	setnoaddr();
+	eol();
+}
