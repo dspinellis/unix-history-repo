@@ -12,7 +12,7 @@
  * Mail to others.
  */
 
-static char *SccsId = "@(#)send.c	2.4 %G%";
+static char *SccsId = "@(#)send.c	2.5 %G%";
 
 /*
  * Send message described by the passed pointer to the
@@ -334,7 +334,12 @@ topdog:
 	 */
 
 #ifdef VMUNIX
+#ifdef	pdp11
+	while (wait2(&s, WNOHANG) > 0)
+#endif
+#ifdef	vax
 	while (wait3(&s, WNOHANG, 0) > 0)
+#endif
 		;
 #else
 	wait(&s);
