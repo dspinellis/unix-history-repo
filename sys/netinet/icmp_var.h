@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)icmp_var.h	7.5 (Berkeley) 6/28/90
+ *	from: @(#)icmp_var.h	7.5 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 /*

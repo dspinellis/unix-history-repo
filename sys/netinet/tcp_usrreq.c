@@ -30,18 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)tcp_usrreq.c	7.15 (Berkeley) 6/28/90
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00152
- * --------------------         -----   ----------------------
- *
- * 22 Feb 93	David Greenman		Increased tcp_sendspace and 
- *					tcp_recvspace to 16k bytes
- * 20 Aug 93	Rodney W. Grimes	Add #ifdef's so you can go back to
- *					the stock 4k with a kernel config
- *					options "TCP_SMALLSPACE"
+ *	from: @(#)tcp_usrreq.c	7.15 (Berkeley) 6/28/90
+ *	$Id$
  */
 
 #include "param.h"

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)in.h	7.11 (Berkeley) 4/20/91
+ *	from: @(#)in.h	7.11 (Berkeley) 4/20/91
+ *	$Id$
  */
 
 #ifndef _NETINET_IN_H_

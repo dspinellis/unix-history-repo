@@ -30,15 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)raw_ip.c	7.8 (Berkeley) 7/25/90
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00020
- * --------------------         -----   ----------------------
- *
- * 03 Nov 92	Julian Elischer		Fixed memory leak that caused ping
- *					and traceroute to cause panic
+ *	from: @(#)raw_ip.c	7.8 (Berkeley) 7/25/90
+ *	$Id$
  */
 
 #include "param.h"
