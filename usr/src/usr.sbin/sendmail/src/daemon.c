@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.66 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.67 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.66 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.67 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -188,12 +188,10 @@ getrequests()
 #ifdef XDEBUG
 		/* check for disaster */
 		{
-			register STAB *s;
 			char jbuf[MAXHOSTNAMELEN];
 
 			expand("\201j", jbuf, &jbuf[sizeof jbuf - 1], CurEnv);
-			if ((s = stab(jbuf, ST_CLASS, ST_FIND)) == NULL ||
-			    !bitnset('w', s->s_class))
+			if (!wordinclass(jbuf, 'w'))
 			{
 				dumpstate("daemon lost $j");
 				syslog(LOG_ALERT, "daemon process doesn't have $j in $=w; see syslog");
@@ -502,7 +500,7 @@ setdaemonoptions(p)
 #ifdef NETINET
 			  case AF_INET:
 				if (isascii(*v) && isdigit(*v))
-					DaemonAddr.sin.sin_addr.s_addr = inet_network(v);
+					DaemonAddr.sin.sin_addr.s_addr = htonl(inet_network(v));
 				else
 				{
 					register struct netent *np;
