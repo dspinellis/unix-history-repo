@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cache.c	8.1 (Berkeley) %G%
+ *	@(#)vfs_cache.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,8 +67,10 @@ cache_lookup(dvp, vpp, cnp)
 {
 	register struct namecache *ncp, *ncq, **ncpp;
 
-	if (!doingcache)
+	if (!doingcache) {
+		cnp->cn_flags &= ~MAKEENTRY;
 		return (0);
+	}
 	if (cnp->cn_namelen > NCHNAMLEN) {
 		nchstats.ncs_long++;
 		cnp->cn_flags &= ~MAKEENTRY;
