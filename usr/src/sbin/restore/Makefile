@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS= -O
@@ -19,8 +19,8 @@ rtape.o: rtape.c
 	cc ${CFLAGS} -c -DRRESTOR rtape.c
 
 install: rrestore restore
-	install restore ${DESTDIR}/etc/restor
-	install -m 4755 rrestore ${DESTDIR}/etc/rrestor
+	install restore ${DESTDIR}/etc/restore
+	install -m 4755 rrestore ${DESTDIR}/etc/rrestore
 
 clean:
 	rm -f restore rrestore *.o errs
