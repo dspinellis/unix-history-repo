@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.16		%G%);
+SCCSID(@(#)util.c	3.17		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -490,4 +490,59 @@ dfopen(filename, mode)
 			break;
 	}
 	return (fp);
+}
+/*
+**  PUTLINE -- put a line like fputs obeying SMTP conventions
+**
+**	Parameters:
+**		l -- line to put.
+**		fp -- file to put it onto.
+**		fullsmtp -- if set, obey strictest SMTP conventions.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		output of l to fp.
+*/
+
+# define SMTPLINELIM	120	/* maximum line length */
+
+putline(l, fp, fullsmtp)
+	char *l;
+	FILE *fp;
+	bool fullsmtp;
+{
+	register char *p;
+	char s1, s2;
+
+	if (!fullsmtp)
+	{
+		fputs(l, fp);
+		return;
+	}
+
+	/* find the end of the line */
+	p = index('\n', l);
+	if (p == NULL)
+		p = &l[strlen(l)];
+
+	/* check for line overflow */
+	while (p - l > SMTPLINELIM)
+	{
+		register char *q = &l[SMTPLINELIM - 1];
+		char svchar = *q;
+
+		*q = '\0';
+		fputs(l, fp);
+		fputs("!\r\n", fp);
+		*q = svchar;
+		l = q;
+	}
+
+	/* output last part */
+	*p = '\0';
+	fputs(l, fp);
+	fputs("\r\n", fp);
+	*p = '\n';
 }
