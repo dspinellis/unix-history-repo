@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ifconfig.8	6.1 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.2 (Berkeley) %G%
 .\"
 .TH IFCONFIG 8C ""
 .UC 5
@@ -10,13 +10,19 @@
 ifconfig \- configure network interface parameters
 .SH SYOPNSIS
 .B /etc/ifconfig
-interface
+interface address_family
 [
 .I address
 [
 .I dest_address
 ] ] [
 .I parameters
+]
+.br
+.B /etc/ifconfig
+interface
+[
+protocol_family
 ]
 .SH DESCRIPTION
 .I Ifconfig
@@ -28,12 +34,28 @@ must be used at boot time to define the network address
 of each interface present on a machine; it may also be used at
 a later time to redefine an interface's address.  The
 .I interface
-parameter is a string of the form ``name unit'', e.g. ``en0'', while
+parameter is a string of the form ``name unit'', e.g. ``en0''.
+.LP
+Since an interface may receive transmissions in differing protocols,
+each of which may required separate naming schemes, it is necessary
+to specify the
+.IR protocol_family ,
+which may change the interpretation of the remaining parameters.
+The address protocols current supported are ``inet'' and ``ns''.
+.LP
+For the DARPA-Internet family,
 the address is either a host name present in the host name data
 base, 
 .IR hosts (5),
 or a DARPA Internet address expressed in the Internet standard
 ``dot notation''.
+For the Xerox Network Systems(tm) family,
+addresses are 
+.IR net:a.b.c.d.e.f ,
+where
+.I net
+is the assigned network number (in decimal),
+and each of the six bytes are specified in hexadecimal.
 .PP
 The following parameters may be set with 
 .IR ifconfig :
@@ -73,10 +95,31 @@ extra console error logging.
 .TP 15
 .B \-debug
 Disable driver dependent debugging code.
+.TP 15
+.B netmask
+Specify how much of the address you wish to reserve for subdiving
+Class A and B networks into sub-networks.
+(Inet only).
+.TP 15
+.B dstaddr
+Specify the correspondent on the other end of a point to point link
+.TP 15
+.B broadcast
+Specify the address you wish to use to represent broadcasts to the
+network.
+.TP 15
+.B ipdst
+This is used to specify an internet host who is willing to receive
+ip packets encapsulating ns packets bound for a remote network.
+In this case, an apparent point to point link is constructed, and
+the address you specify will be taken as the ns address and network
+of the destinee.
 .PP
 .I Ifconfig
 displays the current configuration for a network interface
 when no optional parameters are supplied.
+If a protocol family is specified,
+Ifconfig will report only the details specific to that protocol family.
 .PP
 Only the super-user may modify the configuration of a network interface.
 .SH DIAGNOSTICS
