@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)libpc.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)libpc.h 1.3 %G%"; */
 
 extern FILE *ACTFILE();
 extern long *ADDT();
@@ -34,10 +34,10 @@ extern bool RELSLT();
 extern bool RELSLE();
 extern bool RELSGT();
 extern bool RELSGE();
-extern bool RELGLT();
-extern bool RELGLE();
-extern bool RELGGT();
-extern bool RELGGE();
+extern bool RELTLT();
+extern bool RELTLE();
+extern bool RELTGT();
+extern bool RELTGE();
 extern long ROUND();
 extern long RANG4();
 extern long RSNG4();
