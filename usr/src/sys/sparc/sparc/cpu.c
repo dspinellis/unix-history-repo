@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.c	7.5 (Berkeley) %G%
+ *	@(#)cpu.c	7.6 (Berkeley) %G%
  *
- * from: $Header: cpu.c,v 1.11 93/04/27 14:34:42 torek Exp $ (LBL)
+ * from: $Header: cpu.c,v 1.12 93/05/03 09:47:57 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -33,7 +33,6 @@ struct cacheinfo cacheinfo;
 /* the following are used externally (sysctl_hw) */
 char	machine[] = "sparc";
 char	cpu_model[80];
-int	cpuspeed;		/* XXX */
 
 static char *psrtoname();
 static char *fsrtoname();
@@ -79,7 +78,6 @@ cpu_attach(parent, dev, aux)
 	    getpropstring(node, "name"), psrtoname(psr),
 	    clockfreq(clk), fpuname);
 	printf(": %s\n", cpu_model);
-	cpuspeed = clk / 1000000;	/* XXX */
 
 	/*
 	 * Fill in the cache info.  Note, vac-hwflush is spelled
