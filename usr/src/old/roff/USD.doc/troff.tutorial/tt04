@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt04	8.1 (Berkeley) %G%
+.\"	@(#)tt04	8.2 (Berkeley) %G%
 .\"
 .NH
 Indents and Line Lengths
@@ -137,8 +137,8 @@ command:
 \s36\v'2'P\v'-2'\s0ater noster qui est in caelis sanctificetur
 nomen tuum;
 adveniat regnum tuum;
-'in -.3i
 fiat voluntas tua,
+'in -.3i
 sicut in caelo, et in terra. ...
 Amen.
 .ll +0.3i
