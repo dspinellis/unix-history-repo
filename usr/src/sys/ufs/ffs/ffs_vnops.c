@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.80 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.81 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -209,8 +209,8 @@ ffs_read(ap)
 	if (uio->uio_resid == 0)
 		return (0);
 	fs = ip->i_fs;
-	if (uio->uio_offset < 0)
-		return (EINVAL);
+	if (uio->uio_offset + uio->uio_resid > fs->fs_maxfilesize)
+		return (EFBIG);
 	ip->i_flag |= IACC;
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
@@ -284,10 +284,11 @@ ffs_write(ap)
 	default:
 		panic("ffs_write type");
 	}
-	if (uio->uio_offset < 0)
-		return (EINVAL);
 	if (uio->uio_resid == 0)
 		return (0);
+	fs = ip->i_fs;
+	if (uio->uio_offset + uio->uio_resid > fs->fs_maxfilesize)
+		return (EFBIG);
 	/*
 	 * Maybe this should be above the vnode op call, but so long as
 	 * file servers have no limits, i don't think it matters
@@ -300,7 +301,6 @@ ffs_write(ap)
 	}
 	resid = uio->uio_resid;
 	osize = ip->i_size;
-	fs = ip->i_fs;
 	flags = 0;
 	if (ioflag & IO_SYNC)
 		flags = B_SYNC;
