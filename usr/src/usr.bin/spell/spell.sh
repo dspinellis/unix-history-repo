@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)spell.sh	1.2	(Berkeley)	83/04/20
+#	@(#)spell.sh	1.3	(Berkeley)	83/09/10
 #
 : V data for -v, B flags, D dictionary, S stop, H history, F files, T temp
 V=/dev/null		B=			F= 
@@ -10,10 +10,11 @@ trap "rm -f $T ${T}a ; exit" 0
 for A in $*
 do
 	case $A in
-	-v)	B="$B -v"
+	-v)	B="$B@-v"
 		V=${T}a ;;
+	-x)	B="$B@-x" ;;
 	-b) 	D=${D-/usr/dict/hlistb}
-		B="$B -b" ;;
+		B="$B@-b" ;;
 	-d)	next="D=" ;;
 	-s)	next="S=" ;;
 	-h)	next="H=" ;;
@@ -37,4 +38,4 @@ esac
 case $V in
 /dev/null)	exit ;;
 esac
-sed '/^\./d' $V | sort -u +1f +0 ;;
+sed '/^\./d' $V | sort -u +1f +0
