@@ -5,6 +5,10 @@
 PROG=	telnet
 
 CFLAGS+=-DTERMCAP -DUSE_TERMIO
+.ifdef KLUDGE
+.undef KLUDGE
+CFLAGS+=-DKLUDGELINEMODE
+.endif
 CFLAGS+=-I${.CURDIR}/../../lib
 
 .if exists(/usr/lib/libcrypt.a)
