@@ -1,5 +1,5 @@
 # Area Code : City : State/Province : State/Province Abbrev.
-#	@(#)na.phone	5.1 (Berkeley) %G%
+#	@(#)na.phone	5.2 (Berkeley) %G%
 201:Ashbury Park:New Jersey:NJ
 201:Newark:New Jersey:NJ
 202::District of Columbia:DC
@@ -30,7 +30,7 @@
 219:Gary:Indiana:IN
 219:Hammond:Indiana:IN
 301::Maryland:MD
-302::Deleware:DE
+302::Delaware:DE
 303:Aspen:Colorado:CO
 303:Boulder:Colorado:CO
 303:Denver:Colorado:CO
@@ -48,6 +48,7 @@
 308:Grand Island:Nebraska:NE
 308:North Platte:Nebraska:NE
 309:Bloomington:Illinois:IL
+310:Los Angelos:California:LA
 312:Arlington Heights:Illinois:IL
 312:Broadview:Illinois:IL
 312:Calumet Park:Illinois:IL
@@ -85,6 +86,7 @@
 407:Orlando:Florida:FL
 407:West Palm Beach:Florida:FL
 409:Galveston:Texas:TX
+410:Baltimore:Maryland:MD
 412:Pittsburgh:Pennsylvania:PA
 413:Greenfield:Massachusetts:MA
 413:Springfield:Massachusetts:MA
@@ -112,6 +114,7 @@
 508:Worcester:Massachusetts:MA
 509:Pullman:Washington:WA
 509:Walla Walla:Washington:WA
+510:Oakland:California:CA
 512:Alamo:Texas:TX
 513:Camden:Ohio:OH
 513:Cincinnati:Ohio:OH
@@ -210,6 +213,7 @@
 904:Atlantic Beach:Florida:FL
 904:Tallahassee:Florida:FL
 907::Alaska:AK
+908::New Jersey:NJ
 912:Macon:Georgia:GA
 913:Kansas City:Kansas:KS
 913:Lawrence:Kansas:KS
