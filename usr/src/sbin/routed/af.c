@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	4.17 (Berkeley) %G%";
 #endif
 
 #include "defs.h"
@@ -31,8 +31,13 @@ inet_hash(sin, hp)
 	register struct sockaddr_in *sin;
 	struct afhash *hp;
 {
+	register u_long n;
 
-	hp->afh_nethash = inet_netof(sin->sin_addr);
+	n = inet_netof(sin->sin_addr);
+	if (n)
+	    while ((n & 0xff) == 0)
+		n >>= 8;
+	hp->afh_nethash = n;
 	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
 	hp->afh_hosthash &= 0x7fffffff;
 }
@@ -93,7 +98,7 @@ inet_checkhost(sin)
 
 #define	IN_BADCLASS(i)	(((long) (i) & 0xe0000000) == 0xe0000000)
 
-	if (IN_BADCLASS(i))
+	if (IN_BADCLASS(i) || sin->sin_port != 0)
 		return (0);
 	if (i != 0 && (i & 0xff000000) == 0)
 		return (0);
