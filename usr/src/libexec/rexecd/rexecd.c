@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rexecd.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,8 +60,9 @@ main(argc, argv)
 char	username[20] = "USER=";
 char	homedir[64] = "HOME=";
 char	shell[64] = "SHELL=";
+char	path[sizeof(_PATH_DEFPATH) + sizeof("PATH=")] = "PATH=";
 char	*envinit[] =
-	    {homedir, shell, _PATH_DEFPATH, username, 0};
+	    {homedir, shell, path, username, 0};
 char	**environ;
 
 struct	sockaddr_in asin = { AF_INET };
@@ -184,6 +185,7 @@ doit(f, fromp)
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid((uid_t)pwd->pw_uid);
+	(void)strcat(path, _PATH_DEFPATH);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
