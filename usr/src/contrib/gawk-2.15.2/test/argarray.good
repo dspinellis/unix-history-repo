@@ -1,0 +1,6 @@
+here we have 1 argument
+which is
+	 gawk
+Environment variable TEST=test
+and the current input file is called -
+but this would change if we would have something to process
