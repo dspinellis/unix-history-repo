@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,28 +28,37 @@ static char sccsid[] = "@(#)mail.local.c	5.11 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sysexits.h>
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
 #include "pathnames.h"
 
-#define	FATAL		1
-#define	NOTFATAL	0
+int eval = EX_OK;			/* sysexits.h error value. */
 
-int	deliver __P((int, char *));
-void	err __P((int, const char *, ...));
-void	notifybiff __P((char *));
-int	store __P((char *));
-void	usage __P((void));
+void		deliver __P((int, char *));
+void		e_to_sys __P((int));
+__dead void	err __P((const char *, ...));
+void		notifybiff __P((char *));
+int		store __P((char *));
+void		usage __P((void));
+void		vwarn __P((const char *, _BSD_VA_LIST_));
+void		warn __P((const char *, ...));
 
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	struct passwd *pw;
-	int ch, fd, eval;
+	int ch, fd;
 	uid_t uid;
 	char *from;
 
@@ -58,12 +67,14 @@ main(argc, argv)
 	from = NULL;
 	while ((ch = getopt(argc, argv, "df:r:")) != EOF)
 		switch(ch) {
-		case 'd':		/* backward compatible */
+		case 'd':		/* Backward compatible. */
 			break;
 		case 'f':
-		case 'r':		/* backward compatible */
-			if (from)
-			    err(FATAL, "multiple -f options");
+		case 'r':		/* Backward compatible. */
+			if (from != NULL) {
+				warn("multiple -f options");
+				usage();
+			}
 			from = optarg;
 			break;
 		case '?':
@@ -86,9 +97,17 @@ main(argc, argv)
 	    !(pw = getpwnam(from)) || pw->pw_uid != uid))
 		from = (pw = getpwuid(uid)) ? pw->pw_name : "???";
 
-	fd = store(from);
-	for (eval = 0; *argv; ++argv)
-		eval |= deliver(fd, *argv);
+	/*
+	 * There is no way to distinguish the error status of one delivery
+	 * from the rest of the deliveries.  So, if we failed hard on one
+	 * or more deliveries, but had no failures on any of the others, we
+	 * return a hard failure.  If we failed temporarily on one or more
+	 * deliveries, we return a temporary failure regardless of the other
+	 * failures.  This results in the delivery being reattempted later
+	 * at the expense of repeated failures and multiple deliveries.
+	 */
+	for (fd = store(from); *argv; ++argv)
+		deliver(fd, *argv);
 	exit(eval);
 }
 
@@ -102,8 +121,10 @@ store(from)
 	char *tn, line[2048];
 
 	tn = strdup(_PATH_LOCTMP);
-	if ((fd = mkstemp(tn)) == -1 || (fp = fdopen(fd, "w+")) == NULL)
-		err(FATAL, "unable to open temporary file");
+	if ((fd = mkstemp(tn)) == -1 || (fp = fdopen(fd, "w+")) == NULL) {
+		e_to_sys(errno);
+		err("unable to open temporary file");
+	}
 	(void)unlink(tn);
 	free(tn);
 
@@ -120,30 +141,33 @@ store(from)
 			eline = 0;
 		}
 		(void)fprintf(fp, "%s", line);
-		if (ferror(fp))
-			break;
+		if (ferror(fp)) {
+			e_to_sys(errno);
+			err("temporary file write error");
+		}
 	}
 
 	/* If message not newline terminated, need an extra. */
-	if (!index(line, '\n'))
+	if (!strchr(line, '\n'))
 		(void)putc('\n', fp);
 	/* Output a newline; note, empty messages are allowed. */
 	(void)putc('\n', fp);
 
-	(void)fflush(fp);
-	if (ferror(fp))
-		err(FATAL, "temporary file write error");
-	return(fd);
+	if (fflush(fp) == EOF || ferror(fp)) {
+		e_to_sys(errno);
+		err("temporary file write error");
+	}
+	return (fd);
 }
 
-int
+void
 deliver(fd, name)
 	int fd;
 	char *name;
 {
 	struct stat sb;
 	struct passwd *pw;
-	int created, mbfd, nr, nw, off, rval;
+	int mbfd, nr, nw, off;
 	char biffmsg[100], buf[8*1024], path[MAXPATHLEN];
 	off_t curoff;
 
@@ -152,71 +176,95 @@ deliver(fd, name)
 	 * handled in the sendmail aliases file.
 	 */
 	if (!(pw = getpwnam(name))) {
-		err(NOTFATAL, "unknown name: %s", name);
-		return(1);
+		if (eval != EX_TEMPFAIL)
+			eval = EX_UNAVAILABLE;
+		warn("unknown name: %s", name);
+		return;
 	}
 
 	(void)snprintf(path, sizeof(path), "%s/%s", _PATH_MAILDIR, name);
 
-	if (!(created = lstat(path, &sb)) &&
-	    (sb.st_nlink != 1 || S_ISLNK(sb.st_mode))) {
-		err(NOTFATAL, "%s: linked file", path);
-		return(1);
-	}
-
 	/*
-	 * There's a race here -- two processes think they both created
-	 * the file.  This means the file cannot be unlinked.
+	 * If the mailbox is a linked or a symlink, fail.
+	 *
+	 * If we created the mailbox, set the owner/group.  If that fails,
+	 * just return.  Another process may have already opened it, so we
+	 * can't unlink it.  Historically, binmail set the owner/group at
+	 * each mail delivery.  We no longer do this, assuming that if the
+	 * ownership or permissions were changed there was a reason.
+	 *
+	 * XXX
+	 * open(2) should support flock'ing the file.
 	 */
-	if ((mbfd =
-	    open(path, O_APPEND|O_CREAT|O_WRONLY, S_IRUSR|S_IWUSR)) < 0) {
-		err(NOTFATAL, "%s: %s", path, strerror(errno));
-		return(1);
+	if (lstat(path, &sb)) {
+		if ((mbfd = open(path,
+		    O_APPEND|O_CREAT|O_EXCL|O_WRONLY, S_IRUSR|S_IWUSR)) < 0)
+			mbfd = open(path, O_APPEND|O_WRONLY, 0);
+		else if (fchown(mbfd, pw->pw_uid, pw->pw_gid)) {
+			e_to_sys(errno);
+			warn("chown %u.%u: %s", pw->pw_uid, pw->pw_gid, name);
+			return;
+		}
+	} else if (sb.st_nlink != 1 || S_ISLNK(sb.st_mode)) {
+		e_to_sys(errno);
+		warn("%s: linked file", path);
+		return;
+	} else
+		mbfd = open(path, O_APPEND|O_WRONLY, 0);
+
+	if (mbfd == -1) {
+		e_to_sys(errno);
+		warn("%s: %s", path, strerror(errno));
+		return;
 	}
 
-	rval = 0;
-	/* XXX: Open should allow flock'ing the file; see 4.4BSD. */
+	/* Wait until we can get a lock on the file. */
 	if (flock(mbfd, LOCK_EX)) {
-		err(NOTFATAL, "%s: %s", path, strerror(errno));
-		rval = 1;
-		goto bad;
+		e_to_sys(errno);
+		warn("%s: %s", path, strerror(errno));
+		goto err1;
 	}
 
+	/* Get the starting offset of the new message for biff. */
 	curoff = lseek(mbfd, (off_t)0, SEEK_END);
 	(void)snprintf(biffmsg, sizeof(biffmsg), "%s@%qd\n", name, curoff);
-	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
-		err(FATAL, "temporary file: %s", strerror(errno));
-		rval = 1;
-		goto bad;
-	}
 
+	/* Copy the message into the file. */
+	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
+		e_to_sys(errno);
+		warn("temporary file: %s", strerror(errno));
+		goto err1;
+	}
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
 		for (off = 0; off < nr; nr -= nw, off += nw)
 			if ((nw = write(mbfd, buf + off, nr)) < 0) {
-				err(NOTFATAL, "%s: %s", path, strerror(errno));
-				goto trunc;
+				e_to_sys(errno);
+				warn("%s: %s", path, strerror(errno));
+				goto err2;;
 			}
 	if (nr < 0) {
-		err(FATAL, "temporary file: %s", strerror(errno));
-trunc:		(void)ftruncate(mbfd, curoff);
-		rval = 1;
+		e_to_sys(errno);
+		warn("temporary file: %s", strerror(errno));
+		goto err2;;
 	}
 
-	/*
-	 * Set the owner and group.  Historically, binmail repeated this at
-	 * each mail delivery.  We no longer do this, assuming that if the
-	 * ownership or permissions were changed there was a reason for doing
-	 * so.
-	 */
-bad:	if (created) 
-		(void)fchown(mbfd, pw->pw_uid, pw->pw_gid);
+	/* Flush to disk, don't wait for update. */
+	if (fsync(mbfd)) {
+		e_to_sys(errno);
+		warn("%s: %s", path, strerror(errno));
+err2:		(void)ftruncate(mbfd, curoff);
+err1:		(void)close(mbfd);
+		return;
+	}
+		
+	/* Close and check -- NFS doesn't write until the close. */
+	if (close(mbfd)) {
+		e_to_sys(errno);
+		warn("%s: %s", path, strerror(errno));
+		return;
+	}
 
-	(void)fsync(mbfd);		/* Don't wait for update. */
-	(void)close(mbfd);		/* Implicit unlock. */
-
-	if (!rval)
-		notifybiff(biffmsg);
-	return(rval);
+	notifybiff(biffmsg);
 }
 
 void
@@ -234,7 +282,7 @@ notifybiff(msg)
 		if (!(sp = getservbyname("biff", "udp")))
 			return;
 		if (!(hp = gethostbyname("localhost"))) {
-			err(NOTFATAL, "localhost: %s", strerror(errno));
+			warn("localhost: %s", strerror(errno));
 			return;
 		}
 		addr.sin_family = hp->h_addrtype;
@@ -242,51 +290,173 @@ notifybiff(msg)
 		addr.sin_port = sp->s_port;
 	}
 	if (f < 0 && (f = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-		err(NOTFATAL, "socket: %s", strerror(errno));
+		warn("socket: %s", strerror(errno));
 		return;
 	}
 	len = strlen(msg) + 1;
 	if (sendto(f, msg, len, 0, (struct sockaddr *)&addr, sizeof(addr))
 	    != len)
-		err(NOTFATAL, "sendto biff: %s", strerror(errno));
+		warn("sendto biff: %s", strerror(errno));
 }
 
 void
 usage()
 {
-	err(FATAL, "usage: mail.local [-f from] user ...");
+	eval = EX_USAGE;
+	err("usage: mail.local [-f from] user ...");
 }
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
 
 void
 #if __STDC__
-err(int isfatal, const char *fmt, ...)
+err(const char *fmt, ...)
 #else
-err(isfatal, fmt, va_alist)
-	int isfatal;
-	char *fmt;
+err(fmt, va_alist)
+	const char *fmt;
 	va_dcl
 #endif
 {
 	va_list ap;
+
 #if __STDC__
 	va_start(ap, fmt);
 #else
 	va_start(ap);
 #endif
+	vwarn(fmt, ap);
+	va_end(ap);
+
+	exit(eval);
+}
+
+void
+#if __STDC__
+warn(const char *fmt, ...)
+#else
+warn(fmt, va_alist)
+	const char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	vwarn(fmt, ap);
+	va_end(ap);
+}
+
+void
+vwarn(fmt, ap)
+	const char *fmt;
+	_BSD_VA_LIST_ ap;
+{
 	/*
-	 * Don't use LOG_PERROR as an openlog() flag to do this, it's
-	 * not portable enough.
+	 * Log the message to stderr.
+	 *
+	 * Don't use LOG_PERROR as an openlog() flag to do this,
+	 * it's not portable enough.
 	 */
+	if (eval != EX_USAGE)
+		(void)fprintf(stderr, "mail.local: ");
 	(void)vfprintf(stderr, fmt, ap);
 	(void)fprintf(stderr, "\n");
+
+	/* Log the message to syslog. */
 	vsyslog(LOG_ERR, fmt, ap);
-	va_end(ap);
-	if (isfatal)
-		exit(1);
+}
+
+/*
+ * e_to_sys --
+ *	Guess which errno's are temporary.  Gag me.
+ */
+void
+e_to_sys(num)
+	int num;
+{
+	/* Temporary failures override hard errors. */
+	if (eval == EX_TEMPFAIL)
+		return;
+
+	switch(num) {		/* Hopefully temporary errors. */
+#ifdef EAGAIN
+	case EAGAIN:		/* Resource temporarily unavailable */
+#endif
+#ifdef EDQUOT
+	case EDQUOT:		/* Disc quota exceeded */
+#endif
+#ifdef EBUSY
+	case EBUSY:		/* Device busy */
+#endif
+#ifdef EPROCLIM
+	case EPROCLIM:		/* Too many processes */
+#endif
+#ifdef EUSERS
+	case EUSERS:		/* Too many users */
+#endif
+#ifdef ECONNABORTED
+	case ECONNABORTED:	/* Software caused connection abort */
+#endif
+#ifdef ECONNREFUSED
+	case ECONNREFUSED:	/* Connection refused */
+#endif
+#ifdef ECONNRESET
+	case ECONNRESET:	/* Connection reset by peer */
+#endif
+#ifdef EDEADLK
+	case EDEADLK:		/* Resource deadlock avoided */
+#endif
+#ifdef EFBIG
+	case EFBIG:		/* File too large */
+#endif
+#ifdef EHOSTDOWN
+	case EHOSTDOWN:		/* Host is down */
+#endif
+#ifdef EHOSTUNREACH
+	case EHOSTUNREACH:	/* No route to host */
+#endif
+#ifdef EMFILE
+	case EMFILE:		/* Too many open files */
+#endif
+#ifdef ENETDOWN
+	case ENETDOWN:		/* Network is down */
+#endif
+#ifdef ENETRESET
+	case ENETRESET:		/* Network dropped connection on reset */
+#endif
+#ifdef ENETUNREACH
+	case ENETUNREACH:	/* Network is unreachable */
+#endif
+#ifdef ENFILE
+	case ENFILE:		/* Too many open files in system */
+#endif
+#ifdef ENOBUFS
+	case ENOBUFS:		/* No buffer space available */
+#endif
+#ifdef ENOMEM
+	case ENOMEM:		/* Cannot allocate memory */
+#endif
+#ifdef ENOSPC
+	case ENOSPC:		/* No space left on device */
+#endif
+#ifdef EROFS
+	case EROFS:		/* Read-only file system */
+#endif
+#ifdef ESTALE
+	case ESTALE:		/* Stale NFS file handle */
+#endif
+#ifdef ETIMEDOUT
+	case ETIMEDOUT:		/* Connection timed out */
+#endif
+#if defined(EWOULDBLOCK) && (EWOULDBLOCK != EAGAIN)
+	case EWOULDBLOCK:	/* Operation would block. */
+#endif
+		eval = EX_TEMPFAIL;
+		break;
+	default:
+		eval = EX_UNAVAILABLE;
+		break;
+	}
 }
