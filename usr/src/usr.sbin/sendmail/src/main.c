@@ -381,12 +381,6 @@ main(argc, argv)
 	if (++HopCount > MAXHOP)
 		syserr("Infinite forwarding loop (%s->%s)", From.q_paddr, *argv);
 
-	/* if we have had errors sofar, drop out now */
-	if (Error && ExitStat == EX_OK)
-		ExitStat = EX_USAGE;
-	if (ExitStat != EX_OK)
-		finis();
-
 	/*
 	** Scan argv and deliver the message to everyone.
 	*/
@@ -395,6 +389,12 @@ main(argc, argv)
 	{
 		sendto(*argv, 0);
 	}
+
+	/* if we have had errors sofar, drop out now */
+	if (Error && ExitStat == EX_OK)
+		ExitStat = EX_USAGE;
+	if (ExitStat != EX_OK)
+		finis();
 
 	/*
 	**  See if we have anyone to send to at all.
