@@ -1,12 +1,11 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)FRTN.c 1.1 %G%";
+static char sccsid[] = "@(#)FRTN.c 1.2 %G%";
 
 #include "h00vars.h"
 
-FRTN(frtn, result)
+FRTN(frtn)
 	register struct formalrtn *frtn;
-	int result;
 {
 	register struct display *dp;
 	register struct display *ds;
@@ -15,5 +14,4 @@ FRTN(frtn, result)
 	limit = &frtn->disp[2 * frtn->cbn];
 	for (ds = &frtn->disp[frtn->cbn], dp = &_disply[1]; ds < limit; )
 		*dp++ = *ds++;
-	return result;
 }
