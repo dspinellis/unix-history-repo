@@ -1,13 +1,13 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1986, 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * from: hp300/hp300/swapgeneric.c	7.8 (Berkeley) 10/11/92
  *
- *	@(#)swapgeneric.c	7.6 (Berkeley) %G%
+ *	@(#)swapgeneric.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
