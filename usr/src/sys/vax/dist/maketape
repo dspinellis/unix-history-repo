@@ -1,49 +1,69 @@
-#!/bin/sh -
+#!/bin/sh
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.16 (Berkeley) %G%
+#	@(#)maketape	4.17 (Berkeley) %G%
 #
+#	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
+tape=/dev/rmt12
+type=6250
+if [ $# -gt 0 ]; then type=$1; fi
+if [ $# -gt 1 ]; then tape=$2; fi
+tartape=$tape
+if [ $# -gt 2 ]; then remote=$3; tartape='-'; fi
 #
 trap "rm -f /tmp/tape.$$; exit" 0 1 2 3 13 15
-mt rew
+$remote mt -t ${tape} rew
 date
-umount /dev/hp2g /dev/hp2h
+umount /dev/hp2g
 umount /dev/hp2a
 mount -r /dev/hp2a /nbsd
 mount -r /dev/hp2g /nbsd/usr
-mount -r /dev/hp2h /nbsd/a
 cd /nbsd/tp
 tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
-	dd of=/dev/rmt12 bs=512 conv=sync
+	$remote dd of=${tape} bs=512 conv=sync
 cd /nbsd
 sync
 echo "Add dump of mini-root file system"
-dd if=/dev/r${miniroot} of=/dev/rmt12 bs=20b count=205 conv=sync
+dd if=/dev/r${miniroot} ${remote+"$remote dd"} of=${tape} bs=20b count=205 conv=sync
 echo "Add full dump of real file system"
-/etc/dump 0uf /dev/rmt12 /nbsd
+/etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
 echo "Add tar image of system sources"
-cd /nbsd/a/sys; tar cf /dev/rmt12 .
+cd /nbsd/sys; tar cf ${tartape} . \
+	${remote+"| $remote /usr/local/20b > $tape"}
 echo "Add tar image of /usr"
-cd /nbsd/usr; tar cf /dev/rmt12 adm bin dict doc games \
+cd /nbsd/usr; tar cf ${tartape} adm bin dict doc games \
 	guest hosts include lib local man mdec msgs new \
-	preserve pub spool tmp ucb
+	preserve pub spool tmp ucb \
+		${remote+"| $remote /usr/local/20b > $tape"}
 echo "Add varian fonts"
-cd /usr/lib/vfont; tar cf /dev/rmt12 .
-echo "Done, rewinding first tape"
-mt rew
-echo "Mount second tape and hit return when ready"; read x
+cd /usr/lib/vfont; tar cf ${tartape} . \
+	${remote+"| $remote /usr/local/20b > $tape"}
+if [ ${type} != '6250' ]
+then
+	echo "Done, rewinding first tape"
+	$remote mt -t ${tape} rew &
+	echo "Mount second tape and hit return when ready"
+	echo "(or type name of next tape drive)"
+	read x
+	if [ $x != "" ]
+	then	tape=$x
+	fi
+fi
 echo "Add user source code"
-cd /nbsd/usr/src; tar cf /dev/rmt12 .
+cd /nbsd/usr/src; tar cf ${tartape} . \
+	${remote+"| $remote /usr/local/20b > $tape"}
 echo "Add user contributed software"
-cd /nbsd/a/new; tar cf /dev/rmt12 .
+cd /nbsd/usr/src/new; tar cf ${tartape} . \
+	${remote+"| $remote /usr/local/20b > $tape"}
 echo "Add ingres source"
-cd /nbsd/usr/ingres; tar cf /dev/rmt12 .
-echo "Done, rewinding second tape"
-mt rew
+cd /nbsd/usr/ingres; tar cf ${tartape} . \
+	${remote+"| $remote /usr/local/20b > $tape"}
+echo "Done, rewinding tape"
+$remote mt -t ${tape} rew &

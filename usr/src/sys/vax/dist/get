@@ -1,10 +1,10 @@
-#!/bin/sh -
+#!/bin/sh
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.16 (Berkeley) %G%
+#	@(#)get	4.17 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -19,7 +19,7 @@ then
 	echo You just '(almost)' destroyed the root
 	exit
 fi
-cp $DISTROOT/a/sys/GENERIC/vmunix .
+cp $DISTROOT/sys/GENERIC/vmunix .
 rm -rf bin; mkdir bin
 rm -rf etc; mkdir etc
 rm -rf a; mkdir a
@@ -53,9 +53,9 @@ cp $DISTROOT/bin/[ bin; strip bin/[
 cp $DISTROOT/bin/awk bin; strip bin/awk
 cp $DISTROOT/bin/make bin; strip bin/make
 cp $DISTROOT/usr/mdec/* usr/mdec
-cp $DISTROOT/a/sys/floppy/[Ma-z0-9]* sys/floppy
-cp $DISTROOT/a/sys/cassette/[Ma-z0-9]* sys/cassette
-cp $DISTROOT/a/sys/stand/boot boot
+cp $DISTROOT/sys/floppy/[Ma-z0-9]* sys/floppy
+cp $DISTROOT/sys/cassette/[Ma-z0-9]* sys/cassette
+cp $DISTROOT/sys/stand/boot boot
 cp $DISTROOT/.profile .profile
 cat >etc/passwd <<EOF
 root::0:10::/:/bin/sh
