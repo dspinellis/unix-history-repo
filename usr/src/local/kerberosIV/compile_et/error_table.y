@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
-char *str_concat(), *ds(), *quote(), *malloc(), *realloc();
+#include <stdlib.h>
+char *str_concat(), *ds(), *quote();
 char *current_token = (char *)NULL;
 extern char *table_name;
 %}
@@ -69,7 +70,6 @@ description	:	QUOTED_STRING
 #include "error_table.h"
 #include "mit-sipb-copyright.h"
 
-char *malloc(), *realloc();
 extern FILE *hfile, *cfile;
 
 static long gensym_n = 0;
