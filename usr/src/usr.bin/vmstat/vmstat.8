@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vmstat.8	4.1 (Berkeley) %G%
+.\"	@(#)vmstat.8	5.1 (Berkeley) %G%
 .\"
-.TH VMSTAT 1 4/26/81
+.TH VMSTAT 1 "26 April 1981"
 .UC 4
 .de s1
 .if n .sp
@@ -44,15 +44,13 @@ events which have occurred since boot.
 .PP
 If none of these options are given,
 .I vmstat
-will report in a (usually) iterative fashion on the virtual memory
-activity in the system.
-In this case, the optional
+will report in the first line a summary of the virtual memory activity 
+since the system has been booted.
+If
 .I interval
-argument causes
-.I vmstat
-to report once each
+is specified, then successive lines are summaries over the last
 .I interval
-seconds;
+seconds.
 ``vmstat 5'' will print what the system is doing every five seconds;
 this is a good choice of printing interval since this is how often
 some of the statistics are sampled in the system; others vary every
@@ -121,8 +119,7 @@ id	cpu idle
 /dev/kmem, /vmunix
 .SH SEE ALSO
 The sections starting with ``Interpreting system activity'' in
-.I "Setting up 4.1bsd"
-by W. Joy.
+.IR "Installing and Operating 4.2bsd" .
 .SH AUTHORS
 William Joy and Ozalp Babaoglu
 .SH BUGS
