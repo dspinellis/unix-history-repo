@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arith_lex.l	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arith_lex.l	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "y.tab.h"
