@@ -47,13 +47,13 @@
 %#ifndef lint
 %/*static char sccsid[] = "from: @(#)rstat.x 1.2 87/09/18 Copyr 1987 Sun Micro";*/
 %/*static char sccsid[] = "from: @(#)rstat.x	2.2 88/08/01 4.0 RPCSRC";*/
-%static char rcsid[] = "$Id: rstat.x,v 1.4 1993/08/03 21:53:27 mycroft Exp $";
+%static char rcsid[] = "$Id: rstat.x,v 1.1 1993/09/14 17:42:50 jtc Exp $";
 %#endif /* not lint */
 
 #endif /* def RPC_HDR */
 
-const CPUSTATES = 4;
-const DK_NDRIVE = 4;
+const RSTAT_CPUSTATES = 4;
+const RSTAT_DK_NDRIVE = 4;
 
 /*
  * GMT since 0:00, January 1, 1970
