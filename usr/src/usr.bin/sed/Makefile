@@ -1,6 +1,6 @@
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
 PROG=	sed
-SRCS=	sed0.c sed1.c
+SRCS=	compile.c main.c misc.c process.c
 
 .include <bsd.prog.mk>
