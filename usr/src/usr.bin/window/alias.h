@@ -1,5 +1,5 @@
 /*
- *	@(#)alias.h	3.2 84/05/23
+ * @(#)alias.h	3.2 %G%
  */
 
 #define alias var

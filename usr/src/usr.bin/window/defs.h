@@ -1,4 +1,4 @@
-/*	@(#)defs.h	3.14 84/04/08		*/
+/*	@(#)defs.h	3.15 84/05/23		*/
 
 #include "ww.h"
 #include <sys/time.h>
