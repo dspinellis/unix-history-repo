@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)reader.c	4.6 (Berkeley) %G%";
+static char *sccsid ="@(#)reader.c	4.7 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -456,12 +456,12 @@ prcook( cookie ){
 
 int odebug = 0;
 
-order(p,cook) NODE *p; {
+order(p,cook) register NODE *p; {
 
 	register o, ty, m;
 	int m1;
 	int cookie;
-	NODE *p1, *p2;
+	register NODE *p1, *p2;
 
 	cookie = cook;
 	rcount();
@@ -662,6 +662,22 @@ order(p,cook) NODE *p; {
 			p->in.op = FREE;
 			return;
 			}
+#ifdef R2REGS
+		/* try to coax a tree into a doubly indexed OREG */
+		p1 = p->in.left;
+		if( p1->in.op == PLUS ) {
+			if( ISPTR(p1->in.left->in.type) &&
+			    offset(p1->in.right, tlen(p)) >= 0 ) {
+				order( p1->in.left, INAREG|INTAREG );
+				goto again;
+				}
+			if( ISPTR(p1->in.right->in.type) &&
+			    offset(p1->in.left, tlen(p)) >= 0 ) {
+				order( p1->in.right, INAREG|INTAREG );
+				goto again;
+				}
+			}
+#endif
 		offstar( p->in.left );
 		goto again;
 
