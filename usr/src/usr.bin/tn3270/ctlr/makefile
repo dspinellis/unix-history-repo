@@ -21,14 +21,9 @@ KBD	= unix.kbd
 # The source files...
 ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h options.h screen.h scrnctlr.h
 
-MOSTC =	dctype.c ebc_disp.c inbound.c options.c outbound.c
+ALLC =	dctype.c ebc_disp.c inbound.c oia.c options.c outbound.c
 
-ALLC = ${MOSTC}
-ALLC = ${MOSTC}
-
-MOSTO =	dctype.o ebc_disp.o inbound.o options.o outbound.o
-
-ALLO	= $(MOSTO)
+ALLO =	dctype.o ebc_disp.o inbound.o oia.o options.o outbound.o
 
 .s.o:
 	/lib/cpp -E $< | as -o $@
@@ -43,8 +38,8 @@ clean:
 
 print:
 	${PRINT} ${ALLH} ${M4FILE} default.map
-	${PRINT} ${MOSTC}
-	${PRINT} ${MSMAIN} ${TNMAIN} ${PRT3270MAIN}
+	${PRINT} ${ALLC}
+	${PRINT} ${PRT3270MAIN}
 
 tags:	${ALLC} ${ALLH}
 	ctags -t ${ALLC} ${ALLH}
@@ -53,9 +48,7 @@ action:
 	${ACTION}
 
 lint:
-	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 \
-				${TNMAIN} ${MOSTC} -lcurses
-	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} ${MSMAIN} map3270.c -lcurses
+	lint ${LINTFLAGS} ${INCLUDES} ${DEFINES} -DTN3270 ${ALLC} -lcurses
 
 .DEFAULT:
 	sccs get $<
