@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwho.c	4.7 (Berkeley) 83/07/01";
+static char sccsid[] = "@(#)rwho.c	4.8 (Berkeley) 84/03/19";
 #endif
 
 #include <sys/param.h>
@@ -7,7 +7,7 @@ static char sccsid[] = "@(#)rwho.c	4.7 (Berkeley) 83/07/01";
 #include <sys/dir.h>
 #include "../etc/rwhod/rwhod.h"
 
-DIR	*etc;
+DIR	*dirp;
 
 struct	whod wd;
 int	utmpcmp();
@@ -49,13 +49,13 @@ again:
 		perror(RWHODIR);
 		exit(1);
 	}
-	etc = opendir(".");
-	if (etc == NULL) {
-		perror("/etc");
+	dirp = opendir(".");
+	if (dirp == NULL) {
+		perror(RWHODIR);
 		exit(1);
 	}
 	mp = myutmp;
-	while (dp = readdir(etc)) {
+	while (dp = readdir(dirp)) {
 		if (dp->d_ino == 0)
 			continue;
 		if (strncmp(dp->d_name, "whod.", 5))
