@@ -3,7 +3,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.5 %G%";
+static char sccsid[] = "@(#)main.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -31,7 +31,7 @@ char	*errfile = ERR_STRNGS;
     char	*obj	= "obj";
 #endif OBJ
 #ifdef PC
-    char	*pcname = "pc.pc1";
+    char	*pcname = "pc.pc0";
 #endif PC
 #ifdef PTREE
     char	*pTreeName = "pi.pTree";
