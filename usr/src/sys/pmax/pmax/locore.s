@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	8.4 (Berkeley) %G%
+ *	@(#)locore.s	8.5 (Berkeley) %G%
  */
 
 /*
@@ -80,15 +80,53 @@ start:
 	cfc1	t1, MACH_FPC_ID			# read FPU ID register
 	sw	t0, cpu				# save PRID register
 	sw	t1, fpu				# save FPU ID register
-	jal	main				# main()
-	nop
-
-/* proc[1] == /etc/init now running here; run icode */
+	jal	main				# main(regs)
+	move	a0, zero
+/*
+ * proc[1] == /etc/init now running here.
+ * Restore user registers and return.
+ */
+	.set	noat
 	li	v0, PSL_USERSET
 	mtc0	v0, MACH_COP_0_STATUS_REG	# switch to user mode
-	li	v0, VM_MIN_ADDRESS
-	j	v0				# jump to icode
+	lw	a0, UADDR+U_PCB_REGS+(SR * 4)
+	lw	t0, UADDR+U_PCB_REGS+(MULLO * 4)
+	lw	t1, UADDR+U_PCB_REGS+(MULHI * 4)
+	mtlo	t0
+	mthi	t1
+	lw	k0, UADDR+U_PCB_REGS+(PC * 4)
+	lw	AT, UADDR+U_PCB_REGS+(AST * 4)
+	lw	v0, UADDR+U_PCB_REGS+(V0 * 4)
+	lw	v1, UADDR+U_PCB_REGS+(V1 * 4)
+	lw	a0, UADDR+U_PCB_REGS+(A0 * 4)
+	lw	a1, UADDR+U_PCB_REGS+(A1 * 4)
+	lw	a2, UADDR+U_PCB_REGS+(A2 * 4)
+	lw	a3, UADDR+U_PCB_REGS+(A3 * 4)
+	lw	t0, UADDR+U_PCB_REGS+(T0 * 4)
+	lw	t1, UADDR+U_PCB_REGS+(T1 * 4)
+	lw	t2, UADDR+U_PCB_REGS+(T2 * 4)
+	lw	t3, UADDR+U_PCB_REGS+(T3 * 4)
+	lw	t4, UADDR+U_PCB_REGS+(T4 * 4)
+	lw	t5, UADDR+U_PCB_REGS+(T5 * 4)
+	lw	t6, UADDR+U_PCB_REGS+(T6 * 4)
+	lw	t7, UADDR+U_PCB_REGS+(T7 * 4)
+	lw	s0, UADDR+U_PCB_REGS+(S0 * 4)
+	lw	s1, UADDR+U_PCB_REGS+(S1 * 4)
+	lw	s2, UADDR+U_PCB_REGS+(S2 * 4)
+	lw	s3, UADDR+U_PCB_REGS+(S3 * 4)
+	lw	s4, UADDR+U_PCB_REGS+(S4 * 4)
+	lw	s5, UADDR+U_PCB_REGS+(S5 * 4)
+	lw	s6, UADDR+U_PCB_REGS+(S6 * 4)
+	lw	s7, UADDR+U_PCB_REGS+(S7 * 4)
+	lw	t8, UADDR+U_PCB_REGS+(T8 * 4)
+	lw	t9, UADDR+U_PCB_REGS+(T9 * 4)
+	lw	gp, UADDR+U_PCB_REGS+(GP * 4)
+	lw	sp, UADDR+U_PCB_REGS+(SP * 4)
+	lw	s8, UADDR+U_PCB_REGS+(S8 * 4)
+	lw	ra, UADDR+U_PCB_REGS+(RA * 4)
+	j	k0
 	rfe
+	.set	at
 
 /*
  * GCC2 seems to want to call __main in main() for some reason.
@@ -97,38 +135,6 @@ LEAF(__main)
 	j	ra
 	nop
 END(__main)
-
-/*
- * This code is copied to user data space as the first program to run.
- * Basically, it just calls execve();
- */
-	.globl	icode
-icode:
-	li	a1, VM_MIN_ADDRESS + (9 * 4)	# address of 'icode_argv'
-	addu	a0, a1, (3 * 4)		# address of 'icode_fname'
-	move	a2, zero		# no environment
-	li	v0, 59			# code for execve system call
-	syscall
-	li	v0, 1			# code for exit system call
-	syscall				# execve failed: call exit()
-1:	b	1b			# loop if exit returns
-	nop
-icode_argv:
-	.word	VM_MIN_ADDRESS + (12 * 4)	# address of 'icode_fname'
-	.word	VM_MIN_ADDRESS + (15 * 4)	# address of 'icodeEnd'
-	.word	0
-icode_fname:
-	.asciiz	"/sbin/init"		# occupies 3 words
-	.align	2
-	.globl	icodeEnd
-icodeEnd:
-
-	.data
-	.align	2
-	.globl	szicode
-szicode:
-	.word	(9 + 3 + 3) * 4		# compute icodeEnd - icode
-	.text
 
 /*
  * This code is copied the user's stack for returning from signal handlers
@@ -926,12 +932,11 @@ sw1:
  */
 	sw	zero, want_resched
 	jal	pmap_alloc_tlbpid		# v0 = TLB PID
-	move	s0, a0				# save p
-	move	a0, s0				# restore p
-	sw	a0, curproc			# set curproc
+	move	s0, a0				# BDSLOT: save p
+	sw	s0, curproc			# set curproc
 	sll	v0, v0, VMMACH_TLB_PID_SHIFT	# v0 = aligned PID
-	lw	t0, P_UPTE+0(a0)		# t0 = first u. pte
-	lw	t1, P_UPTE+4(a0)		# t1 = 2nd u. pte
+	lw	t0, P_UPTE+0(s0)		# t0 = first u. pte
+	lw	t1, P_UPTE+4(s0)		# t1 = 2nd u. pte
 	or	v0, v0, UADDR			# v0 = first HI entry
 /*
  * Resume process indicated by the pte's for its u struct
