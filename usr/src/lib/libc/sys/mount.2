@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mount.2	6.8 (Berkeley) %G%
+.\"	@(#)mount.2	6.9 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
@@ -95,6 +95,8 @@ their type specific data are:
 .ta \w'struct  'u +\w'nfsv2fh_t  'u +\w'sockaddr_in *addr  'u
 struct ufs_args {
 	char	*fspec;	/* Block special file to mount */
+	int	exflags;	/* export related flags */
+	uid_t	exroot;	/* mapping for root uid */
 };
 .fi
 .sp
