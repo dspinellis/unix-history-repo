@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.9 %G%";
+static char sccsid[] = "@(#)lval.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -361,7 +361,7 @@ arycod(np, el)
 		    if (constsub) {
 			sub *= w;
 			if (sub != 0) {
-			    w = width(ap);
+			    w = bytes(sub, sub);
 			    put(2, w <= 2 ? O_CON2 : O_CON4, sub);
 			    gen(NIL, T_ADD, sizeof(char *), w);
 			}
