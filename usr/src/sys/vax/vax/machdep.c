@@ -1,4 +1,4 @@
-/*	machdep.c	4.52.1.1	82/06/14	*/
+/*	machdep.c	4.55	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,13 +79,13 @@ startup(firstaddr)
 	
 	/*
 	 * First determine how many buffers are reasonable.
-	 * Current alg is 32 per megabyte, with min of 32.
+	 * Current alg is 16 per megabyte, with min of 16.
 	 * We allocate 1/2 as many swap buffer headers as file i/o buffers.
 	 */
 	if (nbuf == 0) {
-		nbuf = (32 * physmem) / btoc(1024*1024);
-		if (nbuf < 32)
-			nbuf = 32;
+		nbuf = (16 * physmem) / btoc(1024*1024);
+		if (nbuf < 16)
+			nbuf = 16;
 	}
 	if (nswbuf == 0) {
 		nswbuf = (nbuf / 2) &~ 1;	/* force even */
@@ -101,7 +101,7 @@ startup(firstaddr)
 	    (name) = (type *)(v); (v) = (caddr_t)((name)+(num))
 #define	valloclim(name, type, num, lim) \
 	    (name) = (type *)(v); (v) = (caddr_t)((lim) = ((name)+(num)))
-	valloc(buffers, char, BSIZE*nbuf);
+	valloc(buffers, char, MAXBSIZE * nbuf);
 	valloc(buf, struct buf, nbuf);
 	valloc(swbuf, struct buf, nswbuf);
 	valloc(swsize, short, nswbuf);	/* note: nswbuf is even */
