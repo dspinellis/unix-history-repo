@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # define msg(s,help)	fprintf(pkt->p_stdout,msgstr,s,pkt->p_glnno,help)
 
-static char Sccsid[] = "@(#)rdmod.c	1.2	%G%";
+static char Sccsid[] = "@(#)rdmod.c	1.3	%G%";
 
 static char msgstr[] = "Inex conflict %s at line %u (%s)\n";
 
@@ -59,14 +59,14 @@ int ser;
 int keep;
 int iord;
 {
-	register struct queue *cur, *prev, *q;
+	register struct queue *cur, **prev, *q;
 
-	for (cur = &pkt->p_q; cur = (prev = cur)->q_next; )
+	for (prev = &pkt->p_q; cur = *prev; prev = &cur->q_next)
 		if (cur->q_sernum <= ser)
 			break;
-	if (cur->q_sernum == ser)
+	if (cur && cur->q_sernum == ser)
 		fmterr(pkt);
-	prev->q_next = q = alloc(sizeof(*q));
+	*prev = q = alloc(sizeof(*q));
 	q->q_next = cur;
 	q->q_sernum = ser;
 	q->q_keep = keep;
@@ -85,15 +85,15 @@ remq(pkt,ser)
 register struct packet *pkt;
 int ser;
 {
-	register struct queue *cur, *prev;
+	register struct queue *cur, **prev;
 
-	for (cur = &pkt->p_q; cur = (prev = cur)->q_next; )
+	for (prev = &pkt->p_q; cur = *prev; prev = &cur->q_next)
 		if (cur->q_sernum == ser)
 			break;
 	if (cur) {
 		if (cur->q_ixmsg)
 			--(pkt->p_ixmsg);
-		prev->q_next = cur->q_next;
+		*prev = cur->q_next;
 		free(cur);
 		setkeep(pkt);
 	}
@@ -135,7 +135,7 @@ struct queue *head;
 
 	if (!apply(new))
 		return(0);
-	for (cur = head; cur = cur->q_next; )
+	for (cur = head; cur && (cur = cur->q_next); )
 		if (cur->q_user)
 			break;
 	if (!cur)
@@ -143,7 +143,7 @@ struct queue *head;
 	retval = 0;
 	firstins = 0;
 	lastdel = 0;
-	for (cur = head; cur = cur->q_next; ) {
+	for (cur = head; cur && (cur = cur->q_next); ) {
 		if (apply(cur)) {
 			if (cur->q_iord == DEL)
 				lastdel = cur->q_sernum;
