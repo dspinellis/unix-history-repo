@@ -1,4 +1,4 @@
-.\"	@(#)col.1	6.1 (Berkeley) %G%
+.\"	@(#)col.1	6.2 (Berkeley) %G%
 .\"
 .TH COL 1 ""
 .AT 3
@@ -7,7 +7,7 @@ col \- filter reverse line feeds
 .SH SYNOPSIS
 .B col
 [
-.B \-bfx
+.B \-bfh
 ]
 .SH DESCRIPTION
 .I Col
@@ -52,11 +52,11 @@ The character set (primary or alternate) associated with each printing
 character read is remembered; on output, SO and SI characters are generated
 where necessary to maintain the correct treatment of each character.
 .PP
-.I Col
-normally converts white space to tabs to shorten printing time.
 If the
-.B \-x
-option is given, this conversion is suppressed.
+.B \-h
+option is given,
+.I col
+converts white space to tabs to shorten printing time.
 .PP
 All control characters are removed from the input except space,
 backspace,
