@@ -12,7 +12,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -103,12 +103,14 @@ main(argc, argv)
 	if (pwd->pw_uid == 0 && (gr = getgrgid((gid_t)0)))
 		for (g = gr->gr_mem;; ++g) {
 			if (!*g) {
-				fprintf(stderr, "su: you are not in the correct group to su %s.\n", user);
+				(void)fprintf(stderr,
+				    "su: you are not in the correct group to su %s.\n", user);
 				exit(1);
 			}
 			if (!strcmp(username, *g))
 				break;
 		}
+	openlog("su", LOG_CONS, 0);
 
 	/* if target requires a password, verify it */
 	if (ruid && *pwd->pw_passwd) {
@@ -116,7 +118,8 @@ main(argc, argv)
 		if (strcmp(pwd->pw_passwd, crypt(p, pwd->pw_passwd))) {
 			fprintf(stderr, "Sorry\n");
 			if (pwd->pw_uid == 0)
-				syslog(LOG_CRIT|LOG_AUTH, "su: BAD SU %s on %s", username, ttyname(2));
+				syslog(LOG_AUTH|LOG_CRIT,
+				    "BAD SU %s on %s", username, ttyname(2));
 			exit(1);
 		}
 	}
@@ -188,7 +191,7 @@ main(argc, argv)
 	*np = fulllogin ? "-su" : iscsh == YES ? "_su" : "su";
 
 	if (pwd->pw_uid == 0)
-		syslog(LOG_NOTICE|LOG_AUTH, "su: %s on %s",
+		syslog(LOG_NOTICE|LOG_AUTH, "%s on %s",
 		    username, ttyname(2));
 
 	(void)setpriority(PRIO_PROCESS, 0, prio);
