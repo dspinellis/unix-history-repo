@@ -31,8 +31,9 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 cribbage ${DESTDIR}/usr/games/cribbage
-	install -o bin -g bin -m 644 crib.instr ${DESTDIR}/usr/games/lib/crib.instr
+	install -o games -g bin -m 400 crib.instr ${DESTDIR}/usr/games/lib/crib.instr
+	install -s -o games -g bin -m 4700 cribbage ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f cribbage; ln -s dm cribbage; chown games.bin cribbage)
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}

@@ -12,8 +12,6 @@ SRCS1=	snake.c move.c
 OBJS1=	snake.o move.o
 SRCS2=	snscore.c
 OBJS2=	snscore.o
-SRCS3=	busy.c
-OBJS3=	busy.o
 
 all:	snake snscore
 
@@ -23,28 +21,25 @@ snake:	${OBJS1} ${LIBC}
 snscore: ${OBJS2} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS2}
 
-busy:	${OBJS3} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS3}
-
 clean: FRC
-	rm -f ${OBJS1} ${OBJS2} ${OBJS3} core snake snscore busy
+	rm -f ${OBJS1} ${OBJS2} core snake snscore busy
 
 depend: FRC
-	mkdep ${CFLAGS} ${SRCS1} ${SRCS2} ${SRCS3}
+	mkdep ${CFLAGS} ${SRCS1} ${SRCS2}
 
 install: FRC
-	install -s -o daemon -g bin -m 4755 snake ${DESTDIR}/usr/games/snake
-	install -s -o daemon -g bin -m 755 snscore ${DESTDIR}/usr/games/snscore
-	install -c -o daemon -g bin -m 644 /dev/null ${DESTDIR}/usr/games/lib/snakerawscores
-#	install -s -o daemon -g bin -m 755 busy ${DESTDIR}/usr/games/busy
+	install -s -o games -g bin -m 4700 snake ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f snake; ln -s dm snake; chown games.bin snake)
+	install -s -o games -g bin -m 700 snscore ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f snscore; ln -s dm snscore; chown games.bin snscore)
+	install -c -o games -g bin -m 600 /dev/null ${DESTDIR}/usr/games/lib/snakerawscores
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS1}
 	lint ${CFLAGS} ${SRCS2}
-	lint ${CFLAGS} ${SRCS3}
 
 tags: FRC
-	ctags ${SRCS1} ${SRCS2} ${SRCS3}
+	ctags ${SRCS1} ${SRCS2}
 
 FRC:
 

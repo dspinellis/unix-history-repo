@@ -27,8 +27,9 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o bin -g bin -m 755 battlestar ${DESTDIR}/usr/games/battlestar
-	install -c -o bin -g bin -m 666 /dev/null ${DESTDIR}/usr/games/lib/battlestar.log
+	install -s -o games -g bin -m 4700 battlestar ${DESTDIR}/usr/games/hide/battlestar
+	install -c -o games -g bin -m 600 /dev/null ${DESTDIR}/usr/games/lib/battlestar.log
+	(cd ${DESTDIR}/usr/games; rm -f battlestar; ln -s dm battlestar; chown games.bin battlestar)
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
