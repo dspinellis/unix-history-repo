@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)daily	5.4 (Berkeley) %G%
+#	@(#)daily	5.5 (Berkeley) %G%
 #
 PATH=/bin:/usr/bin:/sbin:/usr/sbin:/usr/local
 host=`hostname -s`
@@ -10,44 +10,48 @@ bak=/var/backups
 echo ""
 echo "Removing scratch and junk files:"
 if [ -d /tmp ]; then
-	cd /tmp
+	cd /tmp && {
 	find .	! -name . -atime +3 -exec rm -f {} \;
-	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1
+	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
 fi
 
-#if [ -d /var/tmp ]; then
-#	cd /var/tmp
-#	find .	! -name . -atime +7 -exec rm -f {} \;
-#	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1
-#fi
+if [ -d /var/tmp ]; then
+	cd /var/tmp && {
+	find .	! -name . -atime +7 -exec rm -f {} \;
+	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
+fi
 
 if [ -d /scratch ]; then
-	cd /scratch
+	cd /scratch && {
 	find .	! -name . -atime +1 -exec rm -f {} \;
-	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1
+	find .	! -name . -type d -mtime +1 -exec rmdir {} \; >/dev/null 2>&1; }
 fi
 
 if [ -d /var/preserve ]; then
-	cd /var/preserve
-	find .	! -name . -mtime +7 -exec rm -f {} \;
+	cd /var/preserve && {
+	find .	! -name . -mtime +7 -exec rm -f {} \; ; }
 fi
 
 if [ -d /var/rwho ] ; then
-	cd /var/rwho
-	find .	! -name . -mtime +7 -exec rm -f {} \;
+	cd /var/rwho && {
+	find .	! -name . -mtime +7 -exec rm -f {} \; ; }
 fi
 
+cd /tmp
 find /	\( -name '[#,]*' -o -name '.#*' -o -name a.out -o -name core \
 	   -o -name '*.CKP' -o -name '.emacs_[0-9]*' \) \
 		-a -atime +3 -exec rm -f {} \;
 msgs -c
-if [ -f /usr/new/lib/news/expire ]; then
-	/usr/new/lib/news/expire
+if [ -f /etc/news.expire ]; then
+	/etc/news.expire
 fi
 
 echo ""
 echo "Purging accounting records:"
-cp /var/account/acct /var/account/acct.yesterday
+mv /var/account/acct.2 /var/account/acct.3
+mv /var/account/acct.1 /var/account/acct.2
+mv /var/account/acct.0 /var/account/acct.1
+cp /var/account/acct /var/account/acct.0
 sa -s > /dev/null
 
 echo ""
@@ -57,11 +61,14 @@ if cmp $bak/master.passwd.bak /etc/master.passwd >/dev/null; then :; else
 	diff $bak/master.passwd.bak /etc/master.passwd
 	mv $bak/master.passwd.bak $bak/master.passwd.bak2
 	cp -p /etc/master.passwd $bak/master.passwd.bak
-	chmod 600 $bak/master.passwd.bak $bak/master.passwd.bak2
 fi
 if cmp $bak/group.bak /etc/group >/dev/null; then :; else
 	mv $bak/group.bak $bak/group.bak2
 	cp -p /etc/group $bak/group.bak
+fi
+if cmp $bak/aliases.bak /etc/aliases >/dev/null; then :; else
+	mv $bak/aliases.bak $bak/aliases.bak2
+	cp -p /etc/aliases $bak/aliases.bak
 fi
 if [ -f /etc/Distfile ]; then
 	if cmp $bak/Distfile.bak /etc/Distfile >/dev/null; then :; else
@@ -72,7 +79,7 @@ fi
 
 echo ""
 echo "Running calendar:"
-calendar -
+calendar -a
 
 echo ""
 echo "Rotating mail log:"
@@ -91,10 +98,10 @@ chmod 644    maillog
 kill -1 `cat /var/run/syslog.pid`
 cd /
 
-if [ -d /var/spool/uucp -a -f /usr/lib/uucp/clean.daily ]; then
+if [ -d /var/spool/uucp -a -f /etc/uuclean.daily ]; then
 	echo ""
 	echo "Cleaning up UUCP:"
-	echo /usr/lib/uucp/clean.daily | su daemon
+	echo /etc/uuclean.daily | su daemon
 fi
 
 echo ""
