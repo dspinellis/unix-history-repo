@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.44		%G%);
+SCCSID(@(#)collect.c	3.45		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -107,6 +107,14 @@ collect(sayok)
 	{
 		register char c;
 		extern bool isheader();
+
+		/* if the line is too long, throw the rest away */
+		if (index(buf, '\n') == NULL)
+		{
+			while ((c = getc(InChannel)) != '\n')
+				continue;
+			/* give an error? */
+		}
 
 		fixcrlf(buf, FALSE);
 
