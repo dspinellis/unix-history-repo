@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)patch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)patch.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /* patch - a program to apply diffs to original files
@@ -1465,7 +1465,15 @@ another_hunk()
 	    if (ret == Nullch) {
 		if (p_max - p_end < 4)
 		    Strcpy(buf,"  \n");	/* assume blank lines got chopped */
-		else
+		else if (p_end == repl_beginning) {
+		    /* redundant 'new' context lines were omitted - set up */
+		    /* to fill them in from the the old file's context */
+		    fillsrc = 1;
+		    filldst = p_end + 1;
+		    fillcnt = p_max - repl_beginning;
+		    p_end = p_max;
+		    break;
+		} else
 		    fatal("Unexpected end of file in patch.\n");
 	    }
 	    p_input_line++;
