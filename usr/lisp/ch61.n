@@ -1,0 +1,6 @@
+." %W% %G%
+.Lc "Local functions" 61
+.pp
+This chapter describes functions which we found 
+useful at Berkeley.
+Some of these functions may be useful at other sites
