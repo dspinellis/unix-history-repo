@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -96,12 +96,12 @@ __rec_open(fname, flags, mode, openinfo)
 			goto err;
 		if (!(flags & (O_RDWR | O_WRONLY)))
 			SET(t, BTF_RDONLY);
-		if (sb.st_size > INT_MAX) {
+		if (sb.st_size > UINT_MAX) {
 			errno = EFBIG;
 			goto err;
 		}
-		if ((t->bt_smap = mmap(NULL, (int)sb.st_size,
-		    PROT_READ, MAP_FILE, rfd, (off_t)0)) == NULL)
+		if ((t->bt_smap = mmap(NULL,
+		    (size_t)sb.st_size, PROT_READ, 0, rfd, (off_t)0)) == NULL)
 			goto err;
 		t->bt_emap = t->bt_smap + sb.st_size;
 		t->bt_rfd = rfd;
