@@ -15,13 +15,14 @@
  *
  *	@(#)conf.c	7.5 (Berkeley) %G%
  *
- * from: $Header: conf.c,v 1.14 92/11/26 03:04:49 torek Exp $ (LBL)
+ * from: $Header: conf.c,v 1.15 93/05/05 09:43:29 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
 #include <sys/ioctl.h>
+#include <sys/vnode.h>
 #include <sys/tty.h>
 #include <sys/conf.h>
 
@@ -235,7 +236,7 @@ struct cdevsw	cdevsw[] =
 	cdev_cn_init(1,cn),		/* 0: virtual console */
 	cdev_notdef(),			/* 1 */
 	cdev_ctty_init(1,ctty),		/* 2: controlling terminal */
-	cdev_mm_init(1,mm),		/* 2: /dev/{null,mem,kmem,...} */
+	cdev_mm_init(1,mm),		/* 3: /dev/{null,mem,kmem,...} */
 	cdev_notdef(),			/* 4 */
 	cdev_notdef(),			/* 5 */
 	cdev_notdef(),			/* 6 */
@@ -356,3 +357,60 @@ int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
  * provided as a character (raw) device.
  */
 dev_t	swapdev = makedev(3, 0);
+
+/*
+ * Routine that identifies /dev/mem and /dev/kmem.
+ *
+ * A minimal stub routine can always return 0.
+ */
+iskmemdev(dev)
+	dev_t dev;
+{
+
+	return (major(dev) == 3 && minor(dev) < 2);
+}
+
+/*
+ * Routine to determine if a device is a disk.
+ *
+ * A minimal stub routine can always return 0.
+ */
+isdisk(dev, type)
+	dev_t dev;
+	int type;
+{
+
+#ifdef notyet
+	/* someday, something like this, perhaps */
+	dev = devtab[major(dev)];
+	return (dev != NULL && dev->dv_class == DV_DISK);
+#else
+	switch (major(dev)) {
+	case 7:
+		if (type == VBLK)
+			return (1);
+		return (0);
+	case 17:
+		if (type == VCHR)
+			return (1);
+		/* fall through */
+
+	default:
+		return (0);
+	}
+#endif
+}
+
+/*
+ * Routine to convert from character to block device number.
+ *
+ * A minimal stub routine can always return NODEV.
+ */
+chrtoblk(dev)
+	dev_t dev;
+{
+
+	if (major(dev) != 17)
+		return (NODEV);
+	return (makedev(7, minor(dev)));
+}
