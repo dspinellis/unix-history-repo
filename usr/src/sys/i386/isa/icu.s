@@ -7,13 +7,13 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)icu.s	5.2 (Berkeley) %G%
+ *	@(#)icu.s	5.3 (Berkeley) %G%
  */
 
 /*
  * AT/386
  * Vector interrupt control section
- * W. Jolitz	8/89
+ * Copyright (C) 1989,90 W. Jolitz
  */
 
 	.data
@@ -22,9 +22,11 @@
 _cpl:	.long	0xffff			# current priority level (all off)
 _imen:	.long	0xffff			# interrupt mask enable (all off)
 	.globl	_ttymask
-_ttymask:	.long	IRQ1+IRQ3+IRQ4
+_ttymask:	.long	0
 	.globl	_biomask
-_biomask:	.long	IRQ14+IRQ6
+_biomask:	.long	0
+	.globl	_netmask
+_netmask:	.long	0
 	.text
 
 	.globl	_iml0			# masks off all interrupts
@@ -57,7 +59,6 @@ _splclock:
 _iml1:
 _spltty:
 	cli				# disable interrupts
-	# movw	$0xfffe,%ax		# set new priority level
 	movw	_cpl,%ax
 	orw	_ttymask,%ax
 	movw	%ax,%dx
@@ -103,8 +104,8 @@ _iml2:
 _splimp:
 _splnet:
 	cli				# disable interrupts
-	# movw	$0xfef8,%ax		# set new priority level
-	movw	$0xffff,%ax		# set new priority level
+	movw	_cpl,%ax
+	orw	_netmask,%ax
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
@@ -203,8 +204,6 @@ _splbio:
 	cli				# disable interrupts
 	movw	_cpl,%ax
 	orw	_biomask,%ax
-	# movw	$0xffff,%ax		# set new priority level XXX
-	# movw	$0xc0f8,%ax		# set new priority level
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
@@ -319,7 +318,8 @@ _iml6:
 _iml7:
 _splsoftclock:
 	cli				# disable interrupts
-	movw	$0x0080,%ax		# set new priority level
+	movw	_cpl,%ax
+	orw	$0x8000,%ax		# set new priority level
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
@@ -342,6 +342,26 @@ _imlnone:
 _splnone:
 _spl0:
 	cli				# disable interrupts
+	pushl	_cpl			# save old priority
+	movw	_cpl,%ax
+	orw	_netmask,%ax		# mask off those network devices
+	movw	%ax,_cpl		# set new priority level
+	orw	_imen,%ax		# mask off those not enabled yet
+	NOP
+	outb	%al,$0x21		/* update icu's */
+	NOP
+	movb	%ah,%al
+	NOP
+	outb	%al,$0xA1
+	NOP
+	sti				# enable interrupts
+
+	DONET(NETISR_RAW,_rawintr)
+#ifdef INET
+	DONET(NETISR_IP,_ipintr)
+#endif
+	cli				# disable interrupts
+	popl	_cpl			# save old priority
 	movw	$0,%ax			# set new priority level
 	movw	%ax,%dx
 	orw	_imen,%ax		# mask off those not enabled yet
@@ -363,6 +383,9 @@ _splx:
 	cli				# disable interrupts
 	movw	4(%esp),%ax		# new priority level
 	movw	%ax,%dx
+	cmpw	$0,%dx
+	je	_spl0
+
 	orw	_imen,%ax		# mask off those not enabled yet
 	movw	%ax,%cx
 	NOP
@@ -376,3 +399,4 @@ _splx:
 	movw	%dx,_cpl		# set new priority level
 	sti				# enable interrupts
 	ret
+
