@@ -1,4 +1,4 @@
-/*	if_pcl.c	4.1	83/03/31	*/
+/*	if_pcl.c	4.2	83/06/13	*/
 
 #include "pcl.h"
 #if NPCL > 0
@@ -16,6 +16,7 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/vmmac.h"
+#include "../h/ioctl.h"
 #include "../h/errno.h"
 
 #include "../net/if.h"
@@ -37,7 +38,7 @@
 #define	PCLMTU	(1006)		/* Max transmission unit (bytes) */
 
 int	pclprobe(), pclattach(), pclrint(), pclxint();
-int	pclinit(),pcloutput(),pclreset();
+int	pclinit(), pclioctl(), pcloutput(), pclreset();
 
 struct	uba_device	*pclinfo[NPCL];
 u_short pclstd[] = { 0 };
@@ -116,16 +117,9 @@ pclattach(ui)
 	sc->sc_if.if_unit = ui->ui_unit;
 	sc->sc_if.if_name = "pcl";
 	sc->sc_if.if_mtu = PCLMTU;
-	/* copy network addr from flags long */
-	sc->sc_if.if_net = in_netof(htonl(ui->ui_flags));
-	sc->sc_if.if_host[0] = in_lnaof(htonl(ui->ui_flags));
-
-	sin = (struct sockaddr_in *)&sc->sc_if.if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = htonl(ui->ui_flags);
-
 	sc->sc_if.if_init = pclinit;
 	sc->sc_if.if_output = pcloutput;
+	sc->sc_if.if_ioctl = pclioctl;
 	sc->sc_if.if_reset = pclreset;
 	sc->sc_ifuba.ifu_flags = UBA_NEEDBDP;
 	if_attach(&sc->sc_if);
@@ -157,8 +151,12 @@ pclinit(unit)
 	register struct pcl_softc *sc = &pcl_softc[unit];
 	register struct uba_device *ui = pclinfo[unit];
 	register struct pcldevice *addr;
+	struct sockaddr_in *sin;
 	int s;
 
+	sin = &sc->sc_if.if_addr;
+	if (sin->sin_addr.s_addr == 0)
+		return;
 	if (if_ubainit(&sc->sc_ifuba, ui->ui_ubanum, 0,
 	    (int)btoc(PCLMTU)) == 0) { 
 		printf("pcl%d: can't init\n", unit);
@@ -179,7 +177,7 @@ pclinit(unit)
 	addr->pcl_rcr = (((int)(sc->sc_ifuba.ifu_r.ifrw_info>>12))&0x0030) |
 		PCL_RCNPR | PCL_RCVWD | PCL_RCVDAT | PCL_IE;
 	sc->sc_oactive = 0;
-	sc->sc_if.if_flags |= IFF_UP;		/* Mark interface up */
+	sc->sc_if.if_flags |= IFF_UP|IFF_RUNNING;
 	pclstart(unit);
 	splx(s);
 	/* Set up routing table entry */
@@ -437,5 +435,39 @@ setup:
 	addr->pcl_rdbc = -PCLMTU;
 	addr->pcl_rcr = (((int)(sc->sc_ifuba.ifu_w.ifrw_info>>12))&0x0030) |
 		PCL_RCNPR | PCL_RCVWD | PCL_RCVDAT | PCL_IE;
+}
+
+/*
+ * Process an ioctl request.
+ */
+pclioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+		ifp->if_addr = *sin;
+		ifp->if_net = in_netof(sin->sin_addr);
+		ifp->if_host[0] = in_lnaof(sin->sin_addr);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, RTF_UP);
+		else
+			pclinit(ifp->if_unit);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
 #endif
