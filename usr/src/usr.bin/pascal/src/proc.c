@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.17 %G%";
+static char sccsid[] = "@(#)proc.c 1.18 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -14,6 +14,9 @@ static char sccsid[] = "@(#)proc.c 1.17 %G%";
 #include "tmps.h"
 
 /*
+ * The constant EXPOSIZE specifies the number of digits in the exponent
+ * of real numbers.
+ *
  * The constant REALSPC defines the amount of forced padding preceeding
  * real numbers when they are printed. If REALSPC == 0, then no padding
  * is added, REALSPC == 1 adds one extra blank irregardless of the width
@@ -21,7 +24,8 @@ static char sccsid[] = "@(#)proc.c 1.17 %G%";
  *
  * N.B. - Values greater than one require program mods.
  */
-#define	REALSPC	0
+#define EXPOSIZE	2
+#define	REALSPC		0
 
 /*
  * The following array is used to determine which classes may be read
@@ -424,12 +428,8 @@ proc(r)
 			     tdouble:
 				switch (fmtspec) {
 				case NIL:
-#					ifdef DEC11
-					    field = 21;
-#					else
-					    field = 22;
-#					endif DEC11
-					prec = 14;
+					field = 14 + (5 + EXPOSIZE);
+				        prec = field - (5 + EXPOSIZE);
 					fmt = 'e';
 					fmtspec = CONWIDTH + CONPREC;
 					break;
@@ -437,11 +437,7 @@ proc(r)
 					field -= REALSPC;
 					if (field < 1)
 						field = 1;
-#					ifdef DEC11
-					    prec = field - 7;
-#					else
-					    prec = field - 8;
-#					endif DEC11
+				        prec = field - (5 + EXPOSIZE);
 					if (prec < 1)
 						prec = 1;
 					fmtspec += CONPREC;
@@ -544,11 +540,8 @@ proc(r)
 						put(1, O_AS4);
 						put(2, O_RV4 | cbn << 8 + INDX,
 						    tempnlp -> value[NL_OFFS] );
-#						ifdef DEC11
-						    put(3, O_MAX, 7 + REALSPC, 1);
-#						else
-						    put(3, O_MAX, 8 + REALSPC, 1);
-#						endif DEC11
+					        put(3, O_MAX,
+						    5 + EXPOSIZE + REALSPC, 1);
 						convert(nl+T4INT, INT_TYP);
 						stkcnt += sizeof(int);
 						put(2, O_RV4 | cbn << 8 + INDX, 
