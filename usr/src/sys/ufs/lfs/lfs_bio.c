@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.11 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -53,12 +53,6 @@ printf("lfs_bwrite\n");
 		bp->b_flags |= B_DELWRI | B_LOCKED;
 		bp->b_flags &= ~(B_READ | B_DONE | B_ERROR);
 		s = splbio();
-#define	PMAP_BUG_FIX_HACK
-#ifdef PMAP_BUG_FIX_HACK
-		if (((struct ufsmount *)
-		    (bp->b_vp->v_mount->mnt_data))->um_lfs->lfs_ivnode !=
-		    bp->b_vp)
-#endif
 		reassignbuf(bp, bp->b_vp);
 		splx(s);
 	}
