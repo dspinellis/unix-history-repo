@@ -982,6 +982,8 @@ __fixunssfsi (SFtype a)
    Reult is negative if S1 is less than S2,
    positive if S1 is greater, 0 if S1 and S2 are equal.  */
 
+#include <sys/types.h>
+
 int
 __gcc_bcmp (s1, s2, size)
      unsigned char *s1, *s2;
@@ -1203,6 +1205,9 @@ __bb_init_func (blocks)
 /* frills for C++ */
 
 #ifdef L_builtin_new
+
+#include <sys/types.h>
+
 typedef void (*vfp)(void);
 
 extern vfp __new_handler;
@@ -1228,6 +1233,7 @@ __builtin_new (sz)
 /* This gets us __GNU_LIBRARY__.  */
 #undef NULL /* Avoid errors if stdio.h and our stddef.h mismatch.  */
 #include <stdio.h>
+#include <sys/types.h>
 
 #ifdef __GNU_LIBRARY__
   /* Avoid forcing the library's meaning of `write' on the user program
@@ -1241,6 +1247,7 @@ extern void *__builtin_new (size_t);
 static void default_new_handler (void);
 
 vfp __new_handler = default_new_handler;
+
 
 void *
 __builtin_vec_new (p, maxindex, size, ctor)
@@ -1302,6 +1309,9 @@ default_new_handler ()
 #endif
 
 #ifdef L_builtin_del
+
+#include <sys/types.h>
+
 typedef void (*vfp)(void);
 
 void
