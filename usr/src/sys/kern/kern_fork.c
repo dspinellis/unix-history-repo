@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	8.5 (Berkeley) %G%
+ *	@(#)kern_fork.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,12 +64,12 @@ fork1(p1, isvfork, retval)
 	/*
 	 * Although process entries are dynamically created, we still keep
 	 * a global limit on the maximum number we will create.  Don't allow
-	 * a nonprivileged user to bring the system within one of the global
-	 * limit; don't let root exceed the limit. The variable nprocs is
-	 * the current number of processes, maxproc is the limit.
+	 * a nonprivileged user to use the last process; don't let root
+	 * exceed the limit. The variable nprocs is the current number of
+	 * processes, maxproc is the limit.
 	 */
 	uid = p1->p_cred->p_ruid;
-	if (nprocs >= maxproc || uid == 0 && nprocs >= maxproc + 1) {
+	if ((nprocs >= maxproc - 1 && uid != 0) || nprocs >= maxproc) {
 		tablefull("proc");
 		return (EAGAIN);
 	}
