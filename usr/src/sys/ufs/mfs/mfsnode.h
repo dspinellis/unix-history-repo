@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.9 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.10 (Berkeley) %G%
  */
 
 /*

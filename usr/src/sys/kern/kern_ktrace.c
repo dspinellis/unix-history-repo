@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.16 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.17 (Berkeley) %G%
  */
 
 #ifdef KTRACE

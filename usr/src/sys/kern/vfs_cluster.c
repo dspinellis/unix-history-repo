@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.46 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.72 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.73 (Berkeley) %G%
  */
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.80 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.81 (Berkeley) %G%
  */
 
 #include <sys/param.h>

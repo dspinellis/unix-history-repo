@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.14 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.15 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>

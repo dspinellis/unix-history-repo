@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.38 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"

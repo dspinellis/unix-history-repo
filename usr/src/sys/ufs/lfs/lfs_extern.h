@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.13 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.14 (Berkeley) %G%
  */
 
 struct fid;

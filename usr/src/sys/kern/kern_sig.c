@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.44 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.45 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */

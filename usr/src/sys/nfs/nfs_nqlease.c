@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.6 (Berkeley) %G%
  */
 
 /*

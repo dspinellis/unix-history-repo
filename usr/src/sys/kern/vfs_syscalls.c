@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.81 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.82 (Berkeley) %G%
  */
 
 #include "param.h"

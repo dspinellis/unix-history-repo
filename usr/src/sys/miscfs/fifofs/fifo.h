@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fifo.h	7.5 (Berkeley) %G%
+ *	@(#)fifo.h	7.6 (Berkeley) %G%
  */
 
 #ifdef FIFO

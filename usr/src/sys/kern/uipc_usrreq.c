@@ -2,7 +2,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_usrreq.c	7.33 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
