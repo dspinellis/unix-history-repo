@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)7.t	5.1 (Berkeley) %G%
+.\"	@(#)7.t	6.1 (Berkeley) %G%
 .\"
 .NH 1
 Troubleshooting
@@ -41,23 +41,16 @@ boot time has died or is hung.  Check the local socket
 /dev/printer to be sure it still exists (if it does not exist,
 there is no 
 .I lpd
-process running).  Use
+process running). 
+Usually it is sufficient to get a super-user to type the following to
+restart
+.IR lpd .
 .DS
-% ps ax | fgrep lpd
-.DE
-to get a list of process identifiers of running lpd's.
-The \fIlpd\fP to kill is the one which is not listed in any
-of the ``lock" files (the lock file is contained in the spool directory of
-each printer).
-Kill the master daemon using the following command.
-.DS
-% kill \fIpid\fP
-.DE
-Then remove /dev/printer and restart the daemon (and printer)
-with the following commands.
-.DS
-% rm /dev/printer
 % /usr/lib/lpd
+.DE
+You can also check on the state of the master printer daemon with the following.
+.DS
+% ps l`cat /usr/spool/lpd.lock`
 .DE
 .IP
 Another possibility is that the
@@ -151,6 +144,13 @@ To restart an \fIlpd\fP, use
 .DS
 % lpc restart \fIprinter\fP
 .DE
+.SH
+no space on remote; waiting for queue to drain
+.IP
+This indicates that there is insufficient disk space on the remote.
+If the file is large enough, there will never be enough space on
+the remote (even after the queue on the remote is empty). The solution here
+is to move the spooling queue or make more free space on the remote.
 .NH 2
 LPRM
 .SH
