@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t10.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)t10.c	2.2 (CWI) 88/03/09";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -265,6 +265,8 @@ tchar	*pi;
 			ptps();
 		if (lead)
 			ptlead();
+		if (esc)	/* for psfig ???*/
+			ptesc();
 		fdprintf(ptid, "x X ");
 		for (j = 1; (c=cbits(pi[j])) != XOFF; j++)
 			outascii(pi[j]);
