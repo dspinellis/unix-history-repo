@@ -1,16 +1,16 @@
 .\" Copyright (c) 1991 Free Software Foundation              -*-Text-*-
 .\" See section COPYING for conditions for redistribution
 .\" FIXME: no info here on predefines.  Should there be?  extra for C++...
-.TH GCC 1 "28may1992" "GNU Tools" "GNU Tools"
+.TH CC 1 "28may1992" "GNU Tools" "GNU Tools"
 .de BP
 .sp
 .ti \-.2i
 \(**
 ..
 .SH NAME
-gcc, g++ \- GNU project C and C++ Compiler (v2 preliminary)
+cc, g++ \- GNU project C and C++ Compiler (v2 preliminary)
 .SH SYNOPSIS
-.RB gcc " [" \c
+.RB cc " [" \c
 .IR option " | " filename " ].\|.\|.
 .br
 .RB g++ " [" \c
@@ -526,7 +526,7 @@ GCC ignores input files which don't require preprocessing.
 \&
 Place output in file \c
 .I file\c
-\&.  This applies regardless to whatever
+\&.  This applies to whatever
 sort of output GCC is producing, whether it be an executable file,
 an object file, an assembler file or preprocessed C code.
 
@@ -541,7 +541,7 @@ If you do not specify `\|\c
 \&\|', the default is to put an executable file
 in `\|\c
 .B a.out\c
-\&\|', the object file for `\|\c
+\&\|', an object file for `\|\c
 .B \c
 .I source\c
 \&.\c
@@ -557,10 +557,10 @@ in `\|\c
 .I source\c
 \&.s\c
 \&\|', and
-all preprocessed C source on standard output.
+all preprocessed C source on the standard output.
 .TP
 .B \-v
-Print (on standard error output) the commands executed to run the stages
+Print (on the standard error output) the commands executed to run the stages
 of compilation.  Also print the version number of the compiler driver
 program and of the preprocessor and the compiler proper.
 .TP
@@ -966,7 +966,7 @@ Do not predefine any nonstandard macros.  (Including architecture flags).
 .TP
 .B \-E
 Run only the C preprocessor.  Preprocess all the C source files
-specified and output the results to standard output or to the
+specified and output the results to the standard output or to the
 specified output file.
 .TP
 .B \-C
@@ -997,8 +997,8 @@ file name for that source file and whose dependencies are all the files
 \&\|'d in it.  This rule may be a single line or may be
 continued with `\|\c
 .B \e\c
-\&\|'-newline if it is long.  The list of rules is
-printed on standard output instead of the preprocessed C program.
+\&\|newline if it is long.  The list of rules is
+printed on the standard output instead of the preprocessed C program.
 
 `\|\c
 .B \-M\c
@@ -1583,7 +1583,7 @@ All of the above `\|\c
 .B \-W\c
 \&\|' options combined.  These are all the
 options which pertain to usage that we recommend avoiding and that we
-believe is easy to avoid, even in conjunction with macros.
+believe are easy to avoid, even in conjunction with macros.
 .PP
 
 The remaining `\|\c
@@ -1825,7 +1825,7 @@ Says to make debugging dumps during compilation at times specified by
 .I letters\c
 \&.  This is used for debugging the compiler.  The file names
 for most of the dumps are made by appending a word to the source file
-name (e.g.  `\|\c
+name (e.g.,  `\|\c
 .B foo.c.rtl\c
 \&\|' or `\|\c
 .B foo.c.jump\c
@@ -1843,7 +1843,7 @@ Dump all macro definitions, at the end of preprocessing, in addition to
 normal output.
 .TP
 .B \-dy
-Dump debugging information during parsing, to standard error.
+Dump debugging information during parsing, to the standard error.
 .TP
 .B \-dr
 Dump after RTL generation, to `\|\c
@@ -1955,7 +1955,7 @@ Dump after conversion from registers to stack, to `\|\c
 .TP
 .B \-dm
 Print statistics on memory usage, at the end of the run, to
-standard error.
+the standard error.
 .TP
 .B \-dp
 Annotate the assembler output with a comment indicating which
@@ -2532,9 +2532,9 @@ configured for a C2.
 .TP
 .B \-margcount
 Generate code which puts an argument count in the word preceding each
-argument list.  Some nonportable Convex and Vax programs need this word.
+argument list.  Some non-portable Convex and Vax programs need this word.
 (Debuggers don't, except for functions with variable-length argument
-lists; this info is in the symbol table.)
+lists; this information is in the symbol table.)
 .TP
 .B \-mnoargcount
 Omit the argument count word.  This is the default if you use the
