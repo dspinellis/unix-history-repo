@@ -3,10 +3,10 @@
 # include <signal.h>
 # include "dlvrmail.h"
 # ifdef LOG
-# include <log.h>
+# include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.5	%G%";
+static char SccsId[] = "@(#)deliver.c	2.6	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -219,23 +219,29 @@ deliver(to, editfcn)
 		}
 		if (!flagset(M_RESTR, m->m_flags))
 			setuid(getuid());
+# ifndef VFORK
+		/*
+		**  We have to be careful with vfork - we can't mung up the
+		**  memory but we don't want the mailer to inherit any extra
+		**  open files.  Chances are the mailer won't
+		**  care about an extra file, but then again you never know.
+		**  Actually, we would like to close(fileno(pwf)), but it's
+		**  declared static so we can't.  But if we fclose(pwf), which
+		**  is what endpwent does, it closes it in the parent too and
+		**  the next getpwnam will be slower.  If you have a weird
+		**  mailer that chokes on the extra file you should do the
+		**  endpwent().
+		**
+		**  Similar comments apply to log.  However, openlog is
+		**  clever enough to set the FIOCLEX mode on the file,
+		**  so it will be closed automatically on the exec.
+		*/
+
+		endpwent();
 # ifdef LOG
 		closelog();
 # endif LOG
-# ifndef VFORK
-		/*
-		 * We have to be careful with vfork - we can't mung up the
-		 * memory but we don't want the mailer to inherit any extra
-		 * open files.  Chances are the mailer won't
-		 * care about an extra file, but then again you never know.
-		 * Actually, we would like to close(fileno(pwf)), but it's
-		 * declared static so we can't.  But if we fclose(pwf), which
-		 * is what endpwent does, it closes it in the parent too and
-		 * the next getpwnam will be slower.  If you have a weird mailer
-		 * that chokes on the extra file you should do the endpwent().
-		 */
-		endpwent();
-# endif
+# endif VFORK
 		execv(m->m_mailer, pvp);
 		/* syserr fails because log is closed */
 		/* syserr("Cannot exec %s", m->m_mailer); */
@@ -355,7 +361,7 @@ giveresponse(stat, force, m)
 	}
 
 # ifdef LOG
-	logmsg(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
+	syslog(LOG_INFO, "%s->%s: %ld: %s", From.q_paddr, To, MsgSize, statmsg);
 # endif LOG
 	setstat(stat);
 	return (stat);
