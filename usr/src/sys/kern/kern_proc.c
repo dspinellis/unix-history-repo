@@ -1,4 +1,4 @@
-/*	kern_proc.c	6.4	84/08/29	*/
+/*	kern_proc.c	6.5	84/12/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,38 +23,47 @@
 #include "uio.h"
 #include "mbuf.h"
 
+/*
+ * Change the process group of top and all descendents to npgrp.
+ * If npgrp is -1, instead clear any pending stops.
+ */
 spgrp(top, npgrp)
-	register struct proc *top;
+	struct proc *top;
 {
-	register struct proc *pp, *p;
+	register struct proc *p;
 	int f = 0;
 
-	for (p = top; npgrp == -1 || u.u_uid == p->p_uid ||
-	    !u.u_uid || inferior(p); p = pp) {
-		if (npgrp == -1) {
-#define	bit(a)	(1<<(a-1))
-			p->p_sig &= ~(bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
-		} else
+	p = top;
+	for (;;) {
+		if (npgrp == -1)
+			p->p_sig &=
+			  ~(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU));
+		else
 			p->p_pgrp = npgrp;
 		f++;
 		/*
-		 * Search for children.
+		 * If this process has children, descend to them next,
+		 * otherwise do any siblings, and if done with this level,
+		 * follow back up the tree (but not past top).
 		 */
-		for (pp = proc; pp < procNPROC; pp++)
-			if (pp->p_pptr == p)
-				goto cont;
-		/*
-		 * Search for siblings.
-		 */
-		for (; p != top; p = p->p_pptr)
-			for (pp = p + 1; pp < procNPROC; pp++)
-				if (pp->p_pptr == p->p_pptr)
-					goto cont;
-		break;
-	cont:
-		;
+		if (p->p_cptr)
+			p = p->p_cptr;
+		else if (p == top)
+			return (f);
+		else if (p->p_osptr)
+			p = p->p_osptr;
+		else for (;;) {
+			p = p->p_pptr;
+			if (p == top)
+				return (f);
+if (p == &proc[1])
+	panic("spgrp");
+			if (p->p_osptr) {
+				p = p->p_osptr;
+				break;
+			}
+		}
 	}
-	return (f);
 }
 
 /*

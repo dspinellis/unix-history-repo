@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.4	84/08/29	*/
+/*	kern_exit.c	6.5	84/12/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -158,6 +158,7 @@ panic("exit: m_getclr");
 		 */
 		(void) spgrp(q, -1);
 	}
+	p->p_cptr = NULL;
 	psignal(p->p_pptr, SIGCHLD);
 	wakeup((caddr_t)p->p_pptr);
 	swtch();
