@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1982 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.h	6.9 (Berkeley) %G%
+ *	@(#)if.h	6.10 (Berkeley) %G%
  */
 
 /*
@@ -197,25 +197,14 @@ struct	ifconf {
 #define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
 };
 
-/*
- * ARP ioctl request
- */
-struct arpreq {
-	struct sockaddr	arp_pa;		/* protocol address */
-	struct sockaddr	arp_ha;		/* hardware address */
-	int	arp_flags;		/* flags */
-};
-/*  arp_flags and at_flags field values */
-#define	ATF_INUSE	1	/* entry in use */
-#define ATF_COM		2	/* completed entry (enaddr valid) */
-#define	ATF_PERM	4	/* permanent entry */
-#define	ATF_PUBL	8	/* publish entry (respond for other host) */
-
 #ifdef KERNEL
+#include "../net/if_arp.h"
 #ifdef INET
 struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif
 struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet *ifnet;
 struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet(), *ifa_ifwithaf();
-#endif
+#else KERNEL
+#include <net/if_arp.h>
+#endif KERNEL
