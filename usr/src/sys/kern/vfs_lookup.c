@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	8.5 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
