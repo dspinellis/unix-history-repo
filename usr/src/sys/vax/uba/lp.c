@@ -195,7 +195,7 @@ lpcanon(dev, c)
 	else switch(c) {
 
 	case '\t':
-		logcol = (logcol-8) & ~7;
+		logcol = (logcol+8) & ~7;
 		break;
 
 	case '\f':
