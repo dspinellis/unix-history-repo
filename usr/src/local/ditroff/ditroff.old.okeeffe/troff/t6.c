@@ -1,4 +1,4 @@
-/*	t6.c	1.4	(Berkeley)	83/11/09	*/
+/*	t6.c	1.5	(Berkeley)	83/11/28	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -352,7 +352,7 @@ int	a;
 		j = font1;
 		goto s0;
 	}
-	if (i == 'S' || i == '0')
+	if (i == '0')
 		return;
 	if ((j = findft(i)) == -1)
 		if ((j = setfp(0, i)) == -1)	/* try to put it in position 0 */
