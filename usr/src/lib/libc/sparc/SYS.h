@@ -8,7 +8,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.2 (Berkeley) %G%
+ *	@(#)SYS.h	5.3 (Berkeley) %G%
+ *
+ * from: $Header: SYS.h,v 1.2 92/07/03 18:57:00 torek Exp $
  */
 
 #include <sys/syscall.h>
@@ -41,18 +43,18 @@
 
 /*
  * RSYSCALL is used when the system call should just return.  Here
- * we use the SYSCALL_RFLAG to put the `success' return address in %g7
+ * we use the SYSCALL_G2RFLAG to put the `success' return address in %g2
  * and avoid a branch.
  */
 #define	RSYSCALL(x) \
-	ENTRY(x); mov (SYS_##x)|SYSCALL_RFLAG,%g1; add %o7,8,%g7; \
+	ENTRY(x); mov (SYS_##x)|SYSCALL_G2RFLAG,%g1; add %o7,8,%g2; \
 	t ST_SYSCALL; ERROR()
 
 /*
- * PSEUDO(x,y) is like  RSYSCALL(y) except that the name is x.
+ * PSEUDO(x,y) is like RSYSCALL(y) except that the name is x.
  */
 #define	PSEUDO(x,y) \
-	ENTRY(x); mov (SYS_##y)|SYSCALL_RFLAG,%g1; add %o7,8,%g7; \
+	ENTRY(x); mov (SYS_##y)|SYSCALL_G2RFLAG,%g1; add %o7,8,%g2; \
 	t ST_SYSCALL; ERROR()
 
 #define	ASMSTR		.asciz
