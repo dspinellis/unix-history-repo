@@ -6,16 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rec_seq.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_seq.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
-#include <errno.h>
 #include <db.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <strings.h>
+
 #include "recno.h"
 
 /*
@@ -44,10 +45,8 @@ __rec_seq(dbp, key, data, flags)
 	t = dbp->internal;
 	switch(flags) {
 	case R_CURSOR:
-		if ((nrec = *(recno_t *)key->data) == 0) {
-			errno = EINVAL;
-			return (RET_ERROR);
-		}
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
 		break;
 	case R_NEXT:
 		if (ISSET(t, BTF_SEQINIT)) {
@@ -60,25 +59,25 @@ __rec_seq(dbp, key, data, flags)
 		break;
 	case R_PREV:
 		if (ISSET(t, BTF_SEQINIT)) {
-			if ((nrec = t->bt_rcursor - 1) == 0) {
-				errno = EINVAL;
-				return (RET_ERROR);
-			}
+			if ((nrec = t->bt_rcursor - 1) == 0)
+				return (RET_SPECIAL);
 			break;
 		}
 		/* FALLTHROUGH */
 	case R_LAST:
-		if (t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
+		if (!ISSET(t, BTF_RINMEM) &&
+		    t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
 			return (RET_ERROR);
 		nrec = t->bt_nrecs;
 		break;
 	default:
-		errno = EINVAL;
+einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 	
 	if (t->bt_nrecs == 0 || nrec > t->bt_nrecs) {
-		if ((status = t->bt_irec(t, nrec)) != RET_SUCCESS)
+		if (!ISSET(t, BTF_RINMEM) &&
+		    (status = t->bt_irec(t, nrec)) != RET_SUCCESS)
 			return (status);
 		if (t->bt_nrecs == 0 || nrec > t->bt_nrecs)
 			return (RET_SPECIAL);
@@ -87,13 +86,11 @@ __rec_seq(dbp, key, data, flags)
 	if ((e = __rec_search(t, nrec - 1, SEARCH)) == NULL)
 		return (RET_ERROR);
 
-	if ((status = __rec_ret(t, e, data)) == RET_SUCCESS) {
-		key->size = sizeof(recno_t);
-		bcopy(&nrec, key->data, sizeof(recno_t));
-		t->bt_rcursor = nrec;
-		SET(t, BTF_SEQINIT);
-		UNSET(t, BTF_DELCRSR);
-	}
+	SET(t, BTF_SEQINIT);
+	t->bt_rcursor = nrec;
+
+	status = __rec_ret(t, e, nrec, key, data);
+
 	mpool_put(t->bt_mp, e->page, 0);
 	return (status);
 }
