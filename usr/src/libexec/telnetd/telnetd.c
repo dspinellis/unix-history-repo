@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -901,6 +901,7 @@ telnet(f, p, host)
 	char *HN;
 	char *IM;
 	void netflush();
+	int nfd;
 
 	/*
 	 * Initialize the slc mapping table.
@@ -1130,6 +1131,7 @@ telnet(f, p, host)
 	startslave(host);
 #endif
 
+	nfd = ((f > p) ? f : p) + 1;
 	for (;;) {
 		fd_set ibits, obits, xbits;
 		register int c;
@@ -1161,7 +1163,7 @@ telnet(f, p, host)
 		if (!SYNCHing) {
 			FD_SET(f, &xbits);
 		}
-		if ((c = select(16, &ibits, &obits, &xbits,
+		if ((c = select(nfd, &ibits, &obits, &xbits,
 						(struct timeval *)0)) < 1) {
 			if (c == -1) {
 				if (errno == EINTR) {
@@ -1481,6 +1483,14 @@ interrupt()
 {
 	ptyflush();	/* half-hearted */
 
+#if defined(STREAMSPTY) && defined(TIOCSIGNAL)
+	/* Streams PTY style ioctl to post a signal */
+	{
+		int sig = SIGINT;
+		(void) ioctl(pty, TIOCSIGNAL, &sig);
+		(void) ioctl(pty, I_FLUSH, FLUSHR);
+	}
+#else
 #ifdef	TCSIG
 	(void) ioctl(pty, TCSIG, (char *)SIGINT);
 #else	/* TCSIG */
@@ -1488,6 +1498,7 @@ interrupt()
 	*pfrontp++ = slctab[SLC_IP].sptr ?
 			(unsigned char)*slctab[SLC_IP].sptr : '\177';
 #endif	/* TCSIG */
+#endif
 }
 
 /*
