@@ -1,108 +1,205 @@
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	4.1 (Melbourne) %G%";
+static char sccsid[] = "@(#)repquota.c	4.2 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
  * Quota report
  */
 #include <stdio.h>
-#include <ctype.h>
-#include <pwd.h>
 #include <sys/param.h>
-#define	QUOTA
 #include <sys/quota.h>
+#include <sys/stat.h>
+#include <fstab.h>
+#include <pwd.h>
 
-#define	NUID	3000
+#define LOGINNAMESIZE 8
+struct fileusage {
+	struct fileusage *fu_next;
+	struct dqblk fu_dqblk;
+	u_short	fu_uid;
+	char fu_name[LOGINNAMESIZE + 1];
+};
+#define FUHASH 997
+struct fileusage *fuhead[FUHASH];
+struct fileusage *lookup();
+struct fileusage *adduid();
+int highuid;
 
-struct dqblk dq[NUID];
+long done;
+struct	passwd	*getpwent();
 
-char	*dn[NUID];
-int	nuids;
+int	vflag;		/* verbose */
+int	aflag;		/* all file systems */
+
+char *qfname = "quotas";
+char quotafile[MAXPATHLEN + 1];
+struct dqblk zerodqblk;
 
 main(argc, argv)
+	int argc;
 	char **argv;
 {
-	register struct passwd *lp;
-	register n;
-	register i;
-	register FILE *qf;
-	char *copy();
-	struct passwd *getpwent();
+	register struct fstab *fs;
+	register struct passwd *pw;
+	register struct fileusage *fup;
+	char quotafile[MAXPATHLEN];
+	int i, errs = 0;
 
-	argc--;
-	if ((qf = fopen(*++argv, "r")) == NULL) {
-		fprintf(stderr, "Can't open %s\n", *argv);
+again:
+	argc--, argv++;
+	if (argc > 0 && strcmp(*argv, "-v") == 0) {
+		vflag++;
+		goto again;
+	}
+	if (argc > 0 && strcmp(*argv, "-a") == 0) {
+		aflag++;
+		goto again;
+	}
+	if (argc <= 0 && !aflag) {
+		fprintf(stderr, "Usage:\n\t%s\n\t%s\n",
+			"repquota [-v] -a",
+			"repquota [-v] filesys ...");
 		exit(1);
 	}
-	argc--, argv++;
-	nuids = fread(dq, sizeof(struct dqblk), NUID, qf);
-	fclose(qf);
-	while ((lp = getpwent()) != (struct passwd *)0) {
-		n = lp->pw_uid;
-		if (n >= NUID)
-			continue;
-		if (dn[n])
-			continue;
-		dn[n] = copy(lp->pw_name);
+	setpwent();
+	while ((pw = getpwent()) != 0) {
+		fup = lookup(pw->pw_uid);
+		if (fup == 0)
+			fup = adduid(pw->pw_uid);
+		strncpy(fup->fu_name, pw->pw_name, sizeof(fup->fu_name));
 	}
-
-	for (n = 0; n < nuids; n++) {
-		if (argc > 0) {
-			for (i = 0; i < argc; i++) {
-				register char *p;
-
-				for (p = argv[i]; *p && isdigit(*p); p++)
-					;
-				if (*p)
-					continue;
-				if (n == atoi(argv[i]))
-					goto rep;
-			}
-			if (!dn[n])
-				continue;
-			for (i = 0; i < argc; i++)
-				if (strcmp(argv[i], dn[n]) == 0)
-					break;
-			if (i >= argc)
-				continue;
-		} else if (dq[n].dqb_curinodes == 0 && dq[n].dqb_curblocks == 0)
+	endpwent();
+	setfsent();
+	while ((fs = getfsent()) != NULL) {
+		if (aflag &&
+		    (fs->fs_type == 0 || strcmp(fs->fs_type, "rq") != 0))
 			continue;
-	rep:
-		if (dn[n])
-			printf("%-10s", dn[n]);
-		else
-			printf("#%-9d", n);
-
-		printf("%c%c %5d %5d %5d %5d %5d %5d %5d %5d\n"
-			, dq[n].dqb_bsoftlimit && dq[n].dqb_curblocks >= dq[n].dqb_bsoftlimit
-				? '+' : '-'
-			, dq[n].dqb_isoftlimit && dq[n].dqb_curinodes >= dq[n].dqb_isoftlimit
-				? '+' : '-'
-			, dq[n].dqb_curblocks
-			, dq[n].dqb_bsoftlimit
-			, dq[n].dqb_bhardlimit
-			, dq[n].dqb_bwarn
-			, dq[n].dqb_curinodes
-			, dq[n].dqb_isoftlimit
-			, dq[n].dqb_ihardlimit
-			, dq[n].dqb_iwarn
-		);
+		if (!aflag &&
+		    !(oneof(fs->fs_file, argv, argc) ||
+		      oneof(fs->fs_spec, argv, argc)))
+			continue;
+		(void) sprintf(quotafile, "%s/%s", fs->fs_file, qfname);
+		errs += repquota(fs->fs_spec, quotafile);
 	}
-	exit(0);
+	endfsent();
+	for (i = 0; i < argc; i++)
+		if ((done & (1 << i)) == 0)
+			fprintf(stderr, "%s not found in /etc/fstab\n",
+				argv[i]);
+	exit(errs);
 }
 
-char *
-copy(s)
-	char *s;
+repquota(fsdev, qffile)
+	char *fsdev;
+	char *qffile;
 {
-	register char *p;
-	register n;
-	char *malloc();
+	register struct fileusage *fup;
+	FILE *qf;
+	u_short uid;
+	struct dqblk dqbuf;
+	struct stat statb;
 
-	for(n=0; s[n]; n++)
-		;
-	p = malloc((unsigned)n+1);
-	for(n=0; p[n] = s[n]; n++)
-		;
-	return(p);
+	if (vflag)
+		fprintf(stdout, "*** Quota report for %s\n", fsdev);
+	qf = fopen(qffile, "r");
+	if (qf == NULL) {
+		perror(qffile);
+		return (1);
+	}
+	if (fstat(fileno(qf), &statb) < 0) {
+		perror(qffile);
+		return (1);
+	}
+	quota(Q_SYNC, 0, statb.st_dev, 0);
+	for (uid = 0; ; uid++) {
+		fread(&dqbuf, sizeof(struct dqblk), 1, qf);
+		if (feof(qf))
+			break;
+		if (dqbuf.dqb_curinodes == 0 && dqbuf.dqb_curblocks == 0)
+			continue;
+		fup = lookup(uid);
+		if (fup == 0)
+			fup = adduid(uid);
+		fup->fu_dqblk = dqbuf;
+	}
+	printf("                        Block limits               File limits\n");
+	printf("User            used    soft    hard  warn    used  soft  hard  warn\n");
+	for (uid = 0; uid <= highuid; uid++) {
+		fup = lookup(uid);
+		if (fup == 0)
+			continue;
+		if (fup->fu_dqblk.dqb_curinodes == 0 &&
+		    fup->fu_dqblk.dqb_curblocks == 0)
+			continue;
+		if (fup->fu_name[0] != '\0')
+			printf("%-10s", fup->fu_name);
+		else
+			printf("#%-9d", uid);
+		printf("%c%c%8d%8d%8d %5d   %5d %5d %5d %5d\n",
+			fup->fu_dqblk.dqb_bsoftlimit && 
+			    fup->fu_dqblk.dqb_curblocks >= 
+			    fup->fu_dqblk.dqb_bsoftlimit ? '+' : '-',
+			fup->fu_dqblk.dqb_isoftlimit &&
+			    fup->fu_dqblk.dqb_curinodes >=
+			    fup->fu_dqblk.dqb_isoftlimit ? '+' : '-',
+			fup->fu_dqblk.dqb_curblocks / btodb(1024),
+			fup->fu_dqblk.dqb_bsoftlimit / btodb(1024),
+			fup->fu_dqblk.dqb_bhardlimit / btodb(1024),
+			fup->fu_dqblk.dqb_bwarn,
+			fup->fu_dqblk.dqb_curinodes,
+			fup->fu_dqblk.dqb_isoftlimit,
+			fup->fu_dqblk.dqb_ihardlimit,
+			fup->fu_dqblk.dqb_iwarn);
+		fup->fu_dqblk = zerodqblk;
+	}
+	return (0);
+}
+
+oneof(target, list, n)
+	char *target, *list[];
+	register int n;
+{
+	register int i;
+
+	for (i = 0; i < n; i++)
+		if (strcmp(target, list[i]) == 0) {
+			done |= 1 << i;
+			return (1);
+		}
+	return (0);
+}
+
+struct fileusage *
+lookup(uid)
+	u_short uid;
+{
+	register struct fileusage *fup;
+
+	for (fup = fuhead[uid % FUHASH]; fup != 0; fup = fup->fu_next)
+		if (fup->fu_uid == uid)
+			return (fup);
+	return ((struct fileusage *)0);
+}
+
+struct fileusage *
+adduid(uid)
+	u_short uid;
+{
+	struct fileusage *fup, **fhp;
+
+	fup = lookup(uid);
+	if (fup != 0)
+		return (fup);
+	fup = (struct fileusage *)calloc(1, sizeof(struct fileusage));
+	if (fup == 0) {
+		fprintf(stderr, "out of memory for fileusage structures\n");
+		exit(1);
+	}
+	fhp = &fuhead[uid % FUHASH];
+	fup->fu_next = *fhp;
+	*fhp = fup;
+	fup->fu_uid = uid;
+	if (uid > highuid)
+		highuid = uid;
+	return (fup);
 }
