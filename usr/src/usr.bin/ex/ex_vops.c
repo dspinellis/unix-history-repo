@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	7.1	%G%";
+static char *sccsid = "@(#)ex_vops.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -713,7 +713,8 @@ vfilter()
 {
 	register line *addr;
 	register int cnt;
-	char *oglobp, d;
+	char *oglobp;
+	short d;
 
 	if ((cnt = xdw()) < 0)
 		return;

@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	7.1	%G%";
+static char *sccsid = "@(#)ex_vmain.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -19,7 +19,7 @@ vmain()
 	register int c, cnt, i;
 	char esave[TUBECOLS];
 	char *oglobp;
-	char d;
+	short d;
 	line *addr;
 	int ind, nlput;
 	int shouldpo = 0;

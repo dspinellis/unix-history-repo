@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	7.1	%G%";
+static char *sccsid = "@(#)ex_cmdsub.c	7.2	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -1261,7 +1261,7 @@ char c;
 	char macbuf[BUFSIZ];
 	line *ad, *a1, *a2;
 	char *oglobp;
-	char pk;
+	short pk;
 	bool oinglobal;
 
 	lastmac = c;

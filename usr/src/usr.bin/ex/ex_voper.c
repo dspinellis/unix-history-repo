@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_voper.c	7.1	%G%";
+static char *sccsid = "@(#)ex_voper.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -30,7 +30,7 @@ operate(c, cnt)
 	register line *addr;
 	line *odot;
 	static char lastFKND, lastFCHR;
-	char d;
+	short d;
 
 	moveop = vmove, deleteop = vdelete;
 	wcursor = cursor;
