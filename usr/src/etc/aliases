@@ -1,5 +1,5 @@
 #
-#	@(#)aliases	5.3 (Berkeley) %G%
+#	@(#)aliases	5.4 (Berkeley) %G%
 #
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.
@@ -9,41 +9,40 @@
 #	>>>>>>>>>>	show through to sendmail.
 #
 
-# Basic system aliases -- these MUST be present
-MAILER-DAEMON: postmaster
-postmaster: root
+# Basic system aliases -- these MUST be present.
+MAILER-DAEMON:	postmaster
+postmaster:	root
 
-# General redirections for pseudo accounts
-bin:	root
-daemon:	root
-games:	root
-ingres:	root
-nobody:	root
-system:	root
-toor:	root
-uucp:	root
+# General redirections for pseudo accounts.
+bin:		root
+daemon:		root
+games:		root
+ingres:		root
+nobody:		root
+system:		root
+toor:		root
+uucp:		root
 
-# Well-known aliases
-root:
-manager:
-dumper:
-operator:
+# Well-known aliases.
+manager:	root
+dumper:		root
+operator:	root
 
 # OFFICIAL CSRG/BUG ADDRESSES
 
-# FTP BUG ADDRESS
+# Ftp maintainer.
 ftp-bugs: bigbug@ucbvax.berkeley.edu
 
-# DISTRIBUTION PERSON
+# Distribution office.
 bsd-dist: bsd-dist@ucbvax.berkeley.edu
 
-# FORTUNE
+# Fortune maintainer.
 fortune: fortune@ucbvax.berkeley.edu
 
-# TERMCAP
-termcap: bigbug@ucbvax.berkeley.edu
+# Termcap maintainer.
+termcap: bigbug@
 
-# BUG PERSON
+# General bug address.
 ucb-fixes: bigbug@ucbvax.berkeley.edu
 ucb-fixes-request: bigbug@ucbvax.berkeley.edu
 bugs: bugs@ucbvax.berkeley.edu
