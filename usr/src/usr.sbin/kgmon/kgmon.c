@@ -1,11 +1,12 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.6 83/01/16";
+static char sccsid[] = "@(#)kgmon.c	4.7 83/03/10";
 #endif
 
 #include <sys/param.h>
 #include <machine/pte.h>
+#include <sys/vm.h>
 #include <stdio.h>
 #include <nlist.h>
 #include <ctype.h>
@@ -297,8 +298,10 @@ klseek(fd, base, off)
 
 	if (kflag) {
 		/* get kernel pte */
+#if vax
 		base &= 0x7fffffff;
-		base = Sysmap[base >> 9].pg_pfnum * 512 + (base & 0x1ff);
+#endif
+		base = ((int)ptob(Sysmap[btop(base)].pg_pfnum))+(base&(NBPG-1));
 	}
 	return (lseek(fd, base, off));
 }
