@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.4 (Berkeley) %G%
+ *	@(#)archive.h	5.5 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -57,17 +57,6 @@ typedef struct {
 	char name[MAXNAMLEN + 1];	/* name */
 } CHDR;
 
-/* Print out any files that weren't in the archive. */
-#define	ORPHANS { \
-	if (*argv) { \
-		eval = 1; \
-		do { \
-			(void)fprintf(stderr, \
-			    "ar: %s: not found in archive.\n", *argv); \
-		} while (*++argv); \
-	} \
-}
-
 /* Header format strings. */
 #define	HDR1	"%s%-13d%-12ld%-6u%-6u%-8o%-10ld%2s"
 #define	HDR2	"%-16.16s%-12ld%-6u%-6u%-8o%-10ld%2s"
@@ -75,5 +64,16 @@ typedef struct {
 #define	OLDARMAXNAME	15
 #define	HDR3	"%-16.15s%-12ld%-6u%-6u%-8o%-10ld%2s"
 
-#include <stdlib.h>
-#include <string.h>
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+void	close_archive __P((int));
+void	skipobj __P((int));
+int	copyfile __P((CF *, off_t));
+int	get_header __P((int));
+int	open_archive __P((int));
+struct stat;
+int	put_object __P((CF *, struct stat *));
+__END_DECLS
+
