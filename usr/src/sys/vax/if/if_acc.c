@@ -1,4 +1,4 @@
-/*	if_acc.c	4.6	82/02/25	*/
+/*	if_acc.c	4.7	82/02/27	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -346,10 +346,6 @@ COUNT(ACCRINT);
 			sc->acc_iq = m;
 		goto setup;
 	}
-#ifdef notdef
-	/* adjust message length for padding. */
-	m->m_len -= 2;
-#endif
 	if (sc->acc_iq) {
 		m_cat(sc->acc_iq, m);
 		m = sc->acc_iq;
