@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.8 (Berkeley) %G%
+#	@(#)Makefile.inc	5.9 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -8,7 +8,7 @@ SRCS+=	alarm.c clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
 	getgrent.c getlogin.c getmntinfo.c getopt.c getpass.c \
 	getpwent.c getttyent.c getusershell.c getwd.c glob.c initgroups.c \
 	isatty.c isctype.c mktemp.c ndbm.c nice.c nlist.c opendir.c \
-	pause.c perror.c popen.c psignal.c radixsort.c random.c readdir.c \
+	pause.c perror.c popen.c psignal.c random.c readdir.c \
 	regex.c remove.c rewinddir.c scandir.c seekdir.c setjmperr.c \
 	setmode.c setrgid.c setruid.c siginterrupt.c sigsetjmp.c \
 	siglist.c signal.c sigsetops.c sleep.c syslog.c telldir.c \
@@ -45,7 +45,7 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
 	getgrent.0 getmntinfo.0 getopt.0 getpass.0 getpwent.0 \
 	getttyent.0 getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 \
 	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 \
-	radixsort.0 random.0 regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 \
+	random.0 regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 \
 	setuid.0 siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
 	times.0 tmpnam.0 ttyname.0 ualarm.0 unvis.0 usleep.0 utime.0 \
 	valloc.0 vis.0
