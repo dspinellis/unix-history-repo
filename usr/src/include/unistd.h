@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	8.4 (Berkeley) %G%
+ *	@(#)unistd.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -72,10 +72,10 @@ int	 unlink __P((const char *));
 ssize_t	 write __P((int, const void *, size_t));
 
 #ifndef	_POSIX_SOURCE
-
-/* structure timeval required for select() */
-#include <sys/time.h>
-
+#ifdef	__STDC__
+struct timeval;				/* select(2) */
+struct iovec;				/* readv(2), writev(2) */
+#endif
 int	 acct __P((const char *));
 int	 async_daemon __P((void));
 char	*brk __P((const char *));
@@ -109,6 +109,7 @@ int	 nice __P((int));
 void	 psignal __P((unsigned int, const char *));
 extern __const char *__const sys_siglist[];
 int	 profil __P((char *, int, int, int));
+ssize_t	 readv __P((int, struct iovec *, int));
 int	 rcmd __P((char **, int, const char *,
 		const char *, const char *, int *));
 char	*re_comp __P((const char *));
@@ -144,6 +145,7 @@ unsigned int	 ualarm __P((unsigned int, unsigned int));
 void	 usleep __P((unsigned int));
 void	*valloc __P((size_t));			/* obsoleted by malloc() */
 pid_t	 vfork __P((void));
+ssize_t	 writev __P((int, struct iovec *, int));
 
 #endif /* !_POSIX_SOURCE */
 __END_DECLS
