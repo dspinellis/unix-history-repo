@@ -1,4 +1,4 @@
-/*	param.h	4.30	83/02/21	*/
+/*	param.h	4.31	83/03/31	*/
 
 /*
  * Macine type dependent parameters.
@@ -22,6 +22,8 @@
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	10240		/* # characters in exec arglist */
 #define	NGROUPS	8		/* max number groups */
+
+#define	NOGROUP	-1		/* marker for empty group set member */
 
 /*
  * Priorities
