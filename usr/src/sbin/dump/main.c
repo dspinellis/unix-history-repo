@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -314,11 +314,11 @@ main(argc, argv)
 #ifndef RDUMP
 	if (!pipeout) {
 		close(to);
-		rewind();
+		trewind();
 	}
 #else
 	tflush(1);
-	rewind();
+	trewind();
 #endif
 	broadcast("DUMP IS DONE!\7\7\n");
 	Exit(X_FINOK);

@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.11 (Berkeley) %G%";
 #endif not lint
 
-#include <sys/file.h>
+#include <sys/types.h>
+#include <fcntl.h>
 #include "dump.h"
 #include "pathnames.h"
 
@@ -165,7 +166,7 @@ flusht()
 	timeest();
 }
 
-rewind()
+trewind()
 {
 	int f;
 
@@ -192,7 +193,7 @@ rewind()
 
 close_rewind()
 {
-	rewind();
+	trewind();
 	if (!nogripe) {
 		msg("Change Tapes: Mount tape #%d\n", tapeno+1);
 		broadcast("CHANGE TAPES!\7\7\n");
@@ -337,6 +338,7 @@ dumpabort()
 }
 
 Exit(status)
+	int status;
 {
 #ifdef TDEBUG
 	msg("pid = %d exits with status %d\n", getpid(), status);
