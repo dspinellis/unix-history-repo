@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.17 (Berkeley) %G%
+#	@(#)Makefile	5.18 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -21,7 +21,7 @@ SCRIPT=	false true
 #
 STD=	ar cat cc chmod cmp date dd du echo ed grep hostid hostname \
 	kill ld ln ls mkdir mt nice nm od pagesize pr pwd rm rmail \
-	rmdir size stty sync tar tee test time wall who
+	rmdir size stty sync tar tee test time who
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -41,9 +41,9 @@ KMEM=	ps
 
 # Programs that must run set-group-id tty.
 #
-TTY=	tty
+TTY=	wall write
 
-BINS=	${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${WRITE} cp mv strip
+BINS=	${STD} ${NSTD} ${SETUID} ${OPERATOR} ${KMEM} ${TTY} cp mv strip
 
 all:	${SUBDIR} ${BINS}
 
@@ -53,7 +53,7 @@ ${SUBDIR}: FRC
 FRC:
 	
 
-${STD} ${SETUID} ${OPERATOR} ${WRITE} mv cp strip:
+${STD} ${SETUID} ${OPERATOR} ${TTY} mv cp strip:
 	${CC} ${CFLAGS} -o $@ $@.c
 
 # take care with cp, strip, and mv, install uses them
