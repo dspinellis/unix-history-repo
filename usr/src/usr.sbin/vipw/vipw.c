@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -14,7 +14,11 @@ static char sccsid[] = "@(#)vipw.c	4.3 (Berkeley) %G%";
  * Password file editor with locking.
  */
 char	*temp = "/etc/ptmp";
+char	*temp_pag = "/etc/ptmp.pag";
+char	*temp_dir = "/etc/ptmp.dir";
 char	*passwd = "/etc/passwd";
+char	*passwd_pag = "/etc/passwd.pag";
+char	*passwd_dir = "/etc/passwd.dir";
 char	buf[BUFSIZ];
 char	*getenv();
 char	*index();
@@ -124,7 +128,13 @@ main(argc, argv)
 		}
 		fclose(ft);
 		if (ok) {
-			if (rename(temp, passwd) < 0)
+			if (makedb(temp) < 0)
+				fprintf(stderr, "vipw: mkpasswd failed\n");
+			else if (rename(temp_pag, passwd_pag) < 0)
+				fprintf(stderr, "vipw: "), perror(temp_pag);
+			else if (rename(temp_dir, passwd_dir) < 0)
+				fprintf(stderr, "vipw: "), perror(temp_dir);
+			else if (rename(temp, passwd) < 0)
 				fprintf(stderr, "vipw: "), perror("rename");
 			else
 				exit(0);
@@ -136,4 +146,20 @@ main(argc, argv)
 bad:
 	unlink(temp);
 	exit(1);
+}
+
+makedb(file)
+	char *file;
+{
+	int status, pid, w;
+
+	if ((pid = vfork()) == 0) {
+		execl("/etc/mkpasswd", "mkpasswd", file, 0);
+		_exit(127);
+	}
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1 || status != 0)
+		status = -1;
+	return(status);
 }
