@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -99,8 +99,8 @@ int	interleave;		/* hardware sector interleave */
 int	trackskew = -1;		/* sector 0 skew, per track */
 int	headswitch;		/* head switch time, usec */
 int	trackseek;		/* track-to-track seek, usec */
-int	fsize = DFL_FRAGSIZE;	/* fragment size */
-int	bsize = DFL_BLKSIZE;	/* block size */
+int	fsize = 0;		/* fragment size */
+int	bsize = 0;		/* block size */
 int	cpg = DESCPG;		/* cylinders/cylinder group */
 int	minfree = MINFREE;	/* free space threshold */
 int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
@@ -421,7 +421,7 @@ next:
 	oldpartition = *pp;
 #ifdef tahoe
 	realsectorsize = sectorsize;
-	if (sectorsize != DEV_BSIZE) {
+	if (sectorsize != DEV_BSIZE) {		/* XXX */
 		int secperblk = DEV_BSIZE / sectorsize;
 
 		sectorsize = DEV_BSIZE;
