@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -533,13 +533,13 @@ getla()
 		kmem = open("/dev/kmem", 0);
 		if (kmem < 0)
 			return (-1);
-		(void) ioctl(kmem, FIOCLEX, 0);
+		(void) ioctl(kmem, (int) FIOCLEX, (char *) 0);
 		nlist("/vmunix", Nl);
 		if (Nl[0].n_type == 0)
 			return (-1);
 	}
-	if (lseek(kmem, (long) Nl[X_AVENRUN].n_value, 0) < 0 ||
-	    read(kmem, avenrun, sizeof(avenrun)) < sizeof(avenrun))
+	if (lseek(kmem, (off_t) Nl[X_AVENRUN].n_value, 0) < 0 ||
+	    read(kmem, (char *) avenrun, sizeof(avenrun)) < sizeof(avenrun))
 	{
 		/* thank you Ian */
 		return (-1);
@@ -555,27 +555,3 @@ getla()
 }
 
 #endif VMUNIX
-/*
-**  DBMCLOSE -- close the DBM file
-**
-**	This depends on the implementation of the DBM library.  It
-**	seems to work for all versions that I have come across.
-**
-**	Parameters:
-**		none.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Closes the current DBM file; dbminit must be
-**		called again to continue using the DBM routines.
-*/
-
-dbmclose()
-{
-	extern int pagf, dirf;	/* defined in the DBM package */
-
-	(void) close(pagf);
-	(void) close(dirf);
-}

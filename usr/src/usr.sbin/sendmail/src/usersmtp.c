@@ -8,8 +8,6 @@
 **  specifies the terms and conditions for redistribution.
 */
 
-#ifndef lint
-#endif not lint
 
 # include <ctype.h>
 # include <sysexits.h>
@@ -17,10 +15,14 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-static char	SccsId[] = "@(#)usersmtp.c	5.2 (Berkeley) %G%	(no SMTP)";
+# ifndef lint
+static char	SccsId[] = "@(#)usersmtp.c	5.3 (Berkeley) %G%	(no SMTP)";
+# endif not lint
 # else SMTP
 
-static char	SccsId[] = "@(#)usersmtp.c	5.2 (Berkeley) %G%";
+# ifndef lint
+static char	SccsId[] = "@(#)usersmtp.c	5.3 (Berkeley) %G%";
+# endif not lint
 
 
 

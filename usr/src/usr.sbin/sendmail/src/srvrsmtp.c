@@ -14,10 +14,14 @@
 # include <signal.h>
 
 # ifndef SMTP
-static char	SccsId[] = "@(#)srvrsmtp.c	5.3 (Berkeley) %G%	(no SMTP)";
+# ifndef lint
+static char	SccsId[] = "@(#)srvrsmtp.c	5.4 (Berkeley) %G%	(no SMTP)";
+# endif not lint
 # else SMTP
 
-static char	SccsId[] = "@(#)srvrsmtp.c	5.3 (Berkeley) %G%";
+# ifndef lint
+static char	SccsId[] = "@(#)srvrsmtp.c	5.4 (Berkeley) %G%";
+# endif not lint
 
 /*
 **  SMTP -- run the SMTP protocol.
