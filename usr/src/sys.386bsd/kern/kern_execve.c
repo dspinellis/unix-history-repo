@@ -52,7 +52,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00137
+ * CURRENT PATCH LEVEL:         5       00146
  * --------------------         -----   ----------------------
  *
  * 05 Aug 92	Paul Kranenburg		Fixed #! as a magic number
@@ -60,7 +60,9 @@
  * 15 Aug 92    Terry Lambert           Fixed CMOS RAM size bug
  * 12 Dec 92	Julians Elischer	Place argc into user address space
  *					correctly
- * 10 Aug 93	Yoval Yarom		Fix for busy text on executables
+ * 10 Apr 93	Yoval Yarom		Fix for busy text on executables
+ * 20 Apr 93	markie			Stop execution of a file open for write
+ *		Rodney W. Grimes	Fix date on Yoval Yarom's patch
  */
 
 #include "param.h"
@@ -132,6 +134,10 @@ again:							/* 05 Aug 92*/
 	if (rv = namei(ndp, p))
 		return (rv);
 
+	if (ndp->ni_vp->v_writecount) { /* don't exec if file is busy */
+		rv = EBUSY;
+		goto exec_fail;
+	}
 	/* does it have any attributes? */
 	rv = VOP_GETATTR(ndp->ni_vp, &attr, p->p_ucred, p);
 	if (rv)
