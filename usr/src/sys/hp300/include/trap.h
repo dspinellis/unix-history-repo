@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.h 1.6 88/11/25$
  *
- *	@(#)trap.h	7.1 (Berkeley) %G%
+ *	@(#)trap.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -31,5 +31,5 @@
 #define	T_FMTERR	10
 #define T_FPERR		11
 #define T_COPERR	12
-#define T_AST		13
+#define T_ASTFLT	13
 #define T_TRAP15	15

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.2 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -362,7 +362,7 @@ computeSignal(int type)
 	case T_COPERR:
 		sigval = SIGFPE;
 		break;
-	case T_AST:
+	case T_ASTFLT:
 		sigval = SIGINT;
 		break;
 	case T_TRAP15:

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.28 89/09/25$
  *
- *	@(#)trap.c	7.4 (Berkeley) %G%
+ *	@(#)trap.c	7.5 (Berkeley) %G%
  */
 
 #include "cpu.h"
@@ -244,24 +244,14 @@ copyfault:
 
 	case T_TRACE+USER:	/* user trace trap */
 	case T_TRAP15+USER:	/* SUN user trace trap */
-#ifdef SUNCOMPAT
-		/*
-		 * Trap #2 is used to signal a cache flush.
-		 * Should we also flush data cache?
-		 */
-		if (type == T_TRACE+USER && (p->p_flag & SSUN)) {
-			ICIA();
-			goto out;
-		}
-#endif
 		frame.f_sr &= ~PSL_T;
 		i = SIGTRAP;
 		break;
 
-	case T_AST:		/* system async trap, cannot happen */
+	case T_ASTFLT:		/* system async trap, cannot happen */
 		goto dopanic;
 
-	case T_AST+USER:	/* user async trap */
+	case T_ASTFLT+USER:	/* user async trap */
 		astoff();
 		/*
 		 * We check for software interrupts first.  This is because
@@ -289,7 +279,7 @@ copyfault:
 		/*
 		 * If this was not an AST trap, we are all done.
 		 */
-		if (type != T_AST+USER) {
+		if (type != T_ASTFLT+USER) {
 			cnt.v_trap--;
 			return;
 		}
@@ -592,7 +582,8 @@ syscall(code, frame)
 #ifdef HPUXCOMPAT
 	/* debug kludge */
 	if (callp->sy_call == notimp)
-		error = notimp(code, callp->sy_narg);
+		error = notimp(u.u_procp, u.u_ap, &u.u_r.r_val1,
+			       code, callp->sy_narg);
 	else
 #endif
 	error = (*callp->sy_call)(u.u_procp, u.u_ap, &u.u_r.r_val1);
@@ -647,7 +638,7 @@ done:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
-		if (i = CURSIG(p))
+		if (code != SYS_sigreturn && (i = CURSIG(p)))
 			psig(i);
 	}
 	if (u.u_prof.pr_scale) {
