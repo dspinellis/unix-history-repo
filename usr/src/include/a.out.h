@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)a.out.h	5.6 (Berkeley) %G%
+ *	@(#)a.out.h	5.7 (Berkeley) %G%
  */
 
 #ifndef	_AOUT_H_
@@ -39,7 +39,7 @@
 /* Data segment offset. */
 #define	N_DATOFF(ex) \
 	(N_TXTOFF(ex) + ((ex).a_magic != ZMAGIC ? (ex).a_text : \
-	: __LDPGSZ + ((ex).a_text - 1 & ~(__LDPGSZ - 1))))
+	__LDPGSZ + ((ex).a_text - 1 & ~(__LDPGSZ - 1))))
 
 /* Symbol table offset. */
 #define N_SYMOFF(ex) \
