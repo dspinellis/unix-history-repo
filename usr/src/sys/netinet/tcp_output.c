@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.15	81/11/20	*/
+/*	tcp_output.c	4.16	81/11/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -183,8 +183,8 @@ COUNT(TCP_TEMPLATE);
 	n->ti_len = htons(sizeof (struct tcpiphdr) - sizeof (struct ip));
 	n->ti_src = inp->inp_laddr;
 	n->ti_dst = inp->inp_faddr;
-	n->ti_sport = htons(inp->inp_lport);
-	n->ti_dport = htons(inp->inp_fport);
+	n->ti_sport = inp->inp_lport;
+	n->ti_dport = inp->inp_fport;
 	n->ti_seq = 0;
 	n->ti_ackno = 0;
 	n->ti_x2 = 0;
