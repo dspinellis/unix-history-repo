@@ -1,4 +1,4 @@
-/*	mbavar.h	4.10	81/02/26	*/
+/*	mbavar.h	4.11	81/02/26	*/
 
 /*
  * VAX Massbus adapter registers
@@ -153,7 +153,7 @@ struct	mba_hd {
 	struct	mba_info *mh_mbip[8];	/* what is attached */
 	struct	mba_info *mh_actf;	/* head of queue to transfer */
 	struct	mba_info *mh_actl;	/* tail of queue to transfer */
-} mba_hd[4];
+};
 /*
  * Values for flags; normally MH_NOSEEK will be set when there is
  * only a single drive on an massbus.
@@ -206,6 +206,7 @@ struct mba_driver {
  */
 #ifdef KERNEL
 #if NMBA > 0
+struct	mba_hd mba_hd[NMBA];
 extern	Xmba0int(), Xmba1int(), Xmba2int(), Xmba3int();
 extern	struct	mba_info mbinit[];	/* blanks for filling mba_info */
 int	nummba;
