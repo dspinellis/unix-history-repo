@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -52,7 +52,7 @@ __rec_open(fname, flags, mode, openinfo)
 		btopeninfo.cachesize = openinfo->cachesize;
 		btopeninfo.maxkeypage = 0;
 		btopeninfo.minkeypage = 0;
-		btopeninfo.psize = 0;
+		btopeninfo.psize = openinfo->psize;
 		btopeninfo.compare = NULL;
 		btopeninfo.prefix = NULL;
 		btopeninfo.lorder = openinfo->lorder;
