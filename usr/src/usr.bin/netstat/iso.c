@@ -34,10 +34,11 @@ SOFTWARE.
 /*
  *	ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-static char sccsid[] = "@(#)iso.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.3 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
+#define KERNEL
 #include <sys/time.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
@@ -49,7 +50,6 @@ static char sccsid[] = "@(#)iso.c	5.2 (Berkeley) %G%";
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
 #include <netiso/clnp.h>
-#include <netiso/cltp_var.h>
 #include <netiso/esis.h>
 #include <netiso/clnp_stat.h>
 #include <netiso/argo_debug.h>
@@ -57,10 +57,10 @@ static char sccsid[] = "@(#)iso.c	5.2 (Berkeley) %G%";
 #include <netiso/tp_param.h>
 #include <netiso/tp_states.h>
 #include <netiso/tp_astring.c>
-#define KERNEL
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_stat.h>
 #include <netiso/iso_pcb.h>
+#include <netiso/cltp_var.h>
 #include <netiso/cons.h>
 #ifdef IncStat
 #undef IncStat
