@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)robots.h	5.5 (Berkeley) %G%
+ *	@(#)robots.h	5.6 (Berkeley) %G%
  */
 
 # include	<curses.h>
@@ -78,6 +78,7 @@ extern jmp_buf	End_move;
  * functions types
  */
 
-int	quit(), cmp_sc(), move_robots();
+int	cmp_sc();
+void	move_robots();
 
 COORD	*rnd_pos();

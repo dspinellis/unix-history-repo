@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -175,6 +175,7 @@ stop_window()
 	md_control_keybord(1);
 }
 
+void
 byebye()
 {
 	md_ignore_signals();
@@ -186,6 +187,7 @@ byebye()
 	md_heed_signals();
 }
 
+void
 onintr()
 {
 	md_ignore_signals();
@@ -198,6 +200,7 @@ onintr()
 	md_heed_signals();
 }
 
+void
 error_save()
 {
 	save_is_interactive = 0;

@@ -1,5 +1,5 @@
 
-static char sccsid[] = "	quiz.c	4.6	91/02/04	";
+static char sccsid[] = "	quiz.c	4.7	91/02/28	";
 
 #include <stdio.h>
 #include <signal.h>
@@ -301,6 +301,8 @@ talloc()
 		tmp[i] = malloc(SL);
 }
 
+void done();
+
 main(argc,argv)
 char *argv[];
 {
@@ -311,7 +313,6 @@ char *argv[];
 	char *info;
 	int tvec[2];
 	char *t;
-	extern done();
 	int count;
 	info = _PATH_INDEX;
 	time(tvec);
@@ -424,6 +425,7 @@ next()
 	return(ptr);
 }
 
+void
 done()
 {
 	if (rights + wrongs) {
@@ -435,6 +437,7 @@ done()
 	exit(0);
 }
 instruct(info)
+	char *info;
 {
 	char *t;
 	int i, n;

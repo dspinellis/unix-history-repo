@@ -276,6 +276,8 @@ troom(lv,xsize,ysize,tx,ty,glyph)
 	playerx=tp1;  playery=tp2;
 	}
 
+static void fillroom();
+
 /*
 	***********
 	MAKE_OBJECT
@@ -386,7 +388,8 @@ froom(n,itm,arg)
 	subroutine to put an object into an empty room
  *	uses a random walk
  */
-static fillroom(what,arg)
+static void
+fillroom(what,arg)
 	int arg;
 	char what;
 	{

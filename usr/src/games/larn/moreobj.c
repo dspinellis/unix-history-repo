@@ -9,6 +9,8 @@
  */
 #include "header.h"
 
+static void ohear();
+
 /*
  *	******
  *	OALTAR
@@ -98,7 +100,8 @@ oaltar()
 /*
 	function to cast a +3 protection on the player
  */
-static ohear()
+static void
+ohear()
 	{
 	lprcat("\nYou have been heard!");
 	if (c[ALTPRO]==0) c[MOREDEFENSES]+=3;
@@ -299,6 +302,23 @@ ofountain()
 	}
 
 /*
+	***
+	FCH
+	***
+
+	subroutine to process an up/down of a character attribute for ofountain
+ */
+static void
+fch(how,x)
+	int how;
+	long *x;
+	{
+	if (how < 0)	 { lprcat(" went down by one!");	--(*x); }
+		else		 { lprcat(" went up by one!");	(*x)++; }
+	bottomline();
+	}
+
+/*
 	a subroutine to raise or lower character levels
 	if x > 0 they are raised   if x < 0 they are lowered
  */
@@ -349,20 +369,4 @@ fntchange(how)
 				break;
 		}
 	cursors();
-	}
-
-/*
-	***
-	FCH
-	***
-
-	subroutine to process an up/down of a character attribute for ofountain
- */
-static fch(how,x)
-	int how;
-	long *x;
-	{
-	if (how < 0)	 { lprcat(" went down by one!");	--(*x); }
-		else		 { lprcat(" went up by one!");	(*x)++; }
-	bottomline();
 	}

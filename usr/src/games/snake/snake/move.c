@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*************************************************************************
@@ -32,9 +32,9 @@ static char sccsid[] = "@(#)move.c	5.7 (Berkeley) %G%";
  *		home()		home.
  *		ll()		move to lower left corner of screen.
  *		cr()		carriage return (no line feed).
- *		printf()	just like standard printf, but keeps track
+ *		pr()		just like standard printf, but keeps track
  *				of cursor position. (Uses pstring).
- *		aprintf()	same as printf, but first argument is &point.
+ *		apr()		same as printf, but first argument is &point.
  *				(Uses pstring).
  *		pstring(s)	output the string of printing characters.
  *				However, '\r' is interpreted to mean return
@@ -65,6 +65,7 @@ static char sccsid[] = "@(#)move.c	5.7 (Berkeley) %G%";
  *
  ******************************************************************************/
 
+#include <stdarg.h>
 #include "snake.h"
 
 int CMlength;
@@ -83,7 +84,7 @@ struct point *sp;
 	struct point z;
 
 	if (sp->line <0 || sp->col <0 || sp->col > COLUMNS){
-		printf("move to [%d,%d]?",sp->line,sp->col);
+		pr("move to [%d,%d]?",sp->line,sp->col);
 		return;
 	}
 	if (sp->line >= LINES){
@@ -133,7 +134,8 @@ struct point *sp;
 		distance = sp->col - cursor.col;
 		distance = distance > 0 ?
 			distance*NDlength : -distance * BSlength;
-if(distance < 0)printf("ERROR: distance is negative: %d",distance);
+		if (distance < 0)
+			pr("ERROR: distance is negative: %d",distance);
 		distance += abs(sp->line - cursor.line);
 		if(distance >= CMlength){
 			putpad(cmstr);
@@ -158,11 +160,11 @@ struct point *sp;
 
 	if (cursor.line > LINES || cursor.line <0 ||
 	    cursor.col <0 || cursor.col > COLUMNS)
-		printf("ERROR: cursor is at %d,%d\n",
+		pr("ERROR: cursor is at %d,%d\n",
 			cursor.line,cursor.col);
 	if (sp->line > LINES || sp->line <0 ||
 	    sp->col <0 || sp->col >  COLUMNS)
-		printf("ERROR: target is %d,%d\n",sp->line,sp->col);
+		pr("ERROR: target is %d,%d\n",sp->line,sp->col);
 	tfield = (sp->col) >> 3;
 	if (sp->line == cursor.line){
 		if (sp->col > cursor.col)right(sp);
@@ -225,7 +227,7 @@ struct point *sp;
 	int tabcol,strlength;
 
 	if (sp->col < cursor.col)
-		printf("ERROR:right() can't move left\n");
+		pr("ERROR:right() can't move left\n");
 	if(TA){		/* If No Tabs: can't send tabs because ttydrive
 			 * loses count with control characters.
 			 */
@@ -358,25 +360,29 @@ pch(c)
 	}
 }
 
-aprintf(ps,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9)
-struct point *ps;
-char *st;
-int v0,v1,v2,v3,v4,v5,v6,v7,v8,v9;
-
+apr(ps, fmt)
+	struct point *ps;
+	char *fmt;
 {
 	struct point p;
+	va_list ap;
 
 	p.line = ps->line+1; p.col = ps->col+1;
 	move(&p);
-	(void)sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
+	va_start(ap, fmt);
+	(void)vsprintf(str, fmt, ap);
+	va_end(ap);
 	pstring(str);
 }
 
-printf(st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9)
-char *st;
-int v0,v1,v2,v3,v4,v5,v6,v7,v8,v9;
+pr(fmt)
+	char *fmt;
 {
-	(void)sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
+	va_list ap;
+
+	va_start(ap, fmt);
+	(void)vsprintf(str, fmt, ap);
+	va_end(ap);
 	pstring(str);
 }
 
@@ -519,7 +525,7 @@ getcap()
 	char *term;
 	char *xPC;
 	struct point z;
-	int stop();
+	void stop();
 
 	term = getenv("TERM");
 	if (term==0) {

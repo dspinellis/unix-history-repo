@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)number.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)number.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -65,7 +65,6 @@ main(argc,argv)
 	exit(0);
 }
 
-static
 convert(line)
 	char	*line;
 {
@@ -119,7 +118,6 @@ convert(line)
 		puts("zero.");
 }
 
-static
 unit(len,C)
 	register int	len;
 	register char	*C;
@@ -153,7 +151,6 @@ unit(len,C)
 	return(ret);
 }
 
-static
 number(C,len)
 	register char	*C;
 	int	len;
@@ -193,7 +190,6 @@ number(C,len)
 	return(ret);
 }
 
-static
 pfract(len)
 	register int	len;
 {
@@ -211,7 +207,6 @@ pfract(len)
 	}
 }
 
-static
 usage(toobig)
 	int	toobig;
 {

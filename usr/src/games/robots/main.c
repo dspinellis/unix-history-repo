@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"robots.h"
@@ -28,7 +28,7 @@ char	**av;
 	register bool	show_only;
 	extern char	*Scorefile;
 	extern int	Max_per_uid;
-	extern char	*rindex();
+	void quit();
 
 	show_only = FALSE;
 	if (ac > 1) {
@@ -96,7 +96,8 @@ char	**av;
 	if (LINES != Y_SIZE || COLS != X_SIZE) {
 		if (LINES < Y_SIZE || COLS < X_SIZE) {
 			endwin();
-			printf("Need at least a %dx%d screen\n", Y_SIZE, X_SIZE);
+			printf("Need at least a %dx%d screen\n",
+			    Y_SIZE, X_SIZE);
 			exit(1);
 		}
 		delwin(stdscr);
@@ -124,6 +125,7 @@ char	**av;
  * quit:
  *	Leave the program elegantly.
  */
+void
 quit()
 {
 	extern int	_putchar();

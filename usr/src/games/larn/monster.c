@@ -216,6 +216,8 @@ cast()
 	bottomline();
 	}
 
+static int dirsub();
+
 /*
  *	speldamage(x) 		Function to perform spell functions cast by the player
  *		int x;
@@ -729,7 +731,8 @@ omnidirect(spnum,dam,str)
  *	Enter with the origination coordinates in (x,y).
  *	Returns index into diroffx[] (0-8).
  */
-static dirsub(x,y)
+static int
+dirsub(x,y)
 	int *x,*y;
 	{
 	register int i;

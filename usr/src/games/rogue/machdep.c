@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -354,7 +354,7 @@ char *fname;
 char *
 md_gln()
 {
-	struct passwd *p, *getpwuid();
+	struct passwd *p;
 
 	if (!(p = getpwuid(getuid())))
 		return((char *)NULL);

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)morse.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)morse.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -93,7 +93,6 @@ main(argc, argv)
 		morse(ch);
 }
 
-static
 morse(c)
 	register int c;
 {
@@ -109,7 +108,6 @@ morse(c)
 		show(" ...\n");
 }
 
-static
 show(s)
 	register char *s;
 {

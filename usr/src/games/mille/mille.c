@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mille.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mille.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
@@ -25,7 +25,7 @@ static char sccsid[] = "@(#)mille.c	5.4 (Berkeley) %G%";
  * @(#)mille.c	1.3 (Berkeley) 5/10/83
  */
 
-int	rub();
+void	rub();
 
 main(ac, av)
 reg int		ac;
@@ -120,6 +120,7 @@ reg char	*av[]; {
  *	Routine to trap rubouts, and make sure they really want to
  * quit.
  */
+void
 rub() {
 
 	(void)signal(SIGINT, SIG_IGN);

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pl_1.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pl_1.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "player.h"
@@ -87,11 +87,13 @@ int conditions;
 	exit(0);
 }
 
+void
 choke()
 {
 	leave(LEAVE_QUIT);
 }
 
+void
 child()
 {
 	union wait status;
@@ -99,7 +101,7 @@ child()
 
 	(void) signal(SIGCHLD, SIG_IGN);
 	do {
-		pid = wait3(&status, WNOHANG, (struct rusage *)0);
+		pid = wait3((int *)&status, WNOHANG, (struct rusage *)0);
 		if (pid < 0 || pid > 0 && !WIFSTOPPED(status))
 			hasdriver = 0;
 	} while (pid > 0);

@@ -23,6 +23,8 @@ bottomdo()
 	if (bot3f) { bot3f=0; bot_spellx(); }
 	}
 
+static void botsub();
+
 bot_linex()
 	{
 	register int i;
@@ -144,7 +146,8 @@ botside()
 	always=0;
 	}
 
-static botsub(idx,str)
+static void
+botsub(idx,str)
 	register int idx;
 	char *str;
 	{

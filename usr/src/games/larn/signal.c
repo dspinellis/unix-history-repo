@@ -8,7 +8,8 @@ static s2choose()	/* text to be displayed if ^C during intro screen */
 	lprcat(" to continue: ");   lflush(); 
 	}
 
-static cntlc()	/* what to do for a ^C */
+static void
+cntlc()	/* what to do for a ^C */
 	{
 	if (nosignal) return;	/* don't do anything if inhibited */
 	signal(SIGQUIT,SIG_IGN);	signal(SIGINT,SIG_IGN);
@@ -20,13 +21,15 @@ static cntlc()	/* what to do for a ^C */
 /*
  *	subroutine to save the game if a hangup signal
  */
-static sgam()
+static void
+sgam()
 	{
 	savegame(savefilename);  wizard=1;  died(-257); /* hangup signal */
 	}
 
 #ifdef SIGTSTP
-static tstop() /* control Y	*/
+static void
+tstop() /* control Y	*/
 	{
 	if (nosignal)   return;  /* nothing if inhibited */
 	lcreat((char*)0);  clearvt100();	lflush();	  signal(SIGTSTP,SIG_DFL);
@@ -45,11 +48,17 @@ static tstop() /* control Y	*/
 /*
  *	subroutine to issue the needed signal traps  called from main()
  */
-static sigill()  { sigpanic(SIGILL); }	 static sigtrap() { sigpanic(SIGTRAP); }
-static sigiot()  { sigpanic(SIGIOT); }   static sigemt()  { sigpanic(SIGEMT); }
-static sigfpe()  { sigpanic(SIGFPE); }   static sigbus()  { sigpanic(SIGBUS); }
-static sigsegv() { sigpanic(SIGSEGV); }  static sigsys()  { sigpanic(SIGSYS); }
-static sigpipe() { sigpanic(SIGPIPE); }  static sigterm() { sigpanic(SIGTERM); }
+static void sigpanic();
+static void sigill()	{ sigpanic(SIGILL); }
+static void sigtrap()	{ sigpanic(SIGTRAP); }
+static void sigiot()	{ sigpanic(SIGIOT); }
+static void sigemt()	{ sigpanic(SIGEMT); }
+static void sigfpe()	{ sigpanic(SIGFPE); }
+static void sigbus()	{ sigpanic(SIGBUS); }
+static void sigsegv()	{ sigpanic(SIGSEGV); }
+static void sigsys()	{ sigpanic(SIGSYS); }
+static void sigpipe()	{ sigpanic(SIGPIPE); }
+static void sigterm()	{ sigpanic(SIGTERM); }
 sigsetup()
 	{
 	signal(SIGQUIT, cntlc); 		signal(SIGINT,  cntlc); 
@@ -125,7 +134,8 @@ static char *signame[NSIG] = { "",
 /*
  *	routine to process a fatal error signal
  */
-static sigpanic(sig)
+static void
+sigpanic(sig)
 	int sig;
 	{
 	char buf[128];

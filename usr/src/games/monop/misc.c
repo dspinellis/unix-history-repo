@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
@@ -247,12 +247,13 @@ list_all() {
 /*
  *	This routine gives the players a chance before it exits.
  */
+void
 quit() {
 
 	putchar('\n');
 	if (getyn("Do you all really want to quit? ", yn) == 0)
 		exit(0);
-	signal(2, quit);
+	signal(SIGINT, quit);
 }
 /*
  *	This routine copies one structure to another
@@ -274,7 +275,7 @@ shell_out() {
 	printline();
 	if (shell == NULL)
 		shell = shell_in();
-	fflush();
+	fflush(stdout);
 	if (!fork()) {
 		signal(SIGINT, SIG_DFL);
 		execsh(shell);
@@ -290,8 +291,6 @@ shell_out() {
  */
 # include	<sys/types.h>
 # include	<pwd.h>
-
-struct passwd	*getpwuid();
 
 char		*getenv();
 
@@ -330,5 +329,5 @@ resetsigs() {
 
 	for (i = 0; i < NSIG; i++)
 		signal(i, SIG_DFL);
-	signal(2, quit);
+	signal(SIGINT, quit);
 }

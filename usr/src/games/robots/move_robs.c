@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move_robs.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)move_robs.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"robots.h"
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)move_robs.c	5.4 (Berkeley) %G%";
  * move_robots:
  *	Move the robots around
  */
+void
 move_robots(was_sig)
 bool	was_sig;
 {
@@ -82,7 +83,7 @@ bool	was_sig;
 	if (was_sig) {
 		refresh();
 		if (Dead || Num_robots <= 0)
-			longjmp(End_move);
+			longjmp(End_move, 0);
 	}
 
 # ifdef DEBUG
