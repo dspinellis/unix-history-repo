@@ -43,7 +43,7 @@
 /* Global defs. */
 extern u_long nfs_prog, nfs_vers;
 extern int (*nfsrv_procs[NFS_NPROCS])();
-extern struct buf nfs_bqueue;
+extern struct buf *nfs_bqueuehead, **nfs_bqueuetail;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
 extern time_t nqnfsstarttime;
@@ -586,26 +586,23 @@ nfssvc_iod(p)
 	if (myiod == -1)
 		return (EBUSY);
 	nfs_numasync++;
-	dp = &nfs_bqueue;
 	/*
 	 * Just loop around doin our stuff until SIGKILL
 	 */
 	for (;;) {
-		while (dp->b_actf == NULL && error == 0) {
+		while (nfs_bqueuehead == NULL && error == 0) {
 			nfs_iodwant[myiod] = p;
 			error = tsleep((caddr_t)&nfs_iodwant[myiod],
 				PWAIT | PCATCH, "nfsidl", 0);
 			nfs_iodwant[myiod] = (struct proc *)0;
 		}
-		while (dp->b_actf != NULL) {
-			/* Take one off the end of the list */
-			bp = dp->b_actl;
-			if (bp->b_actl == dp) {
-				dp->b_actf = dp->b_actl = (struct buf *)0;
-			} else {
-				dp->b_actl = bp->b_actl;
-				bp->b_actl->b_actf = dp;
-			}
+		while ((bp = nfs_bqueuehead) != NULL) {
+			/* Take one off the front of the list */
+			if (dp = bp->b_actf)
+				dp->b_actb = bp->b_actb;
+			else
+				nfs_bqueuetail = bp->b_actb;
+			*bp->b_actb = dp;
 			(void) nfs_doio(bp, (struct proc *)0);
 		}
 		if (error) {
