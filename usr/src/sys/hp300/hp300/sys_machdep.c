@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_machdep.c	7.2 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
 #include "ioctl.h"
 #include "file.h"
 #include "proc.h"
@@ -39,20 +38,20 @@ vtrace(p, uap, retval)
 	case VTR_DISABLE:		/* disable a trace point */
 	case VTR_ENABLE:		/* enable a trace point */
 		if (uap->value < 0 || uap->value >= TR_NFLAGS)
-			RETURN (EINVAL);
+			return (EINVAL);
 		*retval = traceflags[uap->value];
 		traceflags[uap->value] = uap->request;
 		break;
 
 	case VTR_VALUE:		/* return a trace point setting */
 		if (uap->value < 0 || uap->value >= TR_NFLAGS)
-			RETURN (EINVAL);
+			return (EINVAL);
 		*retval = traceflags[uap->value];
 		break;
 
 	case VTR_UALARM:	/* set a real-time ualarm, less than 1 min */
 		if (uap->value <= 0 || uap->value > 60 * hz || nvualarm > 5)
-			RETURN (EINVAL);
+			return (EINVAL);
 		nvualarm++;
 		timeout(vdoualarm, (caddr_t)p->p_pid, uap->value);
 		break;
@@ -61,7 +60,7 @@ vtrace(p, uap, retval)
 		trace(TR_STAMP, uap->value, p->p_pid);
 		break;
 	}
-	RETURN (0);
+	return (0);
 }
 
 vdoualarm(arg)
