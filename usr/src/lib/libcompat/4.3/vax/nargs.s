@@ -1,12 +1,12 @@
 /*-
- * Copyright (c) 1984 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1984, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.proprietary.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)nargs.s	5.4 (Berkeley) %G%"
+	.asciz "@(#)nargs.s	8.1 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
