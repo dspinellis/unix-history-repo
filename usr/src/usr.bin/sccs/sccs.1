@@ -57,11 +57,18 @@ Besides the usual
 commands,
 several ``pseudo-commands'' can be issued.
 These are:
-.IP del 1i
+.IP edit 1i
+Equivalent to ``get \-e''.
+.IP delget
 Perform a delta on the named files
 and then get new versions.
 The new versions will have id keywords expanded,
 and will not be editable.
+.IP deled
+Equivalent to ``delget'' except that the
+``get'' phase includes the ``\-e'' flag.
+This option is useful for making a ``checkpoint''
+of your current editting phase.
 .IP fix
 Must be followed by a
 .B \-r
@@ -77,6 +84,8 @@ Takes no arguments.
 This routine removes everything from the current directory
 that can be recreated from SCCS files.
 It will not remove any files being editted.
+.IP info
+Gives a listing of all files being editted.
 .PP
 The
 .B \-r
