@@ -9,23 +9,16 @@
  *
  * from: $Hdr: fbbm_lcdm.c,v 4.300 91/06/09 06:33:38 root Rel41 $ SONY
  *
- *	@(#)fbbm_lcdm.c	7.2 (Berkeley) %G%
+ *	@(#)fbbm_lcdm.c	7.3 (Berkeley) %G%
  */
 
 /*
  * LCD frame buffer driver
  */
 
-#include <machine/fix_machine_type.h>
-
 #include "lfbm.h"
 
 #if NLFBM > 0
-#ifdef mips
-#ifndef news3200
-#define news3200 1
-#endif /* !news3200 */
-#endif /* mips */
 
 #include <sys/param.h>
 #include <news3400/iop/framebuf.h>
@@ -45,15 +38,6 @@ extern unsigned int mfbrmask32[];
 
 #define NOP	for (j = 0; j < 40; j++)
 	
-#ifdef news1200
-#define LCD_CRTC	(unsigned char *)(0xe1480000)
-#define LCD_PORT	(unsigned char *)(0xe1500002)
-#define DIMMER_PORT	(unsigned char *)(0xe190000f)
-#define KROM_START	(char *)(0xe2000000)
-#define	VRAM_START	(unsigned long *)(0xe4000000)
-#define VRAM_WIDTH	(1120/32)
-#endif
-
 #ifdef news3200
 #define LCD_PORT	(volatile unsigned long *)(0xb0000000)
 #define DIMMER_PORT	(volatile unsigned long *)(0xb0100000)
@@ -62,63 +46,6 @@ extern unsigned int mfbrmask32[];
 #define	VRAM_START	(unsigned long *)(0x90200000)
 #define VRAM_WIDTH	(1120/32)
 #endif
-
-#ifdef news1200
-static caddr_t
-fblfbm_Krom_addr(fb, c, sr)
-	struct fbdev *fb;
-	register int c;
-	lRectangle *sr;
-{
-	register caddr_t tmp;
-
-	if ((c >= 0x20) && (c <= 0x7e)) {
-		/*
-		 * ASCII char
-		 */
-		c -= ' ';
-		c = ((c & 0x1f) | ((c & 0xe0) << 2)) << 7;
-		tmp =  (caddr_t)(c + fb->Krom_base + (sr->extent.y > 16 ? 0 : 96));
-	} else if ((c >= 0xa1) && (c <= 0xdf)) {
-		/*
-		 * KANA char
-		 */
-		if (sr->extent.y > 16)
-			tmp =  (caddr_t)ext_fnt24_addr[c + 64];
-		else
-			tmp =  (caddr_t)ext_fnt_addr[c + 64];
-	} else if ((c >= 0x2020) && (c <= 0x7e7e)) {
-		/*
-		 * KANJI char
-		 */
-		switch (c & 0x7000) {
-		case 0x2000:
-			c = ((c & 0x1f) | ((c & 0x60) << 5) | ((c & 0x700) >> 1)) << 7;
-			break;
-		case 0x3000:
-		case 0x4000:
-			c = ((c & 0x7f) | ((c & 0xf00) >> 1) | ((c & 0x4000) >> 3)) << 7;
-			break;
-		case 0x5000:
-		case 0x6000:
-			c = ((c & 0x7f) | ((c & 0xf00) >> 1) | ((c & 0x2000) >> 2)
-				| 0x1000) << 7;
-			break;
-		case 0x7000:
-			c = ((c & 0x1f) | ((c & 0x60) << 5) | ((c & 0x700) >> 1)
-				| 0x1000) << 7;
-			break;
-		}
-		tmp =  (caddr_t)(c + fb->Krom_base + (sr->extent.y > 16 ? 0 : 96));
-	} else {
-		/*
-		 * UNKNOWN char
-		 */
-		tmp =  (caddr_t)zero;
-	}
-	return (tmp);
-}
-#endif /* news1200 */
 
 #ifdef news3200
 static caddr_t
@@ -200,15 +127,6 @@ fblfbm_set_dimmer(fb, dim)
 	int s;
 
 	fb->status_flag = dim ? 0xf1: 0xf0;
-#ifdef news1200
-	val_1185_ioptr = fb->status_flag;
-	if (scsi_stat.ipc >= 0) {
-		pend_1185_ioptr = 1;
-	} else {
-		pend_1185_ioptr = 0;
-		*DIMMER_PORT = val_1185_ioptr;
-	}
-#endif
 #ifdef news3200
 	*DIMMER_PORT = fb->status_flag;
 #endif
@@ -236,9 +154,6 @@ fblfbm_get_page(fb, off)
 	off_t off;
 {
 	if (off < 1120/8 * 930) {		/* X/8 * Y */
-#ifdef news1200
-		return (((unsigned int)VRAM_START + off) >> PGSHIFT);
-#endif
 #ifdef news3200
 		return (((unsigned int)0x10200000 + off) >> PGSHIFT);
 #endif
@@ -250,14 +165,6 @@ int
 fblfbm_probe(unit)
 	int unit;
 {
-#ifdef news1200
-	if (unit < NLFBM) {
-		if (badaddr(VRAM_START, 1))
-			return 0;
-		else
-			return FB_LCDM;
-	}
-#endif /* news1200 */
 #ifdef news3200
 	if (unit < NLFBM) {
 		if (badaddr(0xbff50000, 1))

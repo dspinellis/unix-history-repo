@@ -9,10 +9,8 @@
  *
  * from: $Hdr: fb_probe.c,v 4.300 91/06/09 06:32:57 root Rel41 $ SONY
  *
- *	@(#)fb_probe.c	7.2 (Berkeley) %G%
+ *	@(#)fb_probe.c	7.3 (Berkeley) %G%
  */
-
-#include <machine/fix_machine_type.h>
 
 #ifdef IPC_MRX
 #include "../../iop/framebuf.h"
@@ -42,36 +40,6 @@ int	nfbdev = 0;
 
 static int	cons_dev = -1;
 extern struct fbdevsw	fbdevsw[];
-
-#if defined(news1700)
-struct autodev	autodev[] = {
-	-1, (char *)0xf0600000, (char *)0xf0610000,
-	-1, (char *)0xf0620000, (char *)0xf0630000,
-	-1, (char *)0xf0640000, (char *)0xf0650000,
-	-1, (char *)0xf0660000, (char *)0xf0670000,
-	-1, (char *)0xf0680000, (char *)0xf0690000,
-	-1, (char *)0xf06a0000, (char *)0xf06b0000,
-	-1, (char *)0xf06c0000, (char *)0xf06d0000,
-	-1, (char *)0xf06e0000, (char *)0xf06f0000,
-};
-
-#define AUTOSEL	1
-#endif /* defined(news1700) */
-
-#ifdef news1800
-struct autodev	autodev[] = {
-	-1, (char *)0x20600000, (char *)0x20610000,
-	-1, (char *)0x20620000, (char *)0x20630000,
-	-1, (char *)0x20640000, (char *)0x20650000,
-	-1, (char *)0x20660000, (char *)0x20670000,
-	-1, (char *)0x20680000, (char *)0x20690000,
-	-1, (char *)0x206a0000, (char *)0x206b0000,
-	-1, (char *)0x206c0000, (char *)0x206d0000,
-	-1, (char *)0x206e0000, (char *)0x206f0000,
-};
-
-#define AUTOSEL	1
-#endif /* news1800 */
 
 #ifdef news3400
 struct autodev	autodev[] = {
