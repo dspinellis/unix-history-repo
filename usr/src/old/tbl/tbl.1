@@ -1,6 +1,6 @@
-.\"	@(#)tbl.1	4.1 (Berkeley) %G%
+.\"	@(#)tbl.1	5.1 (Berkeley) %G%
 .\"
-.TH TBL 1 
+.TH TBL 1 "7 February 1983"
 .AT 3
 .SH NAME
 tbl \- format tables for nroff or troff
@@ -13,15 +13,16 @@ is a preprocessor for formatting tables for
 .I nroff
 or
 .IR troff (1).
-The input files are copied to the standard output,
-except for lines between .TS and .TE
-command lines, which are assumed to describe tables
-and reformatted.
-Details are given in the reference manual.
+The input files are copied to the standard output, except for lines between
+.TS and .TE command lines, which are assumed to describe tables
+and are reformatted.
+Details are given in the 
+.IR tbl (1)
+reference manual.
+.SH EXAMPLE
 .PP
-As an example, letting \\t represent a tab (which should
-be typed as a genuine tab)
-the input
+As an example, letting \\t represent a tab (which should be typed as a genuine
+tab) the input
 .IP ""
 \&.TS
 .nf
@@ -200,17 +201,15 @@ yields
 .PP
 If no arguments are given,
 .I tbl
-reads the standard input,
-so it may be used as a filter.
-When it is used with
+reads the standard input, so it may be used as a filter.  When 
+.I tbl
+is used with
 .I eqn
 or
 .I neqn
 the
 .I tbl
-command should be first, to minimize the volume
-of data passed through
-pipes.
+command should be first, to minimize the volume of data passed through pipes.
 .SH SEE ALSO
 troff(1), eqn(1)
 .br
