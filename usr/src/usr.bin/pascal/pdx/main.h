@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)main.h	5.1 (Berkeley) %G%
+ *	@(#)main.h	5.2 (Berkeley) %G%
  */
 
-*
+/*
  * Definitions for main program.
  *
  * The main program just handles the command arguments and then
