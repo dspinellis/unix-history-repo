@@ -1,0 +1,68 @@
+.TH "XNSRPRINT" 1 "6-FEB-87" "Xerox (WRC)"
+.\" $Header: xnsrprint.n,v 1.1 87/04/01 13:57:21 ed Exp $
+.SH NAME
+xnsrprint - Print files which are stored remotely on XNS file servers
+.SH SYNOPSIS
+.B xnsrprint 
+[
+.B \-f
+] [
+.B \-v\
+] [
+.B "\-P printer"
+] 
+.B "file1 ... filen"
+.SH DESCRIPTION
+.I Xnsrprint
+retrieves the files named in \fIfile1\fR through \fIfilen\fR and sends them 
+to an Interpress printer.
+.PP
+If the file is a simple text file, \fImaha\fR will be invoked to format
+the file into an Interpress master which is sent by \fIxnsprint\fR.
+If the file is already an Interpress master, \fIxnsprint\fR is invoked
+directly. An appropriate message is issued if the file is of a type other
+than text or Interpress.
+.PP
+The arguments specified in \fIfile1\fR through \fIfilen\fR may be in one
+of the following three forms, where host is a Clearinghouse name of the form 
+\fIobject:domain:organization\fR (domain and organization are optional):
+.nf
+	[host]filename
+	(host)filename
+	host:filename
+.fi
+.PP
+Credentials for accessing the remote service are determined either from the
+environment variables XNSNAME and XNSPASSWD or, if not defined, by prompting 
+the user.
+.PP
+The possible options are:
+.TP
+.B -f
+causes the FilingSubset Protocol to be used instead of Filing.
+.TP
+.B -v
+causes a message to be displayed as each file is sent to the printer.
+.TP
+.BI -P \ printer
+causes the Interpress master to be delivered to the printer specified in
+.IR printer .
+.SH NOTES
+If no printer is specified on the command line,
+.I xnsprint
+will determine the printer either from the environment variable PRINTER
+or by querying a network Clearinghouse service.
+.SH "SEE ALSO"
+xnsprint(1N), maha(1N), xnscreds(1N)
+.br
+Clearinghouse Protocol, \s8XSIS\s0 048404 (April 1984)
+.br
+Filing Protocol, \s8XSIS\s0 108605 (May 1986)
+.SH BUGS
+It might be nice to build a minimal Interpress header for printing RES
+(Viewpoint canvases) also.
+.PP
+There should be a way to pass other command line switches to \fImaha\fR or
+\fIxnsprint\fR directly.
+.SH AUTHORS
+Ed Flint
