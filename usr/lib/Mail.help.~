@@ -1,0 +1,18 @@
+-----------------------------------------------------------
+The following ~ escapes are defined:
+~~		Quote a single tilde
+~c users	Add users to cc list
+~d		Read in dead.letter
+~e		Edit the message buffer
+~h		Prompt for to list, subject and cc list
+~r file		Read a file into the message buffer
+~p		Print the message buffer
+~m messages	Read in messages, right shifted by a tab
+~s subject	Set subject
+~t users	Add users to to list
+~v		Invoke display editor on message
+~w file		Write message onto file.
+~?		Print this message
+~!command	Invoke the shell
+~|command	Pipe the message through the command
+-----------------------------------------------------------
