@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.49 (Berkeley) %G%
+ *	@(#)conf.h	8.50 (Berkeley) %G%
  */
 
 /*
@@ -150,6 +150,10 @@
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
+
+# ifdef SOLARIS_2_3
+#  define SOLARIS
+# endif
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
