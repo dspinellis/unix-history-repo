@@ -1,4 +1,4 @@
-/*	autoconf.c	6.1	83/08/01	*/
+/*	autoconf.c	6.2	83/08/01	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -92,7 +92,7 @@ configure()
 			 * write-enable was done in assembly language
 			 * to which we will never return.
 			 */
-			ip = (int *)Sysmap; *ip &= ~PG_PROT; *ip |= PG_KR;
+			ip = (int *)Sysmap + 1; *ip &= ~PG_PROT; *ip |= PG_KR;
 			ip++; *ip &= ~PG_PROT; *ip |= PG_KR;
 #if NUBA > 1
 			ip++; *ip &= ~PG_PROT; *ip |= PG_KR;
