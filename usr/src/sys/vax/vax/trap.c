@@ -1,4 +1,4 @@
-/*	trap.c	4.26	82/12/17	*/
+/*	trap.c	4.27	83/01/22	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
@@ -114,7 +114,7 @@ trap(sp, type, code, pc, psl)
 	case T_PAGEFLT:		/* allow page faults in kernel mode */
 	case T_PAGEFLT+USER:	/* page fault */
 		i = u.u_error;
-		pagein(code);
+		pagein(code, 0);
 		u.u_error = i;
 		if (type == T_PAGEFLT)
 			return;
