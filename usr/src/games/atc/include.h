@@ -9,9 +9,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
-#ifdef SYSV
 #include <sys/types.h>
-#endif
 #include <pwd.h>
 
 #ifdef BSD
