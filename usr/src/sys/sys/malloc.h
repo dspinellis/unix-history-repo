@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.31 (Berkeley) %G%
+ *	@(#)malloc.h	7.32 (Berkeley) %G%
  */
 
 #ifndef _MALLOC_H_
@@ -175,6 +175,7 @@ struct kmemusage {
  */
 struct kmembuckets {
 	caddr_t kb_next;	/* list of free blocks */
+	caddr_t kb_last;	/* last free block */
 	long	kb_calls;	/* total calls to allocate this size */
 	long	kb_total;	/* total number of blocks allocated */
 	long	kb_totalfree;	/* # of free elements in this bucket */
@@ -254,8 +255,12 @@ struct kmembuckets {
 		free((caddr_t)(addr), type); \
 	} else { \
 		kbp = &bucket[kup->ku_indx]; \
-		*(caddr_t *)(addr) = kbp->kb_next; \
-		kbp->kb_next = (caddr_t)(addr); \
+		if (kbp->kb_next == NULL) \
+			kbp->kb_next = (caddr_t)(addr); \
+		else \
+			*(caddr_t *)(kbp->kb_last) = (caddr_t)(addr); \
+		*(caddr_t *)(addr) = NULL; \
+		kbp->kb_last = (caddr_t)(addr); \
 	} \
 	splx(s); \
 }
