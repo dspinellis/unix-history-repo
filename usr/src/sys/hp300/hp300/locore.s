@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  *
- *	@(#)locore.s	7.16 (Berkeley) %G%
+ *	@(#)locore.s	7.17 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -1002,12 +1002,13 @@ Lnoflush:
  *			.
  *	scp+0->	beginning of signal context frame
  */
-	.globl	_sigcode, _esigcode
+	.globl	_sigcode, _esigcode, _sigcodetrap
 	.data
 _sigcode:
 	movl	sp@(12),a0		| signal handler addr	(4 bytes)
 	jsr	a0@			| call signal handler	(2 bytes)
 	addql	#4,sp			| pop signo		(2 bytes)
+_sigcodetrap:
 	trap	#1			| special syscall entry	(2 bytes)
 	movl	d0,sp@(4)		| save errno		(4 bytes)
 	moveq	#1,d0			| syscall == exit	(2 bytes)
