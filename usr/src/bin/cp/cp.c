@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,23 +41,16 @@ static char sccsid[] = "@(#)cp.c	5.21 (Berkeley) %G%";
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include "cp.h"
 
-#define	type(st)	((st).st_mode & S_IFMT)
-
-typedef struct {
-	char	p_path[MAXPATHLEN + 1];	/* pointer to the start of a path. */
-	char	*p_end;			/* pointer to NULL at end of path. */
-} PATH_T;
-
-PATH_T from = { "", from.p_path };
-PATH_T to = { "", to.p_path };
+PATH_T from = { from.p_path, "" };
+PATH_T to = { to.p_path, "" };
 
 uid_t myuid;
 int exit_val, myumask;
 int iflag, pflag, orflag, rflag;
 int (*statfcn)();
-char *buf, *pname;
-char *path_append(), *path_basename();
+char *buf, *progname;
 
 main(argc, argv)
 	int argc;
@@ -70,10 +63,10 @@ main(argc, argv)
 	char *old_to, *p;
 
 	/*
-	 * cp is used by mv(1) -- except for usage statements, print
-	 * the "called as" program name.
+	 * The utility cp(1) is used by mv(1) -- except for usage statements,
+	 * print the "called as" program name.
 	 */
-	pname = (p = rindex(*argv,'/')) ? ++p : *argv;
+	progname = (p = rindex(*argv,'/')) ? ++p : *argv;
 
 	symfollow = 0;
 	while ((c = getopt(argc, argv, "Rfhipr")) != EOF) {
@@ -116,7 +109,7 @@ main(argc, argv)
 
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
-		(void)fprintf(stderr, "%s: out of space.\n", pname);
+		(void)fprintf(stderr, "%s: out of space.\n", progname);
 		exit(1);
 	}
 
@@ -128,16 +121,15 @@ main(argc, argv)
 
 	/* consume last argument first. */
 	if (!path_set(&to, argv[--argc]))
-		exit(exit_val);
+		exit(1);
 
 	statfcn = symfollow || !rflag ? stat : lstat;
 
 	/*
 	 * Cp has two distinct cases:
 	 *
-	 * Case (1)	  $ cp [-rip] source target
-	 *
-	 * Case (2)	  $ cp [-rip] source1 ... directory
+	 * % cp [-rip] source target
+	 * % cp [-rip] source1 ... directory
 	 *
 	 * In both cases, source can be either a file or a directory.
 	 *
@@ -153,7 +145,7 @@ main(argc, argv)
 		error(to.p_path);
 		exit(1);
 	}
-	if (r == -1 || type(to_stat) != S_IFDIR) {
+	if (r == -1 || !S_ISDIR(to_stat.st_mode)) {
 		/*
 		 * Case (1).  Target is not a directory.
 		 */
@@ -162,7 +154,7 @@ main(argc, argv)
 			exit(1);
 		}
 		if (!path_set(&from, *argv))
-			exit(exit_val);
+			exit(1);
 		copy();
 	}
 	else {
@@ -170,11 +162,15 @@ main(argc, argv)
 		 * Case (2).  Target is a directory.
 		 */
 		for (;; ++argv) {
-			if (!path_set(&from, *argv))
+			if (!path_set(&from, *argv)) {
+				exit_val = 1;
 				continue;
+			}
 			old_to = path_append(&to, path_basename(&from), -1);
-			if (!old_to)
+			if (!old_to) {
+				exit_val = 1;
 				continue;
+			}
 			copy();
 			if (!--argc)
 				break;
@@ -204,14 +200,14 @@ copy()
 		    to_stat.st_ino == from_stat.st_ino) {
 			(void)fprintf(stderr,
 			    "%s: %s and %s are identical (not copied).\n",
-			    pname, to.p_path, from.p_path);
+			    progname, to.p_path, from.p_path);
 			exit_val = 1;
 			return;
 		}
 		dne = 0;
 	}
 
-	switch(type(from_stat)) {
+	switch(from_stat.st_mode & S_IFMT) {
 	case S_IFLNK:
 		copy_link(!dne);
 		return;
@@ -219,7 +215,7 @@ copy()
 		if (!rflag && !orflag) {
 			(void)fprintf(stderr,
 			    "%s: %s is a directory (not copied).\n",
-			    pname, from.p_path);
+			    progname, from.p_path);
 			exit_val = 1;
 			return;
 		}
@@ -237,9 +233,9 @@ copy()
 				return;
 			}
 		}
-		else if (type(to_stat) != S_IFDIR) {
+		else if (!S_ISDIR(to_stat.st_mode) != S_IFDIR) {
 			(void)fprintf(stderr, "%s: %s: not a directory.\n",
-			    pname, to.p_path);
+			    progname, to.p_path);
 			return;
 		}
 		copy_dir();
@@ -350,7 +346,7 @@ copy_dir()
 	dir_cnt = scandir(from.p_path, &dir_list, NULL, NULL);
 	if (dir_cnt == -1) {
 		(void)fprintf(stderr, "%s: can't read directory %s.\n",
-		    pname, from.p_path);
+		    progname, from.p_path);
 		exit_val = 1;
 	}
 
@@ -371,15 +367,17 @@ copy_dir()
 		    && (dp->d_name[1] == NULL || dp->d_name[1] == '.'))
 			goto done;
 		old_from = path_append(&from, dp->d_name, (int)dp->d_namlen);
-		if (!old_from)
+		if (!old_from) {
+			exit_val = 1;
 			goto done;
+		}
 
 		if (statfcn(from.p_path, &from_stat) < 0) {
 			error(dp->d_name);
 			path_restore(&from, old_from);
 			goto done;
 		}
-		if (type(from_stat) == S_IFDIR) {
+		if (S_ISDIR(from_stat.st_mode)) {
 			path_restore(&from, old_from);
 			continue;
 		}
@@ -387,7 +385,8 @@ copy_dir()
 		if (old_to) {
 			copy();
 			path_restore(&to, old_to);
-		}
+		} else
+			exit_val = 1;
 		path_restore(&from, old_from);
 done:		dir_list[i] = NULL;
 		(void)free((void *)dp);
@@ -400,11 +399,13 @@ done:		dir_list[i] = NULL;
 			continue;
 		old_from = path_append(&from, dp->d_name, (int) dp->d_namlen);
 		if (!old_from) {
+			exit_val = 1;
 			(void)free((void *)dp);
 			continue;
 		}
 		old_to = path_append(&to, dp->d_name, (int) dp->d_namlen);
 		if (!old_to) {
+			exit_val = 1;
 			(void)free((void *)dp);
 			path_restore(&from, old_from);
 			continue;
@@ -506,146 +507,11 @@ setfile(fs, fd)
 	}
 }
 
-ismember(gid)
-	gid_t gid;
-{
-	register int cnt;
-	static int ngroups, groups[NGROUPS];
-
-	if (!ngroups) {
-		ngroups = getgroups(NGROUPS, groups);
-		if (ngroups == -1) {
-			ngroups = 0;
-			exit_val = 1;
-			(void)fprintf(stderr, "%s: %s\n",
-			    pname, strerror(errno));
-			return(0);
-		}
-	}
-	for (cnt = ngroups; cnt--;)
-		if (gid == groups[cnt])
-			return(1);
-	return(0);
-}
-
 error(s)
 	char *s;
 {
 	exit_val = 1;
-	(void)fprintf(stderr, "%s: %s: %s\n", pname, s, strerror(errno));
-}
-
-/********************************************************************
- * Path Manipulation Routines.
- ********************************************************************/
-
-/*
- * These functions manipulate paths in PATH_T structures.
- * 
- * They eliminate multiple slashes in paths when they notice them, and keep
- * the path non-slash terminated.
- *
- * Both path_set() and path_append() return 0 if the requested name
- * would be too long.
- */
-
-#define	STRIP_TRAILING_SLASH(p) { \
-	while ((p)->p_end > (p)->p_path && (p)->p_end[-1] == '/') \
-		*--(p)->p_end = 0; \
-	}
-
-/*
- * Move specified string into path.  Convert "" to "." to handle BSD
- * semantics for a null path.  Strip trailing slashes.
- */
-path_set(p, string)
-	register PATH_T *p;
-	char *string;
-{
-	if (strlen(string) > MAXPATHLEN) {
-		(void)fprintf(stderr, "%s: %s: name too long.\n",
-		    pname, string);
-		exit_val = 1;
-		return(0);
-	}
-
-	(void)strcpy(p->p_path, string);
-	p->p_end = p->p_path + strlen(p->p_path);
-
-	if (p->p_path == p->p_end) {
-		*p->p_end++ = '.';
-		*p->p_end = 0;
-	}
-
-	STRIP_TRAILING_SLASH(p);
-	return(1);
-}
-
-/*
- * Append specified string to path, inserting '/' if necessary.  Return a
- * pointer to the old end of path for restoration.
- */
-char *
-path_append(p, name, len)
-	register PATH_T *p;
-	char *name;
-	int len;
-{
-	char *old;
-
-	old = p->p_end;
-	if (len == -1)
-		len = strlen(name);
-
-	/*
-	 * The final "+ 1" accounts for the '/' between old path and name.
-	 */
-	if ((len + p->p_end - p->p_path + 1) > MAXPATHLEN) {
-		(void)fprintf(stderr,
-		    "%s: %s/%s: name too long.\n", pname, p->p_path, name);
-		exit_val = 1;
-		return(0);
-	}
-
-	/*
-	 * This code should always be executed, since paths shouldn't
-	 * end in '/'.
-	 */
-	if (p->p_end[-1] != '/') {
-		*p->p_end++ = '/';
-		*p->p_end = 0;
-	}
-
-	(void)strncat(p->p_end, name, len);
-	p->p_end += len;
-	*p->p_end = 0;
-
-	STRIP_TRAILING_SLASH(p);
-	return(old);
-}
-
-/*
- * Restore path to previous value.  (As returned by path_append.)
- */
-path_restore(p, old)
-	PATH_T *p;
-	char *old;
-{
-	p->p_end = old;
-	*p->p_end = 0;
-}
-
-/*
- * Return basename of path.  (Like basename(1).)
- */
-char *
-path_basename(p)
-	PATH_T *p;
-{
-	char *basename;
-
-	basename = rindex(p->p_path, '/');
-	return(basename ? ++basename : p->p_path);
+	(void)fprintf(stderr, "%s: %s: %s\n", progname, s, strerror(errno));
 }
 
 usage()
