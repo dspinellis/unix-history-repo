@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -138,7 +138,7 @@ chompheader(line, def, e)
 		{
 			auto ADDRESS a;
 			char *fancy;
-			bool oldHoldErrs = HoldErrs;
+			bool oldSuprErrs = SuprErrs;
 			extern char *crackaddr();
 			extern char *udbsender();
 
@@ -150,12 +150,12 @@ chompheader(line, def, e)
 			** XXX	This code doesn't belong here -- parsing should
 			** XXX	not be done during collect() phase because
 			** XXX	error messages can confuse the SMTP phase.
-			** XXX	Setting HoldErrs is a crude hack around this
+			** XXX	Setting SuprErrs is a crude hack around this
 			** XXX	problem.
 			*/
 
 			if (OpMode == MD_SMTP || OpMode == MD_ARPAFTP)
-				HoldErrs = TRUE;
+				SuprErrs = TRUE;
 			fancy = crackaddr(fvalue);
 			if (parseaddr(fvalue, &a, RF_COPYNONE, '\0', NULL, e) != NULL &&
 			    a.q_mailer == LocalMailer &&
@@ -168,7 +168,7 @@ chompheader(line, def, e)
 				define('g', oldg, e);
 				fvalue = buf;
 			}
-			HoldErrs = oldHoldErrs;
+			SuprErrs = oldSuprErrs;
 		}
 #endif
 #endif
