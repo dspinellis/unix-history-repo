@@ -5,27 +5,28 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.3 (Berkeley) %G%";
 #endif not lint
 
-#include "dump.h"
 #include <sys/file.h>
+#include "dump.h"
 
 char	(*tblock)[TP_BSIZE];	/* Pointer to malloc()ed buffer for tape */
 int	writesize;		/* Size of malloc()ed buffer for tape */
 int	trecno = 0;
-extern	int ntrec;		/* blocking factor on tape */
-extern	int cartridge;
-int	tenths; 		/* length of tape used per block written */
+extern int ntrec;		/* blocking factor on tape */
+extern int cartridge;
+extern int read(), write();
+#ifdef RDUMP
+extern char *host;
+#endif RDUMP
 
 /*
  * Concurrent dump mods (Caltech) - disk block reading and tape writing
  * are exported to several slave processes.  While one slave writes the
  * tape, the others read disk blocks; they pass control of the tape in
  * a ring via flock().	The parent process traverses the filesystem and
- * sends spclrec()'s and lists of daddr's to each slave via pipes.
- *
- * from "@(#)dumptape.c 2.1 (Berkeley+Caltech mods) 4/7/85";
+ * sends spclrec()'s and lists of daddr's to the slaves via pipes.
  */
 struct req {			/* instruction packets sent to slaves */
 	daddr_t dblk;
@@ -34,46 +35,42 @@ struct req {			/* instruction packets sent to slaves */
 int reqsiz;
 
 #define SLAVES 3		/* 1 slave writing, 1 reading, 1 for slack */
-int slavepid[SLAVES];
-int slavefd[SLAVES];		/* Pipes from master to each slave */
-int rotor;			/* Current slave number */
-int master;			/* Pid of master, for sending error signals */
-int trace = 0;			/* Protocol trace; easily patchable with adb */
-#define  tmsg	if (trace) msg
+int slavefd[SLAVES];		/* pipes from master to each slave */
+int slavepid[SLAVES];		/* used by killall() */
+int rotor;			/* next slave to be instructed */
+int master;			/* pid of master, for sending error signals */
+int tenths;			/* length of tape used per block written */
 
-/*
-/* Allocate tape buffer contiguous with the array of instruction
- * packets, so flusht() can write them together with one write().
- * Align tape buffer on page boundary to speed up tape write().
- */
 alloctape()
 {
-
 	int pgoff = getpagesize() - 1;
-	writesize = ntrec * TP_BSIZE;
-	/*
-	 * 92185 NEEDS 0.4"; 92181 NEEDS 0.8" to start/stop (see TU80 manual)
-	 */
-	tenths = writesize/density + (cartridge ? 16 : density == 625 ? 4 : 8);
 
+	writesize = ntrec * TP_BSIZE;
 	reqsiz = ntrec * sizeof(struct req);
+	/*
+	 * CDC 92181's and 92185's make 0.8" gaps in 1600-bpi start/stop mode
+	 * (see DEC TU80 User's Guide).  The shorter gaps of 6250-bpi require
+	 * repositioning after stopping, i.e, streaming mode, where the gap is
+	 * variable, 0.30" to 0.45".  The gap is maximal when the tape stops.
+	 */
+	tenths = writesize/density + (cartridge ? 16 : density == 625 ? 5 : 8);
+	/*
+	 * Allocate tape buffer contiguous with the array of instruction
+	 * packets, so flusht() can write them together with one write().
+	 * Align tape buffer on page boundary to speed up tape write().
+	 */
 	req = (struct req *)malloc(reqsiz + writesize + pgoff);
 	if (req == NULL)
 		return(0);
 	tblock = (char (*)[TP_BSIZE]) (((long)&req[ntrec] + pgoff) &~ pgoff);
-	req = (struct req *)tblock;
-	req = &req[-ntrec];	/* Cmd packets go in front of tape buffer */
+	req = (struct req *)tblock - ntrec;
 	return(1);
 }
 
-/*
- * Make copy of spclrec, to later send to tape writer.
- */
+
 taprec(dp)
 	char *dp;
 {
-
-	tmsg("taprec %d\n", trecno);
 	req[trecno].dblk = (daddr_t)0;
 	req[trecno].count = 1;
 	*(union u_spcl *)(*tblock++) = *(union u_spcl *)dp;	/* movc3 */
@@ -87,17 +84,16 @@ dmpblk(blkno, size)
 	daddr_t blkno;
 	int size;
 {
-	int tpblks, dblkno;
-	register int avail;
+	int avail, tpblks, dblkno;
 
 	dblkno = fsbtodb(sblock, blkno);
 	tpblks = size / TP_BSIZE;
 	while ((avail = MIN(tpblks, ntrec - trecno)) > 0) {
-		tmsg("dmpblk %d\n", avail);
 		req[trecno].dblk = dblkno;
 		req[trecno].count = avail;
+		trecno += avail;
 		spcl.c_tapea += avail;
-		if ((trecno += avail) >= ntrec)
+		if (trecno >= ntrec)
 			flusht();
 		dblkno += avail * (TP_BSIZE / DEV_BSIZE);
 		tpblks -= avail;
@@ -113,7 +109,7 @@ tperror() {
 		dumpabort();
 		/* NOTREACHED */
 	}
-	msg("Tape write error on tape %d\n", tapeno);
+	msg("Tape write error %d feet into tape %d\n", asize/120L, tapeno);
 	broadcast("TAPE ERROR!\n");
 	if (!query("Do you want to restart?"))
 		dumpabort();
@@ -126,11 +122,20 @@ tperror() {
 	Exit(X_REWRITE);
 }
 
-#ifdef RDUMP
-tflush(cnt)
-	int cnt;
+sigpipe()
 {
+
+	msg("Broken pipe\n");
+	dumpabort();
+}
+
+#ifdef RDUMP
+/*
+ * compatibility routine
+ */
+tflush(i)
 	int i;
+{
 
 	for (i = 0; i < ntrec; i++)
 		spclrec();
@@ -139,15 +144,12 @@ tflush(cnt)
 
 flusht()
 {
-	int sig, siz = (char *)tblock - (char *)req;
+	int siz = (char *)tblock - (char *)req;
 
-	tmsg("flusht %d\n", siz);
-	sig = sigblock(1 << SIGINT-1);		/* Don't abort pipe write */
-	if (write(slavefd[rotor], req, siz) != siz) {
-		perror("  DUMP: pipe error in command to slave");
+	if (atomic(write, slavefd[rotor], req, siz) != siz) {
+		perror("  DUMP: error writing command pipe");
 		dumpabort();
 	}
-	sigsetmask(sig);
 	if (++rotor >= SLAVES) rotor = 0;
 	tblock = (char (*)[TP_BSIZE]) &req[ntrec];
 	trecno = 0;
@@ -171,16 +173,18 @@ rewind()
 	while (wait(NULL) >= 0)    ;	/* wait for any signals from slaves */
 	msg("Tape rewinding\n");
 #ifdef RDUMP
-	rmtclose();
-	while (rmtopen(tape, 0) < 0)
-		sleep(10);
-	rmtclose();
-#else
+	if (host) {
+		rmtclose();
+		while (rmtopen(tape, 0) < 0)
+			sleep(10);
+		rmtclose();
+		return;
+	}
+#endif RDUMP
 	close(to);
 	while ((f = open(tape, 0)) < 0)
 		sleep (10);
 	close(f);
-#endif RDUMP
 }
 
 close_rewind()
@@ -191,8 +195,10 @@ close_rewind()
 		broadcast("CHANGE TAPES!\7\7\n");
 	}
 	while (!query("Is the new tape mounted and ready to go?"))
-		if (query("Do you want to abort?"))
+		if (query("Do you want to abort?")) {
 			dumpabort();
+			/*NOTREACHED*/
+		}
 }
 
 /*
@@ -211,12 +217,15 @@ otape()
 	int	childpid;
 	int	status;
 	int	waitpid;
-	int	(*interrupt)();
+	int	(*interrupt)() = signal(SIGINT, SIG_IGN);
 
 	parentpid = getpid();
 
     restore_check_point:
-	interrupt = signal(SIGINT, SIG_IGN);
+	signal(SIGINT, interrupt);
+	/*
+	 *	All signals are inherited...
+	 */
 	childpid = fork();
 	if (childpid < 0) {
 		msg("Context save fork fails in parent %d\n", parentpid);
@@ -229,6 +238,7 @@ otape()
 		 *	until the child doing all of the work returns.
 		 *	don't catch the interrupt
 		 */
+		signal(SIGINT, SIG_IGN);
 #ifdef TDEBUG
 		msg("Tape: %d; parent process: %d child process %d\n",
 			tapeno+1, parentpid, childpid);
@@ -254,7 +264,7 @@ otape()
 				break;
 			default:
 				msg("Child %d finishes unknown %d\n",
-				    childpid, status);
+					childpid, status);
 				break;
 		}
 #endif TDEBUG
@@ -275,11 +285,11 @@ otape()
 		sleep(4);	/* allow time for parent's message to get out */
 		msg("Child on Tape %d has parent %d, my pid = %d\n",
 			tapeno+1, parentpid, getpid());
-#endif
-		signal(SIGINT, interrupt);
+#endif TDEBUG
 #ifdef RDUMP
-		while ((to = rmtopen(tape, 2)) < 0)
-#else
+		while ((to = (host ? rmtopen(tape, 2) :
+			pipeout ? 1 : creat(tape, 0666))) < 0)
+#else RDUMP
 		while ((to = pipeout ? 1 : creat(tape, 0666)) < 0)
 #endif RDUMP
 			if (!query("Cannot open tape.  Do you want to retry the open?"))
@@ -302,7 +312,7 @@ otape()
 dumpabort()
 {
 	if (master != 0 && master != getpid())
-		kill(master, SIGPIPE);
+		kill(master, SIGTERM);	/* Signals master to call dumpabort */
 	else {
 		killall();
 		msg("The ENTIRE dump is aborted.\n");
@@ -319,7 +329,7 @@ Exit(status)
 }
 
 /*
- * prefer pipe(), but flock() barfs on them
+ * could use pipe() for this if flock() worked on pipes
  */
 lockfile(fd)
 	int fd[2];
@@ -341,8 +351,9 @@ enslave()
 	register int i, j;
 
 	master = getpid();
-	signal(SIGPIPE, dumpabort);  /* Slave quit/died/killed -> abort */
-	signal(SIGIOT, tperror);     /* SIGIOT -> restart from checkpoint */
+	signal(SIGTERM, dumpabort); /* Slave sends SIGTERM on dumpabort() */
+	signal(SIGPIPE, sigpipe);
+	signal(SIGUSR1, tperror);    /* Slave sends SIGUSR1 on tape errors */
 	lockfile(first);
 	for (i = 0; i < SLAVES; i++) {
 		if (i == 0) {
@@ -361,12 +372,11 @@ enslave()
 			dumpabort();
 		}
 		slavefd[i] = cmd[1];
-		if (slavepid[i] == 0) {		    /* Slave starts up here */
+		if (slavepid[i] == 0) { 	    /* Slave starts up here */
 			for (j = 0; j <= i; j++)
 				close(slavefd[j]);
-			signal(SIGINT, SIG_IGN);     /* Master handles these */
-			signal(SIGTERM, SIG_IGN);
-			doslave(i, cmd[0], prev, next);
+			signal(SIGINT, SIG_IGN);    /* Master handles this */
+			doslave(cmd[0], prev, next);
 			Exit(X_FINOK);
 		}
 		close(cmd[0]);
@@ -396,95 +406,66 @@ killall()
  * file, allowing the following process to lock it and proceed. We
  * get the lock back for the next cycle by swapping descriptors.
  */
-doslave(mynum,cmd,prev,next)
-	int mynum, cmd, prev[2], next[2];
+doslave(cmd, prev, next)
+	register int cmd, prev[2], next[2];
 {
-	register int toggle = 0, firstdone = mynum;
+	register int nread, toggle = 0;
 
-	tmsg("slave %d\n", mynum);
 	close(fi);
-	if ((fi = open(disk, 0)) < 0) {		/* Need our own seek pointer */
+	if ((fi = open(disk, 0)) < 0) { 	/* Need our own seek pointer */
 		perror("  DUMP: slave couldn't reopen disk");
-		kill(master, SIGPIPE);		/* dumpabort */
-		Exit(X_ABORT);
+		dumpabort();
 	}
 	/*
-	 * Get list of blocks to dump
+	 * Get list of blocks to dump, read the blocks into tape buffer
 	 */
-	while (readpipe(cmd, req, reqsiz) > 0) {
+	while ((nread = atomic(read, cmd, req, reqsiz)) == reqsiz) {
 		register struct req *p = req;
 		for (trecno = 0; trecno < ntrec; trecno += p->count, p += p->count) {
 			if (p->dblk) {
-				tmsg("%d READS %d\n", mynum, p->count);
 				bread(p->dblk, tblock[trecno],
-				    p->count * TP_BSIZE);
+					p->count * TP_BSIZE);
 			} else {
-				tmsg("%d PIPEIN %d\n", mynum, p->count);
-				if (p->count != 1 ||
-				    readpipe(cmd, tblock[trecno], TP_BSIZE) <= 0) {
+				if (p->count != 1 || atomic(read, cmd,
+				    tblock[trecno], TP_BSIZE) != TP_BSIZE) {
 					msg("Master/slave protocol botched");
 					dumpabort();
 				}
 			}
 		}
 		flock(prev[toggle], LOCK_EX);	/* Wait our turn */
-		tmsg("%d WRITE\n", mynum);
+
 #ifdef RDUMP
-#ifndef sun	/* Defer checking first write until next one is started */
-		rmtwrite0(writesize);
-		rmtwrite1(tblock[0],writesize);
-		if (firstdone == 0) firstdone = -1;
-		else if (rmtwrite2() != writesize) {
-			rmtwrite2();		/* Don't care if another err */
-#else
-		/* Asynchronous writes can hang Suns; do it synchronously */
-		if (rmtwrite(tblock[0],writesize) != writesize) {
-#endif sun
-#else		/* Local tape drive */
-		if (write(to,tblock[0],writesize) != writesize) {
-			perror(tape);
+		if ((host ? rmtwrite(tblock[0], writesize)
+			: write(to, tblock[0], writesize)) != writesize) {
+#else RDUMP
+		if (write(to, tblock[0], writesize) != writesize) {
 #endif RDUMP
-			kill(master, SIGIOT);	/* restart from checkpoint */
-			for (;;) sigpause(0);
+			kill(master, SIGUSR1);
+			for (;;)
+				sigpause(0);
 		}
 		toggle ^= 1;
 		flock(next[toggle], LOCK_UN);	/* Next slave's turn */
 	}					/* Also jolts him awake */
-#ifdef RDUMP			/* One more time around, to check last write */
-#ifndef sun
-	flock(prev[toggle], LOCK_EX);
-	tmsg("%d LAST\n", mynum);
-	if (firstdone < 0 && rmtwrite2() != writesize) {
-		kill(master, SIGIOT);
-		for (;;)
-			sigpause(0);
+	if (nread != 0) {
+		perror("  DUMP: error reading command pipe");
+		dumpabort();
 	}
-	toggle ^= 1;
-	flock(next[toggle], LOCK_UN);
-#endif sun
-#endif RDUMP
 }
 
 /*
- * Since a read from a pipe may not return all we asked for
- * we must loop until we get all we need
+ * Since a read from a pipe may not return all we asked for,
+ * or a write may not write all we ask if we get a signal,
+ * loop until the count is satisfied (or error).
  */
-readpipe(fd, buf, cnt)
-	int fd;
+atomic(func, fd, buf, count)
+	int (*func)(), fd, count;
 	char *buf;
-	int cnt;
 {
-	int rd, got;
+	int got, need = count;
 
-	for (rd = cnt; rd > 0; rd -= got) {
-		got = read(fd, buf, rd);
-		if (got <= 0) {
-			if (rd == cnt && got == 0)
-				return (0);		/* Normal EOF */
-			msg("short pipe read");
-			dumpabort();
-		}
+	while ((got = (*func)(fd, buf, need)) > 0 && (need -= got) > 0)
 		buf += got;
-	}
-	return (cnt);
+	return (got < 0 ? got : count - need);
 }
