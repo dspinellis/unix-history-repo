@@ -1,3 +1,9 @@
+8.6.1/8.6	93/10/08
+	Portability fixes for A/UX and Encore UMAX V.
+	Fix error message handling -- if you had a name server down
+		causing an error during parsing, that message was never
+		propogated to the queue file.
+
 8.6/8.6		93/10/05
 	Configuration cleanup: make it easier to undo IDENTPROTO in
 		conf.h (other systems have the same bug).
