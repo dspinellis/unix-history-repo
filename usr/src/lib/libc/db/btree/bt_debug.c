@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -100,7 +100,6 @@ __bt_dmpage(h)
 		X(BTF_RECNO,	"RECNO");
 		(void)fprintf(stderr, ")");
 	}
-	(void)fprintf(stderr, "\nlorder %lu\n", m->m_lorder);
 }
 
 /*
