@@ -12,48 +12,77 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)biff.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)biff.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * biff
- */
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-char	*ttyname();
+static void usage __P((void));
+static void err __P((char *));
 
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	char *cp = ttyname(2);
-	struct stat stb;
+	struct stat sb;
+	int ch;
+	char *name;
 
-	argc--, argv++;
-	if (cp == 0)
-		fprintf(stderr, "Where are you?\n"), exit(1);
-	if (stat(cp, &stb) < 0)
-		perror(cp), exit(1);
-	if (argc == 0) {
-		printf("is %s\n", stb.st_mode&0100 ? "y" : "n");
-		exit((stb.st_mode&0100) ? 0 : 1);
+
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if ((name = ttyname(STDERR_FILENO)) == NULL) {
+		(void)fprintf(stderr, "biff: unknown tty\n");
+		exit(2);
 	}
-	switch (argv[0][0]) {
 
-	case 'y':
-		if (chmod(cp, stb.st_mode|0100) < 0)
-			perror(cp);
-		break;
+	if (stat(name, &sb))
+		err(name);
 
+	if (*argv == NULL) {
+		(void)printf("is %s\n", sb.st_mode&0100 ? "y" : "n");
+		exit(sb.st_mode & 0100 ? 0 : 1);
+	}
+
+	switch(argv[0][0]) {
 	case 'n':
-		if (chmod(cp, stb.st_mode&~0100) < 0)
-			perror(cp);
+		if (chmod(name, sb.st_mode & ~0100) < 0)
+			err(name);
 		break;
-
+	case 'y':
+		if (chmod(name, sb.st_mode | 0100) < 0)
+			err(name);
+		break;
 	default:
-		fprintf(stderr, "usage: biff [y] [n]\n");
+		usage();
 	}
-	exit((stb.st_mode&0100) ? 0 : 1);
+	exit(sb.st_mode & 0100 ? 0 : 1);
+}
+
+static void
+err(name)
+	char *name;
+{
+	(void)fprintf(stderr, "biff: %s: %s\n", name, strerror(errno));
+	exit(2);
+}
+
+static void
+usage()
+{
+	(void)fprintf(stderr, "usage: biff [y | n]\n");
+	exit(2);
 }
