@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer3.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)refer3.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -24,7 +24,7 @@ char *in, *out, *rprog;
 		move(fr1, 0);
 		move(fw2, 1);
 		execl(rprog, "deliv", arg, 0);
-		err("Can't run %s", (void) rprog);
+		err("Can't run %s", rprog);
 	}
 	close(fw2); 
 	close(fr1);
