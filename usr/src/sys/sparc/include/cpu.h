@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.4 (Berkeley) %G%
+ *	@(#)cpu.h	8.5 (Berkeley) %G%
  *
  * from: $Header: cpu.h,v 1.12 93/05/25 10:36:34 torek Exp $ (LBL)
  */
@@ -48,6 +48,7 @@
 #define	cpu_swapin(p)		/* nothing */
 #define	cpu_wait(p)		/* nothing */
 #define	cpu_setstack(p, ap)	((p)->p_md.md_tf->tf_out[6] = (ap) - 64)
+#define	BACKTRACE(p)		/* not implemented */
 
 /*
  * See syscall() for an explanation of the following.  Note that the

@@ -13,7 +13,7 @@
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  * from: hp300/include/cpu.h	8.2 (Berkeley) 9/23/93
  *
- *	@(#)cpu.h	8.5 (Berkeley) %G%
+ *	@(#)cpu.h	8.6 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@
 #define	cpu_wait(p)			/* nothing */
 #define cpu_setstack(p, ap)		(p)->p_md.md_regs[SP] = ap
 #define cpu_set_init_frame(p, fp)	(p)->p_md.md_regs = fp
+#define	BACKTRACE(p)			/* not implemented */
 
 /*
  * Arguments to hardclock and gatherstats encapsulate the previous
