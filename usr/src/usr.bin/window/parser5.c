@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser5.c	3.6 %G%";
+static char sccsid[] = "@(#)parser5.c	3.7 %G%";
 #endif
 
 #include "parser.h"
 #include "var.h"
 
 /*
- * unary $ + - ! ~
+ * unary $ $? + - ! ~
  */
 p_expr11(v, flag)
 register struct value *v;
@@ -18,6 +18,9 @@ char flag;
 	switch (token) {
 	case T_DOLLAR:
 		opname = "$";
+		break;
+	case T_DQ:
+		opname = "$?";
 		break;
 	case T_PLUS:
 		opname = "unary +";
@@ -46,7 +49,7 @@ char flag;
 		case T_MINUS:
 		case T_NOT:
 		case T_COMP:
-			p_error("Numeric value required for %s.", opname);
+			p_error("%s: Numeric operand required.", opname);
 			str_free(v->v_str);
 			v->v_type = V_ERR;
 			return 0;
@@ -56,36 +59,38 @@ char flag;
 		return 0;
 	}
 	switch (op) {
-	case T_DOLLAR: {
-		struct var *r;
+	case T_DOLLAR:
+	case T_DQ:
 		if (v->v_type == V_NUM) {
-			v->v_num--;
-			if (cx.x_type != X_BUF || cx.x_arg == 0 ||
-			    v->v_num < 0 || v->v_num >= cx.x_narg) {
+			int tmp = cx.x_type == X_BUF && cx.x_arg != 0 &&
+				v->v_num > 0 && v->v_num <= cx.x_narg;
+			if (op == T_DQ)
+				v->v_num = tmp;
+			else if (tmp)
+				*v = cx.x_arg[v->v_num - 1];
+			else {
 				p_error("%d: No such argument.", v->v_num);
 				v->v_type = V_ERR;
-				return 0;
 			}
-			if (flag)
-				*v = cx.x_arg[v->v_num];
 		} else {
-			if ((r = var_lookup(v->v_str)) == 0) {
-				p_error("%s: Undefined variable.", v->v_str);
-				str_free(v->v_str);
-				v->v_type = V_ERR;
-				return 0;
-			}
-			str_free(v->v_str);
-			if (flag)
+			char *name = v->v_str;
+			struct var *r = var_lookup(name);
+			if (op == T_DQ) {
+				v->v_type = V_NUM;
+				v->v_num = r != 0;
+			} else if (r != 0)
 				*v = r->r_val;
+			else {
+				p_error("%s: Undefined variable.", name);
+				v->v_type = V_ERR;
+			}
+			str_free(name);
 		}
-		if (v->v_type == V_STR
-		    && (v->v_str = str_cpy(v->v_str)) == 0) {
+		if (v->v_type == V_STR && (v->v_str = str_cpy(v->v_str)) == 0) {
 			p_memerror();
 			return -1;
 		}
 		break;
-		}
 	case T_MINUS:
 		v->v_num = - v->v_num;
 		break;
