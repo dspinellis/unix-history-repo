@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	7.24 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,7 +32,6 @@
 #include "tcpip.h"
 #include "tcp_debug.h"
 
-#define VAN
 int	tcprexmtthresh = 3;
 int	tcppredack;	/* XXX debugging: times hdr predict ok for acks */
 int	tcppreddat;	/* XXX # times header prediction ok for data packets */
@@ -333,7 +332,6 @@ findpcb:
 	tp->t_idle = 0;
 	tp->t_timer[TCPT_KEEP] = tcp_keepidle;
 
-#ifndef VAN
 	/*
 	 * Process options if not in LISTEN state,
 	 * else do it below (after getting remote address).
@@ -342,7 +340,6 @@ findpcb:
 		tcp_dooptions(tp, om, ti);
 		om = 0;
 	}
-#endif VAN
 	/* 
 	 * Header prediction: check for the two common cases
 	 * of a uni-directional data xfer.  If the packet has
@@ -528,12 +525,6 @@ findpcb:
 	 *	continue processing rest of data/controls, beginning with URG
 	 */
 	case TCPS_SYN_SENT:
-#ifdef VAN
-		if (om) {
-			tcp_dooptions(tp, om, ti);
-			om = 0;
-		}
-#endif VAN
 		if ((tiflags & TH_ACK) &&
 		    (SEQ_LEQ(ti->ti_ack, tp->iss) ||
 		     SEQ_GT(ti->ti_ack, tp->snd_max)))
@@ -597,14 +588,6 @@ trimthenstep6:
 		tp->snd_wl1 = ti->ti_seq - 1;
 		tp->rcv_up = ti->ti_seq;
 		goto step6;
-#ifdef VAN
-
-	default:
-		if (om) {
-			tcp_dooptions(tp, om, ti);
-			om = 0;
-		}
-#endif VAN
 	}
 
 	/*
