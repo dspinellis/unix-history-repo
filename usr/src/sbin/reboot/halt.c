@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)halt.c	4.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)halt.c	4.6 (Berkeley) %G%";
 /*
  * Halt
  */
@@ -18,7 +18,7 @@ main(argc, argv)
 	int howto;
 	char *ttyn = (char *)ttyname(2);
 	register i;
-	register qflag;
+	register qflag = 0;
 
 	howto = RB_HALT;
 	argc--, argv++;
