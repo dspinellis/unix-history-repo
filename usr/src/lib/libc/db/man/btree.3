@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)btree.3	5.2 (Berkeley) %G%
+.\"	@(#)btree.3	5.3 (Berkeley) %G%
 .\"
 .TH BTREE 3 ""
 .UC 7
@@ -61,10 +61,16 @@ any of the following values:
 .RS
 .TP
 R_DUP
-Permit insertion if the key to be inserted already exists in the tree.
-This flag permits duplicate keys in the tree.
-By default, duplicates are not permitted, and attempts to insert them will
-fail.
+Permit duplicate keys in the tree, i.e. permit insertion if the key to be
+inserted already exists in the tree.
+The default behavior, as described in
+.IR db (3),
+is to overwrite a matching key when inserting a new key or to fail if
+the R_NOOVERWRITE flag is specified.
+The R_DUP flag is overridden by the R_NOOVERWRITE flag, and if the
+R_NOOVERWRITE flag is specified attempts to insert duplicate keys into
+the tree will fail.
+.IP
 The order of retrieval of key/data pairs with duplicate keys is undefined,
 although a sequential retrieval call with the R_CURSOR flag set will always
 return the logical ``first'' of any group of duplicate keys.
