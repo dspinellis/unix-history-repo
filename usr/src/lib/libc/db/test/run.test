@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)run.test	8.4 (Berkeley) %G%
+#	@(#)run.test	8.5 (Berkeley) %G%
 #
 
 # db regression tests
@@ -33,8 +33,8 @@ TMP3=t3
 		test12
 		test13
 		test20
-		rm -f $TMP1 $TMP2 $TMP3
 	fi
+	rm -f $TMP1 $TMP2 $TMP3
 	exit 0
 }
 
