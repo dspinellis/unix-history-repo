@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)savax.h	6.3 (Berkeley) %G%
+ *	@(#)savax.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -45,3 +45,11 @@ struct	uba_regs **ubaddr;
 #define	PHYSMBA0	0x20010000
 #define	PHYSMBA1	0x20012000
 #define	PHYSUMEM	0x2013e000
+
+/*
+ * RM03/5 (4-byte header plus CRC) format information:
+ * codes for sector header word 1
+ */
+#define	HDR1_FMT22	0x1000	/* standard 16 bit format */
+#define	HDR1_OKSCT	0xc000	/* sector ok */
+#define	HDR1_SSF	0x2000	/* skip sector flag */
