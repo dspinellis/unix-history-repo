@@ -1,4 +1,3 @@
-/* AUTOMATICALLY GENERATED; DO NOT EDIT! */ 
 #ifndef _G_config_h
 #define _G_config_h
 #define _G_LIB_VERSION "2.3"
@@ -7,7 +6,7 @@
 #define _G_HAVE_ST_BLKSIZE 1
 typedef unsigned long _G_clock_t;
 typedef unsigned long _G_dev_t;
-typedef quad_t _G_fpos_t;
+typedef long long _G_fpos_t;
 typedef unsigned long _G_gid_t;
 typedef unsigned long _G_ino_t;
 typedef unsigned short _G_mode_t;
@@ -28,11 +27,12 @@ typedef char* /* default */ _G_va_list;
 #define _G_FOPEN_MAX 20 
 #define _G_FILENAME_MAX 1024 
 #define _G_NULL 0 /* default */
-#ifdef _G_USE_PROTOS
+/* #ifdef _G_USE_PROTOS*/
 #define _G_ARGS(ARGLIST) ARGLIST
+/*
 #else
 #define _G_ARGS(ARGLIST) (...)
-#endif
+#endif */
 /* #define _G_SYSV */
 #define _G_HAVE_SYS_RESOURCE 0
 #define _G_HAVE_SYS_SOCKET 1
