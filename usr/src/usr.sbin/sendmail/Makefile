@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	3.8		%G%
+#		@(#)Makefile	3.9		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -72,4 +72,4 @@ srcinstall:
 
 tar:
 	rm -f sendmail.tar
-	tar rcf sendmail.tar `cat FILES`
+	tar rcfh sendmail.tar `cat FILES`
