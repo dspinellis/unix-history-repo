@@ -1,4 +1,4 @@
-/*	tty.c	4.17	82/01/17	*/
+/*	tty.c	4.18	82/01/19	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -460,6 +460,26 @@ caddr_t addr;
 		else
 			(*linesw[tp->t_line].l_rint)(c, tp);
 		break;
+
+	case TIOCSTOP:
+		c = spl5();
+		if ((tp->t_state & TS_TTSTOP) == 0) {
+			tp->t_state |= TS_TTSTOP;
+			(*cdevsw[major(tp->t_dev)].d_stop)(tp, 0);
+		}
+		splx(c);
+		break;
+
+	case TIOCSTART:
+		c = spl5();
+		if ((tp->t_state & TS_TTSTOP) || (tp->t_local & LFLUSHO)) {
+			tp->t_state &= ~TS_TTSTOP;
+			tp->t_local &= ~LFLUSHO;
+			ttstart(tp);
+		}
+		splx(c);
+		break;
+
 /* end of locals */
 
 	default:
