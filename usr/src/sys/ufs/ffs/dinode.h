@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.17 (Berkeley) %G%
+ *	@(#)dinode.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -26,8 +26,10 @@
 struct dinode {
 	u_short		di_mode;	/*   0: mode and type of file */
 	short		di_nlink;	/*   2: number of links to file */
-	u_short		di_ouid;	/*   4: old owner's user id */
-	u_short		di_ogid;	/*   6: old owner's group id */
+	union {
+		u_short	oldids[2];	/*   4: ffs: old user and group ids */
+		ino_t	inumber;	/*   4: lfs: inode number */
+	} di_u;
 	u_quad_t	di_size;	/*   8: number of bytes in file */
 	struct timespec	di_atime;	/*  16: time last accessed */
 	struct timespec	di_mtime;	/*  24: time last modified */
@@ -49,6 +51,9 @@ struct dinode {
  * dev_t value. Short symbolic links place their path in the
  * di_db area.
  */
+#define	di_ouid		di_u.oldids[0]
+#define	di_ogid		di_u.oldids[1]
+#define	di_inumber	di_u.inumber
 #define	di_rdev		di_db[0]
 #define di_shortlink	di_db
 #define	MAXSYMLINKLEN	(NDADDR * sizeof(daddr_t))
