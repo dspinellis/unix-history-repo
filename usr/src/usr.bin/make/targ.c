@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)targ.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)targ.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -111,7 +111,7 @@ Targ_NewGN (name)
 {
     register GNode *gn;
 
-    gn = (GNode *) malloc (sizeof (GNode));
+    gn = (GNode *) emalloc (sizeof (GNode));
     gn->name = strdup (name);
     gn->path = (char *) 0;
     if (name[0] == '-' && name[1] == 'l') {
