@@ -1,0 +1,305 @@
+Dfix	sh.dol.c	/^Dfix(t)$/
+Dfix1	sh.dol.c	/^Dfix1(cp)$/
+Dfix2	sh.dol.c	/^Dfix2(v)$/
+DgetC	sh.dol.c	/^DgetC(flag)$/
+Dgetdol	sh.dol.c	/^Dgetdol()$/
+Dredc	sh.dol.c	/^Dredc()$/
+Dtest	sh.dol.c	/^Dtest(c)$/
+Dtestq	sh.dol.c	/^Dtestq(c)$/
+Dword	sh.dol.c	/^Dword()$/
+Gcat	sh.glob.c	/^Gcat(s1, s2)$/
+Gmatch	sh.glob.c	/^Gmatch(s, p)$/
+Msh	sh.c	/^main(c, av)$/
+Perror	sh.err.c	/^Perror(s)$/
+acollect	sh.glob.c	/^acollect(as)$/
+addla	sh.lex.c	/^addla(cp)$/
+addpath	sh.glob.c	/^addpath(c)$/
+adrof	sh.set.c	/^adrof(var)$/
+adrof1	sh.set.c	/^adrof1(var, head)$/
+alias	sh.parse.c	/^alias(lex)$/
+alnum	sh.misc.c	/^alnum(c)$/
+amatch	sh.glob.c	/^amatch(s, p)$/
+any	sh.misc.c	/^any(c, s)$/
+asx	sh.set.c	/^asx(vp, subscr, p)$/
+asyn0	sh.parse.c	/^asyn0(p1, p2)$/
+asyn3	sh.parse.c	/^asyn3(p1, p2)$/
+asyntax	sh.parse.c	/^asyntax(p1, p2)$/
+backeval	sh.glob.c	/^backeval(cp, literal)$/
+bferr	sh.err.c	/^bferr(cp)$/
+bfree	sh.lex.c	/^bfree()$/
+bgetc	sh.lex.c	/^bgetc()$/
+blkcat	sh.misc.c	/^blkcat(up, vp)$/
+blkcpy	sh.misc.c	/^blkcpy(oav, bv)$/
+blkend	sh.misc.c	/^blkend(up)$/
+blkfree	sh.misc.c	/^blkfree(av0)$/
+blklen	sh.misc.c	/^blklen(av)$/
+blkpr	sh.misc.c	/^blkpr(av)$/
+blkspl	sh.misc.c	/^blkspl(up, vp)$/
+bseek	sh.lex.c	/^bseek(l)$/
+btell	sh.lex.c	/^btell()$/
+btoeof	sh.lex.c	/^btoeof()$/
+calloc	sh.misc.c	/^calloc(i, j)$/
+cfree	sh.misc.c	/^cfree(p)$/
+chkclob	sh.sem.c	/^chkclob(cp)$/
+closech	sh.misc.c	/^closech()$/
+closem	sh.misc.c	/^closem()$/
+collect	sh.glob.c	/^collect(as)$/
+copy	sh.misc.c	/^copy(to, from, size)$/
+copyblk	sh.misc.c	/^copyblk(v)$/
+copylex	sh.lex.c	/^copylex(hp, fp)$/
+dcanon	sh.dir.c	/^dcanon(cp)$/
+dcopy	sh.misc.c	/^dcopy(i, j)$/
+dfind	sh.dir.c	/^dfind(cp)$/
+dfollow	sh.dir.c	/^dfollow(cp)$/
+dfree	sh.dir.c	/^dfree(dp)$/
+digit	sh.misc.c	/^digit(c)$/
+dinit	sh.dir.c	/^dinit(hp)$/
+dmove	sh.misc.c	/^dmove(i, j)$/
+dnewcwd	sh.dir.c	/^dnewcwd(dp)$/
+doagain	sh.func.c	/^doagain()$/
+doalias	sh.func.c	/^doalias(v)$/
+dobackp	sh.glob.c	/^dobackp(cp, literal)$/
+dobg	sh.proc.c	/^dobg(v)$/
+dobg1	sh.proc.c	/^dobg1(v)$/
+dobreak	sh.func.c	/^dobreak()$/
+dochngd	sh.dir.c	/^dochngd(v)$/
+docontin	sh.func.c	/^docontin()$/
+dodirs	sh.dir.c	/^dodirs(v)$/
+doecho	sh.func.c	/^doecho(v)$/
+doelse	sh.func.c	/^doelse()$/
+doend	sh.func.c	/^doend()$/
+doeval	sh.func.c	/^doeval(v)$/
+doexec	sh.exec.c	/^doexec(t)$/
+doexit	sh.func.c	/^doexit(v)$/
+dofg	sh.proc.c	/^dofg(v)$/
+dofg1	sh.proc.c	/^dofg1(v)$/
+doforeach	sh.func.c	/^doforeach(v)$/
+doglob	sh.func.c	/^doglob(v)$/
+dogoto	sh.func.c	/^dogoto(v)$/
+dohash	sh.exec.c	/^dohash()$/
+dohist	sh.hist.c	/^dohist(vp)$/
+dohist1	sh.hist.c	/^dohist1(hp, np, rflg, hflg)$/
+doif	sh.func.c	/^doif(v, kp)$/
+doio	sh.sem.c	/^doio(t, pipein, pipeout)$/
+dojobs	sh.proc.c	/^dojobs(v)$/
+dokill	sh.proc.c	/^dokill(v)$/
+dolabel	sh.func.c	/^dolabel()$/
+dolet	sh.set.c	/^dolet(v)$/
+dolimit	sh.func.c	/^dolimit(v)$/
+dologin	sh.func.c	/^dologin(v)$/
+dologout	sh.func.c	/^dologout()$/
+domod	sh.lex.c	/^domod(cp, type)$/
+donefds	sh.misc.c	/^donefds()$/
+donewgrp	sh.func.c	/^donewgrp(v)$/
+donice	sh.time.c	/^donice(v)$/
+donohup	sh.func.c	/^donohup()$/
+donotify	sh.proc.c	/^donotify(v)$/
+doonintr	sh.func.c	/^doonintr(v)$/
+dopopd	sh.dir.c	/^dopopd(v)$/
+dopushd	sh.dir.c	/^dopushd(v)$/
+dorepeat	sh.func.c	/^dorepeat(v, kp)$/
+doset	sh.set.c	/^doset(v)$/
+dosetenv	sh.func.c	/^dosetenv(v)$/
+dosource	sh.c	/^dosource(t)$/
+dostop	sh.proc.c	/^dostop(v)$/
+dosub	sh.lex.c	/^dosub(sc, en, global)$/
+dosuspend	sh.func.c	/^dosuspend()$/
+doswbrk	sh.func.c	/^doswbrk()$/
+doswitch	sh.func.c	/^doswitch(v)$/
+dotime	sh.time.c	/^dotime()$/
+doumask	sh.func.c	/^doumask(v)$/
+dounhash	sh.exec.c	/^dounhash()$/
+dounlimit	sh.func.c	/^dounlimit(v)$/
+dounsetenv	sh.func.c	/^dounsetenv(v)$/
+dowait	sh.proc.c	/^dowait()$/
+dowhile	sh.func.c	/^dowhile(v)$/
+dozip	sh.func.c	/^dozip()$/
+draino	sh.print.c	/^draino()$/
+dtildepr	sh.dir.c	/^dtildepr(home, dir)$/
+echo	sh.func.c	/^echo(sep, v)$/
+egetn	sh.exp.c	/^egetn(cp)$/
+enthist	sh.hist.c	/^enthist(event, lp, docopy)$/
+error	sh.err.c	/^error(s, arg)$/
+etracc	sh.exp.c	/^etracc(str, cp, vp)$/
+etraci	sh.exp.c	/^etraci(str, i, vp)$/
+evalav	sh.exp.c	/^evalav(v)$/
+execash	sh.exec.c	/^execash(t, kp)$/
+execbrc	sh.glob.c	/^execbrc(p, s)$/
+execute	sh.sem.c	/^execute(t, wanttty, pipein, pipeout)$/
+exit	sh.c	/^exit(i)$/
+exitstat	sh.c	/^exitstat()$/
+exp	sh.exp.c	/^exp(vp)$/
+exp0	sh.exp.c	/^exp0(vp, ignore)$/
+exp1	sh.exp.c	/^exp1(vp, ignore)$/
+exp2	sh.exp.c	/^exp2(vp, ignore)$/
+exp2a	sh.exp.c	/^exp2a(vp, ignore)$/
+exp2b	sh.exp.c	/^exp2b(vp, ignore)$/
+exp2c	sh.exp.c	/^exp2c(vp, ignore)$/
+exp3	sh.exp.c	/^exp3(vp, ignore)$/
+exp3a	sh.exp.c	/^exp3a(vp, ignore)$/
+exp4	sh.exp.c	/^exp4(vp, ignore)$/
+exp5	sh.exp.c	/^exp5(vp, ignore)$/
+exp6	sh.exp.c	/^exp6(vp, ignore)$/
+expand	sh.glob.c	/^expand(as)$/
+exportpath	sh.set.c	/^exportpath(val)$/
+findev	sh.lex.c	/^findev(cp, anyarg)$/
+findlim	sh.func.c	/^findlim(cp)$/
+flush	sh.print.c	/^flush()$/
+freelex	sh.lex.c	/^freelex(vp)$/
+freenod	sh.parse.c	/^freenod(p1, p2)$/
+freesyn	sh.parse.c	/^freesyn(t)$/
+func	sh.func.c	/^func(t, bp)$/
+getC	sh.lex.c	/^getC(flag)$/
+getdol	sh.lex.c	/^getdol()$/
+getexcl	sh.lex.c	/^getexcl(sc)$/
+gethdir	sh.c	/^gethdir(home)$/
+gethent	sh.lex.c	/^gethent(sc)$/
+getinx	sh.set.c	/^getinx(cp, ip)$/
+getn	sh.set.c	/^getn(cp)$/
+getsel	sh.lex.c	/^getsel(al, ar, dol)$/
+getsub	sh.lex.c	/^getsub(en)$/
+getval	sh.func.c	/^getval(lp, v)$/
+getvx	sh.set.c	/^getvx(vp, subscr)$/
+getword	sh.func.c	/^getword(wp)$/
+ginit	sh.glob.c	/^ginit(agargv)$/
+glob	sh.glob.c	/^glob(v)$/
+globone	sh.glob.c	/^globone(str)$/
+goodbye	sh.c	/^goodbye()$/
+hash	sh.exec.c	/^hash(cp)$/
+hashstat	sh.exec.c	/^hashstat()$/
+heredoc	sh.dol.c	/^heredoc(term)$/
+hfree	sh.hist.c	/^hfree(hp)$/
+if	sh.set.c	/^	} else if (sizeof (int) == 4 && n == -2147483648)/
+importpath	sh.c	/^importpath(cp)$/
+initdesc	sh.c	/^initdesc()$/
+isa	sh.exp.c	/^isa(cp, what)$/
+isbfunc	sh.func.c	/^isbfunc(t)$/
+islogin	sh.func.c	/^islogin()$/
+lastchr	sh.misc.c	/^lastchr(cp)$/
+letter	sh.misc.c	/^letter(c)$/
+lex	sh.lex.c	/^lex(hp)$/
+limtail	sh.func.c	/^limtail(cp, str0)$/
+lshift	sh.misc.c	/^lshift(v, c)$/
+madrof	sh.set.c	/^madrof(pat, head)$/
+mailchk	sh.c	/^mailchk()$/
+match	sh.glob.c	/^match(s, p)$/
+matchdir	sh.glob.c	/^matchdir(pattern)$/
+matchev	sh.lex.c	/^matchev(hp, cp, anyarg)$/
+matchs	sh.lex.c	/^matchs(str, pat)$/
+mypipe	sh.sem.c	/^mypipe(pv)$/
+noev	sh.lex.c	/^noev(cp)$/
+number	sh.misc.c	/^number(cp)$/
+okpcntl	sh.proc.c	/^okpcntl()$/
+onlyread	sh.set.c	/^onlyread(cp)$/
+operate	sh.set.c	/^operate(op, vp, p)$/
+p2dig	sh.print.c	/^p2dig(i)$/
+padd	sh.proc.c	/^padd(t)$/
+pads	sh.proc.c	/^pads(cp)$/
+palloc	sh.proc.c	/^palloc(pid, t)$/
+panystop	sh.proc.c	/^panystop(neednl)$/
+pchild	sh.proc.c	/^pchild()$/
+pclrcurr	sh.proc.c	/^pclrcurr(pp)$/
+pdeltat	sh.time.c	/^pdeltat(t1, t0)$/
+pendjob	sh.proc.c	/^pendjob()$/
+pexerr	sh.exec.c	/^pexerr()$/
+pfind	sh.proc.c	/^pfind(cp)$/
+pflush	sh.proc.c	/^pflush(pp)$/
+pflushall	sh.proc.c	/^pflushall()$/
+pfork	sh.proc.c	/^pfork(t, wanttty)$/
+pgetcurr	sh.proc.c	/^pgetcurr(pp)$/
+phist	sh.hist.c	/^phist(hp, hflg)$/
+phup	sh.c	/^phup()$/
+pintr	sh.c	/^pintr()$/
+pintr1	sh.c	/^pintr1(wantnl)$/
+pjwait	sh.proc.c	/^pjwait(pp)$/
+pkill	sh.proc.c	/^pkill(v, signum)$/
+plim	sh.func.c	/^plim(lp)$/
+plist	sh.print.c	/^plist(vp)$/
+pnote	sh.proc.c	/^pnote()$/
+pprint	sh.proc.c	/^pprint(pp, flag)$/
+prefix	sh.misc.c	/^prefix(sub, str)$/
+preread	sh.func.c	/^preread()$/
+prestjob	sh.proc.c	/^prestjob()$/
+prlex	sh.lex.c	/^prlex(sp0)$/
+process	sh.c	/^process(catch)$/
+prusage	sh.time.c	/^prusage(r0, r1, sec)$/
+prvars	sh.func.c	/^prvars()$/
+psave	sh.glob.c	/^psave(c)$/
+psavejob	sh.proc.c	/^psavejob()$/
+psecs	sh.print.c	/^psecs(l)$/
+pstart	sh.proc.c	/^pstart(pp, foregnd)$/
+ptprint	sh.proc.c	/^ptprint(tp)$/
+putchar	sh.print.c	/^putchar(c)$/
+putn	sh.set.c	/^putn(n)$/
+putn1	sh.set.c	/^putn1(n)$/
+pwait	sh.proc.c	/^pwait()$/
+pword	sh.glob.c	/^pword()$/
+readc	sh.lex.c	/^readc(wanteof)$/
+rechist	sh.c	/^rechist()$/
+reexecute	sh.func.c	/^reexecute(kp)$/
+renum	sh.misc.c	/^renum(i, j)$/
+return	sh.set.c	/^	return (savestr(number));$/
+rscan	sh.glob.c	/^rscan(t, f)$/
+ruadd	sh.time.c	/^ruadd(ru, ru2)$/
+saveblk	sh.misc.c	/^saveblk(v)$/
+savehist	sh.hist.c	/^savehist(sp)$/
+savestr	sh.set.c	/^savestr(s)$/
+scan	sh.glob.c	/^scan(t, f)$/
+search	sh.func.c	/^search(type, level, goal)$/
+set	sh.set.c	/^set(var, value)$/
+set1	sh.set.c	/^set1(var, vec, head)$/
+setDolp	sh.dol.c	/^setDolp(cp)$/
+setNS	sh.set.c	/^setNS(cp)$/
+setenv	sh.func.c	/^setenv(name, value)$/
+seterr	sh.err.c	/^seterr(s)$/
+seterr2	sh.err.c	/^seterr2(cp, dp)$/
+seterrc	sh.err.c	/^seterrc(cp, d)$/
+setexclp	sh.lex.c	/^setexclp(cp)$/
+setlim	sh.func.c	/^setlim(lp, limit)$/
+setq	sh.set.c	/^setq(var, vec, head)$/
+settell	sh.lex.c	/^settell()$/
+settimes	sh.time.c	/^settimes()$/
+shift	sh.set.c	/^shift(v)$/
+sort	sh.glob.c	/^sort()$/
+srccat	sh.c	/^srccat(cp, dp)$/
+srchx	sh.func.c	/^srchx(cp)$/
+srcunit	sh.c	/^srcunit(unit, onlyown, hflg)$/
+strend	sh.misc.c	/^strend(cp)$/
+strip	sh.misc.c	/^strip(cp)$/
+strspl	sh.misc.c	/^strspl(cp, dp)$/
+subword	sh.lex.c	/^subword(cp, type, adid)$/
+syn0	sh.parse.c	/^syn0(p1, p2, flags)$/
+syn1	sh.parse.c	/^syn1(p1, p2, flags)$/
+syn1a	sh.parse.c	/^syn1a(p1, p2, flags)$/
+syn1b	sh.parse.c	/^syn1b(p1, p2, flags)$/
+syn2	sh.parse.c	/^syn2(p1, p2, flags)$/
+syn3	sh.parse.c	/^syn3(p1, p2, flags)$/
+syntax	sh.parse.c	/^syntax(p1, p2, flags)$/
+tback	sh.glob.c	/^tback(c)$/
+texec	sh.exec.c	/^texec(f, t)$/
+tglob	sh.glob.c	/^tglob(c)$/
+toend	sh.func.c	/^toend()$/
+trim	sh.glob.c	/^trim(c)$/
+tvadd	sh.time.c	/^tvadd(tsum, t0)$/
+tvsub	sh.time.c	/^tvsub(tdiff, t1, t0)$/
+udvar	sh.misc.c	/^udvar(name)$/
+unDgetC	sh.dol.c	/^#define	unDgetC(c)	Dpeekc = c$/
+unDredc	sh.dol.c	/^unDredc(c)$/
+unalias	sh.func.c	/^unalias(v)$/
+ungetC	sh.lex.c	/^#define	ungetC(c)	peekc = c$/
+ungetD	sh.lex.c	/^#define	ungetD(c)	peekd = c$/
+unreadc	sh.lex.c	/^unreadc(c)$/
+unset	sh.set.c	/^unset(v)$/
+unset1	sh.set.c	/^unset1(v, head)$/
+unsetenv	sh.func.c	/^unsetenv(name)$/
+unsetv	sh.set.c	/^unsetv(var)$/
+unsetv1	sh.set.c	/^unsetv1(var, head)$/
+untty	sh.c	/^untty()$/
+value	sh.set.c	/^value(var)$/
+value1	sh.set.c	/^value1(var, head)$/
+vffree	sh.sem.c	/^vffree()$/
+wfree	sh.func.c	/^wfree()$/
+word	sh.lex.c	/^word()$/
+xechoit	sh.exec.c	/^xechoit(t)$/
+xfree	sh.set.c	/^xfree(cp)$/
+xset	sh.set.c	/^xset(cp, vp)$/
