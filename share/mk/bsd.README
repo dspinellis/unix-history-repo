@@ -202,6 +202,10 @@ PROG		The name of the program to build.  If not supplied, nothing
 SRCS		List of source files to build the program.  If PROG is not
 		defined, it's assumed to be ${PROG}.c.
 
+DPSRCS		List of source files that must exist before compiling the
+		program source files.  Usually for a building a configuration
+		file that is required by all sources.
+
 DPADD		Additional dependencies for the program.  Usually used for
 		libraries.  For example, to depend on the compatibility and
 		utility libraries use:

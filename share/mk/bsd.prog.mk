@@ -49,12 +49,12 @@ OBJS+=  ${SRCS:R:S/$/.o/g}
 
 .if defined(LDONLY)
 
-${PROG}: ${LIBCRT0} ${LIBC} ${OBJS} ${DPADD} 
+${PROG}: ${LIBCRT0} ${LIBC} ${DPSRCS} ${OBJS} ${DPADD} 
 	${LD} ${LDFLAGS} -o ${.TARGET} ${LIBCRT0} ${OBJS} ${LIBC} ${LDADD}
 
 .else defined(LDONLY)
 
-${PROG}: ${OBJS} ${LIBC} ${DPADD}
+${PROG}: ${DPSRCS} ${OBJS} ${LIBC} ${DPADD}
 	${CC} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
 .endif
@@ -63,7 +63,7 @@ ${PROG}: ${OBJS} ${LIBC} ${DPADD}
 
 SRCS= ${PROG}.c
 
-${PROG}: ${SRCS} ${LIBC} ${DPADD}
+${PROG}: ${DPSRCS} ${SRCS} ${LIBC} ${DPADD}
 	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
 
 MKDEP=	-p
@@ -108,7 +108,7 @@ cleandir: _PROGSUBDIR
 # some of the rules involve .h sources, so remove them from mkdep line
 .if !target(depend)
 depend: .depend _PROGSUBDIR
-.depend: ${SRCS}
+.depend: ${DPSRCS} ${SRCS}
 .if defined(PROG)
 	mkdep ${MKDEP} ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
 .endif
