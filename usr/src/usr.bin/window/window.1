@@ -1,0 +1,159 @@
+.\" @(#)window.1	1.1 83/07/28
+.TH WINDOW 1 local
+.SH NAME
+window \- multiple window shell
+.SH SYNOPSIS
+window
+.SH DESCRIPTION
+\fIWindow\fP provides a window oriented working environment
+on ordinary CRT terminals.
+.PP
+Windows are rectangular partitions on the physical terminal screen
+that resemble real terminals to all programs running in
+them.  Their sizes and placement are determined at creation
+time.  They are framed as necessary to mark the boundaries between
+windows.  Each window, like terminals, has a cursor and a set of
+control functions.  Most intelligent terminal functions such as line and
+character deletion and insertion are supported.  A termcap(5)
+entry is created for each window and passed on to its processes
+in the environment (see environ(8)).  The windows are labeled
+with the digits ``1'' through ``9''.  There are a maximum of nine windows.
+One window, the current window, is treated specially.
+This window is indicated by showing its label in reverse video.  Windows
+can overlap.  Some can be completely obscured by others.
+The current window is alway on top of all others.
+.PP
+The \fIwindow\fP program has two basic modes of operation:  command mode
+and conversation mode.  In conversation mode, the terminal's
+real cursor is placed at the cursor position of the current
+window and all keyboard input is sent to the process in that
+window.  Output from windows is displayed at all times,
+even in command mode.
+.PP
+Typing \fIwindow\fP's escape character (initially ^P)
+in conversation mode switches the program into
+command mode.  In command mode, the top line of the
+terminal screen becomes the command prompt window.
+And the cursor in the current window is replaced by a
+reverse video blinking block.
+.PP
+The available commands are:
+.TP
+.B [1-9]
+Select window [1-9] and return to conversation mode.
+.TP
+.B %[1-9]
+Select window [1-9] but stay in command mode.
+.TP
+.B ?
+List a short summary of commands.
+.TP
+.B escape
+Return to conversation mode.
+.TP
+.B ^P
+Return to conversation mode and write ^P to the
+current window.  Thus, typing two ^P's in conversation
+mode sends one to the current window.  If the \fIwindow\fP
+escape is changed to some other character, that
+character takes the place of ^P.
+.TP
+.B .
+Exit \fIwindow\fP.  You are asked to confirm this.
+.TP
+.B w
+Create a new window.  You are prompted for the position
+and size of the window.  The cursor is placed on the screen
+and the keys ``h,j,k,l''
+moves the cursor left, down, up, and right, respectively.
+And the keys ``H,J,K,L'' moves the cursor to the respective
+limits of the screen.  Typing a number before the movement keys
+repeats the movement the appropriate number of times.
+Return enters the cursor position
+as the upper left corner of the window.  The lower right corner
+is entered in the same manner.  Typing escape (or ^[) at any
+point returns you to command mode.
+.IP
+A pseudo-terminal device (pty(5)) is allocated for the window and
+the terminal modes and special characters (see stty(1)) made
+identical to the real terminal.  A shell is then started with
+the pseudo-terminal as the standard input, output and diagnostic
+output.  The environment variable SHELL is checked to find the
+name of the shell program.  \fICsh\fP(1) is used by default.
+.IP
+This window is given the first available label.
+.TP
+.B c[1-9]
+Close the window [1-9].  The process in the window is sent
+the hangup signal (see kill(1,2)).  \fICsh\fP(1) should
+handle this signal correctly and cause no problems.
+.TP
+.B C
+Close all windows with no processes.
+.TP
+.B Z
+Close all windows.
+.TP
+.B Q
+Show all windows.  Each window is brought to the top in sequence,
+with the terminal cursor placed on its label.  Typing escape
+at this point will select this window as the current window.
+Return will let you see the next one.  This command is useful
+when there are a large number of windows and some are completely
+obscured by others.
+.TP
+.B e
+Set the escape character.
+.TP
+.B R
+Normally, windows are updated only when all keyboard inputs and
+program outputs are processed.  This command forces the
+current window to refresh after every new line and every
+line deletion and insertion.  In this mode, the window
+will operates in a more terminal like manner, but considerably
+more CPU time will be consumed.
+.TP
+.B r
+Cancels the \fB``R''\fP command on the current window.
+.TP
+.B ^U
+Scroll the current window up by half the window size.
+.TP
+.B ^D
+Scroll the current window down by half the window size.
+.TP
+.B ^B
+Scroll the current window up by the full window size.
+.TP
+.B ^F
+Scroll the current window down by the full window size.
+.TP
+.B h
+Move the cursor of the current window left by one column.
+.TP
+.B j
+Move the cursor of the current window down by one line.
+.TP
+.B k
+Move the cursor of the current window up by one line.
+.TP
+.B l
+Move the cursor of the current window right by one column.
+.TP
+.B ^L
+Redraw the screen.
+.SH FILES
+.ta 15
+~/.windowcf	startup configuration file.
+/dev/ptyp?	pseudo-terminal devices.
+.SH SEE ALSO
+.SH DIAGNOSTICS
+Should be self explanatory.
+.SH BUGS
+When all pseudo-terminal devices are used, the \fB``w''\fP
+command will fail mysteriously.
+.PP
+When a window is scrolled or the cursor moved, output from
+the process in the window will be displayed at the new cursor
+position.  This is consistent with real terminals but
+not always desirable.
