@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)open.2	6.8 (Berkeley) %G%
+.\"     @(#)open.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt OPEN 2
@@ -12,7 +12,7 @@
 .Nm open
 .Nd open or create a file for reading or writing
 .Sh SYNOPSIS
-.Fd #include <sys/file.h>
+.Fd #include <fcntl.h>
 .Ft int
 .Fn open "const char *path" "int flags" "mode_t mode"
 .Sh DESCRIPTION
