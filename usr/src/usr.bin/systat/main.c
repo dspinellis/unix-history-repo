@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.5 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.6 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -33,10 +33,8 @@ main(argc, argv)
 		if (argv[0][0] == '-') {
 			struct cmdtab *p;
 
-			for (p = cmdtab; *p->c_name; p++)
-				if (strcmp(p->c_name, &argv[0][1]) == 0)
-					break;
-			if (*p->c_name == 0) {
+			p = lookup(&argv[0][1]);
+			if (p == (struct cmdtab *)-1) {
 				fprintf(stderr, "%s: unknown request\n",
 				    &argv[0][1]);
 				exit(1);
@@ -94,9 +92,7 @@ main(argc, argv)
 		die();
 	}
 
-#ifdef notdef
         gethostname(hostname, sizeof (hostname));
-#endif
         lseek(kmem, nlst[X_CCPU].n_value, 0);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);

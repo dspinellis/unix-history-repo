@@ -52,6 +52,7 @@ struct  cmdtab {
 
 struct	cmdtab *curcmd;
 struct	cmdtab cmdtab[];
+struct	cmdtab *lookup();
 
 char    *kmemf;
 char    *memf;
