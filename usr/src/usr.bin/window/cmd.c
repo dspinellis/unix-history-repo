@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.3 83/08/18";
+static	char *sccsid = "@(#)cmd.c	3.4 83/08/19";
 #endif
 
 #include "defs.h"
@@ -14,7 +14,6 @@ docmd()
 	if (!terse)
 		Wunhide(cmdwin->ww_win);
 	if (selwin != 0)
-		Woncursor(selwin->ww_win, 1);
 top:
 	while ((c = bgetc()) >= 0) {
 		if (!terse)
@@ -169,9 +168,6 @@ out:
 	if (!quit)
 		wwsetcurwin(selwin);
 	if (selwin != 0)
-		Woncursor(selwin->ww_win, 0);
-	if (!terse)
-		Whide(cmdwin->ww_win);
 }
 
 struct ww *
@@ -204,11 +200,6 @@ register struct ww *w;
 		/* bring it to the top just below cmdwin */
 		wwsetcurwin(w);
 		wwsetcurwin(cmdwin);
-		Woncursor(w->ww_win, 1);
-	}
-	if (oldselwin) {
-		labelwin(oldselwin);
-		Woncursor(oldselwin->ww_win, 0);
 	}
 }
 
