@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.28 (Berkeley) %G%
+.\"	@(#)op.me	6.29 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.28
+Version 6.29
 .sp
-For Sendmail Version 6.43
+For Sendmail Version 6.44
 .)l
 .sp 2
 .pp
@@ -3792,6 +3792,48 @@ normally, re-inserting an existing key is an error.
 .ip \-v
 Print what is happening.
 .pp
+There are also two builtin maps that are,
+strictly speaking,
+not database lookups.
+.pp
+The
+.q host
+map does host domain canonification;
+given a host name it calls the name server
+to find the canonical name for that host.
+.pp
+The
+.q dequote
+map strips double quotes (") from a name.
+It does not strip backslashes.
+It will not strip quotes if the resulting string
+would contain unscannable syntax
+(that is, basic errors like unbalanced angle brackets;
+more sophisticated errors such as unknown hosts are not checked).
+The intent is for use when trying to accept mail from systems such as
+DECnet
+that routinely quote odd syntax such as
+.(b
+"49ers::ubell"
+.)b
+A typical usage is probably something like:
+.(b
+Kdequote dequote
+
+\&...
+
+R$\-	$: $(dequote $1 $)
+R$\- $+	$: $>3 $1 $2
+.)b
+Care must be taken to prevent unexpected results;
+for example,
+.(b
+"|someprogram < input > output"
+.)b
+will have quotes stripped,
+but the result is probably not what you had in mind.
+Fortunately these cases are rare.
+.pp
 New classes can be added in the routine
 .b setupmaps
 in file
@@ -5832,7 +5874,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.28
+.\"Version 6.29
 .\".ce 0
 .pn 2
 .bp
