@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)uname.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uname.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,7 +35,7 @@ main(argc, argv)
 #define	SFLAG	0x08
 #define	VFLAG	0x10
 	u_int flags;
-	int ch, name[2];
+	int ch, mib[2];
 	size_t len, tlen;
 	char *p, *prefix, buf[1024];
 
@@ -77,37 +77,37 @@ main(argc, argv)
 	prefix = "";
 
 	if (flags & SFLAG) {
-		name[0] = CTL_KERN;
-		name[1] = KERN_OSTYPE;
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_OSTYPE;
 		len = sizeof(buf);
-		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+		if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
 			err(1, "sysctl");
 		(void)printf("%s%.*s", prefix, len, buf);
 		prefix = " ";
 	}
 	if (flags & NFLAG) {
-		name[0] = CTL_KERN;
-		name[1] = KERN_HOSTNAME;
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_HOSTNAME;
 		len = sizeof(buf);
-		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+		if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
 			err(1, "sysctl");
 		(void)printf("%s%.*s", prefix, len, buf);
 		prefix = " ";
 	}
 	if (flags & RFLAG) {
-		name[0] = CTL_KERN;
-		name[1] = KERN_OSRELEASE;
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_OSRELEASE;
 		len = sizeof(buf);
-		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+		if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
 			err(1, "sysctl");
 		(void)printf("%s%.*s", prefix, len, buf);
 		prefix = " ";
 	}
 	if (flags & VFLAG) {
-		name[0] = CTL_KERN;
-		name[1] = KERN_VERSION;
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_VERSION;
 		len = sizeof(buf);
-		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+		if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
 			err(1, "sysctl");
 		for (p = buf, tlen = len; tlen--; ++p)
 			if (*p == '\n' || *p == '\t')
@@ -116,10 +116,10 @@ main(argc, argv)
 		prefix = " ";
 	}
 	if (flags & MFLAG) {
-		name[0] = CTL_HW;
-		name[1] = HW_MACHINE;
+		mib[0] = CTL_HW;
+		mib[1] = HW_MACHINE;
 		len = sizeof(buf);
-		if (sysctl(name, 2, &buf, &len, NULL, 0) == -1)
+		if (sysctl(mib, 2, &buf, &len, NULL, 0) == -1)
 			err(1, "sysctl");
 		(void)printf("%s%.*s", prefix, len, buf);
 		prefix = " ";
