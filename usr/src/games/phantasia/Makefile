@@ -36,7 +36,7 @@ PLOTDEVICE =	> /dev/tty
 # Add '-ljobs' to LDFLAGS if 4.1bsd; add -ltermlib if not SVR2.
 # Need separate i/d space on small machines.
 # May need '-f' on machines without floating point hardware.
-LDFLAGS =	-lm -lcurses -ltermlib
+LIBS= -lm -lcurses -ltermlib
 
 # DEST is where the program and its support files reside
 DEST =		/usr/games/lib/phantasia
@@ -68,23 +68,24 @@ CFLAGS = 	-O \
 		-DSHELL=\"/bin/csh\" \
 		-DBSD42
 
-CFILES =	main.c fight.c io.c interplayer.c gamesupport.c misc.c phantglobs.c
-OFILES =	main.o fight.o io.o interplayer.o gamesupport.o misc.o phantglobs.o
+SRCS=	main.c fight.c io.c interplayer.c gamesupport.c misc.c phantglobs.c
+OBJS=	main.o fight.o io.o interplayer.o gamesupport.o misc.o phantglobs.o
 HFILES =	phantdefs.h phantstruct.h macros.h include.h
+LIBC=	/lib/libc.a
 
 all:		phantasia setup phant.help
 
 # Make the game.
-phantasia:	${OFILES}
-		${CC} ${OFILES} ${LDFLAGS} -o phantasia
+phantasia:	${OBJS} ${LIBC}
+		${CC} ${OBJS} -o $@ ${LIBS}
 
-${OFILES}:	${HFILES}
+${OBJS}:	${HFILES}
 
 # Make the initialization program.
-setup:		phantglobs.o setup.o monsters.asc
-		${CC} phantglobs.o setup.o ${LDFLAGS} -o setup
+setup:		phantglobs.o setup.o monsters.asc ${LIBC}
+		${CC} phantglobs.o setup.o -o $@ ${LIBS}
 
-setup.o:	${HFILES}
+setup.o: ${HFILES}
 
 # Make documentation.
 # The flags below on tbl and nroff are to make a line printable version.
@@ -92,12 +93,15 @@ phant.help:	phant.nr
 		tbl -TX phant.nr | nroff -Ttn300 -man > phant.help
 
 # Install game and documentation.  Initialize.
-install:	all
-		cp phantasia phant.help ${DEST}
-		chmod 755 ${DEST}
-		chmod 4711 ${DEST}/phantasia
-		chmod 644 ${DEST}/phant.help
-		setup
+install: FRC
+	-mkdir /usr/games/lib/phantasia
+	chmod 700 /usr/games/lib/phantasia
+	chown bin /usr/games/lib/phantasia
+	install -s -o bin -g bin -m 4711 phantasia ${DESTDIR}/usr/games/phantasia
+	install -c -o bin -g bin -m 444 phant.help ${DESTDIR}/usr/games/lib/phantasia/phant.help
+	./setup
+	chgrp bin /usr/games/lib/phantasia/*
+	chown bin /usr/games/lib/phantasia/*
 
 # Make Phantasia map.
 # Change the map commands reflect your installation.
@@ -116,18 +120,62 @@ convert:	convert.c oldplayer.h phantstruct.h
 
 # Clean up directory after installation.
 clean:
-		${RM} -f *.o phantasia phant.help phant.pt?
+		${RM} -f *.o core phantasia phant.help phant.pt?
 
-# Make 'shell archives'.
-# All source files barely fit into 5 archives, and must be
-# carefully grouped to do so.
-shar:		${CFILES} ${HFILES} phant.nr Makefile map.c convert.c oldplayer.h
-		${SHAR} README Makefile main.c include.h phantstruct.h \
-		    map.c monsters.asc > phant.pt1
-		${SHAR} phantglobs.h phantglobs.c fight.c \
-		    convert.c > phant.pt2
-		${SHAR} interplayer.c gamesupport.c io.c > phant.pt3
-		${SHAR} macros.h phantdefs.h setup.c misc.c \
-		    oldplayer.h > phant.pt4
-		${SHAR} phant.nr interplayer.c > phant.pt5
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+main.o: main.c include.h /usr/include/ctype.h /usr/include/curses.h
+main.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+main.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+main.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+main.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
+main.o: phantstruct.h phantglobs.h
+fight.o: fight.c include.h /usr/include/ctype.h /usr/include/curses.h
+fight.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+fight.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+fight.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+fight.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
+fight.o: phantstruct.h phantglobs.h
+io.o: io.c include.h /usr/include/ctype.h /usr/include/curses.h
+io.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+io.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h /usr/include/math.h
+io.o: /usr/include/pwd.h /usr/include/setjmp.h /usr/include/signal.h
+io.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h phantglobs.h
+interplayer.o: interplayer.c include.h /usr/include/ctype.h
+interplayer.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+interplayer.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+interplayer.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+interplayer.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
+interplayer.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+gamesupport.o: gamesupport.c include.h /usr/include/ctype.h
+gamesupport.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
+gamesupport.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+gamesupport.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+gamesupport.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
+gamesupport.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+misc.o: misc.c include.h /usr/include/ctype.h /usr/include/curses.h
+misc.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+misc.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+misc.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+misc.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
+misc.o: phantstruct.h phantglobs.h
+phantglobs.o: phantglobs.c include.h /usr/include/ctype.h /usr/include/curses.h
+phantglobs.o: /usr/include/stdio.h /usr/include/sgtty.h
+phantglobs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+phantglobs.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+phantglobs.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
+phantglobs.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
