@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)unvis.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)unvis.c	1.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -177,7 +177,8 @@ unvis(cp, c, astate, flag)
 		/* 
 		 * decoder in unknown state - (probably uninitialized) 
 		 */
-		return (UNVIS_ERROR);
+		*astate = S_GROUND;
+		return (UNVIS_SYNBAD);
 	}
 }
 
@@ -193,7 +194,7 @@ strunvis(dst, src)
 {
 	register char c;
 	char *start = dst;
-	int state;
+	int state = 0;
 
 	while (c = *src++) {
 	again:
@@ -211,6 +212,8 @@ strunvis(dst, src)
 			return (-1);
 		}
 	}
+	if (unvis(dst, c, &state, UNVIS_END) == UNVIS_VALID)
+		dst++;
 	*dst = '\0';
 	return (dst - start);
 }
