@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.35 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.36 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -111,14 +111,28 @@ buildtree( o, l, r ) register NODE *l, *r; {
 			}
 		}
 
-	else if( o==UNARY MINUS && l->in.op==FCON ){
-		l->fpn.fval = -l->fpn.fval;
-		return(l);
-		}
+	else if( opty == UTYPE && (l->in.op == FCON || l->in.op == DCON) ){
 
-	else if( o==UNARY MINUS && l->in.op==DCON ){
-		l->dpn.dval = -l->dpn.dval;
-		return(l);
+		switch( o ){
+
+		case NOT:
+			if( hflag ) werror( "constant argument to NOT" );
+			if( l->in.op == FCON )
+				l->tn.lval = l->fpn.fval == 0.0;
+			else
+				l->tn.lval = l->dpn.dval == 0.0;
+			l->tn.rval = NONAME;
+			l->in.op = ICON;
+			l->fn.csiz = l->in.type = INT;
+			l->fn.cdim = 0;
+			return(l);
+		case UNARY MINUS:
+			if( l->in.op == FCON )
+				l->fpn.fval = -l->fpn.fval;
+			else
+				l->dpn.dval = -l->dpn.dval;
+			return(l);
+			}
 		}
 
 	else if( o==QUEST && l->in.op==ICON ) {
@@ -295,7 +309,8 @@ buildtree( o, l, r ) register NODE *l, *r; {
 				uerror( "%s undefined", sp->sname );
 #endif
 				/* make p look reasonable */
-				p->in.type = p->fn.cdim = p->fn.csiz = INT;
+				p->in.type = p->fn.csiz = INT;
+				p->fn.cdim = 0;
 				p->tn.rval = idname;
 				p->tn.lval = 0;
 				defid( p, SNULL );
@@ -484,10 +499,16 @@ buildtree( o, l, r ) register NODE *l, *r; {
 
 		case LS:
 		case RS:
+			if( l->in.type == CHAR || l->in.type == SHORT )
+				p->in.type = INT;
+			else if( l->in.type == UCHAR || l->in.type == USHORT )
+				p->in.type = UNSIGNED;
+			else
+				p->in.type = l->in.type;
 		case ASG LS:
 		case ASG RS:
-			if(tsize(p->in.right->in.type, p->in.right->fn.cdim, p->in.right->fn.csiz) > SZINT)
-				p->in.right = makety(p->in.right, INT, 0, INT );
+			if( r->in.type != INT )
+				p->in.right = r = makety(r, INT, 0, INT );
 			break;
 
 		case RETURN:
@@ -833,7 +854,7 @@ chkpun(p) register NODE *p; {
 				t1 = DECREF(t1);
 				}
 			}
-		else
+		else if( t1 != INCREF(UNDEF) && t2 != INCREF(UNDEF) )
 			werror( "illegal pointer combination" );
 		}
 
@@ -1377,7 +1398,7 @@ opact( p )  NODE *p; {
 		break;
 
 	case UNARY AND:
-		{  return( NCVT+OTHER ); }
+		return( NCVT+OTHER );
 	case INIT:
 	case CM:
 		return( 0 );
@@ -1406,7 +1427,7 @@ opact( p )  NODE *p; {
 
 	case LS:
 	case RS:
-		if( mt12 & MINT ) return( TYMATCH+OTHER );
+		if( mt12 & MINT ) return( OTHER );
 		break;
 
 	case EQ:
