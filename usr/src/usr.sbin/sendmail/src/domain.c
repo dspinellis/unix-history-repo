@@ -10,16 +10,15 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.20 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.21 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.20 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.21 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
 #if NAMED_BIND
 
 #include <errno.h>
-#include <arpa/nameser.h>
 #include <resolv.h>
 #include <netdb.h>
 
@@ -43,13 +42,9 @@ static char	MXHostBuf[MAXMXHOSTS*PACKETSZ];
 # define NO_DATA	NO_ADDRESS
 #endif
 
-#ifndef HEADERSZ
-# define HEADERSZ	12	/* sizeof(HEADER) */
+#ifndef HFIXEDSZ
+# define HFIXEDSZ	12	/* sizeof(HEADER) */
 #endif
-
-/* don't use sizeof because sizeof(long) is different on 64-bit machines */
-#define SHORTSIZE	2	/* size of a short (really, must be 2) */
-#define LONGSIZE	4	/* size of a long (really, must be 4) */
 
 #define MAXCNAMEDEPTH	10	/* maximum depth of CNAME recursion */
 /*
@@ -173,7 +168,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	/* find first satisfactory answer */
 	hp = (HEADER *)&answer;
-	cp = (u_char *)&answer + HEADERSZ;
+	cp = (u_char *)&answer + HFIXEDSZ;
 	eom = (u_char *)&answer + n;
 	for (qdcount = ntohs(hp->qdcount); qdcount--; cp += n + QFIXEDSZ)
 		if ((n = dn_skipname(cp, eom)) < 0)
@@ -188,7 +183,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 			break;
 		cp += n;
 		GETSHORT(type, cp);
- 		cp += SHORTSIZE + LONGSIZE;
+ 		cp += INT16SZ + INT32SZ;
 		GETSHORT(n, cp);
 		if (type != T_MX)
 		{
@@ -561,7 +556,7 @@ cnameloop:
 		*/
 
 		hp = (HEADER *) &answer;
-		ap = (u_char *) &answer + HEADERSZ;
+		ap = (u_char *) &answer + HFIXEDSZ;
 		eom = (u_char *) &answer + ret;
 
 		/* skip question part of response -- we know what we asked */
@@ -585,7 +580,7 @@ cnameloop:
 				break;
 			ap += n;
 			GETSHORT(type, ap);
-			ap += SHORTSIZE + LONGSIZE;
+			ap += INT16SZ + INT32SZ;
 			GETSHORT(n, ap);
 			switch (type)
 			{

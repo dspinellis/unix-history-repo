@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -21,7 +21,6 @@ static char sccsid[] = "@(#)main.c	8.57 (Berkeley) %G%";
 #include "sendmail.h"
 #include <netdb.h>
 #if NAMED_BIND
-#include <arpa/nameser.h>
 #include <resolv.h>
 #endif
 #include <pwd.h>
@@ -368,7 +367,7 @@ main(argc, argv, envp)
 				printf("\ta.k.a.: %s\n", *av);
 			setclass('w', *av);
 		}
-		if (hp->h_addrtype == AF_INET && hp->h_length == IPADDRSIZE)
+		if (hp->h_addrtype == AF_INET && hp->h_length == INADDRSZ)
 		{
 			register int i;
 

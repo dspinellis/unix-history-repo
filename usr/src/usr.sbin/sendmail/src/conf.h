@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.107 (Berkeley) %G%
+ *	@(#)conf.h	8.108 (Berkeley) %G%
  */
 
 /*
@@ -1040,13 +1040,31 @@ typedef int		pid_t;
 # include "cdefs.h"
 #endif
 
+#if NAMED_BIND
+# include <arpa/nameser.h>
+#endif
+
 /*
 **  The size of an IP address -- can't use sizeof because of problems
 **  on Crays, where everything is 64 bits.  This will break if/when
 **  IP addresses are expanded to eight bytes.
 */
 
-#define IPADDRSIZE	4
+#ifndef INADDRSZ
+# define INADDRSZ	4
+#endif
+
+/*
+**  The size of various known types -- for reading network protocols.
+**  Again, we can't use sizeof because of compiler randomness.
+*/
+
+#ifndef INT16SZ
+# define INT16SZ	2
+#endif
+#ifndef INT32SZ
+# define INT32SZ	4
+#endif
 
 /*
 **  Do some required dependencies
