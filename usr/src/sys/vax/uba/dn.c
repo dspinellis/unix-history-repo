@@ -1,4 +1,4 @@
-/*	dn.c	4.2	81/11/18	*/
+/*	dn.c	4.3	82/03/14	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -125,19 +125,19 @@ dnwrite(dev)
 {
 	register int *dnreg, cc;
 	register struct dndevice *dp;
-	char buf[OBUFSIZ];
+	char digits[OBUFSIZ];
 	register char *cp;
 	extern lbolt;
 
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(u.u_count, OBUFSIZ);
-	cp = buf;
+	cp = digits;
 	iomove(cp, (unsigned)cc, B_WRITE);
 	if (u.u_error)
 		return;
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
-		spl4();
+		(void) spl4();
 		if ((*dnreg&PND) == 0 || cc == 0)
 			sleep((caddr_t)dnreg, DNPRI);
 		else switch(*cp) {
