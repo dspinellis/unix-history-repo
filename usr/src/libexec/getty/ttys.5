@@ -1,39 +1,72 @@
-.\"	@(#)ttys.5	5.1 (Berkeley) %G%
+.\"	@(#)ttys.5	6.1 (Berkeley) %G%
 .\"
-.TH TTYS 5  "18 July 1983"
+.TH TTYS 5  ""
 .AT 3
 .SH NAME
 ttys \- terminal initialization data
 .SH DESCRIPTION
 The
 .I ttys
-file is read by the
-.I init
-program and specifies which terminal special files are to have
-a process created for them so that people can log in.
+file contains information that is used by various routines to initialize
+and control the use of terminal special files. This information is read
+with the
+.IR getttyent (3)
+library routines.
 There is one line in the 
 .I ttys
 file per special file.
-.PP
-The first character of a line in the 
-.I ttys
-file is either `0' or `1'.  If the first character on the line is a `0', the 
-.I init
-program ignores that line.  If the first character on the line is a `1', the
-.I init
-program creates a login process for that line.
-The second character on each line is used as an argument to
+Fields are separated by tabs and/or spaces.
+A field of more than one word may be enclosed by quotes.
+Blank lines and comments can appear anywhere in the file; comments
+are delimited by `#' and new line. Unspecified fields default to
+the empty string or zero as appropriate.
+The first field is the terminal's entry in the device directory, /dev.
+The second field of the file is the command to execute for the line,
+typically
 .IR getty (8),
 which performs such tasks as baud-rate recognition, reading the login name,
 and calling
-.I login.
-For normal lines, the character is `0';
-other characters can be used, for example, with hard-wired terminals
-where speed recognition is unnecessary or which have special characteristics.
-.RI ( Getty
-will have to be fixed in such cases.)
-The remainder of the line is the terminal's entry in the device directory, /dev.
+.IR login (1).
+It can be, however, any command you wish, for example
+the start up for a window system terminal emulator or maintain other
+daemon processes.
+The third field is the type of terminal normally connected to the
+terminal special file as found in the
+.IR termcap (5)
+data base file.
+The remaining fields are flags to be set in the
+.I ty_status
+entry (see
+.IR getttyent (3))
+or for a window system process indicated by
+the "window" keyword that
+.IR init(8)
+will maintain for the terminal line.
+If the line ends in a comment, the comment is included in the
+.I ty_comment
+field of the ttyent structure.
+.PP
+Some examples:
+.PP
+.nf
+console "/etc/getty std.1200" vt100 on secure
+ttyd0 "/etc/getty d1200" dialup on
+ttyh0 "/etc/getty std.9600" hp2621-nl on
+ttyh1 "/etc/getty std.9600" plugboard on
+ttyp0 none network
+ttyp1 none network off
+ttyv0 "/etc/xpty -L :0" vs100 on window="/etc/X 0"
+.fi
+.PP
+The first example permits root login on the console at 1200 baud,
+the second allows dialup at 1200 baud without root login,
+the third and fourth allow login at 9600 baud with terminal types of
+"hp2621-nl" and "plugboard" respectively,
+the fifth and sixth line are examples of network pseudo ttys, which
+should not have getty enabled on them,
+and the last example shows a terminal emulator and window system
+startup entry.
 .SH FILES
 /etc/ttys
 .SH "SEE ALSO"
-gettytab(5), init(8), getty(8), login(1)
+getttyent(3), gettytab(5), init(8), getty(8), login(1)
