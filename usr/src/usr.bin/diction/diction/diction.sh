@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-#	@(#)diction.sh	4.1	(Berkeley)	82/11/06
+#	@(#)diction.sh	4.2	(Berkeley)	82/11/06
 #
 B=/usr/lib
 echo $*
@@ -8,7 +8,7 @@ rest=
 flag=
 nflag=
 mflag=-mm
-lflag=
+lflag= -ml
 file=
 for i
 do case $i in

@@ -1,12 +1,15 @@
 /*
- *	@(#)style.h	4.1	(Berkeley)	82/11/06
+ *	@(#)style.h	4.2	(Berkeley)	82/11/06
  */
 extern int part;
 extern int style;
+extern int topic;
 extern int pastyle;
 extern int lstyle;
 extern int rstyle;
 extern int estyle;
+extern int nstyle;
+extern int Nstyle;
 extern int rthresh;
 extern int lthresh;
 extern int pstyle;
@@ -39,3 +42,6 @@ extern int conjc;
 extern int verbc;
 extern int tverbc;
 extern int adj;
+#define MAXPAR 20
+extern int leng[];
+extern sentno;

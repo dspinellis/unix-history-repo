@@ -1,14 +1,16 @@
+
 ing behavior 
  ability to 
  a great deal of 
  majority of 
  number of 
+~the number of 
  a tendency to 
  abovementioned 
  absolutely complete 
  absolutely essential 
  accordingly 
- activate 
+ activate
  actual
  added increments 
  adequate enough 
@@ -66,7 +68,7 @@ ing behavior
  but what 
  by means of 
  by the use of 
- capability 
+ capability
  carry out 
  center portion 
  center around 
@@ -173,7 +175,7 @@ ing behavior
  generally agreed 
  rise to 
  an indication of 
- an order of magnitude 
+ order of magnitude 
  authorization 
  gratuitous 
  greatly minimize 
@@ -190,7 +192,7 @@ ing behavior
  if at all possible 
  it stands to reason 
  impact 
- implement 
+ implement
  important essentials 
  importantly 
  in a large measure 
@@ -247,9 +249,11 @@ ing behavior
  in violation of 
  inasmuch as 
  indicate
+ indicating
  indicative of 
  initialize 
- initiate 
+ initiate
+ initiating
  injurious to 
  inquire 
  inside of 
@@ -269,7 +273,7 @@ ing behavior
  not be un
 ~ not under
 ~ not until 
-~ not unique 
+~ not unique
  joint cooperation 
  joint partnership 
  just exactly 
@@ -440,6 +444,7 @@ ing behavior
  up to this time 
  upshot 
  utilize
+ utilizing
  very complete 
  very 
  very unique 
@@ -454,7 +459,7 @@ ing behavior
 ~ through which
 ~ without which
 ~  which
-~ at which
+~ at which 
 ~ about which
 ~ by which
 ~ on which
@@ -470,6 +475,8 @@ ing behavior
 ~likewise
 ~otherwise
 ~clockwise
+~unwise
+~ wise
 wise 
  with a view to 
  with reference to 
@@ -509,3 +516,4 @@ wise
  from the standpoint of 
  employ 
  as shown in 
+~ rather than

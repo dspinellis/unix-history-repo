@@ -1,14 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)outp.c	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)outp.c	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
+#include <stdio.h>
+#include <ctype.h>
 #include "style.h"
 #include "names.h"
 #include "conp.h"
 char *names[] = {
 	"noun", "verb", "interjection", "adjective", "adverb", "conjunction", "possessive",
-	"pronoun", "article", "preposition", "auxiliary", "tobe", "subordinate conjunction", "", "expletive"
+	"pronoun", "article", "preposition", "auxiliary", "tobe", "", "subordinate conjunction",  "expletive"
 };
+extern int barebones;
 outp(){
 	struct ss *st;
 	char *ssp;
@@ -16,11 +19,31 @@ outp(){
 	int index, lverbc;
 	int nn, sc, f, kk,comp, begsc;
 	int conjf, verbf,lpas,bflg,lexp,olvb;
+	int nom;
 	int infinf, ovflg;
 	int lvowel,nlet;
 	int imper;
 	float rd;
+	extern FILE *deb;
+	extern int nosave;
 
+	if(barebones){
+		for(sentp=sent;sentp->cc != END;sentp++)
+			printf("%s %c %c\n",sentp->sp,sentp->ic,sentp->cc);
+		printf("%s %c %c\n",sentp->sp,sentp->ic,sentp->cc);
+		return;
+	}
+	if(topic){
+		for(sentp=sent;sentp->cc != END;sentp++){
+			if(sentp->cc==ADJ && (sentp+1)->cc==NOUN){
+				printf("%s ",sentp->sp);
+				sentp++;
+				printf("%s\n",sentp->sp);
+			}
+			else if(sentp->cc==NOUN)printf("%s\n",sentp->sp);
+		}
+		return;
+	}
 	if(style){
 	nn = kk = 0;
 	for(sentp=sent;sentp->cc != END;sentp++){
@@ -30,7 +53,7 @@ outp(){
 	if(nn < 4 && kk == 0)return;
 	}
 
-	imper = lexp = lpas = index = lverbc = 0;
+	imper = lexp = lpas = index = lverbc = nom = 0;
 	conjf = verbf = kk = nn = sc = comp = begsc = 0;
 	bflg = olvb = infinf = ovflg = 0;
 	nlet = 0;
@@ -52,6 +75,12 @@ outp(){
 		case NOUN:
 			spart ="noun";
 			if(f)index=0;
+			if((sentp->ic==NOM)||(sentp->ic==PNOUN  && islower(*(sentp->sp)))){
+				sentp->ic = NOM;
+				nom++;
+				if(nosave && (deb != NULL))	/* SAVE NOM */
+					fprintf(deb,"%s\n",sentp->sp);
+			}
 			if(*sentp->sp != 'x'){
 				noun++;
 				numnonf++;
@@ -80,7 +109,7 @@ outp(){
 					if(verbf == 0)verbf++;
 					else if(conjf)comp++;
 				}
-				if(bflg && sentp->ic == ED)lpas = ++passive;
+				if(bflg && sentp->ic == ED){lpas++; ++passive;}
 			}
 			break;
 		case INTER:
@@ -93,6 +122,11 @@ outp(){
 			if(f)index=3;
 			adj++;
 			numnonf++;
+			if(sentp->ic == NOM){
+				nom++;
+				if(nosave && (deb != NULL))	/* SAVE NOM */
+					fprintf(deb,"%s\n",sentp->sp);
+			}
 			letnonf += sentp->leng;
 			bflg = infinf = ovflg = 0;
 			break;
@@ -186,13 +220,6 @@ outp(){
 	if(part){
 		printf("%s	%s\n",spart,sentp->sp);
 	}
-	else if(pstyle){
-		printf("%s ",sentp->sp);
-		if(kk == 15){
-			printf("\n");
-			kk=0;
-		}
-	}
 	if(style){
 		ssp=sentp->sp;
 		lvowel = 0;
@@ -230,8 +257,11 @@ outp(){
 		sentp++;
 	}
 	if(part){
-	printf(".	%s\n",sentp->sp);
+		printf(".	%s\n",sentp->sp);
+		if(sentno < MAXPAR && nn > 0)
+			leng[sentno++] = nn;
 	}
+	if(nn == 0)return;
 	numsent++;
 	numlet += nlet;
 	tverbc += lverbc;
@@ -243,10 +273,14 @@ outp(){
 	else if(*(sentp->sp) == '/')icount++;
 	else if(imper)icount++;
 	if(rstyle||pstyle)rd = 4.71*((float)(nlet)/(float)(nn))+.5*(float)(nn)-21.43;
-	if((rstyle&& rd>=rthresh)||(lstyle&&nn >= lthresh)||(pastyle&&lpas)||(estyle&&lexp)){
+	if(pstyle ||
+	    (rstyle&& rd>=rthresh)||(lstyle&&nn >= lthresh)||(pastyle&&lpas)||(estyle&&lexp)
+	    || (nstyle && (nom > 1 || (nom && lpas)))|| (Nstyle && nom)){
 		if(!part){
 			for(st=sent, kk=0;st->cc != END;st++){
-				printf("%s ",st->sp);
+				if(st->ic == NOM)
+					printf("*%s* ",st->sp);
+				else printf("%s ",st->sp);
 				if(kk++ >= 15){
 					kk=0;
 					printf("\n");

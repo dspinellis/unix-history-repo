@@ -2,10 +2,11 @@
 /* break out words, output cap + word(inverted) */
 
 #ifndef lint
-static char sccsid[] = "@(#)style1.l	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)style1.l	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #include <stdio.h>
+#include <ctype.h>
 #define OUT()	for(i=yyleng-1;i>=0; i--)putchar(yytext[i]); putchar('\n')
 #define OUT1(nam)	printf("%c:%s\n",nam,yytext)
 #define OUTN(string)	printf("%s\n",string)
@@ -13,9 +14,11 @@ static char sccsid[] = "@(#)style1.l	4.1	(Berkeley)	82/11/06";
 #include "nhash.c"
 #include "dict.c"
 #include "ydict.c"
+#include "abbrev.c"
 char nt[]  = "D:n't";
 char qs[]  = "c:'s";
 char fin[]  = "E:.";
+int NOCAPS = 0;		/* if set all caps are turned to lower case */
 int i,j;
 int dot = 0;
 int first  = 1;
@@ -23,39 +26,75 @@ int qflg,nflg;
 int cap  = 0;
 %}
 %p 3000
-%a 2500
+%a 3300
+%o 4500
 
 L	[a-z]
 N	[0-9]
 C	[A-Z]
+A	[a-zA-Z]
+P	[a-zA-Z0-9]
 
 %%
-(St|Dr|Drs|Mr|Mrs|Ms)"."	{
+^[.!].+[\n]	{
+	if(dot){
+		OUTN(fin);
+		dot = 0;
+		first = 1;
+	}
+	printf(":%s",yytext);
+	}
+May	{
+		if(first == 0){
+			OUT1(NOUN);
+		}
+		else {
+			first = 0;
+			yytext[0] = tolower(yytext[0]);
+			cap = 1;
+			goto wd;
+		}
+	}
+"U.S."		{
 		OUT1(NOUN);
 		}
 {C}{L}*'[s]	{
 		pos(1);
 		if(first==1)first=0;
 		}
-{C}+['][s]*	{
+{C}+['][s]	{
+		if(NOCAPS)
+			for(i=0;i<yyleng;i++)
+				if(isupper(yytext[i]))yytext[i] = tolower(yytext[i]);
 		OUT1(POS);
 		}
-(({C}+{L}*)|({C}*{L}+))+([-](({C}*{L}+)|({C}+{L}*))+)+	{
+{P}+([-]{P}+)+	{
+		if(NOCAPS)
+			for(i=0;i<yyleng;i++)
+				if(isupper(yytext[i]))yytext[i] = tolower(yytext[i]);
 		OUT1(NOUN_ADJ);
 		}
 {C}{C}+	{
+		if(NOCAPS)
+			for(i=0;i<yyleng;i++)
+				yytext[i] = tolower(yytext[i]);
 		if((i=input()) == 's'){
 			yytext[yyleng++] = 's';
 			yytext[yyleng] = '\0';
-			OUT1(NOUN);
+			OUT1(PNOUN);
 		}
 		else {
 			unput(i);
-			for(i=0;i<yyleng;i++)yytext[i]+= 'a' - 'A';
+			if(!NOCAPS)
+				for(i=0;i<yyleng;i++)yytext[i] = tolower(yytext[i]);
 				goto wd;
 		}
 		}
 [LD][']{C}{L}*	{
+		if(NOCAPS){
+			yytext[0] = tolower(yytext[0]);
+			yytext[2] = tolower(yytext[2]);
+		}
 		OUT1(NOUN_ADJ);
 		}
 {C}{L}*	{
@@ -66,13 +105,10 @@ C	[A-Z]
 			cap = 0;
 			goto wd;
 		}
-		yytext[0]+= 'a' - 'A';
+		yytext[0] = tolower(yytext[0]);
 		goto wd;
 	}
-({N}+[-]{N}+[-]*)+	{
-		OUT1(NOUN_ADJ);
-		}
-({N}+[-]*{L}+[-]*)+	{
+{N}":"{N}{N}	{
 		OUT1(NOUN_ADJ);
 		}
 ({N}*[,])*({N}+".")+[ \t\n]+{C}	{
@@ -84,8 +120,23 @@ C	[A-Z]
 		OUTN(fin);
 		first = 1;
 	}
-[ \t`][a-zA-Z0-9.]*("\/"[a-zA-Z0-9]+"."*)+[']*	{
-		if(yytext[yyleng-1] == '.')dot=1;
+([hH]e"/"[sS]he)|([sS]he"/"[hH]e)		{
+	if(NOCAPS)
+		if(isupper(yytext[0]))yytext[0] = tolower(yytext[0]);
+	OUT1(PRONS);
+	}
+([hH]is"/"[hH]er)|([hH]er"/"[hH]is)	{
+	if(NOCAPS)
+		if(isupper(yytext[0]))yytext[0] = tolower(yytext[0]);
+	OUT1(POS);
+	}
+[ \t`]*[a-zA-Z0-9.]*("\/"[a-zA-Z0-9.]+)+[']*	{
+		if(yytext[yyleng-1] == '.'){
+			if(ahead() == 0)dot=1;
+		}
+		if(NOCAPS)
+			for(i=0;i<yyleng;i++)
+				if(isupper(yytext[i]))yytext[i] = tolower(yytext[i]);
 		OUT1(NOUN_ADJ);
 		}
 {N}+([,]{N}+)*("."{N}+)*[']*[s]*	{
@@ -98,15 +149,14 @@ C	[A-Z]
 	if(yytext[yyleng-1] == '.')dot=1;
 	OUT1(NOUN_ADJ);
 	}
-{L}+[-]*{N}+	{
-		OUT1(NOUN_ADJ);
-		}
-{C}+[-]*{N}+	{
+({A}*{N}+{A}*)+	{
+	if(input() == '.')
+		ahead();
+	if(NOCAPS)
+		for(i=0;i<yyleng;i++)
+			if(isupper(yytext[i]))yytext[i]=tolower(yytext[i]);
 	OUT1(NOUN_ADJ);
 	}
-{N}+[-]+{C}+	{
-	OUT1(NOUN_ADJ);
-		}
 {N}+[%]		{
 		OUT1(NOUN_ADJ);
 		}
@@ -149,24 +199,6 @@ C	[A-Z]
 "et al."	{
 		OUT1(NOUN);
 		}
-[Nn][Oo][s]*"."	{
-		OUT1(NOUN_ADJ);
-		}
-[Ff]ig[s]*"."	{
-		OUT1(NOUN_ADJ);
-		}
-[Dd]ept[s]*"."	{
-		OUT1(NOUN_ADJ);
-	}
-[Ee]q"."	{
-		OUT1(NOUN_ADJ);
-		}
-dB"."	{
-		OUT1(NOUN_ADJ);
-		}
-vs"."	{
-	OUT1(PREP);
-	}
 in"."[ \n]*{C}	{
 		unput(yytext[yyleng-1]);
 		yytext[2] = '\0';
@@ -174,24 +206,9 @@ in"."[ \n]*{C}	{
 		OUTN(fin);
 		first = 1;
 		}
-(in|ft|yr|ckts|mi)"."	{
-		OUT1(NOUN_ADJ);
-		}
 Ph"."[ ]*[Dd]"."	{
 		OUT1(ADJ);
 		}
-[Jj]r"."	{
-	OUT1(ADJ);
-	}
-[Cc]h"."	{
-		OUT1(NOUN_ADJ);
-	}
-[Rr]ef[s]*"."	{
-		OUT1(NOUN_ADJ);
-	}
-Inc"."	{
-		OUT1(ADJ);
-	}
 [A-Z]"."	{
 		dot=1;
 		OUT1(NOUN);
@@ -205,6 +222,9 @@ can't		{
 won't		{
 		OUT1('X');
 		}
+ain't		{
+		OUT1('g');
+		}
 {L}+n't		{
 		nflg=1;
 		yytext[yyleng-3]='\0';
@@ -212,13 +232,13 @@ won't		{
 		goto wd;
 		}
 [A-Z]{L}+n't	{
-		yytext[0]+= 'a' - 'A';
+		yytext[0] = tolower(yytext[0]);
 		nflg=1;
 		yytext[yyleng-3]='\0';
 		yyleng -= 3;
 		goto wd;
 		}
-o'clock	{
+o'clock		{
 		OUT1(ADV);
 	}
 {L}+'[s]	{
@@ -247,7 +267,8 @@ wd:
 	if((j = lookup(yytext,1,0)) != 0){
 		first=0;
 		if(cap){
-			yytext[0] += 'A' - 'a';
+			if(!NOCAPS)
+				yytext[0] = toupper(yytext[0]);
 			cap = 0;
 			if(dot)OUTN(fin);
 		}
@@ -272,7 +293,7 @@ wd:
 					OUT1(NOUN);
 					break;
 				}
-				 look(gy,yyleng-2,ADJ);
+				look(gy,yyleng-2,ADJ);
 				break;
 			case 'r':	switch(yytext[yyleng-3]){
 				case 'a': look(ary,yyleng-3,ADJ);
@@ -289,10 +310,10 @@ wd:
 				break;
 			default: OUT();
 			}
-		}
+	}
 		else {
 			if(cap){
-				yytext[0] += 'A' - 'a';
+				if(!NOCAPS)yytext[0] = toupper(yytext[0]);
 				cap = 0;
 				OUT1(NOUN_ADJ);
 			}
@@ -335,6 +356,30 @@ wd:
 "/."	{
 	first = 1;
 	OUT1(END);
+	}
+{A}{A}+"."	{
+		yytext[yyleng-1] = '\0';
+		if((j=abbrev(yytext,1,0)) != 0){
+			if(isupper(yytext[0])){
+				if(NOCAPS)yytext[0] = tolower(yytext[0]);
+				if(first == 1)first=0;
+			}
+			yytext[yyleng-1] = '.';
+			OUT1(j);
+		}
+		else {
+			j = ahead();
+			if(j == 0)
+				yyleng--;
+			for(i=0;i<yyleng;i++)
+				if(isupper(yytext[i])){
+					yytext[i] = tolower(yytext[i]);
+					if(i == 0)cap = 1;
+					else cap = 0;
+				}
+			if(j == 0)goto wd;
+			OUT1(NOUN_ADJ);
+		}
 	}
 "."	{
 	first=1;
@@ -396,7 +441,7 @@ char cc;
 }
 pos(flg){
 	int ii,j;
-	if(flg==1)yytext[0] += 'a' - 'A';
+	if(flg == 1)yytext[0] = tolower(yytext[0]);
 	for(ii=yyleng-1;yytext[ii] != '\''; ii--);
 	yytext[ii] = '\0';
 	if((j=lookup(yytext,1,0)) != 0){
@@ -405,7 +450,7 @@ pos(flg){
 		OUTN(qs);
 	}
 	else{
-		if(flg==1)yytext[0] += 'A' - 'a';
+		if(flg==1 && !NOCAPS)yytext[0] = toupper(yytext[0]);
 		yytext[ii] = '\'';
 		OUT1(POS);
 	}
@@ -419,9 +464,11 @@ char	*argv[];
 	register int rc=0;
 	putchar(':'); putchar('\n');
 	getd();
+	getab();
 	ygetd();
 	if(argc<=1) {
 		yylex();
+		OUTN(fin);
 	}else{
 		while(argc>1) {
 			if(freopen(argv[1],"r",stdin)==NULL) {
@@ -430,9 +477,24 @@ char	*argv[];
 			}else{
 				filename=argv[1];
 				yylex();
+				OUTN(fin);
 			}
 			argc--; argv++;
 		}
 	}
 	return(rc);
+}
+ahead(){
+	register int c;
+	if(isalnum((c=input()))){
+		yytext[yyleng++] = '.';
+		while(!isspace((c=input() )))
+			yytext[yyleng++] = c;
+		yytext[yyleng] = '\0';
+		unput(c);
+		return(1);
+	}
+	unput(c);
+	unput('.');
+	return(0);
 }

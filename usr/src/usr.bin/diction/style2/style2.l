@@ -1,15 +1,18 @@
 %{
 #ifndef lint
-static char sccsid[] = "@(#)style2.l	4.1	(Berkeley)	82/11/06";
+static char sccsid[] = "@(#)style2.l	4.2	(Berkeley)	82/11/06";
 #endif not lint
 
 #include <stdio.h>
+#include <ctype.h>
 #include "names.h"
 #include "ehash.c"
 #include "edict.c"
 #define OUT1(c) putchar(c); putchar(':'); for(i=yyleng-1;i>=0;)putchar(yytext[i--])
+#define POUT1(c) putchar(c); putchar(':'); for(i=yyleng-1;i>0;)putchar(yytext[i--])
 int i;
 int nomin = 0;
+int NOCAPS = 0;		/*if set, all caps mapped to lower, plurals stripped*/
 %}
 
 C	[A-Z0-9a-z",;]
@@ -26,6 +29,9 @@ L	[a-zA-Z-]
 	look(ed,2,ED);
 	}
 ^draw.+	{
+	if(yytext[5] == 'E'){
+		OUT1(NOUN_ADJ);
+	}
 	OUT1(ADJ_ADV);
 	}
 ^eca.+	{
@@ -35,10 +41,10 @@ L	[a-zA-Z-]
 	look(ice,3,NOUN_VERB);
 	}
 ^ecne.+	{
-	if(look(ence,4,NOUN))nomin++;
+	if(look(ence,4,NOM))nomin++;
 	}
 ^ecna.+	{
-	if(look(ance,4,NOUN))nomin++;
+	if(look(ance,4,NOM))nomin++;
 	}
 ^ee.+	{
 	look(ee,2,NOUN);
@@ -56,7 +62,7 @@ L	[a-zA-Z-]
 	look(cle,3,NOUN);
 	}
 ^eru.+	{
-	if(look(ure,3,NOUN))nomin++;
+	look(ure,3,NOUN);
 	}
 ^eti.+	{
 	look(ite,3,NOUN);
@@ -92,7 +98,7 @@ L	[a-zA-Z-]
 	OUT1(NV_PL);
 	}
 ^noi.+	{
-	if(look(ion,3,NOUN))nomin++;
+	if(look(ion,3,NOM))nomin++;
 	}
 ^pihs.+	{
 	look(ship,4,NOUN);
@@ -127,19 +133,36 @@ L	[a-zA-Z-]
 ^su.+	{
 	look(us,2,NOUN);
 	}
+^snoi.+	{
+	if(look(ion,4,PNOUN))nomin++;
+	}
+^stnem.+	{
+		if(look(ment,5,PNOUN))nomin++;
+		}
+^secne.+	{
+		if(look(ence,5,PNOUN))nomin++;
+		}
+^secna.+	{
+		if(look(ance,5,PNOUN))nomin++;
+		}
 ^s.+	{
-	if(yytext[yyleng-1] >= 'A' && yytext[yyleng-1]<= 'Z'){
-		OUT1(NOUN);
+	if(isupper(yytext[yyleng-1])){
+		if(NOCAPS){
+			yytext[yyleng-1] = tolower(yytext[yyleng-1]);
+			POUT1(PNOUN);
+		}
+		else { OUT1(PNOUN); }
 	}
 	else {
-		OUT1(NV_PL);
+		if(NOCAPS){POUT1(NV_PL);}
+		else{ OUT1(NV_PL); }
 	}
 	}
 ^tna.+	{
 	look(ant,3,NOUN_ADJ);
 	}
 ^tnem.+	{
-	if(look(ment,4,NOUN))nomin++;
+	if(look(ment,4,NOM))nomin++;
 	}
 ^tse.+	{
 	look(est,3,ADJ);
@@ -151,7 +174,9 @@ L	[a-zA-Z-]
 	putchar(yytext[0]);
 	}
 {L}+	{
-	if(yytext[yyleng-1] >= 'A' && yytext[yyleng-1] <= 'Z'){
+	if(isupper(yytext[yyleng-1])){
+		if(NOCAPS)
+			yytext[yyleng-1] = tolower(yytext[yyleng-1]);
 		if((yytext[0] == 'n' || yytext[0] == 'l') && yytext[1] == 'a'){
 			OUT1(NOUN_ADJ);
 		}
@@ -163,8 +188,11 @@ L	[a-zA-Z-]
 		OUT1(UNK);
 	}
 	}
-:	{
+^:[\n]	{
 	egetd();
+	}
+^:.+[\n]	{
+	printf("%s",yytext);
 	}
 %%
 look(f,n,nc)
@@ -176,12 +204,17 @@ char nc;
 	char sch;
 	in=0;
 	sch=yytext[yyleng-1];
-	if(sch>= 'A' && sch <= 'Z'){
-		yytext[yyleng-1] = sch -'A' +'a';
+	if(isupper(sch)){
+		yytext[yyleng-1] = tolower(sch);
 		in=1;
 	}
 	if((*f)(&yytext[n],1,0) != 0){
 		nn = (*f)(&yytext[n],1,0);
+		if(nc == PNOUN)
+			if(nn == NOUN_VERB){
+				if(in == 1)nn=PNOUN;
+				else nn=NV_PL;
+			}
 		ret = 0;
 	}
 	else {
@@ -190,9 +223,14 @@ char nc;
 	}
 	if(in==1){
 		if(nn == NOUN_VERB)nn=NOUN;
-		yytext[yyleng-1]=sch;
+		if(!NOCAPS)yytext[yyleng-1]=sch;	
 	}
-	OUT1(nn);
+	if(nn==PNOUN && yytext[0] == 's' && NOCAPS){
+		POUT1(nn);
+	}
+	else {
+		OUT1(nn);
+	}
 	return(ret);
 }
 yywrap(){
