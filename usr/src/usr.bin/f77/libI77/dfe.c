@@ -1,5 +1,5 @@
 /*
-char id_dfe[] = "@(#)dfe.c	1.1";
+char id_dfe[] = "@(#)dfe.c	1.2";
  *
  * direct formatted external i/o
  */
@@ -24,7 +24,7 @@ s_rdfe(a) cilist *a;
 	doned = rd_ned;
 	dotab = y_tab;
 	dorevert = doend = donewrec = y_rnew;
-	if(pars_f(fmtbuf)) err(errflag,100,rdfe)
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,rdfe)
 	fmt_bg();
 	return(OK);
 }
@@ -41,7 +41,7 @@ s_wdfe(a) cilist *a;
 	doned = w_ned;
 	dotab = y_tab;
 	dorevert = doend = donewrec = y_wnew;
-	if(pars_f(fmtbuf)) err(errflag,100,wdfe)
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,wdfe)
 	fmt_bg();
 	return(OK);
 }
@@ -71,15 +71,15 @@ c_dfe(a,flag) cilist *a;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,101,dfe);
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,dfe);
 	curunit = &units[lunit];
 	if(!curunit->ufd && (n=fk_open(flag,DIR,FMT,(ftnint)lunit)))
 		err(errflag,n,dfe)
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if(!curunit->ufmt) err(errflag,102,dfe)
-	if(!curunit->useek || !curunit->url) err(errflag,104,dfe)
+	if(!curunit->ufmt) err(errflag,F_ERNOFIO,dfe)
+	if(!curunit->useek || !curunit->url) err(errflag,F_ERNODIO,dfe)
 	recnum = a->cirec - 1;
 	fseek(cf, (long)curunit->url * recnum, 0);
 	cblank = curunit->ublnk;
@@ -109,7 +109,7 @@ y_getc()
 
 y_putc(c)
 {
-	if(curunit->url!=1 && recpos++ >= curunit->url) err(errflag,110,wdfe)
+	if(curunit->url!=1 && recpos++ >= curunit->url) err(errflag,F_EREREC,wdfe)
 	putc(c,cf);
 	return(OK);
 }
@@ -118,11 +118,11 @@ y_tab()
 {	int n;
 	if(curunit->url==1)
 	{
-		if(cursor < 0 && -cursor > ftell(cf)) return(107);
+		if(cursor < 0 && -cursor > ftell(cf)) return(F_ERBREC);
 	}
 	else
 	{	if(reclen < recpos) reclen = recpos;
-		if((recpos + cursor) < 0) return(107);
+		if((recpos + cursor) < 0) return(F_ERBREC);
 		n = reclen - recpos;		/* n >= 0 */
 		if(!reading && (cursor-n) > 0)
 		{	recpos = reclen;
@@ -132,7 +132,7 @@ y_tab()
 			return(cursor=0);
 		}
 		recpos += cursor;
-		if(recpos >= curunit->url) err(errflag,110,dfe)
+		if(recpos >= curunit->url) err(errflag,F_EREREC,dfe)
 	}
 	fseek(cf,(long)cursor,1);
 	return(cursor=0);
@@ -149,7 +149,7 @@ y_tab()
 /*
 /*y_err()
 /*{
-/*	err(errflag, 110, dfe);
+/*	err(errflag, F_EREREC, dfe);
 /*}
 */
 
