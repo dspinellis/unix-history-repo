@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.3 (Berkeley) 83/01/15";
+static char sccsid[] = "@(#)ftpd.c	4.4 (Berkeley) 83/01/15";
 #endif
 
 /*
@@ -320,11 +320,11 @@ getdatasock(mode)
 			retrytime <<= 1;
 			continue;
 		}
-		seteuid(0);
+		seteuid(pw->pw_uid);
 		close(s);
 		return (NULL);
 	}
-	seteuid(0);
+	seteuid(pw->pw_uid);
 	return (fdopen(s, mode));
 }
 
