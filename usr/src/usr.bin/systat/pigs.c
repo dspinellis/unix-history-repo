@@ -1,8 +1,30 @@
 #ifndef lint
-static char sccsid[] = "@(#)pigs.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)pigs.c	1.4 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
+
+WINDOW *
+openpigs()
+{
+	static WINDOW *w = NULL;
+
+	if (w == NULL)
+		w = newwin(20, 70, 3, 5);
+        return (w);
+}
+
+closepigs(w)
+	WINDOW *w;
+{
+
+	if (w == NULL)
+		return;
+	move(5, 20);
+	clrtobot();
+	wclear(w);
+	wrefresh(w);
+}
 
 showpigs()
 {
@@ -14,6 +36,8 @@ showpigs()
         register struct users *knptr;
         char *getpname(), *pnamp;
 
+	if (pt == NULL)
+		return;
         /* Accumulate the percent of cpu per user. */
         ptptr = pt;
         numprocs = 0;
@@ -103,40 +127,28 @@ showpigs()
         }
 }
 
-openpigs()
-{
-
-        kmemf = "/dev/kmem";
-        kmem = open(kmemf, 0);
-        if (kmem < 0) {
-                perror(kmemf);
-                exit(1);
-        }
-        memf = "/dev/mem";
-        mem = open(memf, 0);
-        if (mem < 0) {
-                perror(memf);
-                exit(1);
-        }
-        swapf = "/dev/drum";
-        swap = open(swapf, 0);
-        if (swap < 0) {
-                perror(swapf);
-                exit(1);
-        }
-}
-
-/* these don't belong here */
+static struct nlist nlst[] = {
 #define X_PROC          0
+        { "_proc" },
 #define X_NPROC         1
-#define X_USRPTMAP      4
-#define X_USRPT         5
-
-struct proc *kprocp;
+        { "_nproc" },
+#define X_USRPTMAP      2
+        { "_Usrptmap" },
+#define X_USRPT         3
+        { "_usrpt" },
+        { "" }
+};
 
 initpigs()
 {
 
+	if (nlst[X_PROC].n_type == 0) {
+		nlist("/vmunix", nlst);
+		if (nlst[X_PROC].n_type == 0) {
+			error("namelist on /vmunix failed");
+			return;
+		}
+	}
         if (procp == NULL) {
                 procp = getw(nlst[X_PROC].n_value);
                 nproc = getw(nlst[X_NPROC].n_value);
@@ -158,6 +170,8 @@ fetchpigs()
         register float time;
         register struct proc *pp;
 
+	if (nlst[X_PROC].n_type == 0)
+		return;
 	if (kprocp == NULL) {
 		kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
 		if (kprocp == NULL)
@@ -188,8 +202,7 @@ fetchpigs()
 labelpigs()
 {
 
-        move(5, 0);
-        clrtoeol();
+        move(5, 0); clrtoeol();
         mvaddstr(5, 20,
                 "/0   /10  /20  /30  /40  /50  /60  /70  /80  /90  /100");
 }
