@@ -1,4 +1,4 @@
-/*	conf.c	4.70	83/06/01	*/
+/*	conf.c	4.71	83/06/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -183,16 +183,14 @@ int	uuopen(),uustrategy(),uuclose(),uureset(),uuioctl();
 
 #include "rl.h"
 #if NRL > 0
-int	rlopen(),rlstrategy(),rlclose(),rlread(),rlwrite();
-int	rlreset(),rlioctl(),rldump(),rlsize();
+int	rlopen(),rlstrategy(),rlread(),rlwrite();
+int	rlreset(),rldump(),rlsize();
 #else
 #define	rlopen		nodev
 #define	rlstrategy	nodev
-#define	rlclose		nodev
 #define	rlread		nodev
 #define	rlwrite		nodev
 #define	rlreset		nulldev
-#define	rlioctl		nodev
 #define	rldump		nodev
 #define	rlsize		0
 #endif
@@ -229,7 +227,7 @@ struct bdevsw	bdevsw[] =
 	  0,		0 },
 	{ uuopen,	uuclose,	uustrategy,	nodev,		/*13*/
 	  0,		0 },
-	{ rlopen,	rlclose,	rlstrategy,	rldump,		/*14*/
+	{ rlopen,	nodev,		rlstrategy,	rldump,		/*14*/
 	  rlsize,	0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
@@ -546,8 +544,8 @@ struct cdevsw	cdevsw[] =
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
 	ikioctl,	nodev,		ikreset,	0,
 	seltrue,	nodev,
-	rlopen,		rlclose,	rlread,		rlwrite,	/* 32 */
-	rlioctl,	nodev,		rlreset,	0,
+	rlopen,		nodev,		rlread,		rlwrite,	/* 32 */
+	nodev,		nodev,		rlreset,	0,
 	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
