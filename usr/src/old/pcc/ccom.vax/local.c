@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.15 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.16 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -413,22 +413,6 @@ prtdcon(p)
 	p->in.type = (o == DCON ? DOUBLE : FLOAT);
 	p->in.op = NAME;
 }
-
-isitfloat( s ) char *s; {
-	union cvt {
-		double	d;
-		int	n[2];
-	} cvt;
-	double atof();
-
-	/* avoid floating point exception for double -> float conversions */
-	dcon = cvt.d = atof(s);
-	if( cvt.n[1] == 0 ){
-		fcon = dcon;
-		return( FCON );
-		}
-	return( DCON );
-	}
 
 ecode( p ) NODE *p; {
 
