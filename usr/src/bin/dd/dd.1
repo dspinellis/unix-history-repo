@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)dd.1	5.1 (Berkeley) %G%
+.\"	@(#)dd.1	6.1 (Berkeley) %G%
 .\"
-.TH DD 1  "18 January 1983"
+.TH DD 1 ""
 .UC 4
 .SH NAME
 dd \- convert and copy a file
@@ -209,3 +209,19 @@ One must specify ``conv=noerror,sync'' when copying
 raw disks with bad sectors to insure 
 .I dd
 stays synchronized.
+.PP
+Certain combinations of arguments to 
+.I conv=
+are permitted.
+However, the
+.I block
+or
+.I unblock
+option cannot be combined with
+.IR ascii ,
+.IR ebcdic ""
+or
+.IR ibm .
+Invalid combinations
+.I "silently ignore"
+all but the last mutually-exclusive keyword.
