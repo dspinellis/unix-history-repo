@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.15	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.16	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -8,6 +8,8 @@ static	char sccsid[] = "@(#)main.c	2.15	(Berkeley)	%G%";
 #include <dir.h>
 #include <sys/stat.h>
 #include <fstab.h>
+
+/* RECONSTRUCT ONLY BAD CG IN PASS 6 */
 
 typedef	int	(*SIG_TYP)();
 
@@ -333,7 +335,7 @@ checkfilesys(filesys)
 	}
 	pass1();
 
-/* 1b: locate first references to duplicates, if any  */
+/* 1b: locate first references to duplicates, if any */
 	if (enddup != &duplist[0]) {
 		if (preen)
 			pfatal("INTERNAL ERROR: dups with -p");
@@ -381,18 +383,173 @@ checkfilesys(filesys)
 	free(freemap);
 	free(statemap);
 	free(lncntp);
-	if (dfile.mod)
+	if (dfile.mod) {
 		if (preen) {
+			if (hotroot)
+				exit(4);
+		} else {
 			printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
 			if (hotroot) {
-				sync();
+				printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
 				exit(4);
 			}
-		} else if (hotroot) {
-			printf("\n***** BOOT UNIX (NO SYNC!) *****\n");
-			exit(4);
 		}
-	sync();
+	}
+	sync();			/* ??? */
+}
+
+setup(dev)
+	char *dev;
+{
+	dev_t rootdev;
+	struct stat statb;
+	int super = bflag ? bflag : SBLOCK;
+	int i, j, size;
+	int c, d, cgd;
+
+	bflag = 0;
+	if (stat("/", &statb) < 0)
+		errexit("Can't stat root\n");
+	rootdev = statb.st_dev;
+	if (stat(dev, &statb) < 0) {
+		error("Can't stat %s\n", dev);
+		return (0);
+	}
+	rawflg = 0;
+	if ((statb.st_mode & S_IFMT) == S_IFBLK)
+		;
+	else if ((statb.st_mode & S_IFMT) == S_IFCHR)
+		rawflg++;
+	else {
+		if (reply("file is not a block or character device; OK") == 0)
+			return (0);
+	}
+	if (rootdev == statb.st_rdev)
+		hotroot++;
+	if ((dfile.rfdes = open(dev, 0)) < 0) {
+		error("Can't open %s\n", dev);
+		return (0);
+	}
+	if (preen == 0)
+		printf("** %s", dev);
+	if (nflag || (dfile.wfdes = open(dev, 1)) < 0) {
+		dfile.wfdes = -1;
+		if (preen)
+			pfatal("NO WRITE ACCESS");
+		printf(" (NO WRITE)");
+	}
+	if (preen == 0)
+		printf("\n");
+	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0; sbsumbad = 0;
+	dfile.mod = 0;
+	n_files = n_blks = n_ffree = n_bfree = 0;
+	muldup = enddup = &duplist[0];
+	badlnp = &badlncnt[0];
+	lfdir = 0;
+	rplyflag = 0;
+	initbarea(&sblk);
+	initbarea(&fileblk);
+	initbarea(&inoblk);
+	initbarea(&cgblk);
+	/*
+	 * Read in the super block and its summary info.
+	 */
+	if (bread(&dfile, &sblock, super, SBSIZE) == 0)
+		return (0);
+	sblk.b_bno = super;
+	sblk.b_size = SBSIZE;
+	/*
+	 * run a few consistency checks of the super block
+	 */
+	if (sblock.fs_magic != FS_MAGIC)
+		{ badsb("MAGIC NUMBER WRONG"); return (0); }
+	if (sblock.fs_ncg < 1)
+		{ badsb("NCG OUT OF RANGE"); return (0); }
+	if (sblock.fs_cpg < 1 || sblock.fs_cpg > MAXCPG)
+		{ badsb("CPG OUT OF RANGE"); return (0); }
+	if (sblock.fs_nsect < 1)
+		{ badsb("NSECT < 1"); return (0); }
+	if (sblock.fs_ntrak < 1)
+		{ badsb("NTRAK < 1"); return (0); }
+	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
+		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
+	if (sblock.fs_ipg % INOPB(&sblock))
+		{ badsb("INODES NOT MULTIPLE OF A BLOCK"); return (0); }
+	if (cgdmin(&sblock, 0) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
+		{ badsb("IMPLIES MORE INODE THAN DATA BLOCKS"); return (0); }
+	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
+	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
+		{ badsb("NCYL DOES NOT JIVE WITH NCG*CPG"); return (0); }
+	if (sblock.fs_fpg != sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
+		{ badsb("FPG DOES NOT JIVE WITH CPG & SPC"); return (0); }
+	if (sblock.fs_size * NSPF(&sblock) <=
+	    (sblock.fs_ncyl - 1) * sblock.fs_spc)
+		{ badsb("SIZE PREPOSTEROUSLY SMALL"); return (0); }
+	if (sblock.fs_size * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc)
+		{ badsb("SIZE PREPOSTEROUSLY LARGE"); return (0); }
+	/* rest we COULD repair... */
+	if (sblock.fs_cgsize != fragroundup(&sblock,
+	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY)))
+		{ badsb("CGSIZE INCORRECT"); return (0); }
+	if (sblock.fs_cssize !=
+	    fragroundup(&sblock, sblock.fs_ncg * sizeof(struct csum)))
+		{ badsb("CSSIZE INCORRECT"); return (0); }
+	fmax = sblock.fs_size;
+	imax = sblock.fs_ncg * sblock.fs_ipg;
+	n_bad = cgsblock(&sblock, 0); /* boot block plus dedicated sblock */
+	/*
+	 * read in the summary info.
+	 */
+	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
+		size = sblock.fs_cssize - i < sblock.fs_bsize ?
+		    sblock.fs_cssize - i : sblock.fs_bsize;
+		sblock.fs_csp[j] = (struct csum *)calloc(1, size);
+		bread(&dfile, (char *)sblock.fs_csp[j],
+		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
+		    size);
+	}
+	/*
+	 * allocate and initialize the necessary maps
+	 */
+	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
+	blockmap = (char *)calloc(bmapsz, sizeof (char));
+	if (blockmap == NULL) {
+		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
+		exit(1);
+	}
+	freemap = (char *)calloc(bmapsz, sizeof (char));
+	if (freemap == NULL) {
+		printf("cannot alloc %d bytes for freemap\n", bmapsz);
+		exit(1);
+	}
+	statemap = (char *)calloc(imax+1, sizeof(char));
+	if (statemap == NULL) {
+		printf("cannot alloc %d bytes for statemap\n", imax + 1);
+		exit(1);
+	}
+	lncntp = (short *)calloc(imax+1, sizeof(short));
+	if (lncntp == NULL) {
+		printf("cannot alloc %d bytes for lncntp\n", 
+		    (imax + 1) * sizeof(short));
+		exit(1);
+	}
+	for (c = 0; c < sblock.fs_ncg; c++) {
+		cgd = cgdmin(&sblock, c);
+		if (c == 0) {
+			d = cgbase(&sblock, c);
+			cgd += howmany(sblock.fs_cssize, sblock.fs_fsize);
+		} else
+			d = cgsblock(&sblock, c);
+		for (; d < cgd; d++)
+			setbmap(d);
+	}
+
+	startinum = imax + 1;
+	return (1);
+
+badsb:
+	ckfini();
+	return (0);
 }
 
 pass1()
@@ -407,8 +564,10 @@ pass1()
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
-		if (debug && cgrp.cg_magic != CG_MAGIC)
-			printf("cg %d: bad magic number\n", c);
+		if (cgrp.cg_magic != CG_MAGIC) {
+			pfatal("cg %d: bad magic number\n", c);
+			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
+		}
 		n = 0;
 		for (i = 0; i < sblock.fs_ipg; i++, inum++) {
 			dp = ginode();
@@ -507,9 +666,11 @@ pass1check(blk, size)
 {
 	register daddr_t *dlp;
 	int res = KEEPON;
+	int anyout;
 
+	anyout = outrange(blk, size);
 	for (; size > 0; blk++, size--) {
-		if (outrange(blk)) {
+		if (anyout && outrange(blk, 1)) {
 			blkerr("BAD", blk);
 			if (++badblk >= MAXBAD) {
 				pwarn("EXCESSIVE BAD BLKS I=%u", inum);
@@ -583,7 +744,7 @@ pass1bcheck(blk, size)
 	int res = KEEPON;
 
 	for (; size > 0; blk++, size--) {
-		if (outrange(blk))
+		if (outrange(blk, 1))
 			res = SKIP;
 		for (dlp = duplist; dlp < muldup; dlp++)
 			if (*dlp == blk) {
@@ -767,7 +928,7 @@ pass4check(blk, size)
 	int res = KEEPON;
 
 	for (; size > 0; blk++, size--) {
-		if (outrange(blk))
+		if (outrange(blk, 1))
 			res = SKIP;
 		else if (getbmap(blk)) {
 			for (dlp = duplist; dlp < enddup; dlp++)
@@ -785,24 +946,21 @@ pass4check(blk, size)
 pass5()
 {
 	register int c, n, i, b, d;
+	short bo[MAXCPG][NRPOS];
+	long botot[MAXCPG];
+	long frsum[MAXFRAG];
+	int blk;
+	daddr_t cbase;
+	int blockbits = (1<<sblock.fs_frag)-1;
 
 	blkcpy((unsigned)bmapsz, blockmap, freemap);
 	dupblk = 0;
 	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		daddr_t cbase = cgbase(&sblock, c);
-		short bo[MAXCPG][NRPOS];
-		long botot[MAXCPG];
-		long frsum[MAXFRAG];
-		int blk;
-
-		for (n = 0; n < sblock.fs_cpg; n++) {
-			botot[n] = 0;
-			for (i = 0; i < NRPOS; i++)
-				bo[n][i] = 0;
-		}
-		for (i = 0; i < sblock.fs_frag; i++)
-			frsum[i] = 0;
+		cbase = cgbase(&sblock, c);
+		bzero(botot, sizeof (botot));
+		bzero(bo, sizeof (bo));
+		bzero(frsum, sizeof (frsum));
 		/*
 		 * need to account for the super blocks
 		 * which appear (inaccurately) bad
@@ -810,10 +968,15 @@ pass5()
 		n_bad += cgtod(&sblock, c) - cgsblock(&sblock, c);
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
 			continue;
-		if (debug && cgrp.cg_magic != CG_MAGIC)
-			printf("cg %d: bad magic number\n", c);
+		if (cgrp.cg_magic != CG_MAGIC) {
+			pfatal("cg %d: bad magic number\n", c);
+			bzero((caddr_t)&cgrp, sblock.fs_cgsize);
+		}
 		for (b = 0; b < sblock.fs_fpg; b += sblock.fs_frag) {
-			if (isblock(&sblock, cgrp.cg_free, b/sblock.fs_frag)) {
+			blk = blkmap(&sblock, cgrp.cg_free, b);
+			if (blk == 0)
+				continue;
+			if (blk == blockbits) {
 				if (pass5check(cbase+b, sblock.fs_frag) == STOP)
 					goto out5;
 				/* this is clumsy ... */
@@ -822,40 +985,37 @@ pass5()
 				botot[cbtocylno(&sblock, b)]++;
 				bo[cbtocylno(&sblock, b)]
 				    [cbtorpos(&sblock, b)]++;
-			} else {
-				for (d = 0; d < sblock.fs_frag; d++)
-					if (isset(cgrp.cg_free, b+d))
-						if (pass5check(cbase+b+d,1) == STOP)
-							goto out5;
-				blk = ((cgrp.cg_free[b / NBBY] >> (b % NBBY)) &
-				       (0xff >> (NBBY - sblock.fs_frag)));
-				if (blk != 0)
-					fragacct(&sblock, blk, frsum, 1);
+				continue;
 			}
+			for (d = 0; d < sblock.fs_frag; d++)
+				if ((blk & (1<<d)) &&
+				    pass5check(cbase+b+d,1) == STOP)
+					goto out5;
+			fragacct(&sblock, blk, frsum, 1);
 		}
-		for (i = 0; i < sblock.fs_frag; i++) {
-			if (cgrp.cg_frsum[i] != frsum[i]) {
-				if (debug)
-					printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
-					    c, i, cgrp.cg_frsum[i], frsum[i]);
-				frsumbad++;
-			}
+		if (bcmp(cgrp.cg_frsum, frsum, sizeof (frsum))) {
+			if (debug)
+			for (i = 0; i < sblock.fs_frag; i++)
+				if (cgrp.cg_frsum[i] != frsum[i])
+				printf("cg[%d].cg_frsum[%d] have %d calc %d\n",
+				    c, i, cgrp.cg_frsum[i], frsum[i]);
+			frsumbad++;
 		}
-		for (n = 0; n < sblock.fs_cpg; n++) {
-			if (botot[n] != cgrp.cg_btot[n]) {
-				if (debug)
-					printf("cg[%d].cg_btot[%d] have %d calc %d\n",
-					    c, n, cgrp.cg_btot[n], botot[n]);
-				offsumbad++;
-			}
+		if (bcmp(cgrp.cg_btot, botot, sizeof (botot))) {
+			if (debug)
+			for (n = 0; n < sblock.fs_cpg; n++)
+				if (botot[n] != cgrp.cg_btot[n])
+				printf("cg[%d].cg_btot[%d] have %d calc %d\n",
+				    c, n, cgrp.cg_btot[n], botot[n]);
+			offsumbad++;
+		}
+		if (bcmp(cgrp.cg_b, bo, sizeof (bo))) {
+			if (debug)
 			for (i = 0; i < NRPOS; i++)
-				if (bo[n][i] != cgrp.cg_b[n][i]) {
-					if (debug)
-						printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
-						    c, n, i, cgrp.cg_b[n][i],
-						    bo[n][i]);
-					offsumbad++;
-				}
+				if (bo[n][i] != cgrp.cg_b[n][i])
+				printf("cg[%d].cg_b[%d][%d] have %d calc %d\n",
+				    c, n, i, cgrp.cg_b[n][i], bo[n][i]);
+			offsumbad++;
 		}
 	}
 out5:
@@ -897,28 +1057,27 @@ pass5check(blk, size)
 	daddr_t blk;
 	int size;
 {
-	int res = KEEPON;
 
-	for (; size > 0; blk++, size--) {
-		if (outrange(blk)) {
-			fixcg = 1;
-			if (preen)
-				pfatal("BAD BLOCKS IN BIT MAPS.");
-			if (++badblk >= MAXBAD) {
-				printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
-				if (reply("CONTINUE") == 0)
-					errexit("");
-				return (STOP);
-			}
-		} else if (getfmap(blk)) {
+	if (outrange(blk, size)) {
+		fixcg = 1;
+		if (preen)
+			pfatal("BAD BLOCKS IN BIT MAPS.");
+		if (++badblk >= MAXBAD) {
+			printf("EXCESSIVE BAD BLKS IN BIT MAPS.");
+			if (reply("CONTINUE") == 0)
+				errexit("");
+			return (STOP);
+		}
+	}
+	for (; size > 0; blk++, size--)
+		if (getfmap(blk)) {
 			fixcg = 1;
 			++dupblk;
 		} else {
 			n_ffree++;
 			setfmap(blk);
 		}
-	}
-	return (res);
+	return (KEEPON);
 }
 
 ckinode(dp, flg)
@@ -974,7 +1133,7 @@ iblock(blk, ilevel, flg, isize)
 			return (n);
 	} else
 		func = dirscan;
-	if (outrange(blk))		/* protect thyself */
+	if (outrange(blk, sblock.fs_frag))		/* protect thyself */
 		return (SKIP);
 	initbarea(&ib);
 	if (getblk(&ib, blk, sblock.fs_bsize) == NULL)
@@ -1001,14 +1160,35 @@ iblock(blk, ilevel, flg, isize)
 	return (KEEPON);
 }
 
-outrange(blk)
+outrange(blk, cnt)
 	daddr_t blk;
+	int cnt;
 {
 	register int c;
 
-	c = dtog(&sblock, blk);
-	if ((unsigned)blk >= fmax) {
+	if ((unsigned)(blk+cnt) > fmax)
 		return (1);
+	c = dtog(&sblock, blk);
+	if (blk < cgdmin(&sblock, c)) {
+		if ((blk+cnt) > cgsblock(&sblock, c)) {
+			if (debug) {
+				printf("blk %d < cgdmin %d;",
+				    blk, cgdmin(&sblock, c));
+				printf(" blk+cnt %d > cgsbase %d\n",
+				    blk+cnt, cgsblock(&sblock, c));
+			}
+			return (1);
+		}
+	} else {
+		if ((blk+cnt) > cgbase(&sblock, c+1)) {
+			if (debug)  {
+				printf("blk %d >= cgdmin %d;",
+				    blk, cgdmin(&sblock, c));
+				printf(" blk+cnt %d > sblock.fs_fpg %d\n",
+				    blk+cnt, sblock.fs_fpg);
+			}
+			return (1);
+		}
 	}
 	return (0);
 }
@@ -1059,7 +1239,7 @@ dirscan(blk, nf)
 	int blksiz, dsize, n;
 	char dbuf[DIRBLKSIZ];
 
-	if (outrange(blk)) {
+	if (outrange(blk, 1)) {
 		filsize -= sblock.fs_bsize;
 		return (SKIP);
 	}
@@ -1227,160 +1407,6 @@ clri(s, flg)
 		inodirty();
 		inosumbad++;
 	}
-}
-
-setup(dev)
-	char *dev;
-{
-	dev_t rootdev;
-	struct stat statb;
-	int super = bflag ? bflag : SBLOCK;
-	int i, j, size;
-	int c, d, cgd;
-
-	bflag = 0;
-	if (stat("/", &statb) < 0)
-		errexit("Can't stat root\n");
-	rootdev = statb.st_dev;
-	if (stat(dev, &statb) < 0) {
-		error("Can't stat %s\n", dev);
-		return (0);
-	}
-	rawflg = 0;
-	if ((statb.st_mode & S_IFMT) == S_IFBLK)
-		;
-	else if ((statb.st_mode & S_IFMT) == S_IFCHR)
-		rawflg++;
-	else {
-		if (reply("file is not a block or character device; OK") == 0)
-			return (0);
-	}
-	if (rootdev == statb.st_rdev)
-		hotroot++;
-	if ((dfile.rfdes = open(dev, 0)) < 0) {
-		error("Can't open %s\n", dev);
-		return (0);
-	}
-	if (preen == 0)
-		printf("** %s", dev);
-	if (nflag || (dfile.wfdes = open(dev, 1)) < 0) {
-		dfile.wfdes = -1;
-		if (preen)
-			pfatal("NO WRITE ACCESS");
-		printf(" (NO WRITE)");
-	}
-	if (preen == 0)
-		printf("\n");
-	fixcg = 0; inosumbad = 0; offsumbad = 0; frsumbad = 0; sbsumbad = 0;
-	dfile.mod = 0;
-	n_files = n_blks = n_ffree = n_bfree = 0;
-	muldup = enddup = &duplist[0];
-	badlnp = &badlncnt[0];
-	lfdir = 0;
-	rplyflag = 0;
-	initbarea(&sblk);
-	initbarea(&fileblk);
-	initbarea(&inoblk);
-	initbarea(&cgblk);
-	/*
-	 * Read in the super block and its summary info.
-	 */
-	if (bread(&dfile, &sblock, super, SBSIZE) == 0)
-		return (0);
-	sblk.b_bno = super;
-	sblk.b_size = SBSIZE;
-	/*
-	 * run a few consistency checks of the super block
-	 */
-	if (sblock.fs_magic != FS_MAGIC)
-		{ badsb("MAGIC NUMBER WRONG"); return (0); }
-	if (sblock.fs_ncg < 1)
-		{ badsb("NCG OUT OF RANGE"); return (0); }
-	if (sblock.fs_cpg < 1 || sblock.fs_cpg > MAXCPG)
-		{ badsb("CPG OUT OF RANGE"); return (0); }
-	if (sblock.fs_nsect < 1)
-		{ badsb("NSECT < 1"); return (0); }
-	if (sblock.fs_ntrak < 1)
-		{ badsb("NTRAK < 1"); return (0); }
-	if (sblock.fs_spc != sblock.fs_nsect * sblock.fs_ntrak)
-		{ badsb("SPC DOES NOT JIVE w/NTRAK*NSECT"); return (0); }
-	if (sblock.fs_ipg % INOPB(&sblock))
-		{ badsb("INODES NOT MULTIPLE OF A BLOCK"); return (0); }
-	if (cgdmin(&sblock, 0) >= sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
-		{ badsb("IMPLIES MORE INODE THAN DATA BLOCKS"); return (0); }
-	if (sblock.fs_ncg * sblock.fs_cpg < sblock.fs_ncyl ||
-	    (sblock.fs_ncg - 1) * sblock.fs_cpg >= sblock.fs_ncyl)
-		{ badsb("NCYL DOES NOT JIVE WITH NCG*CPG"); return (0); }
-	if (sblock.fs_fpg != sblock.fs_cpg * sblock.fs_spc / NSPF(&sblock))
-		{ badsb("FPG DOES NOT JIVE WITH CPG & SPC"); return (0); }
-	if (sblock.fs_size * NSPF(&sblock) <=
-	    (sblock.fs_ncyl - 1) * sblock.fs_spc)
-		{ badsb("SIZE PREPOSTEROUSLY SMALL"); return (0); }
-	if (sblock.fs_size * NSPF(&sblock) > sblock.fs_ncyl * sblock.fs_spc)
-		{ badsb("SIZE PREPOSTEROUSLY LARGE"); return (0); }
-	/* rest we COULD repair... */
-	if (sblock.fs_cgsize != fragroundup(&sblock,
-	    sizeof(struct cg) + howmany(sblock.fs_fpg, NBBY)))
-		{ badsb("CGSIZE INCORRECT"); return (0); }
-	if (sblock.fs_cssize !=
-	    fragroundup(&sblock, sblock.fs_ncg * sizeof(struct csum)))
-		{ badsb("CSSIZE INCORRECT"); return (0); }
-	fmax = sblock.fs_size;
-	imax = sblock.fs_ncg * sblock.fs_ipg;
-	n_bad = cgsblock(&sblock, 0); /* boot block plus dedicated sblock */
-	/*
-	 * read in the summary info.
-	 */
-	for (i = 0, j = 0; i < sblock.fs_cssize; i += sblock.fs_bsize, j++) {
-		size = sblock.fs_cssize - i < sblock.fs_bsize ?
-		    sblock.fs_cssize - i : sblock.fs_bsize;
-		sblock.fs_csp[j] = (struct csum *)calloc(1, size);
-		bread(&dfile, (char *)sblock.fs_csp[j],
-		    fsbtodb(&sblock, sblock.fs_csaddr + j * sblock.fs_frag),
-		    size);
-	}
-	/*
-	 * allocate and initialize the necessary maps
-	 */
-	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
-	blockmap = (char *)calloc(bmapsz, sizeof (char));
-	if (blockmap == NULL) {
-		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
-		exit(1);
-	}
-	freemap = (char *)calloc(bmapsz, sizeof (char));
-	if (freemap == NULL) {
-		printf("cannot alloc %d bytes for freemap\n", bmapsz);
-		exit(1);
-	}
-	statemap = (char *)calloc(imax+1, sizeof(char));
-	if (statemap == NULL) {
-		printf("cannot alloc %d bytes for statemap\n", imax + 1);
-		exit(1);
-	}
-	lncntp = (short *)calloc(imax+1, sizeof(short));
-	if (lncntp == NULL) {
-		printf("cannot alloc %d bytes for lncntp\n", 
-		    (imax + 1) * sizeof(short));
-		exit(1);
-	}
-	for (c = 0; c < sblock.fs_ncg; c++) {
-		cgd = cgdmin(&sblock, c);
-		if (c == 0) {
-			d = cgbase(&sblock, c);
-			cgd += howmany(sblock.fs_cssize, sblock.fs_fsize);
-		} else
-			d = cgsblock(&sblock, c);
-		for (; d < cgd; d++)
-			setbmap(d);
-	}
-
-	startinum = imax + 1;
-	return (1);
-
-badsb:
-	ckfini();
-	return (0);
 }
 
 badsb(s)
