@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.12 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -71,27 +71,34 @@ portal_lookup(ap)
 		struct componentname * a_cnp;
 	} */ *ap;
 {
-	char *pname = ap->a_cnp->cn_nameptr;
+	struct componentname *cnp = ap->a_cnp;
+	struct vnode **vpp = ap->a_vpp;
+	struct vnode *dvp = ap->a_dvp;
+	char *pname = cnp->cn_nameptr;
 	struct portalnode *pt;
 	int error;
 	struct vnode *fvp = 0;
 	char *path;
 	int size;
 
-	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
-		*ap->a_vpp = ap->a_dvp;
-		VREF(ap->a_dvp);
-		/*VOP_LOCK(ap->a_dvp);*/
+	*vpp = NULLVP;
+
+	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
+		return (EROFS);
+
+	if (cnp->cn_namelen == 1 && *pname == '.') {
+		*vpp = dvp;
+		VREF(dvp);
+		/*VOP_LOCK(dvp);*/
 		return (0);
 	}
 
-
-	error = getnewvnode(VT_PORTAL, ap->a_dvp->v_mount, portal_vnodeop_p, &fvp);
+	error = getnewvnode(VT_PORTAL, dvp->v_mount, portal_vnodeop_p, &fvp);
 	if (error)
 		goto bad;
 	fvp->v_type = VREG;
-	MALLOC(fvp->v_data, void *, sizeof(struct portalnode),
-		M_TEMP, M_WAITOK);
+	MALLOC(fvp->v_data, void *, sizeof(struct portalnode), M_TEMP,
+	    M_WAITOK);
 
 	pt = VTOPORTAL(fvp);
 	/*
@@ -101,22 +108,20 @@ portal_lookup(ap)
 	 */
 	for (size = 0, path = pname; *path; path++)
 		size++;
-	ap->a_cnp->cn_consume = size - ap->a_cnp->cn_namelen;
+	cnp->cn_consume = size - cnp->cn_namelen;
 
 	pt->pt_arg = malloc(size+1, M_TEMP, M_WAITOK);
 	pt->pt_size = size+1;
 	bcopy(pname, pt->pt_arg, pt->pt_size);
 	pt->pt_fileid = portal_fileid++;
 
-	*ap->a_vpp = fvp;
+	*vpp = fvp;
 	/*VOP_LOCK(fvp);*/
 	return (0);
 
 bad:;
-	if (fvp) {
+	if (fvp)
 		vrele(fvp);
-	}
-	*ap->a_vpp = NULL;
 	return (error);
 }
 

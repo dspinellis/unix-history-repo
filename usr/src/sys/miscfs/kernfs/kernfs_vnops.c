@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.11 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.12 (Berkeley) %G%
  */
 
 /*
@@ -184,6 +184,11 @@ kernfs_lookup(ap)
 	printf("kernfs_lookup(%s)\n", pname);
 #endif
 
+	*vpp = NULLVP;
+
+	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
+		return (EROFS);
+
 	if (cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);
@@ -200,24 +205,19 @@ kernfs_lookup(ap)
 	}
 #endif
 
-	*vpp = NULLVP;
-
-	for (error = ENOENT, kt = kern_targets, i = 0; i < nkern_targets;
-	     kt++, i++) {
+	for (kt = kern_targets, i = 0; i < nkern_targets; kt++, i++) {
 		if (cnp->cn_namelen == kt->kt_namlen &&
-		    bcmp(kt->kt_name, pname, cnp->cn_namelen) == 0) {
-			error = 0;
-			break;
-		}
+		    bcmp(kt->kt_name, pname, cnp->cn_namelen) == 0)
+			goto found;
 	}
 
 #ifdef KERNFS_DIAGNOSTIC
-	printf("kernfs_lookup: i = %d, error = %d\n", i, error);
+	printf("kernfs_lookup: i = %d, failed", i);
 #endif
 
-	if (error)
-		return (error);
+	return (cnp->cn_nameiop == LOOKUP ? ENOENT : EROFS);
 
+found:
 	if (kt->kt_tag == KTT_DEVICE) {
 		dev_t *dp = kt->kt_data;
 	loop:

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.14 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.15 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -43,15 +43,15 @@
  * process-specific sub-directories.  It is
  * used in procfs_lookup and procfs_readdir
  */
-static struct pfsnames {
-	u_char	d_type;
-	u_char	d_namlen;
-	char	d_name[PROCFS_NAMELEN];
-	pfstype	d_pfstype;
-	int	(*d_valid) __P((struct proc *p));
-} procent[] = {
+struct proc_target {
+	u_char	pt_type;
+	u_char	pt_namlen;
+	char	*pt_name;
+	pfstype	pt_pfstype;
+	int	(*pt_valid) __P((struct proc *p));
+} proc_targets[] = {
 #define N(s) sizeof(s)-1, s
-	/* namlen, nam, type */
+	/*	  name		type		validp */
 	{ DT_DIR, N("."),	Pproc,		NULL },
 	{ DT_DIR, N(".."),	Proot,		NULL },
 	{ DT_REG, N("file"),	Pfile,		procfs_validfile },
@@ -64,7 +64,7 @@ static struct pfsnames {
 	{ DT_REG, N("notepg"),	Pnotepg,	NULL },
 #undef N
 };
-#define Nprocent (sizeof(procent)/sizeof(procent[0]))
+static int nproc_targets = sizeof(proc_targets) / sizeof(proc_targets[0]);
 
 static pid_t atopid __P((const char *, u_int));
 
@@ -208,7 +208,7 @@ procfs_inactive(ap)
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
 	if (PFIND(pfs->pfs_pid) == 0)
-		VOP_REVOKE(ap->a_vp, 0);
+		VOP_REVOKE(ap->a_vp);
 
 	return (0);
 }
@@ -564,12 +564,17 @@ procfs_lookup(ap)
 	struct vnode *dvp = ap->a_dvp;
 	char *pname = cnp->cn_nameptr;
 	int error = 0;
+	struct proc_target *pt;
+	struct vnode *fvp;
 	pid_t pid;
-	struct vnode *nvp;
 	struct pfsnode *pfs;
-	struct proc *procp;
-	pfstype pfs_type;
+	struct proc *p;
 	int i;
+
+	*vpp = NULL;
+
+	if (cnp->cn_nameiop == DELETE || cnp->cn_nameiop == RENAME)
+		return (EROFS);
 
 	if (cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
@@ -577,8 +582,6 @@ procfs_lookup(ap)
 		/*VOP_LOCK(dvp);*/
 		return (0);
 	}
-
-	*vpp = NULL;
 
 	pfs = VTOPFS(dvp);
 	switch (pfs->pfs_type) {
@@ -591,53 +594,48 @@ procfs_lookup(ap)
 
 		pid = atopid(pname, cnp->cn_namelen);
 		if (pid == NO_PID)
-			return (ENOENT);
+			break;
 
-		procp = PFIND(pid);
-		if (procp == 0)
-			return (ENOENT);
+		p = PFIND(pid);
+		if (p == 0)
+			break;
 
 		return (procfs_allocvp(dvp->v_mount, vpp, pid, Pproc));
 
 	case Pproc:
-		if (cnp->cn_flags & ISDOTDOT) {
-			error = procfs_root(dvp->v_mount, vpp);
-			return (error);
-		}
+		if (cnp->cn_flags & ISDOTDOT)
+			return (procfs_root(dvp->v_mount, vpp));
 
-		procp = PFIND(pfs->pfs_pid);
-		if (procp == 0)
-			return (ENOENT);
+		p = PFIND(pfs->pfs_pid);
+		if (p == 0)
+			break;
 
-		for (i = 0; i < Nprocent; i++) {
-			struct pfsnames *dp = &procent[i];
-
-			if (cnp->cn_namelen == dp->d_namlen &&
-			    bcmp(pname, dp->d_name, dp->d_namlen) == 0 &&
-			    (dp->d_valid == NULL || (*dp->d_valid)(procp))) {
-			    	pfs_type = dp->d_pfstype;
+		for (pt = proc_targets, i = 0; i < nproc_targets; pt++, i++) {
+			if (cnp->cn_namelen == pt->pt_namlen &&
+			    bcmp(pt->pt_name, pname, cnp->cn_namelen) == 0 &&
+			    (pt->pt_valid == NULL || (*pt->pt_valid)(p)))
 				goto found;
-			}
 		}
-		return (ENOENT);
+		break;
 
 	found:
-		if (pfs_type == Pfile) {
-			nvp = procfs_findtextvp(procp);
-			if (nvp == NULLVP)
-				return (ENXIO);
-			VREF(nvp);
-			VOP_LOCK(nvp);
-			*vpp = nvp;
+		if (pt->pt_pfstype == Pfile) {
+			fvp = procfs_findtextvp(p);
+			/* We already checked that it exists. */
+			VREF(fvp);
+			VOP_LOCK(fvp);
+			*vpp = fvp;
 			return (0);
 		}
 
 		return (procfs_allocvp(dvp->v_mount, vpp, pfs->pfs_pid,
-		    pfs_type));
+		    pt->pt_pfstype));
 
 	default:
 		return (ENOTDIR);
 	}
+
+	return (cnp->cn_nameiop == LOOKUP ? ENOENT : EROFS);
 }
 
 int
@@ -705,31 +703,29 @@ procfs_readdir(ap)
 	 * from the procent[] table (top of this file).
 	 */
 	case Pproc: {
-		pid_t pid = pfs->pfs_pid;
-		struct pfsnames *dt;
+		struct proc *p;
+		struct proc_target *pt;
 
-		for (dt = &procent[i]; i < Nprocent && uio->uio_resid >= UIO_MX;
-		     dt++, i++) {
-			struct proc *p = PFIND(pid);
+		p = PFIND(pfs->pfs_pid);
+		if (p == NULL)
+			break;
 
-			if (p == NULL)
-				break;
-
-			if (dt->d_valid && (*dt->d_valid)(p) == 0)
+		for (pt = &proc_targets[i];
+		     uio->uio_resid >= UIO_MX && i < nproc_targets; pt++, i++) {
+			if (pt->pt_valid && (*pt->pt_valid)(p) == 0)
 				continue;
 			
 			dp->d_reclen = UIO_MX;
-			dp->d_fileno = PROCFS_FILENO(pid, dt->d_pfstype);
-			dp->d_namlen = dt->d_namlen;
-			bcopy(dt->d_name, dp->d_name, dt->d_namlen + 1);
-			dp->d_type = dt->d_type;
+			dp->d_fileno = PROCFS_FILENO(pfs->pfs_pid, pt->pt_pfstype);
+			dp->d_namlen = pt->pt_namlen;
+			bcopy(pt->pt_name, dp->d_name, pt->pt_namlen + 1);
+			dp->d_type = pt->pt_type;
 
 			if (error = uiomove((caddr_t)dp, UIO_MX, uio))
 				break;
 		}
 
 	    	break;
-
 	    }
 
 	/*
