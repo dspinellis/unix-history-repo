@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_systm.h	6.2 (Berkeley) %G%
+ *	@(#)in_systm.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -11,7 +11,6 @@
  * definitions for kernel.
  */
 
-#ifndef LOCORE
 /*
  * Network types.
  *
@@ -24,10 +23,7 @@ typedef u_short n_short;		/* short as received from the net */
 typedef u_long	n_long;			/* long as received from the net */
 
 typedef	u_long	n_time;			/* ms since 00:00 GMT, byte rev */
-#endif
 
-#ifndef LOCORE
 #ifdef KERNEL
 n_time	iptime();
-#endif
 #endif
