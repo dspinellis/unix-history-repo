@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.118 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.119 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -312,8 +312,8 @@ ufs_setattr(ap)
 		} else {
 			if (ip->i_flags & (SF_IMMUTABLE | SF_APPEND))
 				return (EPERM);
-			ip->i_flags &= 0xffff0000;
-			ip->i_flags |= (vap->va_flags & 0xffff);
+			ip->i_flags &= SF_SETTABLE;
+			ip->i_flags |= (vap->va_flags & UF_SETTABLE);
 		}
 		ip->i_flag |= ICHG;
 		if (vap->va_flags & (IMMUTABLE | APPEND))
