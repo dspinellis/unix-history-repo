@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.22 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.23 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,6 +22,8 @@
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
+#define INC_FINFO(SP) \
+	++((SEGSUM *)((SP)->segsum))->ss_nfinfo
 
 struct buf *lfs_fakebuf __P((struct vnode *, int, size_t, caddr_t));
 
@@ -97,6 +99,15 @@ lfs_markv(p, uap, retval)
 				lfs_updatemeta(sp);
 				lfs_writeinode(fs, sp, ip);
 				vput(vp);
+				if (sp->fip->fi_nblocks) {
+					INC_FINFO(sp);
+					sp->fip =
+					(FINFO *) (&sp->fip->fi_blocks[sp->fip->fi_nblocks]);
+				}
+				sp->start_lbp = &sp->fip->fi_blocks[0];
+				sp->fip->fi_version = blkp->bi_version;
+				sp->fip->fi_nblocks = 0;
+				sp->fip->fi_ino = blkp->bi_inode;
 				sp->vp = NULL;
 			}
 			lastino = blkp->bi_inode;
@@ -154,6 +165,8 @@ lfs_markv(p, uap, retval)
 		while (lfs_gatherblock(sp, bp, NULL));
 	}
 	if (sp->vp) {
+		if (sp->fip->fi_nblocks)
+			INC_FINFO(sp);
 		lfs_updatemeta(sp);
 		lfs_writeinode(fs, sp, ip);
 		vput(vp);
@@ -370,8 +383,11 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 
 	ump = VFSTOUFS(mp);
 	dev = ump->um_dev;
-	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL) {
+		ip = VTOI(*vpp);
+		ip->i_flag |= IMOD;
 		return (0);
+	}
 
 	/* Allocate new vnode/inode. */
 	if (error = lfs_vcreate(mp, ino, &vp)) {
