@@ -3,7 +3,9 @@
 #define	MAXLINE	3600	/* maximum input line */
 	/* huge for Chris's graphics language */
 
+#ifndef DEVDIR
 #define DEVDIR	"/usr/lib/font"		/* place to find "dev" directory */
+#endif
 char	*devdir	= DEVDIR;
 
 char	in[MAXLINE];	/* input buffer */
