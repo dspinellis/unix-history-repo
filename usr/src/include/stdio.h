@@ -1,16 +1,14 @@
-/*	stdio.h	1.11	85/01/08	*/
-#define	BUFSIZ	1024
-#define	_NFILE	48
+/*	stdio.h	1.12	85/05/30	*/
 # ifndef FILE
+#define	BUFSIZ	1024
 extern	struct	_iobuf {
 	int	_cnt;
-	char	*_ptr;
-	char	*_base;
+	char	*_ptr;		/* should be unsigned char */
+	char	*_base;		/* ditto */
 	int	_bufsiz;
 	short	_flag;
-	char	_file;
-} _iob[_NFILE];
-# endif
+	char	_file;		/* should be short */
+} _iob[];
 
 #define	_IOREAD	01
 #define	_IOWRT	02
@@ -41,13 +39,17 @@ extern	struct	_iobuf {
 #define	feof(p)		(((p)->_flag&_IOEOF)!=0)
 #define	ferror(p)	(((p)->_flag&_IOERR)!=0)
 #define	fileno(p)	((p)->_file)
+#define	clearerr(p)	((p)->_flag &= ~(_IOERR|_IOEOF))
 
 FILE	*fopen();
 FILE	*fdopen();
 FILE	*freopen();
+FILE	*popen();
 long	ftell();
+long	fseek();
 char	*fgets();
 char	*gets();
 #ifdef vax
 char	*sprintf();		/* too painful to do right */
 #endif
+# endif
