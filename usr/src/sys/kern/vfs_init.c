@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_init.c	7.3 (Berkeley) %G%
+ *	@(#)vfs_init.c	7.4 (Berkeley) %G%
  */
 
 
@@ -184,7 +184,6 @@ vfs_op_init()
 /*
  * Routines having to do with the management of the vnode table.
  */
-struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops;
 extern struct vnodeops spec_vnodeops;
 extern void vclean();
