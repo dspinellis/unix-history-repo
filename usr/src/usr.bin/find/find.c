@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.17 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.18 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -642,6 +642,10 @@ descend(name, fname, exlist)
 	if((Statb.st_mode&S_IFMT)!=S_IFDIR ||
 	   !Xdev && Devstat.st_dev != Statb.st_dev)
 		return(1);
+
+	if (Statb.st_nlink == 2 && exlist->F == and &&
+		exlist->L->F == type && ((int) (exlist->L->L)) == S_IFDIR)
+			return(1);
 
 	for (c1 = name; *c1; ++c1);
 	if (*(c1-1) == '/')
