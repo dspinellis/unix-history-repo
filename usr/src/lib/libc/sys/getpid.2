@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpid.2	6.1 (Berkeley) %G%
+.\"	@(#)getpid.2	6.2 (Berkeley) %G%
 .\"
 .TH GETPID 2 ""
 .UC 4
@@ -12,10 +12,10 @@ getpid, getppid \- get process identification
 .ft B
 .nf
 pid = getpid()
-long pid;
+int pid;
 .sp
 ppid = getppid()
-long ppid;
+int ppid;
 .fi
 .ft R
 .SH DESCRIPTION
