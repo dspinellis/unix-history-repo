@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 # Flag BSD4_2 means 4.2 or later.
 CFLAGS=	-O -DBSD4_2
@@ -39,8 +39,8 @@ install: FRC
 	install -o bin -g bin -m 644 getline.o ${LLIB}/getline.o
 	install -o bin -g bin -m 644 getnum.o ${LLIB}/getnum.o
 	cd ${LLIB}; rm -f ../C/get*.o; ln getline.o getnum.o ../C
-	install -o bin -g bin -m 644 getline.c ${LLIB}/../C/getline.c
-	install -o bin -g bin -m 644 getnum.c ${LLIB}/../C/getnum.c
+	install -c -o bin -g bin -m 644 getline.c ${LLIB}/../C/getline.c
+	install -c -o bin -g bin -m 644 getnum.c ${LLIB}/../C/getnum.c
 	chmod 755 ${LLIB}/../*/Init
 
 lint: FRC
