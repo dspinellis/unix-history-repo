@@ -1,9 +1,10 @@
-/*	init_main.c	4.35	82/08/24	*/
+/*	init_main.c	4.36	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/fs.h"
 #include "../h/mount.h"
 #include "../h/map.h"
@@ -14,11 +15,9 @@
 #include "../h/buf.h"
 #include "../h/mtpr.h"
 #include "../h/pte.h"
-#include "../h/clock.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
 #include "../h/text.h"
-#include "../h/vlimit.h"
 #include "../h/clist.h"
 #ifdef INET
 #include "../h/protosw.h"
@@ -67,25 +66,17 @@ main(firstaddr)
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = -1;
-	for (i = 1; i < sizeof(u.u_limit)/sizeof(u.u_limit[0]); i++)
-		switch (i) {
-
-		case LIM_STACK:
-			u.u_limit[i] = 512*1024;
-			continue;
-		case LIM_DATA:
-			u.u_limit[i] = ctob(MAXDSIZ);
-			continue;
-		default:
-			u.u_limit[i] = INFINITY;
-			continue;
-		}
-	p->p_maxrss = INFINITY/NBPG;
+	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
+		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
+		    RLIM_INFINITY;
+	u.u_rlimit[RLIMIT_STACK].rlim_cur = 512*1024;
+	u.u_rlimit[RLIMIT_DATA].rlim_cur = ctob(MAXDSIZ);
+	p->p_maxrss = RLIM_INFINITY/NBPG;
 #ifdef QUOTA
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
-	clkstart();
+	clockstart();
 
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
@@ -111,8 +102,8 @@ main(firstaddr)
 	if (fs == 0)
 		panic("iinit");
 	bcopy("/", fs->fs_fsmnt, 2);
-	clkinit(fs->fs_time);
-	bootime = time;
+	clockinit(fs->fs_time);
+	boottime = time;
 
 	rootdir = iget(rootdev, fs, (ino_t)ROOTINO);
 	iunlock(rootdir);
