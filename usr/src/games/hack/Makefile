@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 PROG=	hack
 SRCS=	alloc.c hack.Decl.c hack.apply.c hack.bones.c hack.c hack.cmd.c \
@@ -16,6 +16,7 @@ MAN6=	hack.0
 DPADD=	${LIBTERM} ${LIBCOMPAT}
 LDADD=	-ltermcap -lcompat
 HIDEGAME=hidegame
+CFLAGS=	-fwritable-strings
 
 hack.onames.h: makedefs def.objects.h
 	makedefs ${.CURDIR}/def.objects.h > hack.onames.h
