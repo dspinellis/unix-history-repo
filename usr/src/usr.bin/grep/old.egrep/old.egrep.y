@@ -13,10 +13,11 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)old.egrep.y	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)old.egrep.y	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
 #define BLKSIZE 8192
 #define MAXLIN 350
@@ -25,6 +26,7 @@ static char *sccsid = "@(#)old.egrep.y	4.4 (Berkeley) %G%";
 #define NSTATES 128
 #define FINAL -1
 char gotofn[NSTATES][NCHARS];
+char cmap[256];
 int state[NSTATES];
 char out[NSTATES];
 int line = 1;
@@ -49,6 +51,7 @@ long	lnum;
 int	bflag;
 int	cflag;
 int	fflag;
+int	iflag;
 int	lflag;
 int	nflag;
 int	hflag	= 1;
@@ -165,7 +168,7 @@ yylex() {
 	}
 }
 nextch() {
-	register char c;
+	register int c;
 	if (fflag) {
 		if ((c = getc(exprfile)) == EOF) {
 			fclose(exprfile);
@@ -423,6 +426,8 @@ follow(v) int v; {
 main(argc, argv)
 char **argv;
 {
+	register int i;
+
 	while (--argc > 0 && (++argv)[0][0]=='-')
 		switch (argv[0][1]) {
 
@@ -451,6 +456,12 @@ char **argv;
 			fflag++;
 			continue;
 
+		case 'i':
+			iflag++;
+			for ( i = 'A'; i <= 'Z'; i++ )
+				cmap[i] = (char) tolower ( i );
+			continue;
+
 		case 'l':
 			lflag++;
 			continue;
@@ -470,6 +481,10 @@ char **argv;
 out:
 	if (argc<=0)
 		exit(2);
+
+	for (i = 0; i < 256; ++i)
+		cmap[i] = (char)i;
+
 	if (fflag) {
 		fname = *argv;
 		exprfile = fopen(fname, "r");
@@ -479,6 +494,12 @@ out:
 		}
 	}
 	else input = *argv;
+	if ( iflag ) {
+		register char *s;
+		for ( s = input; *s != '\0'; s++ )
+			if ( isupper ( (int)(*s) ) )
+				*s = (char) tolower ( (int)(*s) );
+	}
 	argc--;
 	argv++;
 
@@ -504,6 +525,7 @@ char *file;
 	register char *p;
 	register cstat;
 	register ccount;
+	register char *cmapr = cmap;
 	static char *buf;
 	static int blksize;
 	struct stat stb;
@@ -539,7 +561,7 @@ char *file;
 	istat = cstat = gotofn[0]['\n'];
 	if (out[cstat]) goto found;
 	for (;;) {
-		cstat = gotofn[cstat][*p&0377];	/* all input chars made positive */
+		cstat = gotofn[cstat][(unsigned char)cmapr[*(unsigned char *)p]];
 		if (out[cstat]) {
 		found:	for(;;) {
 				if (*p++ == '\n') {
