@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -74,7 +74,8 @@ klogin(pw, localhost, password)
 	 *	   return value of RD_AP_UNDEC from krb_rd_req().
 	 */
 	if (kerror != INTK_OK) {
-		if (kerror != INTK_BADPW && kerror != KDC_PR_UNKNOWN) {
+		if (kerror != INTK_BADPW && kerror != KDC_PR_UNKNOWN &&
+		    kerror != KFAILURE) {
 			syslog(LOG_ERR, "Kerberos intkt error: %s",
 			    krb_err_txt[kerror]);
 			dest_tkt();
