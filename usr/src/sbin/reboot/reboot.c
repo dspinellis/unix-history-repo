@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)reboot.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)reboot.c	4.4 (Berkeley) %G%";
 /*
  * Reboot
  */
@@ -60,6 +60,8 @@ main(argc, argv)
 		pause();
 	}
 
+	if ((howto & RB_NOSYNC) == 0)
+		log_entry();
 	if (!qflag) {
 		if (!(howto & RB_NOSYNC)) {
 			markdown();
