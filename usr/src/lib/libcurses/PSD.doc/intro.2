@@ -3,12 +3,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.2	6.3 (Berkeley) %G%
+.\"	@(#)intro.2	6.4 (Berkeley) %G%
 .\"
 .sh 1 Variables
 .pp
 Many variables which are used to describe the terminal environment
 are available to the programmer. They are:
+.(b
 .TS
 expand;
 lw(6m) lw(8n) lw(50n).
@@ -37,27 +38,13 @@ T}
 int	COLS	T{
 number of columns on the terminal
 T}
-int	ERR	T{
+int	CURSES_ERR	T{
 error flag returned by routines on a fail.
 T}
-int	OK	T{
-error flag returned by routines when things go right.
+int	CURSES_OK	T{
+flag returned by routines upon success.
 T}
 .TE
-.pp
-There are also several
-.q #define
-constants and types
-which are of general usefulness:
-.sp
-.ev 1
-.ta 11n
-.(b L
-.nf
-reg	storage class ``register'' (\fIe.g.\fP, \fIreg int i;\fR\|)
-bool	boolean type, actually a ``char'' (\fIe.g.\fP, \fIbool doneit;\fR\|)
-TRUE	boolean ``true'' flag (1).
-FALSE	boolean ``false'' flag (0).
 .fi
 .ev
 .)b
