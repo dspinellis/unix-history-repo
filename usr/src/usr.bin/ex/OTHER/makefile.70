@@ -25,7 +25,7 @@ LIBDIR=	/usr/ucb/lib
 FOLD=	${BINDIR}/fold
 CTAGS=	${BINDIR}/ctags
 XSTR=	${BINDIR}/xstr
-CC=	cc -V -B/usr/new/lib/ -t012 # kludge for /usr/new
+CC=	cc -V
 AS=	ovas
 LD=	ovld
 DEBUGFLAGS=	-DTRACE
@@ -86,13 +86,8 @@ a.out: ${OBJS}
 
 all:	a.out exrecover expreserve
 
-${OBJS}:	${SRCS}
-
 tags:	/tmp
 	${CTAGS} -w ex.[hc] ex_*.[hc]
-
-${SRCS}:
-	${GET}$@
 
 # ex_vars.h:
 # 	csh makeoptions ${CFLAGS}
