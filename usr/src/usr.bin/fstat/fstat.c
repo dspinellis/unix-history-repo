@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,6 +53,7 @@ static char sccsid[] = "@(#)fstat.c	5.15 (Berkeley) %G%";
 #include <ctype.h>
 #include <nlist.h>
 #include <pwd.h>
+#include "pathnames.h"
 
 #ifdef	ULTRIX
 		/* UFS -> GFS */
@@ -63,11 +64,6 @@ static char sccsid[] = "@(#)fstat.c	5.15 (Berkeley) %G%";
 #    define	i_mode	g_mode
 #    define	i_size	g_size
 #endif
-
-#define	N_KMEM	"/dev/kmem"
-#define	N_MEM	"/dev/mem"
-#define	N_SWAP	"/dev/drum"
-#define	N_UNIX	"/vmunix"
 
 #define	TEXT	-2
 #define	WD	-1
@@ -161,8 +157,8 @@ main(argc, argv)
 
 	openfiles();
 
-	if (nlist(N_UNIX, nl) == -1 || !nl[0].n_type) {
-		fprintf(stderr, "%s: No namelist\n", N_UNIX);
+	if (nlist(_PATH_UNIX, nl) == -1 || !nl[0].n_type) {
+		fprintf(stderr, "%s: No namelist\n", _PATH_UNIX);
 		exit(1);
 	}
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
@@ -176,7 +172,7 @@ main(argc, argv)
 		exit(1);
 	}
 	if (read(kmem, (char *)mproc, size) != size)
-		rerr1("proc table", N_KMEM);
+		rerr1("proc table", _PATH_KMEM);
 
 	printf("USER\t CMD\t      PID    FD\tDEVICE\tINODE\t  SIZE TYPE%s\n",
 	    fflg ? " NAME" : "");
@@ -214,7 +210,7 @@ getu()
 		(void)lseek(swap, (off_t)dtob(mproc->p_swaddr), L_SET);
 		if (read(swap, (char *)&user.user, sizeof(struct user))
 		    != sizeof(struct user)) {
-			fprintf(stderr, "fstat: can't read u for pid %d from %s\n", mproc->p_pid, N_SWAP);
+			fprintf(stderr, "fstat: can't read u for pid %d from %s\n", mproc->p_pid, _PATH_SWAP);
 			return(0);
 		}
 		return(1);
@@ -222,13 +218,13 @@ getu()
 	pteaddr = &Usrptma[btokmx(mproc->p_p0br) + mproc->p_szpt - 1];
 	(void)lseek(kmem, (off_t)pteaddr, L_SET);
 	if (read(kmem, (char *)&apte, sizeof(apte)) != sizeof(apte)) {
-		printf("fstat: can't read indir pte to get u for pid %d from %s\n", mproc->p_pid, N_SWAP);
+		printf("fstat: can't read indir pte to get u for pid %d from %s\n", mproc->p_pid, _PATH_SWAP);
 		return(0);
 	}
 	(void)lseek(mem, (off_t)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE)
 	    * sizeof(struct pte), L_SET);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
-		printf("fstat: can't read page table for u of pid %d from %s\n", mproc->p_pid, N_KMEM);
+		printf("fstat: can't read page table for u of pid %d from %s\n", mproc->p_pid, _PATH_KMEM);
 		return(0);
 	}
 	ncl = (sizeof(struct user) + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
@@ -236,7 +232,7 @@ getu()
 		i = ncl * CLSIZE;
 		(void)lseek(mem, (off_t)ctob(arguutl[CLSIZE+i].pg_pfnum), L_SET);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
-			printf("fstat: can't read page %u of u of pid %d from %s\n", arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, N_MEM);
+			printf("fstat: can't read page %u of u of pid %d from %s\n", arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, _PATH_MEM);
 			return(0);
 		}
 	}
@@ -250,7 +246,7 @@ dotext()
 
 	(void)lseek(kmem, (off_t)mproc->p_textp, L_SET);
 	if (read(kmem, (char *) &text, sizeof(text)) != sizeof(text)) {
-		rerr1("text table", N_KMEM);
+		rerr1("text table", _PATH_KMEM);
 		return;
 	}
 	if (text.x_flag)
@@ -528,7 +524,7 @@ readf()
 		(void)lseek(kmem, (off_t)user.user.u_ofile[i], L_SET);
 		if (read(kmem, (char *)&lfile, sizeof(lfile))
 		    != sizeof(lfile)) {
-			rerr1("file", N_KMEM);
+			rerr1("file", _PATH_KMEM);
 			continue;
 		}
 		itrans(lfile.f_type, (struct inode *)lfile.f_data, i);
@@ -560,7 +556,7 @@ getfname(filename)
 	char *malloc();
 
 	if (stat(filename, &statbuf)) {
-		perror(filename);
+		fprintf(stderr, "fstat: %s: %s\n", strerror(errno), filename);
 		return(0);
 	}
 	if ((cur = (DEVS *)malloc(sizeof(DEVS))) == NULL) {
@@ -586,16 +582,19 @@ getfname(filename)
 static
 openfiles()
 {
-	if ((kmem = open(N_KMEM, O_RDONLY, 0)) < 0) {
-		perror(N_KMEM);
+	if ((kmem = open(_PATH_KMEM, O_RDONLY, 0)) < 0) {
+		(void)fprintf(stderr, "fstat: %s: %s\n",
+		    strerror(errno), _PATH_KMEM);
 		exit(1);
 	}
-	if ((mem = open(N_MEM, O_RDONLY, 0)) < 0) {
-		perror(N_MEM);
+	if ((mem = open(_PATH_MEM, O_RDONLY, 0)) < 0) {
+		(void)fprintf(stderr, "fstat: %s: %s\n",
+		    strerror(errno), _PATH_MEM);
 		exit(1);
 	}
-	if ((swap = open(N_SWAP, O_RDONLY, 0)) < 0) {
-		perror(N_SWAP);
+	if ((swap = open(_PATH_SWAP, O_RDONLY, 0)) < 0) {
+		(void)fprintf(stderr, "fstat: %s: %s\n",
+		    strerror(errno), _PATH_SWAP);
 		exit(1);
 	}
 }
@@ -605,7 +604,7 @@ rerr1(what, fromwhat)
 	char *what, *fromwhat;
 {
 	if (vflg)
-		printf("fstat: error reading %s from %s", what, fromwhat);
+		printf("error reading %s from %s", what, fromwhat);
 }
 
 static
@@ -614,7 +613,8 @@ rerr2(err, address, what)
 	char *what;
 {
 	if (vflg)
-		printf("error %d reading %s at %x from kmem\n", errno, what, address);
+		printf("error %d reading %s at %x from %s\n",
+		    errno, what, address, _PATH_KMEM);
 }
 
 static long
