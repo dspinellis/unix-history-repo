@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.23 (Berkeley) 89/01/11
+#	@(#)Makefile	5.24 (Berkeley) 89/04/28
 #
 # Doing a make install builds /usr/include
 #
@@ -25,7 +25,7 @@ STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h dirent.h disktab.h \
 	sysexits.h time.h ttyent.h tzfile.h utmp.h varargs.h vfont.h
 LINKS=	errno.h signal.h syslog.h
 
-NETDIRS=	net netimp netinet netns
+SYSDIRS=	sys net netimp netinet netns
 TAHOEDIRS=	tahoe tahoemath tahoevba tahoeif
 VAXDIRS=	vax vaxmba vaxuba vaxif
 SHARED=	symlinks
@@ -60,16 +60,9 @@ install: ${SHARED}
 	ln -s machine/frame.h ${DESTDIR}/usr/include/frame.h
 
 symlinks: ${MACHINE}.symlinks
-	rm -rf ${DESTDIR}/usr/include/sys
-	-if [ ! -s ${DESTDIR}/usr/include/sys ]; \
-	then \
-		ln -s /sys/h ${DESTDIR}/usr/include/sys; \
-	else \
-		echo ${DESTDIR}/usr/include/sys not removed; \
-	fi
 
 tahoe.symlinks:
-	-for i in ${NETDIRS} ${TAHOEDIRS}; do \
+	-for i in ${SYSDIRS} ${TAHOEDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
 		then \
@@ -80,7 +73,7 @@ tahoe.symlinks:
 	done
 
 vax.symlinks:
-	-for i in ${NETDIRS} ${VAXDIRS}; do \
+	-for i in ${SYSDIRS} ${VAXDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		if [ ! -s ${DESTDIR}/usr/include/$$i ]; \
 		then \
@@ -91,20 +84,16 @@ vax.symlinks:
 	done
 
 copies: ${MACHINE}.copies
-	rm -rf ${DESTDIR}/usr/include/sys;
-	mkdir ${DESTDIR}/usr/include/sys; 
-	chmod 775 ${DESTDIR}/usr/include/sys;
-	-(cd /sys/h; tar cf - *.h | (cd ${DESTDIR}/usr/include/sys; tar xpfB -))
 
 tahoe.copies:
-	-for i in ${NETDIRS} ${TAHOEDIRS}; do \
+	-for i in ${SYSDIRS} ${TAHOEDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
 	done
 
 vax.copies:
-	-for i in ${NETDIRS} ${VAXDIRS}; do \
+	-for i in ${SYSDIRS} ${VAXDIRS}; do \
 		rm -rf ${DESTDIR}/usr/include/$$i; \
 		cd /sys; \
 		tar cf - $$i/*.h | (cd ${DESTDIR}/usr/include; tar xpfB -); \
