@@ -7,11 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	5.12 (Berkeley) %G%
+ *	@(#)genassym.c	5.13 (Berkeley) %G%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sys/param.h"
@@ -64,10 +64,7 @@ main()
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
 	printf("#define\tV_SOFT %d\n", &vm->v_soft);
-	printf("#define\tV_PDMA %d\n", &vm->v_pdma);
 	printf("#define\tV_FAULTS %d\n", &vm->v_faults);
-	printf("#define\tV_PGREC %d\n", &vm->v_pgrec);
-	printf("#define\tV_FASTPGREC %d\n", &vm->v_fastpgrec);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tHIGHPAGES %d\n", HIGHPAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
