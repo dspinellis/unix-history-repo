@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)signal.3	6.4 (Berkeley) %G%
+.\"	@(#)signal.3	6.5 (Berkeley) %G%
 .\"
 .TH SIGNAL 3C ""
 .UC 4
@@ -16,13 +16,13 @@ signal \- simplified software signal facilities
 .nf
 .B #include <signal.h>
 .PP
-.B (*signal(sig, func))()
-.B int (*func)();
+.B void (*signal(sig, func))()
+.B void (*func)();
 .fi
 .SH DESCRIPTION
 .I Signal
 is a simplified interface to the more general
-.IR sigvec (2)
+.IR sigaction (2)
 facility.
 .PP
 A signal
@@ -57,7 +57,7 @@ SIGINT	2	interrupt
 SIGQUIT	3*	quit
 SIGILL	4*	illegal instruction
 SIGTRAP	5*	trace trap
-SIGIOT	6*	IOT instruction
+SIGABRT	6*	\fIabort\fP() call (formerly SIGIOT)
 SIGEMT	7*	EMT instruction
 SIGFPE	8*	floating point exception
 SIGKILL	9	kill (cannot be caught or ignored)
@@ -80,6 +80,7 @@ SIGXFSZ	25	file size limit exceeded (see \fIsetrlimit\fP(2))
 SIGVTALRM	26	virtual time alarm (see \fIsetitimer\fP(2))
 SIGPROF	27	profiling timer alarm (see \fIsetitimer\fP(2))
 SIGWINCH	28\*b	Window size change
+SIGINFO	29\*b	status request from keyboard
 SIGUSR1	30	User defined signal 1
 SIGUSR2	31	User defined signal 2
 .fi
@@ -117,15 +118,25 @@ remains installed after a signal has been delivered.\fP
 If a caught signal occurs
 during certain system calls, causing
 the call to terminate prematurely, the call
-is automatically restarted.
-In particular this can occur
-during a
-.I read
-or
-.IR write (2)
-on a slow device (such as a terminal; but not a file)
+is automatically restarted
+(the handler is installed using the SA_RESTART flag with
+.IR sigaction (2)).
+The affected system calls include
+.IR read (2),
+.IR write (2),
+.IR sendto (2),
+.IR recvfrom (2),
+.IR sendmsg (2)
+and
+.IR recvmsg (2)
+on a communications channel or a slow device (such as a terminal,
+but not a regular file)
 and during a
-.IR wait (2).
+.IR wait (2)
+or
+.IR ioctl (2).
+However, calls that have already committed are not restarted,
+but instead return a partial success (for example, a short read count).
 .PP
 The value of
 .I signal
@@ -160,19 +171,14 @@ is not a valid signal number.
 [EINVAL]
 An attempt is made to ignore or supply a handler for SIGKILL
 or SIGSTOP.
-.TP 15
-[EINVAL]
-An attempt is made to ignore SIGCONT (by default SIGCONT
-is ignored).
 .SH "SEE ALSO"
-kill(1),
-ptrace(2), kill(2),
-sigvec(2), sigblock(2), sigsetmask(2), sigpause(2),
+kill(1), ptrace(2), kill(2),
+sigaction(2), sigprocmask(2), sigsuspend(2),
 sigstack(2), setjmp(3), tty(4)
 .SH "NOTES  (VAX-11)"
 The handler routine can be declared:
 .PP
-    handler(sig, code, scp)
+    void handler(sig, code, scp)
 .PP
 Here
 .I sig
