@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_rrip.h	8.1 (Berkeley) %G%
+ *	@(#)iso_rrip.h	8.2 (Berkeley) %G%
  */
 
 
@@ -45,13 +45,13 @@ typedef struct {
 	int		cont;		/* continuation of above */
 } ISO_RRIP_ANALYZE;
 
-int isofs_rrip_analyze __P((struct iso_directory_record *isodir,
+int cd9660_rrip_analyze __P((struct iso_directory_record *isodir,
 			    struct iso_node *inop, struct iso_mnt *imp));
-int isofs_rrip_getname __P((struct iso_directory_record *isodir,
+int cd9660_rrip_getname __P((struct iso_directory_record *isodir,
 			    char *outbuf, u_short *outlen,
 			    ino_t *inump, struct iso_mnt *imp));
-int isofs_rrip_getsymname __P((struct iso_directory_record *isodir,
+int cd9660_rrip_getsymname __P((struct iso_directory_record *isodir,
 			       char *outbuf, u_short *outlen,
 			       struct iso_mnt *imp));
-int isofs_rrip_offset __P((struct iso_directory_record *isodir,
+int cd9660_rrip_offset __P((struct iso_directory_record *isodir,
 			   struct iso_mnt *imp));

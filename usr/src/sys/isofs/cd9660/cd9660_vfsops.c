@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,22 +29,22 @@
 #include <sys/malloc.h>
 
 #include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/isofs_node.h>
+#include <isofs/cd9660/cd9660_node.h>
 
 extern int enodev ();
 
-struct vfsops isofs_vfsops = {
-	isofs_mount,
-	isofs_start,
-	isofs_unmount,
-	isofs_root,
-	isofs_quotactl,
-	isofs_statfs,
-	isofs_sync,
-	isofs_vget,
-	isofs_fhtovp,
-	isofs_vptofh,
-	isofs_init,
+struct vfsops cd9660_vfsops = {
+	cd9660_mount,
+	cd9660_start,
+	cd9660_unmount,
+	cd9660_root,
+	cd9660_quotactl,
+	cd9660_statfs,
+	cd9660_sync,
+	cd9660_vget,
+	cd9660_fhtovp,
+	cd9660_vptofh,
+	cd9660_init,
 };
 
 /*
@@ -56,7 +56,7 @@ struct vfsops isofs_vfsops = {
 
 static iso_mountfs();
 
-isofs_mountroot()
+cd9660_mountroot()
 {
 	register struct mount *mp;
 	extern struct vnode *rootvp;
@@ -71,11 +71,11 @@ isofs_mountroot()
 	 * Get vnodes for swapdev and rootdev.
 	 */
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
-		panic("isofs_mountroot: can't setup bdevvp's");
+		panic("cd9660_mountroot: can't setup bdevvp's");
 
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = &isofs_vfsops;
+	mp->mnt_op = &cd9660_vfsops;
 	mp->mnt_flag = MNT_RDONLY;
 	args.flags = ISOFSMNT_ROOT;
 	if (error = iso_mountfs(rootvp, mp, p, &args)) {
@@ -83,7 +83,7 @@ isofs_mountroot()
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
-		(void)isofs_unmount(mp, 0, p);
+		(void)cd9660_unmount(mp, 0, p);
 		free(mp, M_MOUNT);
 		return (error);
 	}
@@ -98,7 +98,7 @@ isofs_mountroot()
 	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) isofs_statfs(mp, &mp->mnt_stat, p);
+	(void) cd9660_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	return (0);
 }
@@ -113,7 +113,7 @@ int iso_doforce = 1;
  *
  * mount system call
  */
-isofs_mount(mp, path, data, ndp, p)
+cd9660_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
 	caddr_t data;
@@ -178,7 +178,7 @@ isofs_mount(mp, path, data, ndp, p)
 	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) isofs_statfs(mp, &mp->mnt_stat, p);
+	(void) cd9660_statfs(mp, &mp->mnt_stat, p);
 	return 0;
 }
 
@@ -290,7 +290,7 @@ static iso_mountfs(devvp, mp, p, argp)
 	
 	mp->mnt_data = (qaddr_t)isomp;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_ISOFS;
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_CD9660;
 	mp->mnt_maxsymlinklen = 0;
 	mp->mnt_flag |= MNT_LOCAL;
 	isomp->im_mountp = mp;
@@ -309,7 +309,7 @@ static iso_mountfs(devvp, mp, p, argp)
 		
 		rootp = (struct iso_directory_record *)bp->b_un.b_addr;
 		
-		if ((isomp->rr_skip = isofs_rrip_offset(rootp,isomp)) < 0) {
+		if ((isomp->rr_skip = cd9660_rrip_offset(rootp,isomp)) < 0) {
 		    argp->flags  |= ISOFSMNT_NORRIP;
 		} else {
 		    argp->flags  &= ~ISOFSMNT_GENS;
@@ -354,7 +354,7 @@ out:
  * Nothing to do at the moment.
  */
 /* ARGSUSED */
-isofs_start(mp, flags, p)
+cd9660_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
 	struct proc *p;
@@ -366,7 +366,7 @@ isofs_start(mp, flags, p)
  * unmount system call
  */
 int
-isofs_unmount(mp, mntflags, p)
+cd9660_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
 	struct proc *p;
@@ -406,7 +406,7 @@ isofs_unmount(mp, mntflags, p)
 /*
  * Return root of a filesystem
  */
-isofs_root(mp, vpp)
+cd9660_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
@@ -444,7 +444,7 @@ isofs_root(mp, vpp)
  */
 /* ARGSUSED */
 int
-isofs_quotactl(mp, cmd, uid, arg, p)
+cd9660_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
 	uid_t uid;
@@ -458,7 +458,7 @@ isofs_quotactl(mp, cmd, uid, arg, p)
 /*
  * Get file system statistics.
  */
-isofs_statfs(mp, sbp, p)
+cd9660_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
 	struct proc *p;
@@ -468,7 +468,7 @@ isofs_statfs(mp, sbp, p)
 	
 	isomp = VFSTOISOFS(mp);
 	
-	sbp->f_type = MOUNT_ISOFS;
+	sbp->f_type = MOUNT_CD9660;
 	sbp->f_bsize = isomp->logical_block_size;
 	sbp->f_iosize = sbp->f_bsize;	/* XXX */
 	sbp->f_blocks = isomp->volume_space_size;
@@ -489,7 +489,7 @@ isofs_statfs(mp, sbp, p)
 
 /* ARGSUSED */
 int
-isofs_sync(mp, waitfor, cred, p)
+cd9660_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
 	struct ucred *cred;
@@ -504,7 +504,7 @@ isofs_sync(mp, waitfor, cred, p)
  */
 /* ARGSUSED */
 int
-isofs_vget(mp, ino, vpp)
+cd9660_vget(mp, ino, vpp)
 	struct mount *mp;
 	ino_t ino;
 	struct vnode **vpp;
@@ -532,7 +532,7 @@ struct ifid {
 
 /* ARGSUSED */
 int
-isofs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
+cd9660_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
 	register struct mount *mp;
 	struct fid *fhp;
 	struct mbuf *nam;
@@ -632,7 +632,7 @@ isofs_fhtovp(mp, fhp, nam, vpp, exflagsp, credanonp)
  * Vnode pointer to File handle
  */
 /* ARGSUSED */
-isofs_vptofh(vp, fhp)
+cd9660_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
 {

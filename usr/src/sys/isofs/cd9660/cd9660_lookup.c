@@ -11,7 +11,7 @@
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
  *
- *	@(#)cd9660_lookup.c	8.1 (Berkeley) %G%
+ *	@(#)cd9660_lookup.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -22,9 +22,9 @@
 #include <sys/mount.h>
 
 #include <isofs/cd9660/iso.h>
-#include <isofs/cd9660/isofs_node.h>
+#include <isofs/cd9660/cd9660_node.h>
 #include <isofs/cd9660/iso_rrip.h>
-#include <isofs/cd9660/isofs_rrip.h>
+#include <isofs/cd9660/cd9660_rrip.h>
 
 struct	nchstats iso_nchstats;
 
@@ -63,7 +63,7 @@ struct	nchstats iso_nchstats;
  *
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode unlocked.
  */
-isofs_lookup(ap)
+cd9660_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode *a_dvp;
 		struct vnode **a_vpp;
@@ -294,7 +294,7 @@ searchloop:
 			else
 				ino = dbtob(bp->b_blkno) + entryoffsetinblock;
 			dp->i_ino = ino;
-			isofs_rrip_getname(ep,altname,&namelen,&dp->i_ino,imp);
+			cd9660_rrip_getname(ep,altname,&namelen,&dp->i_ino,imp);
 			if (namelen == cnp->cn_namelen
 			    && !bcmp(name,altname,namelen))
 				goto found;
