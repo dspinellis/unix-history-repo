@@ -1,4 +1,4 @@
-/*	idc.c	6.4	85/03/12	*/
+/*	idc.c	6.5	85/05/02	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -15,7 +15,6 @@ int	*trp = idctrb;
  * of that to simplify the driver.
  *
  * TODO:
- *	dk_busy
  *	ecc
  */
 #include "../machine/pte.h"
@@ -153,24 +152,23 @@ idcslave(ui, reg)
 	i = idcaddr->idcmpr;
 	idcaddr->idccsr = IDC_CRDY|(1<<(ui->ui_slave+16));
 	(void) idcwait(idcaddr, 0);
-	if (idcaddr->idccsr&IDC_R80) {
-		/* read header to synchronize microcode */
-		idcaddr->idccsr = (ui->ui_slave<<8)|IDC_RHDR;
-		(void) idcwait(idcaddr, 0);
-		if (idcaddr->idccsr & IDC_ERR)
-			return (0);
-		i = idcaddr->idcmpr;		/* read header word 1 */
-		i = idcaddr->idcmpr;		/* read header word 2 */
+	/* read header to synchronize microcode */
+	idcaddr->idccsr = (ui->ui_slave<<8)|IDC_RHDR;
+	(void) idcwait(idcaddr, 0);
+	i = idcaddr->idcmpr;		/* read header word 1 */
+	i = idcaddr->idcmpr;		/* read header word 2 */
 #ifdef lint
-		i = i;
+	i = i;
 #endif
+	if ((idcaddr->idccsr & (IDC_ERR|IDC_R80)) == IDC_R80)
 		ui->ui_type = 1;
-	} else
+	else if ((idcaddr->idccsr & (IDC_DE|IDC_R80)) == 0)
 		/*
 		 * RB02 may not have pack spun up, just look for drive error.
 		 */
-		if (idcaddr->idccsr & IDC_DE)
-			return (0);
+		ui->ui_type = 0;
+	else
+		return (0);
 	return (1);
 }
 
