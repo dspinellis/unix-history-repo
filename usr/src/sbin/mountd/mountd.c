@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.23 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -900,13 +900,15 @@ hang_dirp(dp, grp, ep, alldirs)
 			free((caddr_t)dp);
 		else
 			ep->ex_defdir = dp;
-		if (grp) {
+		if (grp == (struct grouplist *)0)
+			ep->ex_defdir->dp_flag |= DP_DEFSET;
+		else while (grp) {
 			hp = get_ht();
 			hp->ht_grp = grp;
 			hp->ht_next = ep->ex_defdir->dp_hosts;
 			ep->ex_defdir->dp_hosts = hp;
-		} else
-			ep->ex_defdir->dp_flag |= DP_DEFSET;
+			grp = grp->gr_next;
+		}
 	} else {
 
 		/*
