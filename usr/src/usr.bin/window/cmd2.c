@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.20 84/01/13";
+static	char *sccsid = "@(#)cmd2.c	3.21 84/01/13";
 #endif
 
 #include "defs.h"
@@ -95,7 +95,7 @@ register char **list;
 			(void) wwputc('\n', w);
 			break;
 		case 1:
-			(void) wwprintf(w, "%s: (continue)\n\n", name);
+			(void) wwprintf(w, "%s: (continued)\n\n", name);
 			break;
 		case 2:
 			return -1;
@@ -237,60 +237,4 @@ doquit()
 		wwputs("\r\n", cmdwin);
 	if (terse)
 		Whide(cmdwin->ww_win);
-}
-
-struct ww *
-openwin(nrow, label)
-char *label;
-{
-	register struct ww *w;
-	int startcol;
-
-	if ((w = wwopen(WW_NONE, 0, nrow, wwncol, 0, 0)) == 0)
-		return 0;
-	wwframe(w);
-	if ((startcol = (wwncol - strlen(label)) / 2) <= 0)
-		startcol = 1;
-	wwlabel(w, startcol, label, WINVERSE);
-	wwsetcurwin(w);
-	return w;
-}
-
-waitnl(w)
-struct ww *w;
-{
-	(void) waitnl1(w, "[Type any key to continue]");
-}
-
-waitnl1(w, prompt)
-register struct ww *w;
-char *prompt;
-{
-	wwsetcurwin(w);
-	wwprintf(w, "\r\nType return to continue: ");
-	wwsetcursor(WCurRow(w->ww_win), WCurCol(w->ww_win));
-	while (bpeekc() < 0)
-		bread();
-	return bgetc();
-	wwputs("\033E", w);			/* clear and home cursor */
-}
-
-more(w, flag)
-register struct ww *w;
-char flag;
-{
-	int c;
-
-	if (!flag && w->ww_cur.r < w->ww_w.b - 2)
-		return 0;
-	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
-	(void) wwputs("\033E", w);
-	return c == CTRL([) ? 2 : 1;
-}
-
-closewin(w)
-register struct ww *w;
-{
-	wwclose(w);
-	wwsetcurwin(cmdwin);
 }
