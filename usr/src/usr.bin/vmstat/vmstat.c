@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,6 +26,9 @@ static char sccsid[] = "@(#)vmstat.c	5.29 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/vmmeter.h>
+#include <vm/vm.h>
+#include <vm/vm_statistics.h>
 #include <time.h>
 #include <nlist.h>
 #include <kvm.h>
@@ -37,26 +40,14 @@ static char sccsid[] = "@(#)vmstat.c	5.29 (Berkeley) %G%";
 #include <string.h>
 #include <paths.h>
 
-#ifdef SPPWAIT
-#define NEWVM
-#endif
-#ifdef NEWVM
-#include <sys/vmmeter.h>
-#include <vm/vm.h>
-#include <vm/vm_statistics.h>
-#else
-#include <sys/vm.h>
-#include <sys/text.h>
-#endif
-
+#define NEWVM			/* XXX till old has been updated or purged */
 struct nlist nl[] = {
 #define	X_CPTIME	0
 	{ "_cp_time" },
 #define X_TOTAL		1
 	{ "_total" },
 #define X_SUM		2
-#define	SUM	"_cnt"			/* XXX for now that's where it is */
-	{ SUM },
+	{ "_cnt" },		/* XXX for now that's where it is */
 #define	X_BOOTTIME	3
 	{ "_boottime" },
 #define	X_DKXFER	4
@@ -81,11 +72,9 @@ struct nlist nl[] = {
 	{ "_kmemstats" },
 #define	X_KMEMBUCKETS	14
 	{ "_bucket" },
-#ifdef NEWVM
 #define	X_VMSTAT	15
 	{ "_vm_stat" },
-#define X_END		15
-#else
+#ifdef notdef
 #define	X_DEFICIT	15
 	{ "_deficit" },
 #define	X_FORKSTAT	16
@@ -97,6 +86,8 @@ struct nlist nl[] = {
 #define	X_XSTATS	19
 	{ "_xstats" },
 #define X_END		19
+#else
+#define X_END		15
 #endif
 #ifdef hp300
 #define	X_HPDINIT	(X_END+1)
@@ -124,9 +115,7 @@ struct _disk {
 	long *xfer;
 } cur, last;
 
-#ifdef NEWVM
 struct	vm_statistics vm_stat, ostat;
-#endif
 struct	vmmeter sum, osum;
 char	*vmunix = _PATH_UNIX;
 char	**dr_name;
@@ -140,13 +129,12 @@ int	winlines = 20;
 #define	SUMSTAT		0x08
 #define	TIMESTAT	0x10
 #define	VMSTAT		0x20
-#define	ZEROOUT		0x40
 
 #include "names.c"			/* disk names -- machine dependent */
 
 void	cpustats(), dkstats(), dointr(), domem(), dosum();
-void	dovmstat(), kread(), usage(), zero();
-#ifndef NEWVM
+void	dovmstat(), kread(), usage();
+#ifdef notdef
 void	dotimes(), doforkst();
 #endif
 
@@ -163,12 +151,12 @@ main(argc, argv)
 
 	kmem = NULL;
 	interval = reps = todo = 0;
-	while ((c = getopt(argc, argv, "c:fiM:mN:stw:z")) != EOF) {
+	while ((c = getopt(argc, argv, "c:fiM:mN:stw:")) != EOF) {
 		switch (c) {
 		case 'c':
 			reps = atoi(optarg);
 			break;
-#ifndef NEWVM
+#ifndef notdef
 		case 'f':
 			todo |= FORKSTAT;
 			break;
@@ -188,16 +176,13 @@ main(argc, argv)
 		case 's':
 			todo |= SUMSTAT;
 			break;
-#ifndef NEWVM
+#ifndef notdef
 		case 't':
 			todo |= TIMESTAT;
 			break;
 #endif
 		case 'w':
 			interval = atoi(optarg);
-			break;
-		case 'z':
-			todo |= ZEROOUT;
 			break;
 		case '?':
 		default:
@@ -206,13 +191,6 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
-
-	if (todo & ZEROOUT) {
-		if (todo & ~ZEROOUT || kmem)
-			usage();
-		zero();
-		exit(0);
-	}
 
 	if (todo == 0)
 		todo = VMSTAT;
@@ -261,11 +239,10 @@ main(argc, argv)
 	if (interval) {
 		if (!reps)
 			reps = -1;
-	} else
-		if (reps)
-			interval = 1;
+	} else if (reps)
+		interval = 1;
 
-#ifndef NEWVM
+#ifdef notdef
 	if (todo & FORKSTAT)
 		doforkst();
 #endif
@@ -273,7 +250,7 @@ main(argc, argv)
 		domem();
 	if (todo & SUMSTAT)
 		dosum();
-#ifndef NEWVM
+#ifdef notdef
 	if (todo & TIMESTAT)
 		dotimes();
 #endif
@@ -375,13 +352,14 @@ dovmstat(interval, reps)
 	int reps;
 {
 	struct vmtotal total;
-	time_t uptime;
+	time_t uptime, halfuptime;
 	void needhdr();
-#ifndef NEWVM
+#ifndef notdef
 	int deficit;
 #endif
 
 	uptime = getuptime();
+	halfuptime = uptime / 2;
 	(void)signal(SIGCONT, needhdr);
 
 	if (nl[X_PHZ].n_type != 0 && nl[X_PHZ].n_value != 0)
@@ -396,52 +374,55 @@ dovmstat(interval, reps)
 		kread(X_DKXFER, cur.xfer, sizeof(*cur.xfer * dk_ndrive));
 		kread(X_SUM, &sum, sizeof(sum));
 		kread(X_TOTAL, &total, sizeof(total));
-#ifdef NEWVM
 		kread(X_VMSTAT, &vm_stat, sizeof(vm_stat));
-#else
+#ifdef notdef
 		kread(X_DEFICIT, &deficit, sizeof(deficit));
 #endif
 		(void)printf("%2d %1d %1d ",
 		    total.t_rq, total.t_dw + total.t_pw, total.t_sw);
 #define pgtok(a) ((a)*NBPG >> 10)
+#define	rate(x)	(((x) + halfuptime) / uptime)	/* round */
 		(void)printf("%5ld %5ld ",
 		    pgtok(total.t_avm), pgtok(total.t_free));
 #ifdef NEWVM
-		(void)printf("%4lu ",
-		    (vm_stat.faults - ostat.faults) / uptime);
+		(void)printf("%4lu ", rate(vm_stat.faults - ostat.faults));
 		(void)printf("%3lu ",
-		    (vm_stat.reactivations - ostat.reactivations) / uptime);
-		(void)printf("%3lu ",
-		    (vm_stat.pageins - ostat.pageins) / uptime);
+		    rate(vm_stat.reactivations - ostat.reactivations));
+		(void)printf("%3lu ", rate(vm_stat.pageins - ostat.pageins));
 		(void)printf("%3lu %3lu ",
-		    (vm_stat.pageouts - ostat.pageouts) / uptime, 0);
+		    rate(vm_stat.pageouts - ostat.pageouts), 0);
 #else
 		(void)printf("%3lu %2lu ",
-		    (sum.v_pgrec - (sum.v_xsfrec+sum.v_xifrec) -
-		    (osum.v_pgrec - (osum.v_xsfrec+osum.v_xifrec))) / uptime,
-		    (sum.v_xsfrec + sum.v_xifrec -
-		    osum.v_xsfrec - osum.v_xifrec) / uptime);
+		    rate(sum.v_pgrec - (sum.v_xsfrec+sum.v_xifrec) -
+		    (osum.v_pgrec - (osum.v_xsfrec+osum.v_xifrec))),
+		    rate(sum.v_xsfrec + sum.v_xifrec -
+		    osum.v_xsfrec - osum.v_xifrec));
 		(void)printf("%3lu ",
-		    pgtok(sum.v_pgpgin - osum.v_pgpgin) / uptime);
+		    rate(pgtok(sum.v_pgpgin - osum.v_pgpgin)));
 		(void)printf("%3lu %3lu ",
-		    pgtok(sum.v_pgpgout - osum.v_pgpgout) / uptime,
-		    pgtok(sum.v_dfree - osum.v_dfree) / uptime);
+		    rate(pgtok(sum.v_pgpgout - osum.v_pgpgout)),
+		    rate(pgtok(sum.v_dfree - osum.v_dfree)));
 		(void)printf("%3d ", pgtok(deficit));
 #endif
-		(void)printf("%3lu ", (sum.v_scan - osum.v_scan) / uptime);
+		(void)printf("%3lu ", rate(sum.v_scan - osum.v_scan));
 		dkstats();
 		(void)printf("%4lu %4lu %3lu ",
-		    (sum.v_intr - osum.v_intr) / uptime,
-		    (sum.v_syscall - osum.v_syscall) / uptime,
-		    (sum.v_swtch - osum.v_swtch ) / uptime);
+		    rate(sum.v_intr - osum.v_intr),
+		    rate(sum.v_syscall - osum.v_syscall),
+		    rate(sum.v_swtch - osum.v_swtch));
 		cpustats();
 		(void)printf("\n");
 		(void)fflush(stdout);
-		uptime = 1;
 		if (reps >= 0 && --reps <= 0)
 			break;
 		osum = sum;
 		ostat = vm_stat;
+		uptime = interval;
+		/*
+		 * We round upward to avoid losing low-frequency events
+		 * (i.e., >= 1 per interval but < 1 per second).
+		 */
+		halfuptime = (uptime + 1) / 2;
 		(void)sleep(interval);
 	}
 }
@@ -479,7 +460,7 @@ needhdr()
 	hdrcnt = 1;
 }
 
-#ifndef NEWVM
+#ifdef notdef
 void
 dotimes()
 {
@@ -626,7 +607,7 @@ dosum()
 #endif
 }
 
-#ifndef NEWVM
+#ifdef notdef
 void
 doforkst()
 {
@@ -772,46 +753,6 @@ domem()
 	     (totuse + 1023) / 1024, (totfree + 1023) / 1024, totreq);
 }
 
-void
-zero()
-{
-	static struct nlist znl[] = {
-#undef	X_SUM
-#define X_SUM		0
-		{ SUM },
-		{ "" },
-	};
-	int fd;
-	char *kmem;
-
-	if (geteuid()) {
-		(void)fprintf(stderr, "vmstat: %s\n", strerror(EPERM));
-		exit(1);
-	}
-	/*
-	 * Zeroing the statistics is fundamentally different
-	 * (and really belongs in a separate program).
-	 */
-	if (nlist(vmunix, znl) || nl[0].n_type == 0) {
-		(void)fprintf(stderr, "vmstat: %s: symbol %s not found\n",
-		    vmunix, nl[0].n_name);
-		exit(1);
-	}
-
-	kmem = _PATH_KMEM;
-	if ((fd = open(kmem, O_RDWR)) < 0) {
-		(void)fprintf(stderr,
-		    "vmstat: %s: %s\n", kmem, strerror(errno));
-		exit(1);
-	}
-	if (lseek(fd, (long)nl[0].n_value, L_SET) == -1 ||
-	    write(fd, &sum, sizeof(sum)) != sizeof(sum)) {
-		(void)fprintf(stderr,
-		    "vmstat: %s: %s\n", kmem, strerror(errno));
-		exit(1);
-	}
-}
-
 /*
  * kread reads something from the kernel, given its nlist index.
  */
@@ -846,10 +787,10 @@ usage()
 	(void)fprintf(stderr,
 #ifndef NEWVM
 	    "usage: vmstat [-fimst] [-c count] [-M core] \
-[-N system] [-w wait] [disks]\n       vmstat -z\n");
+[-N system] [-w wait] [disks]\n");
 #else
 	    "usage: vmstat [-ims] [-c count] [-M core] \
-[-N system] [-w wait] [disks]\n       vmstat -z\n");
+[-N system] [-w wait] [disks]\n");
 #endif
 	exit(1);
 }
