@@ -58,8 +58,9 @@ KBD	= unix.kbd
 ALLH =	function.h hostctlr.h inbound.ext oia.h \
 	options.ext options.h outbound.ext screen.h scrnctlr.h
 
-ALLC =	inbound.c oia.c options.c outbound.c
+ALLC =	function.c inbound.c oia.c options.c outbound.c
 
+# Note: NO function.o!
 ALLO =	inbound$O oia$O options$O outbound$O
 
 ALLPRINT =	3180.kbd 3270pc.kbd unix.kbd ${ALLH} ${ALLC}
@@ -108,7 +109,7 @@ lint:
 kbd.out:	$(KBD) hostctlr.h
 	(cd ../tools; make mkhits )
 	${RM} $@ TMPfunc.out
-	$(CC) $(CFLAGS) -E function.h > TMPfunc.out
+	$(CC) $(CFLAGS) -E function.c > TMPfunc.out
 	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
 	${RM} TMPfunc.out
 
