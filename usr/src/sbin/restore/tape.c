@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -23,6 +23,7 @@ static int	mt = -1;
 static int	pipein = 0;
 static char	magtape[BUFSIZ];
 static int	bct;
+static int	numtrec;
 static char	*tbf;
 static union	u_spcl endoftapemark;
 static long	blksread;
@@ -655,14 +656,16 @@ readtape(b)
 	long rd, newvol;
 	int cnt;
 
-	if (bct < ntrec) {
+top:
+	if (bct < numtrec) {
 		bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 		blksread++;
 		return;
 	}
 	for (i = 0; i < ntrec; i++)
 		((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
-	bct = 0;
+	if (numtrec == 0)
+		numtrec = ntrec;
 	cnt = ntrec*TP_BSIZE;
 	rd = 0;
 getmore:
@@ -671,6 +674,17 @@ getmore:
 #else
 	i = read(mt, &tbf[rd], cnt);
 #endif
+	/*
+	 * Check for mid-tape short read error.
+	 * If found, return rest of buffer.
+	 */
+	if (numtrec < ntrec && i != 0) {
+		numtrec = ntrec;
+		goto top;
+	}
+	/*
+	 * Handle partial block read.
+	 */
 	if (i > 0 && i != ntrec*TP_BSIZE) {
 		if (pipein) {
 			rd += i;
@@ -682,10 +696,12 @@ getmore:
 			if (i % TP_BSIZE != 0)
 				panic("partial block read: %d should be %d\n",
 					i, ntrec * TP_BSIZE);
-			bcopy((char *)&endoftapemark, &tbf[i],
-				(long)TP_BSIZE);
+			numtrec = i / TP_BSIZE;
 		}
 	}
+	/*
+	 * Handle read error.
+	 */
 	if (i < 0) {
 		fprintf(stderr, "Tape read error while ");
 		switch (curfile.action) {
@@ -717,10 +733,14 @@ getmore:
 			done(1);
 		}
 	}
+	/*
+	 * Handle end of tape.
+	 */
 	if (i == 0) {
 		if (!pipein) {
 			newvol = volno + 1;
 			volno = 0;
+			numtrec = 0;
 			getvol(newvol);
 			readtape(b);
 			return;
@@ -730,6 +750,7 @@ getmore:
 				rd, ntrec * TP_BSIZE);
 		bcopy((char *)&endoftapemark, &tbf[rd], (long)TP_BSIZE);
 	}
+	bct = 0;
 	bcopy(&tbf[(bct++*TP_BSIZE)], b, (long)TP_BSIZE);
 	blksread++;
 }
@@ -756,6 +777,7 @@ findtapeblksize()
 		done(1);
 	}
 	ntrec = i / TP_BSIZE;
+	numtrec = ntrec;
 	vprintf(stdout, "Tape block size is %d\n", ntrec);
 }
 
