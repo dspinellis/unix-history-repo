@@ -32,7 +32,7 @@
  *
  *	@(#)vm_swap.c	7.18 (Berkeley) 5/6/91
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/vm/vm_swap.c,v 1.1.1.1 1993/06/12 14:57:39 rgrimes Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys.386bsd/vm/vm_swap.c,v 1.2 1993/07/16 20:54:00 davidg Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -210,9 +210,8 @@ swapon(p, uap, retval)
 				return (EBUSY);
 			}
 			sp->sw_vp = vp;
-			printf("adding swap: ");
 			if (error = swfree(p, sp - swdevt)) {
-				printf("failed! (unchanged)\n");
+				printf("swap failed! (unchanged)\n");
 				vrele(vp);
 				return (error);
 			}
