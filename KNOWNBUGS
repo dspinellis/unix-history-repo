@@ -52,18 +52,6 @@ keyboard problems.
 	Workaround: Try a "ifconfig ep0 down" and a "ifconfig ep0 up"
 	to get it running again.
 
-
-/sys/i386/boot
-	DO NOT ATTEMPT TO REBUILD THE BOOT BLOCKS.  There is currently
-	a problem in that the boot block code has grown and if you build
-	it with the new version of as and install them you will NOT BE
-	ABLE TO BOOT YOUR SYSTEM.  This problem will be fixed before
-	the 1.1 release is ship, and should only exist with the 1.1 BETA
-	release.
-
-	The boot block binaries shipped with the 1.1 BETA release were
-	built using an older version of as and can be installed safely.
-
 /sys/i386/isa/bt742a.c
 	The Bt445S and Bt747 controllers can cause problems when ISA DMA
 	is selected as an option.  With the EISA controller the remedy is
@@ -85,4 +73,4 @@ keyboard problems.
 	Problem is already known by the gawk maintainers and will be fixed
 	in the next release of gawk.
 
-$Id: KNOWNBUGS,v 1.11 1994/03/22 16:43:58 jkh Exp $
+$Id: KNOWNBUGS,v 1.12 1994/03/29 08:52:55 jkh Exp $
