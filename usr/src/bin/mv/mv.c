@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mv.c	4.4 (Berkeley) 81/04/26";
+static	char *sccsid = "@(#)mv.c	4.5 (Berkeley) 82/02/11";
 /*
  * mv file1 file2
  */
@@ -6,7 +6,6 @@ static	char *sccsid = "@(#)mv.c	4.4 (Berkeley) 81/04/26";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/dir.h>
 #include <signal.h>
 
 #define	DOT	"."
@@ -177,14 +176,15 @@ char *source, *target;
 			fprintf(stderr, "mv: %s exists\n", target);
 			return(1);
 		}
-		if (strlen(target) > MAXN-DIRSIZ-2) {
+		p = dname(source);
+		if (strlen(target) > MAXN-strlen(p)-2) {
 			fprintf(stderr, "mv :target name too long\n");
 			return(1);
 		}
 		strcpy(buf, target);
 		target = buf;
 		strcat(buf, SDELIM);
-		strcat(buf, dname(source));
+		strcat(buf, p);
 		if (stat(target, &s2) >= 0) {
 			fprintf(stderr, "mv: %s exists\n", buf);
 			return(1);
