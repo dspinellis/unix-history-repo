@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.7 (Berkeley) %G%
+#	@(#)sed.test	8.1 (Berkeley) %G%
 #
 
 # sed Regression Tests
