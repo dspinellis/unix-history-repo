@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -41,8 +41,8 @@ void
 bcopy(src0, dst0, length)
 #endif
 #endif
-	char *dst0;
-	const char *src0;
+	void *dst0;
+	const void *src0;
 	register size_t length;
 {
 	register char *dst = dst0;
