@@ -1,4 +1,4 @@
-/*	vm_swap.c	6.4	85/01/29	*/
+/*	vm_swap.c	6.5	85/05/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -88,6 +88,8 @@ swapon()
 	register struct swdevt *sp;
 	register struct nameidata *ndp = &u.u_nd;
 
+	if (!suser())
+		return;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
