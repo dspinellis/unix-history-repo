@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -331,20 +331,73 @@ texec(sf, st)
 
 /*ARGSUSED*/
 void
-execash(v, t)
-    Char  **v;
-    register struct command *t;
+execash(t, kp)
+    Char  **t;
+    register struct command *kp;
 {
+    int     saveIN, saveOUT, saveDIAG, saveSTD;
+    int     oSHIN;
+    int     oSHOUT;
+    int     oSHERR;
+    int     oOLDSTD;
+    jmp_buf osetexit;
+    int	    my_reenter;
+    int     odidfds;
+    sig_t   osigint, osigquit, osigterm;
+
     if (chkstop == 0 && setintr)
 	panystop(0);
+    /*
+     * Hmm, we don't really want to do that now because we might
+     * fail, but what is the choice
+     */
     rechist();
-    (void) signal(SIGINT, parintr);
-    (void) signal(SIGQUIT, parintr);
-    (void) signal(SIGTERM, parterm);	/* if doexec loses, screw */
-    lshift(t->t_dcom, 1);
-    exiterr = 1;
-    doexec(NULL, t);
-    /* NOTREACHED */
+
+    osigint  = signal(SIGINT, parintr);
+    osigquit = signal(SIGQUIT, parintr);
+    osigterm = signal(SIGTERM, parterm);
+
+    odidfds = didfds;
+    oSHIN = SHIN;
+    oSHOUT = SHOUT;
+    oSHERR = SHERR;
+    oOLDSTD = OLDSTD;
+
+    saveIN = dcopy(SHIN, -1);
+    saveOUT = dcopy(SHOUT, -1);
+    saveDIAG = dcopy(SHERR, -1);
+    saveSTD = dcopy(OLDSTD, -1);
+
+    lshift(kp->t_dcom, 1);
+
+    getexit(osetexit);
+
+    if ((my_reenter = setexit()) == 0) {
+	SHIN = dcopy(0, -1);
+	SHOUT = dcopy(1, -1);
+	SHERR = dcopy(2, -1);
+	didfds = 0;
+	doexec(t, kp);
+    }
+
+    (void) signal(SIGINT, osigint);
+    (void) signal(SIGQUIT, osigquit);
+    (void) signal(SIGTERM, osigterm);
+
+    doneinp = 0;
+    didfds = odidfds;
+    (void) close(SHIN);
+    (void) close(SHOUT);
+    (void) close(SHERR);
+    (void) close(OLDSTD);
+    SHIN = dmove(saveIN, oSHIN);
+    SHOUT = dmove(saveOUT, oSHOUT);
+    SHERR = dmove(saveDIAG, oSHERR);
+    OLDSTD = dmove(saveSTD, oOLDSTD);
+
+    resexit(osetexit);
+    if (my_reenter)
+	stderror(ERR_SILENT);
 }
 
 void
