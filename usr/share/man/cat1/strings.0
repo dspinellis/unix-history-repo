@@ -1,0 +1,47 @@
+STRINGS(1)                   BSD Reference Manual                   STRINGS(1)
+
+NNAAMMEE
+     ssttrriinnggss - find printable strings in a file
+
+SSYYNNOOPPSSIISS
+     ssttrriinnggss [--aaffoo] [--nn _n_u_m_b_e_r] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSttrriinnggss displays the sequences of printable characters in each of the
+     specified files, or in the standard input, by default.  By default, a se-
+     quence must be at least four characters in length before being displayed.
+
+     The options are as follows:
+
+     --aa      By default, ssttrriinnggss only searches the text and data segments of
+             object files.  The --aa option causes ssttrriinnggss to search the entire
+             object file.
+
+     --ff      Each string is preceded by the name of the file in which it was
+             found.
+
+     --nn      Specifies the minimum number of characters in a sequence to be
+             _n_u_m_b_e_r, instead of four.
+
+     --oo      Each string is preceded by its decimal offset in the file.
+
+     SSttrriinnggss is useful for identifying random binaries, among other things.
+
+SSEEEE AALLSSOO
+     hexdump(1)
+
+BBUUGGSS
+     The algorithm for identifying strings is extremely primitive.  In partic-
+     ular, machine code instructions on certain architectures can resemble se-
+     quences of ASCII bytes, which will fool the algorithm.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Historic implementations of ssttrriinnggss only search the initialized data por-
+     tion of the object file.  This was reasonable as strings were normally
+     stored there.  Given new compiler technology which installs strings in
+     the text portion of the object file, the default behavior was changed.
+
+HHIISSTTOORRYY
+     The ssttrriinnggss command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1
