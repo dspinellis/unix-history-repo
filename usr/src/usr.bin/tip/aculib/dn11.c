@@ -1,8 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)dn11.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dn11.c	4.14 (Berkeley) %G%";
 #endif
 
-#if DN11
 /*
  * Routines for dialing up on DN-11
  */
@@ -107,4 +106,3 @@ dn_abort()
 		ioctl(FD, TIOCCDTR, 0);
 	close(FD);
 }
-#endif

@@ -1,8 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)ventel.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ventel.c	1.5 (Berkeley) %G%";
 #endif
 
-#if VENTEL
 /*
  * Routines for calling up on a Ventel Modem
  * The Ventel is expected to be strapped for "no echo".
@@ -180,4 +179,3 @@ vensync(fd)
 	}
 	return (0);
 }
-#endif

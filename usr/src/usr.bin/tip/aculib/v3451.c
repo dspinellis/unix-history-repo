@@ -1,8 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)v3451.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)v3451.c	4.4 (Berkeley) %G%";
 #endif
 
-#ifdef V3451
 /*
  * Routines for calling up on a Vadic 3451 Modem
  */
@@ -175,4 +174,3 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
-#endif
