@@ -4,14 +4,14 @@
 .\" This version prints the U.C. letterhead, complete with seal.
 .\" Unfortunately, it assumes that you have ditroff and the seal font.
 .\"
-.\"	@(#)letterhead.me	2.1		%G%
+.\"	@(#)letterhead.me	2.2		%G%
 .\"	%beginstrip%
-.nr xx \\n(.d
-.nr xy \\n(.u
-.nr xz \\n(.f
+.nr xx \n(.d
+.nr xy \n(.u
+.nr xz \n(.f
 .lp
 .rs
-.nr xw \\n(.s
+.nr xw \n(.s
 .nf
 .ie "\*(.T"ip" \
 .	ft R
@@ -36,16 +36,16 @@ UNIVERSITY OF CALIFORNIA, BERKELEY
 \|DEPARTMENT OF ELECTRICAL ENGINEERING
 \0\0AND COMPUTER SCIENCES\D't 3u'
 \|COMPUTER SCIENCE DIVISION
-.ft \\n(xz
-.ps \\n(xw
-.if "\\$1"d" \
+.ft \n(xz
+.ps \n(xw
+.if "\$1"d" \
 \{\
 .	sp 4p
-\h'|4.1i'\\*(td
+\h'|4.1i'\*(td
 .\}
-.if \\n(xy .fi
-.ie \\n(xx>\\n(.d \
-.	sp |\\n(xxu
+.if \n(xy .fi
+.ie \n(xx>\n(.d \
+.	sp |\n(xxu
 .el .sp 0.3i
 .vs
 .in
