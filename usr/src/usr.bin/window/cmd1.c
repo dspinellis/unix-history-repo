@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.4 83/07/22";
+static	char *sccsid = "@(#)cmd1.c	1.5 83/07/28";
 #endif
 
 #include "defs.h"
@@ -175,6 +175,6 @@ reframe()
 			continue;
 		wwunframe(w);
 		wwframe(w);
-		labelwin(w, w == selwin ? WINVERSE : 0);
+		labelwin(w);
 	}
 }
