@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pr_comment.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pr_comment.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,7 +54,7 @@ static char sccsid[] = "@(#)pr_comment.c	5.7 (Berkeley) %G%";
  */
 
 
-#include "indent_globs.h";
+#include "indent_globs.h"
 
 
 pr_comment()
