@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.31.1.1		%G%);
+SCCSID(@(#)savemail.c	3.32		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -43,7 +43,7 @@ savemail()
 			message(Arpa_Info, "Dumping junk mail");
 		return;
 	}
-	ForceMail = TRUE;
+	/* ForceMail = TRUE; */
 
 	/*
 	**  In the unhappy event we don't know who to return the mail
@@ -178,6 +178,7 @@ savemail()
 **
 **	Parameters:
 **		msg -- the explanatory message.
+**		returnto -- the queue of people to send the message to.
 **		sendbody -- if TRUE, also send back the body of the
 **			message; otherwise just send the header.
 **
@@ -192,18 +193,29 @@ savemail()
 
 static bool	SendBody;
 
+#define MAXRETURNS	6	/* max depth of returning messages */
+
 returntosender(msg, returnto, sendbody)
 	char *msg;
 	ADDRESS *returnto;
 	bool sendbody;
 {
-	ADDRESS to_addr;
 	char buf[MAXNAME];
 	register int i;
 	extern putheader(), errbody();
 	register ENVELOPE *ee;
 	extern ENVELOPE *newenvelope();
 	ENVELOPE errenvelope;
+	static int returndepth;
+
+	if (++returndepth >= MAXRETURNS)
+	{
+		if (returndepth != MAXRETURNS)
+			syserr("returntosender: infinite recursion on %s", returnto->q_paddr);
+		/* don't "unrecurse" and fake a clean exit */
+		/* returndepth--; */
+		return (0);
+	}
 
 	NoAlias = TRUE;
 	SendBody = sendbody;
@@ -216,17 +228,15 @@ returntosender(msg, returnto, sendbody)
 	addheader("subject", msg, ee);
 
 	/* fake up an address header for the from person */
-	bmove((char *) returnto, (char *) &to_addr, sizeof to_addr);
 	expand("$n", buf, &buf[sizeof buf - 1], CurEnv);
 	if (parse(buf, &ee->e_from, -1) == NULL)
 	{
 		syserr("Can't parse myself!");
 		ExitStat = EX_SOFTWARE;
+		returndepth--;
 		return (-1);
 	}
-	to_addr.q_next = NULL;
-	to_addr.q_flags &= ~QDONTSEND;
-	ee->e_sendqueue = &to_addr;
+	ee->e_sendqueue = returnto;
 
 	/* push state into submessage */
 	CurEnv = ee;
@@ -234,20 +244,16 @@ returntosender(msg, returnto, sendbody)
 	define('x', "Mail Delivery Subsystem");
 
 	/* actually deliver the error message */
-	i = deliver(&to_addr);
+	sendall(ee, FALSE);
 
-	/* if the error message was "queued", make that happen */
-	if (bitset(QQUEUEUP, to_addr.q_flags))
-		queueup(ee, FALSE);
+	/* do any closing error processing */
+	checkerrors(ee);
 
 	/* restore state */
 	CurEnv = CurEnv->e_parent;
+	returndepth--;
 
-	if (i != 0)
-	{
-		syserr("Can't return mail to %s", to_addr.q_paddr);
-		return (-1);
-	}
+	/* should check for delivery errors here */
 	return (0);
 }
 /*

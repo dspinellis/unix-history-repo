@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.17		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.18		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.17		%G%);
+SCCSID(@(#)queue.c	3.18		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -505,7 +505,7 @@ dowork(w)
 		readqf(buf);
 
 		/* do the delivery */
-		sendall(FALSE);
+		sendall(CurEnv, FALSE);
 
 		/* if still not sent, perhaps we should time out.... */
 # ifdef DEBUG

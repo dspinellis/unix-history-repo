@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.78.1.1		%G%);
+SCCSID(@(#)main.c	3.79		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -591,7 +591,7 @@ main(argc, argv)
 	**	If verifying, just ack.
 	*/
 
-	sendall(Mode == MD_VERIFY);
+	sendall(CurEnv, Mode == MD_VERIFY);
 
 	/*
 	** All done.
@@ -744,31 +744,27 @@ setfrom(from, realname)
 
 finis()
 {
+	CurEnv = &MainEnvelope;
+
 # ifdef DEBUG
 	if (Debug > 0)
+	{
 		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
 		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
+	}
 # endif DEBUG
 
 	/* send back return receipts as requested */
 	if (CurEnv->e_sendreceipt && ExitStat == EX_OK)
 		(void) returntosender("Return receipt", &CurEnv->e_from, FALSE);
 
-	/* mail back the transcript on errors */
-	if (FatalErrors)
-		savemail();
+	/* do error handling */
+	checkerrors(CurEnv);
 
+	/* now clean up bookeeping information */
 	if (Transcript != NULL)
 		(void) unlink(Transcript);
-	if (CurEnv->e_queueup)
-	{
-# ifdef QUEUE
-		queueup(CurEnv, FALSE);
-# else QUEUE
-		syserr("finis: trying to queue %s", CurEnv->e_df);
-# endif QUEUE
-	}
-	else
+	if (!CurEnv->e_queueup)
 		(void) unlink(CurEnv->e_df);
 	exit(ExitStat);
 }
@@ -1059,6 +1055,7 @@ newenvelope(e)
 	e->e_origfrom = NULL;
 	e->e_to = NULL;
 	e->e_sendqueue = NULL;
+	e->e_errorqueue = NULL;
 	e->e_parent = CurEnv;
 	e->e_df = NULL;
 

@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.81		%G%);
+SCCSID(@(#)deliver.c	3.82		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -79,7 +79,6 @@ deliver(firstto)
 
 	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
 	{
-		CurEnv->e_queueup = TRUE;
 		for (; to != NULL; to = to->q_next)
 			if (!bitset(QDONTSEND, to->q_flags))
 				to->q_flags |= QQUEUEUP|QDONTSEND;
@@ -168,10 +167,7 @@ deliver(firstto)
 		i = smtpinit(m, pv, (ADDRESS *) NULL);
 # ifdef QUEUE
 		if (i == EX_TEMPFAIL)
-		{
-			CurEnv->e_queueup = TRUE;
 			tempfail = TRUE;
-		}
 # endif QUEUE
 # else SMTP
 		/* oops!  we don't implement SMTP */
@@ -261,10 +257,7 @@ deliver(firstto)
 			{
 # ifdef QUEUE
 				if (i == EX_TEMPFAIL)
-				{
-					CurEnv->e_queueup = TRUE;
 					to->q_flags |= QQUEUEUP;
-				}
 				else
 # endif QUEUE
 				{
@@ -398,7 +391,6 @@ deliver(firstto)
 # ifdef QUEUE
 	if (i == EX_TEMPFAIL)
 	{
-		CurEnv->e_queueup = TRUE;
 		for (to = tochain; to != NULL; to = to->q_tchain)
 			to->q_flags |= QQUEUEUP;
 	}
@@ -1437,6 +1429,7 @@ mailfile(filename, ctladdr)
 **  SENDALL -- actually send all the messages.
 **
 **	Parameters:
+**		e -- the envelope to send.
 **		verifyonly -- if set, only give verification messages.
 **
 **	Returns:
@@ -1444,23 +1437,28 @@ mailfile(filename, ctladdr)
 **
 **	Side Effects:
 **		Scans the send lists and sends everything it finds.
+**		Delivers any appropriate error messages.
 */
 
-sendall(verifyonly)
+sendall(e, verifyonly)
+	ENVELOPE *e;
 	bool verifyonly;
 {
 	register ADDRESS *q;
-	typedef int (*fnptr)();
 
 # ifdef DEBUG
 	if (Debug > 1)
 	{
 		printf("\nSend Queue:\n");
-		printaddr(CurEnv->e_sendqueue, TRUE);
+		printaddr(e->e_sendqueue, TRUE);
 	}
 # endif DEBUG
 
-	for (q = CurEnv->e_sendqueue; q != NULL; q = q->q_next)
+	/*
+	**  Run through the list and send everything.
+	*/
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (verifyonly)
 		{
@@ -1475,5 +1473,88 @@ sendall(verifyonly)
 		}
 		else
 			(void) deliver(q);
+	}
+
+	/*
+	**  Now run through and check for errors.
+	*/
+
+	if (verifyonly)
+		return;
+
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		register ADDRESS *qq;
+
+		if (bitset(QQUEUEUP, q->q_flags))
+			e->e_queueup = TRUE;
+		if (!bitset(QBADADDR, q->q_flags))
+			continue;
+
+		/* we have an address that failed -- find the parent */
+		for (qq = q; qq != NULL; qq = qq->q_alias)
+		{
+			char obuf[MAXNAME + 6];
+			extern char *aliaslookup();
+
+			/* we can only have owners for local addresses */
+			if (!bitset(M_LOCAL, qq->q_mailer->m_flags))
+				continue;
+
+			/* see if the owner list exists */
+			(void) strcpy(obuf, "owner-");
+			(void) strcat(obuf, qq->q_user);
+			if (aliaslookup(obuf) == NULL)
+				continue;
+
+			/* owner list exists -- add it to the error queue */
+			qq->q_flags &= ~QPRIMARY;
+			sendto(obuf, 1, qq, &e->e_errorqueue);
+			MailBack = TRUE;
+			break;
+		}
+
+		/* if we did not find an owner, send to the sender */
+		if (qq == NULL)
+			sendto(e->e_from.q_paddr, 1, qq, &e->e_errorqueue);
+	}
+}
+/*
+**  CHECKERRORS -- check a queue of addresses and process errors.
+**
+**	Parameters:
+**		e -- the envelope to check.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Arranges to queue all tempfailed messages in q
+**			or deliver error responses.
+*/
+
+checkerrors(e)
+	register ENVELOPE *e;
+{
+# ifdef DEBUG
+	if (Debug > 0)
+	{
+		printf("\ncheckerrors: errorqueue:\n");
+		printaddr(e->e_errorqueue, TRUE);
+	}
+# endif DEBUG
+
+	/* mail back the transcript on errors */
+	if (FatalErrors)
+		savemail();
+
+	/* queue up anything laying around */
+	if (e->e_queueup)
+	{
+# ifdef QUEUE
+		queueup(e, FALSE);
+# else QUEUE
+		syserr("finis: trying to queue %s", e->e_df);
+# endif QUEUE
 	}
 }
