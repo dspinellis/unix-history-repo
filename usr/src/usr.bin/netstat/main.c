@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.8 83/05/01";
+static char sccsid[] = "@(#)main.c	4.9 83/05/30";
 #endif
 
 #include <sys/param.h>
@@ -40,6 +40,8 @@ struct nlist nl[] = {
 	{ "_rtnet" },
 #define	N_ICMPSTAT	13
 	{ "_icmpstat" },
+#define	N_RTSTAT	14
+	{ "_rtstat" },
 	"",
 };
 
@@ -199,7 +201,10 @@ use:
 		exit(0);
 	}
 	if (rflag) {
-		routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value);
+		if (sflag)
+			rt_stats(nl[N_RTSTAT].n_value);
+		else
+			routepr(nl[N_RTHOST].n_value, nl[N_RTNET].n_value);
 		exit(0);
 	}
 	setprotoent(1);
@@ -237,4 +242,12 @@ klseek(fd, base, off)
 		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
 	}
 	lseek(fd, base, off);
+}
+
+char *
+plural(n)
+	int n;
+{
+
+	return (n != 1 ? "s" : "");
 }

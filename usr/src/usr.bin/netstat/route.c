@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)route.c	4.5 82/11/14";
+static char sccsid[] = "@(#)route.c	4.6 83/05/30";
 #endif
 
 #include <sys/types.h>
@@ -73,7 +73,9 @@ again:
 			read(kmem, &mb, sizeof (mb));
 			rt = mtod(&mb, struct rtentry *);
 			sin = (struct sockaddr_in *)&rt->rt_dst;
-			printf("%-15.15s ", routename(sin->sin_addr));
+			printf("%-15.15s ",
+			    sin->sin_addr.s_addr ?
+				routename(sin->sin_addr) : "default");
 			sin = (struct sockaddr_in *)&rt->rt_gateway;
 			printf("%-15.15s ", routename(sin->sin_addr));
 			for (flags = name, p = bits; p->b_mask; p++)
@@ -139,4 +141,31 @@ routename(in)
 				ucp[2], ucp[3]);
 	}
 	return (line);
+}
+
+/*
+ * Print routing statistics
+ */
+rt_stats(off)
+	off_t off;
+{
+	struct rtstat rtstat;
+
+	if (off == 0) {
+		printf("rtstat: symbol not in namelist\n");
+		return;
+	}
+	klseek(kmem, off, 0);
+	read(kmem, (char *)&rtstat, sizeof (rtstat));
+	printf("routing:\n");
+	printf("\t%d bad routing redirect%s\n",
+		rtstat.rts_badredirect, plural(rtstat.rts_badredirect));
+	printf("\t%d dynamically created route%s\n",
+		rtstat.rts_dynamic, plural(rtstat.rts_dynamic));
+	printf("\t%d new gateway%s due to redirects\n",
+		rtstat.rts_newgateway, plural(rtstat.rts_newgateway));
+	printf("\t%d destination%s found unreachable\n",
+		rtstat.rts_unreach, plural(rtstat.rts_unreach));
+	printf("\t%d use%s of a wildcard route\n",
+		rtstat.rts_wildcard, plural(rtstat.rts_wildcard));
 }
