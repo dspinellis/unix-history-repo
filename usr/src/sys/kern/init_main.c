@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)init_main.c	7.15 (Berkeley) %G%
+ *	@(#)init_main.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -175,6 +175,9 @@ main(firstaddr)
 #endif
 #ifdef NFS
 	nfsinit();
+#endif
+#ifdef MFS
+	mfs_init();
 #endif
 
 /* kick off timeout driven events by calling first time */
