@@ -1,10 +1,15 @@
-(Version 8.18 of %G%)
+(Version 8.19 of %G%)
 
 Key:
   X -- extension (user visible change)
   B -- bug fix
   S -- security fix
   E -- enhancement to existing algorithm
+
+B ****	CNAME loops cause message to be both queued and bounced.
+	"Right" fix is to change dropenvelope et al to do one or
+	the other, but could this cause other problems?
+	Eric Hagberg <hagberg@med.cornell.edu>
 
 X ****	8 -> 7 bit MIME conversion.
 
