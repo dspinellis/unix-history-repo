@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -203,6 +203,7 @@ setupdevs()
 	hashtab = (struct devhash *)malloc(NDEVS * sizeof(struct devhash));
 	if (hashtab == (struct devhash *)0) {
 		fprintf(stderr, "No mem for dev table\n");
+		closedir(fd);
 		return;
 	}
 	while (dp = readdir(fd)) {
@@ -230,7 +231,7 @@ getdev(dev)
 	char name[fldsiz(devhash, dev_name) + 6];
 	static dev_t lastdev = (dev_t) -1;
 	static char *lastname;
-	int init = 0;
+	static int init = 0;
 
 	if (dev == NODEV)
 		return ("__");
