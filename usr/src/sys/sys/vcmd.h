@@ -1,16 +1,13 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vcmd.h	7.3 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)vcmd.h	7.4 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "ioctl.h"
-#else
 #include <sys/ioctl.h>
-#endif
 
 #define	VPRINT		0100
 #define	VPLOT		0200
