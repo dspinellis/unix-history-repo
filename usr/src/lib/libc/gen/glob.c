@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -417,7 +417,7 @@ globfree(pglob)
 		pp = pglob->gl_pathv + pglob->gl_offs;
 		for (i = pglob->gl_pathc; i--; ++pp)
 			if (*pp)
-				(void)free(*pp);
-		(void)free((char *)pp);
+				free((void *)*pp);
+		free((void *)pglob->gl_pathv);
 	}
 }
