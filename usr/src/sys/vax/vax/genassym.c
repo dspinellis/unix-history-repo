@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)genassym.c	7.8 (Berkeley) %G%
+ *	@(#)genassym.c	7.9 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -43,7 +43,6 @@ main()
 	struct rpb *rp = (struct rpb *)0;
 	struct text *tp = (struct text *)0;
 
-	printf("#ifdef LOCORE\n");
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
 	printf("#define\tP_XLINK %d\n", &p->p_xlink);
@@ -91,8 +90,5 @@ main()
 	printf("#define\tU_RU %d\n", &up->u_ru);
 	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#define\tSZ_CMAP %d\n", sizeof(struct cmap));
-	printf("#else\n");
-	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
-	printf("#endif\n");
 	exit(0);
 }
