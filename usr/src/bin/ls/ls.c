@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -224,13 +224,18 @@ args(argc, argv)
 	int argc;
 	char **argv;
 {
-	register LS *dstats, *rstats;
+	register LS *dstatp, *rstatp;
+	LS *dstats, *rstats;
 	register int cnt, dircnt, regcnt;
 	struct stat sb;
 	LS *stats;
 	int num, (*statfcn)(), stat(), lstat();
 	char *names, top[MAXPATHLEN + 1];
 
+	/*
+	 * walk through the operands, building separate arrays of LS
+	 * structures for directory and non-directory files.
+	 */
 	dstats = rstats = NULL;
 	statfcn = f_ignorelink ? stat : lstat;
 	for (dircnt = regcnt = 0; *argv; ++argv) {
@@ -243,24 +248,32 @@ args(argc, argv)
 		}
 		if (!f_specialdir && !f_listdir && S_ISDIR(sb.st_mode)) {
 			if (!dstats)
-				dstats = (LS *)emalloc((u_int)argc *
+				dstatp = dstats = (LS *)emalloc((u_int)argc *
 				    (sizeof(LS)));
-			dstats[dircnt].name = *argv;
-			dstats[dircnt].lstat = sb;
+			dstatp->name = *argv;
+			dstatp->lstat = sb;
+			++dstatp;
 			++dircnt;
 		}
 		else {
 			if (!rstats)
-				rstats = (LS *)emalloc((u_int)argc *
+				rstatp = rstats = (LS *)emalloc((u_int)argc *
 				    (sizeof(LS)));
-			rstats[regcnt].name = *argv;
-			rstats[regcnt].lstat = sb;
+			rstatp->name = *argv;
+			rstatp->lstat = sb;
+			++rstatp;
 			++regcnt;
 		}
 	}
+	/* display regular files */
 	if (regcnt) {
+		/*
+		 * for -f flag -- switch above treats all -f operands as
+		 * regular files; this code uses buildstats() to read
+		 * them as directories.
+		 */
 		if (f_specialdir) {
-			for (cnt = 0; cnt < regcnt; ++cnt) {
+			for (cnt = regcnt; cnt--;) {
 				if (num = buildstats(rstats++, &stats, &names))
 					ls(stats, num);
 				(void)free((char *)stats);
@@ -268,9 +281,8 @@ args(argc, argv)
 			}
 		} else
 			ls(rstats, regcnt);
-		if (dircnt)
-			(void)putchar('\n');
 	}
+	/* display directories */
 	if (dircnt) {
 		register char *p;
 
@@ -281,7 +293,7 @@ args(argc, argv)
 		for (cnt = 0; cnt < dircnt; ++dstats) {
 			for (endofpath = path, p = dstats->name;
 			    *endofpath = *p++; ++endofpath);
-			ls_dir(dstats, cnt, regcnt || dircnt > 1);
+			ls_dir(dstats, regcnt, regcnt || dircnt > 1);
 			if (++cnt < dircnt && chdir(top)) {
 				(void)fprintf(stderr, "ls: %s: %s\n",
 				    top, strerror(errno));
@@ -289,10 +301,6 @@ args(argc, argv)
 			}
 		}
 	}
-#ifdef whybother
-	(void)free((char *)rstats);
-	(void)free((char *)dstats);
-#endif
 }
 
 ls(stats, num)
@@ -332,6 +340,14 @@ ls_dir(lp, newline, tag)
 	int num;
 	char *names;
 
+	/*
+	 * this doesn't really belong here, but it's the only place that
+	 * everybody goes through; the `tag' variable is so that we don't
+	 * print the header for directories unless we're going to display
+	 * more directories, or we've already displayed files or directories.
+	 * The `newline' variable keeps us from inserting a newline before
+	 * we've displayed anything at all.
+	 */
 	if (newline)
 		(void)putchar('\n');
 	if (tag)
@@ -375,6 +391,7 @@ buildstats(lp, s_stats, s_names)
 		return(0);
 	}
 	for (cnt = 0; entry = readdir(dirp);) {
+		/* this does -A and -a */
 		p = entry->d_name;
 		if (p[0] == '.') {
 			if (!f_listdot)
