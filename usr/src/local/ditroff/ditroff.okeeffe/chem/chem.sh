@@ -1,4 +1,6 @@
-# 1.1	(CWI)	87/03/31
+#!/bin/sh
+# 1.2	(CWI)	87/03/31
+
 for i in $*
 do
 	if test ! -r $i
