@@ -1,4 +1,4 @@
-/*	rk.c	4.28	81/03/09	*/
+/*	rk.c	4.29	81/03/11	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -10,9 +10,7 @@ int	rknosval;	/* DEBUG */
  * This driver mimics up.c; see it for an explanation of common code.
  *
  * TODO:
- *	Add reading of bad sector information and disk layout from sector 1
- *	Add bad sector forwarding code
- *	Why do we lose an interrupt sometime when spinning drives down?
+ *	Learn why we lose an interrupt sometime when spinning drives down
  */
 #include "../h/param.h"
 #include "../h/systm.h"
