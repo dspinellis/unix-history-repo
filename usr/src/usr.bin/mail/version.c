@@ -1,4 +1,6 @@
 /*
  * Just keep track of the date/sid of this version of Mail.
+ * Load this file first to get a "total" Mail version.
  */
-char	*version = "2.4 %G%";
+static	char	*SccsID = "@(#)UCB Mail Version 2.5 (%G%)";
+char	*version = "2.5 %G%";
