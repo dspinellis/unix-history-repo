@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)version.c 1.1 %G%";
+static char sccsid[] = "@(#)version.c 1.2 %G%";
 
     /*
      *	this writes the declaration of the current time stamp
@@ -8,9 +8,9 @@ static char sccsid[] = "@(#)version.c 1.1 %G%";
      *	useful for making Version.c to give the creation date for px.
      */
 
-#include	<time.h>
+extern long time();
 
 main()
 {
-	printf( "long	createtime = %d;\n" , time(0) );
+	printf( "long	createtime = %D;\n" , time(0) );
 }

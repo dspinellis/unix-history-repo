@@ -1,7 +1,7 @@
-SCCSID = "@(#)Makefile 1.5 %G%"
+SCCSID = "@(#)Makefile 1.6 %G%"
 
 CFLAGS = -O
-DEFS = -DVAX -DOBJ
+DEFS =
 DESTDIR =/usr/ucb
 LIBDIR =/usr/lib
 PASCALDIR = /usr/src/cmd/pascal
@@ -11,7 +11,7 @@ OPT = /lib/c2
 AS = as
 RM = rm -f
 
-PSHDR =	OPnames.h objfmt.h opc.c pic.c
+PSHDR =	OPnames.h whoami.h objfmt.h opc.c pic.c
 PCHDR =	libpc.h h01errs.h
 
 PXHDR =	vars.h machdep.h
@@ -32,7 +32,7 @@ ${PCHDR}:
 	${CC} ${CFLAGS} ${DEFS} -c $*.c
 
 px: Version.c ${PXOBJ}
-	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} -lpc -lnm
+	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} -lpc -lm
 Version.c: version.c
 	${CC} ${CFLAGS} -o version version.c
 	./version >Version.c

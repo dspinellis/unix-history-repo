@@ -1,7 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)utilities.c 1.2 %G%";
+static char sccsid[] = "@(#)utilities.c 1.3 %G%";
 
+#include	"whoami.h"
 #include	"vars.h"
 #include	"panics.h"
 #include	"h02opcs.h"
@@ -62,7 +63,7 @@ skipprof:
 }
 
 backtrace(errnum)
-	long	errnum;
+	int	errnum;
 {
 	register struct disp *mydp;
 	register struct stack *ap;
@@ -88,7 +89,7 @@ backtrace(errnum)
 		i = linum - (((ap)->entry)->offset & 0177777);
 		fprintf(stderr,"%s\"",(ap->entry)->name);
 		if (_nodump == 0)
-			fprintf(stderr,"+%1d near line %1d.",i,linum);
+			fprintf(stderr,"+%D near line %D.",i,linum);
 		fputc('\n',stderr);
 		*mydp = (ap)->odisp;
 		if (mydp <= &_display.frame[1]){
@@ -103,7 +104,7 @@ backtrace(errnum)
 
 psexit(code)
 
-	long	code;
+	int	code;
 {
 	if (_pcpcount != 0)
 		PMFLUSH(_cntrs, _rtns, _pcpcount);

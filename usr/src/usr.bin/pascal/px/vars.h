@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.5 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.6 %G%"; */
 
 #include <stdio.h>
 
@@ -40,14 +40,17 @@
 #define	BITSPERBYTE	8
 #define	BITSPERLONG	(BITSPERBYTE * sizeof(long))
 #define HZ		60
-#define	TRUE		1
-#define	FALSE		0
 #define	MAXLVL		20
 #define NAMSIZ		76
 #define MAXFILES	32
 #define PREDEF		2
+#ifdef VAX
 #define STDLVL		((struct iorec *)(0x7ffffff1))
 #define GLVL		((struct iorec *)(0x7ffffff0))
+#else
+#define STDLVL		((struct iorec *)(0xfff1))
+#define GLVL		((struct iorec *)(0xfff0))
+#endif VAX
 #define FILNIL		((struct iorec *)(0))
 #define INPUT		((struct iorec *)(&input))
 #define OUTPUT		((struct iorec *)(&output))
@@ -61,6 +64,7 @@
 #define relgt 6
 #define relle 8
 #define relge 10
+typedef enum {FALSE, TRUE} bool;
 
 /*
  * interrupt and allocation routines
@@ -68,6 +72,7 @@
 extern long createtime;
 extern char *PALLOC();
 extern char *malloc();
+extern long time();
 extern intr();
 extern memsize();
 extern except();
@@ -95,7 +100,7 @@ union progcntr {
 	short *sp;
 	unsigned short *usp;
 	long *lp;
-	double *dp;
+	double *dbp;
 	struct hdr *hdrp;
 };
 
@@ -166,7 +171,7 @@ struct stack {
 	struct hdr {
 		long framesze;	/* number of bytes of local vars */
 		long nargs;	/* number of bytes of arguments */
-		short tests;	/* TRUE => perform runtime tests */
+		bool tests;	/* TRUE => perform runtime tests */
 		short offset;	/* offset of procedure in source file */
 		char name[1];	/* name of active procedure */
 	} *entry;
@@ -198,8 +203,8 @@ extern struct disp	*_dp;		/* ptr to active frame */
 extern long		_lino;		/* current line number */
 extern int		_argc;		/* number of passed args */
 extern char		**_argv;	/* values of passed args */
-extern long		_nodump;	/* TRUE => no post mortum dump */
-extern long		_runtst;	/* TRUE => runtime tests */
+extern bool		_nodump;	/* TRUE => no post mortum dump */
+extern bool		_runtst;	/* TRUE => runtime tests */
 extern long		_mode;		/* execl by PX, PIPE, or PIX */
 extern long		_stlim;		/* statement limit */
 extern long		_stcnt;		/* statement count */
