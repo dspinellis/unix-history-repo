@@ -1,69 +1,99 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)vis.1	5.1 (Berkeley) %G%
+.\"     @(#)vis.1	5.2 (Berkeley) %G%
 .\"
-.TH VIS 1 ""
-.UC 7
-.SH NAME
-vis \- display non-printable characters in a visual format
-.SH SYNOPSIS
-.B vis
-[
-.B \-nwctsobfl
-] [
-.B \-F
-foldwidth
-] [ file ... ]
-.SH DESCRIPTION
-\fIVis\fP is a filter for converting non-printable characters
-into a visual representation.  It differs from cat -v in that
+.Dd 
+.Dt VIS 1
+.Os
+.Sh NAME
+.Nm vis
+.Nd display non-printable characters in a visual format
+.Sh SYNOPSIS
+.Nm vis
+.Op Fl cbflnostw
+.Op Fl F Ar foldwidth
+.Op Ar file ...
+.Sh DESCRIPTION
+.Nm Vis
+is a filter for converting non-printable characters
+into a visual representation.  It differs from
+.Ql cat -v
+in that
 the form is unique and invertible.  By default, all non-graphic
 characters except space, tab, and newline are encoded.
 A detailed description of the
-various visual formats is given in vis(3).
-.SH OPTIONS
-.IP -c
+various visual formats is given in
+.Xr vis 3 .
+.Pp
+Options supported by
+.Nm vis :
+.Bl -tag -width Ds
+.It Fl b
+Turns off prepending of backslash before up-arrow control sequences
+and meta characters, and disables the doubling of backslashes.  This
+produces output which is neither invertible or precise, but does
+represent a minimum of change to the input.  It is similar to
+.Dq Li cat -v .
+.It Fl c
 Request a format which displays a small subset of the
 non-printable characters using C-style backslash sequences.
-.IP -o
-Request a format which displays non-printable characters as
-an octal number, \\ddd.
-.IP -t
-Tabs are also encoded.
-.IP -w
-White space (space-tab-newline) is also encoded.
-.IP -s
-Only characters considered unsafe to send to a terminal are encoded.
-This flag allows backspace, bell, and carriage return in addition
-to the default space, tab and newline.
-.IP -f
-and
-.IP -F
+.It Fl F
 Causes
-.B vis
-to fold output lines to foldwidth columns (default 80), like fold(1), except
+.Nm vis
+to fold output lines to foldwidth columns (default 80), like
+.Xr fold 1 ,
+except
 that a hidden newline sequence is used, (which is removed
-when inverting the file back to its original form with unvis(1)).
+when inverting the file back to its original form with
+.Xr unvis 1 ) .
 If the last character in the encoded file does not end in a newline,
 a hidden newline sequence is appended to the output.
 This makes
 the output usuable with various editors and other utilities which
 typically don't work with partial lines.
-.IP -n
+.It Fl f
+Same as
+.Fl F .
+.It Fl l
+Mark newlines with the visable sequence
+.Ql \e$ ,
+followed by the newline.
+.It Fl n
 Turns off any encoding, except for the fact that backslashes are
-still doubled and hidden newline sequences inserted if -f or -F
-is selected.  When combined with the -f flag, vis becomes like
-an invertible version of the fold(1) utility.  That is, the output
-can be unfolded by running the output through unvis(1).
-.IP -b
-Turns off prepending of backslash before up-arrow control sequences
-and Meta characters, and disables the doubling of backslashes.  This
-produces output which is neither invertible or precise, but does
-represent a minimum of change to the input.  It is similar to cat -v.
-.IP -l
-Mark newlines with the visable sequence '\\$', followed by the newline.
-.SH "SEE ALSO
-unvis(1) vis(3)
+still doubled and hidden newline sequences inserted if
+.Fl f
+or
+.Fl F
+is selected.  When combined with the
+.Fl f
+flag,
+.Nm vis
+becomes like
+an invertible version of the
+.Xr fold 1
+utility.  That is, the output
+can be unfolded by running the output through
+.It Fl o
+Request a format which displays non-printable characters as
+an octal number, \eddd.
+.It Fl s
+Only characters considered unsafe to send to a terminal are encoded.
+This flag allows backspace, bell, and carriage return in addition
+to the default space, tab and newline.
+.Xr unvis 1 .
+.It Fl t
+Tabs are also encoded.
+.It Fl w
+White space (space-tab-newline) is also encoded.
+.El
+.Sh SEE ALSO
+.Xr unvis 1
+.Xr vis 3
+.Sh HISTORY
+The
+.Nm
+command is
+.Ud .
