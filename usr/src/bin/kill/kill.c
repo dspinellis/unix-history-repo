@@ -12,23 +12,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)kill.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <signal.h>
+#include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
 void nosig __P((char *));
 void printsig __P((FILE *));
 void usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	register int errors, numsig, pid;
 	register char *const *p;
@@ -57,11 +59,8 @@ main(argc, argv)
 				nosig(*argv);
 		} else if (isdigit(**argv)) {
 			numsig = strtol(*argv, &ep, 10);
-			if (!*argv || *ep) {
-				(void)fprintf(stderr,
-				    "kill: illegal signal number %s\n", *argv);
-				exit(1);
-			}
+			if (!*argv || *ep)
+				errx(1, "illegal signal number: %s", *argv);
 			if (numsig <= 0 || numsig > NSIG)
 				nosig(*argv);
 		} else
@@ -75,13 +74,10 @@ main(argc, argv)
 	for (errors = 0; *argv; ++argv) {
 		pid = strtol(*argv, &ep, 10);
 		if (!*argv || *ep) {
-			(void)fprintf(stderr,
-			    "kill: illegal process id %s\n", *argv);
-			continue;
-		}
-		if (kill(pid, numsig) == -1) {
-			(void)fprintf(stderr,
-			    "kill: %s: %s\n", *argv, strerror(errno));
+			warnx("illegal process id: %s", *argv);
+			errors = 1;
+		} else if (kill(pid, numsig) == -1) {
+			warn("%s", *argv);
 			errors = 1;
 		}
 	}
