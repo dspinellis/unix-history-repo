@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)kvm_hp300.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_hp300.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -98,7 +98,7 @@ static	struct ste *Sysseg;
 #define pftoc(f)	(f)
 #endif
 #ifndef iskva
-#define iskva(v)	((v) & KERNBASE)
+#define iskva(v)	((u_long)(v) & KERNBASE)
 #endif
 
 static struct nlist nl[] = {
@@ -911,13 +911,13 @@ kvm_read(loc, buf, len)
 	if (kvmfilesopen == 0 && kvm_openfiles(NULL, NULL, NULL) == -1)
 		return (-1);
 	if (iskva(loc)) {
-		klseek(kmem, loc, 0);
+		klseek(kmem, (off_t) loc, 0);
 		if (read(kmem, buf, len) != len) {
 			seterr("error reading kmem at %x", loc);
 			return (-1);
 		}
 	} else {
-		lseek(mem, loc, 0);
+		lseek(mem, (off_t) loc, 0);
 		if (read(mem, buf, len) != len) {
 			seterr("error reading mem at %x", loc);
 			return (-1);
