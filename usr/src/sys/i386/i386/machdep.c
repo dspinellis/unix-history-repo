@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -329,7 +329,7 @@ sendsig(catcher, sig, mask, code)
 	}
 
 	if ((unsigned)fp <= USRSTACK - ctob(p->p_vmspace->vm_ssize)) 
-		(void)grow((unsigned)fp);
+		(void)grow(p, (unsigned)fp);
 
 	if (useracc((caddr_t)fp, sizeof (struct sigframe), B_WRITE) == 0) {
 		/*
@@ -607,7 +607,8 @@ setregs(p, entry, retval)
 
 	p->p_addr->u_pcb.pcb_flags = 0;	/* no fp at all */
 	load_cr0(rcr0() | CR0_EM);	/* start emulating */
-#ifdef	NPX
+#include "npx.h"
+#if NNPX > 0
 	npxinit(0x262);
 #endif
 }
@@ -864,31 +865,21 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	lidt(idt, sizeof(idt)-1);
 	lldt(GSEL(GLDT_SEL, SEL_KPL));
 
-	/*if (Maxmem > 6*1024/4)
-		Maxmem = (1024+384) *1024 /NBPG;*/
-	maxmem = Maxmem;
-
-	/* reconcile against BIOS's recorded values in RTC
-	 * we trust neither of them, as both can lie!
+	/*
+	 * This memory size stuff is a real mess.  Here is a simple
+	 * setup that just believes the BIOS.  After the rest of
+	 * the system is a little more stable, we'll come back to
+	 * this and deal with issues if incorrect BIOS information,
+	 * and when physical memory is > 16 megabytes.
 	 */
 	biosbasemem = rtcin(RTC_BASELO)+ (rtcin(RTC_BASEHI)<<8);
 	biosextmem = rtcin(RTC_EXTLO)+ (rtcin(RTC_EXTHI)<<8);
-	if (biosbasemem == 0xffff || biosextmem == 0xffff) {
-		if (maxmem > 0xffc)
-			maxmem = 640/4;
-	} else if (biosextmem > 0 && biosbasemem == 640) {
-		int totbios = (biosbasemem + 0x60000 + biosextmem)/4;
-		if (totbios < maxmem) maxmem = totbios;
-	} else	maxmem = 640/4;
-	maxmem = (biosextmem+1024)/4;
-	maxmem = maxmem-1;
-	physmem = maxmem;
-	if (maxmem > 1024/4)
-		physmem -= (1024 - 640)/4;
-printf("bios base %d ext %d maxmem %d physmem %d\n",
-	biosbasemem, biosextmem, 4*maxmem, 4*physmem);
+	Maxmem = btoc ((biosextmem + 1024) * 1024);
+	maxmem = Maxmem - 1;
+	physmem = btoc (biosbasemem * 1024 + (biosextmem - 1) * 1024);
+	printf ("bios %dK+%dK. maxmem %x, physmem %x\n",
+		biosbasemem, biosextmem, ctob (maxmem), ctob (physmem));
 
-maxmem=8192/4 -2;
 	vm_set_page_size();
 	/* call pmap initialization to make new kernel address space */
 	pmap_bootstrap (first, 0);
@@ -1000,7 +991,7 @@ vmunaccess() {}
  */
 copyinstr(fromaddr, toaddr, maxlength, lencopied) u_int *lencopied, maxlength;
 	void *toaddr, *fromaddr; {
-	u_int c,tally;
+	int c,tally;
 
 	tally = 0;
 	while (maxlength--) {
