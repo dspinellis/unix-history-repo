@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.11 %G%";
+# Sccs Id = "@(#)Makefile	2.12 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -50,7 +50,7 @@ Mail:	$S $(OBJS)
 mail.g:	$(SRCS)
 	$(CGRAF) $(SRCS) > mail.g
 
-install:
+install:	Mail
 	install -s Mail ${DESTDIR}/usr/ucb
 	cp misc/Mail.help* ${DESTDIR}/usr/lib
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
