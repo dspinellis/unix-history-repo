@@ -1,11 +1,11 @@
 #!/bin/sh -
 #
-# Copyright (c) 1982 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1982, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)pcexterns.awk	5.2 (Berkeley) %G%
+#	@(#)pcexterns.awk	8.1 (Berkeley) %G%
 #
 
 # This generates .stabs for all the global routines and variables
