@@ -1,5 +1,5 @@
 /*
-char	id_trapov[] = "@(#)trapov_.c	1.1";
+char	id_trapov[] = "@(#)trapov_.c	1.2";
  *
  *	Fortran/C floating-point overflow handler
  *
@@ -25,6 +25,7 @@ char	id_trapov[] = "@(#)trapov_.c	1.1";
 # include <signal.h>
 # include "opcodes.h"
 # include "../libI77/fiodefs.h"
+# define SIG_VAL	int (*)()
 
 /*
  *	Operand modes
@@ -59,6 +60,24 @@ char	id_trapov[] = "@(#)trapov_.c	1.1";
 # define AP	0xc
 
 /*
+ * trap type codes
+ */
+# define INT_OVF_T	1
+# define INT_DIV_T	2
+# define FLT_OVF_T	3
+# define FLT_DIV_T	4
+# define FLT_UND_T	5
+# define DEC_OVF_T	6
+# define SUB_RNG_T	7
+# define FLT_OVF_F	8
+# define FLT_DIV_F	9
+# define FLT_UND_F	10
+
+# define RES_ADR_F	0
+# define RES_OPC_F	1
+# define RES_OPR_F	2
+
+/*
  *	Potential operand values
  */
 typedef	union operand_types {
@@ -75,7 +94,7 @@ typedef	union operand_types {
  *
  *	Actual program counter and locations of registers.
  */
-
+#if	vax
 static char	*pc;
 static int	*regs0t6;
 static int	*regs7t11;
@@ -85,12 +104,25 @@ static union	{
 	long	v_long[2];
 	double	v_double;
 	} retrn;
-static int	sigill_default = 0;
+static int	(*sigill_default)() = (SIG_VAL)-1;
+static int	(*sigfpe_default)();
+#endif	vax
 
 /*
  *	the fortran unit control table
  */
 extern unit units[];
+
+/*
+ * Fortran message table is in main
+ */
+struct msgtbl {
+	char	*mesg;
+	int	dummy;
+};
+extern struct msgtbl	act_fpe[];
+
+
 
 anyval *get_operand_address(), *addr_of_reg();
 char *opcode_name();
@@ -107,9 +139,9 @@ trapov_(count, rtnval)
 #if	vax
 	extern got_overflow(), got_illegal_instruction();
 
-	signal(SIGFPE, got_overflow);
-	if (sigill_default == 0)
-		sigill_default = (int)signal(SIGILL, got_illegal_instruction);
+	sigfpe_default = signal(SIGFPE, got_overflow);
+	if (sigill_default == (SIG_VAL)-1)
+		sigill_default = signal(SIGILL, got_illegal_instruction);
 	total_overflows = 0;
 	max_messages = *count;
 	retrn.v_double = *rtnval;
@@ -130,13 +162,38 @@ trapov_(count, rtnval)
 got_overflow(signo, codeword, myaddr, pc, ps)
 	char *myaddr, *pc;
 {
-	if (++total_overflows <= max_messages) {
-		fprintf(units[STDERR].ufd, "Overflow!\n");
-		if (total_overflows == max_messages) {
-			fprintf(units[STDERR].ufd, "No more overflow messages will be printed.\n");
-		}
-	}
+	int	*sp, i;
+	FILE	*ef;
+
 	signal(SIGFPE, got_overflow);
+	ef = units[STDERR].ufd;
+	switch (codeword) {
+		case INT_OVF_T:
+		case INT_DIV_T:
+		case FLT_UND_T:
+		case DEC_OVF_T:
+		case SUB_RNG_T:
+		case FLT_OVF_F:
+		case FLT_DIV_F:
+		case FLT_UND_F:
+				if (sigfpe_default > (SIG_VAL)7)
+					return((*sigfpe_default)(signo, codeword, myaddr, pc, ps));
+				else
+					sigdie(signo, codeword, myaddr, pc, ps);
+					/* NOTREACHED */
+
+		case FLT_OVF_T:
+		case FLT_DIV_T:
+				if (++total_overflows <= max_messages) {
+					fprintf(ef, "trapov: %s",
+						act_fpe[codeword-1].mesg);
+					if (total_overflows == max_messages)
+						fprintf(ef, ": No more messages will be printed.\n");
+					else
+						fputc('\n', ef);
+				}
+				return;
+	}
 #endif	vax
 }
 
@@ -183,9 +240,12 @@ got_illegal_instruction(signo, codeword, myaddr, trap_pc, ps)
 
 	opcode = fetch_byte() & 0xff;
 	no_reserved = 0;
-	if (!is_floating_operation(opcode)) {
-		fprintf(units[STDERR].ufd, "illegal instruction: 0x%02\n", opcode);
-		force_abort();
+	if (codeword != RES_OPR_F || !is_floating_operation(opcode)) {
+		if (sigill_default > (SIG_VAL)7)
+			return((*sigill_default)(signo, codeword, myaddr, trap_pc, ps));
+		else
+			sigdie(signo, codeword, myaddr, trap_pc, ps);
+			/* NOTREACHED */
 	}
 
 	if (opcode == POLYD || opcode == POLYF) {
@@ -555,7 +615,7 @@ fetch_long()
  */
 force_abort()
 {
-	signal(SIGILL, sigill_default);
+	signal(SIGILL, SIG_DFL);
 	abort();
 }
 
