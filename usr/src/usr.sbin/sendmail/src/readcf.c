@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -220,7 +220,7 @@ readcf(cfname)
 			/* expand and save the LHS */
 			*p = '\0';
 			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
-			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf);
+			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf, NULL);
 			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
 			{
@@ -301,7 +301,7 @@ readcf(cfname)
 			while (*++p == '\t')
 				continue;
 			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
-			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf);
+			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf, NULL);
 			if (rwp->r_rhs != NULL)
 			{
 				register char **ap;
@@ -365,7 +365,7 @@ readcf(cfname)
 			break;
 
 		  case 'D':		/* macro definition */
-			define(bp[1], newstr(munchstring(&bp[2])), e);
+			define(bp[1], newstr(munchstring(&bp[2], NULL)), e);
 			break;
 
 		  case 'H':		/* required header line */
@@ -623,7 +623,6 @@ makemailer(line)
 	extern int NextMailer;
 	extern char **makeargv();
 	extern char *munchstring();
-	extern char *DelimChar;
 	extern long atol();
 
 	/* allocate a mailer and set up defaults */
@@ -641,6 +640,8 @@ makemailer(line)
 	/* now scan through and assign info from the fields */
 	while (*p != '\0')
 	{
+		auto char *delimptr;
+
 		while (*p != '\0' && (*p == ',' || (isascii(*p) && isspace(*p))))
 			p++;
 
@@ -657,7 +658,7 @@ makemailer(line)
 			p++;
 
 		/* p now points to the field body */
-		p = munchstring(p);
+		p = munchstring(p, &delimptr);
 
 		/* install the field into the mailer struct */
 		switch (fcode)
@@ -719,7 +720,7 @@ makemailer(line)
 			break;
 		}
 
-		p = DelimChar;
+		p = delimptr;
 	}
 
 	/* do some heuristic cleanup for back compatibility */
@@ -767,24 +768,22 @@ makemailer(line)
 **
 **	Parameters:
 **		p -- the string to munch.
+**		delimptr -- if non-NULL, set to the pointer of the
+**			field delimiter character.
 **
 **	Returns:
 **		the munched string.
-**
-**	Side Effects:
-**		Sets "DelimChar" to point to the string that caused us
-**		to stop.
 */
 
 char *
-munchstring(p)
+munchstring(p, delimptr)
 	register char *p;
+	char **delimptr;
 {
 	register char *q;
 	bool backslash = FALSE;
 	bool quotemode = FALSE;
 	static char buf[MAXLINE];
-	extern char *DelimChar;
 
 	for (q = buf; *p != '\0'; p++)
 	{
@@ -825,7 +824,8 @@ munchstring(p)
 		}
 	}
 
-	DelimChar = p;
+	if (delimptr != NULL)
+		*delimptr = p;
 	*q++ = '\0';
 	return (buf);
 }

@@ -28,15 +28,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.20 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.21 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.20 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.21 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.20 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.21 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.20 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.21 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -623,7 +623,7 @@ readaliases(aliasfile, init, e)
 			syserr("554 missing colon");
 			continue;
 		}
-		if (parseaddr(line, &al, 1, ':', e) == NULL)
+		if (parseaddr(line, &al, 1, ':', NULL, e) == NULL)
 		{
 			syserr("554 illegal alias name");
 			continue;
@@ -646,16 +646,16 @@ readaliases(aliasfile, init, e)
 				/* do parsing & compression of addresses */
 				while (*p != '\0')
 				{
-					extern char *DelimChar;
+					auto char *delimptr;
 
 					while ((isascii(*p) && isspace(*p)) ||
 								*p == ',')
 						p++;
 					if (*p == '\0')
 						break;
-					if (parseaddr(p, &bl, -1, ',', e) == NULL)
+					if (parseaddr(p, &bl, -1, ',', &delimptr, e) == NULL)
 						usrerr("553 %s... bad address", p);
-					p = DelimChar;
+					p = delimptr;
 				}
 			}
 			else

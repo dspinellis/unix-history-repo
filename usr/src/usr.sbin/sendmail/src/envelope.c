@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -404,21 +404,26 @@ closexscript(e)
 **		from -- the person we would like to believe this message
 **			is from, as specified on the command line.
 **		e -- the envelope in which we would like the sender set.
+**		delimptr -- if non-NULL, set to the location of the
+**			trailing delimiter.
 **
 **	Returns:
-**		none.
+**		pointer to the delimiter terminating the from address.
 **
 **	Side Effects:
 **		sets sendmail's notion of who the from person is.
 */
 
-setsender(from, e)
+char *
+setsender(from, e, delimptr)
 	char *from;
 	register ENVELOPE *e;
+	char **delimptr;
 {
 	register char **pvp;
 	char *realname = NULL;
 	register struct passwd *pw;
+	char *delimchar = NULL;
 	char buf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
 	extern struct passwd *getpwnam();
@@ -446,7 +451,8 @@ setsender(from, e)
 /*
 	SuprErrs = TRUE;
 */
-	if (from == NULL || parseaddr(from, &e->e_from, 1, ' ', e) == NULL)
+	if (from == NULL ||
+	    parseaddr(from, &e->e_from, 1, ' ', delimptr, e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 			syslog(LOG_ERR, "Unparseable user %s wants to be %s",
@@ -488,7 +494,7 @@ setsender(from, e)
 			**  We have an alternate address for the sender
 			*/
 
-			pvp = prescan(p, '\0', pvpbuf);
+			pvp = prescan(p, '\0', pvpbuf, NULL);
 		}
 # endif /* USERDB */
 
@@ -533,7 +539,7 @@ setsender(from, e)
 	*/
 
 	if (pvp == NULL)
-		pvp = prescan(from, '\0', pvpbuf);
+		pvp = prescan(from, '\0', pvpbuf, NULL);
 	if (pvp == NULL)
 	{
 # ifdef LOG
