@@ -1,4 +1,4 @@
-/*	uba.c	4.27	81/03/22	*/
+/*	uba.c	4.28	81/04/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

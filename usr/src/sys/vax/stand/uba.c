@@ -1,4 +1,4 @@
-/*	uba.c	4.3	81/03/21	*/
+/*	uba.c	4.4	81/04/03	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -62,7 +62,7 @@ ubafree(io, mr)
 		ubauba(io->i_unit)->uba_dpr[bdp] |=
 		     UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE;
 		break;
-	case VAX_730:
+	case VAX_7ZZ:
 		break;
 	}
 }

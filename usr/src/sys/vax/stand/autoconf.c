@@ -1,4 +1,4 @@
-/*	autoconf.c	4.3	81/03/22	*/
+/*	autoconf.c	4.4	81/04/03	*/
 
 #include "../h/param.h"
 #include "../h/cpu.h"
@@ -33,11 +33,11 @@ struct	mba_regs *mbaddr750[] = { MTR(4), MTR(5), MTR(6), MTR(7) };
 #undef	UMA
 #undef	MTR
 
-#define	UTR(i)	((struct uba_regs *)(NEX730+(i)))
-#define	UMA	((caddr_t)UMEM730)
+#define	UTR(i)	((struct uba_regs *)(NEX7ZZ+(i)))
+#define	UMA	((caddr_t)UMEM7ZZ)
 
-struct	uba_regs *ubaddr730[] = { UTR(3) };
-caddr_t	umaddr730[] = { UMA };
+struct	uba_regs *ubaddr7ZZ[] = { UTR(3) };
+caddr_t	umaddr7ZZ[] = { UMA };
 
 #undef	UTR
 #undef	UMA
@@ -67,9 +67,9 @@ configure()
 		nuba = 0;
 		break;
 
-	case VAX_730:
-		ubaddr = ubaddr730;
-		umaddr = umaddr730;
+	case VAX_7ZZ:
+		ubaddr = ubaddr7ZZ;
+		umaddr = umaddr7ZZ;
 		nmba = nuba = 0;
 		break;
 	}
