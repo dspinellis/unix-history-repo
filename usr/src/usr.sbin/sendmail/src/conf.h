@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.32 (Berkeley) %G%
+ *	@(#)conf.h	6.33 (Berkeley) %G%
  */
 
 /*
@@ -95,7 +95,7 @@
 # define HASUNAME	1	/* use System V uname system call */
 # endif
 
-#if defined(sun) && !defined(BSD)
+#if defined(sun) && !defined(BSD) && !defined(SOLARIS)
 # include <vfork.h>
 #endif
 
