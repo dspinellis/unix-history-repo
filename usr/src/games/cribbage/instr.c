@@ -6,15 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)instr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)instr.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
 #include <sys/stat.h>
-#include <sys/file.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "pathnames.h"
 
 instructions()
@@ -22,8 +24,8 @@ instructions()
 	extern int errno;
 	struct stat sb;
 	union wait pstat;
-	pid_t pid, waitpid();
-	char *pager, *path, *getenv(), *rindex(), *strerror();
+	pid_t pid;
+	char *pager, *path;
 
 	if (stat(_PATH_INSTR, &sb)) {
 		(void)fprintf(stderr, "cribbage: %s: %s.\n", _PATH_INSTR,
@@ -45,7 +47,7 @@ instructions()
 		_exit(1);
 	default:
 		do {
-			pid = waitpid(pid, &pstat, 0);
+			pid = waitpid(pid, (int *)&pstat, 0);
 		} while (pid == -1 && errno == EINTR);
 		if (pid == -1 || pstat.w_status)
 			exit(1);
