@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_socket.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -138,7 +138,7 @@ soclose(so)
 	register struct socket *so;
 {
 	int s = splnet();		/* conservative */
-	int error;
+	int error = 0;
 
 	if (so->so_options & SO_ACCEPTCONN) {
 		while (so->so_q0 != so)
