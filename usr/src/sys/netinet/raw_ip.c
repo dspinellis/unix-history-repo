@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)raw_ip.c	8.6 (Berkeley) %G%
+ *	@(#)raw_ip.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -204,6 +204,7 @@ rip_ctloutput(op, so, level, optname, m)
 
 	default:
 		if (optname >= DVMRP_INIT) {
+#ifdef MROUTING
 			if (op == PRCO_SETOPT) {
 				error = ip_mrouter_cmd(optname, so, *m);
 				if (*m)
@@ -211,6 +212,11 @@ rip_ctloutput(op, so, level, optname, m)
 			} else
 				error = EINVAL;
 			return (error);
+#else
+			if (op == PRCO_SETOPT && *m)
+				(void)m_free(*m);
+			return (EOPNOTSUPP);
+#endif
 		}
 
 	}
