@@ -4,7 +4,7 @@
  * vpd.c						updated %G%
  * Varian or Versatec printer daemon
  */
-char vpdSCCSid[] = "@(#)vpd.c	1.3\t%G%";
+char vpdSCCSid[] = "@(#)vpd.c	1.4\t%G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -58,6 +58,8 @@ char	fonts[4][50] = {
 };
 
 main(argc, argv)
+	int argc;
+	char **argv;
 {
 	char n;
 	register char *p1, *p2;
@@ -68,6 +70,22 @@ main(argc, argv)
 	int offline = 0;
 	int i, okreque = 1;
 
+	while (argc > 1) {
+		argc--;
+		argv++;
+		if (argv[0][0] != '-')
+			continue;
+		switch (argv[0][1]) {
+		case 'n':
+			if (argc < 2)
+				break;
+			argv++;
+			argc--;
+			nice(atol(argv[0]));
+			break;
+		}
+	}
+	setuid(getuid());
 	signal(SIGHUP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
