@@ -12,14 +12,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmdir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmdir.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <err.h>
 #include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void usage __P((void));
 
@@ -44,8 +45,7 @@ main(argc, argv)
 
 	for (errors = 0; *argv; ++argv)
 		if (rmdir(*argv) < 0) {
-			(void)fprintf(stderr,
-			    "rmdir: %s: %s\n", *argv, strerror(errno));
+			warn("%s", *argv);
 			errors = 1;
 		}
 	exit(errors);
