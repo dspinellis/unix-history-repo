@@ -1,0 +1,53 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)intro.3	5.1 (Berkeley) %G%
+.\"
+.TH INTRO 3M "8 July 1983"
+.UC 5
+.SH NAME
+intro \- introduction to mathematical library functions
+.SH DESCRIPTION
+These functions constitute the math library,
+.I libm.
+They are automatically loaded as needed by the Fortran compiler
+.IR f77 (1).
+The link editor searches this library under the \*(lq\-lm\*(rq option.
+Declarations for these functions may be obtained from the include file
+.RI < math.h >.
+.SH "LIST OF FUNCTIONS"
+.sp 2
+.nf
+.ta \w'atan2'u+2n +\w'gamma.3m'u+10n
+\fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
+.ta \w'atan2'u+4n +\w'gamma.3m'u+4n
+.sp 5p
+acos	sin.3m	trigonometric functions
+asin	sin.3m	trigonometric functions
+atan	sin.3m	trigonometric functions
+atan2	sin.3m	trigonometric functions
+cabs	hypot.3m	Euclidean distance
+ceil	floor.3m	absolute value, floor, ceiling functions
+cos	sin.3m	trigonometric functions
+cosh	sinh.3m	hyperbolic functions
+exp	exp.3m	exponential, logarithm, power, square root
+fabs	floor.3m	absolute value, floor, ceiling functions
+floor	floor.3m	absolute value, floor, ceiling functions
+gamma	gamma.3m	log gamma function
+hypot	hypot.3m	Euclidean distance
+j0	j0.3m	bessel functions
+j1	j0.3m	bessel functions
+jn	j0.3m	bessel functions
+log	exp.3m	exponential, logarithm, power, square root
+log10	exp.3m	exponential, logarithm, power, square root
+pow	exp.3m	exponential, logarithm, power, square root
+sin	sin.3m	trigonometric functions
+sinh	sinh.3m	hyperbolic functions
+sqrt	exp.3m	exponential, logarithm, power, square root
+tan	sin.3m	trigonometric functions
+tanh	sinh.3m	hyperbolic functions
+y0	j0.3m	bessel functions
+y1	j0.3m	bessel functions
+yn	j0.3m	bessel functions
+.fi
