@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-_sccsid:.asciz	"@(#)puts.s	5.1 (Berkeley) %G%"
+_sccsid:.asciz	"@(#)puts.s	5.2 (Berkeley) %G%"
 #endif not lint
 
 /*
@@ -57,8 +57,8 @@ ENTRY(puts, R11|R10|R9)
 	jbr	2f
 
 1:
-	tstl	_BASE(IOP)		/* Has a buffer been allocated? */
-	jneq	2f
+	tstl	_CNT(IOP)		/* Has a buffer been allocated? */
+	jgtr	2f
 	pushl	IOP			/* Get _flsbuf() to make one */
 	pushl	$0
 	calls	$2,__flsbuf
