@@ -39,7 +39,6 @@ define(`MAILER',
 define(`DOMAIN', `PUSHDIVERT(-1)define(`_ARG_', $2)include(../domain/$1.m4)POPDIVERT`'')
 define(`FEATURE', `PUSHDIVERT(-1)define(`_ARG_', $2)include(../feature/$1.m4)POPDIVERT`'')
 define(`HACK', `PUSHDIVERT(-1)define(`_ARG_', $2)include(../hack/$1.m4)POPDIVERT`'')
-define(`OLDSENDMAIL', `define(`_OLD_SENDMAIL_', `')')
 define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_0', `divert(3)')
 define(`LOCAL_RULE_1',
@@ -120,4 +119,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.5 (Berkeley) %G%')

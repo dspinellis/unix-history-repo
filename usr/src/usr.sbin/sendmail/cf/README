@@ -4,13 +4,12 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.29 (Berkeley) %G%
+		@(#)README	8.30 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
-at Berkeley.  These use features in the new (R8) sendmail, and although
-there is an ``OLDSENDMAIL'' mode, they haven't really been tested on
-old versions of sendmail and cannot be expected to work well.
+at Berkeley.  These use features in the new (R8) sendmail; they will
+not work on other versions.
 
 These configuration files are probably not as general as previous
 versions, and don't handle as many of the weird cases automagically.

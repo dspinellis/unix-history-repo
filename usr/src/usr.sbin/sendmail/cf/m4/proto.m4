@@ -8,23 +8,12 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.48 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.49 (Berkeley) %G%')
 
 MAILER(local)dnl
 
-ifdef(`_OLD_SENDMAIL_',
-`define(`_SET_95_', 5)dnl
-define(`_SET_96_', 6)dnl
-define(`_SET_97_', 7)dnl
-define(`_SET_98_', 8)dnl
-define(`confDOMAIN_NAME',
-	`ifdef(`NEED_DOMAIN', `$w.$d', `$w')')dnl',
-`# level 5 config file format
+# level 5 config file format
 V5
-define(`_SET_95_', 95)dnl
-define(`_SET_96_', 96)dnl
-define(`_SET_97_', 97)dnl
-define(`_SET_98_', 98)dnl')
 ifdef(`confSMTP_MAILER',, `define(`confSMTP_MAILER', `smtp')')dnl
 ifdef(`confLOCAL_MAILER',, `define(`confLOCAL_MAILER', `local')')dnl
 ifdef(`confRELAY_MAILER',,
@@ -107,9 +96,8 @@ CO @ % ifdef(`_NO_UUCP_', `', `!')
 # a class with just dot (for identifying canonical names)
 C..
 
-ifdef(`_OLD_SENDMAIL_', `dnl',
-`# dequoting map
-Kdequote dequote')
+# dequoting map
+Kdequote dequote
 
 undivert(6)dnl
 
@@ -130,8 +118,7 @@ Dn`'confMAILER_NAME
 Do`'confOPERATORS
 
 # format of a total name
-Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER,
-	ifdef(`_OLD_SENDMAIL_', `$g$?x ($x)$.', `$?x$x <$g>$|$g$.'))
+Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER, $g$?x ($x)$.', `$?x$x <$g>$|$g$.)
 include(`../m4/version.m4')
 
 ###############
@@ -377,40 +364,40 @@ R$*:;$*			$@ $1 :; <@>
 R@ $+ , $+		@ $1 : $2			change all "," to ":"
 
 # localize and dispose of route-based addresses
-R@ $+ : $+		$@ $>_SET_96_ < @$1 > : $2		handle <route-addr>
+R@ $+ : $+		$@ $>96 < @$1 > : $2		handle <route-addr>
 
 # find focus for list syntax
-R $+ : $* ; @ $+	$@ $>_SET_96_ $1 : $2 ; < @ $3 >	list syntax
+R $+ : $* ; @ $+	$@ $>96 $1 : $2 ; < @ $3 >	list syntax
 R $+ : $* ;		$@ $1 : $2;			list syntax
 
 # find focus for @ syntax addresses
 R$+ @ $+		$: $1 < @ $2 >			focus on domain
 R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
-R$+ < @ $+ >		$@ $>_SET_96_ $1 < @ $2 >		already canonical
+R$+ < @ $+ >		$@ $>96 $1 < @ $2 >		already canonical
 
 # do some sanity checking
 R$* < @ $* : $* > $*	$1 < @ $2 $3 > $4		nix colons in addrs
 
 ifdef(`_NO_UUCP_', `dnl',
 `# convert old-style addresses to a domain-based address
-R$- ! $+		$@ $>_SET_96_ $2 < @ $1 .UUCP >	resolve uucp names
-R$+ . $- ! $+		$@ $>_SET_96_ $3 < @ $1 . $2 >		domain uucps
-R$+ ! $+		$@ $>_SET_96_ $2 < @ $1 .UUCP >	uucp subdomains')
+R$- ! $+		$@ $>96 $2 < @ $1 .UUCP >	resolve uucp names
+R$+ . $- ! $+		$@ $>96 $3 < @ $1 . $2 >		domain uucps
+R$+ ! $+		$@ $>96 $2 < @ $1 .UUCP >	uucp subdomains')
 
 # if we have % signs, take the rightmost one
 R$* % $*		$1 @ $2				First make them all @s.
 R$* @ $* @ $*		$1 % $2 @ $3			Undo all but the last.
-R$* @ $*		$@ $>_SET_96_ $1 < @ $2 >		Insert < > and finish
+R$* @ $*		$@ $>96 $1 < @ $2 >		Insert < > and finish
 
 # else we must be a local name
 
 
 ################################################
-###  Ruleset _SET_96_ -- bottom half of ruleset 3  ###
+###  Ruleset 96 -- bottom half of ruleset 3  ###
 ################################################
 
 #  At this point, everything should be in a "local_part<@domain>extra" format.
-S`'_SET_96_
+S96
 
 # handle special cases for local names
 R$* < @ localhost > $*		$: $1 < @ $j . > $2		no domain at all
@@ -444,9 +431,7 @@ ifdef(`_CLASS_Y_',
 
 # try UUCP traffic as a local address
 R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP . > $3
-ifdef(`_OLD_SENDMAIL_',
-`R$* < @ $+ . $+ . UUCP . > $*		$@ $1 < @ $2 . $3 . > $4',
-`R$* < @ $+ . . UUCP . > $*		$@ $1 < @ $2 . > $3')')
+R$* < @ $+ . . UUCP . > $*		$@ $1 < @ $2 . > $3')
 ')
 ifdef(`_NO_CANONIFY_', `dnl',
 `# pass to name server to make hostname canonical
@@ -486,11 +471,11 @@ R$+ % $=w @ $=w		$1 @ $j				u%host@host => u@host
 
 
 ##############################################################
-###   Ruleset _SET_97_ -- recanonicalize and call ruleset zero   ###
+###   Ruleset 97 -- recanonicalize and call ruleset zero   ###
 ###		   (used for recursive calls)		   ###
 ##############################################################
 
-S`'_SET_97_
+S`'97
 R$*			$: $>3 $1
 R$*			$@ $>0 $1
 
@@ -509,17 +494,17 @@ R$* < @ . > $*		$#error $@ USAGE $: "invalid host name"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
-R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
+R$* < @ [ $+ ] > $*	$: $>98 $1 < @ [ $2 ] > $3	numeric internet spec
 R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 < @ [$2] > $3	still numeric: send',
 	`dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
-R$* < @ > $*		$@ $>_SET_97_ $1		user@ => user
-R< @ $=w . > : $*	$@ $>_SET_97_ $2		@here:... -> ...
-R$* $=O $* < @ $=w . >	$@ $>_SET_97_ $1 $2 $3		...@here -> ...
+R$* < @ > $*		$@ $>97 $1		user@ => user
+R< @ $=w . > : $*	$@ $>97 $2		@here:... -> ...
+R$* $=O $* < @ $=w . >	$@ $>97 $1 $2 $3		...@here -> ...
 
 # handle local hacks
-R$*			$: $>_SET_98_ $1
+R$*			$: $>98 $1
 
 # short circuit local delivery so forwarded email works
 R$* < @ $=w . >		$: < $R @ $H > $1 < @ $2 . >	if both relay & hub ...
@@ -573,23 +558,16 @@ ifdef(`_LOCAL_RULES_',
 `# figure out what should stay in our local mail system
 R$* < @ $* > $*		$#smtp $@ $2 $: $1 @ $2 $3		user@host.domain')')
 # pass names that still have a host to a smarthost (if defined)
-R$* < @ $* > $*		$: $>_SET_95_ < $S > $1 < @ $2 > $3	glue on smarthost name
+R$* < @ $* > $*		$: $>95 < $S > $1 < @ $2 > $3	glue on smarthost name
 
 # deal with other remote names
 ifdef(`_MAILER_smtp_',
 `R$* < @$* > $*		$#_SMTP_ $@ $2 $: $1 < @ $2 > $3		user@host.domain',
 `R$* < @$* > $*		$#error $@NOHOST $: Unrecognized host name $2')
 
-ifdef(`_OLD_SENDMAIL_',
-`# forward remaining names to local relay, if any
-R$=L			$#_LOCAL_ $: $1			special local names
-R$+			$: $>_SET_95_ < $R > $1			try relay
-R$+			$: $>_SET_95_ < $H > $1			try hub
-R$+			$#_LOCAL_ $: $1			no relay or hub: local',
-
-`# if this is quoted, strip the quotes and try again
+# if this is quoted, strip the quotes and try again
 R$+			$: $(dequote $1 $)		strip quotes
-R$+ $=O $+		$@ $>_SET_97_ $1 $2 $3			try again
+R$+ $=O $+		$@ $>97 $1 $2 $3			try again
 
 # handle locally delivered names
 R$=L			$: $>_SET_95_ < $H > $1		special local names
@@ -627,20 +605,20 @@ R<$+> <$*> $*		$@ $3				no match',
 `dnl')
 
 ###################################################################
-###  Ruleset _SET_95_ -- canonify mailer:host syntax to triple	###
+###  Ruleset 95 -- canonify mailer:host syntax to triple	###
 ###################################################################
 
-S`'_SET_95_
+S95
 R< > $*			$@ $1				strip off null relay
 R< $- : $+ > $*		$# $1 $@ $2 $: $3		try qualified mailer
 R< $=w > $*		$@ $2				delete local host
 R< $+ > $*		$#_RELAY_ $@ $1 $: $2		use unqualified mailer
 
 ###################################################################
-###  Ruleset _SET_98_ -- local part of ruleset zero (can be null)	###
+###  Ruleset 98 -- local part of ruleset zero (can be null)	###
 ###################################################################
 
-S`'_SET_98_
+S98
 undivert(3)dnl
 #
 ######################################################################

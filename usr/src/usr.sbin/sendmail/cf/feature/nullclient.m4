@@ -6,9 +6,7 @@ PUSHDIVERT(-1)
 #
 # %sccs.include.redist.sh%
 #
-ifdef(`SMTP_MAILER_FLAGS',,
-	`define(`SMTP_MAILER_FLAGS',
-		`ifdef(`_OLD_SENDMAIL_', `L', `')')')
+ifdef(`SMTP_MAILER_FLAGS',, `define(`SMTP_MAILER_FLAGS', `')')
 define(_NULL_CLIENT_ONLY_, `1')
 ifelse(_ARG_, `', `errprint(`Feature "nullclient" requires argument')',
 	`define(`MAIL_HUB', _ARG_)')
@@ -21,7 +19,7 @@ POPDIVERT
 #  sendmail.
 #
 
-VERSIONID(`@(#)nullclient.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)nullclient.m4	8.4 (Berkeley) %G%')
 
 PUSHDIVERT(7)
 ############################################
