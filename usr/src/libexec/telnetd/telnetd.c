@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -215,8 +215,7 @@ ttloop()
  * getterminalspeed
  *
  *     Ask the other end to send along its terminal speed.
- * subopt does the rest.  Interlocked so it can't happen during
- * getterminaltype.
+ * subopt does the rest.
  */
 
 void
@@ -1130,24 +1129,16 @@ suboption()
     }
     case TELOPT_NAWS: {
 	struct winsize win;
-	char c;
-
-#define SB_GETCHAR(c) \
-	{ if ((c = SB_GET()) == IAC && SB_GET() != IAC) return; }
 
 	ioctl(pty, TIOCGWINSZ, &win);
 	settimer(ttypesubopt);
 
 	syslog(LOG_INFO, "%x %x %x %x",
 	subpointer[0],subpointer[1],subpointer[2],subpointer[3]);
-	SB_GETCHAR(c);
-	win.ws_col = c << 8;
-	SB_GETCHAR(c);
-	win.ws_col |= c;
-	SB_GETCHAR(c);
-	win.ws_row = c << 8;
-	SB_GETCHAR(c);
-	win.ws_row |= c;
+	win.ws_col = SB_GET() << 8;
+	win.ws_col |= SB_GET();
+	win.ws_row = SB_GET() << 8;
+	win.ws_row |= SB_GET();
 	syslog(LOG_INFO, "col %d row %d", win.ws_col, win.ws_row);
 	ioctl(pty, TIOCSWINSZ, &win);
 	break;
