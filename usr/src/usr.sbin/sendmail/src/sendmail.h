@@ -1,9 +1,9 @@
 /*
-**  DLVRMAIL.H -- Global definitions for delivermail.
+**  POSTBOX.H -- Global definitions for postbox.
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	3.1	%G%
+**	@(#)sendmail.h	3.2	%G%
 */
 
 
@@ -90,14 +90,14 @@ struct address
 	struct address	*q_prev;	/* back pointer */
 };
 
-typedef struct address addrq;
+typedef struct address ADDRESS;
 
 /* some other primitives */
 # define nxtinq(q)	((q)->q_next)
 # define clearq(q)	(q)->q_next = (q)->q_prev = NULL
 
-extern addrq SendQ;		/* queue of people to send to */
-extern addrq AliasQ;		/* queue of people that are aliases */
+extern ADDRESS SendQ;		/* queue of people to send to */
+extern ADDRESS AliasQ;		/* queue of people that are aliases */
 
 
 /*
@@ -184,12 +184,11 @@ extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
 extern char	*MsgId;		/* the message id for this message */
 extern char	*Date;		/* origination date (UNIX format) */
-extern addrq	From;		/* the person it is from */
+extern ADDRESS	From;		/* the person it is from */
 extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */
 
 
 # include	<sysexits.h>
 
-# define flagset(bits, word)	((bits) & (word))
 # define setstat(s)		{ if (ExitStat == EX_OK) ExitStat = s; }
