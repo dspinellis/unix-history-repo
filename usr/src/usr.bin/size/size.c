@@ -1,53 +1,67 @@
-static	char *sccsid = "@(#)size.c	4.4 (Berkeley) %G%";
 /*
- * size
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
-#include	<stdio.h>
-#include 	<a.out.h>
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1988 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
 
-int	header;
+#ifndef lint
+static char sccsid[] = "@(#)size.c	4.5 (Berkeley) %G%";
+#endif /* not lint */
+
+#include <sys/param.h>
+#include <sys/file.h>
+#include <a.out.h>
+#include <stdio.h>
 
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	struct exec buf;
-	long sum;
-	int gorp,i;
-	int err = 0;
-	FILE *f;
+	struct exec head;
+	u_long total;
+	int exval, fd, first;
 
-	if (argc==1) {
+	if (!*argv[1])
 		*argv = "a.out";
-		argc++;
-		--argv;
-	}
-	gorp = argc;
-	while(--argc) {
+	else
 		++argv;
-		if ((f = fopen(*argv, "r"))==NULL) {
-			printf("size: %s not found\n", *argv);
-			err++;
+	for (first = 1, exval = 0; *argv; ++argv) {
+		if ((fd = open(*argv, O_RDONLY, 0)) < 0) {
+			fprintf(stderr, "size: ");
+			perror(*argv);
+			exval = 1;
 			continue;
 		}
-		if (fread((char *)&buf, sizeof(buf), 1, f) != 1 ||
-		    N_BADMAG(buf)) {
-			printf("size: %s not an object file\n", *argv);
-			fclose(f);
-			err++;
+		if (read(fd, (char *)&head, sizeof(head)) != sizeof(head) ||
+		    N_BADMAG(head)) {
+			fprintf(stderr, "size: %s: not in a.out format.\n",
+			    *argv);
+			exval = 1;
 			continue;
 		}
-		if (header == 0) {
+		(void)close(fd);
+		if (first) {
+			first = 0;
 			printf("text\tdata\tbss\tdec\thex\n");
-			header = 1;
 		}
-		printf("%u\t%u\t%u\t", buf.a_text,buf.a_data,buf.a_bss);
-		sum = (long) buf.a_text + (long) buf.a_data + (long) buf.a_bss;
-		printf("%ld\t%lx", sum, sum);
-		if (gorp>2)
+		total = head.a_text + head.a_data + head.a_bss;
+		printf("%lu\t%lu\t%lu\t%lu\t%lx", head.a_text, head.a_data,
+		    head.a_bss, total, total);
+		if (argc > 2)
 			printf("\t%s", *argv);
 		printf("\n");
-		fclose(f);
 	}
-	exit(err);
+	exit(exval);
 }
