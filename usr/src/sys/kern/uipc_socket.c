@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.32 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -964,9 +964,5 @@ sohasoutofband(so)
 		gsignal(-so->so_pgid, SIGURG);
 	else if (so->so_pgid > 0 && (p = pfind(so->so_pgid)) != 0)
 		psignal(p, SIGURG);
-	if (so->so_rcv.sb_sel) {
-		selwakeup(so->so_rcv.sb_sel, so->so_rcv.sb_flags & SB_COLL);
-		so->so_rcv.sb_sel = 0;
-		so->so_rcv.sb_flags &= ~SB_COLL;
-	}
+	selwakeup(&so->so_rcv.sb_sel);
 }
