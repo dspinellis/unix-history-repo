@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.6 %G%";
+static	char sccsid[] = "@(#)pc.c 3.7 %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <wait.h>
@@ -131,7 +131,7 @@ main(argc, argv)
 				pc3 = "/usr/src/cmd/pc3/a.out";
 				continue;
 			case 'l':
-				lpc = "-lnpc";
+				lpc = "/usr/src/lib/libpc/pclib";
 				continue;
 			}
 			continue;
@@ -172,6 +172,20 @@ main(argc, argv)
 		argp = argv[i];
 		if (argp[0] == '-')
 			continue;
+		if (suffix(argp) == 's') {
+			asargx = 1;
+			if (Jflag)
+				asargs[asargx++] = "-J";
+			asargs[asargx++] = argp;
+			asargs[asargx++] = "-o";
+			tfile[1] = setsuf(argp, 'o');
+			asargs[asargx++] = tfile[1];
+			asargs[asargx] = 0;
+			if (dosys(as, asargs, 0, 0))
+				continue;
+			tfile[1] = 0;
+			continue;
+		}
 		if (suffix(argp) != 'p')
 			continue;
 		tfile[0] = tname[0];
@@ -240,6 +254,7 @@ main(argc, argv)
 			pc3args[pc3argx++] = argp;
 			nxo++;
 			continue;
+		case 's':
 		case 'p':
 			onepso = pc3args[pc3argx++] =
 			    savestr(setsuf(argp, 'o'));
@@ -260,6 +275,7 @@ main(argc, argv)
 			switch (getsuf(argp)) {
 
 			case 'p':
+			case 's':
 				ldargs[ldargx] = savestr(setsuf(argp, 'o'));
 				break;
 			default:
