@@ -22,8 +22,8 @@ kern/dead_vnops.c	standard
 kern/spec_vnops.c	standard
 kern/fifo_vnops.c	optional fifo
 kern/subr_log.c		standard
-kern/subr_mcount.c	optional profiling-routine
 kern/subr_prf.c		standard
+kern/subr_prof.c	standard
 kern/subr_rmap.c	standard
 kern/subr_xxx.c		standard
 kern/sys_generic.c	standard
