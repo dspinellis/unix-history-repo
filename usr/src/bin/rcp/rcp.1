@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)rcp.1	6.14.1.1 (Berkeley) %G%
+.\"	@(#)rcp.1	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RCP 1
@@ -17,8 +17,7 @@
 .Op Fl k Ar realm
 .Ar file1 file2
 .Nm rcp
-.Op Fl p
-.Op Fl r
+.Op Fl Kprx
 .Op Fl k Ar realm
 .Ar file ...
 .Ar directory
@@ -33,6 +32,10 @@ form ``rname@rhost:path'', or a local file name (containing no `:' characters,
 or a `/' before any `:'s).
 .Pp
 .Bl -tag -width flag
+.It Fl K
+The
+.Fl K
+option turns off all Kerberos authentication.
 .It Fl r
 If any of the source files are directories,
 .Nm rcp
