@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.14 (Berkeley) %G%
+ *	@(#)types.h	7.15 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -12,9 +12,9 @@
 typedef	short	dev_t;
 #ifndef _POSIX_SOURCE
 					/* major part of a device */
-#define	major(x)	((int)(((unsigned)(x)>>8)&0377))
+#define	major(x)	((int)(((unsigned)(x) >> 8)&0xff))
 					/* minor part of a device */
-#define	minor(x)	((int)((x)&0377))
+#define	minor(x)	((int)((x)&0xff))
 					/* make a device number */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))
 #endif
@@ -92,6 +92,21 @@ typedef	struct fd_set {
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define	FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
+
+#if defined(__STDC__) && defined(KERNEL)
+/*
+ * Forward structure declarations for function prototypes.
+ * We include the common structures that cross subsystem boundaries here;
+ * others are mostly used in the same place that the structure is defined.
+ */
+struct	proc;
+struct	pgrp;
+struct	ucred;
+struct	rusage;
+struct	file;
+struct	buf;
+struct	uio;
+#endif
 
 #endif /* !_POSIX_SOURCE */
 #endif /* !_TYPES_H_ */
