@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.3 (Berkeley) %G%
+ *	@(#)locore.s	7.4 (Berkeley) %G%
  */
 
 /*
@@ -1089,12 +1089,12 @@ MachException:
 	mfc0	k0, MACH_COP_0_STATUS_REG	# Get the status register
 	mfc0	k1, MACH_COP_0_CAUSE_REG	# Get the cause register value.
 	and	k0, k0, MACH_SR_KU_PREV		# test for user mode
-	beq	k0, zero, 1f			# handle kernel exception
+	sll	k0, k0, 3			# shift user bit for cause index
 	and	k1, k1, MACH_CR_EXC_CODE	# Mask out the cause bits.
-	addu	k1, k1, 0x40			# change index to user table
+	or	k1, k1, k0			# change index to user table
 1:
 	la	k0, machExceptionTable		# get base of the jump table
-	add	k0, k0, k1			# Get the address of the
+	addu	k0, k0, k1			# Get the address of the
 						#  function entry.  Note that
 						#  the cause is already
 						#  shifted left by 2 bits so
@@ -2317,8 +2317,9 @@ END(MachGetCauseReg)
 LEAF(MachSwitchFPState)
 	.set	noreorder
 	mfc0	t1, MACH_COP_0_STATUS_REG	# Save old SR
-	li	t0, MACH_SR_COP_1_BIT		# Disable interrupts and
-	mtc0	t0, MACH_COP_0_STATUS_REG	#  enable the coprocessor
+	li	t0, MACH_SR_COP_1_BIT		# enable the coprocessor
+	or	t0, t0, t1
+	mtc0	t0, MACH_COP_0_STATUS_REG
 
 	beq	a0, zero, 1f			# skip save if NULL pointer
 	nop
