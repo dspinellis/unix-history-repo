@@ -1,0 +1,5 @@
+for i in */.
+do
+	echo "	======= $i"; date
+	cd $i; make; make DESTDIR=$DESTDIR install clean; cd ..
+done
