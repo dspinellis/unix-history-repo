@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_iso.c	8.1 (Berkeley) %G%
+ *	@(#)tp_iso.c	8.2 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -69,6 +69,7 @@ SOFTWARE.
 #include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/protosw.h>
+#include <sys/kernel.h>
 
 #include <net/if.h>
 #include <net/route.h>
