@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -487,11 +487,7 @@ main (argc, argv)
     } else {
 	amMake = FALSE;
 	backwards = FALSE;    	/* Do things MY way, not MAKE's */
-#ifdef DEF_OLD_VARS
 	oldVars = TRUE;
-#else
-	oldVars = FALSE;      	/* don't substitute for undefined variables */
-#endif
     }
 
     /*
