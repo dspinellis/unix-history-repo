@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	4.1 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)quota.c	4.2 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -11,7 +11,6 @@ static char sccsid[] = "@(#)quota.c	4.1 (Berkeley, from Melbourne) %G%";
 #include <pwd.h>
 
 #include <sys/param.h>
-#define	QUOTA
 #include <sys/quota.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -20,6 +19,7 @@ int	qflag;
 int	vflag;
 int	done;
 int	morethanone;
+char	*qfname = "quotas";
 
 main(argc, argv)
 	char *argv[];
@@ -105,16 +105,16 @@ showquotas(uid, name)
 		dev_t	fsdev;
 		struct	stat statb;
 		struct	dqblk dqblk;
-		char qfname[MAXPATHLEN + 1], iwarn[8], dwarn[8];
+		char qfilename[MAXPATHLEN + 1], iwarn[8], dwarn[8];
 
 		if (stat(fs->fs_spec, &statb) < 0)
 			continue;
 		fsdev = statb.st_rdev;
-		(void) sprintf(qfname, "%s/%s", fs->fs_file, fs->fs_quotafile);
-		if (stat(qfname, &statb) < 0 || statb.st_dev != fsdev)
+		(void) sprintf(qfilename, "%s/%s", fs->fs_file, qfname);
+		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfname, FRDONLY);
+			register fd = open(qfilename, FRDONLY);
 
 			if (fd < 0)
 				continue;
