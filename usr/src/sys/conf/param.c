@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)param.c	7.7 (Berkeley) %G%
+ *	@(#)param.c	7.8 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -30,7 +30,6 @@ char copyright[] =
 #include "../sys/proc.h"
 #include "../sys/text.h"
 #include "../sys/vnode.h"
-#include "../ufs/inode.h"
 #include "../sys/file.h"
 #include "../sys/callout.h"
 #include "../sys/clist.h"
@@ -58,21 +57,16 @@ struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
 int	ntext = 36 + MAXUSERS;
-#define NINODE ((NPROC + 16 + MAXUSERS) + 32)
-int	ninode = NINODE;
-#ifndef NFS
-int	nchsize = NINODE * 11 / 10;
-#else
-int	nnfsnode = NINODE;
-int	nchsize = (2 * NINODE) * 11 / 10;
-#endif /* NFS */
+#define NVNODE ((NPROC + 16 + MAXUSERS) + 32)
+int	nvnode = NVNODE;
+int	nchsize = NVNODE * 11 / 10;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
 int	ncallout = 16 + NPROC;
 int	nclist = 60 + 12 * MAXUSERS;
 int     nmbclusters = NMBCLUSTERS;
 #ifdef QUOTA
 int	nquota = (MAXUSERS * 9) / 7 + 3;
-int	ndquot = NINODE + (MAXUSERS * NMOUNT) / 4;
+int	ndquot = NVNODE + (MAXUSERS * NMOUNT) / 4;
 #endif
 int	fscale = FSCALE;	/* kernel uses `FSCALE', user uses `fscale' */
 
@@ -89,7 +83,7 @@ int	nbuf, nswbuf;
  */
 struct	proc *proc, *procNPROC;
 struct	text *text, *textNTEXT;
-struct	inode *inode, *inodeNINODE;
+struct	vnode *vnode, *vnodeNVNODE;
 struct	file *file, *fileNFILE;
 struct 	callout *callout;
 struct	cblock *cfree;
