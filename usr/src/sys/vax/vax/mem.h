@@ -1,4 +1,4 @@
-/*	mem.h	4.4	81/03/03	*/
+/*	mem.h	4.5	81/03/07	*/
 
 /*
  * Memory controller registers
@@ -56,7 +56,7 @@ struct	mcr {
 #define	M750_CORERR	0x40000000	/* correctable error, in [0] */
 
 #define	M750_INH(mcr)	((mcr)->mc_reg[1] = M750_ICRD)
-#define	M750_ENA(mcr)	((mcr)->mc_reg[0] = (M750_UNCORR|M750_CORR), \
+#define	M750_ENA(mcr)	((mcr)->mc_reg[0] = (M750_UNCORR|M750_CORERR), \
 			    (mcr)->mc_reg[1] = 0)
 #define	M750_ERR(mcr)	((mcr)->mc_reg[0] & (M750_UNCORR|M750_CORERR))
 
