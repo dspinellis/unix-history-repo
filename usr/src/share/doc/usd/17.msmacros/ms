@@ -1,6 +1,8 @@
-.\"	@(#)ms	5.1 (Berkeley) %G%
+.\"	@(#)ms	6.1 (Berkeley) %G%
 .\"
-.RP
+.EH 'USD:20-%''Using the \-ms Macros with Troff and Nroff'
+.OH 'Using the \-ms Macros with Troff and Nroff''USD:20-%'
+.\".RP
 ....TM 76-1274-16 39199 39199-11
 ....ND October 8, 1976
 .nr CW 2.85i
@@ -15,8 +17,8 @@ M. E. Lesk
 .AI
 .MH
 .OK
-Text Formatting
-Phototypesetting
+\"Text Formatting
+\"Phototypesetting
 .AB
 This document describes a set of easy-to-use macros
 for preparing documents on the UNIX system.
