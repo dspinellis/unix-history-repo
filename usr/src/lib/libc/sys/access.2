@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)access.2	6.5 (Berkeley) %G%
+.\"	@(#)access.2	6.6 (Berkeley) %G%
 .\"
 .TH ACCESS 2 ""
 .UC 4
@@ -11,16 +11,8 @@ access \- determine accessibility of file
 .SH SYNOPSIS
 .nf
 .ft B
-#include <sys/file.h>
-.PP
-.ft B
-.ta 1.25i 1.6i
-#define R_OK	4	/* test for read permission */
-#define W_OK	2	/* test for write permission */
-#define X_OK	1	/* test for execute (search) permission */
-#define F_OK	0	/* test for presence of file */
-.PP
-.ft B
+#include <unistd.h>
+
 accessible = access(path, mode)
 int accessible;
 char *path;
@@ -34,15 +26,12 @@ file
 .I path
 for accessibility according to
 .IR mode ,
-which is an inclusive or of the bits
-R_OK,
-W_OK
-and
-X_OK.
+which is the bitwise inclusive OR of the access permissions to be
+checked (R_OK for read permission, W_OK for write permission and X_OK
+for execute/search permission) or the existence test, F_OK.
 Specifying
 .I mode
-as F_OK (i.e., 0)
-tests whether the directories leading to the file can be
+as F_OK tests whether the directories leading to the file can be
 searched and the file exists.
 .PP
 The real user ID and the group access list
