@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.66 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.67 (Berkeley) %G%
  */
 
 /*
@@ -757,7 +757,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	*mdp = md;
 	if (vaper != NULL) {
 		bcopy((caddr_t)vap, (caddr_t)vaper, sizeof(*vap));
-		if (np->n_size > vap->va_size)
+		if ((np->n_flag & NMODIFIED) && np->n_size > vap->va_size)
 			vaper->va_size = np->n_size;
 		if (np->n_flag & NCHG) {
 			if (np->n_flag & NACC) {
@@ -798,7 +798,7 @@ nfs_getattrcache(vp, vap)
 	}
 	nfsstats.attrcache_hits++;
 	bcopy((caddr_t)&np->n_vattr,(caddr_t)vap,sizeof(struct vattr));
-	if (vap->va_size > np->n_size) {
+	if ((np->n_flag & NMODIFIED) == 0) {
 		np->n_size = vap->va_size;
 		vnode_pager_setsize(vp, (u_long)np->n_size);
 	} else if (np->n_size > vap->va_size)
