@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)fend.c 1.22.1.1 %G%";
+static char sccsid[] = "@(#)fend.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
@@ -134,23 +134,23 @@ funcend(fp, bundle, endline)
 	    codeformain();
 	    ftnno = fp -> value[NL_ENTLOC];
 	    prog_prologue(&eecookie);
-	    stabfunc( "program" , fp -> class ,
-		bundle->stmnt_blck.line_no , (long) 0 );
+	    stabline(bundle->stmnt_blck.line_no);
+	    stabfunc(fp, "program", bundle->stmnt_blck.line_no , (long) 0 );
 	} else {
 	    ftnno = fp -> value[NL_ENTLOC];
 	    fp_prologue(&eecookie);
-	    stabfunc( fp -> symbol , fp -> class , 
-		bundle->stmnt_blck.line_no , (long) (cbn - 1) );
+	    stabline(bundle->stmnt_blck.line_no);
+	    stabfunc(fp, fp->symbol, bundle->stmnt_blck.line_no,
+		(long)(cbn - 1));
 	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
-			    , p -> value[ NL_OFFS ] ,
-				 (int) lwidth( p -> type ) );
+		stabparam( p , p -> value[ NL_OFFS ] , (int) lwidth(p->type));
 	    }
 	    if ( fp -> class == FUNC ) {
 		    /*
 		     *	stab the function variable
 		     */
 		p = fp -> ptr[ NL_FVAR ];
-			, p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
+		stablvar( p , p -> value[ NL_OFFS ] , (int) lwidth( p -> type));
 	    }
 		/*
 		 *	stab local variables
@@ -164,7 +164,6 @@ funcend(fp, bundle, endline)
 		    /*
 		     *	stab locals (not parameters)
 		     */
-			    , p -> value[ NL_OFFS ] , (int) lwidth( p -> type ) );
 		    }
 		}
 	    }
