@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.3 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -35,6 +35,7 @@ long	dumplo;
 int	dmmin, dmmax, dmtext;
 
 extern	struct vba_driver vddriver;
+extern	struct vba_driver hdcdriver;
 
 struct	genericconf {
 	caddr_t	gc_driver;
@@ -42,6 +43,7 @@ struct	genericconf {
 	dev_t	gc_root;
 } genericconf[] = {
 	{ (caddr_t)&vddriver,	"dk",	makedev(1, 0),	},
+	{ (caddr_t)&hdcdriver,	"hd",	makedev(1, 0),	},
 	{ 0 },
 };
 
