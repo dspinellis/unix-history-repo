@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.32 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -425,6 +425,7 @@ ufs_sync(mp, waitfor)
 	register struct inode *ip;
 	register struct ufsmount *ump = VFSTOUFS(mp);
 	register struct fs *fs;
+	struct vnode *nvp;
 	int error, allerror = 0;
 	static int updlock = 0;
 
@@ -453,14 +454,19 @@ ufs_sync(mp, waitfor)
 	/*
 	 * Write back each (modified) inode.
 	 */
-	for (vp = mp->m_mounth; vp; vp = vp->v_mountf) {
+loop:
+	for (vp = mp->m_mounth; vp; vp = nvp) {
+		nvp = vp->v_mountf;
 		ip = VTOI(vp);
-		if ((ip->i_flag & ILOCKED) != 0 || vp->v_usecount == 0 ||
-		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
+		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
+		    vp->v_dirtyblkhd == NULL)
 			continue;
-		VREF(vp);
-		VOP_LOCK(vp);
-		if (error = VOP_FSYNC(vp, 0, NOCRED, MNT_NOWAIT))
+		if (vget(vp))
+			goto loop;
+		if (vp->v_dirtyblkhd)
+			vflushbuf(vp, 0);
+		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) &&
+		    (error = iupdat(ip, &time, &time, 0)))
 			allerror = error;
 		vput(vp);
 	}
