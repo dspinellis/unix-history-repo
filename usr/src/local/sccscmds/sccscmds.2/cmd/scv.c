@@ -13,7 +13,7 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
-SCCSID(@(#)scv.c	4.2);
+SCCSID(@(#)scv.c	4.3);
 
 
 /*
@@ -596,7 +596,6 @@ xwrite(a,b,c)
 
 
 
-SCCSID(@(#)scv	2.1.1.2);
 
 # define CALL(p,func,cnt)	Ffile=p; (*func)(p); cnt++;
 short	nfiles;
