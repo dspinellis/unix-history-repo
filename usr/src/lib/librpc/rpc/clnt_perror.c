@@ -43,7 +43,6 @@ static char sccsid[] = "@(#)clnt_perror.c 1.15 87/10/07 Copyr 1984 Sun Micro";
 #include <rpc/auth.h>
 #include <rpc/clnt.h>
 
-extern char *sys_errlist[];
 static char *auth_errmsg();
 
 extern char *strcpy();
@@ -102,7 +101,7 @@ clnt_sperror(rpch, s)
 	case RPC_CANTSEND:
 	case RPC_CANTRECV:
 		(void) sprintf(str, "; errno = %s",
-		    sys_errlist[e.re_errno]); 
+		    strerror(e.re_errno)); 
 		str += strlen(str);
 		break;
 
@@ -229,7 +228,6 @@ clnt_spcreateerror(s)
 	char *s;
 {
 	extern int sys_nerr;
-	extern char *sys_errlist[];
 	char *str = _buf();
 
 	if (str == 0)
@@ -248,7 +246,7 @@ clnt_spcreateerror(s)
 		if (rpc_createerr.cf_error.re_errno > 0
 		    && rpc_createerr.cf_error.re_errno < sys_nerr)
 			(void) strcat(str,
-			    sys_errlist[rpc_createerr.cf_error.re_errno]);
+			    strerror(rpc_createerr.cf_error.re_errno));
 		else
 			(void) sprintf(&str[strlen(str)], "Error %d",
 			    rpc_createerr.cf_error.re_errno);
