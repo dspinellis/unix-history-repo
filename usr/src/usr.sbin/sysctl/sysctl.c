@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -321,7 +321,8 @@ findname(string, level, bufp, namelist)
 usage()
 {
 
-	(void)fprintf(stderr, "usage:\t%s\n\t%s\n\t%s\n",
-	    "sysctl [-w] variable ...", "sysctl -a", "sysctl -A");
+	(void)fprintf(stderr, "usage:\t%s\n\t%s\n\t%s\n\t%s\n",
+	    "sysctl [-n] variable ...", "sysctl [-n] -w variable=value ...",
+	    "sysctl [-n] -a", "sysctl [-n] -A");
 	exit(1);
 }
