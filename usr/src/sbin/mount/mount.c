@@ -11,14 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <fstab.h>
-#include <mtab.h>
 #include <errno.h>
 #include <stdio.h>
 #include <strings.h>
@@ -44,12 +43,10 @@ static char sccsid[] = "@(#)mount.c	5.9 (Berkeley) %G%";
 #define	SETTYPE(type) \
 	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
-#define	MTAB	"/etc/mtab"
-
-static struct mtab mtab[NMOUNT];
 static int fake, verbose, mnttype;
 #ifdef NFS
 int xdr_dir(), xdr_fh();
+char *getnfsargs();
 struct nfs_args nfsargs = {
 	(struct sockaddr_in *)0,
 	(nfsv2fh_t *)0,
@@ -77,10 +74,11 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	register struct mtab *mp;
 	register struct fstab *fs;
 	register int cnt;
-	int all, ch, fd, rval, sfake;
+	int all, ch, rval, sfake, i;
+	long mntsize;
+	struct statfs statfsbuf, *mntbuf;
 	char *type;
 
 	all = 0;
@@ -109,7 +107,7 @@ main(argc, argv)
 				mnttype = MOUNT_NFS;
 			break;
 		case 'o':
-			getoptions(optarg,&nfsargs,&opflags,&retrycnt);
+			getoptions(optarg, &nfsargs, &opflags, &retrycnt);
 			break;
 #endif
 		case '?':
@@ -120,11 +118,6 @@ main(argc, argv)
 	argv += optind;
 
 	/* NOSTRICT */
-	if ((fd = open(MTAB, O_RDONLY, 0)) >= 0) {
-		if (read(fd, (char *)mtab, NMOUNT * sizeof(struct mtab)) < 0)
-			mtaberr();
-		(void)close(fd);
-	}
 
 	if (all) {
 		rval = 0;
@@ -155,9 +148,33 @@ main(argc, argv)
 	if (argc == 0) {
 		if (verbose || fake || type)
 			usage();
-		for (mp = mtab, cnt = NMOUNT; cnt--; ++mp)
-			if (*mp->m_path)
-				prmtab(mp);
+		if ((mntsize = getfsstat(0, 0)) < 0) {
+			perror("mount");
+			exit(1);
+		}
+		mntbuf = 0;
+		do {
+			if (mntbuf)
+				free(mntbuf);
+			i = (mntsize + 1) * sizeof(struct statfs);
+			if ((mntbuf = (struct statfs *)malloc(i)) == 0) {
+				fprintf(stderr,
+					"no space for mount table buffer\n");
+				exit(1);
+			}
+			if ((mntsize = getfsstat(mntbuf, i)) < 0) {
+				perror("df");
+				exit(1);
+			}
+		} while (i == mntsize * sizeof(struct statfs));
+		for (i = 0; i < mntsize; i++) {
+			if (mntbuf[i].f_flags & M_RDONLY)
+				type = "ro";
+			else
+				type = "rw";
+			prmount(mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname,
+				type);
+		}
 		exit(0);
 	}
 
@@ -191,22 +208,8 @@ mountfs(spec, name, type)
 	char *spec, *name, *type;
 {
 	extern int errno;
-	register struct mtab *mp, *space;
 	register int cnt;
-	register char *p;
-#ifdef NFS
-	register CLIENT *clp;
-	struct hostent *hp;
-	struct sockaddr_in saddr;
-	struct timeval pertry, try;
-	enum clnt_stat clnt_stat;
-	int so = RPC_ANYSOCK;
-	char *hostp, *delimp;
-	u_short tport;
-	struct nfhret nfhret;
-	char nam[MNAMELEN+1];
-#endif
-	int fd, flags;
+	int flags;
 	struct ufs_args args;
 	char *argp;
 
@@ -214,88 +217,27 @@ mountfs(spec, name, type)
 		flags = 0;
 		if (!strcmp(type, FSTAB_RO))
 			flags |= M_RDONLY;
-#ifdef NFS
 		switch (mnttype) {
 		case MOUNT_UFS:
 			args.fspec = spec;
 			argp = (caddr_t)&args;
 			break;
+
+#ifdef NFS
 		case MOUNT_NFS:
-			strncpy(nam, spec, MNAMELEN);
-			nam[MNAMELEN] = '\0';
-			if ((delimp = index(spec, '@')) != NULL) {
-				hostp = delimp+1;
-			} else if ((delimp = index(spec, ':')) != NULL) {
-				hostp = spec;
-				spec = delimp+1;
-			} else {
-				fprintf(stderr, "No <host>:<dirpath> or <dirpath>@<host> spec\n");
-				return (1);
-			}
-			*delimp = '\0';
-			if ((hp = gethostbyname(hostp)) == NULL) {
-				fprintf(stderr,"Can't get net id for host\n");
-				return (1);
-			}
-			bcopy(hp->h_addr,(caddr_t)&saddr.sin_addr,hp->h_length);
-			nfhret.stat = EACCES;	/* Mark not yet successful */
-			while (retrycnt > 0) {
-				saddr.sin_family = AF_INET;
-				saddr.sin_port = htons(PMAPPORT);
-				if ((tport = pmap_getport(&saddr, RPCPROG_NFS,
-					NFS_VER2, IPPROTO_UDP)) == 0) {
-					if ((opflags & ISBGRND) == 0)
-						clnt_pcreateerror("NFS Portmap");
-				} else {
-					saddr.sin_port = 0;
-					pertry.tv_sec = 10;
-					pertry.tv_usec = 0;
-					if ((clp = clntudp_create(&saddr, RPCPROG_MNT,
-						RPCMNT_VER1, pertry, &so)) == NULL) {
-						if ((opflags & ISBGRND) == 0)
-							clnt_pcreateerror("Cannot MNT PRC");
-					} else {
-						clp->cl_auth = authunix_create_default();
-						try.tv_sec = 10;
-						try.tv_usec = 0;
-						clnt_stat = clnt_call(clp, RPCMNT_MOUNT, xdr_dir, spec,
-							xdr_fh, &nfhret, try);
-						if (clnt_stat != RPC_SUCCESS) {
-							if ((opflags & ISBGRND) == 0)
-								clnt_perror(clp, "Bad MNT RPC");
-						} else {
-							auth_destroy(clp->cl_auth);
-							clnt_destroy(clp);
-							retrycnt = 0;
-						}
-					}
-				}
-				if (--retrycnt > 0) {
-					if (opflags & BGRND) {
-						opflags &= ~BGRND;
-						if (fork())
-							return (0);
-						else
-							opflags |= ISBGRND;
-					} 
-					sleep(10);
-				}
-			}
-			if (nfhret.stat) {
-				if (opflags & ISBGRND)
-					exit(1);
-				fprintf(stderr, "Can't access %s, errno=%d\n",
-					spec, nfhret.stat);
-				return (1);
-			}
-			saddr.sin_port = htons(tport);
-			nfsargs.addr = &saddr;
-			nfsargs.fh = &nfhret.nfh;
-			nfsargs.hostname = nam;
-			argp = (caddr_t)&nfsargs;
-			break;
+			if (argp = getnfsargs(spec, name, type))
+				break;
+			return (1);
+#endif /* NFS */
+
+		default:
+			if (opflags & ISBGRND)
+				exit(1);
+			fprintf(stderr, "%d: unknown mount type\n", mnttype);
+			exit(1);
+			/* NOTREACHED */
+
 		};
-#endif
 		if (mount(mnttype, name, flags, argp)) {
 			if (opflags & ISBGRND)
 				exit(1);
@@ -314,54 +256,11 @@ mountfs(spec, name, type)
 			return(1);
 		}
 
-		/* we don't do quotas.... */
-		if (strcmp(type, FSTAB_RQ) == 0)
-			type = FSTAB_RW;
 	}
-
-	/* trim trailing /'s and find last component of name */
-	for (p = index(spec, '\0'); *--p == '/';);
-	*++p = '\0';
-	if (p = rindex(spec, '/')) {
-		*p = '\0';
-		spec = p + 1;
-	}
-
-	for (mp = mtab, cnt = NMOUNT, space = NULL; cnt--; ++mp) {
-		if (!strcmp(mp->m_dname, spec))
-			break;
-		if (!space && !*mp->m_path)
-			space = mp;
-	}
-	if (cnt == -1) {
-		if (!space) {
-			if ((opflags & ISBGRND) == 0)
-				fprintf(stderr, "mount: no more room in %s.\n", MTAB);
-			exit(1);
-		}
-		mp = space;
-	}
-
-#define	DNMAX	(sizeof(mtab[0].m_dname) - 1)
-#define	PNMAX	(sizeof(mtab[0].m_path) - 1)
-
-	(void)strncpy(mp->m_dname, spec, DNMAX);
-	mp->m_dname[DNMAX] = '\0';
-	(void)strncpy(mp->m_path, name, PNMAX);
-	mp->m_path[PNMAX] = '\0';
-	(void)strcpy(mp->m_type, type);
 
 	if (verbose)
-		prmtab(mp);
+		prmount(spec, name, type);
 
-	for (mp = mtab + NMOUNT - 1; mp > mtab && !*mp->m_path; --mp);
-	if ((fd = open(MTAB, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0)
-		mtaberr();
-	cnt = (mp - mtab + 1) * sizeof(struct mtab);
-	/* NOSTRICT */
-	if (write(fd, (char *)mtab, cnt) != cnt)
-		mtaberr();
-	(void)close(fd);
 	if (opflags & ISBGRND)
 		exit();
 	else
@@ -369,27 +268,27 @@ mountfs(spec, name, type)
 }
 
 static
-prmtab(mp)
-	register struct mtab *mp;
+prmount(spec, name, type)
+	char *spec, *name, *type;
 {
+	register char *root;
+
 	if (opflags & ISBGRND)
 		return;
-	printf("%s on %s", mp->m_dname, mp->m_path);
-	if (!strcmp(mp->m_type, FSTAB_RO))
+	/*
+	 * trim trailing /'s and find last component of name
+	 */
+	for (root = index(spec, '\0'); *--root == '/';)
+		/* void */;
+	*++root = '\0';
+	if (root = rindex(spec, '/'))
+		spec = root + 1;
+	printf("%s on %s", spec, name);
+	if (!strcmp(type, FSTAB_RO))
 		printf("\t(read-only)");
-	else if (!strcmp(mp->m_type, FSTAB_RQ))
+	else if (!strcmp(type, FSTAB_RQ))
 		printf("\t(with quotas)");
 	printf("\n");
-}
-
-static
-mtaberr()
-{
-	if (opflags & ISBGRND)
-		exit(1);
-	fprintf(stderr, "mount: %s: ", MTAB);
-	perror((char *)NULL);
-	exit(1);
 }
 
 static
@@ -400,6 +299,96 @@ usage()
 }
 
 #ifdef NFS
+char *
+getnfsargs(spec)
+	char *spec;
+{
+	register CLIENT *clp;
+	struct hostent *hp;
+	struct sockaddr_in saddr;
+	struct timeval pertry, try;
+	enum clnt_stat clnt_stat;
+	int so = RPC_ANYSOCK;
+	char *hostp, *delimp;
+	u_short tport;
+	struct nfhret nfhret;
+	char nam[MNAMELEN + 1];
+
+	strncpy(nam, spec, MNAMELEN);
+	nam[MNAMELEN] = '\0';
+	if ((delimp = index(spec, '@')) != NULL) {
+		hostp = delimp + 1;
+	} else if ((delimp = index(spec, ':')) != NULL) {
+		hostp = spec;
+		spec = delimp + 1;
+	} else {
+		fprintf(stderr,
+		    "No <host>:<dirpath> or <dirpath>@<host> spec\n");
+		return (0);
+	}
+	*delimp = '\0';
+	if ((hp = gethostbyname(hostp)) == NULL) {
+		fprintf(stderr, "Can't get net id for host\n");
+		return (0);
+	}
+	bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
+	nfhret.stat = EACCES;	/* Mark not yet successful */
+	while (retrycnt > 0) {
+		saddr.sin_family = AF_INET;
+		saddr.sin_port = htons(PMAPPORT);
+		if ((tport = pmap_getport(&saddr, RPCPROG_NFS,
+		    NFS_VER2, IPPROTO_UDP)) == 0) {
+			if ((opflags & ISBGRND) == 0)
+				clnt_pcreateerror("NFS Portmap");
+		} else {
+			saddr.sin_port = 0;
+			pertry.tv_sec = 10;
+			pertry.tv_usec = 0;
+			if ((clp = clntudp_create(&saddr, RPCPROG_MNT,
+			    RPCMNT_VER1, pertry, &so)) == NULL) {
+				if ((opflags & ISBGRND) == 0)
+					clnt_pcreateerror("Cannot MNT PRC");
+			} else {
+				clp->cl_auth = authunix_create_default();
+				try.tv_sec = 10;
+				try.tv_usec = 0;
+				clnt_stat = clnt_call(clp, RPCMNT_MOUNT,
+				    xdr_dir, spec, xdr_fh, &nfhret, try);
+				if (clnt_stat != RPC_SUCCESS) {
+					if ((opflags & ISBGRND) == 0)
+						clnt_perror(clp, "Bad MNT RPC");
+				} else {
+					auth_destroy(clp->cl_auth);
+					clnt_destroy(clp);
+					retrycnt = 0;
+				}
+			}
+		}
+		if (--retrycnt > 0) {
+			if (opflags & BGRND) {
+				opflags &= ~BGRND;
+				if (fork())
+					return (0);
+				else
+					opflags |= ISBGRND;
+			} 
+			sleep(10);
+		}
+	}
+	if (nfhret.stat) {
+		if (opflags & ISBGRND)
+			exit(1);
+		fprintf(stderr, "Can't access %s, errno=%d\n", spec,
+		    nfhret.stat);
+		return (0);
+	}
+	saddr.sin_port = htons(tport);
+	nfsargs.addr = &saddr;
+	nfsargs.fh = &nfhret.nfh;
+	nfsargs.hostname = nam;
+	return ((caddr_t)&nfsargs);
+}
+
 /*
  * xdr routines for mount rpc's
  */
@@ -471,4 +460,4 @@ getoptions(optarg, nfsargsp, opflagsp, retrycntp)
 		cp = nextcp;
 	}
 }
-#endif
+#endif /* NFS */
