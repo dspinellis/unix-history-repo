@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.10		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.11		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.10		%G%);
+SCCSID(@(#)usersmtp.c	4.11		%G%);
 
 
 
@@ -380,7 +380,7 @@ reply(m)
 				pause();
 # endif DEBUG
 # ifdef LOG
-			syslog(LOG_ERR, "%s", &MsgBuf[4]);
+			syslog(LOG_MAIL, "%s", &MsgBuf[4]);
 # endif LOG
 			SmtpState = SMTP_CLOSED;
 			smtpquit(m);
