@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.7	82/09/12	*/
+/*	kern_prot.c	5.8	82/10/10	*/
 
 /*
  * System calls related to processes and protection
@@ -11,7 +11,6 @@
 #include "../h/reg.h"
 #include "../h/inode.h"
 #include "../h/proc.h"
-#include "../h/mtpr.h"
 #include "../h/timeb.h"
 #include "../h/times.h"
 #include "../h/reboot.h"

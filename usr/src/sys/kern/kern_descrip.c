@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.10	82/09/11	*/
+/*	kern_descrip.c	5.11	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,7 +9,6 @@
 #include "../h/proc.h"
 #include "../h/conf.h"
 #include "../h/file.h"
-#include "../h/inline.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/mount.h"

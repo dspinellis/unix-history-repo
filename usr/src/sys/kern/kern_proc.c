@@ -1,9 +1,8 @@
-/*	kern_proc.c	4.39	82/09/12	*/
+/*	kern_proc.c	4.40	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/map.h"
-#include "../h/mtpr.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/kernel.h"
@@ -416,6 +415,7 @@ register struct inode *ip;
 		    1 + ts/CLSIZE, (int)btoc(u.u_exdata.ux_dsize));
 
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
+#include "../vax/mtpr.h"		/* XXX */
 	mtpr(TBIA, 0);
 
 	if (u.u_error)
