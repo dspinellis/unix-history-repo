@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -325,6 +325,8 @@ copy(ftsp)
 			    "%s: %s and %s are identical (not copied).\n",
 				    progname, to.p_path, curr->fts_path);
 				exit_val = 1;
+				if (S_ISDIR(curr->fts_statp->st_mode))
+					(void)fts_set(ftsp, curr, FTS_SKIP);
 				continue;
 			}
 			dne = 0;
