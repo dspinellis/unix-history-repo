@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)telnet.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	4.6 (Berkeley) %G%";
 /*
  * User telnet program.
  */
@@ -325,14 +325,17 @@ telnet(s)
 		printoption("<--", doopt, TELOPT_ECHO);
 	sprintf(nfrontp, doopt, TELOPT_ECHO);
 	nfrontp += sizeof(doopt) - 2;
+	hisopts[TELOPT_ECHO] = 1;
 	if (showoptions)
 		printoption("<--", doopt, TELOPT_SGA);
 	sprintf(nfrontp, doopt, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
+	hisopts[TELOPT_SGA] = 1;
 	if (showoptions)
 		printoption("<--", will, TELOPT_SGA);
 	sprintf(nfrontp, will, TELOPT_SGA);
 	nfrontp += sizeof(doopt) - 2;
+	myopts[TELOPT_SGA] = 1;
 	ioctl(s, FIONBIO, &on);
 	for (;;) {
 		int ibits = 0, obits = 0;
