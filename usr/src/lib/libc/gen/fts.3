@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fts.3	5.1 (Berkeley) %G%
+.\"	@(#)fts.3	5.2 (Berkeley) %G%
 .\"
 .TH FTS 3 ""
 .UC 7
@@ -157,6 +157,9 @@ Note, the
 and
 .I path
 fields of the FTSENT structures may not be used in this comparison.
+If the
+.I compar
+argument is NULL the traversal order is undefined.
 .PP
 If both FTS_MULTIPLE and the user comparison routine are specified,
 the root paths are processed in sorted order.
