@@ -7,7 +7,7 @@ extern char	*getenv();
 /*
  *	This routine initializes the current and standard screen.
  *
- * %G% (Berkeley) @(#)initscr.c	1.3
+ * %G% (Berkeley) @(#)initscr.c	1.4
  */
 WINDOW *
 initscr() {
