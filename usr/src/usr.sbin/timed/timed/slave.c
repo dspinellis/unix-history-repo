@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.8 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -188,6 +188,7 @@ loop:
 				msg->tsp_name, olddate);
 			if ((status & SUBMASTER) == SUBMASTER)
 				spreadtime();
+			(void)gettimeofday(&time, (struct timezone *)0);
 			electiontime = time.tv_sec + delay2;
 
 			if (senddateack == ON) {
