@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)main.c	5.3	%G%
+ *	@(#)main.c	5.4	%G%
  */
 #include <stdio.h>
 #include <signal.h>
@@ -19,8 +19,8 @@ int argc;
 char **argv;
 char **arge;
 {
-int sigdie();
-long int (*sigf)();
+sig_t sigdie;
+sig_t sigf;
 int signum;
 
 xargc = argc;
