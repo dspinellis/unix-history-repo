@@ -12,24 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- *  fstat 
- */
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/proc.h>
 #include <sys/user.h>
-#ifdef SPPWAIT
-#define NEWVM
-#endif
-#ifndef NEWVM
-#include <machine/pte.h>
-#include <sys/vmmac.h>
-#include <sys/text.h>
-#endif
 #include <sys/stat.h>
 #include <sys/vnode.h>
 #include <sys/socket.h>
@@ -38,13 +27,14 @@ static char sccsid[] = "@(#)fstat.c	5.38 (Berkeley) %G%";
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
 #include <sys/kinfo.h>
+#include <sys/kinfo_proc.h>
 #include <sys/filedesc.h>
 #define	KERNEL
 #define NFS
 #include <sys/file.h>
 #include <sys/mount.h>
-#include <ufs/ufs/quota.h>
-#include <ufs/ufs/inode.h>
+#include <ufs/quota.h>
+#include <ufs/inode.h>
 #include <nfs/nfsv2.h>
 #include <nfs/rpcv2.h>
 #include <nfs/nfs.h>
@@ -119,7 +109,10 @@ int maxfiles;
 /*
  * a kvm_read that returns true if everything is read 
  */
-#define KVM_READ(kaddr, paddr, len) (kvm_read((kaddr), (paddr), (len)) == (len))
+#define KVM_READ(kaddr, paddr, len) \
+	(kvm_read(kd, (u_long)(kaddr), (char *)(paddr), (len)) == (len))
+
+kvm_t *kd;
 
 int ufs_filestat(), nfs_filestat();
 void dofiles(), getinetproto(), socktrans();
@@ -132,9 +125,10 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	register struct passwd *passwd;
-	struct proc *p;
+	struct kinfo_proc *p, *plast;
 	int arg, ch, what;
 	char *memf, *nlistf;
+	int cnt;
 
 	arg = 0;
 	what = KINFO_PROC_ALL;
@@ -208,18 +202,18 @@ main(argc, argv)
 	if (nlistf != NULL || memf != NULL)
 		setgid(getgid());
 
-	if (kvm_openfiles(nlistf, memf, NULL) == -1) {
-		fprintf(stderr, "fstat: %s\n", kvm_geterr());
+	if ((kd = kvm_open(nlistf, memf, NULL, O_RDONLY, NULL)) == NULL) {
+		fprintf(stderr, "fstat: %s\n", kvm_geterr(kd));
 		exit(1);
 	}
 #ifdef notdef
-	if (kvm_nlist(nl) != 0) {
-		fprintf(stderr, "fstat: no namelist: %s\n", kvm_geterr());
+	if (kvm_nlist(kd, nl) != 0) {
+		fprintf(stderr, "fstat: no namelist: %s\n", kvm_geterr(kd));
 		exit(1);
 	}
 #endif
-	if (kvm_getprocs(what, arg) == -1) {
-		fprintf(stderr, "fstat: %s\n", kvm_geterr());
+	if ((p = kvm_getprocs(kd, what, arg, &cnt)) == NULL) {
+		fprintf(stderr, "fstat: %s\n", kvm_geterr(kd));
 		exit(1);
 	}
 	if (nflg)
@@ -233,8 +227,8 @@ main(argc, argv)
 	else
 		putchar('\n');
 
-	while ((p = kvm_nextproc()) != NULL) {
-		if (p->p_stat == SZOMB)
+	for (plast = &p[cnt]; p < plast; ++p) {
+		if (p->kp_proc.p_stat == SZOMB)
 			continue;
 		dofiles(p);
 	}
@@ -267,62 +261,34 @@ int	Pid;
  * print open files attributed to this process
  */
 void
-dofiles(p)
-	struct proc *p;
+dofiles(kp)
+	struct kinfo_proc *kp;
 {
 	int i, last;
 	struct file file;
-#ifdef NEWVM
 	struct filedesc0 filed0;
 #define	filed	filed0.fd_fd
-	struct eproc *ep;
-#else
-	struct filedesc filed;
-#endif
+	struct proc *p = &kp->kp_proc;
+	struct eproc *ep = &kp->kp_eproc;
 
 	extern char *user_from_uid();
-#ifndef NEWVM
-	struct vnode *xvptr;
-#endif
 
-#ifdef NEWVM
-	ep = kvm_geteproc(p);
 	Uname = user_from_uid(ep->e_ucred.cr_uid, 0);
-#else
-	Uname = user_from_uid(p->p_uid, 0);
-#endif
 	Pid = p->p_pid;
 	Comm = p->p_comm;
 
 	if (p->p_fd == NULL)
 		return;
-#ifdef NEWVM
 	if (!KVM_READ(p->p_fd, &filed0, sizeof (filed0))) {
 		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
 			p->p_fd, Pid);
 		return;
 	}
-#else
-	if (!KVM_READ(p->p_fd, &filed, sizeof (filed))) {
-		dprintf(stderr, "can't read filedesc at %x for pid %d\n",
-			p->p_fd, Pid);
-		return;
-	}
-#endif
 	/*
 	 * root directory vnode, if one
 	 */
 	if (filed.fd_rdir)
 		vtrans(filed.fd_rdir, RDIR);
-#ifndef NEWVM
-	/*
-	 * text vnode
-	 */
-	if (p->p_textp && 
-	    KVM_READ(&(p->p_textp->x_vptr), &xvptr, sizeof (struct vnode *)) &&
-	    xvptr != NULL)
-		vtrans(xvptr, TEXT);
-#endif
 	/*
 	 * current working directory vnode
 	 */
@@ -337,7 +303,6 @@ dofiles(p)
 	 */
 #define FPSIZE	(sizeof (struct file *))
 	ALLOC_OFILES(filed.fd_lastfile+1);
-#ifdef NEWVM
 	if (filed.fd_nfiles > NDFILE) {
 		if (!KVM_READ(filed.fd_ofiles, ofiles,
 		    (filed.fd_lastfile+1) * FPSIZE)) {
@@ -348,16 +313,6 @@ dofiles(p)
 		}
 	} else
 		bcopy(filed0.fd_dfiles, ofiles, (filed.fd_lastfile+1) * FPSIZE);
-#else
-	bcopy(filed.fd_ofile, ofiles, MIN(filed.fd_lastfile, NDFILE) * FPSIZE);
-	last = filed.fd_lastfile;
-	if ((last > NDFILE) && !KVM_READ(filed.fd_moreofiles, &ofiles[NDFILE],
-	    (last - NDFILE) * FPSIZE)) {
-		dprintf(stderr, "can't read rest of files at %x for pid %d\n",
-			filed.fd_moreofiles, Pid);
-		return;
-	}
-#endif
 	for (i = 0; i <= filed.fd_lastfile; i++) {
 		if (ofiles[i] == NULL)
 			continue;
@@ -613,8 +568,8 @@ socktrans(sock, i)
 		goto bad;
 	}
 
-	if ((len =
-	    kvm_read(dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
+	if ((len = kvm_read(kd, (u_long)dom.dom_name, dname,
+	    sizeof(dname) - 1)) < 0) {
 		dprintf(stderr, "can't read domain name at %x\n",
 			dom.dom_name);
 		dname[0] = '\0';
@@ -643,8 +598,8 @@ socktrans(sock, i)
 		getinetproto(proto.pr_protocol);
 		if (proto.pr_protocol == IPPROTO_TCP ) {
 			if (so.so_pcb) {
-				if (kvm_read(so.so_pcb, &inpcb,
-				    sizeof(struct inpcb))
+				if (kvm_read(kd, (u_long)so.so_pcb,
+				    (char *)&inpcb, sizeof(struct inpcb))
 				    != sizeof(struct inpcb)) {
 					dprintf(stderr, 
 					    "can't read inpcb at %x\n",
@@ -661,7 +616,7 @@ socktrans(sock, i)
 		/* print address of pcb and connected pcb */
 		if (so.so_pcb) {
 			printf(" %x", (int)so.so_pcb);
-			if (kvm_read(so.so_pcb, &unpcb,
+			if (kvm_read(kd, (u_long)so.so_pcb, (char *)&unpcb,
 			    sizeof(struct unpcb)) != sizeof(struct unpcb)){
 				dprintf(stderr, "can't read unpcb at %x\n",
 				    so.so_pcb);
