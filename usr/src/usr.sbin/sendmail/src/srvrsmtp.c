@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.13 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.13.1.1 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.13 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.13.1.1 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -106,6 +106,7 @@ smtp(e)
 	char *protocol;			/* sending protocol */
 	char *sendinghost;		/* sending hostname */
 	long msize;			/* approximate maximum message size */
+	long bfree, bsize;		/* queue fs free and block size */
 	auto char *delimptr;
 	char *id;
 	int nrcpts;			/* number of RCPT commands */
@@ -232,8 +233,31 @@ smtp(e)
 				MyHostName, p);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
-			if (MaxMessageSize > 0)
-				message("250-SIZE %ld", MaxMessageSize);
+			if ((bfree = freespace(QueueDir, &bsize)) >= 0)
+			{
+				long t;
+				int log;
+
+				log = 0;
+				bfree -= MinBlocksFree;
+				for (t = bfree; t != 0; t >>= 1)
+					log++;
+				for (t = bsize; t != 0; t >>= 1)
+					log++;
+				if (log <= 29)
+					msize = bfree * bsize;
+				else
+				{
+					/* possible overflow */
+					msize = 0;
+				}
+				if (MaxMessageSize > 0 && MaxMessageSize < msize)
+					msize = MaxMessageSize;
+			}
+			else
+				msize = MaxMessageSize;
+			if (msize > 0)
+				message("250-SIZE %ld", msize);
 			else
 				message("250-SIZE");
 			message("250 HELP");
