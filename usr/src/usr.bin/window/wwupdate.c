@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.10 83/12/21";
+static	char *sccsid = "@(#)wwupdate.c	3.11 84/01/06";
 #endif
 
 #include "ww.h"
@@ -9,41 +9,49 @@ wwupdate()
 {
 	int i;
 	register j;
-	int c, x;
 	register union ww_char *ns, *os;
-	register char *p, *q;
-	char m;
 	char *touched;
-	register didit;
-	char buf[512];			/* > wwncol */
-	union ww_char lastc;
+	char didit;
 
 	wwnupdate++;
 	for (i = 0, touched = wwtouched; i < wwnrow; i++, touched++) {
 		if (!*touched)
 			continue;
-		if (*touched & WWU_MAJOR) {
-			int ncleared = 0;
-			int nsame = 0;
+		if (*touched & WWU_MAJOR && tt.tt_clreol != 0) {
+			register gain = 0;
+			register best_gain = 0;
+			register best;
 
 			wwnmajline++;
 			j = wwncol;
-			ns = wwns[i];
-			os = wwos[i];
+			ns = &wwns[i][j];
+			os = &wwos[i][j];
 			while (--j >= 0) {
-				if (ns->c_w == ' ') {
-					if (ns->c_w != os->c_w)
-						ncleared++;
-				} else
-					if (ns->c_w == os->c_w)
-						nsame++;
-				ns++;
-				os++;
+				/*
+				 * The cost of clearing is:
+				 *	ncol - nblank + X
+				 * The cost of straight update is:
+				 *	ncol - nsame
+				 * We clear if:  nblank - nsame > X
+				 * X is the clreol overhead.
+				 * So we make gain = nblank - nsame.
+				 */
+				if ((--ns)->c_w == (--os)->c_w)
+					gain--;
+				else
+					best_gain--;
+				if (ns->c_w == ' ')
+					gain++;
+				if (gain >= best_gain) {
+					best = j;
+					best_gain = gain;
+				}
 			}
-			if (tt.tt_clreol != 0 && ncleared > nsame + 4) {
-				(*tt.tt_move)(i, 0);
+			if (best_gain > 4) {
+				(*tt.tt_move)(i, best);
 				(*tt.tt_clreol)();
-				for (j = wwncol, os = wwos[i]; --j >= 0;)
+				for (j = wwncol - best, os = &wwos[i][best];
+				     --j >= 0;)
 					os++->c_w = ' ';
 			} else
 				wwnmajmiss++;
@@ -53,6 +61,13 @@ wwupdate()
 		ns = wwns[i];
 		os = wwos[i];
 		for (j = 0; j < wwncol;) {
+			register char *p, *q;
+			char m;
+			int c;
+			register n;
+			char buf[512];			/* > wwncol */
+			union ww_char lastc;
+
 			for (; j++ < wwncol && ns++->c_w == os++->c_w;)
 				;
 			if (j > wwncol)
@@ -62,17 +77,17 @@ wwupdate()
 			c = j - 1;
 			os[-1] = ns[-1];
 			*p++ = ns[-1].c_c;
-			x = 5;
+			n = 5;
 			q = p;
 			while (j < wwncol && (ns->c_m&tt.tt_availmodes) == m) {
 				*p++ = ns->c_c;
 				if (ns->c_w == os->c_w) {
-					if (--x <= 0)
+					if (--n <= 0)
 						break;
 					os++;
 					ns++;
 				} else {
-					x = 5;
+					n = 5;
 					q = p;
 					lastc = *os;
 					*os++ = *ns++;
