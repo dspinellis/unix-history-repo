@@ -1,9 +1,10 @@
-static	char sccsid[] = "@(#)file.c	4.5 (Berkeley) 4.5";
+#ifndef lint
+static	char sccsid[] = "@(#)file.c	4.6 (Berkeley) 4.6";
+#endif
 /*
  * file - determine type of file
  */
 
-#include <pagsiz.h>
 #include <sys/types.h>
 #include <stat.h>
 #include <stdio.h>
