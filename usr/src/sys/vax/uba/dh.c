@@ -1,4 +1,4 @@
-/*	dh.c	3.11	%G%	*/
+/*	dh.c	3.12	%G%	*/
 
 /*
  *	DH-11 driver
@@ -31,7 +31,7 @@
 #define	spl5	spl6
 
 #define	DHADDR	((struct device *)(UBA0_DEV + 0160020))
-#define	NDH11	16	/* number of lines */
+#define	NDH11	32	/* number of lines */
 #define UBACVT(x) (cbase + (short)((x)-(char *)cfree))
 
 struct cblock {
@@ -41,10 +41,14 @@ struct cblock {
 
 struct	tty dh11[NDH11];
 int	dhact;
+int	dhisilo;
 int	ndh11	= NDH11;
 int	dhstart();
 int	ttrstrt();
-int cbase;
+int	dh_ubinfo;
+int	cbase;
+int	getcbase;
+int	dhinit;
 extern struct cblock cfree[];
 
 /*
@@ -105,7 +109,6 @@ dhopen(dev, flag)
 	register struct tty *tp;
 	register d;
 	register struct device *addr;
-	static getcbase;
 	int s;
 
 	d = minor(dev) & 0177;
@@ -123,7 +126,8 @@ dhopen(dev, flag)
 	s = spl6();
 	if (!getcbase) {
 		getcbase++;
-		cbase = (short)uballoc((caddr_t)cfree, NCLIST*sizeof(struct cblock), 0);
+		dh_ubinfo = uballoc((caddr_t)cfree, NCLIST*sizeof(struct cblock), 0);
+		cbase = (short)dh_ubinfo;
 	}
 	splx(s);
 	addr->un.dhcsr |= IENAB;
@@ -328,6 +332,8 @@ dhxint(dev)
 	}
 	sbar = &dhsar[d];
 	bar = *sbar & ~addr->dhbar;
+	if (dhinit)
+		bar = ~0;
 	d <<= 4; ttybit = 1;
 
 	for(; bar; d++, ttybit <<= 1) {
@@ -340,6 +346,7 @@ dhxint(dev)
 				tp->t_state &= ~FLUSH;
 			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
+				if (dhinit == 0)
 				ndflush(&tp->t_outq,
 				    (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
@@ -455,10 +462,49 @@ dhtimer()
 	addr = DHADDR; d = 0;
 	do {
 		if (dhact & (1<<d)) {
-			addr->dhsilo = dhsilo;
+			if ((dhisilo & (1<<d)) == 0) {
+				addr->dhsilo = dhsilo;
+				dhisilo |= 1<<d;
+			}
 			dhrint(d);
 		}
 		d++;
 		addr++;
 	} while (d < (NDH11+15)/16);
+}
+
+/*
+ * Reset state of driver if UBA reset was necessary.
+ * Reset the csrl and lpr registers on open lines, and
+ * restart transmitters.
+ */
+dhreset()
+{
+	int d;
+	register struct tty *tp;
+	register struct device *addr;
+
+	if (getcbase == 0)
+		return;
+	printf(" dh");
+	dhinit = 1;
+	dhisilo = 0;
+	ubafree(dh_ubinfo);
+	dh_ubinfo = uballoc((caddr_t)cfree, NCLIST*sizeof (struct cblock), 0);
+	cbase = (short)dh_ubinfo;
+	for (d = 0; d < NDH11; d++) {
+		tp = &dh11[d];
+		if (tp->t_state & (ISOPEN|WOPEN))
+			dhparam(d);
+	}
+	dhtimer();
+	d = 0;
+	do {
+		addr = DHADDR + d;
+		addr->un.dhcsr |= IENAB;
+		if (dhact & (1<<d))
+			dhxint(d<<4);
+		d++;
+	} while (d < (NDH11+15)/16);
+	dhinit = 0;
 }
