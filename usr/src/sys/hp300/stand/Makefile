@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.18 (Berkeley) %G%
+#	@(#)Makefile	7.19 (Berkeley) %G%
 
 DESTDIR=
 INCPATH=-I. -I../..
@@ -7,8 +7,8 @@ VPATH=	../../stand
 CC=cc
 AS=as
 
-# RELOC=FFF80000 allows for boot prog up to 7F000 (520192) bytes long
-RELOC=	FFF80000
+# RELOC=FFF00000 allows for boot prog up to FF000 (1044480) bytes long
+RELOC=	FFF00000
 
 CONS= -DDCACONSOLE -DITECONSOLE -DDCMCONSOLE
 DEFS= -DSTANDALONE -DCOMPAT_NOLABEL ${CONS} # -DROMPRF
@@ -55,7 +55,7 @@ tpsrt0.o: srt0.c
 tboot:	tboot.o srt0.o ${LIBS}
 	ld -N -T ${RELOC} -e begin srt0.o tboot.o ${LIBS} -o $@
 	@size tboot
-	@echo tboot total size should not exceed 520192 bytes
+	@echo tboot total size should not exceed 1044480 bytes
 
 tboot.o: boot.o
 	cp boot.c tboot.c; chmod +w tboot.c
@@ -65,7 +65,7 @@ tboot.o: boot.o
 tcopy:	copy.o tpsrt0.o ${LIBS}
 	ld -N -T ${RELOC} -e begin tpsrt0.o copy.o ${LIBS} -o $@
 	@size tcopy
-	@echo tcopy total size should not exceed 520192 bytes
+	@echo tcopy total size should not exceed 1044480 bytes
 
 # bootable from floppy or real disks
 
@@ -73,7 +73,7 @@ dboot:	boot.o srt0.o bootconf.o ${LIBS}
 	ld -N -T ${RELOC} -e begin srt0.o boot.o bootconf.o ${LIBS} -o $@ 
 	@size dboot
 	@echo dboot text+data size should not exceed 57344 bytes
-	@echo dboot total size should not exceed 520192 bytes
+	@echo dboot total size should not exceed 1044480 bytes
 
 bootconf.o: conf.o
 	rm -f bootconf.c
@@ -87,7 +87,7 @@ nboot:	nboot.o srt0.o bootconf.o ${LIBS}
 	ld -N -T ${RELOC} -e begin -o nboot srt0.o nboot.o bootconf.o ${LIBS}
 	@size nboot
 	@echo nboot text+data size should not exceed 57344 bytes
-	@echo nboot total size should not exceed 520192 bytes
+	@echo nboot total size should not exceed 1044480 bytes
 
 nboot.o: boot.o
 	rm -f nboot.c
