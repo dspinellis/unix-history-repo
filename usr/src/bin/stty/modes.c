@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)modes.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)modes.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,6 +44,7 @@ struct modes cmodes[] = {
 	"oddp",		PARENB | CS7 | PARODD, CSIZE,
 	"-oddp",	CS8, PARODD | PARENB | CSIZE,
 	"pass8",	CS8, PARODD | PARENB | CSIZE,
+	"-pass8",	PARENB | CS7, PARODD | CSIZE,
 	"hupcl",	HUPCL, 0,
 	"-hupcl",	0, HUPCL,
 	"hup",		HUPCL, 0,
@@ -154,8 +155,6 @@ struct modes omodes[] = {
 	"-onlcr",	0, ONLCR,
 	"tabs",		0, OXTABS,	/* "preserve" tabs */
 	"-tabs",	OXTABS, 0,
-	"xtabs",	OXTABS, 0,
-	"-xtabs",	0, OXTABS,
 	"oxtabs",	OXTABS, 0,
 	"-oxtabs",	0, OXTABS,
 	NULL
