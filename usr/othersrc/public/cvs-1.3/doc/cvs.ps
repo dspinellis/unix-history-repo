@@ -1,0 +1,6911 @@
+%!PS-Adobe-1.0
+%%Creator: troff->tpscript
+%%CreationDate: Fri Jun 22 00:57:30 1990
+%%EndComments
+/inch { 480 mul } bind def
+/Xshowpage { showpage } bind def
+/rotateit { clippath pathbbox /pgtop exch def /pgwid exch def  pop pop newpath } bind def
+/scaleit { 72 480 div dup scale rotateit 1 setlinecap} def
+/unscaleit { 480 72 div dup scale} def
+/RBKFontDict 9 dict def /NEWDict 10 dict def
+RBKFontDict begin
+/FontType 3 def
+/FontName (RBK specials) cvn def
+/FontMatrix [ 0.001 0 0 0.001 0 0] def
+/FontBBox [ -50 -250 1000 1000 ] def
+/Encoding 256 array def 0 1 255 { Encoding exch /.notdef put } for
+Encoding
+dup 2 /Csq put
+dup 3 /Cci put
+dup 4 /Cbx put
+dup 15 /Cbu put
+pop
+/CharProcs 24 dict dup begin
+  /setC { 0 -50 -250 1000 1000 setcachedevice} def
+/Cbu { 0 0 moveto
+600 setC
+300 300 moveto 300 300 250 0 360 arc closepath fill } def
+/Csq { 0 0 moveto
+600 setC
+50 50 moveto
+500 0 rlineto 0 500 rlineto -500 0 rlineto closepath fill } def
+/Cbx { 0 0 moveto
+600 setC
+70 setlinewidth
+50 50 moveto 500 0 rlineto 0 500 rlineto -500 0 rlineto closepath stroke } def
+/Cci { 0 0 moveto 600 setC
+70 setlinewidth
+550 300 moveto 300 300 250 0 360 arc closepath stroke } def
+end def
+
+/BuildChar
+{
+	NEWDict begin
+	/charcode exch def /fontdict exch def
+	fontdict /CharProcs get begin
+	fontdict /Encoding get
+	charcode get load
+	gsave 0 setlinecap 0 setgray newpath exec grestore
+	end end
+} def
+end
+/RBKFont RBKFontDict definefont pop
+%%%%%%%%%%%%%%% End special Font
+scaleit 0 0 moveto
+/pagebot { showpage restore } def
+/pagetop { save } def
+/lastpage {} def
+/pt { 6.666667 mul } bind def
+/y { neg 0 exch rmoveto } bind def
+/X { U moveto } bind def
+/Y { pgtop exch sub currentpoint pop exch dup /U exch def moveto } bind def
+/s { show } bind def
+/S { dup gsave show grestore
+	gsave true charpath 0 setgray stroke grestore } bind def
+/l { neg rlineto currentpoint stroke dup /U exch def moveto } bind def
+/c {
+2 div /rad exch def currentpoint /y0 exch def /x0 exch def
+newpath x0 rad add y0 rad 0 360 arc stroke
+x0 rad add rad add y0 dup /U exch def moveto
+ } def
+/a {
+/y2 exch neg def /x2 exch def /y1 exch neg def /x1 exch def
+x1 y1 rmoveto currentpoint
+currentpoint
+x2 x2 mul y2 y2 mul add sqrt
+y1 neg x1 neg atan
+y2 x2 atan
+newpath arc stroke moveto x2 y2 rmoveto currentpoint /U exch def pop
+} def
+/e {
+2 div /yrad exch def 2 div /xrad exch def
+currentpoint /y0 exch def /x0 exch def
+gsave x0 xrad add y0 translate xrad yrad scale
+LS xrad yrad gt {xrad} {yrad} ifelse div setlinewidth
+newpath 0 0 1 0 360 arc stroke grestore
+x0 xrad add xrad add y0 dup /U exch def moveto
+} def
+/spln {
+rcurveto currentpoint stroke dup /U exch def moveto
+} def
+
+% stolen from greenbook page 115-116
+/F { findfont exch scalefont setfont } bind def
+/RE {   % re-encode
+  findfont begin
+   currentdict dup length dict begin
+    { 1 index /FID ne {def} {pop pop} ifelse } forall
+    /FontName exch def dup length 0 ne { % if
+	   /Encoding Encoding 256 array copy def
+      0 exch
+	   {  % forall
+	     dup type /nametype eq  % if?
+	     { Encoding 2 index 2 index put pop 1 add }
+	     { exch pop }
+	     ifelse
+	   } forall
+    } if
+    pop currentdict dup
+   end
+  end
+  /FontName get exch definefont pop
+} bind def
+
+% use make.remap to make new stdencodings:
+/stdencoding [ 1 /multiply /ntilde /eth /otilde /oacute /idieresis
+/Ocircumflex /ograve /onequarter /scaron /uacute /odieresis
+/Ucircumflex /ugrave /yacute /Thorn /zcaron /udieresis /threequarters
+/threesuperior /ydieresis /aring /Ccedilla /twosuperior /acircumflex
+/Atilde /Aacute /Agrave /ecircumflex /Eacute /copyright 127 /Adieresis
+/Egrave /icircumflex /Iacute /onehalf /Edieresis /Igrave /Ntilde /Eth
+/ocircumflex /Otilde /Oacute /Idieresis /mu /Ograve /Scaron
+/ucircumflex /Uacute /Odieresis /Ugrave /Yacute /thorn /degree
+/logicalnot /minus /Zcaron /Udieresis /registered /plusminus /ccedilla
+/Ydieresis /Aring /atilde /aacute 176 /Acircumflex 181 /divide 190
+/brokenbar 192 /agrave 201 /eacute 204 /Ecircumflex 209 /adieresis
+/egrave /onesuperior /trademark /iacute /Icircumflex /edieresis /igrave
+] def
+/specdwidth 0 def /LS 0 def
+/setwidth {/specdwidth 1 def dup /LS exch def setlinewidth} def
+/ft { /fonttype exch def /xsiz exch def /ysiz exch def /sl exch def
+ fonttype [ xsiz pt 0 sl sin sl cos div ysiz pt mul ysiz pt 0 0 ]
+ makefont setfont
+ specdwidth 0 eq {xsiz 4 div dup /LS exch def setlinewidth} if
+ setgray } def
+/Z { specdwidth 0 eq {dup 4 div dup /LS exch def setlinewidth} if
+ pt scalefont setfont } bind def
+/M { pgtop exch sub moveto } bind def
+/L { pgtop exch sub lineto } bind def
+/cbox { gsave 100 div setgray
+currentpoint /nowy exch def /nowx exch def
+/radius exch def /boxdown exch def /boxover exch def
+currentpoint newpath moveto radius 0 rmoveto
+nowx boxover add nowy nowx boxover add nowy boxdown sub radius arcto 
+pop pop pop pop
+nowx boxover add nowy boxdown sub nowx nowy boxdown sub radius arcto
+pop pop pop pop
+nowx nowy boxdown sub nowx nowy radius arcto pop pop pop pop
+nowx nowy nowx boxover add nowy radius arcto pop pop pop pop
+currentgray 1.0 ne { gsave fill grestore } if 0 setgray stroke
+grestore } bind def
+/f.Y /RBKFont findfont def
+
+stdencoding /NTimes-Roman /Times-Roman RE
+/f.R /NTimes-Roman findfont def 
+stdencoding /NTimes-Italic /Times-Italic RE
+/f.I /NTimes-Italic findfont def 
+stdencoding /NTimes-Bold /Times-Bold RE
+/f.B /NTimes-Bold findfont def 
+stdencoding /NTimes-BoldItalic /Times-BoldItalic RE
+/f.BI /NTimes-BoldItalic findfont def /f.S /Symbol findfont def 
+0 Y
+save
+%%EndProlog
+
+0 Y
+%%Page: 1 1
+pagetop
+0.00 0.0 10 10 f.R ft
+600 X
+820 Y
+1880 X
+f.B 14 Z(CVS)s
+2097 X(II:)s
+600 X
+920 Y
+1313 X(Parallelizing)s
+1850 X(Software)s
+2240 X(Development)s
+600 X
+1080 Y
+1802 X
+f.I 12 Z(Brian)s
+2010 X(Berliner)s
+600 X
+1200 Y
+1840 X(Prisma,)s
+2117 X(Inc.)s
+600 X
+1280 Y
+1619 X(5465)s
+1805 X(Mark)s
+2005 X(Dabling)s
+2293 X(Blvd.)s
+600 X
+1360 Y
+1547 X(Colorado)s
+1879 X(Springs,)s
+2169 X(CO)s
+2332 X(80918)s
+600 X
+1440 Y
+1686 X(berliner@prisma)s
+2240 X(.com)s
+600 X
+1680 Y
+1882 X
+f.I 10 Z(ABSTRACT)s
+600 X
+1840 Y
+1007 X
+f.R 11 Z(The)s
+1146 X(program)s
+1421 X(described)s
+1730 X(in)s
+1812 X(this)s
+1945 X(paper)s
+2135 X(\256lls)s
+2272 X(a)s
+2330 X(need)s
+2495 X(in)s
+2578 X(the)s
+2694 X(UNIX)s
+2903 X(community)s
+600 X
+1920 Y
+840 X(for)s
+952 X(a)s
+1010 X(freely)s
+1209 X(available)s
+1503 X(tool)s
+1644 X(to)s
+1727 X(manage)s
+1982 X(software)s
+2263 X(revision)s
+2528 X(and)s
+2659 X(release)s
+2890 X(control)s
+3125 X(in)s
+3207 X(a)s
+600 X
+2000 Y
+840 X(multi-developer)s
+1315 X(,)s
+1382 X(multi-directory)s
+1833 X(,)s
+1900 X(multi-group)s
+2305 X(environment.)s
+2772 X(This)s
+2954 X(tool)s
+3120 X(also)s
+600 X
+2080 Y
+840 X(addresses)s
+1156 X(the)s
+1278 X(increasing)s
+1615 X(need)s
+1786 X(for)s
+1904 X(tracking)s
+2178 X(third-party)s
+2527 X(vendor)s
+2763 X(source)s
+2987 X(distribu-)s
+600 X
+2160 Y
+840 X(tions)s
+1009 X(while)s
+1198 X(trying)s
+1400 X(to)s
+1482 X(maintain)s
+1766 X(local)s
+1935 X(modi\256cations)s
+2363 X(to)s
+2445 X(earlier)s
+2660 X(releases.)s
+600 X
+2400 Y
+f.B 11 Z(1.)s
+703 X(Background)s
+600 X
+2504 Y
+767 X
+f.R 11 Z(In)s
+873 X(large)s
+1067 X(software)s
+1368 X(development)s
+1796 X(projects,)s
+2095 X(it)s
+2182 X(is)s
+2277 X(usually)s
+2537 X(necessary)s
+2871 X(for)s
+3003 X(more)s
+3200 X(than)s
+3373 X(one)s
+600 X
+2584 Y(software)s
+884 X(developer)s
+1205 X(to)s
+1291 X(be)s
+1388 X(modifying)s
+1724 X(\(usually)s
+1991 X(different\))s
+2300 X(modules)s
+2578 X(of)s
+2667 X(the)s
+2785 X(code)s
+2952 X(at)s
+3033 X(the)s
+3151 X(same)s
+3330 X(time.)s
+600 X
+2664 Y(Some)s
+798 X(of)s
+891 X(these)s
+1075 X(code)s
+1246 X(modi\256cations)s
+1681 X(are)s
+1803 X(done)s
+1978 X(in)s
+2067 X(an)s
+2168 X(experimental)s
+2587 X(sense,)s
+2797 X(at)s
+2882 X(least)s
+3050 X(until)s
+3218 X(the)s
+3340 X(code)s
+600 X
+2744 Y(functions)s
+910 X(correctly,)s
+1226 X(and)s
+1366 X(some)s
+1555 X(testing)s
+1787 X(of)s
+1882 X(the)s
+2006 X(entire)s
+2209 X(program)s
+2493 X(is)s
+2576 X(usually)s
+2824 X(necessary.)s
+3187 X(Then,)s
+3389 X(the)s
+600 X
+2824 Y(modi\256cations)s
+1028 X(are)s
+1143 X(returned)s
+1415 X(to)s
+1497 X(a)s
+1554 X(master)s
+1776 X(source)s
+1994 X(repository)s
+2321 X(so)s
+2412 X(that)s
+2549 X(others)s
+2756 X(in)s
+2839 X(the)s
+2955 X(project)s
+3187 X(can)s
+3315 X(enjoy)s
+600 X
+2904 Y(the)s
+725 X(new)s
+881 X(bug-\256x)s
+1128 X(or)s
+1223 X(functionality.)s
+1679 X(In)s
+1774 X(order)s
+1964 X(to)s
+2055 X(manage)s
+2318 X(such)s
+2487 X(a)s
+2553 X(project,)s
+2811 X(some)s
+3000 X(sort)s
+3145 X(of)s
+3240 X(revision)s
+600 X
+2984 Y(control)s
+835 X(system)s
+1065 X(is)s
+1139 X(necessary.)s
+600 X
+3088 Y
+767 X(Speci\256cally,)s
+1161 X(UNIX)s
+3064 Y
+f.R 9 Z(1)s
+3088 Y
+1400 X
+f.R 11 Z(kernel)s
+1612 X(development)s
+2021 X(is)s
+2097 X(an)s
+2193 X(excellent)s
+2488 X(example)s
+2765 X(of)s
+2853 X(the)s
+2970 X(problems)s
+3272 X(that)s
+3410 X(an)s
+600 X
+3168 Y(adequate)s
+897 X(revision)s
+1170 X(control)s
+1414 X(system)s
+1653 X(must)s
+1830 X(address.)s
+2128 X(The)s
+2276 X(SunOS)s
+3144 Y
+f.R 9 Z(2)s
+3168 Y
+2548 X
+f.R 11 Z(kernel)s
+2767 X(is)s
+2851 X(composed)s
+3185 X(of)s
+3281 X(over)s
+3447 X(a)s
+600 X
+3248 Y(thousand)s
+898 X(\256les)s
+1052 X(spread)s
+1276 X(across)s
+1492 X(a)s
+1555 X(hierarchy)s
+1866 X(of)s
+1959 X(dozens)s
+2196 X(of)s
+2289 X(directories.)s
+3224 Y
+f.R 9 Z(3)s
+3248 Y
+2683 X
+f.R 11 Z(Pieces)s
+2904 X(of)s
+2997 X(the)s
+3119 X(kernel)s
+3336 X(must)s
+600 X
+3328 Y(be)s
+699 X(edited)s
+910 X(by)s
+1013 X(many)s
+1206 X(software)s
+1491 X(developers)s
+1842 X(within)s
+2061 X(an)s
+2160 X(organization.)s
+2603 X(While)s
+2813 X(undesirable)s
+3185 X(in)s
+3272 X(theory,)s
+600 X
+3408 Y(it)s
+668 X(is)s
+744 X(not)s
+865 X(uncommon)s
+1223 X(to)s
+1308 X(have)s
+1475 X(two)s
+1613 X(or)s
+1702 X(more)s
+1881 X(people)s
+2106 X(making)s
+2355 X(modi\256cations)s
+2786 X(to)s
+2871 X(the)s
+2989 X(same)s
+3168 X(\256le)s
+3290 X(within)s
+600 X
+3488 Y(the)s
+723 X(kernel)s
+941 X(sources)s
+1196 X(in)s
+1286 X(order)s
+1475 X(to)s
+1565 X(facilitate)s
+1859 X(a)s
+1924 X(desired)s
+2170 X(change.)s
+2453 X(Existing)s
+2732 X(revision)s
+3003 X(control)s
+3245 X(systems)s
+600 X
+3568 Y(like)s
+735 X
+f.R 9 Z(RCS)s
+875 X
+f.R 11 Z([Tichy])s
+1125 X(or)s
+1210 X
+f.R 9 Z(SCCS)s
+1383 X
+f.R 11 Z([Bell])s
+1584 X(serialize)s
+1861 X(\256le)s
+1984 X(modi\256cations)s
+2416 X(by)s
+2518 X(allowing)s
+2806 X(only)s
+2966 X(one)s
+3101 X(developer)s
+3422 X(to)s
+600 X
+3648 Y(have)s
+770 X(a)s
+833 X(writable)s
+1107 X(copy)s
+1281 X(of)s
+1373 X(a)s
+1436 X(particular)s
+1752 X(\256le)s
+1877 X(at)s
+1961 X(any)s
+2098 X(one)s
+2235 X(point)s
+2417 X(in)s
+2504 X(time.)s
+2707 X(That)s
+2872 X(developer)s
+3194 X(is)s
+3273 X(said)s
+3422 X(to)s
+600 X
+3728 Y(have)s
+764 X(``locked'')s
+1086 X(the)s
+1201 X(\256le)s
+1320 X(for)s
+1431 X(his)s
+1542 X(exclusive)s
+1847 X(use,)s
+1988 X(and)s
+2119 X(no)s
+2217 X(other)s
+2394 X(developer)s
+2711 X(is)s
+2786 X(allowed)s
+3046 X(to)s
+3129 X(check)s
+3327 X(out)s
+3447 X(a)s
+600 X
+3808 Y(writable)s
+879 X(copy)s
+1058 X(of)s
+1155 X(the)s
+1281 X(\256le)s
+1411 X(until)s
+1583 X(the)s
+1708 X(locking)s
+1965 X(developer)s
+2292 X(has)s
+2425 X(\256nished)s
+2694 X(impeding)s
+3008 X(others')s
+3249 X(produc-)s
+600 X
+3888 Y(tivity.)s
+842 X(Development)s
+1283 X(pressures)s
+1602 X(of)s
+1706 X(productivity)s
+2112 X(and)s
+2262 X(deadlines)s
+2586 X(often)s
+2782 X(force)s
+2978 X(organizations)s
+3422 X(to)s
+600 X
+3968 Y(require)s
+845 X(that)s
+991 X(multiple)s
+1273 X(developers)s
+1629 X(be)s
+1733 X(able)s
+1891 X(to)s
+1983 X(simultaneously)s
+2467 X(edit)s
+2613 X(copies)s
+2836 X(of)s
+2931 X(the)s
+3055 X(same)s
+3240 X(revision)s
+600 X
+4048 Y(controlled)s
+926 X(\256le.)s
+600 X
+4152 Y
+767 X(The)s
+907 X(necessity)s
+1205 X(for)s
+1318 X(multiple)s
+1592 X(developers)s
+1940 X(to)s
+2024 X(modify)s
+2264 X(the)s
+2381 X(same)s
+2559 X(\256le)s
+2680 X(concurrently)s
+3082 X(questions)s
+3389 X(the)s
+600 X
+4232 Y(value)s
+793 X(of)s
+887 X(serialization-b)s
+1314 X(ased)s
+1477 X(policies)s
+1740 X(in)s
+1829 X(traditional)s
+2167 X(revision)s
+2438 X(control.)s
+2722 X(This)s
+2885 X(paper)s
+3081 X(discusses)s
+3389 X(the)s
+600 X
+4312 Y(approach)s
+899 X(that)s
+1038 X(Prisma)s
+1272 X(took)s
+1432 X(in)s
+1518 X(adapting)s
+1802 X(a)s
+1863 X(standard)s
+2143 X(revision)s
+2411 X(control)s
+2650 X(system,)s
+2898 X
+f.R 9 Z(RCS)s
+f.R 11 Z(,)s
+3057 X(along)s
+3250 X(with)s
+3410 X(an)s
+600 X
+4385 Y
+f.R 9 Z(_______________)s
+1050 X(_)s
+600 X
+4452 Y
+667 X
+f.R 7 Z(1)s
+4470 Y
+720 X
+f.R 9 Z(UNIX)s
+889 X(is)s
+949 X(a)s
+996 X(registered)s
+1254 X(trademark)s
+1519 X(of)s
+1589 X(AT&T.)s
+600 X
+4537 Y
+667 X
+f.R 7 Z(2)s
+4555 Y
+720 X
+f.R 9 Z(SunOS)s
+909 X(is)s
+969 X(a)s
+1016 X(trademark)s
+1281 X(of)s
+1351 X(Sun)s
+1464 X(Microsystems,)s
+1836 X(Inc.)s
+600 X
+4622 Y
+667 X
+f.R 7 Z(3)s
+4640 Y
+720 X
+f.R 9 Z(Yes,)s
+848 X(the)s
+942 X(SunOS)s
+1131 X(4.0)s
+1226 X(kernel)s
+1397 X(is)s
+1457 X(composed)s
+1721 X(of)s
+1791 X(over)s
+1918 X(a)s
+1965 X
+f.I 9 Z(thousand)s
+2205 X
+f.R 9 Z(\256les!)s
+5184 Y
+pagebot
+
+%%Page: 2 2
+pagetop
+f.R 9 Z
+600 X
+560 Y
+f.R 11 Z(existing)s
+871 X(public-domain)s
+1339 X(collection)s
+1668 X(of)s
+1765 X(shell)s
+1941 X(scripts)s
+2172 X(that)s
+2320 X(sits)s
+2456 X(atop)s
+2616 X
+f.R 9 Z(RCS)s
+2765 X
+f.R 11 Z(and)s
+2908 X(provides)s
+3200 X(the)s
+3327 X(basic)s
+600 X
+640 Y(con\257ict-resolut)s
+1051 X(ion)s
+1183 X(algorithms.)s
+1580 X(The)s
+1731 X(resulting)s
+2028 X(program,)s
+2333 X
+f.B 11 Z(cvs)s
+f.R 11 Z(,)s
+2486 X(addresses)s
+2807 X(not)s
+2938 X(only)s
+3106 X(the)s
+3233 X(issue)s
+3418 X(of)s
+600 X
+720 Y(con\257ict-resolut)s
+1051 X(ion)s
+1191 X(in)s
+1294 X(a)s
+1372 X(multi-developer)s
+1892 X(open-editing)s
+2313 X(environment,)s
+2751 X(but)s
+2891 X(also)s
+3057 X(the)s
+3194 X(issues)s
+3418 X(of)s
+600 X
+800 Y(software)s
+880 X(release)s
+1111 X(control)s
+1346 X(and)s
+1477 X(vendor)s
+1707 X(source)s
+1925 X(support)s
+2172 X(and)s
+2303 X(integration.)s
+600 X
+960 Y
+f.B 11 Z(2.)s
+703 X(The)s
+850 X(CVS)s
+1021 X(Program)s
+600 X
+1064 Y
+767 X(cvs)s
+904 X
+f.R 11 Z(\(Concurrent)s
+1301 X(Versions)s
+1603 X(System\))s
+1884 X(is)s
+1972 X(a)s
+2043 X(front)s
+2226 X(end)s
+2371 X(to)s
+2467 X(the)s
+2593 X
+f.R 9 Z(RCS)s
+2745 X
+f.R 11 Z(revision)s
+3024 X(control)s
+3274 X(system)s
+600 X
+1144 Y(which)s
+808 X(extends)s
+1062 X(the)s
+1180 X(notion)s
+1397 X(of)s
+1486 X(revision)s
+1753 X(control)s
+1991 X(from)s
+2162 X(a)s
+2222 X(collection)s
+2542 X(of)s
+2630 X(\256les)s
+2780 X(in)s
+2864 X(a)s
+2923 X(single)s
+3127 X(directory)s
+3422 X(to)s
+600 X
+1224 Y(a)s
+666 X(hierarchical)s
+1051 X(collection)s
+1378 X(of)s
+1473 X(directories)s
+1821 X(each)s
+1991 X(containing)s
+2339 X(revision)s
+2613 X(controlled)s
+2949 X(\256les.)s
+3149 X(Directories)s
+600 X
+1304 Y(and)s
+746 X(\256les)s
+909 X(in)s
+1006 X(the)s
+1136 X
+f.B 11 Z(cvs)s
+1274 X
+f.R 11 Z(system)s
+1519 X(can)s
+1661 X(be)s
+1770 X(combined)s
+2101 X(together)s
+2384 X(in)s
+2481 X(many)s
+2684 X(ways)s
+2875 X(to)s
+2971 X(form)s
+3153 X(a)s
+3224 X(software)s
+600 X
+1384 Y(release.)s
+878 X
+f.B 11 Z(cvs)s
+1007 X
+f.R 11 Z(provides)s
+1293 X(the)s
+1414 X(functions)s
+1721 X(necessary)s
+2040 X(to)s
+2128 X(manage)s
+2388 X(these)s
+2571 X(software)s
+2857 X(releases)s
+3123 X(and)s
+3260 X(to)s
+3348 X(con-)s
+600 X
+1464 Y(trol)s
+728 X(the)s
+843 X(concurrent)s
+1185 X(editing)s
+1416 X(of)s
+1502 X(source)s
+1720 X(\256les)s
+1868 X(among)s
+2093 X(multiple)s
+2365 X(software)s
+2645 X(developers.)s
+600 X
+1568 Y
+767 X(The)s
+911 X(six)s
+1027 X(major)s
+1229 X(features)s
+1495 X(of)s
+1587 X
+f.B 11 Z(cvs)s
+1716 X
+f.R 11 Z(are)s
+1837 X(listed)s
+2029 X(below,)s
+2258 X(and)s
+2395 X(will)s
+2541 X(be)s
+2641 X(described)s
+2956 X(in)s
+3044 X(more)s
+3226 X(detail)s
+3422 X(in)s
+600 X
+1648 Y(the)s
+715 X(following)s
+1028 X(sections:)s
+600 X
+1752 Y
+767 X(1.)s
+934 X(Concurrent)s
+1317 X(access)s
+1556 X(and)s
+1713 X(con\257ict-resolut)s
+2164 X(ion)s
+2309 X(algorithms)s
+2677 X(to)s
+2785 X(guarantee)s
+3124 X(that)s
+3286 X(source)s
+600 X
+1832 Y
+934 X(changes)s
+1197 X(are)s
+1312 X(not)s
+1431 X(``lost.'')s
+600 X
+1936 Y
+767 X(2.)s
+934 X(Support)s
+1199 X(for)s
+1316 X(tracking)s
+1591 X(third-party)s
+1941 X(vendor)s
+2178 X(source)s
+2403 X(distributions)s
+2807 X(while)s
+3003 X(maintaining)s
+3389 X(the)s
+600 X
+2016 Y
+934 X(local)s
+1103 X(modi\256cations)s
+1531 X(made)s
+1715 X(to)s
+1797 X(those)s
+1978 X(sources.)s
+600 X
+2120 Y
+767 X(3.)s
+934 X(A)s
+1020 X(\257exible)s
+1276 X(module)s
+1531 X(database)s
+1820 X(that)s
+1965 X(provides)s
+2254 X(a)s
+2320 X(symbolic)s
+2625 X(mapping)s
+2917 X(of)s
+3013 X(names)s
+3236 X(to)s
+3328 X(com-)s
+600 X
+2200 Y
+934 X(ponents)s
+1205 X(of)s
+1307 X(a)s
+1380 X(larger)s
+1594 X(software)s
+1890 X(distribution.)s
+2316 X(This)s
+2488 X(symbolic)s
+2800 X(mapping)s
+3098 X(provides)s
+3393 X(for)s
+600 X
+2280 Y
+934 X(location)s
+1202 X(independence)s
+1638 X(within)s
+1856 X(the)s
+1975 X(software)s
+2259 X(release)s
+2495 X(and,)s
+2649 X(for)s
+2765 X(example,)s
+3063 X(allows)s
+3286 X(one)s
+3422 X(to)s
+600 X
+2360 Y
+934 X(check)s
+1135 X(out)s
+1258 X(a)s
+1319 X(copy)s
+1491 X(of)s
+1581 X(the)s
+1700 X(``diff'')s
+1936 X(program)s
+2215 X(without)s
+2470 X(ever)s
+2626 X(knowing)s
+2913 X(that)s
+3053 X(the)s
+3172 X(sources)s
+3422 X(to)s
+600 X
+2440 Y
+934 X(``diff'')s
+1166 X(actually)s
+1426 X(reside)s
+1628 X(in)s
+1710 X(the)s
+1825 X(``bin/diff'')s
+2173 X(directory.)s
+600 X
+2544 Y
+767 X(4.)s
+934 X(Con\256gurable)s
+1357 X(logging)s
+1620 X(support)s
+1879 X(allows)s
+2110 X(all)s
+2222 X(``committed'')s
+2676 X(source)s
+2907 X(\256le)s
+3039 X(changes)s
+3315 X(to)s
+3410 X(be)s
+600 X
+2624 Y
+934 X(logged)s
+1166 X(using)s
+1357 X(an)s
+1457 X(arbitrary)s
+1744 X(program)s
+2025 X(to)s
+2113 X(save)s
+2275 X(the)s
+2395 X(log)s
+2519 X(messages)s
+2828 X(in)s
+2915 X(a)s
+2977 X(\256le,)s
+3119 X(notes\256le,)s
+3418 X(or)s
+600 X
+2704 Y
+934 X(news)s
+1110 X(database.)s
+600 X
+2808 Y
+767 X(5.)s
+934 X(A)s
+1015 X(software)s
+1299 X(release)s
+1534 X(can)s
+1665 X(be)s
+1763 X(symbolically)s
+2175 X(tagged)s
+2401 X(and)s
+2536 X(checked)s
+2807 X(out)s
+2931 X(at)s
+3014 X(any)s
+3150 X(time)s
+3311 X(based)s
+600 X
+2888 Y
+934 X(on)s
+1039 X(that)s
+1182 X(tag.)s
+1346 X(An)s
+1467 X(exact)s
+1655 X(copy)s
+1830 X(of)s
+1923 X(a)s
+1986 X(previous)s
+2272 X(software)s
+2558 X(release)s
+2795 X(can)s
+2928 X(be)s
+3028 X(checked)s
+3301 X(out)s
+3426 X(at)s
+600 X
+2968 Y
+934 X(any)s
+1067 X(time,)s
+1243 X
+f.I 11 Z(regardless)s
+1583 X
+f.R 11 Z(of)s
+1671 X(whether)s
+1936 X(\256les)s
+2087 X(or)s
+2176 X(directories)s
+2518 X(have)s
+2685 X(been)s
+2852 X(added/removed)s
+3336 X(from)s
+600 X
+3048 Y
+934 X(the)s
+1056 X(``current'')s
+1398 X(software)s
+1685 X(release.)s
+1965 X(As)s
+2078 X(well,)s
+2255 X(a)s
+2319 X(``date'')s
+2574 X(can)s
+2707 X(be)s
+2807 X(used)s
+2973 X(to)s
+3061 X(check)s
+3264 X(out)s
+3389 X(the)s
+600 X
+3128 Y
+934 X
+f.I 11 Z(exact)s
+1115 X
+f.R 11 Z(version)s
+1358 X(of)s
+1444 X(the)s
+1559 X(software)s
+1839 X(release)s
+2070 X(as)s
+2156 X(of)s
+2242 X(the)s
+2357 X(speci\256ed)s
+2645 X(date.)s
+600 X
+3232 Y
+767 X(6.)s
+934 X(A)s
+1011 X(``patch'')s
+1296 X(format)s
+1518 X(\256le)s
+1637 X([Wall])s
+1855 X(can)s
+1982 X(be)s
+2076 X(produced)s
+2376 X(between)s
+2647 X(two)s
+2782 X(software)s
+3062 X(releases,)s
+3340 X(even)s
+600 X
+3312 Y
+934 X(if)s
+1004 X(the)s
+1119 X(releases)s
+1379 X(span)s
+1539 X(multiple)s
+1811 X(directories.)s
+600 X
+3416 Y
+767 X(The)s
+906 X(sources)s
+1153 X(maintained)s
+1508 X(by)s
+1607 X
+f.B 11 Z(cvs)s
+1731 X
+f.R 11 Z(are)s
+1847 X(kept)s
+2000 X(within)s
+2215 X(a)s
+2273 X(single)s
+2476 X(directory)s
+2770 X(hierarchy)s
+3076 X(known)s
+3302 X(as)s
+3389 X(the)s
+600 X
+3496 Y(``source)s
+877 X(repository.'')s
+1304 X(This)s
+1469 X(``source)s
+1746 X(repository'')s
+2130 X(holds)s
+2323 X(the)s
+2446 X(actual)s
+2652 X
+f.R 9 Z(RCS)s
+2797 X
+f.R 11 Z(``,v'')s
+2984 X(\256les)s
+3140 X(directly,)s
+3418 X(as)s
+600 X
+3576 Y(well)s
+761 X(as)s
+856 X(a)s
+922 X(special)s
+1162 X(per-repository)s
+1617 X(directory)s
+1919 X(\()s
+f.R 9 Z(CVSROOT.adm)s
+f.R 11 Z(\))s
+2400 X(which)s
+2614 X(contains)s
+2896 X(a)s
+2963 X(small)s
+3158 X(number)s
+3418 X(of)s
+600 X
+3656 Y(administrative)s
+1053 X(\256les)s
+1204 X(that)s
+1343 X(describe)s
+1618 X(the)s
+1736 X(repository)s
+2065 X(and)s
+2199 X(how)s
+2353 X(it)s
+2422 X(can)s
+2552 X(be)s
+2649 X(accessed.)s
+2977 X(See)s
+3110 X(Figure)s
+3330 X(1)s
+3393 X(for)s
+600 X
+3736 Y(a)s
+657 X(picture)s
+888 X(of)s
+974 X(the)s
+1089 X
+f.B 11 Z(cvs)s
+1212 X
+f.R 11 Z(tree.)s
+600 X
+3896 Y
+f.B 11 Z(2.1.)s
+758 X(Software)s
+1066 X(Con\257ict)s
+1341 X(Resolution)s
+3872 Y
+f.R 9 Z(4)s
+600 X
+4000 Y
+767 X
+f.B 11 Z(cvs)s
+897 X
+f.R 11 Z(allows)s
+1122 X(several)s
+1365 X(software)s
+1653 X(developers)s
+2007 X(to)s
+2097 X(edit)s
+2241 X(personal)s
+2525 X(copies)s
+2747 X(of)s
+2841 X(a)s
+2906 X(revision)s
+3178 X(controlled)s
+600 X
+4080 Y(\256le)s
+725 X(concurrently.)s
+1173 X(The)s
+1318 X(revision)s
+1588 X(number)s
+1844 X(of)s
+1936 X(each)s
+2101 X(checked)s
+2373 X(out)s
+2497 X(\256le)s
+2621 X(is)s
+2700 X(maintained)s
+3059 X(independently)s
+600 X
+4160 Y(for)s
+722 X(each)s
+893 X(user,)s
+1070 X(and)s
+1212 X
+f.B 11 Z(cvs)s
+1346 X
+f.R 11 Z(forces)s
+1563 X(the)s
+1689 X(checked)s
+1967 X(out)s
+2097 X(\256le)s
+2227 X(to)s
+2320 X(be)s
+2425 X(current)s
+2671 X(with)s
+2838 X(the)s
+2964 X(``head'')s
+3240 X(revision)s
+600 X
+4240 Y(before)s
+820 X(it)s
+892 X(can)s
+1025 X(be)s
+1125 X(``committed'')s
+1572 X(as)s
+1664 X(a)s
+1727 X(permanent)s
+2070 X(change.)s
+2352 X(A)s
+2435 X(checked)s
+2708 X(out)s
+2833 X(\256le)s
+2958 X(is)s
+3038 X(brought)s
+3298 X(up-to-)s
+600 X
+4320 Y(date)s
+772 X(with)s
+952 X(the)s
+1092 X(``head'')s
+1381 X(revision)s
+1670 X(using)s
+1880 X(the)s
+2020 X(``update'')s
+2367 X(command)s
+2707 X(of)s
+2818 X
+f.B 11 Z(cvs)s
+f.R 11 Z(.)s
+3008 X(This)s
+3189 X(command)s
+600 X
+4393 Y
+f.R 9 Z(_______________)s
+1050 X(_)s
+600 X
+4460 Y
+667 X
+f.R 7 Z(4)s
+4478 Y
+720 X
+f.R 9 Z(The)s
+836 X(basic)s
+982 X(con\257ict-resolut)s
+1347 X(ion)s
+1446 X(algorithms)s
+1726 X(used)s
+1858 X(in)s
+1927 X(the)s
+2023 X
+f.B 9 Z(cvs)s
+2125 X
+f.R 9 Z(program)s
+2351 X(\256nd)s
+2466 X(their)s
+2599 X(roots)s
+2741 X(in)s
+2810 X(the)s
+2906 X(original)s
+3117 X(work)s
+600 X
+4551 Y(done)s
+741 X(by)s
+825 X(Dick)s
+966 X(Grune)s
+1140 X(at)s
+1207 X(Vrije)s
+1354 X(Universiteit)s
+1662 X(in)s
+1732 X(Amsterdam)s
+2036 X(and)s
+2146 X(posted)s
+2326 X(to)s
+2396 X
+f.B 9 Z(comp.sources.un)s
+2822 X(ix)s
+2892 X
+f.R 9 Z(in)s
+2962 X(the)s
+3059 X(volume)s
+600 X
+4624 Y(6)s
+653 X(release)s
+844 X(sometime)s
+1102 X(in)s
+1172 X(1986.)s
+1350 X(This)s
+1480 X(original)s
+1691 X(version)s
+1891 X(of)s
+1964 X
+f.B 9 Z(cvs)s
+2067 X
+f.R 9 Z(was)s
+2183 X(a)s
+2233 X(collection)s
+2495 X(of)s
+2568 X(shell)s
+2706 X(scripts)s
+2887 X(that)s
+3002 X(combined)s
+600 X
+4697 Y(to)s
+667 X(form)s
+804 X(a)s
+851 X(front)s
+988 X(end)s
+1095 X(to)s
+1162 X(the)s
+1251 X
+f.R 7 Z(RCS)s
+1359 X
+f.R 9 Z(programs.)s
+5184 Y
+pagebot
+
+%%Page: 3 3
+pagetop
+f.R 9 Z
+600 X
+560 Y
+840 X
+f.R 11 Z(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+1044 Y
+2230 X
+690 150 l
+600 X
+1196 Y
+2871 X
+49 -1 l
+600 X
+1194 Y
+2920 X
+-44 -22 l
+600 X
+1044 Y
+2230 X
+210 120 l
+600 X
+1151 Y
+2393 X
+47 13 l
+600 X
+2440 X
+-35 -34 l
+600 X
+1044 Y
+2230 X
+-180 150 l
+600 X
+1154 Y
+2079 X
+-29 40 l
+600 X
+2050 X
+44 -21 l
+600 X
+1254 Y
+1990 X
+540 300 l
+600 X
+1541 Y
+2483 X
+47 12 l
+600 X
+1554 Y
+2530 X
+-36 -34 l
+600 X
+1254 Y
+1990 X
+60 300 l
+600 X
+1509 Y
+2029 X
+21 45 l
+600 X
+2050 X
+2 -49 l
+600 X
+1254 Y
+1990 X
+-480 269 l
+600 X
+1490 Y
+1546 X
+-36 34 l
+600 X
+1510 X
+48 -12 l
+600 X
+1014 Y
+1390 X
+180 149 l
+600 X
+1143 Y
+1526 X
+44 21 l
+600 X
+1570 X
+-28 -39 l
+600 X
+1014 Y
+1390 X
+-209 149 l
+600 X
+1127 Y
+1212 X
+-32 37 l
+600 X
+1180 X
+46 -18 l
+600 X
+774 Y
+1870 X
+330 180 l
+600 X
+942 Y
+2152 X
+48 12 l
+600 X
+2200 X
+-36 -33 l
+600 X
+774 Y
+1870 X
+-420 180 l
+600 X
+924 Y
+1490 X
+-39 30 l
+600 X
+1450 X
+48 -8 l
+600 X
+1614 Y
+2410 X(newfs.c,v)s
+600 X
+1930 X(mkfs.c,v)s
+600 X
+1330 X(Make\256le,v)s
+600 X
+1254 Y
+1930 X(newfs)s
+600 X
+2890 X(halt.c,v)s
+600 X
+2290 X(Make\256le,v)s
+600 X
+1450 X(modules,v)s
+600 X
+971 X(loginfo,v)s
+600 X
+1014 Y
+2170 X(etc)s
+600 X
+1211 X(CVSROOT.adm)s
+600 X
+774 Y
+1690 X(/src/master)s
+600 X
+1720 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+1880 Y
+1870 X
+f.B 13 Z(Figure)s
+2145 X(1.)s
+600 X
+1960 Y
+1700 X
+f.B 11 Z(cvs)s
+1823 X
+f.R 11 Z(Source)s
+2053 X(Repository)s
+600 X
+2120 Y(compares)s
+910 X(the)s
+1027 X(``head'')s
+1293 X(revision)s
+1559 X(number)s
+1811 X(with)s
+1969 X(that)s
+2107 X(of)s
+2195 X(the)s
+2312 X(user's)s
+2516 X(\256le)s
+2637 X(and)s
+2770 X(performs)s
+3064 X(an)s
+3156 X
+f.R 9 Z(RCS)s
+3295 X
+f.R 11 Z(merge)s
+600 X
+2200 Y(operation)s
+911 X(if)s
+987 X(they)s
+1145 X(are)s
+1266 X(not)s
+1391 X(the)s
+1512 X(same.)s
+1735 X(The)s
+1879 X(result)s
+2074 X(of)s
+2165 X(the)s
+2285 X(merge)s
+2499 X(is)s
+2578 X(a)s
+2640 X(\256le)s
+2764 X(that)s
+2905 X(contains)s
+3182 X(the)s
+3302 X(user's)s
+600 X
+2280 Y(modi\256cations)s
+1033 X(and)s
+1169 X(those)s
+1356 X(modi\256cations)s
+1790 X(that)s
+1932 X(were)s
+2106 X(``committed'')s
+2553 X(after)s
+2720 X(the)s
+2841 X(user)s
+2995 X(checked)s
+3268 X(out)s
+3393 X(his)s
+600 X
+2360 Y(version)s
+849 X(of)s
+941 X(the)s
+1062 X(\256le)s
+1187 X(\(as)s
+1304 X(well)s
+1462 X(as)s
+1554 X(a)s
+1617 X(backup)s
+1861 X(copy)s
+2035 X(of)s
+2127 X(the)s
+2248 X(user's)s
+2456 X(original)s
+2718 X(\256le\).)s
+2910 X
+f.B 11 Z(cvs)s
+3038 X
+f.R 11 Z(points)s
+3249 X(out)s
+3373 X(any)s
+600 X
+2440 Y(con\257icts)s
+887 X(during)s
+1116 X(the)s
+1243 X(merge.)s
+1506 X(It)s
+1588 X(is)s
+1674 X(the)s
+1801 X(user's)s
+2015 X(responsibility)s
+2457 X(to)s
+2551 X(resolve)s
+2802 X(these)s
+2991 X(con\257icts)s
+3279 X(and)s
+3422 X(to)s
+600 X
+2520 Y(``commit'')s
+950 X(his/her)s
+1177 X(changes)s
+1440 X(when)s
+1624 X(ready.)s
+600 X
+2624 Y
+767 X(Although)s
+1085 X(the)s
+1214 X
+f.B 11 Z(cvs)s
+1351 X
+f.R 11 Z(con\257ict-resolut)s
+1802 X(ion)s
+1935 X(algorithm)s
+2262 X(was)s
+2415 X(de\256ned)s
+2671 X(in)s
+2767 X(1986,)s
+2972 X(it)s
+3053 X(is)s
+3142 X(remarkably)s
+600 X
+2704 Y(similar)s
+834 X(to)s
+919 X(the)s
+1037 X(``Copy-Modify-M)s
+1584 X(erge'')s
+1789 X(scenario)s
+2064 X(included)s
+2347 X(with)s
+2506 X(NSE)s
+2680 Y
+f.R 9 Z(5)s
+2704 Y
+2702 X
+f.R 11 Z(and)s
+2836 X(described)s
+3148 X(in)s
+3233 X([Honda])s
+600 X
+2784 Y(and)s
+731 X([Courington].)s
+1185 X(The)s
+1324 X(following)s
+1637 X(explanation)s
+2008 X(from)s
+2176 X([Honda])s
+2447 X(also)s
+2591 X(applies)s
+2826 X(to)s
+2908 X
+f.B 11 Z(cvs)s
+f.R 11 Z(:)s
+600 X
+2888 Y
+767 X(Simply)s
+1010 X(stated,)s
+1231 X(a)s
+1293 X(developer)s
+1615 X(copies)s
+1834 X(an)s
+1933 X(object)s
+2145 X(without)s
+2402 X(locking)s
+2655 X(it,)s
+2745 X(modi\256es)s
+3030 X(the)s
+3151 X(copy,)s
+600 X
+2968 Y
+767 X(and)s
+920 X(then)s
+1093 X(merges)s
+1352 X(the)s
+1488 X(modi\256ed)s
+1796 X(copy)s
+1985 X(with)s
+2162 X(the)s
+2298 X(original.)s
+2617 X(This)s
+2794 X(paradigm)s
+3119 X(allows)s
+600 X
+3048 Y
+767 X(developers)s
+1114 X(to)s
+1197 X(work)s
+1374 X(in)s
+1457 X(isolation)s
+1740 X(from)s
+1910 X(one)s
+2043 X(another)s
+2292 X(since)s
+2471 X(changes)s
+2736 X(are)s
+2853 X(made)s
+3039 X(to)s
+3123 X(copies)s
+600 X
+3128 Y
+767 X(of)s
+868 X(objects.)s
+1160 X(Because)s
+1446 X(locks)s
+1642 X(are)s
+1772 X(not)s
+1906 X(used,)s
+2099 X(development)s
+2520 X(is)s
+2608 X(not)s
+2741 X(serialized)s
+3065 X(and)s
+3210 X(can)s
+600 X
+3208 Y
+767 X(proceed)s
+1037 X(in)s
+1130 X(parallel.)s
+1431 X(Developers,)s
+1822 X(however,)s
+2130 X(must)s
+2309 X(merge)s
+2529 X(objects)s
+2775 X(after)s
+2947 X(the)s
+3074 X(changes)s
+600 X
+3288 Y
+767 X(have)s
+937 X(been)s
+1107 X(made.)s
+1339 X(In)s
+1431 X(particular,)s
+1765 X(a)s
+1828 X(developer)s
+2151 X(must)s
+2325 X(resolve)s
+2570 X(con\257icts)s
+2852 X(when)s
+3041 X(the)s
+3161 X(same)s
+600 X
+3368 Y
+767 X(object)s
+973 X(has)s
+1096 X(been)s
+1260 X(modi\256ed)s
+1547 X(by)s
+1645 X(someone)s
+1932 X(else.)s
+600 X
+3472 Y
+767 X(In)s
+861 X(practice,)s
+1147 X(Prisma)s
+1385 X(has)s
+1516 X(found)s
+1721 X(that)s
+1865 X(con\257icts)s
+2149 X(that)s
+2293 X(occur)s
+2491 X(when)s
+2684 X(the)s
+2808 X(same)s
+2993 X(object)s
+3208 X(has)s
+3340 X(been)s
+600 X
+3552 Y(modi\256ed)s
+897 X(by)s
+1005 X(someone)s
+1302 X(else)s
+1452 X(are)s
+1577 X(quite)s
+1760 X(rare.)s
+1951 X(When)s
+2160 X(they)s
+2321 X(do)s
+2428 X(happen,)s
+2693 X(the)s
+2817 X(changes)s
+3089 X(made)s
+3282 X(by)s
+3389 X(the)s
+600 X
+3632 Y(other)s
+787 X(developer)s
+1114 X(are)s
+1239 X(usually)s
+1488 X(easily)s
+1696 X(resolved.)s
+2024 X(This)s
+2190 X(practical)s
+2481 X(use)s
+2614 X(has)s
+2747 X(shown)s
+2974 X(that)s
+3120 X(the)s
+3245 X(``Copy-)s
+600 X
+3712 Y(Modify-Merge'')s
+1114 X(paradigm)s
+1418 X(is)s
+1492 X(a)s
+1549 X(correct)s
+1780 X(and)s
+1911 X(useful)s
+2117 X(one.)s
+600 X
+3872 Y
+f.B 11 Z(2.2.)s
+758 X(Tracking)s
+1074 X(Third-Party)s
+1485 X(Source)s
+1727 X(Distributions)s
+600 X
+3976 Y
+767 X
+f.R 11 Z(Currently,)s
+1095 X(a)s
+1153 X(large)s
+1327 X(amount)s
+1574 X(of)s
+1661 X(software)s
+1942 X(is)s
+2018 X(based)s
+2213 X(on)s
+2313 X(source)s
+2533 X(distributions)s
+2932 X(from)s
+3102 X(a)s
+3161 X(third-party)s
+600 X
+4056 Y(distributor.)s
+986 X(It)s
+1065 X(is)s
+1148 X(often)s
+1334 X(the)s
+1458 X(case)s
+1619 X(that)s
+1764 X(local)s
+1942 X(modi\256cations)s
+2379 X(are)s
+2503 X(to)s
+2594 X(be)s
+2696 X(made)s
+2888 X(to)s
+2978 X(this)s
+3118 X(distribution,)s
+600 X
+4136 Y
+f.I 11 Z(and)s
+737 X
+f.R 11 Z(that)s
+875 X(the)s
+992 X(vendor's)s
+1278 X(future)s
+1482 X(releases)s
+1744 X(should)s
+1968 X(be)s
+2064 X(tracked.)s
+2352 X(Rolling)s
+2602 X(your)s
+2765 X(local)s
+2937 X(modi\256cations)s
+3368 X(for-)s
+600 X
+4216 Y(ward)s
+785 X(into)s
+938 X(the)s
+1066 X(new)s
+1226 X(vendor)s
+1469 X(release)s
+1713 X(is)s
+1800 X(a)s
+1869 X(time-consuming)s
+2387 X(task,)s
+2561 X(but)s
+2692 X
+f.B 11 Z(cvs)s
+2827 X
+f.R 11 Z(can)s
+2966 X(ease)s
+3130 X(this)s
+3274 X(burden)s
+600 X
+4296 Y(somewhat.)s
+974 X(The)s
+1121 X
+f.B 11 Z(checkin)s
+1396 X
+f.R 11 Z(program)s
+1679 X(of)s
+1773 X
+f.B 11 Z(cvs)s
+1904 X
+f.R 11 Z(initially)s
+2170 X(sets)s
+2315 X(up)s
+2422 X(a)s
+2488 X(source)s
+2715 X(repository)s
+3050 X(by)s
+3157 X(integrating)s
+600 X
+4376 Y(the)s
+723 X(source)s
+949 X(modules)s
+1232 X(directly)s
+1492 X(from)s
+1668 X(the)s
+1791 X(vendor's)s
+2083 X(release,)s
+2339 X(preserving)s
+2684 X(the)s
+2806 X(directory)s
+3106 X(hierarchy)s
+3418 X(of)s
+600 X
+4456 Y(the)s
+717 X(vendor's)s
+1003 X(distribution.)s
+1415 X(The)s
+1556 X(branch)s
+1784 X(support)s
+2033 X(of)s
+2117 X
+f.R 9 Z(RCS)s
+2256 X
+f.R 11 Z(is)s
+2332 X(used)s
+2494 X(to)s
+2578 X(build)s
+2757 X(this)s
+2891 X(vendor)s
+3124 X(release)s
+3358 X(as)s
+3447 X(a)s
+600 X
+4536 Y(branch)s
+840 X(of)s
+940 X(the)s
+1069 X(main)s
+1251 X
+f.R 9 Z(RCS)s
+1402 X
+f.R 11 Z(trunk.)s
+1639 X(Figure)s
+1871 X(2)s
+1946 X(shows)s
+2169 X(how)s
+2334 X(the)s
+2463 X(``head'')s
+2741 X(tracks)s
+2957 X(a)s
+3027 X(sample)s
+3274 X(vendor)s
+600 X
+4609 Y
+f.R 9 Z(_______________)s
+1050 X(_)s
+600 X
+4676 Y
+667 X
+f.R 7 Z(5)s
+4694 Y
+720 X
+f.R 9 Z(NSE)s
+853 X(is)s
+913 X(the)s
+1007 X(Network)s
+1237 X(Software)s
+1474 X(Environment,)s
+1824 X(a)s
+1871 X(product)s
+2075 X(of)s
+2145 X(Sun)s
+2258 X(Microsystems,)s
+2630 X(Inc.)s
+5184 Y
+pagebot
+
+%%Page: 4 4
+pagetop
+f.R 9 Z
+600 X
+560 Y
+f.R 11 Z(branch)s
+826 X(when)s
+1010 X(no)s
+1108 X(local)s
+1277 X(modi\256cations)s
+1705 X(have)s
+1869 X(been)s
+2033 X(made)s
+2217 X(to)s
+2299 X(the)s
+2414 X(\256le.)s
+600 X
+640 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+2399 Y
+1559 X
+480 240 e
+600 X
+2039 Y
+1799 X
+24 0 l
+600 X
+1853 X
+24 0 l
+600 X
+1907 X
+24 0 l
+600 X
+1961 X
+24 0 l
+600 X
+2015 X
+24 0 l
+600 X
+2039 X
+0 -24 l
+600 X
+1991 Y
+2039 X
+0 -24 l
+600 X
+1943 Y
+2039 X
+0 -24 l
+600 X
+1895 Y
+2039 X
+0 -24 l
+600 X
+1847 Y
+2039 X
+0 -24 l
+600 X
+1799 Y
+2039 X
+0 -24 l
+600 X
+1751 Y
+2039 X
+0 -24 l
+600 X
+1703 Y
+2039 X
+0 -24 l
+600 X
+1655 Y
+2039 X
+0 -24 l
+600 X
+1607 Y
+2039 X
+0 -24 l
+600 X
+1559 Y
+2039 X
+0 -24 l
+600 X
+1512 Y
+2039 X
+0 -24 l
+600 X
+1464 Y
+2039 X
+0 -24 l
+600 X
+1416 Y
+2039 X
+0 -24 l
+600 X
+1368 Y
+2039 X
+0 -24 l
+600 X
+1320 Y
+2039 X
+0 -24 l
+600 X
+1272 Y
+2039 X
+0 -24 l
+600 X
+1224 Y
+2039 X
+0 -24 l
+600 X
+1176 Y
+2039 X
+0 -24 l
+600 X
+1128 Y
+2039 X
+0 -24 l
+600 X
+1080 Y
+2039 X
+0 -24 l
+600 X
+1032 Y
+2039 X
+0 -24 l
+600 X
+984 Y
+2039 X
+0 -24 l
+600 X
+2039 X
+24 0 l
+600 X
+2093 X
+24 0 l
+600 X
+2147 X
+24 0 l
+600 X
+2201 X
+24 0 l
+600 X
+2255 X
+24 0 l
+600 X
+972 Y
+2232 X
+47 -12 l
+600 X
+2279 X
+-47 -12 l
+600 X
+1680 Y
+1319 X
+24 0 l
+600 X
+1370 X
+24 0 l
+600 X
+1420 X
+24 0 l
+600 X
+1471 X
+24 0 l
+600 X
+1522 X
+24 0 l
+600 X
+1572 X
+24 0 l
+600 X
+1623 X
+24 0 l
+600 X
+1674 X
+24 0 l
+600 X
+1724 X
+24 0 l
+600 X
+1775 X
+24 0 l
+600 X
+1799 X
+0 24 l
+600 X
+1728 Y
+1799 X
+0 24 l
+600 X
+1776 Y
+1799 X
+0 24 l
+600 X
+1824 Y
+1799 X
+0 24 l
+600 X
+1872 Y
+1799 X
+0 24 l
+600 X
+1920 Y
+1799 X
+0 24 l
+600 X
+1967 Y
+1799 X
+0 24 l
+600 X
+2015 Y
+1799 X
+0 24 l
+600 X
+2063 Y
+1799 X
+0 24 l
+600 X
+2111 Y
+1799 X
+0 24 l
+600 X
+2159 Y
+1799 X
+0 24 l
+600 X
+2207 Y
+1799 X
+0 24 l
+600 X
+2255 Y
+1799 X
+0 24 l
+600 X
+2232 Y
+1787 X
+12 47 l
+600 X
+1799 X
+12 -47 l
+600 X
+2399 Y
+2039 X
+240 0 l
+600 X
+2412 Y
+2232 X
+47 -12 l
+600 X
+2399 Y
+2279 X
+-47 -12 l
+600 X
+2399 Y
+1319 X
+240 0 l
+600 X
+2412 Y
+1511 X
+48 -12 l
+600 X
+2399 Y
+1559 X
+-48 -12 l
+600 X
+2759 Y
+1080 X
+0 -240 l
+600 X
+2567 Y
+1091 X
+-11 -48 l
+600 X
+1080 X
+-12 48 l
+600 X
+2279 Y
+840 X
+479 0 l
+600 X
+1319 X
+0 240 l
+600 X
+1319 X
+-479 0 l
+600 X
+840 X
+0 -240 l
+600 X
+1320 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+1800 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 239 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -239 l
+600 X
+2279 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+2519 X
+0 -240 l
+600 X
+2087 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+1800 Y
+2519 X
+0 -240 l
+600 X
+1608 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+840 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+1320 Y
+2519 X
+0 -240 l
+600 X
+1128 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+3239 Y
+3119 X
+0 -480 l
+600 X
+3119 X
+-2399 0 l
+600 X
+720 X
+0 480 l
+600 X
+720 X
+2399 0 l
+600 X
+1708 Y
+989 X("HEAD")s
+600 X
+2639 Y
+1679 X('SunOS')s
+600 X
+2399 Y
+1709 X(1.1.1)s
+600 X
+1020 X(1.1)s
+600 X
+2399 X(1.1.1.1)s
+600 X
+1919 Y
+2399 X(1.1.1.2)s
+600 X
+1439 Y
+2399 X(1.1.1.3)s
+600 X
+959 Y
+2399 X(1.1.1.4)s
+600 X
+2399 Y
+2879 X('SunOS_4_0')s
+600 X
+1919 Y
+2879 X('SunOS_4_0_1')s
+600 X
+1439 Y
+2879 X('YAPT_5_5C')s
+600 X
+959 Y
+2879 X('SunOS_4_0_3')s
+600 X
+2999 Y
+1679 X(rcs\256le.c,v)s
+600 X
+3359 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+3519 Y
+1870 X
+f.B 13 Z(Figure)s
+2145 X(2.)s
+600 X
+3599 Y
+1605 X
+f.B 11 Z(cvs)s
+1728 X
+f.R 11 Z(Vendor)s
+1974 X(Branch)s
+2212 X(Example)s
+600 X
+3703 Y(Once)s
+791 X(this)s
+934 X(is)s
+1019 X(done,)s
+1216 X(developers)s
+1573 X(can)s
+1711 X(check)s
+1919 X(out)s
+2049 X(\256les)s
+2208 X(and)s
+2350 X(make)s
+2545 X(local)s
+2725 X(changes)s
+2999 X(to)s
+3093 X(the)s
+3220 X(vendor's)s
+600 X
+3783 Y(source)s
+821 X(distribution.)s
+1234 X(These)s
+1438 X(local)s
+1609 X(changes)s
+1874 X(form)s
+2044 X(a)s
+2103 X(new)s
+2252 X(branch)s
+2480 X(to)s
+2564 X(the)s
+2681 X(tree)s
+2819 X(which)s
+3026 X(is)s
+3102 X(then)s
+3256 X(used)s
+3418 X(as)s
+600 X
+3863 Y(the)s
+723 X(source)s
+949 X(for)s
+1068 X(future)s
+1278 X(check)s
+1483 X(outs.)s
+1681 X(Figure)s
+1907 X(3)s
+1976 X(shows)s
+2193 X(how)s
+2352 X(the)s
+2476 X(``head'')s
+2749 X(moves)s
+2975 X(to)s
+3066 X(the)s
+3190 X(main)s
+3367 X
+f.R 9 Z(RCS)s
+600 X
+3943 Y
+f.R 11 Z(trunk)s
+781 X(when)s
+965 X(a)s
+1022 X(local)s
+1191 X(modi\256cation)s
+1590 X(is)s
+1664 X(made.)s
+600 X
+4047 Y
+767 X(When)s
+976 X(a)s
+1042 X(new)s
+1198 X(version)s
+1451 X(of)s
+1547 X(the)s
+1672 X(vendor's)s
+1966 X(source)s
+2194 X(distribution)s
+2572 X(arrives,)s
+2827 X(the)s
+2952 X
+f.B 11 Z(checkin)s
+3229 X
+f.R 11 Z(program)s
+600 X
+4127 Y(adds)s
+767 X(the)s
+889 X(new)s
+1043 X(and)s
+1180 X(changed)s
+1457 X(vendor's)s
+1747 X(\256les)s
+1901 X(to)s
+1989 X(the)s
+2110 X(already)s
+2359 X(existing)s
+2625 X(source)s
+2849 X(repository.)s
+3223 X(For)s
+3356 X(\256les)s
+600 X
+4207 Y(that)s
+736 X(have)s
+901 X(not)s
+1021 X(been)s
+1186 X(changed)s
+1458 X(locally,)s
+1704 X(the)s
+1820 X(new)s
+1968 X(\256le)s
+2088 X(from)s
+2257 X(the)s
+2373 X(vendor)s
+2604 X(becomes)s
+2888 X(the)s
+3004 X(current)s
+3240 X(``head'')s
+600 X
+4287 Y(revision.)s
+923 X(For)s
+1067 X(\256les)s
+1232 X(that)s
+1384 X(have)s
+1564 X(been)s
+1744 X(modi\256ed)s
+2047 X(locally,)s
+2308 X
+f.B 11 Z(checkin)s
+2591 X
+f.R 11 Z(warns)s
+2808 X(that)s
+2960 X(the)s
+3091 X(\256le)s
+3226 X(must)s
+3410 X(be)s
+600 X
+4367 Y(merged)s
+847 X(with)s
+1005 X(the)s
+1122 X(new)s
+1271 X(vendor)s
+1503 X(release.)s
+1778 X(The)s
+1919 X
+f.B 11 Z(cvs)s
+2044 X
+f.R 11 Z(``join'')s
+2286 X(command)s
+2603 X(is)s
+2679 X(a)s
+2738 X(useful)s
+2946 X(tool)s
+3088 X(that)s
+3226 X(aids)s
+3372 X(this)s
+600 X
+4447 Y(process)s
+867 X(by)s
+984 X(performing)s
+1361 X(the)s
+1495 X(necessary)s
+1823 X
+f.R 9 Z(RCS)s
+1979 X
+f.R 11 Z(merge,)s
+2225 X(as)s
+2330 X(is)s
+2423 X(done)s
+2610 X(above)s
+2830 X(when)s
+3033 X(performing)s
+3410 X(an)s
+600 X
+4527 Y(``update.'')s
+600 X
+4631 Y
+767 X(There)s
+965 X(is)s
+1040 X(also)s
+1185 X(limited)s
+1421 X(support)s
+1669 X(for)s
+1782 X(``dual'')s
+2036 X(derivations)s
+2393 X(for)s
+2506 X(source)s
+2726 X(\256les.)s
+2918 X(See)s
+3051 X(Figure)s
+3271 X(4)s
+3334 X(for)s
+3447 X(a)s
+600 X
+4711 Y(sample)s
+849 X(dual-derived)s
+1264 X(\256le.)s
+1440 X(This)s
+1611 X(example)s
+1902 X(tracks)s
+2120 X(the)s
+2251 X(SunOS)s
+2500 X(distribution)s
+2884 X(but)s
+3019 X(includes)s
+3307 X(major)s
+5184 Y
+pagebot
+
+%%Page: 5 5
+pagetop
+f.R 11 Z
+600 X
+560 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+2319 Y
+1559 X
+480 240 e
+600 X
+1209 Y
+1589 X
+-24 0 l
+600 X
+1541 X
+-24 0 l
+600 X
+1492 X
+-24 0 l
+600 X
+1443 X
+-24 0 l
+600 X
+1395 X
+-24 0 l
+600 X
+1346 X
+-24 0 l
+600 X
+1298 X
+-24 0 l
+600 X
+1249 X
+-24 0 l
+600 X
+1200 X
+-24 0 l
+600 X
+1152 X
+-24 0 l
+600 X
+1104 X
+-24 0 l
+600 X
+1080 X
+0 24 l
+600 X
+1258 Y
+1080 X
+0 24 l
+600 X
+1307 Y
+1080 X
+0 24 l
+600 X
+1355 Y
+1080 X
+0 24 l
+600 X
+1404 Y
+1080 X
+0 24 l
+600 X
+1453 Y
+1080 X
+0 24 l
+600 X
+1501 Y
+1080 X
+0 24 l
+600 X
+1550 Y
+1080 X
+0 24 l
+600 X
+1598 Y
+1080 X
+0 24 l
+600 X
+1647 Y
+1080 X
+0 24 l
+600 X
+1696 Y
+1080 X
+0 24 l
+600 X
+1672 Y
+1068 X
+12 48 l
+600 X
+1080 X
+11 -48 l
+600 X
+2199 Y
+1080 X
+0 -240 l
+600 X
+2007 Y
+1091 X
+-11 -48 l
+600 X
+1080 X
+-12 48 l
+600 X
+1720 Y
+840 X
+479 0 l
+600 X
+1319 X
+0 239 l
+600 X
+1319 X
+-479 0 l
+600 X
+840 X
+0 -239 l
+600 X
+2319 Y
+2039 X
+240 0 l
+600 X
+2332 Y
+2232 X
+47 -12 l
+600 X
+2319 Y
+2279 X
+-47 -12 l
+600 X
+2319 Y
+1319 X
+240 0 l
+600 X
+2332 Y
+1511 X
+48 -12 l
+600 X
+2319 Y
+1559 X
+-48 -12 l
+600 X
+2679 Y
+1080 X
+0 -240 l
+600 X
+2487 Y
+1091 X
+-11 -48 l
+600 X
+1080 X
+-12 48 l
+600 X
+2199 Y
+840 X
+479 0 l
+600 X
+1319 X
+0 240 l
+600 X
+1319 X
+-479 0 l
+600 X
+840 X
+0 -240 l
+600 X
+1240 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+1720 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 239 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -239 l
+600 X
+2199 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+2519 X
+0 -240 l
+600 X
+2007 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+1720 Y
+2519 X
+0 -240 l
+600 X
+1528 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+760 Y
+2279 X
+480 0 l
+600 X
+2759 X
+0 240 l
+600 X
+2759 X
+-480 0 l
+600 X
+2279 X
+0 -240 l
+600 X
+1240 Y
+2519 X
+0 -240 l
+600 X
+1048 Y
+2532 X
+-12 -48 l
+600 X
+2519 X
+-12 48 l
+600 X
+3159 Y
+3119 X
+0 -480 l
+600 X
+3119 X
+-2399 0 l
+600 X
+720 X
+0 480 l
+600 X
+720 X
+2399 0 l
+600 X
+1839 Y
+1020 X(1.2)s
+600 X
+1239 Y
+1619 X("HEAD")s
+600 X
+2559 Y
+1679 X('SunOS')s
+600 X
+2319 Y
+1709 X(1.1.1)s
+600 X
+1020 X(1.1)s
+600 X
+2399 X(1.1.1.1)s
+600 X
+1839 Y
+2399 X(1.1.1.2)s
+600 X
+1359 Y
+2399 X(1.1.1.3)s
+600 X
+879 Y
+2399 X(1.1.1.4)s
+600 X
+2319 Y
+2879 X('SunOS_4_0')s
+600 X
+1839 Y
+2879 X('SunOS_4_0_1')s
+600 X
+1359 Y
+2879 X('YAPT_5_5C')s
+600 X
+879 Y
+2879 X('SunOS_4_0_3')s
+600 X
+2919 Y
+1679 X(rcs\256le.c,v)s
+600 X
+3279 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+3439 Y
+1870 X
+f.B 13 Z(Figure)s
+2145 X(3.)s
+600 X
+3519 Y
+1407 X
+f.B 11 Z(cvs)s
+1530 X
+f.R 11 Z(Local)s
+1723 X(Modi\256cation)s
+2130 X(to)s
+2212 X(Vendor)s
+2458 X(Branch)s
+600 X
+3679 Y(changes)s
+863 X(from)s
+1031 X(Berkeley.)s
+1365 X(These)s
+1566 X(BSD)s
+1733 X(\256les)s
+1881 X(are)s
+1996 X(saved)s
+2189 X(directly)s
+2441 X(in)s
+2523 X(the)s
+2634 X
+f.R 9 Z(RCS)s
+2771 X
+f.R 11 Z(\256le)s
+2890 X(off)s
+3001 X(a)s
+3058 X(new)s
+3205 X(branch.)s
+600 X
+3839 Y
+f.B 11 Z(2.3.)s
+758 X(Location)s
+1062 X(Independent)s
+1485 X(Module)s
+1751 X(Database)s
+600 X
+3943 Y
+767 X(cvs)s
+901 X
+f.R 11 Z(contains)s
+1184 X(support)s
+1442 X(for)s
+1564 X(a)s
+1632 X(simple,)s
+1883 X(yet)s
+2009 X(powerful,)s
+2330 X(``module'')s
+2687 X(database.)s
+3020 X(For)s
+3159 X(reasons)s
+3418 X(of)s
+600 X
+4023 Y(ef\256ciency,)s
+939 X(this)s
+1075 X(database)s
+1359 X(is)s
+1437 X(stored)s
+1647 X(in)s
+1733 X
+f.B 11 Z(ndbm)s
+1929 X
+f.R 11 Z(\(3\))s
+2044 X(format.)s
+2312 X(The)s
+2455 X(module)s
+2705 X(database)s
+2989 X(is)s
+3067 X(used)s
+3230 X(to)s
+3315 X(apply)s
+600 X
+4103 Y(names)s
+827 X(to)s
+923 X(collections)s
+1284 X(of)s
+1384 X(directories)s
+1737 X(and)s
+1882 X(\256les)s
+2044 X(as)s
+2144 X(a)s
+2215 X(matter)s
+2443 X(of)s
+2543 X(convenience)s
+2952 X(for)s
+3078 X(checking)s
+3385 X(out)s
+600 X
+4183 Y(pieces)s
+824 X(of)s
+924 X(a)s
+995 X(large)s
+1182 X(software)s
+1476 X(distribution.)s
+1899 X(The)s
+2051 X(database)s
+2344 X(records)s
+2600 X(the)s
+2728 X(physical)s
+3013 X(location)s
+3290 X(of)s
+3389 X(the)s
+600 X
+4263 Y(sources)s
+855 X(as)s
+949 X(a)s
+1014 X(form)s
+1190 X(of)s
+1284 X(information)s
+1667 X(hiding,)s
+1907 X(allowing)s
+2200 X(one)s
+2340 X(to)s
+2431 X(check)s
+2637 X(out)s
+2765 X(whole)s
+2979 X(directory)s
+3281 X(hierar-)s
+600 X
+4343 Y(chies)s
+778 X(or)s
+865 X(individual)s
+1192 X(\256les)s
+1341 X(without)s
+1592 X(regard)s
+1806 X(for)s
+1917 X(their)s
+2078 X(actual)s
+2280 X(location)s
+2544 X(within)s
+2758 X(the)s
+2873 X(global)s
+3083 X(source)s
+3301 X(distri-)s
+600 X
+4423 Y(bution.)s
+600 X
+4527 Y
+767 X(Consider)s
+1075 X(the)s
+1206 X(following)s
+1535 X(small)s
+1736 X(sample)s
+1986 X(of)s
+2088 X(a)s
+2161 X(module)s
+2423 X(database,)s
+2737 X(which)s
+2958 X(must)s
+3142 X(be)s
+3252 X(tailored)s
+600 X
+4607 Y(manually)s
+900 X(to)s
+982 X(each)s
+1142 X(speci\256c)s
+1393 X(source)s
+1611 X(repository)s
+1937 X(environment:)s
+stdencoding /NCourier /Courier RE
+/f.CW /NCourier findfont def 
+5184 Y
+pagebot
+
+%%Page: 6 6
+pagetop
+f.R 11 Z
+600 X
+560 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+1540 Y
+1640 X
+336 180 e
+600 X
+1270 Y
+1628 X
+336 180 e
+600 X
+1330 Y
+1274 X
+0 -168 l
+600 X
+1209 Y
+1286 X
+-12 -48 l
+600 X
+1274 X
+-12 48 l
+600 X
+988 Y
+1106 X
+348 0 l
+600 X
+1454 X
+0 173 l
+600 X
+1454 X
+-348 0 l
+600 X
+1106 X
+0 -173 l
+600 X
+1330 Y
+1106 X
+348 0 l
+600 X
+1454 X
+0 173 l
+600 X
+1504 Y
+1454 X
+-348 0 l
+600 X
+1106 X
+0 -173 l
+600 X
+760 Y
+2630 X
+348 0 l
+600 X
+2978 X
+0 168 l
+600 X
+2978 X
+-348 0 l
+600 X
+2630 X
+0 -168 l
+600 X
+1108 Y
+2630 X
+348 0 l
+600 X
+2978 X
+0 173 l
+600 X
+2978 X
+-348 0 l
+600 X
+2630 X
+0 -173 l
+600 X
+1450 Y
+2630 X
+348 0 l
+600 X
+2978 X
+0 173 l
+600 X
+1624 Y
+2978 X
+-348 0 l
+600 X
+2630 X
+0 -173 l
+600 X
+1450 Y
+2810 X
+0 -168 l
+600 X
+1329 Y
+2822 X
+-12 -48 l
+600 X
+2810 X
+-12 48 l
+600 X
+1108 Y
+2810 X
+0 -180 l
+600 X
+976 Y
+2822 X
+-12 -48 l
+600 X
+2810 X
+-12 48 l
+600 X
+856 Y
+2150 X
+348 0 l
+600 X
+2498 X
+0 174 l
+600 X
+2498 X
+-348 0 l
+600 X
+2150 X
+0 -174 l
+600 X
+1186 Y
+2150 X
+348 0 l
+600 X
+2498 X
+0 173 l
+600 X
+1360 Y
+2498 X
+-348 0 l
+600 X
+2150 X
+0 -173 l
+600 X
+2140 Y
+1029 X
+0 -360 l
+600 X
+1029 X
+2021 0 l
+600 X
+3050 X
+0 360 l
+600 X
+3050 X
+-2021 0 l
+600 X
+1780 Y
+1281 X
+0 -269 l
+600 X
+1558 Y
+1292 X
+-11 -48 l
+600 X
+1281 X
+-12 48 l
+600 X
+1420 Y
+1461 X
+173 120 l
+600 X
+1522 Y
+1588 X
+46 17 l
+600 X
+1540 Y
+1634 X
+-32 -36 l
+600 X
+1540 Y
+1970 X
+660 0 l
+600 X
+1552 Y
+2582 X
+48 -12 l
+600 X
+2630 X
+-48 -12 l
+600 X
+1270 Y
+1970 X
+180 0 l
+600 X
+1282 Y
+2102 X
+48 -12 l
+600 X
+2150 X
+-48 -12 l
+600 X
+1180 Y
+2330 X
+0 -149 l
+600 X
+1078 Y
+2342 X
+-12 -48 l
+600 X
+2330 X
+-12 48 l
+600 X
+1420 Y
+1461 X
+149 -149 l
+600 X
+1312 Y
+1585 X
+25 -42 l
+600 X
+1610 X
+-42 25 l
+600 X
+1119 Y
+1713 X('BSD')s
+600 X
+1089 Y
+1221 X(1.2)s
+600 X
+1431 Y
+1226 X(1.1)s
+600 X
+1569 Y
+2690 X(1.1.1.1)s
+600 X
+1215 Y
+2690 X(1.1.1.2)s
+600 X
+873 Y
+2690 X(1.1.1.3)s
+600 X
+969 Y
+2210 X(1.1.2.2)s
+600 X
+1299 Y
+2210 X(1.1.2.1)s
+600 X
+1971 Y
+1850 X(rcs\256le.c,v)s
+600 X
+1557 Y
+1730 X(1.1.1)s
+600 X
+1713 Y
+1706 X('SunOS')s
+600 X
+1287 Y
+1725 X(1.1.2)s
+600 X
+2260 Y
+840 X(_)s
+872 X(_______________)s
+1427 X(_______________)s
+1982 X(_______________)s
+2537 X(_______________)s
+3092 X(____)s
+600 X
+2420 Y
+1870 X
+f.B 13 Z(Figure)s
+2145 X(4.)s
+600 X
+2500 Y
+1478 X
+f.B 11 Z(cvs)s
+1601 X
+f.R 11 Z(Support)s
+1860 X(For)s
+1987 X(``Dual'')s
+2255 X(Derivations)s
+600 X
+2700 Y
+1205 X
+stdencoding /NCourier /Courier RE
+/f.CW /NCourier findfont def 
+f.CW 11 Z(#key)s
+1645 X([-option)s
+2041 X(argument])s
+2481 X(directory)s
+2921 X([files...])s
+600 X
+2780 Y
+1205 X(diff)s
+1645 X(bin/diff)s
+600 X
+2860 Y
+1205 X(libc)s
+1645 X(lib/libc)s
+600 X
+2940 Y
+1205 X(sys)s
+1645 X(-o)s
+1777 X(sys/tools/make_)s
+2437 X(links)s
+2701 X(sys)s
+600 X
+3020 Y
+1205 X(modules)s
+1645 X(-i)s
+1777 X(mkmodules)s
+2217 X(CVSROOT.adm)s
+2745 X(modules)s
+600 X
+3100 Y
+1205 X(kernel)s
+1645 X(-a)s
+1777 X(sys)s
+1953 X(lang/adb)s
+600 X
+3180 Y
+1205 X(ps)s
+1645 X(bin)s
+1821 X(Makefile)s
+2217 X(ps.c)s
+600 X
+3324 Y
+767 X
+f.R 11 Z(The)s
+912 X(``diff'')s
+1150 X(and)s
+1287 X(``libc'')s
+1529 X(modules)s
+1811 X(refer)s
+1983 X(to)s
+2072 X(whole)s
+2284 X(directory)s
+2584 X(hierarchies)s
+2942 X(that)s
+3085 X(are)s
+3207 X(extracted)s
+600 X
+3404 Y(on)s
+704 X(check)s
+907 X(out.)s
+1073 X(The)s
+1217 X(``sys'')s
+1441 X(module)s
+1692 X(extracts)s
+1953 X(the)s
+2073 X(``sys'')s
+2297 X(hierarchy,)s
+2625 X(and)s
+2761 X(runs)s
+2918 X(the)s
+3038 X(``make_links'')s
+600 X
+3484 Y(program)s
+885 X(at)s
+974 X(the)s
+1100 X(end)s
+1242 X(of)s
+1339 X(the)s
+1465 X(check)s
+1673 X(out)s
+1803 X(process)s
+2061 X(\(the)s
+2212 X
+f.I 11 Z(-o)s
+2309 X
+f.R 11 Z(option)s
+2534 X(speci\256es)s
+2825 X(a)s
+2893 X(program)s
+3179 X(to)s
+3272 X(run)s
+3406 X(on)s
+600 X
+3564 Y(check)s
+f.I 11 Z(o)s
+f.R 11 Z(ut\).)s
+964 X(The)s
+1108 X(``modules'')s
+1488 X(module)s
+1739 X(allows)s
+1961 X(one)s
+2096 X(to)s
+2182 X(edit)s
+2322 X(the)s
+2441 X(module)s
+2691 X(database)s
+2975 X(\256le)s
+3098 X(and)s
+3233 X(runs)s
+3389 X(the)s
+600 X
+3644 Y(``mkmodules'')s
+1069 X(program)s
+1344 X(on)s
+1442 X(check)s
+f.I 11 Z(i)s
+f.R 11 Z(n)s
+1697 X(to)s
+1779 X(regenerate)s
+2113 X(the)s
+2228 X
+f.B 11 Z(ndbm)s
+2436 X
+f.R 11 Z(database)s
+2716 X(that)s
+2852 X
+f.B 11 Z(cvs)s
+2975 X
+f.R 11 Z(uses.)s
+3170 X(The)s
+3310 X(``ker-)s
+600 X
+3724 Y(nel'')s
+775 X(module)s
+1031 X(is)s
+1115 X(an)s
+1219 X(alias)s
+1390 X(\(as)s
+1511 X(the)s
+1636 X
+f.I 11 Z(-a)s
+1732 X
+f.R 11 Z(option)s
+1956 X(speci\256es\))s
+2271 X(which)s
+2486 X(causes)s
+2713 X(the)s
+2837 X(remaining)s
+3171 X(arguments)s
+600 X
+3804 Y(after)s
+762 X(the)s
+878 X
+f.I 11 Z(-a)s
+965 X
+f.R 11 Z(to)s
+1048 X(be)s
+1143 X(interpreted)s
+1491 X(exactly)s
+1731 X(as)s
+1819 X(if)s
+1891 X(they)s
+2045 X(had)s
+2178 X(been)s
+2344 X(speci\256ed)s
+2634 X(on)s
+2734 X(the)s
+2851 X(command)s
+3168 X(line.)s
+3348 X(This)s
+600 X
+3884 Y(is)s
+680 X(useful)s
+892 X(for)s
+1009 X(objects)s
+1250 X(that)s
+1392 X(require)s
+1633 X(shared)s
+1857 X(pieces)s
+2073 X(of)s
+2164 X(code)s
+2333 X(from)s
+2506 X(far)s
+2618 X(away)s
+2803 X(places)s
+3018 X(to)s
+3105 X(be)s
+3204 X(compiled)s
+600 X
+3964 Y(\(as)s
+723 X(is)s
+809 X(the)s
+936 X(case)s
+1100 X(with)s
+1268 X(the)s
+1395 X(kernel)s
+1617 X(debugger,)s
+1947 X
+f.B 11 Z(kadb)s
+f.R 11 Z(,)s
+2161 X(which)s
+2378 X(shares)s
+2600 X(code)s
+2776 X(with)s
+2944 X(the)s
+3072 X(standard)s
+3361 X
+f.B 11 Z(adb)s
+600 X
+4044 Y
+f.R 11 Z(debugger\).)s
+974 X(The)s
+1120 X(``ps'')s
+1317 X(module)s
+1570 X(shows)s
+1786 X(that)s
+1929 X(the)s
+2051 X(source)s
+2275 X(for)s
+2392 X(``ps'')s
+2588 X(lives)s
+2759 X(in)s
+2847 X(the)s
+2968 X(``bin'')s
+3193 X(directory,)s
+600 X
+4124 Y(but)s
+719 X(only)s
+875 X
+f.I 11 Z(Make\256le)s
+1154 X
+f.R 11 Z(and)s
+1285 X
+f.I 11 Z(ps.c)s
+1426 X
+f.R 11 Z(are)s
+1541 X(required)s
+1813 X(to)s
+1895 X(build)s
+2072 X(the)s
+2187 X(object.)s
+600 X
+4228 Y
+767 X(The)s
+913 X(module)s
+1166 X(database)s
+1453 X(at)s
+1538 X(Prisma)s
+1775 X(is)s
+1856 X(now)s
+2014 X(populated)s
+2338 X(for)s
+2456 X(the)s
+2579 X(entire)s
+2781 X(UNIX)s
+2997 X(distribution)s
+3373 X(and)s
+600 X
+4308 Y(thereby)s
+856 X(allows)s
+1083 X(us)s
+1181 X(to)s
+1271 X(issue)s
+1452 X(the)s
+1575 X(following)s
+1896 X(convenient)s
+2254 X(commands)s
+2606 X(to)s
+2696 X(check)s
+2901 X(out)s
+3028 X(components)s
+3418 X(of)s
+600 X
+4388 Y(the)s
+715 X(UNIX)s
+923 X(distribution)s
+1291 X(without)s
+1543 X(regard)s
+1758 X(for)s
+1870 X(their)s
+2032 X(actual)s
+2235 X(location)s
+2500 X(within)s
+2715 X(the)s
+2831 X(master)s
+3054 X(source)s
+3273 X(reposi-)s
+600 X
+4468 Y(tory:)s
+5184 Y
+pagebot
+
+%%Page: 7 7
+pagetop
+f.R 11 Z
+600 X
+600 Y
+1205 X
+stdencoding /NCourier /Courier RE
+/f.CW /NCourier findfont def 
+f.CW 11 Z(example%)s
+1601 X(cvs)s
+1777 X(checkout)s
+2173 X(diff)s
+600 X
+680 Y
+1205 X(example%)s
+1601 X(cvs)s
+1777 X(checkout)s
+2173 X(libc)s
+2393 X(ps)s
+600 X
+760 Y
+1205 X(example%)s
+1601 X(cd)s
+1733 X(diff;)s
+1997 X(make)s
+600 X
+904 Y
+767 X
+f.R 11 Z(In)s
+855 X(building)s
+1129 X(the)s
+1247 X(module)s
+1496 X(database)s
+1779 X(\256le,)s
+1919 X(it)s
+1988 X(is)s
+2065 X(quite)s
+2241 X(possible)s
+2512 X(to)s
+2597 X(have)s
+2764 X(name)s
+2951 X(con\257icts)s
+3230 X(within)s
+3447 X(a)s
+600 X
+984 Y(global)s
+820 X(software)s
+1110 X(distribution.)s
+1530 X(For)s
+1666 X(example,)s
+1968 X(SunOS)s
+2210 X(provides)s
+2499 X(two)s
+2643 X
+f.B 11 Z(cat)s
+2771 X
+f.R 11 Z(programs:)s
+3129 X(one)s
+3269 X(for)s
+3389 X(the)s
+600 X
+1064 Y(standard)s
+889 X(environment,)s
+1319 X
+f.I 11 Z(/bin/cat)s
+f.R 11 Z(,)s
+1602 X(and)s
+1746 X(one)s
+1890 X(for)s
+2014 X(the)s
+2142 X(System)s
+2397 X(V)s
+2487 X(environment,)s
+2917 X
+f.I 11 Z(/usr/5bin/cat)s
+f.R 11 Z(.)s
+3378 X(We)s
+600 X
+1144 Y(resolved)s
+893 X(this)s
+1042 X(con\257ict)s
+1306 X(by)s
+1421 X(naming)s
+1684 X(the)s
+1816 X(standard)s
+2109 X
+f.B 11 Z(cat)s
+2245 X
+f.R 11 Z(module)s
+2508 X(``cat'',)s
+2754 X(and)s
+2902 X(the)s
+3034 X(System)s
+3292 X(V)s
+3385 X
+f.B 11 Z(cat)s
+600 X
+1224 Y
+f.R 11 Z(module)s
+853 X(``5cat''.)s
+1150 X(Similar)s
+1400 X(name)s
+1591 X(modi\256cations)s
+2026 X(must)s
+2201 X(be)s
+2303 X(applied)s
+2554 X(to)s
+2644 X(other)s
+2829 X(con\257icting)s
+3179 X(names,)s
+3418 X(as)s
+600 X
+1304 Y(might)s
+801 X(be)s
+899 X(found)s
+1100 X(between)s
+1375 X(a)s
+1436 X(utility)s
+1643 X(program)s
+1922 X(and)s
+2057 X(a)s
+2118 X(library)s
+2345 X(function,)s
+2638 X(though)s
+2871 X(Prisma)s
+3104 X(chose)s
+3300 X(not)s
+3422 X(to)s
+600 X
+1384 Y(include)s
+843 X(individual)s
+1169 X(library)s
+1392 X(functions)s
+1693 X(within)s
+1907 X(the)s
+2022 X(module)s
+2268 X(database)s
+2548 X(at)s
+2626 X(this)s
+2758 X(time.)s
+600 X
+1544 Y
+f.B 11 Z(2.4.)s
+758 X(Con\256gurable)s
+1197 X(Logging)s
+1480 X(Support)s
+600 X
+1648 Y
+767 X
+f.R 11 Z(The)s
+909 X
+f.B 11 Z(cvs)s
+1035 X
+f.R 11 Z(``commit'')s
+1388 X(command)s
+1706 X(is)s
+1783 X(used)s
+1946 X(to)s
+2031 X(make)s
+2218 X(a)s
+2278 X(permanent)s
+2618 X(change)s
+2855 X(to)s
+2941 X(the)s
+3060 X(master)s
+3286 X(source)s
+600 X
+1728 Y(repository)s
+931 X(\(where)s
+1166 X(the)s
+1282 X
+f.R 9 Z(RCS)s
+1424 X
+f.R 11 Z(``,v'')s
+1608 X(\256les)s
+1761 X(live\).)s
+1969 X(Whenever)s
+2302 X(a)s
+2364 X(``commit'')s
+2719 X(is)s
+2797 X(done,)s
+2987 X(the)s
+3106 X(log)s
+3229 X(message)s
+600 X
+1808 Y(for)s
+713 X(the)s
+830 X(change)s
+1066 X(is)s
+1142 X(carefully)s
+1433 X(logged)s
+1661 X(by)s
+1761 X(an)s
+1858 X(arbitrary)s
+2142 X(program)s
+2420 X(\(in)s
+2530 X(a)s
+2590 X(\256le,)s
+2730 X(notes\256le,)s
+3027 X(news)s
+3206 X(database,)s
+600 X
+1888 Y(or)s
+692 X(mail\).)s
+920 X(For)s
+1052 X(example,)s
+1350 X(a)s
+1412 X(collection)s
+1735 X(of)s
+1826 X(these)s
+2008 X(updates)s
+2264 X(can)s
+2396 X(be)s
+2495 X(used)s
+2660 X(to)s
+2747 X(produce)s
+3015 X(release)s
+3251 X(notices.)s
+600 X
+1968 Y
+f.B 11 Z(cvs)s
+730 X
+f.R 11 Z(can)s
+864 X(be)s
+965 X(con\256gured)s
+1313 X(to)s
+1403 X(send)s
+1571 X(log)s
+1698 X(updates)s
+1957 X(through)s
+2220 X(one)s
+2359 X(or)s
+2453 X(more)s
+2637 X(\256lter)s
+2810 X(programs,)s
+3140 X(based)s
+3341 X(on)s
+3447 X(a)s
+600 X
+2048 Y(regular)s
+838 X(expression)s
+1183 X(match)s
+1391 X(on)s
+1492 X(the)s
+1610 X(directory)s
+1905 X(that)s
+2043 X(is)s
+2119 X(being)s
+2310 X(changed.)s
+2625 X(This)s
+2783 X(allows)s
+3003 X(multiple)s
+3277 X(related)s
+600 X
+2128 Y(or)s
+694 X(unrelated)s
+1003 X(projects)s
+1271 X(to)s
+1361 X(exist)s
+1534 X(within)s
+1756 X(a)s
+1821 X(single)s
+2032 X
+f.B 11 Z(cvs)s
+2164 X
+f.R 11 Z(source)s
+2391 X(repository)s
+2726 X(tree,)s
+2889 X(with)s
+3054 X(each)s
+3223 X(different)s
+600 X
+2208 Y(project)s
+831 X(sending)s
+1086 X(its)s
+1181 X(``commit'')s
+1531 X(reports)s
+1762 X(to)s
+1844 X(a)s
+1901 X(unique)s
+2127 X(log)s
+2246 X(device.)s
+600 X
+2312 Y
+767 X(A)s
+844 X(sample)s
+1078 X(logging)s
+1329 X(con\256guration)s
+1749 X(\256le)s
+1868 X(might)s
+2065 X(look)s
+2221 X(as)s
+2307 X(follows:)s
+600 X
+2432 Y
+1022 X
+f.CW 11 Z(#regex)s
+1550 X(filter-program)s
+600 X
+2512 Y
+1022 X(DEFAULT)s
+1550 X(/usr/local/bin/)s
+2210 X(nfpipe)s
+2518 X(-t)s
+2650 X(%s)s
+2782 X(utils.updates)s
+600 X
+2592 Y
+1022 X(^diag)s
+1550 X(/usr/local/bin/)s
+2210 X(nfpipe)s
+2518 X(-t)s
+2650 X(%s)s
+2782 X(diag.updates)s
+600 X
+2672 Y
+1022 X(^local)s
+1550 X(/usr/local/bin/)s
+2210 X(nfpipe)s
+2518 X(-t)s
+2650 X(%s)s
+2782 X(local.updates)s
+600 X
+2752 Y
+1022 X(^perf)s
+1550 X(/usr/local/bin/)s
+2210 X(nfpipe)s
+2518 X(-t)s
+2650 X(%s)s
+2782 X(perf.updates)s
+600 X
+2832 Y
+1022 X(^sys)s
+1550 X(/usr/local/bin/)s
+2210 X(nfpipe)s
+2518 X(-t)s
+2650 X(%s)s
+2782 X(kernel.updates)s
+600 X
+2976 Y
+767 X
+f.R 11 Z(This)s
+933 X(sample)s
+1177 X(allows)s
+1405 X(the)s
+1530 X(diagnostics)s
+1899 X(and)s
+2041 X(performance)s
+2451 X(groups)s
+2688 X(to)s
+2781 X(share)s
+2973 X(the)s
+3099 X(same)s
+3286 X(source)s
+600 X
+3056 Y(repository)s
+934 X(with)s
+1098 X(the)s
+1221 X(kernel)s
+1439 X(and)s
+1578 X(utilities)s
+1835 X(groups.)s
+2111 X(Changes)s
+2397 X(that)s
+2540 X(they)s
+2699 X(make)s
+2890 X(are)s
+3012 X(sent)s
+3163 X(directly)s
+3422 X(to)s
+600 X
+3136 Y(their)s
+762 X(own)s
+914 X(notes\256le)s
+1191 X([Essick])s
+1460 X(through)s
+1717 X(the)s
+1834 X(``nfpipe'')s
+2150 X(program.)s
+2469 X(A)s
+2548 X(suf\256ciently)s
+2909 X(simple)s
+3133 X(title)s
+3276 X(is)s
+3352 X(sub-)s
+600 X
+3216 Y(stituted)s
+872 X(for)s
+1011 X(the)s
+1154 X(``%s'')s
+1396 X(argument)s
+1728 X(before)s
+1970 X(the)s
+2113 X(\256lter)s
+2306 X(program)s
+2609 X(is)s
+2711 X(executed.)s
+3069 X(This)s
+3253 X(logging)s
+600 X
+3296 Y(con\256guration)s
+1020 X(\256le)s
+1139 X(is)s
+1213 X(tailored)s
+1465 X(manually)s
+1765 X(to)s
+1847 X(each)s
+2007 X(speci\256c)s
+2258 X(source)s
+2476 X(repository)s
+2802 X(environment.)s
+600 X
+3456 Y
+f.B 11 Z(2.5.)s
+758 X(Tagged)s
+1016 X(Releases)s
+1308 X(and)s
+1451 X(Dates)s
+600 X
+3560 Y
+767 X
+f.R 11 Z(Any)s
+926 X(release)s
+1165 X(can)s
+1300 X(be)s
+1402 X(given)s
+1599 X(a)s
+1664 X(symbolic)s
+1968 X(tag)s
+2091 X(name)s
+2283 X(that)s
+2427 X(is)s
+2509 X(stored)s
+2723 X(directly)s
+2983 X(in)s
+3073 X(the)s
+3192 X
+f.R 9 Z(RCS)s
+3338 X
+f.R 11 Z(\256les.)s
+600 X
+3640 Y(This)s
+763 X(tag)s
+885 X(can)s
+1019 X(be)s
+1120 X(used)s
+1287 X(at)s
+1372 X(any)s
+1510 X(time)s
+1673 X(to)s
+1762 X(get)s
+1884 X(an)s
+1985 X(exact)s
+2173 X(copy)s
+2347 X(of)s
+2439 X(any)s
+2576 X(previous)s
+2862 X(release.)s
+3141 X(With)s
+3319 X(equal)s
+600 X
+3720 Y(ease,)s
+771 X(one)s
+903 X(can)s
+1031 X(also)s
+1176 X(extract)s
+1404 X(an)s
+1499 X(exact)s
+1681 X(copy)s
+1850 X(of)s
+1937 X(the)s
+2053 X(source)s
+2272 X(\256les)s
+2421 X(as)s
+2508 X(of)s
+2595 X(any)s
+2727 X(arbitrary)s
+3009 X(date)s
+3159 X(in)s
+3243 X(the)s
+3360 X(past)s
+600 X
+3800 Y(as)s
+695 X(well.)s
+898 X(Thus,)s
+1097 X(all)s
+1205 X(that's)s
+1404 X(required)s
+1685 X(to)s
+1776 X(tag)s
+1900 X(the)s
+2024 X(current)s
+2268 X(kernel,)s
+2505 X(and)s
+2645 X(to)s
+2736 X(tag)s
+2860 X(the)s
+2983 X(kernel)s
+3201 X(as)s
+3295 X(of)s
+3389 X(the)s
+600 X
+3880 Y(Fourth)s
+822 X(of)s
+908 X(July)s
+1056 X(is:)s
+600 X
+4000 Y
+1022 X
+f.CW 11 Z(example%)s
+1418 X(cvs)s
+1594 X(tag)s
+1770 X(TEST_KERNEL)s
+2298 X(kernel)s
+600 X
+4080 Y
+1022 X(example%)s
+1418 X(cvs)s
+1594 X(tag)s
+1770 X(-D)s
+1902 X('July)s
+2166 X(4')s
+2298 X(PATRIOTIC_KERNE)s
+2958 X(L)s
+3046 X(kernel)s
+600 X
+4200 Y
+f.R 11 Z(The)s
+739 X(following)s
+1052 X(command)s
+1367 X(would)s
+1576 X(retrieve)s
+1828 X(an)s
+1922 X(exact)s
+2103 X(copy)s
+2271 X(of)s
+2357 X(the)s
+2472 X(test)s
+2600 X(kernel)s
+2810 X(at)s
+2888 X(some)s
+3068 X(later)s
+3225 X(date:)s
+600 X
+4320 Y
+1022 X
+f.CW 11 Z(example%)s
+1418 X(cvs)s
+1594 X(checkout)s
+1990 X(-fp)s
+2166 X(-rTEST_KERNEL)s
+2782 X(kernel)s
+600 X
+4440 Y
+f.R 11 Z(The)s
+739 X
+f.I 11 Z(-f)s
+809 X
+f.R 11 Z(option)s
+1023 X(causes)s
+1241 X(only)s
+1397 X(\256les)s
+1545 X(that)s
+1681 X(match)s
+1886 X(the)s
+2001 X(speci\256ed)s
+2289 X(tag)s
+2404 X(to)s
+2486 X(be)s
+2581 X(extracted,)s
+2897 X(while)s
+3087 X(the)s
+3203 X
+f.I 11 Z(-p)s
+3290 X
+f.R 11 Z(option)s
+600 X
+4520 Y(automatically)s
+1040 X(prunes)s
+1273 X(empty)s
+1493 X(directories.)s
+1885 X(Consequently,)s
+2346 X(directories)s
+2695 X(added)s
+2906 X(to)s
+2998 X(the)s
+3123 X(kernel)s
+3343 X(after)s
+600 X
+4600 Y(the)s
+715 X(test)s
+843 X(kernel)s
+1053 X(was)s
+1192 X(tagged)s
+1414 X(are)s
+1529 X(not)s
+1648 X(included)s
+1928 X(in)s
+2010 X(the)s
+2125 X(newly)s
+2330 X(extracted)s
+2627 X(copy)s
+2795 X(of)s
+2881 X(the)s
+2996 X(test)s
+3124 X(kernel.)s
+5184 Y
+pagebot
+
+%%Page: 8 8
+pagetop
+f.R 11 Z
+600 X
+560 Y
+767 X(The)s
+909 X
+f.B 11 Z(cvs)s
+1035 X
+f.R 11 Z(date)s
+1186 X(support)s
+1436 X(has)s
+1562 X(exactly)s
+1804 X(the)s
+1922 X(same)s
+2101 X(interface)s
+2389 X(as)s
+2478 X(that)s
+2618 X(provided)s
+2910 X(with)s
+3066 X
+f.R 9 Z(RCS)s
+f.R 11 Z(,)s
+3225 X(however)s
+600 X
+640 Y
+f.B 11 Z(cvs)s
+731 X
+f.R 11 Z(must)s
+907 X(process)s
+1162 X(the)s
+1285 X(``,v'')s
+1472 X(\256les)s
+1628 X(directly)s
+1888 X(due)s
+2027 X(to)s
+2117 X(the)s
+2239 X(special)s
+2477 X(handling)s
+2768 X(required)s
+3047 X(by)s
+3152 X(the)s
+3274 X(vendor)s
+600 X
+720 Y(branch)s
+840 X(support.)s
+1143 X(The)s
+1296 X(standard)s
+1582 X
+f.R 9 Z(RCS)s
+1733 X
+f.R 11 Z(date)s
+1895 X(handling)s
+2194 X(only)s
+2365 X(processes)s
+2689 X(one)s
+2835 X(branch)s
+3076 X(\(or)s
+3202 X(the)s
+3332 X(main)s
+600 X
+800 Y(trunk\))s
+809 X(when)s
+996 X(checking)s
+1291 X(out)s
+1413 X(based)s
+1609 X(on)s
+1710 X(a)s
+1770 X(date)s
+1921 X(speci\256cation.)s
+2366 X
+f.B 11 Z(cvs)s
+2492 X
+f.R 11 Z(must)s
+2663 X(instead)s
+2901 X(process)s
+3151 X(the)s
+3269 X(current)s
+600 X
+880 Y(``head'')s
+876 X(branch)s
+1114 X(and,)s
+1275 X(if)s
+1357 X(a)s
+1426 X(match)s
+1643 X(is)s
+1729 X(not)s
+1860 X(found,)s
+2087 X(proceed)s
+2359 X(to)s
+2454 X(look)s
+2623 X(for)s
+2747 X(a)s
+2817 X(match)s
+3035 X(on)s
+3146 X(the)s
+3274 X(vendor)s
+600 X
+960 Y(branch.)s
+879 X(This,)s
+1064 X(combined)s
+1390 X(with)s
+1556 X(reasons)s
+1813 X(of)s
+1909 X(performance,)s
+2336 X(is)s
+2420 X(why)s
+2581 X
+f.B 11 Z(cvs)s
+2714 X
+f.R 11 Z(processes)s
+3033 X(revision)s
+3307 X(\(sym-)s
+600 X
+1040 Y(bolic)s
+773 X(and)s
+904 X(numeric\))s
+1196 X(and)s
+1327 X(date)s
+1475 X(speci\256cations)s
+1904 X(directly)s
+2156 X(from)s
+2324 X(the)s
+2439 X(``,v'')s
+2618 X(\256les.)s
+600 X
+1200 Y
+f.B 11 Z(2.6.)s
+758 X(Building)s
+1054 X(``patch'')s
+1355 X(Source)s
+1597 X(Distributions)s
+600 X
+1304 Y
+767 X(cvs)s
+890 X
+f.R 11 Z(can)s
+1017 X(produce)s
+1280 X(a)s
+1337 X(``patch'')s
+1622 X(format)s
+1844 X([Wall])s
+2062 X(output)s
+2276 X(\256le)s
+2395 X(which)s
+2600 X(can)s
+2727 X(be)s
+2821 X(used)s
+2981 X(to)s
+3063 X(bring)s
+3244 X(a)s
+3302 X(previ-)s
+600 X
+1384 Y(ously)s
+790 X(released)s
+1063 X(software)s
+1348 X(distribution)s
+1721 X(current)s
+1961 X(with)s
+2122 X(the)s
+2242 X(newest)s
+2477 X(release.)s
+2755 X(This)s
+2916 X(patch)s
+3105 X(\256le)s
+3228 X(supports)s
+600 X
+1464 Y(an)s
+701 X(entire)s
+902 X(directory)s
+1202 X(hierarchy)s
+1514 X(within)s
+1735 X(a)s
+1799 X(single)s
+2008 X(patch,)s
+2218 X(as)s
+2311 X(well)s
+2470 X(as)s
+2563 X(being)s
+2759 X(able)s
+2915 X(to)s
+3005 X(add)s
+3144 X(whole)s
+3357 X(new)s
+600 X
+1544 Y(\256les)s
+764 X(to)s
+862 X(the)s
+993 X(previous)s
+1289 X(release.)s
+1578 X(One)s
+1741 X(can)s
+1884 X(combine)s
+2179 X(symbolic)s
+2491 X(revisions)s
+2800 X(and)s
+2947 X(dates)s
+3139 X(together)s
+3422 X(to)s
+600 X
+1624 Y(display)s
+839 X(changes)s
+1102 X(in)s
+1184 X(a)s
+1241 X(very)s
+1397 X(generic)s
+1640 X(way:)s
+600 X
+1744 Y
+1022 X
+stdencoding /NCourier /Courier RE
+/f.CW /NCourier findfont def 
+f.CW 11 Z(example%)s
+1418 X(cvs)s
+1594 X(patch)s
+1858 X(-D)s
+1990 X('December)s
+2430 X(1,)s
+2562 X(1988')s
+2826 X(\\)s
+600 X
+1824 Y
+1858 X(-D)s
+1990 X('January)s
+2386 X(1,)s
+2518 X(1989')s
+2782 X(sys)s
+600 X
+1944 Y
+f.R 11 Z(This)s
+758 X(example)s
+1035 X(displays)s
+1306 X(the)s
+1424 X(kernel)s
+1637 X(changes)s
+1903 X(made)s
+2090 X(in)s
+2175 X(the)s
+2293 X(month)s
+2509 X(of)s
+2598 X(December,)s
+2947 X(1988.)s
+3164 X(To)s
+3273 X(release)s
+600 X
+2024 Y(a)s
+659 X(patch)s
+846 X(\256le,)s
+985 X(for)s
+1098 X(example,)s
+1393 X(to)s
+1477 X(take)s
+1627 X(the)s
+1744 X
+f.B 11 Z(cvs)s
+1869 X
+f.R 11 Z(distribution)s
+2238 X(from)s
+2407 X(version)s
+2651 X(1.0)s
+2768 X(to)s
+2851 X(version)s
+3095 X(1.4)s
+3212 X(might)s
+3410 X(be)s
+600 X
+2104 Y(done)s
+768 X(as)s
+854 X(follows:)s
+600 X
+2224 Y
+1022 X
+f.CW 11 Z(example%)s
+1418 X(cvs)s
+1594 X(patch)s
+1858 X(-rCVS_1_0)s
+2298 X(-rCVS_1_4)s
+2738 X(cvs)s
+600 X
+2424 Y
+f.B 11 Z(3.)s
+703 X(CVS)s
+874 X(Experience)s
+600 X
+2584 Y(3.1.)s
+758 X(Statistics)s
+600 X
+2688 Y
+767 X
+f.R 11 Z(A)s
+844 X(quick)s
+1033 X(summary)s
+1332 X(of)s
+1418 X(the)s
+1533 X(scale)s
+1706 X(that)s
+1842 X
+f.B 11 Z(cvs)s
+1965 X
+f.R 11 Z(is)s
+2039 X(addressing)s
+2381 X(today)s
+2570 X(can)s
+2697 X(be)s
+2791 X(found)s
+2988 X(in)s
+3070 X(Table)s
+3263 X(1.)s
+600 X
+2751 Y
+1112 X
+1856 0 l
+600 X
+2815 Y
+1344 X
+f.B 13 Z(Revision)s
+1690 X(Control)s
+2007 X(Statistics)s
+2369 X(at)s
+2470 X(Prisma)s
+600 X
+2895 Y
+1783 X(as)s
+1889 X(of)s
+1990 X(11/11/89)s
+600 X
+2918 Y
+1112 X
+f.R 11 Z
+1856 0 l
+600 X
+2982 Y
+1463 X(How)s
+1630 X(Many...)s
+2527 X(Total)s
+600 X
+2999 Y
+1112 X
+1856 0 l
+3012 Y
+1112 X
+1856 0 l
+600 X
+3069 Y
+1148 X(Files)s
+2550 X(17243)s
+600 X
+3149 Y
+1148 X(Directories)s
+2587 X(1005)s
+600 X
+3229 Y
+1148 X(Lines)s
+1337 X(of)s
+1423 X(code)s
+2476 X(3927255)s
+600 X
+3309 Y
+1148 X(Removed)s
+1455 X(\256les)s
+2624 X(131)s
+600 X
+3389 Y
+1148 X(Software)s
+1440 X(developers)s
+2661 X(14)s
+600 X
+3469 Y
+1148 X(Software)s
+1440 X(groups)s
+2698 X(6)s
+600 X
+3549 Y
+1148 X(Megabytes)s
+1497 X(of)s
+1583 X(source)s
+2624 X(128)s
+600 X
+3572 Y
+1112 X
+1856 0 l
+600 X
+1112 X
+0 -821 l
+600 X
+3572 Y
+2225 X
+0 -654 l
+600 X
+3572 Y
+2968 X
+0 -821 l
+600 X
+3676 Y
+1887 X
+f.B 13 Z(Table)s
+2128 X(1.)s
+600 X
+3756 Y
+1843 X
+f.B 11 Z(cvs)s
+1966 X
+f.R 11 Z(Statistics)s
+600 X
+3860 Y(Table)s
+797 X(2)s
+862 X(shows)s
+1075 X(the)s
+1194 X(history)s
+1429 X(of)s
+1519 X(\256les)s
+1672 X(changed)s
+1948 X(or)s
+2039 X(added)s
+2245 X(and)s
+2381 X(the)s
+2501 X(number)s
+2756 X(of)s
+2847 X(source)s
+3070 X(lines)s
+3240 X(affected)s
+600 X
+3940 Y(by)s
+703 X(the)s
+823 X(change)s
+1062 X(at)s
+1145 X(Prisma.)s
+1422 X(Only)s
+1600 X(changes)s
+1869 X(made)s
+2059 X(to)s
+2147 X(the)s
+2268 X(kernel)s
+2484 X(sources)s
+2737 X(are)s
+2858 X(included.)s
+3186 X(The)s
+3331 X(large)s
+600 X
+4020 Y(number)s
+855 X(of)s
+946 X(source)s
+1169 X(\256le)s
+1293 X(changes)s
+1561 X(made)s
+1749 X(in)s
+1835 X(September)s
+2180 X(are)s
+2299 X(the)s
+2418 X(result)s
+2612 X(of)s
+2702 X(merging)s
+2977 X(the)s
+3096 X(SunOS)s
+3333 X(4.0.3)s
+600 X
+4100 Y(sources)s
+847 X(into)s
+987 X(the)s
+1102 X(kernel.)s
+1354 X(This)s
+1510 X(merge)s
+1719 X(process)s
+1966 X(is)s
+2040 X(described)s
+2349 X(in)s
+2431 X(section)s
+2666 X(3.3.)s
+600 X
+4260 Y
+f.B 11 Z(3.2.)s
+758 X(Performance)s
+600 X
+4364 Y
+767 X
+f.R 11 Z(The)s
+913 X(performance)s
+1320 X(of)s
+1414 X
+f.B 11 Z(cvs)s
+1545 X
+f.R 11 Z(is)s
+1627 X(currently)s
+1928 X(quite)s
+2109 X(reasonable.)s
+2501 X(Little)s
+2695 X(effort)s
+2893 X(has)s
+3024 X(been)s
+3196 X(expended)s
+600 X
+4444 Y(on)s
+702 X(tuning)s
+920 X
+f.B 11 Z(cvs)s
+f.R 11 Z(,)s
+1065 X(although)s
+1353 X(performance)s
+1756 X(related)s
+1987 X(decisions)s
+2291 X(were)s
+2462 X(made)s
+2649 X(during)s
+2870 X(the)s
+2988 X
+f.B 11 Z(cvs)s
+3114 X
+f.R 11 Z(design.)s
+3377 X(For)s
+600 X
+4524 Y(example,)s
+907 X
+f.B 11 Z(cvs)s
+1044 X
+f.R 11 Z(parses)s
+1268 X(the)s
+1393 X
+f.R 9 Z(RCS)s
+1544 X
+f.R 11 Z(``,v'')s
+1737 X(\256les)s
+1899 X(directly)s
+2166 X(instead)s
+2416 X(of)s
+2517 X(running)s
+2787 X(an)s
+2892 X
+f.R 9 Z(RCS)s
+3044 X
+f.R 11 Z(process.)s
+3348 X(This)s
+600 X
+4604 Y(includes)s
+881 X(following)s
+1203 X(branches)s
+1500 X(as)s
+1594 X(well)s
+1754 X(as)s
+1848 X(integrating)s
+2203 X(with)s
+2367 X(the)s
+2490 X(vendor)s
+2728 X(source)s
+2954 X(branches)s
+3250 X(and)s
+3389 X(the)s
+600 X
+4684 Y(main)s
+772 X(trunk)s
+953 X(when)s
+1137 X(checking)s
+1429 X(out)s
+1548 X(\256les)s
+1696 X(based)s
+1889 X(on)s
+1987 X(a)s
+2044 X(date.)s
+5184 Y
+pagebot
+
+%%Page: 9 9
+pagetop
+f.R 11 Z
+600 X
+543 Y
+1154 X
+1772 0 l
+600 X
+607 Y
+1364 X
+f.B 13 Z(Prisma)s
+1658 X(Kernel)s
+1944 X(Source)s
+2229 X(File)s
+2398 X(Changes)s
+600 X
+687 Y
+1638 X(By)s
+1768 X(Month,)s
+2069 X(1988-1989)s
+600 X
+710 Y
+1154 X
+f.R 11 Z
+1772 0 l
+600 X
+774 Y
+1495 X(#)s
+1556 X(Changed)s
+1945 X(#)s
+2006 X(Lines)s
+2298 X(#)s
+2359 X(Added)s
+2664 X(#)s
+2725 X(Lines)s
+600 X
+814 Y
+1190 X(Month)s
+854 Y
+1584 X(Files)s
+1927 X(Changed)s
+2354 X(Files)s
+2678 X(Added)s
+600 X
+871 Y
+1154 X
+1772 0 l
+884 Y
+1154 X
+1772 0 l
+600 X
+941 Y
+1190 X(Dec)s
+1657 X(87)s
+2003 X(3619)s
+2408 X(68)s
+2740 X(9266)s
+600 X
+1021 Y
+1190 X(Jan)s
+1657 X(39)s
+2003 X(4324)s
+2445 X(0)s
+2851 X(0)s
+600 X
+1101 Y
+1190 X(Feb)s
+1657 X(73)s
+2003 X(1578)s
+2445 X(5)s
+2740 X(3550)s
+600 X
+1181 Y
+1190 X(Mar)s
+1657 X(99)s
+2003 X(5301)s
+2408 X(18)s
+2703 X(11461)s
+600 X
+1261 Y
+1190 X(Apr)s
+1620 X(112)s
+2003 X(7333)s
+2408 X(11)s
+2740 X(5759)s
+600 X
+1341 Y
+1190 X(May)s
+1620 X(138)s
+2003 X(5371)s
+2408 X(17)s
+2703 X(13986)s
+600 X
+1421 Y
+1190 X(Jun)s
+1657 X(65)s
+2003 X(2261)s
+2408 X(27)s
+2703 X(12875)s
+600 X
+1501 Y
+1190 X(Jul)s
+1657 X(34)s
+2003 X(2000)s
+2445 X(1)s
+2814 X(58)s
+600 X
+1581 Y
+1190 X(Aug)s
+1657 X(65)s
+2003 X(6378)s
+2445 X(8)s
+2740 X(4724)s
+600 X
+1661 Y
+1190 X(Sep)s
+1620 X(266)s
+1966 X(23410)s
+2371 X(113)s
+2703 X(39965)s
+600 X
+1741 Y
+1190 X(Oct)s
+1657 X(22)s
+2040 X(621)s
+2445 X(1)s
+2777 X(155)s
+600 X
+1821 Y
+1190 X(Total)s
+1583 X(1000)s
+1966 X(62196)s
+2371 X(269)s
+2666 X(101799)s
+600 X
+1844 Y
+1154 X
+1772 0 l
+600 X
+1154 X
+0 -1301 l
+600 X
+1844 Y
+1435 X
+0 -1134 l
+1844 Y
+1448 X
+0 -1134 l
+600 X
+1844 Y
+1873 X
+0 -1134 l
+600 X
+1844 Y
+2238 X
+0 -1134 l
+1844 Y
+2251 X
+0 -1134 l
+600 X
+1844 Y
+2610 X
+0 -1134 l
+600 X
+1844 Y
+2926 X
+0 -1301 l
+600 X
+1948 Y
+1887 X
+f.B 13 Z(Table)s
+2128 X(2.)s
+600 X
+2028 Y
+1536 X
+f.B 11 Z(cvs)s
+1659 X
+f.R 11 Z(Usage)s
+1868 X(History)s
+2115 X(for)s
+2226 X(the)s
+2341 X(Kernel)s
+600 X
+2188 Y
+767 X(Checking)s
+1080 X(out)s
+1204 X(the)s
+1324 X(entire)s
+1523 X(kernel)s
+1738 X(source)s
+1961 X(tree)s
+2102 X(\(1223)s
+2305 X(\256les/59)s
+2554 X(directories\))s
+2924 X(currently)s
+3223 X(takes)s
+3406 X(16)s
+600 X
+2268 Y(wall)s
+760 X(clock)s
+953 X(minutes)s
+1220 X(on)s
+1326 X(a)s
+1391 X(Sun-4/280.)s
+1774 X(However,)s
+2095 X(bringing)s
+2379 X(the)s
+2502 X(tree)s
+2646 X(up-to-date)s
+2984 X(with)s
+3147 X(the)s
+3269 X(current)s
+600 X
+2348 Y(kernel)s
+810 X(sources,)s
+1075 X(once)s
+1239 X(it)s
+1305 X(has)s
+1428 X(been)s
+1592 X(checked)s
+1859 X(out,)s
+1996 X(takes)s
+2173 X(only)s
+2330 X(1.5)s
+2447 X(wall)s
+2600 X(clock)s
+2786 X(minutes.)s
+3088 X(Updating)s
+3389 X(the)s
+600 X
+2428 Y
+f.I 11 Z(complete)s
+915 X
+f.R 11 Z(128)s
+1073 X(MByte)s
+1325 X(source)s
+1566 X(tree)s
+1725 X(under)s
+1941 X
+f.B 11 Z(cvs)s
+2087 X
+f.R 11 Z(control)s
+2345 X(\(17243)s
+2602 X(\256les/1005)s
+2941 X(directories\))s
+3327 X(takes)s
+600 X
+2508 Y(roughly)s
+857 X(28)s
+957 X(wall)s
+1111 X(clock)s
+1298 X(minutes)s
+1559 X(and)s
+1692 X(utilizes)s
+1934 X(one-third)s
+2233 X(of)s
+2321 X(the)s
+2438 X(machine.)s
+2757 X(For)s
+2886 X(now)s
+3040 X(this)s
+3175 X(is)s
+3252 X(entirely)s
+600 X
+2588 Y(acceptable;)s
+959 X(improvements)s
+1407 X(on)s
+1505 X(these)s
+1682 X(numbers)s
+1961 X(will)s
+2101 X(possibly)s
+2373 X(be)s
+2467 X(made)s
+2651 X(in)s
+2733 X(the)s
+2848 X(future.)s
+600 X
+2748 Y
+f.B 11 Z(3.3.)s
+758 X(The)s
+905 X(SunOS)s
+1150 X(4.0.3)s
+1321 X(Merge)s
+600 X
+2852 Y
+767 X
+f.R 11 Z(The)s
+907 X(true)s
+1048 X(test)s
+1177 X(of)s
+1264 X(the)s
+1381 X
+f.B 11 Z(cvs)s
+1506 X
+f.R 11 Z(vendor)s
+1738 X(branch)s
+1966 X(support)s
+2215 X(came)s
+2397 X(with)s
+2555 X(the)s
+2672 X(arrival)s
+2893 X(of)s
+2981 X(the)s
+3098 X(SunOS)s
+3333 X(4.0.3)s
+600 X
+2932 Y(source)s
+825 X(upgrade)s
+1095 X(tape.)s
+1292 X(As)s
+1405 X(described)s
+1721 X(above,)s
+1947 X(the)s
+2069 X
+f.B 11 Z(checkin)s
+2343 X
+f.R 11 Z(program)s
+2624 X(was)s
+2769 X(used)s
+2935 X(to)s
+3023 X(install)s
+3236 X(the)s
+3357 X(new)s
+600 X
+3012 Y(sources)s
+849 X(and)s
+982 X(the)s
+1099 X(resulting)s
+1386 X(output)s
+1602 X(\256le)s
+1724 X(listed)s
+1913 X(the)s
+2031 X(\256les)s
+2182 X(that)s
+2321 X(had)s
+2455 X(been)s
+2622 X(locally)s
+2852 X(modi\256ed,)s
+3160 X(needing)s
+3422 X(to)s
+600 X
+3092 Y(be)s
+702 X(merged)s
+956 X(manually.)s
+1306 X(For)s
+1441 X(the)s
+1564 X(kernel,)s
+1800 X(there)s
+1981 X(were)s
+2157 X(94)s
+2263 X(\256les)s
+2419 X(in)s
+2509 X(con\257ict.)s
+2805 X(The)s
+2951 X
+f.B 11 Z(cvs)s
+3081 X
+f.R 11 Z(``join'')s
+3328 X(com-)s
+600 X
+3172 Y(mand)s
+788 X(was)s
+927 X(used)s
+1087 X(on)s
+1185 X(each)s
+1345 X(of)s
+1431 X(the)s
+1546 X(94)s
+1644 X(con\257icting)s
+1986 X(\256les,)s
+2152 X(and)s
+2283 X(the)s
+2398 X(remaining)s
+2723 X(con\257icts)s
+2999 X(were)s
+3167 X(resolved.)s
+600 X
+3276 Y
+767 X(The)s
+911 X(``join'')s
+1156 X(command)s
+1476 X(performs)s
+1773 X(an)s
+1873 X
+f.B 11 Z(rcsmerge)s
+2195 X
+f.R 11 Z(operation.)s
+2548 X(This)s
+2710 X(in)s
+2798 X(turn)s
+2948 X(uses)s
+3106 X
+f.I 11 Z(/usr/lib/diff3)s
+600 X
+3356 Y
+f.R 11 Z(to)s
+687 X(produce)s
+955 X(a)s
+1017 X(three-way)s
+1343 X(diff)s
+1480 X(\256le.)s
+1646 X(As)s
+1757 X(it)s
+1828 X(happens,)s
+2118 X(the)s
+2238 X
+f.B 11 Z(diff3)s
+2416 X
+f.R 11 Z(program)s
+2696 X(has)s
+2824 X(a)s
+2886 X(hard-coded)s
+3249 X(limit)s
+3418 X(of)s
+600 X
+3436 Y(200)s
+739 X(source-\256le)s
+1081 X(changes)s
+1348 X(maximum.)s
+1717 X(This)s
+1877 X(proved)s
+2112 X(to)s
+2199 X(be)s
+2298 X(too)s
+2422 X(small)s
+2612 X(for)s
+2728 X(a)s
+2790 X(few)s
+2930 X(of)s
+3021 X(the)s
+3141 X(kernel)s
+3356 X(\256les)s
+600 X
+3516 Y(that)s
+737 X(needed)s
+972 X(merging)s
+1244 X(by)s
+1343 X(hand,)s
+1530 X(due)s
+1662 X(to)s
+1745 X(the)s
+1861 X(large)s
+2035 X(number)s
+2286 X(of)s
+2373 X(local)s
+2542 X(changes)s
+2805 X(that)s
+2941 X(Prisma)s
+3171 X(had)s
+3302 X(made.)s
+600 X
+3596 Y(The)s
+739 X
+f.B 11 Z(diff3)s
+912 X
+f.R 11 Z(problem)s
+1183 X(was)s
+1322 X(solved)s
+1540 X(by)s
+1638 X(increasing)s
+1968 X(the)s
+2083 X(hard-coded)s
+2441 X(limit)s
+2606 X(by)s
+2704 X(an)s
+2798 X(order)s
+2979 X(of)s
+3065 X(magnitude.)s
+600 X
+3700 Y
+767 X(The)s
+913 X(SunOS)s
+1154 X(4.0.3)s
+1333 X(kernel)s
+1551 X(source)s
+1777 X(upgrade)s
+2048 X(distribution)s
+2424 X(contained)s
+2745 X(346)s
+2888 X(\256les,)s
+3062 X(233)s
+3205 X(of)s
+3299 X(which)s
+600 X
+3780 Y(were)s
+781 X(modi\256cations)s
+1221 X(to)s
+1315 X(previously)s
+1665 X(released)s
+1945 X(\256les,)s
+2123 X(and)s
+2266 X(113)s
+2413 X(of)s
+2511 X(which)s
+2728 X(were)s
+2908 X(newly)s
+3125 X(added)s
+3338 X(\256les.)s
+600 X
+3860 Y
+f.B 11 Z(checkin)s
+875 X
+f.R 11 Z(added)s
+1084 X(the)s
+1207 X(113)s
+1350 X(new)s
+1505 X(\256les)s
+1662 X(to)s
+1753 X(the)s
+1877 X(source)s
+2104 X(repository)s
+2439 X(without)s
+2699 X(intervention.)s
+3134 X(Of)s
+3245 X(the)s
+3369 X(233)s
+600 X
+3940 Y(modi\256ed)s
+902 X(\256les,)s
+1083 X(139)s
+1233 X(dropped)s
+1515 X(in)s
+1612 X(cleanly)s
+1866 X(by)s
+1979 X
+f.B 11 Z(checkin)s
+f.R 11 Z(,)s
+2279 X(since)s
+2470 X(Prisma)s
+2714 X(had)s
+2859 X(not)s
+2992 X(made)s
+3190 X(any)s
+3335 X(local)s
+600 X
+4020 Y(changes)s
+880 X(to)s
+979 X(them,)s
+1186 X(and)s
+1334 X(94)s
+1449 X(required)s
+1739 X(manual)s
+1999 X(merging)s
+2288 X(due)s
+2437 X(to)s
+2537 X(local)s
+2724 X(modi\256cations.)s
+3212 X(The)s
+3369 X(233)s
+600 X
+4100 Y(modi\256ed)s
+899 X(\256les)s
+1059 X(consisted)s
+1371 X(of)s
+1468 X(20,766)s
+1706 X(lines)s
+1882 X(of)s
+1979 X(differences.)s
+2387 X(It)s
+2468 X(took)s
+2635 X(one)s
+2777 X(developer)s
+3105 X(two)s
+3251 X(days)s
+3422 X(to)s
+600 X
+4180 Y(manually)s
+901 X(merge)s
+1111 X(the)s
+1227 X(94)s
+1326 X(\256les)s
+1475 X(using)s
+1661 X(the)s
+1777 X(``join'')s
+2018 X(command)s
+2334 X(and)s
+2466 X(resolving)s
+2768 X(con\257icts)s
+3046 X(manually.)s
+3390 X(An)s
+600 X
+4260 Y(additional)s
+924 X(day)s
+1057 X(was)s
+1198 X(required)s
+1472 X(for)s
+1585 X(kernel)s
+1797 X(debugging.)s
+2178 X(The)s
+2318 X(entire)s
+2513 X(process)s
+2761 X(of)s
+2848 X(merging)s
+3120 X(over)s
+3277 X(20,000)s
+600 X
+4340 Y(lines)s
+776 X(of)s
+873 X(differences)s
+1239 X(was)s
+1389 X(completed)s
+1733 X(in)s
+1826 X(less)s
+1974 X(than)s
+2138 X(a)s
+2207 X(week.)s
+2441 X(This)s
+2609 X(one)s
+2752 X(time-savings)s
+3168 X(alone)s
+3365 X(was)s
+600 X
+4420 Y(justi\256cation)s
+979 X(enough)s
+1224 X(for)s
+1338 X(the)s
+1456 X
+f.B 11 Z(cvs)s
+1582 X
+f.R 11 Z(development)s
+1992 X(effort;)s
+2206 X(we)s
+2318 X(expect)s
+2538 X(to)s
+2622 X(gain)s
+2776 X(even)s
+2942 X(more)s
+3120 X(when)s
+3306 X(track-)s
+600 X
+4500 Y(ing)s
+719 X(future)s
+921 X(SunOS)s
+1154 X(releases.)s
+5184 Y
+pagebot
+
+%%Page: 10 10
+pagetop
+f.R 11 Z
+600 X
+560 Y
+f.B 11 Z(4.)s
+703 X(Future)s
+945 X(Enhancements)s
+1433 X(and)s
+1576 X(Current)s
+1859 X(Bugs)s
+600 X
+664 Y
+767 X
+f.R 11 Z(Since)s
+968 X
+f.B 11 Z(cvs)s
+1103 X
+f.R 11 Z(was)s
+1254 X(designed)s
+1554 X(to)s
+1648 X(be)s
+1754 X(incomplete,)s
+2138 X(for)s
+2261 X(reasons)s
+2520 X(of)s
+2619 X(design)s
+2850 X(simplicity,)s
+3203 X(there)s
+3389 X(are)s
+600 X
+744 Y(naturally)s
+892 X(a)s
+951 X(good)s
+1125 X(number)s
+1377 X(of)s
+1465 X(enhancements)s
+1911 X(that)s
+2049 X(can)s
+2178 X(be)s
+2274 X(made)s
+2460 X(to)s
+2544 X(make)s
+2730 X(it)s
+2798 X(more)s
+2976 X(useful.)s
+3226 X(As)s
+3334 X(well,)s
+600 X
+824 Y(some)s
+780 X(nuisances)s
+1093 X(exist)s
+1258 X(in)s
+1340 X(the)s
+1455 X(current)s
+1690 X(implementation.)s
+600 X
+928 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.B 11 Z(cvs)s
+1001 X
+f.R 11 Z(does)s
+1163 X(not)s
+1284 X(currently)s
+1579 X(``remember'')s
+2005 X(who)s
+2158 X(has)s
+2283 X(a)s
+2342 X(checked)s
+2611 X(out)s
+2732 X(a)s
+2791 X(copy)s
+2961 X(of)s
+3049 X(a)s
+3108 X(module.)s
+3398 X(As)s
+600 X
+1008 Y
+876 X(a)s
+942 X(result,)s
+1159 X(it)s
+1234 X(is)s
+1316 X(impossible)s
+1670 X(to)s
+1760 X(know)s
+1956 X(who)s
+2115 X(might)s
+2320 X(be)s
+2422 X(working)s
+2701 X(on)s
+2807 X(the)s
+2930 X(same)s
+3114 X(module)s
+3368 X(that)s
+600 X
+1088 Y
+876 X(you)s
+1011 X(are.)s
+1168 X(A)s
+1245 X(simple-minded)s
+1714 X(database)s
+1994 X(that)s
+2130 X(is)s
+2204 X(updated)s
+2463 X(nightly)s
+2698 X(would)s
+2907 X(likely)s
+3101 X(suf\256ce.)s
+600 X
+1192 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.R 11 Z(Signal)s
+1099 X(processing,)s
+1468 X(keyboard)s
+1778 X(interrupt)s
+2069 X(handling)s
+2363 X(in)s
+2455 X(particular,)s
+2793 X(is)s
+2877 X(currently)s
+3180 X(somewhat)s
+600 X
+1272 Y
+876 X(weak.)s
+1100 X(This)s
+1258 X(is)s
+1334 X(due)s
+1467 X(to)s
+1551 X(the)s
+1668 X(heavy)s
+1871 X(use)s
+1996 X(of)s
+2084 X(the)s
+2201 X
+f.B 11 Z(system)s
+2427 X
+f.R 11 Z(\(3\))s
+2539 X(library)s
+2763 X(function)s
+3036 X(to)s
+3119 X(execute)s
+3367 X
+f.R 9 Z(RCS)s
+600 X
+1352 Y
+876 X
+f.R 11 Z(programs)s
+1189 X(like)s
+1334 X
+f.B 11 Z(co)s
+1437 X
+f.R 11 Z(and)s
+1577 X
+f.B 11 Z(ci)s
+f.R 11 Z(.)s
+1707 X(It)s
+1787 X(sometimes)s
+2138 X(takes)s
+2325 X(multiple)s
+2607 X(interrupts)s
+2927 X(to)s
+3019 X(make)s
+3213 X
+f.B 11 Z(cvs)s
+3346 X
+f.R 11 Z(quit.)s
+600 X
+1432 Y
+876 X(This)s
+1032 X(can)s
+1159 X(be)s
+1253 X(\256xed)s
+1425 X(by)s
+1523 X(using)s
+1708 X(a)s
+1765 X(home-grown)s
+2167 X
+f.B 11 Z(system)s
+2393 X
+f.R 11 Z(\(\))s
+2467 X(replacement.)s
+600 X
+1536 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.R 11 Z(Security)s
+1163 X(of)s
+1264 X(the)s
+1394 X(source)s
+1627 X(repository)s
+1968 X(is)s
+2057 X(currently)s
+2366 X(not)s
+2501 X(dealt)s
+2686 X(with)s
+2858 X(directly.)s
+3168 X(The)s
+3323 X(usual)s
+600 X
+1616 Y
+876 X(UNIX)s
+1093 X(approach)s
+1398 X(of)s
+1492 X(user-group-othe)s
+1967 X(r)s
+2024 X(security)s
+2292 X(permissions)s
+2679 X(through)s
+2942 X(the)s
+3065 X(\256le)s
+3192 X(system)s
+3430 X(is)s
+600 X
+1696 Y
+876 X(utilized,)s
+1142 X(but)s
+1261 X(nothing)s
+1512 X(else.)s
+1694 X
+f.B 11 Z(cvs)s
+1817 X
+f.R 11 Z(could)s
+2006 X(likely)s
+2200 X(be)s
+2294 X(a)s
+2351 X(set-group-id)s
+2740 X(executable)s
+3083 X(that)s
+3220 X(checks)s
+3447 X(a)s
+600 X
+1776 Y
+876 X(protected)s
+1193 X(database)s
+1489 X(to)s
+1586 X(verify)s
+1803 X(user)s
+1966 X(access)s
+2195 X(permissions)s
+2589 X(for)s
+2715 X(particular)s
+3040 X(objects)s
+3290 X(before)s
+600 X
+1856 Y
+876 X(allowing)s
+1160 X(any)s
+1291 X(operations)s
+1625 X(to)s
+1707 X(affect)s
+1901 X(those)s
+2082 X(objects.)s
+600 X
+1960 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.R 11 Z(With)s
+1048 X(every)s
+1237 X(checked-out)s
+1624 X(directory,)s
+1935 X
+f.B 11 Z(cvs)s
+2058 X
+f.R 11 Z(maintains)s
+2372 X(some)s
+2553 X(administrative)s
+3004 X(\256les)s
+3153 X(that)s
+3290 X(record)s
+600 X
+2040 Y
+876 X(the)s
+998 X(current)s
+1240 X(revision)s
+1511 X(numbers)s
+1797 X(of)s
+1890 X(the)s
+2012 X(checked-out)s
+2406 X(\256les)s
+2561 X(as)s
+2654 X(well)s
+2813 X(as)s
+2906 X(the)s
+3027 X(location)s
+3297 X(of)s
+3389 X(the)s
+600 X
+2120 Y
+876 X(respective)s
+1208 X(source)s
+1432 X(repository.)s
+1806 X
+f.B 11 Z(cvs)s
+1935 X
+f.R 11 Z(does)s
+2101 X(not)s
+2226 X(recover)s
+2479 X(nicely)s
+2691 X(at)s
+2775 X(all)s
+2880 X(if)s
+2957 X(these)s
+3141 X(administra-)s
+600 X
+2200 Y
+876 X(tive)s
+1012 X(\256les)s
+1160 X(are)s
+1275 X(removed.)s
+600 X
+2304 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.R 11 Z(The)s
+1016 X(source)s
+1235 X(code)s
+1400 X(for)s
+1512 X
+f.B 11 Z(cvs)s
+1636 X
+f.R 11 Z(has)s
+1760 X(been)s
+1925 X(tested)s
+2124 X(extensively)s
+2488 X(on)s
+2587 X(Sun-3)s
+2790 X(and)s
+2923 X(Sun-4)s
+3126 X(systems,)s
+3405 X(all)s
+600 X
+2384 Y
+876 X(running)s
+1133 X(SunOS)s
+1368 X(4.0)s
+1486 X(or)s
+1574 X(later)s
+1733 X(versions)s
+2007 X(of)s
+2095 X(the)s
+2211 X(operating)s
+2517 X(system.)s
+2790 X(Since)s
+2980 X(the)s
+3096 X(code)s
+3261 X(has)s
+3385 X(not)s
+600 X
+2464 Y
+876 X(yet)s
+998 X(been)s
+1169 X(compiled)s
+1476 X(under)s
+1676 X(other)s
+1860 X(platforms,)s
+2194 X(the)s
+2316 X(overall)s
+2554 X(portability)s
+2896 X(of)s
+2990 X(the)s
+3113 X(code)s
+3285 X(is)s
+3367 X(still)s
+600 X
+2544 Y
+876 X(questionable.)s
+600 X
+2648 Y
+767 X
+f.Y 11 Z(\017)s
+876 X
+f.R 11 Z(As)s
+985 X(witnessed)s
+1305 X(in)s
+1390 X(the)s
+1508 X(previous)s
+1791 X(section,)s
+2047 X(the)s
+2165 X
+f.B 11 Z(cvs)s
+2291 X
+f.R 11 Z(method)s
+2540 X(for)s
+2654 X(tracking)s
+2925 X(third)s
+3093 X(party)s
+3274 X(vendor)s
+600 X
+2728 Y
+876 X(source)s
+1111 X(distributions)s
+1525 X(can)s
+1669 X(work)s
+1862 X(quite)s
+2052 X(nicely.)s
+2317 X(However,)s
+2647 X(if)s
+2733 X(the)s
+2864 X(vendor)s
+3110 X(changes)s
+3389 X(the)s
+600 X
+2808 Y
+876 X(directory)s
+1169 X(structure)s
+1454 X(or)s
+1540 X(the)s
+1655 X(\256le)s
+1774 X(names)s
+1987 X(within)s
+2201 X(the)s
+2317 X(source)s
+2536 X(distribution,)s
+2923 X
+f.B 11 Z(cvs)s
+3047 X
+f.R 11 Z(has)s
+3171 X(no)s
+3270 X(way)s
+3418 X(of)s
+600 X
+2888 Y
+876 X(matching)s
+1177 X(the)s
+1293 X(old)s
+1413 X(release)s
+1645 X(with)s
+1802 X(the)s
+1918 X(new)s
+2066 X(one.)s
+2240 X(It)s
+2311 X(is)s
+2386 X(currently)s
+2679 X(unclear)s
+2922 X(as)s
+3008 X(to)s
+3090 X(how)s
+3241 X(to)s
+3323 X(solve)s
+600 X
+2968 Y
+876 X(this,)s
+1026 X(though)s
+1256 X(it)s
+1322 X(is)s
+1396 X(certain)s
+1623 X(to)s
+1705 X(happen)s
+1943 X(in)s
+2025 X(practice.)s
+600 X
+3128 Y
+f.B 11 Z(5.)s
+703 X(Availability)s
+600 X
+3232 Y
+767 X
+f.R 11 Z(The)s
+917 X
+f.B 11 Z(cvs)s
+1051 X
+f.R 11 Z(program)s
+1337 X(sources)s
+1595 X(can)s
+1733 X(be)s
+1838 X(found)s
+2046 X(in)s
+2139 X(a)s
+2207 X(recent)s
+2424 X(posting)s
+2678 X(to)s
+2771 X(the)s
+2897 X
+f.B 11 Z(comp.sources.un)s
+3422 X(ix)s
+600 X
+3312 Y
+f.R 11 Z(newsgroup.)s
+1000 X(It)s
+1079 X(is)s
+1162 X(also)s
+1315 X(currently)s
+1616 X(available)s
+1917 X(via)s
+2040 X(anonymous)s
+2413 X(ftp)s
+2528 X(from)s
+2704 X(``prisma.com''.)s
+3225 X(Copying)s
+600 X
+3392 Y(rights)s
+794 X(for)s
+905 X
+f.B 11 Z(cvs)s
+1028 X
+f.R 11 Z(will)s
+1168 X(be)s
+1262 X(covered)s
+1521 X(by)s
+1619 X(the)s
+1734 X(GNU)s
+1917 X(General)s
+2176 X(Public)s
+2390 X(License.)s
+600 X
+3552 Y
+f.B 11 Z(6.)s
+703 X(Summary)s
+600 X
+3656 Y
+767 X
+f.R 11 Z(Prisma)s
+997 X(has)s
+1120 X(used)s
+1280 X
+f.B 11 Z(cvs)s
+1403 X
+f.R 11 Z(since)s
+1580 X(December,)s
+1926 X(1988.)s
+2141 X(It)s
+2212 X(has)s
+2336 X(evolved)s
+2596 X(to)s
+2679 X(meet)s
+2848 X(our)s
+2972 X(speci\256c)s
+3224 X(needs)s
+3418 X(of)s
+600 X
+3736 Y(revision)s
+880 X(and)s
+1027 X(release)s
+1274 X(control.)s
+1567 X(We)s
+1708 X(will)s
+1863 X(make)s
+2062 X(our)s
+2200 X(code)s
+2379 X(freely)s
+2592 X(available)s
+2900 X(so)s
+3005 X(that)s
+3156 X(others)s
+3377 X(can)s
+600 X
+3816 Y(bene\256t)s
+826 X(from)s
+994 X(our)s
+1117 X(work,)s
+1311 X(and)s
+1442 X(can)s
+1569 X(enhance)s
+1836 X
+f.B 11 Z(cvs)s
+1959 X
+f.R 11 Z(to)s
+2041 X(meet)s
+2209 X(broader)s
+2460 X(needs)s
+2653 X(yet.)s
+600 X
+3920 Y
+767 X(Many)s
+967 X(of)s
+1057 X(the)s
+1176 X(other)s
+1357 X(software)s
+1641 X(release)s
+1876 X(and)s
+2011 X(revision)s
+2279 X(control)s
+2518 X(systems,)s
+2799 X(like)s
+2939 X(the)s
+3059 X(one)s
+3195 X(described)s
+600 X
+4000 Y(in)s
+685 X([Glew],)s
+940 X(appear)s
+1165 X(to)s
+1250 X(use)s
+1375 X(a)s
+1434 X(collection)s
+1754 X(of)s
+1842 X(tools)s
+2013 X(that)s
+2151 X(are)s
+2268 X(geared)s
+2492 X(toward)s
+2724 X(speci\256c)s
+2977 X(environments)s
+3407 X(\320)s
+600 X
+4080 Y(one)s
+736 X(set)s
+848 X(of)s
+939 X(tools)s
+1113 X(for)s
+1229 X(the)s
+1349 X(kernel,)s
+1582 X(one)s
+1718 X(set)s
+1830 X(for)s
+1946 X(``generic'')s
+2294 X(software,)s
+2597 X(one)s
+2733 X(set)s
+2846 X(for)s
+2963 X(utilities,)s
+3236 X(and)s
+3373 X(one)s
+600 X
+4160 Y(set)s
+711 X(for)s
+826 X(kernel)s
+1040 X(and)s
+1175 X(utilities.)s
+1470 X(Each)s
+1646 X(of)s
+1736 X(these)s
+1917 X(tool)s
+2061 X(sets)s
+2201 X(apparently)s
+2543 X(handle)s
+2768 X(some)s
+2951 X(speci\256c)s
+3205 X(aspect)s
+3418 X(of)s
+600 X
+4240 Y(the)s
+723 X(problem)s
+1002 X(uniquely.)s
+1336 X
+f.B 11 Z(cvs)s
+1467 X
+f.R 11 Z(took)s
+1631 X(a)s
+1697 X(somewhat)s
+2030 X(different)s
+2320 X(approach.)s
+2667 X(File)s
+2816 X(sharing)s
+3068 X(through)s
+3332 X(sym-)s
+600 X
+4320 Y(bolic)s
+788 X(or)s
+889 X(hard)s
+1060 X(links)s
+1244 X(is)s
+1333 X(not)s
+1467 X(addressed;)s
+1820 X(instead,)s
+2088 X(the)s
+2218 X(disk)s
+2381 X(space)s
+2585 X(is)s
+2674 X(simply)s
+2915 X(burned)s
+3159 X(since)s
+3350 X(it)s
+3430 X(is)s
+600 X
+4400 Y(``cheap.'')s
+939 X(Support)s
+1198 X(for)s
+1309 X(producing)s
+1634 X(objects)s
+1869 X(for)s
+1980 X(multiple)s
+2253 X(architectures)s
+2659 X(is)s
+2734 X(not)s
+2854 X(addressed;)s
+3193 X(instead,)s
+3447 X(a)s
+600 X
+4480 Y(parallel)s
+852 X(checked-out)s
+1243 X(source)s
+1465 X(tree)s
+1605 X(must)s
+1777 X(be)s
+1875 X(used)s
+2039 X(for)s
+2154 X(each)s
+2318 X(architecture,)s
+2716 X(again)s
+2905 X(wasting)s
+3164 X(disk)s
+3315 X(space)s
+600 X
+4560 Y(to)s
+686 X(simplify)s
+962 X(complexity)s
+1324 X(and)s
+1459 X(ease)s
+1615 X(of)s
+1706 X(use)s
+1834 X(\320)s
+1936 X(punting)s
+2192 X(on)s
+2295 X(this)s
+2432 X(issue)s
+2610 X(allowed)s
+2874 X
+f.I 11 Z(Make\256le)s
+f.R 11 Z(s)s
+3187 X(to)s
+3274 X(remain)s
+600 X
+4640 Y(unchanged,)s
+973 X(unlike)s
+1193 X(the)s
+1318 X(approach)s
+1624 X(taken)s
+1819 X(in)s
+1911 X([Mahler],)s
+2227 X(thereby)s
+2484 X(maintaining)s
+2872 X(closer)s
+3083 X(compatibility)s
+600 X
+4720 Y(with)s
+778 X(the)s
+915 X(third-party)s
+1280 X(vendor)s
+1532 X(sources.)s
+1844 X
+f.B 11 Z(cvs)s
+1990 X
+f.R 11 Z(is)s
+2087 X(essentially)s
+2449 X(a)s
+2529 X(source-\256le)s
+2890 X(server,)s
+3137 X(making)s
+3406 X(no)s
+5184 Y
+pagebot
+
+%%Page: 11 11
+pagetop
+f.R 11 Z
+600 X
+560 Y(assumptions)s
+991 X(or)s
+1077 X(special)s
+1308 X(handling)s
+1592 X(of)s
+1678 X(the)s
+1793 X(sources)s
+2040 X(that)s
+2176 X(it)s
+2242 X(controls.)s
+2548 X(To)s
+2654 X
+f.B 11 Z(cvs)s
+f.R 11 Z(:)s
+600 X
+664 Y
+767 X(A)s
+844 X(source)s
+1062 X(is)s
+1136 X(a)s
+1193 X(source,)s
+1429 X(of)s
+1515 X(course,)s
+1751 X(of)s
+1837 X(course,)s
+2073 X(unless)s
+2283 X(of)s
+2369 X(course)s
+2587 X(the)s
+2702 X(source)s
+2920 X(is)s
+2994 X(Mr.)s
+3126 X(Ed.)s
+640 Y
+f.R 9 Z(6)s
+600 X
+768 Y
+f.R 11 Z(Sources)s
+859 X(are)s
+974 X(maintained,)s
+1346 X(saved,)s
+1557 X(and)s
+1688 X(retrievable)s
+2031 X(at)s
+2109 X(any)s
+2240 X(time)s
+2396 X(based)s
+2589 X(on)s
+2687 X(symbolic)s
+2984 X(or)s
+3071 X(numeric)s
+3339 X(revi-)s
+600 X
+848 Y(sion)s
+760 X(or)s
+858 X(date)s
+1018 X(in)s
+1112 X(the)s
+1239 X(past.)s
+1437 X(It)s
+1519 X(is)s
+1604 X(entirely)s
+1867 X(up)s
+1976 X(to)s
+2069 X
+f.B 11 Z(cvs)s
+2203 X
+f.R 11 Z(wrapper)s
+2481 X(programs)s
+2796 X(to)s
+2889 X(provide)s
+3151 X(for)s
+3273 X(release)s
+600 X
+928 Y(environments)s
+1028 X(and)s
+1159 X(such.)s
+600 X
+1032 Y
+767 X(The)s
+908 X(major)s
+1107 X(advantage)s
+1434 X(of)s
+1522 X
+f.B 11 Z(cvs)s
+1647 X
+f.R 11 Z(over)s
+1805 X(the)s
+1922 X(many)s
+2112 X(other)s
+2292 X(similar)s
+2526 X(systems)s
+2788 X(that)s
+2927 X(have)s
+3094 X(already)s
+3340 X(been)s
+600 X
+1112 Y(designed)s
+896 X(is)s
+978 X(the)s
+1101 X(simplicity)s
+1431 X(of)s
+1524 X
+f.B 11 Z(cvs)s
+f.R 11 Z(.)s
+1696 X
+f.B 11 Z(cvs)s
+1826 X
+f.R 11 Z(contains)s
+2105 X(only)s
+2268 X(three)s
+2448 X(programs)s
+2759 X(that)s
+2902 X(do)s
+3007 X(all)s
+3113 X(the)s
+3235 X(work)s
+3418 X(of)s
+600 X
+1192 Y(release)s
+832 X(and)s
+964 X(revision)s
+1229 X(control,)s
+1483 X(and)s
+1615 X(two)s
+1752 X(manually-mainta)s
+2255 X(ined)s
+2409 X(administrative)s
+2861 X(\256les)s
+3011 X(for)s
+3124 X(each)s
+3286 X(source)s
+600 X
+1272 Y(repository.)s
+977 X(Of)s
+1087 X(course,)s
+1331 X(the)s
+1454 X(deciding)s
+1742 X(factor)s
+1948 X(of)s
+2042 X(any)s
+2181 X(tool)s
+2329 X(is)s
+2411 X(whether)s
+2682 X(people)s
+2912 X(use)s
+3043 X(it,)s
+3135 X(and)s
+3274 X(if)s
+3352 X(they)s
+600 X
+1352 Y(even)s
+767 X
+f.I 11 Z(like)s
+902 X
+f.R 11 Z(to)s
+987 X(use)s
+1113 X(it.)s
+1224 X(At)s
+1326 X(Prisma,)s
+1578 X
+f.B 11 Z(cvs)s
+1705 X
+f.R 11 Z(prevented)s
+2026 X(members)s
+2325 X(of)s
+2415 X(the)s
+2534 X(kernel)s
+2748 X(group)s
+2949 X(from)s
+3121 X(killing)s
+3344 X(each)s
+600 X
+1432 Y(other.)s
+600 X
+1592 Y
+f.B 11 Z(7.)s
+703 X(Acknowledgement)s
+1286 X(s)s
+600 X
+1696 Y
+767 X
+f.R 11 Z(Many)s
+965 X(thanks)s
+1185 X(to)s
+1269 X(Dick)s
+1439 X(Grune)s
+1650 X(at)s
+1730 X(Vrije)s
+1910 X(Universiteit)s
+2289 X(in)s
+2374 X(Amsterdam)s
+2746 X(for)s
+2860 X(his)s
+2974 X(work)s
+3153 X(on)s
+3254 X(the)s
+3372 X(ori-)s
+600 X
+1776 Y(ginal)s
+777 X(version)s
+1024 X(of)s
+1114 X
+f.B 11 Z(cvs)s
+1241 X
+f.R 11 Z(and)s
+1376 X(for)s
+1491 X(making)s
+1741 X(it)s
+1811 X(available)s
+2108 X(to)s
+2193 X(the)s
+2311 X(world.)s
+2553 X(Thanks)s
+2798 X(to)s
+2883 X(Jeff)s
+3022 X(Polk)s
+3185 X(of)s
+3274 X(Prisma)s
+600 X
+1856 Y(for)s
+718 X(helping)s
+972 X(with)s
+1136 X(the)s
+1259 X(design)s
+1485 X(of)s
+1579 X(the)s
+1702 X(module)s
+1956 X(database,)s
+2262 X(vendor)s
+2500 X(branch)s
+2734 X(support,)s
+3007 X(and)s
+3146 X(for)s
+3265 X(writing)s
+600 X
+1936 Y(the)s
+724 X
+f.B 11 Z(checkin)s
+1000 X
+f.R 11 Z(shell)s
+1174 X(script.)s
+1415 X(Thanks)s
+1666 X(also)s
+1819 X(to)s
+1910 X(the)s
+2033 X(entire)s
+2235 X(software)s
+2523 X(group)s
+2728 X(at)s
+2814 X(Prisma)s
+3052 X(for)s
+3171 X(taking)s
+3389 X(the)s
+600 X
+2016 Y(time)s
+756 X(to)s
+838 X(review)s
+1064 X(the)s
+1179 X(paper)s
+1368 X(and)s
+1499 X(correct)s
+1730 X(my)s
+1848 X(grammar.)s
+600 X
+2176 Y
+f.B 11 Z(8.)s
+703 X(References)s
+600 X
+2280 Y
+f.R 11 Z([Bell])s
+1038 X(Bell)s
+1197 X(Telephone)s
+1546 X(Laboratories.)s
+2000 X(``Source)s
+2292 X(Code)s
+2484 X(Control)s
+2747 X(System)s
+3001 X(User's)s
+3231 X(Guide.'')s
+600 X
+2360 Y
+1038 X
+f.I 11 Z(UNIX)s
+1234 X(System)s
+1464 X(III)s
+1563 X(Programmer's)s
+2023 X(Manual)s
+f.R 11 Z(,)s
+2295 X(October)s
+2558 X(1981.)s
+600 X
+2464 Y([Courington])s
+1038 X(Courington,)s
+1436 X(W.)s
+1589 X
+f.I 11 Z(The)s
+1742 X(Network)s
+2035 X(Software)s
+2341 X(Environment)s
+f.R 11 Z(,)s
+2784 X(Sun)s
+2942 X(Technical)s
+3278 X(Report)s
+600 X
+2544 Y
+1038 X(FE197-0,)s
+1339 X(Sun)s
+1478 X(Microsystems)s
+1918 X(Inc,)s
+2055 X(February)s
+2347 X(1989.)s
+600 X
+2648 Y([Essick])s
+1038 X(Essick,)s
+1284 X(Raymond)s
+1605 X(B.)s
+1706 X(and)s
+1848 X(Robert)s
+2085 X(Bruce)s
+2297 X(Kolstad.)s
+2605 X
+f.I 11 Z(Notes\256le)s
+2900 X(Reference)s
+3232 X(Manual)s
+f.R 11 Z(,)s
+600 X
+2728 Y
+1038 X(Department)s
+1413 X(of)s
+1499 X(Computer)s
+1819 X(Science)s
+2074 X(Technical)s
+2391 X(Report)s
+2617 X(#1081,)s
+2844 X(University)s
+3182 X(of)s
+3268 X(Illinois)s
+600 X
+2808 Y
+1038 X(at)s
+1116 X(Urbana-Champaig)s
+1663 X(n,)s
+1742 X(Urbana,)s
+2002 X(Illinois,)s
+2256 X(1982,)s
+2446 X(p.)s
+2525 X(26.)s
+600 X
+2912 Y([Glew])s
+1038 X(Glew,)s
+1245 X(Andy.)s
+1480 X(``Boxes,)s
+1762 X(Links,)s
+1978 X(and)s
+2114 X(Parallel)s
+2371 X(Trees:)s
+2610 X(Elements)s
+2915 X(of)s
+3006 X(a)s
+3068 X(Con\256guration)s
+600 X
+2992 Y
+1038 X(Management)s
+1464 X(System.'')s
+1814 X
+f.I 11 Z(Workshop)s
+2154 X(Proceedings)s
+2564 X(of)s
+2661 X(the)s
+2791 X(Software)s
+3094 X(Management)s
+600 X
+3072 Y
+1038 X(Conference)s
+f.R 11 Z(,)s
+1422 X(USENIX,)s
+1734 X(New)s
+1897 X(Orleans,)s
+2170 X(April)s
+2351 X(1989.)s
+600 X
+3176 Y([Grune])s
+1038 X(Grune,)s
+1291 X(Dick.)s
+1527 X(Distributed)s
+1913 X(the)s
+2055 X(original)s
+2338 X(shell)s
+2530 X(script)s
+2747 X(version)s
+3017 X(of)s
+3130 X
+f.B 11 Z(cvs)s
+3280 X
+f.R 11 Z(in)s
+3389 X(the)s
+600 X
+3256 Y
+1038 X
+f.B 11 Z(comp.sources.un)s
+1563 X(ix)s
+1645 X
+f.R 11 Z(volume)s
+1891 X(6)s
+1952 X(release)s
+2183 X(in)s
+2265 X(1986.)s
+600 X
+3360 Y([Honda])s
+1038 X(Honda,)s
+1280 X(Masahiro)s
+1587 X(and)s
+1721 X(Terrence)s
+2012 X(Miller.)s
+2267 X(``Software)s
+2612 X(Management)s
+3026 X(Using)s
+3231 X(a)s
+3292 X(CASE)s
+600 X
+3440 Y
+1038 X(Environment.'')s
+1555 X
+f.I 11 Z(Workshop)s
+1893 X(Proceedings)s
+2302 X(of)s
+2397 X(the)s
+2525 X(Software)s
+2826 X(Management)s
+3249 X(Confer-)s
+600 X
+3520 Y
+1038 X(ence)s
+f.R 11 Z(,)s
+1216 X(USENIX,)s
+1528 X(New)s
+1691 X(Orleans,)s
+1964 X(April)s
+2145 X(1989.)s
+600 X
+3624 Y([Mahler])s
+1038 X(Mahler,)s
+1304 X(Alex)s
+1482 X(and)s
+1624 X(Andreas)s
+1906 X(Lampen.)s
+2225 X(``An)s
+2400 X(Integrated)s
+2737 X(Toolset)s
+2995 X(for)s
+3117 X(Engineering)s
+600 X
+3704 Y
+1038 X(Software)s
+1366 X(Con\256gurations.')s
+1850 X(')s
+1959 X
+f.I 11 Z(Proceedings)s
+2390 X(of)s
+2508 X(the)s
+2659 X(ACM)s
+2873 X(SIGSOFT/SIGPLAN)s
+600 X
+3784 Y
+1038 X(Software)s
+1331 X(Engineering)s
+1727 X(Symposium)s
+2093 X(on)s
+2196 X(Practical)s
+2502 X(Software)s
+2795 X(Development)s
+3216 X(Environ-)s
+600 X
+3864 Y
+1038 X(ments)s
+f.R 11 Z(,)s
+1254 X(ACM,)s
+1464 X(Boston,)s
+1716 X(November)s
+2052 X(1988.)s
+2266 X(Described)s
+2591 X(is)s
+2665 X(the)s
+2780 X
+f.B 11 Z(shape)s
+2985 X
+f.R 11 Z(toolkit)s
+3204 X(posted)s
+3422 X(to)s
+600 X
+3944 Y
+1038 X(the)s
+1153 X
+f.B 11 Z(comp.sources.un)s
+1678 X(ix)s
+1760 X
+f.R 11 Z(newsgroup)s
+2109 X(in)s
+2191 X(the)s
+2306 X(volume)s
+2552 X(19)s
+2650 X(release.)s
+600 X
+4048 Y([Tichy])s
+1038 X(Tichy,)s
+1255 X(Walter)s
+1483 X(F.)s
+1592 X(``Design,)s
+1896 X(Implementation,)s
+2410 X(and)s
+2543 X(Evaluation)s
+2892 X(of)s
+2981 X(a)s
+3041 X(Revision)s
+3332 X(Con-)s
+600 X
+4128 Y
+1038 X(trol)s
+1180 X(System.'')s
+1528 X
+f.I 11 Z(Proceedings)s
+1937 X(of)s
+2033 X(the)s
+2162 X(6th)s
+2295 X(International)s
+2726 X(Conference)s
+3105 X(on)s
+3216 X(Software)s
+600 X
+4208 Y
+1038 X(Engineering)s
+f.R 11 Z(,)s
+1447 X(IEEE,)s
+1649 X(Tokyo,)s
+1884 X(September)s
+2225 X(1982.)s
+600 X
+4312 Y([Wall])s
+1038 X(Wall,)s
+1233 X(Larry.)s
+1473 X(The)s
+1621 X
+f.B 11 Z(patch)s
+1831 X
+f.R 11 Z(program)s
+2115 X(is)s
+2198 X(an)s
+2301 X(indispensable)s
+2740 X(tool)s
+2890 X(for)s
+3011 X(applying)s
+3305 X(a)s
+3372 X(diff)s
+600 X
+4392 Y
+1038 X(\256le)s
+1157 X(to)s
+1239 X(an)s
+1333 X(original.)s
+1631 X(Can)s
+1774 X(be)s
+1868 X(found)s
+2065 X(on)s
+2163 X(uunet.uu.net)s
+2553 X(in)s
+2635 X(~ftp/pub/patch.)s
+3090 X(tar.)s
+600 X
+4465 Y
+f.R 9 Z(_______________)s
+1050 X(_)s
+600 X
+4532 Y
+667 X
+f.R 7 Z(6)s
+4550 Y
+720 X
+f.B 9 Z(cvs)s
+f.R 9 Z(,)s
+835 X(of)s
+905 X(course,)s
+1097 X(does)s
+1227 X(not)s
+1324 X(really)s
+1482 X(discriminate)s
+1801 X(against)s
+1992 X(Mr.)s
+2100 X(Ed.)s
+4532 Y
+f.R 7 Z(7)s
+600 X
+4617 Y
+667 X(7)s
+4635 Y
+720 X
+f.R 9 Z(Yet.)s
+5184 Y
+pagebot
+
+%%Trailer
+lastpage
