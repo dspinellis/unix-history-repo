@@ -1,9 +1,9 @@
-static	char *sccsid = "@(#)mkfs.c	2.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.11 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
  *
- * usage: mkfs special size [ nsect ntrak bsize fsize cpg ]
+ * usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]
  */
 
 /*
@@ -128,7 +128,7 @@ main(argc, argv)
 	argc--, argv++;
 	time(&utime);
 	if (argc < 2) {
-		printf("usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps ]\n");
+		printf("usage: mkfs special size [ nsect ntrak bsize fsize cpg minfree rps nbpi ]\n");
 		exit(1);
 	}
 	fsys = argv[0];
@@ -387,9 +387,17 @@ next:
 	 * Compute number of inode blocks per cylinder group.
 	 * Start with one inode per NBPI bytes; adjust as necessary.
 	 */
+	inos = MAX(NBPI, sblock.fs_fsize);
+	if (argc > 9) {
+		i = atoi(argv[9]);
+		if (i <= 0)
+			printf("%s: bogus nbpi reset to %d\n", argv[9], inos);
+		else
+			inos = i;
+	}
 	i = sblock.fs_iblkno + MAXIPG / INOPF(&sblock);
-	inos = (fssize - sblock.fs_ncg * i) * sblock.fs_fsize /
-	    MAX(NBPI, sblock.fs_fsize) / INOPB(&sblock);
+	inos = (fssize - sblock.fs_ncg * i) * sblock.fs_fsize / inos /
+	    INOPB(&sblock);
 	if (inos <= 0)
 		inos = 1;
 	sblock.fs_ipg = ((inos / sblock.fs_ncg) + 1) * INOPB(&sblock);
