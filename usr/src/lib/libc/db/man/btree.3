@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)btree.3	5.1 (Berkeley) %G%
+.\"	@(#)btree.3	5.2 (Berkeley) %G%
 .\"
 .TH BTREE 3 ""
 .UC 7
@@ -41,8 +41,8 @@ u_int cachesize;
 index_t psize;
 .br
 int lorder;
-.br
-int maxkeypage;
+.\" .br
+.\" int maxkeypage;
 .br
 int minkeypage;
 .br
@@ -100,16 +100,16 @@ big endian order would be the number 4,321.
 If
 .I lorder
 is 0 (no order is specified) the current host order is used.
-.TP
-maxkeypage
-The maximum number of keys which will be stored on any single page.
-Because of the way the btree data structure works,
-.I maxkeypage
-must always be greater than or equal to 2.
-If
-.I maxkeypage
-is 0 (no maximum number of keys is specified) the page fill factor is
-made as large as possible (which is almost invariably what is wanted).
+.\" .TP
+.\" maxkeypage
+.\" The maximum number of keys which will be stored on any single page.
+.\" Because of the way the btree data structure works,
+.\" .I maxkeypage
+.\" must always be greater than or equal to 2.
+.\" If
+.\" .I maxkeypage
+.\" is 0 (no maximum number of keys is specified) the page fill factor is
+.\" made as large as possible (which is almost invariably what is wanted).
 .TP
 minkeypage
 The minimum number of keys which will be stored on any single page.
