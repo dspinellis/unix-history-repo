@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinschar.c	3.4 83/08/16";
+static	char *sccsid = "@(#)wwinschar.c	3.5 83/08/17";
 #endif
 
 #include "ww.h"
@@ -67,7 +67,7 @@ short c;
 	}
 	col += w->ww_w.l;
 	row += w->ww_w.t;
-	if (nvis > (wwncol - col) / 2) {
+	if (tt.tt_setinsert != 0 && nvis > (wwncol - col) / 2) {
 		register union ww_char *p, *q;
 
 		(*tt.tt_setinsert)(1);
