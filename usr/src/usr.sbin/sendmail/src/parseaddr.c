@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -796,6 +796,7 @@ rewrite(pvp, ruleset)
 			char **default_rvp;
 			char buf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
+			char *argvect[10];
 			char pvpbuf[PSBUFSIZE];
 			extern char *DelimChar;
 
@@ -809,7 +810,6 @@ rewrite(pvp, ruleset)
 			*/
 
 			hbrvp = rvp;
-			arg_rvp = default_rvp = NULL;
 			if (**rvp == HOSTBEGIN)
 			{
 				endtoken = HOSTEND;
@@ -826,27 +826,50 @@ rewrite(pvp, ruleset)
 
 			/* extract the match part */
 			key_rvp = ++rvp;
+			default_rvp = NULL;
+			arg_rvp = argvect;
+			xpvp = NULL;
+			replac = pvpbuf;
 			while (*rvp != NULL && **rvp != endtoken)
 			{
-				switch (**rvp)
+				int nodetype = **rvp;
+
+				if (nodetype != CANONHOST && nodetype != CANONUSER)
+				{
+					rvp++;
+					continue;
+				}
+
+				*rvp++ = NULL;
+
+				if (xpvp != NULL)
+				{
+					cataddr(xpvp, replac,
+						&pvpbuf[sizeof pvpbuf] - replac);
+					*++arg_rvp = replac;
+					replac += strlen(replac) + 1;
+					xpvp = NULL;
+				}
+				switch (nodetype)
 				{
 				  case CANONHOST:
-					*rvp++ = NULL;
-					arg_rvp = rvp;
+					xpvp = rvp;
 					break;
 
 				  case CANONUSER:
-					*rvp++ = NULL;
 					default_rvp = rvp;
-					break;
-
-				  default:
-					rvp++;
 					break;
 				}
 			}
 			if (*rvp != NULL)
 				*rvp++ = NULL;
+			if (xpvp != NULL)
+			{
+				cataddr(xpvp, replac,
+					&pvpbuf[sizeof pvpbuf] - replac);
+				*++arg_rvp = replac;
+			}
+			*++arg_rvp = NULL;
 
 			/* save the remainder of the input string */
 			trsize = (int) (avp - rvp + 1) * sizeof *rvp;
@@ -854,19 +877,28 @@ rewrite(pvp, ruleset)
 
 			/* look it up */
 			cataddr(key_rvp, buf, sizeof buf);
+			argvect[0] = buf;
 			if (map != NULL && bitset(MF_VALID, map->s_map.map_flags))
-				replac = (*map->s_map.map_class->map_lookup)(buf,
-						sizeof buf - 1, arg_rvp);
+				replac = (*map->s_map.map_class->map_lookup)(map,
+						buf, sizeof buf - 1, argvect);
 			else
 				replac = NULL;
 
 			/* if no replacement, use default */
+			if (replac == NULL && default_rvp != NULL)
+			{
+				char buf2[sizeof buf];
+
+				/* rewrite the default with % translations */
+				cataddr(default_rvp, buf2, sizeof buf2);
+				map_rewrite(buf2, sizeof buf2, buf, sizeof buf,
+					argvect);
+				replac = buf;
+			}
+
 			if (replac == NULL)
 			{
-				if (default_rvp != NULL)
-					xpvp = default_rvp;
-				else
-					xpvp = key_rvp;
+				xpvp = key_rvp;
 			}
 			else
 			{

@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.27 (Berkeley) %G%
+#	@(#)Makefile	5.28 (Berkeley) %G%
 
 PROG=	sendmail
 
@@ -14,8 +14,8 @@ DBMDEF=	-DNEWDB
 CFLAGS+=-I${.CURDIR} ${DBMDEF}
 
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
-	deliver.c domain.c envelope.c err.c headers.c macro.c main.c mci.c \
-	parseaddr.c queue.c readcf.c recipient.c savemail.c srvrsmtp.c \
+	deliver.c domain.c envelope.c err.c headers.c macro.c main.c map.c \
+	mci.c parseaddr.c queue.c readcf.c recipient.c savemail.c srvrsmtp.c \
 	stab.c stats.c sysexits.c trace.c udb.c usersmtp.c \
 	util.c version.c
 DPADD=	${LIBDBM} ${LIBCOMPAT} ${LIBUTIL}

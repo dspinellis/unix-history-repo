@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.28 (Berkeley) %G%
+ *	@(#)conf.h	5.29 (Berkeley) %G%
  */
 
 /*
@@ -40,8 +40,4 @@
 **
 **	#define these if they are available; comment them out otherwise.
 */
-
-# ifdef hpux
-# define SYSTEM5	1
-# endif
 
