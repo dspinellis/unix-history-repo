@@ -1,0 +1,8 @@
+% A small prologue for displaying landscape-mode files.
+
+	clippath pathbbox
+	4 dict begin
+	/ury exch def /urx exch def /lly exch def /llx exch def
+	90 rotate
+	ury urx sub llx ury add neg translate
+	end
