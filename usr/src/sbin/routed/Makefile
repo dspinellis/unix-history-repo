@@ -1,3 +1,5 @@
+#	@(#)Makefile	5.12 (Berkeley) %G%
+
 PROG=	routed
 SRCS=	af.c if.c input.c main.c output.c startup.c tables.c timer.c \
 	trace.c inet.c
