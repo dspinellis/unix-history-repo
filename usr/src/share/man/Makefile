@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 # Missing: man3f
 
@@ -12,7 +12,7 @@ makedb:
 	for file in `find /usr/share/man -type f -name '*.0' -print`; do \
 		sed -n -f /usr/share/man/makewhatis.sed $$file; \
 	done | sort -u > /tmp/whatis.db
-	install -o ${BINOWN} -g ${BINGRP} -m 444 whatis.db \
+	install -o ${BINOWN} -g ${BINGRP} -m 444 /tmp/whatis.db \
 	    ${DESTDIR}/usr/share/man
 
 .include <bsd.subdir.mk>
