@@ -1,4 +1,4 @@
-/* main.c	(Berkeley)	1.3	83/08/15	*/
+/* main.c	(Berkeley)	1.4	83/10/07	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -8,7 +8,7 @@
 #define DEVDIR	"/usr/lib/font"		/* place to look up device files */
 
 char	*devdir = DEVDIR;
-char	*dev = "var";			/* default typesetter is varian */
+char	*dev = "va";			/* default typesetter is varian */
 
 struct	obj	*objlist[MAXOBJ];	/* store the elements here */
 int	nobj	= 0;
@@ -68,6 +68,7 @@ main(argc, argv)
 			devdir = &argv[1][2];
 			break;
 		case 'T':
+		case 'P':
 			dev = &argv[1][2];
 			break;
 		case 'd':
