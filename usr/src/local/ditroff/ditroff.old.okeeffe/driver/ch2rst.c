@@ -1,20 +1,19 @@
-/* ch2rst.c	1.4	84/04/07
+/*	ch2rst.c	1.5	85/01/31
  *
  * Font translation to Imagen-style fonts (RST format) from character format.
  *
  *	Use:	ch2rst  [ -i  -s ]  charfile  > rstfile
  *
  *		Takes input from charfile (which must be in the format written
- *	by rst2ch), converts to rst format and writes to stdout.  If charfile
- *	is missing, stdin is read.  The -i flag tells ch2rst to ignore the
- *	character codes at the start of each glyph definition, and pack the
- *	glyphs in consecutive code positions starting with 0.  The -s flag
- *	forces ch2rst to NOT trim off any white space in the glyph map.  This
- *	is usefull to make stipples of fixed size.
+ *	by one of the xxx2ch programs), converts to rst format and writes to
+ *	stdout.  If charfile is missing, stdin is read.  The -i flag tells
+ *	ch2rst to ignore the character codes at the start of each glyph
+ *	definition, and pack the glyphs in consecutive code positions starting
+ *	with 0.  The -s flag forces ch2rst to NOT trim off any white space in
+ *	the glyph map.  This is usefull to make stipples of fixed size.
  */
 
 #include <stdio.h>
-#include <ctype.h>
 #include "rst.h"
 
 
@@ -26,14 +25,13 @@
 #define wr1(x)		putchar(x)
 
 
-char *	rdchar();
 char *	malloc();
 
 glyph_dir g[DIRSIZ];		/* directory of glyph definitions */
 preamble p;			/* set of variables for preamble */
-double widthtofix = 1.0 / FIXPIX;	/* fix conversion factor */
+double widthtofix;		/* fix conversion factor */
 
-int	code, codeindex;
+int	code;
 int	width, length, maxv, minv, maxh, minh, refv, refh;
 int	bitwidth;
 
@@ -46,14 +44,13 @@ char *	glyphs[DIRSIZ];
 char	charbits[GLYPHSPACE];	/* place to store bits for a glyph */
 
 
-
-main(argc,argv)
+main(argc, argv)
 int argc;
 char **argv;
 {
     register int i;
     register int j;
-    register int k;
+    register int codeindex;
     register char *chp;
     register char *bitp;
     float par;
@@ -78,6 +75,7 @@ char **argv;
 	    error("can't open file \"%s\"", argv[1]);
     } else filep = stdin;
 
+    widthtofix = (1.0 / FIXPIX);	/* default fix conversion factor */
     codeindex = 0;
     for (i = 0; i < DIRSIZ; glyphs[i++] = (char *) 0);
 
@@ -109,14 +107,14 @@ char **argv;
 	    else if (strcmp(ebuff, "id") == 0) p.p_id = par + 0.5;
 	    else if (strcmp(ebuff, "res") == 0) {
 		if ((p.p_res = par + 0.5) != RES)
-		    error("wrong resolution in Font file.", p.p_res);
-	    } else
-		error("unknown input descriptor, \"%s\"", ebuff);
+		    fprintf(stderr, "ch2rst: Warning, wrong resolution (%d).\n",
+				p.p_res);
+	    } /* ignore unrecognized fields */
 	} else {
 	    if (sscanf (ibuff, ":%d, width = %f", &code, &par) != 2)
 		error("bad glyph header, %s", ibuff);
-	    if (ignorecode) i = codeindex++; else i = code;
-	    g[i].g_pwidth = par * widthtofix + 0.5;
+	    if (ignorecode) codeindex++; else codeindex = code;
+	    g[codeindex].g_pwidth = par * widthtofix + 0.5;
 
 	    chp = &charbits[0];
 	    if (fgets(chp, MAXLINE, filep) == NULL)
@@ -129,29 +127,29 @@ char **argv;
 	    for (length = 0; *chp != '\n'; length++) {
 		if ((length + 1) * width > GLYPHSPACE)
 		    error ("out of glyph space");
-		for (j = 0; j < width; j++, chp++) {
+		for (i = 0; i < width; i++, chp++) {
 		    switch (*chp) {
 			case '.':
 				break;
 			case 'x':
-				refh = j;
+				refh = i;
 				refv = length;
 				*chp = '.';
 				break;
 			case 'X':
-				refh = j;
+				refh = i;
 				refv = length;
 			case '@':
 			case '*':
 				maxv = length;
 				if (minv < 0) minv = length;
-				if (j < minh) minh = j;
-				if (j > maxh) maxh = j;
+				if (i < minh) minh = i;
+				if (i > maxh) maxh = i;
 				break;
 			default:
 				error("illegal character '%c' in map.", *chp);
 		    } /* switch */
-		} /* for j */
+		} /* for i */
 		if (fgets(chp, MAXLINE, filep) == NULL)
 			error("unexpected end of input");
 	    } /* for length */
@@ -168,16 +166,16 @@ char **argv;
 		minv = maxv = refv;
 		minh = maxh = refh;
 	    }
-	    g[i].g_height = maxv + 1 - minv;
-	    g[i].g_width = maxh + 1 - minh;
-	    g[i].g_up = refv - minv;
-	    g[i].g_left = refh - minh;
-	    g[i].g_bitp = g[i].g_height * ((g[i].g_width + 7) / 8);
+	    g[codeindex].g_height = maxv + 1 - minv;
+	    g[codeindex].g_width = maxh + 1 - minh;
+	    g[codeindex].g_up = refv - minv;
+	    g[codeindex].g_left = refh - minh;
+	    g[codeindex].g_bitp =
+		g[codeindex].g_height * ((g[codeindex].g_width + 7) / 8);
 
-
-	    bitp = (glyphs[i] = malloc(g[i].g_bitp)) - 1;
-	    for (k = minv; k <= maxv; k++) {
-		chp = &charbits[0] + width * k + minh;
+	    bitp = (glyphs[codeindex] = malloc(g[codeindex].g_bitp)) - 1;
+	    for (i = minv; i <= maxv; i++) {
+		chp = &charbits[0] + width * i + minh;
 		bitwidth = 0;
 		for (j = minh; j <= maxh; j++, chp++) {
 		    if (--bitwidth < 0) {
@@ -186,19 +184,18 @@ char **argv;
 		    }
 		    if (*chp != '.') *bitp |= 1 << bitwidth;
 		}
-	    } /* for */
+	    } /* for i */
 	} /* else */
     } /* while */
 
     if (ignorecode) {
-	i = codeindex;
-	p.p_last = i - 1;
+	p.p_last = codeindex - 1;
 	p.p_first = 0;
     } else {
 	for (i = DIRSIZ - 1; glyphs[i] == (char *) 0; i--);
 	p.p_last = i;
-	for (j = 0; glyphs[j] == (char *) 0; j++);
-	p.p_first = j;
+	for (i = 0; glyphs[i] == (char *) 0; i++);
+	p.p_first = i;
     }
     bitwidth = STARTGLYPH + 15 * (1 + p.p_last - p.p_first);
 
@@ -222,32 +219,52 @@ char **argv;
 	    wr3(bitwidth);
 	    bitwidth += g[i].g_bitp;
 	}
-    }
+    } /* for i */
     fflush(stdout);
 
     for (i = p.p_first; i <= p.p_last; i++)
 	if (glyphs[i] != (char *) 0)
 	    vwrite(glyphs[i], g[i].g_bitp);
+    exit(0);
 }
 
 
-vwrite(buf,usize)
+/*----------------------------------------------------------------------------*
+ | Routine:	vwrite (buffer, buffer_size)
+ |
+ | Results:	writes out character array "buffer" of size "buffer_size"
+ |		to standard output in small enough chunks that a pipe could
+ |		handle them.
+ |
+ | Bugs:	this routine shouldn't be needed
+ *----------------------------------------------------------------------------*/
+
+vwrite(buf, bufsize)
 char *buf;
-int usize;
+int bufsize;
 {
 	int tsize = 0;
 
-	while (usize) {
+	while (bufsize) {
 		buf += tsize;
-		tsize = usize > BUFSIZ ? BUFSIZ : usize;
+		tsize = bufsize > BUFSIZ ? BUFSIZ : bufsize;
 		if ((tsize = write(1, buf, tsize)) < 0) {
 			perror("ch2rst: write failed");
 			exit(-1);
 		}
-		usize -= tsize;
+		bufsize -= tsize;
 	}
 }
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	error (format_string, argument1, argument2.... )
+ |
+ | Results:	fprints a message to standard error, then exits with error
+ |		code 1
+ |
+ | Side Efct:	This routine does NOT return
+ *----------------------------------------------------------------------------*/
 
 /*VARARGS1*/
 error(string, a1, a2, a3, a4)
@@ -256,30 +273,37 @@ char *string;
 	fprintf(stderr, "ch2rst: ");
 	fprintf(stderr, string, a1, a2, a3, a4);
 	fprintf(stderr, "\n");
-	exit(8);
-};
+	exit(1);
+}
 
+
+/*----------------------------------------------------------------------------*
+ | Routine:	wr2, wr3, wr4 (and wr1)
+ |
+ | Results:	writes out 2, 3, or 4 byte integers in RST byte order, using
+ |		the wr1() routine, which writes one byte to standard output.
+ *----------------------------------------------------------------------------*/
 
 wr2(i)
 unsigned int i;
 {
-    wr1((i>>8)&255);
-    wr1(i&255);
+    wr1((i >> 8) & 255);
+    wr1(i & 255);
 }
 
 wr3(i)
 unsigned int i;
 {
-    wr1((i>>16)&255);
-    wr1((i>>8)&255);
-    wr1(i&255);
+    wr1((i >> 16) & 255);
+    wr1(( i >> 8) & 255);
+    wr1(i & 255);
 }
 
 wr4(i)
 unsigned int i;
 {
-    wr1((i>>24)&255);
-    wr1((i>>16)&255);
-    wr1((i>>8)&255);
-    wr1(i&255);
+    wr1((i >> 24) & 255);
+    wr1((i >> 16) & 255);
+    wr1((i >> 8) & 255);
+    wr1(i & 255);
 }
