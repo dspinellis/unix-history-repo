@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}/..
@@ -15,7 +15,6 @@ UNSUPPORTED=	xdr_float.c
 
 HDRS=	auth.h auth_unix.h clnt.h pmap_clnt.h \
 	pmap_prot.h pmap_rmt.h rpc.h rpc_msg.h svc.h svc_auth.h types.h xdr.h
-.PATH: ${.CURDIR} ${.CURDIR}/doc
 
 all: librpc.a
 
