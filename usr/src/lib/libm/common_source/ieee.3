@@ -53,14 +53,19 @@ Thus, the remainder is always exact.
 .I Logb(x)
 returns the exponent of
 .I x,
-a signed integer in double precision.
-When
+a signed integer represented as a double precision number.
+Here the exponent of a non-zero
 .I x
-is positive, the expression
-.I scalb(x,(int)(\-logb(x)))
-lies strictly between 1 and 2; the expression equals 1 only if
-.I x
-is a power of 2.
+is defined to be the integer
+.I n
+such that
+.br
+1 \(<= |
+.if n \
+.I x*(2**n)|
+.if t \
+.I x*2\u\s8n\s10\d|
+< 2.
 .PP
 .I Scalb(x,n)
 returns
@@ -81,7 +86,7 @@ intro(3M)
 .I Drem(x,y)
 returns the reserved operand on the VAX when y is equal to 0.
 .I Logb(x)
-returns the hugest negative number on the VAX when x is equal to 0.
+returns -2,147,483,647.0 on the VAX when x is equal to 0.
 If the correct value would overflow,
 .I scalb(x,n)
 returns the reserved operand on the VAX
