@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.32 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.33 (Berkeley) %G%
  */
 
 /*
@@ -52,7 +52,6 @@ struct nfsnode {
 	struct	sillyrename n_silly;	/* Silly rename struct */
 	struct	timeval n_atim;		/* Special file times */
 	struct	timeval n_mtim;
-	long	n_spare[2];		/* Up to a power of 2 */
 };
 
 /*
