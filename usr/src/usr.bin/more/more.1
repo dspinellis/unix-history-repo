@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)more.1	5.10 (Berkeley) %G%
+.\"	@(#)more.1	5.11 (Berkeley) %G%
 .\"
 .TH MORE 1
 .SH NAME
@@ -46,10 +46,13 @@ If the -c option is set, when
 .I more 
 needs to change the entire display, it will paint from the top line down.
 .IP -e
-Normally
+Normally, if displaying a single file,
 .I more
 exits as soon as it reaches end-of-file.  The -e option tells more to
-exit the second time it reaches end-of-file.
+exit if it reaches end-of-file twice without an intervening operation.
+If the file is shorter than a single screen
+.I more
+will exit at end-of-file regardless.
 .IP -i
 The -i option causes searches to ignore case; that is,
 uppercase and lowercase are considered identical.
