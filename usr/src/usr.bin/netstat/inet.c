@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.4 82/10/07";
+static char sccsid[] = "@(#)inet.c	4.5 82/11/14";
 #endif
 
 #include <sys/types.h>
@@ -7,9 +7,25 @@ static char sccsid[] = "@(#)inet.c	4.4 82/10/07";
 #include <sys/socketvar.h>
 #include <sys/mbuf.h>
 #include <sys/protosw.h>
+
 #include <net/route.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/ip_var.h>
+#include <netinet/tcp.h>
+#include <netinet/tcpip.h>
+#include <netinet/tcp_seq.h>
 #define TCPSTATES
-#include <net/inet.h>
+#include <netinet/tcp_fsm.h>
+#include <netinet/tcp_timer.h>
+#include <netinet/tcp_var.h>
+#include <netinet/tcp_debug.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
+
 #include <netdb.h>
 
 struct	inpcb inpcb;
