@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -100,6 +100,10 @@ struct nlist nl[] = {
 	{ "_ndhu" },
 #define	SYSMAP	27
 	{ "_Sysmap" },
+#define	SDMZ	28
+	{ "_dmz_tty" },
+#define	SNDMZ	29
+	{ "_ndmz" },
 	{ "" }
 };
 
@@ -434,6 +438,8 @@ dotty()
 		dottytype("dmf", SDMF, SNDMF);
 	if (nl[SNDHU].n_type != 0)
 		dottytype("dhu", SDHU, SNDHU);
+	if (nl[SNDMZ].n_type != 0)
+		dottytype("dmz", SDMZ, SNDMZ);
 	if (nl[SNPTY].n_type != 0)
 		dottytype("pty", SPTY, SNPTY);
 }
