@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.6 (Berkeley) %G%
+ *	@(#)mp.c	7.7 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -175,10 +175,12 @@ mpopen(dev, mode)
 		return (ENXIO);
 	mp = &ms->ms_mb->mb_port[port];		/* host mpcc struct */
 	s = spl8();
-	while (mp->mp_flags & MP_PROGRESS)
+	/*
+	 * serialize open and close events
+	 */
+	while ((mp->mp_flags & MP_PROGRESS) || (tp->t_state & TS_WOPEN))
 		sleep((caddr_t)&tp->t_canq, TTIPRI);
-	while (tp->t_state & TS_WOPEN) 
-		sleep((caddr_t)&tp->t_canq, TTIPRI);
+restart:
 	tp->t_state |= TS_WOPEN;
 	tp->t_addr = (caddr_t)ms;
 	tp->t_oproc = mpstart;
@@ -194,7 +196,6 @@ mpopen(dev, mode)
 		 * Initialize port state: init MPCC interface
 		 * structures for port and setup modem control.
 		 */
-		mp->mp_proto = MPPROTO_ASYNC;		/* XXX */
 		error = mpportinit(ms, mp, port);
 		if (error)
 			goto bad;
@@ -203,16 +204,31 @@ mpopen(dev, mode)
 			error = ENOBUFS;
 			goto bad;
 		}
+		mp->mp_flags |= MP_PROGRESS;
 		mpcmd(ev, EVCMD_OPEN, 0, ms->ms_mb, port);
+		/*
+		 * wait for port to start
+		 */
+		while (mp->mp_proto != MPPROTO_ASYNC)
+			sleep((caddr_t)&tp->t_canq, TTIPRI);
+		mp->mp_flags &= ~MP_PROGRESS;
 	}
-	while ((tp->t_state & TS_CARR_ON) == 0)
+	while ((tp->t_state & TS_CARR_ON) == 0) {
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		/*
+		 * a mpclose() might have disabled port. if so restart
+		 */
+		if (mp->mp_proto != MPPROTO_ASYNC)
+			goto restart;
+		tp->t_state |= TS_WOPEN;
+	}
 	error = (*linesw[tp->t_line].l_open)(dev,tp);
 done:
 	splx(s);
-	/* wakeup anyone waiting for open to complete */
+	/*
+	 * wakeup those processes waiting for the open to complete
+	 */
 	wakeup((caddr_t)&tp->t_canq);
-
 	return (error);
 bad:
 	tp->t_state &= ~TS_WOPEN;
@@ -238,19 +254,19 @@ mpclose(dev, flag)
 	mb = mp_softc[MPUNIT(unit)].ms_mb;
 	mp = &mb->mb_port[port];
 	s = spl8();
-	if (mp->mp_flags & MP_PROGRESS) {	/* close in progress??? */
+	if (mp->mp_flags & MP_PROGRESS) {
 		if (mp->mp_flags & MP_REMBSY) {
 			mp->mp_flags &= ~MP_REMBSY;
 			splx(s);
 			return (0);
 		}
 		while (mp->mp_flags & MP_PROGRESS)
-			sleep((caddr_t)&tp->t_canq,TTIPRI);
+			sleep((caddr_t)&tp->t_canq, TTIPRI);
 	}
 	error = 0;
 	mp->mp_flags |= MP_PROGRESS;
 	(*linesw[tp->t_line].l_close)(tp);
-	ev = mp_getevent(mp, unit);
+	ev = mp_getevent(mp, unit, 1);
 	if (ev == 0) {
 		error = ENOBUFS;
 		mp->mp_flags &= ~MP_PROGRESS;
@@ -265,6 +281,9 @@ mpclose(dev, flag)
 out:
 	if (mp->mp_flags & MP_REMBSY)
 		mpclean(mb, port);
+	else
+		while (mp->mp_flags & MP_PROGRESS)
+			sleep((caddr_t)&tp->t_canq,TTIPRI);
 	splx(s);
 	return (error);
 }
@@ -313,6 +332,10 @@ mpioctl(dev, cmd, data, flag)
 	tp = &mp_tty[unit];
 	ms = &mp_softc[MPUNIT(unit)];
 	mb = ms->ms_mb;
+	port = MPPORT(unit);
+	mp = &mb->mb_port[port];
+	if (mp->mp_proto != MPPROTO_ASYNC)
+		return(ENXIO);
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
 	if (error >= 0)
 		return (error);
@@ -320,27 +343,44 @@ mpioctl(dev, cmd, data, flag)
 	if (error >= 0) {
 		if (cmd == TIOCSETP || cmd == TIOCSETN || cmd == TIOCLBIS ||
 		    cmd == TIOCLBIC || cmd == TIOCLSET || cmd == TIOCSETC) {
+			s = spl8();
+			while (mp->mp_flags & MP_IOCTL) {
+				sleep((caddr_t)&tp->t_canq, TTIPRI);
+				if (mp->mp_proto != MPPROTO_ASYNC) {
+					mp->mp_flags &= ~MP_IOCTL;
+					splx(s);
+					return(ENXIO);
+				}
+			}
 			ev = mpparam(unit);
 			if (ev == 0)
 				error = ENOBUFS;
-			else
-				mpcmd(ev, EVCMD_IOCTL, A_CHGALL, mb,
-				    MPPORT(unit));
+			else {
+				mp->mp_flags |= MP_IOCTL;
+				mpcmd(ev, EVCMD_IOCTL, A_CHGALL, mb, port);
+			}
+			splx(s);
 		}
 		return (error);
 	}
 	switch (cmd) {
 	case TIOCSBRK:			/* send break */
 	case TIOCCBRK:			/* clear break */
-		port = MPPORT(unit);
-		mp = &mb->mb_port[port];
 		s = spl8();
-		ev = mp_getevent(mp, unit);
-		if (ev)
+		while (mp->mp_flags & MP_IOCTL) {
+			sleep((caddr_t)&tp->t_canq, TTIPRI);
+			if (mp->mp_proto != MPPROTO_ASYNC) {
+				mp->mp_flags &= ~MP_IOCTL;
+				splx(s);
+				return(ENXIO);
+			}
+		}
+		ev = mp_getevent(mp, unit, 0);
+		if (ev) {
+			mp->mp_flags |= MP_IOCTL;
 			mpcmd(ev, EVCMD_IOCTL,
-			    (cmd == TIOCSBRK ? A_BRKON : A_BRKOFF),
-			    mb, port);
-		else
+			    (cmd == TIOCSBRK ? A_BRKON : A_BRKOFF), mb, port);
+		} else
 			error = ENOBUFS;
 		splx(s);
 		break;
@@ -371,7 +411,7 @@ mpparam(unit)
 	mb = ms->ms_mb;
 	port = MPPORT(unit);
 	mp = &mb->mb_port[port];
-	ev = mp_getevent(mp, unit);	/* XXX */
+	ev = mp_getevent(mp, unit, 0);	/* XXX */
 	if (ev == 0)
 		return (ev);
 	tp = &mp_tty[unit];
@@ -398,16 +438,22 @@ mpparam(unit)
 			asp->ap_parity = MPPAR_EVEN;
 	}
 #endif
+	asp->ap_loop = MPA_DIS;		/* disable loopback */
+	asp->ap_rtimer = A_RCVTIM;	/* default receive timer */
 	if (tp->t_ospeed == B110)
 		asp->ap_stop = MPSTOP_2;
 	else
 		asp->ap_stop = MPSTOP_1;
+	if (tp->t_ospeed == 0) {
+		tp->t_state |= TS_HUPCLS;
+		setm(&asp->ap_modem, 0, DROP);
+		seti(&asp->ap_intena, A_DCD);
+		return (ev);
+	} 
 	if (tp->t_ospeed == EXTA || tp->t_ospeed == EXTB)
 		asp->ap_baud = M19200;
 	else
 		asp->ap_baud = tp->t_ospeed;
-	asp->ap_loop = MPA_DIS;		/* disable loopback */
-	asp->ap_rtimer = A_RCVTIM;	/* default receive timer */
 	if (ms->ms_softCAR & (1<<port))
 		setm(&asp->ap_modem, A_DTR, ASSERT);
 	else
@@ -462,6 +508,8 @@ mpstart(tp)
 		else {
 			n = ndqb(&outq, 0200);
 			if (n == 0) {
+				if (xcnt > 0)
+					break;
 				n = getc(&outq);
 				timeout(ttrstrt, (caddr_t)tp, (n&0177)+6);
 				tp->t_state |= TS_TIMEOUT;
@@ -477,7 +525,7 @@ mpstart(tp)
 	 * If data to send, poke mpcc.
 	 */
 	if (xcnt) {
-		ev = mp_getevent(mp, unit);
+		ev = mp_getevent(mp, unit, 0);
 		if (ev == 0) {
 			tp->t_state &= ~(TS_BUSY|TS_TIMEOUT);
 		} else {
@@ -537,13 +585,27 @@ mpstop(tp, rw)
 	register struct tty *tp;
 	int rw;
 {
+	register struct mpport *mp;
+	register struct mpevent *ev;
+	int unit = minor(tp->t_dev);
+	int port;
+	struct mblok *mb;
 	int s;
 
 	s = spl8();
-	/* XXX: DISABLE TRANSMITTER */
 	if (tp->t_state & TS_BUSY) {
-		if ((tp->t_state & TS_TTSTOP) == 0)
+		if ((tp->t_state & TS_TTSTOP) == 0) {
 			tp->t_state |= TS_FLUSH;
+			port = MPPORT(unit);
+			mb = mp_softc[MPUNIT(unit)].ms_mb;
+			mp = &mb->mb_port[port];
+			ev = mp_getevent(mp, unit, 0);
+			if (ev == 0) {
+				splx(s);
+				return;
+			}
+			mpcmd(ev, EVCMD_WRITE, A_FLUSH, mb, port);
+		}
 	}
 	splx(s);
 }
@@ -580,6 +642,7 @@ mpportinit(ms, mp, port)
 		/* to host until open has completed      */
 		ev->ev_status = EVSTATUS_FREE;
 		ev->ev_cmd = 0;
+		ev->ev_opts = 0;
 		ev->ev_error = 0;
 		ev->ev_flags = 0;
 		ev->ev_count = 0;
@@ -613,9 +676,10 @@ mpcmd(ev, cmd, flags, mb, port)
  * Return the next available event entry for the indicated port.
  */
 struct mpevent *
-mp_getevent(mp, unit)
+mp_getevent(mp, unit, cls_req)
 	register struct mpport *mp;
 	int unit;
+	int cls_req;
 {
 	register struct mpevent *ev;
 	int i, s;
@@ -628,13 +692,15 @@ mp_getevent(mp, unit)
 	 * If not a close request, verify one extra
 	 * event is available for closing the port.
 	 */
-	if ((mp->mp_flags & MP_PROGRESS) == 0) {
+	if (!cls_req) {
 		if ((i = mp->mp_on + 1) >= MPINSET)
 			i = 0;
 		if (mp->mp_recvq[i].ev_status != EVSTATUS_FREE)
 			goto bad;
 	}
 	/* init inbound fields marking this entry as busy */
+	ev->ev_cmd = 0;
+	ev->ev_opts = 0;
 	ev->ev_error = 0;
 	ev->ev_flags = 0;
 	ev->ev_count = 0;
@@ -645,7 +711,8 @@ mp_getevent(mp, unit)
 	return (ev);
 bad:
 	splx(s);
-	log(LOG_ERR, "mp%d: port%d, out of events", MPUNIT(unit), MPPORT(unit));
+	log(LOG_ERR, "mp%d: port%d, out of events\n",
+	    MPUNIT(unit), MPPORT(unit));
 	return ((struct mpevent *)0);
 }
 
@@ -731,7 +798,6 @@ mpcleanport(mb, port)
 		tp = &mp_tty[mb->mb_unit*MPCHUNK+port];
 		ttyflush(tp, FREAD|FWRITE);
 		(void) (*linesw[tp->t_line].l_modem)(tp, 0);
-		(void) mpclose(tp->t_dev, 0);
 	}
 }
 
@@ -819,6 +885,7 @@ mpxintr(unit, list)
 	register struct asyncparam *ap;
 	struct mpsoftc *ms;
 	int port, i, j;
+#	define nextevent(mp) &mp->mp_recvq[mp->mp_off]
 
 	ms = &mp_softc[unit];
 	mb = mp_softc[unit].ms_mb;
@@ -828,9 +895,8 @@ mpxintr(unit, list)
 		 */
 		mp = &mb->mb_port[port];
 		tp = &mp_tty[unit*MPCHUNK + port];
-#define	nextevent(mp)	&mp->mp_recvq[mp->mp_off]
 		ev = nextevent(mp);
-		for(; ev->ev_status & EVSTATUS_DONE; ev = nextevent(mp)) {
+		for (; ev->ev_status & EVSTATUS_DONE; ev = nextevent(mp)) {
 			/* YUCK */
 			ap = &ms->ms_async[port][mp->mp_off];
 			mppurge((caddr_t)ap, (int)sizeof (*ap));
@@ -844,6 +910,10 @@ mpxintr(unit, list)
 					mp->mp_sendq[i].ev_status = EVSTATUS_GO;
 				(*linesw[tp->t_line].l_modem)
 				    (tp, ap->ap_modem.mc_dcd == ASSERT);
+				mp_freein(ev);
+				adjptr(mp->mp_off, MPINSET);
+				mp->mp_proto = MPPROTO_ASYNC;	/* XXX */
+				wakeup((caddr_t)&tp->t_canq);
 				break;
 			case EVCMD_CLOSE:
 				/*
@@ -857,33 +927,38 @@ mpxintr(unit, list)
 					mp->mp_sendq[i].ev_un.rcvblk = 0;
 					mp->mp_sendq[i].ev_params = 0;
 				}
-				tp->t_state &= ~TS_CARR_ON;
+				mp_freein(ev);
+				adjptr(mp->mp_off, MPINSET);
+				tp->t_state &= ~(TS_CARR_ON|TS_BUSY|TS_FLUSH);
 				mp->mp_on = mp->mp_off = mp->mp_nextrcv = 0;
 				mp->mp_flags &= ~MP_PROGRESS;
 				mp->mp_proto = MPPROTO_UNUSED;
 				wakeup((caddr_t)&tp->t_canq);
-				goto done;
+				break;
 			case EVCMD_IOCTL:
-				/*
-				 * Nothing to do, just pitch.
-				 */
+				mp_freein(ev);
+				adjptr(mp->mp_off, MPINSET);
+				mp->mp_flags &= ~MP_IOCTL;
+				wakeup((caddr_t)&tp->t_canq);
 				break;
 			case EVCMD_WRITE:
 				/*
 				 * Transmission completed, update tty
 				 * state and restart output.
 				 */
-				tp->t_state &= ~TS_BUSY;
-				if (tp->t_state & TS_FLUSH)
-					tp->t_state &= ~TS_FLUSH;
-				else {
-					register int cc = 0, n;
-					struct hxmtl *hxp;
+				if (ev->ev_opts != A_FLUSH) {
+					tp->t_state &= ~TS_BUSY;
+					if (tp->t_state & TS_FLUSH)
+						tp->t_state &= ~TS_FLUSH;
+					else {
+						register int cc = 0, n;
+						struct hxmtl *hxp;
 
-					hxp = &ms->ms_hxl[port];
-					for(n = 0; n < ev->ev_count; n++)
-						cc += hxp->size[n];
-					ndflush(&tp->t_outq, cc);
+						hxp = &ms->ms_hxl[port];
+						for (n=0;n < ev->ev_count; n++)
+							cc += hxp->size[n];
+						ndflush(&tp->t_outq, cc);
+					}
 				}
 				switch (ev->ev_error) {
 				case A_SIZERR:  /*# error in xmt data size */
@@ -893,26 +968,32 @@ mpxintr(unit, list)
 					mplog(unit, port, A_NOXBUF, 0);
 					break;
 				}
+				mp_freein(ev);
+				adjptr(mp->mp_off, MPINSET);
 				mpstart(tp);
 				break;
 			default:
 				mplog(unit, port, A_INVCMD, (int)ev->ev_cmd);  
+				mp_freein(ev);
+				adjptr(mp->mp_off, MPINSET);
 				break;
 			}
-			/* re-init all values in this entry */
-			ev->ev_cmd = 0;
-			ev->ev_opts = 0;
-			ev->ev_error = 0;
-			ev->ev_flags = 0;
-			ev->ev_count = 0;
-			/* show this entry is available for use */
-			ev->ev_status = EVSTATUS_FREE;
-			adjptr(mp->mp_off, MPINSET);
-#undef	nextevent
 		}
-done:
-		;
 	}
+#undef	nextevent
+}
+
+mp_freein(ev)
+	register struct mpevent *ev;
+{
+	/* re-init all values in this entry */
+	ev->ev_cmd = 0;
+	ev->ev_opts = 0;
+	ev->ev_error = 0;
+	ev->ev_flags = 0;
+	ev->ev_count = 0;
+	/* show this entry is available for use */
+	ev->ev_status = EVSTATUS_FREE;
 }
 
 /*
@@ -939,80 +1020,103 @@ mprintr(unit, list)
 		mp = &mb->mb_port[port];
 		ev = &mp->mp_sendq[mp->mp_nextrcv];
 		while (ev->ev_status & EVSTATUS_DONE) {
-			if (ev->ev_cmd != EVCMD_READ &&
-			    ev->ev_cmd != EVCMD_STATUS) {
-				mplog(unit, port, "unexpected command",
-				    (int)ev->ev_cmd);
-				goto next;
-			}
-			if (ev->ev_cmd == EVCMD_STATUS) {
+			switch(ev->ev_cmd) {
+			case EVCMD_STATUS:
 				/*
 				 * Status change, look for carrier changes.
 				 */
-				if (ev->ev_opts == DCDASRT ||
-				    ev->ev_opts == DCDDROP)
-					(*linesw[tp->t_line].l_modem)
-					    (tp, ev->ev_opts == DCDASRT);
-				else
+				switch(ev->ev_opts) {
+				case DCDASRT:
+					(*linesw[tp->t_line].l_modem)(tp, 1);
+					wakeup((caddr_t)&tp->t_canq);
+					break;
+				case DCDDROP:
+					(*linesw[tp->t_line].l_modem)(tp, 0);
+					wakeup((caddr_t)&tp->t_canq);
+					break;
+				case NORBUF:
+				case NOEBUF:
+					mplog(unit, port,
+					    "out of receive events", 0);
+					break;
+				default:
 					mplog(unit, port,
 					    "unexpect status command",
 					    (int)ev->ev_opts);
-				goto next;
-			}
-			/*
-			 * Process received data.
-			 */
-			if ((tp->t_state & (TS_ISOPEN|TS_WOPEN)) == 0)
-				goto next;
-			cc = ev->ev_count;
-			if (cc == 0)
-				goto next;
-			/* YUCK */
-			cp = ms->ms_cbuf[port][mp->mp_nextrcv];
-			mppurge(cp, CBSIZE);
-			while (cc-- > 0) {
+					break;
+				}
+				break;
+			case EVCMD_READ:
 				/*
-				 * A null character is inserted, potentially
-				 * when a break or framing error occurs.  If
-				 * we're not in raw mode, substitute the
-				 * interrupt character.
-				 */
-				if (*cp == 0 &&
-				    (ev->ev_error == BRKASRT ||
-				     ev->ev_error == FRAMERR))
-					if ((tp->t_flags&RAW) == 0)
-						*cp = tp->t_intrc;
-				(*linesw[tp->t_line].l_rint)(*cp++, tp);
-			}
-			/* setup for next read */
-			ptr = (caddr_t)&mp_softc[unit].ms_cbuf[port][mp->mp_nextrcv][0];
-			ev->ev_un.rcvblk = (u_char *)kvtophys(ptr);
-			ev->ev_params = (caddr_t) kvtophys(ptr);
-			switch(ev->ev_error) {
-			case RCVDTA:    /* Normal (good) rcv data */
-					/* do not report the following */
-					/* they are "normal" errors */
-			case FRAMERR:   /* frame error */
-			case BRKASRT:   /* Break condition */
-			case PARERR:    /* parity error */
-				rcverr = (char *)0;
-				break;
-			case OVRNERR:   /* Overrun error */
-				rcverr = "overrun error";
-				break;
-			case OVFERR:    /* Overflow error */
-				rcverr = "overflow error";
+			 	 * Process received data.
+			 	 */
+				if ((tp->t_state & TS_ISOPEN) == 0) {
+					wakeup((caddr_t)&tp->t_rawq);
+					break;
+				}
+				if ((cc = ev->ev_count) == 0)
+					break;
+				cp = ms->ms_cbuf[port][mp->mp_nextrcv];
+				mppurge(cp, CBSIZE);
+				while (cc-- > 0) {
+					/*
+				 	 * A null character is inserted,
+					 * potentially when a break or framing
+					 * error occurs. If we're not in raw
+					 * mode, substitute the interrupt
+					 * character.
+				 	 */
+					if (*cp == 0 &&
+				            (ev->ev_error == BRKASRT ||
+				             ev->ev_error == FRAMERR))
+						if ((tp->t_flags&RAW) == 0)
+							*cp = tp->t_intrc;
+					(*linesw[tp->t_line].l_rint)(*cp++, tp);
+				}
+				/* setup for next read */
+				ptr = (caddr_t)&mp_softc[unit].ms_cbuf[port][mp->mp_nextrcv][0];
+				ev->ev_un.rcvblk = (u_char *)kvtophys(ptr);
+				ev->ev_params = (caddr_t) kvtophys(ptr);
+				switch(ev->ev_error) {
+				case RCVDTA:
+					/* Normal (good) rcv data do not
+					 * report the following they are
+					 * "normal" errors 
+					 */
+				case FRAMERR:
+					/* frame error */
+				case BRKASRT:
+					/* Break condition */
+				case PARERR:
+					/* parity error */
+					rcverr = (char *)0;
+					break;
+				case OVRNERR:
+					/* Overrun error */
+					rcverr = "overrun error";
+					break;
+				case OVFERR:
+					/* Overflow error */
+					rcverr = "overflow error";
+					break;
+				default:
+					rcverr = "undefined rcv error";
+					break;
+				}
+				if (rcverr != (char *)0)
+					mplog(unit, port, rcverr,
+					      (int)ev->ev_error);
 				break;
 			default:
-				rcverr = "undefined rcv error";
+				mplog(unit, port, "unexpected command",
+					(int)ev->ev_cmd);
+				break;
 			}
-			if (rcverr != (char *)0)
-				mplog(unit, port, rcverr, (int)ev->ev_error);
-		next:
 			ev->ev_cmd = 0;
 			ev->ev_opts = 0;
 			ev->ev_error = 0;
 			ev->ev_flags = 0;
+			ev->ev_count = 0;
 			ev->ev_status = EVSTATUS_GO;	/* start next read */
 			adjptr(mp->mp_nextrcv, MPOUTSET);
 			ev = &mp->mp_sendq[mp->mp_nextrcv];
