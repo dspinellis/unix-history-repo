@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_subr.c	7.13.1.2 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,9 +30,9 @@
 #include "../net/if.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "ip_icmp.h"
 #include "tcp.h"
@@ -272,44 +272,27 @@ tcp_notify(inp)
 	sorwakeup(inp->inp_socket);
 	sowwakeup(inp->inp_socket);
 }
-tcp_ctlinput(cmd, sa)
+
+tcp_ctlinput(cmd, sa, ip)
 	int cmd;
 	struct sockaddr *sa;
+	register struct ip *ip;
 {
+	register struct tcphdr *th;
+	extern struct in_addr zeroin_addr;
 	extern u_char inetctlerrmap[];
-	struct sockaddr_in *sin;
-	int tcp_quench(), in_rtchange();
+	int (*notify)() = tcp_notify, tcp_quench();
 
-	if ((unsigned)cmd > PRC_NCMDS)
+	if (cmd == PRC_QUENCH)
+		notify = tcp_quench;
+	else if ((unsigned)cmd > PRC_NCMDS || inetctlerrmap[cmd] == 0)
 		return;
-	if (sa->sa_family != AF_INET && sa->sa_family != AF_IMPLINK)
-		return;
-	sin = (struct sockaddr_in *)sa;
-	if (sin->sin_addr.s_addr == INADDR_ANY)
-		return;
-
-	switch (cmd) {
-
-	case PRC_QUENCH:
-		in_pcbnotify(&tcb, &sin->sin_addr, 0, tcp_quench);
-		break;
-
-	case PRC_ROUTEDEAD:
-	case PRC_REDIRECT_NET:
-	case PRC_REDIRECT_HOST:
-	case PRC_REDIRECT_TOSNET:
-	case PRC_REDIRECT_TOSHOST:
-#if BSD>=43
-		in_pcbnotify(&tcb, &sin->sin_addr, 0, in_rtchange);
-#endif
-		break;
-
-	default:
-		if (inetctlerrmap[cmd] == 0)
-			return;		/* XXX */
-		in_pcbnotify(&tcb, &sin->sin_addr, (int)inetctlerrmap[cmd],
-			tcp_notify);
-	}
+	if (ip) {
+		th = (struct tcphdr *)((caddr_t)ip + (ip->ip_hl << 2));
+		in_pcbnotify(&tcb, sa, th->th_dport, ip->ip_src, th->th_sport,
+			cmd, notify);
+	} else
+		in_pcbnotify(&tcb, sa, 0, zeroin_addr, 0, cmd, notify);
 }
 
 #if BSD<43
