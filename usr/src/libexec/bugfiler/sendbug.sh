@@ -1,11 +1,11 @@
 #! /bin/csh -f
 #
-#	sendbug.sh	4.1	83/05/11
+#	sendbug.sh	4.2	83/05/23
 # Create a bug report and mail to '4bsd-bugs'.
 #
 
 onintr clean
-/bin/cp bugformat /tmp/bug$$
+/bin/cp /usr/ucb/bugformat /tmp/bug$$
 /usr/ucb/vi /tmp/bug$$
 if ($#argv == 0) then
 	/usr/lib/sendmail -t 4bsd-bugs\@BERKELEY < /tmp/bug$$
