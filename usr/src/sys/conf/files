@@ -1,16 +1,16 @@
-kdb/kdb_access.c	optional kdb
-kdb/kdb_command.c	optional kdb
-kdb/kdb_ctype.c		optional kdb
-kdb/kdb_expr.c		optional kdb
-kdb/kdb_format.c	optional kdb
-kdb/kdb_input.c		optional kdb
-kdb/kdb_message.c	optional kdb
-kdb/kdb_output.c	optional kdb
-kdb/kdb_pcs.c		optional kdb
-kdb/kdb_print.c		optional kdb
-kdb/kdb_runpcs.c	optional kdb
-kdb/kdb_sym.c		optional kdb
-kdb/kdb_trap.c		optional kdb
+kdb/kdb_access.c	optional kadb
+kdb/kdb_command.c	optional kadb
+kdb/kdb_ctype.c		optional kadb
+kdb/kdb_expr.c		optional kadb
+kdb/kdb_format.c	optional kadb
+kdb/kdb_input.c		optional kadb
+kdb/kdb_message.c	optional kadb
+kdb/kdb_output.c	optional kadb
+kdb/kdb_pcs.c		optional kadb
+kdb/kdb_print.c		optional kadb
+kdb/kdb_runpcs.c	optional kadb
+kdb/kdb_sym.c		optional kadb
+kdb/kdb_trap.c		optional kadb
 net/af.c		standard
 net/if.c		standard
 net/if_loop.c		optional loop
