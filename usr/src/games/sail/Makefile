@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.8 83/05/20
+# Makefile	@(#)Makefile	1.9 83/05/20
 #
 CC= cc
 CTAGS= ctags -w
@@ -20,7 +20,7 @@ HDRS= externs.h player.h machdep.h
 OTHERFILES= Makefile sail.m
 CTAGFILES= ${DFILES} ${PFILES} ${LFILES} ${COMMONFILES}
 JUNKFILES= sail driver sail.log sail.doc junk arch tags
-PLIBS= -lcurses -ltermlib machdep.o
+PLIBS= -lcurses -ltermlib machdep.o -ljobs
 DLIBS=
 LLIBS=
 SAILMASTER= daemon
