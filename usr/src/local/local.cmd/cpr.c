@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.7		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.8		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -17,6 +17,8 @@ static char	SccsId[] =	"@(#)cpr.c	1.7		%G%";
 **	Flags:
 **		-f	form feed following to print.
 */
+
+#define LINELEN	132			/* carriage width */
 
 typedef char	bool;
 #define TRUE	1
@@ -85,9 +87,89 @@ main(argc, argv)
 
 copyfile()
 {
-	char buf[200];
-	while (fgets(buf, sizeof buf, stdin) != NULL)
-		fputs(buf, stdout);
+	int c;
+	int col;
+	register char *p;
+	char bufa[LINELEN + 1];
+	char bufb[LINELEN + 2];
+	char bufc[LINELEN + 1];
+	char bufd[LINELEN + 2];
+
+  clearbuf:
+	for (col = 0; col <= LINELEN; col++)
+		bufa[col] = bufb[col] = bufc[col] = bufd[col] = ' ';
+	col = 0;
+	while ((c = getchar()) != EOF)
+	{
+		switch (c)
+		{
+		  case '\b':
+			if (col > 0)
+				col--;
+			break;
+
+		  case '\r':
+			col = 0;
+			break;
+
+		  case ' ':
+			col++;
+			break;
+
+		  case '\t':
+			col = (col + 8) & ~07;
+			break;
+
+		  case '\n':
+			putout(bufa, FALSE);
+			putout(bufb, TRUE);
+			putout(bufc, TRUE);
+			putout(bufd, TRUE);
+			col = 0;
+			putchar('\n');
+			goto clearbuf;
+
+		  default:
+			if (col >= LINELEN)
+				col++;
+			else if (bufa[col] == ' ')
+				bufa[col++] = c;
+			else if (bufb[col] == ' ')
+				bufb[col++] = c;
+			else if (bufc[col] == ' ')
+				bufc[col++] = c;
+			else if (bufd[col] == ' ')
+				bufd[col++] = c;
+			else
+			{
+				int i;
+
+				putout(bufa, FALSE);
+				putchar('\r');
+				for (i = 0; i < LINELEN; i++)
+					bufa[i] = ' ';
+				bufa[col++] = c;
+			}
+		}
+	}
+}
+
+putout(buf, cr)
+	char buf[];
+	bool cr;
+{
+	register char *p;
+
+	/* find the end of the line */
+	for (p = &buf[LINELEN-1]; p >= buf && *p == ' '; p--)
+		continue;
+	*++p = '\0';
+	if (buf[0] == '\0')
+		return;
+	if (cr)
+		putchar('\r');
+	for (p = buf; *p != '\0'; p++)
+		putchar(*p);
 }
 
 setupterm()
