@@ -1,4 +1,4 @@
-#	@(#)sys.mk	5.9 (Berkeley) %G%
+#	@(#)sys.mk	5.10 (Berkeley) %G%
 
 unix=		We run UNIX.
 
@@ -10,7 +10,7 @@ AR=		ar
 ARFLAGS=	rl
 RANLIB=		ranlib
 
-.if (${MACHINE} == "hp300")
+.if (${MACHINE} == "hp300" || ${MACHINE} == "i386")
 AS=		/usr/local/lib/gcc-as
 .else
 AS=		as
@@ -21,7 +21,7 @@ AFLAGS=
 CC=		cc
 CFLAGS=		-O
 
-.if (${MACHINE} == "hp300")
+.if (${MACHINE} == "hp300" || ${MACHINE} == "i386")
 CPP=		/usr/local/lib/gcc-cpp -traditional
 .else
 CPP=		cpp
