@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.h	5.5 (Berkeley) %G%
+ *	@(#)config.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -151,7 +151,6 @@ char	errbuf[80];
 int	yyline;
 
 struct	file_list *ftab, *conf_list, **confp;
-char	*PREFIX;
 
 int	timezone, hadtz;
 int	dst;
