@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/* "@(#)dumprestore.h 1.3 %G%" */
+/* "@(#)dumprestore.h 2.1 %G%" */
 
 /*
  * TP_BSIZE is the size of file blocks on the dump tapes.
