@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -176,7 +176,7 @@ doit(f, fromp)
 		error("Permission denied.\n");
 		exit(1);
 	}
-	if (!access("/etc/nologin", F_OK)) {
+	if (pwd->pw_uid && !access("/etc/nologin", F_OK)) {
 		error("Logins currently disabled.\n");
 		exit(1);
 	}
