@@ -9,10 +9,12 @@
 #include "rcv.h"
 #include <sgtty.h>
 
-static char *SccsId = "@(#)tty.c	1.3 %G%";
+static char *SccsId = "@(#)tty.c	1.4 %G%";
 
 static	int	c_erase;		/* Current erase char */
 static	int	c_kill;			/* Current kill char */
+static	int	hadcont;		/* Saw continue signal */
+static	jmp_buf	rewrite;		/* Place to go when continued */
 #ifndef TIOCSTI
 static	int	ttyset;			/* We must now do erase/kill */
 #endif
@@ -25,12 +27,15 @@ grabh(hp, gflags)
 	struct header *hp;
 {
 	struct sgttyb ttybuf;
+	int ttycont(), signull();
 #ifndef TIOCSTI
 	int (*savesigs[2])();
 #endif
+	int (*savecont)();
 	register int s;
 	int errs;
 
+	savecont = sigset(SIGCONT, signull);
 	errs = 0;
 #ifndef TIOCSTI
 	ttyset = 0;
@@ -84,6 +89,7 @@ grabh(hp, gflags)
 		if (hp->h_bcc != NOSTR)
 			hp->h_seq++;
 	}
+	sigset(SIGCONT, savecont);
 #ifndef TIOCSTI
 	ttybuf.sg_erase = c_erase;
 	ttybuf.sg_kill = c_kill;
@@ -107,10 +113,11 @@ readtty(pr, src)
 	char pr[], src[];
 {
 	char canonb[BUFSIZ];
-	int c, ch;
+	int c, ch, signull();
 	register char *cp, *cp2;
 
-	fputs(pr, stdout); fflush(stdout);
+	fputs(pr, stdout);
+	fflush(stdout);
 	if (src != NOSTR && strlen(src) > BUFSIZ - 2) {
 		printf("too long to edit\n");
 		return(src);
@@ -123,7 +130,8 @@ readtty(pr, src)
 	fputs(canonb, stdout);
 	fflush(stdout);
 #else
-	for (cp = src; c = *cp; cp++) {
+	cp = src == NOSTR ? "" : src;
+	while (c = *cp++) {
 		if (c == c_erase || c == c_kill) {
 			ch = '\\';
 			ioctl(0, TIOCSTI, &ch);
@@ -133,10 +141,28 @@ readtty(pr, src)
 	cp = canonb;
 	*cp = 0;
 #endif
-	cp2 = fgets(cp, BUFSIZ - (cp - canonb), stdin);
-	cp = index(canonb, '\n');
-	if (cp != NOSTR)
-		*cp = 0;
+	cp2 = cp;
+	while (cp2 < canonb + BUFSIZ)
+		*cp2++ = 0;
+	cp2 = cp;
+	if (setjmp(rewrite))
+		goto redo;
+	sigset(SIGCONT, ttycont);
+	while (cp2 < canonb + BUFSIZ) {
+		c = getc(stdin);
+		if (c == EOF || c == '\n')
+			break;
+		*cp2++ = c;
+	}
+	*cp2 = 0;
+	sigset(SIGCONT, signull);
+	if (c == EOF && ferror(stdin) && hadcont) {
+redo:
+		hadcont = 0;
+		cp = strlen(canonb) > 0 ? canonb : NOSTR;
+		clearerr(stdin);
+		return(readtty(pr, cp));
+	}
 #ifndef TIOCSTI
 	if (cp2 == NOSTR || *cp2 == '\0')
 		return(src);
@@ -173,3 +199,21 @@ readtty(pr, src)
 		return(NOSTR);
 	return(savestr(canonb));
 }
+
+/*
+ * Receipt continuation.
+ */
+ttycont(s)
+{
+
+	hadcont++;
+	sigrelse(SIGCONT);
+	longjmp(rewrite, 1);
+}
+
+/*
+ * Null routine to satisfy
+ * silly system bug that denies us holding SIGCONT
+ */
+signull(s)
+{}
