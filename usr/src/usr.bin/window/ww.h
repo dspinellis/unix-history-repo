@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.4 83/08/16	
+ *	@(#)ww.h	3.5 83/08/17	
  */
 
 #include <stdio.h>
@@ -24,9 +24,10 @@ struct ww {
 	struct ww *ww_back;
 	char ww_state;		/* state of window creation */
 	char ww_wstate;		/* state for printing charcters */
-	int ww_insert :1;	/* insert mode, for printing */
-	int ww_mapnl :1;	/* map \n to \r\n */
-	int ww_haspty :1;	/* has pty */
+	char ww_modes;		/* current printing modes */
+	char ww_insert :1;	/* insert mode, for printing */
+	char ww_mapnl :1;	/* map \n to \r\n */
+	char ww_haspty :1;	/* has pty */
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 	struct ww_dim ww_w;	/* window dimemsions */
@@ -114,6 +115,7 @@ char wwtermcap[1024];		/* place for the termcap */
 char wwkeys[512];		/* termcap fields for the function keys */
 
 int wwnrow, wwncol;		/* the screen size */
+char wwavailmodes;		/* actually supported modes */
 int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
 char **wwfmap;			/* the frame map */
@@ -134,6 +136,16 @@ int wwnupdate, wwntouched, wwnmiss;
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor(wwcurrow(w), wwcurcol(w))
 #define wwbell()	putchar(CTRL(g))
+
+	/* the window virtual terminal */
+#define WWT_TERM	"TERM=window"
+#define WWT_TERMCAP	"TERMCAP=WW|window|window package:\
+	:cr=^M:nl=^J:bl=^G:\
+	:al=\\EL:am:le=^H:bs:cd=\\EJ:ce=\\EK:cl=\\EE:cm=\\EY%%+ %%+ :\
+	:co#%d:dc=\\EN:dl=\\EM:do=\\EB:ei=\\EO:ho=\\EH:li#%d:im=\\E@:mi:\
+	:nd=\\EC:ta=^I:pt:up=\\EA:"
+#define WWT_REV		"se=\\Eq:so=\\Ep:"
+#define WWT_UL		"ue=\\Es:us=\\Er:"
 
 	/* our functions */
 struct ww *wwopen();
