@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  *
- *	@(#)cpu.h	7.12 (Berkeley) %G%
+ *	@(#)cpu.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -32,11 +32,9 @@
 /*
  * Arguments to hardclock and gatherstats encapsulate the previous
  * machine state in an opaque clockframe.  One the hp300, we use
- * what the hardware pushes on an interrupt (but we pad the sr to a
- * longword boundary).
+ * what the hardware pushes on an interrupt (frame format 0).
  */
 struct clockframe {
-	u_short	pad;		/* pad to get stack aligned */
 	u_short	sr;		/* sr at time of interrupt */
 	u_long	pc;		/* pc at time of interrupt */
 	u_short	vo;		/* vector offset (4-word frame) */
@@ -107,6 +105,7 @@ extern unsigned char ssir;
 #define	HP_340		5	/* 16Mhz 68030 */
 #define	HP_375		6	/* 50Mhz 68030+32K external cache */
 #define	HP_380		7	/* 25Mhz 68040 */
+#define HP_433		8	/* 33Mhz 68040 */
 
 /* values for mmutype (assigned for quick testing) */
 #define	MMU_68040	-2	/* 68040 on-chip MMU */
