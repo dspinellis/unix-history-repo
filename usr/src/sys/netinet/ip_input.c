@@ -1,20 +1,9 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)ip_input.c	7.10 (Berkeley) %G%
+ *	@(#)ip_input.c	7.6.1.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -235,53 +224,43 @@ next:
 
 ours:
 	/*
-	 * If offset or IP_MF are set, must reassemble.
-	 * Otherwise, nothing need be done.
-	 * (We could look in the reassembly queue to see
-	 * if the packet was previously fragmented,
-	 * but it's not worth the time; just let them time out.)
+	 * Look for queue of fragments
+	 * of this datagram.
 	 */
-	if (ip->ip_off &~ IP_DF) {
-		/*
-		 * Look for queue of fragments
-		 * of this datagram.
-		 */
-		for (fp = ipq.next; fp != &ipq; fp = fp->next)
-			if (ip->ip_id == fp->ipq_id &&
-			    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
-			    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
-			    ip->ip_p == fp->ipq_p)
-				goto found;
-		fp = 0;
+	for (fp = ipq.next; fp != &ipq; fp = fp->next)
+		if (ip->ip_id == fp->ipq_id &&
+		    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
+		    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
+		    ip->ip_p == fp->ipq_p)
+			goto found;
+	fp = 0;
 found:
 
-		/*
-		 * Adjust ip_len to not reflect header,
-		 * set ip_mff if more fragments are expected,
-		 * convert offset of this to bytes.
-		 */
-		ip->ip_len -= hlen;
-		((struct ipasfrag *)ip)->ipf_mff = 0;
-		if (ip->ip_off & IP_MF)
-			((struct ipasfrag *)ip)->ipf_mff = 1;
-		ip->ip_off <<= 3;
+	/*
+	 * Adjust ip_len to not reflect header,
+	 * set ip_mff if more fragments are expected,
+	 * convert offset of this to bytes.
+	 */
+	ip->ip_len -= hlen;
+	((struct ipasfrag *)ip)->ipf_mff = 0;
+	if (ip->ip_off & IP_MF)
+		((struct ipasfrag *)ip)->ipf_mff = 1;
+	ip->ip_off <<= 3;
 
-		/*
-		 * If datagram marked as having more fragments
-		 * or if this is not the first fragment,
-		 * attempt reassembly; if it succeeds, proceed.
-		 */
-		if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
-			ipstat.ips_fragments++;
-			ip = ip_reass((struct ipasfrag *)ip, fp);
-			if (ip == 0)
-				goto next;
-			m = dtom(ip);
-		} else
-			if (fp)
-				ip_freef(fp);
+	/*
+	 * If datagram marked as having more fragments
+	 * or if this is not the first fragment,
+	 * attempt reassembly; if it succeeds, proceed.
+	 */
+	if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
+		ipstat.ips_fragments++;
+		ip = ip_reass((struct ipasfrag *)ip, fp);
+		if (ip == 0)
+			goto next;
+		m = dtom(ip);
 	} else
-		ip->ip_len -= hlen;
+		if (fp)
+			ip_freef(fp);
 
 	/*
 	 * Switch out to protocol's input routine.
@@ -863,10 +842,6 @@ ip_forward(ip, ifp)
 		return;
 #endif
 	}
-	if (in_canforward(ip->ip_dst) == 0) {
-		m_freem(dtom(ip));
-		return;
-	}
 	if (ip->ip_ttl <= IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
 		goto sendicmp;
@@ -901,7 +876,7 @@ ip_forward(ip, ifp)
 	 */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 	if (ipforward_rt.ro_rt && ipforward_rt.ro_rt->rt_ifp == ifp &&
-	    (ipforward_rt.ro_rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
+	    (ipforward_rt.ro_rt->rt_flags & RTF_DYNAMIC) == 0 &&
 	    satosin(&ipforward_rt.ro_rt->rt_dst)->sin_addr.s_addr != 0 &&
 	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
 		struct in_ifaddr *ia;
@@ -961,10 +936,7 @@ ip_forward(ip, ifp)
 
 	case ENETUNREACH:
 	case ENETDOWN:
-		if (in_localaddr(ip->ip_dst))
-			code = ICMP_UNREACH_HOST;
-		else
-			code = ICMP_UNREACH_NET;
+		code = ICMP_UNREACH_NET;
 		break;
 
 	case EMSGSIZE:
