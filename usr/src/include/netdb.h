@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)netdb.h	5.5 (Berkeley) %G%
+ *	@(#)netdb.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -27,10 +27,10 @@ struct	hostent {
  * fits in 32 bits -- probably a poor one.
  */
 struct	netent {
-	char	*n_name;	/* official name of net */
-	char	**n_aliases;	/* alias list */
-	int	n_addrtype;	/* net address type */
-	int	n_net;		/* network # */
+	char		*n_name;	/* official name of net */
+	char		**n_aliases;	/* alias list */
+	int		n_addrtype;	/* net address type */
+	unsigned long	n_net;		/* network # */
 };
 
 struct	servent {
