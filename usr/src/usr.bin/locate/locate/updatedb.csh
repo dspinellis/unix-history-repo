@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)updatedb.csh	4.13 (Berkeley) %G%
+#	@(#)updatedb.csh	5.1 (Berkeley) %G%
 #
 
 set SRCHPATHS = "/"			# directories to be put in the database
@@ -28,14 +28,15 @@ set errs = $TMPDIR/locate.errs.$$
 # ('awk', with its associative memory capacity, can do this in several
 # lines, but is too slow, and runs out of string space on small machines).
 
-# only search locally
-# find ${SRCHPATHS} ! -fstype local -a -prune -o -print | \
-find ${SRCHPATHS} -print | \
+# search locally or everything
+# find ${SRCHPATHS} -print | \
+find ${SRCHPATHS} ! -fstype local -a -prune -o -print | \
 	tr '/' '\001' | \
-	(sort -f; echo $status > $errs) | tr '\001' '/' > $filelist
+	(sort -T /var/tmp -f; echo $status > $errs) | tr '\001' '/' > $filelist
 
 $LIBDIR/locate.bigram < $filelist | \
-	(sort; echo $status >> $errs) | uniq -c | sort -nr | \
+	(sort -T /var/tmp; echo $status >> $errs) | \
+	uniq -c | sort -T /var/tmp -nr | \
 	awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
 # code the file list
