@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.49 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.50 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -86,9 +86,13 @@ DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
-#CLroot
-CEroot
+# class D: dotted names, e.g., root.machinename
+#CL root
+CE root
 undivert(5)dnl
+ifdef(`__DOTTED_USER_LIST__',
+	`__DOTTED_USER_LIST__',
+	`#CD postmaster')
 
 # operators that cannot be in local usernames (i.e., network indicators)
 CO @ % ifdef(`_NO_UUCP_', `', `!')
@@ -118,7 +122,7 @@ Dn`'confMAILER_NAME
 Do`'confOPERATORS
 
 # format of a total name
-Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER, $g$?x ($x)$.', `$?x$x <$g>$|$g$.)
+Dq`'ifdef(`confFROM_HEADER', confFROM_HEADER, `$?x$x <$g>$|$g$.')
 include(`../m4/version.m4')
 
 ###############
@@ -580,6 +584,10 @@ R$+			$#_LOCAL_ $: $1			regular local names
 ###########################################################################
 
 S5
+
+# if we have a "special dotted user", convert it back to the base name
+R$=D . *		$#_LOCAL_ $: $1
+R$=D . $+		$#_LOCAL_ $: $1 . *
 
 # see if we have a relay or a hub
 R$+			$: $>_SET_95_ < $R > $1		try relay
