@@ -5,10 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)string.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)string.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
+#include "align.h"
 #include "0.h"
 #ifndef PI01
 #ifndef PXP
@@ -101,7 +102,7 @@ esavestr(cp)
 #ifdef PI0
 	send(REVENIT);
 #endif
-	strngp = ( (char *) ( ( (int) (strngp + 1) ) &~ 1 ) );
+	strngp = ( (char *) roundup( strngp, A_LONG ) );
 	return (savestr(cp));
 }
 #endif
