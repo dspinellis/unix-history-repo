@@ -63,10 +63,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00074
+ * CURRENT PATCH LEVEL:         1       00137
  * --------------------         -----   ----------------------
  *
  * 22 Jan 93	Paul Mackerras		Fixed bug where pages got lost
+ * 08 Apr 93	Yuval Yarom		Several VM system fixes
  *
  */
 
@@ -263,7 +264,7 @@ vm_offset_t vm_page_startup(start, end, vaddr)
 	 */
 
 	vm_page_free_count = npages =
-		(end - start)/(PAGE_SIZE + sizeof(struct vm_page));
+		(end - start + sizeof(struct vm_page))/(PAGE_SIZE + sizeof(struct vm_page));
 
 	/*
 	 *	Initialize the mem entry structures now, and

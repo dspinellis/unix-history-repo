@@ -34,11 +34,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00011
+ * CURRENT PATCH LEVEL:         1       00137
  * --------------------         -----   ----------------------
  *
  * 04 Sep 92	Paul Kranenburg		Fixed copy-on-write checking for pages
  *					other than anonymous (text pages, etc.)
+ * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
 
 #define IPCREG
@@ -274,6 +275,10 @@ procxmt(p)
 	switch (ipc.req) {
 	case PT_READ_I:
 	case PT_READ_D:
+		if (!useracc(ipc.addr, sizeof(ipc.data), B_READ)) {
+			ipc.error = EFAULT;
+			break;
+		}
 		ipc.error = copyin((char *)ipc.addr, (char *)&ipc.data, sizeof(ipc.data));
 		break;
 
@@ -288,7 +293,7 @@ procxmt(p)
 	case PT_WRITE_I:
 	case PT_WRITE_D: {				/* 04 Sep 92*/
 		vm_prot_t prot;		/* current protection of region */
-		int cow;		 /* ensure copy-on-write happens */
+		int cow;		/* ensure copy-on-write happens */
 
 		if (cow = (useracc(ipc.addr, sizeof(ipc.data), B_WRITE) == 0)) {
 			vm_offset_t	addr = (vm_offset_t)ipc.addr;
@@ -299,7 +304,12 @@ procxmt(p)
 			vm_object_t	object;
 			vm_offset_t	objoff;
 
-			if (vm_region(&p->p_vmspace->vm_map, &addr, &size,
+			/*
+			 * XXX - the useracc check is stronger than the vm
+			 * checks because the user page tables are in the map.
+			 */
+			if (!useracc(ipc.addr, sizeof(ipc.data), B_READ) ||
+			    vm_region(&p->p_vmspace->vm_map, &addr, &size,
 					&prot, &max_prot, &inh, &shared,
 					&object, &objoff) != KERN_SUCCESS ||
 			    vm_protect(&p->p_vmspace->vm_map, ipc.addr,
@@ -318,7 +328,6 @@ procxmt(p)
 			if (vm_protect(&p->p_vmspace->vm_map, ipc.addr,
 					sizeof(ipc.data), FALSE,
 					prot) != KERN_SUCCESS)
-
 				printf("ptrace: oops\n");
 		break;
 	}
