@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c	4.9 (Berkeley) 85/04/26";
+static	char sccsid[] = "@(#)setup.c	4.10 (Berkeley) 85/05/09";
 /*
  * adb - routines to read a.out+core at startup
  */
