@@ -1,4 +1,4 @@
-/*	up.c	4.5	83/01/29	*/
+/*	up.c	4.5	83/01/31	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -92,10 +92,10 @@ upopen(io)
 		tio = *io;
 		tio.i_bn = st->nspc * st->ncyl - st->nsect;
 		tio.i_ma = (char *)&upbad[tio.i_unit];
-		tio.i_cc = sizeof (upbad);
+		tio.i_cc = sizeof (struct dkbad);
 		tio.i_flgs |= F_RDDATA;
 		for (i = 0; i < 5; i++) {
-			if (upstrategy(&tio, READ) == sizeof (upbad))
+			if (upstrategy(&tio, READ) == sizeof (struct dkbad))
 				break;
 			tio.i_bn += 2;
 		}
@@ -127,7 +127,7 @@ upstrategy(io, func)
 	if ((io->i_flgs & (F_HDR|F_CHECK)) != 0)
 		sectsiz += HDRSIZ;
 	io->i_errcnt = 0;
-	recal = 1;
+	recal = 0;
 	upaddr->upcs2 = unit;
 	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
@@ -139,7 +139,7 @@ upstrategy(io, func)
 	info = ubasetup(io, 1);
 	upaddr->upwc = -io->i_cc / sizeof (short);
 	upaddr->upba = info;
-readmore: 
+restart: 
 	bn = io->i_bn + (io->i_cc + upaddr->upwc*sizeof(short))/sectsiz;
 	while((upaddr->upds & UPDS_DRY) == 0)
 		;
@@ -230,7 +230,6 @@ hard:
 				}
 			}
 		} 
-		io->i_active = 0; /* else force retry */
 	}
 	/*
 	 * Clear drive error and, every eight attempts,
@@ -238,10 +237,10 @@ hard:
 	 * recalibrate to clear the slate.
 	 */
 	upaddr->upcs1 = UP_TRE|UP_DCLR|UP_GO;
-	if ((io->i_errcnt&07) == 4 && io->i_active == 0) {
+	if ((io->i_errcnt&07) == 4 ) {
 		upaddr->upcs1 = UP_RECAL|UP_GO;
-		recal = 0;
-		goto nextrecal;
+		recal = 1;
+		goto restart;
 	}
 	/*
 	 * Advance recalibration finite state machine
@@ -256,44 +255,36 @@ hard:
 	case 1:
 		upaddr->updc = cn;
 		upaddr->upcs1 = UP_SEEK|UP_GO;
-		goto nextrecal;
+		recal++;
+		goto restart;
 
 	case 2:
 		if (io->i_errcnt < 16 || (func & READ) == 0)
 			goto donerecal;
 		upaddr->upof = up_offset[io->i_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_OFFSET|UP_GO;
-	nextrecal:
 		recal++;
-		io->i_active = 1;
-		goto readmore;
+		goto restart;
 
 	donerecal:
 	case 3:
 		recal = 0;
-		io->i_active = 0;
 		break;
 	}
 	/*
-	 * If still ``active'', then don't need any more retries.
+	 * If we were offset positioning,
+	 * return to centerline.
 	 */
-	if (io->i_active) {
-		/*
-		 * If we were offset positioning,
-		 * return to centerline.
-		 */
-		if (io->i_errcnt >= 16) {
-			upaddr->upof = UPOF_FMT22;
-			upaddr->upcs1 = UP_RTC|UP_GO;
-			while ((upaddr->upds&UPDS_DRY) == 0)
-				DELAY(25);
-		}
-		goto readmore;
+	if (io->i_errcnt >= 16) {
+		upaddr->upof = UPOF_FMT22;
+		upaddr->upcs1 = UP_RTC|UP_GO;
+		while ((upaddr->upds&UPDS_DRY) == 0)
+			DELAY(25);
 	}
+	goto restart;
 success:
-	io->i_active = 1;
 	if (upaddr->upwc != 0)
-		goto readmore;
+		goto restart;
 	/*
 	 * Release unibus 
 	 */
@@ -330,7 +321,6 @@ upecc(io, flag)
 #endif
 	bn = io->i_bn + npf ;
 	st = &upst[up_type[io->i_unit]];
-	io->i_active = 2;
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
@@ -342,7 +332,7 @@ upecc(io, flag)
 		int bit, byte, ecccnt;
 		ecccnt = 0;
 		mask = up->upec2;
-		printf("up%d: soft ecc sn%d\n", io->i_unit, io->i_bn + npf );
+		printf("up%d: soft ecc sn%d\n", io->i_unit, bn);
 		/*
 		 * Compute the
 		 * byte and bit position of the error.  The variable i
@@ -414,7 +404,7 @@ upecc(io, flag)
 			return (1);
 		}
 	}
-	if (twc != 0)
+	if (twc)
 		up->upwc = twc;
 	return (0);
 }
