@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,6 +43,7 @@ struct	dkbad dkbad, oldbad;
 daddr_t	size, getold(), badsn();
 struct	disktab *dp;
 char	name[BUFSIZ];
+char	*malloc();
 
 main(argc, argv)
 	int argc;
@@ -197,7 +198,7 @@ main(argc, argv)
 		qsort(dkbad.bt_bad, nbad, sizeof (struct bt_bad), compare);
 		shift(f, nbad, nbad-new);
 	}
-	for (i = 0; i < 10; i += 2) {
+	for (i = 0; i < 10 && i < dp->d_nsectors; i += 2) {
 		if (lseek(f, dp->d_secsize * (size - dp->d_nsectors + i),
 		    L_SET) < 0)
 			Perror("lseek");
@@ -224,7 +225,7 @@ struct dkbad *bad;
 	daddr_t sn;
 	char msg[80];
 
-	for (i = 0; i < 10; i += 2) {
+	for (i = 0; i < 10 && i < dp->d_nsectors; i += 2) {
 		sn = size - dp->d_nsectors + i;
 		if (lseek(f, sn * dp->d_secsize, L_SET) < 0)
 			Perror("lseek");
@@ -315,14 +316,22 @@ shift(f, new, old)
 	}
 }
 
+char *buf;
+
 /*
  *  Copy disk sector s1 to s2.
  */
 blkcopy(f, s1, s2)
 daddr_t s1, s2;
 {
-	char buf[512];
 
+	if (buf == (char *)NULL) {
+		buf = malloc(dp->d_secsize);
+		if (buf == (char *)NULL) {
+			fprintf(stderr, "Out of memory\n");
+			exit(20);
+		}
+	}
 	if (lseek(f, dp->d_secsize * s1, L_SET) < 0)
 		Perror("lseek");
 	if (read(f, buf, sizeof (buf)) != sizeof (buf)) {
@@ -342,12 +351,19 @@ daddr_t s1, s2;
 	return(1);
 }
 
-char zbuf[512];
+char *zbuf;
 
 blkzero(f, sn)
 daddr_t sn;
 {
 
+	if (zbuf == (char *)NULL) {
+		zbuf = malloc(dp->d_secsize);
+		if (zbuf == (char *)NULL) {
+			fprintf(stderr, "Out of memory\n");
+			exit(20);
+		}
+	}
 	if (lseek(f, dp->d_secsize * sn, L_SET) < 0)
 		Perror("lseek");
 	if (verbose)
@@ -366,7 +382,7 @@ register struct bt_bad *b1, *b2;
 		return(1);
 	if (b1->bt_cyl < b2->bt_cyl)
 		return(-1);
-	return (b2->bt_trksec - b1->bt_trksec);
+	return (b1->bt_trksec - b2->bt_trksec);
 }
 
 daddr_t
@@ -418,7 +434,7 @@ format(fd, blk)
 	daddr_t blk;
 {
 	register struct formats *fp;
-	char *buf, *malloc();
+	char *buf;
 
 	for (fp = formats; fp->f_name; fp++)
 		if (strcmp(dp->d_name, fp->f_name) == 0)
@@ -440,7 +456,7 @@ format(fd, blk)
 	 * purpose format routine is specified, we allow it to
 	 * process the sector as well.
 	 */
-	if (lseek(fd, (long)blk * 512, L_SET) < 0)
+	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
 		Perror("lseek");
 	if (verbose)
 		printf("format blk %d\n", blk);
@@ -454,7 +470,7 @@ format(fd, blk)
 	}
 	if (fp->f_routine)
 		(*fp->f_routine)(fp, dp, blk, buf);
-	if (lseek(fd, (long)blk * 512, L_SET) < 0)
+	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
 		Perror("lseek");
 	if (ioctl(fd, DKIOCHDR, 0) < 0)
 		Perror("ioctl");
