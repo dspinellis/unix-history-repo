@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.33 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.34 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -668,7 +668,11 @@ conval( p, o, q ) register NODE *p, *q; {
 	if( p->tn.rval != NONAME && o!=PLUS && o!=MINUS ) return(0);
 
 	/* usual type conversions -- handle casts of constants */
-	utype = u ? UNSIGNED : INT;
+#define	ISLONG(t)	((t) == LONG || (t) == ULONG)
+	if (ISLONG(p->in.type) || ISLONG(q->in.type))
+		utype = u ? ULONG : LONG;
+	else
+		utype = u ? UNSIGNED : INT;
 	if( !ISPTR(p->in.type) && p->in.type != utype )
 		p = makety(p, utype, 0, (int)utype);
 	if( q->in.type != utype )
