@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.21	82/03/09	*/
+/*	uipc_socket2.c	4.22	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -373,18 +373,3 @@ sbdrop(sb, len)
 	}
 	sb->sb_mb = m;
 }
-
-/*
-printm(m)
-	struct mbuf *m;
-{
-
-	printf("<");
-	while (m) {
-		printf("%d,", m->m_len);
-		m = m->m_next;
-	}
-	printf(">");
-	printf("\n");
-}
-*/

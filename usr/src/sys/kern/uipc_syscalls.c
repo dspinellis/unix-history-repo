@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.15	82/03/15	*/
+/*	uipc_syscalls.c	4.16	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -72,45 +72,6 @@ free2:
 free:
 	rso->so_state |= SS_USERGONE;
 	sofree(rso);
-}
-
-/*
- * Splice system call interface.
- */
-ssplice()
-{
-	register struct a {
-		int	fd1;
-		int	fd2;
-	} *ap = (struct a *)u.u_ap;
-	struct file *f1, *f2;
-COUNT(SSPLICE);
-
-	f1 = getf(ap->fd1);
-	if (f1 == NULL)
-		return;
-	f2 = getf(ap->fd2);
-	if (f2 == NULL)
-		return;
-	if (f1 == f2) {
-		u.u_error = EINVAL;
-		return;
-	}
-	if ((f1->f_flag & FSOCKET) == 0 || (f2->f_flag & FSOCKET) == 0) {
-		u.u_error = ENOTSOCK;
-		return;
-	}
-	if (f1->f_count > 1 || f2->f_count > 1) {
-		u.u_error = ETOOMANYREFS;
-		return;
-	}
-	u.u_error = sosplice(f1->f_socket, f2->f_socket);
-	if (u.u_error)
-		return;
-	u.u_ofile[ap->fd1] = 0;
-	u.u_ofile[ap->fd2] = 0;
-	f1->f_count = 0;
-	f2->f_count = 0;
 }
 
 /*
@@ -243,51 +204,6 @@ COUNT(SCONNECT);
 		return;
 	}
 	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
-		sleep((caddr_t)&so->so_timeo, PZERO+1);
-	u.u_error = so->so_error;
-	so->so_error = 0;
-	splx(s);
-}
-
-/*
- * Disconnect socket from foreign peer; system call
- * interface.  Copy sa arguments and call internal routine.
- */
-sdisconnect()
-{
-	register struct a {
-		int	fdes;
-		struct	sockaddr *asa;
-	} *uap = (struct a *)u.u_ap;
-	struct sockaddr sa;
-	register struct file *fp;
-	register struct socket *so;
-	int s;
-COUNT(SDISCONNECT);
-
-	if (uap->asa &&
-	    copyin((caddr_t)uap->asa, (caddr_t)&sa, sizeof (sa))) {
-		u.u_error = EFAULT;
-		return;
-	}
-	fp = getf(uap->fdes);
-	if (fp == 0)
-		return;
-	if ((fp->f_flag & FSOCKET) == 0) {
-		u.u_error = ENOTSOCK;
-		return;
-	}
-	so = fp->f_socket;
-	u.u_error = sodisconnect(so, uap->asa ? &sa : 0);
-	if (u.u_error)
-		return;
-	s = splnet();
-	if ((so->so_state&SS_NBIO) && (so->so_state&SS_ISDISCONNECTING)) {
-		u.u_error = EINPROGRESS;
-		splx(s);
-		return;
-	}
-	while ((so->so_state & SS_ISDISCONNECTING) && so->so_error == 0)
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
 	so->so_error = 0;
