@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys.c	6.3 (Berkeley) %G%
+ *	@(#)sys.c	6.4 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -456,7 +456,7 @@ gotdev:
 	file->i_unit = *cp++ - '0';
 	if (*cp >= '0' && *cp <= '9')
 		file->i_unit = file->i_unit * 10 + *cp++ - '0';
-	if (file->i_unit < 0 || file->i_unit > 31) {
+	if (file->i_unit < 0 || file->i_unit > 63) {
 		printf("Bad unit specifier\n");
 		file->i_flgs = 0;
 		errno = EUNIT;
