@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -321,33 +321,24 @@ FILE *
 getdatasock(mode)
 	char *mode;
 {
-	int retrytime, s;
+	int s;
 
 	if (data >= 0)
 		return (fdopen(data, mode));
-	retrytime = 1;
-	while ((s = socket(AF_INET, SOCK_STREAM, 0, 0)) < 0) {
-		if (retrytime < 5) {
-			sleep(retrytime);
-			retrytime <<= 1;
-			continue;
-		}
+	s = socket(AF_INET, SOCK_STREAM, 0, 0);
+	if (s < 0)
 		return (NULL);
-	}
-	retrytime = 1;
 	seteuid(0);
-	while (bind(s, &data_source, sizeof (data_source), 0) < 0) {
-		if (retrytime < 5) {
-			sleep(retrytime);
-			retrytime <<= 1;
-			continue;
-		}
-		seteuid(pw->pw_uid);
-		close(s);
-		return (NULL);
-	}
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0)
+		goto bad;
+	if (bind(s, &data_source, sizeof (data_source), 0) < 0)
+		goto bad;
 	seteuid(pw->pw_uid);
 	return (fdopen(s, mode));
+bad:
+	seteuid(pw->pw_uid);
+	close(s);
+	return (NULL);
 }
 
 FILE *
@@ -372,9 +363,6 @@ dataconn(name, size, mode)
 	if (usedefault)
 		data_dest = his_addr;
 	usedefault = 1;
-	reply(150, "Opening data connection for %s (%s,%d)%s.",
-	    name, ntoa(data_dest.sin_addr.s_addr),
-	    ntohs(data_dest.sin_port), sizebuf);
 	file = getdatasock(mode);
 	if (file == NULL) {
 		reply(425, "Can't create data socket (%s,%d): %s.",
@@ -383,6 +371,9 @@ dataconn(name, size, mode)
 		    sys_errlist[errno]);
 		return (NULL);
 	}
+	reply(150, "Opening data connection for %s (%s,%d)%s.",
+	    name, ntoa(data_dest.sin_addr.s_addr),
+	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
 	if (connect(data, &data_dest, sizeof (data_dest), 0) < 0) {
 		reply(425, "Can't build data connection: %s.",
