@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ndbm.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -46,7 +46,7 @@ dbm_open(file, flags, mode)
 	info.lorder = 0;
 	(void)strcpy(path, file);
 	(void)strcat(path, DBM_SUFFIX);
-	return ((DBM *)__hash_open(path, flags, mode, &info));
+	return ((DBM *)__hash_open(path, flags, mode, &info, 0));
 }
 
 extern void
