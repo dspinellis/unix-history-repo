@@ -1,0 +1,92 @@
+# 
+# The file "localize.nntp" should be used as a starting point from which
+# to build a localize.sh from which nntp-capable programs can be built.
+# Basically, you can use the regular localize.sh you use and add those line
+# that contain #NNTP, NNTPSRC and SERVERFILE to make it work.
+# The string NNTPSRC should be replaced with the location of your nntp source
+# directory. The string SERVERFILE should be replaced with the location of
+# the serverfile. See the nntp (Version 1.4) instructions for more information.
+# 
+# You will need nntp version 1.4 to make full use of these programs. They
+# make some use of the XHDR extenstion in nntp version 1.4.
+# 
+# You do not need to include any reference to the dbm library. DBM may remain
+# undefined. You may also want to remove $(OTHERS) from the line in the
+# Makefile that starts with "all:".
+# 
+# You may want to include the line that begins with #RESOLVE in localize.sh
+# if you want to link against the resolver library. I use it on my suns.
+# 
+# You will need to create a "mailpaths" file on each host that uses these
+# programs. See the regular news documenation for information on the
+# mailpaths file.
+# 
+# PROBLEMS:
+# 
+# 1. Distribution checking is disabled in postnews. nntp does not provide this
+# information, so postnews cannot check the article before posting.
+# 
+# 2. History file support is marginal. nntp does not provided direct access
+# to the history file information. nntp can tell if an article is not avail-
+# able, but you cannot know if it was cancelled or expired or has not arrived
+# yet.
+# 
+# 3. The recording feature is available, but you have to implement it on each
+# host that uses these programs. nntp does not provide this information from
+# the server.
+# 
+# 4. sys file searching is disabled. Again, nntp does not provide access to 
+# this information from the server.
+# 
+# 5. XHDR support is necessary for some functions to work. This can be rewritten
+# to avoid this, but I have not done it yet.
+# 
+# FINALLY
+# 
+# If you have bug reports on the nntp hunks of code, please feel free to let
+# me know about it. I will do my best to fix them and route the fixes 
+# through Rick Adams for patch releases.
+# 
+# Stan Barber
+# Baylor College of Medicine
+# uucp: {hoptoad,killer,rice}!academ!sob
+# Internet: sob@tmc.edu
+# 
+rm -f Makefile
+cp Makefile.dst Makefile
+chmod u+w Makefile
+ed Makefile  <<'EOF'
+g/^#BSD4_2 /s///
+g/^#V7 /s///
+g/^#NNTP /s///
+g/^#RESOLVE /s///
+g/^#USG /d
+g/^#EXCELAN /d
+g/=fork/d
+g/^#VMS /d
+g/^#BSD4_3 /d
+g/^#BSD4_1 /d
+g/^all:/s/$(OTHERS)//
+g/#NOTVMS/s/#NOTVMS//
+g/-DDBM/s/-DDBM//
+g/-ldbm/s/-ldbm//
+g/NNTPSRC/s/NNTPSRC/\/usr\/src\/nntp/
+w
+q
+EOF
+rm -f defs.h
+cp defs.dist defs.h
+chmod u+w defs.h
+ed defs.h << 'EOF'
+g/NNTPSRC/s/NNTPSRC/\usr\/src\/nntp/
+g/SERVERFILE/s/SERVERFILE/\/usr\/lib\/news\/server/
+w
+q
+EOF
+echo "Be sure to make a login for usenet and create the group news"
+echo "Also, be sure to alter Makefile and defs.h to reflect the"
+echo "user name, id number, group name and group id number in the"
+echo "places documented."
+echo "Finally, please set your organization name in defs.h"
+echo "Look for #define MYORG for the string to alter."
+echo "Good Luck."
