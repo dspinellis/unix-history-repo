@@ -1,5 +1,5 @@
 /*
-char id_inquire[] = "@(#)inquire.c	1.1";
+char id_inquire[] = "@(#)inquire.c	1.2";
  *
  * inquire.c - f77 i/o inquire statement routine
  */
@@ -34,7 +34,7 @@ f_inqu(a) inlist *a;
 	}
 	else
 	{
-		if (not_legal(lunit)) err(a->inerr,101,"inquire")
+		if (not_legal(lunit)) err(a->inerr,F_ERUNIT,"inquire")
 		else
 			if (units[lunit].ufd)
 			{	p= &units[lunit];

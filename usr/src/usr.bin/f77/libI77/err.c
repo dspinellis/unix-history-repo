@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.1";
+char id_err[] = "@(#)err.c	1.2";
  *
  * file i/o error and initialization routines
  */
@@ -124,7 +124,7 @@ prnt_int()
 prnt_fmt(n) int n;
 {	int i; char *ep;
 	fprintf(stderr, "part of last format: ");
-	if(n==100)
+	if(n==F_ERFMT)
 	{	i = fmtptr - fmtbuf;
 		ep = fmtptr - (i<20?i:20);
 		i = i + 5;

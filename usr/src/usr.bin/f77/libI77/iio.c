@@ -1,5 +1,5 @@
 /*
-char id_iio[] = "@(#)iio.c	1.1";
+char id_iio[] = "@(#)iio.c	1.2";
  *
  * internal (character array) i/o
  */
@@ -29,20 +29,20 @@ z_putc(c) char c;
 		{	*icptr++ = c;
 			return(OK);
 		}
-		else err(errflag,110,"iio")
+		else err(errflag,F_EREREC,"iio")
 	}
 	leof = EOF;
 #ifndef KOSHER
 	err(endflag,EOF,"iio")   /* NOT STANDARD, end-of-file on writes */
 #endif
 #ifdef KOSHER
-	err(errflag,110,"iio")
+	err(errflag,F_EREREC,"iio")
 #endif
 }
 
 z_ungetc(ch,cf) char ch;
 {	if(ch==EOF || --recpos >= svic->icirlen) return(OK);
-	if(--icptr < svic->iciunit || recpos < 0) err(errflag,107,"ilio")
+	if(--icptr < svic->iciunit || recpos < 0) err(errflag,F_ERBREC,"ilio")
 	*icptr = ch;
 	return(OK);
 }
@@ -110,7 +110,7 @@ c_fi(a) icilist *a;
 	icend = a->iciunit + a->icirnum*a->icirlen;
 	errflag = a->icierr;
 	endflag = a->iciend;
-	if(pars_f(fmtbuf)) err(errflag,100,"ifio")
+	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"ifio")
 	fmt_bg();
 	return(OK);
 }
@@ -153,7 +153,7 @@ z_wnew()
 z_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
-	if((recpos + cursor) < 0) return(107);
+	if((recpos + cursor) < 0) return(F_ERBREC);
 	n = reclen - recpos;
 	if(!reading && (cursor-n) > 0)
 	{	icptr += n;

@@ -1,11 +1,11 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.1";
+char id_fmt[] = "@(#)fmt.c	1.2";
  *
  * fortran format parser
  */
 
 #include "fio.h"
-#include "fmt.h"
+#include "format.h"
 
 #define isdigit(x)	(x>='0' && x<='9')
 #define isspace(s)	(s==' ')
@@ -253,7 +253,7 @@ op_gen(a,b,c,d,s) char *s;
 {	struct syl *p= &syl[pc];
 	if(pc>=SYLMX)
 	{	fmtptr = s;
-		fatal(100,"format too complex");
+		fatal(F_ERFMT,"format too complex");
 	}
 #ifdef DEBUG
 	fprintf(stderr,"%3d opgen: %d %d %d %d %c\n",
@@ -292,5 +292,5 @@ char *ap_end(s) char *s;
 		if(*s==quote && *++s!=quote) return(s);
 	}
 	fmtptr = s;
-	fatal(100,"bad string");
+	fatal(F_ERFMT,"bad string");
 }

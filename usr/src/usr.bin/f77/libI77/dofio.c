@@ -1,11 +1,11 @@
 /*
-char id_dofio[] = "@(#)dofio.c	1.1";
+char id_dofio[] = "@(#)dofio.c	1.2";
  *
  * fortran format executer
  */
 
 #include "fio.h"
-#include "fmt.h"
+#include "format.h"
 
 #define DO(x)	if(n=x) err(n>0?errflag:endflag,n,dfio)
 #define STKSZ 10
@@ -45,12 +45,12 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		more--;
 		break;
 	case STACK:		/* repeat count */
-		if(++cp==STKSZ) err(errflag,100,"too many nested ()")
+		if(++cp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
 		cnt[cp]=p->p1;
 		pc++;
 		break;
 	case RET:		/* open paren */
-		if(++rp==STKSZ) err(errflag,100,"too many nested ()")
+		if(++rp==STKSZ) err(errflag,F_ERFMT,"too many nested ()")
 		ret[rp]=p->p1;
 		pc++;
 		break;
@@ -108,7 +108,7 @@ do_fio(number,ptr,len) ftnint *number; ftnlen len; char *ptr;
 		pc++;
 		break;
 	default:
-		err(errflag,100,"impossible code")
+		err(errflag,F_ERFMT,"impossible code")
 	}
 }
 

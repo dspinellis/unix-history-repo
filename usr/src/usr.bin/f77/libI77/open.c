@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.1";
+char id_open[] = "@(#)open.c	1.2";
  *
  * open.c  -  f77 file open routines
  */
@@ -29,7 +29,7 @@ f_open(a) olist *a;
 	external = YES;			/* for err */
 	errflag = a->oerr;
 	lunit = a->ounit;
-	if(not_legal(lunit)) err(errflag,101,"open")
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,"open")
 	b= &units[lunit];
 	if(a->osta) st = lcase(*a->osta);
 	else st = 'u';
@@ -56,8 +56,8 @@ f_open(a) olist *a;
 		if(n=f_clos(&x)) return(n);
 	}
 	exists = (access(buf,0)==NULL);
-	if(!exists && OLD) err(errflag,118,"open");
-	if( exists && NEW) err(errflag,117,"open");
+	if(!exists && OLD) err(errflag,F_EROLDF,"open");
+	if( exists && NEW) err(errflag,F_ERNEWF,"open");
 	if(isdev(buf))
 	{	if((b->ufd = fopen(buf,"r")) != NULL) b->uwrt = NO;
 		else	err(errflag,errno,buf)
@@ -70,9 +70,9 @@ f_open(a) olist *a;
 		}
 		else	err(errflag, errno, buf)
 	}
-	if((b->uinode=finode(b->ufd))==-1) err(errflag,108,"open")
+	if((b->uinode=finode(b->ufd))==-1) err(errflag,F_ERSTAT,"open")
 	b->ufnm = (char *) calloc(strlen(buf)+1,sizeof(char));
-	if(b->ufnm==NULL) err(errflag,113,"open")
+	if(b->ufnm==NULL) err(errflag,F_ERSPACE,"open")
 	strcpy(b->ufnm,buf);
 	b->uscrtch = SCRATCH;
 	b->uend = NO;
@@ -98,7 +98,7 @@ f_open(a) olist *a;
 			b->uprnt = NO;
 			break;
 		default:
-			err(errflag,121,"open form=")
+			err(errflag,F_ERARG,"open form=")
 		}
 	}
 	else	/* not specified */

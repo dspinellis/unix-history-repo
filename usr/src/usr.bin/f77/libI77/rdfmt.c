@@ -1,11 +1,11 @@
 /*
-char id_rdfmt[] = "@(#)rdfmt.c	1.1";
+char id_rdfmt[] = "@(#)rdfmt.c	1.2";
  *
  * formatted read routines
  */
 
 #include "fio.h"
-#include "fmt.h"
+#include "format.h"
 
 #define isdigit(c)	(c>='0' && c<='9')
 #define isalpha(c)	(c>='a' && c<='z')
@@ -37,7 +37,7 @@ rd_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 		n = (rd_F(ptr,p->p1,p->p2,len));
 		break;
 	default:
-		return(errno=100);
+		return(errno=F_ERFMT);
 	}
 	if (n < 0)
 	{
@@ -75,7 +75,7 @@ rd_ned(p,ptr) char *ptr; struct syl *p;
 		tab = YES;
 		return(OK);
 	default:
-		return(errno=100);
+		return(errno=F_ERFMT);
 	}
 }
 
@@ -116,7 +116,7 @@ rd_I(n,w,len) ftnlen len; uint *n;
 					break;
 				}
 			}
-			return(errno=115);
+			return(errno=F_ERRDCHR);
 		}
 	}
 done:
@@ -134,7 +134,7 @@ rd_L(n,w) ftnint *n;
 		else if(ch=='f' && v==-1) v=0;
 		else if(ch==',') break;
 	}
-	if(v==-1) return(errno=116);
+	if(v==-1) return(errno=F_ERLOGIF);
 	*n=v;
 	return(OK);
 }
@@ -159,7 +159,7 @@ rd_F(p,w,d,len) ftnlen len; ufloat *p;
 		{	i=w;
 			break;
 		}
-		else if(ch!='\n') return(errno=115);
+		else if(ch!='\n') return(errno=F_ERRDCHR);
 	}
 	if(ch=='.') dot=1;
 	while(i<w && ch!='e' && ch!='d' && ch!='+' && ch!='-')
@@ -189,7 +189,7 @@ rd_F(p,w,d,len) ftnlen len; ufloat *p;
 		else if(ch==',') break;
 		else if(ch==' ') continue;
 		else if(ch=='+') continue;
-		else if(ch!='\n') return(errno=115);
+		else if(ch!='\n') return(errno=F_ERRDCHR);
 	}
 	if(!dot)
 		for(i=0;i<d;i++) x /= 10;
