@@ -12,7 +12,7 @@
  *
  * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
  *
- *	@(#)autoconf.c	7.8 (Berkeley) %G%
+ *	@(#)autoconf.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -476,6 +476,18 @@ find_devs()
 		setup_hw(hw, (char *) 0xf1000000, 0xf, D_LAN,      0xf);
 		hw++;
 	}
+
+#if defined(LUNA2) && defined(notyet)
+	if (machineid == LUNA_II) {
+		setup_hw(hw, (char *) 0xe1000040, 0xe, C_SCSI,     0xe);
+		hw++;
+
+		if (!badaddr((caddr_t) 0xf1000008)) {
+			setup_hw(hw, (char *) 0xf1000008, 0xf, D_LAN,      0xf);
+			hw++;
+		}
+	}
+#endif
 }
 
 /*
