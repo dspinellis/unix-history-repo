@@ -1,4 +1,4 @@
-/* @(#)vs.c	7.5 (MIT) %G% */
+/* @(#)vs.c	7.6 (MIT) %G% */
  /****************************************************************************
  *									    *
  *  Copyright (c) 1983, 1984 by						    *
@@ -33,7 +33,6 @@
 #include "map.h"
 #include "kernel.h"
 #include "ioctl.h"
-#include "tsleep.h"
 
 #include "vsio.h" 
 
@@ -191,7 +190,9 @@ int flag;
 	 */
 
 	if (!vsp->inited && !(flag & FNDELAY)) {
-		vsInitDev(dev, TRUE);
+		ret = vsInitDev(dev, TRUE);
+		if (ret)
+			return (ret);
 		if (ret = vsError(vsp))
 			return(ret);
 	}
@@ -282,6 +283,7 @@ dev_t dev;
 	    vsBuffnpages--;
 	}
 #endif
+	return (0);
 }
 
 vsread(dev,uio)
@@ -308,7 +310,7 @@ register caddr_t addr;
 	register struct vsdevice *vsaddr = (struct vsdevice *) uip->ui_addr;
 	register struct vsBuffArea *vsb = &vsBuff[VSUNIT(dev)];
 	struct vs_fparm vsAddr;
-	int s;
+	int s, error = 0;
 	int func;
 	int ret;
 
@@ -319,8 +321,9 @@ register caddr_t addr;
 		if ((ret = vsb->vsioa.status) == 0) {
 			vsp->vs_nextgo.fparm_all = ((struct vs_fparm *) addr)->fparm_all;
 			do {
-				tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_WAIT, 0);
-			} while (vsp->vs_nextgo.fparm_all);
+				error = tsleep((caddr_t)vsp, VSWAITPRI | PCATCH,
+				    devwait, 0);
+			} while (vsp->vs_nextgo.fparm_all && error == 0);
 			ret = vsp->vs_status;
 		} else {
 			vsaddr->vs_pr1 = ((struct vs_fparm *)addr)->fparm_low;
@@ -330,6 +333,8 @@ register caddr_t addr;
 			vsaddr->vs_csr0 |= (VS_IE | (VS_SEND << VS_FCSHIFT) | VS_GO);
 		}
 		splx(s);
+		if (error)
+			return (error);
 		if (ret & VS_ERROR)
 			return ((ret & VS_REASON) + 128);
 		return(0);
@@ -338,10 +343,11 @@ register caddr_t addr;
 		/* wait for user I/O operation to complete */
 		s = spl5();
 		while (vsb->vsioa.status == 0) {
-			tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_USRWAIT, 0);
+			error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH,
+			    devio, 0);
 		}
 		splx(s);
-		return (0);
+		return (error);
 
 	case VSIOGETVER:		/* get ROM version */
 		if (!vsp->inited)
@@ -380,8 +386,10 @@ register caddr_t addr;
 		vsaddr->vs_csr0 &= ~VS_FCN;	/* clear bits */
 		vsaddr->vs_csr0 |= (VS_IE | (VS_START << VS_FCSHIFT) | VS_GO);
 		/* synchronous */
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_START, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOABORT:			/* abort a command chain */
@@ -389,8 +397,10 @@ register caddr_t addr;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_ABORT << VS_FCSHIFT) | VS_GO);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_ABORT, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOPWRUP:			/* power-up reset */
@@ -398,8 +408,10 @@ register caddr_t addr;
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_PWRUP << VS_FCSHIFT) | VS_GO);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_PWRUP, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOBBACTL:		/* enable/disable BBA */
@@ -408,8 +420,10 @@ register caddr_t addr;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		func = *(int *)addr == VSIO_ON ? VS_ENABBA : VS_DISBBA;
 		vsaddr->vs_csr0 |= (VS_IE | (func << VS_FCSHIFT) | VS_GO);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_IOBCTL, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOFIBCTL:		/* turn the fiber lamp on/off */
@@ -418,8 +432,10 @@ register caddr_t addr;
 			vsaddr->vs_csr0 &= ~VS_XMIT_ON;
 		else
 			vsaddr->vs_csr0 |= (VS_IE | VS_XMIT_ON);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_FIB, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOFIBRETRY:		/* set fiber retries */
@@ -428,8 +444,10 @@ register caddr_t addr;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		func = *(int *)addr == VS_FIB_FINITE ? VS_FINITE : VS_INFINITE;
 		vsaddr->vs_csr0 |= (VS_IE | (func << VS_FCSHIFT) | VS_GO);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_FIBRET, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH, devwait, 0);
 		splx(s);
+		if (error)
+			return (error);
 		return(vsError(vsp));
 
 	case VSIOSYNC:			/* get synchronized with device */
@@ -742,16 +760,14 @@ dev_t dev;
 {
 	struct vsdevice *vsaddr = (struct vsdevice *) vsdinfo[VSUNIT(dev)]->ui_addr;
 	register struct vs_softc *vsp = &vs_softc[VSUNIT(dev)];
-	int s;
-#ifdef VSSBO
-	int vsFiberNudge();
+	int s, error;
 
-	timeout(vsFiberNudge, (caddr_t) dev, 2*hz);
-#endif
 	s = spl5();
 	vsaddr->vs_csr0 |= (VS_IE | VS_XMIT_ON);	/* turn link on */
-	tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_INITF, 0);
+	error = tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_INITF, 2*hz);
 	splx(s);
+	if (error == EWOULDBLOCK)	/* timeout */
+		error = 0;
 #ifdef VSSBO
 	if (!vsp->linkAvail) {
 		uprintf("\007This had better be a vs125!\n");
@@ -759,18 +775,8 @@ dev_t dev;
 		vsp->linkAvail = TRUE;
 	}
 #endif
+	return (error);
 }
-
-#ifdef VSSBO
-vsFiberNudge(dev)
-dev_t dev;
-{
-	struct vs_softc *vsp = &vs_softc[VSUNIT(dev)];
-
-	if (!vsp->linkAvail)
-		wakeup((caddr_t) vsp);
-}
-#endif VSSBO
 
 vsInitDev(dev, retry)
 dev_t dev;
@@ -778,37 +784,32 @@ int retry;
 {
 	register struct vsdevice *vsaddr;
 	register struct vs_softc *vsp;
-	int s;
-	int vsInitNudge();
+	int s, error;
 
 	vsaddr = (struct vsdevice *) vsdinfo[VSUNIT(dev)]->ui_addr;
 	vsp = &vs_softc[VSUNIT(dev)];
 
 	if (!vsp->linkAvail)
-		vsInitFiber(dev);
+		if (error = vsInitFiber(dev))
+			return (error);
 	while (1) {
-		if (retry)
-			timeout(vsInitNudge, (caddr_t) dev, 10*hz);
 		s = spl5();
 		vsaddr->vs_irr = 0;
 		vsaddr->vs_csr0 &= ~VS_FCN;
 		vsaddr->vs_csr0 |= (VS_IE | (VS_INIT << VS_FCSHIFT) | VS_GO);
-		tsleep((caddr_t) vsp, VSWAITPRI, SLP_VS_INITDEV, 0);
+		error = tsleep((caddr_t) vsp, VSWAITPRI | PCATCH,
+		    devwait, retry ? 10*hz : 0);
 		splx(s);
+		if (error == EWOULDBLOCK)
+			error = 0;
+		if (error)
+			return (error);
 		if (vsp->inited)
 			break;
 		printM("vs%d: VS_INIT fails\n", VSUNIT(dev));
 		uprintf("vsInitDev %x %x\n",vsaddr->vs_csr0, vsaddr->vs_csr1);
 	}
-}
-
-vsInitNudge(dev)
-dev_t dev;
-{
-	struct vs_softc *vsp = &vs_softc[VSUNIT(dev)];
-
-	if (!vsp->inited)
-		wakeup((caddr_t) vsp);
+	return (0);
 }
 
 vsError(vsp)
