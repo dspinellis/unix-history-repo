@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.26 (Berkeley) %G%
+ *	@(#)conf.h	8.27 (Berkeley) %G%
  */
 
 /*
@@ -312,6 +312,29 @@ typedef int		pid_t;
 #  define LA_TYPE	LA_FLOAT
 # endif
 #endif
+
+
+/*
+**  DELL SVR4 Issue 2.2, and others
+**	From Kimmo Suominen <kim@grendel.lut.fi>
+**
+**	It's on #ifdef DELL_SVR4 because Solaris also gets __svr4__
+**	defined, and the definitions conflict.
+*/
+
+#ifdef DELL_SVR4
+# define SYSTEM5	1
+/* # define setreuid(r, e)	seteuid(e) */
+/* # include <sys/time.h> */
+# define _PATH_UNIX	"/unix"
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/ucblib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/usr/ucblib/sendmail.pid"
+# endif
+#endif
+
 
 
 /**********************************************************************
