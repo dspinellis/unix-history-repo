@@ -1,8 +1,7 @@
-
 #
-#	@(#)Makefile	1.1	(CWI)	85/07/18
+#	@(#)Makefile	1.2	(CWI)	85/07/18
 #
-CFLAGS=-O -DBSD42
+CFLAGS= -DINCORE -g
 DESTDIR=
 BINDIR=/usr/local
 SUBDIR= utilities devhar eqn pic ideal
@@ -11,25 +10,25 @@ TFILES=n1.o n2.o n3.o n4.o n5.o t6.o n7.o n8.o n9.o t10.o ni.o nii.o hytab.o suf
 all:	ditroff ${SUBDIR}
 
 ditroff:	${TFILES}
-	${CC} -o ditroff ${CFLAGS} ${TFILES} 
+	${CC} -o ditroff -n ${CFLAGS} ${TFILES} 
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-n1.o:	tdef.h d.h v.h tw.h s.h ext.h ni.o
-n2.o:	tdef.h d.h v.h tw.h s.h
-n3.o:	tdef.h d.h v.h tw.h s.h
-n4.o:	tdef.h d.h v.h tw.h s.h
-n5.o:	tdef.h d.h v.h tw.h s.h
-n6.o:	tdef.h d.h v.h tw.h s.h
-t6.o:	tdef.h d.h v.h tw.h s.h dev.h ni.o
-n7.o:	tdef.h d.h v.h tw.h s.h
-n8.o:	tdef.h d.h v.h tw.h s.h
-n9.o:	tdef.h d.h v.h tw.h s.h
-n10.o:	tdef.h d.h v.h tw.h s.h
-t10.o:	tdef.h d.h v.h tw.h s.h dev.h ni.o
-ni.o:	tdef.h d.h v.h tw.h s.h
-nii.o:	tdef.h d.h v.h tw.h s.h
+n1.o:	tdef.h tw.h ext.h ni.o
+n2.o:	tdef.h tw.h
+n3.o:	tdef.h tw.h
+n4.o:	tdef.h tw.h
+n5.o:	tdef.h tw.h
+n6.o:	tdef.h tw.h
+t6.o:	tdef.h tw.h dev.h ni.o
+n7.o:	tdef.h tw.h
+n8.o:	tdef.h tw.h
+n9.o:	tdef.h tw.h
+n10.o:	tdef.h tw.h
+t10.o:	tdef.h tw.h dev.h ni.o
+ni.o:	tdef.h tw.h
+nii.o:	tdef.h tw.h
 
 install:	all
 	install -s ditroff ${DESTDIR}${BINDIR}/ditroff
