@@ -6,15 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getbsize.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getbsize.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 char *
-getbsize(prog, headerlenp, blocksizep)
-	char *prog;
+getbsize(headerlenp, blocksizep)
 	int *headerlenp;
 	long *blocksizep;
 {
@@ -55,20 +56,17 @@ getbsize(prog, headerlenp, blocksizep)
 			mul = 1;
 			break;
 		default:
-fmterr:			(void)fprintf(stderr,
-			    "%s: %s: unknown blocksize\n", prog, p);
+fmterr:			warnx("%s: unknown blocksize", p);
 			n = 512;
 			mul = 1;
 			break;
 		}
 		if (n > max) {
-			(void)fprintf(stderr,
-			    "%s: maximum blocksize is %dG\n", prog, MAXB / GB);
+			warnx("maximum blocksize is %dG", MAXB / GB);
 			n = max;
 		}
 		if ((blocksize = n * mul) < 512) {
-underflow:		(void)fprintf(stderr,
-			    "%s: minimum blocksize is 512\n", prog);
+underflow:		warnx("minimum blocksize is 512");
 			form = "";
 			blocksize = n = 512;
 		}
