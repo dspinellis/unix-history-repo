@@ -1,4 +1,4 @@
-/*	if.c	6.4	84/03/20	*/
+/*	if.c	6.4	84/03/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,8 @@
 
 #include "../net/if.h"
 #include "../net/af.h"
+
+#include "ether.h"
 
 int	ifqmaxlen = IFQ_MAXLEN;
 
@@ -215,6 +217,16 @@ ifioctl(cmd, data)
 
 	case SIOCGIFCONF:
 		return (ifconf(cmd, data));
+
+#if defined(INET) && NETHER > 0
+	case SIOCSARP:
+	case SIOCDARP:
+		if (!suser())
+			return (u.u_error);
+		/* FALL THROUGH */
+	case SIOCGARP:
+		return (arpioctl(cmd, data));
+#endif
 
 	case SIOCSIFADDR:
 	case SIOCSIFFLAGS:
