@@ -1,26 +1,25 @@
-static	char *sccsid = "@(#)comsat.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)comsat.c	4.3 82/03/31";
+
 #include <stdio.h>
-#include <sys/mx.h>
 #include <sgtty.h>
 #include <utmp.h>
 #include <sys/types.h>
+#include <net/in.h>
+#include <sys/socket.h>
 #include <stat.h>
 #include <wait.h>
 #include <signal.h>
+#include <errno.h>
 
 /*
  * comsat
  */
 #define	dprintf	if (0) printf
-int	xd;
-
-struct  ctp {
-	short   ctrl;
-	short   ctrlarg;
-	struct  sgttyb ctrlv;
-} ctp;
 
 #define MAXUTMP 100		/* down from init */
+
+struct	sockaddr_in sin = { AF_INET, IPPORT_BIFFUDP };
+extern	errno;
 
 struct	utmp utmp[100];
 int	nutmp;
@@ -35,99 +34,44 @@ char **argv;
 {
 	register cc;
 	char buf[BUFSIZ];
+	int s;
 
+#ifndef DEBUG
 	if (fork())
 		exit();
+#endif
 	chdir("/usr/spool/mail");
 	if((uf = open("/etc/utmp",0)) < 0)
 		perror("/etc/utmp"), exit(1);
+#ifndef DEBUG
 	while (fork())
 		wait(0);
+#endif
 	sleep(10);
 	onalrm();
 	sigset(SIGALRM, onalrm);
 	sigignore(SIGTTOU);
-	unlink("/dev/mail");
-	xd = mpx("/dev/mail", 0666);
-	if (xd < 0) {
-		close(2);
-		open("/dev/console", 1);
-		perror("/dev/mail");
+#if vax
+	sin.sin_port = ((sin.sin_port<<8)&0xff00)|((sin.sin_port>>8)&0xff);
+#endif
+	s = socket(SOCK_DGRAM, 0, &sin, 0);
+	if (s < 0) {
+		perror("socket");
 		exit(1);
 	}
-	while((cc=read(xd, buf, BUFSIZ)) >= 0) {
-		dprintf("0: got %d bytes\n", cc);
-		unpack(buf, cc);
-	}
-	_exit(1);
-}
+	for (;;) {
+		char msgbuf[100];
+		int cc;
 
-#define	skip(rp, c)	((struct rh *)(((char *)rp)+c))
-
-unpack(rp, cc)
-	register struct rh *rp;
-{
-	register struct rh *end;
-	int i;
-
-	i = 0;
-	end = skip(rp, cc);
-	while (rp < end) {
-		dprintf("%d: ", ++i);
-		if (rp->count==0) {
-			dprintf("%d byte control message\n", rp->ccount);
-			control(rp->index, rp+1, rp->ccount);
-		} else {
-			dprintf("%*.*s\n", rp->count, rp->count, rp+1);
-			sighold(SIGALRM);
-			mailfor(rp+1);
-			sigrelse(SIGALRM);
+		cc = receive(s, 0, msgbuf, sizeof (msgbuf) - 1);
+		if (cc <= 0) {
+			if (errno != EINTR)
+				sleep(1);
+			errno = 0;
+			continue;
 		}
-		rp->count += rp->ccount;
-		if (rp->count & 1)
-			rp->count++;
-		rp = skip(rp, rp->count);
-		rp++;
-	}
-}
-
-control(x, cb, cc)
-	register char *cb;
-{
-	register char *end;
-	int cmd;
-	short *sp;
-	struct wh or;
-
-	end = cb + cc;
-	cmd = *cb++;
-	sp = (short *)cb+1;
-	switch (cmd) {
-
-	case M_WATCH:
-		dprintf("attach %x, uid %d\n", x, *sp);
-		attach(x, xd);
-		break;
-
-	case M_CLOSE:
-		sp = (short *)cb;
-		dprintf("detach %x, uid %d\n", x, *sp);
-		detach(x, xd);
-		break;
-
-	case M_IOCTL:
-		dprintf("ioctl %x\n", x);
-		or.index = x;
-		or.count = 0;
-		or.ccount = sizeof ctp;
-		or.data = (char *) &ctp.ctrlarg;
-		ctp.ctrlarg = M_IOANS;
-		write(xd, &or, sizeof or);
-		break;
-		
-	default:
-		dprintf("unknown command %d\n", cmd);
-		return;
+		msgbuf[cc] = 0;
+		mailfor(msgbuf);
 	}
 }
 
