@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arpadate.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)arpadate.c	6.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -215,15 +215,71 @@ nextatom(s)
 **			(case-insensitive)
 **		Month can be "Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul"
 **			"Aug" "Sep" "Oct" "Nov" "Dec" (also case-insensitive)
-**		Zone can be "UT" "GMT" "EST" "EDT" "CST" "CDT" "MST" "MDT"
-**			"PST" "PDT" or "+"4*DIGIT or "-"4*DIGIT
-**			(case-insensitive; military zones not useful
-**			per RFC1123)
+**		Zone can be as in the list below.
 **		Additional whitespace or comments may occur.
+**
+**	Notes:
+**		It's not clear this routine is valuable, since about the
+**		only place UNIX dates are used is in the UNIX mailbox
+**		header, which should probably be delivery time, not
+**		message creation time.  Oh well, I'll leave this for
+**		the time being.
 */
 
 static char MonthDays[] = {
 	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
+
+struct tzone
+{
+	char	*tzname;	/* string name */
+	int	tzoff;		/* offset in hours from GMT */
+	bool	tzdst;		/* daylight savings */
+};
+
+static struct tzone	Zones[] =
+{
+	"UT",		0,	FALSE,
+	"GMT",		0,	FALSE,
+	"AST",		-4,	FALSE,		/* Atlantic */
+	"ADT",		-3,	TRUE,
+	"EST",		-5,	FALSE,		/* Eastern */
+	"EDT",		-4,	TRUE,
+	"CST",		-6,	FALSE,		/* Central */
+	"CDT",		-5,	TRUE,
+	"MST",		-7,	FALSE,		/* Mountain */
+	"MDT",		-6,	TRUE,
+	"PST",		-8,	FALSE,		/* Pacific */
+	"PDT",		-7,	TRUE,
+	"YST",		-9,	FALSE,		/* Yukon */
+	"YDT",		-8,	TRUE,
+	"JST",		9,	FALSE,		/* Japan */
+	"AHST",		-10,	FALSE,		/* Aleutian */
+	"AHDT",		-9,	TRUE,
+	"HAST",		-10,	FALSE,		/* Aleutian */
+	"HADT",		-9,	TRUE,
+	"NST",		-11,	FALSE,		/* Nome */
+	"BST",		-11,	FALSE,		/* Bering */
+	"SST",		-11,	FALSE,		/* Samoa */
+	"HST",		-10,	FALSE,		/* Hawaii */
+	"BST",		1,	TRUE,
+	"WET",		0,	FALSE,		/* Western European */
+	"WET DST",	1,	TRUE,
+	"MET",		1,	FALSE,		/* Middle European */
+	"MET DST",	2,	TRUE,
+	"CET",		1,	FALSE,		/* Central European */
+	"CET DST",	2,	TRUE,
+	"EET",		2,	FALSE,		/* Eastern European */
+	"MET DST",	3,	TRUE,
+	"HKT",		8,	FALSE,		/* Hong Kong */
+	"IST",		2,	FALSE,		/* Israel */
+	"IDT",		3,	TRUE,
+	"KST",		9,	FALSE,		/* Korea */
+	"KDT",		10,	TRUE,
+	"SST",		8,	FALSE,		/* Singapore */
+	"NZST",		12,	FALSE,		/* New Zealand */
+	"NZDT",		13,	TRUE,
+	NULL,
 };
 
 char *
@@ -236,6 +292,7 @@ arpatounix(s, e)
 	int h_offset = 0;		/* hours */
 	int m_offset = 0;		/* minutes */
 	struct tm tm;
+	register struct tzone *z;
 	extern char *DowList[];		/* defined in collect.c */
 	extern char *MonthList[];	/* defined in collect.c */
 
@@ -327,37 +384,8 @@ arpatounix(s, e)
 			p++;
 	}
 	p = nextatom(p);		/* zone */
-	if (!strncasecmp(p, "UT", 2) || !strncasecmp(p, "GMT", 3))
-		;
-	else if (!strncasecmp(p, "EDT", 3))
-		h_offset = -4;
-	else if (!strncasecmp(p, "EST", 3))
-	{
-		h_offset = -5;
-		tm.tm_isdst = 1;
-	}
-	else if (!strncasecmp(p, "CDT", 3))
-		h_offset = -5;
-	else if (!strncasecmp(p, "CST", 3))
-	{
-		h_offset = -6;
-		tm.tm_isdst = 1;
-	}
-	else if (!strncasecmp(p, "MDT", 3))
-		h_offset = -6;
-	else if (!strncasecmp(p, "MST", 3))
-	{
-		h_offset = -7;
-		tm.tm_isdst = 1;
-	}
-	else if (!strncasecmp(p, "PDT", 3))
-		h_offset = -7;
-	else if (!strncasecmp(p, "PST", 3))
-	{
-		h_offset = -8;
-		tm.tm_isdst = 1;
-	}
-	else if (*p == '+')
+
+	if (*p == '+')
 	{
 		int off;
 
@@ -375,12 +403,26 @@ arpatounix(s, e)
 	}
 	else
 	{
+		for (z = Zones; z->tzname != NULL; z++)
+		{
+			if (strncasecmp(p, z->tzname, strlen(z->tzname)) == 0)
+				break;
+		}
+
+		if (z->tzname != NULL)
+		{
+			h_offset = z->tzoff;
+			tm.tm_isdst = z->tzdst;
+		}
+		else
+		{
 #ifdef LOG
-		if (LogLevel > 0)
-			syslog(LOG_NOTICE, "%s: arpatounix: unparseable date: %s",
-				e->e_id, s);
+			if (LogLevel > 3)
+				syslog(LOG_NOTICE, "%s: arpatounix: unparseable date: %s",
+					e->e_id, s);
 #endif /* LOG */
-		return(NULL);
+			return (NULL);
+		}
 	}
 
 	/* is the year a leap year? */
@@ -390,11 +432,11 @@ arpatounix(s, e)
 	else
 		MonthDays[2] = 28;
 
-	/* apply offset */
-	if (h_offset || m_offset)
+	/* apply offset -- this leaves the date in GMT */
+	if (h_offset != 0 || m_offset != 0)
 	{
-		tm.tm_min += m_offset;
-		tm.tm_hour += h_offset;
+		tm.tm_min -= m_offset;
+		tm.tm_hour -= h_offset;
 
 		/* normalize */
 		if (tm.tm_min < 0)
@@ -468,7 +510,7 @@ arpatounix(s, e)
 	if ((p = asctime(&tm)) == NULL || *p == '\0' || strlen(p) < 25)
 	{
 #ifdef LOG
-		if (LogLevel > 0)
+		if (LogLevel > 1)
 			syslog(LOG_NOTICE, "%s: arpatounix: asctime failed: %s",
 				e->e_id, s);
 #endif /* LOG */

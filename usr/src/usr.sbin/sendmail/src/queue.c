@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.10 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.11 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.10 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.11 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -217,7 +217,8 @@ queueup(df)
 	*/
 
 	bzero((char *) &nullmailer, sizeof nullmailer);
-	nullmailer.m_r_rwset = nullmailer.m_s_rwset = -1;
+	nullmailer.m_re_rwset = nullmailer.m_rh_rwset =
+			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = -1;
 	nullmailer.m_eol = "\n";
 
 	define('g', "\001f", e);
@@ -342,7 +343,7 @@ runqueue(forkflag)
 	ForceMail = TRUE;
 
 # ifdef LOG
-	if (LogLevel > 11)
+	if (LogLevel > 69)
 		syslog(LOG_DEBUG, "runqueue %s, pid=%d, forkflag=%d",
 			QueueDir, getpid(), forkflag);
 # endif /* LOG */
@@ -472,6 +473,23 @@ orderq(doall)
 # endif DEBUG
 		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
+
+		if (strlen(d->d_name) != 9)
+		{
+			if (Verbose)
+				printf("orderq: bogus qf name %s\n", d->d_name);
+#ifdef LOG
+			if (LogLevel > 3)
+				syslog(LOG_NOTICE, "orderq: bogus qf name %s",
+					d->d_name);
+#endif
+			if (strlen(d->d_name) >= MAXNAME)
+				d->d_name[MAXNAME - 1] = '\0';
+			strcpy(lbuf, d->d_name);
+			lbuf[0] = 'Q';
+			(void) rename(d->d_name, lbuf);
+			continue;
+		}
 
 		/* yes -- open control file (if not too many files) */
 		if (++wn >= QUEUESIZE)
@@ -651,7 +669,7 @@ dowork(w, e)
 		ErrorMode = EM_MAIL;
 		e->e_id = &w->w_name[2];
 # ifdef LOG
-		if (LogLevel > 12)
+		if (LogLevel > 76)
 			syslog(LOG_DEBUG, "%s: dowork, pid=%d", e->e_id,
 			       getpid());
 # endif /* LOG */
@@ -756,7 +774,7 @@ readqf(e)
 		if (Verbose)
 			printf("%s: locked\n", e->e_id);
 # ifdef LOG
-		if (LogLevel > 10)
+		if (LogLevel > 19)
 			syslog(LOG_DEBUG, "%s: locked", e->e_id);
 # endif /* LOG */
 		(void) fclose(qfp);
@@ -812,8 +830,11 @@ readqf(e)
 			e->e_df = newstr(&bp[1]);
 			e->e_dfp = fopen(e->e_df, "r");
 			if (e->e_dfp == NULL)
+			{
 				syserr("readqf: cannot open %s", e->e_df);
-			if (fstat(fileno(e->e_dfp), &st) >= 0)
+				e->e_msgsize = -1;
+			}
+			else if (fstat(fileno(e->e_dfp), &st) >= 0)
 				e->e_msgsize = st.st_size;
 			break;
 
@@ -1088,7 +1109,7 @@ queuename(e, type)
 		if (tTd(7, 1))
 			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
 # ifdef LOG
-		if (LogLevel > 16)
+		if (LogLevel > 93)
 			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
 # endif /* LOG */
 	}
@@ -1123,7 +1144,7 @@ unlockqueue(e)
 
 	/* remove the transcript */
 # ifdef LOG
-	if (LogLevel > 19)
+	if (LogLevel > 87)
 		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
 # endif /* LOG */
 	if (!tTd(51, 4))

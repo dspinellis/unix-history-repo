@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.6 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.7 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.6 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.7 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -142,7 +142,7 @@ smtp(e)
 			message("421", "%s Lost input channel from %s",
 				MyHostName, CurHostName);
 #ifdef LOG
-			if (LogLevel >= 4)
+			if (LogLevel > 1)
 				syslog(LOG_NOTICE, "lost input channel from %s",
 					CurHostName);
 #endif
@@ -352,7 +352,7 @@ smtp(e)
 				break;
 			setproctitle("%s: %s", CurHostName, inp);
 #ifdef LOG
-			if (LogLevel >= 9)
+			if (LogLevel > 5)
 				syslog(LOG_INFO, "%s: %s", CurHostName, inp);
 #endif
 			vrfyqueue = NULL;
@@ -438,7 +438,7 @@ smtp(e)
 # ifdef LOG
 			if (RealHostName != NULL && LogLevel > 0)
 				syslog(LOG_NOTICE,
-				    "\"%s\" command from %s (%s)\n",
+				    "\"%s\" command from %s (%s)",
 				    c->cmdname, RealHostName,
 				    inet_ntoa(RealHostAddr.sin_addr));
 # endif

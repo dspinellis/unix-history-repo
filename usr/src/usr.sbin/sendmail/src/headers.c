@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -318,7 +318,7 @@ eatheader(e, queuejob)
 	*/
 
 # ifdef LOG
-	if (!queuejob && LogLevel > 1)
+	if (!queuejob && LogLevel > 4)
 	{
 		char *name;
 		char hbuf[MAXNAME];
@@ -341,7 +341,7 @@ eatheader(e, queuejob)
 		sprintf(sbuf, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
 		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
 		    e->e_msgpriority, e->e_nrcpts, msgid);
-		syslog(LOG_INFO, "%s: %s, received from %s\n",
+		syslog(LOG_INFO, "%s: %s, received from %s",
 		    e->e_id, sbuf, name);
 	}
 # endif /* LOG */
@@ -811,7 +811,8 @@ commaize(h, p, fp, oldstyle, m, e)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		name = remotename(name, m, bitset(H_FROM, h->h_flags), FALSE, e);
+		name = remotename(name, m, bitset(H_FROM, h->h_flags),
+				  TRUE, FALSE, e);
 		if (*name == '\0')
 		{
 			*p = savechar;
