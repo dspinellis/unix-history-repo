@@ -1,12 +1,18 @@
-#	@(#)bsd.lib.mk	5.5 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.6 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
+LIBDIR?=	/usr/lib
+LINTLIBDIR?=	/usr/libdata/lint
+LIBGRP?=	bin
+LIBOWN?=	bin
+LIBMODE?=	444
+
 .MAIN: all
 
-# prefer .s to a .c, add .po, remove stuff not used in the BSD tree
+# prefer .s to a .c, add .po, remove stuff not used in the BSD libraries
 .SUFFIXES:
 .SUFFIXES: .out .o .po .s .c .y .l
 
@@ -34,15 +40,7 @@
 
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
-all: ranlib llib-l${LIB}.ln ${MANALL}
-
-ranlib: lib${LIB}.a lib${LIB}_p.a
-	ranlib lib${LIB}.a
-	ranlib lib${LIB}_p.a
-
-.if target(reorder)
-ranlib: reorder
-.endif
+all: lib${LIB}.a lib${LIB}_p.a ${MANALL}# llib-l${LIB}.ln
 
 OBJS=	${SRCS:S/.c$/.o/g:S/.f$/.o/g:S/.s$/.o/g}
 lib${LIB}.a:: ${OBJS}
@@ -82,9 +80,11 @@ beforeinstall:
 .endif
 
 realinstall: beforeinstall
+	ranlib lib${LIB}.a
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
 	    ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}.a
+	ranlib lib${LIB}_p.a
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}/usr/lib/lib${LIB}_p.a
@@ -92,7 +92,7 @@ realinstall: beforeinstall
 	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
 
 install: afterinstall
-afterinstall: realinstall
+afterinstall: realinstall maninstall
 .endif
 
 .if !target(lint)
@@ -114,4 +114,4 @@ tags:
 	mv tags.tmp tags
 .endif
 
-.include <bsd.own.mk>
+.include <bsd.man.mk>
