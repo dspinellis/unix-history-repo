@@ -3,9 +3,9 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)gcore.1	6.4 (Berkeley) 3/14/91
+.\"	@(#)gcore.1	6.8 (Berkeley) %G%
 .\"
-.Dd March 14, 1991
+.Dd ""
 .Dt GCORE 1
 .Os BSD 4.2
 .Sh NAME
@@ -56,9 +56,9 @@ Context switches or paging activity that occur while
 .Nm gcore
 is running may cause the program to become confused.
 For best results, use -s to temporarily stop the target process.
-
+.Pp
 .Nm Gcore
-is not compatible with the original 4.2BSD version.  In particular, 4.4BSD
-requires the 
+is not compatible with the original 4.2BSD version.
+In particular, 4.4BSD requires the 
 .Ar exec
 argumemt.
