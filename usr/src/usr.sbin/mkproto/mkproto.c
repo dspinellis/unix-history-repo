@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -333,8 +333,8 @@ iput(ip, aibc, ib, inum)
 	struct timeval t;
 
 	(void)gettimeofday(&t, NULL);
-	ip->di_atime.ts_sec = t.tv_sec;
-	ip->di_atime.ts_nsec = 0;
+	ip->di_atime = t.tv_sec;
+	ip->di_atimensec = 0;
 	ip->di_mtime = ip->di_ctime = ip->di_atime;
 	switch (ip->di_mode&IFMT) {
 
