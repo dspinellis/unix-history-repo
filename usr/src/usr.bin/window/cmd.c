@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.15 83/11/23";
+static	char *sccsid = "@(#)cmd.c	3.16 83/11/30";
 #endif
 
 #include "defs.h"
@@ -42,7 +42,7 @@ docmd()
 			case '1': case '2': case '3': case '4': case '5':
 			case '6': case '7': case '8': case '9':
 				if ((w = window[c - '1']) == 0) {
-					wwbell();
+					error("%c: No such window.", c);
 					break;
 				}
 				setselwin(w);
@@ -52,6 +52,14 @@ docmd()
 			case '%':
 				if ((w = getwin()) != 0)
 					setselwin(w);
+				break;
+			case CTRL(^):
+				if (lastselwin != 0) {
+					setselwin(lastselwin);
+					if (checkproc(selwin) >= 0)
+						incmd = 0;
+				} else
+					error("No previous window.");
 				break;
 			case 'c':
 				if ((w = getwin()) != 0)
@@ -226,15 +234,12 @@ struct ww *w;
 setselwin(w)
 struct ww *w;
 {
-	if ((selwin = w) != 0)
-		front(w);
+	lastselwin = selwin;
+	front(selwin = w);
 }
 
 /*
- * This is all heuristic.
  * wwvisible() doesn't work for tinted windows.
- * and wwmoveup() doesn't work for transparent windows
- * (completely or partially).
  * But anything to make it faster.
  */
 front(w)

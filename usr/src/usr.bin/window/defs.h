@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.6 83/11/22	
+ *	@(#)defs.h	3.7 83/11/30	
  */
 
 #include "ww.h"
@@ -29,6 +29,7 @@ int ibufc;
 
 struct ww *window[NWINDOW];	/* the windows */
 struct ww *selwin;		/* the selected window */
+struct ww *lastselwin;		/* the last selected window */
 struct ww *cmdwin;		/* the command window */
 struct ww *framewin;		/* the window for framing */
 struct ww *boxwin;		/* the window for the box */

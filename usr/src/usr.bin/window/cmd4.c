@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.4 83/11/22";
+static	char *sccsid = "@(#)cmd4.c	3.5 83/11/30";
 #endif
 
 #include "defs.h"
@@ -18,9 +18,7 @@ c_show()
 			wwdelete(cmdwin);
 			wwadd(cmdwin, framewin);
 		}
-		wwdelete(w);
-		wwadd(w, framewin);
-		reframe();
+		front(w);
 		wwsetcursor(w->ww_w.t - 1, w->ww_w.l + 1);
 		for (;;) {
 			switch (bgetc()) {

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.8 83/11/23";
+static	char *sccsid = "@(#)lcmd1.c	3.9 83/11/30";
 #endif
 
 #include "defs.h"
@@ -173,23 +173,12 @@ l_close(v)
 struct value *v;
 {
 	register struct lcmd_arg *a = arg_close;
-	register i;
 	struct ww *w;
 
-	if (a->arg_vtype == V_ERR) {
+	if (a->arg_vtype == V_ERR)
 		c_close((struct ww *)0);
-		return;
-	}
-	if ((w = vtowin(&a->arg_val)) == 0)
-		return;
-	closewin(w);
-	if (selwin == 0) {
-		for (i = 0; i < NWINDOW && window[i] != 0; i++)
-			;
-		if (i < NWINDOW)
-			setselwin(window[i]);
-	}
-	reframe();
+	else if ((w = vtowin(&a->arg_val)) != 0)
+		c_close(w);
 }
 
 struct ww *
