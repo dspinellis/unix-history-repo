@@ -2,16 +2,20 @@
  * Copyright (c) 1990 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Van Jacobson and Steven McCanne of Lawrence Berkeley Laboratory.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)kgdb_stub.c	7.12 (Berkeley) %G%
+ *	@(#)kgdb_stub.c	7.13 (Berkeley) %G%
  */
+
 /*
  * "Stub" to allow remote cpu to debug over a serial line using gdb.
  */
 #ifdef KGDB
 #ifndef lint
-static char rcsid[] = "$Header: kgdb_stub.c,v 1.13 91/03/23 13:55:57 mccanne Exp $";
+static char rcsid[] = "$Header: kgdb_stub.c,v 1.2 92/07/23 19:37:50 mccanne Exp $";
 #endif
 
 #include "param.h"
@@ -53,10 +57,12 @@ int kgdb_debug = 0;
 	} else if (c == FRAME_ESCAPE) { \
 		PUTC(FRAME_ESCAPE); \
 		c = TRANS_FRAME_ESCAPE; \
+	} else if (c == FRAME_START) { \
+		PUTC(FRAME_ESCAPE); \
+		c = TRANS_FRAME_START; \
 	} \
 	PUTC(c); \
 }
-
 static int (*kgdb_getc)();
 static int (*kgdb_putc)();
 
@@ -72,9 +78,10 @@ kgdb_send(type, bp, len)
 	register u_char csum;
 	register u_char *ep = bp + len;
 
-	csum = type;
-	PUTESC(type)
+	PUTC(FRAME_START);
+	PUTESC(type);
 
+	csum = type;
 	while (bp < ep) {
 		type = *bp++;
 		csum += type;
@@ -94,6 +101,7 @@ kgdb_recv(bp, lenp)
 	register int escape, len;
 	register int type;
 
+restart:
 	csum = len = escape = 0;
 	type = -1;
 	while (1) {
@@ -114,6 +122,14 @@ kgdb_recv(bp, lenp)
 				c = FRAME_END;
 			break;
 
+		case TRANS_FRAME_START:
+			if (escape)
+				c = FRAME_START;
+			break;
+			
+		case FRAME_START:
+			goto restart;
+
 		case FRAME_END:
 			if (type < 0 || --len < 0) {
 				csum = len = escape = 0;
@@ -132,7 +148,7 @@ kgdb_recv(bp, lenp)
 			escape = 0;
 			continue;
 		}
-		if (++len > SL_BUFSIZE) {
+		if (++len > SL_RPCSIZE) {
 			while (GETC != FRAME_END)
 				;
 			return (0);
@@ -257,8 +273,8 @@ kgdb_copy(register u_char *src, register u_char *dst, register u_int nbytes)
 	(kgdb_copy((u_char *)(regs), (u_char *)((fp)->f_regs), REGISTER_BYTES))
 
 static u_long reg_cache[NUM_REGS];
-static u_char inbuffer[SL_BUFSIZE];
-static u_char outbuffer[SL_BUFSIZE];
+static u_char inbuffer[SL_RPCSIZE+1];
+static u_char outbuffer[SL_RPCSIZE];
 
 /*
  * This function does all command procesing for interfacing to 
@@ -308,9 +324,14 @@ kgdb_trap(int type, struct frame *frame)
 		 * but if we come in through a synchronous trap (i.e., via
 		 * kgdb_connect()), we will see the extra character.
 		 */
-		if (in == FRAME_END)
+		if (in == FRAME_START)
 			in = GETC;
 
+		/*
+		 * Check that this is a debugger exec message.  If so,
+		 * slurp up the entire message then ack it, and fall
+		 * through to the recv loop.
+		 */
 		if (KGDB_CMD(in) != KGDB_EXEC || (in & KGDB_ACK) != 0)
 			return (0);
 		while (GETC != FRAME_END)
@@ -373,7 +394,7 @@ kgdb_trap(int type, struct frame *frame)
 			for (len = inbuffer[0]; len < NUM_REGS; ++len) {
 				if (reg_cache[len] != gdb_regs[len] ||
 				    (in & KGDB_DELTA) == 0) {
-					if (outlen + 5 > SL_MAXMSG) {
+					if (outlen + 5 > SL_MAXDATA) {
 						out |= KGDB_MORE;
 						break;
 					}
@@ -403,7 +424,7 @@ kgdb_trap(int type, struct frame *frame)
 		case KGDB_MEM_R:
 			len = inbuffer[0];
 			kgdb_copy(&inbuffer[1], (u_char *)&addr, 4);
-			if (len + 1 > SL_MAXMSG) {
+			if (len > SL_MAXDATA) {
 				outlen = 1;
 				outbuffer[0] = E2BIG;
 			} else if (!kgdb_acc(addr, len, B_READ)) {
