@@ -1,4 +1,4 @@
-/*	uba.c	3.2	%G%	*/
+/*	uba.c	3.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -9,6 +9,7 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/vm.h"
+#include "../h/conf.h"
 
 /*
  * Allocate as many contiguous UBA mapping registers
@@ -136,4 +137,24 @@ ubainit()
 
 	mfree(ubamap, 496, 1);
 	mfree(bdpmap, 15, 1);
+}
+
+#define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
+
+ubareset()
+{
+	struct uba_regs *up = (struct uba_regs *)UBA0;
+	register struct cdevsw *cdp;
+	int i;
+
+	(void) spl6();
+	printf("UBA RESET:");
+	up->uba_cr = ADINIT;
+	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
+	while ((up->uba_cnfgr & UBIC) == 0)
+		;
+	for (cdp = cdevsw; cdp->d_open; cdp++)
+		(*cdp->d_reset)();
+	printf("\n");
+	(void) spl0();
 }
