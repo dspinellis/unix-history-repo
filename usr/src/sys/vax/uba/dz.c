@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	6.10 (Berkeley) %G%
+ *	@(#)dz.c	6.11 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -152,9 +152,17 @@ dzopen(dev, flag)
 	tp->t_oproc = dzstart;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ospeed = tp->t_ispeed = ISPEED;
-		tp->t_flags = IFLAGS;
-		/* tp->t_state |= TS_HUPCLS; */
+#ifndef PORTSELECTOR
+		if (tp->t_ispeed == 0) {
+#else
+			tp->t_state |= TS_HUPCLS;
+#endif PORTSELECTOR
+			tp->t_ispeed = ISPEED;
+			tp->t_ospeed = ISPEED;
+			tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
+		}
+#endif PORTSELECTOR
 		dzparam(unit);
 	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
 		return (EBUSY);

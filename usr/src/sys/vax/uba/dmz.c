@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.6 (Berkeley) %G%
+ *	@(#)dmz.c	6.7 (Berkeley) %G%
  */
 
 /*
@@ -210,8 +210,17 @@ dmzopen(device, flag)
 
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ispeed = tp->t_ospeed = ISPEED;
-		tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
+		if (tp->t_ispeed == 0) {
+#else
+			tp->t_state |= TS_HUPCLS;
+#endif PORTSELECTOR
+			tp->t_ispeed = ISPEED;
+			tp->t_ospeed = ISPEED;
+			tp->t_flags = IFLAGS;
+#ifndef PORTSELECTOR
+		}
+#endif PORTSELECTOR
 		dmz_softc[unit].dmz_state = 0;
 	}
 	dmzparam(unit);
@@ -415,8 +424,8 @@ dmzrint(controller, octet)
 			dmz_addr->octet[octet].octet_csr = DMZ_IE | IR_RMSTSC | unit;
 			if (dmz_addr->octet[octet].octet_rmstsc & DMZ_CAR)
 				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-			else if (dmzsoftCAR[controller] &
-			  (1 << (octet * 8 + unit)) == 0 &&
+			else if ((dmzsoftCAR[controller] &
+			    (1 << (octet * 8 + unit))) == 0 &&
 			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0)
 				(void)dmzmctl(tp - dmz_tty, DMZ_OFF, DMSET);
 			continue;
