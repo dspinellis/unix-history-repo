@@ -1,4 +1,4 @@
-/*	uba.c	4.24	81/03/16	*/
+/*	uba.c	4.25	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,6 +111,10 @@ ubasetup(uban, bp, flags)
 	struct proc *rp;
 	int a, o, ubinfo;
 
+#if VAX730
+	if (cpu == VAX_730)
+		flags &= ~UBA_NEEDBDP;
+#endif
 	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o) + 1;
@@ -331,7 +335,13 @@ ubainit(uba)
 	case VAX_750:
 		mtpr(IUR, 1);
 		/* give devices time to recover from power fail */
+/* THIS IS PROBABLY UNNECESSARY */
 		DELAY(5000000);
+/* END PROBABLY UNNECESSARY */
+		break;
+#endif
+#if VAX730
+	case VAX_730:
 		break;
 #endif
 	}
