@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.20		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.20		%G%);
+SCCSID(@(#)srvrsmtp.c	3.20.1.1		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -31,6 +31,7 @@ struct cmd
 # define CMDMAIL	1	/* mail -- designate sender */
 # define CMDRCPT	2	/* rcpt -- designate recipient */
 # define CMDDATA	3	/* data -- send message text */
+# define CMDHOPS	4	/* hops -- specify hop count */
 # define CMDRSET	5	/* rset -- reset state */
 # define CMDVRFY	6	/* vrfy -- verify address */
 # define CMDHELP	7	/* help -- give usage info */
@@ -57,6 +58,7 @@ static struct cmd	CmdTab[] =
 	"quit",		CMDQUIT,
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
+	"hops",		CMDHOPS,
 # ifdef DEBUG
 	"_showq",	CMDDBGSHOWQ,
 	"_debug",	CMDDBGDEBUG,
@@ -247,6 +249,14 @@ smtp()
 				/* bad argument */
 				message("504", "Scheme unknown");
 			}
+			break;
+
+		  case CMDHOPS:		/* specify hop count */
+			HopCount = atoi(p);
+			if (++HopCount > MAXHOP)
+				message("501", "Hop count exceeded");
+			else
+				message("200", "Hop count ok");
 			break;
 
 # ifdef DEBUG
