@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.5 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -396,23 +396,29 @@ nfs_mountdiskless(path, which, mountflag, sin, args, vpp)
 	register struct mount *mp;
 	register struct mbuf *m;
 	register int error;
+	struct vfsconf *vfsp;
 
-	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
-	    M_MOUNT, M_NOWAIT);
-	if (mp == NULL)
-		panic("nfs_mountroot: %s mount malloc", which);
+	for (vfsp = vfsconf; vfsp; vfsp = vfsp->vfc_next)
+		if (!strcmp(vfsp->vfc_name, "nfs"))
+			break;
+	if (vfsp == NULL)
+		panic("nfs_mountroot: NFS not configured");
+	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = &nfs_vfsops;
+	mp->mnt_vfc = vfsp;
+	mp->mnt_op = vfsp->vfc_vfsops;
 	mp->mnt_flag = mountflag;
-
 	MGET(m, MT_SONAME, M_DONTWAIT);
 	if (m == NULL)
 		panic("nfs_mountroot: %s mount mbuf", which);
 	bcopy((caddr_t)sin, mtod(m, caddr_t), sin->sin_len);
 	m->m_len = sin->sin_len;
-	error = mountnfs(args, mp, m, which, path, vpp);
-	if (error)
+	if (error = mountnfs(args, mp, m, which, path, vpp))
 		panic("nfs_mountroot: mount %s on %s: %d", path, which, error);
+	vfsp->vfc_refcount++;
+	mp->mnt_stat.f_type = vfsp->vfc_typenum;
+	mp->mnt_flag |= (vfsp->vfc_flags & MNT_VISFLAGMASK) | MNT_ROOTFS;
+	strncpy(mp->mnt_stat.f_fstypename, vfsp->vfc_name, MFSNAMELEN);
 
 	return (mp);
 }
