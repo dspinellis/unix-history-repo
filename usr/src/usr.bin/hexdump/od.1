@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)od.1	5.4 (Berkeley) %G%
+.\"     @(#)od.1	5.5 (Berkeley) %G%
 .\"
 .Dd %Q
 .Os BSD 4.4
@@ -13,7 +13,7 @@
 .Nd octal, decimal, hex, ascii dump
 .Sh SYNOPSIS
 .Nm od
-.Op Fl aBbcDdeFfHhIiLlOoPpvXx
+.Op Fl aBbcDdeFfHhIiLlOovXx
 .Cx [
 .Op Sy \&+
 .Li offset
@@ -37,8 +37,11 @@ It does not provide compatibility for the
 option (see
 .Xr strings 1)
 or the
+.Fl P ,
+.Fl p ,
+or
 .Fl w
-option, nor is compatibility provided for the ``label'' component
+options, nor is compatibility provided for the ``label'' component
 of the offset syntax.
 .Sh SEE ALSO
 .Xr hexdump 1 ,
