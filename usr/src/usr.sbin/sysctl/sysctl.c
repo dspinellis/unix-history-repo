@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,9 @@ static char sccsid[] = "@(#)sysctl.c	5.6 (Berkeley) %G%";
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp_var.h>
+#include <netinet/ip_var.h>
+#include <netinet/udp.h>
+#include <netinet/udp_var.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -376,10 +379,27 @@ debuginit()
 struct ctlname inetname[] = CTL_IPPROTO_NAMES;
 struct ctlname ipname[] = IPCTL_NAMES;
 struct ctlname icmpname[] = ICMPCTL_NAMES;
+struct ctlname udpname[] = UDPCTL_NAMES;
 struct list inetlist = { inetname, IPPROTO_MAXID };
 struct list inetvars[] = {
-	{ ipname, IPCTL_MAXID },
-	{ icmpname, ICMPCTL_MAXID },
+	{ ipname, IPCTL_MAXID },	/* ip */
+	{ icmpname, ICMPCTL_MAXID },	/* icmp */
+	{ 0, 0 },			/* igmp */
+	{ 0, 0 },			/* ggmp */
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 0 },			/* tcp */
+	{ 0, 0 },
+	{ 0, 0 },			/* egp */
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 0 },			/* pup */
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 0 },
+	{ 0, 0 },
+	{ udpname, UDPCTL_MAXID },	/* udp */
 };
 
 /*
@@ -402,7 +422,7 @@ sysctl_inet(string, bufpp, mib, flags, typep)
 	if ((indx = findname(string, "third", bufpp, &inetlist)) == -1)
 		return (-1);
 	mib[2] = indx;
-	if (indx < 2)
+	if (indx <= IPPROTO_UDP && inetvars[indx].list != NULL)
 		lp = &inetvars[indx];
 	else if (!flags)
 		return (-1);
