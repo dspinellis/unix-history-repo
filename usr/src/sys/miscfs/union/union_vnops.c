@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -421,16 +421,16 @@ union_open(ap)
 					VOP_UNLOCK(tvp);
 				}
 
-				un->un_flags &= ~UN_ULOCK;
-				VOP_UNLOCK(un->un_uppervp);
-				union_vn_close(un->un_uppervp, FWRITE, cred, p);
-				VOP_LOCK(un->un_uppervp);
-				un->un_flags |= UN_ULOCK;
-
 				if (!error)
 					uprintf("union: copied up %s\n",
 								un->un_path);
 			}
+
+			un->un_flags &= ~UN_ULOCK;
+			VOP_UNLOCK(un->un_uppervp);
+			union_vn_close(un->un_uppervp, FWRITE, cred, p);
+			VOP_LOCK(un->un_uppervp);
+			un->un_flags |= UN_ULOCK;
 
 			/*
 			 * Subsequent IOs will go to the top layer, so
@@ -568,15 +568,38 @@ union_setattr(ap)
 	struct union_node *un = VTOUNION(ap->a_vp);
 	int error;
 
-	if (un->un_uppervp) {
+	/*
+	 * Handle case of truncating lower object to zero size,
+	 * by creating a zero length upper object.  This is to
+	 * handle the case of open with O_TRUNC and O_CREAT.
+	 */
+	if ((un->un_uppervp == NULLVP) &&
+	    /* assert(un->un_lowervp != NULLVP) */
+	    (un->un_lowervp->v_type == VREG) &&
+	    (ap->a_vap->va_size == 0)) {
+		struct vnode *vp;
+
+		error = union_vn_create(&vp, un, ap->a_p);
+		if (error)
+			return (error);
+
+		/* at this point, uppervp is locked */
+		union_newupper(un, vp);
+
+		VOP_UNLOCK(vp);
+		union_vn_close(un->un_uppervp, FWRITE, ap->a_cred, ap->a_p);
+		VOP_LOCK(vp);
+		un->un_flags |= UN_ULOCK;
+	}
+
+	/*
+	 * Try to set attributes in upper layer,
+	 * otherwise return read-only filesystem error.
+	 */
+	if (un->un_uppervp != NULLVP) {
 		error = VOP_SETATTR(un->un_uppervp, ap->a_vap,
 					ap->a_cred, ap->a_p);
 	} else {
-		/*
-		 * XXX should do a copyfile (perhaps only if
-		 * the file permission change, which would not
-		 * track va_ctime correctly).
-		 */
 		error = EROFS;
 	}
 
