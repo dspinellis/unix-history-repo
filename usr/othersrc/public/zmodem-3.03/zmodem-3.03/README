@@ -1,0 +1,50 @@
+May 1989: Corrections for undefined variable and multiply defined rdchk().
+
+New for April 1989:  ZMODEM compression and other compatible extensions
+have been added to the rz and sz programs.  Please read the comments in
+the rz.c and sz.c source code for licensing information for commercial use.
+
+Previous versions of rz and sz (April 1988) remain Public Domain.
+
+New for April 1988:  VMS C flavors of rz and sz especially for tired
+frog stompers.  The following performance log entries give the story!
+
+ 2400 Z  splat.arc         3968  220   18  0  0   0  512  30 (rz) 0 ccvax off
+ 2400 K  splat.arc         3968  110   36  0  0   0   89  -1 get  -1 ccvax off
+
+The contents of RZSZ.ARC can be uploaded to a VAX/XMS system by ZCOMM or
+Professional-YAM using the supplied vupl.t script.  Connect to your VMS
+system, select an empty directory, and then give the YAM/ZCOMM command:
+"source vupl.t".  This will attempt to start a Kermit server ans upload
+the files to it.  If the script can't fire up a Kermit server, the
+script will use the VMS DCL "create" command to upload the files
+directly.  In the latter case, use a clean line for best results.
+
+The contents of RZSZ.ARC can be uploaded to a Unix or Xenix system by
+ZCOMM or Professional-YAM using the supplied zupl.t script.  Connect to
+your Unix/Xenix system, select an empty directory, and then give the
+YAM/ZCOMM command: "source zupl.t".  This will upload minirb.c, compile
+it, and then use minirb to upload the rz/sz files.
+
+Once these files are on your Unix system, you can type "make".
+The Makefile will list the various systems it knows how to
+compile the programs for, and the command to do so (e.g., "make bsd").
+
+The Makefile is self explanatory; just say "make".
+
+Naturally, rz and sz work best with comm programs that seamlessly
+support ZMODEM command and file AutoDownload (Pro-YAM and ZCOMM).
+
+The "DSZ" shareware program allows ZMODEM file transfers with
+traditional DOS comm programs, but it must be called manually.
+(The computer should do that for you!)  DSZ provides a "mini term
+function" that supports ZMODEM AutoDownload.  DSZ (part of DSZ.ARC) and
+the ZMODEM protocol description (YZMODEM.ARC) are on TeleGodzilla and
+other fine bulletin boards.
+
+Chuck Forsberg WA7KGX Author of Pro-YAM communications Tools for PCDOS and Unix
+...!tektronix!reed!omen!caf  Omen Technology Inc "The High Reliability Software"
+  17505-V Northwest Sauvie Island Road Portland OR 97231  Voice: 503-621-3406
+TeleGodzilla BBS: 621-3746 2400/1200  CIS:70007,2304  Genie:CAF  Source:TCE022
+  omen Any ACU 1200 1-503-621-3746 se:--se: link ord: Giznoid in:--in: uucp
+  omen!/usr/spool/uucppublic/FILES lists all uucp-able files, updated hourly

@@ -1,0 +1,53 @@
+'\" Revision Level 
+'\" Last Delta     09-08-87
+.TH MINIRB 1 OMEN
+.SH NAME
+minirb \- Bootstrap YMODEM Batch file receive
+.SH SYNOPSIS
+.B minirb
+.SH DESCRIPTION
+.I Minirb
+receives one or more files with YMODEM batch file transfer protocol.
+.I Minirb
+was developed for use as a bootstrap to simplify uploading of the longer
+.I rz
+and
+.I sz
+programs, such as are contained in the
+.I rzsz.zoo
+"zoo" archive or the
+.I rzsz.sh
+shell archive.
+.SH SEE ALSO
+YMODEM.DOC,
+Professional-YAM manual,
+sz(omen)
+.SH NOTES
+The source file
+.I minirb.c
+has been ruthlessly pruned
+(4k, 175 lines)
+to simplify uploading without benefit of
+an error correcting file transfer protocol.
+Do not reformat or add tabs to the source file
+as this would complicate uploading.
+
+Please read the uploading suggestions in the chapter
+.I "File Transfer Basics"
+in the Professional-YAM or ZCOMM user's manual.
+
+.I Minirb
+uses 8 bit checksum which may not be compatible with some programs
+claiming to support YMODEM batch transfers.
+
+.I Minirb
+uses the
+YMODEM header
+file length information
+to avoid storing extraneous characters.
+.I Minirb
+deletes carriage returns and CPMEOF (^Z) characters
+encountered in uploaded files.
+
+.I Minirb
+calls stty(1) to set and reset raw tty mode.
