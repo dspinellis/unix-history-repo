@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.15 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -19,8 +19,6 @@
  *	pageouts
  *	fix credential use (uses current process credentials now)
  */
-#include "vnodepager.h"
-#if NVNODEPAGER > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -475,4 +473,3 @@ vnode_pager_io(vnp, m, rw)
 	vm_pager_unmap_page(kva);
 	return (error ? VM_PAGER_ERROR : VM_PAGER_OK);
 }
-#endif

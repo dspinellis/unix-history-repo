@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.17 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -20,9 +20,6 @@
  *	Add multiprocessor locks
  *	Deal with async writes in a better fashion
  */
-
-#include "swappager.h"
-#if NSWAPPAGER > 0
 
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -890,4 +887,3 @@ swap_pager_iodone(bp)
 		thread_wakeup((int) &vm_pages_needed);
 	splx(s);
 }
-#endif
