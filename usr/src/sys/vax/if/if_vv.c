@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.9 (Berkeley) %G%
+ *	@(#)if_vv.c	6.10 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -48,11 +48,16 @@
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
+
+#ifdef	BBNNET
+#define	INET
+#endif
+#ifdef	INET
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
-#include "../netinet/ip_var.h"
+#endif
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -77,7 +82,7 @@
  *        The absolute maximum size is 2024, which is enforced.
  */
 
-#define VVMTU (1024)
+#define VVMTU (1536)
 
 #define VVMRU (VVMTU + 16)
 #define VVBUFSIZE (VVMRU + sizeof(struct vv_header))
@@ -417,8 +422,8 @@ gotit:			/* we got something--is it any good? */
 			if (vs->vs_ifuba.ifu_flags & UBA_NEEDBDP)
 				UBAPURGE(vs->vs_ifuba.ifu_uba,
 				    vs->vs_ifuba.ifu_r.ifrw_bdp);
-			m = if_rubaget(&vs->vs_ifuba,
-			    sizeof(struct vv_header), 0);
+			m = if_rubaget(&vs->vs_ifuba, sizeof(struct vv_header),
+				0, 0);
 			if (m != NULL)
 				m_freem(m);
 			
@@ -726,15 +731,19 @@ len = %d, vvicsr = %b\n",
 		goto dropit;
 	}
 
-	m = if_rubaget(&vs->vs_ifuba, len, off);
+	m = if_rubaget(&vs->vs_ifuba, len, off, &vs->vs_if);
 	if (m == NULL) {
 		vvprintf("vv%d: if_rubaget() failed, vvicsr = %b\n", unit,
 			    0xffff&(addr->vvicsr), VV_IBITS);
 		goto dropit;
 	}
 	if (off) {
-		m->m_off += 2 * sizeof(u_short);
-		m->m_len -= 2 * sizeof(u_short);
+		struct ifnet *ifp;
+
+		ifp = *(mtod(m, struct ifnet **));
+		m->m_off += 2 * sizeof (u_short);
+		m->m_len -= 2 * sizeof (u_short);
+		*(mtod(m, struct ifnet **)) = ifp;
 	}
 
 	/* Keep track of source address of this packet */
@@ -944,6 +953,7 @@ vvioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
+		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			vvinit(ifp->if_unit);
                 /*
@@ -957,7 +967,6 @@ vvioctl(ifp, cmd, data)
 				return (EADDRNOTAVAIL);
 			break;
 		}
-		ifp->if_flags |= IFF_UP;
 		break;
 
 	default:
