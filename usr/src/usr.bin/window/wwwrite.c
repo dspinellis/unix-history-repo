@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.11 83/09/15";
+static	char *sccsid = "@(#)wwwrite.c	3.12 83/09/15";
 #endif
 
 #include "ww.h"
@@ -59,6 +59,7 @@ int n;
 				Wcurright(w->ww_win, 1);
 				break;
 			case 'E':
+				w->ww_buf -= w->ww_w.t - w->ww_b.t;
 				break;
 			case 'H':
 				WWcursor(w->ww_win, 0, 0);
