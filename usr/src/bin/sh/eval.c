@@ -5,11 +5,37 @@
  * This code is derived from software contributed to Berkeley by
  * Kenneth Almquist.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)eval.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)eval.c	5.4 (Berkeley) 4/16/92";
 #endif /* not lint */
 
 /*
@@ -304,7 +330,7 @@ evalfor(n)
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
 	for (argp = n->nfor.args ; argp ; argp = argp->narg.next) {
-		expandarg(argp, &arglist, 1);
+		expandarg(argp, &arglist, EXP_FULL | EXP_TILDE);
 		if (evalskip)
 			goto out;
 	}
@@ -343,7 +369,7 @@ evalcase(n, flags)
 
 	setstackmark(&smark);
 	arglist.lastp = &arglist.list;
-	expandarg(n->ncase.expr, &arglist, 0);
+	expandarg(n->ncase.expr, &arglist, EXP_TILDE);
 	for (cp = n->ncase.cases ; cp && evalskip == 0 ; cp = cp->nclist.next) {
 		for (patp = cp->nclist.pattern ; patp ; patp = patp->narg.next) {
 			if (casematch(patp, arglist.list->text)) {
@@ -404,7 +430,7 @@ expredir(n)
 		 || redir->type == NAPPEND) {
 			struct arglist fn;
 			fn.lastp = &fn.list;
-			expandarg(redir->nfile.fname, &fn, 0);
+			expandarg(redir->nfile.fname, &fn, EXP_TILDE | EXP_REDIR);
 			redir->nfile.expfname = fn.list->text;
 		}
 	}
@@ -570,11 +596,11 @@ evalcommand(cmd, flags, backcmd)
 				p++;
 			} while (is_in_name(*p));
 			if (*p == '=') {
-				expandarg(argp, &varlist, 0);
+				expandarg(argp, &varlist, EXP_VARTILDE);
 				continue;
 			}
 		}
-		expandarg(argp, &arglist, 1);
+		expandarg(argp, &arglist, EXP_FULL | EXP_TILDE);
 		varflag = 0;
 	}
 	*arglist.lastp = NULL;
@@ -584,8 +610,10 @@ evalcommand(cmd, flags, backcmd)
 	for (sp = arglist.list ; sp ; sp = sp->next)
 		argc++;
 	argv = stalloc(sizeof (char *) * (argc + 1));
-	for (sp = arglist.list ; sp ; sp = sp->next)
+	for (sp = arglist.list ; sp ; sp = sp->next) {
+		TRACE(("evalcommand arg: %s\n", sp->text));
 		*argv++ = sp->text;
+	}
 	*argv = NULL;
 	lastarg = NULL;
 	if (iflag && funcnest == 0 && argc > 0)
