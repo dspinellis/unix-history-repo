@@ -1,4 +1,4 @@
-/*	dh.c	4.21	81/02/22	*/
+/*	dh.c	4.22	81/02/23	*/
 
 #include "dh.h"
 #if NDH11 > 0
@@ -764,3 +764,4 @@ dmintr(dm)
 		addr->dmcsr = DH_IE|DM_SE;
 	}
 }
+#endif
