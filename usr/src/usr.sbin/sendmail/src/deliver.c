@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1165,48 +1165,45 @@ logdelivery(m, mci, stat, e)
 	char *stat;
 	register ENVELOPE *e;
 {
-	char *delay;
-	char *curhost;
-	extern char *pintvl();
-
 # ifdef LOG
+	char *curhost;
+	char *mname;
+	char *relay;
+	char *hostdetail;
+	extern char *pintvl();
+	extern char *macvalue();
+
 	if (mci != NULL && mci->mci_host != NULL)
 		curhost = mci->mci_host;
 	else
 		curhost = CurHostName;
 
-	delay = pintvl(curtime() - e->e_ctime, TRUE);
-	if (strcmp(stat, "Sent") != 0 || m == NULL || curhost == NULL ||
-	    strcmp(curhost, "localhost") == 0)
+	if (curhost == NULL || curhost[0] == '/')
 	{
-		syslog(LOG_INFO, "%s: to=%s, delay=%s, stat=%s",
-		       e->e_id, e->e_to, delay, stat);
+		hostdetail = macvalue('h', e);
+		if (hostdetail == NULL || hostdetail[0] == '\0')
+			hostdetail = "local";
 	}
 	else
 	{
-		char *p1, *p2;
-		extern char *macvalue();
-
-		if (curhost[0] == '/')
-		{
-			p1 = macvalue('h', e);
-			if (p1 == NULL || p1[0] == '\0')
-				p1 = "local";
-			p2 = curhost;
-		}
 # ifdef DAEMON
-		else
-		{
-			extern struct sockaddr_in CurHostAddr;
-			extern char *inet_ntoa();
+		extern struct sockaddr_in CurHostAddr;
+		extern char *inet_ntoa();
 
-			p1 = curhost;
-			p2 = inet_ntoa(CurHostAddr.sin_addr);
-		}
+		hostdetail = inet_ntoa(CurHostAddr.sin_addr);
+# else
+		hostdetail = "?";
 # endif
-		syslog(LOG_INFO, "%s: to=%s, delay=%s, mailer=%s, stat=Sent to %s (%s)",
-		       e->e_id, e->e_to, delay, m->m_name, p1, p2);
 	}
+
+	if (m != NULL)
+		mname = m->m_name;
+	else
+		mname = "(unknown)";
+
+	syslog(LOG_INFO, "%s: to=%s, delay=%s, mailer=%s, relay=%s (%s), stat=%s",
+	       e->e_id, e->e_to, pintvl(curtime() - e->e_ctime, TRUE),
+	       mname, curhost, hostdetail, stat);
 # endif /* LOG */
 }
 /*
