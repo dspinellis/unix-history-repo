@@ -1,13 +1,14 @@
-/* ip_output.c 1.5 81/10/26 */
+/* ip_output.c 1.5 81/10/29 */
 
 #include "../h/param.h"
-#include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
-#include "../bbnnet/host.h"
-#include "../bbnnet/tcp.h"
-#include "../bbnnet/ip.h"
-#include "../bbnnet/imp.h"
-#include "../bbnnet/ucb.h"
+#include "../h/mbuf.h"
+#include "../h/socket.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/imp.h"
+#include "../inet/inet_host.h"
+#include "../inet/ip.h"
+#include "../inet/tcp.h"
 
 ip_output(mp)
 	struct mbuf *mp;
@@ -27,12 +28,12 @@ COUNT(IP_OUTPUT);
 	 */
 	p->ip_v = IPVERSION;
 	p->ip_hl = hlen >> 2;
-	p->ip_off = 0 | (p->ip_off & ip_df);
+	p->ip_off = 0 | (p->ip_off & IP_DF);
 	p->ip_ttl = MAXTTL;
-	p->ip_id = netcb.n_ip_cnt++;
+	p->ip_id = ip_id++;
 
 	if (p->ip_len > MTU) {          /* must fragment */
-		if (p->ip_off & ip_df)
+		if (p->ip_off & IP_DF)
 			return (0);
 		max = MTU - hlen;       /* maximum data length in fragment */
 		len = p->ip_len - hlen; /* data length */
@@ -57,7 +58,7 @@ COUNT(IP_OUTPUT);
 			}
 
 			if (i < max || m == NULL) {     /* last fragment */
-				p->ip_off = p->ip_off & ~ip_mf;
+				p->ip_off = p->ip_off &~ IP_MF;
 				p->ip_len = i + hlen;
 				break;
 
@@ -68,7 +69,7 @@ COUNT(IP_OUTPUT);
 				if ((mm = m_get(1)) == NULL)    /* no more bufs */
 					return(0);
 
-				p->ip_off |= ip_mf;
+				p->ip_off |= IP_MF;
 
 				/* terminate fragment at 8 byte boundary (round down) */
 
@@ -142,7 +143,9 @@ COUNT(IP_SEND);
 	   necessary byte-swapping  */
 
 	p->ip_sum = 0;
- 	ip_bswap(p);
+	p->ip_len = htons(p->ip_len);
+	p->ip_id = htons(p->ip_id);
+	p->ip_off = htons(p->ip_off);
 	p->ip_sum = cksum(m, sizeof(struct ip));
 
 	m->m_off -= L1822;              /* -> 1822 leader */
@@ -154,7 +157,7 @@ COUNT(IP_SEND);
 
 	/* put output message on queue */
 
-	s = spl_imp();
+	s = splimp();
 	if (imp_stat.outq_head != NULL)
 		imp_stat.outq_tail->m_act = m;
 	else
@@ -199,6 +202,6 @@ COUNT(IP_SETUP);
 	ip->ip_p = up->uc_lolink;
 	ip->ip_len = len + sizeof(struct ip);
 
-	ip->ip_src.s_addr = netcb.n_lhost.s_addr;
+	ip->ip_src.s_addr = n_lhost.s_addr;
         ip->ip_dst.s_addr = up->uc_host->h_addr.s_addr;
 }

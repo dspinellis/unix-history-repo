@@ -1,4 +1,4 @@
-/* ip_input.c 1.8 81/10/28 */
+/* ip_input.c 1.9 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -373,7 +373,7 @@ ip_dooptions(ip)
 {
 	register u_char *cp;
 	int opt, optlen, cnt, s;
-	struct inet_addr *sp;
+	struct socket *sp;
 
 	cp = (u_char *)(ip + 1);
 	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
@@ -394,7 +394,7 @@ ip_dooptions(ip)
 		case IPOPT_SSRR:
 			if (cp[2] < 4 || cp[2] > optlen - 3)
 				break;
-			sp = (struct inet_addr *)(cp+cp[2]);
+			sp = (struct socket *)(cp+cp[2]);
 			if (n_lhost.s_addr == *(u_long *)sp) {
 				if (opt == IPOPT_SSRR) {
 					/* make sure *sp directly accessible*/
@@ -414,7 +414,7 @@ ip_dooptions(ip)
 				cp[3] += 0x10;
 				break;
 			}
-			sp = (struct inet_addr *)(cp+cp[2]);
+			sp = (struct socket *)(cp+cp[2]);
 			switch (cp[3] & 0xf) {
 
 			case IPOPT_TS_TSONLY:

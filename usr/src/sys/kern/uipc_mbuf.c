@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.4 81/10/28 */
+/* uipc_mbuf.c 1.5 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,9 +8,10 @@
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
-#include "../bbnnet/net.h"
-#include "../bbnnet/tcp.h"
-#include "../bbnnet/ip.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/tcp.h"
+#include "../inet/ip.h"
 #include "../h/vm.h"
 
 struct mbuf *
@@ -62,7 +63,7 @@ COUNT(M_FREEM);
 	if (m == NULL)
 		return (0);
 	cnt = 0;
-	s = spl_imp();
+	s = splimp();
 	do {
 		MFREE(m, n);
 		cnt++;
@@ -87,10 +88,10 @@ COUNT(MBUFINIT);
 		m++;
 	}
 	pg_alloc(3);
-	netcb.n_pages = 4;
-	netcb.n_bufs = 32;
-	netcb.n_lowat = 16;
-	netcb.n_hiwat = 32;
+	mbstat.m_pages = 4;
+	mbstat.m_bufs = 32;
+	mbstat.m_lowat = 16;
+	mbstat.m_hiwat = 32;
 }
 
 pg_alloc(n)
@@ -111,14 +112,14 @@ COUNT(PG_ALLOC);
 		return (0);
 	vmaccess(&Netmap[j], (caddr_t)m, k);
 	bufs = n << 3;
-	s = spl_imp();
+	s = splimp();
 	for (j=0; j < bufs; j++) {
 		m->m_off = 0;
 		m_free(m);
 		m++;
 	}
 	splx(s);
-	netcb.n_pages += n;
+	mbstat.m_pages += n;
 	return (1);
 }
 
@@ -132,8 +133,8 @@ m_expand()
 	int need, needp, needs;
 
 COUNT(M_EXPAND);
-	needs = need = netcb.n_hiwat - netcb.n_bufs;    /* #bufs to add */
-	needp = need >> 3;                              /* #pages to add */
+	needs = need = mbstat.m_hiwat - mbstat.m_bufs;
+	needp = need >> 3;
 	if (pg_alloc(needp))
 		return (1);
 	for (i=0; i < needp; i++, need-=NMBPG)
@@ -141,38 +142,18 @@ COUNT(M_EXPAND);
 			goto steal;
 	return (need < needs);
 steal:
-	fp = netcb.n_ip_tail;           /* ip reass.q */
-	while (need > 0 && fp) {
-		q = fp->iqx.ip_next;    /* free mbufs assoc. w/chain */
-		while (q != (struct ip *)fp) {
-			need -= m_freem(dtom(q));
-			q = q->ip_next;
-		}
-		ip_freef(fp);           /* free header */
-		fp = netcb.n_ip_tail;
-	}
-	tp = netcb.n_tcb_tail;          /* ->tcbs */
-	while (need > 0 && tp != NULL) {
-		m = tp->t_rcv_unack;
-		while (m != NULL) {
-			n = m->m_act;
-			need -= m_freem(m);
-			m = n;
-		}
-		tp->t_rcv_unack = NULL;
-		tp = tp->t_tcb_prev;
-	}
+#ifdef notdef
+	/* free fragments */
+	/* free unacks */
+#endif
 	return (need < needs);
 }
 
 #ifdef notdef
 m_relse()
 {
-	int free;
-
 COUNT(M_RELSE);
-	free = (netcb.n_bufs - netcb.n_hiwat) >> 3;    /* # excess free pages */
-	return;
+
 }
 #endif
 

@@ -1,18 +1,19 @@
-/* tcp_usrreq.c 1.13 81/10/29 */
+/* tcp_usrreq.c 1.14 81/10/29 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
-#include "../bbnnet/tcp.h"
-#include "../bbnnet/ip.h"
-#include "../bbnnet/imp.h"
-#include "../bbnnet/ucb.h"
+#include "../h/mbuf.h"
+#include "../h/socket.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/imp.h"
+#include "../inet/ip.h"
+#include "../inet/tcp.h"
 #define TCPFSTAB
 #ifdef TCPDEBUG
 #define TCPSTATES
 #endif
-#include "../bbnnet/fsm.h"
+#include "../inet/tcp_fsm.h"
 
 tcp_timeo()
 {
@@ -23,7 +24,7 @@ COUNT(TCP_TIMEO);
 	/*
 	 * Search through tcb's and update active timers.
 	 */
-	for (tp = netcb.n_tcb_head; tp != NULL; tp = tp->t_tcb_next) {
+	for (tp = tcb_head; tp != NULL; tp = tp->t_tcb_next) {
 		if (tp->t_init != 0 && --tp->t_init == 0)
 			tcp_usrreq(ISTIMER, TINIT, tp, 0);
 		if (tp->t_rexmt != 0 && --tp->t_rexmt == 0)
@@ -36,7 +37,7 @@ COUNT(TCP_TIMEO);
 			tcp_usrreq(ISTIMER, TFINACK, tp, 0);
 		tp->t_xmt++;
 	}
-	netcb.n_iss += ISSINCR;		/* increment iss */
+	tcp_iss += ISSINCR;		/* increment iss */
 	timeout(tcp_timeo, 0, hz);      /* reschedule every second */
 	splx(s);
 }
@@ -179,13 +180,13 @@ COUNT(T_OPEN);
 
 	/* enqueue the tcb */
 
-	if (netcb.n_tcb_head == NULL) {
-		netcb.n_tcb_head = tp;
-		netcb.n_tcb_tail = tp;
+	if (tcb_head == NULL) {
+		tcb_head = tp;
+		tcb_tail = tp;
 	} else {
-		tp->t_tcb_next = netcb.n_tcb_head;
-		netcb.n_tcb_head->t_tcb_prev = tp;
-		netcb.n_tcb_head = tp;
+		tp->t_tcb_next = tcb_head;
+		tcb_head->t_tcb_prev = tp;
+		tcb_head = tp;
 	}
 
 	/* initialize non-zero tcb fields */
@@ -194,9 +195,9 @@ COUNT(T_OPEN);
 	tp->t_rcv_prev = (struct th *)tp;
 	tp->t_xmtime = T_REXMT;
 	tp->snd_end = tp->seq_fin = tp->snd_nxt = tp->snd_hi =
-	              tp->snd_una = tp->iss = netcb.n_iss;
+	              tp->snd_una = tp->iss = tcp_iss;
 	tp->snd_off = tp->iss + 1;
-	netcb.n_iss += (ISSINCR >> 1) + 1;
+	tcp_iss += (ISSINCR >> 1) + 1;
 
 	/* set timeout for open */
 
@@ -223,11 +224,11 @@ COUNT(T_CLOSE);
 	/* delete tcb */
 
 	if (tp->t_tcb_prev == NULL)
-		netcb.n_tcb_head = tp->t_tcb_next;
+		tcb_head = tp->t_tcb_next;
 	else
 		tp->t_tcb_prev->t_tcb_next = tp->t_tcb_next;
 	if (tp->t_tcb_next == NULL)
-		netcb.n_tcb_tail = tp->t_tcb_prev;
+		tcb_tail = tp->t_tcb_prev;
 	else
 		tp->t_tcb_next->t_tcb_prev = tp->t_tcb_prev;
 
@@ -250,6 +251,10 @@ COUNT(T_CLOSE);
 		m_freem(m);
 		tp->t_rcv_unack = NULL;
 	}
+	if (up->uc_template) {
+		m_free(dtom(up->uc_template));
+		up->uc_template = 0;
+	}
 	m = dtom(tp);
 	m->m_off = 0;
 	m_free(m);
@@ -257,8 +262,8 @@ COUNT(T_CLOSE);
 
 	/* lower buffer allocation and decrement host entry */
 
-	netcb.n_lowat -= up->uc_snd + (up->uc_rhiwat/MSIZE) + 2;
-	netcb.n_hiwat = 2 * netcb.n_lowat;
+	mbstat.m_lowat -= up->uc_snd + (up->uc_rhiwat/MSIZE) + 2;
+	mbstat.m_hiwat = 2 * mbstat.m_lowat;
 	if (up->uc_host != NULL) {
 		h_free(up->uc_host);
 		up->uc_host = NULL;
