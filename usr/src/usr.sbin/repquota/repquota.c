@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)repquota.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)repquota.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -166,9 +166,9 @@ repquota(fsdev, fsfile, qffile)
 			fup->fu_dqblk.dqb_isoftlimit &&
 			    fup->fu_dqblk.dqb_curinodes >=
 			    fup->fu_dqblk.dqb_isoftlimit ? '+' : '-',
-			fup->fu_dqblk.dqb_curblocks / btodb(1024),
-			fup->fu_dqblk.dqb_bsoftlimit / btodb(1024),
-			fup->fu_dqblk.dqb_bhardlimit / btodb(1024),
+			dbtob(fup->fu_dqblk.dqb_curblocks) / 1024,
+			dbtob(fup->fu_dqblk.dqb_bsoftlimit) / 1024,
+			dbtob(fup->fu_dqblk.dqb_bhardlimit) / 1024,
 			fup->fu_dqblk.dqb_bwarn,
 			fup->fu_dqblk.dqb_curinodes,
 			fup->fu_dqblk.dqb_isoftlimit,

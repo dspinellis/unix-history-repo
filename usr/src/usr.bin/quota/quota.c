@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)quota.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -196,10 +196,10 @@ showquotas(uid, name)
 			heading(uid, name);
 			printf("%10s%8d%c%7d%8d%8s%8d%c%7d%8d%8s\n"
 				, fs->fs_file
-				, (dqblk.dqb_curblocks / btodb(1024)) 
+				, dbtob(dqblk.dqb_curblocks) / 1024
 				, (msgb == (char *)0) ? ' ' : '*'
-				, (dqblk.dqb_bsoftlimit / btodb(1024)) 
-				, (dqblk.dqb_bhardlimit / btodb(1024)) 
+				, dbtob(dqblk.dqb_bsoftlimit) / 1024
+				, dbtob(dqblk.dqb_bhardlimit) / 1024
 				, dwarn
 				, dqblk.dqb_curinodes
 				, (msgi == (char *)0) ? ' ' : '*'
