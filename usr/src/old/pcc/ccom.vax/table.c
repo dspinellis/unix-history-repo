@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.24 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.25 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -333,25 +333,25 @@ LS,	INAREG|INTAREG|FORCC,
 
 INCR,	FOREFF,
 	AWD,	TANY,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		0,	RLEFT,
 		"	ZE\n",
 
 DECR,	FOREFF,
 	AWD,	TANY,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		0,	RLEFT,
 		"	ZE\n",
 
 INCR,	FOREFF,
 	SAREG,	TWORD,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		0,	RLEFT,
 		"	ZE\n",
 
 DECR,	FOREFF,
 	SAREG,	TWORD,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		0,	RLEFT,
 		"	ZE\n",
 
@@ -359,25 +359,25 @@ DECR,	FOREFF,
 
 INCR,	INAREG|INTAREG,
 	AWD,	TANY,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		NAREG,	RESC1,
 		"	ZD\n",
 
 DECR,	INAREG|INTAREG,
 	AWD,	TANY,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		NAREG,	RESC1,
 		"	ZD\n",
 
 INCR,	INAREG|INTAREG,
 	SAREG,	TWORD,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		NAREG,	RESC1,
 		"	ZD\n",
 
 DECR,	INAREG|INTAREG,
 	SAREG,	TWORD,
-	SCON,	TANY,
+	SCON|SNAME,	TANY,
 		NAREG,	RESC1,
 		"	ZD\n",
 
