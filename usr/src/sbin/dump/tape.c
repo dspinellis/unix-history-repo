@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/file.h>
@@ -97,7 +97,7 @@ dmpblk(blkno, size)
 		spcl.c_tapea += avail;
 		if (trecno >= ntrec)
 			flusht();
-		dblkno += avail * (TP_BSIZE / DEV_BSIZE);
+		dblkno += avail * (TP_BSIZE / dev_bsize);
 		tpblks -= avail;
 	}
 }

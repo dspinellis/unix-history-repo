@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "dump.h"
@@ -313,24 +313,24 @@ bread(da, ba, cnt)
 	int n;
 
 loop:
-	if (lseek(fi, (long)(da * DEV_BSIZE), 0) < 0){
+	if (lseek(fi, (long)(da * dev_bsize), 0) < 0){
 		msg("bread: lseek fails\n");
 	}
 	n = read(fi, ba, cnt);
 	if (n == cnt)
 		return;
-	if (da + (cnt / DEV_BSIZE) > fsbtodb(sblock, sblock->fs_size)) {
+	if (da + (cnt / dev_bsize) > fsbtodb(sblock, sblock->fs_size)) {
 		/*
 		 * Trying to read the final fragment.
 		 *
 		 * NB - dump only works in TP_BSIZE blocks, hence
-		 * rounds DEV_BSIZE fragments up to TP_BSIZE pieces.
+		 * rounds `dev_bsize' fragments up to TP_BSIZE pieces.
 		 * It should be smarter about not actually trying to
 		 * read more than it can get, but for the time being
 		 * we punt and scale back the read only when it gets
 		 * us into trouble. (mkm 9/25/83)
 		 */
-		cnt -= DEV_BSIZE;
+		cnt -= dev_bsize;
 		goto loop;
 	}
 	msg("(This should not happen)bread from %s [block %d]: count=%d, got=%d\n",
