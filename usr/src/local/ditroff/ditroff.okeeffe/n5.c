@@ -1,5 +1,8 @@
 #ifndef lint
+/*
 static char sccsid[] = "@(#)n5.c	2.2 (CWI) 87/03/31";
+*/
+static char sccsid[] = "@(#)n5.c	2.3 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -389,8 +392,6 @@ casetm(ab)
 	if (i == NTM - 2)
 		tmbuf[i++] = '\n';
 	tmbuf[i] = 0;
-	if (ab)	/* truncate output */
-		obufp = obuf;	/* should be a function in n2.c */
 	flusho();
 	fdprintf(stderr, "%s", tmbuf);
 	copyf--;
@@ -470,17 +471,22 @@ caseev()
 	register nxev;
 
 	if (skip()) {
-e0:
-		if (evi == 0)
-			return;
-		nxev =  evlist[--evi];
-		goto e1;
+		if (evi != 0) {
+			ev =  evlist[--evi];
+			env = &env_array[ev];
+		}
+		return;
 	}
 	noscale++;
 	nxev = atoi();
 	noscale = 0;
-	if (nonumb)
-		goto e0;
+	if (nonumb) {
+		if (evi != 0) {
+			ev =  evlist[--evi];
+			env = &env_array[ev];
+		}
+		return;
+	}
 	flushi();
 	if ((nxev >= NEV) || (nxev < 0) || (evi >= EVLSZ)) {
 		flusho();
@@ -492,14 +498,8 @@ e0:
 		return;
 	}
 	evlist[evi++] = ev;
-e1:
-	if (ev == nxev)
-		return;
-	lseek(ibf, ev * (long)sizeof(env), 0);
-	write(ibf, (char *) & env, sizeof(env));
-	lseek(ibf, nxev * (long)sizeof(env), 0);
-	read(ibf, (char *) & env, sizeof(env));
 	ev = nxev;
+	env = &env_array[ev];
 }
 
 

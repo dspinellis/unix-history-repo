@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)checkuse.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)checkuse.c	1.3 (Berkeley) %G%";
 #endif lint
 
 
@@ -46,7 +46,7 @@ char *s;
 	return(1);
 }
 
-#define MAXVEC 20
+#define MAXVEC 128
 
 static int spcount = 0;
 extern char *calloc();
@@ -67,7 +67,7 @@ chspace()
 	return(pp);
 }
 
-#define MAXPC 50
+#define MAXPC 256
 
 static char *thisvec;
 static int tpcount = -1;

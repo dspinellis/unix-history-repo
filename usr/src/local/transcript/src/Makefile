@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.4 (Berkeley) %G%
+#	@(#)Makefile	1.5 (Berkeley) %G%
 # transcript/src/Makefile.bsd
 #
 # Copyright (C) 1985 Adobe Systems Incorporated
@@ -20,8 +20,9 @@ OBJECTS = psbanner.o pscomm.o psrv.o pstext.o \
 # They should be set up here for the local site.
 #
 PSLIBDIR = /usr/local/lib/ps
+BINDIR = /usr/local/bin
 TROFFFONTDIR = /usr/local/lib/ps/troff.font
-DITDIR = /usr/local/lib/font
+DITDIR = /usr/local/libdata/ditroff_font
 PSTEMPDIR = /tmp
 
 CFLAGS = -O -DBSD
@@ -80,12 +81,12 @@ config.c: config.proto ../config
 		config.proto >config.c
 
 install: ${LIBPROGS} ${BINPROGS}
-	install -s -o $$OWNER -g $$GROUP $(LIBPROGS) $$PSLIBDIR
-	install -s -o $$OWNER -g $$GROUP $(BINPROGS) $$BINDIR
-	install -s -o $$OWNER -g $$GROUP $(LNPROGS) $$PSLIBDIR
-	-cd $$BINDIR ; rm -f ${LNPROGS}
+	install -s -o $$OWNER -g $$GROUP $(LIBPROGS) $(PSLIBDIR)
+	install -s -o $$OWNER -g $$GROUP $(BINPROGS) $(BINDIR)
+	install -s -o $$OWNER -g $$GROUP $(LNPROGS) $(PSLIBDIR)
+	-cd $(BINDIR ; rm -f ${LNPROGS}
 	for i in ${LNPROGS} ;\
-	do ln -s $$PSLIBDIR/$$i $$BINDIR ;\
+	do ln $(PSLIBDIR)/$$i $(BINDIR) || ln -s $(PSLIBDIR)/$$i $(BINDIR) ;\
 	done
 
 clean:

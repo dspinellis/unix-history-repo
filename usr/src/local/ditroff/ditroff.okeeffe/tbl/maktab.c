@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maktab.c	1.3 (CWI) 86/11/13";
+static char sccsid[] = "@(#)maktab.c	1.4 (Berkeley) %G%";
 #endif lint
 
 
@@ -258,7 +258,7 @@ maktab()
 	if(boxflg || allflg || dboxflg)
 		printf(".nr TW +%d*\\n(%d\n", sep[ncol - 1], TMP);
 	printf(
-".if t .if(\\n(TW+\\n(.o)>\\n(Tw .tm Table at line %d file %s is too wide - \\n(TW units\n",
+".if t .if\\n(TW>\\n(.lu .tm Table at line %d file %s is too wide - \\n(TW units\n",
 		iline - 1, strlen(oldname) ? oldname : ifile);
 	return;
 }

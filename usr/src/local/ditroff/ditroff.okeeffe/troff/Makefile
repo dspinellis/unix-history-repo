@@ -1,6 +1,6 @@
 #######################################################################
 #
-#	@(#)Makefile	1.7	(CWI)	90/11/03
+#	@(#)Makefile	1.8	(CWI)	93/07/27
 #
 # Makefile for ditroff and nroff
 #
@@ -8,10 +8,6 @@
 
 CFLAGS = -DINCORE -O
 NFLAGS = -DNROFF -DSMALLER	# additional flags for nroff compile
-
-# other utilities maintained by this makefile
-
-UDIRS = utilities devhar eqn pic ideal grap tbl term devnver chem
 
 # location to install final output
 
@@ -35,7 +31,7 @@ TOBS = $T/n1.o $T/n2.o $T/n3.o $T/n4.o $T/n5.o $T/t6.o $T/n7.o $T/n8.o \
 
 #######################################################################
 
-all:	troff_p $(UDIRS)
+all:	troff_p
 
 troff_p: $(T) $(TOBS)
 	$(CC) $(CFLAGS) $(TOBS) -o troff_p -lcompat
@@ -55,18 +51,12 @@ $(LIBDIR):
 	mkdir $(LIBDIR)
 
 install: all $(LIBDIR)
-	install -c -s ditroff $(DESTDIR)$(LIBXDIR)/troff_p
-	for i in $(UDIRS); do (cd $$i; make $(MFLAGS) DESTDIR=${DESTDIR} install); done
-#	install -c -s nroff $(DESTDIR)$(BINDIR)/nroff
+	install -s ditroff $(DESTDIR)$(LIBXDIR)/troff_p
+#	install -s nroff $(DESTDIR)$(BINDIR)/nroff
 #	install -c -m 664 ditroff.1 $(DESTDIR)$(MANDIR)/ditroff.1
 
 clean:  force
 	rm -rf make.out troff_p nroff $N $T
-	for i in ${UDIRS}; do (cd $$i; make ${MFLAGS} clean); done
-
-$(UDIRS): force
-	cd $@; make $(MFLAGS)
-
 
 # fake dependency to force a make
 force:
@@ -116,11 +106,11 @@ $T/suftab.o $N/suftab.o: suftab.c
 #
 
 $(NOBS):  .oldestfile
-	  $(CC) $(CFLAGS) $(NFLAGS) -c $@ `basename $@ .o`.c
+	  $(CC) $(CFLAGS) $(NFLAGS) -c `basename $@ .o`.c
 	mv `basename $@` nrobs
 
 $(TOBS):  .oldestfile
-	  $(CC) $(CFLAGS) -c $@ `basename $@ .o`.c
+	  $(CC) $(CFLAGS) -c `basename $@ .o`.c
 	mv `basename $@` trobs
 
 .oldestfile:

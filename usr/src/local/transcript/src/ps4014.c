@@ -38,7 +38,7 @@ extern struct passwd *getpwuid();
 /* move this to transcript.h some day */
 private char scProlog[512];
 
-private struct Params {
+struct Params {
     char   *scSrcFile;		/* string name of 4014 source file */
     char   *scDstFile;		/* string name of PS destination file */
     char   *scDbgFile;		/* string name of debug output file */
@@ -59,10 +59,10 @@ private struct Params {
 };
 
 
-private struct Real4110 {
+struct Real4110 {
     long    mantissa, exp;
 };				/* 4110-format real number */
-private struct Sts {
+struct Sts {
     short   md;			/* current mode */
     int     xh;			/* current x-position (in 4096ths) */
     int     yh;			/* current y-position (in 4096ths) */
