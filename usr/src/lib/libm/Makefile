@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.12	(Berkeley)	7/6/87
+#	@(#)Makefile	1.4	(ucb.elefunt)	%G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -16,15 +16,16 @@
 # values are:
 #
 # VAX		- for the VAX D_floating format, the default.
+# TAHOE		- for the TAHOE double format.
 # NATIONAL	- for those IEEE machines whose floating point implementation
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
 # IEEE		- for other IEEE machines, we hope.
 #
-CFLAGS=	-O
+CFLAGS=	-O -D${MACHINE}
 LIBC=	/lib/libc.a
 #
 # Files comprising the standard Math library;
-# actually there are more under ${MACH}/ subdirectory.
+# actually there are more under ${MACHINE}/ subdirectory.
 #
 SRCS=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c \
 	exp.c exp__E.c expm1.c floor.c lgamma.c j0.c j1.c jn.c \
@@ -50,14 +51,19 @@ libm.a libm_p.a: ${OBJS} more.${MACHINE}
 	cd profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru libm.a ${OBJS}
 
-more.vax: FRC
-	cd VAX; make "CFLAGS=${CFLAGS} -DVAX"
+more.IEEE: FRC
+	cd COMMON; make "CFLAGS=${CFLAGS}"
+	cd IEEE; make "CFLAGS=${CFLAGS}"
 
-more.tahoe: FRC
-	cd IEEE; make "CFLAGS=${CFLAGS} -DTAHOE"
+more.TAHOE: FRC
+	cd COMMON; make "CFLAGS=${CFLAGS}"
+	cd TAHOE; make "CFLAGS=${CFLAGS}"
+
+more.VAX: FRC
+	cd VAX; make "CFLAGS=${CFLAGS}"
 
 clean: FRC
-	rm -f ${OBJS} core libnm.a libnm_p.a IEEE/*.o VAX/*.o profiled/*.o
+	rm -f ${OBJS} core libm.a libm_p.a COMMON/*.o IEEE/*.o TAHOE/*.o VAX/*.o profiled/*.o
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
