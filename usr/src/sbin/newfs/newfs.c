@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -289,22 +289,22 @@ next:
 		fprintf(stderr, "where fsoptions are:\n");
 		fprintf(stderr, "\t-N do not create file system, %s\n",
 			"just print out parameters");
-		fprintf(stderr, "\t-s file system size (sectors)\n");
 		fprintf(stderr, "\t-b block size\n");
 		fprintf(stderr, "\t-f frag size\n");
-		fprintf(stderr, "\t-d sectors/track\n");
-		fprintf(stderr, "\t-t tracks/cylinder\n");
-		fprintf(stderr, "\t-c cylinders/group\n");
 		fprintf(stderr, "\t-m minimum free space %%\n");
 		fprintf(stderr, "\t-o optimization preference %s\n",
 			"(`space' or `time')");
-		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-i number of bytes per inode\n");
+		fprintf(stderr, "\t-c cylinders/group\n");
+		fprintf(stderr, "\t-s file system size (sectors)\n");
+		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
-		fprintf(stderr, "\t-l hardware sector interleave\n");
-		fprintf(stderr, "\t-k sector 0 skew, per track\n");
+		fprintf(stderr, "\t-d sectors/track\n");
+		fprintf(stderr, "\t-t tracks/cylinder\n");
 		fprintf(stderr, "\t-p spare sectors per track\n");
 		fprintf(stderr, "\t-a spare sectors per cylinder\n");
+		fprintf(stderr, "\t-l hardware sector interleave\n");
+		fprintf(stderr, "\t-k sector 0 skew, per track\n");
 		exit(1);
 	}
 	special = argv[0];
