@@ -1,4 +1,4 @@
-/*	hgraph.c	1.11	(Berkeley) 83/12/08
+/*	hgraph.c	1.12	(Berkeley) 84/05/25
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -17,6 +17,7 @@ extern int style[];	/* line and character styles */
 extern int thick[];
 extern char *tfont[];
 extern int tsize[];
+extern char *stipple;
 
 
 extern double troffscale;	/* imports from main.c */
@@ -33,19 +34,22 @@ extern int xright;
 
 
 /*----------------------------------------------------------------------------*
- | Routine:	HGPrintElt (element_pointer)
+ | Routine:	HGPrintElt (element_pointer, baseline)
  |
  | Results:	examines a picture element and calls the appropriate
  |		routine(s) to print them according to their type.
  |		After the picture is drawn, current position is (lastx, lasty).
  *----------------------------------------------------------------------------*/
 
-HGPrintElt(element)
+HGPrintElt(element, baseline)
 ELT *element;
+int baseline;
 {
     register POINT *p1;
     register POINT *p2;
     register int length;
+    static int didstipple = 1;	/* flag to prevent multipe messages about no */
+				/* stipple font requested from being printed */
 
     if ( !DBNullelt(element) && !Nullpoint((p1 = element->ptlist))) {
 						/* p1 always has first point */
@@ -53,7 +57,9 @@ ELT *element;
             HGSetFont(element->brushf, element->size);
             HGPutText(element->type, *p1, element->textpt);
         } else {
-	    HGSetBrush(element->brushf);	/* graphics need brush set */
+	    if (element->brushf) {		/* if there is a brush, the */
+		HGSetBrush(element->brushf);	/* graphics need it set */
+	    }
             switch (element->type) {
 
                  case ARC:  p2 = PTNextPoint(p1);
@@ -70,7 +76,7 @@ ELT *element;
 			    cr();
                             break;
 
-              case VECTOR:  length = 1;		/* keep track of line length */
+	      case VECTOR:  length = 1;		/* keep track of line length */
 			    tmove(p1);	   /* so single lines don't get long */
                             while (!Nullpoint((p1 = PTNextPoint(p1)))) {
 				printf("\\D'l");
@@ -83,6 +89,29 @@ ELT *element;
 				    length = 1;
 				}
                             }  /* end while */
+			    cr();
+                            break;
+
+	     case POLYGON:  tmove(p1);
+			    if (stipple) {
+				didstipple = 1;
+				if (element->brushf) {
+				    printf("\\D'p %d", element->size);
+				} else {
+				    printf("\\D'P %d", element->size);
+				}
+			    } else {
+				if (didstipple) {
+				    error("no stipple font requested for picture at line %d", baseline);
+				    didstipple = 0;
+				}
+				printf("\\D'p 0");
+			    }
+                            while (!Nullpoint((p1 = PTNextPoint(p1)))) {
+                                dx((double) p1->x);
+                                dy((double) p1->y);
+                            }  /* end while */;
+			    putchar('\'');
 			    cr();
                             break;
             }  /* end switch */
