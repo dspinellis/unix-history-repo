@@ -1,0 +1,348 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tmac.an	6.11 (Berkeley) %G%
+.\"
+
+'	DT, PD, SM, and B macros invoked internally.
+'	# month name
+.if "\nd"0" .nr m \n(mo-1
+.if "\nm"0" .ds ]m January
+.if "\nm"1" .ds ]m February
+.if "\nm"2" .ds ]m March
+.if "\nm"3" .ds ]m April
+.if "\nm"4" .ds ]m May
+.if "\nm"5" .ds ]m June
+.if "\nm"6" .ds ]m July
+.if "\nm"7" .ds ]m August
+.if "\nm"8" .ds ]m September
+.if "\nm"9" .ds ]m October
+.if "\nm"10" .ds ]m November
+.if "\nm"11" .ds ]m December
+'	# set the date
+.if n \{.nr m \nm+1
+.	 ie \nd .ds ]W Modified \nm/\nd/\ny
+.	 el .ds ]W Printed \n(mo/\n(dy/\n(yr\}
+.if t \{.ie \nd .ds ]W \*(]m \nd, 19\ny
+.	 el .ds ]W \*(]m \n(dy, 19\n(yr\}
+.if t .tr *\(**
+.ie n \{\
+.	ds lq \&"\"
+.	ds rq \&"\"
+.\}
+.el \{\
+.	ds rq ''
+.	ds lq ``
+.\}
+.de AT
+.if t \{\
+.	ds ]W 7th Edition
+.	if "\\$1"3" .ds ]W 7th Edition
+.	if "\\$1"4" .ds ]W System III
+.	if "\\$1"5" \{\
+.		ie "\\$2""  .ds ]W System V
+.		el .ds ]W System V Release \\$2
+.	\}
+.\}
+..
+.de UC
+.if t \{\
+.	ds ]W 3rd Berkeley Distribution
+.	if "\\$1"3" .ds ]W 3rd Berkeley Distribution
+.	if "\\$1"4" .ds ]W 4th Berkeley Distribution
+.	if "\\$1"5" .ds ]W 4.2 Berkeley Distribution
+.	if "\\$1"6" .ds ]W 4.3 Berkeley Distribution
+.	if "\\$1"7" .ds ]W 4.4 Berkeley Distribution
+.\}
+..
+'	# reset the basic page layout
+.de }E
+.}f
+.in \\n()Ru+\\n(INu
+.ll \\n(LLu
+..
+'	# default tabs
+.de DT
+'ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
+..
+'	# set type font and size
+.de }f
+.ps 10
+.ft 1
+..
+'	# handle the head of the page
+.de }H
+.ev 1
+.}C
+.ie "\*(.T"va" 'sp .1i
+.el 'sp .5i
+.ft 1
+.ps 10
+.tl @\\*(]H@\\*(]D@\\*(]H@
+'sp .5i
+.ev
+.ns
+..
+'	# handle the foot of the page
+.de }F
+.ev 1
+.ft 1
+.ps 10
+'sp .5i
+.tl @\\*(]W@\\*(]L@%@
+'	# make groff happy
+.ie \n(.g \{\
+.	bp
+.\}
+.el \{\
+'	bp
+.\}
+.ev
+..
+'	# the cut mark
+.if n .ig
+.if !\nv=2 .ig
+.de }C
+.po 0i
+.lt 7.45i
+.tl '__''__'
+.po
+.lt
+..
+'	# the final cut mark
+.de }M
+.}N
+.wh -1p }C
+.ll \\n(LLu
+..
+'	# no runout unless there was a .TH
+.de }K
+.}N
+.pl 1
+.ll \\n(LLu
+..
+.em }K
+'	# set title and heading
+.de TH
+.PD
+.DT
+.if n .nr IN .5i
+.if t .nr IN .5i
+.nr LL \\n(.l
+.ds ]H \\$1\|(\|\\$2\|)
+.ie "\\$5"" .ds ]D UNIX Programmer's Manual
+.el .ds ]D \\$5
+.wh 0 }H
+.if t .ie !"\*(.T"va" .wh -1i }F
+.if t .el .wh -1.4i }F
+.if n .wh -1.167i }F
+.em }M
+.if \\n(nl .bp 1
+.ds ]L \\$3
+.}E
+.DT
+.nr )I .5i
+.nr )R 0
+.if n .na
+.mk ka
+.if !'\\n(ka'-1' .bp
+.if t \{\
+.	ie "\\$4""  .ds ]W 7th Edition
+.	el .ds ]W \\$4
+.\}
+..
+'	# section heading
+.de SH
+.ss 12
+.if "\\$2"SYNOPSIS" .ss 18
+.}X 0
+.nr )E 2
+.SM
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+..
+'	# sub section heading
+.de SS
+.}X \\n()Ru+\\n(INu
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+.br
+..
+'	# subroutine for section heading
+.de }X
+.}E
+.ti \\$1
+.sp \\n()Pu
+.ne 2
+.nr )R 0
+.fi
+.it 1 }N
+.B
+..
+'	# end of SH (cf }X above and }N below)
+.de }2
+.nr )E 0
+.}E
+.nr )I .5i
+.ns
+..
+'	# italic
+.de I
+.ft 2
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# bold
+.de B
+.ft 3
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# small
+.de SM
+.ps 9
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# combinations of Roman, italic, bold
+.de RI
+.}S 1 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de VS
+'if '\\$1'4' .mc \s12\(br\s0
+..
+.de VE
+'mc
+..
+.de RB
+.}S 1 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IR
+.}S 2 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IB
+.}S 2 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BR
+.}S 3 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BI
+.}S 3 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+'	# make special case of shift out of italic
+.de }S
+.ds ]F
+.if "\\$1"2" .if !"\\$5"" .ds ]F\^
+.ie !"\\$4"" .}S \\$2 \\$1 "\\$3\f\\$1\\$4\\*(]F" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.el \\$3
+.}f
+..
+'	# paragraph
+.de LP
+.PP
+..
+.de PP
+.sp \\n()Pu
+.ne 2
+.}E
+.nr )I .5i
+.ns
+..
+'	# synonym for .PP
+.de P
+.PP
+..
+'	# paragraph distance
+.de PD
+.if t .nr )P .4v
+.if n .nr )P 1v
+.if !"\\$1"" .nr )P \\$1v
+..
+'	# paragraph with hanging indent
+.de HP
+.sp \\n()Pu
+.ne 2
+.if !"\\$1"" .nr )I \\$1n
+.ll \\n(LLu
+.in \\n()Ru+\\n(INu+\\n()Iu
+.ti \\n()Ru+\\n(INu
+.}f
+..
+'	# indented paragraph
+.de IP
+.TP \\$2
+\&\\$1
+..
+'	# tagged paragraph (paragraph with hanging label)
+.de TP
+.if !"\\$1"" .nr )I \\$1n
+.sp \\n()Pu
+.ne 1.1v
+.in \\n()Ru
+.nr )E 1
+.ns
+.it 1 }N
+.di ]B
+..
+'	# end of TP (cf }N below)
+.de }1
+.ds ]X \&\\*(]B\\
+.nr )E 0
+.if !"\\$1"" .nr )I \\$1n
+.}f
+.ll \\n(LLu
+.in \\n()Ru+\\n(INu+\\n()Iu
+.ti \\n(INu
+.ie !\\n()Iu+\\n()Ru-\w@\\*(]X@u-3p \{\\*(]X
+.br\}
+.el \\*(]X\h@|\\n()Iu+\\n()Ru@\c
+.}f
+..
+'	# handle end of 1-line features
+.de }N
+.if \\n()E .br
+.di
+.if "\\n()E"0" .}f
+.if "\\n()E"1" .}1
+.if "\\n()E"2" .}2
+.nr )E 0
+..
+'	# increase relative indent
+.de RS
+.nr ]\\n+()p \\n()I
+.nr )\\n()p \\n()R
+.ie !"\\$1"" .nr )R +\\$1n
+.el .nr )R +\\n()I
+.nr )I .5i
+.}E
+..
+.de DS
+.RS
+.nf
+.sp
+..
+'	# decrease relative indent
+.de RE
+.if !"\\$1"" \{.ie "\\$1"0" .nr )p 1 1
+.		el .nr )p \\$1 1\}
+.ds ]i \\*(]I\\n()p
+.ds ]r \\*(]R\\n()p
+.nr )I \\*(]i
+.nr )R \\*(]r
+.if \\n()p .nr )p -1
+.}E
+..
+.de DE
+.fi
+.RE
+.sp .5
+..
+.nr )p 0 1
+.ds ]I \\\\n(]
+.ds ]R \\\\n()
+.if t .bd S B 3
+.if t .ds R \(rg
+.if n .ds R (Reg.)
+.ds S \s10
+.hy 14
+.if "\*(.T"va" .po -0.4i

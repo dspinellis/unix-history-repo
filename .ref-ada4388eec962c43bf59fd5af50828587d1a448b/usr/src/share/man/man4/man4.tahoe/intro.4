@@ -1,0 +1,93 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)intro.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt INTRO 4 tahoe
+.Os
+.Sh NAME
+.Nm intro
+.Nd introduction to special files and hardware support
+.Sh DESCRIPTION
+This section describes the special files, related driver functions,
+and networking support
+available in the system.
+In this part of the manual, the
+.Tn SYNOPSIS
+section of
+each configurable device gives a sample specification
+for use in constructing a system description for the
+.Xr config 8
+program.
+The
+.Tn DIAGNOSTICS
+section lists messages which may appear on the console
+and in the system error log
+.Pa /var/log/messages
+due to errors in device operation.
+.Sh CCI DEVICE SUPPORT
+Software support for these devices comes in two forms.  A hardware
+device may be supported with a character or block
+.Em device driver ,
+or it may be used within the networking subsystem and have a
+.Em network interface driver .
+Block and character devices are accessed through files in the file
+system of a special type; see
+.Xr physio 4
+and
+.Xr mknod 8 .
+Network interfaces are indirectly accessed through the interprocess
+communication facilities provided by the system; see
+.Xr socket 2 .
+.Pp
+A hardware device is identified to the system at configuration time
+and the appropriate device or network interface driver is then compiled
+into the system.  When the resultant system is booted, the
+autoconfiguration facilities in the system probe for the device
+on the
+.Tn VERSAbus
+and, if found, enable the software
+support for it.  If a
+.Tn VERSAbus
+device does not respond at autoconfiguration
+time it is not accessible at any time afterwards.  To
+enable a
+.Tn VERSAbus
+device which did not autoconfigure, the system will have to
+be rebooted.
+.Pp
+The autoconfiguration system is described in
+.Xr autoconf 4 .
+.Sh SEE ALSO
+.Xr autoconf 4 ,
+.Xr netintro 4 ,
+.Xr config 8
+.Sh LIST OF DEVICES
+The devices listed below are supported in this incarnation of
+the system.  Devices are indicated by their functional interface.
+If second vendor products provide functionally identical interfaces
+they should be usable with the supplied software.
+.Bf Sy
+(Beware however that we promise the software works
+ONLY with the hardware indicated on the appropriate manual page.)
+.Ef
+.Pp
+.Bl -column cons
+ace	ACC 10 Mb/s Ethernet controller
+cons	Tahoe console interface
+cy	Cypher tape drive interface
+dr	Ikon DR-11W controller
+enp	3Com 10 Mb/s Ethernet controller
+ik	Evans and Sutherland PS300 interface through an Ikon DR-11W
+	controller
+vd	CCI vd mass storage disk controller
+vx	CCI vioc terminal multiplexor
+.El
+.Sh HISTORY
+The section 4
+.Nm
+appeared in
+.Bx 4.2 .

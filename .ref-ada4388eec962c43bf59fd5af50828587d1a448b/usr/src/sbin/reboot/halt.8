@@ -1,0 +1,59 @@
+.\" Copyright (c) 1980, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)halt.8	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt HALT 8
+.Os BSD 4
+.Sh NAME
+.Nm halt
+.Nd stop the processor
+.Sh SYNOPSIS
+.Nm halt
+.Op Fl n
+.Op Fl q
+.Op Fl y
+.Sh DESCRIPTION
+.Nm Halt
+writes out sandbagged information to the disks and then stops
+the processor.  The machine does not reboot, even if the auto-reboot
+switch is set on the console.
+.Pp
+Available options for
+.Nm halt :
+.Bl -tag -width Ds
+.It Fl n
+No sync before stopping.
+.It Fl q
+Quick halt, no graceful shutdown is attempted.
+.It Fl y
+This option is needed if you are trying to halt the system from a dialup.
+.El
+.Pp
+.Nm Halt
+normally logs the shutdown using
+.Xr syslog 8
+and places a shutdown record in the login accounting file
+.Pa /var/log/wtmp.
+These actions are inhibited if the
+.Fl n
+or
+.Fl q
+options are present.
+.Sh SEE ALSO
+.Xr reboot 8 ,
+.Xr shutdown 8 ,
+.Xr syslogd 8
+.Sh BUGS
+It is very difficult to halt a
+.Tn VAX ,
+as the machine wants to then
+reboot itself.  A rather tight loop suffices.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.0 .

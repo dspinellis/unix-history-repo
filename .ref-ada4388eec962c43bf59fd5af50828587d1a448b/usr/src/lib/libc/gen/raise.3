@@ -1,0 +1,51 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)raise.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RAISE 3
+.Os
+.Sh NAME
+.Nm raise
+.Nd send a signal to the current process
+.Sh SYNOPSIS
+.Fd #include <signal.h>
+.Ft int
+.Fn raise "int sig"
+.Sh DESCRIPTION
+The
+.Fn raise
+function sends the signal
+.Fa sig
+to the current process.
+.Sh RETURN VALUES
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+The
+.Fn raise
+function
+may fail and set
+.Va errno
+for any of the errors specified for the
+library functions
+.Xr getpid 2
+and
+.Xr kill 2 .
+.Sh SEE ALSO
+.Xr kill 2
+.Sh STANDARDS
+The
+.Fn raise
+function
+conforms to
+.St -ansiC .

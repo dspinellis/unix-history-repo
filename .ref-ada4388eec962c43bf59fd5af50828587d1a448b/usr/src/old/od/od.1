@@ -1,0 +1,139 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)od.1	6.1 (Berkeley) %G%
+.\"
+.TH OD 1 ""
+.UC 4
+.SH NAME
+od \- octal, decimal, hex, ascii dump
+.SH SYNOPSIS
+.B od
+[ \-format ] [ file ] [ [\fB+\fP]offset[\fB.\fP][\fBb\fP] [label] ]
+.SH DESCRIPTION
+.I Od
+displays
+.IR file ,
+or it's standard input,
+in one or more dump formats
+as selected by the first argument.
+If the first argument is missing,
+.B \-o
+is the default.
+Dumping continues until end-of-file.
+.PP
+The meanings of the format argument characters are:
+.TP 5
+.B  a
+Interpret bytes as characters and display them with their ACSII names.
+If the
+.B p
+character is given also, then bytes with even parity are underlined.
+The
+.B P
+character causes bytes with odd parity to be underlined.
+Otherwise the parity bit is ignored.
+.TP 5
+.B  b
+Interpret bytes as unsigned octal.
+.TP 5
+.B  c
+Interpret bytes as ASCII characters.
+Certain non-graphic characters appear as C escapes:
+null=\e0,
+backspace=\eb,
+formfeed=\ef,
+newline=\en,
+return=\er,
+tab=\et;
+others appear as 3-digit octal numbers.
+Bytes with the parity bit set are displayed in octal.
+.TP 5
+.B  d
+Interpret (short) words as unsigned decimal.
+.TP 5
+.B  f
+Interpret long words as floating point.
+.TP 5
+.B  h
+Interpret (short) words as unsigned hexadecimal.
+.TP 5
+.B  i
+Interpret (short) words as signed decimal.
+.TP 5
+.B  l
+Interpret long words as signed decimal.
+.TP 5
+.B  o
+Interpret (short) words as unsigned octal.
+.TP 5
+.BR s [n]
+Look for strings of ascii graphic characters, terminated with a null byte.
+.I N
+specifies the minimum length string to be recognized.
+By default, the minimum length is 3 characters.
+.TP 5
+.B  v
+Show all data. By default, display lines that are identical to the last
+line shown are not output, but are indicated with an ``*'' in column 1.
+.TP 5
+.BR w [n]
+Specifies the number of input bytes to be interpreted and displayed
+on each output line. If
+.B w
+is not specified, 16 bytes are read for each display line.
+If
+.I n
+is not specified, it defaults to 32.
+.TP 5
+.B  x
+Interpret (short) words as hexadecimal.
+.PP
+An upper case format character implies the long or double precision
+form of the object.
+.PP
+The
+.I offset
+argument specifies the byte offset
+into the file where dumping is to commence.
+By default this argument is interpreted in octal.
+A different radix can be specified;
+If ``\fB.\fR'' is appended to the argument, then
+.I offset
+is interpreted in decimal.
+If
+.I offset
+begins with ``\fBx\fP'' or ``\fB0x\fP'',
+it is interpreted in hexadecimal.
+If ``\fBb\fP'' (``\fBB\fP'') is appended, the offset is interpreted
+as a block count, where a block is 512 (1024) bytes.
+If the
+.I file
+argument is omitted, an
+.I offset
+argument must be preceded by
+.RB `` + ''.
+.PP
+The radix of the displayed address will be the same as the radix of the
+.IR offset ,
+if specified; otherwise it will be octal.
+.PP
+.I Label
+will be interpreted as a pseudo-address for the first byte displayed.
+It will be shown in ``()'' following the file offset.
+It is intended to be used with
+core images to indicate the real memory address.
+The syntax for
+.I label
+is identical to that for
+.IR offset .
+.SH "SEE ALSO"
+adb(1)
+.SH BUGS
+A file name argument can't start with ``+''.
+A hexadecimal offset can't be a block count.
+Only one file name argument can be given.
+.PP
+It is an historical botch to require specification of object, radix, and
+sign representation in a single character argument.

@@ -1,0 +1,81 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fputs.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FPUTS 3
+.Os
+.Sh NAME
+.Nm fputs ,
+.Nm puts
+.Nd output a line to a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fputs "const char *str" "FILE *stream"
+.Ft int
+.Fn puts "const char *str"
+.Sh DESCRIPTION
+The function
+.Fn fputs
+writes the string pointed to by
+.Fa str
+to the stream pointed to by
+.Fa stream .
+.\" The terminating
+.\" .Dv NUL
+.\" character is not written.
+.Pp
+The function
+.Fn puts
+writes the string
+.Fa str ,
+and a terminating newline character,
+to the stream
+.Em stdout .
+.Sh RETURN VALUES
+The
+.Fn fputs
+function
+returns 0 on success and
+.Dv EOF
+on error;
+.Fn puts
+returns a nonnegative integer on success and
+.Dv EOF
+on error.
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+The
+.Fa stream
+supplied
+is not a writable stream.
+.El
+.Pp
+The functions
+.Fn fputs
+and
+.Fn puts
+may also fail and set
+.Va errno
+for any of the errors specified for the routines
+.Xr write 2 .
+.Sh SEE ALSO
+.Xr putc 3 ,
+.Xr ferror 3 ,
+.Xr stdio 3
+.Sh STANDARDS
+The functions
+.Fn fputs
+and
+.Fn puts
+conform to
+.St -ansiC .

@@ -1,0 +1,65 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)bit.3	8.1 (Berkeley) %G%
+.\"
+.TH BIT 3F ""
+.UC 5
+.SH NAME
+bit \- and, or, xor, not, rshift, lshift bitwise functions
+.SH SYNOPSIS
+.B (intrinsic) function and (word1, word2)
+.sp 1
+.B (intrinsic) function or (word1, word2)
+.sp 1
+.B (intrinsic) function xor (word1, word2)
+.sp 1
+.B (intrinsic) function not (word)
+.sp 1
+.B (intrinsic) function rshift (word, nbits)
+.sp 1
+.B (intrinsic) function lshift (word, nbits)
+.SH DESCRIPTION
+These bitwise functions are built into the compiler and return
+the data type of their argument(s).
+Their arguments must be
+.B integer
+or
+.B logical
+values.
+.PP
+The bitwise combinatorial functions return the
+bitwise ``and'' (\fBand\fR), ``or'' (\fBor\fR), or ``exclusive or'' (\fBxor\fR)
+of two operands.
+.B Not
+returns the bitwise complement of its operand.
+.PP
+.IR Lshift ,
+or
+.I rshift
+with a negative
+.IR nbits ,
+is a logical left shift with no end around carry.
+.IR Rshift ,
+or
+.I lshift
+with a negative
+.IR nbits ,
+is an arithmetic right shift with sign extension.
+No test is made for a reasonable value of
+.I nbits.
+.PP
+These functions may be used to create a variety of general routines, as in
+the following statement function definitions:
+.sp 1
+.B	integer bitset, bitclr, getbit, word, bitnum
+.sp 1
+.B	bitset( word, bitnum ) = or(word,lshift(1,bitnum))
+.br
+.B	bitclr( word, bitnum ) = and(word,not(lshift(1,bitnum)))
+.br
+.B	getbit( word, bitnum ) = and(rshift(word,bitnum),1)
+.SH FILES
+These functions are generated in-line by the f77 compiler.

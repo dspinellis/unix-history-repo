@@ -1,0 +1,61 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)atof.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATOF 3
+.Os
+.Sh NAME
+.Nm atof
+.Nd convert
+.Tn ASCII
+string to double
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft double
+.Fn atof "const char *nptr"
+.Sh DESCRIPTION
+The
+.Fn atof
+function converts the initial portion of the string pointed to by
+.Ar nptr
+to
+.Ar double
+representation.
+.Pp
+It is equivalent to:
+.Bd -literal -offset indent
+strtod(nptr, (char **)NULL);
+.Ed
+.Sh SEE ALSO
+.Xr atoi 3 ,
+.Xr atol 3 ,
+.Xr strtod 3 ,
+.Xr strtol 3 ,
+.Xr strtoul 3
+.Sh STANDARDS
+The
+.Fn atof
+function conforms to
+.St -ansiC .
+.Sh BUGS
+This manual page represents intent instead of actual practice.
+While it is intended that
+.Fn atof
+be implemented using
+.Xr strtod 3 ,
+this has not yet happened.
+In the current system,
+.Fn atof
+translates a string in the following form to a double: a string of
+leading white space, possibly followed by a sign (``+'' or ``-''),
+followed by a digit string which may contain one decimal point (``.''),
+which may be followed by either of the exponent flags (``E'' or ``e''),
+and lastly, followed by a signed or unsigned integer.

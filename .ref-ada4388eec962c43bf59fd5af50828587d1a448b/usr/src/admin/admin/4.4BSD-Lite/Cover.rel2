@@ -1,0 +1,243 @@
+.\"	@(#)Cover.rel2	1.2 (Berkeley) %G%
+.\" use psroff -ms -Plz Cover.rel2
+.\"
+.so HEADERS
+.FH
+.sp .75i
+.tl '''February 1, 1995'
+.LP
+Dear Colleague:
+.sp
+.PP
+We are delighted to send you information about
+our February 1995 distribution of 4.4BSD-Lite Release 2.
+This second release of 4.4BSD-Lite includes the copy editing work done
+for the Usenix/O'Reilly manuals as well as numerous bug fixes and
+enhancements that have been accumulated in the year since the
+release of 4.4BSD-Lite.
+Of particular interest are the changes needed to port the system
+to 64-bit architectures,
+important security enhancements to TCP/IP,
+and much improved functionality for the
+union and log-structured filesystems.
+This tape was put together by emeritus members of the Computer
+Systems Research Group;
+their time was paid for by the excess of revenue
+over expenses from the sales of 4.4BSD-Lite.
+.PP
+The 4.4BSD-Lite Release 2 software is
+copyrighted by the University of California
+and others, but may be freely redistributed without fee.
+It is available to anyone and requires no previous license
+from AT&T, Novell/USL, or The Regents of the University of California.
+The distribution includes both software developed at Berkeley
+and much software contributed by authors outside Berkeley.
+The code in this distribution may be redistributed and used
+in released products without fee, if the due credit,
+copyright notice, and other requirements
+described in the license and the source files are met.
+.PP
+This packet is intended to serve two purposes.
+The first is to acquaint you with the details of our distribution
+so you may decide if you wish to purchase it.
+The second is to inform you how to obtain our distribution.
+.SH
+Distribution contents
+.PP
+.B "The distribution is a source distribution only,"
+.B "and does not contain program binaries for any architecture."
+It will not be possible to compile or run this software
+without a pre-existing system that is already installed and running.
+In addition, the distribution does not include sources for a complete system.
+It includes source code and manual pages for the C library,
+approximately 90% of the utilities distributed as part of 4.4BSD,
+and most of the kernel (the same subsystems that were deleted in Net/2
+are still missing in 4.4BSD-Lite Release 2 \(em support for executing files,
+doing physical I/O, managing the buffer cache,
+handling process tracing, terminal character I/O, and doing accounting).
+Because the Computer Systems Research Group has shut down
+(other than a brief reunion to put together this release),
+there will not be anyone available at Berkeley to assist with problems,
+so sites are encouraged to ensure enough local expertise to
+find and fix any problems that are encountered.
+.PP
+We have attempted to make the system as compliant with the ANSI C and
+IEEE POSIX 1003.1 and 1003.2 standards as was possible at the time
+of its release.
+We have not run it through any of the verification test suites, thus,
+you should not claim conformance with either standard without
+first validating the code.
+.PP
+This software distribution is only available on two 6250bpi 1/2''
+9-track tapes or one 8mm Exabyte cassette.
+A complete set of the Usenix/O'Reilly 4.4BSD manuals will
+accompany your distribution media.
+The 4.4BSD-Lite Release 2 distribution contains source
+for the following architectures:
+.IP \(bu
+HP 9000/300 68000-based workstations,
+.IP \(bu
+DECstation 3100 and 5000 MIPS-based workstations,
+.IP \(bu
+Sparcstation I & II SPARC-based workstations
+(Please note that the distribution does
+.B not
+support the Sparcstation 10.),
+.IP \(bu
+Sony News MIPS-based workstations,
+.IP \(bu
+Omron Luna 68000-based workstations,
+.IP \(bu
+Intel 386/486-based machines (ISA/AT or EISA bus only).
+.LP
+The distribution does
+.B not
+include the machine support for the Tahoe and VAX architectures
+found in previous BSD distributions.
+Our primary development environment is the HP9000/300 series machines.
+The other architectures are developed and supported by
+people outside the university.
+Consequently, we are not able to directly test or maintain these 
+other architectures, so cannot comment on their robustness,
+reliability, or completeness.
+More specifically, the support for the x86 architectures is known to
+be unstable.
+.SH
+How to obtain 4.4BSD-Lite Release 2
+.PP
+To obtain 4.4BSD-Lite Release 2,
+we require execution of the Berkeley License Agreement (3/95).
+In addition, foreign licensees must execute Addendum Number One for 
+Foreign Licensees in ordering 4.4BSD-Lite Release 2.
+The fee is $1000.00 for 4.4BSD-Lite Release 2.
+.PP
+Because we are a research and development organization
+and not a commercial organization,
+we make our research results available for a small license fee.
+We distribute only the whole system ``As Is''
+and cannot send individual pieces of the system.
+We are required by the University of California to have
+a formal license arrangement with each
+organization to which we distribute. 
+.PP
+Specifically, for 4.4BSD-Lite Release 2,
+we must receive from your organization the
+following material before the distribution can be sent:
+.IP \(bu
+\fBTwo\fR original signed and executed copies of
+the Berkeley License Agreement (3/95) for 4.4BSD-Lite between your company
+or institution and The Regents of the University of California
+along with Exhibit A properly filled out.
+For Foreign licensees, there is an Addendum to
+the License Agreement that must also be executed.
+Please have this person's name and title 
+.B 
+typed 
+.R
+in the available space in addition to the signature.
+One signed copy of the Berkeley License Agreement will be
+returned to you after it has been executed by
+The Regents of the University of California.
+.IP \(bu
+A check from a U.S. bank for $1000.00 must be received before
+the distribution can be sent.
+Checks should be made payable to 
+``The Regents of the University of California,
+Computer Systems Research Group.'' 
+If you must issue a Purchase Order,
+together with your prepayment, 
+please issue one that is blank-backed.
+If this is not possible,
+insert and initial in the body of the Purchase Order the following clause:
+``The terms and conditions of this Purchase Order
+are not accepted by The Regents of the University of California.
+The revised Berkeley License Agreement (3/95) prevails.''
+Wire transfers are strongly discouraged.
+.IP \(bu
+The attached Site Information Form completely filled out.
+Your copy of the signed 4.4BSD-Lite License Agreement
+will be sent to the person listed as the administrative contact.
+The distribution itself will be sent to the technical contact.
+All information is kept confidential;
+it is for our use in notifying you of important bug fixes.
+Please note that we cannot ship to post office boxes;
+therefore, please have the technical contact's address
+supplied without use of a post office box.
+.LP
+A checklist is included to aid you in assembling this material.
+All the above material must be sent to:
+.DS
+Pauline Schwartz, Distribution Coordinator
+Computer Systems Research Group
+Computer Science Division, EECS
+317 Soda Hall
+University of California
+Berkeley, California 94720-1776
+.DE
+Once all these items have been received and are in proper order,
+the distribution will be sent to the technical address listed on the
+Site Information Form.
+We cannot provide delivery dates.
+Once the material is assembled and packaged,
+the distribution is shipped by commercial carrier.
+Order of shipment will be based on time
+of arrival of the properly completed paperwork.
+Because of the differential in costs of shipping outside the United States,
+we ask that organizations outside the continental United States
+pay the collect shipping charges.
+If the destination is one where collect shipment
+cannot be made by the carrier,
+then advance payment of the shipping charges will be required.
+.PP
+The most expedient way to ensure that your full distribution
+is sent as quickly as possible is to include in a single
+package two original copies of the appropriate
+Berkeley License Agreement completed
+and properly signed (\fBwithout change\fR),
+the appropriate check properly made out to 
+``The Regents of the University of California,
+Computer Systems Research Group'' and a completely filled out
+Site Information Form and to send this single package
+to the address noted above.
+.PP
+Please note that if you modify the Berkeley License Agreement,
+you may experience a delay of three months or more before 
+receiving an acceptance or denial of the changes.
+We reserve the right to cancel your application if we have
+not received the requested paperwork within 60 days
+from the date it was sent to us.
+.SH
+Special Cases
+.PP
+\fBUniversity of California Sites\fR.
+If you are a part of the University of California,
+the following items must be sent to the Computer Systems Research Group:
+1) a letter of authorization signed by the Director or Head of Department 
+requesting 4.4BSD-Lite Release 2,
+stating that you have read and understood the Berkeley
+License Agreement (3/95) and that your organization
+will abide by it;
+2) an IOC for $1,000.00; and
+3) a Site Information Form.
+.SH
+A Special Note 
+.PP
+The procedures and rules set out in this document
+are University constraints that must be followed
+for the distribution of software to be possible.
+The Computer Systems Research Group has no control over
+these constraints and must reject your application if
+material submitted is not in order.
+If you have questions about the licensing process after reading
+this letter, you may call Pauline Schwartz at (510) 642-7780,
+write to her, or contact her via electronic mail at pauline@cs.berkeley.edu.
+.sp 2
+.nf
+.in +2.5i
+Sincerely yours,
+.sp 3
+Marshall Kirk McKusick
+.sp 3
+Keith Bostic
+.br
+Computer Systems Research Group

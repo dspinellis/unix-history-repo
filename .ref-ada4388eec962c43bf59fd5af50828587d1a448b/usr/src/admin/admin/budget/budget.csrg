@@ -1,0 +1,73 @@
+
+                           CSRG BUDGET
+                 April 1, 1989 - March 31, 1990
+		   Revision of 
+
+
+
+A. SALARIES AND WAGES
+
+     1. Academic (Assistant Research Engineer @ 100%)                 $ 54,389
+     2. Technical (Programmer V @ 100%)                               $ 59,392
+     3. Technical (Programmer IV @ 80%)                               $ 43,350
+     4. Technical (Programmer II @ 100% & Programmer III @ 100%)      $ 85,361
+     5. Clerical Assistance (Assistant II @ 100%)		      $ 23,615
+     6. Clerical Assistance (Assistant III @ 20%)		      $  5,923
+     7. Administrative Services                                       $ 25,930
+
+     TOTAL SALARIES AND WAGES                                        $ 297,960
+
+B. EMPLOYEE BENEFITS                                                  $ 86,869
+
+     TOTAL SALARIES AND EMPLOYEE BENEFITS                            $ 384,829
+
+
+C. EQUIPMENT
+
+     1. 1 ea. Gateway, MicroVAX or equiv.                             $ 15,000
+     2. 3 Ethernet Interfaces                                          $ 9,000
+     3. 4 ea. High-speed Network Interfaces                           $ 30,000
+     4. 4 ea. 9600 Baud Telebit Modems                                 $ 6,400
+     5. 2 ea. X.25 Network Interfaces                                 $ 10,000
+     6. 2 Exabyte 8mm Tape Backup Systems                             $ 15,000
+     7. 3 ea. SCSI Disks                                                $9,600
+     8. 4 ea. Interphase 4400 Disk Controllers                        $ 20,000
+     9. 8 ea. SMD Disk Drives                                         $ 88,000
+
+     TOTAL EQUIPMENT                                                 $ 203,000
+
+D. TRAVEL
+
+     1. 20 R/Ts to the East Coast @ $700/trip
+     2. 4 R/Ts to Europe (IEEE 1003, IETF) @ $1,760/trip
+
+     TOTAL TRAVEL                                                     $ 21,040
+
+
+E. SUPPLIES AND EXPENSES
+
+     1. Computer Maintenance                                          $ 86,816
+     2. Network Access                                                 $ 3,960
+     3. Mailing, Telephone, Manuals & Expendable Supplies             $ 20,313
+
+     TOTAL SUPPLIES AND EXPENSES                                     $ 111,089
+
+
+F. TOTAL DIRECT COSTS                                                $ 719,958
+
+Notes:
+The programmer II position was previously held by Kevin Fall
+who was laid off due to a shortage of funds. If the funds
+become available again Kevin or an equivalent will be hired
+in that position to work on security related issues.
+
+The low per trip cost of travel is due to ceilings on such
+costs imposed by the US government.
+
+The equipment budget used to contain entries for five more
+Sun workstations and attendent servers and disks. These were
+deleted in anticipation of the HP workstations. The remaining
+items are for upgrades of our existing environment.
+
+The costs for university overhead have been deleted. These
+would amount to a 48% surcharge on everything except equipment.

@@ -1,0 +1,89 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pipe.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PIPE 2
+.Os BSD 4
+.Sh NAME
+.Nm pipe
+.Nd create descriptor pair for interprocess communication
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn pipe "int *fildes"
+.Sh DESCRIPTION
+The
+.Fn pipe
+function
+creates a
+.Em pipe ,
+which is an object allowing
+unidirectional data flow,
+and allocates a pair of file descriptors.
+The first descriptor connects to the
+.Em read end
+of the pipe,
+and the second connects to the
+.Em write end  ,
+so that data written to
+.Fa fildes[1]
+appears on (i.e., can be read from)
+.Fa fildes[0] .
+This allows the output of one program to be
+sent
+to another program:
+the source's standard output is set up to be
+the write end of the pipe,
+and the sink's standard input is set up to be
+the read end of the pipe.
+The pipe itself persists until all its associated descriptors are
+closed.
+.Pp
+A pipe whose read or write end has been closed is considered
+.Em widowed .
+Writing on such a pipe causes the writing process to receive
+a
+.Dv SIGPIPE
+signal.
+Widowing a pipe is the only way to deliver end-of-file to a reader:
+after the reader consumes any buffered data, reading a widowed pipe
+returns a zero count.
+.Pp
+Pipes are really a special case of the 
+.Xr socketpair 2
+call and, in fact, are implemented as such in the system.
+.Sh RETURN VALUES
+On successful creation of the pipe, zero is returned. Otherwise, 
+a value of -1 is returned and the variable
+.Va errno
+set to indicate the
+error.
+.Sh ERRORS
+The
+.Fn pipe
+call will fail if:
+.Bl -tag -width [EMFILE]
+.It Bq Er EMFILE
+Too many descriptors are active.
+.It Bq Er ENFILE
+The system file table is full.
+.It Bq Er EFAULT
+The
+.Fa fildes
+buffer is in an invalid area of the process's address
+space.
+.El
+.Sh SEE ALSO
+.Xr sh 1 ,
+.Xr read 2 ,
+.Xr write 2 ,
+.Xr fork 2 ,
+.Xr socketpair 2
+.Sh HISTORY
+A
+.Nm
+function call appeared in Version 6 AT&T UNIX.

@@ -1,0 +1,56 @@
+.\" Copyright (c) 1993 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)scsiformat.8	5.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SCSIFORMAT 8
+.Os BSD 4
+.Sh NAME
+.Nm scsiformat
+.Nd format SCSI disks and show SCSI parameters
+.Sh SYNOPSIS
+.Nm scsiformat
+.Op Fl r
+.Op Fl p Ar page-control
+.Ar raw-device-name
+.Sh DESCRIPTION
+The
+.Nm scsiformat
+utility can be used to format SCSI disks
+on systems that support on-line SCSI formatting
+(currently this is limited to the HP300 and SPARC ports).
+It will also show the various parameters set in the SCSI controller.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl p
+Modify how the SCSI mode sense page query is constructed.
+By default,
+.Nm scsiformat
+asks for the current settings.
+The page-control flag is one of:
+.sp
+.Bl -tag -width XXX -compact
+.It Li c
+gets current settings.
+.It Li d
+gets default settings (those provided by the disk's manufacturer).
+.It Li s
+gets saved settings (those that persist across power cycles).
+.It Li v
+shows which parameters are variable.
+.El
+.It Fl r
+Don't format, instead display the disk parameters.
+.El
+.Sh DIAGNOSTICS
+These should mostly be self-explanatory.
+A copy of the SCSI standard (or a more readable derivative)
+may be useful, however.
+.Sh HISTORY
+The
+.Nm scsiformat
+utility first appeared in 4.4BSD.

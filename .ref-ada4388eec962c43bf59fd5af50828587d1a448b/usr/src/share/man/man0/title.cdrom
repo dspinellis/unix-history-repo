@@ -1,0 +1,1236 @@
+.\" Copyright (c) 1994 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)title.cdrom	8.3 (Berkeley) %G%
+.\"
+.nr LL 6.5i
+.EH ''''
+.OH ''''
+.EF ''''
+.OF ''''
+\&
+.sp |1.5i
+.nr PS 36
+.nr VS 39
+.LP
+.ft B
+.ce 2
+4.4BSD-Lite
+CD-ROM Companion
+.bp
+\&
+.sp |0.83i
+.nr PS 14
+.nr VS 16.5
+.LP
+Now in its twentieth year, the USENIX Association,
+the UNIX and Advanced Computing Systems professional and technical organization,
+is a not-for-profit membership association of individuals and
+institutions with an interest in UNIX and UNIX-like systems,
+and, by extension, C++, X windows, and other advanced tools and technologies.
+.LP
+USENIX and its members are dedicated to:
+.IP \(bu
+fostering innovation and communicating research and technological developments,
+.IP \(bu
+sharing ideas and experience relevant to UNIX,
+UNIX-related, and advanced computing systems, and
+.IP \(bu
+providing a neutral forum for the exercise of critical
+thought and airing of technical issues.
+.LP
+USENIX publishes a journal (\fBComputing Systems\fP),
+a newsletter (\fI;login:\fP),
+Proceedings from its frequent Conferences and Symposia,
+and a Book Series.
+.LP
+SAGE, The Systems Administrators Guild, a Special Technical Group with
+the USENIX Association, is dedicated to the advancement of system
+administration as a profession.
+.LP
+SAGE brings together systems managers and administrators to:
+.IP \(bu
+propagate knowledge of good professional practice,
+.IP \(bu
+recruit talented individuals to the profession,
+.IP \(bu
+recognize individuals who attain professional excellence,
+.IP \(bu
+foster technical development and share solutions to technical
+problems, and
+.IP \(bu
+communicate in an organized voice with users, management, and vendors
+on system administration topics.
+.bp
+\&
+.sp |1i
+.nr PS 36
+.nr VS 39
+.LP
+.ft B
+.ce 3
+4.4BSD-Lite
+CD-ROM Companion
+.sp 1.5i
+.nr PS 24
+.nr VS 26
+.LP
+.ft B
+.ce 1
+Berkeley Software Distribution
+.nr PS 18
+.nr VS 26
+.LP
+.ft B
+.ce 1
+April, 1994
+.sp 1i
+.nr PS 18
+.nr VS 20
+.LP
+.ft B
+.ce 2
+Computer Systems Research Group
+University of California at Berkeley
+.sp 2.75i
+.nr PS 12
+.nr VS 14.5
+.LP
+.ft B
+.ce 4
+A USENIX Association Book
+O'Reilly & Associates, Inc.
+103 Morris Street, Suite A
+Sebastopol, CA 94572
+.bp
+.hy 0
+.nr PS 9
+.nr VS 11
+.LP
+First Printing, 1994
+.br
+Second Printing, 1995
+.sp 1
+.LP
+Copyright 1979, 1980, 1983, 1986, 1993, 1994
+The Regents of the University of California.  All rights reserved.
+.sp 1
+.LP
+Redistribution and use of this manual and its accompanying CD-ROM
+in source and binary forms,
+with or without modification, are permitted provided that the
+following conditions are met:
+.IP 1)
+Redistributions of this manual must retain the copyright
+notices on this page, this list of conditions and the following disclaimer.
+.IP 2)
+Software or documentation that incorporates part of this manual must
+reproduce the copyright notices on this page, this list of conditions and
+the following disclaimer in the documentation and/or other materials
+provided with the distribution.
+.IP 3)
+All advertising materials mentioning features or use of this software
+must display the following acknowledgement:
+``This product includes software developed by the University of
+California, Berkeley and its contributors.''
+.IP 4)
+Neither the name of the University nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+.LP
+\fB\s-1THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGE.\s+1\fP
+.sp 1.5
+.LP
+The Institute of Electrical and Electronics Engineers and the American
+National Standards Committee X3, on Information Processing Systems have
+given us permission to reprint portions of their documentation.
+.sp 1
+.LP
+In the following statement, the phrase ``this text'' refers to portions
+of the system documentation.
+.LP
+``Portions of this text are reprinted and reproduced in
+electronic form in 4.4BSD from IEEE Std 1003.1-1988, IEEE
+Standard Portable Operating System Interface for Computer Environments
+(POSIX), copyright 1988 by the Institute of Electrical and Electronics
+Engineers, Inc.  In the event of any discrepancy between these versions
+and the original IEEE Standard, the original IEEE Standard is the referee
+document.''
+.sp 1
+.LP
+In the following statement, the phrase ``This material'' refers to portions
+of the system documentation.
+.LP
+``This material is reproduced with permission from American National
+Standards Committee X3, on Information Processing Systems.  Computer and
+Business Equipment Manufacturers Association (CBEMA), 311 First St., NW,
+Suite 500, Washington, DC 20001-2178.  The developmental work of
+Programming Language C was completed by the X3J11 Technical Committee.''
+.sp 1.5
+.LP
+The views and conclusions contained in this manual are those of the
+authors and should not be interpreted as representing official policies,
+either expressed or implied, of the Regents of the University of California.
+.sp 1.5
+.LP
+The 4.4BSD Daemon used on the cover is
+copyright 1994 by Marshall Kirk McKusick
+and is reproduced with permission.
+.br
+This book was printed and bound in the United States of America.
+.br
+Distributed by O'Reilly & Associates, Inc.
+.sp 1
+.IP "[recycle logo]" 16
+This book is printed on acid-free paper with 50% recycled content,
+10-13% post-consumer waste. O'Reilly & Associates is committed to
+using paper with the highest recycled content available consistent
+with high quality.
+.sp 1
+.LP
+ISBN: 1-56592-081-3 (Domestic)
+.LP
+ISBN: 1-56592-092-9 (International)
+.bp
+\&
+.sp |1.5i
+.nr PS 24
+.nr VS 26
+.LP
+.ce 1
+\fBContents\fP
+.sp 1
+.nr PS 14
+.nr VS 17
+.LP
+.TS
+expand;
+l r.
+The Computer Systems Research Group, 1979\-1993	7
+Overview	11
+CD-ROM Source Hierarchy	15
+Introduction	21
+List of Manual Pages	23
+Permuted Index	41
+.TE
+.if o .bp
+\&
+.bp
+.\"
+.\" The contributor list below is derived from the file that resides in
+.\" vangogh:~admin/contrib/contrib:
+.\"
+.\"	@(#)contrib	5.55 (Berkeley) 4/18/94
+.\"
+.\" This file should not be editted, rather the original contrib file
+.\" should be used to recrete this one following the directions at its top.
+.\" Contrib starts here and continues to the comment `END OF CONTRIB'.
+.\"
+\&
+.sp |1i
+.ps 24
+.vs 27
+.ce 2
+\fBThe Computer Systems Research Group
+1979 \- 1993\fP
+.sp 1.5
+.nr PS 11
+.nr VS 12
+.LP
+.nf
+.in +0.5i
+\fBCSRG Technical Staff\fP
+.sp 1
+.in +1i
+Jim Bloom
+Keith Bostic
+Ralph Campbell
+Kevin Dunlap
+William N. Joy
+Michael J. Karels
+Samuel J. Leffler
+Marshall Kirk McKusick
+Miriam Amos Nihart
+Keith Sklower
+Marc Teitelbaum
+Michael Toy
+.in -1i
+.sp 3
+\fBCSRG Administration and Support\fP
+.sp 1
+.in +1i
+Robert Fabry
+Domenico Ferrari
+Susan L. Graham
+Bob Henry
+Anne Hughes
+Bob Kridle
+David Mosher
+Pauline Schwartz
+Mark Seiden
+Jean Wood
+.in -1i
+.fi
+.sp 3
+\fBOrganizations that funded the CSRG with grants,
+gifts, personnel, and/or hardware.\fP
+.sp 1
+.nf
+.in +1i
+Center for Advanced Aviation System Development, The MITRE Corp.
+Compaq Computer Corporation
+Cray Research Inc.
+Department of Defense Advance Research Projects Agency (DARPA)
+Digital Equipment Corporation
+The Hewlett-Packard Company
+NASA Ames Research Center
+The National Science Foundation
+The Open Software Foundation
+UUNET Technologies Inc.
+.in -1.5i
+.fi
+.OH '\s10CSRG, 1979 \- 1993''- % -\s0'
+.EH '\s10- % -''CSRG, 1979 \- 1993\s0'
+.bp
+.nr PS 10
+.nr VS 11
+.LP
+\fBThe following are people and organizations that provided a
+large subsystem for the BSD releases.\fP
+.sp
+.TS
+l l.
+ANSI C library	Chris Torek
+ANSI C prototypes	Donn Seeley and John Kohl
+Autoconfiguration	Robert Elz
+C library documentation	American National Standards Committee X3
+CCI 6/32 support	Computer Consoles Inc.
+DEC 3000/5000 support	Ralph Campbell
+Disklabels	Symmetric Computer Systems
+Documentation	Cynthia Livingston and The USENIX Association
+Franz Lisp	Richard Fateman, John Foderaro, Keith Sklower, Kevin Layer
+GCC, GDB	The Free Software Foundation
+Groff	James Clark (The FSF)
+HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the Systems
+	Programming Group; University of Utah Computer Science Department
+ISODE	Marshall Rose
+Ingres	Mike Stonebraker, Gene Wong, and the Berkeley Ingres Research Group
+Intel 386/486 support	Bill Jolitz and TeleMuse
+Job control	Jim Kulp
+Kerberos	Project Athena and MIT
+Kernel support	Bill Shannon and Sun Microsystems Inc.
+LFS	Margo Seltzer, Mendel Rosenblum, Carl Staelin
+MIPS support	Trent Hein
+Math library	K.C. Ng, Zhishun Alex Liu, S. McDonald, P. Tang and W. Kahan
+NFS	Rick Macklem
+NFS automounter	Jan-Simon Pendry
+Network device drivers	Micom-Interlan and Excelan
+Omron Luna support	Akito Fujita and Shigeto Mochida
+Quotas	Robert Elz
+RPC support	Sun Microsystems Inc.
+Shared library support	Rob Gingell and Sun Microsystems Inc.
+Sony News 3400 support	Kazumasa Utashiro
+Sparc I/II support	Computer Systems Engineering Group, Lawrence Berkeley Laboratory
+Stackable file systems	John Heidemann
+Stdio	Chris Torek
+System documentation	The Institute of Electrical and Electronics Engineers, Inc.
+TCP/IP	Rob Gurwitz and Bolt Beranek and Newman Inc.
+Timezone support	Arthur David Olson
+Transport/Network OSI layers	IBM Corporation and the University of Wisconsin
+Kernel XNS assistance	William Nesheim, J. Q. Johnson, Chris Torek, and James O'Toole
+User level XNS	Cornell University
+VAX 3000 support	Mt. Xinu and Tom Ferrin
+VAX BI support	Chris Torek
+VAX device support	Digital Equipment Corporation and Helge Skrivervik
+Versatec printer/plotter support	University of Toronto
+Virtual memory implementation	Avadis Tevanian, Jr., Michael Wayne Young,
+	and the Carnegie-Mellon University Mach project
+X25 	University of British Columbia
+.TE
+.bp
+.LP
+\fBThe following are people and organizations that provided a specific
+item, program, library routine or program maintenance for the BSD system.
+(Their contribution may not be part of the final 4.4BSD release.)\fP
+.nr PS 9
+.nr VS 10
+.ps 9
+.vs 10
+.TS
+l l.
+386 device drivers	Carnegie-Mellon University Mach project
+386 device drivers	Don Ahn, Sean Fagan and Tim Tucker
+HCX device drivers	Harris Corporation
+Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
+	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
+ISO-9660 filesystem	Pace Willisson, Atsushi Murai
+.TE
+.sp -0.4
+.TS
+l l l l.
+adventure(6)	Don Woods	log(3)	Peter McIlroy
+adventure(6)	Jim Gillogly	look(1)	David Hitz
+adventure(6)	Will Crowther	ls(1)	Elan Amir
+apply(1)	Rob Pike	ls(1)	Michael Fischbein
+apply(1)	Jan-Simon Pendry	lsearch(3)	Roger L. Snyder
+ar(1)	Hugh A. Smith	m4(1)	Ozan Yigit
+arithmetic(6)	Eamonn McManus	mail(1)	Kurt Schoens
+arp(8)	Sun Microsystems Inc.	make(1)	Adam de Boor
+at(1)	Steve Wall	me(7)	Eric Allman
+atc(6)	Ed James	mergesort(3)	Peter McIlroy
+awk(1)	Arnold Robbins	mh(1)	Marshall Rose
+awk(1)	David Trueman	mh(1)	The Rand Corporation
+backgammon(6)	Alan Char	mille(6)	Ken Arnold
+banner(1)	Mark Horton	mknod(8)	Kevin Fall
+battlestar(6)	David Riggle	monop(6)	Ken Arnold
+bcd(6)	Steve Hayman	more(1)	Eric Shienbrood
+bdes(1)	Matt Bishop	more(1)	Mark Nudleman
+berknet(1)	Eric Schmidt	mountd(8)	Herb Hasler
+bib(1)	Dain Samples	mprof(1)	Ben Zorn
+bib(1)	Gary M. Levin	msgs(1)	David Wasley
+bib(1)	Timothy A. Budd	multicast	Stephen Deering
+bitstring(3)	Paul Vixie	mv(1)	Ken Smith
+boggle(6)	Barry Brachman	named/bind(8)	Douglas Terry
+bpf(4)	Steven McCanne	named/bind(8)	Kevin Dunlap
+btree(3)	Mike Olson	news(1)	Rick Adams (and a cast of thousands)
+byte-range locking	Scooter Morris	nm(1)	Hans Huebner
+caesar(6)	John Eldridge	pascal(1)	Kirk McKusick
+caesar(6)	Stan King	pascal(1)	Peter Kessler
+cal(1)	Kim Letkeman	paste(1)	Adam S. Moskowitz
+cat(1)	Kevin Fall	patch(1)	Larry Wall
+chess(6)	Stuart Cracraft (The FSF)	pax(1)	Keith Muller
+ching(6)	Guy Harris	phantasia(6)	C. Robertson
+cksum(1)	James W. Williams	phantasia(6)	Edward A. Estes
+clri(8)	Rich $alz	ping(8)	Mike Muuss
+col(1)	Michael Rendell	pom(6)	Keith E. Brandt
+comm(1)	Case Larsen	pr(1)	Keith Muller
+compact(1)	Colin L. McMaster	primes(6)	Landon Curt Noll
+compress(1)	James A. Woods	qsort(3)	Doug McIlroy
+compress(1)	Joseph Orost	qsort(3)	Earl Cohen
+compress(1)	Spencer Thomas	qsort(3)	Jon Bentley
+courier(1)	Eric Cooper	quad(3)	Chris Torek
+cp(1)	David Hitz	quiz(6)	Jim R. Oldroyd
+cpio(1)	AT&T	quiz(6)	Keith Gabryelski
+crypt(3)	Tom Truscott	radixsort(3)	Dan Bernstein
+csh(1)	Christos Zoulas	radixsort(3)	Peter McIlroy
+csh(1)	Len Shar	rain(6)	Eric P. Scott
+curses(3)	Elan Amir	ranlib(1)	Hugh A. Smith
+curses(3)	Ken Arnold	rcs(1)	Walter F. Tichy
+cut(1)	Adam S. Moskowitz	rdist(1)	Michael Cooper
+cut(1)	Marciano Pitargue	regex(3)	Henry Spencer
+dbx(1)	Mark Linton	robots(6)	Ken Arnold
+dd(1)	Keith Muller	rogue(6)	Timothy C. Stoehr
+dd(1)	Lance Visser	rs(1)	John Kunze
+des(1)	Jim Gillogly	sail(6)	David Riggle
+des(1)	Phil Karn	sail(6)	Edward Wang
+des(1)	Richard Outerbridge	sccs(1)	Eric Allman
+dipress(1)	Xerox Corporation	scsiformat(1)	Lawrence Berkeley Laboratory
+disklabel(8)	Symmetric Computer Systems	sdb(1)	Howard Katseff
+du(1)	Chris Newcomb	sed(1)	Diomidis Spinellis
+dungeon(6)	R.M. Supnik	sendmail(8)	Eric Allman
+ed(1)	Rodney Ruddock	setmode(3)	Dave Borman
+emacs(1)	Richard Stallman	sh(1)	Kenneth Almquist
+erf(3)	Peter McIlroy, K.C. Ng	slattach(8)	Rick Adams
+error(1)	Robert R. Henry	slip(8)	Rick Adams
+ex(1)	Mark Horton	spms(1)	Peter J. Nicklin
+factor(6)	Landon Curt Noll	strtod(3)	David M. Gay
+file(1)	Ian Darwin	swab(3)	Jeffrey Mogul
+find(1)	Cimarron Taylor	sysconf(3)	Sean Eric Fagan
+finger(1)	Tony Nardo	sysline(1)	J.K. Foderaro
+fish(6)	Muffy Barkocy	syslog(3)	Eric Allman
+fmt(1)	Kurt Schoens	systat(1)	Bill Reeves
+fnmatch(3)	Guido van Rossum	systat(1)	Robert Elz
+fold(1)	Kevin Ruddy	tail(1)	Edward Sze-Tyan Wang
+fortune(6)	Ken Arnold	talk(1)	Clem Cole
+fpr(1)	Robert Corbett	talk(1)	Kipp Hickman
+fsdb(8)	Computer Consoles Inc.	talk(1)	Peter Moore
+fsplit(1)	Asa Romberger	telnet(1)	Dave Borman
+fsplit(1)	Jerry Berkman	telnet(1)	Paul Borman
+gcc/groff integration	UUNET Technologies, Inc.	termcap(5)	John A. Kunze
+gcore(1)	Eric Cooper	termcap(5)	Mark Horton
+getcap(3)	Casey Leedom	test(1)	Kenneth Almquist
+glob(3)	Guido van Rossum	tetris(6)	Chris Torek
+gprof(1)	Peter Kessler	tetris(6)	Darren F. Provine
+gprof(1)	Robert R. Henry	timed(8)	Riccardo Gusella
+hack(6)	Andries Brouwer (and a cast of thousands)	timed(8)	Stefano Zatti
+hangman(6)	Ken Arnold	tn3270(1)	Gregory Minshall
+hash(3)	Margo Seltzer	tr(1)	Igor Belchinskiy
+heapsort(3)	Elmer Yglesias	traceroute(8)	Van Jacobson
+heapsort(3)	Kevin Lew	trek(6)	Eric Allman
+heapsort(3)	Ronnie Kon	tset(1)	Eric Allman
+hunt(6)	Conrad Huang	tsort(1)	Michael Rendell
+hunt(6)	Greg Couch	unifdef(1)	Dave Yost
+icon(1)	Bill Mitchell	uniq(1)	Case Larsen
+icon(1)	Ralph Griswold	uucpd(8)	Rick Adams
+indent(1)	David Willcox	uudecode(1)	Mark Horton
+indent(1)	Eric Schmidt	uuencode(1)	Mark Horton
+indent(1)	James Gosling	uuq(1)	Lou Salkind
+indent(1)	Sun Microsystems	uuq(1)	Rick Adams
+init(1)	Donn Seeley	uusnap(8)	Randy King
+j0(3)	Sun Microsystems, Inc.	uusnap(8)	Rick Adams
+j1(3)	Sun Microsystems, Inc.	vacation(1)	Eric Allman
+jn(3)	Sun Microsystems, Inc.	vi(1)	Steve Kirkendall
+join(1)	David Goodenough	which(1)	Peter Kessler
+join(1)	Michiro Hikida	who(1)	Michael Fischbein
+join(1)	Steve Hayman	window(1)	Edward Wang
+jot(1)	John Kunze	worm(6)	Michael Toy
+jove(1)	Jonathon Payne	worms(6)	Eric P. Scott
+kermit(1)	Columbia University	write(1)	Craig Leres
+kvm(3)	Peter Shipley	write(1)	Jef Poskanzer
+kvm(3)	Steven McCanne	wump(6)	Dave Taylor
+lam(1)	John Kunze	X25/Ethernet	Univ. of Erlangen-Nuremberg
+larn(6)	Noah Morgan	X25/LLC2	Dirk Husemann
+lastcomm(1)	Len Edmondson	xargs(1)	John B. Roll Jr.
+lex(1)	Vern Paxson	xneko(6)	Masayuki Koba
+libm(3)	Peter McIlroy	XNSrouted(1)	Bill Nesheim
+libm(3)	UUNET Technologies, Inc.	xroach(6)	J.T. Anderson
+locate(1)	James A. Woods	yacc(1)	Robert Paul Corbett
+lock(1)	Bob Toxen
+.TE
+.\"
+.\" END OF CONTRIB: Contrib ends here.
+.\"
+.if o .bp
+\&
+.EH ''''
+.OH ''''
+.bp
+.OH '\s10Overview''- % -\s0'
+.EH '\s10- % -''Overview\s0'
+.nr PS 10
+.nr VS 12
+\&
+.sp |1.5i
+.EQ
+delim $$
+.EN
+.LP
+.ce
+\fB\s24Overview\s0\fP
+.sp 3
+.NH 1
+4.4BSD-Lite Description
+.PP
+This cd-rom contains the source code,
+manual pages and other documentation,
+and research papers from the first revision of the University of California,
+Berkeley's 4.4BSD-Lite distribution.
+.PP
+The 4.4BSD-Lite software is copyrighted by the
+University of California and others,
+but may be freely redistributed and used in products without fee,
+as long as the due credit,
+copyright notice,
+and other requirements described in the file /COPYRIGHT are met.
+.PP
+The distribution includes both software developed at Berkeley and much
+software contributed by authors outside Berkeley.
+Please see the previous section of this document
+for a list of the many contributors to the system.
+.PP
+The layout of the 4.4BSD-Lite distribution is described
+in the \fIhier\fR(7) manual page, which follows.
+A table of contents and permuted index for the 4.4BSD-Lite manual pages
+follow as well.
+.PP
+The cd-rom is in ISO-9660 format,
+with Rock Ridge Extensions.
+For example, to mount on a 4.4BSD-Lite system
+on which the CD-ROM drive is connected as SCSI unit 1,
+ensure that the directory /cdrom exists,
+then enter ``mount -r -t cd9660 /dev/sd1a /cdrom''.
+To mount on a Sun,
+ensure that the directory /cdrom exists,
+then enter ``mount -r -t hsts /dev/sr0 /cdrom''.
+.PP
+The 4.4BSD-Lite distribution is a source distribution only,
+and does not contain program binaries for any architecture.
+It is not possible to compile or run this software without a
+pre-existing system that is already installed and running.
+In addition,
+the distribution does not include sources for the complete 4.4BSD system.
+It includes source code and manual pages for the C library,
+approximately 95% of the utilities distributed in 4.4BSD,
+and all but a few files from the kernel.
+The system is almost entirely ANSI C and IEEE POSIX 1003.1 and 1003.2
+standards compliant.
+.NH 1
+4.4BSD-Lite Features
+.PP
+The major new facilities available in the 4.4BSD-Lite release are
+a new virtual memory system, 
+the addition of ISO/OSI networking support,
+a new virtual filesystem interface supporting filesystem stacking,
+a freely redistributable implementation of NFS,
+a log-structured filesystem,
+enhancement of the local filesystems to support
+files and filesystems that are up to $2 sup 63$ bytes in size,
+enhanced security and system management support,
+and the conversion to and addition of the IEEE Std1003.1 (``POSIX'')
+facilities and many of the IEEE Std1003.2 facilities.
+In addition, many new utilities and additions have been made to the C-library.
+The kernel sources have been reorganized to collect all machine-dependent
+files for each architecture under one directory,
+and most of the machine-independent code is now free of code
+conditional on specific machines.
+The user structure and process structure have been reorganized
+to eliminate the statically-mapped user structure and to make most
+of the process resources shareable by multiple processes.
+The system and include files have been converted to be compatible
+with ANSI C, including function prototypes for most of the exported
+functions.
+There are numerous other changes throughout the system.
+.NH 1
+Changes in the Kernel
+.PP
+This release includes several important structural kernel changes.
+The kernel uses a new internal system call convention;
+the use of global (``u-dot'') variables for parameters and error returns
+has been eliminated,
+and interrupted system calls no longer abort using non-local goto's (longjmp's).
+A new sleep interface separates signal handling from scheduling priority,
+returning characteristic errors to abort or restart the current system call.
+This sleep call also passes a string describing the process state,
+which is used by the ps(1) program.
+The old sleep interface can be used only for non-interruptible sleeps.
+.PP
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include mount entries, file entries,
+user open file descriptors, the process entries, the vnode table,
+the name cache, and the quota structures.
+.PP
+The 4.4BSD-Lite distribution adds support for several new
+architectures including
+SPARC-based Sparcstations 1 and 2,
+MIPS-based Decstation 3100 and 5000 and Sony NEWS,
+68000-based Hewlett-Packard 9000/300 and Omron Luna, and
+386-based Personal Computers.
+Both the HP300 and SPARC ports feature the ability to run binaries
+built for the native operating system (HP-UX or SunOS) by emulating
+their system calls.
+Though this native operating system compatibility was provided by the
+developers as needed for their purposes and is by no means complete,
+it is complete enough to run several non-trivial applications including
+those that require HP-UX or SunOS shared libraries.
+For example, the vendor supplied X11 server and windowing environment
+can be used on both the HP300 and SPARC.
+.NH 2
+Virtual memory changes
+.PP
+The new virtual memory implementation is derived from the MACH
+operating system developed at Carnegie-Mellon,
+and was ported to the BSD kernel at the University of Utah.
+The MACH virtual memory system call interface has been replaced with the
+``mmap''-based interface described in the
+``Berkeley Software Architecture Manual (4.4 Edition)''
+(see the UNIX Programmer's Manual,
+Supplementary Documents, PSD:5).
+The interface is similar to the interfaces shipped
+by several commercial vendors such as Sun, USL, and Convex Computer Corp.
+The integration of the new virtual memory is functionally complete,
+but, like most MACH-based virtual memory systems,
+still has serious performance problems under heavy memory load.
+.NH 2
+Networking additions and changes
+.PP
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet*).
+.\"
+.\" ditroff screws up the environment for footnote. This restores it.
+.\"
+.ev 1
+.ps 8
+.vs 9
+.ev
+.\" end of ditroff fix
+.FS
+*Ethernet is a trademark of the Xerox Corporation.
+.FE
+We also include support for ISO Connection-Oriented Network Service,
+X.25, and TP-0.
+The session and presentation layers are provided outside
+the kernel by the ISO development environment (ISODE).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500), and miscellaneous other utilities.
+.PP
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
+.NH 2
+Additions and changes to filesystems
+.PP
+The 4.4BSD-Lite distribution contains most of the interfaces
+specified in the IEEE Std1003.1 system interface standard.
+Filesystem additions include IEEE Std1003.1 FIFOs,
+byte-range file locking, and saved user and group identifiers.
+.PP
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+In comparison with other interfaces,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+The interface has been extended with support for stackable
+filesystems done at UCLA.
+These extensions allow for filesystems to be layered on top of each
+other and allow new vnode operations to be added without requiring
+changes to existing filesystem implementations.
+For example, the umap filesystem
+is used to mount a sub-tree of an existing filesystem
+that uses a different set of uids and gids than the local system.
+Such a filesystem could be mounted from a remote site via NFS or it
+could be a filesystem on removable media brought from some foreign
+location that uses a different password file.
+.PP
+In addition to the local ``fast filesystem,''
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented using only the
+publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+Using an extended protocol, it supports Leases to allow a limited
+callback mechanism that greatly reduces the network traffic necessary
+to maintain cache consistency between the server and its clients.
+.PP
+A new log-structured filesystem has been added that provides
+near disk-speed output and fast crash recovery.
+It is still experimental in the 4.4BSD-Lite release,
+so we do not recommend it for production use.
+We have also added a memory-based filesystem that runs in
+pageable memory, allowing large temporary filesystems without
+requiring dedicated physical memory.
+.PP
+The local ``fast filesystem'' has been enhanced to do 
+clustering which allows large pieces of files to be
+allocated contiguously resulting in near doubling
+of filesystem throughput.
+The filesystem interface has been extended to allow
+files and filesystems to grow to $2 sup 63$ bytes in size.
+The quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom log in.
+.PP
+The system security has been greatly enhanced by the
+addition of additional file flags that permit a file to be
+marked as immutable or append only.
+Once set, these flags can only be cleared by the super-user
+when the system is running single user.
+To protect against indiscriminate reading or writing of kernel
+memory, all writing and most reading of kernel data structures
+must be done using a new ``sysctl'' interface.
+The information to be accessed is described through an extensible
+``Management Information Base'' (MIB).
+.EQ
+delim off
+.EN
+.NH 2
+POSIX terminal driver changes
+.PP
+The biggest area of change is a new terminal driver.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the 4.3BSD terminal driver.
+4.4BSD-Lite also adds the IEEE Std1003.1 job control interface,
+which is similar to the 4.3BSD job control interface,
+but adds a security model that was missing in the
+4.3BSD job control implementation.
+A new system call, \fIsetsid\fP,
+creates a job-control session consisting of a single process
+group with one member, the caller, that becomes a session leader.
+Only a session leader may acquire a controlling terminal.
+This is done explicitly via a \s-1TIOCSCTTY\s+1 \fIioctl\fP call,
+not implicitly by an \fIopen\fP call.
+The call fails if the terminal is in use.
+.PP
+For backward compatibility,
+both the old \fIioctl\fP
+calls and old options to \fIstty\fP
+are emulated.
+.NH 1
+Changes to the utilities
+.PP
+There are several new tools and utilities included in this release.
+A new version of ``make'' allows much-simplified makefiles for the
+system software and allows compilation for multiple architectures
+from the same source tree (which may be mounted read-only).
+Notable additions to the libraries include functions to traverse a
+filesystem hierarchy, database interfaces to btree and hashing functions,
+a new, fast implementation of stdio, and a radix sort function.
+The additions to the utility suite include greatly enhanced versions of
+programs that display system status information, implementations of
+various traditional tools described in the IEEE Std1003.2 standard,
+and many others.
+.PP
+We have been tracking the IEEE Std1003.2 shell and utility work
+and have included prototypes of many of the proposed utilities.
+Most of the traditional utilities have been replaced
+with implementations conformant to the POSIX standards.
+Almost the entire manual suite has been rewritten to
+reflect the POSIX defined interfaces.
+In rewriting this software, we have generally
+been rewarded with significant performance improvements.
+Most of the libraries and header files have been converted
+to be compliant with ANSI C.
+The system libraries and utilities all compile
+with either ANSI or traditional C.
+.PP
+The Kerberos (version 4) authentication software has been
+integrated into much of the system (including NFS) to provide
+the first real network authentication on BSD.
+.PP
+A new implementation of the \fIex/vi\fP text editors is available
+in this release.
+It is intended as a bug-for-bug compatible version of the editors.
+It also has a few new features: 8-bit clean data, lines and files
+limited only by memory and disk space, split screens, tags stacks
+and left-right scrolling among them.
+\fINex/nvi\fP
+is not yet production quality; future versions of this software may
+be retrieved by anonymous ftp from ftp.cs.berkeley.edu, in the
+directory ucb/4bsd.
+.PP
+The \fIfind\fP
+utility has two new options that are important to be aware of if you
+intend to use NFS.
+The ``fstype'' and ``prune'' options can be used together to prevent
+find from crossing NFS mount points.
+.NH 2
+Additions and changes to the libraries
+.PP
+The \fIcurses\fP
+library has been largely rewritten.
+Important additional features include support
+for scrolling and \fItermios\fP.
+.PP
+An application front-end editing library, named libedit, has been
+added to the system.
+.PP
+A superset implementation of the SunOS kernel memory interface library,
+\fIlibkvm\fP, has been integrated into the system.
+.PP
+Nearly the entire C-library has been rewritten.
+Some highlights of the changes to the 4.4BSD-Lite C-library:
+.IP \(bu
+The newly added \fIfts\fP
+functions will do either physical or logical traversal of
+a file hierarchy as well as handle essentially infinite depth
+filesystems and filesystems with cycles.
+All the utilities in 4.4BSD-Lite that traverse file hierarchies
+have been converted to use \fIfts\fP.
+The conversion has always resulted in a significant performance
+gain, often of four or five to one in system time.
+.IP \(bu
+The newly added \fIdbopen\fP
+functions are intended to be a family of database access methods.
+Currently, they consist of \fIhash\fP,
+an extensible, dynamic hashing scheme,
+\fIbtree\fP, a sorted, balanced tree structure (B+tree's), and
+\fIrecno\fP, a flat-file interface for fixed or variable length records
+referenced by logical record number.
+Each of the access methods stores associated key/data pairs and
+uses the same record oriented interface for access.
+Future versions of this software may be retrieved by anonymous ftp
+from ftp.cs.berkeley.edu, in the directory ucb/4bsd.
+.IP \(bu
+The \fIqsort\fP
+function has been rewritten for additional performance.
+In addition, three new types of sorting functions,
+\fIheapsort\fP, \fImergesort\fP, and \fIradixsort\fP
+have been added to the system.
+The \fImergesort\fP
+function is optimized for data with pre-existing order,
+in which case it usually significantly outperforms \fIqsort\fP.
+The \fIradixsort\fP
+functions are variants of most-significant-byte radix sorting.
+They take time linear to the number of bytes to be
+sorted, usually significantly outperforming \fIqsort\fP
+on data that can be sorted in this fashion.
+An implementation of the POSIX 1003.2 standard \fIsort\fP
+based on \fIradixsort\fP is included in 4.4BSD-Lite.
+.IP \(bu
+The floating point support in the C-library has been replaced
+and is now accurate.
+.IP \(bu
+The C functions specified by both ANSI C, POSIX 1003.1 and
+1003.2 are now part of the C-library.
+This includes support for file name matching, shell globbing
+and both basic and extended regular expressions.
+.IP \(bu
+ANSI C multibyte and wide character support has been integrated.
+The rune functionality from the Bell Labs' Plan 9 system is provided
+as well.
+.IP \(bu
+The \fItermcap\fP
+functions have been generalized and replaced with a general
+purpose interface named \fIgetcap\fP.
+.IP \(bu
+The \fIstdio\fP
+routines have been replaced, and are usually much faster.
+In addition, the \fIfunopen\fP
+interface permits applications to provide their own I/O stream
+function support.
+.NH 1
+Acknowledgements
+.PP
+We were greatly assisted by the past employees of the Computer Systems
+Research Group: Mike Karels, Keith Sklower, and Marc Tietelbaum.
+Our distribution coordinator, Pauline Schwartz, has reliably managed
+the finances and the mechanics of shipping distributions for
+nearly the entire fourteen years of the group's existence.
+Without the help of lawyers Mary MacDonald, Joel Linzner,
+and Carla Shapiro, the 4.4BSD-Lite distribution would never
+have seen the light of day.
+Much help was provided by Chris Demetriou in getting bug fixes
+from NetBSD integrated back into the 4.4BSD-Lite distribution.
+.PP
+The vast majority of the 4.4BSD-Lite distribution comes from the numerous
+people in the UNIX community that provided their time and energy in
+creating the software contained in this release.
+We dedicate this distribution to them.
+.sp 0.6
+.in 4i
+.nf
+M. K. McKusick
+K. Bostic
+.fi
+.in 0
+.if o .bp
+\&
+.EH ''''
+.OH ''''
+.bp +7
+.OH '\s10Introduction''- % -\s0'
+.EH '\s10- % -''Introduction\s0'
+.de IR
+\fI\\$1\^\fR\\$2
+..
+.de RI
+\fR\\$1\fI\\$2\^\fR\\$3
+..
+.ce
+\fB\s24Introduction\s0\fP
+.sp 2
+.nr PS 10
+.nr VS 12
+.LP
+The documentation for 4.4BSD is in a format similar
+to the one used for the 4.2BSD and 4.3BSD manuals.
+It is divided into three sets; each set consists of one or more volumes.
+The abbreviations for the volume names are listed in square brackets;
+the abbreviations for the manual sections are listed in parenthesis.
+.DS
+I. User's Documents
+	User's Reference Manual [URM]
+		Commands (1)
+		Games (6)
+		Macro packages and language conventions (7)
+	User's Supplementary Documents [USD]
+		Getting Started
+		Basic Utilities
+		Communicating with the World
+		Text Editing
+		Document Preparation
+		Amusements
+
+II. Programmer's Documents
+	Programmer's Reference Manual [PRM]
+		System calls (2)
+		Subroutines (3)
+		Special files (4)
+		File formats and conventions (5)
+	Programmer's Supplementary Documents [PSD]
+		Documents of Historic Interest
+		Languages in common use
+		Programming Tools
+		Programming Libraries
+		General Reference
+
+III. System Manager's Manual [SMM]
+	Maintenance commands (8)
+	System Installation and Administration
+.DE
+.LP
+References to individual documents are given as ``volume:document'',
+thus USD:1 refers to the first document in the ``User's Supplementary
+Documents''.
+References to manual pages are given as ``\fIname\fP(section)'' thus
+.IR sh (1)
+refers to the shell manual entry in section 1.
+.LP
+The manual pages give descriptions of the features of the
+4.4BSD system, as developed at the University of California at Berkeley.
+They do not attempt to provide perspective or tutorial information about the
+4.4BSD operating system, its facilities, or its implementation.
+Various documents on those topics are contained in the
+``\s-1UNIX\s+1 User's Supplementary Documents'' (USD), the
+``\s-1UNIX\s+1 Programmer's Supplementary Documents'' (PSD),
+and ``\s-1UNIX\s+1 System Manager's Manual'' (SMM).
+In particular, for an overview see ``The \s-1UNIX\s+1 Time-Sharing System'' (PSD:1)
+by Ritchie and Thompson; for a tutorial see
+``\s8\s-1UNIX\s+1\s10 for Beginners'' (USD:1) by Kernighan,
+and for an guide to the new features of this latest version, see
+``Berkeley Software Architecture Manual (4.4 Edition)'' (PSD:5).
+.LP
+Within the area it surveys, this volume attempts to be timely, complete
+and concise.  Where the latter two objectives conflict,
+the obvious is often left unsaid in favor of brevity.
+It is intended that each program be described as it is, not as it should be.
+Inevitably, this means that various sections will soon be out of date.
+.LP
+Commands are programs intended to be invoked directly by
+the user, in contrast to subroutines, that are
+intended to be called by the user's programs.
+User commands are described in URM section 1.
+Commands generally reside in directory
+.I /bin
+(for
+.IR bin \|ary
+programs).
+Some programs also reside in
+.I
+/\|usr/\|bin,
+.R
+to save space in
+.I  /\|bin.
+.R
+These directories are searched automatically by the command interpreters.
+Additional directories that may be of interest include
+.I
+/\|usr/\|contrib/\|bin,
+.R
+which has contributed software
+.I
+/\|usr/\|old/\|bin,
+.R
+which has old but sometimes still useful software and
+.I
+/\|usr/\|local/\|bin,
+.R
+which contains software local to your site.
+.LP
+Games have been relegated to URM section 6 and
+.I
+/\|usr/\|games,
+.R
+to keep them from contaminating
+the more staid information of URM section 1.
+.LP
+Miscellaneous collection of information necessary for
+writing in various specialized languages such as character codes, 
+macro packages for typesetting, etc is contained in URM section 7.
+.LP
+System calls are entries into the BSD kernel.
+The system call interface is identical to a C language
+procedure call; the equivalent C procedures are described in PRM section 2.
+.LP
+An assortment of subroutines is available;
+they are described in PRM section 3.
+The primary libraries in which they are kept are described in
+.IR intro (3).
+The functions are described in terms of C.
+.LP
+PRM section 4 discusses the characteristics of
+each system ``file'' that refers to an I/O device.
+The names in this section refer to the HP300 device names for the hardware,
+instead of the names of the special files themselves.
+.LP
+The file formats and conventions (PRM section 5)
+documents the structure of particular kinds of files;
+for example, the form of the output of the loader and
+assembler is given.  Excluded are files used by only one command,
+for example the assembler's intermediate files.
+.LP
+Commands and procedures intended for use primarily by the
+system administrator are described in SMM section 8.
+The files described here are almost all kept in the directory
+.I /\|etc.
+The system administration binaries reside in
+.I
+/\|sbin,
+.R
+and
+.I
+/\|usr/\|sbin.
+.LP
+Each section consists of independent entries of a page or so each.
+The name of the entry is in the upper corners of its pages,
+together with the section number.
+Entries within each section are alphabetized.
+The page numbers of each entry start at 1;
+it is infeasible to number consecutively the pages of 
+a document like this that is republished in many variant forms.
+.LP
+All entries are based on a common format;
+not all subsections always appear.
+.RS
+.LP
+The
+.I name
+subsection lists the exact names of the commands and subroutines
+covered under the entry and gives a short description of their purpose.
+.LP
+The
+.IR synopsis ""
+summarizes the use of the program being described.
+A few conventions are used, particularly in the Commands subsection:
+.LP
+.RS
+.B Boldface
+words are considered literals, and are typed just as they appear.
+.LP
+Square brackets [ ] around an argument show that the argument is optional.
+When an argument is given as ``name'', it always refers to a file name.
+.LP
+Ellipses ``.\|.\|.'' are used to show that the previous argument-prototype
+may be repeated.
+.LP
+A final convention is used by the commands themselves.
+An argument beginning with a minus sign ``\-'' usually means that it is an
+option-specifying argument, even if it appears in a position where
+a file name could appear.  Therefore, it is unwise to have files whose
+names begin with ``\-''.
+.LP
+.RE
+The
+.IR description ""
+subsection discusses in detail the subject at hand.
+.LP
+The
+.IR files ""
+subsection gives the names of files that are built into the program.
+.LP
+A
+.I
+see also
+.R
+subsection gives pointers to related information.
+.LP
+A
+.I  diagnostics
+subsection discusses the diagnostic indications that may be produced.
+Messages that are intended to be self-explanatory are not listed.
+.LP
+The
+.IR bugs ""
+subsection gives known bugs and sometimes deficiencies.
+Occasionally the suggested fix is also described.
+.LP
+.RE
+At the beginning of URM, PRM, and SSM is a List of Manual Pages,
+organized by section and alphabetically within each section, and a
+Permuted Index derived from that List.
+Within each index entry, the title of the writeup to which
+it refers is followed by the appropriate section number in parentheses.
+This fact is important because there is considerable
+name duplication among the sections, arising principally from commands that
+exist only to exercise a particular system call.
+Finally, there is a list of documents on the inside back cover of each volume.
+.if o .bp
+\&
+.EH ''''
+.OH ''''
+.bp
+.OH '\s10Manual Pages''- % -\s0'
+.EH '\s10- % -''Manual Pages\s0'
+.EF '\s10\\\\*(Dt''\\\\*(Ed\s0'
+.OF '\s10\\\\*(Ed''\\\\*(Dt\s0'
+.nr PS 10
+.nr VS 11.5
+.LP
+.ce
+\s24\fBList \|of \|Manual \|Pages\fP\s0
+.nr x 0.5
+.in +\nxi
+.nf
+.ta \n(.lu-\nxuR
+.de xx
+\\$1\f3 \a \fP\\$2
+..
+.de t
+.sp 1v
+.ne .5i
+.cs 3
+.ti -\\nxi
+.ss 18
+\fB\\$2. \\$3\fP
+.ss 12
+.if t .sp .5v
+.cs 3 36
+.ds Ed Section \\$2
+.ds Dt \\$3
+.so \\$1
+..
+.t toc1 1 "Commands and Application Programs"
+.t toc2 2 "System Calls"
+.t toc3 3 "C Library Subroutines"
+.t toc4 4 "Special Files"
+.t toc5 5 "File Formats"
+.t toc6 6 "Games"
+.t toc7 7 "Miscellaneous"
+.t toc8 8 "System Maintenance"
+.in -\nxi
+.cs 3
+.ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
+.if o .bp
+\&
+.EH ''''
+.OH ''''
+.bp
+\&
+.OH '\s10Permuted Index''- % -\s0'
+.EH '\s10- % -''Permuted Index\s0'
+.ds Ed 4.4BSD
+.ds Dt April \|1994
+.ce
+\s24\fBPermuted \|Index\fP\s0
+.sp 2
+.nr PS 8
+.nr VS 9
+.LP
+.\"	backup from slotput 1, slot, 2
+.tr ~
+.nf
+.cs 3 36
+.de xx
+.ds s1\"
+.if \w\\$2 .ds s1 ~~\"
+.ds s2 ~~~\"
+.ds s3\"
+.if \w\\$4 .ds s3 ~~\"
+.ds s4 ~~\"
+.ds s5 ~~\"
+.ds y \\*(s4\f3\fP\\*(s5
+.ta 6i-\w\\*(s5u
+\h"3i-\w\\$1\\*(s1\\$2\\*(s2u"\\$1\\*(s1\\$2\\*(s2\\$3\\*(s3\\$4\\*y\\$5
+..
+.so ptxx
+.cs 3
+.ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i

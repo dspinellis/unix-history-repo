@@ -1,0 +1,46 @@
+.\" Copyright (c) 1990, 1993, 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)file.1	8.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FILE 1
+.Os
+.Sh NAME
+.Nm file
+.Nd identify file content
+.Sh SYNOPSIS
+.Nm file
+.Op Fl h
+.Ar file ...
+.Sh DESCRIPTION
+.Nm File
+tests the specified files and attempts to classify them.
+If a file is a text file,
+it attempts to determine the type of text (e.g.
+.Xr csh 1
+commands or C source code).
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl h
+If a symbolic link is specified, identify the file as a symbolic
+link.
+By default, symbolic links are only identified if they reference
+non-existent files.
+.El
+.Sh COMPATIBILITY
+Previous implementations of the
+.Nm file
+utility did not follow symbolic links by default.
+.Sh BUGS
+As many tests are used and
+.Nm file
+stops testing on the first successful one, it can often make mistakes.
+.Sh HISTORY
+A
+.Nm file
+command appeared in
+.At v6 .

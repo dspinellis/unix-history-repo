@@ -1,0 +1,780 @@
+.\" Copyright (c) 1990, 1993, 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)hier.7	8.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt HIER 7
+.Os
+.Sh NAME
+.Nm hier
+.Nd layout of filesystems
+.Sh DESCRIPTION
+An outline of the filesystem hierarchy.
+.Bl -tag -width "/altroot/"
+.It Sy \&/
+root directory of the system
+.It Sy /COPYRIGHT
+system copyright notice
+.It Sy "/[a-z]"
+user filesystems
+.It Sy /altroot/
+alternate root filesystem, in case of disaster
+.It Sy /amd/
+home directories mount point; see
+.Xr amd 8
+.It Sy /bin/
+utilities used in both single and multi-user environments
+.It Sy /dev/
+block, character and other special device files
+.Pp
+.Bl -tag -width "MAKEDEV" -compact
+.It Sy MAKEDEV
+script for creating device files;
+see
+.Xr makedev 8
+.It Sy console
+the computer's console device
+.It Sy fd/
+file descriptor files;
+see
+.Xr \&fd 4
+.It Sy drum
+system swap space; see
+.Xr drum 4
+.It Sy klog
+kernel logging device; see
+.Xr syslog 3
+.It Sy kmem
+kernel virtual memory device; see
+.Xr mem 4
+.It Sy log
+UNIX domain datagram log socket; see
+.Xr syslogd 8
+.It Sy mem
+kernel physical memory device; see
+.Xr mem 4
+.It Sy stderr
+.It Sy stdin
+.It Sy stdout
+file descriptor files;
+see
+.Xr \&fd 4
+.It Sy null
+the null device; see
+.Xr null 4
+.It Sy tty
+process' controlling terminal device; see
+.Xr tty 4
+.El
+.It Sy /dump/
+online
+.Xr dump 8
+repository
+.It Sy /etc/
+system configuration files and scripts 
+.Pp
+.Bl -tag -width "master.passwd" -compact
+.It Sy aliases*
+name alias files for
+.Xr sendmail 8
+.It Sy amd*
+configuration files for
+.Xr amd 8
+.It Sy changelist
+files backed up by the security script
+.It Sy crontab
+schedule used by the
+.Xr cron 8
+daemon
+.It Sy csh.cshrc
+.It Sy csh.login
+.It Sy csh.logout
+system-wide scripts for
+.Xr csh 1
+.It Sy daily
+script run each day by
+.Xr cron 8
+.It Sy disklabels/
+backup disklabels;
+see
+.Xr disklabel 8
+.It Sy disktab
+disk description file, see
+.Xr disktab 5
+.It Sy dm.conf
+dungeon master configuration; see
+.Xr dm.conf 5
+.It Sy dumpdates
+dump history; see
+.Xr dump 8
+.It Sy exports
+filesystem export information; see
+.Xr mountd 8
+.It Sy fstab
+filesystem information; see
+.Xr fstab 5
+and
+.Xr mount 8
+.It Sy ftpusers
+users denied
+.Xr ftp 1
+access; see
+.Xr ftpd 8
+.It Sy ftpwelcome
+.Xr ftp 1
+initial message; see
+.Xr ftpd 8
+.It Sy gettytab
+terminal configuration database; see
+.Xr gettytab 8
+.It Sy group
+group permissions file; see
+.Xr group 5
+.It Sy hosts
+host name database backup for
+.Xr named 8 ;
+see
+.Xr hosts 5
+.It Sy hosts.equiv
+trusted machines with equivalent user ID's
+.It Sy hosts.lpd
+trusted machines with printing privileges
+.It Sy inetd.conf
+Internet server configuration file; see
+.Xr inetd 8
+.It Sy kerberosIV/ 
+configuration files for the kerberos version IV;
+see
+.Xr kerberos 1
+.It Sy localtime
+local timezone information;
+see
+.Xr ctime 3
+.It Sy mail.rc
+system-wide initialization script for
+.Xr mail 1
+.It Sy man.conf
+configuration file for
+.Xr man 1 ;
+see
+.Xr man.conf 5
+.It Sy master.passwd
+.It Sy passwd
+.It Sy pwd.db
+.It Sy spwd.db
+password files and their databases; see
+.Xr pwd_mkdb 8
+.It Sy monthly
+script run each month by
+.Xr cron 8
+.It Sy motd
+system message of the day
+.It Sy mtree/ 
+mtree configuration files;
+see
+.Xr mtree 1
+.It Sy named.*
+.It Sy namedb/ 
+named configuration files and databases;
+see
+.Xr named 8
+.It Sy netgroup
+network groups; see
+.Xr netgroup 5
+.It Sy netstart
+network startup script
+.It Sy networks
+network name data base; see
+.Xr networks 5
+.It Sy phones
+remote host phone number data base; see
+.Xr phones 5
+.It Sy printcap
+system printer configuration; see
+.Xr printcap 5
+.It Sy protocols
+protocol name database; see
+.Xr protocols 5
+.It Sy rc
+.It Sy rc.local
+system startup files; see
+.Xr rc 8
+.It Sy remote
+remote host description file; see
+.Xr remote 5
+.It Sy security
+daily (in)security script run by
+.Xr cron 8
+.It Sy sendmail.*
+.Xr sendmail 8
+configuration information
+.It Sy services
+service name data base; see
+.Xr services 5
+.It Sy shells
+list of permitted shells; see
+.Xr shells 5
+.It Sy sliphome
+slip login/logout scripts; see
+.Xr slattach 8
+.It Sy syslog.conf
+.Xr syslogd 8
+configuration file; see
+.Xr syslog.conf 5
+.It Sy termcap
+terminal type database; see
+.Xr termcap 3
+.It Sy ttys
+terminal initialization information; see
+.Xr ttys 5
+.It Sy weekly
+script run each week by
+.Xr cron 8
+.El
+.It Sy /home/
+mount point for the automounter; see
+.Xr amd 8
+.It Sy /mnt/
+empty directory commonly used by
+system administrators as a temporary mount point
+.It Sy /root/
+home directory for the super-user
+.Pp
+.Bl -tag -width ".profile" -compact
+.It Sy \&.rhosts
+super-user id mapping between machines
+.It Sy \&.cshrc
+super-user start-up file
+.It Sy \&.login
+super-user start-up file
+.It Sy \&.profile
+super-user start-up file
+.El
+.ne 1i
+.It Sy /sbin/
+system programs and administration utilities
+used in both single-user and multi-user environments
+.It Sy /stand/
+programs used in a standalone environment
+.It Sy /sys
+symbolic link to the operating system source
+.It Sy /tmp/ 
+temporary files, usually a
+.Xr mfs 8
+memory-based filesystem (the contents
+of /tmp are usually NOT preserved across a system reboot)
+.It Sy /usr/
+contains the majority of the system utilities and files
+.Pp
+.Bl -tag -width "libdata/" -compact
+.It Sy X11
+X11 files
+.Pp
+.Bl -tag -width "include/" -compact
+.It Sy bin/
+X11 binaries
+.It Sy include/
+X11 include files
+.It Sy lib/
+X11 libraries
+.El
+.It Sy bin/
+common utilities, programming tools, and applications 
+.It Sy contrib/
+packages maintained by groups other than Berkeley
+.Pp
+.Bl -tag -width "include/" -compact
+.It Sy bin/
+contributed binaries
+.It Sy include/
+contributed include files
+.It Sy libexec/
+contributed daemons
+.It Sy libdata/
+contributed data files
+.El
+.It Sy games/
+the important stuff
+.It Sy include/
+standard C include files
+.Pp
+.Bl -tag -width "kerberosIV/" -compact
+.It Sy X11/
+include files for X11 window system
+.It Sy arpa/
+include files for Internet service protocols
+.It Sy g++/
+include files for the C++ compiler
+.It Sy kerberosIV/
+include files for kerberos authentication package;
+see
+.Xr kerberos 1
+.It Sy machine/
+machine specific include files
+.It Sy net/
+miscellaneous network include files
+.It Sy netccitt/
+CCITT networking include files
+.It Sy netinet/
+include files for Internet standard protocols;
+see
+.Xr inet 4
+.It Sy netiso/
+include files for ISO standard protocols;
+see
+.Xr iso 4
+.It Sy netns/
+include files for XNS standard protocols;
+see
+.Xr \&ns 4
+.It Sy nfs/
+include files for NFS (Network File System)
+.It Sy pascal/
+include files for
+.Xr pc 1
+.It Sy protocols/
+include files for Berkeley service protocols
+.It Sy rpc/
+include files for Sun Microsystem's RPC package
+.It Sy sys/
+kernel include files
+.It Sy ufs/
+include files for UFS
+.It Sy xnscourier/
+include files for XNS package
+.El
+.Pp
+.It Sy lib/
+system C library archives; see 
+.Xr ar 1
+.Pp
+.Bl -tag -width "uucp/" -compact
+.It Sy uucp/
+UUCP binaries and scripts (historically placed; to be moved)
+.El
+.Pp
+.It Sy libdata/
+miscellaneous utility data files
+.It Sy libexec/
+system daemons and system utilities (executed by other programs)
+.ne 1i
+.It Sy local/
+local executables, libraries, etc.
+.Pp
+.Bl -tag -width "include/" -compact
+.It Sy bin/
+local binaries
+.It Sy include/
+local include files
+.It Sy libexec/
+local daemons
+.It Sy libdata/
+local data files
+.El
+.It Sy obj/
+architecture-specific target tree produced by building the
+.Pa /usr/src
+tree; normally a symbolic link or mounted filesystem
+.It Sy old/
+programs from past lives of
+.Bx 4
+which may disappear in future releases
+.Pp
+.Bl -tag -width "include/" -compact
+.It Sy bin/
+old binaries
+.It Sy include/
+old include files
+.It Sy libexec/
+old daemons
+.It Sy libdata/
+old data files
+.El
+.It Sy sbin/
+system daemons and system utilities (normally executed by the super-user)
+.It Sy share/
+architecture-independent text files
+.Pp
+.Bl -tag -width "calendar/" -compact
+.It Sy calendar/
+a variety of calendar files; see
+.Xr calendar 1
+.It Sy dict/
+word lists;
+see
+.Xr look 1
+and
+.Xr spell 1
+.Pp
+.Bl -tag -width "special/" -compact
+.It Sy words
+common words
+.It Sy web2
+words of Webster's 2nd International
+.It Sy papers/
+reference databases;
+see
+.Xr refer 1
+.It Sy special/
+custom word lists;
+see
+.Xr spell 1
+.El
+.Pp
+.It Sy doc/
+miscellaneous documentation; source for most of the printed
+.Bx 4
+manuals (available
+from the
+.Tn USENIX
+association)
+.It Sy games/
+text files used by various games
+.It Sy man/
+formatted manual pages 
+.It Sy me/
+macros for use with the
+.Xr me 7
+macro package
+.It Sy misc/
+miscellaneous system-wide text files
+.Pp
+.Bl -tag -width "termcap" -compact
+.It Sy termcap
+terminal characteristics database;
+see
+.Xr termcap 5
+.El
+.Pp
+.It Sy mk/
+include files for
+.Xr make 1
+.It Sy ms/
+macros for use with the
+.Xr ms 7
+macro package
+.It Sy skel/
+sample initialization files for new user accounts
+.It Sy tabset/
+tab description files for a variety of terminals, used in 
+the termcap file;
+see
+.Xr termcap 5
+.It Sy tmac/
+text processing macros;
+see
+.Xr nroff 1
+and 
+.Xr troff 1
+.It Sy zoneinfo/
+timezone configuration information;
+see
+.Xr tzfile 5
+.El
+.It Sy usr.bin/
+source for utilities/files in
+.Pa /usr/bin
+.It Sy usr.sbin/
+source for utilities/files in
+.Pa /usr/sbin
+.El
+.Pp
+.It Sy /usr/src/
+.Bx 4
+and local source files
+.Pp
+.Bl -tag -width "kerberosIV/" -compact
+.It Sy bin/
+source for utilities/files in
+.Pa /bin 
+.It Sy contrib/
+source for utilities/files in
+.Pa /usr/contrib
+.It Sy etc/
+source (usually example files) for files in
+.Pa /etc
+.It Sy games/
+source for utilities/files in
+.Pa /usr/games
+.It Sy include/
+source for files in
+.Pa /usr/include
+.It Sy kerberosIV/
+source for Kerberos version IV utilities and libraries
+.It Sy lib/
+source for libraries in
+.Pa /usr/lib
+.It Sy libexec/
+source for utilities/files in
+.Pa /usr/libexec
+.It Sy local/
+source for utilities/files in
+.Pa /usr/local
+.It Sy old/
+source for utilities/files in
+.Pa /usr/old
+.It Sy sbin/
+source for utilities/files in
+.Pa /sbin
+.It Sy share/
+source for files in
+.Pa /usr/share
+.Pp
+.Bl -tag -width "doc/" -compact
+.It Sy doc/
+.Pp
+.Bl -tag -width "papers/" -compact
+.It Sy papers/
+source for various Berkeley technical papers
+.It Sy psd/
+source for Programmer's Supplementary Documents
+.It Sy smm/
+source for System Manager's Manual
+.It Sy usd/
+source for User's Supplementary Documents
+.El
+.El
+.It Sy sys/
+kernel source files
+.Pp
+.Bl -tag -width "deprecated/" -compact
+.It Sy compile/
+kernel compilation directory
+.It Sy conf/
+architecture independent configuration directory
+.It Sy deprecated/
+deprecated kernel functionality
+.It Sy dev/
+architecture independent device support
+.It Sy hp/
+general support for Hewlett-Packard architectures
+.It Sy hp300/
+support for the Hewlett-Packard 9000/300 68000-based workstations
+.It Sy i386/
+support for the Intel 386/486 workstations
+.It Sy isofs/
+support for ISO filesystems
+.Pp
+.Bl -tag -width "cd9660/" -compact
+.It Sy cd9660/
+support for the ISO-9660 filesystem
+.El
+.Pp
+.It Sy kern/
+support for the high kernel (system calls)
+.It Sy libkern/
+C library routines used in the kernel
+.It Sy luna68k/
+Omron Luna 68000-based workstations
+.It Sy mips/
+general support for MIPS architectures
+.It Sy miscfs/
+miscellaneous file systems
+.It Sy net/
+miscellaneous networking support
+.It Sy netccitt/
+CCITT networking support
+.It Sy netinet/
+TCP/IP networking support
+.It Sy netiso/
+ISO networking support
+.It Sy netns/
+XNS networking support
+.It Sy news3400/
+Sony News MIPS-based workstations
+.It Sy nfs/
+NFS support
+.It Sy pmax/
+DECstation 3100 and 5000 MIPS-based workstations
+.It Sy scripts/
+kernel debugging scripts
+.It Sy sparc/
+Sparcstation I & II SPARC-based workstations
+.It Sy stand/
+kernel standalone support
+.It Sy sys/
+kernel (and system) include files
+.It Sy tahoe/
+Computer Consoles Inc. Tahoe architecture (obsolete)
+.It Sy tests/
+kernel testing
+.It Sy ufs/
+local filesystem support
+.Pp
+.Bl -tag -width "ffs/" -compact
+.It Sy ffs/
+the Berkeley Fast File System
+.It Sy lfs/
+the log-structured file system
+.It Sy mfs/
+the in-memory file system
+.It Sy ufs/
+shared UNIX file system support
+.El
+.It Sy vax/
+Digital Equipment Corp. VAX architecture (obsolete)
+.It Sy vm/
+virtual memory support
+.El
+.El
+.It Sy /var/
+multi-purpose log, temporary, transient, and spool files
+.Pp
+.Bl -tag -width "preserve/" -compact
+.It Sy account/ 
+system accounting files
+.Pp
+.Bl -tag -width "acct" -compact
+.It Sy acct
+execution accounting file;
+see
+.Xr acct 5
+.El
+.Pp
+.It Sy at/
+timed command scheduling files;
+see
+.Xr \&at 1
+.It Sy backups/
+miscellaneous backup files, largely of files found in
+.Pa /etc
+.It Sy crash/
+system crash dumps; see
+.Xr savecore 8
+.It Sy db/ 
+miscellaneous automatically generated system-specific database files
+.It Sy games/ 
+miscellaneous game status and log files
+.It Sy log/ 
+miscellaneous system log files
+.Pp
+.Bl -tag -width "monthly.out" -compact
+.It Sy amd.*
+.Xr amd 8
+logs
+.It Sy daily.out
+output of the last run of the
+.Pa /etc/daily
+script
+.It Sy ftp.*
+.Xr ftp 1
+logs
+.It Sy kerberos.*
+.Xr kerberos 1
+logs
+.It Sy lastlog
+system last time logged in log; see 
+.Xr utmp 5
+.It Sy lpd-errs.*
+printer daemon error logs; see
+.Xr lpd 8
+.It Sy maillog.*
+.Xr sendmail 8
+log files
+.It Sy messages.*
+general system information log
+.It Sy monthly.out
+output of the last run of the
+.Pa /etc/monthly
+script
+.It Sy secure
+sensitive security information log
+.It Sy sendmail.st
+.Xr sendmail 8
+statistics
+.It Sy timed.*
+.Xr timed 8
+logs
+.It Sy weekly.out
+output of the last run of the
+.Pa /etc/weekly
+script
+.It Sy wtmp
+login/logout log;
+see
+.Xr utmp 5
+.El
+.Pp
+.It Sy mail/ 
+user system mailboxes
+.It Sy msgs/
+system messages; see
+.Xr msgs 1
+.It Sy preserve/
+temporary home of files preserved after an accidental death of
+.Xr ex 1
+or
+.Xr vi 1
+.It Sy quotas/ 
+filesystem quota information
+.It Sy run/
+system information files, rebuilt after each reboot
+.Pp
+.Bl -tag -width "utmp" -compact
+.It Sy utmp
+database of current users; see
+.Xr utmp 5
+.El
+.Pp
+.It Sy rwho/ 
+rwho data files; see
+.Xr rwhod 8 ,
+.Xr rwho 1 ,
+and
+.Xr ruptime 1
+.It Sy spool/ 
+miscellaneous printer and mail system spooling directories
+.Pp
+.Bl -tag -width "uucppublic/" -compact
+.It Sy ftp/ 
+commonly
+.Dq ~ftp ,
+the anonymous ftp root directory; see
+.Xr ftpd 8
+.It Sy mqueue/ 
+undelivered mail queue;
+see
+.Xr sendmail 8
+.It Sy news/
+Network news archival and spooling directories
+.It Sy output/
+printer spooling directories
+.It Sy secretmail/ 
+secretmail spool directory;
+see
+.Xr xget 1
+.It Sy uucp/ 
+uucp spool directory
+.It Sy uucppublic/
+commonly
+.Dq ~uucp ,
+the uucp public temporary directory; see
+.Xr uucp 1
+.El
+.Pp
+.It Sy tmp/ 
+temporary files that are not discarded between system reboots
+.Pp
+.Bl -tag -width "vi.recover/" -compact
+.It Sy vi.recover/
+recovery directory for
+.Xr nvi 1
+.El
+.El
+.It Sy /vmunix
+the executable for the operating system
+.El
+.Sh SEE ALSO
+.Xr apropos 1 ,
+.Xr \&ls 1 ,
+.Xr whatis 1 ,
+.Xr whereis 1 ,
+.Xr which 1 ,
+.Sh HISTORY
+A
+.Nm hier
+manual page appeared in
+.At v7 .

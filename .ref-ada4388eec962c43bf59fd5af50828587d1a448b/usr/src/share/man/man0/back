@@ -1,0 +1,56 @@
+.\" Copyright (c) 1994 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)back	8.1 (Berkeley) %G%
+.\"
+.TS
+c s s s
+r l r l.
+\s24\fBUNIX Documents\fP\s0
+.sp 2
+\fBURM	User Reference Manual\fP	\fBPSD	Programmer Supplementary Documents\fP
+	man section 1 (commands)	1	The Unix Time \- Sharing System
+	man section 6 (games)	2	Unix Implementation
+	man section 7 (miscellaneous)	3	The Unix I/O System
+		4	Unix Programming \- Second Edition 
+\fBUSD	User Supplementary Documents\fP	5	4.4BSD Software Architecture Manual
+1	Unix for Beginners	6	C Language \- Reference Manual
+2	Learn \- Computer \- Aided Instruction	7	Berkeley Pascal User\'s Manual
+3	Introduction to the UNIX Shell	8	Fortran 77
+4	Introduction to the C shell	9	Fortran 77 I/O Library
+5	DC \- Interactive Desk Calculator	10	The GDB Source-Level Debugger
+6	BC \- Arbitrary Precision Desk Calculator	11	ADB Tutorial
+7	Mail Reference Manual	12	Make
+8	MH Message Handling System	13	Revision Control System (RCS)
+9	Tutorial Introduction to ``ed''	14	Source Code Control System (SCCS)
+10	Advanced Editing on Unix	15	YACC: Yet Another Compiler-Compiler
+11	Introduction to Display Editing with Vi	16	LEX \- A Lexical Analyzer Generator
+12	Ex Reference Manual (Version 3.7)	17	M4 Macro Processor
+13	Vi Reference Manual	18	gprof \- Call Graph Execution Profiler
+14	Jove Manual for UNIX Users	19	The curses library
+15	SED \- A Non-interactive Text Editor	20	Introductory 4.4BSD IPC
+16	AWK \- Pattern Scanning and Processing	21	Advanced 4.4BSD IPC
+17	Using the \-ms Macros		
+18	Revised Version of \-ms	\fBSMM	System Managers Manual\fP
+19	Writing Papers using \-me		man section 8 (system administration)
+20	The \-me Reference Manual	1	Installing and Operating 4.4BSD
+21	NROFF/TROFF User\'s Manual	2	Building 4.4BSD Kernels with \fIConfig\fP
+22	A TROFF Tutorial	3	Fsck \- File System Check Program
+23	Typesetting Mathematics with ``eqn''	4	Disc Quotas
+24	Typesetting Mathematics \- User\'s Guide	5	A Fast File System for UNIX
+25	Tbl \- A Program to Format Tables	6	The 4.4BSD NFS Implementation
+26	Refer \- A Bibliography System	7	Line Printer Spooler Manual
+27	Some Applications of Inverted Indexes	8	Sendmail Installation and Operation
+28	BIB \- Bibliographic Formatting Program	9	Sendmail \- An Internetwork Mail Router
+29	Writing Tools \- STYLE and DICTION	10	Name Server Operations Guide
+30	A Guide to the Dungeons of Doom	11	Timed Installation and Operation
+31	Star Trek	12	Berkeley Time Synchronization Protocol
+		13	AMD \- The 4.4BSD Automounter
+\fBPRM	Programmer Reference Manual\fP	14	Installation and Operation of UUCP
+	man section 2 (system calls)	15	A Dial \- Up Network of UNIX Systems
+	man section 3 (library routines)	16	On the Security of UNIX
+	man section 4 (devices, special files)	17	Password Security \- A Case History
+	man section 5 (file formats)	18	4.4BSD Networking Implementation
+		19	The PERL Programming Language

@@ -1,0 +1,67 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)flcopy.8	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FLCOPY 8
+.Os BSD 4
+.Sh NAME
+.Nm flcopy
+.Nd floppy copy
+.Sh SYNOPSIS
+.Nm flcopy
+.Op Fl hr
+.Op Fl f Ar file
+.Op Fl t Ar ntracks
+.Sh DESCRIPTION
+.Nm Flcopy
+copies the console floppy disk
+.Dq Pa /dev/floppy
+to a file in the
+current directory, named
+.Dq Pa floppy .
+The user is then prompted to change the floppy, and enter a carriage
+return when done.
+When a carriage return is entered,
+.Nm flcopy
+copies the file out to the floppy disk.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl f
+Use 
+.Ar file
+instead of ``/dev/floppy''.
+.It Fl h
+Cause
+.Nm flcopy
+to copy a file named ``floppy'' in the current directory to
+the console floppy disk.
+.It Fl r
+Cause
+.Nm flcopy
+to copy the floppy to the current directory and then quit.
+.It Fl t
+Copy only the first 
+.Ar ntracks
+tracks.
+.El
+.Sh FILES
+.Bl -tag -width /dev/floppy  -compact
+.It Pa floppy
+Temporary file name.
+.It Pa /dev/floppy
+Default floppy device.
+.El
+.Sh SEE ALSO
+.Xr crl 4 ,
+.Xr fl 4 ,
+.Xr rx 4 ,
+.Xr tu 4 ,
+.Xr arff 8 ,
+.Xr rxformat 8
+.Sh BUGS
+Device errors are handled ungracefully.

@@ -1,0 +1,37 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)register.1	8.1 (Berkeley) %G%
+.\"
+.TH REGISTER 1 ""
+.UC 7
+.SH NAME
+register \- register with Kerberos
+.SH SYNOPSIS
+.B register
+.SH DESCRIPTION
+The
+.I register
+command
+is used to register a new user with Kerberos.
+The Kerberos server keeps record of certain trusted hosts
+from which it will accept new registrations.
+If the host on which
+.I register
+is run is trusted by Kerberos, the user
+is asked for his current password, and then
+a new password to be used with Kerberos.
+A user may only register with Kerberos one time.
+.SH FILES
+.br
+/.update.keyxx.xx.xx.xx    shared DES key with server
+.SH "SEE ALSO"
+registerd(8), kerberos(1)
+.SH DIAGNOSTICS
+\*(lqPrincipal not unique\*(rq
+if the user already exists in the Kerberos database.
+.br
+\*(lqPermission Denied,\*(rq
+if the host on which register is being run is untrusted.

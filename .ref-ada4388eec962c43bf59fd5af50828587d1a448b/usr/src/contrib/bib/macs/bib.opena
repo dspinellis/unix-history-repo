@@ -1,0 +1,12 @@
+#
+#	"@(#)bib.opena	2.4	%G%";
+#
+#  standard open alphabetic format
+#
+SAD-2
+C2D-2
+I bibinc.fullnames
+T AT
+# a[ - amount to indent reference
+.so \*(l]/bmac.open
+.nr a[ 10

@@ -1,0 +1,44 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)calloc.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CALLOC 3
+.Os
+.Sh NAME
+.Nm calloc
+.Nd allocate clean memory (zero initialized space)
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void *
+.Fn calloc "size_t nmemb" "size_t size"
+.Sh DESCRIPTION
+The
+.Fn calloc
+function allocates space for an array of 
+.Fa nmemb
+objects, each of whose size is
+.Fa size .
+The space is initialized to all bits zero.
+.Sh RETURN VALUES
+The
+.Fn calloc
+function returns
+a pointer to the
+the allocated space if successful; otherwise a null pointer is returned.
+.Sh SEE ALSO
+.Xr malloc 3 ,
+.Xr realloc 3 ,
+.Xr free 3 ,
+.Sh STANDARDS
+The
+.Fn calloc
+function conforms to
+.St -ansiC .

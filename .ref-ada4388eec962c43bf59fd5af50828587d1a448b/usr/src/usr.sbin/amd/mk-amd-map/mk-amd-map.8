@@ -1,0 +1,33 @@
+.\" Copyright (c) 1993 Jan-Simon Pendry
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mk-amd-map.8	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt MK-AMD-MAP 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mk-amd-map
+.Nd create database maps for Amd
+.Sh SYNOPSIS
+.Nm
+.Op Fl p
+.Ar mapname
+.Sh DESCRIPTION
+.Nm
+creates the database maps used by the keyed map lookups in
+.Xr amd 8 .
+It reads input from the named file
+and outputs them to a correspondingly named
+hashed database.
+.Pp
+The
+.Fl p
+option prints the map on standard output instead of generating
+a database.  This is usually used to merge continuation lines
+into one physical line.
+.Sh SEE ALSO
+.Xr amd 8

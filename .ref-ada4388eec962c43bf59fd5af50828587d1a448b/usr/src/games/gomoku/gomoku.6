@@ -1,0 +1,66 @@
+.\" Copyright (c) 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Ralph Campbell.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)gomoku.6	8.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GOMOKU 6
+.Os BSD 4.4
+.Sh NAME
+.Nm gomoku
+.Nd game of 5 in a row
+.Sh SYNOPSIS
+.Nm gomoku
+.Op Fl bcdu
+.Op Fl D Ar debugfile
+.Op Ar inputfile
+.Sh DESCRIPTION
+.Nm Gomoku
+is a two player game were the object is to get 5 in a row horizontally,
+vertically or diagonally on a 19 by 19 grid. By convention, black always
+moves first.
+With no arguments,
+.Nm gomoku
+will display a playing board and prompt for moves from the user.
+Valid moves are a letter for the column and a number for the row of an empty
+board location. Entering ``quit" or ``resign" will end the game.
+You can save the current state of the game by entering ``save" and
+supplying a file name when prompted.
+The optional file
+.Ar inputfile
+can be used to restore a saved game.
+.Pp
+The options are:
+.Bl -tag -width Ds
+.It Fl b
+This option sets background mode. Input moves are read from standard input,
+the computer picks a move, and prints it to standard output. The first
+input line should be either ``black" or ``white" to specify whether
+.Nm gomoku
+has the first move or not respectively. This
+option was intended for game tournaments where a referee program handles
+the board display and pits one program against another.
+.It Fl c
+Computer verses computer.
+.Nm Gomoku
+will play a game against itself. This is mostly used for testing.
+.It Fl d
+Print debugging information. Repeating this option more than
+once yields more detailed information.
+.It Fl D Ar debugfile
+Print the debug information to
+.Ar debugfile
+instead of to the standard output.
+.It Fl u
+User verses user. This is mostly used for testing.
+.Sh AUTHOR
+Ralph Campbell
+.Sh ACKNOWLEDGEMENTS
+The board display routines were based on the
+.Nm goref
+program written by Peter Langston.

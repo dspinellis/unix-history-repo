@@ -1,0 +1,115 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)catman.8	6.5 (Berkeley) %G%
+.\"
+.TH CATMAN 8 ""
+.UC 4
+.SH NAME
+catman \- create the cat files for the manual
+.SH SYNOPSIS
+.B /etc/catman
+[
+.B \-p
+] [
+.B \-n
+] [
+.B \-w
+] [
+.B \-M
+.I path
+]
+[ sections ]
+.SH DESCRIPTION
+.I Catman
+creates the preformatted versions of the on-line manual from the nroff
+input files.
+Each manual page is examined and those whose preformatted versions are
+missing or out of date are recreated.
+If any changes are made,
+.I catman
+will recreate the
+.B whatis
+database.
+.PP
+If there is one parameter not starting with a `\-',
+it is taken to be a list of manual sections to look in.
+For example
+.IP
+.B catman 123
+.LP
+will cause the updating to only happen to manual sections
+1, 2, and 3.
+.PP
+Options:
+.TP
+.B \-n
+prevents creations of the
+.B whatis
+database.
+.TP
+.B \-p
+prints what would be done instead of doing it.
+.TP
+.B \-w
+causes only the 
+.B whatis
+database to be created.
+No manual reformatting is done.
+.TP
+.B \-M
+updates manual pages located in the set of directories specified by
+.I path
+(/usr/man by default).
+.I Path
+has the form of a colon (`:') separated list of directory names,
+for example `/usr/local/man:/usr/man'.
+If the environment variable `MANPATH' is set,
+its value is used for the default path.
+.PP
+If the nroff source file contains only a line of the form `.so manx/yyy.x',
+a symbolic link is made in the catx directory to the appropriate
+preformatted manual page.
+This feature allows easy distribution of the preformatted manual pages
+among a group of associated machines with
+.I rdist(1).
+The nroff sources need not be distributed to all machines,
+thus saving the associated disk space.
+As an example, consider a local network with 5 machines,
+called mach1 through mach5.
+Suppose mach3 has the manual page nroff sources.
+Every night, mach3 runs
+.I catman
+via
+.I cron(8)
+and later runs
+.I rdist
+with a distfile that looks like:
+.IP
+.nf
+.ta \w'${MANUAL'u
+
+MANSLAVES = ( mach1 mach2 mach4 mach5 )
+
+MANUALS = (/usr/man/cat[1-8no] /usr/man/whatis)
+
+${MANUALS} -> ${MANSLAVES}
+	install -R;
+	notify root;
+
+.fi
+.SH FILES
+.nf
+.ta \w'/usr/lib/makewhatis   'u
+/usr/man	default manual directory location
+/usr/man/man?/*.*	raw (nroff input) manual sections
+/usr/man/cat?/*.*	preformatted manual pages
+/usr/man/whatis	whatis database
+/usr/lib/makewhatis	command script to make whatis database
+.fi
+.DT
+.SH "SEE ALSO"
+man(1), cron(8), rdist(1)
+.SH BUGS
+Acts oddly on nights with full moons.

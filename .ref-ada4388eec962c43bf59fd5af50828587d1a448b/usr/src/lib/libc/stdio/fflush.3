@@ -1,0 +1,84 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fflush.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FFLUSH 3
+.Os
+.Sh NAME
+.Nm fflush ,
+.Nm fpurge
+.Nd flush a stream
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft int
+.Fn fflush "FILE *stream"
+.Ft int
+.Fn fpurge "FILE *stream"
+.Sh DESCRIPTION
+The function
+.Fn fflush
+forces a write of all buffered data for the given output or update
+.Fa stream
+via the stream's underlying write function.
+The open status of the stream is unaffected.
+.Pp
+If the
+.Fa stream
+argument is
+.Dv NULL ,
+.Fn fflush
+flushes
+.Em all
+open output streams.
+.Pp
+The function
+.Fn fpurge
+erases any input or output buffered in the given
+.Fa stream .
+For output streams this discards any unwritten output.
+For input streams this discards any input read from the underlying object
+but not yet obtained via
+.Xr getc 3 ;
+this includes any text pushed back via
+.Xr ungetc .
+.Sh RETURN VALUES
+Upon successful completion 0 is returned.
+Otherwise,
+.Dv EOF
+is returned and the global variable
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Bl -tag -width [EBADF]
+.It Bq Er EBADF
+.Fa Stream
+is not an open stream, or, in the case of
+.Fn fflush ,
+not a stream open for writing.
+.El
+.Pp
+The function
+.Fn fflush
+may also fail and set
+.Va errno
+for any of the errors specified for the routine
+.Xr write 2 .
+.Sh SEE ALSO
+.Xr write 2 ,
+.Xr fopen 3 ,
+.Xr fclose 3 ,
+.Xr setbuf 3
+.Sh STANDARDS
+The
+.Fn fflush
+function
+conforms to
+.St -ansiC .

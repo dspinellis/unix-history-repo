@@ -1,0 +1,81 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ut.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UT 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm ut
+.Nd
+.Tn UNIBUS TU45
+tri-density tape drive interface
+.Sh SYNOPSIS
+.Cd "controller ut0 at uba0 csr 0172440 vector utintr"
+.Cd "tape tj0 at ut0 drive 0"
+.Sh DESCRIPTION
+The 
+.Nm ut
+interface provides access to a standard tape drive interface as
+describe in 
+.Xr mtio 4 .
+Hardware implementing this on the
+.Tn VAX
+is typified by the System
+Industries
+.Tn SI
+9700 tape subsystem.  Tapes may be read or written
+at 800, 1600, and 6250
+.Tn BPI .
+.Sh DIAGNOSTICS
+.Bl -diag
+.It tj%d: no write ring.
+An attempt was made to write on the tape drive
+when no write ring was present; this message is written on the terminal of
+the user who tried to access the tape.
+.Pp
+.It tj%d: not online.
+An attempt was made to access the tape while it
+was offline; this message is written on the terminal of the user
+who tried to access the tape.
+.Pp
+.It tj%d: can't change density in mid-tape.
+An attempt was made to write
+on a tape at a different density than is already recorded on the tape.
+This message is written on the terminal of the user who tried to switch
+the density.
+.Pp
+.It "ut%d: soft error bn%d cs1=%b er=%b cs2=%b ds=%b."
+The formatter indicated a corrected error at a density other
+than 800bpi.  The data transferred is assumed to be correct.
+.Pp
+.It "ut%d: hard error bn%d cs1=%b er=%b cs2=%b ds=%b."
+A tape error occurred
+at block
+.Pp
+.It bn.
+Any error is
+fatal on non-raw tape; when possible the driver will have retried
+the operation which failed several times before reporting the error.
+.Pp
+.It tj%d: lost interrupt.
+A tape operation did not complete
+within a reasonable time, most likely because the tape was taken
+off-line during rewind or lost vacuum.  The controller should, but does not,
+give an interrupt in these cases.  The device will be made available
+again after this message, but any current open reference to the device
+will return an error as the operation in progress aborts.
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr mtio 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.2 .
+.Sh BUGS
+May hang if a physical error (non-data) occurs.

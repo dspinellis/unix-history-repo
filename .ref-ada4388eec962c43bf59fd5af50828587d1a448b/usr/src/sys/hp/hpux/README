@@ -1,0 +1,7 @@
+
+The HP-UX compatibility code still needs to be converted to the new
+syscall argument access/description method.  Since the new method is binary
+compatible with the old method, it is possible to "sleaze" a solution by
+having makesyscalls.sh just use (nargs * 4) as the syscall argsize and not
+changing the emulation code.  While this works, it's ugly and should be
+cleaned up eventually.

@@ -1,0 +1,62 @@
+The implementation of dungeon on unix systems
+Randy Dietrich 		17 Nov 1981
+
+When we set out to get dungeon running on unix we figured
+it wouldn't be too big a problem.  After all a fortran
+compiler (F77) existed and with relatively little problem
+managed to get everything to compile.  
+Then the Zorkmids hit the volcano.
+We thought that a program which would run in 28k on an
+RSX system would have fit just fine in 64k, especially
+with seperate i & d.  We did not realize just how hostile 
+unix is to FORTRAN programs.
+The first link indicated about 130 k (text only) was needed
+for the whole game (Ieeeeee).  Recompiling with short (I2)
+integers brought this down to about 100k.  Throwing out
+the game debug package (9k) and the save and restore code (3k)
+got us to within 20k.  
+At this point we discovered that the fortran library that
+was being used was about 25k (A HA !!).  If we could just 
+eliminate that we would be in business.  A great game with
+no I/O !!  further work allowed us to write the I/O in C
+with the bulk of the game using only standard input and output.
+The initialization and message printing were "moved out"
+into seperate processes and the whole mess piped together.
+it is a real kludge but seems to work (mostly).
+
+The Input process is called 'listen'.  It first reads the init
+file and shoves it in the pipe and then switches to pass
+keyboard input to the main game.  This keeps the main program
+from having to read anything but 'standard input'.
+
+The output process is currently called 'speak'.
+this process does the lookup in the file 'dtext.dat' and
+sends out the messages that give dungeon it's flavor.  This
+process also passes clear text from the main program to
+allow the output of other messages for such things as the
+echo room, puzzle room, and score.  These functions
+were also 'moved out' so the main program would not have
+to access any disc files.
+
+The main program is sandwitched between listen and speak.
+It really does the work of the game.  I/O is handled
+thorugh C routines in 'cio.c'. this keeps any fortran
+I/O from being used and calling in the whole #$%@ fortran
+library.
+
+The current lash-up does save or restore but not both.  
+It is going to take a while to work in as we are out of room
+in the main program and will have to re-write something
+to make it all fit.  I guess we will just have to play
+without being able to cheat for a while.
+
+Restores are done by initializing the game with a second argument
+(some day the file name) of 'r'.  This causes the init process 
+to send a 'R' down down the pipe followed by the restore data.
+normally the init process ends with a '?'.  The trailing '?'
+will follow the restore data.
+
+Saves are done from within the game.  The game sends a 's'
+down the pipe to signal the speak process to do a save opperation.
+The save data then goes down the pipe followed by 'e' to
+signal the end of data.  The save data is 'dungeon.sav'.

@@ -1,0 +1,53 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strpbrk.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRPBRK 3
+.Os
+.Sh NAME
+.Nm strpbrk
+.Nd locate multiple characters in string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strpbrk "const char *s" "const char *charset"
+.Sh DESCRIPTION
+The
+.Fn strpbrk
+function
+locates in the null-terminated string
+.Fa s
+the first occurrence of any character in the string
+.Fa charset
+and returns a pointer to this character.
+If no characters from
+.Fa charset
+occur anywhere in
+.Fa s
+.Fn strpbrk
+returns NULL.
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strcspn 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strpbrk
+function
+conforms to
+.St -ansiC .

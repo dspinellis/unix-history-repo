@@ -1,0 +1,105 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)tmscp.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TMSCP 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm tmscp
+.Nd
+.Tn DEC TMSCP
+magtape interface
+.Sh SYNOPSIS
+.Cd "controller tmscp0 at uba? csr 0174500 vector tmscpintr"
+.Cd "tape tms0 at tmscp0 drive 0"
+.Sh DESCRIPTION
+Tape controllers compatible with the
+.Tn DEC
+Tape Mass Storage Control Protocol
+.Pq Tn TMSCP
+architecture
+such as the
+.Tn TU81
+and the
+.Tn TK50
+provide a standard tape drive interface 
+as described in
+.Xr mtio 4 .
+The controller communicates with the host through a packet
+oriented protocol.
+Consult the file
+.Aq Pa vax/tmscp.h
+for a detailed 
+description of this protocol.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It tmscp controller failed to init.
+The controller initialization procedure failed.
+This probably indicates a hardware problem.
+.Pp
+.It tmscp%d: sa 0%o, state %d.
+(Additional status information given after a hard
+.Tn I/O
+error.)
+The values of the controller status register and the internal
+driver state are printed.
+.Pp
+.It tmscp%d: random interrupt ignored.
+An unexpected interrupt was received (e.g. when no
+.Tn I/O
+was
+pending).  The interrupt is ignored.
+.Pp
+.It tmscp%d:  interrupt in unknown state %d ignored.
+An interrupt was received when the driver was in an unknown
+internal state.  Indicates a hardware problem or a driver bug.
+.Pp
+.It tmscp%d:  fatal error (0%o).
+The controller detected a ``fatal error'' in the status returned
+to the host.  The contents of the status register are displayed.
+.Pp
+.It OFFLINE.
+(Additional status information given after a hard
+.Tn I/O
+error.)
+A hard
+.Tn I/O
+error occurred because the drive was not on-line.
+.Pp
+.It tmscp%d: hard error
+.It tmscp%d: soft error.
+These errors precede an interpretation of a
+.Tn TMSCP
+error message
+returned by the controller to the host.
+.Tn TMSCP
+errors may be:
+.Pp
+.Bd -filled -offset indent -compact
+.It controller error, event 0%o.
+.It host memory access error, event 0%o, addr 0%o.
+.It tape transfer error, unit %d, grp 0x%x, event 0%o.
+.It STI error, unit %d, event 0%o.
+.It STI Drive Error Log, unit %d, event 0%o.
+.It STI Formatter Error Log, unit %d, event 0%o.
+.It unknown error, unit %d, format 0%o, event 0%o.
+.Ed
+.El
+.Sh SEE ALSO
+.Xr mt 1 ,
+.Xr tar 1 ,
+.Xr tp 1 ,
+.Xr mtio 4 ,
+.Xr tm 4 ,
+.Xr ts 4 ,
+.Xr ut 4 ,
+.Xr dmesg 8
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

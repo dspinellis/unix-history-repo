@@ -1,0 +1,66 @@
+Mail.a
+{pUSD:7-20}  Mail Reference Manual
+adv.a
+{pUSD:13-16}  Advanced Editing on UNIX
+awk.a
+{pUSD:19-8}  Awk - A Pattern Scanning and Processing Language
+bc.a
+{pUSD:6-14}  BC - An Arbitrary Precision Desk-Calculator Language
+beginners.a
+{pUSD:1-14}  UNIX For Beginners
+bib.a
+BIB - A Program for Formatting Bibliographies  {pUSD:31-17}
+csh.a
+{pUSD:4-46}  An Introduction to the C shell
+dc.a
+{pUSD:5-8}  DC - An Interactive Desk Calculator
+diction.a
+Writing Tools - the STYLE and DICTION Programs  {pUSD:32-15}
+edit.a
+{pUSD:14-24}  Edit: A Tutorial
+edtut.a
+{pUSD:12-10}  A Tutorial Introduction to the UNIX Text Editor
+eqn.a
+{pUSD:26-8}  A System for Typesetting Mathematics
+eqnguide.a
+Typesetting Mathematics - User's Guide  {pUSD:27-11}
+ex.a
+Ex Reference Manual  {pUSD:16-19}
+jove.a
+{pUSD:17-48}  JOVE Manual for UNIX Users
+learn.a
+{pUSD:2-12}  LEARN - Computer-Aided Instruction on UNIX
+memacros.a
+Writing Papers with NROFF using -me  {pUSD:22-17}
+mh.a
+{pUSD:8-iii} The Rand MH Message Handling System
+ms.a
+{pUSD:20-8}  Using the -ms Macros with Troff and Nroff
+msdiffs.a
+A Revised Version of  _ ms  {pUSD:21-3}
+news.etiq.a
+{pUSD:10-12}  How to Use USENET Effectively
+news.read.a
+How to Read the Network News  {pUSD:9-13}
+notes.a
+{pUSD:11-15}  Notesfile Reference Manual
+refer.a
+{pUSD:30-12}  Some Applications of Inverted Indexes on the UNIX System
+refer.bib.a
+Refer - A Bibliography System  {pUSD:29-11}
+rogue.a
+{pUSD:33-9}  A Guide to the Dungeons of Doom
+sed.a
+{pUSD:18-10}  SED - A Non-interactive Text Editor
+shell.a
+{pUSD:3-24}  An Introduction to the UNIX Shell
+tbl.a
+{pUSD:28-18}  Tbl - A Program to Format Tables
+trek.a
+Star Trek  {pUSD:34-11}
+troff.a
+NROFF/TROFF User's Manual  {pUSD:24-35}
+trofftut.a
+{pUSD:25-16}  A TROFF Tutorial
+vi.a
+{pUSD:15-22}  An Introduction to Display Editing with Vi

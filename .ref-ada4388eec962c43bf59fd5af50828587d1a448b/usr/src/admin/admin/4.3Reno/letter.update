@@ -1,0 +1,133 @@
+.\"	@(#)letter.update	1.1 (Berkeley) %G%
+.so HEADERS
+.HE
+.LP      
+.ti 3.5i
+February 27, 1991
+.nf
+.sp 6
+Dear Colleague:
+.sp
+.LP
+Enclosed are several important changes that should be applied to your
+4.3BSD-Reno kernel.
+.ti 2.5i 
+.sp 2
+.br
+Sincerely yours,
+.br
+.ti 2.5i
+.sp 2
+Computer Systems Research Group
+.sp 3
+.nf
+*** /sys/kern/kern_fork.c.old	Wed Feb 27 14:20:05 1991
+--- /sys/kern/kern_fork.c.new	Wed Feb 27 14:20:12 1991
+***************
+*** 182,188 ****
+--- 182,190 ----
+  	bcopy(rip->p_logname, rpp->p_logname, MAXLOGNAME);
+  	rpp->p_uid = rip->p_uid;
+  	rpp->p_ruid = rip->p_ruid;
++ 	rpp->p_svuid = rip->p_svuid;
+  	rpp->p_rgid = rip->p_rgid;
++ 	rpp->p_svgid = rip->p_svgid;
+  	rpp->p_pgrp = rip->p_pgrp;
+  	rpp->p_pgrpnxt = rip->p_pgrpnxt;
+  	rip->p_pgrpnxt = rpp;
+.bp
+*** /sys/kern/kern_malloc.c.old	Wed Feb 27 14:32:33 1991
+--- /sys/kern/kern_malloc.c.new	Wed Feb 27 14:32:37 1991
+***************
+*** 48,54 ****
+  	register struct kmemusage *kup;
+  	long indx, npg, alloc, allocsize;
+  	int s;
+! 	caddr_t va, cp;
+  #ifdef KMEMSTATS
+  	register struct kmemstats *ksp = &kmemstats[type];
+  
+--- 48,54 ----
+  	register struct kmemusage *kup;
+  	long indx, npg, alloc, allocsize;
+  	int s;
+! 	caddr_t va, cp, savedlist;
+  #ifdef KMEMSTATS
+  	register struct kmemstats *ksp = &kmemstats[type];
+  
+***************
+*** 100,109 ****
+  		kup->ku_freecnt = kbp->kb_elmpercl;
+  		kbp->kb_totalfree += kbp->kb_elmpercl;
+  #endif
+  		kbp->kb_next = va + (npg * NBPG) - allocsize;
+  		for (cp = kbp->kb_next; cp > va; cp -= allocsize)
+  			*(caddr_t *)cp = cp - allocsize;
+! 		*(caddr_t *)cp = NULL;
+  	}
+  	va = kbp->kb_next;
+  	kbp->kb_next = *(caddr_t *)va;
+--- 100,115 ----
+  		kup->ku_freecnt = kbp->kb_elmpercl;
+  		kbp->kb_totalfree += kbp->kb_elmpercl;
+  #endif
++ 		/*
++ 		 * Just in case we blocked while allocating memory,
++ 		 * and someone else also allocated memory for this
++ 		 * bucket, don't assume the list is still empty.
++ 		 */
++ 		savedlist = kbp->kb_next;
+  		kbp->kb_next = va + (npg * NBPG) - allocsize;
+  		for (cp = kbp->kb_next; cp > va; cp -= allocsize)
+  			*(caddr_t *)cp = cp - allocsize;
+! 		*(caddr_t *)cp = savedlist;
+  	}
+  	va = kbp->kb_next;
+  	kbp->kb_next = *(caddr_t *)va;
+.bp
+*** /sys/nfs/nfs_vnops.c.old	Wed Feb 27 14:35:50 1991
+--- /sys/nfs/nfs_vnops.c.new	Wed Feb 27 14:35:58 1991
+***************
+*** 1508,1527 ****
+  	/*
+  	 * Set b_proc. It seems a bit silly to do it here, but since bread()
+  	 * doesn't set it, I will.
+! 	 * Set b_proc == NULL for asynchronous reads, since these may still
+  	 * be hanging about after the process terminates.
+  	 */
+! 	if ((bp->b_flags & (B_READ | B_ASYNC)) == (B_READ | B_ASYNC))
+  		bp->b_proc = (struct proc *)0;
+  	else
+  		bp->b_proc = u.u_procp;
+  
+  	/*
+! 	 * If an i/o daemon is waiting
+  	 * queue the request, wake it up and wait for completion
+! 	 * otherwise just do it ourselves
+  	 */
+! 	for (i = 0; i < nfs_asyncdaemons; i++) {
+  		if (rp = nfs_iodwant[i]) {
+  			/*
+  			 * Ensure that the async_daemon is still waiting here
+--- 1508,1528 ----
+  	/*
+  	 * Set b_proc. It seems a bit silly to do it here, but since bread()
+  	 * doesn't set it, I will.
+! 	 * Set b_proc == NULL for asynchronous ops, since these may still
+  	 * be hanging about after the process terminates.
+  	 */
+! 	if (bp->b_flags & B_ASYNC)
+  		bp->b_proc = (struct proc *)0;
+  	else
+  		bp->b_proc = u.u_procp;
+  
+  	/*
+! 	 * If the op is asynchronous and an i/o daemon is waiting
+  	 * queue the request, wake it up and wait for completion
+! 	 * otherwise just do it ourselves.
+  	 */
+! 	if (bp->b_proc == (struct proc *)NULL)
+! 	    for (i = 0; i < nfs_asyncdaemons; i++) {
+  		if (rp = nfs_iodwant[i]) {
+  			/*
+  			 * Ensure that the async_daemon is still waiting here

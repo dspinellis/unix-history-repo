@@ -1,0 +1,33 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)drum.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DRUM 4
+.Os BSD 4
+.Sh NAME
+.Nm drum
+.Nd paging device
+.Sh DESCRIPTION
+This file refers to the paging device in use by the system.
+This may actually be a subdevice of one of the disk drivers, but in
+a system with paging interleaved across multiple disk drives
+it provides an indirect driver for the multiple drives.
+.Sh FILES
+.Bl -tag -width /dev/drum
+.It Pa /dev/drum
+.El
+.Sh HISTORY
+The
+.Nm
+special file appeared in
+.Bx 3.0 .
+.Sh BUGS
+Reads from the drum are not allowed across the interleaving boundaries.
+Since these only occur every .5Mbytes
+or so,
+and since the system never allocates blocks across the boundary,
+this is usually not a problem.

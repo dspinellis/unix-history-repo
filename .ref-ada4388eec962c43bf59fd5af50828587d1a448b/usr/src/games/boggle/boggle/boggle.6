@@ -1,0 +1,88 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Barry Brachman.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)boggle.6	8.1 (Berkeley) %G%
+.\"
+.TH BOGGLE 6 ""
+.UC
+.SH NAME
+boggle \- word search game
+.SH SYNOPSIS
+boggle [-bd] [-s seed] [-t time] [-w length] [+[+]] [boardspec]
+.SH DESCRIPTION
+The object of
+.I boggle
+is to find as many words as possible on the Boggle board within the three
+minute time limit.
+A Boggle board is a four by four arrangement of Boggle cubes, each side of
+each cube displaying a letter of the alphabet or `qu'.
+Words are formed by finding a sequence of cubes (letters) that are in the
+game's dictionary.
+The (N+1)th cube in the word must be horizontally,
+vertically, or diagonally adjacent to the Nth cube.
+Cubes cannot be reused.
+Words consist solely of lower case letters and must be at least 3 letters long.
+.PP
+Command line flags can be given to change the rules of the game.
+The
+.B +
+flag allows a cube to be used multiple times, but not in succession.
+The
+.B ++
+flag allows the same cubes to be considered adjacent to itself.
+.B
+A seed other than the time of day is specified by
+.B -s#,
+where
+.B #
+is the seed.
+The time limit can be changed from the default 3 minutes by using the flag
+.B -t#,
+where
+.B #
+is the duration (in seconds) of each game.
+The minimum word length can be changed from 3 letters by specifying
+.B -w#,
+where
+.B #
+is the minimum number of letters to use.
+.PP
+A starting board position can be specified on the command line by
+listing the board left to right and top to bottom.
+.PP
+The
+.B -b
+flag puts
+.I boggle
+in batch mode.
+A
+.B boardspec
+must also be given.
+The dictionary is read from stdin and a list of words appearing in
+.B boardspec
+is printed to stdout.
+.PP
+Help is available during play by typing `?'.
+More detailed information on the game is given there.
+.SH BUGS
+If there are a great many words in the cube the final display of the words
+may scroll off of the screen.  (On a 25 line screen about 130 words can be
+displayed.)
+.sp 2
+No word can contain a 'q' that is not immediately followed by a 'u'.
+.sp 2
+When using the '+' or '++' options the display of words found in the board
+doesn't indicate reused cubes.
+.SH AUTHOR
+Boggle is a trademark of Parker Brothers.
+.br
+Barry Brachman
+.br
+Dept. of Computer Science
+.br
+University of British Columbia

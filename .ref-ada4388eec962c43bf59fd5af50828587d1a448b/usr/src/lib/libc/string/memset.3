@@ -1,0 +1,44 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)memset.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEMSET 3
+.Os
+.Sh NAME
+.Nm memset
+.Nd write a byte to byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void *
+.Fn memset "void *b" "int c" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn memset
+function
+writes
+.Fa len
+bytes of value
+.Fa c
+(converted to an unsigned char) to the string
+.Fa b .
+.Sh RETURNS
+The
+.Fn memset
+function returns its first argument.
+.Sh SEE ALSO
+.Xr bzero 3 ,
+.Xr swab 3
+.Sh STANDARDS
+The
+.Fn memset
+function
+conforms to
+.St -ansiC .

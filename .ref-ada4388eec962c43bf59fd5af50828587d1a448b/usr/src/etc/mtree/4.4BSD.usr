@@ -1,0 +1,1668 @@
+#	   user: bostic
+#	machine: vangogh.CS.Berkeley.EDU
+#	   tree: /usr
+#	   date: Tue Jul 20 13:17:28 1993
+
+# .
+/set type=file gname=wheel uname=root mode=0755
+.               type=dir
+
+# ./.src
+/set type=file gname=sww uname=sww mode=02775
+.src            type=dir uname=root gname=wheel mode=0755
+# ./.src
+..
+
+
+# ./X11R4
+/set type=file gname=wheel uname=root mode=0775
+X11R4           type=dir mode=0755
+# ./X11R4
+..
+
+
+# ./X11R5
+/set type=file gname=wheel uname=root mode=0755
+X11R5           type=dir
+# ./X11R5
+..
+
+
+# ./bin
+/set type=file gname=bin uname=bin mode=0555
+bin             type=dir uname=root gname=wheel mode=0755
+# ./bin
+..
+
+
+# ./contrib
+/set type=file gname=wheel uname=root mode=0755
+contrib         type=dir
+
+# ./contrib/bin
+/set type=file gname=wheel uname=root mode=0755
+bin             type=dir
+# ./contrib/bin
+..
+
+
+# ./contrib/lib
+/set type=file gname=wheel uname=root mode=0755
+lib             type=dir
+
+# ./contrib/lib/bmac
+/set type=file gname=wheel uname=root mode=0444
+bmac            type=dir mode=0775
+
+# ./contrib/lib/bmac/bibmacs
+/set type=file gname=wheel uname=root mode=0444
+bibmacs         type=dir mode=0775
+# ./contrib/lib/bmac/bibmacs
+..
+
+
+# ./contrib/lib/bmac/tibmacs
+/set type=file gname=wheel uname=root mode=0444
+tibmacs         type=dir mode=0775
+# ./contrib/lib/bmac/tibmacs
+..
+
+# ./contrib/lib/bmac
+..
+
+
+# ./contrib/lib/emacs
+/set type=file gname=wheel uname=root mode=0755
+emacs           type=dir mode=0777
+
+# ./contrib/lib/emacs/etc
+/set type=file gname=wsrc uname=bin mode=0664
+etc             type=dir uname=root gname=wheel mode=0755
+# ./contrib/lib/emacs/etc
+..
+
+
+# ./contrib/lib/emacs/info
+/set type=file gname=wsrc uname=bin mode=0664
+info            type=dir uname=root gname=wheel mode=0755
+# ./contrib/lib/emacs/info
+..
+
+
+# ./contrib/lib/emacs/lisp
+/set type=file gname=wsrc uname=bin mode=0664
+lisp            type=dir uname=root gname=wheel mode=0755
+
+# ./contrib/lib/emacs/lisp/term
+/set type=file gname=wsrc uname=bin mode=0666
+term            type=dir uname=root gname=wheel mode=0755
+# ./contrib/lib/emacs/lisp/term
+..
+
+# ./contrib/lib/emacs/lisp
+..
+
+# ./contrib/lib/emacs
+..
+
+
+# ./contrib/lib/jove
+/set type=file gname=wheel uname=root mode=0755
+jove            type=dir
+# ./contrib/lib/jove
+..
+
+
+# ./contrib/lib/perl
+/set type=file gname=obin uname=root mode=0644
+perl            type=dir mode=0755
+# ./contrib/lib/perl
+..
+
+# ./contrib/lib
+..
+
+
+# ./contrib/man
+/set type=file gname=wheel uname=root mode=0755
+man             type=dir
+
+# ./contrib/man/cat1
+/set type=file gname=wheel uname=root mode=0644
+cat1            type=dir mode=0755
+# ./contrib/man/cat1
+..
+
+
+# ./contrib/man/cat2
+cat2            type=dir mode=0755
+# ./contrib/man/cat2
+..
+
+
+# ./contrib/man/cat3
+/set type=file gname=obin uname=root mode=0444
+cat3            type=dir gname=wheel mode=0755
+# ./contrib/man/cat3
+..
+
+
+# ./contrib/man/cat3f
+cat3f           type=dir gname=wheel mode=0755
+# ./contrib/man/cat3f
+..
+
+
+# ./contrib/man/cat4
+cat4            type=dir gname=wheel mode=0755
+# ./contrib/man/cat4
+..
+
+
+# ./contrib/man/cat5
+/set type=file gname=wheel uname=root mode=0644
+cat5            type=dir mode=0755
+# ./contrib/man/cat5
+..
+
+
+# ./contrib/man/cat6
+/set type=file gname=bin uname=bin mode=0444
+cat6            type=dir uname=root gname=wheel mode=0755
+# ./contrib/man/cat6
+..
+
+
+# ./contrib/man/cat7
+cat7            type=dir uname=root gname=wheel mode=0755
+# ./contrib/man/cat7
+..
+
+
+# ./contrib/man/cat8
+/set type=file gname=obin uname=root mode=0444
+cat8            type=dir gname=wheel mode=0755
+# ./contrib/man/cat8
+..
+
+# ./contrib/man
+..
+
+
+# ./contrib/mh-6.8
+/set type=file gname=wheel uname=root mode=0755
+mh-6.8          type=dir
+
+# ./contrib/mh-6.8/bin
+/set type=file gname=wheel uname=root mode=0755
+bin             type=dir
+# ./contrib/mh-6.8/bin
+..
+
+
+# ./contrib/mh-6.8/lib
+/set type=file gname=wheel uname=root mode=0644
+lib             type=dir mode=0755
+# ./contrib/mh-6.8/lib
+..
+
+# ./contrib/mh-6.8
+..
+
+
+# ./contrib/news
+/set type=file gname=news uname=news mode=0775
+news            type=dir
+
+# ./contrib/news/bin
+bin             type=dir
+# ./contrib/news/bin
+..
+
+# ./contrib/news
+..
+
+
+# ./contrib/rnews
+rnews           type=dir
+# ./contrib/rnews
+..
+
+# ./contrib
+..
+
+
+# ./games
+/set type=file gname=wheel uname=root mode=0755
+games           type=dir
+
+# ./games/hide
+/set type=file gname=bin uname=games mode=04700
+hide            type=dir gname=games mode=0700
+# ./games/hide
+..
+
+# ./games
+..
+
+
+# ./include
+/set type=file gname=bin uname=bin mode=0444
+include         type=dir uname=root gname=wheel mode=0755
+
+# ./include/arpa
+/set type=file gname=bin uname=bin mode=0444
+arpa            type=dir mode=0755
+# ./include/arpa
+..
+
+
+# ./include/g++
+/set type=file gname=wheel uname=root mode=0444
+g++             type=dir mode=0755
+
+# ./include/g++/sys
+/set type=file gname=wheel uname=root mode=0444
+sys             type=dir mode=0755
+# ./include/g++/sys
+..
+
+# ./include/g++
+..
+
+
+# ./include/kerberosIV
+/set type=file gname=bin uname=bin mode=0444
+kerberosIV      type=dir uname=root gname=wheel mode=0755
+# ./include/kerberosIV
+..
+
+
+# ./include/pascal
+/set type=file gname=bin uname=bin mode=0444
+pascal          type=dir uname=root gname=wheel mode=0755
+# ./include/pascal
+..
+
+
+# ./include/protocols
+/set type=file gname=bin uname=bin mode=0444
+protocols       type=dir mode=0755
+# ./include/protocols
+..
+
+
+# ./include/rpc
+/set type=file gname=bin uname=bin mode=0444
+rpc             type=dir mode=0755
+# ./include/rpc
+..
+
+
+# ./include/xnscourier
+/set type=file gname=staff uname=root mode=0644
+xnscourier      type=dir gname=wheel mode=0755
+# ./include/xnscourier
+..
+
+# ./include
+..
+
+
+# ./lib
+/set type=file gname=bin uname=bin mode=0444
+lib             type=dir uname=root gname=wheel mode=0755
+
+# ./lib/uucp
+/set type=file gname=daemon uname=uucp mode=06550
+uucp            type=dir mode=0755
+# ./lib/uucp
+..
+
+# ./lib
+..
+
+
+# ./libdata
+/set type=file gname=wheel uname=root mode=0755
+libdata         type=dir
+
+# ./libdata/learn
+/set type=file gname=wsrc uname=bin mode=0775
+learn           type=dir uname=root gname=wheel mode=0755
+
+# ./libdata/learn/C
+/set type=file gname=wsrc uname=bin mode=0444
+C               type=dir mode=0775
+# ./libdata/learn/C
+..
+
+
+# ./libdata/learn/bin
+/set type=file gname=bin uname=bin mode=0444
+bin             type=dir uname=root gname=wheel mode=0755
+# ./libdata/learn/bin
+..
+
+
+# ./libdata/learn/editor
+/set type=file gname=wsrc uname=bin mode=0444
+editor          type=dir mode=0775
+# ./libdata/learn/editor
+..
+
+
+# ./libdata/learn/eqn
+/set type=file gname=wsrc uname=bin mode=0444
+eqn             type=dir mode=0775
+# ./libdata/learn/eqn
+..
+
+
+# ./libdata/learn/files
+/set type=file gname=wsrc uname=bin mode=0444
+files           type=dir mode=0775
+# ./libdata/learn/files
+..
+
+
+# ./libdata/learn/macros
+/set type=file gname=wsrc uname=bin mode=0444
+macros          type=dir mode=0775
+# ./libdata/learn/macros
+..
+
+
+# ./libdata/learn/morefiles
+/set type=file gname=wsrc uname=bin mode=0444
+morefiles       type=dir mode=0775
+# ./libdata/learn/morefiles
+..
+
+# ./libdata/learn
+..
+
+# ./libdata
+..
+
+
+# ./libexec
+/set type=file gname=bin uname=bin mode=0555
+libexec         type=dir uname=root gname=wheel mode=0755
+
+# ./libexec/gcc2
+/set type=file gname=wheel uname=root mode=0775
+gcc2            type=dir mode=0755
+
+# ./libexec/gcc2/gcc-lib
+/set type=file gname=wheel uname=root mode=0755
+gcc-lib         type=dir
+
+# ./libexec/gcc2/gcc-lib/include
+include         type=dir
+# ./libexec/gcc2/gcc-lib/include
+..
+
+
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd
+/set type=file gname=wheel uname=root mode=0755
+m68k-hp-bsd     type=dir
+
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+/set type=file gname=wheel uname=root mode=0755
+2.3.3           type=dir
+
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+include         type=dir
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3/include
+..
+
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd/2.3.3
+..
+
+# ./libexec/gcc2/gcc-lib/m68k-hp-bsd
+..
+
+# ./libexec/gcc2/gcc-lib
+..
+
+# ./libexec/gcc2
+..
+
+
+# ./libexec/lpr
+/set type=file gname=bin uname=bin mode=0555
+lpr             type=dir uname=root gname=wheel mode=0755
+# ./libexec/lpr
+..
+
+
+# ./libexec/pascal
+pascal          type=dir uname=root gname=wheel mode=0755
+# ./libexec/pascal
+..
+
+
+# ./libexec/plot
+/set type=file gname=bin uname=bin mode=0555
+plot            type=dir uname=root gname=wheel mode=0755
+# ./libexec/plot
+..
+
+# ./libexec
+..
+
+
+# ./local
+/set type=file gname=wheel uname=root mode=0755
+local           type=dir
+
+# ./local/bin
+/set type=file gname=bin uname=bin mode=0755
+bin             type=dir uname=root gname=wheel
+# ./local/bin
+..
+
+
+# ./local/lib
+/set type=file gname=bin uname=bin mode=0444
+lib             type=dir uname=root gname=wheel mode=0755
+# ./local/lib
+..
+
+
+# ./local/libdata
+/set type=file gname=bin uname=root mode=0775
+libdata         type=dir gname=wheel mode=0755
+# ./local/libdata
+..
+
+
+# ./local/libexec
+/set type=file gname=bin uname=root mode=0755
+libexec         type=dir gname=wheel
+# ./local/libexec
+..
+
+
+# ./local/man
+/set type=file gname=wheel uname=root mode=0755
+man             type=dir
+
+# ./local/man/cat1
+/set type=file gname=bin uname=bin mode=0444
+cat1            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat1
+..
+
+
+# ./local/man/cat2
+cat2            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat2
+..
+
+
+# ./local/man/cat3
+cat3            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat3
+..
+
+
+# ./local/man/cat4
+cat4            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat4
+..
+
+
+# ./local/man/cat5
+/set type=file gname=bin uname=bin mode=0444
+cat5            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat5
+..
+
+
+# ./local/man/cat6
+cat6            type=dir uname=root gname=wheel mode=0755
+# ./local/man/cat6
+..
+
+
+# ./local/man/cat7
+/set type=file gname=bin uname=root mode=0664
+cat7            type=dir gname=wheel mode=0755
+# ./local/man/cat7
+..
+
+
+# ./local/man/cat8
+/set type=file gname=wheel uname=root mode=0644
+cat8            type=dir mode=0755
+# ./local/man/cat8
+..
+
+# ./local/man
+..
+
+
+# ./local/sbin
+/set type=file gname=wheel uname=root mode=0755
+sbin            type=dir
+# ./local/sbin
+..
+
+# ./local
+..
+
+
+# ./mdec
+/set type=file gname=bin uname=bin mode=0444
+mdec            type=dir uname=root gname=wheel mode=0755
+# ./mdec
+..
+
+
+# ./old
+/set type=file gname=wheel uname=root mode=0755
+old             type=dir
+
+# ./old/bin
+/set type=file gname=bin uname=bin mode=0555
+bin             type=dir uname=root gname=wheel mode=0755
+# ./old/bin
+..
+
+
+# ./old/dict
+/set type=file gname=wheel uname=root mode=0755
+dict            type=dir
+
+# ./old/dict/papers
+/set type=file gname=wheel uname=root mode=0444
+papers          type=dir mode=0755
+# ./old/dict/papers
+..
+
+# ./old/dict
+..
+
+
+# ./old/lib
+/set type=file gname=wheel uname=root mode=0755
+lib             type=dir
+
+# ./old/lib/ms
+/set type=file gname=bin uname=bin mode=0444
+ms              type=dir uname=root gname=wheel mode=0755
+# ./old/lib/ms
+..
+
+
+# ./old/lib/tmac
+/set type=file gname=bin uname=bin mode=0444
+tmac            type=dir uname=root gname=wheel mode=0755
+# ./old/lib/tmac
+..
+
+# ./old/lib
+..
+
+
+# ./old/libdata
+/set type=file gname=wheel uname=root mode=0755
+libdata         type=dir
+
+# ./old/libdata/adb
+/set type=file gname=bin uname=bin mode=0444
+adb             type=dir uname=root gname=wheel mode=0755
+# ./old/libdata/adb
+..
+
+
+# ./old/libdata/term
+/set type=file gname=bin uname=bin mode=0444
+term            type=dir uname=root gname=wheel mode=0755
+# ./old/libdata/term
+..
+
+
+# ./old/libdata/troff_font
+/set type=file gname=bin uname=bin mode=0444
+troff_font      type=dir uname=root gname=wheel mode=0755
+# ./old/libdata/troff_font
+..
+
+# ./old/libdata
+..
+
+
+# ./old/libexec
+/set type=file gname=bin uname=bin mode=0555
+libexec         type=dir uname=root gname=wheel mode=0755
+# ./old/libexec
+..
+
+# ./old
+..
+
+
+# ./public
+/set type=file gname=hosttabl uname=root mode=0644
+public          type=dir gname=wheel mode=0755
+# ./public
+..
+
+
+# ./sbin
+/set type=file gname=bin uname=bin mode=0555
+sbin            type=dir uname=root gname=wheel mode=0755
+# ./sbin
+..
+
+
+# ./share
+/set type=file gname=wheel uname=root mode=0755
+share           type=dir
+
+# ./share/calendar
+/set type=file gname=bin uname=bin mode=0444
+calendar        type=dir uname=root gname=wheel mode=0755
+# ./share/calendar
+..
+
+
+# ./share/dict
+/set type=file gname=bin uname=bin mode=0444
+dict            type=dir uname=root gname=wheel mode=0755
+
+# ./share/dict/papers
+papers          type=dir uname=root gname=wheel mode=0755
+# ./share/dict/papers
+..
+
+
+# ./share/dict/special
+/set type=file gname=bin uname=bin mode=0444
+special         type=dir uname=root gname=wheel mode=0755
+# ./share/dict/special
+..
+
+# ./share/dict
+..
+
+
+# ./share/doc
+/set type=file gname=wheel uname=root mode=0775
+doc             type=dir mode=0755
+
+# ./share/doc/psd
+/set type=file gname=wheel uname=root mode=0775
+psd             type=dir
+
+# ./share/doc/psd/01.cacm
+/set type=file gname=bin uname=bin mode=0444
+01.cacm         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/01.cacm
+..
+
+
+# ./share/doc/psd/02.implement
+/set type=file gname=bin uname=bin mode=0444
+02.implement    type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/02.implement
+..
+
+
+# ./share/doc/psd/03.iosys
+/set type=file gname=bin uname=bin mode=0444
+03.iosys        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/03.iosys
+..
+
+
+# ./share/doc/psd/04.uprog
+/set type=file gname=bin uname=bin mode=0444
+04.uprog        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/04.uprog
+..
+
+
+# ./share/doc/psd/05.sysman
+/set type=file gname=bin uname=bin mode=0444
+05.sysman       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/05.sysman
+..
+
+
+# ./share/doc/psd/06.Clang
+/set type=file gname=bin uname=bin mode=0444
+06.Clang        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/06.Clang
+..
+
+
+# ./share/doc/psd/07.pascal
+/set type=file gname=bin uname=bin mode=0444
+07.pascal       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/07.pascal
+..
+
+
+# ./share/doc/psd/08.f77
+/set type=file gname=bin uname=bin mode=0444
+08.f77          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/08.f77
+..
+
+
+# ./share/doc/psd/09.f77io
+/set type=file gname=bin uname=bin mode=0444
+09.f77io        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/09.f77io
+..
+
+
+# ./share/doc/psd/10.gdb
+10.gdb          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/10.gdb
+..
+
+
+# ./share/doc/psd/11.adb
+/set type=file gname=bin uname=bin mode=0444
+11.adb          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/11.adb
+..
+
+
+# ./share/doc/psd/12.make
+/set type=file gname=bin uname=bin mode=0444
+12.make         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/12.make
+..
+
+
+# ./share/doc/psd/13.rcs
+13.rcs          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/13.rcs
+..
+
+
+# ./share/doc/psd/14.sccs
+/set type=file gname=bin uname=bin mode=0444
+14.sccs         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/14.sccs
+..
+
+
+# ./share/doc/psd/15.yacc
+/set type=file gname=bin uname=bin mode=0444
+15.yacc         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/15.yacc
+..
+
+
+# ./share/doc/psd/16.lex
+/set type=file gname=bin uname=bin mode=0444
+16.lex          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/16.lex
+..
+
+
+# ./share/doc/psd/17.m4
+/set type=file gname=bin uname=bin mode=0444
+17.m4           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/17.m4
+..
+
+
+# ./share/doc/psd/18.gprof
+/set type=file gname=bin uname=bin mode=0444
+18.gprof        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/18.gprof
+..
+
+
+# ./share/doc/psd/19.curses
+/set type=file gname=bin uname=bin mode=0444
+19.curses       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/19.curses
+..
+
+
+# ./share/doc/psd/20.ipctut
+/set type=file gname=bin uname=bin mode=0444
+20.ipctut       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/20.ipctut
+..
+
+
+# ./share/doc/psd/21.ipc
+/set type=file gname=bin uname=bin mode=0444
+21.ipc          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/psd/21.ipc
+..
+
+# ./share/doc/psd
+..
+
+
+# ./share/doc/smm
+/set type=file gname=wheel uname=root mode=0775
+smm             type=dir
+
+# ./share/doc/smm/01.setup
+/set type=file gname=bin uname=bin mode=0444
+01.setup        type=dir uname=root gname=wheel mode=0775
+
+# ./share/doc/smm/01.setup/tahoe
+/set type=file gname=bin uname=bin mode=0444
+tahoe           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/01.setup/tahoe
+..
+
+
+# ./share/doc/smm/01.setup/vax
+/set type=file gname=bin uname=bin mode=0444
+vax             type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/01.setup/vax
+..
+
+# ./share/doc/smm/01.setup
+..
+
+
+# ./share/doc/smm/02.config
+/set type=file gname=bin uname=bin mode=0444
+02.config       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/02.config
+..
+
+
+# ./share/doc/smm/03.fsck
+/set type=file gname=bin uname=bin mode=0444
+03.fsck         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/03.fsck
+..
+
+
+# ./share/doc/smm/04.quotas
+/set type=file gname=bin uname=bin mode=0444
+04.quotas       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/04.quotas
+..
+
+
+# ./share/doc/smm/05.fastfs
+/set type=file gname=bin uname=bin mode=0444
+05.fastfs       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/05.fastfs
+..
+
+
+# ./share/doc/smm/06.nfs
+/set type=file gname=bin uname=bin mode=0444
+06.nfs          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/06.nfs
+..
+
+
+# ./share/doc/smm/07.lpd
+/set type=file gname=bin uname=bin mode=0444
+07.lpd          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/07.lpd
+..
+
+
+# ./share/doc/smm/08.sendmailop
+/set type=file gname=bin uname=bin mode=0444
+08.sendmailop   type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/08.sendmailop
+..
+
+
+# ./share/doc/smm/09.sendmail
+/set type=file gname=bin uname=bin mode=0444
+09.sendmail     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/09.sendmail
+..
+
+
+# ./share/doc/smm/10.named
+10.named        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/10.named
+..
+
+
+# ./share/doc/smm/11.timedop
+/set type=file gname=bin uname=bin mode=0444
+11.timedop      type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/11.timedop
+..
+
+
+# ./share/doc/smm/12.timed
+/set type=file gname=bin uname=bin mode=0444
+12.timed        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/12.timed
+..
+
+
+# ./share/doc/smm/13.amd
+13.amd          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/13.amd
+..
+
+
+# ./share/doc/smm/14.uucpimpl
+/set type=file gname=bin uname=bin mode=0444
+14.uucpimpl     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/14.uucpimpl
+..
+
+
+# ./share/doc/smm/15.uucpnet
+/set type=file gname=bin uname=bin mode=0444
+15.uucpnet      type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/15.uucpnet
+..
+
+
+# ./share/doc/smm/16.security
+/set type=file gname=bin uname=bin mode=0444
+16.security     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/16.security
+..
+
+
+# ./share/doc/smm/17.password
+/set type=file gname=bin uname=bin mode=0444
+17.password     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/17.password
+..
+
+
+# ./share/doc/smm/18.net
+/set type=file gname=bin uname=bin mode=0444
+18.net          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/smm/18.net
+..
+
+# ./share/doc/smm
+..
+
+
+# ./share/doc/usd
+/set type=file gname=wheel uname=root mode=0775
+usd             type=dir
+
+# ./share/doc/usd/01.begin
+/set type=file gname=bin uname=bin mode=0444
+01.begin        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/01.begin
+..
+
+
+# ./share/doc/usd/02.learn
+/set type=file gname=bin uname=bin mode=0444
+02.learn        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/02.learn
+..
+
+
+# ./share/doc/usd/03.shell
+/set type=file gname=bin uname=bin mode=0444
+03.shell        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/03.shell
+..
+
+
+# ./share/doc/usd/04.csh
+/set type=file gname=bin uname=bin mode=0444
+04.csh          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/04.csh
+..
+
+
+# ./share/doc/usd/05.dc
+/set type=file gname=bin uname=bin mode=0444
+05.dc           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/05.dc
+..
+
+
+# ./share/doc/usd/06.bc
+/set type=file gname=bin uname=bin mode=0444
+06.bc           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/06.bc
+..
+
+
+# ./share/doc/usd/07.mail
+/set type=file gname=bin uname=bin mode=0444
+07.mail         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/07.mail
+..
+
+
+# ./share/doc/usd/08.mh
+08.mh           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/08.mh
+..
+
+
+# ./share/doc/usd/09.edtut
+/set type=file gname=bin uname=bin mode=0444
+09.edtut        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/09.edtut
+..
+
+
+# ./share/doc/usd/10.edadv
+/set type=file gname=bin uname=bin mode=0444
+10.edadv        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/10.edadv
+..
+
+
+# ./share/doc/usd/11.edit
+/set type=file gname=bin uname=bin mode=0444
+11.edit         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/11.edit
+..
+
+
+# ./share/doc/usd/12.vi
+/set type=file gname=bin uname=bin mode=0444
+12.vi           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/12.vi
+..
+
+
+# ./share/doc/usd/13.ex
+/set type=file gname=bin uname=bin mode=0444
+13.ex           type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/13.ex
+..
+
+
+# ./share/doc/usd/14.jove
+/set type=file gname=bin uname=bin mode=0444
+14.jove         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/14.jove
+..
+
+
+# ./share/doc/usd/15.sed
+/set type=file gname=bin uname=bin mode=0444
+15.sed          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/15.sed
+..
+
+
+# ./share/doc/usd/16.awk
+/set type=file gname=bin uname=bin mode=0444
+16.awk          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/16.awk
+..
+
+
+# ./share/doc/usd/17.msmacros
+/set type=file gname=bin uname=bin mode=0444
+17.msmacros     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/17.msmacros
+..
+
+
+# ./share/doc/usd/18.msdiffs
+/set type=file gname=bin uname=bin mode=0444
+18.msdiffs      type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/18.msdiffs
+..
+
+
+# ./share/doc/usd/19.memacros
+/set type=file gname=bin uname=bin mode=0444
+19.memacros     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/19.memacros
+..
+
+
+# ./share/doc/usd/20.meref
+/set type=file gname=bin uname=bin mode=0444
+20.meref        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/20.meref
+..
+
+
+# ./share/doc/usd/21.troff
+/set type=file gname=bin uname=bin mode=0444
+21.troff        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/21.troff
+..
+
+
+# ./share/doc/usd/22.trofftut
+/set type=file gname=bin uname=bin mode=0444
+22.trofftut     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/22.trofftut
+..
+
+
+# ./share/doc/usd/23.eqn
+/set type=file gname=bin uname=bin mode=0444
+23.eqn          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/23.eqn
+..
+
+
+# ./share/doc/usd/24.eqnguide
+/set type=file gname=bin uname=bin mode=0444
+24.eqnguide     type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/24.eqnguide
+..
+
+
+# ./share/doc/usd/25.tbl
+/set type=file gname=bin uname=bin mode=0444
+25.tbl          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/25.tbl
+..
+
+
+# ./share/doc/usd/26.refer
+/set type=file gname=bin uname=bin mode=0444
+26.refer        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/26.refer
+..
+
+
+# ./share/doc/usd/27.invert
+/set type=file gname=bin uname=bin mode=0444
+27.invert       type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/27.invert
+..
+
+
+# ./share/doc/usd/28.bib
+/set type=file gname=bin uname=bin mode=0444
+28.bib          type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/28.bib
+..
+
+
+# ./share/doc/usd/29.diction
+/set type=file gname=bin uname=bin mode=0444
+29.diction      type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/29.diction
+..
+
+
+# ./share/doc/usd/30.rogue
+/set type=file gname=bin uname=bin mode=0444
+30.rogue        type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/30.rogue
+..
+
+
+# ./share/doc/usd/31.trek
+/set type=file gname=bin uname=bin mode=0444
+31.trek         type=dir uname=root gname=wheel mode=0775
+# ./share/doc/usd/31.trek
+..
+
+# ./share/doc/usd
+..
+
+# ./share/doc
+..
+
+
+# ./share/games
+/set type=file gname=wheel uname=root mode=0444
+games           type=dir mode=0755
+
+# ./share/games/atc
+/set type=file gname=bin uname=games mode=0400
+atc             type=dir uname=root gname=wheel mode=0755
+# ./share/games/atc
+..
+
+
+# ./share/games/boggle
+/set type=file gname=bin uname=bin mode=0444
+boggle          type=dir uname=root gname=wheel mode=0775
+# ./share/games/boggle
+..
+
+
+# ./share/games/ching
+/set type=file gname=bin uname=games mode=0444
+ching           type=dir uname=root gname=wheel mode=0755
+# ./share/games/ching
+..
+
+
+# ./share/games/fortune
+/set type=file gname=bin uname=bin mode=0444
+fortune         type=dir uname=root gname=wheel mode=0755
+# ./share/games/fortune
+..
+
+
+# ./share/games/larn
+/set type=file gname=bin uname=games mode=0444
+larn            type=dir uname=root gname=wheel mode=0755
+# ./share/games/larn
+..
+
+
+# ./share/games/quiz.db
+/set type=file gname=bin uname=games mode=0444
+quiz.db         type=dir uname=root gname=wheel mode=0755
+# ./share/games/quiz.db
+..
+
+# ./share/games
+..
+
+
+# ./share/groff_font
+/set type=file gname=wheel uname=root mode=0755
+groff_font      type=dir
+
+# ./share/groff_font/devX100
+/set type=file gname=wheel uname=root mode=0644
+devX100         type=dir mode=0755
+# ./share/groff_font/devX100
+..
+
+
+# ./share/groff_font/devX100-12
+/set type=file gname=wheel uname=root mode=0644
+devX100-12      type=dir mode=0755
+# ./share/groff_font/devX100-12
+..
+
+
+# ./share/groff_font/devX75
+/set type=file gname=wheel uname=root mode=0644
+devX75          type=dir mode=0755
+# ./share/groff_font/devX75
+..
+
+
+# ./share/groff_font/devX75-12
+/set type=file gname=wheel uname=root mode=0644
+devX75-12       type=dir mode=0755
+# ./share/groff_font/devX75-12
+..
+
+
+# ./share/groff_font/devascii
+/set type=file gname=wheel uname=root mode=0644
+devascii        type=dir mode=0755
+# ./share/groff_font/devascii
+..
+
+
+# ./share/groff_font/devdvi
+/set type=file gname=wheel uname=root mode=0644
+devdvi          type=dir mode=0755
+
+# ./share/groff_font/devdvi/generate
+/set type=file gname=wheel uname=root mode=0644
+generate        type=dir mode=0755
+# ./share/groff_font/devdvi/generate
+..
+
+# ./share/groff_font/devdvi
+..
+
+
+# ./share/groff_font/devlatin1
+/set type=file gname=wheel uname=root mode=0644
+devlatin1       type=dir mode=0755
+# ./share/groff_font/devlatin1
+..
+
+
+# ./share/groff_font/devps
+/set type=file gname=wheel uname=root mode=0644
+devps           type=dir mode=0755
+
+# ./share/groff_font/devps/generate
+/set type=file gname=wheel uname=root mode=0644
+generate        type=dir mode=0755
+# ./share/groff_font/devps/generate
+..
+
+# ./share/groff_font/devps
+..
+
+# ./share/groff_font
+..
+
+
+# ./share/locale
+locale          type=dir mode=0755
+# ./share/locale
+..
+
+
+# ./share/man
+/set type=file gname=wheel uname=root mode=0755
+man             type=dir
+
+# ./share/man/cat1
+/set type=file gname=bin uname=bin mode=0444
+cat1            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat1
+..
+
+
+# ./share/man/cat2
+/set type=file gname=bin uname=bin mode=0444
+cat2            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat2
+..
+
+
+# ./share/man/cat3
+/set type=file gname=bin uname=bin mode=0444
+cat3            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat3
+..
+
+
+# ./share/man/cat3f
+/set type=file gname=bin uname=bin mode=0444
+cat3f           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat3f
+..
+
+
+# ./share/man/cat4
+/set type=file gname=bin uname=bin mode=0444
+cat4            type=dir uname=root gname=wheel mode=0755
+
+# ./share/man/cat4/hp300
+/set type=file gname=bin uname=bin mode=0444
+hp300           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat4/hp300
+..
+
+
+# ./share/man/cat4/i386
+/set type=file gname=bin uname=bin mode=0444
+i386            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat4/i386
+..
+
+
+# ./share/man/cat4/sparc
+/set type=file gname=bin uname=bin mode=0444
+sparc           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat4/sparc
+..
+
+
+# ./share/man/cat4/tahoe
+/set type=file gname=bin uname=bin mode=0444
+tahoe           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat4/tahoe
+..
+
+
+# ./share/man/cat4/vax
+/set type=file gname=bin uname=bin mode=0444
+vax             type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat4/vax
+..
+
+# ./share/man/cat4
+..
+
+
+# ./share/man/cat5
+/set type=file gname=bin uname=bin mode=0444
+cat5            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat5
+..
+
+
+# ./share/man/cat6
+/set type=file gname=bin uname=bin mode=0444
+cat6            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat6
+..
+
+
+# ./share/man/cat7
+/set type=file gname=bin uname=bin mode=0444
+cat7            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat7
+..
+
+
+# ./share/man/cat8
+/set type=file gname=bin uname=bin mode=0444
+cat8            type=dir uname=root gname=wheel mode=0755
+
+# ./share/man/cat8/hp300
+/set type=file gname=bin uname=bin mode=0444
+hp300           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat8/hp300
+..
+
+
+# ./share/man/cat8/i386
+/set type=file gname=bin uname=bin mode=0444
+i386            type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat8/i386
+..
+
+
+# ./share/man/cat8/sparc
+/set type=file gname=bin uname=bin mode=0444
+sparc           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat8/sparc
+..
+
+
+# ./share/man/cat8/tahoe
+/set type=file gname=bin uname=bin mode=0444
+tahoe           type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat8/tahoe
+..
+
+
+# ./share/man/cat8/vax
+/set type=file gname=bin uname=bin mode=0444
+vax             type=dir uname=root gname=wheel mode=0755
+# ./share/man/cat8/vax
+..
+
+# ./share/man/cat8
+..
+
+
+# ./share/man/old
+/set type=file gname=wheel uname=root mode=0755
+old             type=dir uname=bin gname=bin
+
+# ./share/man/old/cat1
+/set type=file gname=bin uname=bin mode=0444
+cat1            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat1
+..
+
+
+# ./share/man/old/cat2
+cat2            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat2
+..
+
+
+# ./share/man/old/cat3
+cat3            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat3
+..
+
+
+# ./share/man/old/cat4
+cat4            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat4
+..
+
+
+# ./share/man/old/cat5
+/set type=file gname=bin uname=bin mode=0444
+cat5            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat5
+..
+
+
+# ./share/man/old/cat6
+cat6            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat6
+..
+
+
+# ./share/man/old/cat7
+cat7            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat7
+..
+
+
+# ./share/man/old/cat8
+cat8            type=dir uname=root gname=wheel mode=0755
+# ./share/man/old/cat8
+..
+
+# ./share/man/old
+..
+
+# ./share/man
+..
+
+
+# ./share/me
+/set type=file gname=bin uname=bin mode=0444
+me              type=dir uname=root gname=wheel mode=0755
+# ./share/me
+..
+
+
+# ./share/misc
+/set type=file gname=bin uname=bin mode=0444
+misc            type=dir uname=root gname=wheel mode=0755
+# ./share/misc
+..
+
+
+# ./share/mk
+/set type=file gname=bin uname=bin mode=0444
+mk              type=dir uname=root gname=wheel mode=0755
+# ./share/mk
+..
+
+
+# ./share/skel
+/set type=file gname=bin uname=bin mode=0444
+skel            type=dir uname=root gname=wheel mode=0755
+# ./share/skel
+..
+
+
+# ./share/tabset
+/set type=file gname=bin uname=bin mode=0444
+tabset          type=dir uname=root gname=wheel mode=0755
+# ./share/tabset
+..
+
+
+# ./share/tmac
+/set type=file gname=wheel uname=root mode=0644
+tmac            type=dir mode=0755
+
+# ./share/tmac/mm
+/set type=file gname=wheel uname=root mode=0644
+mm              type=dir mode=0755
+# ./share/tmac/mm
+..
+
+# ./share/tmac
+..
+
+
+# ./share/zoneinfo
+/set type=file gname=bin uname=bin mode=0444
+zoneinfo        type=dir mode=0555
+
+# ./share/zoneinfo/Australia
+/set type=file gname=bin uname=bin mode=0444
+Australia       type=dir mode=0555
+# ./share/zoneinfo/Australia
+..
+
+
+# ./share/zoneinfo/Brazil
+/set type=file gname=bin uname=bin mode=0444
+Brazil          type=dir mode=0555
+# ./share/zoneinfo/Brazil
+..
+
+
+# ./share/zoneinfo/Canada
+/set type=file gname=bin uname=bin mode=0444
+Canada          type=dir mode=0555
+# ./share/zoneinfo/Canada
+..
+
+
+# ./share/zoneinfo/Chile
+/set type=file gname=bin uname=bin mode=0444
+Chile           type=dir mode=0555
+# ./share/zoneinfo/Chile
+..
+
+
+# ./share/zoneinfo/Mexico
+/set type=file gname=bin uname=bin mode=0444
+Mexico          type=dir mode=0555
+# ./share/zoneinfo/Mexico
+..
+
+
+# ./share/zoneinfo/SystemV
+/set type=file gname=bin uname=bin mode=0444
+SystemV         type=dir mode=0555
+# ./share/zoneinfo/SystemV
+..
+
+
+# ./share/zoneinfo/US
+/set type=file gname=bin uname=bin mode=0444
+US              type=dir mode=0555
+# ./share/zoneinfo/US
+..
+
+# ./share/zoneinfo
+..
+
+# ./share
+..
+
+
+# ./src
+/set type=file gname=wsrc uname=bin mode=0775
+src             type=dir
+# ./src
+..
+
+
+# ./ucb
+/set type=file gname=wheel uname=root mode=0755
+ucb             type=dir
+# ./ucb
+..

@@ -1,0 +1,54 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mkhosts.8	6.5 (Berkeley) %G%
+.\"
+.TH MKHOSTS 8 ""
+.UC 6
+.SH NAME
+mkhosts \- generate hashed host table
+.SH SYNOPSIS
+.B mkhosts
+[
+.B \-v
+]
+hostfile
+.SH DESCRIPTION
+.I Mkhosts
+is used to generated the hashed host database used by one version of the
+library routines
+.B gethostbyaddr()
+and
+.BR gethostbyname() .
+It is not used if host name translation is performed by
+.IR named (8).
+If the
+.B \-v
+option is supplied, each host will be listed as it is added.
+The file
+.I hostfile
+is usually /etc/hosts, and in any case
+must be in the format of /etc/hosts (see hosts(5)).
+.I Mkhosts
+will generate database files named
+.I hostfile.pag
+and
+.I hostfile.dir.
+The new database is build in a set of temporary files and
+only replaces the real database if the new one is built
+without errors.
+.I Mkhosts
+will exit with a non-zero exit code if any errors are detected.
+.SH FILES
+.ta \w'hostfile.new.dir    'u
+\fIhostfile\fR.pag	- real database filenames
+.br
+\fIhostfile\fR.dir
+.br
+\fIhostfile\fR.new.pag	- temporary database filenames
+.br
+\fIhostfile\fR.new.dir
+.SH SEE ALSO
+gethostbyname(3), gettable(8), hosts(5), htable(8), named(8)

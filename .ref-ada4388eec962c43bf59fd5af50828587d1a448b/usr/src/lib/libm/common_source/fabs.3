@@ -1,0 +1,40 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\"	@(#)fabs.3	8.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)fabs.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FABS 3
+.Os
+.Sh NAME
+.Nm fabs
+.Nd floating-point absolute value function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn fabs "double x"
+.Sh DESCRIPTION
+The
+.Fn fabs
+function computes the absolute value of a floating-point number
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn fabs
+function returns the absolute value of
+.Fa x .
+.Sh SEE ALSO
+.Xr abs 3 ,
+.Xr ceil 3 ,
+.Xr floor 3 ,
+.Xr rint 3 ,
+.Xr ieee 3 ,
+.Xr math.3
+.Sh STANDARDS
+The
+.Fn fabs
+function conforms to
+.St -ansiC .
