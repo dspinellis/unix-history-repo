@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -502,7 +502,6 @@ restart(argc, argv)
 		printf("Usage: restart {all | printer ...}\n");
 		return;
 	}
-	gethostname(host, sizeof(host));
 	if (argc == 2 && !strcmp(argv[1], "all")) {
 		printer = prbuf;
 		while (getprent(line) > 0) {
@@ -544,7 +543,6 @@ start(argc, argv)
 		printf("Usage: start {all | printer ...}\n");
 		return;
 	}
-	gethostname(host, sizeof(host));
 	if (argc == 2 && !strcmp(argv[1], "all")) {
 		printer = prbuf;
 		while (getprent(line) > 0) {
