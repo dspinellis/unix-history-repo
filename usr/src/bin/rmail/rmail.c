@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] =	"@(#)rmail.c	4.4 (Berkeley) %G%";
+static char sccsid[] =	"@(#)rmail.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -101,7 +101,7 @@ main(argc, argv)
 	}
 	(void) strcat(from, uf);
 
-	(void) sprintf(cmd, "%s -em -f%s", MAILER, from);
+	(void) sprintf(cmd, "%s -ee -f%s", MAILER, from);
 	while (*++argv != NULL)
 	{
 		(void) strcat(cmd, " '");
