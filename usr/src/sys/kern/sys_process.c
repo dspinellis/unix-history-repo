@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.30 (Berkeley) %G%
+ *	@(#)sys_process.c	7.31 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -178,7 +178,7 @@ procxmt(p)
 			int rv;
 
 			sa = trunc_page((vm_offset_t)ipc.ip_addr);
-			ea = round_page((vm_offset_t)ipc.ip_addr+sizeof(int)-1);
+			ea = round_page((vm_offset_t)ipc.ip_addr+sizeof(int));
 			rv = vm_map_protect(&p->p_vmspace->vm_map, sa, ea,
 					VM_PROT_DEFAULT, FALSE);
 			if (rv == KERN_SUCCESS) {
