@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.25 (Berkeley) %G%
+#	@(#)Makefile	4.26 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -38,9 +38,8 @@
 #
 #HOSTLOOKUP=	hosttable
 HOSTLOOKUP=	named
-#							
+#
 DESTDIR=
-INSTALL=install -m 644
 DFLMON=	mon.o
 DEFS=
 COMPAT=	compat-4.1 compat-sys5
@@ -71,9 +70,9 @@ ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}: FRC
 FRC:
 
 install: 
-	${INSTALL} libc.a ${DESTDIR}/lib/libc.a
+	install -o bin -g bin -m 644 libc.a ${DESTDIR}/lib/libc.a
 	ranlib ${DESTDIR}/lib/libc.a
-	${INSTALL} libc_p.a ${DESTDIR}/usr/lib/libc_p.a
+	install -o bin -g bin -m 644 libc_p.a ${DESTDIR}/usr/lib/libc_p.a
 	ranlib ${DESTDIR}/usr/lib/libc_p.a
 	cd ${MACHINE}/csu; make DESTDIR=${DESTDIR} install
 
