@@ -1,0 +1,22 @@
+Ignore	ex3.7recover.c	/^Ignore(a)$/
+Ignorf	ex3.7recover.c	/^Ignorf(a)$/
+Ignorl	ex3.7recover.c	/^Ignorl(a)$/
+Mex3.7recover	ex3.7recover.c	/^main(argc, argv)$/
+blkio	ex3.7recover.c	/^blkio(b, buf, iofcn)$/
+clrstats	ex3.7recover.c	/^clrstats()$/
+enter	ex3.7recover.c	/^enter(fp, fname, count)$/
+error	ex3.7recover.c	/^error(str, inf)$/
+findtmp	ex3.7recover.c	/^findtmp(dir)$/
+fpr	ex3.7recover.c	/^fpr(fmt, va_alist)$/
+getblock	ex3.7recover.c	/^getblock(atl, iof)$/
+getline	ex3.7recover.c	/^getline(tl)$/
+ignorl	ex3.7recover.c	/^#define	ignorl(a)	a$/
+listfiles	ex3.7recover.c	/^listfiles(dirname)$/
+preserve	ex3.7recover.c	/^preserve()$/
+putfile	ex3.7recover.c	/^putfile()$/
+qucmp	ex3.7recover.c	/^qucmp(p1, p2)$/
+scrapbad	ex3.7recover.c	/^scrapbad()$/
+searchdir	ex3.7recover.c	/^searchdir(dirname)$/
+syserror	ex3.7recover.c	/^syserror()$/
+wrerror	ex3.7recover.c	/^wrerror()$/
+yeah	ex3.7recover.c	/^yeah(name)$/
