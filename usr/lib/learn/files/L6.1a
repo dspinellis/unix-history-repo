@@ -1,0 +1,33 @@
+#print
+Since the "?" character only matches single characters,
+it isn't useful for such questions as "how many files
+have names beginning with g?"  There is another character,
+  *
+which can be used in patterns for file names, and which matches
+any number of characters of any sort.  Thus
+   g*
+matches anything beginning with g.
+And
+   *x
+matches anything ending in x.  
+There is one file in this directory whose name ends
+in "memo".  Find out that file name
+and print the contents of the file.  Then type "ready".
+#create mymemo
+This is the 7-line file "mymemo";  you should
+have typed "ls *memo", which would print
+"mymemo", and then typed the
+command "cat mymemo".
+Or just plain "cat *memo" would have worked.
+But whatever you did, you got it right
+and now you can type "ready".
+#copyout
+#user
+#uncopyout
+tail -7 .ocopy >X2
+#cmp mymemo X2
+#log
+#next
+6.1b 0
+6.1c 5
+6.1e 10
