@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *      @(#)ns_input.c	7.2 (Berkeley) %G%
+ *      @(#)ns_input.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
