@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.21 (Berkeley) %G%
+ *	@(#)vnode.h	7.22 (Berkeley) %G%
  */
 
 /*
@@ -117,7 +117,7 @@ struct vnodeops {
 	int	(*vn_mkdir)(		/* ndp, vap */ );
 	int	(*vn_rmdir)(		/* ndp */ );
 	int	(*vn_symlink)(		/* ndp, vap, nm */ );
-	int	(*vn_readdir)(		/* vp, uiop, ioflag, cred */ );
+	int	(*vn_readdir)(		/* vp, uiop, cred, eofflagp */ );
 	int	(*vn_readlink)(		/* vp, uiop, cred */ );
 
 	int	(*vn_abortop)(		/* ndp */ );
@@ -155,7 +155,7 @@ struct vnodeops {
 #define	VOP_MKDIR(n,a)		(*((n)->ni_dvp->v_op->vn_mkdir))((n),(a))
 #define	VOP_RMDIR(n)		(*((n)->ni_dvp->v_op->vn_rmdir))(n)
 #define	VOP_SYMLINK(n,a,m)	(*((n)->ni_dvp->v_op->vn_symlink))((n),(a),(m))
-#define	VOP_READDIR(v,u,c)	(*((v)->v_op->vn_readdir))((v),(u),(c))
+#define	VOP_READDIR(v,u,c,e)	(*((v)->v_op->vn_readdir))((v),(u),(c),(e))
 #define	VOP_READLINK(v,u,c)	(*((v)->v_op->vn_readlink))((v),(u),(c))
 #define	VOP_ABORTOP(n)		(*((n)->ni_dvp->v_op->vn_abortop))(n)
 #define	VOP_INACTIVE(v)		(*((v)->v_op->vn_inactive))(v)
