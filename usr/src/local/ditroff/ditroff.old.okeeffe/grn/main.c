@@ -1,4 +1,4 @@
-/*	main.c	1.2	(Berkeley) 83/07/22
+/*	main.c	1.3	(Berkeley) 83/07/22
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -44,7 +44,7 @@ extern POINT *PTInit(), *PTMakePoint();
 
 char *doinput();
 
-#define GREMLIB		"/usr/lib/gremlib/"
+#define GREMLIB		"/usr/local/gremlib/"
 #define DEVDIR		"/usr/lib/font/dev"
 #define DEFAULTDEV	"var"
 
@@ -60,7 +60,7 @@ char *doinput();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.2	83/07/22";
+char	SccsId[] = "main.c	1.3	83/07/22";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
