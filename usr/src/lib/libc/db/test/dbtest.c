@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -572,7 +572,7 @@ xmalloc(text, len)
 
 	if ((p = malloc(len)) == NULL)
 		err("%s", strerror(errno));
-	bcopy(text, p, len);
+	memmove(p, text, len);
 	return (p);
 }
 

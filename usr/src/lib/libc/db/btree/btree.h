@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.10 (Berkeley) %G%
+ *	@(#)btree.h	5.11 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -164,9 +164,9 @@ typedef struct BLEAF {
 	p += sizeof(size_t); \
 	*(u_char *)p = flags; \
 	p += sizeof(u_char); \
-	bcopy(key->data, p, key->size); \
+	memmove(p, key->data, key->size); \
 	p += key->size; \
-	bcopy(data->data, p, data->size); \
+	memmove(p, data->data, data->size); \
 }
 
 /* For the recno leaf pages, the item is a data entry. */
@@ -193,7 +193,7 @@ typedef struct RLEAF {
 	p += sizeof(size_t); \
 	*(u_char *)p = flags; \
 	p += sizeof(u_char); \
-	bcopy(data->data, p, data->size); \
+	memmove(p, data->data, data->size); \
 }
 
 /*

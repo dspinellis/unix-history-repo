@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.32 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -244,8 +244,8 @@ init_hash(hashp, info)
 	hashp->DSIZE = DEF_DIRSIZE;
 	hashp->FFACTOR = DEF_FFACTOR;
 	hashp->hash = __default_hash;
-	bzero(hashp->SPARES, sizeof(hashp->SPARES));
-	bzero (hashp->BITMAPS, sizeof (hashp->BITMAPS));
+	memset(hashp->SPARES, 0, sizeof(hashp->SPARES));
+	memset(hashp->BITMAPS, 0, sizeof (hashp->BITMAPS));
 
 	if (info) {
 		if (info->bsize) {
@@ -552,7 +552,7 @@ hash_access(hashp, action, key, val)
 		if (bp[1] >= REAL_KEY) {
 			/* Real key/data pair */
 			if (size == off - *bp &&
-			    bcmp(kp, rbufp->page + *bp, size) == 0)
+			    memcmp(kp, rbufp->page + *bp, size) == 0)
 				goto found;
 			off = bp[1];
 #ifdef HASH_STATISTICS
@@ -803,8 +803,8 @@ hash_realloc(p_ptr, oldsize, newsize)
 	register void *p;
 
 	if (p = malloc(newsize)) {
-		bcopy(*p_ptr, p, oldsize);
-		bzero(*p_ptr + oldsize, newsize - oldsize);
+		memmove(p, *p_ptr, oldsize);
+		memset(*p_ptr + oldsize, 0, newsize - oldsize);
 		free(*p_ptr);
 		*p_ptr = p;
 	}
