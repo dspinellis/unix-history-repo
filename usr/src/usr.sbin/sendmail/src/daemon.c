@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1983 Eric P. Allman
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
@@ -13,9 +13,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.52 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.1 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.52 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.1 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
