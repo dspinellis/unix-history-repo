@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.3 (Berkeley) %G%
+ *	@(#)union_subr.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -558,7 +558,10 @@ union_mkshadow(um, dvp, cnp, vpp)
 	cn.cn_nameiop = CREATE;
 	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|SAVESTART|ISLASTCN);
 	cn.cn_proc = cnp->cn_proc;
-	cn.cn_cred = um->um_cred;
+	if (um->um_op == UNMNT_ABOVE)
+		cn.cn_cred = cnp->cn_cred;
+	else
+		cn.cn_cred = um->um_cred;
 	cn.cn_nameptr = cn.cn_pnbuf;
 	cn.cn_namelen = cnp->cn_namelen;
 	cn.cn_hash = cnp->cn_hash;

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,7 @@ union_mount(mp, path, data, ndp, p)
 	struct vnode *upperrootvp = NULLVP;
 	struct union_mount *um;
 	struct ucred *cred = 0;
+	struct vattr va;
 	char *cp;
 	int len;
 	u_int size;
@@ -80,11 +81,20 @@ union_mount(mp, path, data, ndp, p)
 	 * mounted-on directory.  This allows the mount_union
 	 * command to be made setuid root so allowing anyone
 	 * to do union mounts onto any directory on which they
-	 * have write permission.
+	 * have write (also delete and rename) permission.
 	 */
 	error = VOP_ACCESS(mp->mnt_vnodecovered, VWRITE, cred, p);
 	if (error)
 		goto bad;
+	error = VOP_GETATTR(mp->mnt_vnodecovered, &va, cred, p);
+	if (error)
+		goto bad;
+	if ((va.va_mode & VSVTX) &&
+	    (va.va_uid != 0) &&
+	    (va.va_uid != cred->cr_uid)) {
+		error = EACCES;
+		goto bad;
+	}
 
 	/*
 	 * Get argument
@@ -124,7 +134,8 @@ union_mount(mp, path, data, ndp, p)
 	 * same as providing a mount under option to the mount syscall.
 	 */
 
-	switch (args.mntflags & UNMNT_OPMASK) {
+	um->um_op = args.mntflags & UNMNT_OPMASK;
+	switch (um->um_op) {
 	case UNMNT_ABOVE:
 		um->um_lowervp = lowerrootvp;
 		um->um_uppervp = upperrootvp;
@@ -159,10 +170,12 @@ union_mount(mp, path, data, ndp, p)
 	 * flag implies that some of the files might be stored locally
 	 * then you will want to change the conditional.
 	 */
-	if (((um->um_lowervp == NULLVP) ||
-	     (um->um_lowervp->v_mount->mnt_flag & MNT_LOCAL)) &&
-	    (um->um_uppervp->v_mount->mnt_flag & MNT_LOCAL))
-		mp->mnt_flag |= MNT_LOCAL;
+	if (um->um_op == UNMNT_ABOVE) {
+		if (((um->um_lowervp == NULLVP) ||
+		     (um->um_lowervp->v_mount->mnt_flag & MNT_LOCAL)) &&
+		    (um->um_uppervp->v_mount->mnt_flag & MNT_LOCAL))
+			mp->mnt_flag |= MNT_LOCAL;
+	}
 
 	/*
 	 * Copy in the upper layer's RDONLY flag.  This is for the benefit
@@ -178,7 +191,7 @@ union_mount(mp, path, data, ndp, p)
 	(void) copyinstr(path, mp->mnt_stat.f_mntonname, MNAMELEN - 1, &size);
 	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
 
-	switch (args.mntflags & UNMNT_OPMASK) {
+	switch (um->um_op) {
 	case UNMNT_ABOVE:
 		cp = "un-above:";
 		break;
@@ -299,6 +312,7 @@ union_root(mp, vpp)
 {
 	struct union_mount *um = MOUNTTOUNIONMOUNT(mp);
 	int error;
+	int loselock;
 
 #ifdef UNION_DIAGNOSTIC
 	printf("union_root(mp = %x, lvp = %x, uvp = %x)\n", mp,
@@ -310,7 +324,13 @@ union_root(mp, vpp)
 	 * Return locked reference to root.
 	 */
 	VREF(um->um_uppervp);
-	VOP_LOCK(um->um_uppervp);
+	if ((um->um_op == UNMNT_BELOW) &&
+	     VOP_ISLOCKED(um->um_uppervp)) {
+		loselock = 1;
+	} else {
+		VOP_LOCK(um->um_uppervp);
+		loselock = 0;
+	}
 	if (um->um_lowervp)
 		VREF(um->um_lowervp);
 	error = union_allocvp(vpp, mp,
@@ -321,11 +341,15 @@ union_root(mp, vpp)
 			      um->um_lowervp);
 
 	if (error) {
+		if (!loselock)
+			VOP_UNLOCK(um->um_uppervp);
 		vrele(um->um_uppervp);
 		if (um->um_lowervp)
 			vrele(um->um_lowervp);
 	} else {
 		(*vpp)->v_flag |= VROOT;
+		if (loselock)
+			VTOUNION(*vpp)->un_flags &= ~UN_ULOCK;
 	}
 
 	return (error);
