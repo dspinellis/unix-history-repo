@@ -1,4 +1,4 @@
-.\"	@(#)sh.1	6.2 (Berkeley) %G%
+.\"	@(#)sh.1	6.3 (Berkeley) %G%
 .\"
 .TH SH 1 ""
 .AT 3
@@ -328,6 +328,10 @@ Internal field separators, normally
 .BR tab ,
 and
 .BR newline .
+.B IFS
+is ignored if 
+.I sh
+is running as root or if the effective user id differs from the real user id.
 .PD
 .RE
 .PP
@@ -595,6 +599,14 @@ A parenthesized command is also executed in a subshell.
 The following commands are executed in the shell process
 and except where specified
 no input output redirection is permitted for such commands.
+.TP
+.B #
+For non-interactive shells, everything following the
+.B #
+is treated as a comment, i.e. the rest of the line is ignored.
+For interactive shells, the
+.B #
+has no special effect.
 .TP
 .B :
 No effect; the command does nothing.
