@@ -11,7 +11,7 @@ char copyright[] =
 #endif
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -63,6 +63,7 @@ main(argc, argv)
 		fprintf(stderr, "usage: chown [-fR] owner[.group] file ...\n");
 		exit(-1);
 	}
+	gid = -1;
 	group = index(argv[0], '.');
 	if (group != NULL) {
 		*group++ = '\0';
@@ -70,8 +71,8 @@ main(argc, argv)
 			if ((grp = getgrnam(group)) == NULL)
 				fatal(255, "unknown group: %s",group);
 			gid = grp -> gr_gid;
-			endgrent();
-		} else
+			(void) endgrent();
+		} else if (*group != '\0')
 			gid = atoi(group);
 	}
 	if (!isnumber(argv[0])) {
@@ -86,10 +87,8 @@ main(argc, argv)
 			status += error("couldn't access %s", argv[c]);
 			continue;
 		}
-		if (group == NULL)
-			gid = stbuf.st_gid;
 		if (rflag && stbuf.st_mode&S_IFDIR) {
-			status += chownr(argv[c], group != NULL, uid, gid);
+			status += chownr(argv[c], uid, gid);
 			continue;
 		}
 		if (chown(argv[c], uid, gid)) {
@@ -111,21 +110,22 @@ isnumber(s)
 	return (1);
 }
 
-chownr(dir, dogrp, uid, ogid)
+chownr(dir, uid, gid)
 	char *dir;
 {
 	register DIR *dirp;
 	register struct direct *dp;
-	register struct stat st;
+	struct stat st;
 	char savedir[1024];
-	int ecode, gid;
+	int ecode;
+	extern char *getwd();
 
-	if (getwd(savedir) == 0)
+	if (getwd(savedir) == (char *)0)
 		fatal(255, "%s", savedir);
 	/*
 	 * Change what we are given before doing it's contents.
 	 */
-	if (chown(dir, uid, ogid) < 0 && error("can't change %s", dir))
+	if (chown(dir, uid, gid) < 0 && error("can't change %s", dir))
 		return (1);
 	if (chdir(dir) < 0)
 		return (Perror(dir));
@@ -141,12 +141,8 @@ chownr(dir, dogrp, uid, ogid)
 				break;
 			continue;
 		}
-		if (dogrp)
-			gid = ogid;
-		else
-			gid = st.st_gid;
 		if (st.st_mode&S_IFDIR) {
-			ecode = chownr(dp->d_name, dogrp, uid, gid);
+			ecode = chownr(dp->d_name, uid, gid);
 			if (ecode)
 				break;
 			continue;
