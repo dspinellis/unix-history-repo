@@ -6,13 +6,13 @@
  */
 
 #if !defined(lint) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)gmon.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.13 (Berkeley) %G%";
 #endif
 
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -41,7 +41,7 @@ monstartup(lowpc, highpc)
 {
 	register int o;
 	struct clockinfo clockinfo;
-	int tsize, fsize, size;
+	int mib[2], tsize, fsize, size;
 	char *cp;
 	struct gmonhdr *hdr;
 	struct gmonparam *p = &_gmonparam;
@@ -103,7 +103,9 @@ monstartup(lowpc, highpc)
 
 	moncontrol(1);
 	size = sizeof(clockinfo);
-	if (getkerninfo(KINFO_CLOCKRATE, &clockinfo, &size, 0) < 0)
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_CLOCKRATE;
+	if (sysctl(mib, 2, &clockinfo, &size, NULL, 0) < 0)
 		/*
 		 * Best guess
 		 */

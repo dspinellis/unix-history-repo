@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)fstat.c	5.42 (Berkeley) %G%";
 #include <sys/domain.h>
 #include <sys/protosw.h>
 #include <sys/unpcb.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 #include <sys/kinfo_proc.h>
 #include <sys/filedesc.h>
 #define	KERNEL
@@ -132,7 +132,7 @@ main(argc, argv)
 	int cnt;
 
 	arg = 0;
-	what = KINFO_PROC_ALL;
+	what = KERN_PROC_ALL;
 	nlistf = memf = NULL;
 	while ((ch = getopt(argc, argv, "fnp:u:vNM")) != EOF)
 		switch((char)ch) {
@@ -156,7 +156,7 @@ main(argc, argv)
 				    "fstat: -p requires a process id\n");
 				usage();
 			}
-			what = KINFO_PROC_PID;
+			what = KERN_PROC_PID;
 			arg = atoi(optarg);
 			break;
 		case 'u':
@@ -167,7 +167,7 @@ main(argc, argv)
 				    optarg);
 				exit(1);
 			}
-			what = KINFO_PROC_UID;
+			what = KERN_PROC_UID;
 			arg = passwd->pw_uid;
 			break;
 		case 'v':
