@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	1.8 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -280,6 +280,16 @@ noinit:
 	 */
 	sblock.fs_nffree = 0;
 	sblock.fs_nbfree = 0;
+	sblock.fs_cgrotor = 0;
+	for (i = 0; i < NRPOS; i++)
+		sblock.fs_postbl[i] = -1;
+	for (i = 0; i < sblock.fs_spc; i += (NSPF * FRAG))
+		/* void */;
+	for (i -= (NSPF * FRAG); i >= 0; i -= (NSPF * FRAG)) {
+		c = i % sblock.fs_nsect * NRPOS / sblock.fs_nsect;
+		sblock.fs_rotbl[i / (NSPF * FRAG)] = sblock.fs_postbl[c];
+		sblock.fs_postbl[c] = i / (NSPF * FRAG);
+	}
 	for (c = 0; c < sblock.fs_ncg; c++)
 		initcg(c);
 	printf("\tsuper-block backups (for fsck -b#) at %d+k*%d (%d .. %d)\n",

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.6 (Berkeley) %G%";
 
 /*
  * icheck
@@ -149,10 +149,11 @@ char *file;
 		nerror |= 04;
 		return;
 	}
-	sblock.fs_cs =
-	    (struct csum *)calloc(howmany(cssize(&sblock), BSIZE), BSIZE);
-	lseek(fi, csaddr(&sblock)*FSIZE, 0);
-	read(fi, (char *)sblock.fs_cs, cssize(&sblock));
+	for (n = 0; n < howmany(cssize(&sblock), BSIZE); n++) {
+		sblock.fs_csp[n] = (struct csum *)calloc(1, BSIZE);
+		bread(csaddr(&sblock) + (n * FRAG),
+		      (char *)sblock.fs_csp[n], BSIZE);
+	}
 	ino = 0;
 	n = (sblock.fs_size*FRAG + BITS-1) / BITS;
 #ifdef STANDALONE
@@ -448,7 +449,7 @@ makecg()
 		dmax = dbase + sblock.fs_fpg;
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
-		cs = &sblock.fs_cs[c];
+		cs = &sblock.fs_cs(c);
 		cgrp.cg_time = time((long)0);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
@@ -524,7 +525,8 @@ makecg()
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
 	bwrite(SBLOCK, (char *)&sblock, sizeof (sblock));
-	lseek(fi, csaddr(&sblock) * FSIZE, 0);
-	if (write(fi,(char *)sblock.fs_cs,cssize(&sblock)) != cssize(&sblock))
-		printf("write error %d\n", tell(fi)/BSIZE);
+	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+		bwrite(csaddr(&sblock) + (i * FRAG),
+		      (char *)sblock.fs_csp[i], BSIZE);
+	}
 }

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.9 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -661,12 +661,16 @@ out5:
 	if (fixcg) {
 		if (preen == 0)
 			printf("** Phase 6 - Salvage Cylinder Groups\n");
-		sblock.fs_cs = (struct csum *)calloc(1,
-		    roundup(cssize(&sblock), BSIZE));
+		for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+			sblock.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
+			getblk((char *)sblock.fs_csp[i],
+			       csaddr(&sblock) + (i * FRAG), BSIZE);
+		}
 		makecg();
-		for (i = 0; i < cssize(&sblock); i += BSIZE)
-			bwrite(&dfile, ((char *)sblock.fs_cs) + i,
-				csaddr(&sblock) + i / BSIZE, BSIZE);
+		for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+			bwrite(&dfile, (char *)sblock.fs_csp[i],
+			       csaddr(&sblock) + (i * FRAG), BSIZE);
+		}
 		n_ffree = sblock.fs_nffree;
 		n_bfree = sblock.fs_nbfree;
 	}
@@ -1454,7 +1458,7 @@ makecg()
 		if (dmax > sblock.fs_size)
 			dmax = sblock.fs_size;
 		dmin = cgdmin(c, &sblock) - dbase;
-		cs = &sblock.fs_cs[c];
+		cs = &sblock.fs_cs(c);
 		cgrp.cg_time = time(0);
 		cgrp.cg_magic = CG_MAGIC;
 		cgrp.cg_cgx = c;
