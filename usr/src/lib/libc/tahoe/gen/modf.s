@@ -1,5 +1,5 @@
 #ifdef LIBC_SCCS
-	.asciz	"@(#)modf.s	1.1 (Berkeley) %G%"
+	.asciz	"@(#)modf.s	1.2 (Berkeley) %G%"
 #endif LIBC_SCCS
 
 /*
@@ -16,33 +16,37 @@
 #include "DEFS.h"
 
 ENTRY(modf, 0)
-	movl	12(fp),r3
+	ldd	4(fp)		# value
+	cvdl	r2		# integerize
+	bvs	1f		# did integer part overflow?
+	cvld	r2		# integer part
+	std	r0
+	std	*12(fp)		# *iptr = r2
 	ldd	4(fp)
-	tstd		# if (value < 0)
-	jgeq	1f
-	negd
-	cvdl	r2	# ul = -value
-	bvs	2f
-	mnegl	r2,r0
-	cvld	r0
-	std	(r3)	# *iptr = -ul
-	cvld	r2
-	addd	4(fp)
-	std	r0	# return (value + ul)
+	subd	r0		# value-(int)value
+	std	r0		# return fraction
 	ret
 1:
-	cvdl	r2	# ul = value
-	bvs	2f
-	cvld	r2
-	std	(r3)	# *iptr = ul
-	std	r0
+	/*
+	 * If the integer portion overflowed, mask out the fractional
+	 * bits in the double word instead of cvdl-ing.
+	 */
+	ldd	4(fp)
+	std	r0		# (r0,r1) = value
+	shrl	$23,r0,r2	# extract sign,exponent of value
+	andl2	$255,r2		# exponent
+	subl2	$152,r2		# e-152
+	/*
+	 * If it overflowed then value>=2^31 and e>=160
+	 * so we mask only r1 (low bits of fraction), not r0
+	 */
+	mnegl	$1,r3
+	shrl	r2,r3,r3	# -1>>(e-152) is neg mask to clear fraction
+	mcoml	r3,r3		# complement mask
+	andl2	r3,r1		# mask off truly fractional bits from fraction
+	ldd	r0		# now (r0,r1) = integerized value
+	std	*12(fp)		# *iptr = integerized
 	ldd	4(fp)
 	subd	r0
-	std	r0
-	ret
-2:			# integer overflow
-	movl	4(fp),(r3)
-	movl	8(fp),4(r3)
-	clrl	r0
-	clrl	r1
+	std	r0		# return fraction
 	ret
