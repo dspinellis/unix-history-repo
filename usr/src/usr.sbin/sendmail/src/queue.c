@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.23 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.24 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.23 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.24 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1056,7 +1056,7 @@ printqueue()
 	{
 		struct stat st;
 
-		if (stat(QueueDir, &st) <= 0)
+		if (stat(QueueDir, &st) < 0)
 		{
 			syserr("Cannot stat %s", QueueDir);
 			return;
