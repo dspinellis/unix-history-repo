@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.11 (Berkeley) %G%
+ *	@(#)locore.s	7.12 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -947,7 +947,7 @@ start:
 	addl2	$4,r5
 	bbc	$6,r11,0f			# check RB_KDB
 	bicl3	$SYSTEM,r9,r5			# skip symbol & string tables
-	bicl3	$SYSTEM,r9,r6
+	bicl3	$SYSTEM,r9,r6			# r9 obtained from boot
 #endif
 0:	bisl3	$SYSTEM,r5,r9			# convert to virtual address
 	addl2	$NBPG-1,r9			# roundup to next page
@@ -1017,7 +1017,7 @@ start:
 	mfpr	$P1BR,PCB_P1BR(r1)
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
-	movl	r9,PCB_R9(r1)			# r9 obtained from boot
+	movl	r9,PCB_R9(r1)
 	movl	r10,PCB_R10(r1)
 	movl	r11,PCB_R11(r1)
 	movab	1f,PCB_PC(r1)			# initial pc
@@ -1034,8 +1034,10 @@ start:
 	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
+#ifdef KADB
 /* save end of symbol & string table in global _bootesym */
 	subl3	$NBPG-1,r9,_bootesym
+#endif
 /* calculate firstaddr, and call main() */
 	bicl3	$SYSTEM,r9,r0; ashl $-PGSHIFT,r0,-(sp)
 	addl2	$UPAGES+1,(sp); calls $1,_main
