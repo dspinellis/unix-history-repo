@@ -1,0 +1,24 @@
+pmax/pmax/autoconf.c		standard
+pmax/pmax/clock.c		standard
+pmax/pmax/conf.c		standard
+pmax/pmax/cons.c		standard
+pmax/pmax/in_cksum.c		optional inet
+pmax/pmax/machdep.c		standard config-dependent
+pmax/pmax/mem.c			standard
+pmax/pmax/ns_cksum.c		optional ns
+pmax/pmax/pmap.c		standard
+pmax/pmax/sys_machdep.c		standard
+pmax/pmax/trap.c		standard
+pmax/pmax/vm_machdep.c		standard
+pmax/dev/scsi.c			standard
+pmax/dev/dc.c			optional dc device-driver
+pmax/dev/if_le.c		optional le
+pmax/dev/pm.c			optional pm
+pmax/dev/rz.c			optional rz
+pmax/dev/sii.c			optional sii device-driver
+pmax/dev/tz.c			optional tz
+pmax/dev/vn.c			optional vn
+pmax/ultrix/ultrix_compat.c	optional ultrixcompat
+pmax/ultrix/ultrix_syscalls.c	optional ultrixcompat
+pmax/ultrix/ultrix_sysent.c	optional ultrixcompat
+thisisfor_in_proto.c		optional hy
