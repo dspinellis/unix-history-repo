@@ -1,4 +1,4 @@
-/*	up.c	4.65	82/12/17	*/
+/*	up.c	4.66	83/02/10	*/
 
 #include "up.h"
 #if NSC > 0
@@ -40,27 +40,17 @@ struct	up_softc {
 } up_softc[NSC];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
-struct	size
-{
+struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
 } up_sizes[8] = {
-#ifdef ERNIE
-	49324,	0,		/* A=cyl 0 thru 26 */
-#else
 	15884,	0,		/* A=cyl 0 thru 26 */
-#endif
 	33440,	27,		/* B=cyl 27 thru 81 */
 	495520,	0,		/* C=cyl 0 thru 814 */
 	15884,	562,		/* D=cyl 562 thru 588 */
 	55936,	589,		/* E=cyl 589 thru 680 */
-#ifndef NOBADSECT
 	81376,	681,		/* F=cyl 681 thru 814 */
 	153728,	562,		/* G=cyl 562 thru 814 */
-#else
-	81472,	681,
-	153824,	562,
-#endif
 	291346,	82,		/* H=cyl 82 thru 561 */
 }, fj_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
@@ -70,11 +60,7 @@ struct	size
 	0,	0,
 	0,	0,
 	0,	0,
-#ifndef NOBADSECT
 	213664,	155,		/* H=cyl 155 thru 822 */
-#else
-	213760,	155,
-#endif
 }, upam_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 31 */
 	33440,	32,		/* B=cyl 32 thru 97 */
@@ -130,10 +116,8 @@ u_char	up_offset[16] = {
 };
 
 struct	buf	rupbuf[NUP];
-#ifndef NOBADSECT
 struct 	buf	bupbuf[NUP];
 struct	dkbad	upbad[NUP];
-#endif
 
 #define	b_cylin b_resid
 
@@ -310,16 +294,14 @@ upustart(ui)
 	 * setup the pack.
 	 */
 	if ((upaddr->upds & UPDS_VV) == 0 || upinit[ui->ui_unit] == 0) {
-#ifndef NOBADSECT
 		struct buf *bbp = &bupbuf[ui->ui_unit];
-#endif
+
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		upinit[ui->ui_unit] = 1;
 		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_IE|UP_PRESET|UP_GO;
 		upaddr->upof = UPOF_FMT22;
 		didie = 1;
-#ifndef NOBADSECT
 		st = &upst[ui->ui_type];
 		bbp->b_flags = B_READ|B_BUSY;
 		bbp->b_dev = bp->b_dev;
@@ -330,7 +312,6 @@ upustart(ui)
 		dp->b_actf = bbp;
 		bbp->av_forw = bp;
 		bp = bbp;
-#endif
 	}
 	/*
 	 * If drive is offline, forget about positioning.
@@ -536,12 +517,10 @@ upintr(sc21)
 	dk_busy &= ~(1 << ui->ui_dk);
 	if ((upaddr->upcs2&07) != ui->ui_slave)
 		upaddr->upcs2 = ui->ui_slave;
-#ifndef NOBADSECT
 	if (bp->b_flags&B_BAD) {
 		if (upecc(ui, CONT))
 			return;
 	}
-#endif
 	/*
 	 * Check for and process errors on
 	 * either the drive or the controller.
@@ -575,11 +554,9 @@ upintr(sc21)
 				upaddr->uper2, UPER2_BITS);
 			bp->b_flags |= B_ERROR;
 		} else if (upaddr->uper2 & UPER2_BSE) {
-#ifndef NOBADSECT
 			if (upecc(ui, BSE))
 				return;
 			else
-#endif
 				goto hard;
 		} else {
 			/*
@@ -747,12 +724,10 @@ upecc(ui, flag)
 	 * mapping (the first part of) the transfer.
 	 * O is offset within a memory page of the first byte transferred.
 	 */
-#ifndef NOBADSECT
 	if (flag == CONT)
 		npf = bp->b_error;
 	else
-#endif
-	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount);
+		npf = btop((up->upwc * sizeof(short)) + bp->b_bcount);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	mask = up->upec2;
@@ -817,7 +792,6 @@ upecc(ui, flag)
 		npf++;
 		reg++;
 		break;
-#ifndef NOBADSECT
 	case BSE:
 		/*
 		 * if not in bad sector table, return 0
@@ -851,7 +825,6 @@ upecc(ui, flag)
 		if (up->upwc == 0)
 			return(0);
 		break;
-#endif
 	}
 	if (up->upwc == 0) {
 		um->um_tab.b_active = 0;
