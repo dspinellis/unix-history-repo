@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.31 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -260,7 +260,6 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
-	devvp->v_mounton = mp;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
@@ -328,7 +327,6 @@ ufs_unmount(mp, flags)
 	ump->um_fs = NULL;
 	ump->um_dev = NODEV;
 	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED);
-	ump->um_devvp->v_mounton = (struct mount *)0;
 	vrele(ump->um_devvp);
 	ump->um_devvp = (struct vnode *)0;
 	return (error);
@@ -432,7 +430,7 @@ ufs_sync(mp, waitfor)
 	 */
 	for (vp = mp->m_mounth; vp; vp = vp->v_mountf) {
 		ip = VTOI(vp);
-		if ((ip->i_flag & ILOCKED) != 0 || vp->v_count == 0 ||
+		if ((ip->i_flag & ILOCKED) != 0 || vp->v_usecount == 0 ||
 		    (ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0)
 			continue;
 		VREF(vp);
