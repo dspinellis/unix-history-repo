@@ -2,9 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)appen.C	5.1 (Berkeley) %G%
+.\"	@(#)appen.C	6.1 (Berkeley) %G%
 .\"
-.ie t .he ''\fBAppendix C\fR''
+.ie t .oh '\*(Ln Appendix C''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln Appendix C'
 .el .he ''\fIAppendix C\fR''
 .bp
 .(x
@@ -46,13 +47,13 @@ as is demonstrated below.
 .)l
 .sh 2 "Life"
 .pp
-This program plays the famous computer pattern game of life
+This program fragment models the famous computer pattern game of life
 (Scientific American, May, 1974).
 The calculational routines create a linked list of structures
 defining where each piece is.
 Nothing here claims to be optimal,
 merely demonstrative.
-This program, however,
+This code, however,
 is a very good place to use the screen updating routines,
 as it allows them to worry about what the last position looked like,
 so you don't have to.
