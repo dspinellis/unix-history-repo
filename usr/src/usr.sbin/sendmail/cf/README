@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.18 (Berkeley) %G%
+		@(#)README	6.19 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -283,6 +283,14 @@ mailertable	Include a "mailer table" which can be used to override
 			hash /etc/mailertable.db -o
 		Keys in this database must be of the form:
 			mailer:domain
+bitdomain	Look up bitnet hosts in a table to try to turn them into
+		internet addresses.  The table can be built using the
+		bitdomain program contributed by John Gardiner Meyers.
+		The argument of the FEATURE may be the key definition; if
+		none is specified, the definition used is:
+			hash /etc/bitdomain.db -o
+		Keys are the bitnet hostname; values are the corresponding
+		internet hostname.
 
 Other FEATUREs should be defined, but I was trying to keep these
 config files fairly lean and mean.
