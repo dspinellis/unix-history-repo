@@ -1,4 +1,4 @@
-/*	raw_cb.h	4.1	82/02/01	*/
+/*	raw_cb.h	4.2	82/02/01	*/
 
 /*
  * Raw protocol interface control block.  Used
@@ -32,8 +32,9 @@ struct rawcb {
  * raw_input after call from protocol specific input routine.
  */
 struct raw_header {
-	struct	sockproto raw_protocol;
-	struct	sockaddr raw_address;
+	struct	sockproto raw_protocol;	/* format of packet */
+	struct	sockaddr raw_dst;	/* dst address for rawintr */
+	struct	sockaddr raw_src;	/* src address for sbappendaddr */
 };
 
 #ifdef KERNEL
