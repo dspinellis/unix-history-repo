@@ -1,0 +1,30 @@
+Create	savecore.c	/^Create(file, mode)$/
+Lseek	savecore.c	/^Lseek(fd, off, flag)$/
+MAXCODE	../../usr.bin/compress/zopen.c	/^#define	MAXCODE(n_bits)	((1 << (n_bits)) - 1)$/
+Msavecore	savecore.c	/^main(argc, argv)$/
+Open	savecore.c	/^Open(name, rw)$/
+Read	savecore.c	/^Read(fd, bp, size)$/
+Write	savecore.c	/^Write(fd, bp, size)$/
+check_kmem	savecore.c	/^check_kmem()$/
+check_space	savecore.c	/^check_space()$/
+cl_block	../../usr.bin/compress/zopen.c	/^cl_block(zs)			\/* Table clear for block compress./
+cl_hash	../../usr.bin/compress/zopen.c	/^cl_hash(zs, cl_hsize)			\/* Reset code table. *\/$/
+clear_dump	savecore.c	/^clear_dump()$/
+codetabof	../../usr.bin/compress/zopen.c	/^#define	codetabof(i)	codetab[i]$/
+dump_exists	savecore.c	/^dump_exists()$/
+find_dev	savecore.c	/^find_dev(dev, type)$/
+get_crashtime	savecore.c	/^get_crashtime()$/
+getcode	../../usr.bin/compress/zopen.c	/^getcode(zs)$/
+htabof	../../usr.bin/compress/zopen.c	/^#define	htabof(i)	htab[i]$/
+kmem_setup	savecore.c	/^kmem_setup()$/
+ok	savecore.c	/^#define ok(number) ((number) - KERNBASE)$/
+output	../../usr.bin/compress/zopen.c	/^output(zs, ocode)$/
+rawname	savecore.c	/^rawname(s)$/
+save_core	savecore.c	/^save_core()$/
+tab_prefixof	../../usr.bin/compress/zopen.c	/^#define	tab_prefixof(i)	codetabof(i)$/
+tab_suffixof	../../usr.bin/compress/zopen.c	/^#define	tab_suffixof(i)	((char_type *)(htab))[i]$/
+usage	savecore.c	/^usage()$/
+zclose	../../usr.bin/compress/zopen.c	/^zclose(cookie)$/
+zopen	../../usr.bin/compress/zopen.c	/^zopen(fname, mode, bits)$/
+zread	../../usr.bin/compress/zopen.c	/^zread(cookie, rbp, num)$/
+zwrite	../../usr.bin/compress/zopen.c	/^zwrite(cookie, wbp, num)$/
