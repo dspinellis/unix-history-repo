@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.1 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,13 +46,14 @@ ufs_ihashinit()
  * Use the dev/ino pair to find the incore inode, and return a pointer to it.
  * If it is in core, but locked, wait for it.
  */
-struct inode *
+struct vnode *
 ufs_ihashget(dev, ino)
 	/* dev_t */ int dev;
 	ino_t ino;
 {
 	register union ihead *ih;
 	register struct inode *ip;
+	struct vnode *vp;
 
 	ih = &ihead[INOHASH(dev, ino)];
 loop:
@@ -64,9 +65,10 @@ loop:
 			sleep((caddr_t)ip, PINOD);
 			goto loop;
 		}
-		if (vget(ITOV(ip)))
+		vp = ITOV(ip);
+		if (vget(vp))
 			goto loop;
-		return (ip);
+		return (vp);
 	}
 	return (NULL);
 }
