@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)shutdown.c	4.19 (Berkeley) 83/06/17";
+static	char *sccsid = "@(#)shutdown.c	4.20 (Berkeley) 84/02/02";
 #endif
 
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
+#include <setjmp.h>
 #include <utmp.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -34,7 +35,7 @@ static	char *sccsid = "@(#)shutdown.c	4.19 (Berkeley) 83/06/17";
 
 char	hostname[32];
 
-int	do_nothing();
+int	timeout();
 time_t	getsdt();
 
 extern	char *ctime();
@@ -58,6 +59,7 @@ char	nologin[] = "nologin";
 char	nologin[] = "/etc/nologin";
 #endif
 time_t	nowtime;
+jmp_buf	alarmbuf;
 
 struct interval {
 	int stogo;
@@ -141,7 +143,7 @@ main(argc,argv)
 #endif
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTERM, finish);
-	signal(SIGALRM, do_nothing);
+	signal(SIGALRM, timeout);
 	setpriority(PRIO_PROCESS, 0, PRIO_MIN);
 	fflush(stdout);
 #ifndef DEBUG
@@ -176,6 +178,8 @@ main(argc,argv)
 		while (read(ufd,&utmp,sizeof utmp)==sizeof utmp)
 		if (utmp.ut_name[0] &&
 		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name))) {
+			if (setjmp(alarmbuf))
+				continue;
 			strcpy(term, tpath);
 			strncat(term, utmp.ut_line, sizeof utmp.ut_line);
 			alarm(3);
@@ -349,10 +353,9 @@ finish()
 	exit(0);
 }
 
-do_nothing()
+timeout()
 {
-
-	signal(SIGALRM, do_nothing);
+	longjmp(alarmbuf, 1);
 }
 
 /*
