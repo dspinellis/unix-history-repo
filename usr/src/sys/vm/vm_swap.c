@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.27 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.28 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -46,10 +46,12 @@ swapinit()
 	 * Count swap devices, and adjust total swap space available.
 	 * Some of this space will not be available until a swapon()
 	 * system is issued, usually when the system goes multi-user.
+	 *
+	 * If using NFS for swap, swdevt[0] will already be bdevvp'd.	XXX
 	 */
 	nswdev = 0;
 	nswap = 0;
-	for (swp = swdevt; swp->sw_dev; swp++) {
+	for (swp = swdevt; swp->sw_dev != NODEV || swp->sw_vp != NULL; swp++) {
 		nswdev++;
 		if (swp->sw_nblks > nswap)
 			nswap = swp->sw_nblks;
@@ -59,7 +61,8 @@ swapinit()
 	if (nswdev > 1)
 		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
-	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
+	if (swdevt[0].sw_vp == NULL &&
+	    bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
 		panic("swapvp");
 	if (error = swfree(p, 0)) {
 		printf("swfree errno %d\n", error);	/* XXX */
@@ -119,7 +122,7 @@ swstrategy(bp)
 	} else
 		index = 0;
 	sp = &swdevt[index];
-	if ((bp->b_dev = sp->sw_dev) == 0)
+	if ((bp->b_dev = sp->sw_dev) == NODEV)
 		panic("swstrategy");
 	if (sp->sw_vp == NULL) {
 		bp->b_error |= B_ERROR;
@@ -179,7 +182,7 @@ swapon(p, uap, retval)
 		vrele(vp);
 		return (ENXIO);
 	}
-	for (sp = &swdevt[0]; sp->sw_dev; sp++)
+	for (sp = &swdevt[0]; sp->sw_dev != NODEV; sp++)
 		if (sp->sw_dev == dev) {
 			if (sp->sw_freed) {
 				vrele(vp);
