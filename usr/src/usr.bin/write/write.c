@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)write.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)write.c	4.3 (Berkeley) %G%";
 /*
  * write to another user
  */
@@ -56,6 +56,14 @@ char *argv[];
 	if (mytty == NULL) {
 		printf("Can't find your tty\n");
 		exit(1);
+	}
+	if (stat (mytty, &stbuf) < 0) {
+		printf ("Can't stat your tty\n");
+		exit (1);
+	}
+	if ((stbuf.st_mode&02) == 0) {
+		printf ("You have write permission turned off.\n");
+		exit (1);
 	}
 	mytty = rindex(mytty, '/') + 1;
 	if (histtya) {
