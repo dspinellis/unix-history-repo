@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	4.4 %G%";
+static char sccsid[] = "@(#)io.c	4.5 %G%";
 #endif
 
 # include "e.h"
@@ -56,7 +56,7 @@ eqn(argc,argv) int argc; char *argv[];{
 				while (putchar(gtc()) != '\n');
 		}
 		else if (type == lefteq)
-			inline();
+			in_line();
 		else
 			printf("%s",in);
 	}
@@ -77,7 +77,7 @@ getline(s) register char *s; {
 	return(c);
 }
 
-inline() {
+in_line() {
 	int ds;
 
 	printf(".nr 99 \\n(.s\n.nr 98 \\n(.f\n");

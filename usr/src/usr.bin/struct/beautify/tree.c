@@ -1,19 +1,21 @@
 #ifndef lint
-static char sccsid[] = "@(#)tree.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)tree.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include "y.tab.h"
 #include "b.h"
 #include <stdio.h>
 
+extern char *malloc();
 
+struct node *
 addroot(string,type,n1,n2)
 char *string;
 int type;
 struct node *n1, *n2;
 	{
 	struct node *p;
-	p = malloc(sizeof(*p));
+	p = (struct node *)malloc(sizeof(*p));
 	p->left = n1;
 	p->right = n2;
 	p->op = type;
@@ -44,6 +46,7 @@ int compop[] =	{	'&',	'|',	'<',	'>',	xxeq,	xxle,	xxne,	xxge};
 int notop[] =	{	'|',	'&',	xxge,	xxle,	xxne,	'>',	xxeq,	'<'};
 char *opstring[] =	{ "||",  "&&",	">=",	"<=", "!=",	">",	"==",	"<"};
 
+struct node *
 checkneg(tree,neg)		/* eliminate nots if possible */
 struct node *tree;
 int neg;
