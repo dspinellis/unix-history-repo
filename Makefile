@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.6 1993/08/23 20:51:34 rgrimes Exp $
+#	$Id: Makefile,v 1.7 1993/08/27 09:16:31 rgrimes Exp $
 #
 
 SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
@@ -52,9 +52,6 @@ includes:
 	@echo " Rebuilding ${DESTDIR}/usr/include"
 	@echo "--------------------------------------------------------------"
 	@echo
-	#
-	# setenv SHARED=copies if you wish the include files to be copies
-	#
 	rm -rf ${DESTDIR}/usr/include
 	mkdir ${DESTDIR}/usr/include
 	chown ${BINOWN}.${BINGRP} ${DESTDIR}/usr/include
