@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lr0.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lr0.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -26,6 +26,7 @@ reductions *first_reduction;
 int get_state();
 core *new_state();
 
+static core **state_set;
 static core *this_state;
 static core *last_state;
 static shifts *last_shift;
@@ -41,129 +42,123 @@ static short **kernel_base;
 static short **kernel_end;
 static short *kernel_items;
 
-static core **state_table;
-
 
 allocate_itemsets()
 {
-  register short *itemp;
-  register short *item_end;
-  register int symbol;
-  register int i;
-  register int count;
-  register int max;
-  register short *symbol_count;
+    register short *itemp;
+    register short *item_end;
+    register int symbol;
+    register int i;
+    register int count;
+    register int max;
+    register short *symbol_count;
 
-  count = 0;
-  symbol_count = NEW2(nsyms, short);
+    count = 0;
+    symbol_count = NEW2(nsyms, short);
 
-  item_end = ritem + nitems;
-  for (itemp = ritem; itemp < item_end; itemp++)
+    item_end = ritem + nitems;
+    for (itemp = ritem; itemp < item_end; itemp++)
     {
-      symbol = *itemp;
-      if (symbol >= 0)
+	symbol = *itemp;
+	if (symbol >= 0)
 	{
-	  count++;
-	  symbol_count[symbol]++;
+	    count++;
+	    symbol_count[symbol]++;
 	}
     }
 
-  kernel_base = NEW2(nsyms, short *);
-  kernel_items = NEW2(count, short);
+    kernel_base = NEW2(nsyms, short *);
+    kernel_items = NEW2(count, short);
 
-  count = 0;
-  max = 0;
-  for (i = 0; i < nsyms; i++)
+    count = 0;
+    max = 0;
+    for (i = 0; i < nsyms; i++)
     {
-      kernel_base[i] = kernel_items + count;
-      count += symbol_count[i];
-      if (max < symbol_count[i])
-	max = symbol_count[i];
+	kernel_base[i] = kernel_items + count;
+	count += symbol_count[i];
+	if (max < symbol_count[i])
+	    max = symbol_count[i];
     }
 
-  shift_symbol = symbol_count;
-  kernel_end = NEW2(nsyms, short *);
+    shift_symbol = symbol_count;
+    kernel_end = NEW2(nsyms, short *);
 }
-
 
 
 allocate_storage()
 {
-  allocate_itemsets();
-
-  shiftset = NEW2(nsyms, short);
-  redset = NEW2(nrules + 1, short);
-  state_table = NEW2(nitems, core *);
+    allocate_itemsets();
+    shiftset = NEW2(nsyms, short);
+    redset = NEW2(nrules + 1, short);
+    state_set = NEW2(nitems, core *);
 }
-
 
 
 append_states()
 {
-  register int i;
-  register int j;
-  register int symbol;
+    register int i;
+    register int j;
+    register int symbol;
 
 #ifdef	TRACE
-  fprintf(stderr, "Entering append_states\n");
+    fprintf(stderr, "Entering append_states()\n");
 #endif
-
-  for (i = 1; i < nshifts; i++)
+    for (i = 1; i < nshifts; i++)
     {
-      symbol = shift_symbol[i];
-      j = i;
-      while (j > 0 && shift_symbol[j - 1] > symbol)
+	symbol = shift_symbol[i];
+	j = i;
+	while (j > 0 && shift_symbol[j - 1] > symbol)
 	{
-	  shift_symbol[j] = shift_symbol[j - 1];
-	  j--;
+	    shift_symbol[j] = shift_symbol[j - 1];
+	    j--;
 	}
-      shift_symbol[j] = symbol;
+	shift_symbol[j] = symbol;
     }
 
-  for (i = 0; i < nshifts; i++)
+    for (i = 0; i < nshifts; i++)
     {
-      symbol = shift_symbol[i];
-      shiftset[i] = get_state(symbol);
+	symbol = shift_symbol[i];
+	shiftset[i] = get_state(symbol);
     }
 }
 
 
 free_storage()
 {
-  FREE(shift_symbol);
-  FREE(redset);
-  FREE(shiftset);
-  FREE(kernel_base);
-  FREE(kernel_end);
-  FREE(kernel_items);
-  FREE(state_table);
+    FREE(shift_symbol);
+    FREE(redset);
+    FREE(shiftset);
+    FREE(kernel_base);
+    FREE(kernel_end);
+    FREE(kernel_items);
+    FREE(state_set);
 }
 
 
 
 generate_states()
 {
-  allocate_storage();
-  itemset = NEW2(nitems, short);
-  ruleset = NEW2(WORDSIZE(nrules), unsigned);
-  set_first_derives();
-  initialize_states();
+    allocate_storage();
+    itemset = NEW2(nitems, short);
+    ruleset = NEW2(WORDSIZE(nrules), unsigned);
+    set_first_derives();
+    initialize_states();
 
-  while (this_state)
+    while (this_state)
     {
-      closure(this_state->items, this_state->nitems);
-      save_reductions();
-      new_itemsets();
-      append_states();
+	closure(this_state->items, this_state->nitems);
+	save_reductions();
+	new_itemsets();
+	append_states();
 
-      if (nshifts > 0)
-        save_shifts();
+	if (nshifts > 0)
+	    save_shifts();
 
-      this_state = this_state->next;
+	this_state = this_state->next;
     }
 
-  finalize_closure();
-  free_storage();
+    finalize_closure();
+    free_storage();
 }
 
 
@@ -172,64 +167,63 @@ int
 get_state(symbol)
 int symbol;
 {
-  register int key;
-  register short *isp1;
-  register short *isp2;
-  register short *iend;
-  register core *sp;
-  register int found;
-
-  int n;
+    register int key;
+    register short *isp1;
+    register short *isp2;
+    register short *iend;
+    register core *sp;
+    register int found;
+    register int n;
 
 #ifdef	TRACE
-  fprintf(stderr, "Entering get_state, symbol = %d\n", symbol);
+    fprintf(stderr, "Entering get_state(%d)\n", symbol);
 #endif
 
-  isp1 = kernel_base[symbol];
-  iend = kernel_end[symbol];
-  n = iend - isp1;
+    isp1 = kernel_base[symbol];
+    iend = kernel_end[symbol];
+    n = iend - isp1;
 
-  key = *isp1;
-  assert(0 <= key && key < nitems);
-  sp = state_table[key];
-  if (sp)
+    key = *isp1;
+    assert(0 <= key && key < nitems);
+    sp = state_set[key];
+    if (sp)
     {
-      found = 0;
-      while (!found)
+	found = 0;
+	while (!found)
 	{
-	  if (sp->nitems == n)
+	    if (sp->nitems == n)
 	    {
-	      found = 1;
-	      isp1 = kernel_base[symbol];
-	      isp2 = sp->items;
+		found = 1;
+		isp1 = kernel_base[symbol];
+		isp2 = sp->items;
 
-	      while (found && isp1 < iend)
+		while (found && isp1 < iend)
 		{
-		  if (*isp1++ != *isp2++)
-		    found = 0;
+		    if (*isp1++ != *isp2++)
+			found = 0;
 		}
 	    }
 
-	  if (!found)
+	    if (!found)
 	    {
-	      if (sp->link)
+		if (sp->link)
 		{
-		  sp = sp->link;
+		    sp = sp->link;
 		}
-	      else
+		else
 		{
-		  sp = sp->link = new_state(symbol);
-		  found = 1;
+		    sp = sp->link = new_state(symbol);
+		    found = 1;
 		}
 	    }
 	}
     }
-  else
+    else
     {
-      state_table[key] = sp = new_state(symbol);
+	state_set[key] = sp = new_state(symbol);
     }
 
-  return (sp->number);
+    return (sp->number);
 }
 
 
@@ -263,37 +257,36 @@ initialize_states()
 
 new_itemsets()
 {
-  register int i;
-  register int shiftcount;
-  register short *isp;
-  register short *ksp;
-  register int symbol;
+    register int i;
+    register int shiftcount;
+    register short *isp;
+    register short *ksp;
+    register int symbol;
 
-  for (i = 0; i < nsyms; i++)
-    kernel_end[i] = 0;
+    for (i = 0; i < nsyms; i++)
+	kernel_end[i] = 0;
 
-  shiftcount = 0;
-  isp = itemset;
-  while (isp < itemsetend)
+    shiftcount = 0;
+    isp = itemset;
+    while (isp < itemsetend)
     {
-      i = *isp++;
-      symbol = ritem[i];
-      if (symbol > 0)
+	i = *isp++;
+	symbol = ritem[i];
+	if (symbol > 0)
 	{
-          ksp = kernel_end[symbol];
-
-          if (!ksp)
+	    ksp = kernel_end[symbol];
+	    if (!ksp)
 	    {
-	      shift_symbol[shiftcount++] = symbol;
-	      ksp = kernel_base[symbol];
+		shift_symbol[shiftcount++] = symbol;
+		ksp = kernel_base[symbol];
 	    }
 
-          *ksp++ = i + 1;
-          kernel_end[symbol] = ksp;
+	    *ksp++ = i + 1;
+	    kernel_end[symbol] = ksp;
 	}
     }
 
-  nshifts = shiftcount;
+    nshifts = shiftcount;
 }
 
 
@@ -302,38 +295,38 @@ core *
 new_state(symbol)
 int symbol;
 {
-  register int n;
-  register core *p;
-  register short *isp1;
-  register short *isp2;
-  register short *iend;
+    register int n;
+    register core *p;
+    register short *isp1;
+    register short *isp2;
+    register short *iend;
 
 #ifdef	TRACE
-  fprintf(stderr, "Entering new_state, symbol = %d\n", symbol);
+    fprintf(stderr, "Entering new_state(%d)\n", symbol);
 #endif
 
-  if (nstates >= MAXSHORT)
-    fatal("too many states");
+    if (nstates >= MAXSHORT)
+	fatal("too many states");
 
-  isp1 = kernel_base[symbol];
-  iend = kernel_end[symbol];
-  n = iend - isp1;
+    isp1 = kernel_base[symbol];
+    iend = kernel_end[symbol];
+    n = iend - isp1;
 
-  p = (core *) allocate((unsigned) (sizeof(core) + (n - 1) * sizeof(short)));
-  p->accessing_symbol = symbol;
-  p->number = nstates;
-  p->nitems = n;
+    p = (core *) allocate((unsigned) (sizeof(core) + (n - 1) * sizeof(short)));
+    p->accessing_symbol = symbol;
+    p->number = nstates;
+    p->nitems = n;
 
-  isp2 = p->items;
-  while (isp1 < iend)
-    *isp2++ = *isp1++;
+    isp2 = p->items;
+    while (isp1 < iend)
+	*isp2++ = *isp1++;
 
-  last_state->next = p;
-  last_state = p;
+    last_state->next = p;
+    last_state = p;
 
-  nstates++;
+    nstates++;
 
-  return (p);
+    return (p);
 }
 
 
@@ -415,33 +408,33 @@ show_shifts()
 
 save_shifts()
 {
-  register shifts *p;
-  register short *sp1;
-  register short *sp2;
-  register short *send;
+    register shifts *p;
+    register short *sp1;
+    register short *sp2;
+    register short *send;
 
-  p = (shifts *) allocate((unsigned) (sizeof(shifts) +
+    p = (shifts *) allocate((unsigned) (sizeof(shifts) +
 			(nshifts - 1) * sizeof(short)));
 
-  p->number = this_state->number;
-  p->nshifts = nshifts;
+    p->number = this_state->number;
+    p->nshifts = nshifts;
 
-  sp1 = shiftset;
-  sp2 = p->shift;
-  send = shiftset + nshifts;
+    sp1 = shiftset;
+    sp2 = p->shift;
+    send = shiftset + nshifts;
 
-  while (sp1 < send)
-    *sp2++ = *sp1++;
+    while (sp1 < send)
+	*sp2++ = *sp1++;
 
-  if (last_shift)
+    if (last_shift)
     {
-      last_shift->next = p;
-      last_shift = p;
+	last_shift->next = p;
+	last_shift = p;
     }
-  else
+    else
     {
-      first_shift = p;
-      last_shift = p;
+	first_shift = p;
+	last_shift = p;
     }
 }
 
@@ -449,49 +442,48 @@ save_shifts()
 
 save_reductions()
 {
-  register short *isp;
-  register short *rp1;
-  register short *rp2;
-  register int item;
-  register int count;
-  register reductions *p;
+    register short *isp;
+    register short *rp1;
+    register short *rp2;
+    register int item;
+    register int count;
+    register reductions *p;
+    register short *rend;
 
-  short *rend;
-
-  count = 0;
-  for (isp = itemset; isp < itemsetend; isp++)
+    count = 0;
+    for (isp = itemset; isp < itemsetend; isp++)
     {
-      item = ritem[*isp];
-      if (item < 0)
+	item = ritem[*isp];
+	if (item < 0)
 	{
-	  redset[count++] = -item;
+	    redset[count++] = -item;
 	}
     }
 
-  if (count)
+    if (count)
     {
-      p = (reductions *) allocate((unsigned) (sizeof(reductions) +
+	p = (reductions *) allocate((unsigned) (sizeof(reductions) +
 					(count - 1) * sizeof(short)));
 
-      p->number = this_state->number;
-      p->nreds = count;
+	p->number = this_state->number;
+	p->nreds = count;
 
-      rp1 = redset;
-      rp2 = p->rules;
-      rend = rp1 + count;
+	rp1 = redset;
+	rp2 = p->rules;
+	rend = rp1 + count;
 
-      while (rp1 < rend)
-	*rp2++ = *rp1++;
+	while (rp1 < rend)
+	    *rp2++ = *rp1++;
 
-      if (last_reduction)
+	if (last_reduction)
 	{
-	  last_reduction->next = p;
-	  last_reduction = p;
+	    last_reduction->next = p;
+	    last_reduction = p;
 	}
-      else
+	else
 	{
-	  first_reduction = p;
-	  last_reduction = p;
+	    first_reduction = p;
+	    last_reduction = p;
 	}
     }
 }
@@ -499,59 +491,59 @@ save_reductions()
 
 set_derives()
 {
-  register int i, k;
-  register int lhs;
-  register short *rules;
+    register int i, k;
+    register int lhs;
+    register short *rules;
 
-  derives = NEW2(nsyms, short *);
-  rules = NEW2(nvars + nrules, short);
+    derives = NEW2(nsyms, short *);
+    rules = NEW2(nvars + nrules, short);
 
-  k = 0;
-  for (lhs = start_symbol; lhs < nsyms; lhs++)
+    k = 0;
+    for (lhs = start_symbol; lhs < nsyms; lhs++)
     {
-      derives[lhs] = rules + k;
-      for (i = 0; i < nrules; i++)
+	derives[lhs] = rules + k;
+	for (i = 0; i < nrules; i++)
 	{
-	  if (rlhs[i] == lhs)
+	    if (rlhs[i] == lhs)
 	    {
-	      rules[k] = i;
-	      k++;
+		rules[k] = i;
+		k++;
 	    }
 	}
-      rules[k] = -1;
-      k++;
+	rules[k] = -1;
+	k++;
     }
 
 #ifdef	DEBUG
-  print_derives();
+    print_derives();
 #endif
 }
 
 free_derives()
 {
-  FREE(derives[start_symbol]);
-  FREE(derives);
+    FREE(derives[start_symbol]);
+    FREE(derives);
 }
 
 #ifdef	DEBUG
 print_derives()
 {
-  register int i;
-  register short *sp;
+    register int i;
+    register short *sp;
 
-  printf("\nDERIVES\n\n");
+    printf("\nDERIVES\n\n");
 
-  for (i = start_symbol; i < nsyms; i++)
+    for (i = start_symbol; i < nsyms; i++)
     {
-      printf("%s derives ", symbol_name[i]);
-      for (sp = derives[i]; *sp >= 0; sp++)
+	printf("%s derives ", symbol_name[i]);
+	for (sp = derives[i]; *sp >= 0; sp++)
 	{
-	  printf("  %d", *sp);
+	    printf("  %d", *sp);
 	}
-      putchar('\n');
+	putchar('\n');
     }
 
-  putchar('\n');
+    putchar('\n');
 }
 #endif
 
@@ -607,7 +599,7 @@ set_nullable()
 
 free_nullable()
 {
-  FREE(nullable);
+    FREE(nullable);
 }
 
 
