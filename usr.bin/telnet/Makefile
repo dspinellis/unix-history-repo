@@ -7,6 +7,7 @@ PROG=	telnet
 CFLAGS+=-DTERMCAP -DUSE_TERMIO
 .ifdef KLUDGE
 .undef KLUDGE
+PROG=	otelnet
 CFLAGS+=-DKLUDGELINEMODE
 .endif
 CFLAGS+=-I${.CURDIR}/../../lib
