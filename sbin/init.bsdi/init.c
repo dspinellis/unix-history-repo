@@ -87,6 +87,7 @@ extern void logwtmp __P((const char *, const char *, const char *));
  */
 #define	GETTY_SPACING		 5	/* N secs minimum getty spacing */
 #define	GETTY_SLEEP		30	/* sleep N secs after spacing problem */
+#define GETTY_NSPACE             3      /* max. spacing count to bring reaction */
 #define	WINDOW_WAIT		 3	/* wait N secs after starting window */
 #define	STALL_TIMEOUT		30	/* wait N secs after warning */
 #define	DEATH_WATCH		10	/* wait N secs for procs to die */
@@ -130,6 +131,7 @@ typedef struct init_session {
 	time_t	se_started;		/* used to avoid thrashing */
 	int	se_flags;		/* status of session */
 #define	SE_SHUTDOWN	0x1		/* session won't be restarted */
+	int     se_nspace;              /* spacing count */
 	char	*se_device;		/* filename of port */
 	char    *se_getty;              /* what to run on that port */
 	char    *se_getty_argv_space;   /* pre-parsed argument array space */
@@ -1092,10 +1094,15 @@ start_getty(sp)
 
 	if (current_time > sp->se_started &&
 	    current_time - sp->se_started < GETTY_SPACING) {
-		warning("getty repeating too quickly on port %s, sleeping",
-		        sp->se_device);
+		if (++sp->se_nspace > GETTY_NSPACE) {
+			sp->se_nspace = 0;
+			warning("getty repeating too quickly on port %s, sleeping %d secs",
+				sp->se_device, GETTY_SLEEP);
 		sleep((unsigned) GETTY_SLEEP);
 	}
+	}
+	else
+		sp->se_nspace = 0;
 
 	if (sp->se_window) {
 		start_window_system(sp);
