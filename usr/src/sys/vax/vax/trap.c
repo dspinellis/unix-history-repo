@@ -1,4 +1,4 @@
-/*	trap.c	4.30	83/08/18	*/
+/*	trap.c	6.1	83/08/18	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
