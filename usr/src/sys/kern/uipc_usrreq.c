@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_usrreq.c	6.18 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -88,7 +88,12 @@ uipc_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_ACCEPT:
-		if (unp->unp_conn->unp_addr) {
+		/*
+		 * Pass back name of connected socket,
+		 * if it was bound and we are still connected
+		 * (our peer may have closed already!).
+		 */
+		if (unp->unp_conn && unp->unp_conn->unp_addr) {
 			nam->m_len = unp->unp_conn->unp_addr->m_len;
 			bcopy(mtod(unp->unp_conn->unp_addr, caddr_t),
 			    mtod(nam, caddr_t), (unsigned)nam->m_len);
