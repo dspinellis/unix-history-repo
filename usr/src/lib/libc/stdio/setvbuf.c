@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setvbuf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)setvbuf.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -26,6 +26,8 @@ setvbuf(fp, buf, mode, size)
 	register int mode;
 	register size_t size;
 {
+	if (buf == NULL)
+		size = 0;
 
 	/*
 	 * Verify arguments.  The `int' limit on `size' is due to this
