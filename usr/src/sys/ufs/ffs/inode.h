@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.30 (Berkeley) %G%
+ *	@(#)inode.h	7.31 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -98,8 +98,9 @@ struct inode {
  * ufs_getlbns and used by truncate and bmap code.
  */
 struct indir {
-	long	in_lbn;			/* logical block number */
+	daddr_t	in_lbn;			/* logical block number */
 	int	in_off;			/* offset in buffer */
+	int	in_exists;		/* does this block exist yet */
 };
 
 /* Convert between inode pointers and vnode pointers. */
