@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	1.3 (Berkeley) %G%
+.\"	@(#)2.t	1.4 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -485,8 +485,6 @@ lw(2i) l.
 (this takes about 5-10 minutes)
 \fB#\fP \fIcd /\fP	(back to root)
 \fB#\fP \fIchmod 755  /  /usr  /usr/src /usr/src/sys\fP
-\fB#\fP \fIrm \-f sys\fP
-\fB#\fP \fIln \-s usr/src/sys sys\fP	(make a symbolic link to the system source)
 \fB#\fP \fIumount /dev/dk#c\fP	(unmount /usr)
 .TE
 .DE
