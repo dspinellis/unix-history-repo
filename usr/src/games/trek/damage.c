@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)damage.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)damage.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -34,7 +34,7 @@ float	dam;		/* time to repair */
 
 	/* find actual length till it will be fixed */
 	if (Ship.cond == DOCKED)
-		dam =* Param.dockfac;
+		dam *= Param.dockfac;
 	/* set the damage flag */
 	f = damaged(dev);
 	if (!f)

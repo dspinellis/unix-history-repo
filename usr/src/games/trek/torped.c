@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)torped.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)torped.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -86,7 +86,7 @@ torped()
 	if (burst)
 	{
 		n = 1;
-		course =- burst;
+		course -= burst;
 	}
 	for (; n && n <= 3; n++)
 	{
@@ -99,20 +99,20 @@ torped()
 		x = fabs(dy);
 		if (x > bigger)
 			bigger = x;
-		dx =/ bigger;
-		dy =/ bigger;
+		dx /= bigger;
+		dy /= bigger;
 		x = Ship.sectx + 0.5;
 		y = Ship.secty + 0.5;
 		if (Ship.cond != DOCKED)
-			Ship.torped =- 1;
+			Ship.torped -= 1;
 		printf("Torpedo track");
 		if (n > 0)
 			printf(", torpedo number %d", n);
 		printf(":\n%6.1f\t%4.1f\n", x, y);
 		while (1)
 		{
-			ix = x =+ dx;
-			iy = y =+ dy;
+			ix = x += dx;
+			iy = y += dy;
 			if (x < 0.0 || x >= sectsize || y < 0.0 || y >= sectsize)
 			{
 				printf("Torpedo missed\n");
@@ -133,7 +133,7 @@ torped()
 				{
 					if (Etc.klingon[k].x != ix || Etc.klingon[k].y != iy)
 						continue;
-					Etc.klingon[k].power =- 500 + ranf(501);
+					Etc.klingon[k].power -= 500 + ranf(501);
 					if (Etc.klingon[k].power > 0)
 					{
 						printf("*** Hit on Klingon at %d,%d: extensive damages\n",
@@ -155,7 +155,7 @@ torped()
 	
 			  case BASE:
 				killb(Ship.quadx, Ship.quady);
-				Game.killb =+ 1;
+				Game.killb += 1;
 				break;
 			  default:
 				printf("Unknown object %c at %d,%d destroyed\n",
@@ -167,7 +167,7 @@ torped()
 		}
 		if (damaged(TORPED) || Quad[Ship.quadx][Ship.quady].stars < 0)
 			break;
-		course =+ burst;
+		course += burst;
 	}
 	Move.free = 0;
 }
@@ -199,7 +199,7 @@ int	n;
 		{
 			damage(TORPED, 0.2 * abs(d) * (franf() + 1.0));
 		}
-		d =* 1.0 + 2.0 * franf();
+		d *= 1.0 + 2.0 * franf();
 	}
 	if (Ship.shldup || Ship.cond == DOCKED)
 	{
@@ -207,7 +207,7 @@ int	n;
 		r = 1.0 + r / Param.shield;
 		if (Ship.cond == DOCKED)
 			r = 2.0;
-		d =* r;
+		d *= r;
 	}
 	return (d);
 }

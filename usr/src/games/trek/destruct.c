@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)destruct.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)destruct.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -63,13 +63,13 @@ destruct()
 	Game.killed = 1;
 	/* let's see what we can blow up!!!! */
 	zap = 20.0 * Ship.energy;
-	Game.deaths =+ Ship.crew;
+	Game.deaths += Ship.crew;
 	for (i = 0; i < Etc.nkling; )
 	{
 		if (Etc.klingon[i].power * Etc.klingon[i].dist <= zap)
 			killk(Etc.klingon[i].x, Etc.klingon[i].y);
 		else
-			i =+ 1;
+			i++;
 	}
 	/* if we didn't kill the last Klingon (detected by killk), */
 	/* then we lose.... */

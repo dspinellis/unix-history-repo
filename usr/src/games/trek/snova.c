@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)snova.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)snova.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -56,7 +56,7 @@ int	x, y;
 			{
 				for (iy = 0; iy < NSECTS; iy++)
 					if (Sect[ix][iy] == STAR || Sect[ix][iy] == INHABIT)
-						if ((n =- 1) <= 0)
+						if ((n -= 1) <= 0)
 							break;
 				if (n <= 0)
 					break;
@@ -101,14 +101,14 @@ int	x, y;
 	/* clear out the supernova'ed quadrant */
 	dx = q->klings;
 	dy = q->stars;
-	Now.klings =- dx;
+	Now.klings -= dx;
 	if (x >= 0)
 	{
 		/* Enterprise caused supernova */
-		Game.kills =+ dy;
+		Game.kills += dy;
 		if (q->bases)
 			killb(qx, qy, -1);
-		Game.killk =+ dx;
+		Game.killk += dx;
 	}
 	else
 		if (q->bases)

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)help.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)help.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)help.c	4.1	(Berkeley)	%G%";
 **	to drop you.  After that, it's your problem.
 */
 
-char	*Cntvect[3]
+char	*Cntvect[3] =
 {"first", "second", "third"};
 
 help()
@@ -45,7 +45,7 @@ help()
 		return (printf("Uhura: I'm not getting any response from starbase\n"));
 
 	/* tut tut, there goes the score */
-	Game.helps =+ 1;
+	Game.helps += 1;
 
 	/* find the closest base */
 	dist = 1e50;

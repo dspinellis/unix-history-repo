@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dock.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dock.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -52,7 +52,7 @@ dock()
 	Ship.torped = Param.torped;
 	Ship.shield = Param.shield;
 	Ship.crew = Param.crew;
-	Game.captives =+ Param.brigfree - Ship.brigfree;
+	Game.captives += Param.brigfree - Ship.brigfree;
 	Ship.brigfree = Param.brigfree;
 
 	/* reset ship's defenses */

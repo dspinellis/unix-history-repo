@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)attack.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)attack.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -89,27 +89,27 @@ int	resting;	/* set if attack while resting */
 		if (Ship.shldup || Move.shldchg)
 		{
 			propor = Ship.shield;
-			propor =/ Param.shield;
+			propor /= Param.shield;
 			shldabsb = propor * chgfac * hit;
 			if (shldabsb > Ship.shield)
 				shldabsb = Ship.shield;
-			Ship.shield =- shldabsb;
+			Ship.shield -= shldabsb;
 		}
 		/* actually do the hit */
 		printf("HIT: %d units", hit);
 		if (!damaged(SRSCAN))
 			printf(" from %d,%d", Etc.klingon[i].x, Etc.klingon[i].y);
 		cas = (shldabsb * 100) / hit;
-		hit =- shldabsb;
+		hit -= shldabsb;
 		if (shldabsb > 0)
 			printf(", shields absorb %d%%, effective hit %d\n",
 				cas, hit);
 		else
 			printf("\n");
-		tothit =+ hit;
+		tothit += hit;
 		if (hit > maxhit)
 			maxhit = hit;
-		Ship.energy =- hit;
+		Ship.energy -= hit;
 		/* see if damages occurred */
 		if (hit >= (15 - Game.skill) * (25 - ranf(12)))
 		{
@@ -117,8 +117,8 @@ int	resting;	/* set if attack while resting */
 			/* select a device from probability vector */
 			cas = ranf(1000);
 			for (l = 0; cas >= 0; l++)
-				cas =- Param.damprob[l];
-			l =- 1;
+				cas -= Param.damprob[l];
+			l -= 1;
 			/* compute amount of damage */
 			extradm = (hit * Param.damfac[l]) / (75 + ranf(25)) + 0.5;
 			/* damage the device */
@@ -143,8 +143,8 @@ int	resting;	/* set if attack while resting */
 		{
 			printf("McCoy: we suffered %d casualties in that attack.\n",
 				cas);
-			Game.deaths =+ cas;
-			Ship.crew =- cas;
+			Game.deaths += cas;
+			Ship.crew -= cas;
 		}
 	}
 

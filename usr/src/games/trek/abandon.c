@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)abandon.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)abandon.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -49,7 +49,7 @@ abandon()
 		{
 			printf("Entire crew of %d left to die in outer space\n",
 				Ship.crew);
-			Game.deaths =+ Ship.crew;
+			Game.deaths += Ship.crew;
 		}
 		else
 		{
@@ -89,8 +89,8 @@ abandon()
 		{
 			if (Param.damprob[j] != 0)
 			{
-				Param.damprob[j] =+ 1;
-				i =- 1;
+				Param.damprob[j] += 1;
+				i -= 1;
 				if (i <= 0)
 					break;
 			}
