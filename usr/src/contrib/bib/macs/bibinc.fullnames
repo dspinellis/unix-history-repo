@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.7	%G%";
+#	"@(#)bibinc.fullnames	2.8	%G%";
 # full journal names, and other names
 #
 # journals
@@ -57,7 +57,8 @@ D CCC82 PROC of the ACM SI\&GPLAN 1982 SYMP on Compiler Construction, SIGPLAN\
 D CCC84 PROC of the ACM SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
 %C Montreal, Quebec\
 %D JUN 1984\
-%N (To Appear as issue of SIGPLAN)
+%V 19 \
+%N 6
 D PLISS83 PROC ACM SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
 %C San Francisco, CA\
 %D JUN 1983\
