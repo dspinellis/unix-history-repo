@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -465,7 +465,7 @@ crypt(key, setting)
 		keyblock.b[i] = t;
 	}
 	if (des_setkey((char *)keyblock.b))	/* also initializes "a64toi" */
-		return(NULL);
+		return (NULL);
 
 	encp = &cryptresult[0];
 	switch (*setting) {
@@ -476,14 +476,14 @@ crypt(key, setting)
 		while (*key) {
 			if (des_cipher((char *)&keyblock,
 			    (char *)&keyblock, 0L, 1))
-				return(NULL);
+				return (NULL);
 			for (i = 0; i < 8; i++) {
 				if ((t = 2*(unsigned char)(*key)) != 0)
 					key++;
 				keyblock.b[i] ^= t;
 			}
 			if (des_setkey((char *)keyblock.b))
-				retrun(NULL);
+				return (NULL);
 		}
 
 		*encp++ = *setting++;
@@ -515,7 +515,7 @@ crypt(key, setting)
 	encp += salt_size;
 	if (des_cipher((char *)&constdatablock, (char *)&rsltblock,
 	    salt, num_iter))
-		return(NULL);
+		return (NULL);
 
 	/*
 	 * Encode the 64 cipher bits as 11 ascii characters.
@@ -537,7 +537,7 @@ crypt(key, setting)
 
 	encp[3] = 0;
 
-	return(cryptresult);
+	return (cryptresult);
 }
 
 
@@ -573,7 +573,7 @@ des_setkey(key)
 		PERM6464(K,K0,K1,(unsigned char *)key,ptabp);
 		STORE(K&~0x03030303L, K0&~0x03030303L, K1, *(C_block *)key);
 	}
-	return(0);
+	return (0);
 }
 
 /*
@@ -696,7 +696,7 @@ des_cipher(in, out, salt, num_iter)
 #else
 	STORE(L,L0,L1,*(C_block *)out);
 #endif
-	return(0);
+	return (0);
 }
 
 
@@ -886,7 +886,7 @@ setkey(key)
 		}
 		keyblock.b[i] = k;
 	}
-	return(des_setkey((char *)keyblock.b));
+	return (des_setkey((char *)keyblock.b));
 }
 
 /*
@@ -908,7 +908,7 @@ encrypt(block, flag)
 		cblock.b[i] = k;
 	}
 	if (des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1)))
-		return(1);
+		return (1);
 	for (i = 7; i >= 0; i--) {
 		k = cblock.b[i];
 		for (j = 7; j >= 0; j--) {
@@ -916,7 +916,7 @@ encrypt(block, flag)
 			k >>= 1;
 		}
 	}
-	return(0);
+	return (0);
 }
 
 #ifdef DEBUG
