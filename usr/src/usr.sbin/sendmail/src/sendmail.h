@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.28 (Berkeley) %G%
+ *	@(#)sendmail.h	5.29 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.28		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.29		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -35,10 +35,8 @@ static char SmailSccsId[] =	"@(#)sendmail.h	5.28		%G%";
 # endif LOG
 
 # ifdef DAEMON
-# ifdef VMUNIX
 # include <sys/socket.h>
 # include <netinet/in.h>
-# endif VMUNIX
 # endif DAEMON
 
 
@@ -362,7 +360,6 @@ struct metamac
 */
 
 # ifdef DAEMON
-# ifdef VMUNIX
 
 # define HOSTINFO	struct hostinfo
 
@@ -379,7 +376,6 @@ HOSTINFO
 /* flag bits */
 #define HOF_VALID	00001		/* this entry is valid */
 
-# endif VMUNIX
 # endif DAEMON
 /*
 **  Symbol table definitions

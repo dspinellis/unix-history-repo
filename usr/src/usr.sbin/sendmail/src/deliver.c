@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.52 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.53 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -535,11 +535,10 @@ markfailure(e, q, rcode)
 */
 
 # define NFORKTRIES	5
-# ifdef VMUNIX
-# define XFORK	vfork
-# else VMUNIX
-# define XFORK	fork
-# endif VMUNIX
+
+# ifndef FORK
+# define FORK	fork
+# endif
 
 # define DOFORK(fORKfN) \
 {\
@@ -748,11 +747,9 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	if (strcmp(m->m_mailer, "[IPC]") == 0 ||
 	    strcmp(m->m_mailer, "[TCP]") == 0)
 	{
-#ifdef HOSTINFO
+#ifdef DAEMON
 		register STAB *st;
 		extern STAB *stab();
-#endif HOSTINFO
-#ifdef DAEMON
 		register int i, j;
 		register u_short port;
 
@@ -766,7 +763,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		for (j = 0; j < Nmx; j++)
 		{
 			CurHostName = MxHosts[j];
-#ifdef HOSTINFO
 			/* see if we already know that this host is fried */
 			st = stab(MxHosts[j], ST_HOST, ST_FIND);
 			if (st == NULL || st->s_host.ho_exitstat == EX_OK)
@@ -782,21 +778,13 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 				i = st->s_host.ho_exitstat;
 				errno = st->s_host.ho_errno;
 			}
-#else HOSTINFO
-			message(Arpa_Info, "Connecting to %s (%s)...",
-				MxHosts[j], m->m_name);
-			i = makeconnection(MxHosts[j], port, pmfile, prfile,
-				bitnset(M_SECURE_PORT, m->m_flags);
-#endif HOSTINFO
 			if (i != EX_OK)
 			{
-#ifdef HOSTINFO
 				/* enter status of this host */
 				if (st == NULL)
 					st = stab(MxHosts[j], ST_HOST, ST_ENTER);
 				st->s_host.ho_exitstat = i;
 				st->s_host.ho_errno = errno;
-#endif HOSTINFO
 				ExitStat = i;
 				continue;
 			}
@@ -842,7 +830,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 # ifdef SIGCHLD
 	(void) signal(SIGCHLD, SIG_DFL);
 # endif SIGCHLD
-	DOFORK(XFORK);
+	DOFORK(FORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
 	{

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.18 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.19 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.18 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.19 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -70,8 +70,10 @@ smtpinit(m, pvp)
 {
 	register int r;
 	EVENT *gte;
+	register STAB *st;
 	char buf[MAXNAME];
 	static int greettimeout();
+	extern STAB *stab();
 
 	/*
 	**  Open the connection to the mailer.
@@ -207,26 +209,19 @@ smtpinit(m, pvp)
 	smtpquit(m);
 	return (EX_PROTOCOL);
 
-	/* signal a temporary failure */
   tempfail1:
-#ifdef HOSTINFO
-	{
-		register STAB *st;
-		extern STAB *stab();
-
-		/* log this as an error to avoid sure-to-be-void connections */
-		st = stab(CurHostName, ST_HOST, ST_ENTER);
-		st->s_host.ho_exitstat = EX_TEMPFAIL;
-		st->s_host.ho_errno = errno;
-	}
-#endif /* HOSTINFO */
+	/* log this as an error to avoid sure-to-be-void connections */
+	st = stab(CurHostName, ST_HOST, ST_ENTER);
+	st->s_host.ho_exitstat = EX_TEMPFAIL;
+	st->s_host.ho_errno = errno;
 
   tempfail2:
+	/* signal a temporary failure */
 	smtpquit(m);
 	return (EX_TEMPFAIL);
 
-	/* signal service unavailable */
   unavailable:
+	/* signal service unavailable */
 	smtpquit(m);
 	return (EX_UNAVAILABLE);
 }
