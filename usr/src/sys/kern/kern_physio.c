@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.11	%G%	*/
+/*	kern_physio.c	4.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -261,8 +261,11 @@ register struct buf *bp;
 		bfreelist[0].b_flags &= ~B_WANTED;
 		wakeup((caddr_t)bfreelist);
 	}
-	if ((bp->b_flags&B_ERROR) && bp->b_dev != NODEV)
-		bp->b_dev = NODEV;  /* no assoc. on error */
+	if (bp->b_flags&B_ERROR)
+		if (bp->b_flags & B_LOCKED)
+			bp->b_flags &= ~B_ERROR;	/* try again later */
+		else
+			bp->b_dev = NODEV;  		/* no assoc */
 	s = spl6();
 	if (bp->b_flags & (B_ERROR|B_INVAL)) {
 		/* block has no info ... put at front of most free list */
