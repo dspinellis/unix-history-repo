@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ln.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)ln.c	4.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)ln.c	4.12 (Berkeley) %G%";
 #include <stdio.h>
 #include <errno.h>
 
-static int	fflag,				/* undocumented force flag */
+static int	dirflag,			/* undocumented force flag */
 		sflag,				/* symbolic, not hard, link */
 		(*linkf)();			/* system link call */
 
@@ -28,15 +28,15 @@ main(argc, argv)
 	int	argc;
 	char	**argv;
 {
-	extern int	optind;
-	struct stat	buf;
-	int	ch, exitval, link(), symlink();
-	char	*sourcedir;
+	extern int optind;
+	struct stat buf;
+	int ch, exitval, link(), symlink();
+	char *sourcedir;
 
-	while ((ch = getopt(argc, argv, "fs")) != EOF)
+	while ((ch = getopt(argc, argv, "Fs")) != EOF)
 		switch((char)ch) {
-		case 'f':
-			fflag = 1;
+		case 'F':
+			dirflag = 1;
 			break;
 		case 's':
 			sflag = 1;
@@ -89,8 +89,8 @@ linkit(target, source, isdir)
 			perror(target);
 			return(1);
 		}
-		/* only symbolic links to directories, unless -f option used */
-		if (!fflag && (buf.st_mode & S_IFMT) == S_IFDIR) {
+		/* only symbolic links to directories, unless -F option used */
+		if (!dirflag && (buf.st_mode & S_IFMT) == S_IFDIR) {
 			printf("%s is a directory.\n", target);
 			return(1);
 		}
