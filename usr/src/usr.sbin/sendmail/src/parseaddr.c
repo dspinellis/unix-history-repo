@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.72 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.73 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1164,7 +1164,7 @@ rewrite(pvp, ruleset, reclevel, e)
 				if (stat == EX_TEMPFAIL)
 				{
 					rstat = EX_TEMPFAIL;
-					if (tTd(50, 1))
+					if (tTd(60, 1))
 						printf("map_lookup(%s, %s) failed (stat = %d)\n",
 							mapname, buf, stat);
 					if (e->e_message == NULL)
