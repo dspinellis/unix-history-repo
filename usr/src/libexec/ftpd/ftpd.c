@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -123,6 +123,11 @@ main(argc, argv, envp)
 	int addrlen, on = 1, tos;
 	char *cp;
 
+	/*
+	 * LOG_NDELAY sets up the logging connection immediately,
+	 * necessary for anonymous ftp's that chroot and can't do it later.
+	 */
+	openlog("ftpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 	addrlen = sizeof (his_addr);
 	if (getpeername(0, (struct sockaddr *)&his_addr, &addrlen) < 0) {
 		syslog(LOG_ERR, "getpeername (%s): %m",argv[0]);
@@ -140,7 +145,6 @@ main(argc, argv, envp)
 #endif
 	data_source.sin_port = htons(ntohs(ctrl_addr.sin_port) - 1);
 	debug = 0;
-	openlog("ftpd", LOG_PID, LOG_DAEMON);
 #ifdef SETPROCTITLE
 	/*
 	 *  Save start and extent of argv for setproctitle.
