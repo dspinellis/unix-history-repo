@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.13 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -97,7 +97,7 @@ execve()
 	if (u.u_error = VOP_GETATTR(vp, &vattr, u.u_cred))
 		goto bad;
 	if (vp->v_mount->m_flag & M_NOEXEC) {
-		u.u_error = ENOEXEC;
+		u.u_error = EACCES;
 		goto bad;
 	}
 	if ((vp->v_mount->m_flag & M_NOSUID) == 0) {
