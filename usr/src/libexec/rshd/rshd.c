@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1988, 1989 The Regents of the University of California.
+ * Copyright (c) 1988, 1989, 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,20 +7,13 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1988, 1989 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1988, 1989, 1992 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.38.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
-
-/*
- * From:
- *	$Source: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v $
- *	$Header: /mit/kerberos/ucb/mit/rshd/RCS/rshd.c,v 
- *		5.2 89/07/31 19:30:04 kfall Exp $
- */
 
 /*
  * remote shell server:
@@ -33,14 +26,14 @@ static char sccsid[] = "@(#)rshd.c	5.38.1.1 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <fcntl.h>
-#include <signal.h>
-
 #include <sys/socket.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <fcntl.h>
+#include <signal.h>
 #include <pwd.h>
 #include <syslog.h>
 #include "pathnames.h"
@@ -53,20 +46,24 @@ static char sccsid[] = "@(#)rshd.c	5.38.1.1 (Berkeley) %G%";
 
 int	keepalive = 1;
 int	check_all = 0;
-int	check_all = 0;
-char	*index(), *rindex(), *strncat();
-/*VARARGS1*/
-int	error();
+int	check_all;
+int	log_success;		/* If TRUE, log all successful accesses */
 int	sent_null;
 int	sent_null;
 
-/*ARGSUSED*/
+void	 doit __P((struct sockaddr_in *));
+void	 error __P((const char *, ...));
+void	 getstr __P((char *, int, char *));
+int	 local_domain __P((char *));
+char	*topdomain __P((char *));
+void	 usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int opterr, optind;
-	extern int _check_rhosts_file;
+	extern int __check_rhosts_file;
 	struct linger linger;
 	int ch, on = 1, fromlen;
 	struct sockaddr_in from;
@@ -79,7 +76,7 @@ main(argc, argv)
 			check_all = 1;
 			break;
 		case 'l':
-			_check_rhosts_file = 0;
+			__check_rhosts_file = 0;
 			break;
 		case 'n':
 			keepalive = 0;
@@ -108,6 +105,7 @@ main(argc, argv)
 	    sizeof (linger)) < 0)
 		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
 	doit(&from);
+	/* NOTREACHED */
 }
 
 char	username[20] = "USER=";
@@ -118,21 +116,20 @@ char	*envinit[] =
 	    {homedir, shell, path, username, 0};
 char	**environ;
 
+void
 doit(fromp)
 	struct sockaddr_in *fromp;
 {
-	char cmdbuf[NCARGS+1], *cp;
-	char locuser[16], remuser[16];
-	struct passwd *pwd;
-	int s;
+	extern char *__rcmd_errstr;	/* syslog hook from libc/net/rcmd.c. */
 	struct hostent *hp;
-	char *hostname, *errorstr = NULL, *errorhost;
+	struct passwd *pwd;
 	u_short port;
-	int pv[2], pid, cc;
-	int nfd;
 	fd_set ready, readfrom;
-	char buf[BUFSIZ], sig;
+	int cc, nfd, pv[2], pid, s;
 	int one = 1;
+	char *hostname, *errorstr, *errorhost;
+	char *cp, sig, buf[BUFSIZ];
+	char cmdbuf[NCARGS+1], locuser[16], remuser[16];
 	char remotehost[2 * MAXHOSTNAMELEN + 1];
 
 	(void) signal(SIGINT, SIG_DFL);
@@ -234,7 +231,7 @@ doit(fromp)
 		if (!use_kerberos)
 		fromp->sin_port = htons(port);
 		if (connect(s, (struct sockaddr *)fromp, sizeof (*fromp)) < 0) {
-			syslog(LOG_INFO, "connect second port: %m");
+			syslog(LOG_INFO, "connect second port %d: %m", port);
 			exit(1);
 		}
 	}
@@ -245,6 +242,7 @@ doit(fromp)
 	dup2(f, 1);
 	dup2(f, 2);
 #endif
+	errorstr = NULL;
 	hp = gethostbyaddr((char *)&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp) {
@@ -311,6 +309,9 @@ doit(fromp)
 	setpwent();
 	pwd = getpwnam(locuser);
 	if (pwd == NULL) {
+		syslog(LOG_INFO|LOG_AUTH,
+		    "%s@%s as %s: unknown login. cmd='%.80s'",
+		    remuser, hostname, locuser, cmdbuf);
 		if (errorstr == NULL)
 			errorstr = "Login incorrect.\n";
 		goto fail;
@@ -318,6 +319,9 @@ doit(fromp)
 	if (chdir(pwd->pw_dir) < 0) {
 		(void) chdir("/");
 #ifdef notdef
+		syslog(LOG_INFO|LOG_AUTH,
+		    "%s@%s as %s: no home directory. cmd='%.80s'",
+		    remuser, hostname, locuser, cmdbuf);
 		error("No remote directory.\n");
 		exit(1);
 #endif
@@ -350,9 +354,11 @@ doit(fromp)
 		}
 		if (pid) {
 			{
-				(void) close(0); (void) close(1);
+				(void) close(0);
+				(void) close(1);
 			}
-			(void) close(2); (void) close(pv[1]);
+			(void) close(2);
+			(void) close(pv[1]);
 
 			FD_ZERO(&readfrom);
 			FD_SET(s, &readfrom);
@@ -395,7 +401,8 @@ doit(fromp)
 			exit(0);
 		}
 		setpgrp(0, getpid());
-		(void) close(s); (void) close(pv[0]);
+		(void) close(s);
+		(void) close(pv[0]);
 		dup2(pv[1], 2);
 		close(pv[1]);
 		close(pv[1]);
@@ -424,18 +431,17 @@ doit(fromp)
 		syslog(LOG_INFO|LOG_AUTH, "ROOT shell from %s@%s, comm: %s\n",
 		    remuser, hostname, cmdbuf);
 	endpwent();
-	if (pwd->pw_uid == 0) {
+	if (log_success || pwd->pw_uid == 0) {
 #ifdef	KERBEROS
 		if (use_kerberos)
-			syslog(LOG_INFO|LOG_AUTH,
-				"ROOT Kerberos shell from %s.%s@%s on %s, comm: %s\n",
-				kdata->pname, kdata->pinst, kdata->prealm,
-				hostname, cmdbuf);
+		    syslog(LOG_INFO|LOG_AUTH,
+			"Kerberos shell from %s.%s@%s on %s as %s, cmd='%.80s'",
+			kdata->pname, kdata->pinst, kdata->prealm,
+			hostname, locuser, cmdbuf);
 		else
 #endif
-			syslog(LOG_INFO|LOG_AUTH,
-				"ROOT shell from %s@%s, comm: %s\n",
-				remuser, hostname, cmdbuf);
+		    syslog(LOG_INFO|LOG_AUTH, "%s@%s as %s: cmd='%.80s'",
+			remuser, hostname, locuser, cmdbuf);
 	}
 	execl(pwd->pw_shell, cp, "-c", cmdbuf, 0);
 	perror(pwd->pw_shell);
@@ -449,28 +455,47 @@ doit(fromp)
  * for that connection first.
  */
 /*
- * Report error to client.
- * Note: can't be used until second socket has connected
- * to client, or older clients will hang waiting
- * for that connection first.
+ * Report error to client.  Note: can't be used until second socket has
+ * connected to client, or older clients will hang waiting for that
+ * connection first.
  */
-/*VARARGS1*/
-error(fmt, a1, a2, a3)
-	char *fmt;
-	int a1, a2, a3;
-{
-	char buf[BUFSIZ], *bp = buf;
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
 
-	if (sent_null == 0)
+void
+#if __STDC__
+error(const char *fmt, ...)
+#else
+error(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+	int len;
+	char *bp, buf[BUFSIZ];
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	bp = buf;
+	if (sent_null == 0) {
 		*bp++ = 1;
-	(void) sprintf(bp, fmt, a1, a2, a3);
-	(void) write(2, buf, strlen(buf));
+		len = 1;
+	} else
+		len = 0;
+	len += vsnprintf(bp, sizeof(buf) - 1, fmt, ap);
+	(void)write(STDERR_FILENO, buf, len);
 }
 
+void
 getstr(buf, cnt, err)
-	char *buf;
+	char *buf, *err;
 	int cnt;
-	char *err;
 {
 	char c;
 
@@ -493,11 +518,12 @@ getstr(buf, cnt, err)
  * assume that the host is local, as it will be
  * interpreted as such.
  */
+int
 local_domain(h)
 	char *h;
 {
 	char localhost[MAXHOSTNAMELEN];
-	char *p1, *p2, *topdomain();
+	char *p1, *p2;
 
 	localhost[0] = 0;
 	localhost[0] = 0;
@@ -505,8 +531,8 @@ local_domain(h)
 	p1 = topdomain(localhost);
 	p2 = topdomain(h);
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
-		return(1);
-	return(0);
+		return (1);
+	return (0);
 }
 
 char *
@@ -545,6 +571,7 @@ topdomain(h)
 	return (maybe);
 }
 
+void
 usage()
 {
 	syslog(LOG_ERR, "usage: rshd [-%s]", OPTIONS);
