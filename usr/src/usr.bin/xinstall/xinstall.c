@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -32,13 +32,15 @@ static int	docopy, dostrip,
 static char	*group = DEF_GROUP,
 		*owner = DEF_OWNER,
 		*path;
+extern int	errno;
+extern char	*sys_errlist[];
 
 main(argc, argv)
 	int	argc;
 	char	**argv;
 {
-	extern char	*optarg, *sys_errlist[];
-	extern int	optind, errno;
+	extern char	*optarg;
+	extern int	optind;
 	register int	to_fd;
 	struct stat	from_sb, to_sb;
 	struct passwd	*pp;
