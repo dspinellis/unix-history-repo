@@ -9,11 +9,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restart.c	1.2 (Berkeley) 6/25/91
- *
  * $Id: restart.c,v 5.2.2.1 1992/02/09 15:08:59 jsp beta $
  *
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)restart.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "am.h"
 

@@ -1,4 +1,4 @@
-/*
+/*-
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -9,11 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_ops.c	1.3 (Berkeley) 6/26/91
- *
  * $Id: nfs_ops.c,v 5.2.2.2 1992/05/31 16:35:05 jsp Exp $
- *
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)nfs_ops.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "am.h"
 #include <sys/stat.h>
