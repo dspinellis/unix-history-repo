@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.80 (Berkeley) %G%
+ *	@(#)conf.h	8.81 (Berkeley) %G%
  */
 
 /*
@@ -401,11 +401,13 @@ typedef int		pid_t;
 /*
 **  4.3 BSD -- this is for very old systems
 **
+**	Should work for mt Xinu MORE/BSD and Mips UMIPS-BSD 2.1.
+**
 **	You'll also have to install a new resolver library.
 **	I don't guarantee that support for this environment is complete.
 */
 
-#ifdef oldBSD43
+#if defined(oldBSD43) || defined(MORE_BSD) || defined(umipsbsd)
 # define NEEDVPRINTF	1	/* need a replacement for vprintf(3) */
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
 # define ARBPTR_T	char *
@@ -460,6 +462,9 @@ extern int		errno;
 
 /*
 **  ConvexOS 11.0 and later
+**
+**	"Todd C. Miller" <millert@mroe.cs.colorado.edu> claims this
+**	works on 9.1 as well.
 */
 
 #ifdef _CONVEX_SOURCE
@@ -469,6 +474,17 @@ extern int		errno;
 # define NEEDGETOPT	1	/* need replacement for getopt(3) */
 # define LA_TYPE	LA_FLOAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef S_IREAD
+#  define S_IREAD	_S_IREAD
+#  define S_IWRITE	_S_IWRITE
+#  define S_IEXEC	_S_IEXEC
+#  define S_IFMT	_S_IFMT
+#  define S_IFCHR	_S_IFCHR
+#  define S_IFBLK	_S_IFBLK
+# endif
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
