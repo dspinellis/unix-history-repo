@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -157,7 +157,7 @@ main(argc, argv, arge)
 		if (verbose || fake || type)
 			usage();
 		if ((mntsize = getmntinfo(&mntbuf, MNT_NOWAIT)) == 0) {
-			fprintf(stderr,
+			(void) fprintf(stderr,
 				"mount: cannot get mount information\n");
 			exit(1);
 		}
@@ -172,7 +172,7 @@ main(argc, argv, arge)
 
 	if (argc == 1 && updateflg) {
 		if ((mntbuf = getmntpt(*argv)) == NULL) {
-			fprintf(stderr,
+			(void) fprintf(stderr,
 			    "mount: unknown special file or file system %s.\n",
 			    *argv);
 			exit(1);
@@ -186,13 +186,13 @@ main(argc, argv, arge)
 		    updateflg, type, options, (char *)NULL);
 	} else if (argc == 1) {
 		if (!(fs = getfsfile(*argv)) && !(fs = getfsspec(*argv))) {
-			fprintf(stderr,
+			(void) fprintf(stderr,
 			    "mount: unknown special file or file system %s.\n",
 			    *argv);
 			exit(1);
 		}
 		if (BADTYPE(fs->fs_type)) {
-			fprintf(stderr,
+			(void) fprintf(stderr,
 			    "mount: %s has unknown file system type.\n", *argv);
 			exit(1);
 		}
@@ -308,7 +308,7 @@ mountfs(spec, name, flags, type, options, mntopts)
 			goto out;
 		}
 		execve(execname, argv, envp);
-		fprintf(stderr, "mount: cannot exec %s for %s: ",
+		(void) fprintf(stderr, "mount: cannot exec %s for %s: ",
 			execname, name);
 		perror((char *)NULL);
 		exit (1);
@@ -318,22 +318,19 @@ mountfs(spec, name, flags, type, options, mntopts)
 	if (!fake && mount(mnttype, name, flags, argp)) {
 		if (opflags & ISBGRND)
 			exit(1);
-		fprintf(stderr, "%s on %s: ", spec, name);
+		(void) fprintf(stderr, "%s on %s: ", spec, name);
 		switch (errno) {
 		case EMFILE:
-			fprintf(stderr, "Mount table full\n");
+			(void) fprintf(stderr, "Mount table full\n");
 			break;
 		case EINVAL:
 			if (flags & MNT_UPDATE)
-				fprintf(stderr, "Specified device does %s\n",
-					"not match mounted device");
+				(void) fprintf(stderr, "Specified device %s\n",
+					"does not match mounted device");
 			else if (mnttype == MOUNT_UFS)
-				fprintf(stderr, "Bogus super block\n");
+				(void) fprintf(stderr, "Bogus super block\n");
 			else
 				perror((char *)NULL);
-			break;
-		case EOPNOTSUPP:
-			fprintf(stderr, "Operation not supported\n");
 			break;
 		default:
 			perror((char *)NULL);
@@ -406,7 +403,8 @@ getmnttype(fstype)
 usage()
 {
 
-	fprintf(stderr, "usage:\n  mount %s %s\n  mount %s\n  mount %s\n",
+	(void) fprintf(stderr,
+		"usage:\n  mount %s %s\n  mount %s\n  mount %s\n",
 		"[ -frwu ] [ -t nfs | ufs | external_type ]",
 		"[ -o options ] special node",
 		"[ -afrwu ] [ -t nfs | ufs | external_type ]",
@@ -576,13 +574,22 @@ makevfslist(fslist)
 }
 
 #ifdef NFS
+exclusive(a, b)
+	char *a, *b;
+{
+
+	(void) fprintf(stderr, "mount: Options %s, %s mutually exclusive\n",
+	    a, b);
+	exit(1);
+}
+
 /*
  * Handle the getoption arg.
  * Essentially update "opflags", "retrycnt" and "nfsargs"
  */
 getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 	char *optarg;
-	struct nfs_args *nfsargsp;
+	register struct nfs_args *nfsargsp;
 	int *opflagsp;
 	int *retrycntp;
 {
@@ -590,8 +597,7 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 	int num;
 	char *nump;
 
-	cp = optarg;
-	while (cp != NULL && *cp != '\0') {
+	for (cp = optarg; cp != NULL && *cp != '\0'; cp = nextcp) {
 		if ((nextcp = index(cp, ',')) != NULL)
 			*nextcp++ = '\0';
 		if ((nump = index(cp, '=')) != NULL) {
@@ -605,18 +611,12 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 		if (!strcmp(cp, "bg")) {
 			*opflagsp |= BGRND;
 		} else if (!strcmp(cp, "soft")) {
-			if (nfsargsp->flags & NFSMNT_SPONGY) {
-				fprintf(stderr,
-					"Options soft, spongy mutually exclusive\n");
-				exit(1);
-			}
+			if (nfsargsp->flags & NFSMNT_SPONGY)
+				exclusive("soft, spongy");
 			nfsargsp->flags |= NFSMNT_SOFT;
 		} else if (!strcmp(cp, "spongy")) {
-			if (nfsargsp->flags & NFSMNT_SOFT) {
-				fprintf(stderr,
-					"Options soft, spongy mutually exclusive\n");
-				exit(1);
-			}
+			if (nfsargsp->flags & NFSMNT_SOFT)
+				exclusive("soft, spongy");
 			nfsargsp->flags |= NFSMNT_SPONGY;
 		} else if (!strcmp(cp, "compress")) {
 			nfsargsp->flags |= NFSMNT_COMPRESS;
@@ -641,7 +641,6 @@ getnfsopts(optarg, nfsargsp, opflagsp, retrycntp)
 			nfsargsp->retrans = num;
 			nfsargsp->flags |= NFSMNT_RETRANS;
 		}
-		cp = nextcp;
 	}
 	if (nfsargsp->sotype == SOCK_DGRAM) {
 		if (nfsargsp->rsize > NFS_MAXDGRAMDATA)
@@ -679,13 +678,13 @@ getnfsargs(spec, nfsargsp)
 		hostp = buf;
 		fsp = delimp + 1;
 	} else {
-		fprintf(stderr,
-		    "No <host>:<dirpath> or <dirpath>@<host> spec\n");
+		(void) fprintf(stderr,
+		    "mount: No <host>:<dirpath> or <dirpath>@<host> spec\n");
 		return (0);
 	}
 	*delimp = '\0';
 	if ((hp = gethostbyname(hostp)) == NULL) {
-		fprintf(stderr, "Can't get net id for host\n");
+		(void) fprintf(stderr, "mount: Can't get net id for host\n");
 		return (0);
 	}
 	bcopy(hp->h_addr, (caddr_t)&saddr.sin_addr, hp->h_length);
@@ -735,7 +734,7 @@ getnfsargs(spec, nfsargsp)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
-		fprintf(stderr, "Mount RPC error on %s: ", spec);
+		(void) fprintf(stderr, "Mount RPC error on %s: ", spec);
 		errno = nfhret.stat;
 		perror((char *)NULL);
 		return (0);
