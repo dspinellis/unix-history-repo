@@ -1,0 +1,11 @@
+bin	/usr/uci
+bboards	on
+bbhome	/usr/bboards
+etc	/usr/uci/lib/mh
+mail	/usr/spool/mail
+manuals	local
+mts	mmdf2/smtp
+options	BSD42
+options	MHE TTYD
+options	UCI
+pop	on

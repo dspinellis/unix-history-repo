@@ -1,0 +1,120 @@
+Date:    30 Jan 86 23:07:34 -0800 (Thu)
+Subject: Repl nifty
+From:    Bob Desinger <hpda!hpitg!bd@ucbvax.berkeley.EDU>
+To:      mh-workers@uci.EDU
+cc:      earl@ucbvax.berkeley.EDU
+
+I've long wanted a way to get someone's original message into my
+replies, prepended with those nice "> " netnews-style borders like so:
+
+> This is the original text that the person wrote.
+> My reply, of course, prepends the original body with the angle-brackets,
+> often called brokets, and skips the headers.
+
+The most obvious way would be to use a repl filter.  Alas, there is no
+mechanism to specify a prepended-text-string for the body, except a
+number of spaces to indent.  I didn't want to use awk because that was
+too easy---uh, too slow on a timeshared machine.  I wound up editing
+the replies anyway, most of the time, but I wanted some mechanism to
+invoke simply by name.  Ideally it would be some kind of "repl:"
+mh_profile entry, but I haven't progressed that far.  (I'm open to
+suggestions.)  I got an idea from a sed script of Peter Honeyman's,
+which used the extremely rapid sed "b" (branch) instruction to churn
+through its input.
+
+How to use this script:
+
+1.  Install it in your bin/ directory, or some other place where you'll
+be able to easily execute it, under the name "cur".  Csh users may need
+to type "rehash" to get it into their $path right after installation.
+
+2.  Change the script's definition of LINK if you don't use "@" for
+your links when replying.
+
+3.  Now you're ready to try it.  Type `repl' and get into your favorite
+editor.  (Yes, I realize this is a hack, but most of the time you wind
+up getting into the editor anyway, to trim down the quoted [original]
+message.)  Go to the last line of the header, on the dashes.  Run the
+program `cur' from the editor, reading its input.  In vi, the command
+is:
+
+	:r ! cur
+
+and voila!  You have the message body, sans headers, prepended with the
+brokets.  Type your response and push it off.
+
+I chose the name cur because of its similarity to the mh message "cur".
+Hopefully, users will think of the editor-invoked command as "read cur".
+
+How it works:
+
+Mh does the setup for you when you type `repl' by installing a link
+named "@" in the current directory.  This "@" is really a link to the
+current message, the one you're trying to reply to.
+
+The first part of the sed script, after the ":header" label, spins
+through the message discarding the first set of lines (the header)
+until it comes to a blank line.  Then it branches to the label ":eohdr"
+with the blank line held in sed's pattern space (== current input
+line).  If you wanted to include parts of the header (like "From:" or
+"Subject:"), put lines like, say,
+
+	/^From:/s/^From:/> From:/p
+	/^Subject:/s/^Subject:/> Subject:/p
+
+just after the "/^$/b eohdr" line which branches to the next section
+when the first empty line is found.
+
+The ":eohdr" part simply discards the blank line and branches to the
+section labeled ":body."  If you want to put in any leading lines
+introducing the quoted part of the original message (like "In Reply
+To:" or whatever), the place to do it is right after the ":eohdr"
+line.
+
+The last section, after the ":body" label, inserts the broket-and-space
+before each line.
+
+Enjoy,
+Bob Desinger
+
+
+# This is a shell archive.  Remove anything before this line,
+# then unpack it by saving it in a file and typing "sh file".
+#
+# Wrapped by hpitg!bd on Thu Jan 30 22:21:38 PST 1986
+# Contents:  cur
+ 
+echo x - cur
+sed 's/^@//' > "cur" <<'@//E*O*F cur//'
+#! /bin/sh
+: read in the current message, rn-style
+LINK="@"
+
+# Skip headers, then print out the body lines prepended with "> "
+sed -n '
+:header
+/^$/b eohdr
+n
+b header
+:eohdr
+n
+b body
+:body
+s/^/> /p
+n
+b body' $LINK
+@//E*O*F cur//
+chmod u=rwx,g=rx,o=rx cur
+ 
+echo Inspecting for damage in transit...
+temp=/tmp/shar$$; dtemp=/tmp/.shar$$
+trap "rm -f $temp $dtemp; exit" 0 1 2 3 15
+cat > $temp <<\!!!
+      17      43     214 cur
+!!!
+wc  cur | sed 's=[^ ]*/==' | diff -b $temp - >$dtemp
+if [ -s $dtemp ]
+then echo "Ouch [diff of wc output]:" ; cat $dtemp
+else echo "No problems found."
+fi
+exit 0

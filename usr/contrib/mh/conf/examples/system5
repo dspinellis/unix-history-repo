@@ -1,0 +1,10 @@
+bin	/usr/uci/src/mh/bin
+bboards	on
+etc	/usr/uci/src/mh/etc
+mail	mailbox
+manuals	gen
+mts	mh
+options	SYS5
+options	MHE
+options	WHATNOW OVERHEAD
+options	UCI

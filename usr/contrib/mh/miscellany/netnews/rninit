@@ -1,0 +1,7 @@
+'To: %f\\n\
+Cc: %L\\n\
+Subject: Re: %S\\n\
+In-Reply-To: Your message of %[date]\\n\
+             %i\\n\
+%(%[references]!=^\$?References\\: %[references]\\n)\
+Newsgroups: %n\\n-------\\n'

@@ -1,0 +1,12 @@
+    If you make all the documentation in one batch, you might find that
+    the TeX output lacks figures/diagrams/tables.  This is apparently
+    due to a bug in make in which it fails to close down file
+    descriptors on an exec.  Although it's tedious, it may just be
+    easier to type:
+
+	make realwork.dvi trusted.dvi tutorial.dvi
+	make all
+
+    instead of just
+
+	make

@@ -1,0 +1,11 @@
+mmdfldir:       @(MHDROPATH)
+mmdflfil:       @(MHDROPFIL)
+mmdelim1:       \001\001\n
+mmdelim2:       \001\001\n
+mmailid:        0
+umincproc:
+lockldir:
+
+hostable:       @(MHETCPATH)/hosts
+
+bbdomain:       UCI

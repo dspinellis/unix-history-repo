@@ -1,0 +1,9 @@
+bin	/usr/local/mh
+bboards	off
+etc	/usr/local/lib/mh
+mail	/usr/spool/mail
+manuals	local
+mts	sendmail
+options	BSD42
+options	MHE TTYD BERK
+options SBACKUP='"\\043"'

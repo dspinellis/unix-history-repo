@@ -1,0 +1,32 @@
+[ For the following, substitute the name of the directory this file resides
+  in for "foo".  E.G., if this file is mh5/READ-ME, s%foo%mh5%g ]
+
+    The Makefile assumes you have PhDTeX on your system.  PhDTeX is
+    AmSTeX with diss.sty preloaded.  If you don't have PhDTeX, then
+    change the Makefile to run AmSTeX instead and the foo.tex file will
+    automatically input diss.sty.  If you don't have AmSTeX, talk to
+    your local TeX maintainer and find out where Michael Spivak's
+    AmS-TeX macro package is kept, and run TeX like this
+
+	tex \\input amstex \\input foo
+
+    This is really slow, but that's life.
+
+
+    If you don't have the wonderful amcscod10 fonts at your site,
+    then in diss.sty, replace the two lines (at line 107):
+
+\font\tencscod=amcscod10
+\font\eightcscod=amcscod10 at 8\p@
+
+    with
+
+\let\tencscod=\tencsc
+\let\eightcscod=\eightcsc
+
+    If you want to get your hands on amcscod10 font, drop a note to
+
+	Bug-TeX@UCI
+
+    and ask for it.  They have the metafont source available.  It's a
+    lot easier just to edit the two lines above though.

@@ -1,0 +1,19 @@
+#! /bin/sh
+
+export PATH || (echo "OOPS, this isn't sh.  Desperation time.  I will feed myse
+lf to sh."; sh $0; kill $$)
+
+cat=/bin/cat
+echo=/bin/echo
+test=/bin/test
+defeditor=prompter
+
+draftfile=`mhpath +`/rndraft
+dotdir=${DOTDIR-${HOME-$LOGDIR}}
+
+$cat $1 > $draftfile
+if $test -f $dotdir/.signature; then
+	$echo "--" >> $draftfile
+	$cat $dotdir/.signature >> $draftfile
+fi
+exec comp -use -editor ${VISUAL-${EDITOR-$defeditor}} -file $draftfile

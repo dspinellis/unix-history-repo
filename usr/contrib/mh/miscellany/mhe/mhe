@@ -1,0 +1,13 @@
+#! /bin/csh -f
+set LIBRARY=/usr/uci/lib/emacs/maclib
+set SUPPORT=~support/lib/mhe
+printenv EPATH >& /dev/null
+if ($status != 0) then
+    setenv EPATH "${LIBRARY}:${SUPPORT}"
+else
+    printenv EPATH | fgrep :${SUPPORT}: >& /dev/null
+    if ($status != 0) then
+	setenv EPATH "${EPATH}:${SUPPORT}"
+    endif
+endif
+exec emacs -lmh-e.ml -estartup $*

@@ -1,0 +1,34 @@
+Delivery-Date: Sat, 01 Feb 86 20:50:42 -0800
+Received: from ECLA by NRTC id aa02607 ;1 Feb 86 20:50 PST
+Received: from CSNET-RELAY.ARPA by USC-ECL.ARPA; Sat 1 Feb 86 17:54:02-PST
+Received: from toronto by csnet-relay.csnet id al19313; 1 Feb 86 20:45 EST
+Received: from utai.UUCP (utai.ARPA) by utcsri.UUCP (4.24/5.1.UofT)
+	id AA27912; Sat, 1 Feb 86 16:09:48 est
+Received: by utai.UUCP (4.24/5.1.UofT)
+	id AA00439; Sat, 1 Feb 86 16:14:14 est
+Date: 01 Feb 86 16:14:10 EST (Sat)
+From: Rayan Zachariassen <rayan%utai%toronto.csnet@CSNET-RELAY.ARPA>
+To: Bob Desinger <hpda!hpitg!bd@hplabs.arpa>
+Subject: Re: Repl nifty
+Cc: earl@ucbvax.berkeley.edu, 
+    Marshall Rose <mrose%NRTC%usc-ecl.arpa@csnet-relay.arpa>
+In-Reply-To: Your message of 30 Jan 86 23:07:34 PST (Thu).
+
+You again, eh :-?
+
+Try this:
+------------ bin/mhvi ---------
+#!/bin/sh
+exec /usr/ucb/vi "+/^------/+mark a|'a,\$s/^/#/|'a" $@
+---------- mh/mhl.repl --------
+:
+body:nocomponent,compwidth=0,offset=1,width=0
+-------------------------------
+And then use mhvi as the first editor after prompter e.g.
+Works ok for me. I also think it's the simplest solution that has appeared...
+
+greetings
+
+rayan
+
+

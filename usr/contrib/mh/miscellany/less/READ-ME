@@ -1,0 +1,47 @@
+This is the distribution of "less", a paginator similar to "more" or "pg".
+The manual page is in less.l.
+
+INSTALLATION:
+
+1. Move the distributed source to its own directory and 
+   unpack it by running "sh" on the distribution file,
+   if you have not already done so.
+
+2. If your system is System V:
+	cp makefile.sys5 makefile
+   If your system is Berkeley 4.2bsd:
+	cp makefile.bsd42 makefile
+   If your system is Berkeley 4.1bsd:
+	cp makefile.bsd41 makefile
+   If your system is Xenix 3.0:
+	cp makefile.xen makefile
+   Otherwise, edit the makefile to make the 
+   system parameters match your system.
+
+   These features are selectable at compile time:
+	shell escapes (SHELL_ESCAPE)
+	editor invocation (EDITOR)
+	alternate error message handling (ONLY_RETURN)
+   If you want to have any of these features, 
+   edit the makefile appropriately.
+   (If you do not include either SHELL_ESCAPE or EDITOR,
+    you may wish to edit the manual page "less.l" to remove
+    the references to the "!" and/or "v" commands.)
+
+3. Type "make" and watch the fun.
+
+4. If the make succeeds, it will generate a program "less"
+   in your current directory.  Test the generated program.
+
+5. When satisfied that it works, if you wish to install it
+   in a public place, edit the makefile so that INSTALL_LESS
+   and INSTALL_MAN are the proper filenames.
+   Then type "make install".
+
+If you have any problems building or running "less", 
+you may mail to the author via USENET at:
+	...!tektronix!reed!nsc-pdc!mark
+  or	...!ihnp4!nsc!nsc-pdc!mark
+
+Note to hackers: comments noting possible improvements are enclosed
+in double curly brackets {{ like this }}.

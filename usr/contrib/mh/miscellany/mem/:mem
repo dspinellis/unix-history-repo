@@ -1,0 +1,15 @@
+#! /bin/sh
+remfolder="+reminders"
+printformat="%3msg%-2.2flags%3day %02mon/%02mday %02hour%02min%<date %|*%>%subject%body"
+case $# in
+    0)
+	while when=`promptdate`
+	do
+		2>/dev/null scan `2>/dev/null pick $remfolder -after yesterday -and -before "$when"` -format "$printformat" $list
+	done
+	;;
+    *)
+	when=`promptdate "$*"`
+	2>/dev/null scan `2>/dev/null pick $remfolder -after yesterday -and -before "$when"` -format "$printformat" $list
+	;;
+esac
