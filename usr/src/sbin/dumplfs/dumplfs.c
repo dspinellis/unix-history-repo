@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -55,14 +55,15 @@ char *special;
 
 /* Segment Usage formats */
 #define print_suheader \
-	(void)printf("segnum\tstatus\tnbytes\t\tlastmod\n")
+	(void)printf("segnum\tflags\tnbytes\tninos\tnsums\tlastmod\n")
 
 #define print_suentry(i, sp) \
-	(void)printf("%d\t%c%c%c\t%d\t%s", i, \
+	(void)printf("%d\t%c%c%c\t%d\t%d\t%d\t%s", i, \
 	    (((sp)->su_flags & SEGUSE_ACTIVE) ? 'A' : ' '), \
 	    (((sp)->su_flags & SEGUSE_DIRTY) ? 'D' : 'C'), \
 	    (((sp)->su_flags & SEGUSE_SUPERBLOCK) ? 'S' : ' '), \
-	    (sp)->su_nbytes, ctime((time_t *)&(sp)->su_lastmod))
+	    (sp)->su_nbytes, (sp)->su_ninos, (sp)->su_nsums, \
+	    ctime((time_t *)&(sp)->su_lastmod))
 
 /* Ifile formats */
 #define print_iheader \
@@ -508,7 +509,8 @@ dump_super(lfsp)
 		"fbmask   ", lfsp->lfs_fbmask,
 		"fbshift  ", lfsp->lfs_fbshift);
 
-	(void)printf("%s%d\t\t%s0x%X\t%s0x%qx\n",
+	(void)printf("%s%d\t%s%d\t%s0x%X\t%s0x%qx\n",
+		"sushift  ", lfsp->lfs_sushift,
 		"fsbtodb  ", lfsp->lfs_fsbtodb,
 		"cksum    ", lfsp->lfs_cksum,
 		"maxfilesize  ", lfsp->lfs_maxfilesize);
