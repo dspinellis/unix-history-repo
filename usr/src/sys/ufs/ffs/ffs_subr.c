@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_subr.c	7.14 (Berkeley) %G%
+ *	@(#)ffs_subr.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -23,23 +23,25 @@
  * remaining space in the directory.
  */
 int
-ffs_blkatoff(ip, offset, res, bpp)
-	struct inode *ip;
+ffs_blkatoff(vp, offset, res, bpp)
+	struct vnode *vp;
 	off_t offset;
 	char **res;
 	struct buf **bpp;
 {
+	struct inode *ip;
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn;
 	int bsize, error;
 
+	ip = VTOI(vp);
 	fs = ip->i_fs;
 	lbn = lblkno(fs, offset);
 	bsize = blksize(fs, ip, lbn);
 
 	*bpp = NULL;
-	if (error = bread(ITOV(ip), lbn, bsize, NOCRED, &bp)) {
+	if (error = bread(vp, lbn, bsize, NOCRED, &bp)) {
 		brelse(bp);
 		return (error);
 	}
