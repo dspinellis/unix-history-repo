@@ -23,11 +23,13 @@ system manager in the file
 .IR /etc/shells .
 If 
 .I /etc/shells
-does not exist, the two standard system shells
+is unreadable or does not exist,
+.I getusershell
+behaves as if
 .I /bin/sh
 and
 .I /bin/csh
-are returned.
+were listed in the file.
 .PP
 .I Getusershell
 reads the next
@@ -38,10 +40,12 @@ rewinds the file;
 closes it.
 .SH FILES
 /etc/shells
+.SH "SEE ALSO"
+shells(5)
 .SH DIAGNOSTICS
 The routine
 .I getusershell
-returns a null pointer (0) on EOF or error.
+returns a null pointer (0) on EOF.
 .SH BUGS
 All information
 is contained in a static area
