@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tstp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tstp.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -32,11 +32,12 @@ __stop_signal_handler(signo)
 		return;
 
 	/*
-	 * Block every signal we can get our hands on.  This is because
-	 * applications have timers going off that want to repaint the
-	 * screen.
+	 * Block window change and timer signals.  The latter is because
+	 * applications use timers to decide when to repaint the screen.
 	 */
-	(void)sigfillset(&set);
+	(void)sigemptyset(&set);
+	(void)sigaddset(&set, SIGALRM);
+	(void)sigaddset(&set, SIGWINCH);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 	
 	/*
