@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sa.8	6.2 (Berkeley) %G%
+.\"	@(#)sa.8	6.3 (Berkeley) %G%
 .\"
 .TH SA 8 ""
 .UC 4
 .SH NAME
 sa, accton \- system accounting
 .SH SYNOPSIS
-.B /etc/sa
+.B sa
 [
 .B \-abcdDfijkKlnrstuv
 ] [
@@ -18,7 +18,7 @@ savacctfile ] [
 .B \-U
 usracctfile ] [ file ]
 .PP
-.B /etc/accton 
+.B accton 
 [ file ]
 .SH DESCRIPTION
 With an argument naming an existing
@@ -33,20 +33,20 @@ reports on, cleans up, and generally maintains accounting files.
 .PP
 .I Sa
 is able to condense the information in
-.I /usr/adm/acct
+.I /var/account/acct
 into a summary file
-.I /usr/adm/savacct
+.I /var/account/savacct
 which contains a count of the
 number of times each command was called and the time resources consumed.
 This condensation is desirable because on a large system
-.I /usr/adm/acct
+.I /var/account/acct
 can grow by 100 blocks per day.
 The summary file is normally read before the accounting file,
 so the reports include all available information.
 .PP
 If a file name is given as the last argument, that file will be treated
 as the accounting file;
-.I /usr/adm/acct
+.I /var/account/acct
 is the default.
 .PP
 Output fields are labeled: \*(lqcpu\*(rq for the sum of user+system time
@@ -108,7 +108,7 @@ Reverse order of sort.
 .TP
 s
 Merge accounting file into summary file
-.I /usr/adm/savacct
+.I /var/account/savacct
 when done.
 .TP
 t
@@ -129,20 +129,20 @@ the category `**junk**.' This is used to strip out garbage.
 .TP
 S
 The following filename is used as the command summary file instead of
-.I /usr/adm/savacct.
+.I /var/account/savacct.
 .TP
 U
 The following filename is used instead of
-.I /usr/adm/usracct
+.I /var/account/usracct
 to accumulate the per-user statistics printed by the \-m option.
 .dt
 .SH FILES
 .ta 2i
-/usr/adm/acct	raw accounting
+/var/account/acct	raw accounting
 .br
-/usr/adm/savacct	summary
+/var/account/savacct	summary
 .br
-/usr/adm/usracct	per-user summary
+/var/account/usracct	per-user summary
 .SH "SEE ALSO"
 ac(8), acct(2)
 .SH BUGS
