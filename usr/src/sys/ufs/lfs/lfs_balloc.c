@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.37 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.38 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -158,11 +158,11 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 				brelse (bp);
 				return (ENOSPC);
 			}
-			ip->i_blocks += bb;
-			fs->lfs_bfree -= bb;
 			daddr = bp->b_un.b_daddr[xap->in_off];
 			if (error = VOP_BWRITE(bp))
 				return (error);
+			ip->i_blocks += bb;
+			fs->lfs_bfree -= bb;
 			bp = NULL;
 			continue;
 		} else {
@@ -313,6 +313,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 		if (daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
 			bb = fsbtodb(fs, 1);
 			if (!ISSPACE_XXX(fs, bb)) {
+				/* Pretend we never allocated the buffer */
 				bp->b_flags |= B_INVAL;
 				*bpp = NULL;
 				brelse(bp);
