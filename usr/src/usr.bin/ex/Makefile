@@ -3,21 +3,32 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.22.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.23 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.22.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.23 (Berkeley) %G%
 #
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	7.22.1.1 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	7.23 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -56,6 +67,7 @@ SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_get.c \
 	ex_io.c ex_put.c ex_re.c ex_set.c ex_subr.c ex_tagio.c ex_temp.c \
 	ex_tty.c ex_unix.c ex_v.c ex_vadj.c ex_vget.c ex_vmain.c ex_voper.c \
 	ex_vops.c ex_vops2.c ex_vops3.c ex_vput.c ex_vwind.c printf.c
+MAN=	ex.0 vi.0
 
 .c.o:
 # ifdef VMUNIX
@@ -68,7 +80,7 @@ SRCS=	ex.c ex_addr.c ex_cmds.c ex_cmds2.c ex_cmdsub.c ex_data.c ex_get.c \
 	${CC} ${CFLAGS} -c x.c 
 	mv x.o $*.o
 
-all:	ex exrecover expreserve
+all: ex exrecover expreserve
 
 ex: ${OBJS} ${LIBC}
 	${CC} ${LDFLAGS} ${OBJS} -ltermcap
@@ -101,11 +113,14 @@ clean:
 	rm -f a.out exrecover expreserve strings core errs trace
 	rm -f *.o x*.[cs]
 
-depend:
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 # install in standard place (/usr/ucb)
-install: a.out exrecover expreserve
+install: ${MAN}
 	rm -f ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi \
 		${DESTDIR}/${BINDIR}/view ${DESTDIR}/${BINDIR}/edit \
 		${DESTDIR}/${BINDIR}/e ${DESTDIR}/usr/bin/ex
@@ -119,211 +134,15 @@ install: a.out exrecover expreserve
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/view
 	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/usr/bin/ex
 	-[ -d ${DESTDIR}/usr/preserve ] || mkdir ${DESTDIR}/usr/preserve
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} exrecover.c ex_extern.c
 	lint ${CFLAGS} expreserve.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 	ctags -a exrecover.c
 	ctags -a expreserve.c
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-ex.o: ex.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h ex_vars.h
-ex.o: ex_argv.h ex_temp.h ex_tty.h
-ex_addr.o: ex_addr.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_addr.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_addr.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_addr.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_addr.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_addr.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_addr.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_re.h
-ex_cmds.o: ex_cmds.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_cmds.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_cmds.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_cmds.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_cmds.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_cmds.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_cmds.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_argv.h ex_temp.h
-ex_cmds.o: ex_tty.h ex_vis.h
-ex_cmds2.o: ex_cmds2.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_cmds2.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_cmds2.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_cmds2.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_cmds2.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_cmds2.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_cmds2.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_argv.h ex_temp.h
-ex_cmds2.o: ex_tty.h ex_vis.h
-ex_cmdsub.o: ex_cmdsub.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_cmdsub.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_cmdsub.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_cmdsub.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_cmdsub.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_cmdsub.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_cmdsub.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_argv.h ex_temp.h
-ex_cmdsub.o: ex_tty.h ex_vis.h
-ex_data.o: ex_data.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_data.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_data.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_data.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_data.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_data.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_data.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h
-ex_get.o: ex_get.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_get.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_get.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_get.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_get.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_get.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_get.o: ex_vars.h ex_tty.h
-ex_io.o: ex_io.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_io.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_io.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_io.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_io.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_io.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_io.o: ex_vars.h ex_argv.h ex_temp.h ex_tty.h ex_vis.h
-ex_put.o: ex_put.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_put.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_put.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_put.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_put.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_put.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_put.o: ex_vars.h ex_tty.h ex_vis.h
-ex_re.o: ex_re.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_re.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_re.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_re.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_re.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_re.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_re.o: ex_vars.h ex_re.h
-ex_set.o: ex_set.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_set.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_set.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_set.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_set.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_set.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_set.o: ex_vars.h ex_temp.h ex_tty.h
-ex_subr.o: ex_subr.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_subr.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_subr.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_subr.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_subr.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_subr.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_subr.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_re.h ex_tty.h
-ex_subr.o: ex_vis.h
-ex_tagio.o: ex_tagio.c /usr/include/sys/file.h ex.h /usr/include/sys/param.h
-ex_tagio.o: /usr/include/sys/types.h /usr/include/signal.h
-ex_tagio.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
-ex_tagio.o: /usr/include/ctype.h /usr/include/errno.h /usr/include/signal.h
-ex_tagio.o: /usr/include/setjmp.h /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_tagio.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_tagio.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h
-ex_temp.o: ex_temp.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_temp.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_temp.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_temp.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_temp.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_temp.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_temp.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_temp.h ex_vis.h
-ex_temp.o: ex_tty.h
-ex_tty.o: ex_tty.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_tty.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_tty.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_tty.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_tty.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_tty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_tty.o: ex_vars.h ex_tty.h
-ex_unix.o: ex_unix.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_unix.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_unix.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_unix.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_unix.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_unix.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_unix.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_temp.h ex_tty.h
-ex_unix.o: ex_vis.h
-ex_v.o: ex_v.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_v.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_v.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_v.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_v.o: /usr/include/sys/stat.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-ex_v.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h ex_tune.h
-ex_v.o: ex_vars.h ex_re.h ex_tty.h ex_vis.h
-ex_vadj.o: ex_vadj.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vadj.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vadj.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vadj.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vadj.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vadj.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vadj.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vget.o: ex_vget.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vget.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vget.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vget.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vget.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vget.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vget.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vmain.o: ex_vmain.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vmain.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vmain.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vmain.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vmain.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vmain.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vmain.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_voper.o: ex_voper.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_voper.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_voper.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_voper.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_voper.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_voper.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_voper.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vops.o: ex_vops.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vops.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vops.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vops.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vops.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vops.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vops.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vops2.o: ex_vops2.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vops2.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vops2.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vops2.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vops2.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vops2.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vops2.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vops3.o: ex_vops3.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vops3.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vops3.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vops3.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vops3.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vops3.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vops3.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vput.o: ex_vput.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vput.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vput.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vput.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vput.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vput.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vput.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-ex_vwind.o: ex_vwind.c ex.h /usr/include/sys/param.h /usr/include/sys/types.h
-ex_vwind.o: /usr/include/signal.h /usr/include/machine/trap.h
-ex_vwind.o: /usr/include/machine/machparam.h /usr/include/ctype.h
-ex_vwind.o: /usr/include/errno.h /usr/include/signal.h /usr/include/setjmp.h
-ex_vwind.o: /usr/include/sys/stat.h /usr/include/sgtty.h
-ex_vwind.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-ex_vwind.o: /usr/include/sys/ttydev.h ex_tune.h ex_vars.h ex_tty.h ex_vis.h
-printf.o: printf.c /usr/include/varargs.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
