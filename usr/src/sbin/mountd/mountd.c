@@ -15,7 +15,7 @@ static char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	8.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -320,7 +320,7 @@ mntsrv(rqstp, transp)
 		 */
 		if (realpath(rpcpath, dirpath) == 0 ||
 		    stat(dirpath, &stb) < 0 ||
-		    (stb.st_mode & S_IFMT) != S_IFDIR ||
+		    (!S_ISDIR(stb.st_mode) && !S_ISREG(stb.st_mode)) ||
 		    statfs(dirpath, &fsb) < 0) {
 			chdir("/");	/* Just in case realpath doesn't */
 			if (debug)
@@ -1965,15 +1965,13 @@ check_dirpath(dirp)
 	while (*cp && ret) {
 		if (*cp == '/') {
 			*cp = '\0';
-			if (lstat(dirp, &sb) < 0 ||
-				(sb.st_mode & S_IFMT) != S_IFDIR)
+			if (lstat(dirp, &sb) < 0 || !S_ISDIR(sb.st_mode))
 				ret = 0;
 			*cp = '/';
 		}
 		cp++;
 	}
-	if (lstat(dirp, &sb) < 0 ||
-		(sb.st_mode & S_IFMT) != S_IFDIR)
+	if (lstat(dirp, &sb) < 0 || !S_ISDIR(sb.st_mode))
 		ret = 0;
 	return (ret);
 }
