@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.23 (Berkeley) %G%
+ *	@(#)signal.h	7.24 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNAL_H_
@@ -12,7 +12,9 @@
 
 #define NSIG	32		/* counting 0; could be 33 (mask is 1-32) */
 
+#ifndef _ANSI_SOURCE
 #include <machine/signal.h>	/* sigcontext; codes for SIGILL, SIGFPE */
+#endif
 
 #define	SIGHUP	1	/* hangup */
 #define	SIGINT	2	/* interrupt */
