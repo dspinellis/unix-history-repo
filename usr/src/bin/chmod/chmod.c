@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chmod.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)chmod.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -60,10 +60,22 @@ main(argc, argv)
 			fts_options &= ~FTS_PHYSICAL;
 			fts_options |= FTS_LOGICAL;
 			break;
-		case 'r':		/* "-[rwx]" are valid file modes */
+		/*
+		 * "-[rwx]" are valid mode commands.  If they are the entire
+		 * argument, getopt has moved past them, so decrement optind.
+		 * Regardless, we're done argument processing.
+		 */
+		case 'r':
+			if (!strcmp(argv[optind - 1], "-r"))
+				--optind;
+			goto done;
 		case 'w':
+			if (!strcmp(argv[optind - 1], "-w"))
+				--optind;
+			goto done;
 		case 'x':
-			--optind;
+			if (!strcmp(argv[optind - 1], "-x"))
+				--optind;
 			goto done;
 		case '?':
 		default:
