@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.32 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.33 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -105,7 +105,7 @@ depend: .depend
 .depend: ${SRCS}
 	mkdep ${CFLAGS:M-[ID]*} ${AINC} ${.ALLSRC}
 	@(TMP=/tmp/_depend$$$$; \
-	    sed -e 's/^\([^\.]*\).o:/\1.o \1.po:/' < .depend > $$TMP; \
+	    sed -e 's/^\([^\.]*\).o *:/\1.o \1.po:/' < .depend > $$TMP; \
 	    mv $$TMP .depend)
 .endif
 
