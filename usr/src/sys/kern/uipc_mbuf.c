@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.7 81/11/04 */
+/* uipc_mbuf.c 1.8 81/11/08 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -8,17 +8,14 @@
 #include "../h/cmap.h"
 #include "../h/map.h"
 #include "../h/mbuf.h"
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/ip.h"
-#include "../inet/tcp.h"
+#include "../net/inet_systm.h"		/* ### */
 #include "../h/vm.h"
 
 m_reserve(mbufs)
 	int mbufs;
 {
 
-	if (mbstat.m_lowat + mbufs > NNETPAGES * NMBPG - 32) 
+	if (mbstat.m_lowat + mbufs > NMBPAGES * NMBPG - 32) 
 		return (0);
 	mbstat.m_lowat += mbufs;
 	mbstat.m_hiwat = 2 * mbstat.m_lowat;
@@ -63,7 +60,7 @@ m_more(type)
 
 COUNT(M_MORE);
 	if (!m_expand()) {
-		netstat.m_drops++;
+		mbstat.m_drops++;
 		return (NULL);
 	}
 #define m_more(x) ((struct mbuf *)panic("m_more"))
@@ -92,15 +89,15 @@ COUNT(M_FREEM);
 	return (cnt);
 }
 
-mbufinit()
+mbinit()
 {
 	register struct mbuf *m;
 	register i;
 
 COUNT(MBUFINIT);
-	m = (struct mbuf *)&netutl[0];  /* ->start of buffer virt mem */
-	vmemall(&Netmap[0], 2, proc, CSYS);
-	vmaccess(&Netmap[0], m, 2);
+	m = (struct mbuf *)&mbutl[0];  /* ->start of buffer virt mem */
+	vmemall(&Mbmap[0], 2, proc, CSYS);
+	vmaccess(&Mbmap[0], m, 2);
 	for (i=0; i < NMBPG; i++) {
 		m->m_off = 0;
 		m_free(m);
@@ -114,16 +111,16 @@ COUNT(MBUFINIT);
 	{ int i,j,k,n;
 	n = 32;
 	k = n << 1;
-	if ((i = rmalloc(netmap, n)) == 0)
+	if ((i = rmalloc(mbmap, n)) == 0)
 		return (0);
 	j = i<<1;
 	m = pftom(i);
 	/* should use vmemall sometimes */
-	if (memall(&Netmap[j], k, proc, CSYS) == 0) {
+	if (memall(&Mbmap[j], k, proc, CSYS) == 0) {
 		printf("botch\n");
 		return;
 	}
-	vmaccess(&Netmap[j], (caddr_t)m, k);
+	vmaccess(&Mbmap[j], (caddr_t)m, k);
 	for (j=0; j < n; j++) {
 		m->m_off = 0;
 		m->m_next = mpfree;
@@ -143,14 +140,14 @@ pg_alloc(n)
 
 COUNT(PG_ALLOC);
 	k = n << 1;
-	if ((i = rmalloc(netmap, n)) == 0)
+	if ((i = rmalloc(mbmap, n)) == 0)
 		return (0);
 	j = i<<1;
 	m = pftom(i);
 	/* should use vmemall sometimes */
-	if (memall(&Netmap[j], k, proc, CSYS) == 0)
+	if (memall(&Mbmap[j], k, proc, CSYS) == 0)
 		return (0);
-	vmaccess(&Netmap[j], (caddr_t)m, k);
+	vmaccess(&Mbmap[j], (caddr_t)m, k);
 	bufs = n << 3;
 	s = splimp();
 	for (j=0; j < bufs; j++) {
@@ -215,60 +212,37 @@ m_adj(mp, len)
 {
 	register struct mbuf *m, *n;
 
-/*
-	for (m = mp; m; m = m->m_next) {
-		printf("a %x %d\n", m, m->m_len);
-	}
-*/
 COUNT(M_ADJ);
 	if ((m = mp) == NULL)
 		return;
-	if (len >= 0) {                 /* adjust from top of msg chain */
+	if (len >= 0) {
 		while (m != NULL && len > 0) {
-			if (m->m_len <= len) {          /* free this mbuf */
+			if (m->m_len <= len) {
 				len -= m->m_len;
 				m->m_len = 0;
 				m = m->m_next;
-			} else {                        /* adjust mbuf */
+			} else {
 				m->m_len -= len;
 				m->m_off += len;
 				break;
 			}
 		}
-
-	} else {                        /* adjust from bottom of msg chain */
+	} else {
+		/* a 2 pass algorithm might be better */
 		len = -len;
 		while (len > 0 && m->m_len != 0) {
-			/* find end of chain */
 			while (m != NULL && m->m_len != 0) {
 				n = m;
 				m = m->m_next;
 			}
-			if (n->m_len <= len) {          /* last mbuf */
+			if (n->m_len <= len) {
 				len -= n->m_len;
 				n->m_len = 0;
 				m = mp;
-			} else {                        /* adjust length */
+			} else {
 				n->m_len -= len;
 				break;
 			}
 		}
 	}
-}
-
-/*
- * convert mbuf virtual to physical addr for uballoc
- */
-mtophys(m)
-	register struct mbuf *m;
-{
-	register i;
-	register unsigned long addr;
-	register struct pte *pte;
-
-COUNT(MTOPHYS);
-	i = (((int)m & ~PGOFSET) - (int)netutl) >> PGSHIFT;
-	pte = &Netmap[i];
-	addr = (pte->pg_pfnum << PGSHIFT) | ((int)m & PGOFSET);
-	return (addr);
 }
