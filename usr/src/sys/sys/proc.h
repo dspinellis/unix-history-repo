@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.16 (Berkeley) %G%
+ *	@(#)proc.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -153,6 +153,11 @@ struct	prochd {
 int	whichqs;		/* bit mask summarizing non-empty qs's */
 
 #define SESS_LEADER(p)	((p)->p_session->s_leader == (p))
+#define	SESSHOLD(s)	((s)->s_count++)
+#define	SESSRELE(s)	{ \
+		if (--(s)->s_count == 0) \
+			FREE(s, M_SESSION); \
+		}
 #endif
 
 /* stat codes */
