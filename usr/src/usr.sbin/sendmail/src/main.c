@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	2.1	%G%";
+static char	SccsId[] = "@(#)main.c	2.1.1.1	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -137,6 +137,7 @@ main(argc, argv)
 	register char *p;
 	extern char *maketemp();
 	extern char *getname();
+	char *locname;
 	extern int finis();
 	extern addrq *parse();
 	register addrq *q;
@@ -145,6 +146,7 @@ main(argc, argv)
 	char *from;
 	register int i;
 	typedef int (*fnptr)();
+	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, finis);
@@ -280,19 +282,9 @@ main(argc, argv)
 		syserr("-f and -a are mutually exclusive");
 
 	/*
-	** Get a temp file.
-	*/
-
-	p = maketemp();
-	if (from == NULL)
-		from = p;
-# ifdef DEBUG
-	if (Debug)
-		printf("Message-Id: <%s>\n", MsgId);
-# endif DEBUG
-
-	/*
-	**  Figure out who it's coming from.
+	**  Find out who the person is as far as the local system is
+	**  concerned.
+	**
 	**	Under certain circumstances allow the user to say who
 	**	s/he is (using -f or -r).  These are:
 	**	1.  The user's uid is zero (root).
@@ -314,26 +306,35 @@ main(argc, argv)
 	**	ourselves.
 	*/
 
-	errno = 0;
-	p = getname();
-	if (p == NULL || p[0] == '\0')
+	locname = getname();
+	if (locname == NULL || locname[0] == '\0')
 	{
 		syserr("Who are you? (uid=%d)", getuid());
 		finis();
 	}
 	errno = 0;
-	if (from != NULL)
+
+	canrename = TRUE;
+	if (strcmp(locname, "network") != 0 && strcmp(locname, "uucp") != 0 &&
+	    getuid() != 0 && from != NULL && index(from, '!') == NULL)
 	{
-		if (strcmp(p, "network") != 0 && strcmp(p, "uucp") != 0 &&
-		    index(from, '!') == NULL && getuid() != 0)
-		{
-			/* network sends -r regardless (why why why?) */
-			/* syserr("%s, you cannot use the -f flag", p); */
-			from = NULL;
-		}
+		canrename = FALSE;
+		from = NULL;
 	}
-	if (from == NULL || from[0] == '\0')
+
+	/*
+	** Get a temp file.
+	*/
+
+	p = maketemp(from);
+	if (from == NULL)
 		from = p;
+# ifdef DEBUG
+	if (Debug)
+		printf("Message-Id: <%s>\n", MsgId);
+# endif DEBUG
+	if (from == NULL || from[0] == '\0')
+		from = locname;
 	else
 		FromFlag++;
 	SuprErrs = TRUE;
