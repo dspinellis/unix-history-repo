@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.16 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -129,6 +129,8 @@ extern int errno;
 struct al_mnt *al_head = (struct al_mnt *)0;
 #ifdef DEBUG
 int debug = 1;
+void	SYSLOG __P((int, const char *, ...));
+#define syslog SYSLOG
 #else
 int debug = 0;
 #endif
@@ -1477,3 +1479,15 @@ out:;
 	(void) close(d);
 	return 0;
 }
+
+#ifdef DEBUG
+void
+SYSLOG(int pri, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vfprintf(stderr, fmt, ap);
+	va_end(ap);
+}
+#endif /* DEBUG */
