@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -123,6 +123,7 @@ char	*FreezeFile =	"/etc/sendmail.fc";	/* frozen version of above */
 */
 
 int	DtableSize =	50;		/* max open files; reset in 4.2bsd */
+extern int la;				/* load average */
 /*
 **  SETDEFAULTS -- set default values
 **
