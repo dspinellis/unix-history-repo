@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.2 (Berkeley) %G%
+ *	@(#)pmap.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@
 #include "vm/vm_page.h"
 
 #include "../include/machConst.h"
-#include "pte.h"
+#include "../include/pte.h"
 
 /*
  * For each vm_page_t, there is a list of all currently valid virtual
@@ -137,6 +137,7 @@ pmap_bootstrap(firstaddr)
 {
 	register int i;
 	vm_offset_t start = firstaddr;
+	vm_offset_t pa;
 	extern int maxmem, physmem;
 
 	/*
@@ -158,17 +159,18 @@ pmap_bootstrap(firstaddr)
 	/*
 	 * Allocate an empty TLB hash table for initial pmap's.
 	 */
-	zero_pmap_hash = (pmap_hash_t)firstaddr;
+	zero_pmap_hash = (pmap_hash_t)MACH_PHYS_TO_CACHED(firstaddr);
+	pa = firstaddr;
 	firstaddr += PMAP_HASH_UPAGES * NBPG;
  
 	/* init proc[0]'s pmap hash table */
 	for (i = 0; i < PMAP_HASH_UPAGES; i++) {
-		kernel_pmap_store.pm_hash_ptes[i] =
-			((u_int)zero_pmap_hash + (i << PGSHIFT)) | PG_V | PG_RO;
+		kernel_pmap_store.pm_hash_ptes[i] = pa | PG_V | PG_RO;
 		MachTLBWriteIndexed(i + UPAGES,
 			(PMAP_HASH_UADDR + (i << PGSHIFT)) |
 				(1 << VMMACH_TLB_PID_SHIFT),
 			kernel_pmap_store.pm_hash_ptes[i]);
+		pa += NBPG;
 	}
 
 	/*
@@ -180,13 +182,13 @@ pmap_bootstrap(firstaddr)
 	 */
 	i = (maxmem - pmax_btop(firstaddr)) * sizeof(struct pv_entry);
 	i = pmax_round_page(i);
-	pv_table = (pv_entry_t)firstaddr;
+	pv_table = (pv_entry_t)MACH_PHYS_TO_CACHED(firstaddr);
 	firstaddr += i;
 
 	/*
 	 * Clear allocated memory.
 	 */
-	bzero((caddr_t)start, firstaddr - start);
+	bzero((caddr_t)MACH_PHYS_TO_CACHED(start), firstaddr - start);
 
 	avail_start = firstaddr;
 	avail_end = pmax_ptob(maxmem);
@@ -223,12 +225,12 @@ pmap_bootstrap_alloc(size)
 	if (vm_page_startup_initialized)
 		panic("pmap_bootstrap_alloc: called after startup initialized");
 
-	val = avail_start;
+	val = MACH_PHYS_TO_CACHED(avail_start);
 	size = round_page(size);
 	avail_start += size;
 
-	blkclr((caddr_t) val, size);
-	return ((void *) val);
+	blkclr((caddr_t)val, size);
+	return ((void *)val);
 }
 
 /*
@@ -267,7 +269,7 @@ pmap_map(virt, start, end, prot)
 		printf("pmap_map(%x, %x, %x, %x)\n", virt, start, end, prot);
 #endif
 
-	return(round_page(end));
+	return (round_page(end));
 }
 
 /*
@@ -296,7 +298,7 @@ pmap_create(size)
 	 * Software use map does not need a pmap
 	 */
 	if (size)
-		return(NULL);
+		return (NULL);
 
 	printf("pmap_create(%x) XXX\n", size); /* XXX */
 	/* XXX: is it ok to wait here? */
@@ -460,6 +462,11 @@ pmap_remove(pmap, sva, eva)
 		register pt_entry_t *pte;
 
 		/* remove entries from kernel pmap */
+#ifdef DIAGNOSTIC
+		if (sva < VM_MIN_KERNEL_ADDRESS ||
+		    eva > VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES*NPTEPG*NBPG)
+			panic("pmap_remove");
+#endif
 		pte = kvtopte(sva);
 		for (va = sva; va < eva; va += NBPG, pte++) {
 			entry = pte->pt_entry;
@@ -641,6 +648,11 @@ pmap_protect(pmap, sva, eva, prot)
 		 * executed much. The common case is to make a user page
 		 * read-only.
 		 */
+#ifdef DIAGNOSTIC
+		if (sva < VM_MIN_KERNEL_ADDRESS ||
+		    eva > VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES*NPTEPG*NBPG)
+			panic("pmap_protect");
+#endif
 		p = (prot & VM_PROT_WRITE) ? PG_RW : PG_RO;
 		pte = kvtopte(sva);
 		for (va = sva; va < eva; va += NBPG, pte++) {
@@ -730,6 +742,8 @@ pmap_enter(pmap, va, pa, prot, wired)
 		if (va & 0x80000000)
 			panic("pmap_enter: uva");
 	}
+	if (pa & 0x80000000)
+		panic("pmap_enter: pa");
 	if (!(prot & VM_PROT_READ))
 		panic("pmap_enter: prot");
 #endif
@@ -892,6 +906,19 @@ pmap_enter(pmap, va, pa, prot, wired)
 		npte = (prot & VM_PROT_WRITE) ? PG_M : PG_RO;
 	}
 
+	/*
+	 * The only time we need to flush the cache is if we
+	 * execute from a physical address and then change the data.
+	 * This is the best place to do this.
+	 * pmap_protect() and pmap_remove() are mostly used to switch
+	 * between R/W and R/O pages.
+	 * NOTE: we only support cache flush for read only text.
+	 */
+#if 0
+	if (prot == (VM_PROT_READ | VM_PROT_EXECUTE))
+		MachFlushICache(MACH_PHYS_TO_UNCACHED(pa), PAGE_SIZE);
+#endif
+
 	if (!pmap->pm_hash) {
 		register pt_entry_t *pte;
 
@@ -1012,6 +1039,11 @@ pmap_change_wiring(pmap, va, wired)
 		register pt_entry_t *pte;
 
 		/* change entries in kernel pmap */
+#ifdef DIAGNOSTIC
+		if (va < VM_MIN_KERNEL_ADDRESS ||
+		    va >= VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES*NPTEPG*NBPG)
+			panic("pmap_change_wiring");
+#endif
 		pte = kvtopte(va);
 		i = pmaxpagesperpage;
 		if (!(pte->pt_entry & PG_WIRED) && p)
@@ -1059,9 +1091,14 @@ pmap_extract(pmap, va)
 		printf("pmap_extract(%x, %x) -> ", pmap, va);
 #endif
 
-	if (!pmap->pm_hash)
+	if (!pmap->pm_hash) {
+#ifdef DIAGNOSTIC
+		if (va < VM_MIN_KERNEL_ADDRESS ||
+		    va >= VM_MIN_KERNEL_ADDRESS + PMAP_HASH_KPAGES*NPTEPG*NBPG)
+			panic("pmap_extract");
+#endif
 		pa = kvtopte(va)->pt_entry & PG_FRAME;
-	else if (pmap->pm_tlbpid >= 0) {
+	} else if (pmap->pm_tlbpid >= 0) {
 		hp = &pmap->pm_hash[PMAP_HASH(va)];
 		if (hp->high)
 			pa = hp->low & PG_FRAME;
@@ -1074,7 +1111,7 @@ pmap_extract(pmap, va)
 	if (pmapdebug & PDB_FOLLOW)
 		printf("%x\n", pa);
 #endif
-	return(pa);
+	return (pa);
 }
 
 /*
@@ -1084,7 +1121,8 @@ pmap_extract(pmap, va)
  *
  *	This routine is only advisory and need not do anything.
  */
-void pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
+void
+pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
 	pmap_t dst_pmap;
 	pmap_t src_pmap;
 	vm_offset_t dst_addr;
@@ -1107,7 +1145,8 @@ void pmap_copy(dst_pmap, src_pmap, dst_addr, len, src_addr)
  *	Generally used to insure that a thread about
  *	to run will see a semantically correct world.
  */
-void pmap_update()
+void
+pmap_update()
 {
 
 #ifdef DEBUG
@@ -1144,22 +1183,23 @@ pmap_collect(pmap)
  */
 void
 pmap_zero_page(phys)
-	register vm_offset_t phys;
+	vm_offset_t phys;
 {
-	register vm_offset_t end;
+	register int *p, *end;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_zero_page(%x)\n", phys);
 #endif
-	end = phys + PAGE_SIZE;
+	p = (int *)MACH_PHYS_TO_CACHED(phys);
+	end = p + PAGE_SIZE / sizeof(int);
 	do {
-		((unsigned *)phys)[0] = 0;
-		((unsigned *)phys)[1] = 0;
-		((unsigned *)phys)[2] = 0;
-		((unsigned *)phys)[3] = 0;
-		phys += 4 * sizeof(unsigned);
-	} while (phys != end);
+		p[0] = 0;
+		p[1] = 0;
+		p[2] = 0;
+		p[3] = 0;
+		p += 4;
+	} while (p != end);
 }
 
 /*
@@ -1168,28 +1208,30 @@ pmap_zero_page(phys)
  */
 void
 pmap_copy_page(src, dst)
-	register vm_offset_t src, dst;
+	vm_offset_t src, dst;
 {
-	register vm_offset_t end;
-	register unsigned tmp0, tmp1, tmp2, tmp3;
+	register int *s, *d, *end;
+	register int tmp0, tmp1, tmp2, tmp3;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
 		printf("pmap_copy_page(%x, %x)\n", src, dst);
 #endif
-	end = src + PAGE_SIZE;
+	s = (int *)MACH_PHYS_TO_CACHED(src);
+	d = (int *)MACH_PHYS_TO_CACHED(dst);
+	end = s + PAGE_SIZE / sizeof(int);
 	do {
-		tmp0 = ((unsigned *)src)[0];
-		tmp1 = ((unsigned *)src)[1];
-		tmp2 = ((unsigned *)src)[2];
-		tmp3 = ((unsigned *)src)[3];
-		((unsigned *)dst)[0] = tmp0;
-		((unsigned *)dst)[1] = tmp1;
-		((unsigned *)dst)[2] = tmp2;
-		((unsigned *)dst)[3] = tmp3;
-		src += 4 * sizeof(unsigned);
-		dst += 4 * sizeof(unsigned);
-	} while (src != end);
+		tmp0 = s[0];
+		tmp1 = s[1];
+		tmp2 = s[2];
+		tmp3 = s[3];
+		d[0] = tmp0;
+		d[1] = tmp1;
+		d[2] = tmp2;
+		d[3] = tmp3;
+		s += 4;
+		d += 4;
+	} while (s != end);
 }
 
 /*
@@ -1268,9 +1310,9 @@ pmap_is_referenced(pa)
 	vm_offset_t pa;
 {
 #ifdef ATTR
-	return(pmap_attributes[atop(pa - KERNBASE)] & PMAP_ATTR_REF);
+	return (pmap_attributes[atop(pa - KERNBASE)] & PMAP_ATTR_REF);
 #else
-	return(FALSE);
+	return (FALSE);
 #endif
 }
 
@@ -1285,9 +1327,9 @@ pmap_is_modified(pa)
 	vm_offset_t pa;
 {
 #ifdef ATTR
-	return(pmap_attributes[atop(pa - KERNBASE)] & PMAP_ATTR_MOD);
+	return (pmap_attributes[atop(pa - KERNBASE)] & PMAP_ATTR_MOD);
 #else
-	return(FALSE);
+	return (FALSE);
 #endif
 }
 
@@ -1301,7 +1343,7 @@ pmap_phys_address(ppn)
 		printf("pmap_phys_address(%x)\n", ppn);
 #endif
 	panic("pmap_phys_address"); /* XXX */
-	return(pmax_ptob(ppn));
+	return (pmax_ptob(ppn));
 }
 
 /*
