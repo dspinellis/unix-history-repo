@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.12 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.13 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -25,12 +25,23 @@ deltest( p ) register NODE *p; {
 
 autoincr( p ) NODE *p; {
 	register NODE *q = p->in.left;
+	register TWORD t;
 
-	if( q->in.op == INCR && q->in.left->in.op == REG &&
-	    ISPTR(q->in.type) && p->in.type == DECREF(q->in.type) &&
-	    tlen(p) == q->in.right->tn.lval ) return(1);
+	if( q->in.op != INCR ||
+	    q->in.left->in.op != REG ||
+	    !ISPTR(q->in.type) )
+		return(0);
+	t = q->in.type;
+	q->in.type = DECREF(t);
+	if( tlen(p) != tlen(q) ) { /* side effects okay? */
+		q->in.type = t;
+		return(0);
+		}
+	q->in.type = t;
+	if( tlen(p) != q->in.right->tn.lval )
+		return(0);
 
-	return(0);
+	return(1);
 	}
 
 mkadrs(p) register NODE *p; {
