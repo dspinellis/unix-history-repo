@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	3.6	%G%";
+static char SccsId[] = "@(#)macro.c	3.7	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -130,6 +130,8 @@ expand(s, buf, buflim)
 **		     net typically)+
 **		$o   delimiters ("operators") for address tokens+
 **		$p   my process id in decimal
+**		$r   protocol used to talk to sender
+**		$s   sender's host name
 **		$t   the current time in seconds since 1/1/1970
 **		$u   to user
 **		$v   version number of sendmail
