@@ -9,8 +9,9 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
+VPATH=	../../ucb/tftp
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	tftpd.c tftpsubs.c
@@ -43,15 +44,12 @@ FRC:
 
 tftpd.o: tftpd.c /usr/include/sys/types.h /usr/include/sys/socket.h
 tftpd.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-tftpd.o: /usr/include/sys/ttydev.h /usr/include/sys/wait.h
-tftpd.o: /usr/include/machine/machparam.h /usr/include/sys/stat.h
-tftpd.o: /usr/include/netinet/in.h /usr/include/arpa/tftp.h
-tftpd.o: /usr/include/signal.h /usr/include/stdio.h /usr/include/errno.h
+tftpd.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+tftpd.o: /usr/include/sys/wait.h /usr/include/machine/endian.h
+tftpd.o: /usr/include/sys/stat.h /usr/include/netinet/in.h
+tftpd.o: /usr/include/arpa/tftp.h /usr/include/signal.h
+tftpd.o: /usr/include/machine/trap.h /usr/include/stdio.h /usr/include/errno.h
 tftpd.o: /usr/include/ctype.h /usr/include/netdb.h /usr/include/setjmp.h
 tftpd.o: /usr/include/syslog.h
-tftpsubs.o: tftpsubs.c /usr/include/sys/types.h /usr/include/sys/socket.h
-tftpsubs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-tftpsubs.o: /usr/include/sys/ttydev.h /usr/include/netinet/in.h
-tftpsubs.o: /usr/include/arpa/tftp.h /usr/include/stdio.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
