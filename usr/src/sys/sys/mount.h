@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.9 (Berkeley) %G%
+ *	@(#)mount.h	7.10 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -54,16 +54,20 @@ struct mount {
 /*
  * Mount flags.
  */
-#define	M_RDONLY	0x01		/* read only filesystem */
-#define	M_SYNCHRONOUS	0x02		/* file system written synchronously */
-#define	M_NOEXEC	0x04		/* can't exec from filesystem */
-#define	M_NOSUID	0x08		/* don't honor setuid bits on fs */
-#define	M_NODEV		0x10		/* don't interpret special files */
+#define	M_RDONLY	0x0001		/* read only filesystem */
+#define	M_SYNCHRONOUS	0x0002		/* file system written synchronously */
+#define	M_NOEXEC	0x0004		/* can't exec from filesystem */
+#define	M_NOSUID	0x0008		/* don't honor setuid bits on fs */
+#define	M_NODEV		0x0010		/* don't interpret special files */
 /*
  * exported mount flags.
  */
-#define	M_EXPORTED	0x100		/* file system is exported */
-#define	M_EXRDONLY	0x200		/* exported read only */
+#define	M_EXPORTED	0x0100		/* file system is exported */
+#define	M_EXRDONLY	0x0200		/* exported read only */
+/*
+ * Mask of flags that are visible to statfs()
+ */
+#define	M_VISFLAGMASK	0x0fff
 /*
  * filesystem control flags.
  *
