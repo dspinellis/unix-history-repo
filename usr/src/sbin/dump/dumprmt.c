@@ -5,16 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <sys/mtio.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
+#include <ufs/dinode.h>
 
 #include <netinet/in.h>
 
