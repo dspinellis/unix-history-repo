@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)timezone.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)timezone.c	5.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/types.h>
@@ -30,7 +30,7 @@ timezone(zone, dst)
 {
 	register char	*beg,
 			*end;
-	char	*getenv(), *index(), *strncpy(), *tztab();
+	char	*getenv(), *index(), *strncpy(), *_tztab();
 
 	if (beg = getenv("TZNAME")) {		/* set in environment */
 		if (end = index(beg, ',')) {	/* "PST,PDT" */
@@ -44,7 +44,7 @@ timezone(zone, dst)
 		}
 		return(beg);
 	}
-	return(tztab(zone,dst));	/* default: table or created zone */
+	return(_tztab(zone,dst));	/* default: table or created zone */
 }
 
 static struct zone {
@@ -71,7 +71,7 @@ static struct zone {
 };
 
 /*
- * tztab --
+ * _tztab --
  *	check static tables or create a new zone name; broken out so that
  *	we can make a guess as to what the zone is if the standard tables
  *	aren't in place in /etc.  DO NOT USE THIS ROUTINE OUTSIDE OF THE
