@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -62,6 +62,7 @@ struct entry list[] = {
 #define	E_LOCATE	10
 	{ "Location",		p_gecos,  0,   8, e2,   },
 	{ "Home directory",	p_hdir,   1,  14, e1,   },
+#define	E_SHELL		12
 	{ "Shell",		p_shell,  0,   5, e1,   },
 	{ NULL, 0, },
 };
@@ -250,7 +251,13 @@ info(pw)
 		return(0);
 	}
 
-	print(fp, pw);
+	/*
+	 * if print doesn't print out a shell field, make it restricted.
+	 * Not particularly pretty, but print is the routine that checks
+	 * to see if the user can change their shell.
+	 */
+	if (!print(fp, pw))
+		list[E_SHELL].restricted = 1;
 	(void)fflush(fp);
 
 	/*
@@ -307,8 +314,12 @@ check(fp, pw)
 				return(0);
 			}
 			if (!strncasecmp(buf, ep->prompt, ep->len)) {
-				if (ep->restricted && uid)
-					break;
+				if (ep->restricted && uid) {
+					(void)fprintf(stderr,
+					    "chpass: you may not change the %s field.\n",
+					    ep->prompt);
+					return(0);
+				}
 				if (!(p = index(buf, ':'))) {
 					(void)fprintf(stderr,
 					    "chpass: line corrupted.\n");
@@ -317,7 +328,7 @@ check(fp, pw)
 				while (isspace(*++p));
 				if (ep->except && strpbrk(p, ep->except)) {
 					(void)fprintf(stderr,
-					   "chpass: illegal character in the \"%s\" field.\n",
+					    "chpass: illegal character in the \"%s\" field.\n",
 					    ep->prompt);
 					return(0);
 				}
