@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_getprocs.3	5.1 (Berkeley) %G%
+.\"     @(#)kvm_getprocs.3	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_GETPROCS 3
@@ -24,7 +24,7 @@
 .Ft char **
 .Fn kvm_getargv "kvm_t *kd" "const struct kinfo_proc *p" "int nchr"
 .Ft char **
-.Fn kvm_getargv "kvm_t *kd" "const struct kinfo_proc *p" "int nchr"
+.Fn kvm_getenvv "kvm_t *kd" "const struct kinfo_proc *p" "int nchr"
 .Sh DESCRIPTION
 .Fn kvm_getprocs
 returns a (sub-)set of active processes in the kernel indicated by
@@ -69,14 +69,14 @@ subsequent kvm library calls.  Data should be copied out if it needs to be
 saved.
 .Pp
 .Fn kvm_getargv
-returns an null-terminated argument vector that corresponds to the 
+returns a null-terminated argument vector that corresponds to the 
 command line arguments passed to process indicated by
 .Fa p .
 Most likely, these arguments correspond to the values passed to
 .Xr exec 3
-on process creation.  However, this information exists only the
-process address space, and is therefore alterable by the process
-itself.   Note that the original command name can be found, unaltered,
+on process creation.  This information is, however,
+deliberately under control of the process itself.
+Note that the original command name can be found, unaltered,
 in the p_comm field of the process structure returned by
 .Fn kvm_getprocs .
 .Pp
@@ -88,13 +88,17 @@ causing the overflow is truncated and the partial result is returned.
 This is handy for programs like
 .Xr ps 1
 and
-.Xr w
-that print only a one line summary of a command and should copy
-out large numbers arguments that will not be printed.
+.Xr w 1
+that print only a one line summary of a command and should not copy
+out large amounts of text only to ignore it.
+If
+.Fa nchr
+is zero, no limit is imposed and all argument strings are returned in 
+their entirety.
 .Pp
-The memory allocated to the argv pointers as well as the string storage
-are owned by the kvm library.  Data must be copied out of this
-structure before calling another kvm function.
+The memory allocated to the argv pointers and string storage
+is owned by the kvm library.  Since subsequent kvm calls may clobber
+this storage, data must be copied out if it needs to be saved.
 .Pp
 The
 .Fn kvm_getenvv
@@ -107,16 +111,18 @@ also alterable by the process.
 .Fn kvm_getargv ,
 and
 .Fn kvm_getenvv ,
-all return NULL on failure.
+all return
+.Dv NULL
+on failure.
 .Pp
 .Sh BUGS
 These routines do not belong in the kvm interface.
 .Sh SEE ALSO
 .Xr kvm 3 ,
+.Xr kvm_close 3 ,
+.Xr kvm_geterr 3 ,
+.Xr kvm_nlist 3 ,
 .Xr kvm_open 3 ,
 .Xr kvm_openfiles 3 ,
-.Xr kvm_close 3 ,
 .Xr kvm_read 3 ,
-.Xr kvm_write 3 ,
-.Xr kvm_nlist 3 ,
-.Xr kvm_geterr 3
+.Xr kvm_write 3

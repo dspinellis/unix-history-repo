@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kvm_geterr.3	5.1 (Berkeley) %G%
+.\"     @(#)kvm_geterr.3	5.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KVM_GETERR 3
@@ -27,13 +27,24 @@ The string returned is stored in memory owned by
 .Xr kvm 3
 so the message should be copied out and saved elsewhere if necessary.
 .Sh BUGS
-This routine cannot be used to access error conditions do to a failed
+This routine cannot be used to access error conditions due to a failed
 .Fn kvm_openfiles
-call, since failure is indicated by returning a NULL descriptor.
+call, since failure is indicated by returning a
+.Dv NULL
+descriptor.
 Therefore, errors on open are output to the special error buffer
 passed to 
 .Fn kvm_openfiles .
 This option is not available to
 .Fn kvm_open .
 .Sh SEE ALSO
-.Xr kvm 3
+.Xr kvm 3 ,
+.Xr kvm_close 3 ,
+.Xr kvm_getargv 3 ,
+.Xr kvm_getenvv 3 ,
+.Xr kvm_getprocs 3 ,
+.Xr kvm_nlist 3 ,
+.Xr kvm_open 3 ,
+.Xr kvm_openfiles 3 ,
+.Xr kvm_read 3 ,
+.Xr kvm_write 3
