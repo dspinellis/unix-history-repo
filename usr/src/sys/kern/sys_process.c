@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.17 (Berkeley) %G%
+ *	@(#)sys_process.c	7.18 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -113,7 +113,7 @@ procxmt(p)
 	if (ipc.ip_lock != p->p_pid)
 		return (0);
 	p->p_slptime = 0;
-	u.u_kproc.kp_proc.p_regs = p->p_regs;	/* u.u_ar0 */
+	p->p_addr->u_kproc.kp_proc.p_regs = p->p_regs;	/* u.u_ar0 */
 	i = ipc.ip_req;
 	ipc.ip_req = 0;
 	switch (i) {
@@ -132,14 +132,14 @@ procxmt(p)
 
 	case PT_READ_U:			/* read the child's u. */
 #ifdef HPUXCOMPAT
-		if (u.u_pcb.pcb_flags & PCB_HPUXTRACE)
+		if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE)
 			i = hpuxtobsduoff(ipc.ip_addr);
 		else
 #endif
 		i = (int)ipc.ip_addr;
 		if (i<0 || i > ctob(UPAGES)-sizeof(int))
 			goto error;
-		ipc.ip_data = *(int *)PHYSOFF(&u, i);
+		ipc.ip_data = *(int *)PHYSOFF(p->p_addr, i);
 		break;
 
 	case PT_WRITE_I:		/* write the child's text space */
@@ -170,12 +170,12 @@ procxmt(p)
 
 	case PT_WRITE_U:		/* write the child's u. */
 #ifdef HPUXCOMPAT
-		if (u.u_pcb.pcb_flags & PCB_HPUXTRACE)
+		if (p->p_addr->u_pcb.pcb_flags & PCB_HPUXTRACE)
 			i = hpuxtobsduoff(ipc.ip_addr);
 		else
 #endif
 		i = (int)ipc.ip_addr;
-		poff = (int *)PHYSOFF(&u, i);
+		poff = (int *)PHYSOFF(p->p_addr, i);
 		for (i=0; i<NIPCREG; i++)
 			if (poff == &p->p_regs[ipcreg[i]])
 				goto ok;
@@ -190,8 +190,8 @@ procxmt(p)
 		}
 #if defined(hp300)
 #ifdef FPCOPROC
-		if (poff >= (int *)u.u_pcb.pcb_fpregs.fpf_regs &&
-		    poff <= (int *)&u.u_pcb.pcb_fpregs.fpf_fpiar)
+		if (poff >= (int *)p->p_addr->u_pcb.pcb_fpregs.fpf_regs &&
+		    poff <= (int *)&p->p_addr->u_pcb.pcb_fpregs.fpf_fpiar)
 			goto ok;
 #endif
 #endif
