@@ -3,141 +3,126 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)syslog.3	6.13 (Berkeley) %G%
+.\"	@(#)syslog.3	6.14 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
 .SH NAME
-syslog, openlog, closelog, setlogmask, vsyslog \- control system log
+syslog, vsyslog, openlog, closelog, setlogmask \- control system log
 .SH SYNOPSIS
-.B "#include <syslog.h>
-.PP
-.B "openlog(ident, logopt, facility)
-.br
-.B "char *ident;
-.PP
-.B "syslog(priority, message, parameters ... )
-.br
-.B "int priority;
-.br
-.B "char *message;
-.PP
-.B "#include <varargs.h>
-.br
-.B "vsyslog(priority, message, args)
-.br
-.B "int priority;
-.br
-.B "char *message;
-.br
-.B "va_list args;
-.PP
-.B "closelog()
-.PP
-.B "setlogmask(maskpri)
+.nf
+.ft B
+#include <syslog.h>
+syslog(int priority, char *message, [, arg ] ... );
+
+include <varargs.h>
+vsyslog(int priority, char *message, va_list args);
+
+openlog(char *ident, int logopt, int facility);
+
+closelog(void);
+
+setlogmask(int maskpri);
+.ft R
+.fi
 .SH DESCRIPTION
 .I Syslog
-arranges to write
+writes
 .I message
-onto the system log maintained by
-.IR syslogd (8).
+to the system message logger.
+The message will then be written to the system console, log files,
+logged-in users, or forwarded to other machines as appropriate (see
+.IR syslogd (8)).
+.PP
+The message is identical to a
+.IR printf (3)
+format string, except that ``%m'' is replaced by the current error
+message (as denoted by
+.IR errno ;
+see
+.IR strerror (3)).
+A trailing newline is added if none is present.
+.PP
+.I Vsyslog
+is an alternate form in which the arguments have already been captured
+using the variable-length argument facilities of
+.IR varargs (3).
+.PP
 The message is tagged with
 .IR priority .
-The message looks like a
-.IR printf (3)
-string except that
-.B %m
-is replaced by the current error message (as referenced by
-.IR errno ).
-A trailing newline is added if needed.
-An alternate form, in which the arguments have already been captured
-using the variable-length argument facilities of
-.IR varargs (3),
-is available under the name
-.IR vsyslog .
-.PP
-This message will be read by
-.IR syslogd (8)
-and written to the system console, log files, or forwarded to
-.I syslogd
-on another host as appropriate.
-.PP
 Priorities are encoded as a
 .I facility
 and a
 .IR level .
 The facility describes the part of the system
 generating the message.
-The level is selected from an ordered list:
-.TP
-LOG_ALERT
-A condition that should be corrected immediately,
-such as a corrupted system database.
-.TP
-LOG_CRIT
-Critical conditions,
-e.g., hard device errors.
-.TP
-LOG_DEBUG
-Messages that contain information
-normally of use only when debugging a program.
+The level is selected from the following
+.B ordered
+(high to low) list:
 .TP
 LOG_EMERG
 A panic condition.
 This is normally broadcast to all users.
 .TP
+LOG_ALERT
+A condition that should be corrected immediately, such as a corrupted
+system database.
+.TP
+LOG_CRIT
+Critical conditions, e.g., hard device errors.
+.TP
 LOG_ERR
 Errors.
 .TP
-LOG_INFO
-Informational messages.
+LOG_WARNING
+Warning messages.
 .TP
 LOG_NOTICE
 Conditions that are not error conditions,
 but should possibly be handled specially.
 .TP
-LOG_WARNING
-Warning messages.
+LOG_INFO
+Informational messages.
+.TP
+LOG_DEBUG
+Messages that contain information
+normally of use only when debugging a program.
 .PP
+.I Openlog
+provides for more specialized processing of the messages sent
+by
+.I syslog
+and
+.IR vsyslog .
+The parameter
+.I ident
+is a string that will be prepended to every message.
+.I Logopt
+is a bit field specifying logging options, which is formed by
+.IR OR 'ing
+one or more of the following values:
+.TP
+LOG_CONS
 If
 .I syslog
 cannot pass the message to
-.IR syslogd ,
-it will attempt to write the message to the console (``/dev/console'')
-if the LOG_CONS option is set (see below).
-.PP
-If special processing is needed,
-.I openlog
-can be called to initialize the log file.
-The parameter
-.I ident
-is a string that is prepended to every message.
-.I Logopt
-is a bit field indicating logging options.
-Current values for
-.I logopt
-are:
-.TP
-LOG_CONS
-If unable to send the message to
-.IR syslogd ,
-write it to the console.
+.I syslogd
+it will attempt to write the message to the console (``/dev/console'').
 .TP
 LOG_NDELAY 
 Open the connection to
 .I syslogd
 immediately.
-Normally the open is delayed
-until the first message is logged.
-Useful for programs that need to manage the
-order in which file descriptors are allocated.
+Normally the open is delayed until the first message is logged.
+Useful for programs that need to manage the order in which file
+descriptors are allocated.
 .TP
 LOG_PERROR
-Write the message to stderr as well to the system log.
+Write the message to standard error output as well to the system log.
 .TP
 LOG_PID
-Log the process id with each message:
-useful for identifying instantiations of daemons.
+Log the process id with each message: useful for identifying
+instantiations of daemons.
 .PP
 The
 .I facility
@@ -151,6 +136,10 @@ The authorization system:
 .IR getty (8),
 etc.
 .TP
+LOG_AUTHPRIV
+The same as LOG_AUTH, but logged to a file readable only by
+selected individuals.
+.TP
 LOG_CRON
 The clock daemon.
 .TP
@@ -158,7 +147,7 @@ LOG_DAEMON
 System daemons, such as
 .IR ftpd (8),
 .IR routed (8),
-etc, that are not provided for explicitly by other facilities.
+etc., that are not provided for explicitly by other facilities.
 .TP
 LOG_KERN
 Messages generated by the kernel.
@@ -206,13 +195,14 @@ with a priority not set in
 are rejected.
 The mask for an individual priority
 .I pri
-is calculated by the macro LOG_MASK(\fIpri\fP);
+is calculated by the macro ``LOG_MASK(pri);''
 the mask for all priorities up to and including
 .I toppri
-is given by the macro LOG_UPTO(\fItoppri\fP).
+is given by the macro ``LOG_UPTO(toppri);''.
 The default allows all priorities to be logged.
 .SH EXAMPLES
 .nf
+.RS
 syslog(LOG_ALERT, "who: internal error 23");
 
 openlog("ftpd", LOG_PID, LOG_DAEMON);
@@ -220,7 +210,48 @@ setlogmask(LOG_UPTO(LOG_ERR));
 syslog(LOG_INFO, "Connection from host %d", CallingHost);
 
 syslog(LOG_INFO|LOG_LOCAL2, "foobar error: %m");
+.RE
 .fi
+.SH RETURNS
+The routines
+.I closelog ,
+.I openlog ,
+.I syslog
+and
+.I vsyslog
+return 0 upon successful completion.
+Otherwise, -1 is returned and
+.I errno
+is set to indicate the error.
+.PP
+The routine
+.I setlogmask
+always returns the previous log mask level, never returning
+an error.
+.SH ERRORS
+The routines
+.I syslog
+and
+.I vsyslog
+may fail and set errno for any of the errors specified for the library
+routines
+.IR connect (2),
+.IR send (2) ,
+and
+.IR socket (2).
+.PP
+The routine
+.I openlog
+may fail and set errno for any of the errors specified for the library
+routines
+.IR connect (2)
+and
+.IR socket (2).
+.PP
+The routine
+.I closelog
+may fail and set errno for any of the errors specified for the library
+routine
+.IR close (2).
 .SH "SEE ALSO"
-logger(1),
-syslogd(8)
+logger(1), syslogd(8)
