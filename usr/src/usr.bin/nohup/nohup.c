@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nohup.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nohup.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -62,22 +62,25 @@ dofile()
 {
 	int fd;
 	char *p, path[MAXPATHLEN];
+	off_t lseek();
 	char *getenv(), *strcpy(), *strcat(), *strerror();
 
 #define	FILENAME	"nohup.out"
 	p = FILENAME;
-	if ((fd = open(p, O_RDWR|O_CREAT|O_TRUNC, 0600)) >= 0)
+	if ((fd = open(p, O_RDWR|O_CREAT, 0600)) >= 0)
 		goto dupit;
 	if (p = getenv("HOME")) {
 		(void)strcpy(path, p);
 		(void)strcat(path, "/");
 		(void)strcat(path, FILENAME);
-		if ((fd = open(p = path, O_RDWR|O_CREAT|O_TRUNC, 0600)) >= 0)
+		if ((fd = open(p = path, O_RDWR|O_CREAT, 0600)) >= 0)
 			goto dupit;
 	}
 	(void)fprintf(stderr, "nohup: can't open a nohup.out file.\n");
 	exit(1);
-dupit:	if (dup2(fd, STDOUT_FILENO) == -1) {
+
+dupit:	(void)lseek(fd, 0L, SEEK_END);
+	if (dup2(fd, STDOUT_FILENO) == -1) {
 		(void)fprintf(stderr, "nohup: %s\n", strerror(errno));
 		exit(1);
 	}
