@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.10	85/04/02	*/
+/*	uipc_socket.c	6.11	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -55,8 +55,6 @@ socreate(dom, aso, type, proto)
 	if (prp->pr_type != type)
 		return (EPROTOTYPE);
 	m = m_getclr(M_WAIT, MT_SOCKET);
-	if (m == 0)
-		return (ENOBUFS);
 	so = mtod(m, struct socket *);
 	so->so_options = 0;
 	so->so_state = 0;
@@ -295,10 +293,8 @@ restart:
 	sblock(&so->so_snd);
 	do {
 		s = splnet();
-		if (so->so_state & SS_CANTSENDMORE) {
-			psignal(u.u_procp, SIGPIPE);
+		if (so->so_state & SS_CANTSENDMORE)
 			snderr(EPIPE);
-		}
 		if (so->so_error) {
 			error = so->so_error;
 			so->so_error = 0;			/* ??? */
@@ -334,21 +330,10 @@ restart:
 		}
 		splx(s);
 		mp = &top;
-		while (uio->uio_resid > 0 && space > 0) {
+		while (space > 0) {
 			register struct iovec *iov = uio->uio_iov;
 
-			if (iov->iov_len == 0) {
-				uio->uio_iov++;
-				uio->uio_iovcnt--;
-				if (uio->uio_iovcnt < 0)
-					panic("sosend");
-				continue;
-			}
 			MGET(m, M_WAIT, MT_DATA);
-if (m == NULL) {
-	error = ENOBUFS;		/* SIGPIPE? */
-	goto release;
-}
 			if (iov->iov_len >= CLBYTES && space >= CLBYTES) {
 				register struct mbuf *p;
 				MCLGET(p, 1);
@@ -367,18 +352,24 @@ nopages:
 				goto release;
 			mp = &m->m_next;
 			space -= len;
+			if (uio->uio_resid <= 0)
+				break;
+			while (uio->uio_iov->iov_len == 0) {
+				uio->uio_iov++;
+				uio->uio_iovcnt--;
+				if (uio->uio_iovcnt <= 0)
+					panic("sosend");
+			}
 		}
-		if (top) {
-			if (dontroute)
-				so->so_options |= SO_DONTROUTE;
-			s = splnet();
-			error = (*so->so_proto->pr_usrreq)(so,
-			    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-			    top, (caddr_t)nam, rights);
-			splx(s);
-			if (dontroute)
-				so->so_options &= ~SO_DONTROUTE;
-		}
+		if (dontroute)
+			so->so_options |= SO_DONTROUTE;
+		s = splnet();					/* XXX */
+		error = (*so->so_proto->pr_usrreq)(so,
+		    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
+		    top, (caddr_t)nam, rights);
+		splx(s);
+		if (dontroute)
+			so->so_options &= ~SO_DONTROUTE;
 		top = 0;
 		first = 0;
 		if (error)
@@ -389,6 +380,8 @@ release:
 	sbunlock(&so->so_snd);
 	if (top)
 		m_freem(top);
+	if (error == EPIPE)
+		psignal(u.u_procp, SIGPIPE);
 	return (error);
 }
 
@@ -411,8 +404,6 @@ soreceive(so, aname, uio, flags, rightsp)
 		*aname = 0;
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
-		if (m == 0)
-			return (ENOBUFS);
 		error = (*pr->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct mbuf *)0);
 		if (error)
@@ -697,8 +688,6 @@ sogetopt(so, level, optname, mp)
 			return (ENOPROTOOPT);
 	} else {
 		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == NULL)
-			return (ENOBUFS);
 		switch (optname) {
 
 		case SO_LINGER:
