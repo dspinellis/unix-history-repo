@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)swap.c	1.3 (Lucasfilm) %G%";
+static char *sccsid = "@(#)swap.c	1.4 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -46,28 +46,47 @@ initswap()
 		klseek(kmem, nlst[X_SWDEVT].n_value, L_SET);
 		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
 		ntext = getw(nlst[X_NTEXT].n_value);
-		xtext = (struct text *)calloc(ntext, sizeof (struct text));
 		textaddr = getw(nlst[X_TEXT].n_value);
         }
         if (procp == NULL) {
                 procp = getw(nlst[X_PROC].n_value);
                 nproc = getw(nlst[X_NPROC].n_value);
-                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
         }
+	if (xtext == NULL)
+		xtext = (struct text *)calloc(ntext, sizeof (struct text));
+	if (kprocp == NULL)
+                kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
         if (usrpt != NULL)
                 return;
 	usrpt = (struct pte *)nlst[X_USRPT].n_value;
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
-	pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
+	if (pt == NULL)
+		pt = (struct p_times *)malloc(nproc * sizeof (struct p_times));
 }
 
 fetchswap()
 {
 
+	if (kprocp == NULL) {
+                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
+		if (kprocp == NULL)
+			return;
+	}
         lseek(kmem, procp, L_SET);
-        read(kmem, kprocp, sizeof (struct proc) * nproc);
+        if (read(kmem, kprocp, sizeof (struct proc) * nproc) !=
+	    sizeof (struct proc) * nproc) {
+		error("couldn't read proc table");
+		return;
+	}
+	if (xtext == NULL) {
+		xtext = (struct text *)calloc(ntext, sizeof (struct text));
+		if (xtext == NULL)
+			return;
+	}
 	lseek(kmem, textaddr, L_SET);
-	read(kmem, xtext, ntext * sizeof (struct text));
+	if (read(kmem, xtext, ntext * sizeof (struct text)) !=
+	    sizeof (struct text) * ntext)
+		error("couldn't read text table");
 }
 
 #ifdef vax
@@ -137,7 +156,7 @@ showswap()
 	register int ts;
 	register swblk_t *dp;
 
-	if (nswdev == 0)
+	if (xtext == 0)
 		return;
 	for (xp = xtext; xp < &xtext[ntext]; xp++) {
 		if (xp->x_iptr == NULL)
@@ -157,15 +176,15 @@ showswap()
 			    [dmtoindex(ctod(ctopt(xp->x_size)))]++;
 	}
 	row = swapdisplay(4, dmtext, 'X');
+	if (kprocp == NULL)
+		return;
         for (i = 0, pp = kprocp; i < nproc; i++, pp++) {
 		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
 			continue;
 		if (pp->p_flag & SSYS)
 			continue;
-		if (getu(pp) == 0) {
-			error("showswap: getu failed on pid %d", pp->p_pid);
+		if (getu(pp) == 0)
 			continue;
-		}
 		vsacct(&u.u_dmap);
 		vsacct(&u.u_smap);
 #ifdef notdef
