@@ -4,23 +4,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_prf.c	7.32 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.30.1.1 (Berkeley) %G%
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/buf.h>
-#include <sys/conf.h>
-#include <sys/reboot.h>
-#include <sys/msgbuf.h>
-#include <sys/proc.h>
-#include <sys/ioctl.h>
-#include <sys/vnode.h>
-#include <sys/file.h>
-#include <sys/tty.h>
-#include <sys/tprintf.h>
-#include <sys/syslog.h>
-#include <sys/malloc.h>
+#include "param.h"
+#include "systm.h"
+#include "buf.h"
+#include "conf.h"
+#include "reboot.h"
+#include "msgbuf.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "vnode.h"
+#include "file.h"
+#include "tty.h"
+#include "tprintf.h"
+#include "syslog.h"
+#include "malloc.h"
 
 /*
  * Note that stdarg.h and the ANSI style va_start macro is used for both
@@ -47,12 +47,10 @@ int	(*v_poll)() = cnpoll;		/* kdb hook to enable input polling */
 extern	cnputc();			/* standard console putc */
 int	(*v_putc)() = cnputc;		/* routine to putc on virtual console */
 
-void  logpri __P((int level));
+static void  logpri __P((int level));
 static void  putchar __P((int ch, int flags, struct tty *tp));
 static char *ksprintn __P((u_long num, int base, int *len));
-void kprintf __P((const char *fmt, int flags, struct tty *tp, va_list ap, ...));
-
-int consintr = 1;			/* Ok to handle console interrupts? */
+void  kprintf __P((const char *fmt, int flags, struct tty *tp, va_list));
 
 extern	cnputc();			/* standard console putc */
 extern	struct tty cons;		/* standard console tty */
@@ -60,10 +58,10 @@ struct	tty *constty;			/* pointer to console "window" tty */
 int	(*v_console)() = cnputc;	/* routine to putc on virtual console */
 
 /*
- * Variable panicstr contains argument to first call to panic; used as flag
- * to indicate that the kernel has already called panic.
+ * Variable panicstr contains argument to first call to panic; used
+ * as flag to indicate that the kernel has already called panic.
  */
-const char *panicstr;
+char	*panicstr;
 
 /*
  * Panic is called on unresolvable fatal errors.  It prints "panic: mesg",
@@ -71,32 +69,16 @@ const char *panicstr;
  * the disks as this often leads to recursive panics.
  */
 void
-#ifdef __STDC__
-panic(const char *fmt, ...)
-#else
-panic(fmt /*, va_alist */)
-	char *fmt;
-#endif
+panic(msg)
+	char *msg;
 {
-	int bootopt, savintr;
-	va_list ap;
+	int bootopt = RB_AUTOBOOT | RB_DUMP;
 
-	bootopt = RB_AUTOBOOT | RB_DUMP;
 	if (panicstr)
 		bootopt |= RB_NOSYNC;
 	else
-		panicstr = fmt;
-
-	savintr = consintr;		/* disable interrupts */
-	consintr = 0;
-
-	va_start(ap, fmt);
-	kprintf("panic: ", TOCONS | TOLOG, NULL, ap);
-	kprintf(fmt, TOCONS | TOLOG, NULL, ap);
-	va_end(ap);
-
-	consintr = savintr;		/* reenable interrupts */
-
+		panicstr = msg;
+	printf("panic: %s\n", msg);
 #ifdef KGDB
 	kgdb_panic();
 #endif
@@ -132,7 +114,7 @@ void
 #ifdef __STDC__
 uprintf(const char *fmt, ...)
 #else
-uprintf(fmt /*, va_alist */)
+uprintf(fmt, va_alist)
 	char *fmt;
 #endif
 {
@@ -175,7 +157,7 @@ void
 #ifdef __STDC__
 tprintf(tpr_t tpr, const char *fmt, ...)
 #else
-tprintf(tpr, fmt /*, va_alist */)
+tprintf(tpr, fmt, va_alist)
 	tpr_t tpr;
 	char *fmt;
 #endif
@@ -205,7 +187,7 @@ void
 #ifdef __STDC__
 ttyprintf(struct tty *tp, const char *fmt, ...)
 #else
-ttyprintf(tp, fmt /*, va_alist */)
+ttyprintf(tp, fmt, va_alist)
 	struct tty *tp;
 	char *fmt;
 #endif
@@ -228,7 +210,7 @@ void
 #ifdef __STDC__
 log(int level, const char *fmt, ...)
 #else
-log(level, fmt /*, va_alist */)
+log(level, fmt, va_alist)
 	int level;
 	char *fmt;
 #endif
@@ -250,7 +232,7 @@ log(level, fmt /*, va_alist */)
 	logwakeup();
 }
 
-void
+static void
 logpri(level)
 	int level;
 {
@@ -267,7 +249,7 @@ void
 #ifdef __STDC__
 addlog(const char *fmt, ...)
 #else
-addlog(fmt /*, va_alist */)
+addlog(fmt, va_alist)
 	char *fmt;
 #endif
 {
@@ -287,11 +269,13 @@ addlog(fmt /*, va_alist */)
 	logwakeup();
 }
 
+int	consintr = 1;			/* ok to handle console interrupts? */
+
 void
 #ifdef __STDC__
 printf(const char *fmt, ...)
 #else
-printf(fmt /*, va_alist */)
+printf(fmt, va_alist)
 	char *fmt;
 #endif
 {
@@ -316,7 +300,7 @@ printf(fmt /*, va_alist */)
  * The format %b is supported to decode error registers.
  * Its usage is:
  *
- *	kprintf("reg=%b\n", regval, "<base><arg>*");
+ *	printf("reg=%b\n", regval, "<base><arg>*");
  *
  * where <base> is the output base expressed as a control character, e.g.
  * \10 gives octal; \20 gives hex.  Each arg is a sequence of characters,
@@ -324,36 +308,32 @@ printf(fmt /*, va_alist */)
  * the next characters (up to a control character, i.e. a character <= 32),
  * give the name of the register.  Thus:
  *
- *	kprintf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
  *
  * would produce output:
  *
  *	reg=3<BITTWO,BITONE>
  *
- * The format %r passes an additional format string and argument list
- * recursively.  Its usage is:
+ * The format %r is supposed to pass an additional format string and argument
+ * list recursively.
+ * Its usage is:
  *
- * fn(char *fmt, ...)
+ * fn(otherstuff, char *fmt, ...)
  * {
  *	va_list ap;
  *	va_start(ap, fmt);
- *	kprintf("prefix: %r: suffix\n", flags, tp, fmt, ap);
+ *	printf("prefix: %r, other stuff\n", fmt, ap);
  *	va_end(ap);
- * }
  *
  * Space or zero padding and a field width are supported for the numeric
  * formats only.
  */
 void
-#ifdef __STDC__
-kprintf(const char *fmt, int flags, struct tty *tp, va_list ap, ...)
-#else
-kprintf(fmt, flags, tp)
+kprintf(fmt, flags, tp, ap)
 	register const char *fmt;
 	int flags;
 	struct tty *tp;
 	va_list ap;
-#endif
 {
 	register char *p;
 	register int ch, n;
