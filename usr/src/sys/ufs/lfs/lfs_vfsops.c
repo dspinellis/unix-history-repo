@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.63 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.64 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -39,12 +39,12 @@ struct vfsops lfs_vfsops = {
 	lfs_mount,
 	ufs_start,
 	lfs_unmount,
-	ufs_root,
+	lfs_root,
 	ufs_quotactl,
 	lfs_statfs,
 	lfs_sync,
-	ufs_fhtovp,
-	ufs_vptofh,
+	lfs_fhtovp,
+	lfs_vptofh,
 	lfs_init,
 };
 
@@ -246,25 +246,14 @@ lfs_mountfs(devvp, mp, p)
 	for (i = 0; i < MAXQUOTAS; i++)
 		ump->um_quotas[i] = NULLVP;
 
-	/* Initialize UFS glue. */
-	ump->um_blkatoff = lfs_blkatoff;
-	ump->um_write = lfs_write;
-	ump->um_iget = lfs_iget;
-	ump->um_ialloc = lfs_ialloc;
-	ump->um_ifree = lfs_ifree;
-	ump->um_itrunc = lfs_itrunc;
-	ump->um_iupdat = lfs_iupdat;
-	ump->um_bwrite = lfs_bwrite;
-	ump->um_bmap = lfs_bmap;
-
 	/* Read the ifile disk inode and store it in a vnode. */
-	error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp);
-	if (error)
+	/* XXX Why not just lfs_vget?? */
+	if (error = bread(devvp, fs->lfs_idaddr, fs->lfs_bsize, NOCRED, &bp))
 		goto out;
-	error = lfs_vcreate(mp, LFS_IFILE_INUM, &vp);
-	if (error)
+	if (error = lfs_vcreate(mp, LFS_IFILE_INUM, &vp))
 		goto out;
 	ip = VTOI(vp);
+	VREF(ip->i_devvp);
 
 	/* The ifile inode is stored in the superblock. */
 	fs->lfs_ivnode = vp;
@@ -285,8 +274,7 @@ lfs_mountfs(devvp, mp, p)
 	seg_addr = ip->i_din.di_db[0];
 	size = fs->lfs_segtabsz << fs->lfs_bshift;
 	fs->lfs_segtab = malloc(size, M_SUPERBLK, M_WAITOK);
-	error = bread(devvp, seg_addr, size, NOCRED, &bp);
-	if (error) {
+	if (error = bread(devvp, seg_addr, size, NOCRED, &bp)) {
 		free(fs->lfs_segtab, M_SUPERBLK);
 		goto out;
 	}
@@ -452,4 +440,70 @@ printf("lfs_sync\n");
 		wakeup(&sync_lock);
 	}
 	return (error);
+}
+
+/*
+ * File handle to vnode
+ *
+ * Have to be really careful about stale file handles:
+ * - check that the inode number is valid
+ * - call lfs_vget() to get the locked inode
+ * - check for an unallocated inode (i_mode == 0)
+ * - check that the generation number matches
+ *
+ * XXX
+ * use ifile to see if inode is allocated instead of reading off disk
+ * what is the relationship between my generational number and the NFS
+ * generational number.
+ */
+int
+lfs_fhtovp(mp, fhp, vpp)
+	register struct mount *mp;
+	struct fid *fhp;
+	struct vnode **vpp;
+{
+	register struct inode *ip;
+	register struct ufid *ufhp;
+	struct vnode *nvp;
+	int error;
+
+	ufhp = (struct ufid *)fhp;
+	if (ufhp->ufid_ino < ROOTINO)
+		return (EINVAL);
+	if (error = lfs_vget(mp, ufhp->ufid_ino, &nvp)) {
+		*vpp = NULLVP;
+		return (error);
+	}
+	ip = VTOI(nvp);
+	if (ip->i_mode == 0) {
+		ufs_iput(ip);
+		*vpp = NULLVP;
+		return (EINVAL);
+	}
+	if (ip->i_gen != ufhp->ufid_gen) {
+		ufs_iput(ip);
+		*vpp = NULLVP;
+		return (EINVAL);
+	}
+	*vpp = nvp;
+	return (0);
+}
+
+/*
+ * Vnode pointer to File handle
+ */
+/* ARGSUSED */
+lfs_vptofh(vp, fhp)
+	struct vnode *vp;
+	struct fid *fhp;
+{
+	register struct inode *ip;
+	register struct ufid *ufhp;
+
+	ip = VTOI(vp);
+	ufhp = (struct ufid *)fhp;
+	ufhp->ufid_len = sizeof(struct ufid);
+	ufhp->ufid_ino = ip->i_number;
+	ufhp->ufid_gen = ip->i_gen;
+	return (0);
 }
