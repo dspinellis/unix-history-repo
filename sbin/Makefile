@@ -3,7 +3,7 @@
 
 SUBDIR=	XNSrouted badsect chkconfig clri comcontrol disklabel dmesg \
 	dump dumpfs fastboot fdisk fsck halt ifconfig mknod mount \
-	mount_isofs mount_pcfs mountd newfs nfsd nfsiod ping \
+	mount_isofs mount_pcfs mount_procfs mountd newfs nfsd nfsiod ping \
 	quotacheck reboot restore route routed savecore scsi shutdown \
 	slattach st swapon tunefs umount 
 
