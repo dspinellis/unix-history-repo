@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -96,7 +96,7 @@ main(argc, argv)
 	}
 
 	if (!qflag && (howto & RB_NOSYNC) == 0) {
-		markdown();
+		logwtmp("~", "shutdown", "");
 		sync();
 		setalarm(5);
 		pause();
@@ -116,23 +116,4 @@ setalarm(n)
 {
 	signal(SIGALRM, dingdong);
 	alarm(n);
-}
-
-#include <utmp.h>
-#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
-char	wtmpf[]	= "/usr/adm/wtmp";
-struct utmp wtmp;
-
-markdown()
-{
-	register f = open(wtmpf, 1);
-	if (f >= 0) {
-		lseek(f, 0L, 2);
-		SCPYN(wtmp.ut_line, "~");
-		SCPYN(wtmp.ut_name, "shutdown");
-		SCPYN(wtmp.ut_host, "");
-		time(&wtmp.ut_time);
-		write(f, (char *)&wtmp, sizeof(wtmp));
-		close(f);
-	}
 }
