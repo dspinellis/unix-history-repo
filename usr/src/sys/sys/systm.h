@@ -1,4 +1,4 @@
-/*	systm.h	4.24	82/06/14	*/
+/*	systm.h	4.25	82/07/16	*/
 
 /*
  * Random set of variables
@@ -56,6 +56,8 @@ dev_t	pipedev;		/* pipe device */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
+extern	int mcode[];		/* MUSH: startup code */
+extern	int szmcode;		/* & its size */
 
 dev_t	getmdev();
 daddr_t	bmap();
