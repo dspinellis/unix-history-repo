@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 DIR=	psd/07.pascal
 SRCS=	puman0.n puman1.n puman2.n puman3.n puman4.n puman5.n pumanA.n
@@ -8,12 +8,13 @@ FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	typequout primeout3 katout copydataout kat2out katscript \
 	xxxxqqqout xxxxqqqout2 primes primes-d comments1.p commentsout
 CLEANFILES+=csfix ${FIGURES}
-PXP=/usr/src/usr.bin/pascal/pxp/pxp
-PI=/usr/src/usr.bin/pascal/pi/pi
-PX=/usr/src/usr.bin/pascal/px/px
-PIX=/usr/src/usr.bin/pascal/pix/pix
+MACROS= -ms
+PXP=/usr/src/usr.bin/pascal/pxp/obj/pxp
+PI=/usr/src/usr.bin/pascal/pi/obj/pi
+PX=/usr/src/usr.bin/pascal/px/obj/px
+PIX=/usr/src/usr.bin/pascal/pix/obj/pix
 
-paper.ps: ${FIGURES}
+paper.ps: ${FIGURES} ${SRCS}
 	${SOELIM} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
@@ -22,7 +23,7 @@ csfix:
 	${CC} -O ${.CURDIR}/csfix.c -o ${.TARGET}
 
 firstout: first.p csfix
-	-csh -cf '$(PIX) -g first.p |& expand | csfix >firstout'
+	-csh -cf '$(PIX) -g first.p |& expand | ./csfix >firstout'
 
 firstobjout: first.p
 	-csh -cf '$(PI) -g first.p >& firstobjout ; $(PX) >& firstobjout'
@@ -34,13 +35,13 @@ bigger2.p: bigger.p
 	-expand bigger.p > bigger2.p
 
 bigger3.p: bigger2.p csfix
-	cat -n bigger2.p | expand | csfix -d > bigger3.p
+	cat -n bigger2.p | expand | ./csfix -d > bigger3.p
 
 bigout1: bigger.p csfix
-	-csh -cf '$(PIX) -g bigger.p |& expand | csfix  >bigout1'
+	-csh -cf '$(PIX) -g bigger.p |& expand | ./csfix  >bigout1'
 
 bigger6.p: bigger5.p csfix
-	cat -n bigger5.p | expand | csfix -d >bigger6.p
+	cat -n bigger5.p | expand | ./csfix -d >bigger6.p
 
 bigout2: bigger4.p
 	-csh -cf '$(PIX) -g bigger4.p |& expand >bigout2'
@@ -52,22 +53,22 @@ bigout4: bigger7.p
 	-csh -cf '($(PIX) -g bigger7.p >/dev/null) |& expand > bigout4'
 
 primeout1: primes.p csfix
-	-csh -cf '$(PIX) -g -l -z primes.p |& expand | csfix - >primeout1'
+	-csh -cf '$(PIX) -g -l -z primes.p |& expand | ./csfix - >primeout1'
 
 primeout2: primes.p csfix
-	-csh -cf '$(PXP) -z primes.p |& expand | csfix - >primeout2'
+	-csh -cf '$(PXP) -z primes.p |& expand | ./csfix - >primeout2'
 
 digitsout: digits.p csfix
-	-csh -cf '$(PI) -g digits.p |& expand | csfix >digitsout'
+	-csh -cf '$(PI) -g digits.p |& expand | ./csfix >digitsout'
 
 synerrout: synerr.p csfix
-	-csh -cf '$(PI) -g -l synerr.p |& expand | csfix >synerrout'
+	-csh -cf '$(PI) -g -l synerr.p |& expand | ./csfix >synerrout'
 
 synerr2out: synerr2.p csfix
-	-csh -cf '$(PIX) -g -l synerr2.p |& expand | csfix >synerr2out'
+	-csh -cf '$(PIX) -g -l synerr2.p |& expand | ./csfix >synerr2out'
 
 mismout: mism.p csfix
-	-csh -cf '$(PI) -g -l mism.p |& expand | csfix >mismout'
+	-csh -cf '$(PI) -g -l mism.p |& expand | ./csfix >mismout'
 
 clashout: clash.p
 	-csh -cf '$(PI) -g clash.p |& expand >clashout'
@@ -85,16 +86,16 @@ typequout: typequ.p
 	-$(PI) -g typequ.p >typequout
 
 primeout3: primes2.p csfix
-	-csh -cf '$(PIX) -g primes2.p |& expand | csfix -d >primeout3'
+	-csh -cf '$(PIX) -g primes2.p |& expand | ./csfix -d >primeout3'
 
 katout: kat.p csfix primes
-	-csh -cf '$(PIX) -g -l kat.p <primes |& expand | csfix -d >katout'
+	-csh -cf '$(PIX) -g -l kat.p <primes |& expand | ./csfix -d >katout'
 
 copydataout: copydata.p csfix
-	-csh -cf '$(PIX) -g -l copydata.p |& expand | csfix -d >copydataout'
+	-csh -cf '$(PIX) -g -l copydata.p |& expand | ./csfix -d >copydataout'
 
 kat2out: kat2.p csfix
-	-csh -cf '$(PI) -g kat2.p ; obj primes |& csfix -d >kat2out'
+	-csh -cf '$(PI) -g kat2.p ; obj primes |& ./csfix -d >kat2out'
 
 xxxxqqqout: kat2.p
 	-$(PI) -g kat2.p
@@ -108,7 +109,7 @@ primes: primes.p
 	-$(PIX) -g -p primes.p > primes
 
 primes-d: primes csfix
-	csfix -d <primes >primes-d
+	./csfix -d <primes >primes-d
 
 katscript: katin
 	-csh -cf '$(PI) -g kat2.p ; obj katin >& katscript'
