@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.29		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.30		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.29		%G%);
+SCCSID(@(#)queue.c	3.30		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -495,6 +495,8 @@ readqf(cf)
 {
 	register FILE *f;
 	char buf[MAXLINE];
+	register char *p;
+	register int i;
 
 	/*
 	**  Open the file created by queueup.
@@ -513,9 +515,22 @@ readqf(cf)
 
 	if (Verbose)
 		printf("\nRunning %s\n", cf);
-	while (fgets(buf, sizeof buf, f) != NULL)
+	p = buf;
+	while (fgets(p, sizeof buf - (p - buf), f) != NULL)
 	{
-		fixcrlf(buf, TRUE);
+		/*
+		**  Collect any continuation lines...
+		*/
+
+		i = fgetc(f);
+		if (i != EOF)
+			ungetc(i, f);
+		if (i == ' ' || i == '\t')
+		{
+			p += strlen(p);
+			continue;
+		}
+		fixcrlf(p, TRUE);
 
 		switch (buf[0])
 		{

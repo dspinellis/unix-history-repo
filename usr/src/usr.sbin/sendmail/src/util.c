@@ -6,7 +6,7 @@
 # include <ctype.h>
 # include "sendmail.h"
 
-SCCSID(@(#)util.c	3.22		%G%);
+SCCSID(@(#)util.c	3.23		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -496,6 +496,9 @@ dfopen(filename, mode)
 /*
 **  PUTLINE -- put a line like fputs obeying SMTP conventions
 **
+**	This routine always guarantees outputing a newline (or CRLF,
+**	as appropriate) at the end of the string.
+**
 **	Parameters:
 **		l -- line to put.
 **		fp -- file to put it onto.
@@ -508,44 +511,48 @@ dfopen(filename, mode)
 **		output of l to fp.
 */
 
-# define SMTPLINELIM	120	/* maximum line length */
+# define SMTPLINELIM	990	/* maximum line length */
 
 putline(l, fp, fullsmtp)
-	char *l;
+	register char *l;
 	FILE *fp;
 	bool fullsmtp;
 {
 	register char *p;
+	char svchar;
 
-	if (!fullsmtp)
+	do
 	{
+		/* find the end of the line */
+		p = index(l, '\n');
+		if (p == NULL)
+			p = &l[strlen(l)];
+
+		/* check for line overflow */
+		while (fullsmtp && (p - l) > SMTPLINELIM)
+		{
+			register char *q = &l[SMTPLINELIM - 1];
+
+			svchar = *q;
+			*q = '\0';
+			fputs(l, fp);
+			fputs("!\r\n", fp);
+			*q = svchar;
+			l = q;
+		}
+
+		/* output last part */
+		svchar = *p;
+		*p = '\0';
 		fputs(l, fp);
-		return;
-	}
-
-	/* find the end of the line */
-	p = index(l, '\n');
-	if (p == NULL)
-		p = &l[strlen(l)];
-
-	/* check for line overflow */
-	while (p - l > SMTPLINELIM)
-	{
-		register char *q = &l[SMTPLINELIM - 1];
-		char svchar = *q;
-
-		*q = '\0';
-		fputs(l, fp);
-		fputs("!\r\n", fp);
-		*q = svchar;
-		l = q;
-	}
-
-	/* output last part */
-	*p = '\0';
-	fputs(l, fp);
-	fputs("\r\n", fp);
-	*p = '\n';
+		if (fullsmtp)
+			fputc('\r', fp);
+		fputc('\n', fp);
+		*p = svchar;
+		l = p;
+		if (*l == '\n')
+			l++;
+	} while (l[0] != '\0');
 }
 /*
 **  XUNLINK -- unlink a file, doing logging as appropriate.
