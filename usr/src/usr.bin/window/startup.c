@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	3.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	3.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -33,7 +33,7 @@ doconfig()
 
 	if ((home = getenv("HOME")) == 0)
 		home = ".";
-	sprintf(buf, "%.*s/%s",
+	(void) sprintf(buf, "%.*s/%s",
 		(sizeof buf - sizeof runcom) / sizeof (char) - 1,
 		home, runcom);
 	return dosource(buf);
