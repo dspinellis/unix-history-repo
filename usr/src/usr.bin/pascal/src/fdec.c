@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.9 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -619,12 +619,12 @@ funcend(fp, bundle, endline)
 	putlbracket( ftnno , -sizes[ cbn ].om_max );
 	    /*
 	     *	and zero them if checking is on
-	     *	by calling zframe( bytes of locals , highest local address );
+	     *	by calling blkclr( bytes of locals , starting local address );
 	     */
 	if ( opt( 't' ) ) {
 	    if ( ( -sizes[ cbn ].om_max ) > DPOFF1 ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-			, "_ZFRAME" );
+			, "_blkclr" );
 		putleaf( P2ICON ,  ( -sizes[ cbn ].om_max ) - DPOFF1
 			, 0 , P2INT , 0 );
 		putLV( 0 , cbn , sizes[ cbn ].om_max , P2CHAR );
