@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readmsg.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)readmsg.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -156,7 +156,7 @@ struct netinfo *netfrom;
 			 * master processing time.
 			 */
 			if ( !(strcmp(msgin.tsp_name, hostname) != 0 ||
-					msgin.tsp_type == TSP_DATE ||
+					msgin.tsp_type == TSP_SETDATE ||
 #ifdef TESTING
 					msgin.tsp_type == TSP_TEST ||
 #endif
@@ -316,7 +316,7 @@ masterack()
 			exit(1);
 		}
 		break;
-	case TSP_DATEREQ:
+	case TSP_SETDATEREQ:
 		resp.tsp_type = TSP_DATEACK;
 		bytenetorder(&resp);
 		if (trace) {
