@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.38		%G%);
+SCCSID(@(#)savemail.c	3.39		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -42,6 +42,7 @@ savemail()
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
 	ForceMail = TRUE;
+	FatalErrors = FALSE;
 
 	/*
 	**  In the unhappy event we don't know who to return the mail
