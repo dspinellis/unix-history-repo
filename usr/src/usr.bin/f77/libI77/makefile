@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.6	%G%
+#	@(#)makefile	1.7	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -11,13 +11,13 @@ TAPE = /dev/nrmt1
 SOURCES = backspace.c close.c dballoc.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
 	rdfmt.c rewind.c sfe.c sue.c douio.c util.c wrtfmt.c \
-	dofio.c fiodefs.h fio.h format.h lio.h f_errno.h f_errlist.h
+	dofio.c f_errlist.c f_errno.h fiodefs.h fio.h format.h lio.h
 
 OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	dofio.o douio.o dolio.o \
 	rdfmt.o wrtfmt.o fmt.o fmtlib.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
-	dballoc.o err.o util.o
+	dballoc.o err.o util.o f_errlist.o
 
 all:	$(LIB)
 
@@ -57,12 +57,16 @@ err.o:		fiodefs.h err.c
 fmtlib.o:	fio.h fmtlib.c
 dballoc.o:	dballoc.c
 #fio.h:		fiodefs.h
+#fiodefs.h:	f_errno.h
 
 # compile, then strip unnecessary symbols
 .c.o:
 	cc $(CFLAGS) -c $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
+
+f_errlist.o:	f_errlist.c
+	cc $(CFLAGS) -c f_errlist.c
 
 Version:	$(SOURCES) mkvers
 	@rm -f Version.c
