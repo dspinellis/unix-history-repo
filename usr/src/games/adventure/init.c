@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*      Re-coding of advent in C: data initialization                   */
