@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.19	%G%";
+static char SccsId[] = "@(#)recipient.c	3.20	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -131,7 +131,7 @@ recipient(a)
 			a->q_mailer = MN_PROG;
 			m = Mailer[MN_PROG];
 			a->q_user++;
-			if (getctladdr(a) == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
@@ -174,7 +174,7 @@ recipient(a)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (getctladdr(a) == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
@@ -215,7 +215,7 @@ recipient(a)
 		if ((p = rindex(buf, '/')) != NULL)
 		{
 			/* check if writable or creatable */
-			if (getctladdr(a) == NULL && Debug == 0)
+			if (a->q_alias == NULL && Debug == 0)
 			{
 				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;
@@ -384,7 +384,6 @@ include(fname, msg, ctladdr)
 	char buf[MAXLINE];
 	register FILE *fp;
 	char *oldto = To;
-	struct stat st;
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -392,11 +391,16 @@ include(fname, msg, ctladdr)
 		usrerr("Cannot open %s", fname);
 		return;
 	}
-	if (fstat(fileno(fp), &st) < 0)
-		syserr("Cannot fstat %s!", fname);
-	ctladdr->q_uid = st.st_uid;
-	ctladdr->q_gid = st.st_gid;
-	ctladdr->q_flags |= QGOODUID;
+	if (getctladdr(ctladdr) == NULL)
+	{
+		struct stat st;
+
+		if (fstat(fileno(fp), &st) < 0)
+			syserr("Cannot fstat %s!", fname);
+		ctladdr->q_uid = st.st_uid;
+		ctladdr->q_gid = st.st_gid;
+		ctladdr->q_flags |= QGOODUID;
+	}
 
 	/* read the file -- each line is a comma-separated list. */
 	while (fgets(buf, sizeof buf, fp) != NULL)
