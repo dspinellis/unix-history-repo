@@ -1,5 +1,5 @@
 /*
-char id_stat[] = "@(#)lstat_.c	1.1";
+char id_stat[] = "@(#)lstat_.c	1.2";
  *
  * get file status
  *
@@ -11,14 +11,17 @@ char id_stat[] = "@(#)lstat_.c	1.1";
  *	'statb' will receive the stat structure for file 'name'.
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
+#ifndef	MAXPATHLEN
+#define MAXPATHLEN	128
+#endif
 #include <sys/stat.h>
 #include "../libI77/f_errno.h"
 
 long lstat_(name, stbuf, namlen)
 char *name; long *stbuf, namlen;
 {
-	char buf[256];
+	char buf[MAXPATHLEN];
 	struct stat statb;
 
 	if (namlen >= sizeof buf)
