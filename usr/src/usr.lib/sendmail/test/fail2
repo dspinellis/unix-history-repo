@@ -1,0 +1,3 @@
+#!/bin/csh
+echo this is a input nonexistant error
+exit 66
