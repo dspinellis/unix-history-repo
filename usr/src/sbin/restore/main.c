@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
  */
 
 #include "restore.h"
-#include <dumprestor.h>
+#include <protocols/dumprestore.h>
 #include <signal.h>
 
 int	bflag = 0, cvtflag = 0, dflag = 0, vflag = 0, yflag = 0;
