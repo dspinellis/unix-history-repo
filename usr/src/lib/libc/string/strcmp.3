@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)strcmp.3	5.2 (Berkeley) %G%
+.\"	@(#)strcmp.3	5.3 (Berkeley) %G%
 .\"
 .TH STRCMP 3 ""
 .UC 4
@@ -26,11 +26,13 @@ strncmp(const char *s1, const char *s2, size_t len);
 .fi
 .SH DESCRIPTION
 .B Strcmp
-compares null-terminated strings
+and
+.B strncmp
+compare null-terminated strings
 .I s1
 and
 .I s2
-and returns an integer greater than, equal to, or less than 0,
+and return an integer greater than, equal to, or less than 0,
 according as
 .I s1
 is lexicographically greater than, equal to, or less than
