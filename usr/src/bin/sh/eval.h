@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)eval.h	5.1 (Berkeley) %G%
+ *	@(#)eval.h	5.2 (Berkeley) %G%
  */
 
 extern char *commandname;	/* currently executing command */
@@ -25,7 +25,7 @@ struct backcmd {		/* result of evalbackcmd */
 
 #ifdef __STDC__
 void evalstring(char *);
-union node;
+union node;	/* BLETCH for ansi C */
 void evaltree(union node *, int);
 void evalbackcmd(union node *, struct backcmd *);
 #else
