@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imp.c	7.1 (Berkeley) %G%
+ *	@(#)if_imp.c	7.2 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -130,20 +130,20 @@ impattach(ui, reset)
 impinit(unit)
 	int unit;
 {
-	int s = splimp();
+	int s;
 	register struct imp_softc *sc = &imp_softc[unit];
 
 	if (sc->imp_if.if_addrlist == 0)
 		return;
+	s = splimp();
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
 		sc->imp_if.if_flags &= ~IFF_UP;
-		splx(s);
-		return;
+	} else {
+		sc->imp_state = IMPS_INIT;
+		impnoops(sc);
+		impintrq.ifq_maxlen = impqmaxlen;
 	}
-	sc->imp_state = IMPS_INIT;
-	impnoops(sc);
-	impintrq.ifq_maxlen = impqmaxlen;
 	splx(s);
 }
 
