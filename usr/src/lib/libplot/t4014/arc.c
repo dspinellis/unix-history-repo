@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)arc.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arc.c	4.3 (Berkeley) %G%";
 #endif
 
 int del = 20;
@@ -16,7 +16,7 @@ arc(x,y,x0,y0,x1,y1){
 	dy = y-y0;
 	r = dx*dx+dy*dy;
 	pc = r;
-	pc = sqrt(pc);
+	pc = pc > 0 ? sqrt(pc) : 0;
 	flg = pc/4;
 	if(flg == 0)step(1);
 	else if(flg < del)step(flg);
@@ -44,7 +44,7 @@ arc(x,y,x0,y0,x1,y1){
 			else yc += del;
 			dy = yc-y;
 			pc = r-dy*dy;
-			xc = m*sqrt(pc)+x;
+			xc = m*(pc > 0 ? sqrt(pc) : 0)+x;
 			if((x < xs && x >= xc) || ( x > xs && x <= xc) ||
 			    (y < ys && y >= yc) || ( y > ys && y <=  yc) )
 			{
@@ -72,7 +72,7 @@ arc(x,y,x0,y0,x1,y1){
 			else xc -= del;
 			dx = xc-x;
 			pc = r-dx*dx;
-			yc = m*sqrt(pc)+y;
+			yc = m*(pc > 0 ? sqrt(pc) : 0)+y;
 			if((x < xs && x >= xc) || ( x > xs && x <= xc ) ||
 			    (y < ys && y >= yc) || (y > ys && y <= yc) )
 			{
