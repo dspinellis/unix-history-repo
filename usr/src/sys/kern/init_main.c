@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.49 (Berkeley) %G%
+ *	@(#)init_main.c	7.50 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -54,6 +54,7 @@ extern	int (*mountroot)();
 struct	vnode *rootvp, *swapdev_vp;
 int	boothowto;
 struct	timeval boottime;
+struct	timeval runtime;
 
 /*
  * System startup; initialize the world, create process 0,
@@ -68,6 +69,8 @@ main()
 	register struct proc *p;
 	register struct filedesc0 *fdp;
 	int s, rval[2];
+	extern void roundrobin __P((void *));
+	extern void schedcpu __P((void *));
 
 	/*
 	 * Initialize curproc before any possible traps/probes
@@ -92,8 +95,8 @@ main()
 	p = &proc0;
 	curproc = p;
 
-	allproc = p;
-	p->p_prev = &allproc;
+	allproc = (volatile struct proc *)p;
+	p->p_prev = (struct proc **)&allproc;
 	p->p_pgrp = &pgrp0;
 	pgrphash[0] = &pgrp0;
 	pgrp0.pg_mem = p;
@@ -171,13 +174,10 @@ main()
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
 		panic("can't setup bdevvp's");
 
-	startrtclock();
-#if defined(vax)
-#include "kg.h"
-#if NKG > 0
-	startkgclock();
-#endif
-#endif
+	/*
+	 * Start real time and statistics clocks.
+	 */
+	initclocks();
 
 	/*
 	 * Initialize tables, protocols, and set up well-known inodes.
@@ -209,9 +209,8 @@ main()
 #endif
 
 	/* kick off timeout driven events by calling first time */
-	roundrobin();
-	schedcpu();
-	enablertclock();		/* enable realtime clock interrupts */
+	roundrobin(NULL);
+	schedcpu(NULL);
 
 	/*
 	 * Set up the root file system and vnode.
@@ -234,7 +233,8 @@ main()
 	 * Now can look at time, having had a chance
 	 * to verify the time from the file system.
 	 */
-	mono_time = boottime = p->p_stats->p_start = time;
+	runtime = mono_time = boottime = time;
+	p->p_stats->p_start = p->p_rtime = runtime;
 
 	/*
 	 * make init process
