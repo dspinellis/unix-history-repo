@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.2 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -322,7 +322,7 @@ cpu_startup()
 	 * and usually occupy more virtual memory than physical.
 	 */
 	size = MAXBSIZE * nbuf;
-	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t)&buffers,
+	buffer_map = kmem_suballoc(kernel_map, (vm_offset_t *)&buffers,
 				   &maxaddr, size, FALSE);
 	minaddr = (vm_offset_t)buffers;
 	if (vm_map_find(buffer_map, vm_object_allocate(size), (vm_offset_t)0,
@@ -364,7 +364,7 @@ cpu_startup()
 	 */
 	mclrefcnt = malloc(NMBCLUSTERS + CLBYTES/MCLBYTES, M_MBUF, M_NOWAIT);
 	bzero(mclrefcnt, NMBCLUSTERS + CLBYTES/MCLBYTES);
-	mb_map = kmem_suballoc(kernel_map, (vm_offset_t)&mbutl, &maxaddr,
+	mb_map = kmem_suballoc(kernel_map, (vm_offset_t *)&mbutl, &maxaddr,
 			       VM_MBUF_SIZE, FALSE);
 	/*
 	 * Initialize callouts
@@ -372,6 +372,7 @@ cpu_startup()
 	callfree = callout;
 	for (i = 1; i < ncallout; i++)
 		callout[i-1].c_next = &callout[i];
+	callout[i-1].c_next = NULL;
 
 #ifdef DEBUG
 	pmapdebug = opmapdebug;
@@ -446,14 +447,14 @@ sendsig(catcher, sig, mask, code)
 {
 	register struct proc *p = curproc;
 	register struct sigframe *fp;
-	register struct sigacts *ps = p->p_sigacts;
+	register struct sigacts *psp = p->p_sigacts;
 	register struct sigcontext *scp;
 	register int *regs;
 	int oonstack, fsize;
 	struct sigcontext ksc;
 
 	regs = p->p_md.md_regs;
-	oonstack = ps->ps_onstack;
+	oonstack = psp->ps_sigstk.ss_flags & SA_ONSTACK;
 	/*
 	 * Allocate and validate space for the signal handler
 	 * context. Note that if the stack is in data space, the
@@ -461,9 +462,12 @@ sendsig(catcher, sig, mask, code)
 	 * will fail if the process has not already allocated
 	 * the space with a `brk'.
 	 */
-	if (!ps->ps_onstack && (ps->ps_sigonstack & sigmask(sig))) {
-		scp = (struct sigcontext *)ps->ps_sigsp - 1;
-		ps->ps_onstack = 1;
+	if ((psp->ps_flags & SAS_ALTSTACK) &&
+	    (psp->ps_sigstk.ss_flags & SA_ONSTACK) == 0 &&
+	    (psp->ps_sigonstack & sigmask(sig))) {
+		scp = (struct sigcontext *)(psp->ps_sigstk.ss_base +
+		    psp->ps_sigstk.ss_size) - 1;
+		psp->ps_sigstk.ss_flags |= SA_ONSTACK;
 	} else
 		scp = (struct sigcontext *)regs[SP] - 1;
 	fp = (struct sigframe *)scp - 1;
@@ -589,7 +593,10 @@ sigreturn(p, uap, retval)
 	/*
 	 * Restore the user supplied information
 	 */
-	p->p_sigacts->ps_onstack = scp->sc_onstack & 01;
+	if (scp->sc_onstack & 01)
+		p->p_sigacts->ps_sigstk.ss_flags |= SA_ONSTACK;
+	else
+		p->p_sigacts->ps_sigstk.ss_flags &= ~SA_ONSTACK;
 	p->p_sigmask = scp->sc_mask &~ sigcantmask;
 	regs[PC] = ksc.sc_pc;
 	bcopy((caddr_t)&ksc.sc_regs[1], (caddr_t)&regs[1],
