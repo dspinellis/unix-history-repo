@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -329,9 +329,6 @@ main(argc, argv, envp)
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(&p[2]);
 			setbuf(stdout, (char *) NULL);
-#ifdef NAMED_BIND
-			_res.options |= RES_DEBUG;
-#endif
 			break;
 
 		  case 'f':	/* from address */
@@ -429,6 +426,11 @@ main(argc, argv, envp)
 # endif DBM
 		}
 	}
+
+#ifdef NAMED_BIND
+	if (tTd(8, 1))
+		_res.options |= RES_DEBUG;
+#endif
 
 	/*
 	**  Do basic initialization.
