@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idp_usrreq.c	6.3 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -176,22 +176,23 @@ idp_ctloutput(req, so, level, name, value)
 	struct nspcb *nsp = sotonspcb(so);
 	int mask, error = 0;
 
-	if (nsp == NULL) {
-		error = EINVAL;
-		goto release;
-	}
+	if (nsp == NULL)
+		return (EINVAL);
 
 	switch (req) {
+
 	case PRCO_GETOPT:
-		if (value==NULL) {
-			error = EINVAL;
-			goto release;
-		}
+		if (value==NULL)
+			return (EINVAL);
 		m = m_get(M_DONTWAIT, MT_DATA);
+		if (m==NULL)
+			return (ENOBUFS);
 		switch (name) {
+
 		case SO_HEADERS_ON_INPUT:
 			mask = NSP_RAWIN;
 			goto get_flags;
+			
 		case SO_HEADERS_ON_OUTPUT:
 			mask = NSP_RAWOUT;
 		get_flags:
@@ -199,6 +200,7 @@ idp_ctloutput(req, so, level, name, value)
 			m->m_off = MMAXOFF - sizeof(short);
 			*mtod(m, short *) = nsp->nsp_flags & mask;
 			break;
+
 		case SO_DEFAULT_HEADERS:
 			m->m_len = sizeof(struct idp);
 			m->m_off = MMAXOFF - sizeof(struct idp);
@@ -214,6 +216,7 @@ idp_ctloutput(req, so, level, name, value)
 		}
 		*value = m;
 		break;
+
 	case PRCO_SETOPT:
 		switch (name) {
 			int mask, *ok;
@@ -221,6 +224,7 @@ idp_ctloutput(req, so, level, name, value)
 		case SO_HEADERS_ON_INPUT:
 			mask = NSP_RAWIN;
 			goto set_head;
+
 		case SO_HEADERS_ON_OUTPUT:
 			mask = NSP_RAWOUT;
 		set_head:
@@ -232,6 +236,7 @@ idp_ctloutput(req, so, level, name, value)
 					nsp->nsp_flags &= ~mask;
 			} else error = EINVAL;
 			break;
+
 		case SO_DEFAULT_HEADERS:
 			{
 				register struct idp *idp
@@ -240,17 +245,16 @@ idp_ctloutput(req, so, level, name, value)
 			}
 #ifdef NSIP
 			break;
+
 		case SO_NSIP_ROUTE:
 			error = nsip_route(*value);
-			break;
 #endif NSIP
 		}
 		if (value && *value)
 			m_freem(*value);
 		break;
 	}
-	release:
-		return(error);
+	return (error);
 }
 
 /*ARGSUSED*/
@@ -444,6 +448,6 @@ idp_raw_usrreq(so, req, m, nam, rights)
 	default:
 		error = idp_usrreq(so, req, m, nam, rights);
 	}
-	return(error);
+	return (error);
 }
 
