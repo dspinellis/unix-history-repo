@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.13 (Berkeley) %G%
+ *	@(#)radix.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -89,16 +89,25 @@ rn_refines(m, n)
 {
 	register caddr_t lim, lim2 = lim = n + *(u_char *)n;
 	int longer = (*(u_char *)n++) - (int)(*(u_char *)m++);
+	int masks_are_equal = 1;
 
 	if (longer > 0)
 		lim -= longer;
-	while (n < lim)
-		if (*n++ & ~(*m++))
+	while (n < lim) {
+		if (*n & ~(*m))
 			return 0;
+		if (*n++ != *m++)
+			masks_are_equal = 0;
+			
+	}
 	while (n < lim2)
 		if (*n++)
 			return 0;
-	return 1;
+	if (masks_are_equal && (longer < 0))
+		for (lim2 = m - longer; m < lim2; )
+			if (*m++)
+				return 1;
+	return (!masks_are_equal);
 }
 
 
@@ -377,9 +386,9 @@ rn_addroute(v, netmask, head, treenodes)
 		 * find it among possible duplicate key entries
 		 * anyway, so the above test doesn't hurt.
 		 *
-		 * We sort the masks
-		 * for a duplicated key the same way as in a masklist.
-		 * It is an unfortunate pain having to relocate
+		 * We sort the masks for a duplicated key the same way as
+		 * in a masklist -- most specific to least specific.
+		 * This may require the unfortunate nuisance of relocating
 		 * the head of the list.
 		 */
 		if (tt && t == saved_tt) {
