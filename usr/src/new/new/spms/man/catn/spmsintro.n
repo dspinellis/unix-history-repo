@@ -1,0 +1,264 @@
+
+
+
+SPMSINTRO(1P)	    UNIX Programmer's Manual	    SPMSINTRO(1P)
+
+
+
+NAME
+     spmsintro - introduction to SPMS commands
+
+INTRODUCTION
+     The Software Project Management System (SPMS) is a	system
+     for the management	of medium- to large-scale software sys-
+     tems. SPMS	provides, within the UNIX environment, a number
+     of	commands which can greatly simplify many tasks associated
+     with program development and maintenance. SPMS does not
+     attempt to	duplicate existing UNIX	program	development tools
+     such as _m_a_k_e or _S_C_C_S, but instead provides	a way of coordi-
+     nating these tools.
+
+     Each software package managed by SPMS is organized	as a pro-
+     ject. A project is	a collection of	directories, each of
+     which supports a specific activity	such as	program	develop-
+     ment, testing, or documentation. There is no restriction on
+     the number	of directories belonging to a project. The direc-
+     tory layout is arbitrary, and can be altered to reflect the
+     changing needs of the package. Projects can be nested to any
+     level and a mechanism is provided for executing commands
+     globally over an entire project hierarchy.
+
+     SPMS can be fitted	to existing software systems. It retains
+     the full capabilities of the UNIX environment with	unres-
+     tricted access to UNIX tools. As a	result,	software packages
+     developed using SPMS do not depend	on the system for their
+     survival and can be ported	to versions of UNIX that do not
+     support SPMS.
+
+DESCRIPTION
+     Getting Started
+
+     Before using SPMS for the first time you must do the follow-
+     ing -
+
+     If	you are	a C shell, _c_s_h,	user:
+
+     1.	  Include the directory	`/usr/new' in the command search
+	  path.	This is	done by	altering the PATH variable in one
+	  of the startup files,	`.cshrc'  or `.login', in the
+	  home directory.
+
+     2.	  Add the following aliases to the `.cshrc' file
+	       alias chproject	'eval `"chproject"  \!*`'
+	       alias pd	 'eval `"pd"  \!*`'
+
+     3.	  Add the following command to the `.login' file
+	       chproject  ^
+
+     4.	  Convert the home directory to	a project root directory
+	  by typing
+
+
+
+Printed	6/22/83		     5/20/83				1
+
+
+
+
+
+
+SPMSINTRO(1P)	    UNIX Programmer's Manual	    SPMSINTRO(1P)
+
+
+
+	       /usr/new/mkproject  -d  ^
+
+     5.	  Execute the `.cshrc' and `.login' files by typing
+	       source .cshrc
+	       source .login
+
+     If	you are	a Bourne shell,	_s_h, user:
+
+     1.	  Include the directory	`/usr/new' in the command search
+	  path.	This is	done by	altering the PATH variable in the
+	  startup file,	`.profile', in the home	directory.
+
+     2.	  Add the following command to the `.profile' file:
+	       eval  `chproject	 \^`
+
+     3.	  Convert the home directory to	a project root directory
+	  by typing
+	       /usr/new/mkproject  -d  \^
+
+     4.	  Execute the `.profile' file by typing
+	       .  .profile
+
+     Global Operations
+
+     The mechanism for executing a command over	an entire
+     software package is provided by the _p_e_x_e_c command.	By label-
+     ing each project directory	according to the type of activity
+     that it supports, global operations can be	restricted to
+     specific directories. These labels	are known as _t_y_p_e _l_a_b_e_l_s.
+     In	some instances,	the directories	affected by a global com-
+     mand must be processed in a particular order. This	ordering
+     is	achieved by appending priorities to type labels. For
+     example, if the project directories `include', `cmd1',
+     `cmd2', `lib1', and `lib2'	have the following labels,
+
+	       include	      print.0, src, update.100,	include
+	       cmd1	      print.1, src, update.300,	cmdsrc
+	       cmd2	      print.1, src, update.300,	cmdsrc
+	       lib1	      print.2, src, update.200,	libsrc
+	       lib2	      print.2, src, update.200,	libsrc
+
+     the entire	software package can be	updated	by the command
+
+	  pexec	 -Tupdate  make	update
+
+     in	the order `include', `lib1', `lib2', `cmd1', `cmd2'.
+
+     Global commands can be made even more precise by using
+     boolean expressions on type labels	to select project direc-
+     tories. The formal	definition of a	boolean	type label
+     expression	is
+
+
+
+
+Printed	6/22/83		     5/20/83				2
+
+
+
+
+
+
+SPMSINTRO(1P)	    UNIX Programmer's Manual	    SPMSINTRO(1P)
+
+
+
+	    _E -> _E or _E	 | _E and _E  | not _E  | ( E ) | id
+
+     where _E is	a boolean expression; and, or, and not are
+     boolean operators;	and id is a type label.	 Or and	and are
+     left-associative.	Or has the lowest precedence, then and,
+     then not. In terms	of entering the	boolean	expression on the
+     command line, or is represented by	the character `|', and by
+     the character `&',	and not	by `!'.	Since these characters,
+     together with `(' and `)',	are meaningful to the command
+     shell, it is good idea to enclose the whole expression in
+     quotes. Even if this is done, the `!' character must still
+     be	escaped	by a backslash `\' if it precedes a type label to
+     prevent it	from being interpreted by the _c_s_h history mechan-
+     ism. The command
+
+	  pexec	 "-Tprint&(libsrc|cmdsrc)"  'pr	*.h *.c'  | lpr
+
+     prints the	source code in the command and library direc-
+     tories, but not the directory containing header files.
+     Alternatively,
+
+	  pexec	 "-Tprint&\!include"  'pr *.h *.c'  | lpr
+
+     achieves the same result.
+
+     Project Pathnames
+
+     _P_r_o_j_e_c_t _p_a_t_h_n_a_m_e_s provide a convenient way	for accessing a
+     particular	directory or file within a project hierarchy. A
+     project pathname is formed	by a succession	of project names
+     separated by `^' characters, followed by the name of the
+     directory or file.	For instance, to describe a file `main.c'
+     in	the project directory `work' in	the project `spms', the
+     project pathname is
+
+	  ^spms^work/main.c
+
+     The project at the	top of each user's project hierarchy is
+     called the	_r_o_o_t _p_r_o_j_e_c_t and is given the special name `^'.
+     If	a project pathname begins with the character `^', it is
+     interpreted relative to the root project and is called an
+     _a_b_s_o_l_u_t_e _p_r_o_j_e_c_t _p_a_t_h_n_a_m_e.	 However, a project pathname not
+     beginning with `^'	is interpreted with respect to the
+     current working project and is therefore called a _r_e_l_a_t_i_v_e
+     _p_r_o_j_e_c_t _p_a_t_h_n_a_m_e. The parent of the working project is
+     called `....' and the alternative name for	the current pro-
+     ject is `...'.
+
+     Project pathnames may have	a prepended ~_u_s_e_r_n_a_m_e, and an
+     appended regular pathname.	For example, the pathname
+
+
+
+
+
+Printed	6/22/83		     5/20/83				3
+
+
+
+
+
+
+SPMSINTRO(1P)	    UNIX Programmer's Manual	    SPMSINTRO(1P)
+
+
+
+	  ~pjn^spms^work/old/main.c
+
+     represents	the path to `main.c' located in	the directory
+     `old' in the project `spms' owned by `pjn'.
+
+OPTIONS
+ENVIRONMENT VARIABLES
+     PROJECT	     Absolute pathname of the current working
+		     project root directory.  This variable is
+		     set by _c_h_p_r_o_j_e_c_t.
+
+     ROOTPROJECT     Absolute pathname of the root project direc-
+		     tory. The default is the user's home direc-
+		     tory.
+
+FILES
+     ...	     Project link directory.
+
+SEE ALSO
+     chproject(1P), mkmf(1P), mkproject(1P), pcp(1P), pd(1P),
+     pdiff(1P),	pexec(1P), pfind(1P), pgrep(1P), phelp(1P),
+     plog(1P), pman(1P), pmkdir(1P), pmv(1P), ppd(1P),
+     prmdir(1P), ptest(1P), pwp(1P), rmproject(1P)
+     Peter J. Nicklin  _T_h_e _S_P_M_S	_S_o_f_t_w_a_r_e _P_r_o_j_e_c_t _M_a_n_a_g_e_m_e_n_t _S_y_s_-
+     _t_e_m
+
+AUTHOR
+     Peter J. Nicklin
+
+BUGS
+     At	present, project pathnames are only recognized by SPMS
+     commands.
+
+     Since the Bourne shell, _s_h, recognizes the	`^' character as
+     an	alternative pipe symbol, Bourne	shell users must type
+     `\^' instead.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed	6/22/83		     5/20/83				4
+
+
+
