@@ -1,14 +1,15 @@
 #
-#	Makefile	(CWI)	1.1	85/01/22
+#	Makefile	(CWI)	1.2	85/02/01
 #
 DESTDIR=
 LIBDIR= /usr/lib/ditroff/font/devhar
 STANDARDFONTS = R I B BI Vl vl V v S Sm
-EXTRAFONTS = Bs G3 RS Rs SO Vm bI bS bb bi br bs cI cb ci cr fs lI lb li lp lr vm
+EXTRAFONTS = Bs G3 RS Rs SO Vm bI bS bb bi br bs cI cb ci cr fs lI lb li lp lr\
+	vm sR
 FONTFILES = B.out BI.out Bs.out DESC.out G3.out I.out R.out RS.out Rs.out\
 	S.out SO.out Sm.out V.out Vl.out Vm.out bI.out bS.out bb.out bi.out\
 	br.out bs.out cI.out cb.out ci.out cr.out fs.out lI.out lb.out li.out\
-	lp.out lr.out v.out vl.out vm.out
+	lp.out lr.out v.out vl.out vm.out sR.out
 
 all:	binaryfonts ${FONTFILES}
 
@@ -24,6 +25,9 @@ install:	all
 ../../utilities/makedev:
 	cd ../../utilities; make makedev
 	touch MadeMakedev
+
+print:
+	print DESC ${STANDARDFONTS} ${EXTRAFONTS}
 
 clean:
 	rm -f *.out binaryfonts
