@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -88,7 +88,7 @@ typedef struct Arch {
 } Arch;
 
 static FILE *ArchFindMember();
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_ParseArchive --
@@ -337,7 +337,7 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
     *linePtr = cp;
     return (SUCCESS);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ArchFindArchive --
@@ -359,7 +359,7 @@ ArchFindArchive (ar, archName)
 {
     return (strcmp (archName, ar->name));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ArchStatMember --
@@ -475,7 +475,7 @@ ArchStatMember (archive, member, hash)
     }
 
     ar = (Arch *) malloc (sizeof (Arch));
-    ar->name = Str_New (archive);
+    ar->name = strdup (archive);
     Hash_InitTable (&ar->members, -1, HASH_STRING_KEYS);
     memName[AR_MAX_NAME_LEN] = '\0';
     
@@ -496,7 +496,7 @@ ArchStatMember (archive, member, hash)
 	    }
 	    cp[1] = '\0';
 
-	    he = Hash_CreateEntry (&ar->members, Str_New (memName),
+	    he = Hash_CreateEntry (&ar->members, strdup (memName),
 				   (Boolean *)NULL);
 	    Hash_SetValue (he, (ClientData)malloc (sizeof (struct ar_hdr)));
 	    bcopy ((Address)&arh, (Address)Hash_GetValue (he), 
@@ -529,7 +529,7 @@ ArchStatMember (archive, member, hash)
 	return ((struct ar_hdr *) NULL);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * ArchFindMember --
@@ -641,7 +641,7 @@ ArchFindMember (archive, member, arhPtr, mode)
     fclose (arch);
     return ((FILE *) NULL);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_Touch --
@@ -674,7 +674,7 @@ Arch_Touch (gn)
 	fclose (arch);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_TouchLib --
@@ -710,7 +710,7 @@ Arch_TouchLib (gn)
 	utimes(gn->path, times);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_MTime --
@@ -744,7 +744,7 @@ Arch_MTime (gn)
     gn->mtime = modTime;
     return (modTime);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_MemMTime --
@@ -804,7 +804,7 @@ Arch_MemMTime (gn)
 
     return (gn->mtime);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_FindLib --
@@ -845,7 +845,7 @@ Arch_FindLib (gn, path)
     Var_Set (TARGET, gn->path == (char *) NULL ? gn->name : gn->path, gn);
 #endif LIBRARIES
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_LibOODate --
@@ -913,7 +913,7 @@ Arch_LibOODate (gn)
     }
     return (oodate);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Arch_Init --

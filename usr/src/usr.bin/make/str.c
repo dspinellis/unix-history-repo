@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -33,8 +33,6 @@ static char sccsid[] = "@(#)str.c	5.2 (Berkeley) %G%";
  *	    	  	    	of separator between them and freeing
  *	    	  	    	the two strings, all this under the control
  *	    	  	    	of the STR_ flags given as the third arg.
- *
- *	Str_New	  	    	Duplicate a string and return the copy.
  *
  *	Str_FindSubstring   	Find a substring within a string (from
  *	    	  	    	original Sprite libc).
@@ -108,30 +106,7 @@ Str_Concat (s1, s2, flags)
     }
     return (result);
 }
-
-/*-
- *-----------------------------------------------------------------------
- * Str_New  --
- *	Create a new unique copy of the given string
- *
- * Results:
- *	A pointer to the new copy of it
- *
- * Side Effects:
- *	None
- *-----------------------------------------------------------------------
- */
-char *
-Str_New (str)
-    char           *str;	/* string to duplicate */
-{
-    register char  *cp;		/* new space */
 
-    cp = malloc (strlen (str) + 1);
-    (void) strcpy (cp, str);
-    return (cp);
-}
-
 static char
 DoBackslash (c)
     char c;
@@ -145,7 +120,7 @@ DoBackslash (c)
 	default:  return (c);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Str_BreakString --
@@ -276,7 +251,7 @@ Str_BreakString (str, breaks, end, argcPtr)
     
     return av;
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Str_FreeVec --
@@ -302,7 +277,7 @@ Str_FreeVec (count, vecPtr)
     free (vecPtr);
 }
 #ifndef Sprite
-
+
 /*
  *----------------------------------------------------------------------
  * Str_FindSubstring --
@@ -353,7 +328,7 @@ Str_FindSubstring(string, substring)
 }
 
 #endif /* !Sprite */
-
+
 /*
  *----------------------------------------------------------------------
  *

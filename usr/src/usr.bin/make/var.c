@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)var.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -119,7 +119,7 @@ typedef struct Var {
 				     * it. Used by Var_Parse for undefined,
 				     * modified variables */
 }  Var;
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarCmp  --
@@ -140,7 +140,7 @@ VarCmp (v, name)
 {
     return (strcmp (name, v->name));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarFind --
@@ -247,7 +247,7 @@ VarFind (name, ctxt, flags)
 	return ((Var *) Lst_Datum (var));
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarAdd  --
@@ -273,7 +273,7 @@ VarAdd (name, val, ctxt)
 
     v = (Var *) malloc (sizeof (Var));
 
-    v->name = Str_New (name);
+    v->name = strdup (name);
 
     len = strlen(val);
     v->val = Buf_Init(len+1);
@@ -286,7 +286,7 @@ VarAdd (name, val, ctxt)
 	printf("%s:%s = %s\n", ctxt->name, name, val);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Delete --
@@ -321,7 +321,7 @@ Var_Delete(name, ctxt)
 	free((char *)v);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Set --
@@ -375,7 +375,7 @@ Var_Set (name, val, ctxt)
 	setenv(name, val);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Append --
@@ -432,7 +432,7 @@ Var_Append (name, val, ctxt)
 	}
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Exists --
@@ -463,7 +463,7 @@ Var_Exists(name, ctxt)
     }
     return(TRUE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Value --
@@ -490,7 +490,7 @@ Var_Value (name, ctxt)
 	return ((char *) NULL);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarHead --
@@ -536,7 +536,7 @@ VarHead (word, addSpace, buf)
 	return(TRUE);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarTail --
@@ -575,7 +575,7 @@ VarTail (word, addSpace, buf)
     }
     return (TRUE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarSuffix --
@@ -612,7 +612,7 @@ VarSuffix (word, addSpace, buf)
 	return (addSpace);
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarRoot --
@@ -651,7 +651,7 @@ VarRoot (word, addSpace, buf)
     }
     return (TRUE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarMatch --
@@ -685,7 +685,7 @@ VarMatch (word, addSpace, buf, pattern)
     }
     return(addSpace);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarNoMatch --
@@ -719,7 +719,7 @@ VarNoMatch (word, addSpace, buf, pattern)
     }
     return(addSpace);
 }
-
+
 typedef struct {
     char    	  *lhs;	    /* String to match */
     int	    	  leftLen;  /* Length of string */
@@ -907,7 +907,7 @@ VarSubstitute (word, addSpace, buf, pattern)
     Buf_AddBytes(buf, wordLen, (Byte *)word);
     return(TRUE);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * VarModify --
@@ -974,7 +974,7 @@ VarModify (str, modProc, datum)
 	str = cp;
     }
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Parse --
@@ -1655,7 +1655,7 @@ Var_Parse (str, ctxt, err, lengthPtr, freePtr)
     }
     return (str);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Subst  --
@@ -1772,7 +1772,7 @@ Var_Subst (str, ctxt, undefErr)
     Buf_Destroy (buf, FALSE);
     return (str);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_GetTail --
@@ -1793,7 +1793,7 @@ Var_GetTail(file)
 {
     return(VarModify(file, VarTail, (ClientData)0));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_GetHead --
@@ -1815,7 +1815,7 @@ Var_GetHead(file)
 {
     return(VarModify(file, VarHead, (ClientData)0));
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Init --
@@ -1835,7 +1835,7 @@ Var_Init ()
     VAR_CMD = Targ_NewGN ("Command");
 
 }
-
+
 /****************** PRINT DEBUGGING INFO *****************/
 static
 VarPrintVar (v)
@@ -1844,7 +1844,7 @@ VarPrintVar (v)
     printf ("%-16s = %s\n", v->name, Buf_GetAll(v->val, (int *)NULL));
     return (0);
 }
-
+
 /*-
  *-----------------------------------------------------------------------
  * Var_Dump --
