@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)driver2.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)driver2.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -55,8 +55,8 @@ main(argc, argv)
 	info.hash = my_hash;
 #endif
 	info.lorder = 0;
-	if (!(db = hash_open("bigtest", O_RDWR | O_CREAT, 0644, &info))) {
-		sprintf(buf, "hash_open failed on file bigtest");
+	if (!(db = dbopen("bigtest", O_RDWR | O_CREAT, 0644, DB_HASH, &info))) {
+		sprintf(buf, "dbopen: failed on file bigtest");
 		perror(buf);
 		exit(1);
 	}

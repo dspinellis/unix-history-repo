@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tseq.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tseq.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ char **argv;
 	FILE *fp;
 	int	stat;
 
-	if (!(dbp = hash_open( "hashtest", O_RDONLY, 0400, NULL))) {
+	if (!(dbp = dbopen( "hashtest", O_RDONLY, 0400, DB_HASH, NULL))) {
 		/* create table */
 		fprintf(stderr, "cannot open: hash table\n" );
 		exit(1);
