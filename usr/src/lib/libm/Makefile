@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
@@ -71,7 +71,7 @@ HARDWARE=${MACHINE}
 .PATH:	${.CURDIR}/common_source ${.CURDIR}/vax
 # common_source
 SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
-	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c
+	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
 	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
 # vax
 SRCS+=	atan2.s cabs.s cbrt.s sqrt.s sincos.s tan.s argred.s support.s \
