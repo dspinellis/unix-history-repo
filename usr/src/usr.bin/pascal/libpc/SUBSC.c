@@ -1,7 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)SUBSC.c 1.3 %G%";
+static char sccsid[] = "@(#)SUBSC.c 1.4 %G%";
 
+char ESUBSC[] = "Subscript value of %D is out of range\n";
 
 long
 SUBSC(i, lower, upper)
@@ -9,7 +10,7 @@ SUBSC(i, lower, upper)
 	long	i, lower, upper;
 {
 	if (i < lower || i > upper) {
-		ERROR("Subscript value of %D is out of range\n", i);
+		ERROR(ESUBSC, i);
 		return;
 	}
 	return i;

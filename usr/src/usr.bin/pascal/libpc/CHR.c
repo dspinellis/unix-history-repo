@@ -1,15 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CHR.c 1.3 %G%";
+static char sccsid[] = "@(#)CHR.c 1.4 %G%";
 
+char ECHR[] = "Argument to chr of %D is out of range\n";
 
 char
 CHR(value)
-
-	long	value;
+	unsigned long	value;
 {
-	if (value < 0 || value > 127) {
-		ERROR("Argument to chr of %D is out of range\n", value);
+	if (value > 127) {
+		ERROR(ECHR, value);
 		return;
 	}
 	return (char)value;

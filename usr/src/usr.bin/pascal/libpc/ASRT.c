@@ -1,21 +1,14 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ASRT.c 1.2 %G%";
+static char sccsid[] = "@(#)ASRT.c 1.3 %G%";
 
-#define NULL 0
+char EASRT[] = "Assertion failed\n";
 
-ASRT(cond, stmt)
-
+ASRT(cond)
 	short	cond;
-	char	*stmt;
 {
 	if (cond)
 		return;
-	if (stmt != NULL) {
-		ERROR("Assertion failed: %s\n", stmt);
-		return;
-	} else {
-		ERROR("Assertion failed\n", 0);
-		return;
-	}
+	ERROR(EASRT, 0);
+	return;
 }
