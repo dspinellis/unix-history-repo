@@ -23,16 +23,18 @@ ALLPRINT =	${ALLH} ${ALLC}
 
 ALLSOURCE =	${ALLPRINT} makefile
 
-sys.lib:	$(ALLO)
-	ar cr sys.lib $(ALLO)
-	ranlib sys.lib
+syslib.a:	$(ALLO)
+	ar cr syslib.a $(ALLO)
+	ranlib syslib.a
 
 clean:
-	rm -f $(ALLO) errs makefile.bak sys.lib
+	rm -f $(ALLO) errs makefile.bak syslib.a
+	-sccs clean
+	-sccs get makefile
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -71,7 +73,7 @@ depend:
 
 system.o: ../general/general.h ../api/api.h ../apilib/api_exch.h
 system.o: ../general/globals.h
-termout.o: ../general/general.h terminal.h ../telnet.ext ../ascii/disp_asc.h
+termout.o: ../general/general.h terminal.h ../telnet.ext ../apilib/disp_asc.h
 termout.o: ../ctlr/hostctlr.h ../ctlr/inbound.ext ../ctlr/oia.h
 termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
 termout.o: ../ascii/map3270.ext ../general/globals.h

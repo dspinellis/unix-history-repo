@@ -18,12 +18,12 @@ KBD	= unix.kbd
 
 
 # The source files...
-ALLH = ascebc.h astosc.h disp_asc.h map3270.ext state.h termin.ext
+ALLH = map3270.ext state.h termin.ext
 
-ALLC = asctab.c astosc.c ebctab.c map3270.c mset.c termin.c
+ALLC = map3270.c mset.c termin.c
 
 # We don't include mset.o here...
-ALLO	= astosc.o map3270.o termin.o asctab.o ebctab.o disp_asc.o
+ALLO	= map3270.o termin.o
 
 ALLPRINT = default.map ${ALLH} ${ALLC}
 
@@ -32,17 +32,18 @@ ALLSOURCE =	${ALLPRINT} makefile makefile.mak
 .s.o:
 	/lib/cpp -E $< | as -o $@
 
-ascii.lib:	$(ALLO)
-	ar cr ascii.lib $(ALLO)
-	ranlib ascii.lib
+asciilib.a:	$(ALLO)
+	ar cr asciilib.a $(ALLO)
+	ranlib asciilib.a
 
 clean:
-	rm -f $(ALLO) astosc.out disp_asc.out asc_disp.out \
-				errs makefile.bak ascii.lib
+	rm -f $(ALLO) errs makefile.bak asciilib.a
+	-sccs clean
+	-sccs get makefile
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 print:
 	${PRINT} ${ALLPRINT}
@@ -58,29 +59,6 @@ lint:
 
 .DEFAULT:
 	sccs get $<
-
-astosc.out:	../ctlr/function.h ../ctlr/hostctlr.h ../ctlr/$(KBD)
-	(cd ../tools; make mkastosc $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkastosc < ../ctlr/$(KBD) > $@
-
-asc_disp.out:	../ctlr/ebc_disp.o
-	(cd ../tools; make mkastods $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkastods > $@
-
-disp_asc.out:	../ctlr/ebc_disp.o
-	(cd ../tools; make mkdstoas $(MFLAGS) )
-	-/bin/rm $@
-	../tools/mkdstoas > $@
-
-disp_asc.o:	disp_asc.h asc_disp.out disp_asc.out
-	-/bin/rm $@ TMPfunc.c
-	/bin/echo \#include \"disp_asc.h\" > TMPfunc.c
-	/bin/echo \#include \"asc_disp.out\" >> TMPfunc.c
-	/bin/echo \#include \"disp_asc.out\" >> TMPfunc.c
-	$(CC) $(CFLAGS) -c TMPfunc.c
-	-/bin/mv TMPfunc.o $@
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
@@ -100,10 +78,9 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-astosc.o: ../general/general.h ../ctlr/function.h astosc.h state.h astosc.out
 map3270.o: state.h ../general/globals.h map3270.ext default.map
+mset.o: ../ctlr/function.h state.h ../apilib/astosc.h ../general/globals.h
+mset.o: map3270.ext
 termin.o: ../general/general.h ../ctlr/function.h ../ctlr/inbound.ext
-termin.o: ../ctlr/outbound.ext ../telnet.ext termin.ext astosc.h state.h
-termin.o: ../general/globals.h
-asctab.o: ascebc.h
-ebctab.o: ascebc.h
+termin.o: ../ctlr/outbound.ext ../telnet.ext termin.ext ../apilib/astosc.h
+termin.o: state.h ../general/globals.h

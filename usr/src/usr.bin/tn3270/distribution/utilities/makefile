@@ -20,8 +20,8 @@ tnrecv:	tnrecv.o
 	${CC} ${CFLAGS} -o $@ tnrecv.o ../apilib/apilib.a
 
 clean:
-	-/bin/rm ${ALLO} errs
-	sccs clean
+	-/bin/rm -f makefile.bak ${ALLO} errs
+	-sccs clean
 	-sccs get makefile
 
 action:
@@ -32,7 +32,7 @@ print:
 
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
-		do (echo ${DIRPATH}/$$i); done
+		do (echo ${DIRPATH}$$i); done
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
