@@ -1,12 +1,10 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lpq.1	6.9 (Berkeley) %G%
+.\"     @(#)lpq.1	6.10 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LPQ 1
 .Os BSD 4.2
@@ -16,9 +14,7 @@
 .Sh SYNOPSIS
 .Nm lpq
 .Op Fl l
-.Oo
-.Op Fl P Ar printer
-.Oo
+.Op Fl P Ns Ar printer
 .Op  job # ...
 .Op  user ...
 .Sh DESCRIPTION
@@ -33,19 +29,19 @@ without any arguments reports on any jobs currently in the queue.
 .Pp
 Options:
 .Pp
-.Tw Ds
-.Tp Fl P
+.Bl -tag -width indent
+.It Fl P
 Specify a particular printer, otherwise the default
 line printer is used (or the value of the
 .Ev PRINTER
 variable in the
 environment). All other arguments supplied are interpreted as user
 names or job numbers to filter out only those jobs of interest.
-.Tp Fl l
+.It Fl l
 Information about each of the files comprising the job entry
 is printed.
 Normally, only as much information as will fit on one line is displayed.
-.Tp
+.El
 .Pp
 For each job submitted (i.e. invocation of
 .Xr lpr  1  )
@@ -57,12 +53,14 @@ may be supplied to
 for removing a specific job), and the total size in bytes.
 Job ordering is dependent on
 the algorithm used to scan the spooling directory and is supposed
-to be FIFO (First in First Out).
+to be
+.Tn FIFO
+(First in First Out).
 File names comprising a job may be unavailable
 (when
 .Xr lpr  1
 is used as a sink in a pipeline) in which case the file
-is indicated as ``(standard input)".
+is indicated as ``(standard input)''.
 .Pp
 If
 .Nm lpq
@@ -73,24 +71,23 @@ command can be used to restart the printer daemon.
 .Sh ENVIRONMENT
 If the following environment variable exists, it is used by
 .Nm lpq :
-.Tw Fl
-.Tp Ev PRINTER
+.Bl -tag -width PRINTER
+.It Ev PRINTER
 Specifies an alternate default printer.
-.Tp
+.El
 .Sh FILES
-.Dw /usr/share/misc/termcap
-.Di L
-.Dp Pa /usr/share/misc/termcap
-for manipulating the screen for repeated display
-.Dp Pa /etc/printcap
-to determine printer characteristics
-.Dp Pa /var/spool/*
-the spooling directory, as determined from printcap
-.Dp Pa /var/spool/*/cf*
-control files specifying jobs
-.Dp Pa /var/spool/*/lock
-the lock file to obtain the currently active job
-.Dp
+.Bl -tag -width /usr/share/misc/termcap -compact
+.It Pa /etc/printcap
+To determine printer characteristics.
+.It Pa /var/spool/*
+The spooling directory, as determined from printcap.
+.It Pa /var/spool/*/cf*
+Control files specifying jobs.
+.It Pa /var/spool/*/lock
+The lock file to obtain the currently active job.
+.It Pa /usr/share/misc/termcap
+For manipulating the screen for repeated display.
+.El
 .Sh SEE ALSO
 .Xr lpr 1 ,
 .Xr lprm 1 ,
@@ -98,10 +95,12 @@ the lock file to obtain the currently active job
 .Xr lpd 8
 .Sh HISTORY
 .Nm Lpq
-appeared in 3 BSD.
+appeared in
+.Bx 3 .
 .Sh BUGS
 Due to the dynamic nature of the information in the spooling directory
-lpq may report unreliably.
+.Nm lpq
+may report unreliably.
 Output formatting is sensitive to the line length of the terminal;
 this can results in widely spaced columns.
 .Sh DIAGNOSTICS
