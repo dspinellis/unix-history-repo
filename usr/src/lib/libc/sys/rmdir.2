@@ -1,0 +1,68 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)rmdir.2	5.1 (Berkeley) %G%
+.\"
+.TH RMDIR 2 "2 July 1983"
+.UC 5
+.SH NAME
+rmdir \- remove a directory file
+.SH SYNOPSIS
+.nf
+.ft B
+rmdir(path)
+char *path;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Rmdir
+removes a directory file
+whose name is given by
+.I path.
+The directory must not have any entries other
+than \*(lq.\*(rq and \*(lq..\*(rq.
+.SH "RETURN VALUE
+A 0 is returned if the remove succeeds; otherwise a \-1 is
+returned and an error code is stored in the global location \fIerrno\fP\|.
+.SH ERRORS
+The named file is removed unless one or more of the
+following are true:
+.TP 15
+[ENOTEMPTY]
+The named directory contains files other than ``.'' and ``..'' in it.
+.TP 15
+[EPERM]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENOENT]
+The pathname was too long.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+A component of the path prefix denies search permission.
+.TP 15
+[EACCES]
+Write permission is denied on the directory containing the link
+to be removed.
+.TP 15
+[EBUSY]
+The directory to be removed is the mount point
+for a mounted file system.
+.TP 15
+[EROFS]
+The directory entry to be removed resides on a read-only file system.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.SH "SEE ALSO"
+mkdir(2), unlink(2)
