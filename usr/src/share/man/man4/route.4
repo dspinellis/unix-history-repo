@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)route.4	8.3 (Berkeley) %G%
+.\"     @(#)route.4	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ROUTE 4
@@ -75,7 +75,7 @@ destination.  The combination of wildcard
 routes and routing redirects can provide an economical
 mechanism for routing traffic.
 .Pp
-One opens the channel for passing routing control messasges
+One opens the channel for passing routing control messages
 by using the socket call shown in the synopsis above:
 .Pp
 The
@@ -173,7 +173,7 @@ A message header consists of:
 .Bd -literal
 struct rt_msghdr {
     u_short rmt_msglen;  /* to skip over non-understood messages */
-    u_char  rtm_version; /* future binary compatability */
+    u_char  rtm_version; /* future binary compatibility */
     u_char  rtm_type;    /* message type */
     u_short rmt_index;   /* index for associated ifp */
     pid_t   rmt_pid;     /* identify sender */
@@ -204,7 +204,7 @@ struct rt_metrics {
 .Pp
 Flags include the values:
 .Bd -literal
-#define	RTF_UP        0x1       /* route useable */
+#define	RTF_UP        0x1       /* route usable */
 #define	RTF_GATEWAY   0x2       /* destination is a gateway */
 #define	RTF_HOST      0x4       /* host entry (net otherwise) */
 #define	RTF_REJECT    0x8       /* host or net unreachable */
@@ -221,7 +221,7 @@ Flags include the values:
 #define	RTF_PROTO1    0x8000    /* protocol specific routing flag #2 */
 .Ed
 .Pp
-Specfiers for metric values in rmx_locks and rtm_inits are:
+Specifiers for metric values in rmx_locks and rtm_inits are:
 .Bd -literal
 #define	RTV_SSTHRESH  0x1    /* init or lock _ssthresh */
 #define	RTV_RPIPE     0x2    /* init or lock _recvpipe */
