@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ni.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)ni.c	2.2 (CWI) 86/08/15";
 #endif lint
 #include "tdef.h"
 
@@ -7,7 +7,8 @@ static char sccsid[] = "@(#)ni.c	2.1 (CWI) 85/07/18";
 
 #ifdef NROFF
 
-char	termtab[NS] = "/usr/lib/term/tab.";	/* term type added in ptinit() */
+char	termtab[NS] = "/usr/local/lib/ditroff/term/tab.";
+					/* term type added in ptinit() */
 char	fontfile[NS] = "";	/* not used */
 char	devname[20] = "37";
 
