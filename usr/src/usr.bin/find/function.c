@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -199,7 +199,7 @@ f_exec(plan, entry)
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
 		if (plan->e_len[cnt])
 			find_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
-			    entry->fts_path, plan->e_len[cnt]);
+			    entry->fts_accpath, plan->e_len[cnt]);
 
 	if (plan->flags && !find_queryuser(plan->e_argv))
 		return(0);
@@ -232,11 +232,13 @@ c_exec(argvp, isok)
 	char ***argvp;
 	int isok;
 {
+	extern int relative;
 	PLAN *new;			/* node returned */
 	register int cnt;
 	register char **argv, **ap, *p;
 
-	ftsoptions |= FTS_NOCHDIR;
+	if (!relative)
+		ftsoptions |= FTS_NOCHDIR;
 	output_specified = 1;
     
 	NEW(T_EXEC, f_exec);
