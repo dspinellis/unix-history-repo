@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.5 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -29,11 +29,7 @@
 #include "uio.h"
 #include "mount.h"
 
-#include "vm_param.h"
-#include "lock.h"
-#include "queue.h"
-#include "vm_prot.h"
-#include "vm_object.h"
+#include "vm.h"
 #include "vm_page.h"
 #include "vnode_pager.h"
 
