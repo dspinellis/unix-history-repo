@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.11	85/04/29	*/
+/*	udp_usrreq.c	6.12	85/05/27	*/
 
 #include "param.h"
 #include "dir.h"
@@ -76,7 +76,7 @@ udp_input(m0)
 	if (udpcksum && ui->ui_sum) {
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
-		ui->ui_len = htons((u_short)len);
+		ui->ui_len = ui->ui_ulen;
 		if (ui->ui_sum = in_cksum(m, len + sizeof (struct ip))) {
 			udpstat.udps_badsum++;
 			m_freem(m);
@@ -92,7 +92,7 @@ udp_input(m0)
 		INPLOOKUP_WILDCARD);
 	if (inp == 0) {
 		/* don't send ICMP response for broadcast packet */
-		if (in_lnaof(ui->ui_dst) == INADDR_ANY)
+		if (in_broadcast(ui->ui_dst))
 			goto bad;
 		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
@@ -169,7 +169,7 @@ udp_output(inp, m0)
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
-	m = m_get(M_DONTWAIT, MT_HEADER);
+	MGET(m, M_DONTWAIT, MT_HEADER);
 	if (m == 0) {
 		m_freem(m0);
 		return (ENOBUFS);
@@ -200,8 +200,7 @@ udp_output(inp, m0)
 	if (udpcksum) {
 	    if ((ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len)) == 0)
 		ui->ui_sum = -1;
-	} else
-		ui->ui_sum = 0;
+	}
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
