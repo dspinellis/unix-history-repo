@@ -1,4 +1,4 @@
-(Version 6.8 of %G%)
+(Version 6.9 of %G%)
 
 *****	Database (keyed lookup) locking and rebuild.
 
@@ -6,9 +6,13 @@
 
 ****	8 -> 7 bit MIME conversion.
 
-**	Find a good test suite and include in the distribution.
+***	NIS support for aliases.
+
+***	Clean up alias.c.
 
 ***	cf/cf/Makefile.dist
+
+**	Find a good test suite and include in the distribution.
 
 *	WIN/3B support (non-atomic rename, no h_addr_list, others?)
 	(Bruce Lilly <blilly!bruce@uu.psi.com>)
