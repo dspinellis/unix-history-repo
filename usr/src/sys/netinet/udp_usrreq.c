@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.30	82/06/20	*/
+/*	udp_usrreq.c	4.31	82/08/15	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -38,7 +38,7 @@ udp_input(m0)
 	register struct udpiphdr *ui;
 	register struct inpcb *inp;
 	register struct mbuf *m;
-	int len, ulen;
+	int len;
 
 	/*
 	 * Get IP and UDP header together in first mbuf.
@@ -57,8 +57,7 @@ udp_input(m0)
 	 * Make mbuf data length reflect UDP length.
 	 * If not enough data to reflect UDP length, drop.
 	 */
-	ulen = ntohs((u_short)ui->ui_ulen);
-	len = sizeof (struct udphdr) + ulen;
+	len = ntohs((u_short)ui->ui_ulen);
 	if (((struct ip *)ui)->ip_len != len) {
 		if (len > ((struct ip *)ui)->ip_len) {
 			udpstat.udps_badlen++;
@@ -74,8 +73,8 @@ udp_input(m0)
 	if (udpcksum) {
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
-		ui->ui_len = htons((u_short)(sizeof (struct udphdr) + ulen));
-		if (ui->ui_sum = in_cksum(m, len)) {
+		ui->ui_len = htons((u_short)len);
+		if (ui->ui_sum = in_cksum(m, len + sizeof (struct ip))) {
 			udpstat.udps_badsum++;
 			printf("udp cksum %x\n", ui->ui_sum);
 			m_freem(m);
@@ -84,8 +83,7 @@ udp_input(m0)
 	}
 
 	/*
-	 * Locate pcb for datagram.  On wildcard match, update
-	 * control block to anchor network and host address.
+	 * Locate pcb for datagram.
 	 */
 	inp = in_pcblookup(&udb,
 	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport,
@@ -186,15 +184,12 @@ udp_output(inp, m0)
 	ui->ui_next = ui->ui_prev = 0;
 	ui->ui_x1 = 0;
 	ui->ui_pr = IPPROTO_UDP;
-	ui->ui_len = sizeof (struct udpiphdr) + len;
+	ui->ui_len = len + sizeof (struct udphdr);
 	ui->ui_src = inp->inp_laddr;
 	ui->ui_dst = inp->inp_faddr;
 	ui->ui_sport = inp->inp_lport;
 	ui->ui_dport = inp->inp_fport;
-	ui->ui_ulen = len;
-#if vax
-	ui->ui_ulen = htons(ui->ui_ulen);
-#endif
+	ui->ui_ulen = htons((u_short)ui->ui_len);
 
 	/*
 	 * Stuff checksum and output datagram.
