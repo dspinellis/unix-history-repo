@@ -1,18 +1,18 @@
-#	@(#)Makefile	4.2	(Berkeley)	82/10/27
+#	@(#)Makefile	4.3	(Berkeley)	85/03/19
 #
-CFLAGS=-c -w -DCOPYCODE -DC2
+CFLAGS=-DCOPYCODE -DC2 -O
 LDFLAGS=
 ASDIR = /usr/src/bin/as
 
 SRCS = makefile c2.h c20.c c21.c c22.c
 
 c2:	c20.o c21.o c22.o
-	$(CC) $(LDFLAGS) -z -o c2 c2?.o
+	$(CC) $(LDFLAGS) -o c2 c2?.o
 
 c20.o:	c20.c c2.h
 c21.o:	c21.c c2.h
 c22.o:  c22.c c2.h instrs.c2
-	$(CC) $(CFLAGS) -R c22.c
+	$(CC) $(CFLAGS) -R -c c22.c
 
 instrs.c2: $(ASDIR)/instrs
 	(echo FLAVOR C2 ; cat $(ASDIR)/instrs) | awk -f /usr/src/bin/as/instrs > instrs.c2
