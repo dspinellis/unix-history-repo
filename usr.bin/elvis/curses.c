@@ -754,7 +754,7 @@ int getsize(signo)
 
 #ifdef SIGWINCH
 	/* reset the signal vector */
-	signal(SIGWINCH, getsize);
+	signal(SIGWINCH, (void *)getsize);
 #endif
 
 	/* get the window size, one way or another. */

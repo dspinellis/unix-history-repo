@@ -267,11 +267,11 @@ MARK	m_bsrch(m, ptrn)
 
 		/* compile the pattern */
 		re = regcomp(ptrn);
+#endif
 		if (!re)
 		{
 			return MARK_UNSET;
 		}
-#endif
 	}
 	else if (!re)
 	{
