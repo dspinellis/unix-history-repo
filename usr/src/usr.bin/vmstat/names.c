@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)names.c	8.1 (Berkeley) %G%
+ *	@(#)names.c	8.2 (Berkeley) %G%
  */
 
 #if !defined(hp300) && !defined(tahoe) && !defined(vax) && \
