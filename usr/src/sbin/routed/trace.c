@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -154,7 +154,7 @@ traceaction(fd, action, rt)
 		}
 	}
 	putc('\n', fd);
-	if ((rt->rt_state & RTS_PASSIVE) == 0 && rt->rt_ifp)
+	if (!tracepackets && (rt->rt_state & RTS_PASSIVE) == 0 && rt->rt_ifp)
 		dumpif(fd, rt->rt_ifp);
 	fflush(fd);
 }

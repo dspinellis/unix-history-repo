@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,7 +24,7 @@ rtlookup(dst)
 {
 	register struct rt_entry *rt;
 	register struct rthash *rh;
-	register int hash;
+	register u_int hash;
 	struct afhash h;
 	int doinghost = 1;
 
@@ -58,7 +58,7 @@ rtfind(dst)
 {
 	register struct rt_entry *rt;
 	register struct rthash *rh;
-	register int hash;
+	register u_int hash;
 	struct afhash h;
 	int af = dst->sa_family;
 	int doinghost = 1, (*match)();
@@ -99,12 +99,13 @@ rtadd(dst, gate, metric, state)
 	struct afhash h;
 	register struct rt_entry *rt;
 	struct rthash *rh;
-	int af = dst->sa_family, flags, hash;
+	int af = dst->sa_family, flags;
+	u_int hash;
 
 	if (af >= AF_MAX)
 		return;
 	(*afswitch[af].af_hash)(dst, &h);
-	flags = (*afswitch[af].af_checkhost)(dst) ? RTF_HOST : 0;
+	flags = (*afswitch[af].af_ishost)(dst) ? RTF_HOST : 0;
 	if (flags & RTF_HOST) {
 		hash = h.afh_hosthash;
 		rh = &hosthash[hash % ROUTEHASHSIZ];

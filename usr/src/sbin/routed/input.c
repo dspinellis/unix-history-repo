@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)input.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -104,7 +104,9 @@ rip_input(from, size)
 					ntohs(n->rip_dst.sa_family);
 				n->rip_metric = ntohl(n->rip_metric);
 			}
-			if (n->rip_metric >= HOPCNT_INFINITY)
+			if ((unsigned) n->rip_metric >= HOPCNT_INFINITY)
+				continue;
+			if (((*afp->af_checkhost)(&n->rip_dst)) == 0)
 				continue;
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0) {
@@ -117,7 +119,7 @@ rip_input(from, size)
 			 * stale and equivalent.
 			 */
 			if (equal(from, &rt->rt_router) ||
-			    n->rip_metric < rt->rt_metric ||
+			    (unsigned) n->rip_metric < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
 			    rt->rt_metric == n->rip_metric)) {
 				rtchange(rt, from, n->rip_metric);
