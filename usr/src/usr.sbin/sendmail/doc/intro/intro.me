@@ -6,7 +6,7 @@
 .+c
 .(l C
 .sz 14
-SENDMAIL \*- An Internet Mail Router
+SENDMAIL \*- An Internetwork Mail Router
 .sz
 .sp
 Eric Allman\(dg
@@ -17,11 +17,43 @@ Electronics Research Lab
 University of California
 Berkeley, California  94720
 .)l
+.sp
+.(l F
+.ce
+ABSTRACT
+
+Routing mail through a heterogenous internet presents many new
+problems.  Among the worst of these is that of address mapping.
+Historically, this has been handled on an ad hoc basis.  However,
+this approach has become unmanageable as internets grow.
+
+Sendmail acts a unified "post office" to which all mail can be
+submitted.  Address interpretation is controlled by a production
+system, which can parse both domain-based addressing and old-style
+ad hoc addresses.  Mail is then dispatched to an outgoing mailer.
+This system can expand trivially.  The production system is powerful
+enough to rewrite addresses in the message header to conform to the
+standards of a number of common target networks, including old
+(NCP/RFC733) Arpanet, new (TCP/RFC822) Arpanet, UUCP, and Phonenet.
+Sendmail is not intended to perform user interface functions or
+final delivery.  Sendmail also implements an SMTP server, message
+queueing, and aliasing.
+
+This is approach is unique in that it allows external compatibility
+with the old practices, and tries to make the mail system conform to
+the user instead of the other way around.  Although sendmail is not
+intended to circumvent new standards, it is intended to make the
+transition less painful.  Sendmail does require certain base-level
+standards on target mailers such as the basic semantics of certain
+headers and the surface syntax of messages.  New mailers can be added
+trivially; for example, a Purduenet channel was brought up in twenty
+minutes.
+.)l
 .sp 2
 .(f
 This is
 .if \n(DR draft
-version 3.19,
+version 3.20,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -39,77 +71,59 @@ featuring aliasing and forwarding,
 automatic routing to network gateways,
 and flexible configuration.
 .pp
-In the early days of computer networking,
-the problems of identification and communication
-were quite simple by today's standards.
-Each node on the network
-would have an address,
-and resources could be identified
+In a simple network,
+each node has an address,
+and resources can be identified
 with a host-resource pair;
 in particular,
-the mail system could refer to users
+the mail system can refer to users
 using a host-username pair.
-Host names and numbers had to be administered by a central authority,
-but usernames could be assigned locally to each host.
-One early example is the ARPANET.
-However, access to the ARPANET is limited,
-and the connection cost is high.
-Many alternative networks appeared,
-such as the Berkeley Network,
-the UUCP network,
-and the CHAOS network.
-Each network defined its own standards
-for resource identification.
+Host names and numbers have to be administered by a central authority,
+but usernames can be assigned locally to each host.
 .pp
-As networks grew,
-they eventually touched.
-Certain special cases could be handled trivially
+In an internet,
+management is distributed.
+In particular,
+the syntax and semantics of resource identification change.
+Certain special cases can be handled trivially
 by ad hoc techniques,
-as when one computer hung off another by a link,
-or by providing network names that appeared local to hosts
+such as
+providing network names that appear local to hosts
 on other networks,
 as with the Ethernet at Xerox PARC.
-The internet was born.
-.pp
-Internet topology became more complex with time.
-Two networks might touch
-in more than one place,
-and the rapid expansion of networks
-created a serious database update problem.
-Since all the address syntaxes were created arbitrarily,
-considerable confusion reigned.
-Some networks required point-to-point routing,
+However,  the general case is extremely complex.
+For example,
+some networks require point-to-point routing,
 which simplifies the database update problem
 since only adjacent hosts must be entered
 into the system tables,
-while others used end-to-end routing.
-Some networks used a left-associative syntax
-and others used a right-associative syntax:
-ambiguity raised its ugly head.
+while others use end-to-end addressing.
+Some networks use a left-associative syntax
+and others use a right-associative syntax,
+causing ambiguity in addresses.
 .pp
-Internet proposals came to the rescue.
-Basically, these proposed expanding the address pairs
+A new set of internet standards seek to eliminate these problems.
+Initially, these proposed expanding the address pairs
 to address triples,
-comprised of network-host-resource.
-Network numbers would be universally agreed upon,
-and hosts could be assigned in the old way
+consisting of
+{network, host, resource}
+triples.
+Network numbers can be universally agreed upon,
+and hosts can be assigned locally
 on each network.
-But these proposals all tended to be far-reaching
-and fundamentally incompatible with the old networks.
-Protocols and proposals met to do battle.
-And there was the issue of assigning network numbers:
-there had to be a central clearing house,
-and any networks that might ever touch
-had to be given their very own number.
-Naturally, not everyone who thought they deserved a number
-got one.
-.pp
-Which brings us to today.
-Although it will be nice when everyone everywhere
-has a unique network number,
-it cannot be expected very soon.
-The old, stupid networks take time to die,
-and bureaucratic inertia is still the rule.
+The user level presentation was quickly expanded
+to address domains,
+comprised of a local resource identification
+and a hierarchical domain specification
+with a common static root.
+The domain technique
+separates the issue of physical versus logical addressing.
+For example,
+an address of the form
+.q "eric@a.cc.berkeley.arpa"
+describes only the logical
+organization of the address space,
+whereas the physical structure is implied.
 .pp
 .i Sendmail
 is intended to help bridge the gap
@@ -117,19 +131,16 @@ between the totally ad hoc world
 of networks that know nothing of each other
 and the clean, tightly-coupled world
 of unique network numbers.
-It uses old arbitrary address syntaxes
-and resolves ambiguities using heuristics
-specified by the system administrator
-who creates the configuration file.
+It can accept old arbitrary address syntaxes,
+resolving ambiguities using heuristics
+specified by the system administrator,
+as well as domain-based addressing.
 It helps guide the conversion of message formats
 between disparate networks.
 In short,
 .i sendmail
-is glue that holds the world together
-until the new world is ready to be inhabited.
-However, it is not unreasonable to expect
-escrow to take several years to close on this
-new world.
+is designed to assist a graceful transition
+to consistent internetwork addressing schemes.
 .sp
 .pp
 Section 1 discusses the design goals for
@@ -137,35 +148,18 @@ Section 1 discusses the design goals for
 Section 2 gives an overview of the basic functions of the system.
 In section 3,
 details of usage are discussed.
-A detailed description of the configuration file
-is given in section 4,
-including a walkthrough of a specific configuration file.
-Section 5 compares
+Section 4 compares
 .i sendmail
 to other internet mail routers,
 and an evaluation of
 .i sendmail
-is given in section 6,
+is given in section 5,
 including future plans.
 .sh 1 "DESIGN GOALS"
 .pp
-.i Sendmail
-is an outgrowth of
-.i delivermail,
-a previous incarnation of a UNIX internetwork mail router.
-.i Delivermail
-was written relatively quickly.
-The first version could only parse addresses based on single
-characters embedded in the address,
-required explicit
-description of gateways,
-and had only limited aliasing;
-automatic forwarding of messages to another gateway and other features
-came later.
-.pp
 Design goals for
-.i delivermail
-included:
+.i sendmail
+include:
 .np
 Compatibility with the existing mail system,
 including Bell version 6 mail,
@@ -199,11 +193,9 @@ Some hosts use blanks in names,
 which created problems with
 UNIX mail programs that assume that an address
 is one word.
-And at least one person lists his address as
-.q "From: the TTY of ..." ,
-giving a
-.q Sender:
-field with his real address.
+The semantics of some fields
+are interpreted slightly differently
+by different sites.
 In summary,
 the obscure aspects of the ARPANET mail protocol
 really
@@ -213,106 +205,21 @@ are difficult to support,
 but must be supported.
 But even obeying the standard is insufficient.
 For example,
-WHARTON changes our host name from
+Wharton changed our host name from
 .q BERKELEY
 to
 .q BERKEL- ,
 which confused error processing.
-Degenerate cases such as this
+Cases such as this
 must be handled gracefully.
-.pp
-There were certain other non-goals in
-.i delivermail .
-These resulted from the expectation that
-it would only be used at Berkeley,
-and probably only at a few sites at Berkeley.
-.np
-It was fair game to compile configuration information
-into the code,
-even to assume that every host was running BerkNet.
-.np
-The problem of multiple gateways to a single network
-was not foreseen.
-For example,
-all UUCP mail was sent to a single gateway host.
-In fact,
-Berkeley has at least three UUCP gateway hosts.
-.np
-No attempt was made to reduce the volume of mail across a network link
-by sending only one copy of a message
-to multiple recipients on the same host.
-Besides the difficulty of doing this,
-we failed to appreciate how much volume there would be.
-For example,
-one of our gateways processed a message approximately
-every twenty seconds
-during peak hours, many of which were duplicates.
 .np
 Existing software to do actual delivery
 should be used whenever possible.
 This resulted as much from political and practical considerations
 as technical.
-.pp
-This resulted in an architecture illustrated in figure 1.
-.(z
-.hl
-.ie t \
-.	sp 18
-.el \{\
-.(c
-+---------+   +---------+   +---------+
-| sender1 |   | sender2 |   | sender3 |
-+---------+   +---------+   +---------+
-     |  	   |             |
-     +----------+  +  +----------+
-		|  |  |
-		v  v  v
-            +-------------+
-            | delivermail |
-            +-------------+
-		|  |  |
-     +----------+  +  +----------+
-     |  	   |             |
-     v             v             v
-+---------+   +---------+   +---------+
-| mailer1 |   | mailer2 |   | mailer3 |
-+---------+   +---------+   +---------+
-.)c
-.\}
-
-.ce
-Figure 1 \*- Delivermail System Structure.
-.hl
-.)z
-The user interacts with a mail generating and sending program.
-When the mail is created,
-the generator calls
-.i delivermail ,
-which routes the message to the correct mailer(s).
-Since some of the senders may be network servers
-and some of the mailers may be network users,
-.i delivermail
-may be used as an internet mail gateway.
-.pp
-.i Sendmail
-maintained the goals of
-.i delivermail.
-Time was less of a constraint,
-but not reimplementing basic mailers
-has proven to be a wise move in many ways.
-For example,
-many internet mailers deliver local mail directly.
-This is more efficient,
-but builds in the design decisions
-of the local mailer,
-and makes it difficult to concentrate
-on the
-.q "real problems"
-(such as locking).
-Other design goals were:
 .np
 .i Sendmail
-should operate in more complex environments,
+should allow fairly complex environments,
 including multiple
 connections to a single network type
 (such as with multiple UUCP or Ether nets
@@ -322,8 +229,8 @@ be considered
 as well as the syntax,
 in order to determine the gateway to use.
 For example,
-the ARPANET is bringing up a new protocol
-called TCP to replace the old NCP protocol.
+the ARPANET is bringing up the
+TCP protocol to replace the old NCP protocol.
 No host at Berkeley runs both TCP and NCP,
 so it is necessary to look at the ARPANET host name
 to determine whether to route mail to an NCP gateway
@@ -340,14 +247,7 @@ many sites like to
 .q fiddle
 with anything that they will be recompiling anyway.
 .np
-.i Delivermail
-only knows about one alias file
-and per-user forwarding is unsupported.
-Berkeley is a sufficiently relaxed environment
-that the system alias file can be writable by everyone,
-but other environments are not so lax.
-Thus,
-.i sendmail
+.i Sendmail
 must be able to let various groups maintain their own mailing lists,
 and let individuals specify their own forwarding,
 without writing the system alias file.
@@ -365,6 +265,47 @@ message).
 Network traffic should be minimized
 by batching addresses to a single host where possible,
 without assistance by the user.
+.pp
+This resulted in an architecture illustrated in figure 1.
+.(z
+.hl
+.ie t \
+.	sp 18
+.el \{\
+.(c
++---------+   +---------+   +---------+
+| sender1 |   | sender2 |   | sender3 |
++---------+   +---------+   +---------+
+     |  	   |             |
+     +----------+  +  +----------+
+		|  |  |
+		v  v  v
+            +-------------+
+            |   sendmail  |
+            +-------------+
+		|  |  |
+     +----------+  +  +----------+
+     |  	   |             |
+     v             v             v
++---------+   +---------+   +---------+
+| mailer1 |   | mailer2 |   | mailer3 |
++---------+   +---------+   +---------+
+.)c
+.\}
+
+.ce
+Figure 1 \*- Sendmail System Structure.
+.hl
+.)z
+The user interacts with a mail generating and sending program.
+When the mail is created,
+the generator calls
+.i sendmail ,
+which routes the message to the correct mailer(s).
+Since some of the senders may be network servers
+and some of the mailers may be network clients,
+.i sendmail
+may be used as an internet mail gateway.
 .sh 1 "OVERVIEW"
 .sh 2 "System Organization"
 .pp
@@ -395,43 +336,80 @@ In this sense
 .i sendmail
 resembles the Message Processing Module (MPM)
 of [Postel79b].
+.sh 2 "Interfaces to the Outside World"
+.pp
+There are three ways
+.i sendmail
+can communicate with the outside world,
+both in receiving and in sending mail.
+These are using the conventional UNIX
+argument vector/return status,
+speaking SMTP over a pair of UNIX pipes,
+and speaking SMTP over an interprocess(or) channel.
+.sh 3 "Argument vector/exit status"
+.pp
+This technique is the standard UNIX method
+for communicating with the process.
+All recipients are sent in the argument vector,
+and the message is sent on the standard input.
+Anything that the mailer prints
+is simply connected and sent back to the user
+if there were any problems.
+The exit status from the mailer is collected
+after the message is sent,
+and a diagnostic is printed if appropriate.
+.sh 3 "SMTP over pipes"
+.pp
+The SMTP protocol
+[Postel82]
+can be used to run an interactive lock-step interface
+with the mailer.
+A subprocess is still created,
+but no recipients are passed to the mailer.
+Instead, they are passed one at a time
+in commands sent to the processes standard input.
+Anything appearing on the standard output
+must be a reply code
+in a special format.
+.sh 3 "SMTP over an IPC connection"
+.pp
+This technique is almost like the previous technique,
+except that it uses a 4.2bsd IPC channel
+[ref?].
+This method is exceptionally flexible
+in that the mailer need not reside
+on the same machine.
+This is normally used to connect to a sendmail process
+on another machine.
 .sh 2 "Operational Description"
 .pp
 When an agent wants to send a message,
-it does a normal program call to
-.i sendmail .
-The arguments it passes include flags giving options
-and a list of addresses of intended recipients.
-It then writes the message to be sent to the standard input
-of
-.i sendmail .
+it issues a request to
+.i sendmail
+using one of the three methods described above.
 .i Sendmail
-delivers the message if possible,
-saving a copy of it if there were errors,
-and returns an exit status code
-telling what (if anything) went wrong.
-.pp
-The message should have a header at the beginning.
-The header is formatted as a series of lines
-of the form
-.(b
-field-name: field-value
-.)b
-Field-value can be split across lines by starting the following
-lines with a space or a tab.
-The header is separated from the body of the message
-by a blank line.
-No formatting requirements are imposed on the message
-except that they must be lines of text
-(i.e., binary data is not allowed).
+operates in two distinct phases.
+In the first phase,
+it collects and stores the message.
+In the second phase,
+message delivery occurs.
+If there were errors during processing,
+.i sendmail
+creates and returns a new message describing the error
+and/or returns an status code
+telling what went wrong.
 .sh 3 "Argument processing and address parsing"
 .pp
-The arguments to
+If
 .i sendmail
+is called using one of the two subprocess techniques,
+the arguments
 are first scanned,
 and flag arguments processed.
-The remaining arguments are
-parsed in turn as addresses,
+Recipient addresses are then collected,
+either from the command line
+or from the SMTP
+RCPT command,
 and a list of recipients is created.
 Aliases are expanded at this step.
 As much validation as possible of the addresses
@@ -447,8 +425,7 @@ appends each address
 to the recipient list after parsing.
 When a name is aliased or forwarded,
 the old name is retained in the list,
-and a flag is set in the address header
-that tells the delivery phase
+and a flag is set that tells the delivery phase
 to ignore this recipient.
 This list is kept without duplicates,
 preventing alias loops
@@ -457,9 +434,12 @@ as might occur if a person were in two groups.
 .sh 3 "Message collection"
 .pp
 .i Sendmail
-then collects the message from the standard input.
-The message header is parsed at this point.
-The header is stored in memory,
+then collects the message.
+The message should have a header at the beginning.
+No formatting requirements are imposed on the message
+except that they must be lines of text
+(i.e., binary data is not allowed).
+The header is parsed and stored in memory,
 and the body of the message is saved
 in a temporary file.
 .pp
@@ -476,9 +456,11 @@ Mailers that only accept one user at a time
 are handled properly.
 .pp
 The message is sent to the mailer
-(which must read its standard input)
+using one of the same three interfaces
+used to submit a message to sendmail.
+Each instantiation of the message is
 prepended by a customized header.
-The mailer exit status code is caught and checked,
+The mailer status code is caught and checked,
 and a suitable error message given as appropriate.
 The exit code must conform to a system standard
 or a meaningless message
@@ -487,7 +469,7 @@ or a meaningless message
 is given.
 .sh 3 "Queueing for retransmission"
 .pp
-If the mailer returned an error status that
+If the mailer returned an status that
 indicated that it might be able to handle the mail later,
 .i sendmail
 will queue the mail and try again later.
@@ -586,12 +568,27 @@ into a special canonical form
 (i.e.,
 a (mailer, host, user)
 3-tuple,
-such as (arpanet, usc-isif, postel)
+such as {arpanet, usc-isif, postel}
 representing the address
 .q "postel@usc-isif" ),
 or it falls off the end.
 When a pattern matches,
 the rule is reapplied until it fails.
+.sh 3 "Option setting"
+.pp
+The configuration file also supports the editing of addresses
+into different formats.
+For example,
+an address of the form:
+.(b
+ucsfcgl!tef
+.)b
+might be mapped into:
+.(b
+tef@ucsfcgl.UUCP
+.)b
+to conform to the domain syntax.
+Translations can also be done in the other direction.
 .sh 2 "Message Header Editing"
 .pp
 Certain editing of the message header
@@ -609,12 +606,12 @@ line can be merged under certain circumstances.
 .sh 2 "Arguments"
 .pp
 Arguments may be flags and addresses.
-The flag arguments are described in Appendix A.
+Flags set various processing options.
 Following flag arguments,
 address arguments may be given,
 unless we are running in SMTP mode.
-These follow the syntax in RFC733
-[Crocker77a]
+These follow the syntax in RFC822
+[Crocker82]
 for ARPANET
 address formats.
 In brief, the format is:
@@ -628,12 +625,12 @@ is preferred
 over anything else.
 This implements the ARPANET standard that addresses of the form
 .(b
-username <machine-address>
+user name <machine-address>
 .)b
 will send to the electronic
 .q machine-address
 rather than the human
-.q username.
+.q "user name."
 .np
 Double quotes
 (\ "\ )
@@ -657,21 +654,6 @@ The rewriting rules control remaining parsing.
 after rewriting local names; see below.)
 Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
-.sh 2 "Simple Mail Transfer Protocol"
-.pp
-The Simple Mail Transfer Protocol
-(SMTP)
-[Postel81]
-can be used on input by specifying the
-.b \-as
-flag.
-This will cause
-.i sendmail
-to use a verbose protocol on its standard input and output
-which is useful over certain types of networks.
-If SMTP is used,
-no addresses are passed on the command line;
-these are sent over the standard input instead.
 .sh 2 "Mail to Files and Programs"
 .pp
 Files and programs are legitimate message recipients.
@@ -747,7 +729,7 @@ forwarding to:
 will use a different incoming mailer.
 .sh 3 "Inclusion"
 .pp
-Inclusion is specified in ARPANET syntax:
+Inclusion is specified in RFC 733 [Crocker77a] syntax:
 .(b
 :Include: pathname
 .)b
@@ -770,41 +752,54 @@ even if the alias file is protected.
 .pp
 It is not necessary to rebuild the alias database
 when a :include: list is changed.
+.sh 2 "Message Collection"
+.pp
+Once all recipients are collected and verified,
+the message is collected either from the input.
+The message comes in two parts:
+a message header and a message body,
+separated by a blank line.
+.pp
+The header is formatted as a series of lines
+of the form
+.(b
+field-name: field-value
+.)b
+Field-value can be split across lines by starting the following
+lines with a space or a tab.
+A number of header fields have special internal meaning,
+and have appropriate special processing.
+Other headers are simply passed through.
+Some header fields may be added automatically,
+such as time stamps.
+.pp
+The body is a series of text lines.
+It is completely uninterpreted and untouched,
+except that lines beginning with a dot
+have the dot doubled
+when transmitted over an SMTP channel.
+This extra dot is stripped at the other end.
 .sh 2 "Message Delivery"
 .pp
-Internally,
-the recipient list is stored as one list per mailer.
-Each mailer list can be scanned trivially
-and mail to each host picked out to implement message batching.
+The send queue is ordered by receiving host
+before transmission
+to implement message batching.
 Each address is marked as it is sent,
 so rescanning the list is safe;
 this makes sending to mailers that can only accept one user easy.
 An argument list is built as the scan proceeds.
 Mail to files is detected during the scan of the send list.
+The interface to the mailer
+is performed using one of the techniques
+described in the following section.
 .pp
-When an argument vector is built,
+After the interface is created,
 .i sendmail
-creates a pipe and subprocess for the mailer.
-The parent calls an
-.q "editing function"
-which makes the per-mailer changes to the header
-and sends the result to the mailer;
-a different editing function is used for sending error messages
-which prepends the error information.
-.pp
-The exit status from the mailer is collected
-after the message is sent,
-and a diagnostic is printed if appropriate.
+makes the per-mailer changes to the header
+and sends the result to the mailer.
 If any mail is rejected by the mailer,
 a flag is set to invoke the return-to-sender function
 after all delivery completes.
-.sh 2 "Exit Status"
-.pp
-.i Sendmail
-defines a set of standard exit status codes
-that should be returned by mailers.
-These are in turn returned by
-.i sendmail .
 .sh 2 "Queued Messages"
 .pp
 If the mailer gave a
@@ -813,7 +808,16 @@ exit status,
 the message is queued.
 A control file is used to describe the recipients to be sent to
 and various other parameters.
-.sh 2 "Interaction With Other Mailers"
+This control file is formatted as a series of lines,
+each describing a sender,
+a recipient,
+the time of submission,
+or some other salient parameter of the message.
+The header of the message is stored
+in the control file,
+so that the associated data file in the queue
+is just the temporary file that was originally collected.
+.sh 2 "Examples of Interactions With Other Mailers"
 .pp
 Two examples of how network-specific work is passed to other programs
 are the incoming UUCP mailer
@@ -862,10 +866,10 @@ as an alternative to
 which must be translated.
 The outgoing ARPANET mailer makes these transformations
 before passing the message to the network.
-.sh 1 CONFIGURATION
+.sh 2 "Configuration"
 .pp
-Configuration is controlled primarily by the file
-.i /usr/lib/sendmail.cf .
+Configuration is controlled primarily by a configuration file
+read at startup.
 .i Sendmail
 should not need to be recomplied except
 .np
@@ -892,1026 +896,6 @@ exists in the sender's home directory,
 that file is read as a configuration file
 after the system configuration file.
 The primary use of this is to add header lines.
-This could also be used to adjust the full name by
-defining the
-.b x
-macro; e.g.,
-.(b
-DxEric Allman in Outer Space
-.)b
-.sh 2 "Configuration File Description"
-.pp
-The configuration file is formatted
-as a series of text lines,
-each beginning with a character describing its semantics.
-Blank lines and lines beginning with a sharp sign
-(#)
-are ignored.
-Other lines are:
-.(b
-.ta 3n
-D	define macro
-H	define header
-M	define mailer
-S	use rewriting set
-C	define word class
-F	define word class from file
-R	specify rewriting rule
-.)b
-.pp
-See figure 2 for an example configuration file.
-Please note that this is intended as an example only.
-.(z
-.hl
-.sz -2
-.re
-##### sendmail configuration file
-.sp \n(psu
-### local hosts on various nets
-DABerkeley
-DBIngVAX
-DUucbvax
-.sp \n(psu
-### special macros
-# my name
-D\&n\&MAILER-DAEMON
-# UNIX header format
-D\&l\&From $g  $d
-# delimiter (operator) characters
-D\&o\&.:@!^
-# address writing style
-D\&q\&$g$?x ($x)$.
-.sp \n(psu
-### format of headers:
-H\&Date: $a
-H\&From: $g$?x ($x)$.
-H\&Full-Name: $x
-H\&Message-Id: <$t.$p.$B@$A>
-H\&Posted-Date: $a
-.sp \n(psu
-### name classifications
-# arpanet hostnames
-C\&A\&ucb berkeley
-# list of local host names
-C\&B\&j IngVax
-# berknet hosts on the arpanet
-C\&C\&i ingres ing70
-# uucp hostnames
-C\&U\&ucbvax ernie
-.sp \n(psu
-.ta \w'M\&local  'u +\w'/usr/net/bin/sendberkmail  'u +\w'rlsAmn  'u +\w'$f@$A  'u
-###  mailers
-M\&local	/bin/mail	rlsAmn	$f	...local\&mail -d $u
-M\&prog	/bin/csh	lA	$f	...prog\&mail -fc $u
-M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berk\&mail -m $h -h $c -t $u
-M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpa\&mail $f $h $u
-M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucp\&mail - $h!rmail ($u)
-.sp \n(psu
-### rewriting rules
-.ta \w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
-R\&$-.$+	$1:$2	change "." to ":"
-R\&$=C:$+@$-	$2@$3	delete ing70: on arpanet addresses
-R\&$+@$=A	ing70:$1	delete local arpa hosts
-R\&$+@$-	$#berk$@ing70$:$1@$2	send arpa mail to ing70
-R\&$+^$+	$1!$2	change "^" to "!"
-R\&$-!$=U!$+	csvax:$3	delete uucp loops through csvax
-R\&$-!$+	csvax:$1!$2	send uucp mail to csvax
-R\&$-:$-:$+	$2:$3	delete multiple berk hosts
-R\&$=B:$+	$2	delete local berk hosts
-R\&$-:$+	$#berk$@$1$:$2	resolve berk mail
-R\&$+	$#local$:$1	resolve local mail
-.sp \n(psu
-### rewriting rules for from host
-S\&1
-R\&ing70:$+@$-	$1@$2	arpanet mail is automatic
-R\&CSVAX:$-!$+	$1!$2	uucp mail is automatic
-.sp \n(psu
-### rewriting rules for translated sender
-S\&2
-R\&$-x:$-:$+	$2:$3	delete multiple berknet hosts
-.sz
-.sp
-.ce
-Figure 2.  Sample configuration file.
-.hl
-.)z
-.sh 3 "D \*- define macro"
-.(b
-.b D \c
-.i x\|val
-.)b
-.pp
-This line defines a macro
-with the single character name
-.i x
-and value
-.i val .
-Macros can be interpolated using the escape
-.b $ \c
-.i x ,
-where
-.i x
-is the macro name.
-By convention,
-all upper-case letters are unused by
-.i sendmail
-and may be used freely by the user;
-all other names are reserved for use by sendmail.
-Certain macros
-.i must
-be defined,
-and are used internally.
-These are:
-.(b
-.ta 4n
-$l	UNIX-style \*(lqFrom\*(rq line.
-$n	My address in error messages.
-$o	\*(lqOperators\*(rq in addresses.
-$q	How to write addresses in headers.
-.)b
-The
-.b $l
-macro is expanded when
-.i sendmail
-wants to insert a UNIX-style
-.q From
-line on messages.
-This typically expands to something like:
-.(b
-From sally  Wed Aug 12 09:15:13 1981
-.)b
-The
-.b $n
-macro is used as the name of this process
-when error messages are being mailed back.
-Typically,
-it is wise to include an alias
-so that mail to this address will be sent to root.
-The
-.b $o
-macro defines the characters
-that will separate words when addresses are being broken up.
-Each of these becomes a word by itself when scanned.
-Blanks and tabs are built-in separators
-but are ignored,
-i.e., are not turned into words.
-For example, the input:
-.(b
-Ing70:  ZRM  @  MIT-MC  SRI-KL
-.)b
-Is broken up into the six words:
-.(b
-Ing70, :, ZRM, @, MIT-MC, SRI-KL
-.)b
-assuming that colon and at-sign are operators
-(but hyphen is not).
-The
-.b $q
-macro gives the format for addresses
-as they should appear in headers.
-This will normally be something like:
-.(b
-$g$?x ($x)$.
-.)b
-Which will give the translated from address
-followed by the full name if known.
-.pp
-A number of macros are defined by
-.i sendmail
-for use as primitives.
-These are:
-.(l
-.ta 5n
-$a	The \*(lqDate:\*(rq line date in ARPANET format.
-$b	The current date in ARPANET format.
-$c	The hop count.
-$d	The date in UNIX (ctime) format.
-$f	The sender's (from) address.
-$g	The sender's address translated by the mailer.
-$h	The host of the recipient.
-$p	The process id of sendmail in decimal.
-$t	The time in seconds in decimal.
-$u	The user part of the recipient.
-$v	The version number of sendmail.
-$x	The full name of the sender.
-$y	The id of the sender's terminal.
-$z	The home directory of the recipient.
-.)l
-.pp
-There are three types of dates that can be used.
-The
-.b $a
-and
-.b $b
-macros are in ARPANET format;
-.b $a
-is a copy of the time extracted from the
-.q Date:
-field of the incoming message
-(if there was one),
-and
-.b $b
-is the current date and time \*- used for postmarks.
-If no
-.q Date:
-is found in the message,
-they are the same.
-The
-.b $d
-macro has the date in UNIX
-.i ctime
-format;
-this is extracted from the message if possible
-and is otherwise the current date.
-.pp
-The
-.b $f
-macro is the id of the sender
-as originally determined;
-when mailing to a specific person,
-the
-.b $g
-macro is the address of the sender
-with respect to the receiver.
-For example,
-if I send to
-.q csvax:samwise
-the
-.b $f
-and
-.b $g
-macros are:
-.(b
-.ta 4n
-$f	eric
-$g	IngVAX:eric
-.)b
-This only applies to the first step in the link.
-For example,
-sending to Ing70:drb@bbn-unix,
-we have
-.b $f
-and
-.b $g
-as above for the transfer to Ing70, but:
-.(b
-$f	IngVAX:eric
-$g	IngVAX:eric@Berkeley
-.)b
-for transfer to the ARPANET\**.
-.(f
-\**When this is actually sent to the ARPANET,
-this will appear as
-IngVAX.eric@Berkeley.
-The translation of the colon to a period is performed
-by the mailer that queues ARPANET mail.
-.)f
-.pp
-The
-.b $x
-macro is set to the full name of the sender.
-This can be determined in several ways.
-It can be passed as a flag to
-.i sendmail .
-The
-.q Full-Name:
-line in the header is the second option,
-and the comment portion of the
-.q From:
-line is the third.
-If all of these fail,
-and if the message is being originated locally,
-the full name is looked up in the
-.i passwd
-file.
-.pp
-When sending, the
-.b $u ,
-.b $h ,
-and
-.b $z
-macros get set to the user, host, and home directory
-(respectively)
-of the receiver.
-The host is only set if the user is not local,
-and the home directory is only set if the user is local.
-.pp
-The
-.b $p
-and
-.b $t
-macros are used to create unique strings.
-The
-.b $y
-macro is set to the id of the terminal of the sender
-(if known);
-some systems like to put this in the
-.q From
-line.
-The
-.b $v
-macro is set to the version number of
-.i sendmail ,
-and can be used in postmarks
-to help debugging.
-.pp
-A primitive conditional is available during macro expansion.
-The construct:
-.(b
-$?x text1 $: text2 $.
-.)b
-tests if macro
-.b $ \c
-.i x
-is defined.
-If it is,
-text1 is interpolated;
-otherwise,
-text2 is interpolated.
-.sh 3 "H \*- define header"
-.(b
-.b H \c
-.i "Field-Name" \c
-.b ":" " \c
-.i "field value"
-.)b
-.pp
-The
-.b H
-line looks like a regular header line,
-except that the field value is macro expanded
-before use.
-All headers mentioned in this way
-are automatically inserted
-into every message
-except for headers mentioned in the compile-time
-configuration file
-.i conf.c .
-These headers are
-Date,
-From,
-Full-Name,
-Message-Id,
-and
-Received-Date.
-To get these fields the appropriate flag
-must be specified
-for the receiving mailer.
-.pp
-Since the file
-.q ".mailcf"
-in the sender's home directory is read and processed,
-it is possible to add customized header lines.
-For example,
-the .mailcf consisting of:
-.(b
-H\&Phone: (415) 888-7770
-.)b
-will add that line to every outgoing message.
-.sh 3 "M \*- define mailer"
-.(b F
-.b M \c
-.i mailer-name
-.i pathname
-.i flags
-.i from-macro
-.i "argument list"
-.)b
-.pp
-This line is structured into fields
-separated by white space (spaces or tabs).
-The fields are:
-.np
-The internal name of the mailer,
-referred to in the rewriting rules.
-.np
-The pathname of the program to execute for this mailer.
-.np
-The flags for this mailer,
-described below.
-.np
-The macro string to become the
-.b $g
-macro (translated sender)
-for this mailer.
-.np
-The argument vector passed to the mailer
-(macro expanded).
-.pp
-The flags are a series of characters:
-.ls 1
-.ip f
-The mailer wants a
-.b \-f
-.i from
-flag,
-but only if this is a network forward operation
-(i.e.,
-the mailer will give an error
-if the executing user does not have special permissions).
-.ip r
-Same as
-.b f ,
-but sends a
-.b \-r
-flag.
-.ip q
-Don't print errors \*- the mailer will do it for us.
-.ip S
-Don't reset your userid before calling the mailer.
-This would be used in a secure environment where
-.i sendmail
-ran as a special user.
-This could be used to prevent
-(or at least complicate)
-forged addresses.
-This option is suppressed in
-.q unsafe
-configuration files
-(i.e., user-supplied, either on a
-command line
-option, or in the
-.i \&.mailcf
-file in the home directory).
-.ip n
-This mailer does not want a UNIX-style
-.q From
-line on the message.
-.ip l
-This mailer is local,
-so no host will be specified.
-Also,
-the mailer wants special local processing
-(such as a
-.q Received-Date:
-field).
-.ip s
-Strip quote characters off of addresses
-before calling the mailer.
-.ip m
-This mailer can send to multiple users
-(on the same host)
-in one call.
-.ip F
-This mailer wants a
-.q From:
-header line.
-.ip D
-This mailer wants a
-.q Date:
-header line.
-.ip M
-This mailer wants a
-.q Message-Id:
-header line.
-.ip x
-This mailer wants a
-.q Full-Name:
-header line.
-.ip u
-Upper case should be preserved in user names.
-.ip h
-Upper case should be preserved in host names.
-.ip e
-This mailer is expensive,
-and it may be desirable to limit usage.
-.ip R
-The recipient addresses should be rewritten to be relative to the
-receiver, rather than relative to the sender.
-This is always done with sender addresses,
-but should only be done on recipients
-if the host you are sending to knows that it is being done.
-Setting this flag makes it easy to do a
-.q reply
-command in a user mail program
-(since all that must be done is send to all addresses in the message header),
-but user mail programs that try to rewrite the addresses
-will be completely confused.
-.ip A
-This mailer wants an ARPANET standard header
-(equivalent to the
-.b F
-and
-.b D
-flags).
-.ip U
-This mailer is a UUCP mailer that wants leading from lines
-of the form:
-.(b
-From sender <date> remote from sysname
-.)b
-instead of the more reasonable:
-.(b
-From sysname!sender <date>
-.)b
-A compilation flag must be on to include this code.
-.ls
-.lp
-There should always be at least one flag,
-since every message should include either a
-.b x
-or a
-.b F
-flag.
-.sh 3 "S \*- use rewriting set"
-.(b
-.b S \c
-.i N
-.)b
-.pp
-There are three sets of rewriting rules.
-Set zero is used to rewrite recipient addresses.
-Set one is used to rewrite sender addresses.
-Set two is applied after evaluating the
-.q $g
-macro,
-i.e., after determining the from address for a particular mailer.
-.pp
-Set one can be used to eliminate implicit links.
-For example,
-if there exists a site on on the BerkNet called
-.q Ing70
-which is an ARPANET gateway,
-and we are on a site called
-.q IngVAX ,
-ARPANET mail coming into
-.q Ing70
-for someone on
-.q IngVAX
-will read:
-.(b
-From: Ing70:auser@ahost
-.)b
-Rewriting set one can rewrite this as:
-.(b
-From: auser@ahost
-.)b
-since
-.q Ing70
-will be implied.
-.pp
-Set two is used to eliminate anomalies resulting from
-forwarding.
-For example,
-a message received at Ing70 from mckusick on the CSVAX will
-appear as:
-.(b
-From CSVAX:mckusick
-.)b
-If this is then forwarded to IngVAX,
-sendmail on Ing70 will rewrite the from address as:
-.(b
-From Ing70:CSVAX:mckusick
-.)b
-The extra host reference can be eliminated by ruleset two on Ing70.
-.pp
-When you change to a new set,
-the previous content of that set is cleared.
-.sh 3 "R \*- rewriting rule"
-.(b F
-.b R \c
-.i pattern
-.i replacement
-.i comments
-.)b
-.pp
-The rewriting rules drive the address parser.
-The rewriting process is essentially textual.
-First,
-the address to be rewritten is broken up into words.
-Words are defined as strings of non-special characters
-separated by white space or single special characters
-as defined by the
-.b $o
-macro.
-Then,
-the words are rewritten using simple pattern matching.
-Words in the pattern match themselves
-unless they begin with dollar sign.
-The dollar escapes have the following meanings\**:
-.(f
-\**These dollar escapes have nothing to do with macro expansion.
-.)f
-.(b
-.ta 6n
-$-	Match a single word.
-$+	Match one or more words.
-$=c	Match any word in class c (see below).
-.)b
-The case of letters is ignored in pattern matching
-(including class comparisons).
-.pp
-When a pattern (also called a left hand side or LHS)
-matches,
-the input is rewritten as defined by the right hand side (RHS).
-Acceptable escapes in the RHS are:
-.(b
-.ta \w'$#mailer  'u
-$n	Replace from corresponding match in LHS.
-$#mailer	Canonical mailer name.
-$@host	Canonical host name.
-$:user	Canonical user name.
-.)b
-The substitution from LHS to RHS is done by the index
-of indefinite matches on the LHS.
-Each pattern reexecutes until it fails.
-As soon as the input resolves to a canonical name
-(i.e.,
-.q "$#mailer$@host$:user" ),
-rewriting ends;
-otherwise,
-the next pattern is tried.
-The
-.q "$@host"
-part is not needed
-if the mailer does not require a host.
-The special mailer
-.q error
-causes the user part to be printed as an error.
-.sh 3 "C \*- define word class"
-.(b F
-.b C \c
-.i c\|word\&1
-.i word\&2 ...
-.)b
-.pp
-There are twenty six word classes,
-represented as
-.q A
-through
-.q Z .
-For example:
-.(b
-CVcsvax ingvax esvax
-.)b
-defines the words
-.q csvax ,
-.q ingvax ,
-and
-.q esvax
-to all be in class
-.q V ,
-so that
-.q $=V
-on the LHS of a rewriting rule
-will match any of these words.
-.sh 3 "F \*- define word class from file"
-.(b
-.b F \c
-.i c\&filename
-.i format
-.)b
-.pp
-This works analogously
-to the
-.b C
-line except that it reads the contents of the class
-from the given
-.i filename .
-If given,
-the specified
-.i format
-is used as a
-scanf(3)
-string which should produce a single string.
-.sh 2 "A Detailed Example"
-.pp
-We will now follow the configuration file
-in figure 2
-through in detail.
-This example is from a version of the configuration file
-for the IngVAX machine at Berkeley.
-IngVAX had no interesting network connections.
-Ing70 had an ARPANET connection,
-and CSVAX had a UUCP connection.
-All of these machines were tied together via BerkNet.
-.sh 3 "Macro definitions"
-.(b
-DABerkeley
-DBIngVAX
-DUucbvax
-DnMAILER-DAEMON
-DlFrom $g  $d
-Do.:@!^
-Dq$g$?x ($x)$.
-.)b
-The first three macros are for convenience only,
-and are used to define the local host names
-on the ARPANET, BerkNet, and the UUCP net
-respectively.
-.pp
-Macro
-.b n
-defines the name of
-.i sendmail
-when error messages are sent.
-Macro
-.b l
-defines what the first line
-of a message in UNIX format looks like,
-in this case the version 7 standard of:
-.(b
-From sender-name  time-of-submission
-.)b
-The
-.b o
-macro
-tells what characters will be distinct from names
-when scanning addresses.
-In this case,
-dot and colon will be used
-to distinguish BerkNet addresses,
-at sign for ARPANET addresses,
-and exclamation point and caret for UUCP addresses.
-.sh 3 "Header definitions"
-.(b
-H\&Date: $a
-H\&From: $g$?x ($x)$.
-H\&Full-Name: $x
-H\&Message-Id: <$t.$p.$B@$A>
-H\&Posted-Date: $a
-.)b
-These define the headers
-that may be added to a message.
-The
-.q Date:
-is just the ARPANET idea of the date.
-The
-.q From:
-line is the translated version of the sender,
-followed by the sender's full name if known.
-The
-.q Full-Name:
-field is used to transmit the sender's full name
-when a
-.q From:
-line is not being sent;
-these will normally be mutually exclusive.
-The
-.q Message-Id:
-field has the time and process id's concatenated
-with the BerkNet and ARPANET addresses
-to make a unique string.
-Finally, the
-.q Posted-Date:
-is the date in ARPANET format;
-it differs from
-.q Date:
-in that it is always output as soon as the message enters
-.i sendmail 's
-domain,
-and hence indicates the time that the message first enters
-the mail delivery system
-[Postel79b, NBS80].
-.sh 3 "Name classifications"
-.(b
-C\&A\&ucb berkeley
-C\&B\&j IngVax
-C\&C\&i ingres ing70
-C\&U\&ucbvax ernie
-.)b
-These commands put the words
-.q ucb
-and
-.q berkeley
-into class
-.q A ,
-the valid names of this site on the ARPANET.
-Words
-.q j
-and
-.q ingvax
-are in class
-.q B ,
-the local names on BerkNet.
-Class
-.q C ,
-the names of the site which has the ARPANET link,
-has the words
-.q i ,
-.q ingres ,
-and
-.q ing70 .
-Finally,
-.q ucbvax
-and
-.q ernie
-are the UUCP names of our UUCP gateway,
-and are in class
-.q U .
-.pp
-The classes will be used in the patterns of the rewriting rules
-as described below.
-.sh 3 "Mailer definitions"
-.(b
-.if n .in 0
-.if t .sz -2
-.ta \w'M\&local  'u +\w'/usr/net/bin/sendberkmail  'u +\w'rlsAmn  'u +\w'$f@$A  'u
-M\&local	/bin/mail	rlsAmn	$f	...localmail -d $u
-M\&prog	/bin/csh	lA	$f	...progmail -fc $u
-M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berkmail -m $h -h $c -t $u
-M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpamail $f $h $u
-M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucpmail - $h!rmail ($u)
-.if n .in
-.if t .sz
-.)b
-Six mailers are known in the configuration file.
-There
-.i must
-be entries for local and program mail.
-.pp
-Local mail is sent using
-/bin/mail.
-It takes a
-.b \-r
-flag,
-is local,
-quote characters are stripped before sending,
-takes ARPANET standard headers,
-can deliver to multiple recipients at once,
-and does not want a UNIX-style
-.q From
-line since it will add one itself.
-The translated
-.q from
-address is the same as the raw
-.q from
-address,
-since no network hops are made.
-The argument vector has a program name,
-a
-.b \-d
-flag (\c
-.q "really deliver" ,
-which must be added to /bin/mail),
-and the list of recipients \*- one recipient per argument.
-.pp
-Mail piped through programs
-is interpreted by /bin/csh.
-Unlike local mail,
-it does not take a
-.b \-r
-flag,
-quotes should be left,
-it can only deal with one user,
-and it does want a UNIX-style
-.q From
-line,
-but is still local and still wants an ARPANET style header.
-.pp
-BerkNet mail is processed by
-/usr/net/bin/sendberkmail.
-It takes a
-.b \-f
-flag,
-wants a
-.q Full-Name:
-header line,
-and wants quotes stripped.
-The
-.q Full-Name:
-is used here because if it were given as a comment
-in a
-.q From:
-line the machine address of the sender
-would not be modified by later instantiations of
-.i delivermail \**.
-.(f
-\**\c
-.i Delivermail
-did no header editing,
-so
-.q From:
-lines were always passed untouched.
-When the gateways are converted to
-.i sendmail
-this can be changed.
-.)f
-The from address as seen by the receiver is
-.q IngVAX:sender ,
-and it takes a flag-oriented
-rather than a positional
-command list.
-.pp
-The ARPANET wants quotes stripped,
-ARPANET standard headers,
-and wants the user name left with case intact.
-It takes a positional command list.
-.pp
-UUCP mail calls
-.i uux
-with a
-.b \-r
-flag,
-quotes stripped,
-a
-.q Date:
-line,
-a
-.q Full-Name:
-line,
-and with multiple users listed.
-Since UUCP is a relic of the (not so) distant past,
-it requires ugly header lines.
-.pp
-If
-.q $u
-were to be missing from the argument vector for a mailer,
-that mailer would be accessed using the SMTP [Postel81]
-protocol.
-.sh 3 "Rewriting rules for recipient addresses"
-.(b
-.sz -2
-.ta \w'[88]  'u +\w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
-[1]	R\&$-.$+	$1:$2	change "." to ":"
-[2]	R\&$=C:$+@$-	$2@$3	delete ing70: on arpanet addresses
-[3]	R\&$+@$=A	ing70:$1	delete local arpa hosts
-[4]	R\&$+@$-	$#berk$@ing70$:$1@$2	send arpa mail to ing70
-[5]	R\&$+^$+	$1!$2	change "^" to "!"
-[6]	R\&$-!$=U!$+	csvax:$3	delete uucp loops through csvax
-[7]	R\&$-!$+	csvax:$1!$2	send uucp mail to csvax
-[8]	R\&$-:$-:$+	$2:$3	delete multiple berk hosts
-[9]	R\&$=B:$+	$2	delete local berk hosts
-[10]	R\&$-:$+	$#berk$@$1$:$2	resolve berk mail
-[11]	R\&$+	$#local$:$1	resolve local mail
-.sz
-.)b
-The first rule translates dots to colons.
-Redundant explicit routing to the ARPANET is deleted
-in the second rule.
-Hops out over the ARPANET
-back to us are deleted in the third rule \*-
-note that the BerkNet host that we would have come in on
-is inserted.
-Real ARPANET mail is resolved immediately with no further ado \*-
-it is sent out over the BerkNet to the ing70,
-and further rewriting stops immediately.
-.pp
-Carets are changed to exclamation points
-for UUCP addresses in the fifth rule.
-The sixth rule deletes loops out into UUCP land
-and back to us \*- noting that we will be left on CSVAX.
-The seventh rule does forwarding of UUCP mail to the CSVAX.
-Multiple BerkNet hosts are deleted in rule eight \*-
-this can occur internally quite easily
-as a side effect of a rewriting rule.
-Rule nine deletes local BerkNet hosts.
-The last two rules resolve BerkNet and local mail
-by turning them into the canonical form:
-.(b
-$#\fInet\fP$@\fIhost\fP$:\fIuser\fP
-.)b
-.pp
-Consider the following examples.
-The numbers to the left are the rule that is being applied
-to make the transformation.
-.(b
-.re
-	esvax.asa
-[1]	esvax:asa
-[10]	$#berk$@esvax$:asa
-.)b
-.(b
-	research^vax135^dmr
-[5]	research!vax135^dmr
-[5]	research!vax135!dmr
-[7]	$#berk$@csvax$:research!vax135!dmr
-.)b
-.(b
-	research!ucbvax!j:eric
-[6]	csvax:j:eric
-[8]	j:eric
-[9]	eric
-[11]	$#local$:eric
-.)b
-.(b
-	ing70:wnj@Berkeley
-[2]	wnj@Berkeley
-[3]	ing70:wnj
-[10]	$#berk$@ing70$:wnj
-.)b
-.sh 3 "Rewriting rules for sender addresses"
-.(b
-.sz -2
-.ta \w'R\&CSVAX:$-h!$+u  'u +\w'$+u@$+h  'u
-S\&1
-R\&ing70:$+@$-	$1@$2	arpanet mail is automatic
-R\&CSVAX:$-!$+	$1!$2	uucp mail is automatic
-.sz
-.)b
-The
-.b S
-line starts putting the rules into set one.
-These rules strip off the
-.q ing70:
-from incoming ARPANET mail
-and the
-.q CSVAX:
-off of incoming UUCP mail.
-.pp
-The name classes could be used here,
-but using literal strings is safe
-because they will always be program-generated.
 .sh 1 "COMPARISON WITH OTHER MAILERS"
 .sh 2 "Delivermail"
 .pp
@@ -1970,6 +954,32 @@ MMDF supports two-stage timeout,
 which
 .i sendmail
 does not currently support.
+.pp
+The configuration for MMDF
+is completely compiled into the code\**.
+.(f
+\**Dynamic configuration tables are currently being considered
+for MMDF;
+this would allow the installer to select either compiled
+or dynamic tables.
+.)f
+Since MMDF does not consider backwards compatibility
+as a design goal,
+the address parsing is much less flexible.
+It is slightly harder to integrate a new mailer
+(\c
+.q channel,
+in MMDF parlance)
+into MMDF,
+both systems are designed to accept this,
+and the difference does not seem to be significant.
+.pp
+MMDF strictly separates the submission and delivery phases.
+Although
+.i sendmail
+has the concept of each of these stages,
+they are integrated into one program,
+whereas in MMDF they are split into two programs.
 .sh 2 "Message Processing Module"
 .pp
 The Message Processing Module (MPM)
@@ -2040,9 +1050,9 @@ and has reduced the job to a manageable task.
 .i Sendmail
 has knowledge of a few difficult environments
 built in.
-It generates ARPANET FTP compatible error messages
+It generates ARPANET FTP/SMTP compatible error messages
 (prepended with three-digit numbers
-[Neigus73, Postel74])
+[Neigus73, Postel74, Postel82])
 as necessary,
 optionally generates UNIX-style
 .q From
@@ -2057,18 +1067,23 @@ lines.
 Also,
 error handling has an option customized for BerkNet.
 .pp
-One surprisingly major annoyance in most internet mailers
-(such as MMDF)
-is that the location and format of local mail is built in\**.
-.(f
-\**For example,
-MMDF puts local mail in the file
-.q .mail
-\*- useful if you are running version 6.
-.)f
-.i Sendmail
-eliminates all knowledge of location
-and can function successfully with different formats.
+The decision to avoid doing any type of delivery where possible
+(even, or perhaps especially, local delivery)
+has turned out to be a good idea.
+Even with local delivery,
+there are issues of the location of the mailbox,
+the format of the mailbox,
+the locking protocol used,
+etc.,
+that are best decided by other programs.
+One surprisingly major annoyance in many internet mailers
+is that the location and format of local mail is built in.
+The feeling seems to be that local mail is so common
+that it should be efficient.
+This does not match our experience.
+On the contrary,
+the location and format of mailboxes seems to vary widely
+from system to system.
 .pp
 The ability to automatically generate a response to incoming mail
 (by forwarding mail to a program)
@@ -2086,37 +1101,9 @@ It might be desirable to implement some form of load limiting.
 I am unaware of any mail system that addresses this problem,
 nor am I aware of any reasonable solution at this time.
 .pp
-.i Sendmail
-should be modified to run as a daemon,
-reading an MPX file
-(or other IPC scheme)
-to receive mail and process it.
-This would reduce the cost of sending mail to writing the message
-into a known file.
-.i Sendmail
-would be modified to have a very different argument structure.
-It already has an option to read the recipients
-from the message header.
-A more palatable technique for giving error messages
-would also have to be devised.
-.pp
 The configuration file is currently practically inscrutable;
 considerable convenience could be realized
 with a higher-level format.
-For example, a description might read:
-.(b
-.re
-(MACRO name value)
-(HEADER name value
-	(OPTION option) ...
-	(NEEDS option) ... )
-(MAILER name path xlatstring
-	(OPTION option) ...
-	(ARGV arg ... ))
-(CLASS name word ...)
-(REWRITE setname
-	(RULE lhs rhs) ... )
-.)b
 .pp
 It seems clear that common protocols will be changing soon
 to accommodate changing requirements and environments.
@@ -2125,71 +1112,29 @@ These changes will include modifications to the message header
 or to the body of the message itself
 (such as for multimedia messages
 [Postel80]).
-Other changes will include changes to communication protocols
-which may effect
-.i sendmail ;
-for example, the changes implied by the new Mail Transfer Protocol
-[Sluizer81].
-These changes should be relatively trivial to integrate
+Experience indicates that
+these changes should be relatively trivial to integrate
 into the existing system.
 .pp
-Many other nice features could be implemented.
-For example,
-if we were sure that the alias file were writable by the effective user
-(i.e., if
-.i sendmail
-were to run setuid)
-then the inverted form could be rebuilt automatically when the
-text copy was changed.
-However, this appears to be little more than frosting.
-.pp
-Some proposals call for a single address syntax,
-such that the host name uniquely determines the network.
-There are a number of evident problems with this.
-In a large internet,
-the database update problem becomes considerable,
-especially under multiple managements;
-this can be solved by a daemon that updates the tables
-dynamically,
-but it is not clear what the problems are here.
-More to the point,
-this requires a unique namespace among all networks.
-In our current configuration
-we have been unable to even find out the names of all the hosts
-on the UUCP network;
-to hope that on an internet with fifty or more networks
-would have no name conflicts is beyond the scope of
-.i sendmail .
-Despite the difficulties, however,
-this is probably a better long-term solution to the problem
-of internet addressing.
-The ambiguities implied by addresses combining
-left-associative and right-associative addresses
-are impossible to solve without parentheses;
-acceptable for mathematical equations,
-but absurd for network addresses.
-.pp
-A related problem occurs with the user namespace.
 In tightly coupled environments,
-it would be nice to have automatic forwarding between machines
-on the basis of the user name alone,
-without cumbersome aliases.
+it would be nice to have a name server integrated into the mail system.
+This would allow a domain such as
+.q Berkeley
+to appear as a homogenous host,
+rather than as a collection of hosts,
+and would allow people to move transparently among machines
+without having to change their addresses.
 This would require an automatically updated database
 and some method of resolving conflicts.
 Ideally this would be effective even with multiple managements.
-A student at Berkeley,
-Alan Biocca,
-is working on a facility which may provide the necessary functionality.
-.pp
-In the long run,
-a system that understands canonical internet addresses
-(net, host, user)
-implemented in a world that understands these addresses
-would be an incredible win.
-.i Sendmail
-seems to be a useful tool to pull together
-the haphazard environment that exists today,
-until the better tools permeate the internetwork world.
+However,
+it is not clear whether this should be integrated into the
+aliasing feature
+or should be considered a
+.q "value added"
+feature outside
+.i sendmail
+itself.
 .sh 0 "ACKNOWLEDGEMENTS"
 .pp
 Thanks are due to Kurt Shoens for his continual cheerful
@@ -2231,8 +1176,8 @@ Kurt and Kirk McKusick
 read early copies of this paper,
 giving considerable useful advice.
 .pp
-Special thanks are reserved for Mike Stonebraker,
-who knowingly allowed me to put so much work into this
+Special thanks are reserved for Mike Stonebraker and Bob Epstein,
+who both knowingly allowed me to put so much work into this
 when there were so many other things I really should
 have been working on.
 .+c
@@ -2279,6 +1224,15 @@ An Internetwork Memo Distribution Facility \*- MMDF.
 6th Data Communication Symposium,
 Asilomar.
 November 1979.
+.ip [Crocker82]
+Crocker, D. H.,
+.ul
+Standard for the Format of Arpa Internet Text Messages.
+RFC 822.
+Network Information Center,
+SRI International,
+Menlo Park, California.
+August 1982.
 .ip [Metcalfe76]
 Metcalfe, R.,
 and
@@ -2377,15 +1331,16 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 August 1980.
-.ip [Postel81]
+.ip [Postel82]
 Postel, J. B.,
 .ul
 Simple Mail Transfer Protocol.
-RFC788.
+RFC821
+(obsoleting RFC788).
 Network Information Center,
 SRI International,
 Menlo Park, California.
-November 1981.
+August 1982.
 .ip [Schmidt79]
 Schmidt, E.,
 .ul
@@ -2412,6 +1367,17 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 May 1981.
+.ip [Su82]
+Su, Zaw-Sing,
+and
+Postel, Jon,
+.ul
+The Domain Naming Convention for Internet User Applications.
+RFC819.
+Network Information Center,
+SRI International,
+Menlo Park, California.
+August 1982.
 .ip [UNIX80]
 .ul
 The UNIX Programmer's Manual, Seventh Edition,
@@ -2421,548 +1387,3 @@ Bell Laboratories,
 modified by the University of California,
 Berkeley California.
 November 1980.
-.++ A
-.+c "SENDMAIL USAGE"
-.pp
-Arguments must be presented with flags before addresses.
-The flags are:
-.nr ii 1i
-.ip "\-f addr"
-The sender's machine address is
-.i addr .
-This flag is ignored unless the real user
-is root,
-network,
-or uucp,
-or if
-.i addr
-contains an exclamation point
-(because of certain restrictions in UUCP).
-.ip "\-r addr"
-An obsolete form of
-.b \-f .
-.ip "\-h cnt"
-Sets the
-.q "hop count"
-to
-.i cnt .
-This represents the number of times this message has been processed
-by
-.i sendmail
-(to the extent that it is supported by the underlying networks).
-.i Cnt
-is incremented during processing,
-and if it reaches
-MAXHOP
-(currently 30)
-.i sendmail
-throws away the message with an error.
-.ip "\-F\&name"
-Sets the full name of this user to
-.i name .
-.ip \-e\&p
-Print error messages (default).
-.ip \-e\&q
-Throw away error messages.
-The only response is the exit status.
-.ip \-e\&m
-Mail back errors.
-.ip \-e\&w
-.q Write
-back errors \*- or mail them if the user is not logged in.
-.ip \-e\&e
-Do special error processing for BerkNet.
-This involves mailing back the errors
-but always returning a zero exit status.
-.ip \-n
-Don't do aliasing or forwarding.
-.ip \-m
-Include me in alias expansions.
-Normally
-.i sendmail
-suppresses the sender
-if in a group being sent to.
-.ip \-o
-Assume that the headers are already in new format,
-i.e.,
-there are commas between names and spaces are to be preserved.
-If this flag is not given,
-an adaptive algorithm is used:
-if any recipient address contains a comma, parenthesis,
-or angle bracket,
-it will be assumed that commas already exist.
-This flag is required in certain rare cases.
-Headers are always output with commas between the names.
-.ip \-i
-Don't take a dot to end a message.
-.ip \-t
-Read the header for
-.q To: ,
-.q Cc: ,
-and
-.q Bcc:
-lines, and send to everyone listed in those lists.
-The
-.q Bcc:
-line will be deleted before sending.
-Any addresses in the argument vector will be deleted
-from the send list.
-.ip \-a
-Do special processing for the
-ARPANET.
-This includes reading the
-.q "From:"
-line from the header to find the sender,
-printing
-ARPANET
-style messages
-(preceded by three digit reply codes for compatibility with
-the FTP protocol
-[Neigus73, Postel74, Postel77]),
-and ending lines of error messages with <CRLF>.
-.ip \-a\&s
-Take input over an SMTP connection on standard input and output.
-This does everything the \-a flag does also.
-.ip \-s
-Save UNIX-style
-.q From
-lines at the beginning of headers.
-Normally they are assumed redundant
-and discarded.
-.ip \-v
-Give a blow-by-blow description of function.
-This gives information of interest to the user
-rather than for the
-.i sendmail
-maintainer;
-for example,
-aliases are printed as expanded
-and mailer functions are printed as they run.
-.ip \-c
-If this mailer is marked as being expensive,
-don't connect immediately.
-This requires that queueing be compiled in,
-since it will depend on a sender process to
-actually send the mail.
-.ip \-q\&time
-Try to execute the queued up mail.
-If the time is given,
-a sendmail will run through the queue at the specified interval
-to deliver queued mail;
-otherwise, it only runs once.
-.ip \-p
-Verify as much about the addresses and message as possible
-and then politely run in background.
-.ip \-D
-Run as a daemon.
-This should always be used with the
-.b \-as
-flag,
-as it runs on the SMTP port.
-.ip \-T\&time
-Set timeout interval for mail that cannot be sent.
-.ip \-Q\&dir
-Select directory in which mail will be queued.
-Typically for debugging only.
-.ip \-C\&file
-Use a different configuration file.
-.ip \-A\&file
-Use a different alias file.
-.ip \-I
-Initialize the DBM version
-of the alias file.
-If
-.b \-I
-is given,
-no delivery is attempted.
-The DBM version will be rebuilt automatically if the DBM files
-are mode 666,
-or if they are owned by the effective userid.
-.ip \-V
-Verify the addresses only.
-Only partial verification is done:
-syntax is checked, and local names are verified,
-but no checking normally done by the mailer is attempted.
-.ip \-d\&level
-Set debugging level.
-.ip \-M\&x\&val
-Define macro
-.i x
-to have value
-.i val .
-.nr ii 5n
-.+c "OTHER CONFIGURATION"
-.pp
-There are some configuration changes that can be made by
-recompiling
-.i sendmail .
-Some of these are changes to compilation flags:
-.nr ii 1i
-.ip V6
-If set,
-this will compile a version 6 system,
-with 8-bit user id's,
-single character tty id's,
-etc.
-If not set,
-a version 7 system is assumed.
-.ip DBM
-If set,
-the
-.q DBM
-package in UNIX is used
-(see DBM(3X) in [UNIX80]).
-If not set,
-a much less efficient algorithm for processing aliases is used.
-.ip VFORK
-Set if your system has the experimental
-.i vfork
-system call.
-See vfork(2) in [UNIX80].
-If not set,
-the regular
-.i fork
-system call is used.
-This option improves performance.
-.ip DEBUG
-If set, debugging information is compiled in.
-To actually get the debugging output,
-the
-.b \-d
-flag must be used.
-.ip LOG
-If set,
-the
-.i syslog
-routine in use at some sites is used.
-This makes an informational log record
-for each message processed,
-and makes a higher priority log record
-for internal system errors.
-.ip QUEUE
-This flag should be set to compile in the queueing code.
-If this is not set,
-mailers must accept the mail immediately
-or it will be returned to the sender.
-.ip SMTP
-If set,
-the code to handle user and server SMTP will be compiled in.
-This is only necessary if your machine has some mailer
-that speaks SMTP.
-.ip UGLYUUCP
-If you have a UUCP host adjacent to you which is not running
-a reasonable version of
-.i rmail ,
-you will have to set this flag to include the
-.q "remote from sysname"
-info on the from line.
-Otherwise, UUCP gets confused about where the mail came from.
-.ip PARANOID
-There are places where
-.i sendmail
-may opt for a more secure,
-but probably less convenient environment.
-For example,
-if this flag is set
-it is not possible to specify a program as an address directly;
-this can only be done with an alias.
-.ip NOTUNIX
-If you are using a non-UNIX mail format,
-you can set this flag to turn off special processing
-of UNIX-style
-.q "From "
-lines.
-.nr ii 5n
-.pp
-Not all header semantics are defined in the configuration file.
-Header lines that should only be included by certain mailers
-(as well as other more obscure semantics)
-must be specified in the
-.i HdrInfo
-table in
-.i conf.c .
-This table contains the header name
-(which should be in all lower case),
-a set of header control flags (described below),
-and a set of mailer flags,
-used by some of the header flags.
-The header flags are:
-.nr ii \w'H_ACHECK  'u
-.ip H_CHECK
-Check the flags for the receiving mailer
-against the third field in the
-.i HdrInfo
-entry.
-If the mailer has any of those bits set,
-send this field;
-otherwise, do not send this field to that mailer.
-If the field was in the message originally, however,
-it will always be sent
-(i.e., this only applies to headers being added by
-.i sendmail ).
-.ip H_ACHECK
-Same as H_CHECK,
-except that it even applies to headers that were in the
-original message.
-That is,
-if this bit is set and the mailer does not have flag bits set
-that intersect with the third field in this
-.i HdrInfo
-entry,
-the header line is
-.i always
-deleted.
-.ip H_EOH
-If this header field is set,
-treat it like a blank line,
-i.e.,
-it will signal the end of the header
-and the beginning of the message text.
-.ip H_FORCE
-Add this header entry
-even if one existed in the message before.
-If a header entry does not have this bit set,
-.i sendmail
-will not add another header line if a header line
-of this name already existed.
-This would normally be used to stamp the message
-by everyone who handled it.
-.ip H_RCPT
-If set,
-this field contains recipient addresses.
-This is used by the
-.b \-t
-flag to determine who to send to
-when it is collecting recipients from the message.
-.ip H_ADDR
-This flag indicates that this field
-contains addresses that should be rewritten
-to include commas, etc.
-.nr ii 5n
-.lp
-Let's look at a sample
-.i HdrInfo
-specification:
-.(b
-.sz -2
-.ta 4n +\w'"received-from",  'u +\w'H_ADDR|H_ACHECK,  'u
-struct hdrinfo	HdrInfo[] =
-{
-	"date",	H_CHECK,	M_NEEDDATE,
-	"from",	H_CHECK,	M_NEEDFROM,
-	"original-from",	H_ACHECK,	0,
-	"sender",	0,	0,
-	"full-name",	H_ACHECK,	M_FULLNAME,
-	"to",	H_ADDR,	0,
-	"cc",	H_ADDR,	0,
-	"bcc",	H_ADDR|H_ACHECK,	0,
-	"message-id",	H_CHECK,	M_MSGID,
-	"message",	H_EOH,	0,
-	"text",	H_EOH,	0,
-	"received-date",	H_CHECK,	M_LOCAL,
-	"received-from",	H_CHECK,	M_LOCAL,
-	"via",	H_FORCE,	0,
-	NULL,	0,	0,
-};
-.sz
-.)b
-This specification says that the
-.q Date: ,
-.q From: ,
-.q Message-Id: ,
-.q Received-Date: ,
-and
-.q Received-From:
-must be requested by the mailer to be inserted.
-However,
-if they were in the message as received by
-.i sendmail
-they will be propagated.
-The
-.q Full-Name:
-field, on the other hand,
-will be deleted even if it was specified before,
-unless the mailer wants it.
-The
-.q Original-From:
-and
-.q Bcc:
-fields will be deleted unconditionally
-(since it is never possible for a mailer's flags
-to intersect with zero).
-The
-.q Original-From:
-is in fact used internally,
-and will be reinserted by ad hoc code,
-but only if it differs from the
-.q From:
-line that would otherwise be inserted.
-.q To: ,
-.q Cc: ,
-and
-.q Bcc:
-all specify recipient addresses.
-The
-.q Message:
-and
-.q Text:
-fields will terminate the header;
-these are specified in new protocols
-[NBS80]
-or used by random dissenters around the network world.
-The
-.q Via:
-field will always be added,
-and can be used to trace messages.
-The
-.q Sender:
-field is used internally,
-although no cliched special processing occurs.
-.pp
-There are a number of important points here.
-First,
-header fields are not added automatically just because they are in the
-.i HdrInfo
-structure;
-they must be specified in the configuration file
-in order to be added to the message.
-Any header fields mentioned in the configuration file but not
-mentioned in the
-.i HdrInfo
-structure have default processing performed;
-that is,
-they are added unless they were in the message already.
-Second,
-the
-.i HdrInfo
-structure only specifies cliched processing;
-certain headers are processed specially by ad hoc code
-regardless of the status specified in
-.i HdrInfo .
-For example,
-the
-.q Sender:
-and
-.q From:
-fields are always scanned on ARPANET mail
-to determine the sender;
-this is used to perform the
-.q "return to sender"
-function.
-The
-.q "From:"
-and
-.q "Full-Name:"
-fields are used to determine the full name of the sender
-if possible;
-this is stored in the macro
-.b $x
-and used in a number of ways.
-Although the
-.q "Original-From:"
-field is specified to be deleted in
-.i HdrInfo ,
-it is added automatically if the
-.q From:
-field that would be generated internally
-differs from the
-.q From:
-field that was specified in the message;
-in this case,
-the original
-.q From:
-field is renamed
-.q Original-From: .
-.pp
-The file
-.i conf.c
-also contains the specification of ARPANET reply codes.
-There are six classifications these fall into:
-.(b
-.sz -2
-.ta \w'char  'u +\w'Arpa_Usrerr[] =  'u +\w'"888";  'u
-char	Arpa_Info[] =	"050";	/* arbitrary info */
-char	Arpa_Enter[] =	"350";	/* start mail input */
-char	Arpa_Mmsg[] =	"256";	/* mail successful (MAIL cmd) */
-char	Arpa_Fmsg[] =	"250";	/* mail successful (MLFL cmd) */
-char	Arpa_Syserr[] =	"455";	/* some (transient) system error */
-char	Arpa_Usrerr[] =	"450";	/* some (fatal) user error */
-.sz
-.)b
-The class
-.i Arpa_Info
-is for any information that is not required by the protocol,
-such as forwarding information.
-.i Arpa_Enter
-is output when
-.i sendmail
-wants to start receiving the mail.
-.i Arpa_Mmsg
-and
-.i Arpa_Fmsg
-are given if the mail is successfully delivered;
-the selection of message number depends on the FTP command given
-(which is communicated via the
-.b \-a
-flag).
-.i Arpa_Syserr
-is printed by the
-.i syserr
-routine;
-typically, this occurs when something has gone wrong at the
-receiving site,
-with the assumption that it is a transient condition.
-Finally,
-.i Arpa_Usrerr
-is the result of a user error
-and is generated by the
-.i usrerr
-routine;
-these are generated when the user has specified something wrong,
-and hence the error is permanent,
-i.e.,
-it will not work simply by resubmitting the request.
-.pp
-If it is necessary to restrict mail through a gateway,
-the
-.i checkcompat
-routine can be modified.
-This routine is called for every recipient address.
-It can return
-.b TRUE
-to indicate that the address is acceptable
-and mail processing will continue,
-or it can return
-.b FALSE
-to reject the recipient.
-If it returns false,
-it is up to
-.i checkcompat
-to print an error message
-(using
-.i usrerr )
-saying why the message is rejected.
-For example,
-.i checkcompat
-could read:
-.(b
-.re
-.sz -2
-bool
-checkcompat(to)
-	register ADDRESS *to;
-{
-	if (MsgSize > 50000 && to->q_mailer != MN_LOCAL)
-	{
-		usrerr("Message too large for non-local delivery");
-		return (FALSE);
-	}
-	return (TRUE);
-}
-.sz
-.)b
-This would reject messages greater than 50000 bytes
-unless they were local.
-The actual use of this routine is highly dependent on the
-implementation,
-and use should be limited.
