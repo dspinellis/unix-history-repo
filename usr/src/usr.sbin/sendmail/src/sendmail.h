@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.96		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.97		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -436,8 +436,8 @@ EXTERN char	*QueueDir;	/* location of queue directory */
 EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
-extern char	*XcriptFile;	/* template for Transcript [conf.c] */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
+extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */
 extern char	SpaceSub;	/* substitution for <lwsp> [conf.c] */
 /*

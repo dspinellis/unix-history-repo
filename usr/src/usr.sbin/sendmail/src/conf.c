@@ -32,7 +32,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.62		%G%);
+SCCSID(@(#)conf.c	3.63		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -83,14 +83,14 @@ char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 
 
 
-
-
 /*
 **  Location of system files/databases/etc.
 */
 
 char	*ConfFile =	"/usr/lib/sendmail.cf";	/* runtime configuration */
-char	*XcriptFile =	"/tmp/mailxXXXXXX";	/* template for transcript */
+char	*FreezeFile =	"/usr/lib/sendmail.fc";	/* frozen version of above */
+
+
 
 /*
 **  Some other configuration....

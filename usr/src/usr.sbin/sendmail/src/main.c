@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.129		%G%);
+SCCSID(@(#)main.c	3.130		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -128,6 +128,8 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
+	int ac;
+	char **av;
 	char *locname;
 	extern int finis();
 	extern char Version[];
@@ -135,9 +137,11 @@ main(argc, argv)
 	typedef int (*fnptr)();
 	STAB *st;
 	register int i;
+	int pass = 0;
 	bool safecf = TRUE;		/* this conf file is sys default */
 	bool queuemode = FALSE;		/* process queue requests */
 	bool aliasinit = FALSE;
+	bool dofreeze = FALSE;		/* freeze the .cf file after read */
 	static bool reenter = FALSE;
 	char jbuf[30];			/* holds HostName */
 	extern bool safefile();
@@ -178,7 +182,7 @@ main(argc, argv)
 # ifdef LOG
 	openlog("sendmail", 0);
 # endif LOG
-	openxscrpt();
+	Xscript = stderr;
 	errno = 0;
 	from = NULL;
 	initmacros();
@@ -187,7 +191,11 @@ main(argc, argv)
 	** Crack argv.
 	*/
 
-	while (--argc > 0 && (p = *++argv)[0] == '-')
+  crackargs:
+	ac = argc;
+	av = argv;
+	pass++;
+	while (--ac > 0 && (p = *++av)[0] == '-')
 	{
 		switch (p[1])
 		{
@@ -208,6 +216,7 @@ main(argc, argv)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
+			safecf = FALSE;
 			break;
 
 # ifdef DEBUG
@@ -224,16 +233,16 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p == '-')
+				p = *++av;
+				if (--ac <= 0 || *p == '-')
 				{
 					syserr("No \"from\" person");
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
-			if (from != NULL)
+			if (from != NULL && pass <= 1)
 			{
 				syserr("More than one \"from\" person");
 				break;
@@ -245,12 +254,12 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p == '-')
+				p = *++av;
+				if (--ac <= 0 || *p == '-')
 				{
 					syserr("Bad -F flag");
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
@@ -261,12 +270,12 @@ main(argc, argv)
 			p += 2;
 			if (*p == '\0')
 			{
-				p = *++argv;
-				if (--argc <= 0 || *p < '0' || *p > '9')
+				p = *++av;
+				if (--ac <= 0 || *p < '0' || *p > '9')
 				{
 					syserr("Bad hop count (%s)", p);
-					argc++;
-					argv--;
+					ac++;
+					av--;
 					break;
 				}
 			}
@@ -301,6 +310,10 @@ main(argc, argv)
 			GrabTo = TRUE;
 			break;
 
+		  case 'Z':	/* freeze the configuration file */
+			dofreeze = TRUE;
+			break;
+
 			/* compatibility flags */
 		  case 'b':	/* operations mode */
 		  case 'c':	/* connect to non-local mailers */
@@ -324,11 +337,18 @@ main(argc, argv)
 	**	Extract special fields for local use.
 	*/
 
-# ifdef LOG
-	if (LogLevel > 10)
-		syslog(LOG_DEBUG, "entered, uid=%d, pid=%d", getuid(), getpid());
-# endif LOG
-	readcf(ConfFile, safecf);
+	if (pass <= 1)
+	{
+		if (!safecf || dofreeze || !thaw())
+			readcf(ConfFile, safecf);
+		else
+			goto crackargs;
+	}
+	if (dofreeze)
+	{
+		freeze();
+		exit(EX_OK);
+	}
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
@@ -524,7 +544,7 @@ main(argc, argv)
 
 	setsender(from);
 
-	if (Mode != MD_DAEMON && argc <= 0 && !GrabTo)
+	if (Mode != MD_DAEMON && ac <= 0 && !GrabTo)
 	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 		finis();
@@ -539,7 +559,7 @@ main(argc, argv)
 	*/
 
 	if (++HopCount > MAXHOP)
-		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *argv);
+		syserr("Infinite forwarding loop (%s->%s)", CurEnv->e_from.q_paddr, *av);
 
 	/*
 	**  Scan argv and deliver the message to everyone.
@@ -549,7 +569,7 @@ main(argc, argv)
 
 	if (GrabTo)
 		DontSend = TRUE;
-	sendtoargv(argv);
+	sendtoargv(av);
 
 	/* if we have had errors sofar, arrange a meaningful exit stat */
 	if (Errors > 0 && ExitStat == EX_OK)
@@ -900,25 +920,22 @@ intsig()
 **		none
 **
 **	Side Effects:
-**		Turns the standard output into a special file
-**			somewhere.
+**		Open the transcript file.
 */
 
 openxscrpt()
 {
-	extern char *mktemp();
 	register char *p;
 
-	p = newstr(XcriptFile);
-	(void) mktemp(p);
+	p = queuename(CurEnv, 'x');
 	Xscript = fopen(p, "w");
 	if (Xscript == NULL)
 	{
 		Xscript = stdout;
 		syserr("Can't create %s", p);
 	}
-	Transcript = p;
 	(void) chmod(p, 0644);
+	Transcript = newstr(p);
 }
 /*
 **  SETSENDER -- set sendmail's idea of the sender.
@@ -1054,10 +1071,10 @@ initsys()
 
 	/*
 	**  Give this envelope a reality.
-	**	I.e., an id and a creation time.
+	**	I.e., an id, a transcript, and a creation time.
 	*/
 
-	(void) queuename(CurEnv, '\0');
+	openxscrpt();
 	CurEnv->e_ctime = curtime();
 
 	/*
@@ -1238,7 +1255,7 @@ dropenvelope(e)
 **	Assigns an id code if one does not already exist.
 **	This code is very careful to avoid trashing existing files
 **	under any circumstances.
-**		We first create an xf file that is only used when
+**		We first create an nf file that is only used when
 **		assigning an id.  This file is always empty, so that
 **		we can never accidently truncate an lf file.
 **
@@ -1268,36 +1285,36 @@ queuename(e, type)
 		char counter = 'A' - 1;
 		char qf[20];
 		char lf[20];
-		char xf[20];
+		char nf[20];
 
 		/* find a unique id */
 		(void) sprintf(qf, "qf_%05d", getpid());
 		strcpy(lf, qf);
 		lf[0] = 'l';
-		strcpy(xf, qf);
-		xf[0] = 'x';
+		strcpy(nf, qf);
+		nf[0] = 'n';
 
 		while (counter < '~')
 		{
 			int i;
 
-			qf[2] = lf[2] = xf[2] = ++counter;
+			qf[2] = lf[2] = nf[2] = ++counter;
 # ifdef DEBUG
 			if (tTd(7, 20))
-				printf("queuename: trying \"%s\"\n", xf);
+				printf("queuename: trying \"%s\"\n", nf);
 # endif DEBUG
 			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
 				continue;
 			errno = 0;
-			i = creat(xf, FileMode);
+			i = creat(nf, FileMode);
 			if (i < 0)
 			{
-				(void) unlink(xf);	/* kernel bug */
+				(void) unlink(nf);	/* kernel bug */
 				continue;
 			}
 			(void) close(i);
-			i = link(xf, lf);
-			(void) unlink(xf);
+			i = link(nf, lf);
+			(void) unlink(nf);
 			if (i < 0)
 				continue;
 			if (link(lf, qf) >= 0)
@@ -1327,4 +1344,116 @@ queuename(e, type)
 		printf("queuename: %s\n", buf);
 # endif DEBUG
 	return (buf);
+}
+/*
+**  FREEZE -- freeze BSS & allocated memory
+**
+**	This will be used to efficiently load the configuration file.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Writes BSS and malloc'ed memory to FreezeFile
+*/
+
+struct frz
+{
+	time_t	frzstamp;		/* timestamp on this freeze */
+	char	*frzbrk;		/* the current break */
+	char	frzver[252];		/* sendmail version */
+};
+
+freeze()
+{
+	int f;
+	struct frz fhdr;
+	extern char edata;
+	extern char *sbrk();
+
+	if (FreezeFile == NULL)
+		return;
+
+	/* try to open the freeze file */
+	f = open(FreezeFile, 1);
+	if (f < 0)
+	{
+		syserr("Cannot freeze");
+		errno = 0;
+		return;
+	}
+
+	/* build the freeze header */
+	fhdr.frzstamp = curtime();
+	fhdr.frzbrk = sbrk(0);
+	strcpy(fhdr.frzver, Version);
+
+	/* write out the freeze header */
+	if (write(f, &fhdr, sizeof fhdr) != sizeof fhdr ||
+	    write(f, &edata, fhdr.frzbrk - &edata) != (fhdr.frzbrk - &edata))
+		syserr("Cannot freeze");
+
+	/* fine, clean up */
+	(void) close(f);
+}
+/*
+**  THAW -- read in the frozen configuration file.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		TRUE if it successfully read the freeze file.
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		reads FreezeFile in to BSS area.
+*/
+
+thaw()
+{
+	int f;
+	struct frz fhdr;
+	extern char edata;
+
+	if (FreezeFile == NULL)
+		return (FALSE);
+
+	/* open the freeze file */
+	f = open(FreezeFile, 0);
+	if (f < 0)
+	{
+		errno = 0;
+		return (FALSE);
+	}
+
+	/* read in the header */
+	if (read(f, &fhdr, sizeof fhdr) < sizeof fhdr ||
+	    strcmp(fhdr.frzver, Version) != 0)
+	{
+		(void) close(f);
+		return (FALSE);
+	}
+
+	/* arrange to have enough space */
+	if (brk(fhdr.frzbrk) < 0)
+	{
+		syserr("Cannot break to %x", fhdr.frzbrk);
+		(void) close(f);
+		return (FALSE);
+	}
+
+	/* now read in the freeze file */
+	if (read(f, &edata, fhdr.frzbrk - &edata) != (fhdr.frzbrk - &edata))
+	{
+		/* oops!  we have trashed memory..... */
+		fprintf(stderr, "Cannot read freeze file\n");
+		exit(EX_SOFTWARE);
+	}
+
+	(void) close(f);
+	return (TRUE);
 }
