@@ -1,0 +1,329 @@
+.TH TIP 1C "18 January 1983"
+.UC 4
+.ad
+.SH NAME
+tip \- connect to a remote system
+.SH SYNOPSIS
+.B tip
+[
+.B \-v
+] [
+.BI \- speed
+] system-name
+.SH DESCRIPTION
+.I Tip
+establishes a full-duplex connection to another machine,
+giving the appearance of being logged in directly on the
+remote cpu.  It goes without saying that you must have a login
+on the machine (or equivalent) to which you wish to connect.
+.PP
+Typed characters are normally transmitted directly to the remote
+machine (which does the echoing as well).  A tilde (``~'')
+appearing as the first character of a line is an escape signal;
+the following are recognized:
+.in +5
+.IP "~^D or ~." 10
+Drop the connection and exit
+(you may still be logged in on the
+remote machine).
+.IP "~c [name]" 10
+Change directory to name (no argument
+implies change to your home directory).
+.IP "~!" 10
+Escape to a shell (exiting the shell will
+return you to tip).
+.IP "~>" 10
+Copy file from local to remote.
+.IP "~<" 10
+Copy file from remote to local.
+.IP "~p from [to]" 10
+Send a file to a remote UNIX host.  The put command causes the remote UNIX
+system to run the command string ``cat > 'to''', while tip sends it the ``from''
+file.  If the ``to'' file isn't specified the ``from'' file name is used.
+This command is actually a UNIX specific version of the ``~>'' command.
+.IP "~t from [to]" 10
+Take a file from a remote UNIX host.  As in the put command the ``to'' file
+defaults to the ``from'' file name if it isn't specified.  The remote host
+executes the command string ``cat 'from';echo ^A'' to send the file to tip.
+.IP "~|" 10
+Pipe the output from a remote command to a local UNIX process.
+The command string sent to the local UNIX system is processed by the shell.
+.IP "~#" 10
+Send a BREAK to the remote system.  For systems which don't support the
+necessary
+.I ioctl
+call the break is simulated by a sequence of line speed changes
+and DEL characters.
+.IP "~s" 10
+Set a variable (see the discussion below).
+.IP "~^Z" 10
+Stop tip (only available with job control).
+.IP "~?" 10
+Get a summary of the tilde escapes
+.sp 1
+.in -5
+.PP
+Copying files requires some cooperation on the part of the remote host.
+When a ~> or ~< escape is used to send a file,
+.I tip
+will prompt
+for a file name (to be transmitted or received) and a command
+which will be sent to the remote system, in case the file is being
+transferred from the remote system.  The default end of transmission
+string for transferring a file from the local system to the remote
+is specified in the
+.IR remote (5)
+file, but may be changed by the set command.  While
+.I tip
+is transferring a file the number of lines transferred will be continuously
+displayed on the screen. 
+A file transfer may be aborted with an interrupt.
+An example of the dialogue used to transfer
+files is given below.
+.nf
+.in +5
+.sp 1
+% tip mds
+[connected]
+<<Assume we are talking to another UNIX system>>
+login: ken
+Password:
+% cat > foo.c
+~> Filename: foo.c
+32 lines transferred in 1 minute 3 seconds
+%
+% ~< Filename: reply.c
+List command for remote host: cat reply.c
+65 lines transferred in 2 minutes
+%
+<<Or, equivalently>>
+% ~p foo.c
+<<actually echo's as ~[put] foo.c>>
+32 lines transferred in 1 minute 3 seconds
+%
+% ~t reply.c
+<<actually echo's as ~[take] reply.c>>
+65 lines transferred in 2 minutes
+%
+<<To print a remote file locally>>
+% ~|Local command: pr -h foo.c | lpr
+List command for remote host: cat foo.c
+% ~^D
+[EOT]
+<<Back on the local system>>
+%
+.sp 1
+.fi
+.in -5
+.PP
+The
+.IR remote (5)
+file contains the definitions for all remote
+systems known by
+.IR tip ;
+refer to the remote manual page for a full description.
+In particular, each system-name has a default baud rate with which to
+establish a connection.  If this value is not suitable, the baud rate
+to be used may be specified on the command line, e.g. ``tip -300 mds''.
+.PP
+When
+.I tip
+establishes a connection it sends out a
+connection message to the remote system.  The default value for
+this string may be found in the remote file.
+.PP
+At any time that
+.I tip
+prompts for an argument (e.g. during set-up of
+a file transfer) the line typed may be edited with the standard
+erase and kill characters.  A null line in response to a prompt,
+or an interrupt, will abort the dialogue and return you to the
+remote machine.
+.PP
+When
+.I tip
+attempts to connect to a remote system, it opens the
+associated device with an exclusive-open
+.IR ioctl (2)
+call.  Thus only one user at a time may access a device.
+This is to prevent multiple
+processes from sampling the terminal line.  In addition,
+.I tip
+honors the locking protocol used by
+.IR uucp (1).
+.SH "AUTO-CALL UNITS"
+.I Tip
+may be used to dial up remote systems using a number of auto-call unit's
+(ACU's).  When the remote system description contains the ``du'' attribute,
+tip will use the call-unit (``cu''), ACU type (``at''), and phone numbers
+(``pn'') supplied.  Normally tip will print out the verbose messages as
+it dials.  See
+.IR remote (5)
+for details of the remote host specification.
+.PP
+Depending on the type of auto-dialer being used to establish a connection
+the remote host may have garbage characters sent to it upon connection.
+The user should never assume that the first characters typed to
+the foreign host are the first ones presented to it.  The recommended
+practice is to immediately type a ``kill'' character upon establishing
+a connection (most UNIX systems support ``@'' as the initial kill
+character).
+.PP
+.I Tip
+currently supports DEC's DN-11 interface with Bell 801 or Vadic 821
+callers, DEC's DF02-AC and DF03-AC, Bizcomp's 1031 and 1022 intelligent
+modems, and Ventel's autodialer modems.
+.SH "REMOTE HOST DESCRIPTIONS"
+Descriptions of remote hosts are normally located in the system-wide
+file
+.IR /etc/remote .
+However, a user may maintain personal description files (and phone numbers)
+by defining and exporting the shell variable
+.SM
+.BR REMOTE .
+The
+.I remote
+file must be readable by tip, but a secondary file describing phone numbers
+may be maintained readable only by the user.  This secondary phone number
+file defaults to
+.IR /etc/phones ,
+unless the shell variable
+.SM
+.B PHONES
+is defined and exported.
+As described in
+.IR remote (5),
+the
+.I phones
+file is read when the host description's phone number(s) capability is
+an ``@''.  The phone number file contains lines of the form:
+.sp 1
+.in +5
+.nf
+system-name    phone-number
+.fi
+.in -5
+.sp 1
+Each phone number found for a system is tried until either a connection
+is established, or an end of file is reached.  Phone numbers are
+constructed from "0123456789-=*", where the ``='' and ``*'' are used
+to indicate a second dial tone should be waited for (ACU dependent).
+.SH VARIABLES
+.I Tip
+maintains a set of variables which are used in normal operation.
+Some of these variable are read-only to normal users (root is allowed
+to change anything of interest).  Variables may be displayed
+and set through the ``s'' escape.  The syntax for variables is patterned
+after the
+.IR vi (1)
+editor and the
+.IR mail (1)
+system.  Supplying ``all''
+as an argument to the set command displays all variables readable by
+the user.  Alternatively, the user may request display of a particular
+variable by attaching a ``?'' to the end.  For example ``escape?''
+would display the current escape character.
+.PP
+Variables are numeric, string, character, or boolean values.  Boolean
+variables are set merely by specifying their name.  They may be reset
+by prepending a ``!'' to the name.  Other variable types are set by
+appending an ``='' and the value.  The entire assignment must not
+have any blanks in it.  A single set command may be used to interrogate
+as well as set a number of variables.
+Variables may be initialized at run time by placing set commands
+(without the ``~s'' prefix in a file
+.I .tiprc
+in one's home directory).  The \-v option causes
+.I tip
+to display the sets as they are made.
+.PP
+Finally, the variable names must either be completely specified or
+an abbreviation may be given.  The following list details those
+variables known to
+.IR tip ,
+their abbreviations (surrounded by brackets), and their default values.
+Those variables initialized from the remote file are marked with
+a ``*''.  A mode is given for each variable;
+capitalization indicates the read or write capability is given only
+to the super-user.
+.ta \w'[dial]timeout  'u +\w'Type  'u +\w'Mode  'u +\w'"\et\en\ef\eb"  'u
+.nf
+.sp 1
+\fBName	Type	Mode	Default	Description\fR
+[be]autify	bool	rw	true	discard unprintables
+				when scripting
+[ba]udrate	num	rW	*	connection baud rate
+[dial]timeout	num	rW	60	timeout (seconds) when
+				establishing connection
+[eofr]ead	str	rw	*	char's signifying EOT
+				from the remote host
+[eofw]rite	str	rw	*	string sent for EOT
+[eol]   	str	rw	*	char's signifying an end of line
+[es]cape	char	rw	`~'	command prefix character
+[ex]ceptions	str	rw	"\et\en\ef\eb"	char's not discarded
+				due to beautification
+[fo]rce  	char	rw	`^P'	forces transparency on next char
+[fr]amesize	num	rw	*	size of buffering between
+				writes on reception
+[ho]st  	str	r	*	name of host connected to
+[lock]  	str	RW	s.d.	lock file for ACU logging
+[log]   	str	RW	s.d.	ACU log file
+[phones]	str	r	s.d.	file for hidden phone numbers
+[pr]ompt	char	rW	`\en'	end of line indicator set by host
+[ra]ise  	bool	rw	false	upper case mapping switch
+[r]aise[c]har	char	rw	`^A'	interactive toggle for raise
+[rec]ord	str	rw	"tip.record"	name of script output file
+[remote]	str	r	s.d.	system description file
+[sc]ript	bool	rw	false	session scripting switch
+[tab]expand	bool	rw	false	expand tabs during file transfers
+[verb]ose	bool	rw	true	make noise during file transfers
+[SHELL]  	str	rw	"/bin/sh"	name of shell for ~! escape
+[HOME]  	str	rw	""	home directory for ~c escape
+.sp 1
+.fi
+.IR NOTE :
+1. \fIs.d.\fR indicates the default value is system dependent; normally
+these values are lock=/tmp/aculock, log=/usr/adm/aculog, phones=/etc/phones,
+and remote=/etc/remote.
+.SH "ENVIRONMENT VARIABLES"
+The following variables are read from the environment:
+.IP REMOTE 10
+The location of the
+.I remote
+file.
+.IP PHONES 10
+The location of the file containing private phone numbers.
+.IP HOST 10
+A default host to connect to.
+.IP HOME 10
+One's log-in directory (for chdirs).
+.IP SHELL 10
+The shell to fork on a ~! escape.
+.SH FILES
+.IP "~/.tiprc" 25
+Variable initialization file.
+.IP "/usr/spool/uucp/LCK..*" 25
+Lock file to avoid conflicts with uucp.  Terminated with port name.
+.SH DIAGNOSTICS
+.IP "unrecognizable host name"
+The phone number file is malformed.
+.IP "missing phone number"
+A line in the phone number file is incomplete; or the remote host
+description indicates the host should be called, but no phone number
+is specified.
+.IP "bizcomp out of sync"
+When using a BIZCOMP ACU the dialer must be ``synced'' up before
+tip will attempt to place a call.  Try running
+.I tip
+again.
+.IP "missing device spec"
+The remote host description entry is missing a device specification.
+.IP "timedout at eol \fIn\fR"
+During a file transfer tip has lost
+contact with the remote system while waiting for a synchronizing echo.
+.IP "timeout error"
+Same as above.
+.PP
+Other diagnostics are, hopefully, self explanatory.
+.SH "SEE ALSO"
+remote(5)
