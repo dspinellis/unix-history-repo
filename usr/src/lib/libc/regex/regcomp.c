@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regcomp.c	5.3 (Berkeley) %G%
+ *	@(#)regcomp.c	5.4 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regcomp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regcomp.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -509,8 +509,8 @@ int starordinary;		/* is a leading * an ordinary character? */
 		/* FALLTHROUGH */
 	default:
 		if (c & BACKSL)
-			c = GETNEXT();
-		ordinary(p, (uchar)c);
+			NEXT();
+		ordinary(p, (uchar)(c &~ BACKSL));
 		break;
 	}
 
