@@ -1,4 +1,4 @@
-/* graph.c	1.5	83/07/08
+/* graph.c	1.6	83/07/09
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -158,38 +158,39 @@ register int pdv;
 
 
 /*----------------------------------------------------------------------------
- * Routine:	drawwig (character_buffer, file_pointer)
+ * Routine:	drawwig (character_buffer, file_pointer, type_flag)
  *
  * Results:	Given the starting position, the motion list in buf, and any
  *		extra characters from fp (terminated by a \n), drawwig sets
- *		up a point list to make a spline from and calls HGCurve.
+ *		up a point list to make a spline from.  If "pic" is set picurve
+ *		is called to draw the curve in pic style; else it calls HGCurve
+ *		for the gremlin-style curve.
  *
  * Side Efct:	Resulting position is reached from adding successive motions
  *		to the current position.
- *
- * Bugs:	This MAY not be the final spline maker (PIC expects different)
  *----------------------------------------------------------------------------*/
 
-drawwig (buf, fp)
+drawwig (buf, fp, pic)
 char *buf;
 FILE *fp;
+int pic;
 {
     register int len = strlen(buf);	/* length of the string in "buf" */
-    register int i = 2;			/* point list index */
+    register int npts = 2;		/* point list index */
     register char *ptr = buf;		/* "walking" pointer into buf */
-    float x[MAXPOINTS], y[MAXPOINTS];	/* point list */
+    int x[MAXPOINTS], y[MAXPOINTS];	/* point list */
 
     while (*ptr == ' ') ptr++;		/* skip any leading spaces */
-    x[1] = (float) hpos;	/* the curve starts at the */
-    y[1] = (float) vpos;	/* current position */
+    x[1] = hpos;		/* the curve starts at the */
+    y[1] = vpos;		/* current position */
 
     while (*ptr != '\n') {		/* curve commands end with a '\n' */
 	hmot(atoi(ptr));		/* convert motion to curve points */
-	x[i] = (float) hpos;		/* and remember them */
+	x[npts] = hpos;			/* and remember them */
 	while (isdigit(*++ptr));		/* skip number*/
 	while (*++ptr == ' ');		/* skip spaces 'tween numbers */
 	vmot(atoi(ptr));
-	y[i] = (float) vpos;
+	y[npts] = vpos;
 	while (isdigit(*++ptr));
 	while (*ptr == ' ') ptr++;
 				/* if the amount we read wasn't the */
@@ -201,9 +202,112 @@ FILE *fp;
 	    fgets ((cop - 1), len - (cop - buf), fp);
 	    ptr = buf;
 	}
-	if (i < MAXPOINTS - 1) i++;	/* if too many points, forget some */
+	if (npts < MAXPOINTS - 1)	/* if too many points, forget some */
+	    npts++;
     }
-    HGCurve(x, y, --i);		/* now, actually DO the curve */
+    npts--;	/* npts must point to the last coordinate in x and y */
+				/* now, actually DO the curve */
+    if (pic)
+	picurve(x, y, npts);
+    else
+	HGCurve(x, y, npts);
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	drawthick (thickness)
+ |
+ | Results:	sets the variable "linethickness" to the given size.
+ |		NO motion is involved.
+ *----------------------------------------------------------------------------*/
+
+drawthick(s)
+int s
+{
+    linethickness = s;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	drawstyle (style_bit_map)
+ |
+ | Results:	sets the variable "linmod" to the given bit map.
+ |		NO motion is involved.
+ *----------------------------------------------------------------------------*/
+
+drawstyle(s)
+int s
+{
+    linmod = s;
+}
+
+
+/*----------------------------------------------------------------------------
+ * Routine:	picurve (xpoints, ypoints, num_of_points)
+ *
+ * Results:	Draws a curve delimited by (not through) the line segments
+ *		traced by (xpoints, ypoints) point list.  This is the "Pic"
+ *		style curve.
+ *
+ * Bugs:	does nothing yet....
+ *----------------------------------------------------------------------------*/
+
+picurve (x, y, npts)
+int x[MAXPOINTS];
+int y[MAXPOINTS];
+int npts;
+{
+    register int i;		/* line segment traverser */
+    register int nseg;		/* effective resolution for each curve */
+    register float w;		/* position factor */
+    register int xp;		/* current point (and intermediary) */
+    register int yp;
+    int pxp, pyp;		/* previous point (to make lines from) */
+    float t1, t2, t3;		/* calculation temps */
+    int j;			/* inner curve segment traverser */
+
+
+    if (x[1] == x[npts] && y[1] == y[npts]) {
+	x[0] = x[npts - 1];		/* if the lines' ends meet, make */
+	y[0] = y[npts - 1];		/* sure the curve meets */
+	x[npts + 1] = x[2];
+	y[npts + 1] = y[2];
+    } else {				/* otherwise, make the ends of the */
+	x[0] = x[1];			/* curve touch the ending points of */
+	y[0] = y[1];			/* the line segments */
+	x[npts + 1] = x[npts];
+	y[npts + 1] = y[npts];
+    }
+
+    pxp = (x[0] + x[1]) / 2;		/* make the last point pointers */
+    pyp = (y[0] + y[1]) / 2;		/* point to the start of the 1st line */
+
+    for (i = 0; i < npts; i++) {	/* traverse the line segments */
+	xp = x[i] - x[i+1];
+	yp = y[i] - y[i+1];
+	nseg = (int) sqrt((double)(xp * xp + yp * yp));
+	xp = x[i+1] - x[i+2];
+	yp = y[i+1] - y[i+2];		/* "nseg" is the number of line */
+					/* segments that will be drawn for */
+					/* each curve segment.  ">> 3" is */
+					/* dropping the resolution ( == / 8) */
+	nseg = (nseg + (int) sqrt((double)(xp * xp + yp * yp))) >> 3;
+
+	for (j = 1; j < nseg; j++) {
+	    w = (float) j / (float) nseg;
+	    t1 = 0.5 * w * w;
+	    w -= 0.5;
+	    t2 = 0.75 - w * w ;
+	    w -= 0.5;
+	    t3 = 0.5 * w * w;
+	    xp = t1 * x[i+2] + t2 * x[i+1] + t3 * x[i] + 0.5;
+	    yp = t1 * y[i+2] + t2 * y[i+1] + t3 * y[i] + 0.5;
+
+	    HGtline(pxp, pyp, xp, yp);
+	    pxp = xp;
+	    pyp = yp;
+	}
+    }
 }
 
 
@@ -387,20 +491,24 @@ int filled;
  *----------------------------------------------------------------------------*/
 
 static Paramaterize(x, y, h, n)
-float x[MAXPOINTS];
-float y[MAXPOINTS];
+int x[MAXPOINTS];
+int y[MAXPOINTS];
 float h[MAXPOINTS];
 int n;
 {
-	int i,j;
+	register int dx;
+	register int dy;
+	register int i;
+	register int j;
 	float u[MAXPOINTS];
 
 
 	for (i=1; i<=n; ++i) {
 	    u[i] = 0;
 	    for (j=1; j<i; j++) {
-		u[i] += sqrt (pow((double) (x[j+1] - x[j]),(double) 2.0)
-			      + pow((double) (y[j+1] - y[j]), (double) 2.0));
+		dx = x[j+1] - x[j];
+		dy = y[j+1] - y[j];
+		u[i] += sqrt ((double) (dx * dx + dy * dy));
 	    }
 	}
 	for (i=1; i<n; ++i)  h[i] = u[i+1] - u[i];
@@ -418,7 +526,8 @@ int n;
  *----------------------------------------------------------------------------*/
 
 static PeriodicSpline(h, z, dz, d2z, d3z, npoints)
-float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and paramaterization  */
+float h[MAXPOINTS];		/* paramaterization  */
+int z[MAXPOINTS];		/* point list */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
 float d2z[MAXPOINTS], d3z[MAXPOINTS];	/* 2nd and 3rd derivatives */
 int npoints;				/* number of valid points */
@@ -430,7 +539,7 @@ int npoints;				/* number of valid points */
 
 						/* step 1 */
 	for (i=1; i<npoints; ++i) {
-	    deltaz[i] = h[i] ? (z[i+1] - z[i]) / h[i] : 0;
+	    deltaz[i] = h[i] ? ((double) (z[i+1] - z[i])) / h[i] : 0;
 	}
 	h[0] = h[npoints-1];
 	deltaz[0] = deltaz[npoints-1];
@@ -487,7 +596,8 @@ int npoints;				/* number of valid points */
  *----------------------------------------------------------------------------*/
 
 static NaturalEndSpline(h, z, dz, d2z, d3z, npoints)
-float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and parameterization */
+float h[MAXPOINTS];		/* parameterization */
+int z[MAXPOINTS];		/* Point list */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
 float d2z[MAXPOINTS], d3z[MAXPOINTS];	/* 2nd and 3rd derivatives */
 int npoints;				/* number of valid points */
@@ -498,7 +608,7 @@ int npoints;				/* number of valid points */
 
 						/* step 1 */
 	for (i=1; i<npoints; ++i) {
-	    deltaz[i] = h[i] ? (z[i+1] - z[i]) / h[i] : 0;
+	    deltaz[i] = h[i] ? ((double) (z[i+1] - z[i])) / h[i] : 0;
 	}
 	deltaz[0] = deltaz[npoints-1];
 
@@ -542,8 +652,8 @@ int npoints;				/* number of valid points */
 #define PointsPerInterval 32
 
 HGCurve(x, y, numpoints)
-float x[MAXPOINTS];
-float y[MAXPOINTS];
+int x[MAXPOINTS];
+int y[MAXPOINTS];
 int numpoints;
 {
 	float h[MAXPOINTS], dx[MAXPOINTS], dy[MAXPOINTS];
@@ -556,8 +666,8 @@ int numpoints;
 	int lx, ly;
 
 
-	lx = (int) x[1];
-	ly = (int) y[1];
+	lx = x[1];
+	ly = y[1];
 
 	     /* Solve for derivatives of the curve at each point 
               * separately for x and y (parametric).
@@ -582,8 +692,8 @@ int numpoints;
 		t = (float) k * h[j] / (float) PointsPerInterval;
 		t2 = t * t;
 		t3 = t * t * t;
-		nx = (int) (x[j] + t * dx[j] + t2 * d2x[j]/2 + t3 * d3x[j]/6);
-		ny = (int) (y[j] + t * dy[j] + t2 * d2y[j]/2 + t3 * d3y[j]/6);
+		nx = x[j] + (int) (t * dx[j] + t2 * d2x[j]/2 + t3 * d3x[j]/6);
+		ny = y[j] + (int) (t * dy[j] + t2 * d2y[j]/2 + t3 * d3y[j]/6);
 		HGtline(lx, ly, nx, ny);
 		lx = nx;
 		ly = ny;
