@@ -1,12 +1,14 @@
+#	@(#)Makefile	1.2	(Berkeley)	82/10/24
+#
 CFLAGS = -O -w
 
 all: libpw.a libwrt.a libPW.a
-
-install: all
 	mv libpw.a libwrt.a libPW.a ..
 	ranlib ../libpw.a
 	ranlib ../libwrt.a
 	ranlib ../libPW.a
+
+install:
 
 libpw.a:	curdir.o fdfopen.o giveup.o lockit.o rename.o userdir.o\
 	username.o xalloc.o xcreat.o xlink.o xopen.o \
