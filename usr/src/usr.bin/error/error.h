@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1980, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)error.h	5.5 (Berkeley) %G%
+ *	@(#)error.h	8.1 (Berkeley) %G%
  */
 
 typedef	int	boolean;
