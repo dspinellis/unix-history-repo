@@ -479,6 +479,7 @@ loop:
 			stunalloc(fullname);
 			goto success;
 		}
+#ifdef notdef
 		if (statb.st_uid == geteuid()) {
 			if ((statb.st_mode & 0100) == 0)
 				goto loop;
@@ -489,6 +490,7 @@ loop:
 			if ((statb.st_mode & 01) == 0)
 				goto loop;
 		}
+#endif
 		TRACE(("searchexec \"%s\" returns \"%s\"\n", name, fullname));
 		INTOFF;
 		cmdp = cmdlookup(name, 1);
@@ -718,7 +720,6 @@ cmdlookup(name, add)
 	lastcmdentry = pp;
 	return cmdp;
 }
-
 
 /*
  * Delete the command entry returned on the last lookup.
