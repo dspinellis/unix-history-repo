@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.1 (Berkeley) %G%
+ *	@(#)machdep.c	8.2 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -350,9 +350,13 @@ mach_init(argc, argv, code, cv)
 		volatile int *csr_addr =
 			(volatile int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
 
-		/* disable all TURBOchannel interrupts */
+		/*
+		 * Enable ECC memory correction, turn off LEDs, and
+		 * disable all TURBOchannel interrupts.
+		 */
 		i = *csr_addr;
-		*csr_addr = i & ~(KN02_CSR_WRESERVED | 0xFF);
+		*csr_addr = (i & ~(KN02_CSR_WRESERVED | KN02_CSR_IOINTEN)) |
+			KN02_CSR_CORRECT | 0xff;
 
 		tc_slot_hand_fill = kn02_slot_hand_fill;
 		pmax_hardware_intr = kn02_intr;
@@ -499,21 +503,24 @@ mach_init(argc, argv, code, cv)
 
 	/*
 	 * Find out how much memory is available.
+	 * Be careful to save and restore the original contents for msgbuf.
 	 */
 	physmem = btoc(v - KERNBASE);
 	cp = (char *)MACH_PHYS_TO_UNCACHED(physmem << PGSHIFT);
 	while (cp < (char *)MACH_MAX_MEM_ADDR) {
 		if (badaddr(cp, 4))
 			break;
+		i = *(int *)cp;
 		*(int *)cp = 0xa5a5a5a5;
 		/*
-		 * Data will persist on the bus if we read it right
-		 * away. Have to be tricky here.
+		 * Data will persist on the bus if we read it right away.
+		 * Have to be tricky here.
 		 */
 		((int *)cp)[4] = 0x5a5a5a5a;
 		MachEmptyWriteBuffer();
 		if (*(int *)cp != 0xa5a5a5a5)
 			break;
+		*(int *)cp = i;
 		cp += NBPG;
 		physmem++;
 	}
