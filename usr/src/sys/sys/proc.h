@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.36 (Berkeley) %G%
+ *	@(#)proc.h	7.37 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -177,11 +177,6 @@ struct	pcred {
 #define	SPROFIL	0x0080000	/* has started profiling */
 /* the following should be moved to machine-dependent areas */
 #define	SOWEUPC	0x0002000	/* owe process an addupc() call at next ast */
-#ifdef HPUXCOMPAT
-#define	SHPUX	0x0010000	/* HP-UX process (HPUXCOMPAT) */
-#else
-#define	SHPUX	0		/* not HP-UX process (HPUXCOMPAT) */
-#endif
 
 #ifdef KERNEL
 /*
