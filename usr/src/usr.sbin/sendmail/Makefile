@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.10		%G%
+#		@(#)Makefile	4.11		%G%
 #
 
 ALL=	src/sendmail
@@ -25,8 +25,7 @@ all:
 #	cd doc; make ${MFLAGS}
 
 install: $(ALL) $(DIRS)
-	install -s -o root -m 4755	src/sendmail	$(SENDMAIL)
-	chgrp kmem $(SENDMAIL)
+	install -s -o root -g kmem -m 6755	src/sendmail	$(SENDMAIL)
 	install -c -o root -m 644	lib/sendmail.hf	$(SENDMAIL).hf
 	install -c -o root -m 666	/dev/null	$(SENDMAIL).st
 	install -c -o root -m 644	/dev/null	$(SENDMAIL).fc
