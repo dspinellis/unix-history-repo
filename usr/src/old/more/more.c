@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -110,7 +110,6 @@ int		Wrap = 1;	/* set if automargins */
 int		soglitch;	/* terminal has standout mode glitch */
 int		ulglitch;	/* terminal has underline mode glitch */
 int		pstate = 0;	/* current UL state */
-long		fseek();
 char		*getenv();
 struct {
     long chrctr, line;
