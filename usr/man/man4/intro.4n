@@ -1,0 +1,173 @@
+.TH INTRO 4N "19 March 1982"
+.UC 4
+.SH NAME
+net \- introduction to networking facilities
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <net/route.h>
+.SH DESCRIPTION
+.de _d
+.if t .ta .6i 2.1i 2.6i
+.\" 2.94 went to 2.6, 3.64 to 3.30
+.if n .ta .84i 2.6i 3.30i
+..
+.de _f
+.if t .ta .5i 1.25i 2.5i
+.\" 3.5i went to 3.8i
+.if n .ta .7i 1.75i 3.8i
+..
+This section briefly describes the networking facilities
+available on the system.
+Documentation in this part of section 4 is broken up into three areas:
+.IR protocol-families ,
+.IR protocols ,
+and
+.IR "network interfaces" .
+Entries describing a protocol-family are marked ``4F'',
+protocol entries ``4P'', and network interfaces ``4V'' (for VAX
+specific devices) or ``4S'' (for Sun specific entries).
+.PP
+All network protocols are associated with a specific
+.IR protocol-family .
+A protocol-family provides basic services to the protocol
+implementation to allow it to function within a specific
+network environment.  These services may include 
+packet fragmentation and reassembly, routing, addressing, and 
+basic transport.  A protocol-family may support multiple
+methods of addressing, though the current protocol implementations
+do not.  A protocol-family is normally comprised of a number
+of protocols, one per
+.IR socket (2)
+type.  It is not required that a protocol-family support
+all socket types.  A protocol-family may contain multiple
+protocols supporting the same socket abstraction. 
+.PP
+A protocol supports one of the socket abstractions detailed
+in
+.IR socket (2).
+A specific protocol may be accessed either by creating a
+socket of the appropriate type and protocol-family, or
+by requesting the protocol explicitly when creating a socket.
+Protocols normally accept only one type of address format,
+usually determined by the addressing structure inherent in
+the design of the protocol-family/network architecture.
+Certain semantics of the basic socket abstractions are
+protocol specific.  All protocols are expected to support
+the basic model for their particular socket type, but may,
+in addition, provide non-standard facilities or extensions
+to a mechanism.  For example, a protocol supporting the
+SOCK_STREAM
+abstraction may allow more than one byte of out-of-band
+data to be transmitted per out-of-band message.
+.PP
+A network interface is similar to a device interface.
+Network interfaces comprise the lowest layer of the
+networking subsystem, interacting with the actual transport
+hardware.  An interface may support one or more protocol
+families, and/or address formats.
+The SYNOPSIS section of each network interface
+entry gives a sample specification
+of the related drivers for use in providing
+a system description to the
+.IR config (8)
+program.
+The DIAGNOSTICS section lists messages which may appear on the console
+and in the system error log
+.I /usr/adm/messages
+due to errors in device operation.
+.SH PROTOCOLS
+The system currently supports only the DARPA Internet
+protocols fully.  Raw socket interfaces are provided to IP protocol
+layer of the DARPA Internet, to the IMP link layer (1822), and to
+Xerox PUP-1 layer operating on top of 3Mb/s Ethernet interfaces.
+Consult the appropriate manual pages in this section for more
+information regarding the support for each protocol family.
+.SH ADDRESSING
+Associated with each protocol family is an address
+format.  The following address formats are used by the system:
+.sp 1
+.nf
+._d
+#define	AF_UNIX	1	/* local to host (pipes, portals) */
+#define	AF_INET	2	/* internetwork: UDP, TCP, etc. */
+#define	AF_IMPLINK	3	/* arpanet imp addresses */
+#define	AF_PUP	4	/* pup protocols: e.g. BSP */
+.fi
+.SH ROUTING
+The network facilities provided limited packet routing.
+A simple set of data structures comprise a ``routing table''
+used in selecting the appropriate network interface when
+outputing packets.  This table contains a single entry for
+each route to a specific network or host.  A user process,
+the routing daemon, maintains this data base with the aid
+of two socket specific 
+.IR ioctl (2)
+commands, SIOCADDRT and SIOCDELRT.  The commands allow
+the addition and deletion of a single routing
+table entry, respectively.  Routing table manipulations may
+only be carried out by super user.
+.PP
+A routing table entry has the following form, as defined
+in
+.RI < net/route.h >;
+.sp 1
+._f
+.nf
+struct rtentry {
+	u_long	rt_hash;
+	struct	sockaddr rt_dst;
+	struct	sockaddr rt_gateway;
+	short	rt_flags;
+	short	rt_refcnt;
+	u_long	rt_use;
+	struct	ifnet *rt_ifp;
+};
+.sp 1
+.fi
+with
+.I rt_flags
+defined from,
+.sp 1
+.nf
+._d
+#define	RTF_UP	0x1		/* route useable */
+#define	RTF_GATEWAY	0x2		/* destination is a gateway */
+#define	RTF_HOST	0x4		/* host entry (net otherwise) */
+.fi
+.PP
+Routing table entries come in two flavors, for a specific
+host or for all hosts on a specific network.  When the system
+is booted, each network interface autoconfigured 
+installs a routing table entry when it wishes to have packets
+sent through it.  Normally the interface specifies the route
+through it is a ``direct'' connection to the destination host
+or network.  If the route is direct, the transport layer of
+a protocol family usually requests the packet be sent to the
+same host specified in the packet.  Otherwise, the interface
+may be requested to address the packet to an entity different
+from the eventual receipient (i.e. the packet is forwarded).
+.PP
+Routing table entries installed by a user process may not specify
+the hash, reference count, use, or interface fields; these are filled
+in by the routing routines.  If
+a route is in use (the reference count field is non-zero),
+when it is deleted, the resources associated with it will not
+be reclaimed until further references to it are released. 
+.PP
+The routing code may return EEXIST if
+requested to add an already existant entry, ESRCH if
+requested to delete an entry and it couldn't be found,
+or ENOBUFS if requested to add an entry and the system was low
+on resources.
+.PP
+There currently is no support for reading the routing tables;
+user processes are expected to read the kernel's memory through
+.IR /dev/kmem .
+.PP
+The use field is used by the routing code in providing a simple
+round-robin scheme of route selection when multiple routes to
+a destination are present; the heuristic is to choose the least
+used route.
+.SH SEE ALSO
+config(8), socket(2)
