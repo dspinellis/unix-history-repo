@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser2.c	3.1 84/01/12";
+static	char *sccsid = "@(#)parser2.c	3.2 84/01/13";
 #endif
 
 #include "parser.h"
+#include "var.h"
+#include "lcmd.h"
 
 /*
  * name == 0 means we don't have a function name but
