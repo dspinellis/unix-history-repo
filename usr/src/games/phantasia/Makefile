@@ -42,6 +42,11 @@ LIBS= -lm -lcurses -ltermlib
 DEST =		/usr/games/lib/phantasia
 DESTR =		/usr/games
 
+MDIR=	/usr/man/cat6
+
+.SUFFIXES: .6 .0
+
+
 # The following are program constants which are implementation dependent.
 #
 # DEST is passed on.  Note that there is no closing quote here.
@@ -62,10 +67,9 @@ DESTR =		/usr/games
 CFLAGS = 	-O \
 		-DDEST=\"${DEST} \
 		-DDESTR=\"${DESTR} \
-		-DWIZARD=\"games\" \
-		-DUID=57 \
+		-DWIZARD=\"root\" \
+		-DUID=0 \
 		-DENEMY \
-		-DSHELL=\"/bin/csh\" \
 		-DBSD42
 
 SRCS=	main.c fight.c io.c interplayer.c gamesupport.c misc.c phantglobs.c
@@ -73,7 +77,7 @@ OBJS=	main.o fight.o io.o interplayer.o gamesupport.o misc.o phantglobs.o
 HFILES =	phantdefs.h phantstruct.h macros.h include.h
 LIBC=	/lib/libc.a
 
-all:		phantasia setup phant.help
+all:		phantasia setup phantasia.0
 
 # Make the game.
 phantasia:	${OBJS} ${LIBC}
@@ -89,8 +93,8 @@ setup.o: ${HFILES}
 
 # Make documentation.
 # The flags below on tbl and nroff are to make a line printable version.
-phant.help:	phant.nr
-		tbl -TX phant.nr | nroff -Ttn300 -man > phant.help
+.6.0:
+	tbl -TX phantasia.6 | /usr/man/manroff > phantasia.0
 
 # Install game and documentation.  Initialize.
 install: FRC
@@ -99,7 +103,8 @@ install: FRC
 	chown games.bin /usr/games/lib/phantasia
 	install -s -o games -g bin -m 4700 phantasia ${DESTDIR}/usr/games/hide
 	(cd ${DESTDIR}/usr/games; rm -f phantasia; ln -s dm phantasia; chown games.bin phantasia)
-	install -c -o games -g bin -m 400 phant.help ${DESTDIR}/usr/games/lib/phantasia/phant.help
+	install -c -o games -g bin -m 400 phantasia.0 ${DESTDIR}/usr/games/lib/phantasia/phant.help
+	install -c -o bin -g bin -m 444 phantasia.0 ${DESTDIR}${MDIR}
 	./setup
 	chown games.bin /usr/games/lib/phantasia/*
 
@@ -120,7 +125,7 @@ convert:	convert.c oldplayer.h phantstruct.h
 
 # Clean up directory after installation.
 clean:
-		${RM} -f *.o core phantasia phant.help phant.pt?
+		${RM} -f *.o core phantasia phant.help phantasia.0 setup
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
@@ -138,44 +143,52 @@ FRC:
 
 main.o: main.c include.h /usr/include/ctype.h /usr/include/curses.h
 main.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-main.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-main.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
-main.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
-main.o: phantstruct.h phantglobs.h
+main.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+main.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+main.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/machine/trap.h
+main.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h phantglobs.h
 fight.o: fight.c include.h /usr/include/ctype.h /usr/include/curses.h
 fight.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-fight.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-fight.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
-fight.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
+fight.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+fight.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+fight.o: /usr/include/setjmp.h /usr/include/signal.h
+fight.o: /usr/include/machine/trap.h /usr/include/time.h macros.h phantdefs.h
 fight.o: phantstruct.h phantglobs.h
 io.o: io.c include.h /usr/include/ctype.h /usr/include/curses.h
 io.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-io.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h /usr/include/math.h
-io.o: /usr/include/pwd.h /usr/include/setjmp.h /usr/include/signal.h
+io.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+io.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+io.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/machine/trap.h
 io.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h phantglobs.h
 interplayer.o: interplayer.c include.h /usr/include/ctype.h
 interplayer.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
 interplayer.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-interplayer.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
-interplayer.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
-interplayer.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+interplayer.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+interplayer.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+interplayer.o: /usr/include/signal.h /usr/include/machine/trap.h
+interplayer.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h
+interplayer.o: phantglobs.h
 gamesupport.o: gamesupport.c include.h /usr/include/ctype.h
 gamesupport.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
 gamesupport.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-gamesupport.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
-gamesupport.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
-gamesupport.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+gamesupport.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+gamesupport.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+gamesupport.o: /usr/include/signal.h /usr/include/machine/trap.h
+gamesupport.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h
+gamesupport.o: phantglobs.h
 misc.o: misc.c include.h /usr/include/ctype.h /usr/include/curses.h
 misc.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-misc.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-misc.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
-misc.o: /usr/include/signal.h /usr/include/time.h macros.h phantdefs.h
-misc.o: phantstruct.h phantglobs.h
+misc.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
+misc.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
+misc.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/machine/trap.h
+misc.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h phantglobs.h
 phantglobs.o: phantglobs.c include.h /usr/include/ctype.h /usr/include/curses.h
 phantglobs.o: /usr/include/stdio.h /usr/include/sgtty.h
 phantglobs.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-phantglobs.o: /usr/include/sys/ttydev.h /usr/include/math.h /usr/include/pwd.h
-phantglobs.o: /usr/include/setjmp.h /usr/include/signal.h /usr/include/time.h
-phantglobs.o: macros.h phantdefs.h phantstruct.h phantglobs.h
+phantglobs.o: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
+phantglobs.o: /usr/include/math.h /usr/include/pwd.h /usr/include/setjmp.h
+phantglobs.o: /usr/include/signal.h /usr/include/machine/trap.h
+phantglobs.o: /usr/include/time.h macros.h phantdefs.h phantstruct.h
+phantglobs.o: phantglobs.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
