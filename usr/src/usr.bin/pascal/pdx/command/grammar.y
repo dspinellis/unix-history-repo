@@ -1,7 +1,7 @@
 %{
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)grammar.y 1.1 %G%";
+static char sccsid[] = "@(#)grammar.y 1.2 %G%";
 
 /*
  * yacc grammar for debugger commands
@@ -157,7 +157,7 @@ command:
 }
 |	QUIT
 {
-		exit(0);
+		quit(0);
 }
 |	STEP
 {
