@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.37 (Berkeley) %G%
+#	@(#)Makefile	4.38 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -7,52 +7,91 @@
 # stubs, remove just -DSYSLIBC_SCCS from CFLAGS.
 LIB=c
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
-AINC=	-I${.CURDIR}/${MACHINE} -I${.CURDIR}/sys/${MACHINE}
+AINC=	-I${.CURDIR}/${MACHINE}
 
-.PATH:	${.CURDIR}/gen/${MACHINE} ${.CURDIR}/gen ${.CURDIR}/gen/regexp \
-	${.CURDIR}/sys/${MACHINE} ${.CURDIR}/sys \
-	${.CURDIR}/stdio/${MACHINE} ${.CURDIR}/stdio \
-	${.CURDIR}/net/${MACHINE} ${.CURDIR}/net \
-	${.CURDIR}/string/${MACHINE} ${.CURDIR}/string \
-	${.CURDIR}/sys5/${MACHINE} ${.CURDIR}/sys5 \
-	${.CURDIR}/compat-43/${MACHINE} ${.CURDIR}/compat-43
+.PATH:	${.CURDIR}/${MACHINE}/gen	${.CURDIR}/gen ${.CURDIR}/gen/regexp \
+	${.CURDIR}/${MACHINE}/sys	${.CURDIR}/sys \
+	${.CURDIR}/${MACHINE}/stdio	${.CURDIR}/stdio \
+	${.CURDIR}/${MACHINE}/stdlib	${.CURDIR}/stdlib \
+	${.CURDIR}/${MACHINE}/net	${.CURDIR}/net \
+	${.CURDIR}/${MACHINE}/string	${.CURDIR}/string \
+	${.CURDIR}/${MACHINE}/sys5	${.CURDIR}/sys5 \
+	${.CURDIR}/${MACHINE}/compat-43	${.CURDIR}/compat-43
 
 # compat-43 sources
 SRCS=	creat.c killpg.c sigcompat.c
 
 MAN2+=	creat.0 killpg.0 sigblock.0 sigpause.0 sigsetmask.0 sigvec.0
 
-# gen sources
-SRCS+=	_setjmp.s abort.c abs.s alarm.c alloca.s calloc.c cencode.c \
-	clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
-	disklabel.c errlst.c execvp.c fabs.s fakcu.c fstab.c \
-	genbuildname.c getenv.c getgrent.c getlogin.c getmntinfo.c \
-	getpass.c getpwent.c getttyent.c getusershell.c getwd.c \
-	initgroups.c insque.s isatty.c isctype.c ldexp.s \
-	malloc.c modf.s nargs.s ndbm.c nice.c nlist.c opendir.c pause.c \
-	perror.c popen.c psignal.c qsort.c random.c readdir.c regerror.c \
-	regex.c regexp.c remove.c remque.s scandir.c seekdir.c setegid.c \
-	setenv.c seteuid.c setgid.c setjmp.s setjmperr.c setmode.c \
-	setrgid.c setruid.c setuid.c siglist.c signal.c sleep.c syslog.c \
-	system.c telldir.c termios.c time.c timezone.c ttyname.c \
-	ttyslot.c ualarm.c udiv.s urem.s usleep.c valloc.c wait.c \
-	wait3.c waitpid.c
+# stdlib sources
+SRCS+=	abort.c atexit.c atoi.c atol.c bsearch.c calloc.c div.c exit.c \
+	getenv.c labs.c ldiv.c malloc.c putenv.c qsort.c rand.c setenv.c \
+	strtol.c strtoul.c system.c
 
-.if (${MACHINE} == "tahoe")
-SRCS+=	frexp.c
+.if   (${MACHINE} == "hp300")
+SRCS+=	abs.s atof.c
+.elif (${MACHINE} == "i386")
+SRCS+=	abs.s atof.c
+.elif (${MACHINE} == "tahoe")
+SRCS+=	abs.s atof.s
 .elif (${MACHINE} == "vax")
-SRCS+=	frexp.s
+SRCS+=	abs.s atof.s
 .endif
 
-MAN3+=	abort.0 alarm.0 cencode.0 clock.0 crypt.0 ctime.0 ctype.0 \
-	directory.0 execvp.0 frexp.0 genbuildname.0 getdiskbyname.0 \
-	getenv.0 getfsent.0 getgrent.0 getlogin.0 getmntinfo.0 \
-	getpass.0 getpwent.0 getttyent.0 getusershell.0 getwd.0 \
-	initgroups.0 insque.0 malloc.0 ndbm.0 nice.0 nlist.0 \
-	pause.0 perror.0 popen.0 psignal.0 qsort.0 random.0 regex.0 \
-	regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 siginterrupt.0 \
-	signal.0 sleep.0 syslog.0 system.0 time.0 ttyname.0 ualarm.0 \
-	usleep.0 valloc.0
+MAN3+=	abort.0 abs.0 atexit.0 atof.0 atoi.0 atol.0 bsearch.0 div.0 \
+	exit.0 getenv.0 labs.0 ldiv.0 malloc.0 qsort.0 rand.0 strtod.0 \
+	strtol.0 strtoul.0 system.0
+
+MLINKS+=malloc.3 alloca.3 malloc.3 calloc.3 malloc.3 free.3 malloc.3 realloc.3
+MLINKS+=getenv.3 setenv.3 getenv.3 unsetenv.3 getenv.3 putenv.3
+MLINKS+=rand.3 srand.3
+
+# gen sources
+SRCS+=	alarm.c clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
+	disklabel.c errlst.c execvp.c fakcu.c fnmatch.c fstab.c \
+	genbuildname.c getgrent.c getlogin.c getmntinfo.c getpass.c \
+	getpwent.c getttyent.c getusershell.c getwd.c glob.c initgroups.c \
+	isatty.c isctype.c mktemp.c ndbm.c nice.c nlist.c \
+	opendir.c pause.c perror.c popen.c psignal.c random.c readdir.c \
+	regex.c remove.c rewinddir.c scandir.c seekdir.c \
+	setegid.c seteuid.c setgid.c setjmperr.c setmode.c setrgid.c \
+	setruid.c setuid.c siginterrupt.c sigsetjmp.c siglist.c signal.c \
+	sigset.c sleep.c syslog.c telldir.c termios.c time.c timezone.c \
+	ttyname.c ttyslot.c ualarm.c unvis.c usleep.c valloc.c vis.c \
+	wait.c wait3.c waitpid.c
+
+SRCS+=	regerror.c regexp.c regsub.c
+
+.if   (${MACHINE} == "hp300")
+SRCS+=	_setjmp.s alloca.s fabs.s frexp.s insque.s ldexp.s modf.s remque.s \
+	setjmp.s
+SRCS+=	adddf3.s addsf3.s ashlsi3.s ashrsi3.s cmpdf2.s cmpsf2.s divdf3.s \
+	divsf3.s divsi3.s eprintf.c extendsfdf2.s fixdfsi.s fixunsdfsi.s \
+	floatsidf.s lshlsi3.s lshrsi3.s modsi3.s muldf3.s mulsf3.s mulsi3.s \
+	negdf2.s negsf2.s saveregs.c subdf3.s subsf3.s truncdfsf2.s udivsi3.s \
+	umodsi3.s umulsi3.s
+.elif (${MACHINE} == "i386")
+SRCS+=	_setjmp.s alloca.s fabs.s frexp.c insque.c ldexp.c modf.c remque.c \
+	setjmp.s
+SRCS+=	divsi3.s fixdfsi.c udivsi3.s
+.elif (${MACHINE} == "tahoe")
+SRCS+=	_setjmp.s alloca.s fabs.s frexp.c insque.s ldexp.s modf.s remque.s \
+	setjmp.s
+SRCS+=	udiv.s urem.s
+.elif (${MACHINE} == "vax")
+SRCS+=	_setjmp.s alloca.s fabs.s frexp.s insque.s ldexp.s modf.s remque.s \
+	setjmp.s
+SRCS+=	udiv.s urem.s
+.endif
+
+MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
+	fnmatch.0 frexp.0 genbuildname.0 getdiskbyname.0 getfsent.0 \
+	getgrent.0 getlogin.0 getmntinfo.0 getpass.0 getpwent.0 getttyent.0 \
+	getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 mktemp.0 \
+	ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 random.0 \
+	regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
+	siginterrupt.0 signal.0 sleep.0 syslog.0 time.0 ttyname.0 ualarm.0 \
+	unvis.0 usleep.0 valloc.0 vis.0
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
@@ -69,7 +108,6 @@ MLINKS+=execvp.3 execle.3 execvp.3 execlp.3 execvp.3 exect.3 \
 	execvp.3 execv.3 execvp.3 execve.3 execvp.3 execl.3 \
 	execvp.3 exec.3
 MLINKS+=frexp.3 ldexp.3 frexp.3 modf.3
-MLINKS+=getenv.3 setenv.3 getenv.3 unsetenv.3 getenv.3 putenv.3
 MLINKS+=getfsent.3 endfsent.3 getfsent.3 getfsfile.3 getfsent.3 getfsspec.3 \
 	getfsent.3 getfstype.3 getfsent.3 setfsent.3
 MLINKS+=getgrent.3 endgrent.3 getgrent.3 setgroupent.3 getgrent.3 getgrgid.3 \
@@ -78,8 +116,9 @@ MLINKS+=getpwent.3 endpwent.3 getpwent.3 setpassent.3 getpwent.3 getpwnam.3 \
 	getpwent.3 getpwuid.3 getpwent.3 setpwent.3 getpwent.3 setpwfile.3
 MLINKS+=getttyent.3 endttyent.3 getttyent.3 getttynam.3 getttyent.3 setttyent.3
 MLINKS+=getusershell.3 endusershell.3 getusershell.3 setusershell.3
+MLINKS+=glob.3 globfree.3
 MLINKS+=insque.3 remque.3
-MLINKS+=malloc.3 alloca.3 malloc.3 calloc.3 malloc.3 free.3 malloc.3 realloc.3
+MLINKS+=mktemp.3 mkstemp.3
 MLINKS+=ndbm.3 dbm_clearerr.3 ndbm.3 dbm_close.3 ndbm.3 dbm_delete.3 \
 	ndbm.3 dbm_error.3 ndbm.3 dbm_fetch.3 ndbm.3 dbm_firstkey.3 \
 	ndbm.3 dbm_nextkey.3 ndbm.3 dbm_open.3 ndbm.3 dbm_store.3
@@ -90,7 +129,8 @@ MLINKS+=random.3 initstate.3 random.3 setstate.3 random.3 srandom.3
 MLINKS+=regex.3 re_comp.3 regex.3 re_exec.3 regexp.3 regcomp.3 \
 	regexp.3 regexec.3 regexp.3 regsub.3 regexp.3 regerror.3
 MLINKS+=scandir.3 alphasort.3
-MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3
+MLINKS+=setjmp.3 _longjmp.3 setjmp.3 _setjmp.3 setjmp.3 longjmp.3 \
+	setjmp.3 longjmperr.3
 MLINKS+=setuid.3 setegid.3 setuid.3 seteuid.3 setuid.3 setgid.3 \
 	setuid.3 setrgid.3 setuid.3 setruid.3
 MLINKS+=syslog.3 closelog.3 syslog.3 openlog.3 syslog.3 setlogmask.3 \
@@ -101,11 +141,21 @@ MLINKS+=setmode.3 getmode.3
 # net sources
 SRCS+=	gethostnamadr.c getnetbyaddr.c getnetbyname.c getnetent.c \
 	getproto.c getprotoent.c getprotoname.c getservbyname.c \
-	getservbyport.c getservent.c herror.c htonl.s htons.s \
-	inet_addr.c inet_lnaof.c inet_makeaddr.c inet_netof.c \
-	inet_network.c inet_ntoa.c iso_addr.c ns_addr.c ns_ntoa.c \
-	ntohl.s ntohs.s rcmd.c recv.c res_comp.c res_debug.c res_init.c \
-	res_mkquery.c res_query.c res_send.c send.c sethostent.c
+	getservbyport.c getservent.c herror.c inet_addr.c inet_lnaof.c \
+	inet_makeaddr.c inet_netof.c inet_network.c inet_ntoa.c \
+	iso_addr.c linkaddr.c ns_addr.c ns_ntoa.c rcmd.c recv.c res_comp.c \
+	res_debug.c res_init.c res_mkquery.c res_query.c res_send.c \
+	send.c sethostent.c
+
+.if   (${MACHINE} == "hp300")
+SRCS+=	htonl.s htons.s ntohl.s ntohs.s
+.elif (${MACHINE} == "i386")
+SRCS+=	htonl.s htons.s ntohl.s ntohs.s
+.elif (${MACHINE} == "tahoe")
+SRCS+=	htonl.s htons.s ntohl.s ntohs.s
+.elif (${MACHINE} == "vax")
+SRCS+=	htonl.s htons.s ntohl.s ntohs.s
+.endif
 
 MAN3+=	byteorder.0 gethostbyname.0 getnetent.0 getprotoent.0 getservent.0 \
 	inet.0 ns.0 rcmd.0 resolver.0 \
@@ -128,19 +178,23 @@ MLINKS+=ns.3 ns_addr.3 ns.3 ns_ntoa.3
 MLINKS+=rcmd.3 rresvport.3 rcmd.3 ruserok.3
 
 # stdio sources
-SRCS+=	clrerr.c doprnt.c doscan.c exit.c fdopen.c fgetc.c filbuf.c \
-	findiop.c flsbuf.c fopen.c fprintf.c fputc.c fread.c freopen.c \
-	fseek.c ftell.c fwrite.c getchar.c gets.c getw.c printf.c \
-	putchar.c putw.c rew.c scanf.c setbuf.c setbuffer.c sprintf.c \
-	ungetc.c vfprintf.c vprintf.c vsprintf.c
+SRCS+=	clrerr.c doprnt.c doscan.c fdopen.c fgetc.c filbuf.c findiop.c \
+	flsbuf.c fopen.c fprintf.c fputc.c fread.c freopen.c fseek.c \
+	ftell.c fwrite.c getchar.c gets.c getw.c printf.c putchar.c \
+	putw.c rew.c scanf.c setbuf.c setbuffer.c sprintf.c ungetc.c \
+	vfprintf.c vprintf.c vsprintf.c
 
-.if (${MACHINE} == "vax")
-SRCS+=	fgets.s fputs.s puts.s
-.else
+.if   (${MACHINE} == "hp300")
 SRCS+=	fgets.c fputs.c puts.c
+.elif (${MACHINE} == "i386")
+SRCS+=	fgets.c fputs.c puts.c
+.elif (${MACHINE} == "tahoe")
+SRCS+=	fgets.c fputs.c puts.c
+.elif (${MACHINE} == "vax")
+SRCS+=	fgets.s fputs.s puts.s
 .endif
 
-MAN3+=	exit.0 fclose.0 ferror.0 fgets.0 fopen.0 fread.0 fseek.0 getc.0 \
+MAN3+=	fclose.0 ferror.0 fgets.0 fopen.0 fread.0 fseek.0 getc.0 \
 	gets.0 printf.0 putc.0 puts.0 scanf.0 setbuf.0 stdio.0 ungetc.0 \
 
 MLINKS+=fclose.3 fflush.3
@@ -157,57 +211,81 @@ MLINKS+=scanf.3 fscanf.3 scanf.3 sscanf.3
 MLINKS+=setbuf.3 setbuffer.3 setbuf.3 setlinebuf.3
 
 # string sources
-SRCS+=	atof.s atoi.c atol.c bcmp.s bcopy.s bzero.s ffs.s fnmatch.c \
-	mktemp.c strcasecmp.c strcat.s strcmp.s strcpy.s strerror.c \
-	strftime.c strlen.s strmode.c strncat.s strncmp.s strncpy.s swab.c
+SRCS+=	memccpy.c memcpy.c strcasecmp.c strcoll.c strdup.c strerror.c \
+	strftime.c strmode.c strtok.c strxfrm.c swab.c
 
-.if (${MACHINE} == "vax")
-SRCS+=	index.s rindex.s
-.else
-SRCS+=	index.c rindex.c
+.if   (${MACHINE} == "hp300")
+SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.s memchr.c memcmp.c memmove.c \
+	memset.c rindex.s strcat.c strchr.c strcmp.s strcpy.s strcspn.c \
+	strlen.s strncat.c strncmp.s strncpy.s strpbrk.c strrchr.c strsep.c \
+	strspn.c strstr.c
+.elif (${MACHINE} == "i386")
+SRCS+=	bcmp.c bcopy.c bzero.s ffs.c index.c memchr.c memcmp.c memmove.c \
+	memset.c rindex.c strcat.c strchr.c strcmp.c strcpy.c strcspn.c \
+	strlen.c strncat.c strncmp.c strncpy.c strpbrk.c strrchr.c strsep.c \
+	strspn.c strstr.c
+.elif (${MACHINE} == "tahoe")
+SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.c memcmp.s memmove.s \
+	memset.s rindex.c strcat.s strchr.c strcmp.s strcpy.s strcspn.c \
+	strlen.s strncat.s strncmp.s strncpy.s strpbrk.c strrchr.c strsep.c \
+	strspn.c strstr.c
+.elif (${MACHINE} == "vax")
+SRCS+=	bcmp.s bcopy.s bzero.s ffs.s index.c memchr.s memcmp.s memmove.s \
+	memset.s rindex.s strcat.s strchr.s strcmp.s strcpy.s strcspn.s \
+	strlen.s strncat.s strncmp.s strncpy.s strpbrk.s strrchr.s strsep.s \
+	strspn.s strstr.s
 .endif
 
-MAN3+=	atof.0 bstring.0 fnmatch.0 glob.0 mktemp.0 strftime.0 string.0 \
-	strmode.0 strtok.0 swab.0 \
-
-MLINKS+=atof.3 atoi.3 atof.3 atol.3
-MLINKS+=bstring.3 bcmp.3 bstring.3 bcopy.3 bstring.3 bzero.3 \
-	bstring.3 ffs.3
-MLINKS+=string.3 index.3 string.3 rindex.3 string.3 strcat.3 \
-	string.3 strcmp.3 string.3 strcpy.3 string.3 strlen.3 \
-	string.3 strncat.3 string.3 strncmp.3 string.3 strcasecmp.3 \
-	string.3 strncasecmp.3 string.3 strncpy.3
-MLINKS+=strtok.3 strsep.3
-MLINKS+=glob.3 globfree.3
-MLINKS+=mktemp.3 mkstemp.3
+MAN3+=	bcmp.0 bcopy.0 bstring.0 bzero.0 ffs.0 index.0 memccpy.0 memchr.0 \
+	memcmp.0 memcpy.0 memmove.0 memset.0 rindex.0 strcasecmp.0 strcat.0 \
+	strchr.0 strcmp.0 strcoll.0 strcpy.0 strcspn.0 strftime.0 string.0 \
+	strlen.0 strmode.0 strncasecmp.0 strncat.0 strncmp.0 strncpy.0 \
+	strpbrk.0 strrchr.0 strsep.0 strspn.0 strstr.0 strtok.0 strxfrm.0 \
+	swab.0
 
 # sys sources
-SRCS+=	Ovadvise.s Ovfork.s _exit.s _getlogin.s accept.s access.s \
-	acct.s adjtime.s async_daemon.s bind.s brk.s cerror.s chdir.s \
-	chflags.s chmod.s chown.s chroot.s close.s connect.s dup.s \
-	dup2.s execl.s execle.s exect.s execv.s execve.s fchdir.s \
-	fchflags.s fchmod.s fchown.s fcntl.s flock.s fork.s fstat.s \
-	fstatfs.s fsync.s ftruncate.s getdirentries.s getdtablesize.s \
-	getegid.s geteuid.s getfh.s getfsstat.s getgid.s getgroups.s \
-	gethostid.s gethostname.s getitimer.s getkerninfo.s \
-	getpagesize.s getpeername.s getpgrp.s getpid.s getppid.s \
-	getpriority.s getrlimit.s getrusage.s getsockname.s getsockopt.s \
-	gettimeofday.s getuid.s ioctl.s kill.s ktrace.s link.s listen.s \
-	lseek.s lstat.s mkdir.s mkfifo.s mknod.s mmap.s mount.s nfssvc.s \
-	open.s pipe.s profil.s ptrace.s quotactl.s read.s readlink.s \
-	readv.s reboot.s recvfrom.s recvmsg.s rename.s rmdir.s sbrk.s \
-	select.s sendmsg.s sendto.s setgroups.s sethostid.s \
-	sethostname.s setitimer.s setlogin.s setpgrp.s setpriority.s \
-	setregid.s setreuid.s setrlimit.s setsid.s \
-	setsockopt.s settimeofday.s shutdown.s sigaction.s sigpending.s \
-	sigprocmask.s sigreturn.s sigstack.s sigsuspend.s socket.s \
-	socketpair.s stat.s statfs.s swapon.s symlink.s sync.s syscall.s \
-	truncate.s umask.s unlink.s unmount.s utimes.s vhangup.s \
-	wait4.s write.s writev.s
+SRCS+=	Ovfork.s _exit.s _getlogin.s brk.s cerror.s execl.s execle.s exect.s \
+	execv.s fork.s getegid.s geteuid.s getppid.s pipe.s ptrace.s reboot.s \
+	sbrk.s setlogin.s sigpending.s sigprocmask.s sigreturn.s sigsuspend.s \
+	syscall.s
+
+BLDASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
+	chflags.o chmod.o chown.o chroot.o close.o connect.o dup.o dup2.o \
+	execve.o fchdir.o fchflags.o fchmod.o fchown.o fcntl.o flock.o \
+	fstat.o fstatfs.o fsync.o ftruncate.o getdirentries.o getdtablesize.o \
+	getfh.o getfsstat.o getgid.o getgroups.o gethostid.o gethostname.o \
+	getitimer.o getkerninfo.o getpagesize.o getpeername.o getpgrp.o \
+	getpid.o getpriority.o getrlimit.o getrusage.o getsockname.o \
+	getsockopt.o gettimeofday.o getuid.o ioctl.o kill.o ktrace.o link.o \
+	listen.o lseek.o lstat.o mkdir.o mkfifo.o mknod.o mmap.o mount.o \
+	nfssvc.o open.o profil.o quotactl.o read.o readlink.o readv.o \
+	recvfrom.o recvmsg.o rename.o revoke.o rmdir.o select.o sendmsg.o \
+	sendto.o setgroups.o sethostid.o sethostname.o setitimer.o setpgrp.o \
+	setpriority.o setregid.o setreuid.o setrlimit.o setsid.o \
+	setsockopt.o settimeofday.o shutdown.o sigaction.o sigstack.o \
+	socket.o socketpair.o stat.o statfs.o swapon.o symlink.o sync.o \
+	truncate.o umask.o unlink.o unmount.o utimes.o vadvise.o wait4.o \
+	write.o writev.o
+
+OBJS+=	${BLDASM}
+POBJS+=	${BLDASM:.o=.po}
+CLEANFILES+=${BLDASM} ${BLDASM:.o=.po}
+
+${BLDASM}:
+	@echo creating ${.PREFIX}.o
+	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\nret\n' | \
+	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
+	@${LD} -x -r ${.PREFIX}.o
+	@mv a.out ${.PREFIX}.o
+	@echo creating ${.PREFIX}.po
+	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\nret\n' | \
+	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
+	@${LD} -x -r ${.PREFIX}.po
+	@mv a.out ${.PREFIX}.po
 
 MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
 	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
-	dup.0 execve.0 exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
+	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
 	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
 	getgroups.0 gethostid.0 gethostname.0 getitimer.0 getlogin.0 \
 	getpagesize.0 getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
@@ -219,7 +297,7 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
 	setregid.0 setreuid.0 shutdown.0 sigreturn.0 \
 	sigstack.0 socket.0 socketpair.0 stat.0 statfs.0 swapon.0 \
 	symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 utimes.0 \
-	vfork.0 vhangup.0 wait.0 write.0
+	vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2
@@ -251,26 +329,9 @@ MLINKS+=wait.2 wait3.2 wait.2 wait4.2 wait.2 waitpid.2
 MLINKS+=write.2 writev.2
 
 # sys5 sources
-SRCS+=	bsearch.c fts.c getopt.c memccpy.c memchr.c memcmp.c memcpy.c \
-	memset.c putenv.c strcspn.c strdup.c strpbrk.c strsep.c strspn.c \
-	strtok.c strtol.c strtoul.c tmpnam.c
+SRCS+=	fts.c getopt.c tmpnam.c
 
-.if (${MACHINE} == "vax")
-SRCS+=	strchr.s strrchr.s
-.else
-SRCS+=	strchr.c strrchr.c
-.endif
-
-MAN3+=	bsearch.0 compat-sys5.0 fts.0 getopt.0
-
-MLINKS+=compat-sys5.3 memccpy.3 compat-sys5.3 memchr.3 \
-	compat-sys5.3 memcmp.3 compat-sys5.3 memcpy.3 \
-	compat-sys5.3 memset.3 compat-sys5.3 strchr.3 \
-	compat-sys5.3 strcspn.3 compat-sys5.3 strpbrk.3 \
-	compat-sys5.3 strrchr.3 compat-sys5.3 strspn.3 \
-	compat-sys5.3 strdup.3 compat-sys5.3 strtol.3 \
-	compat-sys5.3 tmpnam.3 compat-sys5.3 tmpfile.3 \
-	compat-sys5.3 tempnam.3
+MAN3+=	fts.0 getopt.0
 
 errlst.o:
 	${CC} -S ${CFLAGS} ${.IMPSRC}
