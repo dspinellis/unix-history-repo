@@ -1,0 +1,178 @@
+!<arch>
+arc.c           287604804   10    1     100664  93        `
+extern vti;
+arc(xi,yi,x0,y0,x1,y1){
+	char c;
+	c = 6;
+	write(vti,&c,1);
+	write(vti,&xi,12);
+}
+
+box.c           287604805   10    1     100664  114       `
+box(x0, y0, x1, y1)
+{
+	move(x0, y0);
+	cont(x0, y1);
+	cont(x1, y1);
+	cont(x1, y0);
+	cont(x0, y0);
+	move(x1, y1);
+}
+circle.c        287604804   10    1     100664  82        `
+extern vti;
+circle(x,y,r){
+	char c;
+	c = 5;
+	write(vti,&c,1);
+	write(vti,&x,6);
+}
+close.c         287604804   10    1     100664  64        `
+extern vti;
+closevt(){
+	close(vti);
+}
+closepl(){
+	close(vti);
+}
+dot.c           287604804   10    1     100664  197       `
+extern vti;
+dot(xi,yi,dx,n,pat)
+int pat[];
+{
+	struct {char pad,c; int xi,yi,dx;} p;
+	p.c = 7;
+	p.xi = xsc(xi);
+	p.yi = ysc(yi);
+	p.dx = xsc(dx);
+	write(vti,&p.c,7);
+	write(vti,pat,n?n&0377:256);
+}
+
+erase.c         287604804   10    1     100664  58        `
+extern vti;
+erase(){
+	int i;
+	i=0401;
+	write(vti,&i,2);
+}
+frame.c         287604804   10    1     100664  63        `
+frame(n)
+{
+	extern vti;
+	n=n&0377 | 02000;
+	write(vti,&n,2);
+}
+
+label.c         287604804   10    1     100664  122       `
+extern vti;
+
+label(s)
+char *s;
+{
+	int i, o;
+
+	o = 01401;
+	write(vti, &o, 2);
+	for(i=0; s[i++]; )
+		;
+	write(vti, s, i);
+}
+line.c          287604804   10    1     100664  260       `
+extern vti;
+extern xnow,ynow;
+line(x0,y0,x1,y1){
+	struct{char x,c; int x0,y0,x1,y1;} p;
+	p.c = 3;
+	p.x0 = xsc(x0);
+	p.y0 = ysc(y0);
+	p.x1 = xnow = xsc(x1);
+	p.y1 = ynow = ysc(y1);
+	write(vti,&p.c,9);
+}
+cont(x0,y0){
+	line(xnow,ynow,xsc(x0),ysc(y0));
+	return;
+}
+linmod.c        287604805   10    1     100664  24        `
+linemod(s)
+char *s;
+{
+}
+move.c          287604804   10    1     100664  155       `
+extern vti;
+extern xnow,ynow;
+move(xi,yi){
+	struct {char pad,c; int x,y;} p;
+	p.c = 9;
+	p.x = xnow = xsc(xi);
+	p.y = ynow = ysc(yi);
+	write(vti,&p.c,5);
+}
+
+open.c          287604805   10    1     100664  230       `
+int xnow;
+int ynow;
+float boty 0.;
+float botx 0.;
+float oboty 0.;
+float obotx 0.;
+float scalex 1.;
+float scaley 1.;
+int vti -1;
+
+openvt ()
+{
+		vti = open("/dev/vt0",1);
+		return;
+}
+openpl()
+{
+	vti = open("/dev/vt0",1);
+	return;
+}
+point.c         287604805   10    1     100664  157       `
+extern vti;
+extern xnow,ynow;
+point(xi,yi){
+	struct {char pad,c; int x,y;} p;
+	p.c = 2;
+	p.x = xnow = xsc(xi);
+	p.y = ynow =  ysc(yi);
+	write(vti,&p.c,5);
+}
+
+space.c         287604805   10    1     100664  287       `
+extern float boty;
+extern float botx;
+extern float oboty;
+extern float obotx;
+extern float scalex;
+extern float scaley;
+float deltx 4095.;
+float delty 4095.;
+space(x0,y0,x1,y1){
+	botx = -2047.;
+	boty = -2047;
+	obotx = x0;
+	oboty = y0;
+	scalex = deltx/(x1-x0);
+	scaley = delty/(y1-y0);
+}
+
+subr.c          287604805   10    1     100664  246       `
+extern float obotx;
+extern float oboty;
+extern float boty;
+extern float botx;
+extern float scalex;
+extern float scaley;
+xsc(xi){
+	int xa;
+	xa = (xi-obotx)*scalex+botx;
+	return(xa);
+}
+ysc(yi){
+	int ya;
+	ya = (yi-oboty)*scaley+boty;
+	return(ya);
+}

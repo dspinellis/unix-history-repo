@@ -1,0 +1,329 @@
+!<arch>
+arc.c           287606113   10    1     100664  1842      `
+int del = 20;
+step(d){
+	del = d;
+}
+arc(x,y,x0,y0,x1,y1){
+	double pc;
+	double sqrt();
+	int flg,m,xc,yc,xs,ys,qs,qf;
+	float dx,dy,r;
+	char use;
+	dx = x-x0;
+	dy = y-y0;
+	r = dx*dx+dy*dy;
+	pc = r;
+	pc = sqrt(pc);
+	flg = pc/4;
+	if(flg == 0)step(1);
+	else if(flg < del)step(flg);
+	xc = xs = x0;
+	yc = ys = y0;
+	move(xs,ys);
+	if(x0 == x1 && y0 == y1)flg=0;
+	else flg=1;
+	qs = quad(x,y,x0,y0);
+	qf = quad(x,y,x1,y1);
+	if(abs(x-x1) < abs(y-y1)){
+		use = 'x';
+		if(qs == 2 || qs ==3)m = -1;
+		else m=1;
+	}
+	else {
+		use = 'y';
+		if(qs > 2)m= -1;
+		else m= 1;
+	}
+	while(1){
+		switch(use){
+		case 'x':	
+			if(qs == 2 || qs == 3)yc -= del;
+			else yc += del;
+			dy = yc-y;
+			pc = r-dy*dy;
+			xc = m*sqrt(pc)+x;
+			if((x < xs && x >= xc) || ( x > xs && x <= xc) ||
+			    (y < ys && y >= yc) || ( y > ys && y <=  yc) )
+			{
+				if(++qs > 4)qs=1;
+				if(qs == 2 || qs == 3)m= -1;
+				else m=1;
+				flg=1;
+			}
+			cont(xc,yc);
+			xs = xc; 
+			ys = yc;
+			if(qs == qf && flg == 1)
+				switch(qf){
+				case 3:
+				case 4:	
+					if(xs >= x1)return;
+					continue;
+				case 1:
+				case 2:
+					if(xs <= x1)return;
+				}
+			continue;
+		case 'y':	
+			if(qs > 2)xc += del;
+			else xc -= del;
+			dx = xc-x;
+			pc = r-dx*dx;
+			yc = m*sqrt(pc)+y;
+			if((x < xs && x >= xc) || ( x > xs && x <= xc ) ||
+			    (y < ys && y >= yc) || (y > ys && y <= yc) )
+			{
+				if(++qs > 4)qs=1;
+				if(qs > 2)m = -1;
+				else m = 1;
+				flg=1;
+			}
+			cont(xc,yc);
+			xs = xc; 
+			ys = yc;
+			if(qs == qf && flg == 1)
+				switch(qs){
+				case 1:
+				case 4:
+					if(ys >= y1)return;
+					continue;
+				case 2:
+				case 3:
+					if(ys <= y1)return;
+				}
+		}
+	}
+}
+quad(x,y,xp,yp){
+	if(x < xp)
+		if(y <= yp)return(1);
+		else return(4);
+	else if(x > xp)
+		if(y < yp)return(2);
+		else return(3);
+	else if(y < yp)return(2);
+	else return(4);
+}
+abs(a){
+	if(a < 0)return(-a);
+	return(a);
+}
+box.c           287606034   10    1     100664  114       `
+box(x0, y0, x1, y1)
+{
+	move(x0, y0);
+	cont(x0, y1);
+	cont(x1, y1);
+	cont(x1, y0);
+	cont(x0, y0);
+	move(x1, y1);
+}
+circle.c        287606034   10    1     100664  40        `
+circle(x,y,r){
+	arc(x,y,x+r,y,x+r,y);
+}
+close.c         287606035   10    1     100664  105       `
+#include <stdio.h>
+closevt(){
+	putch(037);
+	fflush(stdout);
+}
+closepl(){
+	putch(037);
+	fflush(stdout);
+}
+
+dot.c           287606035   10    1     100664  9         `
+dot(){
+}
+
+erase.c         287606035   10    1     100664  192       `
+extern int ohiy;
+extern int ohix;
+extern int oloy;
+extern int oextra;
+erase(){
+	int i;
+		putch(033);
+		putch(014);
+		ohiy= -1;
+		ohix = -1;
+		oextra = -1;
+		oloy = -1;
+		sleep(2);
+		return;
+}
+label.c         287606099   10    1     100664  590       `
+#define N 0104
+#define E 0101
+#define NE 0105
+#define S 0110
+#define W 0102
+#define SW 0112
+/*	arrange by incremental plotting that an initial
+ *	character such as +, X, *, etc will fall
+ *	right on the point, and undo it so that further
+ *	labels will fall properly in place
+ */
+char lbl_mv[] = {
+	036,040,S,S,S,S,S,S,SW,SW,SW,SW,SW,SW,SW,SW,SW,SW,037,0
+};
+char lbl_umv[] = {
+	036,040,N,N,N,N,N,N,NE,NE,NE,NE,NE,NE,NE,NE,NE,NE,037,0
+};
+label(s)
+char *s;
+{
+	register i,c;
+	for(i=0; c=lbl_mv[i]; i++)
+		putch(c);
+	for(i=0; c=s[i]; i++)
+		putch(c);
+	for(i=0; c=lbl_umv[i]; i++)
+		putch(c);
+}
+line.c          287606035   10    1     100664  49        `
+line(x0,y0,x1,y1){
+	move(x0,y0);
+	cont(x1,y1);
+}
+
+linemod.c       287606035   10    1     100664  216       `
+linemod(s)
+char *s;
+{
+	char c;
+	putch(033);
+	switch(s[0]){
+	case 'l':	
+		c = 'd';
+		break;
+	case 'd':	
+		if(s[3] != 'd')c='a';
+		else c='b';
+		break;
+	case 's':
+		if(s[5] != '\0')c='c';
+		else c='`';
+	}
+	putch(c);
+}
+move.c          287606035   10    1     100664  42        `
+move(xi,yi){
+	putch(035);
+	cont(xi,yi);
+}
+open.c          287606035   10    1     100664  26        `
+openvt ()
+{
+}
+openpl(){
+}
+point.c         287606035   10    1     100664  44        `
+point(xi,yi){
+	move(xi,yi);
+	cont(xi,yi);
+}
+scale.c         287606156   10    1     100664  267       `
+extern float scalex;
+extern float scaley;
+extern int scaleflag;
+scale(i,x,y)
+char i;
+float x,y;
+{
+	switch(i) {
+	default:
+		return;
+	case 'c':
+		x *= 2.54;
+		y *= 2.54;
+	case 'i':
+		x /= 200;
+		y /= 200;
+	case 'u':
+		scalex = 1/x;
+		scaley = 1/y;
+	}
+	scaleflag = 1;
+}
+
+space.c         287606035   10    1     100664  289       `
+extern float botx;
+extern float boty;
+extern float obotx;
+extern float oboty;
+extern float scalex;
+extern float scaley;
+extern int scaleflag;
+space(x0,y0,x1,y1){
+	botx = 0.;
+	boty = 0.;
+	obotx = x0;
+	oboty = y0;
+	if(scaleflag)
+		return;
+	scalex = 3120./(x1-x0);
+	scaley = 3120./(y1-y0);
+}
+
+subr.c          287606231   10    1     100664  900       `
+#include <stdio.h>
+float obotx = 0.;
+float oboty = 0.;
+float botx = 0.;
+float boty = 0.;
+float scalex = 1.;
+float scaley = 1.;
+int scaleflag;
+
+int oloy = -1;
+int ohiy = -1;
+int ohix = -1;
+int oextra = -1;
+cont(x,y){
+	int hix,hiy,lox,loy,extra;
+	int n;
+	x = (x-obotx)*scalex + botx;
+	y = (y-oboty)*scaley + boty;
+	hix=(x>>7) & 037;
+	hiy=(y>>7) & 037;
+	lox = (x>>2)&037;
+	loy=(y>>2)&037;
+	extra=x&03+(y<<2)&014;
+	n = (abs(hix-ohix) + abs(hiy-ohiy) + 6) / 12;
+	if(hiy != ohiy){
+		putch(hiy|040);
+		ohiy=hiy;
+	}
+	if(hix != ohix){
+		if(extra != oextra){
+			putch(extra|0140);
+			oextra=extra;
+		}
+		putch(loy|0140);
+		putch(hix|040);
+		ohix=hix;
+		oloy=loy;
+	}
+	else{
+		if(extra != oextra){
+			putch(extra|0140);
+			putch(loy|0140);
+			oextra=extra;
+			oloy=loy;
+		}
+		else if(loy != oloy){
+			putch(loy|0140);
+			oloy=loy;
+		}
+	}
+	putch(lox|0100);
+	while(n--)
+		putch(0);
+}
+
+putch(c){
+	putc(c,stdout);
+}
