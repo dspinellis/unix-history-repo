@@ -6,10 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bsearch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bsearch.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <stddef.h>		/* size_t */
+#include <stddef.h>
 #include <stdlib.h>
 
 /*
@@ -48,7 +48,7 @@ bsearch(key, base0, nmemb, size, compar)
 		if (cmp > 0) {	/* key > p: move right */
 			base = (char *)p + size;
 			lim--;
-		} /* else move left */
+		}		/* else move left */
 	}
 	return (NULL);
 }
