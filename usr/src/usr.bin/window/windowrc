@@ -1,0 +1,14 @@
+#	@(#)windowrc	3.1 83/08/22
+
+# configuration file example for window manager
+#
+# creates two unequal sized windows of full screen width.
+
+# terse				# set terse mode (if you want)
+# escape ^A			# set escape character (if you want)
+
+window * * 15 *			# top window 15 lines
+label 1 "Top Window"		# label it
+window 17 * * *			# bottom window rest of the screen
+label 2 "Bottom Window"		# label
+%1				# current window is 1
