@@ -37,13 +37,19 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         4       00078
+ * CURRENT PATCH LEVEL:         5       00083
  * --------------------         -----   ----------------------
  *
  * 15 Aug 92	Pace Willisson		Patches for X server
- * 21 Aug 92    Frank Maclachlan        Fixed back-scroll system crash
- * 28 Nov 1992	Terry Lee		Fixed LED's in X mode
- * 09 Feb 1993	Rich Murphey		Added 'BELL' mode in X
+ * 21 Aug 92	Frank Maclachlan	Fixed back-scroll system crash
+ * 28 Nov 92	Terry Lee		Fixed LED's in X mode
+ * 09 Feb 93	Rich Murphey		Added 'BELL' mode in X
+ * 14 Mar 93	Bruce Evans		Added keyboard timeout in pcprobe
+ * 					Fixed color/mono test and mono
+ *					kernel color.  Added check for
+ *					minor. 
+ * 14 Mar 93	Chris G. Demetriou	Moved pg() to i386/cons.c, code
+ *					cleanup, removed ctl-alt-del.
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
 
@@ -163,14 +169,49 @@ extern pcopen(dev_t, int, int, struct proc *);
 }
 
 /*
+ * Pass command to keyboard controller (8042)
+ */
+static int kbc_8042cmd(val)
+int val;
+{
+	unsigned timeo;
+
+	timeo = 100000; 	/* > 100 msec */
+	while (inb(KBSTATP) & KBS_IBF)
+		if (--timeo == 0)
+			return (-1);
+	outb(KBCMDP, val);
+	return (0);
+}
+
+/*
  * Pass command to keyboard itself
  */
-unsigned kbd_cmd(val) {
-	
-	while (inb(KBSTATP)&KBS_IBF);
-	if (val) outb(KBOUTP, val);
-	while (inb(KBSTATP)&KBS_IBF);
-	return (inb(KBDATAP));
+int kbd_cmd(val)
+int val;
+{
+	unsigned timeo;
+
+	timeo = 100000; 	/* > 100 msec */
+	while (inb(KBSTATP) & KBS_IBF)
+		if (--timeo == 0)
+			return (-1);
+	outb(KBOUTP, val);
+	return (0);
+}
+
+/*
+ * Read response from keyboard
+ */
+int kbd_response()
+{
+	unsigned timeo;
+
+	timeo = 500000; 	/* > 500 msec (KBR_RSTDONE requires 87) */
+	while (!(inb(KBSTATP) & KBS_DIB))
+		if (--timeo == 0)
+			return (-1);
+	return ((u_char) inb(KBDATAP));
 }
 
 /*
@@ -179,26 +220,59 @@ unsigned kbd_cmd(val) {
 pcprobe(dev)
 struct isa_device *dev;
 {
-	u_char c;
 	int again = 0;
+	int response;
 
-	/* Enable interrupts and keyboard controller */
-	kbc_8042cmd(K_LDCMDBYTE);
-	outb(KBOUTP, CMDBYTE);
+	/* Enable interrupts and keyboard, etc. */
+	if (kbc_8042cmd(K_LDCMDBYTE) != 0)
+		printf("Timeout specifying load of keyboard command byte\n");
+	if (kbd_cmd(CMDBYTE) != 0)
+		printf("Timeout writing keyboard command byte\n");
+	/*
+	 * Discard any stale keyboard activity.  The 0.1 boot code isn't
+	 * very careful and sometimes leaves a KBR_RESEND.
+	 */
+	while (inb(KBSTATP) & KBS_DIB)
+		kbd_response();
 
-	/* Start keyboard stuff RESET */
-	kbd_cmd(KBC_RESET);
-	while((c = inb(KBDATAP)) != KBR_ACK) {
-		if ((c == KBR_RESEND) ||  (c == KBR_OVERRUN)) {
-			if(!again)printf("KEYBOARD disconnected: RECONNECT \n");
-			kbd_cmd(KBC_RESET);
-			again = 1;
+	/* Start keyboard reset */
+	if (kbd_cmd(KBC_RESET) != 0)
+		printf("Timeout for keyboard reset command\n");
+
+	/* Wait for the first response to reset and handle retries */
+	while ((response = kbd_response()) != KBR_ACK) {
+		if (response < 0) {
+			printf("Timeout for keyboard reset ack byte #1\n");
+			response = KBR_RESEND;
+		}
+		if (response == KBR_RESEND) {
+			if (!again) {
+				printf("KEYBOARD disconnected: RECONNECT\n");
+				again = 1;
+			}
+			if (kbd_cmd(KBC_RESET) != 0)
+				printf("Timeout for keyboard reset command\n");
+		}
+		/*
+		 * Other responses are harmless.  They may occur for new
+		 * keystrokes.
+		 */
+	}
+
+	/* Wait for the second response to reset */
+	while ((response = kbd_response()) != KBR_RSTDONE) {
+		if (response < 0) {
+			printf("Timeout for keyboard reset ack byte #2\n");
+			/*
+			 * If KBR_RSTDONE never arrives, the loop will
+			 * finish here unless the keyboard babbles or
+			 * KBS_DIB gets stuck.
+			 */
+			break;
 		}
 	}
 
-	/* pick up keyboard reset return code */
-	while((c = inb(KBDATAP)) != KBR_RSTDONE);
-	return 1;
+	return (1);
 }
 
 pcattach(dev)
@@ -225,6 +299,8 @@ pcopen(dev, flag, mode, p)
 {
 	register struct tty *tp;
 
+	if (minor(dev) != 0)
+		return (ENXIO);
 	tp = &pccons;
 	tp->t_oproc = pcstart;
 	tp->t_param = pcparam;
@@ -578,7 +654,8 @@ u_char ka;
 
 	if (crtat == 0)
 	{
-		u_short *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR, was;
+		u_short volatile *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR;
+		u_short was;
 		unsigned cursorat;
 
 		/*
@@ -611,7 +688,7 @@ u_char ka;
 		vs.bg_at = BG_BLACK;
 
 		if (vs.color == 0) {
-			vs.kern_fg_at = FG_INTENSE;
+			vs.kern_fg_at = FG_UNDERLINE;
 			vs.so_at = FG_BLACK | BG_LIGHTGREY;
 		} else {
 			vs.kern_fg_at = FG_LIGHTGREY;
@@ -860,7 +937,7 @@ u_char ka;
 	}
 	if (sc && crtat >= Crtat+vs.ncol*vs.nrow) { /* scroll check */
 		if (openf) do (void)sgetc(1); while (scroll);
-		bcopyb(Crtat+vs.ncol, Crtat, vs.ncol*(vs.nrow-1)*CHR);
+		bcopy(Crtat+vs.ncol, Crtat, vs.ncol*(vs.nrow-1)*CHR);
 		fillw ((at << 8) + ' ', Crtat + vs.ncol*(vs.nrow-1),
 			vs.ncol);
 		crtat -= vs.ncol;
@@ -870,8 +947,8 @@ u_char ka;
 }
 
 
-unsigned	__debug = 0; /*0xffe */;
-static char scantokey[] {
+unsigned	__debug = 0; /*0xffe */
+static char scantokey[] = {
 0,
 120,	/* F9 */
 0,
@@ -969,7 +1046,7 @@ static char scantokey[] {
 0,
 0,
 0,
-45,	?* na*/
+45,	/* na*/
 0,
 0,
 0,
@@ -1005,7 +1082,7 @@ static char scantokey[] {
 0,
 118,	/* F7 */
 };
-static char extscantokey[] {
+static char extscantokey[] = {
 0,
 120,	/* F9 */
 0,
@@ -1103,7 +1180,7 @@ static char extscantokey[] {
 0,
 0,
 0,
-45,	?* na*/
+45,	/* na*/
 0,
 0,
 0,
@@ -1295,9 +1372,25 @@ static Scan_def	scan_codes[] =
 
 update_led()
 {
-	kbd_cmd(KBC_STSIND);	/* LED Command */
-	outb(KBOUTP,scroll | 2*num | 4*caps);
-	/*kbd_cmd(scroll | 2*num | 4*caps);*/
+	int response;
+
+	if (kbd_cmd(KBC_STSIND) != 0)
+		printf("Timeout for keyboard LED command\n");
+	else if (kbd_cmd(scroll | (num << 1) | (caps << 2)) != 0)
+		printf("Timeout for keyboard LED data\n");
+#if 0
+	else if ((response = kbd_response()) < 0)
+		printf("Timeout for keyboard LED ack\n");
+	else if (response != KBR_ACK)
+		printf("Unexpected keyboard LED ack %d\n", response);
+#else
+	/*
+	 * Skip waiting for and checking the response.  The waiting
+	 * would be too long (about 3 msec) and the checking might eat
+	 * fresh keystrokes.  The waiting should be done using timeout()
+	 * and the checking should be done in the interrupt handler.
+	 */
+#endif
 }
 
 /*
@@ -1371,19 +1464,15 @@ loop:
 #endif /* !XSERVER*/
 	}
 
-	/*
-	 *   Check for cntl-alt-del
-	 */
-	if ((dt == 83) && ctrl_down && alt_down)
-		cpu_reset();
-
 #include "ddb.h"
 #if NDDB > 0
 	/*
 	 *   Check for cntl-alt-esc
 	 */
-	if ((dt == 1) && ctrl_down && alt_down)
+	if ((dt == 1) && ctrl_down && alt_down) {
 		Debugger();
+		dt |= 0x80;	/* discard esc (ddb discarded ctrl-alt) */
+	}
 #endif
 
 	/*
@@ -1515,12 +1604,6 @@ loop:
 	else
 		goto loop;
 #endif	/* !XSERVER*/
-}
-
-pg(p,q,r,s,t,u,v,w,x,y,z) char *p; {
-	printf(p,q,r,s,t,u,v,w,x,y,z);
-	printf("\n");
-	return(getchar());
 }
 
 /* special characters */
