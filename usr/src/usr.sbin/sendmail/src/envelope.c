@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.63 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -163,7 +163,10 @@ dropenvelope(e)
 		for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 		{
 			if (bitset(QQUEUEUP, q->q_flags))
+			{
 				q->q_flags |= QBADADDR;
+				q->q_status = "4.4.7";
+			}
 		}
 	}
 	else if (TimeOuts.to_q_warning[e->e_timeoutclass] > 0 &&
@@ -664,6 +667,7 @@ setsender(from, e, delimptr, internal)
 			if (!bitset(QBADADDR, e->e_from.q_flags))
 			{
 				/* it was a bogus mailer in the from addr */
+				e->e_status = "5.1.7";
 				usrerr("553 Invalid sender address");
 			}
 			SuprErrs = TRUE;

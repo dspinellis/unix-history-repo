@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysexits.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysexits.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sysexits.h>
@@ -83,20 +83,22 @@ dsntoexitstat(dsncode)
 		  case 0:	/* Other Address Status */
 			return EX_DATAERR;
 
-		  case 1:	/* Bad mailbox address */
+		  case 1:	/* Bad destination mailbox address */
 		  case 6:	/* Mailbox has moved, No forwarding address */
 			return EX_NOUSER;
 
-		  case 2:	/* Bad system address */
+		  case 2:	/* Bad destination system address */
+		  case 8:	/* Bad senders system address */
 			return EX_NOHOST;
 
-		  case 3:	/* Bad mailbox address syntax */
+		  case 3:	/* Bad destination mailbox address syntax */
+		  case 7:	/* Bad senders mailbox address syntax */
 			return EX_USAGE;
 
-		  case 4:	/* Mailbox address ambiguous */
+		  case 4:	/* Destination mailbox address ambiguous */
 			return EX_UNAVAILABLE;
 
-		  case 5:	/* Address valid */
+		  case 5:	/* Destination address valid */
 			return EX_OK;
 		}
 		break;
