@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)order.c	1.13 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.14 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -329,7 +329,7 @@ offstar( p ) register NODE *p; {
 setincr( p ) register NODE *p; {
 	p = p->in.left;
 	if( p->in.op == UNARY MUL ){
-		offstar( p );
+		offstar( p->in.left );
 		return( 1 );
 		}
 	return( 0 );
