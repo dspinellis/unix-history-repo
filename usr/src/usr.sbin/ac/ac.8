@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ac.8	6.1 (Berkeley) %G%
+.\"	@(#)ac.8	6.2 (Berkeley) %G%
 .\"
 .TH AC 8 ""
 .UC 4
 .SH NAME
 ac \- login accounting
 .SH SYNOPSIS
-.B /etc/ac
+.B ac
 [
 .B \-w
 wtmp ] [
@@ -43,11 +43,11 @@ printout to only the specified login names.
 If no
 .IR wtmp ""
 file is given,
-.I /usr/adm/wtmp
+.I /var/log/wtmp
 is used.
 .PP
 The accounting file
-.I /usr/adm/wtmp
+.I /var/log/wtmp
 is maintained by
 .I init
 and
@@ -60,6 +60,6 @@ On the other hand if the file is left undisturbed it will
 grow without bound, so periodically any information
 desired should be collected and the file truncated.
 .SH FILES
-/usr/adm/wtmp
+/var/log/wtmp
 .SH "SEE ALSO"
 init(8), sa(8), login(1), utmp(5).
