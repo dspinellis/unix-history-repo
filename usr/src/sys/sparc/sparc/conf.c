@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  *
- * from: $Header: conf.c,v 1.12 92/06/17 05:22:00 torek Exp $ (LBL)
+ * from: $Header: conf.c,v 1.14 92/11/26 03:04:49 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
@@ -215,6 +215,12 @@ cdev_decl(cgthree);
 #include "bsdaudio.h"
 cdev_decl(audio);
 
+cdev_decl(openprom);
+/* open, close, ioctl */
+#define	cdev_openprom_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), error_read, error_write, \
+	dev_init(c,n,ioctl), 0, 0, 0, error_select, 0, 0 }
+
 #include "bpfilter.h"
 cdev_decl(bpf);
 /* open, close, read, write, ioctl, select -- XXX should be generic device */
@@ -296,7 +302,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 67 */
 	cdev_notdef(),			/* 68 */
 	cdev_gen_init(NBSDAUDIO,audio),	/* 69: /dev/audio */
-	cdev_notdef(),			/* 70 */
+	cdev_openprom_init(1,openprom),	/* 70: /dev/openprom */
 	cdev_notdef(),			/* 71 */
 	cdev_notdef(),			/* 72 */
 	cdev_notdef(),			/* 73 */
