@@ -6,13 +6,15 @@
 #
 MAN5=	termcap.5
 
+CLEANFILES+=	termcap
+
 all: termcap ${MAN5}
 
 termcap: reorder termcap.src
 	ed - ${.CURDIR}/termcap.src < ${.CURDIR}/reorder > /dev/null
 
 beforeinstall:
-	install -o ${BINOWN} -g ${BINGRP} -m 444 termcap \
+	install ${COPY} -o ${BINOWN} -g ${BINGRP} -m 444 termcap \
 	     ${DESTDIR}${BINDIR}/misc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/map3270 \
 	     ${DESTDIR}${BINDIR}/misc
