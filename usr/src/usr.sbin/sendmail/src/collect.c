@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.13	%G%";
+static char	SccsId[] = "@(#)collect.c	3.14	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -126,6 +126,8 @@ collect()
 
 	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
 	{
+		register int i;
+
 		/* check for end-of-message */
 		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
 			break;
@@ -136,8 +138,17 @@ collect()
 			fputs(">", tf);
 			MsgSize++;
 		}
-		MsgSize += strlen(buf);
+
+		/*
+		**  Figure message length, output the line to the temp
+		**  file, and insert a newline if missing.
+		*/
+
+		i = strlen(buf);
+		MsgSize += i;
 		fputs(buf, tf);
+		if (buf[i - 1] != '\n')
+			fputs("\n", tf);
 		if (ferror(tf))
 		{
 			if (errno == ENOSPC)
