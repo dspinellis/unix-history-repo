@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.1 (Berkeley) %G%
+.\"	@(#)2.t	6.2 (Berkeley) %G%
 .\"
 .NH 1
 Commands
 .NH 2
-lpd \- line printer dameon
+lpd \- line printer daemon
 .PP
 The program
 .IR lpd (8),
@@ -111,4 +111,4 @@ disable or enable a printer's spooling queue,
 rearrange the order of jobs in a spooling queue,
 .IP \(bu
 find the status of printers, and their associated
-spooling queues and printer dameons.
+spooling queues and printer daemons.
