@@ -2,13 +2,13 @@
  * Copyright (c) 1995
  *	The Regents of the University of California.  All rights reserved.
  *
- * This code is derived from software contributed to Berkeley by
+ * This code contains ideas from software contributed to Berkeley by
  * Avadis Tevanian, Jr., Michael Wayne Young, and the Mach Operating
  * System project at Carnegie-Mellon University.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.1 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -107,13 +107,13 @@ lockmgr(lkp, p, flags)
 	int error, extflags;
 
 	pid = p->p_pid;
+	atomic_lock(&lkp->lk_interlock);
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
 	lkp->lk_flags &= ~LK_SLEPT;
 
 	switch (flags & LK_TYPE_MASK) {
 
 	case LK_SHARED:
-		atomic_lock(&lkp->lk_interlock);
 		if (lkp->lk_lockholder != pid) {
 			/*
 			 * If just polling, check to see if we will block.
@@ -141,11 +141,9 @@ lockmgr(lkp, p, flags)
 		 * An alternative would be to fail with EDEADLK.
 		 */
 		lkp->lk_sharecount++;
-		atomic_unlock(&lkp->lk_interlock);
 		/* fall into downgrade */
 
 	case LK_DOWNGRADE:
-		atomic_lock(&lkp->lk_interlock);
 		if (lkp->lk_lockholder != pid || lkp->lk_exclusivecount == 0)
 			panic("lockmgr: not holding exclusive lock");
 		lkp->lk_sharecount += lkp->lk_exclusivecount;
@@ -165,11 +163,12 @@ lockmgr(lkp, p, flags)
 		 * shared lock has already requested an upgrade to an
 		 * exclusive lock, our shared lock is released and an
 		 * exclusive lock is requested (which will be granted
-		 * after the upgrade).
+		 * after the upgrade). If we return an error, the file
+		 * will always be unlocked.
 		 */
-		atomic_lock(&lkp->lk_interlock);
 		if (lkp->lk_lockholder == pid || lkp->lk_sharecount <= 0)
 			panic("lockmgr: upgrade exclusive lock");
+		lkp->lk_sharecount--;
 		/*
 		 * If we are just polling, check to see if we will block.
 		 */
@@ -179,7 +178,6 @@ lockmgr(lkp, p, flags)
 			atomic_unlock(&lkp->lk_interlock);
 			return (EBUSY);
 		}
-		lkp->lk_sharecount--;
 		if ((lkp->lk_flags & LK_WANT_UPGRADE) == 0) {
 			/*
 			 * We are first shared lock to request an upgrade, so
@@ -210,11 +208,9 @@ lockmgr(lkp, p, flags)
 			lkp->lk_flags &= ~LK_WAITING;
 			wakeup(lkp);
 		}
-		atomic_unlock(&lkp->lk_interlock);
 		/* fall into exclusive request */
 
 	case LK_EXCLUSIVE:
-		atomic_lock(&lkp->lk_interlock);
 		if (lkp->lk_lockholder == pid) {
 			/*
 			 *	Recursive lock.
@@ -263,7 +259,6 @@ lockmgr(lkp, p, flags)
 		return (0);
 
 	case LK_RELEASE:
-		atomic_lock(&lkp->lk_interlock);
 		if (lkp->lk_exclusivecount != 0) {
 			lkp->lk_exclusivecount--;
 			if (lkp->lk_exclusivecount == 0) {
@@ -280,7 +275,9 @@ lockmgr(lkp, p, flags)
 		return (0);
 
 	default:
+		atomic_unlock(&lkp->lk_interlock);
 		panic("lockmgr: unknown locktype request %d",
 		    flags & LK_TYPE_MASK);
+		/* NOTREACHED */
 	}
 }
