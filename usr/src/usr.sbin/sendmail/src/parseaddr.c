@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.27.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1477,6 +1477,10 @@ buildaddr(tv, a)
 			syserr("buildaddr: no host");
 			return (NULL);
 		}
+		a->q_host = NULL;
+	}
+	else
+	{
 		else
 			a->q_host = NULL;
 	}
