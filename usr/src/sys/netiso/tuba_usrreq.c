@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.5 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -222,7 +222,7 @@ tuba_usrreq(so, req, m, nam, control)
 	 * of the peer, storing through addr.
 	 */
 	case PRU_ACCEPT:
-		bcopy((caddr_t)isop->isop_faddr, mtod(m, caddr_t),
+		bcopy((caddr_t)isop->isop_faddr, mtod(nam, caddr_t),
 			nam->m_len = isop->isop_faddr->siso_len);
 		break;
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.5 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.6 (Berkeley) %G%
  */
 
 struct tuba_cache {
@@ -16,7 +16,7 @@ struct tuba_cache {
 	int	tc_index;
 	u_short	tc_sum_in;			/* for inbound cksum */
 	u_short	tc_sum_out;			/* for outbound cksum */
-	struct	iso_addr tc_addr;		/* so you can respond */
+	struct	sockaddr_iso tc_siso;		/* for responding */
 	char	tc_EID[7];			/* what counts for lookups */
 };
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.c	7.5 (Berkeley) %G%
+ *	@(#)tuba_table.c	7.6 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/systm.h>
@@ -43,7 +43,7 @@ tuba_timer()
 		if ((tc = tuba_table[i]) && (tc->tc_refcnt == 0) &&
 		    (tc->tc_time < timelimit)) {
 			tuba_table[i] = 0;
-			rn_delete((caddr_t)&tc->tc_addr, (caddr_t)0,
+			rn_delete((caddr_t)&tc->tc_EID, (caddr_t)0,
 					tuba_tree->rnh_treetop);
 			free((caddr_t)tc, M_RTABLE);
 		}
@@ -80,15 +80,16 @@ tuba_lookup(isoa, wait)
 		return (0);
 	bzero((caddr_t)tc, sizeof (*tc));
 	bcopy((caddr_t)EID, (caddr_t)&tc->tc_EID, sizeof(EID));
-	bcopy((caddr_t)isoa, (caddr_t)&tc->tc_addr, 1 + isoa->isoa_len);
 	rn_insert(tc->tc_EID, tuba_tree->rnh_treetop, &dupentry, tc->tc_nodes);
 	if (dupentry)
 		panic("tuba_lookup 1");
+	bcopy((caddr_t)isoa, (caddr_t)&tc->tc_siso.siso_addr,
+		1 + isoa->isoa_len);
+	tc->tc_siso.siso_family = AF_ISO;
+	tc->tc_siso.siso_len = sizeof(tc->tc_siso);
 	tc->tc_time = time.tv_sec;
-	for (i = EID[0]; i > 0; ) {
+	for (i = EID[0]; i > 0; i--)
 		(i & 1 ? sum_a : sum_b) += EID[i];
-		i--;
-	}
 	REDUCE(tc->tc_sum_in, (sum_a << 8) + sum_b);
 	HTONS(tc->tc_sum_in);
 	for (i = tuba_table_size; i > 0; i--)
@@ -110,7 +111,7 @@ tuba_lookup(isoa, wait)
 	new = (struct tuba_cache **)malloc((unsigned)i, M_RTABLE, wait);
 	if (new == 0) {
 		tuba_table_size = old_size;
-		rn_delete((caddr_t)&tc->tc_addr, (caddr_t)0, tuba_tree);
+		rn_delete((caddr_t)&tc->tc_EID, (caddr_t)0, tuba_tree);
 		free((caddr_t)tc, M_RTABLE);
 		return (0);
 	}
