@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.6 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.7 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.6 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.7 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -21,6 +21,10 @@ static char sccsid [] = "@(#)udb.c	8.6 (Berkeley) %G% (without USERDB)";
 #include <errno.h>
 #include <netdb.h>
 #include <db.h>
+
+#ifdef HESIOD
+#include <hesiod.h>
+#endif /* HESIOD */
 
 /*
 **  UDB.C -- interface between sendmail and Berkeley User Data Base.
@@ -68,6 +72,7 @@ struct udbent
 #define UDB_REMOTE	2	/* look up in remote database */
 #define UDB_DBFETCH	3	/* look up in local database */
 #define UDB_FORWARD	4	/* forward to remote host */
+#define UDB_HESIOD	5	/* look up via hesiod */
 
 #define MAXUDBENT	10	/* maximum number of UDB entries */
 
@@ -138,6 +143,10 @@ udbexpand(a, sendq, e)
 	if (UdbSpec == NULL || UdbSpec[0] == '\0')
 		return EX_OK;
 
+	/* short circuit name begins with '\\' since it can't possibly match */
+	if (a->q_user[0] == '\\')
+		return EX_OK;
+
 	/* if name is too long, assume it won't match */
 	if (strlen(a->q_user) > sizeof keybuf - 12)
 		return EX_OK;
@@ -170,7 +179,7 @@ udbexpand(a, sendq, e)
 			key.data = keybuf;
 			key.size = keylen;
 			if (tTd(28, 80))
-				printf("udbexpand: trying %s (%d)\n",
+				printf("udbexpand: trying %s (%d) via db\n",
 					keybuf, keylen);
 			i = (*up->udb_dbp->seq)(up->udb_dbp, &key, &info, R_CURSOR);
 			if (i > 0 || info.size <= 0)
@@ -258,6 +267,93 @@ udbexpand(a, sendq, e)
 			bcopy(info.data, a->q_owner, info.size);
 			a->q_owner[info.size] = '\0';
 			break;
+
+#ifdef HESIOD
+		  case UDB_HESIOD:
+			key.data = keybuf;
+			key.size = keylen;
+			if (tTd(28, 80))
+				printf("udbexpand: trying %s (%d) via hesiod\n",
+					keybuf, keylen);
+			/* look up the key via hesiod */
+			i = hes_udb_get(&key, &info);
+			if (i > 0 || info.size <= 0)
+			{
+				if (tTd(28, 2))
+				printf("udbexpand: no match on %s (%d)\n",
+					keybuf, keylen);
+				continue;
+			}
+			if (tTd(28, 80))
+				printf("udbexpand: match %.*s: %.*s\n",
+					key.size, key.data, info.size, info.data);
+			a->q_flags &= ~QSELFREF;
+
+			if (bitset(EF_VRFYONLY, e->e_flags))
+			{
+				a->q_flags |= QVERIFIED;
+				e->e_nrcpts++;
+				free(info.data);
+				return EX_OK;
+			}
+
+			breakout = TRUE;
+			if (info.size < sizeof buf)
+				user = buf;
+			else
+				user = xalloc(info.size + 1);
+			bcopy(info.data, user, info.size);
+			user[info.size] = '\0';
+			free(info.data);
+
+			message("hesioded to %s", user);
+#ifdef LOG
+			if (LogLevel >= 10)
+				syslog(LOG_INFO, "%s: hesiod %s => %s",
+					e->e_id, e->e_to, user);
+#endif
+			AliasLevel++;
+			naddrs = sendtolist(user, a, sendq, e);
+			AliasLevel--;
+
+			if (user != buf)
+				free(user);
+
+			if (naddrs > 0 && !bitset(QSELFREF, a->q_flags))
+			{
+				if (tTd(28, 5))
+				{
+					printf("udbexpand: QDONTSEND ");
+					printaddr(a, FALSE);
+				}
+				a->q_flags |= QDONTSEND;
+			}
+			if (i < 0)
+			{
+				syserr("udbexpand: hesiod-get %.*s stat %d",
+					key.size, key.data, i);
+				return EX_TEMPFAIL;
+			}
+
+			/*
+			**  If this address has a -request address, reflect
+			**  it into the envelope.
+			*/
+
+			(void) strcpy(keybuf, a->q_user);
+			(void) strcat(keybuf, ":mailsender");
+			keylen = strlen(keybuf);
+			key.data = keybuf;
+			key.size = keylen;
+			i = hes_udb_get(&key, &info);
+			if (i != 0 || info.size <= 0)
+				break;
+			a->q_owner = xalloc(info.size + 1);
+			bcopy(info.data, a->q_owner, info.size);
+			a->q_owner[info.size] = '\0';
+			free(info.data);
+			break;
+#endif /* HESIOD */
 
 		  case UDB_REMOTE:
 			/* not yet implemented */
@@ -352,6 +448,10 @@ udbmatch(user, field)
 	if (UdbSpec == NULL || UdbSpec[0] == '\0')
 		return NULL;
 
+	/* short circuit name begins with '\\' since it can't possibly match */
+	if (user[0] == '\\')
+		return NULL;
+
 	/* long names can never match and are a pain to deal with */
 	if ((strlen(user) + strlen(field)) > sizeof keybuf - 4)
 		return NULL;
@@ -381,7 +481,7 @@ udbmatch(user, field)
 			if (i != 0 || info.size <= 0)
 			{
 				if (tTd(28, 2))
-					printf("udbmatch: no match on %s (%d)\n",
+					printf("udbmatch: no match on %s (%d) via db\n",
 							keybuf, keylen);
 				continue;
 			}
@@ -392,6 +492,30 @@ udbmatch(user, field)
 			if (tTd(28, 1))
 				printf("udbmatch ==> %s\n", p);
 			return p;
+			break;
+
+#ifdef HESIOD
+		  case UDB_HESIOD:
+			key.data = keybuf;
+			key.size = keylen;
+			i = hes_udb_get(&key, &info); 
+			if (i != 0 || info.size <= 0)
+			{
+				if (tTd(28, 2))
+					printf("udbmatch: no match on %s (%d) via hesiod\n",
+							keybuf, keylen);
+				continue;
+			}
+
+			p = xalloc(info.size + 1);
+			bcopy(info.data, p, info.size);
+			p[info.size] = '\0';
+			free(info.data);
+			if (tTd(28, 1))
+				printf("udbmatch ==> %s\n", p);
+			return p;
+			break;
+#endif /* HESIOD */
 		}
 	}
 
@@ -453,6 +577,54 @@ udbmatch(user, field)
 			if (tTd(28, 1))
 				printf("udbmatch ==> %s\n", p);
 			return p;
+			break;
+
+#ifdef HESIOD
+		  case UDB_HESIOD:
+			/* get the default case for this database */
+			if (up->udb_default == NULL)
+			{
+				key.data = ":default:mailname";
+				key.size = strlen(key.data);
+				i = hes_udb_get(&key, &info); 
+
+				if (i != 0 || info.size <= 0)
+				{
+					/* no default case */
+					up->udb_default = "";
+					continue;
+				}
+
+				/* save the default case */
+				up->udb_default = xalloc(info.size + 1);
+				bcopy(info.data, up->udb_default, info.size);
+				up->udb_default[info.size] = '\0';
+				free(info.data);
+			}
+			else if (up->udb_default[0] == '\0')
+				continue;
+
+			/* we have a default case -- verify user:maildrop */
+			key.data = keybuf;
+			key.size = keylen;
+			i = hes_udb_get(&key, &info);
+			if (i != 0 || info.size <= 0)
+			{
+				/* nope -- no aliasing for this user */
+				continue;
+			}
+
+			free(info.data);
+			/* they exist -- build the actual address */
+			p = xalloc(strlen(user) + strlen(up->udb_default) + 2);
+			(void) strcpy(p, user);
+			(void) strcat(p, "@");
+			(void) strcat(p, up->udb_default);
+			if (tTd(28, 1))
+				printf("udbmatch ==> %s\n", p);
+			return p;
+			break;
+#endif /* HESIOD */
 		}
 	}
 
@@ -596,6 +768,16 @@ _udbx_init()
 			up++;
 			break;
 
+		  case 'h':	/* use hesiod */
+		  case 'H':
+#ifdef HESIOD
+			if (strcasecmp(spec, "hesiod") != 0)
+				break;
+			up->udb_type = UDB_HESIOD;
+			up++;
+#endif /* HESIOD */
+			break;
+
 		  case '/':	/* look up remote name */
 			up->udb_dbname = spec;
 			errno = 0;
@@ -641,6 +823,10 @@ _udbx_init()
 			  case UDB_FORWARD:
 				printf("FORWARD: host %s\n",
 					up->udb_fwdhost);
+				break;
+
+			  case UDB_HESIOD:
+				printf("HESIOD\n");
 				break;
 
 			  default:
@@ -698,6 +884,57 @@ _udb_parsespec(udbspec, opt, maxopts)
 	}
 	return optnum;
 }
+
+#ifdef HESIOD
+
+int
+hes_udb_get(key, info)
+	DBT *key;
+	DBT *info;
+{
+	char *name, *type;
+	char *p, **hp;
+
+	name = key->data;
+	type = strchr(name, ':');
+	if (type == NULL)
+		return 1;
+
+	*type++ = '\0';
+
+	if (tTd(28, 1))
+		printf("hes_udb_get(%s, %s)\n", name, type);
+
+	/* make the hesiod query */
+	hp = hes_resolve(name, type);
+	if (hp == NULL)
+	{
+		/* network problem or timeout */
+		if (hes_error() == HES_ER_NET)
+			return -1;
+
+		return 1;
+	}
+	else
+	{
+		/*
+		**  If there are multiple matches, just return the
+		**  first one and free the others.
+		**
+		**  XXX These should really be returned; for example,
+		**  XXX it is legal for :maildrop to be multi-valued.
+		*/
+
+		for (p = hp[1]; p; p++)
+			free(p);
+
+		info->data = hp[0];
+		info->size = (size_t) strlen(info->data);
+	}
+
+	return 0;
+}
+#endif /* HESIOD */
 
 #else /* not USERDB */
 
