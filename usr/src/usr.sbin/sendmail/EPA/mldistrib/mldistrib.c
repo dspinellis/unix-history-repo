@@ -8,8 +8,10 @@
 typedef char		BOOL;
 
 #define CHARNULL	((char *) NULL)
+#define MAXMAILOPTS	20
 
 enum copymode {RETAIN, DISCARD};
+char *myname;
 
 main(argc, argv)
 	int argc;
@@ -21,6 +23,8 @@ main(argc, argv)
 	register char *p;
 	char *ml_name;
 	char *ml_owner;
+	char *mailer_opts[MAXMAILOPTS+1];
+	char **next_opt = mailer_opts;
 	char c;
 	extern FILE *openmailer();
 	extern char *readheadertag();
@@ -28,14 +32,30 @@ main(argc, argv)
 	extern void dropheader();
 	extern void copybody();
 
-	/* parse arguments */
-	if (argc < 4)
+	myname = argv[0];
+	argc--, argv++;
+	while (*argv[0] == '-')
 	{
-		fprintf(stderr, "Usage: mldistrib listname ownername member...\n");
+		if (next_opt >= &mailer_opts[MAXMAILOPTS])
+		{
+			fprintf(stderr,
+			    "%s: too many mailer options\n", myname);
+			exit(EX_USAGE);
+		}
+		*next_opt++ = *argv++;
+		argc--;
+	}
+	*next_opt = NULL;
+
+	/* parse arguments */
+	if (argc < 3)
+	{
+		fprintf(stderr,
+		    "Usage: %s [-mailopts ...] listname ownername member...\n",
+		    myname);
 		exit(EX_USAGE);
 	}
 
-	argv++;
 	ml_name = *argv++;
 	ml_owner = *argv++;
 
@@ -44,12 +64,13 @@ main(argc, argv)
 		continue;
 
 	/* open the connection to the mailer */
-	mailfp = openmailer(argv);
+	mailfp = openmailer(ml_owner, mailer_opts, argv);
 
 	/* output the Resent-xxx: fields */
 	fprintf(mailfp, "Resent-To:	%s\n", ml_name);
 	fprintf(mailfp, "Resent-From:	%s\n", ml_owner);
 
+sleep(120);
 	/*
 	**  Consume header
 	**
@@ -120,14 +141,13 @@ main(argc, argv)
 
 	/* if no precedence was given, make it bulk mail */
 	if (!seen_precedence)
-		fprintf(mailfp, "Precedence:	bulk\n");
+		fprintf(mailfp, "Precedence: bulk\n");
 
 	/* copy the body of the message */
 	copybody(stdin, mailfp);
 
 	/* clean up the connection */
-	fclose(mailfp);
-	exit(0);
+	exit (pclose(mailfp));
 }
 
 
@@ -137,8 +157,9 @@ main(argc, argv)
 */
 
 FILE *
-openmailer(argv)
-	char **argv;
+openmailer(from, opt, argv)
+	char *from;
+	char **opt, **argv;
 {
 	register char *bp;
 	register FILE *mailfp;
@@ -146,19 +167,33 @@ openmailer(argv)
 	extern int strlen();
 
 	bp = buf;
-	(void) sprintf(bp, "%s", _PATH_SENDMAIL);
+	(void) sprintf(bp, "%s -f %s", _PATH_SENDMAIL, from);
 	bp += strlen(bp);
 
+	while (*opt != CHARNULL)
+	{
+		(void) sprintf(bp, " %s", *opt++);
+		bp += strlen(bp);
+		if (bp >= buf + sizeof(buf)) {
+			fprintf(stderr, "%s: options list too long\n", myname);
+			exit(EX_SOFTWARE);
+		}
+	}
 	while (*argv != CHARNULL)
 	{
 		(void) sprintf(bp, " %s", *argv++);
 		bp += strlen(bp);
+		if (bp >= buf + sizeof(buf)) {
+			fprintf(stderr, "%s: arg list too long\n", myname);
+			exit(EX_SOFTWARE);
+		}
 	}
 
 	mailfp = popen(buf, "w");
 	if (mailfp == NULL)
 	{
-		fprintf(stderr, "mldistrib: Unable to popen %s\n", _PATH_SENDMAIL);
+		fprintf(stderr, "%s: Unable to popen %s\n", myname,
+		   _PATH_SENDMAIL);
 		exit(EX_OSFILE);
 	}
 
