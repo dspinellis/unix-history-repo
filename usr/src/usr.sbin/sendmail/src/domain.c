@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1986 Eric P. Allman
+ * Copyright (c) 1986, 1995 Eric P. Allman
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.35 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.36 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.35 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.36 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 

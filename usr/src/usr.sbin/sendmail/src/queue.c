@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Eric P. Allman
+ * Copyright (c) 1983, 1995 Eric P. Allman
  * Copyright (c) 1988, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.78 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.79 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.78 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.79 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
