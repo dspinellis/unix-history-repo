@@ -1,1 +1,1 @@
-char	Version[] = "@(#)Delivermail version 1.1 of %G%";
+char	Version[] = "@(#)Delivermail version 1.2 of %G%";
