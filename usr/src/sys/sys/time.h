@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)time.h	6.3 (Berkeley) %G%
+ *	@(#)time.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,7 @@ struct timezone {
 #define	DST_WET		3	/* Western European dst */
 #define	DST_MET		4	/* Middle European dst */
 #define	DST_EET		5	/* Eastern European dst */
+#define	DST_CAN		6	/* Canada */
 
 /*
  * Operations on timevals.
