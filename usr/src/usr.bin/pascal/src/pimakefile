@@ -3,11 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)pimakefile	5.2 (Berkeley) %G%
+#	@(#)pimakefile	5.3 (Berkeley) %G%
 #
-SCCSID = "@(#)pimakefile 5.2 %G%"
+SCCSID = "@(#)pimakefile 5.3 %G%"
 
-INSTALLDIR = ${DESTDIR}/usr/ucb
+INSTALLDIR = ${DESTDIR}/usr/bin
 INSTALLNAME = ${INSTALLDIR}/pi
 BINDIR = ../pi
 SRCDIR = ../src
@@ -15,7 +15,7 @@ WHOAMI = pi
 VERSION = 3.1
 DATE = %G%
 
-MKSTR = /usr/ucb/mkstr
+MKSTR = /usr/bin/mkstr
 EYACC = ../eyacc/eyacc
 RM = -rm -f
 GET = sccs -d${SRCDIR} get
