@@ -1,4 +1,4 @@
-/*	user.h	4.7	81/04/24	*/
+/*	user.h	4.8	81/04/28	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -117,7 +117,9 @@ struct	user
 	size_t	u_odsize, u_ossize;	/* for (clumsy) expansion swaps */
 	size_t	u_vrpages[NOFILE];	/* number vread pages hanging on fd */
 	int	u_limit[8];		/* see <sys/limit.h> */
+#ifdef notdef
 	unsigned u_vsave;		/* saved previous fault page number */
+#endif
 	int	u_stack[1];
 
 					/*
