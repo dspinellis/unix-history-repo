@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.15	81/11/21	*/
+/*	uipc_mbuf.c	1.16	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -15,10 +15,13 @@ m_reserve(mbufs)
 	int mbufs;
 {
 
-	if (mbstat.m_lowat + mbufs > NMBPAGES * NMBPG - 32) 
+/*
+	printf("reserve %d\n", mbufs);
+*/
+	if (mbstat.m_lowat + (mbufs>>1) > NMBPAGES * NMBPG - 32) 
 		return (0);
-	mbstat.m_lowat += mbufs;
-	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+	mbstat.m_hiwat += mbufs;
+	mbstat.m_lowat = mbstat.m_hiwat >> 1;
 	return (1);
 }
 
@@ -26,8 +29,11 @@ m_release(mbufs)
 	int mbufs;
 {
 
-	mbstat.m_lowat -= mbufs;
-	mbstat.m_hiwat = 2 * mbstat.m_lowat;
+/*
+	printf("release %d\n", mbufs);
+*/
+	mbstat.m_hiwat -= mbufs;
+	mbstat.m_lowat = mbstat.m_hiwat >> 1;
 }
 
 struct mbuf *
