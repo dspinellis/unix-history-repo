@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)vd.c	7.1 (Berkeley) %G%
+ *	@(#)vd.c	1.27 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -861,7 +861,8 @@ vdsofterr(bp, dcb)
 	register struct buf *bp;
 	register struct dcb *dcb;
 {
-	struct disklabel *lp = &dklabel[vdunit(bp->b_dev)];
+	int unit = vdunit(bp->b_dev);
+	struct disklabel *lp = &dklabel[unit];
 	int status = dcb->operrsta;
 	int blkdone;
 
