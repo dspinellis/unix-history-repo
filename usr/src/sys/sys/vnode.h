@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.1 (Berkeley) %G%
+ *	@(#)vnode.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -158,6 +158,8 @@ struct vattr {
 	struct timeval	va_atime;	/* time of last access */
 	struct timeval	va_mtime;	/* time of last modification */
 	struct timeval	va_ctime;	/* time file changed */
+	u_long		va_gen;		/* generation number of file */
+	u_long		va_flags;	/* flags defined for file */
 	dev_t		va_rdev;	/* device the special file represents */
 	u_long		va_bytes;	/* bytes of disk space held by file */
 	u_long		va_bytes1;	/* reserved if va_bytes not a quad */
