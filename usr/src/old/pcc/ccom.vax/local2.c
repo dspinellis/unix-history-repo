@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.4 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.5 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -209,8 +209,7 @@ zzzcode( p, c ) register NODE *p; {
 		r = getlr(p, 'R');
 		if (p->in.op == ASSIGN)
 			l = getlr(p, 'L');
-		else if (p->in.op == SCONV)
-			{
+		else if (p->in.op == SCONV) {
 			l = resc;
 #ifdef FORT
 			l->in.type = r->in.type;
@@ -219,8 +218,7 @@ zzzcode( p, c ) register NODE *p; {
 #endif
 			r = getlr(p, 'L');
 			}
-		else
-			{		/* OPLTYPE */
+		else {		/* OPLTYPE */
 			l = resc;
 #ifdef FORT
 			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
@@ -229,37 +227,39 @@ zzzcode( p, c ) register NODE *p; {
 #endif
 			}
 		if (r->in.op == ICON)
-			if (r->in.name[0] == '\0')
-				{
-				if (r->tn.lval == 0)
-					{
+			if (r->in.name[0] == '\0') {
+				if (r->tn.lval == 0) {
 					printf("clr");
 					prtype(l);
 					printf("	");
 					adrput(l);
 					return;
 					}
-				if (r->tn.lval < 0 && r->tn.lval >= -63)
-					{
+				if (r->tn.lval < 0 && r->tn.lval >= -63) {
 					printf("mneg");
 					prtype(l);
 					r->tn.lval = -r->tn.lval;
 					goto ops;
 					}
-				r->in.type = (r->tn.lval < 0 ?
-						(r->tn.lval >= -128 ? CHAR
+				if (r->tn.lval < 0)
+					r->in.type = r->tn.lval >= -128 ? CHAR
 						: (r->tn.lval >= -32768 ? SHORT
-						: INT )) : r->in.type);
-				r->in.type = (r->tn.lval >= 0 ?
-						(r->tn.lval <= 63 ? INT
-						: ( r->tn.lval <= 127 ? CHAR
+						: INT);
+				else if (l->in.type == FLOAT ||
+				    l->in.type == DOUBLE)
+					r->in.type = r->tn.lval <= 63 ? INT
+						: (r->tn.lval <= 127 ? CHAR
+						: (r->tn.lval <= 32767 ? SHORT
+						: INT));
+				else
+					r->in.type = r->tn.lval <= 63 ? INT
+						: (r->tn.lval <= 127 ? CHAR
 						: (r->tn.lval <= 255 ? UCHAR
 						: (r->tn.lval <= 32767 ? SHORT
 						: (r->tn.lval <= 65535 ? USHORT
-						: INT ))))) : r->in.type );
+						: INT))));
 				}
-			else
-				{
+			else {
 				printf("moval");
 				printf("	");
 				acon(r);
@@ -268,10 +268,8 @@ zzzcode( p, c ) register NODE *p; {
 				return;
 				}
 
-		if (l->in.op == REG && l->in.type != FLOAT && l->in.type != DOUBLE)
-			{
-			if (tlen(l) < tlen(r) && !mixtypes(l,r))
-				{
+		if (l->in.op == REG && l->in.type != FLOAT && l->in.type != DOUBLE) {
+			if (tlen(l) < tlen(r) && !mixtypes(l,r)) {
 				if (ISUNSIGNED(l->in.type))
 					printf("movz");
 				else
@@ -283,27 +281,19 @@ zzzcode( p, c ) register NODE *p; {
 			else
 				l->in.type = INT;
 			}
-		if (!mixtypes(l,r))
-			{
-			if (tlen(l) == tlen(r))
-				{
+		if (!mixtypes(l,r)) {
+			if (tlen(l) == tlen(r)) {
 				printf("mov");
 				prtype(l);
 				goto ops;
 				}
 			else if (tlen(l) > tlen(r) && ISUNSIGNED(r->in.type))
-				{
 				printf("movz");
-				}
 			else
-				{
 				printf("cvt");
-				}
 			}
 		else
-			{
 			printf("cvt");
-			}
 		prtype(r);
 		prtype(l);
 	ops:
