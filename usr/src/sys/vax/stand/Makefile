@@ -1,4 +1,4 @@
-#	Makefile	4.7	81/03/22
+#	Makefile	4.8	81/04/03
 
 DESTDIR=
 CFLAGS=	-O -DSTANDALONE ${COPTS}
@@ -8,8 +8,10 @@ SRCS=	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c ht.c mba.c rk.c tm.c ts.c up.c uba.c
 DRIVERS=autoconf.o hp.o ht.o mba.o rk.o tm.o ts.o up.o uba.o
 
-all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
+ALL=	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor \
 	tpicheck tpmkfs tprestor sboot
+
+all: ${ALL}
 
 /usr/lib/libsa.a: sys.o conf.o ${DRIVERS} prf.o machdep.o
 	ar crv ${DESTDIR}/usr/lib/libsa.a $?
@@ -96,7 +98,7 @@ lint:
 	    grep -v 'possible pointer alignment' | \
 	    grep -v 'struct/union .* never defined'
 
-install:
+install: ${ALL}
 	cp tprestor ${DESTDIR}/tp/restor
 	cp tpicheck ${DESTDIR}/tp/icheck
 	cp tpmkfs ${DESTDIR}/tp/mkfs
