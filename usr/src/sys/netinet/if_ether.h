@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.h	6.5 (Berkeley) %G%
+ *	@(#)if_ether.h	6.6 (Berkeley) %G%
  */
 
 /*
@@ -69,9 +69,9 @@ struct	arpcom {
 struct	arptab {
 	struct	in_addr at_iaddr;	/* internet address */
 	u_char	at_enaddr[6];		/* ethernet address */
-	struct	mbuf *at_hold;		/* last packet until resolved/timeout */
 	u_char	at_timer;		/* minutes since last reference */
 	u_char	at_flags;		/* flags */
+	struct	mbuf *at_hold;		/* last packet until resolved/timeout */
 };
 
 #ifdef	KERNEL
