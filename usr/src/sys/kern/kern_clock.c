@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.36	82/08/22	*/
+/*	kern_clock.c	4.37	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,15 +7,14 @@
 #include "../h/seg.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/proc.h"
 #include "../h/reg.h"
 #include "../h/psl.h"
 #include "../h/vm.h"
 #include "../h/buf.h"
 #include "../h/text.h"
-#include "../h/vlimit.h"
 #include "../h/mtpr.h"
-#include "../h/clock.h"
 #include "../h/cpu.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
@@ -82,7 +81,6 @@ hardclock(pc, ps)
 	/*
 	 * reprime clock
 	 */
-	clkreld();
 
 #if NPS > 0
 	/*
@@ -104,27 +102,34 @@ hardclock(pc, ps)
 	 */
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
-		u.u_vm.vm_idsrss += s;
+		u.u_ru.ru_idrss += s;
+		u.u_ru.ru_isrss += 0;		/* XXX */
 		if (u.u_procp->p_textp) {
 			register int xrss = u.u_procp->p_textp->x_rssize;
 
 			s += xrss;
-			u.u_vm.vm_ixrss += xrss;
+			u.u_ru.ru_ixrss += xrss;
 		}
-		if (s > u.u_vm.vm_maxrss)
-			u.u_vm.vm_maxrss = s;
-		if ((u.u_vm.vm_utime+u.u_vm.vm_stime+1)/hz > u.u_limit[LIM_CPU]) {
+		if (s > u.u_ru.ru_maxrss)
+			u.u_ru.ru_maxrss = s;
+		if ((u.u_ru.ru_utime.tv_sec+u.u_ru.ru_stime.tv_sec+1) >
+		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
 			psignal(u.u_procp, SIGXCPU);
-			if (u.u_limit[LIM_CPU] < INFINITY - 5)
-				u.u_limit[LIM_CPU] += 5;
+			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
+			    u.u_rlimit[RLIMIT_CPU].rlim_max)
+				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5;
 		}
 	}
 	/*
 	 * Update iostat information.
 	 */
 	if (USERMODE(ps)) {
-		u.u_vm.vm_utime++;
-		if(u.u_procp->p_nice > NZERO)
+		u.u_ru.ru_utime.tv_usec += 1000000/hz;
+		if (u.u_ru.ru_utime.tv_usec > 1000000) {
+			u.u_ru.ru_utime.tv_sec++;
+			u.u_ru.ru_utime.tv_usec -= 1000000;
+		}
+		if (u.u_procp->p_nice > NZERO)
 			cpstate = CP_NICE;
 		else
 			cpstate = CP_USER;
@@ -138,8 +143,13 @@ hardclock(pc, ps)
 		if (noproc) {
 			if ((ps&PSL_IPL) != 0)
 				cpstate = CP_IDLE;
-		} else
-			u.u_vm.vm_stime++;
+		} else {
+			u.u_ru.ru_stime.tv_usec += 1000000/hz;
+			if (u.u_ru.ru_stime.tv_usec > 1000000) {
+				u.u_ru.ru_stime.tv_sec++;
+				u.u_ru.ru_stime.tv_usec -= 1000000;
+			}
+		}
 	}
 	cp_time[cpstate]++;
 	for (s = 0; s < DK_NDRIVE; s++)
@@ -335,7 +345,7 @@ softclock(pc, ps)
 		 * so squish out all multiples of hz here.
 		 */
 		s = spl6();
-		time += lbolt / hz; lbolt %= hz;
+		time.tv_sec += lbolt / hz; lbolt %= hz;
 		splx(s);
 
 		/*
@@ -369,28 +379,28 @@ softclock(pc, ps)
 			if (pp->p_time != 127)
 				pp->p_time++;
 			/*
-			 * If process has clock counting down, and it
-			 * expires, set it running (if this is a tsleep()),
-			 * or give it an SIGALRM (if the user process
-			 * is using alarm signals.
+			 * Time processes out of select.
 			 */
-			if (pp->p_clktim && --pp->p_clktim == 0)
-				if (pp->p_flag & STIMO) {
-					s = spl6();
-					switch (pp->p_stat) {
+			if (timerisset(&pp->p_seltimer) &&
+			     --pp->p_seltimer.tv_sec <= 0) {
+				timerclear(&pp->p_seltimer);
+				s = spl6();
+				switch (pp->p_stat) {
 
-					case SSLEEP:
-						setrun(pp);
-						break;
+				case SSLEEP:
+					setrun(pp);
+					break;
 
-					case SSTOP:
-						unsleep(pp);
-						break;
-					}
-					pp->p_flag &= ~STIMO;
-					splx(s);
-				} else
-					psignal(pp, SIGALRM);
+				case SSTOP:
+					unsleep(pp);
+					break;
+				}
+				splx(s);
+			}
+			if (timerisset(&pp->p_realtimer.itimer_value) &&
+			    itimerdecr(&pp->p_realtimer, 1000000) == 0)
+				psignal(pp, SIGALRM);
+
 			/*
 			 * If process is blocked, increment computed
 			 * time blocked.  This is used in swap scheduling.
@@ -493,7 +503,7 @@ softclock(pc, ps)
 				     /* this is definitely not good enough */
 				&& (pp->p_pid != pp->p_pgrp || pp->p_ppid != 1)
 #endif
-				&& (u.u_vm.vm_utime + u.u_vm.vm_stime) >
+				&& (u.u_ru.ru_utime + u.u_ru.ru_stime) >
 					(pp->p_nice-NZERO+1)*NFACT
 				&& pp->p_nice >= NZERO
 				&& pp->p_nice < MAXNICE
@@ -514,7 +524,7 @@ softclock(pc, ps)
 		if (USERMODE(ps)) {
 			pp = u.u_procp;
 			if (pp->p_uid && pp->p_nice == NZERO &&
-			    u.u_vm.vm_utime > 600 * hz)
+			    u.u_ru.ru_utime.tv_sec > 600)
 				pp->p_nice = NZERO+4;
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
@@ -524,10 +534,10 @@ softclock(pc, ps)
 	/*
 	 * If trapped user-mode, give it a profiling tick.
 	 */
-	if (USERMODE(ps) && u.u_prof.pr_scale) {
-		u.u_procp->p_flag |= SOWEUPC;
-		aston();
-	}
+	if (USERMODE(ps) &&
+	    timerisset(&u.u_timer[ITIMER_VIRTUAL].itimer_value) &&
+	    itimerdecr(&u.u_timer[ITIMER_VIRTUAL].itimer_value, 1000000/hz) == 0)
+		psignal(u.u_procp, SIGPROF);
 }
 
 /*
@@ -552,12 +562,6 @@ timeout(fun, arg, tim)
 	register int t;
 	int s;
 
-/* DEBUGGING CODE */
-	int ttrstrt();
-
-	if (fun == ttrstrt && arg == 0)
-		panic("timeout ttrstr arg");
-/* END DEBUGGING CODE */
 	t = tim;
 	s = spl7();
 	pnew = callfree;
