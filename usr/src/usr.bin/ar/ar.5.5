@@ -1,34 +1,24 @@
-.\"	@(#)ar.5.5	4.1 (Berkeley) %G%
+.\"	@(#)ar.5.5	5.1 (Berkeley) %G%
 .\"
-.TH AR 5 
+.TH AR 5  "15 January 1983"
 .AT 3
 .SH NAME
 ar \- archive (library) file format
 .SH SYNOPSIS
 .B #include <ar.h>
 .SH DESCRIPTION
-.IR N.B. :
-This archive format is new to this distribution.
-See
-.IR old (8)
-and
-.IR arcv (1)
-for programs to deal with the old format.
 .PP
 The archive command
 .I ar
-is used to combine several files into
-one.
-Archives are used mainly as libraries to be searched
-by the link-editor
+combines several files into one.
+Archives are used mainly as libraries to be searched by the link-editor
 .I ld.
 .PP
 A file produced by
 .I ar
 has a magic string at the start,
 followed by the constituent files, each preceded by a file header.
-The magic number and header layout as described in the
-include file are:
+The magic number and header layout as described in the include file are:
 .RS
 .PP
 .nf
@@ -42,8 +32,7 @@ include file are:
 The name is a blank-padded string.
 The
 .I ar_fmag
-field contains ARFMAG
-to help verify the presence of a header.
+field contains ARFMAG to help verify the presence of a header.
 The other fields are left-adjusted, blank-padded numbers.
 They are decimal except for
 .IR ar_mode ,
@@ -56,12 +45,10 @@ a new-line is inserted between files if necessary.
 Nevertheless the size given reflects the
 actual size of the file exclusive of padding.
 .PP
-There is no provision for empty areas in an archive
-file.
+There is no provision for empty areas in an archive file.
 .PP
 The encoding of the header is portable across machines.
-If an archive contains printable files, the archive itself
-is printable.
+If an archive contains printable files, the archive itself is printable.
 .SH "SEE ALSO"
 ar(1), ld(1), nm(1)
 .SH BUGS
