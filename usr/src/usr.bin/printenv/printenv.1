@@ -3,16 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)printenv.1	6.3 (Berkeley) %G%
+.\"     @(#)printenv.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PRINTENV 1
 .UC
 .Sh NAME
-.Nm printenv
-.Nd print out the environment
-.Nm env
-.Nd set and print out the environment
+.Nm printenv , env
+.Nd print out the environment, set and print environment
 .Sh SYNOPSIS
 .Nm printenv
 .Op Ar name
@@ -46,7 +44,7 @@ an environmental variable,
 with a value of
 .Ar value  .
 The option
-.Fl
+.Sq Fl
 causes
 .Nm env
 to completely ignore the environment

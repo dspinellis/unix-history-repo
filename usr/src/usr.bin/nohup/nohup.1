@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)nohup.1	6.4 (Berkeley) %G%
+.\"     @(#)nohup.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NOHUP 1
@@ -35,6 +35,8 @@ as the standard output.
 exits 1 if an error occurs, otherwise the exit status is that of
 .Ar command  .
 .Sh ENVIRONMENT
+The following variable is utilized by
+.Nm nohup .
 .Tw Fl
 .Tp Ev HOME
 If the output file

@@ -3,48 +3,53 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ruptime.1	6.6 (Berkeley) %G%
+.\"     @(#)ruptime.1	6.7 (Berkeley) %G%
 .\"
-.TH RUPTIME 1 "%Q"
-.UC 5
-.SH NAME
-ruptime \- display status of local network machines
-.SH SYNOPSIS
-.ft B
-.nf
-ruptime [ -alrtu ]
-.fi
-.ft R
-.SH DESCRIPTION
-.I Ruptime
-displays a status line like
-.IR uptime (1)
-for each host on the local network, sorted by host name.
-The information is obtained from packets broadcast once per minute
-by the hosts.
-.PP
-Machines for which no status report has been received for the last 11
+.Dd 
+.Dt RUPTIME 1
+.Os BSD 4.2
+.Sh NAME
+.Nm ruptime
+.Nd show host status of local machines
+.Sh SYNOPSIS
+.Nm ruptime
+.Op Fl alrtu
+.Sh DESCRIPTION
+.Nm Ruptime
+gives a status line like
+.Ar uptime
+for each machine on the local network; these are formed from packets
+broadcast by each host on the network once a minute.
+.Pp
+Machines for which no status report has been received for 11
 minutes are shown as being down.
-.PP
-The options are as follows:
-.TP
-\-a
-Users idle for more than an hour are not counted unless the \-a
-option is specified.
-.TP
-\-l
-Sort the output by load average, greatest to least, instead of host name.
-.TP
-\-r
-Reverse the sort order.
-.TP
-\-t
-Sort the output by uptime, longest to shortest, instead of host name.
-.TP
-\-u
-Sort the output by number of users, most to least, instead of host name.
-.SH FILES
-.DT
-/var/rwho/whod.*	data files
-.SH SEE ALSO
-rwho(1), uptime(1), w(1)
+.Pp
+Options:
+.Tw Ds
+.Tp Fl a
+Users idle an hour or more are not counted unless the
+.Fl a
+flag is given.
+.Tp Fl l
+Sort by load average.
+.Tp Fl r
+Reverses the sort order.
+.Tp Fl t
+Sort by uptime.
+.Tp Fl u
+Sort by number of users.
+.Tp
+.Pp
+The default listing is sorted by host name.
+.Sh FILES
+.Dw /usr/var/rwho/whod.*
+.Di L
+.Dp Pa /usr/var/rwho/whod.*
+data files
+.Dp
+.Sh SEE ALSO
+.Xr rwho 1
+.Xr uptime 1
+.Sh HISTORY
+.Nm Ruptime
+appeared in 4.2 BSD.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rdist.1	6.8 (Berkeley) %G%
+.\"     @(#)rdist.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RDIST 1
@@ -39,12 +39,12 @@ to direct the updating of files and/or directories.
 .Pp
 Options specific to the first SYNOPSIS form:
 .Pp
-.Tw Ar
+.Tw Fl
 .Tp Fl 
 If
 .Ar distfile
 is
-.Fl ,
+.Sq Fl ,
 the standard input is used.
 .Tp Cx Fl f
 .Cx \&\ \&
@@ -57,7 +57,7 @@ Use the specified
 If either the
 .Fl f
 or
-.Fl
+.Sq Fl
 option is not specified, the program looks first for
 .Dq Pa distfile ,
 then
@@ -333,7 +333,7 @@ after a program has been updated.
 The following is a small example:
 .Pp
 .Ds I
-HOSTS = ( matisse root@arpa)
+HOSTS = ( matisse root@arpa )
 .sp
 FILES = ( /bin /lib /usr/bin /usr/games
 \t/usr/include/{*.h,{stand,sys,vax*,pascal,machine}/*.h}

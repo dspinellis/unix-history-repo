@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)colcrt.1	6.5 (Berkeley) %G%
+.\"     @(#)colcrt.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COLCRT 1
@@ -14,7 +14,7 @@
 .Sh SYNOPSIS
 .Nm colcrt
 .Op Fl
-.Op Fl 2
+.Op Fl \&2
 .Ar
 .Sh DESCRIPTION
 .Nm Colcrt
@@ -24,6 +24,7 @@ is destructive.
 Half-line characters and underlining (changed to dashing `\-')
 are placed on new lines in between the normal output lines.
 .Pp
+.Tw Ds
 .Tp Fl
 Suppress all underlining.
 It is especially useful for previewing
@@ -46,7 +47,7 @@ A typical use of
 .Nm colcrt
 would be
 .Pp
-.Dl tbl exum2.n \&| nroff \-ms \&| colcrt \- \&|  more
+.Dl tbl exum2.n \&| nroff \-ms \&| colcrt \- \&| more
 .Sh SEE ALSO
 .Xr nroff 1 ,
 .Xr troff 1 ,
@@ -57,7 +58,7 @@ would be
 Appeared in 3 BSD.
 .Sh BUGS
 Should fold underlines onto blanks even with the
-.Fl
+.Sq Fl
 option so that
 a true underline character would show; if we did this, however,
 .Nm colcrt

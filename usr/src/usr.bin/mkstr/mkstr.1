@@ -3,89 +3,104 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkstr.1	6.3 (Berkeley) %G%
+.\"     @(#)mkstr.1	6.4 (Berkeley) %G%
 .\"
-.TH MKSTR 1 "%Q"
-.UC
-.SH NAME
-mkstr \- create an error message file by massaging C source
-.SH SYNOPSIS
-.B mkstr
-[
-.B \-
-]
-messagefile prefix file ...
-.SH DESCRIPTION
-.I Mkstr
-is used to create files of error messages.
-Its use can make programs with large numbers of error diagnostics much
-smaller, and reduce system overhead in running the program as the
-error messages do not have to be constantly swapped in and out.
-.PP
-.I Mkstr
-will process each of the specified
-.I files,
-placing a massaged version of the input file in a file whose name
+.Dd 
+.Dt MKSTR 1
+.Sh NAME
+.Nm mkstr
+.Nd create an error message file by massaging C source
+.Sh SYNOPSIS
+.Nm mkstr
+.Op Fl
+.Ar messagefile
+.Ar prefix file ...
+.Sh DESCRIPTION
+.Nm Mkstr
+creates files containing error messages extracted from C source,
+and restructures the same C source, to utilize the created error message
+file.
+The intent of
+.Nm mkstr
+was to reduce the size of large programs and
+reduce swapping (see BUGS section below).
+.Pp
+.Nm Mkstr
+processes each of the specified
+.Ar files ,
+placing a restructured version of the input in a file whose name
 consists of the specified
-.I prefix 
+.Ar prefix
 and the original name.
 A typical usage of
-.I mkstr
-would be
-.DT
-.PP
-	mkstr pistrings xx *.c
-.PP
-This command would cause all the error messages from the C source
+.Nm mkstr
+is
+.Pp
+.Dl mkstr pistrings xx *.c
+.Pp
+This command causes all the error messages from the C source
 files in the current directory to be placed in the file
-.I pistrings
-and processed copies of the source for these files to be placed in
+.Ar pistrings
+and restructured copies of the sources to be placed in
 files whose names are prefixed with
-.I xx.
-.PP
-To process the error messages in the source to the message file
-.I mkstr
-keys on the string
-\%`error("'
+.Ar xx .
+.Pp
+Options:
+.Tw Ds
+.Tp Fl
+Error messages are placed at the end of the specified
+message file for recompiling part of a large
+.Nm mkstr
+ed
+program.
+.Tp
+.Pp
+.Nm mkstr
+finds error messages in the source by
+searching for the string
+.Li \&`error("'
 in the input stream.
-Each time it occurs, the C string starting at the `"' is placed
+Each time it occurs, the C string starting at the
+.Sq \&"\&
+is stored
 in the message file followed by a null character and a new-line character;
-the null character terminates the message so it can be easily used
-when retrieved, the new-line character makes it possible to sensibly
-.I cat
-the error message file to see its contents.
-The massaged copy of the input file then contains a
-.I lseek
-pointer into the file which can be used to retrieve the message, i.e.:
-.IP
-.DT
-.nf
-\fBchar\fR	efilname[] =  "/usr/lib/pi_strings";
-\fBint\fR	efil = -1;
-.sp
-error(a1, a2, a3, a4)
-{
-	\fBchar\fR buf[256];
+The new source is restructured with
+.Xr lseek 2
+pointers into the error message file for retrieval.
+.Ds I
+char efilname = "/usr/lib/pi_strings";
+int efil = -1;
 
-	\fBif\fR (efil < 0) {
+error(a1, a2, a3, a4)
+\&{
+	char buf[256];
+
+	if (efil < 0) {
 		efil = open(efilname, 0);
-		\fBif\fR (efil < 0) {
+		if (efil < 0) {
 oops:
 			perror(efilname);
-			exit(1);
+			exit 1 ;
 		}
 	}
-	\fBif\fR (lseek(efil, (long) a1, 0) |\|| read(efil, buf, 256) <= 0)
-		\fBgoto\fR oops;
+	if (lseek(efil, (long) a1, 0) \ read(efil, buf, 256) <= 0)
+		goto oops;
 	printf(buf, a2, a3, a4);
 }
-.fi
-.PP
-The optional
-.B \-
-causes the error messages to be placed at the end of the specified
-message file for recompiling part of a large
-.IR mkstr \|ed
-program.
-.SH SEE\ ALSO
-lseek(2), xstr(1)
+.De
+.Sh SEE ALSO
+.Xr lseek 2 ,
+.Xr xstr 1
+.Sh HISTORY
+.Nm Mkstr
+appeared in 3 BSD.
+.Sh BUGS
+.Nm mkstr
+was intended for the limited architecture of the PDP 11 family.
+Very few programs in 4.4 BSD actually use it. The pascal interpreter,
+.Xr pi 1
+and the editor,
+.Xr ex 1
+are two programs that are built this way.
+It is not an efficient method, the error messages
+should be stored in the program text.

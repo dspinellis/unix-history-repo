@@ -3,124 +3,145 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rsh.1	6.7 (Berkeley) %G%
+.\"     @(#)rsh.1	6.8 (Berkeley) %G%
 .\"
-.TH RSH 1 "%Q"
-.UC 5
-.SH NAME
-rsh \- remote shell
-.SH SYNOPSIS
-.ft B
-rsh [ \-Kdnx ] [ \-k realm ] [ \-l username ] host [ command ]
-.ft R
-.SH DESCRIPTION
-.I Rsh
+.Dd 
+.Dt RSH 1
+.Os BSD 4.2
+.Sh NAME
+.Nm rsh
+.Nd remote shell
+.Sh SYNOPSIS
+.Ar rsh
+.Op Fl Kdnx
+.Op Fl k Ar realm
+.Op Fl l Ar username
+.Ar host
+.Op command
+.Sh DESCRIPTION
+.Nm Rsh
 executes
-.I command
+.Ar command
 on
-.IR host .
-.PP
-.I Rsh
+.Ar host  .
+.Pp
+.Nm Rsh
 copies its standard input to the remote command, the standard
 output of the remote command to its standard output, and the
 standard error of the remote command to its standard error.
 Interrupt, quit and terminate signals are propagated to the remote
 command;
-.I rsh
+.Nm rsh
 normally terminates when the remote command does.
 The options are as follows:
-.TP
-\-K
-The \-K option turns off all Kerberos authentication.
-.TP
-\-d
-The \-d option turns on socket debugging (using
-.IR setsockopt (2))
+.Tp Fl K
+The
+.Fl K
+option turns off all Kerberos authentication.
+.Tp Fl d
+The
+.Fl d
+option turns on socket debugging (using
+.Xr setsockopt  2  )
 on the TCP sockets used for communication with the remote host.
-.TP
-\-k
-The \-k option causes
-.I rsh
+.Tp Fl k
+The
+.Fl k
+option causes
+.Nm rsh
 to obtain tickets for the remote host in
-.I realm
+.Ar realm
 instead of the remote host's realm as determined by
-.IR krb_realmofhost (3).
-.TP
-\-l
+.Xr krb_realmofhost  3  .
+.Tp Fl l
 By default, the remote username is the same as the local username.
-The \-l option allows the remote name to be specified.
+The
+.Fl l
+option allows the remote name to be specified.
 Kerberos authentication is used, and authorization is determined
 as in
-.IR rlogin (1).
-.TP
-\-n
-The \-n option redirects input from the special device ``/dev/null''
+.Xr rlogin  1  .
+.Tp Fl n
+The
+.Fl n
+option redirects input from the special device
+.Pa /dev/null
 (see the BUGS section of this manual page).
-.TP
-\-x
-The \-x option turns on DES encryption for all data exchange.
+.Tp Fl x
+The
+.Fl x
+option turns on DES encryption for all data exchange.
 This may introduce a significant delay in response time.
-.PP
+.Tp
+.Pp
 If no
-.I command
+.Ar command
 is specified, you will be logged in on the remote host using
-.IR rlogin (1).
-.PP
+.Xr rlogin  1  .
+.Pp
 Shell metacharacters which are not quoted are interpreted on local machine,
 while quoted metacharacters are interpreted on the remote machine.
 For example, the command
-.sp
-.RS
-rsh otherhost cat remotefile >> localfile
-.RE
-.sp
+.Pp
+.Dl rsh otherhost cat remotefile >> localfile
+.Pp
 appends the remote file
-.I remotefile
+.Ar remotefile
 to the local file
-.I localfile,
+.Ar localfile ,
 while
-.sp
-.RS
-rsh otherhost cat remotefile ">>" other_remotefile
-.RE
-.sp
+.Pp
+.Dl rsh otherhost cat remotefile \&">>\&" other_remotefile
+.Pp
 appends
-.I remotefile
+.Ar remotefile
 to
-.I other_remotefile.
-.PP
-Many sites specify a large number of host names as commands in the
-directory /usr/hosts.
-If this directory is included in your search path, you can use the
-shorthand ``host command'' for the longer form ``rsh host command''.
-.SH FILES
-/usr/hosts/*
-.DT
-.SH SEE ALSO
-rlogin(1), kerberos(3), krb_sendauth(3), krb_realmofhost(3)
-.SH BUGS
+.Ar other_remotefile .
+.\" .Pp
+.\" Many sites specify a large number of host names as commands in the
+.\" directory /usr/hosts.
+.\" If this directory is included in your search path, you can use the
+.\" shorthand ``host command'' for the longer form ``rsh host command''.
+.Sh FILES
+.Dw /etc/hosts
+.Di L
+.Dp Pa /etc/hosts
+.Dp
+.Sh SEE ALSO
+.Xr rlogin 1 ,
+.Xr kerberos 3 ,
+.Xr krb_sendauth 3 ,
+.Xr krb_realmofhost 3
+.Sh HISTORY
+.Nm Rsh
+appeared in 4.2 BSD
+.Sh BUGS
 If you are using
-.IR csh (1)
+.Xr csh  1
 and put a
-.IR rsh (1)
+.Nm rsh
 in the background without redirecting its input away from the terminal,
 it will block even if no reads are posted by the remote command.
 If no input is desired you should redirect the input of
-.I rsh
-to /dev/null using the \-n option.
-.PP
+.Nm rsh
+to
+.Pa /dev/null
+using the
+.Fl n
+option.
+.Pp
 You cannot run an interactive command
 (like
-.IR rogue (6)
+.Xr rogue  6
 or
-.IR vi (1))
+.Xr vi  1  )
 using
-.IR rsh ;
+.Nm rsh  ;
 use
-.IR rlogin (1)
+.Xr rlogin  1
 instead.
-.PP
+.Pp
 Stop signals stop the local
-.I rsh
+.Nm rsh
 process only; this is arguably wrong, but currently hard to fix for reasons
 too complicated to explain here.

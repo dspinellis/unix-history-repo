@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)expand.1	6.4 (Berkeley) %G%
+.\"     @(#)expand.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXPAND 1
@@ -14,8 +14,10 @@
 .Nd expand tabs to spaces, and vice versa
 .Sh SYNOPSIS
 .Nm expand
-.Op \-tabstop
-.Op \-tab1,tab2,...,tabn
+.Oo
+.Op Fl Ar tabstop
+.Op Fl Ar tab1,tab2,...,tabn
+.Oo
 .Ar
 .Nm unexpand
 .Op Fl a
@@ -46,6 +48,7 @@ files and writes the result on the standard output.
 Option (with
 .Nm unexpand
 only):
+.Tw Ds
 .Tp Fl a
 By default, only leading blanks and tabs
 are reconverted to maximal strings of tabs.  If the

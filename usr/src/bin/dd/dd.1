@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dd.1	6.2 (Berkeley) %G%
+.\"     @(#)dd.1	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DD 1
@@ -15,7 +15,9 @@
 .Nm dd
 .Op options \&...
 .Sh DESCRIPTION
-The dd utility copies the specified input file to the specified
+The
+.Nm
+utility copies the specified input file to the specified
 output with possible conversions.
 .Pp
 The following options are available:
@@ -33,7 +35,7 @@ default.
 .Tc Ic ibs=
 .Ar n
 .Cx
-Input block size.
+Input block size
 .Va n
 bytes (default is
 512 bytes).
@@ -148,7 +150,9 @@ If the option
 is not specified, the standard input is used.
 .Pp
 The input files can be any file type and
-on completion, dd writes the number of input and output
+on completion,
+.Nm
+writes the number of input and output
 blocks, full and partial counts, to the standard error.
 .Pp
 A partial block may be caused by a read or write operation
@@ -161,27 +165,25 @@ them.
 .Pp
 For
 .Li SIGINT ,
-the dd utility writes status information to
+the
+.Nm
+utility writes status information to
 standard error before exiting.
 It takes the default action
 for all other signals.
 .Pp
 The
-.Nm dd
+.Nm
 utility exits 0 on success, and >0 if an error occurs.
 .Pp
-If an error is detected, and the noerror opption has not
-been supplied, the cause is reported and the dd utility
+If an error is detected, and the noerror option has not
+been supplied, the cause is reported and the
+.Nm
+utility
 aborts the copy of the file.
-.\" .Pp
-.\" The following environment variables affect the execution of
-.\" dd:
-.\" .Tp
-.\" LC_TYPE
-.\" The locale for character classification.
 .Sh SEE ALSO
 .Xr tr 1
 .Sh STANDARDS
 The
-.Nm dd
+.Nm
 function is expected to be POSIX 1003.2 compatible.

@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)quota.1	6.5 (Berkeley) %G%
+.\"     @(#)quota.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt QUOTA 1
@@ -32,19 +32,32 @@
 .Nm Quota
 displays users' disk usage and limits.
 By default only the user quotas are printed.
+.Pp
+Options:
+.Pp
+.Tw Ds
+.Tp Fl g
+Print group quotas for the group 
+of which the user is a member.
 The optional
-.Fl g
-flag specifies that group quotas
-for the groups of which the user is a member should be printed.
+.Fl u
+flag is equivalent to the default.
+.Tp Fl v
+.Nm quota
+will display quotas on filesystems
+where no storage is allocated.
+.Tp Fl q
+Print a more terse message,
+containing only information
+on filesystems where usage is over quota.
+.Tp
+.Pp
 Specifying both
 .Fl g
 and
 .Fl u
-specifies that both the user quotas and the group quotas for
-the groups of which the user is a member should be printed.
-The optional
-.Fl u
-flag is equivalent to the default.
+displays both the user quotas and the group quotas (for
+the user).
 .Pp
 Only the super-user may use the
 .Fl u
@@ -57,18 +70,6 @@ flag and optional
 .Ar group
 argument to view only the limits of groups of which they are members.
 .Pp
-If a
-.Fl v
-flag is supplied,
-.Nm quota
-will also display quotas on filesystems
-where no storage is allocated.
-.Pp
-The
-.Fl q
-flag prints a more terse message,
-containing only information
-on filesystems where usage is over quota.
 The
 .Fl q
 flag takes precedence over the
@@ -77,7 +78,7 @@ flag.
 .Pp
 .Nm Quota
 reports the quotas of all the filesystems listed in
-.Nm /etc/fstab .
+.Pa /etc/fstab .
 If
 .Nm quota
 exits with a non-zero status, one or more filesystems
@@ -85,10 +86,10 @@ are over quota.
 .Sh FILES
 .Dw quota.group
 .Di L
-.Nm quota.user
-at the filesystem root with user quotas
-.Nm quota.group
-at the filesystem root with group quotas
+.Dp Pa quota.user
+located at the filesystem root with user quotas
+.Dp Pa quota.group
+located at the filesystem root with group quotas
 .Dp Pa /etc/fstab
 to find filesystem names and locations
 .Dp

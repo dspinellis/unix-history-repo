@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)column.1	5.5 (Berkeley) %G%
+.\"     @(#)column.1	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Os BSD 4.4
@@ -31,6 +31,7 @@ operands, or, by default, from the standard input.
 Empty lines are ignored.
 .Pp
 The options are as follows:
+.Tw Ds
 .Tp Fl c
 Output is formatted for a display
 .Ar columns
@@ -53,16 +54,19 @@ Fill columns before filling rows.
 .Nm Column
 exits 0 on success, >0 if an error occurred.
 .Sh ENVIRONMENT
-.Tp Ar COLUMNS
-The environmental variable COLUMNS is used to determine the size of
+.Tw Fl
+.Tp Ev COLUMNS
+The environment variable
+.Ev COLUMNS
+is used to determine the size of
 the screen if no other information is available.
 .Sh EXAMPLES
-.Dl (printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en";
-.Dl ls -l  sed 1d)  column -t
+.Dl (printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en" \&;
+.Dl ls -l  sed 1d) \&| column -t
 .Sh SEE ALSO
 .Xr colrm 1 ,
 .Xr ls 1 ,
 .Xr paste 1 ,
 .Xr sort 1
 .Sh HISTORY
-4.4 BSD.
+4.3 Reno BSD.

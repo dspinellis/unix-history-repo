@@ -3,23 +3,20 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lastcomm.1	6.5 (Berkeley) %G%
+.\"     @(#)lastcomm.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LASTCOMM 1
-.UC
+.Os BSD 3.0
 .Sh NAME
 .Nm lastcomm
 .Nd show last commands executed in reverse order
 .Sh SYNOPSIS
 .Nm lastcomm
 .Op Fl f Ar file
-.Op Ar command name
-\&...
-.Op Ar user name
-\&...
-.Op Ar terminal name
-\&...
+.Op Ar command \&...
+.Op Ar user \&...
+.Op Ar terminal \&...
 .Sh DESCRIPTION
 .Nm Lastcomm
 gives information on previously executed commands.
@@ -27,23 +24,32 @@ With no arguments,
 .Nm lastcomm
 prints information about all the commands recorded
 during the current accounting file's lifetime.
-.Tw Ds
-.Tp Fl f
-option
-causes
-.Nm lastcomm
-to read from a file other than the default
+.Pp
+Option:
+.Pp
+.Tw Fl
+.Tp Cx Fl f
+.Ws
+.Ar file
+.Cx
+Read from
+.Ar file
+rather than the default
 accounting file.
 .Tp
 .Pp
 If called with arguments, only accounting entries with a
 matching
-.Ar command name ,
-.Ar user name ,
+.Ar command
+name,
+.Ar user
+name,
 or
-.Ar terminal name
+.Ar terminal
+name
 are printed.
 So, for example:
+.Pp
 .Dl lastcomm a.out root ttyd0
 .Pp
 would produce a listing of all the
@@ -55,6 +61,7 @@ on the terminal
 .Ar ttyd0  .
 .Pp
 For each process entry, the following are printed.
+.Pp
 .Ds I
 The name of the user who ran the process.
 Flags, as accumulated by the accounting facilities in the system.

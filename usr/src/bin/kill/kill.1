@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)kill.1	6.3 (Berkeley) %G%
+.\"     @(#)kill.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt KILL 1
@@ -27,6 +27,9 @@ with
 .Sq Li \&& .
 .Nm Kill
 is intelligent about who owns a process.
+.Pp
+Options available:
+.Pp
 .Tw Ds
 .Tp Fl signal_name
 A symbolic signal name. To find out all the possible signal names
@@ -40,7 +43,7 @@ stripped of the common SIG prefix.
 A (nonnegative) decimal integer, representing the signal
 to be used instead of TERM as the sig argument in
 the effective call to
-.Nm kill 1 .
+.Xr kill 2 .
 .Tp
 .Pp
 Some of the more commonly used signals with kill:

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)cc.1	6.5 (Berkeley) %G%
+.\"     @(#)cc.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CC 1
@@ -38,7 +38,7 @@ The following options are interpreted by
 See
 .Xr ld 1
 for load-time options.
-.Tw Fl
+.Tw Ds
 .Tp Fl c
 Suppress the loading phase of the compilation, and force
 an object file to be produced even if only one program is compiled.
@@ -110,10 +110,13 @@ prevent the macro preprocessor from eliding comments.
 Name the final output file
 .Ar output .
 If this option is used the file `a.out' will be left undisturbed.
-.Tp Cx Fl D
+.Tp
+.Dw Ds
+.Di L
+.Dp Cx Fl D
 .Ar name=def
 .Cx
-.Tp Cx Fl D
+.Dp Cx Fl D
 .Ar name
 .Cx
 Define the
@@ -121,6 +124,8 @@ Define the
 to the preprocessor,
 as if by `#define'.
 If no definition is given, the name is defined as "1".
+.Dp
+.Tw Ds
 .Tp Cx Fl U
 .Ar name
 .Cx
@@ -129,7 +134,7 @@ Remove any initial definition of
 .Tp Cx Fl I
 .Ar dir
 .Cx
-`#include files'
+`#include' files
 whose names do not begin with `/'
 are always
 sought first in the directory
@@ -168,6 +173,7 @@ Find only the designated compiler passes in the
 files whose names are constructed by a
 .Fl B
 option.
+.Tp
 .Pp
 Other arguments
 are taken
@@ -182,7 +188,7 @@ given) to produce an executable program with name
 .Pa a.out .
 .Sh FILES
 .Dw /usr/libexec/sccom
-.Ds L
+.Di L
 .Dp Pa file.c
 input file
 .Dp Pa file.o
@@ -207,10 +213,10 @@ startoff for profiling
 startoff for gprof-profiling
 .Dp Pa /usr/lib/libc.a
 standard library, see
-.Ar intro 3
+.Xr intro 3
 .Dp Pa /usr/lib/libc_p.a
 profiling library, see
-.Ar intro 3
+.Xr intro 3
 .Dp Pa /usr/include
 standard directory for `#include' files
 .Dp Pa mon.out
@@ -223,11 +229,11 @@ file produced for analysis by
 .Sh SEE ALSO
 B. W. Kernighan and D. M. Ritchie,
 .Em The Programming Language ,
-Prentice-.Xr Hall,
+Prentice-Hall,
 1978
 .Pp
 B. W. Kernighan,
-.Em Programming in C\-em a tutorial
+.Em Programming in C \- a tutorial
 .Pp
 D. M. Ritchie,
 .Em C Reference Manual
@@ -248,7 +254,6 @@ or loader.
 The
 .Nm
 compiler was distributed with Version 6 AT&T UNIX.
-The current version was derived from the original.
 .Sh BUGS
 The compiler currently ignores advice to put
 .Ic char ,

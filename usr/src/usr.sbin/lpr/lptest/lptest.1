@@ -3,22 +3,20 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lptest.1	6.4 (Berkeley) %G%
+.\"     @(#)lptest.1	6.5 (Berkeley) %G%
 .\"
-.TH LPTEST 1 "%Q"
-.UC 6
-.SH NAME
-lptest \- generate lineprinter ripple pattern
-.SH SYNOPSIS
-.B lptest
-[
-.B length
-[
-.B count
-] ]
-.br
-.SH DESCRIPTION
-.I Lptest
+.Dd 
+.Dt LPTEST 1
+.Os BSD 4.3
+.Sh NAME
+.Nm lptest
+.Nd generate lineprinter ripple pattern
+.Sh SYNOPSIS
+.Nm lptest
+.Op Ar length
+.Op Ar count
+.Sh DESCRIPTION
+.Nm Lptest
 writes the traditional "ripple test" pattern on standard output.
 In 96 lines,
 this pattern will print all 96 printable ASCII characters
@@ -27,20 +25,21 @@ While originally created to test printers, it is quite
 useful for testing terminals,
 driving terminal ports for debugging purposes,
 or any other task where a quick supply of random data is needed.
-.PP
-The 
-.I length
-argument specifies the output line length if the the default 
-length of 79 is inappropriate.
-.PP
+.Pp
 The
-.I count
+.Ar length
+argument specifies the output line length if the the default
+length of 79 is inappropriate.
+.Pp
+The
+.Ar count
 argument specifies the number of output lines to be generated if
 the default count of 200 is inappropriate.
-Note that if 
-.I count
+Note that if
+.Ar count
 is to be specified,
-.I length
+.Ar length
 must be also be specified.
-.SH "SEE ALSO"
-.SH BUGS
+.Sh HISTORY
+.Nm Lptest
+appeared in 4.3 BSD.

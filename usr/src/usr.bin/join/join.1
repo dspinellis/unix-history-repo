@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)join.1	6.2 (Berkeley) %G%
+.\"     @(#)join.1	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt JOIN 1
@@ -80,22 +80,32 @@ The following options are available:
 .Ar file_number
 .Cx
 In addition to the default output, produce a line
-for each unpairable line in file file_number, where
-file_number is 1 or 2.
+for each unpairable line in file
+.Ar file_number ,
+where
+.Ar file_number
+is 1 or 2.
 .Tc Fl e
 .Ws
 .Ar string
 .Cx
-Replace empty output fields by string string.
+Replace empty output fields by the string
+.Ar string .
 .Tc Fl j
 .Ws
 .Ar file_number field
 .Cx
-Join on the fieldth field of file
-file_number.
-If file_number is missing, (i.e., the
+Join on the
+.Sf Ar field 'th
+field of file
+.Ar file_number .
+If
+.Ar file_number
+is missing, (i.e., the
 first digit of the option argument is neither 1 nor
-2), use the fieldth field in each file.
+2), use the
+.Sf Ar field 'th
+field in each file.
 Fields are
 decimal integers starting with 1.
 .Tc Fl o
@@ -103,8 +113,12 @@ decimal integers starting with 1.
 .Ar list
 .Cx
 Each output line comprises the fields specified in
-list, each element of which has the form
-file_number.field, where file_number is a file
+.Ar list ,
+each element of which has the form
+.Ql file_number.field ,
+where
+.Ar file_number
+is a file
 number and field is a decimal integer field number.
 The elements of list are either comma or <space> separated.
 The list is written only for lines with matching join fields,
@@ -113,50 +127,73 @@ and is not output unless specifically requested.
 .Ws
 .Ar char
 .Cx
-Use character char as a separator, for both input
+Use character
+.Ar char
+as a separator, for both input
 and output.
 Every appearance of char in a line is
 significant.
 When this option is specified, the
 collating sequence should be the same as sort
-without the -b option.
+without the
+.Fl b
+option.
 .Tc Fl v
 .Ws
 .Ar file_number
 .Cx
 Instead of the default output, produce a line only
-for each unpairable line in file_number, where
-file_number is 1 or 2.
+for each unpairable line in
+.Ar file_number ,
+where
+.Ar file_number
+is 1 or 2.
 .Tc Fl 1
 .Ws
 .Ar field
 .Cx
-Join on the fieldth field of file 1.
+Join on the
+.Sf Ar field 'th
+field of file 1.
 Fields are
 decimal integers starting with 1.
 .Tc Fl 2
 .Ws
 .Ar field
 .Cx
-Join on the fieldth field of file 2.
+Join on the
+.Sf Ar field 'th
+field of file 2.
 Fields are
 decimal integers starting with 1.
 .Tp
 .Pp
-If both -a 1 and -a 2 are specified, both sets of information
-are output, -a 2 always first, regardless of the specified
+If both
+.Ql \-a 1
+and
+.Ql \-a 2
+are specified, both sets of information
+are output,
+.Ql \-a 2
+always first, regardless of the specified
 order.
 .Pp
 The following arguments are required:
-.Tw Fl
-.Tp Ar file1
-.Tp Ar file2
+.Dw Fl
+.Di L
+.Dp Ar file1
+.Dp Ar file2
 A pathname of a file to be joined.
 If either of
-the file1 or file2 arguments is
-.Fl
+the
+.Ar file1
+or
+.Ar file2
+arguments is
+.Sq Fl
 the standard
 input is used in its place.
+.Dp
 .Pp
 The
 .Nm join

@@ -2,7 +2,7 @@
 .\" All rights reserved.
 .\"
 .\"
-.\"     @(#)addbib.1	6.2 (Berkeley) %G%
+.\"     @(#)addbib.1	6.3 (Berkeley) %G%
 .\"
 .Dd 
 .Os BSD 4.2
@@ -17,14 +17,14 @@
 .Ar database
 .Sh DESCRIPTION
 When this program starts up, answering
-.Li y
+.Ql y
 to the initial
-.Li Instructions?
+.Ql Instructions?
 prompt yields directions;
 typing
-.Li n
+.Ql n
 or
-.Li RETURN
+.Ql RETURN
 skips them.
 .Nm Addbib
 then prompts for various bibliographic fields,
@@ -32,23 +32,23 @@ reads responses from the terminal,
 and sends output records to a
 .Ar database .
 A null response (just
-.Li RETURN )
+.Ql RETURN )
 means to leave out that field.
 A minus sign
-.Li (\-)
+.Ql \-
 means to go back to the previous field.
 A trailing backslash allows a field to be continued on the next line.
 The repeating
-.Li Continue?
+.Ql Continue?
 prompt allows the user
 either to resume by typing
-.Li y
+.Ql y
 or
-.Li RETURN ,
+.Ql RETURN ,
 to quit the current session by typing
-.Li n
+.Ql n
 or
-.Li q ,
+.Ql q ,
 or to edit the
 .Ar database
 with any system editor (.e.g.
@@ -62,7 +62,7 @@ The
 option suppresses prompting for an abstract;
 asking for an abstract is the default.
 Abstracts are ended with a
-.Li CTRL-d .
+.Ql CTRL-d .
 The
 .Fl p
 option causes
@@ -155,6 +155,7 @@ Berkeley
 .Dp
 .Sh FILES
 .Dw promptfile
+.Di L
 .Dp Pa promptfile
 optional file to define prompting
 .Sh SEE ALSO

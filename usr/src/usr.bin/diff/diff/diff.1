@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)diff.1	6.5 (Berkeley) %G%
+.\"     @(#)diff.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIFF 1
@@ -13,13 +13,6 @@
 .Nd differential file and directory comparator
 .Sh SYNOPSIS
 .Nm diff
-.Op Fl l
-.Op Fl r
-.Op Fl s
-.Op Fl cefhn
-.Op Fl biwt
-.Ar dir1 dir2
-.Nm diff
 .Op Fl cefhn
 .Op Fl biwt
 .Ar file1 file2
@@ -27,6 +20,13 @@
 .Op Fl D Ar string
 .Op Fl biw
 .Ar file1 file2
+.Nm diff
+.Op Fl l
+.Op Fl r
+.Op Fl s
+.Op Fl cefhn
+.Op Fl biwt
+.Ar dir1 dir2
 .Sh DESCRIPTION
 The
 .Nm diff
@@ -34,75 +34,11 @@ utility compares the contents of
 .Ar file1
 and
 .Ar file2
-and writes to the standard output a minimal list of changes necessary to
-convert one of the files into the other.
+and writes to the standard output the list of changes necessary to
+convert one file into the other.
 No output is produced if the files are identical.
 .Pp
-If both arguments are directories,
-.Nm diff
-sorts the contents of the directories by name, and then runs the
-regular file
-.Nm diff
-algorithm, producing a change list,
-on text files which are different.
-Binary files which differ,
-common subdirectories, and files which appear in only one directory
-are described as such.
-.Pp
-If only one of
-.Ar file1
-and
-.Ar file2
-is a directory,
-.Nm diff
-is applied to the non-directory file and the file contained in
-the directory file with a filename that is the same as the
-last component of the non-directory file.
-.Pp
-If either the
-.Ar file1
-or
-.Ar file2
-is
-.Fl ,
-the standard input is
-used in its place.
-.Pp
-Options when comparing directories are:
-.Tw Fl
-.Tp Fl l
-long output format; each text file
-.Sf Nm diff \'d
-is piped through
-.Xr pr  1
-to paginate it,
-other differences are remembered and summarized
-after all text file differences are reported.
-.Tp Fl r
-causes application of
-.Nm diff
-recursively to common subdirectories encountered.
-.Tp Fl s
-causes
-.Nm diff
-to report files which are the same, which are otherwise not mentioned.
-.Tc Fl S
-.Ar name
-.Cx
-starts a directory
-.Nm diff
-in the middle beginning with file
-.Ar name .
-.Tp
-.Pp
-Output options. Except for
-.Fl b ,
-.Fl w ,
-.Fl i
-or
-.Fl t
-which may be given with any of the others,
-the following options are mutually exclusive:
+Output options (mutually exclusive):
 .Tw Fl
 .Tp Fl c
 produces a diff with lines of context.
@@ -157,9 +93,7 @@ insert or delete command.  This is the form used by
 .Tc Fl D
 .Ar string
 .Cx
-causes
-.Nm diff
-to create a merged version of
+creates a merged version of
 .Ar file1
 and
 .Ar file2
@@ -173,6 +107,9 @@ while defining
 .Ar string
 will yield
 .Ar file2 .
+.Tp
+.Pp
+Comparison options:
 .Tp Fl b
 causes trailing blanks (spaces and tabs) to be ignored, and other
 strings of blanks to compare equal.
@@ -191,15 +128,71 @@ is similar to
 but causes whitespace (blanks and tabs) to be totally ignored.  E.g.,
 ``if\ (\ a\ ==\ b\ )'' will compare equal to ``if(a==b)''.
 .Tp
+.Pp
+Directory comparison options:
+.Tw Fl
+.Tp Fl l
+long output format; each text file
+.Sf Nm diff \'d
+is piped through
+.Xr pr  1
+to paginate it,
+other differences are remembered and summarized
+after all text file differences are reported.
+.Tp Fl r
+causes application of
+.Nm diff
+recursively to common subdirectories encountered.
+.Tp Fl s
+causes
+.Nm diff
+to report files which are the same, which are otherwise not mentioned.
+.Tc Fl S
+.Ar name
+.Cx
+re-starts a directory
+.Nm diff
+in the middle beginning with file
+.Ar name .
+.Tp
+.Pp
+If both arguments are directories,
+.Nm diff
+sorts the contents of the directories by name, and then runs the
+regular file
+.Nm diff
+algorithm, producing a change list,
+on text files which are different.
+Binary files which differ,
+common subdirectories, and files which appear in only one directory
+are described as such.
+.Pp
+If only one of
+.Ar file1
+and
+.Ar file2
+is a directory,
+.Nm diff
+is applied to the non-directory file and the file contained in
+the directory file with a filename that is the same as the
+last component of the non-directory file.
+.Pp
+If either the
+.Ar file1
+or
+.Ar file2
+is
+.Fl ,
+the standard input is
+used in its place.
 .Ss Output Style
 The default (without
 .Fl e ,
 .Fl c ,
-.Fl n ,
 or
-.Fl t
+.Fl n
 .\"  -C
-options) diff utility
+options)
 output contains lines of these forms, where
 .Va XX , YY , ZZ , QQ
 are line numbers respective of file order.
@@ -373,10 +366,10 @@ The
 and
 .Fl e
 options
-have difficulties producing lines with the
-first and only character
-.Dq Li \&. ,
-as this is a command character for
+do not provide special handling for lines on which the
+first and only character is
+.Dq Li \&. .
+This can cause problems for
 .Xr ed 1 .
 .Pp
 When comparing directories with the
@@ -393,5 +386,5 @@ and then decides to run the
 algorithm if they are not equal.
 This may cause a small amount of spurious output if the files
 then turn out to be identical because the only differences are
-insignificant blank string or case differences.
+insignificant white space or case differences.
 .\" .Sh STANDARDS

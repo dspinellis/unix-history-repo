@@ -2,16 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\" This code is derived from software contributed to Berkeley by
+.\" The code is derived from software contributed to Berkeley by
 .\" Ozan Yigit.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)m4.1	6.5 (Berkeley) %G%
+.\"     @(#)m4.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt M4 1
-.DA 08 Jan 1986
 .Sh NAME
 .Nm m4
 .Nd macro language preprocessor for Ratfor and Pascal
@@ -28,6 +27,7 @@ M4 reads standard input, and writes the results to the standard output.
 .Pp
 The options and their effects are as follows:
 .Pp
+.Tw _Dname[=Val]
 .Tp Cx Fl D
 .Ar name
 .Op Ar \&=Val
@@ -53,9 +53,8 @@ processor provides a kind of
 like syntax and
 some of the macro functions will
 be familiar:
-.Tw Ds
+.Tw \&undiver
 .Tp Ic define
-usage:
 .Ar define(name [, val])
 .br
 the second argument is installed as the value of the macro
@@ -77,13 +76,11 @@ argument.
 Argument 0 is the name of the macro;
 missing arguments are replaced by the null string.
 .Tp Ic defn
-usage:
 .Ar defn(name [, name ...])
 .br
 returns the quoted definition of its argument(s). Useful in renaming
 macros.
 .Tp Ic undefine
-usage:
 .Ar undefine(name [, name ...])
 .br
 removes the definition of the macro(s) named. If there is
@@ -91,27 +88,23 @@ more than one definition for the named macro, (due to previous use of
 .Ic pushdef )
 all definitions are removed.
 .Tp Ic  pushdef
-usage:
 .Ar pushdef(name [, val])
 .br
 like
 .Ic define  ,
 but saves any previous definition by stacking the current definition.
 .Tp Ic popdef
-usage:
 .Ar popdef(name [, name ...])
 .br
 removes current definition of its argument(s),
 exposing the previous one if any.
 .Tp Ic ifdef
-usage:
 .Ar ifdef(name, if-def [, ifnot-def])
 .br
 if the first argument is defined, the value is the second argument,
 otherwise the third.
 If there is no third argument, the value is null.
 .Tp Ic shift
-usage:
 .Ar shift(arg, arg, arg, ...)
 .br
 returns all but its first argument.
@@ -120,14 +113,12 @@ commas in between.
 The quoting nullifies the effect of the extra scan that
 will subsequently be performed.
 .Tp Ic changequote
-usage:
 .Ar changequote(lqchar, rqchar)
 .br
 change quote symbols to the first and second arguments.
 With no arguments, the quotes are reset back to the default
 characters. (i.e., \*`\\*').
 .Tp Ic changecom
-usage:
 .Ar changecom(lcchar, rcchar)
 .br
 change left and right comment markers from the default
@@ -140,7 +131,6 @@ With one argument, the left marker becomes the argument and
 the right marker becomes newline.
 With two arguments, both markers are affected.
 .Tp Ic divert
-usage:
 .Ar divert(divnum)
 .br
 .Nm m4
@@ -153,7 +143,6 @@ argument.
 Output diverted to a stream other than 0 through 9
 disappears into bitbucket.
 .Tp Ic undivert
-usage:
 .Ar undivert([divnum [, divnum ...])
 .br
 causes immediate output of text from diversions named as
@@ -167,17 +156,14 @@ unless
 .Ic m4wrap
 is defined.
 .Tp Ic divnum
-usage:
 .Ar divnum()
 .br
 returns the value of the current output stream.
 .Tp Ic dnl
-usage:
 .Ar dnl()
 .br
 reads and discards characters up to and including the next newline.
 .Tp Ic ifelse
-usage:
 .Ar ifelse(arg, arg, if-same [, ifnot-same \&| arg,\ arg\ ...])
 .br
 has three or more arguments.
@@ -188,19 +174,16 @@ repeated with arguments 4, 5, 6 and 7.
 Otherwise, the value is either the fourth string, or, if it is not present,
 null.
 .Tp Ic incr
-usage:
 .Ar incr(num)
 .br
 returns the value of its argument incremented by 1.
 The value of the argument is calculated
 by interpreting an initial digit-string as a decimal number.
 .Tp Ic decr
-usage:
 .Ar decr(num)
 .br
 returns the value of its argument decremented by 1.
 .Tp Ic eval
-usage:
 .Ar eval(expression)
 .br
 evaluates its argument as a constant expression, using integer arithmetic.
@@ -220,19 +203,16 @@ or by the ternary operator
 Parentheses may be used for grouping. Octal numbers may be specified as
 in C.
 .Tp Ic len
-usage:
 .Ar len(string)
 .br
 returns the number of characters in its argument.
 .Tp Ic index
-usage:
 .Ar index(search-string, string)
 .br
 returns the position in its first argument where the second argument
 begins (zero origin),
 or \-1 if the second argument does not occur.
 .Tp Ic substr
-usage:
 .Ar substr(string, index [, length])
 .br
 returns a substring of its first argument.
@@ -242,7 +222,6 @@ the third argument indicates the length of the substring.
 A missing third argument is taken to be large enough to extend to
 the end of the first string.
 .Tp Ic translit
-usage:
 .Ar translit(source, from [, to])
 .br
 transliterates the characters in its first argument
@@ -252,12 +231,10 @@ in the second argument are deleted from the first argument. If the third
 argument is missing altogether, all characters in the second argument are
 deleted from the first argument.
 .Tp Ic include
-usage:
 .Ar include(filename)
 .br
 returns the contents of the file named in the argument.
 .Tp Ic sinclude
-usage:
 .Ar sinclude(filename)
 .br
 is identical to
@@ -265,21 +242,18 @@ is identical to
 except that it
 says nothing if the file is inaccessible.
 .Tp Ic paste
-usage:
 .Ar paste(filename)
 .br
 returns the contents of the file named in the argument without any
 processing, unlike
 .Ic include .
 .Tp Ic spaste
-usage:
 .Ar spaste(filename)
 .br
 is identical to
 .Ic paste  ,
 except that it says nothing if the file is inaccessible.
 .Tp Ic syscmd
-usage:
 .Ar syscmd(command)
 .br
 executes the
@@ -287,13 +261,11 @@ UNIX
 command given in the first argument.
 No value is returned.
 .Tp Ic sysval
-usage:
 .Ar sysval()
 .br
 is the return code from the last call to
 .Ic syscmd  .
 .Tp Ic maketemp
-usage:
 .Ar maketemp(string)
 .br
 fills in a string of
@@ -301,7 +273,6 @@ XXXXXX
 in its argument with the current process
 ID.
 .Tp Ic m4exit
-usage:
 .Ar m4exit([exitcode])
 .br
 causes immediate exit from
@@ -309,20 +280,17 @@ causes immediate exit from
 Argument 1, if given, is the exit code;
 the default is 0.
 .Tp Ic m4wrap
-usage:
 .Ar m4wrap(m4-macro-or-built-in)
 .br
 argument 1 will be pushed back at final
 .Ic EOF  ;
 .Dl example: m4wrap(`dumptable()').
-.Tp Ic errprint "(str
-usage:
+.Tp Ic errprint
 .Ar errprint(str [, str, str, ...])
 .br
 prints its argument(s) on stderr. If there is more than one argument,
 each argument is separated by a space during the output.
 .Tp Ic dumpdef
-usage:
 .Ar dumpdef([name, name, ...])
 .br
 prints current names and definitions,
@@ -394,7 +362,8 @@ does not handle character constants.)
 .Sh SEE ALSO
 .Xr cc 1 ,
 .Xr cpp 1 .
-.Xr m4 1 ,
+.Xr m4 1
+.br
 .Em The M4 Macro Processor
 by B. W. Kernighan and D. M. Ritchie.
 .Sh HISTORY

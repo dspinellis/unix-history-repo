@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)diction.1	4.4 (Berkeley) %G%
+.\"     @(#)diction.1	4.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DICTION 1
@@ -25,17 +25,17 @@
 finds all sentences in a document that contain phrases
 from a data base of bad or wordy diction.
 Each phrase is bracketed with
-.Op .
+.Sq [\|] .
 Because
 .Nm diction
 runs
 .Xr deroff 1
 before looking at the text, formatting
 header files should be included as part of the input.
-.Tw Fl
+.Tw Ds
 .Tp Fl mm
-The default macro package
-.Fl ms
+The default macro package,
+.Fl ms ,
 may be overridden with the flag
 .Fl mm .
 .Tp Fl ml

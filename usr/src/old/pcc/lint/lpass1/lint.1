@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley Software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)lint.1	6.3 (Berkeley) %G%
+.\"     @(#)lint.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LINT 1
@@ -49,7 +49,7 @@ use the
 .Fl C
 option:
 .Pp
-.DL lint \-Cfoo files . . .
+.Dl lint \-Cfoo files . . .
 .Pp
 where
 .Ar files
@@ -118,7 +118,7 @@ are not understood; this causes various lies.
 Certain conventional comments in the C source
 will change the behavior of
 .Nm lint  :
-.Tw Fl
+.Tw Ds
 .Tp Li /*NOTREACHED*/
 at appropriate points
 stops comments about unreachable code.
@@ -147,9 +147,6 @@ S.C. Johnson.  Lint library construction implemented by Edward Wang.
 .Sh FILES
 .Dw /usr/libdata/lint/llib-port.ln
 .Di L
-.\" Pa /usr/libdata/lint/llib.ln
-.\" .Op 12
-.\" programs
 .Dp Pa /usr/libdata/lint/llib-lc.ln
 declarations for standard functions
 .Dp Pa /usr/libdata/lint/llib-lc

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ctags.1	6.6 (Berkeley) %G%
+.\"     @(#)ctags.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CTAGS 1
@@ -30,10 +30,12 @@ Using the
 file,
 .Xr ex 1
 can quickly locate these object
-definitions.  Depending on the options provided to .Nm ctags  ,
+definitions.  Depending on the options provided to
+.Nm ctags ,
 objects will consist of subroutines, typedefs, defines, structs,
 enums and unions.
 .Pp
+.Tw Ds
 .Tp Fl x
 .Nm ctags
 produces a list of object
@@ -53,13 +55,13 @@ it may be desired to run the output through
 Sample use:
 .Pp
 .Ds I
-ctags \-v files  sort \-f > index
+ctags \-v files \&| sort \-f > index
 vgrind \-x index
 .De
 .Tp Fl f
 Places the tag descriptions in a file called
-.Ar tagsfile.  The default behaviour is to place them in a file
-named
+.Ar tagsfile .
+The default behaviour is to place them in a file
 .Ar tags .
 .Tp Fl F
 use forward searching patterns (/.../) (the default).
@@ -71,9 +73,9 @@ append to
 file.
 .Tp Fl d
 create tags for
-.Ar #defines
+.Li #defines
 that don't take arguments;
-.Ar #defines
+.Li #defines
 that take arguments are tagged automatically.
 .Tp Fl t
 create tags for typedefs, structs, unions, and enums.
@@ -109,7 +111,7 @@ contain any Pascal or Fortran routine definitions, and, if not, are
 searched for C style definitions.
 .Pp
 The tag
-.Ar main
+.Li main
 is treated specially in C programs.  The tag formed
 is created by prepending
 .Ar M
@@ -171,18 +173,13 @@ functions is a hack.
 relies on the input being well formed, and any syntactical
 errors will completely confuse it.  It also finds some legal syntax
 confusing; for example, as it doesn't understand
-.Cx Ar #ifdef
-.Cx 's,
-.Cx
+.Sf Li #ifdef 's,
 (incidentally, that's a feature, not a bug) any code with unbalanced
 braces inside
-.Cx Ar #ifdef
-.Cx 's
+.Sf Li #ifdef 's
 will cause it to become somewhat disoriented.
-.Cx
 In a similar fashion, multiple line changes within a definition will
 cause it to enter the last line of the object, rather than the first, as
 the searching pattern.  The last line of multiple line
-.Ar typedef
-'s
+.Sf Li typedef 's
 will similarly be noted.

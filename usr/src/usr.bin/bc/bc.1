@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)bc.1	6.5 (Berkeley) %G%
+.\"     @(#)bc.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BC 1
@@ -23,7 +23,7 @@ It takes input from any files given, then reads
 the standard input.
 The
 .Tp Fl l
-argument stands for the name
+allow specification
 of an arbitrary precision math library.
 .Tp Fl c
 .Nm Bc
@@ -45,31 +45,34 @@ L means letter a-z,
 E means expression, S means statement.
 .Pp
 Comments
-.Dl are enclosed in /* and */.
+.Ds I
+are enclosed in /* and */.
+.De
 .Pp
 Names
-.Dl simple variables: L
-.Df I
-array elements: L
-.Op  E
-.De
-.Df I
+.Ds I
+simple variables: L
+array elements: L [ E ]
 The words `ibase', `obase', and `scale'
 .De
 .Pp
 Other operands
-.Dl arbitrarily long numbers with optional sign and decimal point.
-.Dl \&( E \&)
-.Dl sqrt ( E )
-.Dl length ( E )	number of significant decimal digits
-.Dl scale ( E )	number of digits right of decimal point
-.Dl L ( E , ... , E )
+.Ds I
+arbitrarily long numbers with optional sign and decimal point.
+\&( E \&)
+sqrt ( E )
+length ( E )	number of significant decimal digits
+scale ( E )	number of digits right of decimal point
+L ( E , ... , E )
+.De
 .Pp
 Operators
-.Dl \&+  \-  *  /  %  ^ (% is remainder; ^ is power)
-.Dl \&++   \-\-         (prefix and postfix; apply to names)
-.Dl \&==  <=  >=  !=  <  >
-.Dl \&=  +=  \-=  *=  /=  %=  ^=
+.Ds I
+\&+  \-  *  /  %  ^ (% is remainder; ^ is power)
+\&++   \-\-         (prefix and postfix; apply to names)
+\&==  <=  >=  !=  <  >
+\&=  +=  \-=  *=  /=  %=  ^=
+.De
 .Pp
 Statements
 .Ds I
@@ -95,7 +98,7 @@ define L ( L ,..., L ) {
 Functions in
 .Fl l
 math library
-.Dw ss(x)
+.Dw j(n,x)
 .Dp s(x)
 sine
 .Dp c(x)
@@ -163,12 +166,14 @@ prints approximate values of the exponential function of
 the first ten integers.
 .Sh FILES
 .\" /usr/lib/lib.b	mathematical library
-.Ds L
 .Dw Dc(1)
+.Di L
 .Dp Pa dc(1)	desk calculator proper
+.Dp
 .Sh SEE ALSO
 .Xr dc 1
-.L. .L. .Cherry and R. Morris,
+.br
+L. L. Cherry and R. Morris,
 .Em BC \- An arbitrary precision desk-calculator language
 .Sh HISTORY
 The
@@ -177,8 +182,8 @@ command appeared in Version 7 AT&T UNIX.
 .Sh BUGS
 No &&, \(or\\(or, or ! operators.
 .br
-.Li For
+.Ql For
 statement must have all three E's.
 .br
-.Li Quit
+.Ql Quit
 is interpreted when read, not when executed.

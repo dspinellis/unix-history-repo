@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)ar.1	6.3 (Berkeley) %G%
+.\"     @(#)ar.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AR 1
@@ -136,10 +136,11 @@ places its temporary files in the directory /tmp.
 This option causes them to be placed in the local directory.
 .Tp
 .Sh FILES
-.Tw /tmp/v*
-.Tp Pa tmp/v*
+.Dw /tmp/v*
+.Di L
+.Dp Pa tmp/v*
 temporaries
-.Tp
+.Dp
 .Sh SEE ALSO
 .Xr lorder 1 ,
 .Xr ld 1 ,

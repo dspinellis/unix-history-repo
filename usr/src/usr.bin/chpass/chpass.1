@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chpass.1	5.8 (Berkeley) %G%
+.\"     @(#)chpass.1	5.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHPASS 1
@@ -27,6 +27,7 @@ The information is formatted and supplied to an editor for changes.
 Only the information that the user is allowed to change is displayed.
 .Pp
 The options are as follows:
+.Tw Ds
 .Tp Fl a
 The super-user is allowed to directly supply a user database
 entry, in the format specified by
@@ -121,7 +122,7 @@ is the month name (the first three characters are sufficient),
 is the day of the month, and
 .Ar year
 is the year.
-.Pp
+.bp
 The
 .Ar class
 field is currently unused.  In the near future it will be a key to
@@ -129,10 +130,14 @@ a
 .Xr termcap 5
 style database of user attributes.
 .Pp
-The user's home directory is the full UNIX path name where the user
+The user's
+.Ar home directory
+is the full UNIX path name where the user
 will be placed at login.
 .Pp
-The shell field is the command interpreter the user prefers.
+The
+.Ar shell
+field is the command interpreter the user prefers.
 If the
 .Ar shell
 field is empty, the Bourne shell,
@@ -144,8 +149,13 @@ shell.
 Non-standard is defined as a shell not found in
 .Pa /etc/shells .
 .Pp
-The last four fields are for storing the user's full name, office
-location, and home and work telephone numbers.
+The last four fields are for storing the user's
+.Ar full name , office location ,
+and
+.Ar home
+and
+.Ar work telephone
+numbers.
 .Pp
 Once the information has been verified,
 .Nm chpass
@@ -183,6 +193,6 @@ The list of approved shells
 Robert Morris and Ken Thompson,
 .Ar UNIX Password security
 .Sh HISTORY
-First release 4.4 Bsd.
+First release 4.3 Reno BSD.
 .Sh BUGS
 User information should (and eventually will) be stored elsewhere.

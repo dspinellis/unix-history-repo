@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)checknr.1	6.4 (Berkeley) %G%
+.\"     @(#)checknr.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHECKNR 1
@@ -32,16 +32,19 @@ If no files are specified,
 checks the standard input.
 Delimiters checked are:
 .Pp
-.Dl Font changes using \efx ... \efP.
-.Pp
-.Dl Size changes using \esx ... \es0.
-.Pp
 .Df I
+.Bu
+Font changes using \efx ... \efP.
+.Bu
+Size changes using \esx ... \es0.
+.Bu
 Macros that come in open ... close forms, for example,
 the .TS and .TE macros which must always come in pairs.
+.Tp
 .De
 .Pp
 Options:
+.Tw Ds
 .Tp Fl a
 Add additional pairs of macros to the list of known macros.
 This must be followed by groups of six characters, each group defining
@@ -52,9 +55,7 @@ the first macro name,
 another period,
 and the second macro name.
 For example, to define a pair .BS and .ES, use
-.Cx Ar a
-.Li \&.BS.ES
-.Cx
+.Ql \-a.BS.ES
 .Pp
 .Tp Fl c
 Define commands which would otherwise be complained about
@@ -68,7 +69,7 @@ Ignore \es size changes.
 .Tp
 .Pp
 .Nm Checknr
-is intended to be used on documents that are prepared with
+is intended for use on documents that are prepared with
 .Nm checknr
 in mind, much the same as
 .Xr lint 1 .
@@ -79,7 +80,7 @@ While it will work to directly go into the next font or explicitly
 specify the original font or point size,
 and many existing documents actually do this,
 such a practice will produce complaints from
-.Nm checknr
+.Nm checknr .
 Since it is probably better to use the \efP and \es0 forms anyway,
 you should think of this as a contribution to your document
 preparation style.

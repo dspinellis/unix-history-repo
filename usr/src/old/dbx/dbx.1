@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)dbx.1	6.4 (Berkeley) %G%
+.\"     @(#)dbx.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DBX 1
@@ -20,7 +20,7 @@
 .Op Fl c Ar file
 .Op Ar objfile Op Ar coredump
 .Sh DESCRIPTION
-.Nm dbx
+.Nm Dbx
 is a tool for source level debugging and execution of
 programs under UNIX.
 The
@@ -41,11 +41,12 @@ The machine level facilities of
 .Nm dbx
 can be used on any program.
 .Pp
-The object file contains a symbol table that includes the name of the
+The object file contains a symbol table that includes the names of
 all the source files translated by the compiler to create it.
 These files are available for perusal while using the debugger.
 .Pp
-If a file named ``core''
+If a file named
+.Pa core
 exists in the current directory
 or a
 .Ar coredump
@@ -54,10 +55,14 @@ file is specified,
 can be used
 to examine the state of the program when it faulted.
 .Pp
-If the file ``.dbxinit'' exists in the current directory then the
+If the file
+.Pa .dbxinit
+exists in the current directory then the
 debugger commands in it are executed.
 .Nm Dbx
-also checks for a ``.dbxinit'' in the user's home directory
+also checks for a
+.Pa .dbxinit
+in the user's home directory
 if there isn't one in the current directory.
 .Pp
 The command line options and their meanings are:
@@ -73,7 +78,9 @@ Otherwise the reason for termination will be reported
 and the user offered the option of entering the debugger
 or letting the program fault.
 .Nm Dbx
-will read from ``/dev/tty'' when
+will read from
+.Pa /dev/tty
+when
 .Fl r
 is specified
 and standard input is not a terminal.
@@ -98,7 +105,7 @@ and in the directory where
 .Ar objfile
 is located.
 The directory search path can also be set with the
-.Ar use
+.Ic use
 command.
 .Tp Cx Fl c
 .Cx \&\ \&
@@ -364,17 +371,11 @@ in the static scope.
 If static and dynamic searches do not yield a result,
 an arbitrary symbol is chosen and
 the message
-.Cx ``
-.Op using Ar qualified name
-.Cx \'\'
-.Cx
+.Dq Li [using Ar qualified name]
 is printed.
 The name resolution procedure may be overridden by qualifying an identifier
 with a block name, e.g.,
-.Cx ``
-Ar module.variable
-.Cx \'\'.
-.Cx
+.Dq Li module.variable
 For C, source files are treated as modules named
 by the file name without ``.c''.
 .Pp
@@ -472,8 +473,10 @@ Print out a list of the active procedures and function.
 Print the full qualification of all the symbols whose
 name matches the given identifier.
 The order in which the symbols are printed is not meaningful.
+.Dp
 .Ss Accessing Source Files
 .Pp
+.Di L
 .Dp Cx Ar /regular expression
 .Op /
 .Cx
@@ -535,7 +538,7 @@ If the name of a procedure or function is given
 lines
 .Ar n-k
 to
-.Ar n +k
+.Ar n+k
 are listed where
 .Ar n
 is the first statement
@@ -592,6 +595,7 @@ one can say
 Subsequently, the command ``b(12)'' will expand to ``stop at 12''.
 .Pp
 .Dp Cx Ic set
+.Ws
 .Ar name
 .Op \&= Ar expression
 .Cx
@@ -784,7 +788,7 @@ commands from the given
 .Tp
 .Sh ENVIRONMENT
 .Nm Dbx
-checks these environment variables:
+utilizes the following environment variables:
 .Ds I
 EDITOR
 HOME

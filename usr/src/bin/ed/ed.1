@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"     @(#)ed.1	6.4 (Berkeley) %G%
+.\"     @(#)ed.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ED 1
@@ -31,6 +31,7 @@ command (see below) on the named file; that is to say,
 the file is read into
 .Nm ed 's
 buffer so that it can be edited.
+.Tw Ds
 .Tp Fl
 Suppresses the printing
 of explanatory output
@@ -92,12 +93,12 @@ Any character except a special character
 matches itself.
 Special characters are
 the regular expression delimiter plus
-.Sq Li \e\[
+.Sq Cm \e\[.
 and sometimes
-.Sq Li ^*$ .
+.Sq Cm ^*$ .
 .Tp 2.
 A
-.Sq Ic \&.
+.Sq Cm \&.
 matches any character.
 .Tp 3.
 A
@@ -109,10 +110,12 @@ matches that character.
 A nonempty string
 .Op Ar s
 or
+.Oo
 .Cx \&(
-.Op \&^ Ar s
+.Op Cm \&^ Ar s
 .Cx \&)
 .Cx
+.Oo
 matches any character in (or not in)
 .Ar s .
 In

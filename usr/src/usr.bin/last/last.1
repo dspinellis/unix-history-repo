@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)last.1	6.5 (Berkeley) %G%
+.\"     @(#)last.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LAST 1
@@ -35,12 +35,16 @@ a crash or shutdown,
 .Nm last
 will so indicate.
 .Pp
+.Tw Fl
+.Tc Fl f
+.Ws
+.Ar file
+.Cx
 .Nm Last
 reads the file
-.Ar file  ,
-or by default,
+.Ar file
+instead of the default,
 .Pa /var/log/wtmp .
-.Tw Ds
 .Tc Fl
 .Ar \&#
 .Cx
@@ -80,7 +84,8 @@ logs in at reboots of the system, thus
 If
 .Nm last
 is interrupted, it indicates to what date the search has
-progressed.  If interrupted with a quit signal .Nm last
+progressed.  If interrupted with a quit signal
+.Nm last
 indicates how
 far the search has progressed and then continues.
 .Sh FILES

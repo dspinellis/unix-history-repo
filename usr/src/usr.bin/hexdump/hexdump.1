@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)hexdump.1	5.9 (Berkeley) %G%
+.\"     @(#)hexdump.1	5.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HEXDUMP 1
@@ -37,7 +37,7 @@ Display the input offset in hexadecimal, followed by sixteen
 space-separated, three column, space-filled, characters of input
 data per line.
 .Tp Fl d
-Two-byte decimal display.
+.Em Two-byte decimal display.
 Display the input offset in hexadecimal, followed by eight
 space-separated, five column, zero-filled, two-byte units
 of input data, in unsigned decimal, per line.
@@ -52,7 +52,8 @@ Specify a format string to be used for displaying data.
 .Cx
 Specify a file that contains one or more newline separated format strings.
 Empty lines and lines whose first non-blank character is a hash mark
-(#) are ignored.
+.Pf \&( Cm \&# )
+are ignored.
 .Tc Fl n
 .Ws
 .Ar length
@@ -61,7 +62,7 @@ Interpret only
 .Ar length
 bytes of input.
 .Tp Fl o
-Two-byte octal display.
+.Em Two-byte octal display.
 Display the input offset in hexadecimal, followed by eight
 space-separated, six column, zero-filled, two byte quantities of
 input data, in octal, per line.
@@ -75,15 +76,28 @@ bytes from the beginning of the input.
 By default,
 .Ar offset
 is interpreted as a decimal number.
-With a leading ``0x'' or ``0X'',
+With a leading
+.Cm 0x
+or
+.Cm 0X ,
 .Ar offset
 is interpreted as a hexadecimal number,
-otherwise, with a leading ``0'',
+otherwise, with a leading
+.Cm 0 ,
 .Ar offset
 is interpreted as an octal number.
-Appending the character ``b'', ``k'', or ``m'' to
+Appending the character
+.Cm b ,
+.Cm k ,
+or
+.Cm m
+to
 .Ar offset
-causes it to be interpreted as a multiple of 512, 1024, or 1048576,
+causes it to be interpreted as a multiple of
+.Li 512 ,
+.Li 1024 ,
+or
+.Li 1048576 ,
 respectively.
 .Tp Fl v
 The
@@ -96,7 +110,7 @@ identical to the immediately preceding group of output lines (except
 for the input offsets), are replaced with a line comprised of a
 single asterisk.
 .Tp Fl x
-Two-byte hexadecimal display.
+.Em Two-byte hexadecimal display.
 Display the input offset in hexadecimal, followed by eight, space
 separated, four column, zero-filled, two-byte quantities of input
 data, in hexadecimal, per line.
@@ -131,14 +145,24 @@ Any whitespace before or after the slash is ignored.
 .Pp
 The format is required and must be surrounded by double quote
 (" ") marks.
-It is interpreted as a fprintf-style format string, with the
+It is interpreted as a fprintf-style format string (see
+.Xr fprintf 3 ) ,
+with the
 following exceptions:
-.Ds I
-.Tw Ds
-.Tp \&Unsupported \&fprintf \&Conversion \&Characters:
+.Df I
+.Bu
+An asterisk (*) may not be used as a field width or precision.
+.Bu
+A byte count or field precision
+.Em is
+required for each ``s'' conversion
+character (unlike the
+.Xr fprintf 3
+default which prints the entire string if the precision is unspecified).
+.Bu
 The conversion characters ``h'', ``n'', and ``p'' are not
 supported.
-.Tp Supported Escape Sequences:
+.Bu
 The single character escape sequences
 described in the C standard are supported:
 .Ds I
@@ -153,40 +177,40 @@ described in the C standard are supported:
 .Cl <vertical tab>	\ev
 .Cw
 .De
-.Tp Taboo:
-An asterisk (*) may not be used as a field width or precision.
-.Tp ``\&%s'' Anomaly:
-A byte count or field precision
-.Em is
-required for each ``s'' conversion
-character (unlike the
-.Xr fprintf 3
-default which prints the entire string if the precision is unspecified).
 .Tp
 .De
 .Pp
 Hexdump also supports the the following additional conversion strings:
 .Tw Fl
 .Tc Cm \&_a
-.Op dox
+.Op Cm dox
 .Cx
 Display the input offset, cumulative across input files, of the
 next byte to be displayed.
-The appended characters ``d'', ``o'', and ``x'' specify the display base
+The appended characters
+.Cm d ,
+.Cm o ,
+and
+.Cm x
+specify the display base
 as decimal, octal or hexadecimal respectively.
 .Tc Cm \&_A
-.Op dox
+.Op Cm dox
 .Cx
-Identical to the _a conversion string except that it is only performed
+Identical to the
+.Cm \&_a
+conversion string except that it is only performed
 once, when all of the input data has been processed.
 .Tp Cm \&_c
 Output characters in the default character set.
 Nonprinting characters are displayed in three character, zero-padded
-octal, except for those representable by standard escape notation,
-which are displayed as the following two character strings.
+octal, except for those representable by standard escape notation
+(see above),
+which are displayed as two character strings.
 .Tp Cm _p
 Output characters in the default character set.
-Nonprinting characters are displayed as a single ``.''.
+Nonprinting characters are displayed as a single
+.Dq Cm \&. .
 .Tp Cm _u
 Output US ASCII characters, with the exception that control characters are
 displayed using the following, lower-case, names.
@@ -204,20 +228,20 @@ strings.
 .Pp
 The default and supported byte counts for the conversion characters
 are as follows:
-.Tw Fl
+.Df I
+.Tw  %c,_%c,_%c,_%c,_%c,_%c
 .Tp Li \&%_c , %_p , %_u , \&%c
 One byte counts only.
 .Tc Li \&%d , \&%i , \&%o ,
-.Ws
-.Li \&%u , \&%X , \&%x
+.Li \&\ %u , \&%X , \&%x
 .Cx
 Four byte default, one and two byte counts supported.
 .Tc Li \&%E , \&%e , \&%f ,
-.Ws
-.Li \&%G , \&%g
+.Li \&\ %G , \&%g
 .Cx
 Eight byte default, four byte counts supported.
 .Tp
+.De
 .Pp
 The amount of data interpreted by each format string is the sum of the
 data required by each format unit, which is the iteration count times the
@@ -239,7 +263,10 @@ during the last iteration.
 .Pp
 It is an error to specify a byte count as well as multiple conversion
 characters or strings unless all but one of the conversion characters
-or strings is ``_a'' or ``_A''.
+or strings is
+.Cm \&_a
+or
+.Cm \&_A .
 .Pp
 If, as a result of the specification of the
 .Fl n
@@ -251,9 +278,15 @@ end of data will display some number of the zero bytes).
 Further output by such format strings is replaced by an equivalent
 number of spaces.
 An equivalent number of spaces is defined as the number of spaces
-output by an ``s'' conversion character with the same field width
+output by an
+.Cm s
+conversion character with the same field width
 and precision as the original conversion character or conversion
-string but with any ``+'', `` '', or ``#'' conversion flag characters
+string but with any
+.Dq Li \&+ ,
+.Dq \&\ \& ,
+.Dq Li \&#
+conversion flag characters
 removed, and referencing a NULL string.
 .Pp
 If no format strings are specified, the default display is equivalent
@@ -261,7 +294,7 @@ to specifying the
 .Fl x
 option.
 .Pp
-.Nm Hexdump
+.Nm hexdump
 exits 0 on success and >0 if an error occurred.
 .Sh EXAMPLES
 Display the input in perusal format:
@@ -278,7 +311,9 @@ Implement the \-x option:
 "%07.7_Ax\en"
 "%07.7_ax  " 8/2 "%04x " "\en"
 .De
+.Sh SEE ALSO
+.Xr adb 1
 .Sh STANDARDS
 The
-.Nm Hexdump
+.Nm hexdump
 utility is expected to be POSIX 1003.2 compatible.

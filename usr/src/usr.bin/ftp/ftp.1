@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ftp.1	6.14 (Berkeley) %G%
+.\"     @(#)ftp.1	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTP 1
@@ -27,6 +27,7 @@ remote network site.
 .Pp
 Options may be specified at the command line, or to the
 command interpreter.
+.Tw Ds
 .Tp Fl v
 Verbose option forces
 .Nm ftp
@@ -66,20 +67,21 @@ server on that host; otherwise,
 will enter its command interpreter and await instructions
 from the user.  When
 .Nm ftp
-is awaiting commands from the user the prompt \*(Lqftp>\*(Rq
+is awaiting commands from the user the prompt
+.Ql ftp>
 is provided to the user.  The following commands are recognized
 by
 .Nm ftp  :
 .Tw Fl
 .Tp Cx Ic \&!
-.Cx \&\ \&
+.Ws
 .Op Ar command Op Ar args
 .Cx
 Invoke an interactive shell on the local machine.
 If there are arguments, the first is taken to be a command to execute
 directly, with the rest of the arguments as its arguments.
 .Tp Cx Ic \&$
-.Cx \&\ \&
+.Ws
 .Ar macro-name
 .Op Ar args
 .Cx
@@ -90,7 +92,7 @@ that was defined with the
 command.
 Arguments are passed to the macro unglobbed.
 .Tp Cx Ic account
-.Cx \&\ \&
+.Ws
 .Op Ar passwd
 .Cx
 Supply a supplemental password required by a remote system for access
@@ -98,9 +100,9 @@ to resources once a login has been successfully completed.
 If no argument is included, the user will be prompted for an account
 password in a non-echoing input mode.
 .Tp Cx Ic append
-.Cx \&\ \&
+.Ws
 .Ar local-file
-.Cx \&\ \&
+.Ws
 .Op Ar remote-file
 .Cx
 Append a local file to a file on the remote machine.  If
@@ -116,7 +118,7 @@ File transfer uses the current settings for
 .Ic format ,
 .Ic mode  ,
 and
-.Ic structure  .
+.Ic structure .
 .Tp Ic ascii
 Set the file transfer
 .Ic type
@@ -143,7 +145,7 @@ is on (default is off), remote computer file names with all letters in
 upper case are written in the local directory with the letters mapped
 to lower case.
 .Tp Cx Ic cd
-.Cx \&\ \&
+.Ws
 .Ar remote-directory
 .Cx
 Change the working directory on the remote machine
@@ -153,14 +155,14 @@ to
 Change the remote machine working directory to the parent of the
 current remote machine working directory.
 .Tp Cx Ic chmod
-.Cx \&\ \&
+.Ws
 .Ar mode file-name
 .Cx
-Change the permission modes the file
+Change the permission modes of the file
 .Ar file-name
 on the remote
 sytem to
-.Ic mode  .
+.Ar mode  .
 .Tp Ic close
 Terminate the FTP session with the remote server, and
 return to the command interpreter.
@@ -181,14 +183,14 @@ distinguished from a record delimiter only when
 .Ic cr
 is off.
 .Tp Cx Ic delete
-.Cx \&\ \&
+.Ws
 .Ar remote-file
 .Cx
 Delete the file
 .Ar remote-file
 on the remote machine.
 .Tp Cx Ic debug
-.Cx \&\ \&
+.Ws
 .Op Ar debug-value
 .Cx
 Toggle debugging mode.  If an optional
@@ -197,11 +199,12 @@ is specified it is used to set the debugging level.
 When debugging is on,
 .Nm ftp
 prints each command sent to the remote machine, preceded
-by the string \*(Lq-->\*(Rq.
+by the string
+.Ql \-\->
 .Tp Cx Ic dir
-.Cx \&\ \&
+.Ws
 .Op Ar remote-directory
-.Cx \&\ \&
+.Ws
 .Op Ar local-file
 .Cx
 Print a listing of the directory contents in the
@@ -226,7 +229,7 @@ output comes to the terminal.
 A synonym for
 .Ar close  .
 .Tp Cx Ic form
-.Cx \&\ \&
+.Ws
 .Ar format
 .Cx
 Set the file transfer
@@ -235,9 +238,9 @@ to
 .Ar format  .
 The default format is \*(Lqfile\*(Rq.
 .Tp Cx Ic get
-.Cx \&\ \&
+.Ws
 .Ar remote-file
-.Cx \&\ \&
+.Ws
 .Op Ar local-file
 .Cx
 Retrieve the
@@ -282,10 +285,7 @@ Expansion of a directory name is likely to be
 different from expansion of the name of an ordinary file:
 the exact result depends on the foreign operating system and ftp server,
 and can be previewed by doing
-.Cx `
-.Cx Li mls remote-files \-
-.Cx \'.
-.Cx
+.Ql mls remote-files \-
 Note:
 .Ic mget
 and
@@ -299,7 +299,7 @@ archive of the subtree (in binary mode).
 Toggle hash-sign (``#'') printing for each data block
 transferred.  The size of a data block is 1024 bytes.
 .Tp Cx Ic help
-.Cx \&\ \&
+.Ws
 .Op Ar command
 .Cx
 Print an informative message about the meaning of
@@ -308,7 +308,7 @@ If no argument is given,
 .Nm ftp
 prints a list of the known commands.
 .Tp Cx Ic idle
-.Cx \&\ \&
+.Ws
 .Op Ar seconds
 .Cx
 Set the inactivity timer on the remote server to
@@ -318,7 +318,7 @@ If
 .Ar seconds
 is ommitted, the current inactivity timer is printed.
 .Tp Cx Ic lcd
-.Cx \&\ \&
+.Ws
 .Op Ar directory
 .Cx
 Change the working directory on the local machine.  If
@@ -326,16 +326,17 @@ no
 .Ar directory
 is specified, the user's home directory is used.
 .Tp Cx Ic ls
-.Cx \&\ \&
+.Ws
 .Op Ar remote-directory
-.Cx \&\ \&
+.Ws
 .Op Ar local-file
 .Cx
 Print a listing of the contents of a
 directory on the remote machine.
 The listing includes any system-dependent information that the server
 chooses to include; for example, most UNIX systems will produce
-output from the command \*(Lqls -l\*(Rq.
+output from the command
+.Ql ls \-l .
 (See also
 .Ic nlist  .
 )
@@ -351,10 +352,10 @@ output.
 If no local file is specified, or if
 .Ar local-file
 is
-.Fl  ,
+.Sq Fl ,
 the output is sent to the terminal.
 .Tp Cx Ic macdef
-.Cx \&\ \&
+.Ws
 .Ar macro-name
 .Cx
 Define a macro.
@@ -368,26 +369,26 @@ defined macros.
 Macros remain defined until a
 .Ic close
 command is executed.
-The macro processor interprets '$' and '\\' as special characters.
-A '$' followed by a number (or numbers) is replaced by the
+The macro processor interprets `$' and `\e' as special characters.
+A `$' followed by a number (or numbers) is replaced by the
 corresponding argument on the macro invocation command line.
-A '$' followed by an 'i' signals that macro processor that the
-executing macro is to be looped. On the first pass '$i' is
+A `$' followed by an `i' signals that macro processor that the
+executing macro is to be looped. On the first pass `$i' is
 replaced by the first argument on the macro invocation command line,
 on the second pass it is replaced by the second argument, and so on.
-A '\\' followed by any character is replaced by that character.
-Use the '\\' to prevent special treatment of the '$'.
+A `\e' followed by any character is replaced by that character.
+Use the `\e' to prevent special treatment of the `$'.
 .Tp Cx Ic mdelete
-.Cx \&\ \&
+.Ws
 .Op Ar remote-files
 .Cx
 Delete the
 .Ar remote-files
 on the remote machine.
 .Tp Cx Ic mdir
-.Cx \&\ \&
+.Ws
 .Ar remote-files
-.Cx \&\ \&
+.Ws
 .Ar local-file
 .Cx
 Like
@@ -400,7 +401,7 @@ target local file for receiving
 .Ic mdir
 output.
 .Tp Cx Ic mget
-.Cx \&\ \&
+.Ws
 .Ar remote-files
 .Cx
 Expand the
@@ -427,14 +428,14 @@ new local directories can be created with
 .Cx Li \&! mkdir directory
 .Cx \'.
 .Tp Cx Ic mkdir
-.Cx \&\ \&
+.Ws
 .Ar directory-name
 .Cx
 Make a directory on the remote machine.
 .Tp Cx Ic mls
-.Cx \&\ \&
+.Ws
 .Ar remote-files
-.Cx \&\ \&
+.Ws
 .Ar local-file
 .Cx
 Like
@@ -450,7 +451,7 @@ target local file for receiving
 .Ic mls
 output.
 .Tp Cx Ic mode
-.Cx \&\ \&
+.Ws
 .Op Ar mode-name
 .Cx
 Set the file transfer
@@ -459,12 +460,12 @@ to
 .Ar mode-name  .
 The default mode is \*(Lqstream\*(Rq mode.
 .Tp Cx Ic modtime
-.Cx \&\ \&
+.Ws
 .Ar file-name
 .Cx
 Show the last modification time of the file on the remote machine.
 .Tp Cx Ic mput
-.Cx \&\ \&
+.Ws
 .Ar local-files
 .Cx
 Expand wild cards in the list of local files given as arguments
@@ -484,12 +485,12 @@ exist on the current system, the remote file is considered
 Otherwise, this command is identical to
 .Ar get  .
 .Tp Cx Ic nlist
-.Cx \&\ \&
+.Ws
 .Op Ar remote-directory
-.Cx \&\ \&
+.Ws
 .Op Ar local-file
 .Cx
-Print a  list of the files of a
+Print a  list of the files in a
 directory on the remote machine.  If
 .Ar remote-directory
 is left unspecified, the current working directory is used.
@@ -505,7 +506,7 @@ is
 .Fl  ,
 the output is sent to the terminal.
 .Tp Cx Ic nmap
-.Cx \&\ \&
+.Ws
 .Op Ar inpattern outpattern
 .Cx
 Set or unset the filename mapping mechanism.
@@ -533,9 +534,9 @@ processed according to the
 and
 .Ic case
 settings).
-Variable templating is accomplished by including the sequences '$1', '$2', ..., '$9' in
+Variable templating is accomplished by including the sequences `$1', `$2', ..., `$9' in
 .Ar inpattern  .
-Use '\\' to prevent this special treatment of the '$' character.
+Use `\\' to prevent this special treatment of the `$' character.
 All other characters are treated literally, and are used to determine the
 .Ic nmap
 .Op Ar inpattern
@@ -547,15 +548,16 @@ $1.$2 and the remote file name "mydata.data", $1 would have the value
 The
 .Ar outpattern
 determines the resulting mapped filename.
-The sequences '$1', '$2', ...., '$9' are replaced by any value resulting
+The sequences `$1', `$2', ...., `$9' are replaced by any value resulting
 from the
 .Ar inpattern
 template.
-The sequence '$0' is replace by the original filename.
+The sequence `$0' is replace by the original filename.
 Additionally, the sequence
 .Cx `
 .Op Ar seq1 , Ar seq2
 .Cx \'
+.Cx
 is replaced by
 .Op Ar seq1
 if
@@ -578,11 +580,11 @@ the output filename "myfile.data" for input filenames "myfile.data" and
 "myfile.myfile" for the input filename ".myfile".
 Spaces may be included in
 .Ar outpattern  ,
-as in the example: nmap $1 sed "s/  *$//" > $1 .
-Use the '\\' character to prevent special treatment
-of the '$','[','[', and ',' characters.
+as in the example: `nmap $1 sed "s/  *$//" > $1' .
+Use the `\e' character to prevent special treatment
+of the `$','[','[', and `,' characters.
 .Tp Cx Ic ntrans
-.Cx \&\ \&
+.Ws
 .Op Ar inchars Op Ar outchars
 .Cx
 Set or unset the filename character translation mechanism.
@@ -612,9 +614,9 @@ is longer than the length of
 .Ar outchars  ,
 the character is deleted from the file name.
 .Tp Cx Ic open
-.Cx \&\ \&
+.Ws
 .Ar host
-.Cx \&\ \&
+.Ws
 .Op Ar port
 .Cx
 Establish a connection to the specified
@@ -641,7 +643,7 @@ will transfer all files, and any
 .Ic mdelete
 will delete all files.
 .Tp Cx Ic proxy
-.Cx \&\ \&
+.Ws
 .Ar ftp-command
 .Cx
 Execute an ftp command on a secondary control connection.
@@ -674,9 +676,9 @@ to the host on the primary control connection.
 Third party file transfers depend upon support of the ftp protocol
 PASV command by the server on the secondary control connection.
 .Tp Cx Ic put
-.Cx \&\ \&
+.Ws
 .Ar local-file
-.Cx \&\ \&
+.Ws
 .Op Ar remote-file
 .Cx
 Store a local file on the remote machine.  If
@@ -701,26 +703,27 @@ machine.
 A synonym for
 .Ic bye  .
 .Tp Cx Ic quote
-.Cx \&\ \&
-.Ar crg1 arg2 ...
+.Ws
+.Ar arg1 arg2 ...
 .Cx
 The arguments specified are sent, verbatim, to the remote FTP
 server.
 .Tp Cx Ic recv
-.Cx \&\ \&
+.Ws
 .Ar remote-file
-.Cx \&\ \&
+.Ws
 .Op Ar local-file
 .Cx
 A synonym for get.
 .Tp Cx Ic remotehelp
-.Cx \&\ \&
+.Ws
 .Op Ar command-name
 .Cx
 Request help from the remote FTP server.  If a
 .Ar command-name
 is specified it is supplied to the server as well.
 .Tp Cx Ic remotestatus
+.Ws
 .Op Ar file-name
 .Cx
 With no arguments, show status of remote machine. If
@@ -729,9 +732,9 @@ is specified, show status of
 .Ar file-name
 on remote machine.
 .Tp Cx Ic rename
-.Cx \&\ \&
+.Ws
 .Op Ar from
-.Cx \&\ \&
+.Ws
 .Op Ar to
 .Cx
 Rename the file
@@ -745,7 +748,7 @@ ftp server.
 Resynchronization may be necessary following a violation of the ftp protocol
 by the remote server.
 .Tp Cx Ic rmdir
-.Cx \&\ \&
+.Ws
 .Ar directory-name
 .Cx
 Delete a directory on the remote machine.
@@ -768,9 +771,9 @@ will not affect local files generated from a shell command
 (see below).
 The default value is off.
 .Tp Cx Ic send
-.Cx \&\ \&
+.Ws
 .Ar local-file
-.Cx \&\ \&
+.Ws
 .Op Ar remote-file
 .Cx
 A synonym for put.
@@ -789,13 +792,13 @@ PORT commands for each data transfer.  This is useful
 for certain FTP implementations which do ignore PORT
 commands but, incorrectly, indicate they've been accepted.
 .Tp Cx Ic site
-.Cx \&\ \&
+.Ws
 .Ar arg1 arg2 ...
 .Cx
 The arguments specified are sent, verbatim, to the remote FTP
 server as a SITE command.
 .Tp Cx Ic size
-.Cx \&\ \&
+.Ws
 .Ar file-name
 .Cx
 Return size of
@@ -805,13 +808,13 @@ on remote machine.
 Show the current status of
 .Nm ftp  .
 .Tp Cx Ic struct
-.Cx \&\ \&
+.Ws
 .Op Ar struct-name
 .Cx
 Set the file transfer
 .Ar structure
 to
-.Ar struct-name  .
+.Ar struct-name .
 By default \*(Lqstream\*(Rq structure is used.
 .Tp Ic sunique
 Toggle storing of files on remote machine under unique file names.
@@ -827,7 +830,7 @@ talk to TENEX machines.
 .Tp Ic trace
 Toggle packet tracing.
 .Tp Cx Ic type
-.Cx \&\ \&
+.Ws
 .Op Ar type-name
 .Cx
 Set the file transfer
@@ -837,29 +840,34 @@ to
 If no type is specified, the current type
 is printed.  The default type is network ASCII.
 .Tp Cx Ic umask
-.Cx \&\ \&
+.Ws
 .Op Ar newmask
 .Cx
 Set the default umask on the remote server to
-.Ic newmask  .
+.Ar newmask  .
 If
-.Ic newmask
+.Ar newmask
 is ommitted, the current umask is printed.
 .Tp Cx Ic user
-.Cx \&\ \&
+.Ws
 .Ar user-name
-.Cx \&\ \&
+.Ws
 .Op Ar password
-.Cx \&\ \&
+.Ws
 .Op Ar account
 .Cx
 Identify yourself to the remote FTP server.  If the
-password is not specified and the server requires it,
+.Ar password
+is not specified and the server requires it,
 .Nm ftp
 will prompt the user for it (after disabling local echo).
-If an account field is not specified, and the FTP server
+If an
+.Ar account
+field is not specified, and the FTP server
 requires it, the user will be prompted for it.
-If an account field is specified, an account command will
+If an
+.Ar account
+field is specified, an account command will
 be relayed to the remote server after the login sequence
 is completed if the remote server did not require it
 for logging in.
@@ -875,15 +883,15 @@ if verbose is on, when a file transfer completes, statistics
 regarding the efficiency of the transfer are reported.  By default,
 verbose is on.
 .Tp Cx Ic ?
-.Cx \&\ \&
+.Ws
 .Op Ar command
 .Cx
 A synonym for help.
 .Tp
 .Pp
 Command arguments which have embedded spaces may be quoted with
-quote (") marks.
-.Sh "ABORTING A FILE TRANSFER"
+quote `"' marks.
+.Sh ABORTING A FILE TRANSFER
 To abort a file transfer, use the terminal interrupt key
 (usually Ctrl-C).
 Sending transfers will be immediately halted.
@@ -891,7 +899,8 @@ Receiving transfers will be halted by sending a ftp protocol ABOR
 command to the remote server, and discarding any further data received.
 The speed at which this is accomplished depends upon the remote
 server's support for ABOR processing.
-If the remote server does not support the ABOR command, an "ftp>"
+If the remote server does not support the ABOR command, an
+.Ql ftp>
 prompt will not appear until the remote server has completed
 sending the requested file.
 .Pp
@@ -905,19 +914,23 @@ violations of the ftp protocol.
 If the delay results from unexpected remote server behavior, the local
 .Nm ftp
 program must be killed by hand.
-.Sh "FILE NAMING CONVENTIONS"
+.Sh FILE NAMING CONVENTIONS
 Files specified as arguments to
 .Nm ftp
 commands are processed according to the following rules.
-.Tw Fl
+.Tw Ds
 .Tp \&1)
-If the file name \*(Lq\-\*(Rq is specified, the
+If the file name
+.Sq Fl
+is specified, the
 .Ar stdin
 (for reading) or
 .Ar stdout
 (for writing) is used.
 .Tp \&2)
-If the first character of the file name is \*(Lq\*(Rq, the
+If the first character of the file name is
+.Sq \&| ,
+the
 remainder of the argument is interpreted as a shell command.
 .Nm Ftp
 then forks a shell, using
@@ -936,7 +949,7 @@ c.f. the
 command.
 If the
 .Nm ftp
-command expects a single local file ( .e.g.
+command expects a single local file (.e.g.
 .Ic put  ) ,
 only the first filename generated by the "globbing" operation is used.
 .Tp \&4)
@@ -969,7 +982,7 @@ The resulting filename may then be altered by the remote server if
 .Ic sunique
 is on.
 .Tp
-.Sh "FILE TRANSFER PARAMETERS"
+.Sh FILE TRANSFER PARAMETERS
 The FTP specification specifies many parameters which may
 affect a file transfer.  The
 .Ic type
@@ -989,7 +1002,7 @@ file transfer parameters:
 .Ic form ,
 and
 .Ic struct  .
-.Sh "THE .netrc FILE"
+.Sh THE .netrc FILE
 The
 .Pa .netrc
 file contains login and initialization information
@@ -999,18 +1012,23 @@ The following tokens are recognized; they may be separated by spaces,
 tabs, or new-lines:
 .Tw password
 .Tp Cx Ic machine
-.Cx \&\ \&
+.Ws
 .Ar name
 .Cx
-Identify a remote machine name.
-The auto-login process searches the .netrc file for a
+Identify a remote machine
+.Ar name .
+The auto-login process searches the
+.Pa .netrc
+file for a
 .Ic machine
 token that matches the remote machine specified on the
 .Nm ftp
 command line or as an
 .Ic open
 command argument.
-Once a match is made, the subsequent .netrc tokens are processed,
+Once a match is made, the subsequent
+.Pa .netrc
+tokens are processed,
 stopping when the end of file is reached or another
 .Ic machine
 or a
@@ -1029,7 +1047,9 @@ token, and it must be after all
 .Ic machine
 tokens.
 This is normally used as:
+.Pp
 .Dl default login anonymous password user@site
+.Pp
 thereby giving the user
 .Ar automatic
 anonymous ftp login to
@@ -1040,14 +1060,15 @@ by using the
 .Fl n
 flag to disable auto-login.
 .Tp Cx Ic login
-.Cx \&\ \&
+.Ws
 .Ar name
 .Cx
 Identify a user on the remote machine.
 If this token is present, the auto-login process will initiate
-a login using the specified name.
+a login using the specified
+.Ar name .
 .Tp Cx Ic password
-.Cx \&\ \&
+.Ws
 .Ar string
 .Cx
 Supply a password.
@@ -1065,7 +1086,7 @@ will abort the auto-login process if the
 is readable by
 anyone besides the user.
 .Tp Cx Ic account
-.Cx \&\ \&
+.Ws
 .Ar string
 .Cx
 Supply an additional account password.
@@ -1074,7 +1095,7 @@ specified string if the remote server requires an additional
 account password, or the auto-login process will initiate an
 ACCT command if it does not.
 .Tp Cx Ic macdef
-.Cx \&\ \&
+.Ws
 .Ar name
 .Cx
 Define a macro.
@@ -1094,11 +1115,15 @@ auto-login process.
 .Tp
 .Sh ENVIRONMENT
 .Nm Ftp
-makes use of the
-.Ev HOME
-and
-.Ev SHELL
-environment variables.
+utilizes the following environment variables.
+.Tw Fl
+.Tp Ev HOME
+For default location of a
+.Pa .netrc
+file, if one exists.
+.Tp Ev SHELL
+For default shell.
+.Tp
 .Sh SEE ALSO
 .Xr ftpd 8
 .Sh HISTORY

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)telnet.1	6.10 (Berkeley) %G%
+.\"     @(#)telnet.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNET 1
@@ -17,8 +17,6 @@ protocol
 .Nm telnet
 .Op Fl d
 .Op Fl n Ar tracefile
-.Op Fl l Ar user
-.Op Fl e Ar escapechar
 .Op Ar host Op Ar port
 .Sh DESCRIPTION
 The
@@ -56,30 +54,6 @@ for recording trace information.
 See the
 .Ic set tracefile
 command below.
-.Tp Cx Fl l
-.Cx \&\ \&
-.Ar user
-.Cx
-When connecting to the remote system, if the remote system
-understands the ENVIRON option, then
-.Ar user
-will be sent to the remote system as the value for the variable USER.
-This option may also be used with the
-.Ic open
-command.
-.Tp Cx Fl e
-.Cx \&\ \&
-.Ar escape char
-.Cx
-Sets the initial
-.Nm
-.B telnet
-escape character to
-.Ar escape char.
-If
-.Ar escape char
-is ommitted, then
-there will be no escape character.
 .Tp Ar host
 Indicates the official name, an alias, or the Internet address
 of a remote host.
@@ -182,7 +156,6 @@ Only enough of each command to uniquely identify it need be typed
 .Ic toggle  ,
 .Ic unset ,
 .Ic slc  ,
-.Ic environ ,
 and
 .Ic display
 commands).
@@ -249,30 +222,6 @@ option.
 This requires that the 
 .Li LINEMODE
 option be enabled.
-.Tp Cx Ic softtabs
-.Cx \&\ \&
-.Pq Ic \-softtabs
-.Cx
-Attempt to enable (disable) the 
-.Li SOFT_TAB
-mode of the 
-.Li LINEMODE
-option.
-This requires that the 
-.Li LINEMODE
-option be enabled.
-.Tp Cx Ic litecho
-.Cx \&\ \&
-.Pq Ic \-litecho
-.Cx
-Attempt to enable (disable) the 
-.Li LIT_ECHO
-mode of the 
-.Li LINEMODE
-option.
-This requires that the 
-.Li LINEMODE
-option be enabled.
 .Tp Ic \&?
 Prints out help information for the
 .Ic mode
@@ -282,11 +231,6 @@ command.
 .Cx \&\ \&
 .Ar host
 .Cx \&\ \&
-.Cx [
-.Op Fl l
-.Cx \&\ \&
-.Ar user
-.Cx ]
 .Cx [
 .Op Fl
 .Cx \&\ \&
@@ -304,12 +248,6 @@ The host specification may be either a host name (see
 .Xr hosts  5  )
 or an Internet address specified in the \*(Lqdot notation\*(Rq (see
 .Xr inet 3 ) .
-The
-.Op Fl l
-option may be used to specify the user name
-to be passed to the remote system via the
-.Li ENVIRON
-option.
 When connecting to a non-standard port,
 .Nm telnet
 omits any automatic initiation of
@@ -699,11 +637,6 @@ The initial value for the worderase character is taken to be
 the terminal's
 .Ic worderase
 character.
-.Tp Ic \&?
-Displays the legal
-.Ic set
-.Pq Ic unset
-commands.
 .Tp
 .Tp Cx Ic slc
 .Cx \&\ \&
@@ -746,74 +679,16 @@ Verify the current settings for the current special characters.
 The remote side is requested to send all the current special
 character settings, and if there are any discrepencies with
 the local side, the local side will switch to the remote value.
-.Tp Ic \&?
+.Ic Ic \&?
 Prints out help information for the
 .Ic slc
 command.
 .Tp
-.Tp Cx Ic environ
-.Cx \&\ \&
-.Ar arguments...
-.Cx
-The
-.Ic environ
-command is used to manipulate the
-the variables that my be sent through the
-.Li TELNET ENVIRON
-option.
-The initial set of variables is taken from the users
-environment; with only the
-.Ev USER
-and
-.Ev DISPLAY variables
-being exported.
-.br
-Valid arguments for the \fBenviron\fP command are:
-.Tw Fl
-.Tp Cx Ic define
-.Cx \&\ \&
-.Ar variable value
-.Cx
-Define the variable
-.Ar variable
-to have a value of
-.Ar value.
-Any variables defined by this command are automatically exported.
-The
-.Ar value
-may be enclosed in single or double quotes so
-that tabs and spaces may be included.
-.Tp Cx Ic undefine
-.Cx \&\ \&
-.Ar variable
-.Cx
-Remove
-.Ar variable
-from the list of environment variables.
-.Tp Cx Ic export
-.Cx \&\ \&
-.Ar variable
-.Cx
-Mark the variable
-.Ar variable
-to be exported to the remote side.
-.Tp Cx Ic unexport
-.Cx \&\ \&
-.Ar variable
-.Cx
-Mark the variable
-.Ar variable
-to not be exported unless
-explicitly asked for by the remote side.
-.Tp Ic list
-List the current set of environment variables.
-Those marked with a \fB*\fR will be sent automatically,
-other variables will only be sent if explicitly requested.
 .Tp Ic \&?
-Prints out help information for the
-.Ic environ
-command.
-.Tp
+Displays the legal
+.Ic set
+.Pq Ic unset
+commands.
 .Tp Cx Ic toggle
 .Cx \&\ \&
 .Ar arguments ...
@@ -928,9 +803,7 @@ If this is
 TRUE,
 then the
 .Ic flush  ,
-.Ic interrupt ,
 .Ic quit  ,
-.Ic erase ,
 and
 .Ic kill
 characters (see
@@ -940,9 +813,7 @@ above) are recognized locally, and transformed into (hopefully) appropriate
 control sequences
 (respectively
 .Ic ao  ,
-.Ic ip ,
 .Ic brk  ,
-.Ic ec ,
 and
 .Ic el  ;
 see
@@ -966,7 +837,6 @@ and
 .B suspend
 are sent as
 .Ic eof and
-.Ic susp ,
 see
 .Ic send
 above).
@@ -1028,18 +898,12 @@ If a command is specified,
 will print the help information for just that command.
 .Sh ENVIRONMENT
 .Nm Telnet
-uses at least the
+uses the
 .Ev HOME ,
-.Ev SHELL ,
-.Ev USER ,
-.Ev DISPLAY ,
+.Ev SHELL
 and
 .Ev TERM
 environent variables.
-Other envirnoment variables may be propogated
-to the other side via the
-.Li TELNET ENVIRON
-option.
 .Sh FILES
 .Dw ~/.telnetrc
 .Di L

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)make.1	5.2 (Berkeley) %G%
+.\"     @(#)make.1	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAKE 1
@@ -141,6 +141,7 @@ and are usually created from them.
 The exact relationship between the target and the source is determined
 by the operator that separates them.
 The three operators are as follows:
+.Tw Ds
 .Tp Ic \&:
 A target is considered out-of-date if its modification time is less than
 those of any of its sources.
@@ -197,6 +198,7 @@ Variables in make are much like variables in the shell, and, by tradition,
 consist of all upper-case letters.
 The five operators that can be used to assign values to variables are as
 follows:
+.Tw Ds
 .Tp Ic \&=
 Assign the value to the variable.
 Any previous value is overridden.
@@ -350,32 +352,32 @@ Replaces each word in the variable with everything but its suffix.
 .Op Cm g
 .Cx
 Modify the first occurrence of
-.Ar old _pattern
+.Ar old_pattern
 in each word to be replaced with
-.Ar new _pattern  .
+.Ar new_pattern  .
 If a ``g'' is appended to the last slash of the pattern, all occurrences
 in each word are replaced.
 If
-.Ar old _pattern
+.Ar old_pattern
 begins with a carat (``^''),
-.Ar old _pattern
+.Ar old_pattern
 is anchored at the beginning of each word.
 If
-.Ar old _pattern
+.Ar old_pattern
 ends with a dollar sign (``$''), it is anchored at the end of each word.
 Inside
-.Ar new _string  ,
+.Ar new_string  ,
 an ampersand (``&'') is replaced by
-.Ar old _pattern .
+.Ar old_pattern .
 Any character may be used as a delimiter for the parts of the modifier
 string.
 The anchoring, ampersand and delimiter characters may be escaped with a
 backslash (``\e'').
 .Pp
 Variable expansion occurs in the normal fashion inside both
-.Ar old _string
+.Ar old_string
 and
-.Ar new _string
+.Ar new_string
 with the single exception that a backslash is used to prevent the expansion
 of a dollar sign (``$''), not a preceding dollar sign as is usual.
 .Tp Cm T
@@ -383,7 +385,7 @@ Replaces each word in the variable with its last component.
 .Tp Ar old_string=new_string
 This is the System V style variable substitution.
 It must be the last modifier specified.
-.Ar Old _string
+.Ar Old_string
 is anchored at the end of each word, so only suffixes or entire
 words may be replaced.
 .Tp
@@ -399,7 +401,9 @@ to form the file name.
 If angle brackets are used, the included makefile is expected to be in
 the system makefile directory.
 If double quotes are used, the including makefile's directory and any
-directories specified using the -I option are searched before the system
+directories specified using the
+.Fl I
+option are searched before the system
 makefile directory.
 .Pp
 Conditional expressions are also preceded by a single dot as the first
@@ -673,13 +677,12 @@ Each source specifies a suffix to
 .Nm make  .
 If no sources are specified, any previous specifies suffices are deleted.
 .Sh ENVIRONMENT
-.Nm make
-can utilize the
+.Nm Make
+utilizes the following environment variables, if they exist:
 .Ev MAKE ,
 .Ev MAKEFLAGS
 and
-.Ev MAKEOBJDIR
-environment variables.
+.Ev MAKEOBJDIR .
 .Sh FILES
 .Dw /usr/share/mk
 .Di L

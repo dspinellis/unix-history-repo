@@ -3,15 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)at.1	6.3 (Berkeley) %G%
+.\"     @(#)at.1	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AT 1
-.Dd 
 .Os BSD 4
 .Sh NAME
 .Nm at
-.Sd run command(s) at a specific time
+.Nd schedule execution of commands `at' a given time
 .Sh SYNOPSIS
 .Nm at
 .Op Fl c
@@ -22,15 +21,23 @@
 .Op Ar command_file
 .Sh DESCRIPTION
 .Nm At
-allows commands to be run at a user specified time.
-The commands can be given to
+schedules execution of commands at the specified
+.Ar time .
+The commands may be given to
 .Nm
 via the
 .Ar command_file
 or accepted from the standard input.
 .Nm At
 will pass these commands to the appropriate
-shell at the requested time.
+shell at the requested time. While awaiting
+execution, the jobs reside in a spool directory
+and may be examined by the
+.Xr atq 1
+program.
+.Pp
+Options available:
+.Pp
 .Tp Fl c
 .Ar Command_file
 contains
@@ -49,18 +56,21 @@ no errors occur, then a short message is sent informing the
 user that no errors occurred.
 .Tp
 .Pp
-If no file name is specified,
+If a
+.Ar command_file
+is not specified,
 .Nm at
 prompts for commands from standard input until a
-.Li \&^D is typed.
+.Ql \&^D
+is typed.
 .Pp
 The format of the spool file is as follows:
 A four line header that includes the owner of the job, the name of the job,
 the shell used to run the job, and whether mail will be
-set after the job is executed. The header is followed by a
-.Ic cd
+sent after the job is executed. The header is followed by a
+.Nm cd
 command to the current directory and a
-.Ic umask
+.Nm umask
 command to set the modes on any files created by the job.
 Then
 .Nm at
@@ -79,13 +89,9 @@ is hour and
 is minutes, or the traditional 12 hour time
 with qualifying options:
 .Df I
-.Dp Li am
+.Dp Li am , a
 am
-.Dp Li a
-am
-.Dp Li pm
-pm
-.Dp Li p
+.Dp Li pm , p
 pm
 .Dp Li n
 noon
@@ -93,7 +99,7 @@ noon
 midnight
 .Dp
 .De
-The time can be abbreviated as shown below in the EXAMPLES.
+The time can be abbreviated as shown below in EXAMPLES.
 .Pp
 A
 .Ar day
@@ -102,33 +108,36 @@ letters of its name. A week (7 days) may be specified by
 the argument
 .Em week .
 If a month name is given, the following argument is expected to
-be the day.
+be the day (numeric).
 .Sh ENVIRONMENT
-If no shell is specified,
+If a shell is not specified,
 the current environment variable
 .Ev SHELL
 is used.
-Examples
+.Sh EXAMPLES
 .Pp
-.Dp Li at 10p
+.Tw Ar
+.Tp Li at 10p
 Execute at 10pm today, or tomorrow
 if 10pm has past. Use the shell
 found in the environment variable
 .Ev SHELL.
-.Dp Li at -c -m 1705 mo
+.Tp Li at -c -m 1705 mo
 Execute at 5:05pm on Monday using
 .Xr csh 1
 and send mail upon completion or
 termination of the job.
-.Dp Li at -s -m 1200n week
+.Tp Li at -s -m 1200n week
 Use
 .Xr sh 1 ,
 send mail upon completetion, start at noon o'clock,
 one week from today.
-.Dp Li at -s 8a apr 1
-Try it for fun.
-.Dp
-.Pp
+.Tp Li at -s 8a apr 1
+Ideally this would be given late in March.  The
+commands would be run at 8 am on April first, using
+the
+.Xr sh 1 .
+.Tp
 .Sh ERRORS
 Errors must be collected via the
 .Fl m
@@ -137,7 +146,7 @@ from inside the
 .Ar command_file.
 .Sh FILES
 .Dw /var/spool/at/yy.ddd.hhhh.*
-.Ds L
+.Di L
 .Dp Pa /var/spool/at
 spooling area
 .Dp Pa /var/spool/at/yy.ddd.hhhh.*
@@ -159,7 +168,7 @@ executor (run by
 .Sh DIAGNOSTICS
 Complains about various syntax errors and times out of range.
 .Sh HISTORY
-.Nm
+.Nm At
 appeared in Version 7 AT&T UNIX.
 .Sh BUGS
 The queueing mechanism
@@ -182,5 +191,6 @@ If the system crashes, mail is not sent to the user informing them that
 the job was not completed.
 .Pp
 Sometimes old spool files are not removed from the directory
-/var/spool/at/past. This is usually due to a system crash,
+.Pa /var/spool/at/past .
+This is usually due to a system crash,
 and requires that they be removed by hand.

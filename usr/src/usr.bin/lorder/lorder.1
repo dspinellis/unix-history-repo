@@ -3,35 +3,42 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lorder.1	6.4 (Berkeley) %G%
+.\"     @(#)lorder.1	6.5 (Berkeley) %G%
 .\"
-.TH LORDER 1 "Q"
-.UC 4
-.SH NAME
-lorder \- list dependencies for object files
-.SH SYNOPSIS
-.ft B
-lorder file ...
-.ft R
-.SH DESCRIPTION
-The 
-.I lorder
+.Dd 
+.Dt LORDER 1
+.Os BSD 4.4
+.Sh NAME
+.Nm lorder
+.Nd list dependencies for object files
+.Sh SYNOPSIS
+.Nm lorder
+.Ar file ...
+.Sh DESCRIPTION
+The
+.Nm lorder
 utility uses
-.IR nm (1)
+.Xr nm  1
 to determine interdependencies in the list of object files
 specified on the command line.
-.I Lorder
+.Nm Lorder
 outputs a list of file names where the first file contains a symbol
 which is defined by the second file.
-.PP
-The output is normally used with 
-.IR tsort (1)
+.Pp
+The output is normally used with
+.Xr tsort  1
 when a library is created to determine the optimum ordering of the
 object modules so that all references may be resolved in a single
 pass of the loader.
-.SH EXAMPLES
-.RS
-ar cr library.a `lorder ${OBJS} | tsort`
-.RE
-.SH "SEE ALSO"
-ar(1), ld(1), nm(1), ranlib(1), tsort(1)
+.Sh EXAMPLES
+.Pp
+.Dl ar cr library.a `lorder ${OBJS}  tsort`
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr ld 1 ,
+.Xr nm 1 ,
+.Xr ranlib 1 ,
+.Xr tsort 1
+.Sh HISTORY
+.Nm Lorder
+appeared in Version 7 AT&T Unix.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)tset.1	6.4 (Berkeley) %G%
+.\"     @(#)tset.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TSET 1
@@ -147,8 +147,8 @@ and
 messages.
 .Tp
 .Pp
-When used in a startup script (
-.Pa \&.profile
+When used in a startup script
+.Pf \&( Pa \&.profile
 for
 .Xr sh  1
 users or
@@ -340,7 +340,7 @@ or ``\-1'' is reset to its default value.  All arguments to
 may be used with reset.
 .Pp
 This is most useful after a program dies leaving a terminal in a funny
-state. You may have to type ``
+state. You may have to type
 .Dq Li <LF>reset<LF>
 to get it to work
 since
