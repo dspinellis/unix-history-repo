@@ -1,4 +1,4 @@
-/*	dvar.c	1.12	84/05/24
+/*	dvar.c	1.13	84/09/28
  *
  * Varian driver for the new troff
  *
@@ -85,7 +85,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.12	84/05/24";
+char	SccsId[]= "dvar.c	1.13	84/09/28";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -1062,8 +1062,7 @@ register int fsize;
 	}
 		/* this is a new font */
 	if (fnum < 0 || fnum > NFONTS || fontname[fnum] == 0) {
-	    fprintf(stderr, "Internal error: illegal font %d name %s size\n",
-			    fontname[fnum], fnum, fsize);
+	    error(!FATAL,"error: illegal font %d, size %d\n", fnum, fsize);
 	    return(-1);
 	}
 		/* Need to verify the existance of that font/size here*/
@@ -1284,7 +1283,7 @@ int number;
 		stip_bits = bits;
 	    }
 	}
-	vloadfont(curfont, cursize);
+	if (curfont >= 0) vloadfont(curfont, cursize);
 }
 
 
