@@ -1,16 +1,16 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)e0	8.1 (Berkeley) %G%
+.\"	@(#)e0	6.3 (Berkeley) %G%
 .\"
-.EH 'USD:12-%''A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor'
-.OH 'A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor''USD:12-%'
+.EH 'USD:9-%''A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor'
+.OH 'A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor''USD:9-%'
 .\".RP
 .TL
 A Tutorial Introduction to the \s-2UNIX\s+2 Text Editor
 .AU
 Brian W. Kernighan
 .AI
-.MH
+Murray Hill, NJ
 .AB
 .PP
 Almost all text input on
