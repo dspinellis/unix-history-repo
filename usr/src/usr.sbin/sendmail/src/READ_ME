@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.67 (Berkeley) %G%
+#	@(#)READ_ME	8.68 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -313,6 +313,10 @@ BROKEN_RES_SEARCH
 		-1 but sets h_errno to 0 instead of HOST_NOT_FOUND.  If
 		you set this, sendmail considers 0 to be the same as
 		HOST_NOT_FOUND.
+NAMELISTMASK	If defined, values returned by nlist(3) are masked
+		against this value before use -- a common value is
+		0x7fffffff to strip off the top bit.
+
 
 
 +-----------------------+
@@ -871,4 +875,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.67, last update %G% 08:53:39)
+(Version 8.68, last update %G% 11:41:27)
