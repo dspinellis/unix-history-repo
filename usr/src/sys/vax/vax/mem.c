@@ -1,4 +1,4 @@
-/*	mem.c	4.8	82/10/20	*/
+/*	mem.c	4.9	82/10/21	*/
 
 /*
  * Memory special file
@@ -64,7 +64,7 @@ mmrw(dev, uio, rw)
 			o = (int)uio->uio_offset & PGOFSET;
 			c = min((u_int)(NBPG - o), (u_int)iov->iov_len);
 			c = min(c, (u_int)(NBPG - ((int)iov->iov_base&PGOFSET)));
-			error = uiomove((caddr_t)&vmmap[o], c, rw, uio);
+			error = uiomove((caddr_t)&vmmap[o], (int)c, rw, uio);
 			continue;
 
 /* minor device 1 is kernel memory */
@@ -78,7 +78,7 @@ mmrw(dev, uio, rw)
 			c = iov->iov_len;
 			if (!kernacc((caddr_t)uio->uio_offset, c, rw == UIO_READ ? B_READ : B_WRITE))
 				goto fault;
-			error = uiomove((caddr_t)uio->uio_offset, c, rw, uio);
+			error = uiomove((caddr_t)uio->uio_offset, (int)c, rw, uio);
 			continue;
 
 /* minor device 2 is EOF/RATHOLE */

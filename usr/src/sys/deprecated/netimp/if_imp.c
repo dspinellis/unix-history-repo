@@ -1,4 +1,4 @@
-/*	if_imp.c	4.41	82/10/20	*/
+/*	if_imp.c	4.42	82/10/21	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -19,8 +19,8 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vax/ubareg.h"
-#include "../vax/ubavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
@@ -406,7 +406,7 @@ impoutput(ifp, m0, dst)
 {
 	register struct imp_leader *imp;
 	register struct mbuf *m = m0;
-	int x, dhost, dimp, dlink, len, dnet;
+	int dhost, dimp, dlink, len, dnet;
 	int error = 0;
 
 	/*
@@ -566,7 +566,6 @@ impnoops(sc)
 	register i;
 	register struct mbuf *m;
 	register struct control_leader *cp;
-	int x;
 
 	sc->imp_dropcnt = IMP_DROPCNT;
 	for (i = 0; i < IMP_DROPCNT + 1; i++ ) { 

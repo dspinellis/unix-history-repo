@@ -1,4 +1,4 @@
-/*	uda.c	4.13	82/10/17	*/
+/*	uda.c	4.14	82/10/21	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -114,6 +114,7 @@ udprobe(reg, ctlr)
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec; reg = reg;
+	udintr(0);
 #endif
 	/* SHOULD CHECK THAT IT REALLY IS A UDA */
 	br = 0x15;

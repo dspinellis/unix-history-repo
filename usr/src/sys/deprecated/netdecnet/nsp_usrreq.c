@@ -1,4 +1,4 @@
-/*	nsp_usrreq.c	1.3	82/10/09	*/
+/*	nsp_usrreq.c	1.4	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -245,7 +245,7 @@ nsp_attach(so, sa)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, 1024) == 0) {
 bad:
-		m_free(m);
+		(void) m_free(m);
 		return (ENOBUFS);
 	}
 	if (sbreserve(&so->so_rcv, 1024) == 0) {

@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.32	82/10/17	*/
+/*	tcp_subr.c	4.33	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -181,7 +181,7 @@ tcp_drop(tp, errno)
 
 	if (TCPS_HAVERCVDSYN(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
-		tcp_output(tp);
+		(void) tcp_output(tp);
 	}
 	so->so_error = errno;
 	tcp_close(tp);

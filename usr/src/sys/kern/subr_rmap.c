@@ -1,4 +1,4 @@
-/*	subr_rmap.c	4.6	82/10/10	*/
+/*	subr_rmap.c	4.7	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,6 +7,7 @@
 #include "../h/user.h"
 #include "../h/proc.h"
 #include "../h/text.h"
+#include "../h/kernel.h"
 
 /*
  * Resource map handling routines.
@@ -78,8 +79,10 @@ rminit(mp, size, addr, name, mapsize)
  * This routine knows about the interleaving of the swapmap
  * and handles that.
  */
+long
 rmalloc(mp, size)
 	register struct map *mp;
+	long size;
 {
 	register struct mapent *ep = (struct mapent *)(mp+1);
 	register int addr;
@@ -140,7 +143,7 @@ rmalloc(mp, size)
  */
 rmfree(mp, size, addr)
 	struct map *mp;
-	register int size, addr;
+	long size, addr;
 {
 	struct mapent *firstbp;
 	register struct mapent *bp;

@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.33	82/10/17	*/
+/*	kern_physio.c	4.34	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,9 +43,9 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	struct proc *p;
 	swblk_t dblkno;
 	caddr_t addr;
-	int flag, nbytes;
+	int nbytes, rdflg, flag;
 	dev_t dev;
-	unsigned pfcent;
+	u_int pfcent;
 {
 	register struct buf *bp;
 	register int c;

@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.17	82/10/19	*/
+/*	lfs_alloc.c	2.18	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -592,7 +592,7 @@ norot:
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
-	clrblock(fs, cgp->cg_free, (int)(bno/fs->fs_frag));
+	clrblock(fs, cgp->cg_free, (long)(bno/fs->fs_frag));
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;

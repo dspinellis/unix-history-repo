@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.42	82/10/17	*/
+/*	kern_proc.c	4.43	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -221,7 +221,7 @@ execve()
 	ne = 0;
 	nc = 0;
 	uap = (struct execa *)u.u_ap;
-	if ((bno = rmalloc(argmap, ctod(clrnd((int) btoc(NCARGS))))) == 0) {
+	if ((bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))))) == 0) {
 		swkill(u.u_procp, "exece");
 		goto bad;
 	}
@@ -412,7 +412,7 @@ register struct inode *ip;
 	if (pagi && u.u_procp->p_textp)
 		vinifod((struct fpte *)dptopte(u.u_procp, 0),
 		    PG_FTEXT, u.u_procp->p_textp->x_iptr,
-		    1 + ts/CLSIZE, (int)btoc(u.u_exdata.ux_dsize));
+		    (long)(1 + ts/CLSIZE), (int)btoc(u.u_exdata.ux_dsize));
 
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
 #include "../vax/mtpr.h"		/* XXX */
@@ -427,7 +427,7 @@ register struct inode *ip;
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_gid = gid;
-		entergroup(gid);
+		(void) entergroup(gid);
 	} else
 		psignal(u.u_procp, SIGTRAP);
 	u.u_tsize = ts;
@@ -689,7 +689,7 @@ loop:
 			if (ru)
 				*ru = *p->p_ru;
 			ruadd(&u.u_cru, p->p_ru);
-			m_free(dtom(p->p_ru));
+			(void) m_free(dtom(p->p_ru));
 			p->p_ru = 0;
 			p->p_stat = NULL;
 			p->p_pid = 0;

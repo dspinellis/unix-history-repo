@@ -1,4 +1,4 @@
-/*	if_ec.c	4.24	82/10/10	*/
+/*	if_ec.c	4.25	82/10/21	*/
 
 #include "ec.h"
 
@@ -45,7 +45,7 @@ u_char	ec_iltop[3] = { 0x02, 0x07, 0x01 };
 #define	ECUNIT(x)	minor(x)
 
 int	ecinit(),ecoutput(),ecreset();
-struct mbuf *ecget();
+struct	mbuf *ecget();
 
 extern struct ifnet loif;
 
@@ -66,7 +66,7 @@ struct	ec_softc {
 	struct	ifuba es_ifuba;		/* UNIBUS resources */
 	short	es_mask;		/* mask for current output delay */
 	short	es_oactive;		/* is output active? */
-	caddr_t	es_buf[16];		/* virtual addresses of buffers */
+	u_char	*es_buf[16];		/* virtual addresses of buffers */
 	u_char	es_enaddr[6];		/* board's ethernet address */
 } ec_softc[NEC];
 
@@ -93,15 +93,15 @@ ecprobe(reg)
 	 * Disable map registers for ec unibus space,
 	 * but don't allocate yet.
 	 */
-	ubamem(numuba, ECMEM, 32*2, 0);
+	(void) ubamem(numuba, ECMEM, 32*2, 0);
 	/*
 	 * Check for existence of buffers on Unibus.
 	 */
-	if (badaddr((caddr_t) ecbuf, 2)) {
+	if (badaddr((caddr_t)ecbuf, 2)) {
 	bad1:
 		printf("ec: buffer mem not found\n");
 	bad2:
-		ubamem(numuba, 0, 0, 0);	/* reenable map (780 only) */
+		(void) ubamem(numuba, 0, 0, 0);	/* reenable map (780 only) */
 		addr->ec_rcr = EC_MDISAB;	/* disable memory */
 		return (0);
 	}
@@ -200,7 +200,7 @@ ecattach(ui)
 	ifp->if_output = ecoutput;
 	ifp->if_ubareset = ecreset;
 	for (i=0; i<16; i++)
-		es->es_buf[i] = &umem[ui->ui_ubanum][ECMEM+2048*i];
+		es->es_buf[i] = (u_char *)&umem[ui->ui_ubanum][ECMEM+2048*i];
 	if_attach(ifp);
 }
 
@@ -217,7 +217,7 @@ ecreset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" ec%d", unit);
-	ubamem(uban, ECMEM, 32*2, 0);	/* map register disable (no alloc) */
+	(void) ubamem(uban, ECMEM, 32*2, 0);	/* mr disable (no alloc) */
 	ecinit(unit);
 }
 
@@ -261,11 +261,10 @@ ecinit(unit)
 ecstart(dev)
 	dev_t dev;
 {
-        int unit = ECUNIT(dev), dest;
+        int unit = ECUNIT(dev);
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	struct mbuf *m;
-	caddr_t ecbuf;
 
 	if (es->es_oactive)
 		goto restart;
@@ -401,15 +400,15 @@ ecread(unit)
 	struct ecdevice *addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 	register struct ec_header *ec;
     	struct mbuf *m;
-	int len, off, resid, ecoff, buf;
+	int len, off, resid, ecoff, rbuf;
 	register struct ifqueue *inq;
-	caddr_t ecbuf;
+	u_char *ecbuf;
 
 	es->es_if.if_ipackets++;
-	buf = addr->ec_rcr & EC_RBN;
-	if (buf < ECRLBF || buf > ECRHBF)
+	rbuf = addr->ec_rcr & EC_RBN;
+	if (rbuf < ECRLBF || rbuf > ECRHBF)
 		panic("ecrint");
-	ecbuf = es->es_buf[buf];
+	ecbuf = es->es_buf[rbuf];
 	ecoff = *(short *)ecbuf;
 	if (ecoff <= ECRDOFF || ecoff > 2046) {
 		es->es_if.if_ierrors++;
@@ -482,7 +481,7 @@ setup:
 	/*
 	 * Reset for next packet.
 	 */
-	addr->ec_rcr = EC_READ|EC_RCLR|buf;
+	addr->ec_rcr = EC_READ|EC_RCLR|rbuf;
 }
 
 /*
@@ -512,7 +511,7 @@ ecoutput(ifp, m0, dst)
 	case AF_INET:
 		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
 		if ((dest &~ 0xff) == 0)
-			mcopy = m_copy(m, 0, M_COPYALL);
+			mcopy = m_copy(m, 0, (long)M_COPYALL);
 		else if (dest == ((struct sockaddr_in *)&es->es_if.if_addr)->
 		    sin_addr.s_addr) {
 			mcopy = m;

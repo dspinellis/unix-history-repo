@@ -1,4 +1,4 @@
-/*	trap.c	4.20	82/10/20	*/
+/*	trap.c	4.21	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -185,7 +185,7 @@ syscall(sp, type, code, pc, psl)
 asm("ok:");						/* GROT */
 		asm("movc3 r9,(r10),_u+U_ARG");		/* GROT */
 #else
-		bcopy(params, u.u_arg, (u_int)i);
+		bcopy(params, (caddr_)u.u_arg, (u_int)i);
 #endif
 	}
 	u.u_ap = u.u_arg;

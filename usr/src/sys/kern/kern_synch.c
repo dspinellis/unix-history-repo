@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.23	82/10/17	*/
+/*	kern_synch.c	4.24	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,7 +32,6 @@ roundrobin()
 #undef ave
 #define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
 int	nrscale = 2;
-double	avenrun[];
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
 
 /*

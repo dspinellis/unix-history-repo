@@ -1,4 +1,4 @@
-/*	nsp_output.c	1.3	82/10/09	*/
+/*	nsp_output.c	1.4	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -50,13 +50,13 @@ top:
 		if (len)
 			bcopy((char *)(n + 1), mtod(np->nb_xmt, char *), len);
 		if (tp_output(m, np->n_node)) {
-			m_free(m);
+			(void) m_free(m);
 			return (0);
 		}
 		np->n_flags &= ~(NF_INTAVAIL|NF_OTHACK);
 		np->n_flags |= NF_OTHSENT;
 		if (len)
-			m_free(np->nb_xmt);
+			(void) m_free(np->nb_xmt);
 		nsp_insrtq(m, np->nt_oth);
 		goto top;
 	}
@@ -79,7 +79,7 @@ top:
 		n->nsp_lsflags = NSPLS_INTREQ | NSPLS_ON;
 		n->nsp_fcval = 1;
 		if (tp_output(m, np->n_node)) {
-			m_free(m);
+			(void) m_free(m);
 			return (0);
 		}
 		np->n_flags &= ~NF_OTHACK;
@@ -106,7 +106,7 @@ top:
 		n->nsp_lsflags = NSPLS_DATREQ | NSPLS_ON;
 		n->nsp_fcval = np->nf_locdat;
 		if (tp_output(m, np->n_node)) {
-			m_free(m);
+			(void) m_free(m);
 			return (0);
 		}
 		np->n_flags &= ~NF_OTHACK;
@@ -130,11 +130,11 @@ top:
 		n->nsp_srcaddr = np->n_loc;
 		n->nsp_acknum = NSPA_ACK | np->na_xmtoth;
 		if (tp_output(m, np->n_node)) {
-			m_free(m);
+			(void) m_free(m);
 			return (0);
 		}
 		np->n_flags &= ~NF_OTHACK;
-		m_free(m);
+		(void) m_free(m);
 		goto top;
 	}
 
@@ -169,11 +169,11 @@ top:
 		n->nsp_srcaddr = np->n_loc;
 		n->nsp_acknum = NSPA_ACK | np->na_xmtdat;
 		if (tp_output(m, np->n_node)) {
-			m_free(m);
+			(void) m_free(m);
 			return (0);
 		}
 		np->n_flags &= ~NF_DATACK;
-		m_free(m);
+		(void) m_free(m);
 		goto top;
 	}
 

@@ -1,4 +1,4 @@
-/*	in.c	4.8	82/10/20	*/
+/*	in.c	4.9	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -21,7 +21,7 @@ inet_hash(sin, hp)
 	hp->afh_hosthash = sin->sin_addr.s_addr;
 #if vax || pdp11 || ns16032
 	hp->afh_hosthash = ntohl((u_long)hp->afh_hosthash);
-#else
+#endif
 }
 
 inet_netmatch(sin1, sin2)
@@ -72,7 +72,7 @@ in_netof(in)
 		return (((i)&IN_CLASSC_NET) >> IN_CLASSC_NSHIFT);
 }
 
-#ifndef notdef
+#ifdef notdef
 /*
  * Return the host portion of an internet address.
  */

@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.19	82/10/19	*/
+/*	sys_generic.c	5.20	82/10/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -293,7 +293,7 @@ rwip(ip, uio, rw)
 			goto bad;
 		}
 		u.u_error =
-		    uiomove(bp->b_un.b_addr+on, n, rw, uio);
+		    (void) uiomove(bp->b_un.b_addr+on, n, rw, uio);
 		if (rw == UIO_READ) {
 			if (n + on == bsize || uio->uio_offset == ip->i_size)
 				bp->b_flags |= B_AGE;
@@ -405,6 +405,7 @@ again:
 	return (0);
 }
 
+#ifdef notdef
 /*
  * Get next character written in by user from uio.
  */
@@ -445,6 +446,7 @@ again:
 	uio->uio_offset++;
 	return (c & 0377);
 }
+#endif
 
 /*
  * Ioctl system call
