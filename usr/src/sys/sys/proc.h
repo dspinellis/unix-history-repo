@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	7.28 (Berkeley) %G%
+ *	@(#)proc.h	7.29 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -156,7 +156,7 @@ struct	pcred {
 
 /* flag codes */
 #define	SLOAD	0x0000001	/* in core */
-#define	SSYS	0x0000002	/* swapper or pager process */
+#define	SSYS	0x0000002	/* system proc: no sigs, stats or swapping */
 #define	SSINTR	0x0000004	/* sleep is interruptible */
 #define	SCTTY	0x0000008	/* has a controlling terminal */
 #define	SPPWAIT	0x0000010	/* parent is waiting for child to exec/exit */
