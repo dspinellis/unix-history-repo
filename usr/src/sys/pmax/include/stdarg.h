@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdarg.h	7.2 (Berkeley) %G%
+ *	@(#)stdarg.h	7.3 (Berkeley) %G%
  */
+
+#ifndef _STDARG_H_
+#define	_STDARG_H_
 
 typedef char *va_list;
 
@@ -27,3 +30,5 @@ typedef char *va_list;
 #endif
 
 #define	va_end(ap)
+
+#endif /* !_STDARG_H_ */
