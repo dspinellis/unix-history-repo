@@ -37,9 +37,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00010
+ * CURRENT PATCH LEVEL:         2       00031
  * --------------------         -----   ----------------------
  *
+ * 15 Aug 92	Pace Willisson		Patches for X server
  * 21 Aug 92    Frank Maclachlan        Fixed back-scroll system crash
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
@@ -65,6 +66,10 @@ static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.
 #include "i386/isa/ic/i8042.h"
 #include "i386/isa/kbd.h"
 #include "machine/pc/display.h"
+
+#ifdef XSERVER						/* 15 Aug 92*/
+int pc_xmode;
+#endif /* XSERVER */
 
 struct	tty pccons;
 
@@ -287,9 +292,20 @@ pcrint(dev, irq, cpl)
 #endif
 	if (!openf)
 		return;
+
+#ifdef XSERVER						/* 15 Aug 92*/
+	/* send at least one character, because cntl-space is a null */
+	(*linesw[pccons.t_line].l_rint)(*cp++ & 0xff, &pccons);
+#endif /* XSERVER */
+
 	while (*cp)
 		(*linesw[pccons.t_line].l_rint)(*cp++ & 0xff, &pccons);
 }
+
+#ifdef XSERVER						/* 15 Aug 92*/
+#define CONSOLE_X_MODE_ON _IO('t',121)
+#define CONSOLE_X_MODE_OFF _IO('t',122)
+#endif /* XSERVER */
 
 pcioctl(dev, cmd, data, flag)
 	dev_t dev;
@@ -297,6 +313,16 @@ pcioctl(dev, cmd, data, flag)
 {
 	register struct tty *tp = &pccons;
 	register error;
+
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (cmd == CONSOLE_X_MODE_ON) {
+		pc_xmode_on ();
+		return (0);
+	} else if (cmd == CONSOLE_X_MODE_OFF) {
+		pc_xmode_off ();
+		return (0);
+	}
+#endif /* XSERVER */
  
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
 	if (error >= 0)
@@ -418,6 +444,11 @@ pccngetc(dev)
 	register int s;
 	register char *cp;
 
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (pc_xmode)
+		return (0);
+#endif /* XSERVER */
+
 	s = spltty();		/* block pcrint while we poll */
 	cp = sgetc(0);
 	splx(s);
@@ -429,6 +460,11 @@ pcgetchar(tp)
 	register struct tty *tp;
 {
 	char *cp;
+
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (pc_xmode)
+		return (0);
+#endif /* XSERVER */
 
 	cp = sgetc(0);
 	return (*cp&0xff);
@@ -474,6 +510,9 @@ static u_short *crtat = 0;
 cursor(int a)
 { 	int pos = crtat - Crtat;
 
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (!pc_xmode) {
+#endif /* XSERVER */
 	outb(addr_6845, 14);
 	outb(addr_6845+1, pos>> 8);
 	outb(addr_6845, 15);
@@ -486,6 +525,9 @@ cursor(int a)
 #endif	FAT_CURSOR
 	if (a == 0)
 		timeout(cursor, 0, hz/10);
+#ifdef XSERVER						/* 15 Aug 92*/
+	}
+#endif /* XSERVER */
 }
 
 static u_char shift_down, ctrl_down, alt_down, caps, num, scroll;
@@ -514,6 +556,11 @@ u_char ka;
 
 	int sc = 1;	/* do scroll check */
 	char fg_at, bg_at, at;
+
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (pc_xmode)
+		return;
+#endif /* XSERVER */
 
 	if (crtat == 0)
 	{
@@ -1255,8 +1302,18 @@ char *sgetc(noblock)
 	 *   First see if there is something in the keyboard port
 	 */
 loop:
+#ifdef XSERVER						/* 15 Aug 92*/
+	if (inb(KBSTATP) & KBS_DIB) {
+		dt = inb(KBDATAP);
+		if (pc_xmode) {
+			capchar[0] = dt;
+			return (&capchar[0]);
+		}
+	}
+#else	/* !XSERVER*/
 	if (inb(KBSTATP) & KBS_DIB)
 		dt = inb(KBDATAP);
+#endif /* !XSERVER*/
 	else
 	{
 		if (noblock)
@@ -1268,10 +1325,14 @@ loop:
 	if (dt == 0xe0)
 	{
 		extended = 1;
+#ifdef XSERVER						/* 15 Aug 92*/
+		goto loop;
+#else	/* !XSERVER*/
 		if (noblock)
 			return 0;
 		else
 			goto loop;
+#endif /* !XSERVER*/
 	}
 
 	/*
@@ -1348,7 +1409,36 @@ loop:
 				ctrl_down = 1;
 				break;
 			case ASCII:
+#ifdef XSERVER						/* 15 Aug 92*/
+/*
+ * 18 Sep 92	Terry Lambert	I find that this behaviour is questionable --
+ *				I believe that this should be conditional on
+ *				the value of pc_xmode rather than always
+ *				done.  In particular, "case NONE" seems to
+ *				not cause a scancode return.  This may
+ *				invalidate alt-"=" and alt-"-" as well as the
+ *				F11 and F12 keys, and some keys on lap-tops,
+ *				Especially Toshibal T1100 and Epson Equity 1
+ *				and Equity 1+ when not in pc_xmode.
+ */
+				/* control has highest priority */
+				if (ctrl_down)
+					capchar[0] = scan_codes[dt].ctrl[0];
+				else if (shift_down)
+					capchar[0] = scan_codes[dt].shift[0];
+				else
+					capchar[0] = scan_codes[dt].unshift[0];
+
+				if (caps && (capchar[0] >= 'a'
+					 && capchar[0] <= 'z')) {
+					capchar[0] = capchar[0] - ('a' - 'A');
+				}
+				capchar[0] |= alt_down;
+				extended = 0;
+				return(&capchar[0]);
+#else	/* !XSERVER*/
 			case NONE:
+#endif	/* !XSERVER*/
 			case FUNC:
 				if (shift_down)
 					more_chars = scan_codes[dt].shift;
@@ -1356,6 +1446,7 @@ loop:
 					more_chars = scan_codes[dt].ctrl;
 				else
 					more_chars = scan_codes[dt].unshift;
+#ifndef XSERVER						/* 15 Aug 92*/
 				/* XXX */
 				if (caps && more_chars[1] == 0
 					&& (more_chars[0] >= 'a'
@@ -1363,6 +1454,7 @@ loop:
 					capchar[0] = *more_chars - ('a' - 'A');
 					more_chars = capchar;
 				}
+#endif	/* !XSERVER*/
 				extended = 0;
 				return(more_chars);
 			case KP:
@@ -1372,13 +1464,21 @@ loop:
 					more_chars = scan_codes[dt].unshift;
 				extended = 0;
 				return(more_chars);
+#ifdef XSERVER						/* 15 Aug 92*/
+			case NONE:
+				break;
+#endif	/* XSERVER*/
 		}
 	}
 	extended = 0;
+#ifdef XSERVER						/* 15 Aug 92*/
+	goto loop;
+#else	/* !XSERVER*/
 	if (noblock)
 		return 0;
 	else
 		goto loop;
+#endif	/* !XSERVER*/
 }
 
 pg(p,q,r,s,t,u,v,w,x,y,z) char *p; {
@@ -1471,3 +1571,38 @@ int pcmmap(dev_t dev, int offset, int nprot)
 		return -1;
 	return i386_btop((0xa0000 + offset));
 }
+
+#ifdef XSERVER						/* 15 Aug 92*/
+#include "machine/psl.h"
+#include "machine/frame.h"
+
+pc_xmode_on ()
+{
+	struct syscframe *fp;
+
+	if (pc_xmode)
+		return;
+	pc_xmode = 1;
+
+	fp = (struct syscframe *)curproc->p_regs;
+	fp->sf_eflags |= PSL_IOPL;
+}
+
+pc_xmode_off ()
+{
+	struct syscframe *fp;
+
+	if (pc_xmode == 0)
+		return;
+	pc_xmode = 0;
+
+	cursor(0);
+
+	fp = (struct syscframe *)curproc->p_regs;
+	fp->sf_eflags &= ~PSL_IOPL;
+}
+#endif	/* XSERVER*/
+
+/*
+ * EOF -- File has not been truncated
+ */
