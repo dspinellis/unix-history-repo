@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id: mbuf.h,v 1.7 1994/03/07 11:48:12 davidg Exp $
+ *	$Id: mbuf.h,v 1.8.1.1 1994/05/01 02:27:52 jtw Exp $
  */
 
 #ifndef _SYS_MBUF_H_
@@ -65,7 +65,7 @@
 #define mtod(m,t)	((t)((m)->m_data))
 #define	dtom(x)		((struct mbuf *)((int)(x) & ~(MSIZE-1)))
 #define	mtocl(x)	(((u_int)(x) - (u_int)mbutl) >> MCLSHIFT)
-#define	cltom(x)	((caddr_t)((u_int)mbutl + ((u_int)(x) >> MCLSHIFT)))
+#define	cltom(x)	((caddr_t)((u_int)mbutl + ((u_int)(x) << MCLSHIFT)))
 
 /* header at beginning of each mbuf: */
 struct m_hdr {

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id: uipc_mbuf.c,v 1.6 1993/12/19 00:51:44 wollman Exp $
+ *	$Id: uipc_mbuf.c,v 1.7.1.1 1994/05/01 02:24:27 jtw Exp $
  */
 
 #include "param.h"
@@ -442,8 +442,8 @@ m_adj(mp, req_len)
 		}
 		if (m->m_len >= len) {
 			m->m_len -= len;
-			if ((mp = m)->m_flags & M_PKTHDR)
-				m->m_pkthdr.len -= len;
+			if (mp->m_flags & M_PKTHDR)
+				mp->m_pkthdr.len -= len;
 			return;
 		}
 		count -= len;
