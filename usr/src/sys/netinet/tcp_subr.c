@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.10 81/12/20 */
+/*	tcp_subr.c	4.11	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -94,6 +94,7 @@ tcp_respond(ti, ack, seq, flags)
 	struct mbuf *m;
 
 COUNT(TCP_RESPOND);
+printf("tcp_respond\n");
 	if (flags == 0) {
 		m = m_get(0);
 		if (m == 0)
@@ -168,8 +169,7 @@ tcp_drop(tp, errno)
 	struct socket *so = tp->t_inpcb->inp_socket;
 
 COUNT(TCP_DROP);
-	if (TCPS_HAVERCVDSYN(tp->t_state) &&
-	    TCPS_OURFINNOTACKED(tp->t_state)) {
+	if (TCPS_HAVERCVDSYN(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
 		tcp_output(tp);
 	}
