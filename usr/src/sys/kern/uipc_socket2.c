@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	4.23	82/06/14	*/
+/*	socketsubr.c	4.24	82/07/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,8 +21,9 @@
 
 /*
  * Procedures to manipulate state flags of socket
- * and do appropriate wakeups.  Normal sequence is that
- * soisconnecting() is called during processing of connect() call,
+ * and do appropriate wakeups.  Normal sequence from the
+ * active (originating) side is that soisconnecting() is
+ * called during processing of connect() call,
  * resulting in an eventual call to soisconnected() if/when the
  * connection is established.  When the connection is torn down
  * soisdisconnecting() is called during processing of disconnect() call,
@@ -32,7 +33,18 @@
  * only, bypassing the in-progress calls when setting up a ``connection''
  * takes no time.
  *
- * When higher level protocols are implemented in
+ * From the passive side, a socket is created with SO_ACCEPTCONN
+ * creating two queues of sockets: so_q0 for connections in progress
+ * and so_q for connections already made and awaiting user acceptance.
+ * As a protocol is preparing incoming connections, it creates a socket
+ * structure queued on so_q0 by calling sonewconn().  When the connection
+ * is established, soisconnected() is called, and transfers the
+ * socket structure to so_q, making it available to accept().
+ * 
+ * If a SO_ACCEPTCONN socket is closed with sockets on either
+ * so_q0 or so_q, these sockets are dropped.
+ *
+ * If and when higher level protocols are implemented in
  * the kernel, the wakeups done here will sometimes
  * be implemented as software-interrupt process scheduling.
  */
@@ -49,7 +61,14 @@ soisconnecting(so)
 soisconnected(so)
 	struct socket *so;
 {
+	register struct socket *head = so->so_head;
 
+	if (head) {
+		if (soqremque(so, 0) == 0)
+			panic("soisconnected");
+		soqinsque(head, so, 1);
+		wakeup((caddr_t)&head->so_timeo);
+	}
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISCONNECTED;
 	wakeup((caddr_t)&so->so_timeo);
@@ -77,6 +96,89 @@ soisdisconnected(so)
 	wakeup((caddr_t)&so->so_timeo);
 	sowwakeup(so);
 	sorwakeup(so);
+}
+
+/*
+ * When an attempt at a new connection is noted on a socket
+ * which accepts connections, sonewconn is called.  If the
+ * connection is possible (subject to space constraints, etc.)
+ * then we allocate a new structure, propoerly linked into the
+ * data structure of the original socket, and return this.
+ */
+struct socket *
+sonewconn(head)
+	register struct socket *head;
+{
+	register struct socket *so;
+	struct mbuf *m;
+
+	if (head->so_qlen + head->so_q0len > 3 * head->so_qlimit / 2)
+		goto bad;
+	m = m_getclr(M_DONTWAIT);
+	if (m == 0)
+		goto bad;
+	so = mtod(m, struct socket *);
+	so->so_type = head->so_type;
+	so->so_options = head->so_options &~ SO_ACCEPTCONN;
+	so->so_linger = head->so_linger;
+	so->so_state = head->so_state;
+	so->so_proto = head->so_proto;
+	so->so_timeo = head->so_timeo;
+	so->so_pgrp = head->so_pgrp;
+	soqinsque(head, so, 0);
+	if ((*so->so_proto->pr_usrreq)(so, PRU_ATTACH, 0, 0)) {
+		(void) soqremque(so, 0);
+		m_free(m);
+		goto bad;
+	}
+	return (so);
+bad:
+	return ((struct socket *)0);
+}
+
+soqinsque(head, so, q)
+	register struct socket *head, *so;
+	int q;
+{
+
+	so->so_head = head;
+	if (q == 0) {
+		head->so_q0len++;
+		so->so_q0 = head->so_q0;
+		head->so_q0 = so;
+	} else {
+		head->so_qlen++;
+		so->so_q = head->so_q;
+		head->so_q = so;
+	}
+}
+
+soqremque(so, q)
+	register struct socket *so;
+	int q;
+{
+	register struct socket *head, *prev, *next;
+
+	head = so->so_head;
+	prev = head;
+	for (;;) {
+		next = q ? prev->so_q : prev->so_q0;
+		if (next == so)
+			break;
+		if (next == head)
+			return (0);
+		prev = next;
+	}
+	if (q == 0) {
+		prev->so_q0 = next->so_q0;
+		head->so_q0len--;
+	} else {
+		prev->so_q = next->so_q;
+		head->so_qlen--;
+	}
+	next->so_q0 = next->so_q = 0;
+	next->so_head = 0;
+	return (1);
 }
 
 /*
