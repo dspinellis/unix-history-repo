@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.37 86/08/04		*/
+/*	@(#)ww.h	3.38 86/10/22		*/
 
 /*
  * Copyright (c) 1983 Regents of the University of California,
@@ -49,7 +49,7 @@ struct ww_tty {
 union ww_char {
 	short c_w;		/* as a word */
 	struct {
-#ifndef mc68000
+#if defined(vax)
 		char C_c;	/* the character part */
 		char C_m;	/* the mode part */
 #else
