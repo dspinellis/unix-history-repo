@@ -1,27 +1,32 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.15
+ * @(#)setterm.c	1.16 (Berkeley) %G%
  */
 
 # include	"curses.ext"
 
-static bool	*sflags[]	= {
-			&AM, &BS, &EO, &HZ, &IN, &MI, &MS, &NC, &OS, &UL, &XN
+static bool	*sflags[] = {
+			&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI,
+			&MS, &NC, &NS, &OS, &UL, &XB, &XN, &XT, &XX
 		};
 
-static char	*xPC,
-		**sstrs[]	= {
-			&AL, &BC, &BT, &CD,  &CE, &CL, &CM, &CR, &DC,
-			&DL, &DM, &DO, &ED,  &EI, &HO, &IC, &IM, &IP,
-			&LL, &MA, &ND, &NL, &xPC, &SE, &SF, &SO, &SR,
-			&TA, &TE, &TI, &UC,  &UE, &UP, &US, &VB, &VS,
-			&VE
+static char	*_PC,
+		**sstrs[] = {
+			&AL, &BC, &BT, &CD, &CE, &CL, &CM, &CR, &CS,
+			&DC, &DL, &DM, &DO, &ED, &EI, &K0, &K1, &K2,
+			&K3, &K4, &K5, &K6, &K7, &K8, &K9, &HO, &IC,
+			&IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU,
+			&LL, &MA, &ND, &NL, &_PC, &RC, &SC, &SE, &SF,
+			&SO, &SR, &TA, &TE, &TI, &UC, &UE, &UP, &US,
+			&VB, &VS, &VE, &AL_PARM, &DL_PARM, &UP_PARM,
+			&DOWN_PARM, &LEFT_PARM, &RIGHT_PARM,
 		},
 		*tgoto();
 
-static char	tspace[256],		/* Space for capability strings */
-		*aoftspace;		/* Address of tspace for relocation */
+char		_tspace[2048];		/* Space for capability strings */
+
+static char	*aoftspace;		/* Address of _tspace for relocation */
 
 static int	destcol, destline;
 
@@ -59,7 +64,9 @@ reg char	*type; {
 
 	reg int		unknown;
 	static char	genbuf[1024];
+# ifdef TIOCGWINSZ
 	struct winsize win;
+# endif
 
 # ifdef DEBUG
 	fprintf(outf, "SETTERM(\"%s\")\n", type);
@@ -75,12 +82,14 @@ reg char	*type; {
 # ifdef DEBUG
 	fprintf(outf, "SETTERM: tty = %s\n", type);
 # endif
+# ifdef TIOCGWINSZ
 	if (ioctl(_tty_ch, TIOCGWINSZ, &win) >= 0) {
 		if (LINES == 0)
 			LINES = win.ws_row;
 		if (COLS == 0)
 			COLS = win.ws_col;
 	}
+# endif
 
 	if (LINES == 0)
 		LINES = tgetnum("li");
@@ -95,57 +104,67 @@ reg char	*type; {
 # ifdef DEBUG
 	fprintf(outf, "SETTERM: LINES = %d, COLS = %d\n", LINES, COLS);
 # endif
-	aoftspace = tspace;
+	aoftspace = _tspace;
 	zap();			/* get terminal description		*/
+
+	/*
+	 * Handle funny termcap capabilities
+	 */
+	if (CS && SC && RC) AL=DL="";
+	if (AL_PARM && AL==NULL) AL="";
+	if (DL_PARM && DL==NULL) DL="";
+	if (IC && IM==NULL) IM="";
+	if (IC && EI==NULL) EI="";
+	if (!GT) BT=NULL;	/* If we can't tab, we can't backtab either */
+
 	if (tgoto(CM, destcol, destline)[0] == 'O')
 		CA = FALSE, CM = 0;
 	else
 		CA = TRUE;
-	PC = xPC ? xPC[0] : FALSE;
-	aoftspace = tspace;
+
+	PC = _PC ? _PC[0] : FALSE;
+	aoftspace = _tspace;
 	strcpy(ttytype, longname(genbuf, type));
 	if (unknown)
 		return ERR;
 	return OK;
 }
+
 /*
  *	This routine gets all the terminal flags from the termcap database
  */
-zap() {
 
-	reg bool	**fp;
-	reg char	*namp, ***sp;
+zap()
+{
+	register char	*namp;
+	register bool	**fp;
+	register char	***sp;
+#ifdef	DEBUG
+	register char	*cp;
+#endif
 	extern char	*tgetstr();
 
-	/*
-	 * get boolean flags
-	 */
- 	namp = "ambseohzinmimsncosulxn\0\0";
-# ifdef FULLDEBUG
-	fprintf(outf, "ZAP: namp = \"%s\"\n", namp);
-# endif
+	namp = "ambsdadbeohchzinmimsncnsosulxbxnxtxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);
-# ifdef FULLDEBUG
-		fprintf(outf, "ZAP: %.2s = %d", namp, *(*(fp - 1)));
-# endif
+#ifdef DEBUG
+		fprintf(outf, "%2.2s = %s\n", namp, *fp[-1] ? "TRUE" : "FALSE");
+#endif
 		namp += 2;
 	} while (*namp);
-
-	/*
-	 * get string values
-	 */
-	namp = "albcbtcdceclcmcrdcdldmdoedeihoicimipllmandnlpcsesfsosrtatetiucueupusvbvsve";
-# ifdef FULLDEBUG
-	fprintf(outf, "ZAP: namp = \"%s\"\n", namp);
-# endif
+	namp = "albcbtcdceclcmcrcsdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullmandnlpcrcscsesfsosrtatetiucueupusvbvsveALDLUPDOLERI";
 	sp = sstrs;
 	do {
 		*(*sp++) = tgetstr(namp, &aoftspace);
-# ifdef FULLDEBUG
-		fprintf(outf, "ZAP: %.2s = \"%s\"\n", namp, *(*(sp-1)));
-# endif
+#ifdef DEBUG
+		fprintf(outf, "%2.2s = %s", namp, *sp[-1] == NULL ? "NULL\n" : "\"");
+		if (*sp[-1] != NULL) {
+			for (cp = *sp[-1]; *cp; cp++)
+				fprintf(outf, "%s", unctrl(*cp));
+			fprintf(outf, "\"\n");
+		}
+#endif
 		namp += 2;
 	} while (*namp);
 	if (tgetnum("sg") > 0)

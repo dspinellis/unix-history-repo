@@ -11,7 +11,7 @@ int		plodput();
  * as formatting of lines (printing of control characters,
  * line numbering and the like).
  *
- * %G% (Berkeley) @(#)cr_put.c	1.5
+ * @(#)cr_put.c	1.5 (Berkeley) %G%
  */
 
 /*
@@ -38,16 +38,6 @@ int	ly, lx, y, x; {
 	fgoto();
 }
 
-char
-_putchar(c)
-reg char	c; {
-
-	putchar(c);
-#ifdef DEBUG
-	fprintf(outf, "_PUTCHAR(%s)\n", unctrl(c));
-#endif
-}
-
 fgoto()
 {
 	reg char	*cgp;
@@ -65,11 +55,11 @@ fgoto()
 			while (l > 0) {
 				if (_pfast)
 					if (CR)
-						tputs(CR, 0, _putchar);
+						_puts(CR);
 					else
 						_putchar('\r');
 				if (NL)
-					tputs(NL, 0, _putchar);
+					_puts(NL);
 				else
 					_putchar('\n');
 				l--;
@@ -111,7 +101,7 @@ fgoto()
 			 * Superbee description which wins better.
 			 */
 			if (NL /* && !XB */ && _pfast)
-				tputs(NL, 0, _putchar);
+				_puts(NL);
 			else
 				_putchar('\n');
 			l--;
@@ -268,10 +258,7 @@ plod(cnt)
 		else
 			plodput('\r');
 		if (NC) {
-			if (NL)
-				tputs(NL, 0, plodput);
-			else
-				plodput('\n');
+			put_nl();
 			outline++;
 		}
 		outcol = 0;
@@ -279,10 +266,7 @@ plod(cnt)
 dontcr:
 	while (outline < destline) {
 		outline++;
-		if (NL && _pfast)
-			tputs(NL, 0, plodput);
-		else
-			plodput('\n');
+		put_nl();
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || _pfast == 0)
@@ -351,7 +335,7 @@ dontcr:
 			else {
 				i = curscr->_y[outline][outcol];
 				if ((i&_STANDOUT) == (curscr->_flags&_STANDOUT))
-					putchar(i);
+					_putchar(i);
 				else
 					goto nondes;
 			}
@@ -390,4 +374,21 @@ int col, ts;
 	else
 		offset = 0;
 	return col + ts - (col % ts) + offset;
+}
+
+/*
+ * put out a newline appropriately, twice if necessary (uck)
+ */
+static
+put_nl()
+{
+	if (NL)
+		tputs(NL, 0, plodput);
+	else
+		plodput('\n');
+	if (AM && XN && outcol == COLS - 1)
+		if (NL)
+			tputs(NL, 0, plodput);
+		else
+			plodput('\n');
 }

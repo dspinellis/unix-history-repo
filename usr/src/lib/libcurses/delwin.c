@@ -3,7 +3,7 @@
 /*
  *	This routine deletes a window and releases it back to the system.
  *
- * %G% (Berkeley) @(#)delwin.c	1.5
+ * @(#)delwin.c	1.6 (Berkeley) %G%
  */
 delwin(win)
 reg WINDOW	*win; {
@@ -17,7 +17,9 @@ reg WINDOW	*win; {
 		 * all the subwindows, and the array of space as well.
 		 */
 		for (i = 0; i < win->_maxy && win->_y[i]; i++)
-			cfree(win->_y[i]);
+			free(win->_y[i]);
+		free(win->_firstch);
+		free(win->_lastch);
 		wp = win->_nextp;
 		while (wp != win) {
 			np = wp->_nextp;
@@ -27,7 +29,7 @@ reg WINDOW	*win; {
 	}
 	else {
 		/*
-		 * If we are a subwindow, take ourself out of the
+		 * If we are a subwindow, take ourselves out of the
 		 * list.  NOTE: if we are a subwindow, the minimum list
 		 * is orig followed by this subwindow, so there are
 		 * always at least two windows in the list.
@@ -36,8 +38,6 @@ reg WINDOW	*win; {
 			continue;
 		wp->_nextp = win->_nextp;
 	}
-	cfree(win->_y);
-	cfree(win->_firstch);
-	cfree(win->_lastch);
-	cfree(win);
+	free(win->_y);
+	free(win);
 }

@@ -1,7 +1,7 @@
 /*
  * Define global variables
  *
- * @(#)curses.c	1.2 (Berkeley) %G%
+ * @(#)curses.c	1.3 (Berkeley) %G%
  */
 # include	"curses.h"
 
@@ -27,9 +27,18 @@ FILE	*outf;			/* debug output file			*/
 
 SGTTY	_tty;			/* tty modes				*/
 
-bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL, XN,
-	NONL, UPPERCASE, normtty, _pfast;
+bool	AM, BS, CA, DA, DB, EO, HC, HZ, IN, MI, MS, NC, NS, OS, UL, XB, XN,
+	XT, XX;
+char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL, *DM,
+	*DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6, *K7, *K8,
+	*K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL, *KR, *KS, *KU,
+	*LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF, *SO, *SR, *TA, *TE,
+	*TI, *UC, *UE, *UP, *US, *VB, *VS, *VE, *AL_PARM, *DL_PARM,
+	*UP_PARM, *DOWN_PARM, *LEFT_PARM, *RIGHT_PARM;
+char	PC;
 
-char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *DC, *DL, *DM, *DO,
-	*ED, *EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *NL, *SE, *SF,
-	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
+/*
+ * From the tty modes...
+ */
+
+bool	GT, NONL, UPPERCASE, normtty, _pfast;
