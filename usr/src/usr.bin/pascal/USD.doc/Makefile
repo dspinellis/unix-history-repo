@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
 DIR=	psd/07.pascal
 SRCS=	puman0.n puman1.n puman2.n puman3.n puman4.n puman5.n pumanA.n
@@ -7,14 +7,15 @@ FIGURES=firstout firstobjout firstobjout2 bigger2.p bigger3.p bigout1 \
 	synerrout synerr2out mismout clashout sinout1 sinout2 exprout \
 	typequout primeout3 katout copydataout kat2out katscript \
 	xxxxqqqout xxxxqqqout2 primes primes-d comments1.p commentsout
-CLEANFILES+=csfix ${FIGURES}
+#CLEANFILES+=csfix ${FIGURES}
 MACROS= -ms
 PXP=/usr/src/usr.bin/pascal/pxp/obj/pxp
 PI=/usr/src/usr.bin/pascal/pi/obj/pi
 PX=/usr/src/usr.bin/pascal/px/obj/px
 PIX=/usr/src/usr.bin/pascal/pix/obj/pix
 
-paper.ps: ${FIGURES} ${SRCS}
+#paper.ps: ${FIGURES} ${SRCS}
+paper.ps: ${SRCS}
 	${SOELIM} ${SRCS} | ${TBL} | ${ROFF} > ${.TARGET}
 
 .include <bsd.doc.mk>
