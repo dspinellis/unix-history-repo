@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.7	85/05/27	*/
+/*	uipc_syscalls.c	6.8	85/06/02	*/
 
 #include "param.h"
 #include "systm.h"
@@ -59,7 +59,7 @@ bind()
 	fp = getsock(uap->s);
 	if (fp == 0)
 		return;
-	u.u_error = sockargs(&nam, uap->name, uap->namelen);
+	u.u_error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME);
 	if (u.u_error)
 		return;
 	u.u_error = sobind((struct socket *)fp->f_data, nam);
@@ -181,7 +181,7 @@ connect()
 	if (fp == 0)
 		return;
 	so = (struct socket *)fp->f_data;
-	u.u_error = sockargs(&nam, uap->name, uap->namelen);
+	u.u_error = sockargs(&nam, uap->name, uap->namelen, MT_SONAME);
 	if (u.u_error)
 		return;
 	u.u_error = soconnect(so, nam);
@@ -388,14 +388,15 @@ sendit(s, mp, flags)
 	}
 	if (mp->msg_name) {
 		u.u_error =
-		    sockargs(&to, mp->msg_name, mp->msg_namelen);
+		    sockargs(&to, mp->msg_name, mp->msg_namelen, MT_SONAME);
 		if (u.u_error)
 			return;
 	} else
 		to = 0;
 	if (mp->msg_accrights) {
 		u.u_error =
-		    sockargs(&rights, mp->msg_accrights, mp->msg_accrightslen);
+		    sockargs(&rights, mp->msg_accrights, mp->msg_accrightslen,
+		    MT_RIGHTS);
 		if (u.u_error)
 			goto bad;
 	} else
@@ -791,17 +792,17 @@ bad:
 	m_freem(m);
 }
 
-sockargs(aname, name, namelen)
+sockargs(aname, name, namelen, type)
 	struct mbuf **aname;
 	caddr_t name;
-	int namelen;
+	int namelen, type;
 {
 	register struct mbuf *m;
 	int error;
 
 	if (namelen > MLEN)
 		return (EINVAL);
-	m = m_get(M_WAIT, MT_SONAME);
+	m = m_get(M_WAIT, type);
 	if (m == NULL)
 		return (ENOBUFS);
 	m->m_len = namelen;
