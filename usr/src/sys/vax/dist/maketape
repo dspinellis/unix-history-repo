@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.21 (Berkeley) %G%
+#	@(#)maketape	4.22 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -35,16 +35,31 @@ eval dd if=/dev/r${miniroot} count=205 bs=20b ${remote+"| $remote dd obs=20b"} \
 	of=${tape} conv=sync
 echo "Add full dump of real file system"
 /etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
-echo "Add tar image of system sources"
-cd /nbsd/sys; eval tar cf ${tartape} . \
-	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add tar image of /usr"
 cd /nbsd/usr; eval tar cf ${tartape} adm bin dict doc games \
 	guest hosts include lib local man mdec msgs new \
 	preserve pub spool tmp ucb \
 		${remote+'| $remote /usr/local/20b ">" $tape'}
+if [ ${type} != '6250' ]
+then
+	echo "Done, rewinding first tape"
+	$remote mt -t ${tape} rew &
+	echo "Mount second tape and hit return when ready"
+	echo "(or type name of next tape drive)"
+	read x
+	if [ "$x" != "" ]
+	then	tape=$x
+	fi
+fi
+echo "Add tar image of system sources"
+cd /nbsd/sys; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add varian fonts"
 cd /usr/lib/vfont; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
+echo "Add user source code"
+cd /nbsd/usr/src; eval tar cf ${tartape} Makefile bin etc games \
+	include lib local old ucb undoc usr.bin usr.lib \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
 if [ ${type} != '6250' ]
 then
@@ -53,14 +68,10 @@ then
 	echo "Mount second tape and hit return when ready"
 	echo "(or type name of next tape drive)"
 	read x
-	if [ $x != "" ]
+	if [ "$x" != "" ]
 	then	tape=$x
 	fi
 fi
-echo "Add user source code"
-cd /nbsd/usr/src; eval tar cf ${tartape} Makefile bin etc games \
-	include lib local old ucb undoc usr.bin usr.lib \
-	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add user contributed software"
 cd /nbsd/usr/src/new; eval tar cf ${tartape} . \
 	${remote+'| $remote /usr/local/20b ">" $tape'}
