@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_proc.c	7.6 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,6 +34,7 @@
 #include "uio.h"
 #include "malloc.h"
 #include "mbuf.h"
+#include "ioctl.h"
 #include "tty.h"
 
 #include "machine/reg.h"
