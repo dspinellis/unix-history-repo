@@ -115,8 +115,9 @@ ttychars(tp)
 wflushtty(tp)
 	register struct tty *tp;
 {
+	int s;
 
-	(void) spl5();
+	s = spl5();
 	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON
 	    && tp->t_oproc) {		/* kludge for pty */
 		(*tp->t_oproc)(tp);
@@ -124,7 +125,7 @@ wflushtty(tp)
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
 	}
 	flushtty(tp, FREAD);
-	(void) spl0();
+	splx(s);
 }
 
 /*
@@ -174,7 +175,6 @@ ttyblock(tp)
 	}
 	if (x >= TTYHOG/2 && putc(tp->t_stopc, &tp->t_outq) == 0) {
 		tp->t_state |= TS_TBLOCK;
-		tp->t_char++;
 		ttstart(tp);
 	}
 }
@@ -948,7 +948,7 @@ ttread(tp, uio)
 {
 	register struct clist *qp;
 	register c, t_flags;
-	int first, error = 0;
+	int s, first, error = 0;
 
 	if ((tp->t_state&TS_CARR_ON)==0)
 		return (EIO);
@@ -956,10 +956,10 @@ loop:
 	/*
 	 * Take any pending input first.
 	 */
-	(void) spl5();
+	s = spl5();
 	if (tp->t_flags&PENDIN)
 		ttypend(tp);
-	(void) spl0();
+	splx(s);
 
 	/*
 	 * Hang process if it's in the background.
@@ -983,24 +983,21 @@ loop:
 	 * device interrupts when interrogating rawq.
 	 */
 	if (t_flags&RAW) {
-		(void) spl5();
+		s = spl5();
 		if (tp->t_rawq.c_cc <= 0) {
 			if ((tp->t_state&TS_CARR_ON) == 0 ||
 			    (tp->t_state&TS_NBIO)) {
-				(void) spl0();
+				splx(s);
 				return (0);
 			}
 			sleep((caddr_t)&tp->t_rawq, TTIPRI);
-			(void) spl0();
+			splx(s);
 			goto loop;
 		}
-		(void) spl0();
-		while (tp->t_rawq.c_cc && uio->uio_iovcnt) {
+		splx(s);
+		while (!error && tp->t_rawq.c_cc && uio->uio_iovcnt)
 			error = passuc(getc(&tp->t_rawq), uio);
-			if (error)
-				break;
-		}
-		return (error);
+		goto checktandem;
 	}
 
 	/*
@@ -1013,18 +1010,18 @@ loop:
 	 * No input, sleep on rawq awaiting hardware
 	 * receipt and notification.
 	 */
-	(void) spl5();
+	s = spl5();
 	if (qp->c_cc <= 0) {
 		if ((tp->t_state&TS_CARR_ON) == 0 ||
 		    (tp->t_state&TS_NBIO)) {
-			(void) spl0();
+			splx(s);
 			return (EWOULDBLOCK);
 		}
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
-		(void) spl0();
+		splx(s);
 		goto loop;
 	}
-	(void) spl0();
+	splx(s);
 
 	/*
 	 * Input present, perform input mapping
@@ -1083,17 +1080,16 @@ loop:
 	}
 	tp->t_state &= ~TS_BKSL;
 
+checktandem:
 	/*
 	 * Look to unblock output now that (presumably)
 	 * the input queue has gone down.
 	 */
-	if (tp->t_state&TS_TBLOCK && tp->t_rawq.c_cc < TTYHOG/5) {
+	if (tp->t_state&TS_TBLOCK && tp->t_rawq.c_cc < TTYHOG/5)
 		if (putc(tp->t_startc, &tp->t_outq) == 0) {
 			tp->t_state &= ~TS_TBLOCK;
 			ttstart(tp);
 		}
-		tp->t_char = 0;
-	}
 	return (error);
 }
 
