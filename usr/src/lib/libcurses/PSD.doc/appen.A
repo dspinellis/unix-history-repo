@@ -3,163 +3,99 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.A	6.3 (Berkeley) %G%
+.\"	@(#)appen.A	6.4 (Berkeley) %G%
 .\"
 .ie t .oh '\*(Ln Appendix A''PS1:18-%'
 .eh 'PS1:18-%''\*(Ln Appendix A'
 .el .he ''\fIAppendix A\fR''
 .bp
 .(x
-.sp 2
-.in 0
-.bi Appendixes
-.sp
+.ti 0
 .b "Appendix A"
 .)x
-.nr * 1
-.sh 1 "Capabilities from termcap" 1
-.sh 2 Disclaimer
+.sh 1 "Examples" 1
 .pp
-The description of terminals is a difficult business,
-and we only attempt to summarize the capabilities here:
-for a full description see
-.b termcap (5).
-.sh 2 Overview
+Here we present a few examples
+of how to use the package.
+They attempt to be representative,
+though not comprehensive.  Further examples can be found in the games section
+of the source tree and in various utilities that use the screen such as 
+.i systat(1) .
+.sh 2 "Screen Updating"
 .pp
-Capabilities from
-.b termcap
-are of three kinds:
-string valued options,
-numeric valued options,
-and boolean options.
-The string valued options are the most complicated,
-since they may include padding information,
-which we describe now.
+The following examples are intended to demonstrate
+the basic structure of a program
+using the screen updating sections of the package.
+Several of the programs require calculational sections
+which are irrelevant of to the example,
+and are therefore usually not included.
+It is hoped that the data structure definitions
+give enough of an idea to allow understanding
+of what the relevant portions do.
+.sh 3 "Simple Character Output"
 .pp
-Intelligent terminals often require padding on intelligent operations
-at high (and sometimes even low) speed.
-This is specified by a number before the string in the capability,
-and has meaning for the capabilities which have a
-.b P
-at the front of their comment.
-This normally is a number of milliseconds to pad the operation.
-In the current system which has no true programmable delays,
-we do this by sending a sequence of pad characters
-(normally nulls, but can be changed
-(specified by
-.i PC )).
-In some cases, the pad is better computed as some number of milliseconds
-times the number of affected lines
-(to the bottom of the screen usually,
-except when terminals have insert modes which will shift several lines.)
-This is specified as,
-i e.g. ,
-.b 12* .
-before the capability,
-to say 12 milliseconds per affected whatever
-(currently always line).
-Capabilities where this makes sense say
-.b P* .
-.sp
-.sh 2 "Variables Set By setterm()"
-.TS H
-c s s s
-l l l l.
-variables set by \fIsetterm()\fR
-
-Type	Name	Pad	Description
-_
-.TH
-char *	AL	P*	Add new blank Line
-bool	AM		Automatic Margins
-char *	BC		Back Cursor movement
-bool	BS		BackSpace works
-char *	BT	P	Back Tab
-bool	CA		Cursor Addressable
-char *	CD	P*	Clear to end of Display
-char *	CE	P	Clear to End of line
-char *	CL	P*	CLear screen
-char *	CM	P	Cursor Motion
-char *	DC	P*	Delete Character
-char *	DL	P*	Delete Line sequence
-char *	DM		Delete Mode (enter)
-char *	DO		DOwn line sequence
-char *	ED		End Delete mode
-bool	EO		can Erase Overstrikes with \' \'
-char *	EI		End Insert mode
-char *	HO		HOme cursor
-bool	HZ		HaZeltine ~ braindamage
-char *	IC	P	Insert Character
-bool	IN		Insert-Null blessing
-char *	IM		enter Insert Mode (IC usually set, too)
-char *	IP	P*	Pad after char Inserted using IM+IE
-char *	LL		quick to Last Line, column 0
-char *	MA		ctrl character MAp for cmd mode
-bool	MI		can Move in Insert mode
-bool	NC		No Cr: \er sends \er\en then eats \en
-char *	ND		Non-Destructive space
-bool	OS		OverStrike works
-char	PC		Pad Character
-char *	SE		Standout End (may leave space)
-char *	SF	P	Scroll Forwards
-char *	SO		Stand Out begin (may leave space)
-char *	SR	P	Scroll in Reverse
-char *	TA	P	TAb (not ^I or with padding)
-char *	TE		Terminal address enable Ending sequence
-char *	TI		Terminal address enable Initialization
-char *	UC		Underline a single Character
-char *	UE		Underline Ending sequence
-bool	UL		UnderLining works even though !OS
-char *	UP		UPline
-char *	US		Underline Starting sequence
-char *	VB		Visible Bell
-char *	VE		Visual End sequence
-char *	VS		Visual Start sequence
-bool	XN		a Newline gets eaten after wrap
-.TE
-Names starting with
-.bi X
-are reserved for severely nauseous glitches
+This program demonstrates how to set up a window and output characters to it.
+Also, it demonstrates how one might control the output to the window.  If
+you run this program, you will get a demonstration of the character output
+chracteristics discussed in the above Character Output section.
+.(l I
+.so t2.gr
+.)l
+.sh 3 "A Small Screen Manipulator"
 .pp
-For purposes of
-.Fn standout ,
-if
-.Fn SG
-is not 0,
-.Fn SO
-is set to
-.Fn NULL ,
-and if
-.Fn UG
-is not
-.Fn 0 ,
-.Fn US
-is set to
-.Fn NULL .
-If, after this,
-.Fn SO
-is
-.Fn NULL ,
-and
-.Fn US
-is not,
-.Fn SO
-is set to be
-.Fn US ,
-and
-.Fn SE
-is set to be
-.Fn UE .
-.sh 2 "Variables Set By gettmode()"
-.TS H
-c s s
-l l l.
-variables set by \fIgettmode()\fR
-
-type	name	description
-_
-.TH
-bool	NONL	Term can't hack linefeeds doing a CR
-bool	GT	Gtty indicates Tabs
-bool	UPPERCASE	Terminal generates only uppercase letters
-.TE
+The next example follows the lines of the previous one but extends then to 
+demonstrate the various othe uses of the package.  Make sure you understand 
+how this program works as it encompasses most of anything you will
+need to do with the package.
+.(l I
+.so t3.gr
+.)l
+.sh 3 "Twinkle"
+.pp
+This is a moderately simple program which prints
+patterns on the screen.
+It switches between patterns of asterisks,
+putting them on one by one in random order,
+and then taking them off in the same fashion.
+It is more efficient to write this
+using only the motion optimization,
+as is demonstrated below.
+.(l I
+.so twinkle1.gr
+.)l
+.sh 3 "Life"
+.pp
+This program fragment models the famous computer pattern game of life
+(Scientific American, May, 1974).
+The calculational routines create a linked list of structures
+defining where each piece is.
+Nothing here claims to be optimal,
+merely demonstrative.
+This code, however,
+is a very good place to use the screen updating routines,
+as it allows them to worry about what the last position looked like,
+so you don't have to.
+It also demonstrates some of the input routines.
+.(l I
+.so life.gr
+.)l
+.sh 2 "Motion optimization"
+.pp
+The following example shows how motion optimization
+is written on its own.
+Programs which flit from one place to another without
+regard for what is already there
+usually do not need the overhead of both space and time
+associated with screen updating.
+They should instead use motion optimization.
+.sh 3 "Twinkle"
+.pp
+The
+.b twinkle
+program
+is a good candidate for simple motion optimization.
+Here is how it could be written
+(only the routines that have been changed are shown):
+.(l
+.so twinkle2.gr
+.)l
