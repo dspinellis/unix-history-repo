@@ -1,13 +1,14 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
 #define SAME 0
-#define NFLAB 2000
-#define NLABC 100
+#define NFLAB 3000		/* number of bytes to record all labels */
+#define NLABC 1000		/* max number of labels */
+#define MXSIG 200		/* max bytes in aggregate signal */
 
-static char sig[NLABC];
+static char sig[MXSIG];
 static char bflab[NFLAB];
 static char *labtab[NLABC];
 static char *lbp = bflab;
@@ -18,7 +19,7 @@ static int  prevsig;
 putsig (nf, flds, nref, nstline, endline, toindex)   /* choose signal style */
 char *flds[], *nstline, *endline;
 {
-	char t[100], t1[100], t2[100], format[10], *sd, *stline;
+	char t[100], t1[MXSIG], t2[100], format[10], *sd, *stline;
 	int addon, another = 0;
 	static FILE *fhide = 0;
 	int i;
@@ -81,6 +82,8 @@ char *flds[], *nstline, *endline;
 	if (another && (strcmp(".[\n", sd) != SAME))
 		fprintf(stderr, "File %s line %d: punctuation ignored from: %s",
 			Ifile, Iline, sd);
+	if ((strlen(sig) + strlen(t)) > MXSIG)
+		err("sig overflow (%d)", MXSIG);
 	strcat(sig, t);
 #if EBUG
 	fprintf(stderr, "sig is now %s leng %d\n",sig,strlen(sig));
@@ -107,6 +110,8 @@ char *flds[], *nstline, *endline;
 	if (bare == 0) {
 		if (!another) {
 			sprintf(t1, "%s%s\%s\n", stline, sig, endline);
+			if (strlen(t1) > MXSIG)
+				err("t1 overflow (%d)", MXSIG);
 			append(t1);
 			flout();
 			sig[0] = 0;
@@ -244,7 +249,7 @@ char *t;
 	if (nref > NLABC)
 		err("nref in labc overflow (%d)", NLABC);
 #if EBUG
-	fprintf(stderr, "lbp up to %d of 2000\n", lbp-bflab);
+	fprintf(stderr, "lbp up to %d of %d\n", lbp-bflab, NFLAB);
 #endif
 	return(labc[nref] = x+1);
 }
