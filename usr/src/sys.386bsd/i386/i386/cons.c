@@ -39,10 +39,11 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00028
+ * CURRENT PATCH LEVEL:         1       00083
  * --------------------         -----   ----------------------
  *
- * 16 Aug 92	Pace Willisson	/dev/console redirect (xterm -C, etc.)
+ * 16 Aug 92	Pace Willisson		/dev/console redirect (xterm -C, etc.)
+ * 14 Mar 93	Chris G. Demetriou	Moved pg() here from isa/pccons.c
  */
 
 
@@ -202,3 +203,11 @@ cnputc(c)
 			(*cn_tab->cn_putc)(cn_tab->cn_dev, '\r');
 	}
 }
+
+pg(p,q,r,s,t,u,v,w,x,y,z) char *p; {
+	printf(p,q,r,s,t,u,v,w,x,y,z);
+	printf("\n>");
+	return(cngetc());
+}
+
+
