@@ -1,4 +1,4 @@
-/*	rx.c	4.16	83/04/26	*/
+/*	rx.c	4.17	83/04/29	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -803,7 +803,10 @@ rxioctl(dev, cmd, data, flag)
 #endif
 		if (sc->sc_open > 1 )
 			return (EBUSY);
-		sc->sc_csbits |= *(int *)data ? RX_DDEN : RX_SDEN;
+		if (*(int *)data)
+			sc->sc_csbits |= RX_DDEN;
+		else
+			sc->sc_csbits &= ~RX_DDEN;
 		return (rxformat(dev));
 
 	case RXIOC_WDDS:
