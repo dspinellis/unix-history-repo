@@ -1,14 +1,13 @@
 /*-
  * Copyright (c) 1994
- *	The Regents of the University of California.
- * All rights reserved.
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Chuck Karish of Mindcraft, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tar.h	8.1 (Berkeley) %G%
+ *	@(#)tar.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _TAR_H
