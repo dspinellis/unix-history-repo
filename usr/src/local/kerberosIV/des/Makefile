@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 LIB=	des
 CFLAGS+=-DKERBEROS -I. -I${.CURDIR}/../include
@@ -6,6 +6,7 @@ SRCS=	cbc_encrypt.c cksum.c debug_decl.c des.c key_parity.c \
 	key_sched.c new_rnd_key.c pcbc_encrypt.c quad_cksum.c \
 	random_key.c read_password.c string_to_key.c util.c weak_key.c
 CLEANFILES+=key_perm.h s_table.h ip.c p.c fp.c odd.h p_table.h
+NOPROFILE=
 
 TDIR=	${.CURDIR}/..
 key_perm.h:
