@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -275,6 +275,7 @@ char	*argv[];
 	}
 	if (strcmp(usefile, "-") == 0) {
 		mt = dup(0);
+		Bflag++;
 	} else if ((mt = open(usefile, 0)) < 0) {
 		fprintf(stderr, "tar: cannot open %s\n", usefile);
 		done(1);
@@ -1209,12 +1210,12 @@ bread(fd, buf, size)
 		return (read(fd, buf, size)); 
 
 	for (count = 0; count < size; count += lastread) {
-		if (lastread < 0) {
+		lastread = read(fd, buf, size - count);
+		if (lastread <= 0) {
 			if (count > 0)
 				return (count);
 			return (lastread);
 		}
-		lastread = read(fd, buf, size - count);
 		buf += lastread;
 	}
 	return (count);
