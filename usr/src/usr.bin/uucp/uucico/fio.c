@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -52,11 +52,11 @@ static char sccsid[] = "@(#)fio.c	5.3 (Berkeley) %G%";
 #endif !USG
 #include <setjmp.h>
 
-#define FIBUFSIZ	256	/* for X.25 interfaces: set equal to packet size,
+#define FIBUFSIZ	4096	/* for X.25 interfaces: set equal to packet size,
 				 * but see comment above
 				 */
 
-#define FOBUFSIZ	256	/* for X.25 interfaces: set equal to packet size;
+#define FOBUFSIZ	4096	/* for X.25 interfaces: set equal to packet size;
 				 * otherwise make as large as feasible to reduce
 				 * number of write system calls 
 				 */
@@ -67,6 +67,8 @@ static char sccsid[] = "@(#)fio.c	5.3 (Berkeley) %G%";
 
 static int fchksum;
 static jmp_buf Ffailbuf;
+
+extern long Bytes_Sent, Bytes_Received;
 
 static
 falarm()
@@ -82,23 +84,34 @@ static int (*fsig)();
 #define TCSETA	TIOCSETP
 #define termio	sgttyb
 #endif USG
+static struct	termio ttbuf;
 
 fturnon()
 {
 	int ret;
-	struct termio ttbuf;
+	int ttbuf_flags;
 
 	if (!IsTcpIp) {
 		ioctl(Ifn, TCGETA, &ttbuf);
 #ifdef USG
+		ttbuf_flags = ttbuf.c_iflag;
 		ttbuf.c_iflag = IXOFF|IXON|ISTRIP;
 		ttbuf.c_cc[VMIN] = FIBUFSIZ > 64 ? 64 : FIBUFSIZ;
 		ttbuf.c_cc[VTIME] = 5;
-#else !USG
-		ttbuf.sg_flags = ANYP|CBREAK|TANDEM;
-#endif USG
 		ret = ioctl(Ifn, TCSETA, &ttbuf);
 		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		ttbuf.c_iflag = ttbuf_flags;
+#else !USG
+		ttbuf_flags = ttbuf.sg_flags;
+		ttbuf.sg_flags = ANYP|CBREAK;
+		ret = ioctl(Ifn, TCSETA, &ttbuf);
+		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		/* this is two seperate ioctls to set the x.29 params */
+		ttbuf.sg_flags |= TANDEM;
+		ret = ioctl(Ifn, TCSETA, &ttbuf);
+		ASSERT(ret >= 0, "STTY FAILED", "", ret);
+		ttbuf.sg_flags = ttbuf_flags;
+#endif USG
 	}
 	fsig = signal(SIGALRM, falarm);
 	/* give the other side time to perform its ioctl;
@@ -111,7 +124,10 @@ fturnon()
 
 fturnoff()
 {
+	if (!IsTcpIp)
+		ioctl(Ifn, TCSETA, &ttbuf);
 	(void) signal(SIGALRM, fsig);
+	sleep(2);
 	return SUCCESS;
 }
 
@@ -170,11 +186,11 @@ FILE *fp1;
 int fn;
 {
 	register int alen, ret;
-	register char *obp;
 	char ack, ibuf[MAXMSGLEN];
 	int flen, mil, retries = 0;
 	long abytes, fbytes;
 	struct timeb t1, t2;
+	float ft;
 
 	ret = FAIL;
 retry:
@@ -216,9 +232,11 @@ acct:
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(ibuf, "sent data %ld bytes %ld.%02d secs",
-		fbytes, (long)t2.time, mil / 10);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(ibuf, "sent data %ld bytes %.2f secs %ld bps",
+		fbytes, ft, (long)((float)fbytes*8./ft));
 	sysacct(abytes, t2.time);
+	Bytes_Sent += fbytes;
 	if (retries > 0)
 		sprintf(&ibuf[strlen(ibuf)], ", %d retries", retries);
 	DEBUG(1, "%s\n", ibuf);
@@ -249,6 +267,7 @@ register FILE *fp2;
 	int ret, mil, retries = 0;
 	long alen, abytes, fbytes;
 	struct timeb t1, t2;
+	float ft;
 
 	ret = FAIL;
 retry:
@@ -286,11 +305,13 @@ acct:
 		--t2.time;
 		mil += 1000;
 	}
-	sprintf(ibuf, "received data %ld bytes %ld.%02d secs",
-		fbytes, (long)t2.time, mil/10);
+	ft = (float)t2.time + (float)mil/1000.;
+	sprintf(ibuf, "received data %ld bytes %.2f secs %ld bps",
+		fbytes, ft, (long)((float)fbytes*8./ft));
 	if (retries > 0) 
 		sprintf(&ibuf[strlen(ibuf)]," %d retries", retries);
 	sysacct(abytes, t2.time);
+	Bytes_Received += fbytes;
 	DEBUG(1, "%s\n", ibuf);
 	syslog(ibuf);
 	if (ret == FAIL) {
