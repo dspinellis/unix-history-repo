@@ -9,12 +9,20 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.7 (Berkeley) %G%
+#	@(#)Makefile	1.8 (Berkeley) %G%
 #
-CFLAGS=	-O
+
+# The following is the telnet makefile.  The sources are down one level
+# in directory "Source" because the sources are shared between telnet
+# and tn3270.
+
+VPATH	=	Source
+INCLUDES=	-ISource
+CFLAGS=	-O ${INCLUDES}
 LIBC=	/lib/libc.a
-SRCS=	commands.c main.c network.c ring.c sys_bsd.c sys_dos.c \
-	telnet.c terminal.c tn3270.c utilities.c
+SRCS=	commands.c main.c network.c ring.c \
+	sys_bsd.c sys_dos.c telnet.c terminal.c \
+	tn3270.c utilities.c
 OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
 	telnet.o terminal.o tn3270.o utilities.o
 
@@ -26,7 +34,7 @@ telnet:	${OBJS} ${LIBC}
 clean: FRC
 	rm -f ${OBJS} core telnet
 
-depend: FRC
+depend: FRC ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
@@ -43,35 +51,45 @@ FRC:
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-commands.o: commands.c /usr/include/sys/types.h /usr/include/sys/socket.h
-commands.o: /usr/include/netinet/in.h /usr/include/signal.h
-commands.o: /usr/include/machine/trap.h /usr/include/netdb.h
-commands.o: /usr/include/ctype.h /usr/include/arpa/telnet.h externs.h
-commands.o: /usr/include/stdio.h /usr/include/setjmp.h defines.h types.h
-main.o: main.c externs.h /usr/include/stdio.h /usr/include/setjmp.h defines.h
-network.o: network.c /usr/include/sys/types.h /usr/include/sys/socket.h
+commands.o: Source/commands.c /usr/include/sys/types.h
+commands.o: /usr/include/sys/socket.h /usr/include/netinet/in.h
+commands.o: /usr/include/signal.h /usr/include/machine/trap.h
+commands.o: /usr/include/netdb.h /usr/include/ctype.h
+commands.o: /usr/include/arpa/telnet.h Source/ring.h Source/externs.h
+commands.o: /usr/include/stdio.h /usr/include/setjmp.h Source/defines.h
+commands.o: Source/types.h
+main.o: Source/main.c /usr/include/sys/types.h Source/ring.h Source/externs.h
+main.o: /usr/include/stdio.h /usr/include/setjmp.h Source/defines.h
+network.o: Source/network.c /usr/include/sys/types.h /usr/include/sys/socket.h
 network.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
-network.o: /usr/include/arpa/telnet.h defines.h externs.h /usr/include/stdio.h
-network.o: /usr/include/setjmp.h
-sys_bsd.o: sys_bsd.c /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-sys_bsd.o: /usr/include/sys/ttydev.h /usr/include/sys/time.h
-sys_bsd.o: /usr/include/time.h /usr/include/signal.h
-sys_bsd.o: /usr/include/machine/trap.h defines.h externs.h /usr/include/stdio.h
-sys_bsd.o: /usr/include/setjmp.h types.h
-sys_dos.o: sys_dos.c
-telnet.o: telnet.c /usr/include/sys/types.h /usr/include/sys/time.h
-telnet.o: /usr/include/time.h /usr/include/sys/socket.h
-telnet.o: /usr/include/netinet/in.h /usr/include/curses.h /usr/include/stdio.h
-telnet.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+network.o: /usr/include/arpa/telnet.h Source/ring.h Source/defines.h
+network.o: Source/externs.h /usr/include/stdio.h /usr/include/setjmp.h
+network.o: Source/fdset.h
+ring.o: Source/ring.c /usr/include/stdio.h /usr/include/errno.h
+ring.o: /usr/include/sys/types.h /usr/include/sys/ioctl.h
+ring.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+ring.o: /usr/include/sys/socket.h Source/ring.h Source/general.h
+sys_bsd.o: Source/sys_bsd.c /usr/include/sys/ioctl.h
+sys_bsd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+sys_bsd.o: /usr/include/sys/types.h /usr/include/sys/time.h /usr/include/time.h
+sys_bsd.o: /usr/include/sys/socket.h /usr/include/signal.h
+sys_bsd.o: /usr/include/machine/trap.h /usr/include/errno.h Source/ring.h
+sys_bsd.o: Source/fdset.h Source/defines.h Source/externs.h
+sys_bsd.o: /usr/include/stdio.h /usr/include/setjmp.h Source/types.h
+sys_dos.o: Source/sys_dos.c
+telnet.o: Source/telnet.c /usr/include/sys/types.h /usr/include/curses.h
+telnet.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 telnet.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-telnet.o: /usr/include/arpa/telnet.h /usr/include/arpa/inet.h
-telnet.o: /usr/include/ctype.h /usr/include/errno.h /usr/include/netdb.h
-telnet.o: /usr/include/strings.h defines.h externs.h /usr/include/stdio.h
-telnet.o: /usr/include/setjmp.h types.h general.h
-terminal.o: terminal.c /usr/include/arpa/telnet.h externs.h
-terminal.o: /usr/include/stdio.h /usr/include/setjmp.h types.h
-tn3270.o: tn3270.c
-utilities.o: utilities.c /usr/include/arpa/telnet.h /usr/include/ctype.h
-utilities.o: externs.h /usr/include/stdio.h /usr/include/setjmp.h
+telnet.o: /usr/include/arpa/telnet.h /usr/include/strings.h Source/ring.h
+telnet.o: Source/defines.h Source/externs.h /usr/include/stdio.h
+telnet.o: /usr/include/setjmp.h Source/types.h Source/general.h
+telnet.o: /usr/include/varargs.h
+terminal.o: Source/terminal.c /usr/include/arpa/telnet.h
+terminal.o: /usr/include/sys/types.h Source/ring.h Source/externs.h
+terminal.o: /usr/include/stdio.h /usr/include/setjmp.h Source/types.h
+tn3270.o: Source/tn3270.c Source/fdset.h
+utilities.o: Source/utilities.c /usr/include/arpa/telnet.h
+utilities.o: /usr/include/sys/types.h /usr/include/ctype.h Source/ring.h
+utilities.o: Source/externs.h /usr/include/stdio.h /usr/include/setjmp.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
