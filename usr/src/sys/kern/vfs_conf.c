@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.6 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -122,6 +122,13 @@ extern	struct vfsops cd9660_vfsops;
 #define CD9660_VFSOPS	NULL
 #endif
 
+#ifdef UNION
+extern	struct vfsops union_vfsops;
+#define	UNION_VFSOPS	&union_vfsops
+#else
+#define	UNION_VFSOPS	NULL
+#endif
+
 struct vfsops *vfssw[] = {
 	NULL,			/* 0 = MOUNT_NONE */
 	UFS_VFSOPS,		/* 1 = MOUNT_UFS */
@@ -138,6 +145,7 @@ struct vfsops *vfssw[] = {
 	PROCFS_VFSOPS,		/* 12 = MOUNT_PROCFS */
 	AFS_VFSOPS,		/* 13 = MOUNT_AFS */
 	CD9660_VFSOPS,		/* 14 = MOUNT_CD9660 */
+	UNION_VFSOPS,		/* 15 = MOUNT_UNION */
 	0
 };
 
@@ -172,6 +180,7 @@ extern struct vnodeopv_desc procfs_vnodeop_opv_desc;
 extern struct vnodeopv_desc cd9660_vnodeop_opv_desc;
 extern struct vnodeopv_desc cd9660_specop_opv_desc;
 extern struct vnodeopv_desc cd9660_fifoop_opv_desc;
+extern struct vnodeopv_desc union_vnodeop_opv_desc;
 
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&ffs_vnodeop_opv_desc,
@@ -228,6 +237,9 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #ifdef FIFO
 	&cd9660_fifoop_opv_desc,
 #endif
+#endif
+#ifdef UNION
+	&union_vnodeop_opv_desc,
 #endif
 	NULL
 };
