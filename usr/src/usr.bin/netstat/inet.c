@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.7 82/12/18";
+static char sccsid[] = "@(#)inet.c	4.8 83/02/24";
 #endif
 
 #include <sys/types.h>
@@ -173,7 +173,11 @@ ip_stats(off, name)
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ipstat, sizeof (ipstat));
 	printf("%s:\n\t%d bad header checksums\n", name, ipstat.ips_badsum);
-	printf("\t%d incomplete packets\n", ipstat.ips_tooshort);
+	printf("\t%d packet size smaller than minimum\n",
+		ipstat.ips_tooshort);
+	printf("\t%d data size < data length\n", ipstat.ips_toosmall);
+	printf("\t%d header length < data size\n", ipstat.ips_badhlen);
+	printf("\t%d data length < header length\n", ipstat.ips_badlen);
 }
 
 /*
