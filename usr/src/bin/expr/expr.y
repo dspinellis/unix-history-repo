@@ -113,7 +113,8 @@ char *arith(op, r1, r2) char *r1, *r2; {
 	long i1, i2;
 	register char *rv;
 
-	if(!(ematch(r1, "[0-9]*$") && ematch(r2, "[0-9]*$")))
+	if(!((ematch(r1, "[0-9]*$") || ematch(r1, "-[0-9]*$")) &&
+	     (ematch(r2, "[0-9]*$") || ematch(r2, "-[0-9]*$"))))
 		yyerror("non-numeric argument");
 	i1 = atol(r1);
 	i2 = atol(r2);
@@ -661,7 +662,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.5 (Berkeley) %G%";
 yyerror(s)
 
 {
