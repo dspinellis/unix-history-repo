@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,27 +26,26 @@ summary(notused)
 	int notused;
 {
 	time_t secs;
-	int len;
 	char buf[100];
 
 	(void)time(&secs);
 	if ((secs -= st.start) == 0)
 		secs = 1;
 	/* Use snprintf(3) so that we don't reenter stdio(3). */
-	len = snprintf(buf, sizeof(buf),
+	(void)snprintf(buf, sizeof(buf),
 	    "%u+%u records in\n%u+%u records out\n%u bytes transferred in %u secs (%u bytes/sec)\n",
 	    st.in_full, st.in_part, st.out_full, st.out_part, st.bytes,
 	    secs, st.bytes / secs);
-	(void)write(STDERR_FILENO, buf, len);
+	(void)write(STDERR_FILENO, buf, strlen(buf));
 	if (st.swab) {
-		len = snprintf(buf, sizeof(buf), "%u odd length swab %s\n",
+		(void)snprintf(buf, sizeof(buf), "%u odd length swab %s\n",
 		     st.swab, (st.swab == 1) ? "block" : "blocks");
-		(void)write(STDERR_FILENO, buf, len);
+		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
 	if (st.trunc) {
-		len = snprintf(buf, sizeof(buf), "%u truncated %s\n",
+		(void)snprintf(buf, sizeof(buf), "%u truncated %s\n",
 		     st.trunc, (st.trunc == 1) ? "block" : "blocks");
-		(void)write(STDERR_FILENO, buf, len);
+		(void)write(STDERR_FILENO, buf, strlen(buf));
 	}
 }
 

@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.69 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -428,12 +428,16 @@ display(p, list)
 	if (needstats) {
 		d.bcfile = bcfile;
 		d.btotal = btotal;
-		d.s_block = snprintf(buf, sizeof(buf), "%lu", maxblock);
+		(void)snprintf(buf, sizeof(buf), "%lu", maxblock);
+		d.s_block = strlen(buf);
 		d.s_flags = maxflags;
 		d.s_group = maxgroup;
-		d.s_inode = snprintf(buf, sizeof(buf), "%lu", maxinode);
-		d.s_nlink = snprintf(buf, sizeof(buf), "%lu", maxnlink);
-		d.s_size = snprintf(buf, sizeof(buf), "%qu", maxsize);
+		(void)snprintf(buf, sizeof(buf), "%lu", maxinode);
+		d.s_inode = strlen(buf);
+		(void)snprintf(buf, sizeof(buf), "%lu", maxnlink);
+		d.s_nlink = strlen(buf);
+		(void)snprintf(buf, sizeof(buf), "%qu", maxsize);
+		d.s_size = strlen(buf);
 		d.s_user = maxuser;
 	}
 
