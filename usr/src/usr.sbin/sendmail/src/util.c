@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)util.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)util.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -217,10 +217,10 @@ printav(av)
 		if (tTd(0, 44))
 			printf("\n\t%08x=", *av);
 		else
-			putchar(' ');
+			(void) putchar(' ');
 		xputs(*av++);
 	}
-	putchar('\n');
+	(void) putchar('\n');
 }
 /*
 **  LOWER -- turn letter into lower case.
@@ -266,22 +266,22 @@ xputs(s)
 		printf("<null>");
 		return;
 	}
-	putchar('"');
+	(void) putchar('"');
 	while ((c = *s++) != '\0')
 	{
 		if (!isascii(c))
 		{
-			putchar('\\');
+			(void) putchar('\\');
 			c &= 0177;
 		}
 		if (c < 040 || c >= 0177)
 		{
-			putchar('^');
+			(void) putchar('^');
 			c ^= 0100;
 		}
-		putchar(c);
+		(void) putchar(c);
 	}
-	putchar('"');
+	(void) putchar('"');
 	(void) fflush(stdout);
 }
 /*
@@ -532,9 +532,9 @@ putline(l, fp, m)
 			svchar = *q;
 			*q = '\0';
 			if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
-				fputc('.', fp);
+				(void) putc('.', fp);
 			fputs(l, fp);
-			fputc('!', fp);
+			(void) putc('!', fp);
 			fputs(m->m_eol, fp);
 			*q = svchar;
 			l = q;
@@ -544,7 +544,7 @@ putline(l, fp, m)
 		svchar = *p;
 		*p = '\0';
 		if (l[0] == '.' && bitnset(M_XDOT, m->m_flags))
-			fputc('.', fp);
+			(void) putc('.', fp);
 		fputs(l, fp);
 		fputs(m->m_eol, fp);
 		*p = svchar;
@@ -693,7 +693,7 @@ fgetfolded(buf, n, f)
 			if (i != '\n')
 			{
 				if (i != EOF)
-					ungetc(i, f);
+					(void) ungetc(i, f);
 				i = '\r';
 			}
 		}
@@ -704,7 +704,7 @@ fgetfolded(buf, n, f)
 			LineNumber++;
 			i = getc(f);
 			if (i != EOF)
-				ungetc(i, f);
+				(void) ungetc(i, f);
 			if (i != ' ' && i != '\t')
 			{
 				*--p = '\0';
