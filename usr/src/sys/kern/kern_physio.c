@@ -1,4 +1,4 @@
-/*	kern_physio.c	6.1	83/07/29	*/
+/*	kern_physio.c	6.2	83/09/09	*/
 
 #include "../machine/pte.h"
 
@@ -248,13 +248,6 @@ nextiov:
 
 #define	MAXPHYS	(63 * 1024)
 
-/* network disk brain damage */
-#include "nd.h"
-#if NND > 0
-#undef MAXPHYS
-#define	MAXPHYS	(32 * 1024)
-#endif
-
 unsigned
 minphys(bp)
 	struct buf *bp;
@@ -263,4 +256,3 @@ minphys(bp)
 	if (bp->b_bcount > MAXPHYS)
 		bp->b_bcount = MAXPHYS;
 }
-
