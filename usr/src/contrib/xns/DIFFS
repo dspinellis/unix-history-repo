@@ -1,0 +1,976 @@
+The following diffs represent changes to attempt to reduce latency
+by having servers start up and receive their connections by passing
+file descriptors.  It is minorly better than the standard XNS servers
+on unix in that one can re-use an XNS SPP connection for additional RPC
+calls; however, this is a performance issue that is not supported by
+the unix clients and does not appreciably to appear to reduce latency
+by anything except the first call to a unix server.  There are also
+some diffs to handle the fact that sprintf() calls no longer return
+a char *, but return a length.
+
+Common subdirectories: xns/bin and xns.newer/bin
+Common subdirectories: xns/compiler and xns.newer/compiler
+Common subdirectories: xns/courierlib and xns.newer/courierlib
+Common subdirectories: xns/daemon and xns.newer/daemon
+Common subdirectories: xns/doc and xns.newer/doc
+Common subdirectories: xns/etc and xns.newer/etc
+Common subdirectories: xns/examples and xns.newer/examples
+Common subdirectories: xns/include and xns.newer/include
+Common subdirectories: xns/lib and xns.newer/lib
+Common subdirectories: xns/man and xns.newer/man
+Common subdirectories: xns/morexnslib and xns.newer/morexnslib
+Common subdirectories: xns/xnscourier and xns.newer/xnscourier
+Common subdirectories: xns/xnslib and xns.newer/xnslib
+Common subdirectories: xns/courierlib/profiled and xns.newer/courierlib/profiled
+Only in xns.newer/daemon: M.k
+Only in xns.newer/daemon: daemon.h
+diff -c -r xns/daemon/xnscourierd.c xns.newer/daemon/xnscourierd.c
+*** xns/daemon/xnscourierd.c	Mon Jan  5 08:43:09 1987
+--- xns.newer/daemon/xnscourierd.c	Tue Dec 22 17:03:56 1987
+***************
+*** 34,42 ****
+--- 34,49 ----
+  #include <netns/sp.h> 
+  #include <xnscourier/courier.h>	/* for lots of things */
+  #include <xnscourier/realcourierconnection.h> /* for CourierConnection */
++ #include <xnscourier/courierdb.h>/* for lots of things */
+  
+  struct sockaddr_ns here, dest;
+  
++ struct ServerTie *ServerList, *NextServerTie();
++ char *copystr(), *malloc();
++ fd_set ServerFdset, NullFdset;
++ int NewConns;		/* Socket for new courier calls, others rehashed */
++ int fd_for_returning;
++ int fd_for_gettingback;
+  int CourierServerDebuggingFlag = 0;
+  
+  
+***************
+*** 47,106 ****
+  Unspecified tid;				/* transaction ID */
+  
+  
+- static void
+- reapchild()
+- {
+- 	union wait status;
+- 
+- 	while (wait3(&status, WNOHANG, 0) > 0)
+- 		;
+- }
+- 
+  main(argc, argv)
+  	int argc;
+  	char *argv[];
+  {
+! 	int s;
+! #ifndef DEBUGDBX
+! 	if (fork())
+! 		exit(0);
+! #endif /* DEBUGDBX */
+  	for (;;)
+! 		poller(argc,argv);
+  }
+  
+! static
+! poller(argc,argv)
+! 	int argc;
+  	char *argv[];
+  {
+! 	int s, pid;
+  	extern int errno;
+  
+  	here.sns_family = AF_NS;
+  	here.sns_addr.x_port = htons(IDPPORT_COURIER);
+  
+- #ifndef DEBUGDBX
+- 	for (s = 0; s < 20; s++)
+- 		(void) close(s);
+- 	(void) open("/", 0);
+- 	(void) dup2(0, 1);
+- 	(void) dup2(0, 2);
+- 	s = open("/dev/tty", 2);
+- 	if (s > 0) {
+- 		ioctl(s, TIOCNOTTY, 0);
+- 		close(s);
+- 	}
+- #endif /* DEBUGDBX */
+  	while ((s = socket(AF_NS, SOCK_SEQPACKET, 0)) < 0) {
+  		perror("xnscourierd: socket");
+  		sleep(5);
+  	}
+  	while (bind(s, &here, sizeof here) < 0) {
+  		perror("xnscourierd: bind");
+  		sleep(5);
+  	}
+- 	signal(SIGCHLD, reapchild);
+  	while (listen(s, 10) < 0) {
+  		perror("xnscourierd: listen");
+  		sleep(5);
+--- 54,109 ----
+  Unspecified tid;				/* transaction ID */
+  
+  
+  main(argc, argv)
+  	int argc;
+  	char *argv[];
+  {
+! 	int s, lim = getdtablesize();
+! 	void reapchild();
+! 
+! 	if (CourierServerDebuggingFlag == 0) {
+! 		if (fork())
+! 			exit(0);
+! 		for (s = 0; s < lim; s++)
+! 			(void) close(s);
+! 		(void) open("/", 0);
+! 		(void) dup2(0, 1);
+! 		(void) dup2(0, 2);
+! 		s = open("/dev/tty", 2);
+! 		if (s > 0) {
+! 			ioctl(s, TIOCNOTTY, 0);
+! 			close(s);
+! 		}
+! 	}
+! 	signal(SIGCHLD, reapchild);
+! 	StartServers();
+  	for (;;)
+! 		poller(s, argc, argv);
+  }
+  
+! poller(s, argc, argv)
+! 	int s, argc;
+  	char *argv[];
+  {
+! 	int pid, nfds = getdtablesize(), on = 1;
+  	extern int errno;
++ 	fd_set readfs, exceptfs;
+  
+  	here.sns_family = AF_NS;
+  	here.sns_addr.x_port = htons(IDPPORT_COURIER);
+  
+  	while ((s = socket(AF_NS, SOCK_SEQPACKET, 0)) < 0) {
+  		perror("xnscourierd: socket");
+  		sleep(5);
+  	}
++ 	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof on) < 0) {
++ 		perror("xnscourierd: Keep-Alives");
++ 	}
++ 	NewConns = s;
+  	while (bind(s, &here, sizeof here) < 0) {
+  		perror("xnscourierd: bind");
+  		sleep(5);
+  	}
+  	while (listen(s, 10) < 0) {
+  		perror("xnscourierd: listen");
+  		sleep(5);
+***************
+*** 111,116 ****
+--- 114,128 ----
+  		struct sockaddr_ns from;
+  		/* int padafter[100]; */
+  
++ 		FD_ZERO(&readfs);
++ 		FD_SET(s, &readfs);
++ 		FD_SET(fd_for_gettingback, &readfs);
++ 		select(nfds, &readfs, 0, 0, 0);
++ 		if (FD_ISSET(fd_for_gettingback, &readfs))
++ 			garnerMessages(fd_for_gettingback);
++ 		if (!(FD_ISSET(s, &readfs))) {
++ 			continue;
++ 		}
+  		s2 = accept(s, (caddr_t)&from, &fromlen);
+  		if (s2 < 0) {
+  			if (errno == EINTR)
+***************
+*** 119,148 ****
+  			(void) close(s);
+  			return;	/* reset the world */
+  		}
+- #ifndef DEBUGDBX
+- 		if ((pid = fork()) < 0) {
+- 			perror("xnscourierd: Out of processes");
+- 			sleep(5);
+- 		}
+- 		else if (pid == 0) {
+- 			/* child */
+- 			signal(SIGCHLD, SIG_DFL);
+- 			close(s);	/* don't keep accepting */
+- 			doit(s2, &from);
+- 			exit(1);	/* can't get here? */
+- 			/*NOTREACHED*/
+- 		}
+- #else
+- 		signal(SIGCHLD, SIG_DFL);
+  		doit(s2, &from);
+- #endif
+- 		close(s2);
+  	}
+  	/*NOTREACHED*/
+  }
+  
+  static CourierConnection connblock;
+  
+  /*
+   * f is the socket on which we have gotten an SPP connection.
+   * who is the sockaddr_ns for the other end.
+--- 131,269 ----
+  			(void) close(s);
+  			return;	/* reset the world */
+  		}
+  		doit(s2, &from);
+  	}
+  	/*NOTREACHED*/
+  }
+  
++ StartServers()
++ {
++ 	register struct ServerTie *st, *st2;
++ 	register struct courierdbent *db;
++ 	int sv[2];
++ 	int foundit = 0;
++ 
++ 	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, sv)) {
++ 		perror("socketpair");
++ 		return; /*log error*/
++ 	}
++ 	fd_for_returning = sv[0];
++ 	fd_for_gettingback = sv[1];
++ 
++ 	while ((db = getcourierdbent()) != NULL) {
++ 		if (access(db->cr_serverbin, 1)) {
++ 			/* Log this server as unobtainable */
++ 			continue;
++ 		}
++ 		st = NextServerTie();
++ 		st->st_db = *db;
++ 		st->st_db.cr_serverbin = copystr(db->cr_serverbin);
++ 		st->st_db.cr_description = copystr(db->cr_description);
++ 		st->st_db.cr_programname = copystr(db->cr_programname);
++ 		if (db->cr_threading != CR_EXEC) {
++ 		    if (CourierServerDebuggingFlag)
++ 			printf("Got a threaded server(%s): %s\n",
++ 				st->st_db.cr_programname,
++ 				st->st_db.cr_serverbin);
++ 		    if (db->cr_threading == CR_WAIT) {
++ 			for (st2 = ServerList; st2; st2 = st2->st_next)
++ 			    if (st2 != st &&
++ 				st2->st_db.cr_threading == CR_WAIT &&
++ 				strcmp( st->st_db.cr_serverbin,
++ 					    st2->st_db.cr_serverbin) == 0) {
++ 				     foundit = 1;
++ 				     st->st_fd = st2->st_fd;
++ 			    }
++ 		    }
++ 		    if (foundit)
++ 			foundit = 0;
++ 		    else
++ 			execServerSetup(st);
++ 		}
++ 	}
++ }
++ 
++ execServerSetup(st)
++ register struct ServerTie *st;
++ {
++ 	static char *argv[2], arg0[10]; 
++ 	int lim = getdtablesize(), i, sv[2];
++ 
++ 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv))
++ 		{ /* Log error */return;  }
++ 	st->st_fd = sv[0];
++ fork_again:
++ 	switch(st->st_pid = vfork()) {
++ 	case -1:
++ 		/* Log Error */
++ 		sleep (15);
++ 		goto fork_again;
++ 	case 0: /* Child */
++ 		for (i = 0; i < lim; i++) {
++ 			if (CourierServerDebuggingFlag && i < 3)
++ 				continue;
++ 			if (i == sv[1])
++ 				continue;
++ 			if (i == fd_for_returning)
++ 				continue;
++ 		}
++ 		sprintf(arg0, "*%d,%d", sv[1], fd_for_returning);
++ 		argv[0] = arg0; argv[1] = 0;
++ 		execv(st->st_db.cr_serverbin, argv);
++ 		_exit(0);
++ 	}
++ 	close(sv[1]);
++ }
++ 
++ void
++ reapchild()
++ {
++ 	union wait status;
++ 	int pid;
++ 	register struct ServerTie *st;
++ 
++ 	while ((pid = wait3(&status, WNOHANG, 0)) > 0) {
++ 		register struct ServerTie *st = ServerList;
++ 		for (st = ServerList; st; st = st->st_next) {
++ 			if ((st->st_pid == pid) &&
++ 			    (st->st_db.cr_threading == CR_WAIT)) {
++ 				close(st->st_fd);
++ 				execServerSetup(st);
++ 			}
++ 		}   
++ 	}
++ }
++ 
++ 
+  static CourierConnection connblock;
+  
++ garnerMessages(fd)
++ int fd;
++ {
++ 	Unspecified buf[512], *bp; 
++ 	register CourierConnection *f = _serverConnection;
++ 	int newfd, buflen;
++ 	LongCardinal programnum;
++ 	Cardinal versionnum;
++ 	int skipcount;
++ 	
++ 	/* set up the CourierConnection data */
++ 	_serverConnection = &connblock;
++ 	buflen = sizeof(buf);
++ 	if (garner_fd(fd, &newfd, buf, &buflen) < 0)
++ 		return;
++ 	bp = buf;
++ 	bp += internalize_LongCardinal(&programnum, bp);
++ 	bp += internalize_Cardinal(&versionnum, bp);
++ 	skipcount = *(unsigned short *) bp;
++ 	bp++;
++ 	_serverConnection->fd = newfd;
++ 	_serverConnection->state = inprogress;
++ 	_serverConnection->bdtstate = wantdata;
++ 	ServerExecCourierProgram(programnum, versionnum, skipcount,
++ 			   bp);
++ 	close (newfd);
++ }
+  /*
+   * f is the socket on which we have gotten an SPP connection.
+   * who is the sockaddr_ns for the other end.
+***************
+*** 170,186 ****
+  	CourierWrite(_serverConnection, (bp-skippedwords), skippedwords,
+  		     0, (Unspecified*) NULL);
+  	/* read and process a connection message */
+! 	for (;;) {
+! 		skipcount = LookAheadCallMsg(&programnum, &versionnum,
+! 					     skippedwords);
+! 		if (skipcount < 0) fatal("connection timed out");
+! #ifdef DEBUG
+! 		fprintf(stderr,"Chaining to %d(%d).  Skipcount =%d\n",
+! 			programnum, versionnum, skipcount);
+! #endif
+! 		ExecCourierProgram(programnum, versionnum, skipcount,
+! 				   skippedwords);
+  	}
+  }
+  
+  
+--- 291,365 ----
+  	CourierWrite(_serverConnection, (bp-skippedwords), skippedwords,
+  		     0, (Unspecified*) NULL);
+  	/* read and process a connection message */
+! 	skipcount = LookAheadCallMsg(&programnum, &versionnum,
+! 				     skippedwords);
+! 	if (skipcount < 0) fatal("connection timed out");
+! 	if (CourierServerDebuggingFlag)
+! 	    fprintf(stderr,"Chaining to %d(%d).  Skipcount =%d\n",
+! 		programnum, versionnum, skipcount);
+! 	ServerExecCourierProgram(programnum, versionnum, skipcount,
+! 			   skippedwords);
+! 	close (f);
+! }
+! 
+! ServerExecCourierProgram(programnum, versionnum, skipcount, skippedwords)
+! 	LongCardinal programnum;
+! 	Cardinal versionnum;
+! 	int skipcount;
+! 	Unspecified skippedwords[];
+! /*
+!  * Exec the appropriate courier program, passing it asciized skippedwords
+!  * in the argument list.
+!  * Does not return unless the exec failed or the server was not found.
+!  * If the server cannot be EXECed, then the appropriate message is sent
+!  * back on the wire and the current message is flushed.
+!  */
+! {
+! 	struct courierdbent *cdbent;
+! 	char *argv[12];
+! 	int i, argc;
+! 	extern char *malloc();
+! 	char tmpbuf[1024];
+! 	char *path;
+! 
+! 	Unspecified databuf[12] , *dp = databuf;
+! 	register struct ServerTie *st = ServerList;
+! 
+! 	for (; st; st = st->st_next) {
+! 		if (st->st_db.cr_programnumber != programnum)
+! 			continue;
+! 		if (st->st_db.cr_version != versionnum)
+! 			continue;
+! 		if (st->st_db.cr_threading != CR_EXEC) {
+! 			dp = databuf;
+! 			dp += externalize_LongCardinal(dp, &programnum);
+! 			dp += externalize_Cardinal(dp, &versionnum);
+! 			dp += externalize_Cardinal(dp, &skipcount);
+! 			for (i = 0; i++; i < skipcount)
+! 				*dp++ = skippedwords[i];
+! 			pass_fd_rights(st->st_fd, _serverConnection->fd,
+! 				databuf, (dp - databuf) * sizeof(Unspecified));
+! 			if (st->st_db.cr_threading == CR_NOWAIT) {
+! 				close(st->st_fd);
+! 				execServerSetup(st);
+! 			}
+! 			return;
+! 		}
+! 		break;
+  	}
++ 	/* Have to vfork and exec, but don't trust rest of library
++ 	   for now */
++ fork_again:
++ 	switch (fork()) {
++ 	case -1:
++ 		sleep(15);
++ 		goto fork_again;
++ 	case 0:
++ 		ExecCourierProgram(programnum,
++ 					versionnum, skipcount, skippedwords);
++ 		_exit(0);
++ 	}
++ 
+  }
+  
+  
+***************
+*** 190,192 ****
+--- 369,416 ----
+  	(void) fprintf(stderr, "xnscourierd: %s.\n", msg);
+  	exit(1);
+  }
++ #define LOTS 8192
++ 
++ char *
++ copystr(cp)
++ 	char *cp;
++ {
++ 	static char *base;
++ 	static int remaining;
++ 	int len;
++ 
++ 	if (cp == 0)
++ 		return (0);
++ 
++ 	len = strlen(cp) + 1;
++ 	if (len > remaining) {
++ 		base = malloc (LOTS);
++ 		remaining = LOTS;
++ 	}
++ 	if (len > LOTS) len = LOTS - 1;
++ 	strncpy(base, cp, len);
++ 	cp = base;
++ 	base += len;
++ 	return (cp);
++ }
++ 
++ struct ServerTie *
++ NextServerTie()
++ {
++ 	static int remaining;
++ 	static struct ServerTie *base, *last;
++ 	register struct ServerTie *result;
++ 	
++ 	if (remaining == 0) {
++ 		base = (struct ServerTie *) malloc(32 * sizeof (*base));
++ 		remaining = 32;
++ 	}
++ 	result = base; base++; remaining--;
++ 	if (last)
++ 		last->st_next = result;
++ 	else
++ 		ServerList = result;
++ 	last = result;
++ 	return (result);
++ }
++ _exit() {abort();}
+Only in xns.newer/daemon: xnscourierd.c.org
+Common subdirectories: xns/examples/archive and xns.newer/examples/archive
+Common subdirectories: xns/examples/auth and xns.newer/examples/auth
+Common subdirectories: xns/examples/authchtest and xns.newer/examples/authchtest
+Common subdirectories: xns/examples/ch and xns.newer/examples/ch
+Common subdirectories: xns/examples/filing and xns.newer/examples/filing
+Common subdirectories: xns/examples/filing_client and xns.newer/examples/filing_client
+Common subdirectories: xns/examples/filing_common and xns.newer/examples/filing_common
+Common subdirectories: xns/examples/filing_servers and xns.newer/examples/filing_servers
+Common subdirectories: xns/examples/gap and xns.newer/examples/gap
+Common subdirectories: xns/examples/passwd and xns.newer/examples/passwd
+Common subdirectories: xns/examples/print and xns.newer/examples/print
+Common subdirectories: xns/examples/remotetool and xns.newer/examples/remotetool
+Common subdirectories: xns/examples/retrieve and xns.newer/examples/retrieve
+Common subdirectories: xns/examples/vpfile and xns.newer/examples/vpfile
+Common subdirectories: xns/examples/xnscreds and xns.newer/examples/xnscreds
+Only in xns/examples/filing: SCCS
+diff -c -r xns/examples/filing/errmsg.c xns.newer/examples/filing/errmsg.c
+*** xns/examples/filing/errmsg.c	Tue May 24 10:02:07 1988
+--- xns.newer/examples/filing/errmsg.c	Sat Mar  7 11:45:01 1987
+***************
+*** 130,139 ****
+  	case ScopeValueError:
+  /* the following fails because "type" is defined as "Filing4_type".  Argh!!
+  /*		problem = (int) (((ScopeTypeErrorArgs *) Message)->problem);
+! /*		(void)sprintf(tempbuf,"problem: %s; type: %d",
+  /*				argproblems[problem],
+  /*				((ScopeTypeErrorArgs *) Message)->type);
+- /*		problemstr = tempbuf;
+  /*		break;
+   */
+  	case RangeError:
+--- 130,138 ----
+  	case ScopeValueError:
+  /* the following fails because "type" is defined as "Filing4_type".  Argh!!
+  /*		problem = (int) (((ScopeTypeErrorArgs *) Message)->problem);
+! /*		problemstr = sprintf(tempbuf,"problem: %s; type: %d",
+  /*				argproblems[problem],
+  /*				((ScopeTypeErrorArgs *) Message)->type);
+  /*		break;
+   */
+  	case RangeError:
+Only in xns.newer/examples/filing: errmsg.c.fix
+Only in xns/examples/filing_common: SCCS
+diff -c -r xns/examples/filing_common/errmsg.c xns.newer/examples/filing_common/errmsg.c
+*** xns/examples/filing_common/errmsg.c	Tue May 24 10:01:14 1988
+--- xns.newer/examples/filing_common/errmsg.c	Tue May 12 08:46:59 1987
+***************
+*** 136,145 ****
+  	case ScopeValueError:
+  /* the following fails because "type" is defined as "Filing4_type".  Argh!!
+  /*		problem = (int) (((ScopeTypeErrorArgs *) Message)->problem);
+! /*		(void)sprintf(tempbuf,"problem: %s; type: %d",
+  /*				argproblems[problem],
+  /*				((ScopeTypeErrorArgs *) Message)->type);
+- /*		problemstr = tempbuf;
+  /*		break;
+   */
+  	case RangeError:
+--- 136,144 ----
+  	case ScopeValueError:
+  /* the following fails because "type" is defined as "Filing4_type".  Argh!!
+  /*		problem = (int) (((ScopeTypeErrorArgs *) Message)->problem);
+! /*		problemstr = sprintf(tempbuf,"problem: %s; type: %d",
+  /*				argproblems[problem],
+  /*				((ScopeTypeErrorArgs *) Message)->type);
+  /*		break;
+   */
+  	case RangeError:
+Only in xns/examples/gap: SCCS
+diff -c -r xns/examples/gap/gap2d.c xns.newer/examples/gap/gap2d.c
+*** xns/examples/gap/gap2d.c	Tue May 24 10:03:27 1988
+--- xns.newer/examples/gap/gap2d.c	Mon Jan  5 08:47:30 1987
+***************
+*** 254,261 ****
+  		dup2(t, 2);
+  		if (t > 2) close(t);
+  		envinit[0] = "TERM=network";
+! 		(void)sprintf(wsenv, "WORKSTATION=%s", xntoa(who.sns_addr));
+! 		envinit[1] = wsenv;
+  		envinit[2] = (char*) 0;
+  #ifdef DEBUG
+  		BUGOUT("about to exec /bin/login");
+--- 254,261 ----
+  		dup2(t, 2);
+  		if (t > 2) close(t);
+  		envinit[0] = "TERM=network";
+! 		envinit[1] = sprintf(wsenv, "WORKSTATION=%s",
+! 				     xntoa(who.sns_addr));
+  		envinit[2] = (char*) 0;
+  #ifdef DEBUG
+  		BUGOUT("about to exec /bin/login");
+Common subdirectories: xns/include/xnscourier and xns.newer/include/xnscourier
+Only in xns/man: Makefile
+Common subdirectories: xns/morexnslib/auth and xns.newer/morexnslib/auth
+Common subdirectories: xns/morexnslib/ch and xns.newer/morexnslib/ch
+Common subdirectories: xns/morexnslib/xnsbfs and xns.newer/morexnslib/xnsbfs
+Common subdirectories: xns/morexnslib/auth/profiled and xns.newer/morexnslib/auth/profiled
+Common subdirectories: xns/morexnslib/ch/profiled and xns.newer/morexnslib/ch/profiled
+Only in xns.newer/xnslib: M.k
+diff -c -r xns/xnslib/courierdb.h xns.newer/xnslib/courierdb.h
+*** xns/xnslib/courierdb.h	Mon Jan  5 09:11:09 1987
+--- xns.newer/xnslib/courierdb.h	Mon Nov 23 18:30:12 1987
+***************
+*** 5,16 ****
+   */
+  
+  struct courierdbent {
+! 	char *cr_programname;	/* the name of the Courier program */
+  	unsigned long cr_programnumber;	/* official number of program */
+  	unsigned short cr_version;	/* version number of this server */
+  	char *cr_description;	/* file containing the Courier description */
+  	char *cr_serverbin;	/* file containing the server binary */
+  };
+  
+  extern struct courierdbent *getcourierdbent();
+  extern struct courierdbent *getcourierservice();
+--- 5,35 ----
+   */
+  
+  struct courierdbent {
+! 	char *cr_programname;		/* the name of the Courier program */
+  	unsigned long cr_programnumber;	/* official number of program */
+  	unsigned short cr_version;	/* version number of this server */
+  	char *cr_description;	/* file containing the Courier description */
+  	char *cr_serverbin;	/* file containing the server binary */
++ 	unsigned short cr_threading;	/* method to contact this server */
+  };
++ #define CR_EXEC		0			/* Normal Fork and Exec */
++ #define CR_NOWAIT	1		/* Return Transport to xnscourierd
++ 					   master daemon will fork */
++ #define CR_WAIT		2		/* Return Transport to xnscourierd
++ 					   master daemon won't fork */
+  
+  extern struct courierdbent *getcourierdbent();
+  extern struct courierdbent *getcourierservice();
++ 
++ /*
++  * misc structures for master daemon for associating
++  * offered services with unix domain socketpairs for passing connections.
++  * This should probably be elsewhere.
++  */
++ 
++ struct ServerTie {
++ 	struct ServerTie *st_next;
++ 	int st_fd;
++ 	int st_pid;
++ 	struct courierdbent st_db;
++ };
+Only in xns.newer/xnslib: courierdb.h.org
+Common subdirectories: xns/xnslib/except and xns.newer/xnslib/except
+diff -c -r xns/xnslib/getcourierent.c xns.newer/xnslib/getcourierent.c
+*** xns/xnslib/getcourierent.c	Mon Jan  5 09:11:11 1987
+--- xns.newer/xnslib/getcourierent.c	Wed Dec  9 18:42:24 1987
+***************
+*** 75,80 ****
+--- 75,91 ----
+  	cp = skipitem(cp);
+  	if (*cp != '\0') {
+  		*cp = '\0';
++ 		cp = skipspace(++cp);
++ 	}
++ 	if (*cp == 0)
++ 		service.cr_threading = CR_EXEC;
++ 	else if (strcmp(cp, "wait") == 0)
++ 		service.cr_threading = CR_WAIT;
++ 	else if (strcmp(cp, "nowait") == 0)
++ 		service.cr_threading = CR_NOWAIT;
++ 	cp = skipitem(cp);
++ 	if (*cp != '\0') {
++ 		*cp = '\0';
+  		/* etc. for more fields */
+  	}
+  	return (&service);
+Only in xns.newer/xnslib: getcourierent.c.org
+Only in xns.newer/xnslib: libxns.a
+diff -c -r xns/xnslib/lookahead.c xns.newer/xnslib/lookahead.c
+*** xns/xnslib/lookahead.c	Mon May 11 06:32:18 1987
+--- xns.newer/xnslib/lookahead.c	Tue Dec 22 17:06:21 1987
+***************
+*** 41,49 ****
+  #define MAKEVEC(idx, addr, len) our_iovec[idx].iov_base = (caddr_t)addr;\
+  				our_iovec[idx].iov_len = len;
+  
+! #if DEBUG
+! extern int CourierServerDebuggingFlag;
+! #endif
+  
+  extern CourierConnection *_serverConnection;
+  extern Unspecified tid;
+--- 41,48 ----
+  #define MAKEVEC(idx, addr, len) our_iovec[idx].iov_base = (caddr_t)addr;\
+  				our_iovec[idx].iov_len = len;
+  
+! int _fd_for_passing;
+! int CourierServerDebuggingFlag;
+  
+  extern CourierConnection *_serverConnection;
+  extern Unspecified tid;
+***************
+*** 170,175 ****
+--- 169,175 ----
+  	int i, argc;
+  	extern char *malloc();
+  	char tmpbuf[1024];
++ 	Unspecified databuf[12] , *dp = databuf;
+  
+  	cdbent = getcourierservice(programnum, versionnum);
+  	if (cdbent != NULL &&
+***************
+*** 197,208 ****
+  		if (curval > 0)
+  		  SendRejectMessage(noSuchVersionNumber, 2, range);
+  		else SendRejectMessage(noSuchProgramNumber, 0, NULL);
+! #if DEBUG
+! 		(void) fprintf(stderr, "xnscourierd: no program %d(%d)\n",
+  			       programnum, versionnum);
+- #endif
+  		return;		/* can't find server */
+  	}
+  	argc = 0;
+  	argv[argc] = malloc(4); /* allow 3 digits per file descriptor */
+  	sprintf(argv[argc++],"%d",(int)_serverConnection->fd);
+--- 197,218 ----
+  		if (curval > 0)
+  		  SendRejectMessage(noSuchVersionNumber, 2, range);
+  		else SendRejectMessage(noSuchProgramNumber, 0, NULL);
+! 		if (CourierServerDebuggingFlag)
+! 		    (void) fprintf(stderr, "xnscourierd: no program %d(%d)\n",
+  			       programnum, versionnum);
+  		return;		/* can't find server */
+  	}
++ 	if (_fd_for_passing >= 0) { /* return call to master server */
++ 		Unspecified databuf[12] , *dp; register int i;
++ 		dp += externalize_LongCardinal(dp, &programnum);
++ 		dp += externalize_Cardinal(dp, &versionnum);
++ 		*(unsigned short *) dp = skipcount; dp++;
++ 		for (i = 0; i++; i < skipcount)
++ 			*dp++ = skippedwords[i];
++ 		pass_fd_rights(_fd_for_passing, _serverConnection->fd, databuf,
++ 				(dp - databuf) * sizeof(Unspecified));
++ 		exit (0);
++ 	}
+  	argc = 0;
+  	argv[argc] = malloc(4); /* allow 3 digits per file descriptor */
+  	sprintf(argv[argc++],"%d",(int)_serverConnection->fd);
+***************
+*** 214,223 ****
+  	execv(cdbent->cr_serverbin, argv);
+  	Deallocate(ReadMessage(_serverConnection, NULL, 0));/* flush message */
+  	SendRejectMessage(unspecifiedError, 0, NULL);
+! #if DEBUG
+  	(void) fprintf(stderr, "xnscourierd: can't exec %s\n",
+  		       cdbent->cr_serverbin);
+- #endif
+  	return;
+  }
+  
+--- 224,232 ----
+  	execv(cdbent->cr_serverbin, argv);
+  	Deallocate(ReadMessage(_serverConnection, NULL, 0));/* flush message */
+  	SendRejectMessage(unspecifiedError, 0, NULL);
+! 	if (CourierServerDebuggingFlag)
+  	(void) fprintf(stderr, "xnscourierd: can't exec %s\n",
+  		       cdbent->cr_serverbin);
+  	return;
+  }
+  
+***************
+*** 231,241 ****
+  	static Cardinal msgtype = REJECT;
+  	Unspecified *bp, buf[REJECTHDRLEN];
+  
+- #if DEBUG
+  	if (CourierServerDebuggingFlag)
+  		fprintf(stderr, "[SendRejectMessage %d, length %d]\n",
+  			rejecttype, nwords);
+- #endif
+  	bp = buf;
+  	bp += externalize_Cardinal(&msgtype, bp);
+  	bp += externalize_Unspecified(&tid, bp);
+--- 240,248 ----
+***************
+*** 255,265 ****
+  	static Cardinal msgtype = ABORT;
+  	Unspecified *bp, buf[ABORTHDRLEN];
+  
+- #if DEBUG
+  	if (CourierServerDebuggingFlag)
+  		fprintf(stderr, "[SendAbortMessage %d %d]\n",
+  				errorvalue, nwords);
+- #endif
+  	bp = buf;
+  	bp += externalize_Cardinal(&msgtype, bp);
+  	bp += externalize_Unspecified(&tid, bp);
+--- 262,270 ----
+***************
+*** 274,282 ****
+  	Cardinal proc;
+  {
+  	SendRejectMessage(noSuchProcedureValue, 0, (Unspecified*) NULL);
+- #if DEBUG
+  	if (CourierServerDebuggingFlag)
+  		fprintf(stderr, "[NoSuchProcedureValue %d in %s]\n",
+  			proc, prog_name);
+- #endif
+  }
+--- 279,329 ----
+  	Cardinal proc;
+  {
+  	SendRejectMessage(noSuchProcedureValue, 0, (Unspecified*) NULL);
+  	if (CourierServerDebuggingFlag)
+  		fprintf(stderr, "[NoSuchProcedureValue %d in %s]\n",
+  			proc, prog_name);
+  }
++ 
++ garner_fd(s, fd, buf, buflen)
++ 	int s, *fd, *buflen;
++ 	char *buf;
++ {
++ 	static struct	msghdr msg;
++ 	static struct	iovec iov[1];
++ 
++ 	iov->iov_base = buf;
++ 	iov->iov_len = *buflen;
++ 	msg.msg_iov = iov;
++ 	msg.msg_iovlen = 1;
++ 	msg.msg_accrights = (caddr_t)fd;
++ 	msg.msg_accrightslen = sizeof (*fd);
++ 	if (recvmsg(s, &msg, 0) < 0) {
++ 		perror("garner_fd: recvmsg");
++ 		return (-1);
++ 	}
++ 	*buflen = iov->iov_len;
++ 	return (0);
++ }
++ 
++ pass_fd_rights(s, fd, buf, buflen)
++ 	int s, fd, buflen;
++ 	char *buf;
++ {
++ 	static struct	msghdr msg;
++ 	static struct	iovec iov[1];
++ 
++ 	iov->iov_base = buf;
++ 	iov->iov_len = buflen;
++ 	msg.msg_iov = iov;
++ 	msg.msg_iovlen = 1;
++ 	msg.msg_accrights = (caddr_t)&fd;
++ 	msg.msg_accrightslen = sizeof (fd);
++ 	if (sendmsg(s, &msg, 0) < 0) {
++ 		perror("pass_fd_rights: sendmsg");
++ 		exit (0);
++ 	}
++ }
++ 
++ int _fd_for_passing = -1;
++ int _fd_for_getting = -1;
++ 
+Only in xns.newer/xnslib: lookahead.c.org
+Common subdirectories: xns/xnslib/profiled and xns.newer/xnslib/profiled
+diff -c -r xns/xnslib/readwrite.c xns.newer/xnslib/readwrite.c
+*** xns/xnslib/readwrite.c	Mon May 11 06:33:14 1987
+--- xns.newer/xnslib/readwrite.c	Tue Dec 22 16:00:47 1987
+***************
+*** 328,334 ****
+  openSPPConnection(dst)
+  	struct sockaddr_ns *dst;
+  {
+! 	int s;
+  	extern int errno;
+  
+  	if ((s = socket(dst->sns_family, SOCK_SEQPACKET, 0)) < 0) {
+--- 328,334 ----
+  openSPPConnection(dst)
+  	struct sockaddr_ns *dst;
+  {
+! 	int s, on = 1;
+  	extern int errno;
+  
+  	if ((s = socket(dst->sns_family, SOCK_SEQPACKET, 0)) < 0) {
+***************
+*** 341,346 ****
+--- 341,349 ----
+  			perror("(Courier) connect");
+  		return(-1);
+  		/*NOTREACHED*/
++ 	}
++ 	if (setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof on) < 0) {
++ 		perror("(Courier) Keep-Alive");
+  	}
+  	return(s);
+  }
+diff -c -r xns/xnslib/server.c xns.newer/xnslib/server.c
+*** xns/xnslib/server.c	Mon Jan  5 09:11:26 1987
+--- xns.newer/xnslib/server.c	Tue Dec 22 17:05:46 1987
+***************
+*** 34,39 ****
+--- 34,40 ----
+  #include <sys/time.h>
+  #include <sys/types.h>		/* for ns.h */
+  #include <sys/socket.h>
++ #include <sys/uio.h>
+  #include <netns/ns.h>		/* for XNS addresses and courierconnectin.h */
+  #include <netns/sp.h>		/* for spphdr */
+  #include "courier.h"
+***************
+*** 48,54 ****
+  /*
+   * Message stream handle.
+   */
+! CourierConnection *_serverConnection = 0;
+  Unspecified tid;				/* transaction ID */
+  
+  
+--- 49,55 ----
+  /*
+   * Message stream handle.
+   */
+! CourierConnection *_serverConnection;
+  Unspecified tid;				/* transaction ID */
+  
+  
+***************
+*** 118,125 ****
+  	CourierWrite(_serverConnection, (bp-buf), buf, nwords, results);
+  	_serverConnection->bdtstate = wantdata;
+  }
+  
+- 
+  static int
+  ServerInit(argc, argv, skippedwords)
+  	int argc;
+--- 119,127 ----
+  	CourierWrite(_serverConnection, (bp-buf), buf, nwords, results);
+  	_serverConnection->bdtstate = wantdata;
+  }
++ int _fd_for_getting;
++ int _fd_for_passing;
+  
+  static int
+  ServerInit(argc, argv, skippedwords)
+  	int argc;
+***************
+*** 153,158 ****
+--- 155,173 ----
+  			CourierServerDebuggingFlag = 1;
+  		else
+  #endif
++ 		if (*argv[0] == '*' && skipcount < 0) {
++ 			Unspecified databuf[512];
++ 			int buflen = sizeof(databuf); register int i;
++ 			sscanf(1 + argv[0], "%d,%d", &_fd_for_getting,
++ 				&_fd_for_passing);
++ 			if (garner_fd(_fd_for_getting, &_serverConnection->fd,
++ 				  databuf, &buflen) < 0)
++ 					exit(1);
++ 			skipcount = *(unsigned short *)(databuf+3);
++ 			for (i = 0; i < skipcount; i++)
++ 				skippedwords[i] = databuf[i+4];
++ 			break;
++ 		}
+  		if (isdigit(*argv[0])) {
+  			if (skipcount < 0) {
+  				_serverConnection->fd = atoi(argv[0]);
+***************
+*** 200,202 ****
+--- 215,218 ----
+  	Server(skipcount, skippedwords);
+  	exit(0);
+  }
++ 
+Only in xns.newer/xnslib: server.c.org
