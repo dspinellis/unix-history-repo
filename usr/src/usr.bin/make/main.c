@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -61,10 +61,10 @@ static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <varargs.h>
 #include "make.h"
+#include "pathnames.h"
 
 #ifndef	DEFMAXLOCAL
 #define	DEFMAXLOCAL DEFMAXJOBS
@@ -96,6 +96,8 @@ Boolean			checkEnvFirst;	/* -e flag */
 static Boolean		jobsRunning;	/* TRUE if the jobs might be running */
 
 static Boolean		ReadMakefile();
+
+static char *curdir;			/* if chdir'd for an architecture */
 
 /*-
  * MainParseArgs --
@@ -289,9 +291,8 @@ Main_ParseArgLine(line)
 		return;
 	for (; *line == ' '; ++line);
 
-	argv = Str_BreakString(line, " \t", "\n", &argc);
+	argv = brk_string(line, &argc);
 	MainParseArgs(argc, argv);
-	Str_FreeVec(argc, argv);
 }
 
 /*-
@@ -317,6 +318,36 @@ main(argc, argv)
 {
 	Lst targs;	/* target nodes to create -- passed to Make_Init */
 	Boolean outOfDate; 	/* FALSE if all targets up to date */
+	struct stat sb;
+	char *path, *getenv();
+
+	/*
+	 * if the MAKEOBJDIR (or by default, the _PATH_OBJDIR) directory
+	 * exists, change into it and build there.  Once things are
+	 * initted, have to add the original directory to the search path,
+	 * and modify the paths for the Makefiles apropriately.  The
+	 * current directory is also placed as a variable for make scripts.
+	 */
+	if (!(path = getenv("MAKEOBJDIR")))
+		path = _PATH_OBJDIR;
+	if (!lstat(path, &sb)) {
+		if (S_ISDIR(sb.st_mode))
+			curdir = "..";
+		else {
+			curdir = emalloc((u_int)MAXPATHLEN + 1);
+			if (!getwd(curdir)) {
+				(void)fprintf(stderr, "make: %s.\n", curdir);
+				exit(2);
+			}
+		}
+		if (chdir(path)) {
+			extern int errno;
+
+			(void)fprintf(stderr, "make: %s: %s.\n",
+			    path, strerror(errno));
+			exit(2);
+		}
+	}
 
 	create = Lst_Init(FALSE);
 	makefiles = Lst_Init(FALSE);
@@ -348,6 +379,12 @@ main(argc, argv)
 	Var_Init();		/* As well as the lists of variables for
 				 * parsing arguments */
 
+	if (curdir) {
+		Dir_AddDir(dirSearchPath, curdir);
+		Var_Set(".CURDIR", curdir, VAR_GLOBAL);
+	} else
+		Var_Set(".CURDIR", ".", VAR_GLOBAL);
+
 	/*
 	 * Initialize various variables.
 	 *	.PMAKE gets how we were executed.
@@ -359,7 +396,7 @@ main(argc, argv)
 	Var_Set("MAKE", argv[0], VAR_GLOBAL);
 	Var_Set(MAKEFLAGS, "", VAR_GLOBAL);
 	Var_Set("MFLAGS", "", VAR_GLOBAL);
-	Var_Set ("MACHINE", MACHINE, VAR_GLOBAL);
+	Var_Set("MACHINE", MACHINE, VAR_GLOBAL);
 
 	/*
 	 * First snag any flags out of the PMAKE environment variable.
@@ -407,8 +444,8 @@ main(argc, argv)
 	 * if it was (makefile != (char *) NULL), or the default Makefile and
 	 * makefile, in that order, if it wasn't.
 	 */
-	 if (!noBuiltins && !ReadMakefile(DEFSYSMK))
-		Fatal("make: no system rules (%s).", DEFSYSMK);
+	 if (!noBuiltins && !ReadMakefile(_PATH_DEFSYSMK))
+		Fatal("make: no system rules (%s).", _PATH_DEFSYSMK);
 
 	if (!Lst_IsEmpty(makefiles)) {
 		LstNode ln;
@@ -530,38 +567,31 @@ static Boolean
 ReadMakefile(fname)
 	char *fname;		/* makefile to read */
 {
+	extern Lst parseIncPath, sysIncPath;
+	FILE *stream;
+	char *name, path[MAXPATHLEN + 1];
+
 	if (!strcmp(fname, "-")) {
 		Parse_File("(stdin)", stdin);
 		Var_Set("MAKEFILE", "", VAR_GLOBAL);
 	} else {
-		extern Lst parseIncPath, sysIncPath;
-		FILE *stream;
-
-		stream = fopen(fname, "r");
-		if (stream == (FILE *) NULL) {
-			/* Look in -I directories... */
-			char *name;
-
-			name = Dir_FindFile(fname, parseIncPath);
-			if (name == NULL) {
-				/*
-				 * Last-ditch: look in system include
-				 * directories.
-				 */
-				name = Dir_FindFile(fname, sysIncPath);
-				if (name == NULL)
-					return(FALSE);
-			}
-			stream = fopen(name, "r");
-			if (stream == (FILE *)NULL)
-				/* Better safe than sorry... */
+		/* if we've chdir'd, rebuild the path name */
+		if (curdir && *fname != '/') {
+			(void)sprintf(path, "%s/%s", curdir, fname);
+			fname = path;
+		}
+		if (!(stream = fopen(fname, "r"))) {
+			/* look in -I and system include directories. */
+			if (!(name = Dir_FindFile(fname, parseIncPath)) &&
+			    !(name = Dir_FindFile(fname, sysIncPath)) ||
+			    !(stream = fopen(name, "r")))
 				return(FALSE);
 			fname = name;
 		}
 		/*
-		 * Set the MAKEFILE variable desired by System V fans -- the
-		 * placement of the setting here means it gets set to the
-		 * last makefile specified, as it is set by SysV make...
+		 * set the MAKEFILE variable desired by System V fans -- the
+		 * placement of the setting here means it gets set to the last
+		 * makefile specified, as it is set by SysV make.
 		 */
 		Var_Set("MAKEFILE", fname, VAR_GLOBAL);
 		Parse_File(fname, stream);
@@ -697,6 +727,36 @@ Finish(errors)
 	Fatal("%d error%s", errors, errors == 1 ? "" : "s");
 }
 
+/*
+ * emalloc --
+ *	malloc, but die on error.
+ */
+char *
+emalloc(len)
+	u_int len;
+{
+	extern int errno;
+	char *p, *malloc();
+
+	if (!(p = malloc(len)))
+		enomem();
+	return(p);
+}
+
+/*
+ * enomem --
+ *	die when out of memory.
+ */
+enomem()
+{
+	(void)fprintf(stderr, "make: %s.\n", strerror(errno));
+	exit(2);
+}
+
+/*
+ * usage --
+ *	exit with usage message
+ */
 usage()
 {
 	(void)fprintf(stderr,
