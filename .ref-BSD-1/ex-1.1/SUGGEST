@@ -1,5 +1,0 @@
-Ex will start much faster if it doesn't have to do a "ttyn".
-This can be (essentially) eliminated by using the program "makeTtyn"
-to generate a "Ttyn" which hashes major and minor device number.
-All you have to do then is change the (one) ttyn call in ex_init.c
-to call "Ttyn". The startup speed change can be striking.

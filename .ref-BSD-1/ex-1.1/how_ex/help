@@ -1,8 +1,0 @@
-help                           12/15/77                           help
-
-     The ex help command provides access to a data base about the edi-
-tor  for  interactive  use.  So far only a small amount of information
-has been prepared  for  this  data  base.   The  prepared  information
-currently  concerns  the  editor crash recovery mechanism.  Type "help
-recover" or "help index" for more details.
-

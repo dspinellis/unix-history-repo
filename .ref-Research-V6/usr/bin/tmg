@@ -1,3 +1,0 @@
-/usr/lib/tmg $1.t $1.s
-as - $1.s
-ld /usr/lib/tmga a.out /usr/lib/tmgb /usr/lib/tmgc -ls

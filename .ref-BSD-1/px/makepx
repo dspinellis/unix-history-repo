@@ -1,9 +1,0 @@
-echo FP = -1. >00head.s
-if ! -r ../nofloat goto ok
-echo FP = 0 >00head.s
-: ok
-Emake
-rm *.o
-asm
-cc -c -O *.c
-load

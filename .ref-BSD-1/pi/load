@@ -1,5 +1,0 @@
-if -r ../nofloat goto nofloatload
-cc -i lib ../opcodes/TRdata.o
-exit
-: nofloatload
-cc -i -f lib ../opcodes/TRdata.o ../fpterp/fp.o

@@ -1,1 +1,0 @@
-pr trek.h getpar.h *.c | lpr &

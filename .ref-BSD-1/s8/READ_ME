@@ -1,6 +1,0 @@
-The glob2.c goes with the sh.c in s1.
-The login and su are here so hyou can see the (simple) changes needed
-to support the editor data base /etc/htmp.
-They need the routines in ../lib/libX.a
-
-See also ../s1/READ_ME

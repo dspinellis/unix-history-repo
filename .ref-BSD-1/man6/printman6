@@ -1,4 +1,0 @@
-nroff naa [a-e]*.[1-9]
-nroff naa [f-m]*.[1-9]
-nroff naa [n-p]*.[1-9]
-nroff naa [q-z]*.[1-9]

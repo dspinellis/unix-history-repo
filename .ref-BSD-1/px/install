@@ -1,4 +1,0 @@
-cp a.out /usr/bin/px
-chmod 711 /usr/bin/px
-chown bin /usr/bin/px
-echo New px installed

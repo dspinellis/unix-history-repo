@@ -1,9 +1,0 @@
-lostlines                      12/15/77                      lostlines
-
-     If you get a message indicating that lines  were  lost  during  a
-"recover"  command, this means that the data base the editor saved in-
-dicating your files state at the point of crash was  inconsistent  and
-that  a few of the lines could not be saved.  These will always be the
-last few lines you changed, and the text of these lines  will  be  re-
-placed by the string "LOST" so that they will be easy to find.
-

@@ -1,1 +1,0 @@
-ld -X $1 crt0o lib ../lib/libX.a -lc -l

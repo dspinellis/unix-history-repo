@@ -1,4 +1,0 @@
-cfree (ptr)
-{
-free(ptr);
-}

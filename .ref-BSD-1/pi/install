@@ -1,8 +1,0 @@
-cp a.out /usr/bin/pi
-cp pi_strings /usr/lib
-cp how_pi /usr/lib
-cp how_pix /usr/lib
-chown bin /usr/bin/pi /usr/lib/how_pi /usr/lib/pi_strings /usr/lib/how_pix
-chmod 711 /usr/bin/pi
-chmod 644 /usr/lib/how_pi /usr/lib/pi_strings /usr/lib/how_pix
-echo New pi installed
