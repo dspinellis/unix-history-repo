@@ -1,23 +1,27 @@
-static	char *sccsid = "@(#)dcheck.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.7 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
 #define	NB	10
-#define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
-#define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
 #define	MAXNINDIR	(MAXBSIZE / sizeof (daddr_t))
 
-#include <stdio.h>
 #include "../h/param.h"
 #include "../h/inode.h"
-#include "../h/dir.h"
 #include "../h/fs.h"
+#include <ndir.h>
+#include <stdio.h>
 
 union {
 	struct	fs fs;
 	char pad[MAXBSIZE];
 } fsun;
 #define	sblock	fsun.fs
+
+struct dirstuff {
+	int loc;
+	struct dinode *ip;
+	char dbuf[MAXBSIZE];
+};
 
 struct	dinode	itab[MAXIPG];
 struct	dinode	*gip;
@@ -121,49 +125,33 @@ char *file;
 }
 
 pass1(ip)
-register struct dinode *ip;
+	register struct dinode *ip;
 {
-	struct direct dbuf[MAXNDIR];
-	long doff;
-	struct direct *dp;
-	register i, j;
+	register struct direct *dp;
+	struct dirstuff dirp;
 	int k;
-	daddr_t d;
-	ino_t kno;
 
 	if((ip->di_mode&IFMT) != IFDIR)
 		return;
+	dirp.loc = 0;
+	dirp.ip = ip;
 	gip = ip;
-	doff = 0;
-	for(i=0;; i++) {
-		if(doff >= ip->di_size)
-			break;
-		d = bmap(i);
-		if(d == 0)
-			break;
-		bread(fsbtodb(&sblock, d), (char *)dbuf, sblock.fs_bsize);
-		for(j=0; j < NDIR(&sblock); j++) {
-			if(doff >= ip->di_size)
-				break;
-			doff += sizeof(struct direct);
-			dp = &dbuf[j];
-			kno = dp->d_ino;
-			if(kno == 0)
-				continue;
-			if(kno > nfiles || kno < ROOTINO) {
-				printf("%d bad; %d/%.*s\n",
-				    kno, ino, DIRSIZ, dp->d_name);
-				nerror++;
-				continue;
-			}
-			for (k=0; ilist[k] != 0; k++)
-				if (ilist[k]==kno) {
-					printf("%d arg; %d/%.*s\n",
-					    kno, ino, DIRSIZ, dp->d_name);
-					nerror++;
-				}
-			ecount[kno]++;
+	for (dp = readdir(&dirp); dp != NULL; dp = readdir(&dirp)) {
+		if(dp->d_ino == 0)
+			continue;
+		if(dp->d_ino > nfiles || dp->d_ino < ROOTINO) {
+			printf("%d bad; %d/%s\n",
+			    dp->d_ino, ino, dp->d_name);
+			nerror++;
+			continue;
 		}
+		for (k = 0; ilist[k] != 0; k++)
+			if (ilist[k] == dp->d_ino) {
+				printf("%d arg; %d/%s\n",
+				     dp->d_ino, ino, dp->d_name);
+				nerror++;
+			}
+		ecount[dp->d_ino]++;
 	}
 }
 
@@ -183,6 +171,35 @@ register struct dinode *ip;
 	}
 	printf("%u\t%d\t%d\n", ino,
 	    ecount[i], ip->di_nlink);
+}
+
+/*
+ * get next entry in a directory.
+ */
+struct direct *
+readdir(dirp)
+	register struct dirstuff *dirp;
+{
+	register struct direct *dp;
+	daddr_t lbn, d;
+
+	for(;;) {
+		if (dirp->loc >= dirp->ip->di_size)
+			return NULL;
+		if ((lbn = dirp->loc / sblock.fs_bsize) == 0) {
+			d = bmap(lbn);
+			if(d == 0)
+				return NULL;
+			bread(fsbtodb(&sblock, d), dirp->dbuf,
+			    dblksize(&sblock, dirp->ip, lbn));
+		}
+		dp = (struct direct *)
+		    (dirp->dbuf + dirp->loc % sblock.fs_bsize);
+		dirp->loc += dp->d_reclen;
+		if (dp->d_ino == 0)
+			continue;
+		return (dp);
+	}
 }
 
 bread(bno, buf, cnt)
