@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_cons.c	7.8 (Berkeley) %G%
+ *	@(#)if_cons.c	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -343,11 +343,10 @@ struct pklcd *lcp;
 	case MT_OOBDATA:
 		tpcons_input(m0, isop->isop_faddr, isop->isop_laddr,
 			(struct socket *)0, (caddr_t)lcp);
+		return;
 
 	case MT_CONTROL:
 		switch (pk_decode(mtod(m0, struct x25_packet *))) {
-		default:
-			return;
 
 		case RR:
 			cmd = PRC_CONS_SEND_DONE;
@@ -356,7 +355,9 @@ struct pklcd *lcp;
 		case CALL_ACCEPTED:
 			if (lcp->lcd_sb.sb_mb)
 				lcp->lcd_send(lcp); /* XXX - fix this */
-			break;
+			/*FALLTHROUGH*/
+		default:
+			return;
 
 		dead:
 		case RESET:
@@ -551,15 +552,30 @@ make_partial_x25_packet(isop, lcp)
 	struct mbuf *m;
 
 
+	IFDEBUG(D_CCONN)
+		printf("make_partial_x25_packet(0x%x, 0x%x, 0x%x, 0x%x, 0x%x)\n",
+			isop->isop_laddr, isop->isop_faddr, proto, m, flag);
+	ENDDEBUG
+	if (cons_use_udata) {
+		if (isop->isop_x25crud_len > 0) {
+			/*
+			 *	The user specified something. Stick it in
+			 */
+			bcopy(isop->isop_x25crud, lcp->lcd_faddr.x25_udata,
+					isop->isop_x25crud_len);
+			lcp->lcd_faddr.x25_udlen = isop->isop_x25crud_len;
+		}
+	}
+
+	if (cons_use_facils == 0) {
+		lcp->lcd_facilities = 0;
+		return 0;
+	}
 	MGET(m, MT_DATA, M_WAITOK);
 	if (m == 0)
 		return ENOBUFS;
 	buf = mtod(m, caddr_t);
 	ptr = buf;
-	IFDEBUG(D_CCONN)
-		printf("make_partial_x25_packet(0x%x, 0x%x, 0x%x, 0x%x, 0x%x)\n",
-			isop->isop_laddr, isop->isop_faddr, proto, m, flag);
-	ENDDEBUG
 	
 	/* ptr now points to facil length (len of whole facil field in OCTETS */
 	facil_len = ptr ++;
@@ -577,7 +593,7 @@ make_partial_x25_packet(isop, lcp)
 				*/
 		len = isop->isop_laddr->siso_addr.isoa_len;
 		bcopy( isop->isop_laddr->siso_data, ptr, len);
-		*(ptr-2) = len+2; /* facil param len in octets */
+		*(ptr-2) = len+1; /* facil param len in octets */
 		*(ptr-1) = len<<1; /* facil param len in nibbles */
 		ptr += len;
 
@@ -593,7 +609,7 @@ make_partial_x25_packet(isop, lcp)
 				*/
 		len = isop->isop_faddr->siso_nlen;
 		bcopy(isop->isop_faddr->siso_data, ptr, len);
-		*(ptr-2) = len+2; /* facil param len = addr len + 1 for each of these
+		*(ptr-2) = len+1; /* facil param len = addr len + 1 for each of these
 						  * two length fields, in octets */
 		*(ptr-1) = len<<1; /* facil param len in nibbles */
 		ptr += len;
@@ -602,17 +618,6 @@ make_partial_x25_packet(isop, lcp)
 	*facil_len = ptr - facil_len - 1;
 	if (*facil_len > MAX_FACILITIES)
 		return E_CO_PNA_LONG;
-
-	if (cons_use_udata) {
-		if (isop->isop_x25crud_len > 0) {
-			/*
-			 *	The user specified something. Stick it in
-			 */
-			bcopy(isop->isop_x25crud, lcp->lcd_faddr.x25_udata,
-					isop->isop_x25crud_len);
-			lcp->lcd_faddr.x25_udlen = isop->isop_x25crud_len;
-		}
-	}
 
 	buflen = (int)(ptr - buf);
 
