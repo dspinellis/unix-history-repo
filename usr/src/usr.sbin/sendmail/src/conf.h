@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.152 (Berkeley) %G%
+ *	@(#)conf.h	8.153 (Berkeley) %G%
  */
 
 /*
@@ -125,6 +125,7 @@
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)
 # define LA_TYPE	LA_SUBR
+# define SPT_TYPE	SPT_PSTAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
 # define _PATH_UNIX	"/hp-ux"
