@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.34	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.35	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -1498,7 +1498,7 @@ dh|vt50h|dec vt50h:\
 	:ta=^I:pt:sr=\EI:up=\EA:
 di|vt100-s|vt100 with status line at top:\
 	:li#23:i2=\E[2;24r\E[24;1H:\
-	:cm@:ho=\E[H^J:cl=50\E[;H^J\E[2J:\
+	:cm@:ho=\E[H^J:cl=50\E[;H^J\E[0J:\
 	:hs:es:ts=\E7\E[1;%dH\E[1K:fs=\E8:tc=vt100-am:
 dj|vt100-s-bot|vt100 with status line at bottom:\
 	:li#23:i2=\E[1;23r\E[23;1H:\
