@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pager.c	7.5 (Berkeley) %G%
+ *	@(#)vm_pager.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -250,7 +250,10 @@ pager_cache(object, should_cache)
 
 	vm_object_cache_lock();
 	vm_object_lock(object);
-	object->can_persist = should_cache;
+	if (should_cache)
+		object->flags |= OBJ_CANPERSIST;
+	else
+		object->flags &= ~OBJ_CANPERSIST;
 	vm_object_unlock(object);
 	vm_object_cache_unlock();
 
