@@ -6,23 +6,25 @@
 #define	KERNEL
 
 #include "machine/mtpr.h"
+
 #include "param.h"
-#include "systm.h"
-#include "buf.h"
-#include "time.h"
 #include "inode.h"
 #include "fs.h"
+#include "buf.h"
 #include "ioctl.h"
-#include "tahoevba/dsk.h"
-#include "tahoevba/dskio.h"
-#include "tahoevba/hdc.h"
+#include "disklabel.h"
 #include "saio.h"
+
+#include "../tahoevba/dsk.h"
+#include "../tahoevba/dskio.h"
+#include "../tahoevba/hdc.h"
 
 #define	NHD		4
 #define	NDRIVE		8		/* drives per controller */
 #define	HDSLAVE(x)	((x) % NDRIVE)
 #define	HDCTLR(x)	((x) / NDRIVE)
 
+#define	HDC_DEFBUS	0		/* we only handle bus zero, for now */
 #define	HDREG(x)	(ctlr_addr->x)	/* standalone io to an hdc register */
 #define	HID_HDC		0x01		/* hvme_id for HDC */
 
@@ -30,10 +32,10 @@
  * hdc controller table. It contains information about the hdc controller.
  */
 typedef struct {
-	int		ctlr;		/* controller number (0-15)         */
+	int		ctlr;		/* controller number (0-15) */
 	hdc_regs_type	*registers;	/* base address of hdc io registers */
-	hdc_mid_type	mid;		/* the module id is read to here    */
-	master_mcb_type	master_mcb;	/* the master mcb for this hdc      */
+	hdc_mid_type	mid;		/* the module id is read to here */
+	master_mcb_type	master_mcb;	/* the master mcb for this hdc */
 	mcb_type	mcb;		/* an mcb for i/o to the controller */
 } hdctlr_type;
 
@@ -44,93 +46,76 @@ hdctlr_type hdc_ctlr[HDC_MAXCTLR][HDC_MAXBUS];
  * Some information is obtained from the profile prom and geometry block.
  */
 typedef struct {
-	par_tab	partition[GB_MAXPART];	/* partition definitions            */
-	int	ctlr;			/* the controller number (0-15)     */
-	int	slave;			/* the slave number (0-4)           */
-	int	unit;			/* the unit number (0-31)           */
-	int	id;			/* identifies the disk model        */
- 	int	cylinders;		/* number of logical cylinders      */
-	int	heads;			/* number of logical heads          */
-	int	sectors;		/* number of logical sectors/track  */
-	int	phys_cylinders;		/* number of physical cylinders     */
-	int	phys_heads;		/* number of physical heads         */
+	par_tab	partition[GB_MAXPART];	/* partition definitions */
+	int	ctlr;			/* the controller number (0-15) */
+	int	slave;			/* the slave number (0-4) */
+	int	unit;			/* the unit number (0-31) */
+	int	id;			/* identifies the disk model */
+ 	int	cylinders;		/* number of logical cylinders */
+	int	heads;			/* number of logical heads */
+	int	sectors;		/* number of logical sectors/track */
+	int	phys_cylinders;		/* number of physical cylinders */
+	int	phys_heads;		/* number of physical heads */
 	int	phys_sectors;		/* number of physical sectors/track */
-	int	def_cyl;		/* logical cylinder of drive def    */
-	int	def_cyl_count;		/* number of logical def cylinders  */
-	int	diag_cyl;		/* logical cylinder of diag area    */
+	int	def_cyl;		/* logical cylinder of drive def */
+	int	def_cyl_count;		/* number of logical def cylinders */
+	int	diag_cyl;		/* logical cylinder of diag area */
 	int	diag_cyl_count;		/* number of logical diag cylinders */
-	int	rpm;			/* disk rpm                         */
-	int	bytes_per_sec;		/* bytes/sector -vendorflaw conversn*/
-	int	format;			/* format program is active         */
-	u_long	phio_data[HDC_PHIO_SIZE];	/* data for physical io     */
+	int	rpm;			/* disk rpm */
+	int	bytes_per_sec;		/* bytes/sector -vendorflaw conversn */
+	int	format;			/* format program is active */
+	u_long	phio_data[HDC_PHIO_SIZE];	/* data for physical io */
 } hdunit_type;
 
-hdunit_type hdc_unit [HDC_MAXDRIVE] [HDC_MAXCTLR] [HDC_MAXBUS];
+hdunit_type	hdc_unit [HDC_MAXDRIVE] [HDC_MAXCTLR] [HDC_MAXBUS];
 
-/*************************************************************************
-*  Procedure:	hdopen
-*
-*  Description:	The hdc open routine. Initializes the hdc and reads the
-*		hdc status and the geometry block.
-*
-*  Returns:	 0  open was successful
-*		-1  this is not an hdc controller
-**************************************************************************/
+/*
+ * hdopen --
+ *	initialize the hdc and read the disk label
+ */
 hdopen(io)
 	register struct iob	*io;	/* i/o block */
 {
-	mcb_type	*mcb;		/* an mcb to send commands to hdc   */
-	hdunit_type	*hu;		/* disk unit information table      */
-	hdctlr_type	*hc;		/* hdc ctlr information table       */
-	hdc_mid_type	*id;		/* the hdc module id                */
-	geometry_sector	geometry;	/* the geometry block sector        */
-	geometry_block	*geo;		/* the geometry block               */
-	drive_stat_type	status;		/* the hdc status is read to here   */
-	long		ctlr;		/* the controller number            */
-	long		junk;		/* badaddr will write junk here     */
-	int		par;		/* partition number                 */
-	int		drive;		/* the drive number                 */
-	int		bus;		/* the bus number                   */
-	int		i;		/* temp                             */
-	hdc_regs_type	*ctlr_addr;	/* hdc i/o registers                */
+	drive_stat_type	status;		/* the hdc status is read to here */
+	hdc_mid_type	*id;		/* the hdc module id */
+	hdc_regs_type	*ctlr_addr;	/* hdc i/o registers */
+	hdctlr_type	*hc;		/* hdc ctlr information table */
+	hdunit_type	*hu;		/* disk unit information table */
+	geometry_sector	geometry;	/* the geometry block sector */
+	geometry_block	*geo;		/* the geometry block */
+	mcb_type	*mcb;		/* an mcb to send commands to hdc */
+	long	junk = 0;		/* badaddr will write junk here */
+	int	par;			/* partition number */
+	int	bus, ctlr, drive, error, i, unit;
 
-	par = io->i_boff;		/* io->i_part;	*/
-	bus = 0;			/* io->i_bus;	*/
-	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr;	*/
-	drive = HDSLAVE(io->i_unit);	/* io->i_drive;	*/
+	/* validate the device specification */
+	if ((ctlr = HDCTLR(io->i_unit)) >= HDC_MAXCTLR) {
+		printf("invalid controller number\n");
+		return(ENXIO);
+	}
+	if ((drive = HDSLAVE(io->i_unit)) < 0 || drive > HDC_MAXDRIVE - 1) {
+		printf("hdc: bad drive number.\n");
+		return(EUNIT);
+	}
+	if ((par = io->i_boff) < 0 || par > 7) {
+		printf("hdc: bad partition number.\n");
+		return(EUNIT);
+	}
+	bus = HDC_DEFBUS;
+
+	ctlr_addr = (hdc_regs_type *)(bus ?
+		0x80000000 | ctlr << 24 | HDC_MID << 16 :
+		0xC0000000 | ctlr << 24 | HDC_MID << 16);
+
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 	mcb = &hc->mcb;
 
-	/*
-	 * Validate the device specification
-	 */
-	if (ctlr >= HDC_MAXCTLR) {
-		printf("invalid controller number\n");
-		return(ENXIO);
-	}
-	if (drive < 0 || drive > HDC_MAXDRIVE - 1) {
-		printf("hdc: bad drive number.\n");
-		return(EUNIT);
-	}
-	if (par < 0 || par > 7) {
-		printf("hdc: bad partition number.\n");
-		return(EUNIT);
-	}
-	ctlr_addr = (hdc_regs_type *)(bus == 0 ?
-		0xC0000000 | ctlr << 24 | HDC_MID << 16  :
-		0x80000000 | ctlr << 24 | HDC_MID << 16);
-
-	/*
-	 * Init drive structure.
-	 */
+	/* init drive structure. */
 	hu->slave = drive;
 	hc->registers = ctlr_addr;
 
-	/*
-	 * Insure that this is an hdc, then reset the hdc.
-	 */
-	junk = 0;
+	/* insure that this is an hdc, then reset the hdc. */
 	if (wbadaddr(&ctlr_addr->module_id_reg, 4, &junk)) {
 		printf("hd%d: %x: invalid csr\n", ctlr, (u_int)ctlr_addr);
 		return(ENXIO);
@@ -147,10 +132,11 @@ hdopen(io)
 	HDREG(module_id_reg) = (u_long)id;
 	DELAY(10000);
 	mtpr(PADC, 0);
+
 	if (id->module_id != (u_char)HDC_MID) {
 		printf("hdc: Controller bad module id: id = %x\n",
 		    id->module_id);
-		return(-1);
+		return(ENXIO);
 	}
 	if (id->code_rev == (u_char)0xFF) {
 		printf("hdc: Controller micro-code is not loaded.\n");
@@ -162,18 +148,28 @@ hdopen(io)
 		return(ENXIO);
 	}
 
-	/*
-	 * Read the drive status. Save important info.
-	 */
+	/* Read the drive status. Save important info. */
 	mcb->command = HCMD_STATUS;
 	mcb->drive = drive;
 	mcb->cyl = 0;
 	mcb->head = 0;
 	mcb->sector = 0;
-	mcb->chain[0].lwc = (long)sizeof(drive_stat_type) / 4;
+	mcb->chain[0].lwc = (long)sizeof(drive_stat_type) / sizeof(long);
 	mcb->chain[0].ta  = (long)&status;
 	if (hdmcb(mcb, io))
 		return(EIO);
+
+	/*
+	 * Report drive down if anything in the drive status is bad.
+	 * If fault condition, reading will try to clear the fault.
+	 */
+	if (status.drs & DRS_FAULT)
+		printf("hdc: clearing drive fault.\n");
+	if (!(status.drs & DRS_ONLINE)) {
+		printf("hdc: drive is not online.\n");
+		return(EIO);
+	}
+
 	hu->cylinders = status.max_cyl+1;
 	hu->heads = status.max_head+1;
 	hu->sectors = status.max_sector+1;
@@ -191,18 +187,6 @@ hdopen(io)
 		hu->def_cyl * hu->sectors * hu->heads / HDC_SPB;
 	hu->partition[HDC_DEFPART].length =
 		hu->def_cyl_count * hu->sectors * hu->heads / HDC_SPB;
-	io->i_boff = hu->partition[HDC_DEFPART].start;	/* default */
-
-	/*
-	 * Report drive down if anything in the drive status is bad.
-	 * If fault condition, reading geo will try to clear the fault.
-	 */
-	if (status.drs & DRS_FAULT)
-		printf("hdc: clearing drive fault.\n");
-	if (!(status.drs & DRS_ONLINE)) {
-		printf("hdc: drive is not online.\n");
-		return(EIO);
-	}
 
 	/*
 	 * Read the geometry block (at head=0 sector=0 of the drive
@@ -212,11 +196,12 @@ hdopen(io)
 	geo = &geometry.geometry_block;
 	mcb->command = HCMD_READ;
 	mcb->drive = drive;
-	mcb->cyl = status.def_cyl;
+	mcb->cyl = hu->def_cyl;
 	mcb->head = 0;
 	mcb->sector = 0;
-	mcb->chain[0].lwc = sizeof(geometry_sector) / 4;
+	mcb->chain[0].lwc = sizeof(geometry_sector) / sizeof(long);
 	mcb->chain[0].ta  = (long)&geometry;
+	io->i_boff = hu->partition[HDC_DEFPART].start;		/* default */
 	if (hdmcb(mcb, io)) {
  		printf("hdc: could not read geometry block\n");
 		return(EIO);
@@ -242,8 +227,8 @@ hdopen(io)
 	 * definition partition.
 	 */
 	if (par != HDC_DEFPART)
-		if (geo->partition[par].length == 0) {
-			printf("hdc:  null partition\n");
+		if (geo->partition[par].length == 0) {	/* XXX */
+			printf("hdc: null partition\n");
 			return(ENXIO);
 		}
 		else {
@@ -254,34 +239,29 @@ hdopen(io)
 	return(0);
 }
 
-/*************************************************************************
-*  Procedure:	hdstrategy
-*
-*  Description:	The hdc strategy routine. This routine does the disk
-*		reads/writes. If this is the format program, read/writes
-*		are forced to be within the disk definition partition.
-*
-*  Returns:	The number of bytes transfered.
-**************************************************************************/
+/*
+ * hdstrategy --
+ *	The hdc strategy routine. This routine does the disk reads/writes. If
+ *	this is the format program, read/writes are forced to be within the
+ *	disk definition partition.  Returns the number of bytes transferred.
+ */
 hdstrategy(io, cmd)
 	register struct iob	*io;	/* i/o block */
 	int	cmd;			/* i/o operation to perform */
 {
-	mcb_type	*mcb;		/* mcb to send to the hdc           */
-	hdunit_type	*hu;		/* disk unit information table      */
-	hdctlr_type	*hc;		/* hdc ctlr information table       */
-	long		err;		/* error code                       */
-	long		sector;		/* sector number for i/o            */
-	int		partstart;	/* block number of partition start  */
-	int		partlen;	/* number of blocks in partition    */
-	int		bytes;		/* number of bytes to transfer      */
-	int		bus;		/* bus number	                    */
-	int		ctlr;		/* the controller number            */
-	int		drive;		/* the drive number                 */
+	mcb_type	*mcb;		/* mcb to send to the hdc */
+	hdunit_type	*hu;		/* disk unit information table */
+	hdctlr_type	*hc;		/* hdc ctlr information table */
+	long		err;		/* error code */
+	long		sector;		/* sector number for i/o */
+	int		partstart;	/* block number of partition start */
+	int		partlen;	/* number of blocks in partition */
+	int		bytes;		/* number of bytes to transfer */
+	int		bus, ctlr, drive;
 
-	bus = 0;			/* io->i_bus;	*/
-	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr;	*/
-	drive = HDSLAVE(io->i_unit);	/* io->i_drive;	*/
+	bus = HDC_DEFBUS;
+	ctlr = HDCTLR(io->i_unit);
+	drive = HDSLAVE(io->i_unit);
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 
@@ -318,36 +298,26 @@ hdstrategy(io, cmd)
 	mcb->head = (sector / hu->sectors) % hu->heads;
 	mcb->sector = sector % hu->sectors;
 	mcb->chain[0].ta  = (u_long)io->i_ma;
-	mcb->chain[0].lwc = (bytes + 3) / 4;
+	mcb->chain[0].lwc = (bytes + 3) / sizeof(long);
 	err = hdmcb(mcb, io);
 	io->i_error = err;
 	return(err ? 0 : bytes);
 }
 
-/*************************************************************************
-*  Procedure:	hdioctl
-*
-*  Description:	ioctl routine.
-*
-*  Returns:	0	no errors
-*		non-0	error
-**************************************************************************/
 hdioctl(io, command, arg)
 	struct iob	*io; 		/* i/o block */
-	int	command;		/* The ioctl commmand */
-	int	arg;			/* Data.  Format depends on ioctl */
+	int	command;		/* ioctl commmand */
+	int	arg;			/* data; format depends on ioctl */
 {
 	register int	i;
 	mcb_type	*mcb;
-	hdunit_type	*hu;		/* disk unit information table	*/
-	hdctlr_type	*hc;		/* hdc ctlr information table	*/
-	int		bus;		/* bus number			*/
-	int		ctlr;		/* the controller number	*/
-	int		drive;		/* the drive number		*/
+	hdunit_type	*hu;		/* disk unit information table */
+	hdctlr_type	*hc;		/* hdc ctlr information table */
+	int	bus, ctlr, drive;
 
-	bus = 0;			/* io->i_bus;	*/
-	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr;	*/
-	drive = HDSLAVE(io->i_unit);	/* io->i_drive;	*/
+	bus = HDC_DEFBUS;
+	ctlr = HDCTLR(io->i_unit);
+	drive = HDSLAVE(io->i_unit);
 	hu = &hdc_unit[drive][ctlr][bus];
 	hc = &hdc_ctlr[ctlr][bus];
 
@@ -542,29 +512,24 @@ hdioctl(io, command, arg)
 	return(0);
 }
 
-/*************************************************************************
-*  Procedure:	hdmcb
-*
-*  Description:	Internal routine used to send mcb's to the hdc.
-*
-*  Returns:	0		normal
-*		non-zero	error occurred
-**************************************************************************/
+/*
+ * hdmcb --
+ *	internal routine used to send mcb's to the hdc
+ */
+static
 hdmcb(mcb, io)
-	register mcb_type	*mcb;	/* mcb to send to the hdc	*/
-	register struct iob	*io;	/* i/o block			*/
+	register mcb_type	*mcb;	/* mcb to send to the hdc */
+	register struct iob	*io;	/* i/o block */
 {
-	master_mcb_type	*master_mcb;	/* the hdc's master mcb		*/
-	hdctlr_type	*hc;		/* hdc ctlr information table	*/
-	hdc_regs_type	*ctlr_addr;	/* pointer to hdc i/o registers	*/
-	int		timeout;	/* used to timeout the mcb	*/
-	int		bus;		/* bus number			*/
-	int		ctlr;		/* the controller number	*/
-	int		i, end;
-	u_int		*ptr;
+	register u_int	*ptr;
+	master_mcb_type	*master_mcb;	/* the hdc's master mcb */
+	hdctlr_type	*hc;		/* hdc ctlr information table */
+	hdc_regs_type	*ctlr_addr;	/* pointer to hdc i/o registers */
+	int	timeout;		/* used to timeout the mcb */
+	int	bus, ctlr, i, end;
 
-	bus = 0;			/* io->i_bus;	*/
-	ctlr = HDCTLR(io->i_unit);	/* io->i_ctlr;	*/
+	bus = HDC_DEFBUS;
+	ctlr = HDCTLR(io->i_unit);
 	hc = &hdc_ctlr[ctlr][bus];
 
 	mcb->interrupt = FALSE;
@@ -592,8 +557,7 @@ hdmcb(mcb, io)
 		if (master_mcb->mcs & MCS_DONE &&
 		    !(master_mcb->mcs & MCS_FATALERROR))
 			return(0);
-		timeout--;
-		if (timeout > 0   && !(master_mcb->mcs & MCS_FATALERROR))
+		if (--timeout > 0 && !(master_mcb->mcs & MCS_FATALERROR))
 			continue;
 		if (master_mcb->mcs & MCS_FATALERROR)
 			printf("hdc: controller fatal error\n");
@@ -611,9 +575,8 @@ hdmcb(mcb, io)
 		}
 		for (i = 8; i <= end; i++)
 			printf(" %x", ptr[i]);
-		printf("\n");
 
-		printf("mcb:  ");
+		printf("\nmcb:  ");
 		ptr = (u_int *)&mcb->forw_phaddr;
 		for (i = 0; i < 6; i++)
 			printf(" %x", ptr[i]);
