@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -25,7 +25,6 @@ pass5()
 	register daddr_t d;
 	register long i, j;
 	struct csum *cs;
-	time_t now;
 	struct csum cstotal;
 	struct inodesc idesc[3];
 	char buf[MAXBSIZE];
@@ -75,7 +74,6 @@ pass5()
 			idesc[i].id_fix = FIX;
 	}
 	bzero((char *)&cstotal, sizeof(struct csum));
-	(void)time(&now);
 	j = blknum(fs, fs->fs_size + fs->fs_frag - 1);
 	for (i = fs->fs_size; i < j; i++)
 		setbmap(i);
@@ -87,10 +85,7 @@ pass5()
 		dmax = dbase + fs->fs_fpg;
 		if (dmax > fs->fs_size)
 			dmax = fs->fs_size;
-		if (now > cg->cg_time)
-			newcg->cg_time = cg->cg_time;
-		else
-			newcg->cg_time = now;
+		newcg->cg_time = cg->cg_time;
 		newcg->cg_cgx = c;
 		if (c == fs->fs_ncg - 1)
 			newcg->cg_ncyl = fs->fs_ncyl % fs->fs_cpg;
