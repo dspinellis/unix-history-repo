@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.7 (Berkeley) 81/05/18";
+static	char *sccsid = "@(#)arff.c	4.6 (Berkeley) 81/05/18";
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -343,19 +343,22 @@ rt_init()
 	static initized = 0;
 	register char *de;
 	register i;
-	int mode, dirnum;
+	int dirnum;
+	char *mode;
 	register char *last;
+	FILE *temp_floppydes;
 
 	if(initized) return;
 	initized = 1;
 	if(flag('c') || flag('d') || flag('r'))
-		mode = 2;
+		mode = "r+";
 	else
-		mode = 0;
-	if((floppydes = open(defdev,mode)) < 0) {
-		dbprintf("Floppy open failed\n");
+		mode = "r";
+	if((temp_floppydes = fopen(defdev, mode)) == NULL) {
+		perror(defdev);
 		exit(1);
-	}
+	} else
+		floppydes = fileno(temp_floppydes);
 	if(flag('c')==0) {
 		lread(6*RT_BLOCK,2*RT_BLOCK,(char *)&rt_dir[0]);
 		dirnum = rt_dir[0].rt_axhead.rt_numseg;
@@ -573,19 +576,21 @@ register char * obuff;
 {
 	long trans();
 	extern floppydes;
+	int temp;
 	rt_init();
 	if(flg['m'-'a']==0)
 		while( (count -= 128) >= 0) {
 			lseek(floppydes, trans(startad), 0);
-			 if (read(floppydes,obuff,128) != 128)
-				fprintf(stderr, "arff: read error block %d\n",startad/128);
+			 if ((temp = read(floppydes,obuff,128)) != 128)
+				fprintf(stderr, "arff: read error block %d %d\n",startad/128, temp);
 			obuff += 128;
 			startad += 128;
 		}
 	else
 		while( (count -= 512) >= 0) {
 			lseek(floppydes,(long) (startad), 0);
-				fprintf(stderr, "arff: read error block %d\n",startad/512);
+			if ((temp = read(floppydes, obuff, 512)) != 512)
+				fprintf(stderr, "arff: read error block %d %d\n",startad/512, temp);
 			obuff += 512;
 			startad += 512;
 		}
