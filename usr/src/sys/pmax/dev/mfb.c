@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfb.c	7.3 (Berkeley) %G%
+ *	@(#)mfb.c	7.4 (Berkeley) %G%
  */
 
 /* 
@@ -88,8 +88,6 @@ struct pmax_fb mfbfb;
 /*
  * Forward references.
  */
-extern void fbScroll();
-
 static void mfbScreenInit();
 static void mfbLoadCursor();
 static void mfbRestoreCursorColor();
@@ -102,7 +100,6 @@ static void bt455_video_on(), bt455_video_off(), bt431_select_reg();
 static void bt431_write_reg(), bt431_init();
 static u_char bt431_read_reg();
 
-extern void fbKbdEvent(), fbMouseEvent(), fbMouseButtons();
 void mfbKbdEvent(), mfbMouseEvent(), mfbMouseButtons();
 #if NDC > 0
 extern void (*dcDivertXInput)();
@@ -133,6 +130,7 @@ struct	driver mfbdriver = {
 #define MFB_OFFSET_BT455	0x100000	/* Bt455 registers */
 #define MFB_OFFSET_IREQ		0x080000	/* Interrupt req. control */
 #define MFB_OFFSET_ROM		0x0		/* Diagnostic ROM */
+#define MFB_FB_SIZE		0x100000	/* frame buffer size */
 
 /*
  * Test to see if device is present.
@@ -192,51 +190,23 @@ mfbclose(dev, flag)
 	mfbInitColorMap(0);
 	mfbDeconfigMouse();
 	mfbScreenInit();
-	vmUserUnmap();
 	bzero((caddr_t)fp->fr_addr, 2048 * 1024);
 	mfbPosCursor(fp->col * 8, fp->row * 15);
 	return (0);
 }
 
 /*ARGSUSED*/
-mfbioctl(dev, cmd, data, flag)
+mfbioctl(dev, cmd, data, flag, p)
 	dev_t dev;
 	caddr_t data;
+	struct proc *p;
 {
 	register struct pmax_fb *fp = &mfbfb;
 	int s;
 
 	switch (cmd) {
 	case QIOCGINFO:
-	    {
-		caddr_t addr;
-		extern caddr_t vmUserMap();
-
-		/*
-		 * Map the all the data the user needs access to into
-		 * user space.
-		 */
-		addr = vmUserMap(sizeof(struct fbuaccess), (unsigned)fp->fbu);
-		if (addr == (caddr_t)0)
-			goto mapError;
-		*(PM_Info **)data = &((struct fbuaccess *)addr)->scrInfo;
-		fp->fbu->scrInfo.qe.events = ((struct fbuaccess *)addr)->events;
-		fp->fbu->scrInfo.qe.tcs = ((struct fbuaccess *)addr)->tcs;
-		fp->fbu->scrInfo.planemask = (char *)0;
-		/*
-		 * Map the frame buffer into the user's address space.
-		 */
-		addr = vmUserMap(2048 * 1024, (unsigned)fp->fr_addr);
-		if (addr == (caddr_t)0)
-			goto mapError;
-		fp->fbu->scrInfo.bitmap = (char *)addr;
-		break;
-
-	mapError:
-		vmUserUnmap();
-		printf("Cannot map shared data structures\n");
-		return (EIO);
-	    }
+		return (fbmmap(fp, dev, data, p));
 
 	case QIOCPMSTATE:
 		/*
@@ -270,8 +240,8 @@ mfbioctl(dev, cmd, data, flag)
 				*cp |= 0x80;
 			(*fp->KBDPutc)(fp->kbddev, (int)*cp);
 		}
+		break;
 	    }
-	    break;
 
 	case QIOCADDR:
 		*(PM_Info **)data = &fp->fbu->scrInfo;
@@ -312,6 +282,24 @@ mfbioctl(dev, cmd, data, flag)
 		return (EINVAL);
 	}
 	return (0);
+}
+
+/*
+ * Return the physical page number that corresponds to byte offset 'off'.
+ */
+/*ARGSUSED*/
+mfbmap(dev, off, prot)
+	dev_t dev;
+{
+	int len;
+
+	len = pmax_round_page(((vm_offset_t)&mfbu & PGOFSET) + sizeof(mfbu));
+	if (off < len)
+		return pmax_btop(MACH_CACHED_TO_PHYS(&mfbu) + off);
+	off -= len;
+	if (off >= mfbfb.fr_size)
+		return (-1);
+	return pmax_btop(MACH_UNCACHED_TO_PHYS(mfbfb.fr_addr) + off);
 }
 
 mfbselect(dev, flag, p)
@@ -403,10 +391,10 @@ mfbinit(cp)
 	fp->isMono = 0;
 	fp->fr_addr = cp + MFB_OFFSET_VRAM;
 	fp->fr_chipaddr = cp;
+	fp->fr_size = MFB_FB_SIZE;
 	/*
-	 * Must be in Uncached space or the Xserver sees a stale version of
-	 * the event queue and acts totally wacko. I don't understand this,
-	 * since the R3000 uses a physical address cache?
+	 * Must be in Uncached space since the fbuaccess structure is
+	 * mapped into the user's address space uncached.
 	 */
 	fp->fbu = (struct fbuaccess *)
 		MACH_PHYS_TO_UNCACHED(MACH_CACHED_TO_PHYS(&mfbu));
