@@ -9,12 +9,10 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)macro.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)macro.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
-
-SCCSID(@(#)macro.c	5.1		%G%);
 
 char	*Macro[128];
 
