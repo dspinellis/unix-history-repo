@@ -14,55 +14,36 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
-CFLAGS=	-O -DDEBUG
+CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	errormain.c errorinput.c errorpi.c errorsubr.c errorfilter.c \
 	errortouch.c
 OBJS=	errormain.o errorinput.o errorpi.o errorsubr.o errorfilter.o \
 	errortouch.o
+MAN=	error.0
 
 all: error
 
-error:	${OBJS} ${LIBC}
+error: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core error
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
-	install -s -o bin -g bin -m 755 error ${DESTDIR}/usr/ucb/error
+install: ${MAN}
+	install -s -o bin -g bin -m 755 error ${DESTDIR}/usr/ucb
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-errormain.o: errormain.c /usr/include/stdio.h /usr/include/ctype.h
-errormain.o: /usr/include/signal.h
-errormain.o:error.h
-errorinput.o: errorinput.c /usr/include/stdio.h /usr/include/ctype.h
-errorinput.o:error.h
-errorpi.o: errorpi.c /usr/include/stdio.h /usr/include/ctype.h
-errorpi.o:error.h
-errorsubr.o: errorsubr.c /usr/include/stdio.h /usr/include/ctype.h
-errorsubr.o:error.h
-errorfilter.o: errorfilter.c /usr/include/stdio.h /usr/include/ctype.h
-errorfilter.o: /usr/include/pwd.h
-errorfilter.o:error.h
-errortouch.o: errortouch.c /usr/include/stdio.h /usr/include/ctype.h
-errortouch.o: /usr/include/sys/types.h /usr/include/sys/stat.h
-errortouch.o: /usr/include/signal.h
-errortouch.o:error.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
