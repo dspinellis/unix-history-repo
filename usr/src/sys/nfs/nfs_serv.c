@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.5 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -101,7 +101,7 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -175,7 +175,7 @@ out:
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -231,7 +231,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -403,7 +403,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -533,7 +533,7 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -611,7 +611,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
@@ -912,7 +912,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	*p++ = txdr_unsigned(vap->va_size);
 	*p++ = txdr_unsigned(vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_rdev);
-	*p++ = txdr_unsigned(vap->va_bytes);
+	*p++ = txdr_unsigned(vap->va_bytes / vap->va_blocksize);
 	*p++ = txdr_unsigned(vap->va_fsid);
 	*p++ = txdr_unsigned(vap->va_fileid);
 	txdr_time(&(vap->va_atime), p);
