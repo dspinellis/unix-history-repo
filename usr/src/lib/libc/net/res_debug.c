@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_debug.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -288,9 +288,9 @@ p_rr(cp, msg, file)
 		while (cp < cp1 + dlen) {
 			c = *cp++;
 			do {
-				if (c & 1)
+ 				if (c & 0200)
 					fprintf(file," %d", n);
-				c >>= 1;
+ 				c <<= 1;
 			} while (++n & 07);
 		}
 		putc('\n',file);
