@@ -1,4 +1,4 @@
-#	@(#)README	8.3 (Berkeley) %G%
+#	@(#)README	8.4 (Berkeley) %G%
 
 This is the area for building the libdb library.  There are a number
 of porting directories, for various architecture/OS combinations.  Pick
@@ -100,7 +100,6 @@ Some of the more common portability problems:
 
 		memmove(3):	add memmove.o
 		mkstemp(3):	add mktemp.o
-		strerror(3):	add strerror.o
 
 			... to the MISC line in the Makefile.
 
