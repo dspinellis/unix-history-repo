@@ -4,10 +4,10 @@
  * it is in the public domain with the United States, and freely distributable
  * outside.  (Comment added by G. Wollman, FreeBSD Project.)
  */
-/* $Id: zic.c,v 1.2 1993/11/10 04:52:52 wollman Exp $ */
+/* $Id: zic.c,v 1.3 1994/01/26 11:03:19 paul Exp $ */
 #ifndef lint
 #ifndef NOID
-static char	elsieid[] = "@(#)zic.c	7.9";
+static char	elsieid[] = "@(#)zic.c	7.19";
 #endif /* !defined NOID */
 #endif /* !defined lint */
 
@@ -78,7 +78,7 @@ extern char *	scheck P((const char * string, const char * format));
 
 static void	addtt P((time_t starttime, int type));
 static int	addtype P((long gmtoff, const char * abbr, int isdst,
-    int ttisstd));
+				int ttisstd));
 static void	leapadd P((time_t t, int positive, int rolling, int count));
 static void	adjleap P((void));
 static void	associate P((void));
@@ -550,10 +550,14 @@ const char * const	tofile;
 	if (!itsdir(toname))
 		(void) remove(toname);
 	if (link(fromname, toname) != 0) {
-		(void) fprintf(stderr, "%s: Can't link from %s to ",
-			progname, fromname);
-		(void) perror(toname);
-		(void) exit(EXIT_FAILURE);
+		if (mkdirs(toname) != 0)
+			(void) exit(EXIT_FAILURE);
+		if (link(fromname, toname) != 0) {
+			(void) fprintf(stderr, "%s: Can't link from %s to ",
+				progname, fromname);
+			(void) perror(toname);
+			(void) exit(EXIT_FAILURE);
+		}
 	}
 	if (fromname != fromfile)
 		ifree(fromname);
@@ -846,7 +850,7 @@ const int		nfields;
 	if (strcmp(fields[ZF_NAME], TZDEFAULT) == 0 && lcltime != NULL) {
 		buf = erealloc(buf, 132 + strlen(TZDEFAULT));
 		(void) sprintf(buf,
-			"\"Zone %s\" line and -l option are mutually exclusive",
+"\"Zone %s\" line and -l option are mutually exclusive",
 			TZDEFAULT);
 		error(buf);
 		return FALSE;
@@ -854,7 +858,7 @@ const int		nfields;
 	if (strcmp(fields[ZF_NAME], TZDEFRULES) == 0 && psxrules != NULL) {
 		buf = erealloc(buf, 132 + strlen(TZDEFRULES));
 		(void) sprintf(buf,
-			"\"Zone %s\" line and -p option are mutually exclusive",
+"\"Zone %s\" line and -p option are mutually exclusive",
 			TZDEFRULES);
 		error(buf);
 		return FALSE;
@@ -939,15 +943,20 @@ const int		iscont;
 			fields[i_untilyear],
 			"only",
 			"",
-			(nfields > i_untilmonth) ? fields[i_untilmonth] : "Jan",
+			(nfields > i_untilmonth) ?
+			fields[i_untilmonth] : "Jan",
 			(nfields > i_untilday) ? fields[i_untilday] : "1",
 			(nfields > i_untiltime) ? fields[i_untiltime] : "0");
-		z.z_untiltime = rpytime(&z.z_untilrule, z.z_untilrule.r_loyear);
-		if (iscont && nzones > 0 && z.z_untiltime < max_time &&
+		z.z_untiltime = rpytime(&z.z_untilrule,
+			z.z_untilrule.r_loyear);
+		if (iscont && nzones > 0 &&
 			z.z_untiltime > min_time &&
+			z.z_untiltime < max_time &&
+			zones[nzones - 1].z_untiltime > min_time &&
+			zones[nzones - 1].z_untiltime < max_time &&
 			zones[nzones - 1].z_untiltime >= z.z_untiltime) {
 error("Zone continuation line end time is not after end time of previous line");
-			return FALSE;
+				return FALSE;
 		}
 	}
 	zones = (struct zone *) erealloc((char *) zones,
@@ -978,8 +987,7 @@ const int		nfields;
 	}
 	dayoff = 0;
 	cp = fields[LP_YEAR];
-	if (sscanf(cp, scheck(cp, "%d"), &year) != 1 ||
-		year < min_year || year > max_year) {
+	if (sscanf(cp, scheck(cp, "%d"), &year) != 1) {
 			/*
 			 * Leapin' Lizards!
 			 */
@@ -1135,12 +1143,9 @@ char * const			timep;
 				"%s: panic: Invalid l_value %d\n",
 				progname, lp->l_value);
 			(void) exit(EXIT_FAILURE);
-	} else if (sscanf(cp, scheck(cp, "%d"), &rp->r_loyear) != 1 ||
-		rp->r_loyear < min_year || rp->r_loyear > max_year) {
-			if (noise)
-				error("invalid starting year");
-			if (rp->r_loyear > max_year)
-				return;
+	} else if (sscanf(cp, scheck(cp, "%d"), &rp->r_loyear) != 1) {
+		error("invalid starting year");
+		return;
 	}
 	cp = hiyearp;
 	if ((lp = byword(cp, end_years)) != NULL) switch ((int) lp->l_value) {
@@ -1158,19 +1163,10 @@ char * const			timep;
 				"%s: panic: Invalid l_value %d\n",
 				progname, lp->l_value);
 			(void) exit(EXIT_FAILURE);
-	} else if (sscanf(cp, scheck(cp, "%d"), &rp->r_hiyear) != 1 ||
-		rp->r_hiyear < min_year || rp->r_hiyear > max_year) {
-			if (noise)
-				error("invalid ending year");
-			if (rp->r_hiyear < min_year)
-				return;
+	} else if (sscanf(cp, scheck(cp, "%d"), &rp->r_hiyear) != 1) {
+		error("invalid ending year");
+		return;
 	}
-	if (rp->r_hiyear < min_year)
- 		return;
- 	if (rp->r_loyear < min_year)
- 		rp->r_loyear = min_year;
- 	if (rp->r_hiyear > max_year)
- 		rp->r_hiyear = max_year;
 	if (rp->r_loyear > rp->r_hiyear) {
 		error("starting year greater than ending year");
 		return;
@@ -1356,9 +1352,8 @@ const int			zonecount;
 	typecnt = 0;
 	charcnt = 0;
 	/*
-	** Two guesses. . .the second may well be corrected later.
+	** A guess that may well be corrected later.
 	*/
-	gmtoff = zpfirst->z_gmtoff;
 	stdoff = 0;
 	/*
 	** Thanks to Earl Chew (earl@dnd.icp.nec.com.au)
@@ -1369,19 +1364,23 @@ const int			zonecount;
 	starttime = 0;
 #endif /* defined lint */
 	for (i = 0; i < zonecount; ++i) {
-		usestart = i > 0;
-		useuntil = i < (zonecount - 1);
 		zp = &zpfirst[i];
+		usestart = i > 0 && (zp - 1)->z_untiltime > min_time;
+		useuntil = i < (zonecount - 1);
+		if (useuntil && zp->z_untiltime <= min_time)
+			continue;
+		gmtoff = zp->z_gmtoff;
 		eat(zp->z_filename, zp->z_linenum);
 		startisdst = -1;
 		if (zp->z_nrules == 0) {
-			type = addtype(oadd(zp->z_gmtoff, zp->z_stdoff),
-				zp->z_format, zp->z_stdoff != 0,
-				startttisstd);
+			stdoff = zp->z_stdoff;
+			(void) strcpy(startbuf, zp->z_format);
+			type = addtype(oadd(zp->z_gmtoff, stdoff),
+				startbuf, stdoff != 0, startttisstd);
 			if (usestart)
 				addtt(starttime, type);
-			gmtoff = zp->z_gmtoff;
-			stdoff = zp->z_stdoff;
+			else if (stdoff != 0)
+				addtt(min_time, type);
 		} else for (year = min_year; year <= max_year; ++year) {
 			if (useuntil && year > zp->z_untilrule.r_hiyear)
 				break;
@@ -1411,11 +1410,11 @@ const int			zonecount;
 					** assuming the current gmtoff and
 					** stdoff values.
 					*/
-					offset = gmtoff;
-					if (!zp->z_untilrule.r_todisstd)
-						offset = oadd(offset, stdoff);
 					untiltime = tadd(zp->z_untiltime,
-						-offset);
+						-gmtoff);
+					if (!zp->z_untilrule.r_todisstd)
+						untiltime = tadd(untiltime,
+							-stdoff);
 				}
 				/*
 				** Find the rule (of those to do, if any)
@@ -1451,21 +1450,33 @@ const int			zonecount;
 				if (useuntil && ktime >= untiltime)
 					break;
 				if (usestart) {
-					if (ktime < starttime) {
-						stdoff = rp->r_stdoff;
-						startoff = oadd(zp->z_gmtoff,
-							rp->r_stdoff);
-						(void) sprintf(startbuf,
-							zp->z_format,
-							rp->r_abbrvar);
-						startisdst =
-							rp->r_stdoff != 0;
-						continue;
+				    if (ktime < starttime) {
+					stdoff = rp->r_stdoff;
+					startoff = oadd(zp->z_gmtoff,
+						rp->r_stdoff);
+					(void) sprintf(startbuf, zp->z_format,
+						rp->r_abbrvar);
+					startisdst = rp->r_stdoff != 0;
+					continue;
+				    }
+				    usestart = FALSE;
+				    if (ktime != starttime) {
+					if (startisdst < 0 &&
+					    zp->z_gmtoff !=
+					    (zp - 1)->z_gmtoff) {
+						type = (timecnt == 0) ? 0 :
+							types[timecnt - 1];
+						startoff = oadd(gmtoffs[type],
+							-(zp - 1)->z_gmtoff);
+						startisdst = startoff != 0;
+						startoff = oadd(startoff,
+							zp->z_gmtoff);
+						(void) strcpy(startbuf,
+							&chars[abbrinds[type]]);
 					}
-					if (ktime != starttime &&
-						startisdst >= 0)
+					if (startisdst >= 0)
 addtt(starttime, addtype(startoff, startbuf, startisdst, startttisstd));
-					usestart = FALSE;
+				    }
 				}
 				eats(zp->z_filename, zp->z_linenum,
 					rp->r_filename, rp->r_linenum);
@@ -1474,9 +1485,7 @@ addtt(starttime, addtype(startoff, startbuf, startisdst, startttisstd));
 				offset = oadd(zp->z_gmtoff, rp->r_stdoff);
 				type = addtype(offset, buf, rp->r_stdoff != 0,
 					rp->r_todisstd);
-				if (timecnt != 0 || rp->r_stdoff != 0)
-					addtt(ktime, type);
-				gmtoff = zp->z_gmtoff;
+				addtt(ktime, type);
 				stdoff = rp->r_stdoff;
 			}
 		}
@@ -1484,9 +1493,10 @@ addtt(starttime, addtype(startoff, startbuf, startisdst, startttisstd));
 		** Now we may get to set starttime for the next zone line.
 		*/
 		if (useuntil) {
-			starttime = tadd(zp->z_untiltime,
-				-gmtoffs[types[timecnt - 1]]);
+			starttime = tadd(zp->z_untiltime, -gmtoff);
 			startttisstd = zp->z_untilrule.r_todisstd;
+			if (!startttisstd)
+				starttime = tadd(starttime, -stdoff);
 		}
 	}
 	writezone(zpfirst->z_name);
@@ -1499,6 +1509,8 @@ const int	type;
 {
 	if (timecnt != 0 && type == types[timecnt - 1])
 		return;	/* easy enough! */
+	if (timecnt == 0 && type == 0 && isdsts[0] == 0)
+		return; /* handled by default rule */
 	if (timecnt >= TZ_MAX_TIMES) {
 		error("too many transitions?!");
 		(void) exit(EXIT_FAILURE);
@@ -1831,24 +1843,14 @@ register const int			wantedy;
 			(void) exit(EXIT_FAILURE);
 		}
 	}
-	if (dayoff < 0 && !tt_signed) {
-		if (wantedy == rp->r_loyear)
-			return min_time;
-		error("time before zero");
-		(void) exit(EXIT_FAILURE);
-	}
+	if (dayoff < 0 && !tt_signed)
+		return min_time;
 	t = (time_t) dayoff * SECSPERDAY;
 	/*
 	** Cheap overflow check.
 	*/
-	if (t / SECSPERDAY != dayoff) {
-		if (wantedy == rp->r_hiyear)
-			return max_time;
-		if (wantedy == rp->r_loyear)
-			return min_time;
-		error("time overflow");
-		(void) exit(EXIT_FAILURE);
-	}
+	if (t / SECSPERDAY != dayoff)
+		return (dayoff > 0) ? max_time : min_time;
 	return tadd(t, rp->r_tod);
 }
 
@@ -1859,7 +1861,7 @@ const char * const	string;
 	register int	i;
 
 	i = strlen(string) + 1;
-	if (charcnt + i >= TZ_MAX_CHARS) {
+	if (charcnt + i > TZ_MAX_CHARS) {
 		error("too many, or too long, time zone abbreviations");
 		(void) exit(EXIT_FAILURE);
 	}
@@ -1902,7 +1904,8 @@ const int	i;
 
 	l = i;
 	if ((i < 0 && l >= 0) || (i == 0 && l != 0) || (i > 0 && l <= 0)) {
-		(void) fprintf(stderr, "%s: %d did not sign extend correctly\n",
+		(void) fprintf(stderr,
+			"%s: %d did not sign extend correctly\n",
 			progname, i);
 		(void) exit(EXIT_FAILURE);
 	}
