@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.14 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.15 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -108,14 +108,14 @@ main(argc)
 	 * ... else preserve all the stuff in /tmp, removing
 	 * it as we go.
 	 */
-	if (chdir(_PATH_TMP) < 0) {
-		perror(_PATH_TMP);
+	if (chdir(_PATH_VARTMP) < 0) {
+		perror(_PATH_VARTMP);
 		exit(1);
 	}
 
 	tf = opendir(".");
 	if (tf == NULL) {
-		perror(_PATH_TMP);
+		perror(_PATH_VARTMP);
 		exit(1);
 	}
 	while ((dirent = readdir(tf)) != NULL) {
