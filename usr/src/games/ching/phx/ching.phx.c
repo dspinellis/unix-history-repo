@@ -25,15 +25,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ching.phx.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ching.phx.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * phx - Print NROFF/TROFF source of change, given the line values.
- * Assumes that the "hexagrams" file is in the current directory.
  */
 #include <stdio.h>
 #include "ching.h"
+#include "pathnames.h"
 
 struct {
 	int	lines;		/* encoded value of lines */
@@ -94,8 +94,8 @@ char **argv;
 		else
 			moving[i] = 0;
 	}
-	if ((chingf = fopen("hexagrams", "r")) == (FILE *)NULL) {
-		fprintf(stderr, "ching: Can't find hexagram file\n");
+	if ((chingf = fopen(_PATH_HEX, "r")) == (FILE *)NULL) {
+		fprintf(stderr, "ching: can't read %s\n", _PATH_HEX);
 		exit(2);
 	}
 	phx(doahex(), 0);
