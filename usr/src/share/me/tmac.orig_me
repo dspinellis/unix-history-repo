@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.26	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.27	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.26	%G%
+.\"	@(#)tmac.orig_me	2.27	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -195,7 +195,7 @@
 .	@n			\" begin the column
 .if \n@>2 .tm << @h
 ..
-.if !\nv \
+.if \nv=2 \
 \{\
 .	de @m		\" --- output cut mark (only on C/A/T-style)
 .	@O 0
@@ -1096,13 +1096,11 @@
 .	nr $T 2
 .if \n(.T=0 \
 .	nr $T 1
-.if t \
+.if \nv=2 \
 \{\
 .	nr $T 0
-.	po -0.5i		\" make ugly line on LHS
+.	po -0.5i		\" make ugly line on LHS on C/A/T typesetters
 .\}
-.if \nv \
-.	po 1i			\" for vtroff
 .if \n($T \
 \{\
 .	if \n($T=1 \
