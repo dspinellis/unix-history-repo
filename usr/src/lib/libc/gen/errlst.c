@@ -6,10 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)errlst.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-char *sys_errlist[] = {
+#include <sys/cdefs.h>
+
+char *const sys_errlist[] = {
 	"Undefined error: 0",			/*  0 - ENOERROR */
 	"Operation not permitted",		/*  1 - EPERM */
 	"No such file or directory",		/*  2 - ENOENT */
@@ -110,4 +112,4 @@ char *sys_errlist[] = {
 	"Inappropriate file type or format",	/* 79 - EFTYPE */
 };
 int errno;
-int sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
+const int sys_nerr = sizeof(sys_errlist) / sizeof(sys_errlist[0]);
