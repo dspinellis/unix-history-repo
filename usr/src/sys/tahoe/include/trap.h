@@ -1,4 +1,4 @@
-/*	trap.h	1.2	86/11/25	*/
+/*	trap.h	1.3	87/07/11	*/
 
 /*	first 3 constants known in system C files - don't change */
 #define	T_RESADFLT	0	/* reserved addressing */
