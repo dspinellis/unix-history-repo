@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.18 (Berkeley) %G%
+ *	@(#)route.c	7.19 (Berkeley) %G%
  */
 #include "machine/reg.h"
  
@@ -67,7 +67,7 @@ rtalloc1(dst, report)
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	struct rtentry *newrt = 0;
-	int  s = splnet(), err = 0;
+	int  s = splnet(), err = 0, msgtype = RTM_MISS;
 
 	for (rnh = radix_node_head; rnh && (dst->sa_family != rnh->rnh_af); )
 		rnh = rnh->rnh_next;
@@ -76,15 +76,17 @@ rtalloc1(dst, report)
 	    ((rn->rn_flags & RNF_ROOT) == 0)) {
 		newrt = rt = (struct rtentry *)rn;
 		if (report && (rt->rt_flags & RTF_CLONING)) {
-			if (err = rtrequest(RTM_RESOLVE, dst, SA(0),
-					      SA(0), 0, &newrt))
-				goto miss;
+			if ((err = rtrequest(RTM_RESOLVE, dst, SA(0),
+					      SA(0), 0, &newrt)) ||
+			    ((rt->rt_flags & RTF_XRESOLVE)
+			      && (msgtype = RTM_RESOLVE))) /* intended! */
+			    goto miss;
 		} else
 			rt->rt_refcnt++;
 	} else {
 		rtstat.rts_unreach++;
 	miss:	if (report)
-			rt_missmsg(RTM_MISS, dst, SA(0), SA(0), SA(0), 0, err);
+			rt_missmsg(msgtype, dst, SA(0), SA(0), SA(0), 0, err);
 	}
 	splx(s);
 	return (newrt);
@@ -418,8 +420,44 @@ rtinit(ifa, cmd, flags)
 	register struct ifaddr *ifa;
 	int cmd, flags;
 {
-	return
-	    rtrequest(cmd, flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr,
-			ifa->ifa_addr, ifa->ifa_netmask,
+	register struct rtentry *rt;
+	register struct sockaddr *dst;
+	register struct sockaddr *deldst;
+	struct mbuf *m = 0;
+	int error;
+
+	dst = flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr;
+	if (ifa->ifa_flags & IFA_ROUTE) {
+		if ((rt = ifa->ifa_rt) && (rt->rt_flags & RTF_UP) == 0) {
+			RTFREE(rt);
+			ifa->ifa_rt = 0;
+		}
+	}
+	if (cmd == RTM_DELETE) {
+		if ((flags & RTF_HOST) == 0 && ifa->ifa_netmask) {
+			m = m_get(M_WAIT, MT_SONAME);
+			deldst = mtod(m, struct sockaddr *);
+			rt_maskedcopy(dst, deldst, ifa->ifa_netmask);
+			dst = deldst;
+		}
+		if (rt = rtalloc1(dst, 0)) {
+			rt->rt_refcnt--;
+			if (rt->rt_ifa != ifa) {
+				if (m)
+					(void) m_free(m);
+				return (flags & RTF_HOST ? EHOSTUNREACH
+							: ENETUNREACH);
+			}
+		}
+	}
+	error = rtrequest(cmd, dst, ifa->ifa_addr, ifa->ifa_netmask,
 			flags | ifa->ifa_flags, &ifa->ifa_rt);
+	if (m)
+		(void) m_free(m);
+	if (cmd == RTM_ADD && error == 0 && (rt = ifa->ifa_rt)
+						&& rt->rt_ifa != ifa) {
+		rt->rt_ifa = ifa;
+		rt->rt_ifp = ifa->ifa_ifp;
+	}
+	return (error);
 }
