@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)dol.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)dol.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -521,6 +521,8 @@ setDolp(cp)
 	} else
 		addla(cp);
 	dolp = "";
+	if (err)
+		error(err);
 }
 
 unDredc(c)
