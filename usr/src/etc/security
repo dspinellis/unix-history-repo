@@ -1,28 +1,40 @@
 #!/bin/sh -
 #
-#	@(#)security	5.7 (Berkeley) %G%
+#	@(#)security	5.8 (Berkeley) %G%
 #
 PATH=/sbin:/bin:/usr/bin
 
 host=`hostname`
 echo "Subject: $host security check output"
 
+umask 22
+
 LOG=/var/log
-TMP=/tmp/_secure.$$
+TMP1=/tmp/_secure1.$$
+TMP2=/tmp/_secure2.$$
 
 echo ""
 echo "Checking setuid files and devices:"
-find / \( ! -fstype local \) -a -prune -o \
-	\( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) \
-	-a -exec /bin/ls -cgl {} \; 2>&1 > $TMP
+(find / \( ! -fstype local \) -a -prune -o \( -perm -u+s -o -perm -g+s \
+	-o ! -type d -a ! -type f -a ! -type l \) | sort >$TMP1) 2>$TMP2
 
-if cmp $LOG/setuid.today $TMP >/dev/null; then :; else
-	echo "$host setuid/device diffs:"
-	diff $LOG/setuid.today $TMP
-	mv $LOG/setuid.today $LOG/setuid.yesterday
-	mv $TMP $LOG/setuid.today
+if [ -s $TMP2 ] ; then
+	echo "$host setuid/device find errors:"
+	cat $TMP2
+	echo ""; echo ""
 fi
-rm -f $TMP
+
+if cmp $LOG/setuid.today $TMP1 >/dev/null; then :; else
+	echo "$host setuid/device additions:"
+	ls -lgT `join -v1 $LOG/setuid.today $TMP1`
+	echo ""; echo ""
+	echo "$host setuid/device deletions:"
+	ls -lgT `join -v2 $LOG/setuid.today $TMP1`
+
+	mv $LOG/setuid.current $LOG/setuid.backup
+	mv $TMP1 $LOG/setuid.current
+fi
+rm -f $TMP1 $TMP2
 
 echo ""
 echo ""
