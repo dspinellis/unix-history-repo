@@ -1,0 +1,1136 @@
+#!/bin/csh -f
+##################################################################
+#
+#       Doc - Version  2.0.1 (9/14/90)
+#	      [Version 2.0 8/22/90]
+#             [Version 1.1 5/17/90]
+#             [Version 1.0 4/25/90]
+#
+#       Developed by: Steve Hotz (hotz@isi.edu)
+#                     Paul Mockapetris (pvm@isi.edu)
+#       USC Information Sciences Institute (USC-ISI)
+#       Marina del Rey, California
+#       1990
+#
+#       Implementation debugging & design comments by
+#       some "dandy" folks:
+#           Andrew Cherenson   Steve Hubert   Edward Vielmetti
+#
+#    This program is Public Domain, and may be freely distributed
+#    and used for any non-profit purpose as long as this notice
+#    is not removed.
+#
+##################################################################
+
+#################################################################
+##
+#   Any configuration changes that you may need to make will
+#   likely be in the next few areas.
+##
+#################################################################
+
+######## alias to DiG Version 2.0 (if not in path)
+##
+# alias dig '/nfs/u5/hotz/bin.sun3/dig'
+
+
+######## Differences in 'tr' program
+##
+### System V's tr requires []
+##
+# set nonomatch
+# set tolower="tr '[A-Z]' '[a-z]'"
+##
+##
+### BSD version
+##
+set tolower="tr 'A-Z' 'a-z'"
+
+
+####XX# 
+######## where are auxiliary awk files (doc[134].awk)
+##
+## Need to set this if you want to include 'doc' in your path,
+##  and run while in other working directories.
+##
+#set auxd=/nfs/u5/hotz/auto/
+set auxd=""
+
+######## Number of dig retries
+##
+## Dig default is four, but this makes for a considerable wait
+## when servers are down.  Two retries seems to be a good trade-off
+## between time and completeness.
+##
+set RET="+ret=2"
+
+
+######## Default standard output options
+##
+set eflag=0	# error info only
+set wflag=0     # warning info
+set vflag=0	# verbose
+set dflag=0	# debug -- *real* verbose
+set pflag=0     # skip parent domain testing
+
+
+##################################################################
+##################################################################
+##
+## Unless you want to add/modify tests that are being made,
+## you will likely not need to change things below this line.
+##
+
+onintr cleanup
+
+set version = "Doc-2.0.1"
+
+set ddflag=0    ## DDBUG numeric checkpoints for development
+set error = (FORMAT_ERROR SERVER_FAIL NXDOMAIN UNIMPLEMENTED \
+             REQ_REFUSED CONN_REFUSED TIME_OUT CONN_REFUSED \
+             UNKNOWN UNEXPECTED)
+
+set fferror=0    ## count of errors found
+set ffwarn=0     ## count of warnings
+set ffallone=0     ## unfinished business (dig failed to parent servers)
+set ffalltwo=0     ## unfinished business (dig failed to AUTH servers)
+set aborted=0    ##
+
+####XX# 
+#########################################
+#
+#  Parse arguments && initialization
+#
+
+while ("$1" =~ -*)
+  switch ($1)
+    case "-p":
+      set pflag=1
+      breaksw
+    case "-d":
+      set dflag=1
+    case "-v":
+      set vflag=1
+    case "-w":
+      set wflag=1
+    case "-e":
+      set eflag=1
+    default:
+      breaksw
+  endsw
+shift
+end
+
+if ($1 == "") goto show
+
+if ($1 =~ *.) then
+  set dom=$1
+else
+  set dom=${1}.
+endif
+
+
+if ($2 == "") then
+   set dad=`echo $dom | sed "s/[a-zA-Z0-9-]*.//p"`
+   if ("$dad" == "") then
+      set dad="."
+   else
+      set dad = $dad[1]  ## sed variants do different things with p
+   endif
+else
+   if ($2 =~ *.) then
+     set dad=$2
+   else
+     set dad=${2}.
+   endif
+endif
+
+set stat = `dig | awk '/DiG/ && / 2./ {print "ok"; exit}'`
+if ($stat != "ok") then
+echo "Abort: This program requires DiG Version-2.x to run."
+exit 1
+endif
+
+####XX# 
+
+set agree=0
+echo "${version}: Starting test of $dom   parent is $dad"
+echo "${version}: Test date - `date`"
+echo "${version}: Starting test of $dom   parent is $dad" >> log.$dom
+echo "${version}: Test date - `date`" >> log.$dom
+
+echo "" >> logXX.$dom
+echo "######## Query Log ########" >> logXX.$dom
+echo "" >> logXX.$dom
+
+set domservall=""
+
+#########################################################
+##
+## Get nameservers for parent zone
+##
+
+if ( -e DNsrv.$dad ) then
+cat DNsrv.${dad} > $dom.$dad.ns
+echo "Note: Using pre-specified $dad NSlist from file." >> log.$dom
+if ($vflag) echo "Note: Using pre-specified $dad NSlist from file."
+goto skip1
+endif
+
+dig ns ${dad} +pfset=0xa224 | awk '$3=="NS" {print $4}' | $tolower > $dom.$dad.ns
+
+set stat = $status
+if ($stat != 0) then
+   set estr= $error[$stat]
+   echo "DIGERR ($estr): dig for parent NS failed (dig ns $dad)" >> log.$dom
+   echo "DIGERR ($estr): dig for parent NS failed (dig ns $dad)"
+   if ($ddflag) echo "DDBUG: 1"
+   goto dig1err1
+endif
+set dadcount=`wc -l < $dom.$dad.ns`
+if ($dadcount == 0) then
+   echo "ABORT: No NS found for parent domain $dad" >> log.$dom
+   echo "ABORT: No NS found for parent domain $dad"
+   @ ffallone++
+   if ($ddflag) echo "DDBUG: 2"
+   goto dig1err2
+endif
+
+skip1:
+
+echo "## Nameservers for $dad (dig ns $dad):" >> logXX.$dom
+echo "" >> logXX.$dom
+cat  $dom.$dad.ns >> logXX.$dom
+echo "===================" >> logXX.$dom
+echo "" >> logXX.$dom
+
+####XX# 
+########################################################
+##
+## Check SOA's of parent domain at each server for parent
+##
+set sns=""
+set aafile=""
+set aaserv=""
+set noaaserv=""
+set cntone = 0
+
+if ($pflag) then
+echo "Note: Skipping parent domain testing" >> log.$dom
+if ($vflag) echo "Note: Skipping parent domain testing"
+set aaserv = `cat $dom.$dad.ns`
+goto skip2
+endif
+
+foreach i (`cat $dom.$dad.ns`) 
+  if ($dflag) echo DEBUG: digging @$i for soa of $dad
+  if ($dflag) echo DEBUG: digging @$i for soa of $dad >> log.$dom
+
+  dig @$i soa $dad +norec $RET +pfset=0xa224 | $tolower > $dom.$dad.soa.$i
+  set stat = $status
+  if ($stat != 0) then
+     set estr=$error[$stat]
+echo "DIGERR ($estr): dig @$i for SOA of parent ($dad) failed" >> log.$dom
+echo "DIGERR ($estr): dig @$i for SOA of parent ($dad) failed"
+     rm $dom.$dad.soa.$i
+     if ($ddflag) echo "DDBUG: 3"
+     continue
+  endif
+
+  echo "## SOA record for $dad domain from nameserver $i" >> logXX.$dom
+  echo "" >> logXX.$dom
+  cat  $dom.$dad.soa.$i >> logXX.$dom
+  echo "===================" >> logXX.$dom
+  echo "" >> logXX.$dom
+
+  set serial=`awk -f ${auxd}doc1.awk $dom.$dad.soa.$i`
+  set stat=$status
+
+  if ($vflag) echo "soa @$i for $dad has serial: $serial"
+  echo "soa @$i for $dad has serial: $serial" >> log.$dom
+
+#####XX# 
+##########################################################
+##
+## Examine SOA information for parent from parent servers
+##
+
+## fix for shells which return unsigned 8 bit exit codes
+  if ($stat > 127) then
+     @ stat = $stat - 256
+  endif
+
+  if ($stat < 0) then
+     @ ffwarn++
+     set noaaserv = ($noaaserv $i)
+     echo "WARNING: non-authoritative answer for $dad from $i" >> log.$dom
+     if ($wflag) echo "WARNING: non-authoritative answer for $dad from $i"
+     if ($ddflag) echo "DDBUG: 4"
+  else if ($stat == 0) then
+     @ ffwarn++
+     echo "WARNING: no SOA record for $dad from $i" >> log.$dom
+     if ($wflag) echo "WARNING: no SOA record for $dad from $i"
+     if ($ddflag) echo "DDBUG: 5"
+  else if ($stat > 1) then
+     set aaserv = ($aaserv $i)
+     @ ffwarn++
+     echo "WARNING: multiple SOA records found for $dad from $i" >> log.$dom
+     if ($wflag) echo "WARNING: multiple SOA records found for $dad from $i"
+     if ($ddflag) echo "DDBUG: 6"
+  else
+
+#########################################################
+##
+## Look for multiple serial numbers among SOA records from
+## servers that are authoritative for parent domain.
+##   aafile/aaserve:  files/list of  authoritative servers for parent
+##   noaaserv:        servers not authoritative for parent
+##
+    set aafile = ($aafile $dom.$dad.soa.$i)
+    set aaserv = ($aaserv $i)
+    @ cntone++
+    set another=1
+    foreach j ($sns)
+      if ($serial == $j) then
+	 set another=0
+         break
+      endif
+    end
+    if ($another) then
+         set sns=($sns $serial)
+    endif
+  endif
+end	## foreach
+
+#####XX# 
+
+if ($#sns > 1) then
+  @ ffwarn++
+  echo "WARNING: Found $#sns unique SOA serial #'s for $dad" >> log.$dom
+  if ($wflag) echo "WARNING: Found $#sns unique SOA serial #'s for $dad"
+  if ($ddflag) echo "DDBUG: 7"
+else if ($sns != "") then
+   if ($cntone > 1) then
+      echo "SOA serial #'s agree for $dad domain" >> log.$dom
+      if ($vflag) echo "SOA serial #'s agree for $dad domain"
+   endif
+else
+   echo "SYSerr: No servers for $dad returned SOAs ..." >> log.$dom
+   echo "SYSerr: No servers for $dad returned SOAs ..."
+   if ($ddflag) echo "DDBUG: 8"
+   goto dig2err1
+endif
+
+#####XXX At this point, might want to add check to compare entire
+#####XXX SOA (not just serial #) -- appropriate SOAs in ${aafile}s
+
+#######################################################
+#######################################################
+##
+## Ask all autoritative servers of parent zone for
+## NS records of domain being tested.
+##
+
+skip2:
+
+set nslists=""		# files with lists of NS recs (unique)
+set nslistsaa=""	# (as above) from servers claim AUTH
+set nsdad=""		# server list not  AUTH for domain
+set nsdadaa=""		# server list also AUTH for domain
+set nsdadno=0
+set nsdadnoaa=0
+
+foreach i ($aaserv)
+   dig @$i ns $dom +pfset=0xa7e4 +norec $RET | $tolower > $dom.raw.$i
+   set stat = $status
+   if ($stat != 0) then
+      set estr=$error[$stat]
+      echo "DIGERR ($estr): dig @$i for NS of $dom failed" >> log.$dom
+      echo "DIGERR ($estr): dig @$i for NS of $dom failed"
+      if ($ddflag) echo "DDBUG: 9"
+      continue
+   endif
+
+   echo "## NS records for $dom domain from nameserver $i" >> logXX.$dom
+   echo "" >> logXX.$dom
+   cat  $dom.raw.$i >> logXX.$dom
+   echo "===================" >> logXX.$dom
+   echo "" >> logXX.$dom
+
+####XX# 
+##################################################
+##
+##  Examine query response:  (1) find list of nameservers,
+##  (2) determine if authoritative response, (3) look for glue
+##
+
+   awk -f ${auxd}doc3.awk $dom.raw.$i | sort -u > $dom.ns.$i
+   set stat=$status
+   set another=1
+
+## fix for shells which return unsigned 8 bit exit codes
+   if ($stat > 127) then
+        @ stat = $stat - 256
+   endif
+   if ($stat < 0) then
+	set isaa = 1
+        @ stat = $stat + 127
+   else
+        set isaa = 0;
+   endif
+   @ glue = $stat % 16
+   @ ttls = $stat / 16
+
+####################################################
+##
+## Here we make a seperate list of info based on whether the
+## server (for parent domain) happens to also be authoritative
+## for the domain being tested.
+##
+## 
+
+   if ($isaa == 0) then
+      @ nsdadno++
+      set nsdad=($nsdad $i)
+      set what="(non-AUTH)"
+      foreach j ($nslists)
+	 diff -i $j $dom.ns.$i >& /dev/null
+         if ($status == 0) then
+	    set another=0
+            break
+         endif
+       end
+       if ($another) set nslists=($nslists $dom.ns.$i)
+   else
+      @ nsdadnoaa++
+      set nsdadaa=($nsdadaa $i)
+      set what="(AUTH)"
+      foreach j ($nslistsaa)
+        diff -i $j $dom.ns.$i >& /dev/null
+        if ($status == 0) then
+	   set another=0
+           break
+        endif
+      end
+      if ($another) set nslistsaa=($nslistsaa $dom.ns.$i)
+   endif
+
+####XX# 
+
+  set dadno = `wc -l < $dom.ns.$i`
+  echo Found $dadno NS and $glue glue records for $dom @$i $what >> log.$dom
+  if ($vflag) echo Found $dadno NS and $glue glue records for $dom @$i $what
+
+   if ($ttls > 1) then
+      @ fferror++
+      echo "ERROR: multiple TTLs found for $dom NS records @$i" >> log.$dom
+      if ($eflag) echo "ERROR: multiple TTLs found for $dom NS records @$i"
+      if ($ddflag) echo "DDBUG: 10"
+   endif
+
+   if ($pflag) then
+      set domservall = `cat $dom.ns.$i`
+      if ($isaa) then
+         set nslistsaa = $dom.ns.$i
+      else
+         set nslists = $dom.ns.$i
+         break
+      endif
+   endif
+
+end  ## foreach
+
+if ($pflag) then
+   echo "Using NSlist from parent domain server $i" >> log.$dom
+   if ($vflag) echo "Using NSlist from parent domain server $i"
+   goto skip3
+endif
+
+echo "DNServers for $dad" >> log.$dom
+echo "   === $nsdadnoaa were also authoritatve for $dom" >> log.$dom
+echo "   === $nsdadno were non-authoritative for $dom" >> log.$dom
+if ($vflag) then
+  echo "DNServers for $dad"
+  echo "   === $nsdadnoaa were also authoritatve for $dom"
+  echo "   === $nsdadno were non-authoritative for $dom"
+endif
+
+####XX# 
+################################################
+##
+## Print info about authoritative responses.
+##
+
+set tmpcntone=0
+if ($#nslistsaa > 1) then
+   @ fferror++
+   set tmpcntone=$#nslistsaa
+   echo "ERROR: Found $#nslistsaa diff sets of NS records" >> log.$dom
+   echo "   === from servers authoritative for $dom" >> log.$dom
+   if ($eflag) echo "ERROR: Found $#nslistsaa diff sets of NS records"
+   if ($eflag) echo "   === from servers authoritative for $dom"
+   if ($ddflag) echo "DDBUG: 11"
+else if ($nslistsaa != "") then
+   set tmpcntone=1
+   if ($nsdadnoaa > 1) then
+     echo "Servers for $dad that are also authoritative for $dom" >> log.$dom
+     echo "   === agree on NS records for $dom" >> log.$dom
+     if ($vflag) echo "Servers for $dad that are also authoritative for $dom"
+     if ($vflag) echo "   === agree on NS records for $dom"
+     if ($ddflag) echo "DDBUG: 12"
+   endif
+endif
+
+################################################
+##
+## Print info about non-authoritative responses.
+##
+
+set tmpcnttwo=0
+if ($#nslists > 1) then
+   @ ffwarn++
+   set tmpcnttwo=$#nslists
+   echo "WARN: Found $#nslists diff sets of NS records" >> log.$dom
+   echo "   === from servers not authoritative for $dom" >> log.$dom
+   if ($wflag) echo "WARN: Found $#nslists diff sets of NS records"
+   if ($wflag)  echo "   === from servers not authoritative for $dom"
+   if ($ddflag) echo "DDBUG: 13"
+else if ($nslists != "") then
+   set tmpcnttwo=1
+   if ($nsdadno > 1) then
+      echo "Servers for $dad (not also authoritative for $dom)" >> log.$dom
+      echo "   === agree on NS records for $dom" >> log.$dom
+      if ($vflag) echo "Servers for $dad (not also authoritative for $dom)"
+      if ($vflag) echo "   === agree on NS records for $dom"
+      if ($ddflag) echo "DDBUG: 14"
+   endif
+
+####XX# 
+###############################################
+##
+## If both authoritative && non-authoritative responses and
+##   if they agree among themselves,
+##      then check if NS records are consitent among all.
+##
+
+  if ($tmpcntone == 1) then
+     diff -i $nslists $nslistsaa >& /dev/null
+     if ($status == 0) then
+echo "NS lists for $dom from all $dad servers are identical" >> log.$dom
+echo "   === (both authoritative and non-authoritative for $dom)" >> log.$dom
+       if ($ddflag) echo "DDBUG: 15"
+       if ($vflag) then
+          echo "NS lists for $dom from all $dad servers are identical"
+          echo "   === (both authoritative and non-authoritative for $dom)"
+       endif
+       set agree=1
+     else
+       @ fferror++
+echo "ERROR: NS list for $dom from parent servers differ" >> log.$dom
+echo "   ===  authoritative disagree with those not AUTH for $dom " >> log.$dom
+       if ($ddflag) echo "DDBUG: 16"
+       if ($eflag) then
+         echo "ERROR: NS list for $dom from parent servers differ"
+         echo "   ===  authoritative disagree with those not AUTH for $dom"
+         diff -c -i $nslists $nslistsaa
+       endif
+     endif
+  endif
+endif
+
+#######################################################
+##
+##  Take union of lists of nameservers for the domain.
+##
+
+###########################################
+##
+## Union of lists from (parent) servers --
+##  those not also authoritative for domain.
+
+foreach i ($nsdad)
+   cat $dom.ns.$i >> $dom.ns.dad
+end
+if (-e $dom.ns.dad) then
+   sort -u $dom.ns.dad > $dom.tmp
+   mv $dom.tmp $dom.ns.dad
+   set domserv=`cat $dom.ns.dad`
+   if ($dflag) echo "DEBUG: domserv = $domserv"
+else
+   set domserv=""
+endif
+
+####XX# 
+##############################################
+##
+## Union of lists from (parent) servers --
+##  those also authoritative for domain.
+
+foreach i ($nsdadaa)
+   cat $dom.ns.$i >> $dom.ns.dadaa
+end
+if (-e $dom.ns.dadaa) then
+   sort -u $dom.ns.dadaa > $dom.tmp
+   mv $dom.tmp $dom.ns.dadaa
+   set domservaa=`cat $dom.ns.dadaa`
+   if ($dflag) echo "DEBUG: domservaa = $domservaa"
+else
+   set domservaa=""
+endif
+
+#################################################
+##
+##  Look for nameservers (NS records) known by
+##  non-authoritative but not by authoritative servers.
+##
+##  XXX: might want to find the other way also/instead
+
+set domservdiff=""
+foreach i ($domserv)
+   set another=1
+   foreach j ($domservaa)
+      if ($i == $j) then
+         set another = 0
+         break
+      endif
+   end
+   if ($another) then
+      set domservdiff=($domservdiff $i)
+   endif
+end
+
+####XX# 
+######################################################
+##
+## Look to make certain that parent servers that claim to be
+## authoritative are listed among the NS records of a server.
+## (Strangely enough, often they claim to be AUTH, but do
+## not hold an NS record for themselves!!
+##
+set domservall=($domservaa $domservdiff)
+
+foreach i ($nsdadaa)
+   set another=1
+   foreach j ($domservall)
+      if ($i == $j) then
+         set another=0
+         break
+      endif
+   end
+   if ($another) then
+      @ ffwarn++
+      echo "WARNING: $i claims to be authoritative for $dom " >> log.$dom
+      echo "   == but no NS record at parent zone" >> log.$dom
+      if ($wflag) echo "WARNING: $i claims authoritative for $dom"
+      if ($wflag) echo "   == but no NS record at parent zone"
+      if ($ddflag) echo "DDBUG: 17"
+   endif
+end
+
+skip3:
+
+echo "NS list summary for $dom from parent ($dad) servers" >> log.$dom
+if ($vflag) echo "NS list summary for $dom from parent ($dad) servers"
+
+if ($#domservall > 3) then
+   echo "  == $domservall[1-3]" >> log.$dom
+   if ($vflag) echo "  == $domservall[1-3]"
+
+   if ($#domservall > 6) then
+      echo "  == $domservall[4-6]" >> log.$dom
+      echo "  == $domservall[7-]" >> log.$dom
+      if ($vflag) echo "  == $domservall[4-6]"
+      if ($vflag) echo "  == $domservall[7-]"
+   else
+      echo "  == $domservall[4-]" >> log.$dom
+      if ($vflag) echo "  == $domservall[4-]"
+   endif
+else
+   echo "  == $domservall" >> log.$dom
+   if ($vflag) echo "  == $domservall"
+endif
+
+
+####XX# 
+#########################################################
+##
+## Check that SOA's from all NS (for domain) have same serial nos
+## Keep list of nameservers that are authoritative and have
+## exactly one SOA record.
+
+set sns=""
+set aafile=""
+set aaserv=""
+set noaaserv=""
+set cnttwo=0
+
+foreach i ($domservall)
+  if ($dflag) echo "digging @$i for soa of $dom"
+  if ($dflag) echo "digging @$i for soa of $dom" >> log.$dom
+
+  dig @$i soa $dom +norec $RET +pfset=0xa224 | $tolower > $dom.soa.$i
+  set stat = $status
+  if ($stat != 0) then
+     set estr = $error[$stat]
+     echo "DIGERR ($estr): dig @$i for SOA of $dom failed" >> log.$dom
+     echo "DIGERR ($estr): dig @$i for SOA of $dom failed"
+     @ ffallone++
+     rm $dom.soa.$i
+     if ($ddflag) echo "DDBUG: 20"
+     continue
+  endif
+
+  echo "## SOA record for $dom domain from nameserver $i" >> logXX.$dom
+  echo "" >> logXX.$dom
+  cat  $dom.soa.$i >> logXX.$dom
+  echo "===================" >> logXX.$dom
+  echo "" >> logXX.$dom
+
+  set serial=`awk -f ${auxd}doc1.awk $dom.soa.$i`
+  set stat=$status
+  if ($vflag) echo "soa @$i for $dom serial: $serial"
+  echo "soa @$i for $dom serial: $serial" >> log.$dom
+
+####XX# 
+
+####################################################
+##
+## Check that answer is authoritative and that
+## SOA record (one) was found.
+##
+
+## fix for shells which return unsigned 8 bit exit codes
+  if ($stat > 127) then
+     @ stat = $stat - 256
+  endif
+
+  if ($stat < 0) then
+     @ fferror++
+     set noaaserv = ($noaaserv $i)
+     echo "ERROR: non-authoritative SOA for $dom from $i" >> log.$dom
+     if ($eflag) echo "ERROR: non-authoritative SOA for $dom from $i"
+     if ($ddflag) echo "DDBUG: 21"
+  else if ($stat == 0) then
+     @ fferror++
+     echo "ERROR: no SOA record for $dom from $i" >> log.$dom
+     if ($eflag) echo "ERROR: no SOA record for $dom from $i"
+     if ($ddflag) echo "DDBUG: 22"
+  else
+    if ($stat > 1) then
+      @ ffwarn++
+      echo "WARNING: multiple SOA records found for $dom from $i" >> log.$dom
+      if ($wflag) echo "WARNING: multiple SOA records found for $dom from $i"
+      if ($ddflag) echo "DDBUG: 23"
+    endif
+
+#############################################
+##
+## Check for multiple SOA serial numbers
+##
+
+    grep -v ";; flag" $dom.soa.$i | $tolower > tmp.$$
+    mv tmp.$$ $dom.soa.$i
+    set aafile = ($aafile $dom.soa.$i)
+    set aaserv = ($aaserv $i)
+    @ cnttwo++
+    set another=1
+    foreach j ($sns)
+      if ($serial == $j) then
+	 set another=0
+         break
+      endif
+    end
+    if ($another) then
+         set sns=($sns $serial)
+    endif
+   endif   ### may need to be removed XXX
+  endif
+end	## foreach
+
+#####XX# 
+############################################
+##
+## Note results about SOA serial numbers.
+## If only one, check that entire SOA records are identical.
+##
+
+if ($#sns > 1) then
+   @ ffwarn++
+   echo "WARN: Found $#sns unique SOA serial #'s for $dom" >> log.$dom
+   if ($wflag) echo "WARN: Found $#sns unique SOA serial #'s for $dom"
+   if ($ddflag) echo "DDBUG: 24"
+else if ($sns != "") then
+   if ($cnttwo > 1) then
+      echo "SOA serial #'s agree for $dom" >> log.$dom
+      if ($vflag) echo "SOA serial #'s agree for $dom"
+      set ii = $#aafile
+      @   ij = $ii - 1
+     if ($ddflag) echo "DDBUG: 25"
+
+      while ($ij)
+         diff $aafile[$ii] $aafile[$ij] >& /dev/null
+         if ($status) then
+            @ ffwarn++
+echo "WARN: SOA records differ for $dom from authoritative servers" >> log.$dom
+if ($wflag) echo "WARN: SOA records differ for $dom from authoritative servers"
+            if ($ddflag) echo "DDBUG: 26"
+            break
+         endif
+         @ ii--
+         @ ij--
+      end  # while
+
+   endif
+else
+   echo "SYSerr: No servers for $dom returned SOAs ..." >> log.$dom
+   echo "SYSerr: No servers for $dom returned SOAs ..."
+   if ($ddflag) echo "DDBUG: 27"
+   goto dig4err1
+endif
+
+#####XX# 
+###################################################
+##
+## Query all authoritative nameservers returning SOA
+## for NS records of domain.
+
+set domnslists=""
+set cntthree=0
+
+foreach i ($aaserv)
+  dig @$i ns $dom +norec $RET +pfset=0xa7e4 | $tolower >& $dom.raw.$i
+  set stat = $status
+  if ($stat != 0) then
+     set estr = $error[$stat]
+     echo "DIGERR ($estr): dig @$i for NS of $dom failed" >> log.$dom
+     echo "DIGERR ($estr): dig @$i for NS of $dom failed"
+     if ($ddflag) echo "DDBUG: 28"
+     @ ffalltwo++
+     rm $dom.raw.$i
+     continue
+  endif
+
+  echo "## NS records for $dom domain from nameserver $i" >> logXX.$dom
+  echo "" >> logXX.$dom
+  cat  $dom.raw.$i >> logXX.$dom
+  echo "===================" >> logXX.$dom
+  echo "" >> logXX.$dom
+
+######################################################
+##
+## Examine response: get nameserver list, check TTLs
+##  (glue or authoritative not used here)
+
+  awk -f ${auxd}doc3.awk $dom.raw.$i | sort -u > $dom.ns.$i
+  set stat=$status
+
+## fix for shells which return unsigned 8 bit exit codes
+  if ($stat > 127) then
+     @ stat = $stat - 256
+  endif
+
+  if ($stat < 0) then
+       set isaa = 1;
+       @ stat = $stat + 127;
+  else
+       set isaa = 0;
+  endif
+  @ glue = $stat % 16
+  @ ttls = $stat / 16
+
+  if ($ttls > 1) then
+     @ fferror++
+     echo "ERROR: multiple TTLs found for $dom NS records @$i" >> log.$dom
+     if ($eflag) echo "ERROR: multiple TTLs found for $dom NS records @$i"
+     if ($ddflag) echo "DDBUG: 29"
+  endif
+
+#####XX# 
+#############################################
+##
+## Look for conflicting sets of NS records.
+##
+
+  @ cntthree++
+  set another=1
+  foreach j ($domnslists)
+	diff -i $j $dom.ns.$i >& /dev/null
+        if ($status == 0) then
+	   set another=0
+           break
+        endif
+  end
+  if ($another) then
+     cat $dom.ns.$i >> $dom.ns.all
+     set domnslists=($domnslists $dom.ns.$i)
+  endif
+end
+
+sort -u $dom.ns.all > tmp.$$
+mv tmp.$$ $dom.ns.all
+
+set bothagree=""
+
+#######################################################
+#######################################################
+##
+## Do NS lists agree among authoritative servers??
+##
+
+if ($#domnslists > 1) then
+   @ fferror++
+   echo "ERROR: Found $#domnslists unique sets of NS records" >> log.$dom
+   echo "   === from authoritative domain ($dom) servers" >> log.$dom
+   if ($ddflag) echo "DDBUG: 30"
+   if ($eflag) then
+      echo "ERROR: Found $#domnslists unique sets of NS records"
+      echo "   === from authoritative domain ($dom) servers"
+   endif
+else if ($domnslists != "") then
+  if ($cntthree > 1) then
+    echo "Authoritative domain ($dom) servers agree on NS for $dom" >> log.$dom
+    if ($vflag) echo "Authoritative domain ($dom) servers agree on NS for $dom"
+    if ($ddflag) echo "DDBUG: 31"
+   endif
+
+####XX# 
+#######################################################
+##
+## If authoritative servers on NS records
+##   recall which (if any) of parent servers agreed and
+##   check for agreement between parent and child servers.
+##
+
+   if ($pflag) then
+      if ($nslists == "") then
+         set pnslist=$nslistsaa[1]
+      else
+         set pnslist=$nslists
+      endif
+      diff -i $pnslist $dom.ns.all > /dev/null
+    if ($status == 0) set bothagree = "first parent ($dad) nameserver queried"
+      goto skip4
+   endif
+
+   if ($agree) then
+      diff -i $nslists $dom.ns.all > /dev/null
+      if ($status == 0) then
+         set bothagree="all parent ($dad) servers"
+         if ($ddflag) echo "DDBUG: 32"
+      endif
+   else if ($tmpcntone == 1) then
+         diff -i $nslistsaa $dom.ns.all > /dev/null
+         if ($status == 0) then
+            set bothagree="parent ($dad) servers also authoritative for $dom"
+            if ($ddflag) echo "DDBUG: 33"
+         else if ($tmpcnttwo == 1) then
+            diff -i $nslists $dom.ns.all > /dev/null
+            if ($status == 0) then
+              set bothagree="parent ($dad) servers not authoritative for $dom"
+              if ($ddflag) echo "DDBUG: 34"
+             endif
+         endif
+   else if ($tmpcnttwo == 1) then
+         diff -i $nslists $dom.ns.all > /dev/null
+         if ($status == 0) then
+            set bothagree="parent ($dad) servers not authoritative for $dom"
+            if ($ddflag) echo "DDBUG: 35"
+         endif
+   endif
+endif
+
+####XX# 
+
+skip4:
+
+if ("$bothagree" != "") then
+   echo "NS list from $dom authoritative servers matches list from" >> log.$dom
+   echo "  ===  $bothagree" >> log.$dom
+   if ($vflag) then
+      echo "NS list from $dom authoritative servers matches list from"
+      echo "  === $bothagree"
+   endif
+else
+   @ fferror++
+   echo "ERROR: NS list from $dom authoritative servers does not" >> log.$dom
+   echo "  === match NS list from parent ($dad) servers" >> log.$dom
+   if ($eflag) then
+      echo "ERROR: NS list from $dom authoritative servers does not"
+      echo "  === match NS list from parent ($dad) servers"
+   endif
+   if ($ddflag) echo "DDBUG: 36"
+
+   set aanslist = `cat $dom.ns.all`
+   echo "NS list summary for $dom from authoritative servers" >> log.$dom
+   if ($vflag) echo "NS list summary for $dom from authoritative servers"
+
+   if ($#aanslist > 3) then
+      echo "  == $aanslist[1-3]" >> log.$dom
+      if ($vflag) echo "  == $aanslist[1-3]"
+
+      if ($#aanslist > 6) then
+         echo "  == $aanslist[4-6]" >> log.$dom
+         echo "  == $aanslist[7-]" >> log.$dom
+         if ($vflag) echo "  == $aanslist[4-6]"
+         if ($vflag) echo "  == $aanslist[7-]"
+      else
+         echo "  == $aanslist[4-]" >> log.$dom
+         if ($vflag) echo "  == $aanslist[4-]"
+      endif
+   else
+      echo "  == $aanslist" >> log.$dom
+      if ($vflag) echo "  == $aanslist"
+   endif
+endif
+
+####XX# 
+##################################################
+##
+## Check that all servers that claim to be authoritative
+## have NS record at other AUTH servers
+##
+
+set domnsall=`cat $dom.ns.all`
+
+foreach i ($aaserv)
+  set missing=1
+  foreach j ($domnsall)
+    if ($i == $j) then
+      set missing=0
+      break
+    endif
+   end
+  if ($missing) then
+     @ fferror++
+     echo -n "ERROR: " >> log.$dom
+     echo "$i claims to be authoritative, but does not appear in" >> log.$dom
+     echo "NS list from authoritative servers" >> log.$dom
+     if ($eflag) then
+        echo -n "ERROR: "
+        echo "$i claims to be authoritative, but does not appear in"
+        echo "NS list from authoritative servers"
+     endif
+     if ($ddflag) echo "DDBUG: 37"
+  endif
+end
+
+#####################################################
+##
+## Determine list of addresses of nameservers for domain
+## which are also in the domain (currently only one per internet
+## network is tested).
+##
+## Ask for in-addr.arpa. PTR to see if reverse mappings
+## are set up correctly.
+
+set netaddr = `cat $dom.raw.* | awk -f ${auxd}doc4.awk`
+echo "Checking $#netaddr potential addresses for hosts at $dom" >> log.$dom
+if ($vflag) echo "Checking $#netaddr potential addresses for hosts at $dom"
+if ($#netaddr > 4) then
+   echo "  == $netaddr[1-4]" >> log.$dom
+   echo "  == $netaddr[5-]" >> log.$dom
+   if ($vflag) then
+      echo "  == $netaddr[1-4]"
+      echo "  == $netaddr[5-]"
+    endif
+else
+    echo "  == $netaddr" >> log.$dom
+    if ($vflag) echo "  == $netaddr"
+endif
+
+####XX# 
+
+
+echo "### Queries for nameserver address in-addr.arpa. records" >> logXX.$dom
+echo "" >> logXX.$dom
+
+foreach i ($netaddr)
+   dig +pfset=0x2738 -x $i >>& logXX.$dom
+   set stat = $status
+   if ($stat == 0) then
+      echo "in-addr PTR record found for $i" >> log.$dom
+      if ($vflag) echo "in-addr PTR record found for $i"
+   else if ($stat == 3) then
+      echo "ERROR: no in-addr PTR recorder found for $i" >> log.$dom
+      if ($eflag) echo "ERROR: no in-addr PTR recorder found for $i"
+      @ fferror++
+      if ($ddflag) echo "DDBUG: 38"
+   else
+      set estr = $error[$stat]
+      echo "DIGERR ($estr): dig for $i in-addr PTR failed" >> log.$dom
+      echo "DIGERR ($estr): dig for $i in-addr PTR failed"
+      @ ffalltwo++
+      if ($ddflag) echo "DDBUG: 39"
+   endif
+end
+
+goto around
+
+dig1err1:
+dig1err2:
+dig2err1:
+dig4err1:
+@ ffallone++
+set aborted=1
+
+####XX# 
+
+around:
+
+(rm $dom.* &) >& /dev/null
+set isok=1
+echo "Summary:" >> log.$dom
+echo "Summary:"
+if ($aborted) then
+   echo "   YIKES: doc aborted while testing $dom  parent $dad" >> log.$dom
+   echo "   YIKES: doc aborted while testing $dom  parent $dad"
+   set isok=0
+endif
+if ($fferror) then
+   echo "   ERRORS found for $dom (count: $fferror)" >> log.$dom
+   echo "   ERRORS found for $dom (count: $fferror)"
+   set isok=0
+endif
+if ($ffwarn) then
+   echo "   WARNINGS issued for $dom (count: $ffwarn)" >> log.$dom
+   echo "   WARNINGS issued for $dom (count: $ffwarn)"
+   set isok=0
+endif
+if ($isok) then
+   echo "   No errors or warnings issued for $dom" >> log.$dom
+   echo "   No errors or warnings issued for $dom"
+endif
+@ ffall = $ffallone + $ffalltwo
+if ( $ffallone | $ffalltwo ) then
+   echo "   Incomplete test for $dom ($ffall)" >> log.$dom
+   echo "   Incomplete test for $dom ($ffall)"
+endif
+
+echo "Done testing $dom  `date`" >> log.$dom
+echo "" >> log.$dom
+echo "Done testing $dom  `date`"
+echo ""
+
+cat logXX.$dom >> log.$dom
+rm logXX.$dom
+
+exit 0
+
+show:
+echo "Usage:  doc [-e][-w][-v][-d] domain_name [parent_domain_name]"
+echo " Note:  You must have DiG Version-2.0 for this program to run."
+exit 9
+
+cleanup:
+
+(rm $dom.* &) >& /dev/null
+
+if ( -e log.$dom ) then
+  if ( -e logXX.$dom ) then
+     cat logXX.$dom >> log.$dom
+     rm logXX.$dom
+  endif
+  echo "Doc interrupted - partial logfile: log.$dom exists."
+endif
+
+####XX#
