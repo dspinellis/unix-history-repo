@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq.c	5.4 (Berkeley) %G%
+ *	@(#)amq.c	5.5 (Berkeley) %G%
  *
  * $Id: amq.c,v 5.2.2.1 1992/02/09 15:09:16 jsp beta $
  *
@@ -29,7 +29,7 @@ char copyright[] = "\
 
 #ifndef lint
 static char rcsid[] = "$Id: amq.c,v 5.2.2.1 1992/02/09 15:09:16 jsp beta $";
-static char sccsid[] = "@(#)amq.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)amq.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -185,12 +185,16 @@ int *twid;
 						mi->mi_up > 0 ? "up" :
 						mi->mi_up < 0 ? "starting" : "down");
 			if (mi->mi_error > 0) {
+#ifdef HAS_STRERROR
+				printf(" (%s)", strerror(mi->mi_error));
+#else
 				extern char *sys_errlist[];
 				extern int sys_nerr;
 				if (mi->mi_error < sys_nerr)
 					printf(" (%s)", sys_errlist[mi->mi_error]);
 				else
 					printf(" (Error %d)", mi->mi_error);
+#endif
 			} else if (mi->mi_error < 0) {
 				fputs(" (in progress)", stdout);
 			}
