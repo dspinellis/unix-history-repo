@@ -1,12 +1,12 @@
 #! /bin/sh
 #
-#	@(#)mkdep.sh	5.5	(Berkeley)	%G%
+#	@(#)mkdep.sh	5.6	(Berkeley)	%G%
 #
 
 PATH=:/bin:/usr/bin:/usr/ucb
 
 if [ $# = 0 ] ; then
-	echo 'usage: mkdep [-p] [-f makefile] flags file ...'
+	echo 'usage: mkdep [-p] [-f makefile] [flags] file ...'
 	exit 1
 fi
 
