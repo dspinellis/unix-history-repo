@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.7 (Berkeley) %G%
+ *	@(#)conf.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -288,6 +288,15 @@ int	dmfopen(),dmfclose(),dmfread(),dmfwrite(),dmfioctl(),dmfstop(),dmfreset();
 struct	tty dmf_tty[];
 #endif
 
+#if VAX8600
+int	crlopen(),crlclose(),crlread(),crlwrite();
+#else
+#define	crlopen		nodev
+#define	crlclose	nodev
+#define	crlread		nodev
+#define	crlwrite	nodev
+#endif
+
 #if VAX780
 int	flopen(),flclose(),flread(),flwrite();
 #else
@@ -477,7 +486,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 	udopen,		nulldev,	udread,		udwrite,	/*9*/
-	nodev,		nodev,		udreset,		0,
+	nodev,		nodev,		udreset,	0,
 	seltrue,	nodev,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
@@ -555,6 +564,9 @@ struct cdevsw	cdevsw[] =
 	dhuopen,        dhuclose,       dhuread,        dhuwrite,       /* 34 */
 	dhuioctl,       dhustop,        dhureset,       dhu_tty,
 	ttselect,       nodev,
+ 	crlopen,	crlclose,	crlread,	crlwrite,	/* 35 */
+ 	nodev,		nodev,		nulldev,	0,
+ 	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 

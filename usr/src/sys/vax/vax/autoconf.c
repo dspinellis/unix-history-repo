@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.11 (Berkeley) %G%
+ *	@(#)autoconf.c	6.12 (Berkeley) %G%
  */
 
 /*
@@ -44,6 +44,7 @@
 #include "mtpr.h"
 #include "nexus.h"
 #include "scb.h"
+#include "ioa.h"
 #include "../vaxmba/mbareg.h"
 #include "../vaxmba/mbavar.h"
 #include "../vaxuba/ubareg.h"
@@ -56,6 +57,7 @@
  */
 int	cold;		/* if 1, still working on cold-start */
 int	nexnum;		/* current nexus number */
+int	nsbi;		/* current sbi number */
 int	dkn;		/* number of iostat dk numbers assigned so far */
 
 /*
@@ -65,9 +67,21 @@ int	dkn;		/* number of iostat dk numbers assigned so far */
  */
 #if NMBA > 0
 int	(*mbaintv[4])() =	{ Xmba0int, Xmba1int, Xmba2int, Xmba3int };
+#if NMBA > 4
+	Need to expand the table for more than 4 massbus adaptors
 #endif
-#if VAX780
-int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
+#endif
+#if defined(VAX780) || defined(VAX8600)
+int	(*ubaintv[])() =
+{
+	Xua0int, Xua1int, Xua2int, Xua3int,
+#if NUBA > 4
+	Xua4int, Xua5int, Xua6int, Xua7int,
+#endif
+#if NUBA > 8
+	Need to expand the table for more than 8 unibus adaptors
+#endif
+};
 #endif
 
 /*
@@ -91,7 +105,7 @@ configure()
 	cpusid.cpusid = mfpr(SID);
 	for (ocp = percpu; ocp->pc_cputype; ocp++)
 		if (ocp->pc_cputype == cpusid.cpuany.cp_type) {
-			probenexus(ocp);
+			probeioa(ocp);
 			/*
 			 * Write protect the scb and UNIBUS interrupt vectors.
 			 * It is strange that this code is here, but this is
@@ -121,26 +135,97 @@ configure()
 	asm("halt");
 }
 
+probeioa(pcpu)
+register struct percpu *pcpu;
+{
+	register struct ioa *ioap;
+	struct sbia_regs *sbiaregs;
+	caddr_t ioa_paddr;
+	union ioacsr ioacsr;
+	int type;
+	int ioanum;
+
+	ioanum = 0;
+	ioap = ioa;
+	for (;ioanum < pcpu->pc_nioa; ioanum++,
+	    ioap = (struct ioa *)((caddr_t)ioap + pcpu->pc_ioasize)) {
+		if (pcpu->pc_ioaaddr) {
+			ioa_paddr = pcpu->pc_ioaaddr[ioanum];
+			nxaccess(ioa_paddr, Ioamap[ioanum], pcpu->pc_ioasize);
+			if (badaddr(ioap, 4))
+				continue;
+			if (pcpu->pc_ioatype)
+				type = (int)pcpu->pc_ioatype[ioanum];
+			else {
+				ioacsr.ioa_csr = ioap->ioacsr.ioa_csr;
+				type = ioacsr.ioa_type & IOA_TYPMSK;
+			}
+		} else
+			type = (int)pcpu->pc_ioatype[ioanum];
+		switch (type) {
+#if VAX780
+		case IOA_SBI780:
+			probesbi(&sbi780);
+			break;
+#endif
+#if VAX750
+		case IOA_CMI750:
+			probesbi(&cmi750);
+			break;
+#endif
+#if VAX730
+		case IOA_XXX730:
+			probesbi(&xxx730);
+			break;
+#endif
+#if VAX8600
+		case IOA_SBIA:
+			printf("SBIA%d at IO adaptor %d address 0x%x\n",
+			    nsbi, ioanum, ioa_paddr);
+			probesbi(&sbi8600[nsbi]);
+			nsbi++;
+			sbiaregs = (struct sbia_regs *)ioap;
+			sbiaregs->sbi_errsum = -1;
+			sbiaregs->sbi_error = 0x1000;
+			sbiaregs->sbi_fltsts = 0xc0000;
+			break;
+#endif
+		default:
+			if (pcpu->pc_ioaaddr) {
+				printf(
+			"IOA%d at address 0x%x is unsupported (type = 0x%x)\n",
+				    ioanum, ioa_paddr, ioacsr.ioa_type);
+			} else
+				printf("IOA%d type 0x%x unknown\n", ioanum,
+					type);
+		}
+	}
+}
+
 /*
  * Probe nexus space, finding the interconnects
  * and setting up and probing mba's and uba's for devices.
  */
 /*ARGSUSED*/
-probenexus(pcpu)
-	register struct percpu *pcpu;
+probesbi(psbi)
+	register struct persbi *psbi;
 {
 	register struct nexus *nxv;
-	struct nexus *nxp = pcpu->pc_nexbase;
+	struct nexus *nxp = psbi->psb_nexbase;
 	union nexcsr nexcsr;
 	int i;
 	
 	nexnum = 0, nxv = nexus;
-	for (; nexnum < pcpu->pc_nnexus; nexnum++, nxp++, nxv++) {
-		nxaccess(nxp, Nexmap[nexnum]);
+	for (; nexnum < psbi->psb_nnexus; nexnum++, nxp++, nxv++) {
+			/*
+			 * the 16 below shouldn't be there, but the constant
+			 * is used at other points (vax/Locore.c)
+			 */
+		nxaccess(nxp, Nexmap[nsbi * 16 + nexnum], sizeof(struct nexus));
 		if (badaddr((caddr_t)nxv, 4))
 			continue;
-		if (pcpu->pc_nextype && pcpu->pc_nextype[nexnum] != NEX_ANY)
-			nexcsr.nex_csr = pcpu->pc_nextype[nexnum];
+		if (psbi->psb_nextype && psbi->psb_nextype[nexnum] != NEX_ANY)
+			nexcsr.nex_csr = psbi->psb_nextype[nexnum];
 		else
 			nexcsr = nxv->nexcsr;
 		if (nexcsr.nex_csr&NEX_APD)
@@ -171,18 +256,19 @@ probenexus(pcpu)
 			}
 #endif
 			if (numuba >= NUBA) {
-				printf("%d uba's", numuba++);
+				printf("%d uba's", ++numuba);
 				goto unconfig;
 			}
-#if VAX780
-			if (cpu == VAX_780)
+#if defined(VAX780) || defined(VAX8600)
+			if ((cpu == VAX_780) || (cpu == VAX_8600))
 				setscbnex(ubaintv[numuba]);
 #endif
 			i = nexcsr.nex_type - NEX_UBA0;
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
-			    umem[i], pcpu->pc_umaddr[i], UMEMmap[i]);
-#if VAX780
-			if (cpu == VAX_780)
+			    umem[numuba], psbi->psb_umaddr[i], UMEMmap[numuba],
+			    psbi->psb_haveubasr);
+#if defined(VAX780) || defined(VAX8600)
+			if ((cpu == VAX_780) || (cpu == VAX_8600))
 				((struct uba_regs *)nxv)->uba_cr =
 				    UBACR_IFS|UBACR_BRIE|
 				    UBACR_USEFIE|UBACR_SUEFIE|
@@ -415,10 +501,11 @@ fixctlrmask()
  * and then fills in the tables, with help from a per-driver
  * slave initialization routine.
  */
-unifind(vubp, pubp, vumem, pumem, memmap)
+unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	struct uba_regs *vubp, *pubp;
 	caddr_t vumem, pumem;
 	struct pte *memmap;
+	int haveubasr;
 {
 #ifndef lint
 	register int br, cvec;			/* MUST BE r11, r10 */
@@ -435,7 +522,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	u_short *reg, *ap, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
-	int i, (**ivec)(), haveubasr;
+	int i, (**ivec)();
 	caddr_t ualloc, zmemall();
 	extern int catcher[256];
 
@@ -446,7 +533,6 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	uhp = &uba_hd[numuba];
 	uhp->uh_map = (struct map *)calloc(UAMSIZ * sizeof (struct map));
 	ubainitmaps(uhp);
-	haveubasr = cpu == VAX_780;
 
 	/*
 	 * Save virtual and physical addresses
@@ -455,7 +541,9 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	uhp->uh_uba = vubp;
 	uhp->uh_physuba = pubp;
-	if (numuba == 0)
+	if (cpu == VAX_8600)
+		uhp->uh_vec = (int(**)())calloc(512);
+	else if (numuba == 0)
 		uhp->uh_vec = UNIvec;
 #if NUBA > 1
 	else if (numuba == 1)
@@ -473,8 +561,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	uhp->uh_lastiv = 0x200;
 
-	ubaaccess(pumem, memmap);
-#if VAX780
+	ubaaccess(pumem, memmap, UBAPAGES * NBPG);
+#if defined(VAX780) || defined(VAX8600)
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
 		vubp->uba_cr = UBACR_IFS|UBACR_BRIE;
@@ -533,7 +621,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		reg = ubaddr(addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
@@ -541,7 +629,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_probe)(reg, um->um_ctlr, um);
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
@@ -614,7 +702,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 		reg = ubaddr(addr);
 		if (badaddr((caddr_t)reg, 2))
 			continue;
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
@@ -622,7 +710,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 #endif
 		cvec = 0x200;
 		i = (*udp->ud_probe)(reg, ui);
-#if VAX780
+#if defined(VAX780) || defined(VAX8600)
 		if (haveubasr && vubp->uba_sr) {
 			vubp->uba_sr = vubp->uba_sr;
 			continue;
@@ -695,6 +783,7 @@ setscbnex(fn)
 {
 	register struct scb *scbp = &scb;
 
+	scbp = (struct scb *)((caddr_t)scbp + nsbi * IOAMAPSIZ);
 	scbp->scb_ipl14[nexnum] = scbp->scb_ipl15[nexnum] =
 	    scbp->scb_ipl16[nexnum] = scbp->scb_ipl17[nexnum] =
 		scbentry(fn, SCB_ISTACK);
@@ -708,11 +797,12 @@ setscbnex(fn)
  * SINCE MISSING NEXI DONT RESPOND.  BUT THEN AGAIN
  * PRESENT NEXI DONT RESPOND TO ALL OF THEIR ADDRESS SPACE.
  */
-nxaccess(physa, pte)
+nxaccess(physa, pte, size)
 	struct nexus *physa;
 	register struct pte *pte;
+	int size;
 {
-	register int i = btop(sizeof (struct nexus));
+	register int i = btop(size);
 	register unsigned v = btop(physa);
 	
 	do
@@ -721,11 +811,12 @@ nxaccess(physa, pte)
 	mtpr(TBIA, 0);
 }
 
-ubaaccess(pumem, pte)
+ubaaccess(pumem, pte, size)
 	caddr_t pumem;
 	register struct pte *pte;
+	int size;
 {
-	register int i = 512;
+	register int i = btop(size);
 	register unsigned v = btop(pumem);
 	
 	do
@@ -734,7 +825,9 @@ ubaaccess(pumem, pte)
 	mtpr(TBIA, 0);
 }
 
+#ifndef MAXDUMP
 #define	MAXDUMP	(10*2048)
+#endif
 /*
  * Configure swap space and related parameters.
  */
