@@ -1,4 +1,4 @@
-/*	dz.c	4.33	82/02/08	*/
+/*	dz.c	4.34	82/03/12	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -232,7 +232,7 @@ dzclose(dev, flag)
 	register struct tty *tp;
 	register int unit;
 	register struct device *dzaddr;
-	int dz, s;
+	int dz;
  
 	unit = minor(dev);
 	dz = unit >> 3;
