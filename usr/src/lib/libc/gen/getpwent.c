@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -49,7 +49,8 @@ getpwent()
 		} else /* _pw_fp */
 			rval = scanpw();
 	} while (rval && _pw_flag != _PW_KEYBYNAME);
-	getpw();
+	if (rval)
+		getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -68,14 +69,15 @@ getpwnam(nam)
 		key.dsize = strlen(nam);
 		rval = fetch_pw(key);
 	} else /* _pw_fp */
-		while (scanpw())
+		for (rval = 0; scanpw();)
 			if (!strcmp(nam, _pw_passwd.pw_name)) {
 				rval = 1;
 				break;
 			}
 	if (!_pw_stayopen)
 		endpwent();
-	getpw();
+	if (rval)
+		getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
@@ -94,14 +96,15 @@ getpwuid(uid)
 		key.dsize = sizeof(uid);
 		rval = fetch_pw(key);
 	} else /* _pw_fp */
-		while (scanpw())
+		for (rval = 0; scanpw();)
 			if (_pw_passwd.pw_uid == uid) {
 				rval = 1;
 				break;
 			}
 	if (!_pw_stayopen)
 		endpwent();
-	getpw();
+	if (rval)
+		getpw();
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
 
