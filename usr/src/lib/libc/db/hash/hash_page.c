@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -693,7 +693,7 @@ overflow_page(hashp)
 		hashp->OVFL_POINT = splitnum;
 		hashp->SPARES[splitnum] = hashp->SPARES[splitnum-1];
 		hashp->SPARES[splitnum-1]--;
-		offset = 0;
+		offset = 1;
 	}
 
 	/* Check if we need to allocate a new bitmap page */
