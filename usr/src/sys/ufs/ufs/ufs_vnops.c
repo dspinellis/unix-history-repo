@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.36 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1488,7 +1488,7 @@ ufs_strategy(bp)
 		last = start + btodb(bp->b_bcount) - 1;
 		for (ep = buf; ep < ebp; ep++) {
 			if (ep == bp || (ep->b_flags & B_INVAL) ||
-			    ep->b_vp == (struct vnode *)0)
+			    ep->b_vp == NULLVP)
 				continue;
 			if (VOP_BMAP(ep->b_vp, (daddr_t)0, &vp, (daddr_t)0))
 				continue;
