@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	8.2 (Berkeley) %G%
+ *	@(#)ffs_extern.h	8.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -46,7 +46,6 @@ int	ffs_reallocblks __P((struct vop_reallocblks_args *));
 int	ffs_realloccg __P((struct inode *,
 	    daddr_t, daddr_t, int, int, struct ucred *, struct buf **));
 int	ffs_reclaim __P((struct vop_reclaim_args *));
-int	ffs_root __P((struct mount *, struct vnode **));
 void	ffs_setblock __P((struct fs *, u_char *, daddr_t));
 int	ffs_statfs __P((struct mount *, struct statfs *, struct proc *));
 int	ffs_sync __P((struct mount *, int, struct ucred *, struct proc *));

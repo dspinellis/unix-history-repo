@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991, 1993
+ * Copyright (c) 1991, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_extern.h	8.2 (Berkeley) %G%
+ *	@(#)ufs_extern.h	8.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -77,6 +77,7 @@ int	 ufs_reclaim __P((struct vop_reclaim_args *));
 int	 ufs_remove __P((struct vop_remove_args *));
 int	 ufs_rename __P((struct vop_rename_args *));
 int	 ufs_rmdir __P((struct vop_rmdir_args *));
+int	 ufs_root __P((struct mount *, struct vnode **));
 int	 ufs_seek __P((struct vop_seek_args *));
 int	 ufs_select __P((struct vop_select_args *));
 int	 ufs_setattr __P((struct vop_setattr_args *));
