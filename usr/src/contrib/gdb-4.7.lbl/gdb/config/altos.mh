@@ -1,0 +1,6 @@
+# Host: Altos 3068 (68k, System V release 2)
+XDEPFILES= infptrace.o inftarg.o fork-child.o altos-xdep.o
+XM_FILE= xm-altos.h
+REGEX=regex.o
+REGEX1=regex.o
+SYSV_DEFINE=-DSYSV
