@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.8 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -225,6 +225,7 @@ clocal(p) register NODE *p; {
 	return(p);
 }
 
+/*ARGSUSED*/
 andable( p ) NODE *p; {
 	return(1);  /* all names can have & taken on them */
 	}
@@ -243,6 +244,7 @@ cisreg( t ) TWORD t; { /* is an automatic variable of type t OK for a register v
 	return(0);
 	}
 
+/*ARGSUSED*/
 NODE *
 offcon( off, t, d, s ) OFFSZ off; TWORD t; {
 
@@ -253,7 +255,7 @@ offcon( off, t, d, s ) OFFSZ off; TWORD t; {
 	register NODE *p;
 
 	/* t, d, and s are the type, dimension offset, and sizeoffset */
-	/* in general they  are necessary for offcon, but not on H'well */
+	/* in general they  are necessary for offcon, but not on Tahoe */
 
 	p = bcon(0);
 	p->tn.lval = off/SZCHAR;
@@ -273,6 +275,7 @@ incode( p, sz ) register NODE *p; {
 	/* inoff is updated to have the proper final value */
 	/* we also assume sz  < SZINT */
 
+	if(nerrors) return;
 	inwd += sz;
 	if(inwd > SZINT) cerror("incode: field > int");
 	word |= (p->tn.lval&((1L<<sz)-1)) << (SZINT-inwd);
@@ -295,6 +298,7 @@ fincode( d, sz ) double d; register int sz; {
 	} *x;
 	float f;
 
+	if (nerrors) return;
 	if(sz == SZFLOAT) {	/* force rounding */
 		f = d;
 		d = f;
@@ -409,6 +413,7 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	register struct symtab *q;
 	OFFSZ off, tsize();
 
+	if (nerrors) return;
 	q = &stab[id];
 	printf( "	.comm	%s,", exname( q->sname ) );
 	off = tsize( q->stype, q->dimoff, q->sizoff );
