@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)smrsh.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)smrsh.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)smrsh.c	8.1 (Berkeley) %G%";
 **	In loving memory of RTM.  11/02/93.
 */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <string.h>
