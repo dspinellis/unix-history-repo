@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -94,7 +94,8 @@ rip_input(from, size)
 		if ((*afp->af_portcheck)(from) == 0)
 			return;
 		if ((ifp = if_iflookup(from)) == 0 || (ifp->int_flags &
-		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0) {
+		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0 ||
+		    ifp->int_flags & IFF_PASSIVE) {
 			syslog(LOG_ERR, "trace command from unknown router, %s",
 			    (*afswitch[from->sa_family].af_format)(from));
 			return;
@@ -140,7 +141,8 @@ rip_input(from, size)
 		 * and from those listed in /etc/gateways.
 		 */
 		if ((ifp = if_iflookup(from)) == 0 || (ifp->int_flags &
-		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0) {
+		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0 ||
+		    ifp->int_flags & IFF_PASSIVE) {
 			if (bcmp((char *)from, (char *)&badfrom,
 			    sizeof(badfrom)) != 0) {
 				syslog(LOG_ERR,
