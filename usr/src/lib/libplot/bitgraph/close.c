@@ -5,13 +5,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)close.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)close.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 
 #include <signal.h>
 #include "bg.h"
 
+void
 closepl()
 {
 	/* recieve interupts */

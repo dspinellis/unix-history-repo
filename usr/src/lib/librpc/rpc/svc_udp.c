@@ -174,6 +174,7 @@ svcudp_recv(xprt, msg)
 	register int rlen;
 	char *reply;
 	u_long replylen;
+	static int cache_get();
 
     again:
 	xprt->xp_addrlen = sizeof(struct sockaddr_in);
@@ -207,6 +208,7 @@ svcudp_reply(xprt, msg)
 	register XDR *xdrs = &(su->su_xdrs);
 	register int slen;
 	register bool_t stat = FALSE;
+	static void cache_set();
 
 	xdrs->x_op = XDR_ENCODE;
 	XDR_SETPOS(xdrs, 0);
@@ -371,7 +373,7 @@ svcudp_enablecache(transp, size)
 /*
  * Set an entry in the cache
  */
-static
+static void
 cache_set(xprt, replylen)
 	SVCXPRT *xprt;
 	u_long replylen;	

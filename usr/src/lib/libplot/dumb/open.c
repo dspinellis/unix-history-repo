@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)open.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)open.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -29,7 +29,7 @@ char screenmat[MAXCOLS][MAXLINES];
 
 openpl()
 {
-	int closepl();
+	void closepl();
 	int i, j;
 	char *term, *getenv();
 	char bp[1024];
