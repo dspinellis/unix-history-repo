@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns.h	6.10 (Berkeley) %G%
+ *	@(#)ns.h	6.11 (Berkeley) %G%
  */
 
 /*
