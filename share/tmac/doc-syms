@@ -119,6 +119,32 @@
 .de Ud
 \&currently under development.
 ..
+.\" Ns Fx macro - FreeBSD
+.de Fx
+.nr cF \\n(.f
+.nr cZ \\n(.s
+.ds aa \&\f\\n(cF\s\\n(cZ
+.if \\n(.$==2 \{\
+.	if "\\$1"Pk024"  \&\\*(tN386BSD\\*(aa patchkit 0.2.4\\$2
+.	if "\\$1"1.0a"  \&\\*(tNFreeBSD\\*(aa version 1.0 ALPHA\\$2
+.	if "\\$1"1.0b"  \&\\*(tNFreeBSD\\*(aa version 1.0 BETA\\$2
+.	if "\\$1"1.0g"  \&\\*(tNFreeBSD\\*(aa version 1.0 GAMMA\\$2
+.	if "\\$1"1.0e"  \&\\*(tNFreeBSD\\*(aa version 1.0 EPSILON\\$2
+.	if "\\$1"1.0"  \&\\*(tNFreeBSD\\*(aa version 1.0\\$2
+.	if "\\$1"1.0.2"  \&\\*(tNFreeBSD\\*(aa version 1.0.2\\$2
+.	if "\\$1"1.1"  \&\\*(FreeBSD\\*(aa version 1.1\\$2
+.\}
+.if \\n(.$==1 \{\
+.\}
+.	if "\\$1"Pk024"  \&\\*(tN386BSD\\*(aa patchkit 0.2.4
+.	if "\\$1"1.0a"  \&\\*(tNFreeBSD\\*(aa version 1.0 ALPHA
+.	if "\\$1"1.0b"  \&\\*(tNFreeBSD\\*(aa version 1.0 BETA
+.	if "\\$1"1.0g"  \&\\*(tNFreeBSD\\*(aa version 1.0 GAMMA
+.	if "\\$1"1.0e"  \&\\*(tNFreeBSD\\*(aa version 1.0 EPSILON
+.	if "\\$1"1.0"  \&\\*(tNFreeBSD\\*(aa version 1.0
+.	if "\\$1"1.0.2"  \&\\*(tNFreeBSD\\*(aa version 1.0.2
+.	if "\\$1"1.1"  \&\\*(FreeBSD\\*(aa version 1.1
+..
 .\" Ns At macro - AT&T UNIX
 .de At
 .nr cF \\n(.f
