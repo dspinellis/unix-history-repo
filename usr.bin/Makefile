@@ -50,6 +50,9 @@ groff::
 gzip::
 	@rm -f gzip
 	ln -s ../gnu/gzip .
+rcs::
+	@rm -f rcs
+	ln -s ../gnu/rcs .
 tar::
 	@rm -f tar
 	ln -s ../gnu/tar . 
