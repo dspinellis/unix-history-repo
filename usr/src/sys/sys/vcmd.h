@@ -1,7 +1,11 @@
-/*	vcmd.h	6.1	83/07/29	*/
+/*	vcmd.h	6.2	84/08/28	*/
 
 #ifndef _IOCTL_
+#ifdef KERNEL
+#include "ioctl.h"
+#else
 #include <sys/ioctl.h>
+#endif
 #endif
 
 #define	VPRINT		0100

@@ -1,12 +1,12 @@
-/*	ioctl.h	6.4	84/08/02	*/
+/*	ioctl.h	6.5	84/08/28	*/
 /*
  * Ioctl definitions
  */
 #ifndef	_IOCTL_
 #define	_IOCTL_
 #ifdef KERNEL
-#include "../h/ttychars.h"
-#include "../h/ttydev.h"
+#include "ttychars.h"
+#include "ttydev.h"
 #else
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>

@@ -1,10 +1,10 @@
-/*	namei.h	6.6	84/07/08	*/
+/*	namei.h	6.7	84/08/28	*/
 
 #ifndef _NAMEI_
 #define	_NAMEI_
 
 #ifdef KERNEL
-#include "../h/uio.h"
+#include "uio.h"
 #else
 #include <sys/uio.h>
 #endif
