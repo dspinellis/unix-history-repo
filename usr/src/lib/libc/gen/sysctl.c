@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)sysctl.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -141,7 +141,7 @@ sysctl(name, namelen, oldp, oldlenp, newp, newlen)
 		*(int *)oldp = FOPEN_MAX;
 		return (0);
 	case USER_TZNAME_MAX:
-		*(int *)oldp = 1024;
+		*(int *)oldp = NAME_MAX;
 		return (0);
 	default:
 		errno = EINVAL;
