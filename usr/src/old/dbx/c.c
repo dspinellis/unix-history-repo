@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.1 %G%";
+static char sccsid[] = "@(#)c.c 5.2 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -459,11 +459,16 @@ Symbol s;
 	    t = rtype(s->type);
 	    if (t->class == RANGE and istypename(t->type, "char")) {
 		len = size(s);
-		sp -= len;
-		if (s->language == primlang) {
-		    printf("%.*s", len, sp);
-		} else {
-		    printf("\"%.*s\"", len, sp);
+		str = (String) (sp -= len);
+		if (s->language != primlang) {
+		    putchar('"');
+		}
+		while (len > 0) {
+		    printchar(*str++);
+		    len--;
+		}
+		if (s->language != primlang) {
+		    putchar('"');
 		}
 	    } else {
 		printarray(s);
@@ -667,7 +672,7 @@ long i;
     lb = s->symvalue.rangev.lower;
     ub = s->symvalue.rangev.upper;
     if (i < lb or i > ub) {
-	error("subscript out of range");
+	warning("subscript out of range");
     }
     push(long, base + (i - lb) * size(t->type));
 }
