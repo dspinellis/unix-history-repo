@@ -56,6 +56,7 @@ main(argc, argv)
 	int on = 1, options = 0, fromlen;
 	struct sockaddr_in from;
 
+	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
@@ -63,7 +64,6 @@ main(argc, argv)
 		_exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
-		openlog(argv[0], LOG_PID, 0);
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 	doit(0, &from);

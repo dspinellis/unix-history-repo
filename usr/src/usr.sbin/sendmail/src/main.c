@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -184,7 +184,7 @@ main(argc, argv, envp)
 # endif V6
 
 # ifdef LOG
-	openlog("sendmail", LOG_PID, 0);
+	openlog("sendmail", LOG_PID, LOG_MAIL);
 # endif LOG
 	errno = 0;
 	from = NULL;

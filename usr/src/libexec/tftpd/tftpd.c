@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tftpd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftpd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -51,6 +51,7 @@ main()
 	register struct tftphdr *tp;
 	register int n;
 
+	openlog("tftpd", LOG_PID, LOG_DAEMON);
 	alarm(10);
 	fromlen = sizeof (from);
 	n = recvfrom(0, buf, sizeof (buf), 0,
@@ -65,17 +66,14 @@ main()
 	close(1);
 	peer = socket(AF_INET, SOCK_DGRAM, 0);
 	if (peer < 0) {
-		openlog("tftpd", LOG_PID, 0);
 		syslog(LOG_ERR, "socket: %m");
 		exit(1);
 	}
 	if (bind(peer, (caddr_t)&sin, sizeof (sin)) < 0) {
-		openlog("tftpd", LOG_PID, 0);
 		syslog(LOG_ERR, "bind: %m");
 		exit(1);
 	}
 	if (connect(peer, (caddr_t)&from, sizeof(from)) < 0) {
-		openlog("tftpd", LOG_PID, 0);
 		syslog(LOG_ERR, "connect: %m");
 		exit(1);
 	}

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -140,7 +140,7 @@ nextopt:
 	  }
 	}
 #endif
-	openlog("inetd", LOG_PID, 0);
+	openlog("inetd", LOG_PID, LOG_DAEMON);
 	config();
 	signal(SIGHUP, config);
 	signal(SIGCHLD, reapchild);

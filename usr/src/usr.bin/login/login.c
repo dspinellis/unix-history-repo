@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -168,7 +168,7 @@ main(argc, argv)
 		tty = ttyn;
 	else
 		tty++;
-	openlog("login", LOG_ODELAY, 0);
+	openlog("login", LOG_ODELAY, LOG_AUTH);
 	t = 0;
 	do {
 		ldisc = 0;
@@ -226,13 +226,13 @@ main(argc, argv)
 		 * see if root logins on this terminal are permitted.
 		 */
 		if (!invalid && pwd->pw_uid == 0 && !rootterm(tty)) {
-			syslog(LOG_SECURITY, "ROOT LOGIN REFUSED %s", tty);
+			syslog(LOG_CRIT, "ROOT LOGIN REFUSED %s", tty);
 			invalid = TRUE;
 		}
 		if (invalid) {
 			printf("Login incorrect\n");
 			if (++t >= 5) {
-				syslog(LOG_SECURITY,
+				syslog(LOG_CRIT,
 				    "REPEATED LOGIN FAILURES %s, %s",
 					tty, utmp.ut_name);
 				ioctl(0, TIOCHPCL, (struct sgttyb *) 0);
@@ -350,7 +350,7 @@ main(argc, argv)
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
 	if (pwd->pw_uid == 0)
-		syslog(LOG_SECURITY, "ROOT LOGIN %s", tty);
+		syslog(LOG_NOTICE, "ROOT LOGIN %s", tty);
 	if (!quietlog) {
 		struct stat st;
 

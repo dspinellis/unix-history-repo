@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -117,7 +117,7 @@ main()
 #endif
 	(void) chdir("/dev");
 	(void) signal(SIGHUP, getkmem);
-	openlog("rwhod", LOG_PID, 0);
+	openlog("rwhod", LOG_PID, LOG_DAEMON);
 	/*
 	 * Establish host name as returned by system.
 	 */

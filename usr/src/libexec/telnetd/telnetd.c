@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -66,6 +66,7 @@ main(argc, argv)
 	struct sockaddr_in from;
 	int on = 1, fromlen;
 
+	openlog("telnetd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
@@ -73,7 +74,6 @@ main(argc, argv)
 		_exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
-		openlog(argv[0], LOG_PID, 0);
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 	doit(0, &from);
