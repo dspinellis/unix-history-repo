@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -672,6 +672,9 @@ include(fname, forwarding, ctladdr, sendq, e)
 	char buf[MAXLINE];
 	static int includetimeout();
 
+	if (tTd(27, 2))
+		printf("include(%s)\n", fname);
+
 	/*
 	**  If home directory is remote mounted but server is down,
 	**  this can hang or give errors; use a timeout to avoid this
@@ -691,6 +694,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 	{
 		/* don't use this .forward file */
 		clrevent(ev);
+		if (tTd(27, 4))
+			printf("include: not safe (uid=%d)\n", ctladdr->q_uid);
 		return EPERM;
 	}
 
@@ -726,7 +731,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		LineNumber++;
 		if (p != NULL)
 			*p = '\0';
-		if (*p == '#' || *p == '\0')
+		if (buf[0] == '#' || buf[0] == '\0')
 			continue;
 		e->e_to = oldto;
 		message(Arpa_Info, "%s to %s",
