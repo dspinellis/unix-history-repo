@@ -1,13 +1,13 @@
-/*	ip_input.c	1.55	82/10/21	*/
+/*	ip_input.c	1.56	82/10/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/kernel.h"
 #include <errno.h>
 #include <time.h>
+#include "../h/kernel.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
