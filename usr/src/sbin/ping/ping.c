@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -122,7 +122,7 @@ u_long tsum;			/* sum of all times, for doing average */
 
 u_long inet_addr();
 char *inet_ntoa(), *pr_addr();
-int catcher(), finish(), prefinish();
+int catcher(), finish();
 
 main(argc, argv)
 	int argc;
@@ -314,7 +314,7 @@ main(argc, argv)
 	else
 		(void)printf("PING %s: %d data bytes\n", hostname, datalen);
 
-	(void)signal(SIGINT, prefinish);
+	(void)signal(SIGINT, finish);
 	(void)signal(SIGALRM, catcher);
 
 	while (preload--)		/* fire off them quickies */
@@ -670,25 +670,12 @@ tvsub(out, in)
 }
 
 /*
- * prefinish --
- *	On the first SIGINT, allow any outstanding packets to dribble in.
- */
-prefinish()
-{
-	/* quit now if caught up or if remote is dead */
-	if (!nreceived || nreceived >= ntransmitted)
-		finish();
-
-	/* do this only the 1st time, let the normal limit work */
-	(void)signal(SIGINT, finish);
-	npackets = ntransmitted + 1;
-}
-/*
  * finish --
  *	Print out statistics, and give up.
  */
 finish()
 {
+	(void)signal(SIGINT, SIG_IGN);
 	(void)putchar('\n');
 	(void)fflush(stdout);
 	(void)printf("--- %s ping statistics ---\n", hostname);
