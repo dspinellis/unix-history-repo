@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	1.9	93/06/07
+#	@(#)Makefile	1.10	94/06/18
 #
 DEST	      = $(DEST_LIB)/bmac
 
