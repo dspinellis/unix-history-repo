@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1271,6 +1271,7 @@ backup:
 			char *pvpb1[MAXATOM + 1];
 			char *argvect[10];
 			char pvpbuf[PSBUFSIZE];
+			char *nullpvp[1];
 			bool match, defaultpart;
 			char begintype;
 			char db = '\0';
