@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.19 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -161,7 +161,7 @@ setsid(p, uap, retval)
 /*
  * set process group (setpgid/old setpgrp)
  *
- * caller does setpgid(pid, pgid)
+ * caller does setpgid(targpid, targpgid)
  *
  * pid must be caller or child of caller (ESRCH)
  * if a child
@@ -172,36 +172,36 @@ setsid(p, uap, retval)
  * pid must not be session leader (EPERM)
  */
 /* ARGSUSED */
-setpgid(cp, uap, retval)
-	struct proc *cp;
+setpgid(curp, uap, retval)
+	struct proc *curp;
 	register struct args {
-		int	pid;
-		int	pgid;
+		int	targpid;	/* target process id */
+		int	targpgid;	/* target pgrp id */
 	} *uap;
 	int *retval;
 {
-	register struct proc *p;
-	register struct pgrp *pgrp;
+	register struct proc *targp;		/* target process */
+	register struct pgrp *targpgrp;		/* target pgrp */
 
-	if (uap->pid != 0) {
-		if ((p = pfind(uap->pid)) == 0 || !inferior(p))
+	if (uap->targpid && uap->targpid != curp->p_pid) {
+		if ((targp = pfind(uap->targpid)) == 0 || !inferior(targp))
 			return (ESRCH);
-		if (p->p_session != cp->p_session)
+		if (targp->p_session != curp->p_session)
 			return (EPERM);
-		if (p->p_flag&SEXEC)
+		if (targp->p_flag&SEXEC)
 			return (EACCES);
 	} else
-		p = cp;
-	if (SESS_LEADER(p))
+		targp = curp;
+	if (SESS_LEADER(targp))
 		return (EPERM);
-	if (uap->pgid == 0)
-		uap->pgid = p->p_pid;
-	else if (uap->pgid != p->p_pid)
-		if ((pgrp = pgfind(uap->pgid)) == 0 ||
-		    pgrp->pg_mem == NULL ||
-	            pgrp->pg_session != cp->p_session)
+	if (uap->targpgid == 0)
+		uap->targpgid = curp->p_pid;
+	else if (uap->targpgid != curp->p_pid)
+		if ((targpgrp = pgfind(uap->targpgid)) == 0 ||
+		    targpgrp->pg_mem == NULL ||
+	            targpgrp->pg_session != curp->p_session)
 			return (EPERM);
-	enterpgrp(p, uap->pgid, 0);
+	enterpgrp(targp, uap->targpgid, 0);
 	return (0);
 }
 
