@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 # need conversion:	tn3270
 # remove ld, lisp
@@ -6,7 +6,7 @@
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar \
 	checknr chpass cksum cmp col colcrt colrm column comm compress \
 	cpio ctags cut dc deroff diction diff dirname du env error ex \
-	expand false file find finger fmt fold fpr from fsplit ftp \
+	expand false file find finger fmt fold fpr from fsplit fstat ftp \
 	g++ gcore gdb gprof graph grep groff groups head hexdump indent \
 	join ktrace last lastcomm learn leave lex locate lock logger \
 	login look lorder m4 machine mail make man mesg mkdep mkfifo \
