@@ -1,0 +1,61 @@
+#	@(#)4.4todo	5.1 (Berkeley) %G%
+
+Target for alpha tape release May 31.
+Target 386/486, HP300, Sparc, DECstation 3100/5000.
+
+Required:
+64-bit file sizes		Kirk
+32-bit uid/gid			Kirk
+32-bit dev			Kirk
+VM				Kirk
+	Merged buffer pool
+	kern_exec.c
+	vfs_bio.c
+NFS update			Kirk
+Nano-second (POSIX) timers	Kirk
+kern_physio.c			Kirk
+Getloadinfo			Kirk/TK
+Getsysinfo/uname		Kirk/TK
+Pathconf			Kirk
+
+Block size in environment	TK
+Vi				TK
+LFS				TK
+subr_rmap.c			TK
+Bug list pass			TK/Marc
+ANSI C compatibility		TK/Chris
+
+POSIX 1003.1 compatibility	Marc
+POSIX 1003.2 shell		Marc
+	command-line editor
+tty_subr.c			Marc
+hp300/dev/hil.c			Marc
+
+Sparc port			Chris
+Bstreams			Mike
+DECstation 3100/5000 ports	Ralph/Ted
+Libm				Peter
+Man page pass			Everyone
+
+Wish list:
+Memory file system cleanup	Kirk
+Accounting (kern_acct.c)	TK/Kirk
+POSIX 1003.2 compatibility	TK/Marc
+/proc (sys_process.c)		Chris
+
+Utility wish list:
+at/cron
+bc/dc/libmp
+diff
+ed
+expr
+file system utilities
+grep/egrep/fgrep/regexp
+pax
+pr
+sed
+sort
+test
+units
+uucp
+
