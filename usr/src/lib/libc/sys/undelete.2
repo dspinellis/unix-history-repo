@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)undelete.2	8.2 (Berkeley) %G%
+.\"     @(#)undelete.2	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt UNWHITEOUT 2
@@ -42,7 +42,7 @@ The pathname contains a character with the high-order bit set.
 .It Bq Er ENAMETOOLONG
 A component of a pathname exceeded 255 characters,
 or an entire path name exceeded 1023 characters.
-.It Bq Er EXIST
+.It Bq Er EEXIST
 The path does not reference a whiteout.
 .It Bq Er ENOENT
 The whiteout does not exist.
