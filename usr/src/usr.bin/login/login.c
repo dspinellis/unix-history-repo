@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -259,6 +259,8 @@ main(argc, argv)
 		if (pwd) {
 #ifdef KERBEROS
 			rval = klogin(pwd, instance, localhost, p);
+			if (rval != 0 && rootlogin && pwd->pw_uid != 0)
+				rootlogin = 0;
 			if (rval == 0)
 				authok = 1;
 			else if (rval == 1)
