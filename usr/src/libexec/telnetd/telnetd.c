@@ -12,11 +12,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
 #include "pathnames.h"
+
+#if	defined(AUTHENTICATE)
+#include <libtelnet/auth.h>
+int	auth_level = 0;
+#endif
+#if	defined(SecurID)
+int	require_SecurID = 0;
+#endif
 
 /*
  * I/O data buffers,
@@ -33,43 +41,29 @@ int	lowpty = 0, highpty;	/* low, high pty numbers */
 #endif /* CRAY */
 
 int debug = 0;
+int keepalive = 1;
 char *progname;
 
-#if	defined(NEED_GETTOS)
-struct tosent {
-	char	*t_name;	/* name */
-	char	**t_aliases;	/* alias list */
-	char	*t_proto;	/* protocol */
-	int	t_tos;		/* Type Of Service bits */
-};
-
-struct tosent *
-gettosbyname(name, proto)
-char *name, *proto;
-{
-	static struct tosent te;
-	static char *aliasp = 0;
-
-	te.t_name = name;
-	te.t_aliases = &aliasp;
-	te.t_proto = proto;
-	te.t_tos = 020;	/* Low Delay bit */
-	return(&te);
-}
-#endif
+extern void usage P((void));
 
 main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
 	int on = 1, fromlen;
-#if	defined(HAS_IP_TOS) || defined(NEED_GETTOS)
-	struct tosent *tp;
-#endif /* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
+	register int ch;
+	extern char *optarg;
+	extern int optind;
+#if	defined(IPPROTO_IP) && defined(IP_TOS)
+	int tos = -1;
+#endif
 
 	pfrontp = pbackp = ptyobuf;
 	netip = netibuf;
 	nfrontp = nbackp = netobuf;
+#if	defined(ENCRYPT)
+	nclearto = 0;
+#endif
 
 	progname = *argv;
 
@@ -81,128 +75,175 @@ main(argc, argv)
 	highpty = getnpty();
 #endif /* CRAY */
 
-top:
-	argc--, argv++;
-#ifdef convex
-	if (argc == 1 && !debug)
-		argc--;			/* ignore the host/port name */
-#endif
+	while ((ch = getopt(argc, argv, "d:a:e:lhnr:I:D:B:sS:a:X:")) != EOF) {
+		switch(ch) {
 
-	if (argc > 0 && strcmp(*argv, "-debug") == 0) {
-		debug++;
-		goto top;
-	}
-
-#ifdef	LINEMODE
-	if (argc > 0 && !strcmp(*argv, "-l")) {
-		alwayslinemode = 1;
-		goto top;
-	}
-#endif	/* LINEMODE */
-
-	if (argc > 0 && !strcmp(*argv, "-h")) {
-		hostinfo = 0;
-		goto top;
-	}
-
-#ifdef CRAY
-	if (argc > 0 && !strncmp(*argv, "-r", 2)) {
-		char *strchr();
-		char *c;
-
-		/*
-		 * Allow the specification of alterations to the pty search
-		 * range.  It is legal to specify only one, and not change the
-		 * other from its default.
-		 */
-		*argv += 2;
-		if (**argv == '\0' && argc)
-			argv++, argc--;
-		c = strchr(*argv, '-');
-		if (c) {
-			*c++ = '\0';
-			highpty = atoi(c);
-		}
-		if (**argv != '\0')
-			lowpty = atoi(*argv);
-		if ((lowpty > highpty) || (lowpty < 0) || (highpty > 32767)) {
-			usage();
-			/* NOT REACHED */
-		}
-		goto top;
-	}
-# ifdef	NEWINIT
-	if (argc > 0 && !strncmp(*argv, "-I", 2)) {
-		extern char *gen_id;
-
-		*argv += 2;
-		if (**argv == '\0') {
-			if (argc < 2) {
-				usage();
-				/* NOT REACHED */
+#ifdef	AUTHENTICATE
+		case 'a':
+			/*
+			 * Check for required authentication level
+			 */
+			if (strcmp(optarg, "debug") == 0) {
+				extern int auth_debug_mode;
+				auth_debug_mode = 1;
+			} else if (strcasecmp(optarg, "none") == 0) {
+				auth_level = 0;
+			} else if (strcasecmp(optarg, "other") == 0) {
+				auth_level = AUTH_OTHER;
+			} else if (strcasecmp(optarg, "user") == 0) {
+				auth_level = AUTH_USER;
+			} else if (strcasecmp(optarg, "valid") == 0) {
+				auth_level = AUTH_VALID;
+			} else if (strcasecmp(optarg, "off") == 0) {
+				/*
+				 * This hack turns off authentication
+				 */
+				auth_level = -1;
+			} else {
+				fprintf(stderr,
+			    "telnetd: unknown authorization level for -a\n");
 			}
-			argv++, argc--;
-			if (**argv == '\0') {
-				usage();
-				/* NOT REACHED */
-			}
-		}
-		gen_id = *argv;
-		goto top;
-	}
-# endif	/* NEWINIT */
-#endif	/* CRAY */
-
-#ifdef DIAGNOSTICS
-	/*
-	 * Check for desired diagnostics capabilities.
-	 */
-	if (argc > 0 && !strncmp(*argv, "-D", 2)) {
-		*argv += 2;
-		if (**argv == '\0') {
-			if (argc < 2) {
-				usage();
-				/* NOT REACHED */
-			}
-			argv++, argc--;
-			if (**argv == '\0') {
-				usage();
-				/* NOT REACHED */
-			}
-		}
-		if (!strcmp(*argv, "report")) {
-			diagnostic |= TD_REPORT|TD_OPTIONS;
-		} else if (!strcmp(*argv, "exercise")) {
-			diagnostic |= TD_EXERCISE;
-		} else if (!strcmp(*argv, "netdata")) {
-			diagnostic |= TD_NETDATA;
-		} else if (!strcmp(*argv, "ptydata")) {
-			diagnostic |= TD_PTYDATA;
-		} else if (!strcmp(*argv, "options")) {
-			diagnostic |= TD_OPTIONS;
-		} else {
-			usage();
-			/* NOT REACHED */
-		}
-		goto top;
-	}
-#endif /* DIAGNOSTICS */
+			break;
+#endif	/* AUTHENTICATE */
 
 #ifdef BFTPDAEMON
-	/*
-	 * Check for bftp daemon
-	 */
-	if (argc > 0 && !strncmp(*argv, "-B", 2)) {
-		bftpd++;
-		goto top;
-	}
+		case 'B':
+			bftpd++;
+			break;
 #endif /* BFTPDAEMON */
 
-	if (argc > 0 && **argv == '-') {
-		fprintf(stderr, "telnetd: %s: unknown option\n", *argv+1);
-		usage();
-		/* NOT REACHED */
+		case 'd':
+			if (strcmp(optarg, "ebug") == 0) {
+				debug++;
+				break;
+			}
+			usage();
+			/* NOTREACHED */
+			break;
+
+#ifdef DIAGNOSTICS
+		case 'D':
+			/*
+			 * Check for desired diagnostics capabilities.
+			 */
+			if (!strcmp(optarg, "report")) {
+				diagnostic |= TD_REPORT|TD_OPTIONS;
+			} else if (!strcmp(optarg, "exercise")) {
+				diagnostic |= TD_EXERCISE;
+			} else if (!strcmp(optarg, "netdata")) {
+				diagnostic |= TD_NETDATA;
+			} else if (!strcmp(optarg, "ptydata")) {
+				diagnostic |= TD_PTYDATA;
+			} else if (!strcmp(optarg, "options")) {
+				diagnostic |= TD_OPTIONS;
+			} else {
+				usage();
+				/* NOT REACHED */
+			}
+			break;
+#endif /* DIAGNOSTICS */
+
+#ifdef	AUTHENTICATE
+		case 'e':
+			if (strcmp(optarg, "debug") == 0) {
+				extern int encrypt_debug_mode;
+				encrypt_debug_mode = 1;
+				break;
+			}
+			usage();
+			/* NOTREACHED */
+			break;
+#endif	/* AUTHENTICATE */
+
+		case 'h':
+			hostinfo = 0;
+			break;
+
+#if	defined(CRAY) && defined(NEWINIT)
+		case 'I':
+		    {
+			extern char *gen_id;
+			gen_id = optarg;
+			break;
+		    }
+#endif	/* defined(CRAY) && defined(NEWINIT) */
+
+#ifdef	LINEMODE
+		case 'l':
+			alwayslinemode = 1;
+			break;
+#endif	/* LINEMODE */
+
+		case 'n':
+			keepalive = 0;
+			break;
+
+#ifdef CRAY
+		case 'r':
+		    {
+			char *strchr();
+			char *c;
+
+			/*
+			 * Allow the specification of alterations
+			 * to the pty search range.  It is legal to
+			 * specify only one, and not change the
+			 * other from its default.
+			 */
+			c = strchr(optarg, '-');
+			if (c) {
+				*c++ = '\0';
+				highpty = atoi(c);
+			}
+			if (*optarg != '\0')
+				lowpty = atoi(optarg);
+			if ((lowpty > highpty) || (lowpty < 0) ||
+							(highpty > 32767)) {
+				usage();
+				/* NOT REACHED */
+			}
+			break;
+		    }
+#endif	/* CRAY */
+
+#ifdef	SecurID
+		case 's':
+			/* SecurID required */
+			require_SecurID = 1;
+			break;
+#endif	/* SecurID */
+		case 'S':
+#ifdef	HAS_GETTOS
+			if ((tos = parsetos(optarg, "tcp")) < 0)
+				fprintf(stderr, "%s%s%s\n",
+					"telnetd: Bad TOS argument '", optarg,
+					"'; will try to use default TOS");
+#else
+			fprintf(stderr, "%s%s\n", "TOS option unavailable; ",
+						"-S flag not supported\n");
+#endif
+			break;
+
+#ifdef	AUTHENTICATE
+		case 'X':
+			/*
+			 * Check for invalid authentication types
+			 */
+			auth_disable_name(optarg);
+			break;
+#endif	/* AUTHENTICATE */
+
+		default:
+			fprintf(stderr, "telnetd: %s: unknown option\n", ch);
+			/* FALLTHROUGH */
+		case '?':
+			usage();
+			/* NOTREACHED */
+		}
 	}
+
+	argc -= optind;
+	argv += optind;
 
 	if (debug) {
 	    int s, ns, foo;
@@ -256,6 +297,10 @@ top:
 	    (void) dup2(ns, 0);
 	    (void) close(ns);
 	    (void) close(s);
+#ifdef convex
+	} else if (argc == 1) {
+		; /* VOID*/		/* Just ignore the host/port name */
+#endif
 	} else if (argc > 0) {
 		usage();
 		/* NOT REACHED */
@@ -268,43 +313,68 @@ top:
 		perror("getpeername");
 		_exit(1);
 	}
-	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
+	if (keepalive &&
+	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 
-#if	defined(HAS_IP_TOS) || defined(NEED_GETTOS)
-	if ((tp = gettosbyname("telnet", "tcp")) &&
-	    (setsockopt(0, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
-		syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
-#endif	/* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
+#if	defined(IPPROTO_IP) && defined(IP_TOS)
+	{
+# if	defined(HAS_GETTOS)
+		struct tosent *tp;
+		if (tos < 0 && (tp = gettosbyname("telnet", "tcp")))
+			tos = tp->t_tos;
+# endif
+		if (tos < 0)
+			tos = 020;	/* Low Delay bit */
+		if (tos
+		   && (setsockopt(0, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) < 0)
+		   && (errno != ENOPROTOOPT) )
+			syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
+	}
+#endif	/* defined(IPPROTO_IP) && defined(IP_TOS) */
 	net = 0;
 	doit(&from);
 	/* NOTREACHED */
 }  /* end of main */
 
+	void
 usage()
 {
-	fprintf(stderr, "Usage: telnetd [-debug] [-h]");
-#ifdef	NEWINIT
-	fprintf(stderr, " [-Iinitid]");
-#endif	/* NEWINIT */
-#ifdef DIAGNOSTICS
-	fprintf(stderr, " [-D (options|report|exercise|netdata|ptydata)]");
-#endif /* DIAGNOSTICS */
-#ifdef LINEMODE
-	fprintf(stderr, " [-l]");
-#endif
-#ifdef	CRAY
-	fprintf(stderr, " [-r[lowpty]-[highpty]]");
+	fprintf(stderr, "Usage: telnetd");
+#ifdef	AUTHENTICATE
+	fprintf(stderr, " [-a (debug|other|user|valid|off)]\n\t");
 #endif
 #ifdef BFTPDAEMON
 	fprintf(stderr, " [-B]");
-#endif /* BFTPDAEMON */
+#endif
+	fprintf(stderr, " [-debug]");
+#ifdef DIAGNOSTICS
+	fprintf(stderr, " [-D (options|report|exercise|netdata|ptydata)]\n\t");
+#endif
+#ifdef	AUTHENTICATE
+	fprintf(stderr, " [-edebug]");
+#endif
+	fprintf(stderr, " [-h]");
+#if	defined(CRAY) && defined(NEWINIT)
+	fprintf(stderr, " [-Iinitid]");
+#endif
+#ifdef LINEMODE
+	fprintf(stderr, " [-l]");
+#endif
+	fprintf(stderr, " [-n]");
+#ifdef	CRAY
+	fprintf(stderr, " [-r[lowpty]-[highpty]]");
+#endif
+#ifdef	SecurID
+	fprintf(stderr, " [-s]");
+#endif
+#ifdef	AUTHENTICATE
+	fprintf(stderr, " [-X auth-type]");
+#endif
 	fprintf(stderr, " [port]\n");
 	exit(1);
 }
-
-void	cleanup();
 
 /*
  * getterminaltype
@@ -313,22 +383,53 @@ void	cleanup();
  * Output is the variable terminaltype filled in.
  */
 static char ttytype_sbbuf[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_SEND, IAC, SE };
-void
-getterminaltype()
+
+    int
+getterminaltype(name)
+    char *name;
 {
-    void ttloop();
+    int retval = -1;
+    void _gettermname();
 
     settimer(baseline);
+#if	defined(AUTHENTICATE)
+    /*
+     * Handle the Authentication option before we do anything else.
+     */
+    send_do(TELOPT_AUTHENTICATION, 1);
+    while (his_will_wont_is_changing(TELOPT_AUTHENTICATION))
+	ttloop();
+    if (his_state_is_will(TELOPT_AUTHENTICATION)) {
+	retval = auth_wait(name);
+    }
+#endif
+
+#if	defined(ENCRYPT)
+    send_will(TELOPT_ENCRYPT, 1);
+#endif
     send_do(TELOPT_TTYPE, 1);
     send_do(TELOPT_TSPEED, 1);
     send_do(TELOPT_XDISPLOC, 1);
     send_do(TELOPT_ENVIRON, 1);
-    while (his_will_wont_is_changing(TELOPT_TTYPE) ||
+    while (
+#if	defined(ENCRYPT)
+	   his_do_dont_is_changing(TELOPT_ENCRYPT) ||
+#endif
+	   his_will_wont_is_changing(TELOPT_TTYPE) ||
 	   his_will_wont_is_changing(TELOPT_TSPEED) ||
 	   his_will_wont_is_changing(TELOPT_XDISPLOC) ||
 	   his_will_wont_is_changing(TELOPT_ENVIRON)) {
 	ttloop();
     }
+#if	defined(ENCRYPT)
+    /*
+     * Wait for the negotiation of what type of encryption we can
+     * send with.  If autoencrypt is not set, this will just return.
+     */
+    if (his_state_is_will(TELOPT_ENCRYPT)) {
+	encrypt_wait();
+    }
+#endif
     if (his_state_is_will(TELOPT_TSPEED)) {
 	static char sbbuf[] = { IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
 
@@ -405,8 +506,10 @@ getterminaltype()
 	    }
 	}
     }
+    return(retval);
 }  /* end of getterminaltype */
 
+    void
 _gettermname()
 {
     /*
@@ -423,8 +526,9 @@ _gettermname()
 	ttloop();
 }
 
+    int
 terminaltypeok(s)
-char *s;
+    char *s;
 {
     char buf[1024];
 
@@ -443,6 +547,20 @@ char *s;
     return(1);
 }
 
+#ifndef	MAXHOSTNAMELEN
+#define	MAXHOSTNAMELEN 64
+#endif	/* MAXHOSTNAMELEN */
+
+char *hostname;
+char host_name[MAXHOSTNAMELEN];
+char remote_host_name[MAXHOSTNAMELEN];
+
+#ifndef	convex
+extern void telnet P((int, int));
+#else
+extern void telnet P((int, int, char *));
+#endif
+
 /*
  * Get a pty, scan input lines.
  */
@@ -452,6 +570,8 @@ doit(who)
 	char *host, *inet_ntoa();
 	int t;
 	struct hostent *hp;
+	int level;
+	char user_name[256];
 
 	/*
 	 * Find an available pty to use.
@@ -483,19 +603,34 @@ doit(who)
 		host = hp->h_name;
 	else
 		host = inet_ntoa(who->sin_addr);
+	/*
+	 * We must make a copy because Kerberos is probably going
+	 * to also do a gethost* and overwrite the static data...
+	 */
+	strncpy(remote_host_name, host, sizeof(remote_host_name)-1);
+	remote_host_name[sizeof(remote_host_name)-1] = 0;
+	host = remote_host_name;
+
+	(void) gethostname(host_name, sizeof (host_name));
+	hostname = host_name;
+
+#if	defined(AUTHENTICATE) || defined(ENCRYPT)
+	auth_encrypt_init(hostname, host, "TELNETD", 1);
+#endif
 
 	init_env();
 	/*
 	 * get terminal type.
 	 */
-	getterminaltype();
+	*user_name = 0;
+	level = getterminaltype(user_name);
 	setenv("TERM", terminaltype ? terminaltype : "network", 1);
 
 	/*
 	 * Start up the login process on the slave side of the terminal
 	 */
 #ifndef	convex
-	startslave(host);
+	startslave(host, level, user_name);
 
 	telnet(net, pty);  /* begin server processing */
 #else
@@ -504,29 +639,37 @@ doit(who)
 	/*NOTREACHED*/
 }  /* end of doit */
 
-#ifndef	MAXHOSTNAMELEN
-#define	MAXHOSTNAMELEN 64
-#endif	MAXHOSTNAMELEN
+#if	defined(CRAY2) && defined(UNICOS5) && defined(UNICOS50)
+	int
+Xterm_output(ibufp, obuf, icountp, ocount)
+	char **ibufp, *obuf;
+	int *icountp, ocount;
+{
+	int ret;
+	ret = term_output(*ibufp, obuf, *icountp, ocount);
+	*ibufp += *icountp;
+	*icountp = 0;
+	return(ret);
+}
+#define	term_output	Xterm_output
+#endif	/* defined(CRAY2) && defined(UNICOS5) && defined(UNICOS50) */
+
 /*
  * Main loop.  Select from pty and network, and
  * hand data to telnet receiver finite state machine.
  */
+	void
 #ifndef	convex
 telnet(f, p)
 #else
 telnet(f, p, host)
 #endif
-int f, p;
+	int f, p;
 #ifdef convex
-char *host;
+	char *host;
 #endif
 {
 	int on = 1;
-	char hostname[MAXHOSTNAMELEN];
-#if	defined(CRAY2) && defined(UNICOS5)
-	int termstat();
-	int interrupt(), sendbrk();
-#endif
 #define	TABBUFSIZ	512
 	char	defent[TABBUFSIZ];
 	char	defstrs[TABBUFSIZ];
@@ -535,7 +678,7 @@ char *host;
 	char *HN;
 	char *IM;
 	void netflush();
-	
+
 	/*
 	 * Initialize the slc mapping table.
 	 */
@@ -618,12 +761,9 @@ char *host;
 	 * mode, which we do not want.
 	 */
 	if (his_want_state_is_will(TELOPT_ECHO)) {
-#ifdef DIAGNOSTICS
-		if (diagnostic & TD_OPTIONS) {
-			sprintf(nfrontp, "td: simulating recv\r\n");
-			nfrontp += strlen(nfrontp);
-		}
-#endif /* DIAGNOSTICS */
+		DIAG(TD_OPTIONS,
+			{sprintf(nfrontp, "td: simulating recv\r\n");
+			 nfrontp += strlen(nfrontp);});
 		willoption(TELOPT_ECHO);
 	}
 
@@ -639,7 +779,7 @@ char *host;
 	 * Turn on packet mode
 	 */
 	(void) ioctl(p, TIOCPKT, (char *)&on);
-#ifdef	KLUDGELINEMODE
+#if	defined(LINEMODE) && defined(KLUDGELINEMODE)
 	/*
 	 * Continuing line mode support.  If client does not support
 	 * real linemode, attempt to negotiate kludge linemode by sending
@@ -647,7 +787,7 @@ char *host;
 	 */
 	if (lmodetype < REAL_LINEMODE)
 		send_do(TELOPT_TM, 1);
-#endif	/* KLUDGELINEMODE */
+#endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 
 	/*
 	 * Call telrcv() once to pick up anything received during
@@ -705,7 +845,7 @@ char *host;
 	}
 #endif
 
-#if	defined(TIOCSCTTY) && defined(CRAY)
+#if	defined(CRAY) && defined(NEWINIT) && defined(TIOCSCTTY)
 	(void) setsid();
 	ioctl(p, TIOCSCTTY, 0);
 #endif
@@ -722,7 +862,6 @@ char *host;
 	if (getenv("USER"))
 		hostinfo = 0;
 #endif
-	(void) gethostname(hostname, sizeof (hostname));
 
 	if (getent(defent, "default") == 1) {
 		char *getstr();
@@ -732,14 +871,14 @@ char *host;
 		HN = getstr("hn", &cp);
 		IM = getstr("im", &cp);
 		if (HN && *HN)
-			(void) strcpy(hostname, HN);
+			(void) strcpy(host_name, HN);
 		if (IM == 0)
 			IM = "";
 	} else {
 		IM = DEFAULT_IM;
 		HE = 0;
 	}
-	edithost(HE, hostname);
+	edithost(HE, host_name);
 	if (hostinfo && *IM)
 		putf(IM, ptyibuf2);
 
@@ -755,12 +894,9 @@ char *host;
 	localstat();
 #endif	/* LINEMODE */
 
-#ifdef DIAGNOSTICS
-	if (diagnostic & TD_REPORT) {
-		sprintf(nfrontp, "td: Entering processing loop\r\n");
-		nfrontp += strlen(nfrontp);
-	}
-#endif /* DIAGNOSTICS */
+	DIAG(TD_REPORT,
+		{sprintf(nfrontp, "td: Entering processing loop\r\n");
+		 nfrontp += strlen(nfrontp);});
 
 #ifdef	convex
 	startslave(host);
@@ -884,15 +1020,10 @@ char *host;
 			}
 			netip = netibuf;
 		    }
-#ifdef DIAGNOSTICS
-		    if (diagnostic & (TD_REPORT | TD_NETDATA)) {
-			    sprintf(nfrontp, "td: netread %d chars\r\n", ncc);
-			    nfrontp += strlen(nfrontp);
-		    }
-		    if (diagnostic & TD_NETDATA) {
-			    printdata("nd", netip, ncc);
-		    }
-#endif /* DIAGNOSTICS */
+		    DIAG((TD_REPORT | TD_NETDATA),
+			    {sprintf(nfrontp, "td: netread %d chars\r\n", ncc);
+			     nfrontp += strlen(nfrontp);});
+		    DIAG(TD_NETDATA, printdata("nd", netip, ncc));
 		}
 
 		/*
@@ -900,9 +1031,14 @@ char *host;
 		 */
 		if (FD_ISSET(p, &ibits)) {
 			pcc = read(p, ptyibuf, BUFSIZ);
-			if (pcc < 0 && errno == EWOULDBLOCK)
+			/*
+			 * On some systems, if we try to read something
+			 * off the master side before the slave side is
+			 * opened, we get EIO.
+			 */
+			if (pcc < 0 && (errno == EWOULDBLOCK || errno == EIO)) {
 				pcc = 0;
-			else {
+			} else {
 				if (pcc <= 0)
 					break;
 #if	!defined(CRAY2) || !defined(UNICOS5)
@@ -915,7 +1051,7 @@ char *host;
 					localstat();
 					pcc = 1;
 				}
-#endif	LINEMODE
+#endif	/* LINEMODE */
 				if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
 					netclear();	/* clear buffer back */
 #ifndef	NO_URGENT
@@ -979,7 +1115,7 @@ char *host;
 		 * If chars were left over from the terminal driver,
 		 * note their existence.
 		 */
-		 if (!uselinemode && unpcc) {
+		if (!uselinemode && unpcc) {
 			pcc = unpcc;
 			unpcc = 0;
 			ptyip = unptyip;
@@ -993,7 +1129,7 @@ char *host;
 		if (FD_ISSET(p, &obits) && (pfrontp - pbackp) > 0)
 			ptyflush();
 	}
-	cleanup();
+	cleanup(0);
 }  /* end of telnet */
 	
 #ifndef	TCSIG
@@ -1007,6 +1143,7 @@ char *host;
  * If it is in raw mode, just write NULL;
  * otherwise, write intr char.
  */
+	void
 interrupt()
 {
 	ptyflush();	/* half-hearted */
@@ -1025,6 +1162,7 @@ interrupt()
  * If it is in raw mode, just write NULL;
  * otherwise, write quit char.
  */
+	void
 sendbrk()
 {
 	ptyflush();	/* half-hearted */
@@ -1037,6 +1175,7 @@ sendbrk()
 #endif	/* TCSIG */
 }
 
+	void
 sendsusp()
 {
 #ifdef	SIGTSTP
@@ -1054,6 +1193,7 @@ sendsusp()
  * When we get an AYT, if ^T is enabled, use that.  Otherwise,
  * just send back "[Yes]".
  */
+	void
 recv_ayt()
 {
 #if	defined(SIGINFO) && defined(TCSIG)
@@ -1066,15 +1206,14 @@ recv_ayt()
 	nfrontp += 9;
 }
 
+	void
 doeof()
 {
-#if	defined(LINEMODE) && defined(USE_TERMIO) && (VEOF == VMIN)
-	extern char oldeofc;
-#endif
 	init_termbuf();
 
 #if	defined(LINEMODE) && defined(USE_TERMIO) && (VEOF == VMIN)
 	if (!tty_isediting()) {
+		extern char oldeofc;
 		*pfrontp++ = oldeofc;
 		return;
 	}

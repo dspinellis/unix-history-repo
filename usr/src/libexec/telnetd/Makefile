@@ -1,12 +1,20 @@
-#	@(#)Makefile	5.12 (Berkeley) %G%
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh
+#
+#	@(#)Makefile	5.13 (Berkeley) %G%
+#
 
 PROG=	telnetd
-CFLAGS+=-DNEED_GETTOS -DLINEMODE -DKLUDGELINEMODE -DUSE_TERMIO -DDIAGNOSTICS
-SRCS=	gettytab.c global.c slc.c state.c sys_term.c telnetd.c \
+CFLAGS+=-DLINEMODE -DKLUDGELINEMODE -DUSE_TERMIO -DDIAGNOSTICS
+CFLAGS+=-DAUTHENTICATE -DENCRYPT -I/usr/src/lib
+SRCS=	authenc.c global.c slc.c state.c sys_term.c telnetd.c \
 	termstat.c utility.c
 DPADD=	${LIBUTIL} ${LIBTERM}
-LDADD=	-lutil -ltermcap
+LDADD=	-lutil -ltermcap -ltelnet
+LDADD+=	-lkrb -ldes
 MAN8=	telnetd.0
-.PATH:	${.CURDIR}/../getty
 
 .include <bsd.prog.mk>

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ext.h	5.6 (Berkeley) %G%
+ *	@(#)ext.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,12 @@ extern int	diagnostic;	/* telnet diagnostic capabilities */
 #ifdef BFTPDAEMON
 extern int	bftpd;		/* behave as bftp daemon */
 #endif /* BFTPDAEMON */
+#if	defined(SecurID)
+extern int	require_SecurID;
+#endif
+#if	defined(AUTHENTICATE)
+extern int	auth_level;
+#endif
 
 extern slcfun	slctab[NSLC + 1];	/* slc mapping table */
 
@@ -56,10 +62,110 @@ extern int	pty, net;
 extern char	*line;
 extern int	SYNCHing;		/* we are in TELNET SYNCH mode */
 
-#ifdef DIAGNOSTICS
-extern void printoption();
-extern void printdata();
+#ifndef	P
+# ifdef	__STDC__
+#  define P(x)	x
+# else
+#  define P(x)	()
+# endif
 #endif
+
+extern void
+	_termstat P((void)),
+	add_slc P((int, int, int)),
+	check_slc P((void)),
+	change_slc P((int, int, int)),
+	cleanup P((int)),
+	clientstat P((int, int, int)),
+	copy_termbuf P((char *, int)),
+	deferslc P((void)),
+	defer_terminit P((void)),
+	do_opt_slc P((unsigned char *, int)),
+	doeof P((void)),
+	dooption P((int)),
+	dontoption P((int)),
+	edithost P((char *, char *)),
+	fatal P((int, char *)),
+	fatalperror P((int, char *)),
+	get_slc_defaults P((void)),
+	init_env P((void)),
+	init_termbuf P((void)),
+	interrupt P((void)),
+	localstat P((void)),
+	netclear P((void)),
+	netflush P((void)),
+#ifdef DIAGNOSTICS
+	printoption P((char *, int)),
+	printdata P((char *, char *, int)),
+	printsub P((int, unsigned char *, int)),
+#endif
+	ptyflush P((void)),
+	putchr P((int)),
+	putf P((char *, char *)),
+	recv_ayt P((void)),
+	send_do P((int, int)),
+	send_dont P((int, int)),
+	send_slc P((void)),
+	send_status P((void)),
+	send_will P((int, int)),
+	send_wont P((int, int)),
+	sendbrk P((void)),
+	sendsusp P((void)),
+	set_termbuf P((void)),
+	start_login P((char *, int, char *)),
+	start_slc P((int)),
+#if	defined(AUTHENTICATE)
+	start_slave P((char *)),
+#else
+	start_slave P((char *, int, char *)),
+#endif
+	suboption P((void)),
+	telrcv P((void)),
+	ttloop P((void)),
+	tty_binaryin P((int)),
+	tty_binaryout P((int));
+
+extern int
+	end_slc P((unsigned char **)),
+	getnpty P((void)),
+	getpty P((void)),
+	login_tty P((int)),
+	spcset P((int, cc_t *, cc_t **)),
+	stilloob P((int)),
+	terminit P((void)),
+	termstat P((void)),
+	tty_flowmode P((void)),
+	tty_isbinaryin P((void)),
+	tty_isbinaryout P((void)),
+	tty_iscrnl P((void)),
+	tty_isecho P((void)),
+	tty_isediting P((void)),
+	tty_islitecho P((void)),
+	tty_isnewmap P((void)),
+	tty_israw P((void)),
+	tty_issofttab P((void)),
+	tty_istrapsig P((void)),
+	tty_linemode P((void));
+
+extern void
+	tty_rspeed P((int)),
+	tty_setecho P((int)),
+	tty_setedit P((int)),
+	tty_setlinemode P((int)),
+	tty_setlitecho P((int)),
+	tty_setsig P((int)),
+	tty_setsofttab P((int)),
+	tty_tspeed P((int)),
+	willoption P((int)),
+	wontoption P((int)),
+	writenet P((unsigned char *, int));
+
+#if	defined(ENCRYPT)
+extern void	(*encrypt_output) P((unsigned char *, int));
+extern int	(*decrypt_input) P((int));
+extern char	*nclearto;
+#endif
+
 
 /*
  * The following are some clocks used to decide how to interpret

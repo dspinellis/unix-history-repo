@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.9 (Berkeley) %G%
+ *	@(#)defs.h	5.10 (Berkeley) %G%
  */
 
 /*
@@ -21,8 +21,10 @@
 # define SYSV_TERMIO
 # define LINEMODE
 # define KLUDGELINEMODE
-# define NO_GETTYTAB
 # define DIAGNOSTICS
+# if defined(UNICOS50) && !defined(UNICOS5)
+#  define UNICOS5
+# endif
 # if !defined(UNICOS5)
 #  define BFTPDAEMON
 #  define HAS_IP_TOS
@@ -35,6 +37,7 @@
 #if defined(PRINTOPTIONS) && defined(DIAGNOSTICS)
 #define TELOPTS
 #define TELCMDS
+#define	SLC_NAMES
 #endif
 
 #if	defined(SYSV_TERMIO) && !defined(USE_TERMIO)
@@ -45,6 +48,7 @@
 #ifndef	CRAY
 #include <sys/wait.h>
 #endif	/* CRAY */
+#include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -59,6 +63,9 @@
 #include <arpa/telnet.h>
 
 #include <stdio.h>
+#ifdef	__STDC__
+#include <stdlib.h>
+#endif
 #include <signal.h>
 #include <errno.h>
 #include <netdb.h>
@@ -89,6 +96,10 @@
 typedef unsigned char cc_t;
 #endif
 
+#ifdef	__STDC__
+#include <unistd.h>
+#endif
+
 #ifndef _POSIX_VDISABLE
 # ifdef VDISABLE
 #  define _POSIX_VDISABLE VDISABLE
@@ -99,7 +110,6 @@ typedef unsigned char cc_t;
 
 
 #ifdef	CRAY
-#include <sys/fcntl.h>
 # ifdef	CRAY1
 # include <sys/pty.h>
 #  ifndef FD_ZERO

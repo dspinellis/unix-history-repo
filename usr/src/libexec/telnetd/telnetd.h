@@ -4,12 +4,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnetd.h	5.2 (Berkeley) %G%
+ *	@(#)telnetd.h	5.3 (Berkeley) %G%
  */
 
 
 #include "defs.h"
 #include "ext.h"
+
+#ifdef	DIAGNOSTICS
+#define	DIAG(a,b)	if (diagnostic & (a)) b
+#else
+#define	DIAG(a,b)
+#endif
 
 /* other external variables */
 extern	char **environ;
