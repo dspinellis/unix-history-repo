@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: hpux_compat.c 1.55 92/12/26$
+ * from: Utah $Hdr: hpux_compat.c 1.59 93/06/15$
  *
- *	@(#)hpux_compat.c	8.1 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -243,42 +243,6 @@ hpuxwaitpid(p, uap, retval)
 }
 
 /*
- * Must remap some bits in the mode mask.
- * O_CREAT, O_TRUNC, and O_EXCL must be remapped,
- * O_SYNCIO (0100000) is removed entirely.
- */
-struct hpuxopen_args {
-	char	*fname;
-	int	mode;
-	int	crtmode;
-};
-hpuxopen(p, uap, retval)
-	struct proc *p;
-	register struct hpuxopen_args *uap;
-	int *retval;
-{
-	int mode;
-
-	mode = uap->mode;
-	uap->mode &= ~(HPUXFSYNCIO|HPUXFEXCL|HPUXFTRUNC|HPUXFCREAT);
-	if (mode & HPUXFCREAT) {
-		/*
-		 * simulate the pre-NFS behavior that opening a
-		 * file for READ+CREATE ignores the CREATE (unless
-		 * EXCL is set in which case we will return the
-		 * proper error).
-		 */
-		if ((mode & HPUXFEXCL) || (FFLAGS(mode) & FWRITE))
-			uap->mode |= O_CREAT;
-	}
-	if (mode & HPUXFTRUNC)
-		uap->mode |= O_TRUNC;
-	if (mode & HPUXFEXCL)
-		uap->mode |= O_EXCL;
-	return (open(p, uap, retval));
-}
-
-/*
  * Old creat system call.
  */
 struct hpuxcreat_args {
@@ -302,10 +266,61 @@ hpuxcreat(p, uap, retval)
 	return (open(p, &openuap, retval));
 }
 
-/* XXX */
+/*
+ * XXX extensions to the fd_ofileflags flags.
+ * Hate to put this there, but they do need to be per-file.
+ */
+#define UF_NONBLOCK_ON	0x10
 #define	UF_FNDELAY_ON	0x20
 #define	UF_FIONBIO_ON	0x40
-/* XXX */
+
+/*
+ * Must remap some bits in the mode mask.
+ * O_CREAT, O_TRUNC, and O_EXCL must be remapped,
+ * O_NONBLOCK is remapped and remembered,
+ * O_FNDELAY is remembered,
+ * O_SYNCIO is removed entirely.
+ */
+struct hpuxopen_args {
+	char	*fname;
+	int	mode;
+	int	crtmode;
+};
+hpuxopen(p, uap, retval)
+	struct proc *p;
+	register struct hpuxopen_args *uap;
+	int *retval;
+{
+	int mode, error;
+
+	mode = uap->mode;
+	uap->mode &=
+		~(HPUXNONBLOCK|HPUXFSYNCIO|HPUXFEXCL|HPUXFTRUNC|HPUXFCREAT);
+	if (mode & HPUXFCREAT) {
+		/*
+		 * simulate the pre-NFS behavior that opening a
+		 * file for READ+CREATE ignores the CREATE (unless
+		 * EXCL is set in which case we will return the
+		 * proper error).
+		 */
+		if ((mode & HPUXFEXCL) || (FFLAGS(mode) & FWRITE))
+			uap->mode |= O_CREAT;
+	}
+	if (mode & HPUXFTRUNC)
+		uap->mode |= O_TRUNC;
+	if (mode & HPUXFEXCL)
+		uap->mode |= O_EXCL;
+	if (mode & HPUXNONBLOCK)
+		uap->mode |= O_NDELAY;
+	error = open(p, uap, retval);
+	/*
+	 * Record non-blocking mode for fcntl, read, write, etc.
+	 */
+	if (error == 0 && (uap->mode & O_NDELAY))
+		p->p_fd->fd_ofileflags[*retval] |=
+			(mode & HPUXNONBLOCK) ? UF_NONBLOCK_ON : UF_FNDELAY_ON;
+	return (error);
+}
 
 struct hpuxfcntl_args {
 	int	fdes;
@@ -328,14 +343,17 @@ hpuxfcntl(p, uap, retval)
 	}
 	switch (uap->cmd) {
 	case F_SETFL:
+		if (uap->arg & HPUXNONBLOCK)
+			*fp |= UF_NONBLOCK_ON;
+		else
+			*fp &= ~UF_NONBLOCK_ON;
 		if (uap->arg & FNONBLOCK)
 			*fp |= UF_FNDELAY_ON;
-		else {
+		else
 			*fp &= ~UF_FNDELAY_ON;
-			if (*fp & UF_FIONBIO_ON)
-				uap->arg |= FNONBLOCK;
-		}
-		uap->arg &= ~(HPUXFSYNCIO|HPUXFREMOTE|FUSECACHE);
+		if (*fp & (UF_NONBLOCK_ON|UF_FNDELAY_ON|UF_FIONBIO_ON))
+			uap->arg |= FNONBLOCK;
+		uap->arg &= ~(HPUXNONBLOCK|HPUXFSYNCIO|HPUXFREMOTE);
 		break;
 	case F_GETFL:
 	case F_DUPFD:
@@ -348,9 +366,13 @@ hpuxfcntl(p, uap, retval)
 	error = fcntl(p, uap, retval);
 	if (error == 0 && uap->cmd == F_GETFL) {
 		mode = *retval;
-		*retval &= ~(O_CREAT|O_TRUNC|O_EXCL|FUSECACHE);
-		if ((mode & FNONBLOCK) && (*fp & UF_FNDELAY_ON) == 0)
-			*retval &= ~FNONBLOCK;
+		*retval &= ~(O_CREAT|O_TRUNC|O_EXCL);
+		if (mode & FNONBLOCK) {
+			if (*fp & UF_NONBLOCK_ON)
+				*retval |= HPUXNONBLOCK;
+			if ((*fp & UF_FNDELAY_ON) == 0)
+				*retval &= ~FNONBLOCK;
+		}
 		if (mode & O_CREAT)
 			*retval |= HPUXFCREAT;
 		if (mode & O_TRUNC)
@@ -362,88 +384,102 @@ hpuxfcntl(p, uap, retval)
 }
 
 /*
- * Read and write should return a 0 count when an operation
- * on a VNODE would block, not an error.
+ * Read and write calls.  Same as BSD except for non-blocking behavior.
+ * There are three types of non-blocking reads/writes in HP-UX checked
+ * in the following order:
  *
- * In 6.2 and 6.5 sockets appear to return EWOULDBLOCK.
- * In 7.0 the behavior for sockets depends on whether FNONBLOCK is in effect.
+ *	O_NONBLOCK: return -1 and errno == EAGAIN
+ *	O_NDELAY:   return 0
+ *	FIOSNBIO:   return -1 and errno == EWOULDBLOCK
  */
-struct hpuxread_args {
-	int	fd;
+struct hpuxrw_args {
+	int fd;
 };
+
 hpuxread(p, uap, retval)
 	struct proc *p;
-	struct hpuxread_args *uap;
+	struct hpuxrw_args *uap;
 	int *retval;
 {
 	int error;
 
 	error = read(p, uap, retval);
-	if (error == EWOULDBLOCK &&
-	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
-	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
-		error = 0;
-		*retval = 0;
+	if (error == EWOULDBLOCK) {
+		char *fp = &p->p_fd->fd_ofileflags[uap->fd];
+
+		if (*fp & UF_NONBLOCK_ON) {
+			*retval = -1;
+			error = EAGAIN;
+		} else if (*fp & UF_FNDELAY_ON) {
+			*retval = 0;
+			error = 0;
+		}
 	}
 	return (error);
 }
 
-struct hpuxwrite_args {
-	int	fd;
-};
 hpuxwrite(p, uap, retval)
 	struct proc *p;
-	struct hpuxwrite_args *uap;
+	struct hpuxrw_args *uap;
 	int *retval;
 {
 	int error;
 
 	error = write(p, uap, retval);
-	if (error == EWOULDBLOCK &&
-	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
-	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
-		error = 0;
-		*retval = 0;
+	if (error == EWOULDBLOCK) {
+		char *fp = &p->p_fd->fd_ofileflags[uap->fd];
+
+		if (*fp & UF_NONBLOCK_ON) {
+			*retval = -1;
+			error = EAGAIN;
+		} else if (*fp & UF_FNDELAY_ON) {
+			*retval = 0;
+			error = 0;
+		}
 	}
 	return (error);
 }
 
-struct hpuxreadv_args {
-	int	fd;
-};
 hpuxreadv(p, uap, retval)
 	struct proc *p;
-	struct hpuxreadv_args *uap;
+	struct hpuxrw_args *uap;
 	int *retval;
 {
 	int error;
 
 	error = readv(p, uap, retval);
-	if (error == EWOULDBLOCK &&
-	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
-	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
-		error = 0;
-		*retval = 0;
+	if (error == EWOULDBLOCK) {
+		char *fp = &p->p_fd->fd_ofileflags[uap->fd];
+
+		if (*fp & UF_NONBLOCK_ON) {
+			*retval = -1;
+			error = EAGAIN;
+		} else if (*fp & UF_FNDELAY_ON) {
+			*retval = 0;
+			error = 0;
+		}
 	}
 	return (error);
 }
 
-struct hpuxwritev_args {
-	int	fd;
-};
 hpuxwritev(p, uap, retval)
 	struct proc *p;
-	struct hpuxwritev_args *uap;
+	struct hpuxrw_args *uap;
 	int *retval;
 {
 	int error;
 
 	error = writev(p, uap, retval);
-	if (error == EWOULDBLOCK &&
-	    (p->p_fd->fd_ofiles[uap->fd]->f_type == DTYPE_VNODE ||
-	     p->p_fd->fd_ofileflags[uap->fd] & UF_FNDELAY_ON)) {
-		error = 0;
-		*retval = 0;
+	if (error == EWOULDBLOCK) {
+		char *fp = &p->p_fd->fd_ofileflags[uap->fd];
+
+		if (*fp & UF_NONBLOCK_ON) {
+			*retval = -1;
+			error = EAGAIN;
+		} else if (*fp & UF_FNDELAY_ON) {
+			*retval = 0;
+			error = 0;
+		}
 	}
 	return (error);
 }
@@ -1207,10 +1243,10 @@ hpuxioctl(p, uap, retval)
 		else
 			*ofp &= ~UF_FIONBIO_ON;
 		/*
-		 * Only set/clear if FNONBLOCK not in effect
+		 * Only set/clear if O_NONBLOCK/FNDELAY not in effect
 		 */
-		if ((*ofp & UF_FNDELAY_ON) == 0) {
-			tmp = fp->f_flag & FNONBLOCK;
+		if ((*ofp & (UF_NONBLOCK_ON|UF_FNDELAY_ON)) == 0) {
+			tmp = *ofp & UF_FIONBIO_ON;
 			error = (*fp->f_ops->fo_ioctl)(fp, FIONBIO,
 						       (caddr_t)&tmp, p);
 		}
