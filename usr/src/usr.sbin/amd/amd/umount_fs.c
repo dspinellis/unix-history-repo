@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umount_fs.c	5.4 (Berkeley) %G%
+ *	@(#)umount_fs.c	5.5 (Berkeley) %G%
  *
  * $Id: umount_fs.c,v 5.2.2.1 1992/02/09 15:09:10 jsp beta $
  *
@@ -19,8 +19,6 @@
 
 #ifdef NEED_UMOUNT_BSD
 
-#include <sys/mount.h>		/* For MNT_NOFORCE */
-
 int umount_fs P((char *fs_name));
 int umount_fs(fs_name)
 char *fs_name;
@@ -28,7 +26,7 @@ char *fs_name;
 	int error;
 
 eintr:
-	error = unmount(fs_name, MNT_NOFORCE);
+	error = unmount(fs_name, 0);
 	if (error < 0)
 		error = errno;
 
