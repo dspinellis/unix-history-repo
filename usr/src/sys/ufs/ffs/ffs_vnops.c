@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.25 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -237,7 +237,7 @@ ufs_close(vp, fflag, cred)
 {
 	register struct inode *ip = VTOI(vp);
 
-	if (vp->v_count > 1 && !(ip->i_flag & ILOCKED))
+	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
 	return (0);
 }
@@ -478,12 +478,12 @@ ufs_read(vp, uio, ioflag, cred)
 		size = blksize(fs, ip, lbn);
 		rablock = lbn + 1;
 		rasize = blksize(fs, ip, rablock);
-		if (ip->i_lastr + 1 == lbn)
+		if (vp->v_lastr + 1 == lbn)
 			error = breada(ITOV(ip), lbn, size, rablock, rasize,
 				NOCRED, &bp);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
-		ip->i_lastr = lbn;
+		vp->v_lastr = lbn;
 		n = MIN(n, size - bp->b_resid);
 		if (error) {
 			brelse(bp);
@@ -1396,7 +1396,7 @@ ufsspec_close(vp, fflag, cred)
 {
 	register struct inode *ip = VTOI(vp);
 
-	if (vp->v_count > 1 && !(ip->i_flag & ILOCKED))
+	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED))
 		ITIMES(ip, &time, &time);
 	return (spec_close(vp, fflag, cred));
 }
