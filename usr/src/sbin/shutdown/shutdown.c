@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.15 (Berkeley) 83/01/16";
+static	char *sccsid = "@(#)shutdown.c	4.16 (Berkeley) 83/04/29";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -136,6 +136,7 @@ main(argc,argv)
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 #endif
+	signal(SIGTTOU, SIG_IGN);
 	signal(SIGTERM, finish);
 	signal(SIGALRM, do_nothing);
 	nice(-20);
