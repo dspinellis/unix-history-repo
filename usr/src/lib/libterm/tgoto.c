@@ -16,10 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tgoto.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tgoto.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#define	CTRL(c)	('c' & 037)
+#define	CTRL(c)	((c) & 037)
 
 #define MAXRETURNSIZE 64
 
@@ -142,7 +142,7 @@ casedot:
 			 * because some terminals use ^I for other things,
 			 * like nondestructive space.
 			 */
-			if (which == 0 || which == CTRL(d) || /* which == '\t' || */ which == '\n') {
+			if (which == 0 || which == CTRL('d') || /* which == '\t' || */ which == '\n') {
 				if (oncol || UP) /* Assumption: backspace works */
 					/*
 					 * Loop needed because newline happens
