@@ -579,13 +579,15 @@ TerminalNewMode(f)
 
 	if (f & MODE_INBIN)
 		lmode |= LPASS8;
-	else
+	else {
 		lmode &= ~LPASS8;
+		lmode |= olmode & LPASS8;
+	}
 #else
 	if (f & MODE_INBIN)
 		tmp_tc.c_iflag &= ~ISTRIP;
 	else
-		tmp_tc.c_iflag |= ISTRIP;
+		tmp_tc.c_iflag |= old_tc.c_iflag & ISTRIP;
 	if (f & MODE_OUTBIN) {
 		tmp_tc.c_cflag &= ~(CSIZE|PARENB);
 		tmp_tc.c_cflag |= CS8;
