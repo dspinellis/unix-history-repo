@@ -6,7 +6,7 @@
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
 PROG=	csh
-CFLAGS+=-fcombine-regs -fstrength-reduce -DFILEC -DNLS -DSHORT_STRINGS -I.
+CFLAGS+=-fstrength-reduce -DFILEC -DNLS -DSHORT_STRINGS -I.
 SRCS=	alloc.c char.c const.c csh.c dir.c dol.c err.c exec.c exp.c file.c \
 	func.c glob.c hist.c init.c lex.c misc.c parse.c print.c printf.c \
 	proc.c sem.c set.c str.c time.c
