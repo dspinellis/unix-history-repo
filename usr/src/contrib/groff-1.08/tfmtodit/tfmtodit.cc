@@ -48,6 +48,7 @@ When it's true, the left_correction and subscript_correction should
 both be zero. */
 
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
