@@ -1,0 +1,36 @@
+.nr VS 24
+.nr PS 12
+.ce 2
+.ft bB
+.nr VS 24
+.nr PS 12
+LETTER OF AUTHORIZATION
+.ft
+(Tahoe release)
+.sp 2
+.LP
+I authorize _________________________________________, a division
+of ___________________________________, to receive a copy of the tahoe
+release of 4.3BSD
+under the terms and conditions of the revised Berkeley License
+Agreement (6/83) and Addendum Number One 
+and Addendum Number Two between _____________________________________
+and the Regents of the University of California.  I warrant that 
+__________________________________________________ will abide by said
+Agreement and accompanying addenda,
+and that I have the authority to make this authorization on
+behalf of ___________________________________________.
+.LP
+Please send a copy of the tahoe release of 4.3BSD to:         
+.in 2i 
+\l'3i'
+\l'3i'
+\l'3i'
+\l'3i'
+.sp
+.nf
+.in 0
+Signed:
+By\l'2.75i'
+Title\l'2.65i'
+Date\l'2.65i'

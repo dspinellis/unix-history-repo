@@ -1,0 +1,128 @@
+#print
+Several of the programs we have been using as examples,
+such as "grep" and "wc", have the property that when
+you use file names with them, the output includes
+the file names.  For example, if you say
+  grep pattern file1 file2 file3
+each line that contains "pattern" is printed out
+with "file1:" or whatever in front of it.
+
+Sometimes you would love to get rid of that file name, since
+you don't care a bit where the line came from,
+and the file name clutters up the output.
+One thing is to use "cat" to collect the files, and
+pipe into "grep"; in that case "grep" doesn't mention
+any file name because there isn't one.
+
+In this directory there are several files whose names end 
+in ".x".  Use a pipeline of "cat" and "grep" to print all the lines
+that contain the letters "ion", without any identifying filenames.
+Type "ready" when you're done.
+#create 0x
+ion, but this one is in the wrong file!
+#create 1.x
+o
+o'
+oaf
+oafish
+oafishly
+oafishness
+oak
+oaken
+oaks
+oakum
+oar
+oared
+oarfish
+oarlock
+oarsman
+oases
+oasis
+oat
+oatcake
+oaten
+oath
+oaths
+oatmeal
+obbligati
+obbligato
+obbligatos
+obconic
+obcordate
+obduracy
+obdurate
+#create 2.x
+obdurately
+obdurateness
+obeah
+obedience
+obedient
+obediently
+obeisance
+obeisant
+obeli
+obelisk
+obelize
+obelus
+obese
+obesity
+obey
+obeyer
+obfuscate
+obfuscation
+obfuscatory
+obi
+obit
+obituary
+object
+objectification
+objectify
+objection
+objectionable
+objectionableness
+objectionably
+objective
+#create 3.x
+objectively
+objectiveness
+objectivism
+objectivist
+objectivistic
+objectivity
+objectless
+objector
+objurgate
+objurgation
+objurgatory
+oblanceolate
+oblast
+oblate
+oblate
+oblateness
+oblation
+obligate
+obligately
+obligation
+obligatorily
+obligatory
+oblige
+obligee
+obliger
+obliging
+obligingly
+obligingness
+obligor
+oblique
+obliquely
+obliqueness
+obliquity
+obliterate
+#copyout
+#user
+#uncopyout
+grep ion <.ocopy >X1
+cat *.x | grep ion >X2
+#cmp X1 X2
+#log
+#next
+6.1c

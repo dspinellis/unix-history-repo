@@ -1,0 +1,55 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)free.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FREE 3
+.Os
+.Sh NAME
+.Nm free
+.Nd free up memory allocated with malloc, calloc or realloc
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft void
+.Fn free "void *ptr"
+.Sh DESCRIPTION
+The
+.Fn free
+function causes the space pointed to by
+.Fa ptr
+to be deallocated, that is, made available
+for further allocation.
+If
+.Fa ptr
+is a null pointer, no action occurs.
+Otherwise, if the argument does not match a pointer earlier
+returned by the
+.Xr calloc ,
+.Xr malloc ,
+or
+.Xr realloc
+function, or if the space has been deallocated by a call to
+.Fn free
+or
+.Xr realloc ,
+general havoc may occur.
+.Sh RETURN VALUES
+The
+.Fn free
+function returns no value.
+.Sh SEE ALSO
+.Xr calloc 3 ,
+.Xr malloc 3 ,
+.Xr realloc 3
+.Sh STANDARDS
+The
+.Fn free
+function conforms to
+.St -ansiC .

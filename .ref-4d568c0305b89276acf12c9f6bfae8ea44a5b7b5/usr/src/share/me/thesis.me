@@ -1,0 +1,27 @@
+.nr _0 \n(c.
+.\" Copyright (c) 1988, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)thesis.me	8.1 (Berkeley) %G%
+.\"
+.\"	%beginstrip%
+.\"
+.\"  Setup for thesis.
+.\"	This file should be modified to keep up with the standard
+.\"	for a doctoral thesis at Berkeley.  Other macros which may
+.\"	be useful for a thesis are defined here.
+.\"
+.nr tf 1			\" set titles in Roman
+.he '''%'
+.if n .if \n(_o \
+.	po 1.5i
+.if t .po 1.125i		\" + .5 inch (off 8i paper roll) = 1.5i
+.ll 5.75i			\" allow 1/4 inch fudge
+.if n .if 1n=0.1i \
+.	ll 5.8i			\" make it even character amount
+.m1 1i
+.nr ?t 1
+.ls 2
+.nr c. \n(_0

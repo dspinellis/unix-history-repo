@@ -1,0 +1,51 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)atexit.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATEXIT 3
+.Os
+.Sh NAME
+.Nm atexit
+.Nd register a function to be called on exit
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft int
+.Fn atexit "void (*function)(void)"
+.Sh DESCRIPTION
+The
+.Fn atexit
+function
+registers the given
+.Ar function
+to be called at program exit, whether via
+.Xr exit 3
+or via return from the program's
+.Em main .
+Functions so registered are called in reverse order;
+no arguments are passed.
+At least 32 functions can always be registered,
+and more are allowed as long as sufficient memory can be allocated.
+.Sh RETURN VALUES
+.Rv -std atexit
+.Sh ERRORS
+.Bl -tag -width [ENOMEM]
+.It Bq Er ENOMEM
+No memory was available to add the function to the list.
+The existing list of functions is unmodified.
+.El
+.Sh SEE ALSO
+.Xr exit 3
+.Sh STANDARDS
+The
+.Fn atexit
+function
+conforms to
+.St -ansiC .

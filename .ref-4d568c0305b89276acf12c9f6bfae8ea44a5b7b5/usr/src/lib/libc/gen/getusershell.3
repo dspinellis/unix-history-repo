@@ -1,0 +1,71 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getusershell.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETUSERSHELL 3
+.Os BSD 4.3
+.Sh NAME
+.Nm getusershell ,
+.Nm setusershell ,
+.Nm endusershell
+.Nd get legal user shells
+.Sh SYNOPSIS
+.Ft char *
+.Fn getusershell void
+.Ft void
+.Fn setusershell void
+.Ft void
+.Fn endusershell void
+.Sh DESCRIPTION
+The
+.Fn getusershell
+function
+returns a pointer to a legal user shell as defined by the
+system manager in the file 
+.Pa /etc/shells .
+If 
+.Pa /etc/shells
+is unreadable or does not exist,
+.Fn getusershell
+behaves as if
+.Pa /bin/sh
+and
+.Pa /bin/csh
+were listed in the file.
+.Pp
+The
+.Fn getusershell
+function
+reads the next
+line (opening the file if necessary);
+.Fn setusershell
+rewinds the file;
+.Fn endusershell
+closes it.
+.Sh FILES
+.Bl -tag -width /etc/shells -compact
+.It Pa /etc/shells
+.El
+.Sh DIAGNOSTICS
+The routine
+.Fn getusershell
+returns a null pointer (0) on
+.Dv EOF .
+.Sh SEE ALSO
+.Xr shells 5
+.Sh HISTORY
+The
+.Fn getusershell
+function appeared in 
+.Bx 4.3 .
+.Sh BUGS
+The
+.Fn getusershell
+function leaves its result in an internal static object and returns
+a pointer to that object. Subsequent calls to
+.Fn getusershell
+will modify the same object.

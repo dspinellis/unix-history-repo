@@ -1,0 +1,51 @@
+.\" Copyright (c) 1993 Jan-Simon Pendry.
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)fsinfo.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FSINFO 8
+.Os
+.Sh NAME
+.Nm fsinfo
+.Nd co-ordinate site-wide filesystem information
+.Sh SYNOPSIS
+.Nm \&fsinfo
+.Op Fl v
+.Op Fl a Ar autodir
+.Op Fl b Ar bootparams
+.Op Fl d Ar dumpsets
+.Op Fl e Ar exports
+.Op Fl f Ar fstabs
+.Op Fl h Ar hostname
+.Op Fl m Ar automounts
+.Op Fl I Ar dir
+.Op Fl D Ar string[=string]]
+.Op Fl U Ar string[=string]]
+.Ar config ...
+.Sh DESCRIPTION
+The
+.Nm fsinfo
+utility takes a set of system configuration information, and generates
+a co-ordinated set of
+.Xr amd ,
+.Xr mount
+and
+.Xr mountd
+configuration files.
+.Pp
+The
+.Nm fsinfo
+command is fully described in the document
+.%T "Amd - The 4.4BSD Automounter"
+.Sh "SEE ALSO"
+.Xr amd 8 ,
+.Xr mount 8 ,
+.Xr mountd 8 .
+.Sh HISTORY
+The
+.Nm fsinfo
+command first appeared in 4.4BSD.

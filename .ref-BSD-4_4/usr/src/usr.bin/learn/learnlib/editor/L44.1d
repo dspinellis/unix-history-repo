@@ -1,0 +1,54 @@
+#print
+In file "locs" is a list of Bell Labs locations.
+Bring it up to date by
+ a) replace "Raritan River" by "Piscataway"
+ b) delete "Denville".
+ c) insert "Atlanta".
+ d) spell "Merrimack Valley" correctly.
+#create Ref
+Allentown
+Atlanta
+Centennial Park
+Chester
+Columbus
+Crawford Hill
+Denver
+Grand Forks
+Guilford Center
+Holmdel
+Indianapolis
+Indian Hill
+Kwajalein
+Madison
+Merrimack Valley
+Murray Hill
+Piscataway
+Reading
+Warren
+Whippany
+#create locs
+Allentown
+Centennial Park
+Chester
+Columbus
+Crawford Hill
+Denver
+Denville
+Grand Forks
+Guilford Center
+Holmdel
+Indianapolis
+Indian Hill
+Kwajalein
+Madison
+Merimack Valley
+Murray Hill
+Raritan River
+Reading
+Warren
+Whippany
+#user
+#cmp locs Ref
+#log
+#next
+44.1e

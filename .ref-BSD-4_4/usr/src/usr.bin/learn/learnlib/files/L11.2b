@@ -1,0 +1,26 @@
+#print
+Contrast 
+ cp old new
+with 
+ mv old new
+as commands; both cause "new" to appear,
+but "cp" does not remove "old".
+Both, by the way, destroy anything
+that happened to be around named "new".
+There is a file in this directory
+whose name ends in "x".  Use "ls"
+with the "*x" construction to find its name;
+then copy it to file "new", and type "ready".
+#create new
+old new
+#create pix
+new new
+#create xip
+nothing
+#user
+#cmp pix new
+#log
+#next
+12.1a 10
+12.2a 5
+12.3a 2

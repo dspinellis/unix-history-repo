@@ -1,0 +1,71 @@
+.\"	@(#)Upgrade.final	1.1 (Berkeley) %G%
+.\" use -ms
+.\"
+.so HEADERS
+.FH
+.sp .75i
+.tl '''June 1, 1993'
+.LP
+Dear 4.4BSD-Alpha Site:
+.sp
+.PP
+We are happy to announce that we have completed 4.4BSD.
+The purpose of this letter is to notify sites that purchased
+the upgrade of 4.4BSD-Alpha to 4.4BSD that we are now ready to
+ship you a 4.4BSD distribution.
+.PP
+This distribution is intended to be used on production systems;
+it has been run extensively at several test sites and has
+proven to be stable and reliable.
+However, because of the shutdown of the CSRG,
+there will not be anyone available at Berkeley to assist
+with problems, so it should not be used by sites without enough local
+expertise to find and fix any problems that are encountered.
+.PP
+The code in this distribution may be redistributed and used
+in released products provided that you abide by the due credit
+requirements listed in your license agreement.
+We have attempted to make the system as compliant with the
+POSIX 1003.1 and 1003.2 standards as was possible at the time
+of its release.
+We have not been able to run it through any of the
+verification test suites, thus,
+you should not claim conformance with either standard without
+first validing the code.
+.PP
+The distribution is available on one 6250bpi 1/2'' 9-track tape
+or one 8mm Exabyte cassette only.
+The distribution contains complete source
+as well as binaries for one of the following three architectures:
+.IP \(bu
+HP 9000/300 68000-based workstations.
+.IP \(bu
+DECstation 3100 and 5000 MIPS-based workstations.
+.IP \(bu
+Sparcstation I & II SPARC-based workstations.
+(Note that the SPARC kernel will not run on the Sparcstation 10.)
+.LP
+You are entitled to a distribution with sources for all architectures
+plus binaries for one of the above architectures.
+If you wish to obtain binaries for more than one architecture,
+they may be purchased at the same time for an additional $500 fee.
+Please return the enclosed form indicating the architecture(s) that
+you would like to receive.
+If you would like more than one architecture,
+please enclose a check for $500 per additional architecture.
+.PP
+We thank you for your early support for finishing 4.4BSD.
+We hope that you will find it useful.
+.PP
+.sp 2
+.ti +2.5i
+Sincerely yours,
+.sp 3
+.ti +2.5i
+Marshall Kirk McKusick
+.br
+.ti +2.5i
+Research Computer Scientist
+.br
+.ti +2.5i
+Computer Systems Research Group

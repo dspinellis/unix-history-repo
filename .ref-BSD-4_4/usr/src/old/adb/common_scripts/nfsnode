@@ -1,0 +1,7 @@
+./"forw"16t"back"nXX
++$<<nfsv2fh
++/"flag"16t"vnode"16t"attrstamp"nXXY
++$<<vattr
++/"sillyrename"16t"size"16t"mtime"nXDY
++/"ctime"nY
++/"error"16t"lockholder"16t"lockwaiter"16t"direofoffset"nDd16td16tD

@@ -1,0 +1,27 @@
+#print
+In this directory there is a file 'fix'.  It contains
+a mistyped line.  Print the file; then change that
+line and rewrite the file correctly.
+Then type "ready".
+#create Ref
+Bell System Companies include:
+American Telephone and Telegraph Company
+  Long Lines Division
+Western Electric Company
+Bell Laboratories
+Teletype Corporation
+Associated Companies
+#create fix
+Bell System Companies include:
+American Telephone and Telegraph Company
+  Long Lines Division
+Western Electric Company
+Bell Lxxxxtories
+Teletype Corporation
+Associated Companies
+#user
+#cmp Ref fix
+#log
+#next
+21.1c 5
+21.1e 10

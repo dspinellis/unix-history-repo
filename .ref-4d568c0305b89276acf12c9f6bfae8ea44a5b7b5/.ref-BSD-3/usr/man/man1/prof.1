@@ -1,0 +1,85 @@
+.TH PROF 1 
+.SH NAME
+prof \- display profile data
+.SH SYNOPSIS
+.B prof
+[
+.B \-v
+] [
+.B \-a
+] [
+.B \-l
+] [
+.BI \- "low\fR [ \fB\-\fIhigh\fR ]"
+] [ file ]
+.SH DESCRIPTION
+.I Prof
+interprets the file
+.I mon.out
+produced by the
+.I monitor
+subroutine.
+Under default modes,
+the symbol table in the
+named object file
+.I (a.out
+default)
+is read and correlated with the
+.I mon.out
+profile file.
+For each external symbol, the percentage
+of time spent executing between that symbol
+and the next
+is printed (in decreasing order),
+together with the number of times that routine was called
+and the number of milliseconds per call.
+.PP
+If the
+.B \-a
+option is used,
+all symbols are reported rather than
+just external symbols.
+If the
+.B \-l
+option
+is used,
+the output is listed by
+symbol value rather than
+decreasing percentage.
+.PP
+If the
+.B \-v
+option is used,
+all printing is suppressed
+and a graphic version of the profile
+is produced
+on the standard output for display by the
+.IR  plot (1)
+filters.
+The numbers
+.I low
+and 
+.I high,
+by default 0 and 100, cause a selected
+percentage of the profile to be plotted
+with accordingly higher resolution.
+.PP
+In order for the number of calls to a routine to be tallied,
+the
+.B \-p
+option of
+.I cc
+must have been given when the file containing the
+routine was compiled.
+This option also arranges for the
+.I mon.out
+file to be produced automatically.
+.SH FILES
+.ta \w'mon.out  'u
+mon.out	for profile
+.br
+a.out		for namelist
+.SH "SEE ALSO"
+monitor(3), profil(2), cc(1), plot(1)
+.SH BUGS
+Beware of quantization errors.

@@ -1,0 +1,28 @@
+We started to use uucp after the dialin lines had been in place for a while.
+It would have been very unpopular here to remove one of lines from public use
+to let uucp dial out.  The first version of these changes ran here early in
+1983.
+
+Having this ability is very useful way to make full use of your modems. For
+one thing, I can smile when a neighoring site complains that their one dialer
+is tied up from news backed up to one of their neighbors which has been down
+for a while and has just come back up. For another thing some of our neighbors
+seem to be reachable better by some modems than by others.  For example, I can
+only reach rocky2 with a Racal Vadic.  I can only reach akgua, burl, and
+sjuvax with a Hayes.  When our 2400 baud modem arrives so I can make special
+note of that --- and I don't have to buy two 2400 baud modems to have two-way
+2400 baud capability.
+
+The key to this is a program is provided in the file acucntrl.c .  This should
+be installed suid to root in the file /usr/lib/uucp/acucntrl .
+
+
+uucp notes:
+The 3rd field of the L-devices file should contain "inout"  for all devices
+intended for dialin/out use.  Devices without the "inout" specification will
+be used like before: for dialout only.
+
+Good luck.  I want to never go back to reserving modems for dialout.
+
+Bill Sebok			Princeton University, Astrophysics
+{allegra,akgua,burl,cbosgd,decvax,ihnp4,noao,princeton,vax135}!astrovax!wls

@@ -1,0 +1,59 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)qe.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt QE 4 vax
+.Os BSD 4.3
+.Sh NAME
+.Nm qe
+.Nd
+.Tn DEC DEQNA
+.Tn Q-bus
+10 Mb/s Ethernet interface
+.Sh SYNOPSIS
+.Cd "device qe0 at uba? csr 174440 vector qeintr"
+.Sh DESCRIPTION
+The
+.Nm qe
+interface provides access to a 10 Mb/s Ethernet network through
+the
+.Tn DEC DEQNA
+.Tn Q-bus
+controller.
+.Pp
+Each of the host's network addresses
+is specified at boot time with an
+.Dv SIOCSIFADDR
+.Xr ioctl 2 .
+The
+.Nm qe
+interface employs the address resolution protocol described in
+.Xr arp 4
+to map dynamically  between Internet and Ethernet addresses on the local
+network.
+.Pp
+The interface normally tries to use a
+.Dq trailer
+encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with
+.Tn ARP .
+This negotiation may be disabled, on a per-interface basis,
+by setting the
+.Dv IFF_NOTRAILERS
+flag with an
+.Dv SIOCSIFFLAGS
+.Xr ioctl .
+.Sh SEE ALSO
+.Xr netintro 4 ,
+.Xr inet 4 ,
+.Xr arp 4
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.3 .

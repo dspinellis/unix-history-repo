@@ -1,0 +1,53 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)vadvise.2v	4.1 (Berkeley) %G%
+.\"
+.TH VADVISE 2V
+.UC 4
+.SH NAME
+vadvise \- give advice to paging system
+.SH SYNOPSIS
+.B vadvise(param)
+.SH DESCRIPTION
+.I Vadvise
+is used to inform the system that process paging behavior merits special
+consideration.  Parameters to
+.I vadvise
+are defined in the file
+.B <vadvise.h> .
+Currently, two calls to
+.I vadvise
+are implemented:
+.PP
+The call
+.IP
+.B "vadvise(VA_ANOM);"
+.LP
+advises that the paging behavior is not likely to
+be well handled by the system's default algorithm, since reference information
+collected over macroscopic intervals (e.g. 10-20 seconds)
+will not serve to indicate future page references.  The system in this case
+will choose to replace pages with little emphasis placed on recent usage,
+and more emphasis on referenceless circular behavior.  It is \fIessential\fR
+that processes which have very random paging behavior (such as
+LISP during garbage collection of very large address spaces) call
+.I vadvise,
+as otherwise the system has great difficulty dealing with their
+page-consumptive demands.
+.PP
+The call
+.IP
+.B "vadvise(VA_NORM);"
+.LP
+restores default paging replacement behavior after a call to
+.IP
+.B "vadvise(VA_ANOM);"
+.SH BUGS
+This call is peculiar to this version of UNIX.
+The options and specifications of this system call and even the call itself
+are expected to change.  It is expected to be extended with additional
+facilities in future versions of the system.  In particular it is expected
+that this call will be particular to a segment, and that other behaviors
+such as sequential behavior will be specifiable.

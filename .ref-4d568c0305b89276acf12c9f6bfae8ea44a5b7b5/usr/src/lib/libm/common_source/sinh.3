@@ -1,0 +1,48 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sinh.3	8.1 (Berkeley) %G%
+.Dd 
+.Dt SINH 3
+.Os
+.Sh NAME
+.Nm sinh
+.Nd hyperbolic sine function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn sinh "double  x"
+.Sh DESCRIPTION
+The
+.Fn sinh
+function computes the hyperbolic sine of
+.Fa x .
+.Sh RETURN VALUES
+The
+.Fn sinh
+function returns the hyperbolic sine value unless
+the  magnitude 
+of
+.Fa x
+is too large; in this event, the global variable
+.Va errno
+is set to
+.Er ERANGE .
+.Sh SEE ALSO
+.Xr acos 3 ,
+.Xr asin 3 ,
+.Xr atan 3 ,
+.Xr atan2 3 ,
+.Xr cos 3 ,
+.Xr cosh 3 ,
+.Xr sin 3 ,
+.Xr tan 3 ,
+.Xr tanh 3 ,
+.Xr math 3 ,
+.Sh STANDARDS
+The
+.Fn sinh
+function conforms to
+.St -ansiC .

@@ -1,0 +1,77 @@
+.\"	@(#)export	5.1 (Berkeley) %G%
+.\" use -me
+.so HEADERS
+.FH
+.de pd
+.ie \\n(.$-1 \\$1 \\$2 \\$3
+.el \\*(DY
+..
+.lp
+.ti 4.5i
+June 20, 1991
+.ip TO: 10
+Bureau of Export Administration
+.br
+P.O. Box 273
+.br
+Washington, D.C. 20044
+.br
+.sp
+.ip FROM: 10
+Keith Bostic
+.br
+Computer Systems Research Group
+.br
+457 Evans Hall
+.br
+University of California
+.br
+Berkeley, CA 94720
+.br
+.sp
+.ip RE: 10
+Commodity Classification Request
+.sp
+.pp
+I would like to request a commodity classification for the Berkeley
+Software Distribution Networking Release #2.
+The distribution includes approximately 85% of a UNIX-like operating
+system as well as approximately 250 user utilities.
+.pp
+I believe that the correct classification for this distribution is
+EECN 5D01A, as described in the August 29, 1991 revision of the
+Commodity Control List.
+The reason for this classification is that the networking component of
+the distribution supports the controlled technologies described in 5A03A,
+paragraphs (d), (e) and (f).
+Specifically, adaptive routing on a per-packet basis, the routing of
+datagram packets and the ability to include data as part of the initial
+connection negotiation packets are all supported.
+.pp
+I believe that the correct general export license is GTDA, as described
+in the October 1990 Export Administration Regulations, section 779.3.
+The reason for this is that the distribution is publicly available
+as described in paragraph (b).
+Specifically, the distribution is available to the general public with
+minimal restrictions (see the attached licensing agreement for complete
+details), and for a cost intended only to cover redistribution expenses.
+Additionally, the recipient may, without further remuneration to the
+University, redistribute the software as they choose.
+.pp
+This distribution is a subset of the software historically distributed
+as part of the Berkeley Software Distribution, the most recent release of
+which was 4.3BSD.
+A similar distribution (Berkeley Software Distribution Networking Release
+#1) was released in the spring of 1989, for which we received a GTDA
+classification (CCATS #15697).
+Attached are copies of the distribution license agreement, an informational
+letter provided with the distribution, the Networking Implementation Notes,
+4.3BSD Edition, and the Berkeley Software Architecture Manual, 4.3BSD Edition.
+The latter two describe the architecture of the system as a whole as well
+as the networking subsystem.
+.pp
+If I can provide any additional information, please contact me at
+510-642-8524 or 510-549-1145.
+.nf
+.sp 5
+Keith Bostic

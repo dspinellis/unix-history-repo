@@ -1,0 +1,35 @@
+.TH TAIL 1 
+.SH NAME
+tail \- deliver the last part of a file
+.SH SYNOPSIS
+.B tail
+.if t [ \(+-number[\fBlbc\fR] ]
+.if n +_number[lbc___]
+[ file ]
+.SH DESCRIPTION
+.I Tail
+copies the named file to the standard output beginning
+at a designated place.
+If no file is named, the standard input is used.
+.PP
+Copying begins at distance
+.I +number
+from the beginning, or
+.I \-number
+from the end of the input.
+.I Number
+is counted in units of lines, blocks or characters,
+according to the appended option
+.B l,
+.B b
+or
+.B c.
+When no units are specified, counting is by lines.
+.SH "SEE ALSO"
+dd(1)
+.SH BUGS
+Tails relative to the end of the file
+are treasured up in a buffer, and thus 
+are limited in length.
+Various kinds of anomalous behavior may happen
+with character special files.

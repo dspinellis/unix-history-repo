@@ -1,0 +1,1309 @@
+This is version 3 of the editor. It is too large to fit on a pdp-11
+unless you have overlay code. (Such code is available for v7 unix on 2bsd.)
+
+Version 2.13 corresponds to version 3 without the enhancements in 3.
+There is no reason to use 2.13 unless you have a pdp-11 that does not have
+overlay software, since 3 contains all the bug fixes and some new features.
+
+Special installation notes for this version.
+2) The include file varargs.h should be installed, as the printf here needs it.
+3) The include file local/uparm.h should be installed, as ex_tune.h needs it.
+   The contents of this include file can be modified if you wish to place
+   the editor in a nonstandard location.
+
+Conditional compilation flags:
+	-DTRACE		for debugging (wont then fit on an 11)
+	-DVFORK		for UCB Vax/Unix with the vfork system call.
+	-DCHDIR		compile in undocumented old chdir (cd) command
+	-DLISP		compile in lisp hacks
+	-DUCVISUAL	compile in code to handle \ escapes for visual on
+			upper case only terminals.  gross.
+	-DCRYPT		-x option to edit encrypted files
+	-DFLOCKFILE	compile in advisory file locking ala 4.[23X]
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+Version 3.7  October 16, 1981
+
+	It is now possible to split lines with substitute commands from vi,
+	by using ^V<return> in the rhs.  This takes care of the last
+	good reason for using ex command mode.
+
+	Mode lines are now supported.  Put a line containing
+		ex: xxx :
+	in the first or last 5 lines of the file, where xxx is any ex
+	command you want executed when that file is read in.  To make
+	other programs happy, it should probably be inside a comment.
+	You can use vi: as well as ex:.  (Note: no space allowed
+	between the "ex" and ":".  The spaces around xxx are considered
+	part of the command, and so are optional.)
+
+	If there is a file .exrc in the current directory, it will be
+	sourced when you enter vi, after your EXINIT or ~/.exrc.
+
+	The changeable scrolling region of the vt100 is now used in
+	place of insert line, resulting in much better performance.
+
+	Vi uses the new AL, DL, LE, RI, DO, and UP (all upper case)
+	termcap capabilities, which are parameterized versions of their
+	lower case equivalents.  This will results in better performance
+	on ANSI terminals, and especially on the Tektronix 4025 which
+	has parameterized local motions but cannot cursor address.
+
+	Vi uses backtabs again.  Now it knows how to handle backtabs on
+	terminals that have tabs set at intervals other than 8, and it
+	won't use backtabs if gtty indicates it can't use tabs.
+
+	A bug causing <escape> <del> to core dump vi has been fixed.
+
+	A bug causing writes to filters when editing encrypted files
+	to write encrypted text has been fixed.
+
+	A bug causing the message "substitution loop", when you enter a
+	1,$s/xxx/yyy/g with lots of changes, has been fixed.
+
+	A bug causing the current directory to be chmodded to 0 if you
+	set nomesg after starting up the editor has been fixed.  Note
+	that the nomesg option is intended for your EXINIT, since it only
+	takes effect on entry to the editor.
+
+	The eat newline glitch has been fixed so that vt100's and tab132's
+	handle long lines correctly.
+
+	Some internal changes have been made so that vi can run under UNIX
+	on the Bell Labs 3B machine, the BBN C/70, and the IBM 370.
+
+Version 3.6  October 30, 1980
+
+	A kernel problem on the V7 pdp-11 overlay systems which causes
+	bad EMT traps to happen randomly, core dumping the editor,
+	has been programmed around by catching EMT traps.
+
+	A bug which prevented using a screen larger than 48 lines has
+	been fixed.
+
+	A bug which allowed you to set window to a value larger than
+	your screen size has been fixed.
+
+	The screen size limit on non-VM/Unix systems has been increased
+	to 66 lines or 5000 characters, to allow the Ann Arbor Ambassador
+	terminal to be used.
+
+	A bug which caused hangups to be ignored on USG systems has
+	been fixed.
+
+	A bug which caused maps with multiple changes on multiple lines
+	to mess up has been fixed.
+
+	If you get I/O errors, the file is considered "not edited" so
+	that you don't accidently clobber the good file with a munged
+	up buffer.
+
+	An inefficiency in 3.5 which caused the editor to always call
+	ttyname has been fixed.
+
+	A bug which prevented the "source" command from working in an
+	EXINIT or from visual has been fixed.
+
+	A bug which caused readonly to be cleared when reading from
+	a writable file with "r" has been fixed.
+
+	The name "suspend" has been made an alias for "stop".
+
+	The stop command now once again works correctly from command mode.
+
+	On a dumb terminal at 1200 baud, "slowopen" is now the default.
+
+	A bug in the shell script "makeoptions" which searched for a
+	string that appeared earlier in a comment has been fixed.
+
+	A bug that caused an infinite loop when you did ":s/\</&/g"
+	has been fixed.
+
+	A bug that caused & with no previous substitution to give
+	"re internal error" has been fixed.
+
+	A bug in the binary search algorithm for tags which sometimes
+	prevented the last tag in the file from being found has been fixed.
+
+	Error messages from expreserve no longer output a linefeed,
+	messing up the screen.
+
+	The message from expreserve telling you a buffer was saved when
+	your phone was hung up has be amended to say the editor was
+	terminated, since a kill can also produce that message.
+
+	The "directory" option, which has been broken for over
+	a year, has been fixed.
+
+	The "r" command no longer invokes input mode macros.
+
+	A bug which caused strangeness if you set wrapmargin to 1
+	and typed a line containing a backslash in column 80 has
+	been fixed.
+
+	A bug which caused the "r<cr>" at the wrapmargin column
+	to mess up has been fixed.
+
+	On terminals with both scroll reverse and insert line,
+	the least expensive of the two will be used to scroll up.
+	This is usually scroll reverse, which is much less annoying
+	than insert line on terminals such as the mime I and mime 2a.
+
+	A bug which caused vi to estimate the cost of cursor motion
+	without taking into account padding has been fixed.
+
+	The failure of the editor to check counts on ^F and ^B commands
+	has been fixed.
+
+	The "remap" option failed completely if it was turned off.
+	This has been fixed.
+
+	A check of the wrong limit on a buffer for the right hand side
+	of substitutions has been fixed.  Overflowing this buffer could
+	produce a core dump.
+
+	A bug causing the editor to go into insert mode if you typed
+	return during an R command has been fixed.
+
+	A bug preventing the + command from working when you edit a
+	new file has been fixed by making it no longer an error to
+	edit a new file (when you first enter the editor.)  Instead
+	you are told it is a new file.
+
+	If an error happens when you are writing out a file, such as
+	an interrupt, you are warned that the file is incomplete.
+
+Version 3.5 -- August 20, 1980
+
+	The provisions for changing the window size with a numeric
+	prefix argument to certain visual commands have been deleted.
+	The correct way to change the window size is to use the z
+	command, for example z5<cr> to change the window to 5 lines.
+
+	The code to handle the -x (encryption) option has been made
+	conditionally compiled, so that ex can run on an an 11/34 (!)
+	with overlays.  Since this code calls getpass, stdio was
+	being pulled in even without VMUNIX being defined.  The
+	savings from not defining CRYPT are about 4K of text and 4.5K
+	of bss.
+
+	Bill Joy put in a buffering scheme under the VMUNIX flag so
+	that up to 64K of file is edited in-core until you make enough
+	changes to force a temp file sync.  This makes entry into the
+	editor much faster, but also makes vi much bigger.
+
+	The source to ex is now sccs'ed.
+
+	An undocumented "feature" which caused the ^^ command to return
+	to the previous tag, if in the current file, instead of the
+	previous file, has been removed.
+
+	A bug which prevented ex from compiling on systems with the new
+	tty driver but no process control (such as Cory) was fixed.
+
+Version 3.4 -- June 24, 1980
+
+	The visual page motion commands ^F and ^B now treat any preceding
+	counts as number of pages to move, instead of changes to the
+	window size.  That is, 2^F moves forward 2 pages.
+
+	A :vi <file> command from visual mode is now treated the same
+	as a :edit <file> or :ex <file> command.  The meaning of the
+	vi command from ex command mode is not affected.
+
+	Provisions to handle the new process stopping features of the
+	Berkeley TTY driver have been added.  A new command, "stop",
+	takes you out of the editor cleanly and efficiently, returning
+	you to the shell.  Resuming the editor puts you back in command
+	or visual mode, as appropriate.  If autowrite is set and there
+	are outstanding changes, a write is done first unless you say
+	"stop!".  From visual mode, the command ^Z is the same as :stop.
+	Note that if you have an arrow key that sends ^Z the stop function
+	will take priority over the arrow function.  If you have your
+	"susp" character set to something besides ^Z, that key will be
+	honored as well.
+
+	A read only mode now lets you guarantee you won't clobber your
+	file by accident.  You can set the on/off option "readonly" (ro)
+	and writes will fail unless you use an ! after the write.
+	Commands such as x, ZZ, and autowrite, and in general anything
+	that writes is affected.  This option is turned on if you invoke
+	ex with the -R flag.  A new link called "view" has been  created.
+	View is just like vi but it sets readonly.
+
+	The encryption code from the v7 editor is now part of ex.
+	You invoke ex with the -x option and it will ask for a key,
+	as ed.  The ed "x" command (to enter encryption mode from
+	within the editor) is not available.
+
+	The editor now adopts the convention that a null string in the
+	environment is the same as not being set.  This applies to
+	TERM, TERMCAP, and EXINIT.
+
+	A word abbreviation mode is now available.  You can define
+	abbreviations with the abbreviate command
+		:abbr foo find outer otter
+	which maps "foo" to "find outer otter".  Abbreviations can be
+	turned off with the "unabbreviate" command.  The syntax of these
+	commands is identical to the map and unmap commands, except
+	that the ! forms do not exist.  Abbreviations are considered
+	when in visual input mode only, and only affect whole words
+	typed in, using the conservative definition.  (Thus "foobar"
+	will not be mapped as it would using map!)
+	Abbreviate and unabbreviate can be abbreviated to "ab" and
+	"una", respectively.
+
+	The editor now supports certain terminals that use strings other
+	then \r and \n for return and linefeed by implementing the cr
+	and nl termcap options.  (Thanks to UCLA for these enhancements).
+
+	The termcap attribute ns is now checked for, and ex refuses to
+	go into visual mode on such a terminal unless it has sf.
+
+	Terminals that can cursor address but cannot go up a line
+	now work in visual.
+
+	If you change your start and stop characters to something other
+	than the default ^S and ^Q, vi now turns them off.  This causes
+	people who change them to escape not to lose so badly.
+	The quit character is once again turned off so that datamedias
+	which send ^\ for the right arrow key work.
+
+	The ~ command now repeats correctly with ".".
+
+	If you type in an unmatched ) or } in showmatch mode, the editor
+	will now beep to warn you about your mistake.  The ) or } is
+	still accepted.
+
+	The way macros are undone has been improved considerably.
+	The number of changes inside the macro is counted, and just
+	before the second change the state before the macro is recreated
+	internally and saved to allow the macro to be undoable as a unit.
+	Hence, if the macro makes only one change the particular change is
+	undone (which will probably not redraw the screen).  If no changes
+	are made (for example, the arrow keys) the previous thing that could
+	be undone is not clobbered.
+
+	The undomacro option has been deleted since it is no longer needed.
+
+	Editor scripts can now contain comments.  Begin the comments with "
+	(double quote).  Comments can be on their own line or come at the
+	end of command lines.  The comment continues to the end of the line.
+
+	The 3rd version of the USG tty driver is now supported, making it
+	possible on USG systems to interrupt redrawing the screen and to
+	not flush output when interruptable commands take place.
+
+	The rewind command has been added to the list of commands that
+	the autowrite option knows about.
+
+	The wrapmargin option is now usable.  The way it works has been
+	completely revamped.  Now if you go past the margin (even in the
+	middle of a word) the entire word is erased and rewritten on the
+	next line.  This changes the semantics of the number given to
+	wrapmargin.  0 still means off.  Any other number is still a
+	distance from the right edge of the screen, but this location
+	is now the right edge of the area where wraps can take place,
+	instead of the left edge.  Wrapmargin now behaves much like
+	fill/nojustify mode in nroff.
+
+	A bug on the USG system where hanging up the phone causes more
+	than one SIGHUP to be sent has been compensated for.
+
+	A bug which caused the :sh command not to send the vs and ti
+	sequences when you returned has been fixed.
+
+	A bug which caused a file that bombed out in the middle of
+	an edit command to be considered modified has been fixed.
+
+	A bug which caused the screen to be wrong after undoing a
+	:move command has been fixed.
+
+	A bug which messed up the buffer and the screen after
+	undoing a :join command has been fixed.
+
+	The source file ex_io.c has been split into ex_io.c and
+	ex_unix.c to avoid a problem where many C compilers overflowed
+	the symbol table.
+
+	A bug which prevented turning off your prompt in your .exrc
+	has been fixed.
+
+	Some of the code internal to the editor has been rearranged
+	and some comments added.
+
+	The bug fix to the USG tty driver to output a null character
+	as padding at 1200 baud has been improved to output a DEL
+	at 1200 baud or above.
+
+	Terminals with small screens (less than 20 columns or less
+	than 5 lines) should now work.
+
+	A bug which prevented you from entering the character DEL
+	into the buffer if you changed your interrupt character to
+	something else besides DEL has been fixed.
+
+	A bug which caused the current line to be clobbered when
+	you did a /, ?, or : command which mapped an input macro
+	successfully has been fixed.
+
+	If you map o to O and O to o and have remap set, the editor
+	now catches the infinite loop.
+
+	A put command after a macro now beeps instead of putting
+	a copy of the whole buffer.  (Note that the arrow keys
+	on terminals are considered macros.)
+
+	A bug which caused things like d) and d} to miss the last
+	character when they should have deleted to the end of the
+	buffer has been fixed.
+
+	A bug which caused the last character to be lost when you
+	read in a file with no newline at the end of the last line
+	has been fixed.
+
+	A bug that caused garbage to be in the buffer if the temp file
+	overflowed has been fixed.  (This only affected non-VMUNIX systems
+	since the temp file cannot overflow on VMUNIX.)
+
+	When a macro or global is undone, you no longer get picked up and
+	dropped on line 1.
+
+	The character | can now be escaped with \| in file names.
+
+	A bug which prevented the confirm option to a substitution that
+	was inside a source command has been fixed.
+
+	A bug which caused the editor to not work if the tab stop size
+	did not divide the screen width has been fixed.
+
+	A bug on HP terminals that caused the screen to be messed up if
+	you scrolled up something that began the same way as the echo line
+	has been fixed.
+
+	A macro bug which sometimes caused the next character after an
+	escape to be ignored on an HP terminal has been fixed.
+
+	A bug which caused unmap of strings with length 2 to fail has been
+	fixed.
+
+	A bug which left vi confused if you invoked a macro containing a
+	quit to command mode and then did an undo has been fixed.
+
+	An old ed bug which caused globals to fail when they did a substitute
+	on the next line has been fixed.
+
+	The % operator will now find matching square brackets the same way
+	it does parentheses and braces.  It will not display them in
+	showmatch mode, however, and will not use a ] to match all ('s.
+
+	Code has been added to handle the Beehive Superbee terminal,
+	using f1 for escape and f2 for control C.
+
+	The default value of the option shell is now taken from the
+	environment variable SHELL, if present.
+
+Version 3.3 -- February 2, 1980
+
+	The default window sizes have been changed.  At 300 baud the
+	window is now 8 lines (was 1/2 the screen size).  At 1200 baud
+	the window is now 16 lines (was 2/3 the screen size, which was
+	usually also 16 for a typical 24 line CRT).  At 9600 baud the
+	window is still the full screen size.  Any baud rate less than
+	1200 behaves like 300, any over 1200 like 9600.
+
+	A new command mode command "x" (for "xit") has been added.  This
+	is the same as wq but will not bother to write if there have been
+	no changes to the file.  The command letter was chosen for
+	convenience and compatibilty with hed.
+
+	The command "ZZ" from vi is the same as ":x<cr>".  This is
+	the recommended way to leave the editor.  Z must be typed twice
+	since this is two easy to type by accident and has such severe
+	effects if unintentional.
+
+	The options w300, w1200, and w9600 can be set.  They are synonyms
+	for "window", but only apply at 300, 1200, or 9600 baud, resp.
+	Thus you can specify you want a 12 line window at 300 baud and
+	a 23 line window at 1200 baud with
+		:set w300=12 w1200=23
+
+	It is now possible to say
+		:set window=5
+	and get the effect the next time the screen is redrawn from scratch.
+	(^L and Hit return to continue don't start from scratch.)
+	This is sort of pointless, since both
+		5:<cr>
+	and
+		z5<cr>
+	do the same thing with better results.
+
+	The editor no longer uses nondestructive space, except when in
+	insert mode.  It instead prints the character it would be
+	moving over.  This is a real win on terminals that use an
+	escape sequence to nd space.
+
+	It is now possible from visual to string several search expressions
+	together separated by semicolons the same as command mode.  For
+	example, you can say
+		/foo/;/bar
+	from visual and it will move to the first "bar" after the next "foo".
+	This also works within one line.
+
+	The option "mapinput" is dead.  It has been replaced by a much
+	more powerful mechanism: :map! (e.g. put an ! after the map).
+	Map and unmap commands with ! apply only to input, others apply
+	only to command mode.
+
+	The new option "timeout" (default on) causes macros to time out
+	after one second.  Turn it off and they will wait forever.
+
+	By using map! and setting notimeout, it is possible to get the
+	effect of emacs abbreviation mode.  Sanity checking is turned off
+	for map when ! is present.  This is a crude facility and does not
+	take into account things like the abbreviation being part of a longer
+	word.  It also does not echo until it is satisfied.
+
+	The new option "remap" (default on) causes the editor to attempt
+	to map the result of a macro mapping again until the mapping fails.
+	This makes it possible, say, to map q to # and #1 to something else
+	and get q1 mapped to something else.  Turning it off makes it possible
+	to map ^L to l and map ^R to ^L without having ^R map to l.
+
+	The new option "undomacro" (default on) makes it possible to undo
+	macros as a unit.  Leaving it off causes macros not to be treated
+	specially.  Macros with zero or one change work better with noum,
+	with two or more changes better with um.  This option may go away
+	if it becomes unnecessary.
+
+	The new (string) valued option "tags" allows you to specify a list
+	of tag files, similar to the "path" variable of csh.  The files
+	are separated by spaces (which are entered preceded by a backslash)
+	and are searched left to right.  The default value is
+	"tags /usr/lib/tags", which has the same effect as before.
+	It is recommended that "tags" always be the first entry.
+	On Ernie, /usr/lib/tags contains entries for the system defined
+	library procedures from section 3 of the manual.
+
+	^R is now the same as ^L on terminals where the right arrow key
+	sends ^L (The tvi and the adm 31).
+
+	Looking for a tag now uses binary search.
+
+	The "q" command from visual no longer works at all.  You must
+	use "Q" to get to ex command mode.
+
+	A minor incompatibility with the v7 ed has been fixed.  Previously,
+	to do a global substitute with an escaped newline in the rhs, you
+	had to put two \'s in ex and one in ed.  Ex now accepts the single
+	form as well as the double form.  For example, instead of
+		g/foo/s//foo\\
+		bar/g
+	(which still works), you can now type, as in ed,
+		g/foo/s//foo\
+		bar/g
+	This means that the following ex command, which used to "work":
+		g/foo/s//foo bar\
+		.+1,/mumble/d
+	won't work anymore unless you put the trailing / on the substitution.
+	This usage is pretty obscure anyway.
+
+	Several bugs relating to undoing macros have been fixed.
+
+	A bug which caused the command "g/pattern" to print an error
+	message if "pattern" occurred on the last line has been fixed.
+
+	If you reply ":" to "Hit return to continue", you will again be
+	asked "Hit return to continue" after the next command finishes.
+
+	Limits have been raised so that an Ann Arbor terminal can be used,
+	and long tags can now be accomodated.
+
+	The maximum length of a string valued option has been raised from
+	32 to 64, for the benefit of the "tags" option.
+
+	It is now possible to search for an escape or delete using f, F, t,
+	T, ;, and ,.  These characters must be quoted with ^V.
+
+	The option "ttytype" is now in correct alphabetical order.
+
+	A bug that caused HP terminals to mess up in insert mode when inserting
+	before a tab which follows 7 or fewer characters at the beginning of a
+	line (such as a tags file) has been fixed.
+
+	It is now possible to include control D in your EXINIT or .exrc.
+
+	A bug which caused the screen to mess up when a glob (such as xx*)
+	doesn't match anything has been fixed.
+
+	The editor now checks for extra junk after a /r.e./ from visual
+	(other than the allowed z command) and beeps if any is found.
+	Previously it was just ignored.
+
+	A bug that caused j and k (up and down) to behave strangely after
+	an insertion has been fixed.
+
+	A bug which causes term to be displayed incorrectly and which
+	caused a crash when changing terminal type when there happened
+	to be several |'s and a long string in genbuf has been fixed.
+	This bug was introduced in ex 2.9.
+
+	The patch for echo lines longer than 80 characters has been
+	repaired to do "Hit return to continue" after such lines and
+	print the entire output.
+
+	A bug that caused a messed up screen after a :sh command from
+	open mode has been fixed.
+
+	A bug which caused a tag request for a nonexistant tag to leave
+	the editor in nomagic mode has been fixed.
+
+	A bug which caused strange behavior if there is no default file
+	name when an autowrite save is attempted has been fixed.
+
+	A bug which caused the cursor to go to the wrong position when
+	^^D or 0^D is entered from column 2 in autoindent mode on terminals
+	that can backspace has been fixed.
+
+Version 3.2 -- January 4, 1980
+
+	A bug that caused nomagic to be set if an error happened within
+	a tag command has been fixed.
+
+	A bug that caused put commands to beep after a macro containing
+	an error has been fixed.
+
+	The mapinput option has been placed in alphabetical order.
+
+	A bug that caused undo to undo more than one macro invocation
+	on the same line has been fixed.
+
+	On non VM/UNIX systems, the screen size has been increased to
+	allow a 40 X 80 Ann Arbor to be used.
+
+Version 3.2 -- December 28, 1980
+	
+	Several limits have been increased for VM/UNIX.  Longer lines,
+	more characters of file names, longer regular expressions, etc.
+	Huge files can now be edited directly.  Larger terminals (up to
+	66 lines) can be used.
+
+	An internal change has been made for VM/UNIX that causes error
+	messages to be stored directly instead of in a disk file.
+	This should cause faster response to errors.
+
+Version 3.1.1 -- December 13, 1979
+
+	A bug that caused nested macros not to be undoable has been fixed.
+
+	A bug that caused pounding on the escape key on terminals with
+	arrow keys that send escape sequences to cause undo to screw up
+	has been fixed.
+
+	It is now acknowledged that macros cannot contain the put command.
+	This is due to the implementation of put - previously a put inside
+	a macro dumped a copy of the buffer instead of the desired text and
+	left the editor in a very strange state.  Now such a put just beeps.
+
+Version 3.1 -- November 1, 1979
+
+	Versions from 3.1 up are too large to fit on pdp-11's.
+	(Special overlay software is expected to be available soon
+	for v7 pdp-11 Unix that will make it fit.) Version 2.9
+	is 3.1 with only the bug fixes and very few of the enhancements.
+	2.9 will fit on a pdp-11. Version 2.10 will come out and may
+	correspond to 3.2. (It turned out to correspond to 3.3)
+
+	For compatibility with ed:  's<newline>' may be used as a
+	command and means '&'.  If you set the option "edcompatible"
+	(abbr "ed") the presense or abscence of g and c suffices is
+	remembered and can be toggled by repeating the suffices.  The
+	suffix "r" makes the substitution into "~" instead of "&".
+
+	A new command line option -w<n> sets the value of window before
+	starting ex. Hence: 'vi -w5 file' makes a quick change to a file
+	easier at 300 baud.
+
+	Arrow keys on terminals that send more than 1 character now
+	work.  Home up keys are supported as are the four directions.
+	Ex no longer looks at the ma= entry in termcap, but uses the
+	ku, kd, kl, kr, and kh entries.  (Note that the HP 2621 will
+	turn on function key labels, and even then you have to hold
+	shift down.  To avoid turning on the labels, and to give up the
+	function keys, use terminal type 2621nl instead of 2621.)
+
+	A parameterless macro facility is included from visual. Briefly,
+	there are two flavors of macros:
+		a) Put the macro body in a buffer register, say x. Then
+		   type @x to invoke it. @ may be followed by another @
+		   to repeat the last macro.
+		   This allows macros up to 512 chars.
+		b) Use the map command from command mode (typically in the
+		   .exrc file) as follows:
+			map lhs rhs
+		   where lhs will be mapped to rhs.
+		   There are restrictions: lhs's should be 1-keystroke
+		   (either 1 char or 1 function key) since they must be
+		   entered within 1 second. lhs no longer than 10 chars,
+		   rhs no longer than 100. To get " ", "\t", "|", or "\n"
+		   into lhs or rhs, escape them with ctrl V. (It may be
+		   necessary to escape the ctrl V with ctrl V if the map
+		   command is given from visual mode.)
+	For 1 shot macros it is best to put the macro in a buffer register
+	and map a key to '@r', since this will allow the macro to be edited.
+
+	Macros can be deleted with
+		unmap lhs
+
+	The boolean option "mapinput" (mi) will, if on, cause macros to
+	be mapped in input mode as well as command mode (in visual only).
+	For example, you can define ctrl T to be four spaces with
+		:map ^V^T_^V^V____
+		:set mi
+	where underlines represent spaces and the ctrl V's are necessary
+	to get ctrl chars and spaces past various levels, and make ^T be
+	a software tab that even works in the middle of a line.
+
+	If the lhs of a macro is "#0" through "#9", this maps the particular
+	function key instead of the 2 char # sequence, if the terminal has
+	function keys. This only works if termcap has function key entries
+	for the particular terminal. For terminals without function keys,
+	the sequence #x means function key x, as typed. As a special case,
+	on terminals without function keys, the #x sequence need not be
+	typed within one second. The character # can be changed by using
+	a macro in the usual way:
+		map ^V^I #
+	to use tab, for example. (This won't affect the map command, which
+	still uses #, but just the invocation from visual mode.)
+	The undo command will undo an entire macro call as a unit.
+
+	New commands in visual: ^Y and ^E. These glitch the screen up
+	and down 1 line, respectively. They can be given counts, controlling
+	the number of lines the screen is glitched. They differ from ^U
+	and ^D in that the cursor stays over the same line in the buffer
+	it was over before rather than staying in the same place on the
+	screen. (^Y on a dumb terminal with a full screen will redraw the
+	screen moving the cursor up a few lines.) If you're looking for
+	mnemonic value in the names, try this: Y is right next to U and
+	E is right next to D.
+
+	More new commands in visual: '&' is a synonym for ':&<cr>'.
+	'~' changes the case of the letter under the cursor and moves
+	to the next character.
+
+	Ex looks in your environment for EXINIT. If it finds it, that
+	is used instead of looking for your .exrc. This should make
+	entry into ex faster, along with the termlib feature of looking
+	for a termcap entry in TERMCAP.
+
+Version 2.13 -- September 23, 1980
+
+	The provisions for changing the window size with a numeric
+	prefix argument to certain visual commands have been deleted.
+	The correct way to change the window size is to use the z
+	command, for example z5<cr> to change the window to 5 lines.
+
+	An undocumented "feature" which caused the ^^ command to return
+	to the previous tag, if in the current file, instead of the
+	previous file, has been removed.
+
+Version 2.12 -- July 23, 1980
+
+	A change was made to the sys_errlist array in ex_subr.c so that
+	Berkeley V7 quotas will produce the right error message.
+
+	A couple of minor bug fixes were made to get the editor to
+	compile on version 6.  The option to use 1K BUFSIZ has been
+	deleted, since it is no longer used on our 1K system.
+
+Version 2.11 -- June 24, 1980
+
+	The visual page motion commands ^F and ^B now treat any preceding
+	counts as number of pages to move, instead of changes to the
+	window size.  That is, 2^F moves forward 2 pages.
+
+	A :vi <file> command from visual mode is now treated the same
+	as a :edit <file> or :ex <file> command.  The meaning of the
+	vi command from ex command mode is not affected.
+
+	A read only mode now lets you guarantee you won't clobber your
+	file by accident.  You can set the on/off option "readonly" (ro)
+	and writes will fail unless you use an ! after the write.
+	Commands such as x, ZZ, and autowrite, and in general anything
+	that writes is affected.  This option is turned on if you invoke
+	ex with the -R flag.  A new link called "view" has been  created.
+	View is just like vi but it sets readonly.
+
+	The editor now supports certain terminals that use strings other
+	then \r and \n for return and linefeed by implementing the cr
+	and nl termcap options.  (Thanks to UCLA for these enhancements).
+
+	The termcap attribute ns is now checked for, and ex refuses to
+	go into visual mode on such a terminal unless it has sf.
+
+	If you change your start and stop characters to something other
+	than the default ^S and ^Q, vi now turns them off.  This causes
+	people who change them to escape not to lose so badly.
+	The quit character is once again turned off so that datamedias
+	which send ^\ for the right arrow key work.
+
+	If you type in an unmatched ) or } in showmatch mode, the editor
+	will now beep to warn you about your mistake.  The ) or } is
+	still accepted.
+
+	Editor scripts can now contain comments.  Begin the comments with "
+	(double quote).  Comments can be on their own line or come at the
+	end of command lines.  The comment continues to the end of the line.
+
+	The 3rd version of the USG tty driver is now supported, making it
+	possible on USG systems to interrupt redrawing the screen and to
+	not flush output when interruptable commands take place.
+
+	The rewind command has been added to the list of commands that
+	the autowrite option knows about.
+
+	A bug on the USG system where hanging up the phone causes more
+	than one SIGHUP to be sent has been compensated for.
+
+	A bug which caused a file that bombed out in the middle of
+	an edit command to be considered modified has been fixed.
+
+	The source file ex_io.c has been split into ex_io.c and
+	ex_unix.c to avoid a problem where many C compilers overflowed
+	the symbol table.
+
+	A bug which prevented turning off your prompt in your .exrc
+	has been fixed.
+
+	Some of the code internal to the editor has been rearranged
+	and some comments added.
+
+	The bug fix to the USG tty driver to output a null character
+	as padding at 1200 baud has been improved to output a DEL
+	at 1200 baud or above.
+
+	Terminals with small screens (less than 20 columns or less
+	than 5 lines) should now work.
+
+	A bug which prevented you from entering the character DEL
+	into the buffer if you changed your interrupt character to
+	something else besides DEL has been fixed.
+
+	A bug which caused things like d) and d} to miss the last
+	character when they should have deleted to the end of the
+	buffer has been fixed.
+
+	A bug which caused the last character to be lost when you
+	read in a file with no newline at the end of the last line
+	has been fixed.
+
+	A bug that caused garbage to be in the buffer if the temp file
+	overflowed has been fixed.
+
+	The character | can now be escaped with \| in file names.
+
+	A bug which caused the editor to not work if the tab stop size
+	did not divide the screen width has been fixed.
+
+	A bug on HP terminals that caused the screen to be messed up if
+	you scrolled up something that began the same way as the echo line
+	has been fixed.
+
+	An old ed bug which caused globals to fail when they did a substitute
+	on the next line has been fixed.
+
+	The % operator will now find matching square brackets the same way
+	it does parentheses and braces.  It will not display them in
+	showmatch mode, however, and will not use a ] to match all ('s.
+
+	Ex looks in your environment for EXINIT. If it finds it, that
+	is used instead of looking for your .exrc. This should make
+	entry into ex faster, along with the termlib feature of looking
+	for a termcap entry in TERMCAP.
+
+	Internally, it is possible to turn off about a dozen different
+	options when compiling the editor to make it fit in 64K.
+	See the makefile for a list of options.
+
+Version 2.10 -- February 2, 1980 (Corresponds to 3.3)
+
+	The default window sizes have been changed.  At 300 baud the
+	window is now 8 lines (was 1/2 the screen size).  At 1200 baud
+	the window is now 16 lines (was 2/3 the screen size, which was
+	usually also 16 for a typical 24 line CRT).  At 9600 baud the
+	window is still the full screen size.  Any baud rate less than
+	1200 behaves like 300, any over 1200 like 9600.
+
+	A new command mode command "x" (for "xit") has been added.  This
+	is the same as wq but will not bother to write if there have been
+	no changes to the file.  The command letter was chosen for
+	convenience and compatibilty with hed.
+
+	The command "ZZ" from vi is the same as ":x<cr>".  This is
+	the recommended way to leave the editor.  Z must be typed twice
+	since this is two easy to type by accident and has such severe
+	effects if unintentional.
+
+	The options w300, w1200, and w9600 can be set.  They are synonyms
+	for "window", but only apply at 300, 1200, or 9600 baud, resp.
+	Thus you can specify you want a 12 line window at 300 baud and
+	a 23 line window at 1200 baud with
+		:set w300=12 w1200=23
+
+	The "q" command from visual no longer works at all.  You must
+	use "Q" to get to ex command mode.
+
+	The editor no longer uses nondestructive space, except when in
+	insert mode.  It instead prints the character it would be
+	moving over.  This is a real win on terminals that use an
+	escape sequence to nd space.
+
+	A minor incompatibility with the v7 ed has been fixed.  Previously,
+	to do a global substitute with an escaped newline in the rhs, you
+	had to put two \'s in ex and one in ed.  Ex now accepts the single
+	form as well as the double form.  For example, instead of
+		g/foo/s//foo\\
+		bar/g
+	(which still works), you can now type, as in ed,
+		g/foo/s//foo\
+		bar/g
+	This means that the following ex command, which used to "work":
+		g/foo/s//foo bar\
+		.+1,/mumble/d
+	won't work anymore unless you put the trailing / on the substitution.
+	This usage is pretty obscure anyway.
+
+	A bug which caused the command "g/pattern" to print an error
+	message if "pattern" occurred on the last line has been fixed.
+
+	Limits have been raised so that an Ann Arbor terminal can be used,
+	and long tags can now be accomodated.
+
+	A bug that caused HP terminals to mess up in insert mode when inserting
+	before a tab which follows 7 or fewer characters at the beginning of a
+	line (such as a tags file) has been fixed.
+
+	A bug which causes term to be displayed incorrectly and which
+	caused a crash when changing terminal type when there happened
+	to be several |'s and a long string in genbuf has been fixed.
+	This bug was introduced in ex 2.9.
+
+	The patch for echo lines longer than 80 characters has been
+	repaired to do "Hit return to continue" after such lines and
+	print the entire output.
+
+	A bug that caused a messed up screen after a :sh command from
+	open mode has been fixed.
+
+	A bug which caused a tag request for a nonexistant tag to leave
+	the editor in nomagic mode has been fixed.
+
+	A bug which caused strange behavior if there is no default file
+	name when an autowrite save is attempted has been fixed.
+
+	A bug which caused the cursor to go to the wrong position when
+	^^D or 0^D is entered from column 2 in autoindent mode on terminals
+	that can backspace has been fixed.
+
+	In order to get 2.10 to fit on a v7 pdp-11, the following features
+	have been deleted:
+		The MASTERTAGS feature (undocumented use of /usr/lib/tags
+		as an alternate tag file)
+		Checking that a file being read in is an ascii file.
+		Turning off ^Q/^S on a v7 system.
+
+Version 2.9 -- November 1, 1979
+
+	The meanings of semicolon and newline, broken in 2.8, have been fixed.
+	Newline with two arguments still prints the range, unless a semicolon
+	was present, in which case only the last line is printed. Semicolon
+	otherwise behaves as in ed (and ex 2.7).
+
+	For compatibility with ed: '%' is an abbreviation for '1,$'.
+	The default starting line for 'z' is '.+1' instead of '.'.
+	If 'z' is followed by a number, this number is remembered
+	(by setting the scroll option).
+
+	The + options to the command line invocation and to the edit
+	command now also work for the next command. In addition, the
+	text after the + is no longer limited to a line number or
+	/ or ? search string, but can be any single command. (It cannot
+	contain spaces except on command line invocation, and then must
+	be quoted to make the shell happy.)  The only special case is
+	where + is used by itself - this is the same as +$.
+
+	The way window sizes and scrolling commands are based on the options
+	window and scroll has been rearranged. All command mode scrolling
+	commands (z and ctrl D) are based on scroll: ^D moves scroll lines,
+	z moves scroll*2 lines. Everything in visual (^D, ^U, ^F, ^B, z,
+	window sizes in general) are based on the window option. The
+	defaults are arranged so that everything seems as before, but
+	on hardcopy terminals at 300 baud the default for scroll is
+	11 instead of 6.
+
+	Whether ex prompts for commands now depends on the setting of the
+	prompt variable, so inside script you can say 'set prompt' and
+	get ex to prompt.
+
+	Tags are now searched for in nomagic mode instead of the funny
+	mode where magic characters were impossible to get.
+
+	Paragraphs and sections with one letter names (such as those
+	used by PWB/MM) now work - use a space (escaped by a backslash)
+	for the second letter. Default paragraphs and sections are included
+	for both MM and MS. (Thanks to adb for this)
+
+	A bug involving 16 bit arithmetic on a vax for the yank command
+	has been fixed.
+
+	The text of the mailed message from expreserve has been improved
+	slightly.
+
+	The editor now always turns off the XTABS stty bit when in visual
+	mode, making terminals that do special things with ^I work.
+
+	The editor now knows about terminals with destructive tabs, like
+	the teleray 1061, having the xt option.
+
+	A bug that caused going past column 80 on terminals with insert line
+	but not insert char (like the mime, h1500, or i100) to mess up the
+	screen has been fixed.
+
+	A bug on 2621's that causes lines longer than 80 chars long with
+	embedded tabs to mess up when a tab was inserted has been fixed.
+
+	A bug that caused the wrong line to suddenly appear under very
+	rare circumstances involving small window sizes and long lines
+	where a search left the cursor on the top line of the screen
+	has been fixed.
+
+	The bug that caused inverse video to sometimes be scrolled up
+	into the file from an error message has been fixed.
+
+	The join command has been fixed, so that '3,3j' no longer joins
+	lines 3 and 4. ('3j' still does.) Thus, '/a/;/b/-j' works right
+	even if b is found on the line after a.
+
+	ex -v now finds your .exrc. In related changes, the default in
+	vi is now magic and nobeautify.
+
+	If your buffer is empty, ex won't refuse to do an edit, quit,
+	or tag command because you haven't done a write.
+
+	A bug causing visual undo not to work after '1,$!cat' has been
+	fixed.
+
+	Ex now decides for itself whether to use CBREAK or TIOCSETN
+	by whether they are defined in <sgtty.h>. This eliminates much
+	of the #ifdef USG or V6 lines. One USG line remains due to a bug
+	in the USG tty driver at 1200 baud.
+	Note that this will mess up if you use libretro because <sgtty.h>
+	has CBREAK and TIOCSETN defined. Take these out of sgtty.h to fix this.
+
+	Termcap options TI and TE have been added.  These strings are 
+	respectively output at the beginning and end of the editing session.
+
+	Values for the set command may now include `\ ' for space and
+	control characters.
+
+	Changes have been made to /etc/termcap (several new fields have
+	been added) and to termlib (it now looks for TERMCAP in the environment
+	and treats it as a termcap entry if the name of the terminal mentioned
+	is the same as TERM and the entry doesn't start with a slash.
+	If it starts with a slash it is treated as a filename, as before.
+	Termcap also checks the 512 byte entry limit and skips lines beginning
+	with # as comments. It is possible to define one terminal as being
+	similar to another one with a few differences without making two
+	copies of the description.) New termcap fields:
+		ti	terminal initialization string. This should be sent
+			out at the beginning of any program that addresses
+			the cursor.
+		te	Like te but at end of the program.
+			(Thanks to adb for these two fields)
+		us	Start underlining.
+		ue	End underlining.
+		uc	Underline one character & move over it.
+		hc	(bool) terminal is hardcopy
+		ns	(bool) terminal doesn't scroll (tektronix)
+		ff	(bool) hardcopy knows ^L means formfeed.
+		pt	(bool) hardware tabs, maybe set by is
+		xt	(bool) destructive tabs (teleray 1061)
+		ku	sequence sent by keypad "up" arrow
+		kd	"down" arrow
+		kl	"left" arrow
+		kr	"right" arrow
+		kh	"home" arrow
+		ks	sequence to make keypad send these codes
+		ke	sequence to make keypad not send these codes.
+		k0-k9	sequences sent by up to 10 "other" keys
+		l0-l9	labels on k0-k9. If omitted, default = "f0" - "f9".
+		ko	additional keys on keypad, in terms of their
+			termcap entry. For example, if "home down" and "clear"
+			are present and send the same codes as ll and cl, use
+				:ko=cl,ll:
+		tc	This entry is a list of differences from the named
+			entry. THIS MUST BE THE LAST FIELD. Example: hp2621
+			with no ks or ke (e.g. null string):
+				hn|hp2621nl:ks@:ke@:tc=hp2621:
+			The @ cancels the string even if it is defined later.
+
+Version 2.8 -- July 18, 1979
+
+	It is now possible to backspace over the first character (:, /, or ?)
+	on the echo line from visual. The effect is as though delete were hit
+	except the bell isn't rung.
+
+	The trailing slash in global commands is now optional.
+	g/pat	means	g/pat/p
+	(This change, as well as the corresponding changes to the substitute
+	command and r.e. address are also in the latest version of ed.)
+
+	The j, k, and l keys now move the cursor down, up, and right,
+	respectively, in visual mode, as they used to do (and still do on
+	3a's). This is to avoid the creeping of these keys into the map
+	descriptions of terminals and to compensate for the lack of arrow
+	keys on terminals like HP's.
+
+	Two arguments given to a newline command now print the range of
+	lines instead of just the last line (as though 'p' were appended).
+	To make forms like /foo/;/bar/	still work, the ; operator sets
+	the dot as before but then forgets everything to the left of the ;.
+
+	The + option invoked from the shell or the edit command has
+	two new forms:	+/pat	and 	+?pat
+	These cause the initial line to be chosen by a search for the
+	pattern pat. Note that if any special characters are in the
+	argument (such as ^, $, and even ?) it must be quoted.
+
+	Two new options are added: autowrite (aw) and hardtabs (ht).
+	Autowrite is a toggle, off by default. When on, if you have
+	unsaved changes before a context switching command, a write
+	is done automatically. The commands that may write are !,
+	next, and tag. Note that there is an equivalent way to do the
+	command with autowrite set without the write in each case:
+	shell, tag!, and edit do not write.
+
+	Hardtabs is a numeric option,, set to 8 by default.
+	Changing this to, say, 4, tells ex that either your system
+	expands tabs to every 4 spaces, or your terminal has hardware
+	tabs set every 4 spaces.
+
+	A bug that caused strange behaviour when an echo line contained
+	more than 79 characters (from a long : command or one or more long
+	filenames) has been patched by not printing any such characters
+	past column 79.
+
+	Handling of systems with nonstandard locations of files (where
+	the maintainer of ex is not a superuser and cannot create files
+	with names like /usr/lib/ex2.0strings or /etc/termcap) has been
+	improved. If the file can't be found as is, it is tried in the
+	current directory. If that fails, ex tries to run without it.
+	(Previously it bombed immediately if the error message file wasn't
+	in /usr/lib.)
+
+	Shell commands containing ! or % characters are no longer echoed
+	when in hush mode (as in 'ex -' from a shell file.)
+
+Version 2.7 -- June 10, 1979
+
+	An inefficiency introduced in version 2.3, which increased the
+	amount of time spent preparing output by approximately 30 percent
+	has been corrected.
+
+	A bug which caused ``wrapmargin'' to work as though all hardcopy
+	terminals were 160 columns wide has been corrected.
+
+	A bug which caused the display to become confused after the display
+	of a long line at the bottom of the screen was suppressed (being
+	replaced temporarily by an @) has been fixed.  Previously, under
+	some circumstances (e.g. after a put created the situation), scrolling
+	up of the following text would cause the display of this long
+	line to be skipped, so that the @ line would remain and the line
+	itself would not be displayed.
+
+Version 2.6 -- June 2, 1979
+
+	A bug which prevented the first field separator in a tags file
+	from beginning with a blank has been fixed; if the separator
+	was a blank previously, the tag would not be found in the tags file.
+
+	A bug which caused the display to be messed up after a ``:''
+	escape which created long lines has been fixed.  Previously
+	a substitute command which changed the last few lines on the screen
+	to be very long would leave the screen messed up.
+
+	A bug in display after 2 successive ``undo'' commands has been fixed.
+	Previously if you opened new lines on the display, and then did
+	2 successive undo commands, the display would be messed up after the
+	second undo if your terminal had insert/delete line.
+
+	A bug on intelligent terminals which caused unnecessary delete
+	character commands to be sent has been fixed.  This occurred when
+	you did not have ``autoindent'' set, and opened a new line
+	below an existing line with tabs.
+
+	The change operations in open mode on hardcopy terminals has been
+	fixed.  Previously there were several bugs in cursor placement
+	when the change extended to just before a tab character.
+
+	Several bugs in the handling of tabs in insert mode on intelligent
+	terminals have been fixed.  Previously, tabs would often expand
+	incorrectly, leaving the wrong amount of white space, when an
+	insert occurred just before a tab.
+
+	A bug has been fixed which caused the editor to skip processing
+	of the ``.exrc'' file when the terminal type set in the
+	environment was unknown.  The editor now processes ``.exrc'' in
+	this case.
+
+	[[A number of formatting changes have been made to the editor code
+	to eliminate unreasonably long lines.  In addition, the code
+	from the Murray Hill and USG sites has been merged in conditionally,
+	so that all sites can compile from the same source.]]
+
+Version 2.5 -- May 28, 1979
+
+	A bug which caused the VE sequence not to be sent when exiting
+	the editor via :q or :wq from visual has been fixed.
+
+	A bug which caused the command r^Q<ESC> to be weird when it
+	was repeated has been fixed.
+
+	The $ command now sets the column for future cursor motions to
+	effective infinity.  Thus a `$' followed by up/down cursor motions
+	moves at the right margin of each line.
+
+	[[Internal: a bug in conditional compilation without the LISP
+	features has been fixed.]]
+
+	Several bugs relating to insert mode and intelligent terminals
+	have been fixed:
+
+	A bug which caused inserts on HP/DATAMEDIA like terminals to act
+	strangely when the material was inserted immediately before a tab
+	has been fixed.
+
+	A bug which caused the insertion of full tabs to not appear to
+	insert as many spaces as required (under strange circumstances)
+	has been fixed.
+
+	A bug which caused inserts on terminals with insert/delete line
+	but no insert/delete character to act strangely if the insert
+	caused a line to overflow has been fixed.
+
+	The ``expreserve'' program has been improved; you now will get
+	mail if a file is saved for you as a result of your phone being
+	hung up accidentally.
+
+Version 2.4 -- May 19, 1979
+
+	A bug during inserts on intelligent terminals which occasionally
+	caused double ``~~'' characters on the last few lines of the display
+	rather than just single `~' characters has been fixed.
+
+	The w W b B e and E operations in visual now wrap around line
+	boundaries.  Thus a sequence of enough w commands will get to any
+	word below the current position in the file, and b's will back
+	up to any place before.  Thus these are more like the sentence
+	operations ( and ).  You still can't back around line boundaries
+	duing inserts however.
+
+Version 2.3 -- May 13, 1979
+
+	The P command to ex is now a synonym for p, so that 1,$P works,
+	if you don't let up on the shift key soon enough.
+
+	The / and ? operations within visual and open now hit later
+	(or earlier resp) occurrences of the same string on the same
+	line.  This makes scans using / and ? much more useful.  You
+	can move to the right on the current line by typing /pref<ESC>
+	where `pref' is a prefix of the word you wish to move to, and
+	delete to a following string `str' by doing d/str<ESC> if it is
+	on the same or succeeding line.  Previously the command
+		d/pat/
+	deleted lines through the next line containing `pat'; it now
+	deletes text up to the next instance of `pat'.  To delete to
+	the next line containing `pat', do
+		d/pat/0
+	which is short for
+		d/pat/+0
+	In general if you use an offset after the scanning pattern,
+	whole lines will always be affected.
+
+	Several bugs relating to the setting of the previous context mark
+	`` have been fixed, including one which caused operations such as
+	d`` or c`` to occasionally dump core.  In particular, the operations
+		( ) { } [[ ]] and %
+	now set the previous context mark correctly, and the mark is set
+	even if the motion by these operations lands in the same line.
+
+	More optimization is now done on output cursor motions.  This
+	is particularly much better on HP terminals which have
+	ridiculously long cursor addressing sequences.  A new
+	capability has been added to the termcap file to aid this:
+	``bt'' (backtab).  Thanks to Chuck Haley for the new code to
+	implement this.
+
+	A bug has been fixed on intelligent terminals which caused part
+	of the screen to be accidentally erased during insertions.
+	This occurred only on the first line on the screen, when it
+	became longer than one displayed line and only if a part of
+	the screen (at the top) was currently not in use.
+
+	A bug has been fixed which caused the command ``dp'' to be interpreted
+	as ``delete to register p''.  This normally went unnoticed since
+	the ``autoprint'' option would cause the effect which the ``p'' was
+	forcing.
+
+Version 2.2 -- May 6, 1979
+
+	"d)" now deletes a line if the current line is a sentence rather
+	than leaving an empty line.
+
+	The command
+		:s/str
+	now deletes str if it can find it; previously it was an error.
+
+	The editor now handles multiple ":" escapes correctly; previously
+	the screen would not be redrawn necessitating a ^L to fix it if you
+	gave a `:!command' to ``[Hit return to continue]''.
+	
+	Recursive calls to visual from within open or visual are no longer
+	permitted.  Previously ``:vi'' from within open mode would eventually
+	leave the editor in a strange state.
+
+	The %age in the status line is now correctly printed on 11's;
+	Previously internal 16-bit overflows often caused it to be incorrect.
+
+	The editor now ignores a ":" in front of commands.
+	Thus you can say ``:read foo'' within ex.
+
+	A bug which caused commands involving ]] to not be repeatable has
+	been fixed.  Previously ``d]]'' followed by ``.'' caused an error.
+
+	"ayw now works correctly.  Previously this silently did nothing.
+
+	Several bugs in "recover" and "ex -r" have been fixed.  Thanks
+	to Andy Koenig for the fixes.
+
+	In input mode in open and visual ^V (like tenex) is now equivalent
+	to ^Q (which is reminiscent of ITS) superquoting the next character.
+	A later version of the UNIX tty driver will implement the standard for
+	^S ^Q handshaking and make ^Q unusable.
+
+	There are several typos on page 3 of the ``edit'' manual section:
+		s/move "a/delete a/
+		s/"a move ./put a/
+		/move to copy/s//delete to yank/
+
+Version 2.1 -- April 5, 1979
+
+	Invoking ex via
+		ex -l
+	now sets "lisp" and "showmatch".  This is suitable for invocations
+	from within Franz Lisp.  If you don't like "showmatch", you can
+	still use "ex -l", just put the command
+		set noshowmatch
+	in your .exrc file.
+

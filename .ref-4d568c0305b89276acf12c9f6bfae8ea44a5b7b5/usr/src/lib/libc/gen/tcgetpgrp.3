@@ -1,0 +1,53 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcgetpgrp.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt TCGETPGRP 3
+.Os
+.Sh NAME
+.Nm tcgetpgrp
+.Nd get foreground process group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <unistd.h>
+.Ft pid_t
+.Fn tcgetpgrp "int fd"
+.Sh DESCRIPTION
+The
+.Nm tcgetpgrp
+function returns the value of the process group ID of the foreground
+process group associated with the terminal device.
+If there is no foreground process group,
+.Nm tcgetpgrp
+returns an invalid process ID.
+.Sh ERRORS
+If an error occurs,
+.Nm tcgetpgrp
+returns -1 and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EBADF
+The
+.Fa fd
+argument is not a valid file descriptor.
+.It Bq Er ENOTTY
+The calling process does not have a controlling terminal or the
+underlying terminal device represented by
+.Fa fd
+is not the controlling terminal.
+.El
+.Sh SEE ALSO
+.Xr setpgid 3 ,
+.Xr setsid 2 ,
+.Xr tcsetpgrp 3
+.Sh STANDARDS
+The
+.Nm tcgetpgrp
+function is expected to be compliant with the
+.St -p1003.1-88
+specification.

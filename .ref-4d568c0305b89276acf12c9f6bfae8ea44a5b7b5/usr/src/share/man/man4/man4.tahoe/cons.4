@@ -1,0 +1,74 @@
+.\" Copyright (c) 1986, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cons.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CONS 4 tahoe
+.Os BSD 4.3t
+.Sh NAME
+.Nm cons ,
+.Nm CP ,
+.Nm remote
+.Nd Tahoe console interface
+.Sh DESCRIPTION
+The console is available to the processor through the console registers.
+It acts like a normal terminal, except that a
+.Dq Ic ~
+is used to transfer
+commands to the console processor when the front panel key switch is
+in the
+.Dq foo
+or
+.Dq bar
+position.
+When the console processor
+is in control, a
+.Ql #>
+prompt is displayed.  To continue execution
+after halting the machine with
+.Ql ~h ,
+use
+.Ql r .
+.Bl -tag -width Ds
+.It Ic \&~h
+Halt the machine.
+.It Ic \&~b
+Force a reboot.
+.It Ic \&~r
+Continue execution after a
+.Ic \&~h .
+.El
+.Pp
+Refer to the Tahoe
+console processor handbook for the complete list of facilities available
+through the console processor.
+.Pp
+The
+.Nm CP
+device provides direct access to the console processor.  The
+.Nm remote
+device is a secondary console terminal used for remote diagnosis;
+it is normally connected to a modem.
+.Sh FILES
+.Bl -tag -width /dev/consolexx -compact
+.It Pa /dev/console
+.It Pa /dev/CP
+.It Pa /dev/remote
+.El
+.Sh DIAGNOSTICS
+None.
+.Sh SEE ALSO
+.Xr kdb 4 ,
+.Xr tty 4 ,
+.Xr reboot 8
+.Rs
+.%T Console Processor Handbook
+.Re
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.3 tahoe .

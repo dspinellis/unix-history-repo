@@ -1,0 +1,25 @@
+#print
+You can also use relative addresses of the +1 or -1
+sort with context searches.  For example, to
+print the line after a line containing "cat",
+you can say
+  /cat/+1p
+How would you print the line before the next line
+containing the word "help" at the beginning
+of the line?  Try some experiments if you want,
+but in the end type "answer COMMAND" where COMMAND
+is the correct command to do that.
+#copyin
+#user
+#uncopyin
+#match /^help/-1p
+#match /^help/-1
+#match /^help/-
+#match /^help/-p
+#succeed
+The "p" isn't necessary, of course.
+#cmp X1 X2
+#log
+#next
+52.1a 10
+52.2a 5

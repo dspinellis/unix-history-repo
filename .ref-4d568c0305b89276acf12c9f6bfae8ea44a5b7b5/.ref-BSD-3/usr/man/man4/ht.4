@@ -1,0 +1,80 @@
+.TH HT 4 
+.SH NAME
+ht \- RH-11/TE-16 magtape interface
+.SH DESCRIPTION
+The files
+.I "mt0, ..., mt15"
+refer to the DEC RH/TM/TE-16 magtape.
+The files
+.I "mt0, ..., mt7"
+are 800 bpi, and
+.I "mt8, ..., mt15"
+are 1600bpi.
+The files
+.I "mt0, ..., mt3"
+and
+.I "mt8, ..., mt11"
+are rewound when closed; the others are not.
+When a file open for writing is closed, a double end-of-file is written.
+.PP
+A standard tape consists of a
+series of 512 byte records terminated by an
+end-of-file.
+To the extent possible, the system makes
+it possible, if inefficient, to treat
+the tape like any other file.
+Seeks have their usual meaning and it is possible
+to read or write a byte at a time.
+Writing in very small units is inadvisable,
+however, because it tends to create monstrous record
+gaps.
+.PP
+The
+.I mt
+files discussed above are useful
+when it is desired to access the tape in a way
+compatible with ordinary files.
+When foreign tapes are to be dealt with, and especially
+when long records are to be read or written, the
+`raw' interface is appropriate.
+The associated files may be named
+.I "rmt0, ..., rmt15,"
+but the same minor-device considerations
+as for the regular files still apply.
+.PP
+Each
+.I read
+or
+.I write
+call reads or writes the next record on the tape.
+In the write case the record has the same length as the
+buffer given.
+During a read, the record size is passed
+back as the number of bytes read, provided it is no greater
+than the buffer size;
+if the record is long, an error is indicated.
+In raw tape I/O, the buffer must begin on a word boundary
+and the count must be even.
+Seeks are ignored.
+A zero count is returned when a tape mark is read;
+another read will fetch the first record of the
+next tape file.
+.SH FILES
+/dev/mt?,
+/dev/rmt?
+.SH "SEE ALSO"
+tp(1)
+.SH BUGS
+The magtape system is supposed to be able
+to take 64 drives.
+Such addressing has never been tried.
+These bugs will be fixed when
+we get more experience with this device.
+.PP
+The driver is limited to four transports.
+.PP
+If any non-data error is encountered, it refuses to do anything
+more until closed.
+In raw I/O, there should be a way
+to perform forward and backward record and file spacing and
+to write an EOF mark explicitly.

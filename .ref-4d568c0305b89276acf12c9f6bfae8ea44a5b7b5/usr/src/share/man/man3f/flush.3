@@ -1,0 +1,25 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)flush.3	8.1 (Berkeley) %G%
+.\"
+.TH FLUSH 3F ""
+.UC 5
+.SH NAME
+flush \- flush output to a logical unit
+.SH SYNOPSIS
+.B subroutine flush (lunit)
+.SH DESCRIPTION
+.I Flush
+causes the contents of the buffer for logical unit
+.I lunit
+to be flushed to the associated file.
+This is most useful for logical units 0 and 6 when they are both
+associated with the control terminal.
+.SH FILES
+.ie \nM /usr/ucb/lib/libI77.a
+.el /usr/lib/libI77.a
+.SH "SEE ALSO"
+fclose(3S)

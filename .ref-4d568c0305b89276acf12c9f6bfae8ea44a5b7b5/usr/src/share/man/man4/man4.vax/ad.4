@@ -1,0 +1,61 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ad.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AD 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm ad
+.Nd Data Translation A/D converter
+.Sh SYNOPSIS
+.Cd "device ad0 at uba0 csr 0170400 vector adintr"
+.Sh DESCRIPTION
+The
+.Nm \&ad
+driver
+provides an interface to the Data Translation A/D converter.
+This is
+.Em not
+a real-time driver, but merely allows
+the user process to sample the board's channels one at a time.
+Each minor device selects a different
+.Tn A/D
+board.
+.Pp
+The driver communicates to a user process by means of
+.Xr ioctl 2 Ns s.
+The
+.Dv AD_CHAN
+.Xr ioctl
+selects which channel of the board to read.
+For example,
+.Bd -literal -offset indent
+chan = 5;
+ioctl(fd, AD_CHAN, &chan);
+.Ed
+.Pp
+selects channel 5.
+The
+.Dv AD_READ
+.Xr ioctl 2
+actually reads the data and returns it to the user
+process.
+An example is
+.Bd -literal -offset indent
+ioctl(fd, AD_READ, &data);
+.Ed
+.Sh FILES
+.Bl -tag -width /dev/adx -compact
+.It Pa /dev/ad
+.El
+.Sh DIAGNOSTICS
+None.
+.Sh HISTORY
+The
+.Nm
+driver appeared in
+.Bx 4.1 .

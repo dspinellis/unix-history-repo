@@ -1,0 +1,17 @@
+#print
+The "mv" command changes the names of files.
+For example, "mv thomas james" changes the
+name of the file "thomas" to be "james".
+
+There is a file in the current directory named
+"thomas".  Change that file to have the
+name "james".  Then type "ready".
+(The "mv" command, by the way, is like many
+UNIX commands in that it is silent unless there is an error.)
+#create thomas
+xx
+#user
+test -r james
+#log
+#next
+2.2b 5

@@ -1,0 +1,25 @@
+.TH MKDIR 1 
+.SH NAME
+mkdir \- make a directory
+.SH SYNOPSIS
+.B mkdir
+dirname ...
+.SH DESCRIPTION
+.I Mkdir
+creates specified directories
+in mode 777.
+Standard entries,
+.RB ` . ',
+for the directory itself,
+and 
+.BR ` .. '
+for its parent, are made automatically.
+.PP
+.I Mkdir
+requires write permission in the parent directory.
+.SH "SEE ALSO"
+rm(1)
+.SH DIAGNOSTICS
+.I Mkdir
+returns exit code 0 if all directories were successfully made.
+Otherwise it prints a diagnostic and returns nonzero.

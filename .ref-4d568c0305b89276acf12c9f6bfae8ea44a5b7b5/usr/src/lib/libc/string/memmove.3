@@ -1,0 +1,49 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)memmove.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MEMMOVE 3
+.Os
+.Sh NAME
+.Nm memmove
+.Nd copy byte string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft void *
+.Fn memmove "void *dst" "const void *src" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn memmove
+function
+copies
+.Fa len
+bytes from string
+.Fa src
+to string
+.Fa dst .
+The two strings may overlap;
+the copy is always done in a non-destructive manner.
+.Sh RETURN VALUES
+The
+.Fn memmove
+function returns the original value of
+.Fa dst .
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memcpy 3 ,
+.Xr strcpy 3
+.Sh STANDARDS
+The
+.Fn memmove
+function
+conforms to
+.St -ansiC .

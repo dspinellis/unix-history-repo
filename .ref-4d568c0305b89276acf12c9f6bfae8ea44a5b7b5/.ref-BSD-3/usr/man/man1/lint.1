@@ -1,0 +1,142 @@
+.TH LINT 1 
+.SH NAME
+lint \- a C program verifier
+.SH SYNOPSIS
+.B lint
+[
+.B \-abchnpuvx
+]
+file ...
+.SH DESCRIPTION
+.I Lint
+attempts to detect features of the C program
+.I files
+which are
+likely to be bugs, or non-portable, or wasteful.
+It also checks the type usage of the program more strictly
+than the compilers.
+Among the things which are currently found are
+unreachable statements,
+loops not entered at the top,
+automatic variables declared and not used,
+and logical expressions whose value is constant.
+Moreover, the usage of functions is checked to find
+functions which return values in some places and not in others,
+functions called with varying numbers of arguments,
+and functions whose values are not used.
+.PP
+By default, it is assumed that all the
+.I files
+are to be loaded together; they are checked for
+mutual compatibility.
+Function definitions for certain libraries are available to
+.IR lint ;
+these libraries are referred to by a
+conventional name,
+such as `-lm', in the style of
+.IR ld (1).
+.PP
+Any number of the options in the following list
+may be used.
+The
+.SM
+.BR \-D "\*S,"
+.SM
+.BR \-U "\*S,"
+and
+.SM
+.B \-I
+options of
+.IR cc (1)
+are also recognized as separate arguments.
+.TP
+.B p
+Attempt to check portability to the
+.I IBM
+and
+.I GCOS
+dialects of C.
+.TP
+.B h
+Apply a number of heuristic tests to attempt to
+intuit bugs, improve style, and reduce waste.
+.TP
+.B b
+Report
+.I break
+statements that cannot be reached.
+(This is not the default because, unfortunately,
+most
+.I lex
+and many
+.I yacc
+outputs produce dozens of such comments.)
+.TP
+.B v
+Suppress complaints about unused arguments in functions.
+.TP
+.B x
+Report variables referred to by extern declarations,
+but never used.
+.TP
+.B a
+Report assignments of long values to int variables.
+.TP
+.B c
+Complain about casts which have questionable portability.
+.TP
+.B u
+Do not complain about functions and variables used and not
+defined, or defined and not used (this is suitable for running
+.I lint
+on a subset of files out of a larger program).
+.TP
+.B n
+Do not check compatibility against the standard library.
+.PP
+.IR Exit (2)
+and other functions which do not return
+are not understood; this causes various lies.
+.PP
+Certain conventional comments in the C source
+will change the behavior of
+.IR lint :
+.TP
+/*NOTREACHED*/
+at appropriate points
+stops comments about unreachable code.
+.TP
+.RI /*VARARGS n */
+suppresses
+the usual checking for variable numbers of arguments
+in the following function declaration.
+The data types of the first
+.I n
+arguments are checked;
+a missing
+.I n
+is taken to be 0.
+.TP
+/*NOSTRICT*/
+shuts off strict type checking in the next expression.
+.TP
+/*ARGSUSED*/
+turns on the
+.B \-v
+option for the next function.
+.TP
+/*LINTLIBRARY*/
+at the beginning of a file shuts off complaints about
+unused functions in this file.
+.SH FILES
+.ta \w'/usr/lib/llib-port  'u
+/usr/lib/lint[12] programs
+.br
+/usr/lib/llib-lc declarations for standard functions
+.br
+/usr/lib/llib-port declarations for portable functions
+.SH SEE ALSO
+cc(1)
+.br
+S. C. Johnson,
+.I Lint, a C Program Checker

@@ -1,0 +1,12 @@
+This entire subtree is believed to contain AT&T proprietary code.
+The following copyright notice applies to all files found here.
+
+Portions of the subtree were derived from software contributed to
+Berkeley by Computer Consoles Inc.
+___________________________________________________________________________
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */

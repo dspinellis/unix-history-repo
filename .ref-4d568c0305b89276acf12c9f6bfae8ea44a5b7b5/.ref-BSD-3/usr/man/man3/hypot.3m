@@ -1,0 +1,26 @@
+.TH HYPOT 3M 
+.SH NAME
+hypot, cabs \- euclidean distance
+.SH SYNOPSIS
+.B #include <math.h>
+.PP
+.B double hypot(x, y)
+.br
+.B double x, y;
+.PP
+.B double cabs(z)
+.br
+.B struct { double x, y;} z;
+.SH DESCRIPTION
+.I Hypot
+and
+.I cabs
+return
+.PP
+.IP "" 15n
+sqrt(x*x + y*y),
+.LP
+taking precautions against unwarranted overflows.
+.SH SEE ALSO
+exp(3) for
+.I sqrt

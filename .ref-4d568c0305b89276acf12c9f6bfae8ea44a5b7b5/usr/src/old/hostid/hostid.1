@@ -1,0 +1,31 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)hostid.1	6.4 (Berkeley) %G%
+.\"
+.TH HOSTID 1 ""
+.UC 5
+.SH NAME
+\fBhostid\fP \- set or print identifier of current host system
+.SH SYNOPSIS
+\fBhostid\fP [hexnum or internet address]
+.SH DESCRIPTION
+\fIHostid\fP prints the identifier of the current host in hexadecimal.
+This numeric value is expected to be unique across all hosts and is
+commonly set to the host's Internet address.  The super-user can set
+the hostid by giving a hexadecimal argument or the hostname; this is
+usually done in the startup script \fI/etc/netstart\fP.
+.SH SEE ALSO
+gethostid(2), sethostid(2)

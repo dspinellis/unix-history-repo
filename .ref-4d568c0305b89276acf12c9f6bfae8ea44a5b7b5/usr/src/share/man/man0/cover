@@ -1,0 +1,37 @@
+.\" Copyright (c) 1993 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)cover	8.1 (Berkeley) %G%
+.\"
+.ps 36
+.vs 40p
+.de t
+\&
+.sp |3.5i
+.ce 10
+\fBSection  \\$1
+.sp 0.5
+\\$2
+\\$3
+\\$4
+\\$5\fP
+.ce 0
+.bp
+..
+.t 1 Commands and Application Programs
+.t 2 System Calls
+.t 3 C-Library Subroutines
+.t 4 Special Files
+.t 5 File Formats
+.t 6 Games
+.t 7 Miscellaneous
+.t 8 System Maintenance
+\&
+.sp |3.5i
+.ce 10
+\fBSystem
+Management
+Documents\fP
+.ce 1

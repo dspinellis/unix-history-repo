@@ -1,0 +1,88 @@
+.\" Copyright (c) 1987, 1991, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Computer Consoles Inc.
+.\"
+.\"	%sccs.include.redist.roff%
+.\"
+.\"     @(#)dlmpcc.8	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DLMPCC 8
+.Os
+.Sh NAME
+.Nm dlmpcc
+.Nd download
+.Tn MPCC
+.Sh SYNOPSIS
+.Nm dlmpcc
+.Op n
+.Sh DESCRIPTION
+.Nm Dlmpcc
+downloads
+.Tn CCI's
+Multi-Protocol
+Communication Controller
+.Pq Tn MPCC .
+The controller provides high-speed
+synchronous communications for the
+.Tn POWER
+5 and
+.Tn POWER
+6 families of computers.
+This utility allows you to 
+download any or all of the
+.Tn MPCC
+boards.
+The configuration file
+.Pa mpcctab
+determines
+the protocol attributes for each
+.Tn MPCC
+board. See
+.Xr mpcctab 4
+for details. 
+.Pp
+If you specify the command with no argument, then
+.Xr dlmpcc
+scans the configuration file
+.Pa mpcctab
+and downloads all configured boards
+with corresponding protocol software.
+.Pp
+Available option:
+.Pp
+.Bl -tag -width Ds
+.It Ar n
+Specify one or
+more
+.Tn MPCC
+boards for downloading. The valid values range from
+.Sy 0-15 .
+For example, the following command line orders
+.Nm dlmpcc
+to download only the protocol software identified with board 2:
+.Pp
+.Dl dlmpcc  2
+.Pp
+The next command line orders the download of the protocols identified with
+boards 0 and 3: 
+.Pp
+.Dl dlmpcc  0  3
+.El
+.Pp
+Typically, this download function is performed at boot time from the
+.Pa /etc/rc.local
+file with an entry similar to:
+.Bd -literal -offset indent
+/usr/sbin/dlmpcc > /dev/console 2>&1
+.Ed
+.Sh SEE ALSO
+.Xr mpcctab 4 ,
+.Xr rc 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 tahoe .

@@ -1,0 +1,49 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strncasecmp.3	5.1 (Berkeley) %G%
+.\"
+.TH STRCASECMP 3 ""
+.UC 7
+.SH NAME
+strncasecmp \- compare strings, ignoring case
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+strcasecmp(const char *s1, const char *s2);
+
+int
+strncasecmp(const char *s1, const char *s2, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strcasecmp
+compares null-terminated strings
+.I s1
+and
+.I s2
+and returns an integer greater than, equal to, or less than 0,
+according as
+.I s1
+is lexicographically greater than, equal to, or less than
+.IR s2
+after translation of each corresponding character to lower-case.
+The strings themselves are not modified.
+The comparison is done using unsigned characters, so that '\e200'
+is greater than '\e0'.
+.PP
+.B Strncasecmp
+compares at most
+.I len
+characters.
+.SH SEE ALSO
+bcmp(3), memcmp(3), strcasecmp(3), strcmp(3), strcoll(3)
+strncmp(3), strxfrm(3)

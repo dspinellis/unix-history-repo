@@ -1,0 +1,130 @@
+pkg=-ms
+name=$1
+fmtr=/usr/ucb/vtroff
+shift
+
+case $name in
+
+index)
+	$fmtr $pkg $* /usr/doc/v7index
+	;;
+as*)
+	tbl /usr/doc/assembler | $fmtr $pkg $*
+	;;
+ed*)
+	$fmtr $pkg $* /usr/doc/edtut/e*
+	;;
+adv.ed)
+	$fmtr $pkg $* /usr/doc/adv.ed/ae*
+	;;
+trofftut)
+	$fmtr $pkg $* /usr/doc/trofftut/tt*
+	;;
+make)
+	$fmtr $pkg $* /usr/doc/make
+	;;
+sum*|hel*)
+	eqn /usr/doc/summary/hel* | $fmtr $pkg $*
+	;;
+cacm)
+	refer -e /usr/doc/cacm/p* | tbl | $fmtr $pkg $*
+	;;
+impl*)
+	refer -e /usr/doc/implement | $fmtr $pkg $*
+	;;
+bc)
+	$fmtr $pkg $* /usr/doc/bc
+	;;
+dc)
+	eqn /usr/doc/dc | $fmtr $pkg $*
+	;;
+eqn)
+	eqn /usr/doc/eqn/e* | $fmtr $pkg $*
+	;;
+eqnguide)
+	eqn /usr/doc/eqn/g* | $fmtr $pkg $*
+	;;
+troff)
+	/usr/doc/troff/tprint $*
+	;;
+ctour)
+	$fmtr $pkg $* /usr/doc/ctour/cdoc*
+	;;
+shell)
+	refer -e /usr/doc/shell/t* | $fmtr -$pkg $*
+	;;
+sed)
+	$fmtr $pkg $* /usr/doc/sed
+	;;
+f77)
+	tbl /usr/doc/f77 | eqn | $fmtr $pkg $*
+	;;
+begin*)
+	eqn -s9 /usr/doc/beginners/u* | $fmtr $pkg $*
+	;;
+uprog)
+	sed -f /usr/doc/cwscript /usr/doc/p? | $fmtr $pkg $* /usr/doc/p.mac -
+	;;
+yacc)
+	refer -e /usr/doc/yacc/ss* | $fmtr $pkg $*
+	;;
+lint)
+	refer -e /usr/doc/lint | $fmtr $pkg $*
+	;;
+ratfor)
+	$fmtr $pkg $* /usr/doc/ratfor/m*
+	;;
+m4)
+	$fmtr $pkg $* /usr/doc/m4 
+	;;
+refer)
+	refer /usr/doc/refer/refer | tbl | $fmtr $pkg $*
+	;;
+pub*)
+	tbl /usr/doc/refer/pubuse | $fmtr -rP1 $pkg $*
+	;;
+lex)
+	tbl /usr/doc/lex | $fmtr -mcp $*
+	;;
+tbl)
+	tbl /usr/doc/tbl | eqn | $fmtr $pkg $*
+	;;
+ms*)
+	tbl /usr/doc/msmacros/ms | $fmtr $pkg $*
+	tbl /usr/doc/msmacros/refcard | eqn | $fmtr $*
+	;;
+awk)
+	refer -e /usr/doc/awk | tbl | $fmtr $pkg $*
+	;;
+adb)
+	$fmtr $pkg $* /usr/doc/adb/tut*
+	;;
+password)
+	tbl /usr/doc/password | eqn | $fmtr $pkg $*
+	;;
+secur*)
+	$fmtr $pkg $* /usr/doc/security
+	;;
+uucp)
+	$fmtr $pkg $* /usr/doc/uucp/network
+	;;
+uucpimp*)
+	$fmtr $pkg $* /usr/doc/uucp/implement
+	;;
+iosys)
+	$fmtr $pkg $* /usr/doc/iosys 
+	;;
+port|p*tour)
+	refer -e /usr/doc/porttour/p* | $fmtr $pkg $*
+	;;
+setup)
+	troff $pkg $* /usr/doc/setup
+	;;
+regen)
+	troff $pkg $* /usr/doc/regen
+	;;
+*)
+	echo 'what is' $name 1>&2
+	;;
+
+esac

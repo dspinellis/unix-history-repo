@@ -1,0 +1,79 @@
+.\"	@(#)letter.tosun	1.2	90/07/01
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.\".so HEADERS
+.\".HE D
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.nf
+.ti 4.5i
+June 4, 1990
+.LP
+.nf
+Ms. Claire LeDonne
+Technology Licensing Office
+2320 Shattuck Avenue
+University of California at Berkeley
+Berkeley, CA 94704
+.sp
+Peter M. C. Choy
+Deputy General Counsel
+Technology Law Group
+Sun Microsystems
+2550 Garcia Avenue
+Mountain View, CA 94043-1100
+.sp 2
+.LP
+Dear Mr. Choy,
+.PP
+I have discussed the issues raised in your letter of April 16, 1990
+with Dr. Marshall Kirk McKusick, who heads the operating
+system and networking research for the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+Dr. McKusick informs me that he has been personally involved in
+coordinating the development of \s-1NFS\s0
+for the Berkeley Software Distribution, \s-1BSD\s0.
+.PP
+The group is well aware of the issues of code contamination,
+as they have had to deal with it for years.
+Further, their high profile makes it additionally important that
+they have strict procedures for code development and detailed
+documentation of all outside sources of code.
+.PP
+The implementation of NFS that has been incorporated in \s-1BSD\s0
+was developed by Rick Macklem at the University of Guelph near
+Toronto, Canada.
+\s-1CSRG\s0 has on file a contributed software agreement from the
+University of Guelph stating that the implementation of \s-1NFS\s0
+that Guelph has made available to \s-1CSRG\s0 contains no proprietary
+code of any company.
+The code was developed entirely from the specifications that were
+placed in the public-domain by Sun.
+As a further assurance that none of Sun's proprietary code was
+incorporated into the contributed \s-1NFS\s0 implementation,
+Rick Macklem has told us that the University of Guelph does not
+have a Sun source license.
+.PP
+If I can be of any further assistance in clarifying these issues,
+please feel free to contact me.
+.sp 2
+.in +1.5i
+Sincerely,
+.sp .65i
+Claire LeDonne
+.in -1.5i
+.sp 2
+.nf
+cc:	Dr. Marshall Kirk McKusick, Mike Karels
+	CSRG
+.fi

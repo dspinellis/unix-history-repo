@@ -1,0 +1,25 @@
+#print
+Most of the examples we have been doing so far have been
+exercises in using "ls ... >file". 
+But ___any program that normally produces its output on your terminal
+can be made to put that same output into a file instead
+with ">". 
+For example, "cat" simply copies one or more files onto the
+terminal normally, so by using ">", you can get the same 
+information on a file instead. 
+In this directory there are two files whose names
+begin with "r".  Copy them onto a new file called 
+"combine". 
+Type "ready" when you're done.
+#create ref
+Now is the tuime
+#create ref1
+for all good men
+#create X1
+Now is the tuime
+for all good men
+#user
+#cmp X1 combine
+#log
+#next
+3.1a 10

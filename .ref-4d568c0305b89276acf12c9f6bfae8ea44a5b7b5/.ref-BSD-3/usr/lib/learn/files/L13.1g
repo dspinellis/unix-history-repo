@@ -1,0 +1,20 @@
+#print
+Suppose that we really do want to interchange the contents
+of the files "dick" and "jane". One way to do it is
+to move the contents of "dick" into some temporary file,
+then move "jane" onto "dick" (which of course clobbers
+the old contents of "dick", but we saved them already),
+then finally to move the temporary copy of "dick" to
+"jane". There are two files named "dick" and "jane" in this
+directory. Interchange their contents, then type "ready".
+#create Ref
+short file for dick
+#create dick
+short file for dick
+#create jane
+another file for jane
+#create Ref1
+another file for jane
+#user
+cmp -s jane Ref && cmp -s dick Ref1
+#log

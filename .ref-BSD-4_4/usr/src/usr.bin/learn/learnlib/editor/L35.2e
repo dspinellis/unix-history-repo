@@ -1,0 +1,33 @@
+#print
+A very powerful construction is ".*",
+which matches any character (remember '.')
+repeated any number of times.    For example
+
+s/a.*b/.../
+
+replaces anything of the forms
+
+axyzb,  aaaaaab,   a1234b,  abbbb
+
+since it requires just an 'a' and a 'b'
+at the ends of the string, with
+anything at all in between.
+Or, to throw away everything
+on a line after the word "stop", you could try
+
+s/stop.*/stop/
+
+In this directory is a file "sentence".
+Delete everything after
+the word "last" on the second line of the file.
+#create Ref
+This file has a sentence in which
+this is the last
+#create sentence
+This file has a sentence in which
+this is the last word which should be left.
+#user
+#cmp sentence Ref
+#next
+36.1a 10
+36.2a 5

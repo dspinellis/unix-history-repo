@@ -1,0 +1,99 @@
+.nr i 1i
+.de H
+'sp |.5i-1
+.tl 'May 15, 1977'''
+'sp |1i
+..
+.de F
+'bp
+..
+.wh 0 H
+.wh -1i F
+.de pp
+.ft R
+.sp
+.ti 0
+..
+.de h
+.sp
+.ti0
+\fB\\$1\fP
+.br
+..
+.ce
+.ftB
+Summary of Changes to N/TROFF Since October 1976 Manual
+.ft
+.ta \niu
+.in \niu
+.h Options
+.pp
+-h	(Nroff only) Output tabs used during horizontal spacing
+to speed output as well as reduce output byte count.
+Device tab settings assumed to be every
+8 nominal character widths.
+The default settings of input (logical) tabs is also
+initialized to every 8 nominal character widths.
+.pp
+-z	Efficiently suppresses formatted output.
+Only message output will occur (from "tm"s and diagnostics).
+.h "Old Requests"
+.pp
+\&.ad\ c	The adjustment type indicator "c" may now also be a number
+previously obtained from the ".j" register (see below).
+.pp
+\&.so\ name	The contents of file "name" will be interpolated
+at the point the "so" is encountered.
+Previously, the interpolation was done upon return to the file-reading input level.
+.h "New Request"
+.pp
+\&.ab\ text	\
+Prints "text" on the message output and terminates
+without further processing.
+If "text" is missing, "User Abort." is printed.
+Does not cause a break.
+The output buffer is flushed.
+.pp
+\&.fz F N	\
+forces f_ont "F" to be in siz_e N.
+N may have the form N, +N, or -N.
+For example,
+     .fz 3 -2
+.br
+will cause an implicit \es-2 every time font 3 is entered,
+and a corresponding \es+2 when it is left.
+Special font characters occurring during the
+reign of font F will have the same size modification.
+If special characters are to be treated differently,
+     .fz S F N
+.br
+may be used to specify the size treatment of special
+characters during font F.
+For example,
+     .fz 3 -3
+     .fz S 3 -0
+.br
+will cause automatic reduction of font 3 by 3 points
+while the special characters would not be affected.
+Any ``.fp'' request specifying a font on some position
+must precede ``.fz'' requests relating to that position.
+.h "New Predefined Number Registers."
+.pp
+\&.k	Read-only. Contains the horizontal size
+of the text portion (without indent) of the current
+partially collected output line, if any, in
+the current environment.
+.pp
+\&.j	Read-only. A number representing the current adjustment mode and type.
+Can be saved and later given to the "ad" request to restore a previous mode.
+.pp
+\&.P	Read-only.
+1 if the current page is being printed,
+and zero otherwise.
+.pp
+\&.L	Read-only.
+Contains the current line-spacing parameter ("ls").
+.pp
+\&c.	General register access to the input line-number
+in the current input file.
+Contains the same value as the read-only ".c" register.

@@ -1,0 +1,74 @@
+.TH LEARN 1
+.SH NAME
+learn \- computer aided instruction about UNIX
+.SH SYNOPSIS
+.B learn
+[
+.BR \- directory
+]
+[ subject [ lesson  [ speed ] ] ]
+.SH DESCRIPTION
+.I Learn
+gives CAI courses and practice in the use of UNIX.
+To get started
+simply type `learn'.
+The program will ask questions to find out what
+you want to do.
+The questions may be bypassed by naming a
+.I subject,
+and the last
+.I lesson
+number that
+.I learn
+told you in the previous session.
+You may also include a
+.I speed
+number that was given with the lesson number
+(but without the parentheses that
+.I learn
+places around the speed number).
+If
+.I lesson
+is `\-', 
+.I learn
+prompts for each lesson;
+this is useful for debugging.
+.PP
+The
+.I subjects
+presently handled are
+.IP " "
+.nf
+editor
+eqn
+files
+macros
+morefiles
+C
+.fi
+.PP
+The special command
+`bye' terminates a 
+.I learn
+session.
+.PP
+The
+.BI \- directory
+option allows one to exercise a script in
+a nonstandard place.
+.SH FILES
+/usr/learn and all dependent directories and files
+.SH BUGS
+The main strength of
+.I learn,
+that it asks the student to use the real
+UNIX, also makes possible baffling mistakes.
+It is helpful, especially for nonprogrammers,
+to have a UNIX initiate near at hand during the first
+sessions.
+.PP
+Occasionally lessons are incorrect, sometimes because the local version
+of a command operates in a non-standard way.
+Such lessons may be skipped,
+but it takes some sophistication to recognize
+the situation.

@@ -1,0 +1,67 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)system.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SYSTEM 3
+.Os
+.Sh NAME
+.Nm system
+.Nd pass a command to the shell
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft int
+.Fn system "const char *string"
+.Sh DESCRIPTION
+The
+.Fn system
+function
+hands the argument
+.Fa string
+to the command interpreter
+.Xr sh 1 .
+The calling process waits for the shell
+to finish executing the command,
+ignoring
+.Dv SIGINT
+and
+.Dv SIGQUIT ,
+and blocking
+.Dv SIGCHLD .
+.Pp
+If
+.Fa string
+is a
+.Dv NULL
+pointer,
+.Fn system
+will return non-zero if the command interpreter
+.Xr sh 1
+is available, and zero if it is not.
+.Pp
+The
+.Fn system
+function
+returns the exit status of the shell, or \-1 if the
+.Xr wait 3
+for the shell failed.
+A return value of 127 means the execution of the shell
+failed.
+.Sh SEE ALSO
+.Xr sh 1 ,
+.Xr execve 2 ,
+.Xr wait 2 ,
+.Xr popen 3
+.Sh STANDARDS
+The
+.Fn system
+function
+conforms to
+.St -ansiC .

@@ -1,0 +1,4 @@
+#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+
+KBD=	unix.kbd
+CFLAGS+=-DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO -DTN3270

@@ -1,0 +1,31 @@
+#print
+Write a program that counts the number of vowels 
+in its input (excluding 'y').  Don't forget to define
+the value of EOF at the beginning of your program.
+#once #create Ref
+This line contains some vowels, including
+the letter 'y'. It also has a capital letter, I think.
+#user
+a.out <Ref >test
+grep 28 test >/dev/null
+#succeed
+Here is one solution.
+
+ #include <stdio.h>
+
+main()
+{
+	int nv, c;
+
+	nv = 0;
+	while ((c = getchar()) != EOF)
+		if (c=='a' || c=='e' || c=='i' || c=='o' || c=='u'
+		 || c=='A' || c=='E' || c=='I' || c=='O' || c=='U')
+			nv++;
+	printf("%d\n", nv);
+}
+#fail
+Did you remember capital letters?
+#log
+#next
+5.1f 10

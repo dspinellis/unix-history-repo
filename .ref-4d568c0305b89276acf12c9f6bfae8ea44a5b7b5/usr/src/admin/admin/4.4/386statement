@@ -1,0 +1,21 @@
+.\"	@(#)386statement	5.1 (Berkeley) %G%
+.ce 1
+- 386BSD -
+.sp 2
+.LP
+.ps 10
+The 386BSD support will be available in February as part of a revision
+of the 1989 Networking Release distribution.
+One very important fact to remember is, that although the 386BSD itself
+support is not AT&T proprietary, much of the rest of the operating system
+and utilities ARE AT&T proprietary.
+Therefore, the February distribution will NOT be a complete system and
+cannot be booted or run on a 386 machine.
+The distribution will not require an AT&T license, but will require a
+Berkeley license and distribution fee.
+Previous fees were approximately $500, but the actual fee has not yet
+been determined.
+.LP
+The 4.4BSD release is scheduled for the middle of 1991, and additional,
+non-proprietary support for the 386 will be made available at that time.
+

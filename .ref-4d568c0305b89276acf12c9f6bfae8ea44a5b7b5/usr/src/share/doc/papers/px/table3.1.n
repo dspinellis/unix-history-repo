@@ -1,0 +1,21 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)table3.1.n	5.2 (Berkeley) %G%
+.\"
+.TS
+center;
+n l l.
+\-108	FNAME	Text name of associated UNIX file
+\-30	LCOUNT	Current count of lines output
+\-26	LLIMIT	Maximum number of lines permitted
+\-22	FBUF	UNIX FILE pointer
+\-18	FCHAIN	Chain to next file
+\-14	FLEV	Pointer to associated file variable
+\-10	PFNAME	Pointer to name of file for error messages
+\-6	FUNIT	File status flags
+\-4	FSIZE	Size of elements in the file
+0		File window element
+.TE

@@ -1,0 +1,42 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)random.3	8.1 (Berkeley) %G%
+.\"
+.TH RANDOM 3F ""
+.UC 6
+.SH NAME
+random, drandm, irandm \- better random number generator
+.SH SYNOPSIS
+.B function irandm (iflag)
+.sp 1
+.B function random (iflag)
+.sp 1
+.B double precision function drandm (iflag)
+.SH DESCRIPTION
+These functions use
+.IR random (3)
+to generate sequences of random numbers, and
+should be used rather than the older functions described in
+.I man 3f rand.
+If
+.I iflag
+is non-zero, it is used as a new seed for the random number
+generator, and the first new random value is returned.
+.PP
+.I Irandm
+returns positive integers in the range 0 through 2147483647 ( 2**31-1).
+.I Random
+and
+.I drandm
+return values in the range 0. through 1.0 by dividing the integer random number
+from
+.IR random (3)
+by 2147483647 .
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
+.SH "SEE ALSO"
+random(3)

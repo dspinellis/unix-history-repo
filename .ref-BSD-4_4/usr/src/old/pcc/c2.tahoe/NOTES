@@ -1,0 +1,39 @@
+The pattern looks like this:
+
+	movl	P,rA
+	xxxl3	Q,rA,rB
+	yyyl2	R,rB
+
+xxx and yyy may be any of several binary operators like 'add',
+'mul', 'and'.  rA and rB must both be temporary registers.
+
+Here's how it happens...  We work backwards from the last instruction:
+
+	movl	P,rA
+	xxxl3	Q,rA,rB
+=>	yyyl2	R,rB
+
+Here we note that rB is a 'modify' operand and mark rB alive.
+
+	movl	P,rA
+=>	xxxl3	Q,rA,rB
+	yyyl2	R,rB
+
+We see that this instruction writes into rB and kills it, but since
+rB is previously alive, the store is not redundant and we leave it
+alone.
+
+=>	movl	P,rA
+	xxxl3	Q,rA,rB
+	yyyl2	R,rB
+
+We notice that this is a useless store into rA, since we can replace
+rA with P in the following instruction.  We delete this instruction
+and modify the following one.
+
+=>	xxxl3	Q,P,rB
+	yyyl2	R,rB
+
+Unfortunately rB is no longer alive because we killed it evaluating
+the earlier form of this very instruction.  The optimizer assumes that
+we have a redundant store and deletes the instruction.  Bleah.

@@ -1,0 +1,25 @@
+#print
+There are several warnings in order about mark and lineup.
+First, remember that you must use ".EQ I" or ".EQ L".
+Second, there can only be one mark or one lineup in any given
+equation.
+Finally, what you are doing must make sense, or
+your results may be not what you wanted.
+
+Does this sequence produce output with the equals signs
+lined up?
+  .EQ L
+  x mark = y
+  .EN
+  .EQ L
+  x+y mark = z
+  .EN
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+11.1a 10
+10.2c 5

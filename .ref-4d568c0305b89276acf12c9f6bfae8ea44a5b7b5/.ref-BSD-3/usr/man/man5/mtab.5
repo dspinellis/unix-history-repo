@@ -1,0 +1,34 @@
+.TH MTAB 5 
+.SH NAME
+mtab \- mounted file system table
+.SH DESCRIPTION
+.I Mtab
+resides in directory
+.I /etc
+and contains a table of devices mounted by the
+.I mount
+command.
+.I Umount
+removes entries.
+.PP
+Each entry is 64 bytes long;
+the first 32 are the null-padded name of the
+place where the special file is mounted;
+the second 32 are the null-padded name of the special
+file.
+The special file has all its directories
+stripped away;
+that is, everything through the last `/' is thrown
+away.
+.PP
+This table is present only so people can look at it.
+It does not matter to
+.I mount
+if there are duplicated entries nor
+to
+.I umount
+if a name cannot be found.
+.SH FILES
+/etc/mtab
+.SH "SEE ALSO"
+mount(1)

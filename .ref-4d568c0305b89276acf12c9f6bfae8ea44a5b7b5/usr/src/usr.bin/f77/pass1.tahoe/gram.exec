@@ -1,0 +1,201 @@
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)gram.exec	5.3 (Berkeley) %G%
+ */
+
+/*
+ * gram.exec
+ *
+ * Grammar for executable statements, f77 compiler pass 1, 4.2 BSD.
+ *
+ * University of Utah CS Dept modification history:
+ *
+ * $Log:	gram.exec,v $
+ * Revision 3.1  84/10/13  00:36:41  donn
+ * Installed Jerry Berkman's version; preserved comment header.
+ * 
+ * Revision 1.3  84/08/06  18:38:43  donn
+ * Fixed a bug in Jerry Berkman's label fixes which caused the same label to
+ * be generated twice for some types of logical IF statements.
+ * 
+ * Revision 1.2  84/08/04  21:09:57  donn
+ * Added fixes from Jerry Berkman to allow proper ASSIGNS from format
+ * statement numbers.
+ * 
+ */
+
+exec:	  iffable
+	| SDO end_spec intonlyon label intonlyoff opt_comma dospec
+		{
+		if( !do_name_err ) {
+		   if($4->labdefined)
+			execerr("no backward DO loops", CNULL);
+		   $4->blklevel = blklevel+1;
+		   exdo($4->labelno, $7);
+		   }
+		}
+	| logif iffable
+		{ exendif();  thiswasbranch = NO; }
+	| logif STHEN
+	| SELSEIF end_spec SLPAR expr SRPAR STHEN
+		{ exelif($4); lastwasbranch = NO; }
+	| SELSE end_spec
+		{ exelse(); lastwasbranch = NO; }
+	| SENDIF end_spec
+		{ exendif(); lastwasbranch = NO; }
+	;
+
+logif:	  SLOGIF end_spec SLPAR expr SRPAR
+		{ exif($4); }
+	;
+
+dospec:	  name SEQUALS exprlist
+		{ if( $1->vclass != CLPARAM ) {
+			$$ = mkchain($1, $3);
+			do_name_err = 0;
+		  } else {
+			err("symbolic constant not allowed as DO variable");
+		 	do_name_err = 1;
+		  }
+		}
+	;
+
+iffable:  let lhs SEQUALS expr
+		{ exequals($2, $4); }
+	| SASSIGN end_spec assignlabel STO name
+		{ if( $5->vclass != CLPARAM ) {
+			exassign($5, $3);
+		  } else {
+			err("can only assign to a variable");
+		  }
+		}
+	| SCONTINUE end_spec
+	| goto
+	| io
+		{ inioctl = NO; }
+	| SARITHIF end_spec SLPAR expr SRPAR label SCOMMA label SCOMMA label
+		{ exarif($4, $6, $8, $10);  thiswasbranch = YES; }
+	| call
+		{ excall($1, PNULL, 0, labarray); }
+	| call SLPAR SRPAR
+		{ excall($1, PNULL, 0, labarray); }
+	| call SLPAR callarglist SRPAR
+		{ if(nstars < MAXLABLIST)
+			excall($1, mklist($3), nstars, labarray);
+		  else
+			err("too many alternate returns");
+		}
+	| SRETURN end_spec opt_expr
+		{ exreturn($3);  thiswasbranch = YES; }
+	| stop end_spec opt_expr
+		{ exstop($1, $3);  thiswasbranch = $1; }
+	;
+
+assignlabel:   SICON
+		{ $$ = mklabel( convci(toklen, token) ); }
+	;
+
+let:	  SLET
+		{ if(parstate == OUTSIDE)
+			{
+			newproc();
+			startproc(PNULL, CLMAIN);
+			}
+		  if( yystno != 0 && thislabel->labtype != LABFORMAT)
+			if (optimflag)
+				optbuff (SKLABEL, 0, thislabel->labelno, 1);
+			else
+				putlabel(thislabel->labelno);
+		}
+	;
+
+goto:	  SGOTO end_spec label
+		{ exgoto($3);  thiswasbranch = YES; }
+	| SASGOTO end_spec name
+		{ if( $3->vclass != CLPARAM ) {
+			exasgoto($3);  thiswasbranch = YES;
+		  } else {
+			err("must go to label or assigned variable");
+		  }
+		}
+	| SASGOTO end_spec name opt_comma SLPAR labellist SRPAR
+		{ if( $3->vclass != CLPARAM ) {
+			exasgoto($3);  thiswasbranch = YES;
+		  } else {
+			err("must go to label or assigned variable");
+		  }
+		}
+	| SCOMPGOTO end_spec SLPAR labellist SRPAR opt_comma expr
+		{ if(nstars < MAXLABLIST)
+			if (optimflag)
+			    optbuff (SKCMGOTO, fixtype($7), nstars, labarray);
+			else
+			    putcmgo (fixtype($7), nstars, labarray);
+		  else
+			err("computed GOTO list too long");
+		}
+	;
+
+opt_comma:
+	| SCOMMA
+	;
+
+call:	  SCALL end_spec name
+		{ nstars = 0; $$ = $3; }
+	;
+
+callarglist:  callarg
+		{ $$ = ($1 ? mkchain($1,CHNULL) : CHNULL); }
+	| callarglist SCOMMA callarg
+		{ if($3)
+			if($1) $$ = hookup($1, mkchain($3,CHNULL));
+			else $$ = mkchain($3,CHNULL);
+		  else
+			$$ = $1;
+		}
+	;
+
+callarg:  expr
+	| SSTAR label
+		{ if(nstars<MAXLABLIST) labarray[nstars++] = $2; $$ = 0; }
+	;
+
+stop:	  SPAUSE
+		{ $$ = 0; }
+	| SSTOP
+		{ $$ = 1; }
+	;
+
+exprlist:  expr
+		{ $$ = mkchain($1, CHNULL); }
+	| exprlist SCOMMA expr
+		{ $$ = hookup($1, mkchain($3,CHNULL) ); }
+	;
+
+end_spec:
+		{ if(parstate == OUTSIDE)
+			{
+			newproc();
+			startproc(PNULL, CLMAIN);
+			}
+		  if(parstate < INDATA) enddcl();
+		  if( yystno != 0 && thislabel->labtype != LABFORMAT)
+			if (optimflag)
+				optbuff (SKLABEL, 0, thislabel->labelno, 1);
+			else
+				putlabel(thislabel->labelno);
+		  yystno = 0;
+		}
+	;
+
+intonlyon:
+		{ intonly = YES; }
+	;
+
+intonlyoff:
+		{ intonly = NO; }
+	;

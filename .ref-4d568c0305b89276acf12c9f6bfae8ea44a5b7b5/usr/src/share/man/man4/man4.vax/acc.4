@@ -1,0 +1,78 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)acc.4	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ACC 4 vax
+.Os BSD 4.2
+.Sh NAME
+.Nm acc
+.Nd
+.Tn ACC LH/DH IMP
+interface
+.Sh SYNOPSIS
+.Cd pseudo-device imp "device acc0 at uba0 csr 167600 vector accrint accxint"
+.Sh DESCRIPTION
+The 
+.Nm acc
+device provides a Local Host/Distant Host
+interface to an
+.Tn IMP .
+It is normally used when participating
+in the
+.Tn DARPA
+Internet.  The controller itself is not accessible
+to users, but instead provides the hardware support to the
+.Tn IMP
+interface described in
+.Xr imp 4 .
+The configuration entry for the
+.Xr imp
+must also include the
+.Em pseudo-device
+as shown above.
+.Sh DIAGNOSTICS
+.Bl -diag
+.It acc%d: not alive.
+The initialization routine was entered even though the device
+did not autoconfigure.  This indicates a system problem.
+.Pp
+.It acc%d: can't initialize.
+Insufficient UNIBUS resources existed to initialize the device.
+This is likely to occur when the device is run on a buffered
+data path on an 11/750 and other network interfaces are also
+configured to use buffered data paths, or when it is configured
+to use buffered data paths on an 11/730 (which has none).
+.Pp
+.It acc%d: imp doesn't respond, icsr=%b.
+The driver attempted to initialize the device, but the
+.Tn IMP
+failed to respond after 500 tries.  Check the cabling.
+.Pp
+.It acc%d: stray xmit interrupt, csr=%b.
+An interrupt occurred when no output had previously been started. 
+.Pp
+.It acc%d: output error, ocsr=%b, icsr=%b.
+The device indicated a problem sending data on output.
+.Pp
+.It acc%d: input error, csr=%b.
+The device indicated a problem receiving data on input.
+.Pp
+.It acc%d: bad length=%d.
+An input operation resulted in a data transfer of less than
+0 or more than 1008 bytes of
+data into memory (according to the word count register).
+This should never happen as the maximum size of a
+.Pf host- Tn IMP
+message is 1008 bytes.
+.El
+.Sh SEE ALSO
+.Xr netintro 4
+.Sh HISTORY
+The
+.Nm
+interface appeared in
+.Bx 4.2 .

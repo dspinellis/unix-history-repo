@@ -1,0 +1,219 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tar.1	6.14 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TAR 1
+.Os ATT 7th
+.Sh NAME
+.Nm tar
+.Nd tape archiver
+.Sh SYNOPSIS
+.Nm tar
+.Op Ar key
+.Op Ar name Ar ...
+.Sh DESCRIPTION
+.Nm Tar
+saves and restores multiple files on a single file (usually a magnetic
+tape, but it can be any file).  
+.Nm Tar Ns 's
+actions are controlled by the
+.Ar key
+argument.  The
+.Ar key
+is a string of characters containing at most one function letter and possibly
+one or more function modifiers.  Other arguments to 
+.Nm tar
+are file or directory names specifying which files to dump or restore.
+In all cases, appearance of a directory name refers to
+the files and (recursively) subdirectories of that directory.
+.Pp
+The function portion of the key is specified by one of the following letters:
+.Bl -tag -width flag
+.It Cm r
+The named files are written on the end of the tape.  The
+.Cm c
+function implies this.
+.It Cm x
+The named files are extracted from the tape.  If the named file
+matches a directory whose contents had been written onto the tape, this
+directory is (recursively) extracted.  The owner, modification time, and mode
+are restored (if possible).  If no file argument is given, the entire content
+of the tape is extracted.  Note that if multiple entries specifying the same
+file are on the tape, the last one overwrites all earlier.
+.It Cm t
+The names of the specified files are listed each time they occur on
+the tape.  If no file argument is given, all of the names on the tape
+are listed.
+.It Cm u
+The named files are added to the tape if either they are not
+already there or have been modified since last put on the tape.
+.It Cm c
+Create a new tape; writing begins on the beginning of the tape
+instead of after the last file.  This command implies
+.Cm r .
+.El
+.Pp
+The following characters may be used in addition to the letter
+which selects the function desired.
+.Bl -tag -width flag
+.It Cm o
+On output, tar normally places information specifying owner and modes
+of directories in the archive.  Former versions of tar, when encountering
+this information will give error message of the form
+.Pp
+.Dl <name>/: cannot create.
+.Pp
+This modifier will suppress the directory information.
+.It Cm p
+This modifier says to restore files to their original modes,
+ignoring the present
+.Xr umask 2 .
+Setuid and sticky information
+will also be restored to the super-user.
+.It Cm 0 , ... , 9
+This modifier selects an alternate drive on which the tape is mounted.
+The default is drive 0 at 1600 bpi, which is normally
+.Pa /dev/rmt8 .
+.It Cm v
+Normally
+.Nm tar
+does its work silently.  The
+.Cm v
+(verbose) option makes
+.Nm tar
+print the name of each file it treats preceded by the function
+letter.  With the
+.Cm t
+function, the verbose option
+gives more information about the tape entries than just their names.
+.It Cm w
+.Nm Tar
+prints the action to be taken followed by file name, then
+wait for user confirmation. If a word beginning with
+.Ql y
+is given, the action is done. Any other input means don't do it.
+.It Cm f
+.Nm Tar
+uses the next argument as the name of the archive instead of
+/dev/rmt?. If the name of the file is
+.Ql Fl ,
+tar writes to standard output or
+reads from standard input, whichever is appropriate. Thus,
+.Nm tar
+can be used as the head or tail of a filter chain.
+.Nm Tar
+can also be used to move hierarchies with the command
+.Pp
+.Bd -literal -offset indent -compact
+cd fromdir; tar cf - . | (cd todir; tar xf -)
+.Ed
+.It Cm b
+.Nm Tar
+uses the next argument as the blocking factor for tape records. The
+default is 20 (the maximum). This option should only be used with raw magnetic
+tape archives (See 
+.Cm f
+above).  The block size is determined automatically
+when reading tapes (key letters
+.Cm x
+and
+.Cm t ) .
+.It Cm s
+tells
+.Nm tar
+to strip off any leading slashes from pathnames.
+.It Cm l
+tells 
+.Nm tar
+to complain if it cannot resolve all of the links to the
+files dumped.  If this is not specified, no error messages are printed.
+.It Cm m
+tells 
+.Nm tar
+not to restore the modification times.  The modification time
+will be the time of extraction.
+.It Cm h
+Force 
+.Nm tar
+to follow symbolic links as if they were normal files or
+directories.  Normally, 
+.Nm tar
+does not follow symbolic links.
+.It Cm H
+Force
+.Nm tar
+to follow symbolic links on the command line only as if they were normal 
+files or directories.  Normally,
+.Nm tar
+does not follow symbolic links.  Note that 
+.Fl h
+supercedes 
+.Fl H .
+.It Cm B
+Forces input and output blocking to 20 blocks per record.  This option
+was added so that 
+.Nm tar
+can work across a communications channel where the blocking may not
+be maintained.
+.It Cm C
+If a file name is preceded by 
+.Fl C ,
+then 
+.Nm tar
+will perform a
+.Xr chdir 2
+to that file name.  This allows multiple directories not
+related by a close common parent to be archived using short
+relative path names.  For example, to archive files from /usr/include
+and from /etc, one might use
+.Pp
+.Bd -literal -offset indent -compact
+tar c -C /usr include -C / etc
+.Ed
+.El
+.Pp
+Previous restrictions dealing with
+.Nm tar Ns 's
+inability to properly handle blocked archives have been lifted.
+.Sh FILES
+.Bl -tag -width /dev/rmtxxx -compact
+.It Pa /dev/rmt?
+.It Pa /tmp/tar*
+.El
+.Sh SEE ALSO
+.Xr tar 5 ,
+.Xr format 5 ,
+.Xr symlink 7
+.Sh DIAGNOSTICS
+Complaints about bad key characters and tape read/write errors.
+.Pp
+Complaints if enough memory is not available to hold the link tables.
+.Sh BUGS
+There is no way to ask for the
+.Ar n Ns -th
+occurrence of a file.
+.Pp
+Tape errors are handled ungracefully.
+.Pp
+The 
+.Cm u
+option can be slow.
+.Pp
+The current limit on file name length is 100 characters.
+.Pp
+There is no way selectively to follow symbolic links.
+.Pp
+When extracting tapes created with the
+.Cm r
+or
+.Cm u
+options, directory modification times may not be set correctly.
+.Sh HISTORY
+The
+.Nm tar
+command appeared in
+.At v7 .

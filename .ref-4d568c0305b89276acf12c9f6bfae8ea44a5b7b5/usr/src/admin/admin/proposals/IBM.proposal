@@ -1,0 +1,123 @@
+.\"	@(#)IBM.proposal	1.3	90/05/31
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.so HEADERS
+.HE D
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.LP
+.nf
+Mr. Joseph Corso
+IBM Advanced Workstations Development
+1510 Page Mill Rd.
+Palo Alto, CA  94303
+.sp 2
+.LP
+Dear Mr. Corso:
+.PP
+I am writing to you in my role as the head of operating
+system and networking research for the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+Recent funding for \s-1CSRG\s0 was provided by the Defense Advanced
+Research Projects Agency (\s-1DARPA\s0) via the National Institute for
+Science and Technology (\s-1NIST\s0, formerly \s-1NBS\s0).
+By mutual agreement,
+only minimal additional funding from \s-1DARPA\s0 is expected.
+We have sought alternative funding from other sources so that we
+can continue our work at the university.
+.PP
+Our strategy is to get three sources of funding,
+each of which would provide approximately one third of our annual budget.
+Annual grants on the order of $490,000 or
+annual gifts on the order of $250,000 would provide roughly
+a third of the budget needed by \s-1CSRG\s0
+for salaries and benefits, maintenance and network access fees,
+travel and other expenses.
+We have secured funding from Hewlett-Packard and the Open Software Foundation
+for a third of our budget each for the current fiscal year.
+Thus, we are interested in seeking funding from at least one
+other organization or computer company that uses our system.
+I hope that \s-1IBM\s0 would be interested in being such an organization.
+.PP
+I am enclosing a description of our current projects
+along with a summary of our current operating budget.
+For your convenience, I am providing a brief summary
+of this paper in this letter.
+.PP
+The goal of the \s-1CSRG\s0 project
+is to use leading edge research ideas in a stable and reliable
+implementation that solves current problems in operating systems research.
+The project also includes incorporation of network protocols and other
+subsystems into the operating system while maintaining consistency
+with the existing system call interface.
+The resulting system is widely used by other
+researchers in operating systems and network protocols.
+The most recent two releases, \s-14.2BSD\s0
+and \s-14.3BSD\s0, provide the
+core of the standard networking and/or operating system software for
+essentially all vendors of \s-1UNIX\s0-based workstations and minicomputers.
+\s-14.3BSD\s0-based network support will be included in the next systems to
+be released by both \s-1OSF\s0 and \s-1AT&T\s0.
+.PP
+\s-1CSRG\s0 includes four full-time research staff (Mike Karels,
+Keith Bostic, Marc Teitelbaum and myself),
+and one three-quarter-time programmer on loan
+from another group (Keith Sklower).
+In addition, two full-time administrative and secretarial people
+handle licensing and software distribution as well as office support.
+.PP
+\s-1CSRG\s0 anticipates that its next major release, tentatively called
+\s-14.4BSD\s0, will be completed and begin shipment early in 1991.
+The file system interface
+has been extended to allow greater flexibility and performance, and a
+public-domain version of \s-1NFS\s0 is included.
+The new system integrates an implementation of the
+\s-1ISO OSI\s0 networking protocols into the existing
+socket interface and internal network architecture.
+This work will include a revised internal network
+architecture incorporating the best features of both the existing
+socket support and the ``streams'' layering of the Ninth Edition
+research version of \s-1UNIX\s0.
+Both file system and networking interfaces
+improve upon previous work with better support for caching in layered
+architectures.
+These caching techniques are based on work done by Van
+Jacobson at the Lawrence Berkeley Laboratory, and will be fully
+exploited by the \s-1TCP/IP\s0 networking protocols.
+The applicability of
+these techniques in the \s-1OSI\s0 protocol suite will be investigated as
+well.
+.PP
+The system will also include an \s-1IEEE\s0 P1003.1 \s-1(POSIX)\s0 standard
+operating system interface integrated with the existing system
+interface in such a way that both interfaces are fully supported and
+interoperate fully.
+Finally, the system is expected to include a new
+virtual memory system derived from that of the
+public domain portion of the Mach operating system
+from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
+We expect that the products of this work will become the interfaces and
+implementations of choice for other operating systems and networking
+researchers in the near future.
+.sp 2
+.in +3i
+Sincerely,
+.sp .65i
+Dr. Marshall Kirk McKusick
+.in -3i
+.sp 2
+.nf
+cc:	Mike Karels
+.fi
+.sp
+MKM/tl

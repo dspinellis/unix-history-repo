@@ -1,0 +1,80 @@
+#print
+Here's a last review exercise.  In the file "cities" is a list
+of cities with populations and Zip codes.  The following cities
+were omitted: add them in alphabetical order
+  St. Louis  622,236  MO 63166
+  Columbus 539,677 OH 43216
+Then, edit the file so that
+ (a) the blanks, if any, at the beginnings of lines and
+ends of lines are removed.
+ (b) each interior string of blanks is replaced by a single tab,
+except for the blanks within "Los Angeles", "New Orleans",
+"New York", "San Antonio", "San Diego", "San Francisco",
+and "St. Louis".
+ (c) Spell "Washington" and "Indianapolis" correctly.
+Then rewrite the file and type "ready".
+#create Ref
+Atlanta	496,973	GA	30301
+Baltimore	905,759	MD	21233
+Boston	641,071	MA	02109
+Bridgeport	156,542	CN	06601
+Buffalo	462,768	NY	14240
+Chicago	3,366,957	IL	60607
+Cleveland	750,903	OH	44101
+Columbus	539,677	OH	43216
+Dallas	844,401	TX	75221
+Denver	514,678	CO	80201
+Detroit	1,511,482	MI	48226
+Hartford	158,017	CN	06101
+Houston	1,232,802	TX	77052
+Indianapolis	774,624	IN	46201
+Los Angeles	2,809,596	CA	92101
+Miami	334,859	FL	33101
+Milwaukee	717,099	WI	53201
+Minneapolis	434,400	MN	55401
+New Orleans	593,471	LA	70140
+New York	7,894,862	NY	10001
+Newark	382,417	NJ	07901
+Omaha	347,328	NE	68108
+Philadephia	1,948,609	PA	19104
+Phoenix	581,562	AR	85026
+Pittsburgh	520,117	PA	15230
+San Antonio	654,153	TX	78205
+San Diego	696,769	CA	92101
+San Francisco	715,674	CA	94101
+Seattle	530,831	WA	98101
+St. Louis	622,236	MO	63166
+Washington	756,510	DC	20013
+#create cities
+  Atlanta  496,973  GA     30301
+  Baltimore  905,759  MD  21233
+Boston  641,071  MA  02109 
+Bridgeport  156,542   CN  06601
+  Buffalo  462,768  NY  14240
+  Chicago     3,366,957  IL  60607
+Cleveland  750,903  OH  44101 
+Dallas  844,401  TX  75221
+Denver  514,678  CO  80201
+Detroit  1,511,482   MI  48226
+Hartford  158,017  CN  06101 
+Houston  1,232,802   TX  77052
+Indianpolis  774,624  IN  46201
+Los Angeles  2,809,596  CA  92101 
+Miami     334,859  FL  33101 
+  Milwaukee  717,099  WI  53201
+Minneapolis  434,400  MN  55401
+New Orleans  593,471  LA  70140
+New York  7,894,862   NY  10001 
+Newark     382,417  NJ  07901
+  Omaha     347,328  NE  68108 
+  Philadephia  1,948,609  PA  19104 
+Phoenix  581,562   AR  85026
+Pittsburgh  520,117  PA  15230
+  San Antonio  654,153  TX  78205
+  San Diego  696,769  CA  92101 
+  San Francisco  715,674  CA  94101 
+  Seattle  530,831  WA  98101 
+Washinggton  756,510  DC  20013 
+#user
+#cmp cities Ref
+#log

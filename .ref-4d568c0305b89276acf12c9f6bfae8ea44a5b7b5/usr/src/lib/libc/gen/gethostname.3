@@ -1,0 +1,71 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)gethostname.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETHOSTNAME 3
+.Os BSD 4.2
+.Sh NAME
+.Nm gethostname ,
+.Nm sethostname
+.Nd get/set name of current host
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn gethostname "char *name" "int namelen"
+.Ft int
+.Fn sethostname "const char *name" "int namelen"
+.Sh DESCRIPTION
+.Fn Gethostname
+returns the standard host name for the current processor, as
+previously set by
+.Fn sethostname .
+The parameter
+.Fa namelen
+specifies the size of the 
+.Fa name
+array.  The returned name is null-terminated unless insufficient
+space is provided.
+.Pp
+.Fn Sethostname
+sets the name of the host machine to be
+.Fa name ,
+which has length
+.Fa namelen .
+This call is restricted to the super-user and
+is normally used only when the system is bootstrapped.
+.Sh RETURN VALUES
+If the call succeeds a value of 0 is returned.  If the call
+fails, a value of -1 is returned and an error code is
+placed in the global location
+.Va errno .
+.Sh ERRORS
+The following errors may be returned by these calls:
+.Bl -tag -width Er
+.It Bq Er EFAULT
+The
+.Fa name
+or
+.Fa namelen
+parameter gave an
+invalid address.
+.It Bq Er EPERM
+The caller tried to set the hostname and was not the super-user.
+.El
+.Sh SEE ALSO
+.Xr sysctl 2
+.Xr gethostid 3
+.Sh BUGS
+Host names are limited to
+.Dv MAXHOSTNAMELEN
+(from
+.Ao Pa sys/param.h Ac )
+characters, currently 256.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

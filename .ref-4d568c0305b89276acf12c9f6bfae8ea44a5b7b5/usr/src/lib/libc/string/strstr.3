@@ -1,0 +1,62 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strstr.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRSTR 3
+.Os
+.Sh NAME
+.Nm strstr
+.Nd locate a substring in a string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strstr "const char *big" "const char *little"
+.Sh DESCRIPTION
+The
+.Fn strstr
+function
+locates the first occurrence of the null-terminated string
+.Fa little
+in the null-terminated string
+.Fa big .
+If
+.Fa little
+is the empty string,
+.Fn strstr
+returns
+.Fa big ;
+if
+.Fa little
+occurs nowhere in
+.Fa big ,
+.Fn strstr
+returns NULL;
+otherwise
+.Fn strstr
+returns a pointer to the first character of the first occurrence of
+.Fa little .
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strcspn 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strstr
+function
+conforms to
+.St -ansiC .

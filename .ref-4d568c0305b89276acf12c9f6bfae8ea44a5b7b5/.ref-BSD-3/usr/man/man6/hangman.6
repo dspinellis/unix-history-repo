@@ -1,0 +1,23 @@
+.TH HANGMAN 6 
+.SH NAME
+hangman \- guess the word
+.SH SYNOPSIS
+.B /usr/games/hangman
+[ arg ]
+.SH DESCRIPTION
+.I Hangman
+chooses a word at least seven letters
+long from a dictionary.
+The user is to guess letters one at a time.
+.PP
+The optional argument
+.I arg
+names an alternate dictionary.
+The special name `\-a' gets a particular very large
+dictionary.
+.SH FILES
+/usr/dict/words		the regular dictionary
+.br
+/usr/dict/web2		the alternate dictionary
+.SH BUGS
+Hyphenated compounds are run together.

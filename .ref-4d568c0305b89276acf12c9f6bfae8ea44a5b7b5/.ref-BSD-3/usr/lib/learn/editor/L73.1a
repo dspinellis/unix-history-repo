@@ -1,0 +1,34 @@
+#print
+Back early in this sequence we made clear that
+the shell (the normal command interpreter) and the
+editor were distinct and they didn't pay any attention
+to each other's commands.
+Sometimes you are in the editor and you really want
+to execute a shell command.  You can do that
+by prefixing it with !.  For example,
+  !ls
+will list your directory.
+Remember that "date" is the shell command
+to find out what time it is.
+Try editing the file 'bridge'; print it out,
+then, without leaving the editor, ask for the
+time and then leave the editor and say "ready".
+#create bridge
+brooklyn
+manhattan
+williamsburg
+queensborough
+george washington
+triborough
+bronx whitestone
+throgs neck
+#create X2
+!date
+#copyin
+#user
+#uncopyin
+grep date .copy | tail -1 >X1
+#cmp X1 X2
+#log
+#next
+74.1a 10

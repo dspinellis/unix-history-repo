@@ -1,0 +1,110 @@
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mktemp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MKTEMP 3
+.Os
+.Sh NAME
+.Nm mktemp
+.Nd make temporary file name (unique)
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft char *
+.Fn mktemp "char *template"
+.Ft int
+.Fn mkstemp "char *template"
+.Sh DESCRIPTION
+The
+.Fn mktemp
+function
+takes the given file name template and overwrites a portion of it
+to create a file name.
+This file name is unique and suitable for use
+by the application.
+The template may be any file name with some number of
+.Ql X Ns s
+appended
+to it, for example
+.Pa /tmp/temp.XXXX .
+The trailing
+.Ql X Ns s
+are replaced with the current process number and/or a
+unique letter combination.
+The number of unique file names
+.Fn mktemp
+can return depends on the number of
+.Ql X Ns s
+provided; six
+.Ql X Ns s
+will
+result in
+.Fn mktemp
+testing roughly 26 ** 6 combinations.
+.Pp
+The
+.Fn mkstemp
+function
+makes the same replacement to the template and creates the template file,
+mode 0600, returning a file descriptor opened for reading and writing.
+This avoids the race between testing for a file's existence and opening it
+for use.
+.Sh RETURN VALUES
+The
+.Fn mktemp
+function
+returns a pointer to the template on success and
+.Dv NULL
+on failure.
+The
+.Fn mkstemp
+function
+returns \-1 if no suitable file could be created.
+If either call fails an error code is placed in the global variable
+.Va errno .
+.Sh ERRORS
+The
+.Fn mktemp
+and
+.Fn mkstemp
+functions
+may set
+.Va errno
+to one of the following values:
+.Bl -tag -width [ENOTDIR]
+.It Bq Er ENOTDIR
+The pathname portion of the template is not an existing directory.
+.El
+.Pp
+The
+.Fn mktemp
+and
+.Fn mkstemp
+functions
+may also set
+.Va errno
+to any value specified by the
+.Xr stat 2
+function.
+.Pp
+The
+.Fn mkstemp
+function
+may also set
+.Va errno
+to any value specified by the
+.Xr open 2
+function.
+.Sh SEE ALSO
+.Xr chmod 2 ,
+.Xr getpid 2 ,
+.Xr open 2 ,
+.Xr stat 2
+.Sh HISTORY
+A
+.Nm mktemp
+function appeared in
+.At v7 .

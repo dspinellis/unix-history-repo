@@ -1,0 +1,57 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)table2.1.n	5.2 (Berkeley) %G%
+.\"
+.DS L
+.TS
+box center;
+c s s
+c s s
+c c c
+n ap-2 a.
+Table 2.1 \- Operator Suffixes
+=
+.sp
+Unary operator suffixes
+.sp .1i
+Suffix	Example	Argument type
+2	NEG2	Short integer (2 bytes)
+4	SQR4	Long integer (4 bytes)
+8	ABS8	Real (8 bytes)
+.sp
+_
+.sp
+.T&
+c s s
+c c c
+n ap-2 a.
+Binary operator suffixes
+.sp .1i
+Suffix	Example	Argument type
+2	ADD2	Two short integers
+24	MUL24	Short above long integer
+42	REL42	Long above short integer
+4	DIV4	Two long integers
+28	DVD28	Short integer above real
+48	REL48	Long integer above real
+82	SUB82	Real above short integer
+84	MUL84	Real above long integer
+8	ADD8	Two reals
+.sp
+_
+.sp
+.T&
+c s s
+c c c
+n ap-2 a.
+Other Suffixes
+.sp .1i
+Suffix	Example	Argument types
+T	ADDT	Sets
+G	RELG	Strings
+.sp
+.TE
+.DE

@@ -1,0 +1,76 @@
+.so HEADERS
+.NH
+.OF ''''
+.EF ''''
+.ti 4.5i
+June, 1988
+.PP
+.sp 2
+This is a full distribution kit for the fourth release of the Fourth
+Berkeley Software tape, known as 4.3BSD Tahoe.  The package
+you received should have contained:
+.sp
+.IP 1)
+Three 2400' 1600 bpi magnetic tapes or one 2400' 6250 bpi magnetic 
+tape containing
+the basic system software; this is the bootstrap distribution media.
+.IP 2)
+Documents entitled
+``Design of a General Purpose Memory Allocator for the 4.3BSD UNIX Kernel'',
+``Hints on Upgrading a 4.3BSD VAX System to 4.3BSD-Tahoe''
+and
+``Installing and Operating 4.3BSD-tahoe UNIX on the Tahoe'',
+as well as various manual pages related to disklabels.
+.PP
+To set up the tapes, follow the instructions in the
+``Installing and Operating 4.3BSD-tahoe UNIX on the Tahoe''
+document.  It
+is a good idea to look through the whole document before you begin.
+If you are upgrading a VAX to the 4.3BSD-tahoe release, you should
+read the ``Hints on Upgrading a 4.3BSD VAX System to 4.3BSD-Tahoe''.
+If you have questions that are not answered
+in the documentation supplied, you can call us at (415) 642-7780.
+.PP
+Bug reports about this distribution can be submitted using the sendbug
+program on the tape, which will submit a formatted report to  
+``4bsd-bugs@BERKELEY.EDU'' on the Internet (on the uucp net, modify sendbug 
+to send to ``ucbvax!4bsd-bugs'' by an appropriate path).
+Ideas for improvement of the system
+should be sent to ``4bsd-ideas'', in the same network context.  Please
+let us know of problems you have with the distribution tape.  If
+you bring up new devices or other software which you would be willing
+to share with others, let us know.  
+.sp 2
+.ti 2.5i
+Good Luck,
+.sp
+.ti 3.0i
+.br
+Mike Karels
+.ti 3.5i
+.br
+karels@berkeley.edu
+.br
+.ti 3.5i
+ucbvax!karels
+.sp
+.ti 3.0i
+.br
+Kirk McKusick
+.br
+.ti 3.5i
+mckusick@berkeley.edu
+.br
+.ti 3.5i
+ucbvax!mckusick
+.sp
+.ti 3.0i
+.br
+Keith Bostic
+.ti 3.5i
+.br
+bostic@okeeffe.berkeley.edu
+.ti 3.5i
+.br
+uunet!keith
+

@@ -1,0 +1,34 @@
+.\" @(#)Acknowledgements	1.2 (CSRG - distribution) %G%
+.so HEADERS
+.FH
+.ND
+.ll 6.8i
+.nr LL 6.8i
+.ls
+.B
+.ce
+THANK YOU!
+.R
+.sp 2
+.LP
+We would like to acknowledge the following staff members for their
+contributions to 4.3BSD: Bob Henry and Brian Shiratsuki our 
+technical support; Pauline
+Schwartz, our Distribution Coordinator; Anne Hughes and
+Tom Livingston, our Distribution
+Assistants; Nick Cuccia, Assaf Reznik, Paul Wydra, Steve Sellgren,
+Eric Skuratowicz, Gary Brown, and Elan Amir
+our Distribution Engineers; 
+and all the contributors from our test sites.
+.sp
+.LP
+We also extend our thanks to the long list of contributors who are not
+mentioned here, but who helped in their countless ways.
+.sp 2
+.in 3.0i
+.nf
+Professor Domenico Ferrari
+Professor Susan Graham
+Kirk McKusick
+Mike Karels
+Keith Bostic

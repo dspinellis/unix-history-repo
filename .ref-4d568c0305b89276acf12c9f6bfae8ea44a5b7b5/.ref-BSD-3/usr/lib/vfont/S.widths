@@ -1,0 +1,213 @@
+char XXw[256-32] {
+0,		/* null */
+0,		/* null */
+18,		/* " */
+23,		/* # */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+27,		/* < */
+0,		/* null */
+27,		/* > */
+0,		/* null */
+30,		/* @ */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+23,		/* \ */
+0,		/* null */
+25,		/* ^ */
+18,		/* _ */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+16,		/* { */
+0,		/* null */
+16,		/* } */
+27,		/* ~ */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+0,		/* null */
+18,		/* section */
+0,		/* null */
+13,		/* acute accent */
+13,		/* grave accent */
+29,		/* underrule */
+31,		/* slash (longer) */
+0,		/* null */
+0,		/* null */
+26,		/* alpha */
+23+0300,	/* beta */
+22+0100,	/* gamma */
+22+0200,	/* delta */
+21,		/* epsilon */
+21+0300,	/* zeta */
+25+0100,	/* eta */
+26+0200,	/* theta */
+13,		/* iota */
+22,		/* kappa */
+22+0200,	/* lambda */
+26+0100,	/* mu */
+22,		/* nu */
+19+0300,	/* xi */
+21,		/* omicron */
+25,		/* pi */
+22+0100,	/* rho */
+23,		/* sigma */
+22,		/* tau */
+22,		/* upsilon */
+25+0100,	/* phi */
+21+0100,	/* chi */
+26+0300,	/* psi */
+26,		/* omega */
+22+0200,	/* Gamma */
+23+0200,	/* Delta */
+26+0200,	/* Theta */
+23+0200,	/* Lambda */
+26+0300,	/* Xi */
+29+0200,	/* Pi */
+25+0200,	/* Sigma */
+0,		/* null */
+22+0200,	/* Upsilon */
+25+0200,	/* Phi */
+27+0200,	/* Psi */
+26+0200,	/* Omega */
+36,		/* square root */
+21+0100,	/* terminal sigma */
+29,		/* root en */
+27,		/* >= */
+27,		/* <= */
+30,		/* identically equal */
+29,		/* minus */
+27,		/* approx = */
+27,		/* approximates */
+30,		/* not equal */
+30,		/* right arrow */
+30,		/* left arrow */
+18,		/* up arrow */
+18,		/* down arrow */
+29,		/* equal */
+25,		/* multiply */
+30,		/* divide */
+27,		/* plus-minus */
+27,		/* cup (union) */
+27,		/* cap (intersection) */
+27,		/* subset of */
+27,		/* superset of */
+27,		/* improper subset */
+27,		/* improper superset */
+29,		/* infinity */
+22,		/* partial derivative */
+22+0200,	/* gradient */
+30,		/* not */
+27,		/* integral sign */
+29,		/* proportional to */
+25,		/* empty set */
+27,		/* member of */
+29,		/* plus */
+0,		/* null */
+0,		/* null */
+0,		/* box vert rule (forced 0, was 2.) */
+0,		/* null */
+18,		/* dbl dagger */
+0,		/* right hand */
+27,		/* left hand */
+19,		/* math *  */
+25,		/* bell system sign */
+9,		/* or */
+25,		/* circle */
+5,		/* left top (of big curly) */
+5,		/* left bottom */
+9,		/* right top */
+9,		/* right bot */
+5,		/* left center of big curly bracket */
+9,		/* right center of big curly bracket */
+5,		/* bold vertical */
+5,		/* left floor (left bot of big sq bract) */
+8,		/* right floor (rb of ) */
+5,		/* left ceiling (lt of ) */
+8,		/* right ceiling (rt of ) */
+};

@@ -1,0 +1,18 @@
+#print
+A file can be printed on your terminal
+by using the "cat" command.  Just say
+"cat file" where "file" is the file name.
+For example, there is a file named
+"food" in this directory.  List it
+by saying "cat food"; then type "ready".
+#create food
+  this is the file
+  named food.
+#copyout
+#user
+#uncopyout
+tail -2 .ocopy >X1
+#cmp X1 food
+#log
+#next
+3.3b  2

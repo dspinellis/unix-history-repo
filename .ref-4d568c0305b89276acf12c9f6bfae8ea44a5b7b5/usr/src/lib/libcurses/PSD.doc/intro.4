@@ -1,0 +1,43 @@
+.\" Copyright (c) 1980, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)intro.4	8.1 (Berkeley) %G%
+.\"
+.sh 1 "Cursor Movement Optimizations"
+.pp
+One of the most difficult things to do properly is motion optimization.
+After using
+.Fn gettmode
+and
+.Fn setterm
+to get the terminal descriptions,
+the function
+.Fn mvcur
+deals with this task.
+It usage is simple:
+simply tell it where you are now and where you want to go.
+For example
+.(l
+mvcur(0\*,0\*,LINES/2\*,COLS/2);
+.)l
+.lp
+would move the cursor from the home position (0\*,0)
+to the middle of the screen.
+If you wish to force absolute addressing,
+you can use the function
+.Fn tgoto
+from the
+.b termlib (7)
+routines,
+or you can tell
+.Fn mvcur
+that you are impossibly far away,
+For example,
+to absolutely address the lower left hand corner of the screen
+from anywhere
+just claim that you are in the upper right hand corner:
+.(l
+mvcur(0\*,COLS\-1\*,LINES\-1\*,0);
+.)l

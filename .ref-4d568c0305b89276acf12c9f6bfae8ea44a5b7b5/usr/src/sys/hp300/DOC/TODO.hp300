@@ -1,0 +1,85 @@
+1. Create and use an interrupt stack.
+   Well actually, use the master SP for kernel stacks instead of
+   the interrupt SP.  Right now we use the interrupt stack for
+   everything.  Allows for more accurate accounting of systime.
+   In theory, could also allow for smaller kernel stacks but we
+   only use one page anyway.
+
+2. Copy/clear primitives could be tuned.
+   What is best is highly CPU and cache dependent.  One thing to look
+   at are the copyin/copyout primitives.  Rather than looping using
+   MOVS instructions, you could map an entire page at a time and use
+   bcopy, MOVE16, or whatever.  This would lose big on the VAC models
+   however.
+
+3. Sendsig/sigreturn are pretty bogus.
+   Currently we can call a signal handler even if an excpetion
+   occurs in the middle of an instruction.  This causes the handler
+   to return right back to the middle of the offending instruction
+   which will most likely lead to another exception/signal.
+   Technically, I feel this is the correct behavior but it requires
+   saving a lot of state on the user's stack, state that we don't
+   really want the user messing with.  Other 68k implementations
+   (e.g. Sun) will delay signals or abort execution of the current
+   instruction to reduce saved state.  Even if we stick with the
+   current philosophy, the code could be cleaned up.
+
+4. Ditto for AST and software interrupt emulation.
+   Both are possibly over-elaborate and inefficiently implemented.
+   We could possibly handle them by using an appropriately planted
+   PS trace bit.
+
+5. Make use of transparent translation registers on 030/040 MMU.
+   With a little rearranging of the KVA space we could use one to
+   map the entire external IO space [ 600000 - 20000000 ).  Since
+   the translation must be 1-1, this would limit the kernel to 6mb
+   (some would say that is hardly a limit) or divide it into two
+   pieces.  Another promising use would be to map physical memory
+   within the kernel.  This allows a much simpler and more efficient
+   implementation of /dev/mem, pmap_zero_page, pmap_copy_page and
+   possible even kernel-user cross address space copies.  However,
+   it does eat up a significant piece of kernel address space.
+
+6. Create a 32-bit timer.
+   Timers 2 and 3 on the MC6840 clock chip can be concatonated together to
+   get a 32-bit countdown timer.  There are at least three uses for this:
+   1. Monitoring the interval timer ("clock") to detect lost "ticks".
+      (Idea from Scott Marovich)
+   2. Implement the DELAY macro properly instead of approximating with
+      the current "while (--count);" loop.  Because of caches, the current
+      method is potentially way off.
+   3. Export as a user-mappable timer for high-precision (4us) timing.
+   Note that by doing this we can no longer use timer 3 as a separate
+   statistics/profiling timer.  Should be able to compile-time (runtime?)
+   select between the two.
+
+7. Conditional MMU code sould be restructured.
+   Right now it reflects the evolutionary path of the code: 320/350 MMU
+   was supported and PMMU support was glued on.  The latter can be ifdef'ed
+   out when not needed, but not all of the former (e.g. ``mmutype'' tests).
+   Also, PMMU is made to look like the HP MMU somewhat ham-stringing it.
+   Since HP MMU models are dead, the excess baggage should be there (though
+   it could be argued that they benefit more from the minor performance
+   impact).  MMU code should probably not be ifdef'ed on model type, but
+   rather on more relevant tags (e.g. MMU_HP, MMU_MOTO).
+
+8. Redo cache handling.
+   There are way too many routines which are specific to particular
+   cache types.  We should be able to come up with a more coherent
+   scheme (though HP 68k boxes have just about every caching scheme
+   imaginable: internal/external, physical/virtual, writeback/writethrough)
+   See, for example, Wheeler and Bershad in ASPLOS 92.
+
+9. Sort the free page list.
+   The DMA hardware on the 300 cannot do scatter/gather IO.  For example,
+   if an 8k system buffer consists of two non-contiguous physical pages
+   it will require two DMA transfers (and hence two interrupts) to do the
+   operation.  It would take only one transfer if they were physically
+   contiguous.  By keeping the free list ordered we could potentially
+   allocate contiguous pages and reduce the number of interrupts.  We can
+   consider doing this since pages in the free list are not reclaimed and
+   thus we don't have to worry about distorting any LRU behavior.
+----
+Mike Hibler
+University of Utah CSS group
+mike@cs.utah.edu

@@ -1,0 +1,94 @@
+.\"	@(#)4.4A.dist.cover	5.2 (Berkeley) %G%
+.\" usage: soelim 4.4A.dist.cover | dtbl -Plz | psroff -ms -Plz
+.\"
+.so HEADERS
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.HE
+.ti 5i
+August 23, 1992
+.nr PS 11
+.nr VS 13
+.nr LL 6.5i
+.nr OI 0.5i
+.ps 11p
+.PP
+.sp 2
+This is a distribution tape for the 4.4BSD-Alpha release.
+The package you received should have contained one 2400', 6250
+BPI, 9-track magnetic tapes or one Exabyte 8mm cassette.
+Both distribution tapes contain three files, however, the second and
+third files on the 9-track distribution format are compressed
+(see \fIcompress\fP(1)).
+The three files are as follows:
+.sp .5
+.in 0.5i
+.IP 1)
+A \fIdump\fP(8) of the root file system.
+.IP 2)
+A tar format archive of the ``/usr'' file system.
+.IP 3)
+A tar format archive of the ``/usr/src'' file system.
+.in -0.5i
+.sp .5
+.PP
+The binaries and kernel on the tape support the Hewlett-Packard
+9000/300 68000-based workstations, as detailed on the next page.
+The dump does not contain a kernel, however, a compiled, generic kernel
+is part of the third file, in ``/usr/src/sys/compile/GENERIC.hp300/vmunix''.
+The tar format archives can be extracted into the current directory with
+a command such as:
+.sp .5
+.ti 1i
+tar  xpf  /dev/\fItapename\fP
+.sp .5
+.br
+or, for the 9-track distribution format, with a command such as:
+.sp .5
+.ti 1i
+dd  if=/dev/\fItapename\fP  bs=\fIbsize\fP  |  uncompress  |  tar  xf  -
+.sp .5
+.br
+where \fIbsize\fP is the blocksize as follows:
+.sp .5
+.TS
+center allbox;
+c c c c.
+	file 1	file2	file3
+Domestic 9-track	1024	20480	20480
+Domestic 8mm	1024	10240	10240
+Foreign 9-track	10240	10240	10240
+Foreign 8mm	10240	10240	10240
+.TE
+.bp
+.sp .5
+.PP
+If you have questions, you can call us at 510-642-4948, or, preferably,
+by sending electronic mail to ``bostic@cs.berkeley.edu''.
+.PP
+Bug reports about this distribution can be submitted using the sendbug
+program on the distribution, which will submit a formatted report to  
+``4bsd-bugs@Berkeley.EDU'' on the Internet (on the uucp net, modify sendbug 
+to send to ``uunet!ucbvax!4bsd-bugs'' by an appropriate path).
+Please be sure to sure that the Index line specifies ``4.4BSD-alpha''.
+If you bring up new devices or other software which you would be willing
+to share with others, let us know.
+.sp 2
+.ti 2.5i
+Good Luck,
+.sp
+.ti 3.0i
+The Computer Systems Research Group
+.sp
+.ti 3.0i
+Kirk McKusick, Keith Bostic,
+.br
+.ti 3.0i
+Keith Sklower, Marc Teitelbaum
+.bp
+.so ../HP/HPSUPPORT.t

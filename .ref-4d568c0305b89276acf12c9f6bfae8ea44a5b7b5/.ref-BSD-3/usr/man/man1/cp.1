@@ -1,0 +1,29 @@
+.TH CP 1 
+.SH  NAME
+cp \- copy
+.SH SYNOPSIS
+.B cp
+file1 file2
+.PP
+.B cp
+file ... directory
+.SH DESCRIPTION
+.I File1
+is copied onto
+.IR file2 .
+The mode and owner of  
+.I file2
+are preserved if it already
+existed; the mode of the source file
+is used otherwise.
+.PP
+In the second form, one or more
+.I files
+are copied into the
+.I directory
+with their original file-names.
+.PP
+.I Cp
+refuses to copy a file onto itself.
+.SH "SEE ALSO"
+cat(1), pr(1), mv(1)

@@ -1,0 +1,33 @@
+.\" Copyright (c) 1989, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)worms.6	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt WORMS 6
+.Sh NAME
+.Nm worms
+.Nd animate worms on a display terminal
+.Sh SYNOPSIS
+.Nm worms
+.Op Fl ft
+.Op Fl l Ar length
+.Op Fl n Ar number
+.Sh DESCRIPTION
+A UNIX version of the DEC-2136 program ``worms''.
+.Pp
+The options are as follows:
+.Bl -tag -width indent
+.It Fl f
+Makes a ``field'' for the worm(s) to eat.
+.It Fl t
+Makes each worm leave a trail behind it.
+.It Fl l
+Specifies a length for each worm; the default is 16.
+.It Fl n
+Specifies the number of worms; the default is 3.
+.Sh BUGS
+The lower-right-hand character position will not be updated properly
+on a terminal that wraps at the right margin.

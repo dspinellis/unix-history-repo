@@ -1,0 +1,40 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)devname.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DEVNAME 3
+.Os BSD 4.4
+.Sh NAME
+.Nm devname
+.Nd get device name
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft char *
+.Fn devname "dev_t dev" "mode_t type"
+.Sh DESCRIPTION
+The
+.Fn devname
+function returns a pointer to the name of the block or character
+device in
+.Dq Pa /dev
+with a device number of
+.Fa dev ,
+and a file type matching the one encoded in
+.Fa type
+which must be one of S_IFBLK or S_IFCHR.
+If no device matches the specified values, or no information is
+available, the string
+.Dq ??
+is returned.
+.Sh SEE ALSO
+.Xr stat 2 ,
+.Xr dev_mkdb 8
+.Sh HISTORY
+The
+.Nm devname
+function call appeared in
+.Bx 4.4 .

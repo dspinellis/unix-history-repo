@@ -1,0 +1,31 @@
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)getarg.3	8.1 (Berkeley) %G%
+.\"
+.TH GETARG 3F ""
+.UC 4
+.SH NAME
+getarg, iargc \- return command line arguments
+.SH SYNOPSIS
+.B subroutine getarg (k, arg)
+.br
+.B character*(*) arg
+.sp 1
+.B function iargc ()
+.SH DESCRIPTION
+A call to
+.I getarg
+will return the \fBk\fIth\fR command line argument in character string
+.I arg.
+The 0\fIth\fR argument is the command name.
+.PP
+.I Iargc
+returns the index of the last command line argument.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+getenv(3F), execve(2)
