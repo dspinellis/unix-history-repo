@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.11 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.12 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -194,8 +194,8 @@ mathfunc:
 			    return NIL;
 		    }
 		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-		    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
-		    putop( P2COMOP , P2INT );
+		    putleaf( P2ICON , 0 , 0 , P2CHAR , 0 );
+		    putop( P2COMOP , P2CHAR );
 		    return ( nl + TBOOL );
 	    case O_SEED:
 		    if (isnta(p1, "i")) {
@@ -297,10 +297,12 @@ mathfunc:
 			    putleaf( P2ICON, tempnlp -> range[1], 0, P2INT, 0 );
 			    putop( P2LISTOP , P2INT );
 			    putop( P2CALL , P2INT );
+			    sconv(P2INT, p2type(p1));
 			} else {
-			    p1 = rvalue( argv[1] , NIL , RREQ );
+			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
 			    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 			    putop( op == O_SUCC2 ? P2PLUS : P2MINUS , P2INT );
+			    sconv(P2INT, p2type(p1));
 			}
 			if ( isa( p1 , "bcs" ) ) {
 			    return p1;
@@ -312,9 +314,13 @@ mathfunc:
 				error("odd's argument must be an integer, not %s", nameof(p1));
 				return (NIL);
 			}
-			p1 = rvalue( (int *) argv[1] , NLNIL , RREQ );
+			p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    /*
+			     *	THIS IS MACHINE-DEPENDENT!!!
+			     */
 			putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 			putop( P2AND , P2INT );
+			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
 	    case O_CHR2:
 			if (isnta(p1, "i")) {
@@ -328,6 +334,7 @@ mathfunc:
 			    putop( P2CALL , P2CHAR );
 			} else {
 			    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
+			    sconv(P2INT, P2CHAR);
 			}
 			return nl + TCHAR;
 	    case O_CARD:
@@ -341,7 +348,7 @@ mathfunc:
 			putleaf( P2ICON , lwidth( p1 ) , 0 , P2INT , 0 );
 			putop( P2LISTOP , P2INT );
 			putop( P2CALL , P2INT );
-			return nl + T2INT;
+			return nl + T4INT;
 	    case O_EOLN:
 			if (!text(p1)) {
 				error("Argument to eoln must be a text file, not %s", nameof(p1));
@@ -351,6 +358,7 @@ mathfunc:
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_TEOLN" );
 			p1 = stklval( (int *) argv[1] , NOFLAGS );
 			putop( P2CALL , P2INT );
+			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
 	    case O_EOF:
 			if (p1->class != FILET) {
@@ -361,6 +369,7 @@ mathfunc:
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_TEOF" );
 			p1 = stklval( (int *) argv[1] , NOFLAGS );
 			putop( P2CALL , P2INT );
+			sconv(P2INT, P2CHAR);
 			return nl + TBOOL;
 	    case 0:
 			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
