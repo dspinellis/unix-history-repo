@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.22 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.23 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -189,7 +189,7 @@ vm_fork(p1, p2, isvfork)
 	 */
 	addr = kmem_alloc_pageable(kernel_map, ctob(UPAGES));
 	if (addr == 0)
-		panic("vm_fork: no more kernel virtual memory\n");
+		panic("vm_fork: no more kernel virtual memory");
 	vm_map_pageable(kernel_map, addr, addr + ctob(UPAGES), FALSE);
 #else
 /* XXX somehow, on 386, ocassionally pageout removes active, wired down kstack,
@@ -197,7 +197,7 @@ and pagetables, WITHOUT going thru vm_page_unwire! Why this appears to work is
 not yet clear, yet it does... */
 	addr = kmem_alloc(kernel_map, ctob(UPAGES));
 	if (addr == 0)
-		panic("vm_fork: no more kernel virtual memory\n");
+		panic("vm_fork: no more kernel virtual memory");
 #endif
 	up = (struct user *)addr;
 	p2->p_addr = up;
