@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.9	85/03/19	*/
+/*	kern_descrip.c	6.10	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -21,7 +21,6 @@
 
 /*
  * TODO:
- *	increase NOFILE
  *	eliminate u.u_error side effects
  */
 
@@ -95,6 +94,8 @@ dupit(fd, fp, flags)
 	u.u_ofile[fd] = fp;
 	u.u_pofile[fd] = flags;
 	fp->f_count++;
+	if (fd > u.u_lastfile)
+		u.u_lastfile = fd;
 }
 
 /*
@@ -224,17 +225,20 @@ fioctl(fp, cmd, value)
 
 close()
 {
-	register struct a {
+	struct a {
 		int	i;
 	} *uap = (struct a *)u.u_ap;
+	register int i = uap->i;
 	register struct file *fp;
 	register u_char *pf;
 
-	GETF(fp, uap->i);
-	pf = (u_char *)&u.u_pofile[uap->i];
+	GETF(fp, i);
+	pf = (u_char *)&u.u_pofile[i];
 	if (*pf & UF_MAPPED)
-		munmapfd(uap->i);
-	u.u_ofile[uap->i] = NULL;
+		munmapfd(i);
+	u.u_ofile[i] = NULL;
+	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
+		u.u_lastfile--;
 	*pf = 0;
 	closef(fp);
 	/* WHAT IF u.u_error ? */
@@ -281,6 +285,8 @@ ufalloc(i)
 		if (u.u_ofile[i] == NULL) {
 			u.u_r.r_val1 = i;
 			u.u_pofile[i] = 0;
+			if (i > u.u_lastfile)
+				u.u_lastfile = i;
 			return (i);
 		}
 	u.u_error = EMFILE;
