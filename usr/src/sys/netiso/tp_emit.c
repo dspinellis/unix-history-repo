@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_emit.c,v 5.5 88/11/18 17:27:20 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_emit.c,v $
- *	@(#)tp_emit.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_emit.c	7.5 (Berkeley) %G% *
  *
  * This file contains tp_emit() and tp_error_emit(), which
  * form TPDUs and hand them to ip.
@@ -199,7 +199,7 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 		switch( dutype ) {
 
 		case CR_TPDU_type:
-			hdr->tpdu_CRdref_0 = htons(0);	/* must be zero */
+			hdr->tpdu_CRdref_0 = 0;	/* must be zero */
 			if (!tpcb->tp_cebit_off) {
 				tpcb->tp_win_recv = tp_start_win << 8;
 				LOCAL_CREDIT(tpcb);
@@ -736,24 +736,38 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 			error, error&0xff, (char)error);
 	ENDDEBUG
 
-	error &= 0xff;
 
-	if( error & 0x40 ) {
+	if (error & TP_ERROR_SNDC)
+		dutype = DC_TPDU_type;
+	else if (error & 0x40) {
 		error &= ~0x40;
 		dutype = ER_TPDU_type;
 	} else
 		dutype = DR_TPDU_type;
+	error &= 0xff;
 
 	hdr->tpdu_type = dutype;
 	hdr->tpdu_cdt = 0;
 
 	switch( dutype ) {
 
+	case DC_TPDU_type:
+		IncStat(ts_DC_sent);
+		hdr->tpdu_li = 6;
+		hdr->tpdu_DCdref = htons(sref);
+		hdr->tpdu_DCsref = tpcb ? htons(tpcb->tp_lref) : 0;
+		IFDEBUG(D_ERROR_EMIT)
+			printf("DC case:\n");
+			dump_buf( hdr, 6);
+		ENDDEBUG
+		/* forget the add'l information variable part */
+		break;
+
 	case DR_TPDU_type:
 		IncStat(ts_DR_sent);
 		hdr->tpdu_li = 7;
 		hdr->tpdu_DRdref = htons(sref);
-		hdr->tpdu_DRsref = htons(0);
+		hdr->tpdu_DRsref = 0;
 		hdr->tpdu_DRreason = (char)error;
 		IFDEBUG(D_ERROR_EMIT)
 			printf("DR case:\n");
