@@ -6,7 +6,7 @@ SCCSID(@(#)dodelt	2.1);
 
 long	Timenow;
 
-char	Pgmr[8];	/* for rmdel & chghist (rmchg) */
+char	Pgmr[SZLNAM];	/* for rmdel & chghist (rmchg) */
 int	First_esc;
 
 dodelt(pkt,statp,sidp,type)
