@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.51 (Berkeley) %G%
+		@(#)README	8.52 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -1147,9 +1147,12 @@ confFROM_HEADER		$q macro	[$?x$x <$g>$|$g$.] The format of an
 					internally generated From: address.
 confOPERATORS		$o macro	[.:%@!^/[]+] Address operator
 					characters.
-confSMTP_LOGIN_MSG	$e macro	[$j Sendmail $v/$Z ready at $b]
+confSMTP_LOGIN_MSG	$e macro	[$j Sendmail $v/$Z; $b]
 					The initial (spontaneous) SMTP
-					greeting message.
+					greeting message.  The word "ESMTP"
+					will be inserted between the first and
+					second words to convince other
+					sendmails to try to speak ESMTP.
 confDOMAIN_NAME		$j macro	If defined, sets $j.  This should
 					only be done if your system cannot
 					determine your local domain name,
@@ -1264,9 +1267,6 @@ confSEPARATE_PROC	ForkEachJob	Run all deliveries in a separate
 confWORK_CLASS_FACTOR	ClassFactor	Priority multiplier for class.
 confWORK_TIME_FACTOR	RetryFactor	Cost of each delivery attempt.
 confQUEUE_SORT_ORDER	QueueSortOrder	Queue sort algorithm: Priority or Host.
-confBROKEN_SMTP_PEERS	BrokenSmtpPeers	Set this to prevent two-line greeting
-					messages that confuse some (mostly
-					PC-based) clients.
 confMIN_QUEUE_AGE	MinQueueAge	The minimum amount of time a job
 					must sit in the queue between queue
 					runs.  This allows you to set the

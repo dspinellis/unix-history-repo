@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.65 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.66 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.65 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.66 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -125,27 +125,26 @@ smtp(e)
 
 	setproctitle("server %s startup", CurSmtpClient);
 	expand("\201e", inp, sizeof inp, e);
-	if (BrokenSmtpPeers)
-	{
-		p = strchr(inp, '\n');
-		if (p != NULL)
-			*p = '\0';
-		message("220 %s", inp);
-	}
-	else
-	{
-		char *q = inp;
 
-		while (q != NULL)
-		{
-			p = strchr(q, '\n');
-			if (p != NULL)
-				*p++ = '\0';
-			message("220-%s", q);
-			q = p;
-		}
-		message("220 ESMTP spoken here");
+	/* output the first line, inserting "ESMTP" as second word */
+	p = strchr(inp, '\n');
+	if (p != NULL)
+		*p++ = '\0';
+	id = strchr(inp, ' ');
+	if (id == NULL)
+		id = &inp[strlen(inp)];
+	cmd = p == NULL ? "220 %.*s ESMTP%s" : "220-%.*s ESMTP%s";
+	message(cmd, id - inp, inp, id);
+
+	/* output remaining lines */
+	while ((id = p) != NULL && (p = strchr(id, '\n')) != NULL)
+	{
+		*p++ = '\0';
+		message("220-%s", id);
 	}
+	if (id != NULL)
+		message("220 %s", id);
+
 	protocol = NULL;
 	sendinghost = macvalue('s', e);
 	gothello = FALSE;
