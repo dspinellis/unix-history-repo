@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.11 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -133,7 +133,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 		int fd;
 
 		signal(SIGALRM, SIG_DFL);
-		sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
+		sigsetmask(sigblock(0L) & ~sigmask(SIGALRM));
 		alarm(5);
 		fd = open(ctty, O_WRONLY);
 		alarm(0);
