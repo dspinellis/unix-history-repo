@@ -1,4 +1,4 @@
-/*	mtboot.c	4.1	83/02/16	*/
+/*	mtboot.c	4.2	83/06/19	*/
 
 /*
  * VAX tape boot block for distribution tapes
@@ -65,7 +65,6 @@
 	.set	MT_rcnt,4	/* record count for single record (shifted) */
 	.set	MT_erc,0xffffffc0	/* error code mask */
 	.set	MT_done,1	/* proper completion code */
-	.set	MT_atn,0	/* attention bit for drive 0 */
 /* local stack variables */
 	.set	tapa,-4		/* desired tape addr */
 	.set	mtapa,-8	/* current tape addr */
@@ -167,7 +166,7 @@ rew:
 	movl	$MT_REW+GO,MTNCS(%rMT)	/* rewind command and go bit */
 1:
 	movl	MTAS(%rMT),r2		/* check attention bits */
-	bbc	$MT_atn,r2,1b		/* loop if attention not yet set */
+	beql	1b			/* loop if attention not yet set */
 	movl	MTNER(%rMT),r2		/* read non-data status */
 	movl	MTAS(%rMT),MTAS(%rMT)	/* and clear any attention bits */
 	bicl2	$MT_erc,r2		/* isolate error condition */
