@@ -1,4 +1,4 @@
-/*	machdep.c	6.1	83/07/29	*/
+/*	machdep.c	4.87	83/08/14	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -249,33 +249,53 @@ vmtime(otime, olbolt, oicr)
  * Stack is set up to allow sigcode stored
  * in u. to call routine, followed by chmk
  * to sigcleanup routine below.  After sigcleanup
- * resets the signal mask and the notion of
- * onsigstack, it returns to user who then
- * unwinds with the rei at the bottom of sigcode.
+ * resets the signal mask and the stack, it
+ * returns to user who then unwinds with the
+ * rei at the bottom of sigcode.
  */
 sendsig(p, sig, sigmask)
 	int (*p)(), sig, sigmask;
 {
-	register int *usp, *regs;
+	register int *usp, *regs, *osp;
 	int oonstack;
 
 	regs = u.u_ar0;
 	oonstack = u.u_onstack;
+	osp = (int *)regs[SP];
 #define	mask(s)	(1<<((s)-1))
 	if (!u.u_onstack && (u.u_sigonstack & mask(sig))) {
 		usp = (int *)u.u_sigsp;
 		u.u_onstack = 1;
 	} else
-		usp = (int *)regs[SP];
-	usp -= 8;
+		usp = osp - 5;
+	/*
+	 * Must build signal context on stack to be returned to
+	 * so that rei instruction in sigcode will pop ps and pc
+	 * off correct stack.  The remainder of the signal state
+	 * used in calling the handler must be placed on the stack
+	 * on which the handler is to operate so that the calls
+	 * in sigcode will save the registers and such correctly.
+	 */
+	osp -= 5;
+	if (!oonstack && (int)osp <= USRSTACK - ctob(u.u_ssize))
+		(void) grow((unsigned)osp);
+	;
+#ifndef lint
+	asm("probew $3,$20,(r9)");
+	asm("jeql bad");
+#else
+	if (useracc((caddr_t)osp, 20, 1))
+		goto bad;
+#endif
+	usp -= 5;
 	if (!u.u_onstack && (int)usp <= USRSTACK - ctob(u.u_ssize))
 		(void) grow((unsigned)usp);
 	;			/* Avoid asm() label botch */
 #ifndef lint
-	asm("probew $3,$32,(r11)");
+	asm("probew $3,$20,(r11)");
 	asm("beql bad");
 #else
-	if (useracc((caddr_t)usp, 32, 1))
+	if (useracc((caddr_t)usp, 20, 1))
 		goto bad;
 #endif
 	*usp++ = sig;
@@ -284,14 +304,23 @@ sendsig(p, sig, sigmask)
 		u.u_code = 0;
 	} else
 		*usp++ = 0;
-	*usp = (int)(usp + 2); usp++;
+	*usp++ = (int)osp;
 	*usp++ = (int)p;
-	/* struct sigcontext used for the inward return */
-	*usp++ = oonstack;
-	*usp++ = sigmask;
-	*usp++ = regs[PC];
-	*usp++ = regs[PS];
-	regs[SP] = (int)(usp - 8);
+	/*
+	 * Duplicate the pointer to the sigcontext structure.
+	 * This one doesn't get popped by the ret, and is used 
+	 * by sigcleanup to reset the stack as well as locate
+	 * the information for reseting the signal state on
+	 * inward return.
+	 */
+	*usp++ = (int)osp;
+	/* sigcontext goes on previous stack */
+	*osp++ = oonstack;
+	*osp++ = sigmask;
+	*osp = (int)(osp + 1); osp++;
+	*osp++ = regs[PC];
+	*osp++ = regs[PS];
+	regs[SP] = (int)(usp - 5);
 	regs[PS] &= ~(PSL_CM|PSL_FPD);
 	regs[PC] = (int)u.u_pcb.pcb_sigc;
 	return;
@@ -313,26 +342,28 @@ bad:
 /*
  * Routine to cleanup state after a signal
  * has been taken.  Reset signal mask and
- * notion of on signal stack from context
- * left there by sendsig (above).  Pop these
- * values in preparation for rei which follows
- * return from this routine.
+ * stack state from context left by sendsig (above).
+ * Pop these values in preparation for rei which
+ * follows return from this routine.
  */
 sigcleanup()
 {
-	register int *usp = (int *)u.u_ar0[SP];
+	register struct sigcontext *scp;
 
+	scp = (struct sigcontext *)fuword((caddr_t)u.u_ar0[SP]);
+	if ((int)scp == -1)
+		return;
 #ifndef lint
-	asm("prober $3,$8,(r11)");
+	asm("prober $3,$12,(r11)");
 	asm("bnequ 1f; ret; 1:");
 #else
-	if (useracc((caddr_t)usp, 8, 0))
+	if (useracc((caddr_t)scp, sizeof (*scp), 0))
 		return;
 #endif
-	u.u_onstack = *usp++ & 01;
+	u.u_onstack = scp->sc_onstack & 01;
 	u.u_procp->p_sigmask =
-	    *usp++ &~ (mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP));
-	u.u_ar0[SP] = (int)usp;
+	    scp->sc_mask &~ (mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP));
+	u.u_ar0[SP] = scp->sc_sp;
 }
 #undef mask
 
