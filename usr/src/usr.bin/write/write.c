@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.9 %G%";
+static char *sccsid = "@(#)write.c	4.10 %G%";
 #endif
 /*
  * write to another user
@@ -42,6 +42,7 @@ main(argc, argv)
 	register FILE *uf;
 	int c1, c2;
 	long clock = time(0);
+	int suser = getuid() == 0;
 	struct tm *localtime();
 	struct tm *localclock = localtime( &clock );
 
@@ -65,7 +66,7 @@ main(argc, argv)
 		perror("write: Can't stat your tty");
 		exit(1);
 	}
-	if ((stbuf.st_mode&02) == 0) {
+	if (!suser && (stbuf.st_mode&02) == 0) {
 		fprintf(stderr,
 			"write: You have write permission turned off\n");
 		exit(1);
@@ -137,7 +138,7 @@ cont:
 	alarm(0);
 	if (fstat(fileno(tf), &stbuf) < 0)
 		goto perm;
-	if ((stbuf.st_mode&02) == 0)
+	if (!suser && (stbuf.st_mode&02) == 0)
 		goto perm;
 	sigs(eof);
 	{ char hostname[32];
