@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.4	%G%";
+#	"@(#)bibinc.fullnames	2.5	%G%";
 # full journal names, and other names
 #
 # journals
@@ -98,7 +98,9 @@ D ADA80 PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIG
 %V 15\
 %N 11
 D FJCC Fall Joint Computer Conference
-D JER3 PROC Third Jerusalem CONF on Information Technology
+D JER3 PROC Third Jerusalem CONF on Information Technology\
+%C Jerusalem, Israel\
+%D AUG 1978
 D WJCC PROC Western Joint Computer CONF
 #
 #  publishers
