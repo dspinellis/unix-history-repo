@@ -19,12 +19,12 @@ ALLO = termout.o
 
 ALLH = terminal.h
 
-screenlib:	$(ALLO)
-	ar cr screenlib $(ALLO)
-	ranlib screenlib
+sys.lib:	$(ALLO)
+	ar cr sys.lib $(ALLO)
+	ranlib sys.lib
 
 clean:
-	rm -f $(ALLO) disp_asc.out errs makefile.bak screenlib
+	rm -f $(ALLO) disp_asc.out errs makefile.bak sys.lib
 
 print:
 	${PRINT} ${ALLC} ${ALLH}
@@ -66,6 +66,7 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-termout.o: terminal.h ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
-termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
-termout.o: ../keyboard/map3270.ext ../system/globals.h disp_asc.out
+termout.o: ../general/general.h terminal.h ../telnet.ext ../ctlr/hostctlr.h
+termout.o: ../ctlr/inbound.ext ../ctlr/oia.h ../ctlr/options.ext
+termout.o: ../ctlr/outbound.ext ../ctlr/screen.h ../ascii/map3270.ext
+termout.o: ../general/globals.h disp_asc.out
