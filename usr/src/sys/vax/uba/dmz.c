@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmz.c	6.2 (Berkeley) %G%
+ *	@(#)dmz.c	6.3 (Berkeley) %G%
  */
 
 /*
@@ -41,6 +41,7 @@
 #include "file.h"
 #include "uio.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "ubareg.h"
 #include "ubavar.h"
@@ -104,7 +105,7 @@ int dmzstart();
 #define	TRUE		(1)
 #define	FALSE		(0)
 
-static int cbase[NUBA];		/* base address in unibus map */
+int cbase[NUBA];		/* base address in unibus map */
 int dmz_ubinfo[NUBA];		/* info about allocated unibus map */
 
 #define	UBACVT(x, uban)	    (cbase[uban] + ((x) - (char *)cfree))
@@ -162,7 +163,6 @@ dmzopen(device, flag)
 	register struct dmzdevice *dmz_addr;
 	register struct uba_device *ui;
 	int priority;
-	int xstatus;
 	int octet;
 
 	unit = minor(device);
@@ -189,14 +189,14 @@ dmzopen(device, flag)
 	 * clear the state.
 	 */
 	priority = spl5();
-	if (dmz_ubinfo[ui->ui_ubanum] == 0) {
+	if (cbase[ui->ui_ubanum] == 0) {
 		dmz_ubinfo[ui->ui_ubanum] = 
 			uballoc(ui->ui_ubanum, (caddr_t)cfree,
 				nclist * sizeof(struct cblock), 0);
 		if (dmz_ubinfo[ui->ui_ubanum] == 0) {
 			splx(priority);
 			printf("dmz: insufficient unibus map regs\n");
-			return (-1); /* Is this the right thing to return? */
+			return (ENOMEM);
 		}
 		cbase[ui->ui_ubanum] = dmz_ubinfo[ui->ui_ubanum] & 0x3ffff;
 	}
@@ -230,8 +230,7 @@ dmzopen(device, flag)
 	}
 	splx(priority);
 
-	xstatus = (*linesw[tp->t_line].l_open)(device, tp);
-	return (xstatus);
+	return ((*linesw[tp->t_line].l_open)(device, tp));
 }
 
 dmzparam(unit)
@@ -313,18 +312,18 @@ dmzreset(uban)
 	int i;
 	int octet;
 
-	if (dmz_ubinfo[uban] == 0)
-		return;
-
-	dmz_ubinfo[uban] = uballoc(uban, (caddr_t) cfree, nclist * sizeof(struct cblock), 0);
-	cbase[uban] = dmz_ubinfo[uban] & 0x3ffff;
-
 	for (controller = 0; controller < NDMZ; controller++) {
 		ui = dmzinfo[controller];
 		if (ui == 0 || ui->ui_alive == 0 || ui->ui_ubanum != uban)
 			continue;
 		printf("dmz%d ", controller);
 		dmz_addr = (struct dmzdevice *) ui->ui_addr;
+
+		if (cbase[uban] == 0) {
+			dmz_ubinfo[uban] = uballoc(uban, (caddr_t)cfree,
+				nclist * sizeof(struct cblock), 0);
+			cbase[uban] = dmz_ubinfo[uban] & 0x3ffff;
+		}
 
 		for (octet = 0; octet < 3; octet++)
 			if ((dmzact[controller] & (1 << octet)) != 0) {
@@ -448,7 +447,7 @@ dmzrint(controller, octet)
 		}
 
 		if ((character & DMZ_DO) && overrun == 0) {
-			printf("dmz%d: silo overflow\n", controller);
+			log(LOG_WARNING, "dmz%d: silo overflow\n", controller);
 			overrun = 1;
 		}
 
@@ -743,7 +742,7 @@ dmzmctl(device, bits, how)
 	modem_status |= ((temp>>8) & (0x1f));
 	line_control = (temp & (0x3f));
 
-	if (line_control & DMZ_BRK)
+	if (line_control & DMZ_RBK)
 		modem_status |= DMZ_BRK;
 
 	switch (how) {
