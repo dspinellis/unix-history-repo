@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	3.1 83/08/11";
+static	char *sccsid = "@(#)cmd3.c	3.2 83/08/15";
 #endif
 
 #include "defs.h"
@@ -22,7 +22,7 @@ register struct ww *w;
 		}
 	}
 	if (selwin == 0) {
-		for (i = 0; i < NWINDOW && window[i] != 0; i++)
+		for (i = 0; i < NWINDOW && window[i] == 0; i++)
 			;
 		if (i < NWINDOW)
 			setselwin(window[i]);
