@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #define	min(a,b)	((a>b) ? b : a)
@@ -1326,7 +1326,8 @@ foreground()
 
 onintr ( )
 {
-    unlink ( ofname );
+    if (!zcat_flg)
+	unlink ( ofname );
     exit ( 1 );
 }
 
