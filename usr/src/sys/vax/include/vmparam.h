@@ -1,4 +1,4 @@
-/*	vmparam.h	6.3	85/03/07	*/
+/*	vmparam.h	6.4	85/03/07	*/
 
 /*
  * Machine dependent constants for VAX
@@ -108,6 +108,20 @@
 #define	DESFREEFRACT	8
 #define	MINFREE		(64 * 1024)
 #define	MINFREEFRACT	2
+
+/*
+ * There are two clock hands, initially separated by HANDSPREAD bytes
+ * (but at most all of user memory).  The amount of time to reclaim
+ * a page once the pageout process examines it increases with this
+ * distance and decreases as the scan rate rises.
+ */
+#define	HANDSPREAD	(2 * 1024 * 1024)
+
+/*
+ * The number of times per second to recompute the desired paging rate
+ * and poke the pagedaemon.
+ */
+#define	RATETOSCHEDPAGING	4
 
 /*
  * Believed threshold (in megabytes) for which interleaved
