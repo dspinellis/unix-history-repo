@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.8 (Berkeley) %G%
+#	@(#)Makefile.inc	5.9 (Berkeley) %G%
 
 # machine-independent net sources
 .PATH: ${.CURDIR}/${MACHINE}/net ${.CURDIR}/net
@@ -31,7 +31,7 @@ MLINKS+=getservent.3 endservent.3 getservent.3 getservbyname.3 \
 MLINKS+=inet.3 addr.3 inet.3 inet_addr.3 inet.3 inet_lnaof.3 \
 	inet.3 inet_makeaddr.3 inet.3 inet_netof.3 inet.3 inet_network.3 \
 	inet.3 inet_ntoa.3 inet.3 network.3 inet.3 ntoa.3 inet.3 inet_aton.3
-MLINKS+=link_addr.0 link_ntoa.0
+MLINKS+=link_addr.3 link_ntoa.3
 MLINKS+=ns.3 ns_addr.3 ns.3 ns_ntoa.3
 MLINKS+=rcmd.3 rresvport.3 rcmd.3 ruserok.3
 MLINKS+=resolver.3 dn_comp.3 resolver.3 dn_expand.3 resolver.3 res_init.3 \
