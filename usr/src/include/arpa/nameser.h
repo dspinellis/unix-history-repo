@@ -4,11 +4,42 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nameser.h	5.25 (Berkeley) %G%
+ *	@(#)nameser.h	5.26 (Berkeley) %G%
  */
 
 #ifndef _NAMESER_H_
 #define	_NAMESER_H_
+
+#ifndef BYTE_ORDER
+/*
+ * BSD gets the byte order definition from <machine/endian.h>.
+ * If you don't have this include file, define NO_ENDIAN_H
+ * and check that your machine will be guessed correctly below.
+ */
+#ifndef NO_ENDIAN_H
+#include <machine/endian.h>
+#else
+#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
+#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
+#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+
+#if defined(vax) || defined(ns32000) || defined(sun386) || defined(MIPSEL) || \
+    defined(i386) || defined(BIT_ZERO_ON_RIGHT)
+#define BYTE_ORDER	LITTLE_ENDIAN
+#endif
+
+#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
+    defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
+    defined(MIPSEB) || defined (BIT_ZERO_ON_LEFT)
+#define BYTE_ORDER	BIG_ENDIAN
+#endif
+#endif /* NO_ENDIAN_H */
+#endif /* BYTE_ORDER */
+
+#ifndef BYTE_ORDER
+	/* you must determine what the correct bit order is for your compiler */
+	Error! UNDEFINED_BIT_ORDER
+#endif
 
 /*
  * Define constants based on rfc883
@@ -92,7 +123,7 @@
 
 #define C_IN		1		/* the arpa internet */
 #define C_CHAOS		3		/* for chaos net at MIT */
-#define C_HS		4		/* for Hesiod name server at MIT */
+#define C_HS		4		/* for Hesiod name server at MIT XXX */
 	/* Query class values which do not appear in resource records */
 #define C_ANY		255		/* wildcard match */
 
@@ -105,61 +136,58 @@
 #define CONV_BADCKSUM -3
 #define CONV_BADBUFLEN -4
 
-#ifndef BYTE_ORDER
-#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
-
-#if defined(vax) || defined(ns32000) || defined(sun386) || defined(MIPSEL) || \
-    defined(BIT_ZERO_ON_RIGHT)
-#define BYTE_ORDER	LITTLE_ENDIAN
-
-#endif
-#if defined(sel) || defined(pyr) || defined(mc68000) || defined(sparc) || \
-    defined(is68k) || defined(tahoe) || defined(ibm032) || defined(ibm370) || \
-    defined(MIPSEB) || defined (BIT_ZERO_ON_LEFT)
-#define BYTE_ORDER	BIG_ENDIAN
-#endif
-#endif /* BYTE_ORDER */
-
-#ifndef BYTE_ORDER
-	/* you must determine what the correct bit order is for your compiler */
-	UNDEFINED_BIT_ORDER;
-#endif
 /*
- * Structure for query header, the order of the fields is machine and
- * compiler dependent, in our case, the bits within a byte are assignd 
- * least significant first, while the order of transmition is most 
- * significant first.  This requires a somewhat confusing rearrangement.
+ * Structure for query header.  The order of the fields is machine- and
+ * compiler-dependent, depending on the byte/bit order and the layout
+ * of bit fields.  We use bit fields only in int variables, as this
+ * is all ANSI requires.  This requires a somewhat confusing rearrangement.
  */
 
 typedef struct {
-	u_short	id;		/* query identification number */
 #if BYTE_ORDER == BIG_ENDIAN
+			/* first and second bytes */
+	u_int	id:16,		/* query identification number */
 			/* fields in third byte */
-	u_char	qr:1;		/* response flag */
-	u_char	opcode:4;	/* purpose of message */
-	u_char	aa:1;		/* authoritive answer */
-	u_char	tc:1;		/* truncated message */
-	u_char	rd:1;		/* recursion desired */
+		qr:1,		/* response flag */
+		opcode:4,	/* purpose of message */
+		aa:1,		/* authoritive answer */
+		tc:1,		/* truncated message */
+		rd:1,		/* recursion desired */
 			/* fields in fourth byte */
-	u_char	ra:1;		/* recursion available */
-	u_char	pr:1;		/* primary server required (non standard) */
-	u_char	unused:2;	/* unused bits */
-	u_char	rcode:4;	/* response code */
+		ra:1,		/* recursion available */
+		pr:1,		/* primary server required (non standard) */
+		unused:2,	/* unused bits */
+		rcode:4;	/* response code */
+
 #endif
-#if BYTE_ORDER == LITTLE_ENDIAN || BYTE_ORDER == PDP_ENDIAN
+#if BYTE_ORDER == LITTLE_ENDIAN
+			/* first and second bytes */
+	u_int	id:16,		/* query identification number */
 			/* fields in third byte */
-	u_char	rd:1;		/* recursion desired */
-	u_char	tc:1;		/* truncated message */
-	u_char	aa:1;		/* authoritive answer */
-	u_char	opcode:4;	/* purpose of message */
-	u_char	qr:1;		/* response flag */
+		rd:1,		/* recursion desired */
+		tc:1,		/* truncated message */
+		aa:1,		/* authoritive answer */
+		opcode:4,	/* purpose of message */
+		qr:1,		/* response flag */
 			/* fields in fourth byte */
-	u_char	rcode:4;	/* response code */
-	u_char	unused:2;	/* unused bits */
-	u_char	pr:1;		/* primary server required (non standard) */
-	u_char	ra:1;		/* recursion available */
+		rcode:4,	/* response code */
+		unused:2,	/* unused bits */
+		pr:1,		/* primary server required (non standard) */
+		ra:1;		/* recursion available */
+#endif
+#if BYTE_ORDER == PDP_ENDIAN	/* and assume 16-bit ints... */
+	u_short	id;		/* query identification number */
+			/* fields in third byte */
+	u_int	rd:1;		/* recursion desired */
+		tc:1,		/* truncated message */
+		aa:1,		/* authoritive answer */
+		opcode:4,	/* purpose of message */
+		qr:1,		/* response flag */
+			/* fields in fourth byte */
+		rcode:4,	/* response code */
+		unused:2,	/* unused bits */
+		pr:1,		/* primary server required (non standard) */
+		ra:1;		/* recursion available */
 #endif
 			/* remaining bytes */
 	u_short	qdcount;	/* number of question entries */
