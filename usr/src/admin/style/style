@@ -1,7 +1,7 @@
 /*
  * Style guide for BSD's KNF (Kernel Normal Form).
  *
- *	@(#)style	1.9 (Berkeley) %G%
+ *	@(#)style	1.10 (Berkeley) %G%
  */
 
 /*
@@ -185,7 +185,7 @@ function(a1, a2, a3, a4)
 	 * function declarations should go in the include file "externs.h".
 	 * If a line overflows reuse the type keyword.
 	 *
-	 * In general, don't initialize variables in the declarations.
+	 * Try not to initialize variables in the declarations.
 	 */
 	extern u_char one;
 	extern char two;
@@ -193,8 +193,8 @@ function(a1, a2, a3, a4)
 	double five;
 	int *six, seven, eight();
 	char *nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen;
-	char *overflow();
-	void *malloc();
+	char *overflow __P((void));
+	void *mymalloc __P((u_int));
 
 	/*
 	 * Casts and sizeof's are not followed by a space.  NULL is any
@@ -216,12 +216,19 @@ function(a1, a2, a3, a4)
 	return (eight);
 }
 
+/* ANSI function braces look like regular function braces. */
+function(int a1, int a2)
+{
+	...
+}
+
 static void
 usage()
-{	/* Insert an empty line if the function has no variables. */
+{	/* Insert an empty line if the function has no local variables. */
 
 	/*
-	 * Use printf(3), not fputs/puts/putchar/whatever.
+	 * Use printf(3), not fputs/puts/putchar/whatever, it's faster and
+	 * usually cleaner, not to mention avoiding stupid bugs.
 	 *
 	 * Usage statements should look like the manual pages.  Options w/o
 	 * operands come first, in alphabetical order inside a single set of
