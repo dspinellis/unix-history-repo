@@ -1,16 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <sys/time.h>
 #include <signal.h>
-#include <setjmp.h>
-
-static jmp_buf jmp;
 
 #define	mask(s)	(1<<((s)-1))
 #define	setvec(vec, a) \
 	vec.sv_handler = a; vec.sv_mask = vec.sv_onstack = 0
+
+static int ringring;
 
 sleep(n)
 	unsigned n;
@@ -27,11 +26,6 @@ sleep(n)
 	if (setitimer(ITIMER_REAL, itp, &oitv) < 0)
 		return;
 	setvec(ovec, SIG_DFL);
-	if (setjmp(jmp)) {
-		(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
-		(void) setitimer(ITIMER_REAL, &oitv, (struct itimerval *)0);
-		return;
-	}
 	omask = sigblock(0);
 	itp->it_value.tv_sec = n;
 	if (timerisset(&oitv.it_value)) {
@@ -41,7 +35,7 @@ sleep(n)
 			itp->it_value = oitv.it_value;
 			/*
 			 * This is a hack, but we must have time to
-			 * return from the setitimer after the longjmp
+			 * return from the setitimer after the alarm
 			 * or else it'll be restarted.  And, anyway,
 			 * sleep never did anything more than this before.
 			 */
@@ -51,16 +45,17 @@ sleep(n)
 	}
 	setvec(vec, sleepx);
 	(void) sigvec(SIGALRM, &vec, &ovec);
-	if (setitimer(ITIMER_REAL, itp, (struct itimerval *)0) < 0)
-		longjmp(jmp, 1);
-	for (;;)
+	(void) setitimer(ITIMER_REAL, itp, (struct itimerval *)0);
+	ringring = 0;
+	while (!ringring)
 		sigpause(omask &~ mask(SIGALRM));
-	/*NOTREACHED*/
+	(void) sigvec(SIGALRM, &ovec, (struct sigvec *)0);
+	(void) setitimer(ITIMER_REAL, &oitv, (struct itimerval *)0);
 }
 
 static
 sleepx()
 {
 
-	longjmp(jmp, 1);
+	ringring = 1;
 }
