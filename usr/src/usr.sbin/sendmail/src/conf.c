@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.111 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.112 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2668,7 +2668,7 @@ ni_propval(keydir, keyprop, keyval, valprop, sepchar)
 	**	an alternate search property.
 	*/
 
-	i = strlen(keydir) + strlen(keyval) + 2)
+	i = strlen(keydir) + strlen(keyval) + 2;
 	if (keyprop != NULL)
 		i += strlen(keyprop) + 1;
 	if (i > sizeof keybuf)

@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.68 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.69 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -241,9 +241,6 @@ main(argc, argv, envp)
 #endif
 #if defined(ultrix)
 # define OPTIONS	"B:b:C:cd:e:F:f:h:IiM:mnO:o:p:q:r:sTtvX:"
-#endif
-#if defined(NeXT)
-# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnO:o:p:q:r:sTtvX:"
 #endif
 #ifndef OPTIONS
 # define OPTIONS	"B:b:C:cd:e:F:f:h:IimnO:o:p:q:r:sTtvX:"
@@ -594,10 +591,6 @@ main(argc, argv, envp)
 
 # if defined(__osf__) || defined(_AIX3)
 		  case 'x':	/* random flag that OSF/1 & AIX mailx passes */
-			break;
-# endif
-# if defined(NeXT)
-		  case 'O':	/* random flag that NeXT Mail.app passes */
 			break;
 # endif
 
