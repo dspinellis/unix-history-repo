@@ -15,12 +15,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/file.h>
+#include <fcntl.h>
 #include <limits.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define	MAXLINELEN	(_POSIX2_LINE_MAX + 1)
 
@@ -135,8 +138,8 @@ file(name)
 
 	if (!strcmp(name, "-"))
 		return(stdin);
-	if (!(fp = fopen(name, "r"))) {
-		(void)fprintf(stderr, "comm: can't read %s.\n", name);
+	if ((fp = fopen(name, "r")) == NULL) {
+		(void)fprintf(stderr, "comm: %s: %s\n", name, strerror(errno));
 		exit(1);
 	}
 	return(fp);
@@ -144,6 +147,6 @@ file(name)
 
 usage()
 {
-	(void)fprintf(stderr, "usage: comm [-123] [ - ] file1 file2\n");
+	(void)fprintf(stderr, "usage: comm [-123] file1 file2\n");
 	exit(1);
 }
