@@ -1,4 +1,4 @@
-/*	if_enp.c	1.3	86/12/15	*/
+/*	if_enp.c	1.4	86/12/15	*/
 
 #include "enp.h"
 #if NENP > 0
@@ -49,7 +49,7 @@
 #define	ENPUNIT(dev)	(minor(dev))	/* for enp ram devices */
 
 int	enpprobe(), enpattach(), enpintr();
-long	enpstd[] = { 0xf41000, 0xf61000, 0 };
+long	enpstd[] = { 0xfff41000, 0xfff61000, 0 };
 struct  vba_device *enpinfo[NENP];
 struct  vba_driver enpdriver = 
     { enpprobe, 0, enpattach, 0, enpstd, "enp", enpinfo, "enp-20", 0 };
