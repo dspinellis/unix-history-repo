@@ -1,6 +1,10 @@
-.\"	@(#)refer	5.1 (Berkeley) %G%
+.\"	@(#)refer	6.1 (Berkeley) %G%
 .\"
 .... refer | tbl | nroff -ms
+.EH 'USD:30-%''Some Applications of Inverted Indexes on the UNIX System'
+.OH 'Some Applications of Inverted Indexes on the UNIX System''USD:30-%'
+.nr LL 6.5i
+.nr LT 6.5i
 .de UC
 \\s-2\\$1\\s0\\$2
 ..
@@ -8,7 +12,7 @@
 .if t .ds -- \(em
 .if n .ds -- --
 .TR 69
-.TM 77-1274-17 39199 39199-11
+\".TM 77-1274-17 39199 39199-11
 .ND October 27, 1977
 .ND June 21, 1978
 .TL
@@ -17,81 +21,81 @@ Some Applications of Inverted Indexes on the UNIX System
 M. E. Lesk
 .AI
 .MH
-.AB
-.LP
-.ft B
-I. Some Applications of Inverted Indexes \- Overview
-.ft R
-.PP
-This memorandum describes a set of programs which
-make inverted indexes to
-UNIX*
-text files, and their
-application to
-retrieving and formatting citations for documents prepared using
-.I troff.
-.PP
-The indexing and searching programs make keyword
-indexes to volumes of material too large for linear searching.
-Searches for combinations of single words can be performed quickly.
-The programs for general searching are divided into
-two phases.  The first makes an index from the original
-data; the second searches the index and retrieves
-items.
-Both of these phases are further divided into two parts
-to separate the data-dependent and algorithm dependent
-code.
-.PP
-The major current application of these programs is
-the
-.I troff
-preprocessor
-.I refer.
-A list of 4300 references is maintained on line,
-containing primarily papers written and cited by
-local authors.
-Whenever one of these references is required
-in a paper, a few words from the title or author list
-will retrieve it, and the user need not bother to re-enter
-the exact citation.
-Alternatively, authors can use their own lists of papers.
-.PP
-This memorandum is of interest to
-those who are interested in facilities for searching large
-but relatively unchanging text files on
-the
-UNIX
-system,
-and those who are interested in handling bibliographic
-citations with
-UNIX
-.I troff.
-.LP
-.ft B
-II. Updating Publication Lists
-.PP
-This section is a brief note describing the
-auxiliary programs for managing the updating
-processing.
-It is written to aid clerical users in
-maintaining lists of references.
-Primarily, the programs described permit a large
-amount of individual control over the content
-of publication lists while retaining the
-usefulness of the files to other users.
-.LP
-.ft B
-III. Manual Pages
-.PP
-This section contains the pages from the
-UNIX programmer's manual
-dealing with these commands.
-It is useful for reference.
-.sp
-\l'3i'
-.br
-* UNIX is a Trademark of Bell Laboratories.
-.AE
+.\".AB
+.\".LP
+.\".ft B
+.\"I. Some Applications of Inverted Indexes \- Overview
+.\".ft R
+.\".PP
+.\"This memorandum describes a set of programs which
+.\"make inverted indexes to
+.\"UNIX*
+.\"text files, and their
+.\"application to
+.\"retrieving and formatting citations for documents prepared using
+.\".I troff.
+.\".PP
+.\"The indexing and searching programs make keyword
+.\"indexes to volumes of material too large for linear searching.
+.\"Searches for combinations of single words can be performed quickly.
+.\"The programs for general searching are divided into
+.\"two phases.  The first makes an index from the original
+.\"data; the second searches the index and retrieves
+.\"items.
+.\"Both of these phases are further divided into two parts
+.\"to separate the data-dependent and algorithm dependent
+.\"code.
+.\".PP
+.\"The major current application of these programs is
+.\"the
+.\".I troff
+.\"preprocessor
+.\".I refer.
+.\"A list of 4300 references is maintained on line,
+.\"containing primarily papers written and cited by
+.\"local authors.
+.\"Whenever one of these references is required
+.\"in a paper, a few words from the title or author list
+.\"will retrieve it, and the user need not bother to re-enter
+.\"the exact citation.
+.\"Alternatively, authors can use their own lists of papers.
+.\".PP
+.\"This memorandum is of interest to
+.\"those who are interested in facilities for searching large
+.\"but relatively unchanging text files on
+.\"the
+.\"UNIX
+.\"system,
+.\"and those who are interested in handling bibliographic
+.\"citations with
+.\"UNIX
+.\".I troff.
+.\".LP
+.\".ft B
+.\"II. Updating Publication Lists
+.\".PP
+.\"This section is a brief note describing the
+.\"auxiliary programs for managing the updating
+.\"processing.
+.\"It is written to aid clerical users in
+.\"maintaining lists of references.
+.\"Primarily, the programs described permit a large
+.\"amount of individual control over the content
+.\"of publication lists while retaining the
+.\"usefulness of the files to other users.
+.\".LP
+.\".ft B
+.\"III. Manual Pages
+.\".PP
+.\"This section contains the pages from the
+.\"UNIX programmer's manual
+.\"dealing with these commands.
+.\"It is useful for reference.
+.\".sp
+.\"\l'3i'
+.\".br
+.\"* UNIX is a trademark of Bell Laboratories.
+.\".AE
 .CS 10 4 14 0 0 4
 .NH
 Introduction.
@@ -145,7 +149,10 @@ and the
 command to search through all text files on
 the
 .UX
-system.
+system.\(dd
+.FS
+\(dd \fIlookall\fP is not part of the Berkeley UNIX distribution.
+.FE
 .PP
 The remaining sections of this memorandum discuss
 the searching programs and their uses.
@@ -168,11 +175,6 @@ The options to make
 .I refer
 collect identical citations, or otherwise relocate and adjust references,
 are described in section 5.
-The
-.UX
-manual sections for
-.I "refer, lookall,"
-and associated commands are attached as appendices.
 .NH
 Searching.
 .PP
@@ -1203,7 +1205,7 @@ key1 key2 key3 \*.\*.\*.
 %R Override report name
 \*.\^]
 .DE
-makes the indicates changes to the result of searching for
+makes the indicated changes to the result of searching for
 the keys.
 All of the search keys must be given before the first
 \f3%\f1 line.
