@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -947,7 +947,7 @@ gethead(buf)
 	buf->c_magic = NFS_MAGIC;
 
 good:
-	if (buf->c_dinode.di_size == 0 &&
+	if ((buf->c_dinode.di_size == 0 || buf->c_dinode.di_size > 0xfffffff) &&
 	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt == 0) {
 		qcvt.qval = buf->c_dinode.di_size;
 		if (qcvt.val[0] || qcvt.val[1]) {
