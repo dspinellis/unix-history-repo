@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.3	(Berkeley)	83/01/09
+#	@(#)Makefile	4.4	(Berkeley)	83/09/10
 #
 COPT=
 CFLAGS=-O
@@ -16,6 +16,9 @@ ufs_subr.o: /sys/sys/ufs_subr.c
 ufs_tables.o: /sys/sys/ufs_tables.c
 	cc ${COPT} -c /sys/sys/ufs_tables.c
 
+lint:
+	lint fsck.c
+
 install: fsck
 	install fsck ${DESTDIR}/etc/fsck
 
@@ -24,9 +27,10 @@ clean:
 	rm -f errs a.out core
 
 depend:
+	echo >x.c
 	for i in fsck; do \
 		(echo $$i: $$i.c >>makedep; \
-		/bin/grep '^#[ 	]*include' $$i.c | sed \
+		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
 			-e '/\.\.\/h/d' \
 			-e 's,<\(.*\)>,"/usr/include/\1",' \
 			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
@@ -36,7 +40,7 @@ depend:
 	echo 'w' >>eddep
 	cp Makefile Makefile.bak
 	ed - Makefile < eddep
-	rm eddep makedep
+	rm eddep makedep x.c
 	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 	echo '# see make depend above' >> Makefile
@@ -44,14 +48,15 @@ depend:
 # DO NOT DELETE THIS LINE -- make depend uses it
 
 fsck: fsck.c
-#include "/usr/include/stdio.h"
-#include "/usr/include/ctype.h"
-#include "/usr/include/sys/param.h"
-#include "/usr/include/sys/fs.h"
-#include "/usr/include/sys/inode.h"
-#include "/usr/include/dir.h"
-#include "/usr/include/sys/stat.h"
-#include "/usr/include/fstab.h"
+fsck: /usr/include/stdio.h
+fsck: /usr/include/ctype.h
+fsck: /usr/include/sys/param.h
+fsck: /usr/include/sys/fs.h
+fsck: /usr/include/sys/inode.h
+fsck: /usr/include/sys/dir.h
+fsck: /usr/include/sys/stat.h
+fsck: /usr/include/sys/wait.h
+fsck: /usr/include/fstab.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
