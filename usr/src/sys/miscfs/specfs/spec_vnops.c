@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.12 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -224,6 +224,7 @@ spec_strategy(bp)
 /*
  * At the moment we do not do any locking.
  */
+/* ARGSUSED */
 spec_lock(vp)
 	struct vnode *vp;
 {
@@ -231,6 +232,7 @@ spec_lock(vp)
 	return (0);
 }
 
+/* ARGSUSED */
 spec_unlock(vp)
 	struct vnode *vp;
 {

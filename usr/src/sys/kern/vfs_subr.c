@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.11 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -297,7 +297,6 @@ bdevvp(dev, vpp)
 	dev_t dev;
 	struct vnode **vpp;
 {
-	register struct inode *ip;
 	register struct vnode *vp;
 	struct vnode *nvp;
 	int error;
@@ -542,7 +541,7 @@ void vgone(vp)
 			slp = speclisth;
 			speclisth = slp->sl_next;
 		} else {
-			for (slp = speclisth; slp;
+			for (pslp = speclisth, slp = pslp->sl_next; slp;
 			     pslp = slp, slp = slp->sl_next) {
 				if (slp->sl_vp != vp)
 					continue;

@@ -54,8 +54,10 @@ ufs_init()
 	register int i;
 	register union ihead *ih = ihead;
 
+#ifndef lint
 	if (VN_MAXPRIVATE < sizeof(struct inode))
 		panic("ihinit: too small");
+#endif /* not lint */
 	for (i = INOHSZ; --i >= 0; ih++) {
 		ih->ih_head[0] = ih;
 		ih->ih_head[1] = ih;
@@ -270,7 +272,7 @@ ufs_inactive(vp)
 ufs_reclaim(vp)
 	register struct vnode *vp;
 {
-	register struct inode *iq, *ip = VTOI(vp);
+	register struct inode *ip = VTOI(vp);
 
 	if (vp->v_count != 0)
 		printf("ufs_reclaim: pushing active ino %d dev 0x%x\n",
