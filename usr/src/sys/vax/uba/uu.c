@@ -1,4 +1,4 @@
-/*	uu.c	4.9	83/07/24	*/
+/*	uu.c	4.10	83/07/27	*/
 
 #include "uu.h"
 #if NUU > 0
@@ -92,6 +92,7 @@ struct uba_driver uudriver =
     { uuprobe, 0, uuattach, 0, uustd, "uu", uudinfo };
 
 int	uuwstart;
+int	uuwake();
 static char uu_pcnt[NUX];		/* pee/vee counters, one per drive */
 
 /*ARGSUSED*/
@@ -200,23 +201,27 @@ uuclose(dev, flag)
 	 * buffer queue for oustanding reads from
 	 * this unit.
 	 */
-	for (bp = uitab[unit/NDPC].b_actf; bp; bp = bp->b_actf)
+	for (bp = uitab[unit/NDPC].b_actf; bp; bp = bp->b_actf) {
 		if (bp->b_dev == dev)
 			last = bp;
-	if (last) 
-		iowait(last);
+	}
+	if (last) {
+		last->b_flags |= B_CALL;
+		last->b_iodone = uuwake;
+		sleep((caddr_t)last, PRIBIO);
+	}
 	uuc->tu_dopen[unit&UMASK] = 0;
 	if (!uuc->tu_dopen[0] && !uuc->tu_dopen[1]) {
 		uuc->tu_flag = 0;
 		uuaddr->rcs = 0;
-		/*
-		 * Make sure the device is left in a
-		 * known state....
-		 */
-		if (uuc->tu_state != TUS_IDLE)
-			uuc->tu_state = TUS_INIT1;
 	}
 	splx(s);
+}
+
+uuwake(bp)
+	struct buf *bp;
+{
+	wakeup(bp);
 }
 
 uureset(ctlr)
@@ -288,13 +293,15 @@ uustart(ui)
 	register struct buf *bp;
 	register struct uu_softc *uuc;
 	struct packet *cmd;
-	int ctlr = ui->ui_unit;
+	int ctlr = ui->ui_unit, s;
 
 	if ((bp = uitab[ctlr].b_actf) == NULL)
 		return;
+	s = splx(UUIPL);
 	uuc = &uu_softc[ctlr];
 	if (uuc->tu_state != TUS_IDLE) {
 		uureset(ctlr);
+		splx(s);
 		return;
 	}
 	cmd = &uucmd[ctlr];
@@ -319,6 +326,7 @@ uustart(ui)
 	uuc->tu_wbptr = (u_char *)cmd;
 	uuc->tu_wcnt = sizeof (*cmd);
 	uuxintr(ctlr);
+	splx(s);
 }
 
 /*
