@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -18,9 +18,29 @@ static char sccsid[] = "@(#)gethostnamadr.c	5.2 (Berkeley) %G%";
 
 #define	MAXALIASES	35
 
-static struct hostent host;
+#define XX 2
+static char h_addr_buf[sizeof(struct in_addr) * XX];
+static char *h_addr_ptr[XX] = {
+	&h_addr_buf[0],
+	&h_addr_buf[sizeof(struct in_addr)]
+};
+static struct hostent host = {
+	NULL,		/* official name of host */
+	NULL,		/* alias list */
+	0,		/* host address type */
+	0,		/* length of address */
+	h_addr_ptr	/* list of addresses from name server */
+};
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
+
+#ifdef BOMBPROOFING
+#include <ndbm.h>
+DBM *_host_db = NULL;
+int	_host_stayopen = 0;
+int	_host_bombed;
+struct hostent *_oldgethostbyname(), *_oldgethostbyaddr();
+#endif BOMBPROOFING
 
 static struct hostent *
 getanswer(msg, msglen, iquery)
@@ -34,10 +54,16 @@ getanswer(msg, msglen, iquery)
 	char *eom, *bp, **ap;
 	int type, class, ancount, buflen;
 
+#ifdef BOMBPROOFING
+	_host_bombed = 0;
+#endif BOMBPROOFING
 	n = res_send(msg, msglen, answer, sizeof(answer));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
 			printf("res_send failed\n");
+#ifdef BOMBPROOFING
+		_host_bombed++;
+#endif BOMBPROOFING
 		return (NULL);
 	}
 	eom = answer + n;
@@ -49,6 +75,10 @@ getanswer(msg, msglen, iquery)
 	if (hp->rcode != NOERROR || ancount == 0) {
 		if (_res.options & RES_DEBUG)
 			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
+#ifdef BOMBPROOFING
+		if (!(hp->rcode == NOERROR && ancount == 0))
+			_host_bombed++;
+#endif BOMBPROOFING
 		return (NULL);
 	}
 	bp = hostbuf;
@@ -117,6 +147,9 @@ gethostbyname(name)
 	char *name;
 {
 	int n;
+#ifdef BOMBPROOFING
+	register struct hostent *hp;
+#endif BOMBPROOFING
 
 	n = res_mkquery(QUERY, name, C_ANY, T_A, NULL, 0, NULL,
 		hostbuf, sizeof(hostbuf));
@@ -124,8 +157,17 @@ gethostbyname(name)
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
 		return (NULL);
+#ifndef BOMBPROOFING
 	}
-	return (getanswer(hostbuf, n, 0));
+	return(getanswer(hostbuf, n, 0));
+#else
+	} else
+		hp = getanswer(hostbuf, n, 0);
+	if (n < 0 || (hp == NULL && _host_bombed))
+		return (_oldgethostbyname(name));
+	else
+		return (hp);
+#endif BOMBPROOFING
 }
 
 struct hostent *
@@ -134,6 +176,9 @@ gethostbyaddr(addr, len, type)
 	int len, type;
 {
 	int n;
+#ifdef BOMBPROOFING
+	register struct hostent *hp;
+#endif BOMBPROOFING
 
 	if (type != AF_INET)
 		return (NULL);
@@ -143,6 +188,85 @@ gethostbyaddr(addr, len, type)
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
 		return (NULL);
+#ifndef BOMBPROOFING
 	}
 	return (getanswer(hostbuf, n, 1));
+#else
+	} else
+		hp = getanswer(hostbuf, n, 1);
+	if (n < 0 || (hp == NULL && _host_bombed))
+		return (_oldgethostbyaddr(addr));
+	else
+		return (hp);
+#endif BOMBPROOFING
 }
+
+#ifdef BOMBPROOFING
+static
+struct hostent *
+_oldgethostbyname(name)
+	register char *name;
+{
+	register struct hostent *hp;
+	register char **cp;
+        datum key;
+
+	if ((_host_db == (DBM *)NULL)
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+		sethostent(_host_stayopen);
+		while (hp = gethostent()) {
+			if (strcmp(hp->h_name, nam) == 0)
+				break;
+			for (cp = hp->h_aliases; cp != 0 && *cp != 0; cp++)
+				if (strcmp(*cp, nam) == 0)
+					goto found;
+		}
+	found:
+		if (!_host_stayopen)
+			endhostent();
+		return (hp);
+	}
+        key.dptr = nam;
+        key.dsize = strlen(nam);
+	hp = fetchhost(key);
+	if (!_host_stayopen) {
+		dbm_close(_host_db);
+		_host_db = (DBM *)NULL;
+	}
+        return (hp);
+}
+
+
+static
+struct hostent *
+_oldgethostbyaddr(addr, len, type)
+	char *addr;
+	register int len, type;
+{
+
+	register struct hostent *hp;
+        datum key;
+
+	if ((_host_db == (DBM *)NULL)
+	  && ((_host_db = dbm_open(_host_file, O_RDONLY)) == (DBM *)NULL)) {
+		sethostent(_host_stayopen);
+		while (hp = gethostent()) {
+			if (hp->h_addrtype == type && hp->h_length == length
+			    && bcmp(hp->h_addr, addr, length) == 0)
+				break;
+		}
+		if (!_host_stayopen)
+			endhostent();
+		return (hp);
+	}
+        key.dptr = addr;
+        key.dsize = length;
+	hp = fetchhost(key);
+	if (!_host_stayopen) {
+		dbm_close(_host_db);
+		_host_db = (DBM *)NULL;
+	}
+        return (hp);
+}
+#endif BOMBPROOFING
+
