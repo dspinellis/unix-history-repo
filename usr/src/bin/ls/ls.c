@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.66 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.67 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -306,9 +306,9 @@ traverse(argc, argv, options)
 }
 
 /*
- * Display() takes a linked list of FTSENT structures passes the list along
- * with any other necessary information to the print function (printfcn()).
- * P points to the parent directory of the display list.
+ * Display() takes a linked list of FTSENT structures and passes the list
+ * along with any other necessary information to the print function.  P
+ * points to the parent directory of the display list.
  */
 static void
 display(p, list)
@@ -321,7 +321,7 @@ display(p, list)
 	NAMES *np;
 	u_long btotal, maxblock, maxinode, maxlen, maxnlink;
 	u_quad_t maxsize;
-	int flen, glen, ulen, maxflags, maxgroup, maxuser;
+	int bcfile, flen, glen, ulen, maxflags, maxgroup, maxuser;
 	int entries, needstats;
 	char *user, *group, *flags, buf[20];	/* 32 bits == 10 digits */
 
@@ -338,6 +338,7 @@ display(p, list)
 	needstats = f_inode || f_longform || f_size;
 	flen = 0;
 	btotal = maxblock = maxinode = maxlen = maxnlink = 0;
+	bcfile = 0;
 	maxuser = maxgroup = maxflags = 0;
 	maxsize = 0;
 	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
@@ -404,6 +405,10 @@ display(p, list)
 				np->group = &np->data[ulen + 1];
 				(void)strcpy(np->group, group);
 
+				if (S_ISCHR(sp->st_mode) ||
+				    S_ISBLK(sp->st_mode))
+					bcfile = 1;
+
 				if (f_flags) {
 					np->flags = &np->data[ulen + glen + 2];
 				  	(void)strcpy(np->flags, flags);
@@ -421,6 +426,7 @@ display(p, list)
 	d.entries = entries;
 	d.maxlen = maxlen;
 	if (needstats) {
+		d.bcfile = bcfile;
 		d.btotal = btotal;
 		d.s_block = snprintf(buf, sizeof(buf), "%lu", maxblock);
 		d.s_flags = maxflags;

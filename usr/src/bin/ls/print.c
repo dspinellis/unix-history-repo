@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -80,6 +80,9 @@ printlong(dp)
 		if (S_ISCHR(sp->st_mode) || S_ISBLK(sp->st_mode))
 			(void)printf("%3d, %3d ",
 			    major(sp->st_rdev), minor(sp->st_rdev));
+		else if (dp->bcfile)
+			(void)printf("%*s%*qd ",
+			    8 - dp->s_size, "", dp->s_size, sp->st_size);
 		else
 			(void)printf("%*qd ", dp->s_size, sp->st_size);
 		if (f_accesstime)
