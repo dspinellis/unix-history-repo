@@ -12,17 +12,18 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)id.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)id.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <pwd.h>
-#include <grp.h>
+
 #include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include <grp.h>
+#include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void	current __P((void));
 void	err __P((const char *, ...));
@@ -162,7 +163,8 @@ current()
 {
 	struct group *gr;
 	struct passwd *pw;
-	int cnt, id, eid, lastid, ngroups, groups[NGROUPS];
+	int cnt, id, eid, lastid, ngroups;
+	gid_t groups[NGROUPS];
 	char *fmt;
 
 	id = getuid();
@@ -231,7 +233,8 @@ group(pw, nflag)
 	int nflag;
 {
 	struct group *gr;
-	int cnt, id, lastid, ngroups, groups[NGROUPS + 1];
+	int cnt, id, lastid, ngroups;
+	gid_t groups[NGROUPS + 1];
 	char *fmt;
 
 	if (pw) {
