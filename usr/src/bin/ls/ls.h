@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ls.h	5.7 (Berkeley) %G%
+ *	@(#)ls.h	5.8 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
@@ -40,6 +40,7 @@ extern int errno;
 extern int f_accesstime;	/* use time of last access */
 extern int f_group;		/* show group ownership of a file */
 extern int f_inode;		/* print inode */
+extern int f_kblocks;		/* print size in kilobytes */
 extern int f_longform;		/* long listing format */
 extern int f_singlecol;		/* use single column output */
 extern int f_size;		/* list size in short listing */
