@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwupdate.c	3.4 83/08/16";
+static	char *sccsid = "@(#)wwupdate.c	3.5 83/08/16";
 #endif
 
 #include "ww.h"
@@ -7,10 +7,15 @@ static	char *sccsid = "@(#)wwupdate.c	3.4 83/08/16";
 
 wwupdate()
 {
-	register i, j;
+	int i;
+	register j;
+	int c, x;
 	register union ww_char *ns, *os;
-	register char *touched;
+	register char *p, *q;
+	char m;
+	char *touched;
 	register didit;
+	char buf[512];			/* > wwncol */
 
 	wwnupdate++;
 	(*tt.tt_setinsert)(0);
@@ -19,17 +24,40 @@ wwupdate()
 			continue;
 		wwntouched++;
 		*touched = 0;
+
 		ns = wwns[i];
 		os = wwos[i];
 		didit = 0;
-		for (j = 0; j < wwncol; j++, ns++, os++) {
-			if (ns->c_w != os->c_w) {
-				(*tt.tt_move)(i, j);
-				(*tt.tt_setmodes)(ns->c_m);
-				(*tt.tt_putc)(ns->c_c);
-				*os = *ns;
-				didit++;
+		for (j = 0; j < wwncol;) {
+			for (; j++ < wwncol && ns++->c_w == os++->c_w;)
+				;
+			if (j > wwncol)
+				break;
+			p = buf;
+			m = ns[-1].c_m;
+			c = j - 1;
+			os[-1] = ns[-1];
+			*p++ = ns[-1].c_c;
+			x = 5;
+			q = p;
+			while (j < wwncol && ns->c_m == m) {
+				*p++ = ns->c_c;
+				if (ns->c_w == os->c_w) {
+					if (--x <= 0)
+						break;
+					os++;
+					ns++;
+				} else {
+					x = 5;
+					q = p;
+					*os++ = *ns++;
+				}
+				j++;
 			}
+			(*tt.tt_move)(i, c);
+			(*tt.tt_setmodes)(m);
+			(*tt.tt_write)(buf, q - 1);
+			didit++;
 		}
 		if (!didit)
 			wwnmiss++;
