@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1630,11 +1630,13 @@ denlstring(s)
 	for (p = bp; (p = strchr(p, '\n')) != NULL; )
 		*p++ = ' ';
 
+/*
 #ifdef LOG
 	p = macvalue('_', CurEnv);
 	syslog(LOG_ALERT, "POSSIBLE ATTACK from %s: newline in string \"%s\"",
 		p == NULL ? "[UNKNOWN]" : p, bp);
 #endif
+*/
 
 	return bp;
 }
