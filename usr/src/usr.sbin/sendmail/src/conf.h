@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.120 (Berkeley) %G%
+ *	@(#)conf.h	8.121 (Berkeley) %G%
  */
 
 /*
