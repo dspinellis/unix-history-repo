@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rec.c 1.2 %G%";
+static char sccsid[] = "@(#)rec.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -76,7 +76,7 @@ tyrec1(r, off, first)
 	    /*
 	     *	round the lengths of records up to their alignments
 	     */
-	p -> value[ NL_OFFS ] = roundup( p -> value[ NL_OFFS ] , align( p ) );
+	p->value[NL_OFFS] = roundup(p->value[NL_OFFS], (long)align(p));
 	P0 = P0was;
 	return (p);
 }
@@ -170,8 +170,8 @@ deffld(p, s, t)
 	     * the total size of the record is based on it,
 	     * rather than just the width of the field.
 	     */
-	fp = enter( defnl( s , FIELD , t , roundup( p -> value[ NL_OFFS ]
-						    , align( t ) ) ) );
+	fp = enter(defnl(s, FIELD, t, (int)roundup(p->value[NL_OFFS],
+			(long)align(t))));
 #else
 	fp = enter(defnl(s, FIELD, t, 0));
 #endif

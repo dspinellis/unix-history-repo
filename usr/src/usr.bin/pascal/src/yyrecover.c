@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyrecover.c 1.1 %G%";
+static char sccsid[] = "@(#)yyrecover.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -156,7 +156,7 @@ struct	yytok *YC;
  * the point of error.
  */
 
-bool	yyunique	1;
+bool	yyunique = 1;
 
 STATIC	unsigned yyTshifts;
 
@@ -320,7 +320,7 @@ yyrecover(Ps0, idfail)
 
 		ap = &yyact[yypact[*Ps0 + 1]];
 		if (*ap == -ERROR)
-			ap =+ 2;
+			ap += 2;
 		if (ap[0] <= 0 && ap[2] > 0) {
 			cchar = -ap[0];
 			if (cchar == YEOF)
@@ -461,7 +461,7 @@ yyrecover(Ps0, idfail)
 			if (yyrhave == NIL) {
 				yerror("Undefined %s", classes[yyrwant]);
 #ifdef PI
-				i =| ISUNDEF;
+				i |= ISUNDEF;
 #endif
 			} else
 				yerror("Replaced %s id with a %s id", classes[yyrhave], classes[yyrwant]);
@@ -569,13 +569,13 @@ trystate(Ps0, Pv0, flag, insmult, delmult, repmult)
 	 * Error action is always first.
 	 */
 	if (*ap == -ERROR) 
-		ap=+ 2;
+		ap += 2;
 
 	/*
 	 * Loop through the test actions
 	 * for this state.
 	 */
-	for (actions = ap; *ap <= 0; ap =+ 2) {
+	for (actions = ap; *ap <= 0; ap += 2) {
 		/*
 		 * Extract the token of this action
 		 */
@@ -717,7 +717,7 @@ correct(fchar, origin, c, multvec, Ps0, Pv0)
 		if (ps == NIL) {
 			if (yyredfail && mv > multvec)
 				mv--;
-			c =* *mv;
+			c *= *mv;
 			break;
 		}
 		mv++;
@@ -776,14 +776,14 @@ actn:
 	 * This allows a fast check.
 	 */
 	while ((n = *p++) <= 0)
-		if ((n =+ nchar) != 0)
+		if ((n += nchar) != 0)
 			p++;
 	switch (n >> 12) {
 		/*
 		 * SHIFT
 		 */
 		case 2:
-			n =& 07777;
+			n &= 07777;
 			yyredfail = 0;
 			if (nchar == YID)
 				yyredfail++;
@@ -805,7 +805,7 @@ tipover:
 		 * REDUCE
 		 */
 		case 3:
-			n =& 07777;
+			n &= 07777;
 			if (yyEactr(n, yytipv[yytipct - 1]) == 0) {
 #ifdef DEBUG
 				Tprintf("\tYyEactr objects: have %s id, want %s id\n", classes[yyidhave], classes[yyidwant]);
@@ -818,12 +818,12 @@ tipover:
 			Tprintf("\tReduce, length %d,", i);
 #endif
 			if (i > yytipct) {
-				i =- yytipct;
+				i -= yytipct;
 				yytipct = 0;
-				ps =- i;
-				yCpv =- i;
+				ps -= i;
+				yCpv -= i;
 			} else
-				yytipct =- i;
+				yytipct -= i;
 			if (yytipct >= YYTIPSIZ)
 				goto tipover;
 			/*
@@ -832,7 +832,7 @@ tipover:
 			p = &yygo[yypgo[yyr1[n]]];
 			i = yytipct ? yytips[yytipct - 1] : *ps;
 			while (*p != i && *p >= 0)
-				p =+ 2;
+				p += 2;
 #ifdef DEBUG
 			Tprintf(" new state %d\n", p[1]);
 #endif

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.7 %G%";
+static char sccsid[] = "@(#)rval.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -125,19 +125,24 @@ rvalue(r, contype , required )
 				w = width(q);
 				switch (w) {
 				    case 8:
-					put(2, O_RV8 | bn << 8+INDX, p->value[0]);
+					put(2, O_RV8 | bn << 8+INDX,
+						(int)p->value[0]);
 					break;
 				    case 4:
-					put(2, O_RV4 | bn << 8+INDX, p->value[0]);
+					put(2, O_RV4 | bn << 8+INDX,
+						(int)p->value[0]);
 					break;
 				    case 2:
-					put(2, O_RV2 | bn << 8+INDX, p->value[0]);
+					put(2, O_RV2 | bn << 8+INDX,
+						(int)p->value[0]);
 					break;
 				    case 1:
-					put(2, O_RV1 | bn << 8+INDX, p->value[0]);
+					put(2, O_RV1 | bn << 8+INDX,
+						(int)p->value[0]);
 					break;
 				    default:
-					put(3, O_RV | bn << 8+INDX, p->value[0], w);
+					put(3, O_RV | bn << 8+INDX,
+						(int)p->value[0], w);
 				}
 #			   endif OBJ
 #			   ifdef PC
@@ -206,16 +211,17 @@ cstrng:
 				    cp1 = cp;
 				    for (c = 0; *cp++; c++)
 					    continue;
+				    w = c;
 				    if (contype != NIL && !opt('s')) {
 					    if (width(contype) < c && classify(contype) == TSTR) {
 						    error("Constant string too long");
 						    return (NIL);
 					    }
-					    c = width(contype);
+					    w = width(contype);
 				    }
 #				    ifdef OBJ
-					put( 2 + (sizeof(char *)/sizeof(short))
-						, O_CONG, c, cp1);
+					put(2, O_CONG, w);
+					putstr(cp1, w - c);
 #				    endif OBJ
 #				    ifdef PC
 					putCONG( cp1 , c , required );
@@ -226,13 +232,13 @@ cstrng:
 				     * width.
 				     * cleaned out by stat.
 				     */
-				    q = defnl(0, STR, 0, c);
+				    q = defnl(0, STR, 0, w);
 				    q->type = q;
 				    return (q);
 			    }
 			    if (q == nl+T1CHAR) {
 #				    ifdef OBJ
-					put(2, O_CONC, p->value[0]);
+					put(2, O_CONC, (int)p->value[0]);
 #				    endif OBJ
 #				    ifdef PC
 					putleaf( P2ICON , p -> value[0] , 0
@@ -278,7 +284,7 @@ cstrng:
 				    break;
 			    case 2:
 #				    ifdef OBJ
-					put(2, O_CON2, ( short ) p->range[0]);
+					put(2, O_CON2, (short)p->range[0]);
 #				    endif OBJ
 #				    ifdef PC
 					    /*
@@ -343,12 +349,13 @@ cstrng:
 			}
 			postcset( r , &csetd );
 		    } else {
-			put( 2, O_PUSH, -width(csetd.csettype));
+			put( 2, O_PUSH, -lwidth(csetd.csettype));
 			postcset( r , &csetd );
 			setran( ( csetd.csettype ) -> type );
 			put( 2, O_CON24, set.uprbp);
 			put( 2, O_CON24, set.lwrb);
-			put( 2, O_CTTOT, 4 + csetd.singcnt + 2 * csetd.paircnt);
+			put( 2, O_CTTOT,
+				(int)(4 + csetd.singcnt + 2 * csetd.paircnt));
 		    }
 		    return csetd.csettype;
 #		endif OBJ
@@ -905,7 +912,8 @@ nonident:
 		    if (rt == NIL || csetd.comptime)
 			    put(4, O_IN, width(p1), set.lwrb, set.uprbp);
 		    else
-			    put(2, O_INCT, 3 + csetd.singcnt + 2*csetd.paircnt);
+			    put(2, O_INCT,
+				(int)(3 + csetd.singcnt + 2*csetd.paircnt));
 #		endif OBJ
 #		ifdef PC
 		    if ( rt == NIL || rt[0] != T_CSET ) {

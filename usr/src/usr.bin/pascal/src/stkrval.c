@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stkrval.c 1.3 %G%";
+static char sccsid[] = "@(#)stkrval.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -67,7 +67,7 @@ stkrval(r, contype , required )
 		switch (p->class) {
 		case VAR:
 			/*
-			  if a variable is
+			 * if a variable is
 			 * qualified then get
 			 * the rvalue by a
 			 * stklval and an ind.
@@ -83,19 +83,24 @@ stkrval(r, contype , required )
 			    w = width(q);
 			    switch (w) {
 			    case 8:
-				    put(2, O_RV8 | bn << 8+INDX, p->value[0]);
+				    put(2, O_RV8 | bn << 8+INDX,
+					(int)p->value[0]);
 				    return(q);
 			    case 4:
-				    put(2, O_RV4 | bn << 8+INDX, p->value[0]);
+				    put(2, O_RV4 | bn << 8+INDX,
+					(int)p->value[0]);
 				    return(q);
 			    case 2:
-				    put(2, O_RV24 | bn << 8+INDX, p->value[0]);
+				    put(2, O_RV24 | bn << 8+INDX,
+					(int)p->value[0]);
 				    return(q);
 			    case 1:
-				    put(2, O_RV14 | bn << 8+INDX, p->value[0]);
+				    put(2, O_RV14 | bn << 8+INDX,
+					(int)p->value[0]);
 				    return(q);
 			    default:
-				    put(3, O_RV | bn << 8+INDX, p->value[0], w);
+				    put(3, O_RV | bn << 8+INDX,
+					(int)p->value[0], w);
 				    return(q);
 			     }
 #			endif OBJ
@@ -188,7 +193,7 @@ cstrng:
 			}
 			if (q == nl+T1CHAR) {
 #			    ifdef OBJ
-				put(2, O_CONC4, p->value[0]);
+				put(2, O_CONC4, (int)p->value[0]);
 #			    endif OBJ
 #			    ifdef PC
 				putleaf( P2ICON , p -> value[0] , 0 , P2CHAR , 0 );
@@ -221,7 +226,7 @@ cstrng:
 				    put(2, O_CON24, (short)p->range[0]);
 				    return(q);
 			    case 1:
-				    put(2, O_CON14, (short)p->range[0]);
+				    put(2, O_CON14, p->value[0]);
 				    return(q);
 			    default:
 				    panic("stkrval");
@@ -253,7 +258,7 @@ cstrng:
 				    c = width(q);
 				    put(2, O_LVCON, even(c+1));
 				    putstr("", c);
-				    put(1, O_SDUP4);
+				    put(1, PTR_DUP);
 				    p = funccod(r);
 				    put(2, O_AS, c);
 				    return(p);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lval.c 1.4 %G%";
+static char sccsid[] = "@(#)lval.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -98,7 +98,7 @@ lvalue(r, modflag , required )
 			 * of the WITHPTR or REF
 			 * as the base of our lvalue
 			 */
-			put(2, PTR_RV | bn << 8+INDX , p->value[0] );
+			put(2, PTR_RV | bn << 8+INDX , (int)p->value[0] );
 			f = 0;		/* have an lv on stack */
 			o = 0;
 			break;
@@ -163,7 +163,7 @@ lvalue(r, modflag , required )
 				        put(2, PTR_RV | bn <<8+INDX , o );
 				} else {
 					if (o) {
-					    put2(O_OFF, o);
+					    put(2, O_OFF, o);
 					}
 				        if (p->class != FILET || bn == 0)
 					    put(1, PTR_IND);
@@ -173,7 +173,7 @@ lvalue(r, modflag , required )
 				 * nil and file cannot
 				 * be at end-of-file.
 				 */
-				put1(p->class == FILET ? O_FNIL : O_NIL);
+				put(1, p->class == FILET ? O_FNIL : O_NIL);
 				f = o = 0;
 				continue;
 			case T_ARGL:
@@ -199,12 +199,12 @@ lvalue(r, modflag , required )
 						 * referenced through pointers
 						 * on the stack
 						 */
-						put2(PTR_RV | bn<<8+INDX, o);
+						put(2, PTR_RV | bn<<8+INDX, o);
 					else
-						put2(O_LV | bn<<8+INDX, o);
+						put(2, O_LV | bn<<8+INDX, o);
 				} else {
 					if (o) {
-					    put2(O_OFF, o);
+					    put(2, O_OFF, o);
 					}
 				}
 				switch (arycod(p, co[1])) {
@@ -258,12 +258,12 @@ lvalue(r, modflag , required )
 			 * global variables are referenced through
 			 * pointers on the stack
 			 */
-			put2(PTR_RV | bn<<8+INDX, o);
+			put(2, PTR_RV | bn<<8+INDX, o);
 		else
-			put2(O_LV | bn<<8+INDX, o);
+			put(2, O_LV | bn<<8+INDX, o);
 	} else {
 		if (o) {
-		    put2(O_OFF, o);
+		    put(2, O_OFF, o);
 		}
 	}
 	return (p->type);
@@ -352,13 +352,13 @@ arycod(np, el)
 			    case 4:
 			    case 2:
 			    case 1:
-				    put2((width(ap) != 4 ? O_INX2P2 : O_INX4P2) | (w & ~1) << 7, ( short ) p->range[0]);
+				    put(2, (width(ap) != 4 ? O_INX2P2 : O_INX4P2) | (w & ~1) << 7, ( short ) p->range[0]);
 				    el = el[2];
 				    continue;
 			    }
 		    }
-		    put(4, width(ap) != 4 ? O_INX2 : O_INX4,w,( short ) p->range[0],
-			   ( short ) ( p->range[1] ) );
+		    put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
+			(short)p->range[0], (short)(p->range[1]));
 #		endif OBJ
 #		ifdef PC
 			/*

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyid.c 1.2 %G%";
+static char sccsid[] = "@(#)yyid.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -78,7 +78,7 @@ yybaduse(cp, line, kindmask)
 	oldp = p;
 	if (p == NIL || p->class != BADUSE)
 		p = enter(defnl(cp, BADUSE, 0, 0));
-	p->value[NL_KINDS] =| kindmask;
+	p->value[NL_KINDS] |= kindmask;
 	yybadref(p, line);
 	return (oldp);
 }

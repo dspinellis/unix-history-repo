@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.9 %G%";
+static char sccsid[] = "@(#)put.c 1.10 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -30,6 +30,8 @@ put(a)
 {
 	register int *p, i;
 	register char *cp;
+	register short *sp;
+	register long *lp;
 	int n, subop, suboppr, op, oldlc, w;
 	char *string;
 	static int casewrd;
@@ -50,7 +52,7 @@ put(a)
 		return (oldlc);
 	p = &a;
 	n = *p++;
-	suboppr = subop = (*p>>8) & 0377;
+	suboppr = subop = (*p >> 8) & 0377;
 	op = *p & 0377;
 	string = 0;
 #ifdef DEBUG
@@ -78,14 +80,17 @@ put(a)
 				goto pack;
 			}
 			n = 1;
-			cp = otext[op];
+#			ifdef DEBUG
+				cp = otext[op];
+#			endif DEBUG
 			break;
+		case O_CONG:
+		case O_LVCON:
+		case O_CON:
 		case O_LINO:
 		case O_NEW:
 		case O_DISPOSE:
 		case O_IND:
-		case O_LVCON:
-		case O_CON:
 		case O_OFF:
 		case O_INX2:
 		case O_INX4:
@@ -124,11 +129,15 @@ put(a)
 				n--;
 				if (op == O_CON2) {
 					op = O_CON1;
-					cp = otext[O_CON1];
+#					ifdef DEBUG
+						cp = otext[O_CON1];
+#					endif DEBUG
 				}
 				if (op == O_CON24) {
 					op = O_CON14;
-					cp = otext[O_CON14];
+#					ifdef DEBUG
+						cp = otext[O_CON14];
+#					endif DEBUG
 				}
 			}
 			break;
@@ -138,11 +147,15 @@ put(a)
 
 #ifdef	DEBUG
 			if ( opt( 'k' ) )
-			    printf ( ")#%5d\tCON8\t%10.3f\n" ,
+			    printf ( ")#%5d\tCON8\t%22.14e\n" ,
 					lc - HEADER_BYTES ,
 					* ( ( double * ) &p[1] ) );
 #endif
-			word ( op );
+#			ifdef DEC11
+			    word(op);
+#			else
+			    word(op << 8);
+#			endif DEC11
 			for ( i = 1 ; i <= 4 ; i ++ )
 			    word ( *sp ++ );
 			return ( oldlc );
@@ -174,34 +187,15 @@ put(a)
 			/* relative addressing */
 			p[3] -= ( unsigned ) lc + 3 * sizeof(short);
 			break;
-		case O_CONG:
-			i = p[1];
-			cp = * ( ( char ** ) &p[2] ) ;
-#ifdef DEBUG
-			if (opt('k'))
-				printf(")#%5d\tCONG:%d\t%s\n",
-					lc - HEADER_BYTES, i, cp);
-#endif
-			if (i <= 127)
-				word(O_CON | i << 8);
-			else {
-				word(O_CON);
-				word(i);
-			}
-			while (i > 0) {
-				w = *cp ? *cp++ : ' ';
-				w |= (*cp ? *cp++ : ' ') << 8;
-				word(w);
-				i -= 2;
-			}
-			return (oldlc);
 		case O_CONC:
 #ifdef DEBUG
 			(string = "'x'")[1] = p[1];
 #endif
 			suboppr = 0;
 			op = O_CON1;
-			cp = otext[O_CON1];
+#			ifdef DEBUG
+				cp = otext[O_CON1];
+#			endif DEBUG
 			subop = p[1];
 			goto around;
 		case O_CONC4:
@@ -231,8 +225,7 @@ around:
 #ifdef DEBUG
 			if (opt('k'))
 				printf(")#%5d\tCASE1\t%d\n"
-					, lc - HEADER_BYTES
-					, ( int ) *( ( long * ) &p[1] ) );
+					, lc - HEADER_BYTES, p[1]);
 #endif
 			/*
 			 * this to build a byte size case table 
@@ -241,31 +234,39 @@ around:
 			 */
 			lc++;
 			if ((unsigned) lc & 1)
-				casewrd = *( ( long * ) &p[1] ) & 0377;
+#				ifdef DEC11
+				    casewrd = p[1] & 0377;
+#				else
+				    casewrd = (p[1] & 0377) << 8;
+#				endif DEC11
 			else {
 				lc -= 2;
-				word (   casewrd
-				       | ( ( int ) *( ( long * ) &p[1] ) << 8 ) );
+#				ifdef DEC11
+				    word(((p[1] & 0377) << 8) | casewrd);
+#				else
+				    word((p[1] & 0377) | casewrd);
+#				endif DEC11
 			}
 			return (oldlc);
 		case O_CASE2:
 #ifdef DEBUG
 			if (opt('k'))
 				printf(")#%5d\tCASE2\t%d\n"
-					, lc - HEADER_BYTES
-					, ( int ) *( ( long * ) &p[1] ) );
+					, lc - HEADER_BYTES , p[1]);
 #endif
-			word( ( short ) *( ( long * ) &p[1] ) );
+			word(p[1]);
 			return (oldlc);
 		case O_FCALL:
-			if (p[1] == 0)
+			lp = (long *)&p[1];
+			if (*lp == 0)
 				goto longgen;
 			/* and fall through */
 		case O_PUSH:
-			if (p[1] == 0)
+			lp = (long *)&p[1];
+			if (*lp == 0)
 				return (oldlc);
-			if (p[1] < 128 && p[1] >= -128) {
-				suboppr = subop = p[1];
+			if (*lp < 128 && *lp >= -128) {
+				suboppr = subop = *lp;
 				p++;
 				n--;
 				break;
@@ -274,8 +275,8 @@ around:
 		case O_FOR4U:
 		case O_FOR4D:
 			/* relative addressing */
-			p[3] -= ( unsigned ) lc +
-				(sizeof(short) + 2 * sizeof(long));
+			p[1 + 2 * (sizeof(long) / sizeof(int))] -=
+			    (unsigned)lc + (sizeof(short) + 2 * sizeof(long));
 			goto longgen;
 		case O_TRA4:
 		case O_CALL:
@@ -284,7 +285,8 @@ around:
 		case O_NAM:
 		case O_READE:
 			/* absolute long addressing */
-			p[1] -= HEADER_BYTES;
+			lp = (long *)&p[1];
+			*lp -= HEADER_BYTES;
 			goto longgen;
 		case O_RV1:
 		case O_RV14:
@@ -303,17 +305,23 @@ around:
 				subop++;
 				suboppr++;
 			}
-			/*
-			 * offsets out of range of word addressing
-			 * must use long offset opcodes
-			 */
-			if (p[1] < SHORTADDR && p[1] >= -SHORTADDR)
-				break;
-			else {
+#			ifdef PDP11
+			    break;
+#			else
+			    /*
+			     * offsets out of range of word addressing
+			     * must use long offset opcodes
+			     */
+			    if (p[1] < SHORTADDR && p[1] >= -SHORTADDR)
+				    break;
+			    else {
 				op += O_LRV - O_RV;
-				cp = otext[op];
-			}
-			/* and fall through */
+#				ifdef DEBUG
+				    cp = otext[op];
+#				endif DEBUG
+			    }
+			    /* and fall through */
+#			endif PDP11
 		case O_BEG:
 		case O_NODUMP:
 		case O_CON4:
@@ -325,31 +333,31 @@ around:
 		case O_SUCC4:
 		case O_PRED4:
 		longgen:
-		    {
-			short	*sp = &p[1];
-			long	*lp = &p[1];
-
 			n = (n << 1) - 1;
 			if ( op == O_LRV || op == O_FOR4U || op == O_FOR4D)
 				n--;
 #ifdef DEBUG
-			if (opt('k'))
-			    {
-				printf( ")#%5d\t%s" , lc - HEADER_BYTES , cp+1 );
+			if (opt('k')) {
+				printf(")#%5d\t%s", lc - HEADER_BYTES, cp+1);
 				if (suboppr)
-					printf(":%1d", suboppr);
-				for ( i = 1 ; i < n 
+					printf(":%d", suboppr);
+				for ( i = 2, lp = (long *)&p[1]; i < n 
 				    ; i += sizeof ( long )/sizeof ( short ) )
 					printf( "\t%D " , *lp ++ );
+				if (i == n) 
+					printf( "\t%d ", p[i - 1] );
 				pchr ( '\n' );
-			    }
+			}
 #endif
 			if ( op != O_CASE4 )
-			    word ( op | subop<<8 );
-			for ( i = 1 ; i < n ; i ++ )
-			    word ( *sp ++ );
+#				ifdef DEC11
+			    	    word((op & 0377) | subop << 8);
+#				else
+				    word(op << 8 | (subop & 0377));
+#				endif DEC11
+			for ( i = 1, sp = (short *)&p[1]; i < n; i++)
+				word ( *sp ++ );
 			return ( oldlc );
-		    }
 	}
 #ifdef DEBUG
 	if (opt('k')) {
@@ -361,12 +369,16 @@ around:
 		if (n > 1)
 			pchr('\t');
 		for (i=1; i<n; i++)
-			printf("%d ", ( short ) p[i]);
+			printf("%d ", p[i]);
 		pchr('\n');
 	}
 #endif
 	if (op != NIL)
-		word(op | subop << 8);
+#		ifdef DEC11
+		    word((op & 0377) | subop << 8);
+#		else
+		    word(op << 8 | (subop & 0377));
+#		endif DEC11
 	for (i=1; i<n; i++)
 		word(p[i]);
 	return (oldlc);
@@ -441,10 +453,18 @@ listnames(ap)
 	strptr = getnext(ap, &next);
 #	ifdef OBJ
 	    do	{
-		    w = (unsigned) *strptr;
+#		    ifdef DEC11
+			w = (unsigned) *strptr;
+#		    else
+			w = *strptr << 8;
+#		    endif DEC11
 		    if (!*strptr++)
 			    strptr = getnext(next, &next);
-		    w |= *strptr << 8;
+#		    ifdef DEC11
+			w |= *strptr << 8;
+#		    else
+			w |= (unsigned) *strptr;
+#		    endif DEC11
 		    if (!*strptr++)
 			    strptr = getnext(next, &next);
 		    word(w);
@@ -526,34 +546,61 @@ putstr(sptr, padding)
 		return(lc);
 #ifdef DEBUG
 	if (opt('k'))
-		printf(")#%5D\t\t\"%s\"\n", lc-HEADER_BYTES, strptr);
+		printf(")#%5d\t\t\"%s\"\n", lc-HEADER_BYTES, strptr);
 #endif
 	if (pad == 0) {
 		do	{
-			w = (unsigned short) * strptr;
+#			ifdef DEC11
+			    w = (unsigned short) * strptr;
+#			else
+			    w = (unsigned short)*strptr<<8;
+#			endif DEC11
 			if (w)
-				w |= *++strptr << 8;
+#				ifdef DEC11
+				    w |= *++strptr << 8;
+#				else
+				    w |= *++strptr;
+#				endif DEC11
 			word(w);
 		} while (*strptr++);
 	} else {
-		do 	{
-			w = (unsigned short) * strptr;
-			if (w) {
-				if (*++strptr)
-					w |= *strptr << 8;
-				else {
-					w |= ' ' << 8;
-					pad--;
-				}
-				word(w);
-			}
-		} while (*strptr++);
+#		ifdef DEC11
+		    do 	{
+			    w = (unsigned short) * strptr;
+			    if (w) {
+				    if (*++strptr)
+					    w |= *strptr << 8;
+				    else {
+					    w |= ' \0';
+					    pad--;
+				    }
+				    word(w);
+			    }
+		    } while (*strptr++);
+#		else
+		    do 	{
+			    w = (unsigned short)*strptr<<8;
+			    if (w) {
+				    if (*++strptr)
+					    w |= *strptr;
+				    else {
+					    w |= ' ';
+					    pad--;
+				    }
+				    word(w);
+			    }
+		    } while (*strptr++);
+#		endif DEC11
 		while (pad > 1) {
 			word('  ');
 			pad -= 2;
 		}
 		if (pad == 1)
-			word(' ');
+#			ifdef DEC11
+			    word(' ');
+#			else
+			    word(' \0');
+#			endif DEC11
 		else
 			word(0);
 	}
@@ -588,7 +635,7 @@ patch(loc)
 {
 
 #	ifdef OBJ
-	    patchfil(loc, lc-loc-2, 1);
+	    patchfil(loc, (long)(lc-loc-2), 1);
 #	endif OBJ
 #	ifdef PC
 	    putlab( loc );
@@ -598,8 +645,7 @@ patch(loc)
 #ifdef OBJ
 patch4(loc)
 {
-
-	patchfil(loc, lc - HEADER_BYTES, 2);
+	patchfil(loc, (long)(lc - HEADER_BYTES), 2);
 }
 
 /*
@@ -608,9 +654,11 @@ patch4(loc)
  */
 patchfil(loc, value, words)
 	PTR_DCL loc;
-	int value, words;
+	long value;
+	int words;
 {
 	register i;
+	int val;
 
 	if (cgenflg < 0)
 		return;
@@ -618,19 +666,28 @@ patchfil(loc, value, words)
 		panic("patchfil");
 #ifdef DEBUG
 	if (opt('k'))
-		printf(")#\tpatch %u %d\n", loc - HEADER_BYTES, value);
+		printf(")#\tpatch %u %D\n", loc - HEADER_BYTES, value);
 #endif
+	val = value;
 	do {
+#		ifndef DEC11
+		    if (words > 1)
+			    val = value >> 16;
+		    else
+			    val = value;
+#		endif DEC11
 		i = ((unsigned) loc + 2 - ((unsigned) lc & ~01777))/2;
 		if (i >= 0 && i < 1024)
-			obuf[i] = value;
+			obuf[i] = val;
 		else {
 			lseek(ofil, (long) loc+2, 0);
-			write(ofil, &value, 2);
+			write(ofil, &val, 2);
 			lseek(ofil, (long) 0, 2);
 		}
 		loc += 2;
-		value = value >> 16;
+#		ifdef DEC11
+		    val = value >> 16;
+#		endif DEC11
 	} while (--words);
 }
 
@@ -695,4 +752,3 @@ putlab(l)
 #	endif PC
 	return (l);
 }
-

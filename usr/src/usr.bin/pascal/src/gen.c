@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)gen.c 1.1 %G%";
+static char sccsid[] = "@(#)gen.c 1.2 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -189,25 +189,25 @@ gen(p, o, w1, w2)
 			i <<= 2;
 			i |= j;
 			if (p == O_AS2) {
-				put1(O_AS2 + asgntab[i]);
+				put(1, O_AS2 + asgntab[i]);
 				return (NIL);
 			}
 			op = arop[o];
 			if (op == O_REL2) {
-				put1((op + reltab[i]) | (o - T_EQ) << 8+INDX);
+				put(1, (op + reltab[i]) | (o - T_EQ) << 8+INDX);
 				return (nl+TBOOL);
 			}
-			put1(i == 15 ? ar8op[o-T_DIVD] : op | artab[i]);
+			put(1, i == 15 ? ar8op[o-T_DIVD] : op | artab[i]);
 			return (op == O_DVD2 && !divchk ? nl+TDOUBLE : nl+arret[i]);
 		case TREC:
 		case TSTR:
-			put2(O_RELG | (o - T_EQ) << 8+INDX, w1);
+			put(2, O_RELG | (o - T_EQ) << 8+INDX, w1);
 			return (nl+TBOOL);
 		case TSET:
 			op = setop[o-T_MULT];
 			if (op == O_RELT)
 				op |= (o - T_EQ)<<8+INDX;
-			put2(op, w1);
+			put(2, op, w1);
 			return (o >= T_EQ ? nl+TBOOL : nl+TSET);
 		default:
 			panic("gen");

@@ -1,8 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)0.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.4 %G%"; */
 
 #define DEBUG
+#define CONSETS
 #define	CHAR
 #define	STATIC
 #define hp21mx 0
@@ -10,9 +11,7 @@
 #include	<stdio.h>
 #include	<sys/types.h>
 
-#define		bool	short
-#define		TRUE	1
-#define		FALSE	0
+typedef enum {FALSE, TRUE} bool;
 
 /*
  * Option flags
@@ -104,7 +103,11 @@ bool	profflag;
 /*
  * TABLE_MULTIPLIER is for uniformly increasing the sizes of the tables
  */
+#ifdef VAX
 #define TABLE_MULTIPLIER	8
+#else
+#define TABLE_MULTIPLIER	1
+#endif VAX
 #define	MAXHASH	(4 * TABLE_MULTIPLIER)
 #define	MAXNL	(12 * TABLE_MULTIPLIER)
 #define	MAXTREE	(30 * TABLE_MULTIPLIER)
@@ -112,7 +115,11 @@ bool	profflag;
  * MAXDEPTH is the depth of the parse stack.
  * STACK_MULTIPLIER is for increasing its size.
  */
+#ifdef VAX
 #define	STACK_MULTIPLIER	8
+#else
+#define	STACK_MULTIPLIER	1
+#endif VAX
 #define	MAXDEPTH ( 150 * STACK_MULTIPLIER )
 
 /*
@@ -156,7 +163,7 @@ char	errpfx;
 #define	warning()	setpfx('w')
 #define	recovered()	setpfx('e')
 
-bool	cgenflg;
+int	cgenflg;
 
 
 /*
@@ -178,10 +185,10 @@ short	efil;
 short	ofil;
 short	obuf[518];
 
-#define	elineoff()	Enoline++
-#define	elineon()	Enoline = 0
-
 bool	Enoline;
+#define	elineoff()	Enoline = TRUE
+#define	elineon()	Enoline = FALSE
+
 
 /*
  * SYMBOL TABLE STRUCTURE DEFINITIONS
@@ -272,7 +279,7 @@ struct {
 #endif
 	struct	nl *type;
 	struct	nl *chain, *nl_next;
-	long	value[4];
+	int	value[5];
 };
 
 /*
@@ -315,7 +322,7 @@ struct {
 #define	NL_VTOREC 2
 #define	NL_TAG	3
 
-#define	NL_ELABEL	3
+#define	NL_ELABEL	4
 
 /*
  * For BADUSE nl structures, NL_KINDS is a bit vector
@@ -556,7 +563,7 @@ int	parts[ DSPLYSZ ];
 bool	divchk;
 bool	divflg;
 
-short	errcnt[DSPLYSZ];
+bool	errcnt[DSPLYSZ];
 
 /*
  * Forechain links those types which are
@@ -664,8 +671,10 @@ char	*lc;
  */
 double		atof();
 long		lwidth();
+long		leven();
 long		aryconst();
 long		a8tol();
+long		roundup();
 struct nl 	*lookup();
 double		atof();
 int		*tree();

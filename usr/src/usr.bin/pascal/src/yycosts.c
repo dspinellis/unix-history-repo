@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yycosts.c 1.1 %G%";
+static char sccsid[] = "@(#)yycosts.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -158,7 +158,7 @@ repcost(what, with)
 	 * semantics by something which doesn't.
 	 */
 	if (nullsem(what) == NIL && nullsem(with) != NIL)
-		c =+ 4;
+		c += 4;
 	return (c);
 }
 
@@ -201,7 +201,7 @@ delcost(what)
 /*
  * Routine to print out costs with "-K" option.
  */
-char	yysyms[]	";,:=*+/-|&()[]<>~^";
+char	yysyms[] = ";,:=*+/-|&()[]<>~^";
 
 
 yycosts()

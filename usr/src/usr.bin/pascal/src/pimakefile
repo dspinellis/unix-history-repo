@@ -1,4 +1,4 @@
-SCCSID = "@(#)pimakefile 1.15 %G%"
+SCCSID = "@(#)pimakefile 1.16 %G%"
 WHOAMI = pi
 INSTALLNAME = ${DESTDIR}/usr/ucb/pi
 VERSION = 2.0
@@ -27,7 +27,7 @@ SRCS =	ato.c \
 	stat.c string.c subr.c \
 	tree.c type.c var.c \
 	TRdata.c \
-	treen.c putn.c yycopy.c \
+	treen.c yycopy.c \
 	yycosts.c yyerror.c yyget.c yyid.c yylex.c yymain.c yyoptions.c \
 	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c
 
@@ -45,7 +45,7 @@ OBJS =	ato.o \
 	stat.o string.o subr.o \
 	tree.o type.o var.o \
 	TRdata.o \
-	treen.o putn.o yycopy.o \
+	treen.o yycopy.o \
 	y.tab.o \
 	yycosts.o yyerror.o yyget.o yyid.o yylex.o yymain.o yyoptions.o \
 	yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o yyseman.o yytree.o

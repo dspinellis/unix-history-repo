@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)forop.c 1.2 %G%";
+static char sccsid[] = "@(#)forop.c 1.3 %G%";
 
 #include	"whoami.h"
 #include	"0.h"
@@ -138,7 +138,7 @@ forop( arg )
 	    putRV( 0 , cbn , termoff , forctype );
 #	endif PC
 #	ifdef OBJ
-	    put(1, width(inittype) <= 2 ? O_AS24 : O_AS4);
+	    gen(O_AS2, O_AS2, sizeof(long), width(inittype));
 		/*
 		 * compute and save the termination expression
 		 */
@@ -180,7 +180,7 @@ forop( arg )
 	    putdot( filename , line );
 #	endif PC
 #	ifdef OBJ
-	    put(1, width(termtype) <= 2 ? O_AS24 : O_AS4);
+	    gen(O_AS2, O_AS2, sizeof(long), width(termtype));
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
@@ -197,7 +197,7 @@ forop( arg )
 	    lvalue( lhs , NOUSE , LREQ );
 	    put(2, O_RV4 | cbn<<8+INDX, initoff);
 	    rangechk(fortype, nl+T4INT);
-	    put(1, width(fortype) <= 2 ? O_AS42 : O_AS4);
+	    gen(O_AS2, O_AS2, width(fortype), sizeof(long));
 #	endif OBJ
 	/*
 	 * put down the label at the top of the loop
@@ -278,8 +278,13 @@ forop( arg )
 	    putline();
 	    put(2, O_RV4 | cbn<<8+INDX, termoff);
 	    lvalue(lhs, MOD, LREQ);
-	    put(4, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (width(fortype)>>1),
-		    fortype->range[0], fortype->range[1], again);
+	    if (width(fortype) <= 2)
+		    put(4, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) +
+			    (width(fortype)>>1), (int)fortype->range[0],
+			    (int)fortype->range[1], again);
+	    else
+		    put(4, (arg[0] == T_FORU ? O_FOR4U : O_FOR4D),
+			    fortype->range[0], fortype->range[1], again);
 		/*
 		 * and here we are
 		 */

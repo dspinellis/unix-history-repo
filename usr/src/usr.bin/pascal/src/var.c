@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)var.c 1.5 %G%";
+static char sccsid[] = "@(#)var.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -94,7 +94,7 @@ var(vline, vidl, vtype)
 	op = &sizes[cbn];
 	for (; vidl != NIL; vidl = vidl[2]) {
 #		ifdef OBJ
-		    op -> om_off = roundup( op -> om_off - w , align( np ) );
+		    op->om_off = roundup((int)(op->om_off-w), (long)align(np));
 		    o2 = op -> om_off;
 #		endif OBJ
 #		ifdef PC
@@ -108,8 +108,8 @@ var(vline, vidl, vtype)
 				/*
 				 * locals are aligned, too.
 				 */
-			    op -> om_off = roundup( op -> om_off - w
-							, align( np ) );
+			    op->om_off = roundup((int)(op->om_off - w),
+				(long)align(np));
 			    o2 = op -> om_off;
 		    }
 #		endif PC
@@ -156,12 +156,20 @@ varend()
 /*
  * Evening
  */
+long
+leven(w)
+	register long w;
+{
+	if (w < 0)
+		return (w & 0xfffffffe);
+	return ((w+1) & 0xfffffffe);
+}
+
+int
 even(w)
 	register int w;
 {
-	if (w < 0)
-		return (w & ~1);
-	return ((w+1) & ~1);
+	return leven((long)w);
 }
 
 /*
@@ -214,7 +222,8 @@ loop:
 			return (bytes(p->range[0], p->range[1]));
 		case SET:
 			setran(p->type);
-			return roundup( ( set.uprbp >> 3 ) + 1 , A_SET );
+			return roundup((int)((set.uprbp >> 3) + 1),
+				(long)(A_SET));
 		case STR:
 		case RECORD:
 			return ( p->value[NL_OFFS] );
@@ -231,7 +240,7 @@ loop:
      */
 long
 roundup( x , y )
-    long		x;
+    int			x;
     register long	y;
     {
 	

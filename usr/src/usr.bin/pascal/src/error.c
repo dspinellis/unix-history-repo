@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)error.c 1.1 %G%";
+static char sccsid[] = "@(#)error.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -81,9 +81,9 @@ error(a1, a2, a3, a4)
 	printf(a1, a2, a3, a4);
 	if (errpfx == 'E')
 #ifndef PI0
-		eflg++, codeoff();
+		eflg = TRUE, codeoff();
 #else
-		eflg++;
+		eflg = TRUE;
 #endif
 	errpfx = 'E';
 	if (Eholdnl)

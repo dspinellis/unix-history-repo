@@ -1,8 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
+
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static	char sccsid[] = "@(#)main.c 1.2 %G%";
+static char sccsid[] = "@(#)main.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -12,8 +13,7 @@ static	char sccsid[] = "@(#)main.c 1.2 %G%";
 
 /*
  * This version of pi has been in use at Berkeley since May 1977
- * and is very stable, except for the syntactic error recovery which
- * has just been written.  Please report any problems with the error
+ * and is very stable. Please report any problems with the error
  * recovery to the second author at the address given in the file
  * READ_ME.  The second author takes full responsibility for any bugs
  * in the syntactic error recovery.
@@ -45,10 +45,10 @@ char	*errfile = ERR_STRNGS;
  * this for executing out of the current directory if running as `a.something'.
  */
 #ifdef OBJ
-char	*howfile	= "/usr/lib/how_pi\0";
+char	*howfile	= HOW_STRNGS;
 #endif OBJ
 #ifdef PC
-char	*howfile	= "/usr/lib/how_pc";
+char	*howfile	= HOW_STRNGS;
 #endif PC
 
 int	onintr();
@@ -80,12 +80,12 @@ main(argc, argv)
 	int i;
 
 	if (argv[0][0] == 'a')
-		errfile += ERR_PATHLEN , howfile += 9;
+		errfile += ERR_PATHLEN , howfile += HOW_PATHLEN;
 #	ifdef OBJ
 	    if (argv[0][0] == '-' && argv[0][1] == 'o') {
 		    obj = &argv[0][2];
 		    usageis = pixusage;
-		    howfile[15] = 'x';
+		    howfile[HOW_PATHLEN+6] = 'x';
 		    ofil = 3;
 	    } else {
 		    ofil = creat(obj, 0755);
@@ -125,11 +125,11 @@ main(argc, argv)
 				    yycosts();
 				    pexit(NOSTART);
 			    case 'A':
-				    testtrace++;
+				    testtrace = TRUE;
 			    case 'F':
-				    fulltrace++;
+				    fulltrace = TRUE;
 			    case 'E':
-				    errtrace++;
+				    errtrace = TRUE;
 				    opt('r')++;
 				    continue;
 			    case 'U':
@@ -160,7 +160,7 @@ main(argc, argv)
 				    togopt(c);
 				    continue;
 			    case 'z':
-				    monflg++;
+				    monflg = TRUE;
 				    continue;
 			    default:
     usage:
