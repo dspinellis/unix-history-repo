@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -284,7 +284,7 @@ printit(file)
 	 */
 	for (i = 0; i < 4; i++)
 		strcpy(fonts[i], ifonts[i]);
-	strcpy(width+2, "0");
+	sprintf(&width[2], "%d", PW);
 	strcpy(indent+2, "0");
 
 	/*
