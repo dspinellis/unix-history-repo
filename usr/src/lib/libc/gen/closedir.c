@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)closedir.c 4.1 %G%";
+static char sccsid[] = "@(#)closedir.c 4.2 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
@@ -10,8 +10,10 @@ static char sccsid[] = "@(#)closedir.c 4.1 %G%";
  */
 void
 closedir(dirp)
-	DIR *dirp;
+	register DIR *dirp;
 {
 	close(dirp->dd_fd);
+	dirp->dd_fd = -1;
+	dirp->dd_loc = 0;
 	free(dirp);
 }
