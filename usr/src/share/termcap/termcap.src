@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.94 (Berkeley) %G%
+#	@(#)termcap.src	5.95 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2103,7 +2103,7 @@ h3|2621k45|hp2621k45|k45|2622|hp2622|hp 2621 with 45 keyboard:\
 h4|hp2645|2645|hp45:\
 	:mh=\E&dH:mr=\E&dB:us=\E&dD:mb=\E&dA:me=\E&d@:\
 	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\Eh:ks=\E&s1A:ke=\E&s0A:tc=hp:
-h5|hp|hewlett-packard:\
+h5|hp|hpterm|hewlett-packard:\
 	:ct=\E3:st=\E1:do=^J:al=\EL:am:le=^H:bs:\
 	:cd=\EJ:ce=\EK:ch=\E&a%dC:cl=\EH\EJ:cm=6\E&a%r%dc%dY:\
 	:co#80:cv=\E&a%dY:da:db:dc=\EP:dl=\EM:ei=\ER:im=\EQ:\
