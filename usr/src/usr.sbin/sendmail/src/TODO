@@ -1,4 +1,4 @@
-(Version 8.17 of %G%)
+(Version 8.18 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -111,6 +111,10 @@ X ***	DECNET_RELAY support in configs.
 X ***	-wN command line flag to set the width of mailq output.
 	(Allan Johannesen)
 
+X **	Allow use of a generalized network service for aliasing?
+	How would the protocol be defined?
+	James Gritton <gritton@byu.edu>.
+
 E **	Make "local configuration error" a temporary failure?
 	(add EX_CONFIG to the markfailure list)
 
@@ -213,6 +217,8 @@ E **	Log $u in logsender() (for=<someaddress>).
 
 B **	Include SOCKADDR in MCI struct for logging (currently gives
 	a sockaddr of zero when printing from the cache).
+
+X *	Map that does MB/MR lookups.  Rick McCarty <mccarty@io.com>.
 
 X *	Allow $> anywhere in RHS.  John Boeske <jboeske@ualberta.ca>.
 
