@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	8.3 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	8.4 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/buf.h>
@@ -35,7 +35,7 @@ lfs_balloc(vp, offset, iosize, lbn, bpp)
 	struct inode *ip;
 	struct lfs *fs;
 	struct indir indirs[NIADDR+2];
-	ufs_daddr_t	lastblock;
+	ufs_daddr_t	daddr, lastblock;
  	int bb;		/* number of disk blocks in a block disk blocks */
  	int error, frags, i, nsize, osize, num;
 
