@@ -12,12 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)df.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -28,8 +30,8 @@ static char sccsid[] = "@(#)df.c	5.32 (Berkeley) %G%";
 int	 bread __P((off_t, void *, int));
 char	*getbsize __P((char *, int *, long *));
 char	*getmntpt __P((char *));
-void	 prtstat __P((struct statfs *, long));
-void	 ufs_df __P((char *, long));
+void	 prtstat __P((struct statfs *, int));
+void	 ufs_df __P((char *, int));
 void	 usage __P((void));
 
 int	iflag, nflag;
@@ -42,17 +44,14 @@ main(argc, argv)
 {
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
-	long width, maxwidth, mntsize;
-	int err, ch, i;
+	long mntsize;
+	int err, ch, i, maxwidth, width;
 	char *mntpt;
 
-	while ((ch = getopt(argc, argv, "ikn")) != EOF)
+	while ((ch = getopt(argc, argv, "in")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
-			break;
-		case 'k':		/* Delete before 4.4BSD. */
-			(void)fprintf(stderr, "df: -k no longer supported\n");
 			break;
 		case 'n':
 			nflag = 1;
@@ -81,8 +80,7 @@ main(argc, argv)
 		if (stat(*argv, &stbuf) < 0) {
 			err = errno;
 			if ((mntpt = getmntpt(*argv)) == 0) {
-				fprintf(stderr, "df: %s: %s\n", *argv,
-				    strerror(err));
+				warn("%s", *argv);
 				continue;
 			}
 		} else if ((stbuf.st_mode & S_IFMT) == S_IFCHR) {
@@ -93,8 +91,7 @@ main(argc, argv)
 				mntpt = mktemp(strdup("/tmp/df.XXXXXX"));
 				mdev.fspec = *argv;
 				if (mkdir(mntpt, DEFFILEMODE) != 0) {
-					fprintf(stderr, "df: %s: %s\n",
-					    mntpt, strerror(errno));
+					warn("%s", mntpt);
 					continue;
 				}
 				if (mount(MOUNT_UFS, mntpt, MNT_RDONLY,
@@ -106,8 +103,7 @@ main(argc, argv)
 					statfsbuf.f_mntonname[0] = '\0';
 					prtstat(&statfsbuf, maxwidth);
 				} else
-					fprintf(stderr, "df: %s: %s\n",
-					    *argv, strerror(errno));
+					warn("%s", *argv);
 				(void)unmount(mntpt, 0);
 				(void)rmdir(mntpt);
 				continue;
@@ -119,8 +115,7 @@ main(argc, argv)
 		 * implement nflag here.
 		 */
 		if (statfs(mntpt, &statfsbuf) < 0) {
-			fprintf(stderr,
-			    "df: %s: %s\n", mntpt, strerror(errno));
+			warn("%s", mntpt);
 			continue;
 		}
 		if (argc == 1)
@@ -151,7 +146,7 @@ getmntpt(name)
 void
 prtstat(sfsp, maxwidth)
 	register struct statfs *sfsp;
-	long maxwidth;
+	int maxwidth;
 {
 	static long blocksize;
 	static int headerlen, timesthrough;
@@ -206,7 +201,7 @@ int	rfd;
 void
 ufs_df(file, maxwidth)
 	char *file;
-	long maxwidth;
+	int maxwidth;
 {
 	struct statfs statfsbuf;
 	register struct statfs *sfsp;
@@ -217,7 +212,7 @@ ufs_df(file, maxwidth)
 		sync();
 
 	if ((rfd = open(file, O_RDONLY)) < 0) {
-		(void)fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
+		warn("%s", file);
 		return;
 	}
 	if (bread((off_t)SBOFF, &sblock, SBSIZE) == 0) {
@@ -242,8 +237,8 @@ ufs_df(file, maxwidth)
 	sfsp->f_fsid.val[1] = 0;
 	if ((mntpt = getmntpt(file)) == 0)
 		mntpt = "";
-	bcopy((caddr_t)mntpt, (caddr_t)&sfsp->f_mntonname[0], MNAMELEN);
-	bcopy((caddr_t)file, (caddr_t)&sfsp->f_mntfromname[0], MNAMELEN);
+	memmove(&sfsp->f_mntonname[0], mntpt, MNAMELEN);
+	memmove(&sfsp->f_mntfromname[0], file, MNAMELEN);
 	prtstat(sfsp, maxwidth);
 	(void)close(rfd);
 }
