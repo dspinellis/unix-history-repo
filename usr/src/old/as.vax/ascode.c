@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.6 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.7 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
@@ -64,14 +64,24 @@ insout(op, ap, nact)
 	    for (ap_walk = ap, i = 1; i <= nact; ap_walk++, i++){
 		ap_type = ap_walk->a_atype;
 		ap_type_mask = ap_type & AMASK;
-		switch( (fetcharg(ip, i-1)) & ACCESSMASK){	/* type of fp */
-		case ACCB:
+		/*
+		 *	The switch value is >> by 3 so that the switch
+		 *	code is dense, not implemented as a sequence
+		 *	of branches but implemented as a casel.
+		 *	In addition, cases ACCI and ACCR are added to force
+		 *	dense switch code.
+		 */
+		switch( ((fetcharg(ip, i-1)) & ACCESSMASK)>>3){	/* type of fp */
+		case ACCI >> 3:
+		case ACCR >> 3:
+			break;
+		case ACCB >> 3:
 			if ( !((ap_type_mask == AEXP) || (ap_type_mask == AIMM)) ){
 				yyerror("arg %d, branch displacement must be an expression",i);
 				return;
 			}
 			break;
-		case ACCA:
+		case ACCA >> 3:
 			switch(ap_type_mask){
 			case AREG:	yyerror("arg %d, addressing a register",i);
 					return;
@@ -81,8 +91,8 @@ insout(op, ap, nact)
 					}
 			}
 			break;
-		case ACCM:
-		case ACCW:
+		case ACCM >> 3:
+		case ACCW >> 3:
 			switch(ap_type_mask){
 			case AIMM:	if (!(ap_type&ASTAR)) {
 					 yyerror("arg %d, modifying a constant",i);
@@ -140,7 +150,17 @@ putins(op, ap, n)
 	    argtype = ap->a_atype;
 	    if (argtype & AINDX)
 		dotp->e_xvalue++;
+	    /*
+	     *	This switch has been fixed by enumerating the no action
+	     *	alternatives (those that have 1 one byte of code)
+	     *	so that a casel instruction is emitted.
+	     */
 	    switch (argtype&~(AINDX|ASTAR)) {
+		case AREG:
+		case ABASE:
+		case ADECR:
+		case AINCR:
+			break;
 		case AEXP: 
 			argtype = fetcharg(itab[op], i);
 			if (argtype == ACCB+TYPB)
