@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.23 (Berkeley) %G%
+ *	@(#)if.c	7.24 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -490,7 +490,6 @@ ifioctl(so, cmd, data, p)
 		ifp->if_metric = ifr->ifr_metric;
 		break;
 
-#ifdef MULTICAST
 	case SIOCADDMULTI:
 	case SIOCDELMULTI:
 		if (error = suser(p->p_ucred, &p->p_acflag))
@@ -498,7 +497,6 @@ ifioctl(so, cmd, data, p)
 		if (ifp->if_ioctl == NULL)
 			return (EOPNOTSUPP);
 		return ((*ifp->if_ioctl)(ifp, cmd, data));
-#endif
 
 	default:
 		if (so->so_proto == 0)
