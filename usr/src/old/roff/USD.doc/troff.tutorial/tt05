@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt05	8.1 (Berkeley) %G%
+.\"	@(#)tt05	8.2 (Berkeley) %G%
 .\"
 .NH
 Tabs
@@ -73,7 +73,7 @@ produces
 .P1 3
 .ta 1.5i 2.5i
 .tc \(ru
-Name	 Age 	
+Name  \l'1i'   Age  \l'0.5i'
 .tc
 .P2
 To reset the tab replacement character to a blank, use
