@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dd.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	4.9 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -159,6 +159,7 @@ char	**argv;
 	register char *ip;
 	register c;
 	int ebcdic(), ibm(), ascii(), null(), cnull(), term(), block(), unblock();
+	int stats();
 	int a;
 
 	conv = null;
@@ -296,6 +297,7 @@ char	**argv;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, term);
+	signal(SIGINFO, stats);
 	if (skip)
 	    switch (iftype) {
 		case tape: {
