@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)login.c	4.30 (Berkeley) 83/06/13";
+static	char *sccsid = "@(#)login.c	4.31 (Berkeley) 83/06/30";
 #endif
 
 /*
@@ -150,9 +150,8 @@ main(argc, argv)
 			/* autologin failed, prompt for passwd */
 			if (rflag == -1)
 				rflag = 0;
-		} else {
+		} else
 			getloginname(&utmp);
-		}
 		if (!strcmp(pwd->pw_shell, "/bin/csh")) {
 			ldisc = NTTYDISC;
 			ioctl(0, TIOCSETD, &ldisc);
@@ -434,13 +433,17 @@ doremotelogin(host)
 	getstr(rusername, sizeof (rusername), "remuser");
 	getstr(lusername, sizeof (lusername), "locuser");
 	getstr(term+5, sizeof(term)-5, "Terminal type");
-	if (getuid())
+	if (getuid()) {
+		pwd = &nouser;
 		goto bad;
+	}
 	setpwent();
 	pwd = getpwnam(lusername);
 	endpwent();
-	if (pwd == NULL)
+	if (pwd == NULL) {
+		pwd = &nouser;
 		goto bad;
+	}
 	hostf = pwd->pw_uid ? fopen("/etc/hosts.equiv", "r") : 0;
 again:
 	if (hostf) {
