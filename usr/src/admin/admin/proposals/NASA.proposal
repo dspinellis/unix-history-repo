@@ -1,4 +1,4 @@
-.\"	@(#)NASA.proposal	1.4	91/07/31
+.\"	@(#)NASA.proposal	1.5	91/08/28
 .fo +CSRG NASA proposal++%
 .nr si 3n
 .nr PS 11
@@ -68,7 +68,7 @@ The primary goal of the 4.4BSD project is to incorporate leading edge
 research ideas in a stable and reliable implementation dealing with
 current problems in operating systems research.
 These research areas include networking protocols, virtual
-memory, shared memory, threads and multi-processing.
+memory, shared memory, threads and multiprocessing.
 The resulting system is widely used by other researchers in operating
 systems and network protocols and by vendor organizations.
 The most recent two releases made by the Computer Systems Research Group
@@ -84,9 +84,8 @@ research system available to anyone without restrictions based on
 the inclusion of proprietary software or restrictive licensing.
 CSRG is unquestionably the largest current distributor of technologically
 advanced, freely redistributable software.
-In June 1991, CSRG made an unencumbered release that includes nearly
-all of the kernel and about 75% of the utilities found on 4.3BSD.
-.sh 1 "Project Description"
+In June 1991, CSRG made an unencumbered release that includes most
+of the kernel and about 75% of the utilities found on 4.3BSD.
 .pp
 During the funding period, CSRG anticipates that it will complete
 its next major release, 4.4BSD.
@@ -94,123 +93,24 @@ As soon as this release is complete, CSRG will begin work on a
 follow-on release, tentatively named 4.5BSD.
 The requested funding will support the development of software for
 both releases.
+.sp 2
+.sh 1 "Project Description"
 .pp
-Current development efforts in the CSRG include many different areas.
-Some of them are as follows:
-.sh 2 "New Architecture Support"
-.pp
-The 4.4BSD release will support the 386/486 based PC architectures,
-Hewlett-Packard's (HP) Motorola 68000 based workstations and 9000/7000
-RISC workstations, Digital Equipment
-Corporation's (DEC) DECstation, and
-Sun Microsystem's Sparcstations, as well as the traditional BSD
-platform, DEC's VAX architecture.
-We are moderately confident of having support for various MIPS workstations
-and the Data General Avion workstations as well.
-.sh 2 "New Virtual Memory"
-.pp
-We have already integrated and are currently testing a new virtual
-memory system derived from that of the Mach operating system distributed
-by Carnegie-Mellon University and ported to 4.3BSD by the University
-of Utah.
-Among the many new features provided by the new virtual memory implementation
-will be an integration of the buffer cache and virtual memory, shared memory,
-semaphores and memory mapped I/O.
-.sh 2 "File Systems"
-.pp
-The fast file system interface has been extended to allow greater flexibility
-and performance.
-We have also included a freely redistributable implementation of Sun
-Microsystem's Network File System (NFS), including the ability to
-run NFS over TCP.
-.sh 2 "Networking"
-We are in the process of integrating an implementation of the ISO OSI
-networking protocols into the existing socket interface and internal
-network architecture.
-This work includes a revised internal network architecture incorporating
-the best features of both the existing socket support and the ``streams''
-layering presented in the Ninth Edition research version of UNIX.
-Both the local filesystem and networking interfaces improve on previous
-work with enhanced support for caching in layered architectures.
-These caching techniques are based, in part, on work done by Van Jacobson
-at the Lawrence Berkeley Laboratory, and will be fully exploited by the
-TCP/IP networking protocols.
-We are investigating the applicability of these techniques to the OSI
-protocol suite as well.
-.sh 2 "Standards"
-.pp
-Members of the CSRG have been closely tracking industry standards,
-including ANSI C and the IEEE POSIX standards.
-In addition, members of the CSRG have served as technical reviewers
-for several of the IEEE POSIX standards groups.
-The 4.4BSD release will include ANSI C support as well as an IEEE
-POSIX 1003.1 standard operating system interface integrated with
-the existing system interface in such a way that both interfaces
-fully interoperate.
-We have also been closely tracking the POSIX 1003.2 and 1003.2a shell
-and utility standards, and have been updating our utilities to reflect
-that proposed standard.
-If these standards have been ratified by the time that we prepare to
-ship 4.4BSD, we expect to be compliant with them as well.
-We have been monitoring several other POSIX working groups, including
-POSIX 1003.4 (real-time), 1003.4a (multiprocessing), 1003.8 (networked
-filesystems), and 1003.12 (networking interfaces).
-We expect to prototype and eventually incorporate support for these
-standards as they come into existence.
-.sh 2 "Open Systems"
-.pp
-In an effort to make this research as widely available as
-possible, the CSRG is actively replacing the portions of the system that
-are proprietary with implementations that are freely redistributable.
-While it is expected that 4.4BSD will still require an AT&T source
-license, CSRG will offer a subset release which will not contain
-any proprietary source code and which will not require licenses other
-than the University of California's.
-(The only restriction on use or redistribution will be a requirement
-that due credit be given to the Regents of the University of California,
-except for any included Free Software Foundation software, which has
-more restrictive release requirements.)
-This subset release will be a bootable, usable system and will contain
-approximately 95% of the source code in the full release.
-At present, 75% of the utilities and much of the kernel is non-proprietary.
-.sh 2 "After 4.4BSD"
-.pp
-The first major project that will be done as part of the release after
-4.4BSD will be support for multi-processors.
-The virtual memory system we are currently integrating already contains
-support for multiprocessors.
-The new internal network architecture, streams, will also be designed
-with multiprocessors in mind.
-As part of this future release, we will extend this support to the other
-major kernel subsystems including the networking, filesystem, and terminal
-handling.
-Much of the ground work for doing multiprocessing has already been done
-by removing global kernel state and encapsulating it in well defined
-data structures.
-The remaining work to be done is to implement locking on these data
-structures and to reorder the code to ensure locks are acquired in
-in a specific order to avoid deadlocks.
-.pp
-A kernel that supports multiprocessing,
-allows immediate throughput improvements for
-environments doing timesharing or with single
-applications made up of several processes.
-However, an application that uses a single process
-will not be able to utilize more than a single CPU.
-To provide speedup for these applications, 
-the multiprocessing must be exported from the kernel
-so that the application can be written to explicitly use it.
-This export is typically done by allowing a single process to
-have multiple ``threads'' of execution.
-The system must also provide primitives to provide thread
-synchronization, scheduling, and mutual exclusion.
-There are many interfaces for these primitives in the research
-and commercial communities.
-The POSIX 1003.4a group has been working to find a commonality
-among these interfaces and to develop a coherent standard interface.
-We are involved in this POSIX group,
-and plan to build a prototype of its interface.
-.bp
+The project will include the following specific goals:
+.ip \(bu
+Integrate a new virtual memory subsystem into the kernel which
+includes multiprocessor support.
+.ip \(bu
+Design and implement a new networking subsystem into the kernel which
+includes multiprocessor support.
+.ip \(bu
+Implement a prototype of the POSIX 1003.4a threads model with support
+for multiple threads of execution through the use of primitives providing
+thread synchronization, scheduling and mutual exclusion.
+.ip \(bu
+Replace the remaining proprietary source code in the machine independent
+portions of the kernel.
+.sp 2
 .sh 1 "Personnel"
 .pp
 There are five members of the CSRG research staff: Kirk McKusick,
@@ -279,7 +179,6 @@ M. Karels, M. McKusick,
 ``Towards a Compatible Filesystem Interface'',
 \fIProceedings of the European UNIX Users Group Meeting\fP,
 Manchester, England, pp. 481-496, September 1986.
-.bp
 .sh 1 "Facilities and Equipment"
 .pp
 Equipment for the CSRG is currently being provided by Computer Consoles
