@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.5 (Berkeley) %G%
+ *	@(#)locore.s	7.6 (Berkeley) %G%
  */
 
 #include "../tahoe/mtpr.h"
@@ -849,19 +849,33 @@ sigcode:
  */
 	.align	2
 _icode:
-	pushab	b`argv-l0(pc)
-l0:	pushab	b`init-l1(pc)
+	/* try /sbin/init */
+	pushab	b`argv1-l0(pc)
+l0:	pushab	b`init1-l1(pc)
 l1:	pushl	$2
 	movab	(sp),fp
 	kcall	$SYS_execv
+	/* try /etc/init */
+	pushab	b`argv2-l2(pc)
+l2:	pushab	b`init2-l3(pc)
+l3:	pushl	$2
+	movab	(sp),fp
+	kcall	$SYS_execv
+	/* give up */
 	pushl	r0
+	pushl	$1
+	movab	(sp),fp
 	kcall	$SYS_exit
 
-init:	.asciz	"/etc/init"
+init1:	.asciz	"/sbin/init"
+init2:	.asciz	"/etc/init"
 	.align	2
 _initflags:
 	.long	0
-argv:	.long	init+5-_icode
+argv1:	.long	init1+6-_icode
+	.long	_initflags-_icode
+	.long	0
+argv2:	.long	init2+5-_icode
 	.long	_initflags-_icode
 	.long	0
 _szicode:
