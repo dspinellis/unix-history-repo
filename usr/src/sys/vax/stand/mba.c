@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.2 (Berkeley) 2/21/87
+ *	@(#)mba.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -20,17 +20,15 @@
 #include "saio.h"
 #include "savax.h"
 
-mbastart(io, func)
+mbastart(io, unit, func)
 	register struct iob *io;
-	int func;
+	int unit, func;
 {
-	struct mba_regs *mba = mbamba(io->i_unit);
-	struct mba_drv *drv = mbadrv(io->i_unit);
+	struct mba_regs *mba = mbamba(io->i_adapt);
+	struct mba_drv *drv = mbadrv(io->i_adapt, unit);
 	register struct pte *pte = mba->mba_map;
-	int npf;
-	unsigned v;
-	int o;
-	int vaddr;
+	unsigned int v;
+	int npf, o, vaddr;
 
 	v = btop(io->i_ma);
 	o = (int)io->i_ma & PGOFSET;
@@ -47,12 +45,12 @@ mbastart(io, func)
 
 	case F_RDDATA:			/* standard read */
 		drv->mbd_cs1 = MB_RCOM|MB_GO;
-		mbawait(io);
+		mbawait(io, unit);
 		return(0);
 
 	case F_WRDATA:			/* standard write */
 		drv->mbd_cs1 = MB_WCOM|MB_GO;
-		mbawait(io);
+		mbawait(io, unit);
 		return(0);
 
 	/* the following commands apply to disks only */
@@ -78,7 +76,7 @@ mbastart(io, func)
 	default:
 		goto error;
 	}
-	mbawait(io);
+	mbawait(io, unit);
 	if ((drv->mbd_dt & MBDT_TAP) == 0)
 		return (0);
 error:
@@ -87,11 +85,12 @@ error:
 	return (1);
 }
 
-mbawait(io)
+mbawait(io, unit)
 	register struct iob *io;
+	int unit;
 {
-	struct mba_regs *mba = mbamba(io->i_unit);
-	struct mba_drv *drv = mbadrv(io->i_unit);
+	struct mba_regs *mba = mbamba(io->i_adapt);
+	struct mba_drv *drv = mbadrv(io->i_adapt, unit);
 
 	while (mba->mba_sr & MBSR_DTBUSY)
 		DELAY(100);
