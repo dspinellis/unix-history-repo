@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.20 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.21 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -14,6 +14,9 @@ static	char sccsid[] = "@(#)pcproc.c 1.20 %G%";
 #include	"pcops.h"
 
 /*
+ * The constant EXPOSIZE specifies the number of digits in the exponent
+ * of real numbers.
+ *
  * The constant REALSPC defines the amount of forced padding preceeding
  * real numbers when they are printed. If REALSPC == 0, then no padding
  * is added, REALSPC == 1 adds one extra blank irregardless of the width
@@ -21,7 +24,8 @@ static	char sccsid[] = "@(#)pcproc.c 1.20 %G%";
  *
  * N.B. - Values greater than one require program mods.
  */
-#define	REALSPC	0
+#define EXPOSIZE	2
+#define	REALSPC		0
 
 /*
  * The following array is used to determine which classes may be read
@@ -480,8 +484,8 @@ pcproc(r)
 			     tdouble:
 				switch (fmtspec) {
 				case NIL:
-					field = 21;
-					prec = 14;
+					field = 14 + (5 + EXPOSIZE);
+				        prec = field - (5 + EXPOSIZE);
 					fmt = 'e';
 					fmtspec = CONWIDTH + CONPREC;
 					break;
@@ -489,7 +493,7 @@ pcproc(r)
 					field -= REALSPC;
 					if (field < 1)
 						field = 1;
-					prec = field - 7;
+				        prec = field - (5 + EXPOSIZE);
 					if (prec < 1)
 						prec = 1;
 					fmtspec += CONPREC;
@@ -683,7 +687,9 @@ pcproc(r)
 						tempnlp -> extra_flags ,
 						P2INT );
 					    tmpfree(&soffset);
-					    putleaf( P2ICON , 7 + REALSPC , 0 , P2INT , 0 );
+					    putleaf( P2ICON ,
+						5 + EXPOSIZE + REALSPC ,
+						0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
 					    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
 					    putop( P2LISTOP , P2INT );
