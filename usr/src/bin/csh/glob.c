@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -257,7 +257,6 @@ pend:
 		}
 		goto doit;
 
-	case ','|QUOTE:
 	case ',':
 		if (brclev)
 			continue;
