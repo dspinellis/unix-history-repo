@@ -1,4 +1,4 @@
-/* tcp.h 1.9 81/10/29 */
+/* tcp.h 1.10 81/10/30 */
 
 /*
  * Tcp header.  Fits over the ip header after option removed.
@@ -102,6 +102,8 @@ struct tcb {
 	u_char	t_persist;		/* retransmit persistance */
 	u_char	t_finack;		/* fin acknowledged */
 	u_char	t_xmt;			/* round trip transmission time */
+
+	seq_t	rcv_adv;		/* advertised window */
 };
 
 /*

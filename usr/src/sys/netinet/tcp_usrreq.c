@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.15 81/10/30 */
+/* tcp_usrreq.c 1.16 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,7 +120,7 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case SSS_RCV:				/* 42 */
-		send_ctl(tp);		/* send new window */
+		send_win(tp);		/* send new window */
 		present_data(tp);
 		break;
 

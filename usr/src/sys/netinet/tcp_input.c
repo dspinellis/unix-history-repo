@@ -1,4 +1,4 @@
-/* tcp_input.c 1.7 81/10/29 */
+/* tcp_input.c 1.8 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -522,12 +522,17 @@ COUNT(RCV_CTLDAT);
 	}
 
 /* respond */
+	sent = 0;
 	if (tp->tc_flags&TC_ACK_DUE)
 		sent = send_ctl(tp);
-	else if (tp->tc_flags&TC_NEW_WINDOW)
-		sent = send(tp);
-	else
-		sent = 0;
+	else if (tp->tc_flags&TC_NEW_WINDOW) {
+		seq_t last = tp->snd_off;
+		up = tp->t_ucb;
+		for (m = up->uc_sbuf; m != NULL; m = m->m_next)
+			last += m->m_len;
+		if (tp->snd_nxt <= last || (tp->tc_flags&TC_SND_FIN))
+			sent = send(tp);
+	}
 
 /* set for retrans */
 	if (!sent && tp->snd_una < tp->snd_nxt &&
