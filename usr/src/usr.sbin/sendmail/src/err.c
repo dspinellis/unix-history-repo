@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.22		%G%);
+SCCSID(@(#)err.c	3.23		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -44,6 +44,7 @@ syserr(fmt, a, b, c, d, e)
 	/* output error message to output channel if appropriate */
 	if (!HoldErrs)
 	{
+		(void) fflush(stdout);
 		if (ArpaMode)
 			fprintf(OutChannel, "%s\r\n", errbuf);
 		else
@@ -129,6 +130,7 @@ message(num, msg, a, b, c, d, e)
 	/* output to channel if appropriate */
 	if (!HoldErrs && (Verbose || errbuf[0] != '0'))
 	{
+		(void) fflush(stdout);
 		if (ArpaMode)
 			fprintf(OutChannel, "%s\r\n", errbuf);
 		else

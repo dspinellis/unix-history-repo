@@ -1,10 +1,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.17		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.18		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.17		%G%);
+SCCSID(@(#)srvrsmtp.c	3.18		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -38,7 +38,9 @@ struct cmd
 # define CMDQUIT	9	/* quit -- close connection and die */
 # define CMDMRSQ	10	/* mrsq -- for old mtp compat only */
 # define CMDHELO	11	/* helo -- be polite */
-# define CMDDBGSHOWQ	12	/* showq -- show send queue (DEBUG) */
+# define CMDDBGSHOWQ	12	/* _showq -- show send queue (DEBUG) */
+# define CMDDBGDEBUG	13	/* _debug -- set debug mode */
+# define CMDDBGVERBOSE	14	/* _verbose -- go into verbose mode */
 
 static struct cmd	CmdTab[] =
 {
@@ -55,7 +57,9 @@ static struct cmd	CmdTab[] =
 	"mrsq",		CMDMRSQ,
 	"helo",		CMDHELO,
 # ifdef DEBUG
-	"showq",	CMDDBGSHOWQ,
+	"_showq",	CMDDBGSHOWQ,
+	"_debug",	CMDDBGDEBUG,
+	"_verbose",	CMDDBGVERBOSE,
 # endif DEBUG
 	NULL,		CMDERROR,
 };
@@ -75,11 +79,14 @@ smtp()
 
 	hasmail = FALSE;
 	rcps = 0;
+	close(1);
+	dup(fileno(OutChannel));
 	message("220", "%s Sendmail version %s at your service", HostName, Version);
 	for (;;)
 	{
 		CurEnv->e_to = NULL;
 		Errors = 0;
+		(void) fflush(stdout);
 		if (fgets(inp, sizeof inp, InChannel) == NULL)
 		{
 			/* end of file, just die */
@@ -244,6 +251,16 @@ smtp()
 		  case CMDDBGSHOWQ:	/* show queues */
 			printf("Send Queue=");
 			printaddr(CurEnv->e_sendqueue, TRUE);
+			break;
+
+		  case CMDDBGDEBUG:	/* set debug mode */
+			Debug = atoi(p);
+			message("200", "Debug = %d", Debug);
+			break;
+
+		  case CMDDBGVERBOSE:	/* set verbose mode */
+			Verbose = TRUE;
+			message("200", "Verbose mode");
 			break;
 # endif DEBUG
 
