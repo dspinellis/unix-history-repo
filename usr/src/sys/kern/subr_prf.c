@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.9 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -65,31 +65,52 @@ printf(fmt, x1)
 }
 
 /*
- * Uprintf prints to the current user's terminal
- * and does no watermark checking - (so no verbose messages).
+ * Uprintf prints to the current user's terminal.
+ * It may block if the tty queue is overfull.
+ * Should determine whether current terminal user is related
+ * to this process.
  */
 /*VARARGS1*/
 uprintf(fmt, x1)
 	char *fmt;
 	unsigned x1;
 {
+	register struct proc *p;
+	register struct tty *tp;
 
-	prf(fmt, &x1, TOTTY, u.u_ttyp);
+	if ((tp = u.u_ttyp) == NULL)
+		return;
+#ifdef notdef
+	if (tp->t_pgrp && (p = pfind(tp->t_pgrp)))
+		if (p->p_uid != u.u_uid)
+			return;
+#endif
+	(void)ttycheckoutq(tp, 1);
+	prf(fmt, &x1, TOTTY, tp);
 }
 
 /*
  * tprintf prints on the specified terminal (console if none)
  * and logs the message.  It is designed for error messages from
- * single-open devices, and may be called from interrupt level.
+ * single-open devices, and may be called from interrupt level
+ * (does not sleep).
  */
 /*VARARGS2*/
-tprintf(ttyp, fmt, x1)
-	struct tty *ttyp;
+tprintf(tp, fmt, x1)
+	register struct tty *tp;
 	char *fmt;
 	unsigned x1;
 {
+	int flags = TOTTY | TOLOG;
+	extern struct tty cons;
 
-	prf(fmt, &x1, TOTTY | TOLOG, ttyp);
+	logpri(LOG_INFO);
+	if (tp == (struct tty *)NULL)
+		tp = &cons;
+	if (ttycheckoutq(tp, 0) == 0)
+		flags = TOLOG;
+	prf(fmt, &x1, flags, tp);
+	logwakeup();
 }
 
 /*
@@ -105,14 +126,21 @@ log(level, fmt, x1)
 	register s = splhigh();
 	extern int log_open;
 
-	putchar('<', TOLOG, (struct tty *)0);
-	printn(level, 10, TOLOG, (struct tty *)0);
-	putchar('>', TOLOG, (struct tty *)0);
+	logpri(level);
 	prf(fmt, &x1, TOLOG, (struct tty *)0);
 	splx(s);
 	if (!log_open)
 		prf(fmt, &x1, TOCONS, (struct tty *)0);
 	logwakeup();
+}
+
+logpri(level)
+	int level;
+{
+
+	putchar('<', TOLOG, (struct tty *)0);
+	printn(level, 10, TOLOG, (struct tty *)0);
+	putchar('>', TOLOG, (struct tty *)0);
 }
 
 prf(fmt, adx, flags, ttyp)
@@ -268,19 +296,18 @@ putchar(c, flags, tp)
 	register int c;
 	struct tty *tp;
 {
-	extern struct tty cons;
 
 	if (flags & TOTTY) {
-		if (tp == (struct tty *)NULL && (flags & TOCONS) == 0)
-			tp = &cons;
-		if (tp && (tp->t_state & TS_CARR_ON)) {
-			register s = spl6();
+		register s = spltty();
+
+		if (tp && (tp->t_state & (TS_CARR_ON | TS_ISOPEN)) ==
+		    (TS_CARR_ON | TS_ISOPEN)) {
 			if (c == '\n')
 				(void) ttyoutput('\r', tp);
 			(void) ttyoutput(c, tp);
 			ttstart(tp);
-			splx(s);
 		}
+		splx(s);
 	}
 	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177
 #ifdef vax
