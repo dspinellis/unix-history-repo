@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.19 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -385,10 +385,10 @@ lfs_statfs(mp, sbp, p)
 	fs = ump->um_lfs;
 	if (fs->lfs_magic != LFS_MAGIC)
 		panic("lfs_statfs: magic");
-	sbp->f_bsize = fs->lfs_bsize;
+	sbp->f_bsize = fs->lfs_fsize;
 	sbp->f_iosize = fs->lfs_bsize;
-	sbp->f_blocks = dbtofsb(fs,fs->lfs_dsize);
-	sbp->f_bfree = dbtofsb(fs, fs->lfs_bfree);
+	sbp->f_blocks = dbtofrags(fs,fs->lfs_dsize);
+	sbp->f_bfree = dbtofrags(fs, fs->lfs_bfree);
 	/*
 	 * To compute the available space.  Subtract the minimum free
 	 * from the total number of blocks in the file system.  Set avail
@@ -397,7 +397,7 @@ lfs_statfs(mp, sbp, p)
 	sbp->f_bavail = fs->lfs_dsize * (100 - fs->lfs_minfree) / 100;
 	sbp->f_bavail =
 	    sbp->f_bavail > fs->lfs_bfree ? fs->lfs_bfree : sbp->f_bavail;
-	sbp->f_bavail = dbtofsb(fs, sbp->f_bavail);
+	sbp->f_bavail = dbtofrags(fs, sbp->f_bavail);
 	sbp->f_files = fs->lfs_nfiles;
 	sbp->f_ffree = sbp->f_bfree * INOPB(fs);
 	if (sbp != &mp->mnt_stat) {
