@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.12 (Berkeley) %G%
+ *	@(#)if_ether.c	6.13 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 #include "ip.h"
 #include "if_ether.h"
 
-#define	ARPTAB_BSIZ	5		/* bucket size */
+#define	ARPTAB_BSIZ	9		/* bucket size */
 #define	ARPTAB_NB	19		/* number of buckets */
 #define	ARPTAB_SIZE	(ARPTAB_BSIZ * ARPTAB_NB)
 struct	arptab arptab[ARPTAB_SIZE];
@@ -205,11 +205,13 @@ arpinput(ac, m)
 {
 	register struct ether_arp *ea;
 	struct ether_header *eh;
-	register struct arptab *at = 0;  /* same as "merge" flag */
+	register struct arptab *at;  /* same as "merge" flag */
 	struct sockaddr_in sin;
 	struct sockaddr sa;
 	struct in_addr isaddr,itaddr,myaddr;
 
+	IF_ADJ(m);
+	at = 0;
 	if (m->m_len < sizeof *ea)
 		goto out;
 	if (ac->ac_if.if_flags & IFF_NOARP)
@@ -321,7 +323,7 @@ arptnew(addr)
 	struct in_addr *addr;
 {
 	register n;
-	int oldest = 0;
+	int oldest = -1;
 	register struct arptab *at, *ato = NULL;
 	static int first = 1;
 
