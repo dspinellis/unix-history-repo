@@ -1,9 +1,10 @@
-static char *sccsid = "@(#)tc.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)tc.c	4.3 (Berkeley) %G%";
 /*
  * Simulate typesetter on 4014
 */
 
-#include <signal.h>
+#include <sys/signal.h>
+#include <paths.h>
 #include <stdio.h>
 
 #define	oput(c) if (pgskip==0) putchar(c); else (c);
@@ -305,7 +306,7 @@ char line[];
 	if( (unixpid=fork())==0 ) {
 		signal(SIGINT,sigint); signal(SIGQUIT,sigquit);
 		close(0); dup(2);
-		execl("/bin/sh", "-sh", "-c", line, 0);
+		execl(_PATH_BSHELL, "-sh", "-c", line, 0);
 		exit(255);
 	}
 	else if(unixpid == -1)

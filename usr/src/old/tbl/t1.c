@@ -1,25 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)t1.c	4.2 %G%";
+static char sccsid[] = "@(#)t1.c	4.3 %G%";
 #endif
 
  /* t1.c: main control and input switching */
 #
 # include "t..c"
 #include <signal.h>
+#include "pathnames.h"
+
 # ifdef gcos
 /* required by GCOS because file is passed to "tbl" by troff preprocessor */
 # define _f1 _f
 extern FILE *_f[];
-# endif
-
-# ifdef unix
-# define MACROS "/usr/lib/tmac.s"
-# define PYMACS "/usr/lib/tmac.m"
-# endif
-
-# ifdef gcos
-# define MACROS "cc/troff/smac"
-# define PYMACS "cc/troff/mmac"
 # endif
 
 # define ever (;;)
@@ -72,12 +64,12 @@ swapin()
 		if (sargc<=0) return(0);
 		if (match("-ms", *sargv))
 			{
-			*sargv = MACROS;
+			*sargv = _PATH_MACROS;
 			break;
 			}
 		if (match("-mm", *sargv))
 			{
-			*sargv = PYMACS;
+			*sargv = _PATH_PYMACS;
 			break;
 			}
 		if (match("-TX", *sargv))
