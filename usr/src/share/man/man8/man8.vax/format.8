@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)format.8	6.1 (Berkeley) %G%
+.\"	@(#)format.8	6.2 (Berkeley) %G%
 .\"
 .TH FORMAT 8V ""
 .UC 4
@@ -35,7 +35,7 @@ the sector by reading and verifying the pattern, using
 the controller's ECC for error detection.
 A sector is marked bad if an unrecoverable media
 error is detected, or if a correctable
-ECC error greater than 5 bits in length
+ECC error too many bits in length
 is detected (such errors are indicated as
 ``ECC'' in the summary printed upon
 completing the format operation).
@@ -46,6 +46,8 @@ any bad sectors and skip sectors are marked,
 and a bad sector forwarding table
 is written to the disk in the first five
 even numbered sectors of the last track.
+It is also possible to reformat sections of the disk
+in units of tracks.
 .I Format 
 may be used on any UNIBUS or MASSBUS drive
 supported by the \fIup\fP and \fIhp\fP device
@@ -59,14 +61,17 @@ Normally the media worst case pattern is used.
 .PP
 .I Format
 also has an option to perform an extended \*(lqsevere burnin,\*(rq
-which makes 46 passes using different patterns.
-Using this option, sectors with any errors of any size
-are marked bad.
+which makes a number of passes using different patterns.
+The number of passes can be selected at run time,
+up to a maximum of 46,
+with provision for additional passes or termination
+after the preselected number of passes.
 This test runs for many hours, depending on the disk and processor.
 .PP
 Each time
 .I format
-is run a completely new bad sector table is generated
+is run to format an entire disk,
+a completely new bad sector table is generated
 based on errors encountered while formatting.
 The device driver, however, will always attempt to
 read any existing bad sector table when the device is
@@ -87,7 +92,7 @@ prints a message indicating the current cylinder being formatted.
 is amiss.)
 .PP
 .I Format
-uses the standard notation of the standalone i/o library
+uses the standard notation of the standalone I/O library
 in identifying a drive to be formatted.  A drive is
 specified as
 .IR zz ( x , y ),
@@ -109,7 +114,7 @@ on drive
 (this should always be 0). 
 For example, ``hp(1,0)'' indicates that drive
 1 on MASSBUS adaptor 0 should be formatted; while
-``up(10,0)'' indicates UNIBUS drive 2 on UNIBUS adaptor 1
+``up(10,0)'' indicates that UNIBUS drive 2 on UNIBUS adaptor 1
 should be formatted.
 .PP
 Before each formatting attempt, 
@@ -121,11 +126,13 @@ disables debugging information.
 .I Format
 should be used prior to building file systems (with 
 .IR newfs (8))
-to insure all sectors with uncorrectable media errors
+to insure that all sectors with uncorrectable media errors
 are remapped.  If a drive develops uncorrectable
-defects after formatting, the program
+defects after formatting, either
+.IR bad144 (8)
+or
 .IR badsect (8)
-must be used.
+should be able to avoid the bad sectors.
 .SH EXAMPLE
 A sample run of 
 .I format
@@ -148,16 +155,23 @@ As usual, ``#'' and ``@'' may be used to edit input.
 Disk format/check utility
 .sp
 Enable debugging (0=none, 1=bse, 2=ecc, 3=bse+ecc)? \fB0\fP
-Device to format? \fBhp(8,0)\fR
+Device to format? \fBhp(8,0)\fP
 (\fIerror messages may occur as old bad sector table is read\fP)
 Formatting drive hp0 on adaptor 1: verify (yes/no)? \fByes\fP
 Device data: #cylinders=842, #tracks=20, #sectors=48
+Starting cylinder (0):
+Starting track (0):
+Ending cylinder (841):
+Ending track (19):
 Available test patterns are:
-	1 - (f00f) rh750 worst case
-	2 - (ec6d) media worst case
-	3 - (a5a5) alternating 1's and 0's
-	4 - (ffff) Severe burnin (takes several hours)
+.in +1.0i
+1 - (f00f) RH750 worst case
+2 - (ec6d) media worst case
+3 - (a5a5) alternating 1's and 0's
+4 - (ffff) Severe burnin (up to 48 passes)
+.in -1.0i
 Pattern (one of the above, other to restart)? \fB2\fP
+Maximum number of bit errors to allow for soft ECC (3):
 Start formatting...make sure the drive is online
  ...
 (\fIsoft ecc's and other errors are reported as they occur\fP)
@@ -165,17 +179,18 @@ Start formatting...make sure the drive is online
 (\fIif 4 write check errors were found, the program terminates like this...\fP)
  ...
 Errors:
-Write check: 4
 Bad sector: 0
-ECC: 0
-Skip sector: 0
-Total of 4 hard errors found.
-Writing bad sector table at block 808271	
-(\fI808271 is the block # of the first block in the bad sector table\fP)
+Write check: 4
+Hard ECC: 0
+Other hard: 0
+Marked bad: 0
+Skipped: 0
+Total of 4 hard errors revectored.
+Writing bad sector table at block 808272	
+(\fI808272 is the block # of the first block in the bad sector table\fP)
 Done
 (\fI...program restarts to allow formatting other disks\fP)
 (\fI...to abort halt machine with ^P\fP)
-.in -0.5i
 .fi
 .sp 1
 .SH DIAGNOSTICS
@@ -245,6 +260,5 @@ newfs(8)
 An equivalent facility should be available which operates under
 a running UNIX system. 
 .PP
-It should be possible to define more
-precisely what a ``hard ECC'' error is; e.g. the maximum unacceptable
-ECC width.
+It should be possible to reformat or verify part or all of a disk,
+then update the existing bad sector table.
