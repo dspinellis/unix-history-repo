@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -44,10 +44,8 @@ __rec_open(fname, flags, mode, openinfo)
 
 	/* Create a btree in memory (backed by disk). */
 	if (openinfo) {
-		if (openinfo->flags & ~(R_FIXEDLEN|R_NOKEY|R_SNAPSHOT)) {
-			errno = EINVAL;
-			goto err;
-		}
+		if (openinfo->flags & ~(R_FIXEDLEN|R_NOKEY|R_SNAPSHOT))
+			goto einval;
 		btopeninfo.flags = 0;
 		btopeninfo.cachesize = openinfo->cachesize;
 		btopeninfo.psize = 0;
@@ -70,10 +68,8 @@ __rec_open(fname, flags, mode, openinfo)
 		if (openinfo->flags & R_FIXEDLEN) {
 			t->bt_flags |= BTF_FIXEDLEN;
 			t->bt_reclen = openinfo->reclen;
-			if (t->bt_reclen == 0) {
-				errno = EINVAL;
-				goto err;
-			}
+			if (t->bt_reclen == 0)
+				goto einval;
 		}
 		t->bt_bval = openinfo->bval;
 	} else
@@ -94,8 +90,17 @@ __rec_open(fname, flags, mode, openinfo)
 	} else {
 		if (fstat(rfd, &sb))
 			goto err;
-		if (!(flags & (O_RDWR | O_WRONLY)))
+		switch(flags & O_ACCMODE) {
+		case O_RDONLY:
 			SET(t, BTF_RDONLY);
+			break;
+		case O_RDWR:
+			break;
+		case O_WRONLY:
+		default:
+			goto einval;
+		}
+			
 		if (sb.st_size > SIZE_T_MAX) {
 			errno = EFBIG;
 			goto err;
@@ -131,6 +136,7 @@ __rec_open(fname, flags, mode, openinfo)
                 goto err;
 	return (dbp);
 
+einval:	errno = EINVAL;
 err:	if (dbp)
 		__bt_close(dbp);
 	(void)close(rfd);
