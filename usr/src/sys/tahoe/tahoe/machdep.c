@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	1.17 (Berkeley) %G%
+ *	@(#)machdep.c	1.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -80,7 +80,7 @@ startup(firstaddr)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 1);
 	msgbufmapped = 1;
-#ifdef KDB
+#ifdef KADB
 	kdb_init();			/* startup kernel debugger */
 #endif
 	/*
