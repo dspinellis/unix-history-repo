@@ -6,10 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)assorted.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)assorted.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "externs.h"
+#include "extern.h"
 
 table(rig, shot, hittable, on, from, roll)
 struct ship *on, *from;
