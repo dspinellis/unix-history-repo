@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.1 (Berkeley) %G%
+.\"	@(#)0.t	6.2 (Berkeley) %G%
 .\"
 .ds Ux \s-1UNIX\s0
 .ds Bs \s-1BSD\s0
@@ -19,6 +19,21 @@
 .ds Dy 
 .de Sm
 \s-1\\$1\s0\\$2
+..
+.de Pn		\" pathname
+\f(CW\\$1\fP\\$2
+..
+.de Li		\" literal
+\f(CW\\$1\fP\\$2
+..
+.de I		\" italicize first arg
+\fI\\$1\fP\^\\$2
+..
+.de Xr		\" manual reference
+\fI\\$1\fP\^\\$2
+..
+.de Fn		\" function
+\fI\\$1\fP\^()\\$2
 ..
 .bd S B 3
 .EH 'SMM:1-%''Installing and Operating \*(4B \*(Ux'
