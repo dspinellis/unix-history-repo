@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.7 %G%";
+static char sccsid[] = "@(#)process.c 1.8 %G%";
 
 /*
  * Process management.
@@ -298,7 +298,8 @@ private intr();
 #define succeeds    == true
 #define fails       == false
 
-public cont()
+public cont(signo)
+int signo;
 {
     dbintr = signal(SIGINT, intr);
     if (just_started) {
@@ -308,20 +309,20 @@ public cont()
 	    error("can't continue execution");
 	}
 	isstopped = false;
-	step();
+	stepover();
     }
     for (;;) {
 	if (single_stepping) {
 	    printnews();
 	} else {
 	    setallbps();
-	    resume();
+	    resume(signo);
 	    unsetallbps();
 	    if (bpact() fails) {
 		printstatus();
 	    }
 	}
-	step();
+	stepover();
     }
     /* NOTREACHED */
 }
@@ -350,7 +351,8 @@ public fixintr()
  * Resume execution.
  */
 
-public resume()
+public resume(signo)
+int signo;
 {
     register Process p;
 
@@ -359,7 +361,7 @@ public resume()
 	printf("execution resumes at pc 0x%x\n", process->reg[PROGCTR]);
 	fflush(stdout);
     }
-    pcont(p);
+    pcont(p, signo);
     pc = process->reg[PROGCTR];
     if (traceexec) {
 	printf("execution stops at pc 0x%x on sig %d\n",
@@ -367,7 +369,11 @@ public resume()
 	fflush(stdout);
     }
     if (p->status != STOPPED) {
-	error("program unexpectedly exited with %d", p->exitval);
+	if (p->signo != 0) {
+	    error("program terminated by signal %d", p->signo);
+	} else {
+	    error("program unexpectedly exited with %d", p->exitval);
+	}
     }
 }
 
@@ -404,9 +410,27 @@ public next()
     isstopped = true;
 }
 
-public step()
+/*
+ * Single-step over the current machine instruction.
+ *
+ * If we're single-stepping by source line we want to step to the
+ * next source line.  Otherwise we're going to continue so there's
+ * no reason to do all the work necessary to single-step to the next
+ * source line.
+ */
+
+private stepover()
 {
-    dostep(false);
+    Boolean b;
+
+    if (single_stepping) {
+	dostep(false);
+    } else {
+	b = inst_tracing;
+	inst_tracing = true;
+	dostep(false);
+	inst_tracing = b;
+    }
 }
 
 /*
@@ -419,7 +443,7 @@ public stepto(addr)
 Address addr;
 {
     setbp(addr);
-    resume();
+    resume(0);
     unsetbp(addr);
     if (not isbperr()) {
 	printstatus();
@@ -723,17 +747,18 @@ String outfile;
 }
 
 /*
- * Continue a stopped process.  The argument points to a PROCESS structure.
- * Before the process is restarted it's user area is modified according to
- * the values in the structure.  When this routine finishes,
+ * Continue a stopped process.  The first argument points to a Process
+ * structure.  Before the process is restarted it's user area is modified
+ * according to the values in the structure.  When this routine finishes,
  * the structure has the new values from the process's user area.
  *
  * Pcont terminates when the process stops with a signal pending that
  * is being traced (via psigtrace), or when the process terminates.
  */
 
-private pcont(p)
+private pcont(p, signo)
 Process p;
+int signo;
 {
     int status;
 
@@ -741,7 +766,7 @@ Process p;
 	error("program not active");
     }
     do {
-	setinfo(p);
+	setinfo(p, signo);
 	sigs_off();
 	if (ptrace(CONT, p->pid, p->reg[PROGCTR], p->signo) < 0) {
 	    panic("can't continue process");
@@ -761,7 +786,7 @@ Process p;
 {
     int status;
 
-    setinfo(p);
+    setinfo(p, 0);
     sigs_off();
     ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo);
     pwait(p->pid, &status);
@@ -863,14 +888,15 @@ register int status;
  * Set process's user area information from given process structure.
  */
 
-private setinfo(p)
+private setinfo(p, signo)
 register Process p;
+int signo;
 {
     register int i;
     register int r;
 
     if (istraced(p)) {
-	p->signo = 0;
+	p->signo = signo;
     }
     for (i = 0; i < NREG; i++) {
 	if ((r = p->reg[i]) != p->oreg[i]) {
