@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
