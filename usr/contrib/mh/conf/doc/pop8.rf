@@ -1,0 +1,37 @@
+.\"	@(MHWARNING)
+.TH POP 8 "April 22, 1986" MH [mh.6]
+.UC 6
+.SH NAME
+pop \- POP channel/mailer
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+/usr/mmdf/chans/pop
+fd1 fd2 \%[y]
+
+.ti .5i
+@(MHETCPATH)/spop
+POP\-subscriber\ ...
+.in -.5i
+.SH DESCRIPTION
+For \fIMMDF\-II\fR, the POP channel delivers mail to the POP spool area for
+later retrieval by POP subscribers.
+For \fISendMail\fR, the SPOP mailer performs this task.
+
+For each address given,
+these programs consult the \fIpop\fR\0(5) file to obtain information
+about the POP\-subscriber named by the address.
+The programs then deliver the message to the spool area for the
+POP\-subscriber.
+.Fi
+^@(MHETCPATH)/mtstailor~^tailor file
+^/usr/spool/pop/POP~^POP database
+.Pr
+None
+.Sa
+bboards(5), bbaka(8)
+.De
+None
+.Co
+None
+.En

@@ -1,0 +1,27 @@
+.\"	@(MHWARNING)
+.TH POPAKA 8 "April 22, 1986" MH [mh.6]
+.UC 6
+.SH NAME
+popaka \- generate POP entries for MMDF\-II alias file
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+@(MHETCPATH)/popaka
+.in -.5i
+.SH DESCRIPTION
+The \fIpopaka\fR program reads the POP database and produces
+on its standard output a file suitable for inclusion in the \fIMMDF\-II\fR
+aliases
+file.
+The contents of this file divert mail for POP subscribers to the POP channel.
+.Fi
+^/usr/spool/pop/POP~^POP database
+.Pr
+None
+.Sa
+pop(5)
+.De
+None
+.Co
+None
+.En

@@ -1,0 +1,52 @@
+.\"	@(MHWARNING)
+.TH PACKF 1 "April 22, 1986" MH [mh.6]
+.UC 6
+.SH NAME
+packf \- compress a folder into a single file
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+packf
+\%[+folder] \%[msgs]
+\%[\-file\ name]
+\%[\-help]
+.in -.5i
+.SH DESCRIPTION
+\fIPackf\fR
+takes messages from a folder and copies them to a single file.
+Each message in the file is separated by four CTRL\-A's and a
+@BEGIN: MMDFMTS
+newline (identical to the way messages are stored in your receiving mail drop).
+@END: MMDFMTS
+@BEGIN: MHMTS
+newline (identical to the way messages are stored in your receiving mail drop).
+@END: MHMTS
+@BEGIN: SENDMTS
+newline.
+@END: SENDMTS
+Messages packed can be unpacked using \fIinc\fR.
+
+If the \fIname\fR given to the `\-file\ name' switch exists,
+then the messages specified
+will be appended to the end of the file, otherwise the file will be created
+and the messages appended.
+.Fi
+^$HOME/\&.mh\(ruprofile~^The user profile
+.Pr
+^Path:~^To determine the user's MH directory
+.Ps
+^Current\-Folder:~^To find the default current folder
+.Ps
+^Msg\-Protect:~^To set mode when creating a new `file'
+.Sa
+inc(1)
+.De
+`+folder' defaults to the current folder
+.Ds
+`msgs' defaults to all
+.Ds
+`\-file ./msgbox' 
+.Co
+If a folder is given, it will become the current folder.
+The first message packed will become the current message.
+.En
