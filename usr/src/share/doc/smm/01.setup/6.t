@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	6.8 (Berkeley) %G%
+.\"	@(#)6.t	6.9 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -393,11 +393,11 @@ sequence will accomplish this.
 .DE
 The \fImake clean\fP removes any existing binary or object files in the source
 trees to insure that everything will be recompiled and reloaded.  The \fImake
-depend\fP recreates all of the dependencies.  See
+depend\fP recreates all the dependencies.  See
 .Xr mkdep (1)
 for further details. The \fImake build\fP compiles and installs the libraries
 and compilers, then recompiles the libraries and compilers and the remainder
-of the sources.  The \fImake installsrc\fP installs all of the commands not
+of the sources.  The \fImake installsrc\fP installs all the commands not
 installed as part of the \fImake build\fP.
 The build will take several hours on a reasonably configured machine.
 .NH 2
@@ -419,7 +419,7 @@ installed in
 The
 .Xr man (1)
 command automatically finds manual pages placed in
-/usr/local/man/cat[1-8] to facilitate this practice (see
+/usr/local/man/cat[1-8] to encourage this practice (see
 .Xr man.conf (5)).
 .NH 2
 Accounting
