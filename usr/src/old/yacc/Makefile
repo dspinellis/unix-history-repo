@@ -1,25 +1,44 @@
 #
-#	@(#)Makefile	4.3	(Berkeley)	87/05/31
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-DESTDIR=
-CFLAGS=-O -DWORD32
-SRCS = Makefile dextern files yaccpar \
-	y1.c y2.c y3.c y4.c \
-	yaccdiffs yaccnews
+#	@(#)Makefile	4.4	(Berkeley)	%G%
+#
+CFLAGS=	-O -DWORD32
+LIBC=	/lib/libc.a
+SRCS=	y1.c y2.c y3.c y4.c
+OBJS=	y1.o y2.o y3.o y4.o
 
 all: yacc
 
-yacc: y1.o y2.o y3.o y4.o
-	$(CC) -o yacc y?.o 
-y1.o y2.o y3.o y4.o: dextern files
-install:
-	install -s yacc $(DESTDIR)/usr/bin
-	install -c yaccpar $(DESTDIR)/usr/lib
-clean :
-	-rm -f *.o yacc
+yacc: ${OBJS} ${LIBC}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
-srcs: $(SRCS)
-$(SRCS):
-	sccs get $@
+clean: FRC
+	rm -f ${OBJS} core yacc
 
-depend:
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
+
+install: FRC
+	install -s -o bin -g bin -m 755 yacc ${DESTDIR}/usr/bin/yacc
+	install -c -o bin -g bin -m 755 yaccpar ${DESTDIR}/usr/lib/yaccpar
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+y1.o: y1.c dextern /usr/include/stdio.h /usr/include/ctype.h files
+y2.o: y2.c dextern /usr/include/stdio.h /usr/include/ctype.h files
+y3.o: y3.c dextern /usr/include/stdio.h /usr/include/ctype.h files
+y4.o: y4.c dextern /usr/include/stdio.h /usr/include/ctype.h files
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
