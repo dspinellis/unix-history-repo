@@ -1,4 +1,4 @@
-/*	hp.c	4.28	81/03/09	*/
+/*	hp.c	4.29	81/03/09	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -250,7 +250,8 @@ hpdtint(mi, mbsr)
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
 			bp->b_flags |= B_ERROR;
-		} else if (hpaddr->hper2&HPER2_SSE) {
+			hprecal[mi->mi_unit] = 0;
+		} else if (hptypes[mi->mi_type] == MBDT_RM80 && hpaddr->hper2&HPER2_SSE) {
 			hpecc(mi, 1);
 			return (MBD_RESTARTED);
 		} else if ((hpaddr->hper1&(HPER1_DCK|HPER1_ECH))==HPER1_DCK) {
