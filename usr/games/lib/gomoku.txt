@@ -1,0 +1,8 @@
+		Berkeley Go-moku
+
+Go-moku is a simple variant of the ancient game of Go.
+The object is to place exactly 5 stones in a row
+(horizontally, vertically, or diagonally) before your opponent does.
+
+Moves are entered as <letter><number>.
+'?' will redraw the board.
