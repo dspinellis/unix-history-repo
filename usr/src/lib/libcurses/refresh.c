@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.3
+ * %G% (Berkeley) @(#)refresh.c	1.4
  */
 
 # include	"curses.ext"
@@ -177,12 +177,12 @@ short		wy;
 					}
 				}
 				wx++;
-				if (wx >= win->_maxx && wy == win->_maxy)
+				if (wx >= win->_maxx && wy == win->_maxy - 1)
 					if (win->_scroll) {
 					    if ((win->_flags&(_ENDLINE|_STANDOUT)) == (_ENDLINE|_STANDOUT))
 						if (!MS) {
-							_puts(SE);
-							win->_flags &= ~_STANDOUT;
+						    _puts(SE);
+						    win->_flags &= ~_STANDOUT;
 						}
 					    if (!curwin)
 						putchar((*csp = *nsp) & 0177);
