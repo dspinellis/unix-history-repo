@@ -1,11 +1,10 @@
-/*	systm.h	4.32	82/11/15	*/
+/*	systm.h	4.33	83/02/10	*/
 
 /*
  * Random set of variables
  * used by more than one
  * routine.
  */
-int	hz;			/* frequency of the clock */
 int	hand;			/* current index into coremap used by daemon */
 extern	char version[];		/* system version */
 
