@@ -12,28 +12,18 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.6 (Berkeley) %G%
+ *	@(#)pathnames.h	5.7 (Berkeley) %G%
  */
 
-/*
- * Declarations and constants specific to an installation.
- *
- * Vax/Unix version 7.
- */
+#include <paths.h>
 
-#define SENDMAIL	"/usr/lib/sendmail"
-					/* Name of classy mail deliverer */
-#define	EDITOR		"/usr/ucb/ex"	/* Name of text editor */
-#define	VISUAL		"/usr/ucb/vi"	/* Name of display editor */
-#define	SHELL		"/bin/csh"	/* Standard shell */
-#define	MORE		"/usr/ucb/more"	/* Standard output pager */
-#define	HELPFILE	"/usr/lib/Mail.help"
-					/* Name of casual help file */
-#define	THELPFILE	"/usr/lib/Mail.tildehelp"
-					/* Name of casual tilde help */
-#define	POSTAGE		"/usr/adm/maillog"
-					/* Where to audit mail sending */
-#define	MASTER		"/usr/lib/Mail.rc"
-#define	APPEND				/* New mail goes to end of mailbox */
+#define	_PATH_EX	"/usr/bin/ex"
+#define	_PATH_HELP	"/usr/share/misc/Mail.help"
+#define	_PATH_TILDE	"/usr/share/misc/Mail.tildehelp"
+#define	_PATH_MAIL_LOG	"/usr/adm/maillog"
+#define	_PATH_MASTER_RC	"/usr/share/misc/Mail.rc"
+#define	_PATH_MBOX	"/var/spool/mail/"
+#define	_PATH_MORE	"/usr/bin/more"
+#define	_PATH_SENDMAIL	"/usr/libexec/sendmail"

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 #
 CFLAGS=	-O -I.
 LIBC=	/lib/libc.a
@@ -38,9 +38,9 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN1} ${MAN8}
-	install -s -o root -g bin -m 4755 bugfiler ${DESTDIR}/usr/lib
-	install -c -o bin -g bin -m 755 sendbug.sh ${DESTDIR}/usr/ucb
-	install -c -o bin -g bin -m 644 bugformat ${DESTDIR}/usr/lib
+	install -s -o root -g bin -m 4755 bugfiler ${DESTDIR}/usr/libexec
+	install -c -o bin -g bin -m 755 sendbug.sh ${DESTDIR}/usr/bin/sendbug
+	install -c -o bin -g bin -m 644 bugformat ${DESTDIR}/usr/share/misc
 	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1
 	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/man/cat8
 

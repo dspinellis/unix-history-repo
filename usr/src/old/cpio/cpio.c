@@ -27,6 +27,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <paths.h>
 
 struct utimbuf {
 	time_t	actime;
@@ -129,7 +130,7 @@ static
 FILE	*Rtty,
 	*Wtty;
 static
-char	ttyname[] = "/dev/tty";
+char	ttyname[] = _PATH_TTY;
 
 static
 char	**Pattern = 0;

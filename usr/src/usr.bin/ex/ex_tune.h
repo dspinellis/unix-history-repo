@@ -3,36 +3,14 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tune.h	7.11 (Berkeley) %G%
+ *	@(#)ex_tune.h	7.12 (Berkeley) %G%
  */
+
+#include "pathnames.h"
 
 /*
  * Definitions of editor parameters and limits
  */
-
-/*
- * Pathnames.
- *
- * Only exstrings is looked at "+4", i.e. if you give
- * "/usr/lib/..." here, "/lib" will be tried only for strings.
- */
-#define libpath(file) "/usr/lib/file"
-#define loclibpath(file) "/usr/local/lib/file"
-#define binpath(file) "/usr/ucb/file"
-#define usrpath(file) "/usr/file"
-#ifndef	vms
-#define E_TERMCAP	"/etc/termcap"
-#else
-#define E_TERMCAP	"etc:termcap."
-#endif
-#define B_CSH		"/bin/csh"
-#define	EXRECOVER	libpath(ex3.7recover)
-#define	EXPRESERVE	libpath(ex3.7preserve)
-#ifndef VMUNIX
-#ifndef	vms
-#define	EXSTRINGS	libpath(ex3.7strings)
-#endif
-#endif
 
 /*
  * If your system believes that tabs expand to a width other than

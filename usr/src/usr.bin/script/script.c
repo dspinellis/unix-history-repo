@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,8 +34,9 @@ static char sccsid[] = "@(#)script.c	5.7 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/file.h>
+#include <sys/signal.h>
 #include <stdio.h>
-#include <signal.h>
+#include <paths.h>
 
 char	*shell;
 FILE	*fscript;
@@ -86,7 +87,7 @@ main(argc, argv)
 
 	shell = getenv("SHELL");
 	if (shell == NULL)
-		shell = "/bin/sh";
+		shell = _PATH_BSHELL;
 
 	getmaster();
 	printf("Script started, file is %s\n", fname);
@@ -163,7 +164,7 @@ doshell()
 	int t;
 
 	/***
-	t = open("/dev/tty", O_RDWR);
+	t = open(_PATH_TTY, O_RDWR);
 	if (t >= 0) {
 		(void) ioctl(t, TIOCNOTTY, (char *)0);
 		(void) close(t);

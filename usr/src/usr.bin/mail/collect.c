@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -306,8 +306,8 @@ cont:
 				goto err;
 			goto cont;
 		case '?':
-			if ((fbuf = fopen(THELPFILE, "r")) == NULL) {
-				perror(THELPFILE);
+			if ((fbuf = fopen(_PATH_TILDE, "r")) == NULL) {
+				perror(_PATH_TILDE);
 				break;
 			}
 			while ((t = getc(fbuf)) != EOF)

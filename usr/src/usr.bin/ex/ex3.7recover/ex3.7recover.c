@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7recover.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -23,7 +23,6 @@ static char *sccsid = "@(#)ex3.7recover.c	7.9 (Berkeley) %G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include <sys/dir.h>
-#include "uparm.h"
 
 char xstr[1];		/* make loader happy */
 short tfile = -1;	/* ditto */
@@ -31,7 +30,7 @@ short tfile = -1;	/* ditto */
 /*
  *
  * This program searches through the specified directory and then
- * the directory usrpath(preserve) looking for an instance of the specified
+ * the directory _PATH_USRPRESERVE looking for an instance of the specified
  * file from a crashed editor or a crashed system.
  * If this file is found, it is unscrambled and written to
  * the standard output.
@@ -49,12 +48,6 @@ short tfile = -1;	/* ditto */
 #ifndef lint
 #define	ignorl(a)	a
 #endif
-
-/*
- * This directory definition also appears (obviously) in expreserve.c.
- * Change both if you change either.
- */
-char	mydir[] =	usrpath(preserve);
 
 /*
  * Limit on the number of printed entries
@@ -86,7 +79,7 @@ main(argc, argv)
 	 * If given only a -r argument, then list the saved files.
 	 */
 	if (argc == 2 && eq(argv[1], "-r")) {
-		listfiles(mydir);
+		listfiles(_PATH_PRESERVE);
 		exit(0);
 	}
 	if (argc != 3)
@@ -224,7 +217,7 @@ listfiles(dirname)
 	struct svfile *fp, svbuf[NENTRY];
 
 	/*
-	 * Open usrpath(preserve), and go there to make things quick.
+	 * Open _PATH_PRESERVE, and go there to make things quick.
 	 */
 	dir = opendir(dirname);
 	if (dir == NULL) {
@@ -237,7 +230,7 @@ listfiles(dirname)
 	}
 
 	/*
-	 * Look at the candidate files in usrpath(preserve).
+	 * Look at the candidate files in _PATH_PRESERVE.
 	 */
 	fp = &svbuf[0];
 	ecount = 0;
@@ -375,7 +368,7 @@ int	bestfd;			/* Keep best file open so it dont vanish */
 
 /*
  * Look for a file, both in the users directory option value
- * (i.e. usually /tmp) and in usrpath(preserve).
+ * (i.e. usually /tmp) and in _PATH_PRESERVE.
  * Want to find the newest so we search on and on.
  */
 findtmp(dir)
@@ -389,12 +382,12 @@ findtmp(dir)
 	bestfd = -1;
 
 	/*
-	 * Search usrpath(preserve) and, if we can get there, /tmp
+	 * Search _PATH_PRESERVE and, if we can get there, /tmp
 	 * (actually the users "directory" option).
 	 */
 	searchdir(dir);
-	if (chdir(mydir) == 0)
-		searchdir(mydir);
+	if (chdir(_PATH_PRESERVE) == 0)
+		searchdir(_PATH_PRESERVE);
 	if (bestfd != -1) {
 		/*
 		 * Gotcha.
@@ -426,7 +419,7 @@ findtmp(dir)
  * Don't chdir here, because the users directory
  * may be ".", and we would move away before we searched it.
  * Note that we actually chdir elsewhere (because it is too slow
- * to look around in usrpath(preserve) without chdir'ing there) so we
+ * to look around in _PATH_PRESERVE without chdir'ing there) so we
  * can't win, because we don't know the name of '.' and if the path
  * name of the file we want to unlink is relative, rather than absolute
  * we won't be able to find it again.

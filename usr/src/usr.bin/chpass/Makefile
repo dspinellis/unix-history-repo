@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-CFLAGS=	-I. -O
+CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	chpass.c field.c util.c
 OBJS=	chpass.o field.o util.o
@@ -37,10 +37,12 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
+	install -s -o root -g bin -m 4755 chpass ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	install -s -o root -g bin -m 4755 chpass ${DESTDIR}/bin/chpass
-	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chfn
-	rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/chpass ${DESTDIR}/bin/chsh
+	rm -f ${DESTDIR}/usr/bin/chfn; ln ${DESTDIR}/usr/bin/chpass \
+	    ${DESTDIR}/usr/bin/chfn
+	rm -f ${DESTDIR}/usr/bin/chsh; ln ${DESTDIR}/usr/bin/chpass \
+	    ${DESTDIR}/usr/bin/chsh
 	rm -f ${DESTDIR}/usr/man/cat1/chfn.0
 	rm -f ${DESTDIR}/usr/man/cat1/chsh.0
 	ln ${DESTDIR}/usr/man/cat1/chpass.0 ${DESTDIR}/usr/man/cat1/chfn.0

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.18 (Berkeley) %G%
+ *	@(#)def.h	5.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -23,7 +23,7 @@
 #include <sgtty.h>
 #include <ctype.h>
 #include <strings.h>
-#include "local.h"
+#include "pathnames.h"
 
 /*
  * Mail -- a mail program
@@ -31,6 +31,7 @@
  * Author: Kurt Shoens (UCB) March 25, 1978
  */
 
+#define	APPEND				/* New mail goes to end of mailbox */
 
 #define	ESCAPE		'~'		/* Default escape for sending */
 #define	NMLSIZE		1024		/* max names in a message list */

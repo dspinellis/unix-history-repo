@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -117,7 +117,7 @@ edit1(msgvec, type)
  * Run an editor on the file at "fpp" of "size" bytes,
  * and return a new file pointer.
  * Signals must be handled by the caller.
- * "Type" is 'e' for EDITOR, 'v' for VISUAL.
+ * "Type" is 'e' for _PATH_EX, 'v' for _PATH_VI.
  */
 FILE *
 run_editor(fp, size, type, readonly)
@@ -160,7 +160,7 @@ run_editor(fp, size, type, readonly)
 	}
 	nf = NULL;
 	if ((edit = value(type == 'e' ? "EDITOR" : "VISUAL")) == NOSTR)
-		edit = type == 'e' ? EDITOR : VISUAL;
+		edit = type == 'e' ? _PATH_EX : _PATH_VI;
 	if (run_command(edit, 0, -1, -1, tempEdit, NOSTR) < 0) {
 		(void) unlink(tempEdit);
 		goto out;

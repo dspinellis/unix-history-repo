@@ -14,12 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.4 (Berkeley) %G%
+#	@(#)Makefile	4.5 (Berkeley) %G%
 #
-DIFF=	/bin/diff
-DIFFH=	/usr/lib/diffh
-PR=	/bin/pr
-CFLAGS=	-O -DDIFF='"${DIFF}"' -DDIFFH='"${DIFFH}"' -DPR='"${PR}"'
+CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	diff.c diffdir.c diffreg.c
 OBJS=	diff.o diffdir.o diffreg.o
@@ -45,8 +42,8 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${HSRCS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 diff ${DESTDIR}/bin/diff
-	install -s -o bin -g bin -m 755 diffh ${DESTDIR}/usr/lib/diffh
+	install -s -o bin -g bin -m 755 diff ${DESTDIR}/usr/bin/diff
+	install -s -o bin -g bin -m 755 diffh ${DESTDIR}/usr/bin/diffh
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/diffh.0
 	ln ${DESTDIR}/usr/man/cat1/diff.0 ${DESTDIR}/usr/man/cat1/diffh.0

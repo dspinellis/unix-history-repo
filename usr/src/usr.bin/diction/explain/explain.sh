@@ -1,8 +1,8 @@
 #! /bin/sh
 #
-#	@(#)explain.sh	4.5	(Berkeley)	83/05/27
+#	@(#)explain.sh	4.6	(Berkeley)	89/05/11
 #
-D=/usr/lib/explain.d
+D=/usr/share/dict/explain.d
 while	echo 'phrase?'
 	read x
 do

@@ -22,22 +22,20 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
-#include <signal.h>
-#include <sys/file.h>
 #include <sys/types.h>
+#include <sys/signal.h>
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <sys/errno.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 #define	MAXREC	(64 * 1024)
 #define	NOCOUNT	(-2)
-
-#undef DEFTAPE
-#define	DEFTAPE	"/dev/rmt0"
 
 int	filen, guesslen, maxblk = MAXREC;
 long	lastrec, record, size, tsize;
@@ -81,7 +79,7 @@ main(argc, argv)
 	case 0:
 		if (op != READ)
 			usage();
-		inf = DEFTAPE;
+		inf = _PATH_DEFTAPE;
 		break;
 	case 1:
 		if (op != READ)

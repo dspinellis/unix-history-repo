@@ -14,12 +14,12 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 MAN=	which.0
 
 all which clean cleandir depend lint tags:
 
 install: ${MAN}
-	install -c -o bin -g bin -m 755 which.csh ${DESTDIR}/usr/ucb/which
+	install -c -o bin -g bin -m 755 which.csh ${DESTDIR}/usr/bin/which
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1

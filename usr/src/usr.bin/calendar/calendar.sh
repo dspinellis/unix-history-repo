@@ -4,9 +4,9 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)calendar.sh	4.7 (Berkeley) %G%
+#	@(#)calendar.sh	4.8 (Berkeley) %G%
 #
-PATH=/usr/lib:/bin:/usr/bin:/usr/ucb:/lib	# order important
+PATH=/usr/libexec:/bin:/usr/bin:/usr/ucb:/lib:/usr/pgrm	# order important
 
 tmp=/tmp/cal0$$
 trap "rm -f $tmp /tmp/cal1$$ /tmp/cal2$$"

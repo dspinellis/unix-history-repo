@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -24,9 +24,9 @@ static char sccsid[] = "@(#)util.c	5.9 (Berkeley) %G%";
 #include <tzfile.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <chpass.h>
 #include <strings.h>
 #include <ctype.h>
+#include "chpass.h"
 #include "pathnames.h"
 
 static int dmsize[] =

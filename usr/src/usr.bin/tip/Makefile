@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # make file for intermachine communications package
 #
@@ -87,7 +87,7 @@ depend:
 
 install: ${MAN}
 	cd aculib; make ${MFLAGS} install
-	install -s -o uucp -g dialer -m 4710 tip ${DESTDIR}/usr/bin/tip
+	install -s -o uucp -g dialer -m 4710 tip ${DESTDIR}/usr/bin
 	rm -f ${DESTDIR}/usr/bin/cu
 	ln ${DESTDIR}/usr/bin/tip ${DESTDIR}/usr/bin/cu
 	install -c -o bin -g bin -m 444 tip.0 ${DESTDIR}/usr/man/cat1

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)vacation.c	5.13 (Berkeley) %G%";
 #include <tzfile.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 /*
  *  VACATION -- return a message to the sender when on vacation.
@@ -340,8 +341,8 @@ sendmessage(myname)
 		syslog(LOG_NOTICE, "vacation: no ~%s/%s file.\n", myname, VMSG);
 		myexit(1);
 	}
-	execl("/usr/lib/sendmail", "sendmail", "-f", myname, from, NULL);
-	syslog(LOG_ERR, "vacation: can't exec /usr/lib/sendmail.\n");
+	execl(_PATH_SENDMAIL, "sendmail", "-f", myname, from, NULL);
+	syslog(LOG_ERR, "vacation: can't exec %s.\n", _PATH_SENDMAIL);
 	myexit(1);
 }
 

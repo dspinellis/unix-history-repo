@@ -1,10 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)dc.c	4.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)dc.c	4.6	(Berkeley)	%G%";
 #endif not lint
 
+#include <paths.h>
+#include <sys/signal.h>
 #include <stdio.h>
-#include <signal.h>
 #include "dc.h"
+
 main(argc,argv)
 int argc;
 char *argv[];
@@ -1579,7 +1581,7 @@ command(){
 		while((c = readc()) != '\n')*sl++ = c;
 		*sl = 0;
 		if((pid = fork()) == 0){
-			execl("/bin/sh","sh","-c",line,0);
+			execl(_PATH_BSHELL,"sh","-c",line,0);
 			exit(0100);
 		}
 		savint = signal(SIGINT, SIG_IGN);

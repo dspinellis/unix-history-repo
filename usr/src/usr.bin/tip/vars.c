@@ -16,10 +16,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vars.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vars.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "tip.h"
+#include "pathnames.h"
 
 /*
  * Definition of variables
@@ -48,7 +49,7 @@ value_t vtable[] = {
 	{ "host",	STRING|IREMOTE|INIT,	READ<<PUBLIC,
 	  "ho",		(char *)&HO },
 	{ "log",	STRING|INIT,		(READ|WRITE)<<ROOT,
-	  NOSTR,	"/usr/adm/aculog" },
+	  NOSTR,	_PATH_ACULOG },
 	{ "phones",	STRING|INIT|IREMOTE,	READ<<PUBLIC,
 	  NOSTR,	(char *)&PH },
 	{ "prompt",	CHAR,			(READ|WRITE)<<PUBLIC,
@@ -68,7 +69,7 @@ value_t vtable[] = {
 	{ "verbose",	BOOL,			(READ|WRITE)<<PUBLIC,
 	  "verb",	(char *)TRUE },
 	{ "SHELL",	STRING|ENVIRON|INIT,	(READ|WRITE)<<PUBLIC,
-	  NULL,		"/bin/sh" },
+	  NULL,		_PATH_BSHELL },
 	{ "HOME",	STRING|ENVIRON,		(READ|WRITE)<<PUBLIC,
 	  NOSTR,	NOSTR },
 	{ "echocheck",	BOOL,			(READ|WRITE)<<PUBLIC,

@@ -11,18 +11,16 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7preserve.c	7.13 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.14 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <pwd.h>
-#include "uparm.h"
-
-#define TMP	"/tmp"
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 #ifdef VMUNIX
 #define	HBLKS	2
@@ -33,12 +31,12 @@ static char *sccsid = "@(#)ex3.7preserve.c	7.13 (Berkeley) %G%";
 char xstr[1];			/* make loader happy */
 
 /*
- * Expreserve - preserve a file in usrpath(preserve)
+ * Expreserve - preserve a file in _PATH_PRESERVE.
  * Bill Joy UCB November 13, 1977
  *
  * This routine is very naive - it doesn't remove anything from
- * usrpath(preserve)... this may mean that we leave
- * stuff there... the danger in doing anything with usrpath(preserve)
+ * _PATH_PRESERVE... this may mean that we leave
+ * stuff there... the danger in doing anything with _PATH_PRESERVE
  * is that the clock may be screwed up and we may get confused.
  *
  * We are called in two ways - first from the editor with no argumentss
@@ -110,14 +108,14 @@ main(argc)
 	 * ... else preserve all the stuff in /tmp, removing
 	 * it as we go.
 	 */
-	if (chdir(TMP) < 0) {
-		perror(TMP);
+	if (chdir(_PATH_TMP) < 0) {
+		perror(_PATH_TMP);
 		exit(1);
 	}
 
 	tf = opendir(".");
 	if (tf == NULL) {
-		perror(TMP);
+		perror(_PATH_TMP);
 		exit(1);
 	}
 	while ((dirent = readdir(tf)) != NULL) {
@@ -137,10 +135,10 @@ main(argc)
 	exit(0);
 }
 
-char	pattern[] =	usrpath(preserve/Exaa`XXXXX);
+char	pattern[MAXPATHLEN];
 
 /*
- * Copy file name into usrpath(preserve)/...
+ * Copy file name into pattern[].
  * If name is (char *) 0, then do the standard input.
  * We make some checks on the input to make sure it is
  * really an editor temporary, generate a name for the
@@ -154,6 +152,7 @@ copyout(name)
 	static int reenter;
 	char buf[BUFSIZ];
 
+	(void)sprintf(pattern, "%s/Exaa`XXXXX", _PATH_PRESERVE);
 	/*
 	 * The first time we put in the digits of our
 	 * process number at the end of the pattern.
@@ -331,7 +330,7 @@ notify(uid, fname, flag, time)
 	gethostname(hostname, sizeof(hostname));
 	timestamp = ctime(&time);
 	timestamp[16] = 0;	/* blast from seconds on */
-	sprintf(cmd, "/bin/mail %s", pp->pw_name);
+	sprintf(cmd, "%s %s", _PATH_BINMAIL, pp->pw_name);
 	setuid(getuid());
 	mf = popen(cmd, "w");
 	if (mf == NULL)

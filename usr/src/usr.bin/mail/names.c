@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)names.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)names.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -263,7 +263,7 @@ outof(names, fo, hp)
 
 			/* XXX, can't really reuse the same image file */
 			if ((shell = value("SHELL")) == NOSTR)
-				shell = SHELL;
+				shell = _PATH_CSHELL;
 			pid = start_command(shell, sigmask(SIGHUP)|
 					sigmask(SIGINT)|sigmask(SIGQUIT),
 				image, -1, "-c", fname, NOSTR);

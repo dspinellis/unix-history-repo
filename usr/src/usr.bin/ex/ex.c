@@ -11,13 +11,14 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex.c	7.6.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex.c	7.7 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
+#include "pathnames.h"
 
 #ifdef TRACE
 #ifdef	vms
@@ -286,8 +287,8 @@ main(ac, av)
 		if (ac == 0) {
 			ppid = 0;
 			setrupt();
-			execl(EXRECOVER, "exrecover", "-r", 0);
-			filioerr(EXRECOVER);
+			execl(_PATH_EXRECOVER, "exrecover", "-r", 0);
+			filioerr(_PATH_EXRECOVER);
 			ex_exit(1);
 		}
 		CP(savedfile, *av++), ac--;

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.8 (Berkeley) %G%
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,7 +25,7 @@ MAN=	diction.0 style.0
 all: dprog style1 style2 style3
 
 dprog: diction.c ${LIBC}
-	${CC} ${CFLAGS} -DDICT=\"/usr/lib/dict.d\" diction.c -o $@
+	${CC} ${CFLAGS} diction.c -o $@
 
 style1: nwords.o ${LIBC}
 	${CC} nwords.o -o $@ -ll
@@ -42,23 +42,20 @@ clean:
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
-depend: ${SRCS} FRC
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 style1 ${DESTDIR}/usr/lib
-	install -s -o bin -g bin -m 755 style2 ${DESTDIR}/usr/lib
-	install -s -o bin -g bin -m 755 style3 ${DESTDIR}/usr/lib
-	install -s -o bin -g bin -m 755 dprog ${DESTDIR}/usr/lib
+	install -s -o bin -g bin -m 755 dprog style1 style2 style3 \
+	    ${DESTDIR}/usr/libexec
+	install -c -o bin -g bin -m 755 dict.d explain.d \
+	    ${DESTDIR}/usr/share/dict
 	install -c -o bin -g bin -m 755 style.sh ${DESTDIR}/usr/bin/style
 	install -c -o bin -g bin -m 755 diction.sh ${DESTDIR}/usr/bin/diction
 	install -c -o bin -g bin -m 755 explain.sh ${DESTDIR}/usr/bin/explain
-	install -c -o bin -g bin -m 755 dict.d ${DESTDIR}/usr/lib
-	install -c -o bin -g bin -m 755 explain.d ${DESTDIR}/usr/lib
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/explain.0
 	ln ${DESTDIR}/usr/man/cat1/diction.0 ${DESTDIR}/usr/man/cat1/explain.0
-#	ln ${DESTDIR}/usr/bin/explain ${DESTDIR}/usr/bin/suggest
 
 lint: ${SRCS}
 	lint ${CFLAGS} nwords.c

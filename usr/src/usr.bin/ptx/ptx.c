@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)ptx.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ptx.c	4.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	permuted title index
@@ -7,7 +7,7 @@ static char *sccsid = "@(#)ptx.c	4.4 (Berkeley) %G%";
 	Ptx reads the input file and permutes on words in it.
 	It excludes all words in the ignore file.
 	Alternately it includes words in the only file.
-	if neither is given it excludes the words in /usr/lib/eign.
+	if neither is given it excludes the words in _PATH_EIGN.
 
 	The width of the output line can be changed to num
 	characters.  If omitted 72 is default unless troff than 100.
@@ -20,9 +20,9 @@ static char *sccsid = "@(#)ptx.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#define DEFLTX "/usr/lib/eign"
+#include "pathnames.h"
+
 #define TILDE 0177
-#define SORT "/usr/bin/sort"
 #define	N 30
 #define	MAX	N*BUFSIZ
 #define LMAX	200
@@ -58,7 +58,7 @@ FILE *inptr = stdin;
 char *outfile;
 FILE *outptr = stdout;
 
-char sortfile[] = "/tmp/ptxsXXXXX";	/* output of sort program */
+char sortfile[] = _PATH_TMP;		/* output of sort program */
 char nofold[] = {'-', 'd', 't', TILDE, 0};
 char fold[] = {'-', 'd', 'f', 't', TILDE, 0};
 char *sortopt = nofold;
@@ -89,7 +89,7 @@ char **argv;
 
 /*	argument decoding	*/
 
-	xfile = DEFLTX;
+	xfile = _PATH_EIGN;
 	argv++;
 	while(argc>1 && **argv == '-') {
 		switch (*++*argv){
@@ -236,7 +236,7 @@ char **argv;
 		diag("Cannot fork",empty);
 
 	case 0:		/* child */
-		execl(SORT, SORT, sortopt, "+0", "-1", "+1",
+		execl(_PATH_SORT, "sort", sortopt, "+0", "-1", "+1",
 			sortfile, "-o", sortfile, 0);
 
 	default:	/* parent */

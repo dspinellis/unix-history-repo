@@ -15,20 +15,23 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)sendbug.sh	5.8 (Berkeley) %G%
+#	@(#)sendbug.sh	5.9 (Berkeley) %G%
 #
 # Create a bug report and mail to '4bsd-bugs'.
 
+PATH=/bin:/sbin:/usr/sbin:/usr/bin
+export PATH
+
 TEMP=/tmp/bug$$
-FORMAT=/usr/lib/bugformat
+FORMAT=/usr/share/misc/bugformat
 
 # uucp sites should use ": ${BUGADDR=ucbvax!4bsd-bugs}" with a suitable path.
 : ${BUGADDR=4bsd-bugs@BERKELEY.EDU}
-: ${EDITOR=/usr/ucb/vi}
+: ${EDITOR=vi}
 
-trap '/bin/rm -f $TEMP ; exit 1' 1 2 3 13 15
+trap 'rm -f $TEMP ; exit 1' 1 2 3 13 15
 
-/bin/cp $FORMAT $TEMP
+cp $FORMAT $TEMP
 if $EDITOR $TEMP
 then
 	if cmp -s $FORMAT $TEMP
@@ -37,9 +40,9 @@ then
 		exit
 	fi
 	case "$#" in
-	0) /usr/lib/sendmail -t -oi $BUGADDR  < $TEMP ;;
-	*) /usr/lib/sendmail -t -oi "$@" < $TEMP ;;
+	0) sendmail -t -oi $BUGADDR  < $TEMP ;;
+	*) sendmail -t -oi "$@" < $TEMP ;;
 	esac
 fi
 
-/bin/rm -f $TEMP
+rm -f $TEMP

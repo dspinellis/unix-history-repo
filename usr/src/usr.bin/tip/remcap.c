@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)remcap.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)remcap.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,12 +26,12 @@ static char sccsid[] = "@(#)remcap.c	5.2 (Berkeley) %G%";
  */
 #include <sys/file.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 #ifndef BUFSIZ
 #define	BUFSIZ		1024
 #endif
 #define MAXHOP		32		/* max number of tc= indirections */
-#define SYSREMOTE	"/etc/remote"	/* system remote file */
 
 #define	tgetent		rgetent
 #define	tnchktc		rnchktc
@@ -39,7 +39,7 @@ static char sccsid[] = "@(#)remcap.c	5.2 (Berkeley) %G%";
 #define	tgetnum		rgetnum
 #define	tgetflag	rgetflag
 #define	tgetstr		rgetstr
-#define	E_TERMCAP	RM = SYSREMOTE
+#define	E_TERMCAP	RM = _PATH_REMOTE
 #define V_TERMCAP	"REMOTE"
 #define V_TERM		"HOST"
 
@@ -79,13 +79,13 @@ tgetent(bp, name)
 	int rc1, rc2;
 
 	remotefile = cp = getenv(V_TERMCAP);
-	if (cp == (char *)0 || strcmp(cp, SYSREMOTE) == 0) {
-		remotefile = cp = SYSREMOTE;
+	if (cp == (char *)0 || strcmp(cp, _PATH_REMOTE) == 0) {
+		remotefile = cp = _PATH_REMOTE;
 		return (getent(bp, name, cp));
 	} else {
 		if ((rc1 = getent(bp, name, cp)) != 1)
 			*bp = '\0';
-		remotefile = cp = SYSREMOTE;
+		remotefile = cp = _PATH_REMOTE;
 		rc2 = getent(lbuf, name, cp);
 		if (rc1 != 1 && rc2 != 1)
 			return (rc2);
@@ -210,9 +210,9 @@ tnchktc()
 		return (0);
 	}
 	if (getent(tcbuf, tcname, remotefile) != 1) {
-		if (strcmp(remotefile, SYSREMOTE) == 0)
+		if (strcmp(remotefile, _PATH_REMOTE) == 0)
 			return (0);
-		else if (getent(tcbuf, tcname, SYSREMOTE) != 1)
+		else if (getent(tcbuf, tcname, _PATH_REMOTE) != 1)
 			return (0);
 	}
 	for (q = tcbuf; *q++ != ':'; )
