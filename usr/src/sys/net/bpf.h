@@ -63,7 +63,7 @@ struct bpf_stat {
 #define	BIOCSETF	_IOW(B,103, struct bpf_program)
 #define	BIOCFLUSH	_IO(B,104)
 #define BIOCPROMISC	_IO(B,105)
-#define	BIOCDEVP	_IOR(B,106, struct bpf_devp)
+#define	BIOCGDLT	_IOR(B,106, u_int)
 #define BIOCGETIF	_IOR(B,107, struct ifreq)
 #define BIOCSETIF	_IOW(B,108, struct ifreq)
 #define BIOCSRTIMEOUT	_IOW(B,109, struct timeval)
@@ -76,7 +76,7 @@ struct bpf_stat {
 #define	BIOCSETF	_IOW('B',103, struct bpf_program)
 #define	BIOCFLUSH	_IO('B',104)
 #define BIOCPROMISC	_IO('B',105)
-#define	BIOCDEVP	_IOR('B',106, struct bpf_devp)
+#define	BIOCGDLT	_IOR('B',106, u_int)
 #define BIOCGETIF	_IOR('B',107, struct ifreq)
 #define BIOCSETIF	_IOW('B',108, struct ifreq)
 #define BIOCSRTIMEOUT	_IOW('B',109, struct timeval)
@@ -84,14 +84,6 @@ struct bpf_stat {
 #define BIOCGSTATS	_IOR('B',111, struct bpf_stat)
 #define BIOCIMMEDIATE	_IOW('B',112, u_int)
 #endif
-
-/*
- * The device parameters of a network interface.
- */
-struct bpf_devp {
-	u_short	bdev_type;	/* data link layer type, codes below */
-	u_short	bdev_hdrlen;	/* length of a hardware packet header */
-};
 
 /*
  * Structure prepended to each packet.
@@ -114,7 +106,7 @@ struct bpf_hdr {
 
 /*
  * Data-link level type codes.
- * Currently, only ENDT_10MB and DLT_SLIP are supported.
+ * Currently, only DLT_EN10MB and DLT_SLIP are supported.
  */
 #define DLT_EN10MB	1	/* Ethernet (10Mb) */
 #define DLT_EN3MB	2	/* Experimental Ethernet (3Mb) */
