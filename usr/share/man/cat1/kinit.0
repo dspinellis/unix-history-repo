@@ -1,0 +1,132 @@
+
+
+
+KINIT(1)               BSD Reference Manual              KINIT(1)
+
+
+NNAAMMEE
+       kinit - Kerberos login utility
+
+SSYYNNOOPPSSIISS
+       kkiinniitt [ --iirrvvll ]
+
+DDEESSCCRRIIPPTTIIOONN
+       The _k_i_n_i_t command is used to login to the Kerberos authen-
+       tication and authorization system.  Note that only  regis-
+       tered  Kerberos  users  can  use the Kerberos system.  For
+       information about registering as a Kerberos user, see  the
+       _k_e_r_b_e_r_o_s_(_1_) manual page.
+
+       If  you are logged in to a workstation that is running the
+       _t_o_e_h_o_l_d service, you do not have to use _k_i_n_i_t_.   The  _t_o_e_-
+       _h_o_l_d  login procedure will log you into Kerberos automati-
+       cally.  You will need to use _k_i_n_i_t only  in  those  situa-
+       tions in which your original tickets have expired.  (Tick-
+       ets expire in about a day.)  Note  as  well  that  _t_o_e_h_o_l_d
+       will  automatically  destroy  your tickets when you logout
+       from the workstation.
+
+       When you use _k_i_n_i_t without options,  the  utility  prompts
+       for  your  username  and  Kerberos  password, and tries to
+       authenticate your login with the local Kerberos server.
+
+       If  Kerberos  authenticates  the  login   attempt,   _k_i_n_i_t
+       retrieves  your  initial  ticket and puts it in the ticket
+       file specified by your KRBTKFILE environment variable.  If
+       this  variable is undefined, your ticket will be stored in
+       the _/_t_m_p directory, in the file _t_k_t_u_i_d _, where _u_i_d  speci-
+       fies your user identification number.
+
+       If  you  have logged in to Kerberos without the benefit of
+       the workstation _t_o_e_h_o_l_d system, make sure you use the _k_d_e_-
+       _s_t_r_o_y command to destroy any active tickets before you end
+       your login session.  You may want to put the _k_d_e_s_t_r_o_y com-
+       mand  in  your  _._l_o_g_o_u_t  file so that your tickets will be
+       destroyed automatically when you logout.
+
+       The options to _k_i_n_i_t are as follows:
+
+       --ii     _k_i_n_i_t prompts you for a Kerberos instance.
+
+       --rr     _k_i_n_i_t prompts  you  for  a  Kerberos  realm.   This
+              option lets you authenticate yourself with a remote
+              Kerberos server.
+
+       --vv     Verbose mode.  _k_i_n_i_t prints the name of the  ticket
+              file used, and a status message indicating the suc-
+              cess or failure of your login attempt.
+
+
+
+MIT Project Athena     Kerberos Version 4.0                     1
+
+
+
+
+
+
+
+
+KINIT(1)               BSD Reference Manual              KINIT(1)
+
+
+       --ll     _k_i_n_i_t prompts you for a ticket lifetime in minutes.
+              Due to protocol restrictions in Kerberos Version 4,
+              this value must be between 5 and 1275 minutes.
+
+SSEEEE AALLSSOO
+       kerberos(1), kdestroy(1), klist(1), toehold(1)
+
+BBUUGGSS
+       The --rr option has not been fully implemented.
+
+AAUUTTHHOORRSS
+       Steve Miller, MIT Project Athena/Digital Equipment  Corpo-
+       ration
+       Clifford Neuman, MIT Project Athena
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena     Kerberos Version 4.0                     2
+
+
+
+
+
