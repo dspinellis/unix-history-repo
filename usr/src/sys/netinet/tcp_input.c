@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.94	83/05/14	*/
+/*	tcp_input.c	1.95	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -591,17 +591,16 @@ step6:
 	if ((tiflags & TH_URG) && ti->ti_urp &&
 	    TCPS_HAVERCVDFIN(tp->t_state) == 0) {
 		/*
-		 * This is a kludge, but the BBN C70 TCP
-		 * randomly sends packets with the urgent flag
-		 * set and random ti_urp values.  This crashes
-		 * the system because so_oobmark ends up being
-		 * interpreted as a negative number in soreceive.
+		 * This is a kludge, but if we receive accept
+		 * random urgent pointers, we'll crash in
+		 * soreceive.  It's hard to imagine someone
+		 * actually wanting to send this much urgent data.
 		 */
 		if (ti->ti_urp > tp->t_maxseg) {	/* XXX */
 			ti->ti_urp = 0;			/* XXX */
 			tiflags &= ~TH_URG;		/* XXX */
 			ti->ti_flags &= ~TH_URG;	/* XXX */
-			goto bbnurp;			/* XXX */
+			goto badurp;			/* XXX */
 		}
 		/*
 		 * If this segment advances the known urgent pointer,
@@ -628,7 +627,7 @@ step6:
 		if (ti->ti_urp <= ti->ti_len)
 			tcp_pulloutofband(so, ti);
 	}
-bbnurp:							/* XXX */
+badurp:							/* XXX */
 
 	/*
 	 * Process the segment text, merging it into the TCP sequencing queue,
