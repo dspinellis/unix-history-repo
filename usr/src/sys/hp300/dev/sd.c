@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	7.16 (Berkeley) %G%
+ *	@(#)sd.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -17,20 +17,26 @@
 #if NSD > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.2 92/04/10 20:48:35 mike Exp $";
+static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.4 92/12/26 13:26:40 mike Exp $";
 #endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/buf.h>
+#include <sys/stat.h>
 #include <sys/dkstat.h>
 #include <sys/disklabel.h>
 #include <sys/malloc.h>
 #include <sys/proc.h>
 #include <sys/ioctl.h>
+#include <sys/fcntl.h>
 
 #include <hp/dev/device.h>
 #include <hp300/dev/scsireg.h>
+#include <hp300/dev/sdvar.h>
+#ifdef USELEDS
+#include <hp300/hp300/led.h>
+#endif
 
 #include <vm/vm_param.h>
 #include <vm/lock.h>
@@ -61,79 +67,20 @@ struct	driver sddriver = {
 	sdinit, "sd", (int (*)())sdstart, (int (*)())sdgo, (int (*)())sdintr,
 };
 
-struct	size {
-	u_long	strtblk;
-	u_long	endblk;
-	int	nblocks;
-};
-
-struct sdinfo {
-	struct	size part[8];
-};
-
-/*
- * since the SCSI standard tends to hide the disk structure, we define
- * partitions in terms of DEV_BSIZE blocks.  The default partition table
- * (for an unlabeled disk) reserves 512K for a boot area, has an 8 meg
- * root and 32 meg of swap.  The rest of the space on the drive goes in
- * the G partition.  As usual, the C partition covers the entire disk
- * (including the boot area).
- */
-struct sdinfo sddefaultpart = {
-	     1024,   17408,   16384   ,	/* A */
-	    17408,   82944,   65536   ,	/* B */
-	        0,       0,       0   ,	/* C */
-	    17408,  115712,   98304   ,	/* D */
-	   115712,  218112,  102400   ,	/* E */
-	   218112,       0,       0   ,	/* F */
-	    82944,       0,       0   ,	/* G */
-	   115712,       0,       0   ,	/* H */
-};
-
-struct	sd_softc {
-	struct	hp_device *sc_hd;
-	struct	devqueue sc_dq;
-	int	sc_format_pid;	/* process using "format" mode */
-	short	sc_flags;
-	short	sc_type;	/* drive type */
-	short	sc_punit;	/* physical unit (scsi lun) */
-	u_short	sc_bshift;	/* convert device blocks to DEV_BSIZE blks */
-	u_int	sc_blks;	/* number of blocks on device */
-	int	sc_blksize;	/* device block size in bytes */
-	u_int	sc_wpms;	/* average xfer rate in 16 bit wds/sec. */
-	struct	sdinfo sc_info;	/* drive partition table & label info */
-} sd_softc[NSD];
-
-/* sc_flags values */
-#define	SDF_ALIVE	0x1
-#define SDF_WANTED	0x2
-#define SDF_RMEDIA	0x4
-
 #ifdef DEBUG
 int sddebug = 1;
 #define SDB_ERROR	0x01
 #define SDB_PARTIAL	0x02
 #endif
 
-struct sdstats {
-	long	sdresets;
-	long	sdtransfers;
-	long	sdpartials;
-} sdstats[NSD];
-
+struct	sd_softc sd_softc[NSD];
+struct	sdstats sdstats[NSD];
 struct	buf sdtab[NSD];
 struct	scsi_fmt_cdb sdcmd[NSD];
 struct	scsi_fmt_sense sdsense[NSD];
 
 static struct scsi_fmt_cdb sd_read_cmd = { 10, CMD_READ_EXT };
 static struct scsi_fmt_cdb sd_write_cmd = { 10, CMD_WRITE_EXT };
-
-#define	sdunit(x)	(minor(x) >> 3)
-#define sdpart(x)	(minor(x) & 0x7)
-#define	sdpunit(x)	((x) & 7)
-#define	b_cylin		b_resid
-
-#define	SDRETRY		2
 
 /*
  * Table of scsi commands users are allowed to access via "format"
@@ -241,10 +188,9 @@ sdident(sc, hd)
 	/*
 	 * Get a usable id string
 	 */
-	if (inqbuf.version != 1) {
-		bcopy("UNKNOWN", &idstr[0], 8);
-		bcopy("DRIVE TYPE", &idstr[8], 11);
-	} else {
+	switch (inqbuf.version) {
+	case 1:
+	case 2:
 		bcopy((caddr_t)&inqbuf.vendor_id, (caddr_t)idstr, 28);
 		for (i = 27; i > 23; --i)
 			if (idstr[i] != ' ')
@@ -258,6 +204,10 @@ sdident(sc, hd)
 			if (idstr[i] != ' ')
 				break;
 		idstr[i+1] = 0;
+		break;
+	default:
+		bcopy("UNKNOWN", &idstr[0], 8);
+		bcopy("DRIVE TYPE", &idstr[8], 11);
 	}
 	i = scsi_immed_command(ctlr, slave, unit, &cap,
 			       (u_char *)&capbuf, sizeof(capbuf), B_READ);
@@ -276,12 +226,19 @@ sdident(sc, hd)
 	/* return value of read capacity is last valid block number */
 	sc->sc_blks++;
 
-	if (inqbuf.version != 1)
-		printf("sd%d: type 0x%x, qual 0x%x, ver %d", hd->hp_unit,
-			inqbuf.type, inqbuf.qual, inqbuf.version);
-	else
+	switch (inqbuf.version) {
+	case 1:
+	case 2:
 		printf("sd%d: %s %s rev %s", hd->hp_unit, idstr, &idstr[8],
 			&idstr[24]);
+		if (inqbuf.version == 2)
+			printf(" (SCSI-2)");
+		break;
+	default:
+		printf("sd%d: type 0x%x, qual 0x%x, ver %d", hd->hp_unit,
+		       inqbuf.type, inqbuf.qual, inqbuf.version);
+		break;
+	}
 	printf(", %d %d byte blocks\n", sc->sc_blks, sc->sc_blksize);
 	if (inqbuf.qual & 0x80)
 		sc->sc_flags |= SDF_RMEDIA;
@@ -320,44 +277,6 @@ sdinit(hd)
 	sc->sc_dq.dq_slave = hd->hp_slave;
 	sc->sc_dq.dq_driver = &sddriver;
 
-	/*
-	 * If we don't have a disk label, build a default partition
-	 * table with 'standard' size root & swap and everything else
-	 * in the G partition.
-	 */
-	sc->sc_info = sddefaultpart;
-	/* C gets everything */
-	sc->sc_info.part[2].nblocks = sc->sc_blks;
-	sc->sc_info.part[2].endblk = sc->sc_blks;
-	/* G gets from end of B to end of disk */
-	sc->sc_info.part[6].nblocks = sc->sc_blks - sc->sc_info.part[1].endblk;
-	sc->sc_info.part[6].endblk = sc->sc_blks;
-	/*
-	 * We also define the D, E and F paritions as an alternative to
-	 * B and G.  D is 48Mb, starts after A and is intended for swapping.
-	 * E is 50Mb, starts after D and is intended for /usr. F starts
-	 * after E and is what ever is left.
-	 */
-	if (sc->sc_blks >= sc->sc_info.part[4].endblk) {
-		sc->sc_info.part[5].nblocks =
-			sc->sc_blks - sc->sc_info.part[4].endblk;
-		sc->sc_info.part[5].endblk = sc->sc_blks;
-	} else {
-		sc->sc_info.part[5].strtblk = 0;
-		sc->sc_info.part[3] = sc->sc_info.part[5];
-		sc->sc_info.part[4] = sc->sc_info.part[5];
-	}
-	/*
-	 * H is a single partition alternative to E and F.
-	 */
-	if (sc->sc_blks >= sc->sc_info.part[3].endblk) {
-		sc->sc_info.part[7].nblocks =
-			sc->sc_blks - sc->sc_info.part[3].endblk;
-		sc->sc_info.part[7].endblk = sc->sc_blks;
-	} else {
-		sc->sc_info.part[7].strtblk = 0;
-	}
-
 	sc->sc_flags |= SDF_ALIVE;
 	return(1);
 }
@@ -370,6 +289,56 @@ sdreset(sc, hd)
 	sdstats[hd->hp_unit].sdresets++;
 }
 
+/*
+ * Read or constuct a disklabel
+ */
+int
+sdgetinfo(dev)
+	dev_t dev;
+{
+	int unit = sdunit(dev);
+	register struct sd_softc *sc = &sd_softc[unit];
+	register struct disklabel *lp = &sc->sc_info.si_label;
+	register struct partition *pi;
+	char *msg, *readdisklabel();
+
+	/*
+	 * Set some default values to use while reading the label
+	 * or to use if there isn't a label.
+	 */
+	bzero((caddr_t)lp, sizeof *lp);
+	lp->d_type = DTYPE_SCSI;
+	lp->d_secsize = DEV_BSIZE;
+	lp->d_nsectors = 32;
+	lp->d_ntracks = 20;
+	lp->d_secpercyl = 32*20;
+	lp->d_npartitions = 3;
+	lp->d_partitions[2].p_offset = 0;
+	/* XXX ensure size is at least one device block */
+	lp->d_partitions[2].p_size =
+		roundup(LABELSECTOR+1, btodb(sc->sc_blksize));
+
+	/*
+	 * Now try to read the disklabel
+	 */
+	msg = readdisklabel(sdlabdev(dev), sdstrategy, lp);
+	if (msg == NULL)
+		return(0);
+	if (bcmp(msg, "I/O", 3) == 0) /* XXX */
+		return(EIO);
+
+	pi = lp->d_partitions;
+	printf("sd%d: WARNING: %s, ", unit, msg);
+#ifdef COMPAT_NOLABEL
+	printf("using old default partitioning\n");
+	sdmakedisklabel(unit, lp);
+#else
+	printf("defining `c' partition as entire disk\n");
+	pi[2].p_size = sc->sc_blks;
+#endif
+	return(0);
+}
+
 int
 sdopen(dev, flags, mode, p)
 	dev_t dev;
@@ -378,14 +347,42 @@ sdopen(dev, flags, mode, p)
 {
 	register int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
+	int mask, error;
 
 	if (unit >= NSD)
 		return(ENXIO);
 	if ((sc->sc_flags & SDF_ALIVE) == 0 && suser(p->p_ucred, &p->p_acflag))
 		return(ENXIO);
+	if (sc->sc_flags & SDF_ERROR)
+		return(EIO);
 
+	/*
+	 * Wait for any pending opens/closes to complete
+	 */
+	while (sc->sc_flags & (SDF_OPENING|SDF_CLOSING))
+		sleep((caddr_t)sc, PRIBIO);
+	/*
+	 * On first open, get label and partition info.
+	 * We may block reading the label, so be careful
+	 * to stop any other opens.
+	 */
+	if (sc->sc_info.si_open == 0) {
+		sc->sc_flags |= SDF_OPENING;
+		error = sdgetinfo(dev);
+		sc->sc_flags &= ~SDF_OPENING;
+		wakeup((caddr_t)sc);
+		if (error)
+			return(error);
+	}
 	if (sc->sc_hd->hp_dk >= 0)
 		dk_wpms[sc->sc_hd->hp_dk] = sc->sc_wpms;
+
+	mask = 1 << sdpart(dev);
+	if (mode == S_IFCHR)
+		sc->sc_info.si_copen |= mask;
+	else
+		sc->sc_info.si_bopen |= mask;
+	sc->sc_info.si_open |= mask;
 	return(0);
 }
 
@@ -397,20 +394,35 @@ sdclose(dev, flag, mode, p)
 {
 	int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
-	int s;
+	register struct sdinfo *si = &sc->sc_info;
+	int mask, s;
 
+	mask = 1 << sdpart(dev);
+	if (mode == S_IFCHR)
+		si->si_copen &= ~mask;
+	else
+		si->si_bopen &= ~mask;
+	si->si_open = si->si_bopen | si->si_copen;
 	/*
-	 * XXX we should really do this for all drives.
+	 * On last close, we wait for all activity to cease since
+	 * the label/parition info will become invalid.  Since we
+	 * might sleep, we must block any opens while we are here.
+	 * Note we don't have to about other closes since we know
+	 * we are the last one.
 	 */
-	if (sc->sc_flags & SDF_RMEDIA) {
+	if (si->si_open == 0) {
+		sc->sc_flags |= SDF_CLOSING;
 		s = splbio();
 		while (sdtab[unit].b_active) {
 			sc->sc_flags |= SDF_WANTED;
 			sleep((caddr_t)&sdtab[unit], PRIBIO);
 		}
 		splx(s);
+		sc->sc_flags &= ~(SDF_CLOSING|SDF_WLABEL|SDF_ERROR);
+		wakeup((caddr_t)sc);
 	}
 	sc->sc_format_pid = 0;
+	return(0);
 }
 
 /*
@@ -515,35 +527,49 @@ void
 sdstrategy(bp)
 	register struct buf *bp;
 {
-	register int unit = sdunit(bp->b_dev);
+	int unit = sdunit(bp->b_dev);
 	register struct sd_softc *sc = &sd_softc[unit];
-	register struct size *pinfo = &sc->sc_info.part[sdpart(bp->b_dev)];
 	register struct buf *dp = &sdtab[unit];
+	register struct partition *pinfo;
 	register daddr_t bn;
 	register int sz, s;
 
+	if (sc->sc_flags & SDF_ERROR) {
+		bp->b_error = EIO;
+		goto bad;
+	}
 	if (sc->sc_format_pid) {
 		if (sc->sc_format_pid != curproc->p_pid) {	/* XXX */
 			bp->b_error = EPERM;
-			bp->b_flags |= B_ERROR;
-			goto done;
+			goto bad;
 		}
 		bp->b_cylin = 0;
 	} else {
 		bn = bp->b_blkno;
 		sz = howmany(bp->b_bcount, DEV_BSIZE);
-		if (bn < 0 || bn + sz > pinfo->nblocks) {
-			sz = pinfo->nblocks - bn;
+		pinfo = &sc->sc_info.si_label.d_partitions[sdpart(bp->b_dev)];
+		if (bn < 0 || bn + sz > pinfo->p_size) {
+			sz = pinfo->p_size - bn;
 			if (sz == 0) {
 				bp->b_resid = bp->b_bcount;
 				goto done;
 			}
 			if (sz < 0) {
 				bp->b_error = EINVAL;
-				bp->b_flags |= B_ERROR;
-				goto done;
+				goto bad;
 			}
 			bp->b_bcount = dbtob(sz);
+		}
+		/*
+		 * Check for write to write protected label
+		 */
+		if (bn + pinfo->p_offset <= LABELSECTOR &&
+#if LABELSECTOR != 0
+		    bn + pinfo->p_offset + sz > LABELSECTOR &&
+#endif
+		    !(bp->b_flags & B_READ) && !(sc->sc_flags & SDF_WLABEL)) {
+			bp->b_error = EROFS;
+			goto bad;
 		}
 		/*
 		 * Non-aligned or partial-block transfers handled specially.
@@ -553,7 +579,7 @@ sdstrategy(bp)
 			sdlblkstrat(bp, sc->sc_blksize);
 			goto done;
 		}
-		bp->b_cylin = (bn + pinfo->strtblk) >> sc->sc_bshift;
+		bp->b_cylin = (bn + pinfo->p_offset) >> sc->sc_bshift;
 	}
 	s = splbio();
 	disksort(dp, bp);
@@ -563,6 +589,8 @@ sdstrategy(bp)
 	}
 	splx(s);
 	return;
+bad:
+	bp->b_flags |= B_ERROR;
 done:
 	biodone(bp);
 }
@@ -611,6 +639,23 @@ sderror(unit, sc, hp, stat)
 			/* recovered error, not a problem */
 			case 1:
 				cond = 0;
+				break;
+			/* possible media change */
+			case 6:
+				/*
+				 * For removable media, if we are doing the
+				 * first open (i.e. reading the label) go
+				 * ahead and retry, otherwise someone has
+				 * changed the media out from under us and
+				 * we should abort any further operations
+				 * until a close is done.
+				 */
+				if (sc->sc_flags & SDF_RMEDIA) {
+					if (sc->sc_flags & SDF_OPENING)
+						cond = -1;
+					else
+						sc->sc_flags |= SDF_ERROR;
+				}
 				break;
 			}
 		}
@@ -684,6 +729,15 @@ sdgo(unit)
 	register int pad;
 	register struct scsi_fmt_cdb *cmd;
 
+	/*
+	 * Drive is in an error state, abort all operations
+	 */
+	if (sc->sc_flags & SDF_ERROR) {
+		bp->b_flags |= B_ERROR;
+		bp->b_error = EIO;
+		sdfinish(unit, sc, bp);
+		return;
+	}
 	if (sc->sc_format_pid) {
 		cmd = &sdcmd[unit];
 		pad = 0;
@@ -700,6 +754,10 @@ sdgo(unit)
 #endif
 		sdstats[unit].sdtransfers++;
 	}
+#ifdef USELEDS
+	if (inledcontrol == 0)
+		ledcontrol(0, 0, LED_DISK);
+#endif
 	if (scsigo(hp->hp_ctlr, hp->hp_slave, sc->sc_punit, bp, cmd, pad) == 0) {
 		if (hp->hp_dk >= 0) {
 			dk_busy |= 1 << hp->hp_dk;
@@ -801,12 +859,55 @@ sdioctl(dev, cmd, data, flag, p)
 	int flag;
 	struct proc *p;
 {
-	register int unit = sdunit(dev);
+	int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
+	register struct disklabel *lp = &sc->sc_info.si_label;
+	int error, flags;
 
 	switch (cmd) {
 	default:
 		return (EINVAL);
+
+	case DIOCGDINFO:
+		*(struct disklabel *)data = *lp;
+		return (0);
+
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = lp;
+		((struct partinfo *)data)->part =
+			&lp->d_partitions[sdpart(dev)];
+		return (0);
+
+        case DIOCWLABEL:
+                if ((flag & FWRITE) == 0)
+                        return (EBADF);
+		if (*(int *)data)
+			sc->sc_flags |= SDF_WLABEL;
+		else
+			sc->sc_flags &= ~SDF_WLABEL;
+		return (0);
+
+        case DIOCSDINFO:
+                if ((flag & FWRITE) == 0)
+                        return (EBADF);
+		error = setdisklabel(lp, (struct disklabel *)data,
+				     (sc->sc_flags & SDF_WLABEL) ? 0
+				     : sc->sc_info.si_open);
+		return (error);
+
+        case DIOCWDINFO:
+		if ((flag & FWRITE) == 0)
+			return (EBADF);
+		error = setdisklabel(lp, (struct disklabel *)data,
+				     (sc->sc_flags & SDF_WLABEL) ? 0
+				     : sc->sc_info.si_open);
+		if (error)
+			return (error);
+		flags = sc->sc_flags;
+		sc->sc_flags = SDF_ALIVE | SDF_WLABEL;
+		error = writedisklabel(sdlabdev(dev), sdstrategy, lp);
+		sc->sc_flags = flags;
+		return (error);
 
 	case SDIOCSFORMAT:
 		/* take this device into or out of "format" mode */
@@ -856,11 +957,25 @@ sdsize(dev)
 {
 	register int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
+	int psize, didopen = 0;
 
 	if (unit >= NSD || (sc->sc_flags & SDF_ALIVE) == 0)
 		return(-1);
 
-	return(sc->sc_info.part[sdpart(dev)].nblocks);
+	/*
+	 * We get called very early on (via swapconf)
+	 * without the device being open so we may need
+	 * to handle it here.
+	 */
+	if (sc->sc_info.si_open == 0) {
+		if (sdopen(dev, FREAD|FWRITE, S_IFBLK, NULL))
+			return(-1);
+		didopen = 1;
+	}
+	psize = sc->sc_info.si_label.d_partitions[sdpart(dev)].p_size;
+	if (didopen)
+		(void) sdclose(dev, FREAD|FWRITE, S_IFBLK, NULL);
+	return (psize);
 }
 
 /*
@@ -874,30 +989,26 @@ sddump(dev)
 	int unit = sdunit(dev);
 	register struct sd_softc *sc = &sd_softc[unit];
 	register struct hp_device *hp = sc->sc_hd;
+	register struct partition *pinfo;
 	register daddr_t baddr;
 	register int maddr;
 	register int pages, i;
 	int stat;
 	extern int lowram;
 
-	/*
-	 * Hmm... all vax drivers dump maxfree pages which is physmem minus
-	 * the message buffer.  Is there a reason for not dumping the
-	 * message buffer?  Savecore expects to read 'dumpsize' pages of
-	 * dump, where dumpsys() sets dumpsize to physmem!
-	 */
-	pages = physmem;
-
 	/* is drive ok? */
 	if (unit >= NSD || (sc->sc_flags & SDF_ALIVE) == 0)
 		return (ENXIO);
+	pinfo = &sc->sc_info.si_label.d_partitions[part];
 	/* dump parameters in range? */
-	if (dumplo < 0 || dumplo >= sc->sc_info.part[part].nblocks)
+	if (dumplo < 0 || dumplo >= pinfo->p_size ||
+	    pinfo->p_fstype != FS_SWAP)
 		return (EINVAL);
-	if (dumplo + ctod(pages) > sc->sc_info.part[part].nblocks)
-		pages = dtoc(sc->sc_info.part[part].nblocks - dumplo);
+	pages = physmem;
+	if (dumplo + ctod(pages) > pinfo->p_size)
+		pages = dtoc(pinfo->p_size - dumplo);
 	maddr = lowram;
-	baddr = dumplo + sc->sc_info.part[part].strtblk;
+	baddr = dumplo + pinfo->p_offset;
 	/* scsi bus idle? */
 	if (!scsireq(&sc->sc_dq)) {
 		scsireset(hp->hp_ctlr);

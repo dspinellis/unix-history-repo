@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rdreg.h 1.2 90/10/12$
  *
- *	@(#)rdreg.h	7.3 (Berkeley) %G%
+ *	@(#)rdreg.h	7.4 (Berkeley) %G%
  */
 
 struct	rd_iocmd {
@@ -103,25 +103,6 @@ struct rd_describe {
 		d_interleave:8;	/* volume: current interleave */
  };
 
-/* indicies into rdinfo -- order is arbitrary */
-#define	RD7945A		0
-#define	RD9134D		1
-#define	RD9122S		2
-#define	RD7912P		3
-#define	RD7914P		4
-#define	RD7958A		5
-#define RD7957A		6
-#define	RD7933H		7
-#define	RD9134L		8
-#define	RD7936H		9
-#define	RD7937H		10
-#define RD7914CT	11
-#define RD7946A		12
-#define RD9122D		13
-#define RD7957B		14
-#define RD7958B		15
-#define RD7959B		16
-
 /* HW ids */
 #define	RD7946AID	0x220	/* also 7945A */
 #define	RD9134DID	0x221	/* also 9122S */
@@ -140,19 +121,38 @@ struct rd_describe {
 #define RD2200AID	0x22F
 #define RD2203AID	0x230	/* yet another guess */
 
-#define	NRD7945ABPT	(32 >> (DEV_BSHIFT-8))
+/* SW ids -- indicies into rdidentinfo, order is arbitrary */
+#define	RD7945A		0
+#define	RD9134D		1
+#define	RD9122S		2
+#define	RD7912P		3
+#define	RD7914P		4
+#define	RD7958A		5
+#define RD7957A		6
+#define	RD7933H		7
+#define	RD9134L		8
+#define	RD7936H		9
+#define	RD7937H		10
+#define RD7914CT	11
+#define RD7946A		12
+#define RD9122D		13
+#define RD7957B		14
+#define RD7958B		15
+#define RD7959B		16
+
+#define	NRD7945ABPT	16
 #define	NRD7945ATRK	7
-#define	NRD9134DBPT	(32 >> (DEV_BSHIFT-8))
+#define	NRD9134DBPT	16
 #define	NRD9134DTRK	6
-#define	NRD9122SBPT	(16 >> (DEV_BSHIFT-8))
+#define	NRD9122SBPT	8
 #define	NRD9122STRK	2
-#define	NRD7912PBPT	(64 >> (DEV_BSHIFT-8))
+#define	NRD7912PBPT	32
 #define	NRD7912PTRK	7
-#define	NRD7914PBPT	(64 >> (DEV_BSHIFT-8))
+#define	NRD7914PBPT	32
 #define	NRD7914PTRK	7
-#define	NRD7933HBPT	(92 >> (DEV_BSHIFT-8))
+#define	NRD7933HBPT	46
 #define	NRD7933HTRK	13
-#define	NRD9134LBPT	(32 >> (DEV_BSHIFT-8))
+#define	NRD9134LBPT	16
 #define	NRD9134LTRK	5
 
 /*
@@ -179,42 +179,24 @@ struct rd_describe {
  * 2200A:	113 x  8 x 1449		113 x  2 x 1449		113 x  4 x 1449
  * 2203A:	113 x 16 x 1449		113 x  4 x 1449		113 x  8 x 1449
  */
-#if DEV_BSIZE == 512
-#	define	NRD7936HBPT	123
-#	define	NRD7936HTRK	7
-#	define	NRD7937HBPT	123
-#	define	NRD7937HTRK	13
-#	define	NRD7957ABPT	22
-#	define	NRD7957ATRK	7
-#	define	NRD7958ABPT	36
-#	define	NRD7958ATRK	7
-#	define	NRD7957BBPT	18
-#	define	NRD7957BTRK	7
-#	define	NRD7958BBPT	42
-#	define	NRD7958BTRK	9
-#	define	NRD7959BBPT	42
-#	define	NRD7959BTRK	9
-#	define	NRD2200ABPT	113
-#	define	NRD2200ATRK	4
-#	define	NRD2203ABPT	113
-#	define	NRD2203ATRK	8
-#endif
-#if DEV_BSIZE == 1024
-#	define	NRD7957ABPT	11
-#	define	NRD7957ATRK	7
-#	define	NRD7958ABPT	21
-#	define	NRD7958ATRK	6
-#	define	NRD7957BBPT	9
-#	define	NRD7957BTRK	7
-#	define	NRD7958BBPT	21
-#	define	NRD7958BTRK	9
-#	define	NRD7959BBPT	21
-#	define	NRD7959BTRK	9
-#	define	NRD2200ABPT	113
-#	define	NRD2200ATRK	2
-#	define	NRD2203ABPT	113
-#	define	NRD2203ATRK	4
-#endif
+#define	NRD7936HBPT	123
+#define	NRD7936HTRK	7
+#define	NRD7937HBPT	123
+#define	NRD7937HTRK	13
+#define	NRD7957ABPT	22
+#define	NRD7957ATRK	7
+#define	NRD7958ABPT	36
+#define	NRD7958ATRK	7
+#define	NRD7957BBPT	18
+#define	NRD7957BTRK	7
+#define	NRD7958BBPT	42
+#define	NRD7958BTRK	9
+#define	NRD7959BBPT	42
+#define	NRD7959BTRK	9
+#define	NRD2200ABPT	113
+#define	NRD2200ATRK	4
+#define	NRD2203ABPT	113
+#define	NRD2203ATRK	8
 
 /* controller "unit" number */
 #define	RDCTLR		15
