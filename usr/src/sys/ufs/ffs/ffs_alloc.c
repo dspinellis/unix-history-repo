@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.9	82/07/22	*/
+/*	ffs_alloc.c	2.10	82/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,7 +63,7 @@ alloc(ip, bpref, size)
 	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
 	      fs->fs_dsize * fs->fs_minfree / 100)
 		goto nospace;
-#ifdef	QUOTA
+#ifdef QUOTA
 	if (chkdq(ip, (long)((unsigned)size/DEV_BSIZE), 0))
 		return(NULL);
 #endif
@@ -121,7 +121,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("realloccg: bad bprev");
 	}
-#ifdef	QUOTA
+#ifdef QUOTA
 	if (chkdq(ip, (long)((unsigned)(nsize-osize)/DEV_BSIZE), 0))
 		return(NULL);
 #endif
@@ -194,7 +194,7 @@ ialloc(pip, ipref, mode)
 	fs = pip->i_fs;
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
-#ifdef	QUOTA
+#ifdef QUOTA
 	if (chkiq(pip->i_dev, NULL, u.u_uid, 0))
 		return(NULL);
 #endif

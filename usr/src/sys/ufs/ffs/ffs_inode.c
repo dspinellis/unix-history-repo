@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.21	82/07/30	*/
+/*	ffs_inode.c	4.22	82/08/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,7 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/inline.h"
-#ifdef	QUOTA
+#ifdef QUOTA
 #include "../h/quota.h"
 #endif
 
@@ -162,7 +162,7 @@ loop:
 	 */
 	remque(ip);
 	insque(ip, ih);
-#ifdef	QUOTA
+#ifdef QUOTA
 	dqrele(ip->i_dquot);
 #endif
 	ip->i_dev = dev;
@@ -192,7 +192,7 @@ loop:
 		 * (probably the two methods are interchangable)
 		 */
 		ip->i_number = 0;
-#ifdef	QUOTA
+#ifdef QUOTA
 		ip->i_dquot = NODQUOT;
 #endif
 		iput(ip);
@@ -202,7 +202,7 @@ loop:
 	dp += itoo(fs, ino);
 	ip->i_ic = dp->di_ic;
 	brelse(bp);
-#ifdef	QUOTA
+#ifdef QUOTA
 	if (ip->i_mode == 0)
 		ip->i_dquot = NODQUOT;
 	else
@@ -244,7 +244,7 @@ irele(ip)
 			ip->i_rdev = 0;
 			ip->i_flag |= IUPD|ICHG;
 			ifree(ip, ip->i_number, mode);
-#ifdef	QUOTA
+#ifdef QUOTA
 			chkiq(ip->i_dev, ip, ip->i_uid, 0);
 			dqrele(ip->i_dquot);
 			ip->i_dquot = NODQUOT;
@@ -333,7 +333,7 @@ itrunc(ip)
 	daddr_t bn;
 	struct inode itmp;
 	register struct fs *fs;
-#ifdef	QUOTA
+#ifdef QUOTA
 	register long cnt = 0;
 	long tloop();
 #endif
@@ -371,7 +371,7 @@ itrunc(ip)
 	bn = ip->i_ib[NIADDR-1];
 	if (bn != (daddr_t)0) {
 		ip->i_ib[NIADDR - 1] = (daddr_t)0;
-#ifdef	QUOTA
+#ifdef QUOTA
 		cnt +=
 #endif
 			tloop(ip, bn, 1);
@@ -383,7 +383,7 @@ itrunc(ip)
 		bn = ip->i_ib[i];
 		if (bn != (daddr_t)0) {
 			ip->i_ib[i] = (daddr_t)0;
-#ifdef	QUOTA
+#ifdef QUOTA
 			cnt +=
 #endif
 				tloop(ip, bn, 0);
@@ -400,7 +400,7 @@ itrunc(ip)
 			continue;
 		ip->i_db[i] = (daddr_t)0;
 		fre(ip, bn, size = (off_t)blksize(fs, ip, i));
-#ifdef	QUOTA
+#ifdef QUOTA
 		cnt += size / DEV_BSIZE;
 #endif
 	}
@@ -409,12 +409,12 @@ itrunc(ip)
 	 * Inode was written and flags updated above.
 	 * No need to modify flags here.
 	 */
-#ifdef	QUOTA
+#ifdef QUOTA
 	(void) chkdq(ip, -cnt, 0);
 #endif
 }
 
-#ifdef	QUOTA
+#ifdef QUOTA
 long
 #endif
 tloop(ip, bn, indflg)
@@ -427,7 +427,7 @@ tloop(ip, bn, indflg)
 	register daddr_t *bap;
 	register struct fs *fs;
 	daddr_t nb;
-#ifdef	QUOTA
+#ifdef QUOTA
 	register long cnt = 0;
 #endif
 
@@ -446,13 +446,13 @@ tloop(ip, bn, indflg)
 		if (nb == (daddr_t)0)
 			continue;
 		if (indflg) {
-#ifdef	QUOTA
+#ifdef QUOTA
 			cnt +=
 #endif
 				tloop(ip, nb, 0);
 		} else {
 			fre(ip, nb, fs->fs_bsize);
-#ifdef	QUOTA
+#ifdef QUOTA
 			cnt += fs->fs_bsize / DEV_BSIZE;
 #endif
 		}
@@ -460,7 +460,7 @@ tloop(ip, bn, indflg)
 	if (bp != NULL)
 		brelse(bp);
 	fre(ip, bn, fs->fs_bsize);
-#ifdef	QUOTA
+#ifdef QUOTA
 	cnt += fs->fs_bsize / DEV_BSIZE;
 	return(cnt);
 #endif
@@ -479,7 +479,7 @@ tloop(ip, bn, indflg)
  *
  * this is called from sumount()/sys3.c when dev is being unmounted
  */
-#ifdef	QUOTA
+#ifdef QUOTA
 iflush(dev, iq)
 	dev_t dev;
 	struct inode *iq;
@@ -492,7 +492,7 @@ iflush(dev)
 	register open = 0;
 
 	for (ip = inode; ip < inodeNINODE; ip++) {
-#ifdef	QUOTA
+#ifdef QUOTA
 		if (ip != iq && ip->i_dev == dev)
 #else
 		if (ip->i_dev == dev)
@@ -512,7 +512,7 @@ iflush(dev)
 				 * infrequently, we would gain very little,
 				 * while making the code bigger.
 				 */
-#ifdef	QUOTA
+#ifdef QUOTA
 				dqrele(ip->i_dquot);
 				ip->i_dquot = NODQUOT;
 #endif
