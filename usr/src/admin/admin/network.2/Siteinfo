@@ -1,24 +1,10 @@
-.\"     @(#)Siteinfo	1.2 (Berkeley) %G%
+.\"     @(#)Siteinfo	1.3 (Berkeley) %G%
 .ps 11
 .vs 13
 .ce 3
 Site Information Form
 April 30, 1991
 .b "Please type or block print"
-.sp -3.5
-.in +4i
-.(l
-.TS
-box;
-cs
-ll.
-.ft B
-Tape Format
-
-9 track, 1600bpi  \(ci	8mm  \(ci 
-9 track, 6250bpi  \(ci
-.ft
-.TE
 .sp 1
 .)l
 .in -4i
