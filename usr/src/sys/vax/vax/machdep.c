@@ -1,4 +1,4 @@
-/*	machdep.c	4.2	%G%	*/
+/*	machdep.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,11 +16,11 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 4.2) %G% \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.1) 11/10/80 \n";
 int	icode[] =
 {
-	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
-	0x02dd09af,	/* "/etc/init.vm"; pushl $2 */
+	0x9f19af9f,	/* pushab [&"init",0]; pushab */
+	0x02dd09af,	/* "/etc/init"; pushl $2 */
 	0xbc5c5ed0,	/* movl sp,ap; chmk */
 	0x2ffe110b,	/* $exec; brb .; "/ */
 	0x2f637465,	/* etc/ */
@@ -45,7 +45,12 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 
+#if VAX==780
 	tocons(TXDB_CWSI);
+#endif
+#if VAX==750
+	tocons(TXDB_CCSF);
+#endif
 	printf(version);
 	printf("real mem  = %d\n", ctob(maxmem));
 
@@ -322,17 +327,32 @@ dorti()
 #define	MEMINTVL	(60*60*10)		/* 10 minutes */
 int	memintvl = MEMINTVL;
 
+#if VAX==780
 #define	MHIERR	0x20000000
 #define	MERLOG	0x10000000
+#else
+#define	MUNCORR	0xc0000000
+#define	MCORERR	0x40000000
+#define	MERLOG	(MUNCORR|MCORERR)
+#endif
+
 
 memchk()
 {
+#if VAX==780
 	register int c = mcr[2];
+#else
+	register int c = mcr[0];
+#endif
 
 	if (c & MERLOG) {
-		printf("MEMERR: mcra %X mcrb %X mcrc %X\n", mcr[0],
-		    mcr[1], c);
+#if VAX==780
+		printf("MEMERR: mcra %X mcrb %X mcrc %X\n", mcr[0], mcr[1], c);
 		mcr[2] = (MERLOG|MHIERR);
+#else
+		printf("MEMERR: csr0 %X csr1 %X csr2 %X\n", c, mcr[1], mcr[2]);
+		mcr[0] = MERLOG;
+#endif
 	}
 	if (memintvl > 0)
 		timeout(memchk, (caddr_t)0, memintvl);
@@ -359,6 +379,7 @@ tbiscl(v)
 	}
 }
   
+#if VAX==780
 int	hangcnt;
 
 unhang()
@@ -374,6 +395,7 @@ unhang()
 		ubareset();
 	}
 }
+#endif
 
 int	waittime = -1;
 
@@ -394,16 +416,23 @@ boot(panic, arghowto)
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
-	if ((howto&RB_HALT)) {
-		tocons(0xf01);
+#if VAX==780
+	if (howto&RB_HALT)
 		tocons(TXDB_WSI);
-	} else if (panic == RB_PANIC)
+	else if (panic == RB_PANIC)
 		;			/* sent TXDB_CWSI at boot */
 	else {
-		tocons(0xf01);
 		tocons(TXDB_WSI);
 		tocons(TXDB_BOOT);	/* defboo.cmd, not restar.cmd */
 	}
+#endif
+#if VAX==750
+	if (howto&RB_HALT)
+		;
+	else
+		tocons(TXDB_BOOT);
+	{ asm("movl r11,r5"); }		/* where boot flags go on comet */
+#endif
 	for (;;)
 		asm("halt");
 #ifdef lint

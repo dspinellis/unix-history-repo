@@ -1,19 +1,19 @@
-/*	tty_subr.c	4.1	%G%	*/
-
 #include "../h/param.h"
-#include "../h/tty.h"
 #include "../h/systm.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
+#include "../h/tty.h"
 
 struct cblock {
-	struct cblock *c_next;
+	struct	cblock *c_next;
 	char	c_info[CBSIZE];
 };
 
-struct	cblock	cfree[NCLIST];
-int	cbad;
-struct	cblock	*cfreelist;
+struct	cblock cfree[NCLIST];
+struct	cblock *cfreelist;
+
+int	cfreecount;
+char	cwaiting;
 
 /*
  * Character list get/put
@@ -38,17 +38,52 @@ register struct clist *p;
 			p->c_cl = NULL;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
+			if (cwaiting) {
+				wakeup(&cwaiting);
+				cwaiting = 0;
+			}
 		} else if (((int)p->c_cf & CROUND) == 0){
 			bp = (struct cblock *)(p->c_cf);
 			bp--;
 			p->c_cf = bp->c_next->c_info;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
+			if (cwaiting) {
+				wakeup(&cwaiting);
+				cwaiting = 0;
+			}
 		}
 	}
 	splx(s);
 	return(c);
 }
+
+#if HAVTR > 0
+trgetc(p)
+register struct clist *p;
+{
+	register struct cblock *bp;
+	register int c, s;
+
+	if (p->c_cc <= 0) {
+		c = -1;
+		p->c_cc = 0;
+		p->c_cf = NULL;
+	} else {
+		c = *p->c_cf++ & 0377;
+		if (--p->c_cc<=0) {
+			p->c_cf = NULL;
+		} else if (((int)p->c_cf & CROUND) == 0) {
+			bp = (struct cblock *)(p->c_cf);
+			bp--;
+			p->c_cf = bp->c_next->c_info;
+		}
+	}
+	return(c);
+}
+#endif
 
 /*
  * copy clist to buffer.
@@ -68,6 +103,7 @@ register char *cp;
 	if (q->c_cc <= 0) {
 		q->c_cc = 0;
 		q->c_cf = q->c_cl = NULL;
+		splx(s);
 		return(0);
 	}
 	acp = cp;
@@ -81,6 +117,11 @@ register char *cp;
 			q->c_cf = q->c_cl = NULL;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
+			if (cwaiting) {
+				wakeup(&cwaiting);
+				cwaiting = 0;
+			}
 			break;
 		}
 		if (((int)q->c_cf & CROUND) == 0) {
@@ -89,11 +130,52 @@ register char *cp;
 			q->c_cf = bp->c_next->c_info;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
+			if (cwaiting) {
+				wakeup(&cwaiting);
+				cwaiting = 0;
+			}
 		}
 	}
 	splx(s);
 	return(cp-acp);
 }
+
+#if HAVTR > 0
+/*
+ * Traverse a clist copying its contents to a buffer.
+ * q->cc and q->cf are updated with the current position
+ * in the list, but bytes are not released to the freelist.
+ */
+trq_to_b(q, cp, cc)
+register struct clist *q;
+register char *cp;
+register cc;
+{
+	register struct cblock *bp;
+	char *acp;
+
+	if (cc <= 0)
+		return(0);
+	if (q->c_cc <= 0)
+		return(0);
+
+	acp = cp;
+	cc++;
+	while (--cc) {
+		*cp++ = *q->c_cf++;
+		if (((int)q->c_cf & CROUND) == 0) {
+			bp = (struct cblock *)(q->c_cf);
+			bp--;
+			q->c_cf = bp->c_next->c_info;
+		}
+		if (--q->c_cc <= 0)
+			break;
+	}
+	return(cp-acp);
+}
+#endif
+
 
 /*
  * Return count of contiguous characters
@@ -123,7 +205,8 @@ int s;
 		end += cc;
 		while (p < end) {
 			if (*p & flag) {
-				cc = (int)p - (int)q->c_cf;
+				cc = (int)p;
+				cc -= (int)q->c_cf;
 				break;
 			}
 			p++;
@@ -134,64 +217,71 @@ out:
 	return(cc);
 }
 
+
+
 /*
- * Update clist to show that cc characters
- * were removed.  It is assumed that cc < CBSIZE.
+ * Flush cc bytes from q.
  */
 ndflush(q, cc)
 register struct clist *q;
 register cc;
 {
+register struct cblock *bp;
+char *end;
+int rem;
 register s;
 
-	if (cc == 0)
-		return;
 	s = spl6();
 	if (q->c_cc < 0) {
-		if (q->c_cf != NULL) {
-			q->c_cc += cc;
-			q->c_cf += cc;
-			goto out;
-		}
-		q->c_cc = 0;
+		printf("neg q flush\n");
 		goto out;
 	}
 	if (q->c_cc == 0) {
 		goto out;
 	}
-	if (cc > CBSIZE || cc <= 0) {
-		cbad++;
-		goto out;
-	}
-	q->c_cc -= cc;
-	q->c_cf += cc;
-	if (((int)q->c_cf & CROUND) == 0) {
-		register struct cblock *bp;
-
-		bp = (struct cblock *)(q->c_cf) -1;
-		if (bp->c_next) {
-			q->c_cf = bp->c_next->c_info;
+	while (cc>0 && q->c_cc) {
+		bp = (struct cblock *)((int)q->c_cf & ~CROUND);
+		if ((int)bp == (((int)q->c_cl-1) & ~CROUND)) {
+			end = q->c_cl;
 		} else {
-			q->c_cf = q->c_cl = NULL;
+			end = (char *)((int)bp + sizeof (struct cblock));
 		}
-		bp->c_next = cfreelist;
-		cfreelist = bp;
-	} else
-	if (q->c_cc == 0) {
-		register struct cblock *bp;
-		q->c_cf = (char *)((int)q->c_cf & ~CROUND);
-		bp = (struct cblock *)(q->c_cf);
-		bp->c_next = cfreelist;
-		cfreelist = bp;
+		rem = end - q->c_cf;
+		if (cc >= rem) {
+			cc -= rem;
+			q->c_cc -= rem;
+			q->c_cf = bp->c_next->c_info;
+			bp->c_next = cfreelist;
+			cfreelist = bp;
+			cfreecount += CBSIZE;
+			if (cwaiting) {
+				wakeup(&cwaiting);
+				cwaiting = 0;
+			}
+		} else {
+			q->c_cc -= cc;
+			q->c_cf += cc;
+			if (q->c_cc <= 0) {
+				bp->c_next = cfreelist;
+				cfreelist = bp;
+				cfreecount += CBSIZE;
+				if (cwaiting) {
+					wakeup(&cwaiting);
+					cwaiting = 0;
+				}
+			}
+			break;
+		}
+	}
+	if (q->c_cc <= 0) {
 		q->c_cf = q->c_cl = NULL;
+		q->c_cc = 0;
 	}
 out:
 	splx(s);
 }
 
-/*
- * Put character c in queue p.
- */
+
 putc(c, p)
 register struct clist *p;
 {
@@ -206,6 +296,7 @@ register struct clist *p;
 			return(-1);
 		}
 		cfreelist = bp->c_next;
+		cfreecount -= CBSIZE;
 		bp->c_next = NULL;
 		p->c_cf = cp = bp->c_info;
 	} else if (((int)cp & CROUND) == 0) {
@@ -216,6 +307,7 @@ register struct clist *p;
 		}
 		bp = bp->c_next;
 		cfreelist = bp->c_next;
+		cfreecount -= CBSIZE;
 		bp->c_next = NULL;
 		cp = bp->c_info;
 	}
@@ -225,6 +317,8 @@ register struct clist *p;
 	splx(s);
 	return(0);
 }
+
+
 
 /*
  * copy buffer to clist.
@@ -242,11 +336,14 @@ register int cc;
 	if (cc <= 0)
 		return(0);
 	acc = cc;
+
+
 	s = spl6();
 	if ((cq = q->c_cl) == NULL || q->c_cc < 0) {
 		if ((bp = cfreelist) == NULL) 
 			goto out;
 		cfreelist = bp->c_next;
+		cfreecount -= CBSIZE;
 		bp->c_next = NULL;
 		q->c_cf = cq = bp->c_info;
 	}
@@ -258,6 +355,7 @@ register int cc;
 				goto out;
 			bp = bp->c_next;
 			cfreelist = bp->c_next;
+			cfreecount -= CBSIZE;
 			bp->c_next = NULL;
 			cq = bp->c_info;
 		}
@@ -270,6 +368,63 @@ out:
 	splx(s);
 	return(cc);
 }
+
+char *
+wb_to_q(cp, cc, q)
+register char *cp;
+register struct clist *q;
+register cc;
+{
+char *f;
+register s;
+
+	s = spl6();
+	while (cc > cfreecount) {
+		cwaiting = 1;
+		sleep(&cwaiting, TTOPRI);
+	}
+	if (q->c_cc==0) {
+		b_to_q(cp, cc, q);
+		f = q->c_cf;
+	} else {
+		(void) putc(*cp++, q);
+		f = q->c_cl;
+		f--;
+		b_to_q(cp, --cc, q);
+	}
+	splx(s);
+	return(f);
+}
+
+#ifdef notdef
+char *
+nb_to_q(cp, cc, q)
+register char *cp;
+register struct clist *q;
+register cc;
+{
+char *f;
+register s;
+
+	s = spl6();
+	if (cc > cfreecount) {
+		f = NULL;
+		goto out;
+	}
+	if (q->c_cc==0) {
+		b_to_q(cp, cc, q);
+		f = q->c_cf;
+	} else {
+		(void) putc(*cp++, q);
+		f = q->c_cl;
+		f--;
+		b_to_q(cp, --cc, q);
+	}
+out:
+	splx(s);
+	return(f);
+}
+#endif
 
 /*
  * Given a non-NULL pointter into the list (like c_cf which
@@ -314,6 +469,7 @@ register struct clist *p;
 			p->c_cl = p->c_cf = NULL;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
 		} else if (((int)p->c_cl & CROUND) == sizeof(bp->c_next)) {
 			p->c_cl = (char *)((int)p->c_cl & ~CROUND);
 			bp = (struct cblock *)p->c_cf;
@@ -325,6 +481,7 @@ register struct clist *p;
 			bp = bp->c_next;
 			bp->c_next = cfreelist;
 			cfreelist = bp;
+			cfreecount += CBSIZE;
 			obp->c_next = NULL;
 		}
 	}
@@ -359,9 +516,10 @@ cinit()
 
 	ccp = (int)cfree;
 	ccp = (ccp+CROUND) & ~CROUND;
-	for(cp=(struct cblock *)ccp; cp <= &cfree[NCLIST-1]; cp++) {
+	for(cp=(struct cblock *)ccp; cp < &cfree[NCLIST-1]; cp++) {
 		cp->c_next = cfreelist;
 		cfreelist = cp;
+		cfreecount += CBSIZE;
 	}
 	ccp = 0;
 	for(cdp = cdevsw; cdp->d_open; cdp++)
@@ -369,11 +527,11 @@ cinit()
 	nchrdev = ccp;
 }
 
+
 /*
  * integer (2-byte) get/put
  * using clists
  */
-/*
 getw(p)
 register struct clist *p;
 {
@@ -384,7 +542,19 @@ register struct clist *p;
 	s = getc(p);
 	return(s | (getc(p)<<8));
 }
-*/
+
+#if HAVTR > 0
+trgetw(p)
+register struct clist *p;
+{
+	register int w;
+
+	if (p->c_cc <=1)
+		return(-1);
+	w = trgetc(p);
+	return(w | (trgetc(p)<<8));
+}
+#endif
 
 putw(c, p)
 register struct clist *p;

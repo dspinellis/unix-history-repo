@@ -1,5 +1,4 @@
-/*	trap.c	4.2	%G%	*/
-
+/*	trap.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -37,7 +36,7 @@ unsigned code;
 	switch (type) {
 
 	default:
-		printf("trap type %d, code = %x\n", type, code);
+		printf("trap type %d, code = %x, pc = %x\n", type, code, pc);
 		panic("trap");
 
 	case PROTFLT + USER:	/* protection fault */

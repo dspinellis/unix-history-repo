@@ -1,8 +1,8 @@
-#
-# Machine Language Assist for UC Berkeley Virtual Vax/Unix
-#
-#	locore.s		4.3	%G%
-#
+/*
+ * Machine Language Assist for UC Berkeley Virtual Vax/Unix
+ *
+ *	locore.s	4.4	%G%
+ */
 
 	.set	HIGH,31		# mask for total disable
 	.set	MCKVEC,4	# offset into Scbbase of machine check vector
@@ -14,21 +14,21 @@
 	.set	MAXNBUF,128
 	.set	UPAGES,6	# size of user area, in pages
 
-# ====================================
-# Trap vectors and C interface for Vax
-# ====================================
+/*
+ * Trap vectors and C interface for Vax
+ */ 
 
-#
-# System control block
-#
+/*
+ * System control block
+ */
 
 	.set	INTSTK,1	# handle this interrupt on the interrupt stack
 	.set	HALT,3		# halt if this interrupt occurs
-#	.align	PGSHIFT
+/*	.align	PGSHIFT	*/
 	.globl	Scbbase
 Scbbase:
 	.long	Xstray + INTSTK		# unused
-	.long	Xmachcheck + INTSTK	# machine check interrupt
+	.long	Xmachcheck + HALT	# machine check interrupt
 	.long	Xkspnotval + INTSTK	# kernel stack not valid
 	.long	Xpowfail + HALT		# power fail
 	.long	Xprivinflt		# privileged instruction 
@@ -88,20 +88,29 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==750
+	.long	Xconsdin + INTSTK	# tu58 receiver
+	.long	Xconsdout + INTSTK	# tu58 transmitter
+#else
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xcnrint + INTSTK	# console receiver 
 	.long	Xcnxint + INTSTK	# console transmitter
 
-#
-# I/O vectors
-#
+/*
+ * I/O vectors
+ */
 
-# IPL 14
+/* IPL 14 */
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==780
 	.long	Xua0int + INTSTK	# UBA 0 br4
+#else
+	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -115,17 +124,26 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 
-# IPL 15
+/* IPL 15 */
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==780
 	.long	Xua0int + INTSTK	# UBA 0 br5
+#else
+	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==780
 	.long	Xmba0int + INTSTK	# mass bus adapter 0
 	.long	Xmba1int + INTSTK	# mass bus adapter 1
+#else
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -133,11 +151,15 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 
-# IPL 16
+/* IPL 16 */
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
+#if VAX==780
 	.long	Xua0int + INTSTK	# UBA 0 br6
+#else
+	.long	Xstray + INTSTK		# unused
+#endif
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -151,7 +173,7 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 
-# IPL 17
+/* IPL 17 */
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
@@ -169,11 +191,349 @@ ubabase:
 	.long	Xstray + INTSTK		# unused
 	.long	Xstray + INTSTK		# unused
 
-# 0x200
+/* 0x200 */
+#if VAX==750
+	.globl	UBVEC
+UBVEC:
+/* 0x0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x10 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x20 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x30 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x40 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x50 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x60 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x70 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x80 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xrkintr + INTSTK
+	.long	Xubastray + INTSTK		# unused
+/* 0x90 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xtsintr + INTSTK
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0xa0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+#ifdef notdef
+	.long	Xemintr + INTSTK
+#else
+	.long	Xubastray + INTSTK		# unused
+#endif
+/* 0xb0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0xc0 */
+	.long	Xdzrint + INTSTK
+	.long	Xdzxint + INTSTK
+#ifdef notdef
+	.long	Xobiint + INTSTK
+	.long	Xoboint + INTSTK
+#else
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+#endif
+/* 0xd0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0xe0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0xf0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x100 */
+#if VAX==750
+	.long	Xdkxint + INTSTK
+	.long	Xdkrint + INTSTK
+#else
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+#endif
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x110 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x120 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x130 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x140 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x150 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x160 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x170 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x180 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x190 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1a0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1b0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1c0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1d0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1e0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x1f0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x200 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x210 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x220 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x230 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x240 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x250 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x260 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x270 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x280 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x290 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2a0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2b0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2c0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2d0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2e0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x2f0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x300 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x310 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x320 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x330 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x340 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x350 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x360 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x370 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x380 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x390 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3a0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3b0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3c0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3d0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3e0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+/* 0x3f0 */
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+	.long	Xubastray + INTSTK		# unused
+#endif
 
-# =====================================
-# Produce a core image dump on mag tape
-# =====================================
+/*
+ * Produce a core image dump on mag tape
+ */ 
 	.globl	doadump
 doadump:
 	movl	sp,dumpstack		# save stack pointer
@@ -195,9 +555,9 @@ dumpstack:
 	.space	4
 	.text
 
-#
-# Debugging print switches given here so they won't move around
-#
+/*
+ * Debugging print switches given here so they won't move around
+ */
 	.data
 	.align	2
 	.globl	_printsw
@@ -208,20 +568,26 @@ _coresw:
 	.space	4
 	.text
 
-# =============================
-# I/O interrupt vector routines
-# =============================
+/*
+ * I/O interrupt vector routines
+ */ 
 
-#
-# Physical i/o addresses
-#
+/*
+ * Physical i/o addresses
+ */
+#if VAX==780
 	.set	PHYSMCR,0x20002000	# memory controller register
 	.set	PHYSUBA,0x20006000	# uba 0
 	.set	PHYSUMEM,0x2013e000	# unibus memory
+#else
+	.set	PHYSMCR,0xf20000
+	.set	PHYSUBA,0xf30000
+	.set	PHYSUMEM,0xfc0000+0760000
+#endif
 
-#
-# Catch random or unexpected interrupts
-#
+/*
+ * Catch random or unexpected interrupts
+ */
 	.globl	_waittime
 	.align	2
 Xmachcheck:
@@ -258,9 +624,21 @@ Xstray:
 	popr	$0x3f
 	rei
 
-#
-# Massbus 0 adapter interrupts
-#
+#if VAX==750
+	.align	2
+Xubastray:
+	pushr	$0x3f
+	pushab	UBAstraym
+	calls	$1,_printf
+	popr	$0x3f
+	rei
+#endif
+
+
+#if VAX==780
+/*
+ * Massbus 0 adapter interrupts
+ */
 	.align	2
 Xmba0int:
 	pushr	$0x3f			# save r0 - r5
@@ -272,9 +650,9 @@ Xmba0int:
 	calls	$2,_hpintr		# call rp06 interrupt dispatcher
 	brw 	int_ret			# merge with common interrupt code
 
-#
-# Massbus 1 adapter interrupts
-#
+/*
+ * Massbus 1 adapter interrupts
+ */
 	.align	2
 Xmba1int:
 	pushr	$0x3f
@@ -286,9 +664,9 @@ Xmba1int:
 	calls	$2,_htintr		# call te16 interrupt dispatcher
 	brw 	int_ret			# return from interrupt
 
-#
-# Unibus adapter interrupts
-#
+/*
+ * Unibus adapter interrupts
+ */
 	.align	2
 Xua0int:
 	pushr	$0x3f  			# save regs 0-5
@@ -297,12 +675,12 @@ Xua0int:
 	bleq	ubasrv  		# branch if zero vector
 					# ... or UBA service required
 
-#
-# Normal UBA interrupt point - device on a UBA has generated an
-# interrupt - r3 holds interrupt vector.  Get the service routine
-# address and controller code from the UNIBUS vector area
-# and service the interrupt.
-#
+/*
+ * Normal UBA interrupt point - device on a UBA has generated an
+ * interrupt - r3 holds interrupt vector.  Get the service routine
+ * address and controller code from the UNIBUS vector area
+ * and service the interrupt.
+ */
 ubanorm:
 	movl	_UNIvec(r3),r1 
 	extzv	$27,$4,r1,r0  		# controller code is in 4 most
@@ -315,38 +693,37 @@ ubanpdma:
 	calls	$1,(r1)  		# call ISR
 	brw	int_ret			# go to common interrupt return
 
-#
-# Come here for zero or negative UBA interrupt vector.
-# Negative vector -> UBA requires service.
-#
+/*
+ * Come here for zero or negative UBA interrupt vector.
+ * Negative vector -> UBA requires service.
+ */
 ubasrv:
 	jeql	ubapass
-#
-# UBA service required.
-# The following 'printf' calls should probably be replaced
-# with calls to an error logger and/or some corrective action.
-#
+/*
+ * UBA service required.
+ * The following 'printf' calls should probably be replaced
+ * with calls to an error logger and/or some corrective action.
+ */
 	bitl	$CFGFLT,UBA0+UCN_OFF  	# any SBI faults ?
 	beql	UBAflt
-	pushr	$0x3f  			# save regs 0-5
+	clrl	_waittime
+	pushr	$0xf  			# save regs 0-3
 	pushl	UBA0+UCN_OFF
 	pushl	UBA0+UST_OFF
 	pushab	SBIflt
 	calls	$3,_printf
-#	pushab	SBImsg
-#	calls	$1,_panic
 	movl	UBA0+UCN_OFF,UBA0+UCN_OFF
 	calls	$0,_ubareset
 	popr	$0x3f
 	brw	int_ret
 
-#
-# No SBI fault bits set in UBA config reg - must be
-# some error bits set in UBA status reg.
-#
+/*
+ * No SBI fault bits set in UBA config reg - must be
+ * some error bits set in UBA status reg.
+ */
 UBAflt:
 	movl	UBA0+UST_OFF,r2  	# UBA status reg
-	pushr	$0x3f  			# save regs 0-3
+	pushr	$0x3f  			# save regs 0-5
 	mfpr	$IPL,-(sp)
 	mtpr	$HIGH,$IPL
 	pushl	UBA0+UFUBAR_OFF
@@ -362,9 +739,9 @@ UBAflt:
 	jneq	ubanorm  		# branch if normal UBA interrupt
 					# to process
 	brw 	int_ret			# restore regs and return
-#
-# Zero interrupt vector - count 'em
-#
+/*
+ * Zero interrupt vector - count 'em
+ */
 ubapass:
 	incl	_zvcnt
 	cmpl	_zvcnt,$250000
@@ -374,21 +751,83 @@ ubapass:
 	clrl	_zvcnt
 	calls	$0,_ubareset
 	brw 	int_ret
+#endif
+#if VAX==750
+/*
+ * Console data storage
+ */
+Xconsdin:
+Xconsdout:
+	.align	2
+	halt
+
+/*
+ * Dz
+ */
+	.globl	Xdzrint
+	.align	2
+Xdzrint:
+	pushr	$0x3f
+	pushl	$0
+	calls	$1,_dzrint
+	jmp	int_ret
+
+	.globl	Xdzxint
+	.align	2
+Xdzxint:
+	pushr	$0x3f
+	clrl	r0			# show controller 0 (board 0)
+	jbr	_dzdma
+
+/*
+ * Rk
+ */
+	.align	2
+Xrkintr:
+	pushr	$0x3f
+	calls	$0,_rkintr
+	jbr	int_ret
+
+/*
+ * Dk
+ */
+	.align	2
+Xdkrint:
+	pushr	$0x3f
+	calls	$0,_dkrint
+	jbr	int_ret
+	.align	2
+Xdkxint:
+	pushr	$0x3f
+	calls	$0,_dkxint
+	jbr	int_ret
+
+/*
+ * Ts
+ */
+	.align	2
+Xtsintr:
+	pushr	$0x3f
+	calls	$0,_tsintr
+	jbr	int_ret
+#endif
+
 	.data
+#if VAX==780
 	.globl	_zvcnt
 _zvcnt:	.space	4
+#endif
 	.globl	_dzdcnt
 _dzdcnt:.space	4
 	.text
 
-#
-# DZ pseudo dma routine:
-#	r0 - controller number
-#
+/*
+ * DZ pseudo dma routine:
+ *	r0 - controller number
+ */
 	.align	1
 	.globl	_dzdma
 _dzdma:
-#	bisw2	$4,*_draddr	# leading edge for dr11-c
 	mull2	$8*20,r0
 	movab	_dzpdma(r0),r3		# pdma structure base
 					# for this controller
@@ -409,7 +848,6 @@ dzploop:
 	movl	r2,-8(r0)
 	brb 	dzploop			# check for another line
 dzprei:
-#	bicw2	$4,*_draddr	# trailing edge for dr11-c
 	popr	$0x3f
 	incl	_cnt+V_PDMA
 	rei
@@ -419,27 +857,27 @@ dzpcall:
 	calls	$1,_dzxint		# call interrupt rtn
 	brb 	dzploop			# check for another line
 
-#
-# Console receiver interrupt
-#
+/*
+ * Console receiver interrupt
+ */
 	.align	2
 Xcnrint:
 	pushr	$0x3f			# save registers 0 - 5
 	calls	$0,_cnrint
 	brb 	int_ret			# merge
 
-#
-# Console transmit interrupt
-#
+/*
+ * Console transmit interrupt
+ */
 	.align	2
 Xcnxint:
 	pushr	$0x3f			# save registers 0 - 5
 	calls	$0,_cnxint
 	brb 	int_ret
 
-#
-# Clock interrupt
-#
+/*
+ * Clock interrupt
+ */
 	.align	2
 Xclockint:
 	pushr	$0x3f			# save regs 0 - 5
@@ -448,40 +886,38 @@ Xclockint:
 	calls	$2,_clock
 	brb 	int_ret
 
-#
-# Common code for interrupts.
-# At this point, the interrupt stack looks like:
-#
-#	r0	<- isp
-#	...
-#	r5
-#	pc
-#	psl
-#
+/*
+ * Common code for interrupts.
+ * At this point, the interrupt stack looks like:
+ *
+ *	r0	<- isp
+ *	...
+ *	r5
+ *	pc
+ *	psl
+ */
 
 int_ret:
 	incl	_cnt+V_INTR
-#	bbssi	$0,idleflag,int_r0	# escape from idle() if old switch code
-#int_r0:
 	popr	$0x3f			# restore regs 0 - 5
 	bitl	$PSL_CURMOD,4(sp)	# interrupt from user mode?
 	beql	int_r1			# no, from kernel, just rei
 	tstb	_runrun			# should we reschedule?
 	beql	int_r1			# no, just rei
-#
-# If here, interrupt from user mode, and time to reschedule.
-# To do this, we set a software level 3 interrupt to
-# change to kernel mode, switch stacks, and format
-# kernel stack for a `qswitch' trap to force a reschedule.
-#
+/*
+ * If here, interrupt from user mode, and time to reschedule.
+ * To do this, we set a software level 3 interrupt to
+ * change to kernel mode, switch stacks, and format
+ * kernel stack for a `qswitch' trap to force a reschedule.
+ */
 	mtpr	$0x18,$IPL
 	mtpr	$3,$SIRR		# request level 1 software interrupt
 int_r1:
 	rei 				# return to interrupted process
 
-# ==================================
-# User area virtual addresses
-# ==================================
+/*
+ * User area virtual addresses
+ */ 
 
 	.globl	_u
 	.set	_u,0x80000000 - UPAGES*NBPG
@@ -497,12 +933,14 @@ UBA0map:
 	.set	_umbabeg,((UBA0map-_Sysmap)/4)*512+0x80000000
 UMEMmap:
 	.space	16*4
+#if VAX==780
 	.globl	_MBA0map
 _MBA0map:
 	.space	16*4
 	.globl	_MBA1map
 _MBA1map:
 	.space	16*4
+#endif
 umend:
 	.globl	_umbaend
 	.set	_umbaend,((umend-_Sysmap)/4)*512+0x80000000
@@ -578,13 +1016,13 @@ eSysmap:
 	.set	Syssize,(eSysmap-_Sysmap)/4
 	.text
 
-# ==============================
-# Trap and fault vector routines
-# ==============================
+/*
+ * Trap and fault vector routines
+ */ 
 
-#
-# Reschedule trap (Software level 3 interrupt)
-#
+/*
+ * Reschedule trap (Software level 3 interrupt)
+ */
 	.align	2
 Xresched:
 	mtpr	$0,$IPL			# lower ipl
@@ -596,79 +1034,79 @@ Xresched:
 	mtpr	$HIGH,$IPL
 	rei
 
-#
-# Privileged instruction fault
-#
+/*
+ * Privileged instruction fault
+ */
 	.align	2
 Xprivinflt:
 	pushl	$0			# push dummy code
 	pushl	$PRIVINFLT		# push type
 	brw 	alltraps		# merge
 
-#
-# Xfc instruction fault
-#
+/*
+ * Xfc instruction fault
+ */
 	.align	2
 Xxfcflt:
 	pushl	$0			# push dummy code value
 	pushl	$XFCFLT			# push type value
 	brw 	alltraps		# merge
 
-#
-# Reserved operand fault
-#
+/*
+ * Reserved operand fault
+ */
 	.align	2
 Xresopflt:
 	pushl	$0			# push dummy code value
 	pushl	$RESOPFLT		# push type value
 	brw 	alltraps		# merge
 
-#
-# Reserved addressing mode fault
-#
+/*
+ * Reserved addressing mode fault
+ */
 	.align	2
 Xresadflt:
 	pushl	$0			# push dummy code value
 	pushl	$RESADFLT		# push type value
 	brw 	alltraps		# merge with common code
 
-#
-# Bpt instruction fault
-#
+/*
+ * Bpt instruction fault
+ */
 	.align	2
 Xbptflt:
 	pushl	$0			# push dummy code value
 	pushl	$BPTFLT			# push type value
 	brw 	alltraps		# merge with common code
 
-#
-# Compatibility mode fault
-#
+/*
+ * Compatibility mode fault
+ */
 	.align	2
 Xcompatflt:
 	pushl	$COMPATFLT		# push type value
 	brw 	alltraps		# merge with common code
 
-#
-# Trace trap
-#
+/*
+ * Trace trap
+ */
 	.align	2
 Xtracep:
 	pushl	$0			# push dummy code value
 	pushl	$TRCTRAP		# push type value
 	brw 	alltraps		# go do it
 
-#
-# Arithmetic trap
-#
+/*
+ * Arithmetic trap
+ */
 	.align	2
 Xarithtrap:
 	pushl	$ARITHTRAP		# push type value
 	brw 	alltraps		# merge with common code
 
-#
-# Protection and segmentation fault
-#
+/*
+ * Protection and segmentation fault
+ */
 	.align	2
 Xprotflt:
 	blbs	(sp),segflt		# check for pt length violation
@@ -676,17 +1114,17 @@ Xprotflt:
 	pushl	$PROTFLT
 	brw 	alltraps
 
-#
-# Segmentation fault
-#
+/*
+ * Segmentation fault
+ */
 segflt:
 	addl2	$4,sp
 	pushl	$SEGFLT
 	brb 	alltraps
 
-#
-# Translation Not Valid Fault
-#
+/*
+ * Translation Not Valid Fault
+ */
 	.align  2
 Xtransflt:
 	bbs	$1,(sp),tableflt	# check for page table fault
@@ -694,17 +1132,17 @@ Xtransflt:
 	pushl	$PAGEFLT		# push type value
 	brb	alltraps
 
-#
-# Page table fault
-#
+/*
+ * Page table fault
+ */
 tableflt: 
 	addl2	$4,sp			# pop fault parameter word
 	pushl	$TABLEFLT		# push type value
 	brb	alltraps
 
-#
-# all traps but syscalls...
-#
+/*
+ * all traps but syscalls...
+ */
 alltraps:
 	mfpr	$USP,-(sp)		# get usp
 	calls	$0,_trap		# $0 so ret wont pop args
@@ -715,24 +1153,24 @@ alltraps:
 					# a higher IPL
 	rei
 
-#
-# CHMK trap (syscall trap)
-#
-# Kernel stack on entry:
-#
-#	code	<- ksp
-#	pc
-#	psl
-#
-#
-# Stack (parameters) at calls to _trap or _syscall
-#
-#	usp	<- ksp
-#	type
-#	code
-#	pc
-#	psl
-#
+/*
+ * CHMK trap (syscall trap)
+ *
+ * Kernel stack on entry:
+ *
+ *	code	<- ksp
+ *	pc
+ *	psl
+ *
+ *
+ * Stack (parameters) at calls to _trap or _syscall
+ *
+ *	usp	<- ksp
+ *	type
+ *	code
+ *	pc
+ *	psl
+ */
 
 	.align	2
 Xsyscall:
@@ -746,38 +1184,39 @@ Xsyscall:
 					# a higher IPL
 	rei
 
-# ==============
-# Initialization
-# ==============
-#
-#	IPL == 1F
-#	MAPEN == off
-#	SCBB, PCBB not set
-#	SBR, SLR not set
-#	ISP, KSP not set
-#
+/*
+ * Initialization
+ *
+ *	IPL == 1F
+ *	MAPEN == off
+ *	SCBB, PCBB not set
+ *	SBR, SLR not set
+ *	ISP, KSP not set
+ */
 	.globl	start
 start:
 	.word	0x0000
-	mtpr	$HIGH,$IPL		# no interrupts yet
-	mtpr	$Scbbase,$SCBB		# set SCBB
-	mtpr	$_Sysmap,$SBR		# set SBR
-	mtpr	$Syssize,$SLR		# set SLR
-	mtpr	$_Sysmap,$P0BR		# set temp P0BR
-	mtpr	$Syssize,$P0LR		# set temp P0LR
-	movl	$_intstack+2048,sp	# set ISP
-#
-# Initialize I/O adapters.
-#
-	movl	$1,PHYSUBA+4		# init & interrupt enable
-	movl	$0x78,PHYSUBA+4		# init & interrupt enable
+	mtpr	$HIGH,$IPL			## no interrupts yet
+	mtpr	$Scbbase-0x80000000,$SCBB	# set SCBB
+	mtpr	$_Sysmap-0x80000000,$SBR	## set SBR
+	mtpr	$Syssize,$SLR			## set SLR
+	mtpr	$_Sysmap,$P0BR			## set temp P0BR
+	mtpr	$Syssize,$P0LR			## set temp P0LR
+	movl	$_intstack+2048,sp		# set ISP
+#if VAX==780
+/*
+ * Initialize UBA
+ */
+	movl	$1,PHYSUBA+4		# init
+	movl	$0x78,PHYSUBA+4		# ienable
+#endif
 
 	movl	Scbbase+MCKVEC,r5	# save machine check entry
 	movab	2f+INTSTK,Scbbase+MCKVEC	# set new vector address
-#
-# Will now see how much memory there really is
-# in 64kb chunks.  Save number of bytes in r7.
-#
+/*
+ * Will now see how much memory there really is
+ * in 64kb chunks.  Save number of bytes in r7.
+ */
 	mtpr	$HIGH-1,$IPL		# allow machine check interrupts
 	clrl	r7
 1:
@@ -787,12 +1226,14 @@ start:
 
 	.align	2
 2:
+#if VAX==780
 	mtpr	$0,$SBIFS		# clear sbi fault status
+#endif
 	movl	r5,Scbbase+MCKVEC	# restore machine check vector
 	movl	$_intstack+2048,sp	# reset interrupt stack pointer
-#
-# calculate size of cmap[] based on available memory, and allocate space for it
-#
+/*
+ * calculate size of cmap[] based on available memory, and allocate space for it
+ */
 	movab	_end,r5
 	movl	r5,_cmap
 	bbss	$31,_cmap,0f; 0:
@@ -800,10 +1241,10 @@ start:
 	divl2	$(NBPG*CLSIZE)+CMSIZE,r1
 	mull2	$CMSIZE,r1
 	addl3	_cmap,r1,_ecmap
-#
-# Clear memory starting with kernel bss, and extra pages for
-# proc 0 u. and proc 0 paget.
-#
+/*
+ * Clear memory starting with kernel bss, and extra pages for
+ * proc 0 u. and proc 0 paget.
+ */
 	movab	_edata,r6
 	movl	_ecmap,r5		# clear to end of cmap[]
 	bbcc	$31,r5,0f; 0:
@@ -812,19 +1253,19 @@ start:
 	clrq	(r6)
 	acbl	r5,$8,r6,1b
 
-#
-# Finagle _trap and _syscall to save r0-r11 so
-# that it won't be necessary to pushr/popr what
-# the (already time consuming) calls is prepared to do.
-# The fact that this is done is well known (e.g. in the definition
-# of the stack offsets of the registers in ../h/reg.h)
-# 
+/*
+ * Finagle _trap and _syscall to save r0-r11 so
+ * that it won't be necessary to pushr/popr what
+ * the (already time consuming) calls is prepared to do.
+ * The fact that this is done is well known (e.g. in the definition
+ * of the stack offsets of the registers in ../h/reg.h)
+ */ 
 	bisw2	$0x0fff,_trap		# so _trap saves r0-r11
 	bisw2	$0x0fff,_syscall	# so _syscall saves r0-r11
 
-#
-# Initialize system page table
-#
+/*
+ * Initialize system page table
+ */
 	movab	_etext+NBPG-1,r1	# end of kernel text segment
 	bbcc	$31,r1,0f; 0:		# turn off high order bit
 	ashl	$-9,r1,r1		# last page of kernel text
@@ -838,15 +1279,15 @@ start:
 1:
 	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]	# fill data entries
 	aoblss	r1,r2,1b
-#
-# initialize memory controller mapping
-#
+/*
+ * initialize memory controller mapping
+ */
 	movl	$PHYSMCR/NBPG,r1
 	movab	_mcrmap,r2
 	bisl3	$PG_V|PG_KW,r1,(r2)
-#
-# Initialize UNIBUS page table entries
-#
+/*
+ * Initialize UNIBUS page table entries
+ */
 	movl	$PHYSUBA/NBPG,r1	# page frame number for uba
 	movab	UBA0map,r2		# page table address
 	movab	15(r1),r3		# last pt entry
@@ -862,26 +1303,26 @@ start:
 	mtpr	$1,$TBIA		# invalidate all trans buffer entries
 	mtpr	$1,$MAPEN		# turn on memory mapping
 	jmp 	*$0f			# put system virtual address in pc
-#
-# Now we move forward, virtually.
-#
+/*
+ * Now we move forward, virtually.
+ */
 0:
 	ashl	$-9,r7,_maxmem		# set maxmem = btoc(r7)
 	movl	_maxmem,_physmem
 	movl	_maxmem,_freemem
 
-#
-# Setup context for proc[0] == Scheduler
-#
-# First page: paget for proc[0]
-# Next UPAGES: _u for proc[0]
-# Initialize (slightly) the pcb.
-#
+/*
+ * Setup context for proc[0] == Scheduler
+ *
+ * First page: paget for proc[0]
+ * Next UPAGES: _u for proc[0]
+ * Initialize (slightly) the pcb.
+ */
 	addl3	_ecmap,$NBPG-1,r6
 	bicl2	$NBPG-1,r6		# make page boundary
-#
-# set up u area page table
-#
+/*
+ * set up u area page table
+ */
 	bbcc	$31,r6,0f; 0:
 	ashl	$-9,r6,r3			# r3 = btoc(r6)
 	bisl3	$PG_V|PG_KW,r3,_Usrptmap	# init first upt entry
@@ -922,16 +1363,16 @@ start:
 	clrl	PCB_PSL(r1)			# mode(k,k), ipl=0
 	ashl	$9,r3,r3
 	mtpr	r3,$PCBB			# first pcbb
-#
-# set regs, p0br, p0lr, p1br, p1lr
-# astlvl, ksp and change to kernel mode
-#
+/*
+ * set regs, p0br, p0lr, p1br, p1lr
+ * astlvl, ksp and change to kernel mode
+ */
 	ldpctx
 	rei
 
-#
-# put signal trampoline code in u. area
-#
+/*
+ * put signal trampoline code in u. area
+ */
 1:
 	movab	_u,r0
 	movc3	$12,sigcode,PCB_SIGC(r0)
@@ -940,19 +1381,19 @@ start:
 	bbcc	$31,r0,0f; 0:
 	ashl	$-9,r0,-(sp)			# convert to clicks and stack
 	calls	$1,_main			# startup, fork off /etc/init.vm
-#
-# proc[1] == /etc/init now running here.
-# execute code at location 0, in user mode.
-#
+/*
+ * proc[1] == /etc/init now running here.
+ * execute code at location 0, in user mode.
+ */
 	pushl	$PSL_CURMOD|PSL_PRVMOD		# psl, user mode, ipl = 0
 	pushl	$0				# pc, $location 0
 	rei 					# do /etc/init.vm
 
-#
-# signal trampoline code
-# it is known that this code takes exactly 12 bytes
-# in ../h/pcb.h and in the movc3 above
-#
+/*
+ * signal trampoline code
+ * it is known that this code takes exactly 12 bytes
+ * in ../h/pcb.h and in the movc3 above
+ */
 sigcode:
 	calls	$3,1(pc)
 	rei
@@ -960,9 +1401,9 @@ sigcode:
 	callg	(ap),*12(ap)			# registers 0-6 (6==sp/compat)
 	ret
 
-# ==========
-# Primitives
-# ==========
+/*
+ * Primitives
+ */ 
 
 _addupc:	.globl	_addupc
 	.word	0x0000
@@ -1030,9 +1471,9 @@ coshort:
 	clrl	r0
 	rsb
 
-#
-# non-local goto's
-#
+/*
+ * non-local goto's
+ */
 	.globl	_Setjmp
 _Setjmp:
 	movq	r6,(r0)+
@@ -1070,21 +1511,21 @@ lj1:	.asciz	"longjmp"
 	.globl	_runrun
 	.comm	_runrun,4
 
-#
-# The following primitives use the fancy VAX instructions
-# much like VMS does.  _whichqs tells which of the 32 queues _qs
-# have processes in them.  Setrq puts processes into queues, Remrq
-# removes them from queues.  The running process is on no queue,
-# other processes are on a queue related to p->p_pri, divided by 4
-# actually to shrink the 0-127 range of priorities into the 32 available
-# queues.
-#
+/*
+ * The following primitives use the fancy VAX instructions
+ * much like VMS does.  _whichqs tells which of the 32 queues _qs
+ * have processes in them.  Setrq puts processes into queues, Remrq
+ * removes them from queues.  The running process is on no queue,
+ * other processes are on a queue related to p->p_pri, divided by 4
+ * actually to shrink the 0-127 range of priorities into the 32 available
+ * queues.
+ */
 
-#
-# Setrq(p), using fancy VAX instructions.
-#
-# Call should be made at spl6(), and p->p_stat should be SRUN
-#
+/*
+ * Setrq(p), using fancy VAX instructions.
+ *
+ * Call should be made at spl6(), and p->p_stat should be SRUN
+ */
 	.globl	_Setrq		# <<<massaged to jsb by "asm.sed">>>
 _Setrq:
 	tstl	P_RLINK(r0)		## firewall: p->p_rlink must be 0
@@ -1102,11 +1543,11 @@ set2:
 
 set3:	.asciz	"setrq"
 
-#
-# Remrq(p), using fancy VAX instructions
-#
-# Call should be made at spl6().
-#
+/*
+ * Remrq(p), using fancy VAX instructions
+ *
+ * Call should be made at spl6().
+ */
 	.globl	_Remrq		# <<<massaged to jsb by "asm.sed">>>
 _Remrq:
 	movzbl	P_PRI(r0),r1
@@ -1125,9 +1566,9 @@ rem2:
 rem3:	.asciz	"remrq"
 
 sw0:	.asciz	"swtch"
-#
-# Swtch(), using fancy VAX instructions
-#
+/*
+ * Swtch(), using fancy VAX instructions
+ */
 	.globl	_Swtch
 _Swtch:				# <<<massaged to jsb by "asm.sed">>>
 	movl	$1,_noproc
@@ -1154,15 +1595,15 @@ sw3:
 	bneq	sw1b			##
 	clrl	P_RLINK(r2)		##
 	ashl	$PGSHIFT,*P_ADDR(r2),r0	# r0 = pcbb(p)
-#	mfpr	$PCBB,r1		# resume of current proc is easy
-#	cmpl	r0,r1
-#	beql	res0
+/*	mfpr	$PCBB,r1		# resume of current proc is easy
+ *	cmpl	r0,r1
+ */	beql	res0
 	incl	_cnt+V_SWTCH
-# fall into...
+/* fall into... */
 
-#
-# Resume(pf)
-#
+/*
+ * Resume(pf)
+ */
 	.globl	_Resume		# <<<massaged to jsb by "asm.sed">>>
 _Resume:
 	mtpr	$0x18,$IPL			# no interrupts, please
@@ -1181,9 +1622,9 @@ res0:
 res1:
 	rei
 
-#
-# {fu,su},{byte,word}, all massaged by asm.sed to jsb's
-#
+/*
+ * {fu,su},{byte,word}, all massaged by asm.sed to jsb's
+ */
 	.globl	_Fuword
 _Fuword:
 	prober	$3,$4,(r0)
@@ -1217,10 +1658,10 @@ _Subyte:
 	clrl	r0
 	rsb
 
-#
-# Copy 1 relocation unit (NBPG bytes)
-# from user virtual address to physical address
-#
+/*
+ * Copy 1 relocation unit (NBPG bytes)
+ * from user virtual address to physical address
+ */
 _copyseg: 	.globl	_copyseg
 	.word	0x0000
 	mfpr	$IPL,r0		# get current pri level
@@ -1231,10 +1672,10 @@ _copyseg: 	.globl	_copyseg
 	mtpr	r0,$IPL		# restore pri level
 	ret
 
-#
-# zero out physical memory
-# specified in relocation units (NBPG bytes)
-#
+/*
+ * zero out physical memory
+ * specified in relocation units (NBPG bytes)
+ */
 _clearseg: 	.globl	_clearseg
 	.word	0x0000
 	mfpr	$IPL,r0		# get current pri level
@@ -1245,11 +1686,11 @@ _clearseg: 	.globl	_clearseg
 	mtpr	r0,$IPL		# restore pri level
 	ret
 
-#
-# Check address.
-# Given virtual address, byte count, and rw flag
-# returns 0 on no access.
-#
+/*
+ * Check address.
+ * Given virtual address, byte count, and rw flag
+ * returns 0 on no access.
+ */
 _useracc:	.globl	_useracc
 	.word	0x0000
 	movl	4(ap),r0		# get va
@@ -1286,18 +1727,19 @@ uaerr:
 	clrl	r0
 	ret
 
-#
-# kernacc - check for kernel access privileges
-#
-# We can't use the probe instruction directly because
-# it ors together current and previous mode.
-#
+/*
+ * kernacc - check for kernel access privileges
+ *
+ * We can't use the probe instruction directly because
+ * it ors together current and previous mode.
+ */
 	.globl	_kernacc
 _kernacc:
 	.word	0x0000
 	movl	4(ap),r0	# virtual address
 	bbcc	$31,r0,kacc1
 	mfpr	$SBR,r2		# address and length of page table (system)
+	bbss	$31,r2,0f; 0:
 	mfpr	$SLR,r3
 	brb	kacc2
 kacc1:
@@ -1339,40 +1781,16 @@ kacerr:
 	clrl	r0		# error
 	ret
 
-# ==============
-# Error messages
-# ==============
+/*
+ * Error messages
+ */ 
 
 	.data
 SBIflt:	.asciz	"UBA SBI Fault SR %X CNFGR %X\n"
-SBImsg: .asciz	"SBI fault\n"
 UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
 straym:	.asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
 
-#
-# Junk.
-#
-
-#
-# This is needed when running old-style switch code.
-# Be sure to enable setting of idleflag in interrupt code above also.
-#
-#_idle:	.globl	_idle
-#	.word	0x0000
-#	mtpr	$0,$IPL			# enable interrupts
-#waitloc:
-#	blbc	idleflag,waitloc	# loop until interrupt
-#ewaitloc:
-#	bbcci	$0,idleflag,idle1	# clear idle escape flag
-#idle1:
-#	ret
-#	.data
-#	.globl	_waitloc
-#	.globl	_ewaitloc
-#l	.align	2
-#_waitloc:	.long	waitloc
-#_ewaitloc:	.long	ewaitloc
-#idleflag:	.long	0
-#	.text
-
+#if VAX==750
+UBAstraym: .asciz "Stray UBA Interrupt\n"
+#endif

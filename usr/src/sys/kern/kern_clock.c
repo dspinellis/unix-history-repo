@@ -1,4 +1,4 @@
-/*	%H%	4.1	kern_clock.c	*/
+/*	kern_clock.c	4.2	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -179,13 +179,16 @@ out:
 		runrun++;
 	}
 	if (lbolt >= HZ) {
+#if VAX==780
 		extern int hangcnt;
+#endif
 
 		if (BASEPRI(ps))
 			return;
 		lbolt -= HZ;
 		++time;
 		(void) spl1();
+#if VAX==780
 		/*
 		 * machdep.c:unhang uses hangcnt to make sure uba
 		 * doesn't forget to interrupt (this has been observed).
@@ -194,6 +197,7 @@ out:
 		 */
 		if (hangcnt)
 			hangcnt--;
+#endif
 		runrun++;
 		wakeup((caddr_t)&lbolt);
 		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
@@ -271,8 +275,10 @@ out:
 #endif
 		}
 	}
+#if VAX==780
 	if (!BASEPRI(ps))
 		unhang();
+#endif
 	if (USERMODE(ps)) {
 		/*
 		 * We do this last since it
