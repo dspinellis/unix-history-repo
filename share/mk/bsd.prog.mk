@@ -4,7 +4,7 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
-.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s
+.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s .S
 
 CFLAGS+=${COPTS}
 
