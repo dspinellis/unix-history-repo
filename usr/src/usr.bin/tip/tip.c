@@ -1,4 +1,4 @@
-/*	tip.c	4.4	81/06/16	*/
+/*	tip.c	4.5	81/07/11	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -58,6 +58,10 @@ int bauds[] = {
 	1200, 1800, 2400, 4800, 9600, 19200, -1
 };
 
+#ifdef VMUNIX
+int	disc = OTTYDISC;		/* tip normally runs this way */
+#endif
+
 int	intprompt();
 int	timeout();
 static int cleanup();
@@ -67,9 +71,6 @@ char *argv[];
 {
 	char *system = NOSTR;
 	register int i;
-#ifdef VMUNIX
-	int disc;
-#endif
 	char *p;
 
 	if (argc > 4) {
@@ -123,41 +124,39 @@ char *argv[];
 			else
 				printf("%s: unknown option\n", argv[i]);
 		}
-	if ((arg.sg_ispeed = speed(number(value(BAUDRATE)))) == NULL) {
+	if ((i = speed(number(value(BAUDRATE)))) == NULL) {
 		printf("tip: bad baud rate %d\n", number(value(BAUDRATE)));
 		delock(uucplock);
 		exit(3);
 	}
 
+	/*
+	 * Hardwired connections require the
+	 *  line speed set before they make any transmissions
+	 *  (this is particularly true of things like a DF03-AC)
+	 */
+	if (HW)
+		ttysetup(i);
 	if (p = connect()) {
 		printf("\07%s\n[EOT]\n", p);
 		delock(uucplock);
 		exit(1);
 	}
-	arg.sg_ospeed = arg.sg_ispeed;
-	/*
-	 * NOTE that remote side runs in TANDEM mode,
-	 *  if the host doesn't honor X-ON/X-OFF with default
-	 *  start/stop chars, the remote description must be
-	 *  extended and tchars will have to be set up here.
-	 * If the host doesn't honor TANDEM mode, then watch
-	 *  out, as you'll get garbage.
-	 */
-	arg.sg_flags = RAW | TANDEM;
-	ioctl(FD, TIOCSETP, &arg);
+	if (!HW)
+		ttysetup(i);
 
-	ioctl(0, TIOCGETP, &defarg);	/* store initial status */
-	ioctl(0, TIOCGETC, &defchars);
+	/*
+	 * Set up local tty state
+	 */
+	ioctl(0, TIOCGETP, (char *)&defarg);
+	ioctl(0, TIOCGETC, (char *)&defchars);
+	ioctl(0, TIOCGETD, (char *)&odisc);
 	arg = defarg;
 	arg.sg_flags = ANYP | CBREAK;
 	tchars = defchars;
 	tchars.t_intrc = tchars.t_quitc = -1;
 	raw();
-#ifdef VMUNIX
-	ioctl(0, TIOCGETD, (char *)&odisc);
-	disc = OTTYDISC;
-	ioctl(0, TIOCSETD, (char *)&disc);
-#endif
+
 	pipe(fildes); pipe(repdes);
 	signal(SIGALRM, timeout);
 
@@ -194,6 +193,9 @@ raw()
 {
 	ioctl(0, TIOCSETP, &arg);
 	ioctl(0, TIOCSETC, &tchars);
+#ifdef VMUNIX
+	ioctl(0, TIOCSETD, (char *)&disc);
+#endif
 }
 
 
@@ -202,8 +204,11 @@ raw()
  */
 unraw()
 {
-	ioctl(0, TIOCSETP, &defarg);
-	ioctl(0, TIOCSETC, &defchars);
+#ifdef VMUNIX
+	ioctl(0, TIOCSETD, (char *)&odisc);
+#endif
+	ioctl(0, TIOCSETP, (char *)&defarg);
+	ioctl(0, TIOCSETC, (char *)&defchars);
 }
 
 /*
@@ -401,4 +406,22 @@ help(c)
 		printf("%-2s %c   %s\r\n", ctrl(p->e_char),
 			p->e_flags&EXP ? '*': ' ', p->e_help);
 	}
+}
+
+/*
+ * Set up the "remote" tty's state
+ */
+static
+ttysetup(speed)
+{
+#ifdef VMUNIX
+	unsigned bits = LDECCTQ;
+#endif
+
+	arg.sg_ispeed = arg.sg_ospeed = speed;
+	arg.sg_flags = TANDEM|RAW;
+	ioctl(FD, TIOCSETP, (char *)&arg);
+#ifdef VMUNIX
+	ioctl(FD, TIOCLBIS, (char *)&bits);
+#endif
 }
