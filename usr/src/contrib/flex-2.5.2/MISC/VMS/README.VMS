@@ -1,0 +1,83 @@
+Brief instructions for building flex 2.5.x for VMS:
+
+   0) if you have either MMS (from Digital) or MMK (freeware) for use
+as a `make' utility, follow the directions in steps #1 through #5 below.
+If not, execute
+      @BUILD.COM xxxC
+where "xxxC" is either "VAXC" or "DECC" or "GNUC", and then skip to
+step #5.
+
+   1) set default to the source directory (not the [.MISC.VMS] subdirectory
+where this file is located).
+
+   2) COPY [.MISC.VMS]DESCRIP.MMS []*.*
+(Recursive invocations of `make' for the `bigcheck' test assume that the
+makefile will be found as descrip.mms in the current directory.)
+
+To build with VAX C for VAX/VMS:
+   3) MMS /MACRO=("VAXC=1") FLEX.EXE
+(The /macro qualifier is optional in this case.)
+
+To build with GNU C for VAX/VMS:
+ 2.5) possibly edit descrip.mms to uncomment `SET COMMAND' for GCCINIT,
+      depending on local site configuration
+   3) MMS /MACRO=("GNUC=1") FLEX.EXE
+
+To build with DEC C for either VAX/VMS or Alpha/VMS:
+   3) MMS /MACRO=("DECC=1") FLEX.EXE
+(Expect one or two informational messages from the compiler about
+implicitly declared functions.)
+
+Minimal testing of the resulting program:
+   4) MMS CHECK
+(If `diff' reports no warnings, the test has succeeded.)
+
+More thorough testing:
+ 4.5) MMS /MACRO=("xxxC=1") BIGCHECK    ! "xxxC=1" as in step #3 above
+(If using an older version of MMK rather than MMS, this might fail when
+`make' is invoked recursively due to excessive BYTLM usage by MMK.)
+
+Installation (the VMS makefile does not support an `install' target;
+you'll need to do this part manually):
+   5) copy flex.exe, flex.doc, flex.skl, flexlib.olb, and FlexLexer.h to
+location(s) appropriate for your site.  To use flex, define a "foreign"
+command by making a DCL symbol whose value begins with a dollar sign
+immediately followed by the filename for flex.exe, as in
+      $ flex :== $local_tools:flex.exe
+where `local_tools:' is the logical name pointing to flex.exe's location.
+This symbol will ordinarily be a candidate for your login.com.  When
+invoking flex, upper- or mixed-case command line options must be enclosed
+in quotes.  For example,
+      $ flex "-Pxyz" "-L" -t mylexer.l > mylexer.c
+(use prefix "xyz" instead of "yy", suppress `#line' compiler directives
+in the output, write the output to `stdout', process file mylexer.l,
+and capture `stdout' in file mylexer.c).  As illustrated here, this VMS
+version of flex supports emulation of command line I/O redirection used
+by Unix shells.
+
+ flex.exe    -- the executable image for the flex program;
+ flex.doc    -- documentation, the "man page" describing flex (flex.1
+                processed with `nroff -man' followed by `col -b');
+ flex.skl    -- a text file containing flex's default skeleton;
+                with this version of flex, it is for reference only;
+                flex.exe does not need to know where to find it;
+ flexlib.olb -- an object library containing some support routines;
+                you might need to link your generated lexer against
+                it, depending on how your program is designed;
+                flex.exe does not access it; it corresponds to
+                `libfl.a' under Unix;
+ FlexLexer.h -- header file used for C++ class-based lexers; not
+                needed for ordinary C lexers.
+
+Notes:
+      This VMS port of flex supports only the original Unix command line
+interface, not the native DCL interface which was available for flex 2.3.
+
+ build.com   -- DCL command procedure as alternative to descrip.mms;
+ descrip.mms -- 2.5.x makefile for use with MMS or MMK (see step #1);
+ mkskel.tpu  -- TPU program used to make skel.c from flex.skl for full
+                build from scratch; performs same function as mkskel.sh;
+ vms-conf.h  -- pre-configured `conf.in', copied to [-.-]config.h;
+ vms-code.c  -- VMS-specific support code, copied to [-.-]vms-code.c;
+ README.VMS  -- this file
+
