@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)opinfo.c 1.2 %G%";
+static char sccsid[] = "@(#)opinfo.c 1.3 %G%";
 
 /*
  * Operator information structure.
@@ -16,7 +16,7 @@ OPINFO opinfo[] ={
 /* O_LCON */		LEAF,		0,
 /* O_FCON */		LEAF,		0,
 /* O_SCON */		LEAF,		0,
-/* O_INDEX */		BINARY,		0,
+/* O_INDEX */		UNARY,		0,
 /* O_INDIR */		UNARY,		"^",
 /* O_RVAL */		UNARY,		0,
 /* O_COMMA */		BINARY,		",",
