@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	8.1 (Berkeley) %G%
+ *	@(#)swapgeneric.c	5.7 (Berkeley) %G%
  */
 
 #include <machine/pte.h>
@@ -27,7 +27,7 @@ dev_t	dumpdev = makedev(0,1);
 int	nswap;
 struct	swdevt swdevt[] = {
 	{ 1,	0,	0 },
-	{ 0,	1,	0 },
+	{ NODEV,	1,	0 },
 };
 long	dumplo;
 int	dmmin, dmmax, dmtext;
