@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.49 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -443,8 +443,6 @@ username()
 **		savemail
 */
 
-# include <sys/stat.h>
-
 char *
 ttypath()
 {
@@ -587,7 +585,7 @@ rlsesigs()
 #    define LA_TYPE		LA_INT
 #    define LA_AVENRUN		"avenrun"
 #  endif
-#  if defined(hpux)
+#  if defined(__hpux)
 #    define LA_TYPE		LA_FLOAT
 #    define LA_AVENRUN		"avenrun"
 #  endif
@@ -616,7 +614,7 @@ rlsesigs()
 
 /* _PATH_UNIX should be defined in <paths.h> */
 #ifndef _PATH_UNIX
-#  if defined(hpux)
+#  if defined(__hpux)
 #    define _PATH_UNIX		"/hp-ux"
 #  endif
 #  if defined(mips) && !defined(ultrix)
@@ -1059,7 +1057,7 @@ uname(name)
 */
 
 #ifndef HASINITGROUPS
-# if !defined(SYSTEM5) || defined(hpux)
+# if !defined(SYSTEM5) || defined(__hpux)
 #  define HASINITGROUPS
 # endif
 #endif
@@ -1114,7 +1112,6 @@ setsid()
 #endif
 
 #if defined(HASUSTAT)
-# include <sys/stat.h>
 # include <ustat.h>
 #endif
 
@@ -1122,7 +1119,7 @@ setsid()
 # if defined(sgi) || defined(apollo)
 #  include <sys/statfs.h>
 # else
-#  if defined(sun) || defined(hpux)
+#  if defined(sun) || defined(__hpux)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>
