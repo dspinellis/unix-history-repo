@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.15	82/04/24	*/
+/*	raw_usrreq.c	4.16	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -144,6 +144,9 @@ raw_ctlinput(cmd, arg)
 	caddr_t arg;
 {
 COUNT(RAW_CTLINPUT);
+
+	if (cmd < 0 || cmd > PRC_NCMDS)
+		return;
 }
 
 /*ARGSUSED*/

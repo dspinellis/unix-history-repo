@@ -1,4 +1,4 @@
-/* ip_icmp.h 4.4 82/04/24 */
+/* ip_icmp.h 4.5 82/04/25 */
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -54,7 +54,7 @@ struct icmp {
 #define	ICMP_MINLEN	8				/* abs minimum */
 #define	ICMP_TSLEN	(8 + 3 * sizeof (n_time))	/* timestamp */
 #define	ICMP_ADVLENMIN	(8 + sizeof (struct ip) + 8)	/* min */
-#define	ICMP_ADVLEN(p)	(8 + ((p)->icmp_ip.ip_len << 2) + 8)
+#define	ICMP_ADVLEN(p)	(8 + ((p)->icmp_ip.ip_hl << 2) + 8)
 	/* N.B.: must separately check that ip_hl >= 5 */
 
 /*

@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.14	82/04/24	*/
+/*	ip_icmp.c	4.15	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,6 +16,7 @@
  * routines to turnaround packets back to the originator, and
  * host table maintenance routines.
  */
+int	icmpprintfs = 1;
 
 /*
  * Generate an error packet of type error
@@ -31,12 +32,14 @@ icmp_error(oip, type, code)
 	struct ip *nip;
 COUNT(ICMP_ERROR);
 
+	if (icmpprintfs)
+		printf("icmp_error(%x, %d, %d)\n", oip, type, code);
 	/*
 	 * Make sure that the old IP packet had 8 bytes of data to return;
 	 * if not, don't bother.  Also don't EVER error if the old
 	 * packet protocol was ICMP.
 	 */
-	if (oip->ip_len - oiplen < 8 || oip->ip_p == IPPROTO_ICMP)
+	if (oip->ip_len < 8 || oip->ip_p == IPPROTO_ICMP)
 		goto free;
 
 	/*
@@ -56,6 +59,11 @@ COUNT(ICMP_ERROR);
 	}
 	icp->icmp_code = code;
 	bcopy((caddr_t)oip, (caddr_t)&icp->icmp_ip, oiplen + 8);
+	nip = &icp->icmp_ip;
+	nip->ip_len += oiplen;
+#if vax || pdp11
+	nip->ip_len = htons((u_short)nip->ip_len);
+#endif
 
 	/*
 	 * Now, copy old ip header in front of icmp
@@ -96,7 +104,7 @@ icmp_input(m)
 {
 	register struct icmp *icp;
 	register struct ip *ip = mtod(m, struct ip *);
-	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2, i;
+	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2, i, (*ctlfunc)();
 	extern u_char ip_protox[];
 COUNT(ICMP_INPUT);
 
@@ -104,6 +112,8 @@ COUNT(ICMP_INPUT);
 	 * Locate icmp structure in mbuf, and check
 	 * that not corrupted and of at least minimum length.
 	 */
+	if (icmpprintfs)
+		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
 	if (icmplen < ICMP_MINLEN)
 		goto free;
 	m->m_len -= hlen;
@@ -120,6 +130,9 @@ COUNT(ICMP_INPUT);
 	/*
 	 * Message type specific processing.
 	 */
+	if (icmpprintfs)
+		printf("icmp_input, type %d code %d\n", icp->icmp_type,
+			icp->icmp_code);
 	switch (i = icp->icmp_type) {
 
 	case ICMP_UNREACH:
@@ -131,10 +144,15 @@ COUNT(ICMP_INPUT);
 		 * Problem with previous datagram; advise
 		 * higher level routines.
 		 */
+#if vax || pdp11
+		icp->icmp_ip.ip_len = ntohs(icp->icmp_ip.ip_len);
+#endif
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
 			goto free;
-		(*protosw[ip_protox[ip->ip_p]].pr_ctlinput)
-			(icmpmap[i] + icp->icmp_code, (caddr_t)icp);
+		if (icmpprintfs)
+			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
+		if (ctlfunc = protosw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
+			(*ctlfunc)(icmpmap[i] + icp->icmp_code, (caddr_t)icp);
 		goto free;
 
 	case ICMP_ECHO:
@@ -210,6 +228,8 @@ COUNT(ICMP_SEND);
 	icp->icmp_cksum = in_cksum(m, ip->ip_len - hlen);
 	m->m_off -= hlen;
 	m->m_len += hlen;
+	if (icmpprintfs)
+		printf("icmp_send dst %x src %x\n", ip->ip_dst, ip->ip_src);
 	(void) ip_output(m, 0, 0, 0);
 }
 

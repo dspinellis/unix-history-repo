@@ -1,4 +1,4 @@
-/*	ip_input.c	1.41	82/04/24	*/
+/*	ip_input.c	1.42	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -560,7 +560,7 @@ COUNT(IP_STRIPOPTIONS);
 	m->m_len -= olen;
 }
 
-static u_char ctlerrmap[] = {
+u_char inetctlerrmap[] = {
 	ECONNABORTED,	ECONNABORTED,	0,		0,
 	0,
 #ifdef notdef
@@ -577,12 +577,12 @@ ip_ctlinput(cmd, arg)
 	caddr_t arg;
 {
 	struct in_addr *sin;
-	extern int tcp_abort(), udp_abort();
+	int tcp_abort(), udp_abort();
 	extern struct inpcb tcb, udb;
 
 	if (cmd < 0 || cmd > PRC_NCMDS)
 		return;
-	if (ctlerrmap[cmd] == 0)
+	if (inetctlerrmap[cmd] == 0)
 		return;		/* XXX */
 	if (cmd == PRC_IFDOWN)
 		sin = &((struct sockaddr_in *)arg)->sin_addr;
@@ -590,8 +590,8 @@ ip_ctlinput(cmd, arg)
 		sin = (struct in_addr *)arg;
 	else
 		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
-	in_pcbnotify(&tcb, sin, ctlerrmap[cmd], tcp_abort);
-	in_pcbnotify(&udb, sin, ctlerrmap[cmd], udp_abort);
+	in_pcbnotify(&tcb, sin, inetctlerrmap[cmd], tcp_abort);
+	in_pcbnotify(&udb, sin, inetctlerrmap[cmd], udp_abort);
 }
 
 int	ipprintfs = 0;

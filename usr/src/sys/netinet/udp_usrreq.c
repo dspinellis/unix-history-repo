@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.27	82/04/24	*/
+/*	udp_usrreq.c	4.28	82/04/25	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -96,7 +96,7 @@ COUNT(UDP_INPUT);
 		struct in_addr broadcastaddr;
 
 		broadcastaddr = if_makeaddr(ui->ui_dst.s_net, INADDR_ANY);
-		if (ui->ui_dst.s_addr != broadcastaddr.s_addr)
+		if (ui->ui_dst.s_addr == broadcastaddr.s_addr)
 			goto bad;
 		icmp_error((struct ip *)ui, ICMP_UNREACH, ICMP_UNREACH_PORT);
 		return;
@@ -118,14 +118,6 @@ bad:
 	m_freem(m);
 }
 
-udp_ctlinput(cmd, arg)
-	int cmd;
-	caddr_t arg;
-{
-
-COUNT(UDP_CTLINPUT);
-}
-
 udp_abort(inp)
 	struct inpcb *inp;
 {
@@ -133,6 +125,36 @@ udp_abort(inp)
 
 	in_pcbdisconnect(inp);
 	soisdisconnected(so);
+}
+
+udp_ctlinput(cmd, arg)
+	int cmd;
+	caddr_t arg;
+{
+	struct in_addr *sin;
+	extern u_char inetctlerrmap[];
+COUNT(UDP_CTLINPUT);
+
+	if (cmd < 0 || cmd > PRC_NCMDS)
+		return;
+	switch (cmd) {
+
+	case PRC_ROUTEDEAD:
+		break;
+
+	case PRC_QUENCH:
+		break;
+
+	/* these are handled by ip */
+	case PRC_IFDOWN:
+	case PRC_HOSTDEAD:
+	case PRC_HOSTUNREACH:
+		break;
+
+	default:
+		sin = &((struct icmp *)arg)->icmp_ip.ip_dst;
+		in_pcbnotify(&udb, sin, inetctlerrmap[cmd], udp_abort);
+	}
 }
 
 udp_output(inp, m0)
