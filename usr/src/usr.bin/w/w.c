@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.2 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -134,7 +134,7 @@ main(argc, argv)
 
 				case 'u':
 				case 'w':
-					firstchar = argv[1][1];
+					firstchar = argv[1][i];
 					break;
 
 				default:
