@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -86,7 +86,6 @@ print(tp, wp, ldisc, fmt)
 	put("-altwerase", ALTWERASE, 0);
 	put("-noflsh", NOFLSH, 0);
 	put("-tostop", TOSTOP, 0);
-	put("-mdmbuf", MDMBUF, 0);
 	put("-flusho", FLUSHO, 0);
 	put("-pendin", PENDIN, 0);
 	put("-nokerninfo", NOKERNINFO, 0);
@@ -140,6 +139,7 @@ print(tp, wp, ldisc, fmt)
 	put("-clocal", CLOCAL, 0);
 	put("-cstopb", CSTOPB, 0);
 	put("-crtscts", CRTSCTS, 0);
+	put("-mdmbuf", MDMBUF, 0);
 
 	/* special control characters */
 	cc = tp->c_cc;
