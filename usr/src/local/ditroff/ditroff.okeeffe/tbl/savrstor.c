@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)savrstor.c	1.2 (CWI) 85/10/02";
+static char sccsid[] = "@(#)savrstor.c	1.3 (CWI) 86/11/10";
 #endif lint
 
 #include "defs.h"
@@ -37,6 +37,7 @@ savefill()
 		break;
 	case CAT:
 	case DEVVER:
+	case DEVPSC:
 		printf(".nr #~ 0\n");
 		printf(".nr #| 0\n");
 		printf(".nr Tw 7.65i\n");
