@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.15 (Berkeley) %G%
+#	@(#)READ_ME	8.16 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -187,9 +187,10 @@ IDENTPROTO	Define this to get IDENT (RFC 1413) protocol support.
 		implementation.
 MIME		Include support for MIME-encapsulated error messages.
 FROZENCONFIG	Define this to get support for frozen configuration
-		files.  Frozen configurations make sense if your I/O system
-		is fast relative to your processor.  At this point this
-		is NOT recommended.
+		files.  Frozen configurations only make sense if your I/O
+		system is fast relative to your processor.  At this point
+		this is NOT RECOMMENDED.  Also, it doesn't work at all on
+		some systems, notably SunOS, Solaris, and NeXT.
 LOG		Set this to get syslog(3) support.  Defined by default
 		in conf.h.  You want this if at all possible.
 NETINET		Set this to get TCP/IP support.  Defined by default
@@ -314,4 +315,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.15, last update %G% 13:18:30)
+(Version 8.16, last update %G% 09:49:13)
