@@ -1,5 +1,5 @@
 /*
-char id_iio[] = "@(#)iio.c	1.2";
+char id_iio[] = "@(#)iio.c	1.3";
  *
  * internal (character array) i/o
  */
@@ -153,7 +153,7 @@ z_wnew()
 z_tab()
 {	int n;
 	if(reclen < recpos) reclen = recpos;
-	if((recpos + cursor) < 0) return(F_ERBREC);
+	if((recpos + cursor) < 0) cursor = -recpos;	/* to BOR */
 	n = reclen - recpos;
 	if(!reading && (cursor-n) > 0)
 	{	icptr += n;
