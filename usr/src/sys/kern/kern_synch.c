@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.4	%G%	*/
+/*	kern_synch.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,7 +10,7 @@
 #include "../h/vm.h"
 #include "../h/pte.h"
 #include "../h/inline.h"
-
+#include "../h/mtpr.h"
 
 #define SQSIZE 0100	/* Must be power of 2 */
 #define HASH(x)	(( (int) x >> 5) & (SQSIZE-1))
@@ -179,8 +179,10 @@ restart:
 					setrq(p);
 #endif
 				}
-				if(p->p_pri < curpri)
+				if(p->p_pri < curpri) {
 					runrun++;
+					aston();
+				}
 				if(runout != 0 && (p->p_flag&SLOAD) == 0) {
 					runout = 0;
 					wakeup((caddr_t)&runout);
@@ -239,8 +241,10 @@ register struct proc *p;
 	if (p->p_flag & SLOAD)
 		setrq(p);
 	splx(s);
-	if(p->p_pri < curpri)
+	if(p->p_pri < curpri) {
 		runrun++;
+		aston();
+	}
 	if(runout != 0 && (p->p_flag&SLOAD) == 0) {
 		runout = 0;
 		wakeup((caddr_t)&runout);
