@@ -27,6 +27,7 @@ SOFTWARE.
 /*
  * $Header: if_cons.c,v 4.7 88/08/11 15:52:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/if_cons.c,v $
+ *	@(#)if_cons.c	7.6 (Berkeley) %G%
  *
  * cons.c - Connection Oriented Network Service:
  * including support for a) user transport-level service, 
@@ -284,8 +285,8 @@ cons_init()
 	pk_protolisten(0x81, 0, clnp_incoming);
 	pk_protolisten(0x82, 0, esis_incoming);
 	pk_protolisten(0x84, 0, tp8878_A_incoming);
-#endif
 	pk_protolisten(0, 0, tp_incoming);
+#endif
 }
 
 tp_incoming(lcp, m0)
@@ -324,6 +325,8 @@ struct pklcd *lcp;
 	register struct x25_packet *xp;
 	int cmd;
 
+	if (m0 == 0)
+		goto dead;
 	switch(m0->m_type) {
 	case MT_DATA:
 	case MT_OOBDATA:
@@ -339,7 +342,10 @@ struct pklcd *lcp;
 			cmd = PRC_CONS_SEND_DONE;
 			break;
 
+		dead:
 		case RESET:
+		case CLEAR:
+		case CLEAR_CONF:
 			cmd = PRC_ROUTEDEAD;
 		}
 		tpcons_ctlinput(cmd, isop->isop_faddr, isop);
@@ -519,7 +525,7 @@ make_partial_x25_packet(isop, lcp)
 	u_int				proto;
 	int					flag;
 	caddr_t 			buf;
-	register caddr_t	ptr	= buf;
+	register caddr_t	ptr;
 	register int		len	= 0;
 	int 				buflen	=0;
 	caddr_t				facil_len;
@@ -531,6 +537,7 @@ make_partial_x25_packet(isop, lcp)
 	if (m == 0)
 		return ENOBUFS;
 	buf = mtod(m, caddr_t);
+	ptr = buf;
 	IFDEBUG(D_CCONN)
 		printf("make_partial_x25_packet(0x%x, 0x%x, 0x%x, 0x%x, 0x%x)\n",
 			isop->isop_laddr, isop->isop_faddr, proto, m, flag);
@@ -657,13 +664,14 @@ NSAPtoDTE(siso, sx25)
 		register char *out = sx25->x25_addr;
 		register char *in = siso->siso_data + 1;
 		register int nibble;
-		char *lim = in + 15;
+		char *lim = siso->siso_data + siso->siso_nlen;
+		char *olim = out+15;
 		int lowNibble = 0;
 
 		while (in < lim) {
 			nibble = ((lowNibble ? *in++ : (*in >> 4)) & 0xf) | 0x30;
 			lowNibble ^= 1;
-			if (nibble != 0x3f)
+			if (nibble != 0x3f && out < olim)
 				*out++ = nibble;
 		}
 		dtelen = out - sx25->x25_addr;
