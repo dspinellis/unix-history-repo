@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)syslog.3	6.2 (Berkeley) %G%
+.\"	@(#)syslog.3	6.3 (Berkeley) %G%
 .\"
 .TH SYSLOG 3 ""
 .UC 5
@@ -101,9 +101,11 @@ This option is safe to use in daemon processes that have no controlling
 terminal since
 .I syslog
 will fork before opening the console.
-.IP LOG_ODELAY \w'LOG_WARNING'u+3
-Delay opening the connection to
+.IP LOG_NDELAY \w'LOG_WARNING'u+3
+Opening the connection to
 .I syslogd
+immediately.
+Normally the open is delayed
 until the first message is logged.
 Useful for programs that need to manage the
 order in which file descriptors are allocated.
