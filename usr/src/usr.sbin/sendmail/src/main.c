@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -734,6 +734,7 @@ finis()
 **		Unlocks the current job.
 */
 
+void
 intsig()
 {
 	FileName = NULL;

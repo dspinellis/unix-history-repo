@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -162,7 +162,6 @@ username()
 	static char *myname = NULL;
 	extern char *getlogin();
 	register struct passwd *pw;
-	extern struct passwd *getpwuid();
 
 	/* cache the result */
 	if (myname == NULL)

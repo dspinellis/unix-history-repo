@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)measure.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)measure.c	2.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -62,7 +62,7 @@ empty:
 	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock_raw, (char *)packet, PACKET_IN, 0, 
-		    (struct sockaddr_in *)NULL, &length);
+		    (struct sockaddr *)NULL, &length);
 		if (cc < 0)
 			return(-1);
 		goto empty;
@@ -99,7 +99,7 @@ empty:
 		oicp->icmp_cksum = in_cksum((u_short *)oicp, sizeof(*oicp));
 	
 		count = sendto(sock_raw, (char *)opacket, sizeof(*oicp), 0, 
-				addr, sizeof(struct sockaddr_in));
+		    (struct sockaddr *)addr, sizeof(struct sockaddr_in));
 		if (count < 0) {
 			status = UNREACHABLE;
 			return(-1);
@@ -110,7 +110,7 @@ empty:
 			    (fd_set *)0, &tout)) <= 0)
 				break;
 			cc = recvfrom(sock_raw, (char *)packet, PACKET_IN, 0, 
-			    (struct sockaddr_in *)NULL, &length);
+			    (struct sockaddr *)NULL, &length);
 			(void)gettimeofday(&tv1, (struct timezone *)0);
 			if (cc < 0)
 				return(-1);

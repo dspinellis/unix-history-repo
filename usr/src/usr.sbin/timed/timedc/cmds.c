@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	2.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "timedc.h"
@@ -156,7 +156,7 @@ int argc;
 	bytenetorder(&msg);
 	length = sizeof(struct sockaddr_in);
 	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
-						&dest, length) < 0) {
+	    (struct sockaddr *)&dest, length) < 0) {
 		perror("sendto");
 		return;
 	}
@@ -168,7 +168,7 @@ int argc;
 	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
-							&from, &length);
+		    (struct sockaddr *)&from, &length);
 		if (cc < 0) {
 			perror("recvfrom");
 			return;
@@ -246,7 +246,7 @@ char *argv[];
 	while (nhosts-- > 0) {
 		length = sizeof(struct sockaddr_in);
 		if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
-						&sin[nhosts], length) < 0) {
+		    (struct sockaddr *)&sin[nhosts], length) < 0) {
 			perror("sendto");
 			return;
 		}
@@ -301,7 +301,7 @@ char *argv[];
 	bytenetorder(&msg);
 	length = sizeof(struct sockaddr_in);
 	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
-						&dest, length) < 0) {
+	    (struct sockaddr *)&dest, length) < 0) {
 		perror("sendto");
 		return;
 	}
@@ -313,7 +313,7 @@ char *argv[];
 	if (select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout)) {
 		length = sizeof(struct sockaddr_in);
 		cc = recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
-							&from, &length);
+		    (struct sockaddr *)&from, &length);
 		if (cc < 0) {
 			perror("recvfrom");
 			return;

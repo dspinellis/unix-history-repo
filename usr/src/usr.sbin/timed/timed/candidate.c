@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)candidate.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)candidate.c	2.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -43,8 +43,9 @@ struct netinfo *net;
 	msg.tsp_vers = TSPVERSION;
 	(void)strcpy(msg.tsp_name, hostname);
 	bytenetorder(&msg);
-	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, &net->dest_addr,
-	    sizeof(struct sockaddr_in)) < 0) {
+	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0,
+		(struct sockaddr *)&net->dest_addr,
+		sizeof(struct sockaddr_in)) < 0) {
 		syslog(LOG_ERR, "sendto: %m");
 		exit(1);
 	}

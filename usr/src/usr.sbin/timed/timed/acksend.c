@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acksend.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)acksend.c	2.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "globals.h"
@@ -55,8 +55,8 @@ struct netinfo *net;
 	}
 	bytenetorder(message);
 	do {
-		if (sendto(sock, (char *)message, sizeof(struct tsp), 0, addr,
-		    sizeof(struct sockaddr_in)) < 0) {
+		if (sendto(sock, (char *)message, sizeof(struct tsp), 0,
+		    (struct sockaddr *)addr, sizeof(struct sockaddr_in)) < 0) {
 			syslog(LOG_ERR, "acksend: sendto: %m");
 			exit(1);
 		}
