@@ -32,11 +32,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: bcopy.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: memmove.s,v 1.7 1993/08/16 17:06:34 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-	.asciz "$Id: bcopy.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: memmove.s,v 1.7 1993/08/16 17:06:34 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
@@ -46,25 +46,26 @@
 	 *  ws@tools.de     (Wolfgang Solfrank, TooLs GmbH) +49-228-985800
 	 */
 
-ENTRY(bcopy)
+ENTRY(memmove)
 	pushl	%esi
 	pushl	%edi
-	movl	12(%esp),%esi
-	movl	16(%esp),%edi
-	movl	20(%esp),%ecx
+	movl	12(%esp),%edi
+	pushl	%edi
+	movl	20(%esp),%esi
+	movl	24(%esp),%ecx
 	cmpl	%esi,%edi	/* potentially overlapping? */
 	jnb	1f
 	cld			/* nope, copy forwards. */
 	shrl	$2,%ecx		/* copy by words */
 	rep
 	movsl
-	movl	20(%esp),%ecx
+	movl	24(%esp),%ecx
 	andl	$3,%ecx		/* any bytes left? */
 	rep
 	movsb
+	popl	%eax
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	ret
 1:
 	addl	%ecx,%edi	/* copy backwards. */
@@ -75,14 +76,14 @@ ENTRY(bcopy)
 	decl	%esi
 	rep
 	movsb
-	movl	20(%esp),%ecx	/* copy remainder by words */
+	movl	24(%esp),%ecx	/* copy remainder by words */
 	shrl	$2,%ecx
 	subl	$3,%esi
 	subl	$3,%edi
 	rep
 	movsl
+	popl	%eax
 	popl	%edi
 	popl	%esi
-	xorl	%eax,%eax
 	cld
 	ret

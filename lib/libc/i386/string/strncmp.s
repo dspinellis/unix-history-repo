@@ -27,60 +27,130 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: strncmp.s,v 1.4 1993/08/16 17:06:42 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: strncmp.s,v 1.4 1993/08/16 17:06:42 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * strncmp(s1, s2, n) 
+ *	return an integer greater than, equal to, or less than 0, 
+ *	according as the first n characters of string s1 is greater
+ *	than, equal to, or less than the string s2.  
+ *
+ * %eax - pointer to s1
+ * %ecx - pointer to s2
+ * %edx - length
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
-	pushl	%edi
+/*
+ * I've unrolled the loop eight times: large enough to make a
+ * significant difference, and small enough not to totally trash the
+ * cashe.
+ */
+
+ENTRY(strncmp)
 	pushl	%ebx
-	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
+	movl	8(%esp),%eax
+	movl	12(%esp),%ecx
+	movl	16(%esp),%edx
+	jmp	L2			/* Jump into the loop! */
 
-	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
-
-	/*
-	 * if the string is too short, it's really not worth the overhead
-	 * of aligning to word boundries, etc.  So we jump to a plain 
-	 * unaligned set.
-	 */
-	cmpl	$0x0f,%ecx
-	jle	L1
-
-	movl	%edi,%edx		/* compute misalignment */
-	negl	%edx
-	andl	$3,%edx
-	movl	%ecx,%ebx
-	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
-	rep
-	stosb
-
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
-	rep
-	stosl
-
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
-L1:	rep
-	stosb
-
+	.align 2,0x90
+L1:	incl	%eax
+	incl	%ecx
+	decl	%edx
+L2:	testl	%edx,%edx		/* Have we compared n chars yet? */
+	jle	L4			/* Yes, strings are equal */
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	jne	L3
+	incl	%eax
+	incl	%ecx
+	decl	%edx
+	testl	%edx,%edx
+	jle	L4
+	movb	(%eax),%bl
+	cmpb	$0,%bl
+	je	L3
+	cmpb	%bl,(%ecx)
+	je	L1
+	.align 2,0x90
+L3:	movsbl	(%eax),%eax		/* unsigned comparision */
+	movsbl	(%ecx),%ecx
+	subl	%ecx,%eax
 	popl	%ebx
-	popl	%edi
+	ret
+	.align 2,0x90
+L4:	xorl	%eax,%eax
+	popl	%ebx
 	ret

@@ -27,31 +27,33 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: memset.s,v 1.3 1993/08/16 17:06:35 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: memset.s,v 1.3 1993/08/16 17:06:35 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * memset(void *b, int c, size_t len)
+ *	write len bytes of value c (converted to an unsigned char) to 
+ *	the string b.
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
+ENTRY(memset)
 	pushl	%edi
 	pushl	%ebx
 	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
+	movzbl	16(%esp),%eax		/* unsigned char, zero extend */
+	movl	20(%esp),%ecx
+	pushl	%edi			/* push address of buffer */
 
 	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
 
 	/*
 	 * if the string is too short, it's really not worth the overhead
@@ -61,26 +63,34 @@ ENTRY(bzero)
 	cmpl	$0x0f,%ecx
 	jle	L1
 
+	movl	%eax,%edx		/* copy value to all bytes in word */
+	sall	$8,%edx			/* XXX is there a better way? */
+	orl	%edx,%eax
+	movl	%eax,%edx
+	sall	$16,%edx
+	orl	%edx,%eax
+
 	movl	%edi,%edx		/* compute misalignment */
 	negl	%edx
 	andl	$3,%edx
 	movl	%ecx,%ebx
 	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
+	
+	movl	%edx,%ecx		/* set until word aligned */
 	rep
 	stosb
 
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
+	movl	%ebx,%ecx
+	shrl	$2,%ecx			/* set by words */
 	rep
 	stosl
 
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
+	movl	%ebx,%ecx		/* set remainder by bytes */
+	andl	$3,%ecx
 L1:	rep
 	stosb
 
+	popl	%eax			/* pop address of buffer */
 	popl	%ebx
 	popl	%edi
 	ret

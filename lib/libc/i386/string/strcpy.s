@@ -27,60 +27,68 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: strcpy.s,v 1.4 1993/08/16 17:06:40 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: strcpy.s,v 1.4 1993/08/16 17:06:40 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * strcpy (dst, src)
+ *	copy the string src to dst.
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
-	pushl	%edi
-	pushl	%ebx
-	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
+/*
+ * I've unrolled the loop eight times: large enough to make a
+ * significant difference, and small enough not to totally trash the
+ * cashe.
+ */
 
-	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
+ENTRY(strcpy)
+	movl	4(%esp),%ecx		/* dst address */
+	movl	8(%esp),%edx		/* src address */
+	pushl	%ecx			/* push dst address */
 
-	/*
-	 * if the string is too short, it's really not worth the overhead
-	 * of aligning to word boundries, etc.  So we jump to a plain 
-	 * unaligned set.
-	 */
-	cmpl	$0x0f,%ecx
-	jle	L1
-
-	movl	%edi,%edx		/* compute misalignment */
-	negl	%edx
-	andl	$3,%edx
-	movl	%ecx,%ebx
-	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
-	rep
-	stosb
-
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
-	rep
-	stosl
-
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
-L1:	rep
-	stosb
-
-	popl	%ebx
-	popl	%edi
+	.align 2,0x90
+L1:	movb	(%edx),%al		/* unroll loop, but not too much */
+	movb	%al,(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	1(%edx),%al
+	movb	%al,1(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	2(%edx),%al
+	movb	%al,2(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	3(%edx),%al
+	movb	%al,3(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	4(%edx),%al
+	movb	%al,4(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	5(%edx),%al
+	movb	%al,5(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	6(%edx),%al
+	movb	%al,6(%ecx)
+	testb	%al,%al
+	je	L2
+	movb	7(%edx),%al
+	movb	%al,7(%ecx)
+	addl	$8,%edx
+	addl	$8,%ecx
+	testb	%al,%al
+	jne	L1
+L2:	popl	%eax			/* pop dst address */
 	ret

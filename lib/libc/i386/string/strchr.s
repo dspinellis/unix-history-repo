@@ -27,60 +27,42 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: strchr.s,v 1.4 1993/08/16 17:06:38 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: strchr.s,v 1.4 1993/08/16 17:06:38 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * strchr(s, c)
+ *	return a pointer to the first occurance of the character c in
+ *	string s, or NULL if c does not occur in the string.
+ *
+ * %edx - pointer iterating through string
+ * %eax - pointer to first occurance of 'c'
+ * %cl  - character we're comparing against
+ * %bl  - character at %edx
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
-	pushl	%edi
+ENTRY(strchr)
 	pushl	%ebx
-	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
-
-	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
-
-	/*
-	 * if the string is too short, it's really not worth the overhead
-	 * of aligning to word boundries, etc.  So we jump to a plain 
-	 * unaligned set.
-	 */
-	cmpl	$0x0f,%ecx
-	jle	L1
-
-	movl	%edi,%edx		/* compute misalignment */
-	negl	%edx
-	andl	$3,%edx
-	movl	%ecx,%ebx
-	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
-	rep
-	stosb
-
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
-	rep
-	stosl
-
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
-L1:	rep
-	stosb
-
+	movl	8(%esp),%eax
+	movb	12(%esp),%cl
+	.align 2,0x90
+L1:
+	movb	(%eax),%bl
+	cmpb	%bl,%cl			/* found char??? */
+	je 	L2
+	incl	%eax
+	testb	%bl,%bl			/* null terminator??? */
+	jne	L1
+	xorl	%eax,%eax
+L2:
 	popl	%ebx
-	popl	%edi
 	ret

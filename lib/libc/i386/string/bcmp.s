@@ -27,60 +27,38 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: bcmp.s,v 1.3 1993/08/16 17:06:27 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: bcmp.s,v 1.3 1993/08/16 17:06:27 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * bcmp (void *b1, void *b2, size_t len)
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
+/*
+ * XXX should compare by words
+ */
+
+ENTRY(bcmp)
 	pushl	%edi
-	pushl	%ebx
+	pushl	%esi
 	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
-
-	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
-
-	/*
-	 * if the string is too short, it's really not worth the overhead
-	 * of aligning to word boundries, etc.  So we jump to a plain 
-	 * unaligned set.
-	 */
-	cmpl	$0x0f,%ecx
-	jle	L1
-
-	movl	%edi,%edx		/* compute misalignment */
-	negl	%edx
-	andl	$3,%edx
-	movl	%ecx,%ebx
-	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
-	rep
-	stosb
-
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
-	rep
-	stosl
-
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
-L1:	rep
-	stosb
-
-	popl	%ebx
+	movl	16(%esp),%esi
+	movl	20(%esp),%ecx
+	xorl	%eax,%eax		/* clear return value */
+	cld				/* set compare direction forward */
+	repe				/* compare! */
+	cmpsb
+	je	L1			/* matches! */
+	incl	%eax
+L1:	popl	%esi
 	popl	%edi
 	ret

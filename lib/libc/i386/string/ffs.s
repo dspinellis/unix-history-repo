@@ -27,60 +27,32 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $
+ *	$Id: ffs.s,v 1.4 1993/08/16 17:06:30 jtc Exp $
  */
 
 #if defined(LIBC_RCS) && !defined(lint)
-        .asciz "$Id: bzero.s,v 1.6 1993/08/16 17:06:29 jtc Exp $"
+        .asciz "$Id: ffs.s,v 1.4 1993/08/16 17:06:30 jtc Exp $"
 #endif /* LIBC_RCS and not lint */
 
 #include "DEFS.h"
 
 /*
- * bzero (void *b, size_t len)
- *	write len zero bytes to the string b.
+ * ffs(value)
+ *	finds the first bit set in value and returns the index of 
+ *	that bit.  Bits are numbered starting from 1, starting at the
+ *	rightmost bit.  A return value of 0 means that the argument
+ *	was zero.
  *
  * Written by:
  *	J.T. Conklin (jtc@wimsey.com), Winning Strategies, Inc.
  */
 
-ENTRY(bzero)
-	pushl	%edi
-	pushl	%ebx
-	movl	12(%esp),%edi
-	movl	16(%esp),%ecx
+ENTRY(ffs)
+	bsfl	4(%esp),%eax
+	jz	L1	 		/* ZF is set if all bits are 0 */
+	incl	%eax			/* bits numbered from 1, not 0 */
+	ret
 
-	cld				/* set fill direction forward */
-	xorl	%eax,%eax		/* set fill data to 0 */
-
-	/*
-	 * if the string is too short, it's really not worth the overhead
-	 * of aligning to word boundries, etc.  So we jump to a plain 
-	 * unaligned set.
-	 */
-	cmpl	$0x0f,%ecx
-	jle	L1
-
-	movl	%edi,%edx		/* compute misalignment */
-	negl	%edx
-	andl	$3,%edx
-	movl	%ecx,%ebx
-	subl	%edx,%ebx
-
-	movl	%edx,%ecx		/* zero until word aligned */
-	rep
-	stosb
-
-	movl	%ebx,%ecx		/* zero by words */
-	shrl	$2,%ecx
-	rep
-	stosl
-
-	movl	%ebx,%ecx
-	andl	$3,%ecx			/* zero remainder by bytes */
-L1:	rep
-	stosb
-
-	popl	%ebx
-	popl	%edi
+	.align 2
+L1:	xorl	%eax,%eax		/* clear result */
 	ret
