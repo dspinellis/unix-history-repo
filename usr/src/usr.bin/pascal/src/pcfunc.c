@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcfunc.c 1.10 %G%";
+static	char sccsid[] = "@(#)pcfunc.c 1.9.1.1 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -173,7 +173,9 @@ mathfunc:
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2DOUBLE , P2PTR ) , funcname );
 		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-		    sconv(p2type(p1), P2DOUBLE);
+		    if ( isa( p1 , "i" ) ) {
+			putop( P2SCONV , P2DOUBLE );
+		    }
 		    putop( P2CALL , P2DOUBLE );
 		    return nl + TDOUBLE;
 	    case O_EXPO:
@@ -184,7 +186,9 @@ mathfunc:
 		    putleaf( P2ICON , 0 , 0
 			    , ADDTYPE( P2FTN | P2INT , P2PTR ) , "_EXPO" );
 		    p1 = stkrval( (int *) argv[1] , NLNIL , RREQ );
-		    sconv(p2type(p1), P2DOUBLE);
+		    if ( isa( p1 , "i" ) ) {
+			putop( P2SCONV , P2DOUBLE );
+		    }
 		    putop( P2CALL , P2INT );
 		    return ( nl + T4INT );
 	    case O_UNDEF:
@@ -252,7 +256,6 @@ mathfunc:
 			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
 				tempnlp -> extra_flags , temptype , 0 );
 			p1 = rvalue( (int *) argv[1] , NLNIL , RREQ );
-			sconv(p2type(p1), temptype);
 			putop( P2ASSIGN , temptype );
 			putRV( 0 , cbn , tempnlp -> value[ NL_OFFS ] ,
 				tempnlp -> extra_flags , temptype , 0 );
