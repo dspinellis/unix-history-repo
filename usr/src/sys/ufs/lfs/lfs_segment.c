@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.10 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -142,7 +142,7 @@ lfs_vflush(vp)
 	 */
 	s = splbio();
 	if (--fs->lfs_iocount && (error =
-	    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs vflush", 0)))
+	    tsleep((caddr_t)&fs->lfs_iocount, PRIBIO + 1, "lfs vflush", 0)))
 		return (error);
 	splx(s);
 	vfs_unbusy(mp);
@@ -251,8 +251,9 @@ printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 	 */
 	if (do_ckp) {
 		s = splbio();
-		if (--fs->lfs_iocount && (error =
-		    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs sync", 0)))
+		if (--fs->lfs_iocount &&
+		    (error = tsleep((caddr_t)&fs->lfs_iocount, PRIBIO + 1,
+		      "lfs sync", 0)))
 			return (error);
 		splx(s);
 		lfs_writesuper(fs, sp);
@@ -262,8 +263,8 @@ printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 	free(sp, M_SEGMENT);
 
 	/* Wake up any cleaning processes waiting on this file system. */
-	wakeup(&fs->lfs_nextseg);
-	wakeup(&lfs_allclean_wakeup);
+	wakeup((caddr_t)&fs->lfs_nextseg);
+	wakeup((caddr_t)&lfs_allclean_wakeup);
 
 	return (0);
 }
@@ -843,7 +844,7 @@ lfs_callback(bp)
 		panic("lfs_callback: zero iocount\n");
 #endif
 	if (--fs->lfs_iocount == 0)
-		wakeup(&fs->lfs_iocount);
+		wakeup((caddr_t)&fs->lfs_iocount);
 
 	brelse(bp);
 }
