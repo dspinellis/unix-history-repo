@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.10 83/03/03";
+static char sccsid[] = "@(#)rlogin.c	4.11 83/03/31";
 #endif
 
 #include <sys/types.h>
@@ -13,6 +13,7 @@ static char sccsid[] = "@(#)rlogin.c	4.10 83/03/03";
 #include <pwd.h>
 #include <signal.h>
 #include <netdb.h>
+#include <wait.h>
 
 /*
  * rlogin - remote login
@@ -92,7 +93,7 @@ another:
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
 	}
-	signal(SIGPIPE, lostpeer);
+	sigset(SIGPIPE, lostpeer);
         rem = rcmd(&host, sp->s_port, pwd->pw_name,
 	    name ? name : pwd->pw_name, term, 0);
         if (rem < 0)
@@ -116,7 +117,7 @@ usage:
 #define CRLF "\r\n"
 
 int	child;
-int	done();
+int	catchild();
 
 int	defflags;
 struct	ttychars deftc;
@@ -135,22 +136,22 @@ doit()
 	ioctl(0, TIOCCGET, (char *)&deftc);
 	notc.tc_startc = deftc.tc_startc;
 	notc.tc_stopc = deftc.tc_stopc;
-	signal(SIGINT, exit);
-	signal(SIGHUP, exit);
-	signal(SIGQUIT, exit);
+	sigset(SIGINT, exit);
+	sigset(SIGHUP, exit);
+	sigset(SIGQUIT, exit);
 	child = fork();
 	if (child == -1) {
 		perror("rlogin: fork");
 		done();
 	}
-	signal(SIGINT, SIG_IGN);
+	sigignore(SIGINT);
+	mode(1);
 	if (child == 0) {
 		reader();
 		prf("\007Lost connection.");
 		exit(3);
 	}
-	signal(SIGCHLD, done);
-	mode(1);
+	sigset(SIGCHLD, catchild);
 	writer();
 	prf("Disconnected.");
 	done();
@@ -165,6 +166,23 @@ done()
 	exit(0);
 }
 
+catchild()
+{
+	union wait status;
+	int pid;
+
+again:
+	pid = wait3(&status, WNOHANG|WUNTRACED, 0);
+	if (pid == 0)
+		return;
+	/*
+	 * if the child (reader) dies, just quit
+	 */
+	if (pid < 0 || pid == child && !WIFSTOPPED(status))
+		done();
+	goto again;
+}
+
 /*
  * writer: write to remote: 0 -> line.
  * ~.	terminate
@@ -175,11 +193,21 @@ writer()
 {
 	char b[600], c;
 	register char *p;
+	register n;
 
 top:
 	p = b;
-	while (read(0, &c, 1) > 0) {
+	for (;;) {
 		int local;
+
+		n = read(0, &c, 1);
+		if (n == 0)
+			break;
+		if (n < 0)
+			if (errno == EINTR)
+				continue;
+			else
+				break;
 
 		if (eight == 0)
 			c &= 0177;
@@ -216,10 +244,10 @@ top:
 				    cmdc == deftc.tc_dsuspc) {
 					write(0, CRLF, sizeof(CRLF));
 					mode(0);
-					signal(SIGCHLD, SIG_IGN);
+					sigignore(SIGCHLD);
 					kill(cmdc == deftc.tc_suspc ?
 					  0 : getpid(), SIGTSTP);
-					signal(SIGCHLD, done);
+					sigrelse(SIGCHLD);
 					mode(1);
 					goto top;
 				}
@@ -238,6 +266,8 @@ top:
 		if (c == deftc.tc_kill || c == 0177 || c == deftc.tc_eofc ||
 		    c == '\r' || c == '\n')
 			goto top;
+		if (p >= &b[sizeof b])
+			p--;
 	}
 }
 
@@ -246,7 +276,6 @@ oob()
 	int out = 1+1, atmark;
 	char waste[BUFSIZ], mark;
 
-	signal(SIGURG, oob);
 	ioctl(1, TIOCFLUSH, (char *)&out);
 	for (;;) {
 		if (ioctl(rem, SIOCATMARK, &atmark) < 0) {
@@ -278,7 +307,7 @@ reader()
 	char rb[BUFSIZ];
 	register int cnt;
 
-	signal(SIGURG, oob);
+	sigset(SIGURG, oob);
 	{ int pid = -getpid();
 	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
 	for (;;) {
@@ -331,7 +360,7 @@ prf(f, a1, a2, a3)
 
 lostpeer()
 {
-	signal(SIGPIPE, SIG_IGN);
+	sigignore(SIGPIPE);
 	prf("\007Lost connection");
 	done();
 }
