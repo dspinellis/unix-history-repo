@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.15 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -53,10 +53,40 @@ struct vfsops lfs_vfsops = {
 	lfs_sysctl,
 };
 
-int
+/*
+ * Called by main() when ufs is going to be mounted as root.
+ */
 lfs_mountroot()
 {
-	panic("lfs_mountroot");		/* XXX -- implement */
+	extern struct vnode *rootvp;
+	struct fs *fs;
+	struct mount *mp;
+	struct proc *p = curproc;	/* XXX */
+	int error;
+	
+	/*
+	 * Get vnodes for swapdev and rootdev.
+	 */
+	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
+		panic("ffs_mountroot: can't setup bdevvp's");
+
+	if (error = vfs_rootmountalloc("lfs", "root_device", &mp))
+		return (error);
+	if (error = lfs_mountfs(rootvp, mp, p)) {
+		mp->mnt_vfc->vfc_refcount--;
+		free(mp, M_MOUNT);
+		return (error);
+	}
+	if (error = vfs_lock(mp)) {
+		(void)lfs_unmount(mp, 0, p);
+		mp->mnt_vfc->vfc_refcount--;
+		free(mp, M_MOUNT);
+		return (error);
+	}
+	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	(void)lfs_statfs(mp, &mp->mnt_stat, p);
+	vfs_unlock(mp);
+	return (0);
 }
 
 /*
