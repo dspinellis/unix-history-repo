@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.4 (Berkeley) %G%
+#	@(#)Makefile	8.5 (Berkeley) %G%
 
 PROG=	dbtest
 OBJS1=	dbtest.o #strerror.o
@@ -8,7 +8,7 @@ OBJS1=	dbtest.o #strerror.o
 OBJS=	${OBJS1} ${OBJS2} ${OBJS3}
 
 PDIR=	../PORT/bsd.44
-CFLAGS=	-O -DDEBUG -DSTATISTICS -I${PDIR}/include #-I../recno
+CFLAGS=	-O -DDEBUG -DSTATISTICS -I${PDIR}/include -I${PDIR} #-I../recno
 LIB=	${PDIR}/libdb.a
 
 dbtest: ${OBJS} ${LIB}
