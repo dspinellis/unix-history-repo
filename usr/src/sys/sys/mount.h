@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.19 (Berkeley) %G%
+ *	@(#)mount.h	7.20 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -109,26 +109,55 @@ struct mount {
 /*
  * Operations supported on mounted file system.
  */
+struct nameidata;
 struct vfsops {
-	int	(*vfs_mount)(	/* mp, path, data, ndp */ );
-	int	(*vfs_start)(	/* mp, flags */ );
-	int	(*vfs_unmount)(	/* mp, forcibly */ );
-	int	(*vfs_root)(	/* mp, vpp */ );
-	int	(*vfs_quotactl)(/* mp, cmd, uid, arg */ );
-	int	(*vfs_statfs)(	/* mp, sbp */ );
-	int	(*vfs_sync)(	/* mp, waitfor */ );
-	int	(*vfs_fhtovp)(	/* mp, fidp, vpp */ );
-	int	(*vfs_vptofh)(	/* vp, fidp */ );
-	int	(*vfs_init)(	/* */ );
+	int	(*vfs_mount)__P((
+			struct mount *mp,
+			char *path,
+			caddr_t data,
+			struct nameidata *ndp,
+			struct proc *p));
+	int	(*vfs_start)__P((
+			struct mount *mp,
+			int flags,
+			struct proc *p));
+	int	(*vfs_unmount)__P((
+			struct mount *mp,
+			int mntflags,
+			struct proc *p));
+	int	(*vfs_root)__P((
+			struct mount *mp,
+			struct vnode **vpp));
+	int	(*vfs_quotactl)__P((
+			struct mount *mp,
+			int cmds,
+			int uid,		/* should be uid_t */
+			caddr_t arg,
+			struct proc *p));
+	int	(*vfs_statfs)__P((
+			struct mount *mp,
+			struct statfs *sbp,
+			struct proc *p));
+	int	(*vfs_sync)__P((
+			struct mount *mp,
+			int waitfor));
+	int	(*vfs_fhtovp)__P((
+			struct mount *mp,
+			struct fid *fhp,
+			struct vnode **vpp));
+	int	(*vfs_vptofh)__P((
+			struct vnode *vp,
+			struct fid *fhp));
+	int	(*vfs_init)__P(());
 };
 
-#define VFS_MOUNT(MP, PATH, DATA, NDP) \
-	(*(MP)->mnt_op->vfs_mount)(MP, PATH, DATA, NDP)
-#define VFS_START(MP, FLAGS)	  (*(MP)->mnt_op->vfs_start)(MP, FLAGS)
-#define VFS_UNMOUNT(MP, FORCIBLY) (*(MP)->mnt_op->vfs_unmount)(MP, FORCIBLY)
+#define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
+	(*(MP)->mnt_op->vfs_mount)(MP, PATH, DATA, NDP, P)
+#define VFS_START(MP, FLAGS, P)	  (*(MP)->mnt_op->vfs_start)(MP, FLAGS, P)
+#define VFS_UNMOUNT(MP, FORCE, P) (*(MP)->mnt_op->vfs_unmount)(MP, FORCE, P)
 #define VFS_ROOT(MP, VPP)	  (*(MP)->mnt_op->vfs_root)(MP, VPP)
-#define VFS_QUOTACTL(MP, C, U, A) (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A)
-#define VFS_STATFS(MP, SBP)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP)
+#define VFS_QUOTACTL(MP,C,U,A,P)  (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A, P)
+#define VFS_STATFS(MP, SBP, P)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP, P)
 #define VFS_SYNC(MP, WAITFOR)	  (*(MP)->mnt_op->vfs_sync)(MP, WAITFOR)
 #define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
 #define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
@@ -220,12 +249,12 @@ struct nfs_args {
 /*
  * exported vnode operations
  */
-extern void	vfs_remove();		/* remove a vfs from mounted vfs list */
-extern int	vfs_lock();		/* lock a vfs */
-extern void	vfs_unlock();		/* unlock a vfs */
-extern struct	mount *getvfs();	/* return vfs given fsid */
-extern struct	mount *rootfs;		/* ptr to root mount structure */
-extern struct	vfsops *vfssw[];	/* mount filesystem type switch table */
+void	vfs_remove __P((struct mount *mp)); /* remove a vfs from mount list */
+int	vfs_lock __P((struct mount *mp));   /* lock a vfs */
+void	vfs_unlock __P((struct mount *mp)); /* unlock a vfs */
+struct	mount *getvfs __P((fsid_t *fsid));  /* return vfs given fsid */
+struct	mount *rootfs;			    /* ptr to root mount structure */
+struct	vfsops *vfssw[];		    /* mount filesystem type table */
 #else
 
 #include <sys/cdefs.h>
