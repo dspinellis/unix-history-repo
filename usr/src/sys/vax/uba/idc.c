@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.10 (Berkeley) %G%
+ *	@(#)idc.c	6.11 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -702,7 +702,6 @@ idcecc(ui)
 	int reg, npf, o;
 	int cn, tn, sn;
 
-	printf("idcecc: HELP!\n");
 	npf = btop(idc->idcbcr + idc_softc.sc_bcnt) - 1;;
 	reg = btop(idc_softc.sc_ubaddr) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
@@ -720,7 +719,13 @@ idcecc(ui)
 	i = (i&~07)>>3;
 	byte = i + o;
 	while (i < 512 && (int)ptob(npf)+i < idc_softc.sc_bcnt && bit > -11) {
-		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+		/*
+		 * should be:
+		 *	addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+		 *		(byte & PGOFSET);
+		 * but this generates an extzv which hangs the UNIBUS.
+		 */
+		addr = ptob(*(int *)&ubp->uba_map[reg+btop(byte)]&0x1fffff)+
 		    (byte & PGOFSET);
 		putmemc(addr, getmemc(addr)^(mask<<bit));
 		byte++;
