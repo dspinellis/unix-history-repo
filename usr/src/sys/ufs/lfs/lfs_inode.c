@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.22	82/08/03	*/
+/*	lfs_inode.c	4.23	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -238,7 +238,7 @@ irele(ip)
 	if (ip->i_count == 1) {
 		ip->i_flag |= ILOCK;
 		if (ip->i_nlink <= 0) {
-			itrunc(ip);
+			itrunc(ip, 0);
 			mode = ip->i_mode;
 			ip->i_mode = 0;
 			ip->i_rdev = 0;
@@ -320,13 +320,14 @@ iupdat(ip, ta, tm, waitfor)
 }
 
 /*
- * Free all the disk blocks associated
- * with the specified inode structure.
- * The blocks of the file are removed
- * in reverse order.
+ * Truncate the inode ip to at most
+ * length size.  Free affected disk
+ * blocks -- the blocks of the file
+ * are removed in reverse order.
  */
-itrunc(ip)
+itrunc(ip, length)
 	register struct inode *ip;
+	register int length;
 {
 	register i;
 	dev_t dev;
@@ -344,13 +345,15 @@ itrunc(ip)
 	i = ip->i_mode & IFMT;
 	if (i != IFREG && i != IFDIR && i != IFLNK)
 		return;
+	if (ip->i_size <= length)
+		return;
 
 	/*
 	 * Clean inode on disk before freeing blocks
 	 * to insure no duplicates if system crashes.
 	 */
 	itmp = *ip;
-	itmp.i_size = 0;
+	itmp.i_size = length;
 	for (i = 0; i < NDADDR; i++)
 		itmp.i_db[i] = 0;
 	for (i = 0; i < NIADDR; i++)
