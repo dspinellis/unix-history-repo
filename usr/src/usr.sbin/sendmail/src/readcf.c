@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1063,13 +1063,82 @@ struct resolverflags
 
 #endif
 
+/* codes for options that have no short name */
+/* NOTE: some of these values may be in the list of "safe" options below */
+#define O_BSP		0x80	/* have broken SMTP peers */
+#define O_SQBH		0x81	/* sort queue by host */
+
+struct optioninfo
+{
+	char	*o_name;	/* long name of option */
+	char	o_code;		/* short name of option */
+	bool	o_safe;		/* safe for random people to use */
+} OptionTab[] =
+{
+	"SevenBitInput",	'7',	TRUE,
+	"AliasFile",		'A',	FALSE,
+	"AliasWait",		'a',	FALSE,
+	"BlankSub",		'B',	FALSE,
+	"MinFreeBlocks",	'b',	TRUE,
+	"CheckpointInterval",	'C',	TRUE,
+	"HoldExpensive",	'c',	FALSE,
+	"AutoRebuildAliases",	'D',	FALSE,
+	"DeliveryMode",		'd',	TRUE,
+	"ErrorHeader",		'E',	FALSE,
+	"ErrorMode",		'e',	TRUE,
+	"TempFileMode",		'F',	FALSE,
+	"SaveFromLine",		'f',	FALSE,
+	"MatchGECOS",		'G',	FALSE,
+	"HelpFile",		'H',	FALSE,
+	"MaxHopCount",		'h',	FALSE,
+	"NameServerOptions",	'I',	FALSE,
+	"IgnoreDots",		'i',	TRUE,
+	"ForwardPath",		'J',	FALSE,
+	"SendMimeErrors",	'j',	TRUE,
+	"ConnectionCacheSize",	'k',	FALSE,
+	"ConnectionCacheTimeout", 'K',	FALSE,
+	"UseErrorsTo",		'l',	FALSE,
+	"LogLevel",		'L',	FALSE,
+	"MeToo",		'm',	TRUE,
+	"CheckAliases",		'n',	FALSE,
+	"OldStyleHeaders",	'o',	TRUE,
+	"DaemonPortOptions",	'O',	FALSE,
+	"PrivacyOptions",	'p',	TRUE,
+	"PostmasterCopy",	'P',	FALSE,
+	"QueueFactor",		'q',	FALSE,
+	"QueueDirectory",	'Q',	FALSE,
+	"DontPruneRoutes",	'R',	FALSE,
+	"ReadTimeout",		'r',	TRUE,
+	"StatusFile",		'S',	FALSE,
+	"SuperSafe",		's',	TRUE,
+	"QueueTimeout",		'T',	FALSE,
+	"TimeZoneSpec",		't',	FALSE,
+	"UserDatabaseSpec",	'U',	FALSE,
+	"DefaultUser",		'u',	FALSE,
+	"FallbackMXhost",	'V',	FALSE,
+	"Verbose",		'v',	TRUE,
+	"TryNullMXList",	'w',	TRUE,
+	"QueueLA",		'x',	FALSE,
+	"RefuseLA",		'X',	FALSE,
+	"RecipientFactor",	'y',	FALSE,
+	"ForkQueueRuns",	'Y',	FALSE,
+	"ClassFactor",		'z',	FALSE,
+	"TimeFactor",		'Z',	FALSE,
+	"BrokenSmtpPeers",	O_BSP,	TRUE,
+	"SortQueueByHost",	O_SQBH,	TRUE,
+	NULL,			'\0',	FALSE,
+};
+
+
+
 setoption(opt, val, sticky)
-	char opt;
+	u_char opt;
 	char *val;
 	bool sticky;
 	register ENVELOPE *e;
 {
 	register char *p;
+	register struct optioninfo *o;
 	extern bool atobool();
 	extern time_t convtime();
 	extern int QueueLA;
@@ -1077,8 +1146,44 @@ setoption(opt, val, sticky)
 	extern bool Warn_Q_option;
 	extern bool trusteduser();
 
+	if (opt == ' ')
+	{
+		/* full word options */
+
+		p = strchr(val, '=');
+		if (p == NULL)
+			p = &val[strlen(val)];
+		while (*--p == ' ')
+			continue;
+		while (*++p == ' ')
+			*p = '\0';
+		if (*p == '=')
+			*p++ = '\0';
+		while (*p == ' ')
+			p++;
+		for (o = OptionTab; o->o_name != NULL; o++)
+		{
+			if (strcasecmp(o->o_name, val) == 0)
+				break;
+		}
+		if (o->o_name == NULL)
+			syserr("readcf: unknown option name %s", val);
+		opt = o->o_code;
+		val = p;
+	}
+	else
+	{
+		for (o = OptionTab; o->o_name != NULL; o++)
+		{
+			if (o->o_code == opt)
+				break;
+		}
+	}
+
 	if (tTd(37, 1))
-		printf("setoption %c=%s", opt, val);
+		printf("setoption %s (0x%x)=%s",
+			o->o_name == NULL ? "<unknown>" : o->o_name,
+			opt, val);
 
 	/*
 	**  See if this option is preset for us.
@@ -1094,7 +1199,7 @@ setoption(opt, val, sticky)
 	if (tTd(37, 1))
 		printf("\n");
 
-	switch (opt)
+	switch (opt & 0xff)
 	{
 	  case '!':		/* extended options */
 		setextoption(val, safe, sticky, e);
@@ -1499,6 +1604,14 @@ setoption(opt, val, sticky)
 
 	  case 'Z':		/* work time factor */
 		WkTimeFact = atoi(val);
+		break;
+
+	  case O_BSP:		/* SMTP Peers can't handle 2-line greeting */
+		BrokenSmtpPeers = atobool(val);
+		break;
+
+	  case O_SQBH:		/* sort work queue by host first */
+		SortQueueByHost = atobool(val);
 		break;
 
 	  default:
