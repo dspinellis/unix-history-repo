@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -107,8 +107,8 @@ __set_subwin(orig, win)
 	     cnt++, ocnt++) {
 		olp = orig->lines[ocnt];
 		lp = win->lines[cnt];
-		lp->firstch = olp->firstch;
-		lp->lastch = olp->lastch;
+		lp->firstchp = olp->firstchp;
+		lp->lastchp = olp->lastchp;
 		lp->line = &olp->line[k];
 		lp->flags = olp->flags;
 		cnt++;
@@ -167,6 +167,10 @@ makenew(nl, nc, by, bx)
 	for (lp = win->lspace, i = 0; i < nl; i++, lp++) {
 		win->lines[i] = lp;
 	        lp->line = &win->wspace[i * nc];
+		lp->firstchp = &lp->firstch;
+		lp->lastchp = &lp->lastch;
+		lp->firstch = 0;
+		lp->lastch = 0;
 	}
 
 #ifdef DEBUG
