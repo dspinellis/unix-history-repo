@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.43	83/05/01	*/
+/*	vfs_cluster.c	4.44	83/05/02	*/
 
 #include "../machine/pte.h"
 
@@ -741,6 +741,7 @@ loop:
 			bp->b_flags |= B_ASYNC;
 			notavail(bp);
 			bwrite(bp);
+			splx(s);
 			goto loop;
 		}
 	}
