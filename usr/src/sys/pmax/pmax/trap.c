@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.1 (Berkeley) %G%
+ *	@(#)trap.c	7.21 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -551,6 +551,11 @@ trap(statusReg, causeReg, vadr, pc, args)
 
 		/* read break instruction */
 		instr = fuiword((caddr_t)va);
+#if 0
+		printf("trap: %s (%d) breakpoint %x at %x: (adr %x ins %x)\n",
+			p->p_comm, p->p_pid, instr, pc,
+			p->p_md.md_ss_addr, p->p_md.md_ss_instr); /* XXX */
+#endif
 #ifdef KADB
 		if (instr == MACH_BREAK_BRKPT || instr == MACH_BREAK_SSTEP)
 			goto err;
@@ -577,12 +582,12 @@ trap(statusReg, causeReg, vadr, pc, args)
 					FALSE);
 			}
 		}
-		if (i < 0) {
-			i = SIGTRAP;
-			break;
-		}
+		if (i < 0)
+			printf("Warning: can't restore instruction at %x: %x\n",
+				p->p_md.md_ss_addr, p->p_md.md_ss_instr);
 		p->p_md.md_ss_addr = 0;
-		goto out;
+		i = SIGTRAP;
+		break;
 	    }
 
 	case T_RES_INST+T_USER:
@@ -1375,12 +1380,12 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 	int condition;
 	extern unsigned GetBranchDest();
 
-#if 0
-	printf("regsPtr=%x PC=%x Inst=%x fpcCsr=%x\n", regsPtr, instPC,
-		*instPC, fpcCSR);
-#endif
 
 	inst = *(InstFmt *)instPC;
+#if 0
+	printf("regsPtr=%x PC=%x Inst=%x fpcCsr=%x\n", regsPtr, instPC,
+		inst.word, fpcCSR); /* XXX */
+#endif
 	switch ((int)inst.JType.op) {
 	case OP_SPECIAL:
 		switch ((int)inst.RType.func) {
@@ -1481,7 +1486,7 @@ MachEmulateBranch(regsPtr, instPC, fpcCSR, allowNonBranch)
 		retAddr = instPC + 4;
 	}
 #if 0
-	printf("Target addr=%x\n", retAddr);
+	printf("Target addr=%x\n", retAddr); /* XXX */
 #endif
 	return (retAddr);
 }
@@ -1506,7 +1511,7 @@ cpu_singlestep(p)
 	int i;
 
 	/* compute next address after current location */
-	va = MachEmulateBranch(locr0, locr0[PC], 0, 1);
+	va = MachEmulateBranch(locr0, locr0[PC], locr0[FSR], 1);
 	if (p->p_md.md_ss_addr || p->p_md.md_ss_addr == va ||
 	    !useracc((caddr_t)va, 4, B_READ)) {
 		printf("SS %s (%d): breakpoint already set at %x (va %x)\n",
@@ -1532,9 +1537,11 @@ cpu_singlestep(p)
 	}
 	if (i < 0)
 		return (EFAULT);
-	printf("SS %s (%d): breakpoint set at %x: %x (pc %x)\n",
+#if 0
+	printf("SS %s (%d): breakpoint set at %x: %x (pc %x) br %x\n",
 		p->p_comm, p->p_pid, p->p_md.md_ss_addr,
-		p->p_md.md_ss_instr, locr0[PC]); /* XXX */
+		p->p_md.md_ss_instr, locr0[PC], fuword((caddr_t)va)); /* XXX */
+#endif
 	return (0);
 }
 
