@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.10 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -212,6 +212,29 @@ cd9660_getattr(ap)
 	vap->va_rdev	= ip->inode.iso_rdev;
 
 	vap->va_size	= (u_quad_t) ip->i_size;
+	if (ip->i_size == 0 && (vap->va_mode & S_IFMT) == S_IFLNK) {
+		struct vop_readlink_args rdlnk;
+		struct iovec aiov;
+		struct uio auio;
+		char *cp;
+
+		MALLOC(cp, char *, MAXPATHLEN, M_TEMP, M_WAITOK);
+		aiov.iov_base = cp;
+		aiov.iov_len = MAXPATHLEN;
+		auio.uio_iov = &aiov;
+		auio.uio_iovcnt = 1;
+		auio.uio_offset = 0;
+		auio.uio_rw = UIO_READ;
+		auio.uio_segflg = UIO_SYSSPACE;
+		auio.uio_procp = ap->a_p;
+		auio.uio_resid = MAXPATHLEN;
+		rdlnk.a_uio = &auio;
+		rdlnk.a_vp = ap->a_vp;
+		rdlnk.a_cred = ap->a_cred;
+		if (cd9660_readlink(&rdlnk) == 0)
+			vap->va_size = MAXPATHLEN - auio.uio_resid;
+		FREE(cp, M_TEMP);
+	}
 	vap->va_flags	= 0;
 	vap->va_gen = 1;
 	vap->va_blocksize = ip->i_mnt->logical_block_size;
