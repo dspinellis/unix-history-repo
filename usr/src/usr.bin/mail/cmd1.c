@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	2.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	2.13 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -460,8 +460,7 @@ folders()
 	case 0:
 		sigchild();
 		execlp("ls", "ls", dirname, 0);
-		clrbuf(stdout);
-		exit(1);
+		_exit(1);
 
 	case -1:
 		perror("fork");

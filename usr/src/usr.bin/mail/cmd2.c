@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd2.c	2.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd2.c	2.12 (Berkeley) %G%";
 #endif
 
 #include "rcv.h"
@@ -144,7 +144,7 @@ save1(str, mark)
 	if ((file = expand(file)) == NOSTR)
 		return(1);
 	printf("\"%s\" ", file);
-	flush();
+	fflush(stdout);
 	if (stat(file, &statb) >= 0)
 		disp = "[Appended]";
 	else
@@ -209,7 +209,7 @@ swrite(str)
 	if (f && getmsglist(str, msgvec, 0) < 0)
 		return(1);
 	printf("\"%s\" ", file);
-	flush();
+	fflush(stdout);
 	if (stat(file, &statb) >= 0)
 		disp = "[Appended]";
 	else
