@@ -40,6 +40,8 @@ vaxuba/lp.c		optional lp device-driver
 vaxuba/lpa.c		optional lpa device-driver
 vaxuba/ps.c		optional ps device-driver
 vaxuba/rk.c		optional rk device-driver
+vaxuba/rl.c		optional rl device-driver
+vaxuba/rx.c		optional rx device-driver
 vaxuba/tm.c		optional te device-driver
 vaxuba/ts.c		optional ts device-driver
 vaxuba/uba.c		standard device-driver
