@@ -1,0 +1,18 @@
+Mrvsort	rvsort.c	/^main(argc, argv) $/
+allflush	rvsort.c	/^allflush()$/
+crail	rvsort.c	/^crail(nrail)$/
+dumpchar	rvsort.c	/^dumpchar(cp)$/
+error	rvsort.c	/^error(s)$/
+getch	rvsort.c	/^getch()$/
+linesflush	rvsort.c	/^linesflush()$/
+loadfont	rvsort.c	/^loadfont(fnum, size)$/
+ofile	rvsort.c	/^ofile()$/
+ptback	rvsort.c	/^ptback()$/
+ptesc	rvsort.c	/^ptesc(escc)$/
+ptlead	rvsort.c	/^ptlead(leadd)$/
+ptmcase	rvsort.c	/^ptmcase()$/
+ptrail	rvsort.c	/^ptrail(rlmg)$/
+ptsize	rvsort.c	/^ptsize(size)$/
+sendchar	rvsort.c	/^sendchar(cp)$/
+stuffc	rvsort.c	/^stuffc(code)$/
+stupidadj	rvsort.c	/^stupidadj(code, lcode)$/

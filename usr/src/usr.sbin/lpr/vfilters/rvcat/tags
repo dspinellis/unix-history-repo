@@ -1,0 +1,18 @@
+CONVERT	rvcat.c	/^#define CONVERT(n)		((n*(200.\/432.))*(2112.\/2200/
+Mrvcat	rvcat.c	/^main(argc, argv) $/
+RECONVERT	rvcat.c	/^#define RECONVERT(n)		((n*(432.\/200.))*(2200.\/21/
+account	rvcat.c	/^account(who, from, acctfile)$/
+allpanic	rvcat.c	/^allpanic(nbytes)$/
+crail	rvcat.c	/^crail(nrail)$/
+findsize	rvcat.c	/^findsize(code)$/
+getfont	rvcat.c	/^getfont()$/
+loadfont	rvcat.c	/^loadfont(fnum, size)$/
+min	rvcat.c	/^#define	min(a,b)		(a<b ? a : b)$/
+nalloc	rvcat.c	/^nalloc(i, j)$/
+new_page	rvcat.c	/^new_page(lines_left)$/
+nfree	rvcat.c	/^nfree(cp)$/
+ofile	rvcat.c	/^ofile()$/
+outc	rvcat.c	/^outc(code)$/
+readrm	rvcat.c	/^readrm()$/
+relfont	rvcat.c	/^relfont()$/
+slop_lines	rvcat.c	/^slop_lines(ncols)$/

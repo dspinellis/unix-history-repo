@@ -1,0 +1,2 @@
+Mgettable	gettable.c	/^main(argc, argv)$/
+equaln	gettable.c	/^#define	equaln(s1, s2, n)	(!strncmp(s1, s2, n))$/

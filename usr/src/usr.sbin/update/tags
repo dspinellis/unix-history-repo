@@ -1,0 +1,2 @@
+Mupdate	update.c	/^main()$/
+mysync	update.c	/^mysync()$/
