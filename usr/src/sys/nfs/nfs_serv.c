@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -348,7 +348,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(cnt, NFS_MAXDATA);
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = vn_access(vp, VREAD | VEXEC, cred)) {
+	if (error = VOP_ACCESS(vp, VREAD | VEXEC, cred)) {
 		vput(vp);
 		nfsm_reply(0);
 	}
@@ -475,7 +475,8 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	}
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = vn_access(vp, VWRITE, cred)) {
+	if ((error = vn_writechk(vp)) ||
+	    (error = VOP_ACCESS(vp, VWRITE, cred))) {
 		vput(vp);
 		nfsm_reply(0);
 	}
@@ -1053,7 +1054,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
 	fullsiz = siz;
 	if (error = nfsrv_fhtovp(fhp, TRUE, &vp, cred))
 		nfsm_reply(0);
-	if (error = vn_access(vp, VEXEC, cred)) {
+	if (error = VOP_ACCESS(vp, VEXEC, cred)) {
 		vput(vp);
 		nfsm_reply(0);
 	}
