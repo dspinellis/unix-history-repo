@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -161,9 +161,9 @@ nextopt:
 	(void) freopen("/dev/null", "w", stderr);
 	(void) signal(SIGPIPE, lostconn);
 	(void) signal(SIGCHLD, SIG_IGN);
-	if (signal(SIGURG, myoob) < 0) {
+	if ((int)signal(SIGURG, myoob) < 0)
 		syslog(LOG_ERR, "signal: %m");
-	}
+
 	/* handle urgent data inline */
 #ifdef SO_OOBINLINE
 	if (setsockopt(0, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)) < 0) {
