@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)copy.c	7.1 (Berkeley) %G%
+ *	@(#)copy.c	7.1 (Berkeley) 6/5/86
  */
 
 /*
@@ -14,15 +14,14 @@
 main()
 {
 	int from, to;
-	char fbuf[50], tbuf[50];
 	char buffer[10240];
 	register int record;
 	extern int errno;
 
-	from = getdev("From", fbuf, 0);
-	to = getdev("To", tbuf, 1);
+	from = getdev("From", 0);
+	to = getdev("To", 1);
 	for (record = 0; ; record++) {
-		int rcc, wcc;
+		register int rcc, wcc;
 
 		rcc = read(from, buffer, sizeof (buffer));
 		if (rcc == 0)
@@ -56,11 +55,13 @@ main()
 	/* can't call exit here */
 }
 
-getdev(prompt, buf, mode)
-	char *prompt, *buf;
+static
+getdev(prompt, mode)
+	char *prompt;
 	int mode;
 {
-	register int i;
+	int i;
+	char buf[100];
 
 	do {
 		printf("%s: ", prompt);
