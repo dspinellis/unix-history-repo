@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1987, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)sqrt.s	5.6	(ucb.elefunt)	%G%"
+.asciz	"@(#)sqrt.s	8.1	(ucb.elefunt)	%G%"
 
 /*
  * double sqrt(arg)   revised August 15,1982

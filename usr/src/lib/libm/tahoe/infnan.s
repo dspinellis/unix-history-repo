@@ -1,14 +1,14 @@
-# Copyright (c) 1985 Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1985, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)infnan.s	5.5 (Berkeley) %G%
+#	@(#)infnan.s	8.1 (Berkeley) %G%
 #
 	.data
 	.align	2
 _sccsid:
-.asciz	"@(#)infnan.s	5.5	(ucb.elefunt)	%G%"
+.asciz	"@(#)infnan.s	8.1	(ucb.elefunt)	%G%"
 
 /*
  * double infnan(arg)
