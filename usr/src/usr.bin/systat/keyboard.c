@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)keyboard.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)keyboard.c	1.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -71,7 +71,7 @@ keyboard()
                                 clrtoeol();
                                 continue;
                         }
-                        if (isprint(ch) || isspace(ch)) {
+                        if (isprint(ch) || ch == ' ') {
                                 line[col] = ch;
                                 mvaddch(CMDLINE, col, ch);
                                 col++;
