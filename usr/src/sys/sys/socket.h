@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socket.h	7.8 (Berkeley) %G%
+ *	@(#)socket.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -152,11 +152,11 @@ struct sockproto {
  */
 struct msghdr {
 	caddr_t	msg_name;		/* optional address */
-	int	msg_namelen;		/* size of address */
+	u_int	msg_namelen;		/* size of address */
 	struct	iovec *msg_iov;		/* scatter/gather array */
-	int	msg_iovlen;		/* # elements in msg_iov */
+	u_int	msg_iovlen;		/* # elements in msg_iov */
 	caddr_t	msg_control;		/* ancillary data, see below */
-	int	msg_controllen;		/* ancillary data buffer len */
+	u_int	msg_controllen;		/* ancillary data buffer len */
 	int	msg_flags;		/* flags on received message */
 };
 
@@ -176,8 +176,8 @@ struct msghdr {
  */
 struct cmsghdr {
 	u_int	cmsg_len;		/* data byte count, including hdr */
-	u_int	cmsg_level;		/* originating protocol */
-	u_int	cmsg_type;		/* protocol-specific type */
+	int	cmsg_level;		/* originating protocol */
+	int	cmsg_type;		/* protocol-specific type */
 /* followed by	u_char  cmsg_data[]; */
 };
 
