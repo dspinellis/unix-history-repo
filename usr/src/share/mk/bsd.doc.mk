@@ -1,15 +1,15 @@
-#	@(#)bsd.doc.mk	5.2 (Berkeley) %G%
+#	@(#)bsd.doc.mk	5.3 (Berkeley) %G%
 
-PRINTER=lz
+PRINTER=psc
 
 BIB?=		bib
-EQN?=		/usr/local/deqn -P${PRINTER}
+EQN?=		deqn -P${PRINTER}
 GREMLIN?=	grn -P${PRINTER}
 GRIND?=		vgrind -f
 INDXBIB?=	indxbib
 PIC?=		pic -P${PRINTER}
 REFER?=		refer
-ROFF?=		psroff -t ${MACROS} ${PAGES} -P${PRINTER}
+ROFF?=		ditroff -t ${MACROS} ${PAGES} -P${PRINTER}
 SOELIM?=	soelim
 TBL?=		dtbl -P${PRINTER}
 
