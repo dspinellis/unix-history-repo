@@ -7,29 +7,27 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdbootblk.c	7.2 (Berkeley) %G%
+ *	@(#)fdbootblk.c	7.3 (Berkeley) %G%
  */
 
 /*
- * fdbootblk.s:
- *	Written 10/6/90 by William F. Jolitz
- *	Initial block boot for AT/386 with typical stupid NEC controller
- *	Works only with 3.5 inch diskettes that have 16 or greater sectors/side
- *
- *	Goal is to read in sucessive 7.5Kbytes of bootstrap to
- *	execute.
- *
- *	No attempt is made to handle disk errors.
+ * Initial block boot for AT/386 with typical stupid NEC controller.  Works
+ * only with 3.5 inch diskettes that have 16 or greater sectors/side.  Goal
+ * is to read in sucessive 7.5Kbytes of bootstrap to execute.  No attempt
+ * is made to handle disk errors.
  */
-/*#include "/sys/i386/isa/isa.h"
-#include "/sys/i386/isa/fdreg.h"*/
-#define	NOP	jmp 1f ; nop ; 1:
-#define BIOSRELOC	0x7c00
-#define	start	0x70400
+#define	NOP		jmp 1f ; nop ; 1:
+#define	BIOSRELOC	0x7c00
+#define	start		0x70400
+
+/* Gas does not know about 16 bit opcodes... */
 
 	/* step 0 force descriptors to bottom of address space */
 
-	.byte 0xfa,0xb8,0x30,0x00,0x8e,0xd0,0xbc,0x00,0x01 #ll fb
+	.byte 	0xfa			# cli
+	.byte 	0xb8, 0x30, 0x00	# mov $0x0030, %ax
+	.byte 	0x8e, 0xd0 		# mov %ax, %ss
+	.byte 	0xbc, 0x00, 0x01  	# mov $0x0100, %sp
 
 	xorl	%eax,%eax
 	movl	%ax,%ds
@@ -37,9 +35,9 @@
 
 	/* step 1 load new descriptor table */
 
-	.byte 0x2E,0x0F,1,0x16
-	.word	BIOSRELOC+0x4a	#GDTptr
-	# word aword cs lgdt GDTptr
+	.byte 	0x2e			# seg cs
+	.byte 	0x0f, 0x01, 0x16	# lgdt DS:d16
+	.word	BIOSRELOC + 0x4a	# [BIOSRELOC + GDTptr]
 
 	/* step 2 turn on protected mode */
 
@@ -49,42 +47,45 @@
 	jmp	1f
 	nop
 
+ 1:
 	/* step 3  reload segment descriptors */
 
- 1:
 	xorl	%eax,%eax
 	movb	$0x10,%al
 	movl	%ax,%ds
 	movl	%ax,%es
 	movl	%ax,%ss
 	word
-	ljmp	$0x8,$ BIOSRELOC+0x59	/* would be nice if .-RELOC+0x7c00 worked */
+	ljmp	$0x8, $ BIOSRELOC + 0x59 # [BIOSRELOC + reloc]
 
- /* Global Descriptor Table contains three descriptors:
+ /* 
+  * Global Descriptor Table contains three descriptors:
   * 0x00: Null: not used
   * 0x08: Code: code segment starts at 0 and extents for 4 gigabytes
   * 0x10: Data: data segment starts at 0 and extends for 4 gigabytes
   *		(overlays code)
   */
 GDT:
-NullDesc:	.word	0,0,0,0	# null descriptor - not used
-CodeDesc:	.word	0xFFFF	# limit at maximum: (bits 15:0)
+NullDsc:.word	0,0,0,0	# null descriptor - not used
+CodeDsc:.word	0xFFFF	# limit at maximum: (bits 15:0)
 	.byte	0,0,0	# base at 0: (bits 23:0)
 	.byte	0x9f	# present/priv level 0/code/conforming/readable
 	.byte	0xcf	# page granular/default 32-bit/limit(bits 19:16)
 	.byte	0	# base at 0: (bits 31:24)
-DataDesc:	.word	0xFFFF	# limit at maximum: (bits 15:0)
+DataDsc:.word	0xFFFF	# limit at maximum: (bits 15:0)
 	.byte	0,0,0	# base at 0: (bits 23:0)
 	.byte	0x93	# present/priv level 0/data/expand-up/writeable
 	.byte	0xcf	# page granular/default 32-bit/limit(bits 19:16)
 	.byte	0	# base at 0: (bits 31:24)
 
-/* Global Descriptor Table pointer
+/* 
+ * Global Descriptor Table pointer
  *  contains 6-byte pointer information for LGDT
  */
 GDTptr:	.word	0x17	# limit to three 8 byte selectors(null,code,data)
-	.long 	BIOSRELOC+0x32	# GDT -- arrgh, gas again!
-readcmd: .byte 0xe6,0,0,0,0,2,18,0x1b,0xff
+	.long 	BIOSRELOC + 0x32	# [BIOSRELOC + GDT]
+
+readcmd: .byte 0xe6, 0x00, 0x00, 0x00, 0x00, 0x02, 18, 0x1b, 0xff
 
 	/* step 4 relocate to final bootstrap address. */
 reloc:
