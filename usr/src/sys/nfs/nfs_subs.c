@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.25 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.26 (Berkeley) %G%
  */
 
 /*
@@ -666,7 +666,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	vap->va_rdev = (dev_t)rdev;
 	vap->va_bytes = fxdr_unsigned(long, fp->fa_blocks) * NFS_FABLKSIZE;
 	vap->va_bytes_rsv = 0;
-	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0] | 0x8000;
+	vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
 	vap->va_fileid = fxdr_unsigned(long, fp->fa_fileid);
 	vap->va_atime.tv_sec = fxdr_unsigned(long, fp->fa_atime.tv_sec);
 	vap->va_atime.tv_usec = 0;
