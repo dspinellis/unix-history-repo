@@ -1,6 +1,0 @@
-Mdiskpart	diskpart.c	/^main(argc, argv)$/
-PART	diskpart.c	/^#define	PART(x)		(x - 'a')$/
-gettype	diskpart.c	/^gettype(t, names)$/
-lower	diskpart.c	/^#define	lower(c)	(islower(c) ? (c) : tolower(c))$/
-promptfordisk	diskpart.c	/^promptfordisk(name)$/
-ustrcmp	diskpart.c	/^ustrcmp(s1, s2)$/

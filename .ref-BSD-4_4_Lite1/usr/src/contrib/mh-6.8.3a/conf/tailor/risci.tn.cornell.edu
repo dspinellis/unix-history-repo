@@ -1,4 +1,0 @@
-mmdfldir:	/usr/spool/mail
-mmdflfil:	
-hostable:	/usr/local/lib/mh/hosts
-servers:	localhost chumley devvax tcgould

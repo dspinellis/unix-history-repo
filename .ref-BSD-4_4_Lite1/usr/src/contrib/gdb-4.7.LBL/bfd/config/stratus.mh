@@ -1,3 +1,0 @@
-# FIXME: Add "-Wall -ansi" to CC when problems are resolved.
-AR_FLAGS = cq
-RANLIB = echo

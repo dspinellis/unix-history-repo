@@ -1,3 +1,0 @@
-/dev/sd0a	/	ufs	rw		1  1
-/dev/sd0f	/usr	ufs	rw		1  2
-/dev/sd0b	/tmp	mfs	rw,-s=24000,-b=8192,-f=1024,-T=wrenv	0  0

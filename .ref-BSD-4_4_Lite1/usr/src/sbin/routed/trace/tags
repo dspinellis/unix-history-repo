@@ -1,1 +1,0 @@
-Mtrace	trace.c	/^main(argc, argv)$/

@@ -1,6 +1,0 @@
-Mfpr	fpr.c	/^main()$/
-flush	fpr.c	/^flush()$/
-gettext	fpr.c	/^gettext()$/
-init	fpr.c	/^init()$/
-nospace	fpr.c	/^nospace()$/
-savech	fpr.c	/^savech(col)$/

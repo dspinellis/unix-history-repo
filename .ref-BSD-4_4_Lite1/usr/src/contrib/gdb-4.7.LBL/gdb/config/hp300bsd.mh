@@ -1,5 +1,0 @@
-# Host: Hewlett-Packard 9000 series 300, running BSD
-XDEPFILES= infptrace.o inftarg.o fork-child.o coredep.o corelow.o
-XM_FILE= xm-hp300bsd.h
-REGEX= regex.o
-REGEX1= regex.o

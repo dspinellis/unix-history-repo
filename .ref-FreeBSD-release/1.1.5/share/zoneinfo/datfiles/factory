@@ -1,9 +1,0 @@
-# $Id: factory,v 1.2 1993/11/10 04:53:57 wollman Exp $
-# From ado: @(#)factory	7.1
-
-# For companies who don't want to put time zone specification in
-# their installation procedures.  When users run date, they'll get the message.
-# Also useful for the "comp.sources" version.
-
-# Zone	NAME	GMTOFF	RULES	FORMAT
-Zone    Factory 0       - "See zic(8) or link /etc/localtime directly"
