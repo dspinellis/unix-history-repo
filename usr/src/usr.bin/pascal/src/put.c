@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.5 %G%";
+static	char sccsid[] = "@(#)put.c 1.6 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -98,6 +98,10 @@ put(a)
 		case O_RSNG2:
 		case O_RANG42:
 		case O_RSNG42:
+		case O_SUCC2:
+		case O_SUCC24:
+		case O_PRED2:
+		case O_PRED24:
 			if (p[1] == 0)
 				break;
 		case O_CON2:
@@ -271,12 +275,26 @@ around:
 		case O_RV8:
 		case O_RV:
 		case O_LV:
+			/*
+			 * positive offsets represent arguments
+			 * and must use "ap" display entry rather
+			 * than the "fp" entry
+			 */
+			if (p[1] >= 0) {
+				subop++;
+				suboppr++;
+			}
+			/*
+			 * offsets out of range of word addressing
+			 * must use long offset opcodes
+			 */
 			if (p[1] < SHORTADDR && p[1] >= -SHORTADDR)
 				break;
 			else {
 				op += O_LRV - O_RV;
 				cp = otext[op];
 			}
+			/* and fall through */
 		case O_BEG:
 		case O_NODUMP:
 		case O_CON4:
@@ -285,6 +303,8 @@ around:
 		case O_RANG24:
 		case O_RSNG4:
 		case O_RSNG24:
+		case O_SUCC4:
+		case O_PRED4:
 		longgen:
 		    {
 			short	*sp = &p[1];

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.3 %G%";
+static	char sccsid[] = "@(#)call.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -329,7 +329,8 @@ call(p, argv, porf, psbn)
 		put(2, O_FCALL, cnt);
 		put(2, O_FRTN, even(lwidth(p->type)));
 	    } else {
-		put2(O_CALL | psbn << 8+INDX, p->entloc);
+		/* put(2, O_CALL | psbn << 8+INDX, p->entloc); */
+		put(2, O_CALL | psbn << 8, p->entloc);
 	    }
 #	endif OBJ
 #	ifdef PC

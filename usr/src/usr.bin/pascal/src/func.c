@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)func.c 1.4 %G%";
+static	char sccsid[] = "@(#)func.c 1.5 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -171,24 +171,25 @@ funccod(r)
 			return (NIL);
 		case O_SUCC2:
 		case O_PRED2:
-			if (isa(p1, "bcs")) {
-				put1(op);
-				return (p1);
-			}
-			if (isa(p1, "i")) {
-				if (width(p1) <= 2)
-					op += O_PRED24-O_PRED2;
-				else
-					op++;
-				put1(op);
-				return (nl+T4INT);
-			}
-			if (isa(p1, "id")) {
+			if (isa(p1, "d")) {
 				error("%s is forbidden for reals", p->symbol);
 				return (NIL);
 			}
-			error("%s's argument must be of scalar type, not %s", p->symbol, nameof(p1));
-			return (NIL);
+			if ( isnta( p1 , "bcsi" ) ) {
+				error("%s's argument must be of scalar type, not %s", p->symbol, nameof(p1));
+				return NIL;
+			}
+			if (isa(p1, "i")) {
+				if (width(p1) <= 2)
+					op += O_PRED24 - O_PRED2;
+				else
+					op++;
+				put(3, op, p1->range[0], p1->range[1]);
+				return nl + T4INT;
+			} else {
+				put(3, op, p1->range[0], p1->range[1]);
+				return p1;
+			}
 		case O_ODD2:
 			if (isnta(p1, "i")) {
 				error("odd's argument must be an integer, not %s", nameof(p1));

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)lab.c 1.5 %G%";
+static	char sccsid[] = "@(#)lab.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -72,7 +72,8 @@ label(r, l)
 		     * gotos for this label via TRA.
 		     */
 		    putlab(l);
-		    put2(O_GOTO | cbn<<8+INDX, p->value[1]);
+		    /* put(2, O_GOTO | cbn<<8+INDX, p->value[1]); */
+		    put(2, O_GOTO | cbn<<8, p->value[1]);
 #		endif OBJ
 #		ifdef PC
 		    /*

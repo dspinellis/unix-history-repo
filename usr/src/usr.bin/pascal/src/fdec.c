@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.8 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -977,7 +977,7 @@ funcend(fp, bundle, endline)
 	if (Fp == NIL)
 		elineon();
 #	ifdef OBJ
-	    patchfil(var, sizes[cbn].om_max, 2);
+	    patchfil(var, -sizes[cbn].om_max, 2);
 #	endif OBJ
 	cbn--;
 	if (inpflist(fp->symbol)) {

@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)flvalue.c 1.3 %G%";
+static	char sccsid[] = "@(#)flvalue.c 1.4 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -94,7 +94,8 @@ flvalue( r , formalp )
 		    }
 #		    ifdef OBJ
 			put( 2 , O_LV | cbn << 8 + INDX , tempoff );
-			put( 2 , O_FSAV | bn << 8 + INDX , p -> entloc );
+			/* put( 2 , O_FSAV | bn << 8 + INDX , p -> entloc ); */
+			put( 2 , O_FSAV | bn << 8 , p -> entloc );
 #		    endif OBJ
 #		    ifdef PC
 			putlbracket( ftnno , -tempoff );
