@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -572,6 +572,7 @@ include(fname, msg, ctladdr, sendq)
 	{
 		register char *p = index(buf, '\n');
 
+		LineNumber++;
 		if (p != NULL)
 			*p = '\0';
 		if (buf[0] == '\0')
