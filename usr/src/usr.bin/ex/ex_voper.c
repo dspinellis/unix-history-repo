@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_voper.c	7.2	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_voper.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -30,7 +38,7 @@ operate(c, cnt)
 	register line *addr;
 	line *odot;
 	static char lastFKND, lastFCHR;
-	short d;
+	char d;
 
 	moveop = vmove, deleteop = vdelete;
 	wcursor = cursor;
@@ -106,8 +114,8 @@ operate(c, cnt)
 	 *		character.
 	 */
 	case 'r':
-		vmacchng(1);
 		vrep(cnt);
+		vmacchng(1);
 		return;
 
 	default:
@@ -215,10 +223,6 @@ ein:
 	case '%':
 		vsave();
 		i = lmatchp((line *) 0);
-#ifdef TRACE
-		if (trace)
-			fprintf(trace, "after lmatchp in %, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
-#endif
 		getDOT();
 		forbid(!i);
 		if (opf != vmove)

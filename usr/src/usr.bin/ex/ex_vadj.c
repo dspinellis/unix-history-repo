@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	7.7	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_vadj.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -89,6 +97,10 @@ vreopen(p, lineno, l)
 	register int d;
 	register struct vlinfo *vp = &vlinfo[l];
 
+#ifdef ADEBUG
+	if (trace)
+		tfixnl(), fprintf(trace, "vreopen(%d, %d, %d)\n", p, lineno, l);
+#endif
 	d = vp->vdepth;
 	if (d == 0 || (vp->vflags & VDIRT))
 		vp->vdepth = d = vdepth();
@@ -112,7 +124,15 @@ vreopen(p, lineno, l)
 	 *		necessary to determine which way to go.
 	 */
 	vigoto(p, 0);
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "before pline in vreopen\n");
+#endif
 	pline(lineno);
+#ifdef TRACE
+	if (trace)
+		fprintf(trace, "after pline in vreopen\n");
+#endif
 
 	/*
 	 * When we are typing part of a line for hardcopy open, don't
@@ -230,11 +250,21 @@ vinslin(p, cnt, l)
 		vgoto(p, 0), vputp(CD, cnt);
 		vclrech(1);
 		vadjAL(p, cnt);
-	} else if (SR && p == WTOP && costSR < costAL) {
+	} else if (AL) {
+		/*
+		 * Use insert line.
+		 */
+		vgoto(p, 0), vputp(AL, WECHO + 1 - p);
+		for (i = cnt - 1; i > 0; i--) {
+			vgoto(outline+1, 0), vputp(AL, WECHO + 1 - outline);
+			if ((hold & HOLDAT) == 0)
+				putchar('@');
+		}
+		vadjAL(p, cnt);
+	} else if (SR && p == WTOP) {
 		/*
 		 * Use reverse scroll mode of the terminal, at
-		 * the top of the window.  Reverse linefeed works
-		 * too, since we only use it from line WTOP.
+		 * the top of the window.
 		 */
 		for (i = cnt; i > 0; i--) {
 			vgoto(p, 0), vputp(SR, 0);
@@ -249,35 +279,6 @@ vinslin(p, cnt, l)
 			 */
 			if (CE && (DA || p != 0))
 				vputp(CE, 1);
-		}
-		vadjAL(p, cnt);
-	} else if (AL) {
-		/*
-		 * Use insert line.
-		 */
-		vgoto(p, 0);
-		if (AL_PARM && (cnt>1 || *AL==0)) {
-			/* insert cnt lines.  Should do @'s too. */
-			vputp(tgoto(AL_PARM, p, cnt), WECHO+1-p);
-		}
-		else if (CS && *AL==0) {
-			/* vt100 change scrolling region to fake AL */
-			vputp(SC, 1);
-			vputp(tgoto(CS, LINES-1,p), 1);
-			vputp(RC, 1);	/* CS homes stupid cursor */
-			for (i=cnt; i>0; i--)
-				vputp(SR, 1);	/* should do @'s */
-			vputp(tgoto(CS, LINES-1,0), 1);
-			vputp(RC, 1);	/* Once again put it back */
-		}
-		else {
-			vputp(AL, WECHO + 1 - p);
-			for (i = cnt - 1; i > 0; i--) {
-				vgoto(outline+1, 0);
-				vputp(AL, WECHO + 1 - outline);
-				if ((hold & HOLDAT) == 0)
-					putchar('@');
-			}
 		}
 		vadjAL(p, cnt);
 	} else
@@ -408,9 +409,6 @@ vmoveitup(cnt, doclr)
 	if (doclr && (SO || SE))
 		vclrech(0);
 	if (SF) {
-		destline = WECHO;
-		destcol = (NONL ? 0 : outcol % WCOLS);
-		fgoto();
 		while (cnt > 0)
 			vputp(SF, 0), cnt--;
 		return;
@@ -739,23 +737,8 @@ vdellin(p, cnt, l)
 	 * and physical internal data structures.
 	 */
 	vgoto(p, 0);
-	if (DL_PARM && (cnt>1 || *DL==0)) {
-		vputp(tgoto(DL_PARM, p, cnt), WECHO-p);
-	}
-	else if (CS && *DL==0) {
-		/* vt100: fake DL by changing scrolling region */
-		vputp(SC, 1);	/* Save since CS homes stupid cursor */
-		vputp(tgoto(CS, LINES-1, p), 1);
-		vputp(tgoto(CM, 0, LINES-1), 1);/* Go to lower left corner */
-		for (i=0; i<cnt; i++)		/* .. and scroll cnt times */
-			putch('\n');		/* should check NL too */
-		vputp(tgoto(CS, LINES-1, 0), 1);/* restore scrolling region */
-		vputp(RC, 1);			/* put cursor back */
-	}
-	else {
-		for (i = 0; i < cnt; i++)
-			vputp(DL, WECHO - p);
-	}
+	for (i = 0; i < cnt; i++)
+		vputp(DL, WECHO - p);
 	vadjDL(p, cnt);
 	vcloseup(l, cnt);
 }

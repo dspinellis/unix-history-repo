@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.7	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_put.c	5.2.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -196,7 +204,7 @@ slobber(c)
  * message so we don't have to keep it in data space.
  */
 static	char linb[66];
-char *linp = linb;
+static	char *linp = linb;
 
 /*
  * Phadnl records when we have already had a complete line ending with \n.
@@ -300,7 +308,7 @@ flush1()
 					outcol++;
 					destcol++;
 					if (XN && outcol % COLUMNS == 0)
-						putch('\r'), putch('\n');
+						putch('\n');
 				}
 				c = *lp++;
 				if (c <= ' ')
@@ -562,93 +570,59 @@ plod(cnt)
 		outcol = 0;
 	}
 dontcr:
-	/* Move down, if necessary, until we are at the desired line */
 	while (outline < destline) {
-		j = destline - outline;
-		if (j > costDP && DOWN_PARM) {
-			/* Win big on Tek 4025 */
-			tputs(tgoto(DOWN_PARM, 0, j), j, plodput);
-			outline += j;
-		}
-		else {
-			outline++;
-			if (xNL && pfast)
-				tputs(xNL, 0, plodput);
-			else
-				plodput('\n');
-		}
+		outline++;
+		if (xNL && pfast)
+			tputs(xNL, 0, plodput);
+		else
+			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
 		if (NONL || pfast == 0)
 			outcol = 0;
 	}
 	if (BT)
-		k = strlen(BT);	/* should probably be cost(BT) and moved out */
-	/* Move left, if necessary, to desired column */
+		k = strlen(BT);
 	while (outcol > destcol) {
 		if (plodcnt < 0)
 			goto out;
+/*
 		if (BT && !insmode && outcol - destcol > 4+k) {
 			tputs(BT, 0, plodput);
 			outcol--;
-			outcol -= outcol % value(HARDTABS); /* outcol &= ~7; */
+			outcol &= ~7;
 			continue;
 		}
-		j = outcol - destcol;
-		if (j > costLP && LEFT_PARM) {
-			tputs(tgoto(LEFT_PARM, 0, j), j, plodput);
-			outcol -= j;
-		}
-		else {
-			outcol--;
-			if (BC)
-				tputs(BC, 0, plodput);
-			else
-				plodput('\b');
-		}
+*/
+		outcol--;
+		if (BC)
+			tputs(BC, 0, plodput);
+		else
+			plodput('\b');
 	}
-	/* Move up, if necessary, to desired row */
 	while (outline > destline) {
-		j = outline - destline;
-		if (UP_PARM && j > 1) {
-			/* Win big on Tek 4025 */
-			tputs(tgoto(UP_PARM, 0, j), j, plodput);
-			outline -= j;
-		}
-		else {
-			outline--;
-			tputs(UP, 0, plodput);
-		}
+		outline--;
+		tputs(UP, 0, plodput);
 		if (plodcnt < 0)
 			goto out;
 	}
-	/*
-	 * Now move to the right, if necessary.  We first tab to
-	 * as close as we can get.
-	 */
 	if (GT && !insmode && destcol - outcol > 1) {
-		/* tab to right as far as possible without passing col */
-		for (;;) {
-			i = tabcol(outcol, value(HARDTABS));
-			if (i > destcol)
-				break;
+	for (;;) {
+		i = tabcol(outcol, value(HARDTABS));
+		if (i > destcol)
+			break;
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
 				plodput('\t');
 			outcol = i;
 		}
-		/* consider another tab and then some backspaces */
 		if (destcol - outcol > 4 && i < COLUMNS && (BC || BS)) {
 			if (TA)
 				tputs(TA, 0, plodput);
 			else
 				plodput('\t');
 			outcol = i;
-			/*
-			 * Back up.  Don't worry about LEFT_PARM because
-			 * it's never more than 4 spaces anyway.
-			 */
 			while (outcol > destcol) {
 				outcol--;
 				if (BC)
@@ -658,43 +632,23 @@ dontcr:
 			}
 		}
 	}
-	/*
-	 * We've tabbed as much as possible.  If we still need to go
-	 * further (not exact or can't tab) space over.  This is a
-	 * very common case when moving to the right with space.
-	 */
 	while (outcol < destcol) {
-		j = destcol - outcol;
-		if (j > costRP && RIGHT_PARM) {
-			/*
-			 * This probably happens rarely, if at all.
-			 * It seems mainly useful for ANSI terminals
-			 * with no hardware tabs, and I don't know
-			 * of any such terminal at the moment.
-			 */
-			tputs(tgoto(RIGHT_PARM, 0, j), j, plodput);
-			outcol += j;
-		}
-		else {
-			/*
-			 * move one char to the right.  We don't use ND space
-			 * because it's better to just print the char we are
-			 * moving over.  There are various exceptions, however.
-			 * If !inopen, vtube contains garbage.  If the char is
-			 * a null or a tab we want to print a space.  Other
-			 * random chars we use space for instead, too.
-			 */
-			if (!inopen || vtube[outline]==NULL ||
-				(i=vtube[outline][outcol]) < ' ')
-				i = ' ';
-			if(i & QUOTE)	/* mjm: no sign extension on 3B */
-				i = ' ';
-			if (insmode && ND)
-				tputs(ND, 0, plodput);
-			else
-				plodput(i);
-			outcol++;
-		}
+		/*
+		 * move one char to the right.  We don't use ND space
+		 * because it's better to just print the char we are
+		 * moving over.  There are various exceptions, however.
+		 * If !inopen, vtube contains garbage.  If the char is
+		 * a null or a tab we want to print a space.  Other random
+		 * chars we use space for instead, too.
+		 */
+		if (!inopen || vtube[outline]==NULL ||
+			(i=vtube[outline][outcol]) < ' ')
+			i = ' ';
+		if (insmode && ND)
+			tputs(ND, 0, plodput);
+		else
+			plodput(i);
+		outcol++;
 		if (plodcnt < 0)
 			goto out;
 	}
@@ -789,10 +743,6 @@ putch(c)
 	int c;
 {
 
-#ifdef OLD3BTTY		/* mjm */
-	if(c == '\n')	/* mjm: Fake "\n\r" for '\n' til fix in 3B firmware */
-		putch('\r');	/* mjm: vi does "stty -icanon" => -onlcr !! */
-#endif
 	*obp++ = c & 0177;
 	if (obp >= &obuf[sizeof obuf])
 		flusho();
@@ -915,7 +865,7 @@ ostart()
 	tty = normf;
 	tty.c_iflag &= ~ICRNL;
 	tty.c_lflag &= ~(ECHO|ICANON);
-	tty.c_oflag &= ~(TAB3|ONLCR);
+	tty.c_oflag &= ~TAB3;
 	tty.c_cc[VMIN] = 1;
 	tty.c_cc[VTIME] = 1;
 	ttcharoff();
@@ -931,33 +881,8 @@ tostart()
 {
 	putpad(VS);
 	putpad(KS);
-	if (!value(MESG)) {
-		if (ttynbuf[0] == 0) {
-			register char *tn;
-			if ((tn=ttyname(2)) == NULL &&
-			    (tn=ttyname(1)) == NULL &&
-			    (tn=ttyname(0)) == NULL)
-				ttynbuf[0] = 1;
-			else
-				strcpy(ttynbuf, tn);
-		}
-		if (ttynbuf[0] != 1) {
-			struct stat sbuf;
-			stat(ttynbuf, &sbuf);
-			ttymesg = sbuf.st_mode & 0777;
-			chmod(ttynbuf,
-#ifdef UCBV7
-	/*
-	 * This applies to the UCB V7 Pdp-11 system with the
-	 * -u write option only.
-	 */
-					0611	/* 11 = urgent only allowed */
-#else
-					0600
-#endif
-						);
-		}
-	}
+	if (!value(MESG))
+		chmod(ttynbuf, 0611);	/* 11 = urgent only allowed */
 }
 
 /*
@@ -1011,7 +936,7 @@ ostop(f)
 #ifndef USG3TTY
 	pfast = (f & CRMOD) == 0;
 #else
-	pfast = (f.c_oflag & ONLCR) == 0;
+	pfast = (f.c_oflag & OCRNL) == 0;
 #endif
 	termreset(), fgoto(), flusho();
 	normal(f);
@@ -1023,7 +948,7 @@ tostop()
 {
 	putpad(VE);
 	putpad(KE);
-	if (!value(MESG) && ttynbuf[0]>1)
+	if (!value(MESG))
 		chmod(ttynbuf, ttymesg);
 }
 
@@ -1097,6 +1022,8 @@ setty(f)
 gTTY(i)
 	int i;
 {
+	char *tn;
+	struct stat sbuf;
 
 #ifndef USG3TTY
 	ignore(gtty(i, &tty));
@@ -1111,6 +1038,11 @@ gTTY(i)
 #else
 	ioctl(i, TCGETA, &tty);
 #endif
+	if ((tn=ttyname(0)) == NULL && (tn=ttyname(1)) == NULL && (tn=ttyname(2)) == NULL)
+		tn = "/dev/tty";
+	strcpy(ttynbuf, tn);
+	stat(ttynbuf, &sbuf);
+	ttymesg = sbuf.st_mode & 0777;
 }
 
 /*
@@ -1157,4 +1089,40 @@ noonl()
 {
 
 	putchar(Outchar != termchar ? ' ' : '\n');
+}
+
+#ifdef SIGTSTP
+/*
+ * We have just gotten a susp.  Suspend and prepare to resume.
+ */
+onsusp()
+{
+	ttymode f;
+
+	f = setty(normf);
+	vnfl();
+	putpad(TE);
+	flush();
+
+	signal(SIGTSTP, SIG_DFL);
+	kill(0, SIGTSTP);
+
+	/* the pc stops here */
+
+	signal(SIGTSTP, onsusp);
+	vcontin(0);
+	setty(f);
+	if (!inopen)
+		error(0);
+	else {
+		if (vcnt < 0) {
+			vcnt = -vcnt;
+			if (state == VISUAL)
+				vclear();
+			else if (state == CRTOPEN)
+				vcnt = 0;
+		}
+		vdirty(0, LINES);
+		vrepaint(cursor);
+	}
 }

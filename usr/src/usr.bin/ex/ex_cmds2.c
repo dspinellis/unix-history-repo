@@ -1,13 +1,21 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds2.c	7.2	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_cmds2.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
 
-extern bool	pflag, nflag;		/* mjm: extern; also in ex_cmds.c */
-extern int	poffset;		/* mjm: extern; also in ex_cmds.c */
+bool	pflag, nflag;
+int	poffset;
 
 /*
  * Subroutines for major command loop.
@@ -74,10 +82,6 @@ error(str, i)
 
 	error0();
 	merror(str, i);
-	if (writing) {
-		serror(" [Warning - %s is incomplete]", file);
-		writing = 0;
-	}
 	error1(str);
 }
 
@@ -108,6 +112,13 @@ erewind()
 error0()
 {
 
+	if (laste) {
+#ifdef VMUNIX
+		tlaste();
+#endif
+		laste = 0;
+		sync();
+	}
 	if (vcatch) {
 		if (splitw == 0)
 			fixech();

@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	7.5	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_cmdsub.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -83,7 +91,7 @@ pargs()
 
 	for (ac = 0; ac < argc0; ac++) {
 		if (ac != 0)
-			putchar(' ' | QUOTE);
+			putchar(' ');
 		if (ac + argc == argc0 - 1)
 			printf("[");
 		lprintf("%s", as);
@@ -107,10 +115,6 @@ delete(hush)
 	if(FIXUNDO) {
 		register int (*dsavint)();
 
-#ifdef TRACE
-		if (trace)
-			vudump("before delete");
-#endif
 		change();
 		dsavint = signal(SIGINT, SIG_IGN);
 		undkind = UNDCHANGE;
@@ -129,10 +133,6 @@ delete(hush)
 		dot = a1;
 		pkill[0] = pkill[1] = 0;
 		signal(SIGINT, dsavint);
-#ifdef TRACE
-		if (trace)
-			vudump("after delete");
-#endif
 	} else {
 		register line *a3;
 		register int i;
@@ -257,7 +257,7 @@ move()
 		setdot();
 	}
 	nonzero();
-	adt = address((char*)0);
+	adt = address(0);
 	if (adt == 0)
 		serror("%s where?|%s requires a trailing address", Command);
 	newline();
@@ -469,12 +469,20 @@ tagfind(quick)
 	int tfcount = 0;
 	int omagic;
 	char *fn, *fne;
-	struct stat sbuf;
-#ifdef FASTTAG
-	int iof;
-	char iofbuf[MAXBSIZE];
+#ifdef VMUNIX
+	/*
+	 * We have lots of room so we bring in stdio and do
+	 * a binary search on the tags file.
+	 */
+# undef EOF
+# include <stdio.h>
+# undef getchar
+# undef putchar
+	FILE *iof;
+	char iofbuf[BUFSIZ];
 	long mid;	/* assumed byte offset */
 	long top, bot;	/* length of tag file */
+	struct stat sbuf;
 #endif
 
 	omagic = value(MAGIC);
@@ -512,14 +520,15 @@ badtag:
 			fne = 0;	/* done, quit after this time */
 		else
 			*fne = 0;	/* null terminate filename */
-#ifdef FASTTAG
-		iof = topen(fn, iofbuf);
-		if (iof == -1)
+#ifdef VMUNIX
+		iof = fopen(fn, "r");
+		if (iof == NULL)
 			continue;
 		tfcount++;
-		fstat(iof, &sbuf);
+		setbuf(iof, iofbuf);
+		fstat(fileno(iof), &sbuf);
 		top = sbuf.st_size;
-		if (top == 0L )
+		if (top == 0L || iof == NULL)
 			top = -1L;
 		bot = 0L;
 		while (top >= bot) {
@@ -531,13 +540,6 @@ badtag:
 		if (io<0)
 			continue;
 		tfcount++;
-		if (fstat(io, &sbuf) < 0)
-			bsize = LBSIZE;
-		else {
-			bsize = sbuf.st_blksize;
-			if (bsize <= 0)
-				bsize = LBSIZE;
-		}
 		while (getfile() == 0) {
 #endif
 			/* loop for each tags file entry */
@@ -545,29 +547,21 @@ badtag:
 			register char *lp = lasttag;
 			char *oglobp;
 
-#ifdef FASTTAG
+#ifdef VMUNIX
 			mid = (top + bot) / 2;
-			tseek(iof, mid);
+			fseek(iof, mid, 0);
 			if (mid > 0)	/* to get first tag in file to work */
-				/* scan to next \n */
-				if(tgets(linebuf, sizeof linebuf, iof)==NULL)
-					goto goleft;
-			/* get the line itself */
-			if(tgets(linebuf, sizeof linebuf, iof)==NULL)
-				goto goleft;
-#ifdef TDEBUG
-			printf("tag: %o %o %o %s\n", bot, mid, top, linebuf);
-#endif
+				fgets(linebuf, sizeof linebuf, iof);	/* scan to next \n */
+			fgets(linebuf, sizeof linebuf, iof);	/* get a line */
+			linebuf[strlen(linebuf)-1] = 0;	/* was '\n' */
 #endif
 			while (*cp && *lp == *cp)
 				cp++, lp++;
-			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 ||
-			    lp-lasttag < value(TAGLENGTH))) {
-#ifdef FASTTAG
+			if ((*lp || !iswhite(*cp)) && (value(TAGLENGTH)==0 || lp-lasttag < value(TAGLENGTH))) {
+#ifdef VMUNIX
 				if (*lp > *cp)
 					bot = mid + 1;
 				else
-goleft:
 					top = mid - 1;
 #endif
 				/* Not this tag.  Try the next */
@@ -577,8 +571,8 @@ goleft:
 			/*
 			 * We found the tag.  Decode the line in the file.
 			 */
-#ifdef FASTTAG
-			tclose(iof);
+#ifdef VMUNIX
+			fclose(iof);
 #else
 			close(io);
 #endif
@@ -659,8 +653,8 @@ badtags:
 		/*
 		 * No such tag in this file.  Close it and try the next.
 		 */
-#ifdef FASTTAG
-		tclose(iof);
+#ifdef VMUNIX
+		fclose(iof);
 #else
 		close(io);
 #endif
@@ -1070,7 +1064,7 @@ mapcmd(un, ab)
 {
 	char lhs[100], rhs[100];	/* max sizes resp. */
 	register char *p;
-	register int c;		/* mjm: char --> int */
+	register char c;
 	char *dname;
 	struct maps *mp;	/* the map structure we are working on */
 
@@ -1262,7 +1256,7 @@ char c;
 	char macbuf[BUFSIZ];
 	line *ad, *a1, *a2;
 	char *oglobp;
-	short pk;
+	char pk;
 	bool oinglobal;
 
 	lastmac = c;

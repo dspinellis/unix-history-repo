@@ -1,10 +1,17 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmds.c	7.8	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_cmds.c	5.3.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
-#include "ex_vis.h"
 
 bool	pflag, nflag;
 int	poffset;
@@ -270,11 +277,6 @@ doecmd:
 			laste++;
 			sync();
 			rop(c);
-#ifdef VMUNIX
-			tlaste();
-#endif
-			laste = 0;
-			sync();
 			nochng();
 			continue;
 
@@ -460,6 +462,10 @@ quit:
 					vnfl();
 				else {
 					tostop();
+					/* replaced by tostop
+					putpad(VE);
+					putpad(KE);
+					*/
 				}
 				flush();
 				setty(normf);
@@ -512,10 +518,6 @@ quit:
 						rop3(c);
 					if (dol != zero)
 						change();
-#ifdef VMUNIX
-					tlaste();
-#endif
-					laste = 0;
 					nochng();
 					continue;
 				}
@@ -568,10 +570,8 @@ quit:
 
 /* source */
 			case 'o':
-#ifdef notdef
 				if (inopen)
 					goto notinvis;
-#endif
 				tail("source");
 				setnoaddr();
 				getone();
@@ -579,19 +579,16 @@ quit:
 				source(file, 0);
 				continue;
 #ifdef SIGTSTP
-/* stop, suspend */
+/* stop */
 			case 't':
 				tail("stop");
-				goto suspend;
-			case 'u':
-				tail("suspend");
-suspend:
 				if (!ldisc)
 					error("Old tty driver|Not using new tty driver/shell");
 				c = exclam();
 				eol();
 				if (!c)
 					ckaw();
+				eol();
 				onsusp();
 				continue;
 #endif
@@ -664,7 +661,7 @@ suspend:
 /* version */
 				tail("version");
 				setNAEOL();
-				printf("@(#) Version 3.7, %G%."+5);
+				printf("@(#) Version 3.5, %G%."+5);
 				noonl();
 				continue;
 

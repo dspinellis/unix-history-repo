@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.6 %G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_v.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -47,31 +55,15 @@ static char *sccsid = "@(#)ex_v.c	7.6 %G%";
  *		absolute motions, contextual displays, line depth determination
  */
 
-jmp_buf venv;
-int	winch();
-
 /*
  * Enter open mode
  */
-#ifdef u370
-char	atube[TUBESIZE+LBSIZE];
-#endif
 oop()
 {
 	register char *ic;
-#ifndef u370
 	char atube[TUBESIZE + LBSIZE];
-#endif
-	ttymode f;	/* mjm: was register */
-	int resize;
+	register ttymode f;
 
-	if (resize = setjmp(venv)) {
-		setsize();
-		initev = (char *)0;
-		inopen = 0;
-		addr1 = addr2 = dot;
-	}
-	(void)signal(SIGWINCH, winch);
 	ovbeg();
 	if (peekchar() == '/') {
 		ignore(compile(getchar(), 1));
@@ -128,7 +120,6 @@ oop()
 		vclean();
 	Command = "open";
 	ovend(f);
-	(void)signal(SIGWINCH, SIG_DFL);
 }
 
 ovbeg()
@@ -170,11 +161,8 @@ ovend(f)
 vop()
 {
 	register int c;
-#ifndef u370
 	char atube[TUBESIZE + LBSIZE];
-#endif
-	ttymode f;	/* mjm: was register */
-	int resize;
+	register ttymode f;
 
 	if (!CA && UP == NOSTR) {
 		if (initev) {
@@ -201,13 +189,6 @@ toopen:
 			goto toopen;
 		error("Visual requires scrolling");
 	}
-	if (resize = setjmp(venv)) {
-		setsize();
-		initev = (char *)0;
-		inopen = 0;
-		addr1 = addr2 = dot;
-	}
-	(void)signal(SIGWINCH, winch);
 	ovbeg();
 	bastate = VISUAL;
 	c = 0;
@@ -230,7 +211,6 @@ toopen:
 	vmain();
 	Command = "visual";
 	ovend(f);
-	(void)signal(SIGWINCH, SIG_DFL);
 }
 
 /*
@@ -380,18 +360,12 @@ vok(atube)
 #ifdef CBREAK
 vintr()
 {
-	extern jmp_buf readbuf;
-	extern int doingread;
 
 	signal(SIGINT, vintr);
 	if (vcatch)
 		onintr();
 	ungetkey(ATTN);
 	draino();
-	if (doingread) {
-		doingread = 0;
-		longjmp(readbuf, 1);
-	}
 }
 #endif
 
@@ -413,11 +387,4 @@ vsetsiz(size)
 		b = 0;
 	basWTOP = b;
 	basWLINES = WBOT - b + 1;
-}
-
-winch()
-{
-	vsave();
-	setty(normf);
-	longjmp(venv, 1);
 }

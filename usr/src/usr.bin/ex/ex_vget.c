@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vget.c	6.6 %G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_vget.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -15,7 +23,7 @@ static char *sccsid = "@(#)ex_vget.c	6.6 %G%";
  * Return the key.
  */
 ungetkey(c)
-	int c;		/* mjm: char --> int */
+	char c;
 {
 
 	if (Peekkey != ATTN)
@@ -27,7 +35,7 @@ ungetkey(c)
  */
 getkey()
 {
-	register int c;		/* mjm: char --> int */
+	register char c;
 
 	do {
 		c = getbr();
@@ -48,8 +56,6 @@ peekbr()
 }
 
 short	precbksl;
-jmp_buf	readbuf;
-int	doingread = 0;
 
 /*
  * Get a keystroke, including a ^@.
@@ -66,7 +72,6 @@ getbr()
 	char ch;
 	register int c, d;
 	register char *colp;
-	int cnt;
 #define BEEHIVE
 #ifdef BEEHIVE
 	static char Peek2key;
@@ -104,12 +109,7 @@ getATTN:
 	}
 	flusho();
 again:
-	if (setjmp(readbuf))
-		goto getATTN;
-	doingread = 1;
-	c = read(slevel == 0 ? 0 : ttyindes, &ch, 1);
-	doingread = 0;
-	if (c != 1) {
+	if (read(slevel == 0 ? 0 : ttyindes, &ch, 1) != 1) {
 		if (errno == EINTR)
 			goto getATTN;
 		error("Input read error");
@@ -259,7 +259,7 @@ readecho(c)
 		vglobp = INS;
 	}
 	OP = Pline; Pline = normline;
-	ignore(vgetline(0, genbuf + 1, &waste, c));
+	ignore(vgetline(0, genbuf + 1, &waste));
 	if (Outchar == termchar)
 		putchar('\n');
 	vscrap();
@@ -463,7 +463,7 @@ map(c,maps)
 					if ((c=='#' ? peekkey() : fastpeekkey()) == 0) {
 #ifdef MDEBUG
 						if (trace)
-							fprintf(trace,"fpk=0: will return '%c'",c);
+							fprintf(trace,"fpk=0: return '%c'",c);
 #endif
 						/*
 						 * Nothing waiting.  Push back
@@ -475,15 +475,7 @@ map(c,maps)
 						 * to undo part of an insertion
 						 * so if in input mode don't.
 						 */
-#ifdef MDEBUG
-						if (trace)
-							fprintf(trace, "Call macpush, b %d %d %d\n", b[0], b[1], b[2]);
-#endif
 						macpush(&b[1],maps == arrows);
-#ifdef MDEBUG
-						if (trace)
-							fprintf(trace, "return %d\n", c);	
-#endif
 						return(c);
 					}
 					*q = getkey();
@@ -527,7 +519,11 @@ int canundo;
 
 	if (st==0 || *st==0)
 		return;
-#ifdef MDEBUG
+#ifdef notdef
+	if (!value(UNDOMACRO))
+		canundo = 0;
+#endif
+#ifdef TRACE
 	if (trace)
 		fprintf(trace, "macpush(%s), canundo=%d\n",st,canundo);
 #endif
@@ -577,7 +573,6 @@ vudump(s)
 char *s;
 {
 	register line *p;
-	char savelb[1024];
 
 	if (!trace) return;
 
@@ -585,16 +580,10 @@ char *s;
 		s, undkind, vundkind, lineno(unddel), lineno(undap1), lineno(undap2));
 	fprintf(trace, "  undadot=%d, dot=%d, dol=%d, unddol=%d, truedol=%d\n",
 		lineno(undadot), lineno(dot), lineno(dol), lineno(unddol), lineno(truedol));
-	fprintf(trace, "  [\n");
-	CP(savelb, linebuf);
-	fprintf(trace, "linebuf = '%s'\n", linebuf);
-	for (p=zero+1; p<=truedol; p++) {
+	fprintf(trace, "  [");
+	for (p=zero+1; p<=truedol; p++)
 		fprintf(trace, "%o ", *p);
-		getline(*p);
-		fprintf(trace, "'%s'\n", linebuf);
-	}
 	fprintf(trace, "]\n");
-	CP(linebuf, savelb);
 }
 #endif
 
@@ -628,7 +617,6 @@ vgetcnt()
 fastpeekkey()
 {
 	int trapalarm();
-	int (*Oint)();
 	register int c;
 
 	/*
@@ -642,20 +630,9 @@ fastpeekkey()
 	 * as separate.  notimeout is provided for people who dislike such
 	 * nondeterminism.
 	 */
-#ifdef MDEBUG
-	if (trace)
-		fprintf(trace,"\nfastpeekkey: ",c);
-#endif
-	Oint = signal(SIGINT, trapalarm);
 	if (value(TIMEOUT) && inopen >= 0) {
 		signal(SIGALRM, trapalarm);
-#ifdef MDEBUG
-		alarm(10);
-		if (trace)
-			fprintf(trace, "set alarm ");
-#else
 		alarm(1);
-#endif
 	}
 	CATCH
 		c = peekkey();
@@ -668,19 +645,17 @@ fastpeekkey()
 		c = 0;
 #ifdef MDEBUG
 	if (trace)
-		fprintf(trace,"[TIMEOUT]",c);
+		fprintf(trace,"[TOUT]",c);
 #endif
 	ENDCATCH
 #ifdef MDEBUG
 	if (trace)
 		fprintf(trace,"[fpk:%o]",c);
 #endif
-	signal(SIGINT,Oint);
 	return(c);
 }
 
 trapalarm() {
 	alarm(0);
-	if (vcatch)
-		longjmp(vreslab,1);
+	longjmp(vreslab,1);
 }

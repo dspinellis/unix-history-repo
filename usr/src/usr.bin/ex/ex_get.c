@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_get.c	7.4	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_get.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -55,6 +63,7 @@ peekchar()
 
 peekcd()
 {
+
 	if (peekc == 0)
 		peekc = getcd();
 	return (peekc);
@@ -63,8 +72,7 @@ peekcd()
 getach()
 {
 	register int c;
-	static char inline[BUFSIZ];
-	struct stat statb;
+	static char inline[128];
 
 	c = peekc;
 	if (c != 0) {
@@ -102,12 +110,9 @@ top:
 		input = inline;
 		goto top;
 	}
-	c = read(0, inline, sizeof inline - 1);
-	if(c <= 0)
-		return(lastc = EOF);
-	inline[c] = '\0';
-	input = inline;
-	goto top;
+	if (read(0, (char *) &lastc, 1) != 1)
+		lastc = EOF;
+	return (lastc);
 }
 
 /*

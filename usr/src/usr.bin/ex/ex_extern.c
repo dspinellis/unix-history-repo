@@ -1,4 +1,13 @@
-static char *sccs_id = "@(#)ex_extern.c	7.2	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_extern.c	1.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Provide defs of the global variables.
  * This crock is brought to you by the turkeys
@@ -7,7 +16,7 @@ static char *sccs_id = "@(#)ex_extern.c	7.2	%G%";
  * book says!"
  */
 
-# define var 	/* nothing */
+# define extern 	/* nothing */
 # include "ex.h"
 # include "ex_argv.h"
 # include "ex_re.h"
@@ -16,3 +25,5 @@ static char *sccs_id = "@(#)ex_extern.c	7.2	%G%";
 # include "ex_tune.h"
 # include "ex_vars.h"
 # include "ex_vis.h"
+
+short tfile = -1;

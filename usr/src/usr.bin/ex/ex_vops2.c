@@ -1,5 +1,13 @@
-/* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops2.c	6.6 %G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_vops2.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -9,8 +17,8 @@ static char *sccsid = "@(#)ex_vops2.c	6.6 %G%";
  * and mostly, insert mode (and a subroutine
  * to read an input line, including in the echo area.)
  */
-extern char	*vUA1, *vUA2;		/* mjm: extern; also in ex_vops.c */
-extern char	*vUD1, *vUD2;		/* mjm: extern; also in ex_vops.c */
+char	*vUA1, *vUA2;
+char	*vUD1, *vUD2;
 
 /*
  * Obleeperate characters in hardcopy
@@ -104,15 +112,14 @@ bool	gobbled;
 char	*ogcursor;
 
 vappend(ch, cnt, indent)
-	int ch;		/* mjm: char --> int */
+	char ch;
 	int cnt, indent;
 {
 	register int i;
 	register char *gcursor;
 	bool escape;
-	int repcnt, savedoomed;
+	int repcnt;
 	short oldhold = hold;
-	int oldmask;
 
 	/*
 	 * Before a move in hardopen when the line is dirty
@@ -202,7 +209,6 @@ vappend(ch, cnt, indent)
 	 */
 	gobblebl = 0;
 
-	oldmask = sigblock(sigmask(SIGWINCH));
 	/*
 	 * Text gathering loop.
 	 * New text goes into genbuf starting at gcursor.
@@ -214,7 +220,7 @@ vappend(ch, cnt, indent)
 		if (ch == 'r' && repcnt == 0)
 			escape = 0;
 		else {
-			gcursor = vgetline(repcnt, gcursor, &escape, ch);
+			gcursor = vgetline(repcnt, gcursor, &escape);
 
 			/*
 			 * After an append, stick information
@@ -279,7 +285,6 @@ vappend(ch, cnt, indent)
 		 */
 		if (state != HARDOPEN) {
 			DEPTH(vcline) = 0;
-			savedoomed = doomed;
 			if (doomed > 0) {
 				register int cind = cindent();
 
@@ -287,12 +292,6 @@ vappend(ch, cnt, indent)
 				doomed = 0;
 			}
 			i = vreopen(LINE(vcline), lineDOT(), vcline);
-#ifdef TRACE
-			if (trace)
-				fprintf(trace, "restoring doomed from %d to %d\n", doomed, savedoomed);
-#endif
-			if (ch == 'R')
-				doomed = savedoomed;
 		}
 
 		/*
@@ -380,7 +379,6 @@ vappend(ch, cnt, indent)
 	doomed = 0;
 	wcursor = cursor;
 	vmove();
-	(void)sigsetmask(oldmask);
 }
 
 /*
@@ -406,19 +404,17 @@ back1()
  * are careful about the way we do this so that it is
  * repeatable.  (I.e. so that your kill doesn't happen,
  * when you repeat an insert if it was escaped with \ the
- * first time you did it.  commch is the command character
- * involved, including the prompt for readline.
+ * first time you did it.
  */
 char *
-vgetline(cnt, gcursor, aescaped, commch)
+vgetline(cnt, gcursor, aescaped)
 	int cnt;
 	register char *gcursor;
 	bool *aescaped;
-	char commch;
 {
 	register int c, ch;
 	register char *cp;
-	int x, y, iwhite, backsl=0;
+	int x, y, iwhite;
 	char *iglobp;
 	char cstr[2];
 	int (*OO)() = Outchar;
@@ -449,7 +445,6 @@ vgetline(cnt, gcursor, aescaped, commch)
 		vprepins();
 	}
 	for (;;) {
-		backsl = 0;
 		if (gobblebl)
 			gobblebl--;
 		if (cnt != 0) {
@@ -462,7 +457,7 @@ vgetline(cnt, gcursor, aescaped, commch)
 			c &= (QUOTE|TRIM);
 		ch = c;
 		maphopcnt = 0;
-		if (vglobp == 0 && Peekkey == 0 && commch != 'r')
+		if (vglobp == 0 && Peekkey == 0)
 			while ((ch = map(c, immacs)) != c) {
 				c = ch;
 				if (!value(REMAP))
@@ -573,20 +568,18 @@ vbackup:
 				vcsync();
 				c = getkey();
 #ifndef USG3TTY
-				if (c == tty.sg_erase || c == tty.sg_kill)
+				if (c == tty.sg_erase || c == tty.sg_kill) {
 #else
 				if (c == tty.c_cc[VERASE]
-				    || c == tty.c_cc[VKILL])
+				    || c == tty.c_cc[VKILL]) {
 #endif
-				{
 					vgoto(y, x);
 					if (doomed >= 0)
 						doomed++;
 					goto def;
 				}
 				ungetkey(c), c = '\\';
-				backsl = 1;
-				break;
+				goto noput;
 
 			/*
 			 * ^Q		Super quote following character
@@ -624,25 +617,21 @@ vbackup:
 				gobbled = 1;
 				continue;
 			}
-			if (value(WRAPMARGIN) &&
-				(outcol >= OCOLUMNS - value(WRAPMARGIN) ||
-				 backsl && outcol==0) &&
-				commch != 'r') {
+			if (/* c <= ' ' && */ value(WRAPMARGIN) &&
+				outcol >= OCOLUMNS - value(WRAPMARGIN)) {
 				/*
 				 * At end of word and hit wrapmargin.
 				 * Move the word to next line and keep going.
 				 */
 				wdkind = 1;
 				*gcursor++ = c;
-				if (backsl)
-					*gcursor++ = getkey();
 				*gcursor = 0;
 				/*
 				 * Find end of previous word if we are past it.
 				 */
 				for (cp=gcursor; cp>ogcursor && isspace(cp[-1]); cp--)
 					;
-				if (outcol+(backsl?OCOLUMNS:0) - (gcursor-cp) >= OCOLUMNS - value(WRAPMARGIN)) {
+				if (outcol - (gcursor-cp) >= OCOLUMNS - value(WRAPMARGIN)) {
 					/*
 					 * Find beginning of previous word.
 					 */
@@ -809,11 +798,9 @@ vbackup:
 				continue;
 			}
 def:
-			if (!backsl) {
-				int cnt;
-				putchar(c);
-				flush();
-			}
+			putchar(c);
+			flush();
+noput:
 			if (gcursor > &genbuf[LBSIZE - 2])
 				error("Line too long");
 			*gcursor++ = c & TRIM;
