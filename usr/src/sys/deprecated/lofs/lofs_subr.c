@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_subr.c	1.1 (Berkeley) %G%
+ *	@(#)lofs_subr.c	1.2 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -86,11 +86,11 @@ lofs_alloc(vp, targetvp)
 	printf("lofs_alloc(%x, %x)\n", vp, targetvp);
 #endif
 
-	MALLOC(vp->v_data, void *, sizeof(struct lofsnode), M_TEMP, M_WAITOK);
- 	a = LOFSP(vp);
+	MALLOC(a, struct lofsnode *, sizeof(struct lofsnode), M_TEMP, M_WAITOK);
 	a->a_vnode = vp;
+	vp->v_data = a;
 	VREF(targetvp);
-	LOFSP(vp)->a_lofsvp = targetvp;
+	a->a_lofsvp = targetvp;
 	hd = lofs_hash(targetvp);
 	insque(a, hd);
 
