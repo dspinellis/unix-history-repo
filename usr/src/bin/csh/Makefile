@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -38,7 +38,7 @@ csh: ${OBJS} strings.o
 
 # need an old doprnt, whose output we can trap
 doprnt.o: doprnt.c
-	${CC} -E doprnt.c | ${AS} -o doprnt.o
+	/lib/cpp doprnt.c | ${AS} -o doprnt.o
 
 # strings.o, sh.init.o, and sh.char.o are specially processed to be shared
 strings.o: strings
