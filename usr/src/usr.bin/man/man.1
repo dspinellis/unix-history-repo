@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	6.6 (Berkeley) %G%
+.\"	@(#)man.1	6.7 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
@@ -13,6 +13,8 @@ man \- print out the manual
 .B man
 [
 .B \-
+] [
+.B -a
 ] [
 .B \-M
 .I path
@@ -28,7 +30,8 @@ section number (``3'' for example), or one of the words ``local'', ``new,''
 or ``old''.  (The abbreviations ``l'', ``n'', and ``o'' are also allowed.)
 If \fIsection\fP is omitted, \fIman\fP searches all sections of the manual,
 giving preference to commands over library subroutines, and displays the
-first manual page it finds, if any.
+first manual page it finds, if any.  If the \fI-a\fP option is supplied,
+\fIman\fP displays all applicable manual pages.
 .PP
 Normally \fIman\fP checks in standard locations (/usr/man and /usr/local/man)
 for manual information.  This can be changed by supplying a search path (a
