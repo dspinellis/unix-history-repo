@@ -9,12 +9,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)fabs.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)fabs.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "DEFS.h"
 
 ENTRY(fabs)
-	fldl	4(sp)
+	fldl	4(%esp)
 	fabs
 	ret
