@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dd.c	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	4.8 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -272,7 +272,7 @@ char	**argv;
 	}
 	if (bs) {
 		ibs = obs = bs;
-		if (conv == null)
+		if (conv == null && (cflag &~ (SYNC|NERR)) == 0)
 			fflag++;
 	}
 	if(ibs == 0 || obs == 0) {
