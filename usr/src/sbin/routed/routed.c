@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.18 82/06/20";
+static char sccsid[] = "@(#)routed.c	4.19 82/06/20";
 #endif
 
 /*
@@ -504,8 +504,6 @@ rip_input(from, size)
 	switch (msg->rip_cmd) {
 
 	case RIPCMD_REQUEST:
-		if (!supplier)
-			return;
 		newsize = 0;
 		size -= 4 * sizeof (char);
 		n = msg->rip_nets;
