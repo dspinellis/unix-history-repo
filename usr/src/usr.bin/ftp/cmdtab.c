@@ -12,11 +12,11 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -28,7 +28,7 @@ int	setascii(), setbell(), setbinary(), setdebug(), setform();
 int	setglob(), sethash(), setmode(), setpeer(), setport();
 int	setprompt(), setstruct();
 int	settenex(), settrace(), settype(), setverbose();
-int	disconnect();
+int	disconnect(), restart(), reget(), syst();
 int	cd(), lcd(), delete(), mdelete(), user();
 int	ls(), mls(), get(), mget(), help(), append(), put(), mput();
 int	quit(), renamefile(), status();
@@ -36,6 +36,7 @@ int	quote(), rmthelp(), shell();
 int	pwd(), makedir(), removedir(), setcr();
 int	account(), doproxy(), reset(), setcase(), setntrans(), setnmap();
 int	setsunique(), setrunique(), cdup(), macdef(), domacro();
+int	sizecmd(), modtime(), newer(), rmtstatus();
 
 char	accounthelp[] =	"send account command to remote server";
 char	appendhelp[] =	"append to a file";
@@ -57,15 +58,18 @@ char	globhelp[] =	"toggle metacharacter expansion of local file names";
 char	hashhelp[] =	"toggle printing `#' for each buffer transferred";
 char	helphelp[] =	"print local help information";
 char	lcdhelp[] =	"change local working directory";
-char	lshelp[] =	"nlist contents of remote directory";
+char	lshelp[] =	"list contents of remote directory";
 char	macdefhelp[] =  "define a macro";
 char	mdeletehelp[] =	"delete multiple files";
 char	mdirhelp[] =	"list contents of multiple remote directories";
 char	mgethelp[] =	"get multiple files";
 char	mkdirhelp[] =	"make directory on the remote machine";
-char	mlshelp[] =	"nlist contents of multiple remote directories";
+char	mlshelp[] =	"list contents of multiple remote directories";
+char	modtimehelp[] = "show last modification time of remote file";
 char	modehelp[] =	"set file transfer mode";
 char	mputhelp[] =	"send multiple files";
+char	newerhelp[] =	"get file if remote file is newer than local file ";
+char	nlisthelp[] =	"nlist contents of remote directory";
 char	nmaphelp[] =	"set templates for default file name mapping";
 char	ntranshelp[] =	"set translation table for default file name mapping";
 char	porthelp[] =	"toggle use of PORT cmd for each data connection";
@@ -75,16 +79,21 @@ char	pwdhelp[] =	"print working directory on remote machine";
 char	quithelp[] =	"terminate ftp session and exit";
 char	quotehelp[] =	"send arbitrary ftp command";
 char	receivehelp[] =	"receive file";
+char	regethelp[] =	"get file restarting at end of local file";
 char	remotehelp[] =	"get help from remote server";
 char	renamehelp[] =	"rename file";
+char	restarthelp[]=	"restart file transfer at bytecount";
 char	rmdirhelp[] =	"remove directory on the remote machine";
+char	rmtstatushelp[]="show status of remote machine";
 char	runiquehelp[] = "toggle store unique for local files";
 char	resethelp[] =	"clear queued command replies";
 char	sendhelp[] =	"send one file";
 char	shellhelp[] =	"escape to the shell";
+char	sizecmdhelp[] = "show size of remote file";
 char	statushelp[] =	"show current status";
 char	structhelp[] =	"set file transfer structure";
 char	suniquehelp[] = "toggle store unique on remote machine";
+char	systemhelp[] =  "show remote system type";
 char	tenexhelp[] =	"set tenex file transfer type";
 char	tracehelp[] =	"toggle packet tracing";
 char	typehelp[] =	"set file transfer type";
@@ -124,8 +133,11 @@ struct cmd cmdtab[] = {
 	{ "mkdir",	mkdirhelp,	0,	1,	1,	makedir },
 	{ "mls",	mlshelp,	1,	1,	1,	mls },
 	{ "mode",	modehelp,	0,	1,	1,	setmode },
+	{ "modtime",	modtimehelp,	0,	1,	1,	modtime },
 	{ "mput",	mputhelp,	1,	1,	1,	mput },
+	{ "newer",	newerhelp,	1,	1,	1,	newer },
 	{ "nmap",	nmaphelp,	0,	0,	1,	setnmap },
+	{ "nlist",	nlisthelp,	1,	1,	1,	ls },
 	{ "ntrans",	ntranshelp,	0,	0,	1,	setntrans },
 	{ "open",	connecthelp,	0,	0,	1,	setpeer },
 	{ "prompt",	prompthelp,	0,	0,	0,	setprompt },
@@ -136,14 +148,19 @@ struct cmd cmdtab[] = {
 	{ "quit",	quithelp,	0,	0,	0,	quit },
 	{ "quote",	quotehelp,	1,	1,	1,	quote },
 	{ "recv",	receivehelp,	1,	1,	1,	get },
+	{ "reget",	regethelp,	1,	1,	1,	reget },
+	{ "remotestatus",rmtstatushelp,	0,	1,	1,	rmtstatus },
 	{ "remotehelp",	remotehelp,	0,	1,	1,	rmthelp },
 	{ "rename",	renamehelp,	0,	1,	1,	renamefile },
 	{ "reset",	resethelp,	0,	1,	1,	reset },
+	{ "restart",	restarthelp,	1,	1,	1,	restart },
 	{ "rmdir",	rmdirhelp,	0,	1,	1,	removedir },
 	{ "runique",	runiquehelp,	0,	0,	1,	setrunique },
 	{ "send",	sendhelp,	1,	1,	1,	put },
+	{ "size",	sizecmdhelp,	1,	1,	1,	sizecmd },
 	{ "status",	statushelp,	0,	0,	1,	status },
 	{ "struct",	structhelp,	0,	1,	1,	setstruct },
+	{ "system",	systemhelp,	0,	1,	1,	syst },
 	{ "sunique",	suniquehelp,	0,	0,	1,	setsunique },
 	{ "tenex",	tenexhelp,	0,	1,	1,	settenex },
 	{ "trace",	tracehelp,	0,	0,	0,	settrace },

@@ -12,11 +12,11 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ruserpass.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ruserpass.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
 struct macel {
@@ -78,7 +78,7 @@ rnetrc(host, aname, apass, aacct)
 	char *host, **aname, **apass, **aacct;
 {
 	char *hdir, buf[BUFSIZ], *tmp;
-	int t, i, c;
+	int t, i, c, usedefault = 0;
 	struct stat stb;
 	extern int errno;
 
@@ -96,11 +96,11 @@ next:
 	while ((t = token())) switch(t) {
 
 	case DEFAULT:
-		(void) token();
-		continue;
+		usedefault = 1;
+		/* FALL THROUGH */
 
 	case MACHINE:
-		if (token() != ID || strcmp(host, tokval))
+		if (!usedefault && (token() != ID || strcmp(host, tokval)))
 			continue;
 		while ((t = token()) && t != MACHINE) switch(t) {
 

@@ -12,7 +12,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -244,7 +244,7 @@ cmdscanner(top)
 		}
 		(*c->c_handler)(margc, margv);
 		if (bell && c->c_bell)
-			(void) putchar(CTRL('g'));
+			(void) putchar('\007');
 		if (c->c_handler != help)
 			break;
 	}
@@ -321,7 +321,7 @@ slurpstring()
 				slrflag++;
 				stringbase++;
 				return ((*sb == '!') ? "!" : "$");
-				break;
+				/* NOTREACHED */
 			case 1:
 				slrflag++;
 				altarg = stringbase;
