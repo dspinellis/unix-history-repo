@@ -1,4 +1,4 @@
-/*	tcp_timer.h	4.3	81/12/12	*/
+/*	tcp_timer.h	4.4	81/12/21	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -60,7 +60,7 @@
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =
-    { "REXMT", "KEEP", "PERSIST", "2MSL" };
+    { "REXMT", "PERSIST", "KEEP", "2MSL" };
 #endif
 
 /*
