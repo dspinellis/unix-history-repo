@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,9 +48,9 @@ char ether_broadcast_addr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 ifinit()
 {
 	struct interface ifs, *ifp;
-	int s, n;
+	int s;
         struct ifconf ifc;
-	char buf[(sizeof (struct ifreq ) * 20)];
+	char buf[BUFSIZ], *cp, *cplim;
         struct ifreq ifreq, *ifr;
 	u_long i;
 
@@ -67,7 +67,15 @@ ifinit()
         }
         ifr = ifc.ifc_req;
 	lookforinterfaces = 0;
-        for (n = ifc.ifc_len / sizeof (struct ifreq); n > 0; n--, ifr++) {
+#ifdef RTM_ADD
+#define max(a, b) (a > b ? a : b)
+#define size(p)	max((p).sa_len, sizeof(p))
+#else
+#define size(p) (sizeof (p))
+#endif
+	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
+	for (cp = buf; cp < cplim;
+			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
 		bzero((char *)&ifs, sizeof(ifs));
 		ifs.int_addr = ifr->ifr_addr;
 		ifreq = *ifr;

@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,7 @@ union ns_net net;
 	
 	bzero(&sxn, sizeof (struct sockaddr_ns));
 	sxn.sns_family = AF_NS;
+	sxn.sns_len = sizeof (sxn);
 	sxn.sns_addr.x_net = net;
 	sxn.sns_addr.x_host = *(union ns_host *)ether_broadcast_addr;
 	return( (struct sockaddr *)&sxn);
