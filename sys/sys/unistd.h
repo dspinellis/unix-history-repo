@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)unistd.h	5.14 (Berkeley) 4/1/91
- *	$Id: unistd.h,v 1.5 1994/03/16 17:38:10 wollman Exp $
+ *	$Id: unistd.h,v 1.6 1994/03/16 19:18:34 wollman Exp $
  */
 
 #ifndef _SYS_UNISTD_H_
@@ -39,12 +39,14 @@
 
 /* compile-time symbolic constants */
 #define	_POSIX_JOB_CONTROL	1 /* implementation supports job control */
+#if 0
 #define	_POSIX_SAVED_IDS	1 /* saved set-user-ID and set-group-ID */
+#endif
 #define	_POSIX_VERSION		198808L
 
 /* execution-time symbolic constants */
-#define	_POSIX_CHOWN_RESTRICTED	1 /* chown requires appropriate privileges */
-#define	_POSIX_NO_TRUNC		1 /* too-long path components generate errors */
+#define	_POSIX_CHOWN_RESTRICTED	0 /* chown requires appropriate privileges */
+#define	_POSIX_NO_TRUNC		0 /* too-long path components generate errors */
 				/* may disable terminal special characters */
 #define _POSIX_VDISABLE         0xFF
 
