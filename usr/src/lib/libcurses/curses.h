@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.8 */
+/* %G% (Berkeley) @(#)curses.h	1.9 */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -105,14 +105,14 @@ int	__void__;
 #define	mvwaddch(win,y,x,ch)	VOID(wmove(win,y,x)==ERR?ERR:waddch(win,ch))
 #define	mvwgetch(win,y,x)	VOID(wmove(win,y,x)==ERR?ERR:wgetch(win))
 #define	mvwaddstr(win,y,x,str)	VOID(wmove(win,y,x)==ERR?ERR:waddstr(win,str))
-#define	mvwgetstr(win,y,x)	VOID(wmove(win,y,x)==ERR?ERR:wgetstr(win))
+#define mvwgetstr(win,y,x,str)  VOID(wmove(win,y,x)==ERR?ERR:wgetstr(win,str))
 #define	mvwinch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : winch(win))
 #define	mvwdelch(win,y,x)	VOID(wmove(win,y,x) == ERR ? ERR : wdelch(win))
 #define	mvwinsch(win,y,x,c)	VOID(wmove(win,y,x) == ERR ? ERR:winsch(win,c))
 #define	mvaddch(y,x,ch)		mvwaddch(stdscr,y,x,ch)
 #define	mvgetch(y,x)		mvwgetch(stdscr,y,x)
 #define	mvaddstr(y,x,str)	mvwaddstr(stdscr,y,x,str)
-#define	mvgetstr(y,x)		mvwgetstr(stdscr,y,x)
+#define mvgetstr(y,x,str)       mvwgetstr(stdscr,y,x,str)
 #define	mvinch(y,x)		mvwinch(stdscr,y,x)
 #define	mvdelch(y,x)		mvwdelch(stdscr,y,x)
 #define	mvinsch(y,x,c)		mvwinsch(stdscr,y,x,c)
