@@ -14,4 +14,4 @@ lex.yy.c: config.l
 	lex config.l
 
 clean:
-	rm -f $(OBJS) lex.yy.c y.tab.c
+	rm -f $(OBJS) lex.yy.c y.tab.c y.tab.h config
