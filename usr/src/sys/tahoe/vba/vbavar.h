@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vbavar.h	7.2 (Berkeley) %G%
+ *	@(#)vbavar.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -143,10 +143,11 @@ struct vb_buf {
 #define	VB_SCATTER	0x04		/* device does scatter-gather */
 
 /*
- * hardware addressing limits
+ * hardware memory-addressing limits: highest physical address
+ * that each address length can use for main memory access.
  */
 #define	VB_MAXADDR20	0x000fffff	/* highest addr for 20-bit */
-#define	VB_MAXADDR24	0x007fffff	/* highest addr for 23/24-bit */
+#define	VB_MAXADDR24	0x00efffff	/* highest addr for 23/24-bit */
 #define	VB_MAXADDR32	0x3effffff	/* highest addr for 32-bit */
 
 /*
