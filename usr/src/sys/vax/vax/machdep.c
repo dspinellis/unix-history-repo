@@ -1,4 +1,4 @@
-/*	machdep.c	4.19	81/02/27	*/
+/*	machdep.c	4.20	81/02/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -30,7 +30,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.19) 81/02/27 17:44:47 \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.20) 81/02/28 14:46:46 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -99,8 +99,8 @@ startup(firstaddr)
 	valloclim(text, struct text, ntext, textNTEXT);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
-	valloc(swapmap, struct map, nswapmap = nproc * 4);
-	valloc(argmap, struct map, 25);
+	valloc(swapmap, struct map, nswapmap = nproc * 2);
+	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
 
 	/*
@@ -125,13 +125,16 @@ startup(firstaddr)
 	mtpr(TBIA, 1);
 
 	/*
-	 * Initialize memory allocator and
-	 * related maps.
+	 * Initialize memory allocator and swap
+	 * and user page table maps.
+	 *
+	 * THE USER PAGE TABLE MAP IS CALLED ``kernelmap''
+	 * WHICH IS A VERY UNDESCRIPTIVE AND INCONSISTENT NAME.
 	 */
 	meminit(unixsize, maxmem);
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
-	mfree(kernelmap, USRPTSIZE, 1);
+	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
 
 	/*
 	 * Configure the system.
