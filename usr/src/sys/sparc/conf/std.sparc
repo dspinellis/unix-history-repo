@@ -1,4 +1,4 @@
-#	@(#)std.sparc	8.1 (Berkeley) %G%
+#	@(#)std.sparc	8.2 (Berkeley) %G%
 #
 # standard SPARCstation information.
 
@@ -17,3 +17,5 @@ zs0	at mainbus0
 zs1	at mainbus0
 
 sbus0	at mainbus0
+
+pseudo-device kbd
