@@ -1,0 +1,12 @@
+#print
+Often you will use "ls" with "rm"
+to first find the name of a file, and then remove it.
+This directory contains one file whose name begins with "g".
+Find out what it is and remove it.
+Then type "ready".
+#create george
+#user
+test ! -r george
+#log
+#next
+10.3c 2

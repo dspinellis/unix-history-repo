@@ -1,0 +1,23 @@
+#print
+This script deals with the use of the "-ms" macro
+package to produce Bell Laboratories style documents.
+Before trying it, you should be familiar with the
+editor.  To test that, please enter the file
+typed below, _______exactly __as __is, into file "decl".  Then
+type "ready".
+
+#create Ref
+.PP
+When in the course of human events, it becomes
+necessary for one people to dissolve the political bands which have
+connected them with another, and to assume among the
+powers of the earth the separate and equal station to which
+the laws of Nature and of Nature's God entitle them, a decent
+respect to the opinions of mankind requires that they should
+declare the causes which impel them to the separation.
+#print Ref
+#user
+#cmp decl Ref
+#log
+#next
+2.1a 10

@@ -1,0 +1,163 @@
+#	   user: bostic
+#	machine: vangogh.CS.Berkeley.EDU
+#	   tree: /
+#	   date: Tue Jul 20 13:15:45 1993
+
+# .
+/set type=file gname=wheel uname=root mode=0755
+.               type=dir
+
+# ./a
+/set type=file gname=guest uname=root mode=0755
+a               type=dir gname=wheel
+# ./a
+..
+
+
+# ./altroot
+altroot         type=dir gname=wheel
+# ./altroot
+..
+
+
+# ./amd
+/set type=file gname=wheel uname=root mode=0755
+amd             type=dir mode=0555
+# ./amd
+..
+
+
+# ./b
+b               type=dir mode=0775
+# ./b
+..
+
+
+# ./bin
+/set type=file gname=bin uname=bin mode=0555
+bin             type=dir uname=root gname=wheel mode=0755
+# ./bin
+..
+
+
+# ./c
+/set type=file gname=wheel uname=root mode=0750
+c               type=dir mode=0755
+# ./c
+..
+
+
+# ./dev
+/set type=file gname=operator uname=root mode=0640
+dev             type=dir gname=wheel mode=0755
+
+# ./dev/fd
+/set type=file gname=bin uname=bin mode=0666
+fd              type=dir uname=root gname=wheel mode=0755
+# ./dev/fd
+..
+
+# ./dev
+..
+
+
+# ./dump
+/set type=file gname=wheel uname=root mode=0750
+dump		type=dir gname=operator uname=operator mode=0775
+# ./dump
+..
+
+
+# ./etc
+/set type=file gname=wheel uname=root mode=0644
+etc             type=dir mode=0755
+
+# ./etc/disklabels
+/set type=file gname=wheel uname=root mode=0444
+disklabels      type=dir mode=0775
+# ./etc/disklabels
+..
+
+
+# ./etc/kerberosIV
+/set type=file gname=wheel uname=root mode=0444
+kerberosIV      type=dir mode=0755
+# ./etc/kerberosIV
+..
+
+
+# ./etc/mtree
+/set type=file gname=wheel uname=root mode=0600
+mtree           type=dir mode=0755
+# ./etc/mtree
+..
+
+
+# ./etc/namedb
+/set type=file gname=wheel uname=root mode=0600
+namedb           type=dir mode=0755
+# ./etc/namedb
+..
+
+
+# ./etc/sliphome
+/set type=file gname=wheel uname=root mode=0755
+sliphome        type=dir
+# ./etc/sliphome
+..
+
+# ./etc
+..
+
+
+# ./home
+home            type=dir mode=0555
+# ./home
+..
+
+
+# ./mnt
+mnt             type=dir
+# ./mnt
+..
+
+
+# ./root
+/set type=file gname=wheel uname=root mode=0644
+root            type=dir mode=0755
+# ./root
+..
+
+
+# ./sbin
+/set type=file gname=bin uname=bin mode=0555
+sbin            type=dir uname=root gname=wheel mode=0755
+# ./sbin
+..
+
+
+# ./stand
+stand           type=dir uname=root gname=wheel mode=0755
+# ./stand
+..
+
+
+# ./tmp
+/set type=file gname=wheel uname=root mode=0600
+tmp             type=dir mode=01777
+# ./tmp
+..
+
+
+# ./usr
+/set type=file gname=wheel uname=root mode=0755
+usr             type=dir
+# ./usr
+..
+
+
+# ./var
+/set type=file gname=wheel uname=root mode=0755
+var             type=dir
+# ./var
+..

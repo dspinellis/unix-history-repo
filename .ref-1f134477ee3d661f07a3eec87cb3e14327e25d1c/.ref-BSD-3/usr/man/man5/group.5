@@ -1,0 +1,37 @@
+.TH GROUP 5 
+.SH NAME
+group \- group file
+.SH DESCRIPTION
+.I Group
+contains for each group the
+following information:
+.HP 10
+group name
+.br
+.ns
+.HP 10
+encrypted password
+.br
+.ns
+.HP 10
+numerical group ID
+.br
+.ns
+.HP 10
+a comma separated list of all users allowed in the group
+.PP
+This is an ASCII file.
+The fields are separated
+by colons;
+Each group is separated from the next by a new-line.
+If the password field is null, no password is demanded.
+.PP
+This file resides in directory /etc.
+Because of the encrypted
+passwords, it can and does have general read
+permission and can be used, for example,
+to map numerical group ID's to names.
+.SH FILES
+/etc/group
+.SH "SEE ALSO"
+newgrp(1), crypt(3), passwd(1), passwd(5)

@@ -1,0 +1,51 @@
+.TH STICKY 8
+.SH NAME
+sticky \- executable files with persistent text
+.SH DESCRIPTION
+While the `sticky bit', mode 01000 (see
+.IR chmod (2)),
+is set on a sharable executable file,
+the text of that file will not be removed from the system swap area.
+Thus the file does not have to be fetched from the file system
+upon each execution.
+As long as a copy remains in the swap area, the
+original text cannot be overwritten in the file system,
+nor can the file be deleted.
+(Directory entries can be removed so long as one link remains.)
+.PP
+Sharable files are made by the
+.B \-n
+and
+.B \-i
+options of
+.IR ld (1).
+.PP
+To replace a sticky file that has been used do:
+(1) Clear the sticky bit with
+.IR chmod (1).
+(2) Execute the old program to flush the swapped copy.
+This can be done safely even if others are using it.
+(3) Overwrite the sticky file.
+If the file is being executed by any process,
+writing will be prevented; see the next paragraph
+for a dodge.
+(4) Set the sticky bit again.
+Only the super-user can set the sticky bit.
+.PP
+To replace a sharable executable file while any user is
+executing it do:
+(1) Rename the directory entry for that file with
+.IR mv (1).
+(2) Install the new program with
+.I cp,
+.IR mv (1),
+or otherwise.
+(3) With
+.I chown
+and
+.IR chmod (2),
+set the mode of the new file to agree with that of the original
+as necessary.
+(4) Delete the old file when convenient.
+.SH BUGS
+Are self-evident.

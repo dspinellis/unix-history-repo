@@ -1,0 +1,211 @@
+.\" @(#)license	1.1 (CSRG - distribution) 3/17/92
+.nr LL 6.8i
+.OF '1 January 1989'''
+.EF '1 Janurary 1989'''
+.ll 6.8i
+.ls 2
+.ce 2
+.ps 11
+.ft HB
+BSD NETWORKING SOFTWARE, RELEASE 1 LICENSE AGREEMENT
+.sp
+University of California, Berkeley
+.sp
+.ft H
+.nr PS 10
+.ps 10
+.nr FT H
+.ls 1
+.PP
+This LICENSE AGREEMENT is made and entered into this
+\l'1.0i'
+day of
+\l'1.0i'
+, 19
+\l'0.25i'
+, by and between THE REGENTS OF THE
+UNIVERSITY OF CALIFORNIA, a California corporation, hereinafter called
+"THE REGENTS", and
+\l'3.5i'
+having its principal office at 
+\l'2.5i'\|,
+hereinafter called "LICENSEE".
+.nr FT HB
+.PP
+THE REGENTS hold the copyright to original Computer Programs
+and documentation known as BSD Networking Software, Release 1,
+hereinafter called "LICENSED MATERIAL"; and LICENSEE desires
+to obtain from THE REGENTS, and THE REGENTS desires to grant to
+LICENSEE a license to use LICENSED MATERIAL.  THE REGENTS hereby
+grants to LICENSEE a non-exclusive, non-transferable, and
+perpetual license to use the LICENSED MATERIAL upon the terms
+and conditions hereinafter set forth:
+.IP 1.
+.I Term.
+The term of this Agreement shall commence on the
+date hereof, and unless sooner terminated as hereinafter set forth,
+shall be perpetual.
+Upon termination of this Agreement,
+LICENSEE will
+cease to use and distribute the LICENSED MATERIAL.
+LICENSEE may terminate this agreement
+upon thirty (30) days written notice to THE REGENTS.
+THE REGENTS may terminate this agreement by thirty (30)
+days notice to LICENSEE, if LICENSEE is in
+breach of this agreement and fails to correct
+such breach within that time.
+.IP 2.
+.I Fee.
+LICENSEE shall pay THE REGENTS the sum of $400.00
+as a one-time signing fee for the LICENSED MATERIAL.
+Payment shall
+be made by LICENSEE upon execution of this Agreement by check
+or money order
+made payable to: The Regents of the University of California and mailed
+to: Computer Systems Research Group,
+457 Evans Hall, University of California,
+Berkeley, California  94720.
+.IP 3.
+.I Lack
+.I of
+.I Warranty.
+THE REGENTS MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS
+OR IMPLIED, CONCERNING THE LICENSED MATERIAL,
+INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+THE REGENTS shall not be liable for any costs, damages,
+fees, or other liability, nor for any indirect, special,
+incidental, or consequential damages (including lost profits)
+with respect to any claim by LICENSEE or any third party on
+account of or arising from this Agreement or use of the
+LICENSED MATERIAL.
+.IP 4.
+.I Lack
+.I of
+.I Services.
+LICENSEE ACKNOWLEDGES THAT THE
+LICENSED MATERIAL
+IS BEING SUPPLIED "AS IS," WITHOUT ANY
+ACCOMPANYING SERVICES FROM THE REGENTS,
+FOR THE PURPOSES
+OF EDUCATIONAL AND SCIENTIFIC COLLABORATION AIMED AT FURTHER DEVELOPMENT
+AND APPLICATION OF THE PROGRAM AND THE EXCHANGE OF TECHNICAL DATA.
+THE REGENTS DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM
+WILL BE UNINTERRUPTED OR ERROR-FREE.
+
+This software has not been tested for compilation or operation
+with any operating systems other than 4.3BSD.
+.IP 5.
+.I Title.
+LICENSEE agrees that the LICENSED MATERIAL
+is, and shall at all times remain, the property of THE REGENTS.
+LICENSEE shall have no right, title or interest therein or
+thereto except as expressly set forth in this License Agreement.
+.IP 6.
+.I Copyright
+.I Notice
+.I and
+.I Acknowledgement.
+LICENSEE
+may reproduce or
+distribute any copies of the LICENSED MATERIAL
+or derivative works, in source or binary form,
+as long as the original copyright notice is retained by
+LICENSEE in redistributed source code, and appropriate
+credit is given to the
+Electrical Engineering and Computer Science
+Department of the University of California at Berkeley.
+This obligation will be considered met if
+LICENSEE includes
+"Copyright (c) 1988, The Regents of the University of California"
+on the label for electronic media
+containing source or binary code, and the
+statement regarding derivation appears on the
+cover page of the installation or release documentation
+accompanying the electronic media,
+such statement to include
+"This software and documentation
+is based in part on BSD Networking Software, Release 1
+licensed from The Regents of the University of
+California.  We acknowledge the
+role of the
+Computer Systems Research Group and the
+Electrical Engineering and Computer Sciences Department
+of the University of California at Berkeley and the Other
+Contributors in its development."
+Advertisements or other promotional literature for
+products or features based on LICENSED MATERIAL
+should acknowledge the role of the University
+of California, Berkeley.
+However, the name of the University may not be used to
+endorse or promote products derived from this software
+without specific prior written permission.
+.IP 7.
+.I Enhancements.
+LICENSEE may enhance, modify, or correct
+the LICENSED MATERIAL, may merge it into other material,
+and may use, reproduce, and distribute the LICENSED MATERIAL as
+modified.
+However, the modified version is still
+subject to the copyright and acknowledgement provisions
+noted in Section 6.
+.IP 8.
+.I Source
+.I Code.
+THE REGENTS will deliver to
+LICENSEE one copy of source code materials
+for LICENSED MATERIAL as noted in Attachment A.
+.IP 9.
+.I Authority.
+THE REGENTS warrants that THE REGENTS have legal right
+to grant LICENSEE the license
+as set forth herein.
+LICENSEE represents that the individual who
+executes this license on behalf of LICENSEE
+is authorized to do so by LICENSEE.
+.IP 10.
+.I California
+.I Law.
+This Agreement shall be governed
+by and construed in accordance with the laws of the State of
+California.
+.IP 11.
+.I Entire
+.I Agreement.
+This Agreement contains the entire
+Agreement between the parties and supersedes all prior written or
+oral agreements with respect to the subject matter hereof.
+.IP 12.
+.I Modification.
+Any modification to this Agreement
+must be in writing and signed by both parties.
+.IP 13.
+.I Assignment.
+This Agreement will not be assigned by
+LICENSEE to third parties without the prior written
+consent of THE REGENTS.
+.sp 
+.ft HB
+.HB
+.ps 10
+.LP
+IN WITNESS WHEREOF,
+the parties hereto have executed this Agreement
+as of the latest date set forth below:
+.ft
+.sp 
+.TS
+expand tab(~);
+lw(2.9375i) lw(0.4i) lw(2.9375i).
+LICENSEE:\l'2.15i'~~LICENSOR: THE REGENTS OF THE
+~~           UNIVERSITY OF CALIFORNIA
+\l'2.937i'~~
+.sp 1
+By:\l'2.74i'~~By:\l'2.74i'
+.sp 1
+Name:\l'2.55i'~~Name:\l'2.55i'
+.sp 1
+Title:\l'2.6i'~~Title:\l'2.6i'
+.sp 1
+Date:\l'2.6i'~~Date:\l'2.6i'
+.TE

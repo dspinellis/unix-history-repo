@@ -1,0 +1,74 @@
+.\" Copyright (c) 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcsetpgrp.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt TCSETPGRP 3
+.Os
+.Sh NAME
+.Nm tcsetpgrp
+.Nd set foreground process group ID
+.Sh SYNOPSIS
+.Fd #include <sys/types.h>
+.Fd #include <unistd.h>
+.Ft int
+.Fn tcsetpgrp "int fd" "pid_t pgrp_id"
+.Sh DESCRIPTION
+If the process has a controlling terminal, the
+.Nm tcsetpgrp
+function sets the foreground process group ID associated with the
+terminal device to
+.Fa pgrp_id .
+The terminal device associated with
+.Fa fd
+must be the controlling terminal of the calling process and the
+controlling terminal must be currently associated with the session
+of the calling process.
+The value of
+.Fa pgrp_id
+must be the same as the process group ID of a process in the same
+session as the calling process.
+.Pp
+Upon successful completion,
+.Nm tcsetpgrp
+returns a value of zero.
+.Sh ERRORS
+If an error occurs,
+.Nm tcgetpgrp
+returns -1 and the global variable
+.Va errno
+is set to indicate the error, as follows:
+.Bl -tag -width Er
+.It Bq Er EBADF
+The
+.Fa fd
+argument is not a valid file descriptor.
+.It Bq Er EINVAL
+An invalid value of
+.Fa pgrp_id
+was specified.
+.It Bq Er ENOTTY
+The calling process does not have a controlling terminal, or the file
+represented by
+.Fa fd
+is not the controlling terminal, or the controlling terminal is no
+longer associated with the session of the calling process.
+.It Bq Er EPERM
+The
+.Fa pgrp_id
+argument does not match the process group ID of a process in the same
+session as the calling process.
+.El
+.Sh SEE ALSO
+.Xr setpgid 3 ,
+.Xr setsid 2 ,
+.Xr tcgetpgrp 3
+.Sh STANDARDS
+The
+.Nm tcsetpgprp
+function is expected to be compliant with the
+.St -p1003.1-88
+specification.

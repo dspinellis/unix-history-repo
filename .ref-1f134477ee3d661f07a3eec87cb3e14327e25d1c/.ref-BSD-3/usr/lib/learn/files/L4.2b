@@ -1,0 +1,21 @@
+#print
+You can inquire about several files at once
+with the "ls" command.  If you type, for example,
+   ls fee fi fo fum
+you will be told which of the four files "fee", "fi", "fo",
+and "fum" exist.  In the current directory only one
+of the files "grover", "gerald", or "george" exists.
+Find out which one; then rename it "grant".
+Type "ready" when you are done.
+#create gerald
+file
+#create garbage
+garbage it is.
+#user
+#create X1
+file
+#
+cmp -s X1 grant && test ! -r gerald
+#log
+#next
+5.1a  10

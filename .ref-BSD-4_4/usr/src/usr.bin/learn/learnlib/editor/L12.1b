@@ -1,0 +1,27 @@
+#print
+This directory still has both files named 'harry'
+and 'norman' in it.  You checked that they were
+the same with 'cat'.  Now, for an easier time,
+try 'diff'.  If it doesn't report any differences,
+you can be sure the files are the same.
+#create harry
+Four score and seven years ago our
+fathers brought forth on this continent
+a new nation, conceived in liberty and
+dedicated to the proposition that
+all men are created equal.
+#create norman
+Four score and seven years ago our
+fathers brought forth on this continent
+a new nation, conceived in liberty and
+dedicated to the proposition that
+all men are created equal.
+Type "ready" when you're done experimenting.
+#copyin
+#user
+#uncopyin
+grep diff .copy >/dev/null
+#log
+#next
+13.1a 10
+13.2a 5

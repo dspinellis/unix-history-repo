@@ -1,0 +1,22 @@
+#print
+You can also use the "*" operator.  For example,
+print the contents of all the files in this
+directory whose names begin with the letter 'p'.
+Use just one "cat" command.
+Then type "ready".
+#create p1
+There are only two such files.  This is the first
+one and it is two lines long.
+#create ppx
+
+This is the second file.  Its first line
+is blank, and then there are three lines of
+text of which this is the last.
+#copyin
+#user
+#uncopyin
+grep 'cat p\*' .copy >/dev/null
+#log
+#next
+10.1a 10
+9.2c 5

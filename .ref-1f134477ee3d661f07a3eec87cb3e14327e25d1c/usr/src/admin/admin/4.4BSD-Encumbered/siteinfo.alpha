@@ -1,0 +1,61 @@
+.\" @(#)siteinfo	1.2 (CSRG - distribution) 7/9/92
+.nr PS 11
+.in +4i
+.TS
+box;
+c
+c
+ll.
+.ft B
+Choice of medium:
+.sp 5p
+.ps 11
+.ft
+\fB 9 track, 6250bpi \(ci     8mm Exabyte \(ci  
+.ft
+.TE
+.sp -20p
+.ll 4i
+.in 0
+.ce 3
+.ps 12
+.B "4.4BSD-Encumbered"
+.B "Site Information Form"
+.B "PLEASE TYPE"
+.ps 11
+.vs 1.5v
+.sp 2.5
+.ll 6.8i
+.in 0
+.TS
+rw0 l.
+Organization:	\l'4i'
+No. of BSD Users:	\l'4i'
+Site Type (check one):	Educational___ Governmental___ Commercial___
+Site Mailing Address:	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Site Network Address:	(please specify complete path to UUNET if UUCP address)
+	\l'4i'
+.sp 1
+Administrative Contact:	\l'4i'
+Mailing Address (no P.O. Boxes):	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Telephone:	\l'4i'
+Facsimile:	\l'4i'
+E-mail Address:	\l'4i'
+.sp 1
+Technical Contact:	\l'4i'
+Mailing Address (no P.O. Boxes):	\l'4i'
+	\l'4i'
+	\l'4i'
+	\l'4i'
+Telephone:	\l'4i'
+E-mail Address:	\l'4i'
+.sp 1
+Current AT&T Agreement:	32V___sysIII___sysV___(Release No.______) 
+Title of Signatory:	\l'4i'
+.TE

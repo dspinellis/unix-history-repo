@@ -1,0 +1,64 @@
+#!/bin/sh -
+#
+# Copyright (c) 1991, 1993
+#	The Regents of the University of California.  All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Kenneth Almquist.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)builtins.def	8.1 (Berkeley) %G%
+
+#
+# This file lists all the builtin commands.  The first column is the name
+# of a C routine.  The -j flag, if present, specifies that this command
+# is to be excluded from systems without job control.  The rest of the line
+# specifies the command name or names used to run the command.  The entry
+# for bltincmd, which is run when the user does not specify a command, must
+# come first.
+#
+# Copyright (C) 1989 by Kenneth Almquist.  All rights reserved.
+# This file is part of ash, which is distributed under the terms specified
+# by the Ash General Public License.  See the file named LICENSE.
+#
+# NOTE: bltincmd must come first!
+
+bltincmd	command
+#alloccmd	alloc
+bgcmd -j	bg
+breakcmd	break continue
+#catfcmd	catf
+cdcmd		cd chdir
+dotcmd		.
+echocmd		echo
+evalcmd		eval
+execcmd		exec
+exitcmd		exit
+expcmd		exp let
+exportcmd	export readonly
+#exprcmd	expr test [
+histcmd		fc
+fgcmd -j	fg
+getoptscmd	getopts
+hashcmd		hash
+jobidcmd	jobid
+jobscmd		jobs
+#linecmd		line
+localcmd	local
+#nlechocmd	nlecho
+printfcmd	printf
+pwdcmd		pwd
+readcmd		read
+returncmd	return
+setcmd		set
+setvarcmd	setvar
+shiftcmd	shift
+trapcmd		trap
+truecmd		: true
+umaskcmd	umask
+unaliascmd	unalias
+unsetcmd	unset
+waitcmd		wait
+#foocmd		foo
+aliascmd	alias

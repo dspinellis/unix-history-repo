@@ -1,0 +1,43 @@
+#print
+You have now learned quite a bit about substitute commands.
+Here is a larger task to perform.  There is a file 'song' in
+this directory.  Edit it; print it out, and notice that
+there are six mistyped words in it.  Fix all of them
+and rewrite the file.  Then type "ready".
+#create Ref
+Oh, say can you see
+ by the dawn's early light
+What so proudly we hailed
+ at the twilight's last gleaming
+Whose broad stripes and bright stars
+ through the perilous night
+O'er the ramparts we watched
+ were so gallantly streaming
+And the rocket's red glare,
+ the bombs bursting in air
+Gave proof through the night
+ that our flag was still there
+Oh, say does that star spangled banner yet wave
+ o'er the land of the free
+And the home of the brave?
+#create song
+Oh, say can yuo see
+ by the dawn's early light
+What so proudly we hailed
+ at the twilight's last glieaming
+Whose broad stxripes and bright stxars
+ through the perilous night
+O'er the ramparts we watched
+ were so gallantly streammming
+And the rocket's red glare,
+ the bombs bursting in air
+Gave proof through thre night
+ that our flag was still there
+Oh, say does that star spangled banner yet wave
+ o'er the land of the free
+And the home of the brave?
+#user
+#cmp song Ref
+#log
+#next
+44.1b 10

@@ -1,0 +1,80 @@
+.	\"KS keep - for keep release features. As in IFM
+.de ]K
+.nr KN \\n(.u
+.if \\n(IK=0 .if \\n(IF=0 .KQ
+.nr IK +1
+..
+.	\"KQ - real keep processor
+.de KQ
+.br
+.nr KI \\n(.i
+.ev 2
+.br
+.in \\n(KIu
+.ps \\n(PS
+.if \\n(VS>40 .vs \\n(VSu
+.if \\n(VS<=39 .vs \\n(VSp
+.ll \\n(LLu
+.lt \\n(LTu
+.if \\n(NX>1 .ll \\n(CWu
+.if \\n(NX>1 .lt \\n(CWu
+.di KK
+.nr TB 0
+..
+.	\"KF - floating keep
+.de ]J
+.nr KN \\n(.u
+.if !\\n(IK .FQ
+.nr IK +1
+..
+.	\"FQ real floating keep processor
+.de FQ
+.nr KI \\n(.i
+.ev 2
+.br
+.in \\n(KIu
+.ps \\n(PS
+.if \\n(VS>40 .vs \\n(VSu
+.if \\n(VS<=39 .vs \\n(VSp
+.ll \\n(LLu
+.lt \\n(LTu
+.if \\n(NX>1 .ll \\n(CWu
+.if \\n(NX>1 .lt \\n(CWu
+.di KK
+.nr TB 1
+..
+.	\"KE release - everything between keep and release is together
+.de KE
+.if \\n(IK .if !\\n(IK-1 .if \\n(IF=0 .RQ
+.if \\n(IK .nr IK -1
+..
+.	\"RQ real release
+.de RQ
+.br
+.di
+.nr NF 0
+.if \\n(dn-\\n(.t .nr NF 1
+.if \\n(TC .nr NF 1
+.if \\n(NF .if !\\n(TB .sp 200
+.if !\\n(NF .if \\n(TB .nr TB 0
+.nf
+.rs
+.nr TC 5
+.in 0
+.ls 1
+.if \\n(TB=0 .ev
+.if \\n(TB=0 .br
+.if \\n(TB=0 .ev 2
+.if \\n(TB=0 .KK
+.ls
+.ce 0
+.if \\n(TB=0 .rm KK
+.if \\n(TB .da KJ
+.if \\n(TB \!.KD \\n(dn
+.if \\n(TB .KK
+.if \\n(TB .di
+.nr TC \\n(TB
+.if \\n(KN .fi
+.in
+.ev
+..

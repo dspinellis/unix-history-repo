@@ -1,0 +1,25 @@
+.TH VPRINT 1 2/24/79
+.UC
+.SH NAME
+vprint \- pr to the Versatec
+.SH SYNOPSIS
+.B vprint
+file ...
+.SH DESCRIPTION
+.I Vprint
+.I pr's
+a copy of each named file on the line printer,
+dealing with the unusual length of Versatec printed pages.
+.I Vpr
+currently invokes the filter
+.IR sidebyside (1)
+to form the printed pages four across and put in cut lines.
+It is currently a one line shell script:
+.IP
+pr \-l86 $* | vpr
+.SH SEE\ ALSO
+vpr(1), pr(1)
+.SH BUGS
+The hardware character set is ugly.
+.I Vprint
+should use one of the constant width fonts to produce prettier listings.

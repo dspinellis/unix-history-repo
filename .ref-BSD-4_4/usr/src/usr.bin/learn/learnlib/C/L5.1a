@@ -1,0 +1,26 @@
+#print
+(Section 1.5)
+Write a program that copies exactly three characters
+from its input to its output.
+When compiled and tested, type ready.
+#once #create Ref
+XY
+#once #create z1
+XY
+marks the spot.
+#user
+a.out <z1 >z2
+#cmp z2 Ref
+#succeed
+/* Here is one possible solution */
+
+main()
+{
+	putchar(getchar());
+	putchar(getchar());
+	putchar(getchar());
+}
+#log
+#next
+5.1b 10
+5.2a 5

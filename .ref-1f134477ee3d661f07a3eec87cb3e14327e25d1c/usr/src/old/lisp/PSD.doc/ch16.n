@@ -1,0 +1,835 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch16.n	6.3 (Berkeley) %G%
+.\"
+." $Header: /na/franz/doc/RCS/ch16.n,v 1.1 83/01/31 07:08:55 jkf Exp $
+.Lc The\ LISP\ Editor 16
+
+.sh 2 The\ Editors \n(ch 1
+
+It is quite possible to use VI, Emacs or other standard editors to edit your
+lisp programs, and many people do just that.
+However there is a lisp
+structure editor which is particularly good for the editing
+of lisp programs, and operates in a rather different fashion, namely
+within a lisp environment.
+application.  It
+is handy to know how to use it for fixing problems without exiting
+from the lisp system (e.g. from the debugger
+so you can continue to execute rather than having to start over.)  The
+editor is not quite like the top-level and debugger, in that it expects
+you to type editor commands to it.  It will not evaluate whatever you
+happen to type.  (There is an editor command to evaluate things, though.)
+
+The editor is available (assuming your system is set up correctly with
+a lisp library) by typing (load 'cmufncs) and (load 'cmuedit).
+
+The  most  frequent  use of the editor is to change function
+definitions by starting the editor with one of the commands described in
+section 16.14. (see \fIeditf\fP), values (\fIeditv\fP), properties
+(\fIeditp\fP), and  expressions  (\fIedite\fP).  The beginner  is
+advised to start with the following (very basic) commands: \fIok,
+undo, p, #\fP, under which are explained two different basic commands
+which  start with numbers, and f.  
+
+This documentation, and the editor, were imported from PDP-10 CMULisp
+by Don Cohen.  PDP-10 CMULisp is based on UCILisp, and the editor
+itself was derived from an early version of Interlisp.  Lars
+Ericson, the author of this section,
+has provided this very concise summary.
+Tutorial examples and implementation details
+may be found in the Interlisp Reference Manual,
+where a similar editor is described.
+
+.sh 2 Scope\ of\ Attention
+
+Attention-changing commands allow you to look at a different
+part of a Lisp expression you are editing.
+The sub-structure upon which the editor's attention is
+centered is called "the current expression".   Changing the
+current expression means shifting attention and not actually modifying
+any structure.
+.Fb
+.fi
+\fISCOPE OF ATTENTION COMMAND SUMMARY\fP
+
+\fIn (n>0) \fP. Makes the nth element of the current expression be the
+new current expression.
+
+\fI-n (n>0)\fP. Makes the nth element from the end of the current
+expression be the new current expression.  
+
+\fI0\fP. Makes the  next  higher expression  be  the  new  correct
+expression.  If the intention is to go back to the next higher left
+parenthesis, use the command !0.
+
+\fIup\ \fP.  If a p command would cause the editor to
+type ...  before typing the current expression, (the current
+expression is a tail of the next higher expression) then has no effect;
+else, up makes the old current expression the first element in the new
+current expression.
+
+\fI!0 \fP. Goes back to the next higher left parenthesis.
+
+\fI^\ \fP.
+Makes the top level expression be the current expression.  
+
+\fInx\ \fP.
+Makes the current expression be the next expression.  
+
+\fI(nx n)\fP equivalent to n nx commands.
+
+\fI!nx \fP.  Makes current expression be the next
+expression at a higher level.  Goes through any number of right
+parentheses to get to the next expression.
+
+\fI bk\ \fP.
+Makes the current expression be the previous expression in the next
+higher expression.  
+
+\fI(nth n) n>0 \fP.  Makes the list starting with
+the nth element of the current expression be the current expression.
+
+\fI(nth $) - generalized nth command.\fP nth locates $, and then backs
+up to the current level, where the new current expression is the tail
+whose first element contains, however deeply, the expression that was
+the terminus of the location operation.
+
+\fI:: \fP.  (pattern ::  .  $)  e.g., (cond ::
+return).  finds a cond that contains a return, at any depth.
+
+\fI(below com x) \fP.  The below command is useful for
+locating a substructure by specifying something  it contains.  (below
+cond) will cause the cond clause containing  the current  expression to
+become the new current expression.  Suppose you are editing a list
+of lists, and want to find a sublist that contains a foo (at any
+depth).  Then simply executes f foo (below \).
+
+\fI(nex x) \fP.  same as \fI(below x)\fP followed by
+nx.  For example, if you are deep inside of a selectq clause, you
+can advance to the next clause with \fI(nex selectq)\fP.
+
+\fInex\fP.  The  atomic  form  of  \fInex\fP is useful
+if you will be performing repeated  executions  of  \fI(nex  x)\fP.  By
+simply  marking  the  chain corresponding to x,  you can use \fInex\fP to step
+through the sublists.	
+.Fe
+.br
+.sh 2 Pattern\ Matching\ Commands
+
+Many editor commands that search take patterns.
+A pattern \fIpat\fP matches with x if:
+.Fb
+.fi
+\fIPATTERN SPECIFICATION SUMMARY\fP
+
+- \fIpat\fP is \fIeq\fP to x.  
+
+- \fIpat\fP is &.  
+
+- \fIpat\fP is a number and equal to x.  
+
+- if (car \fIpat\fP) is the atom *any*, (cdr \fIpat\fP) is a list of patterns, and
+\fIpat\fP matches x if and only if one of the patterns on (cdr \fIpat\fP) matches x.
+
+- if \fIpat\fP is a literal atom or string, and (nthchar \fIpat\fP -1) is @, then
+\fIpat\fP matches with any literal atom or string which has the same initial
+characters as \fIpat\fP, e.g.  ver@ matches with verylongatom, as well as
+"verylongstring".
+
+- if (car \fIpat\fP) is the atom --, \fIpat\fP matches x if (a) (cdr \fIpat\fP)=nil, i.e.
+\fIpat\fP=(--), e.g., (a --) matches (a) (a b c) and (a .  b) in other words,
+-- can match any tail of a list.  (b) (cdr \fIpat\fP) matches with some tail
+of x, e.g.  (a -- (&)) will match with (a b c (d)), but not (a b c d),
+or (a b c (d) e).  however, note that (a -- (&) --) will match with (a b
+c (d) e).  in other words, -- will match any interior segment of a list.
+
+- if (car \fIpat\fP) is the atom ==, \fIpat\fP matches x if and only if (cdr \fIpat\fP)
+is \fIeq\fP to x.  (this pattern is for use by programs that call the editor
+as a subroutine, since any non-atomic expression in a command typed in
+by the user obviously cannot be \fIeq\fP to existing structure.)
+- otherwise if x is a list, \fIpat\fP matches x if (car \fIpat\fP) matches (car
+x), and (cdr \fIpat\fP) matches (cdr x).
+
+- when searching, the pattern matching routine is called only to match
+with elements in the structure, unless the pattern begins with :::, in
+which case cdr of the pattern is matched against tails in the
+structure.  (in this case, the tail does not have to be a proper tail,
+e.g.  (:::  a --) will match with the element (a b c) as well as with cdr
+of (x a b c), since (a b c) is a tail of (a b c).)   
+.Fe
+.sh 3 Commands\ That\ Search
+.Fb
+.fi
+\fISEARCH COMMAND SUMMARY\fP
+
+\fIf pattern \fP.  f informs the editor that the next
+command is to be interpreted as a pattern.  If no pattern is given on
+the same line as the f then the last pattern is used.  f pattern means
+find the next instance of pattern.
+
+\fI(f pattern n)\fP.  Finds the next instance of pattern.
+
+\fI(f pattern t)\fP.  similar to f pattern, except, for example, if the
+current expression is (cond ..), f cond will look for the next cond,
+but (f cond t) will 'stay here'.
+
+\fI(f pattern n) n>0\fP.  Finds the nth place that pattern matches.
+If the current expression is (foo1 foo2 foo3), (f f00@ 3) will find foo3.
+
+\fI(f pattern) or (f pattern nil)\fP.  only matches with elements at
+the top level of the current expression.  If the current expression is
+\fI(prog nil (setq x (cond & &)) (cond &) ...)\fP f (cond --) will find
+the cond inside the setq, whereas (f (cond --)) will find the top level
+cond, i.e., the second one.
+
+\fI(second . $) \fP.
+same as (lc .  $) followed by another (lc .  $) except that if the
+first succeeds and second fails, no change is made to the edit chain.
+
+\fI(third . $) \fP.  Similar to second.
+
+\fI(fs pattern1 ... patternn) \fP.
+equivalent to f pattern1 followed by f pattern2 ...  followed by f
+pattern n, so that if f pattern m fails, edit chain is left at place
+pattern m-1 matched.
+
+\fI(f= expression x) \fP.  Searches for a structure eq
+to expression.
+
+\fI(orf pattern1 ... patternn) \fP.  Searches for an
+expression that is matched by either pattern1 or ...  patternn.
+
+\fIbf pattern \fP.  backwards find.   If the current
+expression is \fI(prog nil (setq x (setq y (list z))) (cond ((setq w
+--) --)) --)\fP f list followed by bf setq will leave the current
+expression as (setq y (list z)), as will f cond followed by bf setq
+
+\fI(bf pattern t)\fP. backwards find.  Search always includes current
+expression, i.e., starts at end of current expression and works
+backward, then ascends and backs up, etc.
+.Fe
+.sh 4 Location\ Specifications
+.
+Many editor commands use a 
+method of specifying position called a location specification.  The
+meta-symbol $ is used to denote a location specification.   $ is a
+list of commands interpreted as described above.  $ can also be atomic,
+in which case it is interpreted as (list $).  a location specification
+is a list of edit commands that are executed in the normal fashion with
+two exceptions.  first, all commands not recognized by the editor are
+interpreted as though they had been preceded by f.  
+The location specification
+(cond 2 3) specifies the 3rd element in the first clause of the next
+cond.
+
+the if command and the ## function provide a way of using in location
+specifications arbitrary predicates applied to elements in the current
+expression.
+
+In insert, delete, replace and change, if $ is nil (empty), the
+corresponding operation is performed on the current edit chain, i.e.
+(replace with (car x)) is equivalent to (:(car x)).  for added
+readability, here is also permitted, e.g., (insert (print x) before
+here) will insert (print x) before the current expression (but not
+change the edit chain).  It is perfectly legal to ascend to insert,
+replace, or delete.  for example (insert (\fIreturn\fP) after ^ prog
+-1) will go to the top, find the first prog, and insert a
+(\fIreturn\fP) at its end, and not change the current edit chain.
+
+The a, b, and :  commands all make special checks in e1 thru em for
+expressions of the form (## . coms).  In this case, the expression used
+for inserting or replacing is a copy of the current expression after
+executing coms, a list of edit commands.   (insert (## f cond -1 -1)
+after3)  will make a copy of the last form in the last clause of the
+next cond, and insert it after the third element of the current 
+expression.
+
+\fI$\fP.  In descriptions of the editor, the meta-symbol $ is used to
+denote a location specification.   $ is a list of commands interpreted
+as described above.  $ can also be atomic.
+.Fb
+.fi
+\fILOCATION COMMAND SUMMARY\fP
+
+\fI(lc . $) \fP.
+Provides a way of explicitly invoking the location operation.
+(lc cond 2 3) will perform search.
+
+\fI(lcl . $) \fP.  Same as lc except search is confined
+to current expression.  To find a cond containing a \fIreturn\fP, one
+might use the location specification (cond (lcl \fIreturn\fP) \) where
+the \ would reverse the effects of the lcl command, and make the final
+current expression be the cond.
+.Fe
+.sh 3 The\ Edit\ Chain
+The edit-chain is a list of which the first element is the the one you
+are now editing ("current expression"), the next element is what would
+become the current expression if you were to do a 0, etc., until the
+last element which is the expression that was passed to the editor.
+.Fb
+.fi
+\fIEDIT CHAIN COMMAND SUMMARY\fP
+
+\fImark \fP.
+Adds the current edit chain to the front of the list marklst.
+
+\fI_ \fP.
+Makes the new edit chain be (car marklst).  
+
+\fI(_ pattern) \fP.  Ascends the edit chain looking for
+a link which matches pattern.  for example:
+
+\fI__ \fP.
+Similar to _ but also erases the mark.
+
+\fI\\ \fP. Makes the edit chain be the value of unfind.
+unfind is set to the current edit chain by each command that makes a
+"big jump", i.e., a command that usually performs more than a single
+ascent or descent, namely ^, _, __, !nx, all commands that involve a
+search, e.g., f, lc, ::, below, et al and \ and \p themselves.     if
+the user types f cond, and then f car, \ would take him back to the
+cond.  another \ would take him back to the car, etc.
+
+\fI\\p \fP.  Restores the edit chain to its state as of
+the last print operation.  If the edit chain has not changed since the
+last printing, \\p restores it to its state as of the printing before
+that one.  If the user types p followed by 3 2 1 p, \\p will return to
+the first p, i.e., would be equivalent to 0 0 0.  Another \\p would
+then take him back to the second p.
+.Fe
+.sh 2 Printing\ Commands
+.Fb
+.fi
+\fIPRINTING COMMAND SUMMARY\fP
+
+\fIp \fP Prints current expression in abbreviated
+form.  (p m) prints mth element of current expression in abbreviated
+form.  (p m n) prints mth element of current expression as though
+printlev were given a depth of n.  (p 0 n) prints current expression as
+though printlev were given a depth of n.  (p cond 3) will work.
+
+\fI?  \fP.  prints the current expression as though
+printlev were given a depth of 100.
+
+\fIpp \fP.  pretty-prints the current expression.
+
+\fIpp*\fP.  is like pp, but forces comments to be shown.
+.Fe
+.sh 2 Structure\ Modification\ Commands
+
+All structure modification commands are undoable.  See \fIundo\fP.
+
+.Fb
+.fi
+\fISTRUCTURE MODIFICATION COMMAND SUMMARY\fP
+
+\fI# [editor commands]\fP (n)  n>1 deletes the
+corresponding element from the current expression.
+
+\fI(n e1 ...  em) n,m>1\fP replaces the nth element in the current
+expression with e1 ...  em.
+
+\fI(-n e1 ...  em) n,m>1\fP inserts e1 ...  em before the n element in the
+current expression.
+
+\fI(n e1 ...  em)\fP (the letter "n" for "next" or "nconc", not a number)
+m>1 attaches e1 ...  em at the end of the current expression.
+
+\fI(a e1 ... em) \fP.  inserts e1 ...  em after the
+current expression (or after its first element if it is a tail).
+
+\fI(b e1 ... em) \fP.  inserts e1 ...  em before the
+current expression.  to insert foo before the last element in the
+current expression, perform -1 and then (b foo).
+
+\fI(: e1 ... em) \fP.  replaces the current expression
+by e1 ...  em.    If the current expression is a tail then replace its
+first element.
+
+\fIdelete or (:)  \fP.  deletes the current expression,
+or if the current expression is a tail, deletes its first element.
+
+\fI(delete . $)\fP.  does a (lc .  $) followed by delete.  current edit
+chain is not changed.
+
+\fI(insert e1 ... em before . $) \fP.  similar to (lc.
+$) followed by (b e1 ... em).
+
+\fI(insert e1 ...  em after .  $)\fP.  similar to insert before except
+uses a instead of b.
+
+\fI(insert e1 ...  em for .  $)\fP.  similar to insert before except
+uses :  for b.
+
+\fI(replace $ with e1 ... em) \fP.  here $ is the
+segment of the command between replace and with.  
+
+\fI(change $ to e1 ... em) \fP.  same as replace with.
+.Fe
+.sh 2 Extraction\ and\ Embedding\ Commands
+.Fb
+.fi
+\fIEXTRACTION AND EMBEDDING COMMAND SUMMARY\fP
+
+\fI(xtr . $) \fP.  replaces the original current
+expression with the expression that is current after performing (lcl . $).
+
+\fI(mbd x) \fP.  x is a list, substitutes the current
+expression for all instances of the atom * in x, and replaces the
+current expression with the result of that substitution.  (mbd x) :  x
+atomic, same as (mbd (x *)).
+
+\fI(extract $1 from $2) \fP.  extract is an editor
+command which replaces the current expression with one of its
+subexpressions (from any depth).  ($1 is the segment between extract
+and from.)    example:  if the current expression is (print (cond
+((null x) y) (t z))) then following (extract y from cond), the current
+expression will be (print y).  (extract 2 -1 from cond), (extract y
+from 2), (extract 2 -1 from 2) will all produce the same result.
+
+\fI(embed $ in . x) \fP.  embed replaces the current
+expression with a new expression which contains it as a subexpression.
+($ is the segment between embed and in.)   example:  (embed print in
+setq x), (embed 3 2 in \fIreturn\fP), (embed cond 3 1 in (or * (null x))). 
+.Fe
+.sh 2 Move\ and\ Copy\ Commands
+.Fb
+.fi
+\fIMOVE AND COPY COMMAND SUMMARY\fP
+
+\fI(move $1 to com . $2) \fP.  ($1 is the segment
+between move and to.)  where com is before, after, or the name of a
+list command, e.g., :, n, etc.  If $2 is nil, or (here), the current
+position specifies where the operation is to take place.  If $1 is nil,
+the move command allows the user to specify some place the current
+expression is to be moved to.   if the current expression is (a b d c),
+(move 2 to after 4) will make the new current expression be (a c d b).
+
+\fI(mv com . $) \fP.  is the same as (move here to com . $).
+
+\fI(copy $1 to com . $2)\fP  is like move except that the source
+expression is not deleted.
+
+\fI(cp com . $)\fP.  is like mv except that the source expression is
+not deleted.
+.Fe
+.sh 2 Parentheses\ Moving\ Commands
+The commands presented in this section permit modification of the
+list structure itself, as opposed to modifying components thereof.
+their effect can be described as inserting or removing a single left or
+right parenthesis, or pair of left and right parentheses.  
+.Fb
+.fi
+\fIPARENTHESES MOVING COMMAND SUMMARY\fP
+
+\fI(bi n m) \fP.  both in.  inserts parentheses before
+the nth element and after the mth element in the current expression.
+example:  if the current expression is (a b (c d e) f g), then (bi 2 4)
+will modify it to be (a (b (c d e) f) g).  (bi n) :  same as (bi n n).
+example:  if the current expression is (a b (c d e) f g), then (bi -2)
+will modify it to be (a b (c d e) (f) g).
+
+\fI(bo n) \fP.  both out.  removes both parentheses
+from the nth element.  example:  if the current expression is (a b (c d
+e) f g), then (bo d) will modify it to be (a b c d e f g).
+
+\fI(li n) \fP.  left in.  inserts a left parenthesis
+before the nth element (and a matching right parenthesis at the end of
+the current expression).  example:  if the current expression is (a b
+(c d e) f g), then (li 2) will modify it to be (a (b (c d e) f g)).
+
+\fI(lo n) \fP.  left  out.  removes  a  left
+parenthesis  from the nth element. all elements following the nth
+element are deleted.  example: if the current expression is (a b (c d
+e) f g), then  (lo  3) will modify it to be (a b c d e).
+
+\fI(ri n m) \fP.  right  in.  move  the  right
+parenthesis at the end of the nth element in to after the mth element.
+inserts  a  right parenthesis  after  the mth element of the nth
+element.  The rest of the nth element is brought up to the level of
+the  current expression.   example: if the current expression is (a (b
+c d e) f g), (ri 2 2) will modify it to be (a (b c) d e f g).
+
+\fI(ro n) \fP.  right  out.  move the right parenthesis
+at the end of the nth element out to the  end of the current
+expression.  removes the right parenthesis from the nth element, moving
+it to the end of the current expression. all elements following the
+nth  element  are moved  inside of  the  nth element.  example: if the
+current expression is (a b (c d e) f  g),  (ro  3) will modify  it to
+be (a b (c d e f g)).
+
+\fI(r x y) \fP replaces  all  instances  of x by y in
+the current expression, e.g., (r caadr cadar).  x can be the
+s-expression (or atom) to be substituted for, or can be a pattern which
+specifies that s-expression (or atom).
+
+\fI(sw n m) \fP switches the nth and mth elements of
+the current expression.  for example, if the current expression is
+(list (cons (car x) (car y)) (cons (cdr y))),  (sw  2 3)  will  modify
+it to be (list (cons (cdr x) (cdr y)) (cons (car x) (car y))).   (sw
+car  cdr) would produce the same result.
+.Fe
+.sh 3 Using\ to\ and\ thru
+
+to, thru, extract, embed, delete, replace, and move can be made to
+operate on several contiguous elements, i.e., a segment of a list, by
+using the to or thru command in their respective location
+specifications.  thru and to are intended to be used  in conjunction
+with extract, embed, delete, replace, and move.    to and thru can also
+be used directly with xtr (which takes after a location specification),
+as in (xtr (2 thru 4)) (from the current expression).
+.Fb
+.fi
+\fITO AND THRU COMMAND SUMMARY\fP
+
+\fI($1 to $2)   \fP.  same as thru except last element
+not included.
+
+\fI($1 to)\fP.  same as ($1 thru -1)
+
+\fI($1 thru $2)  \fP.  If the current expression is (a
+(b (c d) (e) (f g h) i) j k), following (c thru g), the current
+expression will be ((c d) (e) (f g h)).  If both $1 and $2 are numbers,
+and $2 is greater than $1, then $2 counts from the beginning of the
+current expression, the same as $1.  in other words, if the current
+expression is (a b c d e f g), (3 thru 4) means (c thru d), not (c thru
+f).  in this case, the corresponding bi command is (bi 1 $2-$1+1).
+
+\fI($1 thru)\fP. same as \fI($1 thru -1)\fP.
+.Fe
+.sh 2 Undoing\ Commands
+each command that causes structure modification automatically adds an
+entry to the front of undolst containing the information required to
+restore all pointers that were changed by the command.  The undo
+command undoes the last, i.e., most recent such command.
+.Fb
+.fi
+\fIUNDO COMMAND SUMMARY\fP
+
+\fIundo \fP.  the undo command undoes most recent, structure
+modification command that has not yet been undone, and prints the name
+of that command, e.g., mbd undone.  The edit chain is then exactly what
+it was before the 'undone' command had been performed.
+
+\fI!undo \fP.  undoes all modifications performed during this editing
+session, i.e., this call to the editor.
+
+\fIunblock \fP.  removes  an  undo-block. If executed at a non-blocked
+state, i.e., if undo or !undo could operate, types not blocked.
+
+\fItest \fP.  adds an undo-block at the front of undolst.  note  that
+test  together  with !undo  provide  a  'tentative'  mode  for editing,
+i.e., the user can perform a number of changes, and then undo all of
+them with a single !undo command.
+
+\fIundolst [value]\fP.  each editor command that causes structure
+modification automatically adds an entry to the front of undolst
+containing the information required to restore all pointers that were
+changed by the command.
+
+\fI??  \fP prints the entries on undolst.  The entries are listed most
+recent entry first.
+.Fe
+.sh 2 \Commands\ that\ Evaluate
+.Fb
+.fi
+\fIEVALUATION COMMAND SUMMARY\fP
+
+\fIe \fP.  only when typed in, (i.e., (insert d before e) will treat
+e  as  a  pattern) causes  the  editor  to  call  the lisp interpreter
+giving it the next input as argument.
+
+\fI(e  x)\fP  evaluates  x, and prints the result.  (e x t) same as (e
+x) but does not print.  
+
+\fI(i c x1 ... xn) \fP same as (c y1 ...  yn) where yi=(eval xi).
+example:  (i 3 (cdr foo)) will replace the 3rd element of the current
+expression with the cdr of the value of foo.  (i n foo (car fie)) will
+attach the value of foo and car of the value of fie to the end of the
+current expression.  (i f= foo t) will search for an expression eq to
+the value of foo.  If c is not an atom, it is evaluated as well.
+
+\fI(coms x1 ... xn) \fP.  each  xi  is evaluated and its value executed
+as a command.  The i command is not very convenient for computing an
+entire edit command for  execution,  since it computes the command name
+and its arguments separately. also, the i command cannot be used to
+compute an  atomic  command.  The  coms  and comsq  commands provide
+more  general ways of computing commands.  (coms (cond (x (list 1 x))))
+will replace the first element of the current expression with the value
+of x if non-nil, otherwise do nothing. (nil as a command is a nop.)
+
+\fI(comsq com1 ... comn) \fP.  executes com1 ... comn.  comsq is mainly
+useful in conjunction with the  coms command.    for example,  suppose
+the user wishes to compute an entire list of commands for evaluation,
+as opposed to computing each command one at a time  as does  the coms
+command. he would then write (coms (cons (quote comsq) x)) where x
+computed the list of commands, e.g.,  (coms  (cons  (quote comsq)
+(get  foo (quote commands))))
+.Fe
+.sh 2 Commands\ that\ Test
+.Fb
+.fi
+\fITESTING COMMAND SUMMARY\fP
+
+\fI(if x) \fP generates an error unless the value of (eval x) is
+non-nil, i.e., if (eval x) causes an error or (eval x)=nil, if will
+cause an error.  (if x coms1 coms2) if (eval  x) is non-nil, execute
+coms1; if (eval x) causes an error or is equal to nil, execute coms2.
+(if x coms1)  if  (eval  x)  is  non-nil,  execute  coms1; otherwise
+generate  an  error.
+
+\fI(lp . coms) \fP.  repeatedly executes coms, a list of commands,
+until an  error  occurs.      (lp  f  print (n  t))  will  attach  a
+t  at the end of every print expression. (lp f print (if (## 3) nil ((n
+t)))) will attach a t at the end  of each print expression which does
+not already have a second argument.  (i.e.  the form  (## 3) will cause
+an error if the edit command 3 causes an error, thereby selecting ((n
+t)) as the list of commands to be executed.  The if could also  be
+written  as  (if  (cddr (##)) nil ((n t))).).
+
+\fI(lpq . coms) \fP same as lp but does not print n occurrences.
+
+\fI(orr coms1 ... comsn) \fP.  orr begins by executing coms1, a list of
+commands.  If no error occurs, orr is finished.  otherwise, orr
+restores the edit chain to  its  original  value,  and continues by
+executing coms2, etc.  If none of the command lists execute without
+errors,  i.e., the orr "drops off the end", orr generates an error.
+otherwise, the edit chain is left as of the completion of the first
+command  list  which executes  without error.
+.Fe
+.sh 2 Editor\ Macros
+
+Many of the more sophisticated branching commands in the editor, such
+as orr, if,  etc.,  are  most  often  used  in  conjunction with edit
+macros.  The macro feature permits the user to define new commands and
+thereby expand the editor's repertoire. (however, built in commands
+always  take  precedence  over  macros, i.e.,  the  editor's
+repertoire can be expanded, but not modified.) macros are defined by
+using the m command.
+
+\fI(m c . coms) \fP for c an atom, m defines c as an
+atomic command.  (if a macro  is  redefined, its new definition
+replaces its old.) executing c is then the same as executing the  list
+of  commands  coms.    macros  can  also define list commands, i.e.,
+commands that take arguments.  (m (c) (arg[1] ... arg[n]) . coms) c an
+atom.  m defines c as a list command.  executing (c e1 ...  en)  is
+then  performed  by substituting  e1  for  arg[1],  ...    en  for
+arg[n] throughout coms, and then executing coms.  a list command can be
+defined via a macro  so  as  to  take  a fixed  or  indefinite  number
+of 'arguments'.  The form given above specified a macro with a fixed
+number of arguments, as indicated by its argument list.   if the
+'argument  list'  is  atomic,  the  command  takes an indefinite number
+of arguments.  (m (c) args . coms) c,  args  both  atoms,  defines  c
+as  a  list command.  executing  (c  e1 ...  en) is performed by
+substituting (e1 ...  en), i.e., cdr of the command, for args
+throughout coms, and then executing coms.
+
+(m bp bk up p) will define bp as an atomic  command  which  does three
+things,  a bk, an up, and a p. note that macros can use commands
+defined by macros as well as built in commands in  their
+definitions.    for  example, suppose  z  is  defined by (m z -1 (if
+(null (##)) nil (p))), i.e. z does a -1, and then if the current
+expression is not nil, a p. now we can define zz by  (m zz  -1 z), and
+zzz by (m zzz -1 -1 z) or (m zzz -1 zz).  we could define a more
+general bp by (m (bp) (n) (bk n) up p).    (bp 3)  would  perform  (bk
+3), followed  by  an  up,  followed  by a p.  The command second can be
+defined as a macro by (m (2nd) x (orr ((lc .  x) (lc .  x)))).
+
+Note  that  for  all editor commands, 'built in' commands as well as
+commands defined by macros, atomic  definitions  and  list
+definitions  are  completely independent.  in other words, the
+existence of an atomic definition for c in no way  affects  the
+treatment of c when it appears as car of a list command, and the
+existence of a list definition for c in no way affects the treatment
+of  c when it appears as an atom.  in particular, c can be used as the
+name of either an atomic command, or a list command, or both. in the
+latter case, two entirely different  definitions  can  be  used.   note
+also that once c is defined as an atomic command via a macro
+definition, it will not be searched for when used in a location
+specification, unless c is preceded by an f.  (insert --  before
+bp) would not search for bp, but instead perform a bk, an up, and a p,
+and then do the insertion.  The corresponding also holds true for list
+commands.
+
+\fI(bind . coms) \fP bind  is  an  edit  command which
+is useful mainly in macros.  it binds three dummy variables #1, #2, #3,
+(initialized to nil), and then  executes  the  edit commands  coms.
+note that these bindings are only in effect while the commands are
+being executed, and that bind can be used recursively; it will  rebind
+#1, #2,  and  #3 each time it is invoked.
+
+\fIusermacros [value]\fP.  this  variable  contains the users editing
+macros .   if you want to save your macros then you should save
+usermacros.  you  should  probably  also  save editcomsl.
+
+\fIeditcomsl [value]\fP.
+editcomsl  is  the  list of "list commands" recognized by the editor.  (these
+are the ones of the form (command arg1 arg2 ...).)
+
+.sh 2 Miscellaneous\ Editor\ Commands
+.Fb
+.fi
+\fIMISCELLANEOUS EDITOR COMMAND SUMMARY\fP
+
+\fIok \fP.  Exits from the editor.
+
+\fInil \fP.  Unless preceded by f or bf, is always a null operation.
+
+\fItty:  \fP.  Calls  the  editor  recursively.  The user can then type
+in commands, and have them executed.  The tty:  command is completed
+when  the  user exits  from  the lower  editor  (with  ok  or  stop).
+the tty:  command is extremely useful. it enables the user to  set  up
+a complex  operation,  and  perform  interactive attention-changing
+commands part way through it. for example the command (move 3 to after
+cond 3 p tty:) allows the user to interact, in  effect,  within  the
+move  command.      he can verify for himself that the correct location
+has been found, or complete the specification "by hand". in effect,
+tty: says "I'll tell you what you should do when you get there."
+
+\fIstop \fP.  exits from the editor with an error.  mainly for use in
+conjunction with tty:  commands that the user wants to abort.  since
+all of the commands in the editor are  errset protected, the user must
+exit from the editor via a command.  stop provides a way of
+distinguishing between a successful  and unsuccessful  (from the
+user's  standpoint) editing session.
+
+\fItl \fP.  tl  calls (top-level).  to return to the editor just use
+the \fIreturn\fP top-level command.
+
+\fIrepack \fP.  permits the 'editing' of an atom or string.
+
+\fI(repack $)\fP does (lc . $) followed by repack, e.g. (repack this@).
+
+\fI(makefn form args n m) \fP.  makes (car form) an expr with the nth
+through mth  elements  of  the  current expression with  each
+occurrence  of  an element of (cdr form) replaced by the corresponding
+element of args.  The nth through mth  elements  are replaced  by form.
+
+\fI(makefn form args n)\fP.  same as (makefn form args n n).
+
+\fI(s var . $) \fP.  sets var (using setq) to the current expression
+after performing (lc .    $).    (s  foo)  will  set foo to the current
+expression, (s foo -1 1) will set foo to the first element in the last
+element of the current expression.
+.Fe
+.sh 2 Editor\ Functions
+
+.Lf editf "s_x1 ..."
+.Se
+edits a function. s_x1 is the name of the function,
+any additional arguments are an optional list of commands.
+.Re
+s_x1.
+.No
+if s_x1 is not an editable function, editf generates an fn not editable error.
+
+.Lf edite "l_expr l_coms s_atm)"
+edits an expression.  its value is the last element of (editl (list
+l_expr) l_coms s_atm nil nil).  
+
+.Lf editracefn "s_com"
+is available to help the user debug complex edit macros, or subroutine
+calls to  the  editor. editracefn is to be defined by the user.
+whenever the value of editracefn  is  non-nil,  the  editor  calls
+the  function  editracefn  before executing  each command (at any
+level), giving it that command as its argument.  editracefn is
+initially equal to nil, and undefined.
+
+.Lf editv "s_var [ g_com1 ... ]"
+.Se
+similar to editf, for editing values.  editv sets the variable to the value
+returned.
+.Re
+the name of the variable whose value was edited.
+
+.Lf editp "s_x"
+.Se
+similar to editf for editing property lists.  
+used if x is nil.  
+.Re
+the atom whose property list was edited.
+
+.Lf editl "coms atm marklst mess"
+.Se
+editl is the editor.  its first argument is the edit chain, and its
+value is an edit chain, namely the value of l at the time editl is
+exited.  (l is a special variable, and so can be examined or set by
+edit commands.   ^ is equivalent to (e (setq l(last l)) t).)  coms is
+an optional list of commands.  for interactive editing, coms is nil.
+in this case, editl types edit and then waits for input from the
+teletype.  (if mess is not nil editl types it instead of edit.  for
+example, the tty:  command is essentially (setq l (editl l nil nil nil
+(quote tty:))).)  exit occurs only via an ok, stop, or save command.
+If coms is not nil, no message is typed, and each member of coms is
+treated as a command and executed.  If an error occurs in the execution
+of one of the commands, no error message is printed , the rest of the
+commands are ignored, and editl exits with an error, i.e., the effect
+is the same as though a stop command had been executed.  If all
+commands execute successfully, editl returns the current value of l.
+marklst is the list of marks.  on calls from editf, atm is the name of
+the function being edited; on calls from editv, the name of the
+variable, and calls from editp, the atom of which some property of its
+property list is being edited.  The property list of atm is used by the
+save command for saving the state of the edit.   save will not save
+anything if atm=nil i.e., when editing arbitrary expressions via edite
+or editl directly.
+
+.Lf editfns "s_x [ g_coms1 ... ]" 
+fsubr function, used to perform the same editing operations on
+several functions.  
+editfns maps down the list of
+functions, prints the name of each function, and calls the editor (via
+editf) on that function.
+.Ex
+editfns foofns (r fie fum)) will change every  fie  to  fum  in
+each of the functions on foofns.
+.No
+the  call  to  the  editor is errset protected, so that if the editing of one
+function causes an error, editfns will proceed to the next  function.    in
+the above example, if one of the functions did not contain a fie, the r command
+would  cause  an error, but editing would continue with the next function.  The
+value of editfns is nil.
+
+.Lf edit4e "pat y"
+.Se
+is the pattern match routine. 
+.Re
+t if pat matches y. see edit-match for definition of 'match'.
+.No
+before each search operation in the editor begins, the  entire  pattern
+is  scanned  for  atoms  or strings that end in at-signs.  These are replaced by
+patterns of the form  (cons  (quote  /@)  (explodec  atom)).      from  the
+standpoint  of  edit4e, pattern type 5, atoms or strings ending in at-signs, is
+really "if car[pat] is the atom @ (at-sign), pat will match  with  any  literal
+atom  or  string  whose  initial  character codes (up to the @) are the same as
+those in cdr[pat]."
+if  the  user  wishes  to call edit4e directly, he must therefore convert any
+patterns which contain  atoms  or  strings  ending  in  at-signs  to  the  form
+recognized by edit4e.  this can be done via the function editfpat.
+.Lf editfpat "pat flg"
+makes a copy of pat with all patterns of type 5 (see edit-match) converted to
+the form expected by edit4e. flg should be passed as nil (flg=t is for internal
+use by the editor).
+
+.Lf editfindp "x pat flg"
+.No
+Allows a program to use the edit find command as a pure predicate
+from outside the editor.  x is an expression, pat a pattern.  The value
+of editfindp is t if the command f pat would succeed, nil otherwise.
+editfindp calls editfpat to convert pat to the form expected by edit4e,
+unless flg=t.    if the program is applying editfindp to several
+different expressions using the same pattern, it will be more efficient
+to call editfpat once, and then call editfindp with the converted
+pattern and flg=t.
+
+.Lf ## "g_com1 ..."
+.Re  
+what the current expression would be after executing the edit commands
+com1 ...  starting from the present edit chain.  generates an error
+if any of comi cause errors.  The current edit chain is never
+changed.  example:  (i r (quote x) (## (cons ..z))) replaces all x's in
+the current expression by the first cons containing a z.  

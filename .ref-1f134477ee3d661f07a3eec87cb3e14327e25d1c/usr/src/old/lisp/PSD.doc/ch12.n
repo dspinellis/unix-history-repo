@@ -1,0 +1,643 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch12.n	6.2 (Berkeley) %G%
+.\"
+." $Header: ch12.n 1.2 83/07/23 12:41:32 layer Exp $
+.Lc Liszt\ -\ the\ lisp\ compiler 12
+.sh 2 "General strategy of the compiler" \n(ch 1
+.pp
+The purpose of the lisp compiler, Liszt, is to create an object module which
+when brought into the lisp system using
+.i fasl
+will have the same effect as bringing in the corresponding lisp coded source
+module with
+.i load  
+with one important exception,
+functions will be defined as sequences of machine language instructions, instead
+of lisp S-expressions.
+Liszt is not a function compiler, it is a 
+.i file
+compiler.
+Such a file   can contain more than function definitions; it can
+contain other lisp S-expressions which are evaluated
+at load time.
+These other S-expressions will also be stored in the object
+module produced by Liszt and will be evaluated at fasl time.
+.pp
+As is almost universally true of Lisp compilers, the main pass of Liszt
+is written in Lisp.
+A subsequent pass is the assembler, for which we use the 
+standard UNIX assembler.
+.sh 2 "Running the compiler"
+.pp
+The compiler is normally run in this manner:
+.br
+% \fBliszt foo\fP
+.br
+will compile the file foo.l or foo (the preferred way to indicate a lisp 
+source file is to end the file name with `.l').
+The result of the compilation will be placed in the file foo.o  if no
+fatal errors were detected.
+All messages which Liszt generates go to the standard output.
+Normally each function name is printed before it is compiled (the \-q
+option suppresses this).
+.sh 2 "Special forms"
+.pp
+Liszt makes one pass over the source file. 
+It processes each form in this way:
+.sh 3  macro\ expansion
+.pp
+If the form is a macro invocation (i.e it is a list whose car is a symbol
+whose function binding is a macro), then that macro invocation is expanded.
+This is repeated until the top level form is not a macro invocation.
+When Liszt begins, there are already some macros defined, in fact some
+functions (such as defun) are actually macros.
+The user may define his own macros as well.
+For a macro to be used it must be defined in the Lisp system
+in which Liszt runs.
+.sh +0 classification
+.pp
+After all macro expansion is done, the form is classified according to its
+.i car 
+(if the form is not a list, then it is classified as an
+.i other ).
+.sh +1 "eval-when"
+.pp
+The form of eval-when is 
+\fI(eval-when\ (time1\ time2\ ...)\ form1\ form2\ ...)\fP
+where the time\fIi\fP are one of 
+.i eval ,
+.i compile ,
+or
+.i load .
+The compiler examines the form\fIi\fP in sequence and the action taken
+depends on what is in the time list.
+If 
+.i compile
+is in the list then the compiler will invoke 
+.i eval
+on each form\fIi\fP as it examines it.
+If 
+.i load
+is in the list then the compile will recursively call itself to compile
+each form\fIi\fP as it examines it.
+Note that if 
+.i compile
+and
+.i load
+are in the time list, then the compiler will both evaluate and compile
+each form.
+This is useful if you need a function to be defined in the compiler
+at both compile time (perhaps to aid macro expansion) and at run time
+(after the file is 
+.i fasl ed 
+in).
+.sh +0 "declare"
+.pp
+Declare is used to provide information about functions and variables to
+the compiler.  
+It is (almost) equivalent to \fI(eval-when\ (compile)\ ...)\fP.
+You may declare functions to be one of three types: lambda (*expr),
+nlambda (*fexpr), lexpr (*lexpr).
+The names in parenthesis are the Maclisp names and are accepted by the
+compiler as well (and not just when the compiler is in Maclisp mode).
+Functions are assumed to be lambdas until they are declared otherwise
+or are defined differently.  
+The compiler treats calls to lambdas and lexprs equivalently, so you needn't 
+worry about declaring lexprs either.  
+It is important to declare nlambdas or define them before calling them.
+Another attribute you can declare for a function is localf which
+makes the function `local'.
+A local function's name is 
+known only to the functions defined
+within the file itself.  The
+advantage of a local function is that is can be entered 
+and exited very quickly and it can have the same name as a function in 
+another file and there will be no name conflict.
+.pp
+Variables may be declared special or unspecial.
+When a special variable is lambda bound (either in a lambda,
+prog or do expression), its old value is stored away on a stack for the
+duration of the lambda, prog or do expression.
+This takes time and is often not necessary.
+Therefore the default classification for variables is unspecial.
+Space for unspecial variables is dynamically allocated on a stack.
+An unspecial variable can only be accessed from within the function
+where it is created by its presence in a lambda, prog or do 
+expression variable list.
+It is possible to declare that all variables are special as will be
+shown below.
+.pp
+You may declare any number of things in each declare statement.
+A sample declaration is 
+.ft I
+.nf
+(declare
+\ \ \ \ \ (lambda func1 func2)
+\ \ \ \ \ (*fexpr func3)
+\ \ \ \ \ (*lexpr func4)
+\ \ \ \ \ (localf func5)
+\ \ \ \ \ (special var1 var2 var3)
+\ \ \ \ \ (unspecial var4))
+.fi
+.ft R
+.pp
+You may also declare all variables to be special with
+\fI(declare\ (specials\ t))\fP.
+You may declare that macro definitions should be compiled as well as
+evaluated at compile time by \fI(declare\ (macros\ t))\fP.
+In fact, as was mentioned above, declare is much like 
+\fI(eval-when\ (compile)\ ...)\fP.
+Thus if the compiler sees \fI(declare\ (foo\ bar))\fP
+and foo is defined, then it will evaluate \fI(foo\ bar)\fP.
+If foo is not defined then an undefined declare attribute warning will
+be issued.  
+.sh +0 "(progn 'compile \fRform1 form2 ... formn\fB)\fP"
+.pp
+When the compiler sees this it simply compiles form1 through formn as if
+they too were seen at top level.
+One use for this is to allow a macro at top-level to 
+expand into more than one function definition for the compiler to compile.
+.sh +0 "include/includef"
+.pp
+.i Include 
+and 
+.i includef 
+cause another file to be read and compiled by
+the compiler.  The result is the same as if the included file were
+textually inserted into the original file.  The only difference
+between 
+.i include 
+and 
+.i includef 
+is that include doesn't evaluate its
+argument and includef does.  Nested includes are allowed.
+.sh +0 "def"
+.pp
+A def form is used to define a function.  The macros
+.i defun 
+and 
+.i defmacro 
+expand to a def form.
+If the function being defined is a lambda, nlambda or lexpr then
+the compiler converts the lisp definition to a sequence of machine
+language instructions.
+If the function being defined is a macro, then the compiler will evaluate
+the definition, thus defining the macro withing the running Lisp compiler.
+Furthermore, if the variable 
+.i macros 
+is set to a non nil value, then the macro definition will also be translated
+to machine language and thus will be defined when the object file is
+fasled in.
+The variable
+.i macros
+is set to t by
+\fI(declare\ (macros\ t))\fP.
+.pp
+When a function or macro definition is compiled, macro expansion is
+done whenever possible.
+If the compiler can determine that a form would be evaluated if this
+function were interpreted then it will macro expand it.
+It will not macro expand arguments to a nlambda unless the characteristics
+of the nlambda is known (as is the case with
+.i cond).
+The map functions (
+.i map ,
+.i mapc ,
+.i mapcar ,
+and so on)
+are expanded to a 
+.i do 
+statement.
+This allows the first argument to the map function to be a lambda
+expression which references local variables of the function being
+defined.
+.sh +0 "other forms"
+.pp
+All other forms are simply stored in the object file and are evaluated
+when the file is 
+.i fasl ed
+in.
+.sh 2 "Using the compiler"
+.pp
+The previous section describes exactly what the compiler does with its 
+input.
+Generally you won't have to worry about all that detail as files which
+work interpreted will work compiled.
+Following is a list of steps you should follow to insure that a file
+will compile correctly.
+.ip [1]
+Make sure all macro definitions precede their use in functions or other
+macro definitions.
+If you want the macros to be around when you 
+.i fasl
+in the object file you should include this statement at the beginning
+of the file: \fI(declare\ (macros\ t))\fP
+.ip [2]
+Make sure all nlambdas are defined or declared before they are used.
+If the compiler comes across a call to a
+function which has not been defined in the current file, 
+which does not currently have a function binding, 
+and whose type  has not been declared then it will assume that the function
+needs  its arguments evaluated 
+(i.e. it is a lambda or lexpr) and will generate code
+accordingly.
+This means that you do not have to declare nlambda functions like
+.i status
+since they have an nlambda function binding.
+.ip [3]
+Locate all variables which are used for communicating values between
+functions.
+These variables must be declared special at the beginning of a file.
+In most cases there won't be many special declarations but if you 
+fail to declare a variable special that should be, the compiled code
+could fail in mysterious ways.
+Let's look at a common problem, assume that a file contains just
+these three lines:
+.sp 2v
+.ft I
+(def aaa (lambda (glob loc) (bbb loc)))
+.br
+(def bbb (lambda (myloc) (add glob myloc)))
+.br
+(def ccc (lambda (glob loc) (bbb loc)))
+.sp 2v
+.ft R
+We can see that if we load in these two definitions then (aaa 3 4) is
+the same as (add 3 4) and will give us 7.
+Suppose we compile the file containing these definitions.
+When Liszt compiles aaa, it will assume that both glob and loc are local
+variables and will allocate space on the temporary stack for their values
+when aaa is called.
+Thus the values of the local variables glob and loc 
+will not affect the values of the symbols glob and loc in the Lisp system.
+Now Liszt moves on to function bbb.
+Myloc is assumed to be local.
+When it sees the add statement, it find a reference to a variable called
+glob.
+This variable is not a local variable to this function and therefore
+glob must refer to the value of the symbol glob.
+Liszt will automatically declare glob to be special and it will print
+a warning to that effect.
+Thus subsequent uses of glob will always refer to the symbol glob.
+Next Liszt compiles ccc and treats glob as a special and loc
+as a local.
+When the object file is
+.i fasl 'ed
+in, and (ccc 3 4) is evaluated, 
+the symbol glob will be lambda bound to 3
+bbb will be called and will return 7.
+However (aaa 3 4) will fail since when bbb is called, glob will be unbound.
+What should be done here is to put
+\fI(declare\ (special\ glob)\fP
+at the beginning of the file.
+.ip [4]
+Make sure that all calls to 
+.i arg
+are within the lexpr whose arguments they reference.
+If \fIfoo\fP is a compiled lexpr and it calls \fIbar\fP then \fIbar\fP cannot
+use \fIarg\fP to get at \fIfoo\fP's arguments.
+If both
+.i foo
+and 
+.i bar
+are interpreted this will work however.
+The macro
+.i listify
+can be used to put all of some of a lexprs arguments in a list which 
+then can be passed to other functions.
+.sh 2 "Compiler options"
+.pp
+The compiler recognizes a number of options which are described below.
+The options are typed anywhere on the command line preceded by a minus sign.
+The entire command line is scanned and all options recorded before any action
+is taken.  Thus
+.br
+% liszt -mx foo
+.br
+% liszt -m -x foo
+.br
+% liszt foo -mx
+.br
+are all equivalent.  
+Before scanning the command line for options, liszt looks for in the
+environment for the variable LISZT, and if found scans its value
+as if it was a string of options.
+The meaning of the options are:
+.ip \fBC\fP
+The assembler language output of the compiler is commented.
+This is useful when debugging the compiler and is not normally done since
+it slows down compilation.
+.ip \fBI\fP
+The next command line argument is taken as a filename, and loaded prior
+to compilation.
+.ip \fBe\fP
+Evaluate the next argument on the command line before starting compilation.
+For example
+.br
+% liszt -e '(setq foobar "foo string")' foo
+.br
+will evaluate the above s-expression.  Note that the shell requires
+that the arguments be surrounded by single quotes.
+.ip \fBi\fP
+Compile this program in interlisp compatibility mode.  
+This is not implemented yet.
+.ip \fBm\fP
+Compile this program in Maclisp mode.
+The reader syntax will be changed to the Maclisp syntax and a file of 
+macro definitions will be loaded in (usually named /usr/lib/lisp/machacks).
+This switch brings us sufficiently close to Maclisp to allow us to compile
+Macsyma, a large Maclisp program.
+However Maclisp is a moving target and we can't guarantee that this switch
+will allow you to compile any given program.
+.ip \fBo\fP
+Select a different object or assembler language file name.
+For example
+.br
+% liszt foo -o xxx.o
+.br
+will compile foo and into xxx.o instead of the default foo.o, and
+.br
+% liszt bar -S -o xxx.s
+.br
+will compile to assembler language into xxx.s instead of bar.s.
+.ip \fBp\fP
+place profiling code at the beginning of each non-local function.
+If the lisp system is also created with profiling in it, this allows
+function calling frequency to be determined (see \fIprof(1)\fP)
+.ip \fBq\fP
+Run in quiet mode. 
+The names of functions being compiled and various 
+"Note"'s are not printed.
+.ip \fBQ\fP
+print compilation statistics and warn of strange constructs. 
+This is the inverse of the \fBq\fP switch and is the default.
+.ip \fBr\fP
+place bootstrap code at the beginning of the object file, which when
+the object file is executed will cause a lisp system to be invoked 
+and the object file \fIfasl\fPed in.  
+This is known as `autorun' and is described below.
+.ip \fBS\fP
+Create an assembler language file only.
+.br
+% liszt -S foo
+.br
+will create the file assembler language file foo.s and will not attempt
+to assemble it.
+If this option is not specified, the assembler language file will be put
+in the temporary disk area under a automatically generated name based on
+the lisp compiler's process id.
+Then if there are no compilation errors, the assembler will be invoked to
+assemble the file.
+.ip \fBT\fP
+Print the assembler language output on the standard output file.
+This is useful when debugging the compiler.
+.ip \fBu\fP
+Run in UCI-Lisp mode.
+The character syntax is changed to that of UCI-Lisp and a UCI-Lisp compatibility
+package of macros is read in.
+.ip \fBw\fP
+Suppress warning messages.
+.ip \fBx\fP
+Create an cross reference file.
+.br
+% liszt -x foo 
+.br
+not only compiles foo into foo.o but also generates the file foo.x\ .
+The file foo.x  is lisp readable and lists for each function all functions
+which that function could call.
+The program lxref reads one or more of these ".x" files and produces a 
+human readable cross reference listing.
+.sh 2 autorun
+.pp
+The object  file
+which liszt writes does not contain all the functions necessary
+to run the lisp program which was compiled.
+In order to use the object file, a lisp system must be started and
+the object file 
+.i fasl ed
+in.
+When the -r switch is given to liszt, the object file created will
+contain a small piece of bootstrap code at the beginning, and the
+object file will be made executable.
+Now, when the name of the object file is given to the UNIX command
+interpreter (shell) to run, the bootstrap code at the beginning
+of the object file will cause a lisp system to be started and 
+the first action the lisp system will  take is to
+.i fasl
+in the object file which started it.
+In effect the object file has created an environment in which it can run.
+.pp
+Autorun is an alternative to 
+.i dumplisp .
+The advantage of autorun is that the object file which starts the whole 
+process is typically small, whereas the minimum 
+.i dumplisp ed
+file is very large (one half megabyte).
+The disadvantage of autorun is that the file must be 
+.i fasl ed
+into a lisp each time it is used whereas the file which 
+.i dumplisp
+creates can be run as is.
+liszt itself is a 
+.i dumplisp ed
+file since it is used so often and is large enough that
+too much time  would be wasted 
+.i fasl ing
+it in each time it was used.
+The lisp cross reference program, lxref, uses 
+.i autorun
+since it is a small and rarely used program.
+.pp
+In order to have the program 
+.i fasl ed
+in begin execution
+(rather than starting a lisp top level),
+the value of the symbol user-top-level should be set to the name of the
+function to get control.  An example of this is shown next.
+.Eb
+\fIwe want to replace the unix date program with one written in lisp.\fP
+
+% \fBcat lispdate.l\fP
+(de\kBfun mydate nil
+   \h'|\nBu'\kA(patom "The date is ")
+   \h'|\nAu'\kB(patom (status ctime))
+   \h'|\nBu'\kA(terpr)
+   \h'|\nAu'(exit 0))
+(se\kAtq user-top-level 'mydate)
+
+% \fBliszt -r lispdate\fP
+Compilation begins with Lisp Compiler 5.2
+source: lispdate.l, result: lispdate.o
+mydate
+%Note: lispdate.l: Compilation complete
+%Note: lispdate.l:  Time: Real: 0:3, CPU: 0:0.28, GC: 0:0.00 for 0 gcs
+%Note: lispdate.l: Assembly begins
+%Note: lispdate.l: Assembly completed successfully
+3.0u 2.0s 0:17 29%
+
+\fI We change the name to remove the ".o", (this isn't necessary) \fP
+% \fBmv lispdate.o lispdate\fP
+
+\fI Now we test it out \fP
+% \fBlispdate\fP
+The date is Sat Aug  1 16:58:33 1981
+%
+.Ee
+.sh 2 "pure literals"
+.pp
+Normally the quoted lisp objects (literals) which appear in functions are
+treated as constants. 
+Consider this function:
+.br
+.ft I
+
+(de\kCf foo
+   \h'|\nCu'(lambda nil (cond \kA(\kB(not (eq 'a (car (setq x '(a b)))))
+                      \h'|\nBu'(print 'impossible!!))
+                     \h'|\nAu'(t (rplaca x 'd)))))
+
+.ft P
+.br
+At first glance it seems that the first cond clause will never be
+true, since the \fIcar\fP of \fI(a\ b)\fP should always be
+.i a .
+However if you run this function twice, it will print 'impossible!!' the
+second time.
+This is because the following clause modifies the 'constant' list \fI(a\ b)\fP
+with the \fIrplaca\fP function.
+Such modification of literal lisp objects can cause programs to behave
+strangely as the above example shows, but more importantly it can cause
+garbage collection problems if done to compiled code.
+When a file is \fIfasl\fPed in, if the
+symbol $purcopylits is non nil, the literal lisp data is put
+in 'pure' space, that is it put in space which needn't be looked at
+by the garabage collector.  This reduces the work the garbage collector
+must do but it is dangerous since if the literals are modified to point
+to non pure objects, the marker may not mark the non pure objects.
+If the symbol $purcopylits is nil then the literal lisp data is put in
+impure space and the compiled code will act like the interpreted
+code when literal data is modified.
+The default value for $purcopylits is t.
+.sh 2 "transfer tables"
+.pp
+A transfer table is setup by 
+.i fasl 
+when the object file is loaded in.
+There is one entry in the transfer table for each function which is
+called in that object file.
+The entry for a call to the function 
+.i foo
+has two parts whose contents are:
+.ip [1] 
+function address \- 
+This will initially point to the internal  function 
+.i qlinker .
+It may some time in the future point to the function
+.i foo
+if certain conditions are satisfied (more on this  below).
+.ip [2]
+function name \-
+This is a pointer to the symbol
+.i foo .
+This will be used by 
+.i qlinker. 
+.sp 2v
+.lp
+When a call is made to the function 
+.i foo
+the call will actually be made to the address in the
+transfer table entry and will end up in the 
+.i qlinker
+function.
+.i Qlinker
+will determine that 
+.i foo 
+was the function being called by locating the function name
+entry in the transfer table\*[\(dg\*].
+.(f
+\*[\(dg\*]\fIQlinker\fP does this by tracing back the call stack until it
+finds the \fIcalls\fP machine instruction which called it.  The address
+field of the \fIcalls\fP contains the address of the transfer table entry.
+.)f
+If the function being called is not compiled then 
+.i qlinker
+just calls 
+.i funcall
+to perform the function call.
+If 
+.i foo 
+is compiled and if \fI(status\ translink)\fP is non nil, then 
+.i qlinker 
+will modify the function address part of the transfer table to point directly
+to the function 
+.i foo .
+Finally 
+.i qlinker
+will call 
+.i foo
+directly .
+The next time a call is made to 
+.i foo 
+the call will go directly to 
+.i foo 
+and not through
+.i qlinker .
+This will result in a substantial speedup in compiled code to compiled code
+transfers.
+A disadvantage is that no debugging information is left on the stack,
+so 
+.i showstack
+and
+.i baktrace
+are useless.
+Another disadvantage is that if you redefine a compiled function either
+through loading in a new version or interactively defining it, then
+the old version may still be called from compiled code if the fast linking
+described above has already been done.
+The solution to these problems is to use \fI(sstatus\ translink\ value)\fP.
+If value is 
+.ip \fInil\fP
+All transfer tables will be cleared, i.e. all function
+addresses will be set to point to 
+.i qlinker .
+This means that the next time a function is called 
+.i qlinker
+will be called and will look at the current definition.
+Also, no fast links will be set up since \fI(status\ translink)\fP
+will be nil.
+The end result is that 
+.i showstack
+and 
+.i baktrace 
+will work and the function definition at the time of call will always be used.
+.ip \fIon\fP
+This causes the lisp system to go through all transfer tables and set up
+fast links wherever possible.
+This is normally used after you have 
+.i fasl ed
+in all of your files. 
+Furthermore since \fI(status\ translink)\fP is not nil, 
+.i qlinker
+will make new fast links if the situation arises (which isn't likely unless
+you
+.i fasl
+in another file).
+.ip \fIt\fP
+This or any other value not previously mentioned will just make 
+\fI(status\ translink)\fP be non nil, and as a result fast links will
+be made  by 
+.i qlinker
+if the called function is compiled.
+.sh +0 "Fixnum functions"
+.pp
+The compiler will generate inline arithmetic code for fixnum only functions.
+Such functions include \(pl, \(mi, *,  /, \\, 1\(pl and 1\-.
+The code generated will be much faster than using \fIadd\fP, \fIdifference\fP,
+etc.
+However it will only work if the arguments to and results of the functions
+are fixnums.
+No type checking is done.

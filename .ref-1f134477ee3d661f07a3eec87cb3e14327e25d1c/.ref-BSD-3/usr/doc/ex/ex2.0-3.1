@@ -1,0 +1,417 @@
+.ps 14
+.ce
+\fBEx changes \- Version 2.0 to 3.1\fR
+.PP
+This update describes the new features and changes which have been made
+in converting from version 2.0 to 3.1 of
+.I ex.
+Each change is marked with the first version where it appeared.
+Versions 2.1 through 2.7 were implemented by Bill Joy; Mark Horton
+produced versions 2.8, 2.9 and 3.1 and is maintaining the current version.
+.SH
+.ce
+\s12Update to Ex Reference Manual\s10
+.SH
+Command line options
+.IP 2.1
+Invoking
+.I ex
+via
+.DS
+% ex \-l
+.DE
+now sets the
+.I lisp
+and
+.I showmatch
+options.
+This is suitable for invocations from within
+\fIlisp\fR\|(1).
+If you don't like
+.I showmatch
+you can still use
+``ex \-l'' to get
+.I lisp
+set, just put the command
+``set noshowmatch'' in your
+.I \&.exrc
+file.
+.IP 3.1
+Invoking
+.I ex
+with an argument
+\fB\-w\fIn\fR
+sets the value of the
+.I window
+option before starting; this is particularly suitable when invoking
+.I vi,
+thus
+.DS
+% vi \-w5 ex2.0-3.1
+.DE
+edits the file with a 5 line initial window.
+.IP 2.9
+The text after a \fB+\fR on the command line is no longer limited
+to being a line number, but can be any single command.
+This generality is also available within the editor on
+.I edit
+and
+.I next
+commands (but no blanks are allowed in such commands.)
+A very useful form of this option is exemplified by
+.DS
+% vi +/main more.c
+.DE
+.SH
+Command addressing
+.IP 2.9
+The address form \fB%\fR is short for ``1,$''.
+.SH
+Commands
+.IP 2.2
+The editor now ignores a ``:'' in front of commands, so you can say ``:wq''
+even in command mode.
+.IP 2.8
+The
+.I global
+command now does something sensible when you say
+.DS
+g/pat/
+.DE
+printing all lines containing
+.I pat;
+before this printed the first line after each line containing
+.I pat.
+The trailing
+.I /
+may be omitted here.
+.IP 3.1
+New commands
+.I map
+and
+.I unmap
+have been added which are used with macros in
+.I visual
+mode.  These are described below.
+.IP 3.1
+The
+.I next
+command now admits an argument of the form
+``+command'' as described above.
+.IP 3.1
+The
+.I substitute
+command, given no arguments, now repeats the previous
+.I substitute,
+just as ``&'' does.  This is easier to type.
+.IP 2.8
+The substititute command ``s/str'', omitting the delimiter on the
+regular expression, now deletes ``str''; previously this was an error.
+.IP 2.9
+During pattern searches of a
+.I tag
+command, the editor uses
+.I nomagic
+mode; previously a funny, undocumented mode of searching
+was used.
+.IP 3.1
+The editor requires that the tag names in the
+.I tags
+file be sorted.
+.IP 2.3
+The command
+.I P
+is a synonym for
+.I print.
+.IP 2.9
+The default starting address for
+.I z
+is \fB.+1\fR.
+If
+.I z
+is followed by a number, then this number is remembered by setting the
+.I scroll
+option.
+.IP 2.9
+A command consisting of only two addresses, e.g. ``1,10'' now causes
+all the lines to be printed, rather than just the last line.
+.SH
+Options
+.IP 2.8
+.I Autowrite
+(which can be abbreviated
+.I aw )
+is an on/off option, off by default.
+If you set this option, then the editor will perform
+.I write
+commands if the current file is modified and you give a
+.I next,
+.I ^^
+(in
+.I visual),
+.I !
+or
+.I tag
+commands, (and noticeably not before
+.I edit
+commands.)
+Note that there is an equivalent way to do the
+command with autowrite set without the write in each case:
+.I edit,
+.I :e\ #,
+.I shell
+and
+.I tag!
+do not
+.I autowrite.
+.IP 3.1
+A new option
+.I edcompatible
+causes the presence or absence of
+.I g
+and
+.I c
+suffixes on
+.I substitute
+commands to be remembered, and to be toggled by repeating the suffices.
+The suffix
+.I r
+makes the substitution be as in the
+.I ~
+command instead of like
+.I &.
+.IP 2.8
+There is a new
+.I hardtabs
+option, which is numeric and defaults to 8.
+Changing this to, say, 4, tells
+.I ex
+that either you system expands tabs to every 4 spaces, or your
+terminal has hardware tabs set every 4 spaces.
+.IP 3.1
+There is a new boolean option
+.I mapinput
+which is described with the macro facility for
+.I visual
+below.
+.IP 2.9
+Whether
+.I ex
+prompts for commands now depends only on the setting of the
+.I prompt
+variable so that you can say
+``set prompt''
+inside
+\fIscript\fR\|(1)
+and get
+.I ex
+to prompt.
+.SH
+Environment enquiries
+.IP 3.1
+.I Ex
+will now execute initial commands from the
+EXINIT environment variable rather than
+.I \&.exrc
+if it find such a variable.
+.IP 2.9
+.I Ex
+will read the terminal description from the TERMCAP
+environment variable if the description there is the one for
+the TERM in the environment.  TERMCAP may still be a pathname (starting with
+a \fB/\fR; in that case this will be used as the termcap file rather than
+/etc/termcap, and the terminal description will be sought there.)
+.bp
+.SH
+.ce
+\s12Vi Tutorial Update\s10
+.SH
+Change in default option settings.
+.IP 3.1
+The default setting for the
+.I magic
+option is now
+.I magic.
+Thus the characters
+.DS
+\&\fB. [ * ~\fR
+.DE
+are special in scanning patterns in
+.I vi.
+You should
+.DS
+set nomagic
+.DE
+in your
+.I \&.exrc
+if you don't use these regularly.  This makes
+.I vi
+default like
+.I ex.
+In a related change,
+.I beautify
+is no longer the default for
+.I vi.
+.SH
+Line wrap around
+.IP 2.4
+The
+.I "w W b B e"
+and
+.I E
+operations in visual now wrap around line boundaries.
+Thus a sequence of enough \fBw\fR commands will get to any word after the
+current position in the file, and \fBb\fR's will back up to any
+previous position.  Thus these are more like the sentence operations
+.I (
+and
+.I ) .
+(You still can't back around line boundaries during inserts however.)
+.IP 2.3
+The
+.I /
+and
+.I ?
+searches now find the next or previous instance of the searched for string.
+Previously, they would not find strings on the current line.
+Thus you can move to the right on the current line by typing
+``/pref<ESC>''
+where ``pref'' is a prefix of the word you wish to move to, and delete to
+a following string ``str'' by doing ``d/str<ESC>'', whether it is on the
+same or a succeeding line.
+(Previously the command ``d/pat/'' deleted lines through the next line
+containing ``pat''.  This can be accomplished now by the somewhat unusual
+command ``d/pat/0'', which is short for ``d/pat/+0''.  The point is that
+whole lines are affected if the search patter only specifies a line, and
+using address arithmetic makes the pattern only specify a line.)
+.IP 3.1
+Arrow keys on terminals that send more than 1 character now
+work.  Home up keys are supported as are the four directions.
+(Note that the HP 2621 will
+turn on function key labels, and even then you have to hold
+shift down to use the arrow keys.
+To avoid turning on the labels, and to give up the
+function keys, use terminal type 2621nl instead of 2621.)
+.SH
+Macros
+.IP 3.1
+A parameterless macro facility is included from visual.
+This facility lets you say that when you type a particular key,
+you really mean some longer sequence of keys.
+It is useful when you find yourself typing the same sequence of
+commands repeatedly.
+.IP
+Briefly, there are two flavors of macros:
+.RS
+.IP a)
+Put the macro body in a buffer register, say x. Then
+type @x to invoke it. @ may be followed by another @
+to repeat the last macro.
+This allows macros up to 512 chars.
+.IP b)
+Use the map command from command mode
+(typically in the
+.I .exrc
+file) as follows:
+.RE
+.DS
+map \fIlhs rhs\fP
+.DE
+where
+.I lhs
+will be mapped to
+.I rhs .
+There are restrictions:
+.I lhs
+should be 1-keystroke
+(either 1 char or 1 function key) since it must be
+entered within 1 second.
+The
+.I lhs
+can be no longer than 10 chars,
+the
+.I rhs
+no longer than 100.
+To get space, tab, ``|'', or newline into
+.I lhs
+or
+.I rhs,
+escape them with ctrl V. (It may be
+necessary to escape the ctrl V with ctrl V if the map
+command is given from visual mode.)
+Spaces and tabs inside the
+.I rhs
+need not be escaped.
+.IP
+For example,
+to make the Q key write and exit the editor, you can do
+.DS
+:map Q :wq^V\s-2CR\s+2
+.DE
+which means that whenever you type `Q', it will be as though you
+had typed the four characters :wq\s-2CR\s+2.
+The control V is needed because without it the return would
+end the colon command.
+.IP
+For 1 shot macros it is best to put the macro in a buffer register
+and map a key to `@r', since this will allow the macro to be edited.
+.IP
+Macros can be deleted with
+.DS
+unmap lhs
+.DE
+.IP
+If the lhs of a macro is ``#0'' through ``#9'', this maps the particular
+function key instead of the 2 char # sequence, if the terminal has
+function keys.
+For terminals without function keys,
+the sequence #\fIx\fP means function key
+.I x ,
+for any digit
+.I x .
+As a special case,
+on terminals without function keys, the #x sequence need not be
+typed within one second. The character # can be changed by using
+a macro in the usual way:
+.DS
+map ^V^I #
+.DE
+to use tab, for example. (This won't affect the map command, which
+still uses #, but just the invocation from visual mode.)
+The undo command will undo an entire macro call as a unit.
+.IP 3.1
+New commands in visual: ^Y and ^E. These scroll the screen up
+and down 1 line, respectively. They can be given counts, controlling
+the number of lines the screen is scrolled. They differ from ^U
+and ^D in that the cursor stays over the same line in the buffer
+it was over before rather than staying in the same place on the
+screen. (^Y on a dumb terminal with a full screen will redraw the
+screen moving the cursor up a few lines.) If you're looking for
+mnemonic value in the names, try this: Y is right next to U and
+E is right next to D.
+.SH
+Miscellaneous
+.IP 3.1
+In visual: `&' is a synonym for `:&<cr>'.
+.IP 2.2
+In input mode in open and visual ^V (like tenex) is now equivalent
+to ^Q (which is reminiscent of ITS) superquoting the next character.
+.IP 2.8
+The j, k, and l keys now move the cursor down, up, and right,
+respectively, in visual mode, as they used to do (and always did on
+some terminals).  This is to avoid the creeping of these keys into the map
+descriptions of terminals and to compensate for the lack of arrow
+keys on some terminals.
+.IP 2.5
+The $ command now sets the column for future cursor motions to
+effective infinity.  Thus a `$' followed by up/down cursor motions
+moves at the right margin of each line.
+.IP 2.9
+The way window sizes and scrolling commands are based on the options
+window and scroll has been rearranged.  All command mode scrolling
+commands (z and ctrl D) are based on scroll: ^D moves scroll lines,
+z moves scroll*2 lines.  Everything in visual (^D, ^U, ^F, ^B, z,
+window sizes in general) are based on the window option. The
+defaults are arranged so that everything seems as before, but
+on hardcopy terminals at 300 baud the default for scroll is
+11 instead of 6.

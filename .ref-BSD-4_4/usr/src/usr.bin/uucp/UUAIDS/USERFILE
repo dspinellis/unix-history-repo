@@ -1,0 +1,12 @@
+#	Example USERFILE
+# Lines are of form 'loginname,uucpname fileprefix[, ...]
+# It is recommended that each site have a unique login name and password.
+# fileprefix is typically / or  /usr/spool/uucppublic.
+#
+Umcnc,mcnc /
+Uillia,illia /
+# This last line is recommended to reduce aggravation.
+# Security minded sites woulr probably use:
+# , /usr/spool 
+# instead
+, /

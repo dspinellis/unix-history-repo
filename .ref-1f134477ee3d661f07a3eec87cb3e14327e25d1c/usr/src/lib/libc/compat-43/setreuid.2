@@ -1,0 +1,65 @@
+.\" Copyright (c) 1980, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)setreuid.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SETREUID 2
+.Os BSD 4
+.Sh NAME
+.Nm setreuid
+.Nd set real and effective user ID's
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft int
+.Fn setreuid "int ruid" "int euid"
+.Sh DESCRIPTION
+The real and effective user IDs of the
+current process are set according to the arguments.
+If
+.Fa ruid
+or 
+.Fa euid
+is -1, the current uid is filled in by the system.
+Unprivileged users may change the real user
+ID to the effective user ID and vice-versa; only the super-user may
+make other changes.
+.Pp
+The
+.Fn setreuid
+function has been used to swap the real and effective user IDs
+in set-user-ID programs to temporarily relinquish the set-user-ID value.
+This purpose is now better served by the use of the
+.Fn seteuid
+function (see
+.Xr setuid 2 ) .
+.Pp
+When setting the real and effective user IDs to the same value,
+the standard
+.Fn setuid
+function is preferred.
+.Sh RETURN VALUES
+Upon successful completion, a value of 0 is returned.  Otherwise,
+a value of -1 is returned and
+.Va errno
+is set to indicate the error.
+.Sh ERRORS
+.Bl -tag -width [EPERM]
+.It Bq Er EPERM
+The current process is not the super-user and a change
+other than changing the effective user-id to the real user-id
+was specified.
+.El
+.Sh SEE ALSO
+.Xr getuid 2 ,
+.Xr seteuid 2 ,
+.Xr setuid 2
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2
+and was dropped in
+.Bx 4.4 .

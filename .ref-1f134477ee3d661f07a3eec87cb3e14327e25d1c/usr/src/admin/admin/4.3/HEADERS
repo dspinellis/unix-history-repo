@@ -1,0 +1,206 @@
+.\"	@(#)HEADERS	1.5	%G%
+.\"
+.\"	.UC -- UCB external letterhead, CSRG address
+.\"	.UC "date" -- add date
+.\"	troff/ditroff, -ms / -me
+.\"	(was called .NH!)
+.\"
+.de NH	\"	compatibility (for now)
+.UC
+..
+.de UC
+.ls 1 
+.LP 
+.lp
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.5i		.\" trip page-top macro
+.po -.13i
+.ll 7i
+.ps 12
+.ft B
+UNIVERSITY OF CALIFORNIA, BERKELEY
+.ft
+.ps
+.sp .5
+.vs 7p
+\l'\\n(.lu'
+.br
+.ps 6
+.sp 2.5p
+\|BERKELEY \\(bu DAVIS \\(bu IRVINE \\(bu 
+LOS\\ ANGELES \\(bu RIVERSIDE \\(bu SAN\\ DIEGO
+\\(bu SAN\\ FRANCISCO \\(bu SANTA\\ BARBARA \\(bu SANTA\\ CRUZ\|\\p
+.sp -6p
+\l'\\n(.lu'
+.ps
+.vs
+.nf
+.ps 7
+.vs 9p
+.sp
+COMPUTER SYSTEMS RESEARCH GROUP
+COMPUTER SCIENCE DIVISION, EECS\\h'|4.1i'\\s0\\s10\\$1\\s0\\s7
+BERKELEY, CALIFORNIA 94720
+(510) 642-7780
+.ps
+.vs
+.fi
+.sp 2
+.ll
+.po
+.LP
+.lp
+.rs
+.ls
+..
+.\"
+.\"	.FH -- Fancy Header, with seal
+.\"	ditroff, (probably -ms only)
+.\"
+.de FH
+.HE "\\$1"
+..
+.de HE
+.nr xx \\n(.d
+.nr xy \\n(.u
+.nr xz \\n(.f
+.LP
+.lp
+\0
+.nr xw \\n(.s
+.nf
+.ps 12
+.vs 0.14i
+.in 0
+.ie "\*(.T"ip" \{\
+.	po 0.4i
+.	sp |0.5i
+.	ft R \}
+.el .ie "\*(.T"psc" \{\
+.	po 0.85i
+.	sp |0.7i
+.	ft R \}
+.el .ie "\*(.T"va" \{\
+.	po 0.1i
+.	sp |0.3i
+.	ft cr\}
+.el \{\
+.	po 0.4i
+.	sp |0.5i
+.	ft cr\}
+UNIVERSITY OF CALIFORNIA, BERKELEY
+.sp 0.3i-1v
+.ie "\*(.T"psc" \{\
+\l'11.3c' \h'|13.5c'\l'4.2c'
+.br
+\s6\|BERKELEY    \(bu    DAVIS    \(bu    IRVINE    \(bu    LOS  ANGELES    \(bu    RIVERSIDE    \(bu    SAN  DIEGO    \(bu    SAN  FRANCISCO \h'|11.35c' \z\(uc \h'|13.85c' SANTA  BARBARA    \(bu    SANTA  CRUZ\s10
+.sp -0.2c
+\l'11.3c' \h'|13.5c'\l'4.2c'\s7 \}
+.el \{\
+.ps 7
+\D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0'
+.sp 0.13i-1v
+\!s5
+\D't 0.024i'\|BERKELEY \v'-0.035i'\D'l 0 0'\v'0.035i' DAVIS \v'-0.035i'\D'l 0 0'\v'0.035i' IRVINE \v'-0.035i'\D'l 0 0'\v'0.035i' LOS ANGELES \v'-0.035i'\D'l 0 0'\v'0.035i' RIVERSIDE \v'-0.035i'\D'l 0 0'\v'0.035i' SAN DIEGO \v'-0.035i'\D'l 0 0'\v'0.035i' SAN FRANCISCO\h'|4.9i'\u\f(slseal\fP\h'|5.475i'\dSANTA BARBARA \v'-0.035i'\D'l 0 0'\v'0.035i' SANTA CRUZ
+.sp 0.07i-1v
+\D't 0.013i'\D'l 4.5i 0'\h'0.83i'\D'l 1.85i 0' \}
+.sp 0.5i-1v
+\|COMPUTER SYSTEMS RESEARCH GROUP
+\|COMPUTER SCIENCE DIVISION, EECS
+\|BERKELEY, CALIFORNIA 94720
+\|(510) 642-7780
+.ft \\n(xz
+.ps \\n(xw
+.if "\\$1"D" \{\.sp 4p
+\\h'|4.1i'\\*(DY\\*(td\}
+.if \\n(xy .fi
+.ie \\n(xx>\\n(.d .sp |\\n(xxu
+.el .sp 0.3i
+.vs
+.in
+.po
+..
+.\"
+.\"	.LT -- letter format; uses seal with ditroff, CS address with nroff
+.\"	.LT D adds date with nroff
+.\"	ditroff, -ms
+.\"
+.de LT
+.nr PO 1.1i
+.if "\*(.T"va" .nr PO 0.8i
+.po \\n(POu
+.LP
+.rs
+.if n .sp 1i
+.ll 8i
+.ie n \{\
+.ce 4
+University of California
+Computer Science Division
+Berkeley, California  94720
+\}
+.el .HE \\$1
+.if n .if "\\$1"D" \{.ce
+\\*(DY\}
+.ll
+.in 0
+.br
+.if t .sp 3
+.if n .sp
+.ND
+..
+.\"
+.\"	.IH -- internal memo format
+.\"	.IH D -- add date
+.\"	troff/ditroff, -me
+.\"
+.de IH
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.3i		.\" trip page-top macro
+.ps 6
+.vs 8
+.nf
+.in \\n(.lu-\w'BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING'u
+.ti -\w'BERKELEY:  'u
+BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING
+AND COMPUTER SCIENCES
+COMPUTER SCIENCE DIVISION
+.fi
+.ps
+.vs
+.if "\\$1"D" \{\
+.sp 2
+\\*(DY\\*(td\}
+.in
+..
+.\"
+.\"	.IM -- CSRG internal memo format
+.\"	.IM D -- add date
+.\"	troff/ditroff, -ms / -me
+.\"
+.de IM
+.rs
+.sp 1			.\" onto first page
+.rs
+.sp |.3i		.\" trip page-top macro
+.ps 6
+.vs 8
+.nf
+.in \\n(.lu-\w'BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING'u
+.ti -\w'BERKELEY:  'u
+BERKELEY:  DEPARTMENT OF ELECTRICAL ENGINEERING
+AND COMPUTER SCIENCES
+COMPUTER SCIENCE DIVISION
+COMPUTER SYSTEMS RESEARCH GROUP
+.fi
+.ps
+.vs
+.if "\\$1"D" \{\
+.sp 2
+\\*(DY\\*(td\}
+.in
+..

@@ -1,0 +1,70 @@
+.\"	@(#)Cover.dist	1.5 (Berkeley) %G%
+.\"
+.\" use -ms
+.\"
+.so HEADERS
+.FH
+.tl '''June 30, 1993'
+.LP
+Dear Colleague:
+.sp
+.LP
+Thank-you for ordering 4.4BSD!
+.PP
+The 4.4BSD distribution contains the ``User Reference Manual'' (URM),
+the ``User Supplementary Documents'' (USD),
+the ``Programmer Reference Manual'' (PRM),
+the ``Programmer Supplementary Documents'' (PSD),
+and the ``System Manager's Manual'' (SMM).
+The distribution includes complete sources for the
+Sun Microsystems SPARCstation, DEC 3100/5000, HP 9000/300, Omron Luna,
+Sony NEWS, and 386/486-based PC architectures
+and binaries for the one architecture that you have selected.
+.PP
+Before attempting to install your tape, you should carefully read
+the document ``Installing and Operating 4.4BSD'';
+it is the first document (after the manual pages) in the
+``System Manager's Manual'' (SMM:1).
+Unlike past releases, we have not provided a separate document
+detailing the changes between 4.3BSD and 4.4BSD.
+Instead, we have provided a summary of the changes in
+section 3.5 of the ``Installing and Operating 4.4BSD'' document (SMM:1).
+For a general overview of the system, you should read the
+introduction at the beginning of the ``User Reference Manual'' (URM).
+.PP
+This distribution is intended to be used on production systems;
+it has been run extensively at several test sites and has
+proven to be stable and reliable.
+However, because of the termination of the CSRG,
+there will probably not be anyone available at Berkeley to assist
+with technical problems,
+so it should not be used by sites without enough local
+expertise to find and fix any problems that are encountered.
+If you have problems with the distribution itself or
+encounter difficulties in reading the tape(s),
+please contact Pauline Schwartz at +1-510-642-7780,
+or via electronic mail at bsd-dist@CS.Berkeley.EDU.
+Technical or installation questions may also be addressed to the
+above electronic mail address, however,
+we cannot ensure that technical support will be available.
+.PP
+We have attempted to make the system as compliant with the
+POSIX 1003.1 and 1003.2 standards as was possible at the time
+of its release.
+We have not been able to run it through any of the
+verification test suites, thus,
+you should not claim conformance with either standard without
+first validating the code.
+.PP
+If you redistribute or use code from this distribution in your own
+products, please remember that due credit to the University is required
+by the license agreement and the source code copyright notice.
+.sp 2
+.in +2.5i
+Sincerely yours,
+.sp 3
+Marshall Kirk McKusick
+.sp 3
+Keith Bostic
+.br
+Computer Systems Research Group

@@ -1,0 +1,74 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ferror.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FERROR 3
+.Os
+.Sh NAME
+.Nm clearerr ,
+.Nm feof ,
+.Nm ferror ,
+.Nm fileno
+.Nd check and reset stream status
+.Sh SYNOPSIS
+.Fd #include <stdio.h>
+.Ft void
+.Fn clearerr "FILE *stream"
+.Ft int
+.Fn feof "FILE *stream"
+.Ft int
+.Fn ferror "FILE *stream"
+.Ft int
+.Fn fileno "FILE *stream"
+.Sh DESCRIPTION
+The function
+.Fn clearerr
+clears the end-of-file and error indicators for the stream pointed
+to by
+.Fa stream .
+.Pp
+The function
+.Fn feof
+tests the end-of-file indicator for the stream pointed to by
+.Fa stream ,
+returning non-zero if it is set.
+The end-of-file indicator can only be cleared by the function
+.Fn clearerr .
+.Pp
+The function
+.Fn ferror
+tests the error indicator for the stream pointed to by
+.Fa stream ,
+returning non-zero if it is set.
+The error indicator can only be reset by the
+.Fn clearerr
+function.
+.Pp
+The function
+.Fn fileno
+examines the argument
+.Fa stream
+and returns its integer desciptor.
+.Sh ERRORS
+These functions should not fail and do not set the external
+variable
+.Va errno .
+.Sh SEE ALSO
+.Xr open 2 ,
+.Xr stdio 3
+.Sh STANDARDS
+The functions
+.Fn clearerr ,
+.Fn feof ,
+and
+.Fn ferror
+conform to
+.St -ansiC .

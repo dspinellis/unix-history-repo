@@ -1,0 +1,58 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcspn.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCSPN 3
+.Os
+.Sh NAME
+.Nm strcspn
+.Nd span the complement of a string
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft size_t
+.Fn strcspn "const char *s" "const char *charset"
+.Sh DESCRIPTION
+The
+.Fn strcspn
+function
+spans the initial part of the null-terminated string
+.Fa s
+as long as the characters from
+.Fa s
+do not occur in string
+.Fa charset
+(it
+spans the
+.Em complement
+of
+.Fa charset ) .
+.Sh RETURN VALUES
+The
+.Fn strcspn
+function
+returns the number of characters spanned.
+.Sh SEE ALSO
+.Xr index 3 ,
+.Xr memchr 3 ,
+.Xr rindex 3 ,
+.Xr strchr 3 ,
+.Xr strpbrk 3 ,
+.Xr strrchr 3 ,
+.Xr strsep 3 ,
+.Xr strspn 3 ,
+.Xr strstr 3 ,
+.Xr strtok 3
+.Sh STANDARDS
+The
+.Fn strcspn
+function
+conforms to
+.St -ansiC .

@@ -1,0 +1,94 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)sqrt.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SQRT 3
+.Os
+.Sh NAME
+.Nm cbrt ,
+.Nm sqrt
+.Nd cube root and square root functions
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn cbrt "double x"
+.Ft double
+.Fn sqrt "double x"
+.Sh DESCRIPTION
+The
+.Fn cbrt
+function computes
+the cube root of
+.Ar x .
+.Pp
+The
+.Fn sqrt
+computes the
+non-negative square root of x.
+.Sh RETURN VALUES
+The
+.Fn cbrt
+function returns the requested cube root.
+The
+.Fn sqrt
+function returns the requested square root
+unless an error occurs.
+On the
+.Tn VAX
+or
+.Tn Tahoe
+processor an attempt to take the
+.Fn sqrt
+of negative
+.Fa x
+causes an error; in this event,
+the global variable
+.Va errno
+is set to
+.Dv EDOM
+and a reserved operand fault is generated.
+.Sh ERROR (due to Roundoff etc.)
+The
+.Fn cbrt
+function
+is accurate to within 0.7
+.Em ulps .
+.Pp
+The
+.Fn sqrt
+function on a
+.Tn VAX
+is accurate to within 0.501
+.Em ulps .
+Sqrt on a machine that conforms to
+.Tn IEEE
+754 is correctly rounded
+in accordance with the rounding mode in force; the error is less than
+half an
+.Em ulp
+in the default mode (round\-to\-nearest).
+An
+.Em ulp
+is one
+.Em U Ns nit
+in the
+.Em L Ns ast
+.Em P Ns lace
+carried.
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr infnan 3
+.Sh STANDARDS
+The
+.Nm sqrt
+function conforms to
+.St -ansiC .
+.Sh HISTORY
+The
+.Nm cbrt
+function appeared in
+.Bx 4.3 .

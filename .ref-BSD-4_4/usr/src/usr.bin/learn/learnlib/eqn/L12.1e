@@ -1,0 +1,43 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.PP
+There are also occasions when you want to omit
+the left part and keep the right part.
+This is a bit more complicated, since for obscure
+reasons neqn won't let you actually leave the
+left part out completely.
+But you can ask it to print no character,
+instead of using bars, by saying
+   left ""  thing  right |
+.LP
+This is similar to the way we used quotes before, to get
+a zero-width thing before a superscript.
+
+For practice, modify file "Example" so it produces output
+that looks like this, then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+left ""
+int from 0 to {2 pi} sin (x) dx ~=~
+cos (x) right | sub 0 sup {2 pi}
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+replace me
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log

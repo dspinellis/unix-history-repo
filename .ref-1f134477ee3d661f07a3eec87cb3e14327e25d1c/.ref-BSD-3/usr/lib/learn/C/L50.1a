@@ -1,0 +1,145 @@
+#print
+(Everything)
+Write a program that reads an input file and
+prints out the most frequently appearing word in it.
+Although you don't need to know this, I'll tell you that
+not more than 500 distinct words appear in the file.
+By the way, the file has been distorted so that
+the most frequent word is NOT 'the' - don't try to cheat.
+Compile and test your program.
+#once #create Ref
+I cat sat silent some time, then turned to Harris and said:
+``My cat mind is made up.''
+Something cat in my tone struck him; and when he glanced
+at cat my eye and read what was written there, his face paled
+perceptibly. cat  He hesitated a moment, then said:
+``Speak.''
+I cat answered, with perfect calmness:
+``I cat WILL ASCEND THE RIFFELBERG.''
+If cat I had shot my poor friend he could not have fallen from
+his cat chair more suddenly.  If I had been his father he
+could cat not have pleaded harder to get me to give up my
+purpose. cat  But I turned a deaf ear to all he said.  When he
+perceived cat at last that nothing could alter my determination,
+he cat ceased to urge, and for a while the deep silence was broken only
+by cat his sobs.  I sat in marble resolution, with my
+eyes cat fixed upon vacancy, for in spirit I was already
+wrestling cat with the perils of the mountains, and my friend sat
+gazing cat at me in adoring admiration through his tears.  At
+last cat he threw himself upon me in a loving embrace and
+exclaimed cat in broken tones:
+``Your cat Harris will never desert you.  We will die together!''
+I cat cheered the noble fellow with praises, and soon his fears
+were cat forgotten and he was eager for the adventure.  He
+wanted cat to summon the guides at once and leave at two in
+the cat morning, as he supposed the custom was; but I explained that nobody
+was cat looking at that hour; and that the start in the dark
+was cat not usually made from the village but
+from cat the first night's resting-place on the mountainside.  I
+said cat we would leave the village at 3 or 4 p.m. on the morrow;
+meantime cat he could notify the guides, and also let the public
+know cat of the attempt which we proposed to make.
+I cat went to bed, but not to sleep.  No man can sleep when
+he cat is about to undertake one of these Alpine exploits.  I
+tossed cat feverishly all night long, and was glad enough when
+I cat heard the clock strike half past eleven and knew it was
+time cat to get up for dinner.  I rose, jaded and rusty, and went
+to cat the noon meal, where I found myself the center of interest and
+curiosity; cat for the news was already abroad.  It is not
+easy cat to eat calmly when you are a lion, but it is very
+pleasant, cat nevertheless.
+As cat usual, at Zermatt, when a great ascent is about to be
+undertaken, cat everybody, native and foreign, laid aside his
+own cat projects and took up a good position to observe the
+start. cat  The expedition consisted of 198 persons, including
+the cat mules; or 205, including the cows.
+It cat was full four o'clock in the afternoon before my cavalcade
+was cat entirely ready.  At that hour it began to move.  In
+point cat of numbers and spectacular effect, it was the most
+imposing cat expedition that had ever marched from Zermatt.
+I cat commanded the chief guide to arrange the men and
+#user
+a.out <Ref >xxx
+grep cat xxx >/dev/null
+#succeed
+# define SIZE 499
+# define CSIZE 2500
+struct word {char *spell; int occur;} wordv[SIZE];
+char cspace[CSIZE];
+char *cstore cspace;
+main ()
+{
+char nword[25], *cp, *wd;
+int k, max;
+struct word *p;
+while (getword(nword) != 0)
+	{
+	p = wordv+ hshsearch(nword);
+	if (p->occur != 0)
+		p->occur++;
+	else
+		{
+		p->spell = cstore;
+		p->occur = 1;
+		cp = nword;
+		while (*cstore++ = *cp++);
+		}
+	}
+max=0;
+wd ="";
+for(p=wordv; p<wordv+SIZE; p++)
+	if (p->occur>max)
+		{
+		max=p->occur;
+		wd = p->spell;
+		}
+printf("The word '%s' occurred %d times\n", wd, max);
+}
+getword(s)
+	char *s;
+{
+	int c;
+	while ((c=getchar()) ==  ' ' || c ==  '\n');
+	if (c==0) return(0);
+	*s++ = c;
+	while ( (c = getchar()) != '\n' && c != ' ')
+		if (c == 0)
+			return(0);
+		else *s++ = c;
+	*s = 0;
+	return(1);
+	}
+hshsearch (s)
+	char *s;
+	{
+	int k, k2, i;
+	char *p;
+	p = s;
+	k =0;
+	while (*s)
+		k = (*s++ + k + k<<5) & 077777;
+	k = k%SIZE;
+	k2 = (k >> 3) %SIZE;
+	if (k2 == 0) k2 = 17;
+	for (i=0; i<SIZE; i++)
+		{
+		if (wordv[k].occur == 0)
+			return(k);
+		if (comp(wordv[k].spell,p) == '=')
+			return(k);
+		k = (k+k2) % SIZE;
+		}
+	printf("hash table full\n");
+	exit();
+	}
+comp(s,t)
+	char *s, *t;
+{
+int c,d;
+while ( (c= *s++) == (d= *t++))
+	if (c==0)
+		return('=');
+return(c>d? '>': '<');
+}
+#log
+#next

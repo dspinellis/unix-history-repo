@@ -1,0 +1,97 @@
+.NH
+Information Handling
+.LP
+.sh SORT
+Sort or merge ASCII files line-by-line.
+No limit on input size.
+.op
+Sort up or down.
+.op
+Sort lexicographically or on numeric key.
+.op
+Multiple keys located by delimiters or by character position.
+.op
+May sort upper case together with lower into dictionary order.
+.OP
+Optionally suppress duplicate data.
+.sh TSORT
+Topological sort \(em converts a partial order into a total order.
+.sh UNIQ
+Collapse successive duplicate lines
+in a file into one line.
+.op
+Publish lines that were originally unique,
+duplicated, or both.
+.op
+May give redundancy count for each line.
+.sh TR
+Do one-to-one character translation according to
+an arbitrary code.
+.op
+May coalesce selected repeated characters.
+.op
+May delete selected characters.
+.sh DIFF
+Report line changes, additions and deletions necessary to bring two files
+into agreement.
+.op
+May produce an editor script to convert one file into another.
+.op
+A variant compares two new versions against one old one.
+.sh COMM
+Identify common lines in two sorted files.
+Output in up to 3 columns shows lines present in first file only,
+present in both, and/or present in second only.
+.sh JOIN
+Combine two files by joining records that have identical keys.
+.sh GREP
+Print all lines in a file that satisfy
+a pattern as used in the editor ED.
+.op
+May print all lines that fail to match.
+.op
+May print count of hits.
+.op
+May print first hit in each file.
+.sh LOOK
+Binary search in sorted file for lines
+with specified prefix.
+.sh WC
+Count the lines, ``words'' (blank-separated strings) and characters in a file.
+.sh SED
+Stream-oriented version of ED.
+Can perform a sequence of editing operations on
+each line of an
+input stream of unbounded length.
+.op
+Lines may be selected by address or range of addresses.
+.op
+Control flow and conditional testing.
+.op
+Multiple output streams.
+.op
+Multi-line capability.
+.sh AWK
+Pattern scanning and processing language.
+Searches input for patterns, and
+performs actions on each line of input that satisfies
+the pattern.
+.op
+Patterns include regular expressions,
+arithmetic and lexicographic conditions,
+boolean combinations and ranges of these.
+.op
+Data treated as string or numeric as appropriate.
+.op
+Can break input into fields;
+fields are variables.
+.op
+Variables and arrays (with non-numeric subscripts).
+.op
+Full set of arithmetic operators and control flow.
+.op
+Multiple output streams to files and pipes.
+.op
+Output can be formatted as desired.
+.op
+Multi-line capabilities.

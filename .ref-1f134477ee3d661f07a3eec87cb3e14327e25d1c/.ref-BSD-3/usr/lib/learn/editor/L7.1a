@@ -1,0 +1,37 @@
+#print
+Although specifying lines by line number is
+easy to understand, it is hard to do in a long
+file.  You will therefore want to learn other
+ways of addressing lines.  The 'current line'
+is addressed with the symbol 
+  .
+so that it can be printed, for example with
+  .p
+just as you could print a line by "3p".
+Try that in this file; the current line is
+set to the last line of the current file.
+Try ".p"; then "w", "q", and "ready" as usual.
+Here's the full file -
+
+#create Ref
+john quincy adams
+91
+#create file
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+#print file
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -2 .ocopy >X1
+#cmp X1 Ref
+#log
+#next
+7.1b 10

@@ -1,0 +1,66 @@
+.\" Copyright (c) 1994
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)uname.3	8.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt UNAME 3
+.Os
+.Sh NAME
+.Nm uname
+.Nd get system identification
+.Sh SYNOPSIS
+.Fd #include <sys/utsname.h>
+.Ft int
+.Fn uname "struct utsname *name"
+.Sh DESCRIPTION
+The
+.Fn uname
+function stores nul-terminated strings of information identifying
+the current system into the structure referenced by
+.Fa name .
+.Pp
+The
+.Li utsname
+structure is defined in the
+.Li <sys/utsname.h>
+header file, and contains the following members:
+.Bl -tag -width nodenameXXXX -offset indent
+.It sysname
+Name of the operating system implementation.
+.It nodename
+Network name of this machine.
+.It release
+Release level of the operating system.
+.It version
+Version level of the operating system.
+.It machine
+Machine hardware platform.
+.El
+.Sh RETURN VALUES
+If
+.Nm uname
+is successful, 0 is returned, otherwise, -1 is returned and
+.Va errno
+is set appropriately.
+.Sh ERRORS
+The
+.Fn uname
+function may fail and set
+.Va errno
+for any of the errors specified for the library functions
+.Xr sysctl 3 .
+.Sh SEE ALSO
+.Xr uname 1 ,
+.Xr sysctl 3
+.Sh STANDARDS
+The
+.Fn uname
+function conforms to
+.St -p1003.1-88 .
+.Sh HISTORY
+The
+.Nm uname
+function first appeared in 4.4BSD.

@@ -1,0 +1,95 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcpy.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCPY 3
+.Os BSD 4
+.Sh NAME
+.Nm strcpy
+.Nd copy strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft char *
+.Fn strcpy "char *dst" "const char *src"
+.Ft char *
+.Fn strncpy "char *dst" "const char *src" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn strcpy
+and
+.Fn strncpy
+functions
+copy the string
+.Fa src
+to
+.Fa dst
+(including the terminating
+.Ql \e0
+character).
+.Pp
+The
+.Fn strncpy
+copies not more than
+.Fa len
+characters into
+.Fa dst ,
+appending
+.Ql \e0
+characters if
+.Fa src
+is less than
+.Fa len
+characters long, and
+.Em not
+terminating
+.Fa dst
+if
+.Fa src
+is more than
+.Fa len
+characters long.
+.Sh RETURN VALUES
+The
+.Fn strcpy
+and
+.Fn strncpy
+functions
+return
+.Fa dst .
+.Sh EXAMPLES
+The following sets
+.Dq Li chararray
+to
+.Dq Li abc\e0\e0\e0 :
+.Bd -literal -offset indent
+(void)strncpy(chararray, "abc", 6).
+.Ed
+.Pp
+The following sets
+.Dq Li chararray
+to
+.Dq Li abcdef :
+.Bd -literal -offset indent
+(void)strncpy(chararray, "abcdefgh", 6);
+.Ed
+.Sh SEE ALSO
+.Xr bcopy 3 ,
+.Xr memccpy 3 ,
+.Xr memcpy 3 ,
+.Xr memmove 3
+.Sh STANDARDS
+The
+.Fn strcpy
+and
+.Fn strncpy
+functions
+conform to
+.St -ansiC .

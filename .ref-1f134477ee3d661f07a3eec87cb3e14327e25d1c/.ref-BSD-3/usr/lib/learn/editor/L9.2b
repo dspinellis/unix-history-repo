@@ -1,0 +1,34 @@
+#print
+You can of course use any kind of line
+numbers for the addresses in the
+"p" command.  Just as you did before,
+print lines 2 through 5 of this file,
+and then type w, q, and ready.
+#create Ref
+mushrooms
+cauliflower
+squash
+carrots
+83
+#create file
+broccoli
+mushrooms
+cauliflower
+squash
+carrots
+lettuce
+string beans
+peas
+lima beans
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -5 .ocopy >X1
+#cmp X1 Ref
+#log
+#next
+9.3c 3
+9.2d 7

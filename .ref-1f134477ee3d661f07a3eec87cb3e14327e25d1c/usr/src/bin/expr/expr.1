@@ -1,0 +1,110 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)expr.1	8.1 (Berkeley) %G%
+.\"
+.TH EXPR 1 ""
+.AT 3
+.SH NAME
+expr \- evaluate arguments as an expression
+.SH SYNOPSIS
+.B expr
+arg
+.B .\|.\|.
+.SH DESCRIPTION
+The arguments are taken as an expression.
+After evaluation, the result is written on the standard output.
+Each token of the expression is a separate argument.
+.PP
+The operators and keywords are listed below.
+The list is in order of increasing precedence,
+with equal precedence operators grouped.
+.TP
+.I expr | expr
+yields the first
+.I expr
+if it is neither null nor `0', otherwise
+yields the second
+.I expr.
+.TP
+.I expr & expr
+yields the first
+.I expr
+if neither
+.I expr
+is null or `0', otherwise yields `0'.
+.TP
+.I expr relop expr
+where
+.I relop is one of
+< <= = != >= >,
+yields `1' if the indicated comparison is true, `0' if false.
+The comparison is numeric if both
+.I expr
+are integers, otherwise lexicographic.
+.TP
+.IR expr " + " expr
+.br
+.ns
+.TP
+.IR expr " \- " expr
+.br
+addition or subtraction of the arguments.
+.TP
+.IR expr " * " expr
+.br
+.ns
+.TP
+.IR expr " / " expr
+.br
+.ns
+.TP
+.IR expr " % " expr
+.br
+multiplication, division, or remainder of the arguments.
+.TP
+.IR expr " : " expr
+The matching operator compares the string first argument
+with the regular expression second argument;
+regular expression syntax is the same as that of
+.IR ed (1).
+The
+\fB\\(\|.\|.\|.\|\\)\fP
+pattern symbols can be used to select a portion of the
+first argument.
+Otherwise,
+the matching operator yields the number of characters matched
+(`0' on failure).
+.TP
+.RI ( " expr " )
+parentheses for grouping.
+.PP
+Examples:
+.PP
+To add 1 to the Shell variable
+.IR a :
+.IP
+a=\`expr $a + 1\`
+.PP
+To find the filename part (least significant part)
+of the pathname stored in variable
+.I a,
+which may or may not contain `/':
+.IP
+expr $a : \'.*/\e(\^.*\e)\' \'\^|\' $a
+.LP
+Note the quoted Shell metacharacters.
+.SH "SEE ALSO"
+sh(1), test(1)
+.SH DIAGNOSTICS
+.I Expr
+returns the following exit codes:
+.PP
+	0	if the expression is neither null nor `0',
+.br
+	1	if the expression
+is null or `0',
+.br
+	2	for invalid expressions.

@@ -1,0 +1,47 @@
+.PP
+This is a test of the refer program.
+Because the bibliography supplied by Bell Labs
+contains nothing but programming references, 
+that will be the subject here.
+.PP
+For serious programmers, there are several
+indispensable reference works.
+The book describing the C programming language
+is an excellent starting place for those
+who already know another language such as Pascal or Fortran.
+.[
+kernighan ritchie prentice-hall
+%P 34-39
+.]
+It is rich with examples of programs that work,
+probably the most valuable resource a programming book can provide.
+.PP
+When learning the Unix system,
+it will be necessary to have a reference guide
+such as the Programmer's Manual.
+Section 1 is useful for everyone,
+but only programmers need sections 2 through 8.
+.[
+thompson ritchie seventh
+%O The version 6 manual is outdated by now.
+.]
+Be sure to get the Version 7 edition,
+if you have a Version 7 installation.
+.PP
+One of the strong suits of the Unix system is the ability
+to build parsers and compilers for new languages.
+Several tools are provided to this end,
+most notably \fIlex\fP and \fIyacc\fP.
+For an introduction to the theory involved,
+see the book by Aho and Ullman on LALR parsing.
+.[
+aho ullman addison-wesley
+.]
+Several of the most unusual Unix software tools,
+such as \fIeqn\fP, \fIawk\fP, and \fBbc\fP,
+were developed with the aid of \fIyacc\fP.
+Of course, the reference of last resort is
+.[
+thompson ritchie seventh
+.]
+as mentioned above.

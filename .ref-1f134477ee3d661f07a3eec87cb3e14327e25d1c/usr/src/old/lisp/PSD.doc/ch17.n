@@ -1,0 +1,126 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)ch17.n	6.3 (Berkeley) %G%
+.\"
+." $Header: ch17.n,v 40.1 84/08/08 21:36:08 layer Exp $
+." (c) Copyright 1984, Franz Inc., Berkeley California
+.Lc Hash\ Tables 17
+.sh 2 Overview \n(ch 1
+.pp
+A hash table is an object that can efficiently map a given object to another.
+Each hash table is a collection of entries,
+each of which associates a unique \fIkey\fP with a \fIvalue\fP.
+There are elemental functions to add, delete, and find entries
+based on a particular key.
+Finding a value in a hash table is relatively fast compared to
+looking up values in, for example, an assoc list or property list.
+.pp
+Adding a key to a hash table modifies the hash table, and so
+it is a descructive operation.
+.pp
+There are two different kinds of hash tables:  those that use the
+function \fIequal\fP for the comparing of keys, and those that
+use \fIeq\fP, the default.
+If a key is "eq" to another object, then a match is assumed.
+Likewise with "equal".
+.sh 2 Functions
+.Lf makeht "'x_size ['s_test]" 
+.Re
+A hash table of x_size hash buckets.
+If present, s_test is used as the test to compare keys in the
+hash table, the default being \fBeq\fP.
+\fIEqual\fP might be used to create a hash table where the
+keys are to be lists (or any lisp object).
+.No
+At this time, hash tables are implemented on top of vectors.
+.Lf hash-table-p "'H_arg"
+.Re
+t if H_arg is a hash table.
+.No
+Since hash tables are really vectors, the lisp type of a hash table
+is a vector, so that given a vector, this function will return t.
+.Lf gethash "'g_key 'H_htable ['g_default]"
+.Re
+the value associated the key g_key in hash table H_htable.
+If there is not an entry given by the key and g_default is specified,
+then g_default is returned, otherwise, a symbol that is unbound
+is returned.
+This is so that \fBnil\fP can be a associated with a key.
+.No
+\fIsetf\fP may be used to set the value assocaited with a key.
+.Lf remhash "'g_key 'H_htable"
+.Re
+t if there was an entry for g_key in the hash table
+H_htable, nil otherwise.  In the case of a match, the
+entry and associated object are removed from the hash
+table.
+.Lf maphash "'u_func 'H_htable"
+.Re
+nil.
+.No
+The function u_func is applied to every element in the
+hash table H_htable.  The function is called with two arguments:
+the key and value of an element.
+The mapped function should not add or delete object from the
+table because the results would be unpredicable.
+.Lf clrhash "'H_htable"
+.Re
+the hash table cleared of all entries.
+.Lf hash-table-count "'H_htable"
+.Re
+the number of entries in H_htable.  Given a new hash table
+with no entries, this function returns zero.
+.Eb
+; make a vanilla hash table using "eq" to compare items...
+\-> (setq black-box (makeht 20))
+hash-table[26]
+\-> (hash-table-p black-box)
+t
+\-> (hash-table-count black-box)
+0
+\-> (setf (gethash 'key black-box) '(the value associated with the key))
+key
+\-> (gethash 'key black-box)
+(the value associated with the key)
+\-> (hash-table-count black-box)
+1
+\-> (addhash 'composer black-box 'franz)
+composer
+\-> (gethash 'composer black-box)
+franz
+\-> (maphash '(lambda (key val) (msg "key " key " value " val N)) black-box)
+key composer value franz
+key key value (the value associated with the key)
+nil
+\-> (clrhash black-box)
+hash-table[26]
+\-> (hash-table-count black-box)
+0
+\-> (maphash '(lambda (key val) (msg "key " key " value " val N)) black-box)
+nil
+
+; here is an example using "equal" as the comparator
+\-> (setq ht (makeht 10 'equal))
+hash-table[16]
+\-> (setf (gethash '(this is a key) ht) '(and this is the value))
+(this is a key)
+\-> (gethash '(this is a key) ht)
+(and this is the value)
+; the reader makes a new list each time you type it...
+\-> (setq x '(this is a key))
+(this is a key)
+\-> (setq y '(this is a key))
+(this is a key)
+; so these two lists are really different lists that compare "equal"
+; not "eq"
+\-> (eq x y)
+nil
+; but since we are using "equal" to compare keys, we are OK...
+\-> (gethash x ht)
+(and this is the value)
+\-> (gethash y ht)
+(and this is the value)
+.Ee

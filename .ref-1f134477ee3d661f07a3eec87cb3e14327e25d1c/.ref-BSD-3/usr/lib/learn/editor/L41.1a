@@ -1,0 +1,44 @@
+#print
+One thing you must be careful of is that the substitute
+command does not know about word boundaries.  It will
+change the first occurrence of a letter string it matches
+without regard to blanks or punctuation around it.  Thus,
+if the current line is
+   i would rather be the king
+and you type
+   s/the/a/p
+you get
+   i would raar be the king
+instead of
+   i would rather be a king
+Right?  You should always print lines after changing them
+to avoid missing such errors.  You can defend against them
+by increasing the amount of context you specify; in this
+case, for example, you could say
+   s/the /a /p
+and get
+   i would rather be a king
+Often the "$" operator is useful here, if you want to
+change the last thing on the line.  In the file 'text',
+the third line reads
+  never, never, never, never, never
+Edit this file to make the third line read
+  never, never, never, never, or hardly ever
+Rewrite the file and type "ready".
+#create Ref
+why should a dog, a horse, a rat, have life,
+and thou no breath at all? thou'lt come no more,
+never, never, never, never, or hardly ever
+pray you, undo this button.  thank you, sir.
+#create text
+why should a dog, a horse, a rat, have life,
+and thou no breath at all? thou'lt come no more,
+never, never, never, never, never
+pray you, undo this button.  thank you, sir.
+#user
+#cmp text Ref
+#log
+#next
+42.1a 10
+41.1b 5
+42.2a 6

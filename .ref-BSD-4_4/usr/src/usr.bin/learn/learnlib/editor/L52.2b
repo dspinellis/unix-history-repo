@@ -1,0 +1,65 @@
+#print
+In this directory is a file "outline".  Find the line that
+begins "B.3.i".  Note that this line, and the next few
+lines, should begin "A"... for  consistency.
+(Print the whole file to see what is going on.  It's fairly short.)
+Change all lines from the line beginning "B.3.i" to the line
+beginning "B.3.v" to begin "A.3".  Then rewrite the file
+and type "ready".
+#create Ref
+First section
+A.1.i    Introduction
+A.1.ii   Definitions
+Second section
+A.2.i    Scope
+A.2.ii   Date effective
+A.2.iii  Who covered
+Third section
+A.3.i    Governing committee
+A.3.ii   Chairman's election
+A.3.iii  Board terms
+A.3.iv   Board elections
+A.3.v    Removal procedure
+Fourth section
+A.4.i    Meetings
+A.4.ii   Place of meeting
+A.4.iii  Frequency of meetings
+Fifth section
+A.5.i    Record keeping
+A.5.ii   Corresponding secretary
+A.5.iii  Recording secretary
+A.5.iv   Financial records
+#create outline
+First section
+A.1.i    Introduction
+A.1.ii   Definitions
+Second section
+A.2.i    Scope
+A.2.ii   Date effective
+A.2.iii  Who covered
+Third section
+B.3.i    Governing committee
+B.3.ii   Chairman's election
+B.3.iii  Board terms
+B.3.iv   Board elections
+B.3.v    Removal procedure
+Fourth section
+A.4.i    Meetings
+A.4.ii   Place of meeting
+A.4.iii  Frequency of meetings
+Fifth section
+A.5.i    Record keeping
+A.5.ii   Corresponding secretary
+A.5.iii  Recording secretary
+A.5.iv   Financial records
+#user
+#cmp outline Ref
+#succeed
+You got it right: I hope you found that the easiest
+way to change the file would be with the commands
+ /B.3.i/p
+ .,/B.3.v/s/B/A/
+or some such series.
+#log
+#next
+52.1b 10

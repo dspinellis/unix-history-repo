@@ -1,0 +1,11 @@
+#print
+Does
+  [^abc]
+match the letter 'd'?  Answer "yes" or "no".
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+34.2c 5

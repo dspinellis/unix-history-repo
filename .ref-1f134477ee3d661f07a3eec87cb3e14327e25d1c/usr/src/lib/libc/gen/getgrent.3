@@ -1,0 +1,166 @@
+.\" Copyright (c) 1989, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getgrent.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETGRENT 3
+.Os
+.Sh NAME
+.Nm getgrent ,
+.Nm getgrnam ,
+.Nm getgrgid ,
+.Nm setgroupent ,
+.\" .Nm setgrfile ,
+.Nm setgrent ,
+.Nm endgrent
+.Nd group database operations
+.Sh SYNOPSIS
+.Fd #include <grp.h>
+.Ft struct group *
+.Fn getgrent void
+.Ft struct group *
+.Fn getgrnam "const char *name"
+.Ft struct group *
+.Fn getgrgid "gid_t gid"
+.Ft struct group *
+.Fn setgroupent "int stayopen"
+.\" .Ft void
+.\" .Fn setgrfile "const char *name"
+.Ft int
+.Fn setgrent void
+.Ft void
+.Fn endgrent void
+.Sh DESCRIPTION
+These functions operate on the group database file
+.Pa /etc/group
+which is described
+in
+.Xr group 5 .
+Each line of the database is defined by the structure
+.Ar group
+found in the include
+file
+.Aq Pa grp.h :
+.Bd -literal -offset indent
+struct group {
+	char	*gr_name;	/* group name */
+	char	*gr_passwd;	/* group password */
+	gid_t	gr_gid;		/* group id */
+	char	**gr_mem;	/* group members */
+};
+.Ed
+.Pp
+The functions
+.Fn getgrnam
+and
+.Fn getgrgid
+search the group database for the given group name pointed to by
+.Ar name
+or the group id pointed to by
+.Ar gid ,
+respectively, returning the first one encountered.  Identical group
+names or group gids may result in undefined behavior.
+.Pp
+The
+.Fn getgrent
+function
+sequentially reads the group database and is intended for programs
+that wish to step through the complete list of groups.
+.Pp
+All three routines will open the group file for reading, if necesssary.
+.Pp
+The
+.Fn setgroupent
+function
+opens the file, or rewinds it if it is already open.  If
+.Fa stayopen
+is non-zero, file descriptors are left open, significantly speeding
+functions subsequent calls.  This functionality is unnecessary for
+.Fn getgrent
+as it doesn't close its file descriptors by default.  It should also
+be noted that it is dangerous for long-running programs to use this
+functionality as the group file may be updated.
+.Pp
+The
+.Fn setgrent
+function
+is identical to
+.Fn setgroupent
+with an argument of zero.
+.Pp
+The
+.Fn endgrent
+function
+closes any open files.
+.Sh RETURN VALUES
+The functions
+.Fn getgrent ,
+.Fn getgrnam ,
+and
+.Fn getgrgid ,
+return a pointer to the group entry if successful; if end-of-file
+is reached or an error occurs a null pointer is returned.
+The functions
+.Fn setgroupent
+and
+.Fn setgrent
+return the value 1 if successful, otherwise the value
+0 is returned.
+The functions
+.Fn endgrent
+and
+.Fn setgrfile
+have no return value.
+.Sh FILES
+.Bl -tag -width /etc/group -compact
+.It Pa /etc/group
+group database file
+.El
+.Sh SEE ALSO
+.Fn getpwent 3 ,
+.Fn group 5
+.Sh HISTORY
+The functions
+.Fn endgrent ,
+.Fn getgrent ,
+.Fn getgrnam ,
+.Fn getgrgid ,
+and
+.Fn setgrent
+appeared in
+.At v7 .
+The functions
+.Fn setgrfile
+and
+.Fn setgroupent
+appeared in
+.Bx 4.3 Reno .
+.Sh COMPATIBILITY
+The historic function
+.Fn setgrfile ,
+which allowed the specification of alternate password databases, has
+been deprecated and is no longer available.
+.Sh BUGS
+The functions
+.Fn getgrent ,
+.Fn getgrnam ,
+.Fn getgrgid ,
+.Fn setgroupent
+and
+.Fn setgrent
+leave their results in an internal static object and return
+a pointer to that object. Subsequent calls to
+the same function
+will modify the same object.
+.Pp
+The functions
+.Fn getgrent ,
+.Fn endgrent ,
+.Fn setgroupent ,
+and
+.Fn setgrent
+are fairly useless in a networked environment and should be
+avoided, if possible.

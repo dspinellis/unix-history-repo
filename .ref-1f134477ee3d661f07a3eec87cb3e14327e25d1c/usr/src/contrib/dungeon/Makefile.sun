@@ -1,0 +1,229 @@
+# Makefile for creating dungeon
+# Edit BIN DDIR and FFLAGS suitable for your system
+# Also, if you are running System V change the .F.o production
+#  and production for dinit.F as indicated.
+#
+# need SUFFIXES for System V (doesn't grok .F)
+.SUFFIXES: .F
+.c.o:
+	cc -c $(CFLAGS) $*.c
+.F.o:
+	f77 -c $(FFLAGS) $*.F
+# For System V use the following production instead:
+#	@/lib/cpp $(CPPFLAGS) $*.F > $*.f
+#	f77 -c $(FFLAGS) $*.f
+#	rm $*.f
+
+# define SYSV if running System V or V7
+CFLAGS = -O # -DSYSV -g -i
+CPPFLAGS = -P
+#
+# f77 compiler flags for BSD Vax (and other similar machines)
+FOPTS = -q # -g -Ddebug
+# use -Nn650 for System V to increase default symbol table size
+# also, define SYSV and no -g flag (causes runtime errors)
+#FOPTS = -q -Nn650 -DSYSV # -Ddebug
+# f77 compiler flags for pdp (64K split I/D)
+#FOPTS = -q -I2 -L1 -i -DPDP # -Nn650 -Ddebug
+# use -DNOCC if system does not react on carriage control (e.g. Unix)
+FFLAGS = -O -DNOCC $(FOPTS)
+
+# flags for the loader
+LDFLAGS = # -s -g -v
+
+# Directory path for main program - default /usr/games
+BIN = /usr/games
+# Directory path for data files - default is /usr/games/lib/dunlib
+LIB = /usr/games/lib/dunlib
+DDIR = \'/usr/games/lib/dunlib
+DCDIR =\"/usr/games/lib/dunlib
+# Directory path for man page - default /usr/manl/man6
+MDIR = /usr/manl/man6
+# userid for wizard - allows invoking game debugging tool - default 0
+WIZDEF = -DWIZARDID=320
+
+HDRS =	advers.h clock.h curxt.h debug.h exits.h files.h flags.h\
+	gamestate.h io.h mindex.h objects.h oflags.h oindex.h\
+	parser.h puzzle.h rflag.h rindex.h rooms.h screen.h state.h\
+	verbs.h villians.h vocab.h xpars.h xsrch.h
+
+FSRC =  actors.F ballop.F clockr.F demons.F\
+	dgame.F dinit.F dmain.F dso1.F dso2.F\
+	dso3.F dso4.F dso5.F dso6.F dso7.F\
+	dsub.F dverb1.F dverb2.F gdt.F lightp.F\
+	nobjs.F np.F np1.F np2.F np3.F nrooms.F objcts.F\
+	rooms.F sobjs.F sverbs.F verbs.F villns.F
+
+CSRC =	cinit.c cio.c cspeak.c decode.c lex.c listen.c rtim.c
+
+OBJS =  actors.o ballop.o clockr.o demons.o\
+	dgame.o dinit.o dmain.o dso1.o dso2.o\
+	dso3.o dso4.o dso5.o dso6.o dso7.o\
+	dsub.o dverb1.o dverb2.o gdt.o lightp.o\
+	nobjs.o np.o np1.o np2.o np3.o nrooms.o objcts.o\
+	rooms.o rtim.o sobjs.o sverbs.o verbs.o villns.o
+
+PDPOBJS = cinit.o cio.o lex.o
+LISTEN = listen.o
+SPEAK = cspeak.o speak.o
+
+vax:	dungeon dtext.dat
+pdp:	dungpdp speak listen dtext.dat
+
+dungeon: $(OBJS)
+	f77 -o dungeon $(OBJS) $(LDFLAGS)
+	@echo done
+
+dungpdp: $(OBJS) $(PDPOBJS)
+	f77 -i -s -o dungpdp $(OBJS) $(PDPOBJS)
+	@echo done
+
+speak:	$(SPEAK)
+	f77 -i -s -o speak $(SPEAK)
+	
+speak.o: speak.F
+	f77 $(FFLAGS) -DDDIR=$(DDIR) -c speak.F
+# For System V use the following instead:
+#	@/lib/cpp $(CPPFLAGS) speak.F > speak.f
+#	f77 $(FFLAGS) -DDDIR=$(DDIR) -c speak.f
+#	rm $*.f
+
+listen:	$(LISTEN)
+	cc $(CFLAGS) -o listen $(LISTEN)
+
+listen.o: listen.c
+	cc $(CFLAGS) -DCINDEXFILE=$(DCDIR)/dindx.dat\" -c listen.c
+
+dinit.o: dinit.F
+	f77 $(FFLAGS) -DDDIR=$(DDIR) $(WIZDEF) -c dinit.F
+# For System V use the following instead:
+#	@/lib/cpp $(CPPFLAGS) dinit.F > dinit.f
+#	f77 $(FFLAGS) -DDDIR=$(DDIR) $(WIZDEF) -c dinit.f
+#	rm $*.f
+
+# uncomment the following for Suns to get around an optimizer bug
+# -P means partial optimization.
+#objcts.o: objcts.F
+#	f77 $(FOPTS) -P -c objcts.F
+
+install-vax: vax
+	cp dungeon $(BIN)
+	-mkdir $(LIB)
+	cp dindx.dat dtext.dat $(LIB)
+	cp dungeon.6 $(MDIR)/dungeon.6
+
+install-pdp: pdp
+	cp dungeon.sh $(BIN)
+	-mkdir $(LIB)
+	cp dindx.dat dtext.dat rtext.dat dungpdp $(LIB)
+	cp dungeon.6 $(MDIR)/dungeon.6
+
+dtext.dat: 
+	./maketxt.sh
+
+
+clean:
+	-rm $(OBJS) Mk* core makedep eddep
+
+depend:
+	grep '^#include' $(FSRC) $(CSRC) $(HDRS) | grep -v '<' | \
+	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
+	    -e 's/\.c/.o/' \
+	    -e 's/\.F/.o/' \
+	    -e 's,../[a-zA-Z]*/,,' | \
+	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		       else rec = rec " " $$2 } } \
+	      END { print rec } ' > makedep
+	echo '$$r makedep' >>eddep
+	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+
+actors.o: parser.h gamestate.h rooms.h rflag.h rindex.h xsrch.h objects.h
+actors.o: oflags.h oindex.h clock.h advers.h verbs.h flags.h gamestate.h
+actors.o: debug.h rooms.h rflag.h rindex.h objects.h oflags.h oindex.h
+actors.o: villians.h flags.h
+ballop.o: parser.h gamestate.h state.h rooms.h rflag.h curxt.h xpars.h
+ballop.o: objects.h oflags.h oindex.h clock.h verbs.h flags.h
+clockr.o: gamestate.h state.h rooms.h rflag.h rindex.h objects.h oflags.h
+clockr.o: oindex.h clock.h curxt.h xsrch.h villians.h advers.h flags.h
+clockr.o: gamestate.h objects.h oflags.h clock.h
+demons.o: parser.h gamestate.h objects.h oflags.h oindex.h villians.h advers.h
+demons.o: verbs.h flags.h gamestate.h parser.h objects.h oflags.h clock.h
+demons.o: advers.h verbs.h gamestate.h curxt.h xsrch.h objects.h oindex.h
+demons.o: villians.h advers.h rindex.h objects.h oindex.h villians.h flags.h
+dgame.o: parser.h gamestate.h state.h io.h rooms.h rindex.h objects.h oflags.h
+dgame.o: oindex.h advers.h verbs.h flags.h parser.h villians.h gamestate.h
+dgame.o: objects.h advers.h
+dinit.o: files.h parser.h gamestate.h state.h screen.h mindex.h io.h debug.h
+dinit.o: rooms.h rflag.h rindex.h exits.h curxt.h xpars.h objects.h oindex.h
+dinit.o: clock.h villians.h advers.h flags.h
+dmain.o: parser.h gamestate.h state.h screen.h puzzle.h io.h debug.h rooms.h
+dmain.o: rflag.h rindex.h exits.h curxt.h xpars.h xsrch.h objects.h oflags.h
+dmain.o: oindex.h clock.h villians.h advers.h verbs.h flags.h
+dso1.o: gamestate.h rooms.h rflag.h objects.h oflags.h oindex.h advers.h
+dso1.o: flags.h gamestate.h objects.h oflags.h advers.h objects.h
+dso2.o: gamestate.h rooms.h rflag.h objects.h oindex.h advers.h gamestate.h
+dso2.o: state.h advers.h flags.h gamestate.h state.h clock.h advers.h flags.h
+dso3.o: rooms.h exits.h curxt.h xpars.h objects.h oflags.h
+dso4.o: objects.h oflags.h objects.h oflags.h objects.h state.h advers.h
+dso4.o: parser.h objects.h oflags.h oindex.h villians.h flags.h
+dso5.o: parser.h objects.h oflags.h verbs.h rooms.h rflag.h objects.h oflags.h
+dso5.o: advers.h objects.h
+dso6.o: rooms.h rflag.h rindex.h rindex.h flags.h
+dso7.o: rooms.h rflag.h rindex.h objects.h oflags.h flags.h flags.h
+dsub.o: gamestate.h mindex.h io.h parser.h objects.h debug.h objects.h
+dsub.o: objects.h objects.h parser.h gamestate.h state.h io.h debug.h rooms.h
+dsub.o: rflag.h rindex.h objects.h oflags.h oindex.h advers.h flags.h advers.h
+dsub.o: flags.h parser.h gamestate.h screen.h rooms.h rflag.h xsrch.h objects.h
+dsub.o: advers.h verbs.h flags.h
+dverb1.o: parser.h gamestate.h state.h objects.h oflags.h advers.h parser.h
+dverb1.o: gamestate.h rindex.h objects.h oflags.h advers.h verbs.h parser.h
+dverb1.o: gamestate.h objects.h oflags.h advers.h verbs.h parser.h gamestate.h
+dverb1.o: objects.h oflags.h verbs.h
+dverb2.o: parser.h gamestate.h state.h screen.h puzzle.h rooms.h exits.h
+dverb2.o: objects.h clock.h villians.h advers.h flags.h parser.h gamestate.h
+dverb2.o: state.h screen.h puzzle.h rooms.h exits.h objects.h clock.h
+dverb2.o: villians.h advers.h flags.h parser.h gamestate.h rooms.h rflag.h
+dverb2.o: curxt.h xsrch.h objects.h oflags.h clock.h villians.h advers.h
+dverb2.o: flags.h gamestate.h parser.h puzzle.h rooms.h rindex.h exits.h
+dverb2.o: curxt.h xpars.h xsrch.h objects.h oflags.h oindex.h advers.h flags.h
+gdt.o: parser.h gamestate.h state.h screen.h puzzle.h io.h mindex.h debug.h
+gdt.o: rooms.h rindex.h exits.h objects.h oindex.h clock.h villians.h advers.h
+gdt.o: flags.h
+lightp.o: parser.h gamestate.h objects.h oflags.h oindex.h clock.h verbs.h
+lightp.o: flags.h
+nobjs.o: parser.h gamestate.h state.h screen.h puzzle.h rooms.h rflag.h
+nobjs.o: rindex.h objects.h oflags.h oindex.h clock.h villians.h advers.h
+nobjs.o: verbs.h flags.h gamestate.h parser.h verbs.h flags.h
+np.o: parser.h io.h debug.h parser.h xsrch.h parser.h debug.h
+np1.o: parser.h gamestate.h debug.h objects.h oindex.h advers.h verbs.h vocab.h
+np2.o: parser.h gamestate.h debug.h objects.h oflags.h advers.h vocab.h
+np2.o: objects.h oflags.h vocab.h
+np3.o: parser.h vocab.h debug.h vocab.h parser.h objects.h parser.h parser.h
+np3.o: gamestate.h state.h objects.h oflags.h advers.h parser.h gamestate.h
+np3.o: objects.h oflags.h advers.h
+nrooms.o: parser.h gamestate.h state.h io.h rooms.h rflag.h rindex.h objects.h
+nrooms.o: oflags.h oindex.h xsrch.h clock.h advers.h verbs.h flags.h
+nrooms.o: gamestate.h flags.h rindex.h flags.h
+objcts.o: parser.h gamestate.h state.h rooms.h rflag.h rindex.h objects.h
+objcts.o: oflags.h oindex.h clock.h advers.h verbs.h flags.h
+rooms.o: parser.h gamestate.h state.h rooms.h rflag.h rindex.h objects.h
+rooms.o: oflags.h oindex.h clock.h villians.h advers.h verbs.h flags.h
+sobjs.o: parser.h gamestate.h state.h rooms.h rflag.h rindex.h objects.h
+sobjs.o: oflags.h oindex.h clock.h villians.h advers.h verbs.h flags.h
+sverbs.o: parser.h gamestate.h state.h screen.h io.h rooms.h rflag.h rindex.h
+sverbs.o: exits.h curxt.h xpars.h xsrch.h objects.h oflags.h oindex.h clock.h
+sverbs.o: advers.h verbs.h flags.h
+verbs.o: parser.h gamestate.h state.h rooms.h rflag.h rindex.h xsrch.h
+verbs.o: objects.h oflags.h oindex.h advers.h verbs.h clock.h
+villns.o: parser.h gamestate.h objects.h oflags.h oindex.h verbs.h flags.h
+villns.o: parser.h gamestate.h objects.h oflags.h oindex.h verbs.h flags.h
+villns.o: parser.h gamestate.h rindex.h objects.h oflags.h oindex.h clock.h
+villns.o: villians.h verbs.h flags.h

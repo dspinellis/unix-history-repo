@@ -1,0 +1,36 @@
+#print
+You can also use "-" in addresses.
+For example, you can print the
+line before the current line with
+  .-1p
+as a command.  Again, I'll put
+you in the editor; print the fifth
+line and then the fourth, using this
+command to print lines in reverse
+order.  Then leave with w, q, and ready.
+#create Ref
+carrots
+squash
+83
+#create file
+broccoli
+mushrooms
+cauliflower
+squash
+carrots
+lettuce
+string beans
+peas
+lima beans
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -3 .ocopy >X1
+#cmp Ref X1
+#log
+#next
+9.1a 10
+9.2a 5

@@ -1,0 +1,10 @@
+ls *.out 
+echo "Comparing..."
+for i in `ls *.out`
+do
+	cmp $i  /usr/lib/ditroff/font/devhar/$i
+done
+echo You have 10 seconds to abort
+sleep 10
+cp *.out  /usr/lib/ditroff/font/devhar
+rm *.out 

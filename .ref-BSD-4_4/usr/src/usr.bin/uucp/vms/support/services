@@ -1,0 +1,64 @@
+#
+# DoD Internet Services Database
+#
+#
+# Network standard functions
+#
+echo		7/tcp
+echo		7/udp
+sink		9/tcp		discard null
+sink		9/udp		discard null
+users		11/tcp		systat
+users		11/udp		systat
+daytime		13/tcp
+daytime		13/udp
+netstat		15/tcp
+netstat		15/udp
+qotd		17/tcp		quote
+qotd		17/udp		quote
+chargen		19/tcp	
+chargen		19/udp	
+ftp		21/tcp
+telnet		23/tcp
+smtp		25/tcp		mail
+time		37/tcp		timeserver
+time		37/udp		timeserver
+name		42/tcp		nameserver
+name		42/udp		nameserver
+whois		43/tcp		nicname
+whois		43/udp		nicname
+mtp		57/tcp				# depreciated
+hostnames	101/tcp		hostname	# from sri-nic
+#
+# Host specific functions
+#
+tftp		69/udp
+rje		77/tcp
+finger		79/tcp
+finger		79/udp
+link		87/tcp		ttylink
+supdup		95/tcp
+#
+# UNIX TCP sockets
+#
+exec		512/tcp		execserver
+login		513/tcp		loginserver
+shell		514/tcp		cmdserver
+printer		515/tcp		lprserver
+tty		516/tcp		ttyserver	# for ttyd
+efs		520/tcp		efsserver	# for LucasFilm
+courier		530/tcp		rpc		# experimental
+uucp		540/tcp		uucpserver
+ingreslock	1524/tcp
+#
+# UNIX UDP sockets
+#
+biff		512/udp		comsat
+who		513/udp		whod
+syslog		514/udp
+talk		517/udp
+router_0	520/udp		router routed
+router_1	521/udp
+new-rwho	550/udp		new-who		# experimental
+rmonitor	560/udp		rmonitord	# experimental
+monitor		561/udp				# experimental

@@ -1,0 +1,273 @@
+#! /bin/sh
+: '/*********************************************************************
+	uuusage
+		Print summary of UUCP usage
+	Alan S. Watt
+   
+	Sccsid=@(#)uuusage.sh	1.1
+
+	usage:
+		uuusage [-s] [-t] [period]
+
+	arguments:
+		-s	Just produce the system summary; dont include
+			individual user statistics.
+
+		-t	Produce tbl(1) output.
+
+		period	One of:
+			  today		Just print todays activities
+			  week		Week to date totals
+			  month		Month to date totals
+			  m_name	Totals for month <m_name> which
+					is a three letter abbreviation
+					for the month name.
+   
+	history:
+		02/28/83	original version
+   *********************************************************************/'
+
+: 'format of SYSLOG is:'
+:	'cox onyxasw (4/16-18:24) received data 98 bytes 1 secs'
+: 'format for newer version of UUCP stuff is:'
+:	'swatt decvax (12/30-21:15) (378612944) sent data 64 bytes 0 secs'
+: 'array usage:'
+: '	files[name] == total number of files transferred'
+: '	bytes[name] == total number of bytes sent'
+: '	time[name] == total time spent by user'
+: '	totfiles,tottime,totbytes are like above, but totals'
+: '	sfiles[sname] == files transferred at request of system sname'
+: '	sbytes[sname] == bytes sent/received at request of sname'
+: '	stime[sname] == time spent at request of sname'
+
+libdir=/usr/lib/uucp
+uudir=/usr/spool/uucp
+uutbl=$libdir/uutbl
+slogprefix="$uudir/OLD/SYSLOG"
+ologprefix="$uudir/OLD/UUUSAGE"
+month=
+tbloutput=0
+systmonly=0
+for arg
+do
+	case $arg in
+	-s)	: 'Only print system usage'
+		systmonly=1
+		;;
+	-t)	: 'Generate TBL commands'
+		tbloutput=1 ; systmonly=1
+		;;
+	today)	files="$uudir/SYSLOG"
+		;;
+	week)	files="$slogprefix.week $uudir/SYSLOG"
+		;;
+	month)	files="$slogprefix.month $slogprefix.week $uudir/SYSLOG"
+		;;
+	[Jj]an)	month=Jan
+		;;
+	[Ff]eb)	month=Feb
+		;;
+	[Mm]ar)	month=Mar
+		;;
+	[Aa]pr)	month=Apr
+		;;
+	[Mm]ay)	month=May
+		;;
+	[Jj]un)	month=Jun
+		;;
+	[Jj]ul)	month=Jul
+		;;
+	[Aa]ug)	month=Aug
+		;;
+	[Ss]ep)	month=Sep
+		;;
+	[Oo]ct)	month=Oct
+		;;
+	[Nn]ov)	month=Nov
+		;;
+	[Dd]ec)	month=Dec
+		;;
+	*)	files="$files $arg"
+		;;
+	esac
+done
+
+: 'look for short cut on monthly summaries.  If we have one,
+   just dump the summary, deleting the user information part if
+   -s set; running output through $utbl if -t set.
+  '
+case $month in
+'')	;;
+*) \
+	if [ -s ${ologprefix}.${month} ]
+	then
+		case $systmonly$tbloutput in
+		"00")	grep -v "uuusage: mangled record" \
+				${ologprefix}.${month}
+			;;
+		"10")	grep -v "uuusage: mangled record" \
+				${ologprefix}.${month} \
+				| sed -e '2,/^$/d'
+			;;
+		"01"|"11") \
+			uuusage -s ${month} | $uutbl
+			;;
+		esac
+		exit
+	else
+		files=${slogprefix}.${month} 
+	fi ;;
+esac
+
+: 'Default report: today"s transfers'
+case $files in
+  '')	files="$uudir/SYSLOG"
+		;;
+esac
+
+case $tbloutput in
+ 1)	uuusage -s ${files} | $uutbl
+	exit ;;
+esac
+
+flist=
+for f in $files
+do
+	if [ -r $f ]
+	then
+		flist="$flist $f"
+	else
+		echo "$f: Cannot read file"
+	fi
+done
+
+set " " $flist ; shift
+case $# in
+0)	echo "no files to process" ; exit 1 ;;
+esac
+
+awk '
+BEGIN {
+	systmonly='"$systmonly"'
+	fmon = 1000; lmon = -1000
+	oldnf = 9; newnf = 10
+	# User Format:
+	# user files bytes time Avgsiz Avgtim
+	dfmt = "%-10s%6d%10d%8d%7d%7d\n"
+	sfmt = "%-10s%6s%10s%8s%7s%7s\n"
+	# System Format:
+	# system files bytes time Avgsiz Avgtim rate
+	sfmt1 = "%-10s%6s%10s%8s%7s%7s%7s\n"
+	dfmt1 = "%-10s%6d%10d%8d%7d%7d%7d\n"
+	space = ""
+
+	# width of output for centering purposes
+	width = 52
+}
+(NR == 1) {
+
+	# Protect against partial records
+	maxfields = NF
+	if (NF == oldnf)
+		oldfmt++
+	else if (NF == newnf)
+		newfmt++
+	else {
+		# cant seem to get awk to really exit here
+		# it still tries to produce the report
+		printf "uuusage: mangled format of 1st record\n"
+		printf "must be either %d or %d fields\n", oldnf, newnf
+		exit (1)
+	}
+}
+(NF != maxfields) {
+	printf "uuusage: mangled record #%d in file %s (ignored)\n", \
+		NR, FILENAME
+}
+(NF == maxfields) {
+
+	# protect against format changes
+	D_name = $1
+	D_sname = $2
+	D_date = $3
+
+	# Old (V7/32V format vs. system III format)
+	if (oldfmt) {
+		D_bytes = $6
+		D_time = $8
+	}
+	else if (newfmt) {
+		D_bytes = $7
+		D_time = $9
+	}
+
+	# protect against division by 0
+	if (D_time == 0)
+		D_time = 1
+
+	# stash user usage info
+	if (!systmonly) {
+		name[D_name] = D_name; bytes[D_name] += D_bytes
+		time[D_name] += D_time; files[D_name] += 1
+	}
+
+	# stash system usage info
+	sname[D_sname] = D_sname; sbytes[D_sname] += D_bytes
+	stime[D_sname] += D_time
+	sfiles[D_sname] += 1
+
+	# get the date of the transfer
+	n = index (D_date, "/")
+	cmon = substr (D_date, 2, n-2)
+	m = index (D_date, "-")
+	n++
+	cday = substr (D_date, n, m-n)
+
+
+	# keep earliest and latest dates (naive about new year)
+	if (int(cmon) < int(fmon) || (cmon == fmon && int(cday) < int(fday))) {
+		fmon = cmon
+		fday = cday
+	}
+	if (int(cmon) > int(lmon) || (cmon == lmon && int(cday) > int(lday))) {
+		lmon = cmon
+		lday = cday
+	}
+}
+END {
+	banner = sprintf "UUCP Usage from %s/%s to %s/%s", \
+		fmon,fday,lmon,lday
+	precision = (width-length(banner))/2
+	format = sprintf "%%%ds\n", precision + length(banner)
+	printf format, banner
+	if (!systmonly) {
+		printf sfmt, "user", "files", "bytes", "time", \
+			"Avgsiz", "Avgtim"
+		totfiles=0; totbytes=0; tottime=0
+		for (n in name) {
+			printf dfmt, n, files[n], bytes[n], time[n], \
+				bytes[n]/files[n], time[n]/files[n]
+			totfiles += files[n]
+			totbytes += bytes[n]
+			tottime += time[n]
+		}
+		printf dfmt, "total", totfiles, totbytes, tottime, \
+			totbytes/totfiles, tottime/totfiles
+		print space
+	}
+
+	# now print system usage info
+	printf sfmt1, "system", "files", "bytes", "time", \
+		"Avgsiz", "Avgtim", "rate"
+	totfiles=0; totbytes=0; tottime=0
+	for (n in sname) {
+		printf dfmt1, n, sfiles[n], sbytes[n], stime[n], \
+			sbytes[n]/sfiles[n], stime[n]/sfiles[n], \
+			sbytes[n]/stime[n]
+		totfiles += sfiles[n]
+		totbytes += sbytes[n]
+		tottime += stime[n]
+	}
+	printf dfmt1, "total", totfiles, totbytes, tottime, \
+		totbytes/totfiles, tottime/totfiles, totbytes/tottime
+} ' $flist

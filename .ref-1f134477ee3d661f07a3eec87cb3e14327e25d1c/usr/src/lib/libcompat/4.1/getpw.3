@@ -1,0 +1,52 @@
+.\" Copyright (c) 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)getpw.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETPW 3
+.Os
+.Sh NAME
+.Nm getpw
+.Nd get name from uid
+.Sh SYNOPSIS
+.Fn getpw uid "char *buf"
+.Sh DESCRIPTION
+.Bf -symbolic
+The getpw function is made obsolete by getpwuid(3).
+.br
+It is available from the compatibility library, libcompat.
+.Ef
+.Pp
+The
+.Fn getpw
+function reads the file
+.Pa /etc/passwd ,
+and if it finds
+the specified
+.Fa uid ,
+copies the password entry line into the string pointed to by
+.Fa buf .
+the null terminated entry line from the password database,
+and appends the
+.Dv NUL
+character.
+.Sh RETURN VALUES
+The
+.Fn getpw
+function returns the zero if successful, otherwise 
+a non-zero if the entry does not exist.
+.Sh FILES
+.Bl -tag -width /etc/passwd - compact
+.It Pa /etc/passwd
+.El
+.Sh SEE ALSO
+.Xr getpwent 3 ,
+.Xr passwd 5
+.Sh HISTORY
+A
+.Fn getpw
+function appeared in
+.At v6 .

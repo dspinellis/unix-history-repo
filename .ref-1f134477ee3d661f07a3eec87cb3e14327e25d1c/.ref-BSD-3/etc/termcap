@@ -1,0 +1,255 @@
+# Mail changes to vax:mark (or research!ucbvax!mark) or lose them!
+su|dumb|un|unknown:co#80:os:
+sp|plugboard|pb:co#80:os:
+sa|arpanet|an|network:co#80:os:
+sd|dialup|du:co#80:os:
+sb|bussiplexer|bx:co#80:os:
+la|adm3a|3a|lsi adm3a:\
+	:am:bs:cm=\E=%+ %+ :cl=^Z:co#80:ho=^^:li#24:ma=j^Jk^P^K^Pl :nd=^L:up=^K:
+h2|hp2621|hp2621a|hp2621p|2621|2621a|2621p|hp 2621:\
+	:is=\E&j@\r\E3\r:if=/usr/lib/tabset/std:\
+	:al=\EL:am:bs:bt=\Ei:cd=\EJ:ce=\EK:cl=\EH\EJ:\
+	:cm=\E&a%r%dc%dY:co#80:da:db:dc=2\EP:dl=\EM:ei=\ER:\
+	:im=\EQ:ip=2:li#24:mi:nd=\EC:pt:se=\E&d@:so=\E&dB:up=\EA:\
+	:kh=\Ep\r:ku=\Et\r:kl=\Eu\r:kr=\Ev\r:kd=\Ew\r:\
+	:kn#8:k1=\Ep\r:k2=\Eq\r:k3=\Er\r:k4=\Es\r:k5=\Et\r:k6=\Eu\r:k7=\Ev\r:\
+	:k8=\Ew\r:ks=\E&jB:ke=\E&j@:ma=j^Jk^P^K^Pl :
+cr|c100rv|c100 rev video:\
+	:is=\EU\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200\Eo\47\E:vs@:ve@:\
+	:vb=\EK\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ek:\
+	:tc=c100:
+co|c100|concept|concept100|concept 100:\
+	:is=\EU\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E:\
+	:al=3*\E^R:am:bs:cd=16*\E^C:ce=16\E^S:cl=2*^L:cm=\Ea%+ %+ :co#80:\
+	:dc=16\E^A:dl=3*\E^B:ei=\E\200:eo:im=\E^P:in:ip=16*:li#24:mi:nd=\E=:\
+	:ta=8\t:ul:up=\E;:db:xn:vs=\EW:ve=\Ew:\
+	:vb=\Ek\200\200\200\200\200\200\200\200\200\200\200\200\200\200\EK:\
+	:us=\EG:ue=\Eg:ks=\EX:ke=\Ex:ku=\E;:kd=\E<:kl=\E>:kr=\E=:kh=\E?:\
+	:k1=\E5:k2=\E6:k3=\E7:DN#9:dC#9:
+mm|mime|mime1|mime2|mimei|mimeii|microterm mime:\
+	:al=80^A:am:bs:cd=^_:ce=^^:cl=\035^C:cm=^T%.%.:co#80:dl=80^W:li#24:\
+	:nd=^X:pt:uc=^U:up=^z:ho=\035:dn=^K:\
+	:ma=^X ^K^J^Z^Pj^Jk^Pl :ku=^Z:kd=^K:kl=^H:kr=^X:
+k1|h19|heath|heathkit|heathkit h19:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:dl=\EM:\
+	:dn=\EB:ei=\EO:ho=\EH:im=\E@:li#24:mi:nd=\EC:\
+	:pt:se=\Eq:so=\Ep:up=\EA:vs=\Ex4:ve=\Ey4:\
+	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\EH:kn#8:\
+	:k1=\ES:k2=\ET:k3=\EU:k4=\EV:k5=\EW:\
+	:l6=BLUE:l7=RED:l8=WHITE:k6=\EP:k7=\EQ:k8=\ER:
+l3|adm3|3|lsi adm3:\
+	:am:bs:cl=^Z:li#24:ma=j^Jk^P^K^Pl :co#80:
+A6|1620|450|diablo 1620:\
+	:if=/usr/lib/tabset/std:\
+	:bs:co#132:ff=^L:hc:hu=\EU:hd=\ED:os:pt:up=\E\n:
+Ad|dtc300s|300|300s|gsi|dtc|dtc 300s:\
+	:if=/usr/lib/tabset/std:\
+	:bs:co#132:ff=^L:hc:hu=\EH:hd=\Eh:os:pt:up=^Z:
+Ca|cdc456|cdc:\
+	:li#24:co#80:cl=^Y^X:nd=^L:up=^Z:bs:ca:\
+	:cm=\E1%+ %+ :ho=^Y:al=\E\114:dl=\E\112:ce=^V:cd=^X:am:
+Cc|cdc456tst:\
+	:li#24:co#80:cl=^y^x:bs:ca:cm=\E1%+ %+ :am:
+D0|dm1520|1520|datamedia 1520:\
+	:am:bs:cd=^K:ce=^]:cl=^L:cm=^^%r%+ %.:co#80:ho=^Y:\
+	:ku=^_:kd=^J:kl=^H:kr=^\:kh=^Y:\
+	:li#24:nd=^\:up=^_:xn:ma=^\ ^_^P^YH:
+D1|dm1521|1521|datamedia 1521:\
+	:am:bs:cd=^K:ce=^]:cl=^L:cm=^^%r%+ %.:co#80:ho=^Y:\
+	:ku=^_:kd=^J:kl=^H:kr=^\:kh=^Y:\
+	:li#24:nd=^\:up=^_:xn:ma=^\ ^_^P^YH:pt:
+D2|dm2500|datamedia2500|2500|datamedia 2500:\
+	:al=15^P\n^X^]^X^]:bs:ce=^W:cl=^^^^\177:cm=^L%r%n%.%.:co#80:\
+	:dc=10*\b:dl=10*^P^Z^X^]:dm=^P:ed=^X^]:ei=10\377\377^X^]:ho=^B:ic10*^\:\
+	:im=^P:li#24:nc:nd=^\:pc=\377:so=^N:se=^X^]:up=^Z:
+D3|dm3025|datamedia 3025a:is=\EQ\EU\EV:\
+	:al=130\EP\n\EQ:bs:cd=2\EJ:ce=\EK:cl=2\EM:cm=\EY%r%+ %+ :\
+	:co#80:dc=6\b:dl=130\EP\EA\EQ:dm=\EP:ed=\EQ:ei=\EQ:ho=\EH:\
+	:im=\EP:ip=6:li#24:nd=\EC:pt:so=\EOA:se=\EO@:up=\EA:
+D4|dm3045|datamedia 3045a:is=\EU\EV:\
+	:bs:cd=2\EJ:ce=\EK:cl=2\EM:cm=\EY%r%+ %+ :\
+	:co#80:DC=6\b:DM=\EP:ED=\EP:EI=\EP:ho=\EH:\
+	:k0=\Ey\r:k1=\Ep\R:k2=\Eq\R:k3=\Er\r:k4=\Es\r:\
+	:k5=\Et\r:k6=\Eu\r:k7=\Ev\r:k8=\Ew\r:k9=\Ex\r:\
+	:IC=6:IM=\EP:IP=6:li#24:nd=\EC:pc=\177:pt:ul:up=\EA:
+Gs|gsi:\
+	:bs:co#132:hc:hd=\Eh:hu=\EH:it:os:pl:pt:up=^Z:
+H5|h1500|hazeltine 1500:\
+	:al=~^Z:am:bs:cd=~^X:ce=~^O:cl=~^\:cm=~^Q%r%.%.:co#80:\
+	:dl=~^S:do=~^K:hz:li#24:nd=^P:se=~^Y:so=~^_:up=~^L:
+H6|h1510|hazeltine 1510:\
+	:al=\E^Z:am:bs:cd=\E^X:ce=\E^O:cl=\E^\:cm=\E^Q%r%.%.:co#80:\
+	:dl=\E^S:do=\E^K:hz:li#24:ma=j^Jk^P^K^Pl :nd=^P:se=\E^Y:so=\E^_:up=\E^L:
+H7|h2000|hazeltine 2000:\
+	:al=6~^z:am:bs:cl=6~^\:cm=~^q%r%.%.:co#74:\
+	:dl=6~^s:ho=~^r:li#27:nc:pc=\177:
+I8|8001|ISC8001:al=\EU:am:bc=^Z:cl=3*^L:cm=^C%r%.%.:co#80:\
+	:cd=\EQ:dm=\EQ:ed=\EF:\
+	:dc=\177:dl=\EV:ei=\EF:im=\EQ:li#40:nd=1^Y:ta=8\t:\
+	:up=^\:ho=1^H:pc=^@:
+L3|digilog|333|digilog 333:bs:co#80:ce=\030:ho=^n:li#16:nd=^i:up=^o:
+PD|datapoint|dp3|dp|dp3360|datapoint 3360:\
+	:am:bs:cd^_:ce=^^:cl=^]^_:co#82:ho=^]:li#25:nd=^x:up=^z:
+T3|33|tty33|tty|model 33 teletype:\
+	:co#72:hc:os:
+T4|43|tty43|model 43 teletype:\
+	:am:bs:hc:os:co#132:
+T7|37|tty37|model 37 teletype:\
+	:bs:hc:hu=\E8:hd=\E9:up=\E7:os:
+X1|tek4014|tek4013|4014|4013|tektronix 4013|tektronix 4014:\
+	:is=\E\072:bs:cl=1000\E^L:co#120:HC:ns:li#56:os:
+aa|annarbor|ann arbor:\
+	:cm=^O%r%b3%b4:co#80:li#40:bs:cl=^L^O^P:up=^N:nd=^_:ho=^K:am:\
+	:kd=^J:ku=^N:kl=^H:kr=^_:kh=^K:ma=^_ ^N^P:
+bh|bh3m|beehiveIIIm:if=/usr/lib/tabset/beehive:\
+	:al=160^S:am:bs:cd=^R:ce=^P:cl=^E^R:co#80:dl=300^Q:ho=^E:li#20:ll=^E^K:\
+	:nd=^L:pt:se= ^_:so=^] :up=^K:
+c4|c1004p|c100 w/4 pages:\
+	:ti=\EU\Ev  8p\Ep\r:te=\Ev  ~p\Ep\r\n:vs@:ve@:tc=c100:
+cR|c100rv4p|c100 w/4 pages:\
+	:ti=\EU\Ev  8p\Ep\r:te=\Ev  ~p\Ep\r\n:tc=c100rv:
+cs|c100s|slowconcept|slowconcept100|slow concept 100:\
+	:vb=\Ek\200\EK:pt:dC@:dN@:tc=c100:
+cd|c100rvs|slow reverse concept 100:\
+	:vb=\EK\200\Ek:pt:dN@:tc=c100rv:
+d2|gt42|dec gt42:\
+	:bs:co#72:ns:li#40:os:
+d4|gt40|dec gt40:\
+	:bs:co#72:ns:li#30:os:
+d5|vt50|dec vt50:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:pt:up=\EA:
+dI|dw1|decwriter I:\
+	:bs:co#72:hc:os:
+dh|vt50h|dec vt50h:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#12:nd=\EC:\
+	:pt:sr=\EI:up=\EA:
+dv|vt52|dec vt52:\
+	:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:cm=\EY%+ %+ :co#80:li#24:nd=\EC:\
+	:pt:sr=\EI:up=\EA:lm=A^PB^NC D^H:
+dw|dw2|decwriter II:\
+	:bs:co#132:hc:os:
+e1|ep48|ep4080|execuport 4080:am:bs:os:co#80:hu=\036:hd=\034:
+e2|ep40|ep4000|execuport 4000:am:bs:os:co#136:hu=\036:hd=\034:
+g2|1200|tn1200|terminet 1200:\
+	:co#120:hc:os:
+g3|300|tn300|terminet 300:\
+	:co#120:hc:os:
+# Note: no "ho" on HP's since that homes to top of memory, not screen.
+h4|hp|hp2645|2645|2640|2640a|2640b|hp 264x series:\
+	:if=/usr/lib/tabset/std:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:ch=\E&a%2C:cl=\EH\EJ:cm=6\E&a%r%2c%2Y:\
+	:co#80:cv=\E&a%2Y:da:db:dc=\EP:dl=\EM:ei=\ER:gu:im=\EQ:\
+	:ma=j^Jk^P^K^Pl :ku=\EA:kd=\EB:kl=\EC:kr=\ED:kh=\EH:\
+	:li#24:mi:nd=\EC:pt:se=\E&d@:so=\E&dB:up=\EA:
+h8|hp2648|2648:is=\E3\Eg\r:if=/usr/lib/tabset/std:\
+	:al=\EL:am:bs:dC#80:cd=\EJ:ce=\EK:ch=\E&a%2C:cl=\EH\EJ:\
+	:cm=20\E&a%r%2c%2Y:co#80:cv=\E&a%2Y:da:db:dc=\EP:\
+	:dl=\EM:ei=\ER:gu:im=\EQ:ma=j^Jk^P^K^Pl :li#24:mi:nd=\EC:\
+	:pt:us=\E&dD:ue=\E&d@:se=\E&d@:so=\E&dB:up=\EA:
+hn|2621nl|hp2621nl|hp 2621 with no labels:ks@:ke@:tc=2621:
+hw|2621wl|hp2621wl|hp 2621 with labels:is=\E&jA\r\E3\r:ke=\E&jA:tc=2621:
+i1|i100|Infoton 100:cl=^L:cd=\EJ:ce\EK:li#24:co#80:\
+	:al=\EL:dl=\EM:up=\EA:nd=\EC:ho=\EH:cm=\Ef%r%+ %+ :vb=\Eb\Ea:am:bs:
+i4|i400|400|infoton 400:\
+	:if=/usr/lib/tabset/infoton_tabs:\
+	:al=\E[L:am:bs:ce=\E[N:cl=\E2J:cm=%i\E%3;%3H:co#80:dl=\E[M:li#25:\
+	:nd=\EC:up=\E[A:im=\E[4h\E[2Q:ei=\E[4l\E[0Q:\
+	:dc=\E4h\E[2Q\E[P\E[4l\E[0Q:
+ia|addrinfo:\
+	:li#24:co#80:cl=^L:ho=^H:nd=^Y:cd=^K:\
+	:up=^\:am:bc=^Z:cm=\037%+\377%+\377:ll=^H^\:
+ik|infotonKAS:\
+	:am:bc=^Z:cd=^K:cl=^L:co#80:li#24:nd=^Y:up=^\:ll=^H^\:
+l1|adm31|31|lsi adm31:is=\Eu\E0:\
+	:al=\EE:am:bs:ce=\ET:cm=\E=%+ %+ :cl=\E*:co#80:dc=\EW:dl=\ER:\
+	:ei=\Er:ho=^^:im=\Eq:li#24:mi:nd=^L:se=\EG0:so=\EG4:up=^K:\
+	:kl=^H:kd^J:ku=^K:kr=^L:ma=j^Jk^P^K^Pl ^R^L^L :
+l4|adm42|lsi adm-42:vs=\EC\E3 \E3(:\
+	:al=\EE:am:bs:cd=\EY:ce=\ET:cl=\E;:cm=\E=%+ %+ :co#80:\
+	:dc=\EW:dl=\ER:ei=\Er:im=\Eq:ip=6*:li#24:\
+	:bt=\EI:nd=\E^L:se=\EG0:so=\EG4:ta=\t:up=^k:
+lb|adm3b|3b|lsi adm3b:\
+	:am:bs:cl=^Z:co#80:ho=^^:li#24:ll=\E=7 :nd=^L:up=^K:so=DING :se= DONG:
+m3|mime3a|mime emulating 3a:\
+	:bs:cm=\E=%+ %+ :cl=^Z:co#80:ho=^^:li#24:ma=j^Jk^Pl ^X ^K^J^Z^P:\
+	:nd=^L:up=^K:ku=^Z:kd=^K:kl=^H:kr=^X:
+m4|microterm|act4|microterm act iv:\
+	:am:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^z:
+m5|microterm5|act5|microterm act v:\
+	:am:bs:cd=^_:ce=^^:cl=^L:cm=^T%.%.:co#80:li#24:nd=^X:up=^Z:ho=^]:\
+	:dn=^K:SO=\EC:SE=\EB:ma=j^Jk^Pl:uc=\EA:ku=^Z:kd=^K:kl=^H:kr=^X:
+mh|mimehb|half bright mime:\
+	:al=80^A:am:bs:cd=^_:ce=^^:cl=\035^C:cm=^T%.%.:co#80:dl=80^W:li#24:\
+	:nd=^X:pt:uc=^U:up=^z:ho=\035:dn=^K:so=^N:se=^N:is=^Y:\
+	:ma=^X ^K^J^Z^Pj^Jk^Pl :ku=^Z:kd=^K:kl=^H:kr=^X:
+mx|mime3ax|mime emulating enhanced 3a:\
+	:bs:cm=\E=%+ %+ :cl=^Z:co#80:ho=^^:li#24:ma=j^Jk^Pl ^X ^K^J^Z^P:\
+	:nd=^L:uc=^U:up=^K:al=80^A:dl=80^W:pt:\
+	:ce=^X:cd=^_:ku=^Z:kd=^K:kl=^H:kr=^X:
+oc|compucolor|compucolorII:\
+	:pt:am:cm=%r^C%.%.:bc=^Z:li#32:co#64:\
+	:cl=^L:ho=^H:nd=^Y:up=^\:
+pf|fox|fox 1100:if=/usr/lib/tabset/std:\
+	:am:bs:cd=\EJ:ce=\Ei:cl=\EK:co#80:ho=\EH:li#24:ll=\EH\EA:nd=\EC:\
+	:up=\EA:vb=^P^B^P^C:
+po|owl|owl 1200:if=/usr/lib/tabset/std:\
+	:al=5.5*\EL:am:bs:cd=5.5*\ED:ce=\EI:cl=132\EH\EJ:\
+	:cm=\EX%+ \EY%+ :co#80:dc=5.5*\EO:dl=5.5*\EM:ei=:ic=\EN:im=:ip=5.5*:\
+	:in:li#24:nd=\EC:up=\EA:se?=\E!\200:so?=\E!^H:vb=^P^B^P^C:
+qb|ex3000:\
+	:li#24:co#80:ho=^Q:
+qc|carlock|klc:\
+	:al=^E:am:bs:ce=^U:cl=100^Z:cm=\E=%+ %+ :co#80:dc=\177:dl=^D:dm=:\
+	:ed=:ei=^T:ho=^^:im=^T:li#24:nd=^L:se=^V:so=^V:up=^K:vb=\EV\EV:
+qe|exidy|exidy2500|exidy sorcerer as dm2500|\
+	:al=^P^J^X:bs:ce=^W:cl=^^:cm=^L%r%n%.%.:co#63:\
+	:dc=\b:dl=^P^Z^X:dm=^P:ed=^X:ei=^X:ho=^B:ic=^\:\
+	:im=^P:li#30:nd=^\:pt:so=^N:se=^X:up=^Z:
+qu|ubell|ubellchar:if=/usr/staff/michael/term/startup:\
+	:am:bs:pt:ce=\Ed:cl=^Z:cm=\E=%+ %+ :co#80:li#24:nd=^L:up=^K:\
+	:ma=j^Jk^P^K^Pl :ho=^^:
+qw|ttyWilliams:\
+	:co#80:li#12:bc=^Y:dn=^K:up=^Z:cl=^^:ce=^_:am:ho=^]:nd=^X:
+qx|xitex|xitex sct-100:\
+	:bs:cd=2000^F^E:ce=1600^E:cl=400^L:cm=\E=%+@%+@:co#64:ho=^D:\
+	:li#16:ma=j^Jk^Pl :nd=\E+@A:pc=\200:su=\E=@@^K:up=^K:
+t3|ti|ti700|ti733|735|ti735|ti silent 700:\
+	:bs:co#80:hc:os:dC#162:
+t4|ti745|745|743|ti silent 745:\
+	:bs:co#80:hc:os:
+v9|tvi912|tvi920|tvisp|tvi|televideo:\
+	:al=33*\EE:am:bs:ce=\ET:cm=\E=%+ %+ :cl=^Z:co#80:dc=\EW:dl=33*\ER:ei=:\
+	:ku=^K:kd=^J:kl=^H:kr=^L:k0=^A0\r:k1=^A1\r:k2=^A2\r:k3=^A3\r:\
+	:k4=^A4\r:k5=^A5\r:k6=^A6\r:k7=^A7\rk8=^A8\r:k9=^A9\r:\
+	:ho=^^:im=:ic=\EQ:li#24:nd=^L:pt:se=\Ek:so=\Ej:up=^K:us=\El:us=\Em:\
+	:ma=j^Jk^P^K^Pl ^L :
+wc|swtp|ct82:\
+	:am:bs:al=^\^Y:cd=^V:ce=^F:cl=^L:cm=^K%.%.:co#82:li#16:\
+	:dl=^Z:nd=^I:up=^A:so=^^^V:se=^^^F:dc=^\^H:ic=^\^X:ho=^P:
+x1|x1720|xerox 1720:co#132:bs:ff=^L:hc:os:pt:if=/usr/lib/tabset/xerox1720
+y1|teleray|teleray 1000:\
+	:bs:cl=^L:co#80:li#24:
+y6|t1061|teleray 1061:if=/usr/lib/tabset/teleray:\
+	:al=\EL:am:bs:cd=\EJ:ce=\EK:cl=\Ej:cm=\EY%+ %+ :co#80:dc=\EQ:dl=\EM:\
+	:ei=:ic=\EP:im=:li#24:nd=\EC:pt:\
+	:se=\ER@:so= \ERD:up=\EA:us=\ERH:ue=\ER@:xt:
+#  
+#  ----
+#  Convention: First entry is two chars, first char is manufacturer,
+#  second char is model or mode. Last entry is verbose description.
+#  Second entry is most common brief abbreviation, third entry is
+#  the one the editor will print with "set" command.
+#  Others are mnemonic synonyms for the terminal.
+#  Special manufacturer codes:
+#  	q: Homemade
+#  	s: special (dialup, etc.)
+#  
+#  This file is to be installed with an editor script that moves the most
+#  common terminals to the front of the file. If the source is not available,
+#  it can be constructed by sorting the above entries by the 2 char initial code.
+#  
+#  Problems remaining:
+#  Many terminals untested, including:
+#	gt40 gt42 vt50 vt50h dw1 gsi fox 1200 300 tty33 tty37 swtp dm3045
+#  Ann Arbor uses a cursor addressing code that is not supported by the
+#  current termlib.

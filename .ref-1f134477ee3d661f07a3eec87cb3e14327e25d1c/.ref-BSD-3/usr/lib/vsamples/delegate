@@ -1,0 +1,33 @@
+.ft 1
+.ps 12
+.vs 18
+.lg 0
+.nh
+.na
+Delegate, \fIitalic\fR only, 12 point
+(There is a roman delegate that doesn't work.)
+.sp .5i
+.ig
+ABCDE FGHIJ KLMNO PQRST UVWXY abcde fghij klmno pqrst uvwxyz 01234 56789
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.
+.sp 1i
+..
+
+.ft 2
+.ps 12
+ABCDE FGHIJ KLMNO PQRST UVWXY abcde fghij klmno pqrst uvwxyz 01234 56789 
+.sp
+! " # $ % & ' ( ) : * - = [ ] { } ^ ~ _ \e | @ ` ; + / ? . > , < 
+.sp
+If time be of all things the most precious, wasting time must be,
+as Poor Richard says, the greatest prodigality; since, as he elsewhere
+tells us, lost time is never found again; and what we call time enough,
+always proves little enough: Let us then up and be doing, and doing
+to the purpose; so by diligence shall we do more with less perplexity.

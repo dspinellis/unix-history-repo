@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the American National Standards Committee X3, on Information
+.\" Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)labs.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LABS 3
+.Os
+.Sh NAME
+.Nm labs
+.Nd return the absolute value of a long integer
+.Sh SYNOPSIS
+.Fd #include <stdlib.h>
+.Ft long
+.Fn labs "long j"
+.Sh DESCRIPTION
+The
+.Fn labs
+function
+returns the absolute value of the long integer
+.Ar j .
+.Sh SEE ALSO
+.Xr abs 3 ,
+.Xr floor 3 ,
+.Xr cabs 3 ,
+.Xr math 3
+.Sh STANDARDS
+The
+.Fn labs
+function
+conforms to
+.St -ansiC .
+.Sh BUGS
+The absolute value of the most negative integer remains negative.

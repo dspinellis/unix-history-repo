@@ -1,0 +1,17 @@
+[ this is old -- mike ]
+
+Oh, where do I begin...
+
+1. Integrate 98628A (single port buffered RS232) driver.
+2. Integrate 1/2" 9-track reel tape driver (from Mt Xinu).
+3. SCSI: sync support and connect/disconnect.
+4. VME/EISA adaptor drivers needed.
+5. Centronics driver for 345/375.
+6. HP-IB (SCSI?) improvement: attempt to get more activity on a single
+   bus (e.g. overlap seeks with transfers).
+7. Support for more modern (post-DaVinci) displays.
+
+----
+Mike Hibler
+University of Utah CSS group
+mike@cs.utah.edu

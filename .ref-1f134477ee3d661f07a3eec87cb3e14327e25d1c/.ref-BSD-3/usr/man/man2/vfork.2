@@ -1,0 +1,60 @@
+.UC
+.TH VFORK 2
+.SH NAME
+vfork \- spawn new process in a virtual memory efficient way
+.SH SYNOPSIS
+\fBvfork()\fR
+.SH DESCRIPTION
+.I Vfork
+can be used to create new processes without fully copying the address
+space of the old process, which is horrendously inefficient in a paged
+environment.  It is useful when the purpose of
+.I fork
+(2) would have been to create a new system context for an
+.I exec.
+.I Vfork
+differs from fork in that the parent's memory and thread of control run in
+the child's system context till a call to
+.I exec
+(2) or an exit
+(either by a call to
+.I exit
+(2) or abnormally.)
+The parent's process slot is suspended while it runs in the child's.
+.I Vfork
+returns 0 in the child's context and (later) the pid of the child in
+the parents context.
+.PP
+.I Vfork
+can normally be used just like
+.I fork.
+It does not work, however, to return while running in the childs context
+from the procedure which called
+.I vfork
+since the eventual return from
+.I vfork
+would then return to a no longer existant stack frame.
+Be careful, also, to call
+.I _exit
+rather than
+.I exit
+if you can't
+.I exec,
+since
+.I exit
+will flush and close standard I/O channels, and thereby mess up the
+parent processes standard I/O data structures.  (Even with
+.I fork
+it is wrong to call
+.I exit
+since buffered data would then be flushed twice.)
+.SH SEE ALSO
+fork(2), exec(2), wait(2),
+.SH DIAGNOSTICS
+Same as for fork.
+.SH BUGS
+Would be unnecessary if
+.I fork
+were implemented by a mechanism similar to copy-on-write.
+The current system does not support this mechanism, however, necessitating
+.I vfork.

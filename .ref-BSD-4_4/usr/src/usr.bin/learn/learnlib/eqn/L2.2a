@@ -1,0 +1,25 @@
+#print
+Will the output from the first equation below be different
+from the second? 
+
+.EQ
+X      =       Y
++Z
+.EN
+
+.EQ
+x      =       y
++       z
+.EN
+
+Answer yes if they will be different,
+no if they will be the same.
+#copyin
+#user
+#uncopyin
+#match yes
+#fail
+Look more closely at ____what letters are being printed.
+#log
+#next
+2.1b 10

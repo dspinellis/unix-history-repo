@@ -1,0 +1,90 @@
+.\" @(#)Cover.distribution	5.2 (Berkeley) %G%
+.so HEADERS
+.FH
+.OF ''''
+.EF ''''
+.ti 4i
+July 1991
+.sp 4
+.PP
+This is a distribution kit for the second release of the BSD networking
+software.
+This software is
+Copyright \(co 1989, 1991 The Regents of the University of California, but may
+be used and redistributed freely as long as due credit is provided to
+the University; see the license agreement for further details.
+Your countersigned license agreement has been mailed separately.
+.PP
+This package contains one 6250 BPI 9-track magnetic tape, three 1600 BPI
+9-track magnetic tapes or one 8mm Exabyte cassette.
+The tape(s) contain the C source code for the software and documentation.
+It is in
+.I tar
+format and can be extracted into the current directory with a command such
+as ``tar x,'' or ``tar xf tapedevice''.
+.PP
+The distribution is in the framework of a complete system tree, with source
+placed in the usr/src directory hierarchy.
+Each utility is in a separate directory which contains both its source
+and roff-format manual pages.
+The kernel-related sources are in the usr/src/sys directory hierarchy.
+The include files meant for usr/include are in usr/src/include and
+the the library routines are in usr/src/lib.
+Supplementary documentation is in the usr/src/share/doc and
+usr/src/share/man directories.
+.PP
+It should be noted that this software has only been tested for compilation
+and operation with the 4.3BSD-Reno Berkeley distribution (or even more
+recent systems now running on our development machines).
+We cannot ensure that this software will compile or run on
+.B any
+other systems.
+Only limited support will be provided by our group.
+In particular,
+we cannot provide assistance with installation of this software on
+other systems.
+We are, of course, interested in any fixes that you find it necessary to
+apply, and will integrate these fixes into the 4.4BSD source distribution.
+.PP
+Bug reports about this distribution can be submitted using the sendbug
+program on the tape, which will submit a formatted report to
+``net2-bugs@Berkeley.EDU'' via the Internet.
+On the uucp net, modify the sendbug script to send to
+``uunet!ucbvax!net2-bugs'' by an appropriate path.
+Ideas for improvement of the system should be sent to ``4bsd-ideas''
+in the same network context.
+If you have changes or other software which you would be willing to share
+with others, please let us know.  
+.sp 2
+.ti 3i
+Good Luck,
+.ti 3.5i
+.br
+Mike Karels
+.ti 4i
+.br
+karels@Berkeley.EDU
+.br
+.ti 4i
+ucbvax!karels
+.sp
+.ti 3.5i
+.br
+Kirk McKusick
+.br
+.ti 4i
+mckusick@Berkeley.EDU
+.br
+.ti 4i
+ucbvax!mckusick
+.sp
+.ti 3.5i
+.br
+Keith Bostic
+.ti 4i
+.br
+bostic@Berkeley.EDU
+.ti 4i
+.br
+uunet!bostic
+

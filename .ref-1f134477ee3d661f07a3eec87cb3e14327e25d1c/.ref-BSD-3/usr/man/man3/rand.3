@@ -1,0 +1,23 @@
+.TH RAND 3 VAX-11
+.SH NAME
+rand, srand \- random number generator
+.SH SYNOPSIS
+.B srand(seed)
+.br
+.B int seed;
+.PP
+.B rand( )
+.SH DESCRIPTION
+.I Rand
+uses a multiplicative congruential
+random number generator
+with period 2\u\s732\s0\d
+to return successive pseudo-random
+numbers in the range from 0 to 2\u\s731\s10\d\-1.
+.PP
+The generator is reinitialized by calling
+.I srand
+with 1 as argument.
+It can be set to a random starting point by calling
+.I srand
+with whatever you like as argument.

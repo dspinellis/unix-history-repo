@@ -1,0 +1,1 @@
+/oth/1273/sif/vaxvax/f77 -T1/oth/1273/sif/vaxvax/f77pass1 $* /oth/1273/sif/libF77/libF77.a /oth/1273/sif/libI77/libI77.a

@@ -1,0 +1,140 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)vlp.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt VLP 1
+.Os BSD 4.2
+.Sh NAME
+.Nm vlp
+.Nd Format Lisp programs to
+be printed with nroff, vtroff, or troff
+.Sh SYNOPSIS
+.Nm vlp
+.Op Fl d
+.Op Fl f
+.Op Fl l
+.Op Fl p Ar pointsize
+.Op Fl v
+.Op Fl T Ar title1
+.Ar file1
+.Bk -words
+.Op Fl T Ar title2
+.Ek
+.Ar file2 Ar ...
+.Sh DESCRIPTION
+.Nm Vlp
+formats the named files so that they can be run through
+.Xr nroff 1 ,
+.Xr vtroff 1 ,
+or
+.Xr troff 1
+to produce listings that line-up and are attractive.
+The first non-blank character of each line is lined-up vertically,
+as in the source file.
+Comments (text beginning with a semicolon)
+are printed in italics.
+Each function's name is printed in bold face next to the function.
+This format makes Lisp code look attractive when it is printed with a 
+variable width font.
+.Pp
+Normally,
+.Nm vlp
+works as a filter and sends its output to the standard output.
+However,
+the 
+.Fl v
+switch pipes the output directly to vtroff.
+If no files are specified,
+then
+.Nm vlp
+reads from the standard input.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl d
+The 
+.Fl d
+switch puts
+.Nm vlp
+into debugging mode.
+.It Fl f
+.Nm Vlp
+has a filtered mode
+in which all lines are passed unmodified,
+except those lines between the directives
+.Sy .Ls
+and
+.Sy .Le .
+This mode can be used to format Lisp code that is embedded in a document.
+The directive
+.Sy .Ls
+takes an optional argument that gives the point
+size for the embedded code.
+If not size is specified,
+the size of the surrounding text is used.
+.It Fl l
+The
+.Fl l
+switch prevents
+.Nm vlp
+from placing labels next to functions.
+This switch is useful for embedded Lisp code,
+where the labels would be distracting.
+.It Fl p Ar pointsize
+The
+.Fl p
+switch changes the size of the text from its default value of 8 points
+to one of 6, 8, 10, or 12 points.
+Once set, the point size is used for all subsequent files.
+This point size does not apply to embedded text (see
+.Fl f
+above).
+.It Fl v
+This switch cause
+.Nm vlp
+to send its output to vtroff rather than the
+standard output.
+.It Fl T Ar title
+A title to be printed on each page may be specified by using the 
+.Fl T
+switch.
+The 
+.Fl T
+switch applies only to the next
+.Ar file
+name given.
+Titles are not printed for embedded text (see 
+.Fl f ,
+above).
+This switch may not be used if
+.Nm vlp
+is reading from the standard input.
+.El
+.Sh FILES
+.Bl -tag -width Pa
+.It Pa /usr/lib/vlpmacs
+.Xr troff/nroff
+macros
+.El
+.Sh SEE ALSO
+.Xr vgrind 1 ,
+.Xr lisp 1
+.Sh BUGS
+.Nm vlp
+transforms
+.Ql \e
+into
+.Ql \e\e
+so that it will be printed out.
+Hence,
+.Xr troff
+commands cannot be embedded in Lisp code.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

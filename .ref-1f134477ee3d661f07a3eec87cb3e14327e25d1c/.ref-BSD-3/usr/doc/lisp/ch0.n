@@ -1,0 +1,54 @@
+
+.pp
+\ \ 
+.sp 2i
+.tl ''\s14The\ \s16F\s14RANZ\ \s16L\s14ISP\ \s14Manual''
+.ps 10
+.sp 1v
+.tl ''by''
+.sp 1v
+.tl ''\fIJohn\ K.\ Foderaro\fP''
+.sp 4i
+.tl '''A document in'
+.tl '''four movements'
+.bp
+.sp 1i
+.ft I
+.ll 5.5i
+.in .5i
+.tl ''Overture''
+.sp 2v
+A chorus of students, 
+under the direction of
+Richard Fateman, have contributed to
+building 
+.Fr
+from a mere melody into a full
+symphony .
+The major contributors to the inital system were
+Mike Curry,  John Breedlove and Jeff Levinsky.
+Bill Rowan added the garbage collector and array package.
+Keith Sklower has contributed the most to 
+.Fr ,
+adding the 
+bignum package and rewriting most of code to increase
+its efficiency and clarity.
+Tom London wrote the  compiler for F\s-2RANZ\s0.
+John Foderaro added a function or two, did a lot of 
+kibitzing, and wrote this modest manual.
+.sp 3i
+.ft R
+.ll 6.5i
+.in 0
+\(co 1979 by the Regents of the University of California.
+.br
+All rights reserved.
+.br
+.sp 2v
+Work reported herein was supported in part by 
+the U. S. Department
+of Energy, Contract DE-AT03-76SF00034, Project Agreement
+DE-AS03-79ER10358, and the National Science
+Foundation under Grant No.  MCS 7807291
+.sp 2v
+UNIX is a trademark of Bell Laboratories.

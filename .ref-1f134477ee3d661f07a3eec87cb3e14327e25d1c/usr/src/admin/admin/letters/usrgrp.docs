@@ -1,0 +1,72 @@
+.\"	@(#)usrgrp.docs	5.1	91/06/26
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.\".so HEADERS
+.\".HE D
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.lh
+.nf
+.ti 4.5i
+June 26, 1991
+Ralph Barker
+/usr/group
+2901 Tasman Dr.
+Suite 201
+Santa Clara, CA  95054
+.fi
+.sp 3
+.pp
+Ralph, recently we spoke concerning the possibility of Berkeley
+including portions of the /usr/group standards in our documentation.
+As I said, we
+would like to use portions of the /usr/group standard as follows:
+as you know, we (and all UNIX vendors) provide both on-line and hardcopy
+documentation of the C library functions and system calls supplied with
+the system.
+As standards are, in many ways, a more rigorous specification of the
+current UNIX manual pages, it is a much simpler task to become conformant
+if we can use portions of them to create our usual style of documentation.
+This use is in no way intended to replace the standard itself, and
+my guess is that no more than twenty-five percent of the overall
+standard would be reproduced.
+.pp
+There are two major advantages to the user community in allowing vendors
+to draw from the standards.
+First, the manual pages are much more likely to be error-free if they
+are taken from an exhaustively checked standard.
+This is not a trivial point; if nothing else, the creation of UNIX
+standards has proven the difficulty of rigorously defining the syntax
+of complex functions!
+Secondly, there is little reason for manual pages to differ greatly if
+vendors start with the same text.
+This means that users will see equivalent documentation on a number
+of vendor's systems.
+This is especially true in Berkeley's case; since we freely allow
+redistribution, without additional charge, of our software and
+documentation, vendors that derive their systems from ours will,
+in all probability, deliver our documents as theirs.
+.pp
+We would, of course, credit /usr/group at the beginning of our printed
+documentation, and as part of our online documentation.
+(If possible, please give me a sample of the wording that you would
+like us to use.)
+.pp
+If I can answer any questions, or clarify anything I've said, please
+let me know.
+My phone number is 415-642-8524.
+.sp 2
+.in +.5i
+.nf
+Sincerely,
+.sp 4
+Keith Bostic

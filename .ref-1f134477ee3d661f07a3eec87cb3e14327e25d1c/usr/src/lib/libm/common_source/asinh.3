@@ -1,0 +1,44 @@
+From Prof. Kahan at UC at Berkeley
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)asinh.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ASINH 3
+.Os BSD 4.3
+.Sh NAME
+.Nm asinh
+.Nd inverse hyperbolic sine function
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn asinh "double x"
+.Sh DESCRIPTION
+The
+.Fn asinh
+function computes the inverse hyperbolic sine
+of the real
+argument
+.Ar x .
+For a discussion of error due to roundoff, see
+.Xr math 3 .
+.Sh RETURN VALUES
+The
+.Fn asinh
+function
+returns the inverse hyperbolic sine of
+.Ar x .
+.Sh SEE ALSO
+.Xr acosh 3 ,
+.Xr atanh 3 ,
+.Xr exp 3 ,
+.Xr infnan 3
+.Xr math 3 ,
+.Sh HISTORY
+The
+.Fn asinh
+function appeared in 
+.Bx 4.3 .

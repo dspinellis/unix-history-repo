@@ -1,0 +1,67 @@
+.\" Copyright (c) 1990, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek and the American National Standards Committee X3,
+.\" on Information Processing Systems.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)strcmp.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STRCMP 3
+.Os
+.Sh NAME
+.Nm strcmp
+.Nd compare strings
+.Sh SYNOPSIS
+.Fd #include <string.h>
+.Ft int
+.Fn strcmp "const char *s1" "const char *s2"
+.Ft int
+.Fn strncmp "const char *s1" "const char *s2" "size_t len"
+.Sh DESCRIPTION
+The
+.Fn strcmp
+and
+.Fn strncmp
+functions
+lexicographically compare the null-terminated strings
+.Fa s1
+and
+.Fa s2 .
+.Sh RETURN VALUES
+The
+.Fn strcmp
+and
+.Fn strncmp
+return an integer greater than, equal to, or less than 0, according
+as the string
+.Fa s1
+is greater than, equal to, or less than the string
+.Fa s2 .
+The comparison is done using unsigned characters, so that
+.Ql \e200
+is greater than
+.Ql \e0 .
+.Pp
+The
+.Fn strncmp
+compares not more than
+.Fa len
+characters.
+.Sh SEE ALSO
+.Xr bcmp 3 ,
+.Xr memcmp 3 ,
+.Xr strcasecmp 3 ,
+.Xr strcoll 3 ,
+.Xr strxfrm 3
+.Sh STANDARDS
+The
+.Fn strcmp
+and
+.Fn strncmp
+functions
+conform to
+.St -ansiC .

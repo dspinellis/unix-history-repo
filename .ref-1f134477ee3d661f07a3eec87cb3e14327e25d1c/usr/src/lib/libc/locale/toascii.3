@@ -1,0 +1,43 @@
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)toascii.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TOASCII 3
+.Os
+.Sh NAME
+.Nm toascii
+.Nd convert a byte to 7-bit ASCII
+.Sh SYNOPSIS
+.Fd #include <ctype.h>
+.Ft int
+.Fn toascii "int c"
+.Sh DESCRIPTION
+The
+.Fn toascii
+function strips all but the low 7 bits from a letter,
+including parity or other marker bits.
+.Sh RETURN VALUES
+The
+.Fn toascii
+function always returns a valid ASCII character.
+.Sh SEE ALSO
+.Xr isascii 3 ,
+.Xr isalnum 3 ,
+.Xr isalpha 3 ,
+.Xr iscntrl 3 ,
+.Xr isdigit 3 ,
+.Xr isgraph 3 ,
+.Xr islower 3 ,
+.Xr isprint 3 ,
+.Xr ispunct 3 ,
+.Xr isspace 3 ,
+.Xr isupper 3 ,
+.Xr isxdigit 3 ,
+.Xr tolower 3 ,
+.Xr toupper 3 ,
+.Xr stdio 3 ,
+.Xr ascii 7

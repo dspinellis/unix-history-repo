@@ -1,0 +1,22 @@
+#print
+In the file "mess" delete all blanks at the ends
+of lines.  Be prepared to delete several blanks
+if need be (remember the '*' character).
+Then rewrite the file and type "ready".
+#create Ref
+It is possible to use
+a small counter to keep
+approximate counts
+of large numbers.  The resulting
+expected error can be controlled.
+#create mess
+It is possible to use    
+a small counter to keep
+approximate counts  
+of large numbers.  The resulting      
+expected error can be controlled.
+#user
+#cmp mess Ref
+#log
+#next
+40.2d 5

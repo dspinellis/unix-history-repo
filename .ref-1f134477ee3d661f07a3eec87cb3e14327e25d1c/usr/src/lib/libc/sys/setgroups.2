@@ -1,0 +1,63 @@
+.\" Copyright (c) 1983, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)setgroups.2	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SETGROUPS 2
+.Os BSD 4.2
+.Sh NAME
+.Nm setgroups
+.Nd set group access list
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Fd #include <sys/param.h>
+.Ft int
+.Fn setgroups "int ngroups" "const int *gidset"
+.Sh DESCRIPTION
+.Fn Setgroups
+sets the group access list of the current user process
+according to the array 
+.Fa gidset .
+The parameter
+.Fa ngroups
+indicates the number of entries in the array and must be no
+more than
+.Dv NGROUPS ,
+as defined in
+.Ao Pa sys/param.h Ac .
+.Pp
+Only the super-user may set new groups.
+.Sh RETURN VALUES
+A 0 value is returned on success, -1 on error, with
+an error code stored in
+.Va errno .
+.Sh ERRORS
+The
+.Fn setgroups
+call will fail if:
+.Bl -tag -width Er
+.It Bq Er EPERM
+The caller is not the super-user.
+.It Bq Er EFAULT
+The address specified for
+.Fa gidset
+is outside the process
+address space.
+.El
+.Sh SEE ALSO
+.Xr getgroups 2 ,
+.Xr initgroups 3
+.Sh BUGS
+The
+.Fa gidset
+array should be of type
+.Em gid_t ,
+but remains integer for compatibility with earlier systems.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

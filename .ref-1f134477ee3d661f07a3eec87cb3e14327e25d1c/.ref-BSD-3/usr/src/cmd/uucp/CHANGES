@@ -1,0 +1,23 @@
+	/*  CHANGES 2.9  5/24/79  21:39:26  */
+5/24/79	(uux.c)		add an error message; try to continue if gwd fails;
+5/24/79	(uucp.c)	multi commands/C. file; put -c in command file;
+			use dummy D. name on -c;
+			check for same file on local copy;
+			check ANYREAD/ANYWRITE on local cp
+			check for stat failure on send file;
+5/24/79	(cntrl.c)	don't look for D. if -c option; don't unlink dummy D.;
+			add local notify on file access failures;
+5/23/79	(uucp.h)	add "dialout" routine option
+5/23/79	(conn.c)	add "dialout" routine option
+5/23/79	(uucp.c)	fix sysfile2 system name too long bug
+5/22/79	(anlwrk.c)	fix allocation bug - break loop (gtwrk) when list full
+5/21/79	(chkpth.c)	fix rdpth to use first null in USERFILE for defaults
+5/18/79	(logent.c)	add pid to log entries
+5/18/79	(cico.c)	add 2 logent calls
+5/18/79	(cntrl.c)	touch lock files after each transaction
+5/18/79	(ulockf.c)	add ultouch (touch lock files); reduce lock timeout
+5/16/79	(cntrl.c)	turnoff protocol on message failure
+5/16/79	(pk1.c)		try to fix loop when slave hangs up
+5/16/79	(cico.c)	fix to get core dumps on kill
+5/7/79	(makefile)	add -l option to uuname program
+5/7/79	(uuname.c)	add -l option to uuname.c

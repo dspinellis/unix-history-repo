@@ -1,0 +1,97 @@
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Office of Defense Trade Controls (Commodity Jurisdiction Ruling)
+	703-875-6641
+	Maj. Mike VanAdela	703-875-6644
+	Maj. Gary Oncale
+
+	C library DES code will fall under Commerce Dept. rules
+	Bdes will fall under State Dept. rules.
+
+	Fax requesting licensing and registration packet to 703-875-6647:
+	Office of Defense Trade Controls
+	ATTN: Ro Walker
+
+	Surface:				Courier:
+	PM/DTCSA-6 Room 228			PM/DTCSA-6 Room 228
+	Office of Defense Trade Controls	Office of Defense Trade Controls
+	U.S. Dept. of State			U.S. Dept. of State
+	Washington, D.C. 20522-0602		1701 N. Ft. Meyer Dr.
+						Arlington VA 22209-3113
+
+	Subject:
+		Request Commodity Jurisdiction Ruling for (1) C library
+		password functions and (2) DES file encryption software.
+
+	Para. 1: Describe in detail, but laymen's terms for (1):
+		 -- what it is
+		 -- what it does, what function it performs
+		 -- what is intended to be used for
+		 -- how distributed (in both source and object code)
+		 -- how DES is involved and used
+
+	Para. 2: Repeat para. 1, for (2).
+
+	Para. 3: Who will buy this and what will they use it for.
+
+	Para. 4: Technical point of contact.
+
+	Technical packet (included with request):
+		-- technical description of how software and DES interact
+		-- copy of source code
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Commerce Dept. (gen'l #202-377-0708)
+	Tech. Services Group: 202-377-0899
+	Computers: Larry Hall (202-377-0706), status 202-377-4145
+	Telecommunications: Hans vanGelder, status 202-377-1663
+	Case #24934, submit 10/23/91, transferred 10/26/91
+
+Regional Commerce Department:
+	Bill Volner: 714-660-0144 x124
+
+Documents:
+        Federal Register
+        56FR42824
+        Publication date: August 29, 1991
+        Commerce Dept.
+
+	Order from:			(Printing Office is 202-783-3238)
+        Superintendent of Documents
+        U.S. Government Printing Office
+        Washington, D.C. 20402
+        ATTN: Government Periodicals and Subscription Services
+
+Notes:
+	Networking is under Commerce, but encryption is not.
+	Submit the software for evaluation and designation as GTDA.
+
+Addresses:
+	Export Administration
+	P.O. Box 273
+	Washington, D.C. 20044
+
+	U.S. Dept. of Commerce
+	Room 4074
+	Technical Support Staff
+	14th St. & Pennsylvania Ave.
+	Washington, D.C. 20230
+
+In the lower right corner write:
+	Commodity Classification Request
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+	We would like to request that the Commerce Department provide
+a commodity classification for the Berkeley Software Distribution
+Networking Release #1.  The software is primarily support for the DARPA
+standard TCP, IP, UDP, ICMP, and ARP communication protocols.  It also
+includes support for higher level application protocols such as FTP,
+TELNET, SMTP, rcp, rlogin, and rsh.  It implements a wide-area network,
+capable of connecting a large number of hosts over a geographically 
+disperse area.  It implements the link, network, and transport layers
+of the International Standards Organization Network Model, as well as
+several applications.
+	Attached are copies of the Networking Release License agreement,
+the Networking Implementation Notes, 4.3BSD Edition, and the Berkeley
+Software Architecture Manual, 4.3BSD Edition.
+

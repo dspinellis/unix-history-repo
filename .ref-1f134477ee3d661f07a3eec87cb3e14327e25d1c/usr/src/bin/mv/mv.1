@@ -1,0 +1,103 @@
+.\" Copyright (c) 1989, 1990, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Institute of Electrical and Electronics Engineers, Inc.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mv.1	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MV 1
+.Os
+.Sh NAME
+.Nm mv
+.Nd move files
+.Sh SYNOPSIS
+.Nm mv
+.Op Fl f | Fl i
+.Ar source target
+.Nm mv
+.Op  Fl f | Fl i
+.Ar source ... source directory
+.Sh DESCRIPTION
+.Pp
+In its first form, the
+.Nm mv
+utility renames the file named by the
+.Ar source
+operand to the destination path named by the
+.Ar target
+operand.
+This form is assumed when the last operand does not name an already
+existing directory.
+.Pp
+In its second form,
+.Nm mv
+moves each file named by a
+.Ar source
+operand to a destination file in the existing directory named by the
+.Ar directory
+operand.
+The destination path for each operand is the pathname produced by the
+concatenation of the last operand, a slash, and the final pathname
+component of the named file.
+.Pp
+The following options are available:
+.Bl -tag -width flag
+.It Fl f
+Do not prompt for confirmation before overwriting the destination
+path.
+(The
+.Fl i
+option is ignored if the
+.Fl f
+option is specified.)
+.It Fl i
+Causes
+.Nm mv
+to write a prompt to standard error before moving a file that would
+overwrite an existing file.
+If the response from the standard input begins with the character ``y'',
+the move is attempted.
+.El
+.Pp
+It is an error for either the
+.Ar source
+operand or the destination path to specify a directory unless both do.
+.Pp
+If the destination path does not have a mode which permits writing,
+.Nm mv
+prompts the user for confirmation as specified for the
+.Fl i
+option.
+.Pp
+As the
+.Xr rename  2
+call does not work across file systems,
+.Nm mv
+uses
+.Xr cp 1
+and
+.Xr rm 1
+to accomplish the move.
+The effect is equivalent to:
+.Bd -literal -offset indent
+rm -f destination_path && \e
+\tcp -pr source_file destination && \e
+\trm -rf source_file
+.Ed
+.Pp
+The
+.Nm mv
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr cp 1 ,
+.Xr symlink 7
+.Sh STANDARDS
+The
+.Nm mv
+utility is expected to be
+.St -p1003.2
+compatible.

@@ -1,0 +1,43 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)intro.3c	6.1 (Berkeley) %G%
+.\"
+.TH INTRO 3C ""
+.UC 5
+.SH NAME
+intro \- introduction to compatibility library functions
+.SH DESCRIPTION
+These functions constitute the compatibility library portion
+of
+.IR libc .
+They are automatically loaded as needed by the C compiler
+.IR cc (1).
+The link editor searches this library under the \*(lq\-lc\*(rq option.
+Use of these routines should, for the most part, be avoided.
+Manual entries for the functions in this library describe
+the proper routine to use.
+.SH "LIST OF FUNCTIONS"
+.sp 2
+.nf
+.ta \w'vtimes'u+2n +\w'vtimes.3c'u+10n
+\fIName\fP	\fIAppears on Page\fP	\fIDescription\fP
+.ta \w'vtimes'u+4n +\w'vtimes.3c'u+4n
+.sp 5p
+alarm	alarm.3c	schedule signal after specified time
+ftime	time.3c	get date and time
+getpw	getpw.3c	get name from uid
+gtty	stty.3c	set and get terminal state (defunct)
+nice	nice.3c	set program priority
+pause	pause.3c	stop until signal
+rand	rand.3c	random number generator
+signal	signal.3c	simplified software signal facilities
+srand	rand.3c	random number generator
+stty	stty.3c	set and get terminal state (defunct)
+time	time.3c	get date and time
+times	times.3c	get process times
+utime	utime.3c	set file times
+vlimit	vlimit.3c	control maximum system resource consumption
+vtimes	vtimes.3c	get information about resource utilization
+.fi

@@ -1,0 +1,149 @@
+.\"	@(#)NISTreport.final	1.1	90/08/24
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Final Report on Operating Systems Research
+in the Berkeley UNIX Project\s-2\fP
+July 1, 1989 \- June 30, 1990
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.pp
+During the period of this grant,
+three major new facilities were added to 4.3BSD.
+These are the addition of ISO/OSI networking support,
+a freely redistributable implementation of NFS, and
+the conversion to and addition of the POSIX.1 facilities.
+There were numerous other changes made throughout the system.
+.pp
+The ISO/OSI Networking consists of a kernel implementation of
+transport class 4 (TP-4),
+connectionless networking protocol (CLNP),
+and 802.3-based link-level support (hardware-compatible with Ethernet).
+The session and presentation layers are provided outside
+the kernel by the ISO development environment (ISODE).
+Included in this development environment are file
+transfer and management (FTAM), virtual terminals (VT),
+a directory services implementation (X.500),
+and miscellaneous other utilities.
+Regrettably we were not able to complete
+support for ISO Connection-Oriented Network Service, TP-0.
+.pp
+A new virtual filesystem interface has been added to the
+kernel to support multiple filesystems.
+Although generally similar to Sun's vnode interface,
+the Berkeley interface has been structured for more efficient support
+of filesystems that maintain state (such as the local filesystem).
+In addition to the local ``fast filesystem'',
+we have added an implementation of the network filesystem (NFS)
+that fully interoperates with the NFS shipped by Sun and its licensees.
+Because our NFS implementation was implemented using only the
+publicly available NFS specification,
+it does not require a license from Sun to use in source or binary form.
+By default it runs over UDP to be compatible with Sun's implementation.
+However, it can be configured on a per-mount basis to run over TCP.
+Using TCP allows it to be used quickly and efficiently through
+gateways and over long-haul networks.
+We have also added a memory-based filesystem that runs in
+pageable memory, which allows large temporary filesystems without
+requiring dedicated physical memory.
+.pp
+The disk quota system has been rewritten to support both
+user and group quotas (simultaneously if desired).
+Quota expiration is based on time rather than
+the previous metric of number of logins over quota.
+This change makes quotas more useful on fileservers
+onto which users seldom login.
+.pp
+During the grant we added most of the interfaces
+specified in the POSIX.1 system interface standard.
+The biggest area of change is a new terminal driver.
+The terminal driver is similar to the System V terminal driver
+with the addition of the necessary extensions to get the
+functionality previously available in the 4.3BSD terminal driver.
+We also added the POSIX job control interface,
+which is similar to the 4.3BSD job control interface,
+but adds a security model that was missing in the
+4.3BSD job control implementation.
+Other additions include POSIX signals, FIFO's,
+and saved user and group identifiers.
+We have been tracking the POSIX shell and utility work
+and have included prototypes of many of the proposed utilities.
+Finally, we have converted about 80% of the libraries and header files
+to be compliant with ANSI C.
+.pp
+Work has also progressed in several other areas.
+Several important enhancements have been added to the TCP/IP
+protocols including TCP header prediction and
+serial line IP (SLIP) with header compression.
+The routing implementation has been completely rewritten
+to use a hierarchical routing tree with a mask per route
+to support the arbitrary levels of routing found in the ISO protocols.
+The routing table also stores and caches route characteristics
+to speed the adaptation of the throughput and congestion avoidance
+algorithms.
+.pp
+The Kerberos (version 4) authentication software has been
+integrated into much of the system (except NFS) to provide
+the first real network authentication on BSD.
+.pp
+The hardware which is now supported includes:
+.ip \(bu
+VAX (86x0, 78x, 750, 730; MicroVAX II, 3200/3500/3600; 82x0)
+.ip \(bu
+Tahoe (CCI Power 6/32, 6/32SX; Unisys 7000/xx; Harris HCX7, HCX9)
+.ip \(bu
+HP 9000/300 series
+.lp
+In addition, kernel support for the Intel i386 and many AT-bus peripherals
+has been added recently.
+.pp
+This release includes several important structural kernel changes.
+The most pervasive change is to eliminate the user structure fields
+by using a new internal system call convention.
+We are also reducing the use of other global variables
+with the intent to eventually eliminate all references
+to the user area except for the per-process runtime stack.
+.pp
+Another major change is the introduction
+of a new sleep interface that eliminates
+all non-local goto's (longjmp's) from the kernel.
+.pp
+Many data structures that were previously statically allocated
+are now allocated dynamically.
+These structures include the mount table,
+the vnode table, the name cache, and the quota structures.
+.pp
+At the end of the project we put together
+a formal test release of Berkeley UNIX which we called 4.3BSD-Reno.
+This work included finishing up and documenting the projects that we have
+done and putting together a coherent test release.
+.pp
+We received the very latest version of ISODE, and made sure that it
+compiled and ran under 4.3BSD-Reno.
+Because of delays in getting last minutes fixes installed
+the ISODE was not ready at the time that the 4.3BSD-Reno
+tape was made and consequently had to be shipped separately.
+.pp
+We prepared a mailing to all our licensees notifying them of
+the availability of the 4.3BSD-Reno test release.
+Over a hundred requests were received within the first month
+indicating widespread interest in this work.
+.pp
+The project has managed to secure some non-DARPA continuation funding.
+However, this funding is significantly below our previous funding
+and as a consequence our group will probably have to be sized down.
+In particular, our current funding groups are not very interested
+in ISO development.
+So, although we have managed to continue our ISO work in the short term,
+it is not clear how long this effort can be continued.
+If NIST is still interested in further ISO work,
+then they should take action to see that it gets done.
+We are interested in continuing the ISO work;
+should this be impossible, we recommend that further ISO work
+start with the 4.3BSD-Reno and ISODE version 6.6 distributions.

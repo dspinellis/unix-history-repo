@@ -1,0 +1,46 @@
+.\"     @(#)Siteinfo	1.3 (Berkeley) %G%
+.ps 11
+.vs 13
+.ce 3
+Site Information Form
+April 30, 1991
+.b "Please type or block print"
+.sp 1
+.)l
+.in -4i
+.ps 11
+.vs 19
+.nf
+.ta \w'Mailing Address (no P.O. Boxes):'uR +.25i
+.nr l 6i
+	Organization:	\l'|\nlu'
+	No. of BSD Users:	\l'|\nlu'
+	Site Type (check one):	Educational\l'.25i' Governmental\l'.25i' Commercial\l'|\nlu'
+	Site Mailing Address:	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+.sp 1
+	Site Network Addresses:	Internet\l'|\nlu'
+		UUCP\l'|\nlu'
+		Other\l'|\nlu'
+.sp 1
+	Administrative Contact:	\l'|\nlu'
+	Mailing Address (no P.O. Boxes):	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+	Telephone:	\l'|\nlu'
+	Network Address:	\l'|\nlu'
+.sp 1
+	Technical Contact:	\l'|\nlu'
+	Mailing Address (no P.O. Boxes):	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+	Telephone:	\l'|\nlu'
+	Network Address:	\l'|\nlu'
+.sp 1
+	Applications:	\l'|\nlu'
+	Comments:	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'

@@ -1,0 +1,16 @@
+#print
+Now, with the line
+  now is the time for all good men
+and the command
+  s/t../TIM/p
+what word will be changed?  Again, type
+"answer WORD"; remember that "." matches
+any character, and the first match is picked.
+#copyin
+#user
+#uncopyin
+#match the
+#log
+#next
+33.1a  10
+33.2a 5

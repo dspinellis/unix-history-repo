@@ -1,0 +1,98 @@
+.\" Copyright (c) 1985, 1991, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"     @(#)hypot.3	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt HYPOT 3
+.Os BSD 4
+.Sh NAME
+.Nm hypot ,
+.Nm cabs
+.Nd euclidean distance and complex absolute value functions
+.Sh SYNOPSIS
+.Fd #include <math.h>
+.Ft double
+.Fn hypot "double x" "double y"
+.Fd struct {double x, y;} z;
+.Ft double
+.Fn cabs z
+.Sh DESCRIPTION
+The
+.Fn hypot
+and
+.Fn cabs
+functions
+computes the
+sqrt(x*x+y*y)
+in such a way that underflow will not happen, and overflow
+occurs only if the final result deserves it.
+.Pp
+.Fn hypot "\*(If" "v"
+=
+.Fn hypot "v" "\*(If"
+= +\*(If for all
+.Ar v ,
+including \*(Na.
+.Sh ERROR (due to Roundoff, etc.)
+Below 0.97
+.Em ulps .
+Consequently
+.Fn hypot "5.0" "12.0"
+= 13.0
+exactly;
+in general, hypot and cabs return an integer whenever an
+integer might be expected.
+.Pp
+The same cannot be said for the shorter and faster version of hypot
+and cabs that is provided in the comments in cabs.c; its error can
+exceed 1.2
+.Em ulps .
+.Sh NOTES
+As might be expected,
+.Fn hypot "v" "\*(Na"
+and
+.Fn hypot "\*(Na" "v"
+are \*(Na for all
+.Em finite
+.Ar v ;
+with "reserved operand" in place of "\*(Na", the
+same is true on a
+.Tn VAX .
+But programmers on machines other than a
+.Tn VAX
+(if has no \*(If)
+might be surprised at first to discover that
+.Fn hypot "\(+-\*(If" "\*(Na"
+= +\*(If.
+This is intentional; it happens because
+.Fn hypot "\*(If" "v"
+= +\*(If
+for
+.Em all
+.Ar v ,
+finite or infinite.
+Hence
+.Fn hypot "\*(If" "v"
+is independent of
+.Ar v .
+Unlike the reserved operand fault on a
+.Tn VAX ,
+the
+.Tn IEEE
+\*(Na is designed to
+disappear when it turns out to be irrelevant, as it does in
+.Fn hypot "\*(If" "\*(Na" .
+.Sh SEE ALSO
+.Xr math 3 ,
+.Xr sqrt 3
+.Sh HISTORY
+Both a
+.Fn hypot
+function and a
+.Fn cabs
+function
+appeared in
+.At v7 .

@@ -1,0 +1,22 @@
+#print
+It seems silly to use a temporary file when all that's really
+needed is to take the output from one program like "ls",
+and pass it directly to the input of another, like "wc".
+One of the original contributions of Unix is a clean
+way to do this, called a "pipe".  You can connect two
+programs with a pipe like this:
+  ls | wc
+and the output of the first program goes into the input of
+the second without any intervening file.
+
+Try this pair of commands in a pipeline.
+Try an ordinary "ls" command too, to verify that you
+got the right answer.  Then type "ready".
+#create X1
+#copyin
+#user
+#uncopyin
+grep 'ls *| *wc' .copy >/dev/null
+#log
+#next
+5.1c

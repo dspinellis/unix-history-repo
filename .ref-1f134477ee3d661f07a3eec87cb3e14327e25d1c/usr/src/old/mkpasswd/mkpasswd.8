@@ -1,0 +1,53 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mkpasswd.8	6.7 (Berkeley) %G%
+.\"
+.TH MKPASSWD 8 ""
+.UC 6
+.SH NAME
+mkpasswd \- generate hashed password table
+.SH SYNOPSIS
+.B mkpasswd
+[
+.B \-p
+] passwdfile
+.SH DESCRIPTION
+.ft B
+Mkpasswd has been obsoleted by pwd_mkdb(8).
+.ft R
+.PP
+.I Mkpasswd
+is used to generated the hashed password database used by the
+password library routines (see
+.IR getpwent (3)).
+.PP
+The file
+.I passwdfile
+must be in password file format (see
+.IR passwd (5)).
+.I Mkpasswd
+generates database files named ``passwdfile.pag'' and
+``passwdfile.dir'' (see
+.IR ndbm (3)).
+Data subsequently taken from the database files differ from
+.I passwdfile
+in one respect.
+Rather than storing the encrypted password in the database,
+.I mkpasswd
+stores the offset of the encrypted password in
+.IR passwdfile .
+.PP
+.I Mkpasswd
+exits zero on success, non-zero on failure.
+.PP
+The
+.I \-p
+option causes
+.I mkpasswd
+to create ``passwdfile.orig'', a password file in the
+standard Version 7 format.
+.SH SEE ALSO
+chpass(1), passwd(1), getpwent(3), ndbm(3), passwd(5), vipw(8)
