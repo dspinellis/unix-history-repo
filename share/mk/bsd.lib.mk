@@ -1,6 +1,10 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.15  1993/10/31  15:43:03  ljo
+# bsd.dep.mk wasn't installed. bsd.lib.mk was missing a "\" line
+# continuation character in afterdepend target.
+#
 # Revision 1.14  1993/10/31  03:33:46  paul
 # Added NetBSD's bsd.dep.mk
 #
@@ -75,6 +79,12 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
+.if exists(${.CURDIR}/shlib_version)
+SHLIB_MAJOR != . ${.CURDIR}/shlib_version ; echo $$major
+SHLIB_MINOR != . ${.CURDIR}/shlib_version ; echo $$minor
+.endif
+
+
 LIBDIR?=	/usr/lib
 LINTLIBDIR?=	/usr/libdata/lint
 LIBGRP?=	bin
@@ -90,8 +100,9 @@ BINMODE?=	555
 .MAIN: all
 
 # prefer .s to a .c, add .po, remove stuff not used in the BSD libraries
+# .so used for PIC object files
 .SUFFIXES:
-.SUFFIXES: .out .o .po .s .c .cc .cxx .C .f .y .l
+.SUFFIXES: .out .o .po .so .s .c .cc .cxx .C .f .y .l
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
@@ -103,6 +114,9 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
+.c.so:
+	${CC} ${PICFLAG} -DPIC ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+
 .cc.o .cxx.o .C.o:
 	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
 	@${LD} -x -r ${.TARGET}
@@ -112,6 +126,9 @@ BINMODE?=	555
 	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
+
+.cc.so .C.so:
+	{CXX} ${PICFLAG} -DPIC ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .f.o:
 	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
@@ -135,10 +152,25 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
+.s.so:
+	${CPP} -E -DPIC ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
+	   {AS} -k -o ${.TARGET}
+
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
 .else
 _LIBS=lib${LIB}.a
+.endif
+
+.if !defined(NOPIC)
+_LIBS+=lib${LIB}_pic.a
+.if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
+_LIBS+=lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
+.endif
+.endif
+
+.if !defined(PICFLAG)
+PICFLAG=-fpic
 .endif
 
 all: ${_LIBS} # llib-l${LIB}.ln
@@ -158,6 +190,19 @@ lib${LIB}_p.a:: ${POBJS}
 	@${AR} cTq lib${LIB}_p.a `lorder ${POBJS} | tsort` ${LDADD}
 	${RANLIB} lib${LIB}_p.a
 
+SOBJS+= ${OBJS:.o=.so}
+lib${LIB}_pic.a:: ${SOBJS}
+	@echo building shared object ${LIB} library
+	@rm -f lib${LIB}_pic.a
+	@${AR} cTq lib${LIB}_pic.a `lorder ${SOBJS} | tsort` ${LDADD}
+	${RANLIB} lib${LIB}_pic.a
+
+lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}: lib${LIB}_pic.a
+	@echo building shared ${LIB} library \(version ${SHLIB_MAJOR}.${SHLIB_MINOR}\)
+	@rm -f lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
+	$(LD) -Bshareable -Bforcearchive \
+	    -o lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} lib${LIB}_pic.a
+
 llib-l${LIB}.ln: ${SRCS}
 	${LINT} -C${LIB} ${CFLAGS} ${.ALLSRC:M*.c}
 
@@ -166,6 +211,9 @@ clean:
 	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS}
 	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
+	rm -f ${SOBJS} shared/*.o
+	rm -f lib${LIB}.a lib${LIB}_p.a lib${LIB}_pic.a llib-l${LIB}.ln
+	rm -f lib${LIB}.so.*.*
 .endif
 
 .if !target(cleandir)
@@ -197,6 +245,16 @@ realinstall: beforeinstall
 	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
+.endif
+.if !defined(NOPIC) && defined(INSTALL_PIC_ARCHIVE)
+#       ranlib lib${LIB}_pic.a
+	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	    lib${LIB}_pic.a ${DESTDIR}${LIBDIR}
+	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
+.endif
+.if !defined(NOPIC) && defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
+	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	    lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} ${DESTDIR}${LIBDIR}
 .endif
 #	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 #	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
