@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -542,17 +542,51 @@ union_getattr(ap)
 	} */ *ap;
 {
 	int error;
-	struct vnode *vp = OTHERVP(ap->a_vp);
-	int dolock = (vp == LOWERVP(ap->a_vp));
+	struct union_node *un = VTOUNION(ap->a_vp);
+	struct vnode *vp = un->un_uppervp;
+	struct vattr *vap;
+	struct vattr va;
 
-	if (dolock)
+
+	/*
+	 * Some programs walk the filesystem hierarchy by counting
+	 * links to directories to avoid stat'ing all the time.
+	 * This means the link count on directories needs to be "correct".
+	 * The only way to do that is to call getattr on both layers
+	 * and fix up the link count.  The link count will not necessarily
+	 * be accurate but will be large enough to defeat the tree walkers.
+	 */
+
+	vap = ap->a_vap;
+
+	vp = un->un_uppervp;
+	if (vp != NULLVP) {
+		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
+		if (error)
+			return (error);
+	}
+
+	if (vp == NULLVP) {
+		vp = un->un_lowervp;
+	} else if (vp->v_type == VDIR) {
+		vp = un->un_lowervp;
+		vap = &va;
+	} else {
+		vp = NULLVP;
+	}
+
+	if (vp != NULLVP) {
 		VOP_LOCK(vp);
-	error = VOP_GETATTR(vp, ap->a_vap, ap->a_cred, ap->a_p);
-	if (dolock)
+		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
 		VOP_UNLOCK(vp);
+		if (error)
+			return (error);
+	}
 
-	/* Requires that arguments be restored. */
-	ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
+	if ((vap != ap->a_vap) && (vap->va_type == VDIR))
+		ap->a_vap->va_nlink += vap->va_nlink;
+
+	vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
 	return (0);
 }
 
