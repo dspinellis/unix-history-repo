@@ -1,4 +1,16 @@
-/* Copyright (c) University of British Columbia, 1984 */
+/*
+ * Copyright (c) University of British Columbia, 1984
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * the Laboratory for Computation Vision and the Computer Science Department
+ * of the University of British Columbia.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)pk.h	7.2 (Berkeley) %G%
+ */
 
 /*
  *
@@ -56,20 +68,38 @@ typedef char    bool;
 
 /*
  *  X.25 Packet format definitions
+ *  This will eventually have to be rewritten without reference
+ *  to bit fields, to be ansi C compliant and allignment safe.
  */
+
+#if BYTE_ORDER == BIG_ENDIAN
+#define ORDER2(a, b) a , b
+#define ORDER3(a, b, c) a , b , c
+#define ORDER4(a, b, c, d) a , b , c , d
+#endif
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+#define ORDER2(a, b) b , a
+#define ORDER3(a, b, c) c , b , a
+#define ORDER4(a, b, c, d) d , c , b , a
+#endif
 
 typedef u_char octet;
 
 struct x25_calladdr {
-#ifdef vax
-	unsigned called_addrlen:4;
-	unsigned calling_addrlen:4;
-#endif 
-#ifdef sun
-	unsigned calling_addrlen:4;
-	unsigned called_addrlen:4;
-#endif
-	char address_field[MAXADDRLN];
+	octet ORDER2(called_addrlen:4, calling_addrlen:4);
+	octet address_field[MAXADDRLN];
+}
+
+struct x25_packet {
+	octet ORDER3(lc_group_number:4, fmt_identifier:3, q_bit:1);
+	octet logical_channel_number;
+	octet packet_type;
+	octet packet_data;
+};
+
+struct data_packet {
+	octet ORDER4(z:1, ps:3, m_bit:1, pr:3);
 };
 
 #define FACILITIES_REVERSE_CHARGE	0x1
@@ -79,36 +109,6 @@ struct x25_calladdr {
 
 #define PKHEADERLN	3
 
-struct x25_packet {
-#ifdef vax
-	unsigned lc_group_number:4;
-	unsigned fmt_identifier:3;
-	unsigned q_bit:1;
-#endif
-#ifdef sun
-	unsigned q_bit:1;
-	unsigned fmt_identifier:3;
-	unsigned lc_group_number:4;
-#endif
-	octet logical_channel_number;
-	octet packet_type;
-	octet packet_data;
-};
-
-struct data_packet {
-#ifdef vax
-	unsigned z:1;
-	unsigned ps:3;
-	unsigned m_bit:1;
-	unsigned pr:3;
-#endif
-#ifdef sun
-	unsigned pr:3;
-	unsigned m_bit:1;
-	unsigned ps:3;
-	unsigned z:1;
-#endif
-};
 
 #define PR(xp)		(((struct data_packet *)&xp -> packet_type)->pr)
 #define PS(xp)		(((struct data_packet *)&xp -> packet_type)->ps)
