@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -70,7 +70,7 @@ char *argv[];
 	if (sline)
 		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
 	sprintf(mesg,
-	    "\nBroadcast Message from %s@%s (%.*s) at %d:%02d ...\r\n\n"
+	    "\n\007\007Broadcast Message from %s@%s (%.*s) at %d:%02d ...\r\n\n"
 		, who
 		, hostname
 		, sizeof(utmp[sline].ut_line)
