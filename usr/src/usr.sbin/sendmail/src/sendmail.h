@@ -1,9 +1,7 @@
 /*
 **  POSTBOX.H -- Global definitions for postbox.
 **
-**	Most of these are actually allocated in globals.c
-**
-**	@(#)sendmail.h	3.5	%G%
+**	@(#)sendmail.h	3.6	%G%
 */
 
 
@@ -20,6 +18,7 @@
 # define MAXFIELD	2500	/* maximum total length of a header field */
 # define MAXPV		15	/* maximum # of parms to mailers */
 # define MAXHOP		30	/* maximum value of HopCount */
+# define MAXATOM	15	/* max atoms per address */
 # define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
 
 
@@ -49,11 +48,10 @@
 struct mailer
 {
 	char	*m_mailer;	/* pathname of the mailer to use */
+	char	*m_name;	/* symbolic name of this mailer */
 	short	m_flags;	/* status flags, see below */
 	short	m_badstat;	/* the status code to use on unknown error */
-	char	**m_local;	/* list of local names for this host */
 	char	*m_from;	/* pattern for From: header */
-	char	***m_hmap;	/* host map */
 	char	**m_argv;	/* template argument vector */
 };
 
@@ -69,6 +67,8 @@ struct mailer
 # define M_NEEDDATE	001000	/* need arpa-style Date: line */
 # define M_MSGID	002000	/* need Message-Id: field */
 # define M_COMMAS	004000	/* need comma-seperated address lists */
+# define M_USR_UPPER	010000	/* preserve user case distinction */
+# define M_HST_UPPER	020000	/* preserve host case distinction */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID|M_COMMAS)
 
@@ -101,26 +101,7 @@ extern ADDRESS SendQ;		/* queue of people to send to */
 extern ADDRESS AliasQ;		/* queue of people that are aliases */
 
 
-/*
-**  Parse structure.
-**	This table drives the parser which determines the network
-**	to send the mail to.
-*/
 
-struct parsetab
-{
-	char	p_char;		/* trigger character */
-	char	p_mailer;	/* the index of the mailer to call */
-	short	p_flags;	/* see below */
-	char	*p_arg;		/* extra info needed for some flags */
-};
-
-# define P_MAP		0001	/* map p_char -> p_arg[0] */
-# define P_HLAST	0002	/* host is last, & right associative */
-# define P_ONE		0004	/* can only be one p_char in addr */
-# define P_MOVE		0010	/* send untouched to host p_arg */
-# define P_USR_UPPER	0020	/* don't map UPPER->lower in user names */
-# define P_HST_UPPER	0040	/* don't map UPPER->lower in host names */
 
 
 /*
@@ -160,6 +141,27 @@ extern struct hdrinfo	HdrInfo[];
 # define H_DELETE	00002	/* don't send this field */
 # define H_DEFAULT	00004	/* if another value is found, drop this */
 # define H_USED		00010	/* indicates that this has been output */
+
+
+/*
+**  Rewrite rules.
+*/
+
+struct rewrite
+{
+	char	**r_lhs;	/* pattern match */
+	char	**r_rhs;	/* substitution value */
+	struct rewrite	*r_next;/* next in chain */
+};
+
+struct rewrite	*RewriteRules;
+
+# define MATCHANY	'\020'	/* match exactly one token */
+# define MATCHONE	'\021'	/* match one or more tokens */
+
+# define CANONNET	'\025'	/* canonical net, next token */
+# define CANONHOST	'\026'	/* canonical host, next token */
+# define CANONUSER	'\027'	/* canonical user, next N tokens */
 
 
 

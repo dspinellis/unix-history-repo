@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.3	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.4	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -42,9 +42,9 @@ savemail()
 	extern char *ctime();
 	extern ADDRESS *parse();
 	static int exclusive;
-	extern char *DaemonName;
 	extern char *strcpy(), *strcat();
 	extern long time();
+	extern char *Macro[];
 
 	if (exclusive++)
 		return;
@@ -98,7 +98,7 @@ savemail()
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
-			printf("\r\nMessage from %s\r\n", DaemonName);
+			printf("\r\nMessage from %s\r\n", Macro['d']);
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) && !ferror(stdout))
 				fputs(buf, stdout);
@@ -127,7 +127,7 @@ savemail()
 
 		/* fake up an address header for the from person */
 		bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
-		if (parse(DaemonName, &From, -1) == NULL)
+		if (parse(Macro['d'], &From, -1) == NULL)
 		{
 			syserr("Can't parse myself!");
 			ExitStat = EX_SOFTWARE;

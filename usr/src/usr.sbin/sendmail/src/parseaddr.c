@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.5	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.6	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -46,7 +46,7 @@ static char	SccsId[] = "@(#)parseaddr.c	3.5	%G%";
 **		savemail
 */
 
-# define DELIMCHARS	"()<>@!.,;:\\\" \t\r\n"	/* word delimiters */
+# define DELIMCHARS	"$()<>@!.,;:\\\" \t\r\n"	/* word delimiters */
 # define SPACESUB	('.'|0200)		/* substitution for <lwsp> */
 
 ADDRESS *
@@ -55,238 +55,74 @@ parse(addr, a, copyf)
 	register ADDRESS *a;
 	int copyf;
 {
-	register char *p;
-	register struct parsetab *t;
-	extern struct parsetab ParseTab[];
-	static char buf[MAXNAME];
-	register char c;
-	register char *q;
-	bool got_one;
-	extern char *prescan();
+	register char **pvp;
+	register struct mailer *m;
+	extern char **prescan();
 	extern char *xalloc();
 	extern char *newstr();
-	char **pvp;
-	char ***hvp;
 	extern char *strcpy();
+	extern ADDRESS *buildaddr();
 
 	/*
 	**  Initialize and prescan address.
 	*/
 
 	To = addr;
-	if (prescan(addr, buf, &buf[sizeof buf], '\0') == NULL)
+	pvp = prescan(addr, '\0');
+	if (pvp == NULL)
 		return (NULL);
 
 	/*
-	**  Scan parse table.
-	**	Look for the first entry designating a character
-	**		that is contained in the address.
-	**	Arrange for q to point to that character.
-	**	Check to see that there is only one of the char
-	**		if it must be unique.
-	**	Find the last one if the host is on the RHS.
-	**	Insist that the host name is atomic.
-	**	If just doing a map, do the map and then start all
-	**		over.
+	**  Apply rewriting rules.
 	*/
 
- rescan:
-	got_one = FALSE;
-	for (t = ParseTab; t->p_char != '\0'; t++)
+	rewrite(pvp);
+
+	/*
+	**  See if we resolved to a real mailer.
+	*/
+
+	if (pvp[0][0] != CANONNET)
 	{
-		q = NULL;
-		for (p = buf; (c = *p) != '\0'; p++)
-		{
-			/* find the end of this token */
-			while (isalnum(c) || c == '-' || c == '_')
-				c = *++p;
-			if (c == '\0')
-				break;
-
-			if (c == t->p_char)
-			{
-				got_one = TRUE;
-
-				/* do mapping as appropriate */
-				if (bitset(P_MAP, t->p_flags))
-				{
-					*p = t->p_arg[0];
-					if (bitset(P_ONE, t->p_flags))
-						goto rescan;
-					else
-						continue;
-				}
-
-				/* arrange for q to point to it */
-				if (q != NULL && bitset(P_ONE, t->p_flags))
-				{
-					usrerr("multichar error");
-					ExitStat = EX_USAGE;
-					return (NULL);
-				}
-				if (q == NULL || bitset(P_HLAST, t->p_flags))
-					q = p;
-			}
-			else
-			{
-				/* insist that host name is atomic */
-				if (bitset(P_HLAST, t->p_flags))
-					q = NULL;
-				else
-					break;
-			}
-		}
-
-		if (q != NULL)
-			break;
+		setstat(EX_USAGE);
+		usrerr("cannot resolve name");
+		return (NULL);
 	}
 
 	/*
-	**  If we matched nothing cleanly, but we did match something
-	**  somewhere in the process of scanning, then we have a
-	**  syntax error.  This can happen on things like a@b:c where
-	**  @ has a right host and : has a left host.
-	**
-	**  We also set `q' to the null string, in case someone forgets
-	**  to put the P_MOVE bit in the local mailer entry of the
-	**  configuration table.
+	**  Build canonical address from pvp.
 	*/
 
-	if (q == NULL)
-	{
-		q = "";
-		if (got_one)
-		{
-			usrerr("syntax error");
-			ExitStat = EX_USAGE;
-			return (NULL);
-		}
-	}
+	a = buildaddr(pvp, a);
+	m = Mailer[a->q_mailer];
 
 	/*
-	**  Interpret entry.
-	**	t points to the entry for the mailer we will use.
-	**	q points to the significant character.
+	**  Make local copies of the host & user and then
+	**  transport them out.
 	*/
 
-	if (a == NULL)
-		a = (ADDRESS *) xalloc(sizeof *a);
 	if (copyf > 0)
 		a->q_paddr = newstr(addr);
 	else
 		a->q_paddr = addr;
-	a->q_mailer = a->q_rmailer = t->p_mailer;
 
-	if (bitset(P_MOVE, t->p_flags))
+	if (copyf >= 0)
 	{
-		/* send the message to another host & retry */
-		a->q_host = t->p_arg;
-		if (copyf >= 0)
-			a->q_user = newstr(buf);
-		else
-			a->q_user = buf;
-	}
-	else
-	{
-		/*
-		**  Make local copies of the host & user and then
-		**  transport them out.
-		*/
-
-		*q++ = '\0';
-		if (bitset(P_HLAST, t->p_flags))
-		{
-			a->q_host = q;
-			a->q_user = buf;
-		}
-		else
-		{
-			a->q_host = buf;
-			a->q_user = q;
-		}
-
-		/*
-		**  Don't go to the net if already on the target host.
-		**	This is important on the berkeley network, since
-		**	it get confused if we ask to send to ourselves.
-		**	For nets like the ARPANET, we probably will have
-		**	the local list set to NULL to simplify testing.
-		**	The canonical representation of the name is also set
-		**	to be just the local name so the duplicate letter
-		**	suppression algorithm will work.
-		*/
-
-		if ((pvp = Mailer[a->q_mailer]->m_local) != NULL)
-		{
-			while (*pvp != NULL)
-			{
-				auto char buf2[MAXNAME];
-
-				strcpy(buf2, a->q_host);
-				if (!bitset(P_HST_UPPER, t->p_flags))
-					makelower(buf2);
-				if (strcmp(*pvp++, buf2) == 0)
-				{
-					strcpy(buf2, a->q_user);
-					p = a->q_paddr;
-					if (parse(buf2, a, -1) == NULL)
-					{
-						To = addr;
-						return (NULL);
-					}
-					To = a->q_paddr = p;
-					break;
-				}
-			}
-		}
-
-		/*
-		**  Do host equivalence.
-		**	This allows us to map together messages that
-		**	would otherwise have several copies going
-		**	through the same net link.
-		*/
-
-		for (hvp = Mailer[a->q_mailer]->m_hmap; *hvp != NULL; hvp++)
-		{
-			register bool doremap;
-
-			doremap = FALSE;
-			for (pvp = *hvp; *pvp != NULL; pvp++)
-			{
-				p = *pvp;
-				if (*p == '\0')
-				{
-					/* null string: match everything */
-					doremap = TRUE;
-				}
-				else if (strcmp(p, a->q_host) == 0)
-					doremap = TRUE;
-			}
-
-			if (doremap)
-			{
-				a->q_host = pvp[-1];
-				a->q_user = a->q_paddr;
-			}
-		}
-
-		/* make copies if specified */
-		if (copyf >= 0)
-		{
+		if (a->q_host != NULL)
 			a->q_host = newstr(a->q_host);
-			if (a->q_user != a->q_paddr)
-				a->q_user = newstr(a->q_user);
-		}
+		else
+			a->q_host = "";
+		if (a->q_user != a->q_paddr)
+			a->q_user = newstr(a->q_user);
 	}
 
 	/*
 	**  Do UPPER->lower case mapping unless inhibited.
 	*/
 
-	if (!bitset(P_HST_UPPER, t->p_flags))
+	if (!bitset(M_HST_UPPER, m->m_flags))
 		makelower(a->q_host);
-	if (!bitset(P_USR_UPPER, t->p_flags))
+	if (!bitset(M_USR_UPPER, m->m_flags))
 		makelower(a->q_user);
 
 	/*
@@ -296,38 +132,10 @@ parse(addr, a, copyf)
 # ifdef DEBUG
 	if (Debug)
 		printf("parse(\"%s\"): host \"%s\" user \"%s\" mailer %d\n",
-		    addr, a->q_host, a->q_user, t->p_mailer);
+		    addr, a->q_host, a->q_user, a->q_mailer);
 # endif DEBUG
 
 	return (a);
-}
-/*
-**  MAKELOWER -- Translate a line into lower case
-**
-**	Parameters:
-**		p -- the string to translate.  If NULL, return is
-**			immediate.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		String pointed to by p is translated to lower case.
-**
-**	Called By:
-**		parse
-*/
-
-makelower(p)
-	register char *p;
-{
-	register char c;
-
-	if (p == NULL)
-		return;
-	for (; (c = *p) != '\0'; p++)
-		if ((c & 0200) == 0 && isupper(c))
-			*p = c - 'A' + 'a';
 }
 /*
 **  PRESCAN -- Prescan name and make it canonical
@@ -350,70 +158,184 @@ makelower(p)
 **
 **	Parameters:
 **		addr -- the name to chomp.
-**		buf -- the buffer to copy it into.
-**		buflim -- the last usable address in the buffer
-**			(which will old a null byte).  Normally
-**			&buf[sizeof buf - 1].
 **		delim -- the delimiter for the address, normally
 **			'\0' or ','; \0 is accepted in any case.
 **			are moving in place; set buflim to high core.
 **
 **	Returns:
-**		A pointer to the terminator of buf.
+**		A pointer to a vector of tokens.
 **		NULL on error.
 **
 **	Side Effects:
-**		buf gets clobbered.
-**
-**	Called By:
-**		parse
-**		maketemp
+**		none.
 */
 
-char *
-prescan(addr, buf, buflim, delim)
+# define OPER		1
+# define ATOM		2
+# define EOTOK		3
+# define QSTRING	4
+# define SPACE		5
+# define DOLLAR		6
+# define GETONE		7
+
+char **
+prescan(addr, delim)
 	char *addr;
-	char *buf;
-	char *buflim;
 	char delim;
 {
 	register char *p;
+	static char buf[MAXNAME+MAXATOM];
+	static char *av[MAXATOM+1];
+	char **avp;
 	bool space;
-	bool quotemode;
 	bool bslashmode;
-	bool delimmode;
 	int cmntcnt;
 	int brccnt;
 	register char c;
+	char *tok;
 	register char *q;
 	extern char *index();
+	register int state;
+	int nstate;
 
 	space = FALSE;
-	delimmode = TRUE;
 	q = buf;
-	bslashmode = quotemode = FALSE;
+	bslashmode = FALSE;
 	cmntcnt = brccnt = 0;
-	for (p = addr; (c = *p++) != '\0'; )
+	avp = av;
+	state = OPER;
+	for (p = addr; *p != '\0' && *p != delim; )
 	{
-		/* chew up special characters */
-		*q = '\0';
-		if (bslashmode)
+		/* read a token */
+		tok = q;
+		while ((c = *p++) != '\0' && c != delim)
 		{
-			c |= 0200;
-			bslashmode = FALSE;
+			/* chew up special characters */
+			*q = '\0';
+			if (bslashmode)
+			{
+				c |= 0200;
+				bslashmode = FALSE;
+			}
+			else if (c == '\\')
+			{
+				bslashmode = TRUE;
+				continue;
+			}
+
+			nstate = toktype(c);
+			switch (state)
+			{
+			  case QSTRING:		/* in quoted string */
+				if (c == '"')
+					state = OPER;
+				break;
+
+			  case ATOM:		/* regular atom */
+				state = nstate;
+				if (state != ATOM)
+				{
+					state = EOTOK;
+					p--;
+				}
+				break;
+
+			  case GETONE:		/* grab one character */
+				state = OPER;
+				break;
+
+			  case EOTOK:		/* after atom or q-string */
+				state = nstate;
+				if (state == SPACE)
+					continue;
+				break;
+
+			  case SPACE:		/* linear white space */
+				state = nstate;
+				space = TRUE;
+				continue;
+
+			  case OPER:		/* operator */
+				if (nstate == SPACE)
+					continue;
+				state = nstate;
+				break;
+
+			  case DOLLAR:		/* $- etc. */
+				state = OPER;
+				switch (c)
+				{
+				  case '$':		/* literal $ */
+					break;
+
+				  case '+':		/* match anything */
+					c = MATCHANY;
+					state = GETONE;
+					break;
+
+				  case '-':		/* match one token */
+					c = MATCHONE;
+					state = GETONE;
+					break;
+
+				  case '#':		/* canonical net name */
+					c = CANONNET;
+					break;
+
+				  case '@':		/* canonical host name */
+					c = CANONHOST;
+					break;
+
+				  case ':':		/* canonical user name */
+					c = CANONUSER;
+					break;
+
+				  default:
+					c = '$';
+					state = OPER;
+					p--;
+					break;
+				}
+				break;
+
+			  default:
+				syserr("prescan: unknown state %d", state);
+			}
+
+			if (state == OPER)
+				space = FALSE;
+			else if (state == EOTOK)
+				break;
+			if (c == '$' && delim == '\t')
+			{
+				state = DOLLAR;
+				continue;
+			}
+
+			/* squirrel it away */
+			if (q >= &buf[sizeof buf - 5])
+			{
+				usrerr("Address too long");
+				return (NULL);
+			}
+			if (space)
+				*q++ = SPACESUB;
+			*q++ = c;
+
+			/* decide whether this represents end of token */
+			if (state == OPER)
+				break;
 		}
-		else if (c == '"')
-			quotemode = !quotemode;
-		else if (c == '\\')
-		{
-			bslashmode++;
+		if (c == '\0' || c == delim)
+			p--;
+
+		/* new token */
+		if (tok == q)
 			continue;
-		}
-		else if (quotemode)
-			c |= 0200;
-		else if (c == delim)
-			break;
-		else if (c == '(')
+		*q++ = '\0';
+
+		c = tok[0];
+		if (c == '(')
 		{
 			cmntcnt++;
 			continue;
@@ -431,11 +353,13 @@ prescan(addr, buf, buflim, delim)
 				continue;
 			}
 		}
-		if (cmntcnt > 0)
+		else if (cmntcnt > 0)
 			continue;
-		else if (isascii(c) && isspace(c) && (space || delimmode))
-			continue;
-		else if (c == '<')
+
+		*avp++ = tok;
+
+		/* we prefer <> specs */
+		if (c == '<')
 		{
 			if (brccnt < 0)
 			{
@@ -443,13 +367,13 @@ prescan(addr, buf, buflim, delim)
 				return (NULL);
 			}
 			brccnt++;
-			delimmode = TRUE;
 			space = FALSE;
 			if (brccnt == 1)
 			{
 				/* we prefer using machine readable name */
 				q = buf;
 				*q = '\0';
+				avp = av;
 				continue;
 			}
 		}
@@ -472,48 +396,398 @@ prescan(addr, buf, buflim, delim)
 		/*
 		**  Turn "at" into "@",
 		**	but only if "at" is a word.
-		**	By the way, I violate the ARPANET RFC-733
-		**	standard here, by assuming that 'space' delimits
-		**	atoms.  I assume that is just a mistake, since
-		**	it violates the spirit of the semantics
-		**	of the document.....
 		*/
 
-		if (delimmode && (c == 'a' || c == 'A') &&
-		    (p[0] == 't' || p[0] == 'T') &&
-		    (index(DELIMCHARS, p[1]) != NULL || p[1] <= 040))
+		if (lower(tok[0]) == 'a' && lower(tok[1]) == 't' && tok[2] == '\0')
 		{
-			c = '@';
-			p++;
+			tok[0] = '@';
+			tok[1] = '\0';
 		}
-
-		if (delimmode = (index(DELIMCHARS, c) != NULL))
-			space = FALSE;
-
-		/* if not a space, squirrel it away */
-		if ((!isascii(c) || !isspace(c)) && brccnt >= 0)
-		{
-			if (q >= buflim-1)
-			{
-				usrerr("Address too long");
-				return (NULL);
-			}
-			if (space)
-				*q++ = SPACESUB;
-			*q++ = c;
-		}
-		space = isascii(c) && isspace(c);
 	}
-	*q = '\0';
-	if (c == '\0')
-		p--;
+	*avp = NULL;
 	if (cmntcnt > 0)
 		usrerr("Unbalanced '('");
-	else if (quotemode)
-		usrerr("Unbalanced '\"'");
 	else if (brccnt > 0)
 		usrerr("Unbalanced '<'");
-	else if (buf[0] != '\0')
-		return (p);
+	else if (state == QSTRING)
+		usrerr("Unbalanced '\"'");
+	else if (av[0] != NULL)
+		return (av);
 	return (NULL);
+}
+/*
+**  TOKTYPE -- return token type
+**
+**	Parameters:
+**		c -- the character in question.
+**
+**	Returns:
+**		Its type.
+**
+**	Side Effects:
+**		none.
+*/
+
+toktype(c)
+	register char c;
+{
+	if (isspace(c))
+		return (SPACE);
+	if (index(DELIMCHARS, c) != NULL || iscntrl(c))
+		return (OPER);
+	return (ATOM);
+}
+/*
+**  REWRITE -- apply rewrite rules to token vector.
+**
+**	Parameters:
+**		pvp -- pointer to token vector.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		pvp is modified.
+*/
+
+struct match
+{
+	char	**firsttok;	/* first token matched */
+	char	**lasttok;	/* last token matched */
+	char	name;		/* name of parameter */
+};
+
+# define MAXMATCH	8	/* max params per rewrite */
+
+
+rewrite(pvp)
+	char **pvp;
+{
+	register char *ap;		/* address pointer */
+	register char *rp;		/* rewrite pointer */
+	register char **avp;		/* address vector pointer */
+	register char **rvp;		/* rewrite vector pointer */
+	struct rewrite *rwr;
+	struct match mlist[MAXMATCH];
+	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
+
+# ifdef DEBUG
+	if (Debug)
+	{
+		printf("rewrite: original pvp:\n");
+		printav(pvp);
+	}
+# endif DEBUG
+
+	/*
+	**  Run through the list of rewrite rules, applying
+	**	any that match.
+	*/
+
+	for (rwr = RewriteRules; rwr != NULL; )
+	{
+# ifdef DEBUG
+		if (Debug)
+		{
+			printf("-----trying rule:\n");
+			printav(rwr->r_lhs);
+		}
+# endif DEBUG
+
+		/* try to match on this rule */
+		clrmatch(mlist);
+		for (rvp = rwr->r_lhs, avp = pvp; *avp != NULL; )
+		{
+			ap = *avp;
+			rp = *rvp;
+
+			if (rp == NULL)
+			{
+				/* end-of-pattern before end-of-address */
+				goto fail;
+			}
+
+			switch (*rp)
+			{
+			  case MATCHONE:
+				/* match exactly one token */
+				setmatch(mlist, rp[1], avp, avp);
+				break;
+
+			  case MATCHANY:
+				/* match any number of tokens */
+				setmatch(mlist, rp[1], NULL, avp);
+				break;
+
+			  default:
+				/* must have exact match */
+				/* can scribble rp & ap here safely */
+				while (*rp != '\0' && *ap != '\0')
+				{
+					if (*rp++ != lower(*ap++))
+						goto fail;
+				}
+				break;
+			}
+
+			/* successful match on this token */
+			avp++;
+			rvp++;
+			continue;
+
+		  fail:
+			/* match failed -- back up */
+			while (--rvp >= rwr->r_lhs)
+			{
+				rp = *rvp;
+				if (*rp == MATCHANY)
+					break;
+
+				/* can't extend match: back up everything */
+				avp--;
+
+				if (*rp == MATCHONE)
+				{
+					/* undo binding */
+					setmatch(mlist, rp[1], NULL, NULL);
+				}
+			}
+
+			if (rvp < rwr->r_lhs)
+			{
+				/* total failure to match */
+				break;
+			}
+		}
+
+		/*
+		**  See if we successfully matched
+		*/
+
+		if (rvp >= rwr->r_lhs && *rvp == NULL)
+		{
+# ifdef DEBUG
+			if (Debug)
+			{
+				printf("-----rule matches:\n");
+				printav(rwr->r_rhs);
+			}
+# endif DEBUG
+
+			/* substitute */
+			for (rvp = rwr->r_rhs, avp = npvp; *rvp != NULL; rvp++)
+			{
+				rp = *rvp;
+				if (*rp == MATCHANY)
+				{
+					register struct match *m;
+					register char **pp;
+					extern struct match *findmatch();
+
+					m = findmatch(mlist, rp[1]);
+					if (m != NULL)
+					{
+						pp = m->firsttok;
+						do
+						{
+							*avp++ = *pp;
+						} while (pp++ != m->lasttok);
+					}
+				}
+				else
+					*avp++ = rp;
+			}
+			*avp++ = NULL;
+			bmove(npvp, pvp, (avp - npvp) * sizeof *avp);
+# ifdef DEBUG
+			if (Debug)
+			{
+				printf("rewritten as:\n");
+				printav(pvp);
+			}
+# endif DEBUG
+			if (pvp[0][0] == CANONNET)
+				break;
+		}
+		else
+		{
+# ifdef DEBUG
+			if (Debug)
+				printf("----- rule fails\n");
+# endif DEBUG
+			rwr = rwr->r_next;
+		}
+	}
+}
+/*
+**  SETMATCH -- set parameter value in match vector
+**
+**	Parameters:
+**		mlist -- list of match values.
+**		name -- the character name of this parameter.
+**		first -- the first location of the replacement.
+**		last -- the last location of the replacement.
+**
+**		If last == NULL, delete this entry.
+**		If first == NULL, extend this entry (or add it if
+**			it does not exist).
+**
+**	Returns:
+**		nothing.
+**
+**	Side Effects:
+**		munges with mlist.
+*/
+
+setmatch(mlist, name, first, last)
+	struct match *mlist;
+	char name;
+	char **first;
+	char **last;
+{
+	register struct match *m;
+	struct match *nullm = NULL;
+
+	for (m = mlist; m < &mlist[MAXMATCH]; m++)
+	{
+		if (m->name == name)
+			break;
+		if (m->name == '\0')
+			nullm = m;
+	}
+
+	if (m >= &mlist[MAXMATCH])
+		m = nullm;
+
+	if (last == NULL)
+	{
+		m->name = '\0';
+		return;
+	}
+
+	if (m->name == '\0')
+	{
+		if (first == NULL)
+			m->firsttok = last;
+		else
+			m->firsttok = first;
+	}
+	m->name = name;
+	m->lasttok = last;
+}
+/*
+**  FINDMATCH -- find match in mlist
+**
+**	Parameters:
+**		mlist -- list to search.
+**		name -- name to find.
+**
+**	Returns:
+**		pointer to match structure.
+**		NULL if no match.
+**
+**	Side Effects:
+**		none.
+*/
+
+struct match *
+findmatch(mlist, name)
+	struct match *mlist;
+	char name;
+{
+	register struct match *m;
+
+	for (m = mlist; m < &mlist[MAXMATCH]; m++)
+	{
+		if (m->name == name)
+			return (m);
+	}
+
+	return (NULL);
+}
+/*
+**  CLRMATCH -- clear match list
+**
+**	Parameters:
+**		mlist -- list to clear.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		mlist is cleared.
+*/
+
+clrmatch(mlist)
+	struct match *mlist;
+{
+	register struct match *m;
+
+	for (m = mlist; m < &mlist[MAXMATCH]; m++)
+		m->name = '\0';
+}
+/*
+**  BUILDADDR -- build address from token vector.
+**
+**	Parameters:
+**		tv -- token vector.
+**		a -- pointer to address descriptor to fill.
+**			If NULL, one will be allocated.
+**
+**	Returns:
+**		'a'
+**
+**	Side Effects:
+**		fills in 'a'
+*/
+
+ADDRESS *
+buildaddr(tv, a)
+	register char **tv;
+	register ADDRESS *a;
+{
+	register int i;
+	static char buf[MAXNAME];
+	struct mailer **mp;
+	register struct mailer *m;
+	extern char *xalloc();
+
+	if (a == NULL)
+		a = (ADDRESS *) xalloc(sizeof *a);
+
+	/* figure out what net/mailer to use */
+	if (**tv != CANONNET)
+		syserr("buildaddr: no net");
+	tv++;
+	for (mp = Mailer, i = 0; (m = *mp) != NULL; m++, i++)
+	{
+		if (strcmp(m->m_name, *tv) == 0)
+			break;
+	}
+	if (m == NULL)
+		syserr("buildaddr: unknown net %s", *tv);
+	a->q_mailer = i;
+
+	/* figure out what host (if any) */
+	tv++;
+	if (!bitset(M_NOHOST, m->m_flags))
+	{
+		if (**tv != CANONHOST)
+			syserr("buildaddr: no host");
+		tv++;
+		a->q_host = *tv;
+		tv++;
+	}
+	else
+		a->q_host = NULL;
+
+	/* figure out the user */
+	if (**tv != CANONUSER)
+		syserr("buildaddr: no user");
+	buf[0] = '\0';
+	while (**++tv != NULL)
+		strcat(buf, *tv);
+	a->q_user = buf;
+
+	return (a);
 }
