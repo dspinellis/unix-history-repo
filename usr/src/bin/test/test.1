@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)test.1	6.5 (Berkeley) %G%
+.\"     @(#)test.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TEST 1
@@ -46,6 +46,10 @@ special file.
 True if
 .Ar file
 exists and is a directory.
+.It Fl e Ar file
+True if
+.Ar file
+exists (regardless of type).
 .It Fl f Ar file
 True if
 .Ar file
@@ -190,7 +194,17 @@ The
 operator has higher precedence than the
 .Fl o
 operator.
-.Pp
+.Sh GRAMMAR AMBIGUITY
+The 
+.Nm test
+grammar is inherently ambiguous.  In order to assure a degree of consistency,
+the cases described in the 
+.St -p1003.2 , 
+section D11.2/4.62.4, standard
+are evaluated consistently according to the rules specified in the
+standards document.  All other cases are subject to the ambiguity in the
+command semantics.
+.Sh RETURN VALUES
 The
 .Nm test
 utility exits with one of the following values:
