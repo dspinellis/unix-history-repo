@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.5 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.6 (Berkeley) %G%
 .\"
 .TH NDBM 3  ""
 .UC 6
@@ -125,7 +125,7 @@ This code will traverse the data base:
 (key = dbm_firstkey(db); key.dptr != NULL; key = dbm_nextkey(db))
 .PP
 .I Dbm_error
-returns non-zero when an error has occured reading or writing the database.
+returns non-zero when an error has occurred reading or writing the database.
 .I Dbm_clearerr
 resets the error condition on the named database.
 .SH DIAGNOSTICS
