@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -65,17 +65,18 @@ CFLAGS+=-DAS -I.
 SRCS=	asscan1.c asscan2.c asscan3.c asscan4.c bignum1.c bignum2.c natof.c \
 	floattab.c asmain.c asparse.c asexpr.c assyms.c asjxxx.c ascode.c \
 	aspseudo.c assizetab.c asio.c
-
-all: astoks.h
+CLEANFILES=instrs.as astoks.h
 
 astoks.h: astoks.H astokfix.awk
 	awk -f ${.CURDIR}/astokfix.awk < ${.CURDIR}/astoks.H > astoks.h
 
-aspseudo.o: as.h astoks.h aspseudo.c instrs.h instrs.as
+aspseudo.o:
 	${CC} ${CFLAGS} -R -c ${.IMPSRC}
 
 instrs.as: ${.CURDIR}/instrs
 	(echo FLAVOR AS ; cat ${.CURDIR}/instrs) | \
 	    awk -f ${.CURDIR}/instrs > instrs.as
+
+.depend: instrs.as astoks.h
 
 .include <bsd.prog.mk>
