@@ -22,7 +22,7 @@ struct pte
 unsigned int	pg_pfnum:21,		/* core page frame number or 0 */
 		:2,
 		pg_vreadm:1,		/* modified since vread (or with _m) */
-		pg_swapm:1,		/* have to write back to swap */
+		:1,
 		pg_fod:1,		/* is fill on demand (=0) */
 		pg_m:1,			/* hardware maintained modified bit */
 		pg_prot:4,		/* access control */
@@ -66,8 +66,7 @@ unsigned int	pg_blkno:24,		/* file system block number */
 /*
  * Pte related macros
  */
-#define	dirty(pte)	((pte)->pg_fod == 0 && (pte)->pg_pfnum && \
-			    ((pte)->pg_m || (pte)->pg_swapm))
+#define	dirty(pte)	((pte)->pg_m)
 
 #ifndef LOCORE
 #ifdef KERNEL
