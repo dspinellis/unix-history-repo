@@ -10,13 +10,12 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.51 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.52 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.51 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.52 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
-# include <sys/stat.h>
 # include <sys/dir.h>
 # include <signal.h>
 # include <errno.h>
