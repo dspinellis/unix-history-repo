@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.74 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.75 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -239,11 +239,11 @@ lfs_write(vp, uio, ioflag, cred)
 {
 	struct proc *p = uio->uio_procp;
 	register struct inode *ip = VTOI(vp);
-	register struct lfs *fs;				/* LFS */
+	register struct lfs *fs;
 	struct buf *bp;
-	daddr_t lbn, bn;
+	daddr_t lbn;
 	u_long osize;
-	int n, on, flags;
+	int n, on, flags, newblock;
 	int size, resid, error = 0;
 
 #ifdef VERBOSE
@@ -251,7 +251,7 @@ lfs_write(vp, uio, ioflag, cred)
 #endif
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
-		panic("ufs_write mode");
+		panic("lfs_write mode");
 #endif
 	switch (vp->v_type) {
 	case VREG:
@@ -262,12 +262,13 @@ lfs_write(vp, uio, ioflag, cred)
 		break;
 
 	case VDIR:
+		/* XXX This may not be correct for LFS. */
 		if ((ioflag & IO_SYNC) == 0)
-			panic("ufs_write nonsync dir write");
+			panic("lfs_write nonsync dir write");
 		break;
 
 	default:
-		panic("ufs_write type");
+		panic("lfs_write type");
 	}
 	if (uio->uio_offset < 0)
 		return (EINVAL);
@@ -295,13 +296,8 @@ lfs_write(vp, uio, ioflag, cred)
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
-		if (n < fs->lfs_bsize)
-			flags |= B_CLRBUF;
-		else
-			flags &= ~B_CLRBUF;
-		if (error = bread(vp, lbn, fs->lfs_bsize, NOCRED, &bp))
+		if (error = lfs_balloc(vp, n, lbn, &bp))
 			break;
-		bn = bp->b_blkno;
 		if (uio->uio_offset + n > ip->i_size) {
 			ip->i_size = uio->uio_offset + n;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
@@ -318,14 +314,11 @@ lfs_write(vp, uio, ioflag, cred)
 			bawrite(bp);
 		} else
 			bdwrite(bp);
-#else
-		/*
-		 * XXX
-		 * This doesn't handle ioflag & IO_SYNC.
-		 */
-		lfs_bwrite(bp);
-#endif
 		ip->i_flag |= IUPD|ICHG;
+#else
+		/* XXX This doesn't handle IO_SYNC. */
+		LFS_UBWRITE(bp);
+#endif
 		if (cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
