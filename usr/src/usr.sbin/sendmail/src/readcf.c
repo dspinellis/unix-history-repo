@@ -7,11 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include <sys/stat.h>
+# include <unistd.h>
 
 /*
 **  READCF -- read control file.
@@ -48,6 +49,8 @@ static char sccsid[] = "@(#)readcf.c	5.39 (Berkeley) %G%";
 **
 **	Parameters:
 **		cfname -- control file name.
+**		safe -- TRUE if this is the system config file;
+**			FALSE otherwise.
 **
 **	Returns:
 **		none.
@@ -58,6 +61,7 @@ static char sccsid[] = "@(#)readcf.c	5.39 (Berkeley) %G%";
 
 readcf(cfname)
 	char *cfname;
+	bool safe;
 {
 	FILE *cf;
 	int ruleset = 0;
@@ -241,7 +245,7 @@ readcf(cfname)
 					while (isspace(*++p))
 						continue;
 				}
-				fileclass(buf[1], &buf[2], p);
+				fileclass(buf[1], &buf[2], p, safe);
 				break;
 			}
 
@@ -370,21 +374,35 @@ toomany(id, maxcnt)
 **			the named class.
 */
 
-fileclass(class, filename, fmt)
+fileclass(class, filename, fmt, safe)
 	int class;
 	char *filename;
 	char *fmt;
+	bool safe;
 {
 	FILE *f;
+	struct stat stbuf;
 	char buf[MAXLINE];
 
-	if (filename[0] == '|')
-		f = popen(filename + 1, "r");
-	else
-		f = fopen(filename, "r");
+	if (stat(filename, &stbuf) < 0)
+	{
+		syserr("fileclass: cannot stat %s", filename);
+		return;
+	}
+	if (!S_ISREG(stbuf.st_mode))
+	{
+		syserr("fileclass: %s not a regular file", filename);
+		return;
+	}
+	if (!safe && access(filename, R_OK) < 0)
+	{
+		syserr("fileclass: access denied on %s", filename);
+		return;
+	}
+	f = fopen(filename, "r");
 	if (f == NULL)
 	{
-		syserr("cannot open %s", filename);
+		syserr("fileclass: cannot open %s", filename);
 		return;
 	}
 
@@ -429,10 +447,7 @@ fileclass(class, filename, fmt)
 		}
 	}
 
-	if (filename[0] == '|')
-		(void) pclose(f);
-	else
-		(void) fclose(f);
+	(void) fclose(f);
 }
 /*
 **  MAKEMAILER -- define a new mailer.
