@@ -1,0 +1,76 @@
+cc -O -s -I. -c glue1.c
+"glue1.c", line 68: warning: illegal combination of pointer and integer, op <
+"glue1.c", line 77: warning: illegal combination of pointer and integer, op <
+"glue1.c", line 155: warning: illegal pointer combination
+cc -O -s -I. -c refer1.c
+"refer1.c", line 149: warning: & before array or function: ignored
+"refer1.c", line 152: warning: & before array or function: ignored
+"refer1.c", line 153: warning: & before array or function: ignored
+"refer1.c", line 154: warning: & before array or function: ignored
+cc -O -s -I. -c refer2.c
+cc -O -s -I. -c refer4.c
+cc -O -s -I. -c refer5.c
+cc -O -s -I. -c refer6.c
+cc -O -s -I. -c mkey3.c
+cc -O -s -I. -c refer7.c
+cc -O -s -I. -c refer8.c
+cc -O -s -I. -c hunt2.c
+"hunt2.c", line 31: warning: illegal pointer combination
+cc -O -s -I. -c hunt3.c
+cc -O -s -I. -c deliv2.c
+cc -O -s -I. -c hunt5.c
+"hunt5.c", line 16: warning: struct/union or struct/union pointer required
+"hunt5.c", line 16: warning: struct/union or struct/union pointer required
+cc -O -s -I. -c hunt6.c
+cc -O -s -I. -c hunt8.c
+cc -O -s -I. -c glue3.c
+cc -O -s -I. -c hunt7.c
+cc -O -s -I. -c hunt9.c
+cc -O -s -I. -c glue2.c
+cc -O -s -I. -c glue4.c
+cc -O -s -I. -c glue5.c
+cc -O -s -I. -c refer0.c
+cc -O -s -I. -c shell.c
+cc -s -i glue?.o refer[01245678].o hunt[2356789].o mkey3.o shell.o deliv2.o -o refer
+ld: -i ignored
+cc -O -s -I. -c mkey1.c
+"mkey1.c", line 8: warning: old-fashioned initialization: use =
+"mkey1.c", line 23: warning: old-fashioned initialization: use =
+cc -O -s -I. -c mkey2.c
+"mkey2.c", line 4: warning: old-fashioned initialization: use =
+"mkey2.c", line 70: warning: old-fashioned initialization: use =
+"mkey2.c", line 71: warning: old-fashioned initialization: use =
+"mkey2.c", line 71: warning: old-fashioned initialization: use =
+"mkey2.c", line 97: warning: old-fashioned initialization: use =
+"mkey2.c", line 101: warning: illegal combination of pointer and integer, op RETURN
+cc -s mkey?.o deliv2.o -o mkey
+cc -O -s -I. -c inv1.c
+"inv1.c", line 19: warning: old-fashioned initialization: use =
+"inv1.c", line 20: warning: old-fashioned initialization: use =
+"inv1.c", line 21: warning: old-fashioned initialization: use =
+"inv1.c", line 21: warning: old-fashioned initialization: use =
+"inv1.c", line 24: warning: old-fashioned initialization: use =
+"inv1.c", line 25: warning: old-fashioned initialization: use =
+cc -O -s -I. -c inv2.c
+"inv2.c", line 14: warning: old-fashioned initialization: use =
+"inv2.c", line 14: warning: old-fashioned initialization: use =
+"inv2.c", line 14: warning: old-fashioned initialization: use =
+"inv2.c", line 19: warning: old-fashioned initialization: use =
+"inv2.c", line 19: warning: old-fashioned initialization: use =
+cc -O -s -I. -c inv3.c
+cc -O -s -I. -c inv5.c
+"inv5.c", line 23: warning: illegal combination of pointer and integer, op =
+"inv5.c", line 28: warning: illegal combination of pointer and integer, op =
+"inv5.c", line 35: warning: & before array or function: ignored
+"inv5.c", line 37: warning: & before array or function: ignored
+cc -O -s -I. -c inv6.c
+"inv6.c", line 9: warning: old-fashioned initialization: use =
+"inv6.c", line 9: warning: old-fashioned initialization: use =
+"inv6.c", line 10: warning: old-fashioned initialization: use =
+"inv6.c", line 11: warning: old-fashioned initialization: use =
+"inv6.c", line 13: warning: old-fashioned initialization: use =
+"inv6.c", line 17: warning: old-fashioned initialization: use =
+"inv6.c", line 19: warning: illegal combination of pointer and integer, op =
+"inv6.c", line 21: warning: illegal combination of pointer and integer, op =
+cc -s inv?.o deliv2.o -o inv
+cc -O -s -I. -c hunt1.c
