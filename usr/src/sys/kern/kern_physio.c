@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.14	%G%	*/
+/*	kern_physio.c	4.15	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -634,12 +634,14 @@ swkill(p, rout)
 	struct proc *p;
 	char *rout;
 {
+	char *mesg;
 
-	printf("%d: ", p->p_pid);
+	printf("pid %d: ", p->p_pid);
 	if (rout)
-		printf("out of swap space in %s\n", rout);
+		printf(mesg = "killed due to no swap space\n");
 	else
-		printf("killed on swap error\n");
+		printf(mesg = "killed on swap error\n");
+	uprintf("sorry, pid %d was %s", p->p_pid, mesg);
 	/*
 	 * To be sure no looping (e.g. in vmsched trying to
 	 * swap out) mark process locked in core (as though
