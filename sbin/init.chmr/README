@@ -20,6 +20,24 @@ planned but not yet implemented:
 	o support for ty_window (for window systems)
 	o maybe sometime support for /etc/inittab
 
+What you can define (Add "CFLAGS += -D..." to the Makefile):
+	-DDEBUG		enables debugging facilities:
+			you can increment debug level with debug keyword in
+			config file, -d option, or by sending SIGUSR1 to init.
+			SIGUSR2 sets debug level to 0.
+	-DUNTRUSTED	debugging code: on SIGINT it execs /sbin/init.ori
+			(do this only in singleuser mode !)
+	-DCONFIGURE	on startup (and when requested), read /etc/init.conf
+			and set parameters in it.
+	-DFAKE_SYSLOG	do not use syslog, but write to /dev/console.
+			This makes it MUCH smaller !
+	-DSMALL		do not use perror, but write error codes.
+			Makes it even smaller, but requires -DFAKE_SYSLOG.
+For the floppy version, compile this with -DFAKE_SYSLOG -DSMALL. If compiled
+with gcc1, it is not bigger than the original init (20k).
+
+If you want to use CONFIGURE, you also have to copy init.conf to /etc .
+
 I'm interested in any feedback you have !
 
 							Christoph Robitschko
