@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.12 83/10/10
+# Makefile	@(#)Makefile	1.13 83/10/28
 #
 CC= cc
 CTAGS= ctags -w
@@ -9,8 +9,10 @@ CFLAGS= -O
 
 DFILES= driver1.c driver2.c driver3.c grap.c boarders.c
 DOBJS= driver1.o driver2.o driver3.o grap.o boarders.o
-PFILES= player1.c player2.c player3.c player4.c version.c
-POBJS= player1.o player2.o player3.o player4.o version.o
+PFILES= player1.c player2.c player3.c player4.c player5.c player6.c player7.c \
+	version.c
+POBJS= player1.o player2.o player3.o player4.o player5.o player6.o player7.o \
+	version.o
 COMMONFILES= assorted.c game.c globals.c misc.c parties.c sync.c
 COMMONOBJS= assorted.o game.o globals.o misc.o parties.o sync.o
 LFILES= sail.log.c

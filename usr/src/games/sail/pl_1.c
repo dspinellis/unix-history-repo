@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	1.13 83/10/14";
+static	char *sccsid = "@(#)pl_1.c	1.14 83/10/28";
 #endif
 
 #include "player.h"
@@ -13,12 +13,7 @@ main(argc, argv)
 int argc;
 char **argv;
 {
-	register struct ship *sp;
-	int ta;
-	char aheadfirst;
-	int ma;
 	char nodrive = 0, randomize = 0, debug = 0;
-	char *badstring();
 	extern char _sobuf[];
 
 	setbuf(stdout, _sobuf);
@@ -45,105 +40,7 @@ char **argv;
 		game = -1;
 	initialize(nodrive, randomize, debug);
 	Signal("Aye aye, Sir", (struct ship *)0);
-	for (;;) {
-		switch (sgetch("~\b", (struct ship *)0, 0)) {
-		case 'm':
-			if (mc->crew3 && !snagged(ms)
-			    && windspeed != 0) {
-				ta = maxturns(ms, &aheadfirst);
-				ma = maxmove(ms, mf->dir, 0);
-				acceptmove(ma, ta, aheadfirst);
-			} else
-				Signal("Unable to move", (struct ship *)0);
-			break;
-		case 's':
-			acceptsignal();
-			break;
-		case 'g':
-			grapungrap();
-			break;
-		case 'u':
-			unfoulplayer();
-			break;
-		case 'v':
-			Signal("%s", (struct ship *)0, version);
-			break;
-		case 'b':
-			doboarding();
-			break;
-		case 'f':
-			acceptcombat();
-			break;
-		case 'l':
-			loadplayer();
-			break;
-		case 'c':
-			changesail();
-			break;
-		case 'r':
-			repair();
-			break;
-		case 'B':
-			Signal("'Hands to stations!'", (struct ship *)0);
-			unboard(ms, ms, 1);	/* cancel DBP's */
-			unboard(ms, ms, 0);	/* cancel offense */
-			break;
-		case '\f':
-			centerview();
-			board();
-			screen();
-			break;
-		case 'L':
-			mf->loadL = L_EMPTY;
-			mf->loadR = L_EMPTY;
-			mf->readyL = R_EMPTY;
-			mf->readyR = R_EMPTY;
-			Signal("Broadsides unloaded", (struct ship *)0);
-			break;
-		case 'q':
-			Signal("Type 'Q' to quit", (struct ship *)0);
-			break;
-		case 'Q':
-			leave(LEAVE_QUIT);
-			break;
-		case 'I':
-			foreachship(sp)
-				if (sp != ms)
-					eyeball(sp);
-			break;
-		case 'i':
-			eyeball(closestenemy(ms, 0, 1));
-			break;
-		case 'C':
-			centerview();
-			draw_view();
-			break;
-		case 'U':
-			upview();
-			draw_view();
-			break;
-		case 'D':
-		case 'N':
-			downview();
-			draw_view();
-			break;
-		case 'H':
-			leftview();
-			draw_view();
-			break;
-		case 'J':
-			rightview();
-			draw_view();
-			break;
-		case 'F':
-			lookout();
-			break;
-		case 'S':
-			dont_adjust = !dont_adjust;
-			break;
-		}
-		lost();
-	}
+	play();
 }
 
 initialize(nodriver, randomize, debug)
@@ -331,7 +228,7 @@ reprint:
 
 	initscreen();
 
-	board();
+	draw_board();
 	(void) sprintf(message, "Captain %s assuming command", captain);
 	Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
 
@@ -393,7 +290,6 @@ int conditions;
 			(void) fclose(fp);
 		}
 		if (done_curses) {
-			screen();
 			Signal("It looks like you've had it!",
 				(struct ship *)0);
 			switch (conditions) {
@@ -415,19 +311,20 @@ int conditions;
 					(struct ship *)0, conditions);
 			}
 		} else {
-			if (conditions == LEAVE_DRIVER)
+			switch (conditions) {
+			case LEAVE_QUIT:
+				break;
+			case LEAVE_DRIVER:
 				printf("The driver died.\n");
-			else
-				printf("leave: unknown code %d\n", conditions);
+				break;
+			default:
+				printf("A funny thing happened (%d).\n",
+					conditions);
+			}
 		}
 		Sync();
 	}
-	if (done_curses) {
-		lastline();
-		nocrmode();
-		echo();
-		endwin();
-	}
+	cleanupscreen();
 	exit(0);
 }
 
