@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.13 (Berkeley) %G%
+ *	@(#)trap.c	7.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -351,7 +351,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 				p->p_comm, p->p_md.md_regs[PC],
 				p->p_md.md_regs[RA],
 				p->p_md.md_regs[SP]); /* XXX */
-			trapDump("vm_fault");
 		}
 		/*
 		 * If this was a stack access we keep track of the maximum
@@ -830,9 +829,11 @@ pmax_intr(mask, pc, statusReg, causeReg)
 		cf.pc = pc;
 		cf.sr = statusReg;
 		hardclock(&cf);
-		causeReg &= ~MACH_INT_MASK_3;	/* reenable clock interrupts */
-		splx(MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR);
+		/* keep clock interrupts enabled */
+		causeReg &= ~MACH_INT_MASK_3;
 	}
+	/* Re-enable clock interrupts */
+	splx(MACH_INT_MASK_3 | MACH_SR_INT_ENA_CUR);
 #if NSII > 0
 	if (mask & MACH_INT_MASK_0)
 		siiintr(0);
@@ -884,10 +885,11 @@ kn02_intr(mask, pc, statusReg, causeReg)
 		cf.sr = statusReg;
 		hardclock(&cf);
 
-		/* Re-enable clock interrupts */
+		/* keep clock interrupts enabled */
 		causeReg &= ~MACH_INT_MASK_1;
-		splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
 	}
+	/* Re-enable clock interrupts */
+	splx(MACH_INT_MASK_1 | MACH_SR_INT_ENA_CUR);
 	if (mask & MACH_INT_MASK_0) {
 
 		csr = *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CSR);
@@ -1009,7 +1011,7 @@ kmin_intr(mask, pc, statusReg, causeReg)
 }
 
 /*
- * Maxine hardwark interrupts. (Personal DECstation 5000/xx)
+ * Maxine hardware interrupts. (Personal DECstation 5000/xx)
  */
 xine_intr(mask, pc, statusReg, causeReg)
 	unsigned mask;
