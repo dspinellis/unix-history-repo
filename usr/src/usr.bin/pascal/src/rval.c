@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)rval.c 1.5 %G%";
+static	char sccsid[] = "@(#)rval.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -348,7 +348,7 @@ cstrng:
 			setran( ( csetd.csettype ) -> type );
 			put( 2, O_CON24, set.uprbp);
 			put( 2, O_CON24, set.lwrb);
-			put( 2, O_CTTOT, 5 + csetd.singcnt + 2 * csetd.paircnt);
+			put( 2, O_CTTOT, 4 + csetd.singcnt + 2 * csetd.paircnt);
 		    }
 		    return csetd.csettype;
 #		endif OBJ

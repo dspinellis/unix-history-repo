@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)cset.c 1.2 %G%";
+static	char sccsid[] = "@(#)cset.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -400,8 +400,8 @@ postcset( r , csetp )
 		for ( el = r[2] ; el != NIL ; el = el[2] ) {
 		    e = el[1];
 		    if ( e[0] == T_RANG ) {
-			stkrval( e[2] , NIL , RREQ );
 			stkrval( e[1] , NIL , RREQ );
+			stkrval( e[2] , NIL , RREQ );
 		    } else {
 			stkrval( e , NIL , RREQ );
 		    }
