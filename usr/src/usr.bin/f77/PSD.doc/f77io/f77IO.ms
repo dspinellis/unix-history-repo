@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77IO.ms	5.3 (Berkeley) %G%
+.\"	@(#)f77IO.ms	5.4 (Berkeley) %G%
 .\"
 .EH 'PS1:3-%''Introduction to the f77 I/O Library'
 .OH 'Introduction to the f77 I/O Library''PS1:3-%'
@@ -36,42 +36,38 @@ Fortran\\$1
 Introduction to the f77 I/O Library
 .AU
 David L. Wasley
+.AU
+J. Berkman
 .AI
 University of California, Berkeley
 Berkeley, California 94720
 .AB
-.LP
-The f77 I/O Library implements
-.Sm ANSI
-1978
-.Fo
-standard
-input and output
-with a few minor exceptions.
-Where the standard is vague, we have tried to provide flexibility
-within the constraints of the
-.UX
-operating system.
-The I/O Library was written originally by Peter J. Weinberger at Bell Labs.
-A number of logical extensions and enhancements have been provided
-by this author.
-.LP
-April 1983
-.LP
-Revised for 4.3 BSD, September, 1985 by J. Berkman.
-.LP
-.AE
-.PP
 The f77 I/O library, libI77.a,
 includes routines to perform all of the standard types of
 .Fo
-input and output.
-Several enhancements and extensions to
+input and output specified in the
+.Sm ANSI
+1978
 .Fo
-I/O have been added.
-The f77 library routines use the C stdio library routines to provide
+standard.
+The I/O Library was written originally by Peter J. Weinberger at Bell Labs.
+Where the original implementation was incomplete,
+it has been rewritten to more closely implement the standard.
+Where the standard is vague,
+we have tried to provide flexibility within the constraints of the
+.UX
+operating system.
+A number of logical extensions and enhancements have been provided
+such as the use of the C stdio library routines to provide
 efficient buffering for file I/O.
-.sp 1
+.sp 2
+.LP
+Revised September, 1985
+.AE
+.LP
+.\" page 2 is allocated to the table of contents
+.pn 3
+.bp
 .Nh 1 "Fortran I/O"
 The requirements of the
 .Sm ANSI
@@ -919,4 +915,8 @@ connects the unit to a file on its first use in a
 \fBread\fP, \fBwrite\fP, \fBprint\fP, or \fBendfile\fP statement.
 Thus \fBinquire\fP by unit can not tell prior to a unit number use the
 characteristics or name of the file corresponding to a unit.
-.TC
+.\" want Table of Contents to begin on page 2 hence must expand body
+.\" of .TC macro to enable us to get handle on page number.
+.pn 2
+.bp
+.PX
