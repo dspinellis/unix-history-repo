@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)library.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	1.7 (Berkeley) %G%";
 #endif
 
 /* Copyright (c) 1982 Regents of the University of California */
@@ -436,35 +436,6 @@ INTFUNC *f;
  */
 
 public int sys_nsig = NSIG;
-public String sys_siglist[] = {
-    "no signal",
-    "hangup",
-    "interrupt",
-    "quit",
-    "illegal instruction",
-    "trace trap",
-    "IOT instruction",
-    "EMT instruction",
-    "floating point exception",
-    "kill",
-    "bus error",
-    "segmentation violation",
-    "bad argument to system call",
-    "broken pipe",
-    "alarm clock",
-    "soft kill",
-    "urgent I/O condition",
-    "stop signal not from tty",
-    "stop signal from tty",
-    "continue",
-    "child termination",
-    "stop (tty input)",
-    "stop (tty output)",
-    "possible input/output",
-    "exceeded CPU time limit",
-    "exceeded file size limit",
-    nil(String)
-};
 
 public psig(s)
 String s;
