@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.14 82/02/03 */
+/* tcp_timer.c 4.15 82/02/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -95,6 +95,7 @@ COUNT(TCP_CANCELTIMERS);
 		tp->t_timer[i] = 0;
 }
 
+int	tcprexmtprint;
 /*
  * TCP timer processing.
  */
@@ -127,12 +128,12 @@ COUNT(TCP_TIMERS);
 			return;
 		}
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
-		    ((int)(2 * tp->t_srtt)),
-		    TCPTV_MIN, TCPTV_MAX);
+		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    tp->t_timer[TCPT_REXMT] << tp->t_rxtshift,
 		    TCPTV_MIN, TCPTV_MAX);
-/* printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]); */
+if (tcprexmtprint)
+printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
@@ -147,7 +148,7 @@ COUNT(TCP_TIMERS);
 		(void) tcp_output(tp);
 		tp->t_force = 0;
 		TCPT_RANGESET(tp->t_timer[TCPT_PERSIST],
-		    2 * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
+		    tcp_beta * tp->t_srtt, TCPTV_PERSMIN, TCPTV_MAX);
 		return;
 
 	/*
