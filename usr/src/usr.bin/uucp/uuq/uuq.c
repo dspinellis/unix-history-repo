@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuq.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuq.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -66,6 +66,7 @@ float baudrate = 1200.;
 char Username[BUFSIZ];
 char Filename[BUFSIZ];
 int Maxulen = 0;
+struct timeb Now;
 
 main(argc, argv)
 char **argv;
