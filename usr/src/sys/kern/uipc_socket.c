@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.30	82/01/24	*/
+/*	uipc_socket.c	4.31	82/02/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -266,8 +266,10 @@ sosend(so, asa)
 	int error = 0, space, s;
 
 COUNT(SOSEND);
-	if (so->so_state & SS_CANTSENDMORE)
+	if (so->so_state & SS_CANTSENDMORE) {
+		psignal(u.u_procp, SIGPIPE);
 		return (EPIPE);
+	}
 	if (sosendallatonce(so) && u.u_count > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
 	if ((so->so_snd.sb_flags & SB_LOCK) && (so->so_options & SO_NONBLOCKING))
