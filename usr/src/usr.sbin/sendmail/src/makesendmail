@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.17 (Berkeley) %G%
+#       @(#)makesendmail	8.18 (Berkeley) %G%
 #
 
 #
@@ -19,7 +19,7 @@ then
 	# probably a NeXT box
 	arch=NeXT
 	os=Mach
-	rel=`strings /mach | grep Mach | sed -e 's/.* Mach //' -e 's/:.*//'`
+	rel=`strings /mach | grep 'Mach.*:' | sed -e 's/.* Mach //' -e 's/:.*//'`
 else
 	arch=`uname -m | sed -e 's/ //g'`
 	os=`uname -s | sed 's/\//-/g'`
