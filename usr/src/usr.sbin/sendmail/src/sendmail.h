@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	4.12		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	4.13		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -21,7 +21,7 @@ static char SmailSccsId[] =	"@(#)sendmail.h	4.12		%G%";
 # include "useful.h"
 
 # ifdef LOG
-# include <syslog.h>
+# include <sys/syslog.h>
 # endif LOG
 
 
