@@ -1,8 +1,19 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)rcmd.3	6.8 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)rcmd.3	6.9 (Berkeley) %G%
 .\"
 .TH RCMD 3 ""
 .UC 5
@@ -39,14 +50,14 @@ to authenticate clients requesting service with
 .IR rcmd .
 All three functions are present in the same file and are used
 by the
-.IR rshd (8C)
+.IR rshd (8)
 server (among others).
 .PP
 .I Rcmd
 looks up the host
 .I *ahost
 using
-.IR gethostbyname (3N),
+.IR gethostbyname (3),
 returning \-1 if the host does not exist.
 Otherwise
 .I *ahost
@@ -84,7 +95,7 @@ provision is made for sending arbitrary signals to the remote process,
 although you may be able to get its attention by using out-of-band data.
 .PP
 The protocol is described in detail in
-.IR rshd (8C).
+.IR rshd (8).
 .PP
 The
 .I rresvport
@@ -97,34 +108,28 @@ in the range 0 to 1023.  Only the super-user
 is allowed to bind an address of this sort to a socket.
 .PP
 .I Ruserok
-takes a remote host's name, as returned by a
-.IR gethostbyaddr (3N)
+takes a remote host's name, as returned by the
+.IR gethostbyaddr (3)
 routine, two user names and a flag indicating whether
-the local user's name is that of the super-user.  It then
-checks the file
-.I /etc/hosts.equiv
-and, possibly, 
+the local user's name is that of the super-user.  Then,
+if the user is
+.B NOT
+the super-user, it checks the files
+.IR /etc/hosts.equiv .
+If that lookup is not done, or is unsuccessful, the
 .I .rhosts
-in the local user's home directory to see if the request for
-service is allowed.  A 0 is returned if the machine
-name is listed in the ``hosts.equiv'' file, or the
-host and remote user name are found in the ``.rhosts''
-file; otherwise 
+in the local user's home directory is checked to see if the request for
+service is allowed.  If this file is owned by anyone other than the
+user or the super-user, or if it is writeable by anyone other than the
+owner, the check automatically fails.  A 0 is returned if the machine
+name is listed in the ``hosts.equiv'' file, or the host and remote
+user name are found in the ``.rhosts'' file; otherwise
 .I ruserok
-returns \-1.  If the
-.I superuser
-flag is 1, the checking of the ``hosts.equiv'' file is
-bypassed.
+returns \-1.
 If the local domain (as obtained from \fIgethostname\fP\|(2))
 is the same as the remote domain, only the machine name need be specified.
 .SH SEE ALSO
-rlogin(1C),
-rsh(1C),
-intro(2),
-rexec(3),
-rexecd(8C),
-rlogind(8C),
-rshd(8C)
+rlogin(1), rsh(1), intro(2), rexec(3), rexecd(8), rlogind(8), rshd(8)
 .SH DIAGNOSTICS
 .I Rcmd
 returns a valid socket descriptor on success.
