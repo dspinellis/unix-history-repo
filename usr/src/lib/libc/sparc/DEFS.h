@@ -1,7 +1,14 @@
 /*-
+ * Copyright (c) 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This software was developed by the Computer Systems Engineering group
+ * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
+ * contributed to Berkeley.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)DEFS.h	5.1 (Berkeley) %G%
+ *	@(#)DEFS.h	5.2 (Berkeley) %G%
  */
 
 #ifdef PROF
