@@ -1,0 +1,23 @@
+lp|vx|vax|ucbvax|ucbvax line printer:\
+	:lp=:rm=ucbvax:lf=/usr/adm/lpd-errs:
+varian|va|Benson Varian:\
+	:lp=:rm=ucbrenoir:rp=varian:sd=/usr/spool/vad:lf=/usr/adm/lpd-errs:
+versatec|vp|Versatec Plotter:\
+	:lp=:rm=ucbdegas:rp=versatec:sd=/usr/spool/vpd:mx#0:\
+	:lf=/usr/adm/lpd-errs:
+ap|arpa|ucbarpa|ucbarpa line printer:\
+	:lp=:rm=ucbarpa:rp=arpa:sd=/usr/spool/apd:lf=/usr/adm/lpd-errs:
+imagen-cx|cx|Imagen LBP-CX 8/300 printer:\
+	:lp=:rm=ucbrenoir:rp=imagen-cx:sd=/usr/spool/cxd:lf=/usr/adm/lpd-errs:\
+	:rg=imagen:
+imagen|ip|Imagen laser printer:\
+	:lp=:rm=ucbarpa:rp=imagen:sd=/usr/spool/ipd:lf=/usr/adm/lpd-errs:
+dp|dandyprinter|xerox dandelion laser printer:\
+	:lp=:rm=ucbcalder:rp=dp:sd=/usr/spool/dpd:lf=/usr/adm/lpd-errs:
+op|officeprinter|xerox office laser printer:\
+	:lp=:rm=ucbcalder:rp=op:sd=/usr/spool/opd:lf=/usr/adm/lpd-errs:
+# Postscript printer driven with transcript
+gp|georgia-pacific|ps|Georgia Pacific, "Trees into Paper":\
+        :lp=:rm=ucbrenoir:rp=georgia-pacific:\
+        :sd=/usr/spool/ps:lf=/usr/adm/ps-log:\
+        :rg=postscript:
