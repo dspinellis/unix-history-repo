@@ -1,11 +1,10 @@
-/*	systm.h	6.1	83/07/29	*/
+/*	systm.h	6.2	85/03/01	*/
 
 /*
  * Random set of variables
  * used by more than one
  * routine.
  */
-int	hand;			/* current index into coremap used by daemon */
 extern	char version[];		/* system version */
 
 /*
