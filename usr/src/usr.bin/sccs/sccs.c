@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -997,7 +997,8 @@ clean(mode, argv)
 	bufend = &buf[strlen(buf)];
 
 	dirfd = fopen(buf, "r");
-	if (dirfd == NULL)
+	dirp = opendir(buf);
+	if (dirp == NULL)
 	{
 		usrerr("cannot open %s", buf);
 		return (EX_NOINPUT);
