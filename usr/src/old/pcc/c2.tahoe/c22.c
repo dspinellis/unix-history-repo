@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c22.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)c22.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -598,7 +598,7 @@ findcon(p, type)
 		return(p);
 	if ((r = isreg(p)) >= 0 && compat(regs[r][0],type))
 		return(regs[r]+1);
-	if (equstr(p, conloc))
+	if (equstr(p, conloc) && conval[0] == type)
 		return(conval+1);
 	return(p);
 }
