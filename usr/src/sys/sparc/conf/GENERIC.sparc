@@ -1,0 +1,37 @@
+#	@(#)GENERIC.sparc	7.1 (Berkeley) %G%
+#
+# Generic SPARC
+
+include	"std.sparc"
+
+options		COMPAT_SUNOS
+options		DEBUG, DIAGNOSTIC
+options		FFS
+options		GENERIC
+options		INET
+options		KGDB
+options		MFS
+options		MULTICAST, MROUTING
+options		NFS
+options		QUOTA
+options		RCONSOLE
+options		SWAPPAGER, VNODEPAGER, DEVPAGER
+
+config		vmunix	swap generic
+
+dma*	at sbus0 slot ? offset ?
+esp*	at sbus0 slot ? offset ?	# nb., esp is a `scsi'
+
+tg0	at esp? target 0
+tg*	at scsi? target ?
+sd0	at tg0 drive 0
+sd*	at tg? drive ?
+
+bwtwo*	at sbus? slot ? offset ?
+cgthree* at sbus? slot ? offset ?
+
+le*	at sbus? slot ? offset ?
+
+pseudo-device	loop
+pseudo-device	pty
+pseudo-device	sl
