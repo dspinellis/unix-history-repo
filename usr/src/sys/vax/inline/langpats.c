@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	2.6 (Berkeley) %G%";
 #endif
 
 #include "inline.h"
@@ -216,7 +216,7 @@ struct pats language_ptab[] = {
 	{ "2,__queue\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
-	insque	r1,*4(r0)\n" },
+	insque	(r1),*4(r0)\n" },
 
 	{ "1,__dequeue\n",
 "	movl	(sp)+,r0\n\
