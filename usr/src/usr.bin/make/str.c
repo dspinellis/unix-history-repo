@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -34,8 +34,7 @@ static char sccsid[] = "@(#)str.c	5.3 (Berkeley) %G%";
  *	    	  	    	the two strings, all this under the control
  *	    	  	    	of the STR_ flags given as the third arg.
  *
- *	Str_FindSubstring   	Find a substring within a string (from
- *	    	  	    	original Sprite libc).
+ *	Str_FindSubstring   	Find a substring within a string
  *
  *	Str_Match   	    	Pattern match two strings.
  */
@@ -276,7 +275,6 @@ Str_FreeVec (count, vecPtr)
     }
     free (vecPtr);
 }
-#ifndef Sprite
 
 /*
  *----------------------------------------------------------------------
@@ -326,8 +324,6 @@ Str_FindSubstring(string, substring)
     }
     return (char *) NULL;
 }
-
-#endif /* !Sprite */
 
 /*
  *----------------------------------------------------------------------
