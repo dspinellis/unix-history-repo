@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)ed.1	6.9 (Berkeley) %G%
+.\"	@(#)ed.1	6.9.1.1 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ED 1
@@ -14,7 +14,6 @@
 .Sh SYNOPSIS
 .Nm \&ed
 .Op Fl
-.Op Fl \&x
 .Op Ar file
 .Sh DESCRIPTION
 .Nm \&Ed
@@ -61,10 +60,6 @@ buffer so that it can be edited.
 .Pp
 Available options:
 .Bl -tag -width Ds
-.It Fl \&x
-An
-.Cm \&x
-command is simulated first to handle an encrypted file.
 .It Fl
 Suppresses the printing
 of explanatory output
@@ -807,17 +802,6 @@ command is done,
 exiting the editor
 after the file is written.
 .Pp
-.It \&x
-A key string is demanded from the standard input.
-Later
-.Cm \&r , \&e
-and
-.Cm \&w
-commands will encrypt and decrypt the text
-with this key by the algorithm of
-.Xr crypt  1  .
-An explicitly empty key turns off encryption.
-.Pp
 .It Xo
 .Po Ad \&.+1
 .Pc Ns Cm \&z
@@ -953,12 +937,5 @@ The
 .Cm \&undo
 command causes marks to be lost on affected lines.
 .br
-The
-.Cm \&x
-command,
-.Fl \&x
-option,
-and
-special treatment of hangups
-only work on
+The special treatment of hangups only works on
 .Ux .
