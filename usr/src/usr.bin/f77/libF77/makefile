@@ -1,8 +1,9 @@
 # Makefile for the f77 math & startup lib - libF77.a
 
-#	@(#)makefile	1.9	%G%
+#	@(#)makefile	1.10	%G%
 
 LIB = libF77.a
+LPR = lpr
 
 # for the CFO 11's
 #LIBDIR = /usr/ucb/lib
@@ -87,7 +88,7 @@ SOURCES = Version.c main.c s_rnge.c abort_.c exit_.c \
 	s_cat.c s_cmp.c s_copy.c lnblnk_.c rindex_.c
 
 print:	index
-	@pr index Makefile `ls $(SOURCES)` | lpr
+	@pr index Makefile `ls $(SOURCES)` | $(LPR)
 
 index:	$(SOURCES) mkindx
 	@mkindx "libF77 Sources " Makefile $(SOURCES)
