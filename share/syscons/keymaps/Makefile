@@ -15,6 +15,7 @@ CLEANFILES += ${OLDKEYMAPS} ${KEYMAPS_MK}
 all: ${OLDKEYMAPS}
 
 install:
+	cd ${.CURDIR}; \
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${KEYMAPS} \
 			${DESTDIR}${MAPSDIR}
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${OLDKEYMAPS} \
