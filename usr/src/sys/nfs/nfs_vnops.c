@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	8.4 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,7 @@ struct vnodeopv_entry_desc nfsv2_vnodeop_entries[] = {
 	{ &vop_advlock_desc, nfs_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, nfs_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, nfs_valloc },	/* valloc */
+	{ &vop_reallocblks_desc, nfs_reallocblks },	/* reallocblks */
 	{ &vop_vfree_desc, nfs_vfree },		/* vfree */
 	{ &vop_truncate_desc, nfs_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
@@ -139,6 +140,7 @@ struct vnodeopv_entry_desc spec_nfsv2nodeop_entries[] = {
 	{ &vop_advlock_desc, spec_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, spec_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, spec_valloc },	/* valloc */
+	{ &vop_reallocblks_desc, spec_reallocblks },	/* reallocblks */
 	{ &vop_vfree_desc, spec_vfree },	/* vfree */
 	{ &vop_truncate_desc, spec_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
@@ -188,6 +190,7 @@ struct vnodeopv_entry_desc fifo_nfsv2nodeop_entries[] = {
 	{ &vop_advlock_desc, fifo_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, fifo_blkatoff },	/* blkatoff */
 	{ &vop_valloc_desc, fifo_valloc },	/* valloc */
+	{ &vop_reallocblks_desc, fifo_reallocblks },	/* reallocblks */
 	{ &vop_vfree_desc, fifo_vfree },	/* vfree */
 	{ &vop_truncate_desc, fifo_truncate },	/* truncate */
 	{ &vop_update_desc, nfs_update },	/* update */
