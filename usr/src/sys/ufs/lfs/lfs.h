@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.12 (Berkeley) %G%
+ *	@(#)lfs.h	7.13 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
