@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)wait.h	7.6 (Berkeley) %G%
+ *	@(#)wait.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -22,22 +22,66 @@
  * and the alternate interfaces that use it (wait, wait3, waitpid).
  */
 
-#ifndef _POSIX_SOURCE
+/*
+ * Macros to test the exit status returned by wait
+ * and extract the relevant values.
+ */
+#ifdef _POSIX_SOURCE
+#define	_WSTATUS(x)	((x) & 0377)	/* 0, _WSTOPPED, or signal */
+#else
+#define	_W_INT(x)	(*(int *)(x))	/* convert union wait to int */
+#define	_WSTATUS(x)	(_W_INT(x) & 0177)
+#endif
+
+#define	_WSTOPPED	0177		/* _WSTATUS if process is stopped */
+#define WIFSTOPPED(x)	(_WSTATUS(x) == _WSTOPPED)
+#define WIFSIGNALED(x)	(_WSTATUS(x) != _WSTOPPED && _WSTATUS(x) != 0)
+#define WTERMSIG(x)	(_WSTATUS(x))
+#define WIFEXITED(x)	(_WSTATUS(x) == 0)
+
+#ifdef _POSIX_SOURCE
+#define WSTOPSIG(x)	((x) >> 8)
+#define WEXITSTATUS(x)	((x) >> 8)
+
+#else /* _POSIX_SOURCE */
+#define WSTOPSIG(x)	(_W_INT(x) >> 8)
+#define WCOREDUMP(x)	(_W_INT(x) & 0200)
+#define WEXITSTATUS(x)	(_W_INT(x) >> 8)
+#endif /* _POSIX_SOURCE */
+
+/*
+ * Option bits for the second argument of wait4.  WNOHANG causes the
+ * wait to not hang if there are no stopped or terminated processes, rather
+ * returning an error indication in this case (pid==0).  WUNTRACED
+ * indicates that the caller should receive status about untraced children
+ * which stop due to signals.  If children are stopped and a wait without
+ * this option is done, it is as though they were still running... nothing
+ * about them is returned.   By default, a blocking wait call will be
+ * aborted by receipt of a signal that is caught (POSIX); the option
+ * WSIGRESTART causes the call to restart instead of failing with error EINTR.
+ */
+#define WNOHANG		1	/* dont hang in wait */
+#define WUNTRACED	2	/* tell about stopped, untraced children */
+
+#ifndef _POSIX_SOURCE		/* extensions/compat follow: */
+/* additional option bit for wait4: */
+#define WSIGRESTART	4	/* restart wait if signal is received */
+
+/*
+ * Tokens for special values of the "pid" parameter to wait4.
+ */
+#define	WAIT_ANY	(-1)	/* any process */
+#define	WAIT_MYPGRP	0	/* any process in my process group */
 
 #ifndef BYTE_ORDER
 #include <machine/endian.h>
 #endif
 
 /*
- * Tokens for special values of the "pid" parameter to wait4.
- */
-#define	WAIT_ANY	(-1)		/* any process */
-#define	WAIT_MYPGRP	0		/* any process in my process group */
-
-/*
+ * Deprecated:
  * Structure of the information in the status word returned by wait4.
  * If w_stopval==WSTOPPED, then the second structure describes
- * the information returned, else the first.  See WUNTRACED below.
+ * the information returned, else the first.
  */
 union wait {
 	int	w_status;		/* used in syscall */
@@ -79,50 +123,5 @@ union wait {
 #define w_stopval	w_S.w_Stopval
 #define w_stopsig	w_S.w_Stopsig
 
-
-#define	WSTOPPED	0177	/* value of s.stopval if process is stopped */
-#endif /* _POSIX_SOURCE */
-
-/*
- * Option bits for the second argument of wait4.  WNOHANG causes the
- * wait to not hang if there are no stopped or terminated processes, rather
- * returning an error indication in this case (pid==0).  WUNTRACED
- * indicates that the caller should receive status about untraced children
- * which stop due to signals.  If children are stopped and a wait without
- * this option is done, it is as though they were still running... nothing
- * about them is returned.   By default, a blocking wait call will be
- * aborted by receipt of a signal that is caught (POSIX); the option
- * WSIGRESTART causes the call to restart instead of failing with error EINTR.
- */
-#define WNOHANG		1	/* dont hang in wait */
-#define WUNTRACED	2	/* tell about stopped, untraced children */
-#ifndef _POSIX_SOURCE
-#define WSIGRESTART	4	/* restart wait if signal is received */
-#endif /* _POSIX_SOURCE */
-
-/*
- * Macros to test the exit status returned by wait
- * and extract the relevant values.
- */
-#ifndef _POSIX_SOURCE
-#define WIFSTOPPED(x)	((x).w_stopval == WSTOPPED)
-#define WSTOPSIG(x)	((x).w_stopsig)
-
-#define WIFSIGNALED(x)	((x).w_stopval != WSTOPPED && (x).w_termsig != 0)
-#define WTERMSIG(x)	((x).w_termsig)
-#define WCOREDUMP(x)	((x).w_coredump)
-
-#define WIFEXITED(x)	((x).w_termsig == 0)
-#define WEXITSTATUS(x)	((x).w_retcode)
-
-#else /* _POSIX_SOURCE */
-
-#define WIFSTOPPED(x)	(((x) & 0377) == 0177)
-#define WSTOPSIG(x)	((x) >> 8)
-
-#define WIFSIGNALED(x)	(((x) & 0377 != 0177 && ((x) & 0377) != 0)
-#define WTERMSIG(x)	((x) & 0177)
-
-#define WIFEXITED(x)	(((x) & 0377) == 0)
-#define WEXITSTATUS(x)	((x) >> 8)
+#define	WSTOPPED	_WSTOPPED
 #endif /* _POSIX_SOURCE */
