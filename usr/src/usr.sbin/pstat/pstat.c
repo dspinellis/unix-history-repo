@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -815,7 +815,8 @@ doswap()
 	dmmax = getw(nl[SDMMAX].n_value);
 	nswap = 0;
 	for (sw = swdevt; sw < &swdevt[nswdev]; sw++)
-		nswap += sw->sw_nblks,
+		if (sw->sw_freed)
+			nswap += sw->sw_nblks;
 	free = 0;
 	for (me = (struct mapent *)(swapmap+1);
 	    me < (struct mapent *)&swapmap[nswapmap]; me++)
