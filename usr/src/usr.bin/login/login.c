@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.61 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -252,6 +252,7 @@ main(argc, argv)
 		if (pwd && (*pwd->pw_passwd == '\0' ||
 		    fflag && (uid == 0 || uid == pwd->pw_uid)))
 			break;
+		fflag = 0;
 
 		/*
 		 * If trying to log in as root, but with insecure terminal,
@@ -403,7 +404,8 @@ main(argc, argv)
 
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
-	if (pwd->pw_uid == 0)
+	/* if fflag is on, assume caller/authenticator has logged root login */
+	if (pwd->pw_uid == 0 && fflag == 0)
 		if (hostname)
 			syslog(LOG_NOTICE, "ROOT LOGIN ON %s FROM %s",
 			    tty, hostname);
