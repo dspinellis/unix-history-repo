@@ -35,8 +35,8 @@ int	r[NN] = {	/* read-only number registers at beginning */
 int	pto = 10000;
 int	pfrom = 1;
 int	print = 1;
-char	nextf[NS] = "/usr/lib/ditmac/tmac.xxxxx";
-int	nfi = 21;
+char	nextf[NS] = "/usr/local/lib/ditmac/tmac.xxxxx";
+int	nfi = 27;
 #ifdef NROFF
 char	termtab[NS] = "/usr/lib/term/tab37";
 #endif
