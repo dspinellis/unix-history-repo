@@ -1,0 +1,37 @@
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)dm.conf.5	5.1 (Berkeley) %G%
+.\"
+.TH DM.CONFIG 5 ""
+.UC 5
+.SH NAME
+dm.config \- dm configuration file
+.SH DESCRIPTION
+\fIDm.config\fP is the configuration file for the \fIdm\fP(8) program.  It
+consists of three parts, each separated by percent signs (``%'')
+occurring as the first two characters in a line.  Blank lines and lines
+preceded by a hash mark (``#'') are ignored.
+.PP
+The first part of the file sets the standard games hours on a day-by-day
+basis.  Entries consist of three white-space separated fields: the
+unabbreviated day of the week and the beginning and ending time of the
+period of the day when games may not be played.  The time fields are in a
+0 based, 24-hour clock.  Any of the time fields may be a non-numeric
+character, resulting in no time limitations for that day.
+.PP
+The second part sets the tty limitations.  Entries consist of two white-space
+separated fields: the string "badtty", and the ttyname as returned by
+\fIttyname\fP(3).  Games may not be played on tty's listed in this section.
+.PP
+The third, and final, part sets specific game limitations.  Entries consist
+of four white-space separated fields: the name of a game, the highest system
+load average at which the game may be played, the maximum users allowed
+if the game is to be played, and the priority at which the game is to be run.
+Any of these fields may be a non-numeric character, resulting in no game
+limitation or priority based on the field.  The game "default" controls the
+settings for any game not otherwise listed.  Priorities may not be negative.
+.SH "SEE ALSO"
+setpriority(2), ttyname(3), dm(8)
+
