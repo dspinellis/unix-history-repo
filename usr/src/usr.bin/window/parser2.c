@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)parser2.c	3.6 %G%";
+static char sccsid[] = "@(#)parser2.c	3.7 %G%";
 #endif
 
 #include "parser.h"
@@ -131,8 +131,14 @@ register struct value *v;
 		if (c != 0)
 			(*c->lc_func)(v, av);
 		else
-			if (dolongcmd(a->a_buf, av, i) < 0)
-				p_memerror();
+			if (a->a_flags & A_INUSE)
+				p_error("%s: Recursive alias.", a->a_name);
+			else {
+				a->a_flags |= A_INUSE;
+				if (dolongcmd(a->a_buf, av, i) < 0)
+					p_memerror();
+				a->a_flags &= ~A_INUSE;
+			}
 	if (p_abort()) {
 		val_free(*v);
 		v->v_type = V_ERR;
