@@ -4,8 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)chpass.h	8.1 (Berkeley) %G%
+ *	@(#)chpass.h	8.2 (Berkeley) %G%
  */
+
+struct passwd;
 
 typedef struct _entry {
 	char *prompt;
@@ -22,3 +24,22 @@ typedef struct _entry {
 
 extern ENTRY list[];
 extern uid_t uid;
+
+int	 atot __P((char *, time_t *));
+void	 display __P((int, struct passwd *));
+void	 edit __P((struct passwd *));
+char    *ok_shell __P((char *));
+int	 p_change __P((char *, struct passwd *, ENTRY *));
+int	 p_class __P((char *, struct passwd *, ENTRY *));
+int	 p_expire __P((char *, struct passwd *, ENTRY *));
+int	 p_gecos __P((char *, struct passwd *, ENTRY *));
+int	 p_gid __P((char *, struct passwd *, ENTRY *));
+int	 p_hdir __P((char *, struct passwd *, ENTRY *));
+int	 p_login __P((char *, struct passwd *, ENTRY *));
+int	 p_login __P((char *, struct passwd *, ENTRY *));
+int	 p_passwd __P((char *, struct passwd *, ENTRY *));
+int	 p_shell __P((char *, struct passwd *, ENTRY *));
+int	 p_uid __P((char *, struct passwd *, ENTRY *));
+void	 pw_copy __P((int, int, struct passwd *));
+char    *ttoa __P((time_t));
+int	 verify __P((struct passwd *));

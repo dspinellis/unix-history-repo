@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)table.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -15,9 +15,6 @@ static char sccsid[] = "@(#)table.c	8.1 (Berkeley) %G%";
 
 char e1[] = ": ";
 char e2[] = ":,";
-
-int p_change(), p_class(), p_expire(), p_gecos(), p_gid(), p_hdir();
-int p_login(), p_passwd(), p_shell(), p_uid();
 
 ENTRY list[] = {
 	{ "login",		p_login,  1,   5, e1,   },

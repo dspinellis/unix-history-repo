@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -14,9 +14,12 @@ static char sccsid[] = "@(#)klogin.c	8.1 (Berkeley) %G%";
 #include <sys/syslog.h>
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
-#include <pwd.h>
+
+#include <err.h>
 #include <netdb.h>
+#include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -77,7 +80,7 @@ klogin(pw, instance, localhost, password)
 	 * to make the kerberos library do the right thing.
 	 */
 	if (setuid(0) < 0) {
-		perror("login: setuid");
+		warnx("setuid");
 		return (1);
 	}
 	kerror = krb_get_pw_in_tkt(pw->pw_name, instance,
@@ -117,45 +120,45 @@ klogin(pw, instance, localhost, password)
     		    "warning: TGT not verified (%s); %s.%s not registered, or srvtab is wrong?",
 		    krb_err_txt[kerror], VERIFY_SERVICE, savehost);
 		notickets = 0;
-		return(0);
+		return (0);
 	}
 
 	if (kerror != KSUCCESS) {
-		(void)printf("unable to use TGT: (%s)\n", krb_err_txt[kerror]);
+		warnx("unable to use TGT: (%s)", krb_err_txt[kerror]);
 		syslog(LOG_NOTICE, "unable to use TGT: (%s)",
 		    krb_err_txt[kerror]);
 		dest_tkt();
-		return(1);
+		return (1);
 	}
 
 	if (!(hp = gethostbyname(localhost))) {
 		syslog(LOG_ERR, "couldn't get local host address");
 		dest_tkt();
-		return(1);
+		return (1);
 	}
 
-	bcopy((void *)hp->h_addr, (void *)&faddr, sizeof(faddr));
+	memmove((void *)&faddr, (void *)hp->h_addr, sizeof(faddr));
 
 	kerror = krb_rd_req(&ticket, VERIFY_SERVICE, savehost, faddr,
 	    &authdata, "");
 
 	if (kerror == KSUCCESS) {
 		notickets = 0;
-		return(0);
+		return (0);
 	}
 
 	/* undecipherable: probably didn't have a srvtab on the local host */
 	if (kerror = RD_AP_UNDEC) {
 		syslog(LOG_NOTICE, "krb_rd_req: (%s)\n", krb_err_txt[kerror]);
 		dest_tkt();
-		return(1);
+		return (1);
 	}
 	/* failed for some other reason */
-	(void)printf("unable to verify %s ticket: (%s)\n", VERIFY_SERVICE,
+	warnx("unable to verify %s ticket: (%s)", VERIFY_SERVICE,
 	    krb_err_txt[kerror]);
 	syslog(LOG_NOTICE, "couldn't verify %s ticket: %s", VERIFY_SERVICE,
 	    krb_err_txt[kerror]);
 	dest_tkt();
-	return(1);
+	return (1);
 }
 #endif
