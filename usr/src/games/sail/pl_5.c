@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	2.4 83/12/17";
+static	char *sccsid = "@(#)pl_5.c	2.5 83/12/21";
 #endif
 
 #include "player.h"
@@ -123,11 +123,11 @@ acceptboard()
 	crew[2] = mc->crew3;
 	for (n = 0; n < NBP; n++) {
 		if (mf->OBP[n].turnsent)
-			    men += mf->OBP[n].turnsent;
+			    men += mf->OBP[n].mensent;
 	}
 	for (n = 0; n < NBP; n++) {
 		if (mf->DBP[n].turnsent)
-			    men += mf->DBP[n].turnsent;
+			    men += mf->DBP[n].mensent;
 	}
 	if (men) {
 		crew[0] = men/100 ? 0 : crew[0] != 0;
