@@ -114,6 +114,7 @@ extern char	*inet_ntoa();
 #include "ctlr/options.ext"
 #include "ctlr/outbound.ext"
 #include "keyboard/termin.ext"
+#include "general.h"
 #endif	/* defined(TN3270) */
 
 
@@ -203,6 +204,7 @@ static int
 	debug = 0,
 	crmod,
 	netdata,
+	askedSGA = 0,	/* We have talked about suppress go ahead */
 	telnetport = 1;
 
 static FILE	*NetTrace = 0;		/* Not in bss, since needs to stay */
@@ -229,6 +231,20 @@ static int
 static int
 	Sent3270TerminalType;	/* Have we said we are a 3270? */
 
+/*
+ * Telnet receiver states for fsm
+ */
+#define	TS_DATA		0
+#define	TS_IAC		1
+#define	TS_WILL		2
+#define	TS_WONT		3
+#define	TS_DO		4
+#define	TS_DONT		5
+#define	TS_CR		6
+#define	TS_SB		7		/* sub-option collection */
+#define	TS_SE		8		/* looking for sub-option end */
+
+static int	telrcv_state = TS_DATA;
 /* Some real, live, globals. */
 int
 #if	defined(unix)
@@ -292,14 +308,29 @@ static struct {
 static void
 tninit()
 {
-    extern char edata, end;
-
-    bzero(&edata, &end - &edata);
     Ifrontp = Ibackp = Ibuf;
     tfrontp = tbackp = ttyobuf;
     nfrontp = nbackp = netobuf;
     
     /* Don't change telnetport */
+    SB_CLEAR();
+    ClearArray(hisopts);
+    ClearArray(myopts);
+    sbp = sibuf;
+    tbp = tibuf;
+
+    connected = net = scc = tcc = In3270 = ISend = 0;
+    telnetport = 0;
+
+    SYNCHing = 0;
+    Sent3270TerminalType = 0;
+
+#if	defined(unix)
+    HaveInput = 0;
+#endif	/* defined(unix) */
+    errno = 0;
+
+    flushline = 0;
 
     /* Don't change NetTrace */
 
@@ -314,8 +345,10 @@ tninit()
     }
 
 #if	defined(TN3270)
-    terminit();
-    ctlrinit();
+    init_ctlr();		/* Initialize some things */
+    init_keyboard();
+    init_screen();
+    init_system();
 #endif	/* defined(TN3270) */
 }
 
@@ -1121,8 +1154,6 @@ willoption(option, reply)
 	     * DO send).
 	     */
 	    {
-		static int askedSGA = 0;
-
 		if (askedSGA == 0) {
 		    askedSGA = 1;
 		    if (!hisopts[TELOPT_SGA]) {
@@ -1330,24 +1361,12 @@ SetIn3270()
 }
 #endif	/* defined(TN3270) */
 
-/*
- * Telnet receiver states for fsm
- */
-#define	TS_DATA		0
-#define	TS_IAC		1
-#define	TS_WILL		2
-#define	TS_WONT		3
-#define	TS_DO		4
-#define	TS_DONT		5
-#define	TS_CR		6
-#define	TS_SB		7		/* sub-option collection */
-#define	TS_SE		8		/* looking for sub-option end */
 
 static void
 telrcv()
 {
     register int c;
-    static int state = TS_DATA;
+    static int telrcv_state = TS_DATA;
 #   if defined(TN3270)
     register int Scc;
     register char *Sbp;
@@ -1355,10 +1374,10 @@ telrcv()
 
     while ((scc > 0) && (TTYROOM() > 2)) {
 	c = *sbp++ & 0xff, scc--;
-	switch (state) {
+	switch (telrcv_state) {
 
 	case TS_CR:
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    if (c == '\0') {
 		break;	/* Ignore \0 after CR */
 	    } else if (c == '\n') {
@@ -1371,7 +1390,7 @@ telrcv()
 
 	case TS_DATA:
 	    if (c == IAC) {
-		state = TS_IAC;
+		telrcv_state = TS_IAC;
 		continue;
 	    }
 #	    if defined(TN3270)
@@ -1382,7 +1401,7 @@ telrcv()
 		while (Scc > 0) {
 		    c = *Sbp++ & 0377, Scc--;
 		    if (c == IAC) {
-			state = TS_IAC;
+			telrcv_state = TS_IAC;
 			break;
 		    }
 		    *Ifrontp++ = c;
@@ -1416,7 +1435,7 @@ telrcv()
 			}
 		    }
 		} else {
-		    state = TS_CR;
+		    telrcv_state = TS_CR;
 		    TTYADD('\r');
 		    if (crmod) {
 			    TTYADD('\n');
@@ -1431,19 +1450,19 @@ telrcv()
 	    switch (c) {
 	    
 	    case WILL:
-		state = TS_WILL;
+		telrcv_state = TS_WILL;
 		continue;
 
 	    case WONT:
-		state = TS_WONT;
+		telrcv_state = TS_WONT;
 		continue;
 
 	    case DO:
-		state = TS_DO;
+		telrcv_state = TS_DO;
 		continue;
 
 	    case DONT:
-		state = TS_DONT;
+		telrcv_state = TS_DONT;
 		continue;
 
 	    case DM:
@@ -1464,7 +1483,7 @@ telrcv()
 
 	    case SB:
 		SB_CLEAR();
-		state = TS_SB;
+		telrcv_state = TS_SB;
 		continue;
 
 #	    if defined(TN3270)
@@ -1496,7 +1515,7 @@ telrcv()
 	    default:
 		break;
 	    }
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_WILL:
@@ -1509,7 +1528,7 @@ telrcv()
 		willoption(c, 1);
 	    }
 	    SetIn3270();
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_WONT:
@@ -1522,7 +1541,7 @@ telrcv()
 		wontoption(c, 1);
 	    }
 	    SetIn3270();
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_DO:
@@ -1530,7 +1549,7 @@ telrcv()
 	    if (!myopts[c])
 		dooption(c);
 	    SetIn3270();
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_DONT:
@@ -1544,12 +1563,12 @@ telrcv()
 		printoption(">SENT", wont, c, 0);
 	    }
 	    SetIn3270();
-	    state = TS_DATA;
+	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_SB:
 	    if (c == IAC) {
-		state = TS_SE;
+		telrcv_state = TS_SE;
 	    } else {
 		SB_ACCUM(c);
 	    }
@@ -1561,12 +1580,12 @@ telrcv()
 		    SB_ACCUM(IAC);
 		}
 		SB_ACCUM(c);
-		state = TS_SB;
+		telrcv_state = TS_SB;
 	    } else {
 		SB_TERM();
 		suboption();	/* handle sub-option */
 		SetIn3270();
-		state = TS_DATA;
+		telrcv_state = TS_DATA;
 	    }
 	}
     }
