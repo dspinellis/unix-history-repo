@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -107,12 +107,7 @@ again:
 	}
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
-		/*
-		 * Don't send more than one segment if retransmitting
-		 * (or persisting, but then we shouldn't be here).
-		 */
-		if (tp->t_rxtshift == 0)
-			sendalot = 1;
+		sendalot = 1;
 	}
 	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
 		flags &= ~TH_FIN;

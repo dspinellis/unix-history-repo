@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_timer.c	7.4 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -178,6 +178,15 @@ tcp_timers(tp, timer)
 		 */
 		if (tp->t_rtt && tp->t_srtt)
 			tp->t_rtt = 0;
+		/*
+		 * Close the congestion window down to one segment
+		 * (we'll open it by one segment for each ack we get).
+		 * Since we probably have a window's worth of unacked
+		 * data accumulated, this "slow start" keeps us from
+		 * dumping all that data as back-to-back packets (which
+		 * might overwhelm an intermediate gateway).
+		 */
+		tp->snd_cwnd = tp->t_maxseg;
 		(void) tcp_output(tp);
 		break;
 

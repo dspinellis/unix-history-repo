@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	7.3 (Berkeley) %G%
+ *	@(#)tcp_input.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -567,7 +567,7 @@ trimthenstep6:
 					tcpstat.tcps_rcvwinprobe++;
 				else {
 					tcpstat.tcps_rcvpackafterwin++;
-					tcpstat.tcps_rcvbyteafterwin += todrop;
+					tcpstat.tcps_rcvbyteafterwin += ti->ti_len;
 				}
 				goto dropafterack;
 			}
@@ -709,9 +709,10 @@ trimthenstep6:
 			tp->t_rxtshift = 0;
 		}
 		/*
-		 * When new data is acked, open the congestion window a bit.
+		 * When new data is acked, open the congestion window
+		 * by one max sized segment.
 		 */
-		tp->snd_cwnd = MIN(11 * tp->snd_cwnd / 10, 65535);
+		tp->snd_cwnd = MIN(tp->snd_cwnd + tp->t_maxseg, 65535);
 		if (acked > so->so_snd.sb_cc) {
 			tp->snd_wnd -= so->so_snd.sb_cc;
 			sbdrop(&so->so_snd, (int)so->so_snd.sb_cc);
