@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.21 (Berkeley) %G%
+ *	@(#)db.h	5.22 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -32,7 +32,7 @@ typedef struct {
 
 /* Routine flags. */
 #define	R_CURSOR	1		/* del, put, seq */
-#define	R_CURSORLOG	2		/* put (RECNO) */
+#define	__R_UNUSED	2		/* UNUSED */
 #define	R_FIRST		3		/* seq */
 #define	R_IAFTER	4		/* put (RECNO) */
 #define	R_IBEFORE	5		/* put (RECNO) */

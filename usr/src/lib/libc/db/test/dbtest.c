@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -420,8 +420,6 @@ setflags(s)
 		*p = '\0';
 	if (!strcmp(s, "R_CURSOR"))
 		return (R_CURSOR);
-	if (!strcmp(s, "R_CURSORLOG"))
-		return (R_CURSORLOG);
 	if (!strcmp(s, "R_FIRST"))
 		return (R_FIRST);
 	if (!strcmp(s, "R_IAFTER"))
