@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_alloc.c	8.10 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -289,6 +289,8 @@ nospace:
 int doasyncfree = 1;
 #ifdef DEBUG
 struct ctldebug debug14 = { "doasyncfree", &doasyncfree };
+int prtrealloc = 0;
+struct ctldebug debug15 = { "prtrealloc", &prtrealloc };
 #endif
 
 int
@@ -380,6 +382,11 @@ ffs_reallocblks(ap)
 	 * block pointers in the inode and indirect blocks associated
 	 * with the file.
 	 */
+#ifdef DEBUG
+	if (prtrealloc)
+		printf("realloc: ino %d, lbns %d-%d\n\told:", ip->i_number,
+			start_lbn, end_lbn);
+#endif DEBUG
 	blkno = newblk;
 	for (bap = &sbap[soff], i = 0; i < len; i++, blkno += fs->fs_frag) {
 		if (i == ssize)
@@ -387,6 +394,10 @@ ffs_reallocblks(ap)
 #ifdef DIAGNOSTIC
 		if (dbtofsb(fs, buflist->bs_children[i]->b_blkno) != *bap)
 			panic("ffs_reallocblks: alloc mismatch");
+#endif
+#ifdef DEBUG
+		if (prtrealloc)
+			printf(" %d,", *bap);
 #endif
 		*bap++ = blkno;
 	}
@@ -422,11 +433,25 @@ ffs_reallocblks(ap)
 	/*
 	 * Last, free the old blocks and assign the new blocks to the buffers.
 	 */
+#ifdef DEBUG
+	if (prtrealloc)
+		printf("\n\tnew:");
+#endif
 	for (blkno = newblk, i = 0; i < len; i++, blkno += fs->fs_frag) {
 		ffs_blkfree(ip, dbtofsb(fs, buflist->bs_children[i]->b_blkno),
 		    fs->fs_bsize);
 		buflist->bs_children[i]->b_blkno = fsbtodb(fs, blkno);
+#ifdef DEBUG
+		if (prtrealloc)
+			printf(" %d,", blkno);
+#endif
 	}
+#ifdef DEBUG
+	if (prtrealloc) {
+		prtrealloc--;
+		printf("\n");
+	}
+#endif
 	return (0);
 
 fail:
