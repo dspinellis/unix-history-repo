@@ -1,4 +1,4 @@
-/*	Locore.c	4.9	81/04/28	*/
+/*	Locore.c	4.10	81/05/05	*/
 
 #include "dz.h"
 
@@ -74,6 +74,7 @@ lowinit()
 		return;		/* use value */
 	machinecheck((caddr_t)0);
 	memerr();
+	boothowto = 0;
 }
 
 consdin() { }
