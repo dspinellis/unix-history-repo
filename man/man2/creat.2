@@ -1,0 +1,45 @@
+.pa 1
+.he 'CREAT (II)'3/15/72'CREAT (II)'
+.ti 0
+NAME		creat  --  create a new file
+.sp
+.ti 0
+SYNOPSIS	sys	creat; name; mode	/ creat = 8.
+.br
+(file descriptor in r0)
+.sp
+.ti 0
+DESCRIPTION	creat_____
+creates a new file or prepares to rewrite an existing
+file called name____;
+name____ is the address of a null-terminated string.
+If the file did not exist, it is given mode mode____;
+if it did exist, its mode and owner remain unchanged
+but it is truncated to 0 length.
+.sp
+The file is also opened for writing, and its file descriptor
+is returned in r0.
+.sp
+The mode____ given is arbitrary; it need not allow
+writing.
+This feature is used by programs which deal with temporary
+files of fixed names.  The creation is done with
+a mode that forbids writing.  Then if a second
+instance of the program attempts a creat_____, an error is
+returned and the program knows that the name is unusable
+for the moment.
+.sp
+.ti 0
+SEE ALSO	write(II), close(II)
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) may be set if: a needed directory is not readable;
+the file does not exist and the directory
+in which it is to be created is not writable; the file
+does exist and is unwritable;
+the file is a directory;
+there are already 10 files open.
+.sp
+.ti 0
+BUGS		--
