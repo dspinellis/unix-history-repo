@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)soelim.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)soelim.c	4.3 (Berkeley) %G%";
 
 #include <stdio.h>
 /*
@@ -27,24 +27,25 @@ main(argc, argv)
 	argc--;
 	argv++;
 	if (argc == 0) {
-		process(STDIN_NAME);
+		(void)process(STDIN_NAME);
 		exit(0);
 	}
 	do {
-		process(argv[0]);
+		(void)process(argv[0]);
 		argv++;
 		argc--;
 	} while (argc > 0);
 	exit(0);
 }
 
-process(file)
+int process(file)
 	char *file;
 {
 	register char *cp;
 	register int c;
 	char fname[BUFSIZ];
 	FILE *soee;
+	int isfile;
 
 	if (!strcmp(file, STDIN_NAME)) {
 		soee = stdin;
@@ -52,7 +53,7 @@ process(file)
 		soee = fopen(file, "r");
 		if (soee == NULL) {
 			perror(file);
-			return;
+			return(-1);
 		}
 	}
 	for (;;) {
@@ -75,6 +76,7 @@ process(file)
 			c = getc(soee);
 		while (c == ' ' || c == '\t');
 		cp = fname;
+		isfile = 0;
 		for (;;) {
 			switch (c) {
 
@@ -87,6 +89,7 @@ process(file)
 			default:
 				*cp++ = c;
 				c = getc(soee);
+				isfile++;
 				continue;
 			}
 		}
@@ -96,7 +99,9 @@ donename:
 			goto simple;
 		}
 		*cp++ = 0;
-		process(fname);
+		if (process(fname) < 0)
+			if (isfile)
+				printf(".so %s\n", fname);
 		continue;
 simple:
 		if (c == EOF)
@@ -106,4 +111,5 @@ simple:
 	if (soee != stdin) {
 		fclose(soee);
 	}
+	return(0);
 }
