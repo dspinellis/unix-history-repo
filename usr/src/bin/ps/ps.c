@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.7 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -81,11 +81,13 @@ struct	proc proc[8];		/* 8 = a few, for less syscalls */
 struct	proc *mproc;
 struct	text *text;
 
+int	paduser1;		/* avoid hardware mem clobbering botch */
 union {
 	struct	user user;
 	char	upages[UPAGES][NBPG];
 } user;
 #define u	user.user
+int	paduser2;		/* avoid hardware mem clobbering botch */
 
 #define clear(x) 	((int)x & 0x7fffffff)
 
@@ -657,7 +659,10 @@ pcpu()
 
 getu()
 {
-	struct pte *pteaddr, apte, arguutl[UPAGES+CLSIZE];
+	struct pte *pteaddr, apte;
+	int pad1;	/* avoid hardware botch */
+	struct pte arguutl[UPAGES+CLSIZE];
+	int pad2;	/* avoid hardware botch */
 	register int i;
 	int ncl, size;
 
@@ -709,10 +714,12 @@ char *
 getcmd()
 {
 	char cmdbuf[BUFSIZ];
+	int pad1;		/* avoid hardware botch */
 	union {
 		char	argc[CLSIZE*NBPG];
 		int	argi[CLSIZE*NBPG/sizeof (int)];
 	} argspac;
+	int pad2;		/* avoid hardware botch */
 	register char *cp;
 	register int *ip;
 	char c;
