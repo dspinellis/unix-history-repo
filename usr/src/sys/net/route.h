@@ -51,6 +51,14 @@ struct rt_metrics {
 };
 
 /*
+ * rmx_rtt and rmx_rttvar are stored as microseconds;
+ * RTTTOPRHZ(rtt) converts to a value suitable for use
+ * by a protocol slowtimo counter.
+ */
+#define	RTM_RTTUNIT	1000000	/* units for rtt, rttvar, as units per sec */
+#define	RTTTOPRHZ(r)	((r) / (RTM_RTTUNIT / PR_SLOWHZ))
+
+/*
  * We distinguish between routes to hosts and routes to networks,
  * preferring the former if available.  For each route we infer
  * the interface to use from the gateway address supplied when
