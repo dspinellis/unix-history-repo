@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vmparam.h	5.5 (Berkeley) %G%
+ *	@(#)vmparam.h	5.6 (Berkeley) %G%
  */
 
 
@@ -171,11 +171,25 @@
 	{(*(int *)(pte) = ((pfnum)<<PGSHIFT) | (prot)) ; }
 
 /*
- * Invalidate a cluster (optimized here for standard CLSIZE).
+ * Mach derived constants
  */
-#if CLSIZE == 1
-#define	tbiscl(v)
-#endif
+
+/* user/kernel map constants */
+#define VM_MIN_ADDRESS		((vm_offset_t)0)
+#define VM_MAX_ADDRESS		((vm_offset_t)0xFFFFF000)
+#define VM_MIN_KERNEL_ADDRESS	((vm_offset_t)0xFE000000)
+#define VM_MAX_KERNEL_ADDRESS	((vm_offset_t)0xFFFFF000)
+
+/* virtual sizes (bytes) for various kernel submaps */
+#define VM_MBUF_SIZE		(NMBCLUSTERS*MCLBYTES)
+#define VM_KMEM_SIZE		(NKMEMCLUSTERS*CLBYTES)
+#define VM_PHYS_SIZE		(USRIOSIZE*CLBYTES)
+
+/* # of kernel PT pages (initial only, can grow dynamically) */
+#define VM_KERNEL_PT_PAGES	((vm_size_t)2)		/* XXX: SYSPTSIZE */
+
+/* pcb base */
+#define	pcbb(p)		((u_int)(p)->p_addr)
 
 /*
  * Flush MMU TLB
