@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.39 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -58,14 +58,11 @@ ufs_init()
 }
 
 /*
- * Look up an vnode/inode by device,inumber.
- * If it is in core (in the inode structure),
- * honor the locking protocol.
- * If it is not in core, read it in from the
- * specified device.
- * Callers must check for mount points!!
- * In all cases, a pointer to a locked
- * inode structure is returned.
+ * Look up a UFS dinode number to find its incore vnode.
+ * If it is not in core, read it in from the specified device.
+ * If it is in core, wait for the lock bit to clear, then
+ * return the inode locked. Detection and handling of mount
+ * points must be done by the calling routine.
  */
 iget(xp, ino, ipp)
 	struct inode *xp;
@@ -310,10 +307,13 @@ ufs_reclaim(vp)
 }
 
 /*
- * Check accessed and update flags on an inode structure.
- * If any is on, update the inode with the current time.
- * If waitfor is given, then must ensure I/O order,
- * so wait for write to complete.
+ * Update the access, modified, and inode change times as specified
+ * by the IACC, IMOD, and ICHG flags respectively. The IUPD flag
+ * is used to specify that the inode needs to be updated but that
+ * the times have already been set. The access and modified times
+ * are taken from the second and third parameters; the inode change
+ * time is always taken from the current time. If waitfor is set,
+ * then wait for the disk write of the inode to complete.
  */
 iupdat(ip, ta, tm, waitfor)
 	register struct inode *ip;
