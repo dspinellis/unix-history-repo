@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -41,7 +41,7 @@ union dbent
 	struct
 	{
 		char	*data;
-		int	size;
+		size_t	size;
 	} xx;
 };
 
