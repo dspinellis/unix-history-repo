@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.133 (Berkeley) %G%
+ *	@(#)conf.h	8.134 (Berkeley) %G%
  */
 
 /*
@@ -30,7 +30,7 @@
 # define MAXPV		40		/* max # of parms to mailers */
 # define MAXATOM	200		/* max atoms per address */
 # define MAXMAILERS	25		/* maximum mailers known to system */
-# define MAXRWSETS	100		/* max # of sets of rewriting rules */
+# define MAXRWSETS	200		/* max # of sets of rewriting rules */
 # define MAXPRIORITIES	25		/* max values for Precedence: field */
 # define MAXMXHOSTS	20		/* max # of MX records */
 # define SMTPLINELIM	990		/* maximum SMTP line length */
