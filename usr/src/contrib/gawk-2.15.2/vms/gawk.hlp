@@ -1,0 +1,1189 @@
+! Gawk.Hlp
+!                                                       Pat Rankin, Jun'90
+!                                                          revised, Jun'91
+!                                                          revised, Jul'92
+!   Online help for GAWK.
+!
+1 GAWK
+ GAWK is GNU awk, the Free Software Foundation's implementation of
+ the awk programming language.  awk is an interpretive language which
+ can handle many data-reformatting jobs with just a few lines of code.
+ It has powerful string manipulation and pattern matching capabilities
+ built in.  This version should be compatible with POSIX 1003.2 awk.
+
+ The VMS version of GAWK supports both the original UN*X-style command
+ interface and a DCL interface.  The only setup requirement for GAWK
+ is to define it as a 'foreign' command:  a DCL symbol with a value
+ which begins with '$'.
+       $ GAWK :== $disk:[directory]GAWK
+2 GNU_syntax
+ GAWK's UN*X-style interface uses the 'dash' convention for specifying
+ options and uses spaces to separate multiple arguments.
+
+ There are two main alternatives, depending on how the awk program is
+ to be passed to GAWK.  Both alternatives share most options.
+
+ Usage: $ gawk [-W opts] [-F fs] [-v var=val] -f progfile [--] file ...
+    or  $ gawk [-W opts] [-F fs] [-v var=val] [--] "program" file ...
+
+ The options are case-sensitive.  On VMS, the DCL command interpreter
+ converts unquoted text into uppercase before passing it to the running
+ program.  However, GAWK is written in 'C' and the C Run-Time Library
+ (VAXCRTL) converts unquoted text into *lowercase*.  Therefore, the
+ -Fval and -W options must be enclosed in quotes.
+
+ Note:  under VMS POSIX, the usual shell command line processing occurs.
+3 options
+ -f file    use the specified file as the awk program source; if more
+            than one instance of -f is used, each file will be read
+            in succession
+ -Fstring   define a value for the FS variable (field separator)
+ -v var=val assign a value of 'val' to the variable 'var'
+ -W 'options'  additional gawk-specific options; multiple values may
+            be separated by commas, or by spaces if they're quoted,
+            or mulitple occurrences of -W may be used.
+ -W compat  use awk "compatibility mode" to disable GAWK extensions
+            and get the behavior of UN*X awk.
+ -W copyright [or -W copyleft]  display an abbreviated version of
+            the GNU copyright information
+ -W lint    warn about suspect or non-portable awk program code
+ -W posix   compatibility mode with additional restrictions
+ -W version display program version number
+ --         don't check further arguments for leading dash
+3 program_text
+ If the '-f file' option is not used on the command line, then the
+ first "non-dash" argument is assumed to be a string of text containing
+ the awk source program.  Here is a complete sample program:
+       $ gawk -- "BEGIN {print ""\nHello, World!\n""}"
+ This program would print a blank line (based on first "\n"), followed
+ by a line reading "Hello, World!", followed by another blank line
+ (since awk's 'print' statement includes the trailing 'newline').
+
+ On VMS, to include a quote character inside of a quoted string, two
+ successive quotes ("") must be used.  (Not necessary for VMS POSIX.)
+3 data_files
+ After all dash-options are examined, and after the program text if
+ there were no occurrences of the -f option, remaining (space separated)
+ command line arguments are considered to be data files for the awk
+ program to process.  If any of these actually contains an equals sign
+ (=), then it is interpreted as a variable assignment instead of a data
+ file.  The syntax is 'variable_name=value'.  For example, the command
+       $ gawk -f myprog.awk infile.one flag=2 start=0 infile.two
+ would read file 'infile.one' for the program in 'myprog.awk', then it
+ would set 'flag' to 2 and 'start' to 0, and finally it would read file
+ 'infile.two' for the program.  Note that in a case like this, the two
+ assignments actually occur after the first file has been processed,
+ not at program startup when the command line is first scanned.
+3 IO_redirection
+ The command parsing in the VMS implementation of GAWK does some
+ emulation of a UN*X-style shell, where certain characters on the
+ command line have special meaning.  In particular, the symbols '<',
+ '>', '|', '*', and '?' receive special handling before the main part
+ of the program has a chance to see them.  The symbols '<' and '>'
+ perform some file manipulation from the command line:
+
+ <ifile     open file 'ifile' (readonly) as 'stdin' [SYS$INPUT]
+ >nfile     create 'nfile' as 'stdout' [SYS$OUTPUT], in stream-lf format
+ >>ofile    append to 'ofile' for 'stdout'; create it if necessary
+ >&efile    point 'stderr' [SYS$ERROR] at 'efile', but don't open it yet
+ >$vfile    create 'vfile' as 'stdout', using RMS attributes appropriate
+            for a standard text file (variable length records with
+            implied carriage control)
+ 2>&1       route error messages into the regular output stream
+ 1>&2       send output data to the error destination
+ <<sentinel error; reading stdin until 'sentinel' not supported
+ <-, >-     error; closure of stdin or stdout from cmd line not supported
+ >>$vfile   incorrect; would be interpreted as file "$vfile" in stream-lf
+            format rather than as file "vfile" in RMS 'text' format
+ |          error; command line pipes not supported
+
+ Note:  under VMS POSIX these features are implemented by the shell
+ rather than inside GAWK, so consult the shell documentation for
+ specific details.
+3 wildcard_expansion
+ The command parsing in the VMS implementation of GAWK does some
+ emulation of a UN*X-style shell, where certain characters on the
+ command line have special meaning.  In particular, the symbols '<',
+ '>', '*', '%', and '?' receive special handling before the main part
+ of the program has a chance to see them.  The symbols '*', '%' and '?'
+ are used as wildcards in filenames.  '*' and '%' have their usual VMS
+ meanings of multiple character and single character wildcards,
+ respectively, and '?' is also treated as a single character wildcard.
+
+ When a command line argument that should be a filename contains any
+ of the wildcard characters, a directory lookup is attempted for files
+ which match the specified pattern.  If one or more matching files are
+ found, those filenames are put into the command line in place of the
+ original pattern.  If no matching files are found, the original
+ pattern is left in place.
+
+ Note:  under VMS POSIX wildcard expansion, or "file globbing", is
+ performed by the shell rather than inside GAWK, so consult the shell
+ documentation for details.  In particular, the last sentence of the
+ previous paragraph does not apply.
+2 DCL_syntax
+ GAWK's DCL-style interface is more or less a standard DCL command, with
+ one required parameter.  Multiple values--when present--are separated
+ by commas.
+
+ There are two main alternatives, depending on how the awk program is
+ to be passed to GAWK.  Both alternatives share most options.
+
+ Usage:  GAWK  /COMMANDS="awk program text"  data_file[,data_file,...]
+    or   GAWK  /INPUT=awk_file  data_file[,"Var=value",data_file,...]
+ (  or   GAWK  /INPUT=(awk_file1,awk_file2,...)  data_file[,...]       )
+
+ Not applicable under VMS POSIX.
+3 Parameter
+ data_file[,datafile,...]       (data_file data_file ...)
+ data_file[,"Var=value",...,data_file,...]      (data_file Var=value &c)
+
+  Data file(s) for the awk program to process.  If any of these
+  actually contains an equals sign (=), then it is interpreted as
+  a variable assignment instead of a data file.  The syntax is
+  "variable_name=value".  Quotes are required for non-file parameters.
+
+  For example, the command
+       $ gawk/input=myprog.awk infile.one,"flag=2","start=0",infile.two
+  would read file 'infile.one' for the program in 'myprog.awk', then it
+  would set 'flag' to 2 and 'start' to 0, and finally it would read file
+  'infile.two' for the program.  Note that in a case like this, the two
+  assignments actually occur after the first file has been processed,
+  not at program startup when the command line is first scanned.
+
+  Wildcard file lookups are attempted on data file specifications.  See
+  subtopic 'GAWK GNU_syntax wildcard_expansion' for details.
+
+  At least one data_file parameter value is required.  An exception is
+  made if /usage, /version, or /copyright is specified *and* if GAWK is
+  defined as a 'foreign' command rather than a 'native' DCL command.
+3 Qualifiers
+/COMMANDS
+ /COMMANDS="awk program text"   (-- "awk program text")
+
+  For short programs, it is possible to include the complete program
+  on the command line.  The quotes are required.  Here is a complete
+  sample program:
+       $ gawk/commands="BEGIN {print ""\nHello, World!\n""}" NL:
+  This program would print a blank line (based on first "\n"), followed
+  by a line reading "Hello, World!", followed by another blank line
+  (since awk's 'print' statement includes the trailing 'newline').
+
+  To include a quote character inside of a quoted string, two
+  successive quotes ("") must be used.
+
+  Either /COMMANDS or /INPUT (but not both) must be supplied.
+/INPUT
+ /INPUT=(awk_file1,awk_file2)   (-f awk_file1 -f awk_file2)
+
+  Used to specify one or more files containing the source code of
+  the awk program.  If more than one file is used, separate them
+  with commas and enclose the list in parentheses.
+
+  Multiple source files are processed in order as if they had been
+  concatenated together.
+
+  Either /INPUT or /COMMANDS (but not both) must be supplied.
+/FIELD_SEPARATOR
+ /FIELD_SEPARATOR="FS_value"    (-F"FS_value")
+
+  Assign a value to the built in variable FS (field separator).
+/VARIABLES
+ /VARIABLES=("Var1=val1","Var2=val2",...)  (-v Var1=val1 -v Var2=val2)
+
+  Assign value(s) to the specified variable(s).
+/REG_EXPR
+ /REG_EXPR={AWK | EGREP | POSIX}   (-a vs -e options [obsolete])
+
+  This qualifier is obsolete and has no effect.
+/STRICT
+ /[NO]STRICT            (-"W compat" option)
+
+  Use strict awk compatibility mode (/strict) and suppress GAWK
+  extensions.  The default is /NOSTRICT.
+/POSIX
+ /[NO]POSIX             (-"W posix" option)
+
+  Use POSIX compatibility mode (/posix) and suppress GAWK extensions.
+  The default is /NOPOSIX.  Slightly more restrictive than /strict.
+/LINT
+ /[NO]LINT              (-"W lint" option)
+
+  Check the awk program cafefully for potential problems that might
+  be encountered if it were to be used with other awk implementations,
+  and print warnings for anything found.  The default in /NOLINT.
+/VERSION
+ /VERSION               (-"W version" option)
+
+  Print GAWK's version number.
+/COPYRIGHT
+ /COPYRIGHT             (-"W copyright" or -"W copyleft" option)
+
+  Print a brief version of GAWK's copyright notice.
+/USAGE
+ /USAGE                 (no corresponding GNU_syntax option)
+
+  Print a compact summary of the command line options.
+
+  After the 'usage' message is printed, GAWK terminates regardless
+  of any other command line options.
+/OUTPUT
+ /OUTPUT=out_file       (>$out_file)
+
+  Write program output into 'out_file'.  The default is SYS$OUTPUT.
+2 awk_language
+ An awk program consists of one or more pattern-action pairs, sometimes
+ referred to as "rules".  For each record of an input (data) file, the
+ rules are checked sequentially.  Any pattern which matches the input
+ record triggers that rule's action.  Actions are instructions which
+ resemble statements in the 'C' programming language.  Patterns come
+ in several varieties, including field comparisons, regular expression
+ matching, and special cases defined by reserved keywords.
+
+ All awk keywords and variables are case-sensitive.  Text matching is
+ also sensitive to character case unless the builtin variable IGNORECASE
+ is set to a non-zero value.
+3 rules
+ The syntax for a pattern-action 'rule' is simply
+       PATTERN { ACTION }
+ where the braces ({}) are required punctuation for the action.
+ Semicolons (;) or 'newlines' (ie, having the text on a separate line)
+ delimit multiple rules and also multiple actions within a given rule.
+ Either the pattern or the action may be omitted; an empty pattern
+ matches every record of the input file; a missing action (not an empty
+ action inside of braces), is an implicit request to print the current
+ record; an empty action (ie, {}) is legal but not very useful.
+3 patterns
+ There are several types of patterns available for awk rules.
+
+  expression  an 'expression' is something to be evaluated (perhaps
+                         a comparison or function call) which will
+                         be considered true if non-zero (for numeric
+                         results) or if non-null (for strings)
+  /regular_expression/ slashes (/) delimit a regular expression
+                         which is used as a pattern
+  pattern1, pattern2   a pair of patterns separated by a comma (,),
+                         which causes a range of records to trigger
+                         the associated action; the records which
+                         match the patterns are included in the range
+  <null>      an omitted pattern (in this text, the  string '<null>'
+                         is displayed, but in an awk program, it
+                         would really be blank) matches every record
+  BEGIN       keyword for specifying a rule to be executed prior to
+                         reading the 1st record of the 1st input file
+  END         keyword for specifying a rule to be executed after
+                         handling the last input record of last file
+4 examples
+ Some example patterns (mostly with the corresponding actions omitted)
+
+ NF > 0     # comparison expression:  matches non-null records
+ $0         # implied comparison:  also matches non-null records
+ $2 > 1000 && sum <= 999999     # slightly more elaborate expression
+ /x/        # regular expression matching any record with an 'x' in it
+ /^ /       # reg-expr matching records beginning with a space
+ $1 == "start", $NF == "stop"   # range pattern for input in which
+                some data lines begin with 'start' and/or end with
+                'stop' in order to collect groups of records
+        { sum += $1 }   # null pattern:  it's action (add field #1 to
+                variable 'sum') would be executed for every record
+ BEGIN  { sum = 0 }     # keyword 'BEGIN':  perform this action before
+                reading the input file (note: initialization to 0 is
+                unnecessary in awk)
+ END    { print "total =", sum }    # keyword 'END':  perform this
+                action after the last input record has been processed
+3 actions
+ An 'action' is something to do when a given record has matched the
+ corresponding pattern in a rule.  In general, actions resemble 'C'
+ statements and expressions.  The action in a rule must be enclosed
+ in braces ({}).
+
+ Each action can contain more than one statement or expression to be
+ executed, provided that they're separated by semicolons (;) and/or
+ on separate lines.
+
+ An omitted action is equivalent to
+       { print $0 }
+ which prints the current record.
+3 operators
+ Relational operators
+    ==    compare for equality
+    !=    compare for inequality
+    <, <=, >, >=  numerical or lexical comparison (less than, less or
+                    equal, greater than, greater or equal, respectively)
+    ~     match against a regular expression
+    !~    match against a regular expression, but accept failed matches
+            instead of successful ones
+ Arithmetic operators
+    +     addition
+    -     subtraction
+    *     multiplication
+    /     division
+    %     remainder
+    ^, ** exponentiation ('**' is a synonym for '^', unless POSIX
+            compatibility is specified, in which case it's invalid)
+ Boolean operators (aka Logical operators)
+          a value is considered false if it's 0 or a null string,
+            it is true otherwise; the result of a boolean operation
+            (and also of a comparison operation) will be 0 when false
+            or 1 when true
+    ||    or [expression (a || b) is true if either a is true or b
+            is true or both a and b are true; it is false otherwise;
+            b is not evaluated unless a is false (ie, short-circuit)]
+    &&    and [expression (a && b) is true if both a and b are true;
+            it is false otherwise; b is only evaluated if a is true]
+    !     not [expression (!a) is true if a is false, false otherwise]
+    in    array membership; the keyword 'in' tests whether the value
+            on the left represents a current subscript in the array
+            named on the right
+ Conditional operator
+    ? :   the conditional operator takes three operands; the first is
+            an expression to evaluate, the second is the expression to
+            use if the first was true, the third is the expression to
+            use if it was false [simple example (a < b ? b : a) gives
+            the maximum of a and b]
+ Assignment operators
+    =     store the value on the right into the variable or array slot
+            on the left [expression (a = b) stores the value of b in a]
+    +=, -=, *=, /=, %=, ^=, **=  perform the indicated arithmetic
+           operation using the current value of the variable or array
+            element of the left side and the expression on the right
+            side, then store the result in the left side
+    ++    increment by 1 [expression (++a) gets the current value of
+            a and adds 1 to it, stores that back in a, and returns the
+            new value; expression (a++) gets the current value of a,
+            adds 1 to it, stores that back in a, but returns the
+            original value of a]
+    --    decrement by 1 (analogous to increment)
+ String operators
+          there is no explicit operator for string concatenation;
+            two values and/or variables side-by-side are implicitly
+            concatenated into a string (numeric values are first
+            converted into their string equivalents)
+ Conversion between numeric and string values
+          there is no explicit operator for conversion; adding 0
+            to a string with force it to be converted to a number
+            (the numeric value will be 0 if the string does not
+            represent an integer or floating point number); the
+            reverse, converting a number into a string, is done by
+            concatenating a null string ("") to it [the expression
+            (5.75 "") evaluates to "5.75"]
+ Field 'operator'
+    $     prefixing a number or variable with a dollar sign ($)
+            causes the appropriate record field to be returned [($2)
+            gives the second field of the record, ($NF) gives the
+            last field (since the builtin variable NF is set to the
+            number of fields in the current record)]
+ Array subscript operator
+    ,     multi-dimensional arrays are simulated by using comma (,)
+            separated array indices; the actual index is generated
+            by replacing commas with the value of builtin SUBSEP,
+            then concatenating the expression into a string index
+          [comma is also used to separate arguments in function
+            calls and user-defined function definitions]
+          [comma is *also* used to indicate a range pattern in an
+            awk rule]
+ Escape 'operator'
+    \     In quoted character strings, the backslash (\) character
+            causes the following character to be interpreted in a
+            special manner [string "one\ntwo" has an embedded newline
+            character (linefeed on VMS, but treated as if it were both
+            carriage-return and linefeed); string "\033[" has an ASCII
+            'escape' character (which has octal value 033) followed by
+            a 'right-bracket' character]
+          Backslash is also used in regular expressions
+ Redirection operators
+    <     Read-from -- valid with 'getline'
+    >     Write-to (create new file) -- valid with 'print' and 'printf'
+    >>    Append-to (create file if it doesn't already exist)
+    |     Pipe-from/to -- valid with 'getline', 'print', and 'printf'
+4 precedence
+ Operator precedence, listed from highest to lowest.  Assignment,
+ conditional, and exponentiation operators group from right to left;
+ all others group from left to right.  Parentheses may be used to
+ override the normal order.
+
+     field ($)
+     increment (++), decrement (--)
+     exponentiation (^, **)
+     unary plus (+), unary minus (-), boolean not (!)
+     multiplication (*), division (/), remainder (%)
+     addition (+), subtraction (-)
+     concatenation (no special symbol; implied by context)
+     relational (==, !=, <, >=, etc), and redirection (<, >, >>, |)
+       Relational and redirection operators have the same precedence
+       and use similar symbols; context distinguishes between them
+     matching (~, !~)
+     array membership ('in')
+     boolean and (&&)
+     boolean or (||)
+     conditional (? :)
+     assignment (=, +=, etc)
+4 escaped_characters
+ Inside of a quoted string or constant regular expression, the
+ backslash (\) character gives special meaning to the character(s)
+ after it.  Special character letters are case sensitive.
+    \\    results in one backslash in the string
+    \a    is an 'alert' (<ctrl/G>. the ASCII <bell> character)
+    \b    is a backspace (BS, <ctrl/H>)
+    \f    is a form feed (FF, <ctrl/L>)
+    \n    'newline' (<ctrl/J> [line feed treated as CR+LF]
+    \r    carriage return (CR, <ctrl/M> [re-positions at the
+            beginning of the current line]
+    \t    tab (HT, <ctrl/I>)
+    \v    vertical tab (VT, <ctrl/K>)
+    \###  is an arbitrary character, where '###' represents 1 to 3
+            octal (ie, 0 thru 7) digits
+    \x##  is an alternate arbitrary character, where '##' represents
+            1 or more hexadecimal (ie, 0 thru 9 and/or A through E
+            and/or a through e) digits; if more than two digits
+            follow, the result is undefined; not recognized if POSIX
+            compatibility mode is specified.
+3 statements
+ A statement refers to a unit of instruction found in the action
+ part of an awk rule, and also found in the definition of a function.
+ The distinction between action, statement, and expression usually
+ won't matter to an awk programmer.
+
+ Compound statements consist of multiple statements separated by
+ semicolons or newlines and enclosed within braces ({}).  They are
+ sometimes referred to as 'blocks'.
+4 expressions
+ An expression such as 'a = 10' or 'n += i++' is a valid statement.
+
+ Function invocations such as 'reformat_field($3)' are also valid
+ statements.
+4 if-then-else
+ A conditional statement in awk uses the same syntax as for the 'C'
+ programming language:  the 'if' keyword, followed by an expression
+ in parentheses, followed by a statement--or block of statements
+ enclosed within braces ({})--which will be executed if the expression
+ is true but skipped if it's false.  This can optionally be followed
+ by the 'else' keyword and another statement--or block of statements--
+ which will be executed if (and only if) the expression was false.
+5 examples
+ Simple example showing a statement used to control how many numbers
+ are printed on a given line.
+       if ( ++i <= 10 )     #check whether this would be the 11th
+              printf(" %5d", k)     #print on current line if not
+       else {
+              printf("\n %5d", k)   #print on next line if so
+              i = 1                 #and reset the counter
+       }
+ Another example ('next' is described under 'action-controls')
+       if ($1 > $2) { print "rejected"; next } else diff = $2 - $1
+4 loops
+ Three types of loop statements are available in awk.  Each uses
+ the same syntax as 'C'.  The simplest of the three is the 'while'
+ statement.  It consists of the 'while' keyword, followed by an
+ expression enclosed within parentheses, followed by a statement--or
+ block of statements in braces ({})--which will be executed if the
+ expression evaluates to true.  The expression is evaluated before
+ attempting to execute the statement; if it's true, the statement is
+ executed (the entire block of statements if there is a block) and
+ then the expression is re-evaluated.
+
+ The second type of loop is the do-while loop.  It consists of the
+ 'do' keyword, followed by a statement (usually a block of statements
+ enclosed within braces), followed by the 'while' keyword, followed
+ by a test expression enclosed within parentheses.  The statement--or
+ block--is always executed at least once.  Then the test expression
+ is evaluated, and the statement(s) re-executed if the result was
+ true (followed by re-evaluation of the test, and so on).
+
+ The most complex of the three loops is the 'for' statement, and it
+ has a second variant that is not found in 'C'.  The ordinary for-loop
+ consists of the 'for' keyword, followed by three semicolon-separated
+ expressions enclosed within parentheses, followed by a statement or
+ brace-enclosed block of statements.  The first of the three
+ expressions is an initialization clause; it is done before starting
+ the loop.  The second expression is used as a test, just like the
+ expression in a while-loop.  It is checked before attempting to
+ execute the statement block, and then re-checked after each execution
+ (if any) of the block.  The third expression is an 'increment' clause;
+ it is evaluated after an execution of the statement block and before
+ re-evaluation of the test (2nd) expression.  Normally, the increment
+ clause will change a variable used in the test clause, in such a
+ fashion that the test clause will eventually evaluate to false and
+ cause the loop to finish.
+
+ Note to 'C' programmers:  the comma (,) operator commonly used in
+ 'C' for-loop expressions is not valid in awk.
+
+ The awk-specific variant of the for-loop is used for processing
+ arrays.  Its syntax is 'for' keyword, followed by variable_name 'in'
+ array_name (where 'var in array' is enclosed in parentheses),
+ followed by a statement (or block).  Each valid subscript value for
+ the array in question is successively placed--in no particular
+ order--into the specified 'index' variable.
+5 while_example
+ # strip fields from the input record until there's nothing left
+ while (NF > 0) {
+     $1 = ""    #this will affect the value of $0
+     $0 = $0    #this causes $0 and NF to be re-evaluated
+     print
+ }
+5 do_while_example
+ # This is a variation of the while_example; it gives a slightly
+ #   different display due to the order of operation.
+ # echo input record until all fields have been stripped
+ do {
+     print      #output $0
+     $1 = ""    #this will affect the value of $0
+     $0 = $0    #this causes $0 and NF to be re-evaluated
+ } while (NF > 0)
+5 for_example
+ # echo command line arguments (won't include option switches)
+ for ( i = 0; i < ARGC; i++ )  print ARGV[i]
+
+ # display contents of builtin environment array
+ for (itm in ENVIRON)
+     print itm, ENVIRON[itm]
+4 loop-controls
+ There are two special statements--both from 'C'--for changing the
+ behavior of loop execution.  The 'continue' statement is useful in
+ a compound (block) statement; when executed, it effectively skips
+ the rest of the block so that the increment-expression (only for
+ for-loops) and loop-termination expression can be re-evaluated.
+
+ The 'break' statement, when executed, effectively skips the rest
+ of the block and also treats the test expression as if it were
+ false (instead of actually re-evaluating it).  In this case, the
+ increment-expression of a for-loop is also skipped.
+
+ 'break' is only allowed within a loop ('for', 'while', or
+ 'do-while').  If 'continue' is used outside of a loop, it is
+ treated like 'next' (see action-controls).  Inside nested loops,
+ both 'break' and 'continue' only apply to the innermost loop.
+4 action-controls
+ There are two special statements for controlling statement execution.
+ The 'next' statement, when executed, causes the rest of the current
+ action and all further pattern-action rules to be skipped, so that
+ the next input record will be immediately processed.  This is useful
+ if any early action knows that the current record will fail all the
+ remaining patterns; skipping those rules will reduce processing time.
+ An extended form, 'next file', is also available.  It causes the
+ remainder of the current file to be skipped, and then either the
+ next input file will be processed, if any, or the END action will be
+ performed.  'next file' is not available in traditional awk.
+
+ The 'exit' statement causes GAWK execution to terminate.  All open
+ files are closed, and no further processing is done.  The END rule,
+ if any, is executed.  'exit' takes an optional numeric value as a
+ argument which is used as an exit status value, so that some sort
+ of indication of why execution has stopped can be passed on to the
+ user's environment.
+4 other_statements
+ The delete statement is used to remove an element from an array.
+ The syntax is 'delete' keyword followed by array name, followed
+ by index value enclosed in square brackets ([]).
+
+ The return statement is used in user-defined functions.  The syntax
+ is the keyword 'return' optionally followed by a string or numeric
+ expression.
+
+ See also subtopic 'functions IO_functions' for a description of
+ 'print', 'printf', and 'getline'.
+3 fields
+ When an input record is read, it is automatically split into fields
+ based on the current values of FS (builtin variable defining field
+ separator expression) and RS (builtin variable defining record
+ separator character).  The default value of FS is an expression
+ which matches one or more spaces and tabs; the default for RS is
+ newline.  If the FIELDWIDTHS variable is set to a space separated
+ list of numbers (as in ``FIELDWIDTHS = "2 3 2"'') then the input
+ is treated as if it had fixed-width fields of the indicated sizes
+ and the FS value will be ignored.
+
+ The field prefix operator ($), is used to reference a particular
+ field.  For example, $3 designates the third field of the current
+ record.  The entire record can be referenced via $0 (and it holds
+ the actual input record, not the values of $1, $2, ... concatenated
+ together, so multiple spaces--when present--remain intact, unless
+ a new value gets assigned).
+
+ The builtin variable NF holds the number of fields in the current
+ record.  $NF is therefore the value of the last field.  Attempts to
+ access fields beyond NF result in null values (if a record contained
+ 3 fields, the value of $5 would be "").
+
+ Assigning a new value to $0 causes all the other field values (and NF)
+ to be re-evaluated.  Changing a specific field will cause $0 to receive
+ a new value once it's re-evaluated, but until then the other existing
+ fields remain unchanged.
+3 variables
+ Variables in awk can hold both numeric and string values and do not
+ have to be pre-declared.  In fact, there is no way to explicitly
+ declare them at all.  Variable names consist of a leading letter
+ (either upper or lower case, which are distinct from each other)
+ or underscore (_) character followed by any number of letters,
+ digits, or underscores.
+
+ When a variable that didn't previously exist is referenced, it is
+ created and given a null value.  A null value is treated as 0 when
+ used as a number, and is a string of zero characters in length if
+ used as a string.
+4 builtin_variables
+ GAWK maintains several 'built-in' variables.  All have default values;
+ some are updated automatically.  All the builtins have uppercase-only
+ names.
+
+ These builtin variables control how awk behaves
+   FS  input field separator; default is a single space, which is
+         treated as if it were a regular expression for matching
+         one or more spaces and/or tabs; a value of " " also has a
+         second special-case side-effect of causing leading blanks
+         to be ignored instead of producing a null first field;
+         initial value can be specified on the command line with
+         the -F option (or /field_separator); the value can be a
+         regular expression
+   RS  input record separator; default value is a newline ("\n");
+         only a single character is allowed [no regular expressions
+         or multi-character strings; expected to be remedied in a
+         future release of gawk]
+   OFS output field separator; value to place between variables in
+         a 'print' statement; default is one space; can be arbitrary
+         string
+   ORS output record separator; value to implicitly terminate 'print'
+         statement with; default is newline ("\n"); can be arbitrary
+         string
+   OFMT default output format used for printing numbers; default
+         value is "%.6g"
+   CONVFMT conversion format used for string-to-number conversions;
+         default value is also "%.6g", like OFMT
+   SUBSEP subscript separator for array indices; used when an array
+         subscript is specified as a comma separated list of values:
+         the comma is replaced by SUBSEP and the resulting index
+         is a concatenation of the values and SUBSEP(s); default
+         value is "\034"; value may be arbitrary string
+   IGNORECASE regular expression matching flag; if true (non-zero)
+         matching ignores differences between upper and lower case
+         letters; affects the '~' and '!~' operators, the 'index',
+         'match', 'split', 'sub', and 'gsub' functions, and the
+         field splitting based on FS; default value is false (0);
+         has no effect if GAWK is in strict compatibility mode (via
+         the -"W compat" option or /strict)
+   FIELDWIDTHS space or tab separated list of width sizes; takes
+         precedence over FS when set, but is cleared if FS has a
+         value assigned to it; [note: the current implementation
+         of fixed-field input is considered experimental and is
+         expected to evolve over time]
+
+ These builtin variables provide useful information
+   NF  number of fields in the current record
+   NR  record number (accumulated over all files when more than one
+         input file is processed by the same program)
+   FNR current record number of the current input file; reset to 0
+         each time an input file is completed
+   RSTART starting position of substring matched by last invocation
+         of the 'match' function; set to 0 if a match fails and at
+         the start of each input record
+   RLENGTH length of substring matched by the last invocation of the
+         'match' function; set to -1 if a match fails
+   FILENAME name of the input file currently being processed; the
+         special name "-" is used to represent the standard input
+   ENVIRON array of miscellaneous user environment values; the VMS
+         implementation of GAWK provides values for ["USER"] (the
+         username), ["PATH"] (current default directory), ["HOME"]
+         (the user's login directory), and "[TERM]" (terminal type
+         if available) [all info provided by VAXCRTL's environ]
+   ARGC number of elements in the ARGV array, counting [0] which is
+         the program name (ie, "gawk")
+   ARGV array of command-line arguments (in [0] to [ARGC-1]); the
+         program name (ie, "gawk") in held in ARGV[0]; command line
+         parameters (data files and "var=value" expressions, but not
+         program options or the awk program text string if present)
+         are stored in ARGV[1] through ARGV[ARGC-1]; the awk program
+         can change values of ARGC and ARGV[] during execution in
+         order to alter which files are processed or which between-
+         file assignments are made
+4 arrays
+ awk supports associative arrays to collect data into tables.  Array
+ elements can be either numeric or string, as can the indices used to
+ access them.  Each array must have a unique name, but a given array
+ can hold both string and numeric elements at the same time.  Arrays
+ are one-dimensional only, but multi-dimensional arrays can be
+ simulated using comma (,) separated indices, whereby a single index
+ value gets created by replacing commas with SUBSEP and concatenating
+ the resulting expression into a single string.
+
+ Referencing an array element is done with the expression
+       Array[Index]
+ where 'Array' represents the array's name and 'Index' represents a
+ value or expression used for a subscript.  If the requested array
+ element did not exist, it will be created and assigned an initial
+ null value.  To check whether an element exists without creating it,
+ use the 'in' boolean operator.
+       Index in Array
+ would check 'Array' for element 'Index' and return 1 if it existed
+ or 0 otherwise.  To remove an element from an array, use the 'delete'
+ statement
+       delete Array[Index]
+ Note:  there is no way to delete an ordinary variable or an entire
+ array; 'delete' only works on a specific array element.
+
+ To process all elements of an array (in succession) when their
+ subscripts might be unknown, use the 'in' variant of the for-loop
+       for (Index in Array) { ... }
+3 functions
+ awk supports both built-in and user-defined functions.  A function
+ may be considered a 'black-box' which accepts zero or more input
+ parameters, performs some calculations or other manipulations based
+ on them, and returns a single result.
+
+ The syntax for calling a function consists of the function name
+ immediately followed by an open parenthesis (left parenthesis '('),
+ followed by an argument list, followed by a closing parenthesis
+ (right parenthesis ')').  The argument list is a sequence of values
+ (numbers, strings, variables, array references, or expressions
+ involving the above and/or nested function calls), separated by
+ commas and optional white space.
+
+ The parentheses are required punctuation, except for the 'print' and
+ 'printf' builtin IO functions, where they're optional, and for the
+ builtin IO function 'getline', where they're not allowed.  Some
+ functions support optional [trailing] arguments which can be simply
+ omitted (along with the corresponding comma if applicable).
+4 numeric_functions
+ Builtin numeric functions
+   int(n)      returns the value of 'n' with any fraction truncated
+                 [truncation of negative values is towards 0]
+   sqrt(n)     the square root of n
+   exp(n)      the exponential of n ('e' raised to the 'n'th power)
+   log(n)      natural logarithm of n
+   sin(n)      sine of n (in radians)
+   cos(n)      cosine of n (radians)
+   atan2(m,n)  arctangent of m/n (radians)
+   rand()      random number in the range 0 to 1 (exclusive)
+   srand(s)    sets the random number 'seed' to s, so that a sequence
+                 of 'random' numbers can be repeated; returns the
+                 previous seed value; srand() [argument omitted] sets
+                 the seed to an 'unpredictable' value (based on date
+                 and time, for instance, so should be unrepeatable)
+4 string_functions
+ Builtin string functions
+   index(s,t)  search string s for substring t; result is 1-based
+                 offset of t within s, or 0 if not found
+   length(s)   returns the length of string s; either 'length()'
+                 with its argument omitted or 'length' without any
+                 parenthesized argument list will return length of $0
+   match(s,r)  search string s for regular expression r; the offset
+                 of the longest, left-most substring which matches
+                 is returned, or 0 if no match was found; the builtin
+                 variables RSTART and RLENGTH are also set [RSTART to
+                 the return value and RLENGTH to the size of the
+                 matching substring, or to -1 if no match was found]
+   split(s,a,f) break string s into components based on field
+                 separator f and store them in array a (into elements
+                 [1], [2], and so on); the last argument is optional,
+                 if omitted, the value of FS is used; the return value
+                 is the number of components found
+   sprintf(f,e,...) format expression(s) e using format string f and
+                 return the result as a string; formatting is similar
+                 to the printf function
+   sub(r,t,s)  search string target s for regular expression r, and
+                 if a match is found, replace the matching text with
+                 substring t, then store the result back in s; if s
+                 is omitted, use $0 for the string; the result is
+                 either 1 if a match+substitution was made, or 0
+                 otherwise; if substring t contains the character
+                 '&', the text which matched the regular expression
+                 is used instead of '&' [to suppress this feature
+                 of '&', 'quote' it with a backslash (\); since this
+                 will be inside a quoted string which will receive
+                 'backslash' processing before being passed to sub(),
+                 *two* consecutive backslashes will be needed "\\&"]
+   gsub(r,t,s) similar to sub(), but gsub() replaces all nonoverlapping
+                 substrings instead of just the first, and the return
+                 value is the number of substitutions made
+   substr(s,p,l) extract a substring l characters long starting at
+                 offset p in string s; l is optional, if omitted then
+                 the remainder of the string (p thru end) is returned
+   tolower(s)  return a copy of string s in which every uppercase
+                 letter has been converted into lowercase
+   toupper(s)  analogous to tolower(); convert lowercase to uppercase
+4 time_functions
+ Builtin time functions
+   systime()   return the current time of day as the number of seconds
+                 since some reference point; on VMS the reference point
+                 is January 1, 1970, at 12 AM local time (not UTC)
+   strftime(f,t) format time value t using format f; if t is omitted,
+                 the default is systime()
+5 time_formats
+ Formatting directives similar to the 'printf' & 'sprintf' functions
+ (each is introduced in the format string by preceding it with a
+ percent sign (%)); the directive is substituted by the corresponding
+ value
+   a   abbreviated weekday name (Sun,Mon,Tue,Wed,Thu,Fri,Sat)
+   A   full weekday name
+   b   abbreviated month name (Jan,Feb,...)
+   B   full month name
+   c   date and time (Unix-style "aaa bbb dd HH:MM:SS YYYY" format)
+   C   century prefix (19 or 20) [not century number, ie 20th]
+   d   day of month as two digit decimal number (01-31)
+   D   date in mm/dd/yy format
+   e   day of month with leading space instead of leading 0 ( 1-31)
+   E   ignored; following format character used
+   H   hour (24 hour clock) as two digit number (00-23)
+   h   abbreviated month name (Jan,Feb,...) [same as %b]
+   I   hour (12 hour clock) as two digit number (01-12)
+   j   day of year as three digit number (001-366)
+   m   month as two digit number (01-12)
+   M   minute as two digit number (00-59)
+   n   'newline' (ie, treat %n as \n)
+   O   ignored; following format character used
+   p   AM/PM designation for 12 hour clock
+   r   time in AM/PM format ("II:MM:SS p")
+   R   time without seconds ("HH:MM")
+   S   second as two digit number (00-59)
+   t   tab (ie, treat %t as \t)
+   T   time ("HH:MM:SS")
+   U   week of year (00-53) [first Sunday is first day of week 1]
+   V   date (VMS-style "dd-bbb-YYYY" with 'bbb' forced to uppercase)
+   w   weekday as decimal digit (0 [Sunday] through 6 [Saturday])
+   W   week of year (00-53) [first _Monday_ is first day of week 1]
+   x   date ("aaa bbb dd YYYY")
+   X   time ("HH:MM:SS")
+   y   year without century (00-99)
+   Y   year with century (19yy-20yy)
+   Z   time zone name (always "local" for VMS)
+   %   literal percent sign (%)
+4 IO_functions
+ Builtin I/O functions
+   print x,... print the values of one or more expressions; if none
+                 are listed, $0 is used; parentheses are optional;
+                 when multiple values are printed, the current value
+                 of builtin OFS (default is 1 space) is used to
+                 separate them; the print line is implicitly
+                 terminated with the current value of ORS (default
+                 is newline); print does not have a return value
+   printf(f,x,...) print the values of one or more expressions, using
+                 the specified format string; null strings are used
+                 to supply missing values (if any); no between field
+                 or trailing newline characters are printed, they
+                 should be specified within the format string; the
+                 argument-enclosing parentheses are optional;
+                 printf does not have a return value
+   getline v   read a record into variable v; if v is omitted, $0 is
+                 used (and NF, NR, and FNR are updated); if v is
+                 specified, then field-splitting won't be performed;
+                 note:  parentheses around the argument are *not*
+                 allowed; return value is 1 for successful read, 0
+                 if end of file is encountered, or -1 if some sort
+                 of error occurred; [see 'redirection' for several
+                 variants]
+   close(s)    close a file or pipe specified by the string s; the
+                 string used should have the same value as the one
+                 used in a getline or print/printf redirection
+   system(s)   pass string s to executed by the operating system;
+                 the command string is executed in a subprocess
+5 redirection
+ Both getline and print/printf support variant forms which use
+ redirection and pipes.
+
+ To read from a file (instead of from the primary input file), use
+     getline var < "file"
+ or  getline < "file"    (read into $0)
+ where the string "file" represents either an actual file name (in
+ quotes) or a variable which contains a file name string value or an
+ expression which evaluates to a string filename.
+
+ To create a pipe executing some command and read the result into
+ a variable (or into $0), use
+     "command" | getline var
+ or  "command" | getline    (read into $0)
+ where "command" is a literal string containing an operating system
+ command or a variable with a string value representing such a
+ command.
+
+ To output into a file other that the primary output, use
+     print x,... > "file"    (or >> "file")
+ or  printf(f,x,...) > "file"    (or >> "file")
+ similar to the 'getline' example above.  '>>' causes output to be
+ appended to an existing file if it exists, or create the file if
+ it doesn't already exist.  '>' always creates a new file.  The
+ alternate redirection method of '>$' (for RMS text file attributes)
+ is *only* available on the command line, not with 'print' or
+ 'printf' in  the current release.
+
+ To output an error message, use 'print' or 'printf' and redirect
+ the output to file "/dev/stderr" (or equivalently to "SYS$ERROR:"
+ on VMS).  'stderr' will normally be the user's terminal, even if
+ ordinary output is being redirected into a file.
+
+ To feed awk output into another command, use
+     print x,... | "command"    (similarly for 'printf')
+ similar to the second 'getline' example.  In this case, output
+ from awk will be passed as input to the specified operating system
+ command.  The command must be capable of reading input from 'stdin'
+ ("SYS$INPUT:" on VMS) in order to receive data in this manner.
+
+ The 'close' function operates on the "file" or "command" argument
+ specified here (either a literal string or a variable or expression
+ resulting in a string value).  It completely closes the file or
+ pipe so that further references to the same file or command string
+ would re-open that file or command at the beginning.  Closing a
+ pipe or redirection also releases some file-oriented resources.
+
+ Note:  the VMS implementation of GAWK uses temporary files to
+ simulate pipes, so a command must finish before 'getline' can get
+ any input from it, and 'close' must be called for an output pipe
+ before any data can be passed to the specified command.
+5 formats
+ Formatting characters used by the 'printf' and 'sprintf' functions
+ (each is introduced in the format string by preceding it with a
+ percent sign (%))
+   %   include a literal percent sign (%) in the result
+   c   format the next argument as a single ASCII character
+         (prints first character of string argument, or corresponding
+         ASCII character if numeric argument, e.g. 65 is 'A')
+   s   format the next argument as a string (numeric arguments are
+         converted into strings on demand)
+   d   decimal number (ie, integer value in base 10)
+   i   integer (equivalent to decimal)
+   o   octal number (integer in base 8)
+   x   hexadecimal number (integer in base 16) [lowercase]
+   X   hexadecimal number [digits 'A' thru 'E' in uppercase]
+   f   floating point number (digits, decimal point, fraction digits)
+   e   exponential (scientific notation) number (digit, decimal
+         point, fraction digits, letter 'e', sign '+' or '-',
+         exponent digits)
+   g   'fractional' number in either 'e' or 'f' format, whichever
+         produces shorter result
+
+ Three optional modifiers can be placed between the initiating
+ percent sign and the format character (doesn't apply to %%).
+   -   left justify (only matters when width specifier is present)
+   NN  width ['NN' represents 1 or more decimal digits]; actually
+         minimum width to use, longer items will not be truncated; a
+         leading 0 will cause right-justified numbers to be padded on
+         the left with zeroes instead of spaces when they're aligned
+   .MM precision [decimal point followed by 1 or more digits]; used
+         as maximum width for strings (causing truncation if they're
+         actually longer) or as number of fraction digits for 'f' or
+         'e' numeric formats, or number of significant digits for 'g'
+         numeric format
+4 user_defined_functions
+ User-defined functions may be created as needed to simplify awk
+ programs or to collect commonly used code into one place.  The
+ general syntax of a user-defined function is the 'function' keyword
+ followed by unique function name, followed by a comma-separated
+ parameter list enclosed in parentheses, followed by statement(s)
+ enclosed within braces ({}).  A 'return' statement is customary
+ but is not required.
+       function FuncName(arg1,arg2) {
+           # arbitrary statements
+           return (arg1 + arg2) / 2
+       }
+ If a function does not use 'return' to specify an output value, the
+ result received by the caller will be unpredictable.
+
+ Functions may be placed in an awk program before, between, or after
+ the pattern-action rules.  The abbreviation 'func' may be used in
+ place of 'function', unless POSIX compatibility mode is in effect.
+3 regular_expressions
+ A regular expression is a shorthand way of specifying a 'wildcard'
+ type of string comparison.  Regular expression matching is very
+ fundamental to awk's operation.
+
+ Meta symbols
+   ^   matches beginning of line or beginning of string; note that
+         embedded newlines ('\n') create multi-line strings, so
+         beginning of line is not necessarily beginning of string
+   $   matches end of line or end of string
+   .   any single character (except newline)
+   [ ] set of characters; [ABC] matches either 'A' or 'B' or 'C'; a
+         dash (other than first or last of the set) denotes a range
+         of characters: [A-Z] matches any upper case letter; if the
+         first character of the set is '^', then the sense of match
+         is reversed: [^0-9] matches any non-digit; several
+         characters need to be quoted with backslash (\) if they
+         occur in a set:  '\', ']', '-', and '^'
+   |   alternation (similar to boolean 'or'); match either of two
+         patterns [for example "^start|stop$" matches leading 'start'
+         or trailing 'stop']
+   ( ) grouping, alter normal precedence [for example, "^(start|stop)$"
+         matches lines reading either 'start' or 'stop']
+   *   repeated matching; when placed after a pattern, indicates that
+         the pattern should match any number of times [for example,
+         "[a-z][0-9]*" matches a lower case letter followed by zero or
+         more digits]
+   +   repeated matching; when placed after a pattern, indicates that
+         the pattern should match one or more times ["[0-9]+" matches
+         any non-empty sequence of digits]
+   ?   optional matching; indicates that the pattern can match zero or
+         one times ["[a-z][0-9]?" matches lower case letter alone or
+         followed by a single digit]
+   \   quote; prevent the character which follows from having special
+         meaning
+
+ A regular expression which matches a string or line will match against
+ the first (left-most) substring which meets the pattern and include
+ the longest sequence of characters which still meets that pattern.
+3 comments
+ Comments in awk programs are introduced with '#'.  Anything after
+ '#' on a line is ignored by GAWK.  It's a good idea to include an
+ explanation of what an awk program is doing and also who wrote it
+ and when.
+3 further_information
+ For complete documentation on GAWK, see "The_GAWK_Manual" from FSF.
+ Source text for it is present in the file GAWK.TEXINFO.  A postscript
+ version is available via anonymous FTP from host prep.ai.mit.edu in
+ directory pub/gnu/.
+
+ For additional documentation on awk--above and beyond that provided in
+ The_GAWK_Manual--see "The_AWK_Programming_Language" by Aho, Weinberger,
+ and Kernighan (2nd edition, 1988), published by Addison-Wesley.  It is
+ both a reference on the awk language and a tutorial on awk's use, with
+ many sample programs.
+3 authors
+ The awk programming language was originally created by Alfred V. Aho,
+ Peter J. Weinberger, and Brian W. Kernighan in 1977.  The language
+ was revised and enhanced in a new version which was released in 1985.
+
+ GAWK, the GNU implementation of awk, was written in 1986 by Paul Rubin
+ and Jay Fenlason, with advice from Richard Stallman, and with
+ contributions from John Woods.  In 1988 and 1989, David Trueman and
+ Arnold Robbins revised GAWK for compatibility with the newer awk.
+
+ GAWK version 2.11.1 was ported to VMS by Pat Rankin in November, 1989,
+ with further revisions in the Spring of 1990.  The VMS port was
+ incorporated into the official GNU distribution of version 2.13 in
+ Spring 1991.  (Version 2.12 was never publically released.)
+2 release_notes
+ GAWK 2.14 tested under VMS V5.5, July, 1992; compatible with VMS
+ versions V4.6 and later.  Current source code compatible with DEC's
+ VAXC v3.x and v2.4 or v2.3; also compiles successfully with GNUC
+ (GNU's gcc).  VMS POSIX uses c89 and requires VAXC V3.x.
+3 AWK_LIBRARY
+ GAWK uses a built in search path when looking for a program file
+ specified by the -f option (or the /input qualifier) when that file
+ name does not include a device and/or directory.  GAWK will first
+ look in the current default directory, then if the file wasn't found
+ it will look in the directory specified by the translation of logical
+ name "AWK_LIBRARY".
+
+ Not applicable under VMS POSIX.
+3 known_problems
+ There are several known problems with GAWK running on VMS.  Some can
+ be ignored, others require work-arounds.  Note: GAWK in the VMS POSIX
+ environment does not have these problems.
+4 command_line_parsing
+ The command
+       gawk "program text"
+ will pass the first phase of DCL parsing (the single required
+ parameter is present), then it will give an error that a required
+ element (either /input=awk_file or /commands="program text") is
+ missing.  If what was intended (as is most likely) is to pass the
+ program text to the UN*X-style command interface, the following
+ variation is required
+       gawk -- "program text"
+ The presence of "--", which is normally optional, will inhibit the
+ attempt to use DCL parsing (as will any '-' option or redirection).
+4 file_formats
+ If a file having the RMS attribute "Fortran carriage control" is
+ read as input, it will generate an empty first record if the first
+ actual record begins with a space (leading space becomes a newline).
+ Also, the last record of the file will give a "record not terminated"
+ warning.  Both of these minor problems are due to the way that the
+ C Run-Time Library (VAXCRTL) converts record attributes.
+
+ Another poor feature without a work-around is that there's no way to
+ specify "append if possible, create with RMS text attributes if not"
+ with the current command line I/O redirection.  '>>$' isn't supported.
+4 RS_peculiarities
+ Changing the record separator to something other than newline ('\n')
+ will produce anomalous results for ordinary files.  For example,
+ using RS = "\f" and FS = "\n" with the following input
+       |rec 1, line 1
+       |rec 1, line 2
+       |^L    (form feed)
+       |rec 2, line 1
+       |rec 2, line 2
+       |^L    (form feed)
+       |rec 3, line 1
+       |rec 3, line 2
+       |(end of file)
+ will produce two fields for record 1, but three fields each for
+ records 2 and 3.  This is because the form-feed record delimiter is
+ on its own line, so awk sees a newline after it.  Since newline is
+ now a field separator, records 2 and 3 will have null first fields.
+ The following awk code will work-around this problem by inserting
+ a null first field in the first record, so that all records can be
+ handled the same by subsequent processing.
+       # fix up for first record (RS != "\n")
+       FNR == 1  { if ( $0 == "" )     #leading separator
+                     next              #skip its null record
+                   else                #otherwise,
+                     $0 = FS $0        #realign fields
+                 }
+ There is a second problem with this same example.  It will always
+ trigger a "record not terminated" warning when it reaches the end of
+ file.  In the sample shown, there is no final separator; however, if
+ a trailing form-feed were present, it would produce a spurious final
+ record with two null fields.  This occurs because the I/O system
+ sees an implicit newline at the end of the last record, so awk sees
+ a pair of null fields separated by that newline.  The following code
+ fragment will fix that provided there are no null records (in this
+ case, that would be two consecutive lines containing just form-feeds).
+       # fix up for last record (RS != "\n")
+       $0 == FS  { next }      #drop spurious final record
+ Note that the "record not terminated" warning will persist.
+4 cmd_inconsistency
+ The DCL qualifier /OUTPUT is internally equivalent to '>$' output
+ redirection, but the qualifier /INPUT corresponds to the -f option
+ rather than to '<' input redirection.
+4 exit
+ The exit statement can optionally pass a final status value to the
+ operating system.  GAWK expects a UN*X-style value instead of a
+ VMS status value, so 0 indicates success and non-zero indicates
+ failure.  The final exit status will be 1 (VMS success) if 0 is
+ used, or even (VMS non-success) if non-zero is used.
+3 changes
+ Changes between version 2.14 and 2.13.2:
+
+   General
+     'next file' construct added
+     'continue' outside of any loop is treated as 'next'
+     Assorted bug fixes and efficiency improvements
+     _The_GAWK_Manual_ updated
+     Test suite expanded
+
+   VMS-specific
+     VMS POSIX support added
+     Disk I/O throughput enhanced
+     Pipe emulation improved and incorrect interaction with user-mode
+         redefinition of SYS$OUTPUT eliminated
+3 prior_changes
+ Changes between version 2.13 and 2.11.1:  (2.12 was not released)
+
+   General
+     CONVFMT and FIELDWIDTHS builtin control variables added
+     systime() and strftime() date/time functions added
+     'lint' and 'posix' run-time options added
+     '-W' command line option syntax supercedes '-c', '-C', and '-V'
+     '-a' and '-e' regular expression options made obsolete
+     Various bug fixes and efficiency improvements
+     More platforms supported ('officially' including VMS)
+
+   VMS-specific
+     %g printf format fixed
+     Handling of '\' on command line modified; no longer necessary to
+         double it up
+     Problem redirecting stderr (>&efile) at same time as stdin (<ifile)
+         or stdout (>ofile) has been fixed
+     ``2>&1'' and ``1>&2'' redirection constructs added
+     Interaction between command line I/O redirection and gawk pipes
+         fixed; also, name used for pseudo-pipe temporary file expanded
+3 license
+ GAWK is covered by the "GNU General Public License", the gist of which
+ is that if you supply this software to a third party, you are expressly
+ forbidden to prevent them from supplying it to a fourth party, and if
+ you supply binaries you must make the source code available to them
+ at no additional cost.  Any revisions or modified versions are also
+ covered by the same license.  There is no warranty, express or implied,
+ for this software.  It is provided "as is."
+
+ [Disclaimer:  This is just an informal summary with no legal basis;
+ refer to the actual GNU General Public License for specific details.]
+!2 examples
+!
