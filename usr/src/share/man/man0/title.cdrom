@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.cdrom	8.1 (Berkeley) %G%
+.\"	@(#)title.cdrom	8.2 (Berkeley) %G%
 .\"
 .nr LL 6.5i
 .EH ''''
@@ -18,7 +18,7 @@
 .ft B
 .ce 2
 4.4BSD-Lite
-Source CD-ROM
+CD-ROM Companion
 .bp
 \&
 .sp |0.83i
@@ -72,7 +72,7 @@ on system administration topics.
 .ft B
 .ce 3
 4.4BSD-Lite
-Source CD-ROM
+CD-ROM Companion
 .sp 1.5i
 .nr PS 24
 .nr VS 26
