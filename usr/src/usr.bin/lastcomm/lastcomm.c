@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -102,7 +102,7 @@ main(argc, argv)
 			printf("%-*.*s %s %-*s %-*s %6.2f secs %.16s\n",
 				fldsiz(acct, ac_comm), fldsiz(acct, ac_comm),
 				acp->ac_comm, flagbits(acp->ac_flag),
-				UT_NAMESIZE, user_from_uid(acp->ac_uid), 
+				UT_NAMESIZE, user_from_uid(acp->ac_uid, 0),
 				UT_LINESIZE, getdev(acp->ac_tty),
 				x / (double)AHZ, ctime(&acp->ac_btime));
 		}
@@ -149,7 +149,7 @@ ok(argv, acp)
 	char *user_from_uid();
 
 	do {
-		cp = user_from_uid(acp->ac_uid);
+		cp = user_from_uid(acp->ac_uid, 0);
 		if (!strcmp(cp, *argv)) 
 			return(1);
 		if ((cp = getdev(acp->ac_tty)) && !strcmp(cp, *argv))
