@@ -8,9 +8,9 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)mail.eecs.mc	2.2 (Berkeley) %G%)
+VERSIONID(@(#)mail.eecs.mc	2.3 (Berkeley) %G%)
 OSTYPE(hpux)dnl
-DOMAIN(cs.exposed)dnl
+DOMAIN(cs.hidden)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
 define(`NEWSENDMAIL')dnl
