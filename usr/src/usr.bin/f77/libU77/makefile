@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.16	%G%
+#	@(#)makefile	1.17	%G%
 
 DESTDIR =
 LIB = libU77.a
@@ -9,11 +9,13 @@ LPR = lpr
 # for 11's
 #ENV = ucb
 #LIBDIR = ${DESTDIR}/usr/$(ENV)/lib
+#OLDDIR = ${DESTDIR}/usr/old/lib
 #TAPE = /dev/nrmt1
 
 # for Vax
 LIBDIR = ${DESTDIR}/usr/lib
-TAPE = /dev/rnmt0.1600
+OLDDIR = ${DESTDIR}/usr/old/lib
+TAPE = /dev/rnmt0
 
 CFLAGS = -O
 
@@ -136,11 +138,11 @@ $(LIB_P):	$(OBJECTS) Version
 install:	$(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB_P)
 
 $(LIBDIR)/$(LIB):	$(LIB)
-	@-mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	@-mv $(LIBDIR)/$(LIB) $(OLDDIR)/$(LIB)
 	tar cf - $(LIB) | (cd $(LIBDIR); tar xvf - )
 
 $(LIBDIR)/$(LIB_P):	$(LIB_P)
-	@-mv $(LIBDIR)/$(LIB_P) $(LIBDIR)/$(LIB_P).old
+	@-mv $(LIBDIR)/$(LIB_P) $(OLDDIR)/$(LIB_P)
 	tar cf - $(LIB_P) | (cd $(LIBDIR); tar xvf - )
 
 
