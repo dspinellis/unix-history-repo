@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.20 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -303,19 +303,16 @@ nfs_nput(vp)
 nfs_abortop(ndp)
 	register struct nameidata *ndp;
 {
-	register struct nfsnode *np;
 
-	if (ndp->ni_vp != NULL) {
-		np = VTONFS(ndp->ni_vp);
-		if (np->n_flag & NLOCKED)
-			nfs_unlock(ndp->ni_vp);
-		vrele(ndp->ni_vp);
-	}
 	if (ndp->ni_dvp != NULL) {
-		np = VTONFS(ndp->ni_dvp);
-		if (np->n_flag & NLOCKED)
-			nfs_unlock(ndp->ni_dvp);
+		if (VOP_ISLOCKED(ndp->ni_dvp))
+			VOP_UNLOCK(ndp->ni_dvp);
 		vrele(ndp->ni_dvp);
+	}
+	if (ndp->ni_vp != NULL) {
+		if (VOP_ISLOCKED(ndp->ni_vp))
+			VOP_UNLOCK(ndp->ni_vp);
+		vrele(ndp->ni_vp);
 	}
 }
 
