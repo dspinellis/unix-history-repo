@@ -1,15 +1,25 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)lextab.l	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lextab.l	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "y.tab.h"
 #include "b.h"
-#undef	input
-#define input()	ninput()
-#undef	unput
-#define unput(c)	nunput(c)
+
+#undef YY_INPUT
+#define YY_INPUT(buf,result,max_size)	\
+	{				\
+	int c = ninput();		\
+	if ( c == EOF )			\
+		result = YY_NULL;	\
+	else				\
+		{			\
+		buf[0] = c;		\
+		result = 1;		\
+		}			\
+	}
+
 extern char *malloc();
 extern int yylval;
 #define xxbpmax	1700
@@ -41,7 +51,7 @@ char *xxp;
 				xxtbuff = malloc(2*xxn+3);
 				for (xxj = xxk = 1; xxj <= xxn; ++xxj)
 					{
-					xxtbuff[xxk] = ninput();
+					xxtbuff[xxk] = input();
 					if (xxtbuff[xxk] == '"')
 						xxtbuff[++xxk] = '"';
 					++xxk;
@@ -148,22 +158,6 @@ char c;
 			xxunbuf,"\n");
 		}
 	xxunbuf[xxunbp] = c;
-	}
-
-nunput(c)
-char c;
-	{
-	backup(c);
-	if (xxbp < 0) return;
-	if (c != xxbuf[xxbp])
-		{
-		xxbuf[xxbp + 1] = '\0';
-		error("RATFOR beautifying; lex call of nunput with wrong char:\n",
-			xxbuf,"\n");
-		}
-	for ( --xxbp; xxbp >= 0 && (xxbuf[xxbp] == ' ' || xxbuf[xxbp] == '\t'); --xxbp)
-		backup(xxbuf[xxbp]);
-	xxbuf[xxbp+1] = '\0';
 	}
 
 ninput()
