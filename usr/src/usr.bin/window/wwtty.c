@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.9 %G%";
+static char sccsid[] = "@(#)wwtty.c	3.10 %G%";
 #endif
 
 /*
@@ -14,15 +14,15 @@ static char sccsid[] = "@(#)wwtty.c	3.9 %G%";
 wwgettty(d, t)
 register struct ww_tty *t;
 {
-	if (ioctl(d, (int)TIOCGETP, (char *)&t->ww_sgttyb) < 0)
+	if (ioctl(d, TIOCGETP, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCGETC, (char *)&t->ww_tchars) < 0)
+	if (ioctl(d, TIOCGETC, (char *)&t->ww_tchars) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCGLTC, (char *)&t->ww_ltchars) < 0)
+	if (ioctl(d, TIOCGLTC, (char *)&t->ww_ltchars) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCLGET, (char *)&t->ww_lmode) < 0)
+	if (ioctl(d, TIOCLGET, (char *)&t->ww_lmode) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCGETD, (char *)&t->ww_ldisc) < 0)
+	if (ioctl(d, TIOCGETD, (char *)&t->ww_ldisc) < 0)
 		goto bad;
 	if ((t->ww_fflags = fcntl(d, F_GETFL, 0)) < 0)
 		goto bad;
@@ -40,16 +40,16 @@ bad:
 wwsettty(d, t, o)
 register struct ww_tty *t, *o;
 {
-	if (ioctl(d, (int)TIOCSETN, (char *)&t->ww_sgttyb) < 0)
+	if (ioctl(d, TIOCSETN, (char *)&t->ww_sgttyb) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCSETC, (char *)&t->ww_tchars) < 0)
+	if (ioctl(d, TIOCSETC, (char *)&t->ww_tchars) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCSLTC, (char *)&t->ww_ltchars) < 0)
+	if (ioctl(d, TIOCSLTC, (char *)&t->ww_ltchars) < 0)
 		goto bad;
-	if (ioctl(d, (int)TIOCLSET, (char *)&t->ww_lmode) < 0)
+	if (ioctl(d, TIOCLSET, (char *)&t->ww_lmode) < 0)
 		goto bad;
 	if ((o == 0 || t->ww_ldisc != o->ww_ldisc) &&
-	    ioctl(d, (int)TIOCSETD, (char *)&t->ww_ldisc) < 0)
+	    ioctl(d, TIOCSETD, (char *)&t->ww_ldisc) < 0)
 		goto bad;
 	if (fcntl(d, F_SETFL, t->ww_fflags) < 0)
 		goto bad;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.15 %G%";
+static char sccsid[] = "@(#)ttinit.c	3.16 %G%";
 #endif
 
 /*
@@ -69,7 +69,7 @@ ttinit()
 		wwerrno = WWE_CANTDO;
 		return -1;
 	}
-	if (ioctl(0, (int)TIOCGWINSZ, (char *)&winsize) >= 0 &&
+	if (ioctl(0, TIOCGWINSZ, (char *)&winsize) >= 0 &&
 	    winsize.ws_row != 0 && winsize.ws_col != 0) {
 		tt.tt_nrow = winsize.ws_row;
 		tt.tt_ncol = winsize.ws_col;
