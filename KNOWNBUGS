@@ -25,4 +25,15 @@ keyboard problems.
 	machine off network.  (Though the machine will continue to run with
 	no network facilities)
 
-$Id: KNOWNBUGS,v 1.4 1994/02/11 12:21:22 nate Exp $
+/sys/i386/boot
+	DO NOT ATTEMPT TO REBUILD THE BOOT BLOCKS.  There is currently
+	a problem in that the boot block code has grown and if you build
+	it with the new version of as and install them you will NOT BE
+	ABLE TO BOOT YOUR SYSTEM.  This problem will be fixed before
+	the 1.1 release is ship, and should only exist with the 1.1 BETA
+	release.
+
+	The boot block binaries shipped with the 1.1 BETA release were
+	built using an older version of as and can be installed safely.
+
+$Id: KNOWNBUGS,v 1.5 1994/02/20 02:45:44 rgrimes Exp $
