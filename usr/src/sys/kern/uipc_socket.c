@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	7.2 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -121,13 +121,13 @@ sofree(so)
 	register struct socket *so;
 {
 
+	if (so->so_pcb || (so->so_state & SS_NOFDREF) == 0)
+		return;
 	if (so->so_head) {
 		if (!soqremque(so, 0) && !soqremque(so, 1))
 			panic("sofree dq");
 		so->so_head = 0;
 	}
-	if (so->so_pcb || (so->so_state & SS_NOFDREF) == 0)
-		return;
 	sbrelease(&so->so_snd);
 	sorflush(so);
 	(void) m_free(dtom(so));
