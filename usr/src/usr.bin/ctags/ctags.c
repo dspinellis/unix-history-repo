@@ -1,6 +1,18 @@
-#ifndef	lint
-static char *sccsid = "@(#)ctags.c	4.4 (Berkeley) 8/30/82";
-#endif
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)ctags.c	5.1 (Berkeley) 5/31/85";
+#endif not lint
 
 #include <stdio.h>
 #include <ctype.h>
@@ -10,7 +22,7 @@ static char *sccsid = "@(#)ctags.c	4.4 (Berkeley) 8/30/82";
  */
 
 #define	reg	register
-#define	logical	char
+#define	bool	char
 
 #define	TRUE	(1)
 #define	FALSE	(0)
@@ -26,17 +38,19 @@ static char *sccsid = "@(#)ctags.c	4.4 (Berkeley) 8/30/82";
 struct	nd_st {			/* sorting structure			*/
 	char	*entry;			/* function or type name	*/
 	char	*file;			/* file name			*/
-	logical f;			/* use pattern or line no	*/
+	bool	f;			/* use pattern or line no	*/
 	int	lno;			/* for -x option		*/
 	char	*pat;			/* search pattern		*/
-	logical	been_warned;		/* set if noticed dup		*/
+	bool	been_warned;		/* set if noticed dup		*/
 	struct	nd_st	*left,*right;	/* left and right sons		*/
 };
 
 long	ftell();
 typedef	struct	nd_st	NODE;
 
-logical	number,				/* T if on line starting with #	*/
+bool	number,				/* T if on line starting with #	*/
+	term	= FALSE,		/* T if print on terminal	*/
+	makefile= TRUE,			/* T if to creat "tags" file	*/
 	gotone,				/* found a func already on line	*/
 					/* boolean "func" (see init)	*/
 	_wht[0177],_etk[0177],_itk[0177],_btk[0177],_gd[0177];
@@ -81,7 +95,9 @@ long	lineftell;		/* ftell after getc( inf ) == '\n' 	*/
 NODE	*head;			/* the head of the sorted binary tree	*/
 
 char	*savestr();
-char	*rindex();
+char	*rindex(), *index();
+char	*toss_comment();
+
 main(ac,av)
 int	ac;
 char	*av[];
@@ -92,40 +108,48 @@ char	*av[];
 	while (ac > 1 && av[1][0] == '-') {
 		for (i=1; av[1][i]; i++) {
 			switch(av[1][i]) {
-				case 'B':
-					searchar='?';
-					break;
-				case 'F':
-					searchar='/';
-					break;
-				case 'a':
-					aflag++;
-					break;
-				case 't':
-					tflag++;
-					break;
-				case 'u':
-					uflag++;
-					break;
-				case 'w':
-					wflag++;
-					break;
-				case 'v':
-					vflag++;
-					xflag++;
-					break;
-				case 'x':
-					xflag++;
-					break;
-				default:
+			  case 'B':
+				searchar='?';
+				break;
+			  case 'F':
+				searchar='/';
+				break;
+			  case 'a':
+				aflag++;
+				break;
+			  case 't':
+				tflag++;
+				break;
+			  case 'u':
+				uflag++;
+				break;
+			  case 'w':
+				wflag++;
+				break;
+			  case 'v':
+				vflag++;
+				xflag++;
+				break;
+			  case 'x':
+				xflag++;
+				break;
+			  case 'f':
+				if (ac < 2)
 					goto usage;
-			}
+				ac--, av++;
+				outfile = av[1];
+				goto next;
+			  default:
+				goto usage;
 		}
+		}
+	next:
 		ac--; av++;
 	}
 
 	if (ac <= 1) {
-usage:		printf("Usage: ctags [-BFatuwvx] file ...\n");
+usage:
+		printf("Usage: ctags [-BFatuwvx] [-f tagsfile] file ...\n");
 		exit(1);
 	}
 
@@ -202,25 +226,57 @@ char	*file;
 {
 	char *cp;
 
-	if ((inf=fopen(file,"r")) == NULL) {
+	if ((inf = fopen(file,"r")) == NULL) {
 		perror(file);
 		return;
 	}
 	curfile = savestr(file);
+	lineno = 0;
 	cp = rindex(file, '.');
-	if (cp && (cp[1] != 'c' || cp[1] != 'h') && cp[2] == 0) {
-		if (PF_funcs(inf) == 0) {
-			rewind(inf);
-			C_entries();
+	/* .l implies lisp or lex source code */
+	if (cp && cp[1] == 'l' && cp[2] == '\0') {
+		if (index(";([", first_char()) != NULL) {	/* lisp */
+			L_funcs(inf);
+			fclose(inf);
+			return;
 		}
-	} else
+		else {						/* lex */
+			/*
+			 * throw away all the code before the second "%%"
+			 */
+			toss_yysec();
+			getline();
+			pfnote("yylex", lineno, TRUE);
+			toss_yysec();
+			C_entries();
+			fclose(inf);
+			return;
+		}
+	}
+	/* .y implies a yacc file */
+	if (cp && cp[1] == 'y' && cp[2] == '\0') {
+		toss_yysec();
+		Y_entries();
 		C_entries();
+		fclose(inf);
+		return;
+	}
+	/* if not a .c or .h file, try fortran */
+	if (cp && (cp[1] != 'c' && cp[1] != 'h') && cp[2] == '\0') {
+		if (PF_funcs(inf) != 0) {
+			fclose(inf);
+			return;
+		}
+		rewind(inf);	/* no fortran tags found, try C */
+	}
+	C_entries();
 	fclose(inf);
 }
 
 pfnote(name, ln, f)
-	char *name;
-	logical f;			/* f == TRUE when function */
+char	*name;
+int	ln;
+bool	f;		/* f == TRUE when function */
 {
 	register char *fp;
 	register NODE *np;
@@ -269,26 +325,28 @@ C_entries()
 {
 	register int c;
 	register char *token, *tp;
-	logical incomm, inquote, inchar, midtoken;
+	bool incomm, inquote, inchar, midtoken;
 	int level;
 	char *sp;
 	char tok[BUFSIZ];
 
-	lineno = 1;
 	number = gotone = midtoken = inquote = inchar = incomm = FALSE;
 	level = 0;
 	sp = tp = token = line;
+	lineno++;
+	lineftell = ftell(inf);
 	for (;;) {
-		*sp=c=getc(inf);
+		*sp = c = getc(inf);
 		if (feof(inf))
 			break;
 		if (c == '\n')
 			lineno++;
-		if (c == '\\') {
+		else if (c == '\\') {
 			c = *++sp = getc(inf);
-			if (c = '\n')
+			if (c == '\n')
 				c = ' ';
-		} else if (incomm) {
+		}
+		else if (incomm) {
 			if (c == '*') {
 				while ((*++sp=c=getc(inf)) == '*')
 					continue;
@@ -297,7 +355,8 @@ C_entries()
 				if (c == '/')
 					incomm = FALSE;
 			}
-		} else if (inquote) {
+		}
+		else if (inquote) {
 			/*
 			 * Too dumb to know about \" not being magic, but
 			 * they usually occur in pairs anyway.
@@ -305,34 +364,36 @@ C_entries()
 			if (c == '"')
 				inquote = FALSE;
 			continue;
-		} else if (inchar) {
+		}
+		else if (inchar) {
 			if (c == '\'')
 				inchar = FALSE;
 			continue;
-		} else switch (c) {
-		case '"':
+		}
+		else switch (c) {
+		  case '"':
 			inquote = TRUE;
 			continue;
-		case '\'':
+		  case '\'':
 			inchar = TRUE;
 			continue;
-		case '/':
+		  case '/':
 			if ((*++sp=c=getc(inf)) == '*')
 				incomm = TRUE;
 			else
 				ungetc(*sp, inf);
 			continue;
-		case '#':
+		  case '#':
 			if (sp == line)
 				number = TRUE;
 			continue;
-		case '{':
+		  case '{':
 			if (tydef == begin) {
 				tydef=middle;
 			}
 			level++;
 			continue;
-		case '}':
+		  case '}':
 			if (sp == line)
 				level = 0;	/* reset */
 			else
@@ -347,7 +408,7 @@ C_entries()
 				if (endtoken(c)) {
 					int f;
 					int pfline = lineno;
-					if (start_entry(&sp,token,&f)) {
+					if (start_entry(&sp,token,tp,&f)) {
 						strncpy(tok,token,tp-token+1);
 						tok[tp-token+1] = 0;
 						getline();
@@ -356,9 +417,11 @@ C_entries()
 					}
 					midtoken = FALSE;
 					token = sp;
-				} else if (intoken(c))
+				}
+				else if (intoken(c))
 					tp++;
-			} else if (begtoken(c)) {
+			}
+			else if (begtoken(c)) {
 				token = tp = sp;
 				midtoken = TRUE;
 			}
@@ -380,15 +443,13 @@ C_entries()
  * It updates the input line * so that the '(' will be
  * in it when it returns.
  */
-start_entry(lp,token,f)
-char	**lp;
-register char *token;
+start_entry(lp,token,tp,f)
+char	**lp,*token,*tp;
 int	*f;
 {
-
-	reg	char	c,*sp;
-	static	logical	found;
-	logical	firsttok;		/* T if have seen first token in ()'s */
+	reg	char	c,*sp,*tsp;
+	static	bool	found;
+	bool	firsttok;		/* T if have seen first token in ()'s */
 	int	bad;
 
 	*f = 1;			/* a function */
@@ -406,7 +467,8 @@ int	*f;
 		}
 	/* the following tries to make it so that a #define a b(c)	*/
 	/* doesn't count as a define of b.				*/
-	} else {
+	}
+	else {
 		if (!strncmp(token, "define", 6))
 			found = 0;
 		else
@@ -450,8 +512,10 @@ badone:			bad = TRUE;
 		 * token, other than a / (in case of a comment in there)
 		 * makes this not a declaration.
 		 */
-		if (begtoken(c) || c=='/') firsttok++;
-		else if (!iswhite(c) && !firsttok) goto badone;
+		if (begtoken(c) || c=='/')
+			firsttok++;
+		else if (!iswhite(c) && !firsttok)
+			goto badone;
 	}
 	while (iswhite(*++sp=c=getc(inf)))
 		if (c == '\n') {
@@ -466,6 +530,112 @@ ret:
 	ungetc(c,inf);
 	return !bad && (!*f || isgood(c));
 					/* hack for typedefs */
+}
+
+/*
+ * Y_entries:
+ *	Find the yacc tags and put them in.
+ */
+Y_entries()
+{
+	register char	*sp, *orig_sp;
+	register int	brace;
+	register bool	in_rule, toklen;
+	char		tok[BUFSIZ];
+
+	brace = 0;
+	getline();
+	pfnote("yyparse", lineno, TRUE);
+	while (fgets(line, sizeof line, inf) != NULL)
+		for (sp = line; *sp; sp++)
+			switch (*sp) {
+			  case '\n':
+				lineno++;
+				/* FALLTHROUGH */
+			  case ' ':
+			  case '\t':
+			  case '\f':
+			  case '\r':
+				break;
+			  case '"':
+				do {
+					while (*++sp != '"')
+						continue;
+				} while (sp[-1] == '\\');
+				break;
+			  case '\'':
+				do {
+					while (*++sp != '\'')
+						continue;
+				} while (sp[-1] == '\\');
+				break;
+			  case '/':
+				if (*++sp == '*')
+					sp = toss_comment(sp);
+				else
+					--sp;
+				break;
+			  case '{':
+				brace++;
+				break;
+			  case '}':
+				brace--;
+				break;
+			  case '%':
+				if (sp[1] == '%' && sp == line)
+					return;
+				break;
+			  case '|':
+			  case ';':
+				in_rule = FALSE;
+				break;
+			  default:
+				if (brace == 0  && !in_rule && (isalpha(*sp) ||
+								*sp == '.' ||
+								*sp == '_')) {
+					orig_sp = sp;
+					++sp;
+					while (isalnum(*sp) || *sp == '_' ||
+					       *sp == '.')
+						sp++;
+					toklen = sp - orig_sp;
+					while (isspace(*sp))
+						sp++;
+					if (*sp == ':' || (*sp == '\0' &&
+							   first_char() == ':'))
+					{
+						strncpy(tok, orig_sp, toklen);
+						tok[toklen] = '\0';
+						strcpy(lbuf, line);
+						lbuf[strlen(lbuf) - 1] = '\0';
+						pfnote(tok, lineno, TRUE);
+						in_rule = TRUE;
+					}
+					else
+						sp--;
+				}
+				break;
+			}
+}
+
+char *
+toss_comment(start)
+char	*start;
+{
+	register char	*sp;
+
+	/*
+	 * first, see if the end-of-comment is on the same line
+	 */
+	do {
+		while ((sp = index(start, '*')) != NULL)
+			if (sp[1] == '/')
+				return ++sp;
+			else
+				start = ++sp;
+		start = line;
+		lineno++;
+	} while (fgets(line, sizeof line, inf) != NULL);
 }
 
 getline()
@@ -513,7 +683,8 @@ fprintf(stderr,"Duplicate entry in files %s and %s: %s (Warning only)\n",
     node->file, cur_node->file, node->entry);
 		cur_node->been_warned = TRUE;
 		return;
-	} 
+	}
+
 	if (dif < 0) {
 		if (cur_node->left != NULL)
 			add_node(node,cur_node->left);
@@ -547,7 +718,8 @@ reg NODE	*node;
 				else
 					putc(*sp, outf);
 			fprintf(outf, "%c\n", searchar);
-		} else {		/* a typedef; text pattern inadequate */
+		}
+		else {		/* a typedef; text pattern inadequate */
 			fprintf(outf, "%s\t%s\t%d\n",
 				node->entry, node->file, node->lno);
 		}
@@ -559,7 +731,6 @@ reg NODE	*node;
 			node->entry, node->lno, node->file, node->pat);
 	put_entries(node->right);
 }
-
 char	*dbp = lbuf;
 int	pfcnt;
 
@@ -567,7 +738,6 @@ PF_funcs(fi)
 	FILE *fi;
 {
 
-	lineno = 0;
 	pfcnt = 0;
 	while (fgets(lbuf, sizeof(lbuf), fi)) {
 		lineno++;
@@ -579,23 +749,23 @@ PF_funcs(fi)
 			continue;
 		switch (*dbp |' ') {
 
-		case 'i':
+		  case 'i':
 			if (tail("integer"))
 				takeprec();
 			break;
-		case 'r':
+		  case 'r':
 			if (tail("real"))
 				takeprec();
 			break;
-		case 'l':
+		  case 'l':
 			if (tail("logical"))
 				takeprec();
 			break;
-		case 'c':
+		  case 'c':
 			if (tail("complex") || tail("character"))
 				takeprec();
 			break;
-		case 'd':
+		  case 'd':
 			if (tail("double")) {
 				while (isspace(*dbp))
 					dbp++;
@@ -613,15 +783,15 @@ PF_funcs(fi)
 			continue;
 		switch (*dbp|' ') {
 
-		case 'f':
+		  case 'f':
 			if (tail("function"))
 				getit();
 			continue;
-		case 's':
+		  case 's':
 			if (tail("subroutine"))
 				getit();
 			continue;
-		case 'p':
+		  case 'p':
 			if (tail("program")) {
 				getit();
 				continue;
@@ -686,7 +856,7 @@ getit()
 	cp[0] = 0;
 	strcpy(nambuf, dbp);
 	cp[0] = c;
-	pfnote(nambuf, lineno, FALSE);
+	pfnote(nambuf, lineno);
 	pfcnt++;
 }
 
@@ -723,3 +893,137 @@ register char *sp, c;
 	} while (*sp++);
 	return(r);
 }
+
+/*
+ * lisp tag functions
+ * just look for (def or (DEF
+ */
+
+L_funcs (fi)
+FILE *fi;
+{
+	register int	special;
+
+	pfcnt = 0;
+	while (fgets(lbuf, sizeof(lbuf), fi)) {
+		lineno++;
+		dbp = lbuf;
+		if (dbp[0] == '(' &&
+		    (dbp[1] == 'D' || dbp[1] == 'd') &&
+		    (dbp[2] == 'E' || dbp[2] == 'e') &&
+		    (dbp[3] == 'F' || dbp[3] == 'f')) {
+			dbp += 4;
+			if (striccmp(dbp, "method") == 0 ||
+			    striccmp(dbp, "wrapper") == 0 ||
+			    striccmp(dbp, "whopper") == 0)
+				special = TRUE;
+			else
+				special = FALSE;
+			while (!isspace(*dbp))
+				dbp++;
+			while (isspace(*dbp))
+				dbp++;
+			L_getit(special);
+		}
+	}
+}
+
+L_getit(special)
+int	special;
+{
+	register char	*cp;
+	register char	c;
+	char		nambuf[BUFSIZ];
+
+	for (cp = lbuf; *cp; cp++)
+		continue;
+	*--cp = 0;		/* zap newline */
+	if (*dbp == 0)
+		return;
+	if (special) {
+		if ((cp = index(dbp, ')')) == NULL)
+			return;
+		while (cp >= dbp && *cp != ':')
+			cp--;
+		if (cp < dbp)
+			return;
+		dbp = cp;
+		while (*cp && *cp != ')' && *cp != ' ')
+			cp++;
+	}
+	else
+		for (cp = dbp + 1; *cp && *cp != '(' && *cp != ' '; cp++)
+			continue;
+	c = cp[0];
+	cp[0] = 0;
+	strcpy(nambuf, dbp);
+	cp[0] = c;
+	pfnote(nambuf, lineno,TRUE);
+	pfcnt++;
+}
+
+/*
+ * striccmp:
+ *	Compare two strings over the length of the second, ignoring
+ *	case distinctions.  If they are the same, return 0.  If they
+ *	are different, return the difference of the first two different
+ *	characters.  It is assumed that the pattern (second string) is
+ *	completely lower case.
+ */
+striccmp(str, pat)
+register char	*str, *pat;
+{
+	register int	c1;
+
+	while (*pat) {
+		if (isupper(*str))
+			c1 = tolower(*str);
+		else
+			c1 = *str;
+		if (c1 != *pat)
+			return c1 - *pat;
+		pat++;
+		str++;
+	}
+	return 0;
+}
+
+/*
+ * first_char:
+ *	Return the first non-blank character in the file.  After
+ *	finding it, rewind the input file so we start at the beginning
+ *	again.
+ */
+first_char()
+{
+	register int	c;
+	register long	off;
+
+	off = ftell(inf);
+	while ((c = getc(inf)) != EOF)
+		if (!isspace(c) && c != '\r') {
+			fseek(inf, off, 0);
+			return c;
+		}
+	fseek(inf, off, 0);
+	return EOF;
+}
+
+/*
+ * toss_yysec:
+ *	Toss away code until the next "%%" line.
+ */
+toss_yysec()
+{
+	char		buf[BUFSIZ];
+
+	for (;;) {
+		lineftell = ftell(inf);
+		if (fgets(buf, BUFSIZ, inf) == NULL)
+			return;
+		lineno++;
+		if (strncmp(buf, "%%", 2) == 0)
+			return;
+	}
+}
+
