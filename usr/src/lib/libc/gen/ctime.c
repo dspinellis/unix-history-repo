@@ -1,4 +1,4 @@
-/* @(#)ctime.c	4.1 (Berkeley) %G% */
+/* @(#)ctime.c	4.2 (Berkeley) %G% */
 /*
  * This routine converts time as follows.
  * The epoch is 0000 Jan 1 1970 GMT.
@@ -61,12 +61,33 @@ static	int	dmsize[12] =
  * gives the day number of the first day after the Sunday of the
  * change.
  */
-static struct {
+struct dstab {
+	int	dayyr;
 	int	daylb;
 	int	dayle;
-} daytab[] = {
-	5,	333,	/* 1974: Jan 6 - last Sun. in Nov */
-	58,	303,	/* 1975: Last Sun. in Feb - last Sun in Oct */
+};
+
+static struct dstab usdaytab[] = {
+	1974,	5,	333,	/* 1974: Jan 6 - last Sun. in Nov */
+	1975,	58,	303,	/* 1975: Last Sun. in Feb - last Sun in Oct */
+	0,	119,	303,	/* all other years: end Apr - end Oct */
+};
+static struct dstab ausdaytab[] = {
+	1970,	400,	0,	/* 1970: no daylight saving at all */
+	1971,	303,	0,	/* 1971: daylight saving from Oct 31 */
+	1972,	303,	58,	/* 1972: Jan 1 -> Feb 27 & Oct 31 -> dec 31 */
+	0,	303,	65,	/* others: -> Mar 7, Oct 31 -> */
+};
+
+static struct dayrules {
+	int		dst_type;	/* number obtained from system */
+	int		dst_hrs;	/* hours to add when dst on */
+	struct	dstab *	dst_rules;	/* one of the above */
+	enum {STH,NTH}	dst_hemi;	/* southern, northern hemisphere */
+} dayrules [] = {
+	DST_USA,	1,	usdaytab,	NTH,
+	DST_AUST,	1,	ausdaytab,	STH,
+	-1,
 };
 
 struct tm	*gmtime();
@@ -78,37 +99,60 @@ char	*asctime();
 
 char *
 ctime(t)
-long *t;
+unsigned long *t;
 {
 	return(asctime(localtime(t)));
 }
 
 struct tm *
 localtime(tim)
-long *tim;
+unsigned long *tim;
 {
 	register int dayno;
 	register struct tm *ct;
-	register daylbegin, daylend;
-	long copyt;
-	struct timeb systime;
+	register dalybeg, daylend;
+	register struct dayrules *dr;
+	register struct dstab *ds;
+	int year;
+	unsigned long copyt;
+	struct timeval curtime;
+	struct timezone zone;
 
-	ftime(&systime);
-	copyt = *tim - (long)systime.timezone*60;
+	gettimeofday(&curtime, &zone);
+	copyt = *tim - (unsigned long)zone.tz_minuteswest*60;
 	ct = gmtime(&copyt);
 	dayno = ct->tm_yday;
-	daylbegin = 119;	/* last Sun in Apr */
-	daylend = 303;		/* Last Sun in Oct */
-	if (ct->tm_year==74 || ct->tm_year==75) {
-		daylbegin = daytab[ct->tm_year-74].daylb;
-		daylend = daytab[ct->tm_year-74].dayle;
-	}
-	daylbegin = sunday(ct, daylbegin);
-	daylend = sunday(ct, daylend);
-	if (systime.dstflag &&
-	    (dayno>daylbegin || (dayno==daylbegin && ct->tm_hour>=2)) &&
-	    (dayno<daylend || (dayno==daylend && ct->tm_hour<1))) {
-		copyt += 1*60*60;
+	for (dr = dayrules; dr->dst_type >= 0; dr++)
+		if (dr->dst_type == zone.tz_dsttime)
+			break;
+	if (dr->dst_type >= 0) {
+		year = ct->tm_year + 1900;
+		for (ds = dr->dst_rules; ds->dayyr; ds++)
+			if (ds->dayyr == year)
+				break;
+		dalybeg = ds->daylb;	/* first Sun after dst starts */
+		daylend = ds->dayle;	/* first Sun after dst ends */
+		dalybeg = sunday(ct, dalybeg);
+		daylend = sunday(ct, daylend);
+		switch (dr->dst_hemi) {
+		case NTH:
+		    if (!(
+		       (dayno>dalybeg || (dayno==dalybeg && ct->tm_hour>=2)) &&
+		       (dayno<daylend || (dayno==daylend && ct->tm_hour<1))
+		    ))
+			    return(ct);
+		    break;
+		case STH:
+		    if (!(
+		       (dayno>dalybeg || (dayno==dalybeg && ct->tm_hour>=2)) ||
+		       (dayno<daylend || (dayno==daylend && ct->tm_hour<2))
+		    ))
+			    return(ct);
+		    break;
+		default:
+		    return(ct);
+		}
+	        copyt += dr->dst_hrs*60*60;
 		ct = gmtime(&copyt);
 		ct->tm_isdst++;
 	}
@@ -132,10 +176,10 @@ register int d;
 
 struct tm *
 gmtime(tim)
-long *tim;
+unsigned long *tim;
 {
 	register int d0, d1;
-	long hms, day;
+	unsigned long hms, day;
 	register int *tp;
 	static struct tm xtime;
 
@@ -218,7 +262,7 @@ struct tm *t;
 	cp = ct_numb(cp, *--tp+100);
 	if (t->tm_year>=100) {
 		cp[1] = '2';
-		cp[2] = '0';
+		cp[2] = '0' + t->tm_year >= 200;
 	}
 	cp += 2;
 	cp = ct_numb(cp, t->tm_year+100);
