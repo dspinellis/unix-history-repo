@@ -6,9 +6,24 @@
 |
 | from: hp300/hp300/vectors.s	7.3 (Berkeley) 6/5/92
 |
-|	@(#)vectors.s	7.2 (Berkeley) %G%
+|	@(#)vectors.s	7.3 (Berkeley) %G%
 |
 
+#ifdef HPFPLIB
+/*
+ * XXX the HP FP library mishandles "normal" F-line faults causing
+ * the kernel to crash, hence we detect it ourselves rather than just
+ * vectoring to "_fline".  We also always catch unsupported data type
+ * faults ourselves for no particular reason.
+ */
+#define	_fpbsun		_bsun
+#define	_fpinex		_inex
+#define	_fpdz		_dz
+#define	_fpunfl		_unfl
+#define	_fpoperr	_operr
+#define	_fpovfl		_ovfl
+#define	_fpsnan		_snan
+#else
 #define	_fpbsun		_fpfault
 #define	_fpinex		_fpfault
 #define	_fpdz		_fpfault
@@ -16,6 +31,7 @@
 #define	_fpoperr	_fpfault
 #define	_fpovfl		_fpfault
 #define	_fpsnan		_fpfault
+#endif
 
 	.text
 	.globl	_buserr,_addrerr

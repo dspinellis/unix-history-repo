@@ -13,7 +13,7 @@
  * from: Utah $Hdr: locore.s 1.62 92/01/20$
  * from: hp300/hp300/locore.s	7.22 (Berkeley) 2/18/93
  *
- *	@(#)locore.s	7.10 (Berkeley) %G%
+ *	@(#)locore.s	7.11 (Berkeley) %G%
  */
 
 /*
@@ -74,15 +74,53 @@ _doadump:
 	.globl	_trap, _nofault, _longjmp
 _buserr:
 	tstl	_nofault		| device probe?
-	jeq	_addrerr		| no, handle as usual
+	jeq	Lberr			| no, handle as usual
 	movl	_nofault,sp@-		| yes,
 	jbsr	_longjmp		|  longjmp(nofault)
+Lberr:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	_addrerr		| no, skip
+	clrl	sp@-			| stack adjust count
+	moveml	#0xFFFF,sp@-		| save user registers
+	movl	usp,a0			| save the user SP
+	movl	a0,sp@(FR_SP)		|   in the savearea
+	lea	sp@(FR_HW),a1		| grab base of HW berr frame
+	moveq	#0,d0
+	movw	a1@(12),d0		| grab SSW
+	movl	a1@(20),d1		| and fault VA
+	btst	#11,d0			| check for mis-aligned access
+	jeq	Lberr2			| no, skip
+	addl	#3,d1			| yes, get into next page
+	andl	#PG_FRAME,d1		| and truncate
+Lberr2:
+	movl	d1,sp@-			| push fault VA
+	movl	d0,sp@-			| and padded SSW
+	btst	#10,d0			| ATC bit set?
+	jeq	Lisberr			| no, must be a real bus error
+	movc	dfc,d1			| yes, get MMU fault
+	movc	d0,dfc			| store faulting function code
+	movl	sp@(4),a0		| get faulting address
+	.word	0xf568			| ptestr a0@
+	movc	d1,dfc
+	.long	0x4e7a0805		| movc mmusr,d0
+	movw	d0,sp@			| save (ONLY LOW 16 BITS!)
+	jra	Lismerr
+#endif
 _addrerr:
 	clrl	sp@-			| stack adjust count
 	moveml	#0xFFFF,sp@-		| save user registers
 	movl	usp,a0			| save the user SP
 	movl	a0,sp@(FR_SP)		|   in the savearea
 	lea	sp@(FR_HW),a1		| grab base of HW berr frame
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lbenot040		| no, skip
+	movl	a1@(8),sp@-		| yes, push fault address
+	clrl	sp@-			| no SSW for address fault
+	jra	Lisaerr			| go deal with it
+Lbenot040:
+#endif
 	moveq	#0,d0
 	movw	a1@(10),d0		| grab SSW for fault processing
 	btst	#12,d0			| RB set?
@@ -165,10 +203,38 @@ Lstkadj:
  * FP exceptions.
  */
 _fpfline:
+#if defined(LUNA2)
+	cmpw	#0x202c,sp@(6)		| format type 2?
+	jne	_illinst		| no, not an FP emulation
+#ifdef HPFPLIB
+	.globl fpsp_unimp
+	jmp	fpsp_unimp		| yes, go handle it
+#else
+	clrl	sp@-			| stack adjust count
+	moveml	#0xFFFF,sp@-		| save registers
+	moveq	#T_FPEMULI,d0		| denote as FP emulation trap
+	jra	fault			| do it
+#endif
+#else
 	jra	_illinst
+#endif
 
 _fpunsupp:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	_illinst		| no, treat as illinst
+#ifdef HPFPLIB
+	.globl	fpsp_unsupp
+	jmp	fpsp_unsupp		| yes, go handle it
+#else
+	clrl	sp@-			| stack adjust count
+	moveml	#0xFFFF,sp@-		| save registers
+	moveq	#T_FPEMULD,d0		| denote as FP emulation trap
+	jra	fault			| do it
+#endif
+#else
 	jra	_illinst
+#endif
 
 /*
  * Handles all other FP coprocessor exceptions.
@@ -198,6 +264,37 @@ Lfptnull:
 	jra	Ltrapnstkadj	| call trap and deal with stack cleanup
 #else
 	jra	_badtrap	| treat as an unexpected trap
+#endif
+
+#ifdef HPFPLIB
+/*
+ * We wind up here from the 040 FP emulation library after
+ * the exception has been processed.
+ */
+	.globl	_fault
+_fault:
+	subql	#4,sp		| space for rts addr
+	movl	d0,sp@-		| scratch register
+	movw	sp@(14),d0	| get vector offset
+	andl	#0xFFF,d0	| mask out frame type and clear high word
+	cmpl	#0x100,d0	| HP-UX style reschedule trap?
+	jne	Lfault1		| no, skip
+	movl	sp@+,d0		| restore scratch register
+	addql	#4,sp		| pop space
+	jra	Lrei1		| go do AST
+Lfault1:
+	cmpl	#0xC0,d0	| FP exception?
+	jlt	Lfault2		| no, skip
+	movl	sp@+,d0		| yes, backoff
+	addql	#4,sp		|  and prepare for normal trap frame
+	jra	_fpfault	| go to it
+Lfault2:
+	addl	#Lvectab,d0	| convert to vector table offset
+	exg	d0,a0
+	movl	a0@,sp@(4) 	| get exception vector and save for rts
+	exg	d0,a0
+	movl	sp@+,d0		|   scratch registers
+	rts			| return to handler from vectab
 #endif
 
 /*
@@ -688,6 +785,25 @@ start:
 	movl	#CACHE_OFF,d0
 	movc	d0,cacr			| clear and disable on-chip cache(s)
 
+#if defined(LUNA2)
+/* determine our CPU/MMU combo - check for all regardless of kernel config */
+	movl	#0x200,d0		| data freeze bit
+	movc	d0,cacr			|   only exists on 68030
+	movc	cacr,d0			| read it back
+	tstl	d0			| zero?
+	jeq	Lnot68030		| yes, we have 68040(LUNA2)
+	movl	#1,_machineid		| no, must be a LUNA-I
+	movl	#-1,_mmutype		| set to reflect 68030 PMMU
+	jra	Lstart1
+Lnot68030:
+	movl	#2,_machineid		| must be a LUNA-II
+	movl	#-2,_mmutype		| set to reflect 68040 MMU
+#ifdef HPFPLIB
+	movl	#3,_processor		| HP-UX style processor id
+#endif
+Lstart1:
+#endif
+
 /* initialize source/destination control registers for movs */
 	moveq	#FC_USERD,d0		| user space
 	movc	d0,sfc			|   as source
@@ -713,25 +829,48 @@ start:
 /*
  * Prepare to enable MMU.
  */
-	movl	_Sysseg,a1		| system segment table addr read value (a KVA)
+	movl	_Sysseg,d1		| system segment table addr read value (a KVA)
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu1		| no, skip
+	
+	.long	0x4e7b1807		| movc d1,srp
+/* we must set tt-registers here */
+	movl	#0x403FA040,d0		| tt0 for LUNA2 0x40000000-0x7fffffff
+	.long	0x4e7b0004		| movc d0,itt0
+	.long	0x4e7b0006		| movc d0,dtt0
+	movl	#0x807FA040,d0		| tt1 for LUNA2 0x80000000-0xffffffff
+	.long	0x4e7b0005		| movc d0,itt1
+	.long	0x4e7b0007		| movc d0,dtt1
+	.word	0xf4d8			| cinva bc
+	.word	0xf518			| pflusha
+	movl	#0x8000,d0
+	.long	0x4e7b0003		| movc d0,tc
+	movl	#0x80008000,d0
+	movc	d0,cacr			| turn on both caches
+	jmp	Lenab1
+Lmotommu1:
+#endif
 	lea	_protorp,a0
 	movl	#0x80000202,a0@		| nolimit + share global + 4 byte PTEs
-	movl	a1,a0@(4)		| + segtable address
+	movl	d1,a0@(4)		| + segtable address
 	pmove	a0@,srp			| load the supervisor root pointer
 	movl	#0x80000002,a0@		| reinit upper half for CRP loads
 /* we must set tt-registers here */
-	lea	_protott0,a0
+	lea	_protott0,a0		| tt0 for LUNA1 0x40000000-0x7fffffff
 	.word	0xf010			| pmove	a0@,mmutt0
 	.word	0x0800
-	lea	_protott1,a0
+	lea	_protott1,a0		| tt1 for LUNA1 0x80000000-0xffffffff
 	.word	0xf010			| pmove	a0@,mmutt1
 	.word	0x0c00
+	lea	_mapping_tc,a2
 	movl	#0x82c0aa00,a2@		| value to load TC with
 	pmove	a2@,tc			| load it
 
 /*
  * Should be running mapped from this point on
  */
+Lenab1:
 #ifdef FPCOPROC
 /* fpp check */
 	movl	a1,sp@-
@@ -757,8 +896,13 @@ start:
 #endif
 /* flush TLB and turn on caches */
 	jbsr	_TBIA			| invalidate TLB
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jeq	Lnocache0		| yes, cache already on
+#endif
 	movl	#CACHE_ON,d0
 	movc	d0,cacr			| clear cache(s)
+Lnocache0:
 /* final setup for C code */
 	movw	#PSL_LOWIPL,sr		| lower SPL
 	movl	d7,_boothowto		| save reboot flags
@@ -768,6 +912,13 @@ start:
 /* proc[1] == init now running here;
  * create a null exception frame and return to user mode in icode
  */
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lnoflush		| no, skip
+	.word	0xf478			| cpusha dc
+	.word	0xf498			| cinva ic
+Lnoflush:
+#endif
 	clrw	sp@-			| vector offset/frame type
 	clrl	sp@-			| return to icode location 0
 	movw	#PSL_USER,sp@-		| in user mode
@@ -832,16 +983,21 @@ _szicode:
  * Primitives
  */ 
 
+#ifdef __STDC__
+#define EXPORT(name)	.globl _ ## name; _ ## name:
+#else
+#define EXPORT(name)	.globl _/**/name; _/**/name:
+#endif
 #ifdef GPROF
 #define	ENTRY(name) \
-	.globl _/**/name; _/**/name: link a6,#0; jbsr mcount; unlk a6
+	EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
 #define ALTENTRY(name, rname) \
 	ENTRY(name); jra rname+12
 #else
 #define	ENTRY(name) \
-	.globl _/**/name; _/**/name:
+	EXPORT(name)
 #define ALTENTRY(name, rname) \
-	.globl _/**/name; _/**/name:
+	ENTRY(name)
 #endif
 
 /*
@@ -1359,6 +1515,17 @@ Lres1:
 	orl	#PG_RW+PG_V,d1		| ensure valid and writable
 	movl	d1,a2@+			| load it up
 	dbf	d0,Lres1		| til done
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lres1a			| no, skip
+	.word	0xf518			| yes, pflusha
+	movl	a1@(PCB_USTP),d0	| get USTP
+	moveq	#PGSHIFT,d1
+	lsll	d1,d0			| convert to addr
+	.long	0x4e7b0806		| movc d0,urp
+	jra	Lcxswdone
+Lres1a:
+#endif
 	movl	#CACHE_CLR,d0
 	movc	d0,cacr			| invalidate cache(s)
 	pflusha				| flush entire TLB
@@ -1368,6 +1535,7 @@ Lres1:
 	lea	_protorp,a0		| CRP prototype
 	movl	d0,a0@(4)		| stash USTP
 	pmove	a0@,crp			| load new user root pointer
+Lcxswdone:
 	moveml	a1@(PCB_REGS),#0xFCFC	| and registers
 	movl	a1@(PCB_USP),a0
 	movl	a0,usp			| and USP
@@ -1375,6 +1543,13 @@ Lres1:
 	lea	a1@(PCB_FPCTX),a0	| pointer to FP save area
 	tstb	a0@			| null state frame?
 	jeq	Lresfprest		| yes, easy
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lresnot040		| no, skip
+	clrl	sp@-			| yes...
+	frestore sp@+			| ...magic!
+Lresnot040:
+#endif
 	fmovem	a0@(312),fpcr/fpsr/fpi	| restore FP control registers
 	fmovem	a0@(216),fp0-fp7	| restore FP general registers
 Lresfprest:
@@ -1481,6 +1656,13 @@ ENTRY(suiword)
 	movsl	d0,a0@			| do write to user space
 	nop
 	moveq	#0,d0			| indicate no fault
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lsuicpurge		| no, skip
+	.word	0xf498			| cinva ic (XXX overkill)
+	jra	Lfsdone
+Lsuicpurge:
+#endif
 	movl	#IC_CLEAR,d1
 	movc	d1,cacr			| invalidate i-cache
 	jra	Lfsdone
@@ -1526,11 +1708,46 @@ ENTRY(subyte)
 	moveq	#0,d0			| indicate no fault
 	jra	Lfsdone
 
+#if defined(LUNA2)
+ENTRY(suline)
+	movl	sp@(4),a0		| address to write
+	movl	_curpcb,a1		| current pcb
+	movl	#Lslerr,a1@(PCB_ONFAULT) | where to return to on a fault
+	movl	sp@(8),a1		| address of line
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	movl	a1@+,d0			| get lword
+	movsl	d0,a0@+			| put lword
+	nop				| sync
+	moveq	#0,d0			| indicate no fault
+	jra	Lsldone
+Lslerr:
+	moveq	#-1,d0
+Lsldone:
+	movl	_curpcb,a1		| current pcb
+	clrl	a1@(PCB_ONFAULT) 	| clear fault address
+	rts
+#endif
+
 /*
  * Invalidate entire TLB.
  */
 ENTRY(TBIA)
 __TBIA:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu3		| no, skip
+	.word	0xf518			| yes, pflusha
+	rts
+Lmotommu3:
+#endif
 	pflusha				| flush entire TLB
 	movl	#DC_CLEAR,d0
 	movc	d0,cacr			| invalidate on-chip d-cache
@@ -1543,6 +1760,21 @@ ENTRY(TBIS)
 #ifdef DEBUG
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush entire TLB
+#endif
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu4		| no, skip
+	movl	sp@(4),a0
+	movc	dfc,d1
+	moveq	#1,d0			| user space
+	movc	d0,dfc
+	.word	0xf508			| pflush a0@
+	moveq	#5,d0			| super space
+	movc	d0,dfc
+	.word	0xf508			| pflush a0@
+	movc	d1,dfc
+	rts
+Lmotommu4:
 #endif
 
 	movl	sp@(4),a0		| get addr to flush
@@ -1559,6 +1791,13 @@ ENTRY(TBIAS)
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush everything
 #endif
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu5		| no, skip
+	.word	0xf518			| yes, pflusha (for now) XXX
+	rts
+Lmotommu5:
+#endif
 	pflush #4,#4			| flush supervisor TLB entries
 	movl	#DC_CLEAR,d0
 	movc	d0,cacr			| invalidate on-chip d-cache
@@ -1572,6 +1811,13 @@ ENTRY(TBIAU)
 	tstl	fulltflush		| being conservative?
 	jne	__TBIA			| yes, flush everything
 #endif
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmotommu6		| no, skip
+	.word	0xf518			| yes, pflusha (for now) XXX
+	rts
+Lmotommu6:
+#endif
 	pflush	#0,#4			| flush user TLB entries
 	movl	#DC_CLEAR,d0
 	movc	d0,cacr			| invalidate on-chip d-cache
@@ -1581,18 +1827,114 @@ ENTRY(TBIAU)
  * Invalidate instruction cache
  */
 ENTRY(ICIA)
+#if defined(LUNA2)
+ENTRY(ICPA)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu7		| no, skip
+	.word	0xf498			| cinva ic
+	rts
+Lmotommu7:
+#endif
 	movl	#IC_CLEAR,d0
 	movc	d0,cacr			| invalidate i-cache
 	rts
 
+/*
+ * Invalidate data cache.
+ * NOTE: we do not flush 68030 on-chip cache as there are no aliasing
+ * problems with DC_WA.  The only cases we have to worry about are context
+ * switch and TLB changes, both of which are handled "in-line" in resume
+ * and TBI*.
+ */
+ENTRY(DCIA)
+__DCIA:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu8		| no, skip
+	/* XXX implement */
+	rts
+Lmotommu8:
+#endif
+	rts
+
+ENTRY(DCIS)
+__DCIS:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040
+	jne	Lmotommu9		| no, skip
+	/* XXX implement */
+	rts
+Lmotommu9:
+#endif
+	rts
+
+ENTRY(DCIU)
+__DCIU:
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040
+	jne	LmotommuA		| no, skip
+	/* XXX implement */
+	rts
+LmotommuA:
+#endif
+	rts
+
+#if defined(LUNA2)
+ENTRY(ICPL)
+	movl	sp@(4),a0		| address
+	.word	0xf488			| cinvl ic,a0@
+	rts
+ENTRY(ICPP)
+	movl	sp@(4),a0		| address
+	.word	0xf490			| cinvp ic,a0@
+	rts
+ENTRY(DCPL)
+	movl	sp@(4),a0		| address
+	.word	0xf448			| cinvl dc,a0@
+	rts
+ENTRY(DCPP)
+	movl	sp@(4),a0		| address
+	.word	0xf450			| cinvp dc,a0@
+	rts
+ENTRY(DCPA)
+	.word	0xf458			| cinva dc
+	rts
+ENTRY(DCFL)
+	movl	sp@(4),a0		| address
+	.word	0xf468			| cpushl dc,a0@
+	rts
+ENTRY(DCFP)
+	movl	sp@(4),a0		| address
+	.word	0xf470			| cpushp dc,a0@
+	rts
+#endif
+
 ENTRY(PCIA)
+#if defined(LUNA2)
+ENTRY(DCFA)
+	cmpl	#-2,_mmutype		| 68040
+	jne	LmotommuB		| no, skip
+	.word	0xf478			| cpusha dc
+	rts
+LmotommuB:
+#endif
 	movl	#DC_CLEAR,d0
 	movc	d0,cacr			| invalidate on-chip d-cache
 	rts
 
+#if 0 /****************************************************************/
+/* external cache control */
+ENTRY(ecacheon)
+	rts
+
+ENTRY(ecacheoff)
+	rts
+#endif /****************************************************************/
+
 /*
  * Get callers current SP value.
  * Note that simply taking the address of a local variable in a C function
+
  * doesn't work because callee saved registers may be outside the stack frame
  * defined by A6 (e.g. GCC generated code).
  */
@@ -1617,6 +1959,13 @@ ENTRY(loadustp)
 	movl	sp@(4),d0		| new USTP
 	moveq	#PGSHIFT,d1
 	lsll	d1,d0			| convert to addr
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	LmotommuC		| no, skip
+	.long	0x4e7b0806		| movc d0,urp
+	rts
+LmotommuC:
+#endif
 	lea	_protorp,a0		| CRP prototype
 	movl	d0,a0@(4)		| stash USTP
 	pmove	a0@,crp			| load root pointer
@@ -1965,6 +2314,23 @@ _fpvec:	movl	a0,a2@(FLINE_VEC)	| restore vectors
 _doboot:
 	movl	#0x41000004,a0
 	movl	a0@,a1			| get PROM restart entry address
+#if defined(LUNA2)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	LmotommuF		| no, skip
+	.word	0xf4f8			| cpusha bc
+	movl	#0,d0
+	movc	d0,cacr			| caches off
+	movql	#0,d0
+	.long	0x4e7b0004		| movc d0,itt0
+	.long	0x4e7b0005		| movc d0,itt1
+	.long	0x4e7b0006		| movc d0,dtt0
+	.long	0x4e7b0007		| movc d0,dtt1
+
+	.long	0x4e7b0003		| movc d0,tc
+
+	jmp	a1@			| goto REBOOT
+LmotommuF:
+#endif
 	movl	#CACHE_OFF,d0
 	movc	d0,cacr			| disable on-chip cache(s)
 	movl	#_tcroff,a0		| value for pmove to TC (turn off MMU)
@@ -1972,13 +2338,20 @@ _doboot:
 	jmp	a1@			| goto REBOOT
 
 	.data
+	.globl	_machineid,_mmutype
+_machineid:
+	.long	1		| default to LUNA-I
+_mmutype:
+	.long	-1		| default to 68030 PMMU
 	.globl	_protorp,_protott0,_protott1
 _protorp:
 	.long	0,0		| prototype root pointer
 _protott0:
-	.long	0x807F8543	| prototype tt0 register (for kernel)
+	.long	0x403f8543	| tt0 (for LUNA1 kernel 0x40000000-0x7fffffff)
 _protott1:
-	.long	0		| prototype tt0 register (for user)
+	.long	0x807F8543	| tt1 (for LUNA1 kernel 0x80000000-0xffffffff)
+_mapping_tc:
+	.long	0
 	.globl	_cold
 _cold:
 	.long	1		| cold start flag
@@ -2013,6 +2386,27 @@ fulltflush:
 	.long	0
 fullcflush:
 	.long	0
+#endif
+#ifdef HPFPLIB
+/*
+ * Undefined symbols from hpux_float.o:
+ *
+ * kdb_printf:	A kernel debugger print routine, we just use printf instead.
+ * processor:	HP-UX equiv. of machineid, set to 3 if it is a 68040.
+ * u:		Ye ole u-area.  The code wants to grab the first longword
+ *		indirect off of that and clear the 0x40000 bit there.
+ *		Oddly enough this was incorrect even in HP-UX!
+ * runrun:	Old name for want_resched.
+ */
+	.globl	_kdb_printf,_processor,_u,_runrun
+_kdb_printf:
+	.long	_printf
+_processor:
+	.long	0
+_u:
+	.long	.+4
+	.long	0
+	.set	_runrun,_want_resched
 #endif
 /* interrupt counters */
 	.globl	_intrcnt,_eintrcnt,_intrnames,_eintrnames

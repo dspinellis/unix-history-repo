@@ -12,14 +12,18 @@
  *
  * from: hp300/include/pmap.h	7.11 (Berkeley) 12/27/92
  *
- *	@(#)pmap.h	7.3 (Berkeley) %G%
+ *	@(#)pmap.h	7.4 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
 #define	_PMAP_MACHINE_
 
 #define LUNA_PAGE_SIZE	NBPG
+#if defined(LUNA2)
+#define LUNA_SEG_SIZE	(mmutype == MMU_68040 ? 0x40000 : NBSEG)
+#else
 #define LUNA_SEG_SIZE	NBSEG
+#endif
 
 #define luna_trunc_seg(x)	(((unsigned)(x)) & ~(LUNA_SEG_SIZE-1))
 #define luna_round_seg(x)	luna_trunc_seg((unsigned)(x) + LUNA_SEG_SIZE-1)

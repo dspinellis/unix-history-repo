@@ -6,7 +6,7 @@
  *
  * from: hp300/dev/if_le.c	7.16 (Berkeley) 3/11/93
  *
- *	@(#)if_le.c	7.5 (Berkeley) %G%
+ *	@(#)if_le.c	7.6 (Berkeley) %G%
  */
 
 #include "le.h"
@@ -142,7 +142,23 @@ leattach(hd)
 #ifdef NOROM
 	cp = "00000a02456c";
 #else
-	cp = (char *) 0x4101FFE0;
+#if defined(LUNA2)
+	if (machineid == LUNA_II) {
+		static char rom_data[128];
+		volatile u_int *from = (u_int *)0xf1000004;
+		for (i = 0; i < 128; i++) {
+			*from = (i * 2) << 16;
+			rom_data[i] |= (*from >> 12) & 0xf0;
+			*from = (i * 2 + 1) << 16;
+			rom_data[i] |= (*from >> 16) & 0xf;
+		}
+		cp =&rom_data[6]; /* ETHER0 must be here */
+		/* one port only now  XXX */
+	} else
+#endif
+	{
+		cp = (char *) 0x4101FFE0;
+	}
 #endif
 	for (i = 0; i < sizeof(le->sc_addr); i++) {
 		le->sc_addr[i]  = (*cp < 'A' ? (*cp & 0xF) : (*cp & 0xF) + 9) << 4;

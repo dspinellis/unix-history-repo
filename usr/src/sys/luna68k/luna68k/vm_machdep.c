@@ -13,7 +13,7 @@
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  * from: hp300/hp300/vm_machdep.c	7.14 (Berkeley) 12/27/92
  *
- *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -140,6 +140,9 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
+#ifdef LUNA2
+	DCIS();
+#endif
 }
 
 /*

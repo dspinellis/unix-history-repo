@@ -13,7 +13,7 @@
  * from: Utah $Hdr: cpu.h 1.16 91/03/25$
  * from: hp300/include/cpu.h	7.13 (Berkeley) 12/27/92
  *
- *	@(#)cpu.h	7.3 (Berkeley) %G%
+ *	@(#)cpu.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -92,6 +92,14 @@ extern unsigned char ssir;
 #define siroff(x)	ssir &= ~(x)
 #define setsoftnet()	ssir |= SIR_NET
 #define setsoftclock()	ssir |= SIR_CLOCK
+
+#ifdef KERNEL
+extern	int mmutype, machineid;
+#endif
+
+/* values for machineid */
+#define	LUNA_I		1	/* 20Mhz 68030 */
+#define	LUNA_II		2	/* 25Mhz 68040 */
 
 /* values for mmutype (assigned for quick testing) */
 #define	MMU_68040	-2	/* 68040 on-chip MMU */

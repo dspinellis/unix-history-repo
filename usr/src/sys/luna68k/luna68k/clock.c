@@ -13,13 +13,17 @@
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  * from: hp300/hp300/clock.c	7.19 (Berkeley) 2/18/93
  *
- *	@(#)clock.c	7.7 (Berkeley) %G%
+ *	@(#)clock.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/kernel.h>
 
 #include <luna68k/luna68k/clockreg.h>
+
+#ifdef LUNA2
+#include <machine/cpu.h>
+#endif
 
 extern int clock_on;
 
@@ -29,6 +33,9 @@ static int month_days[12] = {
 struct bbc_tm *gmt_to_bbc();
 
 volatile struct bbc *bbc = (struct bbc *)BBC_ADDR;
+#ifdef LUNA2
+volatile struct bbc2 *bbc2 = (struct bbc2 *)BBC_ADDR;
+#endif
 
 int battery_clock;
 int battery_chkfg;
@@ -57,6 +64,15 @@ cpu_initclocks()
 
 	/* set flag for clockintr. */
 	clock_on = 1;
+
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		/* not yet */
+		battery_chkfg = 1;
+		battery_clock = 1;
+		return;
+	}
+#endif
 
 	batterychk();
 	if (!battery_clock)
@@ -137,14 +153,34 @@ resettodr()
 	s = splimp();
 
 	/* set bb-clock */
-	bbc->cal_ctl |= BBC_WRT;
-	bbc->cal_sec = binary_to_bcd(tmptr->tm_sec);
-	bbc->cal_min = binary_to_bcd(tmptr->tm_min);
-	bbc->cal_hour = binary_to_bcd(tmptr->tm_hour);
-	bbc->cal_day = binary_to_bcd(tmptr->tm_mday);
-	bbc->cal_mon = binary_to_bcd(tmptr->tm_mon);
-	bbc->cal_year = binary_to_bcd(tmptr->tm_year);
-	bbc->cal_ctl &= ~BBC_WRT;
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+#if 1
+		/* not yet */
+		printf("WARNING: not supported resettodr() at LUNA2 yet.\n");
+		return;
+#else
+		/* bbc2->cal_ctl_? |= BBC_WRT; */
+		bbc2->cal_sec = tmptr->tm_sec;
+		bbc2->cal_min = tmptr->tm_min;
+		bbc2->cal_hour =tmptr->tm_hour;
+		bbc2->cal_day = tmptr->tm_mday;
+		bbc2->cal_mon = tmptr->tm_mon;
+		bbc2->cal_year = tmptr->tm_year);
+		/* bbc2->cal_ctl_? &= ~BBC_WRT; */
+#endif
+	} else 
+#endif
+	{
+		bbc->cal_ctl |= BBC_WRT;
+		bbc->cal_sec = binary_to_bcd(tmptr->tm_sec);
+		bbc->cal_min = binary_to_bcd(tmptr->tm_min);
+		bbc->cal_hour = binary_to_bcd(tmptr->tm_hour);
+		bbc->cal_day = binary_to_bcd(tmptr->tm_mday);
+		bbc->cal_mon = binary_to_bcd(tmptr->tm_mon);
+		bbc->cal_year = binary_to_bcd(tmptr->tm_year);
+		bbc->cal_ctl &= ~BBC_WRT;
+	}
 
 	splx(s);
 }
@@ -197,21 +233,39 @@ bbc_to_gmt(timbuf)
 	s = splimp();
 
 	/* read bb-clock */
-	bbc->cal_ctl |= BBC_RD;
-	sec = bcd_to_binary(bbc->cal_sec);
-	min = bcd_to_binary(bbc->cal_min);
-	hour = bcd_to_binary(bbc->cal_hour);
-	day = bcd_to_binary(bbc->cal_day);
-	month = bcd_to_binary(bbc->cal_mon);
-	year = bcd_to_binary(bbc->cal_year) + 1900;
-	bbc->cal_ctl &= ~BBC_RD;
-	
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		sec = bbc2->cal_sec;
+		min = bbc2->cal_min;
+		hour = bbc2->cal_hour;
+		day = bbc2->cal_day;
+		month = bbc2->cal_mon;
+		year = bbc2->cal_year + 1900;
+	} else
+#endif
+	{
+		bbc->cal_ctl |= BBC_RD;
+		sec = bcd_to_binary(bbc->cal_sec);
+		min = bcd_to_binary(bbc->cal_min);
+		hour = bcd_to_binary(bbc->cal_hour);
+		day = bcd_to_binary(bbc->cal_day);
+		month = bcd_to_binary(bbc->cal_mon);
+		year = bcd_to_binary(bbc->cal_year) + 1900;
+		bbc->cal_ctl &= ~BBC_RD;
+	}
+
 	splx(s);
 
 	range_test(hour, 0, 23);
 	range_test(day, 1, 31);
 	range_test(month, 1, 12);
+#if 1	/* limitted 2000 now ... */
 	range_test(year, STARTOFTIME, 2000);
+#else
+	if (year < 1970) {
+		year += 100;
+	}
+#endif
 	
 	tmp = 0;
 	
@@ -234,6 +288,14 @@ batterychk()
 {
 	static char btchkdata[] = "chk";
 
+#ifdef LUNA2
+	if (machineid == LUNA_II) {
+		/* not yet */
+		battery_chkfg = 1;
+		battery_clock = 1;
+		return;
+	}
+#endif
 	/* if already checked, return */
 	if (battery_chkfg)
 		return;
