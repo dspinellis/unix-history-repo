@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)setreuid.2	5.1 (Berkeley) %G%
+.\"	@(#)setreuid.2	6.1 (Berkeley) %G%
 .\"
-.TH SETREUID 2 "12 February 1983"
+.TH SETREUID 2 ""
 .UC 4
 .SH NAME
 setreuid \- set real and effective user ID's
@@ -23,10 +23,9 @@ If
 or 
 .I euid
 is \-1, the current uid is filled in by the system.
-Only the super-user may modify the real uid of
-a process.  Users other than the super-user may
-change the effective uid of a process only to the
-real uid.
+Unprivileged users may change the real user
+ID to the effective user ID and vice-versa; only the super-user may
+make other changes.
 .SH "RETURN VALUE
 Upon successful completion, a value of 0 is returned.  Otherwise,
 a value of \-1 is returned and \fIerrno\fP is set to indicate the error.
