@@ -5,7 +5,7 @@
  * This code is derived from software contributed to Berkeley by
  * Hugh Smith at The University of Guelph.
  *
- *	@(#)archive.h	5.5 (Berkeley) %G%
+ *	@(#)archive.h	5.6 (Berkeley) %G%
  */
 
 /* Ar(1) options. */
@@ -69,11 +69,11 @@ typedef struct {
 
 __BEGIN_DECLS
 void	close_archive __P((int));
-void	skipobj __P((int));
-int	copyfile __P((CF *, off_t));
-int	get_header __P((int));
+void	skip_arobj __P((int));
+int	copy_ar __P((CF *, off_t));
+int	get_arobj __P((int));
 int	open_archive __P((int));
 struct stat;
-int	put_object __P((CF *, struct stat *));
+int	put_arobj __P((CF *, struct stat *));
 __END_DECLS
 

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -60,12 +60,12 @@ move(argv)
 
 	/* Read and write to an archive; pad on both. */
 	SETCF(afd, archive, 0, tname, RPAD|WPAD);
-	for (curfd = tfd1; get_header(afd);) {	
+	for (curfd = tfd1; get_arobj(afd);) {	
 		if (*argv && (file = files(argv))) {
 			if (options & AR_V)
 				(void)printf("m - %s\n", file);
 			cf.wfd = tfd2;
-			put_object(&cf, (struct stat *)NULL);
+			put_arobj(&cf, (struct stat *)NULL);
 			continue;
 		}
 		if (mods && compare(posname)) {
@@ -73,12 +73,12 @@ move(argv)
 			if (options & AR_B)
 				curfd = tfd3;
 			cf.wfd = curfd;
-			put_object(&cf, (struct stat *)NULL);
+			put_arobj(&cf, (struct stat *)NULL);
 			if (options & AR_A)
 				curfd = tfd3;
 		} else {
 			cf.wfd = curfd;
-			put_object(&cf, (struct stat *)NULL);
+			put_arobj(&cf, (struct stat *)NULL);
 		}
 	}
 
@@ -93,17 +93,17 @@ move(argv)
 	SETCF(tfd1, tname, afd, archive, NOPAD);
 	tsize = size = lseek(tfd1, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd1, (off_t)0, SEEK_SET);
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 
 	tsize += size = lseek(tfd2, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd2, (off_t)0, SEEK_SET);
 	cf.rfd = tfd2;
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 
 	tsize += size = lseek(tfd3, (off_t)0, SEEK_CUR);
 	(void)lseek(tfd3, (off_t)0, SEEK_SET);
 	cf.rfd = tfd3;
-	copyfile(&cf, size);
+	copy_ar(&cf, size);
 
 	(void)ftruncate(afd, tsize + SARMAG);
 	close_archive(afd);
