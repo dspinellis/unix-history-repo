@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.21 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -13,6 +13,7 @@
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "errno.h"
 #include "stat.h"
 
 #include "../net/if.h"
