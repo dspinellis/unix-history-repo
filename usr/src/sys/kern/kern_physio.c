@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	6.7 (Berkeley) %G%
+ *	@(#)kern_physio.c	6.8 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -59,6 +59,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 	register struct pte *dpte, *vpte;
 	int s;
 	extern swdone();
+	int error = 0;
 
 	s = spl6();
 	while (bswlist.av_forw == NULL) {
@@ -104,7 +105,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
 				panic("big push");
-			return;
+			return (error);
 		}
 		bp->b_un.b_addr += c;
 		bp->b_flags &= ~B_DONE;
@@ -112,6 +113,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			if ((flag & (B_UAREA|B_PAGET)) || rdflg == B_WRITE)
 				panic("hard IO err in swap");
 			swkill(p, "swap: read error from swap device");
+			error = EIO;
 		}
 		nbytes -= c;
 		dblkno += btodb(c);
@@ -126,6 +128,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 		wakeup((caddr_t)&proc[2]);
 	}
 	splx(s);
+	return (error);
 }
 
 /*
