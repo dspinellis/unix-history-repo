@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.7 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.8 (Berkeley) %G%
  */
 #include "param.h"
 #include "kernel.h"
@@ -738,6 +738,7 @@ dqget(vp, id, ump, type, dqp)
 	auio.uio_offset = (off_t)(id * sizeof (struct dqblk));
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_rw = UIO_READ;
+	auio.uio_procp = (struct proc *)0;
 	error = VOP_READ(dqvp, &auio, 0, ump->um_cred[type]);
 	if (auio.uio_resid == sizeof(struct dqblk) && error == 0)
 		bzero((caddr_t)&dq->dq_dqb, sizeof(struct dqblk));
@@ -852,6 +853,7 @@ dqsync(vp, dq)
 	auio.uio_offset = (off_t)(dq->dq_id * sizeof (struct dqblk));
 	auio.uio_segflg = UIO_SYSSPACE;
 	auio.uio_rw = UIO_WRITE;
+	auio.uio_procp = (struct proc *)0;
 	error = VOP_WRITE(dqvp, &auio, 0, dq->dq_ump->um_cred[dq->dq_type]);
 	if (auio.uio_resid && error == 0)
 		error = EIO;
