@@ -4,13 +4,14 @@ way around and compiling the programs.  We apologize that this
 distribution has so little in the way of compatibility with previous
 systems.  We had hoped that we could provide compatibility with at least
 4.3BSD, but we simply did not have sufficient time to accomplished the
-task.
+task.  In general, this release is similar to the 4.3BSD-Reno, although
+it has a new virtual memory system and other changes.
 
 First, there has been a major reorganization of the file system.  (You
-may have seen similar reorganizations on systems shipped by Sun
-Microsytems and Digital Equipment Corporation, among others.)  In general,
-the reorganization is as follows.  (Directories not listed are pretty much
-unchanged, i.e.  /dev is the same as always.)
+may have seen similar reorganizations on 4.3BSD-Reno and systems shipped
+by Sun Microsytems and Digital Equipment Corporation, among others.)
+In general, the reorganization is as follows.  (Directories not listed are
+pretty much unchanged, i.e.  /dev is the same as always.)
 
 	/etc		configuration files (NO BINARIES)
 	/bin		binaries needed when running single-user
@@ -61,7 +62,8 @@ figure out what the real problem is in this case.  Loading make on your
 system may also fail.  If it does, you are probably missing one or more
 routines in your C library that make needs.  Finding the correct routine
 in the lib/libc/* directories, and creating a .o for the make directory
-will probably get you around this problem.
+will probably get you around this problem.  Once pmake compile and loads,
+it can be installed as "make".
 
 Once you have a "new" make working, you have to install the template files
 that it uses.  These files are in the directory src/share/mk.  Normally, they
