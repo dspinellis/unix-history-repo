@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	7.5 (Berkeley) %G%
+ *	@(#)vm_map.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -199,4 +199,4 @@ void		 vm_map_startup __P((void));
 int		 vm_map_submap __P((vm_map_t,
 		    vm_offset_t, vm_offset_t, vm_map_t));
 #endif
-#endif	_VM_MAP_
+#endif /* _VM_MAP_ */
