@@ -1,0 +1,440 @@
+%    Copyright (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Font initialization for Ghostscript.
+
+% Ghostscript fonts have essentially the same contents as Adobe Type 1 fonts,
+% except that the external form doesn't use eexec encryption.
+% Someday there will be GNU documentation that describes this format.
+% Until then, you'll have to either get a copy of Adobe's book, or read
+% the Ghostscript code.  The interpreter for Type 1 fonts, which reveals
+% most of their structure, is in the file gstype1.c.
+
+
+% Define the default font.
+/defaultfontname /Ugly def
+
+% Put an entry into a dictionary, with automatic expansion.
+/.xput
+ { 2 index length 3 index maxlength eq
+    { 3 copy pop known not
+       { 2 index dup length 3 mul 2 idiv 1 add setmaxlength
+       } if
+    } if
+   put
+ } bind def
+
+% Internal procedure to load the font name -> font file name map
+% if it isn't loaded already, and push it on the stack.
+/Fontmap
+ { /FontFileMap where
+    { /FontFileMap get }
+    { (Fontmap) findlibfile not
+       { (Can't find ) print print (!\n) print stop }
+      if exch pop
+
+      FontDirectory maxlength dict exch
+      2 dict begin
+        mark exch 2 index exch
+	/;
+	 { % The stack contains a mark, the dictionary, the font name,
+	   % the file name, and additional information about the font.
+	   counttomark 3 sub { pop } repeat .xput
+	   1 index
+	 } bind def
+	run
+      end
+      pop pop		% pop the mark and the copy of the dictionary
+      userdict exch /FontFileMap exch put
+      FontFileMap
+     }
+   ifelse
+ } bind def
+
+
+% Ghostscript optionally can load individual CharStrings as they are needed.
+% (This is intended primarily for machines with very small memories.)
+% This happens if DISKFONTS is true.  In this case, we define another
+% dictionary parallel to FontDirectory that retains an open file
+% for every font loaded.
+DISKFONTS
+ { /FontFileDirectory FontDirectory maxlength dict def
+ }
+if
+
+
+% Define definefont.  This is a procedure built on an operator that
+% does all the error checking and key insertion.
+/.buildfontdict 3 dict
+	/.buildfont0 where { pop dup 0 /.buildfont0 load put } if
+	/.buildfont1 where { pop dup 1 /.buildfont1 load put } if
+	/.buildfont3 where { pop dup 3 /.buildfont3 load put } if
+def
+/definefont
+ { 1 dict begin count /d exch def	% save stack depth in case of error
+    { dup /FontType get .buildfontdict exch get exec
+      DISKFONTS
+       { FontFileDirectory 2 index known
+          { dup /FontFile FontFileDirectory 4 index get put
+	  }
+	 if
+       }
+      if
+      readonly
+    }
+   stopped
+    { count d sub { pop } repeat end /invalidfont signalerror }
+    { end dup FontDirectory 4 2 roll .xput }
+   ifelse
+ } odef
+
+
+% Ghostscript optionally can load individual CharStrings as they are needed.
+% (This is intended primarily for machines with very small memories.)
+% Initially, the character definition is the file position of the definition;
+% this gets replaced with the actual CharString.
+% Note that if we are loading characters lazily, CharStrings is writable.
+
+% _Cstring must be long enough to hold the longest CharString for
+% a character defined using seac.  This is lenIV + 4 * 5 (for the operands
+% of sbw, assuming div is not used) + 2 (for sbw) + 3 * 5 (for the operands
+% of seac other than the character codes) + 2 * 2 (for the character codes)
+% + 2 (for seac), i.e., lenIV + 43.
+
+/_Cstring 60 string def
+
+% When we initially load the font, we call
+%	<index|charname> <length> /readstring|/readhexstring skip_C
+% to skip over each character definition and return the file position instead.
+% This substitutes for the procedure
+%	<length> string currentfile exch read[hex]string pop
+% What we actually store is fileposition * 1000 + length,
+%   negated if the string is stored in binary form.
+
+/skip_C
+ { load exch dup 1000 ge 3 index type /nametype ne or
+    { % This is a Subrs string, or the string is so long we can't represent
+      % its length.  Load it now.
+      currentfile 3 1 roll string exch exec pop
+    }
+    { % Record the position and length, and skip the string.
+      dup currentfile fileposition 1000 mul add
+      2 index /readstring load eq { neg } if
+      3 1 roll
+      dup _Cstring length idiv
+       { currentfile _Cstring 3 index exec pop pop
+       } repeat
+      _Cstring length mod _Cstring exch 0 exch getinterval
+      currentfile exch 3 -1 roll exec pop pop
+    }
+   ifelse
+ } bind def
+
+% Type1BuildChar calls load_C to actually load the character definition.
+
+/load_C		% charindex fileposandlength ->
+ { exch Encoding exch get exch
+   read_C type1addpath
+ } bind def
+
+/read_C		% charname fileposandlength -> charstring
+ { dup abs 1000 idiv FontFile exch setfileposition
+   CharStrings 3 1 roll
+   dup 0 lt
+    { neg 1000 mod string FontFile exch readstring }
+    { 1000 mod string FontFile exch readhexstring }
+   ifelse pop
+   dup 4 1 roll put
+% If the character is defined with seac, load its components now.
+   dup mark exch seac_C
+   counttomark
+    { StandardEncoding exch get dup CharStrings exch get
+      dup type /integertype eq { read_C } { pop } ifelse pop
+    } repeat
+   pop		% the mark
+ } bind def
+
+/seac_C		% charstring -> achar bchar ..or nothing..
+ { dup length _Cstring length le
+    { 4330 exch _Cstring type1decrypt exch pop
+      dup dup length 2 sub 2 getinterval <0c06> eq	% seac
+       { dup length
+         Private /lenIV known { Private /lenIV get } { 4 } ifelse
+	 exch 1 index sub getinterval
+% Parse the string just enough to extract the seac information.
+% We assume that the only possible operators are hsbw, sbw, and seac,
+% and that there are no 5-byte numbers.
+	 mark 0 3 -1 roll
+	  { exch
+	     { { dup 32 lt
+	          { pop 0 }
+		  { dup 247 lt
+		     { 139 sub 0 }
+		     { dup 251 lt
+			{ 247 sub 256 mul 108 add 1 1 }
+			{ 251 sub -256 mul -108 add -1 1 }
+		       ifelse
+		     }
+		    ifelse
+		  }
+		 ifelse
+	       }			% 0
+	       { mul add 0 }		% 1
+	     }
+	    exch get exec
+	  }
+	 forall pop
+	 counttomark 1 add 2 roll cleartomark	% pop all but achar bchar
+       }
+       { pop	% not seac
+       }
+      ifelse
+    }
+    { pop	% punt
+    }
+   ifelse
+ } bind def
+
+% Define an auxiliary procedure for loading a font.
+% If DISKFONTS is true:
+%    - Prevent the CharStrings from being made read-only.
+%    - Substitute a different CharString-reading procedure.
+% If the body of the font is encrypted with eexec, this is disabled,
+% because the implicit 'systemdict begin' hides the redefinitions.
+% We assume that:
+%    - The magic procedures (-|, -!, |-, and |) are defined with
+%	executeonly or readonly;
+%    - The contents of the reading procedures are as defined in bdftops.ps;
+%    - The font ends with
+%	<font> <Private> <CharStrings>
+%	readonly put noaccess|readonly put
+4 dict begin
+ /dict			% leave room for FontFile
+  { 1 add dict
+  } bind def
+ /executeonly		% for reading procedures
+  { readonly
+  } def
+ /noaccess		% for Subrs strings and Private dictionary
+  { readonly
+  } def
+ /readonly		% for procedures and CharStrings dictionary
+  {	% We want to take the following non-standard actions here:
+  	%   - If the operand is the CharStrings dictionary, do nothing;
+	%   - If the operand is a number (a file position replacing the
+	%	actual CharString), do nothing;
+	%   - If the operand is either of the reading procedures (-| or -!),
+	%	substitute a different one.
+    dup type /dicttype eq		% CharStrings or Private
+     { 1 index /CharStrings ne { readonly } if }
+     { dup type /arraytype eq		% procedure or data array
+        { dup length 5 eq 1 index xcheck and
+	   { dup 0 get /string eq
+	     1 index 1 get /currentfile eq and
+	     1 index 2 get /exch eq and
+	     1 index 3 get dup /readstring eq exch /readhexstring eq or and
+	     1 index 4 get /pop eq and
+	      { 3 get cvlit /skip_C cvx 2 packedarray cvx
+	      }
+	      { readonly
+	      }
+	     ifelse
+	   }
+	   { readonly
+	   }
+	  ifelse
+	}
+	{ dup type /stringtype eq	% must be a Subr string
+	   { readonly }
+	  if
+	}
+       ifelse
+     }
+    ifelse
+  } bind def
+currentdict end /.loadfontdict exch def
+/.loadfont		% <file> .loadfont ->
+ { mark exch systemdict begin
+   DISKFONTS { .loadfontdict begin } if
+	% We can't just use `run', because we want to check for
+	% .PFB files.  We can't save the packing status anywhere,
+	% so we need two separate control paths.
+   currentpacking
+    { false setpacking
+       { dup read not { -1 } if
+         2 copy unread 16#80 eq { /PFBDecode filter } if
+	 cvx exec
+       } stopped	% split up `execute'
+      true setpacking
+      $error /newerror get and {handleerror} if
+    }
+    {  { dup read not { -1 } if
+         2 copy unread 16#80 eq { /PFBDecode filter } if
+	 cvx exec
+       } execute
+    }
+   ifelse
+   DISKFONTS { end } if
+   end cleartomark
+ } bind def
+
+% Define findfont so it tries to load a font if it's not found.
+/findfont
+ {
+	% If the key is a string, convert it to a name for lookup.
+	dup type /stringtype eq { cvn } if
+
+	% If the font isn't in FontDirectory already, load it.
+	dup FontDirectory exch known
+	 { FontDirectory exch get
+	 }
+	 { dup		% save the font name on the stack
+
+	   % Push the font name -> font file name map on the stack,
+	   % loading it if necessary.
+	   Fontmap
+
+	   % Read the file name from the map.
+	   % (The stack contains the font name and the font file map.)
+	   1 index known not
+	    { QUIET not
+	       { (Substituting ) print defaultfontname cvx =only
+	         ( for unknown font ) print == flush
+	       } { pop } ifelse
+	      pop defaultfontname findfont
+	    }
+	    { dup Fontmap exch get
+
+	      % If we can't find the file, substitute for the font.
+	      findlibfile
+	       { DISKFONTS
+	          { 1 index (r) file
+		    FontFileDirectory exch 4 index exch .xput
+		  }
+	         if
+	         QUIET not
+		  { (Loading ) print 2 index =only
+		    ( font from ) print exch print (... ) print flush }
+		  { exch pop }
+		 ifelse exch pop
+		 .loadfont
+		 QUIET not
+		  { vmstatus 3 { =only ( ) print } repeat
+		    (done.\n) print flush
+		  } if
+		 % Check to make sure the font was actually loaded.
+		 dup FontDirectory exch known
+		  { findfont
+		  }
+		  { (Loading ) print cvx =only
+		    ( font failed, substituting )print defaultfontname cvx =only
+		    (.\n) print flush
+		    defaultfontname findfont
+		  }
+		 ifelse
+	       }
+	       { 1 index defaultfontname eq
+		  { (Can't find default font!\n) print
+		    pop pop NullFont
+		  }
+		  { (Can't find font file ) print print
+		    (, substituting ) print defaultfontname cvx =only
+		    (.\n) print flush
+		    pop pop defaultfontname findfont
+		  }
+		 ifelse
+	       }
+	      ifelse
+	    }
+	   ifelse
+
+	 } ifelse
+
+ } odef % bind def
+
+
+% The CharStrings for a Ghostscript font are a dictionary in which
+% the key is the character name, and the value is a compressed
+% representation of a path, as produced by type1imagepath.
+% For detailed information, see the book
+% "Adobe Type 1 Font Format", published by Adobe Systems Inc.
+
+% Here is the BuildChar implementation
+% for Type 1 (Ghostscript standard) fonts.
+% The name Type1BuildChar is known to the interpreter.
+
+/Type1BuildChar
+ { exch begin
+    dup Encoding exch get
+    dup CharStrings exch known not
+     { QUIET not
+        { (Substituting .notdef for ) print = flush
+	} { pop } ifelse
+       /.notdef
+     } if
+    currentdict /Metrics known
+     { dup Metrics exch known
+        { dup Metrics exch get .setmetrics } if
+     } if
+    CharStrings exch get
+    PaintType 0 ne
+     { 1 setmiterlimit 1 setlinejoin 1 setlinecap
+       currentdict /StrokeWidth known { StrokeWidth } { 0 } ifelse
+       setlinewidth
+     } if
+    dup type /stringtype eq		% encoded outline
+     { type1addpath pop }		% does a fill or stroke
+     { dup type /integertype eq		% file position for lazy loading
+        { load_C
+	}
+	{ currentdict end systemdict begin begin
+	  exec
+	  end
+	}
+       ifelse
+     }
+    ifelse
+   end
+ } bind def
+
+% Find all the precompiled font operators in systemdict.
+   systemdict
+    { exch =string cvs (.font_) anchorsearch
+       { pop pop exec	% execute the operator, returns the font dictionary
+         dup begin
+	   Encoding type /stringtype eq
+	    { Encoding cvn cvx exec /Encoding exch def
+	    }
+	   if
+	   FontName exch
+	 end definefont pop
+       }
+       { pop pop
+       }
+      ifelse
+    }
+   forall
+
+
+
+% Define a procedure to load all known fonts.
+% This isn't likely to be very useful.
+/loadallfonts
+ { Fontmap { pop findfont pop } forall
+ } bind def
