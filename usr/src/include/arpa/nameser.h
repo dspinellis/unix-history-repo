@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.7 (Berkeley) %G%
+ *	@(#)nameser.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -31,11 +31,11 @@
 #define CQUERYM		2		/* completion query (multiple) */
 #define CQUERYU		3		/* completion query (unique) */
 	/* non standard */
-#define UPDATEA		11		/* add resource record */
-#define UPDATED		12		/* delete resource record */
-#define UPDATEM		13		/* modify resource record */
-#define ZONEINIT	14		/* initial zone transfer */
-#define ZONEREF		15		/* incremental zone referesh */
+#define UPDATEA		100		/* add resource record */
+#define UPDATED		101		/* delete resource record */
+#define UPDATEM		102		/* modify resource record */
+#define ZONEINIT	103		/* initial zone transfer */
+#define ZONEREF		104		/* incremental zone referesh */
 
 /*
  * Currently defined response codes
@@ -47,7 +47,7 @@
 #define NOTIMP		4		/* not implemented */
 #define REFUSED		5		/* query refused */
 	/* non standard */
-#define NOCHANGE	15		/* update failed to change db */
+#define NOCHANGE	100		/* update failed to change db */
 
 /*
  * Type values for resources and queries
@@ -67,9 +67,9 @@
 #define T_HINFO		13		/* host information */
 #define T_MINFO		14		/* mailbox information */
 	/* non standard */
-#define T_UINFO		15		/* user (finger) information */
-#define T_UID		16		/* user ID */
-#define T_GID		17		/* group ID */
+#define T_UINFO		100		/* user (finger) information */
+#define T_UID		101		/* user ID */
+#define T_GID		102		/* group ID */
 	/* Query type values which do not appear in resource records */
 #define T_AXFR		252		/* transfer zone of authority */
 #define T_MAILB		253		/* transfer mailbox records */
