@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,7 +54,6 @@ static char sccsid[] = "@(#)syslogd.c	5.36 (Berkeley) %G%";
 #define TIMERINTVL	30		/* interval for checking flush, mark */
 
 #include <sys/param.h>
-#include <sys/syslog.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -79,6 +78,9 @@ static char sccsid[] = "@(#)syslogd.c	5.36 (Berkeley) %G%";
 #include <unistd.h>
 #include "pathnames.h"
 
+#define SYSLOG_NAMES
+#include <sys/syslog.h>
+
 char	*LogName = _PATH_LOG;
 char	*ConfFile = _PATH_LOGCONF;
 char	*PidFile = _PATH_LOGPID;
@@ -89,9 +91,6 @@ char	ctty[] = _PATH_CONSOLE;
 #define	dprintf		if (Debug) printf
 
 #define MAXUNAMES	20	/* maximum number of user names */
-
-#define NOPRI		0x10	/* the "no priority" priority */
-#define	LOG_MARK	LOG_MAKEPRI(LOG_NFACILITIES, 0)	/* mark "facility" */
 
 /*
  * Flags to logmsg().
@@ -514,7 +513,8 @@ logmsg(pri, msg, from, flags)
 	}
 	for (f = Files; f; f = f->f_next) {
 		/* skip messages that are incorrect priority */
-		if (f->f_pmask[fac] < prilev || f->f_pmask[fac] == NOPRI)
+		if (f->f_pmask[fac] < prilev ||
+		    f->f_pmask[fac] == INTERNAL_NOPRI)
 			continue;
 
 		if (f->f_type == F_CONSOLE && (flags & IGN_CONS))
@@ -726,8 +726,10 @@ wallmsg(f, iov)
 		if (ut.ut_name[0] == '\0')
 			continue;
 		if (f->f_type == F_WALL) {
-			if (p = ttymsg(iov, 6, ut.ut_line, 1))
+			if (p = ttymsg(iov, 6, ut.ut_line, 1)) {
+				errno = 0;	/* already in msg */
 				logerror(p);
+			}
 			continue;
 		}
 		/* should we send the message to this user? */
@@ -736,8 +738,10 @@ wallmsg(f, iov)
 				break;
 			if (!strncmp(f->f_un.f_uname[i], ut.ut_name,
 			    UT_NAMESIZE)) {
-				if (p = ttymsg(iov, 6, ut.ut_line, 1))
+				if (p = ttymsg(iov, 6, ut.ut_line, 1)) {
+					errno = 0;	/* already in msg */
 					logerror(p);
+				}
 				break;
 			}
 		}
@@ -923,7 +927,7 @@ init()
 	if (Debug) {
 		for (f = Files; f; f = f->f_next) {
 			for (i = 0; i <= LOG_NFACILITIES; i++)
-				if (f->f_pmask[i] == NOPRI)
+				if (f->f_pmask[i] == INTERNAL_NOPRI)
 					printf("X ");
 				else
 					printf("%d ", f->f_pmask[i]);
@@ -956,50 +960,6 @@ init()
  * Crack a configuration file line
  */
 
-struct code {
-	char	*c_name;
-	int	c_val;
-};
-
-struct code	PriNames[] = {
-	"panic",	LOG_EMERG,
-	"emerg",	LOG_EMERG,
-	"alert",	LOG_ALERT,
-	"crit",		LOG_CRIT,
-	"err",		LOG_ERR,
-	"error",	LOG_ERR,
-	"warn",		LOG_WARNING,
-	"warning",	LOG_WARNING,
-	"notice",	LOG_NOTICE,
-	"info",		LOG_INFO,
-	"debug",	LOG_DEBUG,
-	"none",		NOPRI,
-	NULL,		-1
-};
-
-struct code	FacNames[] = {
-	"kern",		LOG_KERN,
-	"user",		LOG_USER,
-	"mail",		LOG_MAIL,
-	"daemon",	LOG_DAEMON,
-	"auth",		LOG_AUTH,
-	"security",	LOG_AUTH,
-	"mark",		LOG_MARK,
-	"syslog",	LOG_SYSLOG,
-	"lpr",		LOG_LPR,
-	"news",		LOG_NEWS,
-	"uucp",		LOG_UUCP,
-	"local0",	LOG_LOCAL0,
-	"local1",	LOG_LOCAL1,
-	"local2",	LOG_LOCAL2,
-	"local3",	LOG_LOCAL3,
-	"local4",	LOG_LOCAL4,
-	"local5",	LOG_LOCAL5,
-	"local6",	LOG_LOCAL6,
-	"local7",	LOG_LOCAL7,
-	NULL,		-1
-};
-
 cfline(line, f)
 	char *line;
 	register struct filed *f;
@@ -1019,7 +979,7 @@ cfline(line, f)
 	/* clear out file entry */
 	bzero((char *) f, sizeof *f);
 	for (i = 0; i <= LOG_NFACILITIES; i++)
-		f->f_pmask[i] = NOPRI;
+		f->f_pmask[i] = INTERNAL_NOPRI;
 
 	/* scan through the list of selectors */
 	for (p = line; *p && *p != '\t';) {
@@ -1038,7 +998,7 @@ cfline(line, f)
 			q++;
 
 		/* decode priority name */
-		pri = decode(buf, PriNames);
+		pri = decode(buf, prioritynames);
 		if (pri < 0) {
 			char xbuf[200];
 
@@ -1057,7 +1017,7 @@ cfline(line, f)
 				for (i = 0; i < LOG_NFACILITIES; i++)
 					f->f_pmask[i] = pri;
 			else {
-				i = decode(buf, FacNames);
+				i = decode(buf, facilitynames);
 				if (i < 0) {
 					char xbuf[200];
 
@@ -1149,9 +1109,9 @@ cfline(line, f)
 
 decode(name, codetab)
 	char *name;
-	struct code *codetab;
+	CODE *codetab;
 {
-	register struct code *c;
+	register CODE *c;
 	register char *p;
 	char buf[40];
 
