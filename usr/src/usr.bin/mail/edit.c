@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -96,7 +96,7 @@ edit1(msgvec, type)
 			}
 			if (ferror(otf))
 				perror("/tmp");
-			(void) fclose(fp);
+			(void) Fclose(fp);
 		}
 		(void) signal(SIGINT, sigint);
 	}
@@ -126,7 +126,7 @@ run_editor(fp, size, type, readonly)
 		perror(tempEdit);
 		goto out;
 	}
-	if ((nf = fdopen(t, "w")) == NULL) {
+	if ((nf = Fdopen(t, "w")) == NULL) {
 		perror(tempEdit);
 		(void) unlink(tempEdit);
 		goto out;
@@ -142,7 +142,14 @@ run_editor(fp, size, type, readonly)
 		modtime = 0;
 	else
 		modtime = statb.st_mtime;
-	if (ferror(nf) || fclose(nf) < 0) {
+	if (ferror(nf)) {
+		(void) Fclose(nf);
+		perror(tempEdit);
+		(void) unlink(tempEdit);
+		nf = NULL;
+		goto out;
+	}
+	if (Fclose(nf) < 0) {
 		perror(tempEdit);
 		(void) unlink(tempEdit);
 		nf = NULL;
@@ -174,7 +181,7 @@ run_editor(fp, size, type, readonly)
 	/*
 	 * Now switch to new file.
 	 */
-	if ((nf = fopen(tempEdit, "a+")) == NULL) {
+	if ((nf = Fopen(tempEdit, "a+")) == NULL) {
 		perror(tempEdit);
 		(void) unlink(tempEdit);
 		goto out;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -266,14 +266,8 @@ type1(msgvec, doign, page)
 	FILE *obuf;
 
 	obuf = stdout;
-	if (setjmp(pipestop)) {
-		if (obuf != stdout) {
-			pipef = NULL;
-			Pclose(obuf);
-		}
-		signal(SIGPIPE, SIG_DFL);
-		return(0);
-	}
+	if (setjmp(pipestop))
+		goto close_pipe;
 	if (value("interactive") != NOSTR &&
 	    (page || (cp = value("crt")) != NOSTR)) {
 		nlines = 0;
@@ -289,10 +283,8 @@ type1(msgvec, doign, page)
 			if (obuf == NULL) {
 				perror(cp);
 				obuf = stdout;
-			} else {
-				pipef = obuf;
+			} else
 				signal(SIGPIPE, brokpipe);
-			}
 		}
 	}
 	for (ip = msgvec; *ip && ip - msgvec < msgCount; ip++) {
@@ -303,17 +295,21 @@ type1(msgvec, doign, page)
 			fprintf(obuf, "Message %d:\n", *ip);
 		(void) send(mp, obuf, doign ? ignore : 0, NOSTR);
 	}
+close_pipe:
 	if (obuf != stdout) {
-		pipef = NULL;
+		/*
+		 * Ignore SIGPIPE so it can't cause a duplicate close.
+		 */
+		signal(SIGPIPE, SIG_IGN);
 		Pclose(obuf);
+		signal(SIGPIPE, SIG_DFL);
 	}
-	signal(SIGPIPE, SIG_DFL);
 	return(0);
 }
 
 /*
  * Respond to a broken pipe signal --
- * probably caused by using quitting more.
+ * probably caused by quitting more.
  */
 
 brokpipe()

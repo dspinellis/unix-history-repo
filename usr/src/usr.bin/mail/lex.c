@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -42,7 +42,7 @@ setfile(name)
 	if ((name = expand(name)) == NOSTR)
 		return -1;
 
-	if ((ibuf = fopen(name, "r")) == NULL) {
+	if ((ibuf = Fopen(name, "r")) == NULL) {
 		if (!isedit && errno == ENOENT)
 			goto nomail;
 		perror(name);
@@ -51,13 +51,13 @@ setfile(name)
 
 	if (fstat(fileno(ibuf), &stb) < 0) {
 		perror("fstat");
-		fclose(ibuf);
+		Fclose(ibuf);
 		return (-1);
 	}
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFDIR:
-		fclose(ibuf);
+		Fclose(ibuf);
 		errno = EISDIR;
 		perror(name);
 		return (-1);
@@ -66,7 +66,7 @@ setfile(name)
 		break;
 
 	default:
-		fclose(ibuf);
+		Fclose(ibuf);
 		errno = EINVAL;
 		perror(name);
 		return (-1);
@@ -114,7 +114,7 @@ setfile(name)
 	remove(tempMesg);
 	setptr(ibuf);
 	setmsize(msgCount);
-	fclose(ibuf);
+	Fclose(ibuf);
 	relsesigs();
 	sawcom = 0;
 	if (!edit && msgCount == 0) {
@@ -458,34 +458,6 @@ isprefix(as1, as2)
 
 int	inithdr;			/* am printing startup headers */
 
-#ifdef _NFILE
-static
-_fwalk(function)
-	register int (*function)();
-{
-	register FILE *iop;
-
-	for (iop = _iob; iop < _iob + _NFILE; iop++)
-		(*function)(iop);
-}
-#endif
-
-static
-xclose(iop)
-	register FILE *iop;
-{
-	if (iop == stdin || iop == stdout ||
-	    iop == stderr || iop == itf || iop == otf)
-		return;
-
-	if (iop != pipef)
-		fclose(iop);
-	else {
-		Pclose(pipef);
-		pipef = NULL;
-	}
-}
-
 /*ARGSUSED*/
 intr(s)
 {
@@ -497,10 +469,7 @@ intr(s)
 	while (sourcing)
 		unstack();
 
-	/*
-	 * Walk through all the open FILEs, applying xclose() to them
-	 */
-	_fwalk(xclose);
+	close_all_files();
 
 	if (image >= 0) {
 		close(image);
@@ -638,7 +607,7 @@ load(name)
 {
 	register FILE *in, *oldin;
 
-	if ((in = fopen(name, "r")) == NULL)
+	if ((in = Fopen(name, "r")) == NULL)
 		return;
 	oldin = input;
 	input = in;
@@ -648,5 +617,5 @@ load(name)
 	loading = 0;
 	sourcing = 0;
 	input = oldin;
-	fclose(in);
+	Fclose(in);
 }

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)def.h	5.21 (Berkeley) %G%
+ *	@(#)def.h	5.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -246,6 +246,7 @@ struct ignoretab {
  * Forward declarations of routine types to keep lint and cc happy.
  */
 
+FILE	*Fopen();
 FILE	*Fdopen();
 FILE	*Popen();
 FILE	*collect();

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -120,13 +120,13 @@ help()
 	register c;
 	register FILE *f;
 
-	if ((f = fopen(_PATH_HELP, "r")) == NULL) {
+	if ((f = Fopen(_PATH_HELP, "r")) == NULL) {
 		perror(_PATH_HELP);
 		return(1);
 	}
 	while ((c = getc(f)) != EOF)
 		putchar(c);
-	fclose(f);
+	Fclose(f);
 	return(0);
 }
 

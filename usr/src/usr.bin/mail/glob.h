@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.19 (Berkeley) %G%
+ *	@(#)glob.h	5.20 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,6 @@ int	loading;			/* Loading user definitions */
 int	cond;				/* Current state of conditional exc. */
 FILE	*itf;				/* Input temp file buffer */
 FILE	*otf;				/* Output temp file buffer */
-FILE	*pipef;				/* Pipe file we have opened */
 int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
 char	mailname[PATHSIZE];		/* Name of current file */

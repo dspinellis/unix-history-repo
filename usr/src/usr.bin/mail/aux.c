@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -45,7 +45,8 @@ panic(fmt, a, b)
 	fprintf(stderr, "panic: ");
 	fprintf(stderr, fmt, a, b);
 	putc('\n', stderr);
-	exit(1);
+	fflush(stdout);
+	abort();
 }
 
 /*
@@ -241,13 +242,13 @@ source(arglist)
 
 	if ((cp = expand(*arglist)) == NOSTR)
 		return(1);
-	if ((fi = fopen(cp, "r")) == NULL) {
+	if ((fi = Fopen(cp, "r")) == NULL) {
 		perror(cp);
 		return(1);
 	}
 	if (ssp >= NOFILE - 1) {
 		printf("Too much \"sourcing\" going on.\n");
-		fclose(fi);
+		Fclose(fi);
 		return(1);
 	}
 	sstack[ssp].s_file = input;
@@ -272,7 +273,7 @@ unstack()
 		sourcing = 0;
 		return(1);
 	}
-	fclose(input);
+	Fclose(input);
 	if (cond != CANY)
 		printf("Unmatched \"if\"\n");
 	ssp--;
