@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.8 (Berkeley) %G%
+#	@(#)POSIX	5.9 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -15,20 +15,29 @@ implementing a POSIX-compatible version of sed, and should not be
 interpreted as official opinions or criticism towards the POSIX committee.
 All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 
- 1.	Historic implementations of sed strip the text arguments of the
-	a, c and i commands of their initial blanks, i.e.
+ 1.	32V and BSD derived implementations of sed strip the text
+	arguments of the a, c and i commands of their initial blanks,
+	i.e.
 
 	#!/bin/sed -f
 	a\
 		foo\
+		\  indent\
 		bar
 
 	produces:
 
 	foo
+	  indent
 	bar
 
-	POSIX does not specify this behavior.  This implementation follows
+	POSIX does not specify this behavior as the System V versions of
+	sed do not do this stripping.  The argument against stripping is
+	that it is difficult to write sed scripts that have leading blanks
+	if they are stripped.  The argument for stripping is that it is
+	difficult to write readable sed scripts unless indentation is allowed
+	and ignored, and leading whitespace is obtainable by entering a
+	backslash in front of it.  This implementation follows the BSD
 	historic practice.
 
  2.	Historical versions of sed required that the w flag be the last
@@ -129,7 +138,7 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	sed", where they produce no output, and "ls | sed -e#", where they
 	behave like cat.  This implementation behaves like cat in both cases.
 
-15.	The POSIX requirement to open all wfiles from the beginning makes
+15.	The POSIX requirement to open all w files at the beginning makes
 	sed behave nonintuitively when the w commands are preceded by
 	addresses or are within conditional blocks.  This implementation
 	follows historic practice and POSIX, by default, and provides the
@@ -191,6 +200,6 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 
 	While many historical implementations fail on programs depending
 	on scope differences, the SunOS version exhibited dynamic scope
-	behaviour.  This implementation also uses does dynamic scoping, as
-	this seems the most useful and in order to remain consistent with
-	historical practice.
+	behaviour.  This implementation does dynamic scoping, as this seems
+	the most useful and in order to remain consistent with historical
+	practice.
