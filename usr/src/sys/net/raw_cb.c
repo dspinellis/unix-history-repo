@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.c	6.6 (Berkeley) %G%
+ *	@(#)raw_cb.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -76,6 +76,8 @@ raw_detach(rp)
 {
 	struct socket *so = rp->rcb_socket;
 
+	if (rp->rcb_route.ro_rt)
+		rtfree(rp->rcb_route.ro_rt);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
@@ -110,7 +112,7 @@ raw_bind(so, nam)
 	 */
 	switch (addr->sa_family) {
 
-#ifdef INET
+#if defined(INET) || defined(BBNNET)
 	case AF_IMPLINK:
 	case AF_INET: {
 		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
