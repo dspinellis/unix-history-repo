@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumprmt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumprmt.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ static char sccsid[] = "@(#)dumprmt.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <pwd.h>
 #include <netdb.h>
-#include <dumprestor.h>
+#include <protocols/dumprestore.h>
 
 #define	TS_CLOSED	0
 #define	TS_OPEN		1
