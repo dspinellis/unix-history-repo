@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)compress.c	3.6 (Berkeley) %G%";
 
 	/* special */
 #include <stdio.h>
+#include <fcntl.h>
 int cc_trace = 0;
 FILE *cc_trace_fp;
 
@@ -272,8 +273,10 @@ ccstart()
 		p->hback = 0;
 	for (p = cc_q1a.qforw; p != &cc_q1a; p = p->qforw)
 		p->hback = 0;
-	if (cc_trace)
+	if (cc_trace) {
 		cc_trace_fp = fopen("window-trace", "a");
+		(void) fcntl(fileno(cc_trace_fp), F_SETFD, 1);
+	}
 }
 
 ccend()

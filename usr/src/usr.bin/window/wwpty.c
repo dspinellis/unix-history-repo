@@ -9,10 +9,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwpty.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwpty.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
+#include <fcntl.h>
 #if !defined(OLD_TTY) && !defined(TIOCPKT)
 #include <sys/ioctl.h>
 #endif
@@ -50,6 +51,7 @@ register struct ww *w;
 				(void) close(w->ww_pty);
 				continue;
 			}
+			(void) fcntl(w->ww_pty, F_SETFD, 1);
 			return 0;
 		}
 	}

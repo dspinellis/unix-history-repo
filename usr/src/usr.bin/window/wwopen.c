@@ -9,12 +9,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwopen.c	3.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwopen.c	3.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 
 struct ww *
 wwopen(flags, nrow, ncol, row, col, nline)
@@ -77,6 +78,8 @@ wwopen(flags, nrow, ncol, row, col, nline)
 			wwerrno = WWE_SYS;
 			goto bad;
 		}
+		(void) fcntl(d[0], F_SETFD, 1);
+		(void) fcntl(d[1], F_SETFD, 1);
 		w->ww_pty = d[0];
 		w->ww_socket = d[1];
 	}

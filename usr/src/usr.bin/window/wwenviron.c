@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -48,8 +48,7 @@ register struct ww *wp;
 	(void) dup2(i, 0);
 	(void) dup2(i, 1);
 	(void) dup2(i, 2);
-	for (i = wwdtablesize - 1; i > 2; i--)
-		(void) close(i);
+	(void) close(i);
 #ifdef TIOCSCTTY
 	(void) setsid();
 	(void) ioctl(0, TIOCSCTTY, 0);
