@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -230,6 +230,9 @@ readcf(cfname)
 				/* count the number of fuzzy matches in LHS */
 				for (ap = rwp->r_lhs; *ap != NULL; ap++)
 				{
+					char *botch;
+
+					botch = NULL;
 					switch (**ap & 0377)
 					{
 					  case MATCHZANY:
@@ -238,7 +241,59 @@ readcf(cfname)
 					  case MATCHCLASS:
 					  case MATCHNCLASS:
 						nfuzzy++;
+						break;
+
+					  case MATCHREPL:
+						botch = "$0-$9";
+						break;
+
+					  case CANONNET:
+						botch = "$#";
+						break;
+
+					  case CANONHOST:
+						botch = "$@";
+						break;
+
+					  case CANONUSER:
+						botch = "$:";
+						break;
+
+					  case CALLSUBR:
+						botch = "$>";
+						break;
+
+					  case CONDIF:
+						botch = "$?";
+						break;
+
+					  case CONDELSE:
+						botch = "$|";
+						break;
+
+					  case CONDFI:
+						botch = "$.";
+						break;
+
+					  case HOSTBEGIN:
+						botch = "$[";
+						break;
+
+					  case HOSTEND:
+						botch = "$]";
+						break;
+
+					  case LOOKUPBEGIN:
+						botch = "$(";
+						break;
+
+					  case LOOKUPEND:
+						botch = "$)";
+						break;
 					}
+					if (botch != NULL)
+						syserr("Inappropriate use of %s on LHS",
+							botch);
 				}
 			}
 			else
@@ -263,13 +318,42 @@ readcf(cfname)
 				nfuzzy += '0';
 				for (ap = rwp->r_rhs; *ap != NULL; ap++)
 				{
-					if ((**ap & 0377) != MATCHREPL)
-						continue;
-					if ((*ap)[1] <= '0' || (*ap)[1] > nfuzzy)
+					char *botch;
+
+					botch = NULL;
+					switch (**ap & 0377)
 					{
-						syserr("replacement $%c out of bounds",
-							(*ap)[1]);
+					  case MATCHREPL:
+						if ((*ap)[1] <= '0' || (*ap)[1] > nfuzzy)
+						{
+							syserr("replacement $%c out of bounds",
+								(*ap)[1]);
+						}
+						break;
+
+					  case MATCHZANY:
+						botch = "$*";
+						break;
+
+					  case MATCHANY:
+						botch = "$+";
+						break;
+
+					  case MATCHONE:
+						botch = "$-";
+						break;
+
+					  case MATCHCLASS:
+						botch = "$=";
+						break;
+
+					  case MATCHNCLASS:
+						botch = "$~";
+						break;
 					}
+					if (botch != NULL)
+						syserr("Inappropriate use of %s on RHS",
+							botch);
 				}
 			}
 			else
@@ -330,7 +414,12 @@ readcf(cfname)
 				delim = *p;
 				*p = '\0';
 				if (wd[0] != '\0')
+				{
+					if (tTd(37, 2))
+						printf("setclass(%c, %s)\n",
+							bp[1], wd);
 					setclass(bp[1], wd);
+				}
 				*p = delim;
 			}
 			break;
@@ -1136,6 +1225,10 @@ setoption(opt, val, sticky)
 			QueueDir = "mqueue";
 		else
 			QueueDir = newstr(val);
+		break;
+
+	  case 'R':		/* don't prune routes */
+		DontPruneRoutes = atobool(val);
 		break;
 
 	  case 'r':		/* read timeout */
