@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.56 (Berkeley) %G%
+ *	@(#)init_main.c	7.57 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -130,7 +130,7 @@ main()
 	for (i = 0; i < sizeof(p->p_rlimit)/sizeof(p->p_rlimit[0]); i++)
 		limit0.pl_rlimit[i].rlim_cur =
 		    limit0.pl_rlimit[i].rlim_max = RLIM_INFINITY;
-	limit0.pl_rlimit[RLIMIT_OFILE].rlim_cur = NOFILE;
+	limit0.pl_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
 	limit0.pl_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
 	limit0.p_refcnt = 1;
 
