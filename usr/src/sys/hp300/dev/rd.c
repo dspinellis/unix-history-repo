@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: rd.c 1.38 90/10/12$
  *
- *	@(#)rd.c	7.15 (Berkeley) %G%
+ *	@(#)rd.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -318,7 +318,6 @@ struct size rd7945A_sizes[8] = {
 	RDSZ(516600),	98,		/* G=cyl 98 thru 697 */
 	RDSZ(259161),	397,		/* H=cyl 397 thru 697 */
 }, rd7937H_sizes[8] = {
-#ifdef UTAH
 	RDSZ(15990),	1,		/* A=cyl 1 thru 10 */
 	RDSZ(67158),	11,		/* B=cyl 11 thru 52 */
 	RDSZ(1116102),	0,		/* C=cyl 0 thru 697 */
@@ -327,16 +326,6 @@ struct size rd7945A_sizes[8] = {
 	RDSZ(287820),	233,		/* F=cyl 233 thru 412 */
 	RDSZ(1031355),	53,		/* G=cyl 53 thru 697 */
 	RDSZ(455715),	413,		/* H=cyl 413 thru 697 */
-#else
-	RDSZ(15990),	1,		/* A=cyl 1 thru 10 */
-	RDSZ(67158),	11,		/* B=cyl 11 thru 52 */
-	RDSZ(1116102),	0,		/* C=cyl 0 thru 697 */
-	RDSZ(15990),	53,		/* D=cyl 53 thru 62 */
-	RDSZ(246246),	63,		/* E=cyl 63 thru 216 */
-	RDSZ(246246),	217,		/* F=cyl 217 thru 370 */
-	RDSZ(1031355),	53,		/* G=cyl 53 thru 697 */
-	RDSZ(522873),	371,		/* H=cyl 371 thru 697 */
-#endif
 #endif
 };
 
