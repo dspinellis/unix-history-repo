@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.16 (Berkeley) %G%
+ *	@(#)ip_input.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -140,8 +140,10 @@ next:
 	splx(s);
 	if (m == 0)
 		return;
-if ((m->m_flags & M_PKTHDR) == 0)
-panic("ipintr no HDR");
+#ifdef	DIAGNOSTIC
+	if ((m->m_flags & M_PKTHDR) == 0)
+		panic("ipintr no HDR");
+#endif
 	/*
 	 * If no IP addresses have been set yet but the interfaces
 	 * are receiving, can't do anything with incoming packets yet.
