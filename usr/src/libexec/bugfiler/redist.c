@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redist.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)redist.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
@@ -51,8 +51,14 @@ redist()
 					fprintf(pf, "%s", mailhead[SUBJ_TAG].line);
 				else
 					fputs("Subject: Untitled Bug Report\n", pf);
-				if (!mailhead[TO_TAG].line && mailhead[APPAR_TO_TAG].line)
-					fprintf(pf, "To%s", index(mailhead[APPAR_TO_TAG].line, ':'));
+				if (!mailhead[TO_TAG].line) {
+					if (mailhead[APPAR_TO_TAG].line)
+					    fprintf(pf, "To%s",
+					      index(mailhead[APPAR_TO_TAG].line,
+					      ':'));
+					else
+					    fprintf(pf, "To: %s\n",  BUGS_ID);
+				}
 				fputs("Resent-To: ", pf);
 			}
 			/*
