@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.15 (Berkeley) %G%
+#	@(#)Makefile	5.16 (Berkeley) %G%
 #
 
-SUBDIR=	des kdb krb lib2648 libF77 libI77 libU77 libc libcurses libdbm \
+SUBDIR=	des kdb krb libF77 libI77 libU77 libc libcurses libdbm \
 	libg libln libm libmp libpc libplot libtermlib libutil liby sunrpc
 
 all clean cleandir depend lint tags: FRC
