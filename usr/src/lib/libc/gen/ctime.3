@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.6 (Berkeley) %G%
+.\"	@(#)ctime.3	6.7 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
@@ -105,21 +105,18 @@ reliably map timezone's arguments (\fIzone\fP, a "minutes west of GMT" value
 and \fIdst\fP, a "daylight saving time in effect" flag) to a time zone
 abbreviation.
 .PP
-If the environmental string \fITZNAME\fP exists, its value is returned,
-unless it consists of two comma separated strings, in which case the
-second string is returned if the \fIdst\fP is non-zero, else the first
-string.  If \fITZNAME\fP doesn't exist, and the \fIzone\fP value is the
-same as the kernel's notion of local time, the time zone abbreviation
-as set by \fIlocaltime\fP is returned.  If the \fIzone\fP value isn't
-local, \fIzone\fP is checked for equality with a built-in table of values,
-in which case the time zone abbreviation or daylight time zone abbreviation
-associated with that value is returned.  If the requested \fIzone\fP does
-not appear in the table, the difference from GMT is returned; e.g. in
-Afghanistan, \fItimezone(-(60*4+30), 0)\fP is appropriate because it
-is 4:30 ahead of GMT, and the string \fBGMT+4:30\fP is returned.
-.PP
-Programs that in the past used the timezone function should return
-the zone name as set by \fIlocaltime\fP to assure correctness.
+If the environmental string \fITZNAME\fP exists, \fItimezone\fP returns
+its value, unless it consists of two comma separated strings, in which
+case the second string is returned if \fIdst\fP is non-zero, else
+the first string.  If \fITZNAME\fP doesn't exist, \fIzone\fP is checked
+for equality with a built-in table of values, in which case \fItimezone\fP
+returns the time zone or daylight time zone abbreviation associated with
+that value.  If the requested \fIzone\fP does not appear in the table, the
+difference from GMT is returned; e.g. in Afghanistan,
+\fItimezone(-(60*4+30), 0)\fP is appropriate because it is 4:30 ahead of
+GMT, and the string \fBGMT+4:30\fP is returned.  Programs that in the
+past used the \fItimezone\fP function should return the zone name as
+set by \fIlocaltime\fP to assure correctness.
 .SH FILES
 .ta \w'/etc/zoneinfo/localtime\0\0'u
 /etc/zoneinfo	time zone information directory
