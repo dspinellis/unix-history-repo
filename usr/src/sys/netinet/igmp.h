@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)igmp.h	7.1 (Berkeley) %G%
+ *	@(#)igmp.h	7.2 (Berkeley) %G%
  */
 
 /* Internet Group Management Protocol (IGMP) definitions. */
@@ -31,4 +31,3 @@ struct igmp {
 					   /*  routing protocol            */
 
 #define IGMP_MAX_HOST_REPORT_DELAY   10    /* max delay for response to    */
-					   /*  query (in seconds)          */
