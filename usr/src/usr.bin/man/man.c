@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -314,12 +314,16 @@ manual(section, name)
 		if (section == NO_SECTION)
 			for (dir = dirlist; (++dir)->name;) {
 				if (find(beg, dir->name, name))
-					return(YES);
+					goto found;
 			}
-		else if (find(beg, stanlist[section].name, name))
+		else if (find(beg, stanlist[section].name, name)) {
+found:			if (end)
+				*end = ':';
 			return(YES);
+		}
 		if (!end)
 			return(NO);
+		*end = ':';
 	}
 	/*NOTREACHED*/
 }
