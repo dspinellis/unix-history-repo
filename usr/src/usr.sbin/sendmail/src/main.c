@@ -23,7 +23,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -193,7 +193,6 @@ main(argc, argv, envp)
 		}
 		else if (strncmp(p, "-bz", 3) == 0)
 			nothaw = TRUE;
-# ifdef DEBUG
 		else if (strncmp(p, "-d", 2) == 0)
 		{
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
@@ -201,7 +200,6 @@ main(argc, argv, envp)
 			setbuf(stdout, (char *) NULL);
 			printf("Version %s\n", Version);
 		}
-# endif DEBUG
 	}
 	if (!nothaw)
 		readconfig = !thaw(FreezeFile);
@@ -255,20 +253,16 @@ main(argc, argv, envp)
 		av = myhostname(jbuf, sizeof jbuf);
 		if (jbuf[0] != '\0')
 		{
-#ifdef DEBUG
 			if (tTd(0, 4))
 				printf("canonical name: %s\n", jbuf);
-#endif DEBUG
 			p = newstr(jbuf);
 			define('w', p, CurEnv);
 			setclass('w', p);
 		}
 		while (av != NULL && *av != NULL)
 		{
-#ifdef DEBUG
 			if (tTd(0, 4))
 				printf("\ta.k.a.: %s\n", *av);
-#endif DEBUG
 			setclass('w', *av++);
 		}
 
@@ -338,7 +332,6 @@ main(argc, argv, envp)
 		  case 'C':	/* select configuration file (already done) */
 			break;
 
-#ifdef DEBUG
 		  case 'd':	/* debugging -- redo in case frozen */
 			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
 			tTflag(&p[2]);
@@ -347,7 +340,6 @@ main(argc, argv, envp)
 			_res.options |= RES_DEBUG;
 #endif
 			break;
-#endif
 
 		  case 'f':	/* from address */
 		  case 'r':	/* obsolete -f flag */
@@ -535,7 +527,6 @@ main(argc, argv, envp)
 		break;
 	}
 
-# ifdef DEBUG
 	if (tTd(0, 15))
 	{
 		/* print configuration table (or at least part of it) */
@@ -558,7 +549,6 @@ main(argc, argv, envp)
 			printf("\n");
 		}
 	}
-# endif DEBUG
 
 	/*
 	**  Switch to the main envelope.
@@ -726,10 +716,8 @@ main(argc, argv, envp)
 	if (OpMode != MD_VERIFY)
 		markstats(CurEnv, (ADDRESS *) NULL);
 
-# ifdef DEBUG
 	if (tTd(1, 1))
 		printf("From person = \"%s\"\n", CurEnv->e_from.q_paddr);
-# endif DEBUG
 
 	/*
 	**  Actually send everything.
@@ -761,10 +749,8 @@ main(argc, argv, envp)
 
 finis()
 {
-# ifdef DEBUG
 	if (tTd(2, 1))
 		printf("\n====finis: stat %d e_flags %o\n", ExitStat, CurEnv->e_flags);
-# endif DEBUG
 
 	/* clean up temp files */
 	CurEnv->e_to = NULL;
@@ -1019,7 +1005,6 @@ disconnect(fulldrop)
 {
 	int fd;
 
-#ifdef DEBUG
 	if (tTd(52, 1))
 		printf("disconnect: In %d Out %d\n", fileno(InChannel),
 						fileno(OutChannel));
@@ -1028,7 +1013,6 @@ disconnect(fulldrop)
 		printf("don't\n");
 		return;
 	}
-#endif DEBUG
 
 	/* be sure we don't get nasty signals */
 	(void) signal(SIGHUP, SIG_IGN);

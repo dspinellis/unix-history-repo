@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -142,10 +142,8 @@ maketemp(from)
 			break;
 	} while (sfgets(buf, MAXFIELD, InChannel) != NULL);
 
-# ifdef DEBUG
 	if (tTd(30, 1))
 		printf("EOH\n");
-# endif DEBUG
 
 	/* throw away a blank line */
 	if (buf[0] == '\0')
@@ -225,10 +223,8 @@ maketemp(from)
 		{
 			if (q->q_alias != NULL)
 				continue;
-# ifdef DEBUG
 			if (tTd(30, 3))
 				printf("Adding Apparently-To: %s\n", q->q_paddr);
-# endif DEBUG
 			addheader("apparently-to", q->q_paddr, CurEnv);
 		}
 	}
@@ -300,10 +296,8 @@ eatfrom(fm)
 	register char *p;
 	register char **dt;
 
-# ifdef DEBUG
 	if (tTd(30, 2))
 		printf("eatfrom(%s)\n", fm);
-# endif DEBUG
 
 	/* find the date part */
 	p = fm;

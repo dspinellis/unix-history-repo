@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -55,10 +55,8 @@ chompheader(line, def)
 	extern char *crackaddr();
 	extern ADDRESS *sendto();
 
-# ifdef DEBUG
 	if (tTd(31, 6))
 		printf("chompheader: %s\n", line);
-# endif DEBUG
 
 	/* strip off options */
 	clrbitmap(mopts);
@@ -300,18 +298,14 @@ eatheader(e)
 	register char *p;
 	int hopcnt = 0;
 
-#ifdef DEBUG
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
-#endif DEBUG
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
-#ifdef DEBUG
 		extern char *capitalize();
 
 		if (tTd(32, 1))
 			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
-#endif DEBUG
 		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
 			hopcnt++;
@@ -341,10 +335,8 @@ eatheader(e)
 		}
 #endif LOG
 	}
-#ifdef DEBUG
 	if (tTd(32, 1))
 		printf("----------------------------\n");
-#endif DEBUG
 
 	/* store hop count */
 	if (hopcnt > e->e_hopcount)
@@ -495,10 +487,8 @@ crackaddr(addr)
 	bool gotaddr;
 	register char *bp;
 
-# ifdef DEBUG
 	if (tTd(33, 1))
 		printf("crackaddr(%s)\n", addr);
-# endif DEBUG
 
 	(void) strcpy(buf, "");
 	rhs = NULL;
@@ -617,10 +607,8 @@ crackaddr(addr)
 		(void) strcpy(bp, rhs);
 	}
 
-# ifdef DEBUG
 	if (tTd(33, 1))
 		printf("crackaddr=>`%s'\n", buf);
-# endif DEBUG
 
 	return (buf);
 }
@@ -737,10 +725,8 @@ commaize(h, p, fp, oldstyle, m)
 	**  mailer and with commas.
 	*/
 
-# ifdef DEBUG
 	if (tTd(14, 2))
 		printf("commaize(%s: %s)\n", h->h_field, p);
-# endif DEBUG
 
 	obp = obuf;
 	(void) sprintf(obp, "%s: ", capitalize(h->h_field));

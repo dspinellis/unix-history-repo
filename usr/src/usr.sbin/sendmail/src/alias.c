@@ -18,9 +18,9 @@
 
 #ifndef lint
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.16 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.17 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.16 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.17 (Berkeley) %G% (without DBM)";
 #endif
 #endif /* not lint */
 
@@ -77,10 +77,8 @@ alias(a, sendq)
 	extern ADDRESS *sendto();
 	extern char *aliaslookup();
 
-# ifdef DEBUG
 	if (tTd(27, 1))
 		printf("alias(%s)\n", a->q_paddr);
-# endif
 
 	/* don't realias already aliased names */
 	if (bitset(QDONTSEND, a->q_flags))
@@ -104,11 +102,9 @@ alias(a, sendq)
 	**	Deliver to the target list.
 	*/
 
-# ifdef DEBUG
 	if (tTd(27, 1))
 		printf("%s (%s, %s) aliased to %s\n",
 		    a->q_paddr, a->q_host, a->q_user, p);
-# endif
 	message(Arpa_Info, "aliased to %s", p);
 	AliasLevel++;
 	a->q_child = sendto(p, 1, a, 0);
@@ -327,10 +323,8 @@ readaliases(aliasfile, init)
 
 	if ((af = fopen(aliasfile, "r")) == NULL)
 	{
-# ifdef DEBUG
 		if (tTd(27, 1))
 			printf("Can't open %s\n", aliasfile);
-# endif
 		errno = 0;
 		NoAlias++;
 		return;
@@ -613,17 +607,13 @@ forward(user, sendq)
 	char buf[60];
 	extern bool safefile();
 
-# ifdef DEBUG
 	if (tTd(27, 1))
 		printf("forward(%s)\n", user->q_paddr);
-# endif DEBUG
 
 	if (user->q_mailer != LocalMailer || bitset(QBADADDR, user->q_flags))
 		return;
-# ifdef DEBUG
 	if (user->q_home == NULL)
 		syserr("forward: no home");
-# endif DEBUG
 
 	/* good address -- look for .forward file in home */
 	define('z', user->q_home, CurEnv);

@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.25 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.26 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.25 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.26 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -90,10 +90,8 @@ queueup(e, queueall, announce)
 	}
 	(void) chmod(tf, FileMode);
 
-# ifdef DEBUG
 	if (tTd(40, 1))
 		printf("queueing %s\n", e->e_id);
-# endif DEBUG
 
 	/*
 	**  If there is no data file yet, create one.
@@ -155,13 +153,11 @@ queueup(e, queueall, announce)
 					logdelivery("queued");
 				e->e_to = NULL;
 			}
-#ifdef DEBUG
 			if (tTd(40, 1))
 			{
 				printf("queueing ");
 				printaddr(q, FALSE);
 			}
-#endif DEBUG
 		}
 	}
 
@@ -450,11 +446,9 @@ orderq(doall)
 		{
 			/* this may be some random person sending hir msgs */
 			/* syserr("orderq: cannot open %s", cbuf); */
-#ifdef DEBUG
 			if (tTd(41, 2))
 				printf("orderq: cannot open %s (%d)\n",
 					d->d_name, errno);
-#endif DEBUG
 			errno = 0;
 			wn--;
 			continue;
@@ -518,13 +512,11 @@ orderq(doall)
 		WorkQ = w;
 	}
 
-# ifdef DEBUG
 	if (tTd(40, 1))
 	{
 		for (w = WorkQ; w != NULL; w = w->w_next)
 			printf("%32s: pri=%ld\n", w->w_name, w->w_pri);
 	}
-# endif DEBUG
 
 	return (wn);
 }
@@ -577,10 +569,8 @@ dowork(w)
 	register int i;
 	extern bool shouldqueue();
 
-# ifdef DEBUG
 	if (tTd(40, 1))
 		printf("dowork: %s pri %ld\n", w->w_name, w->w_pri);
-# endif DEBUG
 
 	/*
 	**  Ignore jobs that are too expensive for the moment.
@@ -722,10 +712,8 @@ readqf(e, full)
 		printf("\nRunning %s\n", e->e_id);
 	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
 	{
-# ifdef DEBUG
 		if (tTd(40, 4))
 			printf("+++++ %s\n", buf);
-# endif DEBUG
 		switch (buf[0])
 		{
 		  case 'R':		/* specify recipient */
@@ -972,10 +960,8 @@ queuename(e, type)
 			}
 			lf[2] = nf[2] = qf[2] = c1;
 			lf[3] = nf[3] = qf[3] = ++c2;
-# ifdef DEBUG
 			if (tTd(7, 20))
 				printf("queuename: trying \"%s\"\n", nf);
-# endif DEBUG
 
 # ifdef QUEUE
 			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
@@ -1013,23 +999,19 @@ queuename(e, type)
 		}
 		e->e_id = newstr(&qf[2]);
 		define('i', e->e_id, e);
-# ifdef DEBUG
 		if (tTd(7, 1))
 			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
 # ifdef LOG
 		if (LogLevel > 16)
 			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
 # endif LOG
-# endif DEBUG
 	}
 
 	if (type == '\0')
 		return (NULL);
 	(void) sprintf(buf, "%cf%s", type, e->e_id);
-# ifdef DEBUG
 	if (tTd(7, 2))
 		printf("queuename: %s\n", buf);
-# endif DEBUG
 	return (buf);
 }
 /*
@@ -1049,13 +1031,11 @@ unlockqueue(e)
 	ENVELOPE *e;
 {
 	/* remove the transcript */
-#ifdef DEBUG
 # ifdef LOG
 	if (LogLevel > 19)
 		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
 # endif LOG
 	if (!tTd(51, 4))
-#endif DEBUG
 		xunlink(queuename(e, 'x'));
 
 # ifdef QUEUE

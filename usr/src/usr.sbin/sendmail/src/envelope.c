@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <pwd.h>
@@ -86,14 +86,12 @@ dropenvelope(e)
 	bool queueit = FALSE;
 	register ADDRESS *q;
 
-#ifdef DEBUG
 	if (tTd(50, 1))
 	{
 		printf("dropenvelope %x id=", e);
 		xputs(e->e_id);
 		printf(" flags=%o\n", e->e_flags);
 	}
-#endif DEBUG
 #ifdef LOG
 	if (LogLevel > 10)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
@@ -429,10 +427,8 @@ setsender(from)
 	extern bool safefile();
 	extern char *FullName;
 
-# ifdef DEBUG
 	if (tTd(45, 1))
 		printf("setsender(%s)\n", from == NULL ? "" : from);
-# endif DEBUG
 
 	/*
 	**  Figure out the real user executing us.

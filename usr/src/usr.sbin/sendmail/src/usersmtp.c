@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -87,10 +87,8 @@ smtpinit(m, pvp)
 	**  Open the connection to the mailer.
 	*/
 
-#ifdef DEBUG
 	if (SmtpState == SMTP_OPEN)
 		syserr("smtpinit: already open");
-#endif DEBUG
 
 	SmtpIn = SmtpOut = NULL;
 	SmtpState = SMTP_CLOSED;
@@ -99,11 +97,9 @@ smtpinit(m, pvp)
 	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
-# ifdef DEBUG
 		if (tTd(18, 1))
 			printf("smtpinit: cannot open %s: stat %d errno %d\n",
 			   pvp[0], ExitStat, errno);
-# endif DEBUG
 		if (CurEnv->e_xfp != NULL)
 		{
 			register char *p;
@@ -424,11 +420,9 @@ reply(m)
 # endif ECONNRESET
 
 			message(Arpa_TSyserr, "reply: read error");
-# ifdef DEBUG
 			/* if debugging, pause so we can see state */
 			if (tTd(18, 100))
 				pause();
-# endif DEBUG
 # ifdef LOG
 			syslog(LOG_INFO, "%s", &MsgBuf[4]);
 # endif LOG

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -91,11 +91,9 @@ deliver(e, firstto)
 	m = to->q_mailer;
 	host = to->q_host;
 
-# ifdef DEBUG
 	if (tTd(10, 1))
 		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
 			m->m_mno, host, to->q_user);
-# endif DEBUG
 
 	/*
 	**  If this mailer is expensive, and if we don't want to make
@@ -226,13 +224,11 @@ deliver(e, firstto)
 		if (sizeof tobuf - (strlen(to->q_paddr) + strlen(tobuf) + 2) < 0)
 			break;
 
-# ifdef DEBUG
 		if (tTd(10, 1))
 		{
 			printf("\nsend to ");
 			printaddr(to, FALSE);
 		}
-# endif DEBUG
 
 		/* compute effective uid/gid when sending */
 		if (to->q_mailer == ProgMailer)
@@ -709,13 +705,11 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	FILE *rfile;
 	extern FILE *fdopen();
 
-# ifdef DEBUG
 	if (tTd(11, 1))
 	{
 		printf("openmailer:");
 		printav(pvp);
 	}
-# endif DEBUG
 	errno = 0;
 
 	CurHostName = m->m_mailer;
@@ -729,7 +723,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**  We also handle a debug version that just talks to stdin/out.
 	*/
 
-#ifdef DEBUG
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
 	{
@@ -737,7 +730,6 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		*prfile = stdin;
 		return (0);
 	}
-#endif DEBUG
 
 	if (strcmp(m->m_mailer, "[IPC]") == 0)
 	{
@@ -1334,13 +1326,11 @@ sendall(e, mode)
 			mode = SendMode;
 	}
 
-#ifdef DEBUG
 	if (tTd(13, 1))
 	{
 		printf("\nSENDALL: mode %c, sendqueue:\n", mode);
 		printaddr(e->e_sendqueue, TRUE);
 	}
-#endif DEBUG
 
 	/*
 	**  Do any preprocessing necessary for the mode we are running.
@@ -1436,13 +1426,11 @@ sendall(e, mode)
 	{
 		register ADDRESS *qq;
 
-# ifdef DEBUG
 		if (tTd(13, 3))
 		{
 			printf("Checking ");
 			printaddr(q, FALSE);
 		}
-# endif DEBUG
 
 		/* only send errors if the message failed */
 		if (!bitset(QBADADDR, q->q_flags))
@@ -1467,10 +1455,8 @@ sendall(e, mode)
 			if (aliaslookup(obuf) == NULL)
 				continue;
 
-# ifdef DEBUG
 			if (tTd(13, 4))
 				printf("Errors to %s\n", obuf);
-# endif DEBUG
 
 			/* owner list exists -- add it to the error queue */
 			sendtolist(obuf, (ADDRESS *) NULL, &e->e_errorqueue);

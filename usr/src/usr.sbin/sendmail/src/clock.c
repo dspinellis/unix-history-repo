@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -52,13 +52,11 @@ setevent(intvl, func, arg)
 	auto time_t now;
 	extern tick();
 
-# ifdef DEBUG
 	if (intvl <= 0)
 	{
 		syserr("setevent: intvl=%ld\n", intvl);
 		return (NULL);
 	}
-# endif DEBUG
 
 	(void) time(&now);
 
@@ -78,11 +76,9 @@ setevent(intvl, func, arg)
 	ev->ev_link = *evp;
 	*evp = ev;
 
-# ifdef DEBUG
 	if (tTd(5, 5))
 		printf("setevent: intvl=%ld, for=%ld, func=%x, arg=%d, ev=%x\n",
 			intvl, now + intvl, func, arg, ev);
-# endif DEBUG
 
 	tick();
 	return (ev);
@@ -105,10 +101,8 @@ clrevent(ev)
 {
 	register EVENT **evp;
 
-# ifdef DEBUG
 	if (tTd(5, 5))
 		printf("clrevent: ev=%x\n", ev);
-# endif DEBUG
 	if (ev == NULL)
 		return;
 
@@ -155,10 +149,8 @@ tick()
 	(void) alarm(0);
 	now = curtime();
 
-# ifdef DEBUG
 	if (tTd(5, 4))
 		printf("tick: now=%ld\n", now);
-# endif DEBUG
 
 	while ((ev = EventQueue) != NULL &&
 	       (ev->ev_time <= now || ev->ev_pid != mypid))
@@ -170,11 +162,9 @@ tick()
 		/* process the event on the top of the queue */
 		ev = EventQueue;
 		EventQueue = EventQueue->ev_link;
-# ifdef DEBUG
 		if (tTd(5, 6))
 			printf("tick: ev=%x, func=%x, arg=%d, pid=%d\n", ev,
 				ev->ev_func, ev->ev_arg, ev->ev_pid);
-# endif DEBUG
 
 		/* we must be careful in here because ev_func may not return */
 		(void) signal(SIGALRM, tick);

@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -603,8 +603,6 @@ makeargv(p)
 **		prints rewrite rules.
 */
 
-# ifdef DEBUG
-
 printrules()
 {
 	register struct rewrite *rwp;
@@ -626,7 +624,6 @@ printrules()
 	}
 }
 
-# endif DEBUG
 /*
 **  SETOPTION -- set global processing option
 **
@@ -658,10 +655,8 @@ setoption(opt, val, sticky)
 	extern bool trusteduser();
 	extern char *username();
 
-# ifdef DEBUG
 	if (tTd(37, 1))
 		printf("setoption %c=%s", opt, val);
-# endif DEBUG
 
 	/*
 	**  See if this option is preset for us.
@@ -669,17 +664,13 @@ setoption(opt, val, sticky)
 
 	if (bitnset(opt, StickyOpt))
 	{
-# ifdef DEBUG
 		if (tTd(37, 1))
 			printf(" (ignored)\n");
-# endif DEBUG
 		return;
 	}
 
-#ifdef DEBUG
 	if (tTd(37, 1))
 		printf("\n");
-#endif DEBUG
 
 	switch (opt)
 	{
