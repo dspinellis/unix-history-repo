@@ -1,22 +1,28 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
+# Copyright (c) 1986 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
-SRCS=	input.me
-MACROS=	-me
-PRINTER=Pdp
-
-
-
-
 SRCS=	0.t 1.t 2.t 3.t 4.t 5.t 6.t
-TROFF=	itroff
+MACROS=	-ms
+PRINTER=Pdp
+EQN=	deqn -${PRINTER}
+TBL=	dtbl -${PRINTER}
+TROFF=	ditroff -${PRINTER}
 
-fs:	${SRCS}
-	eqn ${SRCS} | tbl | ${TROFF} -ms -t > fs
+paper:	paper.${PRINTER}
+	lpr -${PRINTER} -n paper.${PRINTER}
 
-paper:	fs
-	lpr -Pimagen -t fs
+paper.${PRINTER}: ${SRCS}
+	${TBL} ${SRCS} | ${EQN} | ${TROFF} ${MACROS} -t > paper.${PRINTER}
+
+clean:
+	rm -f paper.[PT]* *.spell errs Errs make.out
+
+spell:	${SRCS}
+	@for i in ${SRCS}; do \
+		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
+	done
+
