@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.23 (Berkeley) %G%
+#	@(#)Makefile	5.24 (Berkeley) %G%
 # N.B.:
 #    My version of cerror automatically catches certain errors
 # such as out of memory, I/O error.  If you re-make this with
@@ -18,6 +18,8 @@ SRCS=	asm.c events.c c.c check.c coredump.c debug.c eval.c fortran.c \
 	process.c scanner.c source.c stabstring.c symbols.c tree.c \
 	${MACHINE}.c runtime.${MACHINE}.c ops.${MACHINE}.c
 OBJS+=	cerror.${MACHINE}.o commands.o date.o
+LDADD=	-lcompat
+DPADD=	${LIBCOMPAT}
 CLEANFILES+=mkdate makedefs makedefs.o date.c y.tab.h \
 	${HDRS} ${MACHINE}.h runtime.${MACHINE}.h ops.${MACHINE}.h
 
