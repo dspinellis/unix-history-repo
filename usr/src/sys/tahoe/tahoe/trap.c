@@ -1,4 +1,4 @@
-/*	trap.c	1.4	86/01/09	*/
+/*	trap.c	1.5	86/07/16	*/
 
 #include "../tahoe/psl.h"
 #include "../tahoe/reg.h"
@@ -172,7 +172,7 @@ out:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) spl8();
+		(void) splclock();
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
@@ -304,7 +304,7 @@ done:
 		 * swtch()'ed, we might not be on the queue indicated by
 		 * our priority.
 		 */
-		(void) spl8();
+		(void) splclock();
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
