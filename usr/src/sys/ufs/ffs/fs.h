@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	7.12 (Berkeley) %G%
+ *	@(#)fs.h	7.13 (Berkeley) %G%
  */
 
 /*
@@ -60,15 +60,7 @@
  *
  * The file system records space availability at the fragment level;
  * to determine block availability, aligned fragments are examined.
- *
- * The root inode is the root of the file system.
- * Inode 0 can't be used for normal purposes and
- * historically bad blocks were linked to inode 1,
- * thus the root inode is 2. (inode 1 is no longer used for
- * this purpose, however numerous dump tapes make this
- * assumption, so we are stuck with it)
  */
-#define	ROOTINO		((ino_t)2)
 
 /*
  * MINBSIZE is the smallest allowable block size.
