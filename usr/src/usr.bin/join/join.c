@@ -16,10 +16,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)join.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)join.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,6 +47,7 @@ typedef struct {
 	int number;		/* 1 for file 1, 2 for file 2 */
 
 	LINE *set;		/* set of lines with same field */
+	int pushbool;		/* if pushback is set */
 	u_long pushback;	/* line on the stack */
 	u_long setcnt;		/* set count */
 	u_long setalloc;	/* set allocated count */
@@ -244,7 +245,7 @@ slurp(F)
 	LINE tmp;
 	size_t len;
 	int cnt;
-	char *bp, *fieldp, *token;
+	char *bp, *fieldp;
 
 	/*
 	 * Read all of the lines from an input file that have the same
@@ -259,46 +260,47 @@ slurp(F)
 		 */
 		if (F->setcnt == F->setalloc) {
 			cnt = F->setalloc;
-			F->setalloc += 100;
+			F->setalloc += 50;
 			if ((F->set = realloc(F->set,
 			    F->setalloc * sizeof(LINE))) == NULL)
 				enomem();
-			bzero(F->set + cnt, 100 * sizeof(LINE *));
+			bzero(F->set + cnt, 50 * sizeof(LINE));
 		}
 			
 		/*
 		 * Get any pushed back line, else get the next line.  Allocate
 		 * space as necessary.  If taking the line from the stack swap
-		 * the two structures so that we don't lose the allocated space.
-		 * This could be avoided by doing another level of indirection,
+		 * the two structures so that we don't lose space allocated to
+		 * either structure.  This could be avoided by doing another
+		 * level of indirection, but it's probably okay as is.
 		 * but it's probably okay as is.
 		 */
 		lp = &F->set[F->setcnt];
-		if (F->pushback != -1) {
+		if (F->pushbool) {
 			tmp = F->set[F->setcnt];
 			F->set[F->setcnt] = F->set[F->pushback];
 			F->set[F->pushback] = tmp;
-			F->pushback = -1;
+			F->pushbool = 0;
 			continue;
 		}
 		if ((bp = fgetline(F->fp, &len)) == NULL)
 			return;
 		if (lp->linealloc <= len) {
-			lp->linealloc += 100;
-			if ((lp->line = realloc(lp->line,
-			    lp->linealloc * sizeof(char))) == NULL)
+			lp->linealloc += MAX(100, len + 1);
+			if ((lp->line =
+			    realloc(lp->line, lp->linealloc)) == NULL)
 				enomem();
 		}
-		bcopy(bp, lp->line, len);
+		bcopy(bp, lp->line, len + 1);
+		bp = lp->line;
 
 		/* Split the line into fields, allocate space as necessary. */
-		token = bp;
 		lp->fieldcnt = 0;
-		while ((fieldp = strsep(&token, tabchar)) != NULL) {
+		while ((fieldp = strsep(&bp, tabchar)) != NULL) {
 			if (spans && *fieldp == '\0')
 				continue;
 			if (lp->fieldcnt == lp->fieldalloc) {
-				lp->fieldalloc += 100;
+				lp->fieldalloc += 50;
 				if ((lp->fields = realloc(lp->fields,
 				    lp->fieldalloc * sizeof(char *))) == NULL)
 					enomem();
@@ -308,6 +310,7 @@ slurp(F)
 
 		/* See if the join field value has changed. */
 		if (lastlp != NULL && cmp(lp, F->joinf, lastlp, F->joinf)) {
+			F->pushbool = 1;
 			F->pushback = F->setcnt;
 			break;
 		}
