@@ -1,14 +1,14 @@
 # include "sendmail.h"
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.6		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.7		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <wellknown.h>
 # include <net/in.h>
 
-SCCSID(@(#)daemon.c	3.6		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.7		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -112,7 +112,7 @@ getrequests()
 **		Waits for a connection.
 */
 
-struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SENDMAIL };
+struct sockaddr_in SendmailAddress = { AF_INET, IPPORT_SMTP };
 
 getconnection()
 {
