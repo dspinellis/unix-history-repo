@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -19,31 +19,31 @@ struct pats language_ptab[] = {
 /*
  * General Pascal library routines
  */
-	{ "2,_ROUND\n",
+	{ 2, "_ROUND\n",
 "	movd	(sp)+,r0\n\
 	cvtrdl	r0,r0\n" },
 
-	{ "2,_TRUNC\n",
+	{ 2, "_TRUNC\n",
 "	movd	(sp)+,r0\n\
 	cvtdl	r0,r0\n" },
 
-	{ "1,_ACTFILE\n",
+	{ 1, "_ACTFILE\n",
 "	movl	(sp)+,r1\n\
 	movl	12(r1),r0\n" },
 
-	{ "2,_FCALL\n",
+	{ 2, "_FCALL\n",
 "	movl	(sp)+,r5\n\
 	movl	(sp),r0\n\
 	movc3	4(r0),__disply+8,(r5)\n\
 	movl	(sp)+,r0\n\
 	movc3	4(r0),8(r0),__disply+8\n" },
 
-	{ "2,_FRTN\n",
+	{ 2, "_FRTN\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r5\n\
 	movc3	4(r0),(r5),__disply+8\n" },
 
-	{ "3,_FSAV\n",
+	{ 3, "_FSAV\n",
 "	movl	(sp)+,r3\n\
 	movl	(sp)+,r4\n\
 	movl	(sp),r5\n\
@@ -55,7 +55,7 @@ struct pats language_ptab[] = {
 /*
  * Pascal relational comparisons
  */
-	{ "3,_RELEQ\n",
+	{ 3, "_RELEQ\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -76,7 +76,7 @@ struct pats language_ptab[] = {
 	incl	r0\n\
 4:\n" },
 
-	{ "3,_RELNE\n",
+	{ 3, "_RELNE\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -96,7 +96,7 @@ struct pats language_ptab[] = {
 	jneq	2b\n\
 4:\n" },
 
-	{ "3,_RELSLT\n",
+	{ 3, "_RELSLT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -119,7 +119,7 @@ struct pats language_ptab[] = {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "3,_RELSLE\n",
+	{ 3, "_RELSLE\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -142,7 +142,7 @@ struct pats language_ptab[] = {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "3,_RELSGT\n",
+	{ 3, "_RELSGT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -165,7 +165,7 @@ struct pats language_ptab[] = {
 	movl	$1,r0\n\
 5:\n" },
 
-	{ "3,_RELSGE\n",
+	{ 3, "_RELSGE\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
@@ -191,7 +191,7 @@ struct pats language_ptab[] = {
 /*
  * Pascal set operations.
  */
-	{ "4,_ADDT\n",
+	{ 4, "_ADDT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -201,7 +201,7 @@ struct pats language_ptab[] = {
 	bisl3	(r1)+,(r2)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "4,_SUBT\n",
+	{ 4, "_SUBT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -211,7 +211,7 @@ struct pats language_ptab[] = {
 	bicl3	(r2)+,(r1)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "4,_MULT\n",
+	{ 4, "_MULT\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -222,7 +222,7 @@ struct pats language_ptab[] = {
 	bicl3	r5,(r2)+,(r3)+\n\
 	sobgtr	r4,1b\n" },
 
-	{ "4,_IN\n",
+	{ 4, "_IN\n",
 "	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
 	movl	(sp)+,r3\n\
@@ -238,7 +238,7 @@ struct pats language_ptab[] = {
 /*
  * Pascal runtime checks
  */
-	{ "1,_ASRT\n",
+	{ 1, "_ASRT\n",
 "	movl	(sp)+,r0\n\
 	tstl	r0\n\
 	jneq	1f\n\
@@ -247,7 +247,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 1:\n" },
 
-	{ "2,_ASRTS\n",
+	{ 2, "_ASRTS\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	tstl	r0\n\
@@ -257,7 +257,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 1:\n" },
 
-	{ "1,_CHR\n",
+	{ 1, "_CHR\n",
 "	movl	(sp)+,r0\n\
 	cmpl	r0,$127\n\
 	jlequ	1f\n\
@@ -266,7 +266,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 1:\n" },
 
-	{ "0,_LINO\n",
+	{ 0, "_LINO\n",
 "	incl	__stcnt\n\
 	cmpl	__stcnt,__stlim\n\
 	jlss	1f\n\
@@ -275,7 +275,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 1:\n" },
 
-	{ "1,_NIL\n",
+	{ 1, "_NIL\n",
 "	movl	(sp)+,r0\n\
 	cmpl	r0,__maxptr\n\
 	jgtr	1f\n\
@@ -287,7 +287,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 2:\n" },
 
-	{ "2,_RANDOM\n",
+	{ 2, "_RANDOM\n",
 "	movd	(sp)+,r0\n\
 	emul	__seed,$1103515245,$0,r0\n\
 	ediv	$0x7fffffff,r0,r1,r0\n\
@@ -295,7 +295,7 @@ struct pats language_ptab[] = {
 	cvtld	r0,r0\n\
 	divd2	$0d2.147483647e+09,r0\n" },
 
-	{ "3,_RANG4\n",
+	{ 3, "_RANG4\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -309,7 +309,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 2:\n" },
 
-	{ "2,_RSNG4\n",
+	{ 2, "_RSNG4\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	cmpl	r0,r1\n\
@@ -319,12 +319,12 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 1:\n" },
 
-	{ "1,_SEED\n",
+	{ 1, "_SEED\n",
 "	movl	(sp)+,r1\n\
 	movl	__seed,r0\n\
 	movl	r1,__seed\n" },
 
-	{ "3,_SUBSC\n",
+	{ 3, "_SUBSC\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	movl	(sp)+,r2\n\
@@ -338,7 +338,7 @@ struct pats language_ptab[] = {
 	calls	$2,_ERROR\n\
 2:\n" },
 
-	{ "2,_SUBSCZ\n",
+	{ 2, "_SUBSCZ\n",
 "	movl	(sp)+,r0\n\
 	movl	(sp)+,r1\n\
 	cmpl	r0,r1\n\
@@ -353,11 +353,11 @@ struct pats language_ptab[] = {
 /*
  * General Pascal library routines
  */
-	{ "_ACTFILE\n",
+	{ 1, "_ACTFILE\n",
 "	movl	sp@+,a0\n\
 	movl	a0@(12),d0\n" },
 
-	{ "_ADDT\n",
+	{ 4, "_ADDT\n",
 "	movl	sp@+,a0\n\
 	movl	sp@+,d0\n\
 	movl	sp@+,a1\n\
@@ -374,7 +374,7 @@ struct pats language_ptab[] = {
 	movl	sp@+,a2\n\
 	movl	sp@+,d0\n" },
 
-	{ "_SUBT\n",
+	{ 4, "_SUBT\n",
 "	movl	sp@+,a0\n\
 	movl	sp@+,d0\n\
 	movl	sp@+,a1\n\
@@ -392,7 +392,7 @@ struct pats language_ptab[] = {
 	movl	sp@+,a2\n\
 	movl	sp@+,d0\n" },
 
-	{ "_MULT\n",
+	{ 4, "_MULT\n",
 "	movl	sp@+,a0\n\
 	movl	sp@+,d0\n\
 	movl	sp@+,a1\n\
@@ -409,7 +409,7 @@ struct pats language_ptab[] = {
 	movl	sp@+,a2\n\
 	movl	sp@+,d0\n" },
 
-	{ "_IN\n",
+	{ 4, "_IN\n",
 "	movl	sp@+,d0\n\
 	movl	sp@+,a0\n\
 	movl	sp@+,d1\n\
@@ -427,7 +427,7 @@ struct pats language_ptab[] = {
 	moveq	#0,d0\n\
 2:\n" },
 
-	{ "_RANG4\n",
+	{ 3, "_RANG4\n",
 "	movl	sp@+,d0\n\
 	movl	sp@+,a0\n\
 	movl	sp@+,a1\n\
@@ -440,7 +440,7 @@ struct pats language_ptab[] = {
 	jbsr	_ERROR\n\
 	addqw	#4,sp\n\
 2:\n" },
-	{ "_RSNG4\n",
+	{ 2, "_RSNG4\n",
 "	movl	sp@+,a0\n\
 	movl	sp@+,a1\n\
 	cmpl	a1,a0\n\
@@ -450,7 +450,7 @@ struct pats language_ptab[] = {
 	addqw	#4,sp\n\
 1:\n" },
 
-	{ "_SUBSC\n",
+	{ 3, "_SUBSC\n",
 "	movl	sp@+,d0\n\
 	movl	sp@+,a0\n\
 	movl	sp@+,a1\n\
@@ -464,7 +464,7 @@ struct pats language_ptab[] = {
 	addqw	#4,sp\n\
 2:\n" },
 
-	{ "_SUBSCZ\n",
+	{ 2, "_SUBSCZ\n",
 "	movl	sp@+,a0\n\
 	movl	sp@+,a1\n\
 	cmpl	a1,a0\n\
@@ -476,5 +476,5 @@ struct pats language_ptab[] = {
 
 #endif mc68000
 
-	{ "", "" }
+	{ 0, "", "" }
 };
