@@ -340,6 +340,8 @@ compile_delimited(p, d)
 			if ((d = compile_ccl(&p, d)) == NULL)
 				err(COMPILE, "unbalanced brackets ([])");
 			continue;
+		} else if (*p == '\\' && p[1] == '[') {
+			*d++ = *p++;
 		} else if (*p == '\\' && p[1] == c)
 			p++;
 		else if (*p == '\\' && p[1] == 'n') {
