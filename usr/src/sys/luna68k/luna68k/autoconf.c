@@ -12,7 +12,7 @@
  *
  * from:hp300/hp300/autoconf.c	7.9 (Berkeley) 12/27/92
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -439,6 +439,9 @@ same_hw_device(hw, hd)
 	case D_SIO:
 		found = dr_type(hd->hp_driver, "sio");
 		break;
+	case D_BMC:
+		found = dr_type(hd->hp_driver, "bmc");
+		break;
 	default:
 		break;
 	}
@@ -459,6 +462,9 @@ same_hw_device(hw, hd)
 find_devs()
 {
 	register struct hp_hw *hw = sc_table;
+	
+	setup_hw(hw, (char *) 0x51000004, 0x5, D_BMC,      0x5);
+	hw->hw_secid = 0; hw++;
 	
 	setup_hw(hw, (char *) 0x51000000, 0x5, D_SIO,      0x5);
 	hw->hw_secid = 0; hw++;
