@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.17 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -683,7 +683,6 @@ include(fname, forwarding, ctladdr, sendq, e)
 	int oldlinenumber = LineNumber;
 	register EVENT *ev = NULL;
 	int nincludes;
-	int ret;
 	register ADDRESS *ca;
 	uid_t saveduid, uid;
 	gid_t savedgid, gid;
@@ -750,26 +749,25 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* the input file must be marked safe */
-	ret = safefile(fname, uid, gid, uname, forwarding, S_IREAD);
-	if (ret != 0)
+	rval = safefile(fname, uid, gid, uname, forwarding, S_IREAD);
+	if (rval != 0)
 	{
 		/* don't use this :include: file */
 		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: not safe (uid=%d): %s\n",
-				uid, errstring(ret));
-		return ret;
+				uid, errstring(rval));
+		goto resetuid;
 	}
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
 	{
-		int ret = errno;
-
+		rval = errno;
 		clrevent(ev);
 		if (tTd(27, 4))
-			printf("include: open: %s\n", errstring(ret));
-		return ret;
+			printf("include: open: %s\n", errstring(rval));
+		goto resetuid;
 	}
 
 	if (ca == NULL)
@@ -778,11 +776,10 @@ include(fname, forwarding, ctladdr, sendq, e)
 
 		if (fstat(fileno(fp), &st) < 0)
 		{
-			int ret = errno;
-
+			rval = errno;
 			clrevent(ev);
 			syserr("Cannot fstat %s!", fname);
-			return ret;
+			goto resetuid;
 		}
 		ctladdr->q_uid = st.st_uid;
 		ctladdr->q_gid = st.st_gid;
@@ -797,7 +794,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 		ctladdr->q_flags |= QVERIFIED;
 		e->e_nrcpts++;
 		xfclose(fp, "include", fname);
-		return 0;
+		goto resetuid;
 	}
 
 	/* read the file -- each line is a comma-separated list. */
