@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.7 (Berkeley) %G%
+ *	@(#)tty.c	7.8 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -132,7 +132,7 @@ ttywait(tp)
 	register int s = spltty();
 
 	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
-	    tp->t_state&TS_CARR_ON) {
+	    tp->t_state&TS_CARR_ON && tp->t_oproc) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
