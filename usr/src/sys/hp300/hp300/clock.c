@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.17 (Berkeley) %G%
+ *	@(#)clock.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -214,7 +214,7 @@ microtime(tvp)
 	 */
 	if (sr & CLK_INT1)
 		u += tick;
-	u += clkint - ((h << 8) | l);
+	u += (clkint - ((h << 8) | l)) * CLK_RESOLUTION;
 	if (u >= 1000000) {		/* normalize */
 		s++;
 		u -= 1000000;
