@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)interp.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <math.h>
@@ -114,10 +114,10 @@ long _profcnts[NUMOPS];
 /*
  * debugging variables
  */
-#ifdef DEBUG
+#ifdef PXDEBUG
 char opc[10];
 long opcptr = 9;
-#endif DEBUG
+#endif PXDEBUG
 
 interpreter(base)
 	char *base;
@@ -174,11 +174,11 @@ interpreter(base)
 
 	asm("_loopaddr:");
 	for(;;) {
-#		ifdef DEBUG
+#		ifdef PXDEBUG
 		if (++opcptr == 10)
 			opcptr = 0;
 		opc[opcptr] = *pc.ucp;
-#		endif DEBUG
+#		endif PXDEBUG
 #		ifdef PROFILE
 		_profcnts[*pc.ucp]++;
 #		endif PROFILE
