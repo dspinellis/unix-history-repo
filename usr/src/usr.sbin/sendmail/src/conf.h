@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.90 (Berkeley) %G%
+ *	@(#)conf.h	8.91 (Berkeley) %G%
  */
 
 /*
@@ -266,6 +266,7 @@ extern long	dgux_inet_addr();
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASUNAME	1	/* use System V uname(2) system call */
 # ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
