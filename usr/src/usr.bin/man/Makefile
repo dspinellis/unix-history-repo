@@ -14,44 +14,35 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	apropos.c whatis.c man.c
-MAN=	man.0 apropos.0 whatis.0
+SRCS=	config.c man.c
+OBJS=	config.o man.o
+MAN=	man.0 man.config.0
 
-all: man apropos whatis
+all: man
 
-man: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
-
-apropos: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
-
-whatis: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+man: ${LIBC} ${OBJS}
+	${CC} -o $@ ${OBJS}
 
 clean:
-	rm -f core apropos whatis man
+	rm -f core man ${OBJS}
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend:
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 apropos whatis man ${DESTDIR}/usr/bin
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 man.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 man.config.0 ${DESTDIR}/usr/man/cat5
 
 lint:
-	lint ${CFLAGS} apropos.c
-	lint ${CFLAGS} whatis.c
-	lint ${CFLAGS} man.c
+	lint ${CFLAGS} ${SRCS}
 
 tags:
-	ctags apropos.c
-	ctags -a whatis.c
-	ctags -a man.c
-	sort -o tags tags
+	ctags ${SRCS}

@@ -1,69 +1,121 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)man.1	6.7 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)man.1	6.8 (Berkeley) %G%
 .\"
 .TH MAN 1 ""
 .UC 4
 .SH NAME
-man \- print out the manual
+man \- display the on-line manual pages
 .SH SYNOPSIS
-.br
-.B man
-[
-.B \-
-] [
-.B -a
-] [
-.B \-M
-.I path
-] [
-section
-]
-title ...
-.SH DESCRIPTION
-\fIMan\fP is the program which provides on-line access to the UNIX manual.
-If a \fIsection\fP specifier is given, \fIman\fP looks in that section of
-the manual for the given \fItitle\fP(s).  \fISection\fP is either an Arabic
-section number (``3'' for example), or one of the words ``local'', ``new,''
-or ``old''.  (The abbreviations ``l'', ``n'', and ``o'' are also allowed.)
-If \fIsection\fP is omitted, \fIman\fP searches all sections of the manual,
-giving preference to commands over library subroutines, and displays the
-first manual page it finds, if any.  If the \fI-a\fP option is supplied,
-\fIman\fP displays all applicable manual pages.
-.PP
-Normally \fIman\fP checks in standard locations (/usr/man and /usr/local/man)
-for manual information.  This can be changed by supplying a search path (a
-la the Bourne shell) with the \fB-M\fP flag.  The search path is a colon
-(``:'') separated list of directories in which \fIman\fP expects to find
-the standard manual subdirectories.  This search path can also be set with
-the environmental variable \fIMANPATH\fP.
-.PP
-Since some manual pages are intended for use only on certain machines,
-\fIman\fP only searches those directories applicable to the current
-machine.  \fIMan\fP's determination of the current machine type can
-be overridden by setting the environmental variable \fIMACHINE\fP.
-.PP
-If the standard output is a teletype, and the \fB-\fP flag is not provided,
-\fIman\fP uses \fImore\fP(1), or the pager provided by the environmental
-variable \fIPAGER\fP, to display the manual page.
-.PP
-The FORTRAN version of section 3 of the manual may be specified by supplying
-\fIman\fP with the \fIsection\fP ``3f''.  Also, a specific section of the
-local manual may be specified by appending a number to the \fIsection\fP,
-i.e. ``l5'' would indicate section 5 of the local manual.
-.SH FILES
 .nf
-.ta \w'/usr/local/man/man?/*   'u
-/usr/man	standard manual area
-/usr/man/cat?/*	directories containing standard manual pages
-/usr/local/man/cat?/*	directories containing local manual pages
-/usr/src/man	directories containing unformatted manual pages
+.ft B
+man [-acw] [-M path] [-m path] [section] title ...
+.ft R
 .fi
-.SH SEE\ ALSO
-apropos(1), more(1), whatis(1), whereis(1)
+.SH DESCRIPTION
+.I Man
+displays the UNIX manual pages.
+.PP
+The options are as follows:
+.TP
+.I a
+Display all of the manual pages for a specified
+.IR title .
+(Normally, only the first manual page found is displayed.)
+.TP
+.I c
+Copy the manual page to the standard output instead of using
+.I more (1)
+to paginate it.
+This is done by default if the standard output is not a terminal device.
+.TP
+.I M
+Override the list of standard directories where
+.I man
+searches for manual pages.
+The supplied
+.I path
+must be a colon (``:'') separated list of directories.
+This search path may also be set using the environmental variable
+.IR MANPATH .
+.TP
+.I m
+Augment the list of standard directories where
+.I man
+searches for manual pages.
+The supplied
+.I path
+must be a colon (``:'') separated list of directories.
+These directories will be searched before the standard directories or
+the directories supplied with the
+.I M
+option or the
+.I MANPATH
+environmental variable are searched.
+.TP
+.I w
+List the locations of the manual pages that
+.I man
+would display for the specified
+.IR title .
+.PP
+Section numbers restrict the portions of the manual that
+.I man
+will search to a single section.
+The section number should be a number, ``1'' through ``8'', or ``3f''
+to specify the FORTRAN versions of section 3 of the manual.
+If no section number is given,
+.I man
+will search the sections in the following order:
+``1'', ``8'', ``6'', ``2'', ``3'', ``4'', ``5'', ``7'' and ``3f''.
+This is to give precedence to commands over library subroutines.
+.SH "ENVIRONMENTAL VARIABLES"
+.TP
+.I
+MACHINE
+As some manual pages are intended only for use on certain architectures,
+.I man
+only searches the directories applicable to the current machine.
+.I Man's
+determination of the current machine type may be overridden by setting
+the environmental variable
+.I MACHINE
+to the name of an architecture.
+Currently supported architectures are ``tahoe'' and ``vax''.
+Machine specific areas are checked before general areas.
+.TP
+.I MANPATH
+The standard search path used by
+.I man
+may be overridden by specifying a path in the
+.I MANPATH
+environmental variable.
+The format of the path is a colon (``:'') separated list of directories.
+.TP
+.I
+PAGER
+Any value of the environmental variable
+.I PAGER
+will be used instead of the standard pagination program
+.IR more (1).
+.SH FILES
+/etc/man.config	standard directory search path
+.SH "SEE ALSO"
+apropos(1), whatis(1), whereis(1), man.config(5)
 .SH BUGS
-The manual is supposed to be reproducible either on the
-phototypesetter or on a typewriter, however, on a typewriter,
-some information is necessarily lost.
+The on-line manual pages are, by necessity, forgiving toward stupid
+display devices, causing some manual pages to not be as good as their
+typeset counterparts.
