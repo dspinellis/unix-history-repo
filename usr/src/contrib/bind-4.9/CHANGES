@@ -1,0 +1,587 @@
+4.9-FINAL -------------------
+
+Kevin Dunlap sent in some changes for the BOG.  So did a lot of other folks.
+
+Someone asked about AXP-OSF, so I did a trivial 64-bit port.  Porting to
+other 64-bit systems should be simple now.  Someone also sent in some MIPS
+RISCOS portability changes, which were simple and therefore were put in.  
+Note that some type names have been added to BSD 4.4 as a result of this
+work; they are going to be in <sys/types.h> in BSD 4.4 but they are in a
+local include file called <sys/bitypes.h> in this distribution, with 
+appropriate #ifdef's in the include files that depend on them.  Those of you
+who are porting to 64-bit platforms where "long" isn't 32 bits should be
+using these new names for your types; there was no standard before this,
+but the names we've added for BIND 4.9 and BSD 4.4 are going to be proposed
+to Posix at some point.  Sometimes it's just not OK for "int" to be the
+"natural integer size of the machine" and you just _have_ to tell the compiler
+how many bits you want.
+
+The NIC added a new root server, thus pushing the size of a nonauthoritative
+root server response (which includes the root server list in the answer as
+well as the authority sections) over the 512-byte limit.  This showed up a
+long-term BIND bug wherein it failed to set the TC ("truncation occurred")
+bit if truncation occurred anywhere but the answer section.  Since truncation
+was occuring at the end of the packet, in the additional data section, this
+meant that BIND was generating truncated responses without setting TC in the
+response header.  Upon further investigation, I found that BIND ignored TC
+on responses it received from other name servers.  RFC 1035 states that RR's
+from truncated responses should not be cached; with creative interpretation
+of the exact 1035 wording, I found a way to reach this goal while still 
+caching the answer section (as long as the truncation occurred in some other
+section, which 1035 gives no definitive way to determine but I'm happy with
+my guess).
+
+While researching the above, I finally broke down and added credibility
+output to the zone dump files.  They are in the comments so should cause
+no trouble.  There's more work to be done on the dump output; in particular,
+Phil Almquist proposed and even prototyped a "tagging" of all RR's with the
+A RR of the nameserver that sent them to us; this feature should be added
+and the dump output should include it.  This would add a lot to our ability
+to track down corrupt data.
+
+Don Lewis and I had more discussions about TC and ended up agreeing that the
+right thing to do is to set TC on responses that overflow in the answer or
+authority section, truncating at an RR boundary, but do not set TC on responses
+that overflow in the additional-data section (truncating at a {name,type}
+boundary).  This actually solves the root server problem pretty well, since
+BIND 4.9 will, when it tries to use an NS whose A isn't in the cache, generate
+a sysquery() for the missing A.  (Heck, additional data TTL's are depreciated
+at the rate of 5% per use, so this would end up happening pretty quickly even
+if we did cache a partial {name,type} -- but now we won't have to.)
+
+While trying to fix all of this stuff I ended up moving some functions around
+to avoid duplicating them in different source files, and I reformatted some
+source lines that went over 80 characters.  I also made a few things "static"
+that used to be unneccessarily global.  More of that will happen in 4.9.1.
+
+DEC's product version of MIT Hesiod uses SIGXFSZ for what we do with SIGHUP;
+since the default for SIGXFSZ is to exit, it seemed prudent to wire it up to
+do what SIGHUP does instead, so that this BIND can run on DEC Hesiod servers.
+
+At the request of several people, I integrated the USC "dig" and Rutgers
+"host" tools into the distribution.  This required some changes to the
+resolver library's debugging output formats, which will be visible in
+nslookup, nsquery, and any other tool that sets the RES_DEBUG option.
+Note that there is no support for "DEFNAMES" in this version of dig, due
+to design changes between 4.8 (from which "dig" is derived) and 4.9.  there
+is no reason in principle why it can't be made to work, but it doesn't work
+now.  therefore only fully-qualified names can be looked up with this "dig".
+
+I had to change the name of the resolver "state" structure to be "__res_state"
+for standards conformance (really, it is not reasonable to expect that because
+a program includes <resolv.h> it will never define its own structure called
+"state".  This change highlights the imperative that any application which is
+relinked against this resolver must first be recompiled against these include
+files (notably <resolv.h>).  This is true for almost all versions of libresolv.
+
+I asked for items for the "TODO" list and got quite a few.  Check them out
+before you hack; someone else may already have started doing what you want to
+do.  I also asked for tools for the "contrib" subdirectory and got 650KB worth.
+They make the BIND 4.9 distribution a lot larger than 4.8.3 was, but the extra
+bytes are well worth their weight.
+
+Kenneth Almquist (no relation to Phil, as far as I know) posted a patch for
+res_send() that lets it keep track of servers that are responding "SERVFAIL"
+or some other fatal condition; these servers are NOT used for retries of the
+current query.  This information is not persistent between calls to res_send()
+since future calls will probably be for different {name,type} queries, which
+will not neccessarily fail in the same way.  This change is trivial and makes
+a measurable difference in the amount of DNS traffic on my local net.
+
+4.9-BETA ------------------- April 17, 1993 -- Paul Vixie -- DECWRL
+
+"Peter Koch" <pk@TechFak.Uni-Bielefeld.DE>'s previous patch caused core
+dumps on some systems.  I fixed part of it and Peter sent me a fix for
+the rest of it.  All is now well.
+
+The Bind Operations Guide in doc/BOG has been updated to 4.9.  Also, the
+man page in man/named.8 has had some patches applied.  The copyrights are
+all fixed now.  Let's get this thing OUT of here!
+
+4.9-ALPHA ------------------- March 15, 1993 -- Paul Vixie -- DECWRL
+
+There was a really bad bug affecting wildcards.  I received a patch
+from "Peter Koch" <pk@TechFak.Uni-Bielefeld.DE> which fixes some of
+it, but I can't quite motivate myself to fix the rest of it since I
+know that what's _really_ wrong is going to require chainsaws and
+dynamite to fix and that'll add another year to the release.  I think
+that this patch will hold us for a while.
+
+There are a LOT of portability changes that I'm holding onto, especially
+including 64-bit fixes.  Do not submit any more portability changes
+until 4.9.1 opens.  Go ahead and make them, but be prepared to remake
+them later.  Let me know what you are doing but don't send me any diffs
+for portability until I ask for them.  4.9 has been stuck in the barrel
+for way too long already -- patches that don't fix RFC-noncompliance or
+core dumps will just go into my "todo" folder (which is presently a
+black hole of great mass).
+
+4.9-ALPHA ---------------- Febrtuary 2, 1992 -- Paul Vixie -- DECWRL
+
+Mostly portability fixes.  The nslookup "lex" problem is BSDI-specific
+and I'm not going to hold up release because of it.  This will be the
+last alpha release before the public beta.  It is, as usual, running
+the DEC.COM primary name service and has done so for more than a week
+without any problems.
+
+4.9-ALPHA ---------------- January 10, 1993 -- Paul Vixie -- DECWRL
+
+Once I get the known bug in nslookup (see below) fixed, this version is going
+to go into public beta.  I would appreciate it if everyone would try it out.
+
+KNOWN BUG IN THIS RELEASE: something wild is going on inside of the yylex()
+routing on BSD/386 systems.  It only affects nslookup.  I'm still trying to
+figure out how I'm going to debug this; lex experts, please see what's going
+on.  None of the changes since the 930105 release should have been capable
+of producing this change, but something is sure doing it.
+
+I finally fixed the {GET,PUT}{SHORT,LONG} macros to stop issuing warnings
+on HP-UX systems.  They are also warning-free on Ultrix(SPIM,VAX), BSDI(386),
+and SunOS(SPARC) systems.  I took the plunge and changed the internal functions
+in res/res_comp.c to depend on these macros instead of duplicating the code,
+and everything still works.
+
+Tom Limoncelli found three ancient memory leaks.  I fixed two of them
+but the last one looks too much like a "cannot happen" for me to be
+willing to experiment with it.  Besides which, it's "very" minor.
+
+Uses setsid() on POSIX systems.  PID file is now optional.  (arc@sgi)
+
+Comments (";" or "#") are now allowed in resolv.conf (arc@sgi).
+
+Documentation and copyright changes in README.
+
+Known to compile on NeXT machines.
+
+Some portability changes for AIX, whose CC is very picky.
+
+I forgot to mention in the 921227 release that T_RP is supported (arc@sgi).
+
+I included a number of changes that Alan Barrett has been trying to get
+in since the 921221 version.  Most are portability-related, and the few
+things that are functional are changes to my own previous additions :-),
+so I'm fairly sure that they are doing the right thing.  Alan's changes
+include:
+
+    include/arpa/nameser.h
+	improved error diagnosis in the BYTE_ORDER configuration.
+
+	changed hp9000 test to hp9000s300.  As far as I know, there is
+	no hp9000 preprocessor symbol.  Should probably add other
+	hp9000s<whatever> tests, but have not done so.
+
+    named/ns.h
+	Moved the XFER-related stuff from the end of the file to near
+	the top, where it is grouped with similar stuff.
+
+    Makefiles:
+	Add SYSLIBS variable, so folk can compile with -lBSD easily.
+
+	Changed install targets to make them easier to customise.
+
+	make links wasn't handling named.{reload,restart}*
+
+	Add ${CDEBUG} flag to link step.  Some debuggers don't work
+	right if the program isn't linked with the -g flag.
+
+    struct timeval members are declared as unsigned long on some systems.
+	Add casts to (long) in several if statements that appear to assume
+	that tv_sec is signed.
+
+    PID_FIX in ns_main.c controlled more than just whether or not the
+    pid file gets fixed.
+	Changed it to control only that one feature.
+
+    For debugging, it is useful for a nameserver to listen to non-standard
+    port, but to forward requests to a standard port.
+	Add "-p remote/local" option to named/ns_main.c.
+	Also needed some other changes elsewhere.
+
+    Don't forward back to the host that asked us a question, unless they
+    asked from some port other than their nameserver port.  This allows a
+    dig or nslookup user on a host to ask us questions with
+    recursion-desired, where we are willing to recursively ask the
+    nameserver on their host.  However, if a nameserver asks us something
+    we will not recurse back to them.
+	nslookup() in named/ns_forw.c checks for this and returns -1.
+	ns_forw() and sysquery() notice this and return SERVFAIL.
+
+	Moved the nsContainsUs functionality from a separate routine
+	into nslookup().  No need to do the same tree walk several times.
+
+    While trying to track down various problems, added detection
+    and logging of errors in several syscalls in ns_main.c.
+
+    Avoid integer overflow in roundtrip time calc in ns_resp.
+    This needs a definition for INT_MAX.
+
+    Fixed root zone transfer bug.  Also corrected some slightly misleading
+    comments in the doaxfr() code, and added some more comments.
+
+4.9-ALPHA ---------------- January 5, 1993 -- Paul Vixie -- DECWRL
+
+This one was built and tested on Ultrix 4.2 (SPIM, MIPS CC and GCC),
+BSD/386 (Gamma.4), Sun SPARC (4.0.3, sorry, that's the latest I have),
+4.3BSD Reno (VAX, PCC), and Ultrix 3.0 (VAX PCC).
+
+Moved res/defs.h to conf/portability.h; named/options.h to conf/options.h.
+
+Portability changes for O_NDELAY.  SUNOS is really strange about this.
+
+Removed some unneccessary goto's added to ns_main.c on 1jan.  Oops.
+
+Art Harkin of HP sent in a number of small (read: obviously correct)
+improvements, some related to portability, some to functionality.
+
+4.9-ALPHA ---------------- January 1, 1993 -- Paul Vixie -- DECWRL
+
+Changed all O_NONBLOCK to O_NDELAY.  Changed all {r}index to str{r}chr.
+
+Added some SysV support in the form of bcopy->memcpy, bzero->memset.
+
+Added C_HS support to named-xfer (greg@duke.cs.unlv.edu).
+
+Fixed a line-number problem in asp's "include" logic (asp@uunet.uu.net).
+
+streamq's were being used after free().  bug report from fuat@ans.net
+and jpe@ee.egr.duke.edu.  bug fix by vixie.
+
+In the resolver, we now default to address 127.0.0.1 rather than 0.0.0.0.
+There's a comment in the code that explains why.
+
+In the resolver, arc@xingping.esg.sgi.com changed it to use inet_aton()
+and included that function for those not running 4.4bsd.
+
+arc@xingping.esg.sgi.com also provided lots of portability fixes and
+general cleanups, in particular to nslookup which he maintains for CSRG.
+
+4.9-ALPHA ---------------- December 27, 1992 -- Paul Vixie -- DECWRL
+
+Added strtoul() to libresolv.a since it's yet another neccessary function
+that older systems don't have.  If we can stomach strcasecmp() we can sure
+handle this.
+
+Moved res/named/gethostnamadr.c to res/gethnamaddr.c (note basename change)
+and res/named/sethostent.c to res/sethostent.c.  Since the host table stuff
+isn't in separate files any more I saw no reason to retain the subdirectory.
+
+Updated all the copyrights and applied the small lint changes that bring
+the baseline of this version from "4.8.3 as seen on ucbarpa" up to "4.8.3
+as released with net-2".  Thanks to the alpha testers for pointing this out
+to me and for sending in the diffs.
+
+With much howling and screaming, I ported this to UMIPS (MIPS System V).
+There are a lot of really bad things going on in their libc.a, and now
+they're going on in BIND as well.
+
+I added a "res/defs.h" file and then proceeded to include it from all kinds
+of files that aren't in res/.  I'm thinking of moving it but I'm also trying
+to figure out where -- include/ is the wrong place.  res/defs.h has in it all
+the ugly ifdef's needed to figure out whether this is a late-model BSD system,
+a POSIX system, or just old.
+
+All the "#endif" and "#else" cpp directives now have comments around their
+annotations.  It turns out that System V CPP complains about "#endif DEBUG"
+but has no problem with "#endif /*DEBUG*/".  In many cases where the #ifdef
+was obviously visible and unambiguous, I simply removed the annotation.
+
+The "l" is now a ";".  Thanks to all who replied :-).
+
+There was a very bad bug in the named-xfer interface.  'nuff said.
+
+AIX needs a 32-bit field for PID's.  I can't imagine.  But it's fixed.
+
+The "domain" directive in named.boot is now an option, defaulting to off.
+
+There was a benign bug in sqrm().
+
+doaxfr() is now shorter and clearer.
+
+There is an "include" directive in the named.boot file now.  Its syntax is
+simple: "include somefile".  No quotes, no "#", no <brackets>.  This feature
+was in 4.9-ALPHA as well, courtesy of Andrew Partan.  I forgot to document it.
+
+4.9-ALPHA ---------------- December 21, 1992 -- Paul Vixie -- DECWRL
+
+This release incorporates fixes from a lot of people, including many from
+DECWRL.  Some fixes are just lint; some are to avoid dumping core on non-VAX
+computers; many are to fix promiscuity, corruption, and rudeness.
+
+Various internal DEC programmers have ported the old 4.8.3 code to various
+not-entirely-BSD-like platforms and turned up some interesting lint.  All
+of this has been fixed.  Also, we fixed a bad bug in the handling of timeouts
+and SERVFAIL's when forwarders and slave are both used.
+
+I have made major changes to the code inside the ALLOW_UPDATES ifdef's, but
+I don't use it and have never compiled with that option turned on so I don't
+know if it still works.  Given that SNMP has come and there is an IETF WG for
+SNMP management of the DNS, I am thinking very seriously of purging all of the
+ALLOW_UPDATES code in 4.9.1.  I suspect that Mike Schwartz will let me know if
+this is ok..
+
+(interrim "KJB" notes) ------------------- March, 1992 -- Paul Vixie -- DECWRL
+
+If we are about to forward a query for some zone for which we are one of the
+servers, we send back a SERVFAIL instead.  If we don't have it, chances are
+good that the other name servers won't have it either.  This is the major
+cause of "network meltdown" when the root servers declare you as a name server
+for some zone you don't know about and havn't configured yourself for.
+
+Fixed a memory leak such that if db_update() fails to update the database
+from a response packet, a databuf will no longer be orphaned.  Also fixed
+what looks like a similar leak in the ALLOW_UPDATES code but I don't use it
+that hasn't been tested.
+
+Fixed a memory sponge such that if we forward a query to someone who is not
+ever going to answer it, we will eventually expire it from our query queue.
+Previously it would expire after N retries to N' different servers, which
+could be a very long time.  Particularly in the case of lame delegations and
+other forwarding loops, we feel that 90 seconds (two max-retry intervals) is
+enough time for a query to be answered.  While we were into this code we made
+several fields in the query structure into "short"'s since they were only
+being used to store smallish integers.  The query list gets Very Long during
+a forwarding loop -- even 90 seconds worth of queries is a lot of queries.
+
+This version includes my hacks that assign a "credibility index" to each
+<name,type> such that when more credible data arrives for a given
+<name,type>, all old data is purged.  When equally-credible data arrives it
+is aggregated in the way we all know and love; when less credible data
+arrives it is completely ignored.  Credibility, from best to worst, is:
+	1. zone files (primary or secondary)
+	2. authoritative answers
+	3. non-authoritative answers and authority records
+	4. additional data
+	5. zone files ("cache" or "bootstrap" information)
+You need this version of bind if you still show any A RR's in network
+32.0.0.0 when you look up uucp-gw-1.pa.dec.com's A or adobe.com's NS.
+
+I have also added some extra code to prevent pollution of the internal
+"hint cache."  In all versions of BIND that I was able to test, any IN_A
+response to any sysquery() would cause the IN_A RR to be added to the
+fcachetab ("hint cache").  This resulted in lots of extra cruft in the hint
+cache, that wasn't timed out properly, which in turn resulted in lots of
+strange answers ('nuff said, take my word for it.)
+
+Though changes have been made to make the Ultrix and GNU (2.1) C compilers
+stop complaining about the source, it should still compile and run just
+about anywhere.  In fact, after I cleaned up lots of old lint, this version
+of BIND is known to compile and run on:
+
+	Ultrix 4.2 (MIPS or VAX)
+	SunOS 4.0.3
+	BSD/386 (BSDi beta)
+
+This was being released as King James Bind because, like KJ Sendmail, it is
+a merge of every major variant of Bind that we know about.  It was
+assembled and tested by Paul Vixie of DEC NSL/WRL, with generous donations
+of code and advice from Win Treese of DEC CRL.  Changes from Don Lewis of
+Harris, Andrew Partan of UUNET, and Piet Beertema of EUNet are also included.
+See the OPTIONS file for a description of the changes you can control with
+#ifdef's.
+
+This server has been run on UUCP-GW-{1,2}.PA.DEC.COM, which are in the UUCP
+Zone.  Our named.boot file has ~1900 lines in it.  Before we instituted the
+changes in this release, our name server usually ran at about 16MB virtual,
+15MB physical, growing slowly but constantly until we restarted it.
+Whenever a new zone was added to the NIC's root zone listing us as a name
+server, our servers would kill themselves and eachother (and NS.UU.NET, one
+of the other UUCP Zone name servers) with forwarding loops.  After these
+changes, we run at a fairly constant 8MB virtual and physical size, and our
+apparent CPU utilization is always 0.0% since we never finish a quantum and
+the scheduler always sees us as waiting for I-O.  In other words, life is good.
+
+Notes from UCB version 4.8.3 follow:
+
+-------------------
+
+This is version 4.8.3 of bind.  It is a test release that updates
+versions 4.8 and 4.8.1 with fixes, and is essentially the same as
+the version of named on the 4.3BSD Reno release.  Although it is
+currently described as a test release, it is believed to be reasonably
+stable and more usable than the previously-released versions.
+Here are some of the more important changes:
+
+  o A list of domains may be specified for searching in resolv.conf instead
+    of just the local domain name.
+
+  o gethostbyname() will accept a dotted quad.
+
+  o Support has been added for the the T_TXT data type and for the class
+    C_HS.  These are both used by Hesiod from Project Athena at MIT.
+
+  o All of the pathnames have been put into one header file.  This
+    makes it easier to change the location based upon your local
+    configuration.
+
+  o Responses are only accepted from an address to which we might of sent
+    the request.  This might cause problems if some server is multihomed
+    and is still running BIND 4.3, but it prevents attacks induced by
+    sending responses from another address.
+
+  o Numerous bugs have been fixed:  Adding a new authoritative zone now
+    works when the server has a cached SOA record.  Comparisons in the
+    db now look at type and class as well instead of dropping records
+    with identical data.  Scheduling of maintenance interrupts has been
+    moved to one routine avoid spurious ones.  Named goes into the background
+    after more of the initialization is done.  Stream connection queue
+    handling was cleaned up including a bug that caused data corruption
+    and core dumps.  Sys5 no longer can have multiple transfers of the
+    same zone occuring at the same time.  Handle CNAME -> CNAME loops
+    more gracefully.  Avoid making one server never get queried.  Border
+    conditions in resolver are checked more accurately.
+
+  o Nslookup has been updated.
+
+There are several bug reports that have yet to be integrated into this
+version.  Hopefully they will be dealt with in the next release.  Please
+send feedback on this release.
+
+Notes from versions 4.8.1 and 4.8 follow:
+
+------------------
+
+This is version 4.8.1 of bind.  It is a test release that includes
+version 4.8 with fixes, asynchronous zone transfer and better reload
+capabilities.  Although it is currently described as a test release,
+it is believed to be reasonably stable and more usable than the currently-
+released version, 4.8.  The changes of note are:
+
+  o The asynchronous zone transfer code previously posted to the bind
+    mailing list has been integrated, completed and tested.  There are
+    a number of changes from the version posted, including fixes to
+    allow top-level domains to work and a simplification of the timer
+    code.
+
+  o The code for reloading the server has been changed so that only
+    primary zones master files that have changed are reloaded.  The
+    cache and secondary zones are not flushed, and the sortlist, domain,
+    etc. are reset to correspond to the boot file contents.
+
+  o Several bugs have been fixed: the name "*" is not interpreted as
+    a wildcard in cached zones, only in primary zones.  Secondary servers
+    no longer decrement the time-to-live of records by the time since
+    they verified the zone with the master; as a result, they never
+    hand out nameserver referrals with too short a TTL to be usable.
+    A bug was fixed that caused secondary servers with out-of-date
+    zones to return empty answers between the actual expiration time
+    and the next timeout.
+
+There are several other bugs that have been reported but have not yet
+been fixed.  In addition, the next regular release of named will
+support negative caching, but this has not been integrated.
+
+I would appreciate receiving feedback on this release; in particular,
+problems (or lack of problems) when installing on various systems.
+I attempted to update the SysV code when integrating the zone-transfer,
+but haven't tested it.
+
+The notes from version 4.8 follow.
+
+----------
+Welcome to version 4.8 of bind.
+
+There have been several changes to the named boot file (/etc/named.boot)
+of which you should be aware.  The "domain" line for each zone is no longer
+needed, but one such line may still be used to specify a default domain
+to be used for queries containing names with only a single component.
+The term "suffixes", which was added in version 4.7alpha, has been removed.
+
+The manual page on named (named.8) has been updated to reflect all
+these changes.  Please read this and look at the example files
+before installation.  You should also note the changes in the
+resolver code to support non-fully-qualified addresses and per-user
+host aliases.  See hostname(7) for an overview.  Two new routines
+have been added to the resolver library since the last test release:
+res_query formulates a query, sends it, waits for a response and does
+preliminary error checking; res_search implements the search rules
+of gethostbyname using res_query.
+
+The MX lookup routine in sendmail has been modified to use res_search.  
+Also, dn_skip takes an additional parameter and has been renamed
+to dn_skipname.  While old sendmail binaries will work with the new
+version of bind, because of these changes, it is desirable to install
+new sendmail sources and recompile sendmail.  Do not rebuild sendmail 
+from old sources.   The new sendmail is on ucbarpa.Berkeley.EDU for
+anonymous FTP from pub/4.3/sendmail.MX.tar and pub/4.3/sendmail.MX.tar.Z.
+
+There have been numerous changes to named, fixing most of the known
+bugs that can be fixed without major structural changes in the server.
+Several server configurations that failed before should now work.
+Certain robustness problems have been fixed, in particular bounds-
+checking when processing incoming packets.  Two changes have been made
+in preparation for negative caching: SOA records are sent in the authority
+section in negative responses with NXDOMAIN set, and a bug was fixed that
+caused confusion and repeated requests if a response had no error, no answer
+and an SOA in the authority section.  As such responses are already sent
+by other servers, and will be sent by the next release of BIND, it is
+important that all sites upgrade to this version as quickly as possible.
+
+The root "hint" cache and cache file remain the largest problem area,
+along with named's naivete in accepting bogus server's data.
+These will be addressed in the next release, along with asynchronous
+zone transfers, intelligent reloading of zone files, faster startup,
+and caching of negative responses.
+
+This version (4.8) will replace the last officially released version (4.5).
+Version 4.5 has a serious bug that causes the generation of a continuous
+stream of bogons to the root domain servers (bogus queries with the query
+response bit set and possibly garbage for nsid and rcode).  It is imperative
+that these versions of named be replaced as fast as possible.  We urge you to
+field 4.8 quickly, for the sake of the root domain servers.
+
+	Mike Karels
+	Jean Wood
+	bind@ucbarpa.Berkeley.EDU
+
+## ++Copyright++
+## -
+## Copyright (c)  Regents of the University of California.
+## All rights reserved.
+## 
+## Redistribution and use in source and binary forms, with or without
+## modification, are permitted provided that the following conditions
+## are met:
+## 1. Redistributions of source code must retain the above copyright
+##    notice, this list of conditions and the following disclaimer.
+## 2. Redistributions in binary form must reproduce the above copyright
+##    notice, this list of conditions and the following disclaimer in the
+##    documentation and/or other materials provided with the distribution.
+## 3. All advertising materials mentioning features or use of this software
+##    must display the following acknowledgement:
+## 	This product includes software developed by the University of
+## 	California, Berkeley and its contributors.
+## 4. Neither the name of the University nor the names of its contributors
+##    may be used to endorse or promote products derived from this software
+##    without specific prior written permission.
+## 
+## THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+## ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+## IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+## ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+## FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+## DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+## OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+## HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+## LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+## OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+## SUCH DAMAGE.
+## -
+## Portions Copyright (c) 1993 by Digital Equipment Corporation.
+## 
+## Permission to use, copy, modify, and distribute this software for any
+## purpose with or without fee is hereby granted, provided that the above
+## copyright notice and this permission notice appear in all copies, and that
+## the name of Digital Equipment Corporation not be used in advertising or
+## publicity pertaining to distribution of the document or software without
+## specific, written prior permission.
+## 
+## THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
+## WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
+## OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
+## CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+## DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+## PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+## ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+## SOFTWARE.
+## -
+## --Copyright--
