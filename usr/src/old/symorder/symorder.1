@@ -5,41 +5,51 @@
 .\"
 .\"     @(#)symorder.1	6.5 (Berkeley) %G%
 .\"
-.TH SYMORDER 1 "%Q"
-.UC
-.SH NAME
-symorder \- rearrange name list
-.SH SYNOPSIS
-.nf
-.ft B
-symorder [\-t] symlist file
-.ft R
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt SYMORDER 1
+.Os BSD 3
+.Sh NAME
+.Nm symorder
+.Nd rearrange name list
+.Sh SYNOPSIS
+.Nm symorder
+.Fl t Ar symlist file
+.Sh DESCRIPTION
 The file
-.I symlist
-contains a list of symbols expected to be found in
-.IR file ,
+.Ar symlist
+contains a list of symbols to be found in
+.Ar file,
 one symbol per line.
-.PP
-The file
-.I file
-is updated in place to place the listed symbols first in the symbol
-table, in the order specified.
-.PP
-The options are as follows:
-.TP
-\-t
+.Pp
+The symbol table of
+.Ar file
+is updated in place;
+symbols read from
+.Ar symlist
+are relocated to the beginning of the table and in the order given.
+.Bl -tag -width flag
+.It Fl t
 Restrict the symbol table to the symbols listed in
-.IR symlist .
-.PP
+.Ar symlist .
+.El
+.Pp
+This program was specifically designed to cut down on the
+overhead of getting symbols from
+.Pa /vmunix.
+.Sh DIAGNOSTICS
 The
-.I symorder
-utility exits 0 on success, 1 if a symbol listed in the
-.I symlist
-file was not found in the symbol table, and >1 if an error occurs.
-.PP
-This program was specifically designed to cut down on the overhead of
-getting extracting symbols from the kernel.
-.SH "SEE ALSO"
-nm(1), strip(1), nlist(3)
+.Nm symorder
+utility exits 0 on success, 1 if a symbol
+listed in the
+.Ar symlist
+file was not found in the symbol
+table, and >1 if an error occurs.
+.Sh SEE ALSO
+.Xr nm 3 ,
+.Xr nlist 3 ,
+.Xr strip 3
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
