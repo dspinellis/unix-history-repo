@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.56 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -476,6 +476,8 @@ prescan(addr, delim, pvpbuf, pvpbsize, delimptr)
 				if (q >= &pvpbuf[pvpbsize - 5])
 				{
 					usrerr("553 Address too long");
+					if (strlen(addr) > MAXNAME)
+						addr[MAXNAME] = '\0';
 	returnnull:
 					if (delimptr != NULL)
 						*delimptr = p;
