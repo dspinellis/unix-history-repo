@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.54 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.37.1.1 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.54 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.37.1.1 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -259,14 +259,10 @@ smtp(e)
 				MyHostName, CurSmtpClient);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
-			message("250-8BITMIME");
 			if (MaxMessageSize > 0)
 				message("250-SIZE %ld", MaxMessageSize);
 			else
 				message("250-SIZE");
-#ifdef DSN
-			message("250-X-DSN-2 (Unpublished draft as of Sat, 04 Feb 1995)");
-#endif
 			message("250 HELP");
 			break;
 
@@ -353,8 +349,8 @@ smtp(e)
 
 			/* check for possible spoofing */
 			if (RealUid != 0 && OpMode == MD_SMTP &&
-			    !bitnset(M_LOCALMAILER, e->e_from.q_mailer->m_flags) &&
-			    strcmp(e->e_from.q_user, RealUserName) != 0)
+			    (e->e_from.q_mailer != LocalMailer &&
+			     strcmp(e->e_from.q_user, RealUserName) != 0))
 			{
 				auth_warning(e, "%s owned process doing -bs",
 					RealUserName);
@@ -416,30 +412,23 @@ smtp(e)
 						usrerr("501 BODY requires a value");
 						/* NOTREACHED */
 					}
+# ifdef MIME
 					if (strcasecmp(vp, "8bitmime") == 0)
 					{
-						SevenBitInput = FALSE;
+						e->e_bodytype = "8BITMIME";
+						SevenBit = FALSE;
 					}
 					else if (strcasecmp(vp, "7bit") == 0)
 					{
-						SevenBitInput = TRUE;
+						e->e_bodytype = "7BIT";
+						SevenBit = TRUE;
 					}
 					else
 					{
 						usrerr("501 Unknown BODY type %s",
 							vp);
-						/* NOTREACHED */
 					}
-					e->e_bodytype = newstr(vp);
-				}
-				else if (strcasecmp(kp, "envid") == 0)
-				{
-					if (vp == NULL)
-					{
-						usrerr("501 ENVID requires a value");
-						/* NOTREACHED */
-					}
-					e->e_envid = newstr(vp);
+# endif
 				}
 				else
 				{
@@ -486,54 +475,11 @@ smtp(e)
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;
-			a = parseaddr(p, NULLADDR, RF_COPYALL, ' ', &delimptr, e);
+			a = parseaddr(p, NULLADDR, RF_COPYALL, ' ', NULL, e);
 			if (a == NULL)
 				break;
-			p = delimptr;
-
-			/* now parse ESMTP arguments */
-			while (p != NULL && *p != '\0')
-			{
-				char *kp;
-				char *vp = NULL;
-
-				/* locate the beginning of the keyword */
-				while (isascii(*p) && isspace(*p))
-					p++;
-				if (*p == '\0')
-					break;
-				kp = p;
-
-				/* skip to the value portion */
-				while (isascii(*p) && isalnum(*p) || *p == '-')
-					p++;
-				if (*p == '=')
-				{
-					*p++ = '\0';
-					vp = p;
-
-					/* skip to the end of the value */
-					while (*p != '\0' && *p != ' ' &&
-					       !(isascii(*p) && iscntrl(*p)) &&
-					       *p != '=')
-						p++;
-				}
-
-				if (*p != '\0')
-					*p++ = '\0';
-
-				if (tTd(19, 1))
-					printf("RCPT: got arg %s=\"%s\"\n", kp,
-						vp == NULL ? "<null>" : vp);
-
-				rcpt_esmtp_args(a, kp, vp, e);
-
-			}
-
-			/* save in recipient list after ESMTP mods */
 			a->q_flags |= QPRIMARY;
-			a = recipient(a, &e->e_sendqueue, 0, e);
-
+			a = recipient(a, &e->e_sendqueue, e);
 			if (Errors != 0)
 				break;
 
@@ -585,13 +531,10 @@ smtp(e)
 			}
 
 			/* collect the text of the message */
-			collect(InChannel, TRUE, doublequeue, NULL, e);
+			collect(TRUE, doublequeue, e);
 			if (Errors != 0)
 				goto abortmessage;
-
-			/* from now on, we have to operate silently */
 			HoldErrs = TRUE;
-			e->e_errormode = EM_MAIL;
 
 			/*
 			**  Arrange to send to everyone.
@@ -612,33 +555,41 @@ smtp(e)
 			*/
 
 			if (rcps != 1)
+			{
+				HoldErrs = TRUE;
+				e->e_errormode = EM_MAIL;
+			}
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
 			id = e->e_id;
 
-			if (doublequeue)
+			/* send to all recipients */
+			sendall(e, doublequeue ? SM_QUEUE : SM_DEFAULT);
+			e->e_to = NULL;
+
+			/* issue success if appropriate and reset */
+			if (Errors == 0 || HoldErrs)
+				message("250 %s Message accepted for delivery", id);
+
+			if (bitset(EF_FATALERRS, e->e_flags) && !HoldErrs)
 			{
-				/* make sure it is in the queue */
-				queueup(e, TRUE, FALSE);
-				if (e->e_sendmode == SM_QUEUE)
-					e->e_flags |= EF_KEEPQUEUE;
+				/* avoid sending back an extra message */
+				e->e_flags &= ~EF_FATALERRS;
+				e->e_flags |= EF_CLRQUEUE;
 			}
 			else
 			{
-				/* send to all recipients */
-				sendall(e, SM_DEFAULT);
-			}
-			e->e_to = NULL;
+				/* from now on, we have to operate silently */
+				HoldErrs = TRUE;
+				e->e_errormode = EM_MAIL;
 
-			/* issue success message */
-			message("250 %s Message accepted for delivery", id);
+				/* if we just queued, poke it */
+				if (doublequeue && e->e_sendmode != SM_QUEUE)
+				{
+					extern pid_t dowork();
 
-			/* if we just queued, poke it */
-			if (doublequeue && e->e_sendmode != SM_QUEUE)
-			{
-				extern pid_t dowork();
-
-				unlockqueue(e);
-				(void) dowork(id, TRUE, TRUE, e);
+					unlockqueue(e);
+					(void) dowork(id, TRUE, TRUE, e);
+				}
 			}
 
   abortmessage:
@@ -666,7 +617,7 @@ smtp(e)
 						PrivacyFlags))
 			{
 				if (vrfy)
-					message("252 Cannot VRFY user; try RCPT to attempt delivery (or try finger)");
+					message("252 Who's to say?");
 				else
 					message("502 Sorry, we do not allow this operation");
 #ifdef LOG
@@ -694,7 +645,7 @@ smtp(e)
 			if (vrfy)
 				e->e_flags |= EF_VRFYONLY;
 			while (*p != '\0' && isascii(*p) && isspace(*p))
-				p++;
+				*p++;
 			if (*p == '\0')
 			{
 				message("501 Argument required");
@@ -702,7 +653,7 @@ smtp(e)
 			}
 			else
 			{
-				(void) sendtolist(p, NULLADDR, &vrfyqueue, 0, e);
+				(void) sendtolist(p, NULLADDR, &vrfyqueue, e);
 			}
 			if (Errors != 0)
 			{
@@ -861,87 +812,6 @@ skipword(p, w)
 		goto syntax;
 
 	return (p);
-}
-/*
-**  RCPT_ESMTP_ARGS -- process ESMTP arguments from RCPT line
-**
-**	Parameters:
-**		a -- the address corresponding to the To: parameter.
-**		kp -- the parameter key.
-**		vp -- the value of that parameter.
-**		e -- the envelope.
-**
-**	Returns:
-**		none.
-*/
-
-rcpt_esmtp_args(a, kp, vp, e)
-	ADDRESS *a;
-	char *kp;
-	char *vp;
-	ENVELOPE *e;
-{
-	if (strcasecmp(kp, "notify") == 0)
-	{
-		char *p;
-
-		if (vp == NULL)
-		{
-			usrerr("501 NOTIFY requires a value");
-			/* NOTREACHED */
-		}
-		a->q_flags &= ~(QPINGONSUCCESS|QPINGONFAILURE|QPINGONDELAY);
-		if (strcasecmp(vp, "never") == 0)
-			return;
-		for (p = vp; p != NULL; vp = p)
-		{
-			p = strchr(p, ',');
-			if (p != NULL)
-				*p++ = '\0';
-			if (strcasecmp(vp, "success") == 0)
-				a->q_flags |= QPINGONSUCCESS;
-			else if (strcasecmp(vp, "failure") == 0)
-				a->q_flags |= QPINGONFAILURE;
-			else if (strcasecmp(vp, "delay") == 0)
-				a->q_flags |= QPINGONDELAY;
-			else
-			{
-				usrerr("501 Bad argument \"%s\"  to NOTIFY",
-					vp);
-				/* NOTREACHED */
-			}
-		}
-	}
-	else if (strcasecmp(kp, "ret") == 0)
-	{
-		if (vp == NULL)
-		{
-			usrerr("501 RET requires a value");
-			/* NOTREACHED */
-		}
-		a->q_flags |= QHAS_RET_PARAM;
-		if (strcasecmp(vp, "hdrs") == 0)
-			a->q_flags |= QRET_HDRS;
-		else if (strcasecmp(vp, "full") != 0)
-		{
-			usrerr("501 Bad argument \"%s\" to RET", vp);
-			/* NOTREACHED */
-		}
-	}
-	else if (strcasecmp(kp, "orcpt") == 0)
-	{
-		if (vp == NULL)
-		{
-			usrerr("501 ORCPT requires a value");
-			/* NOTREACHED */
-		}
-		a->q_orcpt = newstr(vp);
-	}
-	else
-	{
-		usrerr("501 %s parameter unrecognized", kp);
-		/* NOTREACHED */
-	}
 }
 /*
 **  PRINTVRFYADDR -- print an entry in the verify queue
