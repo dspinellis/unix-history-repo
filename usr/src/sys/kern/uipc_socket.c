@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_socket.c	7.1 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -215,9 +215,12 @@ soconnect(so, nam)
 	register struct socket *so;
 	struct mbuf *nam;
 {
-	int s = splnet();
+	int s;
 	int error;
 
+	if (so->so_options & SO_ACCEPTCONN)
+		return (EOPNOTSUPP);
+	s = splnet();
 	/*
 	 * If protocol is connection-based, can only connect once.
 	 * Otherwise, if connected, try to disconnect first.
