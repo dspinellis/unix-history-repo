@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -442,14 +442,18 @@ dosum()
 	printf("%9d system calls\n", sum.v_syscall);
 	lseek(mf, (long)nl[X_NCHSTATS].n_value, 0);
 	read(mf, &nchstats, sizeof nchstats);
-	nchtotal = nchstats.ncs_goodhits + nchstats.ncs_badhits +
-	    nchstats.ncs_falsehits + nchstats.ncs_miss + nchstats.ncs_long;
-	printf("%9d total name lookups", nchtotal);
-	printf(" (cache hits %d%% system %d%% per-process)\n",
-	    pct(nchstats.ncs_goodhits, nchtotal),
+	nchtotal = nchstats.ncs_goodhits + nchstats.ncs_neghits +
+	    nchstats.ncs_badhits + nchstats.ncs_falsehits +
+	    nchstats.ncs_miss + nchstats.ncs_long;
+	printf("%9d total name lookups\n", nchtotal);
+	printf("%9s cache hits (%d%% pos + %d%% neg) system %d%% per-process\n",
+	    "", pct(nchstats.ncs_goodhits, nchtotal),
+	    pct(nchstats.ncs_neghits, nchtotal),
 	    pct(nchstats.ncs_pass2, nchtotal));
-	printf("%9s badhits %d, falsehits %d, toolong %d\n", "",
-	    nchstats.ncs_badhits, nchstats.ncs_falsehits, nchstats.ncs_long);
+	printf("%9s deletions %d%%, falsehits %d%%, toolong %d%%\n", "",
+	    pct(nchstats.ncs_badhits, nchtotal),
+	    pct(nchstats.ncs_falsehits, nchtotal),
+	    pct(nchstats.ncs_long, nchtotal));
 	lseek(mf, (long)nl[X_XSTATS].n_value, 0);
 	read(mf, &xstats, sizeof xstats);
 	printf("%9d total calls to xalloc (cache hits %d%%)\n",
