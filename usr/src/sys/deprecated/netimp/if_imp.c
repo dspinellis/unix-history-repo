@@ -1,4 +1,4 @@
-/*	if_imp.c	4.21	82/03/30	*/
+/*	if_imp.c	4.22	82/04/07	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -382,8 +382,7 @@ COUNT(IMPOUTPUT);
 	/*
 	 * Don't even try if the IMP is unavailable.
 	 */
-	x = imp_softc[ifp->if_unit].imp_state;
-	if (x == IMPS_DOWN || x == IMPS_GOINGDOWN)
+	if (imp_softc[ifp->if_unit].imp_state != IMPS_UP)
 		goto drop;
 
 	switch (dst->sa_family) {
