@@ -1,4 +1,5 @@
-#	@(#)Makefile	5.10 (Berkeley) 5/6/91
+#	from: @(#)Makefile	5.10 (Berkeley) 5/6/91
+#	$Id$
 
 LIB=	util
 # kvm.c needs -I/sys

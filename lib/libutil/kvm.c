@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ *	$Id$
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -906,7 +907,6 @@ Vtophys(loc)
 #define KREAD(off, addr, len) \
 	(kvm_read((void *)(off), (char *)(addr), (len)) == (len))
 
-#define atop(x)		(((unsigned)(x)) >> page_shift)
 #define vm_page_hash(object, offset) \
         (((unsigned)object+(unsigned)atop(offset))&vm_page_hash_mask)
 
