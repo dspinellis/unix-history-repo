@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.18 %G%
+ *	@(#)as.h 4.19 %G%
  */
 #define	reg	register
 
@@ -201,6 +201,7 @@ struct symtab{
 #define	FETCHNAME(sp)	(((struct strdesc *)(sp)->s_name)->sd_string)
 #define	STRLEN(sp)	(((struct strdesc *)(sp)->s_name)->sd_strlen)
 #define	STROFF(sp)	(((struct strdesc *)(sp)->s_name)->sd_stroff)
+#define	STRPLACE(sp)	(((struct strdesc *)(sp)->s_name)->sd_place)
 #define	s_nmx	s_nm.n_un.n_strx	/* string table index */
 #define	s_type	s_nm.n_type		/* type of the symbol */
 #define	s_other	s_nm.n_other		/* other information for sdb */
