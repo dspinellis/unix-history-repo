@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	7.13 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -421,5 +421,8 @@ profil(p, uap, retval)
 	upp->pr_size = uap->bufsize;
 	upp->pr_off = uap->pcoffset;
 	upp->pr_scale = uap->pcscale;
+#ifdef PROFTIMER
+	initprofclock();
+#endif
 	return (0);
 }
