@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)temp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)temp.c	5.6 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -33,16 +33,14 @@ tinit()
 {
 	register char *cp;
 	char uname[PATHSIZE];
-	register int pid;
 	uid_t getuid();
 
-	pid = getpid();
-	sprintf(tempMail, "/tmp/Rs%05d", pid);
-	sprintf(tempResid, "/tmp/Rq%05d", pid);
-	sprintf(tempQuit, "/tmp/Rm%05d", pid);
-	sprintf(tempEdit, "/tmp/Re%05d", pid);
-	sprintf(tempSet, "/tmp/Rx%05d", pid);
-	sprintf(tempMesg, "/tmp/Rx%05d", pid);
+	mktemp(strcpy(tempMail, "/tmp/RsXXXXXX"));
+	mktemp(strcpy(tempResid, "/tmp/RqXXXXXX"));
+	mktemp(strcpy(tempQuit, "/tmp/RmXXXXXX"));
+	mktemp(strcpy(tempEdit, "/tmp/ReXXXXXX"));
+	mktemp(strcpy(tempSet, "/tmp/RxXXXXXX"));
+	mktemp(strcpy(tempMesg, "/tmp/RxXXXXXX"));
 
 	if (strlen(myname) != 0) {
 		uid = getuserid(myname);
