@@ -1,4 +1,4 @@
-/*	machdep.c	4.4	%G%	*/
+/*	machdep.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 4.4) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.1) %G% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -45,6 +45,7 @@ startup(firstaddr)
 	 * Good {morning,afternoon,evening,night}.
 	 */
 
+	tocons(TXDB_CWSI);
 	printf(version);
 	printf("real mem  = %d\n", ctob(maxmem));
 
@@ -220,6 +221,7 @@ ttime()
  * PROVIDED BY HARDWARE IS AVAILABLE TO THE USER PROCESS.
  */
 sendsig(p, n)
+	int (*p)();
 {
 	register int *usp, *regs;
 
@@ -230,11 +232,16 @@ sendsig(p, n)
 	if ((int)usp <= USRSTACK - ctob(u.u_ssize))
 		(void) grow((unsigned)usp);
 	;			/* Avoid asm() label botch */
+#ifndef lint
 	asm("probew $3,$20,(r11)");
 	asm("beql bad");
+#else
+	if (useracc((caddr_t)usp, 0x20, 1))
+		goto bad;
+#endif
 	*usp++ = n;
 	*usp++ = n == SIGILL ? u.u_cfcode : 0;
-	*usp++ = p;
+	*usp++ = (int)p;
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
 	regs[SP] = (int)(usp - 5);
@@ -244,7 +251,7 @@ sendsig(p, n)
 		goto bad;
 	if (suword((caddr_t)--usp, regs[PC]))
 		goto bad;
-	if (suword((caddr_t)--usp, p))
+	if (suword((caddr_t)--usp, (int)p))
 		goto bad;
 	if (suword((caddr_t)--usp, n==SIGILL ? u.u_cfcode : 0))
 		goto bad;
@@ -290,7 +297,7 @@ dorti()
 	mask = frame.mask;
 	for (reg = 0; reg <= 11; reg++) {
 		if (mask&1) {
-			u.u_ar0[ipcreg[reg]] = fuword(sp);
+			u.u_ar0[ipcreg[reg]] = fuword((caddr_t)sp);
 			sp += 4;
 		}
 		mask >>= 1;
@@ -298,11 +305,11 @@ dorti()
 	sp += frame.spa;
 	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.psw;
 	if (frame.s)
-		sp += 4 + 4 * (fuword(sp) & 0xff);
+		sp += 4 + 4 * (fuword((caddr_t)sp) & 0xff);
 	/* phew, now the rei */
-	u.u_ar0[PC] = fuword(sp);
+	u.u_ar0[PC] = fuword((caddr_t)sp);
 	sp += 4;
-	u.u_ar0[PS] = fuword(sp);
+	u.u_ar0[PS] = fuword((caddr_t)sp);
 	sp += 4;
 	u.u_ar0[PS] |= PSL_CURMOD|PSL_PRVMOD;
 	u.u_ar0[PS] &= ~PSL_USERCLR;
@@ -387,11 +394,26 @@ boot(panic, arghowto)
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
-	if ((howto&RB_HALT)==0) {
-		while ((mfpr(TXCS)&TXCS_RDY) == 0)
-			continue;
-		mtpr(TXDB, panic == RB_PANIC ? TXDB_AUTOR : TXDB_BOOT);
+	if ((howto&RB_HALT))
+		tocons(TXDB_WSI);
+	else if (panic == RB_PANIC)
+		;			/* sent TXDB_CWSI at boot */
+	else {
+		tocons(TXDB_WSI);
+		tocons(TXDB_BOOT);	/* defboo.cmd, not restar.cmd */
 	}
 	for (;;)
 		asm("halt");
+#ifdef lint
+	printf("howto %d, devtype %d\n", howto, devtype);
+#endif
+	/*NOTREACHED*/
+}
+
+tocons(c)
+{
+
+	while ((mfpr(TXCS)&TXCS_RDY) == 0)
+		continue;
+	mtpr(TXDB, c);
 }
