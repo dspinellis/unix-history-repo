@@ -1475,6 +1475,7 @@ boolean_t vm_object_coalesce(prev_object, next_object,
 	return(TRUE);
 }
 
+#ifdef	DEBUG
 /*
  *	vm_object_print:	[ debug ]
  */
@@ -1523,3 +1524,4 @@ void vm_object_print(object, full)
 		printf("\n");
 	indent -= 2;
 }
+#endif	/* DEBUG */

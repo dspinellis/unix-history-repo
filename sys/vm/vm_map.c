@@ -2411,6 +2411,7 @@ void vm_map_simplify(map, start)
 	vm_map_unlock(map);
 }
 
+#ifdef	DEBUG
 /*
  *	vm_map_print:	[ debug ]
  */
@@ -2480,3 +2481,4 @@ void vm_map_print(map, full)
 	}
 	indent -= 2;
 }
+#endif	/* DEBUG */

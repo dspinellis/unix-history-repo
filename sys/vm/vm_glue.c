@@ -66,7 +66,7 @@
  *
  * 08 Apr 93	Bruce Evans		Several VM system fixes
  */
-static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/vm/vm_glue.c,v 1.4 1993/07/02 08:56:07 davidg Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/sys/vm/vm_glue.c,v 1.5 1993/08/28 09:22:57 rgrimes Exp $";
 
 #include "param.h"
 #include "systm.h"
@@ -543,6 +543,7 @@ thread_wakeup(event)
  * DEBUG stuff
  */
 
+#ifdef	DEBUG
 int indent = 0;
 
 /*ARGSUSED2*/
@@ -560,3 +561,4 @@ iprintf(a, b, c, d, e, f, g, h)
 		printf(" ");
 	printf(a, b, c, d, e, f, g, h);
 }
+#endif	DEBUG
