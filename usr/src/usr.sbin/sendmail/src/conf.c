@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.170 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.171 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1275,7 +1275,15 @@ getla()
 
 #if LA_TYPE == LA_HPUX
 
+/* forward declarations to keep gcc from complaining */
 struct pst_dynamic;
+struct pst_status;
+struct pst_static;
+struct pst_vminfo;
+struct pst_diskinfo;
+struct pst_processor;
+struct pst_lv;
+struct pst_swapinfo;
 
 # include <sys/param.h>
 # include <sys/pstat.h>
