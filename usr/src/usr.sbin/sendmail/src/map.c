@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.25.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -118,6 +118,39 @@ map_parseargs(map, ap)
 		  case 'a':
 			map->map_app = ++p;
 			break;
+
+		  case 'k':
+			while (isascii(*++p) && isspace(*p))
+				continue;
+			map->map_keycolnm = p;
+			break;
+
+		  case 'v':
+			while (isascii(*++p) && isspace(*p))
+				continue;
+			map->map_valcolnm = p;
+			break;
+
+		  case 'z':
+			if (*++p != '\\')
+				map->map_coldelim = *p;
+			else
+			{
+				switch (*++p)
+				{
+				  case 'n':
+					map->map_coldelim = '\n';
+					break;
+
+				  case 't':
+					map->map_coldelim = '\t';
+					break;
+
+				  default:
+					map->map_coldelim = '\\';
+				}
+			}
+			break;
 		}
 		while (*p != '\0' && !(isascii(*p) && isspace(*p)))
 			p++;
@@ -126,6 +159,10 @@ map_parseargs(map, ap)
 	}
 	if (map->map_app != NULL)
 		map->map_app = newstr(map->map_app);
+	if (map->map_keycolnm != NULL)
+		map->map_keycolnm = newstr(map->map_keycolnm);
+	if (map->map_valcolnm != NULL)
+		map->map_valcolnm = newstr(map->map_valcolnm);
 
 	if (*p != '\0')
 	{
@@ -142,7 +179,8 @@ map_parseargs(map, ap)
 	if (*p != '\0')
 		map->map_rebuild = newstr(p);
 
-	if (map->map_file == NULL)
+	if (map->map_file == NULL &&
+	    !bitset(MCF_OPTFILE, map->map_class->map_cflags))
 	{
 		syserr("No file name for %s map %s",
 			map->map_class->map_cname, map->map_mname);
@@ -163,7 +201,8 @@ map_parseargs(map, ap)
 **		av -- arguments to interpolate into buf.
 **
 **	Returns:
-**		Pointer to rewritten result.
+**		Pointer to rewritten result.  This is static data that
+**		should be copied if it is to be saved!
 **
 **	Side Effects:
 **		none.
@@ -340,9 +379,10 @@ map_init(s, rebuild)
 		return;
 
 	if (tTd(38, 2))
-		printf("map_init(%s:%s, %d)\n",
+		printf("map_init(%s:%s, %s, %d)\n",
 			map->map_class->map_cname == NULL ? "NULL" :
 				map->map_class->map_cname,
+			map->map_mname == NULL ? "NULL" : map->map_mname,
 			map->map_file == NULL ? "NULL" : map->map_file,
 			rebuild);
 
@@ -370,20 +410,34 @@ map_init(s, rebuild)
 		if (map->map_class->map_open(map, O_RDONLY))
 		{
 			if (tTd(38, 4))
-				printf("\t%s:%s: valid\n",
+				printf("\t%s:%s %s: valid\n",
 					map->map_class->map_cname == NULL ? "NULL" :
 						map->map_class->map_cname,
+					map->map_mname == NULL ? "NULL" :
+						map->map_mname,
 					map->map_file == NULL ? "NULL" :
 						map->map_file);
 			map->map_mflags |= MF_OPEN;
 		}
-		else if (tTd(38, 4))
-			printf("\t%s:%s: invalid: %s\n",
-				map->map_class->map_cname == NULL ? "NULL" :
-					map->map_class->map_cname,
-				map->map_file == NULL ? "NULL" :
-					map->map_file,
-				errstring(errno));
+		else
+		{
+			if (tTd(38, 4))
+				printf("\t%s:%s %s: invalid: %s\n",
+					map->map_class->map_cname == NULL ? "NULL" :
+						map->map_class->map_cname,
+					map->map_mname == NULL ? "NULL" :
+						map->map_mname,
+					map->map_file == NULL ? "NULL" :
+						map->map_file,
+					errstring(errno));
+			if (!bitset(MF_OPTIONAL, map->map_mflags))
+			{
+				extern MAPCLASS BogusMapClass;
+
+				map->map_class = &BogusMapClass;
+				map->map_mflags |= MF_OPEN;
+			}
+		}
 	}
 }
 /*
@@ -405,7 +459,8 @@ ndbm_map_open(map, mode)
 	struct stat st;
 
 	if (tTd(38, 2))
-		printf("ndbm_map_open(%s, %d)\n", map->map_file, mode);
+		printf("ndbm_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
 
 	if (mode == O_RDWR)
 		mode |= O_CREAT|O_TRUNC;
@@ -414,10 +469,8 @@ ndbm_map_open(map, mode)
 	dbm = dbm_open(map->map_file, mode, DBMMODE);
 	if (dbm == NULL)
 	{
-#ifdef MAYBENEXTRELEASE
 		if (aliaswait(map, ".pag", FALSE))
 			return TRUE;
-#endif
 		if (!bitset(MF_OPTIONAL, map->map_mflags))
 			syserr("Cannot open DBM database %s", map->map_file);
 		return FALSE;
@@ -461,7 +514,8 @@ ndbm_map_lookup(map, name, av, statp)
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(38, 20))
-		printf("ndbm_map_lookup(%s)\n", name);
+		printf("ndbm_map_lookup(%s, %s)\n",
+			map->map_mname, name);
 
 	key.dptr = name;
 	key.dsize = strlen(name);
@@ -516,7 +570,8 @@ ndbm_map_store(map, lhs, rhs)
 	int stat;
 
 	if (tTd(38, 12))
-		printf("ndbm_map_store(%s, %s)\n", lhs, rhs);
+		printf("ndbm_map_store(%s, %s, %s)\n",
+			map->map_mname, lhs, rhs);
 
 	key.dsize = strlen(lhs);
 	key.dptr = lhs;
@@ -550,7 +605,8 @@ ndbm_map_close(map)
 	register MAP  *map;
 {
 	if (tTd(38, 9))
-		printf("ndbm_map_close(%s, %x)\n", map->map_file, map->map_mflags);
+		printf("ndbm_map_close(%s, %s, %x)\n",
+			map->map_mname, map->map_file, map->map_mflags);
 
 	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
@@ -609,7 +665,8 @@ bt_map_open(map, mode)
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
-		printf("bt_map_open(%s, %d)\n", map->map_file, mode);
+		printf("bt_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
 
 	omode = mode;
 	if (omode == O_RDWR)
@@ -641,19 +698,21 @@ bt_map_open(map, mode)
 			syserr("Cannot open BTREE database %s", map->map_file);
 		return FALSE;
 	}
-#if !OLD_NEWDB && HASFLOCK
+#if !OLD_NEWDB
 	fd = db->fd(db);
-# if !defined(O_EXLOCK)
+# if HASFLOCK
+#  if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
 	{
 		if (lockfile(fd, map->map_file, ".db", LOCK_EX))
 			map->map_mflags |= MF_LOCKED;
 	}
-# else
+#  else
 	if (mode == O_RDONLY && fd >= 0)
 		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
 	else
 		map->map_mflags |= MF_LOCKED;
+#  endif
 # endif
 #endif
 
@@ -693,7 +752,8 @@ hash_map_open(map, mode)
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
-		printf("hash_map_open(%s, %d)\n", map->map_file, mode);
+		printf("hash_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
 
 	omode = mode;
 	if (omode == O_RDWR)
@@ -725,19 +785,21 @@ hash_map_open(map, mode)
 			syserr("Cannot open HASH database %s", map->map_file);
 		return FALSE;
 	}
-#if !OLD_NEWDB && HASFLOCK
+#if !OLD_NEWDB
 	fd = db->fd(db);
-# if !defined(O_EXLOCK)
+# if HASFLOCK
+#  if !defined(O_EXLOCK)
 	if (mode == O_RDWR && fd >= 0)
 	{
 		if (lockfile(fd, map->map_file, ".db", LOCK_EX))
 			map->map_mflags |= MF_LOCKED;
 	}
-# else
+#  else
 	if (mode == O_RDONLY && fd >= 0)
 		(void) lockfile(fd, map->map_file, ".db", LOCK_UN);
 	else
 		map->map_mflags |= MF_LOCKED;
+#  endif
 # endif
 #endif
 
@@ -779,7 +841,8 @@ db_map_lookup(map, name, av, statp)
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(38, 20))
-		printf("db_map_lookup(%s)\n", name);
+		printf("db_map_lookup(%s, %s)\n",
+			map->map_mname, name);
 
 	key.size = strlen(name);
 	if (key.size > sizeof keybuf - 1)
@@ -842,7 +905,8 @@ db_map_store(map, lhs, rhs)
 	register DB *db = map->map_db2;
 
 	if (tTd(38, 20))
-		printf("db_map_store(%s, %s)\n", lhs, rhs);
+		printf("db_map_store(%s, %s, %s)\n",
+			map->map_mname, lhs, rhs);
 
 	key.size = strlen(lhs);
 	key.data = lhs;
@@ -878,7 +942,8 @@ db_map_close(map)
 	register DB *db = map->map_db2;
 
 	if (tTd(38, 9))
-		printf("db_map_close(%s, %x)\n", map->map_file, map->map_mflags);
+		printf("db_map_close(%s, %s, %x)\n",
+			map->map_mname, map->map_file, map->map_mflags);
 
 	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
@@ -917,7 +982,8 @@ nis_map_open(map, mode)
 	char *master;
 
 	if (tTd(38, 2))
-		printf("nis_map_open(%s)\n", map->map_file);
+		printf("nis_map_open(%s, %s)\n",
+			map->map_mname, map->map_file);
 
 	if (mode != O_RDONLY)
 	{
@@ -951,7 +1017,7 @@ nis_map_open(map, mode)
 		if (yperr != 0)
 		{
 			if (!bitset(MF_OPTIONAL, map->map_mflags))
-				syserr("NIS map %s specified, but NIS not running\n",
+				syserr("421 NIS map %s specified, but NIS not running\n",
 					map->map_file);
 			return FALSE;
 		}
@@ -964,10 +1030,14 @@ nis_map_open(map, mode)
 		printf("nis_map_open: yp_match(%s, %s) => %s\n",
 			map->map_domain, map->map_file, yperr_string(yperr));
 	if (yperr == 0 || yperr == YPERR_KEY || yperr == YPERR_BUSY)
-		return TRUE;
+	{
+		if (!bitset(MF_ALIAS, map->map_mflags) ||
+		    aliaswait(map, NULL, TRUE))
+			return TRUE;
+	}
 
 	if (!bitset(MF_OPTIONAL, map->map_mflags))
-		syserr("Cannot bind to domain %s: %s", map->map_domain,
+		syserr("421 Cannot bind to domain %s: %s", map->map_domain,
 			yperr_string(yperr));
 
 	return FALSE;
@@ -992,7 +1062,8 @@ nis_map_lookup(map, name, av, statp)
 	char keybuf[MAXNAME + 1];
 
 	if (tTd(38, 20))
-		printf("nis_map_lookup(%s)\n", name);
+		printf("nis_map_lookup(%s, %s)\n",
+			map->map_mname, name);
 
 	buflen = strlen(name);
 	if (buflen > sizeof keybuf - 1)
@@ -1028,33 +1099,609 @@ nis_map_lookup(map, name, av, statp)
 		return map_rewrite(map, vp, vsize, av);
 }
 
-
-/*
-**  NIS_MAP_STORE
+#endif
+/*
+**  NISPLUS Modules
+**
+**	This code donated by Sun Microsystems.
 */
 
-void
-nis_map_store(map, lhs, rhs)
+#ifdef NISPLUS
+
+#undef NIS /* symbol conflict in nis.h */
+#include <rpcsvc/nis.h>
+#include <rpcsvc/nislib.h>
+
+#define EN_col(col)	zo_data.objdata_u.en_data.en_cols.en_cols_val[(col)].ec_value.ec_value_val
+#define COL_NAME(res,i)	((res->objects.objects_val)->TA_data.ta_cols.ta_cols_val)[i].tc_name
+#define COL_MAX(res)	((res->objects.objects_val)->TA_data.ta_cols.ta_cols_len)
+#define PARTIAL_NAME(x)	((x)[strlen(x) - 1] != '.')
+
+/*
+**  NISPLUS_MAP_OPEN -- open nisplus table
+*/
+
+bool
+nisplus_map_open(map, mode)
 	MAP *map;
-	char *lhs;
-	char *rhs;
+	int mode;
 {
-	/* nothing */
+	register char *p;
+	char qbuf[MAXLINE + NIS_MAXNAMELEN];
+	nis_result *res = NULL;
+	u_int objs_len;
+	nis_object *obj_ptr;
+	int retry_cnt, max_col, i;
+
+	if (tTd(38, 2))
+		printf("nisplus_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
+
+	if (mode != O_RDONLY)
+	{
+		errno = ENODEV;
+		return FALSE;
+	}
+
+	if (*map->map_file == '\0')
+		map->map_file = "mail_aliases.org_dir";
+
+	if (PARTIAL_NAME(map->map_file) && map->map_domain == NULL)
+	{
+		/* set default NISPLUS Domain to $m */
+		extern char *nisplus_default_domain();
+
+		map->map_domain = newstr(nisplus_default_domain());
+		if (tTd(38, 2))
+			printf("nisplus_map_open(%s): using domain %s\n",
+				 map->map_file, map->map_domain);
+	}
+	if (!PARTIAL_NAME(map->map_file))
+		map->map_domain = newstr("");
+
+	/* check to see if this map actually exists */
+	if (PARTIAL_NAME(map->map_file))
+		sprintf(qbuf, "%s.%s", map->map_file, map->map_domain);
+	else
+		strcpy(qbuf, map->map_file);
+	
+	retry_cnt = 0;
+	while (res == NULL || res->status != NIS_SUCCESS)
+	{
+		res = nis_lookup(qbuf, FOLLOW_LINKS);
+		switch (res->status)
+		{
+		  case NIS_SUCCESS:
+		  case NIS_TRYAGAIN:
+		  case NIS_RPCERROR:
+		  case NIS_NAMEUNREACHABLE:
+			break;
+
+		  default:		/* all other nisplus errors */
+#if 0
+			if (!bitset(MF_OPTIONAL, map->map_mflags))
+				syserr("421 Cannot find table %s.%s: %s",
+					map->map_file, map->map_domain,
+					nis_sperrno(res->status));
+#endif
+			errno = EBADR;
+			return FALSE;
+		}
+		sleep(2);		/* try not to overwhelm hosed server */
+		if (retry_cnt++ > 4)
+		{
+			errno = EBADR;
+			return FALSE;
+		}
+	}
+
+	if (NIS_RES_NUMOBJ(res) != 1 ||
+	    (NIS_RES_OBJECT(res)->zo_data.zo_type != TABLE_OBJ))
+	{
+		if (tTd(38, 10))
+			printf("nisplus_map_open: %s is not a table\n", qbuf);
+#if 0
+		if (!bitset(MF_OPTIONAL, map->map_mflags))
+			syserr("421 %s.%s: %s is not a table",
+				map->map_file, map->map_domain,
+				nis_sperrno(res->status));
+#endif
+		errno = EBADR;
+		return FALSE;
+	}
+	/* default key column is column 0 */
+	if (map->map_keycolnm == NULL)
+		map->map_keycolnm = newstr(COL_NAME(res,0));
+
+	max_col = COL_MAX(res);
+	
+	/* verify the key column exist */
+	for (i=0; i< max_col; i++)
+	{
+		if (!strcmp(map->map_keycolnm, COL_NAME(res,i)))
+			break;
+	}
+	if (i == max_col)
+	{
+		if (tTd(38, 2))
+			printf("nisplus_map_open(%s): can not find key column %s\n",
+				map->map_file, map->map_keycolnm);
+		errno = EBADR;
+		return FALSE;
+	}
+
+	/* default value column is the last column */
+	if (map->map_valcolnm == NULL)
+	{
+		map->map_valcolno = max_col - 1;
+		return TRUE;
+	}
+
+	for (i=0; i< max_col; i++)
+	{
+		if (strcmp(map->map_valcolnm, COL_NAME(res,i)) == 0)
+		{
+			map->map_valcolno = i;
+			return TRUE;
+		}
+	}
+
+	if (tTd(38, 2))
+		printf("nisplus_map_open(%s): can not find column %s\n",
+			 map->map_file, map->map_keycolnm);
+	errno = EBADR;
+	return FALSE;
 }
 
 
 /*
-**  NIS_MAP_CLOSE
+**  NISPLUS_MAP_LOOKUP -- look up a datum in a NISPLUS table
 */
 
-void
-nis_map_close(map)
+char *
+nisplus_map_lookup(map, name, av, statp)
 	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
 {
-	/* nothing */
+	char *vp;
+	auto int vsize;
+	int buflen;
+	char search_key[MAXNAME + 1];
+	char qbuf[MAXLINE + NIS_MAXNAMELEN];
+	nis_result *result;
+
+	if (tTd(38, 20))
+		printf("nisplus_map_lookup(%s, %s)\n",
+			map->map_mname, name);
+
+	if (!bitset(MF_OPEN, map->map_mflags))
+	{
+		if (nisplus_map_open(map, O_RDONLY))
+			map->map_mflags |= MF_OPEN;
+		else
+		{
+			*statp = EX_UNAVAILABLE;
+			return NULL;
+		}
+	}
+		
+	buflen = strlen(name);
+	if (buflen > sizeof search_key - 1)
+		buflen = sizeof search_key - 1;
+	bcopy(name, search_key, buflen + 1);
+	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
+		makelower(search_key);
+
+	/* construct the query */
+	if (PARTIAL_NAME(map->map_file))
+		sprintf(qbuf, "[%s=%s],%s.%s", map->map_keycolnm,
+			search_key, map->map_file, map->map_domain);
+	else
+		sprintf(qbuf, "[%s=%s],%s", map->map_keycolnm,
+			search_key, map->map_file);
+
+	if (tTd(38, 20))
+		printf("qbuf=%s\n", qbuf);
+	result = nis_list(qbuf, FOLLOW_LINKS | FOLLOW_PATH, NULL, NULL);
+	if (result->status == NIS_SUCCESS)
+	{
+		int count;
+		char *str;
+
+		if ((count = NIS_RES_NUMOBJ(result)) != 1)
+		{
+			if (LogLevel > 10)
+				syslog(LOG_WARNING,
+				  "%s:Lookup error, expected 1 entry, got (%d)",
+				    map->map_file, count);
+
+			/* ignore second entry */
+			if (tTd(38, 20))
+				printf("nisplus_map_lookup(%s), got %d entries, additional entries ignored\n",
+					name, count);
+		}
+
+		vp = ((NIS_RES_OBJECT(result))->EN_col(map->map_valcolno));
+		/* set the length of the result */
+		if (vp == NULL)
+			vp = "";
+		vsize = strlen(vp);
+		if (tTd(38, 20))
+			printf("nisplus_map_lookup(%s), found %s\n",
+				name, vp);
+		if (bitset(MF_MATCHONLY, map->map_mflags))
+			str = map_rewrite(map, name, strlen(name), NULL);
+		else
+			str = map_rewrite(map, vp, vsize, av);
+		nis_freeresult(result);
+#ifdef MAP_EXIT_STAT
+		*statp = EX_OK;
+#endif
+		return str;
+	}
+	else
+	{
+#ifdef MAP_EXIT_STAT
+		if (result->status == NIS_NOTFOUND)
+			*statp = EX_NOTFOUND;
+		else if (result->status == NIS_TRYAGAIN)
+			*statp = EX_TEMPFAIL;
+		else
+		{
+			*statp = EX_UNAVAILABLE;
+			map->map_mflags &= ~(MF_VALID|MF_OPEN);
+		}
+#else
+		if ((result->status != NIS_NOTFOUND) &&
+		    (result->status != NIS_TRYAGAIN))
+			map->map_mflags &= ~(MF_VALID|MF_OPEN);
+#endif
+	}
+	if (tTd(38, 20))
+		printf("nisplus_map_lookup(%s), failed\n", name);
+	nis_freeresult(result);
+	return NULL;
 }
 
-#endif /* NIS */
+
+char *
+nisplus_default_domain()
+{
+	static char default_domain[MAXNAME] = "";
+	nis_result *res = NULL;
+	char *p;
+
+	if (default_domain[0] != '\0')
+		return(default_domain);
+	
+	if (VendorCode == VENDOR_SUN && ConfigLevel < 2)
+	{
+		/* for old config, user nis+ local directory        */
+		/* have to be backward compatible with bugs too :-( */
+		p = nis_local_directory();
+		strcpy(default_domain, p);
+		return default_domain;
+	}
+
+	if ((p = macvalue('m', CurEnv)) == NULL)
+	{
+		p = nis_local_directory();
+		strcpy(default_domain, p);
+		return default_domain;
+	}
+
+	strcpy(default_domain, p);
+	if (PARTIAL_NAME(default_domain))
+		strcat(default_domain, ".");
+
+	res = nis_lookup(default_domain, FOLLOW_LINKS);
+	if (res->status == NIS_NOTFOUND)
+	{
+		p = nis_local_directory();
+		strcpy(default_domain, p);
+	}
+	return(default_domain);
+}
+
+#endif /* NISPLUS */
+/*
+**  HESIOD Modules
+**
+**	Only works for aliases (for now).
+*/
+
+#ifdef HESIOD
+
+#include <hesiod.h>
+
+char *
+hes_map_lookup(map, name, av, statp)
+        MAP *map;
+        char *name;
+        char **av;
+        int *statp;
+{
+	char **hp;
+	char *retdata = NULL;
+	int i;
+
+	if (tTd(38, 20))
+		printf("hes_map_lookup(%s, %s)\n", map->map_file, name);
+
+	hp = hes_resolve(name, map->map_file);
+	if (hp == NULL)
+		return NULL;
+	
+	if (hp[0] != NULL)
+	{
+		if (tTd(38, 20))
+			printf("  %d %s\n", i, p);
+		if (bitset(MF_MATCHONLY, map->map_mflags))
+			retdata = map_rewrite(map, name, strlen(name), NULL);
+		else
+			retdata = map_rewrite(map, hp[0], strlen(hp[0]), av);
+	}
+
+	for (i = 0; hp[i] != NULL; i++)
+		free(hp[i]);
+	free(hp);
+	return retdata;
+}
+
+#endif
+/*
+**  NeXT NETINFO Modules
+*/
+
+#ifdef NETINFO
+
+#define NETINFO_DEFAULT_DIR		"/aliases"
+#define NETINFO_DEFAULT_PROPERTY	"members"
+
+
+/*
+**  NI_MAP_OPEN -- open NetInfo Aliases
+*/
+
+bool
+ni_map_open(map, mode)
+	MAP *map;
+	int mode;
+{
+	char *p;
+
+	if (tTd(38, 20))
+		printf("ni_map_open: %s\n", map->map_file);
+
+	if (*map->map_file == '\0')
+		map->map_file = NETINFO_DEFAULT_DIR;
+
+	if (map->map_valcolnm == NULL)
+		map->map_valcolnm = NETINFO_DEFAULT_PROPERTY;
+
+	if (map->map_coldelim == '\0' && bitset(MF_ALIAS, map->map_mflags))
+		map->map_coldelim = ',';
+
+	return TRUE;
+}
+
+
+/*
+**  NI_MAP_LOOKUP -- look up a datum in NetInfo
+*/
+
+char *
+ni_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	char *res;
+	char *propval;
+	extern char *ni_propval();
+
+	if (tTd(38, 20))
+		printf("ni_map_lookup(%s, %s)\n",
+			map->map_mname, name);
+
+	propval = ni_propval(map->map_file, map->map_keycolnm, name,
+			     map->map_valcolnm, map->map_coldelim);
+
+	if (propval == NULL)
+		return NULL;
+
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		res = map_rewrite(map, name, strlen(name), NULL);
+	else
+		res = map_rewrite(map, propval, strlen(propval), av);
+	free(propval);
+	return res;
+}
+
+#endif
+/*
+**  TEXT (unindexed text file) Modules
+**
+**	This code donated by Sun Microsystems.
+*/
+
+
+/*
+**  TEXT_MAP_OPEN -- open text table
+*/
+
+bool
+text_map_open(map, mode)
+	MAP *map;
+	int mode;
+{
+	struct stat sbuf;
+
+	if (tTd(38, 2))
+		printf("text_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
+
+	if (mode != O_RDONLY)
+	{
+		errno = ENODEV;
+		return FALSE;
+	}
+
+	if (*map->map_file == '\0')
+	{
+		if (tTd(38, 2))
+			printf("text_map_open: file name required\n");
+		return FALSE;
+	}
+
+	if (map->map_file[0] != '/')
+	{
+		if (tTd(38, 2))
+			printf("text_map_open(%s): file name must be fully qualified\n",
+				map->map_file);
+		return FALSE;
+	}
+	/* check to see if this map actually accessable */
+	if (access(map->map_file, R_OK) <0)
+		return FALSE;
+
+	/* check to see if this map actually exist */
+	if (stat(map->map_file, &sbuf) <0)
+	{
+		if (tTd(38, 2))
+			printf("text_map_open(%s): can not stat %s\n",
+				map->map_file, map->map_file);
+		return FALSE;
+	}
+
+	if (!S_ISREG(sbuf.st_mode))
+	{
+		if (tTd(38, 2))
+			printf("text_map_open(%s): %s is not a file\n",
+				map->map_file, map->map_file);
+		return FALSE;
+	}
+
+	if (map->map_keycolnm == NULL)
+		map->map_keycolno = 0;
+	else
+	{
+		if (!isdigit(*map->map_keycolnm))
+		{
+			if (tTd(38, 2))
+				printf("text_map_open(%s): -k should specify a number, not %s\n",
+					map->map_file, map->map_keycolnm);
+			return FALSE;
+		}
+		map->map_keycolno = atoi(map->map_keycolnm);
+	}
+
+	if (map->map_valcolnm == NULL)
+		map->map_valcolno = 0;
+	else
+	{
+		if (!isdigit(*map->map_valcolnm))
+		{
+			if (tTd(38, 2))
+				printf("text_map_open(%s): -v should specify a number, not %s\n",
+					map->map_file, map->map_valcolnm);
+			return FALSE;
+		}
+		map->map_valcolno = atoi(map->map_valcolnm);
+	}
+
+	if (map->map_coldelim == '\0')
+		map->map_coldelim = ':';
+
+	if (tTd(38, 2))
+	{
+		printf("text_map_open(%s): delimiter = %c\n",
+			map->map_file, map->map_coldelim);
+	}
+
+	return TRUE;
+}
+
+
+/*
+**  TEXT_MAP_LOOKUP -- look up a datum in a TEXT table
+*/
+
+char *
+text_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+	char *vp;
+	auto int vsize;
+	int buflen;
+	char search_key[MAXNAME + 1];
+	char linebuf[MAXLINE];
+	FILE *f;
+	char buf[MAXNAME+1];
+	char delim;
+	int key_idx;
+	bool found_it;
+	extern char *get_column();
+
+
+	found_it = FALSE;
+	if (tTd(38, 20))
+		printf("text_map_lookup(%s)\n", name);
+
+	buflen = strlen(name);
+	if (buflen > sizeof search_key - 1)
+		buflen = sizeof search_key - 1;
+	bcopy(name, search_key, buflen + 1);
+	if (!bitset(MF_NOFOLDCASE, map->map_mflags))
+		makelower(search_key);
+
+	f = fopen(map->map_file, "r");
+	if (f == NULL)
+	{
+		map->map_mflags &= ~(MF_VALID|MF_OPEN);
+		*statp = EX_UNAVAILABLE;
+		return NULL;
+	}
+	key_idx = map->map_keycolno;
+	delim = map->map_coldelim;
+	while (fgets(linebuf, MAXLINE, f))
+	{
+		char *lf;
+		if (linebuf[0] == '#')
+			continue; /* skip comment line */
+		if (lf = strchr(linebuf, '\n'))
+			*lf = '\0';
+		if (!strcasecmp(search_key,
+				get_column(linebuf, key_idx, delim, buf)))
+		{
+			found_it = TRUE;
+			break;
+		}
+	}
+	fclose(f);
+	if (!found_it)
+	{
+#ifdef MAP_EXIT_STAT
+		*statp = EX_NOTFOUND;
+#endif
+		return(NULL);
+	}
+	vp = get_column(linebuf, map->map_valcolno, delim, buf);
+	vsize = strlen(vp);
+#ifdef MAP_EXIT_STAT
+	*statp = EX_OK;
+#endif
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, vp, vsize, av);
+}
 /*
 **  STAB (Symbol Table) Modules
 */
@@ -1074,7 +1721,8 @@ stab_map_lookup(map, name, av, pstat)
 	register STAB *s;
 
 	if (tTd(38, 20))
-		printf("stab_lookup(%s)\n", name);
+		printf("stab_lookup(%s, %s)\n",
+			map->map_mname, name);
 
 	s = stab(name, ST_ALIAS, ST_FIND);
 	if (s != NULL)
@@ -1118,7 +1766,8 @@ stab_map_open(map, mode)
 	struct stat st;
 
 	if (tTd(38, 2))
-		printf("stab_map_open(%s)\n", map->map_file);
+		printf("stab_map_open(%s, %s)\n",
+			map->map_mname, map->map_file);
 
 	if (mode != O_RDONLY)
 	{
@@ -1129,27 +1778,13 @@ stab_map_open(map, mode)
 	af = fopen(map->map_file, "r");
 	if (af == NULL)
 		return FALSE;
-	readaliases(map, af, TRUE);
+	readaliases(map, af, FALSE, FALSE);
 
 	if (fstat(fileno(af), &st) >= 0)
 		map->map_mtime = st.st_mtime;
 	fclose(af);
 
 	return TRUE;
-}
-
-
-/*
-**  STAB_MAP_CLOSE -- close symbol table.
-**
-**	Since this is in memory, there is nothing to do.
-*/
-
-void
-stab_map_close(map)
-	MAP *map;
-{
-	/* ignore it */
 }
 /*
 **  Implicit Modules
@@ -1170,7 +1805,8 @@ impl_map_lookup(map, name, av, pstat)
 	int *pstat;
 {
 	if (tTd(38, 20))
-		printf("impl_map_lookup(%s)\n", name);
+		printf("impl_map_lookup(%s, %s)\n",
+			map->map_mname, name);
 
 #ifdef NEWDB
 	if (bitset(MF_IMPL_HASH, map->map_mflags))
@@ -1216,7 +1852,8 @@ impl_map_open(map, mode)
 	struct stat stb;
 
 	if (tTd(38, 2))
-		printf("impl_map_open(%s, %d)\n", map->map_file, mode);
+		printf("impl_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
 
 	if (stat(map->map_file, &stb) < 0)
 	{
@@ -1268,6 +1905,9 @@ void
 impl_map_close(map)
 	MAP *map;
 {
+	if (tTd(38, 20))
+		printf("impl_map_close(%s, %s, %x)\n",
+			map->map_mname, map->map_file, map->map_mflags);
 #ifdef NEWDB
 	if (bitset(MF_IMPL_HASH, map->map_mflags))
 	{
@@ -1283,6 +1923,394 @@ impl_map_close(map)
 		map->map_mflags &= ~MF_IMPL_NDBM;
 	}
 #endif
+}
+/*
+**  User map class.
+**
+**	Provides access to the system password file.
+*/
+
+/*
+**  USER_MAP_OPEN -- open user map
+**
+**	Really just binds field names to field numbers.
+*/
+
+bool
+user_map_open(map, mode)
+	MAP *map;
+	int mode;
+{
+	if (tTd(38, 2))
+		printf("user_map_open(%s)\n", map->map_mname);
+
+	if (mode != O_RDONLY)
+	{
+		/* issue a pseudo-error message */
+#ifdef ENOSYS
+		errno = ENOSYS;
+#else
+# ifdef EFTYPE
+		errno = EFTYPE;
+# else
+		errno = ENXIO;
+# endif
+#endif
+		return FALSE;
+	}
+	if (map->map_valcolnm == NULL)
+		/* nothing */ ;
+	else if (strcasecmp(map->map_valcolnm, "name") == 0)
+		map->map_valcolno = 1;
+	else if (strcasecmp(map->map_valcolnm, "passwd") == 0)
+		map->map_valcolno = 2;
+	else if (strcasecmp(map->map_valcolnm, "uid") == 0)
+		map->map_valcolno = 3;
+	else if (strcasecmp(map->map_valcolnm, "gid") == 0)
+		map->map_valcolno = 4;
+	else if (strcasecmp(map->map_valcolnm, "gecos") == 0)
+		map->map_valcolno = 5;
+	else if (strcasecmp(map->map_valcolnm, "dir") == 0)
+		map->map_valcolno = 6;
+	else if (strcasecmp(map->map_valcolnm, "shell") == 0)
+		map->map_valcolno = 7;
+	else
+	{
+		syserr("User map %s: unknown column name %s",
+			map->map_mname, map->map_valcolnm);
+		return FALSE;
+	}
+	return TRUE;
+}
+
+
+/*
+**  USER_MAP_LOOKUP -- look up a user in the passwd file.
+*/
+
+#include <pwd.h>
+
+char *
+user_map_lookup(map, key, av, statp)
+	MAP *map;
+	char *key;
+	char **av;
+	int *statp;
+{
+	struct passwd *pw;
+
+	if (tTd(38, 20))
+		printf("user_map_lookup(%s, %s)\n",
+			map->map_mname, key);
+
+	pw = getpwnam(key);
+	if (pw == NULL)
+		return NULL;
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, key, strlen(key), NULL);
+	else
+	{
+		char *rwval;
+		char buf[30];
+
+		switch (map->map_valcolno)
+		{
+		  case 0:
+		  case 1:
+			rwval = pw->pw_name;
+			break;
+
+		  case 2:
+			rwval = pw->pw_passwd;
+			break;
+
+		  case 3:
+			sprintf(buf, "%d", pw->pw_uid);
+			rwval = buf;
+			break;
+
+		  case 4:
+			sprintf(buf, "%d", pw->pw_gid);
+			rwval = buf;
+			break;
+
+		  case 5:
+			rwval = pw->pw_gecos;
+			break;
+
+		  case 6:
+			rwval = pw->pw_dir;
+			break;
+
+		  case 7:
+			rwval = pw->pw_shell;
+			break;
+		}
+		return map_rewrite(map, rwval, strlen(rwval), av);
+	}
+}
+/*
+**  BESTMX -- find the best MX for a name
+**
+**	This is really a hack, but I don't see any obvious way
+**	to generalize it at the moment.
+*/
+
+#if NAMED_BIND
+
+char *
+bestmx_map_lookup(map, name, av, statp)
+	MAP *map;
+	char *name;
+	char **av;
+	int *statp;
+{
+        int nmx;
+        auto int rcode;
+        char *mxhosts[MAXMXHOSTS + 1];
+
+	nmx = getmxrr(name, mxhosts, FALSE, &rcode);
+	if (nmx <= 0)
+		return NULL;
+	if (bitset(MF_MATCHONLY, map->map_mflags))
+		return map_rewrite(map, name, strlen(name), NULL);
+	else
+		return map_rewrite(map, mxhosts[0], strlen(mxhosts[0]), av);
+}
+
+#endif
+/*
+**  Sequenced map type.
+**
+**	Tries each map in order until something matches, much like
+**	implicit.  Stores go to the first map in the list that can
+**	support storing.
+**
+**	This is slightly unusual in that there are two interfaces.
+**	The "sequence" interface lets you stack maps arbitrarily.
+**	The "switch" interface builds a sequence map by looking
+**	at a system-dependent configuration file such as
+**	/etc/nsswitch.conf on Solaris or /etc/svc.conf on Ultrix.
+**
+**	We don't need an explicit open, since all maps are
+**	opened during startup, including underlying maps.
+*/
+
+/*
+**  SEQ_MAP_PARSE -- Sequenced map parsing
+*/
+
+bool
+seq_map_parse(map, ap)
+	MAP *map;
+	char *ap;
+{
+	int maxmap;
+
+	if (tTd(38, 2))
+		printf("seq_map_parse(%s, %s)\n", map->map_mname, ap);
+	maxmap = 0;
+	while (*ap != '\0')
+	{
+		register char *p;
+		STAB *s;
+
+		/* find beginning of map name */
+		while (isascii(*ap) && isspace(*ap))
+			ap++;
+		for (p = ap; isascii(*p) && isalnum(*p); p++)
+			continue;
+		if (*p != '\0')
+			*p++ = '\0';
+		while (*p != '\0' && (!isascii(*p) || !isalnum(*p)))
+			p++;
+		if (*ap == '\0')
+		{
+			ap = p;
+			continue;
+		}
+		s = stab(ap, ST_MAP, ST_FIND);
+		if (s == NULL)
+		{
+			syserr("Sequence map %s: unknown member map %s",
+				map->map_mname, ap);
+		}
+		else if (maxmap == MAXMAPSTACK)
+		{
+			syserr("Sequence map %s: too many member maps (%d max)",
+				map->map_mname, MAXMAPSTACK);
+			maxmap++;
+		}
+		else if (maxmap < MAXMAPSTACK)
+		{
+			map->map_stack[maxmap++] = &s->s_map;
+		}
+		ap = p;
+	}
+	return TRUE;
+}
+
+
+/*
+**  SWITCH_MAP_OPEN -- open a switched map
+**
+**	This looks at the system-dependent configuration and builds
+**	a sequence map that does the same thing.
+**
+**	Every system must define a switch_map_find routine in conf.c
+**	that will return the list of service types associated with a
+**	given service class.
+*/
+
+bool
+switch_map_open(map, mode)
+	MAP *map;
+	int mode;
+{
+	int mapno;
+	int nmaps;
+	char *maptype[MAXMAPSTACK];
+
+	if (tTd(38, 2))
+		printf("switch_map_open(%s, %s, %d)\n",
+			map->map_mname, map->map_file, mode);
+
+	nmaps = switch_map_find(map->map_file, maptype, map->map_return);
+	if (tTd(38, 19))
+	{
+		printf("\tswitch_map_find => %d\n", nmaps);
+		for (mapno = 0; mapno < nmaps; mapno++)
+			printf("\t\t%s\n", maptype[mapno]);
+	}
+	if (nmaps <= 0 || nmaps > MAXMAPSTACK)
+		return FALSE;
+
+	for (mapno = 0; mapno < nmaps; mapno++)
+	{
+		register STAB *s;
+		char nbuf[MAXNAME + 1];
+
+		if (maptype[mapno] == NULL)
+			continue;
+		(void) sprintf(nbuf, "%s.%s", map->map_file, maptype[mapno]);
+		s = stab(nbuf, ST_MAP, ST_FIND);
+		if (s == NULL)
+		{
+			syserr("Switch map %s: unknown member map %s",
+				map->map_mname, nbuf);
+		}
+		else
+		{
+			map->map_stack[mapno] = &s->s_map;
+			if (tTd(38, 4))
+				printf("\tmap_stack[%d] = %s:%s\n",
+					mapno, s->s_map.map_class->map_cname,
+					nbuf);
+		}
+	}
+	return TRUE;
+}
+
+
+/*
+**  SEQ_MAP_CLOSE -- close all underlying maps
+*/
+
+seq_map_close(map)
+	MAP *map;
+{
+	int mapno;
+
+	if (tTd(38, 20))
+		printf("seq_map_close(%s)\n", map->map_mname);
+	for (mapno = 0; mapno < MAXMAPSTACK; mapno++)
+	{
+		MAP *mm = map->map_stack[mapno];
+
+		if (mm == NULL || !bitset(MF_OPEN, mm->map_mflags))
+			continue;
+		mm->map_class->map_close(mm);
+	}
+}
+
+
+/*
+**  SEQ_MAP_LOOKUP -- sequenced map lookup
+*/
+
+char *
+seq_map_lookup(map, key, args, pstat)
+	MAP *map;
+	char *key;
+	char **args;
+	int *pstat;
+{
+	int mapno;
+	int mapbit = 0x01;
+
+	if (tTd(38, 20))
+		printf("seq_map_lookup(%s, %s)\n", map->map_mname, key);
+
+	for (mapno = 0; mapno < MAXMAPSTACK; mapbit <<= 1, mapno++)
+	{
+		MAP *mm = map->map_stack[mapno];
+		int stat = 0;
+		char *rv;
+
+		if (mm == NULL)
+			continue;
+		if (!bitset(MF_OPEN, mm->map_mflags))
+		{
+			if (bitset(mapbit, map->map_return[MA_UNAVAIL]))
+			{
+				*pstat = EX_UNAVAILABLE;
+				return NULL;
+			}
+			continue;
+		}
+		rv = mm->map_class->map_lookup(mm, key, args, &stat);
+		if (rv != NULL)
+			return rv;
+		if (stat == 0 && bitset(mapbit, map->map_return[MA_NOTFOUND]))
+			return NULL;
+		if (stat != 0 && bitset(mapbit, map->map_return[MA_TRYAGAIN]))
+		{
+			*pstat = stat;
+			return NULL;
+		}
+	}
+	return NULL;
+}
+
+
+/*
+**  SEQ_MAP_STORE -- sequenced map store
+*/
+
+void
+seq_map_store(map, key, val)
+	MAP *map;
+	char *key;
+	char *val;
+{
+	int mapno;
+
+	if (tTd(38, 12))
+		printf("seq_map_store(%s, %s, %s)\n",
+			map->map_mname, key, val);
+
+	for (mapno = 0; mapno < MAXMAPSTACK; mapno++)
+	{
+		MAP *mm = map->map_stack[mapno];
+
+		if (mm == NULL || !bitset(MF_WRITABLE, mm->map_mflags))
+			continue;
+
+		mm->map_class->map_store(mm, key, val);
+		return;
+	}
+	syserr("seq_map_store(%s, %s, %s): no writable map",
+		map->map_mname, key, val);
 }
 /*
 **  NULL stubs
@@ -1311,3 +2339,26 @@ null_map_store(map, key, val)
 {
 	return;
 }
+
+
+/*
+**  BOGUS stubs
+*/
+
+char *
+bogus_map_lookup(map, key, args, pstat)
+	MAP *map;
+	char *key;
+	char **args;
+	int *pstat;
+{
+	*pstat = EX_TEMPFAIL;
+	return NULL;
+}
+
+MAPCLASS	BogusMapClass =
+{
+	"bogus-map",		NULL,		0,
+	NULL,		bogus_map_lookup,	null_map_store,
+	null_map_open,	null_map_close,
+};
