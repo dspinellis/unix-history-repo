@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)date.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)date.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -47,6 +47,7 @@ main(argc, argv)
 	}
 	if (argc > 1) {
 		ap = argv[1];
+		wtmp[0].ut_time = tv.tv_sec;
 		if (gtime()) {
 			printf(usage);
 			exit(1);
@@ -59,7 +60,6 @@ main(argc, argv)
 				tv.tv_sec -= 60*60;
 		}
 		tv.tv_sec = tv.tv_sec;
-		wtmp[0].ut_time = tv.tv_sec;
 		if (settimeofday(&tv, (struct timezone *)0) < 0) {
 			rc++;
 			perror("Failed to set date");
