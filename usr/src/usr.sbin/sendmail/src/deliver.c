@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.68		%G%);
+SCCSID(@(#)deliver.c	3.69		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -517,6 +517,15 @@ sendoff(m, pvp, editfcn, ctladdr)
 
 	i = endmailer(pid, pvp[0]);
 	giveresponse(i, TRUE, m);
+
+	/* arrange a return receipt if requested */
+	if (RetReceipt && bitset(M_LOCAL, m->m_flags) && i == EX_OK)
+	{
+		SendReceipt = TRUE;
+		fprintf(Xscript, "%s... successfully delivered\n", To);
+		/* do we want to send back more info? */
+	}
+
 	return (i);
 }
 /*
@@ -851,13 +860,6 @@ putmessage(fp, m, xdot)
 	bool xdot;
 {
 	char buf[BUFSIZ];
-	register HDR *h;
-	extern char *arpadate();
-	bool anyheader = FALSE;
-	extern char *capitalize();
-	extern char *hvalue();
-	extern bool samefrom();
-	char *of_line;
 
 	/*
 	**  Output "From" line unless supressed
@@ -886,6 +888,60 @@ putmessage(fp, m, xdot)
 	/*
 	**  Output all header lines
 	*/
+
+	putheader(fp, m);
+
+	/*
+	**  Output the body of the message
+	*/
+
+	if (TempFile != NULL)
+	{
+		rewind(TempFile);
+		while (!ferror(fp) && fgets(buf, sizeof buf, TempFile) != NULL)
+			fprintf(fp, "%s%s", xdot && buf[0] == '.' ? "." : "", buf);
+
+		if (ferror(TempFile))
+		{
+			syserr("putmessage: read error");
+			setstat(EX_IOERR);
+		}
+	}
+
+	(void) fflush(fp);
+	if (ferror(fp) && errno != EPIPE)
+	{
+		syserr("putmessage: write error");
+		setstat(EX_IOERR);
+	}
+	errno = 0;
+}
+/*
+**  PUTHEADER -- put the header part of a message
+**
+**	Parameters:
+**		fp -- file to put it on.
+**		m -- mailer to use.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+putheader(fp, m)
+	register FILE *fp;
+	register struct mailer *m;
+{
+	char buf[BUFSIZ];
+	register HDR *h;
+	extern char *arpadate();
+	bool anyheader = FALSE;
+	extern char *capitalize();
+	extern char *hvalue();
+	extern bool samefrom();
+	char *of_line;
 
 	of_line = hvalue("original-from");
 	for (h = Header; h != NULL; h = h->h_link)
@@ -1018,31 +1074,6 @@ putmessage(fp, m, xdot)
 	}
 	if (anyheader)
 		fprintf(fp, "\n");
-
-	/*
-	**  Output the body of the message
-	*/
-
-	if (TempFile != NULL)
-	{
-		rewind(TempFile);
-		while (!ferror(fp) && fgets(buf, sizeof buf, TempFile) != NULL)
-			fprintf(fp, "%s%s", xdot && buf[0] == '.' ? "." : "", buf);
-
-		if (ferror(TempFile))
-		{
-			syserr("putmessage: read error");
-			setstat(EX_IOERR);
-		}
-	}
-
-	(void) fflush(fp);
-	if (ferror(fp) && errno != EPIPE)
-	{
-		syserr("putmessage: write error");
-		setstat(EX_IOERR);
-	}
-	errno = 0;
 }
 /*
 **  ISATWORD -- tell if the word we are pointing to is "at".
