@@ -31,13 +31,16 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mount.h	7.22 (Berkeley) 6/3/91
- *	$Id: mount.h,v 1.8 1993/11/25 01:37:59 wollman Exp $
+ *	$Id: mount.h,v 1.9 1993/12/12 12:27:00 davidg Exp $
  */
 
 #ifndef _SYS_MOUNT_H_
 #define _SYS_MOUNT_H_ 1
 
-typedef quad fsid_t;			/* file system id type */
+typedef union {
+		quad_t v;
+		long val[2];
+} fsid_t;			/* file system id type */
 
 /*
  * File identifier.

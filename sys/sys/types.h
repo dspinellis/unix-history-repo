@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)types.h	7.17 (Berkeley) 5/6/91
- *	$Id: types.h,v 1.6 1993/12/19 21:32:50 alm Exp $
+ *	$Id: types.h,v 1.7 1993/12/19 21:56:16 alm Exp $
  */
 
 #ifndef _TYPES_H_
@@ -68,9 +68,10 @@ typedef unsigned long long u_quad_t;
 typedef	quad_t *	qaddr_t;
 
 /* GCC_1 quad definitions */
-typedef	struct	_uquad	{ u_long val[2]; } u_quad;
-typedef	struct	_quad	{   long val[2]; } quad;
-/* typedef	long *	qaddr_t; */
+/* typedef	struct	_uquad	{ u_long val[2]; } u_quad;
+ * typedef	struct	_quad	{   long val[2]; } quad;
+ * typedef	long *	qaddr_t; 
+ */
 
 #define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
 #define	minor(x)	((int)((x)&0xff))		/* minor number */
