@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 
 #include <fcntl.h>
@@ -37,7 +38,7 @@ int docopy, dostrip;
 int mode = S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
 char *group, *owner, pathbuf[MAXPATHLEN];
 
-void	copy __P((int, char *, int, char *));
+void	copy __P((int, char *, int, char *, off_t));
 void	err __P((const char *, ...));
 void	install __P((char *, char *, int));
 void	strip __P((char *));
@@ -147,14 +148,15 @@ install(from_name, to_name, isdir)
 	(void)unlink(to_name);
 
 	/* Create target. */
-	if ((to_fd = open(to_name, O_CREAT|O_WRONLY|O_TRUNC, 0600)) < 0)
+	if ((to_fd = open(to_name,
+	    O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR)) < 0)
 		err("%s: %s", to_name, strerror(errno));
 	if (!devnull) {
 		if ((from_fd = open(from_name, O_RDONLY, 0)) < 0) {
 			(void)unlink(to_name);
 			err("%s: %s", from_name, strerror(errno));
 		}
-		copy(from_fd, from_name, to_fd, to_name);
+		copy(from_fd, from_name, to_fd, to_name, from_sb.st_size);
 		(void)close(from_fd);
 	}
 	if (dostrip)
@@ -188,24 +190,39 @@ install(from_name, to_name, isdir)
  *	copy from one file to another
  */
 void
-copy(from_fd, from_name, to_fd, to_name)
+copy(from_fd, from_name, to_fd, to_name, size)
 	register int from_fd, to_fd;
 	char *from_name, *to_name;
+	off_t size;
 {
 	register int nr, nw;
 	int serrno;
-	char buf[MAXBSIZE];
+	char *p, buf[MAXBSIZE];
 
-	while ((nr = read(from_fd, buf, sizeof(buf))) > 0)
-		if ((nw = write(to_fd, buf, nr)) != nr) {
+	/*
+	 * Mmap and write if less than 8M (the limit is so we don't totally
+	 * trash memory on big files.  This is really a minor hack, but it
+	 * wins some CPU back.
+	 */
+	if (size <= 8 * 1048576) {
+		if ((p = mmap(NULL, (size_t)size, PROT_READ,
+		    0, from_fd, (off_t)0)) == (char *)-1)
+			err("%s: %s", from_name, strerror(errno));
+		if (write(to_fd, p, size) != size)
+			err("%s: %s", to_name, strerror(errno));
+	} else {
+		while ((nr = read(from_fd, buf, sizeof(buf))) > 0)
+			if ((nw = write(to_fd, buf, nr)) != nr) {
+				serrno = errno;
+				(void)unlink(to_name);
+				err("%s: %s",
+				    to_name, strerror(nw > 0 ? EIO : serrno));
+			}
+		if (nr != 0) {
 			serrno = errno;
 			(void)unlink(to_name);
-			err("%s: %s", to_name, strerror(nw > 0 ? EIO : serrno));
+			err("%s: %s", from_name, strerror(serrno));
 		}
-	if (nr != 0) {
-		serrno = errno;
-		(void)unlink(to_name);
-		err("%s: %s", from_name, strerror(serrno));
 	}
 }
 
