@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)look.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)look.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)look.c	5.1 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+
+#include <limits.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -99,9 +101,12 @@ main(argc, argv)
 		usage();
 	}
 
-	if ((fd = open(file, O_RDONLY, 0)) < 0 || fstat(fd, &sb) ||
-	    (front = mmap(NULL, sb.st_size, PROT_READ, MAP_FILE, fd,
-	    (off_t)0)) == NULL)
+	if ((fd = open(file, O_RDONLY, 0)) < 0 || fstat(fd, &sb))
+		err("%s: %s", file, strerror(errno));
+	if (sb.st_size > SIZE_T_MAX)
+		err("%s: %s", file, strerror(EFBIG));
+	if ((front = mmap(NULL,
+	    (size_t)sb.st_size, PROT_READ, 0, fd, (off_t)0)) == NULL)
 		err("%s: %s", file, strerror(errno));
 	back = front + sb.st_size;
 	exit(look(string, front, back));
