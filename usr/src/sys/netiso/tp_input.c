@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.22 (Berkeley) %G%
+ *	@(#)tp_input.c	7.23 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -846,7 +846,6 @@ again:
 			CONG_INIT_SAMPLE(tpcb);
 			CONG_UPDATE_SAMPLE(tpcb, ce_bit);
 		}
-		tpcb->tp_ackrcvd = 0;
 	} else if ( dutype == ER_TPDU_type ) {
 		/* 
 		 * ER TPDUs have to be recognized separately
@@ -863,8 +862,8 @@ again:
 		e.ATTR(ER_TPDU).e_reason =  (u_char)hdr->tpdu_ERreason;
 		CHECK (((int)dref <= 0 || dref >= tp_refinfo.tpr_size || 
 			(tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ||
-			tpcb->tp_refp->tpr_state == REF_FREE ||
-			tpcb->tp_refp->tpr_state == REF_FROZEN),
+			tpcb->tp_refstate == REF_FREE ||
+			tpcb->tp_refstate == REF_FROZEN),
 		       E_TP_MISM_REFS, ts_inv_dref, discard, 0)
 
 	} else {
@@ -886,7 +885,7 @@ again:
 				ENDDEBUG
 				dref = tpcb->tp_lref;
 				sref = tpcb->tp_fref;
-				CHECK( (tpcb->tp_refp->tpr_state == REF_FREE), 
+				CHECK( (tpcb->tp_refstate == REF_FREE), 
 					E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 					(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 				goto tp0_data;
@@ -902,7 +901,7 @@ again:
 			CHECK( ((tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ), 
 				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
-			CHECK( (tpcb->tp_refp->tpr_state == REF_FREE), 
+			CHECK( (tpcb->tp_refstate == REF_FREE), 
 				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 		}
@@ -912,7 +911,7 @@ again:
 		ENDDEBUG
 
 		/* causes a DR to be sent for CC; ER for all else */
-		CHECK( (tpcb->tp_refp->tpr_state == REF_FROZEN),
+		CHECK( (tpcb->tp_refstate == REF_FROZEN),
 			(dutype == CC_TPDU_type?E_TP_NO_SESSION:E_TP_MISM_REFS),
 			ts_inv_dref, respond,
 			(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
@@ -1016,7 +1015,7 @@ again:
 				vb_getval(P, u_short, subseq);
 				subseq = ntohs(subseq);
 				IFDEBUG(D_ACKRECV)
-					printf("AK Subsequence # 0x%x\n", subseq);
+					printf("AK dref 0x%x Subseq 0x%x\n", dref, subseq);
 				ENDDEBUG
 				break;
 
@@ -1033,8 +1032,8 @@ again:
 					ysubseq = ntohs(ysubseq);
 					ycredit = ntohs(ycredit);
 					IFDEBUG(D_ACKRECV)
-						printf("AK FCC lwe 0x%x, subseq 0x%x, cdt 0x%x\n", 
-							ylwe, ysubseq, ycredit);
+						printf("%s%x, subseq 0x%x, cdt 0x%x dref 0x%x\n", 
+							"AK FCC lwe 0x", ylwe, ysubseq, ycredit, dref);
 					ENDDEBUG
 				}
 				break;

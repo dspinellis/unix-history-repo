@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.16 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -83,15 +83,11 @@ SOFTWARE.
 #define REF_OPENING 1	/* in use (has a pcb) but no timers */
 #define REF_FREE 0		/* free to reallocate */
 
-#define N_CTIMERS 		6
+#define TM_NTIMERS 		6
 
 struct tp_ref {
 /*	u_char	 			tpr_state; /* values REF_FROZEN, etc. above */
-/*	struct Ccallout 	tpr_callout[N_CTIMERS]; /* C timers */
-/*	struct Ecallout		tpr_calltodo;			/* list of active E timers */
 #define	tpr_state		tpr_pcb->tp_refstate
-#define	tpr_callout		tpr_pcb->tp_refcallout
-#define	tpr_calltodo 	tpr_pcb->tp_refcalltodo
 	struct tp_pcb 		*tpr_pcb;	/* back ptr to PCB */
 };
 
@@ -152,38 +148,32 @@ struct tp_pcb {
 
 	/* credit & sequencing info for SENDING */
 	u_short 			tp_fcredit;		/* current remote credit in # packets */
-	u_short				tp_ssthresh;	/* cong_win threshold for slow start
+	u_short 			tp_maxfcredit;	/* max remote credit in # packets */
+	u_short				tp_dupacks;		/* intuit packet loss before rxt timo */
+	u_long				tp_cong_win;	/* congestion window in bytes.
+										 * see profuse comments in TCP code
+										 */
+	u_long				tp_ssthresh;	/* cong_win threshold for slow start
 										 * exponential to linear switch
 										 */
-	u_short				tp_cong_win;	/* congestion window : set to 1 on
-										 * source quench
-										 * Minimizes the amount of retrans-
-										 * missions (independently of the
-										 * retrans strategy).  Increased
-										 * by one for each good ack received.
-										 * Minimizes the amount sent in a
-										 * regular tp_send() also.
-										 */
-	u_int   tp_ackrcvd; /* ACKs received since the send window was updated */
-	SeqNum              tp_last_retrans;
-	SeqNum              tp_retrans_hiwat;
 	SeqNum				tp_snduna;		/* seq # of lowest unacked DT */
-	SeqNum				tp_sndhiwat;	/* highest seq # sent so far */
+	SeqNum				tp_sndnew;		/* seq # of lowest unsent DT  */
 	SeqNum				tp_sndnum;		/* next seq # to be assigned */
-	struct mbuf			*tp_sndhiwat_m; /* packet corres. to sndhiwat*/
+	SeqNum				tp_sndnxt;		/* what to do next; poss. rxt */
+	struct mbuf			*tp_sndnxt_m;	/* packet corres. to sndnxt*/
 	int					tp_Nwindow;		/* for perf. measurement */
 
 	/* credit & sequencing info for RECEIVING */
+	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
 	SeqNum	 			tp_sent_lcdt;	/* cdt according to last ack sent */
 	SeqNum	 			tp_sent_uwe;	/* uwe according to last ack sent */
-	SeqNum				tp_rcvnxt;		/* next DT seq # expect to recv */
 	SeqNum	 			tp_sent_rcvnxt;	/* rcvnxt according to last ack sent 
 										 * needed for perf measurements only
 										 */
 	u_short				tp_lcredit;		/* current local credit in # packets */
 	u_short				tp_maxlcredit;	/* needed for reassembly queue */
 	struct mbuf			**tp_rsyq;		/* unacked stuff recvd out of order */
-	int					tp_rsycnt;		/* number of packets */
+	int					tp_rsycnt;		/* number of packets "" "" "" ""    */
 
 	/* receiver congestion state stuff ...  */
 	u_int               tp_win_recv;
@@ -284,7 +274,7 @@ struct tp_pcb {
 	u_char 				tp_peer_acktime;	/* used for DT retrans time */
 	u_char	 			tp_refstate;		/* values REF_FROZEN, etc. above */
 	struct tp_pcb		*tp_fasttimeo;		/* limit pcbs to examine */
-	struct Ccallout 	tp_refcallout[N_CTIMERS]; /* C timers */
+	u_int			 	tp_timer[TM_NTIMERS]; /* C timers */
 	struct Ecallarg		tp_retransargs;		/* dunt ask ... */
 
 	struct sockbuf		tp_Xsnd;		/* for expedited data */
@@ -328,17 +318,6 @@ u_int	tp_start_win;
         pcb->tp_lcredit = ROUND(pcb->tp_win_recv); \
         CONG_INIT_SAMPLE(pcb); \
     }
-
-#define CONG_ACK(pcb, seq) \
-{ int   newacks = SEQ_SUB(pcb, seq, pcb->tp_snduna); \
-	if (newacks > 0) { \
-		pcb->tp_ackrcvd += newacks; \
-		if (pcb->tp_ackrcvd >= MIN(pcb->tp_fcredit, pcb->tp_cong_win)) { \
-			++pcb->tp_cong_win; \
-			pcb->tp_ackrcvd = 0; \
-		} \
-	} \
-}
 
 #ifdef KERNEL
 extern struct tp_refinfo 	tp_refinfo;

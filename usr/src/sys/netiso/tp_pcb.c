@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.c	7.17 (Berkeley) %G%
+ *	@(#)tp_pcb.c	7.18 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -450,7 +450,7 @@ tp_soisdisconnected(tpcb)
 
 	tpcb->tp_refstate = REF_FROZEN;
 	tp_recycle_tsuffix(tpcb);
-	tp_etimeout(tpcb->tp_refp, TM_reference, 0,0,0, (int)tpcb->tp_refer_ticks);
+	tp_etimeout(tpcb, TM_reference, (int)tpcb->tp_refer_ticks);
 }
 
 /*
@@ -521,7 +521,7 @@ tp_freeref(r)
  *
  * NOTES:
  */
-RefNum
+u_long
 tp_getref(tpcb) 
 	register struct tp_pcb *tpcb;
 {
@@ -620,6 +620,7 @@ tp_attach(so, protocol)
 	register struct tp_pcb	*tpcb;
 	int 					error;
 	int 					dom = so->so_proto->pr_domain->dom_family;
+	u_long					lref;
 	extern struct tp_conn_param tp_conn_param[];
 
 	IFDEBUG(D_CONN)
@@ -650,10 +651,11 @@ tp_attach(so, protocol)
 	}
 	bzero( (caddr_t)tpcb, sizeof (struct tp_pcb) );
 
-	if ( ((tpcb->tp_lref = tp_getref(tpcb)) &  TP_ENOREF) != 0 ) { 
+	if ( ((lref = tp_getref(tpcb)) &  TP_ENOREF) != 0 ) { 
 		error = ETOOMANYREFS; 
 		goto bad3;
 	}
+	tpcb->tp_lref = lref;
 	tpcb->tp_sock =  so;
 	tpcb->tp_domain = dom;
 	/* tpcb->tp_proto = protocol; someday maybe? */
@@ -668,7 +670,6 @@ tp_attach(so, protocol)
 	}
 	tpcb->_tp_param = tp_conn_param[tpcb->tp_netservice];
 
-	tpcb->tp_cong_win = 1;	
 	tpcb->tp_state = TP_CLOSED;
 	tpcb->tp_vers  = TP_VERSION;
 	tpcb->tp_notdetached = 1;
@@ -682,13 +683,12 @@ tp_attach(so, protocol)
 			* we'll respond w/ this.
 			* Our maximum is 4096.  See tp_chksum.c comments.
 			*/
-	tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
+	tpcb->tp_cong_win = 
+		tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
 
 	tpcb->tp_seqmask  = TP_NML_FMT_MASK;
 	tpcb->tp_seqbit  =  TP_NML_FMT_BIT;
 	tpcb->tp_seqhalf  =  tpcb->tp_seqbit >> 1;
-	tpcb->tp_sndhiwat = (SeqNum) - 1; /* a kludge but it works */
-	tpcb->tp_s_subseq = 0;
 
 	/* attach to a network-layer protoswitch */
 	if ( error =  tp_set_npcb(tpcb))
