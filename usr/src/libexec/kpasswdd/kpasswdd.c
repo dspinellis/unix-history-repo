@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)kpasswdd.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)kpasswdd.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,20 +26,21 @@ static char sccsid[] = "@(#)kpasswdd.c	1.4 (Berkeley) %G%";
  * 12-Dec-88
  */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/signal.h>
+#include <netinet/in.h>
+#include <pwd.h>
 #include <syslog.h>
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #include <kerberosIV/krb_db.h>
-#include <sys/resource.h>
-#include <sys/signal.h>
-#include <netinet/in.h>
+#include <stdio.h>
 #include "kpasswd_proto.h"
 
 static	struct kpasswd_data	kpwd_data;
-static	C_Block			master_key, key;
+static	des_cblock		master_key, key;
 static	Key_schedule		master_key_schedule,
 				key_schedule, random_sched;
 long				mkeyversion;
