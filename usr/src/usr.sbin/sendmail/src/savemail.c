@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.78 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.79 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -352,8 +352,8 @@ savemail(e, sendbody)
 
 			strcpy(buf, _PATH_VARTMP);
 			strcat(buf, "dead.letter");
-			sfflags = SFF_NOSLINK|SFF_CREAT|SFF_REGONLY;
 
+			sfflags = SFF_NOSLINK|SFF_CREAT|SFF_REGONLY|SFF_ROOTOK;
 			if (!writable(buf, NULL, sfflags) ||
 			    (fp = safefopen(buf, O_WRONLY|O_CREAT|O_APPEND,
 					    FileMode, sfflags)) == NULL)
@@ -380,7 +380,12 @@ savemail(e, sendbody)
 				Verbose = TRUE;
 				message("Saved message in %s", buf);
 				Verbose = oldverb;
+#ifdef LOG
+				if (LogLevel > 3)
+					syslog(LOG_NOTICE, "Saved message in %s", buf);
+#endif
 				state = ESM_DONE;
+				break;
 			}
 			state = ESM_PANIC;
 			(void) xfclose(fp, "savemail", buf);
@@ -472,8 +477,15 @@ returntosender(msg, sendbody)
 	/* mark statistics */
 	markstats(ee, NULLADDR);
 
-	/* should check for delivery errors here */
-	return (0);
+	/* check for delivery errors */
+	if (ee->e_parent == NULL || !bitset(EF_RESPONSE, ee->e_parent->e_flags))
+		return 0;
+	for (q = ee->e_sendqueue; q != NULL; q = q->q_next)
+	{
+		if (bitset(QSENT, q->q_flags))
+			return 0;
+	}
+	return -1;
 }
 /*
 **  ERRHDR -- Output the header for error mail.
