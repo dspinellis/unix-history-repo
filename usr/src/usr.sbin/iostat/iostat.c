@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -90,8 +90,11 @@ char **dr_name;
 
 #include "names.c"				/* XXX */
 
-static void cpustats __P((void)), dkstats __P((void)), phdr __P((int));
-static void usage __P((void)), err __P((const char *, ...));
+void cpustats __P((void));
+void dkstats __P((void));
+void err __P((const char *, ...));
+void phdr __P((int));
+void usage __P((void));
 
 main(argc, argv)
 	int argc;
