@@ -1,0 +1,105 @@
+.\" $Revision: 1.4 $
+.TH CLIENTLIB 3
+.SH NAME
+clientlib \- NNTP clientlib part of InterNetNews library
+.SH SYNOPSIS
+.nf
+.ta \w'    unsigned long    'u
+.B "extern FILE	*ser_rd_fp;"
+.B "extern FILE	*ser_wr_fp;"
+.B "extern char	ser_line[];"
+
+.B "char *"
+.B "getserverbyfile(file)"
+.B "    char	*file;"
+
+.B "int"
+.B "server_init(host)"
+.B "    char	*host;"
+
+.B "int"
+.B "handle_server_response(response, host)"
+.B "    int	reponse;"
+.B "    char	*host;"
+
+.B "void"
+.B "put_server(text)"
+.B "    char	*text;"
+
+.B "int"
+.B "get_server(buff, buffsize)"
+.B "    char	*buff;"
+.B "    int	buffsize;"
+
+.B "void"
+.B "close_server()"
+.fi
+.SH DESCRIPTION
+The routines described in this manual page are part of the InterNetNews
+library,
+.IR libinn (3).
+They are replacements for the ``clientlib'' part of the NNTP distribution,
+and are intended to be used in building programs like
+.IR rrn .
+.PP
+.I Getserverbyfile
+calls
+.I GetConfigValue
+to get the name of the local NNTP server.
+It returns a pointer to static space.
+The
+.I file
+parameter is ignored.
+.PP
+.I Server_init
+opens a connect to the NNTP server at the specified
+.IR host .
+It returns the server's response code or \-1 on error.
+If a connection was made, then
+.I ser_rd_fp
+and
+.I ser_wr_fp
+can be used to read from and write to the server, respectively, and
+.I ser_line
+will contain the server's response.
+.I Ser_line
+can also be used in other routines.
+.PP
+.I Handle_server_response
+decodes the
+.IR response ,
+which comes from the server on
+.IR host.
+If the client is authorized, it returns 0.
+A client that is only allowed to read is authorized, but
+.I handle_server_response
+will print a message on the standard output.
+If the client is not authorized to talk to the server, then a message is
+printed and the routine returns \-1.
+.PP
+.I Put_server
+sends the text in
+.I buff
+to the server, adding the necessary NNTP line terminators, and flushing
+the I/O buffer.
+.PP
+.I Get_server
+reads a line of text from the server into
+.IR buff ,
+reading at most
+.I buffsize
+characters.
+Any trailing \er\en terminators are stripped off.
+.I Get_server
+returns \-1 on error.
+.PP
+.I Close_server
+sends a ``quit'' command to the server and closes the connection.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: clientlib.3,v 1.4 1992/04/03 06:28:02 rsalz Exp $
+.SH "SEE ALSO"
+libinn(3).
