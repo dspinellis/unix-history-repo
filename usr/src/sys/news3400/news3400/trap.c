@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.1 (Berkeley) %G%
+ *	@(#)trap.c	7.2 (Berkeley) %G%
  */
 
 #include "../include/fix_machine_type.h"
@@ -35,27 +35,22 @@
 #include "../include/pte.h"
 #include "../include/mips_opcode.h"
 #include "../include/adrsmap.h"
-#if defined(DS3100) || defined(DS5000)
-#include "clockreg.h"
-#endif
 
 #include "vm/vm.h"
 #include "vm/vm_kern.h"
 #include "vm/vm_page.h"
 
-#ifdef news3400
 #include "lp.h"
 #include "bm.h"
 #include "ms.h"
 #include "en.h"
 #include "../hbdev/dmac_0448.h"
 #include "../sio/scc.h"
-#endif
 
 /*
  * This is a kludge to allow X windows to work.
  */
-#define X_KLUGE
+#undef X_KLUGE
 
 #ifdef X_KLUGE
 #define USER_MAP_ADDR	0x4000
@@ -242,17 +237,25 @@ trap(statusReg, causeReg, vadr, pc, args)
 			panic("tlbmod");
 #endif
 		hp = &((pmap_hash_t)PMAP_HASH_UADDR)[PMAP_HASH(vadr)];
-		if (hp->low & PG_RO) {
+		if (((hp->pmh_pte[0].high ^ vadr) & ~PGOFSET) == 0)
+			i = 0;
+		else if (((hp->pmh_pte[1].high ^ vadr) & ~PGOFSET) == 0)
+			i = 1;
+		else
+			panic("trap: tlb umod not found");
+		if (hp->pmh_pte[i].low & PG_RO) {
 			ftype = VM_PROT_WRITE;
 			goto dofault;
 		}
-		hp->low |= PG_M;
-		printf("trap: TLBupdate hi %x lo %x i %x\n", hp->high, hp->low,
-			MachTLBUpdate(hp->high, hp->low)); /* XXX */
+		hp->pmh_pte[i].low |= PG_M;
+		printf("trap: TLBupdate hi %x lo %x i %x\n",
+			hp->pmh_pte[i].high, hp->pmh_pte[i].low,
+			MachTLBUpdate(hp->pmh_pte[i].high, hp->pmh_pte[i].low)); /* XXX */
 #ifdef ATTR
-		pmap_attributes[atop(hp->low - KERNBASE)] |= PMAP_ATTR_MOD;
+		pmap_attributes[atop(hp->pmh_pte[i].low - KERNBASE)] |=
+			PMAP_ATTR_MOD;
 #else
-		pa = hp->low & PG_FRAME;
+		pa = hp->pmh_pte[i].low & PG_FRAME;
 		if (!IS_VM_PHYSADDR(pa))
 			panic("trap: umod");
 		PHYS_TO_VM_PAGE(pa)->clean = FALSE;
@@ -392,10 +395,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 		int rval[2];
 		struct sysent *systab;
 		extern int nsysent;
-#ifdef ULTRIXCOMPAT
-		extern struct sysent ultrixsysent[];
-		extern int ultrixnsysent;
-#endif
 
 		cnt.v_syscall++;
 		/* compute next PC after syscall instruction */
@@ -405,23 +404,16 @@ trap(statusReg, causeReg, vadr, pc, args)
 			locr0[PC] += 4;
 		systab = sysent;
 		numsys = nsysent;
-#ifdef ULTRIXCOMPAT
-		if (p->p_md.md_flags & MDP_ULTRIX) {
-			systab = ultrixsysent;
-			numsys = ultrixnsysent;
-		}
-#endif
 		code = locr0[V0];
 #ifdef COMPAT_NEWSOS
-#define	SYSCALL_BSDOFFSET	1000
-		if (code >= SYSCALL_BSDOFFSET)
-			code -= SYSCALL_BSDOFFSET;
+		if (code >= 1000)
+			code -= 1000;			/* too easy */
 #endif
 		if (code == 0) {			/* indir */
 			code = locr0[A0];
 #ifdef COMPAT_NEWSOS
-			if (code >= SYSCALL_BSDOFFSET)
-				code -= SYSCALL_BSDOFFSET;
+			if (code >= 1000)
+				code -= 1000;		/* too easy */
 #endif
 			if (code >= numsys)
 				callp = &systab[0];	/* indir (illegal) */
@@ -478,10 +470,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 		if (KTRPOINT(p, KTR_SYSCALL))
 			ktrsyscall(p->p_tracep, code, callp->sy_narg, args.i);
 #endif
-/*
-if (!strcmp(p->p_comm, "ftp"))
-printf("syscall: pid=%d, code=%d, pc=0x%x\n", p->p_pid, code, pc);
-*/
 		rval[0] = 0;
 		rval[1] = locr0[V1];
 #ifdef DEBUG
@@ -552,7 +540,7 @@ printf("EINVAL: pid=%d, code=%d\n", p->p_pid, code);
 			va += 4;
 
 		/* read break instruction */
-		instr = fuiword(va);
+		instr = fuiword((caddr_t)va);
 #ifdef KADB
 		if (instr == MACH_BREAK_BRKPT || instr == MACH_BREAK_SSTEP)
 			goto err;
@@ -652,10 +640,11 @@ printf("EINVAL: pid=%d, code=%d\n", p->p_pid, code);
 		if (kdb(causeReg, vadr, p, !USERMODE(statusReg)))
 			return (kdbpcb.pcb_regs[PC]);
 	    }
+#else
+#ifdef DEBUG
+		trapDump("trap");
 #endif
-		printf("trap: pid %d %s sig %d adr %x pc %x ra %x\n", p->p_pid,
-			p->p_comm, i, vadr, pc, p->p_md.md_regs[RA]); /* XXX */
-		trapDump("unkown exception");
+#endif
 		panic("trap");
 	}
 	printf("trap: pid %d %s sig %d adr %x pc %x ra %x\n", p->p_pid,
@@ -701,14 +690,6 @@ out:
 	return (pc);
 }
 
-#ifdef DS5000
-struct	intr_tab intr_tab[8];
-#endif
-
-#if defined(DS3100) || defined(DS5100)
-int temp; /* XXX ULTRIX compiler bug with -O */
-#endif
-
 /*
  * Handle an interrupt.
  * Called from MachKernIntr() or MachUserIntr()
@@ -734,7 +715,6 @@ interrupt(statusReg, causeReg, pc)
 #endif
 
 	mask = causeReg & statusReg;	/* pending interrupts & enable mask */
-#ifdef news3400
 #ifndef NOPRIORITY
 	if (mask & MACH_INT_MASK_5) {		/* level 5 interrupt */
 		splx((MACH_SPL_MASK_8 & ~causeReg) | MACH_SR_INT_ENA_CUR);
@@ -872,116 +852,11 @@ interrupt(statusReg, causeReg, pc)
 	if (mask & MACH_INT_MASK_0)		/* level 0 interrupt */
 		level0_intr();
 #endif /* NOPRIORITY */
-#endif /* news3400 */
-#ifdef DS3100
-	/* handle clock interrupts ASAP */
-	if (mask & MACH_INT_MASK_3) {
-		register volatile struct chiptime *c =
-			(volatile struct chiptime *)MACH_CLOCK_ADDR;
-
-		temp = c->regc;	/* clear interrupt bits */
-		cf.pc = pc;
-		cf.ps = statusReg;
-		hardclock(cf);
-		causeReg &= ~MACH_INT_MASK_3;	/* reenable clock interrupts */
-	}
-	/*
-	 * Enable hardware interrupts which were enabled but not pending.
-	 * We only respond to software interrupts when returning to spl0.
-	 */
-	splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-		MACH_SR_INT_ENA_CUR);
-	if (mask & MACH_INT_MASK_0)
-		siiintr(0);
-	if (mask & MACH_INT_MASK_1)
-		leintr(0);
-	if (mask & MACH_INT_MASK_2)
-		dcintr(0);
-	if (mask & MACH_INT_MASK_4)
-		MemErrorInterrupt();
-#endif /* DS3100 */
-#ifdef DS5000
-	/* handle clock interrupts ASAP */
-	if (mask & MACH_INT_MASK_1) {
-		register volatile struct chiptime *c =
-			(volatile struct chiptime *)MACH_CLOCK_ADDR;
-		register unsigned csr;
-		static int warned = 0;
-
-		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
-		if ((csr & MACH_CSR_PSWARN) && !warned) {
-			warned = 1;
-			printf("WARNING: power supply is overheating!\n");
-		} else if (warned && !(csr & MACH_CSR_PSWARN)) {
-			warned = 0;
-			printf("WARNING: power supply is OK again\n");
-		}
-
-		temp = c->regc;	/* clear interrupt bits */
-		cf.pc = pc;
-		cf.ps = statusReg;
-		hardclock(cf);
-		causeReg &= ~MACH_INT_MASK_1;	/* reenable clock interrupts */
-	}
-	if (mask & MACH_INT_MASK_0) {
-		register unsigned csr;
-		register unsigned i, m;
-
-		csr = *(unsigned *)MACH_SYS_CSR_ADDR;
-		m = csr & (csr >> MACH_CSR_IOINTEN_SHIFT) & MACH_CSR_IOINT_MASK;
-#if 0
-		*(unsigned *)MACH_SYS_CSR_ADDR =
-			(csr & ~(MACH_CSR_MBZ | 0xFF)) |
-			(m << MACH_CSR_IOINTEN_SHIFT);
-#endif
-		/*
-		 * Enable hardware interrupts which were enabled but not
-		 * pending. We only respond to software interrupts when
-		 * returning to spl0.
-		 */
-		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-			MACH_SR_INT_ENA_CUR);
-		for (i = 0; m; i++, m >>= 1) {
-			if (!(m & 1))
-				continue;
-			if (intr_tab[i].func)
-				(*intr_tab[i].func)(intr_tab[i].unit);
-			else
-				printf("spurious interrupt %d\n", i);
-		}
-#if 0
-		*(unsigned *)MACH_SYS_CSR_ADDR =
-			csr & ~(MACH_CSR_MBZ | 0xFF);
-#endif
-	} else {
-		/*
-		 * Enable hardware interrupts which were enabled but not
-		 * pending. We only respond to software interrupts when
-		 * returning to spl0.
-		 */
-		splx((statusReg & ~causeReg & MACH_HARD_INT_MASK) |
-			MACH_SR_INT_ENA_CUR);
-	}
-	if (mask & MACH_INT_MASK_3)
-		MemErrorInterrupt();
-#endif /* DS5000 */
-#if defined(DS3100) || defined(DS5000)
-	if (mask & MACH_INT_MASK_5) {
-		if (!USERMODE(statusReg)) {
-#ifdef DEBUG
-			trapDump("fpintr");
-#else
-			printf("FPU interrupt: PC %x CR %x SR %x\n",
-				pc, causeReg, statusReg);
-#endif
-		} else
-			MachFPInterrupt(statusReg, causeReg, pc);
-	}
-#endif /* DS3100 || DS5000 */
 	if (mask & MACH_SOFT_INT_MASK_0) {
 		clockframe cf;
 
 		clearsoftclock();
+		cnt.v_soft++;
 		cf.pc = pc;
 		cf.ps = statusReg;
 		softclock(cf);
@@ -990,6 +865,7 @@ interrupt(statusReg, causeReg, pc)
 	if ((mask & MACH_SOFT_INT_MASK_1) ||
 	    netisr && (statusReg & MACH_SOFT_INT_MASK_1)) {
 		clearsoftnet();
+		cnt.v_soft++;
 #ifdef INET
 		if (netisr & (1 << NETISR_ARP)) {
 			netisr &= ~(1 << NETISR_ARP);
@@ -1143,28 +1019,13 @@ vmUserUnmap()
  *
  *----------------------------------------------------------------------
  */
+#ifdef NOTDEF
 static void
 MemErrorInterrupt()
 {
-#ifdef DS3100
-	volatile u_short *sysCSRPtr = (u_short *)MACH_SYS_CSR_ADDR;
-	u_short csr;
 
-	csr = *sysCSRPtr;
-
-	if (csr & MACH_CSR_MEM_ERR) {
-		printf("Memory error at 0x%x\n",
-			*(unsigned *)MACH_WRITE_ERROR_ADDR);
-		panic("Mem error interrupt");
-	}
-	*sysCSRPtr = (csr & ~MACH_CSR_MBZ) | 0xff;
-#endif /* DS3100 */
-#ifdef DS5000
-	printf("erradr %x\n", *(unsigned *)MACH_ERROR_ADDR);
-	*(unsigned *)MACH_ERROR_ADDR = 0;
-	MachEmptyWriteBuffer();
-#endif /* DS5000 */
 }
+#endif
 
 /*
  * Return the resulting PC as if the branch was executed.
@@ -1320,7 +1181,7 @@ cpu_singlestep(p)
 		return (EFAULT);
 	}
 	p->p_md.md_ss_addr = va;
-	p->p_md.md_ss_instr = fuiword(va);
+	p->p_md.md_ss_instr = fuiword((caddr_t)va);
 	i = suiword((caddr_t)va, MACH_BREAK_SSTEP);
 	if (i < 0) {
 		vm_offset_t sa, ea;
@@ -1344,7 +1205,6 @@ cpu_singlestep(p)
 	return (0);
 }
 
-#ifdef news3400
 /*
  * news3400 - INT0 service routine.
  *
@@ -1546,4 +1406,3 @@ print_int_stat(msg)
 		printf("intr: ");
 	printf("INTST0=0x%x, INTST1=0x%x.\n", s0, s1);
 }
-#endif /* news3400 */
