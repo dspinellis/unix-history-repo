@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)broadcast.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)broadcast.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -33,7 +33,7 @@ struct tsp *msg;
 	length = sizeof(struct sockaddr_in);
 	if (sendto(sock, (char *)msg, sizeof(struct tsp), 0, 
 					&server, length) < 0) {
-		syslog(LOG_ERR, "timed: sendto: %m");
+		syslog(LOG_ERR, "sendto: %m");
 		exit(1);
 	}
 }
