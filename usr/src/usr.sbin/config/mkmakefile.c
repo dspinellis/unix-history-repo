@@ -32,10 +32,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00001
+ * CURRENT PATCH LEVEL:         2       00096
  * --------------------         -----   ----------------------
  *
  * 29 Jun 92	Chris G. Demetriou	Fix Version number update
+ * 15 Feb 93	Julian Elischer		allow comments (leading #) in
+ *					files and files.i386
  */
 
 #ifndef lint
@@ -267,6 +269,15 @@ next:
 	}
 	if (wd == 0)
 		goto next;
+	/*************************************************\
+	* If it's a comment ignore to the end of the line *
+	\*************************************************/
+	if(wd[0] == '#')
+	{
+		while( ((wd = get_word(fp)) != (char *)EOF) && wd)
+		;
+		goto next;
+	}
 	this = ns(wd);
 	next_word(fp, wd);
 	if (wd == 0) {
