@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -140,10 +140,17 @@ lf_setlock(lock)
 				if (block->lf_block != lock)
 					continue;
 				block->lf_block = block->lf_block->lf_block;
-				free(lock, M_LOCKF);
-				return (error);
+				break;
 			}
-			panic("lf_setlock: lost lock");
+			/*
+			 * If we did not find ourselves on the list, but
+			 * are still linked onto a lock list, then something
+			 * is very wrong.
+			 */
+			if (block == NOLOCKF && lock->lf_next != NOLOCKF)
+				panic("lf_setlock: lost lock");
+			free(lock, M_LOCKF);
+			return (error);
 		}
 	}
 	/*
