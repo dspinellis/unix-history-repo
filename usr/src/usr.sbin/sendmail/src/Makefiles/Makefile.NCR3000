@@ -7,7 +7,7 @@
 #
 #	NCR 3000 support from Kevin Darcy <kevin@tech.mis.cfc.com>.
 #
-#	@(#)Makefile.NCR3000	8.7 (Berkeley) %G%
+#	@(#)Makefile.NCR3000	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -73,7 +73,6 @@ all: ${ALL}
 sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${LDOPTS} ${OBJS} ${LIBDIRS} ${LIBS}
 
-#NROFF=	nroff -h
 NROFF=	/usr/ucb/nroff -h
 MANDOC=	-mandoc
 
