@@ -1,5 +1,5 @@
 /*
-char id_sfe[] = "@(#)sfe.c	1.2";
+char id_sfe[] = "@(#)sfe.c	1.3";
  *
  * sequential formatted external routines
  */
@@ -32,6 +32,10 @@ x_rnew()			/* find next record */
 {	int ch;
 	if(!curunit->uend)
 		while((ch=getc(cf))!='\n' && ch!=EOF);
+	if(recpos==0 && feof(cf))
+	{	curunit->uend = YES;
+		return(EOF);
+	}
 	cursor=recpos=reclen=0;
 	return(OK);
 }
