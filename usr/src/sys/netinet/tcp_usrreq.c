@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_usrreq.c	8.4 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -181,7 +181,7 @@ tcp_usrreq(so, req, m, nam, control)
 		tcpstat.tcps_connattempt++;
 		tp->t_state = TCPS_SYN_SENT;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP_INIT;
-		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
+		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/4;
 		tcp_sendseqinit(tp);
 		error = tcp_output(tp);
 		break;
