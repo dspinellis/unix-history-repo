@@ -1,4 +1,4 @@
-/*	machdep.c	4.77	83/05/18	*/
+/*	machdep.c	4.78	83/05/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -48,22 +48,6 @@ int	icode[] =
 };
 int	szicode = sizeof(icode);
 
-#ifdef MUSH
-int	mcode[] =
-{
-	0x9f19af9f,	/* pushab [&"mush",0]; pushab */
-	0x02dd09af,	/* "/etc/mush"; pushl $2 */
-	0xbc5c5ed0,	/* movl sp,ap; chmk */
-	0x2f01bc0b,	/* $exec; chmk $exit; "/ */
-	0x2f637465,	/* etc/ */
-	0x6873756d,	/* mush" */
-	0x00000000,	/* \0\0\0";  0 */
-	0x00000014,	/* [&"mush", */
-	0x00000000,	/* 0] */
-};
-int	szmcode = sizeof(mcode);
-#endif
- 
 /*
  * Declare these as initialized data so we can patch them.
  */
