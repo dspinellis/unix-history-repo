@@ -36,7 +36,7 @@
 # 
 
 BEGIN {
-	MetricsVersion = 1.0	# afm format version to match
+	MetricsVersion = 2.0	# afm format version to match
 	SCALE = 5.0		# font width scale factor to 
 				# achieve proper dynamic range
 				# (ditroff widths are <= 256)
@@ -500,8 +500,9 @@ FILENAME ~ /.*\.map$/ {next}
 #	compute width
 	scaledwidth = int(0.5 + (width / SCALE))
 	if ((scaledwidth < 0) || (scaledwidth > 256)) {
-		print "ERROR! Width out of range!"
-		exit 2
+		printf "ERROR! Width out of range! (character %s)\n", charname
+#		exit 2
+		next
 		}
 
 #	handle space
