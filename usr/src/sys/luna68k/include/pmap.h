@@ -10,9 +10,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	OMRON: $Id: pmap.h,v 1.2 92/06/14 06:29:43 moti Exp $
+ * from: hp300/include/pmap.h	7.11 (Berkeley) 12/27/92
  *
- *	@(#)pmap.h	7.2 (Berkeley) %G%
+ *	@(#)pmap.h	7.3 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -43,7 +43,10 @@ struct pmap {
 typedef struct pmap	*pmap_t;
 
 extern struct pmap	kernel_pmap_store;
-#define kernel_pmap (&kernel_pmap_store)
+
+#define kernel_pmap	(&kernel_pmap_store)
+#define	active_pmap(pm) \
+	((pm) == kernel_pmap || (pm) == curproc->p_vmspace->vm_map.pmap)
 
 /*
  * On the 040 we keep track of which level 2 blocks are already in use
@@ -86,10 +89,11 @@ typedef struct pv_entry {
 	int		pv_flags;	/* flags */
 } *pv_entry_t;
 
-#define	PV_CI		0x01	/* all entries must be cache inhibited */
-#define PV_PTPAGE	0x02	/* entry maps a page table page */
+#define	PV_CI		0x01	/* header: all entries are cache inhibited */
+#define PV_PTPAGE	0x02	/* header: entry maps a page table page */
 
 #ifdef	KERNEL
+
 pv_entry_t	pv_table;		/* array of entries, one per page */
 
 #define pa_index(pa)		atop(pa - vm_first_phys)
