@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -19,6 +19,7 @@ int Copy = 0;
 int Copy = 1;
 #endif !DONTCOPY
 char Nuser[32];
+struct timeb Now;
 
 /* variables used to check if talking to more than one system. */
 int	xsflag = -1;
@@ -128,6 +129,8 @@ char *argv[];
 			fprintf(stderr, "bad system name: %s\n", sysfl2);
 			cleanup(1);
 		}
+		if (Rmtname[0] != '\0')
+			strncpy(Rmtname, sysfl2, MAXBASENAME);
 		/* block multi-hop requests immediately */
 		if (index(cp+1, '!') != NULL) {
 			fprintf(stderr, "uucp handles only adjacent sites.\n");
@@ -159,6 +162,8 @@ char *argv[];
 				fprintf(stderr, "bad system name: %s\n", sysfile1);
 				cleanup(0);
 			}
+			if (Rmtname[0] != '\0')
+				strncpy(Rmtname, sysfl2, MAXBASENAME);
 			strcpy(file1, cp + 1);
 		}
 		else {
