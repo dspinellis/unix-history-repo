@@ -1,9 +1,10 @@
 /*
-** rmail: front end for mail to stack up those stupid >From ... remote from ...
-** lines and make a correct return address.  This works with the -f option
-** to /usr/lib/sendmail so it won't work on systems without sendmail.
-** However, it ought to be easy to modify a standard /bin/mail to do the
-** same thing.
+**  RMAIL -- UUCP mail server.
+**
+**	This program reads the >From ... remote from ... lines that
+**	UUCP is so fond of and turns them into something reasonable.
+**	It calls sendmail giving it a -f option built from these
+**	lines.
 */
 
 # include <stdio.h>
@@ -11,7 +12,7 @@
 # include "useful.h"
 # include "conf.h"
 
-SCCSID(@(#)rmail.c	3.7	(Berkeley)	%G%);
+SCCSID(@(#)rmail.c	3.8	(Berkeley)	%G%);
 
 extern FILE *popen();
 extern char *index();
@@ -48,6 +49,9 @@ main(argc, argv)
 		fprintf(stderr, "Usage: rmail user ...\n");
 		exit(EX_USAGE);
 	}
+
+	strcpy(from, "");
+	strcpy(ufrom, "/dev/null");
 
 	for (;;)
 	{
