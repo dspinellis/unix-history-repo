@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -147,7 +147,7 @@ shutdown()
 	shutend();
 }
 
-char shutfailm[] = "WARNING: Something is hung (wont die); ps axl advised\n";
+char shutfailm[] = "WARNING: Something is hung (won't die); ps axl advised\n";
 
 shutreset()
 {
@@ -201,6 +201,7 @@ single()
 			dup2(0, 1);
 			dup2(0, 2);
 			execl(shell, minus, (char *)0);
+			perror(shell);
 			exit(0);
 		}
 		while ((xpid = wait((int *)0)) != pid)
@@ -263,7 +264,7 @@ multiple()
 		pid = wait((int *)0);
 		if (pid == -1)
 			return;
-		omask = sigblock(SIGHUP);
+		omask = sigblock(sigmask(SIGHUP));
 		for (ALL) {
 			/* must restart window system BEFORE emulator */
 			if (p->wpid == pid || p->wpid == -1)
@@ -309,7 +310,7 @@ merge()
 				p->xflag |= CHANGE;
 				SCPYN(p->comn, t->ty_getty);
 			}
-			if (SCMPN(p->wcmd, t->ty_window)) {
+			if (SCMPN(p->wcmd, t->ty_window ? t->ty_window : "")) {
 				p->xflag |= WCHANGE|CHANGE;
 				SCPYN(p->wcmd, t->ty_window);
 			}
@@ -338,7 +339,7 @@ merge()
 		SCPYN(p->line, t->ty_name);
 		p->xflag |= FOUND|CHANGE;
 		SCPYN(p->comn, t->ty_getty);
-		if (strcmp(t->ty_window, "") != 0) {
+		if (t->ty_window && strcmp(t->ty_window, "") != 0) {
 			p->xflag |= WCHANGE;
 			SCPYN(p->wcmd, t->ty_window);
 		}
@@ -385,8 +386,6 @@ term(p)
 	if (p->wpid > 0)
 		kill(p->wpid, SIGHUP);
 }
-
-#include <sys/ioctl.h>
 
 dfork(p)
 	struct tab *p;
