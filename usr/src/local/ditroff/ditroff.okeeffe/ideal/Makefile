@@ -41,13 +41,16 @@ lex.yy.c:	idlex.l
 y.tab.c:	idyac.y
 	yacc -d idyac.y
 
-install: all
+install: all $(LIBDIR)
 	install -s ideal ${DESTDIR}/${LIBDIR}/ideal
 	install -m 755 ideal.sh ${DESTDIR}/${BINDIR}/ideal
 	install -c -m 644 ideal.1 ${DESTDIR}/usr/man/manl/ideal.1
 	cd idfilt; make DESTDIR=${DESTDIR} install
 	cd lib; make DESTDIR=${DESTDIR} install
 
+$(LIBDIR):
+	mkdir ${BINDIR}/lib/ideal
+	mkdir${BINDIR}/lib/ideal/lib
 list:
 	pr $(SOURCES)
 

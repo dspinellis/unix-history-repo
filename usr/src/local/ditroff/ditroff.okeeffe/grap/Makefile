@@ -1,5 +1,5 @@
 #
-# grap Makefile @(#)Makefile	1.3 (CWI) 87/04/01
+# grap Makefile @(#)Makefile	1.4 (CWI) 88/03/04
 #
 DESTDIR =
 BINDIR = /usr/local
@@ -26,9 +26,12 @@ y.tab.h:	grap.o
 prevy.tab.h:	y.tab.h
 	-cmp -s y.tab.h prevy.tab.h || cp y.tab.h prevy.tab.h
 
-install: grap
+install: grap $(LIBDIR)
 	install -s grap $(DESTDIR)$(BINDIR)/grap
 	install -c -m 644 grap.defines $(DESTDIR)${LIBDIR}/grap.defines
+
+$(LIBDIR):
+	mkdir $(LIBDIR)
 
 clean:
 	rm -rf grap *.o y.tab.h grap.c
