@@ -1,4 +1,4 @@
-#	@(#)NEWS3400	7.1 (Berkeley) %G%
+#	@(#)NEWS3400	7.2 (Berkeley) %G%
 #
 # NWS-3400
 #
@@ -37,7 +37,7 @@ options		"PARK2_BUG"
 options		BUGFIX
 options		FILE_BUGFIX
 
-config		vmunix	root on sd0f swap on sd0b and sd1b
+config		vmunix	root on sd0d swap on sd0b and sd1b
 
 #
 # nexus
@@ -59,9 +59,9 @@ disk		sd0	at sdc0 drive 0
 #disk		sd1	at sdc1 drive 0
 
 device		en0	at hb0					priority 16
-#device		kb0	at hb0					priority 36
-#device		ms0	at hb0					priority 40
-#device		fb0	at hb0					priority 44
+device		kb0	at hb0					priority 36
+device		ms0	at hb0					priority 40
+device		fb0	at hb0					priority 44
 device		rs0	at hb0		flags 0xf		priority 48
 #device		rs1	at hb0		flags 0xf		priority 64
 #device		rs2	at hb0		flags 0xf		priority 80
@@ -80,5 +80,5 @@ pseudo-device	swappager
 pseudo-device	vnodepager
 pseudo-device	devpager
 #pseudo-device	sl	2
-#pseudo-device	bm
-#pseudo-device	lfbm
+pseudo-device	bm
+pseudo-device	"nwb253"
