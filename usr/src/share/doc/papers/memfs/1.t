@@ -1,4 +1,4 @@
-.\"	@(#)1.t	1.2	(Copyright 1990 M. K. McKusick)	90/04/16
+.\"	@(#)1.t	1.3	(Copyright 1990 M. K. McKusick)	90/04/16
 .nr PS 11
 .nr VS 13
 .SH
@@ -291,7 +291,7 @@ process' address space and the kernel buffer cache,
 and once between the kernel buffer and the requesting process.
 These copies are done in different process contexts, necessitating
 two context switches per group of I/O requests.
-These problems are due to the current inability of the kernel
+These problems arise because of the current inability of the kernel
 to do page-in operations
 for an address space other than that of the currently-running process,
 and the current inconvenience of mapping process-owned pages into the kernel
@@ -301,7 +301,7 @@ of the virtual memory system,
 and thus we chose not to address them in the current implementation.
 With the new version of the virtual memory system, we expect to use
 any part of physical memory as part of the buffer cache,
-even though not all of it will be addressable at once within the kernel.
+even though it will not be entirely addressable at once within the kernel.
 In that system, the implementation of a memory-based filesystem
 that avoids the double copy and context switches will be much easier.
 .PP
@@ -327,7 +327,7 @@ exactly as other cached pages are accessed.
 .PP
 The current system uses the existing local filesystem structures
 and code to implement the memory-based filesystem.
-The major advantages of this approach is the sharing of code
+The major advantages of this approach are the sharing of code
 and the simplicity of the approach.
 There are several disadvantages, however.
 One is that the size of the filesystem is fixed at mount time.
@@ -345,7 +345,7 @@ disks.
 It includes replicated control structures, ``cylinder groups''
 with separate allocation maps and control structures,
 and data structures that optimize rotational layout of files.
-None of this is useful in a memory-base filesystem (at least when the
+None of this is useful in a memory-based filesystem (at least when the
 backing store for the filesystem is dynamically allocated and not
 contiguous on a single disk type).
 On the other hand,
