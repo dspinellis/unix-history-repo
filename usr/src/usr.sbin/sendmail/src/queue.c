@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.31		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.32		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.31		%G%);
+SCCSID(@(#)queue.c	3.32		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -365,7 +365,7 @@ orderq()
 		register char *p;
 
 		/* is this an interesting entry? */
-		if (d->d_name[0] != 'c')
+		if (d->d_name[0] != 'c' || d->d_name[1] != 'f')
 			continue;
 
 		/* yes -- find the control file location */
@@ -539,6 +539,7 @@ dowork(w)
 
 		/* read the queue control file */
 		readqf(buf);
+		eatheader();
 
 		/* do the delivery */
 		if (!FatalErrors)
