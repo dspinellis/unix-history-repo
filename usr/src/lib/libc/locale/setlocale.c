@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)setlocale.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)setlocale.c	8.1 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <limits.h>
