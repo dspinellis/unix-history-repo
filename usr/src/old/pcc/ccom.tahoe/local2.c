@@ -1,6 +1,6 @@
-# ifndef lint
-static char sccsid[] = "@(#)local2.c	1.27 (Berkeley) %G%";
-# endif
+#ifndef lint
+static char sccsid[] = "@(#)local2.c	1.28 (Berkeley) %G%";
+#endif
 
 # include "pass2.h"
 # include <ctype.h>
@@ -619,10 +619,21 @@ stasg(p)
 		 * Can we ever get a register conflict with R1 here?
 		 */
 		putstr("\tmovab\t");
-		adrput(l);
-		putstr(",r1\n\tmovab\t");
-		adrput(r);
-		printf(",r0\n\tmovl\t$%d,r2\n\tmovblk\n", size);
+		if(r->in.op == OREG && r->tn.rval == R1)
+		{
+			adrput(r);
+			printf(",r0\n\tmovab\t");
+			adrput(l);
+			putstr(",r1\n");
+		}
+		else
+		{
+			adrput(l);
+			putstr(",r1\n\tmovab\t");
+			adrput(r);
+			printf(",r0\n");
+		}
+		printf("\tmovl\t$%d,r2\n\tmovblk\n", size);
 		rname(R2);
 		break;
 	}
