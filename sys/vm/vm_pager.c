@@ -130,9 +130,10 @@ vm_pager_init()
 				  PAGER_MAP_SIZE, FALSE);
 	/*
 	 * Initialize known pagers
+	 * If pgops is a null pointer skip over it.
 	 */
 	for (pgops = pagertab; pgops < &pagertab[npagers]; pgops++)
-		(*(*pgops)->pgo_init)();
+		if (*pgops) (*(*pgops)->pgo_init)();
 	if (dfltpagerops == NULL)
 		panic("no default pager");
 }
