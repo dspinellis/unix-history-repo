@@ -1,0 +1,64 @@
+From decvax!genrad!sources-request 
+Article 62 of mod.sources:
+Relay-Version: version B 2.10.3 alpha 4/15/85; site ucbvax.ARPA
+Posting-Version: version B 2.10.2 9/3/84; site genrad.UUCP
+Path: ucbvax!decvax!genrad!sources-request
+>From: sources-request@genrad.UUCP
+Newsgroups: mod.sources
+Subject: The REAL rn (rn 4.3 - part 0 of 9)
+Message-ID: <819@genrad.UUCP>
+Date: 9 May 85 21:43:20 GMT
+Date-Received: 10 May 85 06:25:46 GMT
+Sender: john@genrad.UUCP
+Lines: 28
+Approved: john@genrad.UUCP
+
+I've just posted the new release of rn (version 4.3) to mod.sources.
+ [For those who don't already know:  rn is a news reading program that
+  is an alternative to readnews or vnews - mod]
+
+As soon as it works its way over to genrad, [it made it! - mod] you
+should see it.  It now comes in nine, count 'em, nine kits weighing
+in at about half a Meg total.
+
+This is primarily a cleanup release, but there are some new features.
+The biggie is macros and keymaps.
+
+Thank you all for your encouragement and ideas (even the ones I haven't
+done yet).  This is truly a net-wide project.
+
+Larry Wall
+{allegra,burdvax,cbosgd,hplabs,ihnp4,sdcsvax}!sdcrdcf!lwall
+
+[ I have unpacked the newest rn, and run the Configure program.  You will
+  be happy to hear that Configure is as entertaining in this release as
+  it was in the previous release.   I will be posting the nine parts of
+  rn 4.3 over the next several days, so don't panic if you dont get it all
+  at once.
+
+               -   John Nelson,   moderator mod.sources
+
+  P.S.  THIS rn has ABSOLUTELY nothing to do with the "rn" posted to
+        net.sources several days ago.  This is the REAL rn.
+]
+
+
+From decvax!genrad!sources-request 
+Article 63 of mod.sources:
+Relay-Version: version B 2.10.3 alpha 4/15/85; site ucbvax.ARPA
+Posting-Version: version B 2.10.2 9/3/84; site genrad.UUCP
+Path: ucbvax!decvax!genrad!sources-request
+>From: sources-request@genrad.UUCP
+Newsgroups: mod.sources
+Subject: rn version 4.3 (kit 1 of 9)
+Message-ID: <821@genrad.UUCP>
+Date: 9 May 85 22:03:53 GMT
+Date-Received: 10 May 85 06:44:25 GMT
+Sender: john@genrad.UUCP
+Organization: System Development Corporation R&D, Santa Monica
+Lines: 2021
+Approved: john@genrad.UUCP
+
+>From: lwall@sdcrdcf.UUCP (Larry Wall)
+
+---------------- cut here ---------------
