@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.13 (Berkeley) %G%
+ *	@(#)if_loop.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -17,13 +17,12 @@
 #include "socket.h"
 #include "errno.h"
 #include "ioctl.h"
+#include "machine/cpu.h"
 
-#include "../net/if.h"
-#include "../net/if_types.h"
-#include "../net/netisr.h"
-#include "../net/route.h"
-
-#include "machine/mtpr.h"
+#include "if.h"
+#include "if_types.h"
+#include "netisr.h"
+#include "route.h"
 
 #ifdef	INET
 #include "../netinet/in.h"
