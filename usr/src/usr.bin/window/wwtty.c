@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwtty.c	3.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)wwtty.c	3.13 (Berkeley) %G%";
 wwgettty(d, t)
 register struct ww_tty *t;
 {
+#ifndef POSIX_TTY
 	if (ioctl(d, TIOCGETP, &t->ww_sgttyb) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGETC, &t->ww_tchars) < 0)
@@ -35,6 +36,10 @@ register struct ww_tty *t;
 		goto bad;
 	if (ioctl(d, TIOCGETD, &t->ww_ldisc) < 0)
 		goto bad;
+#else
+	if (tcgetattr(d, &t->ww_termios) < 0)
+		goto bad;
+#endif
 	if ((t->ww_fflags = fcntl(d, F_GETFL, 0)) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGPGRP, &t->ww_pgrp) < 0)

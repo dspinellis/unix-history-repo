@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.57 89/10/19		*/
+/*	@(#)ww.h	3.58 90/06/02		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -14,10 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.57 (Berkeley) %G%
+ *	@(#)ww.h	3.58 (Berkeley) %G%
  */
 
+#ifndef POSIX_TTY
 #include <sgtty.h>
+#else
+#include <termios.h>
+#endif
 #include <setjmp.h>
 #include <machine/endian.h>
 #include "window.h"
@@ -50,11 +54,15 @@ struct ww {
 
 	/* state of a tty */
 struct ww_tty {
+#ifndef POSIX_TTY
 	struct sgttyb ww_sgttyb;
 	struct tchars ww_tchars;
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
+#else
+	struct termios ww_termios;
+#endif
 	int ww_fflags;
 };
 

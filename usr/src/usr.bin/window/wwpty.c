@@ -16,10 +16,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwpty.c	3.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwpty.c	3.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
+#ifdef POSIX_TTY
+#include <sys/ioctl.h>
+#endif
 
 wwgetpty(w)
 register struct ww *w;

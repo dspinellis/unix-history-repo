@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -374,7 +374,15 @@ tt_generic()
 {
 	gen_PC = tttgetstr("pc");
 	PC = gen_PC ? *gen_PC->ts_str : 0;
+#ifndef POSIX_TTY
 	ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
+#else
+#ifdef CBAUD
+	ospeed = wwoldtty.ww_termios.c_cflag & CBAUD;
+#else
+	ospeed = wwoldtty.ww_termios.c_ospeed;	/* XXX */
+#endif
+#endif
 
 	gen_CM = ttxgetstr("cm");		/* may not work */
 	gen_IM = ttxgetstr("im");
@@ -469,12 +477,18 @@ tt_generic()
 	if (gen_UG > 0 || gen_US && gen_SO && ttstrcmp(gen_US, gen_SO) == 0)
 		gen_US = 0;
 
-	if (gen_IM->ts_n == 0)
+	if (gen_IM && gen_IM->ts_n == 0) {
+		free((char *) gen_IM);
 		gen_IM = 0;
-	if (gen_EI->ts_n == 0)
+	}
+	if (gen_EI && gen_EI->ts_n == 0) {
+		free((char *) gen_EI);
 		gen_EI = 0;
-	if (gen_IC->ts_n == 0)
+	}
+	if (gen_IC && gen_IC->ts_n == 0) {
+		free((char *) gen_IC);
 		gen_IC = 0;
+	}
 	if (gen_IM)
 		tt.tt_inschar = gen_inschar;
 	else if (gen_IC)

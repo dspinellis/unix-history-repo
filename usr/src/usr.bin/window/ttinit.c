@@ -16,11 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttinit.c	3.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include "tt.h"
+#ifdef POSIX_TTY
+#include <sys/ioctl.h>
+#endif
 
 int tt_h19();
 int tt_h29();

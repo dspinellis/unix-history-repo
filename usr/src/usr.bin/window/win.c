@@ -16,11 +16,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)win.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
 #include "char.h"
+#ifdef POSIX_TTY
+#include <sys/ioctl.h>
+#endif
 
 /*
  * Higher level routines for dealing with windows.
