@@ -1,4 +1,4 @@
-/* graph.c	1.2	83/07/05
+/* graph.c	1.3	83/07/05
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -61,7 +61,7 @@ register int d;
  * Routine:	drawellip (horizontal_diameter, vertical_diameter)
  *
  *	This routine draws regular ellipses given the major diagonals.
- *	It does so by drawing many small lines, every one pixels.
+ *	It does so by drawing many small lines, every other pixel.
  *
  *	The ellipse formula:  ((x-x0)/hrad)**2 + ((y-y0)/vrad)**2 = 1
  *	is used, converting to y = f(x) and duplicating the lines about
@@ -97,12 +97,12 @@ int vd;
     do {
 	yk = k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))) + 0.5;
 
-	HGtline (x-1, oldy1, x, y = vpos + yk);    /* top half of ellipse */
+	HGtline (x-2, oldy1, x, y = vpos + yk);    /* top half of ellipse */
 	oldy1 = y;
-	HGtline (x-1, oldy2, x, y = vpos - yk);	  /* bottom half of ellipse */
+	HGtline (x-2, oldy2, x, y = vpos - yk);	  /* bottom half of ellipse */
 	oldy2 = y;
 
-    } while (--hd);
+    } while (hd -= 2);
 }
 
 drawarc (cdh, cdv, pdh, pdv)
