@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.15 (Berkeley) %G%
+ *	@(#)dhu.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -275,16 +275,17 @@ dhuopen(dev, flag)
  * Close a DHU11 line, turning off the modem control.
  */
 /*ARGSUSED*/
-dhuclose(dev, flag)
+dhuclose(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register unit;
 
 	unit = UNIT(dev);
 	tp = &dhu_tty[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	(void) dhumctl(unit, DHU_BRK, DMBIC);
 	if ((tp->t_state&TS_WOPEN) || (tp->t_cflag&HUPCL) || 
 	    (tp->t_state&TS_ISOPEN) == 0) {

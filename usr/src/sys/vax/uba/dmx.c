@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmx.c	7.6 (Berkeley) %G%
+ *	@(#)dmx.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -142,11 +142,12 @@ dmxopen(tp, sc, flag)
 	return ((*linesw[tp->t_line].l_open)(tp->t_dev, tp));
 }
 
-dmxclose(tp)
-	register struct tty *tp;
+dmxclose(tp, flag)
+	struct tty *tp;
+	int flag;
 {
 
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	(void) dmxmctl(tp, DMF_BRK, DMBIC);
 	if (tp->t_cflag & HUPCL || (tp->t_state & TS_ISOPEN) == 0)
 		(void) dmxmctl(tp, DMF_OFF, DMSET);

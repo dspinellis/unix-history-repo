@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.16 (Berkeley) %G%
+ *	@(#)dh.c	7.17 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -267,16 +267,17 @@ dhopen(dev, flag)
  * Close a DH11 line, turning off the DM11.
  */
 /*ARGSUSED*/
-dhclose(dev, flag)
+dhclose(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	register unit;
 
 	unit = minor(dev);
 	tp = &dh11[unit];
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	((struct dhdevice *)(tp->t_addr))->dhbreak &= ~(1<<(unit&017));
 	if (tp->t_cflag&HUPCL || (tp->t_state&TS_ISOPEN)==0)
 		dmctl(unit, DML_OFF, DMSET);

@@ -398,9 +398,10 @@ int             flag;
 /*##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%*/
 
 /*ARGSUSED*/
-xxclose(dev, flag)
+xxclose(dev, flag, mode, p)
 dev_t           dev;
-int             flag;
+int             flag, mode;
+struct proc	*p;
 {
     register struct tty *tp;
     register        d;
@@ -419,7 +420,7 @@ int             flag;
 	 *	because the line could be flowed off and it would hang
 	 * 	forever */
 
-    (*linesw[tp->t_line].l_close) (tp);
+    (*linesw[tp->t_line].l_close) (tp, flag);
 
 #if ACC_ULTRIX >= 31
     if ((tp->t_cflag & HUPCL) || ((tp->t_state & TS_ISOPEN) == 0)) {

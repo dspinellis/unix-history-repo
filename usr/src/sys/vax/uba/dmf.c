@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	7.14 (Berkeley) %G%
+ *	@(#)dmf.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -222,9 +222,10 @@ dmfopen(dev, flag)
  * Close a DMF32 line.
  */
 /*ARGSUSED*/
-dmfclose(dev, flag)
+dmfclose(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
 	register unit;
 
@@ -233,7 +234,7 @@ dmfclose(dev, flag)
 		dmflclose(dev, flag);
 		return;
 	}
-	return (dmxclose(&dmf_tty[unit]));
+	return (dmxclose(&dmf_tty[unit]), flag);
 }
 
 dmfread(dev, uio, flag)
