@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	7.3 (Berkeley) %G%
+ *	@(#)prf.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,30 +109,6 @@ number:
 }
 
 /*
- * Printn prints a number n in base b.
- * We don't use recursion to avoid deep kernel stacks.
- */
-printn(n, b)
-	u_long n;
-{
-	char prbuf[11];
-	register char *cp;
-
-	if (b == 10 && (int)n < 0) {
-		putchar('-');
-		n = (unsigned)(-(int)n);
-	}
-	cp = prbuf;
-	do {
-		*cp++ = "0123456789abcdef"[n%b];
-		n /= b;
-	} while (n);
-	do
-		putchar(*--cp);
-	while (cp > prbuf);
-}
-
-/*
  * Print a character on console.
  */
 putchar(c)
@@ -171,44 +147,4 @@ getchar()
 	if (c != '\b' && c != '\177')
 		putchar(c);
 	return(c);
-}
-
-gets(buf)
-	char *buf;
-{
-	register char *lp;
-	register c;
-
-	lp = buf;
-	for (;;) {
-		c = getchar() & 0177;
-		switch(c) {
-		case '\n':
-		case '\r':
-			c = '\n';
-			*lp++ = '\0';
-			return;
-		case '\b':
-			if (lp > buf) {
-				lp--;
-				putchar('\b');
-				putchar(' ');
-				putchar('\b');
-			}
-			continue;
-		case '#':
-		case '\177':
-			lp--;
-			if (lp < buf)
-				lp = buf;
-			continue;
-		case '@':
-		case 'u'&037:
-			lp = buf;
-			putchar('\n');
-			continue;
-		default:
-			*lp++ = c;
-		}
-	}
 }
