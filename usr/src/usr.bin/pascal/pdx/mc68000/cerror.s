@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cerror.s	5.3 (Berkeley) %G%
+#	@(#)cerror.s	8.1 (Berkeley) %G%
 #
 
 # modified version of cerror
