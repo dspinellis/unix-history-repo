@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_syscalls.c	7.74 (Berkeley) 6/21/91
- *	$Id$
+ *	$Id: vfs_syscalls.c,v 1.4 1993/10/16 15:25:26 rgrimes Exp $
  */
 
 #include "param.h"
@@ -301,7 +301,8 @@ sync(p, uap, retval)
 	register struct mount *mp;
 	struct mount *omp;
 
-	mp = rootfs;
+	if ((mp = rootfs) == NULL)
+		return (0);
 	do {
 		/*
 		 * The lock check below is to avoid races with mount
@@ -1666,7 +1667,8 @@ out:
 	vrele(tond.ni_startdir);
 	FREE(tond.ni_pnbuf, M_NAMEI);
 out1:
-	vrele(fromnd.ni_startdir);
+	if (fromnd.ni_startdir)
+		vrele(fromnd.ni_startdir);
 	FREE(fromnd.ni_pnbuf, M_NAMEI);
 	if (error == -1)
 		return (0);
