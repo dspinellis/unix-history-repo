@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -179,7 +179,7 @@ dircheck(idesc, dp)
 		if (dp->d_ino == 0)
 			return (1);
 		for (cp = dp->d_name, size = 0; size < dp->d_namlen; size++)
-			if (*cp == 0 || (*cp++ & 0200))
+			if (*cp == 0 || (*cp++ == '/'))
 				return (0);
 		if (*cp == 0)
 			return (1);
