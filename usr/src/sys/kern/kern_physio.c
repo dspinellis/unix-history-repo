@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.38	83/01/17	*/
+/*	kern_physio.c	4.39	83/01/20	*/
 
 #include "../machine/pte.h"
 
@@ -231,6 +231,7 @@ nextiov:
 /* network disk brain damage */
 #include "nd.h"
 #if NND > 0
+#undef MAXPHYS
 #define	MAXPHYS	(32 * 1024)
 #endif
 
