@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.1 (Berkeley) %G%
+		@(#)README	6.2 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -374,6 +374,28 @@ This adds users to class L; you could also use something like
 
 	FL/etc/sendmail.cL
 
+If you want all mail sent to a centralized hub, as for a shared
+/var/spool/mail scheme, use
+
+	define(`MAIL_HUB', hostname)
+
+If you define both LOCAL_RELAY and MAIL_HUB, unqualified names and
+names in class L will be sent to the LOCAL_RELAY and other local names
+will be sent to MAIL_HUB.  For example, if are on machine
+mastodon.CS.Berkeley.EDU, the following combinations of settings
+will have the indicated effects:
+
+email sent to....	eric			  eric@mastodon.CS.Berkeley.EDU
+
+LOCAL_RELAY set to	mail.CS.Berkeley.EDU	  (delivered locally)
+mail.CS.Berkeley.EDU
+
+MAIL_HUB set to		mammoth.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
+mammoth.CS.Berkeley.EDU
+
+Both LOCAL_RELAY and	mail.CS.Berkeley.EDU	  mammoth.CS.Berkeley.EDU
+MAIL_HUB set as above
+
 +-----------+
 | HIERARCHY |
 +-----------+
@@ -462,7 +484,7 @@ MACROS
    E
    F
    G
-   H
+   H	mail Hub (for mail clusters)
    I
    J
    K
