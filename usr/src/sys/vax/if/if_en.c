@@ -1,4 +1,4 @@
-/*	if_en.c	4.51	82/04/04	*/
+/*	if_en.c	4.52	82/04/07	*/
 
 #include "en.h"
 #include "imp.h"
@@ -463,7 +463,10 @@ COUNT(ENOUTPUT);
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr >> 24;
+		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
+		if (dest & 0x00ffff00)
+			goto drop;
+		dest = (dest >> 24) & 0xff;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
@@ -536,15 +539,17 @@ gottype:
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
-		m_freem(m);
-		splx(s);
-		return (0);
+		goto bad;
 	}
 	IF_ENQUEUE(&ifp->if_snd, m);
 	if (en_softc[ifp->if_unit].es_oactive == 0)
 		enstart(ifp->if_unit);
 	splx(s);
 	return (1);
+bad:
+	m_freem(m);
+	splx(s);
+	return (0);
 }
 
 #if NIMP == 0 && NEN > 0
