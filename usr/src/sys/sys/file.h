@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)file.h	7.10 (Berkeley) %G%
+ *	@(#)file.h	7.11 (Berkeley) %G%
  */
 
 #include <sys/fcntl.h>
