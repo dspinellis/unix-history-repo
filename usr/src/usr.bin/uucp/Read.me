@@ -1,0 +1,38 @@
+(Message inbox:528)
+Date:  4 Feb 1982 1931-PST (Thursday)
+From: decvax!yale-comix!jod
+To: decvax!ucbvax!ucbcad.clemc
+
+The following mail message is an ar file of the changed sources
+required for dialout on the Ventel 212+ modem.
+
+
+Stuff you should know:
+- L.sys entries for dialout look like this:
+hostname time ACU 1200 literaldialstring ogin uucp ssword whatever
+Our dial strings look like 123%%12345%%16175551212%% .  We dial through
+a centrex, and it WORKS, amazingly enough.  Note the trailing %%'s. 
+If you have trouble dialing, run uucico -r1 -x4 and it will show you the
+whole transaction with the modem.
+
+- Levine (decvax!yale-comix!ima!johnl) has dialin/dialout on the same line,
+  but I didn't bother implementing it here.  There are some routines 
+  commented out in the code.
+
+- L-devices entries for the dialer look like
+ACUVENTEL tty8 tty8 1200
+
+The file CHANGES in the following ar has info on the modem switch settings.
+We had timing problems locally (with Centrex, not Unix) so we use pulse dialing.
+
+Good luck.  Let me know if I've left anything out.
+
+
+				  John O'Donnell
+				  Yale CS Dept.
+				  (203)432-4666
+				  odonnell@yale
+				  decvax!yale-comix!odonnell
+
+
+
