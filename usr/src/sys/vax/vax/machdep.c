@@ -1,4 +1,4 @@
-/*	machdep.c	4.79	83/06/02	*/
+/*	machdep.c	4.80	83/06/09	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -253,21 +253,22 @@ vmtime(otime, olbolt, oicr)
  * onsigstack, it returns to user who then
  * unwinds with the rei at the bottom of sigcode.
  */
-sendsig(p, sig, mask)
-	int (*p)(), sig, mask;
+sendsig(p, sig, sigmask)
+	int (*p)(), sig, sigmask;
 {
 	register int *usp, *regs;
-	int oonsigstack;
+	int oonstack;
 
 	regs = u.u_ar0;
-	oonsigstack = u.u_onsigstack;
-	if (!u.u_onsigstack && u.u_sigstack) {
-		usp = (int *)u.u_sigstack;
-		u.u_onsigstack = 1;
+	oonstack = u.u_onstack;
+#define	mask(s)	(1<<((s)-1))
+	if (!u.u_onstack && (u.u_sigonstack & mask(sig))) {
+		usp = (int *)u.u_sigsp;
+		u.u_onstack = 1;
 	} else
 		usp = (int *)regs[SP];
 	usp -= 8;
-	if ((int)usp <= USRSTACK - ctob(u.u_ssize))
+	if (!u.u_onstack && (int)usp <= USRSTACK - ctob(u.u_ssize))
 		(void) grow((unsigned)usp);
 	;			/* Avoid asm() label botch */
 #ifndef lint
@@ -286,8 +287,8 @@ sendsig(p, sig, mask)
 	*usp++ = (int)(usp + 2);
 	*usp++ = (int)p;
 	/* struct sigcontext used for the inward return */
-	*usp++ = oonsigstack;
-	*usp++ = mask;
+	*usp++ = oonstack;
+	*usp++ = sigmask;
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
 	regs[SP] = (int)(usp - 8);
@@ -302,7 +303,7 @@ bad:
 	 * instruction to halt it in its tracks.
 	 */
 	u.u_signal[SIGILL] = SIG_DFL;
-	sig = 1 << (SIGILL - 1);
+	sig = mask(SIGILL);
 	u.u_procp->p_sigignore &= ~sig;
 	u.u_procp->p_sigcatch &= ~sig;
 	u.u_procp->p_sigmask &= ~sig;
@@ -328,10 +329,12 @@ sigcleanup()
 	if (useracc((caddr_t)usp, 8, 0))
 		return;
 #endif
-	u.u_onsigstack = *usp++ & 01;
-	u.u_procp->p_sigmask = *usp++;
+	u.u_onstack = *usp++ & 01;
+	u.u_procp->p_sigmask =
+	    *usp++ &~ (mask(SIGKILL)|mask(SIGCONT)|mask(SIGSTOP));
 	u.u_ar0[SP] = (int)usp;
 }
+#undef mask
 
 #ifdef notdef
 dorti()

@@ -1,4 +1,4 @@
-/*	signal.h	4.1	83/06/02	*/
+/*	signal.h	4.2	83/06/09	*/
 
 #ifndef	NSIG
 #define NSIG	32
@@ -47,7 +47,25 @@
 
 #ifndef KERNEL
 int	(*signal())();
+int	(*sigvec())();
 #endif
+
+/*
+ * Signal vector "template" used in sigvec call.
+ */
+struct	sigvec {
+	int	(*sv_handler)();	/* signal handler */
+	int	sv_mask;		/* signal mask to apply */
+	int	sv_onstack;		/* if non-zero, take on signal stack */
+};
+
+/*
+ * Structure used in sigstack call.
+ */
+struct	sigstack {
+	char	*ss_sp;			/* signal stack pointer */
+	int	ss_onstack;		/* current status */
+};
 
 /*
  * Information pushed on stack when a signal is delivered.
