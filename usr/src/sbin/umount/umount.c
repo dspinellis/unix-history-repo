@@ -1,18 +1,30 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980, 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms is permitted
+ * provided that all copyright information, including this notice,
+ * is retained in all such forms, and that any documentation,
+ * advertising or other materials related to such distribution and
+ * use acknowledge that the software was
+ * developed by the University of California, Berkeley.  The name
+ * of the University may not be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.10 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)umount.c	5.11 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * umount
