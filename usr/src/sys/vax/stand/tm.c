@@ -1,4 +1,4 @@
-/*	tm.c	4.4	81/04/03	*/
+/*	tm.c	4.5	81/04/03	*/
 
 /*
  * TM11/TE??
@@ -68,7 +68,6 @@ retry:
 	}
 	ubafree(io, info);
 	word = tmaddr->tmer;
-	printf("tmer %b\n", word, TMER_BITS);
 	if (word&TMER_EOT)
 		return(0);
 	if (word < 0) {
