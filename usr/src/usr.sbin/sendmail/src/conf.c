@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)conf.c	5.9 (Berkeley) %G%";
+static char	SccsId[] = "@(#)conf.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 # include <pwd.h>
@@ -644,18 +644,25 @@ setproctitle(fmt, a, b, c)
 {
 # ifdef SETPROCTITLE
 	register char *p;
+	register int i;
 	extern char **Argv;
 	extern char *LastArgv;
+	char buf[MAXLINE];
 
-	p = Argv[0];
+	(void) sprintf(buf, fmt, a, b, c);
 
 	/* make ps print "(sendmail)" */
+	p = Argv[0];
 	*p++ = '-';
 
-	(void) sprintf(p, fmt, a, b, c);
-	p += strlen(p);
-
-	/* avoid confusing ps */
+	i = strlen(buf);
+	if (i > LastArgv - p - 2)
+	{
+		i = LastArgv - p - 2;
+		buf[i] = '\0';
+	}
+	(void) strcpy(p, buf);
+	p += i;
 	while (p < LastArgv)
 		*p++ = ' ';
 # endif SETPROCTITLE
