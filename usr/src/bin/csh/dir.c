@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -856,14 +856,7 @@ dcanon(cp, p)
 	    /*
 	     * Use STRhome to make '~' work
 	     */
-	    p2 = cp + Strlen(p2);
-	    sp = newcp = (Char *) xmalloc((size_t)
-					  ((cc + Strlen(p2)) * sizeof(Char)));
-	    while (*p1)
-		*sp++ = *p1++;
-	    while (*p2)
-		*sp++ = *p2++;
-	    *sp = '\0';
+	    newcp = Strspl(p1, cp + Strlen(p2));
 	    xfree((ptr_t) cp);
 	    cp = newcp;
 	}
