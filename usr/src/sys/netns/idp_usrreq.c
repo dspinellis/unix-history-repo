@@ -14,11 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)idp_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "malloc.h"
 #include "mbuf.h"
