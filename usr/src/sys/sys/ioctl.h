@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ioctl.h	7.22 (Berkeley) %G%
+ *	@(#)ioctl.h	8.1 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_H_
