@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.6 (Berkeley) %G%
+#	@(#)Makefile	7.7 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -106,6 +106,7 @@ clean:
 	rm -f boot[a-z]? boot[a-wyz][a-z].c conf[a-wyz][a-z].c
 	rm -f format drtest core sboot bootconf.c nboot.c
 	rm -f libdrive.a mkboot tboot tcopy dboot nboot installboot *.lif
+	cd ${STAND}; make clean
 
 lint:
 	lint ${INCPATH} -hxbn boot.c ${SRCS} | \
