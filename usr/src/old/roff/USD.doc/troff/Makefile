@@ -1,38 +1,23 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	6.6 (Berkeley) %G%
 
 DIR=	usd/21.troff
-INTRO=	m0
-TUTOR=	m0a
-PAPER=	m1 m2 m3 m4
-APNDX1=	m5
-APNDX2=	table1
-APNDX3=	table2
-MACROS=	m.mac
+SRCS=	m0 m0a m1 m2 m3 m4 m5
+APNDX=	table1 table2
+MACROS= m.mac
 
-paper.ps: intro.ps tutor.ps apndx1.ps apndx2.ps apndx3.ps
-	${TBL} ${PAPER} | ${ROFF} > ${.TARGET}
+all: paper.ps apndx.ps
 
-intro.ps: ${INTRO}
-	${ROFF} ${INTRO} > ${.TARGET}
+paper.ps: ${SRCS}
+	${TBL} ${SRCS} | ${ROFF} - > ${.TARGET}
 
-tutor.ps: ${TUTOR}
-	${TBL} ${TUTOR} | ${ROFF} > ${.TARGET}
-
-apndx1.ps: ${APNDX1}
-	${ROFF} ${APNDX1} > ${.TARGET}
-
-apndx2.ps: ${APNDX2}
-	${ROFF} ${APNDX2} > ${.TARGET}
-
-apndx3.ps: ${APNDX3}
-	${ROFF} ${APNDX3} > ${.TARGET}
+apndx.ps: ${APNDX}
+	${TBL} ${APNDX} | ${ROFF} - > ${.TARGET}
 
 clean:
-	rm -f intro.ps tutor.ps paper.ps apndx1.ps apndx2.ps apndx3.ps \
-	    *.spell errs Errs make.out
+	rm -f paper.ps apndx.ps *.spell errs Errs make.out
 
-spell: ${INTRO} ${TUTOR} ${PAPER} ${APNDX1} ${APNDX2} ${APNDX3}
-	@for i in ${INTRO} ${TUTOR} ${PAPER} ${APNDX1} ${APNDX2} ${APNDX3}; do \
+spell: ${SRCS} ${APNDX}
+	@for i in ${PAPER} ${APNDX}; do \
 		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
 	done
 
