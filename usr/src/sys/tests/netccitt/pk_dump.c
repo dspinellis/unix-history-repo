@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pk_dump.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk_dump.c	7.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,7 +28,6 @@ static char sccsid[] = "@(#)pk_dump.c	7.1 (Berkeley) %G%";
 #include <netccitt/x25.h>
 #include <netccitt/pk.h>
 #include <netccitt/pk_var.h>
-#include <netccitt/pk_debug.h>
 
 #include <errno.h>
 #include <netdb.h>
@@ -197,15 +196,15 @@ bprintf(fp, b, s)
 		(void) putc('>', fp);
 }
 
-int verbose;
-int tflag;
-int Iflag;
-int Aflag;
+int verbose = 0; /* so you can adb -w the binary */
+int tflag = 0;
+int Iflag = 0;
+int Aflag = 0;
 char *vmunix = _PATH_UNIX;
 char *kmemf;
 struct nlist nl[] = {
-{"_pk_input_cache"},
 {"_pk_output_cache"},
+{"_pk_input_cache"},
 0
 };
 
@@ -225,14 +224,14 @@ main(argc, argv)
 	mbuf_cache_dump(nl);
 	mbuf_cache_dump(nl + 1);
 }
+struct mbuf_cache c;
+struct mbuf **mbvec;
 #define kget(p, d) \
 	(kvm_read((void *)(p), &(d), sizeof (d)))
 
 mbuf_cache_dump(nl)
 struct nlist *nl;
 {
-	struct mbuf_cache c;
-	struct mbuf **mbvec;
 	register struct mbuf *m;
 	unsigned cache_size;
 	int i;
@@ -241,7 +240,7 @@ struct nlist *nl;
 	kget(nl->n_value, c);
 	if (cache_size = c.mbc_size * sizeof(m))
 		mbvec = (struct mbuf **)malloc(cache_size);
-	if (mbvec == 0)
+	if (mbvec == 0 || c.mbc_cache == 0)
 		return;
 	kvm_read(c.mbc_cache, mbvec, cache_size);
 	for (i = c.mbc_num;;) {
