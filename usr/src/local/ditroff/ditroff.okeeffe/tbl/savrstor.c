@@ -19,27 +19,25 @@ savefill()
 	printf(".if \\n(.j=0 .na\n");
 	printf("..\n");
 	printf(".nf\n");
-	/*
-	 * set obx offset if useful
-	 * 
-	printf(".nr #~ 0\n");
-	 *
-	 * JNA, the offset is used to set the vertical line to the left
-	 *
-	 * I'll introduce register #| to offset the horizontal lines
-	 * a bit up
-	 */
+
+	/* #| and #~ give the offsets for hor. and vert. lines
+	   (in hundredths of an n) */
 	switch(device){
 	case HARRIS:
-		printf(".nr #~ 0.24n\n");
-		printf(".nr #| 0.1n\n");
+		printf(".nr #~ 24\n");
+		printf(".nr #| 46\n");
 		printf(".nr Tw 22.5c\n");
 		break;
 	case CAT:
 	case DEVVER:
-	case DEVPSC:
+	default:
 		printf(".nr #~ 0\n");
 		printf(".nr #| 0\n");
+		printf(".nr Tw 7.65i\n");
+		break;
+	case DEVPSC:
+		printf(".nr #~ 0-5\n");
+		printf(".nr #| 8\n");
 		printf(".nr Tw 7.65i\n");
 		break;
 	}
@@ -47,7 +45,7 @@ savefill()
 	/*
 	 * This is the offset for the T450 boxes see drawvert()
 	 */
-	printf(".if \\n(.T .if n .nr #~ 0.6n\n");
+	printf(".if \\n(.T .if n .nr #~ 60\n");
 }
 
 /*

@@ -33,8 +33,10 @@ int	argc; char   *argv[];
 			device = DEVVER;
 		else if(strcmp(p, "psc") == 0)
 			device = DEVPSC;
-		else
-			fprintf(stderr, "tbl: warning: unknown typesetter %s\n", p);
+		/* johan doesnt want to see error messages in a context like
+			TYPESETTER=1650.10 tbl files | eqn | nroff -ms
+		so I removed the warning here. Besides, there is no complaint
+		for an option -Tfoo either. */
 	}
 
 	tabin = stdin;
@@ -92,8 +94,8 @@ swapin()
 			sargv++;
 			break;
 		}
-			sargc--;
-			sargv++;
+		sargc--;
+		sargv++;
 	}
 	if(sargc <= 0)
 		return(0);
