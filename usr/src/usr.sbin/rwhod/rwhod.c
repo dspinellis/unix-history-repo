@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.13 (Berkeley) 83/06/02";
+static char sccsid[] = "@(#)rwhod.c	4.14 (Berkeley) 83/06/02";
 #endif
 
 #include <sys/types.h>
@@ -264,7 +264,7 @@ onalrm()
 	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, 0);
 	(void) read(kmemf, (char *)avenrun, sizeof (avenrun));
 	for (i = 0; i < 3; i++)
-		mywd.wd_loadav[i] = htonl(avenrun[i] * 100);
+		mywd.wd_loadav[i] = htonl((u_long)(avenrun[i] * 100));
 	cc = (char *)we - (char *)&mywd;
 	mywd.wd_sendtime = htonl(time(0));
 	mywd.wd_vers = WHODVERSION;
