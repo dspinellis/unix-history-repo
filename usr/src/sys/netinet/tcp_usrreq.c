@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	7.7.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -60,9 +60,14 @@ tcp_usrreq(so, req, m, nam, rights)
 	int error = 0;
 	int ostate;
 
+#if BSD>=43
 	if (req == PRU_CONTROL)
 		return (in_control(so, (int)m, (caddr_t)nam,
 			(struct ifnet *)rights));
+#else
+	if (req == PRU_CONTROL)
+		return(EOPNOTSUPP);
+#endif
 	if (rights && rights->m_len)
 		return (EINVAL);
 
@@ -247,7 +252,9 @@ tcp_usrreq(so, req, m, nam, rights)
 	case PRU_RCVOOB:
 		if ((so->so_oobmark == 0 &&
 		    (so->so_state & SS_RCVATMARK) == 0) ||
+#ifdef SO_OOBINLINE
 		    so->so_options & SO_OOBINLINE ||
+#endif
 		    tp->t_oobflags & TCPOOB_HADDATA) {
 			error = EINVAL;
 			break;
@@ -309,6 +316,7 @@ tcp_usrreq(so, req, m, nam, rights)
 	return (error);
 }
 
+#if BSD>=43
 tcp_ctloutput(op, so, level, optname, mp)
 	int op;
 	struct socket *so;
@@ -366,6 +374,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 	}
 	return (error);
 }
+#endif
 
 int	tcp_sendspace = 1024*4;
 int	tcp_recvspace = 1024*4;

@@ -9,8 +9,55 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_var.h	7.6 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.6.1.1 (Berkeley) %G%
  */
+
+/*
+ * TCP configuration:  This is a half-assed attempt to make TCP
+ * self-configure for a few varieties of 4.2 and 4.3-based unixes.
+ * If you don't have a) a 4.3bsd vax or b) a 3.x Sun (x<6), check
+ * this carefully (it's probably not right).  Please send me mail
+ * if you run into configuration problems.
+ *  - Van Jacobson (van@lbl-csam.arpa)
+ */
+
+#ifndef BSD
+#define BSD 42	/* if we're not 4.3, pretend we're 4.2 */
+#endif
+
+#if sun || BSD < 43
+#define TCP_COMPAT_42	/* set if we have to interop w/4.2 systems */
+#endif
+
+#ifndef SB_MAX
+#ifdef	SB_MAXCOUNT
+#define	SB_MAX	SB_MAXCOUNT	/* Sun has to be a little bit different... */
+#else
+#define SB_MAX	32767		/* XXX */
+#endif	SB_MAXCOUNT
+#endif	SB_MAX
+
+/*
+ * Bill Nowicki pointed out that the page size (CLBYTES) has
+ * nothing to do with the mbuf cluster size.  So, we followed
+ * Sun's lead and made the new define MCLBYTES stand for the mbuf
+ * cluster size.  The following define makes up backwards compatible
+ * with 4.3 and 4.2.  If CLBYTES is >1024 on your machine, check
+ * this against the mbuf cluster definitions in /usr/include/sys/mbuf.h.
+ */
+#ifndef MCLBYTES
+#define	MCLBYTES CLBYTES	/* XXX */
+#endif
+
+/*
+ * The routine in_localaddr is broken in Sun's 3.4.  We redefine ours
+ * (in tcp_input.c) so we use can it but won't have a name conflict.
+ */
+#ifdef sun
+#define in_localaddr tcp_in_localaddr
+#endif
+
+/* --------------- end of TCP config ---------------- */
 
 /*
  * Kernel variables for tcp.
