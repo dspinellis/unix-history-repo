@@ -1,4 +1,4 @@
-/*	setjmp.s	4.4	83/07/02	*/
+/*	setjmp.s	4.5	83/08/14	*/
 
 /*
  * C library -- setjmp, longjmp
@@ -63,8 +63,10 @@ done:
 3:
 	addl2	$8,sp			# compensate for PSL-PC push
 4:
+	pushl	sp			# old stack pointer
 	pushl	8(r1)			# old signal mask
 	pushl	12(r1)			# old onsigstack
+	pushl	sp			# pointer to sigcontext
 	chmk	$139			# restore previous signal context
 	jmp	*4(r1)			# done, return....
 
