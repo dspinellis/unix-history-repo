@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.34	82/05/19	*/
+/*	uipc_mbuf.c	1.35	82/06/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -15,8 +15,6 @@ mbinit()
 {
 
 COUNT(MBINIT);
-	if (m_reserve(32) == 0)
-		goto bad;
 	if (m_clalloc(4, MPG_MBUFS) == 0)
 		goto bad;
 	if (m_clalloc(32, MPG_CLUSTERS) == 0)
@@ -99,27 +97,6 @@ steal:
 }
 
 /* NEED SOME WAY TO RELEASE SPACE */
-
-/*
- * Space reservation routines
- */
-m_reserve(mbufs)
-	int mbufs;
-{
-
-	if (mbstat.m_mbcommitted + mbufs >
-	      (nmbclusters * NMBPCL) * MBUFOVERALLOCFRACTION)
-		return (0);
-	mbstat.m_mbcommitted += mbufs;
-	return (1);
-}
-
-m_release(mbufs)
-	int mbufs;
-{
-
-	mbstat.m_mbcommitted -= mbufs;
-}
 
 /*
  * Space allocation routines.
