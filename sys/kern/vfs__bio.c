@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.12 1993/11/26 19:08:26 wollman Exp $
+ *	$Id: vfs__bio.c,v 1.13 1993/11/27 17:07:05 davidg Exp $
  */
 
 #include "param.h"
@@ -461,33 +461,30 @@ getblk(register struct vnode *vp, daddr_t blkno, int size)
 	struct buf *bp, *bh;
 	int x;
 
-	for (;;) {
-		if (bp = incore(vp, blkno)) {
-			x = splbio();
-			if (bp->b_flags & B_BUSY) {
-				bp->b_flags |= B_WANTED;
-				tsleep ((caddr_t)bp, PRIBIO, "getblk", 0);
-				splx(x);
-				continue;
-			}
-			bp->b_flags |= B_BUSY | B_CACHE;
-			bremfree(bp);
-			if (size > bp->b_bufsize)
-				panic("now what do we do?");
-			/* if (bp->b_bufsize != size) allocbuf(bp, size); */
-		} else {
-
-			if((bp = getnewbuf(size)) == 0) continue;
-			bp->b_blkno = bp->b_lblkno = blkno;
-			bgetvp(vp, bp);
-			x = splbio();
-			bh = BUFHASH(vp, blkno);
-			binshash(bp, bh);
-			bp->b_flags = B_BUSY;
+	x = splbio();
+loop:
+	if (bp = incore(vp, blkno)) {
+		if (bp->b_flags & B_BUSY) {
+			bp->b_flags |= B_WANTED;
+			tsleep ((caddr_t)bp, PRIBIO, "getblk", 0);
+			goto loop;
 		}
-		splx(x);
-		return (bp);
+		bp->b_flags |= B_BUSY | B_CACHE;
+		bremfree(bp);
+		if (size > bp->b_bufsize)
+			panic("now what do we do?");
+		/* if (bp->b_bufsize != size) allocbuf(bp, size); */
+	} else {
+
+		if ((bp = getnewbuf(size)) == 0) goto loop;
+		bp->b_blkno = bp->b_lblkno = blkno;
+		bgetvp(vp, bp);
+		bh = BUFHASH(vp, blkno);
+		binshash(bp, bh);
+		bp->b_flags = B_BUSY;
 	}
+	splx(x);
+	return (bp);
 }
 
 /*
