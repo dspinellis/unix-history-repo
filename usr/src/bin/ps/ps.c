@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,14 +49,14 @@ enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 uid_t	getuid();
 char	*ttyname();
 
-#define DFMT	"pid tt state time command"
-#define	JFMT	"user pid ppid pgid sess jobc state tt time command"
-#define LFMT \
-	"uid pid ppid cpu pri nice vsz rss wchan state tt time command"
-#define UFMT \
-	"user pid %cpu %mem vsz rss tt state start time command"
-#define	VFMT \
-	"pid state time sl re pagein vsz rss lim tsiz trs %cpu %mem command"
+char dfmt[] = "pid tt state time command";
+char jfmt[] = "user pid ppid pgid sess jobc state tt time command";
+char lfmt[] = "uid pid ppid cpu pri nice vsz rss wchan state tt time command";
+char   o1[] = "pid";
+char   o2[] = "tt state time command";
+char ufmt[] = "user pid %cpu %mem vsz rss tt state start time command";
+char vfmt[] =
+	"pid state time sl re pagein vsz rss lim tsiz trs %cpu %mem command";
 
 main(argc, argv)
 	int argc;
@@ -103,23 +103,23 @@ main(argc, argv)
 			prtheader = ws.ws_row > 5 ? ws.ws_row : 22;
 			break;
 		case 'j':
-			parsefmt(JFMT);
+			parsefmt(jfmt);
 			fmt = 1;
 			break;
 		case 'L': 
 			showkey();
 			exit(0);
 		case 'l':
-			parsefmt(LFMT);
+			parsefmt(lfmt);
 			fmt = 1;
 			break;
 		case 'm':
 			sortby = SORTMEM;
 			break;
 		case 'O':
-			parsefmt("pid");
+			parsefmt(o1);
 			parsefmt(optarg);
-			parsefmt("tt state time command");
+			parsefmt(o2);
 			fmt = 1;
 			break;
 		case 'o':
@@ -163,12 +163,12 @@ main(argc, argv)
 			break;
 		}
 		case 'u':
-			parsefmt(UFMT);
+			parsefmt(ufmt);
 			sortby = SORTCPU;
 			fmt = 1;
 			break;
 		case 'v':
-			parsefmt(VFMT);
+			parsefmt(vfmt);
 			sortby = SORTMEM;
 			fmt = 1;
 			break;
@@ -202,7 +202,7 @@ main(argc, argv)
 	}
 
 	if (!fmt)
-		parsefmt(DFMT);
+		parsefmt(dfmt);
 
 	if (!all && ttydev == NODEV && pid == -1)  /* XXX - should be cleaner */
 		uid = getuid();
