@@ -1,7 +1,13 @@
 /*
  * Copyright (c) 1987 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
@@ -11,35 +17,32 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)basename.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)basename.c	4.4 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <stdio.h>
-
 main(argc, argv)
-char **argv;
+	int argc;
+	char **argv;
 {
-	register char *p1, *p2, *p3;
+	register char *p, *t;
+	char *base;
 
-	if (argc < 2) {
+	if (argc <= 1) {	/* backward compatible */
 		putchar('\n');
 		exit(1);
 	}
-	p1 = argv[1];
-	p2 = p1;
-	while (*p1) {
-		if (*p1++ == '/')
-			p2 = p1;
+	for (p = base = *++argv; *p;)
+		if (*p++ == '/')
+			base = p;
+	if (argc > 2) {		/* original version allows any # of args */
+		for (t = *++argv; *t; ++t);
+		do {
+			if (t == *argv) {
+				*p = '\0';
+				break;
+			}
+		} while (p >= base && *--t == *--p);
 	}
-	if (argc>2) {
-		for(p3=argv[2]; *p3; p3++) 
-			;
-		while(p3>argv[2])
-			if(p1 <= p2 || *--p3 != *--p1)
-				goto output;
-		*p1 = '\0';
-	}
-output:
-	puts(p2, stdout);
+	puts(base);
 	exit(0);
 }
