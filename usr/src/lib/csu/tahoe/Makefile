@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
@@ -28,7 +28,7 @@ TAGSFILE=tags
 	ld -x -r $*.o
 	mv a.out $*.o
 
-all link: ${OBJS}
+all: ${OBJS}
 
 mcrt0.o: moncrt0.o mon.o
 	ld -x -r -o $@ moncrt0.o mon.o
@@ -50,12 +50,15 @@ gmon.o: gmon.c
 	${AS} -o $@ gmon.s
 
 install:
-	install -o bin -g bin -m 444 crt0.o ${DESTDIR}/lib/crt0.o
-	install -o bin -g bin -m 444 mcrt0.o ${DESTDIR}/lib/mcrt0.o
+	install -o bin -g bin -m 444 crt0.o ${DESTDIR}/usr/lib/crt0.o
+	install -o bin -g bin -m 444 mcrt0.o ${DESTDIR}/usr/lib/mcrt0.o
 	install -o bin -g bin -m 444 gcrt0.o ${DESTDIR}/usr/lib/gcrt0.o
 
 clean:
-	rm -f *.o *mon.s a.out core ${TAGSFILE}
+	rm -f *.o *mon.s a.out core
+
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
 tags:
 	cwd=`pwd`; \
