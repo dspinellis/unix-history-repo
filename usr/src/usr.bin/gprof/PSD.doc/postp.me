@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.4 %G%
+\"	@(#)postp.me	1.5 %G%
 .EQ
 delim ##
 .EN
@@ -11,11 +11,24 @@ routines that call it.
 We construct a dynamic call graph with arcs from caller to callee,
 and propagate time from descendants to ancestors
 by topologically sorting the call graph.
-.(z
+Time propagation is performed from the leaves of the
+call graph toward the roots, according to the order
+assigned by a topological numbering algorithm.
+The topological numbering ensures that
+all edges in the graph go from higher numbered nodes to lower
+numbered nodes.
+If we propagate time from nodes in the
+reverse order assigned by the algorithm,
+execution time can be propagated from descendants to ancestors
+after a single traversal of each arc in the call graph.
+Each parent receives some fraction of a child's time.
+Thus time is charged to the
+caller in addition to being charged to the callee.
+.(b
 .TS
 center;
 c s c c s.
-8		9
+8		9	
 
 
 .T&
@@ -31,20 +44,7 @@ c c c c c.
 .ce 1
 Topological ordering
 .ce 0
-.)z
-Time propagation is performed from the leaves of the
-call graph toward the roots, according to the order
-assigned by a topological numbering algorithm.
-The topological numbering ensures that
-all edges in the graph go from higher numbered nodes to lower
-numbered nodes.
-If we propagate time from nodes in the
-reverse order assigned by the algorithm,
-execution time can be propagated from descendants to ancestors
-after a single traversal of each arc in the call graph.
-Each parent receives some fraction of a child's time.
-Thus time is charged to the
-caller in addition to being charged to the callee.
+.)b
 .pp
 Let #C sub e# be the number of calls to some routine,
 #e#, and #C sub e sup r# be the number of
@@ -90,6 +90,8 @@ In our scheme, this time should be
 shared among its call graph parents.
 The arcs from a routine to itself are of interest,
 but do not participate in time propagation.
+Thus the simple equation for time propagation
+does not work within strongly connected components.
 Time is not propagated from one member of a cycle to another,
 since, by definition, this involves propagating time from a routine
 to itself.
@@ -106,11 +108,11 @@ propagate time into the cycle as a whole.
 Calls among the members of the cycle 
 do not propagate any time,
 though they are listed in the call graph profile.
-.(z
+.(b
 .TS
 center;
 c s c c s.
-o		o
+o		o	
 
 
 .T&
@@ -125,12 +127,12 @@ o		o		o
 .TE
 .ce 1
 Cycle to be collapsed.
-.)z
-.(z
+.)b
+.(b
 .TS
 center;
 c s c c s.
-7		8
+7		8	
 
 
 .T&
@@ -146,7 +148,7 @@ c c c c c.
 .ce 1
 Topological numbering after cycle collapsing.
 .ce 0
-.)z
+.)b
 .pp
 Since the technique described above only collects the
 dynamic call graph,
