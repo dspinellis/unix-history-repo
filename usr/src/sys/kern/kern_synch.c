@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.25	82/12/17	*/
+/*	kern_synch.c	4.26	83/05/21	*/
 
 #include "../machine/pte.h"
 
@@ -10,10 +10,6 @@
 #include "../h/file.h"
 #include "../h/inode.h"
 #include "../h/vm.h"
-#ifdef MUSH
-#include "../h/quota.h"
-#include "../h/share.h"
-#endif
 #include "../h/kernel.h"
 #include "../h/buf.h"
 
@@ -47,11 +43,6 @@ schedcpu()
 
 	wakeup((caddr_t)&lbolt);
 	for (p = proc; p < procNPROC; p++) if (p->p_stat && p->p_stat!=SZOMB) {
-#ifdef MUSH
-		if (p->p_quota->q_uid)
-			p->p_quota->q_cost +=
-			    shconsts.sc_click * p->p_rssize;
-#endif
 		if (p->p_time != 127)
 			p->p_time++;
 		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
@@ -61,13 +52,8 @@ schedcpu()
 			p->p_pctcpu = ccpu * p->p_pctcpu +
 			    (1.0 - ccpu) * (p->p_cpticks/(float)hz);
 		p->p_cpticks = 0;
-#ifdef MUSH
-		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
-		     p->p_nice - NZERO + p->p_quota->q_nice;
-#else
 		a = ave((p->p_cpu & 0377), avenrun[0]*nrscale) +
 		     p->p_nice - NZERO;
-#endif
 		if (a < 0)
 			a = 0;
 		if (a > 255)
