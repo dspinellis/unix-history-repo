@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.4 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -81,20 +81,19 @@ union_mount(mp, path, data, ndp, p)
 	 * mounted-on directory.  This allows the mount_union
 	 * command to be made setuid root so allowing anyone
 	 * to do union mounts onto any directory on which they
-	 * have write (also delete and rename) permission.
+	 * have write permission and which they also own.
 	 */
-	error = VOP_ACCESS(mp->mnt_vnodecovered, VWRITE, cred, p);
-	if (error)
-		goto bad;
 	error = VOP_GETATTR(mp->mnt_vnodecovered, &va, cred, p);
 	if (error)
 		goto bad;
-	if ((va.va_mode & VSVTX) &&
-	    (va.va_uid != 0) &&
-	    (va.va_uid != cred->cr_uid)) {
+	if ((va.va_uid != cred->cr_uid) && 
+	    (cred->cr_uid != 0)) {
 		error = EACCES;
 		goto bad;
 	}
+	error = VOP_ACCESS(mp->mnt_vnodecovered, VWRITE, cred, p);
+	if (error)
+		goto bad;
 
 	/*
 	 * Get argument
@@ -185,6 +184,13 @@ union_mount(mp, path, data, ndp, p)
 	 * will leave the unioned view as read-only.
 	 */
 	mp->mnt_flag |= (um->um_uppervp->v_mount->mnt_flag & MNT_RDONLY);
+
+	/*
+	 * This is a user mount.  Privilege check for unmount
+	 * will be done in union_unmount.
+	 */
+	mp->mnt_flag |= MNT_USER;
+
 	mp->mnt_data = (qaddr_t) um;
 	getnewfsid(mp, MOUNT_UNION);
 
@@ -260,6 +266,11 @@ union_unmount(mp, mntflags, p)
 #ifdef UNION_DIAGNOSTIC
 	printf("union_unmount(mp = %x)\n", mp);
 #endif
+
+	/* only the mounter, or superuser can unmount */
+	if ((p->p_cred->p_ruid != um->um_cred->cr_uid) &&
+	    (error = suser(p->p_ucred, &p->p_acflag)))
+		return (error);
 
 	if (mntflags & MNT_FORCE) {
 		/* union can never be rootfs so don't check for it */
