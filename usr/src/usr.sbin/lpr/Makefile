@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	(Berkeley)	%G%
+#	@(#)Makefile	4.5	(Berkeley)	%G%
 #
 # makefile for line printer spooling system
 #
@@ -7,7 +7,6 @@
 # DAEMON	someone special
 # SPGRP		the group id of the spooling programs
 #
-
 CFLAGS=-O -DBSD41C
 LDFLAGS=
 LIBDIR=/usr/lib
@@ -17,10 +16,11 @@ CXREF=/usr/ucb/ctags -x
 ROOT=root
 DAEMON=daemon
 SPGRP=daemon
+DESTDIR=
 
-SRCS=lpd.c rlpr.c lpr.c lpq.c lprm.c lpdrestart.c lpdchar.c getq.c printcap.c \
-	lpf.c necf.c
-OBJS=lpd rlpr lpr lpq lprm lpdrestart
+SRCS=	lpd.c rlpr.c lpr.c lpq.c lprm.c lpdrestart.c \
+	lpdchar.c getq.c printcap.c lpf.c necf.c
+OBJS=	lpd rlpr lpr lpq lprm lpdrestart
 filters=lpf necf
 
 all:	${OBJS}
@@ -53,16 +53,18 @@ lpd.o rlpr.o lpr.o lpq.o lprm.o lpdrestart.o: lp.local.h
 lpd.o lpq.o getq.o: getq.h
 
 install: all
-	install -o ${ROOT} -m 6711 lpd ${LIBDIR}/lpd
-	install -o ${DAEMON} -m 6711 rlpr ${LIBDIR}/rlpr
-	install -o ${ROOT} -m 6711 lpr ${BINDIR}/lpr
-	install -o ${ROOT} -m 6711 lpq ${BINDIR}/lpq
-	install -o ${ROOT} -m 6711 lprm ${BINDIR}/lprm
-	chgrp ${SPGRP} ${LIBDIR}/lpd ${LIBDIR}/rlpr ${BINDIR}/lpr \
-		${BINDIR}/lpq ${BINDIR}/lprm
-	chown ${DAEMON} ${SPOOLDIR}
-	chgrp ${SPGRP} ${SPOOLDIR}
-	chmod 775 ${SPOOLDIR}
+	install -o ${ROOT} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
+	install -o ${DAEMON} -m 6711 rlpr ${DESTDIR}/${LIBDIR}/rlpr
+	install -o ${ROOT} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
+	install -o ${ROOT} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
+	install -o ${ROOT} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
+	install -s lpdrestart ${DESTDIR}/etc/lpdrestart
+	chgrp ${SPGRP} ${DESTDIR}/${LIBDIR}/lpd ${DESTDIR}/${LIBDIR}/rlpr \
+		${DESTDIR}/${BINDIR}/lpr ${DESTDIR}/${BINDIR}/lpq \
+		${DESTDIR}/${BINDIR}/lprm
+	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
+	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
+	chmod 775 ${DESTDIR}/${SPOOLDIR}
 
 clean:
 	rm -f ${OBJS} *.o
