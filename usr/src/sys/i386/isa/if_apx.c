@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_apx.c	7.1 (Berkeley) %G%
+ *	@(#)if_apx.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -29,12 +29,13 @@
 
 #include "net/if.h"
 #include "net/netisr.h"
+#include "net/if_types.h"
 #include "netccitt/x25.h"
 
-#include "apxreg.h"
+#include "if_apxreg.h"
 
 int	apxprobe(), apxattach(), apxstart(), apx_uprim(), apx_meminit();
-int	apxinit(), x25_ifoutput(), apxioctl(), apxreset();
+int	apxinit(), x25_ifoutput(), x25_rtrequest(), apxioctl(), apxreset();
 void	apx_ifattach(), apxinput(), apxintr(), apxtint(), apaxrint();
 
 struct apx_softc {
@@ -54,7 +55,7 @@ struct apx_softc {
 struct apxstat {
 	int	nulltx;
 	int	pint;
-};
+} apxstat;
 
 /* default operating paramters for devices */
 struct	apc_modes apx_default_modes = {
@@ -74,19 +75,18 @@ struct	apc_modes apx_default_modes = {
 
 /* Begin bus & endian dependence */
 
-#include "i386/isa/if_apxreg.h"
-#include "i386/isa/isa_device.h"
+#include "isa_device.h"
 
 struct	isa_driver apxdriver = {
 	apxprobe, apxattach, "apx",
 };
 
 #define SG_RCSR(apx, csrnum) \
-	 (outw(&(apx->apx_sgcp->sgcp_rap), csrnum << 1),
-	  inw(&(apx->apx_sgcp->sgcp_rdp))
+	 (outw(&(apx->apx_sgcp->sgcp_rap), csrnum << 1), \
+	  inw(&(apx->apx_sgcp->sgcp_rdp)))
 
 #define SG_WCSR(apx, csrnum, data) \
-	 (outw(&(apx->apx_sgcp->sgcp_rap), csrnum << 1),
+	 (outw(&(apx->apx_sgcp->sgcp_rap), csrnum << 1), \
 	  outw(&(apx->apx_sgcp->sgcp_rdp), data))
 
 #define APX_RCSR(apx, csrname) inb(&(apx->apx_reg->csrname))
@@ -98,7 +98,7 @@ apxprobe(id)
 	register struct	isa_device *id;
 {
 	int	moffset, subunit, unit = id->id_unit << 1;
-	struct	apc_reg *reg = id->id_iobase;
+	struct	apc_reg *reg = (struct apc_reg *)id->id_iobase;
 	register struct	apx_softc *apx = apx_softc + unit;
 
 	/* Set and read DTR defeat in channel 0 to test presence of apc */
@@ -109,9 +109,9 @@ apxprobe(id)
 	for (subunit = 0; subunit < 2; subunit++, apx++) {
 		/* Set and read DTR mode to test present of SGS thompson chip */
 		apx->apx_if.if_unit = unit++;
-		apx->apx_sgcp = reg->axr_sgcb + subunit;
+		apx->apx_sgcp = reg->axr_sgcp + subunit;
 		SG_WCSR(apx, 5, 0x08);
-		if ((SG_RCSR(apx, 5) & 0xff08) != 0x08)) {
+		if (((SG_RCSR(apx, 5) & 0xff08) != 0x08)) {
 			apxerror(apx, "no mk5025 for channel", subunit);
 			continue;
 		}
@@ -143,6 +143,7 @@ apxattach(id)
  * record.  System will initialize the interface when it is ready
  * to accept packets.
  */
+void
 apx_ifattach(unit)
 {
 	register struct ifnet *ifp = &(apx_softc[unit].apx_if);
@@ -158,7 +159,7 @@ apx_ifattach(unit)
 	ifp->if_start = apxstart;
 	ifp->if_ioctl = apxioctl;
 	ifp->if_reset = apxreset;
-	ifp->if_type = apx_default_modes.axp_iftype;
+	ifp->if_type = apx_default_modes.apm_iftype;
 	ifp->if_hdrlen = 5;
 	ifp->if_addrlen = 8;
 	if_attach(ifp);
@@ -195,20 +196,20 @@ apxreset(unit)
 	MODE(apm_apxaltmode);
 	APX_WCSR(apx, axr_mode, apm_apxmode);
 	APX_WCSR(apx, axr_altmode, apm_apxaltmode);
-	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = apx->apx_rxnt = 0;
+	apx->apx_txnum = apx->apx_rxnum = apx->apx_txcnt = 0;
 
 	if (apx_uprim(apx, SG_STOP, "stop") ||
 	    !(apx->apx_if.if_flags & IFF_UP))
 		return 0;
-	apx_meminit(apx->apc_mem, apx); /* also sets CSR2 */
+	apx_meminit(apx->apx_hmem, apx); /* also sets CSR2 */
 	SG_WCSR(apx, 3, (int)apx->apx_dmem);
 	SG_WCSR(apx, 4, apx->apx_csr4);
-	if (apx_uprim(apx, SG_INIT, "init request")) ||
+	if (apx_uprim(apx, SG_INIT, "init request") ||
 	    apx_uprim(apx, SG_STAT, "status request") ||
 	    apx_uprim(apx, SG_TRANS, "transparent mode"))
 		return 0;
 	SG_WCSR(apx, 0, SG_INEA);
-	return 1:
+	return 1;
 }
 
 apx_uprim(apx, request, ident)
@@ -219,8 +220,8 @@ apx_uprim(apx, request, ident)
 	register int timo = 0;
 	int reply = SG_RCSR(apx, 1);
 
-	if (reply & x8040)
-		SG_WCRS(1, x8040); /* Magic! */
+	if (reply & 0x8040)
+		SG_WCRS(1, 0x8040); /* Magic! */
 	SG_WCSR(apx, 1, request | SG_UAV);
 	do {
 		reply = SG_RCRS(1);
@@ -238,8 +239,8 @@ apx_meminit(apc, apx)
 {
 	register struct apc_mem *apcbase = apx->apx_dmem;
 	register int i;
-#define LOWADDR(e) (((u_long)&(apcbase->(e))) & 0xffff)
-#define HIADDR(e) ((((u_long)&(apcbase->(e))) >> 16) & 0xff)
+#define LOWADDR(e) (((u_long)&(apcbase->e)) & 0xffff)
+#define HIADDR(e) ((((u_long)&(apcbase->e)) >> 16) & 0xff)
 #define SET_SGDX(dx, f, a, b, m) \
 	{ (dx).sgdx_addr = LOWADDR(a); (dx).sgdx_bcnt = (b);\
 	  (dx).sgdx_mcnt = (m); (dx).sgdx_flags = (f) | HIADDR(a); }
@@ -272,21 +273,21 @@ apxstart(ifp)
 {
 	register struct apx_softc *apx = &apx_softc[ifp->if_unit];
 	register struct sgdx *dx;
-	struct apc_mem *apc = apx->apx_mem;
+	struct apc_mem *apc = apx->apx_hmem;
 	struct mbuf *m;
 	int len;
 
 	if ((ifp->if_flags & IFF_RUNNING) == 0)
 		return (0);
 	do {
-		dx = apc->apc_txmd + apc->apc_txnum;
+		dx = apc->apc_txmd + apx->apx_txnum;
 		if (dx->sgdx_flags & SG_OWN)
 			return (0);
 		IF_DEQUEUE(&ifp->if_snd, m);
 		if (m == 0)
 			return (0);
 		len = min(m->m_pkthdr.len, SGMTU);
-		m_copydata(m, 0, len, apc->apc_txbuf[apx->apx_txnum]);
+		m_copydata(m, 0, len, apc->apc_tbuf[apx->apx_txnum]);
 		dx->sgdx_mcnt = -len;
 		dx->sgdx_flags = SG_OWN | SG_TUI | (0xff & dx->sgdx_flags);
 		SG_WCSR(apx, 0, SG_INEA | SG_TDMD);
@@ -298,6 +299,7 @@ apxstart(ifp)
 	return (0);
 }
 
+void
 apxintr()
 {
 	register struct apx_softc *apx = apx_lastsoftc;
@@ -305,7 +307,7 @@ apxintr()
 	int reply;
 
 	do {
-		if (apx->ap_if.if_flags & IFF_UP)
+		if (apx->apx_if.if_flags & IFF_UP)
 		    /* Try to turn off interrupt cause */
 		    while ((reply = SG_RCSR(apx, 0)) & 0xff) {
 			SG_WCSR(apx, 0, SG_INEA | 0xfe);
@@ -326,10 +328,11 @@ apxintr()
 	} while (apx != apx_lastsoftc);
 }
 
+void
 apxtint(apx)
 	register struct apx_softc *apx;
 {
-	register struct apc_mem *apc = apx->apx_mem;
+	register struct apc_mem *apc = apx->apx_hmem;
 	int i, loopcount = 0;
 
 	do {
@@ -350,7 +353,7 @@ apxtint(apx)
 apxrint(apx)
 	register struct apx_softc *apx;
 {
-	register struct apc_mem *apc = apx->apx_mem;
+	register struct apc_mem *apc = apx->apx_hmem;
 	register struct sgdx *dx = apc->apc_rxmd + apx->apx_rxnum;
 #define SGNEXTRXMD \
 dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
@@ -371,7 +374,7 @@ dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 			 * Find the end of the packet so we can see how long
 			 * it was.  We still throw it away.
 			 */
-			apxerror(apx, "chained buffer", ds->sgdx_flags);
+			apxerror(apx, "chained buffer", dx->sgdx_flags);
 			do {
 				dx->sgdx_bcnt = 0;
 				dx->sgdx_flags = SG_OWN | (0xff&dx->sgdx_flags);
@@ -382,7 +385,7 @@ dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 			 * we reset the hardware (conservative).
 			 */
 			if ((dx->sgdx_flags & (SG_OWN|SG_SLF|SG_ELF)) !=
-			    SG_ENP) {
+			    SG_ELF) {
 				apxreset(apx->apx_if.if_unit);
 				return;
 			}
@@ -395,6 +398,7 @@ dx = ++apx->apx_rxnum == SGRBUF ? &apc->apc_rxmd[apx->apx_rxnum = 0] : dx + 1;
 	}
 }
 
+void
 apxinput(ifp, buffer, len)
 register struct ifnet *ifp;
 caddr_t buffer;
@@ -537,7 +541,7 @@ apxioctl(ifp, cmd, data)
 
 	case SIOCSIFMODE:
 		if ((ifp->if_flags & IFF_UP) == 0)
-			apx->apx_modes = *(struct apx_modes *)data;
+			apx->apx_modes = *(struct apc_modes *)data;
 		else
 	default:
 			error = EINVAL;
