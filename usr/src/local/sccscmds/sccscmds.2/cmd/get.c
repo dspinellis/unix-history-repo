@@ -5,7 +5,7 @@
 # include	<sys/dir.h>
 # include	"pathnames.h"
 
-static char Sccsid[] = "@(#)get.c	4.10	%G%";
+static char Sccsid[] = "@(#)get.c	4.11	%G%";
 
 int	Debug = 0;
 struct packet gpkt;
@@ -595,7 +595,8 @@ char line[];
 				tp = readcopy(lp + 14, tp);
 				lp = p + 1;
 			}
-		}
+		} else
+			*tp++ = '%';
 	}
 
 	*tp = 0;
