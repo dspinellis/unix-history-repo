@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.29 (Berkeley) %G%
+ *	@(#)in.c	7.30 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -604,7 +604,6 @@ in_addmulti(ap, ifp)
 	struct ifreq ifr;
 	struct in_ifaddr *ia;
 	int s = splnet();
-	int error;
 
 	/*
 	 * See if address already in list.
@@ -637,25 +636,21 @@ in_addmulti(ap, ifp)
 			return (NULL);
 		}
 		inm->inm_ia = ia;
+		inm->inm_next = ia->ia_multiaddrs;
+		ia->ia_multiaddrs = inm;
 		/*
 		 * Ask the network driver to update its multicast reception
 		 * filter appropriately for the new address.
 		 */
 		((struct sockaddr_in *)&ifr.ifr_addr)->sin_family = AF_INET;
 		((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr = *ap;
-		if (ifp->if_ioctl == NULL) {
+		if ((ifp->if_ioctl == NULL) ||
+		    (*ifp->if_ioctl)(ifp, SIOCADDMULTI,(caddr_t)&ifr) != 0) {
+			ia->ia_multiaddrs = inm->inm_next;
 			free(inm, M_IPMADDR);
 			splx(s);
 			return (NULL);
 		}
-		error = (*ifp->if_ioctl)(ifp, SIOCADDMULTI,(caddr_t)&ifr);
-		if (error != 0) {
-			free(inm, M_IPMADDR);
-			splx(s);
-			return (NULL);
-		}
-		inm->inm_next = ia->ia_multiaddrs;
-		ia->ia_multiaddrs = inm;
 		/*
 		 * Let IGMP know that we have joined a new IP multicast group.
 		 */
