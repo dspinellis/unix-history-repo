@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.48 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,6 +26,8 @@ int	dirchk = 1;
 #else
 int	dirchk = 0;
 #endif
+
+#define FSFMT(vp)	((vp)->v_mount->mnt_maxsymlinklen <= 0)
 
 /*
  * Convert a component of a pathname into a pointer to a locked inode.
@@ -92,7 +94,7 @@ ufs_lookup (ap)
 	u_long bmask;			/* block offset mask */
 	int lockparent;			/* 1 => lockparent flag is set */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
-	int error;
+	int namlen, error;
 	struct vnode **vpp = ap->a_vpp;
 	struct componentname *cnp = ap->a_cnp;
 	struct ucred *cred = cnp->cn_cred;
@@ -243,7 +245,7 @@ searchloop:
 		 */
 		ep = (struct direct *)(bp->b_un.b_addr + entryoffsetinblock);
 		if (ep->d_reclen == 0 ||
-		    dirchk && ufs_dirbadentry(ep, entryoffsetinblock)) {
+		    dirchk && ufs_dirbadentry(vdp, ep, entryoffsetinblock)) {
 			int i;
 
 			ufs_dirbad(dp, dp->i_offset, "mangled entry");
@@ -263,7 +265,7 @@ searchloop:
 			int size = ep->d_reclen;
 
 			if (ep->d_ino != 0)
-				size -= DIRSIZ(ep);
+				size -= DIRSIZ(FSFMT(vdp), ep);
 			if (size > 0) {
 				if (size >= slotneeded) {
 					slotstatus = FOUND;
@@ -286,9 +288,17 @@ searchloop:
 		 * Check for a name match.
 		 */
 		if (ep->d_ino) {
-			if (ep->d_namlen == cnp->cn_namelen &&
+#			if (BYTE_ORDER == LITTLE_ENDIAN)
+				if (vdp->v_mount->mnt_maxsymlinklen > 0)
+					namlen = ep->d_namlen;
+				else
+					namlen = ep->d_type;
+#			else
+				namlen = ep->d_namlen;
+#			endif
+			if (namlen == cnp->cn_namelen &&
 			    !bcmp(cnp->cn_nameptr, ep->d_name,
-				(unsigned)ep->d_namlen)) {
+				(unsigned)namlen)) {
 				/*
 				 * Save directory entry's inode number and
 				 * reclen in ndp->ni_ufs area, and release
@@ -385,9 +395,9 @@ found:
 	 * Check that directory length properly reflects presence
 	 * of this entry.
 	 */
-	if (entryoffsetinblock + DIRSIZ(ep) > dp->i_size) {
+	if (entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep) > dp->i_size) {
 		ufs_dirbad(dp, dp->i_offset, "i_size too small");
-		dp->i_size = entryoffsetinblock + DIRSIZ(ep);
+		dp->i_size = entryoffsetinblock + DIRSIZ(FSFMT(vdp), ep);
 		dp->i_flag |= IUPD|ICHG;
 	}
 
@@ -545,20 +555,30 @@ ufs_dirbad(ip, offset, how)
  *	name must be as long as advertised, and null terminated
  */
 int
-ufs_dirbadentry(ep, entryoffsetinblock)
+ufs_dirbadentry(dp, ep, entryoffsetinblock)
+	struct vnode *dp;
 	register struct direct *ep;
 	int entryoffsetinblock;
 {
 	register int i;
+	int namlen;
 
+#	if (BYTE_ORDER == LITTLE_ENDIAN)
+		if (dp->v_mount->mnt_maxsymlinklen > 0)
+			namlen = ep->d_namlen;
+		else
+			namlen = ep->d_type;
+#	else
+		namlen = ep->d_namlen;
+#	endif
 	if ((ep->d_reclen & 0x3) != 0 ||
 	    ep->d_reclen > DIRBLKSIZ - (entryoffsetinblock & (DIRBLKSIZ - 1)) ||
-	    ep->d_reclen < DIRSIZ(ep) || ep->d_namlen > MAXNAMLEN) {
+	    ep->d_reclen < DIRSIZ(FSFMT(dp), ep) || namlen > MAXNAMLEN) {
 		/*return (1); */
 		printf("First bad\n");
 		goto bad;
 	}
-	for (i = 0; i < ep->d_namlen; i++)
+	for (i = 0; i < namlen; i++)
 		if (ep->d_name[i] == '\0') {
 			/*return (1); */
 			printf("Second bad\n");
@@ -607,7 +627,17 @@ ufs_direnter(ip, dvp, cnp)
 	newdir.d_ino = ip->i_number;
 	newdir.d_namlen = cnp->cn_namelen;
 	bcopy(cnp->cn_nameptr, newdir.d_name, (unsigned)cnp->cn_namelen + 1);
-	newentrysize = DIRSIZ(&newdir);
+	if (dvp->v_mount->mnt_maxsymlinklen > 0)
+		newdir.d_type = IFTODT(ip->i_mode);
+	else {
+		newdir.d_type = 0;
+#		if (BYTE_ORDER == LITTLE_ENDIAN)
+			{ u_char tmp = newdir.d_namlen;
+			newdir.d_namlen = newdir.d_type;
+			newdir.d_type = tmp; }
+#		endif
+	}
+	newentrysize = DIRSIZ(FSFMT(dvp), &newdir);
 	if (dp->i_count == 0) {
 		/*
 		 * If dp->i_count is 0, then namei could find no
@@ -670,7 +700,7 @@ ufs_direnter(ip, dvp, cnp)
 	 * space.
 	 */
 	ep = (struct direct *)dirbuf;
-	dsize = DIRSIZ(ep);
+	dsize = DIRSIZ(FSFMT(dvp), ep);
 	spacefree = ep->d_reclen - dsize;
 	for (loc = ep->d_reclen; loc < dp->i_count; ) {
 		nep = (struct direct *)(dirbuf + loc);
@@ -682,7 +712,7 @@ ufs_direnter(ip, dvp, cnp)
 			/* overwrite; nothing there; header is ours */
 			spacefree += dsize;
 		}
-		dsize = DIRSIZ(nep);
+		dsize = DIRSIZ(FSFMT(dvp), nep);
 		spacefree += nep->d_reclen - dsize;
 		loc += nep->d_reclen;
 		bcopy((caddr_t)nep, (caddr_t)ep, dsize);
@@ -774,12 +804,14 @@ ufs_dirrewrite(dp, ip, cnp)
 	USES_VOP_BWRITE;
 	struct buf *bp;
 	struct direct *ep;
+	struct vnode *vdp = ITOV(dp);
 	int error;
 
-	if (error =
-	    VOP_BLKATOFF(ITOV(dp), (off_t)dp->i_offset, (char **)&ep, &bp))
+	if (error = VOP_BLKATOFF(vdp, (off_t)dp->i_offset, (char **)&ep, &bp))
 		return (error);
 	ep->d_ino = ip->i_number;
+	if (vdp->v_mount->mnt_maxsymlinklen > 0)
+		ep->d_type = IFTODT(ip->i_mode);
 	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	return (error);
@@ -803,7 +835,7 @@ ufs_dirempty(ip, parentino, cred)
 	register off_t off;
 	struct dirtemplate dbuf;
 	register struct direct *dp = (struct direct *)&dbuf;
-	int error, count;
+	int error, count, namlen;
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
@@ -822,16 +854,24 @@ ufs_dirempty(ip, parentino, cred)
 		if (dp->d_ino == 0)
 			continue;
 		/* accept only "." and ".." */
-		if (dp->d_namlen > 2)
+#		if (BYTE_ORDER == LITTLE_ENDIAN)
+			if (ITOV(ip)->v_mount->mnt_maxsymlinklen > 0)
+				namlen = dp->d_namlen;
+			else
+				namlen = dp->d_type;
+#		else
+			namlen = dp->d_namlen;
+#		endif
+		if (namlen > 2)
 			return (0);
 		if (dp->d_name[0] != '.')
 			return (0);
 		/*
-		 * At this point d_namlen must be 1 or 2.
+		 * At this point namlen must be 1 or 2.
 		 * 1 implies ".", 2 implies ".." if second
 		 * char is also "."
 		 */
-		if (dp->d_namlen == 1)
+		if (namlen == 1)
 			continue;
 		if (dp->d_name[1] == '.' && dp->d_ino == parentino)
 			continue;
@@ -854,7 +894,7 @@ ufs_checkpath(source, target, cred)
 	struct dirtemplate dirbuf;
 	register struct inode *ip;
 	struct vnode *vp;
-	int error, rootino;
+	int error, rootino, namlen;
 
 	ip = target;
 	if (ip->i_number == source->i_number) {
@@ -877,7 +917,15 @@ ufs_checkpath(source, target, cred)
 			IO_NODELOCKED, cred, (int *)0, (struct proc *)0);
 		if (error != 0)
 			break;
-		if (dirbuf.dotdot_namlen != 2 ||
+#		if (BYTE_ORDER == LITTLE_ENDIAN)
+			if (vp->v_mount->mnt_maxsymlinklen > 0)
+				namlen = dirbuf.dotdot_namlen;
+			else
+				namlen = dirbuf.dotdot_type;
+#		else
+			namlen = dirbuf.dotdot_namlen;
+#		endif
+		if (namlen != 2 ||
 		    dirbuf.dotdot_name[0] != '.' ||
 		    dirbuf.dotdot_name[1] != '.') {
 			error = ENOTDIR;
