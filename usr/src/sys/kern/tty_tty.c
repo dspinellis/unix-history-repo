@@ -1,4 +1,4 @@
-/*	tty_tty.c	4.11	82/10/13	*/
+/*	tty_tty.c	4.12	82/10/17	*/
 
 /*
  * Indirect driver for controlling tty.
@@ -16,13 +16,13 @@
 
 /*ARGSUSED*/
 syopen(dev, flag)
+	dev_t dev;
+	int flag;
 {
 
-	if (u.u_ttyp == NULL) {
-		u.u_error = ENXIO;
-		return;
-	}
-	(*cdevsw[major(u.u_ttyd)].d_open)(u.u_ttyd, flag);
+	if (u.u_ttyp == NULL)
+		return (ENXIO);
+	return ((*cdevsw[major(u.u_ttyd)].d_open)(u.u_ttyd, flag));
 }
 
 /*ARGSUSED*/
@@ -59,13 +59,11 @@ syioctl(dev, cmd, addr, flag)
 		u.u_ttyp = 0;
 		u.u_ttyd = 0;
 		u.u_procp->p_pgrp = 0;
-		return;
+		return (0);
 	}
-	if (u.u_ttyp == NULL) {
-		u.u_error = ENXIO;
-		return;
-	}
-	(*cdevsw[major(u.u_ttyd)].d_ioctl)(u.u_ttyd, cmd, addr, flag);
+	if (u.u_ttyp == NULL)
+		return (ENXIO);
+	return ((*cdevsw[major(u.u_ttyd)].d_ioctl)(u.u_ttyd, cmd, addr, flag));
 }
 
 syselect(dev, flag)
