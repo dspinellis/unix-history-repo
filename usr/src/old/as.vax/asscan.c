@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asscan.c 4.5 %G%";
+static	char sccsid[] = "@(#)asscan.c 4.6 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asscan.h"
@@ -961,6 +961,7 @@ middle:
 		}
 		else if (val == '"');		/*done*/
 		else if (val == '\n'){
+			yywarning("New line embedded in a string constant.");
 			scanlineno++;
 			linescrossed++;
 			val = getchar();
