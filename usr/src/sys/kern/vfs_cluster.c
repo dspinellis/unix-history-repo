@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	8.1 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -301,10 +301,10 @@ cluster_callback(bp)
 	b_save = (struct cluster_save *)(bp->b_saveaddr);
 	bp->b_saveaddr = b_save->bs_saveaddr;
 
-	cp = bp->b_un.b_addr + b_save->bs_bufsize;
+	cp = (char *)bp->b_data + b_save->bs_bufsize;
 	daddr = bp->b_blkno + b_save->bs_bufsize / DEV_BSIZE;
 	for (tbp = b_save->bs_children; b_save->bs_nchildren--; ++tbp) {
-		pagemove(cp, (*tbp)->b_un.b_addr, (*tbp)->b_bufsize);
+		pagemove(cp, (*tbp)->b_data, (*tbp)->b_bufsize);
 		cp += (*tbp)->b_bufsize;
 		bp->b_bufsize -= (*tbp)->b_bufsize;
 		if ((*tbp)->b_blkno != daddr) {
@@ -480,7 +480,7 @@ redo:
 
 	bp->b_flags |= B_CALL;
 	bp->b_iodone = cluster_callback;
-	cp = bp->b_un.b_addr + bp->b_bufsize;
+	cp = (char *)bp->b_data + bp->b_bufsize;
 	for (++start_lbn, i = 0; i < len; ++i, ++start_lbn) {
 		if (!incore(vp, start_lbn) || start_lbn == lbn)
 			break;
@@ -509,7 +509,7 @@ redo:
 			panic("Clustered write to wrong blocks");
 		}
 
-		pagemove(tbp->b_un.b_daddr, cp, size);
+		pagemove(tbp->b_data, cp, size);
 		bp->b_bcount += size;
 		bp->b_bufsize += size;
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_readwrite.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_readwrite.c	8.2 (Berkeley) %G%
  */
 
 #ifdef LFS_READWRITE
@@ -115,7 +115,7 @@ READ(ap)
 			xfersize = size;
 		}
 		if (error =
-		    uiomove(bp->b_un.b_addr + blkoffset, (int)xfersize, uio))
+		    uiomove((char *)bp->b_data + blkoffset, (int)xfersize, uio))
 			break;
 
 		if (S_ISREG(mode) && (xfersize + blkoffset == fs->fs_bsize ||
@@ -125,7 +125,7 @@ READ(ap)
 	}
 	if (bp != NULL)
 		brelse(bp);
-	ip->i_flag |= IACC;
+	ip->i_flag |= IACCESS;
 	return (error);
 }
 
@@ -228,7 +228,7 @@ WRITE(ap)
 			xfersize = size;
 
 		error =
-		    uiomove(bp->b_un.b_addr + blkoffset, (int)xfersize, uio);
+		    uiomove((char *)bp->b_data + blkoffset, (int)xfersize, uio);
 #ifdef LFS_READWRITE
 		(void)VOP_BWRITE(bp);
 #else
@@ -246,7 +246,7 @@ WRITE(ap)
 #endif
 		if (error || xfersize == 0)
 			break;
-		ip->i_flag |= IUPD | ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 	}
 	/*
 	 * If we successfully wrote any data, and we are not the superuser

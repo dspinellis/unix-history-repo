@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -86,10 +86,10 @@ ufs_inactive(ap)
 		mode = ip->i_mode;
 		ip->i_mode = 0;
 		ip->i_rdev = 0;
-		ip->i_flag |= IUPD|ICHG;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		VOP_VFREE(vp, ip->i_number, mode);
 	}
-	if (ip->i_flag&(IUPD|IACC|ICHG|IMOD)) {
+	if (ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE)) {
 		tv = time;
 		VOP_UPDATE(vp, &tv, &tv, 0);
 	}

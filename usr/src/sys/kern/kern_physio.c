@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	8.1 (Berkeley) %G%
+ *	@(#)kern_physio.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>

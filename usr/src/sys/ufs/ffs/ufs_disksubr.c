@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_disksubr.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -147,8 +147,9 @@ readdisklabel(dev, strat, lp)
 	(*strat)(bp);
 	if (biowait(bp))
 		msg = "I/O error";
-	else for (dlp = (struct disklabel *)bp->b_un.b_addr;
-	    dlp <= (struct disklabel *)(bp->b_un.b_addr+DEV_BSIZE-sizeof(*dlp));
+	else for (dlp = (struct disklabel *)bp->b_data;
+	    dlp <= (struct disklabel *)((char *)bp->b_data +
+	    DEV_BSIZE - sizeof(*dlp));
 	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
 		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
 			if (msg == NULL)
@@ -240,9 +241,9 @@ writedisklabel(dev, strat, lp)
 	(*strat)(bp);
 	if (error = biowait(bp))
 		goto done;
-	for (dlp = (struct disklabel *)bp->b_un.b_addr;
+	for (dlp = (struct disklabel *)bp->b_data;
 	    dlp <= (struct disklabel *)
-	      (bp->b_un.b_addr + lp->d_secsize - sizeof(*dlp));
+	      ((char *)bp->b_data + lp->d_secsize - sizeof(*dlp));
 	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
 		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
 		    dkcksum(dlp) == 0) {

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	8.1 (Berkeley) %G%
+ *	@(#)lfs.h	8.2 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -219,32 +219,32 @@ struct segsum {
 
 /* Read in the block with the cleaner info from the ifile. */
 #define LFS_CLEANERINFO(CP, F, BP) { \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
 	if (bread((F)->lfs_ivnode, (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read"); \
-	(CP) = (CLEANERINFO *)(BP)->b_un.b_addr; \
+	(CP) = (CLEANERINFO *)(BP)->b_data; \
 }
 
 /* Read in the block with a specific inode from the ifile. */
 #define	LFS_IENTRY(IP, F, IN, BP) { \
 	int _e; \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
 	if (_e = bread((F)->lfs_ivnode, \
 	    (IN) / (F)->lfs_ifpb + (F)->lfs_cleansz + (F)->lfs_segtabsz, \
 	    (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read %d", _e); \
-	(IP) = (IFILE *)(BP)->b_un.b_addr + (IN) % (F)->lfs_ifpb; \
+	(IP) = (IFILE *)(BP)->b_data + (IN) % (F)->lfs_ifpb; \
 }
 
 /* Read in the block with a specific segment usage entry from the ifile. */
 #define	LFS_SEGENTRY(SP, F, IN, BP) { \
 	int _e; \
-	VTOI((F)->lfs_ivnode)->i_flag |= IACC; \
+	VTOI((F)->lfs_ivnode)->i_flag |= IACCESS; \
 	if (_e = bread((F)->lfs_ivnode, \
 	    ((IN) >> (F)->lfs_sushift) + (F)->lfs_cleansz, \
 	    (F)->lfs_bsize, NOCRED, &(BP))) \
 		panic("lfs: ifile read: %d", _e); \
-	(SP) = (SEGUSE *)(BP)->b_un.b_addr + ((IN) & (F)->lfs_sepb - 1); \
+	(SP) = (SEGUSE *)(BP)->b_data + ((IN) & (F)->lfs_sepb - 1); \
 }
 
 /* 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	8.2 (Berkeley) %G%
+ *	@(#)vfs_bio.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -100,7 +100,7 @@ bufinit()
 		bp->b_dev = NODEV;
 		bp->b_rcred = NOCRED;
 		bp->b_wcred = NOCRED;
-		bp->b_un.b_addr = buffers + i * MAXBSIZE;
+		bp->b_data = buffers + i * MAXBSIZE;
 		if (i < residual)
 			bp->b_bufsize = (base + 1) * CLBYTES;
 		else
@@ -572,7 +572,7 @@ allocbuf(tp, size)
 		bremfree(ep);
 		ep->b_flags |= B_BUSY;
 		splx(s);
-		pagemove(tp->b_un.b_addr + sizealloc, ep->b_un.b_addr,
+		pagemove((char *)tp->b_data + sizealloc, ep->b_data,
 		    (int)tp->b_bufsize - sizealloc);
 		ep->b_bufsize = tp->b_bufsize - sizealloc;
 		tp->b_bufsize = sizealloc;
@@ -592,8 +592,8 @@ allocbuf(tp, size)
 			/* void */;
 		if (take >= bp->b_bufsize)
 			take = bp->b_bufsize;
-		pagemove(&bp->b_un.b_addr[bp->b_bufsize - take],
-		    &tp->b_un.b_addr[tp->b_bufsize], take);
+		pagemove(&((char *)bp->b_data)[bp->b_bufsize - take],
+		    &((char *)tp->b_data)[tp->b_bufsize], take);
 		tp->b_bufsize += take;
 		bp->b_bufsize = bp->b_bufsize - take;
 		if (bp->b_bcount > bp->b_bufsize)

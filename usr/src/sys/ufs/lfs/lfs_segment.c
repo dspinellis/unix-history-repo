@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -162,7 +162,7 @@ loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
 		 * the IFILE.
 		 */
 		ip = VTOI(vp);
-		if ((ip->i_flag & (IMOD | IACC | IUPD | ICHG) ||
+		if ((ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE) ||
 		    vp->v_dirtyblkhd.le_next != NULL) &&
 		    ip->i_number != LFS_IFILE_INUM) {
 			if (vp->v_dirtyblkhd.le_next != NULL)
@@ -245,7 +245,7 @@ lfs_segwrite(mp, flags)
 			    NOCRED, &bp))
 
 				panic("lfs: ifile read");
-			segusep = (SEGUSE *)bp->b_un.b_addr;
+			segusep = (SEGUSE *)bp->b_data;
 			for (i = fs->lfs_sepb; i--; segusep++)
 				segusep->su_flags &= ~SEGUSE_ACTIVE;
 				
@@ -352,7 +352,7 @@ lfs_writeinode(fs, sp, ip)
 	int error, i, ndx;
 	int redo_ifile = 0;
 
-	if (!(ip->i_flag & (IMOD | IACC | IUPD | ICHG)))
+	if (!(ip->i_flag & (IMODIFIED | IACCESS | IUPDATE | ICHANGE)))
 		return(0);
 
 	/* Allocate a new inode block if necessary. */
@@ -370,7 +370,7 @@ lfs_writeinode(fs, sp, ip)
 		    fs->lfs_bsize);
 		/* Zero out inode numbers */
 		for (i = 0; i < INOPB(fs); ++i)
-			sp->ibp->b_un.b_dino[i].di_inumber = 0;
+			((struct dinode *)sp->ibp->b_data)[i].di_inumber = 0;
 		++sp->start_bpp;
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
@@ -382,12 +382,12 @@ lfs_writeinode(fs, sp, ip)
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
-	if (ip->i_flag & IMOD)
+	if (ip->i_flag & IMODIFIED)
 		--fs->lfs_uinodes;
 	ITIMES(ip, &time, &time);
-	ip->i_flag &= ~(IMOD | IACC | IUPD | ICHG);
+	ip->i_flag &= ~(IMODIFIED | IACCESS | IUPDATE | ICHANGE);
 	bp = sp->ibp;
-	bp->b_un.b_dino[sp->ninodes % INOPB(fs)] = ip->i_din;
+	((struct dinode *)bp->b_data)[sp->ninodes % INOPB(fs)] = ip->i_din;
 	/* Increment inode count in segment summary block. */
 	++((SEGSUM *)(sp->segsum))->ss_ninos;
 
@@ -574,7 +574,7 @@ printf ("Updatemeta allocating indirect block: shouldn't happen\n");
 				ip->i_blocks += btodb(fs->lfs_bsize);
 				fs->lfs_bfree -= btodb(fs->lfs_bsize);
 			}
-			bp->b_un.b_daddr[ap->in_off] = off;
+			((daddr_t *)bp->b_data)[ap->in_off] = off;
 			VOP_BWRITE(bp);
 		}
 
@@ -649,7 +649,7 @@ lfs_initseg(fs)
 	sp->cbpp = sp->bpp;
 	*sp->cbpp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, fs->lfs_offset,
 	     LFS_SUMMARY_SIZE);
-	sp->segsum = (*sp->cbpp)->b_un.b_addr;
+	sp->segsum = (*sp->cbpp)->b_data;
 	bzero(sp->segsum, LFS_SUMMARY_SIZE);
 	sp->start_bpp = ++sp->cbpp;
 	fs->lfs_offset += LFS_SUMMARY_SIZE / DEV_BSIZE;
@@ -767,7 +767,7 @@ lfs_writeseg(fs, sp)
 			if (copyin((*bpp)->b_saveaddr, dp++, sizeof(u_long)))
 				panic("lfs_writeseg: copyin failed");
 		} else
-			*dp++ = (*bpp)->b_un.b_words[0];
+			*dp++ = ((u_long *)(*bpp)->b_data)[0];
 	}
 	ssp->ss_create = time.tv_sec;
 	ssp->ss_datasum = cksum(datap, (nblocks - 1) * sizeof(u_long));
@@ -813,7 +813,7 @@ lfs_writeseg(fs, sp)
 
 		s = splbio();
 		++fs->lfs_iocount;
-		for (p = cbp->b_un.b_addr; num--;) {
+		for (p = cbp->b_data; num--;) {
 			bp = *bpp++;
 			/*
 			 * Fake buffers from the cleaner are marked as B_INVAL.
@@ -825,7 +825,7 @@ lfs_writeseg(fs, sp)
 				if (copyin(bp->b_saveaddr, p, bp->b_bcount))
 					panic("lfs_writeseg: copyin failed");
 			} else
-				bcopy(bp->b_un.b_addr, p, bp->b_bcount);
+				bcopy(bp->b_data, p, bp->b_bcount);
 			p += bp->b_bcount;
 			if (bp->b_flags & B_LOCKED)
 				--locked_queue_count;
@@ -835,7 +835,7 @@ lfs_writeseg(fs, sp)
 				/* if B_CALL, it was created with newbuf */
 				brelvp(bp);
 				if (!(bp->b_flags & B_INVAL))
-					free(bp->b_un.b_addr, M_SEGMENT);
+					free(bp->b_data, M_SEGMENT);
 				free(bp, M_SEGMENT);
 			} else {
 				bremfree(bp);
@@ -846,7 +846,7 @@ lfs_writeseg(fs, sp)
 		}
 		++cbp->b_vp->v_numoutput;
 		splx(s);
-		cbp->b_bcount = p - cbp->b_un.b_addr;
+		cbp->b_bcount = p - (char *)cbp->b_data;
 		/*
 		 * XXXX This is a gross and disgusting hack.  Since these
 		 * buffers are physically addressed, they hang off the
@@ -900,7 +900,7 @@ lfs_writesuper(fs)
 	fs->lfs_cksum = cksum(fs, sizeof(struct lfs) - sizeof(fs->lfs_cksum));
 	bp = lfs_newbuf(VTOI(fs->lfs_ivnode)->i_devvp, fs->lfs_sboffs[0],
 	    LFS_SBPAD);
-	*bp->b_un.b_lfs = *fs;
+	*(struct lfs *)bp->b_data = *fs;
 
 	/* XXX Toggle between first two superblocks; for now just write first */
 	bp->b_dev = i_dev;
@@ -976,8 +976,7 @@ lfs_newbuf(vp, daddr, size)
 	bp = malloc(sizeof(struct buf), M_SEGMENT, M_WAITOK);
 	bzero(bp, sizeof(struct buf));
 	if (nbytes)
-		bp->b_un.b_addr =
-		    malloc(nbytes, M_SEGMENT, M_WAITOK);
+		bp->b_data = malloc(nbytes, M_SEGMENT, M_WAITOK);
 	bgetvp(vp, bp);
 	bp->b_bufsize = size;
 	bp->b_bcount = size;
@@ -1005,7 +1004,7 @@ lfs_callback(bp)
 		wakeup(&fs->lfs_iocount);
 
 	brelvp(bp);
-	free(bp->b_un.b_addr, M_SEGMENT);
+	free(bp->b_data, M_SEGMENT);
 	free(bp, M_SEGMENT);
 }
 
@@ -1014,7 +1013,7 @@ lfs_supercallback(bp)
 	struct buf *bp;
 {
 	brelvp(bp);
-	free(bp->b_un.b_addr, M_SEGMENT);
+	free(bp->b_data, M_SEGMENT);
 	free(bp, M_SEGMENT);
 }
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	8.1 (Berkeley) %G%
+ *	@(#)kern_fork.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -253,7 +253,7 @@ again:
 	 */
 	(void) splhigh();
 	p2->p_stat = SRUN;
-	setrq(p2);
+	setrunqueue(p2);
 	(void) spl0();
 
 	/*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -171,7 +171,7 @@ lfs_markv(p, uap, retval)
 		else {
 			bp = getblk(vp, blkp->bi_lbn, bsize, 0, 0);
 			if (!(bp->b_flags & (B_DELWRI | B_DONE | B_CACHE)) &&
-			    (error = copyin(blkp->bi_bp, bp->b_un.b_addr,
+			    (error = copyin(blkp->bi_bp, bp->b_data,
 			    bsize)))
 				goto err2;
 			if (error = VOP_BWRITE(bp))
@@ -419,11 +419,11 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 		ip = VTOI(*vpp);
 		if (ip->i_flags & ILOCKED)
 			printf ("Cleaned vnode ILOCKED\n");
-		if (!(ip->i_flag & IMOD)) {
+		if (!(ip->i_flag & IMODIFIED)) {
 			++ump->um_lfs->lfs_uinodes;
-			ip->i_flag |= IMOD;
+			ip->i_flag |= IMODIFIED;
 		}
-		ip->i_flag |= IMOD;
+		ip->i_flag |= IMODIFIED;
 		return (0);
 	}
 
@@ -470,7 +470,8 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 			*vpp = NULL;
 			return (error);
 		}
-		ip->i_din = *lfs_ifind(ump->um_lfs, ino, bp->b_un.b_dino);
+		ip->i_din =
+		    *lfs_ifind(ump->um_lfs, ino, (struct dinode *)bp->b_data);
 		brelse(bp);
 	}
 
@@ -490,7 +491,7 @@ lfs_fastvget(mp, ino, daddr, vpp, dinp)
 	 * Finish inode initialization now that aliasing has been resolved.
 	 */
 	ip->i_devvp = ump->um_devvp;
-	ip->i_flag |= IMOD;
+	ip->i_flag |= IMODIFIED;
 	++ump->um_lfs->lfs_uinodes;
 	VREF(ip->i_devvp);
 	*vpp = vp;
