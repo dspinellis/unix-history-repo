@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.9 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.10 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -14,8 +14,8 @@ static char vers[] = "@(#)lfs_alloc.c 1.9 %G%";
 #include "../h/dir.h"
 #include "../h/user.h"
 
-extern long		hashalloc();
-extern long		ialloccg();
+extern u_long		hashalloc();
+extern ino_t		ialloccg();
 extern daddr_t		alloccg();
 extern daddr_t		alloccgblk();
 extern daddr_t		fragextend();
@@ -51,7 +51,7 @@ alloc(dev, ip, bpref, size)
 		cg = itog(ip->i_number, fs);
 	else
 		cg = dtog(bpref, fs);
-	bno = hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
+	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, size, alloccg);
 	if (bno == 0)
 		goto nospace;
 	bp = getblk(dev, bno, size);
@@ -65,9 +65,8 @@ nospace:
 }
 
 struct buf *
-realloccg(dev, ip, bprev, bpref, osize, nsize)
+realloccg(dev, bprev, bpref, osize, nsize)
 	dev_t dev;
-	register struct inode *ip;
 	daddr_t bprev, bpref;
 	int osize, nsize;
 {
@@ -98,7 +97,7 @@ realloccg(dev, ip, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	bno = hashalloc(dev, fs, cg, (long)bpref, nsize, alloccg);
+	bno = (daddr_t)hashalloc(dev, fs, cg, (long)bpref, nsize, alloccg);
 	if (bno != 0) {
 		/*
 		 * make a new copy
@@ -110,7 +109,7 @@ realloccg(dev, ip, bprev, bpref, osize, nsize)
 		obp->b_un.b_addr = cp;
 		obp->b_flags |= B_INVAL;
 		brelse(obp);
-		fre(dev, bprev, osize);
+		fre(dev, bprev, (off_t)osize);
 		blkclr(bp->b_un.b_addr + osize, nsize - osize);
 		return(bp);
 	}
@@ -130,7 +129,7 @@ ialloc(dev, ipref, mode)
 	ino_t ipref;
 	int mode;
 {
-	daddr_t ino;
+	ino_t ino;
 	register struct fs *fs;
 	register struct inode *ip;
 	int cg;
@@ -141,12 +140,12 @@ ialloc(dev, ipref, mode)
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
 		ipref = 0;
 	cg = itog(ipref, fs);
-	ino = hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
+	ino = (ino_t)hashalloc(dev, fs, cg, (long)ipref, mode, ialloccg);
 	if (ino == 0)
 		goto noinodes;
 	ip = iget(dev, ino);
 	if (ip == NULL) {
-		ifree(dev, ino);
+		ifree(dev, ino, 0);
 		return (NULL);
 	}
 	if (ip->i_mode)
@@ -184,6 +183,7 @@ dirpref(dev)
 /*
  * select a cylinder to place a large block of data
  */
+daddr_t
 blkpref(dev)
 	dev_t dev;
 {
@@ -205,14 +205,15 @@ blkpref(dev)
 	return (0);
 }
 
-long
+/*VARARGS5*/
+u_long
 hashalloc(dev, fs, cg, pref, size, allocator)
 	dev_t dev;
 	register struct fs *fs;
 	int cg;
 	long pref;
 	int size;	/* size for data blocks, mode for inodes */
-	long (*allocator)();
+	u_long (*allocator)();
 {
 	long result;
 	int i, icg = cg;
@@ -326,7 +327,7 @@ alloccg(dev, fs, cg, bpref, size)
 		return (0);
 	cgp = bp->b_un.b_cg;
 	if (size == BSIZE) {
-		bno = alloccgblk(dev, fs, cgp, bpref);
+		bno = alloccgblk(fs, cgp, bpref);
 		bdwrite(bp);
 		return (bno);
 	}
@@ -348,7 +349,7 @@ alloccg(dev, fs, cg, bpref, size)
 			brelse(bp);
 			return (0);
 		}
-		bno = alloccgblk(dev, fs, cgp, bpref);
+		bno = alloccgblk(fs, cgp, bpref);
 		bpref = bno % fs->fs_fpg;
 		for (i = frags; i < FRAG; i++)
 			setbit(cgp->cg_free, bpref + i);
@@ -376,8 +377,7 @@ alloccg(dev, fs, cg, bpref, size)
 }
 
 daddr_t
-alloccgblk(dev, fs, cgp, bpref)
-	dev_t dev;
+alloccgblk(fs, cgp, bpref)
 	struct fs *fs;
 	register struct cg *cgp;
 	daddr_t bpref;
@@ -442,7 +442,7 @@ gotit:
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
 }
 	
-long
+ino_t
 ialloccg(dev, fs, cg, ipref, mode)
 	dev_t dev;
 	register struct fs *fs;
@@ -495,7 +495,7 @@ gotit:
 fre(dev, bno, size)
 	dev_t dev;
 	daddr_t bno;
-	int size;
+	off_t size;
 {
 	register struct fs *fs;
 	register struct cg *cgp;
@@ -576,7 +576,6 @@ ifree(dev, ino, mode)
 	register struct fs *fs;
 	register struct cg *cgp;
 	register struct buf *bp;
-	int i;
 	int cg;
 
 	fs = getfs(dev);
