@@ -1,23 +1,12 @@
-
-/*
+/*-
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)unvis.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)unvis.c	1.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -34,6 +23,8 @@ static char sccsid[] = "@(#)unvis.c	1.1 (Berkeley) %G%";
 #define	S_CTRL		4	/* control char started (^) */
 #define	S_OCTAL2	5	/* octal digit 2 */
 #define	S_OCTAL3	6	/* octal digit 3 */
+
+#define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
 
 /*
  * unvis - decode characters previously encoded by vis
@@ -122,6 +113,12 @@ unvis(cp, c, astate, flag)
 			 */
 			*astate = S_GROUND;
 			return (UNVIS_NOCHAR);
+		case '$':
+			/*
+			 * hidden marker
+			 */
+			*astate = S_GROUND;
+			return (UNVIS_NOCHAR);
 		}
 		*astate = S_GROUND;
 		return (UNVIS_SYNBAD);
@@ -185,31 +182,35 @@ unvis(cp, c, astate, flag)
 }
 
 /*
- * strvis - visually encode characters from src into dst
+ * strunvis - decode src into dst 
  *
- *	If len >= 0, encodes exactly len chars from src (including NULL's).
- *	Otherwise, stops before first NULL in src.  In all cases, dst is 
- *	NULL terminated.
- *
- *	Dst must be 4 times the size of src to account for possible
- *	expansion.  The length of dst, not including the trailing NULL,
- *	is returned.
+ *	Number of chars decoded into dst is returned, -1 on error.
+ *	Dst is null terminated.
  */
-strvis(dst, src, len, flag)
+
+strunvis(dst, src)
 	register char *dst, *src;
-	register int len;
 {
+	register char c;
 	char *start = dst;
+	int state;
 
-	for (;;) {
-		if (len > 0) { 
-			if (len-- == 0)
-				break;
-		} else if (!*src)
+	while (c = *src++) {
+	again:
+		switch (unvis(dst, c, &state, 0)) {
+		case UNVIS_VALID:
+			dst++;
 			break;
-		dst = vis(dst, *src, flag, *(src+1));
-		src++;
+		case UNVIS_VALIDPUSH:
+			dst++;
+			goto again;
+		case 0:
+		case UNVIS_NOCHAR:
+			break;
+		default:
+			return (-1);
+		}
 	}
-
+	*dst = '\0';
 	return (dst - start);
 }
