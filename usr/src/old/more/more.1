@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)more.1	6.3 (Berkeley) %G%
+.\"	@(#)more.1	6.4 (Berkeley) %G%
 .\"
 .TH MORE 1 ""
 .UC 4
@@ -84,10 +84,10 @@ lines erroneously.
 .TP
 .B \-l
 Do
-not treat ^L (form feed) specially.
+not treat ^\&L (form feed) specially.
 If this option is not given,
 .I more
-will pause after any line that contains a ^L, as if the end of a
+will pause after any line that contains a ^\&L, as if the end of a
 screenful had been reached.
 Also, if a file begins with a form feed, the screen will be cleared
 before the file is printed.
