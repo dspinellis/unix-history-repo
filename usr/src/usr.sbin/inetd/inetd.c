@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -210,13 +210,17 @@ nextopt:
 	    int s, ctrl, n;
 	    fd_set readable;
 
-	    while (nsock == 0)
+	    if (nsock == 0) {
+		(void) sigblock(SIGBLOCK);
+		while (nsock == 0)
 		    sigpause(0);
+		(void) sigsetmask(0);
+	    }
 	    readable = allsock;
 	    if ((n = select(maxsock + 1, &readable, (fd_set *)0,
 		(fd_set *)0, (struct timeval *)0)) <= 0) {
 		    if (n < 0 && errno != EINTR)
-				syslog(LOG_WARNING, "select: %m\n");
+			syslog(LOG_WARNING, "select: %m\n");
 		    sleep(1);
 		    continue;
 	    }
@@ -705,7 +709,7 @@ echo_stream(s, sep)		/* Echo service -- echo data back */
 	char buffer[BUFSIZ];
 	int i;
 
-	setproctitle("echo", s);
+	setproctitle(sep->se_service, s);
 	while ((i = read(s, buffer, sizeof(buffer))) > 0 &&
 	    write(s, buffer, i) > 0)
 		;
@@ -734,7 +738,7 @@ discard_stream(s, sep)		/* Discard service -- ignore data */
 {
 	char buffer[BUFSIZ];
 
-	setproctitle("discard", s);
+	setproctitle(sep->se_service, s);
 	while (1) {
 		while (read(s, buffer, sizeof(buffer)) > 0)
 			;
@@ -779,7 +783,7 @@ chargen_stream(s, sep)		/* Character generator */
 	register int i;
 	register char *rp, *rs, *dp;
 
-	setproctitle("discard", s);
+	setproctitle(sep->se_service, s);
 	if (endring == 0)
 		initring();
 
