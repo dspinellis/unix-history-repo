@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.25 (Berkeley) %G%
+ *	@(#)proc.h	7.26 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -39,7 +39,7 @@ struct	pgrp {
  * of control, known in UN*X as a process; it has references to substructures
  * containing descriptions of things that the process uses, but may share
  * with related processes.  The process structure and the substructures
- * are always addressible except for those marked "(proc only)" below,
+ * are always addressible except for those marked "(PROC ONLY)" below,
  * which might be addressible only on a processor on which the process
  * is running.
  */
@@ -52,10 +52,10 @@ struct	proc {
 	/* substructures: */
 	struct	pcred *p_cred;		/* process owner's identity */
 	struct	filedesc *p_fd;		/* ptr to open files structure */
-	struct	pstats *p_stats;	/* accounting/statistics (proc only) */
+	struct	pstats *p_stats;	/* accounting/statistics (PROC ONLY) */
 	struct	plimit *p_limit;	/* process limits */
 	struct	vmspace *p_vmspace;	/* address space */
-	struct	sigacts *p_sigacts;	/* signal actions, state (proc only) */
+	struct	sigacts *p_sigacts;	/* signal actions, state (PROC ONLY) */
 
 #define	p_ucred		p_cred->pc_ucred
 #define	p_rlimit	p_limit->pl_rlimit
@@ -113,7 +113,7 @@ struct	proc {
 #define	p_endcopy	p_wmesg
 	char	*p_wmesg;	/* reason for sleep */
 	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
-	caddr_t	p_addr;		/* kernel virtual address of u-area */
+	struct	user *p_addr;	/* kernel virtual addr of u-area (PROC ONLY) */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
 	int	*p_regs;	/* saved registers during syscall/trap */
 	struct	mdproc p_md;	/* any machine-dependent fields */
