@@ -31,7 +31,16 @@
  * SUCH DAMAGE.
  *
  *	@(#)route.c	7.22 (Berkeley) 6/27/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00095
+ * --------------------         -----   ----------------------
+ *
+ * 27 Feb 93    Charles Hannum & ???	Proper initialization of *rt
+ *
  */
+
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
@@ -150,7 +159,7 @@ rtredirect(dst, gateway, netmask, flags, src, rtp)
 	int flags;
 	struct rtentry **rtp;
 {
-	register struct rtentry *rt;
+	register struct rtentry *rt = 0;
 	int error = 0;
 	short *stat = 0;
 
