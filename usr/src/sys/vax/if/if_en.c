@@ -1,4 +1,4 @@
-/*	if_en.c	4.20	81/12/11	*/
+/*	if_en.c	4.21	81/12/12	*/
 
 #include "en.h"
 
@@ -370,8 +370,6 @@ printf("enet rcvd len %d\n", len);
 	m = if_rubaget(&es->es_ifuba, len, off);
 	if (m == 0)
 		goto setup;
-	printf("rubaget returns m %x\n", m);
-	asm("halt");
 	if (off) {
 		m->m_off += 2;
 		m->m_len -= 2;

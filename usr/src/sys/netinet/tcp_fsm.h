@@ -1,4 +1,4 @@
-/*	tcp_fsm.h	4.10	81/12/03	*/
+/*	tcp_fsm.h	4.11	81/12/12	*/
 
 /*
  * TCP FSM state definitions.
@@ -36,7 +36,7 @@
 u_char	tcp_outflags[TCP_NSTATES] = {
     TH_RST|TH_ACK, 0, TH_SYN, TH_SYN|TH_ACK,
     TH_ACK, TH_ACK,
-    TH_FIN|TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK,
+    TH_FIN|TH_ACK, TH_FIN|TH_ACK, TH_FIN|TH_ACK, TH_ACK, TH_ACK,
 };
 #endif
 
@@ -47,7 +47,7 @@ int	tcp_acounts[TCP_NSTATES][PRU_NREQ];
 #ifdef	TCPSTATES
 char *tcpstates[] = {
 	"CLOSED",	"LISTEN",	"SYN_SENT",	"SYN_RCVD",
-	"ESTABLISHED",	"CLOSE_WAIT",	"FIN_WAIT_1",	"FIN_WAIT_2",
-	"TIME_WAIT",	"CLOSING",	"LAST_ACK",
+	"ESTABLISHED",	"CLOSE_WAIT",	"FIN_WAIT_1",	"CLOSING",
+	"LAST_ACK",	"FIN_WAIT_2",	"TIME_WAIT",
 };
 #endif

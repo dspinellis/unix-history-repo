@@ -1,4 +1,4 @@
-/* ip_input.c 1.25 81/12/11 */
+/* ip_input.c 1.26 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -371,7 +371,12 @@ ip_slowtimo()
 	int s = splnet();
 
 COUNT(IP_SLOWTIMO);
-	for (fp = ipq.next; fp != &ipq; )
+	fp = ipq.next;
+	if (fp == 0) {
+		splx(s);
+		return;
+	}
+	while (fp != &ipq)
 		if (--fp->ipq_ttl == 0)
 			fp = ip_freef(fp);
 		else
@@ -517,5 +522,5 @@ COUNT(IP_STRIPOPTIONS);
 	}
 	i = m->m_len - (sizeof (struct ip) + olen);
 	bcopy((caddr_t)ip+olen, (caddr_t)ip, (unsigned)i);
-	m->m_len -= i;
+	m->m_len -= olen;
 }

@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.16	81/12/09	*/
+/*	udp_usrreq.c	4.17	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -39,7 +39,7 @@ udp_input(m0)
 
 COUNT(UDP_INPUT);
 	/*
-	 * Get ip and udp header together in first mbuf.
+	 * Get IP and UDP header together in first mbuf.
 	 */
 	m = m0;
 	if (m->m_len < sizeof (struct udpiphdr) &&
@@ -48,12 +48,12 @@ COUNT(UDP_INPUT);
 		goto bad;
 	}
 	ui = mtod(m, struct udpiphdr *);
-	if (ui->ui_len > sizeof (struct ip))
+	if (((struct ip *)ui)->ip_hl > (sizeof (struct ip) >> 2))
 		ip_stripoptions((struct ip *)ui, (struct mbuf *)0);
 
 	/*
-	 * Make mbuf data length reflect udp length.
-	 * If not enough data to reflect udp length, drop.
+	 * Make mbuf data length reflect UDP length.
+	 * If not enough data to reflect UDP length, drop.
 	 */
 	ulen = ntohs((u_short)ui->ui_ulen);
 	len = sizeof (struct udphdr) + ulen;
@@ -67,7 +67,7 @@ COUNT(UDP_INPUT);
 	}
 
 	/*
-	 * Checksum extended udp header and data.
+	 * Checksum extended UDP header and data.
 	 */
 	if (udpcksum) {
 		ui->ui_next = ui->ui_prev = 0;
@@ -113,7 +113,6 @@ COUNT(UDP_CTLINPUT);
 	m_freem(m);
 }
 
-/*ARGSUSED*/
 udp_output(inp, m0)
 	struct inpcb *inp;
 	struct mbuf *m0;
@@ -125,7 +124,7 @@ udp_output(inp, m0)
 COUNT(UDP_OUTPUT);
 	/*
 	 * Calculate data length and get a mbuf
-	 * for udp and ip headers.
+	 * for UDP and IP headers.
 	 */
 	for (m = m0; m; m = m->m_next)
 		len += m->m_len;
@@ -134,7 +133,7 @@ COUNT(UDP_OUTPUT);
 		goto bad;
 
 	/*
-	 * Fill in mbuf with extended udp header
+	 * Fill in mbuf with extended UDP header
 	 * and addresses and length put into network format.
 	 */
 	m->m_off = MMAXOFF - sizeof (struct udpiphdr);
@@ -164,7 +163,6 @@ bad:
 	m_freem(m);
 }
 
-/*ARGSUSED*/
 udp_usrreq(so, req, m, addr)
 	struct socket *so;
 	int req;
