@@ -1,4 +1,4 @@
-/*	init_main.c	6.3	84/05/22	*/
+/*	init_main.c	6.4	84/07/08	*/
 
 #include "../machine/pte.h"
 
@@ -68,6 +68,15 @@ main(firstaddr)
 	p->p_nice = NZERO;
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
+#ifdef vax
+	/*
+	 * This assumes that the u. area is always mapped 
+	 * to the same physical address. Otherwise must be
+	 * handled when copying the u. area in newproc().
+	 */
+	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
+#endif
+	u.u_nd.ni_iovcnt = 1;
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
