@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krcmd.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)krcmd.c	1.6.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -72,53 +72,4 @@ krcmd(ahost, rport, remuser, cmd, fd2p, realm)
 	return(sock);
 }
 
-#ifdef CRYPT
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-int
-krcmd_mutual(ahost, rport, remuser, cmd, fd2p, realm, cred, sched)
-	char		**ahost;
-	u_short		rport;
-	char		*remuser, *cmd;
-	int		*fd2p;
-	char		*realm;
-	CREDENTIALS	*cred;
-	Key_schedule	sched;
-{
-	int		sock, err;
-	KTEXT_ST	ticket;
-	MSG_DAT		msg_dat;
-	struct sockaddr_in	laddr, faddr;
-	long authopts = KOPT_DO_MUTUAL;
-
-	err = kcmd(
-		&sock,
-		ahost,
-		rport,
-		NULL,	/* locuser not used */
-		remuser,
-		cmd,
-		fd2p,
-		&ticket,
-		SERVICE_NAME,
-		realm,
-		cred,		/* filled in */
-		sched,		/* filled in */
-		&msg_dat,	/* filled in */
-		&laddr,		/* filled in */
-		&faddr,		/* filled in */
-		authopts
-	);
-
-	if (err > KSUCCESS && err < MAX_KRB_ERRORS) {
-		fprintf(stderr, "krcmd_mutual: %s\n", krb_err_txt[err]);
-		return(-1);
-	}
-
-	if (err < 0)
-		return (-1);
-	return(sock);
-}
-#endif /* CRYPT */
 #endif /* KERBEROS */
