@@ -1,11 +1,11 @@
 .ds PX \s-1POSIX\s+1
 .ds UX \s-1UNIX\s+1
 .ds AN \s-1ANSI\s+1
-.TH GAWK 1 "Apr 15 1993" "Free Software Foundation" "Utility Commands"
+.TH AWK 1 "April 15 1993" "Free Software Foundation" "Utility Commands"
 .SH NAME
-gawk \- pattern scanning and processing language
+awk \- pattern scanning and processing language
 .SH SYNOPSIS
-.B gawk
+.B awk
 [ POSIX or GNU style options ]
 .B \-f
 .I program-file
@@ -13,7 +13,7 @@ gawk \- pattern scanning and processing language
 .B \-\^\-
 ] file .\^.\^.
 .br
-.B gawk
+.B awk
 [ POSIX or GNU style options ]
 [
 .B \-\^\-
@@ -23,6 +23,8 @@ file .\^.\^.
 .SH DESCRIPTION
 .I Gawk
 is the GNU Project's implementation of the AWK programming language.
+In the 4.4BSD distribution, it is installed as
+.IR awk .
 It conforms to the definition of the language in
 the \*(PX 1003.2 Command Language And Utilities Standard.
 This version in turn is based on the description in
@@ -143,7 +145,7 @@ below, for more information.
 .PD
 .B \-\^\-copyright
 Print the short version of the GNU copyright information message on
-the error output.
+the standard error output.
 .TP
 .PD 0
 .B "\-W help"
@@ -157,7 +159,7 @@ the error output.
 .PD
 .B \-\^\-usage
 Print a relatively short summary of the available options on
-the error output.
+the standard error output.
 .TP
 .PD 0
 .B "\-W lint"
@@ -242,7 +244,7 @@ will be recognized in the same argument.
 .B \-\^\-version
 Print version information for this particular copy of
 .I gawk
-on the error output.
+on the standard error output.
 This is useful mainly for knowing if the current copy of
 .I gawk
 on your system
@@ -359,7 +361,7 @@ block(s) (if any).
 AWK variables are dynamic; they come into existence when they are
 first used. Their values are either floating-point numbers or strings,
 or both,
-depending upon how they are used. AWK also has one dimension
+depending upon how they are used. AWK also has one dimensional
 arrays; multiply dimensioned arrays may be simulated.
 Several pre-defined variables are set as a program
 runs; these will be described as needed and summarized below.
@@ -423,7 +425,7 @@ The variable
 .B NF
 is set to the total number of fields in the input line.
 .PP
-References to non-existent fields (i.e. fields after
+References to non-existent fields (i.e., fields after
 .BR $NF )
 produce the null-string. However, assigning to a non-existent field
 (e.g., 
@@ -554,10 +556,10 @@ The output format for numbers, \fB"%.6g"\fR, by default.
 The output field separator, a blank by default.
 .TP
 .B ORS
-The output record separator, by default a newline.
+The output record separator, a newline by default.
 .TP
 .B RS
-The input record separator, by default a newline.
+The input record separator, a newline by default.
 .B RS
 is exceptional in that only the first character of its string
 value is used for separating records.
@@ -586,7 +588,7 @@ The length of the string matched by
 .TP
 .B SUBSEP
 The character used to separate multiple subscripts in array
-elements, by default \fB"\e034"\fR.
+elements, \fB"\e034"\fR by default.
 .SS Arrays
 .PP
 Arrays are subscripted with an expression between square brackets
@@ -612,7 +614,7 @@ x[i, j, k] = "hello, world\en"
 assigns the string \fB"hello, world\en"\fR to the element of the array
 .B x
 which is indexed by the string \fB"A\e034B\e034C"\fR. All arrays in AWK
-are associative, i.e. indexed by string values.
+are associative, i.e., indexed by string values.
 .PP
 The special operator
 .B in
@@ -1359,7 +1361,7 @@ and returns the number of fields. If
 .I r
 is omitted,
 .B FS
-is used instead.
+is used.
 .TP
 .BI sprintf( fmt , " expr-list" )
 prints
@@ -1459,7 +1461,7 @@ backspace.
 form-feed.
 .TP
 .B \en
-new line.
+newline.
 .TP
 .B \er
 carriage return.
@@ -1504,7 +1506,7 @@ call are used to instantiate the formal parameters declared in the function.
 Arrays are passed by reference, other variables are passed by value.
 .PP
 Since functions were not originally part of the AWK language, the provision
-for local variables is rather clumsy: They are declared as extra parameters
+for local variables is rather clumsy: they are declared as extra parameters
 in the parameter list. The convention is to separate local variables from
 real parameters by extra spaces in the parameter list. For example:
 .PP
@@ -1637,7 +1639,7 @@ and
 .BR \ev
 escape sequences (done originally in
 .I gawk
-and fed back into AT&T's); the
+and fed back into AT&T's version); the
 .B tolower()
 and
 .B toupper()
@@ -1733,7 +1735,7 @@ option is ``t'', then
 will be set to the tab character.
 Since this is a rather ugly special case, it is not the default behavior.
 This behavior also does not occur if
-.B \-Wposix
+.B \-W posix
 has been specified.
 .ig
 .PP
@@ -1785,7 +1787,7 @@ a = length($0)
 This feature is marked as ``deprecated'' in the \*(PX standard, and
 .I gawk
 will issue a warning about its use if
-.B \-Wlint
+.B \-W lint
 is specified on the command line.
 .PP
 The other feature is the use of the
@@ -1801,7 +1803,7 @@ equivalent to the
 statement.
 .I Gawk
 will support this usage if
-.B \-Wposix
+.B \-W posix
 has not been specified.
 .SH BUGS
 The
