@@ -2,6 +2,7 @@
 /usr/src/share/man/man7/ascii.7
 /usr/src/share/man/man7/environ.7
 /usr/src/share/man/man7/eqnchar.7
+/usr/src/contrib/groff-1.08/man/groff_char.7
 /usr/src/share/man/man7/hier.7
 /usr/src/share/man/man7/hostname.7
 /usr/src/share/man/man7/mailaddr.7
@@ -9,6 +10,7 @@
 /usr/src/share/man/man7/mdoc.7
 /usr/src/share/man/man7/mdoc.samples.7
 /usr/src/share/me/me.7
+/usr/src/contrib/groff-1.08/mm/mm.7
 /usr/src/share/man/man7/ms.7
 /usr/src/share/man/man7/operator.7
 /usr/src/lib/libc/regex/re_format.7
