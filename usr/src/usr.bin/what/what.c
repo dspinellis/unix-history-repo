@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)what.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)what.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 
 /*
@@ -26,6 +26,7 @@ main(argc, argv)
 		fseek(stdin, (long) 0, 0);
 		find();
 	} while (argc > 0);
+	exit(0);
 }
 
 find()
