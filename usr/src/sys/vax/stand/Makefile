@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.6 (Berkeley) %G%
+#	@(#)Makefile	6.7 (Berkeley) %G%
 #
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
@@ -36,7 +36,7 @@ all: ${ALL}
 ${ODRIVERS} ${DRIVERS}: savax.h
 	cc -c -S ${COPTS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
-	rm $*.s
+	rm -f $*.s
 
 dkbad.o: ../vax/dkbad.c
 	${CC} -c ${CFLAGS} ../vax/dkbad.c
@@ -56,26 +56,26 @@ relsrt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
 
 tpboot:	tpboot.o relsrt0.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o tpboot.o -lsa -lc
-	cp a.out b.out; strip b.out; dd if=b.out of=tpboot ibs=32 skip=1; rm b.out
+	cp a.out b.out; strip b.out; dd if=b.out of=tpboot ibs=32 skip=1; rm -f b.out
 
 tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
 tpboot.o: saio.h ../h/reboot.h ../h/vm.h 
 	cp boot.c tpboot.c; chmod +w tpboot.c
 	cc -c -O -DJUSTASK tpboot.c
-	rm tpboot.c
+	rm -f tpboot.c
 
 tpcopy:	copy.o tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o copy.o -lsa -lc
 	cp a.out b.out; strip b.out; \
-		dd if=b.out of=tpcopy ibs=32 skip=1; rm b.out
+		dd if=b.out of=tpcopy ibs=32 skip=1; rm -f b.out
 
 tpformat: format.o tpsrt0.o confhpup.o /usr/lib/libsa.a
 	cp format.c tpformat.c; chmod +w tpformat.c
 	cc -c -O -DJUSTEXIT tpformat.c
-	rm tpformat.c
+	rm -f tpformat.c
 	ld -N tpsrt0.o tpformat.o confhpup.o -lsa -lc
 	cp a.out b.out; strip b.out; \
-		dd if=b.out of=tpformat ibs=32 skip=1; rm b.out
+		dd if=b.out of=tpformat ibs=32 skip=1; rm -f b.out
 
 # bootable from floppy or real disks
 
@@ -86,7 +86,7 @@ bootconf.o: conf.c ../h/param.h ../h/inode.h ../machine/pte.h
 bootconf.o: ../h/fs.h saio.h ../vaxmba/mbareg.h
 	cp conf.c bootconf.c
 	cc -c ${COPTS} -DBOOT bootconf.c
-	rm bootconf.c
+	rm -f bootconf.c
 
 copy:	copy.o srt0.o conf.o /usr/lib/libsa.a
 	ld -N -o copy srt0.o copy.o conf.o -lsa -lc
@@ -104,7 +104,7 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 730boot.o: saio.h ../h/reboot.h ../h/vm.h 
 	cp boot.c 730boot.c; chmod +w 730boot.c
 	cc -c ${730OPTS} 730boot.c
-	rm 730boot.c
+	rm -f 730boot.c
 
 730boot: 730boot.o relsrt0.o 730bootconf.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o -lsa -lc
@@ -138,23 +138,23 @@ drtest:	drtest.o srt0.o confhpup.o /usr/lib/libsa.a
 
 boothk: relsrt0.o boothk.o confrk.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o -lsa -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=boothk ibs=32 skip=1;rm -f b.out
 
 boothp: relsrt0.o boothp.o confhp.o hp.old.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o hp.old.o -lsa -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=boothp ibs=32 skip=1;rm -f b.out
 
 bootup: relsrt0.o bootup.o confup.o up.old.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o up.old.o -lsa -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=bootup ibs=32 skip=1;rm -f b.out
 
 bootra: relsrt0.o bootra.o confra.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o -lsa -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm -f b.out
 
 bootrl: relsrt0.o bootrl.o confrl.o /usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o -lsa -lc
-	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm b.out
+	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm -f b.out
 
 boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h
 boothp.o: ../h/fs.h saio.h
