@@ -43,11 +43,12 @@ cleandir: clean
 depend: ${SRC1} ${SRC2}
 	mkdep -p ${CFLAGS} ${SRC1} ${SRC2}
 
-install: ${MAN}
+#install: ${MAN}
+install:
 	install -s -o bin -g bin -m 755 kpasswdd ${DESTDIR}/usr/libexec/kpasswdd
 	install -s -o bin -g bin -m 755 kpasswd ${DESTDIR}/usr/athena
 	install -c -o bin -g bin -m 444 kpasswd.0 ${DESTDIR}/usr/man/cat1
-	install -c -o bin -g bin -m 444 kpasswdd.0 ${DESTDIR}/usr/man/cat8
+#	install -c -o bin -g bin -m 444 kpasswdd.0 ${DESTDIR}/usr/man/cat8
 
 lint: ${SRC1} ${SRC2}
 	lint ${CFLAGS} ${SRC1} ${SRC2}

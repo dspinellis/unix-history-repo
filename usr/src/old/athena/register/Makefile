@@ -31,13 +31,13 @@ MAN=	register.0 registerd.0 make_keypair.0
 all: registerd register make_keypair
 
 registerd: ${OBJ1} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRC1} -lutil -lkdb -lkrb -ldes -lkrb
+	${CC} -o $@ ${CFLAGS} ${OBJ1} -lutil -lkdb -lkrb -ldes -lkrb
 
 register: ${OBJ2} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRC2} -lutil -lkrb -ldes -lkrb
+	${CC} -o $@ ${CFLAGS} ${OBJ2} -lutil -lkrb -ldes -lkrb
 
 make_keypair: ${OBJ3} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${SRC3} -lutil -lkdb -lkrb -ldes
+	${CC} -o $@ ${CFLAGS} ${OBJ3} -lutil -lkdb -lkrb -ldes
 
 clean:
 	rm -f ${OBJS} core registerd register make_keypair
