@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1266,11 +1266,14 @@ mailfile(filename, ctladdr)
 		(void) signal(SIGHUP, SIG_DFL);
 		(void) signal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
+
 		if (stat(filename, &stb) < 0)
-		{
-			errno = 0;
 			stb.st_mode = 0666;
-		}
+
+		/* limit the errors to those actually caused in the child */
+		errno = 0;
+		ExitStat = EX_OK;
+
 		if (bitset(0111, stb.st_mode))
 			exit(EX_CANTCREAT);
 		if (ctladdr == NULL)
@@ -1279,7 +1282,8 @@ mailfile(filename, ctladdr)
 		if (e->e_dfp == NULL &&  e->e_df != NULL)
 		{
 			e->e_dfp = fopen(e->e_df, "r");
-			if (e->e_dfp == NULL) {
+			if (e->e_dfp == NULL)
+			{
 				syserr("mailfile: Cannot open %s for %s from %s",
 				e->e_df, e->e_to, e->e_from);
 			}
@@ -1287,10 +1291,13 @@ mailfile(filename, ctladdr)
 
 		if (!bitset(S_ISGID, stb.st_mode) || setgid(stb.st_gid) < 0)
 		{
-			if (ctladdr->q_uid == 0) {
+			if (ctladdr->q_uid == 0)
+			{
 				(void) setgid(DefGid);
 				(void) initgroups(DefUser, DefGid);
-			} else {
+			}
+			else
+			{
 				(void) setgid(ctladdr->q_gid);
 				(void) initgroups(ctladdr->q_ruser?
 					ctladdr->q_ruser: ctladdr->q_user,
@@ -1304,21 +1311,31 @@ mailfile(filename, ctladdr)
 			else
 				(void) setuid(ctladdr->q_uid);
 		}
+		FileName = filename;
+		LineNumber = 0;
 		f = dfopen(filename, "a");
 		if (f == NULL)
+		{
+			message("cannot open");
 			exit(EX_CANTCREAT);
+		}
 
 		putfromline(f, ProgMailer);
 		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
 		putline("\n", f, ProgMailer);
 		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
 		putline("\n", f, ProgMailer);
+		if (ferror(f))
+		{
+			message("I/O error");
+			setstat(EX_IOERR);
+		}
 		(void) fclose(f);
 		(void) fflush(stdout);
 
 		/* reset ISUID & ISGID bits for paranoid systems */
 		(void) chmod(filename, (int) stb.st_mode);
-		exit(EX_OK);
+		exit(ExitStat);
 		/*NOTREACHED*/
 	}
 	else
