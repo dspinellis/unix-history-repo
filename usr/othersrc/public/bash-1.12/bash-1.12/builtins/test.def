@@ -1,0 +1,138 @@
+This file is test.def, from which is created test.c.
+It implements the builtin "test" in Bash.
+
+Copyright (C) 1987, 1989, 1991 Free Software Foundation, Inc.
+
+This file is part of GNU Bash, the Bourne Again SHell.
+
+Bash is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 1, or (at your option) any later
+version.
+
+Bash is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+for more details.
+
+You should have received a copy of the GNU General Public License along
+with Bash; see the file COPYING.  If not, write to the Free Software
+Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+$PRODUCES test.c
+
+$BUILTIN test
+$FUNCTION test_builtin
+$SHORT_DOC test [expr]
+Exits with a status of 0 (trueness) or 1 (falseness) depending on
+the evaluation of EXPR.  Expressions may be unary or binary.  Unary
+expressions are often used to examine the status of a file.  There
+are string operators as well, and numeric comparison operators.
+
+File operators:
+
+    -b FILE        True if file is block special.
+    -c FILE        True if file is character special.
+    -d FILE        True if file is a directory.
+    -e FILE        True if file exists.
+    -f FILE        True if file exists and is a regular file.
+    -g FILE        True if file is set-group-id.
+    -L FILE        True if file is a symbolic link.
+    -k FILE        True if file has its "sticky" bit set.
+    -p FILE        True if file is a named pipe.
+    -r FILE        True if file is readable by you.
+    -s FILE        True if file is not empty.
+    -S FILE        True if file is a socket.
+    -t [FD]        True if FD is opened on a terminal.  If FD
+                   is omitted, it defaults to 1 (stdout).
+    -u FILE        True if the file is set-user-id.
+    -w FILE        True if the file is writable by you.
+    -x FILE        True if the file is executable by you.
+    -O FILE        True if the file is effectively owned by you.
+    -G FILE        True if the file is effectively owned by your group.
+
+  FILE1 -nt FILE2  True if file1 is newer than (according to
+                   modification date) file2.
+
+  FILE1 -ot FILE2  True if file1 is older than file2.
+
+  FILE1 -ef FILE2  True if file1 is a hard link to file2.
+
+String operators:
+
+    -z STRING      True if string is empty.
+
+    -n STRING
+ or STRING         True if string is not empty.
+
+    STRING1 = STRING2
+                   True if the strings are equal.
+    STRING1 != STRING2
+                   True if the strings are not equal.
+
+Other operators:
+
+    ! EXPR         True if expr is false.
+    EXPR1 -a EXPR2 True if both expr1 AND expr2 are true.
+    EXPR1 -o EXPR2 True if either expr1 OR expr2 is true.
+
+    arg1 OP arg2   Arithmetic tests.  OP is one of -eq, -ne,
+                   -lt, -le, -gt, or ge.
+
+Arithmetic binary operators return true if ARG1 is equal, not-equal,
+less-than, less-than-or-equal, greater-than, or greater-than-or-equal
+than ARG2.
+$END
+
+$BUILTIN [
+$DOCNAME test_bracket
+$FUNCTION test_builtin
+$SHORT_DOC [ arg... ]
+This is a synonym for the "test" shell builtin, excepting that the
+last argument must be literally `]', to match the `[' which invoked
+the test.
+$END
+
+#include "../shell.h"
+extern char *this_command_name;
+
+/* TEST/[ builtin. */
+int
+test_builtin (list)
+     WORD_LIST *list;
+{
+  char **argv;
+  int argc, result;
+  WORD_LIST *t = list;
+
+  /* We let Matthew Bradburn and Kevin Braunsdorf's code do the
+     actual test command.  So turn the list of args into an array
+     of strings, since that is what his code wants. */
+  if (!list)
+    {
+      if (strcmp (this_command_name, "[") == 0)
+	builtin_error ("missing `]'");
+
+      return (EXECUTION_FAILURE);
+    }
+
+  /* Get the length of the argument list. */
+  for (argc = 0; t; t = t->next, argc++);
+
+  /* Account for argv[0] being a command name.  This makes our life easier. */
+  argc++;
+  argv = (char **)xmalloc ((1 + argc) * sizeof (char *));
+  argv[argc] = (char *)NULL;
+
+  /* this_command_name is the name of the command that invoked this
+     function.  So you can't call test_builtin () directly from
+     within this code, there are too many things to worry about. */
+  argv[0] = savestring (this_command_name);
+
+  for (t = list, argc = 1; t; t = t->next, argc++)
+    argv[argc] = savestring (t->word->word);
+
+  result = test_command (argc, argv);
+  free_array (argv);
+  return (result);
+}
