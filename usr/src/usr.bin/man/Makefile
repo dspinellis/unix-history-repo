@@ -27,8 +27,10 @@ depend: FRC
 	mkdep ${CFLAGS} ${ASRCS} ${MSRCS}
 
 install: FRC
+	rm -f ${DESTDIR}/usr/ucb/whatis ${DESTDIR}/usr/ucb/apropos
 	install -s -o bin -g bin -m 755 apropos ${DESTDIR}/usr/ucb/apropos
 	install -s -o bin -g bin -m 755 man ${DESTDIR}/usr/ucb/man
+	ln ${DESTDIR}/usr/ucb/apropos ${DESTDIR}/usr/ucb/whatis
 
 lint: FRC
 	lint ${CFLAGS} ${ASRCS}
