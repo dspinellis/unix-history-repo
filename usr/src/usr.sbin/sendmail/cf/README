@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.8 (Berkeley) %G%
+		@(#)README	8.9 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -318,7 +318,7 @@ mailertable	Include a "mailer table" which can be used to override
 		routing for particular domains.  The argument of the
 		FEATURE may be the key definition.  If none is specified,
 		the definition used is:
-			hash /etc/mailertable -o
+			hash -o /etc/mailertable
 		Keys in this database are fully qualified domain names
 		or partial domains preceded by a dot -- for example,
 		"vangogh.CS.Berkeley.EDU" or ".CS.Berkeley.EDU".
@@ -331,7 +331,7 @@ domaintable	Include a "domain table" which can be used to provide
 		full domains on unqualified (single word) hosts.  The
 		argument of the FEATURE may be the key definition.  If
 		none is specified, the definition used is:
-			hash /etc/domaintable -o
+			hash -o /etc/domaintable
 		The key in this table is the unqualified host name; the
 		value is the fully qualified domain.  Anything in the
 		domaintable is reflected into headers; that is, this
@@ -341,12 +341,12 @@ bitdomain	Look up bitnet hosts in a table to try to turn them into
 		bitdomain program contributed by John Gardiner Myers.
 		The argument of the FEATURE may be the key definition; if
 		none is specified, the definition used is:
-			hash /etc/bitdomain.db -o
+			hash -o /etc/bitdomain.db
 		Keys are the bitnet hostname; values are the corresponding
 		internet hostname.
 uucpdomain	Similar feature for UUCP hosts.  The default map definition
 		is:
-			hash /etc/uudomain.db -o
+			hash -o /etc/uudomain.db
 		At the moment there is no automagic tool to build this
 		database.
 always_add_domain
