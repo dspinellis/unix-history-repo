@@ -1,16 +1,16 @@
-#	@(#)Makefile.tahoe	1.21 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.22 (Berkeley) %G%
 #
-# Makefile for 4.3 BSD
+# Makefile for 4.4 BSD
 #
 # This makefile is constructed from a machine description:
 #	config machineid
 # Most changes should be made in the machine description
-#	/sys/conf/``machineid''
+#	/sys/tahoe/conf/``machineid''
 # after which you should do
 #	 config machineid
-# Generic makefile changes should be made in
+# Machine generic makefile changes should be made in
 #	/sys/conf/Makefile.``machinetype''
-# after which config should be rerun for all machines.
+# after which config should be rerun for all machines of that type.
 #
 # N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE INVISIBLE TO MAKEFILE
 #	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
@@ -20,13 +20,16 @@
 #
 C2=	/usr/libexec/c2
 LD=	/usr/bin/ld
-TOUCH=	touch -f -c
-INDIR=	../tahoe/inline
-INLINE=	${INDIR}/inline
 
-INCLUDES= -I. -I../sys
+S=	../..
+TAHOE=	../../tahoe
+
+INCLUDES= -I. -I$S -I$S/sys
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
+
+INLINECMD=	${TAHOE}/inline/obj/inline
+INLINE=	${INLINECMD} ${INLINEOPTS}
 
 %OBJS
 
@@ -36,29 +39,29 @@ CFLAGS=	-O ${COPTS}
 
 clean:
 	rm -f eddep *vmunix tags *.o locore.i [a-uw-z]*.s \
-		errs linterrs makelinks
+		Errs errs linterrs makelinks
 
 lint: /tmp param.c
 	@lint -hbxn -I. -DGENERIC ${COPTS} ${PARAM} \
-	  ../tahoe/Locore.c ${CFILES} ioconf.c param.c | \
+	  ${TAHOE}/tahoe/Locore.c ${CFILES} ioconf.c param.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 
-../tahoe/symbols.sort: ../tahoe/symbols.raw
-	grep -v '^#' ../tahoe/symbols.raw \
-	    | sed 's/^	//' | sort -u > ../tahoe/symbols.sort
+symbols.sort: ${TAHOE}/tahoe/symbols.raw
+	grep -v '^#' ${TAHOE}/tahoe/symbols.raw \
+	    | sed 's/^	//' | sort -u > symbols.sort
 
-${INLINE}: ${INDIR}/inline.h ${INDIR}/langpats.c
-${INLINE}: ${INDIR}/libcpats.c ${INDIR}/machdep.c
-${INLINE}: ${INDIR}/machpats.c ${INDIR}/main.c
-	cd ${INDIR}; make
+${INLINECMD}:
+	cd ${TAHOE}/inline; make
 
-locore.o: assym.s ../tahoe/scb.s vbvec.s ../tahoe/locore.s \
-    vbglue.s ../tahoe/mtpr.h ../tahoe/trap.h ../tahoe/psl.h \
-    ../tahoe/pte.h ../tahoe/cp.h ../tahoe/mem.h
-	cat assym.s ../tahoe/scb.s vbvec.s ../tahoe/locore.s \
+locore.o: assym.s ${TAHOE}/tahoe/scb.s vbvec.s ${TAHOE}/tahoe/locore.s 
+locore.o: vbglue.s ${TAHOE}/include/mtpr.h ${TAHOE}/include/trap.h 
+locore.o: ${TAHOE}/include/psl.h ${TAHOE}/include/pte.h ${TAHOE}/tahoe/cp.h
+locore.o: ${TAHOE}/tahoe/mem.h
+locore.o:
+	cat assym.s ${TAHOE}/tahoe/scb.s vbvec.s ${TAHOE}/tahoe/locore.s \
 	    vbglue.s > locore.c
-	${CC} -E -I. -DLOCORE ${COPTS} locore.c > locore.i
+	${CC} -E -DLOCORE ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o locore.i'
 	@${AS} -o locore.o locore.i
 	@rm locore.i
@@ -79,14 +82,15 @@ assym.s: genassym
 	./genassym >assym.s
 
 genassym:
-	cc ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../tahoe/genassym.c
+	${CC} ${INCLUDES} ${IDENT} ${PARAM} -o genassym \
+	    ${TAHOE}/tahoe/genassym.c
 
 depend: assym.s
 	mkdep ${COPTS} ${CFILES} ioconf.c
-	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ../tahoe/genassym.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ${TAHOE}/tahoe/genassym.c
 
 links:
-	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
+	egrep '#if' ${CFILES} | sed -f $S/conf/defines | \
 	  sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
 	echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
 	  sort -u | comm -23 - dontlink | \
@@ -96,30 +100,13 @@ links:
 	sh makelinks && rm -f dontlink
 
 tags:
-	@echo "see ../kern/Makefile for tags"
+	@echo "see $S/kern/Makefile for tags"
 
-print:
-	@pr -f Makefile ../kern/TODO linterrs
-	@/usr/ucb/ctags -x ${CFILES} | pr -f -h XREF
-	@(size vmunix *.o) | pr -f -h sizes
-	@ls -ls | pr -f
-	@cd ../kern; ls -ls | pr -f ; pr -f *.m *.h
-	@echo 'once upon a time ...'
-	@cd ../tahoe; pr -f Locore.c scb.s locore.s
-	@cd ${INDIR}; make print
-	@pr -f ${CFILES}
-
-ioconf.o: ioconf.c ../sys/param.h ../tahoe/pte.h ../sys/buf.h ../sys/map.h \
-    ../sys/vm.h ../tahoevba/vbavar.h
-
-param.c: ../conf/param.c
-	-rm -f param.c
-	cp ../conf/param.c .
+param.c: $S/conf/param.c
+	rm -f param.c
+	cp $S/conf/param.c .
 
 param.o: param.c Makefile
 	${CC} -c ${CFLAGS} ${PARAM} param.c
 
 %RULES
-
-# DO NOT DELETE THIS LINE -- make depend uses it
-
