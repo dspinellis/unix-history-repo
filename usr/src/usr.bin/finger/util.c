@@ -6,27 +6,36 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/file.h>
+#include <fcntl.h>
+#include <pwd.h>
+#include <utmp.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <paths.h>
 #include "finger.h"
 
+static void	 find_idle_and_ttywrite __P((WHERE *));
+static int	 hash __P((char *));
+static void	 userinfo __P((PERSON *, struct passwd *));
+static WHERE	*walloc __P((PERSON *));
+
+static void
 find_idle_and_ttywrite(w)
 	register WHERE *w;
 {
 	extern time_t now;
-	extern int errno;
 	struct stat sb;
-	char *strerror();
 
-	(void)sprintf(tbuf, "%s/%s", _PATH_DEV, w->tty);
+	(void)snprintf(tbuf, sizeof(tbuf), "%s/%s", _PATH_DEV, w->tty);
 	if (stat(tbuf, &sb) < 0) {
 		(void)fprintf(stderr,
 		    "finger: %s: %s\n", tbuf, strerror(errno));
@@ -38,6 +47,7 @@ find_idle_and_ttywrite(w)
 	w->writable = ((sb.st_mode & TALKABLE) == TALKABLE);
 }
 
+static void
 userinfo(pn, pw)
 	register PERSON *pn;
 	register struct passwd *pw;
@@ -106,6 +116,7 @@ match(pw, user)
 	return(0);
 }
 
+void
 enter_lastlog(pn)
 	register PERSON *pn;
 {
@@ -113,7 +124,6 @@ enter_lastlog(pn)
 	static int opened, fd;
 	struct lastlog ll;
 	char doit = 0;
-	off_t lseek();
 
 	/* some systems may not maintain lastlog, don't report errors. */
 	if (!opened) {
@@ -121,7 +131,7 @@ enter_lastlog(pn)
 		opened = 1;
 	}
 	if (fd == -1 ||
-	    lseek(fd, (long)pn->uid * sizeof(ll), L_SET) !=
+	    lseek(fd, (long)pn->uid * sizeof(ll), SEEK_SET) !=
 	    (long)pn->uid * sizeof(ll) ||
 	    read(fd, (char *)&ll, sizeof(ll)) != sizeof(ll)) {
 			/* as if never logged in */
@@ -156,12 +166,14 @@ enter_lastlog(pn)
 	}
 }
 
+void
 enter_where(ut, pn)
 	struct utmp *ut;
 	PERSON *pn;
 {
-	register WHERE *w = walloc(pn);
+	register WHERE *w;
 
+	w = walloc(pn);
 	w->info = LOGGEDIN;
 	bcopy(ut->ut_line, w->tty, UT_LINESIZE);
 	w->tty[UT_LINESIZE] = 0;
@@ -213,6 +225,7 @@ find_person(name)
 	return(pn);
 }
 
+static
 hash(name)
 	register char *name;
 {
@@ -230,14 +243,12 @@ palloc()
 {
 	PERSON *p;
 
-	if ((p = (PERSON *)malloc((u_int) sizeof(PERSON))) == NULL) {
-		(void)fprintf(stderr, "finger: out of space.\n");
-		exit(1);
-	}
+	if ((p = malloc((u_int) sizeof(PERSON))) == NULL)
+		err("%s", strerror(errno));
 	return(p);
 }
 
-WHERE *
+static WHERE *
 walloc(pn)
 	register PERSON *pn;
 {
@@ -302,4 +313,33 @@ prphone(num)
 	*p++ = *num++;
 	*p = '\0';
 	return(pbuf);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "finger: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }

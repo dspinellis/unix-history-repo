@@ -6,16 +6,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
+#include <unistd.h>
+#include <pwd.h>
+#include <utmp.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
+#include "finger.h"
 
+void
 netfinger(name)
 	char *name;
 {
@@ -27,8 +34,7 @@ netfinger(name)
 	struct servent *sp;
 	struct sockaddr_in sin;
 	int s;
-	char *alist[1], *host, *rindex();
-	u_long inet_addr();
+	char *alist[1], *host;
 
 	if (!(host = rindex(name, '@')))
 		return;
