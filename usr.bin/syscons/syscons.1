@@ -37,7 +37,12 @@ Sets the screensaver timeout to
 .I N
 seconds, or turns it
 .I off
-.
+.TP
+.BI "\-S\ " NAME|list
+Sets the screensaver appearance to
+.I NAME .
+Use \-S list to list the available
+.I NAMEs .
 .TP
 .BI "\-m\ " 80x25|80x50
 Set screen size to 80x25 or 80x50 chars.
@@ -53,7 +58,7 @@ rates, or use presets for
 or
 .I normal.
 .TP
-.BI "\-S\ " scrmap
+.BI "\-M\ " scrmap
 Install screen output map file from
 .I scrmap
 .TP
@@ -87,6 +92,8 @@ to send
 .SH BUGS
 Sure to be some.
 .SH "SEE ALSO"
+.BR keyboard (4) ,
+.BR screen (4) ,
 .BR /sys/i386/conf/SYSCONS
 .SH AUTHORS
 Christoph M. Robitschko
