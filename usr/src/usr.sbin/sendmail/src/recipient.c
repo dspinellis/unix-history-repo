@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.36 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -261,10 +261,25 @@ recipient(a, sendq, e)
 	stripquotes(buf);
 
 	/* check for direct mailing to restricted mailers */
-	if (a->q_alias == NULL && m == ProgMailer)
+	if (m == ProgMailer)
 	{
-		a->q_flags |= QBADADDR;
-		usrerr("550 Cannot mail directly to programs");
+		if (a->q_alias == NULL)
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Cannot mail directly to programs");
+		}
+		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 User %s@%s doesn't have a valid shell for mailing to programs",
+				a->q_alias->q_ruser, MyHostName);
+		}
+		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Address %s is unsafe for mailing to programs",
+				a->q_alias->q_paddr);
+		}
 	}
 
 	/*
@@ -364,6 +379,18 @@ recipient(a, sendq, e)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");
+		}
+		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 User %s@%s doesn't have a valid shell for mailing to files",
+				a->q_alias->q_ruser, MyHostName);
+		}
+		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Address %s is unsafe for mailing to files",
+				a->q_alias->q_paddr);
 		}
 		else if (!writable(buf, getctladdr(a), SFF_ANYFILE))
 		{
@@ -746,6 +773,10 @@ writable(filename, ctladdr, flags)
 static jmp_buf	CtxIncludeTimeout;
 static int	includetimeout();
 
+#ifndef S_IWOTH
+# define S_IWOTH	(S_IWRITE >> 6)
+#endif
+
 int
 include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
@@ -766,6 +797,7 @@ include(fname, forwarding, ctladdr, sendq, e)
 	char *uname;
 	int rval = 0;
 	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
+	struct stat st;
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
@@ -831,37 +863,20 @@ include(fname, forwarding, ctladdr, sendq, e)
 	if (rval != 0)
 	{
 		/* don't use this :include: file */
-		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: not safe (uid=%d): %s\n",
 				uid, errstring(rval));
-		goto resetuid;
 	}
-
-	fp = fopen(fname, "r");
-	if (fp == NULL)
+	else
 	{
-		rval = errno;
-		if (tTd(27, 4))
-			printf("include: open: %s\n", errstring(rval));
-	}
-	else if (ca == NULL)
-	{
-		struct stat st;
-
-		if (fstat(fileno(fp), &st) < 0)
+		fp = fopen(fname, "r");
+		if (fp == NULL)
 		{
 			rval = errno;
-			syserr("Cannot fstat %s!", fname);
-		}
-		else
-		{
-			ctladdr->q_uid = st.st_uid;
-			ctladdr->q_gid = st.st_gid;
-			ctladdr->q_flags |= QGOODUID;
+			if (tTd(27, 4))
+				printf("include: open: %s\n", errstring(rval));
 		}
 	}
-
 	clrevent(ev);
 
 resetuid:
@@ -883,6 +898,37 @@ resetuid:
 	if (fp == NULL)
 		return rval;
 
+	if (fstat(fileno(fp), &st) < 0)
+	{
+		rval = errno;
+		syserr("Cannot fstat %s!", fname);
+		return rval;
+	}
+
+	if (ca == NULL)
+	{
+		ctladdr->q_uid = st.st_uid;
+		ctladdr->q_gid = st.st_gid;
+		ctladdr->q_flags |= QGOODUID;
+	}
+	if (ca != NULL && ca->q_uid == st.st_uid)
+	{
+		/* optimization -- avoid getpwuid if we already have info */
+		ctladdr->q_flags |= ca->q_flags & QBOGUSSHELL;
+		ctladdr->q_ruser = ca->q_ruser;
+	}
+	else
+	{
+		register struct passwd *pw;
+
+		pw = getpwuid(st.st_uid);
+		if (pw == NULL || !usershellok(pw->pw_shell))
+		{
+			ctladdr->q_ruser = newstr(pw->pw_name);
+			ctladdr->q_flags |= QBOGUSSHELL;
+		}
+	}
+
 	if (bitset(EF_VRFYONLY, e->e_flags))
 	{
 		/* don't do any more now */
@@ -891,6 +937,19 @@ resetuid:
 		xfclose(fp, "include", fname);
 		return rval;
 	}
+
+	/*
+	** Check to see if some bad guy can write this file
+	**
+	**	This should really do something clever with group
+	**	permissions; currently we just view world writable
+	**	as unsafe.  Also, we don't check for writable
+	**	directories in the path.  We've got to leave
+	**	something for the local sysad to do.
+	*/
+
+	if (bitset(S_IWOTH, st.st_mode))
+		ctladdr->q_flags |= QUNSAFEADDR;
 
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;

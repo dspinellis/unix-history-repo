@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -769,18 +769,7 @@ deliver(e, firstto)
 		/* XXX perhaps this should be to->q_mailer != LocalMailer ?? */
 		/* XXX perhaps it should be a mailer flag? */
 		if (to->q_mailer == ProgMailer || to->q_mailer == FileMailer)
-		{
 			ctladdr = getctladdr(to);
-			if (ctladdr != NULL &&
-			    bitset(QBOGUSSHELL, ctladdr->q_flags))
-			{
-				/* user has no valid shell on this machine */
-				usrerr("550 User %s doesn't have a valid shell on %s",
-					ctladdr->q_ruser, MyHostName);
-				giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, e);
-				continue;
-			}
-		}
 
 		user = to->q_user;
 		e->e_to = to->q_paddr;
