@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_acct.c	7.13 (Berkeley) %G%
+ *	@(#)kern_acct.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,7 @@
 #include "vnode.h"
 #include "mount.h"
 #include "kernel.h"
+#include "file.h"
 #include "acct.h"
 #include "uio.h"
 #include "syslog.h"
@@ -57,7 +58,7 @@ sysacct(p, uap, retval)
 		acctp = savacctp;
 		savacctp = NULL;
 	}
-	if (uap->fname==NULL) {
+	if (uap->fname == NULL) {
 		if (vp = acctp) {
 			acctp = NULL;
 			vrele(vp);
@@ -65,19 +66,14 @@ sysacct(p, uap, retval)
 		}
 		return (0);
 	}
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp))
+	if (error = vn_open(ndp, FWRITE, 0644))
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VREG) {
 		vrele(vp);
 		return (EACCES);
-	}
-	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
-		vrele(vp);
-		return (EROFS);
 	}
 	oacctp = acctp;
 	acctp = vp;
