@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -47,6 +47,7 @@ static char copyright[] =
 
 struct mntopt mopts[] = {
 	MOPT_STDOPTS,
+	MOPT_ASYNC,
 	{ NULL },
 };
 
@@ -153,7 +154,7 @@ int	maxbpg;			/* maximum blocks per file in a cyl group */
 int	nrpos = NRPOS;		/* # of distinguished rotational positions */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
-int	mntflags;		/* flags to be passed to mount */
+int	mntflags = MNT_ASYNC;	/* flags to be passed to mount */
 u_long	memleft;		/* virtual memory available */
 caddr_t	membase;		/* start address of memory based filesystem */
 #ifdef COMPAT
@@ -192,7 +193,7 @@ main(argc, argv)
 	}
 
 	opstring = mfs ?
-	    "Na:b:c:d:e:f:i:m:o:s:" :
+	    "NT:a:b:c:d:e:f:i:m:o:s:" :
 	    "NOS:T:a:b:c:d:e:f:i:k:l:m:n:o:p:r:s:t:u:x:";
 	while ((ch = getopt(argc, argv, opstring)) != EOF)
 		switch (ch) {
