@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -81,7 +81,7 @@ __bt_search(t, key, exactp)
 			return (&e);
 		}
 
-next:		if (bt_push(t, h->pgno, index) == RET_ERROR)
+next:		if (__bt_push(t, h->pgno, index) == RET_ERROR)
 			return (NULL);
 		pg = GETBINTERNAL(h, index)->pgno;
 		mpool_put(t->bt_mp, h, 0);
