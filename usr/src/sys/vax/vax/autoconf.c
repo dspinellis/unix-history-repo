@@ -1,4 +1,4 @@
-/*	autoconf.c	4.22	81/03/06	*/
+/*	autoconf.c	4.23	81/03/07	*/
 
 /*
  * Initialize the devices for the current machine.
@@ -12,10 +12,12 @@
 #include "../h/nexus.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
-#include "../h/mba.h"
+#include "../h/mbareg.h"
+#include "../h/mbavar.h"
 #include "../h/dk.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
+#include "../h/ubavar.h"
 #include "../h/mtpr.h"
 #include "../h/cpu.h"
 #include "../h/scb.h"
@@ -35,6 +37,7 @@ caddr_t	umaddr780[4] = {
 	(caddr_t) 0x201be000, (caddr_t) 0x201fe000
 };
 #endif
+struct	uba_hd uba_hd[MAXNUBA];
 
 #if VAX780
 char	nexflt_bits[] = NEXFLT_BITS;
@@ -139,7 +142,7 @@ c780(pcpu)
 			unifind((struct uba_regs *)nxv, (struct uba_regs *)nxp,
 			    umem[i], umaddr780[i]);
 			((struct uba_regs *)nxv)->uba_cr =
-			    UBA_IFS|UBA_BRIE|UBA_USEFIE|UBA_SUEFIE;
+			    UBACR_IFS|UBACR_BRIE|UBACR_USEFIE|UBACR_SUEFIE;
 			numuba++;
 			break;
 
@@ -215,6 +218,7 @@ c750(pcpu)
 #endif
 
 #if NMBA > 0
+struct	mba_device *mbaconfig();
 /*
  * Find devices attached to a particular mba
  * and look for each device found in the massbus
@@ -225,8 +229,10 @@ mbafind(nxv, nxp)
 {
 	register struct mba_regs *mdp;
 	register struct mba_drv *mbd;
+	register struct mba_device *mi;
+	register struct mba_slave *ms;
 	int dn, dt, sn, ds;
-	struct mba_info	fnd;
+	struct mba_device	fnd;
 
 	mdp = (struct mba_regs *)nxv;
 	mba_hd[nummba].mh_mba = mdp;
@@ -245,18 +251,25 @@ mbafind(nxv, nxp)
 		if (dt == MBDT_MOH)
 			continue;
 		fnd.mi_drive = dn;
-		if (dt & MBDT_TAP) {
-			for (sn = 0; sn < 8; sn++) {
-				mbd->mbd_tc = sn;
+		if ((mi = mbaconfig(&fnd, dt)) && (dt & MBDT_TAP)) {
+			for (ms = mbsinit; ms->ms_driver; ms++)
+			if (ms->ms_driver == mi->mi_driver && ms->ms_alive == 0 && 
+			    (ms->ms_ctlr == mi->mi_unit || ms->ms_ctlr=='?')) {
+				mbd->mbd_tc = ms->ms_slave;
 				dt = mbd->mbd_dt;
-				if ((dt & MBDT_SPR) == 0)
-					continue;
-				fnd.mi_slave = sn;
-				mbaconfig(&fnd, dt);
+				ms->ms_alive = 1;
+				ms->ms_ctlr = mi->mi_unit;
+				if (dt & MBDT_SPR) {
+					printf("%s%d at %s%d slave %d\n",
+					    ms->ms_driver->md_sname,
+					    ms->ms_unit,
+					    mi->mi_driver->md_dname,
+					    mi->mi_unit,
+					    ms->ms_slave);
+					(*ms->ms_driver->md_slave)
+					    (mi, ms);
+				}
 			}
-		} else {
-			fnd.mi_slave = -1;
-			mbaconfig(&fnd, dt);
 		}
 	}
 	mdp->mba_cr = MBAINIT;
@@ -268,15 +281,16 @@ mbafind(nxv, nxp)
  * see if it is in the configuration table.
  * If so, fill in its data.
  */
+struct mba_device *
 mbaconfig(ni, type)
-	register struct mba_info *ni;
+	register struct mba_device *ni;
 	register int type;
 {
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register short *tp;
 	register struct mba_hd *mh;
 
-	for (mi = mbinit; mi->mi_driver; mi++) {
+	for (mi = mbdinit; mi->mi_driver; mi++) {
 		if (mi->mi_alive)
 			continue;
 		tp = mi->mi_driver->md_type;
@@ -286,12 +300,11 @@ mbaconfig(ni, type)
 		continue;
 found:
 #define	match(fld)	(ni->fld == mi->fld || mi->fld == '?')
-		if (!match(mi_slave) || !match(mi_drive) || !match(mi_mbanum))
+		if (!match(mi_drive) || !match(mi_mbanum))
 			continue;
-		printf("%c%d at mba%d drive %d",
-		    mi->mi_name, mi->mi_unit, ni->mi_mbanum, ni->mi_drive);
-		if (type & MBDT_TAP)
-			printf(" slave %d", ni->mi_slave);
+		printf("%s%d at mba%d drive %d",
+		    mi->mi_driver->md_dname, mi->mi_unit,
+		    ni->mi_mbanum, ni->mi_drive);
 		printf("\n");
 		mi->mi_alive = 1;
 		mh = &mba_hd[ni->mi_mbanum];
@@ -303,13 +316,14 @@ found:
 		mi->mi_driver->md_info[mi->mi_unit] = mi;
 		mi->mi_mbanum = ni->mi_mbanum;
 		mi->mi_drive = ni->mi_drive;
-		mi->mi_slave = ni->mi_slave;
 		if (mi->mi_dk && dkn < DK_NDRIVE)
 			mi->mi_dk = dkn++;
 		else
 			mi->mi_dk = -1;
-		(*mi->mi_driver->md_dkinit)(mi);
+		(*mi->mi_driver->md_attach)(mi);
+		return (mi);
 	}
+	return (0);
 }
 #endif
 
@@ -320,8 +334,8 @@ found:
  */
 fixctlrmask()
 {
-	register struct uba_minfo *um;
-	register struct uba_dinfo *ui;
+	register struct uba_ctlr *um;
+	register struct uba_device *ui;
 	register struct uba_driver *ud;
 #define	phys(a,b) ((b)(((int)(a))&0x7fffffff))
 
@@ -342,8 +356,8 @@ unifind(vubp, pubp, vumem, pumem)
 	caddr_t vumem, pumem;
 {
 	register int br, cvec;			/* MUST BE r11, r10 */
-	register struct uba_dinfo *ui;
-	register struct uba_minfo *um;
+	register struct uba_device *ui;
+	register struct uba_ctlr *um;
 	u_short *umem = (u_short *)vumem, *sp, *reg, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
@@ -388,7 +402,7 @@ unifind(vubp, pubp, vumem, pumem)
 #if VAX780
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
-		vubp->uba_cr = UBA_IFS|UBA_BRIE;
+		vubp->uba_cr = UBACR_IFS|UBACR_BRIE;
 	}
 #endif
 	/*
@@ -397,7 +411,7 @@ unifind(vubp, pubp, vumem, pumem)
 	 * for devices which will need to dma
 	 * output to produce an interrupt.
 	 */
-	*(int *)(&vubp->uba_map[0]) = UBA_MRV;
+	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
 
 #define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x1fff))
 	/*
