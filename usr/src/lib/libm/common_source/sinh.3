@@ -1,7 +1,5 @@
-.\"	@(#)sinh.3	6.1 (Berkeley) %G%
-.\"
-.TH SINH 3M ""
-.AT 3
+.TH SINH 3M "8 May 1985"
+.UC 4
 .SH NAME
 sinh, cosh, tanh \- hyperbolic functions
 .SH SYNOPSIS
@@ -9,6 +7,7 @@ sinh, cosh, tanh \- hyperbolic functions
 .B #include <math.h>
 .PP
 .B double sinh(x)
+.B double x;
 .PP
 .B double cosh(x)
 .B double x;
@@ -18,8 +17,12 @@ sinh, cosh, tanh \- hyperbolic functions
 .fi
 .SH DESCRIPTION
 These functions compute the designated hyperbolic functions for real arguments.
+.SH SEE ALSO
+intro(3M)
 .SH DIAGNOSTICS
 .I Sinh
 and
 .I cosh
-return a huge value of appropriate sign when the correct value would overflow.
+return the reserved operand on the VAX if the correct value would overflow.
+.SH AUTHOR
+W. Kahan, Kwok-Choi Ng
