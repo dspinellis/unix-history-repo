@@ -123,6 +123,8 @@ define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
+define(`confSORT_QUEUE_BY_HOST', `False')
+define(`confBROKEN_SMTP_PEERS', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.7 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.8 (Berkeley) %G%')
