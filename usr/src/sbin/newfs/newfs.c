@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -104,6 +104,7 @@ int	trackseek;		/* track-to-track seek, usec */
 int	fsize = 0;		/* fragment size */
 int	bsize = 0;		/* block size */
 int	cpg = DESCPG;		/* cylinders/cylinder group */
+int	cpgflg;			/* cylinders/cylinder group flag was given */
 int	minfree = MINFREE;	/* free space threshold */
 int	opt = DEFAULTOPT;	/* optimization preference (space or time) */
 int	density = NBPI;		/* number of bytes per inode */
@@ -179,6 +180,7 @@ main(argc, argv)
 				cpg = atoi(*argv);
 				if (cpg <= 0)
 					fatal("%s: bad cylinders/group", *argv);
+				cpgflg++;
 				goto next;
 
 			case 'd':
