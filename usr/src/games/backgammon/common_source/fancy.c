@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fancy.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fancy.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "back.h"
@@ -50,6 +50,8 @@ int	oldw;
 						 * are accurate */
 int	realr;
 int	realc;
+
+void	addbuf();
 
 fboard ()  {
 	register int	i, j, l;
@@ -385,7 +387,6 @@ newpos ()  {
 	int	j;			/* index */
 	int	n;			/* temporary variable */
 	char	*m;			/* string containing CM movement */
-	int	addbuf();		/* add a char to the output buffer */
 
 
 	if (realr == -1)		/* see if already there */
@@ -545,7 +546,6 @@ newpos ()  {
 
 clear ()  {
 	register int	i;
-	int		addbuff();
 
 					/* double space if can't clear */
 	if (CL == 0)  {
@@ -624,7 +624,6 @@ register char	c;			/* character to output */
 clend()  {
 	register int	i;
 	register char	*s;
-	int		addbuf();
 
 
 	if (CD)  {
@@ -648,7 +647,6 @@ cline ()  {
 	register int	i;
 	register int	c;
 	register char	*s;
-	int		addbuf();
 
 	if (curc > linect[curr])
 		return;
