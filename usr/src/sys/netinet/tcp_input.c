@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.16 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -746,7 +746,7 @@ step6:
 		 * soreceive.  It's hard to imagine someone
 		 * actually wanting to send this much urgent data.
 		 */
-		if (ti->ti_urp + (unsigned) so->so_rcv.sb_cc > 32767) {
+		if (ti->ti_urp + so->so_rcv.sb_cc > SB_MAX) {
 			ti->ti_urp = 0;			/* XXX */
 			tiflags &= ~TH_URG;		/* XXX */
 			ti->ti_flags &= ~TH_URG;	/* XXX */
