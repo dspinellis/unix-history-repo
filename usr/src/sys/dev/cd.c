@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cd.c 1.6 90/11/28$
  *
- *	@(#)cd.c	7.5 (Berkeley) %G%
+ *	@(#)cd.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -27,6 +27,12 @@
 #include <sys/buf.h>
 #include <sys/malloc.h>
 #include <sys/conf.h>
+#include <sys/stat.h>
+#ifdef COMPAT_NOLABEL
+#include <sys/ioctl.h>
+#include <sys/disklabel.h>
+#include <sys/fcntl.h>
+#endif
 
 #include <dev/cdvar.h>
 
@@ -74,6 +80,8 @@ cdinit(cd)
 	register int ix;
 	size_t minsize;
 	dev_t dev;
+	struct bdevsw *bsw;
+	int error;
 
 #ifdef DEBUG
 	if (cddebug & (CDB_FOLLOW|CDB_INIT))
@@ -93,12 +101,21 @@ cdinit(cd)
 			break;
 		ci = &cs->sc_cinfo[ix];
 		ci->ci_dev = dev;
+		bsw = &bdevsw[major(dev)];
+		/*
+		 * Open the partition
+		 */
+		if (bsw->d_open && (error = (*bsw->d_open)(dev, 0, S_IFBLK))) {
+			printf("cd%d: component %s open failed, error = %d\n",
+			       cd->cd_unit, cddevtostr(dev), error);
+			return(0);
+		}
 		/*
 		 * Calculate size (truncated to interleave boundary
 		 * if necessary.
 		 */
-		if (bdevsw[major(dev)].d_psize) {
-			size = (size_t) (*bdevsw[major(dev)].d_psize)(dev);
+		if (bsw->d_psize) {
+			size = (size_t) (*bsw->d_psize)(dev);
 			if ((int)size < 0)
 				size = 0;
 		} else
@@ -107,9 +124,27 @@ cdinit(cd)
 			size -= size % cs->sc_ileave;
 		if (size == 0) {
 			printf("cd%d: not configured (component %s missing)\n",
-			       cd->cd_unit, cddevtostr(ci->ci_dev));
+			       cd->cd_unit, cddevtostr(dev));
 			return(0);
 		}
+#ifdef COMPAT_NOLABEL
+		/*
+		 * XXX if this is a 'c' partition then we need to mark the
+		 * label area writeable since there cannot be a label.
+		 */
+		if ((minor(dev) & 7) == 2 && bsw->d_open) {
+			int i, flag;
+
+			for (i = 0; i < nchrdev; i++)
+				if (cdevsw[i].d_open == bsw->d_open)
+					break;
+			if (i != nchrdev && cdevsw[i].d_ioctl) {
+				flag = 1;
+				(void)(*cdevsw[i].d_ioctl)(dev, DIOCWLABEL,
+							   &flag, FWRITE);
+			}
+		}
+#endif
 		if (minsize == 0 || size < minsize)
 			minsize = size;
 		ci->ci_size = size;
