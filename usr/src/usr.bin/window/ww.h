@@ -2,9 +2,12 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Edward Wang at The University of California, Berkeley.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.59 (Berkeley) %G%
+ *	@(#)ww.h	3.60 (Berkeley) %G%
  */
 
 #ifndef POSIX_TTY

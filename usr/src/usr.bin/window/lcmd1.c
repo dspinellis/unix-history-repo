@@ -2,11 +2,14 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Edward Wang at The University of California, Berkeley.
+ *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd1.c	3.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd1.c	3.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"

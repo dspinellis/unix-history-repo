@@ -2,9 +2,12 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Edward Wang at The University of California, Berkeley.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)alias.h	3.7 (Berkeley) %G%
+ *	@(#)alias.h	3.8 (Berkeley) %G%
  */
 
 #define alias var

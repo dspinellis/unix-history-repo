@@ -10,13 +10,13 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * David C. Elliott.
+ * David C. Elliott, of MIPS Computer Systems.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttwyse75.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttwyse75.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"

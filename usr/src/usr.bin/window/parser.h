@@ -2,9 +2,12 @@
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Edward Wang at The University of California, Berkeley.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)parser.h	3.8 (Berkeley) %G%
+ *	@(#)parser.h	3.9 (Berkeley) %G%
  */
 
 #include "value.h"
