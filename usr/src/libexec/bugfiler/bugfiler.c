@@ -1,4 +1,4 @@
-/*	bugfiler.c	4.1	83/05/11	*/
+/*	bugfiler.c	4.2	83/05/23	*/
 /*
  * Bug report processing program.
  * It is designed to be invoked by alias(5) and to be compatible with mh.
@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 char	deliver[] = "/usr/local/lib/mh/deliver";
 char	unixtomh[] = "/usr/local/lib/mh/unixtomh";
@@ -21,7 +21,7 @@ char	logfile[] = "errors/log";
 char	tmpname[] = "BfXXXXXX";
 char	draft[] = "RpXXXXXX";
 
-char	line[BUFSIZ];
+char	buf[8192];
 char	folder[MAXNAMLEN];
 int	num;
 int	msg_prot = 0664;
@@ -36,39 +36,81 @@ main(argc, argv)
 	char *argv[];
 {
 	register char *cp;
+	register int n;
+	int pfd[2];
 
 	if (argc > 3) {
 	usage:
-		fprintf(stderr, "Usage: bugfiler [-d] [maildir]\n");
+		fprintf(stderr, "Usage: bugfiler [-d] [-mmsg_mode] [maildir]\n");
 		exit(1);
 	}
 	while (--argc > 0) {
 		cp = *++argv;
-		if (*cp == '-') while (*++cp)
-			switch (*cp) {
+		if (*cp == '-')
+			switch (cp[1]) {
 			case 'd':
 				debug++;
 				break;
+
+			case 'm':	/* set message protection */
+				n = 0;
+				for (cp += 2; *cp >= '0' && *cp <= '7'; )
+					n = (n << 3) + (*cp++ - '0');
+				msg_prot = n & 0777;
+				break;
+
 			default:
 				goto usage;
 			}
 		else
 			maildir = cp;
 	}
+	if (!debug)
+		freopen(logfile, "a", stderr);
+
 	if (chdir(maildir) < 0) {
 		fprintf(stderr, "can't chdir to %s\n", maildir);
 		exit(1);
 	}
-	if (freopen(logfile, "a", stderr) == NULL)
-		freopen("/dev/null", "w", stderr);
-	exit(process());
+	umask(0);
+
+#ifdef UNIXCOMP
+	/*
+	 * Convert UNIX style mail to mh style by filtering stdin through
+	 * unixtomh.
+	 */
+	if (pipe(pfd) >= 0) {
+		while ((n = fork()) == -1)
+			sleep(5);
+		if (n == 0) {
+			close(pfd[0]);
+			dup2(pfd[1], 1);
+			close(pfd[1]);
+			execl(unixtomh, "unixtomh", 0);
+			_exit(127);
+		}
+		close(pfd[1]);
+		dup2(pfd[0], 0);
+		close(pfd[0]);
+	}
+#endif
+	while (process())
+		;
+	exit(0);
 }
+
+/* states */
+
+#define EOM	0	/* End of message seen */
+#define FLD	1	/* Looking for header lines */
+#define BODY	2	/* Looking for message body lines */
 
 /* defines used for tag attributes */
 
 #define H_REQ 01
-#define H_OPT 02
-#define H_SAV 04
+#define H_SAV 02
+#define H_HDR 04
+#define H_FND 010
 
 #define FROM_I headers[0].h_info
 #define SUBJECT_I headers[1].h_info
@@ -87,86 +129,151 @@ struct header {
 	int	h_flags;
 	char	*h_info;
 } headers[] = {
-	"From",		H_REQ|H_SAV, 0,
-	"Subject",	H_REQ|H_SAV, 0,
+	"From",		H_REQ|H_SAV|H_HDR, 0,
+	"Subject",	H_REQ|H_SAV|H_HDR, 0,
 	"Index",	H_REQ|H_SAV, 0,
-	"Date",		H_OPT|H_SAV, 0,
-	"Message-Id",	H_OPT|H_SAV, 0,
-	"Reply-To",	H_OPT|H_SAV, 0,
-	"Return-Path",	H_OPT|H_SAV, 0,
-	"To",		H_OPT|H_SAV, 0,
-	"Cc",		H_OPT|H_SAV, 0,
+	"Date",		H_SAV|H_HDR, 0,
+	"Message-Id",	H_SAV|H_HDR, 0,
+	"Reply-To",	H_SAV|H_HDR, 0,
+	"Return-Path",	H_SAV|H_HDR, 0,
+	"To",		H_SAV|H_HDR, 0,
+	"Cc",		H_SAV|H_HDR, 0,
 	"Description",	H_REQ,       0,
 	"Repeat-By",	H_REQ,	     0,
-	"Fix",		H_OPT,	     0,
+	"Fix",		0,	     0,
 	0,	0,	0,
 };
+
+struct header *findheader();
 
 process()
 {
 	register struct header *hp;
 	register char *cp;
+	register int c;
 	char *info;
-	int tmp, pfd[2];
-	FILE *fs;
+	int state, tmp;
+	FILE *tfp, *fs;
 
 	/*
 	 * Insure all headers are in a consistent
 	 * state.  Anything left there is free'd.
 	 */
 	for (hp = headers; hp->h_tag; hp++) {
+		hp->h_flags &= ~H_FND;
 		if (hp->h_info) {
-			if (hp->h_info != (char *) 1)
-				free(hp->h_info);
+			free(hp->h_info);
 			hp->h_info = 0;
 		}
 	}
-#ifdef UNIXCOMP
-	/*
-	 * Convert UNIX style mail to mh style by filtering stdin through
-	 * unixtomh.
-	 */
-	if (pipe(pfd) >= 0) {
-		register int n;
-
-		while ((n = fork()) == -1)
-			sleep(5);
-		if (n == 0) {
-			close(pfd[0]);
-			dup2(pfd[1], 1);
-			close(pfd[1]);
-			execl(unixtomh, "unixtomh", 0);
-			_exit(127);
-		}
-		close(pfd[1]);
-		dup2(pfd[0], 0);
-		close(pfd[0]);
-	}
-#endif
 	/*
 	 * Read the report and make a copy.  Must conform to RFC822 and
 	 * be of the form... <tag>: <info>
+	 * Note that the input is expected to be in mh mail format
+	 * (i.e., messages are separated by lines of ^A's).
 	 */
+	while ((c = getchar()) == '\001' && peekc(stdin) == '\001')
+		while (getchar() != '\n')
+			;
+	if (c == EOF)
+		return(0);	/* all done */
+
 	mktemp(tmpname);
-	if ((tmp = creat(tmpname, msg_prot)) < 0)
-		return(1);
-	while ((cp = fgets(line, sizeof(line), stdin)) != NULL) {
-		if (line[0] == '\01')
-			continue;
-		write(tmp, cp, strlen(cp));
-		cp = index(cp, ':');
-		if (cp == 0)
-			continue;
-		*cp++ = '\0';
-		for (hp = headers; hp->h_tag; hp++)
-			if (streq(hp->h_tag, line))
-				break;
-		if (hp->h_tag == 0)
-			continue;
-		if (!(hp->h_flags & H_SAV)) {
-			hp->h_info = (char *) 1;
-			continue;
+	if ((tmp = creat(tmpname, msg_prot)) < 0) {
+		fprintf(stderr, "cannont create %s\n", tmpname);
+		exit(1);
+	}
+	if ((tfp = fdopen(tmp, "w")) == NULL) {
+		fprintf(stderr, "cannot fdopen temp file\n");
+		exit(1);
+	}
+
+	for (state = FLD; state != EOF && state != EOM; c = getchar()) {
+		switch (state) {
+		case FLD:
+			if (c == '\n' || c == '-')
+				goto body;
+			for (cp = buf; c != ':'; c = getchar()) {
+				if (cp < buf+sizeof(buf)-1 && c != '\n' && c != EOF) {
+					*cp++ = c;
+					continue;
+				}
+				*cp = '\0';
+				fputs(buf, tfp);
+				state = EOF;
+				while (c != EOF) {
+					if (c == '\n')
+						if ((tmp = peekc(stdin)) == EOF)
+							break;
+						else if (tmp == '\001') {
+							state = EOM;
+							break;
+						}
+					putc(c, tfp);
+					c = getchar();
+				}
+				fclose(tfp);
+				goto badfmt;
+			}
+			*cp = '\0';
+			fprintf(tfp, "%s:", buf);
+			hp = findheader(buf, state);
+
+			for (cp = buf; ; ) {
+				if (cp >= buf+sizeof(buf)-1) {
+					fprintf(stderr, "field truncated\n");
+					while ((c = getchar()) != EOF && c != '\n')
+						putc(c, tfp);
+				}
+				if ((c = getchar()) == EOF) {
+					state = EOF;
+					break;
+				}
+				putc(c, tfp);
+				*cp++ = c;
+				if (c == '\n')
+					if ((c = peekc(stdin)) != ' ' && c != '\t') {
+						if (c == EOF)
+							state = EOF;
+						else if (c == '\001')
+							state = EOM;
+						break;
+					}
+			}
+			*cp = '\0';
+			cp = buf;
+			break;
+
+		body:
+			state = BODY;
+		case BODY:
+			for (cp = buf; ; c = getchar()) {
+				if (c == EOF) {
+					state = EOF;
+					break;
+				}
+				if (c == '\001' && peekc(stdin) == '\001') {
+					state = EOM;
+					break;
+				}
+				putc(c, tfp);
+				*cp++ = c;
+				if (cp >= buf+sizeof(buf)-1 || c == '\n')
+					break;
+			}
+			*cp = '\0';
+			if ((cp = index(buf, ':')) == NULL)
+				continue;
+			*cp++ = '\0';
+			hp = findheader(buf, state);
 		}
+
+		/*
+		 * Don't save the info if the header wasn't found, we don't
+		 * care about the info, or the header is repeated.
+		 */
+		if (hp == NULL || !(hp->h_flags & H_SAV) || hp->h_info)
+			continue;
 		while (isspace(*cp))
 			cp++;
 		if (*cp) {
@@ -176,47 +283,78 @@ process()
 			while (isspace(cp[-1]))
 				*--cp = '\0';
 			hp->h_info = (char *) malloc(strlen(info) + 1);
-			if (hp->h_info == NULL)
+			if (hp->h_info == NULL) {
+				fprintf(stderr, "ran out of memory\n");
 				continue;
+			}
 			strcpy(hp->h_info, info);
 			if (hp == INDEX)
 				chkindex(hp);
 		}
 	}
-	close(tmp);
+	fclose(tfp);
 	/*
 	 * Verify all the required pieces of information
 	 * are present.
 	 */
-	for (hp = headers; hp->h_tag; hp++)
-		if ((hp->h_flags & H_REQ) && !hp->h_info)
-			break;
-	if (hp->h_tag) {
+	for (hp = headers; hp->h_tag; hp++) {
 		/*
 		 * Mail the bug report back to the sender with a note
 		 * explaining they must conform to the specification.
 		 */
-		if (debug)
-			fprintf(stderr, "Missing %s\n", hp->h_tag);
-		reply(FROM_I, errfile, tmpname);
-		file(tmpname, "errors");
-		return(0);
+		if ((hp->h_flags & H_REQ) && !(hp->h_flags & H_FND)) {
+			if (debug)
+				printf("Missing %s\n", hp->h_tag);
+		badfmt:
+			reply(FROM_I, errfile, tmpname);
+			file(tmpname, "errors");
+			return(state == EOM);
+		}
 	}
-	else {	/* Acknowledge receipt */
-		reply(FROM_I, ackfile, (char *)0);
-		file(tmpname, folder);
-	}
+	/*
+	 * Acknowledge receipt.
+	 */
+	reply(FROM_I, ackfile, (char *)0);
+	file(tmpname, folder);
 	/*
 	 * Append information about the new bug report
 	 * to the summary file.
 	 */
-	if ((fs = fopen(sumfile, "a")) == NULL) {
+	if ((fs = fopen(sumfile, "a")) == NULL)
 		fprintf(stderr, "Can't open %s\n", sumfile);
-		return(1);
+	else {
+		fprintf(fs, "%14.14s/%-3d  ", folder, num);
+		fprintf(fs, "%-51.51s Recv\n", INDEX_I);
+		fprintf(fs, "\t\t    %-51.51s\n", SUBJECT_I);
 	}
-	fprintf(fs, "%14.14s/%-3d  %s\n\t\t    %s\n", folder, num, INDEX_I, SUBJECT_I);
 	fclose(fs);
-	return(0);
+	return(state == EOM);
+}
+
+/*
+ * Lookup the string in the list of headers and return a pointer
+ * to the entry or NULL.
+ */
+
+struct header *
+findheader(name, state)
+	char *name;
+	int state;
+{
+	register struct header *hp;
+
+	if (debug)
+		printf("findheader(%s, %d)\n", name, state);
+
+	for (hp = headers; hp->h_tag; hp++) {
+		if (!streq(hp->h_tag, buf))
+			continue;
+		if ((hp->h_flags & H_HDR) && state != FLD)
+			continue;
+		hp->h_flags |= H_FND;
+		return(hp);
+	}
+	return(NULL);
 }
 
 /*
@@ -227,49 +365,49 @@ process()
 chkindex(hp)
 	struct header *hp;
 {
-	register char *cp1, *cp2, *cp3, *cp4;
+	register char *cp1, *cp2;
 	register char c;
 	struct stat stbuf;
 
 	if (debug)
-		fprintf(stderr, "chkindex(%s)\n", hp->h_info);
+		printf("chkindex(%s)\n", hp->h_info);
+	/*
+	 * Strip of leading "/", "usr/", "src/" or "sys/".
+	 */
+	cp1 = hp->h_info;
+	while (*cp1 == '/')
+		cp1++;
+	while (substr(cp1, "usr/") || substr(cp1, "src/") || substr(cp1, "sys/"))
+		cp1 += 4;
 	/*
 	 * Read the folder name and remove it from the index line.
 	 */
-	for (cp1 = hp->h_info, cp2 = NULL, cp3 = folder, cp4 == NULL; ;) {
-		c = *cp1++;
-		if (c == '\0' || isspace(c) || cp3 >= folder+sizeof(folder)-1) {
-			if (cp4 == NULL)
-				*cp3 = '\0';
-			else
-				*cp4 = '\0';
-			if (cp2 == NULL) {
-				cp2 = cp1 - 1;
-				while (isspace(*cp2))
-					cp2++;
-			}
-			for (cp3 = hp->h_info; *cp3++ = *cp2++; );
+	for (cp2 = folder; ;) {
+		switch (c = *cp1++) {
+		case '/':
+			if (cp2 == folder)
+				continue;
 			break;
-		} else {
-			if (c == '/') {
-				cp2 = cp1;
-				cp4 = cp3;
-			}
-			*cp3++ = c;
+		case '\0':
+			cp1--;
+			break;
+		case ' ':
+		case '\t':
+			while (isspace(*cp1))
+				cp1++;
+			break;
+		default:
+			if (cp2 < folder+sizeof(folder)-1)
+				*cp2++ = c;
+			continue;
 		}
+		*cp2 = '\0';
+		for (cp2 = hp->h_info; *cp2++ = *cp1++; )
+			;
+		break;
 	}
-	/*
-	 * Check to see if a Fix is included.
-	if ((cp1 = rindex(hp->h_info, ' ')) == NULL) {
-		if ((cp1 = rindex(hp->h_info, '\t')) != NULL)
-			cp1++;
-	} else
-		cp1++;
-	if (cp1 != NULL && streq(cp1, FIX.h_tag))
-		FIX.h_flags = H_REQ;
-	else
-		FIX.h_flags = 0;
-	 */
+	if (debug)
+		printf("folder = %s\n", folder);
 	/*
 	 * Check to make sure we have a valid folder name
 	 */
@@ -277,9 +415,9 @@ chkindex(hp)
 		return;
 	/*
 	 * The Index line is not in the correct format so clear
-	 * the h_info line to mail back the correct format.
+	 * the H_FND flag to mail back the correct format.
 	 */
-	hp->h_info = 0;
+	hp->h_flags &= ~H_FND;
 }
 
 /*
@@ -297,7 +435,7 @@ file(fname, folder)
 	struct direct *d;
 
 	if (debug)
-		fprintf(stderr, "file(%s, %s)\n", fname, folder);
+		printf("file(%s, %s)\n", fname, folder);
 	/*
 	 * Get the next number to use by finding the last message number
 	 * in folder and adding one.
@@ -324,12 +462,16 @@ file(fname, folder)
 	if (link(fname, msgname) < 0) {
 		int fin, fout;
 
-		if ((fin = open(fname, 0)) < 0)
+		if ((fin = open(fname, 0)) < 0) {
+			fprintf(stderr, "cannot open %s\n", fname);
 			return;
-		if ((fout = open(msgname, 1)) < 0)
+		}
+		if ((fout = creat(msgname, msg_prot)) < 0) {
+			fprintf(stderr, "cannot create %s\n", msgname);
 			return;
-		while ((n = read(fin, line, sizeof(line))) > 0)
-			write(fout, line, n);
+		}
+		while ((n = read(fin, buf, sizeof(buf))) > 0)
+			write(fout, buf, n);
 		close(fin);
 		close(fout);
 	}
@@ -348,7 +490,8 @@ reply(to, file1, file2)
 	FILE *fout;
 
 	if (debug)
-		fprintf(stderr, "reply(%s, %s, %s)\n", to, file1, file2);
+		printf("reply(%s, %s, %s)\n", to, file1, file2);
+
 	/*
 	 * Create a temporary file to put the message in.
 	 */
@@ -360,7 +503,7 @@ reply(to, file1, file2)
 	/*
 	 * Output the proper header information.
 	 */
-	fprintf(fout, "Reply-To: 4bsd-bugs@BERKELEY\n");
+	fprintf(fout, "Reply-To: 4bsd-bugs%ucbarpa@BERKELEY\n");
 	if (RETURNPATH_I != NULL)
 		to = RETURNPATH_I;
 	if (REPLYTO_I != NULL)
@@ -386,13 +529,13 @@ reply(to, file1, file2)
 	}
 	fprintf(fout, "----------\n");
 	if ((in = open(file1, 0)) >= 0) {
-		while ((w = read(in, line, sizeof(line))) > 0)
-			fwrite(line, 1, w, fout);
+		while ((w = read(in, buf, sizeof(buf))) > 0)
+			fwrite(buf, 1, w, fout);
 		close(in);
 	}
 	if (file2 && (in = open(file2, 0)) >= 0) {
-		while ((w = read(in, line, sizeof(line))) > 0)
-			fwrite(line, 1, w, fout);
+		while ((w = read(in, buf, sizeof(buf))) > 0)
+			fwrite(buf, 1, w, fout);
 		close(in);
 	}
 	fclose(fout);
@@ -448,13 +591,38 @@ fixaddr(text)
  * Compare two strings and convert any upper case letters to lower case.
  */
 
-streq(c1, c2)
-	register char *c1, *c2;
+streq(s1, s2)
+	register char *s1, *s2;
 {
 	register int c;
 
-	while (c = *c1++)
-		if ((c | 040) != (*c2++ | 040))
+	while (c = *s1++)
+		if ((c | 040) != (*s2++ | 040))
 			return(0);
-	return(*c2 == '\0');
+	return(*s2 == '\0');
+}
+
+/*
+ * Return true if string s2 matches the first part of s1.
+ */
+
+substr(s1, s2)
+	register char *s1, *s2;
+{
+	register int c;
+
+	while (c = *s2++)
+		if (c != *s1++)
+			return(0);
+	return(1);
+}
+
+peekc(fp)
+FILE *fp;
+{
+	register c;
+
+	c = getc(fp);
+	ungetc(c, fp);
+	return(c);
 }
