@@ -1,33 +1,39 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwpty.c	3.4 83/12/01";
+static	char *sccsid = "@(#)wwpty.c	3.5 83/12/08";
 #endif
 
 #include "ww.h"
 
 wwgetpty(w)
-	register struct ww *w;
+register struct ww *w;
 {
 	register char c;
-	register char *line;
 	register int i;
-#define PTY "/dev/ptyXX"
+	int tty;
+#define PTY "/dev/XtyXX"
+#define _PT	5
+#define _PQRS	8
+#define _0_9	9
 
+	(void) strcpy(w->ww_ttyname, PTY);
 	for (c = 'p'; c <= 's'; c++) {
-		line = PTY;
-		line[sizeof PTY - 6] = 'p';
-		line[sizeof PTY - 3] = c;
-		line[sizeof PTY - 2] = '0';
-		if (access(line, 0) < 0)
+		w->ww_ttyname[_PT] = 'p';
+		w->ww_ttyname[_PQRS] = c;
+		w->ww_ttyname[_0_9] = '0';
+		if (access(w->ww_ttyname, 0) < 0)
 			break;
 		for (i = 0; i < 16; i++) {
-			line[sizeof PTY - 6] = 'p';
-			line[sizeof PTY - 2] = "0123456789abcdef"[i];
-			w->ww_pty = open(line, 2);
-			if (w->ww_pty >= 0) {
-				line[sizeof PTY - 6] = 't';
-				(void) strcpy(w->ww_ttyname, line);
-				return 0;
+			w->ww_ttyname[_PT] = 'p';
+			w->ww_ttyname[_0_9] = "0123456789abcdef"[i];
+			if ((w->ww_pty = open(w->ww_ttyname, 2)) < 0)
+				continue;
+			w->ww_ttyname[_PT] = 't';
+			if ((tty = open(w->ww_ttyname, 2)) < 0) {
+				(void) close(w->ww_pty);
+				continue;
 			}
+			(void) close(tty);
+			return 0;
 		}
 	}
 	w->ww_pty = -1;
