@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.1 (Berkeley) %G%
+.\"	@(#)0.t	1.2 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
-Measuring and Improving the Performance of UNIX*
+Measuring and Improving the Performance of Berkeley UNIX*
 .sp
-Revised July 16, 1985
+Revised July 16, August 11, 1985
 .AU
 Marshall Kirk McKusick,
 Samuel J. Leffler\(dg,
@@ -22,7 +22,7 @@ University of California, Berkeley
 Berkeley, CA  94720
 .AB
 .FS
-* UNIX is a trademark of Bell Laboratories.
+* UNIX is a trademark of AT&T Bell Laboratories.
 .FE
 .FS
 \(dg Samuel J. Leffler is currently employed by:
@@ -30,7 +30,8 @@ Lucasfilm Ltd., PO Box 2009, San Rafael, CA 94912
 .FE
 .FS
 \(dd Luis Felipe Cabrera is currently employed by:
-???
+Computer Science Department, IBM Research Laboratory, 5600 Cottle Road,
+San Jose, California 95193.
 .FE
 .FS
 This work was done under grants from
@@ -46,7 +47,7 @@ for the VAX\(dd
 \(dd VAX, MASSBUS, UNIBUS, and DEC are trademarks of
 Digital Equipment Corporation.
 .FE
-has several problems that can severely affect the overall
+had several problems that could severely affect the overall
 performance of the system.
 These problems were identified with
 kernel profiling and system tracing during day to day use.
@@ -58,13 +59,13 @@ This paper examines
 the performance problems encountered and describes
 modifications that have been made
 to the system since the initial distribution.
-.pp
+.PP
 The changes to the system have consisted of improvements to the
 performance of the existing facilities,
 as well as enhancements to the current facilities.
 Performance improvements in the kernel include cacheing of path name
 translations, reductions in clock handling and scheduling overhead,
-and improved throughput of the network.
+and improved throughput of the network subsystem.
 Performance improvements in the libraries and utilities include replacement of
 linear searches of system databases with indexed lookup,
 merging of most network services into a single daemon,
@@ -80,6 +81,7 @@ new system management tools,
 and extensions to \fIdbx\fP to work with Pascal.
 The paper concludes with a brief discussion of changes made to
 the system to enhance security.
+All of these enhancements are present in Berkeley UNIX 4.3BSD.
 .AE
 .LP
 .sp 2
@@ -102,7 +104,7 @@ Information Storage \-
 .I "file organization"
 .sp
 Additional Keywords and Phrases:
-UNIX,
+Berkeley UNIX,
 file system organization,
 file system performance,
 file system design,

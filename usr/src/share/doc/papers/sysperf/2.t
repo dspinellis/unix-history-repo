@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	1.1 (Berkeley) %G%
+.\"	@(#)2.t	1.2 (Berkeley) %G%
 .\"
 .ds RH Observation techniques
 .NH
 Observation techniques
 .PP
-There are many tools available for observing the performance
+There are many tools available for monitoring the performance
 of the system.
 Those that we found most useful are described below.
 .NH 2
@@ -26,7 +26,8 @@ By running \fIvmstat\fP
 when the system is active you can judge the system activity in several
 dimensions: job distribution, virtual memory load, paging and swapping
 activity, disk and cpu utilization.
-Ideally, there should be few blocked (b) jobs,
+Ideally, to have a balanced system in activity,
+there should be few blocked (b) jobs,
 there should be little paging or swapping activity, there should
 be available bandwidth on the disk devices (most single arms peak
 out at 25-35 tps in practice), and the user cpu utilization (us) should
@@ -60,7 +61,7 @@ per second and an average of 90 system calls per second.
 If the system is heavily loaded, or if you have little memory
 for your load (1 megabyte is little in our environment), then the system
 may be forced to swap.  This is likely to be accompanied by a noticeable
-reduction in system performance and pregnant pauses when interactive
+reduction in the system responsiveness and long pauses when interactive
 jobs such as editors swap out.
 .PP
 A second important program is \fIiostat\fP\|(1).
