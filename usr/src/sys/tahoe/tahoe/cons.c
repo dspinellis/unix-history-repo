@@ -1,4 +1,4 @@
-/*	cons.c	7.8	91/05/08	*/
+/*	cons.c	7.9	91/05/16	*/
 
 /*
  * Tahoe console processor driver
@@ -141,12 +141,14 @@ cnpostread(unit)
 	cnlast = &cin->cp_hdr;
 }
 
-cnclose(dev)
+cnclose(dev, flag, mode, p)
 	dev_t dev;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp = cntty[minor(dev)];
 
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	ttyclose(tp);
 }
 

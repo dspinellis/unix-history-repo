@@ -1,7 +1,7 @@
 /*
  *  Datakit terminal driver
  *	SCCSID[] = "@(#)dktty.c	1.8 Garage 84/05/14"
- *		   "@(#)dktty.c	1.5 (Berkeley) %G%"
+ *		   "@(#)dktty.c	1.6 (Berkeley) %G%"
  */
 
 #include "dktty.h"
@@ -141,7 +141,7 @@ int  flag;
 		splx(s);
 	}
 
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	if (devDEBUG) log(LOG_ERR, "DKT_clos(%x)\n",dev);
 	dv->d_prot &= ~DpTTY;
 	tp->t_state &= ~TS_CARR_ON;
