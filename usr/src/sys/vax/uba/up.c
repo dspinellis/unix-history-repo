@@ -1,5 +1,6 @@
-/*	%H%	3.11	%G%	*/
+/*	%H%	3.12	%G%	*/
 
+#define	spl5	spl6
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
@@ -333,6 +334,9 @@ register unit;
 		softas |= 1<<unit;
 		return (0);
 	}
+	if (dp->b_active)
+		goto done;
+	dp->b_active = 1;
 	if ((upaddr->upcs2 & 07) != unit) {
 		upaddr->upcs2 = unit;
 		DELAY(sdelay);
@@ -353,9 +357,6 @@ register unit;
 		printf("VV done ds %o, er? %o %o %o\n", upaddr->upds, upaddr->uper1, upaddr->uper2, upaddr->uper3);
 		didie = 1;
 	}
-	if (dp->b_active)
-		goto done;
-	dp->b_active = 1;
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
 		goto done;
 	/*
@@ -544,6 +545,7 @@ upintr()
 	int osoftas;
 	int needie = 1;
 
+	(void) spl6();
 	if (uptab.b_active) {
 		/*
 		 * The drive is transferring, thus the hardware
@@ -629,12 +631,6 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 		 * on this drive with the upustart routine (if any).
 		 */
 		if (uptab.b_active) {
-			if ((upaddr->upcs2 & 07) != unit) {
-				upaddr->upcs2 = unit;
-				DELAY(sdelay);
-				nwaitcs2++;
-			} else
-				neasycs2++;
 			if (uptab.b_errcnt >= 16) {
 				upaddr->upcs1 = RTC|GO|IE;
 				DELAY(idelay);
