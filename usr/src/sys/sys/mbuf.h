@@ -3,11 +3,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	8.1 (Berkeley) %G%
+ *	@(#)mbuf.h	8.2 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
-#include "malloc.h"
+#include <sys/malloc.h>
 #endif
 
 /*
