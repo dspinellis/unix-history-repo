@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -26,8 +26,10 @@ static char sccsid[] = "@(#)deliver.c	5.22 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <netdb.h>
 #include <errno.h>
+#ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
+#endif
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -81,11 +83,13 @@ deliver(firstto, editfcn)
 	if (bitset(QDONTSEND, to->q_flags))
 		return (0);
 
+#ifdef NAMED_BIND
 	/* unless interactive, try twice, over a minute */
 	if (OpMode == MD_DAEMON || OpMode == MD_SMTP) {
 		_res.retrans = 30;
 		_res.retry = 2;
 	}
+#endif NAMED_BIND
 
 # ifdef DEBUG
 	if (tTd(10, 1))
@@ -380,10 +384,12 @@ deliver(firstto, editfcn)
 		editfcn = putmessage;
 	if (ctladdr == NULL)
 		ctladdr = &e->e_from;
+#ifdef NAMED_BIND
 	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
-		} else
-			Nmx = getmxrr(host, MxHosts, buf, &rcode);
-		if (Nmx >= 0) {
+#endif
+		}
+		if (Nmx >= 0)
+		{
 			message(Arpa_Info, "Connecting to %s (%s)...",
 			    MxHosts[0], m->m_name);
 			if ((rcode = smtpinit(m, pv)) == EX_OK) {

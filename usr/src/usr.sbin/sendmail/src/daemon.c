@@ -21,9 +21,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.26 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.27 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.26 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.27 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -301,8 +301,6 @@ clrdaemon()
 **		none.
 */
 
-int	h_errno;	/*this will go away when code implemented*/
-
 makeconnection(host, port, outfile, infile)
 	char *host;
 	u_short port;
@@ -313,13 +311,18 @@ makeconnection(host, port, outfile, infile)
 	register struct hostent *hp = (struct hostent *)NULL;
 	extern char *inet_ntoa();
 	int sav_errno;
+#ifdef NAMED_BIND
+	extern int h_errno;
+#endif
 
 	/*
 	**  Set up the address for the mailer.
 	**	Accept "[a.b.c.d]" syntax for host name.
 	*/
 
+#ifdef NAMED_BIND
 	h_errno = 0;
+#endif
 	errno = 0;
 
 	if (host[0] == '[')
@@ -345,8 +348,14 @@ makeconnection(host, port, outfile, infile)
 		hp = gethostbyname(host);
 		if (hp == NULL)
 		{
+#ifdef NAMED_BIND
 			if (errno == ETIMEDOUT || h_errno == TRY_AGAIN)
 				return (EX_TEMPFAIL);
+
+			/* if name server is specified, assume temp fail */
+			if (errno == ECONNREFUSED && UseNameServer)
+				return (EX_TEMPFAIL);
+#endif
 
 			/*
 			**  XXX Should look for mail forwarder record here
