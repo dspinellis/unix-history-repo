@@ -1,0 +1,63 @@
+.TH RM 1 
+.SH NAME
+rm, rmdir  \- remove (unlink) files
+.SH SYNOPSIS
+.B rm
+[
+.B \-fri
+] file ...
+.PP
+.B rmdir
+dir ...
+.PP
+.SH DESCRIPTION
+.I Rm
+removes the entries for one or more
+files
+from a directory.
+If an entry was the last link to the file, the file
+is destroyed.
+Removal of a file requires write permission in its directory,
+but neither read nor write permission on the file itself.
+.PP
+If a file has no write permission
+and the standard input is a terminal,
+its permissions are printed and a line is read from
+the standard input.
+If that line begins with `y' the file is deleted,
+otherwise the file remains.
+No questions are asked
+when the
+.B \-f
+(force) option is given.
+.PP
+If a designated file is a directory,
+an error comment is printed unless the optional
+argument
+.B \-r
+has been used.
+In that case,
+.I rm
+recursively deletes the
+entire contents of the specified directory,
+and the directory itself.
+.PP
+If the
+.B \-i
+(interactive) option is in effect,
+.I rm
+asks whether to delete each file,
+and, under
+.BR \-r ,
+whether to examine each directory.
+.PP
+.I Rmdir
+removes entries for the named directories,
+which must be empty.
+.SH "SEE ALSO"
+unlink(2)
+.SH DIAGNOSTICS
+Generally self-explanatory.
+It is forbidden to remove the file `..' merely to avoid the
+antisocial consequences of inadvertently doing something like
+`rm \-r .*'.
