@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.15 (Berkeley) %G%
+.\"	@(#)2.t	6.16 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -565,6 +565,9 @@ You should now proceed to the generic part of the installation
 described starting in section 2.5 below.
 Note that where the disk name ``sd'' is used throughout section 2.5,
 you should substitute the name ``rd'' if you are running on an HP-IB disk.
+Also, if you are loading on a single disk with the default disklabel,
+/var should be restored to the ``f'' partition and
+/usr to the ``e'' partition.
 .NH 2
 Booting the SPARC
 .NH 3
@@ -1336,20 +1339,32 @@ and
 .Pn /usr
 filesystems.
 You may also want to extract some or all the program sources.
+Since not all architectures support tape drives or don't support the
+correct ones, you may need to extract the files indirectly using
+.Xr rsh (1).
+For example, for a directly connected tape drive you might do:
+.DS
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP
+.DE
+The equivalent indirect procedure (where the tape drive is on machine ``foo'')
+is:
+.DS
+\fB#\fP \fIrsh foo mt -f /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fIrsh foo dd if=/dev/nr\*(Mt0 bs=40b | tar xbpf 40 -\fP
+.DE
+Obviously, the target machine must be connected to the local network
+for this to work.
+See section 5 if you need hints on how to do this.
 .PP
-Then do the following:
+Assuming a directly connected tape drive, here is how to extract and
+install /var and /usr:
 .br
 .ne 5
 .DS
 .TS
 lw(2i) l.
-\fB#\fP \fImount_mfs -s 1000 -T type /tmp	(create a writable filesystem)
-(\fItype\fP is disk type as determined from /etc/disktab)
-\fB#\fP \fIcd /tmp\fP	(go to writable filesystem)
-\fB#\fP \fI../dev/MAKEDEV \*(Dk#\fP	(create special files for root disk)
-\fB#\fP \fImount -u /tmp/\*(Dk#a /\fP	(read-write mount root filesystem)
-\fB#\fP \fIcd /dev\fP	(go to device directory)
-\fB#\fP \fI./MAKEDEV \*(Dk#\fP	(create permanent special files for root disk)
+\fB#\fP \fImount -u /dev/\*(Dk#a /\fP	(read-write mount root filesystem)
 \fB#\fP \fIdate yymmddhhmm\fP	(set date, see \fIdate\fP\|(1))
 \&....
 \fB#\fP \fIpasswd root\fP	(set password for super-user)
@@ -1361,14 +1376,14 @@ lw(2i) l.
 is the partition; this takes a few minutes)
 \fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var filesystem)
 \fB#\fP \fIcd /var\fP	(make /var the current directory)
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
 \fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user filesystem)
 (as before \fI\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
 is the partition)
 \fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr filesystem)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
 .TE
@@ -1384,8 +1399,8 @@ to extract
 .Pn /var
 it may be repositioned by the following commands.
 .DS
-\fB#\fP \fImt -t /dev/nr\*(Mt0 rew\fP
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf 3\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 rew\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf 3\fP
 .DE
 The data on the fifth tape file has now been extracted.
 If you are using 6250bpi tapes, the first reel of the
@@ -1397,7 +1412,7 @@ point on the 8mm tape.
 lw(2i) l.
 \fB#\fP \fImkdir src\fP	(make directory for source)
 \fB#\fP \fIcd src\fP	(make source directory the current directory)
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the system source)
 (this takes about 5-10 minutes)
 \fB#\fP \fIcd /\fP	(change directory, back to the root)
@@ -1448,7 +1463,7 @@ point on the 8mm tape.
 \fB#\fP \fImkdir /usr/src/sys\fP
 \fB#\fP \fIchmod 755 /usr/src/sys\fP
 \fB#\fP \fIcd /usr/src/sys\fP
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
 .PP
@@ -1461,7 +1476,7 @@ format.  As distributed, X11R5 should be placed in
 .Pn /usr/src/X11R5 .
 .DS
 \fB#\fP \fIcd /usr/src\fP
-\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
 Many of the X11 utilities search using the path /usr/X11,
