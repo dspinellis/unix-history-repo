@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+
 #include <fcntl.h>
 #undef DIRBLKSIZ
 #include <dirent.h>
@@ -30,13 +31,14 @@ static char sccsid[] = "@(#)dev_mkdb.c	5.10 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 
-void error(), usage();
+void	err __P((const char *, ...));
+void	usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
 	register DIR *dirp;
 	register struct dirent *dp;
 	struct stat sb;
@@ -59,16 +61,20 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+	if (argc > 0)
+		usage();
+
 	if (chdir(_PATH_DEV))
-		error(_PATH_DEV);
+		err("%s: %s", _PATH_DEV, strerror(errno));
 
 	dirp = opendir(".");
 
-	(void)snprintf(dbtmp, sizeof(dbtmp), "%s/dev.tmp", _PATH_VARRUN);
-	(void)snprintf(dbname, sizeof(dbtmp), "%s/dev.db", _PATH_VARRUN);
-	db = dbopen(dbtmp, O_CREAT|O_WRONLY|O_EXCL, DEFFILEMODE, DB_HASH, NULL);
-	if (!db)
-		error(dbtmp);
+	(void)snprintf(dbtmp, sizeof(dbtmp), "%sdev.tmp", _PATH_VARRUN);
+	(void)snprintf(dbname, sizeof(dbtmp), "%sdev.db", _PATH_VARRUN);
+	db = dbopen(dbtmp, O_CREAT|O_EXLOCK|O_TRUNC|O_WRONLY,
+	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, DB_HASH, NULL);
+	if (db == NULL)
+		err("%s: %s", dbtmp, strerror(errno));
 
 	/*
 	 * Keys are a mode_t followed by a dev_t.  The former is the type of
@@ -79,8 +85,8 @@ main(argc, argv)
 	data.data = buf;
 	while (dp = readdir(dirp)) {
 		if (stat(dp->d_name, &sb)) {
-			(void)fprintf(stderr, "dev_mkdb: can't stat %s\n",
-				dp->d_name);
+			(void)fprintf(stderr,
+			    "dev_mkdb: %s: %s\n", dp->d_name, strerror(errno));
 			continue;
 		}
 
@@ -101,23 +107,12 @@ main(argc, argv)
 		buf[dp->d_namlen] = '\0';
 		data.size = dp->d_namlen + 1;
 		if ((db->put)(db, &key, &data, 0))
-			error(dbtmp);
+			err("dbput %s: %s\n", dbtmp, strerror(errno));
 	}
 	(void)(db->close)(db);
-	if (rename(dbtmp, dbname)) {
-		(void)fprintf(stderr, "dev_mkdb: %s to %s: %s.\n",
-		    dbtmp, dbname, strerror(errno));
-		exit(1);
-	}
+	if (rename(dbtmp, dbname))
+		err("rename %s to %s: %s", dbtmp, dbname, strerror(errno));
 	exit(0);
-}
-
-void
-error(n)
-	char *n;
-{
-	(void)fprintf(stderr, "dev_mkdb: %s: %s\n", n, strerror(errno));
-	exit(1);
 }
 
 void
@@ -125,4 +120,33 @@ usage()
 {
 	(void)fprintf(stderr, "usage: dev_mkdb\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "dev_mkdb: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
