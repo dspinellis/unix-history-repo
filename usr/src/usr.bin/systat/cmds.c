@@ -5,21 +5,27 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Command support.
  */
 
-#include "systat.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 #include <ctype.h>
+#include <string.h>
+#include "systat.h"
+#include "extern.h"
 
+void
 command(cmd)
         char *cmd;
 {
-        register char *cp;
         register struct cmdtab *p;
+        register char *cp;
 	int interval, omask;
 
 	omask = sigblock(sigmask(SIGALRM));
@@ -32,7 +38,7 @@ command(cmd)
 	for (; *cp && isspace(*cp); cp++)
 		;
         if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0)
-                die();
+                die(0);
 	if (strcmp(cmd, "load") == 0) {
 		load();
 		goto done;
@@ -70,7 +76,7 @@ command(cmd)
 	if (interval > 0) {
                 alarm(0);
                 naptime = interval;
-                display();
+                display(0);
                 status();
 		goto done;
         }
@@ -102,7 +108,7 @@ command(cmd)
 		}
                 curcmd = p;
 		labels();
-                display();
+                display(0);
                 status();
 		goto done;
         }
@@ -141,6 +147,7 @@ lookup(name)
 	return (found);
 }
 
+void
 status()
 {
 
@@ -149,27 +156,29 @@ status()
 }
 
 void
-suspend()
+suspend(signo)
+	int signo;
 {
-        int oldmask;
 	extern sig_t sigtstpdfl;
+        int oldmask;
 
 	alarm(0);
         move(CMDLINE, 0);
         refresh();
         echo();
         nocrmode();
-        signal(SIGTSTP, sigtstpdfl);
+        (void)signal(SIGTSTP, sigtstpdfl);
         oldmask = sigsetmask(0);
         kill(getpid(), SIGTSTP);
         sigsetmask(oldmask);
-        signal(SIGTSTP, suspend);
+        (void)signal(SIGTSTP, suspend);
         crmode();
         noecho();
         move(CMDLINE, col);
 	alarm(naptime);
 }
 
+int
 prefix(s1, s2)
         register char *s1, *s2;
 {
