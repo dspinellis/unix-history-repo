@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.9	{Berkeley}	%G%
+#	@(#)Makefile	5.10	{Berkeley}	%G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
@@ -35,7 +35,7 @@ backgammon.doc: backgammon.src
 	nroff -man -Tcrt backgammon.src > backgammon.doc
 
 clean: FRC
-	rm -f ${TOBJS} ${BOBJS} core teachgammon backgammmon backgammon.doc
+	rm -f ${TOBJS} ${BOBJS} core teachgammon backgammon backgammon.doc
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
