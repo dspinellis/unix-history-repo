@@ -1,6 +1,18 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static	char sccsid[] = "@(#)comsat.c	4.14 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)comsat.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <sys/types.h>
 #include <sys/socket.h>
