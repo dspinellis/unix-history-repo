@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_xxx.c	7.2.1.1 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,9 +37,6 @@ sethostid()
 		long	hostid;
 	} *uap = (struct a *)u.u_ap;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	hostid = uap->hostid;
 }
 
 gethostname()
@@ -62,7 +59,6 @@ sethostname()
 		u_int	len;
 	} *uap = (struct a *)u.u_ap;
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
 	if (uap->len > sizeof (hostname) - 1) {
 		u.u_error = EINVAL;
@@ -79,7 +75,4 @@ reboot()
 		int	opt;
 	};
 
-	if (u.u_error = suser(u.u_cred, &u.u_acflag))
-		return;
-	boot(((struct a *)u.u_ap)->opt);
 }
