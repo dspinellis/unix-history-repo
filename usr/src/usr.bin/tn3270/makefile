@@ -129,7 +129,7 @@ SYS	= sys_curses
 
 # The places where the various components live...
 
-SUBDIR =	api apilib ascii ctlr general ${SYS}
+SUBDIR =	api ascii ctlr general ${SYS}
 
 # The following are directories we don't do regular make's in, but
 # we do make everywhere, print, and sourcelist in.
@@ -137,10 +137,8 @@ SUBDIR =	api apilib ascii ctlr general ${SYS}
 EXTRADIR =	arpa sys_dos tools utilities
 
 # The libraries we use.  The order here is important.
-# ctlrlib.a and syslib.a should come first, then apiliblib.a
-# then the rest.
-SUBLIB =	ctlr/ctlrlib.a ${SYS}/syslib.a \
-		api/apilib.a \
+# syslib.a and ctlrlib.a should come first, then the rest.
+SUBLIB =	${SYS}/syslib.a ctlr/ctlrlib.a \
 		ascii/asciilib.a general/generallib.a
 
 .s.o:
@@ -155,21 +153,21 @@ FRC:
 	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} "CFLAGS=${CFLAGS}"); done
 
-tn3270$X:	telnet$O ${SUBLIB} apilib/apiliblib.a
+tn3270$X:	telnet$O ${SUBLIB} api/apilib.a
 	${CC} ${CFLAGS} -o tn3270 telnet$O \
-		$L ${SUBLIB} apilib/apiliblib.a $(LIBCURSES) $(LIBTERM)
+		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM)
 
 #PC_tn3270$X:
 #PC_	link <@<
 #PC_	telnet
 #PC_	tn3270
 #PC_	nul
-#PC_	${SUBLIB} apilib/apiliblib.a+
+#PC_	${SUBLIB} api/apilib.a+
 #PC_	\lib\ublib\ubtcp
 #PC_	_PC_<
 
 mset$X:	mset$O ascii/map3270$O
-	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L apilib/apiliblib.a
+	${CC} ${CFLAGS} -o mset mset$O ascii/map3270$O $L api/apilib.a
 
 telnet$O:	$(TNMAIN)
 	$(CC) $(CFLAGS) -DTN3270 -c $(TNMAIN)
