@@ -1,4 +1,4 @@
-/*	dvar.c	1.9	83/12/18
+/*	dvar.c	1.10	84/02/27
  *
  * Varian driver for the new troff
  *
@@ -80,7 +80,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.9	83/12/18";
+char	SccsId[]= "dvar.c	1.10	84/02/27";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -570,6 +570,7 @@ fileinit()
 }
 
 
+#ifdef DEBUGABLE
 fontprint(i)	/* debugging print of font i (0,...) */
 {
 	int j, n;
@@ -598,6 +599,7 @@ fontprint(i)	/* debugging print of font i (0,...) */
 	}
 	fprintf(stderr,"\n");
 }
+#endif
 
 
 loadfont(n, s, s1)	/* load font info for font s on position n (0...) */
@@ -619,8 +621,9 @@ char *s, *s1;
 		register char *c;			    /* somewhere else */
 
 #define ptrswap(x, y) { c = (char*) (x); x = y; y = c; }
+#define ptrfswap(x, y) { c = (char*) (x); x = y; y = (struct font *) c; }
 
-		ptrswap(fontbase[n], fontbase[fin]);
+		ptrfswap(fontbase[n], fontbase[fin]);
 		ptrswap(codetab[n], codetab[fin]);
 		ptrswap(widtab[n], widtab[fin]);
 		ptrswap(fitab[n], fitab[fin]);
@@ -910,24 +913,26 @@ int c;
 	if (i != 0) {			/* it's on this font */
 		p = codetab[font];	/* get the printing value of ch */
 		pw = widtab[font];	/* get the width */
-	} else		/* on another font (we hope) */
-		for (k=font, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
+	} else {		/* on another font - run down the font list */
+		for (j=0; j++ <= nfonts; k = (k+1) % (nfonts+1)) {
 			if (fitab[k] == 0)
 				continue;
-			if ((i = fitab[k][c] & BMASK) != 0) {
+			if ((i=fitab[k][c] & BMASK) != 0) {
 				p = codetab[k];
 				pw = widtab[k];
 				setfont(k);
 				break;
 			}
 		}
+	}
 
-	if (i == 0 || (code = p[i] & BMASK) == 0 || k > nfonts) {
+	if (i == 0) {
 #ifdef DEBUGABLE
 		if (dbg) fprintf(stderr,"not found 0%o\n", c+32);
 #endif
 		return;
 	}
+	code = p[i] & BMASK;
 #ifdef DEBUGABLE
 	if (dbg) {
 		if (isprint(c+32))
