@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	8.13 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	8.14 (Berkeley) %G%
  */
 
 /*
@@ -527,6 +527,7 @@ kernfs_readdir(ap)
 kernfs_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
+		struct proc *a_p;
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
@@ -538,6 +539,7 @@ kernfs_inactive(ap)
 	 * Clear out the v_type field to avoid
 	 * nasty things happening in vgone().
 	 */
+	VOP_UNLOCK(vp, 0, ap->a_p);
 	vp->v_type = VNON;
 	return (0);
 }
