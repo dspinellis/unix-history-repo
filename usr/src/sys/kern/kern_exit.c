@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exit.c	7.18 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -85,9 +85,13 @@ exit(rv)
 	 * a vfork(), instead give the resources back to
 	 * the parent.
 	 */
-	if ((p->p_flag & SVFORK) == 0)
+	if ((p->p_flag & SVFORK) == 0) {
+#ifdef MAPMEM
+		if (u.u_mmap)
+			mmexit();
+#endif
 		vrelvm();
-	else {
+	} else {
 		p->p_flag &= ~SVFORK;
 		wakeup((caddr_t)p);
 		while ((p->p_flag & SVFDONE) == 0)
@@ -132,7 +136,6 @@ exit(rv)
 	if (p->p_tracep)
 		vrele(p->p_tracep);
 #endif
-	/*
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer
