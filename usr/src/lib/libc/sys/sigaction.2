@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sigaction.2	6.5 (Berkeley) %G%
+.\"	@(#)sigaction.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGACTION 2
@@ -23,7 +23,7 @@ struct sigaction {
 .Fn sigaction "int sig" "struct sigaction *act" "struct sigaction *oact"
 .Sh DESCRIPTION
 The system defines a set of signals that may be delivered to a process.
-Signal delivery resembles the occurence of a hardware interrupt:
+Signal delivery resembles the occurrence of a hardware interrupt:
 the signal is blocked from further occurrence, the current process 
 context is saved, and a new one is built.  A process may specify a
 .Em handler
@@ -122,6 +122,13 @@ See the signal list below for each signal's default action.
 If
 .Fa sa_handler
 is
+.Dv SIG_DFL ,
+the default action for the signal is to discard the signal,
+and if a signal is pending,
+the pending signal is discarded even if the signal is masked.
+If
+.Fa sa_handler
+is set to
 .Dv SIG_IGN
 current and pending instances
 of the signal are ignored and discarded.
@@ -145,12 +152,13 @@ bit is set in
 the system will deliver the signal to the process on a
 .Em "signal stack" ,
 specified with
-.Xr sigaltstack 2 .
+.Xr sigstack 2 .
 .Pp
 If a signal is caught during the system calls listed below,
 the call may be forced to terminate
 with the error
 .Dv EINTR ,
+the call may return with a data transfer shorter than requested,
 or the call may be restarted.
 Restart of pending calls is requested
 by setting the
@@ -158,6 +166,7 @@ by setting the
 bit in
 .Ar sa_flags .
 The affected system calls include
+.Xr open 2 ,
 .Xr read 2 ,
 .Xr write 2 ,
 .Xr sendto 2 ,
@@ -240,34 +249,56 @@ The mask specified in
 is not allowed to block
 .Dv SIGKILL
 or
-.Dv SIGSTOP
+.Dv SIGSTOP .
 This is done silently by the system.
 .Sh RETURN VALUES
 A 0 value indicated that the call succeeded.  A \-1 return value
 indicates an error occurred and
 .Va errno
 is set to indicated the reason.
-.Sh ERROR
+.Sh EXAMPLE
+The handler routine can be declared:
+.Bd -literal -offset indent
+void handler(sig, code, scp)
+int sig, code;
+struct sigcontext *scp;
+.Ed
+.Pp
+Here
+.Fa sig
+is the signal number, into which the hardware faults and traps are
+mapped.
+.Em Code
+is a parameter that is either a constant
+or the code provided by
+the hardware.
+.Fa Scp
+is a pointer to the
+.Fa sigcontext
+structure (defined in
+.Aq Pa signal.h ) ,
+used to restore the context from before the signal.
+.Sh ERRORS
 .Fn Sigaction
 will fail and no new signal handler will be installed if one
 of the following occurs:
-.Tw Er
-.Tl Bq Er EFAULT
+.Bl -tag -width Er
+.It Bq Er EFAULT
 Either
 .Fa act
 or 
 .Fa oact
 points to memory that is not a valid part of the process
 address space.
-.Tl Bq Er EINVAL
+.It Bq Er EINVAL
 .Fa Sig
 is not a valid signal number.
-.Tl Bq Er EINVAL
+.It Bq Er EINVAL
 An attempt is made to ignore or supply a handler for
-.Em SIGKIL
+.Em SIGKILL
 or
 .Dv SIGSTOP
-.Tl
+.El
 .Sh STANDARD
 The
 .Nm sigaction
@@ -292,7 +323,7 @@ as are the signals,
 .Dv SIGWINCH ,
 and
 .Dv SIGINFO .
-Most of those signals are available on most
+Those signals are available on most
 .Tn BSD Ns \-derived
 systems.
 .Sh SEE ALSO
@@ -300,43 +331,14 @@ systems.
 .Xr ptrace 2 ,
 .Xr kill 2 ,
 .Xr sigaction 2 ,
-.Xr sigaltstack 2 ,
 .Xr sigprocmask 2 ,
-.Em sigsetops 2 ,
+.Xr sigsetops 2 ,
 .Xr sigsuspend 2 ,
 .Xr sigblock 2 ,
 .Xr sigsetmask 2 ,
 .Xr sigpause 2 ,
+.Xr sigstack 2 ,
 .Xr sigvec 2 ,
 .Xr setjmp 3 ,
-.Em siginterrupt 3 ,
+.Xr siginterrupt 3 ,
 .Xr tty 4
-.Sh EXAMPLE
-On a
-.Tn VAX\-11,
-the handler routine can be declared:
-.Bd -literal -offset indent
-void handler(sig, code, scp)
-int sig, code;
-struct sigcontext *scp;
-.Ed
-.Pp
-Here
-.Fa sig
-is the signal number, into which the hardware faults and traps are
-mapped as defined below. 
-.Em Code
-is a parameter that is either a constant
-as given below or the code provided by
-the hardware (Compatibility mode faults are distinguished from the
-other
-.Dv SIGILL
-traps by having
-.Dv PSL_CM
-set in the psl).
-.Fa Scp
-is a pointer to the
-.Fa sigcontext
-structure (defined in
-.Aq Pa signal.h ) ,
-used to restore the context from before the signal.
