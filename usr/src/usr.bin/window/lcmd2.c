@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.8 %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.9 %G%";
 #endif
 
 #include "defs.h"
@@ -198,7 +198,7 @@ struct lcmd_arg arg_shell[] = {
 l_shell(v, a)
 	struct value *v, *a;
 {
-	register char **pp, *p;
+	register char **pp;
 	register struct value *vp;
 
 	if (a->v_type == V_ERR) {
@@ -277,8 +277,9 @@ l_alias(v, a)
 				for (p = vp->v_str; *q++ = *p++;)
 					;
 			q[-1] = 0;
-			if ((ap = alias_set(a[0].v_str, 0)) == 0) {
+			if ((ap = alias_set(a[0].v_str, (char *)0)) == 0) {
 				p_memerror();
+				str_free(str);
 				return;
 			}
 			ap->a_buf = str;
