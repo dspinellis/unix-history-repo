@@ -23,7 +23,7 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\" $Id$
+.\" $Id: chkconfig.8,v 1.1 1993/11/11 05:25:28 wollman Exp $
 .\"
 .Dd November 10, 1993
 .Dt CHKCONFIG 8
@@ -38,6 +38,10 @@
 .Nm chkconfig
 .Op Fl d Ar dirname
 .Op Fl v
+.Ar option
+.Nm chkconfig
+.Op Fl d Ar dirname
+.Fl o
 .Ar option
 .Nm chkconfig
 .Op Fl d Ar dirname
@@ -65,7 +69,7 @@ By convention, configuration file names do not contain dots (which are
 reserved for files containing command-line options for various
 programs), but this is not strictly enforced.
 .Pp
-There are three forms of the
+There are four forms of the
 .Nm chkconfig
 command.  The first form, with no
 .Ar option
@@ -79,7 +83,9 @@ The second form, with only a
 argument (and no state) specified, retrieves the current value of the
 specified option.  If the appropriate file exists and contains only
 the word ``on'', then the option is considered to be on; otherwise it
-is considered to be off.  If the
+is considered to be off.  Comments are allowed, using the `#'
+character, but must begin in the first column of the file.
+If the
 .Fl v
 flag is specified,
 .Nm chkconfig
@@ -88,7 +94,18 @@ displays the status on the standard output.  In either case,
 exits with a status of zero (true) if the option is on, or 1 (false)
 otherwise.
 .Pp
-The third form, with both
+The third form, with the
+.Fl o
+flag specified, does not actually have anything to do with options,
+but was included in
+.Nm chkconfig
+for convenience.  It looks in the configuration directory for a file
+named
+.Ar option Ns No .flags ,
+and skips any comment lines, then prints the next line on the standard
+output.
+.Pp
+The fourth form, with both
 .Ar option
 and
 .Ar state

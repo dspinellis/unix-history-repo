@@ -26,7 +26,7 @@
  */
 
 const char chkconfig_c_rcsid[] =
-  "$Id$";
+  "$Id: chkconfig.c,v 1.1 1993/11/11 05:25:28 wollman Exp $";
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +38,7 @@ const char chkconfig_c_rcsid[] =
 #include "paths.h"
 
 static int testvalue(const char *);
+static int getflags(const char *);
 static int setvalue(const char *, int);
 static int printvalues(void);
 static void usage(void);
@@ -47,6 +48,7 @@ static int is_on(const char *);
 const char *whoami;
 static const char *configdir = _PATH_CONFIG;
 static int sortbystate = 0;
+static int doflags = 0;
 static int force = 0;
 static int verbose = 0;
 
@@ -55,8 +57,11 @@ int main(int argc, char **argv) {
 
   whoami = argv[0];
 
-  while((opt = getopt(argc, argv, "sfd:v")) != EOF) {
+  while((opt = getopt(argc, argv, "osfd:v")) != EOF) {
     switch(opt) {
+    case 'o':
+      doflags = 1;
+      break;
     case 's':
       sortbystate = 1;
       break;
@@ -93,7 +98,7 @@ int main(int argc, char **argv) {
     return printvalues();
 
   case 1:
-    return testvalue(argv[optind]);
+    return doflags ? getflags(argv[optind]) : testvalue(argv[optind]);
 
   case 2:
     return setvalue(argv[optind], is_on(argv[optind + 1]));
@@ -116,8 +121,8 @@ static void chat(const char *str, int state) {
     printf("`%s' is %s.\n", str, state ? "ON" : "OFF");
 }
 
-static const char *confname(const char *str) {
-  int len = strlen(configdir) + strlen(str) + 2;
+static const char *confname(const char *str, const char *str2) {
+  int len = strlen(configdir) + strlen(str) + strlen(str2) + 2;
   char *rv = malloc(len);
 
   if(!rv) {
@@ -128,6 +133,7 @@ static const char *confname(const char *str) {
   strcpy(rv, configdir);
   strcat(rv, "/");
   strcat(rv, str);
+  strcat(rv, str2);
   return rv;
 }
 
@@ -137,10 +143,12 @@ static int testvalue(const char *str) {
   const char *fname;
   int rv = 1;			/* NB: shell's convention is opposite C's */
 
-  fname = confname(str);
+  fname = confname(str, "");
   fp = fopen(fname, "r");
   if(fp) {
-    line = fgetline(fp, (size_t *)0);
+    do {
+      line = fgetline(fp, (size_t *)0);
+    } while(line && line[0] == '#');
     rv = !is_on(line);		/* shell's convention is opposite C's */
     fclose(fp);
   }
@@ -150,11 +158,35 @@ static int testvalue(const char *str) {
   return rv;
 }
 
+static int getflags(const char *str) {
+  FILE *fp;
+  char *line;
+  const char *fname;
+  int rv = 0;
+
+  fname = confname(str, ".flags");
+  fp = fopen(fname, "r");
+  if(fp) {
+    do {
+      line = fgetline(fp, (size_t *)0);
+    } while(line && line[0] == '#');
+
+    if(line) {
+      fputs(line, stdout);
+      fputc('\n', stdout);
+    }
+
+    fclose(fp);
+  }
+  free((void *)fname);
+  return 0;
+}
+
 static int setvalue(const char *str, int state) {
   FILE *fp;
   const char *fname;
 
-  fname = confname(str);
+  fname = confname(str, "");
   errno = 0;
   fp = fopen(fname, "r");
   if(!fp && !force) {
