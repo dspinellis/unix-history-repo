@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.24 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -173,6 +173,7 @@ again:
 ptswrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
@@ -437,6 +438,7 @@ ptcselect(dev, rw, p)
 ptcwrite(dev, uio, flag)
 	dev_t dev;
 	register struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register u_char *cp;
