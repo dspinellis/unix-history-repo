@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.48 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.49 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.48 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.49 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1088,7 +1088,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_flags |= EF_INQUEUE;
 
 		/* if this has been tried recently, let it be */
-		if (e->e_ntries > 0 && (curtime() - e->e_dtime) > MinQueueAge)
+		if (e->e_ntries > 0 && (curtime() - e->e_dtime) < MinQueueAge)
 		{
 			char *howlong = pintvl(curtime() - e->e_dtime, TRUE);
 
