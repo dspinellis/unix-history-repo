@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.2 (Berkeley) 83/07/07";
+static char sccsid[] = "@(#)main.c	4.3 (Berkeley) 83/07/07";
 #endif
 
 /*
@@ -149,7 +149,7 @@ main(argc, argv)
 		if (getname()) {
 			alarm(0);
 			signal(SIGALRM, SIG_DFL);
-			if (!(upper||lower||digit))
+			if (!(upper || lower || digit))
 				continue;
 			allflags = setflags(2);
 			tmode.sg_flags = allflags & 0xffff;
@@ -164,6 +164,7 @@ main(argc, argv)
 			ioctl(0, TIOCSLTC, &ltc);
 			ioctl(0, TIOCLSET, &allflags);
 			putchr('\n');
+			oflush();
 			makeenv(env);
 			signal(SIGINT, SIG_DFL);
 			execle(LO, "login", name, (char *)0, env);
@@ -184,7 +185,7 @@ getname()
 	char cs;
 
 	/*
-	 * interrupt may happen if we use CBREAK mode
+	 * Interrupt may happen if we use CBREAK mode
 	 */
 	if (setjmp(intrupt)) {
 		signal(SIGINT, SIG_IGN);
@@ -207,16 +208,16 @@ getname()
 			exit(0);
 		if ((c = cs&0177) == 0)
 			return (0);
-		if (c==EOT)
+		if (c == EOT)
 			exit(1);
-		if (c=='\r' || c=='\n' || np >= &name[16])
+		if (c == '\r' || c == '\n' || np >= &name[16])
 			break;
 
-		if (c>='a' && c <='z')
+		if (c >= 'a' && c <= 'z')
 			lower++;
-		else if (c>='A' && c<='Z') {
+		else if (c >= 'A' && c <= 'Z') {
 			upper++;
-		} else if (c==ERASE || c=='#' || c=='\b') {
+		} else if (c == ERASE || c == '#' || c == '\b') {
 			if (np > name) {
 				np--;
 				if (tmode.sg_ospeed >= B1200)
@@ -225,7 +226,7 @@ getname()
 					putchr(cs);
 			}
 			continue;
-		} else if (c==KILL || c=='@') {
+		} else if (c == KILL || c == '@') {
 			putchr(cs);
 			putchr('\r');
 			if (tmode.sg_ospeed < B1200)
