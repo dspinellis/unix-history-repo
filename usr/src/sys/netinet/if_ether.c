@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ether.c	7.14 (Berkeley) %G%
+ *	@(#)if_ether.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -339,7 +339,7 @@ in_arpinput(m)
 	register struct ether_arp *ea;
 	register struct arpcom *ac = (struct arpcom *)m->m_pkthdr.rcvif;
 	struct ether_header *eh;
-	register struct llinfo_arp *la;
+	register struct llinfo_arp *la = 0;
 	register struct rtentry *rt;
 	struct in_ifaddr *ia, *maybe_ia = 0;
 	struct mbuf *mcopy = 0;
