@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)create.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)create.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ cwalk(parent, tail)
 
 	*tail++ = '/';
 	dir_cnt = scandir(".", &dir_list, NULL, alphasort);
-	if (dir_cnt == -1 || xflag && stat(".", &sbuf)) {
+	if (dir_cnt == -1 || xflag && lstat(".", &sbuf)) {
 		(void)fprintf(stderr, "mtree: %s: %s\n", path + 2,
 		    strerror(errno));
 			exit(1);
@@ -54,7 +54,7 @@ cwalk(parent, tail)
 		    (!dp->d_name[1] || dp->d_name[1] == '.' && !dp->d_name[2]))
 			continue;
 		bcopy(dp->d_name, tail, dp->d_namlen + 1);
-		if (stat(dp->d_name, &sbuf)) {
+		if (lstat(dp->d_name, &sbuf)) {
 			(void)fprintf(stderr, "mtree: %s: %s\n",
 			    path + 2, strerror(errno));
 			exit(1);
