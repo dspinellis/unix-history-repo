@@ -3,11 +3,11 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.2 (Berkeley) %G%
+#	@(#)Makefile	6.3 (Berkeley) %G%
 #
 SRCS=	bibdoc.ms
 MACROS=	-i char.macros -ms
-PRINTER=Plp
+PRINTER=Pps
 BIB=	bib
 TROFF=	ditroff -${PRINTER}
 
