@@ -1,4 +1,4 @@
-/*	conf.c	4.22	%G%	*/
+/*	conf.c	4.23	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,13 +43,14 @@ int	htopen(),htclose(),htstrategy(),htread(),htwrite(),htdump();
 
 #include "rk.h"
 #if NHK > 0
-int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump();
+int	rkstrategy(),rkread(),rkwrite(),rkintr(),rkdump(),rkreset();
 #else
 #define	rkstrategy	nodev
 #define	rkread		nodev
 #define	rkwrite		nodev
 #define	rkintr		nodev
 #define	rkdump		nodev
+#define	rkreset		nodev
 #endif
 
 #include "te.h"
@@ -232,7 +233,7 @@ struct cdevsw	cdevsw[] =
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
 	nulldev,	nulldev,	rkread,		rkwrite,	/*11*/
-	nodev,		nodev,		nulldev,	0,
+	nodev,		nodev,		rkreset,	0,
 	dhopen,		dhclose,	dhread,		dhwrite,	/*12*/
 	dhioctl,	dhstop,		dhreset,	dh11,
 	nulldev,	nulldev,	upread,		upwrite,	/*13*/
