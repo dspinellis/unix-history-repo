@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.20 (Berkeley) %G%
+ *	@(#)ip_input.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1004,12 +1004,12 @@ ip_forward(m, srcrt)
 	    (rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
 	    satosin(rt_key(rt))->sin_addr.s_addr != 0 &&
 	    ipsendredirects && !srcrt) {
-		struct in_ifaddr *ia;
+#define	RTA(rt)	((struct in_ifaddr *)(rt->rt_ifa))
 		u_long src = ntohl(ip->ip_src.s_addr);
 		u_long dst = ntohl(ip->ip_dst.s_addr);
 
-		if ((ia = ifptoia(m->m_pkthdr.rcvif)) &&
-		   (src & ia->ia_subnetmask) == ia->ia_subnet) {
+		if (RTA(rt) &&
+		    (src & RTA(rt)->ia_subnetmask) == RTA(rt)->ia_subnet) {
 		    if (rt->rt_flags & RTF_GATEWAY)
 			dest = satosin(rt->rt_gateway)->sin_addr;
 		    else
@@ -1020,7 +1020,6 @@ ip_forward(m, srcrt)
 		     * on the attached net (!), use host redirect.
 		     * (We may be the correct first hop for other subnets.)
 		     */
-#define	RTA(rt)	((struct in_ifaddr *)(rt->rt_ifa))
 		    type = ICMP_REDIRECT;
 		    if ((rt->rt_flags & RTF_HOST) ||
 		        (rt->rt_flags & RTF_GATEWAY) == 0)
