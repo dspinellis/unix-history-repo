@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.36 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.37 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -97,7 +97,7 @@ DM`'ifdef(`MASQUERADE_NAME', MASQUERADE_NAME, $j)
 
 # class L: names that should be delivered locally, even if we have a relay
 # class E: names that should be exposed as from this host, even if we masquerade
-CLroot
+#CLroot
 CEroot
 undivert(5)dnl
 
