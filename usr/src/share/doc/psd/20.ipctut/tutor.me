@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tutor.me	6.6 (Berkeley) %G%
+.\"	@(#)tutor.me	6.7 (Berkeley) %G%
 .\"
 .oh 'Introductory 4.3BSD IPC''PS1:7-%'
 .eh 'PS1:7-%''Introductory 4.3BSD IPC'
@@ -233,10 +233,11 @@ After the fork, both parent's and child's descriptor tables point to
 the pipe.
 The child can then use the pipe to send a message to the parent.
 .(z
--
-.bl 5.8i
--
-.\" pipe.grn goes here
+.ns
+.GS C
+height 6i
+file pipe.grn
+.GE
 .sp
 .ce 1
 Figure 2\ \ Sharing a pipe between parent and child
@@ -311,10 +312,10 @@ for some of its definitions.
 Figure 3\ \ Use of a socketpair
 .)z
 .(z
--
-.bl 5.8i
--
-.\" socketpair.grn goes here
+.GS C
+height 6i
+file socketpair.grn
+.GE
 .sp
 .ce 1
 Figure 4\ \ Sharing a socketpair between parent and child
@@ -613,10 +614,10 @@ Figure 7b\ \ Accepting an Internet domain stream connection
 Figure 7c\ \ Using select() to check for pending connections
 .)z
 .(z
--
-.bl 5.8i
--
-.\" accept.grn goes here
+.GS C
+height 6i
+file accept.grn
+.GE
 .sp
 .ce 1
 Figure 8\ \ Establishing a stream connection
