@@ -1,0 +1,118 @@
+ADD_STATE	dfa.c	/^#define ADD_STATE(state) \\$/
+CHECK_ACCEPT	dfa.c	/^#define CHECK_ACCEPT(state) \\$/
+IS_MARKED	dfa.c	/^#define IS_MARKED(state) (trans1[state] < 0)$/
+MARK_STATE	dfa.c	/^#define MARK_STATE(state) \\$/
+Mmain	main.c	/^int main( argc, argv )$/
+PUT_ON_STACK	dfa.c	/^#define PUT_ON_STACK(state) \\$/
+STACK_STATE	dfa.c	/^#define STACK_STATE(state) \\$/
+UNMARK_STATE	dfa.c	/^#define UNMARK_STATE(state) \\$/
+action_out	misc.c	/^void action_out()$/
+add_accept	nfa.c	/^void add_accept( mach, accepting_number )$/
+addsym	sym.c	/^int addsym( sym, str_def, int_def, table, table_si/
+all_lower	misc.c	/^int all_lower( str )$/
+all_upper	misc.c	/^int all_upper( str )$/
+allocate_array	misc.c	/^void *allocate_array( size, element_size )$/
+bldtbl	tblcmp.c	/^void bldtbl( state, statenum, totaltrans, comstate/
+bubble	misc.c	/^void bubble( v, n )$/
+ccl2ecl	ecs.c	/^void ccl2ecl()$/
+ccladd	ccl.c	/^void ccladd( cclp, ch )$/
+cclinit	ccl.c	/^int cclinit()$/
+cclinstal	sym.c	/^void cclinstal( ccltxt, cclnum )$/
+ccllookup	sym.c	/^int ccllookup( ccltxt )$/
+cclnegate	ccl.c	/^void cclnegate( cclp )$/
+check_for_backtracking	dfa.c	/^void check_for_backtracking( ds, state )$/
+check_trailing_context	dfa.c	/^void check_trailing_context( nfa_states, num_state/
+clower	misc.c	/^Char clower( c )$/
+cmptmps	tblcmp.c	/^void cmptmps()$/
+copy_string	misc.c	/^char *copy_string( str )$/
+copy_unsigned_string	misc.c	/^Char *copy_unsigned_string( str )$/
+copysingl	nfa.c	/^int copysingl( singl, num )$/
+cre8ecs	ecs.c	/^int cre8ecs( fwd, bck, num )$/
+cshell	misc.c	/^void cshell( v, n, special_case_0 )$/
+dataend	misc.c	/^void dataend()$/
+dataflush	misc.c	/^void dataflush()$/
+do_indent	gen.c	/^void do_indent()$/
+dump_associated_rules	dfa.c	/^void dump_associated_rules( file, ds )$/
+dump_transitions	dfa.c	/^void dump_transitions( file, state )$/
+dumpnfa	nfa.c	/^void dumpnfa( state1 )$/
+dupmachine	nfa.c	/^int dupmachine( mach )$/
+ecs_from_xlation	ecs.c	/^int ecs_from_xlation( ecmap )$/
+epsclosure	dfa.c	/^int *epsclosure( t, ns_addr, accset, nacc_addr, hv/
+expand_nxt_chk	tblcmp.c	/^void expand_nxt_chk()$/
+find_table_space	tblcmp.c	/^int find_table_space( state, numtrans )$/
+findsym	sym.c	/^struct hash_entry *findsym( sym, table, table_size/
+finish_rule	nfa.c	/^void finish_rule( mach, variable_trail_rule, headc/
+flex_gettime	misc.c	/^char *flex_gettime()$/
+flexend	main.c	/^void flexend( status )$/
+flexerror	misc.c	/^void flexerror( msg )$/
+flexfatal	misc.c	/^void flexfatal( msg )$/
+flexinit	main.c	/^void flexinit( argc, argv )$/
+gen_NUL_trans	gen.c	/^void gen_NUL_trans()$/
+gen_backtracking	gen.c	/^void gen_backtracking()$/
+gen_bt_action	gen.c	/^void gen_bt_action()$/
+gen_find_action	gen.c	/^void gen_find_action()$/
+gen_next_compressed_state	gen.c	/^void gen_next_compressed_state( char_map )$/
+gen_next_match	gen.c	/^void gen_next_match()$/
+gen_next_state	gen.c	/^void gen_next_state( worry_about_NULs )$/
+gen_start_state	gen.c	/^void gen_start_state()$/
+genctbl	gen.c	/^void genctbl()$/
+genecs	gen.c	/^void genecs()$/
+genftbl	gen.c	/^void genftbl()$/
+gentabs	gen.c	/^void gentabs()$/
+hashfunct	sym.c	/^int hashfunct( str, hash_size )$/
+htoi	misc.c	/^int htoi( str )$/
+increase_max_dfas	dfa.c	/^void increase_max_dfas()$/
+indent_down	gen.c	/^#define indent_down() (--indent_level)$/
+indent_put2s	gen.c	/^void indent_put2s( fmt, arg )$/
+indent_puts	gen.c	/^void indent_puts( str )$/
+indent_up	gen.c	/^#define indent_up() (++indent_level)$/
+inittbl	tblcmp.c	/^void inittbl()$/
+isascii	misc.c	/^#define isascii(c) ((c) <= 0177)$/
+lerrif	misc.c	/^void lerrif( msg, arg )$/
+lerrsf	misc.c	/^void lerrsf( msg, arg )$/
+line_directive_out	misc.c	/^void line_directive_out( output_file_name )$/
+link_machines	nfa.c	/^int link_machines( first, last )$/
+list_character_set	ccl.c	/^void list_character_set( file, cset )$/
+make_tables	gen.c	/^void make_tables()$/
+mark_beginning_as_normal	nfa.c	/^void mark_beginning_as_normal( mach )$/
+mk1tbl	tblcmp.c	/^void mk1tbl( state, sym, onenxt, onedef )$/
+mk2data	misc.c	/^void mk2data( value )$/
+mkbranch	nfa.c	/^int mkbranch( first, second )$/
+mkclos	nfa.c	/^int mkclos( state )$/
+mkdata	misc.c	/^void mkdata( value )$/
+mkdeftbl	tblcmp.c	/^void mkdeftbl()$/
+mkeccl	ecs.c	/^void mkeccl( ccls, lenccl, fwd, bck, llsiz, NUL_ma/
+mkechar	ecs.c	/^void mkechar( tch, fwd, bck )$/
+mkentry	tblcmp.c	/^void mkentry( state, numchars, statenum, deflink, /
+mkopt	nfa.c	/^int mkopt( mach )$/
+mkor	nfa.c	/^int mkor( first, second )$/
+mkposcl	nfa.c	/^int mkposcl( state )$/
+mkprot	tblcmp.c	/^void mkprot( state, statenum, comstate )$/
+mkrep	nfa.c	/^int mkrep( mach, lb, ub )$/
+mkstate	nfa.c	/^int mkstate( sym )$/
+mktemplate	tblcmp.c	/^void mktemplate( state, statenum, comstate )$/
+mkxtion	nfa.c	/^void mkxtion( statefrom, stateto )$/
+mv2front	tblcmp.c	/^void mv2front( qelm )$/
+myctoi	misc.c	/^int myctoi( array )$/
+myesc	misc.c	/^Char myesc( array )$/
+ndinstal	sym.c	/^void ndinstal( nd, def )$/
+ndlookup	sym.c	/^Char *ndlookup( nd )$/
+new_rule	nfa.c	/^void new_rule()$/
+ntod	dfa.c	/^void ntod()$/
+otoi	misc.c	/^int otoi( str )$/
+place_state	tblcmp.c	/^void place_state( state, statenum, transnum )$/
+readable_form	misc.c	/^char *readable_form( c )$/
+readin	main.c	/^void readin()$/
+reallocate_array	misc.c	/^void *reallocate_array( array, size, element_size /
+scinstal	sym.c	/^void scinstal( str, xcluflg )$/
+sclookup	sym.c	/^int sclookup( str )$/
+set_indent	gen.c	/^#define set_indent(indent_val) indent_level = inde/
+set_up_initial_allocations	main.c	/^void set_up_initial_allocations()$/
+skelout	misc.c	/^void skelout()$/
+snstods	dfa.c	/^int snstods( sns, numstates, accset, nacc, hashval/
+stack1	tblcmp.c	/^void stack1( statenum, sym, nextstate, deflink )$/
+symfollowset	dfa.c	/^int symfollowset( ds, dsize, transsym, nset )$/
+sympartition	dfa.c	/^void sympartition( ds, numstates, symlist, duplist/
+tbldiff	tblcmp.c	/^int tbldiff( state, pr, ext )$/
+transition_struct_out	misc.c	/^void transition_struct_out( element_v, element_n )/
+yylex	yylex.c	/^int yylex()$/

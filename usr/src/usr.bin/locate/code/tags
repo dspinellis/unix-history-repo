@@ -1,0 +1,2 @@
+Mlocate.code	locate.code.c	/^main ( argc, argv )$/
+bgindex	locate.code.c	/^bgindex ( bg )			\/* return location of bg in bigr/

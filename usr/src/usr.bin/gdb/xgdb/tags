@@ -1,0 +1,16 @@
+_initialize_xgdb	xgdb.c	/^_initialize_xgdb()$/
+addbutton	xgdb.c	/^addbutton(parent, name, function, closure)$/
+append_selection	xgdb.c	/^append_selection(cp)$/
+append_selection_expr	xgdb.c	/^append_selection_expr(cp)$/
+append_selection_word	xgdb.c	/^append_selection_word(cp)$/
+button_command	xgdb.c	/^button_command(arg)$/
+button_delete_command	xgdb.c	/^button_delete_command(arg)$/
+create_buttons	xgdb.c	/^create_buttons(parent)$/
+create_label	xgdb.c	/^create_label(name, label)$/
+create_text_widget	xgdb.c	/^create_text_widget(parent, filename)$/
+current_lineno	xgdb.c	/^current_lineno()$/
+do_command	xgdb.c	/^do_command(w, command, call_data)$/
+safe_strcmp	xgdb.c	/^safe_strcmp(a, b)$/
+xgdb_create_window	xgdb.c	/^xgdb_create_window()$/
+xgdb_display_source	xgdb.c	/^xgdb_display_source()$/
+xgdb_window_hook	xgdb.c	/^xgdb_window_hook()$/

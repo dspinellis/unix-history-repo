@@ -1,0 +1,10 @@
+Mscript	script.c	/^main(argc, argv)$/
+doinput	script.c	/^doinput()$/
+done	script.c	/^done()$/
+dooutput	script.c	/^dooutput()$/
+doshell	script.c	/^doshell()$/
+fail	script.c	/^fail()$/
+finish	script.c	/^finish()$/
+fixtty	script.c	/^fixtty()$/
+getmaster	script.c	/^getmaster()$/
+getslave	script.c	/^getslave()$/
