@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.7 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -507,7 +507,7 @@ hpuxulimit(p, uap, retval)
 		int	cmd;
 		long	newlimit;
 	} *uap;
-	int *retval;
+	off_t *retval;
 {
 	struct rlimit *limp;
 	int error = 0;
@@ -523,12 +523,12 @@ hpuxulimit(p, uap, retval)
 		/* else fall into... */
 
 	case 1:
-		u.u_r.r_off = limp->rlim_max / 512;		/* XXX */
+		*retval = limp->rlim_max / 512;		/* XXX */
 		break;
 
 	case 3:
 		limp = &u.u_rlimit[RLIMIT_DATA];
-		u.u_r.r_off = ctob(u.u_tsize) + limp->rlim_max;	/* XXX */
+		*retval = ctob(u.u_tsize) + limp->rlim_max;	/* XXX */
 		break;
 
 	default:
@@ -1229,14 +1229,14 @@ ohpuxtime(p, uap, retval)
 	register struct args {
 		long	*tp;
 	} *uap;
-	int *retval;
+	time_t *retval;
 {
 	int error;
 
 	if (uap->tp)
 		error = copyout((caddr_t)&time.tv_sec, (caddr_t)uap->tp,
 				sizeof (long));
-	u.u_r.r_time = time.tv_sec;		/* XXX */
+	*retval = time.tv_sec;		/* XXX */
 	RETURN (error);
 }
 
@@ -1328,7 +1328,7 @@ ohpuxtimes(p, uap, retval)
 	register struct args {
 		struct	tms *tmsb;
 	} *uap;
-	int *retval;
+	time_t *retval;
 {
 	struct tms atms;
 	int error;
@@ -1339,7 +1339,7 @@ ohpuxtimes(p, uap, retval)
 	atms.tms_cstime = scale50(&u.u_cru.ru_stime);
 	error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
 	if (error == 0)
-		u.u_r.r_time = scale50(&time) - scale50(&boottime); /* XXX */
+		*retval = scale50(&time) - scale50(&boottime); /* XXX */
 	RETURN (error);
 }
 
