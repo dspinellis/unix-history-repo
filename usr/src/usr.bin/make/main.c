@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -112,6 +112,7 @@ MainParseArgs(argc, argv)
 	register char *cp;
 	char c;
 
+	optind = 1;	/* since we're called more than once */
 rearg:	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != -1) {
 		switch(c) {
 		case 'D':
