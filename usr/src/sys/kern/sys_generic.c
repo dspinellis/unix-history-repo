@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_generic.c	7.13 (Berkeley) %G%
+ *	@(#)sys_generic.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,15 +70,10 @@ read()
 		ktriov = aiov;
 #endif
 	cnt = uap->count;
-	if (setjmp(&u.u_qsave)) {
-		if (auio.uio_resid == cnt) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-				error = EINTR;
-			else
-				u.u_eosys = RESTARTSYS;
-		}
-	} else
-		error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred);
+	if (error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred))
+		if (auio.uio_resid != cnt && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
@@ -147,15 +142,10 @@ readv()
 	}
 #endif
 	cnt = auio.uio_resid;
-	if (setjmp(&u.u_qsave)) {
-		if (auio.uio_resid == cnt) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-				error = EINTR;
-			else
-				u.u_eosys = RESTARTSYS;
-		}
-	} else
-		error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred);
+	if (error = (*fp->f_ops->fo_read)(fp, &auio, fp->f_cred))
+		if (auio.uio_resid != cnt && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (ktriov != NULL) {
@@ -209,15 +199,13 @@ write()
 		ktriov = aiov;
 #endif
 	cnt = uap->count;
-	if (setjmp(&u.u_qsave)) {
-		if (auio.uio_resid == cnt) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-				error = EINTR;
-			else
-				u.u_eosys = RESTARTSYS;
-		}
-	} else
-		error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred);
+	if (error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred)) {
+		if (auio.uio_resid != cnt && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
+		if (error == EPIPE)
+			psignal(u.u_procp, SIGPIPE);
+	}
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_GENIO))
@@ -287,15 +275,13 @@ writev()
 	}
 #endif
 	cnt = auio.uio_resid;
-	if (setjmp(&u.u_qsave)) {
-		if (auio.uio_resid == cnt) {
-			if ((u.u_sigintr & sigmask(u.u_procp->p_cursig)) != 0)
-				error = EINTR;
-			else
-				u.u_eosys = RESTARTSYS;
-		}
-	} else
-		error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred);
+	if (error = (*fp->f_ops->fo_write)(fp, &auio, fp->f_cred)) {
+		if (auio.uio_resid != cnt && (error == ERESTART ||
+		    error == EINTR || error == EWOULDBLOCK))
+			error = 0;
+		if (error == EPIPE)
+			psignal(u.u_procp, SIGPIPE);
+	}
 	cnt -= auio.uio_resid;
 #ifdef KTRACE
 	if (ktriov != NULL) {
@@ -322,7 +308,7 @@ ioctl()
 		int	cmd;
 		caddr_t	cmarg;
 	} *uap = (struct a *)u.u_ap;
-	register int com;
+	register int com, error;
 	register u_int size;
 	caddr_t memp = 0;
 #define STK_PARAMS	128
@@ -332,10 +318,8 @@ ioctl()
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
 		RETURN (EBADF);
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0) {
-		u.u_error = EBADF;
-		return;
-	}
+	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
+		RETURN (EBADF);
 	com = uap->cmd;
 
 	if (com == FIOCLEX) {
@@ -344,7 +328,7 @@ ioctl()
 	}
 	if (com == FIONCLEX) {
 		u.u_pofile[uap->fdes] &= ~UF_EXCLOSE;
-		return;
+		RETURN (0);
 	}
 
 	/*
@@ -353,10 +337,8 @@ ioctl()
 	 * user's address space.
 	 */
 	size = IOCPARM_LEN(com);
-	if (size > IOCPARM_MAX) {
-		u.u_error = ENOTTY;
-		return;
-	}
+	if (size > IOCPARM_MAX)
+		RETURN (ENOTTY);
 	if (size > sizeof (stkbuf)) {
 		memp = (caddr_t)malloc((u_long)IOCPARM_LEN(com), M_IOCTLOPS,
 		    M_WAITOK);
@@ -364,11 +346,11 @@ ioctl()
 	}
 	if (com&IOC_IN) {
 		if (size) {
-			u.u_error = copyin(uap->cmarg, data, (u_int)size);
-			if (u.u_error) {
+			error = copyin(uap->cmarg, data, (u_int)size);
+			if (error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
-				return;
+				RETURN (error);
 			}
 		} else
 			*(caddr_t *)data = uap->cmarg;
@@ -384,38 +366,35 @@ ioctl()
 	switch (com) {
 
 	case FIONBIO:
-		u.u_error = fset(fp, FNDELAY, *(int *)data);
+		error = fset(fp, FNDELAY, *(int *)data);
 		break;
 
 	case FIOASYNC:
-		u.u_error = fset(fp, FASYNC, *(int *)data);
+		error = fset(fp, FASYNC, *(int *)data);
 		break;
 
 	case FIOSETOWN:
-		u.u_error = fsetown(fp, *(int *)data);
+		error = fsetown(fp, *(int *)data);
 		break;
 
 	case FIOGETOWN:
-		u.u_error = fgetown(fp, (int *)data);
+		error = fgetown(fp, (int *)data);
 		break;
 	default:
-		if (setjmp(&u.u_qsave))
-			u.u_error = EINTR;
-		else
-			u.u_error = (*fp->f_ops->fo_ioctl)(fp, com, data);
+		error = (*fp->f_ops->fo_ioctl)(fp, com, data);
 		/*
 		 * Copy any data to user, size was
 		 * already set and checked above.
 		 */
-		if (u.u_error == 0 && (com&IOC_OUT) && size)
-			u.u_error = copyout(data, uap->cmarg, (u_int)size);
+		if (error == 0 && (com&IOC_OUT) && size)
+			error = copyout(data, uap->cmarg, (u_int)size);
 		break;
 	}
 	if (memp)
 		free(memp, M_IOCTLOPS);
+	RETURN (error);
 }
 
-int	unselect();
 int	nselcoll;
 
 /*
@@ -430,8 +409,7 @@ select()
 	} *uap = (struct uap *)u.u_ap;
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, ni;
-	label_t lqsave;
+	int s, ncoll, ni, error = 0, timo;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
 	bzero((caddr_t)obits, sizeof(obits));
@@ -441,9 +419,9 @@ select()
 
 #define	getbits(name, x) \
 	if (uap->name) { \
-		u.u_error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
+		error = copyin((caddr_t)uap->name, (caddr_t)&ibits[x], \
 		    (unsigned)(ni * sizeof(fd_mask))); \
-		if (u.u_error) \
+		if (error) \
 			goto done; \
 	}
 	getbits(in, 0);
@@ -452,21 +430,25 @@ select()
 #undef	getbits
 
 	if (uap->tv) {
-		u.u_error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
+		error = copyin((caddr_t)uap->tv, (caddr_t)&atv,
 			sizeof (atv));
-		if (u.u_error)
+		if (error)
 			goto done;
 		if (itimerfix(&atv)) {
-			u.u_error = EINVAL;
+			error = EINVAL;
 			goto done;
 		}
 		s = splhigh(); timevaladd(&atv, &time); splx(s);
-	}
+		timo = hzto(&atv);
+	} else
+		timo = 0;
 retry:
 	ncoll = nselcoll;
 	u.u_procp->p_flag |= SSEL;
-	u.u_r.r_val1 = selscan(ibits, obits, uap->nd);
-	if (u.u_error || u.u_r.r_val1)
+	u.u_r.r_val1 = selscan(ibits, obits, uap->nd, &error);
+	if (error == 0)
+		error = u.u_error;		/* XXX */
+	if (error || u.u_r.r_val1)
 		goto done;
 	s = splhigh();
 	/* this should be timercmp(&time, &atv, >=) */
@@ -480,60 +462,36 @@ retry:
 		goto retry;
 	}
 	u.u_procp->p_flag &= ~SSEL;
-	if (uap->tv) {
-		lqsave = u.u_qsave;
-		if (setjmp(&u.u_qsave)) {
-			untimeout(unselect, (caddr_t)u.u_procp);
-			u.u_error = EINTR;
-			splx(s);
-			goto done;
-		}
-		timeout(unselect, (caddr_t)u.u_procp, hzto(&atv));
-	}
-	tsleep((caddr_t)&selwait, PZERO+1, SLP_SELECT, 0);
-	if (uap->tv) {
-		u.u_qsave = lqsave;
-		untimeout(unselect, (caddr_t)u.u_procp);
-	}
+	error = tsleep((caddr_t)&selwait, PSOCK | PCATCH, "select", timo);
 	splx(s);
-	goto retry;
+	if (error == 0)
+		goto retry;
 done:
 	u.u_procp->p_flag &= ~SSEL;
+	/* select is not restarted after signals... */
+	if (error == ERESTART)
+		error = EINTR;
+	if (error == EWOULDBLOCK)
+		error = 0;
 #define	putbits(name, x) \
 	if (uap->name) { \
-		int error = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
+		int error2 = copyout((caddr_t)&obits[x], (caddr_t)uap->name, \
 		    (unsigned)(ni * sizeof(fd_mask))); \
-		if (error) \
-			u.u_error = error; \
+		if (error2) \
+			error = error2; \
 	}
-	if (u.u_error == 0) {
+	if (error == 0) {
 		putbits(in, 0);
 		putbits(ou, 1);
 		putbits(ex, 2);
 #undef putbits
 	}
+	RETURN (error);
 }
 
-unselect(p)
-	register struct proc *p;
-{
-	register int s = splhigh();
-
-	switch (p->p_stat) {
-
-	case SSLEEP:
-		setrun(p);
-		break;
-
-	case SSTOP:
-		unsleep(p);
-		break;
-	}
-	splx(s);
-}
-
-selscan(ibits, obits, nfd)
+selscan(ibits, obits, nfd, errp)
 	fd_set *ibits, *obits;
+	int nfd, *errp;
 {
 	register int which, i, j;
 	register fd_mask bits;
@@ -559,7 +517,7 @@ selscan(ibits, obits, nfd)
 				bits &= ~(1 << j);
 				fp = u.u_ofile[i + j];
 				if (fp == NULL) {
-					u.u_error = EBADF;
+					*errp = EBADF;
 					break;
 				}
 				if ((*fp->f_ops->fo_select)(fp, flag)) {
