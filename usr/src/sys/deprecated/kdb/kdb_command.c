@@ -1,4 +1,4 @@
-/*	kdb_command.c	7.1	86/11/20	*/
+/*	kdb_command.c	7.2	86/11/20	*/
 
 #include "../kdb/defs.h"
 
@@ -33,7 +33,7 @@ command(buf, defcom)
 
 	if (buf) {
 		if (*buf==EOR)
-			return (FALSE);
+			return (0);
 		lp=buf;
 	}
 
@@ -43,10 +43,11 @@ command(buf, defcom)
 			ditto=dot;
 		}
 		adrval=dot;
-		if (rdc()==',' && expr(0))
-			cntflg=TRUE, cntval=expv;
+		cntflg = (rdc() == ',' && expr(0));
+		if (cntflg)
+			cntval=expv;
 		else
-			cntflg=FALSE, cntval=1, lp--;
+			cntval=1, lp--;
 		if (eol(rdc())) {
 			if (!adrflg)
 				dot=inkdot(dotinc);
@@ -78,11 +79,11 @@ command(buf, defcom)
 			}
 
 		trypr:
-			longpr=FALSE; eqcom=lastcom=='=';
+			longpr=0; eqcom=lastcom=='=';
 			switch (rdc()) {
 
 			case 'L':
-				longpr=TRUE;
+				longpr=1;
 			case 'l':
 				/*search for exp*/
 				if (eqcom)
@@ -112,7 +113,7 @@ command(buf, defcom)
 				break;
 
 			case 'W':
-				longpr=TRUE;
+				longpr=1;
 			case 'w':
 				if (eqcom)
 					error(BADEQ);
@@ -162,16 +163,13 @@ command(buf, defcom)
 			break;
 
 		case ':':
-			if (!executing) {
-				executing=TRUE;
-				subpcs(nextchar());
-				executing=FALSE;
-				lastcom=0;
-			}
+			if (executing)
+				break;
+			executing=1; subpcs(nextchar()); executing=0;
+			lastcom=0;
 			break;
 
-		case 0:
-			printf(DBNAME);
+		case '\0':
 			break;
 
 		default:
