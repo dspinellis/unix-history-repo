@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,8 +14,8 @@ static char sccsid[] = "@(#)bugfiler.c	4.4 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/dir.h>
 
-char	deliver[] = "/usr/local/lib/mh/deliver";
-char	unixtomh[] = "/usr/local/lib/mh/unixtomh";
+char	deliver[] = "/usr/new/lib/mh/deliver";
+char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
 char	*maildir = "/ra/bugs/mail";
 char	ackfile[] = ".ack";
 char	errfile[] = ".format";
