@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_subr.c	1.2 (Berkeley) 6/18/92
+ *	@(#)null_subr.c	7.1 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -21,7 +21,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <nullfs/null.h>
+#include <miscfs/nullfs/null.h>
 
 #define LOG2_SIZEVNODE 7		/* log2(sizeof struct vnode) */
 #define	NNULLNODECACHE 16
@@ -257,7 +257,7 @@ null_checkvp(vp, fil, lno)
 	int lno;
 {
 	struct null_node *a = VTONULL(vp);
-#if 0
+#ifdef notyet
 	/*
 	 * Can't do this check because vop_reclaim runs
 	 * with a funny vop vector.
@@ -289,7 +289,7 @@ null_checkvp(vp, fil, lno)
 		while (null_checkvp_barrier) /*WAIT*/ ;
 		panic ("null with unref'ed lowervp");
 	};
-#if 0
+#ifdef notyet
 	printf("null %x/%d -> %x/%d [%s, %d]\n",
 	        NULLTOV(a), NULLTOV(a)->v_usecount,
 		a->null_lowervp, a->null_lowervp->v_usecount,
@@ -298,5 +298,3 @@ null_checkvp(vp, fil, lno)
 	return a->null_lowervp;
 }
 #endif
-
-

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	1.6 (Berkeley) %G%
+ *	@(#)null_vfsops.c	7.1 (Berkeley) %G%
  *
  * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
@@ -27,7 +27,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
-#include <nullfs/null.h>
+#include <miscfs/nullfs/null.h>
 
 /*
  * Mount null layer
