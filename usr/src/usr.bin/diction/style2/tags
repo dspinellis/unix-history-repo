@@ -1,0 +1,21 @@
+OUT1	style2.c	/^#define OUT1(c) putchar(c); putchar(':'); for(i=yy/
+POUT1	style2.c	/^#define POUT1(c) putchar(c); putchar(':'); for(i=y/
+YY_FATAL_ERROR	style2.c	/^#define YY_FATAL_ERROR(msg) \\$/
+YY_INPUT	style2.c	/^#define YY_INPUT(buf,result,max_size) \\$/
+YY_PROTO	style2.c	/^#define YY_PROTO(proto) proto$/
+YY_STATE_EOF	style2.c	/^#define YY_STATE_EOF(state) (YY_END_OF_BUFFER + st/
+look	style2.c	/^look(f,n,nc)$/
+unput	style2.c	/^#define unput(c) yyunput( c, yytext )$/
+yy_create_buffer	style2.c	/^YY_BUFFER_STATE yy_create_buffer( file, size )$/
+yy_delete_buffer	style2.c	/^void yy_delete_buffer( b )$/
+yy_get_next_buffer	style2.c	/^static int yy_get_next_buffer()$/
+yy_get_previous_state	style2.c	/^static yy_state_type yy_get_previous_state()$/
+yy_init_buffer	style2.c	/^void yy_init_buffer( b, file )$/
+yy_switch_to_buffer	style2.c	/^void yy_switch_to_buffer( new_buffer )$/
+yy_try_NUL_trans	style2.c	/^static yy_state_type yy_try_NUL_trans( yy_current_/
+yyless	style2.c	/^#define yyless(n) \\$/
+yymore	style2.c	/^#define yymore() yymore_used_but_not_detected$/
+yyrestart	style2.c	/^void yyrestart( input_file )$/
+yyterminate	style2.c	/^#define yyterminate() return ( YY_NULL )$/
+yyunput	style2.c	/^static void yyunput( c, yy_bp )$/
+yywrap	style2.c	/^yywrap(){$/

@@ -1,0 +1,7 @@
+Mdprog	dprog.c	/^main(argc, argv)$/
+cfail	dprog.c	/^cfail() {$/
+cgotofn	dprog.c	/^cgotofn() {$/
+execute	dprog.c	/^execute(file)$/
+getargc	dprog.c	/^getargc()$/
+outc	dprog.c	/^outc(addr,file)$/
+overflo	dprog.c	/^overflo() {$/
