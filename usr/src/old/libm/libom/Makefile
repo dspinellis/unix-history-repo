@@ -33,9 +33,12 @@ depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
+	rm -f ${DESTDIR}/usr/lib/libnm.a ${DESTDIR}/usr/lib/libnm_p.a
 	install -o bin -g bin -m 644 libom.a ${DESTDIR}/usr/lib/libom.a
+	ln ${DESTDIR}/usr/lib/libom.a ${DESTDIR}/usr/lib/libnm.a
 	ranlib ${DESTDIR}/usr/lib/libom.a
 	install -o bin -g bin -m 644 libom_p.a ${DESTDIR}/usr/lib/libom_p.a
+	ln ${DESTDIR}/usr/lib/libom_p.a ${DESTDIR}/usr/lib/libnm_p.a
 	ranlib ${DESTDIR}/usr/lib/libom_p.a
 
 lint: FRC
