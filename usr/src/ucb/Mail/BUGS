@@ -1,0 +1,19 @@
+From bostic@okeeffe.Berkeley.EDU Thu Apr  9 11:51:32 1987
+While you're there... the 'u' command fails if 
+the message hasn't been deleted; it seems reasonable
+that it should just move you to that message.
+
+From bostic@okeeffe.Berkeley.EDU Sun Apr 26 15:25:03 1987
+Hi, the bug report ~bugs/4.2BSD/ucb/116 seems valid, and,
+since you seem to have that particular piece of code all
+locked up, I thought I'd pass it to you.
+
+From bostic@okeeffe.Berkeley.EDU Sun Apr 26 16:08:15 1987
+Subject: Mail bug (~bugs/4.2BSD/ucb/130)
+
+From leres@lbl-helios.arpa Wed May  6 02:29:22 1987
+Subject: /usr/src/ucb/Mail/cmd3.c
+
+As long as you're in there hacking, you might as well fix echo() so that
+it finishes with a newline instead of a blank. E.g., "echo foo" comes out
+as "foo " instead of "foo\n".
