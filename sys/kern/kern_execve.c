@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.12 1993/12/20 19:31:17 wollman Exp $
+ *	$Id: kern_execve.c,v 1.13 1994/01/03 07:56:43 davidg Exp $
  */
 
 #include "param.h"
@@ -497,6 +497,12 @@ exec_check_permissions(iparams)
 	    (attr->va_type != VREG)) {
 		return (EACCES);
 	}
+
+	/*
+	 * Zero length files can't be exec'd
+	 */
+	if (attr->va_size == 0)
+		return (ENOEXEC);
 
 	/*
 	 * Disable setuid/setgid if the filesystem prohibits it or if
