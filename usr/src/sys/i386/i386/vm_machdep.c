@@ -7,7 +7,11 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)vm_machdep.c	5.2 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.3 (Berkeley) %G%
+ */
+
+/*
+ * Copyright (c) 1989, 1990 William F. Jolitz
  */
 
 /*
@@ -40,6 +44,11 @@
 #include "buf.h"
 
 #include "dbg.h"
+
+#define load_cr3(s)	{long phys; \
+	phys = (long)(s) /*| 0x80000000 */ ;\
+	__asm ( "movl %0,%%eax; movl %%eax,%%cr3" : : "g" (phys) : "ax" ) ; }
+
 /*
  * Set a red zone in the kernel stack after the u. area.
  */
@@ -89,7 +98,7 @@ newptes(pte, v, size)
 #ifdef lint
 	pte = pte;
 #endif
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -121,7 +130,7 @@ chgprot(addr, tprot)
 	}
 	*(u_int *)pte &= ~PG_PROT;
 	*(u_int *)pte |= tprot;
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 	return (1);
 }
 
@@ -135,7 +144,7 @@ settprot(tprot)
 		ptaddr[i] &= ~PG_PROT;
 		ptaddr[i] |= tprot;
 	}
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -171,7 +180,7 @@ printf("p1b %x p1l %x pte %x", u.u_pcb.pcb_p1br, u.u_pcb.pcb_p1lr, pte);*/
 		*(u_int *)pte++ = 0;
 	} while (--change);
 	/* short cut newptes */
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -192,7 +201,7 @@ physaccess(pte, paddr, size, prot)
 		page += NBPG;
 		pte++;
 	}
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -208,8 +217,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from)];
-	tpte = &Sysmap[btop(to)];
+	fpte = &Sysmap[btop(from-0xfe000000)];
+	tpte = &Sysmap[btop(to-0xfe000000)];
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
@@ -217,7 +226,7 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -357,7 +366,8 @@ vtopde(p, va)
 initcr3(p)
 	register struct proc *p;
 {
-	return((int)Usrptmap[btokmx(p->p_p0br) + p->p_szpt].pg_pfnum);
+	return(ctob(Usrptmap[btokmx(p->p_p0br+p->p_szpt*NPTEPG)].pg_pfnum));
+	/*return((int)Usrptmap[btokmx(p->p_p0br) + p->p_szpt].pg_pfnum);*/
 }
 
 /*
@@ -376,7 +386,7 @@ initpdt(p)
 /*pg("initpdt");*/
 	/* clear entire map */
 	pde = vtopde(p, 0);
-	bzero(pde, NBPG);
+	/*bzero(pde, NBPG); */
 	/* map kernel */
 	pde = vtopde(p, &Sysbase);
 	for (i = 0; i < 5; i++, pde++) {
@@ -430,6 +440,7 @@ to bzero above XXX*/
 		pde->pd_pfnum = Usrptmap[k++].pg_pfnum;
 /*pg("pde %x pf %x", pde, *(int *)pde);*/
 	}
+	return(initcr3(p));
 }
 
 #ifdef notdef
@@ -526,7 +537,7 @@ vmapbuf(bp)
 		iopte++, pte++;
 		a++;
 	}
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
 
 /*
@@ -566,5 +577,5 @@ vunmapbuf(bp)
 		a = ((bp - swbuf) * CLSIZE) * KLMAX;
 		bp->b_un.b_addr = (caddr_t)ctob(dptov(&proc[2], a));
 	}
-	load_cr3(_cr3());
+	load_cr3(u.u_pcb.pcb_ptd);
 }
