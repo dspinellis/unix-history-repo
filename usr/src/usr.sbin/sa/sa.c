@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)sa.c	4.2 (Berkeley) 81/02/28";
+#ifndef lint
+static	char *sccsid = "@(#)sa.c	4.3 (Berkeley) 83/04/04";
+#endif
 
 /*
  *	Extensive modifications to internal data structures
@@ -267,20 +269,18 @@ int	htabinstall = 1;
 int	maxuser = -1;
 int	(*cmp)();
 
+extern	tcmp(), ncmp(), bcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
+extern	double sum();
+
 main(argc, argv)
-char **argv;
+	char **argv;
 {
 	FILE *ff;
-	int i, j;
-	extern	tcmp(), ncmp(), bcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
-	extern	double sum();
-	double	ft;
-	register	struct	allocbox	*allocwalk;
-	register	cell	*tp, *ub;
-	int	size;
-	int	nchunks;
-	struct	chunkdesc	*chunkvector;
-	int	smallest;
+	double ft;
+	register struct	allocbox *allocwalk;
+	register cell *tp, *ub;
+	int i, j, size, nchunks, smallest;
+	struct chunkdesc *chunkvector;
 
 	maxuser = USERSLOP + getmaxuid();
 
@@ -530,7 +530,7 @@ printmoney()
 				else 
 					printf("%-8d", i);
 				printf("%7u %9.2fcpu %10.0ftio %12.0fk*sec\n",
-					up->us_cnt, up->us_ctime/60,
+					up->us_cnt, up->us_ctime / 60,
 					up->us_io,
 					up->us_imem / (60 * 2));
 			}
@@ -539,7 +539,7 @@ printmoney()
 }
 
 column(n, a, b, c, d, e)
-double n, a, b, c, d, e;
+	double n, a, b, c, d, e;
 {
 
 	printf("%8.0f", n);
@@ -569,8 +569,8 @@ double n, a, b, c, d, e;
 }
 
 col(n, a, m, cp)
-double n, a, m;
-char *cp;
+	double n, a, m;
+	char *cp;
 {
 
 	if(jflg)
@@ -591,8 +591,8 @@ char *f;
 	struct acct fbuf;
 	register char *cp;
 	register int c;
-	register	struct	user	*up;
-	register	cell	*tp;
+	register struct	user *up;
+	register cell *tp;
 #ifdef DEBUG
 	int	nrecords = 0;
 #endif DEBUG
@@ -634,15 +634,14 @@ char *f;
 		z = expand(fbuf.ac_io);
 		if (uflg) {
 			printf("%3d%6.1fcp %6dmem %6dio %.14s\n",
-			    fbuf.ac_uid, x/60.0, y, z,
-			    fbuf.ac_comm);
+			    fbuf.ac_uid, x, y, z, fbuf.ac_comm);
 			continue;
 		}
 		up = finduser(fbuf.ac_uid);
 		if (up == 0)
 			continue;	/* preposterous user id */
 		up->us_cnt++;
-		up->us_ctime += x/60.;
+		up->us_ctime += x;
 		up->us_imem += x * y;
 		up->us_io += z;
 		ncom += 1.0;
@@ -651,7 +650,7 @@ char *f;
 		tp->p.imem += x * y;
 		timem += x * y;
 		tp->p.count++;
-		x = expand(fbuf.ac_etime)*60;
+		x = expand(fbuf.ac_etime);
 		tp->p.realt += x;
 		treal += x;
 		x = expand(fbuf.ac_utime);
@@ -670,7 +669,7 @@ char *f;
  *	Generalized cell compare routine, to cast out users
  */
 cellcmp(p1, p2)
-	cell	*p1, *p2;
+	cell *p1, *p2;
 {
 	if (ISPROCESS(p1)){
 		if (ISPROCESS(p2))
@@ -681,8 +680,9 @@ cellcmp(p1, p2)
 		return(1);
 	return(0);
 }
+
 ncmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 
 	if(p1->p.count == p2->p.count)
@@ -693,7 +693,7 @@ cell *p1, *p2;
 }
 
 bcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 	double f1, f2;
 	double sum();
@@ -714,7 +714,7 @@ cell *p1, *p2;
 }
 
 Kcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 
 	if (p1->p.imem < p2->p.imem) {
@@ -731,7 +731,7 @@ cell *p1, *p2;
 }
 
 kcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 	double a1, a2;
 
@@ -751,7 +751,7 @@ cell *p1, *p2;
 }
 
 dcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 	double a1, a2;
 
@@ -771,7 +771,7 @@ cell *p1, *p2;
 }
 
 Dcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 
 	if (p1->p.io < p2->p.io) {
@@ -788,7 +788,7 @@ cell *p1, *p2;
 }
 
 tcmp(p1, p2)
-cell *p1, *p2;
+	cell *p1, *p2;
 {
 	extern double sum();
 	double f1, f2;
@@ -809,7 +809,7 @@ cell *p1, *p2;
 }
 
 double sum(p)
-cell *p;
+	cell *p;
 {
 
 	if(p->p.name[0] == 0)
@@ -819,11 +819,11 @@ cell *p;
 
 init()
 {
-	struct	user	userbuf;
-	struct	process	tbuf;
-	register	cell	*tp;
-	register	struct	user	*up;
-	int		uid;
+	struct user userbuf;
+	struct process	tbuf;
+	register cell *tp;
+	register struct user *up;
+	int uid;
 	FILE *f;
 
 	if ((f = fopen(SAVACCT, "r")) == NULL)
@@ -862,9 +862,9 @@ init()
 
 strip()
 {
-	int	c;
-	register	struct	allocbox	*allocwalk;
-	register	cell	*tp, *ub, *junkp;
+	int c;
+	register struct allocbox *allocwalk;
+	register cell *tp, *ub, *junkp;
 
 	if (fflg)
 		printf("Categorizing commands used %d times or fewer as **junk**\n",
@@ -892,7 +892,7 @@ strip()
 
 time_t
 expand(t)
-unsigned t;
+	unsigned t;
 {
 	register time_t nt;
 
@@ -905,36 +905,42 @@ unsigned t;
 	return(nt);
 }
 
-static	char	UserKey[NAMELG + 2];
-char *makekey(uid)
-	int	uid;
+static	char UserKey[NAMELG + 2];
+
+char *
+makekey(uid)
+	int uid;
 {
 	sprintf(UserKey+1, "%04x", uid);
 	UserKey[0] = USERKEY;
 	return(UserKey);
 }
 
-struct user *wasuser(uid)
-	int 	uid;
+struct user *
+wasuser(uid)
+	int uid;
 {
-	struct	user	*tp;
+	struct user *tp;
+
 	htabinstall = 0;
 	tp = finduser(uid);
 	htabinstall = 1;
 	return(tp);
 }
+
 /*
  *	Only call this if you really want to insert it in the table!
  */
-struct user *finduser(uid)
-	int	uid;
+struct user *
+finduser(uid)
+	int uid;
 {
+
 	if (uid > maxuser){
 		fprintf(stderr, "Preposterous user id, %d: ignored\n", uid);
 		return(0);
-	} else {
-		return((struct user*)enter(makekey(uid)));
 	}
+	return((struct user*)enter(makekey(uid)));
 }
 
 /*
@@ -943,7 +949,7 @@ struct user *finduser(uid)
  */
 getnames()
 {
-	register	struct user	*tp;
+	register struct user *tp;
 	register struct passwd *pw;
 	struct passwd *getpwent();
 
@@ -955,12 +961,13 @@ getnames()
 	endpwent();
 }
 
-int getmaxuid()
+int
+getmaxuid()
 {
-	register	struct	user	*tp;
-	register	struct	passwd	*pw;
-	struct		passwd	*getpwent();
-	int		maxuid = -1;
+	register struct user *tp;
+	register struct passwd *pw;
+	struct passwd *getpwent();
+	int maxuid = -1;
 
 	setpwent();
 	while(pw = getpwent()){
@@ -983,8 +990,10 @@ tabinit()
 }
 
 #define ALLOCQTY 	sizeof (struct allocbox)
-cell *taballoc()
+cell *
+taballoc()
 {
+
 	if (tabsleft == 0){
 		newbox = (struct allocbox *)calloc(1, ALLOCQTY);
 		tabsleft = TABDALLOP;
@@ -1007,9 +1016,10 @@ cell *taballoc()
 
 htaballoc()
 {
-	register	struct	hashdallop	*new;
+	register struct hashdallop *new;
 #ifdef DEBUG
-	static	int	ntables = 0;
+	static int ntables = 0;
+
 	printf("%%%New hash table chunk allocated, number %d\n", ++ntables);
 #endif DEBUG
 	new = (struct hashdallop *)calloc(1, sizeof (struct hashdallop));
@@ -1029,19 +1039,16 @@ htaballoc()
  *	is called quite frequently, and the calling overhead
  *	contributes significantly to the overall execution speed of sa.
  */
-cell *enter(name)
-	char	*name;	
+cell *
+enter(name)
+	char *name;	
 {
-	static	 int		initialprobe;
-	register cell	 	**hp;
-	register char 		*from;
-	register char		*to;
-	register	int	len;
-	register	int	nprobes;
-	static	 struct hashdallop *hdallop;
-	static	 cell		**emptyslot;
-	static 	 struct hashdallop *emptyhd;
-	static	 cell		**hp_ub;
+	static int initialprobe;
+	register cell **hp;
+	register char *from, *to;
+	register int len, nprobes;
+	static struct hashdallop *hdallop, *emptyhd;
+	static cell **emptyslot, **hp_ub;
 
 	emptyslot = 0;
 	for (nprobes = 0, from = name, len = 0;
@@ -1098,4 +1105,4 @@ cell *enter(name)
 		return(*hp);
 	}
 	return(0);
-}	/*end of lookup*/
+}
