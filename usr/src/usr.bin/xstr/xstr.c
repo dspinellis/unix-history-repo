@@ -12,13 +12,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xstr.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)xstr.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <signal.h>
+#include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <string.h>
 #include "pathnames.h"
 
 /*
@@ -30,14 +33,10 @@ static char sccsid[] = "@(#)xstr.c	5.6 (Berkeley) %G%";
 
 #define	ignore(a)	((void) a)
 
-char	*calloc();
 off_t	tellpt;
 off_t	hashit();
-char	*mktemp();
-int	onintr();
+void	onintr();
 char	*savestr();
-char	*strcat();
-char	*strcpy();
 off_t	yankstr();
 
 off_t	mesgpt;
@@ -80,7 +79,7 @@ main(argc, argv)
 	if (cflg || argc == 0 && !readstd)
 		inithash();
 	else
-		strings = mktemp(savestr(_PATH_TMP));
+		strings = mktemp(strdup(_PATH_TMP));
 	while (readstd || argc > 0) {
 		if (freopen("x.c", "w", stdout) == NULL)
 			perror("x.c"), exit(1);
@@ -306,7 +305,10 @@ hashit(str, new)
 		exit(8);
 	}
 	hp->hpt = mesgpt;
-	hp->hstr = savestr(str);
+	if (!(hp->hstr = strdup(str))) {
+		(void)fprintf(stderr, "xstr: %s\n", strerror(errno));
+		exit(1);
+	}
 	mesgpt += strlen(hp->hstr) + 1;
 	hp->hnext = hp0->hnext;
 	hp->hnew = new;
@@ -411,19 +413,6 @@ out:
 	ignore(fclose(strf));
 }
 
-char *
-savestr(cp)
-	register char *cp;
-{
-	register char *dp;
-
-	if ((dp = (char *) calloc(1, strlen(cp) + 1)) == NULL) {
-		perror("xstr");
-		exit(8);
-	}
-	return (strcpy(dp, cp));
-}
-
 lastchr(cp)
 	register char *cp;
 {
@@ -443,6 +432,7 @@ istail(str, of)
 	return (d);
 }
 
+void
 onintr()
 {
 
