@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)termios.4	5.2 (Berkeley) %G%
+.\"	@(#)termios.4	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMIOS 4
@@ -592,7 +592,7 @@ character.
 The following special characters are extensions defined by this
 system and are not a part of 1003.1 termios.
 .Bl -tag -width indent
-.It Dv EOL2	
+.It Dv EOL2
 Secondary
 .Dv EOL
 character.  Same function as
@@ -984,7 +984,7 @@ the following masks.
 Not all values
 specified are supported by all hardware.
 .Pp
-.Bl -tag -width CRTS_IFLOW -offset indent -compact
+.Bl -tag -width CRTSXIFLOW -offset indent -compact
 .It Dv CSIZE
 /* character size mask */
 .It Dv CS5
