@@ -19,7 +19,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)make.h	5.7 (Berkeley) %G%
+ *	@(#)make.h	5.8 (Berkeley) %G%
  */
 
 /*-
@@ -272,7 +272,6 @@ extern Boolean 	queryFlag;    	/* TRUE if we aren't supposed to really make
 				 * anything, just see if the targets are out-
 				 * of-date */
 
-extern Boolean	noWarnings;    	/* TRUE if should not print warning messages */
 extern Boolean	checkEnvFirst;	/* TRUE if environment should be searched for
 				 * variables before the global context */
 
@@ -292,31 +291,31 @@ extern time_t 	now;	    	/* The time at the start of this whole
 extern Boolean	oldVars;    	/* Do old-style variable substitution */
 
 /*
- * Debug control:
- *	There is one bit per module. It is up to the module what debug
+ * debug control:
+ *	There is one bit per module.  It is up to the module what debug
  *	information to print.
- *	DEBUG(module) returns TRUE if debugging is on for that module.
  */
-extern int    	debug;
-#define DEBUG_SUFF	0x00000001
-#define DEBUG_MAKE	0x00000002
-#define DEBUG_JOB 	0x00000004
-#define DEBUG_TARG	0x00000008
-#define DEBUG_DIR 	0x00000010
-#define DEBUG_VAR 	0x00000020
-#define DEBUG_COND	0x00000040
-#define DEBUG_PARSE	0x00000080
-#define DEBUG_RMT 	0x00000100
-#define DEBUG_ARCH	0x00000200
+extern int debug;
+#define	DEBUG_ARCH	0x0001
+#define	DEBUG_COND	0x0002
+#define	DEBUG_DIR	0x0004
+#define	DEBUG_GRAPH1	0x0008
+#define	DEBUG_GRAPH2	0x0010
+#define	DEBUG_JOB	0x0020
+#define	DEBUG_MAKE	0x0040
+#define	DEBUG_PARSE	0x0080
+#define	DEBUG_SUFF	0x0100
+#define	DEBUG_TARG	0x0200
+#define	DEBUG_VAR	0x0400
 
-#ifndef __STDC__
+#ifdef __STDC__
+#define CONCAT(a,b)	a##b
+#else
 #define I(a)	  	a
 #define CONCAT(a,b)	I(a)b
-#else
-#define CONCAT(a,b)	a##b
 #endif /* __STDC__ */
 
-#define DEBUG(module)	(debug & CONCAT(DEBUG_,module))
+#define	DEBUG(module)	(debug & CONCAT(DEBUG_,module))
 
 /*
  * Since there are so many, all functions that return non-integer values are
