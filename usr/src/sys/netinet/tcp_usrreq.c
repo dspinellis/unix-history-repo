@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.5 81/10/21 */
+/* tcp_usrreq.c 1.6 81/10/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,7 +66,7 @@ COUNT(TCP_USRREQ);
 	wp->w_tcb = tp;
 	wp->w_dat = m;
 	nstate = tp->t_state;
-	tp->net_keep = 0;
+	tp->tc_flags &= ~TC_NET_KEEP;
 	acounts[nstate][input]++;
 	switch (tcp_fstab[nstate][input]) {
 
@@ -93,9 +93,9 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case CL2_CLW:				/* 10 */
-		tp->snd_fin = 1;
+		tp->tc_flags |= TC_SND_FIN;
 		send_ctl(tp);
-		tp->usr_closed = 1;
+		tp->tc_flags |= TC_USR_CLOSED;
 		nstate = CLOSING2;
 		break;
 
@@ -113,9 +113,9 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case FW1_SYR:				/* 24,25 */
-		tp->snd_fin = 1;
+		tp->tc_flags |= TC_SND_FIN;
 		send_ctl(tp);
-		tp->usr_closed = 1;
+		tp->tc_flags |= TC_USR_CLOSED;
 		nstate = FIN_W1;
 		break;
 
@@ -134,7 +134,7 @@ COUNT(TCP_USRREQ);
 		break;
 
 	case CLS_SYN:				/* 45 */
-		tp->snd_rst = 1;
+		tp->tc_flags |= TC_SND_RST;
 		send_null(tp);
 		t_close(tp, UABORT);
 		nstate = CLOSED;
@@ -269,7 +269,7 @@ COUNT(T_CLOSE);
 	/* if user has initiated close (via close call), delete ucb
 	   entry, otherwise just wakeup so user can issue close call */
 
-	if (tp->usr_abort)
+	if (tp->tc_flags&TC_USR_ABORT)
         	up->uc_proc = NULL;
 	else
         	to_user(up, state);
@@ -328,7 +328,7 @@ sss_snd(wp)
 
 	if (up->uc_flags & UURG) {		/* urgent data */
 		tp->snd_urp = last+1;
-		tp->snd_urg = 1;
+		tp->tc_flags |= TC_SND_URG;
 	}
 
 	send(tp);
@@ -346,7 +346,7 @@ COUNT(TCP_TIMERS);
 	switch (type) {
 
 	case TINIT:		/* initialization timer */
-		if (!tp->syn_acked) {				/* 35 */
+		if ((tp->tc_flags&TC_SYN_ACKED) == 0) {		/* 35 */
 			t_close(tp, UINTIMO);
 			return (CLOSED);
 		}
@@ -367,7 +367,7 @@ COUNT(TCP_TIMERS);
 			return (RCV_WAIT);			/* 17 */
 
 		case CLOSING1:
-			tp->waited_2_ml = 1;
+			tp->tc_flags |= TC_WAITED_2_ML;
 			return (SAME);
 
 		default:
@@ -381,7 +381,7 @@ COUNT(TCP_TIMERS);
 			 * in case of multiple retransmissions.
 			 */
 			tp->snd_nxt = tp->snd_una;
-			tp->rexmt = 1;
+			tp->tc_flags |= TC_REXMT;
 			tp->t_xmtime = tp->t_xmtime << 1;
 			if (tp->t_xmtime > T_REMAX)
 				tp->t_xmtime = T_REMAX;
@@ -395,7 +395,7 @@ COUNT(TCP_TIMERS);
 		/*
 		 * If user has already closed, abort the connection.
 		 */
-		if (tp->usr_closed) {
+		if (tp->tc_flags & TC_USR_CLOSED) {
 			t_close(tp, URXTIMO);
 			return (CLOSED);
 		}
@@ -405,7 +405,7 @@ COUNT(TCP_TIMERS);
 		/*
 		 * Force a byte send through closed window.
 		 */
-		tp->force_one = 1;				/* 38 */
+		tp->tc_flags |= TC_FORCE_ONE;
 		send(tp);
 		return (SAME);
 	}
