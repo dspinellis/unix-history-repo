@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.76 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.77 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,18 +27,31 @@ static char sccsid[] = "@(#)login.c	5.76 (Berkeley) %G%";
 #include <sys/resource.h>
 #include <sys/file.h>
 
-#include <utmp.h>
 #include <signal.h>
-#include <errno.h>
 #include <ttyent.h>
 #include <syslog.h>
+#include <setjmp.h>
+#include <tzfile.h>
+#include <utmp.h>
+#include <errno.h>
 #include <grp.h>
 #include <pwd.h>
-#include <setjmp.h>
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <tzfile.h>
 #include "pathnames.h"
+
+void	 badlogin __P((char *));
+void	 checknologin __P((void));
+void	 dolastlog __P((int));
+void	 getloginname __P((void));
+void	 motd __P((void));
+int	 rootterm __P((char *));
+void	 sigint __P((int));
+void	 sleepexit __P((int));
+char	*stypeof __P((char *));
+void	 timedout __P((int));
 
 #define	TTYGRPNAME	"tty"		/* name of group to own ttys */
 
@@ -47,7 +60,7 @@ static char sccsid[] = "@(#)login.c	5.76 (Berkeley) %G%";
  * be patched on machines where it's too small.
  */
 int	timeout = 300;
-int	rootlogin;
+
 #ifdef KERBEROS
 int	notickets = 1;
 char	*instance;
@@ -59,25 +72,22 @@ struct	passwd *pwd;
 int	failures;
 char	term[64], *envinit[1], *hostname, *username, *tty;
 
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
-	extern char *optarg, **environ;
-	struct timeval tp;
-	struct group *gr;
+	extern char **environ;
 	register int ch;
 	register char *p;
-	int ask, fflag, hflag, pflag, cnt, uid;
-	int quietlog, rval;
+	struct group *gr;
+	struct stat st;
+	struct timeval tp;
+	struct utmp utmp;
+	int ask, cnt, fflag, hflag, pflag, quietlog, rootlogin, rval, uid;
 	char *domain, *salt, *ttyn;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char localhost[MAXHOSTNAMELEN];
-	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
-	time_t time();
-	off_t lseek();
-	void timedout();
 
 	(void)signal(SIGALRM, timedout);
 	(void)alarm((u_int)timeout);
@@ -131,6 +141,7 @@ main(argc, argv)
 		}
 	argc -= optind;
 	argv += optind;
+
 	if (*argv) {
 		username = *argv;
 		ask = 0;
@@ -138,11 +149,11 @@ main(argc, argv)
 		ask = 1;
 
 	for (cnt = getdtablesize(); cnt > 2; cnt--)
-		close(cnt);
+		(void)close(cnt);
 
-	ttyn = ttyname(0);
+	ttyn = ttyname(STDIN_FILENO);
 	if (ttyn == NULL || *ttyn == '\0') {
-		(void)sprintf(tname, "%s??", _PATH_TTY);
+		(void)snprintf(tname, sizeof(tname), "%s??", _PATH_TTY);
 		ttyn = tname;
 	}
 	if (tty = rindex(ttyn, '/'))
@@ -291,18 +302,14 @@ main(argc, argv)
 			(void)printf("Warning: your account expires on %s",
 			    ctime(&pwd->pw_expire));
 
-	/* nothing else left to fail -- really log in */
-	{
-		struct utmp utmp;
-
-		bzero((void *)&utmp, sizeof(utmp));
-		(void)time(&utmp.ut_time);
-		strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
-		if (hostname)
-			strncpy(utmp.ut_host, hostname, sizeof(utmp.ut_host));
-		strncpy(utmp.ut_line, tty, sizeof(utmp.ut_line));
-		login(&utmp);
-	}
+	/* Nothing else left to fail -- really log in. */
+	bzero((void *)&utmp, sizeof(utmp));
+	(void)time(&utmp.ut_time);
+	strncpy(utmp.ut_name, username, sizeof(utmp.ut_name));
+	if (hostname)
+		(void)strncpy(utmp.ut_host, hostname, sizeof(utmp.ut_host));
+	(void)strncpy(utmp.ut_line, tty, sizeof(utmp.ut_line));
+	login(&utmp);
 
 	dolastlog(quietlog);
 
@@ -315,7 +322,7 @@ main(argc, argv)
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
 
-	/* destroy environment unless user has requested preservation */
+	/* Destroy environment unless user has requested its preservation. */
 	if (!pflag)
 		environ = envinit;
 	(void)setenv("HOME", pwd->pw_dir, 1);
@@ -333,7 +340,8 @@ main(argc, argv)
 
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
-	/* if fflag is on, assume caller/authenticator has logged root login */
+
+	/* If fflag is on, assume caller/authenticator has logged root login. */
 	if (rootlogin && fflag == 0)
 		if (hostname)
 			syslog(LOG_NOTICE, "ROOT LOGIN (%s) ON %s FROM %s",
@@ -347,13 +355,12 @@ main(argc, argv)
 #endif
 
 	if (!quietlog) {
-		struct stat st;
-
-		printf(
+		(void)printf(
 "Copyright (c) 1980,1983,1986,1988,1990,1991 The Regents of the University\n%s",
 "of California.  All rights reserved.\n\n");
 		motd();
-		(void)sprintf(tbuf, "%s/%s", _PATH_MAILDIR, pwd->pw_name);
+		(void)snprintf(tbuf,
+		    sizeof(tbuf), "%s/%s", _PATH_MAILDIR, pwd->pw_name);
 		if (stat(tbuf, &st) == 0 && st.st_size != 0)
 			(void)printf("You have %smail.\n",
 			    (st.st_mtime > st.st_atime) ? "new " : "");
@@ -365,7 +372,7 @@ main(argc, argv)
 	(void)signal(SIGTSTP, SIG_IGN);
 
 	tbuf[0] = '-';
-	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
+	(void)strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
 
 	if (setlogin(pwd->pw_name) < 0)
@@ -383,11 +390,12 @@ main(argc, argv)
 }
 
 #ifdef	KERBEROS
-#define	NBUFSIZ		(UT_NAMESIZE + 1 + 5) /* .root suffix */
+#define	NBUFSIZ		(UT_NAMESIZE + 1 + 5)	/* .root suffix */
 #else
 #define	NBUFSIZ		(UT_NAMESIZE + 1)
 #endif
 
+void
 getloginname()
 {
 	register int ch;
@@ -416,28 +424,22 @@ getloginname()
 	}
 }
 
-void
-timedout()
-{
-	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
-	exit(0);
-}
-
+int
 rootterm(ttyn)
 	char *ttyn;
 {
 	struct ttyent *t;
 
-	return((t = getttynam(ttyn)) && t->ty_status&TTY_SECURE);
+	return((t = getttynam(ttyn)) && t->ty_status & TTY_SECURE);
 }
 
 jmp_buf motdinterrupt;
 
+void
 motd()
 {
 	register int fd, nchars;
 	sig_t oldint;
-	void sigint();
 	char tbuf[8192];
 
 	if ((fd = open(_PATH_MOTDFILE, O_RDONLY, 0)) < 0)
@@ -450,12 +452,24 @@ motd()
 	(void)close(fd);
 }
 
+/* ARGSUSED */
 void
-sigint()
+sigint(signo)
+	int signo;
 {
 	longjmp(motdinterrupt, 1);
 }
 
+/* ARGSUSED */
+void
+timedout(signo)
+	int signo;
+{
+	(void)fprintf(stderr, "Login timed out after %d seconds\n", timeout);
+	exit(0);
+}
+
+void
 checknologin()
 {
 	register int fd, nchars;
@@ -468,12 +482,12 @@ checknologin()
 	}
 }
 
+void
 dolastlog(quiet)
 	int quiet;
 {
 	struct lastlog ll;
 	int fd;
-	char *ctime();
 
 	if ((fd = open(_PATH_LASTLOG, O_RDWR, 0)) >= 0) {
 		(void)lseek(fd, (off_t)pwd->pw_uid * sizeof(ll), L_SET);
@@ -501,6 +515,7 @@ dolastlog(quiet)
 	}
 }
 
+void
 badlogin(name)
 	char *name;
 {
@@ -533,9 +548,10 @@ stypeof(ttyid)
 	return(ttyid && (t = getttynam(ttyid)) ? t->ty_type : UNKNOWN);
 }
 
+void
 sleepexit(eval)
 	int eval;
 {
-	sleep((u_int)5);
+	(void)sleep((u_int)5);
 	exit(eval);
 }
