@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.2 (Berkeley) %G%
+ *	@(#)pmap.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -1377,13 +1377,14 @@ vm_page_alloc1()
 
 	spl = splimp();				/* XXX */
 	simple_lock(&vm_page_queue_free_lock);
-	if (queue_empty(&vm_page_queue_free)) {
+	if (vm_page_queue_free.tqh_first == NULL) {
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);
 		return (NULL);
 	}
 
-	queue_remove_first(&vm_page_queue_free, mem, vm_page_t, pageq);
+	mem = vm_page_queue_free.tqh_first;
+	TAILQ_REMOVE(&vm_page_queue_free, mem, pageq);
 
 	cnt.v_free_count--;
 	simple_unlock(&vm_page_queue_free_lock);
@@ -1424,13 +1425,13 @@ vm_page_free1(mem)
 {
 
 	if (mem->flags & PG_ACTIVE) {
-		queue_remove(&vm_page_queue_active, mem, vm_page_t, pageq);
+		TAILQ_REMOVE(&vm_page_queue_active, mem, pageq);
 		mem->flags &= ~PG_ACTIVE;
 		cnt.v_active_count--;
 	}
 
 	if (mem->flags & PG_INACTIVE) {
-		queue_remove(&vm_page_queue_inactive, mem, vm_page_t, pageq);
+		TAILQ_REMOVE(&vm_page_queue_inactive, mem, pageq);
 		mem->flags &= ~PG_INACTIVE;
 		cnt.v_inactive_count--;
 	}
@@ -1440,7 +1441,7 @@ vm_page_free1(mem)
 
 		spl = splimp();
 		simple_lock(&vm_page_queue_free_lock);
-		queue_enter(&vm_page_queue_free, mem, vm_page_t, pageq);
+		TAILQ_INSERT_TAIL(&vm_page_queue_free, mem, pageq);
 
 		cnt.v_free_count++;
 		simple_unlock(&vm_page_queue_free_lock);
