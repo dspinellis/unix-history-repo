@@ -1,0 +1,12 @@
+# Use -nostdinc++ flag if your version of gcc understands it.
+NOSTDINC = -nostdinc++
+
+# If the C include files are C++-ready (with extern "C"),
+# define: HAVE_CPLUS_EXTERN = 1 and: WRAP_C_INCLUDES =
+# If not, define HAVE_CPLUS_EXTERN = 0, and do not define WRAP_C_INCLUDES here
+HAVE_CPLUS_EXTERN = 1
+WRAP_C_INCLUDES =
+
+# Flags to pass to gen-params when building _G_config.h.
+# For example: G_CONFIG_ARGS = size_t="unsigned long"
+G_CONFIG_ARGS = DOLLAR_IN_LABEL=1
