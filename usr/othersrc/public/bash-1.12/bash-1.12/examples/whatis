@@ -1,0 +1,50 @@
+#
+# whatis -- and implementation of the 10th Edition Unix sh builtin `whatis'
+#	    command.
+#
+# usage: whatis arg [...]
+#
+# For each argument, whatis prints the associated value as a parameter,
+# builtin, function, alias, or executable file as appropriate.  In each
+# case, the value is printed in a form which would yield the same value
+# if typed as input to the shell itself.
+#
+
+whatis ()
+{
+  local fail=0
+
+  if [ $# -eq 0 ] ; then
+    echo 'usage: whatis arg [arg...]'
+    return 1
+  fi
+
+  for arg; do
+    case $(builtin type -type $arg 2>/dev/null) in
+      "alias")
+        builtin alias "$arg"
+        ;;
+      "function")
+        builtin type "$arg" | sed 1d
+        ;;
+      "builtin")
+        echo builtin "$arg"
+        ;;
+      "file")
+        builtin type -path "$arg"
+        ;;
+      *)
+        # OK, we could have a variable, or we could have nada.
+        if [ "$(eval echo \${$arg+set})" = "set" ] ; then
+          # It is a variable, and it is set.
+          echo -n "$arg="
+          eval echo '\"'\$$arg'\"'
+        else
+          echo whatis: $arg: not found
+          fail=1
+        fi
+        ;;
+      esac
+    done
+  return $fail
+}
