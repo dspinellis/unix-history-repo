@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket2.c	7.16.1.1 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "proc.h"
 #include "file.h"
 #include "buf.h"
@@ -232,26 +231,6 @@ socantrcvmore(so)
 }
 
 /*
- * Socket select/wakeup routines.
- */
-
-/*
- * Queue a process for a select on a socket buffer.
- */
-sbselqueue(sb)
-	struct sockbuf *sb;
-{
-	struct proc *p;
-
-	if ((p = sb->sb_sel) && p->p_wchan == (caddr_t)&selwait)
-		sb->sb_flags |= SB_COLL;
-	else {
-		sb->sb_sel = u.u_procp;
-		sb->sb_flags |= SB_SEL;
-	}
-}
-
-/*
  * Wait for data to arrive at/drain from a socket buffer.
  */
 sbwait(sb)
@@ -295,11 +274,8 @@ sowakeup(so, sb)
 {
 	struct proc *p;
 
-	if (sb->sb_sel) {
-		selwakeup(sb->sb_sel, sb->sb_flags & SB_COLL);
-		sb->sb_sel = 0;
-		sb->sb_flags &= ~(SB_SEL|SB_COLL);
-	}
+	selwakeup(&sb->sb_sel);
+	sb->sb_flags &= ~SB_SEL;
 	if (sb->sb_flags & SB_WAIT) {
 		sb->sb_flags &= ~SB_WAIT;
 		wakeup((caddr_t)&sb->sb_cc);
@@ -431,13 +407,19 @@ sbappend(sb, m)
 	struct sockbuf *sb;
 	struct mbuf *m;
 {
-	register struct mbuf *n, *n0;
+	register struct mbuf *n;
 
 	if (m == 0)
 		return;
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
+		do {
+			if (n->m_flags & M_EOR) {
+				sbappendrecord(sb, m); /* XXXXXX!!!! */
+				return;
+			}
+		} while (n->m_next && (n = n->m_next));
 	}
 	sbcompress(sb, m, n);
 }
@@ -491,6 +473,10 @@ sbappendrecord(sb, m0)
 		sb->sb_mb = m0;
 	m = m0->m_next;
 	m0->m_next = 0;
+	if (m && (m0->m_flags & M_EOR)) {
+		m0->m_flags &= ~M_EOR;
+		m->m_flags |= M_EOR;
+	}
 	sbcompress(sb, m, m0);
 }
 
@@ -525,10 +511,16 @@ sbinsertoob(sb, m0)
 	 * Put the first mbuf on the queue.
 	 * Note this permits zero length records.
 	 */
+	sballoc(sb, m0);
 	m0->m_nextpkt = *mp;
 	*mp = m0;
-	for (m = m0; m; m = m->m_next)
-		sballoc(sb, m);
+	m = m0->m_next;
+	m0->m_next = 0;
+	if (m && (m0->m_flags & M_EOR)) {
+		m0->m_flags &= ~M_EOR;
+		m->m_flags |= M_EOR;
+	}
+	sbcompress(sb, m, m0);
 }
 
 /*
@@ -543,7 +535,7 @@ sbappendaddr(sb, asa, m0, control)
 	struct mbuf *m0, *control;
 {
 	register struct mbuf *m, *n;
-	int space = asa->sa_len, eor = 0;
+	int space = asa->sa_len;
 
 if (m0 && (m0->m_flags & M_PKTHDR) == 0)
 panic("sbappendaddr");
@@ -568,11 +560,8 @@ panic("sbappendaddr");
 	else
 		control = m0;
 	m->m_next = control;
-	for (n = m; n; n = n->m_next) {
-		eor |= n->m_flags & M_EOR;
+	for (n = m; n; n = n->m_next)
 		sballoc(sb, n);
-	}
-	m->m_flags |= eor;
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
@@ -587,7 +576,7 @@ sbappendcontrol(sb, m0, control)
 	struct mbuf *control, *m0;
 {
 	register struct mbuf *m, *n;
-	int space = 0, eor = 0;
+	int space = 0;
 
 	if (control == 0)
 		panic("sbappendcontrol");
@@ -602,11 +591,8 @@ sbappendcontrol(sb, m0, control)
 	if (space > sbspace(sb))
 		return (0);
 	n->m_next = m0;			/* concatenate data to control */
-	for (m = control; m; m = m->m_next) {
-		eor |= m->m_flags & M_EOR;
+	for (m = control; m; m = m->m_next)
 		sballoc(sb, m);
-	}
-	control->m_flags |= eor;
 	if (n = sb->sb_mb) {
 		while (n->m_nextpkt)
 			n = n->m_nextpkt;
@@ -621,29 +607,23 @@ sbappendcontrol(sb, m0, control)
  * buffer sb following mbuf n.  If n
  * is null, the buffer is presumed empty.
  */
-sbcompress(sb, m, n0)
+sbcompress(sb, m, n)
 	register struct sockbuf *sb;
-	register struct mbuf *m;
-	struct mbuf *n0;
+	register struct mbuf *m, *n;
 {
-	register struct mbuf *n = n0;
 	register int eor = 0;
+	register struct mbuf *o;
 
-	if (n) {
-		if (n->m_flags & M_EOR)
-			n = 0;
-		else while (n->m_next)
-			n = n->m_next;
-	}
 	while (m) {
 		eor |= m->m_flags & M_EOR;
-		if (m->m_len == 0) {
-			if (eor == 0 || m->m_next || n) {
-				m = m_free(m);
-				continue;
-			}
+		if (m->m_len == 0 &&
+		    (eor == 0 ||
+		     (((o = m->m_next) || (o = n)) &&
+		      o->m_type == m->m_type))) {
+			m = m_free(m);
+			continue;
 		}
-		if (n && (n->m_flags & M_EXT) == 0 &&
+		if (n && (n->m_flags & (M_EXT | M_EOR)) == 0 &&
 		    (n->m_data + n->m_len + m->m_len) < &n->m_dat[MLEN] &&
 		    n->m_type == m->m_type) {
 			bcopy(mtod(m, caddr_t), mtod(n, caddr_t) + n->m_len,
@@ -653,25 +633,21 @@ sbcompress(sb, m, n0)
 			m = m_free(m);
 			continue;
 		}
-		if (n == 0) {
-			if (n0)
-				n0->m_nextpkt = m;
-			else
-				sb->sb_mb = m;
-			n0 = m;
-		} else
+		if (n)
 			n->m_next = m;
+		else
+			sb->sb_mb = m;
 		sballoc(sb, m);
 		n = m;
-		/*m->m_flags &= ~M_EOR;*/
+		m->m_flags &= ~M_EOR;
 		m = m->m_next;
 		n->m_next = 0;
 	}
 	if (eor) {
-		if (n0)
-			n0->m_flags |= eor;
+		if (n)
+			n->m_flags |= eor;
 		else
-			panic("sbcompress");
+			printf("semi-panic: sbcompress\n");
 	}
 }
 
