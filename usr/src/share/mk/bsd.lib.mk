@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.37 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.38 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -81,13 +81,17 @@ llib-l${LIB}.ln: ${SRCS}
 
 .if !target(clean)
 clean:
-	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} ${POBJS} \
+	rm -f ${OBJS}
+	rm -f ${POBJS}
+	rm -f a.out Errs errs mklog ${CLEANFILES} \
 	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
 .endif
 
 .if !target(cleandir)
 cleandir:
-	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} ${POBJS} \
+	rm -f ${OBJS}
+	rm -f ${POBJS}
+	rm -f a.out Errs errs mklog ${CLEANFILES} \
 	    profiled/*.o lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
 	rm -f ${MANALL} ${.CURDIR}/tags .depend
 .endif
