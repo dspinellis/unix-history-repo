@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex.h	7.2	%G%  */
+/* sccs id:	@(#)ex.h	7.3	%G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -49,7 +49,7 @@
 #include <sys/stat.h>
 
 #ifndef var
-#define var	var
+#define var	extern
 #endif
 /*
  *	The following little dance copes with the new USG tty handling.
