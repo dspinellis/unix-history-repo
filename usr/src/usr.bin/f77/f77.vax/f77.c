@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char sccsid[] = "@(#)f77.c	5.2 (Berkeley) %G%";
+static	char sccsid[] = "@(#)f77.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -16,6 +16,12 @@ static	char sccsid[] = "@(#)f77.c	5.2 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	f77.c,v $
+ * Revision 5.4  85/12/17  19:12:14  donn
+ * Dynamically allocate buffer; add lint fixes.
+ * 
+ * Revision 5.3  85/11/25  00:00:02  donn
+ * 4.3 beta
+ * 
  * Revision 5.2  85/08/10  05:16:14  donn
  * Ifdeffed 66 code, added -r8 flag.  From Jerry Berkman.
  * 
@@ -140,7 +146,6 @@ static char rflags[30]	= "";
 static char lflag[3]	= "-x";
 static char *fflagp	= fflags+1;
 static char *f2flagp	= f2flags;
-static char *cflagp	= cflags+2;
 static char *eflagp	= eflags+12;
 static char *rflagp	= rflags;
 static char *cppflags	= "";
@@ -155,11 +160,14 @@ static flag profileflag	= NO;
 static flag optimflag	= NO;
 static flag debugflag	= NO;
 static flag verbose	= NO;
-static flag nofloating	= NO;
 static flag fortonly	= NO;
 static flag macroflag	= NO;
 static flag sdbflag	= NO;
 static flag namesflag	= YES;
+
+#if TARGET == PDP11
+static flag nofloating	= NO;
+#endif
 
 static int ncpp;
 
@@ -168,12 +176,14 @@ main(argc, argv)
 int argc;
 char **argv;
 {
-int i, c, status;
+register int i, n;
+int c, status;
 char *setdoto(), *lastchar(), *lastfield(), *copys(), *argvtos();
 ptr ckalloc();
+char *strcat();
 register char *s;
 char fortfile[20], *t;
-char buff[100];
+char *buff;
 int intrupt();
 int new_aoutname = NO;
 
@@ -200,6 +210,10 @@ loadp = loadargs + 4;
 
 --argc;
 ++argv;
+
+for (i = 0, n = 50; i < argc; ++i)
+	n += strlen(argv[i]) + 1;
+buff = (char *) ckalloc(n);
 
 while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 	{
@@ -294,7 +308,7 @@ while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 			break;
 
 		case 'S':
-			strcat(cflags, " -S");
+			(void) strcat(cflags, " -S");
 			saveasmflag = YES;
 
 		case 'c':
@@ -330,13 +344,13 @@ while(argc>0 && argv[0][0]=='-' && argv[0][1]!='\0')
 				fprintf(diagfile, "-g and -O are incompatible; -g ignored\n");
 				break;
 				}
-			strcat(cflags," -g");
+			(void) strcat(cflags," -g");
 			sdbflag = YES;
 			goto copyfflag;
 
 		case 'p':
 			profileflag = YES;
-			strcat(cflags," -p");
+			(void) strcat(cflags," -p");
 			*fflagp++ = 'p';
 			if(s[1] == 'g')
 				{
@@ -433,7 +447,7 @@ if(!debugflag)
 	struct rlimit r;
 
 	r.rlim_cur = r.rlim_max = 0;
-	setrlimit(RLIMIT_CORE, &r);
+	(void) setrlimit(RLIMIT_CORE, &r);
 	}
 #endif	NOCORE
 
@@ -747,7 +761,8 @@ obj = setdoto(s);
 		else
 			{
 			sprintf(buff,"mv %s %s", optzfname, asmpass2);
-			sys(buff);
+			if( sys(buff) )
+				fatal("can't rename optimizer output file");
 			}
 		}
 #	endif
@@ -772,7 +787,8 @@ if(saveasmflag)
 		CATNAME, asmfname, initfname, asmpass2, obj);
 #endif
 #endif
-	sys(buff);
+	if( sys(buff) )
+		fatal("can't concatenate assembly files");
 	*lastc = 'o';
 	}
 else
@@ -792,7 +808,8 @@ else
 	else
 		sprintf(buff, "%s %s %s >>%s",
 			CATNAME, initfname, asmpass2, asmfname);
-	sys(buff);
+	if( sys(buff) )
+		fatal("can't concatenate assembly files");
 #ifdef UCBVAXASM
 	sprintf(buff, "%s -J -o %s %s", asmname, obj, asmfname);
 #else
@@ -860,7 +877,8 @@ if(debugflag)
 		execv(ldname, v0);
 		fatalstr("couldn't load %s", ldname);
 		}
-	await(waitpid);
+	if( await(waitpid) )
+		erred = YES;
 #endif
 
 #if HERE==INTERDATA
@@ -942,9 +960,11 @@ for(t = argv[1] ; *s++ = *t++ ; )
 if((waitpid = fork()) == 0)
 	{
 	if(inname)
-		freopen(inname, "r", stdin);
+		if(freopen(inname, "r", stdin) == NULL)
+			fatalstr("Cannot open %s", inname);
 	if(outname)
-		freopen(outname, (append ? "a" : "w"), stdout);
+		if(freopen(outname, (append ? "a" : "w"), stdout) == NULL)
+			fatalstr("Cannot open %s", outname);
 	enbint(SIG_DFL);
 
 	texec(path+9, argv);  /* command */
@@ -1009,13 +1029,13 @@ enbint(k)
 int (*k)();
 {
 if(sigivalue == 0)
-	signal(SIGINT,k);
+	(void) signal(SIGINT,k);
 if(sigqvalue == 0)
-	signal(SIGQUIT,k);
+	(void) signal(SIGQUIT,k);
 if(sighvalue == 0)
-	signal(SIGHUP,k);
+	(void) signal(SIGHUP,k);
 if(sigtvalue == 0)
-	signal(SIGTERM,k);
+	(void) signal(SIGTERM,k);
 }
 
 
@@ -1104,6 +1124,7 @@ stupid(s)
 char *s;
 {
 char c;
+extern char *index();
 
 if( (c = dotchar(s))
   && index("focsreF", c)
@@ -1266,9 +1287,10 @@ fatalstr("cannot open intermediate file %s", s);
 ptr ckalloc(n)
 int n;
 {
-ptr p, calloc();
+ptr p;
+extern char *calloc();
 
-if( p = calloc(1, (unsigned) n) )
+if( p = (ptr) calloc(1, (unsigned) n) )
 	return(p);
 
 fatal("out of memory");
