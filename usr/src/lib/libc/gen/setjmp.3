@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)setjmp.3	6.5 (Berkeley) %G%
+.\"     @(#)setjmp.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SETJMP 3
@@ -127,6 +127,13 @@ versions of
 .Xr sigaction 2 ,
 .Xr sigstack 2 ,
 .Xr signal 3
+.Sh STANDARDS
+The
+.Fn setjmp
+and
+.Fn longjmp
+functions conform to
+.St -ansiC .
 .\" .Sh HISTORY
 .\ The
 .\ .Nm

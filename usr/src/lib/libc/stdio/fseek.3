@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fseek.3	6.9 (Berkeley) %G%
+.\"     @(#)fseek.3	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FSEEK 3
@@ -92,7 +92,7 @@ and
 the file offset into or from the object referenced by 
 .Fa pos .
 On some
-.Pq (non- Ns Tn UNIX )
+.Pq non- Ns Tn UNIX
 systems an
 .Dq Fa fpos_t
 object may be a complex object
@@ -105,10 +105,11 @@ returns no value.
 Upon successful completion,
 .Fn fgetpos ,
 .Fn fseek ,
-.Fn fsetpos ,
+.Fn fsetpos
+return 0,
 and
 .Fn ftell
-return 0.
+returns the current offset.
 Otherwise, \-1 is returned and the global variable errno is set to
 indicate the error.
 .Sh ERRORS

@@ -1,33 +1,46 @@
-.\" Copyright (c) 1991 The Regents of the University of California.
+.\" Copyright (c) 1991, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)isinf.3	5.1 (Berkeley) %G%
+.\"     @(#)isinf.3	5.2 (Berkeley) %G%
 .\"
-.TH ISINF 3 ""
-.UC 7
-.SH NAME
-isinf, isnan \- return if infinity or not-a-number
-.SH SYNOPSIS
-.nf
-.ft B
-int isinf(double);
-int isnan(double);
-.fr R
-.fi
-.SH DESCRIPTION
-.I Isninf
-returns 1 if the number is ``infinity'', otherwise 0.
-.PP
-.I Isnan
-returns 1 if the number is ``NaN'', otherwise 0.
-.SH SEE ALSO
-.IR math (3)
-.sp
-.IR "IEEE Standard for Binary Floating-Point Arithmetic" ,
-ANSI/IEEE Std 754-1985
-.SH BUGS
-Neither the VAX nor the Tahoe floating point have distinguished values
+.Dd 
+.Dt ISINF 3
+.Os
+.Sh NAME
+.Nm isinf ,
+.Nm isnan
+.Nd test for infinity or not-a-number (\*(Na)
+.Sh SYNOPSIS
+.Ft int 
+.Fn isinf double
+.Ft int 
+.Fn isnan double
+.Sh DESCRIPTION
+The
+.Fn isninf
+function
+returns 1 if the number is
+.Dq \\*(If ,
+otherwise 0.
+.Pp
+The
+.Fn isnan
+function
+returns 1 if the number is
+.Dq \\*(Na ,
+otherwise 0.
+.Sh SEE ALSO
+.Xr math 3
+.Rs
+.%T "IEEE Standard for Binary Floating-Point Arithmetic"
+.%Q ANSI
+.%R Std 754-1985
+.Re
+.Sh BUGS
+Neither the
+.Tn VAX
+nor the Tahoe floating point have distinguished values
 for either infinity or not-a-number.
 These routines always return 0 on those architectures.
