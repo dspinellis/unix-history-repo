@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
+#include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/stat.h>
@@ -503,9 +504,14 @@ startnewtape(top)
 	int	childpid;
 	int	status;
 	int	waitpid;
-	sig_t	interrupt;
 	int	i;
 	char	*p;
+#ifdef sunos
+	void	(*interrupt)();
+	char	*index();
+#else
+	sig_t	interrupt;
+#endif
 
 	interrupt = signal(SIGINT, SIG_IGN);
 	parentpid = getpid();
