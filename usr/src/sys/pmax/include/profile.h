@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)profile.h	7.4 (Berkeley) %G%
+ *	@(#)profile.h	7.5 (Berkeley) %G%
  */
 
 #define	_MCOUNT_DECL static void __mcount
@@ -45,7 +45,7 @@
  * functions on the PMAX, and we do not want to invoke mcount
  * recursively.
  */
-#define	MCOUNT_ENTER	s = splhigh()
+#define	MCOUNT_ENTER	s = _splhigh()
 
-#define	MCOUNT_EXIT	splx(s)
+#define	MCOUNT_EXIT	_splx(s)
 #endif /* KERNEL */
