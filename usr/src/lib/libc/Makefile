@@ -1,30 +1,21 @@
 #
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.29 (Berkeley) %G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
 #
-#
-# The system has two monitoring schemes, utilizing either ``prof''
-# or ``gprof''. DFLMON determines the default profiler; mon.o
-# specifies that ``prof'' is the default, gmon.o specifies that
-# ``gprof'' is the default.
-#
-# Machine dependent routines are located in a subtree which parallels
-# the top directories.  This subtree is identified by the machine name.
+#	@(#)Makefile	4.30 (Berkeley) %G%
 #
 # Compatibility routines are kept in directories with a prefixing
 # ``compat'' (so they all sort together).
 # 
 # The C run-time startup code is always machine dependent and expected
 # to be located in ${MACHINE}/csu
-#
-# All files contain sccsid strings, but these are not compiled into
-# library objects by default, as a space-saving measure.  To produce
-# a library that contains these strings in every object except
-# system call stubs, add -DLIBC_SCCS to DEFS below; to put these
-# strings into system call stubs, use -DSYSLIBC_SCCS.
 #
 # There are two possible methods of doing host name look up.  They are
 # to use the name server or /etc/hosts. HOSTLOOKUP defines which method
@@ -39,35 +30,45 @@
 #HOSTLOOKUP=	hosttable
 HOSTLOOKUP=	named
 #
-DESTDIR=
-DFLMON=	mon.o
-DEFS=
-COMPAT=	compat-4.1 compat-4.3 compat-sys5
-ALL=	gen inet net ns stdio ${MACHINE} ${COMPAT}
+# The system has two monitoring schemes, utilizing either ``prof''
+# or ``gprof''. DFLMON determines the default profiler; mon.o
+# specifies that ``prof'' is the default, gmon.o specifies that
+# ``gprof'' is the default.
+#DFLMON=	gmon.o
+DFLMON=		mon.o
+#
+# All library object contain sccsid strings by default; they may be
+# excluded as a space-saving measure.  To produce a library that does
+# not contain these strings, remove -DLIBC_SCCS and -DSYSLIBC_SCCS
+# from DEFS below.  To remove these strings from just the system call
+# stubs, remove -DSYSLIBC_SCCS from DEFS below.
+#DEFS=
+DEFS="-DLIBC_SCCS -DSYSLIBC_SCCS"
+
+ALL=	compat-4.1 compat-4.1/compat-4.1.${MACHINE} compat-4.3 \
+	compat-sys5 gen gen/gen.${MACHINE} inet net net/net.${MACHINE} \
+	net/${HOSTLOOKUP} ns stdio stdio/stdio.${MACHINE} \
+	${MACHINE}/csu ${MACHINE}/sys
+SUBDIR=	${ALL} net/hosttable net/named
 TAGSFILE=tags
 
-libc.a libc_p.a: ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}
-	rm -rf t1 tmp
-	-mkdir tmp
-	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib); done
-	cd tmp; ar x ../net/${HOSTLOOKUP}/hostlib
-	ls tmp/*.o | sort -t/ +1 > t1
+libc.a libc_p.a: mkdir ${ALL}
+	ls library/*.o | sort -t/ +1 > t1
 	ar cr libc.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma findiop.o libc.a exit.o
 	ar ma exit.o libc.a fakcu.o
-	rm -f t1 tmp/*
-	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib_p); done
-	cd tmp; ar x ../net/${HOSTLOOKUP}/hostlib_p
-	ls tmp/*.o | sort -t/ +1 > t1
+	ls profiled/*.o | sort -t/ +1 > t1
 	ar cr libc_p.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma findiop.o libc_p.a exit.o
 	ar ma exit.o libc_p.a fakcu.o
-	rm -rf t1 tmp
+	rm -rf t1 library profiled
 
-${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}: FRC
-	cd $@; make ${MFLAGS} DEFS=${DEFS}
+mkdir: FRC
+	rm -rf library profiled
+	mkdir library profiled
 
-FRC:
+${ALL}: FRC
+	cd $@; make ${MFLAGS} DEFS=${DEFS} link
 
 install: 
 	install -o bin -g bin -m 644 libc.a ${DESTDIR}/lib/libc.a
@@ -78,15 +79,18 @@ install:
 
 tags:
 	for i in ${ALL}; do \
-		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
+		(cd $$i; make ${MFLAGS} TAGSFILE=`pwd`/${TAGSFILE} tags); \
 	done
 	/usr/bin/sort -o ${TAGSFILE} ${TAGSFILE}
 
 clean:
-	for i in ${MACHINE}/csu ${ALL} net/hosttable net/named; \
+	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} clean); done
-	rm -rf tmp t1 libc.a libc_p.a
+	rm -rf libc.a libc_p.a library profiled
 
 depend:
-	for i in ${ALL} net/hosttable net/named; \
+	for i in ${SUBDIR}; \
 		do (cd $$i; make ${MFLAGS} DEFS=${DEFS} depend); done
+
+FRC:
+
