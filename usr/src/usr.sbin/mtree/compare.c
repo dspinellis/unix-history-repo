@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compare.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)compare.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -135,7 +135,7 @@ typeerr:		LABEL;
 	}
 	if (s->flags & F_SIZE && s->st_size != p->fts_statp->st_size) {
 		LABEL;
-		(void)printf("%ssize (%ld, %ld)\n",
+		(void)printf("%ssize (%qd, %qd)\n",
 		    tab, s->st_size, p->fts_statp->st_size);
 		tab = "\t";
 	}
