@@ -1,4 +1,4 @@
-#	@(#)Makefile.luna68k	7.3 (Berkeley) %G%
+#	@(#)Makefile.luna68k	7.4 (Berkeley) %G%
 #
 # From: hp300/conf/Makefile.luna68k	7.13 (Berkeley) 2/24/92
 #
@@ -80,10 +80,11 @@ SYSTEM_LD=	@strip=-x; \
 		${LD} $$strip -n -o $@ ${SYSTEM_OBJ} vers.o ../../libkern/obj/libkern.a
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
-SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
-		[ X${DEBUG} = X-g ] && { \
-		echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
-		echo strip -d $@; strip -d $@; } || true
+#SYSTEM_LD_TAIL=	@size $@; chmod 755 $@; \
+#		[ X${DEBUG} = X-g ] && { \
+#		echo cp $@ $@.gdb; rm -f $@.gdb; cp $@ $@.gdb; \
+#		echo strip -d $@; strip -d $@; } || true
+SYSTEM_LD_TAIL=	@size $@; chmod 755 $@
 
 %LOAD
 
