@@ -15,23 +15,25 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
-#include <dirent.h>
-#include <stdio.h>
-#include <fts.h>
-#include <string.h>
-#include <stdlib.h>
 
-void	 err __P((const char *, ...));
+#include <dirent.h>
+#include <err.h>
+#include <errno.h>
+#include <fts.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 char	*getbsize __P((char *, int *, long *));
 int	 linkchk __P((FTSENT *));
 void	 usage __P((void));
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -91,7 +93,7 @@ main(argc, argv)
 	blocksize /= 512;
 
 	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "");
 
 	while (p = fts_read(fts))
 		switch(p->fts_info) {
@@ -113,8 +115,7 @@ main(argc, argv)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
-			(void)fprintf(stderr,
-			    "du: %s: %s\n", p->fts_path, strerror(errno));
+			warn("%s", p->fts_path);
 			break;
 		default:
 			if (p->fts_statp->st_nlink > 1 && linkchk(p))
@@ -130,7 +131,7 @@ main(argc, argv)
 			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
 	if (errno)
-		err("%s", strerror(errno));
+		err(1, "");
 	exit(0);
 }
 
@@ -158,7 +159,7 @@ linkchk(p)
 
 	if (nfiles == maxfiles && (files = realloc((char *)files,
 	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL)
-		err("%s", strerror(errno));
+		err(1, "");
 	files[nfiles].inode = ino;
 	files[nfiles].dev = dev;
 	++nfiles;
@@ -170,33 +171,4 @@ usage()
 {
 	(void)fprintf(stderr, "usage: du [-a | -s] [-Hhx] [file ...]\n");
 	exit(1);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-err(const char *fmt, ...)
-#else
-err(fmt, va_alist)
-	char *fmt;
-        va_dcl
-#endif
-{
-	va_list ap;
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-#endif
-	(void)fprintf(stderr, "du: ");
-	(void)vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	(void)fprintf(stderr, "\n");
-	exit(1);
-	/* NOTREACHED */
 }
