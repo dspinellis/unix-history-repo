@@ -1,15 +1,15 @@
 /*
  * Copyright (c) 1989 Jan-Simon Pendry
  * Copyright (c) 1989 Imperial College of Science, Technology & Medicine
- * Copyright (c) 1989 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry at Imperial College, London.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wr_atab.c	5.4 (Berkeley) %G%
+ *	@(#)wr_atab.c	8.1 (Berkeley) %G%
  *
  * $Id: wr_atab.c,v 5.2.2.1 1992/02/09 15:09:44 jsp beta $
  *
