@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.10	%G%	*/
+/*	subr_prf.c	4.11	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,46 +18,52 @@
  * panicstr contains argument to last
  * call to panic.
  */
-
 char	*panicstr;
 
 /*
  * Scaled down version of C Library printf.
- * Only %s %u %d (==%u) %o %x %D are recognized.
- * Used to print diagnostic information
- * directly on console tty.
- * Since it is not interrupt driven,
- * all system activities are pretty much
- * suspended.
- * Printf should not be used for chit-chat.
+ * Used to print diagnostic information directly on console tty.
+ * Since it is not interrupt driven, all system activities are
+ * suspended.  Printf should not be used for chit-chat.
+ *
+ * One additional format: %b is supported to decode error registers.
+ * Usage is:
+ *	printf("reg=%b\n", regval, "<base><arg>*");
+ * Where <base> is the output base expressed as a control character,
+ * e.g. \10 gives octal; \20 gives hex.  Each arg is a sequence of
+ * characters, the first of which gives the bit number to be inspected
+ * (origin 1), and the next characters (up to a control character, i.e.
+ * a character <= 32), give the name of the register.  Thus
+ *	printf("reg=%b\n", 3, "\10\2BITTWO\1BITONE\n");
+ * would produce output:
+ *	reg=2<BITTWO,BITONE>
  */
 /*VARARGS1*/
 printf(fmt, x1)
-register char *fmt;
-unsigned x1;
+	char *fmt;
+	unsigned x1;
 {
 
 	prf(fmt, &x1, 0);
 }
 
 /*
- * print to the current users terminal,
- * guarantee not to sleep (so can be called by intr routine)
- * no watermark checking - so no verbose messages
+ * Uprintf prints to the current user's terminal,
+ * guarantees not to sleep (so can be called by interrupt routines)
+ * and does no watermark checking - (so no verbose messages).
  */
 /*VARARGS1*/
 uprintf(fmt, x1)
-	char	*fmt;
+	char *fmt;
 	unsigned x1;
 {
 
 	prf(fmt, &x1, 2);
 }
 
-/* THIS CODE IS VAX DEPENDENT */
 prf(fmt, adx, touser)
-register char *fmt;
-register u_int *adx;
+	register char *fmt;
+	register u_int *adx;
 {
 	register int b, c, i;
 	char *s;
@@ -71,6 +77,7 @@ loop:
 	}
 again:
 	c = *fmt++;
+	/* THIS CODE IS VAX DEPENDENT IN HANDLING %l? AND %c */
 	switch (c) {
 
 	case 'l':
@@ -124,8 +131,11 @@ number:
 	adx++;
 	goto loop;
 }
-/* END VAX DEPENDENT CODE */
 
+/*
+ * Printn prints a number n in base b.
+ * We don't use recursion to avoid deep kernel stacks.
+ */
 printn(n, b, touser)
 	unsigned long n;
 {
@@ -148,24 +158,26 @@ printn(n, b, touser)
 
 /*
  * Panic is called on unresolvable fatal errors.
- * It syncs, prints "panic: mesg", and then reboots.
+ * It prints "panic: mesg", and then reboots.
+ * If we are called twice, then we avoid trying to
+ * sync the disks as this often leads to recursive panics.
  */
 panic(s)
-char *s;
+	char *s;
 {
+	int bootopt = panicstr ? RB_AUTOBOOT : RB_AUTOBOOT|RB_NOSYNC;
 
 	panicstr = s;
 	printf("panic: %s\n", s);
 	(void) spl0();
-	for(;;)
-		boot(RB_PANIC, RB_AUTOBOOT);
+	boot(RB_PANIC, bootopt);
 }
 
 /*
- * prdev prints a warning message of the
- * form "mesg on dev x/y".
- * x and y are the major and minor parts of
- * the device argument.
+ * Prdev prints a warning message of the form "mesg on dev x/y".
+ * x and y are the major and minor parts of the device argument.
+ *
+ * PRDEV SHOULD COMPUTE AND USE DEVICE NAMES
  */
 prdev(str, dev)
 	char *str;
@@ -175,12 +187,17 @@ prdev(str, dev)
 	printf("%s on dev %d/%d\n", str, major(dev), minor(dev));
 }
 
+/*
+ * Hard error is the preface to plaintive error messages
+ * about failing device transfers.
+ */
 harderr(bp)
 	struct buf *bp;
 {
 
-	printf("hard err bn %d ", bp->b_blkno);
+	printf("hard err bn%d ", bp->b_blkno);
 }
+
 /*
  * Print a character on console or users terminal.
  * If destination is console then the last MSGBUFS characters

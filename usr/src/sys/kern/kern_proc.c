@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.7	%G%	*/
+/*	kern_proc.c	4.8	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -169,12 +169,12 @@ exece()
 	ne = 0;
 	nc = 0;
 	uap = (struct execa *)u.u_ap;
-	if ((bno = malloc(argmap, ctod(clrnd((int) btoc(NCARGS))))) == 0) {
+	if ((bno = rmalloc(argmap, ctod(clrnd((int) btoc(NCARGS))))) == 0) {
 		swkill(u.u_procp, "exece");
 		goto bad;
 	}
 	if (bno % CLSIZE)
-		panic("execa malloc");
+		panic("execa rmalloc");
 	if (uap->argp) for (;;) {
 		ap = NULL;
 		if (na == 1 && indir) {
@@ -280,7 +280,7 @@ bad:
 	if (bp)
 		brelse(bp);
 	if (bno)
-		mfree(argmap, ctod(clrnd((int) btoc(NCARGS))), bno);
+		rmfree(argmap, ctod(clrnd((int) btoc(NCARGS))), bno);
 	iput(ip);
 }
 
