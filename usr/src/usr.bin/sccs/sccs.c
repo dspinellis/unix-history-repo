@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.40 %G%";
+static char SccsId[] = "@(#)sccs.c	1.41 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -455,16 +455,16 @@ command(argv, forkflag, editflag, arg0)
 		argv = np;
 
 		/* for each file, do the diff */
+		p = argv[1];
 		while (*np != NULL)
 		{
 			/* messy, but we need a null terminated argv */
 			*argv = *np++;
-			p = *np;
-			*np = NULL;
+			argv[1] = NULL;
 			i = dodiff(ap, tail(*argv));
 			if (rval == 0)
 				rval = i;
-			*np = p;
+			argv[1] = p;
 		}
 		break;
 
