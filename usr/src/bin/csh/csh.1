@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.3 (Berkeley) %G%
+.\"	@(#)csh.1	6.4 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -202,13 +202,11 @@ prefixes, when they are input from the terminal followed by
 the escape character (the escape key, or control-[).  For example,
 if the current directory looks like
 .ta 1i 2i 3i 4i 5i 6i
-.br
-	DSC.OLD	bin	cmd	lib	memos
-.br
-	DSC.NEW	chaosnet	cmtest	mail	netnews
-.br
-	bench	class	dev	mbox	new
-.br
+.nf
+	DSC.OLD	bin	cmd	lib	xmpl.c
+	DSC.NEW	chaosnet	cmtest	mail	xmpl.o
+	bench	class	dev	mbox	xmpl.out
+.fi
 and the input is
 .br
 	% vi ch<escape>
@@ -253,6 +251,31 @@ typing
 may produce the expansion
 .br
 	cd ~root
+.PP
+The use of the terminal bell to signal errors or multiple matches
+can be inhibited by setting the variable \fInobeep\fP.
+.PP
+Normally, all files in the particular directory are candidates
+for name completion.  Files with certain suffixes can be excluded
+from consideration by setting the variable \fIfignore\fP to the
+list of suffixes to be ignored.  Thus, if \fIfignore\fP is set by
+the command
+.br
+	% set fignore = (.o .out)
+.br
+then typing
+.br
+	% vi x<escape>
+.br
+would result in the completion to
+.br
+	% vi xmpl.c
+.br
+ignoring the files "xmpl.o" and "xmpl.out".
+However, if the only completion possible requires not ignoring these
+suffixes, then they are not ignored.  In addition, \fIfignore\fP
+does not affect the listing of file names by control-D.  All files
+are listed regardless of their suffixes.
 .sh Substitutions
 We now describe the various transformations the shell performs on the
 input in the order in which they occur.
