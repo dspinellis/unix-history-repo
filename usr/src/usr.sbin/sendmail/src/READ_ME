@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.41 (Berkeley) %G%
+#	@(#)READ_ME	8.42 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -186,10 +186,14 @@ NEEDVPRINTF	Define this if your standard C library does not define
 		is not very elegant and may not even work on some
 		architectures.
 NEEDGETUSERSHELL
-		Define this if you do not have getusershell(3) in your
-		standard C library.  This compiles in a version that
-		looks in /etc/shells (no NIS-style support) and defaults
-		to /bin/sh and /bin/csh.
+		Define this to 1 if you do not have getusershell(3) in
+		your standard C library.  This will cause inclusion of
+		a getusershell implementation that looks in /etc/shells
+		(no NIS-style support) and defaults to /bin/sh and
+		/bin/csh if that file does not exist.  You can #define
+		this to 0 to force it to believe that getusershell(3)
+		does exist in the C library (for example, for SVR4
+		systems that have BSD extensions, such as Solaris 2.x).
 GIDSET_T	The type of entries in a gidset passed as the second
 		argument to getgroups(2).  Historically this has been an
 		int, so this is the default, but some systems (such as
@@ -676,4 +680,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.41, last update %G% 07:57:07)
+(Version 8.42, last update %G% 10:11:59)
