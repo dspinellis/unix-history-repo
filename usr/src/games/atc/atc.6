@@ -86,6 +86,10 @@ in any other way than through its destination exit is an error as well.
 Scores are sorted in order of the number of planes safe.  The other
 statistics are provided merely for fun.  There is no penalty for 
 taking longer than another player (except in the case of ties).
+.LP
+Suspending a game is not permitted.  If you get a talk message, tough.
+When was the last time an Air Traffic Controller got called away to
+the phone? 
 .SH "THE DISPLAY"
 .LP
 Depending on the terminal you run 
@@ -173,7 +177,6 @@ This area is used simply to give credit where credit is due. :-)
 .LP
 A command completion interface is built into
 the game.  At any time, typing '?' will list possible input characters.
-Typing '!' will clear the screen and spawn a shell.
 Typing a backspace (your erase character) backs up, erasing the last part
 of the command.  When a command is complete, a return enters it, and 
 any semantic checking is done at that time.  If no errors are detected,
@@ -545,6 +548,9 @@ The list of playable games.
 .SH AUTHOR
 .LP
 Ed James, UC Berkeley: edjames@ucbvax.berkeley.edu, ucbvax!edjames
+.LP
+This game is based on someone's description of the overall flavor
+of a game written for some unknown PC many years ago, maybe.
 .SH BUGS
 .LP
 The screen sometimes refreshes after you have quit.
@@ -553,3 +559,4 @@ Yet Another Curses Bug was discovered during the development of this game.
 If your curses library clrtobot.o is version 5.1 or earlier, 
 you will have erase problems with the backspace operator in the input
 window.
+
