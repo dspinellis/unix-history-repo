@@ -1,4 +1,4 @@
-/*	pcb.h	4.4	81/02/26	*/
+/*	pcb.h	4.5	81/05/14	*/
 
 /*
  * VAX process control block
@@ -23,7 +23,9 @@ struct pcb
 	int	pcb_r10; 
 	int	pcb_r11; 
 	int	pcb_r12; 
+#define	pcb_ap pcb_r12
 	int	pcb_r13; 
+#define	pcb_fp pcb_r13
 	int	pcb_pc; 	/* program counter */
 	int	pcb_psl; 	/* program status longword */
 	struct  pte *pcb_p0br; 	/* seg 0 base register */
