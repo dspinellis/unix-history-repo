@@ -11,7 +11,7 @@ model|mod|m:\
 pascal|pasc|p:\
 	:pb=(^\d?procedure|function|program\d\p\d|\(|;|\:)|(=\d?record\d):\
 	:bb=\dcase|begin\d:be=\dend|forward\d|;:\
-	:cb={|\(*:ce=}|*\):sb=':se=\e':\
+	:cb={|\(*:ce=}|*\):sb=':se=':\
 	:kw=and array assert begin case const div do downto else end file for\
 	forward function goto if in label mod nil not of or packed procedure\
 	program record repeat set then to type until var while with oct hex\
@@ -29,3 +29,20 @@ ISP|isp|i:\
 	:kw=and begin decode define end eql eqv geq gtr if leave leq lss mod\
 	neq next not or otherwise repeat restart resume sr0 sr1 srd srr sl0 sl1\
 	sld slr tst xor:
+SH|sh:\
+	:bb={:be=}:cb=#:sb=":se=\e":lb=':\
+	:le=\e':tl:\
+	:kw=break case cd continue do done \
+	elif else esac eval exec exit export \
+	fi for if in then while until \
+	read readonly set shift test trap umask wait:
+CSH|csh:\
+	:bb={:be=}:cb=#:sb=":se=\e":lb=':\
+	:le=\e':tl:\
+	:kw=alias alloc break breaksw case cd chdir continue default
+	echo else end endif endsw exec exit foreach \
+	glob goto history if logout nice nohup onintr repeat set
+	setenv shift source switch then time \
+	while umask unalias unset wait while @ env \
+	argv child home ignoreeof noclobber noglob \
+	nomatch path prompt shell status verbose :
