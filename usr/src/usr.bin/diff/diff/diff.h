@@ -1,4 +1,4 @@
-/*	diff.h	4.5	85/06/03	*/
+/*	diff.h	4.6	85/06/07	*/
 
 /*
  * diff - common declarations
@@ -22,11 +22,15 @@ int	opt;
 #define	D_CONTEXT	2	/* Diff with context */
 #define	D_IFDEF		3	/* Diff with merged #ifdef's */
 
+int	tflag;			/* expand tabs on output */
+
 /*
  * Algorithm related options
  */
 int	hflag;			/* -h, use halfhearted DIFFH */
-int	bflag;			/* ignore blanks in comparisions */
+int	bflag;			/* ignore blanks in comparisons */
+int	wflag;			/* totally ignore blanks in comparisons */
+int	iflag;			/* ignore case in comparisons */
 
 /*
  * Options on hierarchical diffs.
