@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	4.2 %G%";
+static char sccsid[] = "@(#)io.c	4.3 %G%";
 #endif
 
 #
@@ -12,7 +12,6 @@ static char sccsid[] = "@(#)io.c	4.2 %G%";
  */
 
 #include	"defs.h"
-#include	"dup.h"
 
 
 /* ========	input output and file copying ======== */
@@ -83,7 +82,7 @@ rename(f1,f2)
 	REG INT		f1, f2;
 {
 	IF f1!=f2
-	THEN	dup(f1|DUPFLG, f2);
+	THEN	dup2(f1, f2);
 		close(f1);
 		IF f2==0 THEN ioset|=1 FI
 	FI
