@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.2 %G%";
+static char sccsid[] = "@(#)c.c 5.3 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -463,9 +463,11 @@ Symbol s;
 		if (s->language != primlang) {
 		    putchar('"');
 		}
-		while (len > 0) {
+		while (--len > 0 and *str != '\0') {
 		    printchar(*str++);
-		    len--;
+		}
+		if (*str != '\0') {	/* XXX - pitch trailing null */
+		    printchar(*str);
 		}
 		if (s->language != primlang) {
 		    putchar('"');
