@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.8 (Berkeley) %G%
+ *	@(#)locore.s	7.9 (Berkeley) %G%
  */
 
 /*
@@ -198,6 +198,7 @@ onfault_table:
 LEAF(badaddr)
 	li	v0, BADERR
 	sw	v0, UADDR+U_PCB_ONFAULT
+	sw	zero, badaddr_flag
 	bne	a1, 1, 2f
 	lbu	v0, (a0)
 	b	5f
@@ -209,8 +210,15 @@ LEAF(badaddr)
 	lw	v0, (a0)
 5:
 	sw	zero, UADDR+U_PCB_ONFAULT
-	move	v0, zero		# made it w/o errors
+	lw	v0, badaddr_flag	# set by interrupt handler
 	j	ra
+	/*
+	 * This onfault table entry is not necessary for single processor
+	 * machine.  But dual processor machine causes exception when
+	 * data is loaded from bad address.  Onfault table index is also
+	 * used to determine if the access is occured during bad address
+	 * check.  This should be changed to better way.  K.U.
+	 */
 baderr:
 	li	v0, 1			# trap sends us here
 	j	ra
