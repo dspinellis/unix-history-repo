@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.1 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.2 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -626,14 +626,6 @@ findpcb:
 
 trimthenstep6:
 		/*
-		 * Must not talk to ourselves.
-		 */
-		if (inp->inp_laddr.s_addr == inp->inp_faddr.s_addr &&
-		    inp->inp_lport == inp->inp_fport) {
-			dropsocket = 1; /* do an ECONNRESET */
-			goto dropwithreset;
-		}
-		/*
 		 * Advance ti->ti_seq to correspond to first data byte.
 		 * If data, trim to stay within window,
 		 * dropping FIN if necessary.
@@ -708,8 +700,7 @@ trimthenstep6:
 				tiflags &= ~TH_URG;
 			todrop--;
 		}
-		if (todrop > ti->ti_len ||
-		    todrop == ti->ti_len && (tiflags&TH_FIN) == 0) {
+		if (todrop >= ti->ti_len) {
 			tcpstat.tcps_rcvduppack++;
 			tcpstat.tcps_rcvdupbyte += ti->ti_len;
 			/*
