@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-static char Sccsid[] = "@(#)cmt.c	4.5	%G%";
+static char Sccsid[] = "@(#)cmt.c	4.6	%G%";
 
 struct packet gpkt;
 int	num_files, had_ffile;
@@ -362,3 +362,7 @@ struct packet *pkt;
 		putline(pkt,str);
 	}
 }
+
+/* Null routine to satisfy external reference from dodelt() */
+escdodelt()
+{}
