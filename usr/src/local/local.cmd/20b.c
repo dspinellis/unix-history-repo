@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)20b.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)20b.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -42,6 +42,8 @@ main(argc, argv)
 			exit(-1);
 		}
 	}
+	else
+		bsize = 20 * 512;
 	base = alloca(bsize);
 	for (cc = bsize; cc > 0;) {
 		current = base;
