@@ -1,0 +1,52 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)flmin.3	5.1 (Berkeley) %G%
+.\"
+.TH FLMIN 3F "13 June 1983"
+.UC 5
+.SH NAME
+flmin, flmax, ffrac, dflmin, dflmax, dffrac, inmax \- return extreme values
+.SH SYNOPSIS
+.B function flmin()
+.sp 1
+.B function flmax()
+.sp 1
+.B function ffrac()
+.sp 1
+.B double precision function dflmin()
+.sp 1
+.B double precision function dflmax()
+.sp 1
+.B double precision function dffrac()
+.sp 1
+.B function inmax()
+.SH DESCRIPTION
+Functions
+.I flmin
+and
+.I flmax
+return the minimum and maximum positive floating point values respectively.
+Functions
+.I dflmin
+and
+.I dflmax
+return the minimum and maximum positive double precision floating point values.
+Function
+.I inmax
+returns the maximum positive integer value.
+.PP
+The functions
+.I ffrac
+and
+.I dffrac
+return the fractional accuracy of single and double precision
+floating point numbers respectively.
+These are the smallest numbers that can be added to 1.0 without being lost.
+.PP
+These functions can be used by programs that must scale algorithms
+to the numerical range of the processor.
+.SH FILES
+.ie \nM /usr/ucb/lib/libF77.a
+.el /usr/lib/libF77.a
