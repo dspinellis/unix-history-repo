@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.47 (Berkeley) %G%
+ *	@(#)sendmail.h	6.48 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.47		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.48		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -598,11 +598,20 @@ EXTERN char	OpMode;		/* operation mode, see below */
 #define EM_WRITE	'w'		/* write back errors */
 #define EM_BERKNET	'e'		/* special berknet processing */
 #define EM_QUIET	'q'		/* don't print messages (stat only) */
+/*
+**  Additional definitions
+*/
+
 
 /* Offset used to ensure that name server error * codes are unique */
 #define	MAX_ERRNO	100
 
-/* privacy flags */
+
+/*
+**  Privacy flags
+**	These are bit values for the PrivacyFlags word.
+*/
+
 #define PRIV_PUBLIC		0	/* what have I got to hide? */
 #define PRIV_NEEDMAILHELO	00001	/* insist on HELO for MAIL, at least */
 #define PRIV_NEEDEXPNHELO	00002	/* insist on HELO for EXPN */
@@ -619,6 +628,17 @@ struct prival
 	char	*pv_name;	/* name of privacy flag */
 	int	pv_flag;	/* numeric level */
 };
+
+
+/*
+**  Flags passed to remotename
+*/
+
+#define RF_SENDERADDR		0001	/* this is a sender address */
+#define RF_HEADERADDR		0002	/* this is a header address */
+#define RF_CANONICAL		0004	/* strip comment information */
+#define RF_ADDDOMAIN		0010	/* OK to do domain extension */
+
 
 /*
 **  Regular UNIX sockaddrs are too small to handle ISO addresses, so
