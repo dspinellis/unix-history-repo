@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.9 (Berkeley) %G%
+ *	@(#)dca.c	7.10 (Berkeley) %G%
  */
 
 #include "dca.h"
 #if NDCA > 0
 /*
  *  98626/98644/internal serial interface
+ *  uses National Semiconductor INS8250/NS16550AF UART
  */
 #include "sys/param.h"
 #include "sys/systm.h"
@@ -36,6 +37,7 @@ struct	driver dcadriver = {
 int	dcastart(), dcaparam(), dcaintr();
 int	dcasoftCAR;
 int	dca_active;
+int	dca_hasfifo;
 int	ndca = NDCA;
 #ifdef DCACONSOLE
 int	dcaconsole = DCACONSOLE;
@@ -80,6 +82,13 @@ extern int kgdb_debug_init;
 
 #define	UNIT(x)		minor(x)
 
+#ifdef DEBUG
+long	fifoin[17];
+long	fifoout[17];
+long	dcaintrcount[16];
+long	dcamintcount[16];
+#endif
+
 dcaprobe(hd)
 	register struct hp_device *hd;
 {
@@ -97,6 +106,12 @@ dcaprobe(hd)
 		DELAY(100000);
 	dca->dca_irid = 0xFF;
 	DELAY(100);
+
+	/* look for a NS 16550AF UART with FIFOs */
+	dca->dca_fifo = FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14;
+	DELAY(100);
+	if ((dca->dca_iir & IIR_FIFO_MASK) == IIR_FIFO_MASK)
+		dca_hasfifo |= 1 << unit;
 
 	hd->hp_ipl = DCAIPL(dca->dca_ic);
 	dcaisr[unit].isr_ipl = hd->hp_ipl;
@@ -252,21 +267,55 @@ dcaintr(unit)
 		return(0);
 	while (1) {
 		code = dca->dca_iir;
-		switch (code) {
+#ifdef DEBUG
+		dcaintrcount[code & IIR_IMASK]++;
+#endif
+		switch (code & IIR_IMASK) {
 		case IIR_NOPEND:
 			return (1);
+		case IIR_RXTOUT:
 		case IIR_RXRDY:
 			/* do time-critical read in-line */
 			tp = &dca_tty[unit];
-			code = dca->dca_data;
-			if ((tp->t_state & TS_ISOPEN) == 0) {
+/*
+ * Process a received byte.  Inline for speed...
+ */
 #ifdef KGDB
-				if (kgdb_dev == makedev(dcamajor, unit) &&
-				    code == FRAME_END)
-					kgdb_connect(0); /* trap into kgdb */
+#define	RCVBYTE() \
+			code = dca->dca_data; \
+			if ((tp->t_state & TS_ISOPEN) == 0) { \
+				if (kgdb_dev == makedev(dcamajor, unit) && \
+				    code == FRAME_END) \
+					kgdb_connect(0); /* trap into kgdb */ \
+			} else \
+				(*linesw[tp->t_line].l_rint)(code, tp)
+#else
+#define	RCVBYTE() \
+			code = dca->dca_data; \
+			if ((tp->t_state & TS_ISOPEN) != 0) \
+				(*linesw[tp->t_line].l_rint)(code, tp)
 #endif
-			} else
-				(*linesw[tp->t_line].l_rint)(code, tp);
+			RCVBYTE();
+			if (dca_hasfifo & (1 << unit)) {
+#ifdef DEBUG
+				register int fifocnt = 1;
+#endif
+				while ((code = dca->dca_lsr) & LSR_RCV_MASK) {
+					if (code == LSR_RXRDY) {
+						RCVBYTE();
+					} else
+						dcaeint(unit, code, dca);
+#ifdef DEBUG
+					fifocnt++;
+#endif
+				}
+#ifdef DEBUG
+				if (fifocnt > 16)
+					fifoin[0]++;
+				else
+					fifoin[fifocnt]++;
+#endif
+			}
 			break;
 		case IIR_TXRDY:
 			tp = &dca_tty[unit];
@@ -277,7 +326,7 @@ dcaintr(unit)
 				dcastart(tp);
 			break;
 		case IIR_RLS:
-			dcaeint(unit, dca);
+			dcaeint(unit, dca->dca_lsr, dca);
 			break;
 		default:
 			if (code & IIR_NOPEND)
@@ -292,15 +341,14 @@ dcaintr(unit)
 	}
 }
 
-dcaeint(unit, dca)
-	register int unit;
+dcaeint(unit, stat, dca)
+	register int unit, stat;
 	register struct dcadevice *dca;
 {
 	register struct tty *tp;
-	register int stat, c;
+	register int c;
 
 	tp = &dca_tty[unit];
-	stat = dca->dca_lsr;
 	c = dca->dca_data;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
 #ifdef KGDB
@@ -329,6 +377,9 @@ dcamint(unit, dca)
 
 	tp = &dca_tty[unit];
 	stat = dca->dca_msr;
+#ifdef DEBUG
+	dcamintcount[stat & 0xf]++;
+#endif
 	if ((stat & MSR_DDCD) && (dcasoftCAR & (1 << unit)) == 0) {
 		if (stat & MSR_DCD)
 			(void)(*linesw[tp->t_line].l_modem)(tp, 1);
@@ -447,6 +498,8 @@ dcaparam(tp, t)
 	if (cflag&CSTOPB)
 		cfcr |= CFCR_STOPB;
 	dca->dca_cfcr = cfcr;
+	if (dca_hasfifo & (1 << unit))
+		dca->dca_fifo = FIFO_ENABLE | FIFO_TRIGGER_14;
 	return(0);
 }
  
@@ -478,6 +531,16 @@ dcastart(tp)
 		c = getc(&tp->t_outq);
 		tp->t_state |= TS_BUSY;
 		dca->dca_data = c;
+		if (dca_hasfifo & (1 << unit)) {
+			for (c = 1; c < 16 && tp->t_outq.c_cc; ++c)
+				dca->dca_data = getc(&tp->t_outq);
+#ifdef DEBUG
+			if (c > 16)
+				fifoout[0]++;
+			else
+				fifoout[c]++;
+#endif
+		}
 	}
 out:
 	splx(s);
@@ -541,7 +604,7 @@ dcamctl(dev, bits, how)
 dcacnprobe(cp)
 	struct consdev *cp;
 {
-	int unit, i;
+	int unit;
 
 	/* locate the major number */
 	for (dcamajor = 0; dcamajor < nchrdev; dcamajor++)
@@ -550,7 +613,7 @@ dcacnprobe(cp)
 
 	/* XXX: ick */
 	unit = CONUNIT;
-	dca_addr[CONUNIT] = CONADDR;
+	dca_addr[CONUNIT] = (struct dcadevice *) sctova(CONSCODE);
 
 	/* make sure hardware exists */
 	if (badaddr((short *)dca_addr[unit])) {
@@ -575,12 +638,14 @@ dcacnprobe(cp)
 		break;
 	}
 	/*
-	 * If dcmconsole is initialized, raise our priority.
+	 * If dcaconsole is initialized, raise our priority.
 	 */
 	if (dcaconsole == unit)
 		cp->cn_pri = CN_REMOTE;
+#ifdef KGDB
 	if (major(kgdb_dev) == 1)			/* XXX */
 		kgdb_dev = makedev(dcamajor, minor(kgdb_dev));
+#endif
 }
 
 dcacninit(cp)
@@ -614,6 +679,7 @@ dcainit(unit, rate)
 	dca->dca_ier = rate >> 8;
 	dca->dca_cfcr = CFCR_8BITS;
 	dca->dca_ier = IER_ERXRDY | IER_ETXRDY;
+	dca->dca_fifo = FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14;
 	stat = dca->dca_iir;
 	splx(s);
 }
