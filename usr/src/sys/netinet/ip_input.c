@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_input.c	7.11 (Berkeley) %G%
+ *	@(#)ip_input.c	7.6.1.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,6 +55,21 @@ int	ipforwarding = IPFORWARDING;
 extern	int in_interfaces;
 int	ipsendredirects = IPSENDREDIRECTS;
 
+#ifndef	IPFORWARDING
+#ifdef GATEWAY
+#define	IPFORWARDING	1
+#else /* GATEWAY */
+#define	IPFORWARDING	0
+#endif /* GATEWAY */
+#endif /* IPFORWARDING */
+#ifndef	IPSENDREDIRECTS
+#define	IPSENDREDIRECTS	1
+#endif
+int	ipprintfs = 0;
+int	ipforwarding = IPFORWARDING;
+extern	int in_interfaces;
+int	ipsendredirects = IPSENDREDIRECTS;
+
 u_char	ip_protox[IPPROTO_MAX];
 int	ipqmaxlen = IFQ_MAXLEN;
 struct	in_ifaddr *in_ifaddr;			/* first inet address */
@@ -68,6 +83,7 @@ struct	in_ifaddr *in_ifaddr;			/* first inet address */
  */
 int	ip_nhops = 0;
 static	struct ip_srcrt {
+	struct	in_addr dst;			/* final destination */
 	struct	in_addr dst;			/* final destination */
 	char	nop;				/* one NOP to align */
 	char	srcopt[IPOPT_OFFSET + 1];	/* OPTVAL, OLEN and OFFSET */
@@ -534,9 +550,11 @@ ip_dooptions(m)
 	struct mbuf *m;
 {
 	register struct ip *ip = mtod(m, struct ip *);
+	register struct ip *ip = mtod(m, struct ip *);
 	register u_char *cp;
 	register struct ip_timestamp *ipt;
 	register struct in_ifaddr *ia;
+	int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0;
 	int opt, optlen, cnt, off, code, type = ICMP_PARAMPROB, forward = 0;
 	struct in_addr *sin;
 	n_time ntime;
@@ -615,6 +633,7 @@ ip_dooptions(m)
 			bcopy((caddr_t)&(IA_SIN(ia)->sin_addr),
 			    (caddr_t)(cp + off), sizeof(struct in_addr));
 			cp[IPOPT_OFFSET] += sizeof(struct in_addr);
+			forward = 1;
 			forward = 1;
 			break;
 
@@ -780,11 +799,21 @@ ip_srcroute()
 	if (ipprintfs)
 		printf("ip_srcroute: nhops %d mlen %d", ip_nhops, m->m_len);
 
+#define OPTSIZ	(sizeof(ip_srcrt.nop) + sizeof(ip_srcrt.srcopt))
+
+	/* length is (nhops+1)*sizeof(addr) + sizeof(nop + srcrt header) */
+	m->m_len = ip_nhops * sizeof(struct in_addr) + sizeof(struct in_addr) +
+	    OPTSIZ;
+	if (ipprintfs)
+		printf("ip_srcroute: nhops %d mlen %d", ip_nhops, m->m_len);
+
 	/*
 	 * First save first hop for return route
 	 */
 	p = &ip_srcrt.route[ip_nhops - 1];
 	*(mtod(m, struct in_addr *)) = *p--;
+	if (ipprintfs)
+		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
 	if (ipprintfs)
 		printf(" hops %X", ntohl(*mtod(m, struct in_addr *)));
 
@@ -813,6 +842,13 @@ ip_srcroute()
 	*q = ip_srcrt.dst;
 	if (ipprintfs)
 		printf(" %X\n", ntohl(*q));
+	}
+	/*
+	 * Last hop goes to final destination.
+	 */
+	*q = ip_srcrt.dst;
+	if (ipprintfs)
+		printf(" %X\n", ntohl(*q));
 	return (m);
 }
 
@@ -821,6 +857,9 @@ ip_srcroute()
  * level protocol in the kernel.
  * Second argument is buffer to which options
  * will be moved, and return value is their length.
+#ifdef NEW
+ * XXX should be deleted; last arg currently ignored.
+#endif NEW
  * XXX should be deleted; last arg currently ignored.
  */
 ip_stripoptions(m, mopt)
@@ -866,6 +905,7 @@ ip_forward(m)
 	struct mbuf *m;
 {
 	register struct ip *ip = mtod(m, struct ip *);
+	register struct ip *ip = mtod(m, struct ip *);
 	register int error, type = 0, code;
 	register struct sockaddr_in *sin;
 	struct mbuf *mcopy;
@@ -880,6 +920,7 @@ ip_forward(m)
 		m_freem(m);
 		return;
 	}
+	ip->ip_id = htons(ip->ip_id);
 	if (ip->ip_ttl <= IPTTLDEC) {
 		type = ICMP_TIMXCEED, code = ICMP_TIMXCEED_INTRANS;
 		goto sendicmp;
@@ -916,7 +957,7 @@ ip_forward(m)
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
 	if (ipforward_rt.ro_rt &&
 	    ipforward_rt.ro_rt->rt_ifp == m->m_pkthdr.rcvif &&
-	    (ipforward_rt.ro_rt->rt_flags & RTF_DYNAMIC) == 0 &&
+	    (ipforward_rt.ro_rt->rt_flags & (RTF_DYNAMIC|RTF_MODIFIED)) == 0 &&
 	    satosin(rt_key(ipforward_rt.ro_rt))->sin_addr.s_addr != 0 &&
 	    ipsendredirects && ip->ip_hl == (sizeof(struct ip) >> 2)) {
 		struct in_ifaddr *ia;
