@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.7 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.8 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -81,8 +81,8 @@ retry:
 		printf("root device? ");
 		gets(name);
 		for (gc = genericconf; gc->gc_driver; gc++)
-		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++, gp++)
-			if (*gp == 0)
+		    for (cp = name, gp = gc->gc_name; *cp == *gp; cp++)
+			if (*++gp == 0)
 				goto gotit;
 		printf(
 		  "use hp%%d, up%%d, ra%%d, rb%%d, rl%%d, hk%%d or kra%%d\n");
@@ -96,6 +96,7 @@ gotit:
 			unit = 10 * unit + *cp++ - '0';
 		if (*cp == '*')
 			swaponroot++;
+		goto found;
 	}
 	for (gc = genericconf; gc->gc_driver; gc++) {
 #if NMBA > 0
