@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.36	82/09/04	*/
+/*	ffs_vnops.c	4.37	82/09/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -708,7 +708,7 @@ chown1(ip, uid, gid)
  * Set IUPD and IACC times on file.
  * Can't set ICHG.
  */
-utime()
+outime()
 {
 	register struct a {
 		char	*fname;
