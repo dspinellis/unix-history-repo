@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)saio.h	7.3 (Berkeley) %G%
+ *	@(#)saio.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -65,6 +65,20 @@ struct devsw {
 
 struct devsw devsw[];
 int ndevs;
+
+#ifdef COMPAT_42
+/*
+ * Old drive description table.
+ * still used by some drivers for now.
+ */
+struct st {
+	short	nsect;		/* # sectors/track */
+	short	ntrak;		/* # tracks/surfaces/heads */
+	short	nspc;		/* # sectors/cylinder */
+	short	ncyl;		/* # cylinders */
+	short	*off;		/* partition offset table (cylinders) */
+};
+#endif
 
 /*
  * Request codes. Must be the same a F_XXX above
