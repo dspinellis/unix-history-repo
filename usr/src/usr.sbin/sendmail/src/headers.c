@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.31		%G%);
+SCCSID(@(#)headers.c	3.32		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -121,7 +121,7 @@ chompheader(line, def)
 
 	/* send to this person if we so desire */
 	if (!def && GrabTo && bitset(H_RCPT, h->h_flags))
-		sendto(h->h_value, 0, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+		sendto(h->h_value, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 
 	return (h->h_flags);
 }
@@ -509,6 +509,10 @@ crackaddr(addr)
 	strcpy(buf, "");
 	rhs = NULL;
 
+	/* strip leading spaces */
+	while (*addr != '\0' && isspace(*addr))
+		addr++;
+
 	/*
 	**  See if we have anything in angle brackets.  If so, that is
 	**  the address part, and the rest is the comment.
@@ -521,10 +525,14 @@ crackaddr(addr)
 		*p = '\0';
 		strcpy(buf, addr);
 		strcat(buf, "<");
-		*p = '<';
+		*p++ = '<';
+
+		/* skip spaces */
+		while (isspace(*p))
+			p++;
 
 		/* find the matching right angle bracket */
-		addr = ++p;
+		addr = p;
 		for (i = 0; *p != '\0'; p++)
 		{
 			switch (*p)

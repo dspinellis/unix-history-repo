@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.52		%G%);
+SCCSID(@(#)parseaddr.c	3.53		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -62,7 +62,7 @@ parse(addr, a, copyf)
 		printf("\n--parse(%s)\n", addr);
 # endif DEBUG
 
-	pvp = prescan(addr, '\0');
+	pvp = prescan(addr, ',');
 	if (pvp == NULL)
 		return (NULL);
 
@@ -99,7 +99,14 @@ parse(addr, a, copyf)
 	*/
 
 	if (copyf > 0)
+	{
+		extern char *DelimChar;
+		char savec = *DelimChar;
+
+		*DelimChar = '\0';
 		a->q_paddr = newstr(addr);
+		*DelimChar = savec;
+	}
 	else
 		a->q_paddr = addr;
 	if (copyf >= 0)
@@ -158,7 +165,6 @@ parse(addr, a, copyf)
 **		addr -- the name to chomp.
 **		delim -- the delimiter for the address, normally
 **			'\0' or ','; \0 is accepted in any case.
-**			are moving in place; set buflim to high core.
 **
 **	Returns:
 **		A pointer to a vector of tokens.
@@ -168,14 +174,34 @@ parse(addr, a, copyf)
 **		none.
 */
 
-# define OPER		1
-# define ATOM		2
-# define EOTOK		3
-# define QSTRING	4
-# define SPACE		5
-# define ONEMORE	6
-# define GETONE		7
-# define MACRO		8
+/* states and character types */
+# define OPR		0	/* operator */
+# define ATM		1	/* atom */
+# define QST		2	/* in quoted string */
+# define SPC		3	/* chewing up spaces */
+# define ONE		4	/* pick up one character */
+
+# define NSTATES	5	/* number of states */
+# define TYPE		017	/* mask to select state type */
+
+/* meta bits for table */
+# define M		020	/* meta character; don't pass through */
+# define B		040	/* cause a break */
+# define MB		M|B	/* meta-break */
+
+static short StateTab[NSTATES][NSTATES] =
+{
+   /*	oldst	newst>	OPR	ATM	QST	SPC	ONE	*/
+	/*OPR*/		OPR|B,	ATM|B,	QST|MB,	SPC|MB,	ONE|B,
+	/*ATM*/		OPR|B,	ATM,	QST|MB,	SPC|MB,	ONE|B,
+	/*QST*/		QST,	QST,	QST|MB,	QST,	QST,
+	/*SPC*/		OPR,	ATM,	QST,	SPC|M,	ONE,
+	/*ONE*/		OPR,	OPR,	OPR,	OPR,	OPR,
+};
+
+# define NOCHAR		-1	/* signal nothing in lookahead token */
+
+char	*DelimChar;		/* set to point to the delimiter */
 
 char **
 prescan(addr, delim)
@@ -183,29 +209,61 @@ prescan(addr, delim)
 	char delim;
 {
 	register char *p;
-	static char buf[MAXNAME+MAXATOM];
-	static char *av[MAXATOM+1];
+	register char *q;
+	register char c;
 	char **avp;
 	bool bslashmode;
 	int cmntcnt;
-	register char c;
 	char *tok;
-	register char *q;
-	register int state;
-	int nstate;
-	extern char lower();
+	int state;
+	int newstate;
+	static char buf[MAXNAME+MAXATOM];
+	static char *av[MAXATOM+1];
 
 	q = buf;
 	bslashmode = FALSE;
 	cmntcnt = 0;
 	avp = av;
-	state = OPER;
-	for (p = addr; *p != '\0' && *p != delim; )
+	state = OPR;
+	c = NOCHAR;
+	p = addr;
+# ifdef DEBUG
+	if (tTd(22, 45))
+	{
+		printf("prescan: ");
+		xputs(p);
+		putchar('\n');
+	}
+# endif DEBUG
+
+	do
 	{
 		/* read a token */
 		tok = q;
-		while ((c = *p++) != '\0' && c != delim)
+		for (;;)
 		{
+			/* store away any old lookahead character */
+			if (c != NOCHAR)
+			{
+				/* squirrel it away */
+				if (q >= &buf[sizeof buf - 5])
+				{
+					usrerr("Address too long");
+					DelimChar = p;
+					return (NULL);
+				}
+				*q++ = c;
+			}
+
+			/* read a new input character */
+			c = *p++;
+			if (c == '\0')
+				break;
+# ifdef DEBUG
+			if (tTd(22, 101))
+				printf("c=%c, s=%d; ", c, state);
+# endif DEBUG
+
 			/* chew up special characters */
 			c &= ~0200;
 			*q = '\0';
@@ -217,115 +275,72 @@ prescan(addr, delim)
 			else if (c == '\\')
 			{
 				bslashmode = TRUE;
-				continue;
+				c = NOCHAR;
 			}
-			else if (c == '"')
+			else if (c == '(')
 			{
-				if (state == QSTRING)
-					state = OPER;
-				else
-					state = QSTRING;
-				break;
+				cmntcnt++;
+				c = NOCHAR;
 			}
-
-			nstate = toktype(c);
-			switch (state)
+			else if (c == ')')
 			{
-			  case QSTRING:		/* in quoted string */
-				break;
-
-			  case ATOM:		/* regular atom */
-				if (nstate != ATOM)
+				if (cmntcnt <= 0)
 				{
-					state = EOTOK;
-					p--;
+					usrerr("Unbalanced ')'");
+					DelimChar = p;
+					return (NULL);
 				}
-				break;
-
-			  case GETONE:		/* grab one character */
-				state = OPER;
-				break;
-
-			  case EOTOK:		/* after atom or q-string */
-				state = nstate;
-				if (state == SPACE)
-					continue;
-				break;
-
-			  case SPACE:		/* linear white space */
-				state = nstate;
-				break;
-
-			  case OPER:		/* operator */
-				if (nstate == SPACE)
-					continue;
-				state = nstate;
-				break;
-
-			  case ONEMORE:		/* $- etc. */
-				state = GETONE;
-				break;
-
-			  default:
-				syserr("prescan: unknown state %d", state);
+				else
+					cmntcnt--;
 			}
+			else if (cmntcnt > 0)
+				c = NOCHAR;
 
-			if (state == EOTOK || state == SPACE)
+			if (c == NOCHAR)
+				continue;
+
+			/* see if this is end of input */
+			if (c == delim)
 				break;
 
-			/* squirrel it away */
-			if (q >= &buf[sizeof buf - 5])
-			{
-				usrerr("Address too long");
-				return (NULL);
-			}
-			*q++ = c;
-
-			/* decide whether this represents end of token */
-			if (state == OPER || state == GETONE)
+			newstate = StateTab[state][toktype(c)];
+# ifdef DEBUG
+			if (tTd(22, 101))
+				printf("ns=%02o\n", newstate);
+# endif DEBUG
+			state = newstate & TYPE;
+			if (bitset(M, newstate))
+				c = NOCHAR;
+			if (bitset(B, newstate))
 				break;
 		}
-		if (c == '\0' || c == delim)
-			p--;
 
 		/* new token */
-		if (tok == q)
-			continue;
-		*q++ = '\0';
-
-		c = tok[0];
-		if (c == '(')
+		if (tok != q)
 		{
-			cmntcnt++;
-			continue;
-		}
-		else if (c == ')')
-		{
-			if (cmntcnt <= 0)
+			*q++ = '\0';
+# ifdef DEBUG
+			if (tTd(22, 36))
 			{
-				usrerr("Unbalanced ')'");
+				printf("tok=");
+				xputs(tok);
+				putchar('\n');
+			}
+# endif DEBUG
+			if (avp >= &av[MAXATOM])
+			{
+				syserr("prescan: too many tokens");
+				DelimChar = p;
 				return (NULL);
 			}
-			else
-			{
-				cmntcnt--;
-				continue;
-			}
+			*avp++ = tok;
 		}
-		else if (cmntcnt > 0)
-			continue;
-
-		if (avp >= &av[MAXATOM])
-		{
-			syserr("prescan: too many tokens");
-			return (NULL);
-		}
-		*avp++ = tok;
-	}
+	} while (c != '\0' && c != delim);
 	*avp = NULL;
+	DelimChar = --p;
 	if (cmntcnt > 0)
 		usrerr("Unbalanced '('");
-	else if (state == QSTRING)
+	else if (state == QST)
 		usrerr("Unbalanced '\"'");
 	else if (av[0] != NULL)
 		return (av);
@@ -357,14 +372,16 @@ toktype(c)
 		(void) strcat(buf, DELIMCHARS);
 	}
 	if (c == MATCHCLASS || c == MATCHREPL)
-		return (ONEMORE);
+		return (ONE);
+	if (c == '"')
+		return (QST);
 	if (!isascii(c))
-		return (ATOM);
-	if (isspace(c))
-		return (SPACE);
+		return (ATM);
+	if (isspace(c) || c == ')')
+		return (SPC);
 	if (iscntrl(c) || index(buf, c) != NULL)
-		return (OPER);
-	return (ATOM);
+		return (OPR);
+	return (ATM);
 }
 /*
 **  REWRITE -- apply rewrite rules to token vector.
@@ -781,7 +798,7 @@ cataddr(pvp, buf, sz)
 	sz--;
 	while (*pvp != NULL && (i = strlen(*pvp)) < sz)
 	{
-		natomtok = (toktype(**pvp) == ATOM);
+		natomtok = (toktype(**pvp) == ATM);
 		if (oatomtok && natomtok)
 			*p++ = SPACESUB;
 		(void) strcpy(p, *pvp);

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.107		%G%);
+SCCSID(@(#)deliver.c	3.108		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1044,9 +1044,8 @@ commaize(h, p, fp, oldstyle, m)
 	{
 		register char *name;
 		char savechar;
-		int commentlevel;
-		bool inquote;
 		extern char *remotename();
+		extern char *DelimChar;		/* defined in prescan */
 
 		/*
 		**  Find the end of the name.  New style names
@@ -1056,30 +1055,17 @@ commaize(h, p, fp, oldstyle, m)
 		**  signs mean keep going.
 		*/
 
-		/* clean up the leading trash in source */
-		while (*p != '\0' && (isspace(*p) || *p == ','))
+		/* find end of name */
+		while (isspace(*p) || *p == ',')
 			p++;
 		name = p;
-
-		/* find end of name */
-		commentlevel = 0;
-		inquote = FALSE;
-		while (*p != '\0' && (*p != ',' || commentlevel > 0 || inquote))
+		for (;;)
 		{
-			extern bool isatword();
 			char *oldp;
+			extern bool isatword();
 
-			if (*p == '(')
-				commentlevel++;
-			else if (*p == ')' && commentlevel > 0)
-				commentlevel--;
-			else if (*p == '"')
-				inquote = !inquote;
-			if (!oldstyle || !isspace(*p))
-			{
-				p++;
-				continue;
-			}
+			(void) prescan(name, oldstyle ? ' ' : ',');
+			p = DelimChar;
 
 			/* look to see if we have an at sign */
 			oldp = p;
@@ -1462,14 +1448,14 @@ sendall(e, verifyonly)
 
 			/* owner list exists -- add it to the error queue */
 			qq->q_flags &= ~QPRIMARY;
-			sendto(obuf, 1, qq, &e->e_errorqueue);
+			sendto(obuf, qq, &e->e_errorqueue);
 			MailBack = TRUE;
 			break;
 		}
 
 		/* if we did not find an owner, send to the sender */
 		if (qq == NULL)
-			sendto(e->e_from.q_paddr, 1, qq, &e->e_errorqueue);
+			sendto(e->e_from.q_paddr, qq, &e->e_errorqueue);
 	}
 }
 /*

@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.39		%G%);
+SCCSID(@(#)recipient.c	3.40		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -18,7 +18,6 @@ SCCSID(@(#)recipient.c	3.39		%G%);
 **
 **	Parameters:
 **		list -- the send list.
-**		copyf -- the copy flag; passed to parse.
 **		ctladdr -- the address template for the person to
 **			send to -- effective uid/gid are important.
 **			This is typically the alias that caused this
@@ -39,14 +38,12 @@ SCCSID(@(#)recipient.c	3.39		%G%);
 ADDRESS *
 sendto(list, copyf, ctladdr, qflags)
 	char *list;
-	int copyf;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
 	u_short qflags;
 {
 	register char *p;
-	bool more;		/* set if more addresses to send to */
-	ADDRESS *al;		/* list of addresses to send to */
+	register ADDRESS *al;		/* list of addresses to send to */
 	bool firstone;		/* set on first address sent */
 	bool selfref;		/* set if this list includes ctladdr */
 	ADDRESS *sibl;		/* sibling pointer in tree */
@@ -60,32 +57,20 @@ sendto(list, copyf, ctladdr, qflags)
 	}
 # endif DEBUG
 
-	more = TRUE;
 	firstone = TRUE;
 	selfref = FALSE;
 	al = NULL;
-	for (p = list; more; )
+	for (p = list; *p != '\0'; )
 	{
-		register char *q;
-		register char c;
-		ADDRESS *a;
-
-		/* find the end of this address */
-		while (*p == ' ' || *p == '\t')
-			p++;
-		q = p;
-		while ((c = *p++) != '\0' && c != ',' && c != '\n')
-			continue;
-		more = c != '\0';
-		*--p = '\0';
-		if (more)
-			p++;
-		if (*q == '\0')
-			continue;
+		register ADDRESS *a;
+		extern char *DelimChar;		/* defined in prescan */
 
 		/* parse the address */
-		if ((a = parse(q, (ADDRESS *) NULL, copyf)) == NULL)
+		while (isspace(*p) || *p == ',')
+			p++;
+		if ((a = parse(p, (ADDRESS *) NULL, 1)) == NULL)
 			continue;
+		p = DelimChar;
 		a->q_next = al;
 		a->q_alias = ctladdr;
 		if (ctladdr != NULL)
@@ -94,7 +79,7 @@ sendto(list, copyf, ctladdr, qflags)
 
 		/* see if this should be marked as a primary address */
 		if (ctladdr == NULL ||
-		    (firstone && !more && bitset(QPRIMARY, ctladdr->q_flags)))
+		    (firstone && *p == '\0' && bitset(QPRIMARY, ctladdr->q_flags)))
 			a->q_flags |= QPRIMARY;
 
 		/* put on send queue or suppress self-reference */
