@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	6.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	6.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -563,6 +563,11 @@ bt_map_open(map, mode)
 		(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
 # endif
 #endif
+
+	/* try to make sure that at least the database header is on disk */
+	if (mode == O_RDWR)
+		(void) db->sync(db, 0);
+
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".db");
@@ -622,6 +627,11 @@ hash_map_open(map, mode)
 		(void) lockfile(db->fd(db), map->map_file, LOCK_UN);
 # endif
 #endif
+
+	/* try to make sure that at least the database header is on disk */
+	if (mode == O_RDWR)
+		(void) db->sync(db, 0);
+
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".db");
