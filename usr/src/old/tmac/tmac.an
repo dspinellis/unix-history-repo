@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tmac.an	6.2 (Berkeley) %G%
+.\"	@(#)tmac.an	6.3 (Berkeley) %G%
 .\"
 '	DT, PD, SM, and B macros invoked internally.
 '	# month name
@@ -73,8 +73,8 @@
 .de }H
 .ev 1
 .}C
-.if !"\*(.T"va" 'sp .4i
-'sp .1i
+.ie "\*(.T"va" 'sp .1i
+.el 'sp .5i
 .ft 1
 .ps 10
 .tl @\\*(]H@\\*(]D@\\*(]H@
