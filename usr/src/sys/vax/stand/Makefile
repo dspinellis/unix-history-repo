@@ -1,5 +1,6 @@
-#	Makefile	1.4	%G%
+#	Makefile	1.5	%G%
 
+DESTDIR=
 CFLAGS = -O -DSTANDALONE
 RELOC=	70000
 DRIVERS=hp.o ht.o mba.o up.o uba.o
@@ -7,7 +8,8 @@ DRIVERS=hp.o ht.o mba.o up.o uba.o
 all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor tpicheck tpmkfs tprestor
 
 /usr/lib/libsa.a:	sys.o conf.o hp.o ht.o mba.o up.o uba.o prf.o machdep.o 
-	ar crv /usr/lib/libsa.a $?
+	ar crv ${DESTDIR}/usr/lib/libsa.a $?
+	ranlib ${DESTDIR}/usr/lib/libsa.a
 
 ${DRIVERS}:
 	cc -c -S ${COPTS} $*.c
@@ -15,48 +17,48 @@ ${DRIVERS}:
 	as -o $*.o $*.os
 	rm $*.s $*.os
 
-boot:	boot.o relsrt0.o /usr/lib/libsa.a
+boot:	boot.o relsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N -T ${RELOC} relsrt0.o boot.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=boot ibs=32 skip=1; rm b.out
 
-cat:	cat.o srt0.o /usr/lib/libsa.a
+cat:	cat.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o cat.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=cat ibs=32 skip=1; rm b.out
 
-ls:	ls.o srt0.o /usr/lib/libsa.a
+ls:	ls.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o ls.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
 
 mkfs.o:	/usr/src/cmd/mkfs.c
 	cc ${CFLAGS} -c /usr/src/cmd/mkfs.c
 
-mkfs:	mkfs.o srt0.o /usr/lib/libsa.a
+mkfs:	mkfs.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o mkfs.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=mkfs ibs=32 skip=1; rm b.out
 
 restor.o: /usr/src/cmd/restor.c
 	cc ${CFLAGS} -c /usr/src/cmd/restor.c
 
-restor:	restor.o srt0.o /usr/lib/libsa.a
+restor:	restor.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o restor.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=restor ibs=32 skip=1; rm b.out
 
 icheck.o: /usr/src/cmd/icheck.c
 	cc ${CFLAGS} -c /usr/src/cmd/icheck.c
 
-icheck: icheck.o srt0.o /usr/lib/libsa.a
+icheck: icheck.o srt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N srt0.o icheck.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=icheck ibs=32 skip=1; rm b.out
 
-tpmkfs:	mkfs.o tpsrt0.o /usr/lib/libsa.a
+tpmkfs:	mkfs.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N tpsrt0.o mkfs.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpmkfs ibs=32 skip=1; rm b.out
 
-tprestor: restor.o tpsrt0.o /usr/lib/libsa.a
+tprestor: restor.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N tpsrt0.o restor.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tprestor ibs=32 skip=1; rm b.out
 
-tpicheck: icheck.o tpsrt0.o /usr/lib/libsa.a
+tpicheck: icheck.o tpsrt0.o ${DESTDIR}/usr/lib/libsa.a
 	ld -N tpsrt0.o icheck.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
@@ -78,6 +80,12 @@ print:
 	@pr *.h
 	@pr *.m *.s
 	@pr *.c
+
+vgrindt:
+	@vgrind -t -n makefile;
+	@vgrind -t *.h;
+	@vgrind -t -n *.m *.s;
+	@vgrind -t *.c;
 
 clean:
 	rm -f *.o *.exe
