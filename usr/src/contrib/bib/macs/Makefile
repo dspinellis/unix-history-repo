@@ -1,7 +1,7 @@
 #
-#	@(#)Makefile	1.5	85/06/25
+#	@(#)Makefile	1.6	85/09/10
 #
-DEST	      = $(DESTDIR)/usr/lib/bmac
+DEST	      = $(DESTDIR)/usr/new/lib/bmac
 
 MAKEFILE      = Makefile
 

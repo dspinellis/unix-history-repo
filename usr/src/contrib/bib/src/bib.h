@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.6	%G%
+ *	@(#)bib.h	2.7	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -30,9 +30,9 @@
 # define INVTEMPFILE "/tmp/invertXXXXXX"
 # define SYSINDEX "/usr/dict/papers/INDEX"	/* default system dictionary */
 
-# define N_BMACLIB "/usr/lib/bmac"		/* where macro libraries live */
-# define N_COMFILE "/usr/lib/bmac/common"		/* common words */
-# define N_DEFSTYLE "/usr/lib/bmac/bib.stdsn"	/* default style of refs */
+# define N_BMACLIB "/usr/new/lib/bmac"		/* where macro libraries live */
+# define N_COMFILE "/usr/new/lib/bmac/common"	/* common words */
+# define N_DEFSTYLE "/usr/new/lib/bmac/bib.stdsn" /* default style of refs */
 char BMACLIB[64], COMFILE[64], DEFSTYLE[64];
 
 /* size limits */

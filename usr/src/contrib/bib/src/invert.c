@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)invert.c	2.4	%G%";
+static char sccsid[] = "@(#)invert.c	2.5	%G%";
 #endif not lint
 #
 /*  input:  records of lines, separated by blank lines
@@ -109,7 +109,7 @@ char **arglist;
     -%str   ignore lines that begin with %x     CNOPVX
             where x is in str
             str is a seq of chars
-    -cfile  file contains Common words          /usr/lib/bib/common
+    -cfile  file contains Common words          /usr/new/lib/bib/common
             do not use common words as keys
     -pfile  name of output file                 INDEX
     -s	    do not print statistics		statistics printed
