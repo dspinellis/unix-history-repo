@@ -9,7 +9,7 @@ afterinstall:
 	    ${DESTDIR}/usr/share/man/COPYRIGHT
 
 makedb:
-	for file in `find /usr/share/man -type f -name '*.0' -print`; do \
+	for file in `find /usr/share/man/cat? -type f -print`; do \
 		sed -n -f /usr/share/man/makewhatis.sed $$file; \
 	done | sort -u > whatis.db
 	install -o ${BINOWN} -g ${BINGRP} -m 444 whatis.db \
