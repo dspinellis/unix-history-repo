@@ -1,4 +1,4 @@
-#	@(#)VERSION	5.4 (Berkeley) %G%
+#	@(#)VERSION	5.5 (Berkeley) %G%
 
 This is version 1.2 of the Berkeley DB code.
 
@@ -9,3 +9,19 @@ please update it!
 ============================================
 1.1 -> 1.2
 	No bug fixes, only compatibility hacks.
+
+============================================
+
+Distribution contents:
+	Makefile.inc	Ignore this, it's Berkeley's internal Makefile.
+	PORT		The directory to build in.
+	README		This file.
+	VERSION		This file.
+	btree		B+tree routines.
+	db		Dbopen(3) interface routine.
+	doc		USENIX papers.
+	hash		Extended linear hashing routines.
+	man		Man pages.
+	mpool		Memory pool routines.
+	recno		Fixed/variable length routines.
+	test		Test package.
