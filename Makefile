@@ -13,7 +13,7 @@
 
 SUBDIR=	bin contrib games gnu include lib libexec sbin share usr.bin usr.sbin
 
-# Special cases: etc sys.386bsd
+# Special cases: etc sys
 # Not ported: kerberosIV
 
 .include <bsd.subdir.mk>
