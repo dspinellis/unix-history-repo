@@ -45,10 +45,12 @@ typedef struct same {
     }
 
 %start makefile
+%token <intval>	FOR IN DO DONE
 %token <string> TOKEN QUOTED_STRING
-%token <intval> MACRO_CHAR BREAK_CHAR WHITE_SPACE NL END_OF_FILE
-%token <intval> ':' '=' '$' '{' '}'
-%type <same> target assignment actions action tokens token
+%token <intval> MACRO_CHAR WHITE_SPACE NL END_OF_FILE
+%token <intval> ':' '=' '$' '{' '}' ';' '-' '@' '(' ')'
+%type <same> target assignment actions action
+%type <same> for_statement maybe_at_minus tokens token
 %type <intval> special_chars white_space macro_char
 %%
 
@@ -106,8 +108,43 @@ action:	white_space tokens NL
     {
 	$$ = $2;
     }
+    | white_space for_statement NL
+    {
+	$$ = $2;
+    }
     ;
 
+for_statement: maybe_at_minus FOR white_space token
+		white_space IN white_space tokens maybe_white_space ';'
+		maybe_white_space DO white_space '(' maybe_white_space
+		tokens maybe_white_space ')' maybe_white_space ';'
+		maybe_white_space DONE
+    {
+	$$ = for_statement($1, $4, expand_variables($8, 0), $16);
+    }
+    ;
+
+maybe_at_minus: /* empty */
+    {
+	$$ = same_copy(null);
+    }
+    | '@'
+    {
+	char buffer[2];
+
+	buffer[0] = $1;
+	buffer[1] = 0;
+	$$ = same_item(string_lookup(buffer));
+    }
+    | '-'
+    {
+	char buffer[2];
+
+	buffer[0] = $1;
+	buffer[1] = 0;
+	$$ = same_item(string_lookup(buffer));
+    }
+    ;
 tokens : token
     | tokens token
     {
@@ -146,14 +183,21 @@ token: TOKEN
     {
 	$$ = variable($3);
     }
+    | '-'
+    {
+	$$ = same_char('-');
+    }
+    | '@'
+    {
+	$$ = same_char('@');
+    }
     ;
 
 macro_char: MACRO_CHAR
     | '$'
     ;
 
-special_chars : BREAK_CHAR
-    | MACRO_CHAR
+special_chars : MACRO_CHAR
     | white_space
     ;
 
@@ -366,17 +410,35 @@ same_t *list;
     } while (token != list);
 }
 
-void
+same_t *
 same_unlink(token)
 same_t
     *token;
 {
+    same_t *tmp;
+
     if (token == 0) {
-	return;
+	return 0;
+    }
+    if ((tmp = token->nexttoken) == token) {
+	tmp = 0;
     }
     token->lasttoken->nexttoken = token->nexttoken;
     token->nexttoken->lasttoken = token->lasttoken;
     token->nexttoken = token->lasttoken = token;
+    return tmp;
+}
+
+same_t *
+same_char(ch)
+char ch;
+{
+    char buffer[2];
+
+    buffer[0] = ch;
+    buffer[1] = 0;
+
+    return same_item(string_lookup(buffer));
 }
 
 same_t *
@@ -410,10 +472,7 @@ same_t
     do {
 	target->action_list = same_cat(target->action_list,
 						same_copy(actions));
-	if ((ptr = target->nexttoken) == target) {
-	    ptr = 0;
-	}
-	same_unlink(target);
+	ptr = same_unlink(target);
 	add_target(target);
 	target = ptr;
     } while (target);
@@ -456,7 +515,7 @@ same_t
 
     if ((ptr = same_search(variables, variable)) != 0) {
 	same_free(ptr->value_list);
-	same_unlink(ptr);
+	(void) same_unlink(ptr);
 	same_free(ptr);
     }
     variable->value_list = value;
@@ -474,6 +533,37 @@ same_t *variable;
     } else {
 	return same_copy(ptr->value_list);
     }
+}
+
+
+same_t *
+expand_variables(token, free)
+same_t *token;
+int	free;
+{
+    same_t *head = 0;
+
+    if (!free) {
+	token = same_copy(token);		/* Get our private copy */
+    }
+
+    while (token) {
+	char *string = token->string->string;
+	same_t *tmp = same_unlink(token);
+
+	if ((string[0] == '$') && (string[1] == '{')) {/* '}' Expand time */
+	    int len = strlen(string);
+
+	    string[len-1] = 0;
+	    head = same_cat(head, expand_variables(
+			value_of(same_item(string_lookup(string+2))), 1));
+	    string[len-1] = '}';
+	} else {
+	    head = same_cat(head, token);
+	}
+	token = tmp;
+    }
+    return head;
 }
 
 same_t *
@@ -496,6 +586,17 @@ same_t *var_name;
     free(newname);
 
     return resolved;
+}
+
+same_t *
+for_statement(special, variable, list, commands)
+same_t
+    *special,
+    *variable,
+    *list,
+    *commands;
+{
+    return same_cat(special, same_cat(variable, same_cat(list, commands)));
 }
 
 
@@ -521,6 +622,37 @@ Getchar()
 }
 
 
+int
+token_type(string)
+char *string;
+{
+    switch (string[0]) {
+    case 'f':
+	if (strcmp(string, "for") == 0) {
+	    return FOR;
+	}
+	break;
+    case 'd':
+	if (string[1] == 'o') {
+	    if (strcmp(string, "do") == 0) {
+		return DO;
+	    } else if (strcmp(string, "done") == 0) {
+		return DONE;
+	    }
+	}
+	break;
+    case 'i':
+	if (strcmp(string, "in") == 0) {
+	    return IN;
+	}
+	break;
+    default:
+	break;
+    }
+    return TOKEN;
+}
+
+
 yylex()
 {
 #define	ret_token(c)	if (bufptr != buffer) { \
@@ -528,7 +660,7 @@ yylex()
 			    *bufptr = 0; \
 			    bufptr = buffer; \
 			    yylval.string = string_lookup(buffer); \
-			    return TOKEN; \
+			    return token_type(buffer); \
 			}
 #define	save(c)	{ last_char = c; last_saved = 1; }
 #if	defined(YYDEBUG)
@@ -564,26 +696,24 @@ yylex()
 	    }
 	    save(c);
 	    break;
-	case '@':
 	case '<':
 	case '?':
 	    ret_token(c);
 	    Return(MACRO_CHAR, c);
-	case '-':
-	case '(':
-	case ')':
-	case ';':
-	    ret_token(c);
-	    Return(BREAK_CHAR, c);
 	case '\t':
 	case ' ':
 	    ret_token(c);
 	    Return(WHITE_SPACE, c);
+	case '-':
+	case '@':
 	case ':':
+	case ';':
 	case '=':
 	case '$':
 	case '{':
 	case '}':
+	case '(':
+	case ')':
 	    ret_token(c);
 	    Return(c,c);
 	case '\'':
