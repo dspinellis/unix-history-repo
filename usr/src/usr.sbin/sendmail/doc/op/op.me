@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.11'DRAFT'Last Mod %G%'
+.fo 'Version 3.12'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.11
+Version 3.12
 .)l
 .sp 3
 .pp
@@ -1481,31 +1481,28 @@ are defined in this line.
 The format is:
 .(b F
 .b M \c
-.i name
-.i pathname
-.i flags
-.i sender-rws
-.i rcpt-rws
-.i argv
+.i name ,
+.i field =\c
+.i value
 .)b
 where
 .i name
 is the name of the mailer
-(used internally only),
-.i pathname
-is where to find it,
-.i flags
-are a set of flags describing the various properties
-of the mailer,
-.i sender-rws
-is the rewriting set
-to apply to sender addresses,
-.i rcpt-rws
-is the rewriting set
-to apply to recipient addresses,
-and
-.i argv
-is the list of arguments the mailer takes.
+(used internally only)
+and the
+.q field=name
+pairs define attributes of the mailer.
+Fields are:
+.(b
+.ta 1i
+Path	The pathname of the mailer
+Flags	Special flags for this mailer
+Sender	A rewriting set for sender addresses
+Recipient	A rewriting set for recipient addresses
+Argv	An argument vector to pass to this mailer
+Eol	The end-of-line string for this mailer
+.)b
+Only the first character of the field name is checked.
 .sh 3 "H \*- define header"
 .pp
 The format of the header lines that sendmail inserts into the message
@@ -2459,17 +2456,21 @@ is probably going to print out several pages worth of information.
 To add an outgoing mailer to your mail system,
 you will have to define the characteristics of the mailer.
 .pp
-First,
-each mailer must have an internal name.
-This can be arbitrary.
+Each mailer must have an internal name.
+This can be arbitrary,
+except that the names
+.q local
+and
+.q prog
+must be defined.
 .pp
-Second, the pathname of the mailer must be given.
+The pathname of the mailer must be given in the P field.
 If this mailer should be accessed via an IPC connection,
 use the string
 .q [IPC]
 instead.
 .pp
-The third field defines the mailer flags.
+The F field defines the mailer flags.
 You should specify an
 .q f
 or
@@ -2572,7 +2573,7 @@ flag is defined in the mailer corresponding to
 Other flags are described
 in Appendix C.
 .pp
-The next two fields in the mailer description
+The S and R fields in the mailer description
 are per-mailer rewriting sets
 to be applied to sender and recipient addresses
 respectively.
@@ -2603,8 +2604,15 @@ These sets can also be used
 to do special purpose output rewriting
 in cooperation with ruleset four.
 .pp
+The E field defines the string to use
+as an end-of-line indication.
+A string containing only newline is the default.
+The usual backslash escapes
+(\er, \en, \ef, \eb)
+may be used.
+.pp
 Finally,
-an argv template is given as the final argument.
+an argv template is given as the E field.
 It may have embedded spaces.
 If there is no argv with a
 .b $u
@@ -2921,7 +2929,7 @@ this is only used under version six.
 Set the default userid for mailers to
 .i n .
 Mailers without the
-.i R
+.i S
 flag in the mailer definition
 will run as this user.
 .ip v
@@ -3028,10 +3036,6 @@ This insures that lines in the message containing a dot
 will not terminate the message prematurely.
 .ip L
 Limit the line lengths as specified in RFC821.
-.ip R
-Terminate lines with CRLF
-(Carriage Return/Line Feed)
-rather than newline.
 .ip P
 Use the return-path in the SMTP
 .q "MAIL FROM:"
@@ -3570,7 +3574,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.11
+Version 3.12
 .ce 0
 .bp 1
 .ce
