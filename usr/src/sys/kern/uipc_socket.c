@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.12	85/06/02	*/
+/*	uipc_socket.c	6.13	85/06/03	*/
 
 #include "param.h"
 #include "systm.h"
@@ -486,7 +486,7 @@ if(m->m_next) panic("receive 2b");
 				m = sbdroprecord(&so->so_rcv);
 		}
 	}
-	if (m == 0 || m->m_type != MT_DATA)
+	if (m == 0 || (m->m_type != MT_DATA && m->m_type != MT_HEADER))
 		panic("receive 3");
 	moff = 0;
 	tomark = so->so_oobmark;
