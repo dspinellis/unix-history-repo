@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)FSAV.c 1.2 %G%";
+static char sccsid[] = "@(#)FSAV.c 1.3 %G%";
 
 #include "h00vars.h"
 
@@ -10,9 +10,9 @@ FSAV(entryaddr, cbn, frtn)
 	long cbn;
 	register struct formalrtn *frtn;
 {
-	frtn->entryaddr = entryaddr;
-	frtn->cbn = cbn;
-	blkcpy(frtn->cbn * sizeof(struct display),
-	       &_disply[1], &frtn->disp[0]);
+	frtn->fentryaddr = entryaddr;
+	frtn->fbn = cbn;
+	blkcpy(frtn->fbn * sizeof(struct display),
+	       &_disply[1], &frtn->fdisp[0]);
 	return frtn;
 }
