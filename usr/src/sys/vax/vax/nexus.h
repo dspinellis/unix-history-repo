@@ -1,23 +1,25 @@
-/*	nexus.h	4.6	81/03/09	*/
+/*	nexus.h	4.7	81/03/13	*/
 
 /*
  * Information about nexus's.
+ *
+ * Each machine has an address of backplane slots (nexi).
+ * Each nexus is some type of adapter, whose code is the low
+ * byte of the first word of the adapter address space.
+ * At boot time the system looks through the array of available
+ * slots and finds the interconnects for the machine.
  */
 #if VAX780
 #define	NNEX780	16
 #define	NEX780	((struct nexus *)0x20000000)
 #endif
 #if VAX750
-#define	NNEX750	4
-#define	NEX750	((struct nexus *)0xf28000)
+#define	NNEX750	16
+#define	NEX750	((struct nexus *)0xf20000)
 #endif
 #define	NEXSIZE	0x2000
 
-#if VAX780
-#define	NNEXUS	16
-#else
-#define	NNEXUS	6		/* 4 mba slots + mem + uba */
-#endif
+#define	MAXNNEXUS 16
 
 #ifndef LOCORE
 struct	nexus {
@@ -28,7 +30,7 @@ struct	nexus {
 	long	nex_pad[NEXSIZE / sizeof (long) - 1];
 };
 #ifdef	KERNEL
-struct nexus nexus[NNEXUS];
+struct nexus nexus[MAXNNEXUS];
 #endif
 #endif
 
@@ -48,7 +50,6 @@ struct nexus nexus[NNEXUS];
 #if VAX780
 #define	NEXFLT_BITS \
 "\20\40PARFLT\37WSQFLT\36URDFLT\35ISQFLT\34MXTFLT\33XMTFLT"
-char	nexflt_bits[];
 #endif
 #endif
 
@@ -64,13 +65,14 @@ char	nexflt_bits[];
 /*
  * Types for nex_type.
  */
+#define	NEX_ANY		0		/* pseudo for handling 11/750 */
 #define	NEX_MEM4	0x08		/* 4K chips, non-interleaved mem */
 #define	NEX_MEM4I	0x09		/* 4K chips, interleaved mem */
 #define	NEX_MEM16	0x10		/* 16K chips, non-interleaved mem */
 #define	NEX_MEM16I	0x11		/* 16K chips, interleaved mem */
 #define	NEX_MBA		0x20		/* Massbus adaptor */
 #define	NEX_UBA0	0x28		/* Unibus adaptor */
-#define	NEX_UBA1	0x29		/* 4 flavours  for 4 addr spaces */
+#define	NEX_UBA1	0x29		/* 4 flavours for 4 addr spaces */
 #define	NEX_UBA2	0x2a
 #define	NEX_UBA3	0x2b
 #define	NEX_DR32	0x30		/* DR32 user i'face to SBI */
