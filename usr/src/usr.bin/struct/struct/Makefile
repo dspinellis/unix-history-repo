@@ -1,6 +1,7 @@
 #
-#	@(#)Makefile	4.1	(Berkeley)	83/02/11
+#	@(#)Makefile	4.2	(Berkeley)	83/02/11
 #
+DESTDIR=
 CFLAGS=-O
 YFLAGS=-d
 0FILES.c = 0.alloc.c 0.args.c 0.def.c 0.extr.c 0.graph.c 0.list.c 0.parts.c 0.string.c
@@ -18,14 +19,20 @@ YFLAGS=-d
 4FILES.c = 4.brace.c 4.form.c 4.main.c 4.out.c
 4FILES.o = 4.brace.o 4.form.o 4.main.o 4.out.o
 
+HDRS = 1.defs.h 1.incl.h 2.def.h 3.def.h 4.def.h b.h def.h
+MSRCS = bdef.c main.c tree.c Makefile beauty.y lextab.l struct
+
+SRCS = $(0FILES.c) $(1FILES.c) $(2FILES.c) \
+	$(3FILES.c) $(4FILES.c) $(HDRS) $(MSRCS)
+
 all:	structure beautify
 
-install: structure beautify
+install: structure beautify struct
 	install -s structure $(DESTDIR)/usr/lib/struct
 	install -s beautify $(DESTDIR)/usr/lib/struct
 	install -c struct $(DESTDIR)/usr/bin
 clean:
-	rm -f *.o y.tab.h beauty.c
+	rm -f *.o y.tab.h beauty.c structure beautify
 
 structure: main.o $(0FILES.o) $(1FILES.o) $(2FILES.o) $(3FILES.o) $(4FILES.o)
 	cc -o structure main.o 0.*.o 1.*.o 2.*.o 3.*.o 4.*.o 
@@ -50,3 +57,7 @@ y.tab.h: beauty.y
 lextab.o tree.o beauty.y: b.h
 
 y.tab.h:	beauty.c
+
+srcs: $(SRCS)
+$(SRCS):
+	sccs get $@
