@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)vax.c 1.4 %G%";
+static char sccsid[] = "@(#)vax.c 1.5 %G%";
 
 /*
  * Target machine dependent stuff.
@@ -499,7 +499,7 @@ public endprogram()
 
 /*
  * Single step the machine a source line (or instruction if "inst_tracing"
- * is true.  If "isnext" is true, skip over procedure calls.
+ * is true).  If "isnext" is true, skip over procedure calls.
  */
 
 private Address getcall();
@@ -512,15 +512,17 @@ Boolean isnext;
     String filename;
 
     addr = nextaddr(pc, isnext);
-    if (not inst_tracing) {
+    if (not inst_tracing and nlhdr.nlines != 0) {
 	line = linelookup(addr);
 	while (line == 0) {
 	    addr = nextaddr(addr, isnext);
 	    line = linelookup(addr);
 	}
+	curline = line;
+    } else {
+	curline = 0;
     }
     stepto(addr);
-    curline = line;
     filename = srcfilename(addr);
     setsource(filename);
 }
