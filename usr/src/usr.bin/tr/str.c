@@ -6,16 +6,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
+
 #include <errno.h>
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "extern.h"
 
 static int	backslash __P((STR *));
@@ -281,13 +283,13 @@ backslash(s)
 		if (!isascii(ch) || !isdigit(ch))
 			break;
 		val = val * 8 + ch - '0';
-		if (++cnt == 3)
+		if (++cnt == 3) {
+			++s->str;
 			break;
+		}
 	}
 	if (cnt)
 		return (val);
-	if (ch != '\0')
-		++s->str;
 	switch (ch) {
 		case 'a':			/* escape characters */
 			return ('\7');
