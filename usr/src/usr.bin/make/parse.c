@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -69,6 +69,7 @@ static char sccsid[] = "@(#)parse.c	5.7 (Berkeley) %G%";
 #include <ctype.h>
 #include "make.h"
 #include "buf.h"
+#include "pathnames.h"
 
 /*
  * These values are returned by ParseEOF to tell Parse_File whether to
@@ -2134,10 +2135,9 @@ Parse_File(name, stream)
  */
 Parse_Init ()
 {
-    char    	*cp;
-    char    	*start;
-    static char syspath[] = DEFSYSPATH;	/* Avoid faults on read-only string
-					 * constant... */
+	char *cp, *start;
+					/* avoid faults on read-only strings */
+	static char syspath[] = _PATH_DEFSYSPATH;
     
     mainNode = NILGNODE;
     parseIncPath = Lst_Init (FALSE);
