@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.58		%G%);
+SCCSID(@(#)collect.c	3.59		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -170,18 +170,10 @@ maketemp(from)
 		fputs(bp, tf);
 		fputs("\n", tf);
 		if (ferror(tf))
-		{
-			if (errno == ENOSPC)
-			{
-				(void) freopen(CurEnv->e_df, "w", tf);
-				fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
-				usrerr("452 Out of disk space for temp file");
-			}
-			else
-				syserr("collect: Cannot write %s", CurEnv->e_df);
-			(void) freopen("/dev/null", "w", tf);
-		}
+			tferror(tf);
 	}
+	if (fflush(tf) != 0)
+		tferror(tf);
 	(void) fclose(tf);
 
 	/* An EOF when running SMTP is an error */
@@ -220,6 +212,33 @@ maketemp(from)
 
 	if ((CurEnv->e_dfp = fopen(CurEnv->e_df, "r")) == NULL)
 		syserr("Cannot reopen %s", CurEnv->e_df);
+}
+/*
+**  TFERROR -- signal error on writing the temporary file.
+**
+**	Parameters:
+**		tf -- the file pointer for the temporary file.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Gives an error message.
+**		Arranges for following output to go elsewhere.
+*/
+
+tferror(tf)
+	FILE *tf;
+{
+	if (errno == ENOSPC)
+	{
+		(void) freopen(CurEnv->e_df, "w", tf);
+		fputs("\nMAIL DELETED BECAUSE OF LACK OF DISK SPACE\n\n", tf);
+		usrerr("452 Out of disk space for temp file");
+	}
+	else
+		syserr("collect: Cannot write %s", CurEnv->e_df);
+	(void) freopen("/dev/null", "w", tf);
 }
 /*
 **  EATFROM -- chew up a UNIX style from line and process
