@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fmt.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fmt.c	2.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -34,14 +34,12 @@ main(argc, argv)
 {
 	register FILE *fi;
 	register int errs = 0;
-	char sobuf[BUFSIZ];
 	register char *cp;
 	int nofile;
 
 	setout();
 	lineno = 1;
 	mark = -10;
-	setbuf(stdout, sobuf);
 	if (argc < 2) {
 single:
 		fmt(stdin);
