@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.28	82/10/17	*/
+/*	ffs_inode.c	4.29	82/10/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -248,7 +248,7 @@ irele(ip)
 			ip->i_dquot = NODQUOT;
 #endif
 		}
-		IUPDAT(ip, time, time, 0);
+		IUPDAT(ip, &time, &time, 0);
 		iunlock(ip);
 		ip->i_flag = 0;
 		/*
@@ -328,7 +328,6 @@ itrunc(ip, length)
 	register int length;
 {
 	register i;
-	dev_t dev;
 	daddr_t bn;
 	struct inode itmp;
 	register struct fs *fs;
@@ -357,7 +356,7 @@ itrunc(ip, length)
 	for (i = 0; i < NIADDR; i++)
 		itmp.i_ib[i] = 0;
 	itmp.i_flag |= ICHG|IUPD;
-	iupdat(&itmp, time, time, 1);
+	iupdat(&itmp, &time, &time, 1);
 	ip->i_flag &= ~(IUPD|IACC|ICHG);
 
 	/*
@@ -393,8 +392,6 @@ itrunc(ip, length)
 	 * finally release direct blocks
 	 */
 	for (i = NDADDR - 1; i>=0; i--) {
-		register size;
-
 		bn = ip->i_db[i];
 		if (bn == (daddr_t)0)
 			continue;
