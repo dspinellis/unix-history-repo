@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttymsg.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttymsg.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,6 +31,8 @@ static char sccsid[] = "@(#)ttymsg.c	5.2 (Berkeley) %G%";
  * display the contents of a uio structure on a terminal.  Used by
  * wall(1) and syslogd(8).  Forks and finishes in child if write
  * would block, waiting at most five minutes.
+ * Returns pointer to error string on error;
+ * string is not newline-terminated.
  */
 char *
 ttymsg(iov, iovcnt, line, nonblock)
@@ -51,8 +53,8 @@ ttymsg(iov, iovcnt, line, nonblock)
 	 */
 	(void) strcpy(device + sizeof(_PATH_DEV) - 1, line);
 	if ((fd = open(device, O_WRONLY|(nonblock ? O_NONBLOCK : 0), 0)) < 0)
-		if (errno != EBUSY && errno != EPERM) {
-			(void) sprintf(errbuf, "open %s: %s\n", device,
+		if (errno != EBUSY && errno != EACCES) {
+			(void) sprintf(errbuf, "open %s: %s", device,
 			    strerror(errno));
 			return (errbuf);
 		} else
@@ -82,7 +84,7 @@ ttymsg(iov, iovcnt, line, nonblock)
 				 */
 				if (errno == ENODEV)
 					break;
-				(void) sprintf(errbuf, "writing %s: %s\n",
+				(void) sprintf(errbuf, "writing %s: %s",
 				    device, strerror(errno));
 				(void) close(fd);
 				return (errbuf);
