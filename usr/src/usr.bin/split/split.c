@@ -1,82 +1,220 @@
-static char *sccsid = "@(#)split.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)split.c	4.3 (Berkeley) %G%";
+
+#include <sys/param.h>
+#include <sys/file.h>
 #include <stdio.h>
+#include <ctype.h>
 
-unsigned count = 1000;
-int	fnumber;
-char	fname[100];
-char	*ifil;
-char	*ofil;
-FILE	*is;
-FILE	*os;
+#define DEFLINE	1000			/* default num lines per file */
+#define ERR	-1			/* general error */
+#define ERREXIT	0			/* error exit */
+#define NO	0			/* no/false */
+#define OK	0			/* okay exit */
+#define YES	1			/* yes/true */
 
-main(argc, argv)
-char *argv[];
+static long	bytecnt,		/* byte count to split on */
+		numlines;		/* lines in each file */
+static int	ifd = ERR,		/* input file descriptor */
+		ofd = ERR;		/* output file descriptor */
+static short	file_open;		/* if a file open */
+static char	bfr[MAXBSIZE],		/* I/O buffer */
+		fname[MAXPATHLEN];	/* file name */
+
+main(argc,argv)
+int	argc;
+char	**argv;
 {
-	register i, c, f;
-	int iflg = 0;
+	register int	cnt;		/* general counter */
+	long	atol();
+	char	*strcpy();
 
-	for(i=1; i<argc; i++)
-		if(argv[i][0] == '-')
-			switch(argv[i][1]) {
-		
-			case '\0':
-				iflg = 1;
-				continue;
-		
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				count = atoi(argv[i]+1);
-				continue;
+	for (cnt = 1;cnt < argc;++cnt) {
+		if (argv[cnt][0] == '-')
+			switch(argv[cnt][1]) {
+				case 0:		/* stdin by request */
+					if (ifd != ERR)
+						usage();
+					ifd = 0;
+					break;
+				case 'b':	/* byte count split */
+					if (numlines)
+						usage();
+					if (!argv[cnt][2])
+						bytecnt = atol(argv[++cnt]);
+					else
+						bytecnt = atol(argv[cnt] + 2);
+					if (bytecnt <= 0) {
+						fputs("split: byte count must be greater than zero.\n",stderr);
+						usage();
+					}
+					break;
+				default:
+					if (!isdigit(argv[cnt][1]) || bytecnt)
+						usage();
+					if ((numlines = atol(argv[cnt] + 2)) <= 0) {
+						fputs("split: line count must be greater than zero.\n",stderr);
+						usage();
+					}
+					break;
 			}
-		else if(iflg)
-			ofil = argv[i];
+		else if (ifd == ERR) {		/* input file */
+			if ((ifd = open(argv[cnt],O_RDONLY,0)) < 0) {
+				perror(argv[cnt]);
+				exit(ERREXIT);
+			}
+		}
+		else if (!*fname)		/* output file prefix */
+			strcpy(fname,argv[cnt]);
+		else
+			usage();
+	}
+	if (ifd == ERR)				/* stdin by default */
+		ifd = 0;
+	if (bytecnt)
+		split1();
+	if (!numlines)
+		numlines = DEFLINE;
+	split2();
+}
+
+/*
+ * split1 --
+ *	split by bytes
+ */
+static
+split1()
+{
+	register long	bcnt;		/* byte counter */
+	register int	dist,		/* buffer offset */
+			len;		/* read length */
+	register char	*C;		/* tmp pointer into buffer */
+
+	for (bcnt = 0;;)
+		switch(len = read(ifd,bfr,MAXBSIZE)) {
+			case 0:
+				exit(OK);
+			case ERR:
+				perror("read");
+				exit(ERREXIT);
+			default:
+				if (!file_open) {
+					newfile();
+					file_open = YES;
+				}
+				if (bcnt + len >= bytecnt) {
+					dist = bytecnt - bcnt;
+					write(ofd,bfr,dist);
+					len -= dist;
+					for (C = bfr + dist;len >= bytecnt;len -= bytecnt,C += bytecnt) {
+						newfile();
+						write(ofd,C,(int)bytecnt);
+					}
+					if (len) {
+						newfile();
+						write(ofd,C,len);
+					}
+					else
+						file_open = NO;
+					bcnt = len;
+				}
+				else {
+					bcnt += len;
+					write(ofd,bfr,len);
+				}
+		}
+}
+
+/*
+ * split2 --
+ *	split by lines
+ */
+static
+split2()
+{
+	register char	*Ce,			/* start/end pointers */
+			*Cs;
+	register long	lcnt;			/* line counter */
+	register int	len;			/* read length */
+
+	for (lcnt = 0;;)
+		switch(len = read(ifd,bfr,MAXBSIZE)) {
+			case 0:
+				exit(0);
+			case ERR:
+				perror("read");
+				break;
+			default:
+				if (!file_open) {
+					newfile();
+					file_open = YES;
+				}
+				for (Cs = Ce = bfr;len--;Ce++)
+					if (*Ce == '\n' && ++lcnt == numlines) {
+						write(ofd,Cs,(int)(Ce - Cs) + 1);
+						lcnt = 0;
+						Cs = Ce + 1;
+						if (len)
+							newfile();
+						else
+							file_open = NO;
+					}
+				if (Cs < Ce)
+					write(ofd,Cs,(int)(Ce - Cs));
+		}
+}
+
+/*
+ * newfile --
+ *	open a new file
+ */
+static
+newfile()
+{
+	static long	fnum;		/* file name counter */
+	static short	defname;	/* using default name, "x" */
+	static char	*fpnt;		/* output file name pointer */
+
+	if (ofd == ERR) {
+		if (fname[0]) {
+			fpnt = fname + strlen(fname);
+			defname = NO;
+		}
 		else {
-			ifil = argv[i];
-			iflg = 2;
+			fname[0] = 'x';
+			fpnt = fname + 1;
+			defname = YES;
 		}
-	if(iflg != 2)
-		is = stdin;
-	else
-		if((is=fopen(ifil,"r")) == NULL) {
-			perror(ifil);
-			exit(1);
+		ofd = fileno(stdout);
+	}
+	/*
+	 * hack to increase max files; original code just wandered through
+	 * magic characters.  Maximum files is 3 * 26 * 26 == 2028
+	 */
+#define MAXFILES	676
+	if (fnum == MAXFILES) {
+		if (!defname || fname[0] == 'z') {
+			fputs("split: too many files.\n",stderr);
+			exit(ERREXIT);
 		}
-	if(ofil == 0)
-		ofil = "x";
+		++fname[0];
+		fnum = 0;
+	}
+	fpnt[0] = fnum / 26 + 'a';
+	fpnt[1] = fnum % 26 + 'a';
+	++fnum;
+	if (!freopen(fname,"w",stdout)) {
+		fprintf(stderr,"split: unable to write to %s.\n",fname);
+		exit(ERR);
+	}
+}
 
-loop:
-	f = 1;
-	for(i=0; i<count; i++)
-	do {
-		c = getc(is);
-		if(c == EOF) {
-			if(f == 0)
-				fclose(os);
-			exit(0);
-		}
-		if(f) {
-			for(f=0; ofil[f]; f++)
-				fname[f] = ofil[f];
-			fname[f++] = fnumber/26 + 'a';
-			fname[f++] = fnumber%26 + 'a';
-			fname[f] = '\0';
-			fnumber++;
-			if((os=fopen(fname,"w")) == NULL) {
-				fprintf(stderr,"Cannot create output\n");
-				exit(1);
-			}
-			f = 0;
-		}
-		putc(c, os);
-	} while(c != '\n');
-	fclose(os);
-	goto loop;
+/*
+ * usage --
+ *	print usage message and die
+ */
+static
+usage()
+{
+	fputs("usage: split [-] [-#] [-b byte_count] [file [prefix]]\n",stderr);
+	exit(ERREXIT);
 }
