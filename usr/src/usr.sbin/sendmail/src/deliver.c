@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.64		%G%);
+SCCSID(@(#)deliver.c	3.65		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -67,6 +67,28 @@ deliver(firstto, editfcn)
 			to->q_mailer->m_mno, to->q_host, to->q_user);
 # endif DEBUG
 
+	m = to->q_mailer;
+	host = to->q_host;
+
+	/*
+	**  If this mailer is expensive, and if we don't want to make
+	**  connections now, just mark these addresses and return.
+	**	This is useful if we want to batch connections to
+	**	reduce load.  This will cause the messages to be
+	**	queued up, and a daemon will come along to send the
+	**	messages later.
+	**		This should be on a per-mailer basis.
+	*/
+
+	if (NoConnect && !QueueRun && bitset(M_EXPENSIVE, m->m_flags))
+	{
+		QueueUp = TRUE;
+		for (; to != NULL; to = to->q_next)
+			if (!bitset(QDONTSEND, to->q_flags))
+				to->q_flags |= QQUEUEUP|QDONTSEND;
+		return (0);
+	}
+
 	/*
 	**  Do initial argv setup.
 	**	Insert the mailer name.  Notice that $x expansion is
@@ -74,10 +96,10 @@ deliver(firstto, editfcn)
 	**	a picky -f flag, we insert it as appropriate.  This
 	**	code does not check for 'pv' overflow; this places a
 	**	manifest lower limit of 4 for MAXPV.
+	**		We rewrite the from address here, being careful
+	**		to also rewrite it again using ruleset 2 to
+	**		eliminate redundancies.
 	*/
-
-	m = to->q_mailer;
-	host = to->q_host;
 
 	/* rewrite from address, using rewriting rules */
 	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
