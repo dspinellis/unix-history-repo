@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	6.6 (Berkeley) %G%
+ *	@(#)kern_physio.c	6.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -159,8 +159,8 @@ swkill(p, rout)
 	char *rout;
 {
 
-	printf("pid %d: %s", p->p_pid, rout);
-	uprintf("sorry, pid %d was killed in %s", p->p_pid, rout);
+	printf("pid %d: %s\n", p->p_pid, rout);
+	uprintf("sorry, pid %d was killed in %s\n", p->p_pid, rout);
 	/*
 	 * To be sure no looping (e.g. in vmsched trying to
 	 * swap out) mark process locked in core (as though
