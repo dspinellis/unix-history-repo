@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	6.15	85/01/21	*/
+/*	ufs_vnops.c	6.16	85/02/22	*/
 
 #include "param.h"
 #include "systm.h"
@@ -1192,6 +1192,10 @@ mkdir()
 		dp->i_flag |= ICHG;
 		goto bad;
 	}
+	if (DIRBLKSIZ > ip->i_fs->fs_fsize)
+		panic("mkdir: blksize");     /* XXX - should grow with bmap() */
+	else
+		ip->i_size = DIRBLKSIZ;
 	/*
 	 * Directory all set up, now
 	 * install the entry for it in
