@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.71 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.72 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.71 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.72 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -262,7 +262,9 @@ smtp(e)
 				MyHostName, CurSmtpClient);
 			if (!bitset(PRIV_NOEXPN, PrivacyFlags))
 				message("250-EXPN");
+#if MIME8TO7
 			message("250-8BITMIME");
+#endif
 			if (MaxMessageSize > 0)
 				message("250-SIZE %ld", MaxMessageSize);
 			else

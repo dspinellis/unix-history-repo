@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.90 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.91 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1285,7 +1285,9 @@ struct optioninfo
 } OptionTab[] =
 {
 	"SevenBitInput",	'7',		TRUE,
+#if MIME8TO7
 	"EightBitMode",		'8',		TRUE,
+#endif
 	"AliasFile",		'A',		FALSE,
 	"AliasWait",		'a',		FALSE,
 	"BlankSub",		'B',		FALSE,
@@ -1485,6 +1487,7 @@ setoption(opt, val, sticky)
 		SevenBitInput = atobool(val);
 		break;
 
+#if MIME8TO7
 	  case '8':		/* handling of 8-bit input */
 		switch (*val)
 		{
@@ -1523,6 +1526,7 @@ setoption(opt, val, sticky)
 			exit(EX_USAGE);
 		}
 		break;
+#endif
 
 	  case 'A':		/* set default alias file */
 		if (val[0] == '\0')
