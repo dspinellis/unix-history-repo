@@ -1,4 +1,4 @@
-/*	tu.c	4.14	83/05/05	*/
+/*	tu.c	4.15	83/05/08	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -75,7 +75,7 @@ struct tu {
 	int	tu_rcnt;	/* how much to read */
 	u_char	*tu_wbptr;	/* pointer to buffer for write */
 	int	tu_wcnt;	/* how much to write */
-	int	tu_state;	/* current tu_state of tansfer operation */
+	int	tu_state;	/* current state of tansfer operation */
 	int	tu_flag;	/* read in progress flag */
 	char	*tu_addr;	/* real buffer data address */
 	int	tu_count;	/* real requested count */
@@ -314,6 +314,7 @@ turintr()
 			;
 		mtpr(CSTD, TUF_CONT);	/* ACK */
 	}
+top:
 	if (tu.tu_rcnt) {		/* still waiting for data? */
 		*tu.tu_rbptr++ = c;	/* yup, put it there */
 		if (--tu.tu_rcnt)	/* decrement count, any left? */
@@ -322,7 +323,7 @@ turintr()
 
 	/*
 	 * We got all the data we were expecting for now,
-	 * switch on the tu_state of the transfer.
+	 * switch on the state of the transfer.
 	 */
 	switch(tu.tu_state) {
 
@@ -343,24 +344,40 @@ turintr()
 	 * get it, reset the world.
 	 */
 	case TUS_WAIT:			/* waiting for continue */
-		if (c != TUF_CONT) {
+		switch(c) {
+		case TUF_CONT:  /* got the expected continue */
+			tu.tu_flag = 0;
+			tudata.pk_flag = TUF_DATA;
+			tudata.pk_mcount = MIN(128, tu.tu_count);
+			tudata.pk_chksum =
+			    tuchk(*((short *)&tudata), (caddr_t)tu.tu_addr,
+				(int)tudata.pk_mcount);
+			tu.tu_state = TUS_SENDH;
+			tu.tu_wbptr = (u_char *)&tudata;
+			tu.tu_wcnt = 2;
+			tuxintr();
+			break;
+
+		case TUF_CMD:   /* sending us an END packet...error */
+			tu.tu_state = TUS_GET;
+			tu.tu_rbptr = (u_char *) &tudata;
+			tu.tu_rcnt = sizeof (tudata);
+			tu.tu_flag = 1;
+			mtpr (CSTS, 0);
+			goto top;
+
+		case TUF_INITF:
+			tureset();
+			break;
+
+		default:        /* something random...bad news */
 			tu.tu_state = TUS_INIT1;
 			break;
 		}
-		tu.tu_flag = 0;
-		tudata.pk_flag = TUF_DATA;
-		tudata.pk_mcount = MIN(128, tu.tu_count);
-		tudata.pk_chksum =
-		    tuchk(*((short *)&tudata), (u_short *)tu.tu_addr,
-			(int)tudata.pk_mcount);
-		tu.tu_state = TUS_SENDH;
-		tu.tu_wbptr = (u_char *)&tudata;
-		tu.tu_wcnt = 2;
-		tuxintr();
 		break;
 
 	case TUS_SENDW:
-		if (c != TUF_CONT)
+		if (c != TUF_CONT && c != TUF_INITF) 
 			goto bad;
 		tureset();
 		break;
@@ -485,7 +502,7 @@ top:
 
 	/*
 	 * Last message byte was sent out.
-	 * Switch on tu_state of transfer.
+	 * Switch on state of transfer.
 	 */
 	if (tudebug) {
 		printf("tuxintr: state=");
