@@ -1,0 +1,328 @@
+.hc %
+.TH MS 7 
+.SH NAME
+ms \- macros for formatting manuscripts
+.SH SYNOPSIS
+.B "nroff \-ms"
+[ options ]
+file ... 
+.br
+.B "troff \-ms"
+[ options ]
+file ... 
+.SH DESCRIPTION
+This package of 
+.I nroff
+and
+.I troff
+macro definitions provides a canned formatting
+.li
+facility for tech%nical papers in various formats.
+When producing 2-column output on a terminal, filter
+the output through
+.IR  col (1).
+.PP
+The macro requests are defined below.
+Many
+.I nroff
+and
+.I troff
+requests are unsafe in conjunction with
+this package, however these requests may be used with
+impunity after the first .PP:
+.IP
+.ta \w'.sp n 'u
+.li
+.bp	begin new page
+.nf
+.li
+.br	break output line here
+.li
+.sp n	insert n spacing lines
+.li
+.ls n	(line spacing) n=1 single, n=2 double space
+.li
+.na	no alignment of right margin
+.fi
+.PP
+Output of the
+.I eqn,
+.I neqn,
+.I refer,
+and
+.IR  tbl (1)
+preprocessors
+for equations and tables is acceptable as input.
+.SH FILES
+/usr/lib/tmac/tmac.s
+.SH "SEE ALSO"
+eqn(1), troff(1), refer(1), tbl(1)
+.tr &.
+.SH REQUESTS 
+.ta \w'..ND \fIdate\fR 'u +\w'Initial 'u +\w'Cause 'u
+.br
+.di x
+			\ka
+.br
+.di
+.in \nau
+.ti0
+Request	Initial	Cause	Explanation
+.ti0
+	Value	Break
+.br
+.in \nau
+.ti0
+.li
+.1C	yes	yes	One column format on a new page.
+.ti0
+.li
+.2C	no	yes	Two column format.
+.ti0
+.li
+.AB	no	yes	Begin abstract.
+.ti0
+.li
+.AE	-	yes	End abstract.
+.ti0
+.li
+.AI	no	yes	Author's institution follows.
+Suppressed in TM.
+.ti0
+.li
+.AT	no	yes	Print `Attached' and turn off line filling.
+.ti0
+.li
+.AU \fIx y\fR	no	yes	Author's name follows.
+.IR x " is location and " "y\fR is"
+extension, ignored except in TM.
+.ti0
+.li
+.B \fIx\fR	no	no	Print \fIx\fR in boldface; if no argument switch to boldface.
+.ti 0
+.li
+.B1	no	yes	Begin text to be enclosed in a box.
+.ti0
+.li
+.B2	no	yes	End text to be boxed & print it.
+.ti0
+.li
+.BT	date	no	Bottom title, automatically invoked at
+foot of page.
+May be redefined.
+.ti0
+.li
+.BX \fIx\fR	no	no	Print \fIx\fR in a box.
+.ti0
+.li
+.CS \fIx...\fR	-	yes	Cover sheet info if
+TM format, suppressed otherwise.
+Arguments are number of text pages,
+other pages, total pages, figures, tables, references.
+.ti0
+.li
+.CT	no	yes	Print `Copies to' and enter no-fill mode.
+.ti0
+.li
+.DA \fIx\fR	nroff	no	`Date line' at bottom of page
+is
+.IR x .
+Default is today.
+.ti0
+.li
+.DE	-	yes	End displayed text.
+Implies .KE.
+.ti0
+.li
+.DS \fIx\fR	no	yes	Start of displayed text,
+to appear verbatim line-by-line.
+.IR x "=I for indented display (default),"
+.IR x "=L for left-justified on the page,"
+.IR x "=C for centered,"
+.IR x "=B for make left-justified block, then center whole block."
+Implies .KS.
+.ti0
+.li
+.EG	no	-	Print document in BTL format for `Engineer's Notes.'  Must be first.
+.ti0
+.li
+.EN	-	yes	Space after equation
+produced by
+.I eqn
+or
+.IR neqn .
+.ti0
+.li
+.EQ \fIx y\fR	-	yes	Precede equation; break out and
+add space.
+Equation number is
+.IR y .
+The optional argument \fIx\fR
+may be
+.I I
+to indent equation (default),
+.I L
+to left-adjust the equation, or
+.I C
+to center the equation.
+.ti0
+.li
+.FE	-	yes	End footnote.
+.ti0
+.li
+.FS	no	no	Start footnote.
+The note will be moved to the bottom of the page.
+.ti0
+.li
+.HO	-	no	`Bell Laboratories, Holmdel,
+New Jersey 07733'.
+.ti0
+.li
+.I \fIx\fR	no	no	Italicize \fIx\fR;
+if \fIx\fR missing, italic text follows.
+.ti0
+.li
+.IH	no	no	`Bell Laboratories, Naperville, Illinois 60540'
+.ti0
+.li
+.IM	no	no	Print document in BTL format for an internal memorandum.  Must be first.
+.ti0
+.li
+.IP \fIx y\fR	no	yes	Start indented paragraph,
+with hanging tag
+.IR x .
+Indentation is
+.IR y ""
+ens (default 5).
+.ti0
+.li
+.KE	-	yes	End keep.
+Put kept text on next page if not enough room.
+.ti0
+.li
+.KF	no	yes	Start floating keep.
+If the kept text must be moved to the next page,
+float later text back to this page.
+.ti0
+.li
+.KS	no	yes	Start keeping following text.
+.ti0
+.li
+.LG	no	no	Make letters larger.
+.ti0
+.li
+.LP	yes	yes	Start left-blocked paragraph.
+.ti0
+.li
+.MF	-	-	Print document in BTL format for `Memorandum for File.'  Must be first.
+.ti0
+.li
+.MH	-	no	`Bell Laboratories, Murray Hill,
+New Jersey 07974'.
+.ti0
+.li
+.MR	-	-	Print document in BTL format for `Memorandum for Record.'  Must be first.
+.ti0
+.li
+.ND \fIdate\fR	troff	no	Use date supplied (if any) only in
+special BTL format positions; omit from page footer.
+.ti0
+.li
+.NH \fIn\fR	-	yes	Same as .SH, with section
+number supplied automatically.
+Numbers are multilevel, like 1.2.3,
+where
+.IR n ""
+tells what level is wanted (default is 1).
+.ti0
+.li
+.NL	yes	no	Make letters normal size.
+.ti0
+.li
+.OK	-	yes	`Other keywords' for TM cover
+sheet follow.
+.ti0
+.li
+.PP	no	yes	Begin paragraph.
+First line indented.
+.ti0
+.li
+.PT	pg #	-	Page title, automatically invoked at
+top of page.
+May be redefined.
+.ti0
+.li
+.PY	-	no	`Bell Laboratories, Piscataway, New Jersey 08854'
+.ti0
+.li
+.QE	-	yes	End quoted (indented and shorter) material.
+.ti0
+.li
+.QP	-	yes	Begin single paragraph which is indented and shorter.
+.ti0
+.li
+.QS	-	yes	Begin quoted (indented and shorter) material.
+.ti0
+.li
+.R	yes	no	Roman text follows.
+.ti0
+.li
+.RE	-	yes	End relative indent level.
+.ti0
+.li
+.RP	no	-	Cover sheet and first page for released
+paper.
+Must precede other requests.
+.ti0
+.li
+.RS	-	yes	Start level of relative indentation.
+Following .IP's are measured from current indentation.
+.ti0
+.li
+.SG \fIx\fR	no	yes	Insert signature(s) of author(s),
+ignored except in TM.
+.IR x " is the reference line (initials of author and typist)."
+.ti0
+.li
+.SH	-	yes	Section head follows,
+font automatically bold.
+.ti0
+.li
+.SM	no	no	Make letters smaller.
+.ti0
+.li
+.TA \fIx\fR...	5...	no	Set tabs in ens.
+Default is 5 10 15 ...
+.ti0
+.li
+.TE	-	yes	End table.
+.ti0
+.li
+.TH	-	yes	End heading section of table.
+.ti0
+.li
+.TL	no	yes	Title follows.
+.ti0
+.li
+.TM \fIx\fR...	no	-	Print document in BTL technical memorandum format.
+Arguments are TM number, (quoted list of) case number(s), and file number.
+Must precede other requests.
+.ti0
+.li
+.TR \fIx\fR	-	-	Print in BTL technical report format; report number is \fIx\fR.  Must be first.
+.ti0
+.li
+.TS \fIx\fR	-	yes	Begin table; if \fIx\fR is
+.I H
+table has repeated heading.
+.ti0
+.li
+.UL \fIx\fR	-	no	Underline argument (even in troff).
+.ti0
+.li
+.UX	-	no	`UNIX'; first time used, add footnote `UNIX is a trademark of
+Bell Laboratories.'
+.ti0
+.li
+.WH	-	no	`Bell Laboratories, Whippany,
+New Jersey 07981'.

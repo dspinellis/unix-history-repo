@@ -1,0 +1,80 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)pipe.2	6.3 (Berkeley) %G%
+.\"
+.TH PIPE 2 ""
+.UC 4
+.SH NAME
+pipe \- create an interprocess communication channel
+.SH SYNOPSIS
+.nf
+.ft B
+pipe(fildes)
+int fildes[2];
+.fi
+.ft R
+.SH DESCRIPTION
+The
+.I pipe
+system call
+creates an I/O mechanism called a pipe.
+The file descriptors returned can
+be used in read and write operations.
+When the pipe is written using the descriptor
+.IR fildes [1]
+up to 4096 bytes of data are buffered
+before the writing process is suspended.
+A read using the descriptor
+.IR fildes [0]
+will pick up the data.
+.PP
+It is assumed that after the
+pipe has been set up,
+two (or more)
+cooperating processes
+(created by subsequent
+.I fork
+calls)
+will pass data through the
+pipe with
+.I read
+and
+.I write
+calls.
+.PP
+The shell has a syntax
+to set up a linear array of processes
+connected by pipes.
+.PP
+Read calls on an empty
+pipe (no buffered data) with only one end
+(all write file descriptors closed)
+returns an end-of-file.
+.PP
+Pipes are really a special case of the 
+.IR socketpair (2)
+call and, in fact, are implemented as such in the system.
+.PP
+A signal is generated if a write on a pipe with only one end is attempted.
+.SH "RETURN VALUE
+The function value zero is returned if the
+pipe was created; \-1 if an error occurred.
+.SH ERRORS
+The \fIpipe\fP call will fail if:
+.TP 15
+[EMFILE]
+Too many descriptors are active.
+.TP 15
+[ENFILE]
+The system file table is full.
+.TP 15
+[EFAULT]
+The \fIfildes\fP buffer is in an invalid area of the process's address
+space.
+.SH "SEE ALSO"
+sh(1), read(2), write(2), fork(2), socketpair(2)
+.SH BUGS
+Should more than 4096 bytes be necessary in any
+pipe among a loop of processes, deadlock will occur.

@@ -1,0 +1,63 @@
+.so chars.me
+.pl 10
+.nf
+.de XX
+.if !"\\$2"\\*X" \
+\{\
+.	sp
+.	ec #
+#*#$2
+.	ec
+.\}
+.br
+.nr xx \\n(nl
+\\$1\e*\\$2\tX\\$1\\*\\$2X\t\\$1\\n(.w\t\w\(ts\\$1\\*\\$2\(ts\t\c
+.nr xx -\\n(nl
+.if \\n(xx {\\n(xx}\t\c
+.ds X \\$2
+..
+.de YY
+.sp
+FONT \\n(.f, \\n(.s POINTS
+.XX a '
+.XX e '
+.XX i '
+.XX a `
+.XX e `
+.XX i `
+.XX u :
+.XX a :
+.XX e :
+.XX i :
+.XX e ^
+.XX a ^
+.XX i ^
+.XX u ^
+.XX a ~
+.XX e ~
+.XX i ~
+.XX n ~
+.XX c ,
+.XX e v
+.XX A o
+.XX a o
+.XX "" (qe
+.XX "" (qa
+..
+.ft R
+.YY
+.ft I
+.if t .YY
+.ft B
+.if t .YY
+.ps 16
+.vs \n(.s+2
+.ft R
+.if t .YY
+.br
+.ex
+.nr $T 1
+.so chars.me
+.if n .sp
+.if n CRUDE CHARACTERS
+.if n .YY

@@ -1,0 +1,64 @@
+.TH DUMPDEV 8L "UKC \- %G%" "Unix Programmer's Manual"
+.SH NAME
+dumpdev,dumpall \- perform cyclic file system dumps
+.SH SYNOPSIS
+.B /etc/dumpdev
+.I file-system
+.br
+.B /etc/dumpall
+.SH DESCRIPTION
+.I Dumpdev
+is used to perform cyclic dumps for the filesystem given as an argument.
+It uses the tape labelling facilities of the
+.IR dump (8)
+command and some data files on /etc/dumpdata which give the current
+dump state and a description of the cycle which is to be used.
+.PP
+The main data file is
+.B /etc/dumpdata/dumpcycle
+which contains lines of data which specify which tape set and dump level
+are to be used for a particular dump in the cycle.
+The file can contain lines starting with `#' which are comments.
+The columns on the file are tab separated and are:
+.TP "\w'Map extension'u+3"
+Name
+the name of the device to be dumped, this is the block device name;
+for example, hp0a not rhp0a.
+.IP "Cycle Number"
+This is a number which defines the state number in the cycle to which this
+line refers.
+.IP "Next Cycle"
+The entry gives the next entry in the cycle.
+.IP "Dump level"
+The dump level which is to be used for the dump.
+.IP "Tape stem"
+The
+.B l
+parameter to the
+.I dump
+program giving the constant part of the tape label.
+.IP "Map extension"
+The optional
+.B m
+argument, giving 
+a single tape, a tape range or a list of tapes which are to be used for the
+dump in that state.
+.PP
+The program maintains a file called /etc/dumpdata/<device>.state
+which contains the
+cycle number of the last dump action on that file system.
+.PP
+The program
+.I /etc/dumpall
+uses the
+.IR dump (8)
+program to determine which file systems require dumping and calls dumpdev
+appropriately.
+.SH FILES
+/etc/dumpdata/dumpcycle
+.br
+/etc/dumpdata/<device>.state
+.SH "SEE ALSO"
+dump(8), restore(8), dumplabel(8)
+.SH AUTHOR
+Peter Collinson, UKC

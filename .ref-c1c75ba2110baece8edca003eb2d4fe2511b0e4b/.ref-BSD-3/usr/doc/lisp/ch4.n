@@ -1,0 +1,378 @@
+.Lc	Special\ Functions 4
+.\".ch 4
+.Lf and "[g_arg1 ...]"
+.Re
+the value of the last argument if all arguments evaluate
+to a non nil value, otherwise 
+.i and 
+returns nil.
+It returns t if there are no arguments.
+.No
+the arguments are evaluated left to right and evaluation will cease
+with the first nil encountered
+.Lf apply "'u_func 'l_args"
+.Re
+the result of applying function u_func to the arguments in the list l_args.
+.Lf arg "['x_numb]"
+.Re 
+if x_numb is specified then the x_numb'\fIth\fP argument to 
+the enclosing lexpr
+If x_numb is not specified then this returns the number of arguments 
+to the enclosing lexpr.
+.No
+it is an error to the interpreter if x_numb is given and out of range.
+.Lf break "[g_val]"
+.Re
+the value of the next return typed in at top level.
+.Se
+the lisp system stops and prints out g_val if given, and  then
+goes into a break loop.
+This allows one to interactively debug a program.
+You may leave the break with 
+.i return 
+or
+.i retbrk .
+.Lf catch "g_exp [s_tag]"
+.Re
+the result of evaluating g_exp or the value thrown during the evaluation
+of g_exp.
+.Se
+this first sets up a `catch frame' on the lisp runtime stack.
+Then it begins to evaluate g_exp.
+If g_exp evaluates normally, its value is returned.
+If, however a 
+.i throw
+is done we will catch the value thrown iff
+the tag thrown to is s_tag or if there is no s_tag argument to the catch.
+.No
+Errors are implemented as a special kind of throw.
+A catch with no tag will not catch an error but a catch whose tag is
+the error type will catch that type of error.
+See \(scX.Y for more information.
+.\".pg
+.Lf cond "[l_clause1 ...]"
+.Re
+the last value evaluated in the first clause satisfied.
+If no clauses are satisfied then nil is returned.
+.No
+This is the basic conditional `statement' in lisp.
+The clauses are processed from left to right.
+The first element of a clause is evaluated.
+If it evaluated to a non nil value then that clause is satisfied and
+all following elements of that clause are evaluated.
+The last value computed is returned as the value of the cond.
+If there is just one element in the clause then its value is returned.
+If the first element of a clause evaluates to nil, then the other
+elements of that clause are not evaluated and the system moves to
+the next clause.
+.Lf declare "[g_arg ...]"
+.Re
+nil
+.No
+this is a no-op to the evaluator.
+It has special meaning to the compiler.
+.Lf def "s_name (s_type l_argl g_exp1 ...)"
+.Wh
+s_type is one of lambda, nlambda, macro or lexpr.
+.Re
+s_name
+.Se
+This defines the function s_name to the lisp system.
+If s_type is nlambda or macro then the argument list l_argl must contain
+exactly one non-nil symbol.
+.Lf defun "s_name [s_mtype] ls_argl g_exp1 ... "
+.Wh
+s_mtype is one of fexpr, expr, args or macro.
+.Re
+s_name
+.Se
+This defines the function s_name.
+.No
+this exists for Maclisp compatibility, it is just a macro which
+changes the defun form to the def form.
+An s_mtype of fexpr is converted to nlambda, of args to lexpr
+, and of expr to lambda. Macro is the same.
+If ls_arg1 is a symbol, then the type is assumed to be lexpr and
+ls_arg1 is the symbol which is bound to the number of args when the
+function is entered.
+.Lf do "l_vrbs l_test g_exp1 ..."
+.Re
+the last form in the cdr of l_test evaluated, or a value explicitly given by
+a return evaluated within the do body.
+.No
+This is the basic iteration form for
+.Fr .
+l_vrbs is a list of zero or more var-init-repeat forms.
+A var-init-repeat form looks like:
+.br
+.tl ''(s_name [g_init [g_repeat]])''
+There are three cases depending on what is present in the form.
+If just s_name is present, this means that when the do is entered,
+s_name is lambda-bound to nil and is never modified by the system 
+(though the program is certainly free to modify its value).
+If the form is (s_name\ 'g_init) then the only difference is that
+s_name is lambda-bound to the value of g_init instead of nil.
+If g_repeat is also present then s_name is lambda-bound to g_init
+when the loop is entered and after each pass through the do body
+s_name is  bound to the value of g_repeat.
+.br
+l_test is either nil or has the form of a cond clause.
+If it is nil then the do body will be evaluated only once and the
+do will return nil.
+Otherwise, before the do body is evaluated the car of l_test is 
+evaluated and if the result is non nil this signals an end to
+the looping.
+Then the rest of the forms in l_test are evaluated
+and the value of the last one is returned as the value of the do.
+If the cdr of l_test is nil, then nil is returned -- thus this is not
+exactly like a cond clause.
+.br
+g_exp1 and those forms which follow constitute the do body.
+A do body is like a prog body and thus may have labels and one may
+use the functions go and return.
+.br
+The sequence of evaluations is this:
+.np
+the init forms are evaluated left to right and  stored in temporary
+locations.
+.np
+Simultaneously all do variables are lambda bound to the value of
+their init forms or nil.
+.np
+If l_test is non nil then the car is evaluated and if it is non nil
+the rest of the forms in l_test are evaluated and the last value is 
+returned as the value
+of the do.
+.np
+The forms in the do body are evaluated left to right.
+.np
+If l_test is nil the do function returns with the value nil.
+.np
+The repeat forms are evaluated and saved in temporary locations.
+.np
+The variables with repeat forms are simultaneoulsy
+bound to the values of those forms.
+.np
+Go to step 3.
+.No
+there is an alternate form of do which can be used when there is
+only one do variable.
+It is described next.
+.\".pg
+.Lf do "s_name g_init g_repeat g_test g_exp1 ..."
+.nr $p 0
+.No
+this is another, less general,  form of do.
+It is evaluated by:
+.np
+evaluating g_init
+.np
+lambda binding s_name to value of g_init
+.np
+g_test is evaluated and if it is not nil the do function returns with nil.
+.np
+the do body is evaluated beginning at g_exp1.
+.np
+the repeat form is evaluted and stored in s_name.
+.np
+go to step 3.
+.\".pg
+.Lf err ???
+.Lf errset ???
+.Lf eval "'g_val"
+.Re
+the result of evaluating g_val.
+.No
+The evaluator evaluates g_val in this way:
+.br
+If g_val is a symbol, then the evaluator returns its value.
+If g_val had never been assigned a value, then this causes 
+an 'Unbound Variable' error.
+If g_val is of type value, then its value is returned.
+If g_val is a list object then g_val is either a function call or
+array reference.
+Let g_car be the first element of g_val.
+We continually evaluate g_car until we end up with a symbol with
+a non nil function binding
+or a non-symbol.
+Call what we end up with: g_func.
+g_func must be one of three types: list, binary or array.
+If it is a list then the first element of the list, which 
+we shall call g_functype, must be either
+lambda, nlambda, macro or lexpr.
+If g_func is a binary, then its discipline, which we shall call
+g_functype, is either lambda, nlambda or macro.
+If g_func is an array then this form is evaluated specially, see
+\(sc X.arrays.
+If g_func is a list or binary, then g_functype will determine how
+the arguments to this function, the cdr of g_val, are processed.
+If g_functype is lambda or lexpr, the arguments are  evaluated
+(by calling 
+.i eval
+recursively) and stacked.
+If g_functype is nlambda then the argument list is stacked.
+If g_functype is macro then the entire form, g_val is stacked.
+Next the formal valiables are lambda bound.
+The formal variables are the cadr of g_func - if g_functype is
+nlambda, lexpr or macro, there should only be one formal variable.
+The values on the stack are lambda bound to the formal variables
+except in the case of a lexpr, where the number of actual arguments
+is bound to the formal variable.
+After the binding is done, the function is invoked, either by
+jumping to the entry point in the case of a binary or 
+by evaluating the list of forms beginning at cddr g_func.
+The result of this function invocation is returned as the value 
+of the call to eval.
+.Lf eval-when "l_times g_exp1 ... g_expn"
+.Wh
+l_times is a list containing any combination of compile, eval and load.
+.Re
+nil
+if the symbol eval is not  member of l_times, 
+else returns the value of g_expn.
+.Se
+If eval is a member of l_times, then the forms g_exp\fIi\fP are
+evaluated.
+.No
+this is used mainly to control when the compiler evaluates forms.
+.\".pg
+.Lf exec
+.Lf funcall "'u_func ['g_arg1 ...]"
+.Re
+the value of applying function u_func to the arguments g_arg\fIi\fP.
+.Lf function "u_func"
+.Re
+the function binding of u_func if it is an symbol with a function binding
+otherwise u_func is returned.
+.Lf getdisc "'t_func"
+.Re
+the discipline of the machine coded function (either lambda, nlambda
+or macro).
+.Lf go "g_labexp"
+.Wh
+g_labexp is either a symbol or an expression.
+.Se
+If g_labexp is an expression, that expression is evaluated and this 
+should
+result in a symbol.
+the locus of control moves to just following the label s_lable in the
+current prog body.
+.No
+this is only valid in the context of a prog body.
+The interpreter will allow non-local go's and expressions which
+evaluate to a symbol, but the compiler will not so
+be forewarned.
+.Lf map "'u_func 'l_arg1 ..."
+.Re
+l_arg1
+.No
+The function u_func is applied to successive sublists of the l_arg\fIi\fP.
+All sublists should have the same length.  
+.\".pg
+.Lf mapc "'u_func 'l_arg1 ..."
+.Re
+l_arg1.
+.No
+The function u_func is applied to successive elements of the argument 
+lists.
+All of the lists should have the same length.
+.Lf mapcan "'u_func 'l_arg1 ..."
+.Re
+nconc applied to the results of the functional evaluations.
+.No
+The function u_func is applied to successive elements of the 
+argument lists.
+All sublists should have the same length.
+.Lf mapcar "'u_func 'l_arg1 ..."
+.Re
+a list of the values returned from the functional application.
+.No
+the function u_func is applied to successive elements of the
+argument lists.
+All sublists should have the same length.
+.Lf mapcon "'u_func 'l_arg1 ..."
+.Re
+nconc applied to the results of the functional evaluation.
+.No
+the function u_func is applied to successive sublists of the
+argument lists.
+All sublists should have the same length.
+.Lf maplist "'u_func 'l_arg1 ..."
+.Re
+a list of the results of the functional evaluations.
+.No
+the function u_func is applied to successive sublists of the arguments
+lists.
+All sublists should have the same length.
+.Lf mfunction "entry 's_disc"
+.Re
+a lisp object of type binary composed of entry and s_disc.
+.No
+entry is a pointer to the machine code for a function, and s_disc is the
+discipline (e.g. lambda).
+.\".pg
+.Lf oblist
+.Re
+a list of all symbols on the oblist.
+.Lf or "[g_arg1 ... ]"
+.Re
+the value of the first non nil argument  or nil if all arguments 
+evaluate to nil.
+.No
+Evaluation proceeds left to right and stops as soon as one of the arguments
+evaluates to a non nil value.
+.Lf prog "l_vrbls g_exp1 ..."
+.Re
+the value explicitly given in a return form
+or else nil if no return is done by the time the last g_exp\fIi\fP is
+evaluated.
+.No
+the local variables are lambda bound to nil then the g_exp\fI\fP
+are evaluated from left to right.
+This is a prog body (obviously) and this means than 
+any symbols seen are not evaluated,
+instead they are treated as labels.
+This also means that returns and go's are allowed.
+.Lf prog2 "g_exp1 g_exp2 [g_exp3 ...]"
+.Re
+the value of g_exp2.
+.No
+the forms are evaluated from left to right and the value of g_exp2 is
+returned.
+.Lf progn "g_exp1 [g_exp2 ...]"
+.Re
+the value of the last g_exp\fIi\fP.
+.No
+the forms are evaluated from left to right and the value of the last one
+is returned.
+.Im
+what if there are no forms.
+.Lf progv "'l_locv 'l_initv g_exp1 ..."
+.Wh
+l_locv is a list of symbols and the length of l_initv is the same as
+the length of l_locv.
+.Re
+the value of the last g_exp\fIi\fP evaluated.
+.No
+first the symbols in l_locv are lambda-bound to the values in l_initv.
+Then the g_exp\fIi\fP are evaluated left to right.
+The body of a progv is like the body of a progn, it is 
+.i not
+a prog body.
+.\".pg
+.Lf putd "'s_name 'u_func"
+.Re
+this sets the function binding of symbol s_name to u_func.
+.Lf return "['g_val]"
+.Re
+g_val (or nil if g_val is not present) from the enclosing prog body.
+.No
+this form is only valid in the context of a prog body.
+.Lf throw "'g_val [s_tag]"
+.Re
+g_val from the enclosing catch with the tag s_tag or no tag at all, whichever
+is closest.
+.No
+this is used in conjunction with 
+.i catch
+to cause a clean jump to an enclosing context.

@@ -1,0 +1,61 @@
+.TH CTAGS 1 8/9/79
+.UC
+.SH NAME
+ctags \- maintain a tags file for a C program
+.SH SYNOPSIS
+.B ctags
+[ 
+.B \-auw
+]
+name ...
+.SH DESCRIPTION
+.I Ctags
+makes a tags file for
+.IR ex (1)
+from the specified C programs.
+A tags file gives the locations of specified objects (in this case
+functions) in a group of files.
+Each line of the tags file contains the function name,
+the file in which it is defined, and a scanning pattern used to find
+the function definition.  These are given in separate fields on the line,
+separated by blanks or tabs.
+.PP
+The
+.B \-a
+option causes the output to be appended to the tags file
+instead of rewriting it.
+.PP
+The
+.B \-u
+option causes the specified files to be
+.I updated
+in tags, that is, all references to them are deleted,
+and the new values are appended to the file.
+This option implies the
+.B \-a
+option.
+.PP
+The
+.B \-w
+option suppresses warning diagnostics.
+.PP
+The tag
+.I main
+is treated specially.
+The tag formed is created by prepending
+.I M
+to the name of the file, with a trailing .c removed, if
+any, and leading pathname components also removed.
+This makes use of ctags practical in directories with
+more than one program.
+.SH FILES
+.DT
+tags	output tags file
+.SH SEE ALSO
+ex(1), vi(1)
+.SH BUGS
+In a directory with only one
+.I main,
+the tag
+.I main
+will still not be created.

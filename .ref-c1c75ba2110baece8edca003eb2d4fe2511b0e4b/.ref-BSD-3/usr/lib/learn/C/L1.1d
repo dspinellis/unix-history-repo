@@ -1,0 +1,33 @@
+#print
+(Section 1.1)
+Write a program which prints these four lines,
+exactly as shown:
+A tab is \t
+A backspace is \b
+A quote is \"
+A backslash is \\
+
+Compile it, test it, then type ready.
+#once #create Ref
+A tab is \t
+A backspace is \b
+A quote is \"
+A backslash is \\
+#user
+a.out >x
+#cmp x Ref
+#succeed
+One solution:
+
+main()
+{
+	printf("A tab is \\t\n");
+	printf("A backspace is \\b\n");
+	printf("A quote is \\\"\n");
+	printf("A backslash is \\\\\n");
+}
+#fail
+Watch out for those backslashes.
+#log
+#next
+1.1e 10

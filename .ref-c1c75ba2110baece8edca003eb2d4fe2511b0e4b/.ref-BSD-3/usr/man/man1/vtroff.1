@@ -1,0 +1,64 @@
+.TH VTROFF 1 2/24/79
+.UC
+.SH NAME
+vtroff \- troff to the Versatec
+.SH SYNOPSIS
+.B vtroff
+[
+\fB\-F\fR majorfont
+] [
+\fB\-123\fR minorfont
+] [
+\fB\-l\fIlength\fR
+]
+troff arguments
+.SH DESCRIPTION
+.I Vtroff
+runs
+.IR troff (1)
+in an environment to produce typeset output on the Versatec,
+four pages across.
+The
+.B \-l
+(lower case l) option causes the output to be split onto successive pages
+every
+.I length
+inches rather than the default 11''.
+.PP
+The default font is a Hershey font.  If some other font is desired
+you can give a
+.B \-F
+argument and then the font name.  This will place normal, italic and
+bold versions of the font on positions 1, 2, and 3.
+To place a font only on a singe position, you can give an argument of
+the form
+.B \-\fIn\fR
+and the minor font name.  A \fB.r\fR will be added to the minor
+font name if needed.  Thus ``vtroff \-ms paper'' will set a paper
+in the Hershey font, while ``vtroff \-F nonie \-ms paper''
+will set the paper in the (sans serif) nonie font.
+.SH FILES
+.DT
+/usr/lib/tmac/tmac.vcat		default font mounts and bug fixes
+.br
+/usr/lib/fontinfo/*			fixes for other fonts
+.br
+/usr/lib/vfont			directory containing fonts
+.SH SEE ALSO
+troff(1), nettroff(1), vfont(5), vpr(1)
+.SH BUGS
+Since some macro packages work correctly only if the fonts
+named R, I, B, and S are mounted, and since the Versatec fonts
+have different widths for individual characters than the fonts
+found on the typesetter, the following dodge was necessary:
+If you don't use the ``.fp'' troff directive
+then you get the widths of the standard typesetter fonts
+suitable for shipping the output of
+troff over the network to the computer center A machine for phototypesetting.
+If, however, you remount the R, I, B and S fonts, then you get
+the width tables for the Versatec.
+.PP
+There are a number of problems with the font files.
+See
+.IR vfont (5)
+for a partial list.

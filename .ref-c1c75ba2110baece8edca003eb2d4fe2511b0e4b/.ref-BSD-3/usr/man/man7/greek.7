@@ -1,0 +1,41 @@
+.TH GREEK 7 
+.SH NAME
+greek \- graphics for extended TTY-37 type-box
+.SH SYNOPSIS
+.B "cat /usr/pub/greek"
+[ \(bv
+.BR "greek \-T" terminal
+]
+.SH DESCRIPTION
+.I Greek
+gives the mapping
+from ascii
+to the `shift out' graphics in effect between SO and SI 
+on model 37 Teletypes
+with a 128-character type-box.
+These are the default greek characters produced by
+.I nroff.
+The filters of 
+.IR greek (1)
+attempt to print them on various other terminals.
+The file contains:
+.PP
+.nf
+.if n .ta 9 +3 +6 +9 +3 +6 +9 +3 +6
+.if t .ta 1i +.3i +.75i +1i +.3i +.75i +1i  +.3i
+alpha	\(*a	A	beta	\(*b	B	gamma	\(*g	\\
+GAMMA	\(*G	G	delta	\(*d	D	DELTA	\(*D	W
+epsilon	\(*e	S	zeta	\(*z	Q	eta	\(*y	N
+THETA	\(*H	T	theta	\(*h	O	lambda	\(*l	L
+LAMBDA	\(*L	E	mu	\(*m	M	nu	\(*n	@
+xi	\(*c	X	pi	\(*p	J	PI	\(*P	P
+rho	\(*r	K	sigma	\(*s	Y	SIGMA	\(*S	R
+tau	\(*t	I	phi	\(*f	U	PHI	\(*F	F
+psi	\(*q	V	PSI	\(*Q	H	omega	\(*w	C
+OMEGA	\(*W	Z	nabla	\(gr	[	not	\(no	_
+partial	\(pd	]	integral	\(is	^
+.fi
+.SH "SEE ALSO"
+greek(1)
+.br
+troff(1)

@@ -1,0 +1,87 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)kill.2	6.5 (Berkeley) %G%
+.\"
+.TH KILL 2 ""
+.UC 4
+.SH NAME
+kill \- send signal to a process
+.SH SYNOPSIS
+.ft B
+kill(pid, sig)
+.br
+int pid, sig;
+.SH DESCRIPTION
+.I Kill
+sends the signal \fIsig\fP
+to a process, specified by the process number
+.IR pid .
+.I Sig
+may be one of the signals specified in
+.IR sigvec (2),
+or it may be 0, in which case
+error checking is performed but no
+signal is actually sent. 
+This can be used to check the validity of
+.IR pid .
+.PP
+The sending and receiving processes must
+have the same effective user ID, otherwise
+this call is restricted to the super-user.
+A single exception is the signal SIGCONT, which may always be sent
+to any descendant of the current process.
+.PP
+If the process number is 0,
+the signal is sent to all processes in the
+sender's process group; this is a variant of
+.IR killpg (2).
+.PP
+If the process number is \-1
+and the user is the super-user,
+the signal is broadcast universally
+except to system processes
+and the process sending the signal.
+If the process number is \-1
+and the user is not the super-user,
+the signal is broadcast universally to
+all processes with the same uid as the user
+except the process sending the signal.
+No error is returned if any process could be signaled.
+.PP
+For compatibility with System V,
+if the process number is negative but not \-1,
+the signal is sent to all processes whose process group ID
+is equal to the absolute value of the process number.
+This is a variant of
+.IR killpg (2).
+.PP
+Processes may send signals to themselves.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH "ERRORS
+.I Kill
+will fail and no signal will be sent if any of the following
+occur:
+.TP 15
+[EINVAL]
+\fISig\fP is not a valid signal number.
+.TP 15
+[ESRCH]
+No process can be found corresponding to that specified by \fIpid\fP.
+.TP 15
+[ESRCH]
+The process id was given as 0
+but the sending process does not have a process group.
+.TP 15
+[EPERM]
+The sending process is not the super-user and its effective
+user id does not match the effective user-id of the receiving process.
+When signaling a process group, this error was returned if any members
+of the group could not be signaled.
+.SH "SEE ALSO"
+getpid(2), getpgrp(2), killpg(2), sigvec(2)

@@ -1,0 +1,32 @@
+.TH NETTROFF 1
+.UC
+.SH NAME
+nettroff \- troff to the phototypesetter over the network
+.SH SYNOPSIS
+.B nettroff
+troff arguments
+.SH DESCRIPTION
+.I Nettroff
+runs
+.IR troff (1)
+and sends the output over the network to the machine at the Computer Center
+with the phototypesetter (currently the ``A'' machine.)
+It will prompt you for an account name and password on the A machine unless
+you have provided these in your
+.I \&.netrc
+file.
+The
+.I troff
+.B \-s
+option is unneccessary and not permitted.
+.LP
+.I Nettroff
+jobs are limited to 15 feet of typesetter output.
+It is also a good idea to limit the size of the individual files sent,
+as the network uses a shortest-job-first scheduling algorithm.
+Jobs of 25000 characters or less are preferable; in no case will the
+network accept jobs longer than 100000 characters.
+.SH SEE ALSO
+vtroff(1), net(1)
+.SH BUGS
+There is no way to specify special font mounts on the A machine.

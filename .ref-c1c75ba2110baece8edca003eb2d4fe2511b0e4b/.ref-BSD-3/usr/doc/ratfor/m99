@@ -1,0 +1,112 @@
+.bp
+.if t .1C
+.SH
+Appendix: Usage on
+.UC UNIX 
+and
+.UC GCOS .
+.PP
+Beware _
+local customs vary.
+Check with a native before going into the jungle.
+.SH
+UNIX
+.PP
+The program
+.UL ratfor
+is the basic translator; it takes either a list
+of file names or the standard input and writes
+Fortran on the standard output.
+Options include
+.UL \-6x ,
+which uses
+.UL x
+as a continuation character in column 6
+.UC UNIX "" (
+uses 
+.UL & 
+in column 1),
+and
+.UL \-C ,
+which causes Ratfor comments to be copied into
+the generated Fortran.
+.PP
+The program
+.UL rc
+provides an interface to the
+.UL ratfor
+command which is much the same as
+.UL cc .
+Thus
+.P1
+rc [options] files
+.P2
+compiles the files specified by
+.UL files .
+Files with names ending in
+.UL \&.r
+are Ratfor source; other files are assumed to
+be for the loader.
+The flags
+.UL \-C 
+and
+.UL \-6x
+described above are recognized, as are
+.P1
+-c	compile only; don't load
+-f	save intermediate Fortran .f files
+-r	Ratfor only; implies -c and -f
+-2	use big Fortran compiler (for large programs)
+-U	flag undeclared variables (not universally available)
+.P2
+Other flags are passed on to the loader.
+.SH
+GCOS
+.PP
+The program
+.UL \&./ratfor
+is the bare translator, and is identical to the
+.UC UNIX
+version, except that the continuation convention
+is 
+.UL &
+in column 6.
+Thus
+.P1
+\&./ratfor  files  >output
+.P2
+translates the Ratfor source on
+.UL files 
+and
+collects the generated Fortran on file
+`output'
+for subsequent processing.
+.PP
+.UL \&./rc
+provides much the same services as
+.UL rc 
+(within the limitations of
+.UC GCOS ),
+regrettably with a somewhat different syntax.
+Options recognized by
+.UL ./rc
+include
+.P1
+.ta 1.2i
+name	Ratfor source or library, depending on type
+h=/name	make TSS H* file (runnable version); run as /name
+r=/name	update and use random library
+a=	compile as ascii (default is bcd)
+C=	copy comments into Fortran
+f=name	Fortran source file
+g=name	gmap source file
+.P2
+Other options are as specified for the
+.UL \&./cc
+command described in [4].
+.SH
+TSO, TSS, and other systems
+.PP
+Ratfor exists on
+various other systems;
+check with the author for specifics.

@@ -1,0 +1,12 @@
+/*	@(#)llib-ldbm	1.1 (Berkeley) %G% */
+
+/* LINTLIBRARY */
+
+#include <dbm.h>
+
+int	dbminit(file) char *file; { return 0; }
+datum	fetch(key) datum key; { return key; }
+int	store(key, content) datum key, content; { return 0; }
+int	delete(key) datum key; { return 0; }
+datum	firstkey() { datum item; return item; }
+datum	nextkey(key) datum key; { return key; }

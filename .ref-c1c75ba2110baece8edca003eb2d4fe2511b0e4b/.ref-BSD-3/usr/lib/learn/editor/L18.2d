@@ -1,0 +1,11 @@
+#print
+What command will insert lines before the second line from the
+end of the file?  Type "answer XXX" where XXX is that command.
+#copyin
+#user
+#uncopyin
+#match $-2i
+#match $-3a
+#log
+#next
+18.2e 5

@@ -1,0 +1,24 @@
+.TH KL 4 
+.SH NAME
+kl \- KL-11 or DL-11 asynchronous interface
+.SH DESCRIPTION
+The discussion of terminal I/O given in
+.IR tty (4)
+applies to these devices.
+.PP
+Since they run at a constant speed, attempts
+to change the speed via
+.IR stty (2)
+are ignored.
+.PP
+The on-line console terminal is interfaced using
+a KL-11 or DL-11.
+By appropriate switch settings during a reboot,
+UNIX will come up as a single-user system with I/O
+on the console terminal.
+.SH FILES
+/dev/console	console
+.SH "SEE ALSO"
+tty(4), init(8)
+.SH BUGS
+Modem control for the DL-11E is not implemented.

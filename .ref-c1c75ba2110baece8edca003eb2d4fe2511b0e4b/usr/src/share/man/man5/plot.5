@@ -1,0 +1,135 @@
+.\"	@(#)plot.5	6.2 (Berkeley) %G%
+.\"
+.TH PLOT 5  ""
+.AT 3
+.SH NAME
+plot \- graphics interface
+.SH DESCRIPTION
+Files of this format are produced by routines
+described in 
+.IR plot (3X)
+and
+.IR plot (3F),
+and are interpreted for various devices
+by commands described in
+.IR  plot (1G).
+A graphics file is a stream of plotting instructions.
+Each instruction consists of an ASCII letter
+usually followed by bytes of binary information.
+The instructions are executed in order.
+A point is designated by
+four bytes representing
+the
+x and y
+values;
+each value
+is a signed integer.
+The last designated point in an
+.B "l, m, n, a,"
+or
+.B p
+instruction becomes the `current point'
+for the next instruction.
+The
+.B a
+and
+.B c
+instructions change the current point in a manner dependent
+upon the specific device.
+.PP
+Each of the following descriptions begins with the name
+of the corresponding routine in
+.IR  plot (3X).
+.TP 3
+.B  m
+move: The next four bytes give a new current point.
+.TP 3
+.B  n
+cont: Draw a line from the current point to
+the point given by the next four bytes.
+.TP 3
+.B  p
+point: Plot the point given by the next four bytes.
+.TP 3
+.B  l
+line: Draw a line from the point given by the next
+four bytes to the point given by the following four bytes.
+.TP 3
+.B  t
+label: Place the following ASCII string so that its
+first character falls on the current point.
+The string is terminated by a newline.
+.TP 3
+.B  a
+arc:
+The first four bytes give the center, the next four give the
+starting point,
+and the last four give the end point of a circular arc.
+The least significant coordinate of the end point is
+used only to determine the quadrant.
+The arc is drawn counter-clockwise.
+.TP 3
+.B  c
+circle:
+The first four bytes give the center of the circle,
+the next two the radius.
+.TP 3
+.B  e
+erase: Start another frame of output.
+.TP 3
+.B  f
+linemod: Take the following string, up to a newline,
+as the style for drawing further lines.
+The styles are
+`dotted,'
+`solid,' `longdashed,' `shortdashed,' and `dotdashed.'
+Effective only in 
+.I plot 4014
+and
+.I plot ver.
+.TP 3
+.B  s
+space: The next four bytes give
+the lower left corner of the plotting area;
+the following four give the upper right corner.
+The plot will be magnified or reduced to fit
+the device as closely as possible.
+.IP
+Space settings that exactly fill the plotting area
+with unity scaling appear below for
+devices supported by the filters of
+.IR  plot (1G).
+The upper limit is just outside the plotting area.
+In every case the plotting area is taken to be square;
+points outside may be displayable on
+devices whose face isn't square.
+.RS
+.TP 10n
+4013
+space(0, 0, 780, 780);
+.br
+.ns
+.TP 10n
+4014
+space(0, 0, 3120, 3120);
+.br
+.ns
+.TP 
+ver
+space(0, 0, 2048, 2048);
+.br
+.ns
+.TP 
+300, 300s
+space(0, 0, 4096, 4096);
+.br
+.ns
+.TP 
+450
+space(0, 0, 4096, 4096);
+.RE
+.SH "SEE ALSO"
+plot(1G), plot(3X), plot(3F), graph(1G)
+.SH BUGS
+A \fIlabel\fP instruction immediately followed by a \fIcont\fP
+instruction does the wrong thing on a 4014.

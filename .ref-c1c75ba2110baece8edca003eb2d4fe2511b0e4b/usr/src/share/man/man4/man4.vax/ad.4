@@ -1,0 +1,41 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ad.4	6.1 (Berkeley) %G%
+.\"
+.TH AD 4 ""
+.UC 5
+.SH NAME
+ad \- Data Translation A/D converter
+.SH SYNOPSIS
+.B "device ad0 at uba0 csr 0170400 vector adintr"
+.SH DESCRIPTION
+.I Ad
+provides the interface to the Data Translation A/D converter.
+This is
+.B not
+a real-time driver, but merely allows
+the user process to sample the board's channels one at a time.
+Each minor device selects a different A/D board.
+.PP
+The driver communicates to a user process by means of ioctls.
+The AD_CHAN ioctl selects which channel of the board to read.
+For example,
+.br
+.in +.5i
+chan = 5;
+ioctl(fd, AD_CHAN, &chan);
+.in -.5i
+selects channel 5.
+The AD_READ ioctl actually reads the data and returns it to the user
+process.
+An example is
+.br
+.in +.5i
+ioctl(fd, AD_READ, &data);
+.in -.5i
+.SH FILES
+/dev/ad
+.SH DIAGNOSTICS
+None.

@@ -1,0 +1,122 @@
+.\"
+.\" Copyright (c) 1988 Mark Nudleman
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by Mark Nudleman and the University of California, Berkeley.  The
+.\" name of Mark Nudleman or the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)lesskey.1	5.2 (Berkeley) %G%
+.\"
+.TH LESSKEY 1
+.SH NAME
+lesskey \- specify key bindings for less
+.SH SYNOPSIS
+.B "lesskey [-o output] [input]"
+.SH DESCRIPTION
+.I Lesskey
+is used to specify a set of key bindings to be used by 
+.I less.
+The input file is a text file which describes the key bindings,
+and the output file is a binary file which is used by 
+.I less.
+If no input file is specified, standard input is used.
+If no output file is specified, $HOME/.less is used.
+.PP
+The input file consists of lines of the form:
+.sp
+	string <whitespace> action <newline>
+.sp
+Whitespace is any sequence of one or more spaces and/or tabs.
+The "string" is the command key(s) which invoke the action.
+The string may be a single command key, or a sequence of up to 15 keys.
+The "action" is the name of the less action, from the list below.
+The characters in the "string" may appear literally, or be
+prefixed by a carat to indicate a control key.
+A backslash may be used to cause the following character
+to be taken literally.
+Characters which must be preceeded by backslash include
+carat, space, tab and the backslash itself.
+A backslash followed by one to three octal digits may be used to
+specify a character by its octal value.
+Blank lines and lines which start with a pound sign (#) are ignored.
+.PP
+As an example, the following input file describes the set of
+default command keys used by less:
+.sp
+.nf
+	k			back-line
+	y			back-line
+	^K			back-line
+	^Y			back-line
+	^P			back-line
+	b			back-screen
+	^B			back-screen
+	\\33v			back-screen
+	u			back-scroll
+	^U			back-scroll
+	?			back-search
+	E			examine
+	^X^V			examine
+	+			first-cmd
+	e			forw-line
+	j			forw-line
+	^E			forw-line
+	^J			forw-line
+	^M			forw-line
+	^N			forw-line
+	f			forw-screen
+	^F			forw-screen
+	\\40			forw-screen
+	^V			forw-screen
+	d			forw-scroll
+	^D			forw-scroll
+	/			forw-search
+	G			goto-end
+	>			goto-end
+	\\33>			goto-end
+	g			goto-line
+	<			goto-line
+	\\33<			goto-line
+	'			goto-mark
+	^X^X			goto-mark
+	H			help
+	N			next-file
+	%			percent
+	p			percent
+	P			prev-file
+	q			quit
+	ZZ			quit
+	^L			repaint
+	^R			repaint
+	r			repaint
+	R			flush-repaint
+	n			repeat-search
+	m			set-mark
+	!			shell
+	=			status
+	^G			status
+	-			toggle-option
+	_			display-option
+	V			version
+	v			visual
+.fi
+.sp
+Commands specified by
+.I lesskey
+take precedence over the default commands.
+A default command key may be disabled by including it in the
+key file with the action "invalid".
+
+.SH "SEE ALSO"
+less(1)

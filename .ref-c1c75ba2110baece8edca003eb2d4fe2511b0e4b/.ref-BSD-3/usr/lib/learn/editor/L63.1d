@@ -1,0 +1,12 @@
+#print
+Will the command
+  m+
+interchange lines "." and ".+1"?
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+63.1e 10

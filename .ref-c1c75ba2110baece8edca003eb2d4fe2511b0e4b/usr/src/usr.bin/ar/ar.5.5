@@ -1,0 +1,57 @@
+.\"	@(#)ar.5.5	6.1 (Berkeley) %G%
+.\"
+.TH AR 5  ""
+.AT 3
+.SH NAME
+ar \- archive (library) file format
+.SH SYNOPSIS
+.B #include <ar.h>
+.SH DESCRIPTION
+.PP
+The archive command
+.I ar
+combines several files into one.
+Archives are used mainly as libraries to be searched by the link-editor
+.I ld.
+.PP
+A file produced by
+.I ar
+has a magic string at the start,
+followed by the constituent files, each preceded by a file header.
+The magic number and header layout as described in the include file are:
+.RS
+.PP
+.nf
+.ta \w'#define 'u +\w'SARMAG 'u
+.ec %
+.so /usr/include/ar.h
+.ec \
+.fi
+.RE
+.LP
+The name is a blank-padded string.
+The
+.I ar_fmag
+field contains ARFMAG to help verify the presence of a header.
+The other fields are left-adjusted, blank-padded numbers.
+They are decimal except for
+.IR ar_mode ,
+which is octal.
+The date is the modification date of the file
+at the time of its insertion into the archive.
+.PP
+Each file begins on a even (0 mod 2) boundary;
+a new-line is inserted between files if necessary.
+Nevertheless the size given reflects the
+actual size of the file exclusive of padding.
+.PP
+There is no provision for empty areas in an archive file.
+.PP
+The encoding of the header is portable across machines.
+If an archive contains printable files, the archive itself is printable.
+.SH "SEE ALSO"
+ar(1), ld(1), nm(1)
+.SH BUGS
+File names lose trailing blanks.
+Most software dealing with archives takes even
+an included blank as a name terminator.

@@ -1,0 +1,10 @@
+define	bullet	% "\s-5\(bu\s0" %
+define	plus	% "\s-3\(pl\s0" %
+define	box	% "\s-4\(bx\s0" %
+define	star	% "\(**" %
+define	dot	% "\v'-.2m'\s+4.\s0\v'.2m'" %
+define	times	% "\s-3\(mu\s0" %
+define	htick	% "\-" %
+define	vtick	% "\(or" %
+define	square	% "\s-3\(sq\s0" %
+define	delta	% "\s-3\(*D\s0" %

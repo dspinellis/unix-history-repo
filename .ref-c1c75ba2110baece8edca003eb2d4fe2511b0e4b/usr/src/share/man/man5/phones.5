@@ -1,0 +1,35 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)phones.5	6.2 (Berkeley) %G%
+.\"
+.TH PHONES 5 ""
+.UC 5
+.SH NAME
+phones \- remote host phone number data base
+.SH DESCRIPTION
+The file /etc/phones contains the system-wide
+private phone numbers for the
+.IR tip (1C)
+program.  This file is normally unreadable, and so may contain
+privileged information.  The format of the file is a series of lines
+of the form: <system-name>[\ \et]*<phone-number>.  The system name is
+one of those defined in the
+.IR remote (5)
+file and the phone number is constructed from any sequence of
+characters terminated only by ``,'' or the end of the line.
+The ``='' and ``*'' characters are
+indicators to the auto call units to pause and wait for a second dial
+tone (when going through an exchange).  The ``='' is required by the
+DF02-AC and the ``*'' is required by the BIZCOMP 1030.
+.PP
+Only one phone number per line is permitted.  However, if more than
+one line in the file contains the same system name
+.IR tip (1C)
+will attempt to dial each one in turn, until it establishes a connection.
+.SH FILES
+/etc/phones
+.SH "SEE ALSO"
+tip(1C),
+remote(5)

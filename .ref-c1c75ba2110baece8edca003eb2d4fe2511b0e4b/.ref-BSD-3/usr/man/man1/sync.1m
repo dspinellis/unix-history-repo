@@ -1,0 +1,19 @@
+.TH SYNC 1M 
+.SH NAME
+sync \- update the super block
+.SH SYNOPSIS
+.B sync
+.SH DESCRIPTION
+.I Sync
+executes the
+.I sync
+system primitive.
+If the system is to be stopped,
+.I sync
+must be called to insure
+file system integrity.
+See
+.IR sync (2)
+for details.
+.SH "SEE ALSO"
+sync(2), update(8)

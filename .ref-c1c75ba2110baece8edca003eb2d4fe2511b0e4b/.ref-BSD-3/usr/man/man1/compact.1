@@ -1,0 +1,95 @@
+.TH COMPACT 1 3/15/79
+.UC
+.SH NAME
+compact \- compress files
+.SH SYNOPSIS
+.B compact
+[ name ... ]
+.SH DESCRIPTION
+.I Compact
+compresses the named files using an adaptive
+Huffman code.  If no file names are given,
+then the standard input is compacted to
+the standard output.
+Unlike
+.I pack,
+.I compact
+operates as an on-line algorithm.
+Each time a byte is read,
+it is encoded immediately
+according to the current prefix
+code.
+This code is an optimal Huffman code
+for the set of frequencies seen so far.
+It is unnecessary to prepend a decoding
+tree to the compressed file (as in
+.I pack
+), since the encoder (
+.I compact
+) and the decoder (
+.I uncompact
+) start in the same state and stay
+synchronized.
+Furthermore,
+.I compact
+and
+.I uncompact
+can operate as filters.
+In particular,
+.sp
+	... | compact | uncompact | ...
+.br
+.sp
+operates as a (very slow) no-op.
+When an argument
+.I file
+is given,
+it is compacted
+and the resulting file is placed in
+.I file.C;
+.I file
+is unlinked.
+The first two bytes of the
+compacted file code the
+fact that the file is compacted.
+This code is used to prohibit
+recompaction.
+.sp
+The amount of compression
+to be expected depends
+on the type of file being compressed.
+Typical values of compression are:
+Text (38%), Pascal Source (43%),
+C Source (36%) and Binary (19%).
+These values are the percentages
+of file bytes reduced.
+.SH RESTRICTIONS
+The last segment of the filename must
+contain fewer than thirteen characters
+to allow space for the appended '.C'.
+Directories cannot (and should not)
+be compressed.
+.SH DIAGNOSTICS
+Compact will not compress directories.
+Also messages about unopenable files, etc.
+No attempt will be made to compress files
+which have already been compressed by
+either compact or pack.
+.SH FILES
+ .C files created
+.br
+Input files unlinked (unless protected)
+.SH "SEE ALSO"
+uncompact (1),
+ccat (1)
+.sp
+Gallager, Robert G., "Variations on a Theme by Huffman",
+.I I.E.E.E.
+.I Transactions
+.I on
+.I Information
+.I Theory,
+vol. IT-24, no. 6, November 1978, pp. 668 - 674.
+.SH AUTHOR
+Colin L. Mc Master
+.SH BUGS

@@ -1,0 +1,262 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ch10.n	6.2 (Berkeley) %G%
+.\"
+." $Header: /na/franz/doc/RCS/ch10.n,v 1.1 83/01/31 07:08:20 jkf Exp $
+.Lc Exception\ Handling 10
+.sh 2 Errset\ and\ Error\ Handler\ Functions \n(ch 1
+.pp
+.Fr
+allows the user to handle in a number of ways the errors
+which arise during computation.
+One way is through the use of the
+.i errset
+function.
+If an error occurs during the evaluation of the 
+.i errset 's
+first argument, then
+the locus of control will return to the errset which will
+return nil (except in special cases, such as
+.i err ).
+The other method of error handling is through an error handler 
+function.
+When an error occurs, the error handler is called and 
+is given as an argument a description  of the
+error which just occurred.
+The error handler may take one of the following actions:
+.nr $p 0
+.np
+it could take some drastic action like a 
+.i reset 
+or a 
+.i throw .
+.np
+it could, assuming that the error is continuable,
+return 
+to the function which noticed the error.
+The error handler indicates that it wants to return a value from
+the error by returning a list whose 
+.i car
+is the value it wants to return.
+.np
+it could decide not to handle the error and return a non-list to
+indicate this fact.
+.sh 2 "The Anatomy of an error"
+.pp
+Each error is described by a list of these items:
+.nr $p 0
+.np
+error type - This is a symbol which indicates the 
+general classification of the error.
+This classification may determine which function handles this
+error.
+.np
+unique id - This is a fixnum unique to this error.
+.np
+continuable - If this is non-nil then this error is continuable.
+There are some who feel that every error should be continuable
+and the reason that some (in fact most) errors in 
+.Fr
+are not continuable is due to the laziness of the programmers.
+.np
+message string - This is a symbol whose print name is  a 
+message describing the error.
+.np
+data - There may be from zero to three lisp values which help
+describe this particular  error.
+For example, the unbound variable error contains one datum value,
+the symbol whose value is unbound.
+The list describing that error might look like:
+.br
+.ce
+(ER%misc 0 t |Unbound Variable:| foobar)
+.sh 2 "Error handling algorithm"
+.pp
+This is the sequence of operations which is done when an
+error occurs:
+.nr $p 0
+.np
+If the symbol 
+.b ER%all 
+has a non nil value
+then this value is the name of an error handler function.
+That function is called with a description of the error.
+If that function returns (and of course it may choose not to)
+and the value is a list and this error is continuable, then
+we return the
+.i car
+of the list to the function which called the error.
+Presumably the function  will use this value to retry the operation.
+On the other hand, if the error handler returns a non list, then
+it has chosen not to handle this error, so  we go on to step (2).
+Something special happens before we call the 
+.b ER%all 
+error
+handler which does not happen in any of the
+other cases we will describe below.
+To help insure that we don't get infinitely recursive 
+errors  if 
+.b ER%all 
+is set to a bad value,
+the value of 
+.b ER%all 
+is set to nil before the 
+handler is called.
+Thus it is the responsibility of the 
+.b ER%all 
+handler to `reenable'
+itself by storing its name in 
+.b ER%all.
+.np
+Next the specific error handler for the type of error 
+which just occurred is called  (if one exists) to see if 
+it wants to handle the error.
+The names of the handlers for the specific types of errors are stored
+as the values of the symbols whose names are the types.
+For example the handler for miscellaneous errors is stored as the
+value of 
+.b ER%misc.  
+Of course, if 
+.b ER%misc 
+has a value of nil, then there is no error
+handler for this type of error.
+Appendix B contains list of all error types.
+The process of classifying the errors is not complete and thus most
+errors are lumped into the \fBER%misc\fP category.
+Just as in step (1),
+the error handler function may choose not to handle the error
+by returning a non-list, and then we go to step (3).
+.np
+Next a check is made to see if there is an 
+.i errset
+surrounding this error.
+If so the second argument to the 
+.i errset
+call 
+is examined. 
+If the second argument was not given or is non nil
+then the error message associated with this error is printed.
+Finally  the stack is popped 
+to the context of the 
+.i errset
+and then the
+.i errset 
+returns nil.
+If there was no
+.i errset
+we go to step (4).
+.np
+If the symbol 
+.b ER%tpl 
+has a value then it is the
+name of an error handler which is called in a manner similar
+to that discussed above.
+If it chooses not to handle the error, we go to step (5).
+.np
+At this point it has been determined that the user doesn't 
+want to handle this error.
+Thus the error message is printed out and
+a 
+.i reset
+is done to send the flow of control to the top-level.
+.pp
+To summarize the error handling system:
+When an error occurs, you have two chances to handle it before
+the search for an
+.i errset
+is done.
+Then, if there is no
+.i errset ,
+you have one more chance to handle the error before control
+jumps to the top level.
+Every  error handler works in the same way:
+It is given a description of the error (as described in the
+previous section).
+It may or may not return.
+If it returns, then it returns
+either a list or a non-list.
+If it returns a list and the error is continuable, then 
+the 
+.i car
+of the list is returned to the function which noticed the error.
+Otherwise the error handler has decided not to handle the error
+and we go on to something else.
+.sh 2 "Default aids"
+.pp
+There are two standard error handlers  which will probably 
+handle the needs of most users.
+One of these is the lisp coded function
+.i break-err-handler
+which is the default value of 
+.b ER%tpl.
+Thus when all other handlers have ignored an error, 
+.i break-err-handler
+will take over.
+It will print out the error message and 
+go into a read-eval-print loop.
+The other standard error handler is 
+.i debug-err-handler .
+This handler is designed to be connected to
+.b ER%all and
+is useful if your program uses
+.i errset
+and you want to 
+look at the error  before
+it is thrown up to the
+.i errset .
+.sh +0 Autoloading
+.pp
+When 
+.i eval ,
+.i apply 
+or 
+.i funcall
+are told to call an undefined function, an \fBER%undef\fP
+error is signaled.
+The default handler for this error is 
+.i undef-func-handler .
+This function checks the property list of the undefined function for
+the indicator autoload.
+If present, the value of that indicator should be the name of the file
+which contains the definition of the undefined function.
+.i Undef-func-handler
+will load the file and check if it has defined the function which caused
+the error.
+If it has, the error handler will return and the computation will continue
+as if the error did not occur.
+This provides a way for the user to tell the lisp system about the location
+of commonly used functions.
+The trace package sets up an autoload property to point to /usr/lib/lisp/trace.
+.sh +0 Interrupt\ processing
+.pp
+The  UNIX operating system provides one user interrupt character which
+defaults to ^C.\*[\(dg\*]
+.(f
+\*[\(dg\*]Actually there are two but the lisp system does not allow you
+to catch the QUIT interrupt.
+.)f
+The user may select a lisp function to run when an interrupt occurs.
+Since this interrupt could occur at any time, and in particular could
+occur at a time when the internal stack pointers were in an inconsistent
+state, the processing of the interrupt may be delayed until a safe
+time.
+When the first ^C is typed, the lisp system sets a flag that an interrupt
+has been requested.
+This flag is  checked at safe places within the interpreter
+and in the
+.i qlinker
+function.
+If the lisp system doesn't respond to the first ^C, another ^C should
+be typed.
+This will cause all of the transfer tables to be cleared forcing
+all calls from compiled code to go through the 
+.i qlinker 
+function where the interrupt flag will be checked.
+If the lisp system still doesn't respond, a third ^C will cause 
+an immediate interrupt.
+This interrupt will not necessarily be in a safe place so the
+user should
+.i reset
+the lisp system as soon as possible.

@@ -1,0 +1,39 @@
+.TH CXREF 1 2/24/79
+.UC
+.SH NAME
+cxref \- a simple C routine referencing program
+.SH SYNOPSIS
+.B cxref
+name ...
+.SH DESCRIPTION
+.I Cxref
+is a simple shell script which uses
+.IR grep (1)
+and
+.IR ex (1)
+and
+.IR sort (1)
+to make a listing of the routines in the specified C program
+files and the lines on which they are defined.
+It is useful as a summary when prowling in a large program,
+especially since
+.I cref
+has a habit of looping on large program input.
+.SH SEE\ ALSO
+cref(1)
+.SH AUTHOR
+William Joy
+.SH BUGS
+.I Cxref
+assumes that routines begin in the first column of lines,
+and that type names are given on different lines than the routine names.
+If you have a program which is in a different format than this,
+.I cxref
+will fail miserably.
+The operating system,
+C compiler,
+Pascal translator,
+.I ex
+editor,
+etc. all work with
+.I cxref.

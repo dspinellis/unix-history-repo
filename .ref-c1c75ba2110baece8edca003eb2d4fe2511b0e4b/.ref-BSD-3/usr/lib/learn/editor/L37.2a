@@ -1,0 +1,30 @@
+#print
+A range of line numbers can be used with the substitute
+command as with the print command.  For example,
+
+$-4,$s/cat/&s/p
+
+will change "cat" into "cats" on the last five lines of
+a file.  In this directory there is a file "cliche"
+containing a number of instances of the word "dog"; change
+the instances of "dog" in the first five lines to "dogs".
+Then rewrite the file and type "ready".
+#create Ref
+dogs tired
+sick as a dogs
+dogs eared
+wouldn't send a dogs out on a night like this
+every dogs has his day
+dog gone
+#create cliche
+dog tired
+sick as a dog
+dog eared
+wouldn't send a dog out on a night like this
+every dog has his day
+dog gone
+#user
+#cmp cliche Ref
+#log
+#next
+37.2b 5

@@ -1,0 +1,97 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)compact.1	6.1 (Berkeley) %G%
+.\"
+.TH COMPACT 1 ""
+.UC 4
+.SH NAME
+compact, uncompact, ccat \- compress and uncompress files, and cat them
+.SH SYNOPSIS
+.B compact
+[
+.B \-v
+] [ name ... ]
+.br
+.B uncompact
+[
+.B \-v
+] [ name ...  ]
+.br
+.B ccat
+[
+.B \-v
+] [ file ... ]
+.SH DESCRIPTION
+.I Compact
+compresses the named files using an adaptive Huffman code.  If no file
+names are given, the standard input is compacted to the standard output.
+.I Compact
+operates as an on-line algorithm.  Each time a byte is read,
+it is encoded immediately according to the current prefix code.
+This code is an optimal Huffman code for the set of frequencies seen so far.
+It is unnecessary to prepend a decoding tree to the compressed file
+since the encoder and the decoder start in the same state and stay
+synchronized.  Furthermore,
+.I compact
+and
+.I uncompact
+can operate as filters.  In particular,
+.sp
+	... | compact | uncompact | ...
+.br
+.sp
+operates as a (very slow) no-op.
+.PP
+When an argument
+.I file
+is given, it is compacted and the resulting file is placed in
+.I file.C;
+.I file
+is unlinked.  The first two bytes of the compacted file code the
+fact that the file is compacted.  This code is used to prohibit recompaction.
+.PP
+The amount of compression to be expected depends on the type of file being
+compressed.  Typical values of compression are:
+Text (38%), Pascal Source (43%), C Source (36%) and Binary (19%).
+These values are the percentages of file bytes reduced.
+.PP
+.I Uncompact
+restores the original file from a file compressed by
+.I compact.
+If no file names are given, the standard input is uncompacted to
+the standard output.
+.PP
+.I Ccat
+cats the original file from a file compressed by
+.I compact,
+without uncompressing the file (it is just a shell script which
+directs the uncompacted output to the standard output).
+.PP
+.IR Compact ,
+.IR uncompact ,
+and
+.I ccat
+normally do their work silently.  If a
+.B \-v
+flag is supplied, 
+.I compact
+will report the compression percentage for each compacted
+file while 
+.I uncompact
+and
+.I ccat
+will print out the name of each file as they're uncompacted.
+.SH RESTRICTION
+The last segment of the filename must be short enough
+to allow space for the appended '.C'.
+.SH FILES
+.ta 1i
+*.C	compacted file created by compact, removed by uncompact
+.SH "SEE ALSO"
+Gallager, Robert G., `Variations on a Theme of Huffman',
+.I "I.E.E.E.  Transactions on Information Theory,"
+vol. IT-24, no. 6, November 1978, pp. 668 - 674.
+.SH AUTHOR
+Colin L. Mc Master

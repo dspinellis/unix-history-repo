@@ -1,0 +1,163 @@
+.SH
+Delaying and reordering
+.PP
+Intertwined with the code generation routines are two other,
+interrelated processes.
+The first, implemented by a routine called
+.II delay,
+is based on the observation that
+naive code generation for the expression
+`a = b++' would produce
+.DS
+mov	b,r0
+inc	b
+mov	r0,a
+.DE
+The point is that the table for postfix ++ has to preserve
+the value of
+.II b
+before incrementing it;
+the general way to do this is to preserve its value in a register.
+A cleverer scheme would generate
+.DS
+mov	b,a
+inc	b
+.DE
+.II Delay
+is called for each expression input to
+.II rcexpr,
+and it searches for postfix ++ and \-\-
+operators.
+If one is found applied to a variable,
+the tree is patched to bypass the operator
+and compiled as it stands;
+then the increment or decrement itself is done.
+The effect is as if `a = b; b++' had been written.
+In this example, of course, the user himself could have done the same job,
+but more complicated examples are easily constructed, for example
+`switch (x++)'.
+An essential restriction is that the condition codes not
+be required.
+It would be incorrect to compile
+`if (a++) ...'
+as
+.DS
+tst	a
+inc	a
+beq	...
+.DE
+because the `inc' destroys the required setting of the condition codes.
+.PP
+Reordering is a similar sort of optimization.
+Many cases which it detects are useful
+mainly with register variables.
+If
+.II r
+is a register variable,
+the expression `r = x+y' is best compiled
+as
+.DS
+mov	x,r
+add	y,r
+.DE
+but the codes tables would produce
+.DS
+mov	x,r0
+add	y,r0
+mov	r0,r
+.DE
+which is in fact preferred if
+.II r
+is not a register.
+(If
+.II r
+is not a register,
+the
+two sequences are the same size, but the
+second is slightly faster.)
+The scheme is to compile the expression as if it had been written
+`r = x; r =+ y'.
+The
+.II reorder
+routine
+is called with a pointer to each tree that
+.II rcexpr
+is about to compile;
+if it has the right characteristics,
+the `r = x' tree is constructed and passed recursively
+to
+.II rcexpr;
+then the original tree is modified to read `r =+ y'
+and the calling instance of
+.II rcexpr
+compiles that instead.
+Of course the whole business is itself recursive
+so that more extended forms of the same phenomenon are
+handled, like `r = x + y | z'.
+.PP
+Care does have to be taken
+to avoid `optimizing' an expression like `r = x + r'
+into `r = x; r =+ r'.
+It is required that the right operand of the expression on the right
+of the `=' be a ', distinct from the register variable.
+.PP
+The second case that
+.II reorder
+handles is expressions of the form `r = X' used as a subexpression.
+Again, the code out of the tables for
+`x = r = y'
+would be
+.DS
+mov	y,r0
+mov	r0,r
+mov	r0,x
+.DE
+whereas if
+.II r
+were a register it would be better to produce
+.DS
+mov	y,r
+mov	r,x
+.DE
+When
+.II reorder
+discovers that
+a register variable is being assigned to
+in a subexpression,
+it calls
+.II rcexpr
+recursively to
+compile the subexpression, then fiddles the tree passed
+to it so that the register variable itself appears
+as the operand instead of the whole subexpression.
+Here care has to be taken to avoid an infinite regress,
+with
+.II rcexpr
+and
+.II reorder
+calling each other forever to handle assignments to registers.
+.PP
+A third set of cases treated by
+.II reorder
+comes up when any name, not necessarily a register,
+occurs as a left operand of an assignment operator other than `='
+or as an operand of prefix `++' or `\-\-'.
+Unless condition-code tests are involved,
+when a subexpression like `(a =+ b)' is seen,
+the assignment is performed and the argument tree
+modified so that
+.II a
+is its operand;
+effectively
+`x + (y =+ z)' is compiled as `y =+ z; x + y'.
+Similarly, prefix increment and decrement are pulled out
+and performed first, then the remainder of the expression.
+.PP
+Throughout code generation,
+the expression optimizer is called whenever
+.II delay
+or
+.II reorder
+change the expression tree.
+This allows some special cases to be found that otherwise
+would not be seen.

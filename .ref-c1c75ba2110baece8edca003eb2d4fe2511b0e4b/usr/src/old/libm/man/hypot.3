@@ -1,0 +1,29 @@
+.\"	@(#)hypot.3	6.2 (Berkeley) %G%
+.\"
+.TH HYPOT 3M  ""
+.AT 3
+.SH NAME
+hypot, cabs \- Euclidean distance
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double hypot(x, y)
+.B double x, y;
+.PP
+.B double cabs(z)
+.B struct { double x, y;} z;
+.fi
+.SH DESCRIPTION
+.I Hypot
+and
+.I cabs
+return
+.PP
+.IP
+sqrt(x*x + y*y),
+.LP
+taking precautions against unwarranted overflows.
+.SH SEE ALSO
+exp(3M) for
+.I sqrt

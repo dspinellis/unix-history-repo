@@ -1,0 +1,82 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)vp.4	6.2 (Berkeley) %G%
+.\"
+.TH VP 4 ""
+.UC 4
+.SH NAME
+vp \- Versatec interface
+.SH SYNOPSIS
+.B "device vp0 at uba0 csr 0177510 vector vpintr vpintr"
+.SH DESCRIPTION
+The Versatec printer/plotter is normally used with the
+line printer system.
+This description is designed for those who wish to drive the Versatec directly.
+.PP
+To use the Versatec yourself, you must realize that you cannot open the
+device,
+.I /dev/vp0
+if there is a daemon active.
+You can see if there is a daemon active by doing a
+.IR lpq (1),
+and seeing if there are any files being sent.
+Printing should be turned off using
+.IR lpc (8).
+.PP
+To set the Versatec into plot mode you should include
+.RI < sys/vcmd.h >
+and use the
+.IR ioctl (2)
+call
+.IP
+ioctl(fileno(vp), VSETSTATE, plotmd);
+.PP
+where
+.I plotmd
+is defined to be
+.IP
+\fBint\fR plotmd[] = { VPLOT, 0, 0 };
+.PP
+and
+.I vp
+is the result of a call to
+.I fopen
+on stdio.
+When you finish using the Versatec in plot mode you should eject paper
+by sending it a EOT after putting it back into print mode, i.e. by
+.PP
+'nf
+	\fBint\fR prtmd[] = { VPRINT, 0, 0 };
+	\&...
+	fflush(vp);
+	ioctl(fileno(vp), VSETSTATE, prtmd);
+	write(fileno(vp), "\e04", 1);
+.fi
+.SH FILES
+/dev/vp0
+.SH SEE ALSO
+vfont(5),
+lpr(1),
+lpd(8),
+vtroff(1),
+va(4)
+.SH DIAGNOSTICS
+The following error numbers are significant at the
+time the device is opened.
+.TP 10
+[ENXIO]
+The device is already in use.
+.TP
+[EIO]
+The device is offline.
+.SH BUGS
+The configuration part of the driver assumes that the device is set up to
+vector print mode through 0174 and plot mode through 0200.
+As the configuration program can't be sure
+which vector interrupted at boot time,
+we specify that it has two interrupt vectors,
+and if an interrupt comes through 0200 it is reset to 0174.
+This is safe for devices with one or two vectors at these two addresses.
+Other configurations with 2 vectors may require changes in the driver.

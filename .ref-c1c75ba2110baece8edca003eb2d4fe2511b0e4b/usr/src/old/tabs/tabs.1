@@ -1,0 +1,30 @@
+.\"	@(#)tabs.1	6.1 (Berkeley) %G%
+.\"
+.TH TABS 1 ""
+.AT 3
+.SH NAME
+tabs \- set terminal tabs
+.SH SYNOPSIS
+.B tabs
+[
+.B \-n
+] [
+terminal
+]
+.SH DESCRIPTION
+.I Tabs
+sets the tabs on a variety of terminals.
+Various terminal names given in
+.IR term (7)
+are recognized;
+the default is, however, suitable for most 300
+baud terminals.
+If the
+.B \-n
+flag is present then the left
+margin is not indented as is normal.
+.SH SEE ALSO
+stty(1), term(7)
+.SH BUGS
+It's much better to use
+.IR tset (1).

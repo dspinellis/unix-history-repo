@@ -1,0 +1,512 @@
+.\" Copyright (c) 1980, 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)uda.4	6.5 (Berkeley) %G%
+.\"
+.TH UDA 4 ""
+.UC 4
+.SH NAME
+uda \- UDA50 disk controller interface
+.SH SYNOPSIS
+.B "controller uda0 at uba0 csr 0172150 vector udaintr"
+.br
+.B "disk ra0 at uda0 drive 0"
+.br
+.B "options MSCP_PARANOIA"
+.SH DESCRIPTION
+This is a driver for the DEC UDA50 disk controller and other
+compatible controllers.  The UDA50 communicates with the host through
+a packet protocol known as the Mass Storage Control Protocol (MSCP).
+Consult the file
+.RI < vax/mscp.h >
+for a detailed description of this protocol.
+.PP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0; minor devices 8 through 15 refer to drive 1, etc.  The
+standard device names begin with `ra' followed by the drive number
+and then a letter a-h for partitions 0-7 respectively.
+The character ? stands here for a drive number in the range 0-7.
+.PP
+The block files access the disk via the system's normal buffering
+mechanism mechanism and may be read and written without regard to
+physical disk records.  There is also a `raw' interface which provides
+for direct transmission between the disk and the user's read or write
+buffer.  A single read or write call results in exactly one I/O
+operation and therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files conventionally
+begin with an extra `r'.
+.PP
+In raw I/O counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.PP
+The
+.B MSCP_PARANOIA
+option enables runtime checking on all transfer completion responses
+from the controller.  This increases disk I/O overhead and may
+be undesirable on slow machines, but is otherwise recommended.
+.PP
+The first sector of each disk contains both a first-stage bootstrap program
+and a disk label containing geometry information and partition layouts (see
+.IR disklabel (5).
+This sector is normally write-protected, and disk-to-disk copies should
+avoid copying this sector.
+The label may be updated with
+.IR disklabel (8),
+which can also be used to write-enable and write-disable the sector.
+The next 15 sectors contain a second-stage bootstrap program.
+.SH "DISK SUPPORT"
+During autoconfiguration,
+as well as when a drive is opened after all partitions are closed,
+the first sector of the drive is examined for a disk label.
+If a label is found, the geometry of the drive and the partition tables
+are taken from it.
+If no label is found,
+the driver configures the type of each drive when it is first
+encountered.  A default partition table in the driver is used for each type
+of disk when a pack is not labelled.  The origin and size
+(in sectors) of the default pseudo-disks on each
+drive are shown below.  Not all partitions begin on cylinder
+boundaries, as on other drives, because previous drivers used one
+partition table for all drive types.  Variants of the partition tables
+are common; check the driver and the file
+.IR /etc/disktab ( disktab (5))
+for other possibilities.
+.PP
+.nf
+.ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u +\w'000000    'u
+.PP
+RA60 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	400176
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	268772	same as 4.2BSD ra?h
+	ra?f	49324	350852
+	ra?g	242606	157570
+	ra?h	49324	193282
+.PP
+RA70 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15972	33440
+	ra?c	0	547041
+	ra?d	34122	15884
+	ra?e	357192	55936
+	ra?f	413457	133584
+	ra?g	341220	205821
+	ra?h	49731	29136
+.PP
+RA80 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	15884	33440
+	ra?c	0	242606
+	ra?e	49324	193282	same as old Berkeley ra?g
+	ra?f	49324	82080	same as 4.2BSD ra?g
+	ra?g	49910	192696
+	ra?h	131404	111202	same as 4.2BSD
+.PP
+RA81 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16422	66880
+	ra?c	0	891072
+	ra?d	375564	15884
+	ra?e	391986	307200
+	ra?f	699720	191352
+	ra?g	375564	515508
+	ra?h	83538	291346
+.PP
+RA81 partitions with 4.2BSD-compatible partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16422	66880
+	ra?c	0	891072
+	ra?d	49324	82080	same as 4.2BSD ra?g
+	ra?e	131404	759668	same as 4.2BSD ra?h
+	ra?f	412490	478582	same as 4.2BSD ra?f
+	ra?g	375564	515508
+	ra?h	83538	291346
+.PP
+RA82 partitions
+	disk	start	length
+	ra?a	0	15884
+	ra?b	16245	66880
+	ra?c	0	1135554
+	ra?d	375345	15884
+	ra?e	391590	307200
+	ra?f	669390	466164
+	ra?g	375345	760209
+	ra?h	83790	291346
+.DT
+.fi
+.PP
+The ra?a partition is normally used for the root file system, the ra?b
+partition as a paging area, and the ra?c partition for pack-pack
+copying (it maps the entire disk).
+.SH FILES
+/dev/ra[0-9][a-f]
+.br
+/dev/rra[0-9][a-f]
+.SH SEE ALSO
+disklabel(5), disklabel(8)
+.SH DIAGNOSTICS
+.TP
+panic: udaslave
+No command packets were available while the driver was looking
+for disk drives.  The controller is not extending enough credits
+to use the drives.
+.TP
+uda%d: no response to Get Unit Status request
+A disk drive was found, but did not respond to a status request.
+This is either a hardware problem or someone pulling unit number
+plugs very fast.
+.TP
+uda%d: unit %d off line
+While searching for drives, the controller found one that
+seems to be manually disabled.  It is ignored.
+.TP
+uda%d: unable to get unit status
+Something went wrong while trying to determine the status of
+a disk drive.  This is followed by an error detail.
+.TP
+uda%d: unit %d, next %d
+This probably never happens, but I wanted to know if it did.  I
+have no idea what one should do about it.
+.TP
+uda%d: cannot handle unit number %d (max is %d)
+The controller found a drive whose unit number is too large.
+Valid unit numbers are those in the range [0..7].
+.TP
+ra%d: don't have a partition table for %s; using (s,t,c)=(%d,%d,%d)
+The controller found a drive whose media identifier (e.g. `RA 25')
+does not have a default partition table.  A temporary partition
+table containing only an `a' partition has been created covering
+the entire disk, which has the indicated numbers of sectors per
+track (s), tracks per cylinder (t), and total cylinders (c).
+Give the pack a label with the
+.I disklabel
+utility.
+.TP
+uda%d: uballoc map failed
+Unibus resource map allocation failed during initialisation.  This
+can only happen if you have 496 devices on a Unibus.
+.TP
+uda%d: timeout during init
+The controller did not initialise within ten seconds.  A hardware
+problem, but it sometimes goes away if you try again.
+.TP
+uda%d: init failed, sa=%b
+The controller refused to initalise.
+.TP
+uda%d: controller hung
+The controller never finished initialisation.  Retrying may sometimes
+fix it.
+.TP
+ra%d: drive will not come on line
+The drive will not come on line, probably because it is spun down.
+This should be preceded by a message giving details as to why the
+drive stayed off line.
+.TP
+uda%d: still hung
+When the controller hangs, the driver occasionally tries to reinitialise
+it.  This means it just tried, without success.
+.TP
+panic: udastart: bp==NULL
+A bug in the driver has put an empty drive queue on a controller queue.
+.TP
+uda%d: command ring too small
+If you increase NCMDL2, you may see a performance improvement.
+(See /sys/vaxuba/uda.c.)
+.TP
+panic: udastart
+A drive was found marked for status or on-line functions while performing
+status or on-line functions.  This indicates a bug in the driver.
+.TP
+uda%d: controller error, sa=0%o (%s)
+The controller reported an error.  The error code is printed in
+octal, along with a short description if the code is known (see the
+.IR "UDA50 Maintenance Guide" ,
+DEC part number AA-M185B-TC, pp. 18-22).
+If this occurs during normal
+operation, the driver will reset it and retry pending I/O.  If
+it occurs during configuration, the controller may be ignored.
+.TP
+uda%d: stray intr
+The controller interrupted when it should have stayed quiet.  The
+interrupt has been ignored.
+.TP
+uda%d: init step %d failed, sa=%b
+The controller reported an error during the named initialisation step.
+The driver will retry initialisation later.
+.TP
+uda%d: version %d model %d
+An informational message giving the revision level of the controller.
+.TP
+uda%d: DMA burst size set to %d
+An informational message showing the DMA burst size, in words.
+.TP
+panic: udaintr
+Indicates a bug in the generic MSCP code.
+.TP
+uda%d: driver bug, state %d
+The driver has a bogus value for the controller state.  Something
+is quite wrong.  This is immediately followed by a `panic: udastate'.
+.TP
+uda%d: purge bdp %d
+A benign message tracing BDP purges.  I have been trying to figure
+out what BDP purges are for.  You might want to comment out this
+call to log() in /sys/vaxuba/uda.c.
+.TP
+.RI "uda%d: SETCTLRC failed: " detail
+The Set Controller Characteristics command (the last part of the
+controller initialisation sequence) failed.  The
+.I detail
+message tells why.
+.TP
+.RI "uda%d: attempt to bring ra%d on line failed: " detail
+The drive could not be brought on line.  The
+.I detail
+message tells why.
+.TP
+uda%d: ra%d: unknown type %d
+The type index of the named drive is not known to the driver, so the
+drive will be ignored.
+.TP
+ra%d: changed types! was %d now %d
+A drive somehow changed from one kind to another, e.g., from an RA80
+to an RA60.  The numbers printed are the encoded media identifiers (see
+.RI < vax/mscp.h >
+for the encoding).
+The driver believes the new type.
+.TP
+ra%d: uda%d, unit %d, size = %d sectors
+The named drive is on the indicated controller as the given unit,
+and has that many sectors of user-file area.  This is printed
+during configuration.
+.TP
+.RI "uda%d: attempt to get status for ra%d failed: " detail
+A status request failed.  The
+.I detail
+message should tell why.
+.TP
+ra%d: bad block report: %d
+The drive has reported the given block as bad.  If there are multiple
+bad blocks, the drive will report only the first; in this case this
+message will be followed by `+ others'.  Get DEC to forward the
+block with EVRLK.
+.TP
+ra%d: serious exception reported
+I have no idea what this really means.
+.TP
+panic: udareplace
+The controller reported completion of a REPLACE operation.  The
+driver never issues any REPLACEs, so something is wrong.
+.TP
+panic: udabb
+The controller reported completion of bad block related I/O.  The
+driver never issues any such, so something is wrong.
+.TP
+uda%d: lost interrupt
+The controller has gone out to lunch, and is being reset to try to bring
+it back.
+.TP
+panic: mscp_go: AEB_MAX_BP too small
+You defined AVOID_EMULEX_BUG and increased NCMDL2 and Emulex has
+new firmware.  Raise AEB_MAX_BP or turn off AVOID_EMULEX_BUG.
+.TP
+uda%d: unit %d: unknown message type 0x%x ignored
+The controller responded with a mysterious message type. See
+/sys/vax/mscp.h for a list of known message types.  This is probably
+a controller hardware problem.
+.TP
+uda%d: unit %d out of range
+The disk drive unit number (the unit plug) is higher than the
+maximum number the driver allows (currently 7).
+.TP
+uda%d: unit %d not configured, \fImessage\fP ignored
+The named disk drive has announced its presence to the controller,
+but was not, or cannot now be, configured into the running system.
+.I Message
+is one of `available attention' (an `I am here' message) or
+`stray response op 0x%x status 0x%x' (anything else).
+.TP
+ra%d: bad lbn (%d)?
+The drive has reported an invalid command error, probably due to an
+invalid block number.  If the lbn value is very much greater than the
+size reported by the drive, this is the problem.  It is probably due to
+an improperly configured partition table.  Other invalid commands
+indicate a bug in the driver, or hardware trouble.
+.TP
+ra%d: duplicate ONLINE ignored
+The drive has come on-line while already on-line.  This condition
+can probably be ignored (and has been).
+.TP
+ra%d: io done, but no buffer?
+Hardware trouble, or a bug; the drive has finished an I/O request,
+but the response has an invalid (zero) command reference number.
+.TP
+Emulex SC41/MS screwup: uda%d, got %d correct, then
+.br
+.ti -5
+changed 0x%x to 0x%x
+.br
+You turned on AVOID_EMULEX_BUG, and the driver successfully
+avoided the bug.  The number of correctly-handled requests is
+reported, along with the expected and actual values relating to
+the bug being avoided.
+.TP
+panic: unrecoverable Emulex screwup
+You turned on AVOID_EMULEX_BUG, but Emulex was too clever and
+avoided the avoidance.  Try turning on MSCP_PARANOIA instead.
+.TP
+uda%d: bad response packet ignored
+You turned on MSCP_PARANOIA, and the driver caught the controller in
+a lie.  The lie has been ignored, and the controller will soon be
+reset (after a `lost' interrupt).  This is followed by a hex dump of
+the offending packet.
+.TP
+ra%d: bogus REPLACE end
+The drive has reported finishing a bad sector replacement, but the
+driver never issues bad sector replacement commands.  The report
+is ignored.  This is likely a hardware problem.
+.TP
+ra%d: unknown opcode 0x%x status 0x%x ignored
+The drive has reported something that the driver cannot understand.
+Perhaps DEC has been inventive, or perhaps your hardware is ill.
+This is followed by a hex dump of the offending packet.
+.TP
+\fBra%d%c: hard error %sing fsbn %d [of %d-%d] (ra%d bn %d cn %d tn %d sn %d)\fP.
+An unrecoverable error occurred during transfer of the specified
+filesystem block number(s),
+which are logical block numbers on the indicated partition.
+If the transfer involved multiple blocks, the block range is printed as well.
+The parenthesized fields list the actual disk sector number
+relative to the beginning of the drive,
+as well as the cylinder, track and sector number of the block.
+.TP
+uda%d: %s error datagram
+The controller has reported some kind of error, either `hard'
+(unrecoverable) or `soft' (recoverable).  If the controller is going on
+(attempting to fix the problem), this message includes the remark
+`(continuing)'.  Emulex controllers wrongly claim that all soft errors
+are hard errors.  This message may be followed by
+one of the following 5 messages, depending on its type, and will always
+be followed by a failure detail message (also listed below).
+.RS
+.TP
+memory addr 0x%x
+A host memory access error; this is the address that could not be
+read.
+.TP
+unit %d: level %d retry %d, %s %d
+A typical disk error; the retry count and error recovery levels are
+printed, along with the block type (`lbn', or logical block; or `rbn',
+or replacement block) and number.  If the string is something else, DEC
+has been clever, or your hardware has gone to Australia for vacation
+(unless you live there; then it might be in New Zealand, or Brazil).
+.TP
+unit %d: %s %d
+Also a disk error, but an `SDI' error, whatever that is.  (I doubt
+it has anything to do with Ronald Reagan.)  This lists the block
+type (`lbn' or `rbn') and number.  This is followed by a second
+message indicating a microprocessor error code and a front panel
+code.  These latter codes are drive-specific, and are intended to
+be used by field service as an aid in locating failing hardware.
+The codes for RA81s can be found in the
+.IR "RA81 Maintenance Guide" ,
+DEC order number AA-M879A-TC, in appendices E and F.
+.TP
+unit %d: small disk error, cyl %d
+Yet another kind of disk error, but for small disks.  (`That's what
+it says, guv'nor.  Dunnask me what it means.')
+.TP
+unit %d: unknown error, format 0x%x
+A mysterious error: the given format code is not known.
+.RE
+.PP
+The detail messages are as follows:
+.RS
+.TP
+success (%s) (code 0, subcode %d)
+Everything worked, but the controller thought it would let you know
+that something went wrong.  No matter what subcode, this can probably
+be ignored.
+.TP
+invalid command (%s) (code 1, subcode %d)
+This probably cannot occur unless the hardware is out; %s should be
+`invalid msg length', meaning some command was too short or too long.
+.TP
+command aborted (unknown subcode) (code 2, subcode %d)
+This should never occur, as the driver never aborts commands.
+.TP
+unit offline (%s) (code 3, subcode %d)
+The drive is offline, either because it is not around (`unknown
+drive'), stopped (`not mounted'), out of order (`inoperative'), has the
+same unit number as some other drive (`duplicate'), or has been
+disabled for diagnostics (`in diagnosis').
+.TP
+unit available (unknown subcode) (code 4, subcode %d)
+The controller has decided to report a perfectly normal event as
+an error.  (Why?)
+.TP
+media format error (%s) (code 5, subcode %d)
+The drive cannot be used without reformatting.  The Format Control
+Table cannot be read (`fct unread - edc'), there is a bad sector
+header (`invalid sector header'), the drive is not set for 512-byte
+sectors (`not 512 sectors'), the drive is not formatted (`not formatted'),
+or the FCT has an uncorrectable ECC error (`fct ecc').
+.TP
+write protected (%s) (code 6, subcode %d)
+The drive is write protected, either by the front panel switch
+(`hardware') or via the driver (`software').  The driver never
+sets software write protect.
+.TP
+compare error (unknown subcode) (code 7, subcode %d)
+A compare operation showed some sort of difference.  The driver
+never uses compare operations.
+.TP
+data error (%s) (code 7, subcode %d)
+Something went wrong reading or writing a data sector.  A `forced
+error' is a software-asserted error used to mark a sector that contains
+suspect data.  Rewriting the sector will clear the forced error.  This
+is normally set only during bad block replacment, and the driver does
+no bad block replacement, so these should not occur.  A `header
+compare' error probably means the block is shot.  A `sync timeout'
+presumably has something to do with sector synchronisation.
+An `uncorrectable ecc' error is an ordinary data error that cannot
+be fixed via ECC logic.  A `%d symbol ecc' error is a data error
+that can be (and presumably has been) corrected by the ECC logic.
+It might indicate a sector that is imperfect but usable, or that
+is starting to go bad.  If any of these errors recur, the sector
+may need to be replaced.
+.TP
+host buffer access error (%s) (code %d, subcode %d)
+Something went wrong while trying to copy data to or from the host
+(Vax).  The subcode is one of `odd xfer addr', `odd xfer count',
+`non-exist. memory', or `memory parity'.  The first two could be a
+software glitch; the last two indicate hardware problems.
+.TP
+controller error (%s) (code %d, subcode %d)
+The controller has detected a hardware error in itself.  A
+`serdes overrun' is a serialiser / deserialiser overrun; `edc'
+probably stands for `error detection code'; and `inconsistent
+internal data struct' is obvious.
+.TP
+drive error (%s) (code %d, subcode %d)
+Either the controller or the drive has detected a hardware error
+in the drive.  I am not sure what an `sdi command timeout' is, but
+these seem to occur benignly on occasion.  A `ctlr detected protocol'
+error means that the controller and drive do not agree on a protocol;
+this could be a cabling problem, or a version mismatch.  A `positioner'
+error means the drive seek hardware is ailing; `lost rd/wr ready'
+means the drive read/write logic is sick; and `drive clock dropout'
+means that the drive clock logic is bad, or the media is hopelessly
+scrambled.  I have no idea what `lost recvr ready' means.  A `drive 
+detected error' is a catch-all for drive hardware trouble; `ctlr
+detected pulse or parity' errors are often caused by cabling problems.
+.RE

@@ -1,0 +1,56 @@
+#print
+How many of the lines in the files "bio*" and "chem*"
+contain the letters "the"?  Type "answer N", where
+N is the number of lines.
+#create bio1
+   Roughly speaking, your eye is made of three balls, or layers,
+fitted tightly one inside the other.  the tough white outermost
+layer's function is to protect the others.  the middle layer gives
+the front of your eye its brown, gray, or blue color.  The inside
+of this layer is dark and full of tiny blood vessels.  The innermost
+layer, called the retina, is made of very special nerve cells that
+are sensitive to light and color.  A nerve cord connects the retina
+of each eye to your brain.
+   The front of your eye's two outer layers (the cornea) is clear,
+or open, to let light enter.
+#create bio2
+   We do not know when life began on the earth, and it seems likely
+that the answer to this question will remain forever hidden from us.
+What we do know is that it was some 500 million years ago when the
+plants and animals of early geologic history had reached a stage of
+development where they produced hard parts capable of being preserved
+as fossils.
+   At this distant date there seemingly was no land life; all life
+was in the sea.  Moreover, there were no vertebrates, or backboned
+animals, living -- at least none of sufficient complexity that they
+left hard structures to be preserved in the form of fossils.
+#create chema
+   The baker said, "Now I shall put just the right amounts of water and
+yeast with the flour that is in the mixer.  Flour, water, and yeast
+together make the sponge.  Making sponge is the first step in making
+bread."
+   The baker closed the mixer.  Inside the machine, the flour and
+yeast and water went around and around until they were well mixed.
+Then the baker opened the mixer and the sponge dropped into a greased
+tub called a trough.
+   The baker pushed the trough into a warm room to let the sponge 
+rise.  It looked like dough, but it did not as yet have everything
+in it.
+#create chemb
+   Wash the blackboard.  Watch it dry.  The water goes into the air.
+When water goes into the air it evaporates.
+   Tie a damp cloth to one end of a stick.  Tie a bottle to the
+other end.  Put water in the bottle until the stick is level.  Watch
+the stick for a few minutes.  It does not stay level.
+   Water goes into the air when it evaporates.  It changes into
+water vapor.  You cannot see water vapor, but it is in the air all
+around you.
+   Cut a hold in the bottom of a cardboard box.  Hold the box
+against a cold window and blow into the hole.
+#copyin
+#user
+#uncopyin
+#match 30
+#log
+#next
+6.1e

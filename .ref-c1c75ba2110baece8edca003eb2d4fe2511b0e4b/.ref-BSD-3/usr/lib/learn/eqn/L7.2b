@@ -1,0 +1,17 @@
+#print
+Does the input
+
+  sum from {i = -n} to {i = +n}
+
+produce the same output as the input
+
+  sum from i=-n to i=+n
+
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+7.1c

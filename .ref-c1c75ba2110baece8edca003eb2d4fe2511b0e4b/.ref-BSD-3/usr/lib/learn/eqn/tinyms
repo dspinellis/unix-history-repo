@@ -1,0 +1,24 @@
+.\" short set of macros to simulate behavior of
+.\" most common -ms macros:
+.\"   .PP, .LP, .EQ, .EN
+.\"
+.de PP
+.br
+.sp
+.ll 60n
+.fi
+.ti +5n
+..
+.de LP
+.br
+.sp
+.ll 60n
+.fi
+..
+.de EQ
+.sp
+.ce
+..
+.de EN
+.sp
+..

@@ -1,0 +1,23 @@
+#print
+Now suppose we wanted to delete the blanks
+after the letter "t" in this line:
+
+here are a lot         of blanks
+
+This line is on file "blank".  Try the sequence
+
+ed blank
+1p
+s/t */t/p
+w
+q
+ready
+#create Ref
+here are a lotof blanks
+#create blank
+here are a lot         of blanks
+#user
+#cmp blank Ref
+#log
+#next
+35.2c 5

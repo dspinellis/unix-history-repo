@@ -1,0 +1,112 @@
+.TH MSGS 1 2/24/79
+.UC
+.SH NAME
+msgs \- system messages and junk mail program
+.SH SYNOPSIS
+.B msgs
+[
+.B \-f
+] [
+.B \-q
+] [
+.B \-h
+] [
+number
+] [
+\-number
+]
+.SH DESCRIPTION
+.I Msgs
+is used to read system messages.
+These messages are
+sent by mailing to the login `msgs' and are short
+pieces of information which are suitable to be read once by most users
+of the system.
+.PP
+.I Msgs
+is normally invoked each time you login, by placing it in the file
+.I \&.login
+.I (\&.profile
+if you use
+.IR /bin/sh ).
+It will then prompt you with the first portion of each new message.
+If the message is longer than a couple of lines you will be told how
+long it is and asked whether you wish to see the whole message.
+You can type return, or `y' to see the message, or `n' to skip it
+and go on to the next message.
+An interrupt drops you out of
+.I msgs;
+the next time you run the program it will pick up where you left off.
+.PP
+.I Msgs
+keeps track of the next message you will see by number in the file
+.I \&.msgsrc
+in your home directory.
+In the directory
+.I /usr/msgs
+it keeps a set of files whose names are the (sequential) numbers
+of the messages they represent.
+The file
+.I /usr/msgs/bounds
+shows the low and high number of the messages in the directory
+so that
+.I msgs
+can quickly determine if there are no messages for you.
+If this file
+.I bounds
+is incorrect it can be fixed by removing it;
+.I msgs
+will make a new
+.I bounds
+file the next time it is run.
+.PP
+Options to msgs include
+.B \-f
+which causes it not to say ``No messages.''.
+This is useful in your
+.I \&.login
+file since this is often the case here.
+If you prefer to learn of new messages without running the program
+you can put the command ``msgs \-q'' in your
+.I \&.login
+file.
+This queries whether there are messages, printing
+``There are new messages.'' if there are.
+The
+.B \-h
+option causes
+.I msgs
+to print the first part of messages only.
+This is most useful when a message number is also given
+on the command line, causing
+.I msgs
+to start at the specified message rather than at the next message
+your
+.I \&.msgsrc
+file indicates.
+Thus
+.IP
+msgs \-h 1
+.PP
+prints the first part of all messages.
+The
+.I "\-number"
+option will start
+.I number
+messages back from the one indicated in your 
+.I \&.msgsrc
+file, useful for reviews of recent messages.
+Within
+.I msgs
+you can also go to any specific message by typing its number when
+.I msgs
+requests input as to what to do.
+.SH FILES
+/usr/msgs/*		database
+.br
+~/.msgsrc		number of next message to be presented
+.SH AUTHOR
+William Joy
+.SH SEE ALSO
+mail(1)
+.SH BUGS

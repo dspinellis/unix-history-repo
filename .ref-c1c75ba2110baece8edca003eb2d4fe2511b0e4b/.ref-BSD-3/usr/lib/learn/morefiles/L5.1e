@@ -1,0 +1,19 @@
+#print
+Use "ls", "pr" and a pipe to make a neat list of the files
+in this directory, sorted by time of last change.
+Do not use a temporary file.
+Type "ready" when you are done.
+#create x1
+adfasdfasdfaf
+
+#create junk
+qerqer
+#create foo
+fofofofofo
+#copyin
+#user
+#uncopyin
+grep 'ls -[l]*t.*| *pr' <.copy >/dev/null
+#log
+#next
+6.1a 10

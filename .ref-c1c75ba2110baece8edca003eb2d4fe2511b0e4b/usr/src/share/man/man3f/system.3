@@ -1,0 +1,41 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)system.3	6.1 (Berkeley) %G%
+.\"
+.TH SYSTEM 3F ""
+.UC 5
+.SH NAME
+system \- execute a \s-2UNIX\s0 command
+.SH SYNOPSIS
+.B integer function system (string)
+.br
+.B character*(*) string
+.SH DESCRIPTION
+.I System
+causes
+.I string
+to be given to your shell
+as input as if the string had been typed as a command.
+If environment variable
+.B SHELL
+is found, its value will be used as the command interpreter (shell);
+otherwise
+.IR sh (1)
+is used.
+.PP
+The current process waits until the command terminates.
+The returned value will be the exit status of the shell.
+See
+.IR wait (2)
+for an explanation of this value.
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+exec(2), wait(2), system(3)
+.SH BUGS
+.I String
+can not be longer than NCARGS\-50 characters, as defined in
+.RI < sys/param.h >.

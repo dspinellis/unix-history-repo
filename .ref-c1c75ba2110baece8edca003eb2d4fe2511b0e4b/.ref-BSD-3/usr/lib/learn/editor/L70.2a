@@ -1,0 +1,30 @@
+#print
+Perhaps the most powerful editor command is the 'g'
+(global) command.  This command selects sets of lines
+on which other commands are executed.  For example,
+  g/abc/p
+prints all lines on which 'abc' appears.  In this directory
+is a file "story".  Print all lines on which the word
+"of" appears.  Then leave the editor and type "ready".
+#create Ref
+   The people of the United States are in a sense becoming a nation
+of the United States in the future, it will be because that system
+did too good a job of filling many of the needs of the people.
+#create story
+   The people of the United States are in a sense becoming a nation
+on a tiger.  They must learn to consume more and more or, they are
+warned, their magnificent economic machine may turn and devour them.
+They must be induced to step up their individual consumption higher
+and higher, whether they have any pressing need for the goods or
+not.  Their ever-expanding economy demands it.
+   If modifications are forced upon the private-enterprise system
+of the United States in the future, it will be because that system
+did too good a job of filling many of the needs of the people.
+#copyout
+#user
+#uncopyout
+grep of .ocopy >x1
+#cmp x1 Ref
+#log
+#next
+70.2b 5

@@ -1,0 +1,24 @@
+.TH GETPASS 3 
+.SH NAME
+getpass \- read a password
+.SH SYNOPSIS
+.B char *getpass(prompt)
+.br
+.B char *prompt;
+.SH DESCRIPTION
+.I Getpass
+reads a password from the file
+.IR /dev/tty ,
+or if that cannot be opened, from the standard input,
+after prompting with the null-terminated string
+.I prompt
+and disabling echoing.
+A pointer is returned to a null-terminated string
+of at most 8 characters.
+.SH FILES
+/dev/tty
+.SH "SEE ALSO"
+crypt(3)
+.SH BUGS
+The return value points to static data
+whose content is overwritten by each call.

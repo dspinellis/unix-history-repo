@@ -1,0 +1,12 @@
+#print
+Can you expect the normal command interpreter (called
+the 'shell') to recognize 
+ w
+Type yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+5.1a 10
