@@ -12,22 +12,20 @@
 #include "param.h"
 #include "systm.h"
 #include "conf.h"
-#include "user.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "proc.h"
 #include "vnode.h"
 #include "file.h"
-#include "uio.h"
 
 #define cttyvp(p) ((p)->p_flag&SCTTY ? (p)->p_session->s_ttyvp : NULL)
 
 /*ARGSUSED*/
-cttyopen(dev, flag)
+cttyopen(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
-	struct proc *p = curproc;
 	struct vnode *ttyvp = cttyvp(p);
 	int error;
 
@@ -43,15 +41,16 @@ cttyopen(dev, flag)
 }
 
 /*ARGSUSED*/
-cttyread(dev, uio, flag)
+cttyread(dev, uio, flag, p)
 	dev_t dev;
 	struct uio *uio;
+	struct proc *p;
 {
-	register struct vnode *ttyvp = cttyvp(curproc);
+	register struct vnode *ttyvp = cttyvp(p);
 	int error;
 
 	if (ttyvp == NULL)
-		return (ENXIO);
+		return (EIO);
 	VOP_LOCK(ttyvp);
 	error = VOP_READ(ttyvp, uio, flag, NOCRED);
 	VOP_UNLOCK(ttyvp);
@@ -59,15 +58,16 @@ cttyread(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-cttywrite(dev, uio, flag)
+cttywrite(dev, uio, flag, p)
 	dev_t dev;
 	struct uio *uio;
+	struct proc *p;
 {
-	register struct vnode *ttyvp = cttyvp(curproc);
+	register struct vnode *ttyvp = cttyvp(p);
 	int error;
 
 	if (ttyvp == NULL)
-		return (ENXIO);
+		return (EIO);
 	VOP_LOCK(ttyvp);
 	error = VOP_WRITE(ttyvp, uio, flag, NOCRED);
 	VOP_UNLOCK(ttyvp);
@@ -75,19 +75,20 @@ cttywrite(dev, uio, flag)
 }
 
 /*ARGSUSED*/
-cttyioctl(dev, cmd, addr, flag)
+cttyioctl(dev, cmd, addr, flag, p)
 	dev_t dev;
 	int cmd;
 	caddr_t addr;
 	int flag;
+	struct proc *p;
 {
-	struct vnode *ttyvp = cttyvp(curproc);
+	struct vnode *ttyvp = cttyvp(p);
 
 	if (ttyvp == NULL)
-		return (ENXIO);
+		return (EIO);
 	if (cmd == TIOCNOTTY) {
-		if (!SESS_LEADER(curproc)) {
-			curproc->p_flag &= ~SCTTY;
+		if (!SESS_LEADER(p)) {
+			p->p_flag &= ~SCTTY;
 			return (0);
 		} else
 			return (EINVAL);
@@ -96,11 +97,12 @@ cttyioctl(dev, cmd, addr, flag)
 }
 
 /*ARGSUSED*/
-cttyselect(dev, flag)
+cttyselect(dev, flag, p)
 	dev_t dev;
 	int flag;
+	struct proc *p;
 {
-	struct vnode *ttyvp = cttyvp(curproc);
+	struct vnode *ttyvp = cttyvp(p);
 
 	if (ttyvp == NULL)
 		return (1);	/* try operation to get EOF/failure */
