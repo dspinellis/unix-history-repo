@@ -1,7 +1,8 @@
-#	@(#)Makefile	4.3	(Berkeley)	83/06/19
+#	@(#)Makefile	4.4	(Berkeley)	86/05/15
 #
 DESTDIR=
 
+# The vi lessons come with the user-contributed software.
 LESSONS = files editor morefiles macros eqn C
 
 FILES = lrnref.h \
@@ -15,7 +16,8 @@ OBJECTS = copy.o dounit.o getlesson.o learn.o list.o mem.o \
 	makpipe.o maktee.o mysys.o selsub.o selunit.o \
 	start.o whatnow.o wrapup.o
 
-CFLAGS = -O
+# Flag BSD4_2 means 4.2 or later.
+CFLAGS = -O -DBSD4_2
 LIBRARY =
 LLIB	= $(DESTDIR)/usr/lib/learn/bin
 
@@ -26,11 +28,6 @@ install:	all
 	install -s learn $(LLIB)
 	install -s lrntee $(LLIB)
 	install -s lcount $(LLIB)
-
-ccinstall:	all
-	cp learn lrntee lcount $(LLIB)
-	chmod 755 $(LLIB)/*
-	strip $(LLIB)/*
 
 clean:
 	rm -f *.o learn lrntee lcount errs

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)selunit.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selunit.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -58,7 +58,7 @@ retry:
 		printf("Congratulations; you have finished this sequence.\n");
 		fflush(stdout);
 		todo = 0;
-		return;
+		wrapup(-1);
 	}
 	for(i=0; fgets(s, 80, f); i++) {
 		sscanf(s, "%s %d", posslev[i], &diff[i]);

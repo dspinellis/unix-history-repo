@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)selsub.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)selsub.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -7,14 +7,18 @@ static char sccsid[] = "@(#)selsub.c	4.2	(Berkeley)	%G%";
 #include "sys/stat.h"
 #include "lrnref.h"
 
+char learnrc[100];
+
 selsub(argc,argv)
 char *argv[];
 {
 	char ans1[100];
-	static char ans2[30];
-	static char dirname[20];
-	static char subname[20];
-	struct stat statbuf;
+	static char ans2[40];
+	static char dirname[40];
+	static char subname[40];
+	FILE *fp;
+	char *getenv();
+	char *home;
 
 	if (argc > 1 && argv[1][0] == '-') {
 		direct = argv[1]+1;
@@ -31,13 +35,36 @@ char *argv[];
 		strcpy (level=ans2, argv[2]);
 		if (strcmp(level, "-") == 0)	/* no lesson name is - */
 			ask = 1;
+		else if (strcmp(level, "0") == 0)
+			level = 0;
 		else
-			again = 1;	/* treat as if "again lesson" */
+			again = 1;	/* treat as if "again" lesson */
 	}
 	else
 		level = 0;
 	if (argc > 3 )
 		speed = atoi(argv[3]);
+	if ((home = getenv("HOME")) != NULL) {
+		sprintf(learnrc, "%s/.learnrc", home);
+		if ((fp=fopen(learnrc, "r")) != NULL) {
+			char xsub[40], xlev[40]; int xsp;
+			fscanf(fp, "%s %s %d", xsub, xlev, &xsp);
+			fclose(fp);
+			if (*xsub && *xlev && xsp >= 0	/* all read OK */
+			    && (argc == 2 && strcmp(sname, xsub) == 0
+			      || argc <= 1)) {
+				strcpy(sname = subname, xsub);
+				strcpy(level = ans2, xlev);
+				speed = xsp;
+				again = 1;
+	printf("[ Taking up where you left off last time:  learn %s %s.\n",
+		sname, level);
+	printf("%s\n  \"rm $HOME/.learnrc\", and re-enter with \"learn %s\". ]\n",
+		"  To start this sequence over leave learn by typing \"bye\", then",
+		sname);
+			}
+		}
+	}
 	if (!sname) {
 		printf("These are the available courses -\n");
 		list("Linfo");
@@ -57,8 +84,7 @@ char *argv[];
 		}
 	}
 	chknam(sname);
-	stat(sname, &statbuf);
-	total = statbuf.st_size / 16 - 2;	/* size/dirsize-(.+..) */
+	total = cntlessons(sname);
 	if (!level) {
 		printf("If you were in the middle of this subject\n");
 		printf("and want to start where you left off, type\n");
@@ -71,7 +97,10 @@ char *argv[];
 		gets(ans2);
 		if (ans2[0]==0)
 			strcpy(ans2,"0");
+		else
+			again = 1;
 		level=ans2;
+		getlesson();
 	}
 
 	/* make new directory for user to play in */
@@ -104,4 +133,35 @@ char *name;
 		printf("Sorry, there is no subject or lesson named %s.\nBye.\n", name);
 		exit(1);
 	}
+}
+
+#ifndef DIR
+#include <sys/dir.h>
+#endif
+
+cntlessons(sname)	/* return number of entries in lesson directory; */
+char *sname;		/* approximate at best since I don't count L0, Init */
+{			/* and lessons skipped by good students */
+#if BSD4_2
+	struct direct dbuf;
+	register struct direct *ep = &dbuf;	/* directory entry pointer */
+	int n = 0;
+	DIR *dp;
+
+	if ((dp = opendir(sname)) == NULL) {
+		perror(sname);
+		wrapup(1);
+	}
+	for (ep = readdir(dp); ep != NULL; ep = readdir(dp)) {
+		if (ep->d_ino != 0)
+			n++;
+	}
+	closedir(dp);
+	return n - 2;				/* minus . and .. */
+#else
+	struct stat statbuf;
+
+	stat(sname, &statbuf);
+	return statbuf.st_size / 16 - 2;
+#endif
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mem.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mem.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 # include "stdio.h"
@@ -38,7 +38,7 @@ struct keys {
 	{"#bad",	BAD},
 	{"#create",	CREATE},
 	{"#cmp",	CMP},
-	{"xyzzy",	XYZZY},
+	{"hint",	HINT},
 	{"#once",	ONCE},
 	{"#",		NOP},
 	{NULL,		0}

@@ -1,4 +1,4 @@
-/*	lrnref.h	4.3	83/08/11	*/
+/*	lrnref.h	4.4	86/05/15	*/
 
 #define	READY	0
 #define	PRINT	1
@@ -28,7 +28,7 @@
 #define	CMP	25
 #define	ONCE	26
 #define	AGAIN	27
-#define XYZZY	28
+#define	HINT	28
 
 extern	int	more;
 extern	char	*level;

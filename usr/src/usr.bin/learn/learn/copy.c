@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)copy.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)copy.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -34,6 +34,7 @@ FILE *fin;
 			if (fin == stdin) {
 				fprintf(stderr, "Type \"bye\" if you want to leave learn.\n");
 				fflush(stderr);
+				clearerr(stdin);
 				continue;
 			} else
 				break;
@@ -88,7 +89,7 @@ FILE *fin;
 			else
 				scopy(fin, stdout);
 			break;
-		case XYZZY:
+		case HINT:
 			mark = ftell(scrin);
 			if (r)
 				rewind(scrin);
@@ -142,6 +143,7 @@ FILE *fin;
 				noclobber = 0;
 			more = 1;
 			return;
+		/* "again previous_lesson" has a hard-to-reproduce bug */
 		case AGAIN:
 			review = 0;
 			if (!r) {
@@ -204,7 +206,7 @@ FILE *fin;
 			printf("You are already in learn.\n");
 			fflush(stdout);
 			break;
-		case LOG:
+		case LOG:	/* logfiles should be created mode 666 */
 			if (!logging)
 				break;
 			if (logf[0] == 0)
