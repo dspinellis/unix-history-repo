@@ -337,7 +337,6 @@ pushbytes(sc)
 		ch = *(sc->sc_cp);
 		sc->sc_cp += 1;
 		sc->sc_count -= 1;
-		outb(sc->sc_data, ch);
 
 		/* Busy wait for printer ready .. */
 		spin = tic = 0;
@@ -355,6 +354,8 @@ pushbytes(sc)
 			}
 		}
 
+                /* output data */
+		outb(sc->sc_data, ch);
 		/* strobe */
 		outb(sc->sc_ctrl, LPC_NINIT|LPC_SEL|LPC_STB);
 		outb(sc->sc_ctrl, LPC_NINIT|LPC_SEL);
