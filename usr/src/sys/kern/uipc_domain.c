@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uipc_domain.c	6.6 (Berkeley) %G%
+ *	@(#)uipc_domain.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -86,8 +86,9 @@ pffindproto(family, protocol, type)
 	return (0);
 found:
 	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++) {
-		if (pr->pr_protocol == protocol)
+		if ((pr->pr_protocol == protocol) && (pr->pr_type == type))
 			return (pr);
+
 		if (type == SOCK_RAW && pr->pr_type == SOCK_RAW &&
 		    pr->pr_protocol == 0 && maybe == (struct protosw *)0)
 			maybe = pr;
