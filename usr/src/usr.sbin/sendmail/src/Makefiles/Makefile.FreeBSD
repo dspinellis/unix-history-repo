@@ -1,7 +1,7 @@
 #
 #  Makefile for FreeBSD
 #
-#	@(#)Makefile.FreeBSD	8.2 (Berkeley) %G%
+#	@(#)Makefile.FreeBSD	8.3 (Berkeley) %G%
 
 PROG=	sendmail
 
@@ -15,8 +15,7 @@ PROG=	sendmail
 # spiral snail, but it will work.
 DBMDEF=	-DNEWDB
 
-# FreeBSD 1.0 RELEASE has uname(2) now. Use -DUSEUNAME in order to use it.
-CFLAGS+=-I${.CURDIR} ${DBMDEF} -DMIME -DUSEUNAME
+CFLAGS+=-I${.CURDIR} ${DBMDEF}
 
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c map.c \
