@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.32 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.33 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.32 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.33 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1081,7 +1081,7 @@ printqueue()
 			errno = 0;
 			continue;
 		}
-		printf("%7s", w->w_name + 2);
+		printf("%8s", w->w_name + 2);
 		if (!lockfile(fileno(f), w->w_name, LOCK_SH|LOCK_NB))
 			printf("*");
 		else if (shouldqueue(w->w_pri, w->w_ctime))
