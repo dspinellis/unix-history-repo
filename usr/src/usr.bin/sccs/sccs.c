@@ -2,8 +2,9 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <sysexits.h>
+# include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c 1.8 delta %G% 20:53:30 get %H% %T%";
+static char SccsId[] = "@(#)sccs.c 1.9 delta %G% 12:31:38 get %H% %T%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -27,17 +28,25 @@ struct sccsprog
 # define NO_SDOT	0001	/* no s. on front of args */
 # define REALUSER	0002	/* protected (e.g., admin) */
 
+# ifdef CSVAX
+# define PROGPATH(name)	"/usr/local/name"
+# endif CSVAX
+
+# ifndef PROGPATH
+# define PROGPATH(name)	"/usr/sccs/name"
+# endif PROGPATH
+
 struct sccsprog SccsProg[] =
 {
-	"admin",	PROG,	REALUSER,		"/usr/sccs/admin",
-	"chghist",	PROG,	0,			"/usr/sccs/rmdel",
-	"comb",		PROG,	0,			"/usr/sccs/comb",
-	"delta",	PROG,	0,			"/usr/sccs/delta",
-	"get",		PROG,	0,			"/usr/sccs/get",
-	"help",		PROG,	NO_SDOT,		"/usr/sccs/help",
-	"prt",		PROG,	0,			"/usr/sccs/prt",
-	"rmdel",	PROG,	REALUSER,		"/usr/sccs/rmdel",
-	"what",		PROG,	NO_SDOT,		"/usr/sccs/what",
+	"admin",	PROG,	REALUSER,		PROGPATH(admin),
+	"chghist",	PROG,	0,			PROGPATH(rmdel),
+	"comb",		PROG,	0,			PROGPATH(comb),
+	"delta",	PROG,	0,			PROGPATH(delta),
+	"get",		PROG,	0,			PROGPATH(get),
+	"help",		PROG,	NO_SDOT,		PROGPATH(help),
+	"prt",		PROG,	0,			PROGPATH(prt),
+	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
+	"what",		PROG,	NO_SDOT,		PROGPATH(what),
 	"del",		CMACRO,	0,			"delta/get",
 	NULL,		-1,	0,			NULL
 };
