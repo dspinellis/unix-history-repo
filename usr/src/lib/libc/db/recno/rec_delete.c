@@ -9,14 +9,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
 #include <db.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "recno.h"
 
 static int rec_rdelete __P((BTREE *, recno_t));
@@ -45,26 +47,24 @@ __rec_delete(dbp, key, flags)
 	t = dbp->internal;
 	switch(flags) {
 	case 0:
-		if ((nrec = *(recno_t *)key->data) == 0) {
-			errno = EINVAL;
-			return (RET_ERROR);
-		}
+		if ((nrec = *(recno_t *)key->data) == 0)
+			goto einval;
 		if (nrec > t->bt_nrecs)
 			return (RET_SPECIAL);
 		--nrec;
 		status = rec_rdelete(t, nrec);
 		break;
 	case R_CURSOR:
-		if (ISSET(t, BTF_DELCRSR))
+		if (!ISSET(t, BTF_SEQINIT))
+			goto einval;
+		if (t->bt_nrecs == 0)
 			return (RET_SPECIAL);
 		status = rec_rdelete(t, t->bt_rcursor - 1);
-		if (status == RET_SUCCESS) {
+		if (status == RET_SUCCESS)
 			--t->bt_rcursor;
-			SET(t, BTF_DELCRSR);
-		}
 		break;
 	default:
-		errno = EINVAL;
+einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 
