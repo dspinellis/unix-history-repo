@@ -1,4 +1,4 @@
-/*	if_de.c	6.1	83/11/02	*/
+/*	if_de.c	6.2	84/02/02	*/
 #include "de.h"
 #if NDE > 0
 
@@ -10,7 +10,6 @@
  *
  * TODO:
  *	timeout routine (get statistics)
- *	generalize UNIBUS routines
  */
 #include "../machine/pte.h"
 
@@ -44,6 +43,8 @@
 #define	NXMT	2	/* number of transmit buffers */
 #define	NRCV	4	/* number of receive buffers (must be > 1) */
 #define	NTOT	(NXMT + NRCV)
+
+int	dedebug = 0;
 
 int	deprobe(), deattach(), deintr();
 struct	uba_device *deinfo[NDE];
@@ -88,6 +89,7 @@ struct	de_softc {
 #define	ds_addr	ds_ac.ac_enaddr		/* hardware Ethernet address */
 	int	ds_flags;
 #define	DSF_LOCK	1		/* lock out destart */
+#define	DSF_RUNNING	2
 	int	ds_ubaddr;		/* map info for incore structs */
 	struct	deuba ds_deuba;		/* unibus resource structure */
 	/* the following structures are always mapped in */
@@ -186,11 +188,11 @@ deattach(ui)
 		printf("de%d: rdphyad failed, csr0=%b csr1=%b\n", ui->ui_unit,
 		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
 	ubarelse(ui->ui_ubanum, &ds->ds_ubaddr);
-	printf("de%d: addr=%d:%d:%d:%d:%d:%d\n",
-		ui->ui_unit,
-		ds->ds_pcbb.pcbb2&0xff, (ds->ds_pcbb.pcbb2>>8)&0xff,
-		ds->ds_pcbb.pcbb4&0xff, (ds->ds_pcbb.pcbb4>>8)&0xff,
-		ds->ds_pcbb.pcbb6&0xff, (ds->ds_pcbb.pcbb6>>8)&0xff);
+	if (dedebug)
+		printf("de%d: addr=%d:%d:%d:%d:%d:%d\n", ui->ui_unit,
+		    ds->ds_pcbb.pcbb2&0xff, (ds->ds_pcbb.pcbb2>>8)&0xff,
+		    ds->ds_pcbb.pcbb4&0xff, (ds->ds_pcbb.pcbb4>>8)&0xff,
+		    ds->ds_pcbb.pcbb6&0xff, (ds->ds_pcbb.pcbb6>>8)&0xff);
 	bcopy((caddr_t)&ds->ds_pcbb.pcbb2, (caddr_t)ds->ds_addr,
 	    sizeof (ds->ds_addr));
 	sin = (struct sockaddr_in *)&ifp->if_addr;
@@ -221,6 +223,7 @@ dereset(unit, uban)
 	    ui->ui_ubanum != uban)
 		return;
 	printf(" de%d", unit);
+	/* NEED TO RESET IFF_RUNNING AND DSF_RUNNING? */
 	deinit(unit);
 }
 
@@ -329,10 +332,11 @@ deinit(unit)
 	/* start up the board (rah rah) */
 	s = splimp();
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = 0;
-	destart(unit);		/* queue output packets */
+	ds->ds_if.if_flags |= IFF_UP|IFF_RUNNING;
+	destart(unit);				/* queue output packets */
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
 	addr->pclow = CMD_START | PCSR0_INTE;
-	ds->ds_if.if_flags |= IFF_UP|IFF_RUNNING;	/* after destart */
+	ds->ds_flags |= DSF_RUNNING;
 	splx(s);
 justarp:
 	if_rtinit(&ds->ds_if, RTF_UP);
@@ -384,7 +388,7 @@ destart(unit)
 	}
 	if (ds->ds_nxmit != nxmit) {
 		ds->ds_nxmit = nxmit;
-		if (ds->ds_if.if_flags & IFF_UP)
+		if (ds->ds_flags & DSF_RUNNING)
 			addr->pclow = PCSR0_INTE|CMD_PDMD;
 	}
 }
@@ -429,6 +433,7 @@ deintr(unit)
 			if (rp->r_flags & XFLG_ERRS) {
 				/* output error */
 				ds->ds_if.if_oerrors++;
+				if (dedebug)
 			printf("de%d: oerror, flags=%b tdrerr=%b (len=%d)\n",
 				    unit, rp->r_flags, XFLG_BITS,
 				    rp->r_tdrerr, XERR_BITS, rp->r_slen);
@@ -489,6 +494,7 @@ derecv(unit)
 		    (rp->r_lenerr & (RERR_BUFL|RERR_UBTO|RERR_NCHN)) ||
 		    len < ETHERMIN || len > ETHERMTU) {
 			ds->ds_if.if_ierrors++;
+			if (dedebug)
 			printf("de%d: ierror, flags=%b lenerr=%b (len=%d)\n",
 				unit, rp->r_flags, RFLG_BITS, rp->r_lenerr,
 				RERR_BITS, len);
