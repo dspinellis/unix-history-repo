@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.56.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.57 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -314,7 +314,7 @@ sendall(e, mode)
 			ee->e_header = copyheader(e->e_header);
 			ee->e_sendqueue = copyqueue(e->e_sendqueue);
 			ee->e_errorqueue = copyqueue(e->e_errorqueue);
-			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE);
+			ee->e_flags = e->e_flags & ~(EF_INQUEUE|EF_CLRQUEUE|EF_FATALERRS);
 			setsender(owner, ee, NULL, TRUE);
 			if (tTd(13, 5))
 			{
@@ -448,7 +448,8 @@ sendenvelope(e, mode)
 		}
 
 		/* only send errors if the message failed */
-		if (!bitset(QBADADDR, q->q_flags))
+		if (!bitset(QBADADDR, q->q_flags) ||
+		    bitset(QDONTSEND, q->q_flags))
 			continue;
 
 		e->e_flags |= EF_FATALERRS;
@@ -1537,9 +1538,9 @@ giveresponse(stat, m, mci, e)
 	if (stat == 0)
 	{
 		statmsg = "250 Sent";
-		if (e->e_message != NULL)
+		if (e->e_statmsg != NULL)
 		{
-			(void) sprintf(buf, "%s (%s)", statmsg, e->e_message);
+			(void) sprintf(buf, "%s (%s)", statmsg, e->e_statmsg);
 			statmsg = buf;
 		}
 	}
