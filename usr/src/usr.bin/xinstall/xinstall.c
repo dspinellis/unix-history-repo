@@ -147,7 +147,7 @@ install(from_name, to_name, isdir)
 
 	/* build the path */
 	if (isdir) {
-		(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(*from_name, '/')) ? ++C : from_name);
+		(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(from_name, '/')) ? ++C : from_name);
 		to_name = pathbuf;
 	}
 
