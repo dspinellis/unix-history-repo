@@ -34,6 +34,7 @@ static struct nlist nl[] = {{"_swapmap"},  /* list of free swap areas */
 #define VM_DMMAX	4
 			    {""}};
 
+char       *getbsize __P((char *, int *, long *));
 
 main (argc, argv)
 int	argc;
@@ -44,16 +45,17 @@ char	**argv;
 		nswap, nswdev, dmmax;
 	struct swdevt	*swdevt;
 	struct rlist	head;
+	static long blocksize;
+        static int headerlen;
+        static char *header;
 
 	/* We are trying to be simple here: */
 
 	if (argc > 1)
-		if (strcmp (argv [1], "-k") == 0) {
-			use_k = 2;
-		} else {
-			fprintf (stderr, "Usage:  swapinfo [-k]\n");
-			exit (1);
-		}
+	{
+		fprintf (stderr, "Usage:  swapinfo\n");
+		exit (1);
+	}
 
 	/* Open up /dev/kmem for reading. */
 	
@@ -154,9 +156,9 @@ char	**argv;
 		swapmap = head.rl_next;
 	}
 
+	header = getbsize("swapinfo", &headerlen, &blocksize);
 	printf ("%-10s %10s %10s %10s %10s\n",
-		"Device", use_k == 1 ? "512-blks" : "Kilobytes", 
-		"Used", "Available", "Capacity");
+		"Device", header, "Used", "Available", "Capacity");
 	for (total_avail = total_partitions = i = 0; i < nswdev; i++) {
 		printf ("/dev/%-5s %10d ",
 			devname (swdevt [i].sw_dev, S_IFBLK), 

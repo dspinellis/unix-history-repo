@@ -35,7 +35,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)find.c	5.3 (Berkeley) 5/25/91";
+static char sccsid[] = "@(#)find.c	5.5 (Berkeley) 5/5/92";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,8 +57,6 @@ find_formplan(argv)
 	char **argv;
 {
 	PLAN *plan, *tail, *new;
-	PLAN *c_print(), *find_create(), *not_squish(), *or_squish();
-	PLAN *paren_squish();
 
 	/*
 	 * for each argument in the command line, determine what kind of node
@@ -163,6 +161,7 @@ find_execute(plan, paths)
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
+			(void)fflush(stdout);
 			(void)fprintf(stderr, "find: %s: %s\n", 
 			    entry->fts_path, strerror(errno));
 			continue;
@@ -176,6 +175,7 @@ find_execute(plan, paths)
 
 #define	BADCH	" \t\n\\'\""
 		if (isxargs && strpbrk(entry->fts_path, BADCH)) {
+			(void)fflush(stdout);
 			(void)fprintf(stderr,
 			    "find: illegal path: %s\n", entry->fts_path);
 			continue;

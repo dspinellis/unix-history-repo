@@ -29,51 +29,79 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- *	@(#)extern.h	5.3 (Berkeley) 7/19/91
  */
 
-#include <sys/cdefs.h>
+#ifndef lint
+static char sccsid[] = "@(#)getbsize.c	5.3 (Berkeley) 3/9/92";
+#endif /* not lint */
 
-void	 brace_subst __P((char *, char **, char *, int));
-void	*emalloc __P((unsigned int));
-void	 err __P((const char *, ...));
-PLAN	*find_create __P((char ***));
-void	 find_execute __P((PLAN *, char **));
-PLAN	*find_formplan __P((char **));
-PLAN	*not_squish __P((PLAN *));
-PLAN	*or_squish __P((PLAN *));
-PLAN	*paren_squish __P((PLAN *));
-struct stat;
-void	 printlong __P((char *, char *, struct stat *));
-int	 queryuser __P((char **));
+#include <stdio.h>
+#include <stdlib.h>
 
-PLAN	*c_atime __P((char *));
-PLAN	*c_ctime __P((char *));
-PLAN	*c_depth __P((void));
-PLAN	*c_exec __P((char ***, int));
-PLAN	*c_follow __P((void));
-PLAN	*c_fstype __P((char *));
-PLAN	*c_group __P((char *));
-PLAN	*c_inum __P((char *));
-PLAN	*c_links __P((char *));
-PLAN	*c_ls __P((void));
-PLAN	*c_name __P((char *));
-PLAN	*c_newer __P((char *));
-PLAN	*c_nogroup __P((void));
-PLAN	*c_nouser __P((void));
-PLAN	*c_path __P((char *));
-PLAN	*c_perm __P((char *));
-PLAN	*c_print __P((void));
-PLAN	*c_prune __P((void));
-PLAN	*c_size __P((char *));
-PLAN	*c_type __P((char *));
-PLAN	*c_user __P((char *));
-PLAN	*c_xdev __P((void));
-PLAN	*c_openparen __P((void));
-PLAN	*c_closeparen __P((void));
-PLAN	*c_mtime __P((char *));
-PLAN	*c_not __P((void));
-PLAN	*c_or __P((void));
+char *
+getbsize(prog, headerlenp, blocksizep)
+	char *prog;
+	int *headerlenp;
+	long *blocksizep;
+{
+	static char header[20];
+	long n, max, mul, blocksize;
+	char *ep, *p, *form;
 
-extern int ftsoptions, isdeprecated, isdepth, isoutput, isxargs;
+#define	KB	(1024L)
+#define	MB	(1024L * 1024L)
+#define	GB	(1024L * 1024L * 1024L)
+#define	MAXB	GB		/* No tera, peta, nor exa. */
+	form = "";
+	if ((p = getenv("BLOCKSIZE")) != NULL && *p != '\0') {
+		if ((n = strtol(p, &ep, 10)) < 0)
+			goto underflow;
+		if (n == 0)
+			n = 1;
+		if (*ep && ep[1])
+			goto fmterr;
+		switch (*ep) {
+		case 'G': case 'g':
+			form = "G";
+			max = MAXB / GB;
+			mul = GB;
+			break;
+		case 'K': case 'k':
+			form = "K";
+			max = MAXB / KB;
+			mul = KB;
+			break;
+		case 'M': case 'm':
+			form = "M";
+			max = MAXB / MB;
+			mul = MB;
+			break;
+		case '\0':
+			max = MAXB;
+			mul = 1;
+			break;
+		default:
+fmterr:			(void)fprintf(stderr,
+			    "%s: %s: unknown blocksize\n", prog, p);
+			n = 512;
+			mul = 1;
+			break;
+		}
+		if (n > max) {
+			(void)fprintf(stderr,
+			    "%s: maximum blocksize is %dG\n", prog, MAXB / GB);
+			n = max;
+		}
+		if ((blocksize = n * mul) < 512) {
+underflow:		(void)fprintf(stderr,
+			    "%s: minimum blocksize is 512\n", prog);
+			form = "";
+			blocksize = n = 512;
+		}
+	} else
+		blocksize = n = 512;
+
+	*headerlenp = snprintf(header, sizeof(header), "%d%s-blocks", n, form);
+	*blocksizep = blocksize;
+	return (header);
+}

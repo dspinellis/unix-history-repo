@@ -41,7 +41,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.12 (Berkeley) 6/20/91";
+static char sccsid[] = "@(#)du.c	5.17 (Berkeley) 5/20/92";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,28 +53,29 @@ static char sccsid[] = "@(#)du.c	5.12 (Berkeley) 6/20/91";
 #include <string.h>
 #include <stdlib.h>
 
+void	 err __P((const char *, ...));
+char	*getbsize __P((char *, int *, long *));
+int	 linkchk __P((FTSENT *));
+void	 usage __P((void));
+
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
 	register FTS *fts;
 	register FTSENT *p;
-	register int kvalue, listdirs, listfiles;
-	int aflag, ch, ftsoptions, sflag;
+	register int listdirs, listfiles;
+	long blocksize;
+	int aflag, ch, ftsoptions, notused, sflag;
 	char **save;
 
 	ftsoptions = FTS_PHYSICAL;
-	kvalue = 0;
 	save = argv;
 	aflag = sflag = 0;
-	while ((ch = getopt(argc, argv, "aksx")) != EOF)
+	while ((ch = getopt(argc, argv, "asx")) != EOF)
 		switch(ch) {
 		case 'a':
 			aflag = 1;
-			break;
-		case 'k':
-			kvalue = 1;
 			break;
 		case 's':
 			sflag = 1;
@@ -105,10 +106,11 @@ main(argc, argv)
 		argv[1] = NULL;
 	}
 
-	if (!(fts = fts_open(argv, ftsoptions, (int (*)())NULL))) {
-		(void)fprintf(stderr, "du: %s.\n", strerror(errno));
-		exit(1);
-	}
+	(void)getbsize("du", &notused, &blocksize);
+	blocksize /= 512;
+
+	if ((fts = fts_open(argv, ftsoptions, NULL)) == NULL)
+		err("%s", strerror(errno));
 
 	while (p = fts_read(fts))
 		switch(p->fts_info) {
@@ -116,22 +118,22 @@ main(argc, argv)
 			break;
 		case FTS_DP:
 			p->fts_parent->fts_number += 
-			    p->fts_number += p->fts_statb.st_blocks;
+			    p->fts_number += p->fts_statp->st_blocks;
 			/*
 			 * If listing each directory, or not listing files
 			 * or directories and this is post-order of the
 			 * root of a traversal, display the total.
 			 */
 			if (listdirs || !listfiles && !p->fts_level)
-				(void)printf("%ld\t%s\n", kvalue ?
-				    howmany(p->fts_number, 2) :
-				    p->fts_number, p->fts_path);
+				(void)printf("%ld\t%s\n",
+				    howmany(p->fts_number, blocksize),
+				    p->fts_path);
 			break;
 		case FTS_DNR:
 		case FTS_ERR:
 		case FTS_NS:
 			(void)fprintf(stderr,
-			    "du: %s: %s.\n", p->fts_path, strerror(errno));
+			    "du: %s: %s\n", p->fts_path, strerror(errno));
 			break;
 		case FTS_SL:
 			if (p->fts_level == FTS_ROOTLEVEL) {
@@ -140,18 +142,20 @@ main(argc, argv)
 			}
 			/* FALLTHROUGH */
 		default:
-			if (p->fts_statb.st_nlink > 1 && linkchk(p))
+			if (p->fts_statp->st_nlink > 1 && linkchk(p))
 				break;
 			/*
 			 * If listing each file, or a non-directory file was
 			 * the root of a traversal, display the total.
 			 */
 			if (listfiles || !p->fts_level)
-				(void)printf("%ld\t%s\n", kvalue ?
-				    howmany(p->fts_statb.st_blocks, 2) :
-				    p->fts_statb.st_blocks, p->fts_path);
-			p->fts_parent->fts_number += p->fts_statb.st_blocks;
+				(void)printf("%ld\t%s\n",
+				    howmany(p->fts_statp->st_blocks, blocksize),
+				    p->fts_path);
+			p->fts_parent->fts_number += p->fts_statp->st_blocks;
 		}
+	if (errno)
+		err("%s", strerror(errno));
 	exit(0);
 }
 
@@ -160,6 +164,7 @@ typedef struct _ID {
 	ino_t	inode;
 } ID;
 
+int
 linkchk(p)
 	register FTSENT *p;
 {
@@ -169,26 +174,54 @@ linkchk(p)
 	register ino_t ino;
 	register dev_t dev;
 
-	ino = p->fts_statb.st_ino;
-	dev = p->fts_statb.st_dev;
+	ino = p->fts_statp->st_ino;
+	dev = p->fts_statp->st_dev;
 	if (start = files)
 		for (fp = start + nfiles - 1; fp >= start; --fp)
 			if (ino == fp->inode && dev == fp->dev)
 				return(1);
 
-	if (nfiles == maxfiles && !(files = (ID *)realloc((char *)files,
-	    (u_int)(sizeof(ID) * (maxfiles += 128))))) {
-		(void)fprintf(stderr, "du: %s\n", strerror(errno));
-		exit(1);
-	}
+	if (nfiles == maxfiles && (files = realloc((char *)files,
+	    (u_int)(sizeof(ID) * (maxfiles += 128)))) == NULL)
+		err("%s", strerror(errno));
 	files[nfiles].inode = ino;
 	files[nfiles].dev = dev;
 	++nfiles;
 	return(0);
 }
 
+void
 usage()
 {
-	(void)fprintf(stderr, "usage: du [-a | -s] [-kx] [file ...]\n");
+	(void)fprintf(stderr, "usage: du [-a | -s] [-x] [file ...]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "du: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }

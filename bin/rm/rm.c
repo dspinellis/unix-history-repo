@@ -38,7 +38,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rm.c	4.26 (Berkeley) 3/10/91";
+static char sccsid[] = "@(#)rm.c	4.27 (Berkeley) 1/27/92";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -154,7 +154,7 @@ rmtree(argv)
 		/* Pre-order: give user chance to skip. */
 		case FTS_D:
 			if (iflag && !check(p->fts_path, p->fts_accpath,
-			    &p->fts_statb)) {
+			    p->fts_statp)) {
 				(void)fts_set(fts, p, FTS_SKIP);
 				p->fts_number = SKIPPED;
 			}
@@ -167,7 +167,7 @@ rmtree(argv)
 		}
 
 		if (!fflag &&
-		    !check(p->fts_path, p->fts_accpath, &p->fts_statb))
+		    !check(p->fts_path, p->fts_accpath, p->fts_statp))
 			continue;
 
 		/*

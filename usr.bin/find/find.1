@@ -32,9 +32,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"	@(#)find.1	6.29 (Berkeley) 7/29/91
+.\"	@(#)find.1	6.30 (Berkeley) 2/27/92
 .\"
-.Dd July 29, 1991
+.Dd February 27, 1992
 .Dt FIND 1
 .Os
 .Sh NAME
@@ -145,8 +145,8 @@ was executed.
 .It Ic -fstype Ar type 
 True if the file is contained in a file system of type
 .Ar type .
-Currently supported types are ``local'', ``mfs'', ``nfs'', ``msdos'', ``isofs'',
-``fdesc'', ``kernfs'', ``rdonly'' and ``ufs''.
+Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'',
+``rdonly'' and ``ufs''.
 The types ``local'' and ``rdonly'' are not specific file system types.
 The former matches any file system physically mounted on the system where
 the
@@ -373,10 +373,9 @@ that are newer than ``ttt''.
 .El
 .Sh SEE ALSO
 .Xr chmod 1 ,
-.Xr sh 1 ,
+.Xr locate 1 ,
 .Xr test 1 ,
 .Xr stat 2 ,
-.Xr umask 2 ,
 .Xr getpwent 3 ,
 .Xr getgrent 3 ,
 .Xr strmode 3

@@ -35,7 +35,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.12 (Berkeley) 6/24/91";
+static char sccsid[] = "@(#)glob.c	5.18 (Berkeley) 12/4/92";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -50,11 +50,15 @@ static char sccsid[] = "@(#)glob.c	5.12 (Berkeley) 6/24/91";
  *	character might have (except \ at end of string is retained).
  * GLOB_MAGCHAR:
  *	Set in gl_flags if pattern contained a globbing character.
+ * GLOB_NOMAGIC:
+ *	Same as GLOB_NOCHECK, but it will only append pattern if it did
+ *	not contain any magic characters.  [Used in csh style globbing]
+ * GLOB_ALTDIRFUNC:
+ *	Use alternately specified directory access functions.
  * gl_matchc:
  *	Number of matches in the current invocation of glob.
  */
 
-#include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -98,10 +102,10 @@ typedef u_short Char;
 
 static int	 compare __P((const void *, const void *));
 static void	 g_Ctoc __P((Char *, char *));
-static int	 g_lstat __P((Char *, struct stat *));
-static DIR	*g_opendir __P((Char *));
+static int	 g_lstat __P((Char *, struct stat *, glob_t *));
+static DIR	*g_opendir __P((Char *, glob_t *));
 static Char	*g_strchr __P((Char *, int));
-static int	 g_stat __P((Char *, struct stat *));
+static int	 g_stat __P((Char *, struct stat *, glob_t *));
 static int	 glob1 __P((Char *, glob_t *));
 static int	 glob2 __P((Char *, Char *, Char *, glob_t *));
 static int	 glob3 __P((Char *, Char *, Char *, Char *, glob_t *));
@@ -167,7 +171,6 @@ glob(pattern, flags, errfunc, pglob)
 	while ((c = *qpatnext++) != EOS) {
 		switch (c) {
 		case LBRACKET:
-			pglob->gl_flags |= GLOB_MAGCHAR;
 			c = *qpatnext;
 			if (c == NOT)
 				++qpatnext;
@@ -191,6 +194,7 @@ glob(pattern, flags, errfunc, pglob)
 					qpatnext += 2;
 				}
 			} while ((c = *qpatnext++) != RBRACKET);
+			pglob->gl_flags |= GLOB_MAGCHAR;
 			*bufnext++ = M_END;
 			break;
 		case QUESTION:
@@ -199,7 +203,11 @@ glob(pattern, flags, errfunc, pglob)
 			break;
 		case STAR:
 			pglob->gl_flags |= GLOB_MAGCHAR;
-			*bufnext++ = M_ALL;
+			/* collapse adjacent stars to one, 
+			 * to avoid exponential behavior
+			 */
+			if (bufnext == patbuf || bufnext[-1] != M_ALL)
+			    *bufnext++ = M_ALL;
 			break;
 		default:
 			*bufnext++ = CHAR(c);
@@ -214,7 +222,15 @@ glob(pattern, flags, errfunc, pglob)
 	if ((err = glob1(patbuf, pglob)) != 0)
 		return(err);
 
-	if (pglob->gl_pathc == oldpathc && flags & GLOB_NOCHECK) {
+	/*
+	 * If there was no match we are going to append the pattern 
+	 * if GLOB_NOCHECK was specified or if GLOB_NOMAGIC was specified
+	 * and the pattern did not contain any magic characters
+	 * GLOB_NOMAGIC is there just for compatibility with csh.
+	 */
+	if (pglob->gl_pathc == oldpathc && 
+	    ((flags & GLOB_NOCHECK) || 
+	     ((flags & GLOB_NOMAGIC) && !(pglob->gl_flags & GLOB_MAGCHAR)))) {
 		if (!(flags & GLOB_QUOTE)) {
 			Char *dp = compilebuf;
 			const u_char *sp = compilepat;
@@ -283,13 +299,13 @@ glob2(pathbuf, pathend, pattern, pglob)
 	for (anymeta = 0;;) {
 		if (*pattern == EOS) {		/* End of pattern? */
 			*pathend = EOS;
-			if (g_stat(pathbuf, &sb))
+			if (g_lstat(pathbuf, &sb, pglob))
 				return(0);
 		
 			if (((pglob->gl_flags & GLOB_MARK) &&
 			    pathend[-1] != SEP) && (S_ISDIR(sb.st_mode)
 			    || (S_ISLNK(sb.st_mode) &&
-			    (g_stat(pathbuf, &sb) == 0) &&
+			    (g_stat(pathbuf, &sb, pglob) == 0) &&
 			    S_ISDIR(sb.st_mode)))) {
 				*pathend++ = SEP;
 				*pathend = EOS;
@@ -324,25 +340,33 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 	glob_t *pglob;
 {
 	register struct dirent *dp;
+	struct dirent *(*readdirfunc)();
 	DIR *dirp;
 	int len, err;
+	char buf[MAXPATHLEN];
 
 	*pathend = EOS;
 	errno = 0;
 	    
-	if (!(dirp = g_opendir(pathbuf)))
+	if ((dirp = g_opendir(pathbuf, pglob)) == NULL) {
 		/* TODO: don't call for ENOENT or ENOTDIR? */
-		if (pglob->gl_errfunc &&
-		    (*pglob->gl_errfunc)(pathbuf, errno) ||
-		    (pglob->gl_flags & GLOB_ERR))
-			return(GLOB_ABEND);
-		else
-			return(0);
+		if (pglob->gl_errfunc) {
+			g_Ctoc(pathbuf, buf);
+			if (pglob->gl_errfunc(buf, errno) ||
+			    pglob->gl_flags & GLOB_ERR)
+				return (GLOB_ABEND);
+		}
+		return(0);
+	}
 
 	err = 0;
 
 	/* Search directory for matching names. */
-	while ((dp = readdir(dirp))) {
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		readdirfunc = pglob->gl_readdir;
+	else
+		readdirfunc = readdir;
+	while ((dp = (*readdirfunc)(dirp))) {
 		register u_char *sc;
 		register Char *dc;
 
@@ -360,8 +384,10 @@ glob3(pathbuf, pathend, pattern, restpattern, pglob)
 			break;
 	}
 
-	/* TODO: check error from readdir? */
-	(void)closedir(dirp);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		(*pglob->gl_closedir)(dirp);
+	else
+		closedir(dirp);
 	return(err);
 }
 
@@ -431,9 +457,10 @@ match(name, pat, patend)
 		case M_ALL:
 			if (pat == patend)
 				return(1);
-			for (; *name != EOS; ++name)
-				if (match(name, pat, patend))
-					return(1);
+			do 
+			    if (match(name, pat, patend))
+				    return(1);
+			while (*name++ != EOS);
 			return(0);
 		case M_ONE:
 			if (*name++ == EOS)
@@ -441,7 +468,8 @@ match(name, pat, patend)
 			break;
 		case M_SET:
 			ok = 0;
-			k = *name++;
+			if ((k = *name++) == EOS)
+				return(0);
 			if (negate_range = ((*pat & M_MASK) == M_NOT))
 				++pat;
 			while (((c = *pat++) & M_MASK) != M_END)
@@ -481,36 +509,47 @@ globfree(pglob)
 }
 
 static DIR *
-g_opendir(str)
+g_opendir(str, pglob)
 	register Char *str;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
+	char *dirname;
 
 	if (!*str)
-		return(opendir("."));
-	g_Ctoc(str, buf);
+		strcpy(buf, ".");
+	else
+		g_Ctoc(str, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_opendir)(buf));
 	return(opendir(buf));
 }
 
 static int
-g_lstat(fn, sb)
+g_lstat(fn, sb, pglob)
 	register Char *fn;
 	struct stat *sb;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
 
 	g_Ctoc(fn, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_lstat)(buf, sb));
 	return(lstat(buf, sb));
 }
 
 static int
-g_stat(fn, sb)
+g_stat(fn, sb, pglob)
 	register Char *fn;
 	struct stat *sb;
+	glob_t *pglob;
 {
 	char buf[MAXPATHLEN];
 
 	g_Ctoc(fn, buf);
+	if (pglob->gl_flags & GLOB_ALTDIRFUNC)
+		return((*pglob->gl_stat)(buf, sb));
 	return(stat(buf, sb));
 }
 
@@ -544,13 +583,13 @@ qprintf(s)
 	register Char *p;
 
 	for (p = s; *p; p++)
-		(void)printf("%c", *p & 0xff);
+		(void)printf("%c", CHAR(*p));
 	(void)printf("\n");
 	for (p = s; *p; p++)
 		(void)printf("%c", *p & M_PROTECT ? '"' : ' ');
 	(void)printf("\n");
 	for (p = s; *p; p++)
-		(void)printf("%c", *p & M_META ? '_' : ' ');
+		(void)printf("%c", ismeta(*p) ? '_' : ' ');
 	(void)printf("\n");
 }
 #endif

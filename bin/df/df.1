@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)df.1	6.9 (Berkeley) 6/17/91
+.\"     @(#)df.1	6.10 (Berkeley) 3/1/92
 .\"
-.Dd June 17, 1991
+.Dd March 1, 1992
 .Dt DF 1
 .Os BSD 4
 .Sh NAME
@@ -39,7 +39,7 @@
 .Nd display free disk space
 .Sh SYNOPSIS
 .Nm df
-.Op Fl ikn
+.Op Fl in
 .Op Ar file | Ar filesystem ...
 .Sh DESCRIPTION
 .Nm Df
@@ -48,6 +48,7 @@ displays statistics about the amount of free disk space on the specified
 or on the filesystem of which
 .Ar file
 is a part.
+Values are displayed in 512-byte per block block counts.
 If neither a file or a filesystem operand is specified,
 statistics for all mounted filesystems are displayed.
 .Pp
@@ -55,11 +56,6 @@ The following options are available:
 .Bl -tag -width Ds
 .It Fl i
 Include statistics on the number of free inodes.
-.It Fl k
-By default, all sizes are reported in 512-byte block counts.
-The
-.Fl k
-option causes the numbers to be reported in kilobyte counts.
 .It Fl n
 Print out the previously obtained statistics from the filesystems.
 This option should be used if it is possible that one or more
@@ -69,6 +65,13 @@ When this option is specified,
 .Nm df
 will not request new statistics from the filesystems, but will respond
 with the possibly stale statistics that were previously obtained.
+.El
+.Sh ENVIRONMENTAL VARIABLES
+.Bl -tag -width BLOCKSIZE
+.It Ev BLOCKSIZE
+If the environmental variable
+.Ev BLOCKSIZE
+is set, the block counts will be displayed in units of that size block.
 .El
 .Sh BUGS
 The

@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) 5/24/91";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) 12/5/91";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -109,6 +109,7 @@ main(argc, argv)
 		err(".: %s", strerror(errno));
 
 	find_execute(find_formplan(argv), start);
+	exit(0);
 }
 
 static void

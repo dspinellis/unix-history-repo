@@ -29,9 +29,9 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)fts.3	5.11 (Berkeley) 7/31/91
+.\"     @(#)fts.3	5.21 (Berkeley) 3/5/92
 .\"
-.Dd July 31, 1991
+.Dd March 5, 1992
 .Dt FTS 3
 .Os
 .Sh NAME
@@ -42,11 +42,11 @@
 .Fd #include <sys/stat.h>
 .Fd #include <fts.h>
 .Ft FTS *
-.Fn fts_open "char * const *path_argv" "int options" "int *compar(const FTSENT *, const FTSENT *)"
+.Fn fts_open "char * const *path_argv" "int options" "int *compar(const FTSENT **, const FTSENT **)"
 .Ft FTSENT *
 .Fn fts_read "FTS *ftsp"
 .Ft FTSENT *
-.Fn fts_children "FTS *ftsp"
+.Fn fts_children "FTS *ftsp" "int options"
 .Ft int
 .Fn fts_set "FTS ftsp" "FTSENT *f" "int options"
 .Ft int
@@ -57,13 +57,12 @@ The
 functions are provided for traversing
 .Tn UNIX
 file hierarchies.
-.Pp
-The simple overview is that the
+A simple overview is that the
 .Fn fts_open
-function returns a ``handle'' on a file hierarchy, which is supplied to
+function returns a ``handle'' on a file hierarchy, which is then supplied to
 the other
 .Nm fts
-functions to determine which hierarchy they operate on.
+functions.
 The function
 .Fn fts_read
 returns a pointer to a structure describing one of the files in the file
@@ -84,7 +83,7 @@ Two structures are defined (and typedef'd) in the include file
 .Aq Pa fts.h .
 The first is
 .Fa FTS ,
-the structure that represents the file hierarchy stream.
+the structure that represents the file hierarchy itself.
 The second is
 .Fa FTSENT ,
 the structure that represents a file in the file
@@ -110,11 +109,13 @@ typedef struct _ftsent {
 	char *fts_name;			/* file name */
 	short fts_namelen;		/* strlen(fts_name) */
 	short fts_level;		/* depth (\-1 to N) */
+	int fts_error;			/* file errno */
 	long fts_number;		/* local numeric value */
 	void *fts_pointer;		/* local address value */
 	struct ftsent *fts_parent;	/* parent directory */
-	struct ftsent *fts_link;	/* cycle or next file structure */
-	struct stat fts_statb;		/* stat(2) information */
+	struct ftsent *fts_link;	/* next file structure */
+	struct ftsent *fts_cycle;	/* cycle structure */
+	struct stat *fts_statp;		/* stat(2) information */
 } FTSENT;
 .Ed
 .Pp
@@ -136,7 +137,7 @@ A directory being visited in pre-order.
 .It Dv FTS_DC
 A directory that causes a cycle in the tree.
 (The
-.Fa fts_link
+.Fa fts_cycle
 field of the
 .Fa FTSENT
 structure will be filled in as well.)
@@ -149,9 +150,9 @@ by one of the other
 values.
 .It Dv FTS_DNR
 A directory which cannot be read.
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_DOT
 A file named
 .Ql \&.
@@ -171,9 +172,9 @@ it was returned in pre-order, i.e. with the
 field set to
 .Dv FTS_D .
 .It Dv FTS_ERR
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_F
 A regular file.
 .It Dv FTS_NS
@@ -181,25 +182,25 @@ A file for which no
 .Xr stat 2
 information was available.
 The contents of the
-.Fa fts_statb
+.Fa fts_statp
 field are undefined.
-An error return; the external variable
-.Va errno
-will be set to indicate the error.
+This is an error return, and the
+.Fa fts_errno
+field will be set to indicate what caused the error.
 .It Dv FTS_NSOK
 A file for which no
 .Xr stat 2
 information was requested.
 The contents of the
-.Fa fts_statb
+.Fa fts_statp
 field are undefined.
 .It Dv FTS_SL
 A symbolic link.
 .It Dv FTS_SLNONE
 A symbolic link with a non-existent target.
 The contents of the
-.Fa fts_statb
-field contain the file characteristic information for the symbolic link
+.Fa fts_statp
+field reference the file characteristic information for the symbolic link
 itself.
 .El
 .It Fa fts_accpath
@@ -227,17 +228,34 @@ of the traversal is numbered \-1, and the
 .Fa FTSENT
 structure for the root
 itself is numbered 0.
+.It Fa fts_errno
+Upon return of a
+.Fa FTSENT
+structure from the
+.Fn fts_children
+or
+.Fn fts_read
+functions, with its
+.Fa fts_info
+field set to 
+.Dv FTS_DNR ,
+.Dv FTS_ERR
+or
+.Dv FTS_NS ,
+the
+.Fa fts_errno
+field contains the value of the external variable
+.Va errno
+specifying the cause of the error.
+Otherwise, the contents of the
+.Fa fts_errno
+field are undefined.
 .It Fa fts_number
 This field is provided for the use of the application program and is
 not modified by the
 .Nm fts
 functions.
 It is initialized to 0.
-The fields
-.Fa fts_number
-and
-.Fa fts_pointer
-occupy the same physical location; using both may cause undefined results.
 .It Fa fts_pointer
 This field is provided for the use of the application program and is
 not modified by the
@@ -245,11 +263,6 @@ not modified by the
 functions.
 It is initialized to
 .Dv NULL .
-The fields
-.Fa fts_number
-and
-.Fa fts_pointer
-occupy the same physical location; using both may cause undefined results.
 .It Fa fts_parent
 A pointer to the
 .Fa FTSENT
@@ -264,33 +277,62 @@ and
 .Fa fts_pointer
 fields are guaranteed to be initialized.
 .It Fa fts_link
-The
+Upon return from the
+.Fn fts_children
+function, the
 .Fa fts_link
-field has two separate uses.
+field points to the next structure in the NULL-terminated linked list of
+directory members.
+Otherwise, the contents of the
+.Fa fts_link
+field are undefined.
+.It Fa fts_cycle
 If a directory causes a cycle in the hierarchy (see
 .Dv FTS_DC ) ,
 either because
 of a hard link between two directories, or a symbolic link pointing to a
 directory, the
-.Fa fts_link
+.Fa fts_cycle
 field of the structure will point to the
 .Fa FTSENT
-structure in the hierarchy
-that references the same file as the current
+structure in the hierarchy that references the same file as the current
 .Fa FTSENT
 structure.
-Also, upon return from the
-.Fn fts_children
-function, the
-.Fa fts_link
-field points to the next structure in the linked list of directory members.
 Otherwise, the contents of the
-.Fa fts_link
+.Fa fts_cycle
 field are undefined.
-.It Fa fts_statb
-.Xr Stat 2
+.It Fa fts_statp
+A pointer to
+.Xr stat 2
 information for the file.
 .El
+.Pp
+A single buffer is used for all of the paths of all of the files in the
+file hierarchy.
+Therefore, the
+.Fa fts_path
+and
+.Fa fts_accpath
+fields are guaranteed to be
+.Dv NULL Ns -terminated
+.Em only
+for the file most recently returned by
+.Fn fts_read .
+To use these fields to reference any files represented by other
+.Fa FTSENT
+structures will require that the path buffer be modified using the
+information contained in that
+.Fa FTSENT
+structure's
+.Fa fts_pathlen
+field.
+Any such modifications should be undone before further calls to
+.Fn fts_read
+are attempted.
+The
+.Fa fts_name
+field is always
+.Dv NULL Ns -terminated.
 .Sh FTS_OPEN
 The
 .Fn fts_open
@@ -310,6 +352,11 @@ The options are selected by
 .Em or Ns 'ing
 the following values:
 .Bl -tag -width "FTS_PHYSICAL"
+.It Dv FTS_COMFOLLOW
+This option causes any symbolic link specified as a root path to be
+followed immediately whether or not
+.Dv FTS_LOGICAL
+is also specified.
 .It Dv FTS_LOGICAL
 This option causes the
 .Nm fts
@@ -349,9 +396,8 @@ pathnames were provided as arguments to
 .It Dv FTS_NOSTAT
 By default, returned
 .Fa FTSENT
-structures contain file characteristic
-information (the
-.Fa statb
+structures reference file characteristic information (the
+.Fa statp
 field) for each file visited.
 This option relaxes that requirement as a performance optimization,
 allowing the
@@ -361,7 +407,7 @@ functions to set the
 field to
 .Dv FTS_NSOK
 and leave the contents of the
-.Fa statb
+.Fa statp
 field undefined.
 .It Dv FTS_PHYSICAL
 This option causes the
@@ -387,10 +433,9 @@ By default, unless they are specified as path arguments to
 .Fn fts_open ,
 any files named
 .Ql \&.
-and
+or
 .Ql ..
-encountered in the file hierarchy are
-ignored.
+encountered in the file hierarchy are ignored.
 This option causes the
 .Nm fts
 routines to return
@@ -429,17 +474,18 @@ If the
 field is set to
 .Dv FTS_NS
 or
-.DV FTS_NSOK ,
+.Dv FTS_NSOK ,
 the
-.Fa fts_stab
+.Fa fts_statp
 field may not either.
 If the
 .Fn compar
 argument is
 .Dv NULL ,
-the directory traversal order is unspecified except
-for the root paths which are traversed in the order listed in
-.Fa path_argv .
+the directory traversal order is in the order listed in
+.Fa path_argv
+for the root paths, and in the order listed in the directory for
+everything else.
 .Sh FTS_READ
 The
 .Fn fts_read
@@ -496,8 +542,8 @@ The
 .Fn fts_children
 function returns a pointer to an
 .Fa FTSENT
-structure describing the first
-entry in a linked list of the files in the directory represented by the
+structure describing the first entry in a NULL-terminated linked list of
+the files in the directory represented by the
 .Fa FTSENT
 structure most recently returned by
 .Fn fts_read .
@@ -505,13 +551,20 @@ The list is linked through the
 .Fa fts_link
 field of the
 .Fa FTSENT
-structure, and is ordered by the user-specified
-comparison function, if any.
+structure, and is ordered by the user-specified comparison function, if any.
 Repeated calls to
 .Fn fts_children
 will recreate this linked list.
 .Pp
-If the
+As a special case, if
+.Fn fts_read
+has not yet been called for a hierarchy,
+.Fn fts_children
+will return a pointer to the files in the logical directory specified to
+.Fn fts_open ,
+i.e. the arguments specified to
+.Fn fts_open .
+Otherwise, if the
 .Fa FTSENT
 structure most recently returned by
 .Fn fts_read
@@ -536,39 +589,24 @@ The
 structures returned by
 .Fn fts_children
 may be overwritten after a call to
+.Fn fts_children ,
 .Fn fts_close
-on the same file hierarchy stream, or after a call to
-.Fn fts_children
 or
 .Fn fts_read
 on the same file hierarchy stream.
 .Pp
-A single buffer is used for all of the paths of all of the files in the
-file hierarchy.
-Therefore, the
-.Fa fts_path
-and
-.Fa fts_accpath
-fields are guaranteed to be
-.Dv NULL Ns -terminated
-.Em only
-for the file most recently returned by
-.Fn fts_read .
-To use these fields to reference any files represented by other
-.Fa FTSENT
-structures will require that the path buffer be modified using the
-information contained in that
-.Fa FTSENT
-structure's
-.Fa fts_pathlen
-field.
-Any such modifications should be undone before further calls to
-.Fn fts_read
-are attempted.
-The
+.Em Option
+may be set to the following value:
+.Bl -tag -width FTS_NAMEONLY
+.It Dv FTS_NAMEONLY
+Only the names of the files are needed.
+The contents of all the fields in the returned linked list of structures
+are undefined with the exception of the
 .Fa fts_name
-field is always
-.Dv NULL Ns -terminated.
+and
+.Fa fts_namelen
+fields.
+.El
 .Sh FTS_SET
 The function
 .Fn fts_set
@@ -610,7 +648,7 @@ the next call to
 returns the file with the
 .Fa fts_info
 and
-.Fa fts_statb
+.Fa fts_statp
 fields reinitialized to reflect the target of the symbolic link instead
 of the symbolic link itself.
 If the file is one of those most recently returned by
@@ -618,7 +656,7 @@ If the file is one of those most recently returned by
 the
 .Fa fts_info
 and
-.Fa fts_statb
+.Fa fts_statp
 fields of the structure, when returned by
 .Fn fts_read ,
 will reflect the target of the symbolic link instead of the symbolic link
@@ -655,32 +693,48 @@ returns 0 on success, and \-1 if an error occurs.
 .Sh ERRORS
 The function
 .Fn fts_open
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr open 2
 and
 .Xr malloc 3 .
 .Pp
 The function
 .Fn fts_close
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr chdir 2
 and
 .Xr close 2 .
 .Pp
 The functions
-.Fn Fts_read
+.Fn fts_read
 and
 .Fn fts_children
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr chdir 2 ,
 .Xr malloc 3 ,
 .Xr opendir 3 ,
 .Xr readdir 3
 and
 .Xr stat 2 .
+.Pp
+In addition,
+.Fn fts_children ,
+.Fn fts_open
+and
+.Fn fts_set
+may fail and set
+.Va errno
+as follows:
+.Bl -tag -width Er
+.It Bq Er EINVAL
+The options were invalid.
+.EL
 .Sh SEE ALSO
 .Xr find 1 ,
 .Xr chdir 2 ,

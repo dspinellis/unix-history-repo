@@ -29,18 +29,18 @@
 .\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 .\" SUCH DAMAGE.
 .\"
-.\"     @(#)du.1	6.13 (Berkeley) 6/20/91
+.\"	@(#)du.1	6.15 (Berkeley) 3/1/92
 .\"
-.Dd June 20, 1991
+.Dd March 1, 1992
 .Dt DU 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm du
 .Nd Display disk usage statistics
 .Sh SYNOPSIS
 .Nm du
 .Op Fl a Li \&| Fl s
-.Op Fl kx
+.Op Fl x
 .Op Ar file ...
 .Sh DESCRIPTION
 The
@@ -50,22 +50,15 @@ and for each directory in the file hierarchy rooted in each directory
 argument.
 If no file is specified, the block usage of the hierarchy rooted in
 the current directory is displayed.
+The number of blocks are in the same units as that returned by the
+.Xr stat 2
+system call, i.e. 512-byte blocks.
+Partial numbers of blocks are rounded up.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
 .It Fl a
 Display an entry for each file in the file hierarchy.
-.It Fl k
-By default,
-.Nm du
-displays the number of blocks as returned by the
-.Xr stat  2
-system call, i.e. 512-byte blocks.
-If the
-.Fl k
-flag is specified, the number displayed is the number of 1024-byte
-blocks.
-Partial numbers of blocks are rounded up.
 .It Fl s
 Display only the grand total for the specified files.
 .It Fl x
@@ -81,11 +74,18 @@ Files having multiple hard links are counted (and displayed) a single
 time per
 .Nm du
 execution.
+.Sh ENVIRONMENTAL VARIABLES
+.Bl -tag -width BLOCKSIZE
+.It Ev BLOCKSIZE
+If the environmental variable
+.Ev BLOCKSIZE
+is set, the block counts will be displayed in units of that size block.
+.El
 .Sh SEE ALSO
 .Xr df 1 ,
 .Xr quot 8
 .Sh HISTORY
 A
-.Nm
+.Nm du
 command appeared in
 .At v6 .

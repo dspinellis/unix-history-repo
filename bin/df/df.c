@@ -38,54 +38,51 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)df.c	5.24 (Berkeley) 3/6/91";
+static char sccsid[] = "@(#)df.c	5.30 (Berkeley) 4/23/92";
 #endif /* not lint */
 
-/*
- * df
- */
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-char	*getmntpt();
-void	ufs_df(), prtstat();
-int	iflag, kflag, nflag;
+int	 bread __P((long, char *, int));
+char	*getbsize __P((char *, int *, long *));
+char	*getmntpt __P((char *));
+void	 prtstat __P((struct statfs *, long));
+void	 ufs_df __P((char *, long));
+void	 usage __P((void));
+
+int	iflag, nflag;
 struct	ufs_args mdev;
 
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int errno, optind;
-	int err, ch, i;
-	long width, maxwidth, mntsize;
-	char *mntpt, *mktemp();
 	struct stat stbuf;
 	struct statfs statfsbuf, *mntbuf;
+	long width, maxwidth, mntsize;
+	int err, ch, i;
+	char *mntpt;
 
-	while ((ch = getopt(argc, argv, "ikn")) != EOF)
+	while ((ch = getopt(argc, argv, "in")) != EOF)
 		switch(ch) {
 		case 'i':
 			iflag = 1;
-			break;
-		case 'k':
-			kflag = 1;
 			break;
 		case 'n':
 			nflag = 1;
 			break;
 		case '?':
 		default:
-			fprintf(stderr,
-			    "usage: df [-ikn] [file | file_system ...]\n");
-			exit(1);
+			usage();
 		}
 	argc -= optind;
 	argv += optind;
@@ -179,36 +176,38 @@ prtstat(sfsp, maxwidth)
 	register struct statfs *sfsp;
 	long maxwidth;
 {
+	static long blocksize;
+	static int headerlen, timesthrough;
+	static char *header;
 	long used, availblks, inodes;
-	static int timesthrough;
 
 	if (maxwidth < 11)
 		maxwidth = 11;
 	if (++timesthrough == 1) {
-		printf("%-*.*s%s    used   avail capacity",
-		    maxwidth, maxwidth, "Filesystem",
-		    kflag ? "  kbytes" : "512-blks");
+		header = getbsize("df", &headerlen, &blocksize);
+		(void)printf("%-*.*s %s    Used   Avail Capacity",
+		    maxwidth, maxwidth, "Filesystem", header);
 		if (iflag)
-			printf(" iused   ifree  %%iused");
-		printf("  Mounted on\n");
+			(void)printf(" iused   ifree  %%iused");
+		(void)printf("  Mounted on\n");
 	}
-	printf("%-*.*s", maxwidth, maxwidth, sfsp->f_mntfromname);
+	(void)printf("%-*.*s", maxwidth, maxwidth, sfsp->f_mntfromname);
 	used = sfsp->f_blocks - sfsp->f_bfree;
 	availblks = sfsp->f_bavail + used;
-	printf("%8ld%8ld%8ld",
-	    sfsp->f_blocks * sfsp->f_fsize / (kflag ? 1024 : 512),
-	    used * sfsp->f_fsize / (kflag ? 1024 : 512),
-	    sfsp->f_bavail * sfsp->f_fsize / (kflag ? 1024 : 512));
-	printf("%6.0f%%",
+	(void)printf(" %*ld %7ld %7ld", headerlen,
+	    sfsp->f_blocks * sfsp->f_fsize / blocksize,
+	    used * sfsp->f_fsize / blocksize,
+	    sfsp->f_bavail * sfsp->f_fsize / blocksize);
+	(void)printf(" %5.0f%%",
 	    availblks == 0 ? 100.0 : (double)used / (double)availblks * 100.0);
 	if (iflag) {
 		inodes = sfsp->f_files;
 		used = inodes - sfsp->f_ffree;
-		printf("%8ld%8ld%6.0f%% ", used, sfsp->f_ffree,
+		(void)printf(" %7ld %7ld %5.0f%% ", used, sfsp->f_ffree,
 		   inodes == 0 ? 100.0 : (double)used / (double)inodes * 100.0);
 	} else 
-		printf("  ");
-	printf("  %s\n", sfsp->f_mntonname);
+		(void)printf("  ");
+	(void)printf("  %s\n", sfsp->f_mntonname);
 }
 
 /*
@@ -226,14 +225,12 @@ union {
 #define sblock sb.iu_fs
 
 int	fi;
-int	bread();
 
 void
 ufs_df(file, maxwidth)
 	char *file;
 	long maxwidth;
 {
-	extern int errno;
 	struct statfs statfsbuf;
 	register struct statfs *sfsp;
 	char *mntpt;
@@ -243,18 +240,20 @@ ufs_df(file, maxwidth)
 		sync();
 
 	if ((fi = open(file, O_RDONLY)) < 0) {
-		fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
+		(void)fprintf(stderr, "df: %s: %s\n", file, strerror(errno));
 		return;
 	}
 	if (bread((long)SBOFF, (char *)&sblock, SBSIZE) == 0) {
-		(void) close(fi);
+		(void)close(fi);
 		return;
 	}
 	sfsp = &statfsbuf;
 	sfsp->f_type = MOUNT_UFS;
 	sfsp->f_flags = 0;
-	sfsp->f_fsize = sblock.fs_fsize;
-	sfsp->f_bsize = sblock.fs_bsize;
+	sfsp->f_bsize = sblock.fs_fsize;
+#ifdef notyet
+	sfsp->f_iosize = sblock.fs_bsize;
+#endif
 	sfsp->f_blocks = sblock.fs_dsize;
 	sfsp->f_bfree = sblock.fs_cstotal.cs_nbfree * sblock.fs_frag +
 		sblock.fs_cstotal.cs_nffree;
@@ -274,8 +273,6 @@ ufs_df(file, maxwidth)
 	(void) close(fi);
 }
 
-long lseek();
-
 int
 bread(off, buf, cnt)
 	long off;
@@ -283,16 +280,22 @@ bread(off, buf, cnt)
 	int cnt;
 {
 	int n;
-	extern errno;
 
 	(void) lseek(fi, off, SEEK_SET);
 	if ((n=read(fi, buf, cnt)) != cnt) {
 		/* probably a dismounted disk if errno == EIO */
 		if (errno != EIO) {
-			printf("\nread error off = %ld\n", off);
-			printf("count = %d; errno = %d\n", n, errno);
+			(void)printf("\nread error off = %ld\n", off);
+			(void)printf("count = %d: %s\n", n, strerror(errno));
 		}
 		return (0);
 	}
 	return (1);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: df [-in] [file | file_system ...]\n");
+	exit(1);
 }

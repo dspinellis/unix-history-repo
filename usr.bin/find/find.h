@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)find.h	5.8 (Berkeley) 5/24/91
+ *	@(#)find.h	5.9 (Berkeley) 7/19/91
  */
 
 /* node type */
@@ -41,14 +41,21 @@ enum ntype {
 	N_AND = 1, 				/* must start > 0 */
 	N_ATIME, N_CLOSEPAREN, N_CTIME, N_DEPTH, N_EXEC, N_EXPR, N_FOLLOW,
 	N_FSTYPE, N_GROUP, N_INUM, N_LINKS, N_LS, N_MTIME, N_NAME, N_NEWER,
-	N_NOGROUP, N_NOT, N_NOUSER, N_OK, N_OPENPAREN, N_OR, N_PERM, N_PRINT,
-	N_PRUNE, N_SIZE, N_TYPE, N_USER, N_XDEV,
+	N_NOGROUP, N_NOT, N_NOUSER, N_OK, N_OPENPAREN, N_OR, N_PATH,
+	N_PERM, N_PRINT, N_PRUNE, N_SIZE, N_TYPE, N_USER, N_XDEV,
 };
 
 /* node definition */
 typedef struct _plandata {
 	struct _plandata *next;			/* next node */
 	int (*eval)();				/* node evaluation function */
+#define	F_EQUAL		1			/* [acm]time inum links size */
+#define	F_LESSTHAN	2
+#define	F_GREATER	3
+#define	F_NEEDOK	1			/* exec ok */
+#define	F_MTFLAG	1			/* fstype */
+#define	F_MTTYPE	2
+#define	F_ATLEAST	1			/* perm */
 	int flags;				/* private flags */
 	enum ntype type;			/* plan node type */
 	union {
@@ -59,6 +66,7 @@ typedef struct _plandata {
 		off_t _o_data;			/* file size */
 		time_t _t_data;			/* time value */
 		uid_t _u_data;			/* uid */
+		short _mt_data;			/* mount flags */
 		struct _plandata *_p_data[2];	/* PLAN trees */
 		struct _ex {
 			char **_e_argv;		/* argv array */
@@ -67,14 +75,15 @@ typedef struct _plandata {
 		} ex;
 		char *_a_data[2];		/* array of char pointers */
 		char *_c_data;			/* char pointer */
-		int _m_flags;			/* mount flage for fstype */
 	} p_un;
+} PLAN;
 #define	a_data	p_un._a_data
 #define	c_data	p_un._c_data
 #define	i_data	p_un._i_data
 #define	g_data	p_un._g_data
 #define	l_data	p_un._l_data
 #define	m_data	p_un._m_data
+#define	mt_data	p_un._mt_data
 #define	o_data	p_un._o_data
 #define	p_data	p_un._p_data
 #define	t_data	p_un._t_data
@@ -82,7 +91,5 @@ typedef struct _plandata {
 #define	e_argv	p_un.ex._e_argv
 #define	e_orig	p_un.ex._e_orig
 #define	e_len	p_un.ex._e_len
-#define m_flags	p_un._m_flags
-} PLAN;
 
 #include "extern.h"
