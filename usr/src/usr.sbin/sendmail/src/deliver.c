@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -358,23 +358,8 @@ sendenvelope(e, mode)
 		}
 		else if (pid > 0)
 		{
-			if (e->e_lockfp != NULL)
-			{
-				(void) xfclose(e->e_lockfp, "sendenvelope", "lockfp");
-				e->e_lockfp = NULL;
-			}
-
-			/* close any random open files in the envelope */
-			if (e->e_dfp != NULL)
-			{
-				(void) xfclose(e->e_dfp, "sendenvelope", "dfp");
-				e->e_dfp = NULL;
-			}
-			if (e->e_xfp != NULL)
-			{
-				(void) xfclose(e->e_xfp, "sendenvelope", "xfp");
-				e->e_xfp = NULL;
-			}
+			/* now drop the envelope in the parent */
+			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
 			return;
 		}
 
