@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)arpadate.c	5.3 (Berkeley) %G%";
+static char	SccsId[] = "@(#)arpadate.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # include "conf.h"
@@ -203,14 +203,14 @@ struct foreign
 	char *f_to; 
 };
 
-static struct foreign Foreign[] =
+static struct foreign	Foreign[] =
 {
-	{ "EET",	" -0200" },	/* eastern europe */
-	{ "MET",	" -0100" },	/* middle europe */
-	{ "WET",	" GMT"   },	/* western europe */
-	{ "EET DST",	" -0300" },	/* daylight saving times */
-	{ "MET DST",	" -0200" },
-	{ "WET DST",	" -0100" },
+	{ "EET",	"+0200" },	/* eastern europe */
+	{ "MET",	"+0100" },	/* middle europe */
+	{ "WET",	"GMT"   },	/* western europe */
+	{ "EET DST",	"+0300" },	/* daylight saving times */
+	{ "MET DST",	"+0200" },
+	{ "WET DST",	"+0100" },
 	{ NULL,		NULL	 }
 };
 
@@ -229,7 +229,8 @@ fconvert(a, b)
 		if (sameword(euptr->f_from, a))
 		{
 			p = euptr->f_to;
-			while (*p)
+			*b++ = ' ';
+			while (*p != '\0')
 				*b++ = *p++;
 			*b = '\0';
 			return (TRUE);
