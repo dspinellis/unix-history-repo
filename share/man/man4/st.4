@@ -114,15 +114,9 @@ return to you (unless there were no records before the filemark) the driver
 will return the data to you (less than you requested), but hide from
 you the discovery of the Filemark. The  NEXT read will be returned
 immediatly with an EOF. If you never Make the next read, but close the device,
-(in non rewind mode)
-the next process to read will see the first block of the next file.
-In contrast, if you had read the exact number of records in the file, the
-Filemark would be ahead of the head still, so the next reader will receive
-an immediate EOF when the Filemark is encountered.
-.Pp
-The correct answer to this 'drives act differently depending
-on the recordsize' problem is still under investigation. Possible answers
-include the suggested close mode 3 above, and keeping state across opens.
+the next process to read
+will immediatly read the filemark and return EOF. (assuming you were
+in non-rewind mode).
 .El
 
 There are four Operation modes. These are  controlled by bits 2 and 3 of
@@ -147,6 +141,21 @@ a set of flags that allows the setting of densities for each
 of the 4 modes, along with a set of 'QUIRK' flags that can be
 used to enable or disable sections of code within the driver if a particular
 drive is recognised.
+.Pp
+The handling of filemarks on write is pretty much automatic. If you
+have written to the tape, and not done a read since, then a filemark will
+be written to the tape when you close the device. If a rewind is requested
+after a write, then the driver assumes that you have written the last file
+on the tape and ensures that there are two filemarks written to the tape.
+It takes into account any filemarks already written (whether by close
+or by explicit ioctl). The exception to this is that there seems to be
+a standard (which we follow, but don't understand why) that certain
+types of tape do not actually write two filemarks to tape,
+but when read, report a 'phantom' filemark when the last file is read.
+These devices include the QIC family of devices. It might be that this
+set of devices is the same set as that of fixed block devices. This has not
+been detirmined yet, and they are treated as separate behaviours by the
+driver at this time.
 .Pp
 In configuring, if an optional
 .Ar count
