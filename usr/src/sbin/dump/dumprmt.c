@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dumprmt.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)dumprmt.c	1.3 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -212,11 +212,4 @@ rmtgets(cp, len)
 	}
 	msg("Protocol to remote tape server botched (in rmtgets).\n");
 	rmtconnaborted();
-}
-
-msg(cp, a1, a2, a3)
-	char *cp;
-{
-
-	fprintf(stderr, cp, a1, a2, a3);
 }
