@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.39 (Berkeley) %G%
+ *	@(#)sendmail.h	8.40 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.39		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.40		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -649,6 +649,7 @@ EXTERN char	OpMode;		/* operation mode, see below */
 
 #define MD_DELIVER	'm'		/* be a mail sender */
 #define MD_SMTP		's'		/* run SMTP on standard input */
+#define MD_ARPAFTP	'a'		/* obsolete ARPANET mode (Grey Book) */
 #define MD_DAEMON	'd'		/* run as a daemon */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
 #define MD_TEST		't'		/* test mode: resolve addrs only */
