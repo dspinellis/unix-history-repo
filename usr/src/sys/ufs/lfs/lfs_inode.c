@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.79 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.80 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -137,7 +137,7 @@ lfs_truncate(ap)
 	INDIR a[NIADDR + 2], a_end[NIADDR + 2];
 	SEGUSE *sup;
 	daddr_t daddr, lastblock, lbn, olastblock;
-	long off, blocksreleased;
+	long off, a_released, blocksreleased, i_released;
 	int e1, e2, depth, lastseg, num, offset, seg, size;
 
 	ip = VTOI(vp);
@@ -229,12 +229,6 @@ lfs_truncate(ap)
 			}
 			for (; depth && (inp->in_off == 0 || lbn == lastblock);
 			    --inp, --depth) {
-				/*
-				 * XXX
-				 * The indirect block may not yet exist, so
-				 * bread will create one just so we can free
-				 * it.
-				 */
 				if (bread(vp,
 				    inp->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 					panic("lfs_truncate: bread bno %d",
@@ -292,9 +286,42 @@ lfs_truncate(ap)
 	 * that are being deleted out of the cache, so that the lfs_avail
 	 * field can be updated.
 	 */
+	a_released = 0;
+	i_released = 0;
 	for (bp = vp->v_dirtyblkhd; bp; bp = bp->b_blockf)
-		if (bp->b_flags & B_LOCKED)
-			fs->lfs_avail -= fsbtodb(fs, 1);
+		if (bp->b_flags & B_LOCKED) {
+			++a_released;
+			/*
+			 * XXX
+			 * When buffers are created in the cache, their block
+			 * number is set equal to their logical block number.
+			 * If that is still true, we are assuming that the
+			 * blocks are new (not yet on disk) and weren't
+			 * counted above.  However, there is a slight chance
+			 * that a block's disk address is equal to its logical
+			 * block number in which case, we'll get an overcounting
+			 * here.
+			 */
+			if (bp->b_blkno == bp->b_lblkno)
+				++i_released;
+		}
+	blocksreleased = fsbtodb(fs, i_released);
+#ifdef DIAGNOSTIC
+	if (blocksreleased > ip->i_blocks) {
+		printf("lfs_inode: Warning! %s\n",
+		    "more blocks released from inode than are in inode");
+		blocksreleased = ip->i_blocks;
+	}
+#endif
+	fs->lfs_bfree += blocksreleased;
+	ip->i_blocks -= blocksreleased;
+#ifdef DIAGNOSTIC
+	if (length == 0 && ip->i_blocks != 0)
+		printf("lfs_inode: Warning! %s%d%s\n",
+		    "Truncation to zero, but ", ip->i_blocks,
+		    " blocks left on inode");
+#endif
+	fs->lfs_avail -= fsbtodb(fs, a_released);
 	e1 = vinvalbuf(vp, length > 0, ap->a_cred, ap->a_p); 
 	e2 = VOP_UPDATE(vp, &tv, &tv, 0);
 	return (e1 ? e1 : e2 ? e2 : 0);
