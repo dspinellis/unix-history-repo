@@ -1,4 +1,10 @@
-/*	error.h	1.5	84/12/11	*/
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)error.h	5.1 (Berkeley) %G%
+ */
 
 typedef	int	boolean;
 #define	reg	register
