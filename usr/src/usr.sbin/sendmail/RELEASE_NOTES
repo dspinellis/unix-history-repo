@@ -304,6 +304,8 @@ summary of the changes in that release.
 		delimiter.  The field delimiter can be a single character
 		or the sequence "\t" or "\n" for tab or newline.
 		These are for use by NIS+ and similar access methods.
+	Change maps to always strip quotes before lookups; the -q flag
+		turns off this behaviour.  Suggested by Motonori Nakamura.
 	Add "nisplus" map class.  Takes -k and -v flags to choose the
 		key and value field names respectively.  Code donated by
 		Sun Microsystems.
@@ -724,6 +726,15 @@ summary of the changes in that release.
 		alias databases -- new algorithm looks for the substring
 		"/yp/" in the file name.  This is more portable and involves
 		less overhead.  Suggested by Motonori Nakamura.
+	Dynamically allocate the queue work list so that you don't lose
+		jobs in large queue runs.  The old QUEUESIZE compile parameter
+		is replaced by QUEUESEGSIZE (the unit of allocation, which
+		should not need to be changed) and the MaxQueueRunSize option,
+		which is the absolute maximum number of jobs that will ever
+		be handled in a single queue run.  Based on code contributed
+		by Brian Coan of the Institute for Global Communications.
+	Log message when a message is dropped because it exceeds the maximum
+		message size.  Suggested by Leo Bicknell of Virginia Tech.
 	PORTABILITY FIXES:
 		Solaris 2 from Rob McMahon <cudcv@csv.warwick.ac.uk>.
 		System V Release 4 from Motonori Nakamura of Ritsumeikan
