@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fetch.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)fetch.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -69,7 +69,7 @@ getcmd(pid, mproc)
 
         if (mproc == NULL || mproc->p_stat == SZOMB)
 		return ("");
-	if (pid == 1)
+	if (pid == 0)
 		return ("swapper");
 	if (pid == 2)
 		return ("pagedaemon");
