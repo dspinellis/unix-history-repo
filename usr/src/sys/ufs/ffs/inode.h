@@ -1,4 +1,4 @@
-/*	inode.h	6.2	84/02/15	*/
+/*	inode.h	6.3	84/06/27	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -19,6 +19,7 @@ struct inode {
 	u_short	i_shlockc;	/* count of shared locks on inode */
 	u_short	i_exlockc;	/* count of exclusive locks on inode */
 	ino_t	i_number;	/* i number, 1-to-1 with device address */
+	long	i_id;		/* unique identifier */
 	struct	fs *i_fs;	/* file sys associated with this inode */
 	struct	dquot *i_dquot;	/* quota structure controlling this file */
 	union {
@@ -99,6 +100,7 @@ struct dinode {
 struct inode *inode;		/* the inode table itself */
 struct inode *inodeNINODE;	/* the end of the inode table */
 int	ninode;			/* number of slots in the table */
+long	nextinodeid;		/* unique id generator */
 
 struct	inode *rootdir;			/* pointer to inode of root directory */
 
@@ -176,4 +178,3 @@ ino_t	dirpref();
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
-
