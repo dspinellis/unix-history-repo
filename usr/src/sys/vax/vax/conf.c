@@ -1,4 +1,4 @@
-/*	conf.c	3.13	%G%	*/
+/*	conf.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
