@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-ditroff	5.2 (Berkeley) %G%
+.\"     @(#)doc-ditroff	5.3 (Berkeley) %G%
 .\"
 .\" tmac.mdoc-ditroff
 .\"     %beginstrip%
@@ -74,8 +74,8 @@
 .ds sL \(ga
 .ds q \&"
 .\"
+.nr gX 0
 .de hK
-.nr % 1
 .ds hT \\*(dT
 .if !"\\*(cH"Null" \{\
 .       ie !"\\*(gP"Null" .as hT \|(\|\\*(cH\\*(gP\|)
@@ -86,7 +86,10 @@
 .\}
 .wh 0 hM
 .wh -1.25i fM
-'bp
+.if \\n(gX==1 .bp
+.if \\n(gX==0 'bp
+.nr % 1
+.nr gX 0
 .em lM
 ..
 .\"
