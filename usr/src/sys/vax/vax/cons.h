@@ -1,4 +1,4 @@
-/*	cons.h	4.3	%G%	*/
+/*	cons.h	4.4	%G%	*/
 
 /*
  * VAX console interface registers
@@ -15,12 +15,7 @@
 #define	TXDB_DATA	0xff		/* transmitter byte */
 #define	TXDB_ID		0xf00		/* channel id */
 
-#if VAX==780
-#define	TXDB_WSI	0xf02		/* set warm start inhibit */
-#define	TXDB_CWSI	0xf03		/* clear warm start inhibit */
-#define	TXDB_BOOT	0xf04		/* enable boot */
-#endif
-#if VAX==750
+#define	TXDB_DONE	0xf01		/* software done */
 #define	TXDB_BOOT	0xf02		/* reboot */
-#define	TXDB_CCSF	0xf04		/* clear cold-start flag */
-#endif
+#define	TXDB_CWSI	0xf03		/* clear warm start inhibit */
+#define	TXDB_CCSI	0xf04		/* clear cold-start inhibit */
