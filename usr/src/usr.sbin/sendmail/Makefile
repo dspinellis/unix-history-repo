@@ -1,7 +1,7 @@
 #
 #	Makefile for sendmail base directory
 #
-#		@(#)Makefile	4.3		%G%
+#		@(#)Makefile	4.4		%G%
 #
 
 ALL=	src/sendmail aux/syslog
@@ -25,6 +25,7 @@ all:
 
 install: $(ALL) $(DIRS)
 	install -s -m 4755	src/sendmail	$(SENDMAIL)
+	chgrp kmem $(SENDMAIL)
 	install -c -m 644	lib/sendmail.hf	$(SENDMAIL).hf
 	install -c -m 666	/dev/null	$(SENDMAIL).st
 	install -c -m 644	/dev/null	$(SENDMAIL).fc
