@@ -1,4 +1,4 @@
-#       @(#)Makefile	1.3 (Berkeley) %G%
+#       @(#)Makefile	8.1 (Berkeley) %G%
 
 # To install on versions prior to BSD 4.4 the following may have to be
 # defined with CFLAGS +=

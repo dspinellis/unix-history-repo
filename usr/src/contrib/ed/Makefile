@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	ed
 SRCS=	a.c add_line.c address.c bang.c c.c d.c e.c edhup.c equal.c f.c \
