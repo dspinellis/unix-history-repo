@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.6 1994/05/31 08:55:13 jkh Exp $
+$Id: options.texi,v 1.7 1994/05/31 18:32:39 ache Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -170,6 +170,15 @@ subnet.
 
 This option will likely be replaced by run-time configuration in a
 future release of FreeBSD.
+
+@item options "DISKLABEL_UNPROTECTED"
+@findex DISKLABEL_UNPROTECTED
+@cindex disk
+@cindex disklabel
+@cindex rawdisk
+This options disables the checks which normally protects the disklabel from
+being overwritten.  This allows dd of=/dev/rwd0d if=file bs=8k to restore
+an diskimage.
 
 @item pseudo-device ether
 @findex ether
