@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -254,8 +254,11 @@ readerr:
 
 	if (fflush(tf) != 0)
 		tferror(tf, e);
-	(void) fsync(fileno(tf));
-	(void) fclose(tf);
+	if (fsync(fileno(tf)) < 0 || fclose(tf) < 0)
+	{
+		syserr("cannot sync message data to disk (%s)", e->e_df);
+		finis();
+	}
 
 	/* An EOF when running SMTP is an error */
 	if (inputerr && OpMode == MD_SMTP)
