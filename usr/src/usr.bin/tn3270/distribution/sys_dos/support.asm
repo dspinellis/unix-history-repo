@@ -1,6 +1,3 @@
-; $Header: /lapis_d/minshall/src/misc/minshall/src/netsys/RCS/support.asm,v 1.5 87/01/14 11:29:19 minshall Exp $
-
-
 _TEXT	segment	byte public 'CODE'
 _TEXT	ends
 
@@ -18,26 +15,11 @@ DGROUP	group	CONST, _BSS, _DATA
 	assume	cs:_TEXT, ds:DGROUP, ss:DGROUP, es:DGROUP
 
 _TEXT	segment
+	public	_iret_subr
 
-	public	_dirconio
-
-_dirconio	proc	near
-	push	bp
-	mov	bp,sp
-
-	mov	ah,01H		; test input
-	int	16H
-	mov	ax,0ffffH	; nothing read
-	jz	dirconiodone
-	mov	ah,00H		; consume the input
-	int	16H
-
-dirconiodone:
-
-	mov	sp,bp
-	pop	bp
-	ret
-_dirconio	endp
+_iret_subr	proc	far
+	iret
+_iret_subr	endp
 
 _TEXT	ends
 
