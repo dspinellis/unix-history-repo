@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quota.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)quota.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -52,7 +52,8 @@ int	vflag;
 main(argc, argv)
 	char *argv[];
 {
-	int ngroups, gidset[NGROUPS];
+	int ngroups; 
+	gid_t gidset[NGROUPS];
 	int i, gflag = 0, uflag = 0;
 	char ch;
 	extern char *optarg;
@@ -181,7 +182,8 @@ showgid(gid)
 	u_long gid;
 {
 	struct group *grp = getgrgid(gid);
-	int ngroups, gidset[NGROUPS];
+	int ngroups;
+	gid_t gidset[NGROUPS];
 	register int i;
 	char *name;
 
@@ -212,7 +214,8 @@ showgrpname(name)
 	char *name;
 {
 	struct group *grp = getgrnam(name);
-	int ngroups, gidset[NGROUPS];
+	int ngroups;
+	gid_t gidset[NGROUPS];
 	register int i;
 
 	if (grp == NULL) {
