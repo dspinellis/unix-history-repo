@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Makefile	7.3 (Berkeley) %G%
+#	@(#)Makefile	7.4 (Berkeley) %G%
 #
 DESTDIR=
 
@@ -15,7 +15,7 @@ CC=cc -Dconst=__const__ -Dvolatile=__volatile__ \
 	-Dsigned=__signed__ -Dinline=__inline__ -fpcc-struct-return
 AS=as
 
-INCPATH=-I. -I../sys -I..
+INCPATH=-I. -I/usr/include -I../sys -I..
 CONS= -DDCACONSOLE -DITECONSOLE -DDCMCONSOLE
 DEFS= -DSTANDALONE ${CONS} # -DROMPRF # -DDEBUG
 COPTS=
