@@ -1,10 +1,9 @@
 /*
- *	@(#)ww.h	3.2 83/08/12	
+ *	@(#)ww.h	3.3 83/08/15	
  */
 
 #include <stdio.h>
 #include <sgtty.h>
-#include "tt.h"
 
 #define NWW	30
 

@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.2 83/08/12";
+static	char *sccsid = "@(#)wwinit.c	3.3 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 static char *kp = wwkeys;
 extern char _sobuf[];
@@ -40,8 +41,7 @@ wwinit()
 		goto bad;
 	wwnrow = tt.tt_nrow;
 	wwncol = tt.tt_ncol;
-	(*tt.tt_reset)();
-	(*tt.tt_clreos)();
+	(*tt.tt_init)();
 
 	if ((wwsmap = wwalloc(wwnrow, wwncol, sizeof (char))) == 0)
 		goto bad;

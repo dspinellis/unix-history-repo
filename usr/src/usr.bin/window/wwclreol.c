@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.3 83/08/15";
+static	char *sccsid = "@(#)wwclreol.c	3.4 83/08/15";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 wwclreol(w, line, col)
 struct ww *w;
