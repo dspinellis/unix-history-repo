@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)pwcache.3	5.4 (Berkeley) %G%
+.\"     @(#)pwcache.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PWCACHE 3
@@ -15,11 +15,6 @@
 .Fn user_from_uid "uid_t uid" "int nouser"
 .Fn group_from_gid "gid_t gid" "int nogroup"
 .Sh DESCRIPTION
-.Bf -symbolic
-This interface is not part of the C library.
-It has been placed in the Berkeley utility library, libutil, as it is
-used by several standard utilities.
-.Ef
 .Pp
 The
 .Fn user_from_uid
@@ -32,9 +27,7 @@ do not require additional calls to
 If there is no user associated with the
 .Fa uid ,
 a pointer is returned
-to an
-.Tn ASCII
-representation of the
+to a string representation of the
 .Fa uid ,
 unless the argument
 .Fa nouser
@@ -53,9 +46,7 @@ do not require additional calls to
 If there is no group associated with the
 .Fa gid ,
 a pointer is returned
-to an
-.Tn ASCII
-representation of the
+to a string representation of the
 .Fa gid ,
 unless the argument
 .Fa nogroup
