@@ -1,11 +1,24 @@
-#	@(#)VERSION	5.7 (Berkeley) %G%
+#	@(#)VERSION	5.8 (Berkeley) %G%
 
-This is version 1.4 of the Berkeley DB code.
+This is version 1.5 of the Berkeley DB code.
 
-If your version of the DB code doesn't have a copy of this version
-file, it's really old, please update it!
+If your version of the DB code doesn't have a copy of
+this version file, it's really old, please update it!
 
 ============================================
+1.4 -> 1.5	23 May 1993
+	hash:	Set hash default fill factor dynamically.
+	recno:	Fixed bug in sorted page splits.
+		Add page size parameter support.
+		Allow recno to specify the name of the underlying btree;
+			used for vi recovery.
+	btree/recno:
+		Support 64K pages.
+	btree/hash/recno:
+		Provide access to an underlying file descriptor.
+		Change sync routines to take a flag argument, recno
+			uses this to sync out the underlying btree.
+
 1.3 -> 1.4	10 May 1993
 	recno:	Delete the R_CURSORLOG flag from the recno interface.
 		Zero-length record fix for non-mmap reads.
@@ -16,7 +29,7 @@ file, it's really old, please update it!
 		existing database.  Fixes to byte-order conversions.
 
 1.1 -> 1.2	15 Apr 1993
-	No bug fixes, only compatibility hacks.
+		No bug fixes, only compatibility hacks.
 ============================================
 
 Distribution contents:
