@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.76		%G%);
+SCCSID(@(#)main.c	3.77		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -128,7 +128,6 @@ main(argc, argv)
 	char *from;
 	typedef int (*fnptr)();
 	register int i;
-	bool verifyonly = FALSE;	/* only verify names */
 	bool safecf = TRUE;		/* this conf file is sys default */
 	char ibuf[30];			/* holds HostName */
 	bool queuemode = FALSE;		/* process queue requests */
@@ -149,6 +148,7 @@ main(argc, argv)
 		(void) signal(SIGHUP, finis);
 	(void) signal(SIGTERM, finis);
 	OldUmask = umask(0);
+	Mode = MD_DEFAULT;
 
 	/* set up the main envelope */
 	MainEnvelope.e_puthdr = putheader;
@@ -324,10 +324,6 @@ main(argc, argv)
 			IgnrDot++;
 			break;
 
-		  case 'V':	/* verify only */
-			verifyonly = TRUE;
-			break;
-
 		  case 'a':	/* arpanet format */
 			ArpaMode = TRUE;
 			if (p[2] == 's')
@@ -359,13 +355,32 @@ main(argc, argv)
 			GrabTo = TRUE;
 			break;
 
-		  case 'D':	/* run as a daemon */
+		  case 'b':	/* operations mode */
+			Mode = p[2];
+			switch (Mode)
+			{
+			  case MD_DAEMON:	/* run as a daemon */
 #ifdef DAEMON
-			Daemon = TRUE;
-			ArpaMode = Smtp = TRUE;
+				ArpaMode = Smtp = TRUE;
 #else DAEMON
-			syserr("Daemon mode not implemented");
+				syserr("Daemon mode not implemented");
 #endif DAEMON
+				break;
+
+			  case '\0':	/* default: do full delivery */
+				Mode = MD_DEFAULT;
+				/* fall through....... */
+
+			  case MD_DELIVER:	/* do everything (default) */
+			  case MD_FORK:		/* fork after verification */
+			  case MD_QUEUE:	/* queue only */
+			  case MD_VERIFY:	/* verify only */
+				break;
+
+			  default:
+				syserr("Unknown operation mode -b%c", Mode);
+				exit(EX_USAGE);
+			}
 			break;
 
 		  case 'q':	/* run queue files at intervals */
@@ -375,10 +390,6 @@ main(argc, argv)
 # else QUEUE
 			syserr("I don't know about queues");
 # endif QUEUE
-			break;
-
-		  case 'p':	/* fork politely after initial verification */
-			ForkOff = TRUE;
 			break;
 
 		  case 'o':	/* take new-style headers (with commas) */
@@ -452,7 +463,7 @@ main(argc, argv)
 	**	doing it in background.
 	*/
 
-	if (Daemon)
+	if (Mode == MD_DAEMON)
 	{
 # ifdef QUEUE
 		if (queuemode)
@@ -473,7 +484,7 @@ main(argc, argv)
 	**  If collecting stuff from the queue, go start doing that.
 	*/
 
-	if (queuemode && !Daemon)
+	if (queuemode && Mode != MD_DAEMON)
 	{
 		runqueue(FALSE);
 		finis();
@@ -486,7 +497,7 @@ main(argc, argv)
 
 	setsender(from);
 
-	if (!Daemon && argc <= 0 && !GrabTo)
+	if (Mode != MD_DAEMON && argc <= 0 && !GrabTo)
 	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 		finis();
@@ -523,7 +534,7 @@ main(argc, argv)
 
 	DontSend = FALSE;
 	CurEnv->e_to = NULL;
-	if (!verifyonly || GrabTo)
+	if (Mode != MD_VERIFY || GrabTo)
 		collect(FALSE);
 	errno = 0;
 
@@ -540,13 +551,18 @@ main(argc, argv)
 	**		slower than it must be.
 	*/
 
-	if (ForkOff)
+	if (Mode == MD_FORK)
 	{
 		if (fork() > 0)
 		{
 			/* parent -- quit */
 			exit(ExitStat);
 		}
+	}
+	else if (Mode == MD_QUEUE)
+	{
+		queueup(CurEnv, TRUE);
+		exit(ExitStat);
 	}
 
 	initsys();
@@ -575,14 +591,14 @@ main(argc, argv)
 	**	If verifying, just ack.
 	*/
 
-	sendall(verifyonly);
+	sendall(Mode == MD_VERIFY);
 
 	/*
 	** All done.
 	*/
 
 	CurEnv->e_to = NULL;
-	if (!verifyonly)
+	if (Mode != MD_VERIFY)
 		poststats(StatFile);
 	finis();
 }
@@ -735,7 +751,7 @@ finis()
 	if (CurEnv->e_queueup)
 	{
 # ifdef QUEUE
-		queueup(CurEnv);
+		queueup(CurEnv, FALSE);
 # else QUEUE
 		syserr("finis: trying to queue %s", CurEnv->e_df);
 # endif QUEUE

@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.70		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.71		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -321,6 +321,21 @@ struct statistics
 EXTERN struct statistics	Stat;
 extern long			kbytes();	/* for _bf, _bt */
 /*
+**  Operation modes
+**	The default operation mode can be safely changed (except
+**	that the default cannot be MD_DAEMON).
+*/
+
+EXTERN char	Mode;		/* operation mode, see below */
+
+#define MD_DELIVER	'a'		/* collect and deliver */
+#define MD_FORK		'f'		/* verify & fork before delivery */
+#define MD_QUEUE	'q'		/* collect & queue, don't deliver */
+#define MD_DAEMON	'd'		/* run as a daemon */
+#define MD_VERIFY	'v'		/* verify: don't collect or deliver */
+
+#define MD_DEFAULT	MD_DELIVER	/* default operation mode */
+/*
 **  Global variables.
 */
 
@@ -337,13 +352,11 @@ EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
 EXTERN bool	DontSend;	/* mark recipients as QDONTSEND */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
-EXTERN bool	Daemon;		/* running as a daemon */
 EXTERN bool	Smtp;		/* using SMTP over connection */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	QueueRun;	/* currently running message from the queue */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	ArpaMode;	/* set if running arpanet protocol */
-EXTERN bool	ForkOff;	/* fork after initial verification */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 extern time_t	TimeOut;	/* time until timeout */
