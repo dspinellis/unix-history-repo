@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.51 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.52 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -275,7 +275,7 @@ spec_write(ap)
 			on = uio->uio_offset % bsize;
 			n = min((unsigned)(bsize - on), uio->uio_resid);
 			if (n == bsize)
-				bp = getblk(vp, bn, bsize);
+				bp = getblk(vp, bn, bsize, 0, 0);
 			else
 				error = bread(vp, bn, bsize, NOCRED, &bp);
 			n = min(n, bsize - bp->b_resid);
@@ -502,7 +502,7 @@ spec_close(ap)
 		 * we must invalidate any in core blocks, so that
 		 * we can, for instance, change floppy disks.
 		 */
-		if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p))
+		if (error = vinvalbuf(vp, 1, ap->a_cred, ap->a_p, 0, 0))
 			return (error);
 		/*
 		 * We do not want to really close the device if it
