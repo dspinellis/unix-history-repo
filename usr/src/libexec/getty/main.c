@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -135,16 +135,19 @@ main(argc, argv)
 	if (argc <= 2 || strcmp(argv[2], "-") == 0)
 	    strcpy(ttyn, ttyname(0));
 	else {
+	    int i;
+
 	    strcpy(ttyn, dev);
 	    strncat(ttyn, argv[2], sizeof(ttyn)-sizeof(dev));
 	    if (strcmp(argv[0], "+") != 0) {
 		chown(ttyn, 0, 0);
-		chmod(ttyn, 0622);
+		chmod(ttyn, 0600);
+		revoke(ttyn);
 		/*
 		 * Delay the open so DTR stays down long enough to be detected.
 		 */
 		sleep(2);
-		while (open(ttyn, O_RDWR) != 0) {
+		while ((i = open(ttyn, O_RDWR)) == -1) {
 			if (repcnt % 10 == 0) {
 				syslog(LOG_ERR, "%s: %m", ttyn);
 				closelog();
@@ -152,15 +155,7 @@ main(argc, argv)
 			repcnt++;
 			sleep(60);
 		}
-		signal(SIGHUP, SIG_IGN);
-		vhangup();
-		(void) open(ttyn, O_RDWR);
-		close(0);
-		dup(1);
-		dup(0);
-		signal(SIGHUP, SIG_DFL);
-		if (ioctl(0, TIOCSCTTY, 0) < 0)
-			 syslog(LOG_ERR, "TIOCSCTTY failed %m");
+		login_tty(i);
 	    }
 	}
 
