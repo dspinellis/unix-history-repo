@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_syscalls.c	7.15 (Berkeley) %G%
+ *	@(#)lfs_syscalls.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -253,14 +253,22 @@ lfs_segclean(p, uap, retval)
 	fs = VFSTOUFS(mntp)->um_lfs;
 
 	LFS_SEGENTRY(sup, fs, uap->segment, bp);
+	fs->lfs_bfree += (sup->su_nsums * LFS_SUMMARY_SIZE / DEV_BSIZE) +
+	    sup->su_ninos * btodb(fs->lfs_bsize);
 	sup->su_flags &= ~SEGUSE_DIRTY;
 	sup->su_nbytes = 0;
+	sup->su_ninos = 0;
+	sup->su_nsums = 0;
 	LFS_UBWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
 	++cip->clean;
 	--cip->dirty;
 	LFS_UBWRITE(bp);
+	/*
+	 * Count all the blocks in the segment as being free again.
+	 */
+	fs->lfs_bfree += fs->lfs_ssize;
 
 	return (0);
 }
