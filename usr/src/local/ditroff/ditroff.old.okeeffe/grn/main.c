@@ -1,4 +1,4 @@
-/*	main.c	1.7	(Berkeley) 83/09/19
+/*	main.c	1.8	(Berkeley) 83/09/23
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
@@ -90,7 +90,7 @@ extern POINT *PTInit(), *PTMakePoint();
 #define JRIGHT		1		/*    get placed within the line */
 
 
-char	SccsId[] = "main.c	1.7	83/09/19";
+char	SccsId[] = "main.c	1.8	83/09/23";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
 double	res;			/* that printer's resolution goes here */
@@ -509,16 +509,10 @@ savebounds(x, y)
 float x;
 float y;
 {
-    if (x < leftpoint) {
-	leftpoint = x;
-    } else if (x > rightpoint) {
-	rightpoint = x;
-    }
-    if (y < toppoint) {
-	toppoint = y;
-    } else if (y > bottompoint) {
-	bottompoint = y;
-    }
+    if (x < leftpoint) leftpoint = x;
+    if (x > rightpoint) rightpoint = x;
+    if (y < toppoint) toppoint = y;
+    if (y > bottompoint) bottompoint = y;
 }
 
 
