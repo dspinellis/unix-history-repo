@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sendmail.h>
@@ -379,11 +379,11 @@ deliver(e, firstto)
 #ifdef SMTP
 	if (clever)
 	{
-		expand("\001w", buf, &buf[sizeof(buf) - 1], e);
 		rcode = EX_OK;
 #ifdef NAMED_BIND
-		if (host[0] != '[')
+		if (host[0] && host[0] != '[')
 		{
+			expand("\001w", buf, &buf[sizeof(buf) - 1], e);
 			Nmx = getmxrr(host, MxHosts, buf, &rcode);
 		}
 		else
