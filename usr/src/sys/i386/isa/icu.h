@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)icu.h	5.7 (Berkeley) %G%
+ *	@(#)icu.h	5.8 (Berkeley) %G%
  */
 
 /*
@@ -42,17 +42,14 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
  */
 
 /* Mask a group of interrupts atomically */
-#define	INTR(unit,mask,offst) \
-	cli ; \
-	pushl	$0 ; \
-	nop ; \
+#define	INTR_HEAD(unit,mask,offst) \
+	pushl	$ offst ; \
 	pushl	$ T_ASTFLT ; \
-	nop ; \
 	pushal ; \
-	nop ; \
 	movb	$0x20,%al ; \
+
+#define INTR_TAIL(unit,mask,offst) \
 	outb	%al,$ IO_ICU1 ; \
-	outb	%al,$ IO_ICU2 ; \
 	pushl	%ds ; \
 	pushl	%es ; \
 	movw	$0x10, %ax ; \
@@ -70,6 +67,17 @@ extern	unsigned short netmask; /* group of interrupts masked with splimp() */
 	movb	%ah,%al ; \
 	outb	%al,$ IO_ICU2+1	; \
 	sti ;
+
+#define INTR1(unit,mask,offst) \
+	INTR_HEAD(unit,mask,offst) \
+	INTR_TAIL(unit,mask,offst)
+
+#define INTR2(unit,mask,offst) \
+	INTR_HEAD(unit,mask,offst) \
+	outb	%al,$ IO_ICU2 ; \
+	INTR_TAIL(unit,mask,offst)
+
+
 
 /* Interrupt vector exit macros */
 
