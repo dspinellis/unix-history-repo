@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kdump.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)kdump.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/errno.h>
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <sys/ktrace.h>
@@ -90,6 +91,11 @@ main(argc, argv)
 	m = (void *)malloc(size = 1025);
 	if (m == NULL) {
 		(void)fprintf(stderr, "kdump: %s.\n", strerror(ENOMEM));
+		exit(1);
+	}
+	if (!freopen(tracefile, "r", stdin)) {
+		(void)fprintf(stderr,
+		    "kdump: %s: %s.\n", tracefile, strerror(errno));
 		exit(1);
 	}
 	while (fread_tail(&ktr_header, sizeof(struct ktr_header), 1)) {
