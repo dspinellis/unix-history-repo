@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkswapconf.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkswapconf.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,8 +51,8 @@ do_swap(fl)
 		perror(path(swapname));
 		exit(1);
 	}
-	fprintf(fp, "#include \"../sys/param.h\"\n");
-	fprintf(fp, "#include \"../sys/conf.h\"\n");
+	fprintf(fp, "#include \"sys/param.h\"\n");
+	fprintf(fp, "#include \"sys/conf.h\"\n");
 	fprintf(fp, "\n");
 	/*
 	 * If there aren't any swap devices
