@@ -1,4 +1,4 @@
-.\"	@(#)mailaddr.7	4.1		%G%
+.\"	@(#)mailaddr.7	4.2		%G%
 .TH MAILADDR 7
 .UC 4
 .SH NAME
@@ -246,6 +246,12 @@ Hosts on bitnet may be accessed using:
 .PP
 		user@host.BITNET
 .PP
+.SH BUGS
+The RFC822 group syntax
+(``group:user1,user2,user3;'')
+is not supported except in the special case of
+``group:;''
+because of a conflict with old berknet-style addresses.
 .SH SEE ALSO
 mail(1), sendmail(8);
 Crocker, D. H.,
