@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.9		%G%);
+SCCSID(@(#)parseaddr.c	4.10		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -736,7 +736,7 @@ rewrite(pvp, ruleset)
 			char **xpvp;
 			int trsize;
 			int i;
-			char buf[MAXATOM + 1];
+			char buf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
 			static char pvpbuf[PSBUFSIZE];
 
@@ -774,14 +774,14 @@ rewrite(pvp, ruleset)
 			}
 
 			/* append it to the token list */
-			rvp = --hbrvp;
-			while ((*rvp++ = *xpvp++) != NULL)
-				if (rvp >= &npvp[MAXATOM])
+			avp = --hbrvp;
+			while ((*avp++ = *xpvp++) != NULL)
+				if (avp >= &npvp[MAXATOM])
 					goto toolong;
 
 			/* restore the old trailing information */
-			for (xpvp = pvpb1, rvp--; (*rvp++ = *xpvp++) != NULL; )
-				if (rvp >= &npvp[MAXATOM])
+			for (xpvp = pvpb1, avp--; (*avp++ = *xpvp++) != NULL; )
+				if (avp >= &npvp[MAXATOM])
 					goto toolong;
 		}
 
