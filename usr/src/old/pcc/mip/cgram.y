@@ -1,4 +1,4 @@
-/*	cgram.y	4.15	87/12/09	*/
+/*	cgram.y	4.16	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -336,6 +336,7 @@ init_declarator:   nfdeclarator
 		|  xnfdeclarator optasgn LC init_list optcomma RC
 			={  endinit(); }
 		| error
+			={  fixinit(); }
 		;
 
 init_list:	   initializer
