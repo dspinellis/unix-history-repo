@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.13 (Berkeley) %G%
+ *	@(#)if.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
  * received from its medium.
  *
  * Output occurs when the routine if_output is called, with three parameters:
- *	(*ifp->if_output)(ifp, m, dst)
+ *	(*ifp->if_output)(ifp, m, dst, rt)
  * Here m is the mbuf chain to be sent and dst is the destination address.
  * The output routine encapsulates the supplied datagram if necessary,
  * and then transmits it on its medium.
@@ -61,13 +61,21 @@ struct ifnet {
 		int	ifq_drops;
 	} if_snd;			/* output queue */
 /* procedure handles */
-	int	(*if_init)();		/* init routine */
-	int	(*if_output)();		/* output routine (enqueue) */
-	int	(*if_start)();		/* initiate output routine */
-	int	(*if_done)();		/* output complete routine */
-	int	(*if_ioctl)();		/* ioctl routine */
-	int	(*if_reset)();		/* bus reset routine */
-	int	(*if_watchdog)();	/* timer routine */
+	int	(*if_init)		/* init routine */
+		__P((int));
+	int	(*if_output)		/* output routine (enqueue) */
+		__P((struct ifnet *, struct mbuf *, struct sockaddr *,
+		     struct rtentry *));
+	int	(*if_start)		/* initiate output routine */
+		__P((struct ifnet *));
+	int	(*if_done)		/* output complete routine */
+		__P((struct ifnet *));	/* (XXX not used; fake prototype) */
+	int	(*if_ioctl)		/* ioctl routine */
+		__P((struct ifnet *, int, caddr_t));
+	int	(*if_reset)		/* XXX; Unibus reset routine for vax */
+		__P((int, int));	/* new autoconfig will permit removal */
+	int	(*if_watchdog)		/* timer routine */
+		__P((int));
 /* generic interface statistics */
 	int	if_ipackets;		/* packets received on interface */
 	int	if_ierrors;		/* input errors on interface */
@@ -166,7 +174,7 @@ struct ifaddr {
 	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
 	struct 	rtentry *ifa_rt;	/* ??? for ROUTETOIF */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
-	u_short	ifa_refcnt;		/* extra to malloc for link info */
+	short	ifa_refcnt;		/* extra to malloc for link info */
 };
 #define IFA_ROUTE	RTF_UP		/* route installed */
 /*
@@ -219,7 +227,7 @@ struct	ifconf {
 
 #ifdef KERNEL
 #define	IFAFREE(ifa) \
-	if ((ifa)->ifa_refcnt <= 1) \
+	if ((ifa)->ifa_refcnt <= 0) \
 		ifafree(ifa); \
 	else \
 		(ifa)->ifa_refcnt--;
@@ -231,6 +239,7 @@ struct	ifaddr	*ifa_ifwithaddr __P((struct sockaddr *)),
 		*ifa_ifwithnet __P((struct sockaddr *)),
 		*ifa_ifwithdstaddr __P((struct sockaddr *));
 void	ifafree __P((struct ifaddr *));
+void	if_attach __P((struct ifnet *));
 #else KERNEL
 #include <net/if_arp.h>
 #endif KERNEL
