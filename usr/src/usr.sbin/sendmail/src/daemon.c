@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.44 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.45 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.44 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.45 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -82,6 +82,7 @@ extern char	*anynet_ntoa();
 
 int		DaemonSocket	= -1;		/* fd describing socket */
 SOCKADDR	DaemonAddr;			/* socket for incoming */
+int		ListenQueueSize = 10;		/* size of listen queue */
 
 getrequests()
 {
@@ -203,7 +204,7 @@ getrequests()
 		if (refusingconnections)
 		{
 			/* start listening again */
-			if (listen(DaemonSocket, 10) < 0)
+			if (listen(DaemonSocket, ListenQueueSize) < 0)
 			{
 				syserr("getrequests: cannot listen");
 				(void) close(DaemonSocket);
@@ -444,6 +445,10 @@ setdaemonoptions(p)
 					DaemonAddr.sa.sa_family);
 				break;
 			}
+			break;
+
+		  case 'L':		/* listen queue size */
+			ListenQueueSize = atoi(v);
 			break;
 		}
 	}
