@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -203,8 +203,10 @@ newroute(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in *sin;
-	char *cmd;
-	int ishost, metric = 0;
+	char *cmd, *dest, *gateway;
+	int ishost, metric = 0, ret, attempts, oerrno;
+	struct hostent *hp;
+	extern int errno;
 
 	cmd = argv[0];
 	if (*cmd == 'a') {
@@ -220,23 +222,55 @@ newroute(argc, argv)
 			return;
 		}
 	}
-	ishost = getaddr(argv[1], &route.rt_dst);
+	sin = (struct sockaddr_in *)&route.rt_dst;
+	ishost = getaddr(argv[1], &route.rt_dst, &hp);
+	if (hp)
+		dest = hp->h_name;
+	else
+		dest = routename(sin->sin_addr);
 	if (forcehost)
 		ishost = 1;
 	if (forcenet)
 		ishost = 0;
-	(void) getaddr(argv[2], &route.rt_gateway);
-	sin = (struct sockaddr_in *)&route.rt_dst;
+	sin = (struct sockaddr_in *)&route.rt_gateway;
+	(void) getaddr(argv[2], &route.rt_gateway, &hp);
+	if (hp)
+		gateway = hp->h_name;
+	else
+		gateway = routename(sin->sin_addr);
 	route.rt_flags = RTF_UP;
 	if (ishost)
 		route.rt_flags |= RTF_HOST;
 	if (metric > 0)
 		route.rt_flags |= RTF_GATEWAY;
-	printf("%s %s: gateway ", cmd, routename(sin->sin_addr));
-	sin = (struct sockaddr_in *)&route.rt_gateway;
-	printf("%s, flags %x\n", routename(sin->sin_addr), route.rt_flags);
-	if (ioctl(s, *cmd == 'a' ? SIOCADDRT : SIOCDELRT, (caddr_t)&route))
-		error(cmd);
+	for (attempts = 1; ; attempts++) {
+		errno = 0;
+		if ((ret = ioctl(s, *cmd == 'a' ? SIOCADDRT : SIOCDELRT,
+		     (caddr_t)&route)) == 0)
+			break;
+		if (errno != ENETUNREACH && errno != ESRCH)
+			break;
+		if (hp && hp->h_addr_list[1]) {
+			hp->h_addr_list++;
+			bcopy(hp->h_addr_list[0], (caddr_t)&sin->sin_addr,
+			    hp->h_length);
+		} else
+			break;
+	}
+	oerrno = errno;
+	printf("%s %s %s: gateway %s", cmd, ishost? "host" : "net",
+		dest, gateway);
+	if (attempts > 1 && ret == 0)
+	    printf(" (%s)",
+		inet_ntoa(((struct sockaddr_in *)&route.rt_gateway)->sin_addr));
+	if (ret == 0)
+		printf("\n");
+	else {
+		printf(": ");
+		fflush(stdout);
+		errno = oerrno;
+		error(0);
+	}
 }
 
 changeroute(argc, argv)
@@ -249,7 +283,6 @@ changeroute(argc, argv)
 error(cmd)
 	char *cmd;
 {
-	extern int errno;
 
 	if (errno == ESRCH)
 		fprintf(stderr, "not in table\n");
@@ -265,30 +298,20 @@ error(cmd)
  * Interpret an argument as a network address of some kind,
  * returning 1 if a host address, 0 if a network address.
  */
-getaddr(s, sin)
+getaddr(s, sin, hpp)
 	char *s;
 	struct sockaddr_in *sin;
+	struct hostent **hpp;
 {
 	struct hostent *hp;
 	struct netent *np;
 	u_long val;
 
+	*hpp = 0;
 	if (strcmp(s, "default") == 0) {
 		sin->sin_family = AF_INET;
 		sin->sin_addr = inet_makeaddr(0, INADDR_ANY);
 		return(0);
-	}
-	np = getnetbyname(s);
-	if (np) {
-		sin->sin_family = np->n_addrtype;
-		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
-		return(0);
-	}
-	hp = gethostbyname(s);
-	if (hp) {
-		sin->sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
-		return(1);
 	}
 	sin->sin_family = AF_INET;
 	val = inet_addr(s);
@@ -300,6 +323,19 @@ getaddr(s, sin)
 	if (val != -1) {
 		sin->sin_addr = inet_makeaddr(val, INADDR_ANY);
 		return(0);
+	}
+	np = getnetbyname(s);
+	if (np) {
+		sin->sin_family = np->n_addrtype;
+		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
+		return(0);
+	}
+	hp = gethostbyname(s);
+	if (hp) {
+		*hpp = hp;
+		sin->sin_family = hp->h_addrtype;
+		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+		return(1);
 	}
 	fprintf(stderr, "%s: bad value\n", s);
 	exit(1);
