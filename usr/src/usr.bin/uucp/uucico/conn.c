@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.7 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -41,8 +41,8 @@ char	par_tab[128];	/* must be power of two */
 int	linebaudrate;	/* used for the sleep test in pk1.c */
 int next_fd = -1;	/* predicted fd to close interrupted opens */
 				/* rti!trt, courtesy unc!smb */
-/***
- *	alarmtr()  -  catch alarm routine for "expect".
+/*
+ *	catch alarm routine for "expect".
  */
 alarmtr()
 {
@@ -87,6 +87,7 @@ char *system;
 	ASSERT(fsys != NULL, "CAN'T OPEN", SYSFILE, 0);
 
 	DEBUG(4, "finds (%s) called\n", system);
+keeplooking:
 	while((nf = finds(fsys, system, info, Flds)) > 0) {
 		if (LocalOnly) {
 			if (strcmp("TCP", Flds[F_LINE])
@@ -104,28 +105,31 @@ char *system;
 		}
 		fcode = (fn == FAIL ? CF_DIAL : fn);
 	}
-	fclose(fsys);
 
-	if (nf <= 0)
+	if (nf <= 0) {
+		fclose(fsys);
 		return fcode ? fcode : nf;
+	}
 
 	DEBUG(4, "login %s\n", "called");
 	ret = login(nf, Flds, fn);
 	if (ret != SUCCESS) {
 		clsacu();
-		if (ret == ABORT)
-			return CF_DIAL;
-		else
+		if (ret == ABORT) {
+			fcode = CF_DIAL;
+			goto  keeplooking;
+		} else {
+			fclose(fsys);
 			return CF_LOGIN;
+		}
 	}
-	/* rti!trt:  avoid passing file to children */
+	fclose(fsys);
 	fioclex(fn);
 	return fn;
 }
 
-/***
- *	getto(flds)		connect to remote machine
- *	char *flds[];
+/*
+ *	connect to remote machine
  *
  *	return codes:
  *		>0  -  file number - ok
@@ -137,23 +141,32 @@ register char *flds[];
 {
 	register struct condev *cd;
 	int nulldev(), diropn();
+	char *line;
 
 	DEBUG(4, "getto: call no. %s ", flds[F_PHONE]);
 	DEBUG(4, "for sys %s\n", flds[F_NAME]);
 
+	if (snccmp(flds[F_LINE], "LOCAL") == SAME)
+		line = "ACU";
+	else
+		line = flds[F_LINE];
+#ifdef DIALINOUT
+	if (snccmp(line, "ACU") != SAME)
+		reenable();
+#endif DIALINOUT
 	CU_end = nulldev;
 	for (cd = condevs; cd->CU_meth != NULL; cd++) {
-		if (snccmp(cd->CU_meth, flds[F_LINE]) == SAME) {
+		if (snccmp(cd->CU_meth, line) == SAME) {
 			DEBUG(4, "Using %s to call\n", cd->CU_meth);
 			return (*(cd->CU_gen))(flds);
 		}
 	}
-	DEBUG(1, "Can't find %s, assuming DIR", flds[F_LINE]);
+	DEBUG(1, "Can't find %s, assuming DIR\n", flds[F_LINE]);
 	return diropn(flds);	/* search failed, so use direct */
 }
 
-/***
- *	clsacu()	close call unit
+/*
+ *	close call unit
  *
  *	return codes:  none
  */
@@ -187,10 +200,8 @@ clsacu()
 	CU_end = nulldev;
 }
 
-/***
- *	exphone - expand phone number for given prefix and number
- *
- *	return code - none
+/*
+ *	expand phone number for given prefix and number
  */
 
 exphone(in, out)
@@ -479,6 +490,7 @@ int fn;
 	register char *rp = rdvec, *strptr;
 	int kr, cnt_char;
 	char nextch;
+	int timo = MAXMSGTIME;
 
 	if (*str == '\0' || strcmp(str, "\"\"") == SAME)
 		return SUCCESS;
@@ -499,11 +511,19 @@ int fn;
 			}
 	}
 
-	*rp = 0;
+	strptr = index(str, '~');
+	if (strptr != NULL) {
+		*strptr++ = '\0';
+		timo = atoi(strptr);
+		if (timo <= 0)
+			timo = MAXMSGTIME;
+	}
+
 	if (setjmp(Sjbuf))
 		return FAIL;
 	signal(SIGALRM, alarmtr);
-	alarm(MAXMSGTIME);
+	alarm(timo);
+	*rp = 0;
 	while (notin(str, rdvec)) {
 		if(AbortOn != NULL && !notin(AbortOn, rdvec)) {
 			DEBUG(1, "Call aborted on '%s'\n", AbortOn);
@@ -929,21 +949,64 @@ register char *s1, *s2;
 {
 	char c1, c2;
 
-	if (islower(*s1)) c1 = toupper(*s1);
-	else c1 = *s1;
-	if (islower(*s2)) c2 = toupper(*s2);
-	else c2 = *s2;
+	if (islower(*s1))
+		c1 = toupper(*s1);
+	else
+		c1 = *s1;
+	if (islower(*s2))
+		c2 = toupper(*s2);
+	else
+		c2 = *s2;
 
 	while (c1 == c2) {
-		if (*s1++=='\0')
+		if (*s1++ == '\0')
 			return 0;
 		s2++;
-		if (islower(*s1)) c1 = toupper(*s1);
-		else c1 = *s1;
-		if (islower(*s2)) c2 = toupper(*s2);
-		else c2 = *s2;
+		if (islower(*s1))
+			c1 = toupper(*s1);
+		else
+			c1 = *s1;
+		if (islower(*s2))
+			c2 = toupper(*s2);
+		else
+			c2 = *s2;
 	}
 	return c1 - c2;
+}
+
+/*
+ * Compare strings:  s1>s2: >0  s1==s2: 0  s1<s2: <0
+ * Strings are compared as if they contain all capital letters.
+ */
+sncncmp(s1, s2, n)
+register char *s1, *s2;
+register int n;
+{
+	char c1, c2;
+
+	if (islower(*s1))
+		c1 = toupper(*s1);
+	else
+		c1 = *s1;
+	if (islower(*s2))
+		c2 = toupper(*s2);
+	else
+		c2 = *s2;
+
+	while ( --n >= 0 && c1 == c2) {
+		if (*s1++ == '\0')
+			return 0;
+		s2++;
+		if (islower(*s1))
+			c1 = toupper(*s1);
+		else
+			c1 = *s1;
+		if (islower(*s2))
+			c2 = toupper(*s2);
+		else
+			c2 = *s2;
+	}
+	return n<0 ? 0 : (c1 - c2);
 }
 /*
  * do chat script

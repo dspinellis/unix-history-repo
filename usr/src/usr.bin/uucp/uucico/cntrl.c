@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.7 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -52,7 +52,7 @@ int (*Rdmsg)()=imsg, (*Rddata)();
 int (*Wrmsg)()=omsg, (*Wrdata)();
 int (*Turnon)()=nullf, (*Turnoff)() = nullf;
 
-struct timeb Now, LastTurned;
+struct timeb Now, LastTurned, LastCheckedNoLogin;
 
 static char *YES = "Y";
 static char *NO = "N";
@@ -156,14 +156,17 @@ top:
 		wrkvec[i] = 0;
 	DEBUG(4, "*** TOP ***  -  role=%s\n", role ? "MASTER" : "SLAVE");
 	setupline(RESET);
-	if (nologinflag) {
-		logent(NOLOGIN, "UUCICO SHUTDOWN");
-		if (Debug > 4)
-			logent("DEBUGGING", "continuing anyway");
-		else {
-			WMESG(HUP, YES);
-			RMESG(HUP, msg, 1);
-			goto process;
+	if (Now.time > (LastCheckedNoLogin.time+60)) {
+		LastCheckedNoLogin = Now;
+		if (access(NOLOGIN, 0) == 0) {
+			logent(NOLOGIN, "UUCICO SHUTDOWN");
+			if (Debug > 4)
+				logent("DEBUGGING", "continuing anyway");
+			else {
+				WMESG(HUP, YES);
+				RMESG(HUP, msg, 1);
+				goto process;
+			}
 		}
 	}
 	if (role == MASTER) {
@@ -289,15 +292,8 @@ process:
 			if (i<0 || i>EM_MAX)
 				i = 0;
 			USRF( 1 << i );
-				i = 0;
 			logent(Em_msg[i], "REQUEST FAILED");
-			if (strcmp(&msg[1], EM_NOTMP) == 0) {
-				/* dont send him files he can't save */
-				WMESG(HUP, "");
-				RMESG(HUP, msg, 1);
-				goto process;
-			} else
-				TransferSucceeded = 1; /* He had his chance */
+			TransferSucceeded = 1; /* He had his chance */
 		}
 		if (msg[1] == 'Y') {
 			USRF(USR_COK);
@@ -388,8 +384,8 @@ process:
 			USRF( 1 << i );
 			fclose(fp);
 			fp = NULL;
+			/* dont send him files he can't save */
 			if (strcmp(&msg[1], EM_NOTMP) == 0) {
-				/* dont send him files he can't save */
 				WMESG(HUP, "");
 				RMESG(HUP, msg, 1);
 				goto process;
@@ -545,12 +541,6 @@ process:
 			USRF( 1 << i );
 			fclose(fp);
 			fp = NULL;
-			if (strcmp(&msg[1], EM_NOTMP) == 0) {
-				/* dont send him files he can't save */
-				WMESG(HUP, "");
-				RMESG(HUP, msg, 1);
-				goto process;
-			}
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 			ASSERT(role == MASTER, "WRONG ROLE - RN", CNULL, role);
 			unlinkdf(Dfile);

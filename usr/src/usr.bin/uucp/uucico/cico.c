@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cico.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cico.c	5.9 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -109,7 +109,6 @@ register char *argv[];
 #ifdef BSD4_2
 	setlinebuf(stderr);
 #endif
-	rflags[0] = '\0';
 	umask(WFMASK);
 	strcpy(Rmtname, Myname);
 	Ifn = Ofn = -1;
@@ -140,7 +139,6 @@ register char *argv[];
 			Debug = atoi(&argv[1][2]);
 			if (Debug <= 0)
 				Debug = 1;
-			strcat(rflags, argv[1]);
 			logent("ENABLED", "DEBUG");
 			break;
 		case 't':
@@ -166,7 +164,7 @@ register char *argv[];
 		--argc; argv++;
 	}
 
-	/* Try to run as uucp -- rti!trt */
+	/* Try to run as uucp */
 	setgid(getegid());
 	setuid(geteuid());
 #ifdef	TIOCNOTTY
@@ -191,8 +189,7 @@ register char *argv[];
 
 	if (Role == SLAVE) {
 		/* check for /etc/nologin */
-		ultouch();	/* sets nologinflag as a side effect */
-		if (nologinflag) {
+		if (access(NOLOGIN, 0) == 0) {
 			logent(NOLOGIN, "UUCICO SHUTDOWN");
 			if (Debug > 4)
 				logent("DEBUGGING", "continuing anyway");
@@ -295,15 +292,16 @@ register char *argv[];
 		if (IsTcpIp) {
 			struct hostent *hp;
 			char *cpnt, *inet_ntoa();
-			int fromlen;
+			int len;
 			struct sockaddr_in from;
+			extern char PhoneNumber[];
 
 #ifdef	NOGETPEER
 			from.sin_addr.s_addr = Hostnumber;
 			from.sin_family = AF_INET;
 #else	!NOGETPEER
-			fromlen = sizeof(from);
-			if (getpeername(0, &from, &fromlen) < 0) {
+			len = sizeof(from);
+			if (getpeername(0, &from, &len) < 0) {
 				logent(Rmtname, "NOT A TCP CONNECTION");
 				omsg('R', "NOT TCP", Ofn);
 				cleanup(0);
@@ -323,33 +321,35 @@ register char *argv[];
 			}
 			if (Debug>99)
 				logent(Rmtname,"Request from IP-Host name =");
-			/* The following is to determine if the name given us by
-			 * the Remote uucico matches any of the names(aliases)
+			/*
+			 * The following is to determine if the name given us by
+			 * the Remote uucico matches any of the names
 			 * given its network number (remote machine) in our
 			 * host table.
+			 * We could check the aliases, but that won't work in
+			 * all cases (like if you are running the domain
+			 * server, where you don't get any aliases). The only
+			 * reliable way I can think of that works in ALL cases
+			 * is too look up the site in L.sys and see if the
+			 * sitename matches what we would call him if we
+			 * originated the call.
 			 */
-			if (strncmp(q, hp->h_name, SYSNSIZE) == 0) {
+			/* PhoneNumber contains the official network name of the 			   host we are checking. (set in versys.c) */
+			if (sncncmp(PhoneNumber, hp->h_name, SYSNSIZE) == 0) {
 				if (Debug > 99)
 					logent(q,"Found in host Tables");
-			} else { /* Scan The host aliases */
-				for(alias=hp->h_aliases; *alias!=0 &&
-				    strncmp(q, *alias, SYSNSIZE) != 0; ++alias)
-					;
-				if (strncmp(q, *alias, SYSNSIZE) != 0) {
-					logent(q, "FORGED HOSTNAME");
-					logent(inet_ntoa(from.sin_addr), "ORIGINATED AT");
-					omsg('R',"You're not who you claim to be", Ofn);
-					cleanup(0);
-				}
-#ifdef DEBUG
-				if (Debug> 99)
-					logent(q,"Found in host Tables");
-#endif DEBUG
+			} else {
+				logent(hp->h_name, "FORGED HOSTNAME");
+				logent(inet_ntoa(from.sin_addr), "ORIGINATED AT");
+				logent(PhoneNumber, "SHOULD BE");
+				sprintf(wkpre, "You're not who you claim to be: %s !=  %s", hp->h_name, PhoneNumber);
+				omsg('R', wkpre, Ofn);
+				cleanup(0);
 			}
 		}
 #endif	BSDTCP
 
-		if (mlock(Rmtname)) {
+		if (mlock(Rmtname) == FAIL) {
 			omsg('R', "LCK", Ofn);
 			cleanup(0);
 		}
@@ -461,8 +461,7 @@ loop:
 	signal(SIGQUIT, SIG_IGN);
 	if (Role == MASTER) {
 		/* check for /etc/nologin */
-		ultouch();	/* sets nologinflag as a side effect */
-		if (nologinflag) {
+		if (access(NOLOGIN, 0) == 0) {
 			logent(NOLOGIN, "UUCICO SHUTDOWN");
 			if (Debug > 4)
 				logent("DEBUGGING", "continuing anyway");
@@ -481,7 +480,7 @@ loop:
 			sleep(3);
 		}
 		sprintf(msg, "call to %s ", Rmtname);
-		if (mlock(Rmtname) != 0) {
+		if (mlock(Rmtname) != SUCCESS) {
 			logent(msg, "LOCKED");
 			US_SST(us_s_lock);
 			goto next;
@@ -533,6 +532,11 @@ loop:
 #else !GNXSEQ
 		seq = 0;
 #endif !GNXSEQ
+		if (Debug)
+			sprintf(rflags, "-x%d", Debug);
+		else
+			rflags[0] = '\0';
+
 		if (MaxGrade != '\177') {
 			char buf[MAXFULLNAME];
 			sprintf(buf, " -p%c -vgrade=%c", MaxGrade, MaxGrade);
