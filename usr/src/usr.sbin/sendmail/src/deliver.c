@@ -7,22 +7,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
 #include <netdb.h>
 #include <errno.h>
-#include <sys/wait.h>
 #ifdef NAMED_BIND
 #include <arpa/nameser.h>
 #include <resolv.h>
 
 extern int	h_errno;
-#endif
-
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(st)	(((st) >> 8) & 0377)
 #endif
 
 /*

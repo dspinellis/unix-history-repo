@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -910,8 +910,6 @@ setproctitle(fmt, va_alist)
 **	Side Effects:
 **		Picks up extant zombies.
 */
-
-# include <sys/wait.h>
 
 void
 reapchild()
