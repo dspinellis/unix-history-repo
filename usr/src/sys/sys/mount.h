@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.3 (Berkeley) %G%
+ *	@(#)mount.h	7.4 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -168,10 +168,11 @@ typedef struct fhandle	fhandle_t;
 /*
  * File Handle (32 bytes for version 2), variable up to 1024 for version 3
  */
-struct nfsv2fh {
-	u_char	fh_bytes[32];
+union nfsv2fh {
+	fhandle_t	fh_generic;
+	u_char		fh_bytes[32];
 };
-typedef struct nfsv2fh nfsv2fh_t;
+typedef union nfsv2fh nfsv2fh_t;
 
 /*
  * Arguments to mount NFS
