@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	7.9 (Berkeley) %G%
+ *	@(#)tty.h	7.10 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
@@ -88,7 +88,7 @@ extern	struct ttychars ttydefaults;
 #define	TS_ASLEEP	0x000040	/* wakeup when output done */
 #define	TS_XCLUDE	0x000080	/* exclusive-use flag against open */
 #define	TS_TTSTOP	0x000100	/* output stopped by ctl-s */
-#define	TS_HUPCLS	0x000200	/* hang up upon last close */
+/* was	TS_HUPCLS	0x000200 	 * hang up upon last close */
 #define	TS_TBLOCK	0x000400	/* tandem queue blocked */
 #define	TS_RCOLL	0x000800	/* collision in read select */
 #define	TS_WCOLL	0x001000	/* collision in write select */
