@@ -23,14 +23,13 @@
  * (We hope this to be temporary until a real admin protocol is worked out)
  */
 
-#define	MAX_PW_LEN	256
 struct kpasswd_data {
 	des_cblock random_key;
-	char secure_msg[MAX_PW_LEN];
+	char secure_msg[_PASSWORD_LEN];
 };
 struct update_data {
-	char pw[MAX_PW_LEN];
-	char secure_msg[MAX_PW_LEN];
+	char pw[_PASSWORD_LEN];
+	char secure_msg[_PASSWORD_LEN];
 };
 #define	SERVICE		"kpasswd"
 #define	SECURE_STRING	"Kerberos password update program -- 12/9/88 UC Berkeley"
