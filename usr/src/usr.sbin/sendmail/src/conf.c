@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -865,17 +865,19 @@ uname(name)
 
 	name->nodename[0] = '\0';
 
+	/* try /etc/whoami -- one line with the node name */
 	if ((file = fopen("/etc/whoami", "r")) != NULL)
 	{
-		(void) fgets(name->nodename, NODE_LENGTH+1, file);
+		(void) fgets(name->nodename, NODE_LENGTH + 1, file);
 		(void) fclose(file);
-		n = index(name->nodename, '\n');
+		n = strchr(name->nodename, '\n');
 		if (n != NULL)
 			*n = '\0';
 		if (name->nodename[0] != '\0')
 			return (0);
 	}
 
+	/* try /usr/include/whoami.h -- has a #define somewhere */
 	if ((file = fopen("/usr/include/whoami.h", "r")) != NULL)
 	{
 		char buf[MAXLINE];
@@ -894,14 +896,15 @@ uname(name)
 	**  Popen is known to have security holes.
 	*/
 
+	/* try uuname -l to return local name */
 	if ((file = popen("uuname -l", "r")) != NULL)
 	{
-		(void) fgets(name, NODE_LENGTH+1, file);
+		(void) fgets(name, NODE_LENGTH + 1, file);
 		(void) pclose(file);
-		n = index(name, '\n');
+		n = strchr(name, '\n');
 		if (n != NULL)
 			*n = '\0';
-		if (name->nodename[0])
+		if (name->nodename[0] != '\0')
 			return (0);
 	}
 #endif
