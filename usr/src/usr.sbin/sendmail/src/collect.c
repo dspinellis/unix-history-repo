@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)collect.c	3.5	%G%";
+static char	SccsId[] = "@(#)collect.c	3.6	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -237,11 +237,9 @@ maketemp(from)
 	.... so we will ignore the problem for the time being */
 	if (Date == NULL)
 	{
-		auto long t;
 		extern char *ctime();
 
-		time(&t);
-		Date = newstr(ctime(&t));
+		Date = newstr(ctime(&CurTime));
 	}
 
 	if (freopen(InFileName, "r", stdin) == NULL)
@@ -371,29 +369,10 @@ hvalue(field)
 char *
 makemsgid()
 {
-	auto long t;
-	register char *p;
-	extern char *Macro[];
 	static char buf[50];
-	extern long time();
-	extern char *sprintf();
+	extern char *expand();
 
-	time(&t);
-	sprintf(buf, "<%ld.%d", t, getpid());
-	p = Macro['l'];
-	if (p != NULL)
-	{
-		strcat(buf, ".");
-		strcat(buf, p);
-	}
-	p = Macro['A'];
-	if (p != NULL)
-	{
-		strcat(buf, "@");
-		strcat(buf, p);
-	}
-	strcat(buf, ">");
-
+	expand("<$m>", buf, &buf[sizeof buf - 1]);
 	return (buf);
 }
 /*

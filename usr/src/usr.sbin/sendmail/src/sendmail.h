@@ -1,7 +1,7 @@
 /*
 **  POSTBOX.H -- Global definitions for postbox.
 **
-**	@(#)sendmail.h	3.6	%G%
+**	@(#)sendmail.h	3.7	%G%
 */
 
 
@@ -20,6 +20,31 @@
 # define MAXHOP		30	/* maximum value of HopCount */
 # define MAXATOM	15	/* max atoms per address */
 # define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
+
+
+
+
+
+
+/*
+**  Address structure.
+**	Addresses are stored internally in this structure.
+*/
+
+struct address
+{
+	char		*q_paddr;	/* the printname for the address */
+	char		*q_user;	/* user name */
+	char		*q_host;	/* host name */
+	short		q_mailer;	/* mailer to use */
+	short		q_rmailer;	/* real mailer (before mapping) */
+	short		q_flags;	/* status flags, see below */
+	struct address	*q_next;	/* chain */
+};
+
+typedef struct address ADDRESS;
+
+# define QDONTSEND	000001	/* don't send to this address */
 
 
 
@@ -47,60 +72,32 @@
 
 struct mailer
 {
-	char	*m_mailer;	/* pathname of the mailer to use */
 	char	*m_name;	/* symbolic name of this mailer */
+	char	*m_mailer;	/* pathname of the mailer to use */
 	short	m_flags;	/* status flags, see below */
 	short	m_badstat;	/* the status code to use on unknown error */
 	char	*m_from;	/* pattern for From: header */
 	char	**m_argv;	/* template argument vector */
+	ADDRESS	*m_sendq;	/* list of addresses to send to */
 };
 
 # define M_FOPT		000001	/* mailer takes picky -f flag */
 # define M_ROPT		000002	/* mailer takes picky -r flag */
 # define M_QUIET	000004	/* don't print error on bad status */
 # define M_RESTR	000010	/* must be daemon to execute */
-# define M_HDR		000020	/* insert From line */
+# define M_NHDR		000020	/* don't insert From line */
 # define M_NOHOST	000040	/* ignore host in comparisons */
 # define M_STRIPQ	000100	/* strip quote characters from user/host */
-# define M_FHDR		000200	/* force good From line */
+# define M_MUSER	000200	/* mailer can handle multiple users at once */
 # define M_NEEDFROM	000400	/* need arpa-style From: line */
 # define M_NEEDDATE	001000	/* need arpa-style Date: line */
 # define M_MSGID	002000	/* need Message-Id: field */
-# define M_COMMAS	004000	/* need comma-seperated address lists */
 # define M_USR_UPPER	010000	/* preserve user case distinction */
 # define M_HST_UPPER	020000	/* preserve host case distinction */
 
-# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID|M_COMMAS)
+# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 
 extern struct mailer *Mailer[];
-
-
-/*
-**  Address structure.
-**	Addresses are stored internally in this structure.
-*/
-
-struct address
-{
-	char		*q_paddr;	/* the printname for the address */
-	char		*q_user;	/* user name */
-	char		*q_host;	/* host name */
-	short		q_mailer;	/* mailer to use */
-	short		q_rmailer;	/* real mailer (before mapping) */
-	struct address	*q_next;	/* chain */
-	struct address	*q_prev;	/* back pointer */
-};
-
-typedef struct address ADDRESS;
-
-/* some other primitives */
-# define nxtinq(q)	((q)->q_next)
-# define clearq(q)	(q)->q_next = (q)->q_prev = NULL
-
-extern ADDRESS SendQ;		/* queue of people to send to */
-extern ADDRESS AliasQ;		/* queue of people that are aliases */
-
-
 
 
 
@@ -191,6 +188,8 @@ extern char	*Date;		/* origination date (UNIX format) */
 extern ADDRESS	From;		/* the person it is from */
 extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */
+extern long	CurTime;	/* time of this message */
+extern char	FromLine[];	/* a UNIX-style From line for this message */
 
 
 # include	<sysexits.h>

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.5	%G%";
+static char	SccsId[] = "@(#)main.c	3.6	%G%";
 
 /*
 **  POSTBOX -- Post mail to a set of destinations.
@@ -124,10 +124,10 @@ char	*To;		/* the target person */
 char	*FullName;	/* full name of sender */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
-ADDRESS	SendQ;		/* queue of people to send to */
-ADDRESS	AliasQ;		/* queue of people who turned out to be aliases */
 HDR	*Header;	/* header list */
 char	*Macro[128];	/* macros */
+long	CurTime;	/* current time */
+char	FromLine[80];	/* holds From line (UNIX style header) */
 
 
 
@@ -156,6 +156,12 @@ main(argc, argv)
 	extern char *strcpy(), *strcat();
 	extern char *makemsgid();
 	char *cfname;
+	register int i;
+	char pbuf[10];			/* holds pid */
+	char tbuf[10];			/* holds "current" time */
+	char cbuf[5];			/* holds hop count */
+	char dbuf[30];			/* holds ctime(tbuf) */
+	extern char *sprintf();
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -300,6 +306,24 @@ main(argc, argv)
 	if (from != NULL && ArpaFmt)
 		syserr("-f and -a are mutually exclusive");
 
+	/*
+	**  Read control file and initialize system macros.
+	**	Collect should be called first, so that the time
+	**	corresponds to the time that the messages starts
+	**	getting sent, rather than when it is first composed.
+	*/
+
+	sprintf(pbuf, "%d", getpid());
+	define('p', pbuf);
+	sprintf(cbuf, "%d", HopCount);
+	define('c', cbuf);
+	time(&CurTime);
+	sprintf(tbuf, "%ld", &CurTime);
+	define('t', tbuf);
+	strcpy(dbuf, ctime(&CurTime));
+	*index(dbuf, '\n') = '\0';
+	define('d', dbuf);
+
 	readcf(cfname);
 
 	/*
@@ -412,10 +436,13 @@ main(argc, argv)
 		syserr("Bad from address `%s'", from);
 		.... so we will just ignore this address */
 		from = p;
+		parse(from, &From, 0);
 		FromFlag = FALSE;
 	}
 	SuprErrs = FALSE;
 
+	define('f', From.q_paddr);
+	expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
 # ifdef DEBUG
 	if (Debug)
 		printf("From person = \"%s\"\n", From.q_paddr);
@@ -473,42 +500,30 @@ main(argc, argv)
 		finis();
 
 	/*
-	**  See if we have anyone to send to at all.
-	*/
-
-	if (nxtinq(&SendQ) == NULL && ExitStat == EX_OK)
-	{
-		syserr("Noone to send to!");
-		ExitStat = EX_USAGE;
-		finis();
-	}
-
-	/*
 	**  Do aliasing.
 	**	First arrange that the person who is sending the mail
 	**	will not be expanded (unless explicitly requested).
 	*/
 
+	From.q_flags |= QDONTSEND;
 	if (!MeToo)
-		recipient(&From, &AliasQ);
+		recipient(&From);
 	To = NULL;
 	alias();
-	if (nxtinq(&SendQ) == NULL && ExitStat == EX_OK)
-	{
-/*
-		syserr("Vacant send queue; probably aliasing loop");
-		ExitStat = EX_SOFTWARE;
-		finis();
-*/
-		recipient(&From, &SendQ);
-	}
 
 	/*
 	**  Actually send everything.
 	*/
 
-	for (q = &SendQ; (q = nxtinq(q)) != NULL; )
-		deliver(q, (fnptr) NULL);
+	for (i = 0; Mailer[i] != NULL; i++)
+	{
+		ADDRESS *q;
+
+		for (q = Mailer[i]->m_sendq; q != NULL; q = q->q_next)
+		{
+			deliver(q, (fnptr) NULL);
+		}
+	}
 
 	/*
 	** All done.

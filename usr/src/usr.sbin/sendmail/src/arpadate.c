@@ -4,7 +4,7 @@
 # include <sys/timeb.h>
 # endif
 
-static char SccsId[] = "@(#)arpadate.c	3.2	%G%";
+static char SccsId[] = "@(#)arpadate.c	3.3	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -21,6 +21,11 @@ static char SccsId[] = "@(#)arpadate.c	3.2	%G%";
 **	WARNING:
 **		date is stored in a local buffer -- subsequent
 **		calls will overwrite.
+**
+**	Bugs:
+**		Timezone is computed from local time, rather than
+**		from whereever (and whenever) the message was sent.
+**		To do better is very hard.
 */
 
 # ifdef V6

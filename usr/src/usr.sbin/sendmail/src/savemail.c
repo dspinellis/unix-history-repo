@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.4	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.5	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -39,12 +39,10 @@ savemail()
 	auto long tim;
 	extern int errno;
 	extern char *ttypath();
-	extern char *ctime();
 	extern ADDRESS *parse();
 	static int exclusive;
 	extern char *strcpy(), *strcat();
-	extern long time();
-	extern char *Macro[];
+	extern char *expand();
 
 	if (exclusive++)
 		return;
@@ -98,7 +96,7 @@ savemail()
 			xfile = fopen(Transcript, "r");
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
-			printf("\r\nMessage from %s\r\n", Macro['d']);
+			printf("\r\nMessage from %s\r\n", expand("$n", buf, &buf[sizeof buf - 1]));
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) && !ferror(stdout))
 				fputs(buf, stdout);
@@ -127,7 +125,7 @@ savemail()
 
 		/* fake up an address header for the from person */
 		bmove((char *) &From, (char *) &to_addr, sizeof to_addr);
-		if (parse(Macro['d'], &From, -1) == NULL)
+		if (parse(expand("$n", buf, &buf[sizeof buf - 1]), &From, -1) == NULL)
 		{
 			syserr("Can't parse myself!");
 			ExitStat = EX_SOFTWARE;
@@ -171,23 +169,10 @@ savemail()
 		/* we have a home directory; open dead.letter */
 		strcpy(buf, p);
 		strcat(buf, "/dead.letter");
-		xfile = fopen(buf, "a");
-		if (xfile == NULL)
+		if (mailfile(buf) != EX_OK)
 			printf("Cannot save mail, sorry\n");
 		else
-		{
-			rewind(stdin);
-			errno = 0;
-			time(&tim);
-			fprintf(xfile, "----- Mail saved at %s", ctime(&tim));
-			while (fgets(buf, sizeof buf, stdin) && !ferror(xfile))
-				fputs(buf, xfile);
-			fputs("\n", xfile);
-			if (ferror(xfile))
-				syserr("savemail: dead.letter: write err");
-			fclose(xfile);
 			printf("Letter saved in dead.letter\n");
-		}
 	}
 	else
 
@@ -224,26 +209,22 @@ savemail()
 errhdr(fp)
 	register FILE *fp;
 {
-	char copybuf[512];
-	register int i;
-	register int xfile;
+	char buf[MAXLINE];
+	register FILE *xfile;
 	extern int errno;
 
-	if ((xfile = open(Transcript, 0)) < 0)
-		syserr("Cannot open %s", Transcript);
 	fflush(stdout);
+	if ((xfile = fopen(Transcript, "r")) == NULL)
+		syserr("Cannot open %s", Transcript);
 	errno = 0;
 	fprintf(fp, "To: %s\n", To);
 	fprintf(fp, "Subject: Unable to deliver mail\n");
 	fprintf(fp, "\n   ----- Transcript of session follows -----\n");
-	fflush(fp);
-	while ((i = read(xfile, copybuf, sizeof copybuf)) > 0)
-		write(fileno(fp), copybuf, i);
+	while (fgets(xfile, buf, sizeof buf) != NULL)
+		fputs(buf, fp);
 	fprintf(fp, "\n   ----- Unsent message follows -----\n");
 	fflush(fp);
-	rewind(stdin);
-	while ((i = read(fileno(stdin), copybuf, sizeof copybuf)) > 0)
-		write(fileno(fp), copybuf, i);
+	putmessage(fp, Mailer[1]);
 	close(xfile);
 	if (errno != 0)
 		syserr("errhdr: I/O error");

@@ -50,14 +50,9 @@
 **				to use by "daemon"; otherwise, we do a
 **				setuid(getuid()) before calling the
 **				mailer.
-**			   M_HDR -- if set, the mailer wants us to
-**				insert a UNIX "From" line before
+**			   M_NHDR -- if set, the mailer doesn't want us
+**				to insert a UNIX "From" line before
 **				outputing.
-**			   M_FHDR -- if set, the header that we
-**				generate will be used literally, so
-**				we must force it to be correct.  The
-**				effect is that we generate a header
-**				even if one exists.
 **			   M_NOHOST -- if set, this mailer doesn't care
 **				about the host part (e.g., the local
 **				mailer).
@@ -74,10 +69,7 @@
 **				field in the message.
 **			   M_MSGID -- this mailer requires a Message-Id
 **				field in the message.
-**			   M_COMMAS -- this mailer wants comma-
-**				seperated To: and Cc: fields.
-**			   M_ARPAFMT == M_NEEDDATE|M_NEEDFROM|M_MSGID|
-**				M_COMMAS.
+**			   M_ARPAFMT == M_NEEDDATE|M_NEEDFROM|M_MSGID.
 **			- an exit status to use as the code for the
 **			  error message print if the mailer returns
 **			  something we don't understand.
@@ -106,7 +98,7 @@
 
 
 
-static char SccsId[] = "@(#)conf.c	3.7	%G%";
+static char SccsId[] = "@(#)conf.c	3.8	%G%";
 
 
 # include <whoami.h>		/* definitions of machine id's at berkeley */
@@ -175,15 +167,15 @@ static char	*LocalArgv[] =
 static struct mailer	LocalMailer =
 {
 # ifdef NETV6MAIL
-	"/usr/net/bin/v6mail",
+	"local",	"/usr/net/bin/v6mail",
 # else
-	"/bin/mail",
+	"local",	"/bin/mail",
 # endif
-	"local",	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,
-	"$f",		LocalArgv,
+	M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT|M_MUSER|M_NHDR,
+	EX_NOUSER,	"$f",		LocalArgv,	NULL,
 };
 
-/* pipes through programs -- must be #1 */
+/* pipes through programs -- must be #1 -- also used for files */
 static char	*ProgArgv[] =
 {
 	"...prog%mail",
@@ -194,9 +186,9 @@ static char	*ProgArgv[] =
 
 static struct mailer	ProgMailer =
 {
-	"/bin/csh",
-	"prog",		M_HDR|M_FHDR|M_NOHOST,			EX_UNAVAILABLE,
-	"$f",		ProgArgv,
+	"prog",		"/bin/csh",
+	M_NOHOST|M_ARPAFMT,
+	EX_UNAVAILABLE, "$f",		ProgArgv,	NULL,
 };
 
 /* local berkeley mail */
@@ -214,9 +206,9 @@ static char	*BerkArgv[] =
 
 static struct mailer	BerkMailer =
 {
-	"/usr/net/bin/sendberkmail",
-	"berk",		M_FOPT|M_HDR|M_STRIPQ,			EX_UNAVAILABLE,
-	"$B:$f",	BerkArgv,
+	"berk",		"/usr/net/bin/sendberkmail",
+	M_FOPT|M_ARPAFMT|M_STRIPQ|M_MUSER,
+	EX_UNAVAILABLE,	"$B:$f",	BerkArgv,	NULL,
 };
 
 /* arpanet mail */
@@ -231,16 +223,16 @@ static char	*ArpaArgv[] =
 
 static struct mailer	ArpaMailer =
 {
-	"/usr/lib/mailers/arpa",
-	"arpa",		M_STRIPQ|M_ARPAFMT,			0,
-	"$f@$A",	ArpaArgv,
+	"arpa",		"/usr/lib/mailers/arpa",
+	M_STRIPQ|M_ARPAFMT|M_USR_UPPER,
+	0,		"$f@$A",	ArpaArgv,	NULL,
 };
 
 /* uucp mail (cheat & use Bell's v7 mail) */
 static char	*UucpArgv[] =
 {
 	"...uucp%mail",
-# ifdef DUMBMAIL
+# ifndef DUMBMAIL
 	"-d",
 # endif DUMBMAIL
 	"$h!$u",
@@ -249,9 +241,9 @@ static char	*UucpArgv[] =
 
 static struct mailer	UucpMailer =
 {
-	"/bin/mail",
-	"uucp",		M_ROPT|M_STRIPQ,			EX_NOUSER,
-	"$U!$f",	UucpArgv,
+	"uucp",		"/bin/mail",
+	M_ROPT|M_STRIPQ|M_ARPAFMT|M_MUSER,
+	EX_NOUSER,	"$U!$f",	UucpArgv,	NULL,
 };
 
 struct mailer	*Mailer[] =
@@ -264,16 +256,11 @@ struct mailer	*Mailer[] =
 	NULL
 };
 
-# define NMAILERS	((sizeof Mailer / sizeof Mailer[0]) - 1)
-
 # define M_LOCAL	0
 # define M_PROG		1
 # define M_BERK		2
 # define M_ARPA		3
 # define M_UUCP		4
-
-/* list of messages for each mailer (sorted by host) */
-ADDRESS		MailList[NMAILERS];
 
 
 

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.5	%G%";
+static char SccsId[] = "@(#)deliver.c	3.6	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -41,14 +41,6 @@ static char SccsId[] = "@(#)deliver.c	3.5	%G%";
 **		including the file pointer.  It is critical that the
 **		parent waits for the child to finish before forking
 **		another child.
-**
-**	Called By:
-**		main
-**		savemail
-**
-**	Files:
-**		standard input -- must be opened to the message to
-**			deliver.
 */
 
 deliver(to, editfcn)
@@ -78,6 +70,7 @@ deliver(to, editfcn)
 	**  Compute receiving mailer, host, and to addreses.
 	**	Do some initialization first.  To is the to address
 	**	for error messages.
+	**	Also, define the standard per-address macros.
 	*/
 
 	To = to->q_paddr;
@@ -86,6 +79,9 @@ deliver(to, editfcn)
 	host = to->q_host;
 	Errors = 0;
 	errno = 0;
+	define('u', user);		/* to user */
+	define('h', host);		/* to host */
+	define('g', m->m_from);		/* translated from address */
 # ifdef DEBUG
 	if (Debug)
 		printf("deliver(%s [%d, `%s', `%s'])\n", To, m, host, user);
@@ -390,9 +386,13 @@ putmessage(fp, m)
 	extern char *arpadate();
 	extern char *hvalue();
 	bool anyheader = FALSE;
-	extern char *translate();
+	extern char *expand();
 	extern char *capitalize();
 	extern char SentDate[];
+
+	/* output "From" line unless supressed */
+	if (!bitset(M_NHDR, m->m_flags))
+		fprintf(fp, "%s\n", FromLine);
 
 	/* clear all "used" bits */
 	for (h = Header; h != NULL; h = h->h_link)
@@ -414,12 +414,11 @@ putmessage(fp, m)
 	{
 		extern char *FullName;
 
-		p = translate("$g", Mailer[From.q_mailer], From.q_paddr, (char *) NULL, (char *) NULL);
+		expand("$g", buf, &buf[sizeof buf - 1]);
 		if (FullName != NULL)
-			fprintf(fp, "From: %s <%s>\n", FullName, p);
+			fprintf(fp, "From: %s <%s>\n", FullName, buf);
 		else
-			fprintf(fp, "From: %s\n", p);
-		free(p);
+			fprintf(fp, "From: %s\n", buf);
 		anyheader = TRUE;
 	}
 	else if (p != NULL)
@@ -531,7 +530,7 @@ sendto(list, copyf)
 			continue;
 
 		/* arrange to send to this person */
-		recipient(a, &SendQ);
+		recipient(a);
 	}
 	To = NULL;
 }
@@ -540,15 +539,8 @@ sendto(list, copyf)
 **
 **	Saves the named person for future mailing.
 **
-**	Designates a person as a recipient.  This routine
-**	does the initial parsing, and checks to see if
-**	this person has already received the mail.
-**	It also supresses local network names and turns them into
-**	local names.
-**
 **	Parameters:
 **		a -- the (preparsed) address header for the recipient.
-**		targetq -- the queue to add the name to.
 **
 **	Returns:
 **		none.
@@ -561,9 +553,8 @@ sendto(list, copyf)
 **		main
 */
 
-recipient(a, targetq)
+recipient(a)
 	register ADDRESS *a;
-	ADDRESS *targetq;
 {
 	register ADDRESS *q;
 	register struct mailer *m;
@@ -580,48 +571,55 @@ recipient(a, targetq)
 # endif DEBUG
 
 	/*
-	**  Look up this person in the recipient list.  If they
-	**  are there already, return, otherwise continue.
+	**  Do sickly crude mapping for program mailing, etc.
 	*/
 
-	if (!ForceMail)
+	if (a->q_mailer == 0 && a->q_user[0] == '|')
 	{
-		for (q = &SendQ; (q = nxtinq(q)) != NULL; )
-			if (sameaddr(q, a, FALSE))
-			{
-# ifdef DEBUG
-				if (Debug)
-					printf("(%s in SendQ)\n", a->q_paddr);
-# endif DEBUG
-				return;
-			}
-		for (q = &AliasQ; (q = nxtinq(q)) != NULL; )
-			if (sameaddr(q, a, FALSE))
-			{
-# ifdef DEBUG
-				if (Debug)
-					printf("(%s in AliasQ)\n", a->q_paddr);
-# endif DEBUG
-				return;
-			}
+		a->q_mailer = 1;
+		m++;
+		a->q_user++;
 	}
+
+	/*
+	**  Look up this person in the recipient list.  If they
+	**  are there already, return, otherwise continue.
+	**  If the list is empty, just add it.
+	*/
+
+	if (m->m_sendq == NULL)
+	{
+		m->m_sendq = a;
+	}
+	else
+	{
+		ADDRESS *pq;
+
+		for (q = m->m_sendq; q != NULL; pq = q, q = q->q_next)
+		{
+			if (!ForceMail && sameaddr(q, a, FALSE))
+			{
+# ifdef DEBUG
+				if (Debug)
+					printf("(%s in sendq)\n", a->q_paddr);
+# endif DEBUG
+				return;
+			}
+		}
+
+		/* add address on list */
+		q = pq;
+		q->q_next = NULL;
+	}
+	a->q_next = NULL;
 
 	/*
 	**  See if the user wants hir mail forwarded.
 	**	`Forward' must do the forwarding recursively.
 	*/
 
-	if (m == Mailer[0] && !NoAlias && targetq == &SendQ && forward(a))
-		return;
-
-	/*
-	**  Put the user onto the target queue.
-	*/
-
-	if (targetq != NULL)
-	{
-		putonq(a, targetq);
-	}
+	if (m == Mailer[0] && !NoAlias && forward(a))
+		setbit(QDONTSEND, a->q_flags);
 
 	return;
 }
@@ -633,10 +631,12 @@ recipient(a, targetq)
 **	items of this vector are copied, unless a dollar sign
 **	is encountered.  In this case, the next character
 **	specifies something else to copy in.  These can be
+**	any macros.  System defined macros are:
 **		$f	The from address.
 **		$h	The host.
 **		$u	The user.
 **		$c	The hop count.
+**	among others.
 **	The vector is built in a local buffer.  A pointer to
 **	the static argv is returned.
 **
@@ -672,7 +672,8 @@ buildargv(m, host, user, from)
 	char **pvp;
 	char **mvp;
 	static char buf[512];
-	extern char *translate();
+	extern char *expand();
+	extern char *newstr();
 
 	/*
 	**  Do initial argv setup.
@@ -693,17 +694,14 @@ buildargv(m, host, user, from)
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
-		*pvp++ = translate(from, m, from, user, host);
+		expand(from, buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
 	}
 
 	/*
 	**  Build the rest of argv.
 	**	For each prototype parameter, the prototype is
-	**	scanned character at a time.  If a dollar-sign is
-	**	found, 'q' is set to the appropriate expansion,
-	**	otherwise it is null.  Then either the string
-	**	pointed to by q, or the original character, is
-	**	interpolated into the buffer.  Buffer overflow is
+	**	scanned character at a time.  Buffer overflow is
 	**	checked.
 	*/
 
@@ -714,7 +712,8 @@ buildargv(m, host, user, from)
 			syserr("Too many parameters to %s", pv[0]);
 			return (NULL);
 		}
-		*pvp++ = translate(p, m, from, user, host);
+		expand(p, buf, &buf[sizeof buf - 1]);
+		*pvp++ = newstr(buf);
 	}
 	*pvp = NULL;
 
@@ -728,91 +727,6 @@ buildargv(m, host, user, from)
 # endif DEBUG
 
 	return (pv);
-}
-/*
-**  TRANSLATE -- translate a string using $x escapes.
-**
-**	Parameters:
-**		s -- string to translate.
-**		m -- pointer to mailer descriptor.
-**
-**	Returns:
-**		pointer to translated string.
-**
-**	Side Effects:
-**		none.
-*/
-
-char *
-translate(s, m, from, user, host)
-	register char *s;
-	struct mailer *m;
-	char *from;
-	char *user;
-	char *host;
-{
-	char buf[MAXNAME];
-	char pbuf[10];
-	extern char *newstr();
-	extern char *Macro[];
-	extern char *sprintf();
-	extern char *trans2();
-
-	/* predefine system macros */
-	Macro['f'] = From.q_paddr;
-	Macro['g'] = m->m_from;
-	Macro['u'] = user;
-	Macro['h'] = host;
-	sprintf(pbuf, "%d", HopCount);
-	Macro['c'] = pbuf;
-
-	trans2(s, buf, &buf[sizeof buf - 1]);
-
-# ifdef DEBUG
-	if (Debug)
-		printf("translate ==> '%s'\n", buf);
-# endif DEBUG
-
-	return (newstr(buf));
-}
-
-/*
-**  TRANS2 -- internal routine to translate.
-*/
-
-char *
-trans2(s, bp, buflim)
-	register char *s;
-	register char *bp;
-	char *buflim;
-{
-	register char *q;
-	extern char *Macro[];
-
-# ifdef DEBUG
-	if (Debug)
-		printf("translate(%s)\n", s);
-# endif DEBUG
-
-	for (; *s != '\0'; s++)
-	{
-		/* q will be the interpolated quantity */
-		q = NULL;
-		if (*s == '$')
-			q = Macro[*++s];
-
-		/*
-		**  Interpolate q or output one character
-		**	Strip quote bits as we proceed.....
-		*/
-
-		if (q != NULL)
-			bp = trans2(q, bp, buflim);
-		else if (bp < buflim - 1)
-			*bp++ = *s;
-	}
-	*bp = '\0';
-	return (bp);
 }
 /*
 **  MAILFILE -- Send a message to a file.
@@ -833,29 +747,13 @@ trans2(s, bp, buflim)
 mailfile(filename)
 	char *filename;
 {
-	char buf[MAXLINE];
 	register FILE *f;
-	auto long tim;
-	extern char *ctime();
-	extern long time();
 
 	f = fopen(filename, "a");
 	if (f == NULL)
 		return (EX_CANTCREAT);
 	
-	/* output the timestamp */
-	time(&tim);
-	fprintf(f, "From %s %s", From.q_paddr, ctime(&tim));
-	rewind(stdin);
-	while (fgets(buf, sizeof buf, stdin) != NULL)
-	{
-		fputs(buf, f);
-		if (ferror(f))
-		{
-			fclose(f);
-			return (EX_IOERR);
-		}
-	}
+	putmessage(f, Mailer[1]);
 	fputs("\n", f);
 	fclose(f);
 	return (EX_OK);
