@@ -13,10 +13,11 @@ static	char	sccsid[] = "@(#)prt3270.c	3.1  10/29/86";
 #include "../ascii/ascebc.h"
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/screen.h"
-#define	DEFINEAIDS
-#define	LETS_SEE_ASCII
-#include "../ascii/m4.out"
+#include "../ctlr/function.h"
+#include "../ascii/astosc.h"
 #include "../general/globals.h"
+
+#include "../ctlr/kbd.out"
 
 
 int NumberColumns = 80;
@@ -158,13 +159,33 @@ void
 PrintAid(i)
 int	i;
 {
-    TC_AsciiAids_t *TC;
+    struct astosc *this;
 
-    for (TC = &TC_AsciiAids[TC_LOWEST_AID-TC_LOWEST];
-		TC <= &TC_AsciiAids[TC_HIGHEST_AID-TC_LOWEST]; TC++) {
-	if ((TC->tc_aid&0xff) == i) {
-	    putstr(TC->tc_name);
-	    return;
+    for (this = &astosc[0]; this <= &astosc[highestof(astosc)]; this++) {
+	if (this->function == FCN_AID) {
+	    int j;
+
+	    switch (this->shiftstate) {
+	    case 0:
+		j = 0;
+		break;
+	    case SHIFT_UPSHIFT:
+		j = 1;
+		break;
+	    case SHIFT_ALT:
+		j = 2;
+		break;
+	    case (SHIFT_UPSHIFT|SHIFT_ALT):
+		j = 3;
+		break;
+	    default:
+		fprintf(stderr, "Bad shiftstate 0x%x.\n", this->shiftstate);
+		exit(1);
+	    }
+	    if (hits[this->scancode].hit[j].code == i) {
+		putstr(this->name);
+		return;
+	    }
 	}
     }
 
@@ -406,7 +427,7 @@ int control;
 	count--;
 	PrintAid(aid);
 	putSpace();
-	if (aid == TCtoAid(TC_TREQ)) {
+	if (aid == AID_TREQ) {
 	    state = DATA;
 	} else {
 	    state = JUST_GOT_AID;
