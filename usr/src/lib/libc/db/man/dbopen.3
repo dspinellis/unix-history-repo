@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.5 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.6 (Berkeley) %G%
 .\"
 .TH DB 3  ""
 .UC 7
@@ -74,9 +74,9 @@ A pointer to a routine to flush any cached information to disk, free any
 allocated resources, and close the database file.
 Its function prototype is:
 .sp
-.RS
+.in +5
 close(const DB *db);
-.RE
+.in -5
 .sp
 Since key/data pairs may be cached in memory, failing to close the
 file with the
@@ -90,9 +90,9 @@ delete
 A pointer to a routine to remove key/data pairs from the database.
 Its function prototype is:
 .sp
-.RS
+.in +5
 delete(const DB *db, const DBT *key);
-.RE
+.in -5
 .sp
 The
 .I delete
@@ -105,9 +105,9 @@ A pointer to a routine which is the interface for keyed retrieval from
 the database.
 Its function prototype is:
 .sp
-.RS
+.in +5
 get(const DB *db, const DBT *key, DBT *data);
-.RE
+.in -5
 .sp
 The address and length of the data associated with the specified
 .I key
@@ -123,11 +123,20 @@ put
 A pointer to a routine to store key/data pairs in the database.
 Its function prototype is:
 .sp
-.RS
-.RS
+.in +5
 put(const DB *db, const DBT *key, const DBT *data, u_long flag);
-.RE
+.in -5
 .sp
+The
+.I put
+routine returns 0 on error, 1 on success, and -1 if the R_NOOVERWRITE
+.I flag
+is set and the key already exists in the file.
+.sp
+The parameter
+.I flag
+may be set to one of the following values:
+.RS
 .TP
 R_APPEND
 Append the data immediately after the data referenced by
@@ -148,22 +157,15 @@ Currently applicable only to the RECNO access method.)
 R_NOOVERWRITE
 Enter the new key/data pair only if the key does not previously exist.
 .RE
-.PP
-The
-.I put
-routine returns 0 on error, 1 on success, and -1 if the
-R_NOOVERWRITE
-.I flag
-is set and the key already exists in the file.
 .TP
 seq
 A pointer to a routine which is the interface for sequential
 retrieval from the database.
 Its function prototype is:
 .sp
-.RS
+.in +5
 seq(const DB *db, DBT *key, DBT *data, int flag);
-.RE
+.in -5
 .sp
 The address and length of the key are returned in the structure
 referenced by
@@ -172,7 +174,19 @@ and the address and length of the data are returned in the
 structure referenced
 by
 .IR data .
-.PP
+The first time the
+.I seq
+routine is called, the first record of the database is returned
+if
+.I flag
+is not set or is set to R_FIRST or R_NEXT.
+.sp
+The
+.I seq
+routine returns 0 on error, 1 on success, -1 if end-of-file is reached,
+and -2 if the input is a character device and no complete records are
+available.
+.sp
 The flag value, if set, should be one of the following values:
 .RS
 .TP
@@ -190,27 +204,14 @@ R_PREV
 Retrieve the record immediately before the most recently requested
 record.
 .RE
-.PP
-The first time the
-.I seq
-routine is called, the first record of the database is returned
-if
-.I flag
-is not set or is set to R_FIRST or R_NEXT.
-.PP
-The
-.I seq
-routine returns 0 on error, 1 on success, -1 if end-of-file is reached,
-and -2 if the input is a character device and no complete records are
-available.
 .TP
 sync
 A pointer to a routine to flush any cached information to disk.
 Its function prototype is:
 .sp
-.RS
+.in +5
 sync(const DB *db);
-.RE
+.in -5
 .sp
 If the database is in memory only, the
 .I sync
