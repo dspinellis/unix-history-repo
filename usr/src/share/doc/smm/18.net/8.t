@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)8.t	6.3 (Berkeley) %G%
+.\"	@(#)8.t	6.4 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Protocol/protocol interface
@@ -91,7 +91,7 @@ int req; struct sockaddr *addr;
 .DE
 The \fIreq\fP parameter is one of the following,
 .DS
-.ta \w'#define  'u '\w'PRC_UNREACH_NEEDFRAG   'u +8n
+.ta \w'#define  'u +\w'PRC_UNREACH_NEEDFRAG   'u +8n
 #define	PRC_IFDOWN	0	/* interface transition */
 #define	PRC_ROUTEDEAD	1	/* select new route if possible */
 #define	PRC_QUENCH	4	/* some said to slow down */
