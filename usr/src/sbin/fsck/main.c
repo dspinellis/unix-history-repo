@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.26 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.27 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -32,9 +32,7 @@ typedef struct direct	DIRECT;
 #define	REG	((dp->di_mode & IFMT) == IFREG)
 #define	BLK	((dp->di_mode & IFMT) == IFBLK)
 #define	CHR	((dp->di_mode & IFMT) == IFCHR)
-#define	MPC	((dp->di_mode & IFMT) == IFMPC)
-#define	MPB	((dp->di_mode & IFMT) == IFMPB)
-#define	SPECIAL	(BLK || CHR || MPC || MPB)
+#define	SPECIAL	(BLK || CHR)
 
 ino_t	startinum;		/* blk num of first in raw area */
 
@@ -1349,8 +1347,7 @@ ftypeok(dp)
 	case IFREG:
 	case IFBLK:
 	case IFCHR:
-	case IFMPC:
-	case IFMPB:
+	case IFLNK:
 		return (1);
 
 	default:
