@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	5.1 (Berkeley) %G%
+.\"	@(#)intro.3	6.1 (Berkeley) %G%
 .\"
 .sh 1 Usage
 .pp
@@ -45,7 +45,7 @@ Terminal status changing routines
 like
 .Fn nl
 and
-.Fn crmode
+.Fn cbreak
 should be called after
 .Fn initscr .
 .pp
@@ -96,7 +96,7 @@ and
 .Fn addch
 adds a character at the current \*y,
 returning ERR if it would cause the window to illegally scroll,
-i.e.,
+.i i.e. ,
 printing a character in the lower right-hand corner
 of a terminal which automatically scrolls
 if scrolling is not allowed.
@@ -127,16 +127,19 @@ assumes that any part of the window not changed
 since the last
 .Fn refresh
 of that window has not been changed on the terminal,
-i.e.,
+.i i.e. ,
 that you have not refreshed a portion of the terminal
 with an overlapping window.
 If this is not the case,
-the routine
-.Fn touchwin
-is provided to make it look like the entire window has been changed,
-thus making
+the routines
+.Fn touchwin ,
+.Fn touchline ,
+and
+.Fn touchoverlap
+are provided to make it look like a desired part of window has been changed,
+thus forcing
 .Fn refresh
-check the whole subsection of the terminal for changes.
+check that whole subsection of the terminal for changes.
 .pp
 If you call
 .Fn wrefresh
