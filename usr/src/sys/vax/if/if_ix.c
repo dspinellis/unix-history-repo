@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ix.c	6.1 (Berkeley) %G%
+ *	@(#)if_ix.c	7.1 (Berkeley) %G%
  */
 
 #include "np.h"

@@ -1,5 +1,5 @@
 /*
- *	@(#)if_hy.c	6.9 (Berkeley) %G%
+ *	@(#)if_hy.c	7.1 (Berkeley) %G%
  */
 
 /*
