@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.4	%G%
+#	@(#)Makefile	4.5	%G%
 
 # The word lists may be extended by adding local words.
 # The set of files containing words to be added are defined
@@ -16,17 +16,17 @@ install:	all
 	install -s spellin ${DESTDIR}/usr/bin
 	install -s spellout ${DESTDIR}/usr/bin
 	install -c spell.sh $(DESTDIR)/usr/bin/spell
-	install -c hlista $(DESTDIR)/usr/dict
-	install -c hlistb $(DESTDIR)/usr/dict
-	install -c hstop $(DESTDIR)/usr/dict
-	install -c words $(DESTDIR)/usr/dict
-	install -c american $(DESTDIR)/usr/dict
-	install -c british $(DESTDIR)/usr/dict
-	install -c stop $(DESTDIR)/usr/dict
-	install -c README $(DESTDIR)/usr/dict
+	install -m 444 -c hlista $(DESTDIR)/usr/dict
+	install -m 444 -c hlistb $(DESTDIR)/usr/dict
+	install -m 444 -c hstop $(DESTDIR)/usr/dict
+	install -m 444 -c words $(DESTDIR)/usr/dict
+	install -m 444 -c american $(DESTDIR)/usr/dict
+	install -m 444 -c british $(DESTDIR)/usr/dict
+	install -m 444 -c stop $(DESTDIR)/usr/dict
+	install -m 444 -c README $(DESTDIR)/usr/dict
 	-mkdir $(DESTDIR)/usr/dict/special
-	install -c special.4bsd $(DESTDIR)/usr/dict/special/4bsd
-	install -c special.math $(DESTDIR)/usr/dict/special/math
+	install -m 444 -c special.4bsd $(DESTDIR)/usr/dict/special/4bsd
+	install -m 444 -c special.math $(DESTDIR)/usr/dict/special/math
 
 clean:	
 	rm -f *.o spell spellin hlista hlistb hlist hstop spellout
