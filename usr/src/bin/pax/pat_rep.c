@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pat_rep.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pat_rep.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -642,8 +642,12 @@ set_dest(arcn, dest_dir, dir_len)
 	if (fix_path(arcn->name, &(arcn->nlen), dest_dir, dir_len) < 0)
 		return(-1);
 
-	if ((arcn->type != PAX_HLK) && (arcn->type != PAX_HRG) &&
-	    (arcn->type != PAX_SLK))
+	/*
+	 * It is really hard to deal with symlinks here, we cannot be sure
+	 * if the name they point was moved (or will be moved). It is best to
+	 * leave them alone.
+	 */
+	if ((arcn->type != PAX_HLK) && (arcn->type != PAX_HRG))
 		return(0);
 
 	if (fix_path(arcn->ln_name, &(arcn->ln_nlen), dest_dir, dir_len) < 0)
