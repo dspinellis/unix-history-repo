@@ -1,4 +1,4 @@
-/*	compact.c	4.2	83/05/04	*/
+/*	compact.c	4.3	83/06/03	*/
 /*
  *  Adaptive Huffman code input to output
  *
@@ -51,7 +51,7 @@ char *argv [ ];
 			cp = fname;
 			for (l = 0; l < (LNAME - 3) && (*cp = argv [i][l]); l++)
 				if (*cp++ == '/') m = l;
-			if (l >= (LNAME - 3) || (l - m) > 254) {
+			if (l >= (LNAME - 3) || (l - m) > MAXNAMLEN - 1) {
 				fprintf (stderr, "%s: File name too long\n", argv [i]);
 				if (i == argc - 1) break;
 				continue;
