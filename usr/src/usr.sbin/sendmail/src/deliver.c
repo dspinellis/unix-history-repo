@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.143		%G%);
+SCCSID(@(#)deliver.c	3.144		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -111,6 +111,7 @@ deliver(firstto, editfcn)
 	rewrite(mvp, 3);
 	rewrite(mvp, 1);
 	rewrite(mvp, m->m_s_rwset);
+	rewrite(mvp, 4);
 	cataddr(mvp, tfrombuf, sizeof tfrombuf);
 
 	define('g', tfrombuf, e);		/* translated sender address */
