@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.28 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.29 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.28 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.29 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -443,7 +443,7 @@ smtpdata(m, mci, e)
 	/* now output the actual message */
 	(*e->e_puthdr)(mci->mci_out, m, e);
 	putline("\n", mci->mci_out, m);
-	(*e->e_putbody)(mci->mci_out, m, e);
+	(*e->e_putbody)(mci->mci_out, m, e, NULL);
 
 	/* terminate the message */
 	fprintf(mci->mci_out, ".%s", m->m_eol);

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.71 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1294,7 +1294,7 @@ tryhost:
 		putfromline(mci->mci_out, m, e);
 		(*e->e_puthdr)(mci->mci_out, m, e);
 		putline("\n", mci->mci_out, m);
-		(*e->e_putbody)(mci->mci_out, m, e);
+		(*e->e_putbody)(mci->mci_out, m, e, NULL);
 
 		/* get the exit status */
 		rcode = endmailer(mci, e, pv);
@@ -1805,6 +1805,8 @@ putfromline(fp, m, e)
 **		fp -- file to output onto.
 **		m -- a mailer descriptor to control output format.
 **		e -- the envelope to put out.
+**		separator -- if non-NULL, a message separator that must
+**			not be permitted in the resulting message.
 **
 **	Returns:
 **		none.
@@ -1813,10 +1815,11 @@ putfromline(fp, m, e)
 **		The message is written onto fp.
 */
 
-putbody(fp, m, e)
+putbody(fp, m, e, separator)
 	FILE *fp;
 	MAILER *m;
 	register ENVELOPE *e;
+	char *separator;
 {
 	char buf[MAXLINE];
 
@@ -1844,6 +1847,14 @@ putbody(fp, m, e)
 			if (buf[0] == 'F' && bitnset(M_ESCFROM, m->m_flags) &&
 			    strncmp(buf, "From ", 5) == 0)
 				(void) putc('>', fp);
+			if (buf[0] == '-' && buf[1] == '-' && separator != NULL)
+			{
+				/* possible separator */
+				int sl = strlen(separator);
+
+				if (strncmp(&buf[2], separator, sl) == 0)
+					(void) putc(' ', fp);
+			}
 			putline(buf, fp, m);
 		}
 
@@ -1990,7 +2001,7 @@ mailfile(filename, ctladdr, e)
 		putfromline(f, FileMailer, e);
 		(*e->e_puthdr)(f, FileMailer, e);
 		putline("\n", f, FileMailer);
-		(*e->e_putbody)(f, FileMailer, e);
+		(*e->e_putbody)(f, FileMailer, e, NULL);
 		putline("\n", f, FileMailer);
 		if (ferror(f))
 		{

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.49 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.50 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.49 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.50 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -447,6 +447,7 @@ smtp(e)
 			/* collect the text of the message */
 			SmtpPhase = "collect";
 			collect(TRUE, a != NULL, e);
+			e->e_flags &= ~EF_FATALERRS;
 			if (Errors != 0)
 				break;
 
@@ -474,7 +475,6 @@ smtp(e)
 				HoldErrs = TRUE;
 				e->e_errormode = EM_MAIL;
 			}
-			e->e_flags &= ~EF_FATALERRS;
 			e->e_xfp = freopen(queuename(e, 'x'), "w", e->e_xfp);
 			id = e->e_id;
 
@@ -490,15 +490,20 @@ smtp(e)
 			/* issue success if appropriate and reset */
 			if (Errors == 0 || HoldErrs)
 				message("250 %s Message accepted for delivery", id);
-			else
-				e->e_flags &= ~EF_FATALERRS;
-
-			/* if we just queued, poke it */
-			if (a != NULL && e->e_sendmode != SM_QUEUE)
+			if (bitset(EF_FATALERRS, e->e_flags))
 			{
-				unlockqueue(e);
-				dowork(id, TRUE, TRUE, e);
-				e->e_id = NULL;
+				/* avoid sending back an extra message */
+				e->e_flags &= ~EF_FATALERRS;
+			}
+			else
+			{
+				/* if we just queued, poke it */
+				if (a != NULL && e->e_sendmode != SM_QUEUE)
+				{
+					unlockqueue(e);
+					dowork(id, TRUE, TRUE, e);
+					e->e_id = NULL;
+				}
 			}
 
 			/* now make it really happen */

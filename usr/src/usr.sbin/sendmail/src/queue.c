@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.55 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.56 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.55 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.56 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -133,7 +133,7 @@ notemp:
 		if (fd < 0)
 			syserr("!queueup: cannot create %s", e->e_df);
 		dfp = fdopen(fd, "w");
-		(*e->e_putbody)(dfp, FileMailer, e);
+		(*e->e_putbody)(dfp, FileMailer, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
 	}
