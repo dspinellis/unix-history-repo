@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.53 (Berkeley) %G%
+.\"	@(#)contrib	5.54 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -137,11 +137,11 @@ X25 	University of British Columbia
 \fBThe following are people and organizations that provided a specific
 item, program, library routine or program maintenance for the BSD system.
 (Their contribution may not be part of the final 4.4BSD release.)\fP
+.sp 0.4
 .nr PS 9
 .nr VS 10
 .ps 9
 .vs 10
-.sp
 .TS
 l l.
 386 device drivers	Carnegie-Mellon University Mach project
