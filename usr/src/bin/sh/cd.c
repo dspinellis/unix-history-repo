@@ -32,6 +32,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00050
+ * --------------------         -----   ----------------------
+ *
+ * 22 Aug 92	pk (?)			Fix "pwd hang bug"
  */
 
 #ifndef lint
@@ -347,7 +354,10 @@ getpwd() {
 			close(pip[1]);
 		}
 		execl("/bin/pwd", "pwd", (char *)0);
-		error("Cannot exec /bin/pwd");
+		/* error("Cannot exec /bin/pwd");*/
+		out2str("Cannot exec /bin/pwd\n");		/* 22 Aug 92*/
+		flushall();
+		_exit(1);
 	}
 	close(pip[1]);
 	pip[1] = -1;
