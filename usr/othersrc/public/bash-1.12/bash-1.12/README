@@ -1,0 +1,41 @@
+This README file is in -*- text -*- mode, because Emacs likes it that way.
+
+This is GNU Bash, version 1.12.  Bash is the GNU Project's Bourne
+Again SHell, an interactive shell with Bourne shell syntax (/bin/sh);
+but also with interactive command line editing, job control on
+architectures that support it, Csh-like history features and brace
+expansion, and a slew of other stuff.  For more information on the
+features of Bash that are new to this type of shell, see the file
+`documentation/features.texi'.  There is also a processed DVI file
+there, as well as a large man page.
+
+To compile it, try typing `make'.
+
+You may want to read the file INSTALL in this directory for more
+information, but I doubt it.
+
+If you are a csh user and wish to convert your csh aliases to Bash
+aliases, you may wish to use the script in examples/alias-conv.sh.
+
+Bug reports for 1.12 should be sent to:
+
+	bash-maintainers@ai.mit.edu
+
+The discussion list "bug-bash@ai.mit.edu" often contains information
+about new ports of Bash, or discussions of new features or behaviour
+changes that people would like.  This mailing list is also available
+as a news feed in gnu.bash.bug.
+
+When you send a bug report to bash-maintainers@ai.mit.edu, please
+include:
+
+	* the version number of Bash
+	* the machine and OS that it is running on (see .machine or .made)
+	* a description of the bug
+	* a recipe for recreating the bug reliably
+	* a fix for the bug if you have one!
+
+While the maintainers of Bash do not promise to fix all bugs, we would
+like this shell to be the best that we can make it.
+
+Enjoy!
