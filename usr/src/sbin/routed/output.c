@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -73,6 +73,7 @@ supply(dst, flags, ifp)
 
 	msg->rip_cmd = RIPCMD_RESPONSE;
 	msg->rip_vers = RIPVERSION;
+	bzero(msg->rip_res1, sizeof(msg->rip_res1));
 again:
 	for (rh = base; rh < &base[ROUTEHASHSIZ]; rh++)
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
