@@ -1,4 +1,4 @@
-/*	socket.h	4.15	82/05/04	*/
+/*	socket.h	4.16	82/06/08	*/
 
 /*
  * Externally visible attributes of sockets.
@@ -23,6 +23,7 @@
 #define	SO_ACCEPTCONN	0x02		/* willing to accept connections */
 #define	SO_DONTLINGER	0x04		/* don't linger on close */
 #define	SO_KEEPALIVE	0x08		/* keep connections alive */
+#define	SO_DONTROUTE	0x10		/* just use interface addresses */
 
 /*
  * Generic socket protocol format.
