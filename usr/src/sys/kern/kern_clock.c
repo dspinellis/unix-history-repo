@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.25 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -72,6 +72,7 @@ int	adjtimedelta;
 int	stathz;
 int	profhz;
 int	profprocs;
+int	ticks;
 static int psdiv, pscnt;	/* prof => stat divider */
 int	psratio;		/* ratio: prot / stat */
 
@@ -152,6 +153,7 @@ hardclock(frame)
 	 * Increment the time-of-day.  The increment is just ``tick'' unless
 	 * we are still adjusting the clock; see adjtime().
 	 */
+	ticks++;
 #ifdef ADJTIME
 	if (adjtimedelta == 0)
 		bumptime(&time, tick);
