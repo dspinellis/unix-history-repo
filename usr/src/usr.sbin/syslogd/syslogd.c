@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #define COMPAT		/* include 4.3 Alpha compatibility */
@@ -104,7 +104,7 @@ struct filed {
 		char	f_uname[MAXUNAMES][UNAMESZ+1];
 		struct
 		{
-			char	f_hname[32];
+			char	f_hname[MAXHOSTNAMELEN+1];
 			struct sockaddr_in	f_addr;
 		}	f_forw;		/* forwarding address */
 		char	f_fname[MAXFNAME];
@@ -128,11 +128,11 @@ char	*TypeNames[7] = {
 struct filed	Files[NLOGS];
 
 int	Debug;			/* debug flag */
-char	LocalHostName[32];	/* our hostname */
+char	LocalHostName[MAXHOSTNAMELEN+1];	/* our hostname */
 int	InetInuse = 0;		/* non-zero if INET sockets are being used */
 int	LogPort;		/* port number for INET connections */
 char	PrevLine[MAXLINE + 1];	/* copy of last line to supress repeats */
-char	PrevHost[32];		/* previous host */
+char	PrevHost[MAXHOSTNAMELEN+1];		/* previous host */
 int	PrevFlags;
 int	PrevPri;
 int	PrevCount = 0;		/* number of times seen */
