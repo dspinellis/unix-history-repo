@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id$
+Revision: $Id: FreeBSD.FAQ,v 1.1 1994/04/16 16:34:17 gclarkii Exp $
 
 
 Table of Contents
@@ -54,37 +54,44 @@ FreeBSD-current distribution in:
 
 FreeBSD is a UN*X type operating system based on William Jolitz's port
 of UCB's Networking Release 2 to the i386, 386BSD.  It is no longer
-safe to say that FreeBSD is only 386BSD with the patchkit applied!  There
-have been large additions and bug fixes made through out the whole system.
-Here are some of the highlights of FreeBSD:
+correct to say that FreeBSD is only 386BSD with the patchkit applied!  There
+have been many additions and bug fixes made throughout the entire system,
+some of the highlights of which are:
 
-   More robust device drivers and more of them 
-   SysV IPC
-   Shared Libraries (Dynamic)
-   Improved virtual memory code
-   Addition of other utilities and applications
-   
+   More robust and extensive PC device support
+   SysV IPC, messaging and semaphores
+   Shared Libraries
+   Much improved virtual memory code
+   Better console driver support
+   Network booting (diskless) support
+   /proc filesystem
+   Yellow Pages support
+   `LDT' support for WINE (primitive but developing Windows emulation)
+   Too many additional utilities and applications to mention
+ 
 
 0.0.2 What are the FreeBSD mailing lists, and how can I get on them? 
 
-Here are a list of FreeBSD mailing lists.  For more information, please send
-mail to majordomo@freefall.cdrom.com with a message body of help.
+The following mailing lists are provided for FreeBSD users and developers.
+For more information, send to majordomo@freefall.cdrom.com and include a
+single line saying "help" in the body of your message.
 
 freebsd-hackers:   Useful for persons wishing to work on the internals. 
 freebsd-questions: General questions on FreeBSD. 
 freebsd-bugs:      Where bugs should be sent.
-freebsd-commit:    This list carries the commit messages for freefall.  Useful
+freebsd-commit:    This list caries the commit messages for freefall.  Useful
                    for tracking ongoing work.
 freebsd-scsi:      Mailing list for SCSI developers. 
 freebsd-current:   This list is for persons wishing to run FreeBSD-current
-                   and carries announcements and discussions on current.
+                   and caries announcements and discussions on current.
 
 Please see also the FreeBSD mailing list FAQ in:
-/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.mailing-list.FAQ
+
+	/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.mailing-list.FAQ
 
 0.0.3 What are the various FreeBSD news groups? 
 
-Presently there are no groups dedicated to FreeBSD, you may find the 
+While there are no groups currently dedicated to FreeBSD, you may find the 
 following groups useful.  
 
 comp.os.386bsd.announce:     For announcements
@@ -93,9 +100,7 @@ comp.os.386bsd.development:  For working on the internals
 comp.os.386bsd.bugs:         About bugs
 comp.os.386bsd.misc:         For items that don't fit anywhere else
 
-NOTE: These groups cover the *BSDs (FreeBSD, NetBSD, 386BSD).
-
-
+NOTE: These groups cover all the *BSDs (FreeBSD, NetBSD, 386BSD).
 
 
 
@@ -104,7 +109,6 @@ NOTE: These groups cover the *BSDs (FreeBSD, NetBSD, 386BSD).
 
 1.0.1:	I just installed my system and rebooted.  Now I can't find the
 	extract or configure programs, where did they go?
-
 
 These two commands are just shell builtins.  To get these back, either
 create a account [adding a user] with /.profile as its profile or
@@ -141,7 +145,7 @@ FreeBSD's bad block (bad144) handling is still not 100% (to put it charitably)
 and it must unfortunately be said that if you've got an IDE or ESDI drive
 with lots of bad blocks, then FreeBSD is probably not for you!  That said, it
 does work on thousands of IDE based systems, so you'd do well to try it first
-before simply iving up.
+before simply giving up.
 
 
 1.0.5:	I have 32MB of memory, should I expect any special problems?
@@ -231,7 +235,7 @@ and ATI mice:
 2.0.7:	I have a PS/2 mouse (`keyboard' mouse) [Alternatively:  I have a
 	laptop with a trackball mouse].  How do I use it?
 
-For the PS/2 mouse you need to look in /usr/src/share/FAQ/programs/psm.tar.z,
+For the PS/2 mouse you need to look in /usr/src/contrib/FAQ/programs/psm,
 which is John Solhed's port of the Linux PS/2 mouse driver. 
 
 Follow the directions in the package.  You will also need to change your
@@ -281,13 +285,13 @@ vendors to send their entries here for inclusion.
 
 3.0.1	Where can I get Motif for FreeBSD?
 
-Sequoia Communications provides commercial quality Motif 1.2.3
-development kits for FreeBSD 1.1 (with full shared library support).
-Due to licensing restrictions from the OSF, and the fact that Sequoia
-needs to make a living, these are NOT FREE, but nonetheless quite reasonably
-priced in comparison to many other commercial Motif distributions.  Send
-electronic mail to `info@seq.com' for further information.
->>>> please make sure this is correct! 
+Sequoia International provides commercial quality Motif 1.2.3
+development kits for FreeBSD 1.1 (with full shared library support) under
+the product name of `SWiM'.  Due to licensing restrictions from the OSF, and
+the fact that Sequoia needs to make a living, these are NOT FREE, but
+nonetheless quite reasonably priced in comparison to many other commercial
+Motif distributions.  Send electronic mail to `info@seq.com' for further
+information.
 
 3.0.8	What about other commercial quality development systems for FreeBSD?
 
