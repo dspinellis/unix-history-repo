@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.14 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -265,7 +265,7 @@ osigvec()
 		    sizeof (vec)))
 			RETURN (error);
 		sv->sv_flags ^= SA_RESTART;	/* opposite of SV_INTERRUPT */
-		setsigvec(sig, sv);
+		setsigvec(sig, (struct sigaction *)sv);
 	}
 	RETURN (0);
 }
@@ -951,16 +951,21 @@ core()
 		vput(vp);
 		return (EFAULT);
 	}
-#ifdef MMAP
-	{ register int fd;
-	/* unmap funky devices in the user's address space */
-	for (fd = 0; fd < u.u_lastfile; fd++)
-		if (u.u_ofile[fd] && (u.u_pofile[fd] & UF_MAPPED))
-			munmapfd(fd);
-	}
+#ifdef MAPMEM
+	mmcore();
 #endif
 	itrunc(ip, (u_long)0);
 	u.u_acflag |= ACORE;
+#ifdef HPUXCOMPAT
+	/*
+	 * BLETCH!  If we loaded from an HPUX format binary file
+	 * we have to dump an HPUX style user struct so that the
+	 * HPUX debuggers can grok it.
+	 */
+	if (u.u_pcb.pcb_flags & PCB_HPUXBIN)
+		error = hpuxdumpu(vp, ndp->ni_cred);
+	else
+#endif
 	u.u_error = rdwri(UIO_WRITE, ip,
 	    (caddr_t)&u,
 	    ctob(UPAGES),
