@@ -11,10 +11,11 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
+#include <signal.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -31,6 +32,7 @@ int nfile;
 long size, tsize;
 int ln;
 char *inf, *outf;
+int copy;
 
 main(argc, argv)
 char **argv;
@@ -38,42 +40,40 @@ char **argv;
 	register n, nw, inp, outp;
 	struct mtop op;
 
-	if (argc != 3) {
-		fprintf(stderr, "Usage: tcopy src dest\n");
+	if (argc <=1 || argc >= 3) {
+		fprintf(stderr, "Usage: tcopy src [dest]\n");
 		exit(1);
 	}
 	inf = argv[1];
-	outf = argv[2];
+	if (argc == 3) {
+		outf = argv[2];
+		copy = 1;
+	}
 	if ((inp=open(inf, O_RDONLY, 0666)) < 0) {
 		fprintf(stderr,"Can't open %s\n", inf);
 		exit(1);
 	}
-	op.mt_op = MTREW;
-	op.mt_count = (daddr_t)1;
-	if(ioctl(inp, MTIOCTOP, &op) < 0) {
-		perror(inf);
-		exit(2);
+	if (copy) {
+		if ((outp=open(outf, O_WRONLY, 0666)) < 0) {
+			fprintf(stderr,"Can't open %s\n", outf);
+			exit(3);
+		}
 	}
-	if ((outp=open(outf, O_WRONLY, 0666)) < 0) {
-		fprintf(stderr,"Can't open %s\n", outf);
-		exit(3);
-	}
-	if(ioctl(outp, MTIOCTOP, &op) < 0) {
-		perror(inf);
-		exit(4);
-	}
-	if (signal(2, 1) != 1)
-		signal(2, RUBOUT);
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		(void) signal(SIGINT, RUBOUT);
 	ln = -2;
 	for (;;) {
 		count++;
 		n = read(inp, buff, SIZE);
 		if (n > 0) {
 		    nw = write(outp, buff, n);
-		    if (nw != n) {
-			fprintf(stderr, "write (%d) != read (%d)\n", nw, n);
-			fprintf(stderr, "COPY Aborted\n");
-			exit(5);
+		    if (copy) {
+			    if (nw != n) {
+				fprintf(stderr, "write (%d) != read (%d)\n",
+					nw, n);
+				fprintf(stderr, "COPY Aborted\n");
+				exit(5);
+			    }
 		    }
 		    size += n;
 		    if (n != ln) {
@@ -102,11 +102,13 @@ char **argv;
 					filen, lcount, ln);
 			printf("file %d: eof after %ld records: %ld bytes\n",
 				filen, count-1, size);
-			op.mt_op = MTWEOF;
-			op.mt_count = (daddr_t)1;
-			if(ioctl(outp, MTIOCTOP, &op) < 0) {
-				perror("Write EOF");
-				exit(6);
+			if (copy) {
+				op.mt_op = MTWEOF;
+				op.mt_count = (daddr_t)1;
+				if(ioctl(outp, MTIOCTOP, (char *)&op) < 0) {
+					perror("Write EOF");
+					exit(6);
+				}
 			}
 			filen++;
 			count = 0;
@@ -118,7 +120,8 @@ char **argv;
 			ln = n;
 		}
 	}
-	close(outp);
+	if (copy)
+		(void) close(outp);
 	printf("total length: %ld bytes\n", tsize);
 }
 
