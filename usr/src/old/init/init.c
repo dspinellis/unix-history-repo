@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)init.c	5.3 (Berkeley) %G%";
 #include <sys/stat.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
-#define	CMDSIZ	70	/* max string length for getty or window command*/
+#define	CMDSIZ	200	/* max string length for getty or window command*/
 #define	ALL	p = itab; p ; p = p->next
 #define	EVER	;;
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
