@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.18 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -374,7 +374,7 @@ spec_close(vp, flag, cred)
 		 * of forcably closing the device, otherwise we only
 		 * close on last reference.
 		 */
-		if (vp->v_count > 1 && (vp->v_flag & VXLOCK) == 0)
+		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
 		cfunc = cdevsw[major(dev)].d_close;
 		mode = S_IFCHR;
@@ -393,12 +393,12 @@ spec_close(vp, flag, cred)
 		 * We do not want to really close the device if it
 		 * is still in use unless we are trying to close it
 		 * forcibly. Since every use (buffer, vnode, swap, cmap)
-		 * holds a reference to the vnode, and because we ensure
-		 * that there cannot be more than one vnode per device,
-		 * we need only check that we are down to the last
-		 * reference to detect last close.
+		 * holds a reference to the vnode, and because we mark
+		 * any other vnodes that alias this device, when the
+		 * sum of the reference counts on all the aliased
+		 * vnodes descends to one, we are on last close.
 		 */
-		if (vp->v_count > 1 && (vp->v_flag & VXLOCK) == 0)
+		if (vcount(vp) > 1 && (vp->v_flag & VXLOCK) == 0)
 			return (0);
 		cfunc = bdevsw[major(dev)].d_close;
 		mode = S_IFBLK;
