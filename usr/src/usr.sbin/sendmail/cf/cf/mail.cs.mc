@@ -17,8 +17,8 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(`@(#)mail.cs.mc	8.5 (Berkeley) %G%')
-OSTYPE(ultrix4.1)dnl
+VERSIONID(`@(#)mail.cs.mc	8.6 (Berkeley) %G%')
+OSTYPE(ultrix4)dnl
 DOMAIN(Berkeley)dnl
 MASQUERADE_AS(CS.Berkeley.EDU)dnl
 FEATURE(use_cw_file)dnl
