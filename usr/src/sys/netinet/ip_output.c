@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)ip_output.c	7.11 (Berkeley) %G%
+ *	@(#)ip_output.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -198,7 +198,7 @@ ip_output(m0, opt, ro, flags)
 		MGET(m, M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
-			goto bad;
+			goto sendorfree;
 		}
 		m->m_off = MMAXOFF - hlen;
 		mhip = mtod(m, struct ip *);
