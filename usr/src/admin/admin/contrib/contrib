@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.35 (Berkeley) %G%
+.\"	@(#)contrib	5.36 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -314,11 +314,11 @@ worms(6)	Eric P. Scott
 write(1)	Craig Leres
 write(1)	Jef Poskanzer
 wump(6)	Dave Taylor
+X25/Ethernet	Univ. of Erlangen-Nuremberg
 X25/LLC2	Dirk Husemann
 xargs(1)	John B. Roll Jr.
 xneko(6)	Masayuki Koba
 XNSrouted(1)	Bill Nesheim
-X25/Ethernet	Univ. of Erlangen-Nuremberg
 xroach(6)	J.T. Anderson
 yacc(1)	Robert Paul Corbett
 .TE
