@@ -1,4 +1,4 @@
-/*	conf.h	3.6	%G%	*/
+/*	conf.h	3.7	%G%	*/
 
 /*
  * Declaration of block device
@@ -48,3 +48,12 @@ extern struct linesw
 	int	(*l_start)();
 	int	(*l_modem)();
 } linesw[];
+
+/*
+ * Swap device information
+ */
+extern struct swdevt
+{
+	dev_t	sw_dev;
+	int	sw_freed;
+} swdevt[];
