@@ -1,0 +1,53 @@
+Variable declarations
+
+	Variables can be declared as either being global or local.
+	Global variables are visible to all functions and on the command
+	line.  Local variables are visible only within a single function or
+	command sequence.  When the function or command sequence returns,
+	the local variables are deleted.
+
+	To declare one or more variables, the 'local' or 'global' keywords
+	are used, followed by the desired list of variable names, separated
+	by commas.  The definition is terminated with a semicolon.  Examples
+	of declarations are:
+
+		local	x, y, z;
+		global	fred;
+		local	foo, bar;
+
+	Within function declarations, all variables must be defined.
+	But on the top level command line, assignments automatically define
+	global variables as needed.  For example, on the top level command
+	line, the following defines the global variable x if it had not
+	already been defined:
+
+		x = 7
+
+	Variables have no fixed type, thus there is no need or way to
+	specify the types of variables as they are defined.  Instead, the
+	types of variables change as they are assigned to or are specified
+	in special statements such as 'mat' and 'obj'.  When a variable is
+	first defined using 'local' or 'global', it has the null type.
+
+	If a procedure defines a local variable name which matches a
+	global variable name, or has a parameter name which matches a
+	global variable name, then the local variable or parameter takes
+	precedence within that procedure, and the global variable is not
+	directly accessible.
+
+	There are no pointers in the calculator language, thus all
+	arguments to user-defined functions are normally passed by value.
+	This is true even for matrices, strings, and lists.  In order
+	to circumvent this, the '&' operator is allowed before a variable
+	when it is an argument to a function.  When this is done, the
+	address of the variable is passed to the function instead of its
+	value.  This is true no matter what the type of the variable is.
+	This allows for fast calls of functions when the passed variable
+	is huge (such as a large array).  However, the passed variable can
+	then be changed by the function if the parameter is assigned into.
+	The function being called does not need to know if the variable
+	is being passed by value or by address.
+
+	Built-in functions and object functions always accept their
+	arguments as addresses, thus there is no need to use '&' when
+	calling built-in functions.

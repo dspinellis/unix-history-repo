@@ -1,0 +1,47 @@
+
+# Copyright (c) 1993 David I. Bell
+# Permission is granted to use, distribute, or modify this source,
+# provided that this copyright notice remains intact.
+#
+# Arbitrary precision calculator.
+
+I am allowing this calculator to be freely distributed for personal uses.
+Like all multi-precision programs, you should not depend absolutely on
+its results, since bugs in such programs can be insidious and only rarely 
+show up.
+  
+-dbell-
+
+p.s. By Landon Curt Noll
+
+To build calc:
+
+    1) Look at the makefile, and adjust it to suit your needs.
+
+    2) build some calc documentation:
+
+	(cd help; make full)	<- after this, read the file help/full
+
+    3) build calc:
+
+	make
+
+    4) test calc:
+
+	After you have built calc, you can test it by running calc and 
+	giving calc the following input:
+
+	read lib/regress	<- error messages should be printed
+	read lib/lucas
+	read lib/lucas_chk
+	lucas_chk(200)		<- should produce no error messages
+	exit
+
+If you find bugs, or better yet have bug fixes; or if you have suggested
+changes, or better yet have patches, send them to both myself and DBell:
+
+    chongo@toad.com		    {uunet,pyramid,sun}!hoptoad!chongo
+    (DBell was not accessible by Email at the time of this release.)
+
+The file doc/todo section points out some needs for calc.  Suggestions
+on other enhancements, and help in doing these are welcome.

@@ -1,0 +1,44 @@
+Using lists
+
+	Lists are a sequence of values which are doubly linked so that
+	elements can be removed or inserted anywhere within the list.
+	The function 'list' creates a list with possible initial elements.
+	For example,
+
+		x = list(4, 6, 7);
+
+	creates a list in the variable x of three elements, in the order
+	4, 6, and 7.
+
+	The 'push' and 'pop' functions insert or remove an element from
+	the beginning of the list.  The 'append' and 'remove' functions
+	insert or remove an element from the end of the list.  The 'insert'
+	and 'delete' functions insert or delete an element from the middle
+	(or ends) of a list.  The functions which insert elements return
+	the null value, but the functions which remove an element return
+	the element as their value.  The 'size' function returns the number
+	of elements in the list.
+
+	Note that these functions manipulate the actual list argument,
+	instead of returning a new list.  Thus in the example:
+
+		push(x, 9);
+
+	x becomes a list of four elements, in the order 9, 4, 6, and 7.
+	Lists can be copied by assigning them to another variable.
+
+	An arbitrary element of a linked list can be accessed by using the
+	double-bracket operator.  The beginning of the list has index 0.
+	Thus in the new list x above, the expression x[[0]] returns the
+	value of the first element of the list, which is 9.  Note that this
+	indexing does not remove elements from the list.
+
+	Since lists are doubly linked in memory, random access to arbitrary
+	elements can be slow if the list is large.  However, for each list
+	a pointer is kept to the latest indexed element, thus relatively
+	sequential accesses to the elements in a list will not be slow.
+
+	Lists can be searched for particular values by using the 'search'
+	and 'rsearch' functions.  They return the element number of the
+	found value (zero based), or null if the value does not exist in
+	the list.

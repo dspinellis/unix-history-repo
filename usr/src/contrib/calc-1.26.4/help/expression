@@ -1,0 +1,35 @@
+Expression sequences
+
+	This is a sequence of statements, of which expression statements
+	are the commonest case.  Statements are separated with semicolons,
+	and the newline character generally ends the sequence.  If any
+	statement is an expression by itself, or is associated with an
+	'if' statement which is true, then two special things can happen.
+	If the sequence is executed at the top level of the calculator,
+	then the value of '.' is set to the value of the last expression.
+	Also, if an expression is a non-assignment, then the value of the
+	expression is automatically printed if its value is not NULL.
+	Some operations such as	pre-increment and plus-equals are also
+	treated as assignments.
+
+	Examples of this are the following:
+
+	expression		sets '.' to		prints
+	----------		-----------		------
+	3+4			7			7
+	2*4; 8+1; fact(3)	6			8, 9, and 6
+	x=3^2			9			-
+	if (3 < 2) 5; else 6	6			6
+	x++			old x			-
+	print fact(4)		-			24
+	null()			null()			-
+
+	Variables can be defined at the beginning of an expression sequence.
+	This is most useful for local variables, as in the following example,
+	which sums the square roots of the first few numbers:
+
+	local s, i; s = 0; for (i = 0; i < 10; i++) s += sqrt(i); s
+
+	If a return statement is executed in an expression sequence, then
+	the result of the expression sequence is the returned value.  In
+	this case, '.' is set to the value, but nothing is printed.
