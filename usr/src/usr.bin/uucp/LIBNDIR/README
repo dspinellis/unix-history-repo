@@ -1,0 +1,21 @@
+The purpose of this library is to simulate the new flexible length
+directory names on top of the old directory structure. It allows
+programs to be converted to the new directory access interface, so
+that they need only be relinked when 4.2bsd becomes available.
+	ucbvax!mckusik
+
+CHANGE NOTICE:
+The include file is now called <ndir.h> rather than <dir.h>
+to avoid conflicting with the old style directory include file.
+On a 4.2bsd system, <ndir.h> and <dir.h> should be identical.
+Please notify me if there is a better solution.
+
+In ndir.h, certain data types are #define-ed for the benefit of non-4.xbsd.
+In telldir.c, lseek() is declared long for the benefit of non-32 bit systems
+	(credit to Mike Mitchell, ikonas!mcm)
+
+The call to telldir in seekdir has been removed,
+because telldir had been thought to be wrong.
+It is actually okay, but the call was not put back in.
+	Tom Truscott (rti!trt)
+P.S.  Also, ignore the "Error code 1 (ignored)" produced on some systems.
