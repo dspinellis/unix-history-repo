@@ -1,4 +1,4 @@
-/*	locore.s	1.16	87/06/04	*/
+/*	locore.s	1.17	87/06/06	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -601,16 +601,27 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(alignmap	,alignutl	,1		)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(Mbmap	,mbutl		,NMBCLUSTERS*CLSIZE+CLSIZE )
-	SYSMAP(camap	,cabase		,(VBPTSIZE+16)*CLSIZE )
+	SYSMAP(kmempt	,kmembase	,100*CLSIZE 	)
 #ifdef	GPROF
 	SYSMAP(profmap	,profbase	,600*CLSIZE	)
 #endif
-	SYSMAP(ecamap	,calimit	,0		)
+	/*
+	 * Enlarge kmempt as needed for bounce buffers allocated
+	 * by tahoe controllers.
+	 */
+#include "dk.h"
+	SYSMAP(_vdmap	,_vdbase	,NVD*MAXPHYS/NBPG+CLSIZE )
+#include "yc.h"
+	SYSMAP(_cymap	,_cybase	,NCY*MAXPHYS/NBPG+CLSIZE )
+	SYSMAP(ekmempt	,kmemlimit	,0		)
 	SYSMAP(VMEMbeg	,vmembeg	,0		)
 	SYSMAP(VMEMmap	,vmem		,VBIOSIZE 	)
-	SYSMAP(VMEMmap1	,vmem1		,VBMEMSIZE	)
+	SYSMAP(VMEMmap1	,vmem1		,0		)
+#include "ace.h"
+	SYSMAP(_acemap1	,_acemem	,NACE*32	)
 	SYSMAP(VMEMend	,vmemend	,0		)
-	SYSMAP(VBmap	,vbbase		,VBPTSIZE	)
+	SYSMAP(VBmap	,vbbase		,0		)
+	SYSMAP(_vdbmap	,_vdbbase	,NVD*MAXPHYS/NBPG+CLSIZE )
 	SYSMAP(eVBmap	,vbend		,0		)
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 eSysmap:
