@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -42,7 +42,6 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	register HEADER *hp;
 	register char *cp;
 	register int n;
-	char dnbuf[MAXDNAME];
 	char *dnptrs[10], **dpp, **lastdnptr;
 	extern char *index();
 
