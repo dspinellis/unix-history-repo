@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	4.5		%G%);
+SCCSID(@(#)headers.c	4.6		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -326,7 +326,7 @@ eatheader(e)
 	if (p != NULL)
 		e->e_class = priencode(p);
 	if (!QueueRun)
-		e->e_msgpriority = e->e_msgsize - e->e_class * WKPRIFACT;
+		e->e_msgpriority = e->e_msgsize + e->e_ctime - e->e_class * WKPRIFACT;
 
 	/* return receipt to */
 	p = hvalue("return-receipt-to");

@@ -1,12 +1,13 @@
 # include <ctype.h>
 # include <sysexits.h>
+# include <errno.h>
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.11		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.12		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.11		%G%);
+SCCSID(@(#)usersmtp.c	4.12		%G%);
 
 
 
@@ -22,6 +23,7 @@ SCCSID(@(#)usersmtp.c	4.11		%G%);
 
 char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
+char	SmtpError[MAXLINE] = "";	/* save failure error messages */
 FILE	*SmtpOut;			/* output file */
 FILE	*SmtpIn;			/* input file */
 int	SmtpPid;			/* pid of mailer */
@@ -72,6 +74,7 @@ smtpinit(m, pvp)
 
 	SmtpIn = SmtpOut = NULL;
 	SmtpState = SMTP_CLOSED;
+	SmtpError[0] = '\0';
 	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
@@ -82,10 +85,23 @@ smtpinit(m, pvp)
 # endif DEBUG
 		if (CurEnv->e_xfp != NULL)
 		{
+			register char *p;
 			extern char *errstring();
+			extern char *statstring();
 
-			fprintf(CurEnv->e_xfp, "421 %s.%s... Deferred: %s\n",
-				pvp[1], m->m_name, errstring(errno));
+			if (errno == 0)
+			{
+				p = statstring(ExitStat);
+				fprintf(CurEnv->e_xfp,
+					"%.3s %s.%s... %s\n",
+					p, pvp[1], m->m_name, p);
+			}
+			else
+			{
+				fprintf(CurEnv->e_xfp,
+					"421 %s.%s... Deferred: %s\n",
+					pvp[1], m->m_name, errstring(errno));
+			}
 		}
 		return (ExitStat);
 	}
@@ -373,6 +389,14 @@ reply(m)
 			extern char MsgBuf[];		/* err.c */
 			extern char Arpa_TSyserr[];	/* conf.c */
 
+			/* if the remote end closed early, fake an error */
+			if (errno == 0)
+# ifdef ECONNRESET
+				errno = ECONNRESET;
+# else ECONNRESET
+				errno = EPIPE;
+# endif ECONNRESET
+
 			message(Arpa_TSyserr, "reply: read error");
 # ifdef DEBUG
 			/* if debugging, pause so we can see state */
@@ -421,6 +445,10 @@ reply(m)
 			SmtpState = SMTP_SSD;
 			smtpquit(m);
 		}
+
+		/* save temporary failure messages for posterity */
+		if (SmtpReplyBuffer[0] == '4' && SmtpError[0] == '\0')
+			(void) strcpy(SmtpError, &SmtpReplyBuffer[4]);
 
 		return (r);
 	}

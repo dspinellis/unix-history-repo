@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.11		%G%);
+SCCSID(@(#)readcf.c	4.12		%G%);
 
 /*
 **  READCF -- read control file.
@@ -33,10 +33,6 @@ SCCSID(@(#)readcf.c	4.11		%G%);
 **
 **	Parameters:
 **		cfname -- control file name.
-**		safe -- set if this is a system configuration file.
-**			Non-system configuration files can not do
-**			certain things (e.g., leave the SUID bit on
-**			when executing mailers).
 **
 **	Returns:
 **		none.
@@ -45,9 +41,8 @@ SCCSID(@(#)readcf.c	4.11		%G%);
 **		Builds several internal tables.
 */
 
-readcf(cfname, safe)
+readcf(cfname)
 	char *cfname;
-	bool safe;
 {
 	FILE *cf;
 	int ruleset = 0;
@@ -199,11 +194,11 @@ readcf(cfname, safe)
 			break;
 
 		  case 'M':		/* define mailer */
-			makemailer(&buf[1], safe);
+			makemailer(&buf[1]);
 			break;
 
 		  case 'O':		/* set option */
-			setoption(buf[1], &buf[2], safe, FALSE);
+			setoption(buf[1], &buf[2], FALSE);
 			break;
 
 		  case 'P':		/* set precedence */
@@ -331,7 +326,6 @@ fileclass(class, filename, fmt)
 **			   R -- the recipient rewriting set
 **			   E -- the eol string
 **			The first word is the canonical name of the mailer.
-**		safe -- set if this is a safe configuration file.
 **
 **	Returns:
 **		none.
@@ -340,9 +334,8 @@ fileclass(class, filename, fmt)
 **		enters the mailer into the mailer table.
 */
 
-makemailer(line, safe)
+makemailer(line)
 	char *line;
-	bool safe;
 {
 	register char *p;
 	register struct mailer *m;
@@ -399,8 +392,6 @@ makemailer(line, safe)
 		  case 'F':		/* flags */
 			for (; *p != '\0'; p++)
 				setbitn(*p, m->m_flags);
-			if (!safe)
-				clrbitn(M_RESTR, m->m_flags);
 			break;
 
 		  case 'S':		/* sender rewriting ruleset */
@@ -594,7 +585,6 @@ printrules()
 **	Parameters:
 **		opt -- option name.
 **		val -- option value (as a text string).
-**		safe -- if set, this came from a system configuration file.
 **		sticky -- if set, don't let other setoptions override
 **			this value.
 **
@@ -609,10 +599,9 @@ static BITMAP	StickyOpt;		/* set if option is stuck */
 extern char	*WizWord;		/* the stored wizard password */
 extern char	*NetName;		/* name of home (local) network */
 
-setoption(opt, val, safe, sticky)
+setoption(opt, val, sticky)
 	char opt;
 	char *val;
-	bool safe;
 	bool sticky;
 {
 	extern bool atobool();
@@ -640,22 +629,8 @@ setoption(opt, val, safe, sticky)
 		return;
 	}
 
-	/*
-	**  Check to see if this option can be specified by this user.
-	*/
-
-	if (!safe && (getruid() == 0 || OpMode == MD_TEST))
-		safe = TRUE;
-	if (!safe && index("deiLmorsv", opt) == NULL)
-	{
-# ifdef DEBUG
-		if (tTd(37, 1))
-			printf(" (unsafe)\n");
-# endif DEBUG
-		return;
-	}
 #ifdef DEBUG
-	else if (tTd(37, 1))
+	if (tTd(37, 1))
 		printf("\n");
 #endif DEBUG
 

@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.9		%G%);
+SCCSID(@(#)deliver.c	4.10		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -899,13 +899,29 @@ giveresponse(stat, m, e)
 		{
 			extern char *errstring();
 
+			statmsg = errstring(errno);
+		}
+		else
+		{
+#ifdef SMTP
+			extern char SmtpError[];
+
+			statmsg = SmtpError;
+#else SMTP
+			statmsg = NULL;
+#endif SMTP
+		}
+		if (statmsg != NULL && statmsg[0] != '\0')
+		{
 			(void) strcat(buf, ": ");
-			(void) strcat(buf, errstring(errno));
+			(void) strcat(buf, statmsg);
 		}
 		statmsg = buf;
 	}
 	else
+	{
 		statmsg = SysExMsg[i];
+	}
 
 	/*
 	**  Print the message as appropriate
