@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# Copyright (c) 1993 Eric P. Allman
+# Copyright (c) 1993 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#       @(#)makesendmail	8.1 (Berkeley) %G%
+#
+
+#
+#  A quick-and-dirty script to compile sendmail in the presence of
+#  multiple architectures and Makefiles.
+#
+
+# determine machine architecture
+arch=`uname -m`
+case $arch
+in
+  sun4*)	arch=sun4;;
+esac
+
+# determine operating system type
+os=`uname -s`
+
+# determine operating system release
+rel=`uname -r`
+
+# now try to find a reasonable object directory
+if [ -r obj.$os.$arch.$rel ]; then
+	obj=obj.$os.$arch.$rel
+elif [ -r obj.$os.$rel ]; then
+	obj=obj.$os.$rel
+elif [ -r obj.$os.$arch ]; then
+	obj=obj.$os.$arch
+elif [ -r obj.$arch.$rel ]; then
+	obj=obj.$arch.$rel
+elif [ -r obj.$os ]; then
+	obj=obj.$os
+elif [ -r obj.$arch ]; then
+	obj=obj.$arch
+elif [ -r obj.$rel ]; then
+	obj=obj.$rel
+elif [ -r Makefile.$os ]; then
+	obj=obj.$arch.$os.$rel
+	echo "Creating $obj using Makefile.$os"
+	mkdir $obj
+	(cd $obj; ln -s ../*.[ch] .; ln -s ../Makefile.$os Makefile)
+else
+	echo "Warning: no recognized support for $arch.$os.$rel"
+	echo "	... winging it ..."
+	obj=.
+fi
+echo "Making in $obj"
+cd $obj
+exec make -f Makefile $*
