@@ -1903,9 +1903,9 @@ cons25|ansi|ansi80x25:\
         :k1=\E[M:k2=\E[N:k3=\E[O:k4=\E[P:k5=\E[Q:k6=\E[R:\
         :k7=\E[S:k8=\E[T:k9=\E[U:k0=\E[V:k10=\E[V:k11=\E[W:k12=\E[X:\
         :kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:sf=\E[S:sr=\E[T:\
-        :mb=\E[5m:md=\E[1m:me=\E[m:\
+        :mb=\E[5m:md=\E[1m:me=\E[m:
 cons50|ansil|ansi80x50:\
-        :li#50:tc=cons25:\
+        :li#50:tc=cons25:
 dosansi|ANSI.SYS standard crt:\
         :am:bs:ce=\E[K:cl=\E[2J:cm=\E[%i%d;%dH:co#80:\
         :do=\E[B:li#25:mi:nd=\E[C:\
@@ -1913,7 +1913,7 @@ dosansi|ANSI.SYS standard crt:\
         :md=\E[1m:mh=\E[m:mb=\E[5m:me=\E[m:\
         :kh=\EG:kb=^h:ku=\EH:kd=\EP:kl=\EK:kr=\EM:\
         :k1=\E;:k2=\E<:k3=\E=:k4=\E>:k5=\E?:\
-        :k6=\E@:k7=\EA:k8=\EB:k9=\EC:k0=\ED:\
+        :k6=\E@:k7=\EA:k8=\EB:k9=\EC:k0=\ED:
 
 # # --------------------------------
 #
@@ -3246,6 +3246,8 @@ pc|ibmpc|ibm pc PC/IX:\
 	:li#24:co#80:am:bs:bw:eo:\
 	:cd=\E[J:ce=\E[K:cl=\Ec:cm=\E[%i%2;%2H:do=\E[B:ho=\E[;H:\
 	:nd=\E[C:up=\E[A:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
+pc3mono|IBM PC 386BSD Console with monochrome monitor:\
+	:so=\E[0;1r\E[m:tc=pc3:
 pc3|ibmpc3|IBM PC 386BSD Console:\
 	:DO=\E[%dB:\
 	:K1=\E[H:\
