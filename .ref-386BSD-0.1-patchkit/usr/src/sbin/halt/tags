@@ -1,3 +1,0 @@
-Mhalt	halt.c	/^main(argc, argv)$/
-dingdong	halt.c	/^dingdong()$/
-setalarm	halt.c	/^setalarm(n)$/
