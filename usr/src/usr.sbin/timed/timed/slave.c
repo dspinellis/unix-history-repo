@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	2.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	2.12 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -60,7 +60,7 @@ slave()
 		fp = fopen("/usr/adm/timed.masterlog", "w");
 		setlinebuf(fp);
 #endif
-		syslog(LOG_NOTICE, "THIS MACHINE IS A SUBMASTER");
+		syslog(LOG_INFO, "THIS MACHINE IS A SUBMASTER");
 		if (trace) {
 			fprintf(fd, "THIS MACHINE IS A SUBMASTER\n");
 		}
@@ -69,7 +69,7 @@ slave()
 				masterup(ntp);
 
 	} else {
-		syslog(LOG_NOTICE, "THIS MACHINE IS A SLAVE");
+		syslog(LOG_INFO, "THIS MACHINE IS A SLAVE");
 		if (trace) {
 			fprintf(fd, "THIS MACHINE IS A SLAVE\n");
 		}
@@ -295,11 +295,11 @@ loop:
 			}
 			ind = findhost(msg->tsp_name);
 			if (ind < 0) {
-			    syslog(LOG_ERR,
+			    syslog(LOG_WARNING,
 				"DATEREQ from uncontrolled machine");
 			    break;
 			}
-			syslog(LOG_NOTICE,
+			syslog(LOG_DEBUG,
 			    "forwarding date change request for %s",
 			    msg->tsp_name);
 			(void)strcpy(msg->tsp_name, hostname);
@@ -361,18 +361,18 @@ loop:
 				server = from;
 				answer = acksend(msg, &server, candidate, TSP_ACK,
 				    (struct netinfo *)NULL);
-				if (answer == NULL) {
-					syslog(LOG_ERR, "problem in election\n");
-				}
-			}
-			else {	/* fromnet->status == MASTER */
+				if (answer == NULL)
+					syslog(LOG_WARNING,
+					   "no answer from master candidate\n");
+			} else {	/* fromnet->status == MASTER */
 				to.tsp_type = TSP_QUIT;
 				(void)strcpy(to.tsp_name, hostname);
 				server = from;
 				answer = acksend(&to, &server, msg->tsp_name,
 				    TSP_ACK, (struct netinfo *)NULL);
 				if (answer == NULL) {
-					syslog(LOG_ERR, "election error");
+					syslog(LOG_WARNING,
+					    "election error: no reply to QUIT");
 				} else {
 					(void) addmach(msg->tsp_name, &from);
 				}
@@ -401,8 +401,9 @@ loop:
                                 msg = acksend(&to, &server, answer->tsp_name,
                                     TSP_ACK, (struct netinfo *)NULL);
                                 if (msg == NULL) {
-                                        syslog(LOG_ERR, "error on sending QUIT");
-                                } else {
+                                        syslog(LOG_WARNING,
+					    "conflict error: no reply to QUIT");
+				} else {
                                         (void) addmach(answer->tsp_name, &from);
 				}
                         }
