@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)comsat.c	4.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)comsat.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/mx.h>
 #include <sgtty.h>
@@ -43,6 +43,7 @@ char **argv;
 		perror("/etc/utmp"), exit(1);
 	while (fork())
 		wait(0);
+	sleep(10);
 	onalrm();
 	sigset(SIGALRM, onalrm);
 	sigignore(SIGTTOU);
@@ -58,6 +59,7 @@ char **argv;
 		dprintf("0: got %d bytes\n", cc);
 		unpack(buf, cc);
 	}
+	_exit(1);
 }
 
 #define	skip(rp, c)	((struct rh *)(((char *)rp)+c))
