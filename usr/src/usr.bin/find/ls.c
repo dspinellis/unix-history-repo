@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,14 +36,10 @@ printlong(name, accpath, sb)
 	struct stat *sb;		/* stat buffer */
 {
 	extern int errno;
-	static char *modep;
-	char *user_from_uid(), *group_from_gid(), *strerror();
+	char modep[15], *user_from_uid(), *group_from_gid(), *strerror();
 
 	(void)printf("%6lu %4ld ", sb->st_ino, sb->st_blocks);
-	if (strmode(sb->st_mode, &modep)) {
-		(void)fprintf(stderr, "find: %s.\n", strerror(errno));
-		exit(1);
-	}
+	(void)strmode(sb->st_mode, modep);
 	(void)printf("%s %3u %-*s %-*s ", modep, sb->st_nlink, UT_NAMESIZE,
 	    user_from_uid(sb->st_uid, 0), UT_NAMESIZE,
 	    group_from_gid(sb->st_gid, 0));
