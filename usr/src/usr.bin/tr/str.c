@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -38,9 +38,8 @@ next(s)
 	case INFINITE:
 		return (1);
 	case NORMAL:
-		switch (ch = *s->str++) {
+		switch (ch = *s->str) {
 		case '\0':
-			--s->str;
 			s->state = EOS;
 			return (0);
 		case '\\':
@@ -51,6 +50,7 @@ next(s)
 				return (next(s));
 			/* FALLTHROUGH */
 		default:
+			++s->str;
 			s->lastch = ch;
 			break;
 		}
@@ -89,7 +89,7 @@ bracket(s)
 {
 	register char *p;
 
-	switch (*s->str) {
+	switch (*++s->str) {
 	case ':':				/* "[:class:]" */
 		if ((p = strpbrk(s->str + 1, ":]")) == NULL)
 			return (0);
