@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -627,11 +627,11 @@ int w;{
 	if (p.line < 0)
 		p.line = 0;
 	if (w) {
-		sprintf(str,"BONUS!!!");
+		strcpy(str,"BONUS!!!");
 		loot = loot - penalty;
 		penalty = 0;
 	} else {
-		sprintf(str,"SPACE WARP!!!");
+		strcpy(str,"SPACE WARP!!!");
 		penalty += loot/PENALTY;
 	}
 	for(j=0;j<3;j++){
