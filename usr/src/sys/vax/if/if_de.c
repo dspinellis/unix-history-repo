@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	6.13 (Berkeley) %G%
+ *	@(#)if_de.c	6.14 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -28,6 +28,7 @@
 #include "vmmac.h"
 #include "ioctl.h"
 #include "errno.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -42,10 +43,6 @@
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/if_ether.h"
-#endif
-
-#ifdef PUP
-#include "../netpup/pup.h"
 #endif
 
 #ifdef NS
@@ -91,7 +88,8 @@ struct	de_softc {
 #define	ds_addr	ds_ac.ac_enaddr		/* hardware Ethernet address */
 	int	ds_flags;
 #define	DSF_LOCK	1		/* lock out destart */
-#define	DSF_RUNNING	2
+#define	DSF_RUNNING	2		/* board is enabled */
+#define	DSF_SETADDR	4		/* physical address is changed */
 	int	ds_ubaddr;		/* map info for incore structs */
 	struct	ifubinfo ds_deuba;	/* unibus resource structure */
 	struct	ifrw ds_ifr[NRCV];	/* unibus receive maps */
@@ -189,7 +187,7 @@ deattach(ui)
 	csr0 = addr->pcsr0;
 	addr->pchigh = csr0 >> 8;
 	if (csr0 & PCSR0_PCEI)
-		printf("de%d: rdphyad failed, csr0=%b csr1=%b\n", ui->ui_unit,
+		printf("de%d: read addr failed, csr0=%b csr1=%b\n", ui->ui_unit,
 		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
 	ubarelse(ui->ui_ubanum, &ds->ds_ubaddr);
 	if (dedebug)
@@ -225,6 +223,7 @@ dereset(unit, uban)
 		return;
 	printf(" de%d", unit);
 	de_softc[unit].ds_if.if_flags &= ~IFF_RUNNING;
+	de_softc[unit].ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
 	deinit(unit);
 }
 
@@ -250,16 +249,19 @@ deinit(unit)
 	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 
-	if (ifp->if_flags & IFF_RUNNING)
+	if (ds->ds_flags & DSF_RUNNING)
 		return;
-	if (if_ubaminit(&ds->ds_deuba, ui->ui_ubanum,
-	    sizeof (struct ether_header), (int)btoc(ETHERMTU),
-	    ds->ds_ifr, NRCV, ds->ds_ifw, NXMT) == 0) { 
-		printf("de%d: can't initialize\n", unit);
-		ds->ds_if.if_flags &= ~IFF_UP;
-		return;
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
+		if (if_ubaminit(&ds->ds_deuba, ui->ui_ubanum,
+		    sizeof (struct ether_header), (int)btoc(ETHERMTU),
+		    ds->ds_ifr, NRCV, ds->ds_ifw, NXMT) == 0) { 
+			printf("de%d: can't initialize\n", unit);
+			ds->ds_if.if_flags &= ~IFF_UP;
+			return;
+		}
+		ds->ds_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(ds),
+			INCORE_SIZE, 0);
 	}
-	ds->ds_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(ds), INCORE_SIZE,0);
 	addr = (struct dedevice *)ui->ui_addr;
 
 	/* set the pcbb block address */
@@ -333,12 +335,14 @@ deinit(unit)
 
 	/* start up the board (rah rah) */
 	s = splimp();
-	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = 0;
+	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = ds->ds_nxmit = 0;
 	ds->ds_if.if_flags |= IFF_RUNNING;
-	destart(unit);				/* queue output packets */
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
 	addr->pclow = CMD_START | PCSR0_INTE;
 	ds->ds_flags |= DSF_RUNNING;
+	if (ds->ds_flags & DSF_SETADDR)
+		de_setaddr(ds->ds_addr, unit);
+	destart(unit);				/* queue output packets */
 	splx(s);
 }
 
@@ -463,7 +467,7 @@ deintr(unit)
 	destart(unit);
 
 	if (csr0 & PCSR0_RCBI) {
-		printf("de%d: buffer unavailable\n", unit);
+		log(LOG_WARNING, "de%d: buffer unavailable\n", unit);
 		addr->pclow = PCSR0_INTE|CMD_PDMD;
 	}
 }
@@ -626,6 +630,10 @@ deoutput(ifp, m0, dst)
 	register struct ether_header *eh;
 	register int off;
 
+	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
+		error = ENETDOWN;
+		goto bad;
+	}
 	switch (dst->sa_family) {
 
 #ifdef INET
@@ -737,6 +745,7 @@ deioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
+	register struct de_softc *ds = &de_softc[ifp->if_unit];
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
@@ -758,16 +767,25 @@ deioctl(ifp, cmd, data)
 		    {
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 			
-			if (ns_nullhost(*ina)) {
-				ina->x_host = * (union ns_host *) 
-				     (de_softc[ifp->if_unit].ds_addr);
-			} else {
+			if (ns_nullhost(*ina))
+				ina->x_host = *(union ns_host *)(ds->ds_addr);
+			else
 				de_setaddr(ina->x_host.c_host,ifp->if_unit);
-			}
 			break;
 		    }
 #endif
 		}
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifp->if_flags & IFF_UP) == 0 &&
+		    ds->ds_flags & DSF_RUNNING) {
+			((struct dedevice *)
+			   (deinfo[ifp->if_unit]->ui_addr))->pclow = PCSR0_RSET;
+			ds->ds_flags &= ~(DSF_LOCK | DSF_RUNNING);
+		} else if (ifp->if_flags & IFF_UP &&
+		    (ds->ds_flags & DSF_RUNNING) == 0)
+			deinit(ifp->if_unit);
 		break;
 
 	default:
@@ -781,8 +799,8 @@ deioctl(ifp, cmd, data)
  * set ethernet address for unit
  */
 de_setaddr(physaddr, unit)
-u_char *physaddr;
-int unit;
+	u_char *physaddr;
+	int unit;
 {
 	register struct de_softc *ds = &de_softc[unit];
 	register struct uba_device *ui = deinfo[unit];
@@ -794,12 +812,18 @@ int unit;
 		
 	bcopy(physaddr, &ds->ds_pcbb.pcbb2, 6);
 	ds->ds_pcbb.pcbb0 = FC_WTPHYAD;
-	addr->pclow = PCSR0_INTE|CMD_PDMD;
+	addr->pclow = PCSR0_INTE|CMD_GETCMD;
+	while ((addr->pcsr0 & PCSR0_INTR) == 0)
+		;
 	csr0 = addr->pcsr0;
 	addr->pchigh = csr0 >> 8;
 	if (csr0 & PCSR0_PCEI)
-		printf("de%d: wtphyad failed, csr0=%b csr1=%b\n", 
+		printf("de%d: address change failed, csr0=%b csr1=%b\n", 
 		    ui->ui_unit, csr0, PCSR0_BITS, 
 		    addr->pcsr1, PCSR1_BITS);
+	else {
+		ds->ds_flags |= DSF_SETADDR;
+		bcopy(physaddr, ds->ds_addr, 6);
+	}
 }
 #endif
