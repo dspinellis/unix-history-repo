@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_mroute.c	8.1 (Berkeley) %G%
+ *	@(#)ip_mroute.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,6 @@ int	ip_mrtproto;				/* for netstat only */
 #include <sys/socketvar.h>
 #include <sys/time.h>
 
-#include <net/af.h>
 #include <net/if.h>
 #include <net/route.h>
 #include <net/raw_cb.h>
