@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	5.4 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -17,6 +17,8 @@ static char	SccsId[] = "@(#)vacation.c	5.4 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <sysexits.h>
+#include <syslog.h>
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -35,6 +37,7 @@ static char	SccsId[] = "@(#)vacation.c	5.4 (Berkeley) %G%";
 #define	VACAT	".vacation"		/* dbm's database prefix */
 #define	VDIR	".vacation.dir"		/* dbm's DB prefix, part 1 */
 #define	VIGN	".vacation.ignore"	/* addresses never replied to */
+#define	VLOG	".vacation.log"		/* log action and errors */
 #define	VMSG	".vacation.msg"		/* vacation message */
 #define	VPAG	".vacation.pag"		/* dbm's DB prefix, part 2 */
 
@@ -47,7 +50,7 @@ typedef struct {
 	time_t	sentdate;
 } DBREC;
 
-static int	debug = NO;		/* debugging flag */
+static int	debug;			/* debugging flag */
 
 main(argc, argv)
 	int	argc;
@@ -58,14 +61,16 @@ main(argc, argv)
 	int	ch, iflag = NO;
 	char	*from,
 		*getfrom();
+	uid_t	getuid();
 
 	while ((ch = getopt(argc, argv, "Idi")) != EOF)
 		switch((char)ch) {
-		case 'd':			/* debug */
-			debug = YES;
-			break;
-		case 'i': case 'I':		/* re-init the database */
+		case 'i':			/* init the database */
+		case 'I':			/* backward compatible */
 			iflag = YES;
+			break;
+		case 'd':			/* debugging */
+			debug = YES;
 			break;
 		case '?':
 		default:
@@ -74,23 +79,41 @@ main(argc, argv)
 	argv += optind;
 	argc -= optind;
 
-	if (argc != 1)
-		usage();
-
 	/* find and move to user's home directory */
-	if (!(pw = getpwnam(*argv))) {
-		fprintf(stderr, "vacation: unknown user %s.\n", *argv);
-		exit(1);
+	if (argc != 1) {
+		if (!iflag)
+			usage();
+		if (!(pw = getpwuid(getuid())) || chdir(pw->pw_dir)) {
+			fprintf(stderr, "vacation: no such user uid %u.\n", getuid());
+			syslog(LOG_ERR, "vacation: no such user uid %u.\n", getuid());
+			exit(EX_USAGE);
+		}
+		*argv = pw->pw_name;
 	}
-	if (chdir(pw->pw_dir)) {
-		perror("vacation: chdir");
-		exit(1);
+	else if (!(pw = getpwnam(*argv)) || chdir(pw->pw_dir)) {
+		fprintf(stderr, "vacation: no such user %s.\n", *argv);
+		syslog(LOG_ERR, "vacation: no such user %s.\n", *argv);
+		exit(EX_USAGE);
 	}
 
 	/* iflag cleans out the database */
 	if (iflag) {
 		initialize();
-		exit(0);
+		exit(EX_OK);
+	}
+
+	if (debug) {
+		time_t	now,
+			time();
+		char	*ctime();
+
+		if (!freopen(VLOG, "a", stderr)) {
+			fprintf(stderr, "vacation: can't append ~%s/%s\n", *argv, VLOG);
+			syslog(LOG_ERR, "vacation: can't append ~%s/%s\n", *argv, VLOG);
+			exit(EX_CANTCREAT);
+		}
+		(void)time(&now);
+		fprintf(stderr, "===== %s", ctime(&now));
 	}
 
 	/*
@@ -119,7 +142,7 @@ main(argc, argv)
 		setknows(from, NO);
 		sendmessage(from, *argv);
 	}
-	exit(0);
+	exit(EX_OK);
 }
 
 /*
@@ -137,19 +160,19 @@ char **shortp;
 	/* read the from line */
 	if (!gets(buf) || strncmp(buf, "From ", 5)) {
 		fputs("vacation: no initial From line.\n", stderr);
-		exit(1);
+		exit(EX_DATAERR);
 	}
 
 	/* find the end of the sender address and terminate it */
 	for (p = &buf[5]; *p && *p != ' '; ++p);
 	if (!*p) {
-		fprintf(stderr, "vacation: address terminated From line '%s'", buf);
-		exit(1);
+		fprintf(stderr, "vacation: address terminated From line '%s'\n", buf);
+		exit(EX_DATAERR);
 	}
 	*p = EOS;
 	if (!(p = malloc((u_int)(strlen(&buf[5]) + 1)))) {
 		fputs("vacation: out of space.\n", stderr);
-		exit(1);
+		exit(EX_OSERR);
 	}
 	/*
 	 * Strip all but the rightmost UUCP host
@@ -196,7 +219,7 @@ junkmail(from)
 		char	*name;
 		int	len;
 	} ignore[] = {
-		"-REQUEST", 8, 		"Postmaster", 10,
+		"-REQUEST", 8,		"Postmaster", 10,
 		"uucp", 4,		"MAILER-DAEMON", 13,
 		"MAILER", 6,		NULL, NULL,
 	};
@@ -204,28 +227,33 @@ junkmail(from)
 	register int	len;
 	register char	*p;
 	char	buf[MAXLINE],
-		*index();
+		*index(), *rindex();
 
 	/*
 	 * This is mildly amusing, and I'm not positive it's right; what
 	 * we're trying to do is find the "real" name of the sender.  I'm
 	 * assuming that addresses will be some variant of:
 	 *
-	 * From ADDRESS
-	 * From ADDRESS@seismo.css.gov
-	 * From ADDRESS%site.BITNET@seismo.css.gov
-	 * From site1!site2!ADDRESS@seismo.css.gov
+	 * From SENDER
+	 * From SENDER@seismo.css.gov
+	 * From SENDER%site.BITNET@seismo.css.gov
+	 * From site1!site2!SENDER@seismo.css.gov
 	 *
 	 * Therefore, the following search order:
 	 */
 	if (!(p = index(from, '%')))
-		if (!(p = index(from, '@')))
-			if (!(p = index(from, '!')))
-				for (p = from; *p; ++p);
-	len = p - from + 1;
+		if (!(p = index(from, '@'))) {
+			if (p = rindex(from, '!'))
+				++p;
+			for (p = from; *p; ++p);
+		}
+	len = p - from;
 	for (I = ignore; I->name; ++I)
-		if (len >= I->len && !strcasencmp(I->name, p - I->len, I->len))
+		if (len >= I->len && !strcasencmp(I->name, p - I->len, I->len)) {
+			if (debug)
+				fprintf(stderr, "not sending to %s {%s}\n", from, I->name);
 			return(YES);
+		}
 
 	/* read the header looking for a "Precedence:" line */
 	while (gets(buf) && *buf) {
@@ -242,7 +270,8 @@ junkmail(from)
 
 		/* see if it is "junk" or "bulk" */
 		if (!strcasencmp(p, "junk", 4) || !strcasecmp(p, "bulk", 4)) {
-			puts("found junk or bulk");
+			if (debug)
+				fprintf(stderr, "not sending to %s {junk/bulk}\n", from);
 			return(YES);
 		}
 	}
@@ -308,23 +337,25 @@ setknows(user, forever)
 
 /*
  * sendmessage --
- *	exec sendmail to send the vacation file to the user "user".
+ *	exec sendmail to send the vacation file to "user".
  */
 static
 sendmessage(user, myname)
 	char	*user, *myname;
 {
-	if (debug)
-		printf("sending {%s} to {%s}\n", VMSG, user);
-	else {
-		if (!freopen(VMSG, "r", stdin)) {
-			fputs("vacation: no message to send.\n", stderr);
-			exit(1);
-		}
-		execl("/usr/lib/sendmail", "sendmail", "-f", myname, user, NULL);
-		fputs("vacation: cannot exec /usr/lib/sendmail\n", stderr);
-		exit(1);
+	if (debug) {
+		fprintf(stderr, "sending {%s} to {%s}\n", VMSG, user);
+		return;
 	}
+	if (!freopen(VMSG, "r", stdin)) {
+		fprintf(stderr, "vacation: no ~%s/%s file.\n", myname, VMSG);
+		syslog(LOG_ERR, "vacation: no ~%s/%s file.\n", myname, VMSG);
+		exit(EX_NOINPUT);
+	}
+	execl("/usr/lib/sendmail", "sendmail", "-f", myname, user, NULL);
+	fprintf(stderr, "vacation: can't exec /usr/lib/sendmail.\n");
+	syslog(LOG_ERR, "vacation: can't exec /usr/lib/sendmail.\n");
+	exit(EX_OSERR);
 }
 
 /*
@@ -334,22 +365,27 @@ sendmessage(user, myname)
 static
 initialize()
 {
+	extern int	errno;
+	extern char	*sys_errlist[];
 	FILE	*fp;
 	int	fd;
 
 	if ((fd = open(VDIR, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		perror("vacation: .vacation.dir");
-		exit(1);
+		fprintf(stderr, "vacation: %s: %s\n", VDIR, sys_errlist[errno]);
+		syslog(LOG_ERR, "vacation: %s: %s\n", VDIR, sys_errlist[errno]);
+		exit(EX_OSERR);
 	}
 	(void)close(fd);
 	if ((fd = open(VPAG, O_WRONLY|O_CREAT|O_TRUNC, 0644)) < 0) {
-		perror("vacation: .vacation.page");
-		exit(1);
+		fprintf(stderr, "vacation: %s: %s\n", VPAG, sys_errlist[errno]);
+		syslog(LOG_ERR, "vacation: %s: %s\n", VPAG, sys_errlist[errno]);
+		exit(EX_OSERR);
 	}
 	(void)close(fd);
 	dbminit(VACAT);
 	if (fp = fopen(VIGN, "r")) {
-		char	buf[MAXLINE];
+		char	buf[MAXLINE],
+			*index();
 
 /* VARARGS 1 */
 		while (fgets(buf, sizeof(buf), fp)) {
@@ -368,6 +404,9 @@ initialize()
 static
 usage()
 {
-	fputs("vacation [-i] username\n", stderr);
-	exit(1);
+	uid_t	getuid();
+
+	fputs("usage: vacation [-i] login\n", stderr);
+	syslog(LOG_ERR, "uid %u: usage: vacation [-i] login\n", getuid());
+	exit(EX_USAGE);
 }
