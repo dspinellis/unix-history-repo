@@ -1,0 +1,66 @@
+
+
+
+LXREF(1)	    UNIX Programmer's Manual		 LXREF(1)
+
+
+
+NNAAMMEE
+     lxref - lisp cross reference program
+
+SSYYNNOOPPSSIISS
+     llxxrreeff [ --NN ] xref-file ...  [ --aa source-file ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _L_x_r_e_f reads cross reference file(s) written by the lisp com-
+     piler _l_i_s_z_t and prints a cross reference listing on the
+     standard output.  _L_i_s_z_t will create a cross reference file
+     during compilation when it is given the --xx switch.  Cross
+     reference files usually end in `.x' and consequently _l_x_r_e_f
+     will append a `.x' to the file names given if necessary.
+     The first option to _l_x_r_e_f is a decimal integer, N, which
+     sets the _i_g_n_o_r_e_l_e_v_e_l. If a function is called more than
+     _i_g_n_o_r_e_l_e_v_e_l times, the cross reference listing will just
+     print the number of calls instead of listing each one of
+     them.  The default for _i_g_n_o_r_e_l_e_v_e_l is 50.
+
+     The --aa option causes _l_x_r_e_f to put limited cross reference
+     information in the sources named.	_l_x_r_e_f will scan the
+     source and when it comes across a definition of a function
+     (that is a line beginning with `(_d_e_f' it will preceed that
+     line with a list of the functions which call this function,
+     written as a comment preceeded by `;.. ' . All existing
+     lines beginning with `;.. ' will be removed from the file.
+     If the source file contains a line beginning `;.-' then this
+     will disable this annotation process from this point on
+     until a `;.+' is seen (however, lines beginning with `;.. '
+     will continue to be deleted).  After the annoation is done,
+     the original file `_f_o_o._l' is renamed to " `#._f_o_o._l'" and the
+     new file with annotation is named `_f_o_o._l'
+
+AAUUTTHHOORR
+     John Foderaro
+
+SSEEEE AALLSSOO
+     lisp(1), liszt(1)
+
+BBUUGGSS
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 3/29/89          April 29, 1985                         1
+
+
+
+
+
+
