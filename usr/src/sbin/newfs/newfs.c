@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.10 %G%";
+static char sccsid[] = "@(#)newfs.c	4.11 %G%";
 #endif
 
 /*
@@ -165,7 +165,7 @@ next:
 	cp = rindex(special, '/');
 	if (cp != 0)
 		special = cp + 1;
-	if (*special == 'r')
+	if (*special == 'r' && special[1] != 'a' && special[1] != 'b')
 		special++;
 	special = sprintf(device, "/dev/r%s", special);
 	if (stat(special, &st) < 0) {
