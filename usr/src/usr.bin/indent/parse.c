@@ -19,11 +19,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "./indent_globs.h"
-#include "./indent_codes.h"
+#include "indent_globs.h"
+#include "indent_codes.h"
 
 parse(tk)
     int         tk;		/* the code for the construct scanned */

@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,7 +28,6 @@ static char sccsid[] = "@(#)args.c	5.6 (Berkeley) %G%";
  */
 
 #include "indent_globs.h"
-#include <sys/types.h>
 #include <ctype.h>
 
 char       *getenv(), *index();
