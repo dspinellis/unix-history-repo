@@ -1,0 +1,8 @@
+[ TODO - Mon Jan 14 22:57:12 1991 - check-out list - /mtr ]
+
+
+After 6.8:
+
+	Get rid of AttrT_cpy, _free, _decode, _alloc
+
+	mosy import check
