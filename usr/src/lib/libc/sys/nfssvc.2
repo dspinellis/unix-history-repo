@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)nfssvc.2	6.7 (Berkeley) %G%
+.\"	@(#)nfssvc.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NFSSVC 2
@@ -17,10 +17,10 @@
 .Ft int
 .Fn nfssvc "int flags" "void *argstructp"
 .Sh DESCRIPTION
-.Ef
-.Fn Nfssvc
-is used by the various NFS daemons, to pass information in and out of
-the kernel and also to enter the kernel as a server daemon.
+The
+.Fn nfssvc
+function is used by the NFS daemons to pass information into and out
+of the kernel and also to enter the kernel as a server daemon.
 The
 .Fa flags
 argument consists of several bits that show what action is to be taken
