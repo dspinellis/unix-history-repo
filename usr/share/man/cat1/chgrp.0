@@ -1,0 +1,59 @@
+CHGRP(1)                     BSD Reference Manual                     CHGRP(1)
+
+NNAAMMEE
+     cchhggrrpp - change group
+
+SSYYNNOOPPSSIISS
+     cchhggrrpp [--RR [--HH | --LL | --PP]] [--ff] _g_r_o_u_p _f_i_l_e_s _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The chgrp utility sets the group ID of the file named by each _f_i_l_e
+     operand to the _g_r_o_u_p ID specified by the group operand.
+
+     Options:
+
+     --HH      If the --RR option is specified, symbolic links on the command line
+             are followed.  (Symbolic links encountered in the tree traversal
+             are not followed.)
+
+     --LL      If the --RR option is specified, all symbolic links are followed.
+
+     --PP      If the --RR option is specified, no symbolic links are followed.
+
+     --RR      Change the group ID for the file hierarchies rooted in the files
+             instead of just the files themselves.
+
+     --ff      The force option ignores errors, except for usage errors and
+             doesn't query about strange modes (unless the user does not have
+             proper permissions).
+
+     Symbolic links don't have groups, so unless the --HH or --LL option is set,
+     cchhggrrpp on a symbolic link always succeeds and has no effect.  The --HH, --LL
+     and --PP options are ignored unless the --RR option is specified.  In addi-
+     tion, these options override each other and the command's actions are de-
+     termined by the last one specified.
+
+     The _g_r_o_u_p operand can be either a group name from the group database, or
+     a numeric group ID.  If a group name is also a numeric group ID, the
+     operand is used as a group name.
+
+     The user invoking cchhggrrpp must belong to the specified group and be the
+     owner of the file, or be the super-user.
+
+     The cchhggrrpp utility exits 0 on success, and >0 if an error occurs.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     Previous versions of the cchhggrrpp utility changed the group of symbolic
+     links specified on the command line.  In this system, symbolic links do
+     not have groups.
+
+FFIILLEESS
+     /etc/group  Group ID file
+
+SSEEEE AALLSSOO
+     chown(2),  group(5),  passwd(5),  fts(3),  symlink(7),  chown(8)
+
+SSTTAANNDDAARRDDSS
+     The cchhggrrpp utility is expected to be POSIX 1003.2 compatible.
+
+4.2 Berkeley Distribution       March 31, 1994                               1

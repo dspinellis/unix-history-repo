@@ -1,0 +1,54 @@
+KGMON(8)                  BSD System Manager's Manual                 KGMON(8)
+
+NNAAMMEE
+     kkggmmoonn - generate a dump of the operating system's profile buffers
+
+SSYYNNOOPPSSIISS
+     kkggmmoonn [--bbhhpprr] [--MM --ccoorree] [--NN --ssyysstteemm]
+
+DDEESSCCRRIIPPTTIIOONN
+     KKggmmoonn is a tool used when profiling the operating system.  When no argu-
+     ments are supplied, kkggmmoonn indicates the state of operating system profil-
+     ing as running, off, or not configured.  (see config(8))  If the --pp flag
+     is specified, kkggmmoonn extracts profile data from the operating system and
+     produces a _g_m_o_n_._o_u_t file suitable for later analysis by gprof(1).
+
+     The options are as follows:
+
+     --bb      Resume the collection of profile data.
+
+     --hh      Stop the collection of profile data.
+
+     --pp      Dump the contents of the profile buffers into a _g_m_o_n_._o_u_t file.
+
+     --rr      Reset all the profile buffers.  If the --pp flag is also specified,
+             the _g_m_o_n_._o_u_t file is generated before the buffers are reset.
+
+     --MM      Extract values associated with the name list from the specified
+             core instead of the default ``/dev/kmem''.
+
+     --NN      Extract the name list from the specified system instead of the
+             default ``/vmunix''.
+
+     If neither --bb nor --hh is specified, the state of profiling collection re-
+     mains unchanged.  For example, if the --pp flag is specified and profile
+     data is being collected, profiling will be momentarily suspended, the op-
+     erating system profile buffers will be dumped, and profiling will be im-
+     mediately resumed.
+
+FFIILLEESS
+     /vmunix     the default system
+     /dev/kmem   the default memory
+
+SSEEEE AALLSSOO
+     gprof(1),  config(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Users with only read permission on _/_d_e_v_/_k_m_e_m cannot change the state of
+     profiling collection.  They can get a _g_m_o_n_._o_u_t file with the warning that
+     the data may be inconsistent if profiling is in progress.
+
+HHIISSTTOORRYY
+     The kkggmmoonn command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

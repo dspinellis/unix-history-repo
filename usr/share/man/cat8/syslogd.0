@@ -1,0 +1,51 @@
+SYSLOGD(8)                BSD System Manager's Manual               SYSLOGD(8)
+
+NNAAMMEE
+     ssyyssllooggdd - log systems messages
+
+SSYYNNOOPPSSIISS
+     ssyyssllooggdd [--ff _c_o_n_f_i_g___f_i_l_e] [--mm _m_a_r_k___i_n_t_e_r_v_a_l] [--pp _l_o_g___s_o_c_k_e_t]
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyyssllooggdd reads and logs messages to the system console, log files, other
+     machines and/or users as specified by its configuration file.  The op-
+     tions are as follows:
+
+     --ff      Specify the pathname of an alternate configuration file; the de-
+             fault is _/_e_t_c_/_s_y_s_l_o_g_._c_o_n_f.
+
+     --mm      Select the number of minutes between ``mark'' messages; the de-
+             fault is 20 minutes.
+
+     --pp      Specify the pathname of an alternate log socket; the default is
+             _/_d_e_v_/_l_o_g.
+
+     SSyyssllooggdd reads its configuration file when it starts up and whenever it
+     receives a hangup signal.  For information on the format of the configu-
+     ration file, see syslog.conf(5).
+
+     SSyyssllooggdd reads messages from the UNIX domain socket _/_d_e_v_/_l_o_g, from an In-
+     ternet domain socket specified in _/_e_t_c_/_s_e_r_v_i_c_e_s, and from the special de-
+     vice _/_d_e_v_/_k_l_o_g (to read kernel messages).
+
+     SSyyssllooggdd creates the file _/_v_a_r_/_r_u_n_/_s_y_s_l_o_g_._p_i_d, and stores its process id
+     there.  This can be used to kill or reconfigure ssyyssllooggdd.
+
+     The message sent to ssyyssllooggdd should consist of a single line.  The message
+     can contain a priority code, which should be a preceding decimal number
+     in angle braces, for example, `<5.>' This priority code should map into
+     the priorities defined in the include file <_s_y_s_/_s_y_s_l_o_g_._h>.
+
+FFIILLEESS
+     /etc/syslog.conf     The configuration file.
+     /var/run/syslog.pid  The process id of current ssyyssllooggdd.
+     /dev/log             Name of the UNIX domain datagram log socket.
+     /dev/klog            The kernel log device.
+
+SSEEEE AALLSSOO
+     logger(1),  syslog(3),  services(5),  syslog.conf(5)
+
+HHIISSTTOORRYY
+     The ssyyssllooggdd command appeared in 4.3BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

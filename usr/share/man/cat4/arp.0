@@ -1,0 +1,65 @@
+ARP(4)                      BSD Programmer's Manual                     ARP(4)
+
+NNAAMMEE
+     aarrpp - Address Resolution Protocol
+
+SSYYNNOOPPSSIISS
+     _p_s_e_u_d_o_-_d_e_v_i_c_e _e_t_h_e_r
+
+DDEESSCCRRIIPPTTIIOONN
+     The Address Resolution Protocol (ARP) is a protocol used to dynamically
+     map between Internet host addresses and 10Mb/s Ethernet addresses.  It is
+     used by all the 10Mb/s Ethernet interface drivers.  It is not specific to
+     Internet protocols or to 10Mb/s Ethernet, but this implementation cur-
+     rently supports only that combination.
+
+     ARP caches Internet-Ethernet address mappings.  When an interface re-
+     quests a mapping for an address not in the cache, ARP queues the message
+     which requires the mapping and broadcasts a message on the associated
+     network requesting the address mapping.  If a response is provided, the
+     new mapping is cached and any pending message is transmitted.  ARP will
+     queue at most one packet while waiting for a response to a mapping re-
+     quest; only the most recently ``transmitted'' packet is kept.  If the
+     target host does not respond after several requests, the host is consid-
+     ered to be down for a short period (normally 20 seconds), allowing an er-
+     ror to be returned to transmission attempts during this interval.  The
+     error is EHOSTDOWN for a non-responding destination host, and
+     EHOSTUNREACH for a non-responding router.
+
+     The ARP cache is stored in the system routing table as dynamically-
+     created host routes.  The route to a directly-attached Ethernet network
+     is installed as a ``cloning'' route (one with the RTF_CLONING flag set),
+     causing routes to individual hosts on that network to be created on de-
+     mand.  These routes time out periodically (normally 20 minutes after val-
+     idated; entries are not validated when not in use).  An entry for a host
+     which is not responding is a ``reject'' route (one with the RTF_REJECT
+     flag set).
+
+     ARP entries may be added, deleted or changed with the arp(8) utility.
+     Manually-added entries may be temporary or permanent, and may be
+     ``published'', in which case the system will respond to ARP requests for
+     that host as if it were the target of the request.
+
+     In the past, ARP was used to negotiate the use of a trailer encapsula-
+     tion.  This is no longer supported.
+
+     ARP watches passively for hosts impersonating the local host (i.e. a host
+     which responds to an ARP mapping request for the local host's address).
+
+DDIIAAGGNNOOSSTTIICCSS
+     _d_u_p_l_i_c_a_t_e _I_P _a_d_d_r_e_s_s _%_x_!_! _s_e_n_t _f_r_o_m _e_t_h_e_r_n_e_t _a_d_d_r_e_s_s_: _%_x_:_%_x_:_%_x_:_%_x_:_%_x_:_%_x_.
+     ARP has discovered another host on the local network which responds to
+     mapping requests for its own Internet address with a different Ethernet
+     address, generally indicating that two hosts are attempting to use the
+     same Internet address.
+
+SSEEEE AALLSSOO
+     inet(4),  route(4),  arp(8),  ifconfig(8),  route(8)
+
+
+     Plummer, D., "RFC826", _A_n _E_t_h_e_r_n_e_t _A_d_d_r_e_s_s _R_e_s_o_l_u_t_i_o_n _P_r_o_t_o_c_o_l.
+
+     Leffler, S.J., and Karels, M.J., "RFC893", _T_r_a_i_l_e_r _E_n_c_a_p_s_u_l_a_t_i_o_n_s.
+
+
+4th Berkeley Distribution       April 18, 1994                               1

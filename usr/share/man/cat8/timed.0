@@ -1,0 +1,96 @@
+TIMED(8)                  BSD System Manager's Manual                 TIMED(8)
+
+NNAAMMEE
+     ttiimmeedd - time server daemon
+
+SSYYNNOOPPSSIISS
+     ttiimmeedd [--MM] [--tt] [--dd] [--ii _n_e_t_w_o_r_k] [--nn _n_e_t_w_o_r_k] [--FF _h_o_s_t_1 _h_o_s_t_2 _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a time server daemon and is normally invoked at boot time from
+     the rc(8) file.  It synchronizes the host's time with the time of other
+     machines in a local area network running ttiimmeedd 88. These time servers will
+     slow down the clocks of some machines and speed up the clocks of others
+     to bring them to the average network time.  The average network time is
+     computed from measurements of clock differences using the ICMP timestamp
+     request message.
+
+     The service provided by ttiimmeedd is based  on a master-slave scheme.  When
+     ttiimmeedd 88 is started on a machine, it asks the master for the network time
+     and sets the host's clock to that time.  After that, it accepts synchro-
+     nization messages periodically sent by the master and calls adjtime(2) to
+     perform the needed corrections on the host's clock.
+
+     It also communicates with date(1) in order to set the date globally, and
+     with timedc(8),  a timed control program.  If the machine running the
+     master crashes, then the slaves will elect a new master from among slaves
+     running with the --MM flag.  A ttiimmeedd running without the --MM or --FF flags
+     will remain a slave.  The --tt flag enables ttiimmeedd to trace the messages it
+     receives in the file _/_v_a_r_/_l_o_g_/_t_i_m_e_d_._l_o_g. Tracing can be turned on or off
+     by the program timedc(8).  The --dd flag is for debugging the daemon.  It
+     causes the program to not put itself into the background.  Normally ttiimmeedd
+     checks for a master time server on each network to which it is connected,
+     except as modified by the options described below.  It will request syn-
+     chronization service from the first master server located.  If permitted
+     by the --MM flag, it will provide synchronization service on any attached
+     networks on which no current master server was detected.  Such a server
+     propagates the time computed by the top-level master.  The --nn flag, fol-
+     lowed by the name of a network which the host is connected to (see
+     networks(5)),  overrides the default choice of the network addresses made
+     by the program.  Each time the --nn flag appears, that network name is
+     added to a list of valid networks.  All other networks are ignored.  The
+     --ii flag, followed by the name of a network to which the host is connected
+     (see networks(5)),  overrides the default choice of the network addresses
+     made by the program.  Each time the --ii flag appears, that network name is
+     added to a list of networks to ignore.  All other networks are used by
+     the time daemon.  The --nn and --ii flags are meaningless if used together.
+
+     TTiimmeedd checks for a master time server on each network to which it is con-
+     nected, except as modified by the --nn and --ii options described above.  If
+     it finds masters on more than one network, it chooses one network on
+     which to be a "slave," and then periodically checks the other networks to
+     see if the masters there have disappeared.
+
+     One way to synchronize a group of machines is to use an NTP daemon to
+     synchronize the clock of one machine to a distant standard or a radio re-
+     ceiver and --FF _h_o_s_t_n_a_m_e to tell its timed daemon to trust only itself.
+
+     Messages printed by the kernel on the system console occur with inter-
+     rupts disabled.  This means that the clock stops while they are printing.
+     A machine with many disk or network hardware problems and consequent mes-
+     sages cannot keep good time by itself.  Each message typically causes the
+     clock to lose a dozen milliseconds.  A time daemon can correct the re-
+     sult.
+
+
+     Messages in the system log about machines that failed to respond usually
+     indicate machines that crashed or were turned off.  Complaints about ma-
+     chines that failed to respond to initial time settings are often associ-
+     ated with "multi-homed" machines that looked for time masters on more
+     than one network and eventually chose to become a slave on the other net-
+     work.  If two or more time daemons, whether ttiimmeedd, NTP,  try to adjust
+     the same clock, temporal chaos will result.  If both ttiimmeedd and another
+     time daemon are run on the same machine, ensure that the --FF flag is used,
+     so that ttiimmeedd never attempts to adjust the local clock.
+
+     The protocol is based on UDP/IP broadcasts.  All machines within the
+     range of a broadcast that are using the TSP protocol must cooperate.
+     There cannot be more than a single administrative domain using the --FF
+     flag among all machines reached by a broadcast packet.  Failure to follow
+     this rule is usually indicated by complaints concerning "untrusted" ma-
+     chines in the system log.
+
+FFIILLEESS
+     /var/log/timed.log        tracing file for timed
+     /var/log/timed.masterlog  log file for master timed
+
+SSEEEE AALLSSOO
+     date(1),  adjtime(2),  gettimeofday(2),  icmp(4),  timedc(8),
+
+     R. Gusella, and S. Zatti, _T_S_P_: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X
+     _4_._3_B_S_D.
+
+HHIISSTTOORRYY
+     The ttiimmeedd daemon appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                2

@@ -1,0 +1,55 @@
+PAC(8)                    BSD System Manager's Manual                   PAC(8)
+
+NNAAMMEE
+     ppaacc - printer/plotter accounting information
+
+SSYYNNOOPPSSIISS
+     ppaacc [--PP_p_r_i_n_t_e_r] [--cc] [--mm] [--pp_p_r_i_c_e] [--ss] [--rr] [_n_a_m_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     PPaacc reads the printer/plotter accounting files, accumulating the number
+     of pages (the usual case) or feet (for raster devices) of paper consumed
+     by each user, and printing out how much each user consumed in pages or
+     feet and dollars.
+
+     Options and operands available:
+
+     --PP_p_r_i_n_t_e_r  Accounting is done for the named printer.  Normally, account-
+                ing is done for the default printer (site dependent) or the
+                value of the environment variable PRINTER is used.
+
+     --cc         flag causes the output to be sorted by cost; usually the out-
+                put is sorted alphabetically by name.
+
+     --mm         flag causes the host name to be ignored in the accounting
+                file.  This allows for a user on multiple machines to have all
+                of his printing charges grouped together.
+
+     --pp_p_r_i_c_e    The value _p_r_i_c_e is used for the cost in dollars instead of the
+                default value of 0.02 or the price specified in _/_e_t_c_/_p_r_i_n_t_c_a_p.
+
+     --rr         Reverse the sorting order.
+
+     --ss         Accounting information is summarized on the summary accounting
+                file; this summarization is necessary since on a busy system,
+                the accounting file can grow by several lines per day.
+
+     _n_a_m_e_s      Statistics are only printed for user(s) _n_a_m_e; usually, statis-
+                tics are printed for every user who has used any paper.
+
+FFIILLEESS
+     /var/account/?acct  raw accounting files
+     /var/account/?_sum  summary accounting files
+     /etc/printcap       printer capability data base
+
+SSEEEE AALLSSOO
+     printcap(5)
+
+BBUUGGSS
+     The relationship between the computed price and reality is as yet un-
+     known.
+
+HHIISSTTOORRYY
+     The ppaacc command appeared in 4.0BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

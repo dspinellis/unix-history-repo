@@ -1,0 +1,47 @@
+REPQUOTA(8)               BSD System Manager's Manual              REPQUOTA(8)
+
+NNAAMMEE
+     rreeppqquuoottaa - summarize quotas for a file system
+
+SSYYNNOOPPSSIISS
+     rreeppqquuoottaa [--gg] [--uu] [--vv] _f_i_l_e_s_y_s_t_e_m _._._.
+     rreeppqquuoottaa [--gg] [--uu] [--vv] --aa
+
+DDEESSCCRRIIPPTTIIOONN
+     RReeppqquuoottaa prints a summary of the disk usage and quotas for the specified
+     file systems.
+
+     Available options:
+
+     --aa      Print the quotas of all the filesystems listed in _/_e_t_c_/_f_s_t_a_b.
+
+     --gg      Print only group quotas (the default is to print both group and
+             user quotas if they exist).
+
+     --uu      Print only user quotas (the default is to print both group and
+             user quotas if they exist).
+
+     --vv      Print a header line before printing each filesystem quotas.
+
+     For each user or group, the current number files and amount of space (in
+     kilobytes) is printed, along with any quotas created with edquota(8).
+
+     Only members of the operator group or the super-user may use this com-
+     mand.
+
+FFIILLEESS
+     quota.user   at the filesystem root with user quotas
+     quota.group  at the filesystem root with group quotas
+     /etc/fstab   for file system names and locations
+
+SSEEEE AALLSSOO
+     quota(1),  quotactl(2),  fstab(5),  edquota(8),  quotacheck(8),  quo-
+     taon(8)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Various messages about inaccessible files; self-explanatory.
+
+HHIISSTTOORRYY
+     The rreeppqquuoottaa command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1
