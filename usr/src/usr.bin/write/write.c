@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)write.c	4.12 %G%";
+static char *sccsid = "@(#)write.c	4.13 %G%";
 #endif
 /*
  * write to another user
@@ -70,7 +70,7 @@ main(argc, argv)
 		perror("write: Can't stat your tty");
 		exit(1);
 	}
-	if ((stbuf.st_mode&02) == 0) {
+	if ((stbuf.st_mode&020) == 0) {
 		fprintf(stderr,
 			"write: You have write permission turned off\n");
 		if (!suser)
@@ -115,7 +115,7 @@ main(argc, argv)
 			if (histty[0]==0)
 				strcpy(histty, ttybuf);
 			if (access(ttybuf, 0) < 0 || stat(ttybuf, &stbuf) < 0 ||
-			    (stbuf.st_mode&02) == 0)
+			    (stbuf.st_mode&020) == 0)
 				nomesg++;
 			else {
 				strcpy(histty, ttybuf);
@@ -223,6 +223,8 @@ ex(bp)
 		goto out;
 	}
 	if (i == 0) {
+		fclose(tf);		/* Close his terminal */
+		setgid(getgid());	/* Give up effective group privs */
 		sigs((int (*)())0);
 		execl(getenv("SHELL") ?
 		    getenv("SHELL") : "/bin/sh", "sh", "-c", bp+1, 0);
