@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.1 83/11/22";
+static	char *sccsid = "@(#)parser1.c	3.2 83/11/22";
 #endif
 
 #include <stdio.h>
@@ -40,11 +40,8 @@ p_start()
 p_statementlist(flag)
 char flag;
 {
-	for (;;) {
-		if (p_statement(flag) < 0)
-			return -1;
-		p_clearerr();
-	}
+	for (; p_statement(flag) >= 0; p_clearerr())
+		;
 }
 
 p_statement(flag)
@@ -286,9 +283,15 @@ register struct value *v;
 			}
 		}
 		if (ap != 0) {
-			if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
+			if (ap->arg_val.v_type != V_ERR) {
+				p_error("Argument %d (%s) multiply specified.",
+					ap - c->lc_arg + 1, ap->arg_name);
+				p_varfree(t);
+				flag = 0;
+			} else if (ap->arg_type == ARG_NUM && t.v_type != V_NUM
 			    || ap->arg_type == ARG_STR && t.v_type != V_STR) {
-				p_error("%s: Argument type mismatch.", t.v_str);
+				p_error("Argument %d (%s) type mismatch.",
+					ap - c->lc_arg + 1, ap->arg_name);
 				p_varfree(t);
 				flag = 0;
 			} else
