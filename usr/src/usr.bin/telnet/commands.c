@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -53,6 +53,10 @@ static char sccsid[] = "@(#)commands.c	5.3 (Berkeley) %G%";
 #ifndef       MAXHOSTNAMELEN
 #define       MAXHOSTNAMELEN 64
 #endif        MAXHOSTNAMELEN
+
+#if	defined(IPPROTO_IP) && defined(IP_TOS)
+int tos = -1;
+#endif	/* defined(IPPROTO_IP) && defined(IP_TOS) */
 
 char	*hostname;
 static char _hostname[MAXHOSTNAMELEN];
@@ -2221,13 +2225,17 @@ tn(argc, argv)
 #endif
 #if	defined(IPPROTO_IP) && defined(IP_TOS)
 	{
-	    int tos = 020; /* Low Delay bit */
 # if	defined(HAS_GETTOS)
 	    struct tosent *tp;
-	    if (tp = gettosbyname("telnet", "tcp"))
+	    if (tos < 0 && (tp = gettosbyname("telnet", "tcp")))
 		tos = tp->t_tos;
 # endif
-	    (void)setsockopt(net, IPPROTO_IP, IP_TOS, &tos, sizeof(int));
+	    if (tos < 0)
+		tos = 020;	/* Low Delay bit */
+	    if (tos
+		&& (setsockopt(net, IPPROTO_IP, IP_TOS, &tos, sizeof(int)) < 0)
+		&& (errno != ENOPROTOOPT))
+		    perror("telnet: setsockopt (IP_TOS) (ignored)");
 	}
 #endif	/* defined(IPPROTO_IP) && defined(IP_TOS) */
 
