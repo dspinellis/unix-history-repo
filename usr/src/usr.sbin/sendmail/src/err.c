@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.23		%G%);
+SCCSID(@(#)err.c	3.24		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -27,31 +27,21 @@ SCCSID(@(#)err.c	3.23		%G%);
 int	sys_nerr;
 char	*sys_errlist[];
 # endif lint
+static char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 
 /*VARARGS1*/
 syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
-	static char errbuf[2*BUFSIZ];
 	extern char Arpa_Syserr[];
+	char *saveto = CurEnv->e_to;
 
-	/* format the error message */
-	fmtmsg(errbuf, (char *) NULL, Arpa_Syserr, fmt, a, b, c, d, e);
+	/* format and output the error message */
+	CurEnv->e_to = NULL;
+	message(Arpa_Syserr, fmt, a, b, c, d, e);
+	CurEnv->e_to = saveto;
 
-	/* output error message to transcript */
-	fprintf(Xscript, "%s\n", &errbuf[4]);
-
-	/* output error message to output channel if appropriate */
-	if (!HoldErrs)
-	{
-		(void) fflush(stdout);
-		if (ArpaMode)
-			fprintf(OutChannel, "%s\r\n", errbuf);
-		else
-			fprintf(OutChannel, "sendmail: %s\n", &errbuf[4]);
-		(void) fflush(OutChannel);
-	}
-
+	/* mark the error as having occured */
 	Errors++;
 	FatalErrors = TRUE;
 
@@ -65,7 +55,7 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 # ifdef LOG
-	syslog(LOG_ERR, "%s->%s: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, &errbuf[4]);
+	syslog(LOG_ERR, "%s->%s: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, &MsgBuf[4]);
 # endif LOG
 	errno = 0;
 }
@@ -119,22 +109,20 @@ message(num, msg, a, b, c, d, e)
 	register char *num;
 	register char *msg;
 {
-	char errbuf[2*BUFSIZ];
-
 	errno = 0;
-	fmtmsg(errbuf, CurEnv->e_to, num, msg, a, b, c, d, e);
+	fmtmsg(MsgBuf, CurEnv->e_to, num, msg, a, b, c, d, e);
 
 	/* output to transcript */
-	fprintf(Xscript, "%s\n", &errbuf[4]);
+	fprintf(Xscript, "%s\n", Smtp ? MsgBuf : &MsgBuf[4]);
 
 	/* output to channel if appropriate */
-	if (!HoldErrs && (Verbose || errbuf[0] != '0'))
+	if (!HoldErrs && (Verbose || MsgBuf[0] != '0'))
 	{
 		(void) fflush(stdout);
 		if (ArpaMode)
-			fprintf(OutChannel, "%s\r\n", errbuf);
+			fprintf(OutChannel, "%s\r\n", MsgBuf);
 		else
-			fprintf(OutChannel, "%s\n", &errbuf[4]);
+			fprintf(OutChannel, "%s\n", &MsgBuf[4]);
 		(void) fflush(OutChannel);
 	}
 }
