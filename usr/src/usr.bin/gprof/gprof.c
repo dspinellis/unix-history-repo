@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.20 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.21 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -38,7 +38,9 @@ main(argc, argv)
 	    debug |= atoi( *argv );
 	    debug |= ANYDEBUG;
 #	    ifdef DEBUG
-		printf( "[main] debug = %d\n" , debug );
+		printf("[main] debug = %d\n", debug);
+#	    else not DEBUG
+		printf("%s: -d ignored\n", whoami);
 #	    endif DEBUG
 	    break;
 	case 'E':
@@ -248,7 +250,6 @@ getsymtab(nfile)
 	nname++;
     }
     npe->value = -1;
-    npe++;
 }
 
     /*
@@ -400,7 +401,7 @@ dumpsum( sumfile )
     /*
      * dump the normalized raw arc information
      */
-    for ( nlp = nl ; nlp < npe - 1 ; nlp++ ) {
+    for ( nlp = nl ; nlp < npe ; nlp++ ) {
 	for ( arcp = nlp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
 	    arc.raw_frompc = arcp -> arc_parentp -> value;
 	    arc.raw_selfpc = arcp -> arc_childp -> value;
@@ -484,11 +485,13 @@ readsamples(pfile)
  *	 pcl       pch		 pcl       pch		 pcl       pch
  *
  *	For the vax we assert that samples will never fall in the first
- *	two bytes of any routine, since that is the entry mask, thus we give
- *	ourselves a little room and use svalue0+2 when assigning samples.
- *	In conjunction with the alignment of routine addresses, this 
- *	should allow us to have one sample for every four bytes of text
- *	space and never have any overlap (the two end cases, above).
+ *	two bytes of any routine, since that is the entry mask,
+ *	thus we give call alignentries() to adjust the entry points if
+ *	the entry mask falls in one bucket but the code for the routine
+ *	doesn't start until the next bucket.  In conjunction with the
+ *	alignment of routine addresses, this should allow us to have
+ *	only one sample for every four bytes of text space and never
+ *	have any overlap (the two end cases, above).
  */
 asgnsamples()
 {
@@ -503,6 +506,7 @@ asgnsamples()
     /* read samples and assign to namelist symbols */
     scale = highpc - lowpc;
     scale /= nsamples;
+    alignentries();
     for (i = 0, j = 1; i < nsamples; i++) {
 	ccnt = samples[i];
 	if (ccnt == 0)
@@ -518,23 +522,28 @@ asgnsamples()
 #	endif DEBUG
 	totime += time;
 	for (j = j - 1; j < nname; j++) {
-	    svalue0 = nl[j].value / sizeof(UNIT);
-	    svalue1 = nl[j+1].value / sizeof(UNIT);
+	    svalue0 = nl[j].svalue;
+	    svalue1 = nl[j+1].svalue;
+		/*
+		 *	if high end of tick is below entry address, 
+		 *	go for next tick.
+		 */
 	    if (pch < svalue0)
 		    break;
+		/*
+		 *	if low end of tick into next routine,
+		 *	go for next routine.
+		 */
 	    if (pcl >= svalue1)
 		    continue;
-#	    ifdef vax
-	        overlap = min(pch, svalue1) - max(pcl, svalue0 + 2);
-#	    else
-	        overlap = min(pch, svalue1) - max(pcl, svalue0);
-#	    endif vax
+	    overlap = min(pch, svalue1) - max(pcl, svalue0);
 	    if (overlap > 0) {
 #		ifdef DEBUG
 		    if (debug & SAMPLEDEBUG) {
-			printf("[asgnsamples] (0x%x-0x%x) %s gets %f ticks\n",
-				svalue0, svalue1, nl[j].name, 
-				overlap * time / scale);
+			printf("[asgnsamples] (0x%x->0x%x-0x%x) %s gets %f ticks %d overlap\n",
+				nl[j].value/sizeof(UNIT), svalue0, svalue1,
+				nl[j].name, 
+				overlap * time / scale, overlap);
 		    }
 #		endif DEBUG
 		nl[j].time += overlap * time / scale;
@@ -565,6 +574,34 @@ max(a, b)
     if (a>b)
 	return(a);
     return(b);
+}
+
+    /*
+     *	calculate scaled entry point addresses (to save time in asgnsamples),
+     *	and possibly push the scaled entry points over the entry mask,
+     *	if it turns out that the entry point is in one bucket and the code
+     *	for a routine is in the next bucket.
+     */
+alignentries()
+{
+    register struct nl	*nlp;
+    unsigned long	bucket_of_entry;
+    unsigned long	bucket_of_code;
+
+    for (nlp = nl; nlp < npe; nlp++) {
+	nlp -> svalue = nlp -> value / sizeof(UNIT);
+	bucket_of_entry = (nlp->svalue - lowpc) / scale;
+	bucket_of_code = (nlp->svalue + UNITS_TO_CODE - lowpc) / scale;
+	if (bucket_of_entry < bucket_of_code) {
+#	    ifdef DEBUG
+		if (debug & SAMPLEDEBUG) {
+		    printf("[alignentries] pushing svalue 0x%x to 0x%x\n",
+			    nlp->svalue, nlp->svalue + UNITS_TO_CODE);
+		}
+#	    endif DEBUG
+	    nlp->svalue += UNITS_TO_CODE;
+	}
+    }
 }
 
 bool
