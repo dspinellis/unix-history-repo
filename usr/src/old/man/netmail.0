@@ -1,0 +1,66 @@
+
+
+
+NETMAIL(1)	    UNIX Programmer's Manual	       NETMAIL(1)
+
+
+
+NAME
+     netmail - read mail on a remote machine over the network
+
+SYNOPSIS
+     netmail [ -l username ] [ -p password ] [ -c ] [ -q ] [ -n ]
+     [ -f ] [ machine:username ]
+
+DESCRIPTION
+     Mail is checked and/or read on the specified _m_a_c_h_i_n_e. If the
+     machine specification is omitted, the default machine is
+     used.  The command has two distinct modes depending on
+     whether the -c option is specified.
+
+     If -c is specified, the presence of mail is checked on the
+     remote machine.  No password is required so it can be put in
+     C shell `.netrc' file.  A message is written or mailed back
+     (see _n_e_t(1)) if there is or is not any unread mail.
+
+     If the -c option is not specified, mail is read and mailed
+     back to the user.	A password is required.  Mail is also
+     appended to the remote file `_m_b_o_x' as a precaution.
+
+     The -q option suppresses the message sent back if there is
+     no mail.  The options -l, -p, -f, and -n behave exactly as
+     in _n_e_t(1).  (The login name can be specified either with the
+     -l option or by `machine:username'.)
+
+     _N_e_t_m_a_i_l executes the _n_e_t(1) command.
+
+     Examples:
+
+	 netmail -c X:uname	   checks if there is mail for
+				   `uname' on the X machine, no
+				   password required.
+
+	 netmail X:uname	   reads mail for `uname' on the
+				   X machine, mails it back,
+				   password is required.
+
+AUTHOR
+     Eric Schmidt
+
+SEE ALSO
+     net(1), netrm(1), netq(1), netlog(1), netcp(1), netlpr(1),
+     netlogin(1), mail(1)
+
+BUGS
+
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
+
+
+

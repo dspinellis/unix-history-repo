@@ -1,0 +1,66 @@
+
+
+
+VFONTINFO(1)	    UNIX Programmer's Manual	     VFONTINFO(1)
+
+
+
+NAME
+     vfontinfo - inspect and print out information about UNIX
+     fonts
+
+SYNOPSIS
+     vfontinfo [ -v ] fontname [ characters ]
+
+DESCRIPTION
+     _V_f_o_n_t_i_n_f_o allows you to examine a font in the UNIX format.
+     It prints out all the information in the font header and
+     information about every non-null (width > 0) glyph.  This
+     can be used to make sure the font is consistent with the
+     format.
+
+     The _f_o_n_t_n_a_m_e argument is the name of the font you wish to
+     inspect.  It writes to standard output.  If it can't find
+     the file in your working directory, it looks in
+     /_u_s_r/_l_i_b/_v_f_o_n_t (the place most of the fonts are kept).
+
+     The _c_h_a_r_a_c_t_e_r_s, if given, specify certain characters to
+     show.  If omitted, the entire font is shown.
+
+     If the -v (verbose) flag is used, the bits of the glyph
+     itself are shown as an array of X's and spaces, in addition
+     to the header information.
+
+SEE ALSO
+     vpr(1), vfont(5)
+     The Berkeley Font Catalog
+
+AUTHORS
+     Mark Horton
+     Andy Hertzfeld
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87          April 29, 1985                         1
+
+
+

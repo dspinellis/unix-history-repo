@@ -1,0 +1,66 @@
+
+
+
+NETRM(1)	    UNIX Programmer's Manual		 NETRM(1)
+
+
+
+NAME
+     netrm - remove a command from the network queue
+
+SYNOPSIS
+     netrm [ - ] [ name1 ... namen ]
+
+DESCRIPTION
+     _N_e_t_r_m removes files from the network queue which have been
+     queued for transmission to remote machines (but not yet
+     sent).  The _n_a_m_e_s specified are the filenames reported by
+     the _n_e_t_q(1) command.  The - option indicates that all files
+     owned by the person logged in are to be removed.
+
+     Only the owner of the file or super-user can _n_e_t_r_m the file.
+
+AUTHOR
+     Eric Schmidt
+
+FILES
+     /usr/spool/berknet/send? the directories where the queues
+     are
+
+BUGS
+     Files on network queues on intermediate machines cannot be
+     removed.
+     There should be a -m flag to use with - to remove all your
+     requests to one particular machine.
+
+SEE ALSO
+     net(1), netq(1), netcp(1), netlpr(1), netmail(1), netlo-
+     gin(1), mail(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
