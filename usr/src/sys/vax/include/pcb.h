@@ -1,4 +1,4 @@
-/*	pcb.h	4.5	81/05/14	*/
+/*	pcb.h	4.6	82/10/31	*/
 
 /*
  * VAX process control block
@@ -48,6 +48,7 @@ struct pcb
 #define	ASTLVL_USER	3
 
 #define	AST_CLR		0x07000000
+#define	PME_CLR		0x80000000
 
 #define	aston() \
 	{ \
