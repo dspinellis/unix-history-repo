@@ -1,4 +1,4 @@
-.\"	@(#)plot.3	6.1 (Berkeley) %G%
+.\"	@(#)plot.3	6.2 (Berkeley) %G%
 .\"
 .TH PLOT 3 ""
 .AT 3
@@ -73,7 +73,7 @@ GSI 300S terminal
 .ns
 .TP
 .B \-l450
-DASI 450 terminal
+GSI 450 terminal
 .br
 .ns
 .TP
@@ -86,6 +86,46 @@ Tektronix 4013 terminal
 Tektronix 4014 and 4015 terminals with the Enhanced Graphics Module (Use
 .B \-l4013
 for 4014's or 4015's without the Enhanced Graphics Module)
+.br
+.ns
+.TP
+.B \-lplotaed
+AED 512 color graphics terminal
+.br
+.ns
+.TP
+.B \-lplotbg
+BBN bitgraph graphics terminal
+.br
+.ns
+.TP
+.B \-lplotdumb
+Dumb terminals without cursor addressing or line printers
+.br
+.ns
+.TP
+.B \-lplot
+DEC Gigi terminals
+.br
+.ns
+.TP
+.B \-lvt0
+DEC vt100 terminals
+.br
+.ns
+.TP
+.B \-lplot2648
+Hewlett Packard 2648 graphics terminal
+.br
+.ns
+.TP
+.B \-lplot7221
+Hewlett Packard 7221 graphics terminal
+.br
+.ns
+.TP
+.B \-lplotimagen
+Imagen laser printer (default 240 dots-per-inch resolution).
 .PP
 On many devices, it is necessary to pause after
 .IR erase (),
