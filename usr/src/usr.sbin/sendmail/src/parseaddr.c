@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.6	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.7	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -522,7 +522,7 @@ rewrite(pvp)
 			  default:
 				/* must have exact match */
 				/* can scribble rp & ap here safely */
-				while (*rp != '\0' && *ap != '\0')
+				while (*rp != '\0' || *ap != '\0')
 				{
 					if (*rp++ != lower(*ap++))
 						goto fail;
@@ -759,7 +759,7 @@ buildaddr(tv, a)
 	if (**tv != CANONNET)
 		syserr("buildaddr: no net");
 	tv++;
-	for (mp = Mailer, i = 0; (m = *mp) != NULL; m++, i++)
+	for (mp = Mailer, i = 0; (m = *mp++) != NULL; i++)
 	{
 		if (strcmp(m->m_name, *tv) == 0)
 			break;
