@@ -1,0 +1,35 @@
+/* Copyright (c) 1982 Regents of the University of California */
+
+static char sccsid[] = "@(#)objsym.rep 1.1 %G%";
+
+/*
+ * This file contains the definition of the representation of a
+ * symbol in the object file.  The major difference is that pointers
+ * are represented as short integers.
+ */
+
+typedef struct {
+	short strindex;
+	char oclass;
+	char oblkno;
+	short typno;
+	short chno;
+	union {
+		int offset;		/* variable address */
+		long iconval;		/* integer constant value */
+		double fconval;		/* floating constant value */
+		struct {		/* range bounds */
+			long lower;
+			long upper;
+		} orangev;
+		struct {		/* address of function value, code */
+			int offset;
+			ADDRESS codeloc;
+		} ofuncv;
+		struct {		/* variant record info */
+			int size;
+			short vtorecno;
+			short vtagno;
+		} ovarnt;
+	} osymvalue;
+} OBJSYM;
