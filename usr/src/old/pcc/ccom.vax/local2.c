@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.20 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.21 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -770,11 +770,9 @@ shtemp( p ) register NODE *p; {
 			r = R2UPK2(r);
 			}
 		return( !istreg(r) );
-/*
 	case UNARY MUL:
 		p = p->in.left;
 		return( p->in.op != UNARY MUL && shtemp(p) );
-*/
 		}
 
 	if( optype( p->in.op ) != LTYPE ) return(0);
