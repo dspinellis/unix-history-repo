@@ -1,7 +1,7 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6)
+			     (for 8.6.3)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -37,17 +37,15 @@ in /ucb/sendmail/KNOWNBUGS.
   Sometimes identical, duplicate error messages can be generated.  As
   near as I can tell, this is rare and relatively innocuous.
 
+* No "exposed users" in "nullrelay" configuration.
+
+  The "nullrelay" configuration hides all addresses behind the mail
+  hub name.  Some sites might prefer to expose some names such as
+  root.  This information is always available in Received: lines.
+
 * If you EXPN a list or user that has a program mailer, the output of
   EXPN will include ``@local.host.name''.  You can't actually mail to
   this address.  It's not clear what the right behaviour is in this
   circumstance.
 
-* You can't use a ``mailer:relay.host'' for UUCP_RELAY or the relay
-  host in the SITECONFIG macro (the second argument) in the
-  configurations.  If the goal is to use ESMTP instead of SMTP,
-  define `confRELAY_MAILER' to `esmtp' and use no mailer name.  Note
-  that the default mailer used for relays (`relay') does use ESMTP
-  by default (it didn't in prior releases).  This problem does not
-  occur for other relays (BITNET or CSNET) or mailertable entries.
-
-(Version 8.7, last updated %G%)
+(Version 8.8, last updated %G%)
