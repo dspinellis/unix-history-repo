@@ -1,4 +1,4 @@
-/*	param.h	6.7	85/02/15	*/
+/*	param.h	6.8	85/05/05	*/
 
 /*
  * Machine type dependent parameters.
@@ -18,7 +18,7 @@
 /* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
-#define	NOFILE	48		/* max open files per process */
+#define	NOFILE	64		/* max open files per process */
 #define	CANBSIZ	256		/* max size of typewriter line */
 #define	NCARGS	20480		/* # characters in exec arglist */
 #define	NGROUPS	16		/* max number groups */
