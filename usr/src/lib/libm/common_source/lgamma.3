@@ -3,22 +3,28 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)lgamma.3	6.5 (Berkeley) %G%
+.\"     @(#)lgamma.3	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LGAMMA 3
 .Os BSD 4.3
 .Sh NAME
 .Nm lgamma
-.Nd log gamma function
+.Nm gamma
+.Nd log gamma function, gamma function
 .Sh SYNOPSIS
 .Fd #include <math.h>
+.Ft extern int
+.Fa signgam ;
+.sp
 .Ft double
 .Fn lgamma "double x"
+.Ft double
+.Fn gamma "double x"
 .Sh DESCRIPTION
-.ta \w'Lgamma returns ln\||\(*G(x)| where'u+1n +1.7i
+.Fn Lgamma x
 .if t \{\
-Lgamma returns ln\||\(*G(x)| where
+returns ln\||\(*G(x)| where
 .Bd -unfilled -offset indent
 \(*G(x) = \(is\d\s8\z0\s10\u\u\s8\(if\s10\d t\u\s8x\-1\s10\d e\u\s8\-t\s10\d dt	for x > 0 and
 .br
@@ -26,19 +32,20 @@ Lgamma returns ln\||\(*G(x)| where
 .Ed
 .\}
 .if n \
-Lgamma returns ln\||\(*G(x)|.
-.ta
+returns ln\||\(*G(x)|.
 .Pp
 The external integer
 .Fa signgam
-returns the sign of
-\(*G(x) .
+returns the sign of \(*G(x).
+.Pp
+.Fn Gamma x
+returns \(*G(x), with no effect on
+.Fa signgam .
 .Sh IDIOSYNCRASIES
-Do
-.Em not
-use the expression
+Do not use the expression
 .Dq Li signgam\(**exp(lgamma(x))
-to compute g := \(*G(x).  Instead use a program like this (in C):
+to compute g := \(*G(x).
+Instead use a program like this (in C):
 .Bd -literal -offset indent
 lg = lgamma(x); g = signgam\(**exp(lg);
 .Ed
@@ -46,87 +53,45 @@ lg = lgamma(x); g = signgam\(**exp(lg);
 Only after
 .Fn lgamma
 has returned can signgam be correct.
-Note too that \(*G(x) must overflow when x is large enough,
-underflow when \-x is large enough, and spawn a division by zero
-when x is a nonpositive integer.
 .Pp
-Only in the
-.Tn UNIX
-math library for C was the name gamma ever attached
-to ln\(*G.  Elsewhere, for instance in
-.Tn IBM Ns 's
-.Tn FORTRAN
-library, the name
-.Tn GAMMA
-belongs to \(*G and the name
-.Tn ALGAMA
-to ln\(*G in single precision;
-in double the names are
-.Tn DGAMMA
-and
-.Tn DLGAMA .
-Why should C be different?
-.Pp
-Archaeological records suggest that C's
-.Em gamma
-originally delivered
-ln(\(*G(|x|)).  Later, the program gamma was changed to
-cope with negative arguments x in a more conventional way, but
-the documentation did not reflect that change correctly.  The most
-recent change corrects inaccurate values when x is almost a
-negative integer, and lets \(*G(x) be computed without
-conditional expressions.  Programmers should not assume that
+For arguments in its range,
+.Fn gamma
+is preferred, as for positive arguments
+it is accurate to within one unit in the last place.
+Exponentiation of
 .Fn lgamma
-has settled down.
-.Pp
-At some time in the future, the name
-.Em gamma
-will be rehabilitated
-and used for the gamma function, just as is done in
-.Tn FORTRAN .
-The reason for this is not so much compatibility with
-.Tn FORTRAN
-as a
-desire to achieve greater speed for smaller values of |x| and greater
-accuracy for larger values.
-.Pp
-Meanwhile, programmers who have to use the name
-.Em gamma
-in its former
-sense, for what is now
-.Fn lgamma ,
-have two choices:
-.Bl -enum -width indent
-.It
-Use the old math library,
-.Pa libom .
-.It
-Add the following program to your others:
-.Bd -literal -offset indent
-#include <math.h>
-double gamma(x)
-double x;
-{
-	return (lgamma(x));
-}
-.Ed
-.El
-.Sh DIAGNOSTICS
-The reserved operand is returned on a
-.Tn VAX
-for negative integer arguments,
+will lose up to 10 significant bits.
+.Sh RETURN VALUES
+.Fn Gamma
+and
+.Fn lgamma
+return appropriate values unless an arguent is out of range.
+Overflow will occur for sufficiently large positive values, and
+non-positive integers.
+On the
+.Tn VAX,
+the reserved operator is returned,
+and
 .Va errno
 is set to
-.Er ERANGE ;
-for very large arguments over/underflows will
-occur inside the
-.Fn lgamma
-routine.
+.Er ERANGE
+For large non-integer negative values,
+.Fn gamma
+will underflow.
 .Sh SEE ALSO
 .Xr math 3 ,
 .Xr infnan 3
 .Sh HISTORY
 The
-.Nm
+.Nm lgamma
 function appeared in 
 .Bx 4.3 .
+The
+.Nm gamma
+function appeared in
+.Bx 4.4 .
+The name
+.Fn gamma
+was originally dedicated to the
+.Fn lgamma
+function, so some old code may no longer be compatible.
