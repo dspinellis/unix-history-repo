@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpriority.2	6.3 (Berkeley) %G%
+.\"	@(#)getpriority.2	6.4 (Berkeley) %G%
 .\"
 .TH GETPRIORITY 2 ""
 .UC 4
@@ -76,7 +76,7 @@ and
 may return one of the following errors:
 .TP 15
 [ESRCH]
-No process(es) were located using the 
+No process was located using the 
 .I which
 and
 .I who
@@ -95,7 +95,6 @@ A process was located, but neither its effective nor real user
 ID matched the effective user ID of the caller.
 .TP 15
 [EACCES]
-A non super-user attempted to change a process
-priority to a negative value.
+A non super-user attempted to lower a process priority.
 .SH "SEE ALSO"
 nice(1), fork(2), renice(8)
