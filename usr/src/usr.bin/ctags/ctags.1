@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctags.1	6.3 (Berkeley) %G%
+.\"	@(#)ctags.1	6.4 (Berkeley) %G%
 .\"
 .TH CTAGS 1 ""
 .UC 4
@@ -27,6 +27,10 @@ Using the \fItags\fP file, \fIex\fP(1) can quickly locate these object
 definitions.  Depending on the options provided to \fIctags\fP,
 objects will consist of subroutines, typedefs, defines, structs,
 enums and unions.
+.PP
+Yacc and lex files each have a special tag.  \fIYyparse\fP is the start
+of the second section of the yacc file, and \fIyylex\fP is the start of
+the second section of the lex file.
 .PP
 If the \fB-x\fP flag is given, \fIctags\fP produces a list of object
 names, the line number and file name on which each is defined, as well
@@ -92,6 +96,9 @@ program.
 .SH FILES
 .DT
 tags		default output tags file
+.SH DIAGNOSTICS
+\fICtags\fP exits with a value of 1 if an error occurred, where
+duplicate objects are not considered errors, 0 otherwise.
 .SH SEE ALSO
 ex(1), vi(1)
 .SH AUTHOR
