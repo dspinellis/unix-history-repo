@@ -12,7 +12,7 @@
  *
  *	OMRON: $Id: pmap.h,v 1.2 92/06/14 06:29:43 moti Exp $
  *
- *	@(#)pmap.h	7.1 (Berkeley) %G%
+ *	@(#)pmap.h	7.2 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -66,9 +66,7 @@ extern struct pmap	kernel_pmap_store;
  */
 #define PMAP_ACTIVATE(pmapp, pcbp, iscurproc) \
 	if ((pmapp) != NULL && (pmapp)->pm_stchanged) { \
-		(pcbp)->pcb_ustp = \
-		    luna_btop(pmap_extract(kernel_pmap, \
-			((vm_offset_t)(pmapp)->pm_stab))); \
+		(pcbp)->pcb_ustp = luna_btop((vm_offset_t)(pmapp)->pm_stpa); \
 		if (iscurproc) \
 			loadustp((pcbp)->pcb_ustp); \
 		(pmapp)->pm_stchanged = FALSE; \
