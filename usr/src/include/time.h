@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	8.1 (Berkeley) %G%
+ *	@(#)time.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _TIME_H_
@@ -44,6 +44,8 @@ struct tm {
 	long	tm_gmtoff;	/* offset from CUT in seconds */
 	char	*tm_zone;	/* timezone abbreviation */
 };
+
+#include <machine/limits.h>	/* Include file containing CLK_TCK. */
 
 #include <sys/cdefs.h>
 
