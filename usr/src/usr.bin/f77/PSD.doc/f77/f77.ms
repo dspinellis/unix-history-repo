@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)f77.ms	8.2 (Berkeley) %G%
+.\"	@(#)f77.ms	8.3 (Berkeley) %G%
 .\"
 .rm CM
 .hw name-list
@@ -199,6 +199,7 @@ make the default integer constants and variables short
 (see section 2.14).
 (\fB\(mii4\fR is the standard value of this option).  
 All logical quantities will be short.
+.ne 1i
 .XX \(mi\f3m\f1
 Apply the M4 macro preprocessor
 to each \s-1EFL\s0 or Ratfor source file
@@ -501,6 +502,7 @@ by a binary constant, denoted by a letter followed by a quoted string.
 If the letter is \fBb\fR, the string is binary, and only zeroes and ones are permitted.
 If the letter is \fBo\fR, the string is octal, with digits \fB0\(mi7\fR.
 If the letter is \fBz\fR or \fBx\fR, the string is hexadecimal, with digits \fB0\(mi9\fR, \fBa\(mif\fR.
+.ne 1i
 Thus, the statements
 .DS
 integer a(3)
@@ -580,6 +582,7 @@ Standard when it seems worthwhile.
 When doing a formatted read of non-character variables,
 commas may be used as value separators in the input record,
 overriding the field lengths given in the format statement.
+.ne 1i
 Thus,
 the format
 .DS
@@ -681,6 +684,7 @@ A value assignment in the data record must be one of three forms.
 The simplest is a variable name followed by an equal sign
 followed by a data value which is assigned to that variable,
 e.g. ``key=5''.
+.ne 1i
 The second form consists of an array name followed by ``=''
 followed by one or more values to be assigned to the array,
 e.g.:
@@ -1491,6 +1495,7 @@ The result of a concatenation
 is the string containing the characters
 of the left operand followed by the characters of
 the right operand.
+.ne 1i
 The character expressions
 .DS
  \(fmab\(fm // \(fmcd\(fm
@@ -1573,6 +1578,7 @@ $c v +- c'$
 rules have been removed.
 .B do
 loop bounds may be general integer, real, or double precision expressions.
+.ne 1i
 Computed
 .B goto
 expressions and \s-1I/O\s0 unit numbers may be general integer expressions.

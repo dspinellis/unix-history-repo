@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)f77IO.ms	8.2 (Berkeley) %G%
+.\"	@(#)f77IO.ms	8.3 (Berkeley) %G%
 .\"
 .EH 'PSD:9-%''Introduction to the f77 I/O Library'
 .OH 'Introduction to the f77 I/O Library''PSD:9-%'
@@ -398,6 +398,7 @@ Likewise, nondestructive tabbing in either direction is possible
 only on a unit that can seek. Otherwise tabbing right or spacing with
 .B X
 will write blanks on the output.
+.sp
 .Nh 2 "List directed output"
 In formatting list directed output, the I/O system tries to prevent
 output lines longer than 80 characters.
@@ -523,6 +524,7 @@ computations because
 uses signed arithmetic and such values appear to the arithmetic unit
 as negative numbers.
 .FE
+.ne 1i
 Radix and ``unsigned'' specifiers could be used to format
 a hexadecimal dump, as follows:
 

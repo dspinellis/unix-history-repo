@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)adb.ms	8.1 (Berkeley) %G%
+.\"	@(#)adb.ms	8.2 (Berkeley) %G%
 .\"
 .EH 'PSD:11-%''A Tutorial Introduction to ADB'
 .OH 'A Tutorial Introduction to ADB''PSD:11-%'
@@ -115,6 +115,7 @@ the
 request examines the 
 .ul
 corefile.
+.ne 1i
 The general form of these requests is:
 .P1
 	address ? format
@@ -197,6 +198,7 @@ which sets `dot' to \fIaddress\fP
 and executes the command
 \fIcount\fR times.
 .PP
+.ne 1i
 The following table illustrates some general ADB command meanings:
 .P1
 	Command	Meaning
@@ -312,6 +314,7 @@ In our example, it is useful to see the
 contents of the string pointed to by
 .ul
 charp.
+.ne 1i
 This is done by:
 .P1
 	*charp/s
@@ -1079,6 +1082,7 @@ sets the maximum offset for symbol matches to zero thus
 suppressing the printing of symbolic labels in favor
 of octal values.
 Note that this is only done for the printing of the data segment.
+.ne 1i
 The request:
 .P1
 	<b,\-1/8ona
@@ -1165,6 +1169,7 @@ This is often used in conjunction with the
 locate,
 \fBl\fP or \fBL\fP
 request.
+.ne 1i
 In general, the request syntax for \fBl\fP and \fBw\fP are similar as follows:
 .P1
 	?l value
