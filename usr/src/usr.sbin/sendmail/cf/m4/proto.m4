@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.63 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.64 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -576,7 +576,7 @@ R<$+ @ $+ > $* < $+ >	$: $>_SET_95_ < $H > $3 < $4 >	... send direct to hub
 R<$* @ $* > $* < $+ >	$: $3 < $4 >
 ifdef(`_STICKY_LOCAL_DOMAIN_',
 `R$+ < @ $=w . >		$: < $H > $1 < @ $2 . >		first try hub
-R< $+ > $+ < $+ >	$#_LOCAL_ $: $2			yep ....
+R< $+ > $+ < $+ >	$>95 < $1 > $2 < $3 >		yep ....
 R< > $=D . $+ < $+ >	$#_LOCAL_ $: $1 . $2		dotted name?
 R< > $+ + $* < $+ >	$#_LOCAL_ $: $1 + $2		plussed name?
 R< > $+ < $+ >		$#_LOCAL_ $: @ $1			nope, local address',
