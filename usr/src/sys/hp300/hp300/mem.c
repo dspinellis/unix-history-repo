@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: mem.c 1.14 90/10/12$
  *
- *	@(#)mem.c	8.1 (Berkeley) %G%
+ *	@(#)mem.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,9 @@
 #include <vm/vm_prot.h>
 #include <vm/pmap.h>
 
+extern u_int lowram;
+caddr_t zeropage;
+
 /*ARGSUSED*/
 mmrw(dev, uio, flags)
 	dev_t dev;
@@ -41,9 +44,7 @@ mmrw(dev, uio, flags)
 	register u_int c, v;
 	register struct iovec *iov;
 	int error = 0;
-	caddr_t zbuf = NULL;
 	int kernloc;
-	extern u_int lowram;
 
 	while (uio->uio_resid > 0 && error == 0) {
 		iov = uio->uio_iov;
@@ -98,13 +99,25 @@ mmrw(dev, uio, flags)
 				c = iov->iov_len;
 				break;
 			}
-			if (zbuf == NULL) {
-				zbuf = (caddr_t)
-				    malloc(CLBYTES, M_TEMP, M_WAITOK);
-				bzero(zbuf, CLBYTES);
+			/*
+			 * On the first call, allocate and zero a page
+			 * of memory for use with /dev/zero.
+			 *
+			 * XXX on the hp300 we already know where there
+			 * is a global zeroed page, the null segment table.
+			 */
+			if (zeropage == NULL) {
+#if CLBYTES == NBPG
+				extern caddr_t Segtabzero;
+				zeropage = Segtabzero;
+#else
+				zeropage = (caddr_t)
+					malloc(CLBYTES, M_TEMP, M_WAITOK);
+				bzero(zeropage, CLBYTES);
+#endif
 			}
 			c = min(iov->iov_len, CLBYTES);
-			error = uiomove(zbuf, (int)c, uio);
+			error = uiomove(zeropage, (int)c, uio);
 			continue;
 
 		default:
@@ -117,7 +130,29 @@ mmrw(dev, uio, flags)
 		uio->uio_offset += c;
 		uio->uio_resid -= c;
 	}
-	if (zbuf)
-		free(zbuf, M_TEMP);
 	return (error);
+}
+
+mmmap(dev, off, prot)
+	dev_t dev;
+{
+	/*
+	 * /dev/mem is the only one that makes sense through this
+	 * interface.  For /dev/kmem any physaddr we return here
+	 * could be transient and hence incorrect or invalid at
+	 * a later time.  /dev/null just doesn't make any sense
+	 * and /dev/zero is a hack that is handled via the default
+	 * pager in mmap().
+	 */
+	if (minor(dev) != 0)
+		return (-1);
+	/*
+	 * Allow access only in RAM.
+	 *
+	 * XXX could be extended to allow access to IO space but must
+	 * be very careful.
+	 */
+	if ((unsigned)off < lowram || (unsigned)off >= 0xFFFFFFFC)
+		return (-1);
+	return (hp300_btop(off));
 }
