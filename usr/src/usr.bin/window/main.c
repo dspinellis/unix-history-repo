@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.7 83/08/26";
+static	char *sccsid = "@(#)main.c	3.8 83/08/26";
 #endif
 
 #include "defs.h"
@@ -122,10 +122,9 @@ char **argv;
 			wwcurtowin(curwin);
 			wwupdate();
 			wwflush();
-			imask = 1 << 0;
-			while (wwforce(&imask) < 0)
+			while (imask = 1, wwforce(&imask) < 0)
 				;
-			if ((imask & 1 << 0) == 0)
+			if ((imask & 1) == 0)
 				continue;
 			/* NOTE: ibufc == 0 */
 			ibufp = ibuf;

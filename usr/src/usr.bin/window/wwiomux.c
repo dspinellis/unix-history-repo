@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.2 83/08/26";
+static	char *sccsid = "@(#)wwiomux.c	3.3 83/08/26";
 #endif
 
 #include "ww.h"
@@ -14,12 +14,12 @@ register int *imask;
 	for (w = wwindex; w < &wwindex[NWW]; w++)
 		if (*w && (*w)->ww_haspty && (*w)->ww_pty >= 0)
 			*imask |= 1 << (*w)->ww_pty;
+	if (*imask == 0)
+		return -1;
 	n = select(wwdtablesize, imask, (int *)0, (int *)0,
 		(struct timeval *)0);
-	if (n <= 0) {
-		wwerrno = WWE_SYS;
+	if (n <= 0)
 		return -1;
-	}
 	for (w = wwindex; w < &wwindex[NWW]; w++)
 		if (*w && (*w)->ww_haspty && (*w)->ww_pty >= 0
 		    && *imask & 1 << (*w)->ww_pty) {
