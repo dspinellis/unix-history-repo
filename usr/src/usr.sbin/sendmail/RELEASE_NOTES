@@ -1,11 +1,11 @@
 			SENDMAIL RELEASE NOTES
-	     @(#)RELEASE_NOTES	8.6.10.1 (Berkeley) %G%
+	     @(#)RELEASE_NOTES	8.6.10.2 (Berkeley) %G%
 
 This listing shows the version of the sendmail binary, the version
 of the sendmail configuration files, the date of release, and a
 summary of the changes in that release.
 
-8.6.10/8.6.10	95/02/xx
+8.6.10/8.6.10	95/02/10
 	SECURITY: Diagnose bogus values to some command line flags that
 		could allow trash to get into headers and qf files.
 	Validate the name of the user returned by the IDENT protocol.
