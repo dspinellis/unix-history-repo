@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.117 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.118 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -102,6 +102,7 @@ sendall(e, mode)
 	if (e->e_hopcount > MaxHopCount)
 	{
 		errno = 0;
+		queueup(e, TRUE, announcequeueup);
 		e->e_flags |= EF_FATALERRS|EF_PM_NOTIFY|EF_CLRQUEUE;
 		syserr("554 too many hops %d (%d max): from %s via %s, to %s",
 			e->e_hopcount, MaxHopCount, e->e_from.q_paddr,
