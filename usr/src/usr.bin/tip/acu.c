@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)acu.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)acu.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -104,9 +104,10 @@ connect()
 				fclose(fd);
 				return ("missing phone number");
 			}
-			for (phnum = cp; any(*cp, "0123456789-*="); cp++)
+			for (phnum = cp; *cp && *cp != ',' && *cp != '\n'; cp++)
 				;
-			*cp = '\0';
+			if (*cp)
+				*cp++ = '\0';
 			
 			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
 				fclose(fd);
