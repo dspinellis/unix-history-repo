@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_loop.c	6.7 (Berkeley) %G%
+ *	@(#)if_loop.c	6.8 (Berkeley) %G%
  */
 
 /*
@@ -17,9 +17,6 @@
 #include "errno.h"
 #include "ioctl.h"
 
-#ifdef	BBNNET
-#define INET
-#endif
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"

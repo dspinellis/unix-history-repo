@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.10 (Berkeley) %G%
+ *	@(#)if.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -236,7 +236,7 @@ ifioctl(so, cmd, data)
 	case SIOCGIFCONF:
 		return (ifconf(cmd, data));
 
-#if (defined(INET) || defined(BBNNET)) && NETHER > 0
+#if defined(INET) && NETHER > 0
 	case SIOCSARP:
 	case SIOCDARP:
 		if (!suser())

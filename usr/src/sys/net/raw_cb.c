@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.c	6.7 (Berkeley) %G%
+ *	@(#)raw_cb.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -112,33 +112,11 @@ raw_bind(so, nam)
 	 */
 	switch (addr->sa_family) {
 
-#if defined(INET) || defined(BBNNET)
+#ifdef INET
 	case AF_IMPLINK:
 	case AF_INET: {
 		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
 		    ifa_ifwithaddr(addr) == 0)
-			return (EADDRNOTAVAIL);
-		break;
-	}
-#endif
-
-#ifdef PUP
-	/*
-	 * Curious, we convert PUP address format to internet
-	 * to allow us to verify we're asking for an Ethernet
-	 * interface.  This is wrong, but things are heavily
-	 * oriented towards the internet addressing scheme, and
-	 * converting internet to PUP would be very expensive.
-	 */
-	case AF_PUP: {
-		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
-		struct sockaddr_in inpup;
-
-		bzero((caddr_t)&inpup, (unsigned)sizeof(inpup));
-		inpup.sin_family = AF_INET;
-		inpup.sin_addr = in_makeaddr(spup->spup_net, spup->spup_host);
-		if (inpup.sin_addr.s_addr &&
-		    ifa_ifwithaddr((struct sockaddr *)&inpup) == 0)
 			return (EADDRNOTAVAIL);
 		break;
 	}
