@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_prot.c	6.6 (Berkeley) %G%
+ *	@(#)kern_prot.c	6.7 (Berkeley) %G%
  */
 
 /*
@@ -168,7 +168,7 @@ setregid()
 		return;
 	if (u.u_rgid != rgid) {
 		leavegroup(u.u_rgid);
-		(void) entergroup(rgid);
+		(void) entergroup((gid_t)rgid);
 		u.u_rgid = rgid;
 	}
 	u.u_gid = egid;
@@ -208,7 +208,7 @@ setgroups()
  * Delete gid from the group set.
  */
 leavegroup(gid)
-	int gid;
+	gid_t gid;
 {
 	register gid_t *gp;
 
@@ -226,7 +226,7 @@ found:
  * Add gid to the group set.
  */
 entergroup(gid)
-	int gid;
+	gid_t gid;
 {
 	register gid_t *gp;
 
