@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.10 (Berkeley) %G%
  */
 
 /*
@@ -172,6 +172,7 @@ kernfs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct vnode *vp;
 
 #ifdef KERNFS_DIAGNOSTIC
@@ -183,7 +184,7 @@ kernfs_root(mp, vpp)
 	 */
 	vp = VFSTOKERNFS(mp)->kf_root;
 	VREF(vp);
-	VOP_LOCK(vp);
+	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY, p);
 	*vpp = vp;
 	return (0);
 }
