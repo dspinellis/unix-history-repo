@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
- *	@(#)vm_mmap.c	7.6 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -31,7 +31,6 @@
 #include "vm.h"
 #include "vm_pager.h"
 #include "vm_prot.h"
-#include "vm_statistics.h"
 
 #ifdef DEBUG
 int mmapdebug = 0;
@@ -232,7 +231,7 @@ msync(p, uap, retval)
 	/*
 	 * Do not msync non-vnoded backed objects.
 	 */
-	if (object->internal || object->pager == NULL ||
+	if ((object->flags & OBJ_INTERNAL) || object->pager == NULL ||
 	    object->pager->pg_type != PG_VNODE) {
 		vm_object_unlock(object);
 		return(EINVAL);
@@ -549,10 +548,10 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 			 * internal temporarily.
 			 */
 			if ((flags & MAP_COPY) == 0)
-				object->internal = TRUE;
+				object->flags |= OBJ_INTERNAL;
 			rv = vm_map_copy(map, tmap, *addr, size, off,
 					 FALSE, FALSE);
-			object->internal = FALSE;
+			object->flags &= ~OBJ_INTERNAL;
 			/*
 			 * (XXX)
 			 * My oh my, this only gets worse...
@@ -739,13 +738,16 @@ vm_allocate_with_pager(map, addr, size, fitit, pager, poffset, internal)
 	 *	it.
 	 */
 	object = vm_object_lookup(pager);
-	vm_stat.lookups++;
+	cnt.v_lookups++;
 	if (object == NULL) {
 		object = vm_object_allocate(size);
 		vm_object_enter(object, pager);
 	} else
-		vm_stat.hits++;
-	object->internal = internal;
+		cnt.v_hits++;
+	if (internal)
+		object->flags |= OBJ_INTERNAL;
+	else
+		object->flags &= ~OBJ_INTERNAL;
 
 	result = vm_map_find(map, object, poffset, addr, size, fitit);
 	if (result != KERN_SUCCESS)
