@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.7 %G%";
+static char sccsid[] = "@(#)eval.c 1.8 %G%";
 
 /*
  * Parse tree evaluation.
@@ -32,6 +32,7 @@ register NODE *p;
 {
     long r0, r1;
     double fr0, fr1;
+    FILE *fp;
 
     if (p == NULL) {
 	return;
@@ -264,7 +265,13 @@ register NODE *p;
 	    if (p->sconval == NIL) {
 		printf("%s\n", cursource);
 	    } else {
-		skimsource(p->sconval);
+		fp = fopen(p->sconval, "r");
+		if (fp == NIL) {
+		    error("can't read \"%s\"", p->sconval);
+		} else {
+		    fclose(fp);
+		    skimsource(p->sconval);
+		}
 	    }
 	    break;
 
