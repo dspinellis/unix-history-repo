@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)cp.c	4.9 85/06/07";
+static char *sccsid = "@(#)cp.c	4.10 %G%";
 #endif
 
 /*
@@ -9,10 +9,12 @@ static char *sccsid = "@(#)cp.c	4.9 85/06/07";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
+#include <sys/time.h>
 
 int	iflag;
 int	rflag;
-char	*rindex(), *sprintf();
+int	pflag;
+char	*rindex();
 
 main(argc, argv)
 	int argc;
@@ -33,6 +35,9 @@ main(argc, argv)
 		case 'r':
 			rflag++; break;
 
+		case 'p':	/* preserve mtimes and atimes */
+			pflag++; break;
+
 		default:
 			goto usage;
 		}
@@ -52,7 +57,7 @@ main(argc, argv)
 	exit(rc);
 usage:
 	fprintf(stderr,
-	    "Usage: cp f1 f2; or cp [ -r ] f1 ... fn d2\n");
+	    "Usage: cp [-ip] f1 f2; or: cp [-irp] f1 ... fn d2");
 	exit(1);
 }
 
@@ -144,7 +149,10 @@ copy(from, to)
 			(void) close(fold); (void) close(fnew); return (1);
 		}
 	}
-	(void) close(fold); (void) close(fnew); return (0);
+	(void) close(fold); (void) close(fnew); 
+	if (pflag)
+		return (setimes(to, &stfrom));
+	return (0);
 }
 
 rcopy(from, to)
@@ -152,10 +160,11 @@ rcopy(from, to)
 {
 	DIR *fold = opendir(from);
 	struct direct *dp;
+	struct stat statb;
 	int errs = 0;
 	char fromname[MAXPATHLEN + 1];
 
-	if (fold == 0) {
+	if (fold == 0 || (pflag && fstat(fold->dd_fd, &statb) < 0)) {
 		Perror(from);
 		return (1);
 	}
@@ -163,6 +172,8 @@ rcopy(from, to)
 		dp = readdir(fold);
 		if (dp == 0) {
 			closedir(fold);
+			if (pflag)
+				return (setimes(to, &statb) + errs);
 			return (errs);
 		}
 		if (dp->d_ino == 0)
@@ -178,6 +189,23 @@ rcopy(from, to)
 		(void) sprintf(fromname, "%s/%s", from, dp->d_name);
 		errs += copy(fromname, to);
 	}
+}
+
+int
+setimes(path, statp)
+	char *path;
+	struct stat *statp;
+{
+	struct timeval tv[2];
+	
+	tv[0].tv_sec = statp->st_atime;
+	tv[1].tv_sec = statp->st_mtime;
+	tv[0].tv_usec = tv[1].tv_usec = 0;
+	if (utimes(path, tv) < 0) {
+		Perror(path);
+		return (1);
+	}
+	return (0);
 }
 
 Perror(s)
