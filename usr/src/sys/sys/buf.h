@@ -3,13 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)buf.h	7.4 (Berkeley) %G%
+ *	@(#)buf.h	7.5 (Berkeley) %G%
  */
 
 /*
  * The header for buffers in the buffer pool and otherwise used
- * to describe a block i/o request is given here.  The routines
- * which manipulate these things are given in bio.c.
+ * to describe a block i/o request is given here.
  *
  * Each buffer in the pool is usually doubly linked into 2 lists:
  * hashed into a chain by <dev,blkno> so it can be located in the cache,
