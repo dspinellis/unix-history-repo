@@ -143,6 +143,7 @@ int		*scr, inc;
 		Lastscore[myturn] = *scr;
 		*scr += inc;
 		prpeg(*scr, PEG, myturn);
+		refresh();
 	}
 	return (*scr >= glimit);
 }
