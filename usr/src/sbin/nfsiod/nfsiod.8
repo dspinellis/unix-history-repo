@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)nfsiod.8	5.2 (Berkeley) %G%
+.\"	@(#)nfsiod.8	5.3 (Berkeley) %G%
 .\"
 .TH NFSIOD 8 ""
 .UC 7
@@ -26,13 +26,20 @@ nfsiod \- local NFS asynchronous I/O server
 ]
 .SH DESCRIPTION
 .I Nfsiod
-services asynchronous I/O requests from
+runs on an
 .SM NFS
-clients to their server.
+client machine to service asynchronous I/O requests to its server.
+It improves performance but is not required for correct operation.
+The option
+.I numservers
+defines how many
+.I nfsiod
+daemons to start.
 A client should typically run enough servers to handle
 their maximum level of concurrency,
 typically four to six.
 .SH SEE ALSO
 .IR nfsstat (1),
 .IR async_daemon (2),
-.IR mountd (8)
+.IR mountd (8),
+.IR portmap (8)
