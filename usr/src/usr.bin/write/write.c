@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)write.c	4.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)write.c	4.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -49,7 +49,7 @@ main(argc, argv)
 	time_t atime;
 	uid_t myuid;
 	int msgsok, myttyfd;
-	char tty[MAXPATHLEN], *mytty, *getlogin(), *ttyname();
+	char tty[MAXPATHLEN], *mytty, *ttyname();
 	void done();
 
 	/* check that sender has write enabled */
@@ -238,7 +238,7 @@ do_write(tty, mytty, myuid)
 	register char *login, *nows;
 	register struct passwd *pwd;
 	time_t now, time();
-	char path[MAXPATHLEN], host[MAXHOSTNAMELEN], line[512];
+	char *getlogin(), path[MAXPATHLEN], host[MAXHOSTNAMELEN], line[512];
 	void done();
 
 	/* Determine our login name before the we reopen() stdout */
