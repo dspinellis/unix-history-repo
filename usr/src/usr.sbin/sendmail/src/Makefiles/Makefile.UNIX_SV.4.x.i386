@@ -7,7 +7,7 @@
 #
 #	UnixWare 1.1 Makefile from John Warburton <jwarb@SACBH.com.au>.
 #
-#	@(#)Makefile.UNIX_SV.4.x.i386	8.2 (Berkeley) %G%
+#	@(#)Makefile.UNIX_SV.4.x.i386	8.3 (Berkeley) %G%
 #
 
 # make sure the shell constructs below use the right shell
@@ -34,13 +34,13 @@ ENVDEF=	-D__svr4__ -DUNIXWARE
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/ucbinclude
+INCDIRS=
 
 # library directories
-LIBDIRS=-L/usr/ucblib
+LIBDIRS=
 
 # libraries required on your system
-LIBS=	-lc -lucb -ldbm -lresolv -lsocket -lnsl -lelf
+LIBS=	-lc -ldbm -lresolv -lsocket -lnsl -lgen -lelf
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/ucblib
