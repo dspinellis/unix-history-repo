@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -39,7 +39,9 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 inetd ${DESTDIR}/etc/inetd
-	install -c -o bin -g bin -m 444 inetd.0 ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 inetd.0 ${DESTDIR}/usr/man/cat8
+	rm -f ${DESTDIR}/usr/man/cat5/inetd.conf.0
+	ln ${DESTDIR}/usr/man/cat8/inetd.0 ${DESTDIR}/usr/man/cat5/inetd.conf.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
