@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,20 +28,19 @@ tmp()
 {
 	sigset_t set, oset;
 	int fd;
-	char path[MAXPATHLEN];
+	char *envtmp, path[MAXPATHLEN];
 
-	bcopy(_PATH_RANTMP, path, sizeof(_PATH_RANTMP));
-
-	sigemptyset(&set);
-	sigaddset(&set, SIGHUP);
-	sigaddset(&set, SIGINT);
-	sigaddset(&set, SIGQUIT);
-	sigaddset(&set, SIGTERM);
+	if (envtmp = getenv("TMPDIR"))
+		(void)sprintf(path, "%s/%s", envtmp, _PATH_RANTMP);
+	else
+		bcopy(_PATH_RANTMP, path, sizeof(_PATH_RANTMP));
+	
+	sigfillset(&set);
 	(void)sigprocmask(SIG_BLOCK, &set, &oset);
 	if ((fd = mkstemp(path)) == -1)
 		error(tname);
         (void)unlink(path);
-	(void)sigprocmask(SIG_SETMASK, &oset, (sigset_t *)NULL);
+	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 	return(fd);
 }
 
@@ -49,9 +48,9 @@ void *
 emalloc(len)
 	int len;
 {
-	char *p;
+	void *p;
 
-	if (!(p = malloc((u_int)len)))
+	if ((p = malloc((u_int)len)) == NULL)
 		error(archive);
 	return(p);
 }
