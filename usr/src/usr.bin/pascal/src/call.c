@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.4 %G%";
+static	char sccsid[] = "@(#)call.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -135,11 +135,12 @@ call(p, argv, porf, psbn)
 				    q = rvalue( argv[1] , p1 -> type , RREQ );
 				    postcheck( p1 -> type );
 				    break;
-					/*
-					 * and fall through
-					 */
 				default:
 				    q = rvalue( argv[1] , p1 -> type , RREQ );
+				    if (  isa( p1 -> type  , "d" )
+				       && isa( q , "i" ) ) {
+					putop( P2SCONV , P2DOUBLE );
+				    }
 				    break;
 			    }
 #			endif PC
