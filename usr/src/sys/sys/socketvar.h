@@ -1,4 +1,4 @@
-/*	socketvar.h	6.2	84/01/11	*/
+/*	socketvar.h	6.3	84/03/22	*/
 
 /*
  * Kernel structure per socket.
@@ -81,7 +81,7 @@ struct socket {
 
 /* do we have to send all at once on a socket? */
 #define	sosendallatonce(so) \
-    (((so)->so_state & SS_NBIO) || ((so)->so_proto->pr_flags & PR_ATOMIC))
+    ((so)->so_proto->pr_flags & PR_ATOMIC)
 
 /* can we read something from so? */
 #define	soreadable(so) \
