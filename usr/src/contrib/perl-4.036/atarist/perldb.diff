@@ -1,0 +1,179 @@
+*** ../../../lib/perldb.pl	Mon Nov 11 10:40:22 1991
+--- perldb.pl	Mon May 18 17:00:56 1992
+***************
+*** 1,10 ****
+  package DB;
+  
+! # modified Perl debugger, to be run from Emacs in perldb-mode
+! # Ray Lischner (uunet!mntgfx!lisch) as of 5 Nov 1990
+! # Johan Vromans -- upgrade to 4.0 pl 10
+! 
+! $header = '$RCSfile: perldb.diff,v $$Revision: 4.0.1.1 $$Date: 92/06/08 11:50:28 $';
+  #
+  # This file is automatically included if you do perl -d.
+  # It's probably not useful to include this yourself.
+--- 1,6 ----
+  package DB;
+  
+! $header = '$RCSfile: perldb.diff,v $$Revision: 4.0.1.1 $$Date: 92/06/08 11:50:28 $';
+  #
+  # This file is automatically included if you do perl -d.
+  # It's probably not useful to include this yourself.
+***************
+*** 14,22 ****
+  # have a breakpoint.  It also inserts a do 'perldb.pl' before the first line.
+  #
+  # $Log:	perldb.diff,v $
+  # Revision 4.0.1.1  92/06/08  11:50:28  lwall
+  # Initial revision
+  # 
+- # Revision 4.0.1.2  91/11/05  17:55:58  lwall
+- # patch11: perldb.pl modified to run within emacs in perldb-mode
+- # 
+  # Revision 4.0.1.1  91/06/07  11:17:44  lwall
+  # patch4: added $^P variable to control calling of perldb routines
+  # patch4: debugger sometimes listed wrong number of lines for a statement
+--- 10,15 ----
+***************
+*** 56,63 ****
+  # 
+  #
+  
+! open(IN, "</dev/tty") || open(IN,  "<&STDIN");	# so we don't dingle stdin
+! open(OUT,">/dev/tty") || open(OUT, ">&STDOUT");	# so we don't dongle stdout
+  select(OUT);
+  $| = 1;				# for DB'OUT
+  select(STDOUT);
+--- 49,56 ----
+  # 
+  #
+  
+! open(IN, "</dev/console") || open(IN,  "<&STDIN");	# so we don't dingle stdin
+! open(OUT,">/dev/console") || open(OUT, ">&STDOUT");	# so we don't dongle stdout
+  select(OUT);
+  $| = 1;				# for DB'OUT
+  select(STDOUT);
+***************
+*** 64,79 ****
+  $| = 1;				# for real STDOUT
+  $sub = '';
+  
+- # Is Perl being run from Emacs?
+- $emacs = $main'ARGV[$[] eq '-emacs';
+- shift(@main'ARGV) if $emacs;
+- 
+  $header =~ s/.Header: ([^,]+),v(\s+\S+\s+\S+).*$/$1$2/;
+! print OUT "\nLoading DB routines from $header\n";
+! print OUT ("Emacs support ",
+! 	   $emacs ? "enabled" : "available",
+! 	   ".\n");
+! print OUT "\nEnter h for help.\n\n";
+  
+  sub DB {
+      &save;
+--- 57,64 ----
+  $| = 1;				# for real STDOUT
+  $sub = '';
+  
+  $header =~ s/.Header: ([^,]+),v(\s+\S+\s+\S+).*$/$1$2/;
+! print OUT "\nLoading DB routines from $header\n\nEnter h for help.\n\n";
+  
+  sub DB {
+      &save;
+***************
+*** 93,107 ****
+  	}
+      }
+      if ($single || $trace || $signal) {
+! 	if ($emacs) {
+! 	    print OUT "\032\032$filename:$line:0\n";
+! 	} else {
+! 	    print OUT "$package'" unless $sub =~ /'/;
+! 	    print OUT "$sub($filename:$line):\t",$dbline[$line];
+! 	    for ($i = $line + 1; $i <= $max && $dbline[$i] == 0; ++$i) {
+! 		last if $dbline[$i] =~ /^\s*(}|#|\n)/;
+! 		print OUT "$sub($filename:$i):\t",$dbline[$i];
+! 	    }
+  	}
+      }
+      $evalarg = $action, &eval if $action;
+--- 78,88 ----
+  	}
+      }
+      if ($single || $trace || $signal) {
+! 	print OUT "$package'" unless $sub =~ /'/;
+! 	print OUT "$sub($filename:$line):\t",$dbline[$line];
+! 	for ($i = $line + 1; $i <= $max && $dbline[$i] == 0; ++$i) {
+! 	    last if $dbline[$i] =~ /^\s*(;|}|#|\n)/;
+! 	    print OUT "$sub($filename:$i):\t",$dbline[$i];
+  	}
+      }
+      $evalarg = $action, &eval if $action;
+***************
+*** 263,276 ****
+  		    $i = $2;
+  		    $i = $line if $i eq '.';
+  		    $i = 1 if $i < 1;
+! 		    if ($emacs) {
+! 			print OUT "\032\032$filename:$i:0\n";
+! 			$i = $end;
+! 		    } else {
+! 			for (; $i <= $end; $i++) {
+! 			    print OUT "$i:\t", $dbline[$i];
+! 			    last if $signal;
+! 			}
+  		    }
+  		    $start = $i;	# remember in case they want more
+  		    $start = $max if $start > $max;
+--- 244,252 ----
+  		    $i = $2;
+  		    $i = $line if $i eq '.';
+  		    $i = 1 if $i < 1;
+! 		    for (; $i <= $end; $i++) {
+! 			print OUT "$i:\t", $dbline[$i];
+! 			last if $signal;
+  		    }
+  		    $start = $i;	# remember in case they want more
+  		    $start = $max if $start > $max;
+***************
+*** 417,427 ****
+  			$start = 1 if ($start > $max);
+  			last if ($start == $end);
+  			if ($dbline[$start] =~ m'."\n$pat\n".'i) {
+! 			    if ($emacs) {
+! 				print OUT "\032\032$filename:$start:0\n";
+! 			    } else {
+! 				print OUT "$start:\t", $dbline[$start], "\n";
+! 			    }
+  			    last;
+  			}
+  		    } ';
+--- 393,399 ----
+  			$start = 1 if ($start > $max);
+  			last if ($start == $end);
+  			if ($dbline[$start] =~ m'."\n$pat\n".'i) {
+! 			    print OUT "$start:\t", $dbline[$start], "\n";
+  			    last;
+  			}
+  		    } ';
+***************
+*** 445,455 ****
+  			$start = $max if ($start <= 0);
+  			last if ($start == $end);
+  			if ($dbline[$start] =~ m'."\n$pat\n".'i) {
+! 			    if ($emacs) {
+! 				print OUT "\032\032$filename:$start:0\n";
+! 			    } else {
+! 				print OUT "$start:\t", $dbline[$start], "\n";
+! 			    }
+  			    last;
+  			}
+  		    } ';
+--- 417,423 ----
+  			$start = $max if ($start <= 0);
+  			last if ($start == $end);
+  			if ($dbline[$start] =~ m'."\n$pat\n".'i) {
+! 			    print OUT "$start:\t", $dbline[$start], "\n";
+  			    last;
+  			}
+  		    } ';
