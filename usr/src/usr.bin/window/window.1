@@ -1,4 +1,4 @@
-.\" @(#)window.1	3.2 83/08/22
+.\" @(#)window.1	3.3 83/08/25
 .TH WINDOW 1 local
 .SH NAME
 window \- multiple window shell
@@ -27,6 +27,9 @@ character deletion and insertion are supported.  Display modes
 such as underlining and reverse video are supported if the terminal
 allows them.
 .PP
+Each window has a text buffer which can be larger than the window.
+Different parts of the buffer can be made visible through scrolling.
+.PP
 Windows are labeled with the digits ``1'' through ``9'',
 thus a maximum of nine windows can exist at the same time.
 One window, the current window, is treated specially.
@@ -47,7 +50,8 @@ variable \fBTERMCAP\fP.  This \fItermcap\fP entry contains the window's
 size and characteristics as well as information about
 the real terminal, such as the existence of underline, reverse
 video and other display modes, and the codes produced by the terminal's
-keypad (if any).
+keypad (if any).  The name of the shell program used is obtained from
+the environment variable \fBSHELL\fP.
 .PP
 When \fIwindow\fP starts up, the file \fI.windowrc\fP in the
 user's home directory is checked.  If it exists, then the
@@ -137,7 +141,9 @@ is entered in the same manner.  Typing escape (or ^[) at any
 point cancels this command.
 .IP
 This window becomes the current window,
-and is given the first available label.
+and is given the first available label.  The default buffer size
+is used (see \fIbuffer\fP command below).
+The
 .TP
 .B c[1-9]
 Close window \fI[1-9]\fP.  The process in the window is sent
@@ -202,9 +208,18 @@ Turn on (or off) terse mode.  In terse mode, the command window
 stays hidden even in command mode, and errors are reported by
 sounding the terminal's bell.
 .TP
-.B window row col nrow ncol
+.B window row col nrow ncol [nline]
 Open a window with upper left corner at \fIrow\fP, \fIcol\fP
-and size \fInrow\fP, \fIncol\fP.
+and size \fInrow\fP, \fIncol\fP.  If \fInline\fP is specified,
+then that many lines is allocated for the text buffer.  Otherwise,
+the default buffer size is used.  Using a \fB``*''\fP in place of
+\fIrow\fP, \fIcol\fP, \fInrow\fP, or \fIncol\fP gives, respectively,
+the up, left, down, or right extremes of the screen.
+.TP
+.B buffer nline
+Set the default buffer size to \fInline\fP.  Initially, it is
+48 lines.  Using a very large buffer can slow the program down
+considerably.
 .TP
 .B label [1-9] string
 Label window \fI[1-9]\fP with \fIstring\fP.  This is in addition
