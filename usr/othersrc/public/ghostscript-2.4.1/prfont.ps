@@ -1,0 +1,83 @@
+%!PS-Adobe-1.0
+%%Creator: Eric Gisin <egisin@waterloo.csnet>
+%%Title: Print font catalog
+% Copyright (c) 1986 Eric Gisin
+
+% Example usages at bottom of file
+
+/#copies 1 def
+
+/T6 /Times-Roman findfont 6 scalefont def
+/Temp 64 string def
+/Inch {72 mul} def
+/Base 16 def	% char code output base
+
+% do single character of page
+% output to rectangle ll=(0,-24) ur=(36,24)
+/DoChar {
+  /C exch def
+  /S (_) dup 0 C put def
+  /N F /Encoding get C get def
+
+  % print code name, width and char name
+  /W F setfont S stringwidth pop def
+  T6 setfont
+  N /.notdef ne {0 -20 moveto N Temp cvs show} if
+  0 -12 moveto C Base Temp cvrs show (  ) show
+  W 0.0005 add Temp cvs 0 5 getinterval show
+
+  % print char with reference lines
+  N /.notdef ne {
+    3 0 translate
+    0 0 moveto F24 setfont S show
+    /W S stringwidth pop def
+    0 -6 moveto 0 24 lineto
+    W -6 moveto W 24 lineto
+    -3 0 moveto W 3 add 0 lineto
+    0 setlinewidth stroke
+  } if
+} def
+
+% print font sample page
+/DoFont {
+  /FName exch def	% font name
+  /F FName findfont def
+  /F24 F 24 scalefont def
+  /Line0 96 string def
+  /Line1 96 string def
+
+  /Times-Roman findfont 18 scalefont setfont
+  18 10.5 Inch moveto FName Temp cvs show ( ) show ((24 point)) show
+
+  0 1 95 {
+    /I exch def
+    /Xn I 16 mod def /Yn I 16 idiv def
+
+    % chars 20-7F
+    gsave
+    Xn 36 mul 18 add Yn -48 mul 9.5 Inch add translate
+    Line0 I I 16#20 add put
+    I 16#20 add DoChar
+    grestore
+
+    % chars A0-FF
+    gsave
+    Xn 36 mul 18 add Yn -48 mul 4.5 Inch add translate
+    Line1 I I 16#A0 add put
+    I 16#A0 add DoChar
+    grestore
+  } for
+
+  F 10 scalefont setfont
+  18 5.5 Inch moveto Line0 show
+  18 0.5 Inch moveto Line1 show
+
+  showpage
+} def
+
+% Do font samples
+% /Times-Roman DoFont			% Test (less than a minute)
+% /Hershey-Gothic-English DoFont	% Test (8 minutes)
+
+% Do a complete catalog
+% FontDirectory {pop DoFont} forall	% All fonts (quite a long time)
