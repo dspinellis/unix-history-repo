@@ -1,0 +1,9 @@
+Mumount	umount.c	/^main(argc, argv)$/
+checkvfsname	../../sbin/mount/vfslist.c	/^checkvfsname(vfsname, vfslist)$/
+getmntname	umount.c	/^getmntname(name, what, type)$/
+makevfslist	../../sbin/mount/vfslist.c	/^makevfslist(fslist)$/
+namematch	umount.c	/^namematch(hp)$/
+umountall	umount.c	/^umountall(typelist)$/
+umountfs	umount.c	/^umountfs(name, typelist)$/
+usage	umount.c	/^usage()$/
+xdr_dir	umount.c	/^xdr_dir(xdrsp, dirp)$/
