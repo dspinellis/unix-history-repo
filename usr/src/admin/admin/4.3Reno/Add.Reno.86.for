@@ -1,4 +1,4 @@
-.\" @(#)Add.Reno.86.for	1.2 (CSRG - distribution) %G%
+.\" @(#)Add.Reno.86.for	1.2 (CSRG - distribution) 4/23/91
 .ND
 .OF '23 April 1991'''
 .nh
@@ -20,7 +20,8 @@ entered into between The Regents of the University of California
 (``Regents'') and the below-named Licensee controls Licensee's use
 of release 4.3 of Regents' Fourth Berkeley Software Distribution
 (``4BSD'') which was distributed upon execution of the Agreement.
-The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee
+The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee,
+on the type of media and for the fee indicated on Exhibit A,
 under the same terms and conditions set forth in the Agreement 
 with the following additional terms and conditions:
 .sp 1
