@@ -1,77 +1,106 @@
-/*	dn11.c	4.2	81/06/04	*/
+/*	dn11.c	4.3	81/06/16	*/
+
+#if DN11
 /*
  * Routines for dialing up on DN-11
  */
 #include "tip.h"
+#include <setjmp.h>
+#include <errno.h>
 
 int dn_abort();
 
-#if DN11
+int alarmtr();
+
+static jmp_buf jmpbuf;
+
 dn_dialer(num, acu)
 char *num, *acu;
 {
 	extern errno;
-	char *p, *q, b[30];
-	int child = -1, dn, t, connected = 1;
+	char *p, *q, phone[40];
+	int child = -1, dn, lt, nw, connected = 1;
+	register int timelim;
 
-	ioctl(FD, TIOCNXCL, 0);	/* get rid of exclusive open from hunt() */
 	if ((dn = open(acu, 1)) < 0) {
-		if (errno == 6)
+		if (errno == ENXIO)
 			printf("line busy\n");
+		else
+			printf("acu open error\n");
 		return(0);
 	}
-	if ((child = fork()) == -1) {
-		printf("can't fork\n");
+	if (setjmp(jmpbuf)) {
+		printf("dn11 write error...");
+		kill(child, SIGKILL);
+		close(dn);
 		return(0);
 	}
-	if (child == 0) {
+	signal(SIGALRM, alarmtr);
+	timelim = 5 * strlen(num);
+	alarm(timelim < 30 ? 30 : timelim);
+	if ((child = fork()) == 0) {
 		signal(SIGALRM, SIG_IGN);
-		pause();
+		sleep(2);
+		nw = write(dn, num, lt = strlen(num));
+		if (nw != lt) {
+			printf("dn11 write failed...");
+			exit(1);
+		}
+		exit(0);
 	}
-	sleep(2);
-	/*
-	 * copy phone #, assure EON
-	 */
-	for (p = b, q = num; *p = *q; p++, q++)
-		;
-	if (*(p-1) != '<') {
-		if (*(p-1) != '-')
-			*p++ = '-';
-		*p++ = '<';
-	}
-	close(FD);
-	t = p-b;
-	signal(SIGALRM, dn_abort);
-	alarm(5*t);
-	t = write(dn, b, t);
-	alarm(0);
-	if (t < 0) {
-		printf("dn11 write error\n");
-		connected = 0;
-		goto error;
-	}
-	alarm(40);		/* was 5; sometimes missed carrier */
+	/*  open line - will return on carrier */
 	FD = open(DV, 2);
-	alarm(0);
 	if (FD < 0) {
-		if (errno == 4)
-			printf("lost carrier\n");
-		connected = 0;
-		goto error;
+		if (errno == EIO)
+			printf("lost carrier...");
+		else
+			printf("dialup line open failed...");
+		alarm(0);
+		kill(child, SIGKILL);
+		close(dn);
+		return(0);
 	}
-	ioctl(FD, TIOCEXCL, 0);
-	ioctl(FD, TIOCHPCL, 0);
-error: 
-	kill(child, SIGKILL);
-	alarm(10);
-	while ((t = wait((int *)NULL)) != -1 && t != child)
+	ioctl(dn, TIOCHPCL, 0);
+	signal(SIGALRM, SIG_DFL);
+	while ((nw = wait(&lt)) != child && nw != -1)
 		;
 	alarm(0);
-	signal(SIGALRM, SIG_DFL);
-	return(connected);
+	fflush(stdout);
+	if (lt != 0) {
+		close(FD);
+		close(dn);
+		return(0);
+	}
+	return(1);
 }
 
-dn_disconnect() { }
+alarmtr()
+{
+	alarm(0);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	longjmp(jmpbuf, 1);
+}
 
-dn_abort() { }
+/*
+ * Insurance, for some reason we don't seem to be
+ *  hanging up...
+ */
+dn_disconnect()
+{
+#ifdef VMUNIX
+	if (FD > 0)
+		ioctl(FD, TIOCCDTR, 0);
+#endif
+	close(FD);
+}
+
+dn_abort()
+{
+#ifdef VMUNIX
+	if (FD > 0)
+		ioctl(FD, TIOCCDTR, 0);
+#endif
+	close(FD);
+}
 #endif

@@ -1,4 +1,4 @@
-/*	tip.h	4.2	81/06/02	*/
+/*	tip.h	4.3	81/06/16	*/
 /*
  * tip - terminal interface program
  *
@@ -31,6 +31,7 @@ int	BR;			/* line speed for conversation */
 int	FS;			/* frame size for transfers */
 
 char	DU;			/* this host is dialed up */
+char	HW;			/* this device is hardwired, see hunt.c */
 
 /*
  * String value table

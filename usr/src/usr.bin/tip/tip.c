@@ -1,4 +1,4 @@
-/*	tip.c	4.3	81/05/18	*/
+/*	tip.c	4.4	81/06/16	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -43,6 +43,9 @@
  * honor uucp locks
  * rewrite remote file stuff for DN-11 like acu's and just to clean
  *   it up
+ *
+ * sjl			6-16-81
+ * real working setup for DN-11's
  */
 
 #include "tip.h"
@@ -83,6 +86,7 @@ char *argv[];
 	signal(SIGQUIT, cleanup);
 	signal(SIGHUP, cleanup);
 	signal(SIGTERM, cleanup);
+
 	if ((i = hunt(system)) == 0) {
 		printf("all ports busy\n");
 		exit(3);
@@ -124,6 +128,12 @@ char *argv[];
 		delock(uucplock);
 		exit(3);
 	}
+
+	if (p = connect()) {
+		printf("\07%s\n[EOT]\n", p);
+		delock(uucplock);
+		exit(1);
+	}
 	arg.sg_ospeed = arg.sg_ispeed;
 	/*
 	 * NOTE that remote side runs in TANDEM mode,
@@ -142,13 +152,6 @@ char *argv[];
 	arg.sg_flags = ANYP | CBREAK;
 	tchars = defchars;
 	tchars.t_intrc = tchars.t_quitc = -1;
-
-	if (p = connect()) {
-		printf("\07%s\n[EOT]\n", p);
-		delock(uucplock);
-		exit(1);
-	}
-	write(1, "\07connected\n", 11);
 	raw();
 #ifdef VMUNIX
 	ioctl(0, TIOCGETD, (char *)&odisc);
@@ -157,6 +160,15 @@ char *argv[];
 #endif
 	pipe(fildes); pipe(repdes);
 	signal(SIGALRM, timeout);
+
+	/*
+	 * Everything's set up now:
+	 *	connection established (hardwired or diaulup)
+	 *	line conditioned (baud rate, mode, etc.)
+	 *	internal data structures (variables)
+	 * so, fork one process for local side and one for remote.
+	 */
+	write(1, "\07connected\r\n", 12);
 	if (pid = fork())
 		tipin();
 	else
@@ -168,6 +180,10 @@ static
 cleanup()
 {
 	delock(uucplock);
+#ifdef VMUNIX
+	if (odisc)
+		ioctl(0, TIOCSETD, (char *)&odisc);
+#endif
 	exit(0);
 }
 
