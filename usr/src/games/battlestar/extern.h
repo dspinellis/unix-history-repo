@@ -1,4 +1,10 @@
-/* @(#)extern.h	1.2 %G% */
+/*
+ * Copyright (c) 1983 Regents of the University of California,
+ * All rights reserved.  Redistribution permitted subject to
+ * the terms of the Berkeley Software License Agreement.
+ */
+
+/* @(#)extern.h	1.3 %G% */
 
 #include <sys/signal.h>
 #include <stdio.h>
