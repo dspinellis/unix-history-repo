@@ -1,4 +1,4 @@
-/*	hgraph.c	1.14	(Berkeley) 84/11/27
+/*	hgraph.c	1.15	(Berkeley) 86/04/14
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
