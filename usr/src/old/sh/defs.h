@@ -1,4 +1,4 @@
-/*	defs.h	4.3	85/02/13	*/
+/*	defs.h	4.4	85/03/19	*/
 
 #
 /*
@@ -106,7 +106,7 @@ VOID		printnam();
 VOID		printflg();
 VOID		prs();
 VOID		prc();
-VOID		getenv();
+VOID		setupenv();
 STRING		*setenv();
 
 #define attrib(n,f)	(n->namflg |= f)
@@ -230,7 +230,7 @@ jmp_buf		INTbuf;
 POS		brkincr;
 
 #define MINTRAP	0
-#define MAXTRAP	17
+#define MAXTRAP	32
 
 #define INTR	2
 #define QUIT	3
