@@ -680,7 +680,7 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		(error = suser(cred, (short *)0)))
 		goto out;
 	/*
-	 * Don't unlink a mounted file.
+	 * The root of a mounted filesystem cannot be deleted.
 	 */
 	if (vp->v_flag & VROOT) {
 		error = EBUSY;
@@ -1079,7 +1079,7 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		goto out;
 	}
 	/*
-	 * Don't unlink a mounted file.
+	 * The root of a mounted filesystem cannot be deleted.
 	 */
 	if (vp->v_flag & VROOT)
 		error = EBUSY;
