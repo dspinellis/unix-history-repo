@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cfgets.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cfgets.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)cfgets.c	5.2 (Berkeley) %G%";
 #define CONTINUE	'\\'
 #define EOLN		'\n'
 #define EOS		'\0'
+
+/*LINTLIBRARY*/
 
 char *
 cfgets(buf, siz, fil)
