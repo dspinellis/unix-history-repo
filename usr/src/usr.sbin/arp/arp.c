@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -49,6 +49,8 @@ static char sccsid[] = "@(#)arp.c	5.8 (Berkeley) %G%";
 #include <nlist.h>
 #include <stdio.h>
 
+#include "pathnames.h"
+
 extern int errno;
 static int kflag;
 
@@ -70,8 +72,8 @@ main(argc, argv)
 				mem = argv[3];
 			}
 			else
-				mem = "/dev/kmem";
-			dump((argc >= 3) ? argv[2] : "/vmunix", mem);
+				mem = _PATH_KMEM;
+			dump((argc >= 3) ? argv[2] : _PATH_VMUNIX, mem);
 			exit(0);
 		}
 		case 'd':
