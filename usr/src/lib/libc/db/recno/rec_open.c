@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ __rec_open(fname, flags, mode, openinfo)
 	DB *dbp;
 	PAGE *h;
 	struct stat sb;
-	int rfd;
+	int rfd, sverrno;
 
 	/* Open the user's file -- if this fails, we're done. */
 	if (fname != NULL && (rfd = open(fname, flags, mode)) < 0)
@@ -78,11 +78,10 @@ __rec_open(fname, flags, mode, openinfo)
 		t->bt_bval = '\n';
 
 	SET(t, BTF_RECNO);
-	if (fname == NULL) {
-		SET(t, BTF_RINMEM);
-		t->bt_reof = 1;
-	} else
-		t->bt_reof = 0;
+	if (fname == NULL)
+		SET(t, BTF_EOF | BTF_RINMEM);
+	else
+		t->bt_rfd = rfd;
 	t->bt_rcursor = 0;
 
 	/*
@@ -91,14 +90,21 @@ __rec_open(fname, flags, mode, openinfo)
 	 */
 	if (fname != NULL)
 		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
-			SET(t, BTF_RDONLY);
+			switch(flags & O_ACCMODE) {
+			case O_RDONLY:
+				SET(t, BTF_RDONLY);
+				break;
+			case O_RDWR:
+			case O_WRONLY:
+			default:
+				goto einval;
+			}
 slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				goto err;
+			SET(t, BTF_CLOSEFP);
 			t->bt_irec =
 			    ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
 		} else {
-			if (fstat(rfd, &sb))
-				goto err;
 			switch(flags & O_ACCMODE) {
 			case O_RDONLY:
 				SET(t, BTF_RDONLY);
@@ -110,18 +116,26 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				goto einval;
 			}
 				
+			if (fstat(rfd, &sb))
+				goto err;
 			if (sb.st_size > (off_t)SIZE_T_MAX) {
 				errno = EFBIG;
 				goto err;
 			}
-			if ((t->bt_smap = mmap(NULL, (size_t)sb.st_size,
-			    PROT_READ, 0, rfd, (off_t)0)) == (caddr_t)-1)
-				goto slow;
-			t->bt_emap = t->bt_smap + sb.st_size;
-			t->bt_rfd = rfd;
-			t->bt_rfp = NULL;
-			t->bt_irec =
-			    ISSET(t, BTF_FIXEDLEN) ? __rec_fmap : __rec_vmap;
+			if (sb.st_size == 0)
+				SET(t, BTF_EOF);
+			else {
+				t->bt_msize = sb.st_size;
+				if ((t->bt_smap =
+				    mmap(NULL, t->bt_msize, PROT_READ, 0, rfd,
+				    (off_t)0)) == (caddr_t)-1)
+					goto slow;
+				t->bt_cmap = t->bt_smap;
+				t->bt_emap = t->bt_smap + sb.st_size;
+				t->bt_irec = ISSET(t, BTF_FIXEDLEN) ?
+				    __rec_fmap : __rec_vmap;
+				SET(t, BTF_MEMMAPPED);
+			}
 		}
 
 	/* Use the recno routines. */
@@ -142,15 +156,17 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 		mpool_put(t->bt_mp, h, 0);
 
 	if (openinfo && openinfo->flags & R_SNAPSHOT &&
-	    !ISSET(t, BTF_RINMEM) &&
+	    !ISSET(t, BTF_EOF | BTF_RINMEM) &&
 	    t->bt_irec(t, MAX_REC_NUMBER) == RET_ERROR)
                 goto err;
 	return (dbp);
 
 einval:	errno = EINVAL;
-err:	if (dbp != NULL)
-		__bt_close(dbp);
+err:	sverrno = errno;
+	if (dbp != NULL)
+		(void)__bt_close(dbp);
 	if (fname != NULL)
 		(void)close(rfd);
+	errno = sverrno;
 	return (NULL);
 }
