@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.28 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.29 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -93,7 +93,7 @@ char	rplyflag;		/* any questions asked? */
 char	hotroot;		/* checking root device */
 char	fixcg;			/* corrupted free list bit maps */
 
-char	*blkmap;		/* ptr to primary blk allocation map */
+char	*blockmap;		/* ptr to primary blk allocation map */
 char	*freemap;		/* ptr to secondary blk allocation map */
 char	*statemap;		/* ptr to inode state table */
 short	*lncntp;		/* ptr to link count table */
@@ -114,7 +114,7 @@ ino_t	orphan;			/* orphaned inode */
 
 off_t	filsize;		/* num blks seen in file */
 off_t	maxblk;			/* largest logical blk in file */
-off_t	bmapsz;			/* num chars in blkmap */
+off_t	bmapsz;			/* num chars in blockmap */
 
 daddr_t	n_ffree;		/* number of small free blocks */
 daddr_t	n_bfree;		/* number of large free blocks */
@@ -138,9 +138,9 @@ struct	dinode zino;
 #define	getlncnt()	(lncntp[inum])
 #define	declncnt()	(--lncntp[inum])
 
-#define	setbmap(x)	setbit(blkmap, x)
-#define	getbmap(x)	isset(blkmap, x)
-#define	clrbmap(x)	clrbit(blkmap, x)
+#define	setbmap(x)	setbit(blockmap, x)
+#define	getbmap(x)	isset(blockmap, x)
+#define	clrbmap(x)	clrbit(blockmap, x)
 
 #define	setfmap(x)	setbit(freemap, x)
 #define	getfmap(x)	isset(freemap, x)
@@ -563,7 +563,7 @@ out1b:
 /* 5 */
 	if (preen == 0)
 		printf("** Phase 5 - Check Cyl groups\n");
-	copy(blkmap, freemap, (unsigned)bmapsz);
+	copy(blockmap, freemap, (unsigned)bmapsz);
 	dupblk = 0;
 	n_index = sblock.fs_ncg * (cgdmin(&sblock, 0) - cgtod(&sblock, 0));
 	for (c = 0; c < sblock.fs_ncg; c++) {
@@ -690,7 +690,7 @@ out5:
 	}
 	if (dfile.mod && preen == 0)
 		printf("\n***** FILE SYSTEM WAS MODIFIED *****\n");
-	free(blkmap);
+	free(blockmap);
 	free(freemap);
 	free(statemap);
 	free(lncntp);
@@ -1297,7 +1297,7 @@ setup(dev)
 	 * allocate the necessary maps
 	 */
 	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
-	blkmap = (char *)calloc(bmapsz, sizeof (char));
+	blockmap = (char *)calloc(bmapsz, sizeof (char));
 	freemap = (char *)calloc(bmapsz, sizeof (char));
 	statemap = (char *)calloc(imax+1, sizeof(char));
 	lncntp = (short *)calloc(imax+1, sizeof(short));
