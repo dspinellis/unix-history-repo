@@ -1,10 +1,14 @@
-/*	vp.c	4.8	81/03/10	*/
+/*	vp.c	4.9	81/04/02	*/
 
 #include "vp.h"
 #if NVP > 0
 /*
  * Versatec matrix printer/plotter
  * dma interface driver
+ *
+ * SETUP NOTES:
+ *	Set up both print and plot interrupts to go through the same vector
+ *	Give the address of the plcsr register in the config specification
  */
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -82,9 +86,16 @@ vpprobe(reg)
 	vpaddr->prcsr = VP_IENABLE|VP_DTCINTR;
 	vpaddr->pbaddr = 0;
 	vpaddr->pbxaddr = 0;
-	vpaddr->plbcr = 1;
+	vpaddr->prbcr = 1;
 	DELAY(10000);
 	vpaddr->prcsr = 0;
+#ifdef ERNIE
+	/* UNTIL REWIRED, GET INTERRUPT AT 200 BUT WANT 174 */
+	if (cvec == 0200) {
+		printf("vp reset vec from 200 to 174\n");
+		cvec = 0174;
+	}
+#endif
 }
 
 /*ARGSUSED*/
