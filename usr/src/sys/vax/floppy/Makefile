@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/09
+#	Makefile	4.3	83/07/10
 #
 # Make a 780 rx01 floppy
 # 
@@ -17,10 +17,8 @@ FLOPPY=	/dev/rrx0b
 all:	floppy
 
 floppy:	3tracks ${OBJS}
-	cp /dev/null floppy
+	cp 3tracks floppy
 	arff crf floppy ${OBJS}
-	dd if=floppy of=x skip=6
-	cat 3tracks x > floppy
 
 install: floppy
 	dd if=floppy of=${FLOPPY}
