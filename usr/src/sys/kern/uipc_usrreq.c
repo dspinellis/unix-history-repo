@@ -11,7 +11,7 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- *	@(#)uipc_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -411,12 +411,13 @@ unp_connect(so, nam)
 	if (access(ip, IWRITE)) {
 		error = u.u_error;
 		u.u_error = 0; 		/* XXX */
-		goto bad;
 	}
 	if ((ip->i_mode&IFMT) != IFSOCK) {
 		error = ENOTSOCK;
 		goto bad;
 	}
+	if (error = VOP_ACCESS(vp, VWRITE, ndp->ni_cred))
+		goto bad;
 	so2 = ip->i_socket;
 	if (so2 == 0) {
 		error = ECONNREFUSED;
