@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -310,11 +310,14 @@ dosum()
 	lseek(mf, (long)nl[X_NCHSTATS].n_value, 0);
 	read(mf, &statbuf, sizeof statbuf);
 	nchtotal = statbuf.ncs_goodhits + statbuf.ncs_badhits +
-		statbuf.ncs_miss + statbuf.ncs_long;
+	    statbuf.ncs_falsehits + statbuf.ncs_miss + statbuf.ncs_long;
 	printf("%9d total name lookups", nchtotal);
+#define	nz(x)	((x) ? (x) : 1)
 	printf(" (cache hits %d%% system %d%% per-process)\n",
-		statbuf.ncs_goodhits * 100 / nchtotal,
-		statbuf.ncs_pass2 * 100 / nchtotal);
+	    statbuf.ncs_goodhits * 100 / nz(nchtotal),
+	    statbuf.ncs_pass2 * 100 / nz(nchtotal));
+	printf("%9s badhits %d, falsehits %d, toolong %d\n", "",
+	    statbuf.ncs_badhits, statbuf.ncs_falsehits, statbuf.ncs_long);
 }
 
 doforkst()
