@@ -1,13 +1,19 @@
 #
-# Copyright {c} 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.11	{Berkeley}	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that this notice is preserved and that due credit is given
+# to the University of California at Berkeley. The name of the University
+# may not be used to endorse or promote products derived from this
+# software without specific prior written permission. This software
+# is provided ``as is'' without express or implied warranty.
+#
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
-CFLAGS=	-O -DV7 -w
+CFLAGS=	-O -DV7
 SRCS=	allow.c board.c check.c data.c extra.c fancy.c init.c main.c move.c \
 	odds.c one.c save.c subs.c table.c teach.c text.c ttext1.c ttext2.c \
 	tutor.c version.c
