@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -192,6 +192,7 @@ setalias(spec)
 	register MAP *map;
 	char *class;
 	STAB *s;
+	static bool first_unqual = TRUE;
 
 	if (tTd(27, 8))
 		printf("setalias(%s)\n", spec);
@@ -209,10 +210,11 @@ setalias(spec)
 		**  for the files implementation, not necessarily in order.
 		*/
 
-		if (spec[0] == '/')
+		if (spec[0] == '/' && first_unqual)
 		{
 			s = stab("aliases.files", ST_MAP, ST_ENTER);
 			map = &s->s_map;
+			first_unqual = FALSE;
 		}
 		else
 		{
