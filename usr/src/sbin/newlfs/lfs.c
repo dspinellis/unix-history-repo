@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -102,6 +102,7 @@ static struct lfs lfs_default =  {
 	/* lfs_fsbtodb */	0,
 	/* lfs_sushift */	0,
 	/* lfs_sboffs */	{ 0 },
+	/* lfs_sp */		NULL,
 	/* lfs_ivnode */	NULL,
 	/* lfs_seglock */	0,
 	/* lfs_iocount */	0,
@@ -204,6 +205,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 			fatal("%d: segment size not power of 2", ssize);
 		lfsp->lfs_ssize = ssize;
 		lfsp->lfs_segmask = ssize - 1;
+		lfsp->lfs_dbpseg = ssize / DEV_BSIZE;
 	}
 	lfsp->lfs_ssize = ssize >> lfsp->lfs_bshift;
 
@@ -374,7 +376,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 
 	/* Make all the other dinodes invalid */
 	for (i = INOPB(lfsp)-3, dip++; i; i--, dip++)
-		dip->di_inum = LFS_UNUSED_INUM;
+		dip->di_inumber = LFS_UNUSED_INUM;
 	
 
 	/* Link remaining IFILE entries in free list */
@@ -602,7 +604,7 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	    dip->di_ctime.ts_sec = lfsp->lfs_tstamp;
 	dip->di_atime.ts_nsec = dip->di_mtime.ts_nsec =
 	    dip->di_ctime.ts_nsec = 0;
-	dip->di_inum = ino;
+	dip->di_inumber = ino;
 
 #define	SEGERR \
 "File requires more than the number of direct blocks; increase block or segment size."
