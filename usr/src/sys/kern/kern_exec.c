@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	6.15 (Berkeley) %G%
+ *	@(#)kern_exec.c	6.16 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -119,7 +119,7 @@ execve()
 		goto bad;
 	}
 #endif
-	switch (exdata.ex_exec.a_magic) {
+	switch ((int)exdata.ex_exec.a_magic) {
 
 	case 0407:
 		exdata.ex_exec.a_data += exdata.ex_exec.a_text;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_alloc.c	6.18 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	6.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,7 @@
 #include "quota.h"
 #include "kernel.h"
 #include "syslog.h"
+#include "cmap.h"
 
 extern u_long		hashalloc();
 extern ino_t		ialloccg();
@@ -153,7 +154,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	switch (fs->fs_optim) {
+	switch ((int)fs->fs_optim) {
 	case FS_OPTSPACE:
 		/*
 		 * Allocate an exact sized fragment. Although this makes 
