@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -371,7 +371,7 @@ static int
 byteorder()
 {
 	u_long x;			/* XXX: 32-bit assumption. */
-	char *p;
+	u_char *p;
 
 	x = 0x01020304;
 	p = (u_char *)&x;
