@@ -53,7 +53,9 @@
  * with 48-bit longs.
  */
 
+#include <machine/endian.h>
 #include <sys/types.h>
+#include <sys/cdefs.h>
 #include <limits.h>
 
 /*
