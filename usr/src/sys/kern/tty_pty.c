@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.6	81/03/09	*/
+/*	tty_pty.c	4.7	81/03/11	*/
 
 /*
  * Pseudo-teletype Driver
@@ -6,7 +6,7 @@
  */
 #include "pty.h"
 
-#if WANTPTY > 0
+#if NPTY > 0
 
 #include "../h/param.h"
 #include "../h/systm.h"
