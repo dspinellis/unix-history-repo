@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.12 (Berkeley) %G%
+ *	@(#)restore.h	5.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
