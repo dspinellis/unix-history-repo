@@ -12,35 +12,37 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifdef sunos
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <ufs/fs.h>
-#else
 #include <sys/param.h>
 #include <sys/time.h>
+#ifdef sunos
+#include <sys/vnode.h>
+
+#include <ufs/inode.h>
+#include <ufs/fs.h>
+#else
 #include <ufs/ffs/fs.h>
-#endif
 #include <ufs/ufs/dinode.h>
-#include <protocols/dumprestore.h>
-#include <signal.h>
-#ifdef __STDC__
-#include <time.h>
 #endif
+
+#include <protocols/dumprestore.h>
+
+#include <errno.h>
 #include <fcntl.h>
 #include <fstab.h>
+#include <signal.h>
 #include <stdio.h>
 #ifdef __STDC__
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#else
+extern	char *rindex();
+extern char *calloc();
 #endif
+
 #include "dump.h"
 #include "pathnames.h"
 
@@ -53,10 +55,8 @@ int	cartridge = 0;	/* Assume non-cartridge tape */
 long	dev_bsize = 1;	/* recalculated below */
 long	blocksperfile;	/* output blocks per file */
 char	*host = NULL;	/* remote host (if any) */
-#ifdef RDUMP
-int	rmthost();
-#endif
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -90,11 +90,11 @@ main(argc, argv)
 
 		case 'w':
 			lastdump('w');	/* tell us only what has to be done */
-			(void) exit(0);
+			exit(0);
 
 		case 'W':		/* what to do */
 			lastdump('W');	/* tell us state of what is done */
-			(void) exit(0);	/* do nothing else */
+			exit(0);	/* do nothing else */
 
 		case 'f':		/* output file */
 			if (argc < 1)
@@ -254,10 +254,10 @@ main(argc, argv)
 		*tape++ = 0;
 #ifdef RDUMP
 		if (rmthost(host) == 0)
-			(void) exit(X_ABORT);
+			exit(X_ABORT);
 #else
 		(void) fprintf(stderr, "remote dump not enabled\n");
-		(void) exit(X_ABORT);
+		exit(X_ABORT);
 #endif
 	}
 	(void) setuid(getuid()); /* rmthost() is the only reason to be setuid */
@@ -330,8 +330,10 @@ main(argc, argv)
 	tp_bshift = ffs(TP_BSIZE) - 1;
 	if (TP_BSIZE != (1 << tp_bshift))
 		quit("TP_BSIZE (%d) is not a power of 2", TP_BSIZE);
+#ifdef FS_44INODEFMT
 	if (sblock->fs_inodefmt >= FS_44INODEFMT)
 		spcl.c_flags |= DR_NEWINODEFMT;
+#endif
 	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	mapsize = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
 		TP_BSIZE);
@@ -424,6 +426,8 @@ main(argc, argv)
 
 	msg("dumping (Pass IV) [regular files]\n");
 	for (map = dumpinomap, ino = 0; ino < maxino; ) {
+		int mode;
+
 		if ((ino % NBBY) == 0)
 			dirty = *map++;
 		else
@@ -435,7 +439,8 @@ main(argc, argv)
 		 * Skip inodes deleted and reallocated as directories.
 		 */
 		dp = getino(ino);
-		if ((dp->di_mode & IFMT) == IFDIR)
+		mode = dp->di_mode & IFMT;
+		if (mode == IFDIR)
 			continue;
 		(void) dumpino(dp, ino);
 	}
@@ -473,7 +478,7 @@ sig(signo)
 		(void) fflush(stderr);
 		(void) fflush(stdout);
 		close_rewind();
-		(void) exit(X_REWRITE);
+		exit(X_REWRITE);
 		/* NOTREACHED */
 	case SIGSEGV:
 		msg("SIGSEGV: ABORTING!\n");
@@ -488,7 +493,6 @@ rawname(cp)
 	char *cp;
 {
 	static char rawbuf[32];
-	char *rindex();
 	char *dp = rindex(cp, '/');
 
 	if (dp == 0)

@@ -6,15 +6,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unctime.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)unctime.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <time.h>
+
 #include <stdio.h>
+#include <time.h>
 #ifdef __STDC__
 #include <stdlib.h>
 #include <string.h>
+#endif
+
+#ifndef __P
+#include <sys/cdefs.h>
 #endif
 
 /*
@@ -35,7 +40,10 @@ static char sccsid[] = "@(#)unctime.c	5.5 (Berkeley) %G%";
 #define	E_SECOND	17
 #define	E_YEAR		20
 
-static int lookup();
+static	int dcmp __P((struct tm *, struct tm *));
+static	time_t emitl __P((struct tm *));
+static	int lookup __P((char *));
+
 
 time_t
 unctime(str)
@@ -43,12 +51,11 @@ unctime(str)
 {
 	struct tm then;
 	char dbuf[30];
-	time_t emitl();
 
 	if (strlen(str) != 25)
-		str[25] = 0;
+		str[25] = '\0';
 	(void) strcpy(dbuf, str);
-	dbuf[E_MONTH+3] = 0;
+	dbuf[E_MONTH+3] = '\0';
 	if ((then.tm_mon = lookup(&dbuf[E_MONTH])) < 0)
 		return (-1);
 	then.tm_mday = atoi(&dbuf[E_DAY]);
@@ -68,7 +75,7 @@ lookup(str)
 {
 	register char *cp, *cp2;
 
-	for (cp = months, cp2 = str; *cp != 0; cp += 3)
+	for (cp = months, cp2 = str; *cp != '\0'; cp += 3)
 		if (strncmp(cp, cp2, 3) == 0)
 			return((cp-months) / 3);
 	return(-1);
@@ -80,10 +87,7 @@ lookup(str)
  *	Use a binary search.
  */
 
-struct tm *localtime();
-static int dcmp();
-
-time_t
+static time_t
 emitl(dp)
 	struct tm *dp;
 {

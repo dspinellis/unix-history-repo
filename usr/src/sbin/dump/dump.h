@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	5.21 (Berkeley) %G%
+ *	@(#)dump.h	5.22 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -86,7 +86,6 @@ void	writeheader __P((ino_t ino));
 int	alloctape __P((void));
 void	close_rewind __P((void));
 void	dumpblock __P((daddr_t blkno, int size));
-void	flushtape __P((void));
 void	startnewtape __P((int top));
 void	trewind __P((void));
 void	writerec __P((char *dp, int isspcl));
@@ -97,6 +96,14 @@ void	getfstab __P((void));
 
 char	*rawname __P((char *cp));
 struct	dinode *getino __P((ino_t inum));
+
+/* rdump routines */
+#ifdef RDUMP
+void	rmtclose __P((void));
+int	rmthost __P((char *host));
+int	rmtopen __P((char *tape, int mode));
+int	rmtwrite __P((char *buf, int count));
+#endif /* RDUMP */
 
 void	interrupt __P((int signo));	/* in case operator bangs on console */
 
@@ -161,7 +168,7 @@ extern char *strncpy();
 extern char *strcat();
 extern time_t time();
 extern void endgrent();
-extern void exit();
+extern __dead void exit();
 extern off_t lseek();
 extern char *strerror();
 #endif
