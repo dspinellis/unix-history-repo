@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)local_passwd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)local_passwd.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -69,14 +69,14 @@ getnewpasswd(pw)
 	    strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
 	    pw->pw_passwd)) {
 		errno = EACCES;
-		pw_error(tempname, 1, 1);
+		pw_error(NULL, 1, 1);
 	}
 
 	for (buf[0] = '\0', tries = 0;;) {
 		p = getpass("New password:");
 		if (!*p) {
 			(void)printf("Password unchanged.\n");
-			pw_error((char *)NULL, 0, 0);
+			pw_error(NULL, 0, 0);
 		}
 		if (strlen(p) <= 5 && (uid != 0 || ++tries < 2)) {
 			(void)printf("Please enter a longer password.\n");
