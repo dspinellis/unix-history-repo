@@ -57,7 +57,7 @@ return( await() );
 
 
 
-int intrupt();
+void intrupt();
 
 await()
 {
