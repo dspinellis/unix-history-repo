@@ -1,4 +1,3 @@
-#	@(#)Makefile	4.2	(Berkeley)	82/12/25
 #
 # makefile for line printer spooling system
 #
@@ -9,27 +8,29 @@
 #
 CFLAGS=-O
 LDFLAGS=
-DESTDIR=
-LIBDIR=${DESTDIR}/usr/lib
-BINDIR=${DESTDIR}/usr/ucb
-SPOOLDIR=${DESTDIR}/usr/spool/lpd
+LIBDIR=/usr/lib
+BINDIR=/usr/ucb
+SPOOLDIR=/usr/spool/lpd
 CXREF=/usr/ucb/ctags -x
 ROOT=root
 DAEMON=daemon
 SPGRP=daemon
 
-all: lpd lpr lpq lprm lpdrestart filters
+all: lpd rlpr lpr lpq lprm lpdrestart filters
 
-filters: necf lpf laf
+filters: laf lpf necf
 
-lpd:	lpd.o lpdchar.o printcap.o getqueue.o
-	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getqueue.o
+lpd:	lpd.o lpdchar.o printcap.o getq.o
+	${CC} -o lpd ${LDFLAGS} lpd.o lpdchar.o printcap.o getq.o
+
+rlpr:	rlpr.o printcap.o
+	${CC} -o rlpr ${LDFLAGS} rlpr.o printcap.o
 
 lpr:	lpr.o printcap.o
-	${CC} -o lpr ${LDFLAGS} lpr.o printcap.o
+	${CC} -o lpr ${LDFLAGS} lpr.o -ljobs printcap.o
 
-lpq:	lpq.o printcap.o getqueue.o
-	${CC} -o lpq ${LDFLAGS} lpq.o -ltermcap printcap.o getqueue.o
+lpq:	lpq.o printcap.o getq.o
+	${CC} -o lpq ${LDFLAGS} lpq.o -ltermcap printcap.o getq.o
 
 lprm:	lprm.o printcap.o
 	${CC} -o lprm ${LDFLAGS} lprm.o printcap.o
@@ -46,28 +47,23 @@ lpf:	lpf.c
 necf:	necf.c
 	${CC} -o necf ${CFLAGS} ${LDFLAGS} necf.c
 
-lpr.o lpd.o lpq.o lprm.o lpdrestart.o: lp.local.h
-lpd.o lpq.o getqueue.o: getqueue.h
+lpd.o rlpr.o lpr.o lpq.o lprm.o lpdrestart.o: lp.local.h
+lpd.o lpq.o getq.o: getq.h
 
-install: all
-	install lpd ${LIBDIR}/lpd
-	install lpq ${BINDIR}/lpq
-	install lprm ${BINDIR}/lprm
-	install lpr ${BINDIR}/lpr
-#	rm -f ${BINDIR}/opr ${BINDIR}/print
-#	ln ${BINDIR}/lpr ${BINDIR}/print
-#	ln ${BINDIR}/lpr ${BINDIR}/opr
-	chown ${ROOT} ${BINDIR}/lpr
-	chown ${DAEMON} $(BINDIR)/lpq ${BINDIR}/lprm ${LIBDIR}/lpd
-	chgrp ${SPGRP} ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/lpq ${BINDIR}/lprm
-	chmod 6711 ${LIBDIR}/lpd ${BINDIR}/lpr ${BINDIR}/lprm
-	chmod 2711 ${BINDIR}/lpq
+install: lpd rlpr lpr lpq lprm
+	install -o ${ROOT} -m 6711 lpd ${LIBDIR}/lpd
+	install -o ${DAEMON} -m 6711 rlpr ${LIBDIR}/rlpr
+	install -o ${ROOT} -m 6711 lpr ${BINDIR}/lpr
+	install -o ${ROOT} -m 6711 lpq ${BINDIR}/lpq
+	install -o ${ROOT} -m 6711 lprm ${BINDIR}/lprm
+	chgrp ${SPGRP} ${LIBDIR}/lpd ${LIBDIR}/rlpr ${BINDIR}/lpr \
+		${BINDIR}/lpq ${BINDIR}/lprm
 	chown ${DAEMON} ${SPOOLDIR}
 	chgrp ${SPGRP} ${SPOOLDIR}
 	chmod 775 ${SPOOLDIR}
 
 clean:
-	rm -f laf lprm lpq lpd lpr necf lpf *.o
+	rm -f lpd rlpr lpr lpq lprm lpdrestart laf lpf necf *.o
 
 print:
 	@pr makefile

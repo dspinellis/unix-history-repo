@@ -1,4 +1,4 @@
-/*	necf.c	1.4	81/08/24	*/
+/*	necf.c	1.5	83/01/05	*/
 #include <stdio.h>
 #include <sgtty.h>
 #include <signal.h>

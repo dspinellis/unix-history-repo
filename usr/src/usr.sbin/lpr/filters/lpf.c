@@ -1,4 +1,4 @@
-/*	lpf.c	4.3	81/06/02	*/
+/*	lpf.c	4.4	83/01/05	*/
 /*
  * lpf -- Line printer filter: handles underlines for those printers/
  *	  device drivers that won't
@@ -32,7 +32,7 @@ getline()
 	register int col, maxcol, c;
 
 	ov = 0;
-	for (col=0; col<LINELN; col++) {
+	for (col = 0; col < LINELN; col++) {
 		linebuf[col] = ' ';
 		ovbuf[col] = 0;
 	}
@@ -44,14 +44,14 @@ getline()
 		return(0);
 
 	default:
-		if (c>=' ') {
+		if (c >= ' ') {
 			if (col < LINELN) {
-				if (linebuf[col]=='_') {
+				if (linebuf[col] != ' ') {
 					ov++;
-					ovbuf[col] = '_';
-				}
-				linebuf[col++] = c;
-				if (col > maxcol)
+					ovbuf[col] = c;
+				} else
+					linebuf[col] = c;
+				if (++col > maxcol)
 					maxcol = col;
 			}
 		}
@@ -63,7 +63,7 @@ getline()
 
 	case '\t':
 		col = (col|07) + 1;
-		if (col>maxcol)
+		if (col > maxcol)
 			maxcol = col;
 		continue;
 
@@ -71,31 +71,16 @@ getline()
 		col = 0;
 		continue;
 
-	case '_':
-		if (col>=LINELN) {
-			col++;
-			continue;
-		}
-		if (linebuf[col]!=' ') {
-			ovbuf[col] = '_';
-			ov++;
-		} else
-			linebuf[col] = c;
-		col++;
-		if (col>maxcol)
-			maxcol = col;
-		continue;
-
 	case '\f':
 		ff = 1;		/* force form feed */
 	case '\n':
-		if (maxcol>=LINELN)
+		if (maxcol >= LINELN)
 			maxcol = LINELN;
 		linebuf[maxcol] = 0;
 		return(1);
 
 	case '\b':
-		if (col>0)
+		if (col > 0)
 			col--;
 		continue;
 	}
@@ -103,18 +88,21 @@ getline()
 
 putline()
 {
-	register char *lp, *ep;
-	register int c;
+	register char c, *lp;
 
 	lp = linebuf;
 	while (c = *lp++)
 		output(c);
 	if (ov) {
 		putchar('\r');
-		for (ep= &ovbuf[LINELN-1]; *ep == 0; ep--)
-			continue;
-		for (lp=ovbuf; lp <= ep; lp++)
-			output(*lp ? *lp : ' ');
+		lp = ovbuf;
+		while (ov) {
+			if (c = *lp++) {
+				output(c);
+				ov--;
+			} else
+				output(' ');
+		}
 	}
 	putchar('\n');
 	if (ff) {
