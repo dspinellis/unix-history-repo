@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso.c	7.15 (Berkeley) %G%
+ *	@(#)iso.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -864,7 +864,8 @@ struct mbuf	*m;			/* data for set, buffer for get */
 		default:
 			error = EOPNOTSUPP;
 	}
-
+	if (cmd == PRCO_SETOPT)
+		m_freem(m);
 	return error;
 }
 #endif ISO
