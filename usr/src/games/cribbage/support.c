@@ -91,7 +91,7 @@ char		*s;
 	if (i != j) {
 	    if (i < j) {
 		win = chkscr(&pscore, i);
-		msg("It's really only %d points, I get %d.", i, 2);
+		msg("It's really only %d points; I get %d", i, 2);
 		if (!win)
 		    win = chkscr(&cscore, 2);
 	    }
@@ -101,6 +101,7 @@ char		*s;
 	    }
 	    if (explain)
 		msg("Explanation: %s", expl);
+	    do_wait();
 	}
 	else
 	    win = chkscr(&pscore, i);
