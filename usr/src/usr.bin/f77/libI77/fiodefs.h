@@ -1,5 +1,5 @@
 /*
-char id_fiodefs[] = "@(#)fiodefs.h	1.3";
+char id_fiodefs[] = "@(#)fiodefs.h	1.4";
  *
  * fortran file i/o type definitions
  */

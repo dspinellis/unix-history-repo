@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.9";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.10";
  *
  * formatted write routines
  */
