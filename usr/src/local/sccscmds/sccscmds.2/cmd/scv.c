@@ -13,7 +13,7 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
-SCCSID(@(#)scv.c	4.5);
+SCCSID(@(#)scv.c	4.6);
 
 
 /*
@@ -421,7 +421,7 @@ struct packet *pkt;
 	for (i = 0; i < 32; i++)
 		if (c = *up++) {
 			j = 0;
-			for (mask = 1; mask; mask =<< 1) {
+			for (mask = 1; mask; mask <<= 1) {
 				if ((c & mask) && (p = getlnam(i * SZLNAM + j)))
 					putline(pkt,sprintf(str,"%s\n",p));
 				j++;
@@ -489,7 +489,7 @@ register short ***rlp;
 		}
 		(*rlp)[rt->Rrel] = alloc((rt->Rlevs + 1) * sizeof(***rlp));
 		(*rlp)[rt->Rrel][0] = rt->Rlevs;
-		n =+ rt->Rlevs;
+		n += rt->Rlevs;
 	}
 	return(n);
 }
@@ -524,7 +524,7 @@ short ndels;
 		ndt->d_pred = 0;
 		n = size(odt->Dhist);
 		n++;
-		n =& ~1;
+		n &= ~1;
 		if (odt->Dtype == 'P' || odt->Dtype == 'U') {
 			hists[ndels] = alloc(n + 16);
 			sprintf(hists[ndels],"[was %d.%d] ",odt->Drel,odt->Dlev);
@@ -704,7 +704,7 @@ char *newline;
 		fputs(p,Xiop);
 		if (Xcreate)
 			while (*p)
-				pkt->p_nhash =+ *p++;
+				pkt->p_nhash += *p++;
 	}
 	Xcreate = 1;
 }
@@ -824,7 +824,7 @@ register struct Ibufr *buf;
 	short *w;
 	short i, n;
 
-	buf->Irecptr =+ buf->Ilen + !(buf->Ilen & 1);
+	buf->Irecptr += buf->Ilen + !(buf->Ilen & 1);
 
 	i = 0;
 	while(1) {
@@ -837,7 +837,7 @@ register struct Ibufr *buf;
 		if(i++ == 1) return(1);
 
 		q = buf->Irecptr;
-		p = buf->Irecptr =- 512;
+		p = buf->Irecptr -= 512;
 
 		while(q <= buf->Iend) *p++ = *q++;
 
@@ -855,7 +855,7 @@ register struct Ibufr *buf;
 		}
 		if(n < 512) buf->Ibuff2[n] = 0;
 
-		buf->Ihcnt =+ sumr(w,&w[(n&1?n-1:n-2)>>1]);
+		buf->Ihcnt += sumr(w,&w[(n&1?n-1:n-2)>>1]);
 
 		if(n<512 && buf->Ihtot && buf->Ihcnt != buf->Ihtot)
 			fatal("corrupted file (201)");
@@ -869,6 +869,6 @@ register short *from, *to;
 	register short sum;
 
 	for (sum=0; from<=to; )
-		sum =+ *from++;
+		sum += *from++;
 	return(sum);
 }
