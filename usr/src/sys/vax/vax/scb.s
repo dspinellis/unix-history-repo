@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)scb.s	6.3 (Berkeley) %G%
+ *	@(#)scb.s	6.4 (Berkeley) %G%
  */
 
 #include "uba.h"
@@ -52,22 +52,3 @@ _UNIvec:	.space	512		# 750 unibus intr vector
 _UNI1vec:	.space	512		# 750 second unibus intr vector
 					# 2nd UBA jump table on 780's
 #endif
-
-/*
- * The following specify offsets into the intrcnt array for SCB interrupt
- * vectors.  Unibus devices will allocate slots after these.
- */
-#define	I_CLOCK		(4 * 0)		/* interval timer */
-#define	I_CNR		(4 * 1)		/* console receive */
-#define	I_CNX		(4 * 2)		/* console transmit */
-#define	I_TUR		(4 * 3)		/* console TU58 receive */
-#define	I_TUX		(4 * 4)		/* console TU58 transmit */
-#define	I_MBA0		(4 * 5)		/* massbus adaptor 0 */
-#define	I_MBA1		(4 * 6)		/* massbus adaptor 1 */
-#define	I_MBA2		(4 * 7)		/* massbus adaptor 2 */
-#define	I_MBA3		(4 * 8)		/* massbus adaptor 3 */
-#define	I_UBA		(4 * 9)		/* unibus adaptor base */
-#define	I_UBA0		(4 * 9)		/* unibus adaptor 0 */
-#define	I_UBA1		(4 * 10)	/* unibus adaptor 1 */
-#define	I_UBA2		(4 * 11)	/* unibus adaptor 2 */
-#define	I_UBA3		(4 * 12)	/* unibus adaptor 3 */
