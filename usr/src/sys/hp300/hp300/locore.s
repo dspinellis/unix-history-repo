@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	8.4 (Berkeley) %G%
+ *	@(#)locore.s	8.5 (Berkeley) %G%
  */
 
 /*
@@ -1145,25 +1145,20 @@ _esigcode:
  */ 
 
 #ifdef __STDC__
-#define EXPORT(name)	.globl _ ## name; _ ## name:
+#define EXPORT(name)		.globl _ ## name; _ ## name:
 #else
-#define EXPORT(name)	.globl _/**/name; _/**/name:
+#define EXPORT(name)		.globl _/**/name; _/**/name:
 #endif
 #ifdef GPROF
 #if __GNUC__ >= 2
-#define	ENTRY(name) \
-	EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
+#define	ENTRY(name)		EXPORT(name) link a6,\#0; jbsr mcount; unlk a6
 #else
-#define	ENTRY(name) \
-	EXPORT(name) link a6,#0; jbsr mcount; unlk a6
+#define	ENTRY(name)		EXPORT(name) link a6,#0; jbsr mcount; unlk a6
 #endif
-#define ALTENTRY(name, rname) \
-	ENTRY(name); jra rname+12
+#define ALTENTRY(name, rname)	ENTRY(name); jra rname+12
 #else
-#define	ENTRY(name) \
-	EXPORT(name)
-#define ALTENTRY(name, rname) \
-	ENTRY(name)
+#define	ENTRY(name)		EXPORT(name)
+#define ALTENTRY(name, rname) 	ENTRY(name)
 #endif
 
 /*
@@ -1173,11 +1168,44 @@ ENTRY(__main)
 	rts
 
 /*
+ * copypage(fromaddr, toaddr)
+ *
+ * Optimized version of bcopy for a single page-aligned NBPG byte copy.
+ */
+ENTRY(copypage)
+	movl	sp@(4),a0		| source address
+	movl	sp@(8),a1		| destination address
+	movl	#NBPG/32,d0		| number of 32 byte chunks
+#if defined(HP380)
+	cmpl	#-2,_mmutype		| 68040?
+	jne	Lmlloop			| no, use movl
+Lm16loop:
+	.long	0xf6209000		| move16 a0@+,a1@+
+	.long	0xf6209000		| move16 a0@+,a1@+
+	subql	#1,d0
+	jne	Lm16loop
+	rts
+#endif
+Lmlloop:
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	movl	a0@+,a1@+
+	subql	#1,d0
+	jne	Lmlloop
+	rts
+
+/*
  * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  *
  * Copy a null terminated string from the user address space into
  * the kernel address space.
- * NOTE: maxlength must be < 64K
+ *
+ * NOTE: maxlength must be < 64K (due to use of DBcc)
  */
 ENTRY(copyinstr)
 	movl	_curpcb,a0		| current pcb
@@ -1218,7 +1246,8 @@ Lcisflt2:
  *
  * Copy a null terminated string from the kernel
  * address space to the user address space.
- * NOTE: maxlength must be < 64K
+ *
+ * NOTE: maxlength must be < 64K (due to use of DBcc)
  */
 ENTRY(copyoutstr)
 	movl	_curpcb,a0		| current pcb
@@ -1259,7 +1288,8 @@ Lcosflt2:
  *
  * Copy a null terminated string from one point to another in
  * the kernel address space.
- * NOTE: maxlength must be < 64K
+ *
+ * NOTE: maxlength must be < 64K (due to use of DBcc)
  */
 ENTRY(copystr)
 	movl	sp@(4),a0		| a0 = fromaddr
@@ -1302,102 +1332,110 @@ Lcsflt2:
  * fixing this code!
  */
 ENTRY(copyin)
+	movl	sp@(12),d0		| get size
+#ifdef MAPPEDCOPY
+	.globl	_mappedcopysize,_mappedcopyin
+	cmpl	_mappedcopysize,d0	| size >= mappedcopysize
+	jcc	_mappedcopyin		| yes, go do it the new way
+#endif
 	movl	d2,sp@-			| scratch register
 	movl	_curpcb,a0		| current pcb
 	movl	#Lciflt,a0@(PCB_ONFAULT) | set up to catch faults
-	movl	sp@(16),d2		| check count
+	tstl	d0			| check count
 	jlt	Lciflt			| negative, error
 	jeq	Lcidone			| zero, done
 	movl	sp@(8),a0		| src address
 	movl	sp@(12),a1		| dest address
-	movl	a0,d0
-	btst	#0,d0			| src address odd?
+	movl	a0,d2
+	btst	#0,d2			| src address odd?
 	jeq	Lcieven			| no, go check dest
 	movsb	a0@+,d1			| yes, get a byte
 	nop
 	movb	d1,a1@+			| put a byte
-	subql	#1,d2			| adjust count
+	subql	#1,d0			| adjust count
 	jeq	Lcidone			| exit if done
 Lcieven:
-	movl	a1,d0
-	btst	#0,d0			| dest address odd?
+	movl	a1,d2
+	btst	#0,d2			| dest address odd?
 	jne	Lcibloop		| yes, must copy by bytes
-	movl	d2,d0			| no, get count
-	lsrl	#2,d0			| convert to longwords
+	movl	d0,d2			| no, get count
+	lsrl	#2,d2			| convert to longwords
 	jeq	Lcibloop		| no longwords, copy bytes
 Lcilloop:
 	movsl	a0@+,d1			| get a long
 	nop
 	movl	d1,a1@+			| put a long
-	subql	#1,d0
+	subql	#1,d2
 	jne	Lcilloop		| til done
-	andl	#3,d2			| what remains
+	andl	#3,d0			| what remains
 	jeq	Lcidone			| all done
 Lcibloop:
 	movsb	a0@+,d1			| get a byte
 	nop
 	movb	d1,a1@+			| put a byte
-	subql	#1,d2
+	subql	#1,d0
 	jne	Lcibloop		| til done
 Lcidone:
-	moveq	#0,d0			| success
-Lciexit:
 	movl	_curpcb,a0		| current pcb
 	clrl	a0@(PCB_ONFAULT) 	| clear fault catcher
 	movl	sp@+,d2			| restore scratch reg
 	rts
 Lciflt:
 	moveq	#EFAULT,d0		| got a fault
-	jra	Lciexit
+	jra	Lcidone
 
 ENTRY(copyout)
+	movl	sp@(12),d0		| get size
+#ifdef MAPPEDCOPY
+	.globl	_mappedcopysize,_mappedcopyout
+	cmpl	_mappedcopysize,d0	| size >= mappedcopysize
+	jcc	_mappedcopyout		| yes, go do it the new way
+#endif
 	movl	d2,sp@-			| scratch register
 	movl	_curpcb,a0		| current pcb
 	movl	#Lcoflt,a0@(PCB_ONFAULT) | catch faults
-	movl	sp@(16),d2		| check count
+	tstl	d0			| check count
 	jlt	Lcoflt			| negative, error
 	jeq	Lcodone			| zero, done
 	movl	sp@(8),a0		| src address
 	movl	sp@(12),a1		| dest address
-	movl	a0,d0
-	btst	#0,d0			| src address odd?
+	movl	a0,d2
+	btst	#0,d2			| src address odd?
 	jeq	Lcoeven			| no, go check dest
 	movb	a0@+,d1			| yes, get a byte
 	movsb	d1,a1@+			| put a byte
 	nop
-	subql	#1,d2			| adjust count
+	subql	#1,d0			| adjust count
 	jeq	Lcodone			| exit if done
 Lcoeven:
-	movl	a1,d0
-	btst	#0,d0			| dest address odd?
+	movl	a1,d2
+	btst	#0,d2			| dest address odd?
 	jne	Lcobloop		| yes, must copy by bytes
-	movl	d2,d0			| no, get count
-	lsrl	#2,d0			| convert to longwords
+	movl	d0,d2			| no, get count
+	lsrl	#2,d2			| convert to longwords
 	jeq	Lcobloop		| no longwords, copy bytes
 Lcolloop:
 	movl	a0@+,d1			| get a long
 	movsl	d1,a1@+			| put a long
 	nop
-	subql	#1,d0
+	subql	#1,d2
 	jne	Lcolloop		| til done
-	andl	#3,d2			| what remains
+	andl	#3,d0			| what remains
 	jeq	Lcodone			| all done
 Lcobloop:
 	movb	a0@+,d1			| get a byte
 	movsb	d1,a1@+			| put a byte
 	nop
-	subql	#1,d2
+	subql	#1,d0
 	jne	Lcobloop		| til done
 Lcodone:
-	moveq	#0,d0			| success
-Lcoexit:
 	movl	_curpcb,a0		| current pcb
 	clrl	a0@(PCB_ONFAULT) 	| clear fault catcher
 	movl	sp@+,d2			| restore scratch reg
 	rts
 Lcoflt:
 	moveq	#EFAULT,d0		| got a fault
-	jra	Lcoexit
+	jra	Lcodone
 
 /*
  * non-local gotos
