@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.86 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.87 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -570,6 +570,9 @@ open(p, uap, retval)
 	p->p_dupfd = 0;
 	vp = nd.ni_vp;
 	fp->f_flag = fmode & FMASK;
+	fp->f_type = DTYPE_VNODE;
+	fp->f_ops = &vnops;
+	fp->f_data = (caddr_t)vp;
 	if (fmode & (O_EXLOCK | O_SHLOCK)) {
 		lf.l_whence = SEEK_SET;
 		lf.l_start = 0;
@@ -591,9 +594,6 @@ open(p, uap, retval)
 		fp->f_flag |= FHASLOCK;
 	}
 	VOP_UNLOCK(vp);
-	fp->f_type = DTYPE_VNODE;
-	fp->f_ops = &vnops;
-	fp->f_data = (caddr_t)vp;
 	*retval = indx;
 	return (0);
 }
@@ -875,7 +875,7 @@ out:
 	return (error);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Seek system call.
  */
@@ -903,7 +903,7 @@ lseek(p, uap, retval)
 	*retval = qret;
 	return (error);
 }
-#endif /* COMPAT_43 */
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Seek system call.
@@ -1000,7 +1000,7 @@ out1:
 	return (error);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Stat system call.
  * This version follows links.
@@ -1088,7 +1088,7 @@ cvtstat(st, ost)
 	ost->st_flags = st->st_flags;
 	ost->st_gen = st->st_gen;
 }
-#endif /* COMPAT_43 */
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Stat system call.
@@ -1451,7 +1451,7 @@ out:
 	return (error);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Truncate a file given its path name.
  */
@@ -1495,7 +1495,7 @@ ftruncate(p, uap, retval)
 	nuap.length = uap->length;
 	return (__ftruncate(p, &nuap, retval));
 }
-#endif /* COMPAT_43 */
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Truncate a file given its path name.
