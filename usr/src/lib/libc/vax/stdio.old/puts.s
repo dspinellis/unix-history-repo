@@ -5,7 +5,7 @@
  */
 
 #ifdef LIBC_SCCS
-_sccsid:.asciz	"@(#)puts.s	5.3 (Berkeley) %G%"
+_sccsid:.asciz	"@(#)puts.s	5.4 (Berkeley) %G%"
 #endif LIBC_SCCS
 
 /*
@@ -88,6 +88,8 @@ Lnl:
 	decl	_CNT(IOP)
 
 	bitw	$LBF,_FLAG(IOP)		/* If line buffered... */
+	jneq	1f
+	tstw	UNBUF			/* or unbuffered... */
 	jneq	1f
 	tstl	_CNT(IOP)		/* or a full buffer... */
 	jgtr	2f
