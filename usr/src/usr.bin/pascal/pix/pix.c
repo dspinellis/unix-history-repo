@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)pix.c 1.3 %G%";
+static char sccsid[] = "@(#)pix.c 1.4 %G%";
 
 /*
  * pix - pi then px
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)pix.c 1.3 %G%";
 
 #include "whoami.h"
 #include "objfmt.h"
+#include "config.h"
 #define	ERRS	1
 
 char	*name;
@@ -64,7 +65,7 @@ main(argc, argv)
 		argv[ac] = 0;
 		argv[0] = name - 2;
 		do
-			execv(PI_COMP, argv);
+			execv(pi_comp, argv);
 		while (errno == ETXTBSY);
 		write(2, "Can't find pi\n", 14);
 		onintr();
@@ -86,7 +87,7 @@ main(argc, argv)
 	argv[ac] = "pix";
 	argv[argc] = 0;
 	do
-		execv(PX_DEBUG, &argv[ac]);
+		execv(px_debug, &argv[ac]);
 	while (errno == ETXTBSY);
 	write(2, "Can't find px\n", 14);
 	onintr();
