@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rec_seq.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_seq.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,6 +43,13 @@ __rec_seq(dbp, key, data, flags)
 	int status;
 
 	t = dbp->internal;
+
+	/* Toss any page pinned across calls. */
+	if (t->bt_pinned != NULL) {
+		mpool_put(t->bt_mp, t->bt_pinned, 0);
+		t->bt_pinned = NULL;
+	}
+
 	switch(flags) {
 	case R_CURSOR:
 		if ((nrec = *(recno_t *)key->data) == 0)
@@ -90,7 +97,9 @@ einval:		errno = EINVAL;
 	t->bt_rcursor = nrec;
 
 	status = __rec_ret(t, e, nrec, key, data);
-
-	mpool_put(t->bt_mp, e->page, 0);
+	if (ISSET(t, B_DB_LOCK))
+		mpool_put(t->bt_mp, e->page, 0);
+	else
+		t->bt_pinned = e->page;
 	return (status);
 }
