@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.7 (Berkeley) %G%
+ *	@(#)lfs.h	5.8 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -213,3 +213,12 @@ struct segsum {
 #define sntoda(fs, sn) 		/* segment number to disk address */ \
 	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) + \
 	    (fs)->lfs_sboffs[0]))
+
+/* Read in the block containing a specific inode from the ifile. */
+#define	LFS_IENTRY(I, F, IN, BP) { \
+	if (bread((F)->lfs_ivnode, (IN) / IFPB(F) + (F)->lfs_segtabsz, \
+	    (F)->lfs_bsize, NOCRED, &BP)) \
+		panic("lfs: ifile read"); \
+	(I) = (IFILE *)BP->b_un.b_addr + IN % IFPB(F); \
+}
+
