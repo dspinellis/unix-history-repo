@@ -3,13 +3,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.18 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "proc.h"
-#include "cmap.h"
 #include "malloc.h"
 #include "map.h"
 #define MBTYPES
@@ -18,12 +16,11 @@
 #include "syslog.h"
 #include "domain.h"
 #include "protosw.h"
-#include "../vm/vm_param.h"
-#include "../vm/vm_map.h"
+#include "vm/vm.h"
 
-extern vm_map_t mb_map;
-struct mbuf *mbutl;
-char *mclrefcnt;
+extern	vm_map_t mb_map;
+struct	mbuf *mbutl;
+char	*mclrefcnt;
 
 mbinit()
 {
