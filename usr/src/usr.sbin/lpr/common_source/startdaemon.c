@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startdaemon.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)startdaemon.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)startdaemon.c	5.7 (Berkeley) %G%";
 startdaemon(printer)
 	char *printer;
 {
-	struct sockaddr_un sun;
+	struct sockaddr_un un;
 	register int s, n;
 	char buf[BUFSIZ];
 	static void perr();
@@ -33,9 +33,9 @@ startdaemon(printer)
 		perr("socket");
 		return(0);
 	}
-	sun.sun_family = AF_UNIX;
-	strcpy(sun.sun_path, _PATH_SOCKETNAME);
-	if (connect(s, (struct sockaddr *)&sun, strlen(sun.sun_path) + 2) < 0) {
+	un.sun_family = AF_UNIX;
+	strcpy(un.sun_path, _PATH_SOCKETNAME);
+	if (connect(s, (struct sockaddr *)&un, strlen(un.sun_path) + 2) < 0) {
 		perr("connect");
 		(void) close(s);
 		return(0);
