@@ -11,10 +11,40 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.7 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <arpa/telnet.h>
+
+#include "defines.h"
+#include "ring.h"
+#include "externs.h"
 #include "fdset.h"
+
+#if	defined(TN3270)
+
+#include "../ctlr/screen.h"
+#include "../general/globals.h"
+
+#if	defined(unix)
+char	tline[200];
+char	*transcom = 0;	/* transparent mode command (default: none) */
+#endif	/* defined(unix) */
+
+char	Ibuf[8*BUFSIZ], *Ifrontp, *Ibackp;
+
+static char	sb_terminal[] = { IAC, SB,
+			TELOPT_TTYPE, TELQUAL_IS,
+			'I', 'B', 'M', '-', '3', '2', '7', '8', '-', '2',
+			IAC, SE };
+#define	SBTERMMODEL	13
+
+static int
+	Sent3270TerminalType;	/* Have we said we are a 3270? */
+
+#endif	/* defined(TN3270) */
+
 
 void
 tn3270_init()
@@ -29,47 +59,8 @@ tn3270_init()
 #endif	/* defined(TN3270) */
 }
 
+
 #if	defined(TN3270)
-
-
-static char	Ibuf[8*BUFSIZ], *Ifrontp, *Ibackp;
-
-static char	sb_terminal[] = { IAC, SB,
-			TELOPT_TTYPE, TELQUAL_IS,
-			'I', 'B', 'M', '-', '3', '2', '7', '8', '-', '2',
-			IAC, SE };
-#define	SBTERMMODEL	13
-
-static int
-	Sent3270TerminalType;	/* Have we said we are a 3270? */
-
-
-#if	defined(unix)
-static
-settranscom(argc, argv)
-	int argc;
-	char *argv[];
-{
-	int i, len = 0;
-	char *strcpy(), *strcat();
-
-	if (argc == 1 && transcom) {
-	   transcom = 0;
-	}
-	if (argc == 1) {
-	   return;
-	}
-	for (i = 1; i < argc; ++i) {
-	    len += 1 + strlen(argv[1]);
-	}
-	transcom = tline;
-	(void) strcpy(transcom, argv[1]);
-	for (i = 2; i < argc; ++i) {
-	    (void) strcat(transcom, " ");
-	    (void) strcat(transcom, argv[i]);
-	}
-}
-#endif	/* defined(unix) */
 
 /*
  * DataToNetwork - queue up some data to go to network.  If "done" is set,
@@ -86,36 +77,44 @@ register char	*buffer;	/* where the data is */
 register int	count;		/* how much to send */
 int		done;		/* is this the last of a logical block */
 {
-    register int c;
+    register int loop, c;
     int origCount;
-    fd_set o;
 
     origCount = count;
-    FD_ZERO(&o);
 
     while (count) {
-	if ((netobuf+sizeof netobuf - nfrontp) < 6) {
+	if (NETROOM() < 6) {
+	    fd_set o;
+
+	    FD_ZERO(&o);
 	    netflush();
-	    while ((netobuf+sizeof netobuf - nfrontp) < 6) {
+	    while (NETROOM() < 6) {
 		FD_SET(net, &o);
 		(void) select(net+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
 		netflush();
 	    }
 	}
-	c = *buffer++;
-	count--;
-	if (c == IAC) {
-	    *nfrontp++ = IAC;
-	    *nfrontp++ = IAC;
-	} else {
-	    *nfrontp++ = c;
+	c = loop = ring_empty_consecutive(&netoring);
+	while (loop) {
+	    if (*buffer == IAC) {
+		break;
+	    }
+	    buffer++;
+	    loop--;
+	}
+	if ((c = c-loop)) {
+	    ring_supply_data(&netoring, buffer-c, c);
+	    count -= c;
+	}
+	if (loop) {
+	    NET2ADD(IAC, IAC);
+	    count--;
 	}
     }
 
-    if (done && !count) {
-	*nfrontp++ = IAC;
-	*nfrontp++ = EOR;
+    if (done) {
+	NET2ADD(IAC, IAC);
 	netflush();		/* try to move along as quickly as ... */
     }
     return(origCount - count);
@@ -123,7 +122,7 @@ int		done;		/* is this the last of a logical block */
 
 
 #if	defined(unix)
-static void
+void
 inputAvailable()
 {
     HaveInput = 1;
@@ -142,12 +141,6 @@ outputPurge()
  * routines make calls into telnet.c.
  */
 
-/* TtyChars() - returns the number of characters in the TTY buffer */
-TtyChars()
-{
-    return(tfrontp-tbackp);
-}
-
 /* DataToTerminal - queue up some data to go to terminal. */
 
 int
@@ -155,28 +148,40 @@ DataToTerminal(buffer, count)
 register char	*buffer;		/* where the data is */
 register int	count;			/* how much to send */
 {
+    register int loop, c;
     int origCount;
-#if	defined(unix)
-    fd_set	o;
 
-    FD_ZERO(&o);
-#endif	/* defined(unix) */
     origCount = count;
 
     while (count) {
-	if (tfrontp >= ttyobuf+sizeof ttyobuf) {
-	    ttyflush(0);
-	    while (tfrontp >= ttyobuf+sizeof ttyobuf) {
+	if (TTYROOM() == 0) {
+#if	defined(unix)
+	    fd_set o;
+
+	    FD_ZERO(&o);
+#endif	/* defined(unix) */
+	    ttyflush();
+	    while (TTYROOM() == 0) {
 #if	defined(unix)
 		FD_SET(tout, &o);
 		(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
 #endif	/* defined(unix) */
-		ttyflush(0);
+		ttyflush();
 	    }
 	}
-	*tfrontp++ = *buffer++;
-	count--;
+	c = loop = ring_empty_consecutive(&ttyoring);
+	while (loop) {
+	    if (*buffer == IAC) {
+		break;
+	    }
+	    buffer++;
+	    loop--;
+	}
+	if ((c = c-loop)) {
+	    ring_supply_data(&ttyoring, buffer-c, c);
+	    count -= c;
+	}
     }
     return(origCount - count);
 }
@@ -195,14 +200,14 @@ EmptyTerminal()
     FD_ZERO(&o);
 #endif	/* defined(unix) */
 
-    if (tfrontp == tbackp) {
+    if (TTYBYTES()) {
 #if	defined(unix)
 	FD_SET(tout, &o);
 	(void) select(tout+1, (int *) 0, &o, (int *) 0,
 			(struct timeval *) 0);	/* wait for TTLOWAT */
 #endif	/* defined(unix) */
     } else {
-	while (tfrontp != tbackp) {
+	while (TTYBYTES()) {
 	    ttyflush(0);
 #if	defined(unix)
 	    FD_SET(tout, &o);
@@ -218,24 +223,24 @@ EmptyTerminal()
  * Push3270 - Try to send data along the 3270 output (to screen) direction.
  */
 
-static int
+int
 Push3270()
 {
-    int save = scc;
+    int save = ring_full_count(&netiring);
 
-    if (scc) {
-	if (Ifrontp+scc > Ibuf+sizeof Ibuf) {
+    if (save) {
+	if (Ifrontp+save > Ibuf+sizeof Ibuf) {
 	    if (Ibackp != Ibuf) {
 		memcpy(Ibuf, Ibackp, Ifrontp-Ibackp);
 		Ifrontp -= (Ibackp-Ibuf);
 		Ibackp = Ibuf;
 	    }
 	}
-	if (Ifrontp+scc < Ibuf+sizeof Ibuf) {
+	if (Ifrontp+save < Ibuf+sizeof Ibuf) {
 	    telrcv();
 	}
     }
-    return save != scc;
+    return save != ring_full_count(&netiring);
 }
 
 
@@ -244,7 +249,7 @@ Push3270()
  *		before quitting.
  */
 
-static void
+void
 Finish3270()
 {
     while (Push3270() || !DoTerminalOutput()) {
@@ -280,10 +285,10 @@ void
 _putchar(c)
 char c;
 {
-    if (tfrontp >= ttyobuf+sizeof ttyobuf) {
+    if (TTYBYTES()) {
 	(void) DataToTerminal(&c, 1);
     } else {
-	*tfrontp++ = c;		/* optimize if possible. */
+	TTYADD(c);
     }
 }
 #endif	/* ((!defined(NOT43)) || defined(PUTCHAR)) */
@@ -406,4 +411,30 @@ tn3270_ttype()
 	return 0;
     }
 }
+
+#if	defined(unix)
+settranscom(argc, argv)
+	int argc;
+	char *argv[];
+{
+	int i, len = 0;
+
+	if (argc == 1 && transcom) {
+	   transcom = 0;
+	}
+	if (argc == 1) {
+	   return;
+	}
+	for (i = 1; i < argc; ++i) {
+	    len += 1 + strlen(argv[1]);
+	}
+	transcom = tline;
+	(void) strcpy(transcom, argv[1]);
+	for (i = 2; i < argc; ++i) {
+	    (void) strcat(transcom, " ");
+	    (void) strcat(transcom, argv[i]);
+	}
+}
+#endif	/* defined(unix) */
+
 #endif	/* defined(TN3270) */
