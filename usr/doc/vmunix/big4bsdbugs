@@ -1,0 +1,246 @@
+.bd S B 3
+.TL
+Fixes for Major Bugs in 4BSD
+.sp 1
+.br
+April 21,1981
+.br
+.sp
+.AU
+Kipp Hickman and Keith Sklower
+.AI
+Computer Systems Research Group
+Department of Electrical Engineering and Computer Science
+University of California, Berkeley
+Berkeley, California  94720
+(415) 642-7780
+.LP
+We consider the following to be the currently known major bugs in 4BSD.
+We feel the fixes should be installed at EVERY site.
+Some of the problems are insidious: they may look minor, but in fact
+have far-reaching consequences.
+We are currently setting up a mechanism for dealing with bugs in a
+more professional way and hope for your patience in the meantime.
+.sp 4
+.IP 1]
+C compiler wouldn't recompile awk; Pascal compiler bombs on
+run-time checks: it had trouble with arguments which
+are structures which are one word long (4 bytes).
+.DS
+.B
+%\ \ diff\ \ pcc/mac2defs\ \ new/pcc/mac2defs
+.R
+
+47c47
+< # define NESTCALL
+---
+> # define NESTCALLS
+.DE
+.IP 2]
+A problem in the libc 'modf' function caused programs using this to get
+strange answers (notably, f77 and pc double precision output conversion).
+.DS
+
+.B
+%\ \ diff\ \ libc/gen/modf.s\ \ new/libc/gen/modf.s
+.R
+
+22c22
+< 	emodf\ 	4(ap),$0,$0f1.0,r2,r0	# How did you like
+---
+> 	emodd	4(ap),$0,$0f1.0,r2,r0	# How did you like
+.DE
+.IP 3]
+Among other problems, the program ``dump'' behaves rudely
+when the notify
+option (-n) is not used.  The dump will successfully complete, but
+the program will demand another tape be mounted even though all data
+has been saved.
+Bill Shannon of DEC proposed the following fix:
+.br
+(a more extensively
+revised version of dump will be distributed soon).
+.DS
+
+.B
+%\ \ diff\ \ old/dump/dumpoptr.c\ \ new/dump/dumpoptr.c
+.R
+
+137a138,140
+> 	if (!notify || gp == 0)
+> 		return;
+> 
+149,150d151
+< 	if (!notify || gp == 0)
+< 		return;
+.DE
+.IP 4]
+The F77 library has the following two bugs:
+pow_zi (double-complex raised to a power) and z_sqrt (sqrt of
+double-complex) are in error.
+.DS
+
+.B
+%\ \ diff\ \ lib/libF77/pow_zi.c\ \ new/lib/libF77/pow_zi.c
+.R
+
+20c20
+< 	z_div(&x,a);
+---
+> 	z_div(&x, p, a);
+
+.B
+%\ \ diff\ \ lib/libF77/z_sqrt.c\ \ new/lib/libF77/z_sqrt.c
+.R
+18,19d17
+< 	if(z->dimag < 0)
+< 		z->dimag = - z->dimag;
+20a19,20
+> 	if(z->dimag < 0)
+> 		r->dreal = - r->dreal;
+.DE
+.IP 5]
+The F77 compiler had several problems.  The most debilitating was that
+using named block data routines caused the assembler to complain
+about undefined symbols. Also, the interface to sdb was badly
+mangled; namely, the F77 compiler was splitting up file names into
+8 character chunks.  
+.IP
+The following diff's show the crucial set of changes made to F77. Please
+note that more changes have been made and that a new release is pending.
+.DS
+.B
+
+
+%\ \ diff\ \ old/f77/init.c\ \ new/f77/init.c
+.R
+
+51a52
+> int lwmno;
+132a134
+> lwmno = 0;
+.B
+
+
+%\ \ diff\ \ old/f77/main.c\ \ new/f77/main.c
+.R
+
+159a160
+> #ifndef UCBPASS2
+165a167,169
+> #else
+> prstab(argv[0],N_SO,0,0);
+> #endif
+.DE
+.bp
+.DS
+.B
+
+
+%\ \ diff\ \ old/f77/proc.c\ \ new/f77/proc.c
+
+.R
+51c51
+< 
+---
+> fixlwm();
+
+.B
+%\ \ diff\ \ old/f77/vax.c\ \ new/f77/vax.c
+
+.R
+141c141
+< 	fprintf(fp, "\t.long\t0x%X\n", cheat.xl[0]);
+---
+> 	{float y = x; fprintf(fp, "\t.long\t0x%X\n", *(long *) &y); }
+318,319c318
+< 		fprintf(asmfile, "\t.set\tLWM%d,0x%x\n",
+< 			procno, regmask[highregvar]);
+---
+> 		fixlwm();
+333,334c332
+< 		fprintf(asmfile, "\t.set\tLWM%d,0x%x\n",
+< 			procno, regmask[highregvar]);
+---
+> 		fixlwm();
+453a452,460
+> fixlwm()
+> {
+> 	extern lwmno;
+> 	if (lwmno == procno)
+> 		return;
+> 	fprintf(asmfile, "\t.set\tLWM%d,0x%x\n",
+> 		procno, regmask[highregvar]);
+> 	lwmno = procno;
+> }
+456d462
+< 
+507c513
+< static char buff[50]	= "\t.stab\t\t";
+---
+> static char buff[512]	= "\t.stab\t\t";
+519c525
+< 	while(*s!='\0' && *s!=' ' && i<8)
+---
+> 	while(*s!='\0' && *s!=' ')
+520a527,530
+> #ifndef UCBPASS2
+> 		if (i == 8)
+> 			break;
+> #endif
+
+
+
+.DE
+.IP 6]
+A bug in the kernel caused 1/8 of the range of program
+counters never to be recorded:
+.DS
+
+
+.B
+diff old/sys/sys/locore.s new/sys/sys/locore.s
+.R
+
+977,978c977
+< 	bicb2	$1,r0
+< 	blss	9f
+___
+> 	bicl2	$1,r0
+
+.DE
+.sp 2
+.IP 7]
+In list directed input, negative numbers are converted incorrectly,
+fractional parts are taken as postive, and then added to (negative)
+integer parts.  Thus "read(5,*) x" when give -6.25 will transmit
+-5.75.
+Here is the fix:
+.DS
+
+
+.B
+% diff old/libI77/lread.c new/libI77/lread.c
+.R
+
+156c156
+< 	int i,ch,sign=0,da,db,dc;
+---
+> 	int i,ch,sign=0,da,db,dc,dd;
+179c179
+< 	if(isexp(GETC(ch))) db=rd_int(&d);
+---
+> 	if(isexp(GETC(ch))) dd=rd_int(&d);
+182c182
+< 		db = rd_int(&d);
+---
+> 		dd = rd_int(&d);
+186c186
+< 		db = 0;
+---
+> 		dd = 0;
+189c189
+< 	if(db > 0) poststar = 1;
+---
+> 	if(dd > 0) poststar = 1;
+.DE
