@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -168,29 +168,22 @@ getsocket(domain, type, sin)
 	int domain, type;
 	struct sockaddr_in *sin;
 {
-	int retry, s, on = 1;
+	int s, on = 1;
 
-	retry = 1;
-	while ((s = socket(domain, type, 0)) < 0 && retry) {
+	if (s = socket(domain, type, 0)) {
 		perror("socket");
-		sleep(5 * retry);
-		retry <<= 1;
-	}
-	if (retry == 0) {
 		syslog(LOG_ERR, "socket: %m");
 		return (-1);
 	}
 	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
 		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
-		exit(1);
+		close(s);
+		return (-1);
 	}
-	while (bind(s, sin, sizeof (*sin), 0) < 0 && retry) {
+	if (bind(s, sin, sizeof (*sin), 0) < 0) {
 		perror("bind");
-		sleep(5 * retry);
-		retry <<= 1;
-	}
-	if (retry == 0) {
 		syslog(LOG_ERR, "bind: %m");
+		close(s);
 		return (-1);
 	}
 	return (s);
