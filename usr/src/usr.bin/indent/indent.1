@@ -1,0 +1,251 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)indent.1	5.1 (Berkeley) %G%
+.\"
+.TH INDENT 1 "22 December 1977"
+.UC 5
+.SH NAME
+indent \- indent and format C program source
+.SH SYNOPSIS
+.B indent
+.I input
+[
+.I output
+] [
+.I flags
+]
+.SH DESCRIPTION
+.I Indent
+is intended primarily as a C program formatter.
+Specifically,
+.I indent
+will:
+.IP \(bu
+indent code lines
+.IP \(bu
+align comments
+.IP \(bu
+insert spaces around operators where necessary
+.IP \(bu
+break up declaration lists as in ``int a,b,c;''.
+.PP
+.I Indent
+will not break up long statements to make them fit within the
+maximum line length, but it will flag lines that are too long.  Lines
+will be broken so that each statement starts a new line, and braces
+will appear alone on a line.  (See the \-br option to inhibit this.)
+Also, an attempt is made to line up identifiers in declarations.
+.PP
+The 
+.I flags
+which can be specified follow. They
+may appear before or after the file names.
+If the
+.I output
+file is omitted, the formatted file will be written
+back into
+.I input
+and a ``backup'' copy of
+.I input
+will be written in the current directory.
+If
+.I input
+is named ``/blah/blah/file'',
+the backup file will be
+named ``.Bfile''.
+If
+.I output
+is specified,
+.I indent
+checks to make sure it is different from
+.IR input .
+.PP
+The following flags may be used to control the formatting
+style imposed by
+.IR indent .
+.TP 10
+.BI \-l nnn
+Maximum length of an output line.  The default is 75.
+.TP 10
+.BI \-c nnn
+The column in which comments will start.  The default is 33.
+.TP 10
+.BI \-cd nnn
+The column in which comments on declarations will start.  The default
+is for these comments to start in the same column as other comments.
+.TP 10
+.BI \-i nnn
+The number of spaces for one indentation level.  The default is 4.
+.TP 10
+.BR \-dj , \-ndj
+.B \-dj
+will cause declarations to be left justified. 
+.B \-ndj
+will cause
+them to be indented the same as code.  The default is
+.BR \-ndj .
+.TP 10
+.BR \-v , \-nv
+.B \-v turns on ``verbose'' mode,
+.B \-nv
+turns it off.  When in verbose mode,
+.I indent
+will report when it 
+splits one line of input into two or more lines of output,
+and it will give some size statistics at completion. 
+The default is
+.BR \-nv .
+.TP 10
+.BR \-bc , \-nbc
+If
+.B \-bc
+is specified, then a newline will be forced after each
+comma in a declaration. 
+.B \-nbc
+will turn off this option.  The default is
+.BR \-bc .
+.TP 10
+.BI \-d nnn
+This option controls the placement of comments
+which are not to the right of code.
+Specifying
+.B \-d2
+means that such comments will be placed two
+indentation levels to the left of code.
+The default
+.B \-d0
+lines up these comments with the code.
+See the section on comment indentation below.
+.TP 10
+.BR \-br , \-bl
+Specifying
+.B \-bl
+will cause
+complex statements to be lined up like this:
+.ne 4
+.nf
+    if (...)
+    {
+        code
+    }
+.fi
+Specifying
+.B \-br
+(the default) will make them look like this:
+.ne 3
+.nf
+    if (...) {
+        code
+    }
+.fi
+.PP
+You may set up your own ``profile'' of defaults to
+.I indent
+by creating the file ``.indent.pro'' in your login directory
+and including whatever switches you like.
+If
+.I indent
+is run and a profile file exists, then it is read
+to set up the program's defaults.
+Switches on the command line, though,
+will always override profile switches.
+The profile
+file must be a single line of not more than 127 characters.
+The switches should be separated on the line by spaces or tabs.
+.PP
+.B Multi-line expressions
+.PP
+.I Indent
+will not break up complicated expressions that extend over multiple
+lines, but it will usually correctly indent such expressions which have
+already been broken up.  Such an expression might end up looking like this:
+.ne 10
+.in +4
+.nf
+x =
+        (
+            (Arbitrary parenthesized expression)
+            +
+            (
+                (Parenthesized expression)
+                *
+                (Parenthesized expression)
+            )
+        );
+
+.fi
+.PP
+.B Comments
+.PP
+.I Indent
+recognizes four kinds of comments. 
+They are: straight text, ``box'' comments,
+UNIX-style comments,
+and comments that should be passed through unchanged. 
+The action taken with these
+various types are as follows:
+.PP
+.I ``Box'' comments.\ \  
+.I Indent
+assumes that any comment with a dash
+immediately after the start of comment (i.e. ``/*\-'')
+is a comment surrounded by a box of stars.  Each line
+of such a comment will be left unchanged,
+except that the first non-blank
+character of each successive line will be lined up with the beginning
+slash of the first line.  Box comments will be indented (see below).
+.PP
+.I ``Unix-style'' comments.\ \ 
+This is the type of section header which is used 
+extensively in the UNIX system source.  If the start
+of comment (``/*'') appears on a
+line by itself, indent assumes that it is a
+UNIX-style comment.  These will be
+treated similarly to box comments, except
+the first non-blank character on each
+line will be lined up with the `*' of the ``/*''.
+.PP
+.I Unchanged comments.\ \ 
+Any comment which starts in column 1 will be left completely
+unchanged.  This is intended primarily for documentation header pages.
+The check for unchanged comments is made before
+the check for UNIX-style comments.
+.PP
+.I Straight text.\ \ 
+All other comments are treated as straight text. 
+.I Indent
+will fit
+as many words (separated by blanks, tabs, or newlines) on a line as possible.
+Straight text comments will be indented.
+.PP
+.B Comment indentation
+.PP
+Box, UNIX-style, and straight text comments may be indented.
+If a comment is on a line
+with code it will be started in the ``comment
+column'', which is set by the
+.B \-cnnn
+command line parameter.
+Otherwise, the
+comment will be started at 
+.I nnn
+indentation levels less than where code is
+currently being placed, where
+.I nnn
+is specified by the
+.B \-dnnn
+command line parameter.  (Indented
+comments will never be placed in column 1.)
+If the code on a line extends past the comment column,
+the comment will be moved to the next line.
+.SH DIAGNOSTICS
+Diagnostic error messages, mostly to
+tell that a text line has been broken
+or is too long for the output line.
+.SH FILES
+.DT
+\&.indent.pro	profile file
+.SH BUGS
+Does not know how to format ``long'' declarations.
