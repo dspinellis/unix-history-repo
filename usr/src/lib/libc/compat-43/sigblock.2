@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigblock.2	6.2 (Berkeley) %G%
+.\"	@(#)sigblock.2	6.3 (Berkeley) %G%
 .\"
 .TH SIGBLOCK 2 ""
 .UC 5
@@ -23,7 +23,7 @@ causes the signals specified in
 to be added to the set of signals currently
 being blocked from delivery.
 Signals are blocked if the
-corresding bit in 
+corresponding bit in 
 .I mask
 is a 1; the macro
 .I sigmask
