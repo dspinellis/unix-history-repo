@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)portal_vnops.c	8.13 (Berkeley) %G%
  *
  * $Id: portal_vnops.c,v 1.4 1992/05/30 10:05:24 jsp Exp jsp $
  */
@@ -630,12 +630,14 @@ portal_nullop()
 #define portal_readlink \
 	((int (*) __P((struct  vop_readlink_args *)))portal_enotsupp)
 #define portal_abortop ((int (*) __P((struct  vop_abortop_args *)))nullop)
-#define portal_lock ((int (*) __P((struct  vop_lock_args *)))nullop)
-#define portal_unlock ((int (*) __P((struct  vop_unlock_args *)))nullop)
+#define portal_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define portal_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 #define portal_bmap ((int (*) __P((struct  vop_bmap_args *)))portal_badop)
 #define portal_strategy \
 	((int (*) __P((struct  vop_strategy_args *)))portal_badop)
-#define portal_islocked ((int (*) __P((struct  vop_islocked_args *)))nullop)
+#define portal_islocked \
+	((int (*) __P((struct vop_islocked_args *)))vop_noislocked)
+#define fifo_islocked ((int(*) __P((struct vop_islocked_args *)))vop_noislocked)
 #define portal_advlock \
 	((int (*) __P((struct  vop_advlock_args *)))portal_enotsupp)
 #define portal_blkatoff \
