@@ -1,6 +1,6 @@
 .\"
 .\"	Copyright (c) 1982 Regents of the University of California
-.\"	@(#)asdocs0.me 1.2 %G%
+.\"	@(#)asdocs0.me 1.3 %G%
 .\"
 .nr si 1n
 .ds UX \s-2UNIX\s+2
@@ -14,12 +14,14 @@
 .ds DL $
 .ds US \s-2\d\-\u\s+2
 .ds UL \s-2\d\-\u\s+2
-.ds TD August 12, 1982
-.oh 'Assembler Reference Manual''%'
-.eh '%''Assembler Reference Manual'
+.ds TD February 9, 1983
+.ds VS Berkeley VAX/UNIX
+.ds AM Assembler Reference Manual
+.oh '\*(VS \*(AM''%'
+.eh '%''\*(VS \*(AM'
 .of ''\*(TD'%'
 .ef '%'\*(TD''
 .de SH
 .sh "\\$1" "\\$2"
-.tm Starting with section \\$1 \\$2
+.\".tm Starting with section \\$1 \\$2
 ..
