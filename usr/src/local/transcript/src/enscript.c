@@ -1,6 +1,6 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
-static char sccsid[] = "@(#)enscript.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)enscript.c	1.5 (Berkeley) %G%";
 static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 
 #endif
@@ -360,6 +360,15 @@ DefineFont (name, size)
 	return (nf++);
 }
 
+ResetFont(indx, name, size)
+	char   *name;
+{
+	register struct font *p;
+
+	p = &fonts[indx];
+	VOIDC   strcpy (p->name, name);
+	p->dsize = size;
+}
 
 /* dump the fonts to the PS file for setup */
 private VOID 
@@ -909,6 +918,10 @@ private VOID ParseArgs (ac, av)
 				UsersHeader = "";
 			if (Header == NULL)
 				Header = "";
+			/* warning: fonts must be defined in this order! */
+			ResetFont(HeaderFont, GHEADFONT, GHEADSZ);
+			if (SHeaderFont == -1)
+				SHeaderFont = DefineFont(SHEADFONT, SHEADSZ);
 			DateFont = DefineFont(DATEFONT, DATESZ);
 			PgNumFont = DefineFont(PGNUMFONT, PGNUMSZ);
 			break;
@@ -1135,6 +1148,7 @@ main (argc, argv)
 		tempdir = TempDir;
 
 	Roman = CurFont = DefineFont (BODYROMAN, BODYSZ);
+	HeaderFont = DefineFont (HEADFONT, HEADSZ);
 
 	/* process args in environment variable ENSCRIPT */
 	if (p = envget ("ENSCRIPT")) {
@@ -1162,15 +1176,6 @@ main (argc, argv)
 	/* process the command line arguments */
 	optind = 1;		/* reset getopt global */
 	ParseArgs (argc, argv);
-	if (!Gaudy) {
-		if (HeaderFont == -1)
-			HeaderFont = DefineFont (HEADFONT, HEADSZ);
-	} else {
-		if (HeaderFont == -1)
-			HeaderFont = DefineFont (GHEADFONT, GHEADSZ);
-		if (SHeaderFont == -1)
-			SHeaderFont = DefineFont(SHEADFONT, SHEADSZ);
-	}
 
 	/* process non-option args */
 	for (; optind < argc; optind++) {
