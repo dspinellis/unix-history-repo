@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -160,15 +160,6 @@ flush()
 		return;
 	if (write(1, obuf, n) != n)
 		screen_trashed = 1;
-	ob = obuf;
-}
-
-/*
- * Discard buffered output.
- */
-	public void
-dropout()
-{
 	ob = obuf;
 }
 
