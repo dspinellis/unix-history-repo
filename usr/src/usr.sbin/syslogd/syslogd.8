@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)syslogd.8	6.7 (Berkeley) %G%
+.\"	@(#)syslogd.8	6.8 (Berkeley) %G%
 .\"
 .TH SYSLOGD 8 ""
 .UC 5
@@ -177,7 +177,7 @@ it should be sent a terminate signal (e.g. kill \`cat /var/run/syslog.pid\`).
 .ta \w'/etc/syslog.conf    'u
 .nf
 /etc/syslog.conf	the configuration file
-/etc/syslog.pid	the process id
+/var/run/syslog.pid	the process id
 /dev/log	Name of the UNIX domain datagram log socket
 /dev/klog	The kernel log device
 .fi
