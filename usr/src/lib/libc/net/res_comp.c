@@ -16,12 +16,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <stdio.h>
 #include <arpa/nameser.h>
+
+static dn_find();
 
 /*
  * Expand compressed domain name 'comp_dn' to full domain name.
