@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)input.c	1.8 (Berkeley) 83/06/14";
+static	char *sccsid = "@(#)input.c	1.9 (Berkeley) 84/05/08";
 #include <stdio.h>
 #include <ctype.h>
 #include "error.h"
@@ -44,8 +44,8 @@ eaterrors(r_errorc, r_errorv)
 	 *	of 0 based.
 	 */
 	wordv -= 1;
-	if ( 0
-	   || (( errorclass = onelong() ) != C_UNKNOWN)
+	if ( wordc > 0 &&
+	   ((( errorclass = onelong() ) != C_UNKNOWN)
 	   || (( errorclass = cpp() ) != C_UNKNOWN)
 	   || (( errorclass = pccccom() ) != C_UNKNOWN)
 	   || (( errorclass = richieccom() ) != C_UNKNOWN)
@@ -57,7 +57,7 @@ eaterrors(r_errorc, r_errorv)
 	   || (( errorclass = f77() ) != C_UNKNOWN)
 	   || ((errorclass = pi() ) != C_UNKNOWN)
 	   || (( errorclass = ri() )!= C_UNKNOWN)
-	   || (( errorclass = troff() )!= C_UNKNOWN)
+	   || (( errorclass = troff() )!= C_UNKNOWN))
 	) ;
 	else
 		errorclass = catchall();
@@ -130,7 +130,7 @@ Errorclass onelong()
 		 *	c)	Random noise
 		 */
 		wordc = 0;
-		if (strcmp(wordv[2], "Stop.") == 0){
+		if (strcmp(wordv[1], "Stop.") == 0){
 			language = INMAKE; return(C_SYNC);
 		}
 		if (strcmp(wordv[1], "Assembler:") == 0){
@@ -207,6 +207,7 @@ Errorclass pccccom()
 		clob_last(wordv[3], '\0');	/* drop : on line number */
 		wordv[2] = wordv[1];	/* overwrite "line" */
 		wordv++;		/*compensate*/
+		wordc--;
 		currentfilename = wordv[1];
 		language = INCC;
 		return(C_TRUE);
