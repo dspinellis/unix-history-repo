@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,9 +27,6 @@ static char sccsid[] = "@(#)dir.c	5.11 (Berkeley) %G%";
 #undef KERNEL
 #include "fsck.h"
 
-#define MINDIRSIZE	(sizeof (struct dirtemplate))
-
-char	*endpathname = &pathname[BUFSIZ - 2];
 char	*lfname = "lost+found";
 int	lfmode = 01777;
 struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
@@ -38,57 +35,34 @@ struct	dirtemplate dirhead = { 0, 12, 1, ".", 0, DIRBLKSIZ - 12, 2, ".." };
 struct direct	*fsck_readdir();
 struct bufarea	*getdirblk();
 
-descend(parentino, inumber)
-	struct inodesc *parentino;
-	ino_t inumber;
+/*
+ * Propagate connected state through the tree.
+ */
+propagate()
 {
-	register struct dinode *dp;
-	struct inodesc curino;
+	register struct inoinfo **inpp, *inp;
+	struct inoinfo **inpend;
+	long change;
 
-	bzero((char *)&curino, sizeof(struct inodesc));
-	if (statemap[inumber] != DSTATE)
-		errexit("BAD INODE %d TO DESCEND", statemap[inumber]);
-	statemap[inumber] = DFOUND;
-	dp = getcacheino(inumber);
-	if (dp->di_size == 0) {
-		direrror(inumber, "ZERO LENGTH DIRECTORY");
-		if (reply("REMOVE") == 1)
-			statemap[inumber] = DCLEAR;
-		return;
-	}
-	if (dp->di_size < MINDIRSIZE) {
-		direrror(inumber, "DIRECTORY TOO SHORT");
-		dp->di_size = MINDIRSIZE;
-		if (reply("FIX") == 1) {
-			dp = ginode(inumber);
-			dp->di_size = MINDIRSIZE;
-			inodirty();
+	inpend = &inpsort[inplast];
+	do {
+		change = 0;
+		for (inpp = inpsort; inpp < inpend; inpp++) {
+			inp = *inpp;
+			if (inp->i_parent == 0)
+				continue;
+			if (statemap[inp->i_parent] == DFOUND &&
+			    statemap[inp->i_number] == DSTATE) {
+				statemap[inp->i_number] = DFOUND;
+				change++;
+			}
 		}
-	}
-	if ((dp->di_size & (DIRBLKSIZ - 1)) != 0) {
-		pwarn("DIRECTORY %s: LENGTH %d NOT MULTIPLE OF %d",
-			pathname, dp->di_size, DIRBLKSIZ);
-		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
-		if (preen)
-			printf(" (ADJUSTED)\n");
-		if (preen || reply("ADJUST") == 1) {
-			dp = ginode(inumber);
-			dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
-			inodirty();
-		}
-	}
-	curino.id_type = DATA;
-	curino.id_func = parentino->id_func;
-	curino.id_parent = parentino->id_number;
-	curino.id_number = inumber;
-	(void)ckinode(dp, &curino);
-	if (curino.id_entryno < 2) {
-		direrror(inumber, "NULL DIRECTORY");
-		if (reply("REMOVE") == 1)
-			statemap[inumber] = DCLEAR;
-	}
+	} while (change > 0);
 }
 
+/*
+ * Scan each entry in a directory block.
+ */
 dirscan(idesc)
 	register struct inodesc *idesc;
 {
@@ -210,21 +184,31 @@ direrror(ino, errmesg)
 	ino_t ino;
 	char *errmesg;
 {
+
+	fileerror(ino, ino, errmesg);
+}
+
+fileerror(cwd, ino, errmesg)
+	ino_t cwd, ino;
+	char *errmesg;
+{
 	register struct dinode *dp;
+	char pathbuf[MAXPATHLEN + 1];
 
 	pwarn("%s ", errmesg);
 	pinode(ino);
 	printf("\n");
+	getpathname(pathbuf, cwd, ino);
 	if (ino < ROOTINO || ino > maxino) {
-		pfatal("NAME=%s\n", pathname);
+		pfatal("NAME=%s\n", pathbuf);
 		return;
 	}
 	dp = ginode(ino);
 	if (ftypeok(dp))
 		pfatal("%s=%s\n",
-		    (dp->di_mode & IFMT) == IFDIR ? "DIR" : "FILE", pathname);
+		    (dp->di_mode & IFMT) == IFDIR ? "DIR" : "FILE", pathbuf);
 	else
-		pfatal("NAME=%s\n", pathname);
+		pfatal("NAME=%s\n", pathbuf);
 }
 
 adjust(idesc, lcnt)
@@ -264,7 +248,7 @@ mkentry(idesc)
 	struct direct newent;
 	int newlen, oldlen;
 
-	newent.d_namlen = 11;
+	newent.d_namlen = strlen(idesc->id_name);
 	newlen = DIRSIZ(&newent);
 	if (dirp->d_ino != 0)
 		oldlen = DIRSIZ(dirp);
@@ -277,7 +261,7 @@ mkentry(idesc)
 	dirp = (struct direct *)(((char *)dirp) + oldlen);
 	dirp->d_ino = idesc->id_parent;	/* ino to be entered is in id_parent */
 	dirp->d_reclen = newent.d_reclen;
-	dirp->d_namlen = strlen(idesc->id_name);
+	dirp->d_namlen = newent.d_namlen;
 	bcopy(idesc->id_name, dirp->d_name, (int)dirp->d_namlen + 1);
 	return (ALTERED|STOP);
 }
@@ -298,7 +282,7 @@ linkup(orphan, parentdir)
 	ino_t parentdir;
 {
 	register struct dinode *dp;
-	int lostdir, len;
+	int lostdir;
 	ino_t oldlfdir;
 	struct inodesc idesc;
 	char tempname[BUFSIZ];
@@ -316,9 +300,6 @@ linkup(orphan, parentdir)
 	else
 		if (reply("RECONNECT") == 0)
 			return (0);
-	pathp = pathname;
-	*pathp++ = '/';
-	*pathp = '\0';
 	if (lfdir == 0) {
 		dp = ginode(ROOTINO);
 		idesc.id_name = lfname;
@@ -360,12 +341,7 @@ linkup(orphan, parentdir)
 			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY\n\n");
 			return (0);
 		}
-		idesc.id_type = DATA;
-		idesc.id_func = chgino;
-		idesc.id_number = ROOTINO;
-		idesc.id_parent = lfdir;	/* new inumber for lost+found */
-		idesc.id_name = lfname;
-		if ((ckinode(ginode(ROOTINO), &idesc) & ALTERED) == 0) {
+		if ((changeino(ROOTINO, lfname, lfdir) & ALTERED) == 0) {
 			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY\n\n");
 			return (0);
 		}
@@ -381,38 +357,48 @@ linkup(orphan, parentdir)
 		pfatal("SORRY. NO lost+found DIRECTORY\n\n");
 		return (0);
 	}
-	len = strlen(lfname);
-	bcopy(lfname, pathp, len + 1);
-	pathp += len;
-	len = lftempname(tempname, orphan);
+	(void)lftempname(tempname, orphan);
 	if (makeentry(lfdir, orphan, tempname) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
 	}
 	lncntp[orphan]--;
-	*pathp++ = '/';
-	bcopy(tempname, pathp, len + 1);
-	pathp += len;
 	if (lostdir) {
-		dp = ginode(orphan);
-		idesc.id_type = DATA;
-		idesc.id_func = chgino;
-		idesc.id_number = orphan;
-		idesc.id_fix = DONTKNOW;
-		idesc.id_name = "..";
-		idesc.id_parent = lfdir;	/* new value for ".." */
-		(void)ckinode(dp, &idesc);
+		if ((changeino(orphan, "..", lfdir) & ALTERED) == 0 &&
+		    parentdir != (ino_t)-1)
+			makeentry(orphan, lfdir, "..");
 		dp = ginode(lfdir);
 		dp->di_nlink++;
 		inodirty();
 		lncntp[lfdir]++;
 		pwarn("DIR I=%u CONNECTED. ", orphan);
-		printf("PARENT WAS I=%u\n", parentdir);
+		if (parentdir != (ino_t)-1)
+			printf("PARENT WAS I=%u\n", parentdir);
 		if (preen == 0)
 			printf("\n");
 	}
 	return (1);
+}
+
+/*
+ * fix an entry in a directory.
+ */
+changeino(dir, name, newnum)
+	ino_t dir;
+	char *name;
+	ino_t newnum;
+{
+	struct inodesc idesc;
+
+	bzero((char *)&idesc, sizeof(struct inodesc));
+	idesc.id_type = DATA;
+	idesc.id_func = chgino;
+	idesc.id_number = dir;
+	idesc.id_fix = DONTKNOW;
+	idesc.id_name = name;
+	idesc.id_parent = newnum;	/* new value for name */
+	return (ckinode(ginode(dir), &idesc));
 }
 
 /*
@@ -424,6 +410,7 @@ makeentry(parent, ino, name)
 {
 	struct dinode *dp;
 	struct inodesc idesc;
+	char pathbuf[MAXPATHLEN + 1];
 	
 	if (parent < ROOTINO || parent >= maxino ||
 	    ino < ROOTINO || ino >= maxino)
@@ -442,7 +429,9 @@ makeentry(parent, ino, name)
 	}
 	if ((ckinode(dp, &idesc) & ALTERED) != 0)
 		return (1);
-	if (expanddir(dp) == 0)
+	getpathname(pathbuf, parent, parent);
+	dp = ginode(parent);
+	if (expanddir(dp, pathbuf) == 0)
 		return (0);
 	return (ckinode(dp, &idesc) & ALTERED);
 }
@@ -450,8 +439,9 @@ makeentry(parent, ino, name)
 /*
  * Attempt to expand the size of a directory
  */
-expanddir(dp)
+expanddir(dp, name)
 	register struct dinode *dp;
+	char *name;
 {
 	daddr_t lastbn, newblk;
 	register struct bufarea *bp;
@@ -485,7 +475,7 @@ expanddir(dp)
 	if (bp->b_errs)
 		goto bad;
 	bcopy((char *)&emptydir, bp->b_un.b_buf, sizeof emptydir);
-	pwarn("NO SPACE LEFT IN %s", pathname);
+	pwarn("NO SPACE LEFT IN %s", name);
 	if (preen)
 		printf(" (EXPANDED)\n");
 	else if (reply("EXPAND") == 0)
