@@ -1,0 +1,42 @@
+.UC
+.TH VWRITE 2
+.SH NAME
+vwrite \- write (virtually) to file
+.SH SYNOPSIS
+\fBvwrite(filedes, buffer, nbytes)\fR
+.br
+\fBchar *buffer;\fR
+.SH DESCRIPTION
+The
+.I vwrite
+system call is used in conjunction with
+.I vread
+to perform efficient updating of large files.
+After a call to
+.I vread
+and updating of the data in the buffer which was given to
+.I vread,
+a
+.I vwrite
+of the same buffer to the same
+.I filedes
+at the same offset in the file
+will cause data which has been modified since it was
+.I vread
+from (or
+.I vwritten
+to) the file to be returned to the file.
+.SH SEE ALSO
+vread(2)
+.SH DIAGNOSTICS
+Returns \-1 on error: bad descriptor, buffer address, count or alignment
+as well as on physical I/O errors.
+.SH BUGS
+The result of
+.I vwrite
+is defined only when no other
+.I vread's
+have occured on
+.I buffer
+since the one matching the
+.I vwrite.
