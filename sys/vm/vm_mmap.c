@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.16 1993/12/19 00:56:06 wollman Exp $
+ *	$Id: vm_mmap.c,v 1.17 1993/12/24 08:57:15 davidg Exp $
  */
 
 /*
@@ -146,6 +146,7 @@ smmap(p, uap, retval)
 		       p->p_pid, uap->addr, uap->len, uap->prot,
 		       uap->flags, uap->fd, uap->pos);
 #endif
+
 	/*
 	 * Make sure one of the sharing types is specified
 	 */
@@ -157,6 +158,7 @@ smmap(p, uap, retval)
 	default:
 		return(EINVAL);
 	}
+
 	/*
 	 * Address (if FIXED) must be page aligned.
 	 * Size is implicitly rounded to a page boundary.
@@ -165,10 +167,7 @@ smmap(p, uap, retval)
 	if ((flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t) round_page(uap->len);
-	if (addr + size >= VM_MAXUSER_ADDRESS)
-		return(EINVAL);
-	if ((size != 0) && (addr >= addr + size))
-		return(EINVAL);
+
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
 	 * the end of the largest possible heap.
@@ -178,6 +177,12 @@ smmap(p, uap, retval)
 	 */
 	if (addr == 0 && (flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
+
+	if (addr + size >= VM_MAXUSER_ADDRESS)
+		return(EINVAL);
+	if (addr > addr + size)
+		return(EINVAL);
+
 	/*
 	 * Mapping file or named anonymous, get fp for validation
 	 */
@@ -186,6 +191,23 @@ smmap(p, uap, retval)
 		    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
 			return(EBADF);
 	}
+
+	/*
+	 * Set initial maximum protection
+	 */
+	maxprot = VM_PROT_ALL;
+
+	/*
+	 * Map protections to MACH style
+	 */
+	prot = VM_PROT_NONE;
+	if (uap->prot & PROT_READ)
+		prot |= VM_PROT_READ;
+	if (uap->prot & PROT_WRITE)
+		prot |= VM_PROT_WRITE;
+	if (uap->prot & PROT_EXEC)
+		prot |= VM_PROT_EXECUTE;
+
 	/*
 	 * If we are mapping a file we need to check various
 	 * file/vnode related things.
@@ -199,45 +221,36 @@ smmap(p, uap, retval)
 		vp = (struct vnode *)fp->f_data;
 		if (vp->v_type != VREG && vp->v_type != VCHR)
 			return(EINVAL);
+
 		/*
-		 * Ensure that file protection and desired protection
-		 * are compatible.  Note that we only worry about writability
-		 * if mapping is shared.
+		 * Set maxprot according to file protection.
+		 * If the file is the backing store, enable maxprot write
+		 *	if the file protection allows. If the file isn't
+		 *	the backing store, enable writes.
 		 */
-		if ((uap->prot & PROT_READ) && (fp->f_flag & FREAD) == 0 ||
-		    ((flags & MAP_SHARED) &&
-		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
-			return(EACCES);
-		handle = (caddr_t)vp;
-		/*
-		 * PATCH GVR 25-03-93
-		 * Map protections to MACH style
-		 */
-		if(uap->flags & MAP_SHARED) {
-			maxprot = VM_PROT_EXECUTE;
-			if (fp->f_flag & FREAD)
-				maxprot |= VM_PROT_READ;
+		maxprot = VM_PROT_NONE;
+		if (fp->f_flag & FREAD)
+			maxprot |= VM_PROT_READ|VM_PROT_EXECUTE;
+		if (uap->flags & MAP_SHARED) {
 			if (fp->f_flag & FWRITE)
 				maxprot |= VM_PROT_WRITE;
-		} else
-			maxprot = VM_PROT_ALL;
+		} else {
+			maxprot |= VM_PROT_WRITE;
+		}
+
+		/*
+		 * Ensure that calculated maximum protection and desired
+		 * protection are compatible.
+		 */
+		if ((maxprot & prot) != prot)
+			return(EACCES);
+
+		handle = (caddr_t)vp;
 	} else if (uap->fd != -1) {
-		maxprot = VM_PROT_ALL;
 		handle = (caddr_t)fp;
 	} else {
-		maxprot = VM_PROT_ALL;
 		handle = NULL;
 	}
-	/*
-	 * Map protections to MACH style
-	 */
-	prot = VM_PROT_NONE;
-	if (uap->prot & PROT_READ)
-		prot |= VM_PROT_READ;
-	if (uap->prot & PROT_WRITE)
-		prot |= VM_PROT_WRITE;
-	if (uap->prot & PROT_EXEC)
-		prot |= VM_PROT_EXECUTE;
 
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
 			flags, handle, (vm_offset_t)uap->pos);
