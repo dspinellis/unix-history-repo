@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.2 (Berkeley) %G%
+ *	@(#)machdep.c	7.3 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -492,12 +492,15 @@ setregs(p, entry, retval)
 	int retval[2];
 {
 	int sp = p->p_md.md_regs[SP];
+	extern struct proc *machFPCurProcPtr;
 
 	bzero((caddr_t)p->p_md.md_regs, (FSR + 1) * sizeof(int));
 	p->p_md.md_regs[SP] = sp;
 	p->p_md.md_regs[PC] = entry;
 	p->p_md.md_regs[PS] = PSL_USERSET;
 	p->p_md.md_flags & ~MDP_FPUSED;
+	if (machFPCurProcPtr == p)
+		machFPCurProcPtr == (struct proc *)0;
 }
 
 /*
