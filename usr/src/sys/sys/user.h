@@ -4,24 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)user.h	7.13 (Berkeley) %G%
+ *	@(#)user.h	7.14 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-#include "machine/pcb.h"
-#include "dmap.h"
-#include "time.h"
-#include "resource.h"
-#include "namei.h"
-#include "ucred.h"
-#else
 #include <machine/pcb.h>
 #include <sys/dmap.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/namei.h>
 #include <sys/ucred.h>
-#endif
 
 /*
  * Per process structure containing data that
