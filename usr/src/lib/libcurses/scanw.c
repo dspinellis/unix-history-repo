@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scanw.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanw.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)scanw.c	5.9 (Berkeley) %G%";
 #include <varargs.h>
 #endif
 
-static int __sscans __P((WINDOW *, const char *, ...));
+static int __sscans __P((WINDOW *, const char *, va_list));
 
 /*
  * scanw --
@@ -139,16 +139,12 @@ mvwscanw(win, y, x, fmt, va_alist)
  *	THIS SHOULD BE RENAMED vwscanw AND EXPORTED
  */
 static int
-#if __STDC__
-__sscans(WINDOW *win, const char *fmt, ...)
-#else
 __sscans(win, fmt, ap)
 	WINDOW *win;
-	char *fmt;
-	va_dcl;
-#endif
-{
+	const char *fmt;
 	va_list ap;
+{
+
 	char buf[1024];
 
 	return (wgetstr(win, buf) == OK ? vsscanf(buf, fmt, ap) : ERR);
