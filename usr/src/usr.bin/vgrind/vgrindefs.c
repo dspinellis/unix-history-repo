@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vgrindefs.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vgrindefs.c	4.3 (Berkeley) %G%";
 #endif
 
 /* Copyright (c) 1979 Regents of the University of California */
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)vgrindefs.c	4.2 (Berkeley) %G%";
  */
 
 static	char *tbuf;
+static	char *filename;
 static	int hopcount;	/* detect infinite loops in termcap, init 0 */
 char	*tskip();
 char	*tgetstr();
@@ -35,8 +36,8 @@ char	*getenv();
  * from the termcap file.  Parse is very rudimentary;
  * we just notice escaped newlines.
  */
-tgetent(bp, name, filename)
-	char *bp, *name, *filename;
+tgetent(bp, name, file)
+	char *bp, *name, *file;
 {
 	register char *cp;
 	register int c;
@@ -47,6 +48,7 @@ tgetent(bp, name, filename)
 
 	tbuf = bp;
 	tf = 0;
+	filename = file;
 	tf = open(filename, 0);
 	if (tf < 0)
 		return (-1);
@@ -121,7 +123,7 @@ tnchktc()
 		write(2, "Infinite tc= loop\n", 18);
 		return (0);
 	}
-	if (tgetent(tcbuf, tcname) != 1)
+	if (tgetent(tcbuf, tcname, filename) != 1)
 		return(0);
 	for (q=tcbuf; *q != ':'; q++)
 		;
