@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.17 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -46,23 +46,24 @@
 			sigmask(SIGCHLD)|sigmask(SIGWINCH)|sigmask(SIGINFO))
 
 /*
- * Can the current process (u.u_procp) send the specified signal
- * to the specified process?
+ * Can process p send the signal signo to process q?
  */
-#define CANSIGNAL(p, signo) \
-	(u.u_uid == 0 || \
-	    u.u_uid == (p)->p_uid || u.u_uid == (p)->p_ruid || \
-	    u.u_procp->p_ruid == (p)->p_uid || \
-	    u.u_procp->p_ruid == (p)->p_ruid || \
-	    ((signo) == SIGCONT && (p)->p_session == u.u_procp->p_session))
+#define CANSIGNAL(p, q, signo) \
+	((p)->p_uid == 0 || \
+	    (p)->p_ruid == (q)->p_ruid || (p)->p_uid == (q)->p_ruid || \
+	    (p)->p_ruid == (q)->p_uid || (p)->p_uid == (q)->p_uid || \
+	    ((signo) == SIGCONT && (q)->p_session == (p)->p_session))
 
-sigaction()
-{
-	register struct a {
+/* ARGSUSED */
+sigaction(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	signo;
 		struct	sigaction *nsa;
 		struct	sigaction *osa;
-	} *uap = (struct a  *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct sigaction vec;
 	register struct sigaction *sa;
 	register int sig;
@@ -81,7 +82,7 @@ sigaction()
 			sa->sa_flags |= SA_ONSTACK;
 		if ((u.u_sigintr & bit) == 0)
 			sa->sa_flags |= SA_RESTART;
-		if (u.u_procp->p_flag & SNOCLDSTOP)
+		if (p->p_flag & SNOCLDSTOP)
 			sa->sa_flags |= SA_NOCLDSTOP;
 		if (error = copyout((caddr_t)sa, (caddr_t)uap->osa,
 		    sizeof (vec)))
@@ -91,20 +92,19 @@ sigaction()
 		if (error = copyin((caddr_t)uap->nsa, (caddr_t)sa,
 		    sizeof (vec)))
 			RETURN (error);
-		setsigvec(sig, sa);
+		setsigvec(p, sig, sa);
 	}
 	RETURN (0);
 }
 
-setsigvec(sig, sa)
+setsigvec(p, sig, sa)
+	register struct proc *p;
 	int sig;
 	register struct sigaction *sa;
 {
-	register struct proc *p;
 	register int bit;
 
 	bit = sigmask(sig);
-	p = u.u_procp;
 	/*
 	 * Change setting atomically.
 	 */
@@ -197,16 +197,17 @@ execsigs(p)
  * and return old mask as return value;
  * the library stub does the rest.
  */
-sigprocmask()
-{
-	struct a {
+sigprocmask(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		int	how;
 		sigset_t mask;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 	int error = 0;
 
-	u.u_r.r_val1 = p->p_sigmask;
+	*retval = p->p_sigmask;
 	(void) splhigh();
 
 	switch (uap->how) {
@@ -230,10 +231,14 @@ sigprocmask()
 	RETURN (error);
 }
 
-sigpending()
+/* ARGSUSED */
+sigpending(p, uap, retval)
+	struct proc *p;
+	void *uap;
+	int *retval;
 {
 
-	u.u_r.r_val1 = u.u_procp->p_sig;
+	*retval = p->p_sig;
 	RETURN (0);
 }
 
@@ -241,13 +246,16 @@ sigpending()
 /*
  * Generalized interface signal handler, 4.3-compatible.
  */
-osigvec()
-{
-	register struct a {
+/* ARGSUSED */
+osigvec(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	signo;
 		struct	sigvec *nsv;
 		struct	sigvec *osv;
-	} *uap = (struct a  *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct sigvec vec;
 	register struct sigvec *sv;
 	register int sig;
@@ -266,7 +274,7 @@ osigvec()
 			sv->sv_flags |= SV_ONSTACK;
 		if ((u.u_sigintr & bit) != 0)
 			sv->sv_flags |= SV_INTERRUPT;
-		if (u.u_procp->p_flag & SNOCLDSTOP)
+		if (p->p_flag & SNOCLDSTOP)
 			sv->sv_flags |= SA_NOCLDSTOP;
 		if (error = copyout((caddr_t)sv, (caddr_t)uap->osv,
 		    sizeof (vec)))
@@ -277,34 +285,36 @@ osigvec()
 		    sizeof (vec)))
 			RETURN (error);
 		sv->sv_flags ^= SA_RESTART;	/* opposite of SV_INTERRUPT */
-		setsigvec(sig, (struct sigaction *)sv);
+		setsigvec(p, sig, (struct sigaction *)sv);
 	}
 	RETURN (0);
 }
 
-osigblock()
-{
-	struct a {
+osigblock(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		int	mask;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 
 	(void) splhigh();
-	u.u_r.r_val1 = p->p_sigmask;
+	*retval = p->p_sigmask;
 	p->p_sigmask |= uap->mask &~ sigcantmask;
 	(void) spl0();
 	RETURN (0);
 }
 
-osigsetmask()
-{
-	struct a {
+osigsetmask(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	mask;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 
 	(void) splhigh();
-	u.u_r.r_val1 = p->p_sigmask;
+	*retval = p->p_sigmask;
 	p->p_sigmask = uap->mask &~ sigcantmask;
 	(void) spl0();
 	RETURN (0);
@@ -316,12 +326,14 @@ osigsetmask()
  * in the meantime.  Note nonstandard calling convention:
  * libc stub passes mask, not pointer, to save a copyin.
  */
-sigsuspend()
-{
-	struct a {
+/* ARGSUSED */
+sigsuspend(p, uap, retval)
+	register struct proc *p;
+	struct args {
 		sigset_t mask;
-	} *uap = (struct a *)u.u_ap;
-	register struct proc *p = u.u_procp;
+	} *uap;
+	int *retval;
+{
 
 	/*
 	 * When returning from sigpause, we want
@@ -338,12 +350,15 @@ sigsuspend()
 	RETURN (EINTR);
 }
 
-sigstack()
-{
-	register struct a {
+/* ARGSUSED */
+sigstack(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		struct	sigstack *nss;
 		struct	sigstack *oss;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct sigstack ss;
 	int error = 0;
 
@@ -356,12 +371,15 @@ sigstack()
 	RETURN (error);
 }
 
-kill()
-{
-	register struct a {
+/* ARGSUSED */
+kill(cp, uap, retval)
+	register struct proc *cp;
+	register struct args {
 		int	pid;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct proc *p;
 
 	if ((unsigned) uap->signo >= NSIG)
@@ -371,7 +389,7 @@ kill()
 		p = pfind(uap->pid);
 		if (p == 0)
 			RETURN (ESRCH);
-		if (!CANSIGNAL(p, uap->signo))
+		if (!CANSIGNAL(cp, p, uap->signo))
 			RETURN (EPERM);
 		if (uap->signo)
 			psignal(p, uap->signo);
@@ -379,30 +397,38 @@ kill()
 	}
 	switch (uap->pid) {
 	case -1:		/* broadcast signal */
-		RETURN (killpg1(uap->signo, 0, 1));
+		RETURN (killpg1(cp, uap->signo, 0, 1));
 	case 0:			/* signal own process group */
-		RETURN (killpg1(uap->signo, 0, 0));
+		RETURN (killpg1(cp, uap->signo, 0, 0));
 	default:		/* negative explicit process group */
-		RETURN (killpg1(uap->signo, -uap->pid, 0));
+		RETURN (killpg1(cp, uap->signo, -uap->pid, 0));
 	}
 	/* NOTREACHED */
 }
 
 #ifdef COMPAT_43
-okillpg()
-{
-	register struct a {
+/* ARGSUSED */
+okillpg(p, uap, retval)
+	struct proc *p;
+	register struct args {
 		int	pgid;
 		int	signo;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 
 	if ((unsigned) uap->signo >= NSIG)
 		RETURN (EINVAL);
-	RETURN (killpg1(uap->signo, uap->pgid, 0));
+	RETURN (killpg1(p, uap->signo, uap->pgid, 0));
 }
 #endif
 
-killpg1(signo, pgid, all)
+/*
+ * Common code for kill process group/broadcast kill.
+ * cp is calling process.
+ */
+killpg1(cp, signo, pgid, all)
+	register struct proc *cp;
 	int signo, pgid, all;
 {
 	register struct proc *p;
@@ -415,7 +441,7 @@ killpg1(signo, pgid, all)
 		 */
 		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_ppid == 0 || p->p_flag&SSYS || 
-			    p == u.u_procp || !CANSIGNAL(p, signo))
+			    p == u.u_procp || !CANSIGNAL(cp, p, signo))
 				continue;
 			f++;
 			if (signo)
@@ -434,7 +460,7 @@ killpg1(signo, pgid, all)
 		}
 		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
 			if (p->p_ppid == 0 || p->p_flag&SSYS ||
-			    !CANSIGNAL(p, signo))
+			    !CANSIGNAL(cp, p, signo))
 				continue;
 			f++;
 			if (signo)
@@ -444,7 +470,7 @@ killpg1(signo, pgid, all)
 	return (f ? 0 : error);
 }
 
-/* XXX - to be removed, as soon as sockets are changed to operate on pgrps
+/*
  * Send the specified signal to
  * all processes with 'pgid' as
  * process group.
@@ -456,6 +482,7 @@ gsignal(pgid, sig)
 	if (pgid && (pgrp = pgfind(pgid)))
 		pgsignal(pgrp, sig, 0);
 }
+
 /*
  * Send sig to every member of a process group.
  * If checktty is 1, limit to members which have a controlling
@@ -481,7 +508,7 @@ trapsignal(sig, code)
 	register int sig;
 	unsigned code;
 {
-	register struct proc *p = u.u_procp;
+	register struct proc *p = u.u_procp;	/* XXX */
 	int mask;
 
 	mask = sigmask(sig);
