@@ -22,105 +22,30 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)hexdump.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hexdump.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <stdio.h>
 #include "hexdump.h"
 
-enum _vflag vflag = FIRST;		/* display duplicate lines */
 FS *fshead;				/* head of format strings */
-off_t skip;				/* bytes to skip */
 int blocksize;				/* data block size */
 int exitval;				/* final exit value */
-int length;				/* max bytes to read */
+int length = -1;			/* max bytes to read */
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno, optind;
-	extern char *optarg;
+	extern int errno;
 	register FS *tfs;
-	int ch;
 	char *p, *rindex();
 
-	length = -1;
-	while ((ch = getopt(argc, argv, "bcde:f:n:os:vx")) != EOF)
-		switch (ch) {
-		case 'b':
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 16/1 \"%03o \" \"\\n\"");
-			break;
-		case 'c':
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 16/1 \"%3_c \" \"\\n\"");
-			break;
-		case 'd':
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%05u \" \"\\n\"");
-			break;
-		case 'e':
-			add(optarg);
-			break;
-		case 'f':
-			addfile(optarg);
-			break;
-		case 'n':
-			if ((length = atoi(optarg)) < 0) {
-				(void)fprintf(stderr,
-				    "hexdump: bad length value.\n");
-				exit(1);
-			}
-			break;
-		case 'o':
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%06o \" \"\\n\"");
-			break;
-		case 's':
-			if ((skip = strtol(optarg, &p, 0)) < 0) {
-				(void)fprintf(stderr,
-				    "hexdump: bad skip value.\n");
-				exit(1);
-			}
-			switch(*p) {
-			case 'b':
-				skip *= 512;
-				break;
-			case 'k':
-				skip *= 1024;
-				break;
-			case 'm':
-				skip *= 1048576;
-				break;
-			}
-			break;
-		case 'v':
-			vflag = ALL;
-			break;
-		case 'x':
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%04x \" \"\\n\"");
-			break;
-		case '?':
-			usage();
-			exit(1);
-		}
-
-	if (!fshead) {
-		p = rindex(argv[0], 'o');
-		if (p && !strcmp(p, "od")) {
-			add("\"%07.7_Ao\n\"");
-			add("\"%07.7_ao  \" 8/2 \"%06o \" \"\\n\"");
-		} else {
-			add("\"%07.7_Ax\n\"");
-			add("\"%07.7_ax \" 8/2 \"%04x \" \"\\n\"");
-		}
-	}
-
-	argv += optind;
-	argc -= optind;
+	if (!(p = rindex(argv[0], 'o')) || strcmp(p, "od"))
+		newsyntax(argc, &argv);
+	else
+		oldsyntax(argc, &argv);
 
 	/* figure out the data block size */
 	for (blocksize = 0, tfs = fshead; tfs; tfs = tfs->nextfs) {
@@ -135,11 +60,4 @@ main(argc, argv)
 	(void)next(argv);
 	display();
 	exit(exitval);
-}
-
-usage()
-{
-	(void)fprintf(stderr,
-"hexdump: [-bcdovx] [-e format] [-f file] [-n length] [-s skip] [file ...]\n");
-	exit(1);
 }
