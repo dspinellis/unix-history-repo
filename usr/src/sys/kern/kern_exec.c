@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.51 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.52 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -62,7 +62,7 @@ execve(p, uap, retval)
 {
 	register struct ucred *cred = p->p_ucred;
 	register struct filedesc *fdp = p->p_fd;
-	int na, ne, ucp, ap, cc;
+	int na, ne, ucp, ap, cc, ssize;
 	register char *cp;
 	register int nc;
 	unsigned len;
@@ -220,16 +220,29 @@ execve(p, uap, retval)
 			goto bad;
 		}
 #endif
+#ifdef sparc
+		if (exdata.ex_exec.a_mid != MID_SUN_SPARC) {
+			error = ENOEXEC;
+			goto bad;
+		}
+#endif
 		exdata.ex_exec.a_data += exdata.ex_exec.a_text;
 		exdata.ex_exec.a_text = 0;
 		break;
 
 	case ZMAGIC:
-		paged++;
+		paged = 1;
 		/* FALLTHROUGH */
+
 	case NMAGIC:
 #ifdef COFF
 		if (exdata.ex_exec.ex_fhdr.magic != COFF_MAGIC) {
+			error = ENOEXEC;
+			goto bad;
+		}
+#endif
+#ifdef sparc
+		if (exdata.ex_exec.a_mid != MID_SUN_SPARC) {
 			error = ENOEXEC;
 			goto bad;
 		}
@@ -350,9 +363,41 @@ execve(p, uap, retval)
 		if (error)
 			goto bad;
 	}
-	nc = (nc + NBPW-1) & ~(NBPW-1);
-	error = getxfile(p, vp, &exdata.ex_exec, paged, nc + (na+4)*NBPW,
-	    uid, gid);
+
+	/*
+	 * XXX the following is excessively bogus
+	 *
+	 * Compute initial process stack size and location of argc
+	 * and character strings.  `nc' is currently just the number
+	 * of characters of arg and env strings.
+	 *
+	 * nc = size of signal code + 4 bytes of NULL pointer + nc,
+	 *	rounded to nearest integer;
+	 * ucp = USRSTACK - nc;		[user characters pointer]
+	 * apsize = padding (if any) +
+	 *	4 bytes of NULL pointer +
+	 *	ne 4-byte pointers to env strings +
+	 *	4 bytes of NULL pointer +
+	 *	(na-ne) 4-byte pointers to arg strings +
+	 *	4 bytes of argc;
+	 * (this is the same as nc + (na+3)*4)
+	 * ap = ucp - apsize;	[user address of argc]
+	 * ssize = ssize + nc + machine-dependent space;
+	 */
+	nc = (szsigcode + 4 + nc + NBPW-1) & ~(NBPW - 1);
+#ifdef sparc
+	ucp = USRSTACK;
+	ssize = (nc + (na + 3) * NBPW + 7) & ~7;
+	ap = ucp - ssize;
+	ucp -= nc;
+	ssize += sizeof(struct rwindow);
+#else
+	ssize = (na + 3) * NBPW;
+	ucp = USRSTACK - nc;
+	ap = ucp - ssize;
+	ssize += nc;
+#endif
+	error = getxfile(p, vp, &exdata.ex_exec, paged, ssize, uid, gid);
 	if (error)
 		goto bad;
 	vput(vp);
@@ -371,8 +416,6 @@ execve(p, uap, retval)
 	/*
 	 * Copy back arglist.
 	 */
-	ucp = USRSTACK - szsigcode - nc - NBPW;
-	ap = ucp - na*NBPW - 3*NBPW;
 	cpu_setstack(p, ap);
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
@@ -432,7 +475,7 @@ execve(p, uap, retval)
 	if (nd.ni_cnd.cn_namelen > MAXCOMLEN)
 		nd.ni_cnd.cn_namelen = MAXCOMLEN;
 	bcopy((caddr_t)nd.ni_cnd.cn_nameptr, (caddr_t)p->p_comm,
-	    (unsigned)(nd.ni_cnd.cn_namelen));
+	    (unsigned)nd.ni_cnd.cn_namelen);
 	p->p_comm[nd.ni_cnd.cn_namelen] = '\0';
 	cpu_exec(p);
 bad:
@@ -448,19 +491,19 @@ bad:
 /*
  * Read in and set up memory for executed file.
  */
-getxfile(p, vp, ep, paged, nargc, uid, gid)
+getxfile(p, vp, ep, paged, ssize, uid, gid)
 	register struct proc *p;
 	register struct vnode *vp;
 	register struct exec *ep;
-	int paged, nargc, uid, gid;
+	int paged, ssize, uid, gid;
 {
-	segsz_t ts, ds, ss;
 	register struct ucred *cred = p->p_ucred;
+	register struct vmspace *vm = p->p_vmspace;
+	vm_offset_t addr;
+	vm_size_t xts, size;
+	segsz_t ds;
 	off_t toff;
 	int error = 0;
-	vm_offset_t addr;
-	vm_size_t size;
-	struct vmspace *vm = p->p_vmspace;
 
 #ifdef HPUXCOMPAT
 	int hpux = (paged & SHPUX);
@@ -475,6 +518,11 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 #ifdef COFF
 	toff = N_TXTOFF(*ep);
 #else
+#ifdef sparc
+	if (ep->a_mid == MID_SUN_SPARC)
+		toff = paged ? 0 : sizeof(struct exec);
+	else
+#endif
 	if (paged)
 		toff = CLBYTES;
 	else
@@ -486,18 +534,21 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 
 	/*
 	 * Compute text and data sizes and make sure not too large.
-	 * NB - Check data and bss separately as they may overflow 
-	 * when summed together.
+	 * Text size is rounded to an ``ld page''; data+bss is left
+	 * in machine pages.  Check data and bss separately as they
+	 * may overflow when summed together.  (XXX not done yet)
 	 */
-	ts = clrnd(btoc(ep->a_text));
+	xts = roundup(ep->a_text, __LDPGSZ);
 	ds = clrnd(btoc(ep->a_data + ep->a_bss));
-	ss = clrnd(SSIZE + btoc(nargc + szsigcode));
 
 	/*
 	 * If we're sharing the address space, allocate a new space
 	 * and release our reference to the old one.  Otherwise,
 	 * empty out the existing vmspace.
 	 */
+#ifdef sparc
+	kill_user_windows(p);		/* before addrs go away */
+#endif
 	if (vm->vm_refcnt > 1) {
 		p->p_vmspace = vmspace_alloc(VM_MIN_ADDRESS,
 		    VM_MAXUSER_ADDRESS, 1);
@@ -539,17 +590,17 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 	p->p_flag |= SEXEC;
 #ifndef COFF
 	addr = VM_MIN_ADDRESS;
-	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts + ds)), FALSE)) {
+	if (vm_allocate(&vm->vm_map, &addr, xts + ctob(ds), FALSE)) {
 		uprintf("Cannot allocate text+data space\n");
 		error = ENOMEM;			/* XXX */
 		goto badmap;
 	}
 	vm->vm_taddr = (caddr_t)VM_MIN_ADDRESS;
-	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + ctob(ts));
+	vm->vm_daddr = (caddr_t)(VM_MIN_ADDRESS + xts);
 #else /* COFF */
 	addr = (vm_offset_t)ep->ex_aout.codeStart;
 	vm->vm_taddr = (caddr_t)addr;
-	if (vm_allocate(&vm->vm_map, &addr, round_page(ctob(ts)), FALSE)) {
+	if (vm_allocate(&vm->vm_map, &addr, xts, FALSE)) {
 		uprintf("Cannot allocate text space\n");
 		error = ENOMEM;			/* XXX */
 		goto badmap;
@@ -606,16 +657,15 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 		 */
 #ifndef COFF
 		addr = VM_MIN_ADDRESS;
-		size = round_page(ep->a_text + ep->a_data);
+		size = round_page(xts + ep->a_data);
 		error = vm_mmap(&vm->vm_map, &addr, size, VM_PROT_ALL,
 			MAP_FILE|MAP_COPY|MAP_FIXED,
 			(caddr_t)vp, (vm_offset_t)toff);
-		(void) vm_map_protect(&vm->vm_map, addr,
-			addr + trunc_page(ep->a_text),
+		(void) vm_map_protect(&vm->vm_map, addr, addr + xts,
 			VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 #else /* COFF */
 		addr = (vm_offset_t)vm->vm_taddr;
-		size = round_page(ep->a_text);
+		size = xts;
 		error = vm_mmap(&vm->vm_map, &addr, size,
 			VM_PROT_READ|VM_PROT_EXECUTE,
 			MAP_FILE|MAP_COPY|MAP_FIXED,
@@ -629,8 +679,8 @@ getxfile(p, vp, ep, paged, nargc, uid, gid)
 #endif /* COFF */
 		vp->v_flag |= VTEXT;
 	}
-badmap:
 	if (error) {
+badmap:
 		printf("pid %d: VM allocation failure\n", p->p_pid);
 		uprintf("sorry, pid %d was killed in exec: VM allocation\n",
 			p->p_pid);
@@ -654,16 +704,16 @@ badmap:
 				p->p_tracep = NULL;
 				p->p_traceflag = 0;
 			}
+			cred->cr_uid = uid;
+			cred->cr_gid = gid;
 		}
-		cred->cr_uid = uid;
-		cred->cr_gid = gid;
 	} else
 		psignal(p, SIGTRAP);
 	p->p_cred->p_svuid = cred->cr_uid;
 	p->p_cred->p_svgid = cred->cr_gid;
-	vm->vm_tsize = ts;
+	vm->vm_tsize = btoc(xts);
 	vm->vm_dsize = ds;
-	vm->vm_ssize = ss;
+	vm->vm_ssize = ssize;
 	p->p_stats->p_prof.pr_scale = 0;
 #if defined(tahoe)
 	/* move this when tahoe cpu_exec is created */
