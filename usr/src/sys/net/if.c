@@ -1,10 +1,29 @@
-/*	if.c	4.5	81/12/02	*/
+/*	if.c	4.6	81/12/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/if.h"
+
+ifinit()
+{
+	register struct ifnet *ifp;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next)
+		if (ifp->if_init)
+			(*ifp->if_init)();
+}
+
+ifubareset(uban)
+	int uban;
+{
+	register struct ifnet *ifp;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next)
+		if (ifp->if_ubareset)
+			(*ifp->if_ubareset)(uban);
+}
 
 if_attach(ifp)
 	struct ifnet *ifp;
@@ -62,11 +81,11 @@ if_makeaddr(net, host)
 	u_long addr;
 
 	if (net < 128)
-		addr = (host << 8) | net;
+		addr = (net << 24) | host;
 	else if (net < 65536)
-		addr = (host << 16) | net;
+		addr = (net << 16) | host;
 	else
-		addr = (host << 24) | net;
+		addr = (net << 8) | host;
 	addr = htonl(addr);
 	return (*(struct in_addr *)&addr);
 }
