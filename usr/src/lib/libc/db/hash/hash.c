@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -67,9 +67,9 @@ long hash_accesses, hash_collisions, hash_expansions, hash_overflows;
 /* OPEN/CLOSE */
 
 extern DB *
-__hash_open(file, flags, mode, info)
+__hash_open(file, flags, mode, info, dflags)
 	const char *file;
-	int flags, mode;
+	int flags, mode, dflags;
 	const HASHINFO *info;	/* Special directives for create */
 {
 	HTAB *hashp;
@@ -85,13 +85,14 @@ __hash_open(file, flags, mode, info)
 	if (!(hashp = calloc(1, sizeof(HTAB))))
 		return (NULL);
 	hashp->fp = -1;
+
 	/*
-	 * Select flags relevant to us. Even if user wants write only, we need
-	 * to be able to read the actual file, so we need to open it read/write.
-	 * But, the field in the hashp structure needs to be accurate so that
+	 * Even if user wants write only, we need to be able to read
+	 * the actual file, so we need to open it read/write. But, the
+	 * field in the hashp structure needs to be accurate so that
 	 * we can check accesses.
 	 */
-	hashp->flags = flags = flags & __USE_OPEN_FLAGS;
+	hashp->flags = flags;
 
 	new_table = 0;
 	if (!file || (flags & O_TRUNC) ||
