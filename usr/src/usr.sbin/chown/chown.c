@@ -1,7 +1,7 @@
-static char *sccsid = "@(#)chown.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)chown.c	4.5 (Berkeley) %G%";
 
 /*
- * chown [-fr] uid[.gid] file ...
+ * chown [-fR] uid[.gid] file ...
  */
 
 #include <stdio.h>
@@ -26,7 +26,7 @@ char *argv[];
 	struct group *grp;
 
 	if(argc < 3) {
-		fprintf(stderr, "usage: chown [-fr] uid[.gid] file ...\n");
+		fprintf(stderr, "usage: chown [-fR] owner[.group] file ...\n");
 		exit(-1);
 	}
 	if (*argv[1] == '-') {
