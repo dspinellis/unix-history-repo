@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -726,13 +726,14 @@ setproctitle(a, s)
 /*
  * Internet services provided internally by inetd:
  */
+#define	BUFSIZE	4096
 
 /* ARGSUSED */
 echo_stream(s, sep)		/* Echo service -- echo data back */
 	int s;
 	struct servtab *sep;
 {
-	char buffer[BUFSIZ];
+	char buffer[BUFSIZE];
 	int i;
 
 	setproctitle(sep->se_service, s);
@@ -747,7 +748,7 @@ echo_dg(s, sep)			/* Echo service -- echo data back */
 	int s;
 	struct servtab *sep;
 {
-	char buffer[BUFSIZ];
+	char buffer[BUFSIZE];
 	int i, size;
 	struct sockaddr sa;
 
@@ -762,7 +763,7 @@ discard_stream(s, sep)		/* Discard service -- ignore data */
 	int s;
 	struct servtab *sep;
 {
-	char buffer[BUFSIZ];
+	char buffer[BUFSIZE];
 
 	setproctitle(sep->se_service, s);
 	while (1) {
@@ -779,7 +780,7 @@ discard_dg(s, sep)		/* Discard service -- ignore data */
 	int s;
 	struct servtab *sep;
 {
-	char buffer[BUFSIZ];
+	char buffer[BUFSIZE];
 
 	(void) read(s, buffer, sizeof(buffer));
 }
