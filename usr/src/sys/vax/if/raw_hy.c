@@ -1,5 +1,5 @@
 /*
- *	@(#)raw_hy.c	6.3	%G%
+ *	@(#)raw_hy.c	6.4	%G%
  *
  * 4.3 BSD Unix kernel - NSC HYPERchannel support
  *
@@ -25,9 +25,6 @@
 #include "../net/route.h"
 #include "../net/raw_cb.h"
 
-#ifdef	BBNNET
-#define	INET
-#endif
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
