@@ -1,9 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.5 83/08/18";
+static	char *sccsid = "@(#)wwframe.c	3.6 83/08/19";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+
+#define frameok(w, r, c) (w1 = wwindex[wwsmap[r][c]], \
+	!w1->ww_hasframe || w1->ww_order > (w)->ww_order)
 
 #define TOP	0
 #define BOTTOM	1
@@ -17,6 +20,7 @@ register struct ww *w;
 	char b1, b2, b3;
 	register char *smap;
 	register code;
+	register struct ww *w1;
 	char ulc, top, urc, left, right, llc, bottom, lrc;
 	struct ww_dim oldsize;
 	Pos bstart;
@@ -100,7 +104,7 @@ register struct ww *w;
 		a1 = 0;
 		a2 = 0;
 		b1 = 0;
-		b2 = wwframeok(w, r, c);
+		b2 = c < 0 || frameok(w, r, c);
 
 	}
 
@@ -145,17 +149,6 @@ register struct ww *w;
 }
 
 wwunframe(w)
-struct ww *w;
-register r, c;
-{
-	char hasbot, hastop, hasright, hasleft;
-	register i;
-
-	hastop = w->ww_o.row < w->ww_i.row;
-	hasbot = w->ww_o.row + w->ww_o.nrow > w->ww_i.row + w->ww_i.nrow;
-	hasleft = w->ww_o.col < w->ww_i.col;
-	hasright = w->ww_o.col + w->ww_o.ncol > w->ww_i.col + w->ww_i.ncol;
-
 	if (hastop) {
 		Wauxcursor(w->ww_win, 0, 0);
 		for (i = 0; i < w->ww_o.ncol; i++)
