@@ -1,6 +1,6 @@
-# include <sccs.h>
+#include "../hdr/macros.h"
 
-SCCSID(@(#)ctime.c	4.1);
+SCCSID(@(#)ctime.c	4.2);
 
 /*
  * This routine converts time as follows.
@@ -38,7 +38,7 @@ SCCSID(@(#)ctime.c	4.1);
  * ctime(t) just calls localtime, then asctime.
  */
 
-#include <time.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
 
