@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcap.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcap.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -659,7 +659,8 @@ cgetnext(bp, db_array)
 					} else
 						continue;
 				}
-			}
+			} else
+				line[len - 1] = '\0';
 			if (isspace(*line) || *line == ':' || *line == '#' 
 			    || len == 0 || slash) {
 				if (len > 0 && line[len - 1] == '\\')
@@ -703,7 +704,8 @@ cgetnext(bp, db_array)
 						(void)cgetclose();
 						return (-1);
 					}
-				}
+				} else {
+					line[len - 1] = '\0';
 			}
 		}
 		rp = buf;
