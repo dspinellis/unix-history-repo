@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.4 83/12/06";
+static	char *sccsid = "@(#)parser1.c	3.5 83/12/09";
 #endif
 
 #include <stdio.h>
@@ -136,7 +136,7 @@ char flag;
 	switch (token) {
 	case T_MOD:
 		t.v_type = V_STR;
-		t.v_str = "%";
+		t.v_str = str_cpy("%");
 		(void) s_gettok();
 		break;
 	case T_NUM:
@@ -518,6 +518,7 @@ char flag;
 {
 	struct value t;
 	int op;
+	char *opname;
 
 	if (level == 10) {
 		if (p_expr11(v, flag) < 0)
@@ -531,43 +532,70 @@ char flag;
 		case 3:
 			if (token != T_OR)
 				return 0;
+			opname = "|";
 			break;
 		case 4:
 			if (token != T_XOR)
 				return 0;
+			opname = "^";
 			break;
 		case 5:
 			if (token != T_AND)
 				return 0;
+			opname = "&";
 			break;
 		case 6:
-			if (token != T_EQ && token != T_NE)
+			if (token == T_EQ)
+				opname = "==";
+			else if (token == T_NE)
+				opname = "!=";
+			else
 				return 0;
 			break;
 		case 7:
 			switch (token) {
 			case T_LT:
+				opname = "<";
+				break;
 			case T_LE:
+				opname = "<=";
+				break;
 			case T_GT:
+				opname = ">";
+				break;
 			case T_GE:
+				opname = ">=";
 				break;
 			default:
 				return 0;
 			}
 			break;
 		case 8:
-			if (token != T_LS && token != T_RS)
+			if (token == T_LS)
+				opname = "<<";
+			else if (token == T_RS)
+				opname = ">>";
+			else
 				return 0;
 			break;
 		case 9:
-			if (token != T_PLUS && token != T_MINUS)
+			if (token == T_PLUS)
+				opname = "+";
+			else if (token == T_MINUS)
+				opname = "-";
+			else
 				return 0;
 			break;
 		case 10:
 			switch (token) {
 			case T_MUL:
+				opname = "*";
+				break;
 			case T_DIV:
+				opname = "/";
+				break;
 			case T_MOD:
+				opname = "%";
 				break;
 			default:
 				return 0;
@@ -611,7 +639,8 @@ char flag;
 			break;
 		default:
 			if (v->v_type == V_STR) {
-				p_error("Numeric value required.");
+				p_error("Numeric value required for %s.",
+					opname);
 				flag = 0;
 			}
 		}
@@ -685,13 +714,23 @@ register struct value *v;
 char flag;
 {
 	int op;
+	char *opname;
 
 	switch (token) {
 	case T_DOLLAR:
+		opname = "$";
+		break;
 	case T_PLUS:
+		opname = "unary +";
+		break;
 	case T_MINUS:
+		opname = "unary -";
+		break;
 	case T_NOT:
+		opname = "!";
+		break;
 	case T_COMP:
+		opname = "~";
 		break;
 	default:
 		return p_expr12(v, flag);
@@ -712,7 +751,7 @@ char flag;
 		case T_MINUS:
 		case T_NOT:
 		case T_COMP:
-			p_error("Numeric value required.");
+			p_error("Numeric value required for %s.", opname);
 			str_free(v->v_str);
 			v->v_type = V_ERR;
 			return 0;
@@ -756,7 +795,8 @@ char flag;
 
 /*
  * string, number, ( expr )
- * plus function calls.
+ * Plus function calls.
+ * Also we map * and % into strings.
  *
  * Always return v_type == V_ERR when flag == 0.
  */
@@ -769,6 +809,26 @@ char flag;
 	error("expr12: %d.", flag);
 #endif
 	switch (token) {
+	case T_MUL:
+#ifdef DEBUG
+		error("expr12: *.");
+#endif
+		if (flag) {
+			v->v_type = V_STR;
+			v->v_str = str_cpy("*");
+		}
+		(void) s_gettok();
+		break;
+	case T_MOD:
+#ifdef DEBUG
+		error("expr12: %.");
+#endif
+		if (flag) {
+			v->v_type = V_STR;
+			v->v_str = str_cpy("%");
+		}
+		(void) s_gettok();
+		break;
 	case T_NUM:
 #ifdef DEBUG
 		error("expr12: NUM %d.", token_num);
