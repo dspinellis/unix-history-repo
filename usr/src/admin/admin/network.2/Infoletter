@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.4 (Berkeley) %G%
+.\"     @(#)Infoletter	1.5 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -19,7 +19,7 @@ Dear Colleague:
 .PP
 We are happy to send you information about our April,
 1991 update to our 1988 networking release.
-This software is copyright by the University of California
+This software is copyrighted by the University of California
 but may be freely redistributed.
 It is available to anyone and requires no previous license, either from
 AT&T or The Regents of the University of California.
@@ -41,7 +41,7 @@ of Berkeley (for details, see the attached contributors list).
 .PP
 This packet is designed to serve two purposes.
 The first is to acquaint you with the details of our distribution
-so you can decide whether you would like to purchase it.
+so you may decide if you wish to purchase it.
 The second purpose is to tell you how to obtain our distribution.
 .SH
 Distribution contents
@@ -55,22 +55,22 @@ It includes source code and manual pages for the C library
 and approximately three-fourths of the utilities distributed as
 part of 4.3BSD-Reno.
 An approximate list of the included and excluded utilities is provided
-in the attached list.
+in the attached utilities list.
 .PP
 Additionally, the distribution includes source code for most of the
 4.3BSD-Reno kernel, including machine support for the HP9000/300 series
 (Motorola 680x0-based machines)
-and for the PCs built by Compaq and others
+and for PCs built by Compaq and others
 (Intel 386/486-based machines with ISA/AT or EISA bus only).
 A limited number of device drivers are provided.
 The distribution does
 .B not
-include machine support for the Tahoe and VAX architectures
+include the machine support for the Tahoe and VAX architectures
 found in the standard BSD distributions.
 .B "The kernel source code is not complete for any architecture."
-Specifically, code for executing files, doing physical I/O,
+Specifically, the kernel support for executing files, doing physical I/O,
 managing the buffer cache, handling process tracing and doing accounting
-is not included as it contains proprietary code.
+is not included for licensing reasons.
 .PP
 .B "This software distribution is provided on 1/2'' 9-track tape only."
 The distribution is available on a single 6250 BPI tape,
@@ -127,11 +127,10 @@ Only limited support will be provided by our group.
 Specifically,
 we cannot provide help with installation
 of this software on other systems.
-We are, or course, interested in getting feedback on the problems that you
-find and also any compatibility problems that you encounter in trying
-to convert your applications to run on this release.
+We are, of course, interested in getting feedback on problems that you
+encounter in this release.
 Some of the interfaces in this release will change before the release
-of 4.4BSD (at least in part based on feedback from this test group).
+of 4.4BSD (in part based on feedback from this test group).
 Therefore, you should not depend on applications ported to this release
 working unchanged on 4.4BSD.
 We appreciate your help in this debugging effort and look
@@ -144,7 +143,7 @@ However, you are strongly encouraged to upgrade any code
 that you use from this distribution to the similarly-licensed
 distribution of the 4.4BSD code within one year of its release.
 We regret that changes documents are not available;
-the major changes are outlined in the next section.
+some of the major changes are outlined in the next section.
 .SH
 Summary of changes since the first networking distribution
 .PP
@@ -172,18 +171,19 @@ and miscellaneous other utilities.
 .PP
 A new virtual filesystem interface has been added to the
 kernel to support multiple filesystems.
-Although generally similar to Sun's vnode interface,
+Although generally similar to Sun Microsystems' (SMI) vnode interface,
 the Berkeley interface has been structured for more efficient support
 of filesystems that maintain state (such as the local filesystem).
 In addition to the local ``fast filesystem'' (UFS),
 we have added an implementation of the network filesystem (NFS)
 from the University of Guelph
-that fully interoperates with the NFS shipped by Sun and its licensees.
+that fully interoperates with the NFS shipped by SMI and
+its licensees.
 Because this NFS implementation was done using only the
 publicly available NFS specification,
-it does not require a license from Sun for use in source or binary form.
-By default it runs over UDP to be compatible with Sun's implementation.
-However, it can be configured on a per-mount basis to run over TCP.
+it does not require a license from SMI for use in source or binary form.
+It runs over UDP to be compatible with SMI implementation, by default,
+however, it can be configured on a per-mount basis to run over TCP.
 Using TCP allows it to be used quickly and efficiently through
 gateways and over long-haul networks.
 We have also added a memory-based filesystem that runs in
@@ -204,9 +204,10 @@ The MACH virtual memory system call interface has been replaced with the
 ``mmap''-based interface described in the ``Berkeley Software
 Architecture Manual'' (see UNIX Programmer's Manual, 
 Supplementary Documents, PS1:6).
-The interface is similar to the interface shipped
-in several commercial versions of UNIX such as SunOS 4.0.
-The current integration of the new virtual memory is functionally complete,
+The interface is similar to the interfaces shipped
+by several commercial vendors such as SMI, Convex Computer Corp.
+and AT&T.
+The integration of the new virtual memory is functionally complete,
 but still has serious performance problems under heavy memory load.
 The internal kernel interfaces have not yet been completed
 and the memory pool and buffer cache have not yet been merged.
@@ -225,6 +226,14 @@ but adds a security model that was missing in the
 Other additions include POSIX signals, FIFOs, byte-range file locking,
 and saved user and group identifiers.
 .PP
+There are a number of new tools and utilities included in this release.
+Notable additions to the libraries include functions to traverse a UNIX
+file hierarchy, database interfaces to btree and hashing functions,
+a new, fast implementation of stdio and a radix sort function.
+The additions to the utility suite include greatly enhanced versions of
+programs which display system status information, implementations of
+various tools traditionally found in System V releases and many others.
+.PP
 We have been tracking the POSIX 1003.2 shell and utility work
 and have included prototypes of many of the proposed utilities.
 Because most of the traditional utilities have been replaced to eliminate
@@ -234,6 +243,8 @@ releases.
 In particular, almost the entire manual suite has been rewritten to
 be freely redistributable and, in many instances,
 it does not correctly reflect the current state of the software.
+It is also worth noting that, in rewriting this software, we have generally
+been rewarded with significant performance improvements.
 Most of the libraries and header files have been converted
 to be compliant with ANSI C.
 The default compiler (gcc) is compatible with traditional C,
