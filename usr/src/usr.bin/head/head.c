@@ -1,90 +1,67 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1987 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* !lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)head.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)head.c	5.2 (Berkeley) %G%";
+#endif /* !lint */
 
 #include <stdio.h>
+#include <ctype.h>
 /*
  * head - give the first few lines of a stream or of each of a set of files
  *
  * Bill Joy UCB August 24, 1977
  */
 
-int	linecnt	= 10;
-int	argc;
-
-main(Argc, argv)
-	int Argc;
-	char *argv[];
+main(argc, argv)
+	int	argc;
+	char	**argv;
 {
-	register int argc;
-	char *name;
-	register char *argp;
-	static int around;
+	register int	ch, cnt;
+	int	firsttime, linecnt = 10;
 
-	Argc--, argv++;
-	argc = Argc;
-	do {
-		while (argc > 0 && argv[0][0] == '-') {
-			linecnt = getnum(argv[0] + 1);
-			argc--, argv++, Argc--;
+	if (argc > 1 && argv[1][0] == '-') {
+		if (!isdigit(argv[1][1])) {
+			fprintf(stderr, "head: illegal option -- %c\n", argv[1][1]);
+			goto usage;
 		}
-		if (argc == 0 && around)
-			break;
-		if (argc > 0) {
-			close(0);
-			if (freopen(argv[0], "r", stdin) == NULL) {
-				perror(argv[0]);
+		if ((linecnt = atoi(argv[1] + 1)) < 0) {
+usage:			fputs("usage: head [-line_count] [file ...]\n", stderr);
+			exit(1);
+		}
+		--argc; ++argv;
+	}
+	/* setlinebuf(stdout); */
+	for (firsttime = 1, --argc, ++argv;; firsttime = 0) {
+		if (!*argv) {
+			if (!firsttime)
+				exit(0);
+		}
+		else {
+			if (!freopen(*argv, "r", stdin)) {
+				fprintf(stderr, "head: can't read %s.\n", *argv);
 				exit(1);
 			}
-			name = argv[0];
-			argc--, argv++;
-		} else
-			name = 0;
-		if (around)
-			putchar('\n');
-		around++;
-		if (Argc > 1 && name)
-			printf("==> %s <==\n", name);
-		copyout(linecnt);
-		fflush(stdout);
-	} while (argc > 0);
-}
-
-copyout(cnt)
-	register int cnt;
-{
-	register int c;
-	char lbuf[BUFSIZ];
-
-	while (cnt > 0 && fgets(lbuf, sizeof lbuf, stdin) != 0) {
-		printf("%s", lbuf);
-		fflush(stdout);
-		cnt--;
+			if (argc > 1) {
+				if (!firsttime)
+					putchar('\n');
+				printf("==> %s <==\n", *argv);
+			}
+			++argv;
+		}
+		for (cnt = linecnt; cnt; --cnt)
+			while ((ch = getchar()) != EOF)
+				if (putchar(ch) == '\n')
+					break;
 	}
-}
-
-getnum(cp)
-	register char *cp;
-{
-	register int i;
-
-	for (i = 0; *cp >= '0' && *cp <= '9'; cp++)
-		i *= 10, i += *cp - '0';
-	if (*cp) {
-		fprintf(stderr, "Badly formed number\n");
-		exit(1);
-	}
-	return (i);
+	/*NOTREACHED*/
 }
