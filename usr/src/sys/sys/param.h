@@ -92,8 +92,10 @@
 #define	clrnd(i)	(((i) + (CLSIZE-1)) &~ (CLSIZE-1))
 #endif
 
-#define	CBSIZE	28		/* number of chars in a clist block */
-#define	CROUND	0x1F		/* clist rounding; sizeof(int *) + CBSIZE -1*/
+/* CBLOCK is the size of a clist block, must be power of 2 */
+#define	CBLOCK	64
+#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
+#define	CROUND	(CBLOCK - 1)				/* clist rounding */
 
 #ifndef KERNEL
 #include	<sys/types.h>
