@@ -1,9 +1,9 @@
-/*	getservbyport.c	4.1	82/08/25	*/
+/*	getservbyport.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct servent *
-getservport(port, proto)
+getservbyport(port, proto)
 	int port;
 	char *proto;
 {

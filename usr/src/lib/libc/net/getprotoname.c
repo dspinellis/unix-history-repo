@@ -1,9 +1,9 @@
-/*	getprotoname.c	4.1	82/08/25	*/
+/*	getprotoname.c	4.2	82/10/05	*/
 
 #include <netdb.h>
 
 struct protoent *
-getprotoname(name)
+getprotobyname(name)
 	register char *name;
 {
 	register struct protoent *p;
