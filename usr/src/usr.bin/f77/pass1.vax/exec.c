@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -243,7 +243,7 @@ if(lp->tag != TPRIM)
 else if(lp->namep->vclass!=CLVAR && lp->argsp)
 	{
 	if(parstate >= INEXEC)
-		err("assignment to an undimemsioned array");
+		err("assignment to an undimensioned array");
 	else
 		mkstfunct(lp, rp);
 	}
