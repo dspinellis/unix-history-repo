@@ -146,8 +146,31 @@ program(s) you have out for editing and the versions
 in
 .SM SCCS
 format.
-The arguments look exactly like the arguments to a get,
-which specify the version to diff against.
+The
+.B \-r,
+.B \-c,
+.B \-i,
+.B \-x,
+and
+.B \-t
+flags are passed to
+.I get\c
+; the
+.B \-l,
+.B \-s,
+.B \-e,
+.B \-f,
+.B \-h,
+and
+.B \-b
+options are passed to
+.I diff.
+The
+.B \-C
+flag is passed to
+.I diff
+as
+.B \-c.
 .PP
 The
 .B \-r
