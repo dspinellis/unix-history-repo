@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)canfield.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)canfield.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,10 +36,11 @@ static char sccsid[] = "@(#)canfield.c	5.8 (Berkeley) %G%";
  *	Betting by Kirk McKusick
  */
 
+#include <sys/types.h>
+#include <sys/signal.h>
 #include <curses.h>
 #include <ctype.h>
-#include <signal.h>
-#include <sys/types.h>
+#include "pathnames.h"
 
 #define	decksize	52
 #define originrow	0
@@ -1305,14 +1306,7 @@ suspend()
 		lseek(dbfd, uid * sizeof(struct betinfo), 0);
 		write(dbfd, (char *)&total, sizeof(total));
 	}
-#ifdef SIGTSTP
 	kill(getpid(), SIGTSTP);
-#else
-	sh = getenv("SHELL");
-	if (sh == NULL)
-		sh = "/bin/sh";
-	system(sh);
-#endif
 	raw();
 	noecho();
 }
@@ -1560,7 +1554,7 @@ initall()
 	uid = getuid();
 	if (uid < 0)
 		uid = 0;
-	dbfd = open("/usr/games/lib/cfscores", 2);
+	dbfd = open(_PATH_SCORE, 2);
 	if (dbfd < 0)
 		return;
 	i = lseek(dbfd, uid * sizeof(struct betinfo), 0);
