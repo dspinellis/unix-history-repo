@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.26 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -452,7 +452,7 @@ ufs_read(vp, uio, ioflag, cred)
 	register struct fs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
-	int size, rasize, diff, error = 0;
+	int size, diff, error = 0;
 	long n, on, type;
 
 	if (uio->uio_rw != UIO_READ)
@@ -477,10 +477,10 @@ ufs_read(vp, uio, ioflag, cred)
 			n = diff;
 		size = blksize(fs, ip, lbn);
 		rablock = lbn + 1;
-		rasize = blksize(fs, ip, rablock);
-		if (vp->v_lastr + 1 == lbn)
-			error = breada(ITOV(ip), lbn, size, rablock, rasize,
-				NOCRED, &bp);
+		if (vp->v_lastr + 1 == lbn &&
+		    lblktosize(fs, rablock) < ip->i_size)
+			error = breada(ITOV(ip), lbn, size, rablock,
+				blksize(fs, ip, rablock), NOCRED, &bp);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
 		vp->v_lastr = lbn;
@@ -1305,13 +1305,13 @@ ufs_strategy(bp)
 	if (bp->b_blkno == bp->b_lblkno) {
 		if (error = bmap(ip, bp->b_lblkno, &bp->b_blkno))
 			return (error);
-		if ((long)bp->b_blkno == -1) {
+		if ((long)bp->b_blkno == -1)
 			clrbuf(bp);
-			biodone(bp);
-		}
 	}
-	if ((long)bp->b_blkno == -1)
+	if ((long)bp->b_blkno == -1) {
+		biodone(bp);
 		return (0);
+	}
 	if (checkoverlap) {
 		ebp = &buf[nbuf];
 		start = bp->b_blkno;
@@ -1328,7 +1328,10 @@ ufs_strategy(bp)
 			if (ep->b_bcount == 0 || ep->b_blkno > last ||
 			    ep->b_blkno + btodb(ep->b_bcount) <= start)
 				continue;
-			panic("Disk overlap");
+			vprint("Disk overlap", vp);
+			printf("\tstart %d, end %d overlap start %d, end %d\n",
+				start, last, ep->b_blkno,
+				ep->b_blkno + btodb(ep->b_bcount) - 1);
 		}
 	}
 	vp = ip->i_devvp;
