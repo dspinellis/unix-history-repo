@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.29 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.30 (Berkeley) %G%
  */
 
 /*
@@ -803,8 +803,11 @@ nfsmout:
 		if (rep == &nfsreqh) {
 			nfsstats.rpcunexpected++;
 			m_freem(mrep);
-		} else if (rep == myrep)
+		} else if (rep == myrep) {
+			if (rep->r_mrep == NULL)
+				panic("nfsreply nil");
 			return (0);
+		}
 	}
 }
 
@@ -877,6 +880,8 @@ kerbauth:
 		}
 	} else {
 		auth_type = RPCAUTH_UNIX;
+		if (cred->cr_ngroups < 1)
+			panic("nfsreq nogrps");
 		auth_len = ((((cred->cr_ngroups - 1) > nmp->nm_numgrps) ?
 			nmp->nm_numgrps : (cred->cr_ngroups - 1)) << 2) +
 			5 * NFSX_UNSIGNED;
