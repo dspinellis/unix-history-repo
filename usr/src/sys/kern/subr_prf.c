@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.7 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -255,7 +255,7 @@ harderr(bp, cp)
 {
 
 	printf("%s%d%c: hard error sn%d ", cp,
-	    dkunit(bp), 'a'+(minor(bp->b_dev)&07), bp->b_blkno);
+	    minor(bp->b_dev) >> 3, 'a'+(minor(bp->b_dev)&07), bp->b_blkno);
 }
 
 /*
