@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)exp.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)exp.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -249,7 +249,7 @@ exp3a(vp, ignore)
 	etracc("exp3a p1", p1, vp);
 #endif
 	op = **vp;
-	if (op && any(op[0], "<>") && op[0] == op[1]) {
+	if (op && index("<>", op[0]) && op[0] == op[1]) {
 		(*vp)++;
 		p2 = exp3a(vp, ignore);
 #ifdef EDEBUG
@@ -422,7 +422,7 @@ exp6(vp, ignore)
 	if (isa(**vp, ANYOP))
 		return ("");
 	cp = *(*vp)++;
-	if (*cp == '-' && any(cp[1], "erwxfdzo")) {
+	if (*cp == '-' && index("erwxfdzo", cp[1])) {
 		struct stat stb;
 
 		if (isa(**vp, ANYOP))
