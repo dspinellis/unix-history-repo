@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	1.5	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	1.6	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -268,7 +268,7 @@ parse(addr, a, copyf)
 	*/
 
 # ifdef DEBUG
-	if (Debug && copyf >= 0)
+	if (Debug)
 		printf("parse(\"%s\"): host \"%s\" user \"%s\" mailer %d\n",
 		    addr, a->q_host, a->q_user, t->p_mailer);
 # endif DEBUG
