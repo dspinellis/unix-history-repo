@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.15 (Berkeley) %G%
+ *	@(#)unistd.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _SYS_UNISTD_H_
@@ -12,9 +12,17 @@
 
 /* compile-time symbolic constants */
 #define	_POSIX_JOB_CONTROL	/* implementation supports job control */
-#ifdef _NOTYET
+
+/*
+ * Although we have saved user/group IDs, we do not use them in setuid
+ * as described in POSIX 1003.1, because the feature does not work for
+ * root.  We use the saved IDs in seteuid/setegid, which are not currently
+ * part of the POSIX 1003.1 specification.
+ */
+#ifdef	_NOT_AVAILABLE
 #define	_POSIX_SAVED_IDS	/* saved set-user-ID and set-group-ID */
 #endif
+
 #define	_POSIX_VERSION		198808L
 #define	_POSIX2_VERSION		199212L
 
