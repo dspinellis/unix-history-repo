@@ -1,5 +1,5 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
-SUBDIR=	f77.${MACHINE} pass1.${MACHINE} libF77 libI77 libU77
+SUBDIR=	f77 libF77 libI77 libU77 pass1
 
 .include <bsd.subdir.mk>
