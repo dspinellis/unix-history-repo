@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.39 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1078,7 +1078,7 @@ struct resolverflags
 struct optioninfo
 {
 	char	*o_name;	/* long name of option */
-	char	o_code;		/* short name of option */
+	u_char	o_code;		/* short name of option */
 	bool	o_safe;		/* safe for random people to use */
 } OptionTab[] =
 {
@@ -1202,7 +1202,10 @@ setoption(opt, val, sticky)
 		if (sel != NULL && o->o_name == NULL)
 			o = sel;
 		else if (o->o_name == NULL)
+		{
 			syserr("readcf: unknown option name %s", val);
+			return;
+		}
 		else if (sel != NULL)
 		{
 			syserr("readcf: ambiguous option name %s (matches %s and %s)",
