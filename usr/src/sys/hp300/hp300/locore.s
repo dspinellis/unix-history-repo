@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.47 89/10/08$
  *
- *	@(#)locore.s	7.2 (Berkeley) %G%
+ *	@(#)locore.s	7.3 (Berkeley) %G%
  */
 
 	.text
@@ -542,7 +542,7 @@ _lev7intr:
  * This code deals with checking for and servicing ASTs
  * (profiling, scheduling) and software interrupts (network, softclock).
  * We check for ASTs first, just like the VAX.  To avoid excess overhead
- * the T_AST handling code will also check for software interrupts so we
+ * the T_ASTFLT handling code will also check for software interrupts so we
  * do not have to do it here.
  *
  * This code is complicated by the fact that sendsig may have been called
@@ -566,7 +566,7 @@ rei:
 	movl	a1,sp@(60)		|    the users SP
 	clrl	sp@-			| VA == none
 	clrl	sp@-			| code == none
-	movl	#T_AST,sp@-		| type == async system trap
+	movl	#T_ASTFLT,sp@-		| type == async system trap
 	jbsr	_trap			| go handle it
 	lea	sp@(12),sp		| pop value args
 	movl	sp@(60),a0		| restore

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.1 (Berkeley) %G%
+ *	@(#)genassym.c	7.2 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -100,7 +100,7 @@ main()
 	printf("#define\tT_FMTERR %d\n", T_FMTERR);
 	printf("#define\tT_COPERR %d\n", T_COPERR);
 	printf("#define\tT_FPERR %d\n", T_FPERR);
-	printf("#define\tT_AST %d\n", T_AST);
+	printf("#define\tT_ASTFLT %d\n", T_ASTFLT);
 	printf("#define\tT_TRAP15 %d\n", T_TRAP15);
 	printf("#define\tPSL_S %d\n", PSL_S);
 	printf("#define\tPSL_IPL7 %d\n", PSL_IPL7);
