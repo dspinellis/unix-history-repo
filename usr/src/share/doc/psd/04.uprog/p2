@@ -1,4 +1,4 @@
-.\"	@(#)p2	6.1 (Berkeley) %G%
+.\"	@(#)p2	6.2 (Berkeley) %G%
 .\"
 .NH
 BASICS
@@ -40,7 +40,7 @@ char *argv[];
 	int i;
 
 	for (i = 1; i < argc; i++)
-		printf("%s%c", argv[i], (i<argc-1) ? ' ' : '\n');
+		printf("%s%c", argv[i], (i<argc-1) ? ' ' : '\en');
 }
 .P2
 .UL argv
@@ -200,7 +200,7 @@ main()	/* ccstrip: strip non-graphic characters */
 {
 	int c;
 	while ((c = getchar()) != EOF)
-		if ((c >= ' ' && c < 0177) || c == '\t' || c == '\n')
+		if ((c >= ' ' && c < 0177) || c == '\et' || c == '\en')
 			putchar(c);
 	exit(0);
 }
