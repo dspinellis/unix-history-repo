@@ -1,8 +1,15 @@
-/*	cyreg.h	7.3	87/01/11	*/
+/*	cyreg.h	7.4	87/04/01	*/
 
 /*
  * Tapemaster controller definitions.
  */
+
+/*
+ * With 20-bit addressing, the intermediate buffer
+ * must be allocated early in startup().
+ */
+#define	CYMAXIO	(32*NBPG)		/* max i/o size */
+char	*cybuf;
 
 /* for byte swapping Multibus values */
 #define	htoms(x) (short)((((x)>>8)&0xff) | (((x)<<8)&0xff00))
