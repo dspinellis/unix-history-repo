@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdio.h	5.16 (Berkeley) %G%
+ *	@(#)stdio.h	5.17 (Berkeley) %G%
  */
 
 #ifndef	_STDIO_H_
@@ -189,6 +189,10 @@ int	 fwrite __P((const void *, size_t, size_t, FILE *));
 int	 getc __P((FILE *));
 int	 getchar __P((void));
 char	*gets __P((char *));
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+extern int sys_nerr;			/* perror(3) external variables */
+extern char *sys_errlist[];
+#endif
 void	 perror __P((const char *));
 int	 printf __P((const char *, ...));
 int	 putc __P((int, FILE *));
