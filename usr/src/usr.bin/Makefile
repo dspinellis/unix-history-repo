@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.5.1.1 (Berkeley) %G%
 
 # need conversion:	tn3270
 
@@ -14,7 +14,7 @@ SUBDIR=	apply at awk banner basename bc biff cal calendar checknr chpass \
 	tail talk tbl tcopy tee telnet tftp time tip touch tput tr true \
 	tset tty ul unexpand uniq units unvis uucp users uudecode uuencode \
 	vacation vis vmstat w wall wc what whereis which who whoami whois \
-	window write xargs xsend yes
+	window write xargs yes
 
 .if   make(clean) || make(cleandir)
 SUBDIR+=systat
