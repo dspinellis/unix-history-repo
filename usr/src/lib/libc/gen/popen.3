@@ -1,4 +1,4 @@
-.\"	@(#)popen.3	6.1 (Berkeley) %G%
+.\"	@(#)popen.3	6.2 (Berkeley) %G%
 .\"
 .TH POPEN 3 ""
 .AT 3
@@ -38,12 +38,7 @@ and returns the exit status of the command.
 Because open files are shared, a type "r" command may be used as an input
 filter, and a type "w" as an output filter.
 .SH "SEE ALSO"
-pipe(2),
-fopen(3S),
-fclose(3S),
-system(3),
-wait(2),
-sh(1)
+sh(1), pipe(2), wait4(2), fclose(3), fopen(3), system(3)
 .SH DIAGNOSTICS
 .I Popen
 returns a null pointer if files or processes cannot be created, or the shell 
@@ -52,7 +47,11 @@ cannot be accessed.
 .I Pclose
 returns \-1 if
 .I stream
-is not associated with a `popened' command.
+is not associated with a `popened' command, or if
+.I stream
+already `pclosed', or
+.IR wait (4)
+returns an error.
 .SH BUGS
 Buffered reading before opening an input filter
 may leave the standard input of that filter mispositioned.
@@ -60,7 +59,7 @@ Similar problems with an output filter may be
 forestalled by careful buffer flushing, for instance, with
 .I fflush,
 see
-.IR fclose (3S).
+.IR fclose (3).
 .LP
 .I Popen
 always calls
