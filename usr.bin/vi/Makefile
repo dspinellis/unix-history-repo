@@ -1,6 +1,6 @@
 #	@(#)Makefile	8.30 (Berkeley) 3/22/94
 
-PROG=	vi
+PROG=	nvi
 #CFLAGS=-g -DDEBUG
 #CFLAGS+=-pg
 CFLAGS+=-I. -I${.CURDIR} -I${.CURDIR}/ex -I${.CURDIR}/vi
@@ -49,11 +49,13 @@ DPADD+= ${LIBCURSES} ${LIBTERM} ${LIBUTIL}
 LDADD+=	-lcurses -ltermlib -lutil
 SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
-LINKS=	${BINDIR}/vi ${BINDIR}/ex
+LINKS=	${BINDIR}/nvi ${BINDIR}/vi ${BINDIR}/nvi ${BINDIR}/ex
 
-all: excmd.h options.h vi
-	rm -f ex
-	ln vi ex
+all: excmd.h options.h nvi
+	- rm -f vi
+	- rm -f ex
+	- if [ ! -d vi]; then ln nvi vi; fi
+	- if [ ! -d ex ]; then ln nvi ex; fi
 
 warn:: ${SRCS}
 	-(cd ${.CURDIR} && \
