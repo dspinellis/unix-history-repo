@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machpats.c	7.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)machpats.c	7.3 (Berkeley) %G%";
 #endif not lint
 
 #include "inline.h"
@@ -158,6 +158,7 @@ struct pats vaxsubset_ptab[] = {
 "	movl	(sp)+,r1\n\
 	movl	(sp)+,r3\n\
 	movl	(sp)+,r0\n\
+	tstl	r0\n\
 	jeql	1f\n\
 2:\n\
 	cmpb	(r1)+,(r3)+\n\
@@ -168,6 +169,7 @@ struct pats vaxsubset_ptab[] = {
 	{ 3, "_llocc\n",
 "	movl	(sp)+,r4\n\
 	movl	(sp)+,r0\n\
+	tstl	r0\n\
 	jeql	1f\n\
 	movl	(sp)+,r1\n\
 2:\n\
@@ -179,6 +181,7 @@ struct pats vaxsubset_ptab[] = {
 	{ 3, "_locc\n",
 "	movl	(sp)+,r3\n\
 	movl	(sp)+,r0\n\
+	tstl	r0\n\
 	jeql	1f\n\
 	movl	(sp)+,r5\n\
 2:\n\
@@ -190,6 +193,7 @@ struct pats vaxsubset_ptab[] = {
 	{ 3, "_skpc\n",
 "	movl	(sp)+,r3\n\
 	movl	(sp)+,r0\n\
+	tstl	r0\n\
 	jeql	1f\n\
 	movl	(sp)+,r5\n\
 2:\n\
