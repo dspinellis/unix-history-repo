@@ -9,16 +9,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwtty.c	3.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwtty.c	3.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
 #include <fcntl.h>
+#if !defined(OLD_TTY) && !defined(TIOCGWINSZ)
+#include <sys/ioctl.h>
+#endif
 
 wwgettty(d, t)
 register struct ww_tty *t;
 {
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 	if (ioctl(d, TIOCGETP, &t->ww_sgttyb) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGETC, &t->ww_tchars) < 0)
@@ -47,8 +50,8 @@ bad:
  * 'o' is the current modes.  We set the line discipline only if
  * it changes, to avoid unnecessary flushing of typeahead.
  */
-wwsettty(d, t, o)
-register struct ww_tty *t, *o;
+wwsettty(d, t)
+register struct ww_tty *t;
 {
 	if (ioctl(d, TIOCSETP, &t->ww_sgttyb) < 0)
 		goto bad;
@@ -64,4 +67,69 @@ register struct ww_tty *t, *o;
 bad:
 	wwerrno = WWE_SYS;
 	return -1;
+}
+
+/*
+ * The ttysize and stop-start routines must also work
+ * on the control side of pseudoterminals.
+ */
+
+wwgetttysize(d, r, c)
+	int *r, *c;
+{
+	struct winsize winsize;
+
+	if (ioctl(d, TIOCGWINSZ, (char *)&winsize) < 0) {
+		wwerrno = WWE_SYS;
+		return -1;
+	}
+	if (winsize.ws_row != 0)
+		*r = winsize.ws_row;
+	if (winsize.ws_col != 0)
+		*c = winsize.ws_col;
+	return 0;
+}
+
+wwsetttysize(d, r, c)
+{
+	struct winsize winsize;
+
+	winsize.ws_row = r;
+	winsize.ws_col = c;
+	winsize.ws_xpixel = winsize.ws_ypixel = 0;
+	if (ioctl(d, TIOCSWINSZ, (char *)&winsize) < 0) {
+		wwerrno = WWE_SYS;
+		return -1;
+	}
+	return 0;
+}
+
+wwstoptty(d)
+{
+#if !defined(OLD_TTY) && defined(TCOOFF)
+	/* not guaranteed to work on the pty side */
+	if (tcflow(d, TCOOFF) < 0)
+#else
+	if (ioctl(d, TIOCSTOP, (char *)0) < 0)
+#endif
+	{
+		wwerrno = WWE_SYS;
+		return -1;
+	}
+	return 0;
+}
+
+wwstarttty(d)
+{
+#if !defined(OLD_TTY) && defined(TCOON)
+	/* not guaranteed to work on the pty side */
+	if (tcflow(d, TCOON) < 0)
+#else
+	if (ioctl(d, TIOCSTART, (char *)0) < 0)
+#endif
+	{
+		wwerrno = WWE_SYS;
+		return -1;
+	}
+	return 0;
 }

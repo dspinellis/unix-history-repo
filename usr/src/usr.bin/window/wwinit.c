@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -44,7 +44,7 @@ wwinit()
 	if (wwgettty(0, &wwoldtty) < 0)
 		return -1;
 	wwwintty = wwoldtty;
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 	wwwintty.ww_sgttyb.sg_flags &= ~XTABS;
 	wwnewtty.ww_sgttyb = wwoldtty.ww_sgttyb;
 	wwnewtty.ww_sgttyb.sg_erase = -1;
@@ -66,6 +66,12 @@ wwinit()
 	wwnewtty.ww_lmode = wwoldtty.ww_lmode | LLITOUT;
 	wwnewtty.ww_ldisc = wwoldtty.ww_ldisc;
 #else
+#ifndef OXTABS
+#define OXTABS XTABS
+#endif
+#ifndef _POSIX_VDISABLE
+#define _POSIX_VDISABLE -1
+#endif
 	wwwintty.ww_termios.c_oflag &= ~OXTABS;
 	wwnewtty.ww_termios = wwoldtty.ww_termios;
 	wwnewtty.ww_termios.c_iflag &=
@@ -75,11 +81,11 @@ wwinit()
 	wwnewtty.ww_termios.c_cflag &= ~(CSIZE | PARENB);
 	wwnewtty.ww_termios.c_cflag |= CS8;
 	wwnewtty.ww_termios.c_lflag = 0;
-	for (i = 0; i < NCC; i++)
+	for (i = 0; i < NCCS; i++)
 		wwnewtty.ww_termios.c_cc[i] = _POSIX_VDISABLE;
 #endif
 	wwnewtty.ww_fflags = wwoldtty.ww_fflags | FASYNC;
-	if (wwsettty(0, &wwnewtty, &wwoldtty) < 0)
+	if (wwsettty(0, &wwnewtty) < 0)
 		return -1;
 	if (Winit(2, 1) != 0)
 		return -1;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttgeneric.c	3.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttgeneric.c	3.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -367,15 +367,7 @@ tt_generic()
 {
 	gen_PC = tttgetstr("pc");
 	PC = gen_PC ? *gen_PC->ts_str : 0;
-#ifndef POSIX_TTY
-	ospeed = wwoldtty.ww_sgttyb.sg_ospeed;
-#else
-#ifdef CBAUD
-	ospeed = wwoldtty.ww_termios.c_cflag & CBAUD;
-#else
-	ospeed = wwoldtty.ww_termios.c_ospeed;	/* XXX */
-#endif
-#endif
+	ospeed = wwospeed;
 
 	gen_CM = ttxgetstr("cm");		/* may not work */
 	gen_IM = ttxgetstr("im");

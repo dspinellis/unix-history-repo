@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.60 90/06/06		*/
+/*	@(#)ww.h	3.61 90/08/12		*/
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
@@ -7,10 +7,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.60 (Berkeley) %G%
+ *	@(#)ww.h	3.61 (Berkeley) %G%
  */
 
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 #include <sgtty.h>
 #else
 #include <termios.h>
@@ -47,7 +47,7 @@ struct ww {
 
 	/* state of a tty */
 struct ww_tty {
-#ifndef POSIX_TTY
+#ifdef OLD_TTY
 	struct sgttyb ww_sgttyb;
 	struct tchars ww_tchars;
 	struct ltchars ww_ltchars;

@@ -9,14 +9,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)win.c	3.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)win.c	3.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
 #include "char.h"
-#ifdef POSIX_TTY
-#include <sys/ioctl.h>
-#endif
 
 /*
  * Higher level routines for dealing with windows.
@@ -278,17 +275,19 @@ register struct ww *w;
 stopwin(w)
 	register struct ww *w;
 {
-	w->ww_stopped = 1;
-	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, TIOCSTOP, (char *)0);
+	if (w->ww_pty >= 0 && w->ww_ispty && wwstoptty(w->ww_pty) < 0)
+		error("Can't stop output: %s.", wwerror());
+	else
+		w->ww_stopped = 1;
 }
 
 startwin(w)
 	register struct ww *w;
 {
-	w->ww_stopped = 0;
-	if (w->ww_pty >= 0 && w->ww_ispty)
-		(void) ioctl(w->ww_pty, TIOCSTART, (char *)0);
+	if (w->ww_pty >= 0 && w->ww_ispty && wwstarttty(w->ww_pty) < 0)
+		error("Can't start output: %s.", wwerror());
+	else
+		w->ww_stopped = 0;
 }
 
 sizewin(w, nrow, ncol)
