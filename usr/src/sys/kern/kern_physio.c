@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.5	%G%	*/
+/*	kern_physio.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -35,8 +35,9 @@
  */
 
 #define	BUFHSZ	63
-#define	BUFHASH(blkno)	(blkno % BUFHSZ)
-short	bufhash[BUFHSZ];
+struct	bufhd bufhash[BUFHSZ];
+#define	BUFHASH(dev,blkno)	\
+		((struct buf *)&bufhash[((int)dev+(int)blkno) % BUFHSZ])
 
 /*
  * Initialize hash links for buffers.
@@ -44,9 +45,10 @@ short	bufhash[BUFHSZ];
 bhinit()
 {
 	register int i;
+	register struct bufhd *bp;
 
-	for (i = 0; i < BUFHSZ; i++)
-		bufhash[i] = -1;
+	for (bp = bufhash, i = 0; i < BUFHSZ; i++, bp++)
+		bp->b_forw = bp->b_back = (struct buf *)bp;
 }
 
 /* #define	DISKMON	1 */
@@ -250,32 +252,36 @@ register struct buf *bp;
 brelse(bp)
 register struct buf *bp;
 {
-	register struct buf **backp;
+	register struct buf *flist;
 	register s;
 
 	if (bp->b_flags&B_WANTED)
 		wakeup((caddr_t)bp);
-	if (bfreelist.b_flags&B_WANTED) {
-		bfreelist.b_flags &= ~B_WANTED;
-		wakeup((caddr_t)&bfreelist);
+	if (bfreelist[0].b_flags&B_WANTED) {
+		bfreelist[0].b_flags &= ~B_WANTED;
+		wakeup((caddr_t)bfreelist);
 	}
-	if ((bp->b_flags&B_ERROR) && bp->b_dev != NODEV) {
-		bunhash(bp);
+	if ((bp->b_flags&B_ERROR) && bp->b_dev != NODEV)
 		bp->b_dev = NODEV;  /* no assoc. on error */
-	}
 	s = spl6();
-	if(bp->b_flags & (B_AGE|B_ERROR)) {
-		backp = &bfreelist.av_forw;
-		(*backp)->av_back = bp;
-		bp->av_forw = *backp;
-		*backp = bp;
-		bp->av_back = &bfreelist;
+	if (bp->b_flags & (B_ERROR|B_INVAL)) {
+		/* block has no info ... put at front of most free list */
+		flist = &bfreelist[BQUEUES-1];
+		flist->av_forw->av_back = bp;
+		bp->av_forw = flist->av_forw;
+		flist->av_forw = bp;
+		bp->av_back = flist;
 	} else {
-		backp = &bfreelist.av_back;
-		(*backp)->av_forw = bp;
-		bp->av_back = *backp;
-		*backp = bp;
-		bp->av_forw = &bfreelist;
+		if (bp->b_flags & B_LOCKED)
+			flist = &bfreelist[BQ_LOCKED];
+		else if (bp->b_flags & B_AGE)
+			flist = &bfreelist[BQ_AGE];
+		else
+			flist = &bfreelist[BQ_LRU];
+		flist->av_back->av_forw = bp;
+		bp->av_back = flist->av_back;
+		flist->av_back = bp;
+		bp->av_forw = flist;
 	}
 	bp->b_flags &= ~(B_WANTED|B_BUSY|B_ASYNC|B_AGE);
 	splx(s);
@@ -290,12 +296,13 @@ dev_t dev;
 daddr_t blkno;
 {
 	register struct buf *bp;
+	register struct buf *dp;
 	register int dblkno = fsbtodb(blkno);
 
-	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
-	    bp = &buf[bp->b_hlink])
-		if (bp->b_blkno == dblkno && bp->b_dev == dev
-					&& !(bp->b_flags & B_INVAL))
+	dp = BUFHASH(dev, blkno);
+	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
+		if (bp->b_blkno == dblkno && bp->b_dev == dev &&
+		    !(bp->b_flags & B_INVAL))
 			return (1);
 	return (0);
 }
@@ -322,17 +329,18 @@ dev_t dev;
 daddr_t blkno;
 {
 	register struct buf *bp, *dp, *ep;
-	register int i, x, dblkno;
+	register int i, x;
+	register int dblkno = fsbtodb(blkno);
 
 	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
 		blkno = 1 << ((sizeof(int)*NBBY-PGSHIFT) + 1);
 	dblkno = fsbtodb(blkno);
+	dp = BUFHASH(dev, dblkno);
     loop:
 	(void) spl0();
-	for (bp = &buf[bufhash[BUFHASH(blkno)]]; bp != &buf[-1];
-	    bp = &buf[bp->b_hlink]) {
-		if (bp->b_blkno != dblkno || bp->b_dev != dev
-					|| bp->b_flags & B_INVAL)
+	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw) {
+		if (bp->b_blkno != dblkno || bp->b_dev != dev ||
+		    bp->b_flags&B_INVAL)
 			continue;
 		(void) spl6();
 		if (bp->b_flags&B_BUSY) {
@@ -344,7 +352,7 @@ daddr_t blkno;
 #ifdef	DISKMON
 		i = 0;
 		dp = bp->av_forw;
-		while (dp != &bfreelist) {
+		while ((dp->b_flags & B_HEAD) == 0) {
 			i++;
 			dp = dp->av_forw;
 		}
@@ -357,46 +365,26 @@ daddr_t blkno;
 	}
 	if (major(dev) >= nblkdev)
 		panic("blkdev");
-	dp = bdevsw[major(dev)].d_tab;
-	if (dp == NULL)
-		panic("devtab");
 	(void) spl6();
-	if (bfreelist.av_forw == &bfreelist) {
-		bfreelist.b_flags |= B_WANTED;
-		sleep((caddr_t)&bfreelist, PRIBIO+1);
+	for (ep = &bfreelist[BQUEUES-1]; ep > bfreelist; ep--)
+		if (ep->av_forw != ep)
+			break;
+	if (ep == bfreelist) {		/* no free blocks at all */
+		ep->b_flags |= B_WANTED;
+		sleep((caddr_t)ep, PRIBIO+1);
 		goto loop;
 	}
 	(void) spl0();
-	bp = bfreelist.av_forw;
+	bp = ep->av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {
 		bp->b_flags |= B_ASYNC;
 		bwrite(bp);
 		goto loop;
 	}
-	if (bp->b_dev == NODEV)
-		goto done;
-	/* INLINE EXPANSION OF bunhash(bp) */
 #ifdef EPAWNJ
 	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
 #endif
-	(void) spl6();
-	i = BUFHASH(dbtofsb(bp->b_blkno));
-	x = bp - buf;
-	if (bufhash[i] == x) {
-		bufhash[i] = bp->b_hlink;
-	} else {
-		for (ep = &buf[bufhash[i]]; ep != &buf[-1];
-		    ep = &buf[ep->b_hlink])
-			if (ep->b_hlink == x) {
-				ep->b_hlink = bp->b_hlink;
-				goto done;
-			}
-		panic("getblk");
-	}
-done:
-	(void) spl0();
-	/* END INLINE EXPANSION */
 	bp->b_flags = B_BUSY;
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
@@ -406,9 +394,6 @@ done:
 	dp->b_forw = bp;
 	bp->b_dev = dev;
 	bp->b_blkno = dblkno;
-	i = BUFHASH(blkno);
-	bp->b_hlink = bufhash[i];
-	bufhash[i] = bp - buf;
 	return(bp);
 }
 
@@ -423,26 +408,26 @@ geteblk()
 
 loop:
 	(void) spl6();
-	while (bfreelist.av_forw == &bfreelist) {
-		bfreelist.b_flags |= B_WANTED;
-		sleep((caddr_t)&bfreelist, PRIBIO+1);
+	for (dp = &bfreelist[BQUEUES-1]; dp > bfreelist; dp--)
+		if (dp->av_forw != dp)
+			break;
+	if (dp == bfreelist) {		/* no free blocks */
+		dp->b_flags |= B_WANTED;
+		sleep((caddr_t)dp, PRIBIO+1);
+		goto loop;
 	}
 	(void) spl0();
-	dp = &bfreelist;
-	bp = bfreelist.av_forw;
+	bp = dp->av_forw;
 	notavail(bp);
 	if (bp->b_flags & B_DELWRI) {
 		bp->b_flags |= B_ASYNC;
 		bwrite(bp);
 		goto loop;
 	}
-	if (bp->b_dev != NODEV) {
 #ifdef EPAWNJ
-		trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
+	trace(TR_BRELSE, bp->b_dev, dbtofsb(bp->b_blkno));
 #endif
-		bunhash(bp);
-	}
-	bp->b_flags = B_BUSY;
+	bp->b_flags = B_BUSY|B_INVAL;
 	bp->b_back->b_forw = bp->b_forw;
 	bp->b_forw->b_back = bp->b_back;
 	bp->b_forw = dp->b_forw;
@@ -452,32 +437,6 @@ loop:
 	bp->b_dev = (dev_t)NODEV;
 	bp->b_hlink = -1;
 	return(bp);
-}
-
-bunhash(bp)
-	register struct buf *bp;
-{
-	register struct buf *ep;
-	register int i, x, s;
-
-	if (bp->b_dev == NODEV)
-		return;
-	s = spl6();
-	i = BUFHASH(dbtofsb(bp->b_blkno));
-	x = bp - buf;
-	if (bufhash[i] == x) {
-		bufhash[i] = bp->b_hlink;
-		goto ret;
-	}
-	for (ep = &buf[bufhash[i]]; ep != &buf[-1];
-	    ep = &buf[ep->b_hlink])
-		if (ep->b_hlink == x) {
-			ep->b_hlink = bp->b_hlink;
-			goto ret;
-		}
-	panic("bunhash");
-ret:
-	splx(s);
 }
 
 /*
@@ -697,10 +656,12 @@ bflush(dev)
 dev_t dev;
 {
 	register struct buf *bp;
+	register struct buf *flist;
 
 loop:
 	(void) spl6();
-	for (bp = bfreelist.av_forw; bp != &bfreelist; bp = bp->av_forw) {
+	for (flist = bfreelist; flist < &bfreelist[BQUEUES]; flist++)
+	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
 		if (bp->b_flags&B_DELWRI && (dev == NODEV||dev==bp->b_dev)) {
 			bp->b_flags |= B_ASYNC;
 			notavail(bp);
@@ -814,7 +775,6 @@ dev_t dev;
 	register struct buf *bp, *dp;
 
 	dp = bdevsw[major(dev)].d_tab;
-
 	for (bp = dp->b_forw; bp != dp; bp = bp->b_forw)
 		if (bp->b_dev == dev)
 			bp->b_flags |= B_INVAL;
