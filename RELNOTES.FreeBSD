@@ -1,6 +1,5 @@
                                     FreeBSD
                                 Release 1.0 GAMMA
-				$Id: RELNOTES.FreeBSD,v 1.1 1993/08/26 23:36:16 rgrimes Exp $
 
 1. Technical overview
 ---------------------
@@ -237,4 +236,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.1 1993/08/26 23:36:16 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.2 1993/08/30 07:13:50 rgrimes Exp $
