@@ -34,15 +34,12 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)redirect.m4	8.2 (Berkeley) 12/27/93')
-divert(-1)
-
-
-PUSHDIVERT(3)
-# addresses sent to foo@host.REDIRECT will give a 551 error code
-R$* < @ $+ .REDIRECT. >	$# error $@ NOUSER $: "551 User not local; please try " <$1@$2>
-POPDIVERT
-
-PUSHDIVERT(6)
-CPREDIRECT
-POPDIVERT
+VERSIONID(`@(#)sco32.m4	8.1 (Berkeley) 11/27/93')
+define(`ALIAS_FILE', /usr/lib/mail/aliases)dnl
+define(`QUEUE_DIR', /usr/spool/mqueue)dnl
+define(`STATUS_FILE', /usr/lib/sendmail.st)dnl
+define(`UUCP_MAILER_PATH', /usr/bin/uux)dnl
+define(`LOCAL_MAILER_PATH', /usr/bin/lmail)dnl
+define(`LOCAL_MAILER_FLAGS', PuhCE)dnl
+define(`LOCAL_MAILER_ARGS', `lmail $u')dnl
+define(`LOCAL_SHELL_FLAGS', Peu)dnl

@@ -34,9 +34,11 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)nextstep.m4	8.3 (Berkeley) 8/13/93')
+VERSIONID(`@(#)nextstep.m4	8.4 (Berkeley) 11/30/93')
 define(`ALIAS_FILE', /etc/sendmail/aliases)dnl
 define(`HELP_FILE', /usr/lib/sendmail.hf)dnl
 define(`STATUS_FILE', /etc/sendmail/sendmail.st)dnl
 define(`UUCP_MAILER_PATH', /usr/bin/uux)dnl
 define(`QUEUE_DIR', /usr/spool/mqueue)dnl
+define(`LOCAL_MAILER_FLAGS', `rmnP')dnl
+define(`LOCAL_SHELL_FLAGS', `euP')dnl

@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.21 (Berkeley) 10/29/93";
+static char sccsid[] = "@(#)recipient.c	8.39 (Berkeley) 1/10/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -222,10 +222,25 @@ recipient(a, sendq, e)
 	stripquotes(buf);
 
 	/* check for direct mailing to restricted mailers */
-	if (a->q_alias == NULL && m == ProgMailer)
+	if (m == ProgMailer)
 	{
-		a->q_flags |= QBADADDR;
-		usrerr("550 Cannot mail directly to programs");
+		if (a->q_alias == NULL)
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Cannot mail directly to programs");
+		}
+		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 User %s@%s doesn't have a valid shell for mailing to programs",
+				a->q_alias->q_ruser, MyHostName);
+		}
+		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Address %s is unsafe for mailing to programs",
+				a->q_alias->q_paddr);
+		}
 	}
 
 	/*
@@ -252,6 +267,8 @@ recipient(a, sendq, e)
 					message("duplicate suppressed");
 				q->q_flags |= a->q_flags;
 			}
+			else if (bitset(QSELFREF, q->q_flags))
+				q->q_flags |= a->q_flags & ~QDONTSEND;
 			a = q;
 			goto testselfdestruct;
 		}
@@ -294,6 +311,7 @@ recipient(a, sendq, e)
 						e->e_id, a->q_user, errstring(ret));
 #endif
 				a->q_flags |= QQUEUEUP;
+				a->q_flags &= ~QDONTSEND;
 				usrerr("451 Cannot open %s: %s",
 					a->q_user, errstring(ret));
 			}
@@ -307,18 +325,27 @@ recipient(a, sendq, e)
 	}
 	else if (m == FileMailer)
 	{
-		struct stat stb;
 		extern bool writable();
 
-		p = strrchr(buf, '/');
 		/* check if writable or creatable */
 		if (a->q_alias == NULL)
 		{
 			a->q_flags |= QBADADDR;
 			usrerr("550 Cannot mail directly to files");
 		}
-		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-		    (*p = '\0', safefile(buf, RealUid, RealGid, NULL, TRUE, S_IWRITE|S_IEXEC) != 0))
+		else if (bitset(QBOGUSSHELL, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 User %s@%s doesn't have a valid shell for mailing to files",
+				a->q_alias->q_ruser, MyHostName);
+		}
+		else if (bitset(QUNSAFEADDR, a->q_alias->q_flags))
+		{
+			a->q_flags |= QBADADDR;
+			usrerr("550 Address %s is unsafe for mailing to files",
+				a->q_alias->q_paddr);
+		}
+		else if (!writable(buf, getctladdr(a), SFF_ANYFILE))
 		{
 			a->q_flags |= QBADADDR;
 			giveresponse(EX_CANTCREAT, m, NULL, a->q_alias, e);
@@ -340,7 +367,6 @@ recipient(a, sendq, e)
 	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
 	{
 		extern int udbexpand();
-		extern int errno;
 
 		if (udbexpand(a, sendq, e) == EX_TEMPFAIL)
 		{
@@ -429,6 +455,11 @@ recipient(a, sendq, e)
 			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
 			if (nbuf[0] != '\0')
 				a->q_fullname = newstr(nbuf);
+			if (pw->pw_shell != NULL && pw->pw_shell[0] != '\0' &&
+			    !usershellok(pw->pw_shell))
+			{
+				a->q_flags |= QBOGUSSHELL;
+			}
 			if (!quoted)
 				forward(a, sendq, e);
 		}
@@ -563,7 +594,9 @@ finduser(name, fuzzyp)
 **	not writable.  This is also enforced by mailfile.
 **
 **	Parameters:
-**		s -- pointer to a stat struct for the file.
+**		filename -- the file name to check.
+**		ctladdr -- the controlling address for this file.
+**		flags -- SFF_* flags to control the function.
 **
 **	Returns:
 **		TRUE -- if we will be able to write this file.
@@ -574,35 +607,98 @@ finduser(name, fuzzyp)
 */
 
 bool
-writable(s)
-	register struct stat *s;
+writable(filename, ctladdr, flags)
+	char *filename;
+	ADDRESS *ctladdr;
+	int flags;
 {
 	uid_t euid;
 	gid_t egid;
 	int bits;
+	register char *p;
+	char *uname;
+	struct stat stb;
+	extern char RealUserName[];
 
-	if (bitset(0111, s->st_mode))
+	if (tTd(29, 5))
+		printf("writable(%s, %x)\n", filename, flags);
+
+#ifdef HASLSTAT
+	if ((bitset(SFF_NOSLINK, flags) ? lstat(filename, &stb)
+					: stat(filename, &stb)) < 0)
+#else
+	if (stat(filename, &stb) < 0)
+#endif
+	{
+		/* file does not exist -- see if directory is safe */
+		p = strrchr(filename, '/');
+		if (p == NULL)
+		{
+			errno = ENOTDIR;
+			return FALSE;
+		}
+		*p = '\0';
+		errno = safefile(filename, RealUid, RealGid, RealUserName,
+				 SFF_MUSTOWN, S_IWRITE|S_IEXEC);
+		*p = '/';
+		return errno == 0;
+	}
+
+#ifdef SUID_ROOT_FILES_OK
+	/* really ought to be passed down -- and not a good idea */
+	flags |= SFF_ROOTOK;
+#endif
+
+	/*
+	**  File does exist -- check that it is writable.
+	*/
+
+	if (bitset(0111, stb.st_mode))
+	{
+		if (tTd(29, 5))
+			printf("failed (mode %o: x bits)\n", stb.st_mode);
+		errno = EPERM;
 		return (FALSE);
-	euid = RealUid;
-	egid = RealGid;
+	}
+
+	if (ctladdr != NULL && geteuid() == 0)
+	{
+		euid = ctladdr->q_uid;
+		egid = ctladdr->q_gid;
+		uname = ctladdr->q_user;
+	}
+	else
+	{
+		euid = RealUid;
+		egid = RealGid;
+		uname = RealUserName;
+	}
+	if (euid == 0)
+	{
+		euid = DefUid;
+		uname = DefUser;
+	}
+	if (egid == 0)
+		egid = DefGid;
 	if (geteuid() == 0)
 	{
-		if (bitset(S_ISUID, s->st_mode))
-			euid = s->st_uid;
-		if (bitset(S_ISGID, s->st_mode))
-			egid = s->st_gid;
+		if (bitset(S_ISUID, stb.st_mode) &&
+		    (stb.st_uid != 0 || bitset(SFF_ROOTOK, flags)))
+		{
+			euid = stb.st_uid;
+			uname = NULL;
+		}
+		if (bitset(S_ISGID, stb.st_mode) &&
+		    (stb.st_gid != 0 || bitset(SFF_ROOTOK, flags)))
+			egid = stb.st_gid;
 	}
 
-	if (euid == 0)
-		return (TRUE);
-	bits = S_IWRITE;
-	if (euid != s->st_uid)
-	{
-		bits >>= 3;
-		if (egid != s->st_gid)
-			bits >>= 3;
-	}
-	return ((s->st_mode & bits) != 0);
+	if (tTd(29, 5))
+		printf("\teu/gid=%d/%d, st_u/gid=%d/%d\n",
+			euid, egid, stb.st_uid, stb.st_gid);
+
+	errno = safefile(filename, euid, egid, uname, flags, S_IWRITE);
+	return errno == 0;
 }
 /*
 **  INCLUDE -- handle :include: specification.
@@ -628,6 +724,10 @@ writable(s)
 static jmp_buf	CtxIncludeTimeout;
 static int	includetimeout();
 
+#ifndef S_IWOTH
+# define S_IWOTH	(S_IWRITE >> 6)
+#endif
+
 int
 include(fname, forwarding, ctladdr, sendq, e)
 	char *fname;
@@ -647,6 +747,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 	gid_t savedgid, gid;
 	char *uname;
 	int rval = 0;
+	int sfflags = forwarding ? SFF_MUSTOWN : SFF_ANYFILE;
+	struct stat st;
 	char buf[MAXLINE];
 
 	if (tTd(27, 2))
@@ -665,9 +767,9 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ca = getctladdr(ctladdr);
 	if (ca == NULL)
 	{
-		uid = 0;
-		gid = 0;
-		uname = NULL;
+		uid = DefUid;
+		gid = DefGid;
+		uname = DefUser;
 		saveduid = -1;
 	}
 	else
@@ -699,7 +801,6 @@ include(fname, forwarding, ctladdr, sendq, e)
 	{
 		ctladdr->q_flags |= QQUEUEUP;
 		errno = 0;
-		usrerr("451 open timeout on %s", fname);
 
 		/* return pseudo-error code */
 		rval = EOPENTIMEOUT;
@@ -708,41 +809,24 @@ include(fname, forwarding, ctladdr, sendq, e)
 	ev = setevent((time_t) 60, includetimeout, 0);
 
 	/* the input file must be marked safe */
-	rval = safefile(fname, uid, gid, uname, forwarding, S_IREAD);
+	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD);
 	if (rval != 0)
 	{
 		/* don't use this :include: file */
-		clrevent(ev);
 		if (tTd(27, 4))
 			printf("include: not safe (uid=%d): %s\n",
 				uid, errstring(rval));
-		goto resetuid;
 	}
-
-	fp = fopen(fname, "r");
-	if (fp == NULL)
+	else
 	{
-		rval = errno;
-		if (tTd(27, 4))
-			printf("include: open: %s\n", errstring(rval));
-	}
-	else if (ca == NULL)
-	{
-		struct stat st;
-
-		if (fstat(fileno(fp), &st) < 0)
+		fp = fopen(fname, "r");
+		if (fp == NULL)
 		{
 			rval = errno;
-			syserr("Cannot fstat %s!", fname);
-		}
-		else
-		{
-			ctladdr->q_uid = st.st_uid;
-			ctladdr->q_gid = st.st_gid;
-			ctladdr->q_flags |= QGOODUID;
+			if (tTd(27, 4))
+				printf("include: open: %s\n", errstring(rval));
 		}
 	}
-
 	clrevent(ev);
 
 resetuid:
@@ -761,8 +845,42 @@ resetuid:
 	if (tTd(27, 9))
 		printf("include: reset uid = %d/%d\n", getuid(), geteuid());
 
+	if (rval == EOPENTIMEOUT)
+		usrerr("451 open timeout on %s", fname);
+
 	if (fp == NULL)
 		return rval;
+
+	if (fstat(fileno(fp), &st) < 0)
+	{
+		rval = errno;
+		syserr("Cannot fstat %s!", fname);
+		return rval;
+	}
+
+	if (ca == NULL)
+	{
+		ctladdr->q_uid = st.st_uid;
+		ctladdr->q_gid = st.st_gid;
+		ctladdr->q_flags |= QGOODUID;
+	}
+	if (ca != NULL && ca->q_uid == st.st_uid)
+	{
+		/* optimization -- avoid getpwuid if we already have info */
+		ctladdr->q_flags |= ca->q_flags & QBOGUSSHELL;
+		ctladdr->q_ruser = ca->q_ruser;
+	}
+	else
+	{
+		register struct passwd *pw;
+
+		pw = getpwuid(st.st_uid);
+		if (pw == NULL || !usershellok(pw->pw_shell))
+		{
+			ctladdr->q_ruser = newstr(pw->pw_name);
+			ctladdr->q_flags |= QBOGUSSHELL;
+		}
+	}
 
 	if (bitset(EF_VRFYONLY, e->e_flags))
 	{
@@ -772,6 +890,19 @@ resetuid:
 		xfclose(fp, "include", fname);
 		return rval;
 	}
+
+	/*
+	** Check to see if some bad guy can write this file
+	**
+	**	This should really do something clever with group
+	**	permissions; currently we just view world writable
+	**	as unsafe.  Also, we don't check for writable
+	**	directories in the path.  We've got to leave
+	**	something for the local sysad to do.
+	*/
+
+	if (bitset(S_IWOTH, st.st_mode))
+		ctladdr->q_flags |= QUNSAFEADDR;
 
 	/* read the file -- each line is a comma-separated list. */
 	FileName = fname;

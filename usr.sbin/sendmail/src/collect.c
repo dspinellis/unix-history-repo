@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.6 (Berkeley) 10/27/93";
+static char sccsid[] = "@(#)collect.c	8.8 (Berkeley) 1/8/94";
 #endif /* not lint */
 
 # include <errno.h>
@@ -160,7 +160,10 @@ collect(smtpmode, requeueflag, e)
 			if (sfgets(freebuf, MAXLINE, InChannel,
 					TimeOuts.to_datablock,
 					"message header read") == NULL)
-				goto readerr;
+			{
+				freebuf[0] = '\0';
+				break;
+			}
 
 			/* is this a continuation line? */
 			if (*freebuf != ' ' && *freebuf != '\t')
@@ -257,7 +260,8 @@ collect(smtpmode, requeueflag, e)
 			break;
 
 		/* check for transparent dot */
-		if (OpMode == MD_SMTP && bp[0] == '.' && bp[1] == '.')
+		if ((OpMode == MD_SMTP || OpMode == MD_DAEMON) &&
+		    bp[0] == '.' && bp[1] == '.')
 			bp++;
 
 		/*
@@ -278,6 +282,8 @@ collect(smtpmode, requeueflag, e)
 	if (feof(InChannel) || ferror(InChannel))
 	{
 readerr:
+		if (tTd(30, 1))
+			printf("collect: read error\n");
 		inputerr = TRUE;
 	}
 
@@ -290,7 +296,7 @@ readerr:
 	}
 
 	/* An EOF when running SMTP is an error */
-	if (inputerr && OpMode == MD_SMTP)
+	if (inputerr && (OpMode == MD_SMTP || OpMode == MD_DAEMON))
 	{
 		char *host;
 		char *problem;

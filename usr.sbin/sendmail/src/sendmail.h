@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)sendmail.h	8.26 (Berkeley) 10/31/93
+ *	@(#)sendmail.h	8.38 (Berkeley) 1/5/94
  */
 
 /*
@@ -41,7 +41,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.26		10/31/93";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.38		1/5/94";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -57,7 +57,6 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.26		10/31/93";
 # include <string.h>
 # include <time.h>
 # include <errno.h>
-# include <sys/un.h>
 
 # include "conf.h"
 # include "useful.h"
@@ -68,6 +67,9 @@ static char SmailSccsId[] =	"@(#)sendmail.h	8.26		10/31/93";
 
 # ifdef DAEMON
 # include <sys/socket.h>
+# endif
+# ifdef NETUNIX
+# include <sys/un.h>
 # endif
 # ifdef NETINET
 # include <netinet/in.h>
@@ -148,6 +150,8 @@ typedef struct address ADDRESS;
 # define QSELFREF	000200	/* this address references itself */
 # define QVERIFIED	000400	/* verified, but not expanded */
 # define QREPORT	001000	/* report this address in return message */
+# define QBOGUSSHELL	002000	/* this entry has an invalid shell listed */
+# define QUNSAFEADDR	004000	/* address aquired through an unsafe path */
 
 # define NULLADDR	((ADDRESS *) NULL)
 /*
@@ -287,9 +291,9 @@ ENVELOPE
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
 	ADDRESS		*e_errorqueue;	/* the queue for error responses */
 	long		e_msgsize;	/* size of the message in bytes */
+	long		e_flags;	/* flags, see below */
 	int		e_nrcpts;	/* number of recipients */
 	short		e_class;	/* msg class (priority, junk, etc.) */
-	short		e_flags;	/* flags, see below */
 	short		e_hopcount;	/* number of times processed */
 	short		e_nsent;	/* number of sends since checkpoint */
 	short		e_sendmode;	/* message send mode */
@@ -314,20 +318,21 @@ ENVELOPE
 };
 
 /* values for e_flags */
-#define EF_OLDSTYLE	000001		/* use spaces (not commas) in hdrs */
-#define EF_INQUEUE	000002		/* this message is fully queued */
-#define EF_CLRQUEUE	000010		/* disk copy is no longer needed */
-#define EF_SENDRECEIPT	000020		/* send a return receipt */
-#define EF_FATALERRS	000040		/* fatal errors occured */
-#define EF_KEEPQUEUE	000100		/* keep queue files always */
-#define EF_RESPONSE	000200		/* this is an error or return receipt */
-#define EF_RESENT	000400		/* this message is being forwarded */
-#define EF_VRFYONLY	001000		/* verify only (don't expand aliases) */
-#define EF_WARNING	002000		/* warning message has been sent */
-#define EF_QUEUERUN	004000		/* this envelope is from queue */
-#define EF_GLOBALERRS	010000		/* treat errors as global */
-#define EF_PM_NOTIFY	020000		/* send return mail to postmaster */
-#define EF_METOO	040000		/* send to me too */
+#define EF_OLDSTYLE	0x0000001	/* use spaces (not commas) in hdrs */
+#define EF_INQUEUE	0x0000002	/* this message is fully queued */
+#define EF_CLRQUEUE	0x0000008	/* disk copy is no longer needed */
+#define EF_SENDRECEIPT	0x0000010	/* send a return receipt */
+#define EF_FATALERRS	0x0000020	/* fatal errors occured */
+#define EF_KEEPQUEUE	0x0000040	/* keep queue files always */
+#define EF_RESPONSE	0x0000080	/* this is an error or return receipt */
+#define EF_RESENT	0x0000100	/* this message is being forwarded */
+#define EF_VRFYONLY	0x0000200	/* verify only (don't expand aliases) */
+#define EF_WARNING	0x0000400	/* warning message has been sent */
+#define EF_QUEUERUN	0x0000800	/* this envelope is from queue */
+#define EF_GLOBALERRS	0x0001000	/* treat errors as global */
+#define EF_PM_NOTIFY	0x0002000	/* send return mail to postmaster */
+#define EF_METOO	0x0004000	/* send to me too */
+#define EF_LOGSENDER	0x0008000	/* need to log the sender */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
@@ -722,6 +727,17 @@ struct prival
 #define RF_COPYALL		(RF_COPYPARSE|RF_COPYPADDR)
 #define RF_COPYNONE		0
 
+
+/*
+**  Flags passed to safefile.
+*/
+
+#define SFF_ANYFILE		0	/* no special restrictions */
+#define SFF_MUSTOWN		0x0001	/* user must own this file */
+#define SFF_NOSLINK		0x0002	/* file cannot be a symbolic link */
+#define SFF_ROOTOK		0x0004	/* ok for root to own this file */
+
+
 /*
 **  Regular UNIX sockaddrs are too small to handle ISO addresses, so
 **  we are forced to declare a supertype here.
@@ -730,7 +746,9 @@ struct prival
 union bigsockaddr
 {
 	struct sockaddr		sa;	/* general version */
+#ifdef NETUNIX
 	struct sockaddr_un	sunix;	/* UNIX family */
+#endif
 #ifdef NETINET
 	struct sockaddr_in	sin;	/* INET family */
 #endif
@@ -804,7 +822,7 @@ EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
 EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
-EXTERN bool	CheckLoopBack;	/* check for loopback on HELO packet */
+extern bool	CheckLoopBack;	/* check for loopback on HELO packet */
 EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */
 EXTERN int	PrivacyFlags;	/* privacy flags */
@@ -825,13 +843,14 @@ EXTERN long	MaxMessageSize;	/* advertised max size we will accept */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
 EXTERN bool	DontPruneRoutes;	/* don't prune source routes */
-EXTERN bool	BrokenSmtpPeers;	/* peers can't handle 2-line greeting */
+extern bool	BrokenSmtpPeers;	/* peers can't handle 2-line greeting */
 EXTERN int	MaxMciCache;		/* maximum entries in MCI cache */
 EXTERN time_t	MciCacheTimeout;	/* maximum idle time on connections */
 EXTERN char	*QueueLimitRecipient;	/* limit queue runs to this recipient */
 EXTERN char	*QueueLimitSender;	/* limit queue runs to this sender */
 EXTERN char	*QueueLimitId;		/* limit queue runs to this id */
 EXTERN FILE	*TrafficLogFile;	/* file in which to log all traffic */
+extern int	errno;
 
 
 /*
@@ -909,7 +928,8 @@ extern const char	*errstring __P((int));
 extern void		expand __P((char *, char *, char *, ENVELOPE *));
 extern void		define __P((int, char *, ENVELOPE *));
 extern char		*macvalue __P((int, ENVELOPE *));
-extern char		**prescan __P((char *, int, char[], char **));
+extern char		**prescan __P((char *, int, char[], int, char **));
+extern int		rewrite __P((char **, int, int, ENVELOPE *));
 extern char		*fgetfolded __P((char *, int, FILE *));
 extern ADDRESS		*recipient __P((ADDRESS *, ADDRESS **, ENVELOPE *));
 extern ENVELOPE		*newenvelope __P((ENVELOPE *, ENVELOPE *));
@@ -928,6 +948,8 @@ extern char		*hostsignature __P((MAILER *, char *, ENVELOPE *));
 extern void		openxscript __P((ENVELOPE *));
 extern void		closexscript __P((ENVELOPE *));
 extern sigfunc_t	setsignal __P((int, sigfunc_t));
+extern char		*shortenstring __P((char *, int));
+extern bool		usershellok __P((char *));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__

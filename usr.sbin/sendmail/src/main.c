@@ -39,7 +39,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.33 (Berkeley) 10/24/93";
+static char sccsid[] = "@(#)main.c	8.46 (Berkeley) 1/9/94";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -155,6 +155,7 @@ main(argc, argv, envp)
 	extern char *getcfname();
 	extern char *optarg;
 	extern char **environ;
+	extern void dumpstate();
 
 	/*
 	**  Check to see if we reentered.
@@ -170,7 +171,12 @@ main(argc, argv, envp)
 	reenter = TRUE;
 
 	/* do machine-dependent initializations */
-	init_md();
+	init_md(argc, argv);
+
+	/* arrange to dump state on signal */
+#ifdef SIGUSR1
+	setsignal(SIGUSR1, dumpstate);
+#endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
 	DtableSize = getdtsize();
@@ -253,12 +259,15 @@ main(argc, argv, envp)
 
 #if defined(__osf__) || defined(_AIX3)
 # define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:x"
-#else
-# if defined(ultrix)
-#  define OPTIONS	"B:b:C:cd:e:F:f:h:IiM:mno:p:q:r:sTtvX:"
-# else
-#  define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:"
-# endif
+#endif
+#if defined(ultrix)
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IiM:mno:p:q:r:sTtvX:"
+#endif
+#if defined(NeXT)
+# define OPTIONS	"B:b:C:cd:e:F:f:h:IimnOo:p:q:r:sTtvX:"
+#endif
+#ifndef OPTIONS
+# define OPTIONS	"B:b:C:cd:e:F:f:h:Iimno:p:q:r:sTtvX:"
 #endif
 	while ((j = getopt(argc, argv, OPTIONS)) != EOF)
 	{
@@ -334,10 +343,9 @@ main(argc, argv, envp)
 
 		if (tTd(0, 4))
 			printf("canonical name: %s\n", jbuf);
-		p = newstr(jbuf);
 		define('w', newstr(jbuf), CurEnv);	/* must be new string */
-		define('j', p, CurEnv);
-		setclass('w', p);
+		define('j', newstr(jbuf), CurEnv);
+		setclass('w', jbuf);
 
 		p = strchr(jbuf, '.');
 		if (p != NULL)
@@ -360,6 +368,8 @@ main(argc, argv, envp)
 			p = utsname.nodename;
 		else
 		{
+			if (tTd(0, 22))
+				printf("uname failed (%s)\n", errstring(errno));
 			makelower(jbuf);
 			p = jbuf;
 		}
@@ -367,6 +377,7 @@ main(argc, argv, envp)
 			printf("UUCP nodename: %s\n", p);
 		p = newstr(p);
 		define('k', p, CurEnv);
+		setclass('k', p);
 		setclass('w', p);
 	}
 	while (av != NULL && *av != NULL)
@@ -586,6 +597,10 @@ main(argc, argv, envp)
 		  case 'x':	/* random flag that OSF/1 & AIX mailx passes */
 			break;
 # endif
+# if defined(NeXT)
+		  case 'O':	/* random flag that NeXT Mail.app passes */
+			break;
+# endif
 
 		  default:
 			ExitStat = EX_USAGE;
@@ -601,6 +616,9 @@ main(argc, argv, envp)
 	**	Extract special fields for local use.
 	*/
 
+#ifdef XDEBUG
+	checkfd012("before readcf");
+#endif
 	readcf(getcfname(), safecf, CurEnv);
 
 	if (tTd(0, 1))
@@ -761,6 +779,10 @@ main(argc, argv, envp)
 		exit(ExitStat);
 	}
 
+#ifdef XDEBUG
+	checkfd012("before main() initmaps");
+#endif
+
 	/*
 	**  Do operation-mode-dependent initialization.
 	*/
@@ -899,7 +921,8 @@ main(argc, argv, envp)
 			{
 				char pvpbuf[PSBUFSIZE];
 
-				pvp = prescan(++p, ',', pvpbuf, &delimptr);
+				pvp = prescan(++p, ',', pvpbuf, sizeof pvpbuf,
+					      &delimptr);
 				if (pvp == NULL)
 					continue;
 				p = q;
@@ -907,7 +930,7 @@ main(argc, argv, envp)
 				{
 					int stat;
 
-					stat = rewrite(pvp, atoi(p), CurEnv);
+					stat = rewrite(pvp, atoi(p), 0, CurEnv);
 					if (stat != EX_OK)
 						printf("== Ruleset %s status %d\n",
 							p, stat);
@@ -1005,7 +1028,7 @@ main(argc, argv, envp)
 	**  commands.  This will never return.
 	*/
 
-	if (OpMode == MD_SMTP)
+	if (OpMode == MD_SMTP || OpMode == MD_DAEMON)
 		smtp(CurEnv);
 # endif /* SMTP */
 
@@ -1325,7 +1348,8 @@ static void
 obsolete(argv)
 	char *argv[];
 {
-	char *ap;
+	register char *ap;
+	register char *op;
 
 	while ((ap = *++argv) != NULL)
 	{
@@ -1333,10 +1357,18 @@ obsolete(argv)
 		if (ap[0] != '-' || ap[1] == '-')
 			return;
 
+		/* skip over options that do have a value */
+		op = strchr(OPTIONS, ap[1]);
+		if (op != NULL && *++op == ':' && ap[2] == '\0' &&
+		    argv[1] != NULL && argv[1][0] != '-')
+		{
+			argv++;
+			continue;
+		}
+
 		/* If -C doesn't have an argument, use sendmail.cf. */
 #define	__DEFPATH	"sendmail.cf"
-		if (ap[1] == 'C' && ap[2] == '\0' &&
-		    (argv[1] == NULL || argv[1][0] == '-'))
+		if (ap[1] == 'C' && ap[2] == '\0')
 		{
 			*argv = xalloc(sizeof(__DEFPATH) + 2);
 			argv[0][0] = '-';
@@ -1345,13 +1377,11 @@ obsolete(argv)
 		}
 
 		/* If -q doesn't have an argument, run it once. */
-		if (ap[1] == 'q' && ap[2] == '\0' &&
-		    (argv[1] == NULL || argv[1][0] == '-'))
+		if (ap[1] == 'q' && ap[2] == '\0')
 			*argv = "-q0";
 
 		/* if -d doesn't have an argument, use 0-99.1 */
-		if (ap[1] == 'd' && ap[2] == '\0' &&
-		    (argv[1] == NULL || !isdigit(argv[1][0])))
+		if (ap[1] == 'd' && ap[2] == '\0')
 			*argv = "-d0-99.1";
 	}
 }
@@ -1396,4 +1426,41 @@ auth_warning(e, msg, va_alist)
 		VA_END;
 		addheader("X-Authentication-Warning", buf, e);
 	}
+}
+/*
+**  DUMPSTATE -- dump state on user signal
+**
+**	For debugging.
+*/
+
+void
+dumpstate()
+{
+#ifdef LOG
+	register char *j = macvalue('j', CurEnv);
+	register STAB *s;
+
+	syslog(LOG_DEBUG, "--- dumping state on user signal: $j = %s ---", j);
+	s = stab(j, ST_CLASS, ST_FIND);
+	if (s == NULL || !bitnset('w', s->s_class))
+		syslog(LOG_DEBUG, "*** $j not in $=w ***");
+	syslog(LOG_DEBUG, "--- open file descriptors: ---");
+	printopenfds(TRUE);
+	syslog(LOG_DEBUG, "--- connection cache: ---");
+	mci_dump_all(TRUE);
+	if (RewriteRules[89] != NULL)
+	{
+		int stat;
+		register char **pvp;
+		char *pv[MAXATOM + 1];
+
+		pv[0] = NULL;
+		stat = rewrite(pv, 89, 0, CurEnv);
+		syslog(LOG_DEBUG, "--- ruleset 89 returns stat %d, pv: ---",
+			stat);
+		for (pvp = pv; *pvp != NULL; pvp++)
+			syslog(LOG_DEBUG, "%s", *pvp);
+	}
+	syslog(LOG_DEBUG, "--- end of state dump ---");
+#endif
 }

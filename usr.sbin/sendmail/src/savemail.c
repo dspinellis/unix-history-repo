@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.17 (Berkeley) 10/31/93";
+static char sccsid[] = "@(#)savemail.c	8.24 (Berkeley) 12/18/93";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -69,6 +69,10 @@ static char sccsid[] = "@(#)savemail.c	8.17 (Berkeley) 10/31/93";
 # define ESM_PANIC	6	/* leave the locked queue/transcript files */
 # define ESM_DONE	7	/* the message is successfully delivered */
 
+# ifndef _PATH_VARTMP
+#  define _PATH_VARTMP	"/usr/tmp/"
+# endif
+
 
 savemail(e)
 	register ENVELOPE *e;
@@ -82,6 +86,7 @@ savemail(e)
 	register char *p;
 	extern char *ttypath();
 	typedef int (*fnptr)();
+	extern bool writable();
 
 	if (tTd(6, 1))
 	{
@@ -374,8 +379,14 @@ savemail(e)
 				break;
 			}
 
-			fp = dfopen("/usr/tmp/dead.letter",
-				    O_WRONLY|O_CREAT|O_APPEND, FileMode);
+			strcpy(buf, _PATH_VARTMP);
+			strcat(buf, "dead.letter");
+			if (!writable(buf, NULLADDR, SFF_NOSLINK))
+			{
+				state = ESM_PANIC;
+				break;
+			}
+			fp = dfopen(buf, O_WRONLY|O_CREAT|O_APPEND, FileMode);
 			if (fp == NULL)
 			{
 				state = ESM_PANIC;
@@ -399,8 +410,7 @@ savemail(e)
 
 		  case ESM_PANIC:
 			/* leave the locked queue & transcript files around */
-			syserr("554 savemail: cannot save rejected email anywhere");
-			exit(EX_SOFTWARE);
+			syserr("!554 savemail: cannot save rejected email anywhere");
 		}
 	}
 }
@@ -466,6 +476,7 @@ returntosender(msg, returnq, sendbody, e)
 
 	SendBody = sendbody;
 	define('g', e->e_from.q_paddr, e);
+	define('u', NULL, e);
 	ee = newenvelope(&errenvelope, e);
 	define('a', "\201b", ee);
 	define('r', "internal", ee);
@@ -602,7 +613,8 @@ errbody(fp, m, e)
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 		if (bitset(QBADADDR, q->q_flags))
 			break;
-	if (q == NULL && !bitset(EF_FATALERRS, e->e_parent->e_flags))
+	if (q == NULL &&
+	    !bitset(EF_FATALERRS|EF_SENDRECEIPT, e->e_parent->e_flags))
 	{
 		putline("    **********************************************",
 			fp, m);

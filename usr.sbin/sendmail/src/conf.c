@@ -33,13 +33,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.42 (Berkeley) 10/21/93";
+static char sccsid[] = "@(#)conf.c	8.62 (Berkeley) 1/9/94";
 #endif /* not lint */
 
 # include "sendmail.h"
 # include "pathnames.h"
 # include <sys/ioctl.h>
 # include <sys/param.h>
+# include <netdb.h>
 # include <pwd.h>
 
 /*
@@ -597,7 +598,9 @@ rlsesigs()
 # include	<compat.h>
 #endif
 
-init_md()
+init_md(argc, argv)
+	int argc;
+	char **argv;
 {
 #ifdef _AUX_SOURCE
 	setcompat(getcompat() | COMPAT_BSDPROT);
@@ -792,10 +795,14 @@ getla()
 #if LA_TYPE == LA_MACH
 
 /*
-**  This has been tested on NeXT release 2.1.
+**  This has been tested on NEXTSTEP release 2.1/3.X.
 */
 
-#include <mach.h>
+#if defined(NX_CURRENT_COMPILER_RELEASE) && NX_CURRENT_COMPILER_RELEASE > NX_COMPILER_RELEASE_3_0
+# include <mach/mach.h>
+#else
+# include <mach.h>
+#endif
 
 getla()
 {
@@ -910,6 +917,7 @@ refuseconnections()
 #  include <sys/exec.h>
 #  ifdef __bsdi__
 #   undef PS_STRINGS	/* BSDI 1.0 doesn't do PS_STRINGS as we expect */
+#   define PROCTITLEPAD	'\0'
 #  endif
 #  ifdef PS_STRINGS
 #   define SETPROC_STATIC static
@@ -918,6 +926,10 @@ refuseconnections()
 # ifndef SETPROC_STATIC
 #  define SETPROC_STATIC
 # endif
+#endif
+
+#ifndef PROCTITLEPAD
+# define PROCTITLEPAD	' '
 #endif
 
 /*VARARGS1*/
@@ -969,7 +981,7 @@ setproctitle(fmt, va_alist)
 	(void) strcpy(Argv[0], buf);
 	p = &Argv[0][i];
 	while (p < LastArgv)
-		*p++ = ' ';
+		*p++ = PROCTITLEPAD;
 #   endif
 #  endif
 # endif /* SETPROCTITLE */
@@ -1258,9 +1270,13 @@ static char sccsid[] = "@(#)getopt.c	4.3 (Berkeley) 3/9/86";
 /*
  * get option letter from argument vector
  */
-int	opterr = 1,		/* if error message should be printed */
-	optind = 1,		/* index into parent argv vector */
-	optopt;			/* character checked for validity */
+#ifdef _CONVEX_SOURCE
+extern int	optind, opterr;
+#else
+int	opterr = 1;		/* if error message should be printed */
+int	optind = 1;		/* index into parent argv vector */
+#endif
+int	optopt;			/* character checked for validity */
 char	*optarg;		/* argument associated with option */
 
 #define BADCH	(int)'?'
@@ -1269,9 +1285,9 @@ char	*optarg;		/* argument associated with option */
 		fputc(optopt,stderr);fputc('\n',stderr);return(BADCH);}
 
 getopt(nargc,nargv,ostr)
-int	nargc;
-char	**nargv,
-	*ostr;
+	int		nargc;
+	char *const	*nargv;
+	const char	*ostr;
 {
 	static char	*place = EMSG;	/* option letter processing */
 	static char	atend = 0;
@@ -1356,6 +1372,97 @@ vsprintf(s, fmt, ap)
 
 #endif
 /*
+**  USERSHELLOK -- tell if a user's shell is ok for unrestricted use
+**
+**	Parameters:
+**		shell -- the user's shell from /etc/passwd
+**
+**	Returns:
+**		TRUE -- if it is ok to use this for unrestricted access.
+**		FALSE -- if the shell is restricted.
+*/
+
+#if !HASGETUSERSHELL
+
+# ifndef _PATH_SHELLS
+#  define _PATH_SHELLS	"/etc/shells"
+# endif
+
+char	*DefaultUserShells[] =
+{
+	"/bin/sh",
+	"/usr/bin/sh",
+	"/bin/csh",
+	"/usr/bin/csh",
+#ifdef __hpux
+	"/bin/rsh",
+	"/bin/ksh",
+	"/bin/rksh",
+	"/bin/pam",
+	"/usr/bin/keysh",
+	"/bin/posix/sh",
+#endif
+	NULL
+};
+
+#endif
+
+bool
+usershellok(shell)
+	char *shell;
+{
+#if HASGETUSERSHELL
+	register char *p;
+	extern char *getusershell();
+
+	setusershell();
+	while ((p = getusershell()) != NULL)
+		if (strcmp(p, shell) == 0 || strcmp(p, "*") == 0)
+			break;
+	endusershell();
+	return p != NULL;
+#else
+	register FILE *shellf;
+	char buf[MAXLINE];
+
+	shellf = fopen(_PATH_SHELLS, "r");
+	if (shellf == NULL)
+	{
+		/* no /etc/shells; see if it is one of the std shells */
+		char **d;
+
+		for (d = DefaultUserShells; *d != NULL; d++)
+		{
+			if (strcmp(shell, *d) == 0)
+				return TRUE;
+		}
+		return FALSE;
+	}
+
+	while (fgets(buf, sizeof buf, shellf) != NULL)
+	{
+		register char *p, *q;
+
+		p = buf;
+		while (*p != '\0' && *p != '#' && *p != '/')
+			p++;
+		if (*p == '#' || *p == '\0')
+			continue;
+		q = p;
+		while (*p != '\0' && *p != '#' && !isspace(*p))
+			p++;
+		*p = '\0';
+		if (strcmp(shell, q) == 0 || strcmp("*", q) == 0)
+		{
+			fclose(shellf);
+			return TRUE;
+		}
+	}
+	fclose(shellf);
+	return FALSE;
+#endif
+}
+/*
 **  FREESPACE -- see how much free space is on the queue filesystem
 **
 **	Only implemented if you have statfs.
@@ -1382,10 +1489,10 @@ vsprintf(s, fmt, ap)
 #endif
 
 #ifdef HASSTATFS
-# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX)
+# if defined(IRIX) || defined(apollo) || defined(_SCO_unix_) || defined(UMAXV) || defined(DGUX) || defined(_AIX3)
 #  include <sys/statfs.h>
 # else
-#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE)
+#  if (defined(sun) && !defined(BSD)) || defined(__hpux) || defined(_CONVEX_SOURCE) || defined(NeXT) || defined(_AUX_SOURCE) || defined(MACH386)
 #   include <sys/vfs.h>
 #  else
 #   include <sys/mount.h>
@@ -1726,6 +1833,16 @@ getcfname()
 {
 	if (ConfFile != NULL)
 		return ConfFile;
+#ifdef NETINFO
+	{
+		extern char *ni_propval();
+		char *cflocation;
+
+		cflocation = ni_propval("/locations/sendmail", "sendmail.cf");
+		if (cflocation != NULL)
+			return cflocation;
+	}
+#endif
 	return _PATH_SENDMAILCF;
 }
 /*
@@ -1737,11 +1854,262 @@ getcfname()
 **	Returns:
 **		TRUE -- if ok.
 **		FALSE -- if vendor code could not be processed.
+**
+**	Side Effects:
+**		It is reasonable to set mode flags here to tweak
+**		processing in other parts of the code if necessary.
+**		For example, if you are a vendor that uses $%y to
+**		indicate YP lookups, you could enable that here.
 */
 
 bool
 setvendor(vendor)
 	char *vendor;
 {
-	return (strcasecmp(vendor, "Berkeley") == 0);
+	if (strcasecmp(vendor, "Berkeley") == 0)
+		return TRUE;
+
+	/* add vendor extensions here */
+
+	return FALSE;
 }
+/*
+**  STRTOL -- convert string to long integer
+**
+**	For systems that don't have it in the C library.
+*/
+
+#ifdef NEEDSTRTOL
+
+long
+strtol(p, ep, b)
+	char *p;
+	char **ep;
+	int b;
+{
+	long l = 0;
+	char c;
+	char maxd;
+	int neg = 1;
+
+	maxd = (b > 10) ? '9' : b + '0';
+
+	if (p && *p == '-') {
+		neg = -1;
+		p++;
+	}
+	while (p && (c = *p)) {
+		if (c >= '0' && c <= maxd) {
+			l = l*b + *p++ - '0';
+			continue;
+		}
+		if (c >= 'A' && c <= 'Z')
+			c -= 'A' + 'a';
+		c = c - 'a' + 10;
+		if (b > c) {
+			l = l*b + c;
+			p++;
+			continue;
+		}
+		break;
+	}
+	l *= neg;
+	if (ep)
+		*ep = p;
+	return l;
+}
+
+#endif
+/*
+**  SOLARIS_GETHOSTBY{NAME,ADDR} -- compatibility routines for gethostbyXXX
+**
+**	Solaris versions prior through 2.3 don't properly deliver a
+**	canonical h_name field.  This tries to work around it.
+*/
+
+#ifdef SOLARIS
+
+struct hostent *
+solaris_gethostbyname(name)
+	const char *name;
+{
+# ifdef SOLARIS_2_3
+	static struct hostent hp;
+	static char buf[1000];
+	extern struct hostent *_switch_gethostbyname_r();
+
+	return _switch_gethostbyname_r(name, &hp, buf, sizeof(buf), &h_errno);
+# else
+	extern struct hostent *__switch_gethostbyname();
+
+	return __switch_gethostbyname(name);
+# endif
+}
+
+struct hostent *
+solaris_gethostbyaddr(addr, len, type)
+	const char *addr;
+	int len;
+	int type;
+{
+# ifdef SOLARIS_2_3
+	static struct hostent hp;
+	static char buf[1000];
+	extern struct hostent *_switch_gethostbyaddr_r();
+
+	return _switch_gethostbyaddr_r(addr, len, type, &hp, buf, sizeof(buf), &h_errno);
+# else
+	extern struct hostent *__switch_gethostbyaddr();
+
+	return __switch_gethostbyaddr(addr, len, type);
+# endif
+}
+
+#endif
+/*
+**  NI_PROPVAL -- netinfo property value lookup routine
+**
+**	Parameters:
+**		directory -- the Netinfo directory name.
+**		propname -- the Netinfo property name.
+**
+**	Returns:
+**		NULL -- if:
+**			1. the directory is not found
+**			2. the property name is not found
+**			3. the property contains multiple values
+**			4. some error occured
+**		else -- the location of the config file.
+**
+**	Notes:
+**      	Caller should free the return value of ni_proval
+*/
+
+#ifdef NETINFO
+
+# include <netinfo/ni.h>
+
+# define LOCAL_NETINFO_DOMAIN    "."
+# define PARENT_NETINFO_DOMAIN   ".."
+# define MAX_NI_LEVELS           256
+
+char *
+ni_propval(directory, propname)
+	char *directory;
+	char *propname;
+{
+	char *propval;
+	int i;
+	void *ni = NULL;
+	void *lastni = NULL;
+	ni_status nis;
+	ni_id nid;
+	ni_namelist ninl;
+
+	/*
+	**  If the passed directory and property name are found
+	**  in one of netinfo domains we need to search (starting
+	**  from the local domain moving all the way back to the
+	**  root domain) set propval to the property's value
+	**  and return it.
+	*/
+
+	for (i = 0; i < MAX_NI_LEVELS; ++i)
+	{
+		if (i == 0)
+		{
+			nis = ni_open(NULL, LOCAL_NETINFO_DOMAIN, &ni);
+		}
+		else
+		{
+			if (lastni != NULL)
+				ni_free(lastni);
+			lastni = ni;
+			nis = ni_open(lastni, PARENT_NETINFO_DOMAIN, &ni);
+		}
+
+		/*
+		**  Don't bother if we didn't get a handle on a
+		**  proper domain.  This is not necessarily an error.
+		**  We would get a positive ni_status if, for instance
+		**  we never found the directory or property and tried
+		**  to open the parent of the root domain!
+		*/
+
+		if (nis != 0)
+			break;
+
+		/*
+		**  Find the path to the server information.
+		*/
+
+		if (ni_pathsearch(ni, &nid, directory) != 0)
+			continue;
+
+		/*
+		**  Find "host" information.
+		*/
+
+		if (ni_lookupprop(ni, &nid, propname, &ninl) != 0)
+			continue;
+
+		/*
+		**  If there's only one name in
+		**  the list, assume we've got
+		**  what we want.
+		*/
+
+		if (ninl.ni_namelist_len == 1)
+		{
+			propval = ni_name_dup(ninl.ni_namelist_val[0]);
+			break;
+		}
+	}
+
+	/*
+	**  Clean up.
+	*/
+
+	if (ni != NULL)
+		ni_free(ni);
+	if (lastni != NULL && ni != lastni)
+		ni_free(lastni);
+
+	return propval;
+}
+
+#endif /* NETINFO */
+/*
+**  HARD_SYSLOG -- call syslog repeatedly until it works
+**
+**	Needed on HP-UX, which apparently doesn't guarantee that
+**	syslog succeeds during interrupt handlers.
+*/
+
+#ifdef __hpux
+
+# define MAXSYSLOGTRIES	100
+# undef syslog
+
+# ifdef __STDC__
+hard_syslog(int pri, char *msg, ...)
+# else
+hard_syslog(pri, msg, va_alist)
+	int pri;
+	char *msg;
+	va_dcl
+# endif
+{
+	int i;
+	char buf[SYSLOG_BUFSIZE * 2];
+	VA_LOCAL_DECL;
+
+	VA_START(msg);
+	vsprintf(buf, msg, ap);
+	VA_END;
+
+	for (i = MAXSYSLOGTRIES; --i >= 0 && syslog(pri, "%s", buf) < 0; )
+		continue;
+}
+
+#endif

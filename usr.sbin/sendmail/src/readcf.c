@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.14 (Berkeley) 10/31/93";
+static char sccsid[] = "@(#)readcf.c	8.18 (Berkeley) 1/9/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -109,7 +109,7 @@ readcf(cfname, safe, e)
 	extern char **copyplist();
 	struct stat statb;
 	char exbuf[MAXLINE];
-	char pvpbuf[PSBUFSIZE];
+	char pvpbuf[MAXLINE + MAXATOM];
 	extern char *munchstring();
 	extern void makemapentry();
 
@@ -241,7 +241,8 @@ readcf(cfname, safe, e)
 			/* expand and save the LHS */
 			*p = '\0';
 			expand(&bp[1], exbuf, &exbuf[sizeof exbuf], e);
-			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf, NULL);
+			rwp->r_lhs = prescan(exbuf, '\t', pvpbuf,
+					     sizeof pvpbuf, NULL);
 			nfuzzy = 0;
 			if (rwp->r_lhs != NULL)
 			{
@@ -325,7 +326,8 @@ readcf(cfname, safe, e)
 				p++;
 			*p = '\0';
 			expand(q, exbuf, &exbuf[sizeof exbuf], e);
-			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf, NULL);
+			rwp->r_rhs = prescan(exbuf, '\t', pvpbuf,
+					     sizeof pvpbuf, NULL);
 			if (rwp->r_rhs != NULL)
 			{
 				register char **ap;
@@ -540,8 +542,10 @@ readcf(cfname, safe, e)
 	{
 		/* user didn't initialize: set up host map */
 		strcpy(buf, "host host");
+#ifdef NAMED_BIND
 		if (ConfigLevel >= 2)
 			strcat(buf, " -a.");
+#endif
 		makemapentry(buf);
 	}
 }
@@ -1020,6 +1024,7 @@ struct resolverflags
 	"defnames",	RES_DEFNAMES,
 	"stayopen",	RES_STAYOPEN,
 	"dnsrch",	RES_DNSRCH,
+	"true",		0,		/* to avoid error on old syntax */
 	NULL,		0
 };
 
@@ -1239,7 +1244,9 @@ setoption(opt, val, safe, sticky, e)
 				if (strcasecmp(q, rfp->rf_name) == 0)
 					break;
 			}
-			if (clearmode)
+			if (rfp->rf_name == NULL)
+				syserr("readcf: I option value %s unrecognized", q);
+			else if (clearmode)
 				_res.options &= ~rfp->rf_bits;
 			else
 				_res.options |= rfp->rf_bits;

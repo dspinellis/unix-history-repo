@@ -34,15 +34,6 @@ divert(-1)
 #
 
 divert(0)
-VERSIONID(`@(#)redirect.m4	8.2 (Berkeley) 12/27/93')
-divert(-1)
-
-
-PUSHDIVERT(3)
-# addresses sent to foo@host.REDIRECT will give a 551 error code
-R$* < @ $+ .REDIRECT. >	$# error $@ NOUSER $: "551 User not local; please try " <$1@$2>
-POPDIVERT
-
-PUSHDIVERT(6)
-CPREDIRECT
-POPDIVERT
+VERSIONID(`@(#)dgux.m4	8.1 (Berkeley) 11/27/93')
+define(`LOCAL_MAILER_FLAGS', m)dnl
+define(`confTIME_ZONE', `USE_TZ')dnl

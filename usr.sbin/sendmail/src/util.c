@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.15 (Berkeley) 10/31/93";
+static char sccsid[] = "@(#)util.c	8.28 (Berkeley) 1/4/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -407,7 +407,9 @@ buildfname(gecos, login, buf)
 **		gid -- group id to compare against.
 **		uname -- user name to compare against (used for group
 **			sets).
-**		mustown -- to be safe, this uid must own the file.
+**		flags -- modifiers:
+**			SFF_MUSTOWN -- "uid" must own this file.
+**			SFF_NOSLINK -- file cannot be a symbolic link.
 **		mode -- mode bits that must match.
 **
 **	Returns:
@@ -433,12 +435,12 @@ buildfname(gecos, login, buf)
 #endif
 
 int
-safefile(fn, uid, gid, uname, mustown, mode)
+safefile(fn, uid, gid, uname, flags, mode)
 	char *fn;
 	uid_t uid;
 	gid_t gid;
 	char *uname;
-	bool mustown;
+	int flags;
 	int mode;
 {
 	register char *p;
@@ -446,8 +448,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 	struct stat stbuf;
 
 	if (tTd(54, 4))
-		printf("safefile(%s, uid=%d, gid=%d, mustown=%d, mode=%o):\n",
-			fn, uid, gid, mustown, mode);
+		printf("safefile(%s, uid=%d, gid=%d, flags=%x, mode=%o):\n",
+			fn, uid, gid, flags, mode);
 	errno = 0;
 
 	for (p = fn; (p = strchr(++p, '/')) != NULL; *p = '/')
@@ -455,6 +457,12 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		*p = '\0';
 		if (stat(fn, &stbuf) < 0)
 			break;
+		if (uid == 0 && !bitset(SFF_ROOTOK, flags))
+		{
+			if (bitset(S_IXOTH, stbuf.st_mode))
+				continue;
+			break;
+		}
 		if (stbuf.st_uid == uid && bitset(S_IXUSR, stbuf.st_mode))
 			continue;
 		if (stbuf.st_gid == gid && bitset(S_IXGRP, stbuf.st_mode))
@@ -488,7 +496,12 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		return ret;
 	}
 
+#ifdef HASLSTAT
+	if ((bitset(SFF_NOSLINK, flags) ? lstat(fn, &stbuf)
+					: stat(fn, &stbuf)) < 0)
+#else
 	if (stat(fn, &stbuf) < 0)
+#endif
 	{
 		int ret = errno;
 
@@ -498,7 +511,17 @@ safefile(fn, uid, gid, uname, mustown, mode)
 		errno = 0;
 		return ret;
 	}
-	if (uid == 0)
+
+#ifdef S_ISLNK
+	if (bitset(SFF_NOSLINK, flags) && S_ISLNK(stbuf.st_mode))
+	{
+		if (tTd(54, 4))
+			printf("\t[slink mode %o]\tEPERM\n", stbuf.st_mode);
+		return EPERM;
+	}
+#endif
+
+	if (uid == 0 && !bitset(SFF_ROOTOK, flags))
 		mode >>= 6;
 	else if (stbuf.st_uid != uid)
 	{
@@ -525,7 +548,8 @@ safefile(fn, uid, gid, uname, mustown, mode)
 	if (tTd(54, 4))
 		printf("\t[uid %d, stat %o, mode %o] ",
 			stbuf.st_uid, stbuf.st_mode, mode);
-	if ((stbuf.st_uid == uid || uid == 0 || !mustown) &&
+	if ((stbuf.st_uid == uid || stbuf.st_uid == 0 ||
+	     !bitset(SFF_MUSTOWN, flags)) &&
 	    (stbuf.st_mode & mode) == mode)
 	{
 		if (tTd(54, 4))
@@ -836,12 +860,13 @@ sfgets(buf, siz, fp, timeout, during)
 
 	/* try to read */
 	p = NULL;
-	while (p == NULL && !feof(fp) && !ferror(fp))
+	while (!feof(fp) && !ferror(fp))
 	{
 		errno = 0;
 		p = fgets(buf, siz, fp);
-		if (errno == EINTR)
-			clearerr(fp);
+		if (p != NULL || errno != EINTR)
+			break;
+		clearerr(fp);
 	}
 
 	/* clear the event if it has not sprung */
@@ -1120,18 +1145,23 @@ strcontainedin(a, b)
 	register char *a;
 	register char *b;
 {
-	int l;
+	int la;
+	int lb;
+	int c;
 
-	l = strlen(a);
-	for (;;)
+	la = strlen(a);
+	lb = strlen(b);
+	c = *a;
+	if (isascii(c) && isupper(c))
+		c = tolower(c);
+	for (; lb-- >= la; b++)
 	{
-		b = strchr(b, a[0]);
-		if (b == NULL)
-			return FALSE;
-		if (strncmp(a, b, l) == 0)
+		if (*b != c && isascii(*b) && isupper(*b) && tolower(*b) != c)
+			continue;
+		if (strncasecmp(a, b, la) == 0)
 			return TRUE;
-		b++;
 	}
+	return FALSE;
 }
 /*
 **  CHECKFD012 -- check low numbered file descriptors
@@ -1279,6 +1309,27 @@ dumpfd(fd, printclosed, logit)
 		p += strlen(p);
 		goto defprint;
 
+#ifdef S_IFIFO
+	  case S_IFIFO:
+		sprintf(p, "FIFO: ");
+		p += strlen(p);
+		goto defprint;
+#endif
+
+#ifdef S_IFDIR
+	  case S_IFDIR:
+		sprintf(p, "DIR: ");
+		p += strlen(p);
+		goto defprint;
+#endif
+
+#ifdef S_IFLNK
+	  case S_IFLNK:
+		sprintf(p, "LNK: ");
+		p += strlen(p);
+		goto defprint;
+#endif
+
 	  default:
 defprint:
 		sprintf(p, "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
@@ -1289,7 +1340,56 @@ defprint:
 
 printit:
 	if (logit)
-		syslog(LOG_INFO, "%s", buf);
+		syslog(LOG_DEBUG, "%s", buf);
 	else
 		printf("%s\n", buf);
+}
+/*
+**  SHORTENSTRING -- return short version of a string
+**
+**	If the string is already short, just return it.  If it is too
+**	long, return the head and tail of the string.
+**
+**	Parameters:
+**		s -- the string to shorten.
+**		m -- the max length of the string.
+**
+**	Returns:
+**		Either s or a short version of s.
+*/
+
+#ifndef MAXSHORTSTR
+# define MAXSHORTSTR	203
+#endif
+
+char *
+shortenstring(s, m)
+	register char *s;
+	int m;
+{
+	int l;
+	static char buf[MAXSHORTSTR + 1];
+
+	l = strlen(s);
+	if (l < m)
+		return s;
+	if (m > MAXSHORTSTR)
+		m = MAXSHORTSTR;
+	else if (m < 10)
+	{
+		if (m < 5)
+		{
+			strncpy(buf, s, m);
+			buf[m] = '\0';
+			return buf;
+		}
+		strncpy(buf, s, m - 3);
+		strcpy(buf + m - 3, "...");
+		return buf;
+	}
+	m = (m - 3) / 2;
+	strncpy(buf, s, m);
+	strcpy(buf + m, "...");
+	strcpy(buf + m + 3, s + l - m);
+	return buf;
 }

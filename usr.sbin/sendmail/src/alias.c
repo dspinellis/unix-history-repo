@@ -36,7 +36,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.19 (Berkeley) 10/31/93";
+static char sccsid[] = "@(#)alias.c	8.21 (Berkeley) 12/11/93";
 #endif /* not lint */
 
 
@@ -144,7 +144,7 @@ alias(a, sendq, e)
 	owner = aliaslookup(obuf, e);
 	if (owner != NULL)
 	{
-		if (strchr(owner, ',') != NULL)
+		if (strpbrk(owner, ",:/|\"") != NULL)
 			owner = obuf;
 		a->q_owner = newstr(owner);
 	}
@@ -570,7 +570,7 @@ readaliases(map, af, automatic)
 		}
 		if (parseaddr(line, &al, RF_COPYALL, ':', NULL, CurEnv) == NULL)
 		{
-			syserr("554 %s... illegal alias name", al.q_paddr);
+			syserr("554 %.40s... illegal alias name", line);
 			continue;
 		}
 

@@ -1,4 +1,4 @@
-divert(-1)
+PUSHDIVERT(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
 # Copyright (c) 1988, 1993
@@ -33,16 +33,22 @@ divert(-1)
 # SUCH DAMAGE.
 #
 
-divert(0)
-VERSIONID(`@(#)redirect.m4	8.2 (Berkeley) 12/27/93')
-divert(-1)
+ifdef(`POP_MAILER_PATH',, `define(`POP_MAILER_PATH', /usr/lib/mh/spop)')
+ifdef(`POP_MAILER_FLAGS',, `define(`POP_MAILER_FLAGS', `eu')')
+ifdef(`POP_MAILER_ARGS',, `define(`POP_MAILER_ARGS', `pop $u')')
 
-
-PUSHDIVERT(3)
-# addresses sent to foo@host.REDIRECT will give a 551 error code
-R$* < @ $+ .REDIRECT. >	$# error $@ NOUSER $: "551 User not local; please try " <$1@$2>
 POPDIVERT
 
-PUSHDIVERT(6)
-CPREDIRECT
+LOCAL_CONFIG
+# POP mailer is a pseudo-domain
+CPPOP
 POPDIVERT
+
+####################################
+###   POP Mailer specification   ###
+####################################
+
+VERSIONID(`@(#)pop.m4	8.1 (Berkeley) 12/15/93')
+
+Mpop,		P=POP_MAILER_PATH, F=CONCAT(`lsDFM', POP_MAILER_FLAGS), S=10, R=20/40,
+		A=POP_MAILER_ARGS

@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) 10/24/93 (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) 1/5/94 (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.13 (Berkeley) 10/24/93 (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.17 (Berkeley) 1/5/94 (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -218,8 +218,13 @@ tryhelo:
 			goto tempfail2;
 	}
 
-	mci->mci_state = MCIS_OPEN;
-	return;
+	if (mci->mci_state != MCIS_CLOSED)
+	{
+		mci->mci_state = MCIS_OPEN;
+		return;
+	}
+
+	/* got a 421 error code during startup */
 
   tempfail1:
   tempfail2:
@@ -317,6 +322,7 @@ smtpmailfrom(m, mci, e)
 	ENVELOPE *e;
 {
 	int r;
+	char *bufp;
 	char buf[MAXNAME];
 	char optbuf[MAXLINE];
 
@@ -341,15 +347,25 @@ smtpmailfrom(m, mci, e)
 		(void) strcpy(buf, "");
 	else
 		expand("\201g", buf, &buf[sizeof buf - 1], e);
+	if (buf[0] == '<')
+	{
+		/* strip off <angle brackets> (put back on below) */
+		bufp = &buf[strlen(buf) - 1];
+		if (*bufp == '>')
+			*bufp = '\0';
+		bufp = &buf[1];
+	}
+	else
+		bufp = buf;
 	if (e->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>%s", m, mci, buf, optbuf);
+		smtpmessage("MAIL From:<%s>%s", m, mci, bufp, optbuf);
 	}
 	else
 	{
 		smtpmessage("MAIL From:<@%s%c%s>%s", m, mci, MyHostName,
-			buf[0] == '@' ? ',' : ':', buf, optbuf);
+			*bufp == '@' ? ',' : ':', bufp, optbuf);
 	}
 	SmtpPhase = mci->mci_phase = "client MAIL";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
@@ -594,7 +610,16 @@ smtpquit(m, mci, e)
 	register MCI *mci;
 	ENVELOPE *e;
 {
-	int i;
+	bool oldSuprErrs = SuprErrs;
+
+	/*
+	**	Suppress errors here -- we may be processing a different
+	**	job when we do the quit connection, and we don't want the 
+	**	new job to be penalized for something that isn't it's
+	**	problem.
+	*/
+
+	SuprErrs = TRUE;
 
 	/* send the quit message if we haven't gotten I/O error */
 	if (mci->mci_state != MCIS_ERROR)
@@ -602,14 +627,18 @@ smtpquit(m, mci, e)
 		SmtpPhase = "client QUIT";
 		smtpmessage("QUIT", m, mci);
 		(void) reply(m, mci, e, TimeOuts.to_quit, NULL);
+		SuprErrs = oldSuprErrs;
 		if (mci->mci_state == MCIS_CLOSED)
+		{
+			SuprErrs = oldSuprErrs;
 			return;
+		}
 	}
 
 	/* now actually close the connection and pick up the zombie */
-	i = endmailer(mci, e, m->m_argv);
-	if (i != EX_OK)
-		syserr("451 smtpquit %s: stat %d", m->m_argv[0], i);
+	(void) endmailer(mci, e, NULL);
+
+	SuprErrs = oldSuprErrs;
 }
 /*
 **  SMTPRSET -- send a RSET (reset) command

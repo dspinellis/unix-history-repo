@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.5 (Berkeley) 9/22/93";
+static char sccsid[] = "@(#)makemap.c	8.6 (Berkeley) 11/22/93";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -262,8 +262,15 @@ main(argc, argv)
 		*/
 
 		p = strchr(ibuf, '\n');
-		if (*p != '\0')
+		if (p != NULL)
 			*p = '\0';
+		else if (!feof(stdin))
+		{
+			fprintf(stderr, "%s: %s: line %d: line too long (%d bytes max)\n",
+				progname, mapname, lineno, sizeof ibuf);
+			continue;
+		}
+			
 		if (ibuf[0] == '\0' || ibuf[0] == '#')
 			continue;
 		if (isspace(ibuf[0]))

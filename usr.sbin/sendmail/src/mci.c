@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	8.6 (Berkeley) 10/23/93";
+static char sccsid[] = "@(#)mci.c	8.9 (Berkeley) 12/1/93";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -275,6 +275,8 @@ mci_get(host, m)
 	bzero(&CurHostAddr, sizeof CurHostAddr);
 #endif
 
+	if (m->m_mno < 0)
+		syserr("negative mno %d (%s)", m->m_mno, m->m_name);
 	s = stab(host, ST_MCI + m->m_mno, ST_ENTER);
 	mci = &s->s_mci;
 	mci->mci_host = s->s_name;
@@ -348,7 +350,7 @@ mci_dump(mci, logit)
 		ctime(&mci->mci_lastuse));
 printit:
 	if (logit)
-		syslog(LOG_INFO, "%s", buf);
+		syslog(LOG_DEBUG, "%s", buf);
 	else
 		printf("%s\n", buf);
 }
@@ -367,6 +369,9 @@ mci_dump_all(logit)
 	bool logit;
 {
 	register int i;
+
+	if (MciCache == NULL)
+		return;
 
 	for (i = 0; i < MaxMciCache; i++)
 		mci_dump(MciCache[i], logit);

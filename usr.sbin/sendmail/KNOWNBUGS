@@ -1,7 +1,7 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6.3)
+			     (for 8.6.5)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -9,14 +9,16 @@ but which have not been fixed in the current release.  You probably
 want to get the most up to date version of this from FTP.CS.Berkeley.EDU
 in /ucb/sendmail/KNOWNBUGS.
 
-* "SYSERR: openmailer(local): fd 1 not open" message
+This list is not guaranteed to be complete, especially for fixed bugs.
+Many bugs are reported and fixed without ever making it as far as this
+file.  See the file RELEASE_NOTES (in the root directory of the sendmail
+distribution) for more details.
 
-  File descriptor 1 (standard output) should not be closed during normal
-  processing.  This is checked periodically, and sometimes this condition
-  is found and this message is produced.  Sendmail repairs the problem,
-  and the mail is still delivered, but I still don't know why it happens.
-  (There was a bug that was fixed in 8.6.beta.13 that might be related,
-  but I think this bug still exists.)
+
++----------------------------------------------+
+| THE FOLLOWING PROBLEMS ARE STILL OUTSTANDING |
++----------------------------------------------+
+
 
 * Null bytes are not handled properly.
 
@@ -25,12 +27,6 @@ in /ucb/sendmail/KNOWNBUGS.
   the header.  Notably missing is 0x00, which would require a major
   restructuring of the code -- for example, almost no C library support
   could be used to handle strings.
-
-* Route-addrs missing angle brackets.
-
-  There are cases where route-addrs do not get angle brackets around them,
-  such as in the "-r" flag on mailers or in the From_ line created when
-  mailing to files.
 
 * Duplicate error messages.
 
@@ -56,4 +52,120 @@ in /ucb/sendmail/KNOWNBUGS.
   this address.  It's not clear what the right behaviour is in this
   circumstance.
 
-(Version 8.9, last updated 10/31/93)
+* REDIRECT aliases don't work with `n' option.
+
+  If you have option `n' set when you use newaliases and have
+  REDIRECT addresses in your aliases file, you'll get the error
+  messages during the newaliases instead of when email is sent to
+  the address in question.  The workaround is to turn off the `n'
+  option.
+
+* MX records that point at non-existent hosts work strangly.
+
+  Consider the DNS records:
+
+	hostH	MX	1 hostA
+		MX	2 hostB
+	hostA	A	128.32.8.9
+
+  (note that there is no A record for hostB).  If hostA is down,
+  an attempt to send to hostH gives "host unknown" -- that is, it
+  reflects out the status on the last host it tries, which in this
+  case is hostB, which is unknown.  It probably ought to eliminate
+  hostB early in processing.
+
+* NAME environment variables with commas break.
+
+  If you define your NAME environment variable to have a comma
+  (e.g., ``Lastname, Firstname''), and you are using the $q definition
+  that uses ``name <address>'' format, sendmail treats the first and
+  last names as two addresses, thus producing a bogus From line.  You
+  can work around this by changing the $q definition to use
+  ``address (name)''.
+
+* \231 considered harmful.
+
+  Header addresses that have the \231 character (and possibly others
+  in the range \201 - \237) behave in odd and usually unexpected ways.
+
+* DEC Alphas (OSF/1 1.3) sometimes time out on sending mail.
+
+  I have one report that DEC Alphas acting as SMTP clients sometimes
+  will apparently not see the "250 OK" message in response to the
+  dot that indicates the end of the message.  This only happens if
+  the message is run from the queue -- if it gets through on first
+  try, everything is fine.  I have been unable to reproduce this
+  problem at Berkeley.
+
+* accept() problem on SVR4.
+
+  Apparently, the sendmail daemon loop (doing accept()s on the network)
+  can get into a wierd state on SVR4; it starts logging ``SYSERR:
+  getrequests: accept: Protocol Error''.  The workaround is to kill
+  and restart the sendmail daemon.  We don't have an SVR4 system at
+  Berkeley that carries more than token mail load, so I can't validate
+  this.  It is likely to be a glitch in the sockets emulation, since
+  "Protocol Error" is not possible error code with Berkeley TCP/IP.
+
+  I've also had someone report the message ``sendmail: accept:
+  SIOCGPGRP failed errno 22'' on an SVR4 system.  This message is
+  not in the sendmail source code, so I assume it is also a bug
+  in the sockets emulation.  (Errno 22 is EINVAL "Invalid Argument"
+  on all the systems I have available, including Solaris 2.x.)
+
+* Sending user deletion not done properly in :include: lists.
+
+  If you don't have the "m" (me too) option set, then a person
+  sending to a list that contains themselves should not get a copy
+  of the message.  However, if that list points to a :include: file
+  that has one address per line, this will break, and the sender
+  will always get a copy of their own message, just as though the
+  "m" option were set.
+
+  You can eliminate this by adding commas at the end of each line
+  of the :include: file.
+
+
++-------------------------------------------+
+| THE FOLLOWING PROBLEMS ARE FIXED IN 8.6.5 |
++-------------------------------------------+
+
+* Route-addrs missing angle brackets.
+
+  There are cases where route-addrs do not get angle brackets around them,
+  such as in the "-r" flag on mailers or in the From_ line created when
+  mailing to files.
+
+* No "exposed users" in "nullrelay" configuration.
+
+  The "nullrelay" configuration hides all addresses behind the mail
+  hub name.  Some sites might prefer to expose some names such as
+  root.  This information is always available in Received: lines.
+
+* owner-* alias that uses :include: broken.
+
+  If you have aliases set up as:
+
+	owner-listname:		:include:/some/file
+
+  sendmail will break because it considers this a "sender address",
+  which is not permitted to use the :include: syntax.  The easiest
+  workaround is to change this to:
+
+	owner-listname:		:include:/some/file,
+
+  (note the trailing comma); a somewhat cleaner solution is to use:
+
+	owner-listname:		listname-request
+	listname-request:	:include:/some/file
+
+* "SYSERR: openmailer(local): fd 1 not open" message
+
+  File descriptor 1 (standard output) should not be closed during normal
+  processing.  This is checked periodically, and sometimes this condition
+  is found and this message is produced.  Sendmail repairs the problem,
+  and the mail is still delivered, but I still don't know why it happens.
+  (There was a bug that was fixed in 8.6.beta.13 that might be related,
+  but I think this bug still exists.)
+
+(Version 8.15, last updated 1/12/94)

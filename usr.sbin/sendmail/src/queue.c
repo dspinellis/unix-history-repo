@@ -36,9 +36,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.27 (Berkeley) 10/29/93 (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.36 (Berkeley) 1/9/94 (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.27 (Berkeley) 10/29/93 (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.36 (Berkeley) 1/9/94 (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -121,21 +121,21 @@ queueup(e, queueall, announce)
 					break;
 #ifdef LOG
 				if (LogLevel > 0 && (i % 32) == 0)
-					syslog(LOG_ALERT, "queueup: cannot create %s: %s",
+					syslog(LOG_ALERT, "queueup: cannot create %s, uid=%d: %s",
+						tf, geteuid(), errstring(errno));
+#endif
+			}
+			else
+			{
+				if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
+					break;
+#ifdef LOG
+				else if (LogLevel > 0 && (i % 32) == 0)
+					syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
 						tf, errstring(errno));
 #endif
-				continue;
+				close(fd);
 			}
-
-			if (lockfile(fd, tf, NULL, LOCK_EX|LOCK_NB))
-				break;
-#ifdef LOG
-			else if (LogLevel > 0 && (i % 32) == 0)
-				syslog(LOG_ALERT, "queueup: cannot lock %s: %s",
-					tf, errstring(errno));
-#endif
-
-			close(fd);
 
 			if ((i % 32) == 31)
 			{
@@ -146,7 +146,11 @@ queueup(e, queueall, announce)
 				sleep(i % 32);
 		}
 		if (fd < 0 || (tfp = fdopen(fd, "w")) == NULL)
-			syserr("!queueup: cannot create queue temp file %s", tf);
+		{
+			printopenfds(TRUE);
+			syserr("!queueup: cannot create queue temp file %s, uid=%d",
+				tf, geteuid());
+		}
 	}
 
 	if (tTd(40, 1))
@@ -176,8 +180,8 @@ queueup(e, queueall, announce)
 		e->e_df = newstr(e->e_df);
 		fd = open(e->e_df, O_WRONLY|O_CREAT, FileMode);
 		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
-			syserr("!queueup: cannot create data temp file %s",
-				e->e_df);
+			syserr("!queueup: cannot create data temp file %s, uid=%d",
+				e->e_df, geteuid());
 		(*e->e_putbody)(dfp, FileMailer, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;
@@ -272,7 +276,7 @@ queueup(e, queueall, announce)
 
 	bzero((char *) &nullmailer, sizeof nullmailer);
 	nullmailer.m_re_rwset = nullmailer.m_rh_rwset =
-			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = 0;
+			nullmailer.m_se_rwset = nullmailer.m_sh_rwset = -1;
 	nullmailer.m_eol = "\n";
 
 	define('g', "\201f", e);
@@ -287,6 +291,14 @@ queueup(e, queueall, announce)
 		/* don't output resent headers on non-resent messages */
 		if (bitset(H_RESENT, h->h_flags) && !bitset(EF_RESENT, e->e_flags))
 			continue;
+
+		/* expand macros; if null, don't output header at all */
+		if (bitset(H_DEFAULT, h->h_flags))
+		{
+			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
+			if (buf[0] == '\0')
+				continue;
+		}
 
 		/* output this header */
 		fprintf(tfp, "H");
@@ -306,7 +318,6 @@ queueup(e, queueall, announce)
 		/* output the header: expand macros, convert addresses */
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
 			fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
@@ -345,7 +356,8 @@ queueup(e, queueall, announce)
 		/* rename (locked) tf to be (locked) qf */
 		qf = queuename(e, 'q');
 		if (rename(tf, qf) < 0)
-			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
+			syserr("cannot rename(%s, %s), df=%s, uid=%d",
+				tf, qf, e->e_df, geteuid());
 
 		/* close and unlock old (locked) qf */
 		if (e->e_lockfp != NULL)
@@ -461,17 +473,18 @@ runqueue(forkflag)
 	if (forkflag)
 	{
 		int pid;
+#ifdef SIGCHLD
+		extern void reapchild();
+
+		(void) setsignal(SIGCHLD, reapchild);
+#endif
 
 		pid = dofork();
 		if (pid != 0)
 		{
-			extern void reapchild();
-
 			/* parent -- pick up intermediate zombie */
 #ifndef SIGCHLD
 			(void) waitfor(pid);
-#else /* SIGCHLD */
-			(void) setsignal(SIGCHLD, reapchild);
 #endif /* SIGCHLD */
 			if (QueueIntvl != 0)
 				(void) setevent(QueueIntvl, runqueue, TRUE);
@@ -850,6 +863,11 @@ dowork(id, forkflag, requeueflag, e)
 			syserr("dowork: cannot fork");
 			return 0;
 		}
+		else if (pid > 0)
+		{
+			/* parent -- clean out connection cache */
+			mci_flush(FALSE, NULL);
+		}
 	}
 	else
 	{
@@ -888,7 +906,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_header = NULL;
 
 		/* read the queue control file -- return if locked */
-		if (!readqf(e, !requeueflag))
+		if (!readqf(e))
 		{
 			if (tTd(40, 4))
 				printf("readqf(%s) failed\n", e->e_id);
@@ -921,8 +939,6 @@ dowork(id, forkflag, requeueflag, e)
 **
 **	Parameters:
 **		e -- the envelope of the job to run.
-**		announcefile -- if set, announce the name of the queue
-**			file in error messages.
 **
 **	Returns:
 **		TRUE if it successfully read the queue file.
@@ -933,9 +949,8 @@ dowork(id, forkflag, requeueflag, e)
 */
 
 bool
-readqf(e, announcefile)
+readqf(e)
 	register ENVELOPE *e;
-	bool announcefile;
 {
 	register FILE *qfp;
 	ADDRESS *ctladdr;
@@ -1031,9 +1046,8 @@ readqf(e, announcefile)
 
 	/* do basic system initialization */
 	initsys(e);
+	define('i', e->e_id, e);
 
-	if (announcefile)
-		FileName = qf;
 	LineNumber = 0;
 	e->e_flags |= EF_GLOBALERRS;
 	OpMode = MD_DELIVER;
@@ -1121,8 +1135,8 @@ readqf(e, announcefile)
 			break;
 
 		  default:
-			syserr("readqf: bad line \"%s\"", e->e_id,
-				LineNumber, bp);
+			syserr("readqf: %s: line %s: bad line \"%s\"",
+				qf, LineNumber, bp);
 			fclose(qfp);
 			rename(qf, queuename(e, 'Q'));
 			return FALSE;
@@ -1131,8 +1145,6 @@ readqf(e, announcefile)
 		if (bp != buf)
 			free(bp);
 	}
-
-	FileName = NULL;
 
 	/*
 	**  If we haven't read any lines, this queue file is empty.

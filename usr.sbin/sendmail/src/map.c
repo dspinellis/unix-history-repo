@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.17 (Berkeley) 10/15/93";
+static char sccsid[] = "@(#)map.c	8.20 (Berkeley) 12/11/93";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -336,7 +336,15 @@ initmaps(rebuild, e)
 	checkfd012("entering initmaps");
 #endif
 	CurEnv = e;
-	stabapply(map_init, rebuild);
+	if (rebuild)
+	{
+		stabapply(map_init, 1);
+		stabapply(map_init, 2);
+	}
+	else
+	{
+		stabapply(map_init, 0);
+	}
 #ifdef XDEBUG
 	checkfd012("exiting initmaps");
 #endif
@@ -358,10 +366,19 @@ map_init(s, rebuild)
 		return;
 
 	if (tTd(38, 2))
-		printf("map_init(%s:%s)\n",
+		printf("map_init(%s:%s, %d)\n",
 			map->map_class->map_cname == NULL ? "NULL" :
 				map->map_class->map_cname,
-			map->map_file == NULL ? "NULL" : map->map_file);
+			map->map_file == NULL ? "NULL" : map->map_file,
+			rebuild);
+
+	if (rebuild == (bitset(MF_ALIAS, map->map_mflags) &&
+		    bitset(MCF_REBUILDABLE, map->map_class->map_cflags) ? 1 : 2))
+	{
+		if (tTd(38, 3))
+			printf("\twrong pass\n");
+		return;
+	}
 
 	/* if already open, close it (for nested open) */
 	if (bitset(MF_OPEN, map->map_mflags))
@@ -370,18 +387,16 @@ map_init(s, rebuild)
 		map->map_mflags &= ~(MF_OPEN|MF_WRITABLE);
 	}
 
-	if (rebuild)
+	if (rebuild == 2)
 	{
-		if (bitset(MF_ALIAS, map->map_mflags) &&
-		    bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
-			rebuildaliases(map, FALSE);
+		rebuildaliases(map, FALSE);
 	}
 	else
 	{
 		if (map->map_class->map_open(map, O_RDONLY))
 		{
 			if (tTd(38, 4))
-				printf("%s:%s: valid\n",
+				printf("\t%s:%s: valid\n",
 					map->map_class->map_cname == NULL ? "NULL" :
 						map->map_class->map_cname,
 					map->map_file == NULL ? "NULL" :
@@ -389,7 +404,7 @@ map_init(s, rebuild)
 			map->map_mflags |= MF_OPEN;
 		}
 		else if (tTd(38, 4))
-			printf("%s:%s: invalid: %s\n",
+			printf("\t%s:%s: invalid: %s\n",
 				map->map_class->map_cname == NULL ? "NULL" :
 					map->map_class->map_cname,
 				map->map_file == NULL ? "NULL" :
@@ -434,9 +449,22 @@ ndbm_map_open(map, mode)
 		return FALSE;
 	}
 	map->map_db1 = (void *) dbm;
-	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
-		if (!aliaswait(map, ".pag", TRUE))
+	if (mode == O_RDONLY)
+	{
+		if (bitset(MF_ALIAS, map->map_mflags) &&
+		    !aliaswait(map, ".pag", TRUE))
 			return FALSE;
+	}
+	else
+	{
+		int fd;
+
+		/* exclusive lock for duration of rebuild */
+		fd = dbm_dirfno((DBM *) map->map_db1);
+		if (fd >= 0 && !bitset(MF_LOCKED, map->map_mflags) &&
+		    lockfile(fd, map->map_file, ".dir", LOCK_EX))
+			map->map_mflags |= MF_LOCKED;
+	}
 	if (fstat(dbm_dirfno((DBM *) map->map_db1), &st) >= 0)
 		map->map_mtime = st.st_mtime;
 	return TRUE;
@@ -559,7 +587,7 @@ ndbm_map_close(map)
 		(void) sprintf(buf, "%010ld", curtime());
 		ndbm_map_store(map, "YP_LAST_MODIFIED", buf);
 
-		(void) myhostname(buf, sizeof buf);
+		(void) gethostname(buf, sizeof buf);
 		ndbm_map_store(map, "YP_MASTER_NAME", buf);
 
 		if (inclnull)
@@ -1237,6 +1265,9 @@ impl_map_open(map, mode)
 #if defined(NEWDB) || defined(NDBM)
 	if (Verbose)
 		message("WARNING: cannot open alias database %s", map->map_file);
+#else
+	if (mode != O_RDONLY)
+		usrerr("Cannot rebuild aliases: no database format defined");
 #endif
 
 	return stab_map_open(map, mode);

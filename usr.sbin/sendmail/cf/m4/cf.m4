@@ -51,6 +51,7 @@ divert(-1)
 
 changecom()
 undefine(`format')
+undefine(`hpux')
 ifdef(`pushdef', `',
 	`errprint(`You need a newer version of M4, at least as new as
 System V or GNU')
@@ -92,7 +93,7 @@ define(`DOL', ``$'$1')
 define(`SITECONFIG',
 `CONCAT(D, $3, $2)
 define(`_CLASS_$3_', `')dnl
-ifelse($3, U, Cw$2, `dnl')
+ifelse($3, U, Cw$2 $2.UUCP, `dnl')
 define(`SITE', `ifelse(CONCAT($'2`, $3), SU,
 		CONCAT(CY, $'1`),
 		CONCAT(C, $3, $'1`))')
@@ -145,4 +146,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.2 (Berkeley) 7/18/93')
+VERSIONID(`@(#)cf.m4	8.4 (Berkeley) 12/24/93')

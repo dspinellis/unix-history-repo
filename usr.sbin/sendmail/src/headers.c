@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.13 (Berkeley) 10/24/93";
+static char sccsid[] = "@(#)headers.c	8.22 (Berkeley) 1/13/94";
 #endif /* not lint */
 
 # include <errno.h>
@@ -371,6 +371,11 @@ eatheader(e, full)
 	else
 		define('u', NULL, e);
 
+	/* full name of from person */
+	p = hvalue("full-name", e);
+	if (p != NULL)
+		define('x', p, e);
+
 	if (tTd(32, 1))
 		printf("----- collected header -----\n");
 	msgid = "<none>";
@@ -395,7 +400,11 @@ eatheader(e, full)
 		}
 
 		if (tTd(32, 1))
-			printf("%s: %s\n", h->h_field, h->h_value);
+		{
+			printf("%s: ", h->h_field);
+			xputs(h->h_value);
+			printf("\n");
+		}
 
 		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
@@ -453,11 +462,6 @@ eatheader(e, full)
 				 - e->e_class * WkClassFact
 				 + e->e_nrcpts * WkRecipFact;
 
-	/* full name of from person */
-	p = hvalue("full-name", e);
-	if (p != NULL)
-		define('x', p, e);
-
 	/* date message originated */
 	p = hvalue("posted-date", e);
 	if (p == NULL)
@@ -471,48 +475,97 @@ eatheader(e, full)
 
 # ifdef LOG
 	if (full && LogLevel > 4)
-	{
-		char *name;
-		register char *sbp;
-		char hbuf[MAXNAME];
-		char sbuf[MAXLINE];
-
-		if (bitset(EF_RESPONSE, e->e_flags))
-			name = "[RESPONSE]";
-		else if ((name = macvalue('_', e)) != NULL)
-			;
-		else if (RealHostName[0] == '[')
-			name = RealHostName;
-		else
-		{
-			name = hbuf;
-			(void) sprintf(hbuf, "%.80s", RealHostName);
-			if (RealHostAddr.sa.sa_family != 0)
-			{
-				p = &hbuf[strlen(hbuf)];
-				(void) sprintf(p, " (%s)",
-					anynet_ntoa(&RealHostAddr));
-			}
-		}
-
-		/* some versions of syslog only take 5 printf args */
-		sbp = sbuf;
-		sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
-		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
-		    e->e_msgpriority, e->e_nrcpts, msgid);
-		sbp += strlen(sbp);
-		if (e->e_bodytype != NULL)
-		{
-			(void) sprintf(sbp, ", bodytype=%.20s", e->e_bodytype);
-			sbp += strlen(sbp);
-		}
-		p = macvalue('r', e);
-		if (p != NULL)
-			(void) sprintf(sbp, ", proto=%.20s", p);
-		syslog(LOG_INFO, "%s: %s, relay=%s",
-		    e->e_id, sbuf, name);
-	}
+		logsender(e, msgid);
 # endif /* LOG */
+	e->e_flags &= ~EF_LOGSENDER;
+}
+/*
+**  LOGSENDER -- log sender information
+**
+**	Parameters:
+**		e -- the envelope to log
+**		msgid -- the message id
+**
+**	Returns:
+**		none
+*/
+
+logsender(e, msgid)
+	register ENVELOPE *e;
+	char *msgid;
+{
+	char *name;
+	register char *sbp;
+	register char *p;
+	char hbuf[MAXNAME];
+	char sbuf[MAXLINE];
+
+	if (bitset(EF_RESPONSE, e->e_flags))
+		name = "[RESPONSE]";
+	else if ((name = macvalue('_', e)) != NULL)
+		;
+	else if (RealHostName[0] == '[')
+		name = RealHostName;
+	else
+	{
+		name = hbuf;
+		(void) sprintf(hbuf, "%.80s", RealHostName);
+		if (RealHostAddr.sa.sa_family != 0)
+		{
+			p = &hbuf[strlen(hbuf)];
+			(void) sprintf(p, " (%s)",
+				anynet_ntoa(&RealHostAddr));
+		}
+	}
+
+	/* some versions of syslog only take 5 printf args */
+#  if (SYSLOG_BUFSIZE) >= 256
+	sbp = sbuf;
+	sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d",
+	    e->e_from.q_paddr, e->e_msgsize, e->e_class,
+	    e->e_msgpriority, e->e_nrcpts);
+	sbp += strlen(sbp);
+	if (msgid != NULL)
+	{
+		sprintf(sbp, ", msgid=%.100s", msgid);
+		sbp += strlen(sbp);
+	}
+	if (e->e_bodytype != NULL)
+	{
+		(void) sprintf(sbp, ", bodytype=%.20s", e->e_bodytype);
+		sbp += strlen(sbp);
+	}
+	p = macvalue('r', e);
+	if (p != NULL)
+		(void) sprintf(sbp, ", proto=%.20s", p);
+	syslog(LOG_INFO, "%s: %s, relay=%s",
+	    e->e_id, sbuf, name);
+
+#  else			/* short syslog buffer */
+
+	syslog(LOG_INFO, "%s: from=%s",
+		e->e_id, shortenstring(e->e_from.q_paddr, 83));
+	syslog(LOG_INFO, "%s: size=%ld, class=%ld, pri=%ld, nrcpts=%d",
+		e->e_id, e->e_msgsize, e->e_class,
+		e->e_msgpriority, e->e_nrcpts);
+	if (msgid != NULL)
+		syslog(LOG_INFO, "%s: msgid=%s", e->e_id, msgid);
+	sbp = sbuf;
+	sprintf(sbp, "%s:", e->e_id);
+	sbp += strlen(sbp);
+	if (e->e_bodytype != NULL)
+	{
+		sprintf(sbp, " bodytype=%s,", e->e_bodytype);
+		sbp += strlen(sbp);
+	}
+	p = macvalue('r', e);
+	if (p != NULL)
+	{
+		sprintf(sbp, " proto=%s,", p);
+		sbp += strlen(sbp);
+	}
+	syslog(LOG_INFO, "%s relay=%s", sbuf, name);
+#  endif
 }
 /*
 **  PRIENCODE -- encode external priority names into internal values.
@@ -639,7 +692,7 @@ crackaddr(addr)
 		}
 
 		/* check for quoted strings */
-		if (c == '"')
+		if (c == '"' && cmtlev <= 0)
 		{
 			qmode = !qmode;
 			if (copylev > 0 && !skipping)
@@ -683,10 +736,9 @@ crackaddr(addr)
 		else if (c == ')')
 		{
 			/* syntax error: unmatched ) */
-			if (!skipping)
+			if (copylev > 0 && !skipping)
 				bp--;
 		}
-
 
 		/* check for characters that may have to be quoted */
 		if (strchr(".'@,;:\\()[]", c) != NULL)
@@ -864,18 +916,23 @@ putheader(fp, m, e)
 				printf(" (skipped (resent))\n");
 			continue;
 		}
-		if (tTd(34, 11))
-			printf("\n");
 
+		/* macro expand value if generated internally */
 		p = h->h_value;
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
-			/* macro expand value if generated internally */
 			expand(p, buf, &buf[sizeof buf], e);
 			p = buf;
 			if (p == NULL || *p == '\0')
+			{
+				if (tTd(34, 11))
+					printf(" (skipped -- null value)\n");
 				continue;
+			}
 		}
+
+		if (tTd(34, 11))
+			printf("\n");
 
 		if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
@@ -980,7 +1037,8 @@ commaize(h, p, fp, oldstyle, m, e)
 			auto char *oldp;
 			char pvpbuf[PSBUFSIZE];
 
-			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf, &oldp);
+			(void) prescan(p, oldstyle ? ' ' : ',', pvpbuf,
+				       sizeof pvpbuf, &oldp);
 			p = oldp;
 
 			/* look to see if we have an at sign */

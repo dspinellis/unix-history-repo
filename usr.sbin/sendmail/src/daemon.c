@@ -37,9 +37,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) 10/31/93 (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.30 (Berkeley) 1/8/94 (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.21 (Berkeley) 10/31/93 (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.30 (Berkeley) 1/8/94 (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -110,10 +110,10 @@ int		TcpSndBufferSize = 0;		/* size of TCP send buffer */
 getrequests()
 {
 	int t;
-	register struct servent *sp;
 	int on = 1;
 	bool refusingconnections = TRUE;
 	FILE *pidf;
+	int socksize;
 	extern void reapchild();
 
 	/*
@@ -126,13 +126,16 @@ getrequests()
 		DaemonAddr.sin.sin_addr.s_addr = INADDR_ANY;
 	if (DaemonAddr.sin.sin_port == 0)
 	{
+		register struct servent *sp;
+
 		sp = getservbyname("smtp", "tcp");
 		if (sp == NULL)
 		{
 			syserr("554 service \"smtp\" unknown");
-			goto severe;
+			DaemonAddr.sin.sin_port = htons(25);
 		}
-		DaemonAddr.sin.sin_port = sp->s_port;
+		else
+			DaemonAddr.sin.sin_port = sp->s_port;
 	}
 
 	/*
@@ -177,22 +180,22 @@ getrequests()
 	{
 # ifdef NETINET
 	  case AF_INET:
-		t = sizeof DaemonAddr.sin;
+		socksize = sizeof DaemonAddr.sin;
 		break;
 # endif
 
 # ifdef NETISO
 	  case AF_ISO:
-		t = sizeof DaemonAddr.siso;
+		socksize = sizeof DaemonAddr.siso;
 		break;
 # endif
 
 	  default:
-		t = sizeof DaemonAddr;
+		socksize = sizeof DaemonAddr;
 		break;
 	}
 
-	if (bind(DaemonSocket, &DaemonAddr.sa, t) < 0)
+	if (bind(DaemonSocket, &DaemonAddr.sa, socksize) < 0)
 	{
 		syserr("getrequests: cannot bind");
 		(void) close(DaemonSocket);
@@ -260,7 +263,7 @@ getrequests()
 		do
 		{
 			errno = 0;
-			lotherend = sizeof RealHostAddr;
+			lotherend = socksize;
 			t = accept(DaemonSocket,
 			    (struct sockaddr *)&RealHostAddr, &lotherend);
 		} while (t < 0 && errno == EINTR);
@@ -299,7 +302,6 @@ getrequests()
 			*/
 
 			(void) setsignal(SIGCHLD, SIG_DFL);
-			OpMode = MD_SMTP;
 
 			/* determine host name */
 			p = hostnamebyanyaddr(&RealHostAddr);
@@ -613,7 +615,7 @@ gothostent:
 		  case AF_INET:
 			bcopy(hp->h_addr,
 				&addr.sin.sin_addr,
-				hp->h_length);
+				sizeof addr.sin.sin_addr);
 			break;
 #endif
 
@@ -639,9 +641,10 @@ gothostent:
 		if (sp == NULL)
 		{
 			syserr("554 makeconnection: service \"smtp\" unknown");
-			return (EX_OSERR);
+			port = htons(25);
 		}
-		port = sp->s_port;
+		else
+			port = sp->s_port;
 	}
 
 	switch (addr.sa.sa_family)
@@ -742,7 +745,7 @@ gothostent:
 			  case AF_INET:
 				bcopy(hp->h_addr_list[i++],
 				      &addr.sin.sin_addr,
-				      hp->h_length);
+				      sizeof addr.sin.sin_addr);
 				break;
 #endif
 
@@ -846,7 +849,7 @@ myhostname(hostbuf, size)
 **		Sets RealHostName to the name of the host at the other end.
 */
 
-#ifdef IDENTPROTO
+#if IDENTPROTO
 
 static jmp_buf	CtxAuthTimeout;
 
@@ -865,7 +868,7 @@ getauthinfo(fd)
 	SOCKADDR fa;
 	int falen;
 	register char *p;
-#ifdef IDENTPROTO
+#if IDENTPROTO
 	SOCKADDR la;
 	int lalen;
 	register struct servent *sp;
@@ -878,7 +881,8 @@ getauthinfo(fd)
 	extern char RealUserName[];			/* main.c */
 
 	falen = sizeof fa;
-	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0)
+	if (getpeername(fd, &fa.sa, &falen) < 0 || falen <= 0 ||
+	    fa.sa.sa_family == 0)
 	{
 		RealHostName = "localhost";
 		(void) sprintf(hbuf, "%s@localhost", RealUserName);
@@ -891,7 +895,7 @@ getauthinfo(fd)
 	RealHostName = newstr(p);
 	RealHostAddr = fa;
 
-#ifdef IDENTPROTO
+#if IDENTPROTO
 	lalen = sizeof la;
 	if (fa.sa.sa_family != AF_INET ||
 	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
@@ -1049,7 +1053,6 @@ host_map_lookup(map, name, av, statp)
 	char *cp;
 	int i;
 	register STAB *s;
-	char *timeoutmsg = "Recipient domain nameserver timed out";
 	char hbuf[MAXNAME];
 	extern struct hostent *gethostbyaddr();
 	extern int h_errno;
@@ -1069,7 +1072,11 @@ host_map_lookup(map, name, av, statp)
 		h_errno = s->s_namecanon.nc_herrno;
 		*statp = s->s_namecanon.nc_stat;
 		if (CurEnv->e_message == NULL && *statp == EX_TEMPFAIL)
-			CurEnv->e_message = newstr(timeoutmsg);
+		{
+			sprintf(hbuf, "%s: Name server timeout",
+				shortenstring(name, 33));
+			CurEnv->e_message = newstr(hbuf);
+		}
 		return s->s_namecanon.nc_cname;
 	}
 
@@ -1109,9 +1116,11 @@ host_map_lookup(map, name, av, statp)
 			  case TRY_AGAIN:
 				if (UseNameServer)
 				{
-					message(timeoutmsg);
+					sprintf(hbuf, "%s: Name server timeout",
+						shortenstring(name, 33));
+					message("%s", hbuf);
 					if (CurEnv->e_message == NULL)
-						CurEnv->e_message = newstr(timeoutmsg);
+						CurEnv->e_message = newstr(hbuf);
 				}
 				*statp = EX_TEMPFAIL;
 				break;
@@ -1200,12 +1209,14 @@ anynet_ntoa(sap)
 	switch (sap->sa.sa_family)
 	{
 #ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
+#ifdef NETUNIX
 	  case AF_UNIX:
 	  	if (sap->sunix.sun_path[0] != '\0')
 	  		sprintf(buf, "[UNIX: %.64s]", sap->sunix.sun_path);
 	  	else
 	  		sprintf(buf, "[UNIX: localhost]");
 		return buf;
+#endif
 #endif
 
 #ifdef NETINET

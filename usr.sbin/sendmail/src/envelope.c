@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.17 (Berkeley) 10/31/93";
+static char sccsid[] = "@(#)envelope.c	8.28 (Berkeley) 1/9/94";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -110,7 +110,7 @@ dropenvelope(e)
 	{
 		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
-		printf(", flags=%o\n", e->e_flags);
+		printf(", flags=0x%x\n", e->e_flags);
 		if (tTd(50, 10))
 		{
 			printf("sendq=");
@@ -123,10 +123,13 @@ dropenvelope(e)
 		return;
 
 #ifdef LOG
+	if (LogLevel > 4 && bitset(EF_LOGSENDER, e->e_flags))
+		logsender(e, NULL);
 	if (LogLevel > 84)
-		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
+		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=0x%x, pid=%d",
 				  id, e->e_flags, getpid());
 #endif /* LOG */
+	e->e_flags &= ~EF_LOGSENDER;
 
 	/* post statistics */
 	poststats(StatFile);
@@ -214,6 +217,7 @@ dropenvelope(e)
 
 		(void) sendtolist(e->e_receiptto, NULLADDR, &rlist, e);
 		(void) returntosender("Return receipt", rlist, FALSE, e);
+		e->e_flags &= ~EF_SENDRECEIPT;
 	}
 
 	/*
@@ -272,9 +276,6 @@ dropenvelope(e)
 		(void) xfclose(e->e_dfp, "dropenvelope", e->e_df);
 	e->e_dfp = NULL;
 	e->e_id = e->e_df = NULL;
-#ifdef XDEBUG
-	checkfd012("dropenvelope");
-#endif
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -583,7 +584,8 @@ setsender(from, e, delimptr, internal)
 	**	Username can return errno != 0 on non-errors.
 	*/
 
-	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP)
+	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP ||
+	    OpMode == MD_DAEMON)
 		realname = from;
 	if (realname == NULL || realname[0] == '\0')
 		realname = username();
@@ -619,7 +621,7 @@ setsender(from, e, delimptr, internal)
 			}
 			syslog(LOG_NOTICE,
 				"setsender: %s: invalid or unparseable, received from %s",
-				from, p);
+				shortenstring(from, 83), p);
 		}
 # endif /* LOG */
 		if (from != NULL)
@@ -681,7 +683,7 @@ setsender(from, e, delimptr, internal)
 				**  We have an alternate address for the sender
 				*/
 
-				pvp = prescan(p, '\0', pvpbuf, NULL);
+				pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL);
 			}
 # endif /* USERDB */
 		}
@@ -700,6 +702,7 @@ setsender(from, e, delimptr, internal)
 			/* extract user and group id */
 			e->e_from.q_uid = pw->pw_uid;
 			e->e_from.q_gid = pw->pw_gid;
+			e->e_from.q_flags |= QGOODUID;
 
 			/* extract full name from passwd file */
 			if (FullName == NULL && pw->pw_gecos != NULL &&
@@ -714,12 +717,13 @@ setsender(from, e, delimptr, internal)
 		if (FullName != NULL && !internal)
 			define('x', FullName, e);
 	}
-	else if (!internal)
+	else if (!internal && OpMode != MD_DAEMON)
 	{
 		if (e->e_from.q_home == NULL)
 			e->e_from.q_home = getenv("HOME");
 		e->e_from.q_uid = RealUid;
 		e->e_from.q_gid = RealGid;
+		e->e_from.q_flags |= QGOODUID;
 	}
 
 	/*
@@ -728,7 +732,7 @@ setsender(from, e, delimptr, internal)
 	*/
 
 	if (pvp == NULL)
-		pvp = prescan(from, '\0', pvpbuf, NULL);
+		pvp = prescan(from, delimchar, pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 	{
 		/* don't need to give error -- prescan did that already */
@@ -738,9 +742,9 @@ setsender(from, e, delimptr, internal)
 # endif
 		finis();
 	}
-	(void) rewrite(pvp, 3, e);
-	(void) rewrite(pvp, 1, e);
-	(void) rewrite(pvp, 4, e);
+	(void) rewrite(pvp, 3, 0, e);
+	(void) rewrite(pvp, 1, 0, e);
+	(void) rewrite(pvp, 4, 0, e);
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
 	if (*bp == '@')
@@ -753,7 +757,7 @@ setsender(from, e, delimptr, internal)
 	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */
-	if (!internal && e->e_from.q_mailer != NULL &&
+	if (e->e_from.q_mailer != NULL &&
 	    bitnset(M_CANONICAL, e->e_from.q_mailer->m_flags))
 	{
 		extern char **copyplist();

@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.2 (Berkeley) 8/15/93
+#	@(#)Makefile	8.3 (Berkeley) 12/20/93
 
 PROG=	sendmail
 
@@ -12,7 +12,7 @@ PROG=	sendmail
 # spiral snail, but it will work.
 DBMDEF=	-DNEWDB
 
-CFLAGS+=-I${.CURDIR} ${DBMDEF} -DNETISO -DMIME
+CFLAGS+=-I${.CURDIR} ${DBMDEF} -DNETISO -DMIME -DUSEUNAME
 
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c map.c \
@@ -34,7 +34,7 @@ BINMODE=6555
 beforeinstall:
 #	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
 #	    ${DESTDIR}/etc/sendmail.fc
-	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
+	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
 	    ${DESTDIR}/var/log/sendmail.st
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/sendmail.hf \
 	    ${DESTDIR}/usr/share/misc

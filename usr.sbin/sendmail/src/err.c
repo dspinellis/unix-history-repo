@@ -33,7 +33,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.14 (Berkeley) 10/29/93";
+static char sccsid[] = "@(#)err.c	8.19 (Berkeley) 1/8/94";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -159,8 +159,6 @@ usrerr(fmt, va_alist)
 #endif
 {
 	VA_LOCAL_DECL
-	extern char SuprErrs;
-	extern int errno;
 
 	if (SuprErrs)
 		return;
@@ -287,13 +285,13 @@ putoutmsg(msg, holdmsg)
 		msg[0] = '5';
 
 	(void) fflush(stdout);
-	if (OpMode == MD_SMTP)
+	if (OpMode == MD_SMTP || OpMode == MD_DAEMON)
 		fprintf(OutChannel, "%s\r\n", msg);
 	else
 		fprintf(OutChannel, "%s\n", &msg[4]);
 	if (TrafficLogFile != NULL)
 		fprintf(TrafficLogFile, "%05d >>> %s\n", getpid(),
-			OpMode == MD_SMTP ? msg : &msg[4]);
+			(OpMode == MD_SMTP || OpMode == MD_DAEMON) ? msg : &msg[4]);
 	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
 	if (!ferror(OutChannel))
@@ -449,6 +447,7 @@ const char *
 errstring(errno)
 	int errno;
 {
+	char *dnsmsg;
 	static char buf[MAXLINE];
 # ifndef ERRLIST_PREDEFINED
 	extern char *sys_errlist[];
@@ -458,16 +457,16 @@ errstring(errno)
 	extern char *SmtpPhase;
 # endif /* SMTP */
 
-# ifdef DAEMON
-# ifdef ETIMEDOUT
 	/*
 	**  Handle special network error codes.
 	**
 	**	These are 4.2/4.3bsd specific; they should be in daemon.c.
 	*/
 
+	dnsmsg = NULL;
 	switch (errno)
 	{
+# if defined(DAEMON) && defined(ETIMEDOUT)
 	  case ETIMEDOUT:
 	  case ECONNRESET:
 		(void) strcpy(buf, sys_errlist[errno]);
@@ -494,26 +493,45 @@ errstring(errno)
 			break;
 		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
+# endif
 
 	  case EOPENTIMEOUT:
 		return "Timeout on file open";
 
 # ifdef NAMED_BIND
 	  case HOST_NOT_FOUND + E_DNSBASE:
-		return ("Name server: host not found");
+		dnsmsg = "host not found";
+		break;
 
 	  case TRY_AGAIN + E_DNSBASE:
-		return ("Name server: host name lookup failure");
+		dnsmsg = "host name lookup failure";
+		break;
 
 	  case NO_RECOVERY + E_DNSBASE:
-		return ("Name server: non-recoverable error");
+		dnsmsg = "non-recoverable error";
+		break;
 
 	  case NO_DATA + E_DNSBASE:
-		return ("Name server: no data known for name");
+		dnsmsg = "no data known";
+		break;
 # endif
+
+	  case EPERM:
+		/* SunOS gives "Not owner" -- this is the POSIX message */
+		return "Operation not permitted";
 	}
-# endif
-# endif
+
+	if (dnsmsg != NULL)
+	{
+		(void) strcpy(buf, "Name server: ");
+		if (CurHostName != NULL)
+		{
+			(void) strcat(buf, CurHostName);
+			(void) strcat(buf, ": ");
+		}
+		(void) strcat(buf, dnsmsg);
+		return buf;
+	}
 
 	if (errno > 0 && errno < sys_nerr)
 		return (sys_errlist[errno]);

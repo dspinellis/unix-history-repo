@@ -34,7 +34,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.20 (Berkeley) 10/31/93')
+VERSIONID(`@(#)proto.m4	8.30 (Berkeley) 1/12/94')
 
 MAILER(local)dnl
 
@@ -91,12 +91,6 @@ ifdef(`BITNET_RELAY',
 `#  BITNET relay host
 DB`'BITNET_RELAY
 CPBITNET
-
-')dnl
-ifdef(`CSNET_RELAY',
-`# CSNET relay host
-DC`'CSNET_RELAY
-CPCSNET
 
 ')dnl
 ifdef(`FAX_RELAY',
@@ -185,7 +179,7 @@ Ob`'confMIN_FREE_BLOCKS
 # substitution for space (blank) characters
 OB`'confBLANK_SUB
 
-# connect to "expensive" mailers on initial submission?
+# avoid connecting to "expensive" mailers on initial submission?
 Oc`'confCON_EXPENSIVE
 
 # checkpoint queue runs after every N successful deliveries
@@ -420,6 +414,9 @@ R$+ @ $+		$: $1 < @ $2 >			focus on domain
 R$+ < $+ @ $+ >		$1 $2 < @ $3 >			move gaze right
 R$+ < @ $+ >		$@ $>_SET_96_ $1 < @ $2 >		already canonical
 
+# do some sanity checking
+R$* < @ $* : $* > $*	$1 < @ $2 $3 > $4		nix colons in addrs
+
 ifdef(`_NO_UUCP_', `dnl',
 `# convert old-style addresses to a domain-based address
 R$- ! $+		$@ $>_SET_96_ $2 < @ $1 .UUCP >	resolve uucp names
@@ -458,30 +455,33 @@ undivert(2)dnl
 ifdef(`_NO_UUCP_', `dnl',
 `ifdef(`UUCP_RELAY',
 `# pass UUCP addresses straight through
-R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP > $3',
+R$* < @ $+ . UUCP > $*		$@ $1 < @ $2 . UUCP . > $3',
 `# if really UUCP, handle it immediately
 ifdef(`_CLASS_U_',
-`R$* < @ $=U . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=U . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=V . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=W . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=X . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 ifdef(`_CLASS_Y_',
-`R$* < @ $=Y . UUCP > $*	$@ $1 < @ $2 . UUCP > $3', `dnl')
+`R$* < @ $=Y . UUCP > $*	$@ $1 < @ $2 . UUCP . > $3', `dnl')
 
 # try UUCP traffic as a local address
-R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP > $3
+R$* < @ $+ . UUCP > $*		$: $1 < @ $[ $2 $] . UUCP . > $3
 ifdef(`_OLD_SENDMAIL_',
-`R$* < @ $+ . $+ . UUCP > $*		$@ $1 < @ $2 . $3 . > $4',
-`R$* < @ $+ . . UUCP > $*		$@ $1 < @ $2 . > $3')')
+`R$* < @ $+ . $+ . UUCP . > $*		$@ $1 < @ $2 . $3 . > $4',
+`R$* < @ $+ . . UUCP . > $*		$@ $1 < @ $2 . > $3')')
 ')
-ifdef(`_NO_CANONIFY_',
-`# make sure local host names appear canonical
-R$* < @ $=w > $*		$: $1 < @ $2 . > $3',
+ifdef(`_NO_CANONIFY_', `dnl',
 `# pass to name server to make hostname canonical
 R$* < @ $* $~P > $*		$: $1 < @ $[ $2 $3 $] > $4')
+
+# local host aliases and pseudo-domains are always canonical
+R$* < @ $=w > $*		$: $1 < @ $2 . > $3
+R$* < @ $* $=P > $*		$: $1 < @ $2 $3 . > $4
+R$* < @ $* . . > $*		$1 < @ $2 . > $3
 
 undivert(8)dnl
 
@@ -534,13 +534,14 @@ S0
 
 R<@>			$#_LOCAL_ $: <>			special case error msgs
 R$*:;<@>		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
+R<@ $+>			$#error $@ USAGE $: "user address required"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
 ifdef(`_NO_CANONIFY_', `dnl',
 `R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr')
 R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
-R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 @ [$2] $3	still numeric: send',
+R$* < @ [ $+ ] > $*	$#_SMTP_ $@ [$2] $: $1 < @ [$2] > $3	still numeric: send',
 	`dnl')
 
 # now delete the local info -- note $=O to find characters that cause forwarding
@@ -564,7 +565,7 @@ R< $+ > $*		$: $>90 <$1> $2			try domain',
 ifdef(`_LOCAL_NOT_STICKY_',
 `R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
 R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
-`R$+ < @ $=w . >		$: $1 < @ $2 @ $H >		first try hub
+`R$+ < @ $=w . >		$: $1 < @ $2 . @ $H >		first try hub
 ifdef(`_OLD_SENDMAIL_',
 `R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 < $2 >	yep ....
 R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 < $2 >	yep ....
@@ -576,39 +577,38 @@ undivert(4)dnl
 ifdef(`_NO_UUCP_', `dnl',
 `# resolve remotely connected UUCP links (if any)
 ifdef(`_CLASS_V_',
-`R$* < @ $=V . UUCP > $*		$: $>_SET_95_ < $V > $1 <@$2.UUCP> $3',
+`R$* < @ $=V . UUCP . > $*		$: $>_SET_95_ < $V > $1 <@$2.UUCP.> $3',
 	`dnl')
 ifdef(`_CLASS_W_',
-`R$* < @ $=W . UUCP > $*		$: $>_SET_95_ < $W > $1 <@$2.UUCP> $3',
+`R$* < @ $=W . UUCP . > $*		$: $>_SET_95_ < $W > $1 <@$2.UUCP.> $3',
 	`dnl')
 ifdef(`_CLASS_X_',
-`R$* < @ $=X . UUCP > $*		$: $>_SET_95_ < $X > $1 <@$2.UUCP> $3',
+`R$* < @ $=X . UUCP . > $*		$: $>_SET_95_ < $X > $1 <@$2.UUCP.> $3',
 	`dnl')')
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
-`R$*<@$+.BITNET>$*	$: $>_SET_95_ < $B > $1 <@$2.BITNET> $3	user@host.BITNET',
+`R$*<@$+.BITNET.>$*	$: $>_SET_95_ < $B > $1 <@$2.BITNET.> $3	user@host.BITNET',
 	`dnl')
-ifdef(`CSNET_RELAY',
-`R$*<@$+.CSNET>$*	$: $>_SET_95_ < $C > $1 <@$2.CSNET> $3	user@host.CSNET',
+ifdef(`_MAILER_pop_',
+`R$+ < @ POP. >		$#pop $: $1			user@POP',
 	`dnl')
 ifdef(`_MAILER_fax_',
-`R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1		user@host.FAX',
+`R$+ < @ $+ .FAX. >	$#fax $@ $2 $: $1		user@host.FAX',
 `ifdef(`FAX_RELAY',
-`R$*<@$+.FAX>$*		$: $>_SET_95_ < $F > $1 <@$2.FAX> $3	user@host.FAX',
+`R$*<@$+.FAX.>$*		$: $>_SET_95_ < $F > $1 <@$2.FAX.> $3	user@host.FAX',
 	`dnl')')
 
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
-R$*<@$*.UUCP>$*		$: $>_SET_95_ < $Y > $1 @ <$2.UUCP> $3	uucp mail',
+R$*<@$*.UUCP.>$*		$: $>_SET_95_ < $Y > $1 <@$2.UUCP.> $3	uucp mail',
 `ifdef(`_MAILER_uucp_',
 `# forward other UUCP traffic straight to UUCP
-R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
-R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1		user@host.UUCP',
+R$* < @ $+ .UUCP. > $*		$#uucp $@ $2 $: $1 < @ $2 .UUCP. > $3	user@host.UUCP',
 	`dnl')')
 ifdef(`_MAILER_usenet_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
-R$+ . USENET		$#usenet $: $1',
+R$+ . USENET.		$#usenet $: $1',
 	`dnl')
 
 ifdef(`_LOCAL_RULES_',
