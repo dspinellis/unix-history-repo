@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -44,7 +44,7 @@ wwiomux()
 	register char *p;
 	char c;
 	struct timeval tv;
-	char noblock;
+	char noblock = 0;
 
 	for (;;) {
 		if (wwinterrupt()) {
@@ -53,7 +53,6 @@ wwiomux()
 		}
 
 		FD_ZERO(&imask);
-		noblock = 0;
 		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
 			if (w->ww_pty < 0)
 				continue;
@@ -86,12 +85,15 @@ wwiomux()
 			 */
 			fcntl(0, F_SETFL, wwnewtty.ww_fflags);
 			tv.tv_sec = 30;
-		} else
+			tv.tv_usec = 0;
+		} else {
 			tv.tv_sec = 0;
-		tv.tv_usec = 0;
+			tv.tv_usec = 10000;
+		}
 		wwnselect++;
 		n = select(wwdtablesize, &imask, (fd_set *)0, (fd_set *)0, &tv);
 		wwsetjmp = 0;
+		noblock = 0;
 
 		if (n < 0)
 			wwnselecte++;
@@ -158,6 +160,7 @@ wwiomux()
 			n = wwwrite(w, w->ww_obp, w->ww_obq - w->ww_obp);
 			if ((w->ww_obp += n) == w->ww_obq)
 				w->ww_obq = w->ww_obp = w->ww_ob;
+			noblock = 1;
 			continue;
 		}
 		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
