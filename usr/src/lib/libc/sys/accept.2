@@ -1,19 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)accept.2	6.4 (Berkeley) %G%
+.\"	@(#)accept.2	6.5 (Berkeley) %G%
 .\"
 .TH ACCEPT 2 ""
 .UC 5
@@ -41,7 +31,7 @@ bound to an address with
 and is listening for connections after a
 .IR listen (2).
 .I Accept
-extracts the first connection
+extracts the first connection request
 on the queue of pending connections, creates
 a new socket with the same properties of 
 .I s
@@ -87,6 +77,25 @@ It is possible to
 a socket for the purposes of doing an
 .I accept
 by selecting it for read.
+.PP
+For certain protocols which require an explicit confirmation,
+such as ISO or DATAKIT,
+one should think of accept as merely dequeueing the next connection
+request, and not in of itself implying confirmation.
+Confirmation can be implied by a normal read or write on the new
+file desciptor, and rejection can be implied by closing the
+new socket.
+.PP
+One can obtain user connection request data without confirming
+the connection by issuing a 
+recvmsg call with an msg_iovlen of 0 and a non-zero
+msg_controllen, or by issuing a
+.IR getsockopt (2)
+request.
+Similarly, one can provide user connection rejection information
+by issuing a sendmsg call with providing only the control information,
+or by calling
+.IR setsockopt (2).
 .SH "RETURN VALUE
 The call returns \-1 on error.  If it succeeds, it returns a non-negative
 integer that is a descriptor for the accepted socket.
