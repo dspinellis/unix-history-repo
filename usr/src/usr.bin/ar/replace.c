@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)replace.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)replace.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,6 +47,7 @@ replace(argv)
 	int err, exists, tfd1, tfd2;
 	char *rname();
 
+	err = 0;
 	/*
 	 * If doesn't exist, simply append to the archive.  There's
 	 * a race here, but it's pretty short, and not worth fixing.
@@ -71,7 +72,7 @@ replace(argv)
 	 * all back together at the end.
 	 */
 	mods = (options & (AR_A|AR_B));
-	for (err = 0, curfd = tfd1; get_arobj(afd);) {
+	for (curfd = tfd1; get_arobj(afd);) {
 		if (*argv && (file = files(argv))) {
 			if ((sfd = open(file, O_RDONLY)) < 0) {
 				err = 1;
