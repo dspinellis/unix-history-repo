@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cgsix.c	8.1 (Berkeley) %G%
+ *	@(#)cgsix.c	8.2 (Berkeley) %G%
  *
  * from: $Header: cgsix.c,v 1.2 93/10/18 00:01:51 torek Exp $
  */
@@ -70,6 +70,7 @@ struct cgsix_softc {
 	struct	fbdevice sc_fb;		/* frame buffer device */
 	volatile struct cg6_layout *sc_physadr;	/* phys addr of h/w */
 	volatile struct bt_regs *sc_bt;		/* Brooktree registers */
+	volatile int *sc_fhc;			/* FHC register */
 	volatile struct cg6_thc *sc_thc;	/* THC registers */
 	int	sc_blanked;		/* true if blanked */
 	struct	cg6_cursor sc_cursor;	/* software cursor info */
@@ -95,6 +96,7 @@ extern int fbnode;
 
 #define	CGSIX_MAJOR	67		/* XXX */
 
+static void cg6_reset __P((struct cgsix_softc *));
 static void cg6_loadcmap __P((struct cgsix_softc *, int, int));
 static void cg6_loadomap __P((struct cgsix_softc *));
 static void cg6_setcursor __P((struct cgsix_softc *));/* set position */
@@ -132,13 +134,18 @@ cgsixattach(parent, self, args)
 	/*
 	 * Dunno what the PROM has mapped, though obviously it must have
 	 * the video RAM mapped.  Just map what we care about for ourselves
-	 * (the THC and Brooktree registers).
+	 * (the FHC, THC, and Brooktree registers).
 	 */
 	sc->sc_physadr = p = (struct cg6_layout *)sa->sa_ra.ra_paddr;
 	sc->sc_bt = bt = (volatile struct bt_regs *)
 	    mapiodev((caddr_t)&p->cg6_bt_un.un_btregs, sizeof(struct bt_regs));
+	sc->sc_fhc = (volatile int *)
+	    mapiodev((caddr_t)&p->cg6_fhc_un.un_fhc, sizeof(int));
 	sc->sc_thc = (volatile struct cg6_thc *)
 	    mapiodev((caddr_t)&p->cg6_thc_un.un_thc, sizeof(struct cg6_thc));
+
+	/* reset cursor & frame buffer controls */
+	cg6_reset(sc);
 
 	/* grab initial (current) color map (DOES THIS WORK?) */
 	bt->bt_addr = 0;
@@ -173,7 +180,9 @@ cgsixclose(dev, flags, mode, p)
 	int flags, mode;
 	struct proc *p;
 {
+	struct cgsix_softc *sc = cgsixcd.cd_devs[minor(dev)];
 
+	cg6_reset(sc);
 	return (0);
 }
 
@@ -350,6 +359,40 @@ cgsixioctl(dev, cmd, data, flags, p)
 		return (ENOTTY);
 	}
 	return (0);
+}
+
+/*
+ * Clean up hardware state (e.g., after bootup or after X crashes).
+ */
+static void
+cg6_reset(sc)
+	register struct cgsix_softc *sc;
+{
+	register int oldfhc, newfhc, rev;
+	register volatile struct bt_regs *bt;
+
+	/* hide the cursor, just in case */
+	sc->sc_thc->thc_cursxy = (THC_CURSOFF << 16) | THC_CURSOFF;
+
+	/* take care of hardware bugs in various revisions */
+	oldfhc = *sc->sc_fhc;
+	rev = (oldfhc >> FHC_REV_SHIFT) & (FHC_REV_MASK >> FHC_REV_SHIFT);
+	if (rev < 5) {
+		/*
+		 * Keep current resolution; set cpu to 68020, set test
+		 * window (size 1Kx1K), and for rev 1, disable dest cache.
+		 */
+		newfhc = (oldfhc & FHC_RES_MASK) | FHC_CPU_68020 | FHC_TEST |
+		    (11 << FHC_TESTX_SHIFT) | (11 << FHC_TESTY_SHIFT);
+		if (rev < 2)
+			newfhc |= FHC_DST_DISABLE;
+		*sc->sc_fhc = newfhc;
+	}
+
+	/* Enable cursor in Brooktree DAC. */
+	bt = sc->sc_bt;
+	bt->bt_addr = 0x06 << 24;
+	bt->bt_ctrl |= 0x03 << 24;
 }
 
 static void
