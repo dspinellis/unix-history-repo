@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	7.9 (Berkeley) %G%
+ *	@(#)tcp_output.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -257,7 +257,7 @@ send:
 	 * unless TCP set to not do any options.
 	 */
 	opt = NULL;
-	if (tp->t_state < TCPS_ESTABLISHED && (tp->t_flags & TF_NOOPT) == 0) {
+	if (flags & TH_SYN && (tp->t_flags & TF_NOOPT) == 0) {
 		u_short mss;
 
 		mss = MIN(so->so_rcv.sb_hiwat / 2, tcp_mss(tp));
