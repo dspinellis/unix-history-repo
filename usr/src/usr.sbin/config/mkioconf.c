@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -453,7 +453,7 @@ hp300_ioconf()
 	fprintf(fp, "#include \"sys/buf.h\"\n");
 	fprintf(fp, "#include \"sys/map.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"hp300/dev/device.h\"\n\n");
+	fprintf(fp, "#include \"hp/dev/device.h\"\n\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n");
 	fprintf(fp, "#define D (struct driver *)\n\n");
