@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.8	81/11/22	*/
+/*	uipc_pipe.c	4.9	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,7 +7,7 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/inet_systm.h"		/* XXX */
+#include "../net/in_systm.h"		/* XXX */
 
 int	piusrreq();
 #define	PIPSIZ	4096
@@ -94,10 +94,6 @@ COUNT(PIUSRREQ);
 			break;
 #define	rcv (&so->so_rcv)
 #define snd (&so2->so_snd)
-/*
-printf("pru_rcvd in: ");
-psndrcv(snd, rcv);
-*/
 		/*
 		 * Transfer resources back to send port
 		 * and wakeup any waiting to write.
@@ -106,10 +102,6 @@ psndrcv(snd, rcv);
 		rcv->sb_mbmax = rcv->sb_mbcnt;
 		snd->sb_hiwat += rcv->sb_hiwat - rcv->sb_cc;
 		rcv->sb_hiwat = rcv->sb_cc;
-/*
-printf("pru_rcvd out: ");
-psndrcv(snd, rcv);
-*/
 		sbwakeup(snd);
 #undef snd
 #undef rcv
@@ -125,20 +117,12 @@ psndrcv(snd, rcv);
 		 * give it enough resources to hold what it already has.
 		 * Wake up readers.
 		 */
-/*
-printf("pru_send in: ");
-psndrcv(snd, rcv);
-*/
 		sbappend(rcv, m);
 		snd->sb_mbmax -= rcv->sb_mbcnt - rcv->sb_mbmax;
 		rcv->sb_mbmax = rcv->sb_mbcnt;
 		snd->sb_hiwat -= rcv->sb_cc - rcv->sb_hiwat;
 		rcv->sb_hiwat = rcv->sb_cc;
 		sbwakeup(rcv);
-/*
-printf("pru_send out: ");
-psndrcv(snd, rcv);
-*/
 #undef snd
 #undef rcv
 		break;

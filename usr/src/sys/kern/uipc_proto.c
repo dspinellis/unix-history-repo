@@ -1,11 +1,11 @@
-/*	uipc_proto.c	4.7	81/11/21	*/
+/*	uipc_proto.c	4.8	81/11/26	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/mbuf.h"
-#include "../net/inet.h"
-#include "../net/inet_systm.h"
+#include "../net/in.h"
+#include "../net/in_systm.h"
 
 /*
  * Protocol configuration table and routines to search it.
@@ -21,7 +21,7 @@ int	piusrreq();
 /*
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
-int	ip_input(),ip_output();
+int	ip_output();
 int	ip_init(),ip_slowtimo(),ip_drain();
 int	icmp_input();
 int	icmp_drain();
@@ -56,7 +56,7 @@ struct protosw protosw[] = {
   0,		0,		0,		0,
 },
 { 0,		0,		0,		0,
-  ip_input,	ip_output,	0,		0,
+  0,		ip_output,	0,		0,
   0,		0,		0,
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
