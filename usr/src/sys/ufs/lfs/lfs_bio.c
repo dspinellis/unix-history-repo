@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.14 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -29,6 +29,10 @@
  * This is almost certainly wrong for synchronous operations and NFS.
  */
 int	locked_queue_count;		/* XXX Count of locked-down buffers. */
+int	lfs_writing;			/* Set if already kicked off a writer
+					   because of buffer space */
+#define WRITE_THRESHHOLD	((nbuf >> 2) - 10)
+#define WAIT_THRESHHOLD		((nbuf >> 1) - 10)
 
 int
 lfs_bwrite(ap)
@@ -37,6 +41,8 @@ lfs_bwrite(ap)
 	} */ *ap;
 {
 	register struct buf *bp = ap->a_bp;
+	struct lfs *fs;
+	struct inode *ip;
 	int s;
 
 	/*
@@ -49,9 +55,20 @@ lfs_bwrite(ap)
 	 * isn't going to work.
 	 */
 	if (!(bp->b_flags & B_LOCKED)) {
+		fs = VFSTOUFS(bp->b_vp->v_mount)->um_lfs;
+		if (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp)) {
+			bp->b_flags |= B_INVAL;
+			brelse(bp);
+			return (ENOSPC);
+		}
+		ip = VTOI((bp)->b_vp);
+		if (!(ip->i_flag & IMOD))
+			++fs->lfs_uinodes;
+		ip->i_flag |= IMOD | ICHG | IUPD;			\
+		fs->lfs_avail -= fsbtodb(fs, 1);
 		++locked_queue_count;
 		bp->b_flags |= B_DELWRI | B_LOCKED;
-		bp->b_flags &= ~(B_READ | B_DONE | B_ERROR);
+		bp->b_flags &= ~(B_READ | B_ERROR);
 		s = splbio();
 		reassignbuf(bp, bp->b_vp);
 		splx(s);
@@ -72,20 +89,16 @@ void
 lfs_flush()
 {
 	register struct mount *mp;
-	struct mount *omp;
 
-	/* 1M in a 4K file system. */
-	if (locked_queue_count < 256)
+	if (lfs_writing)
 		return;
+	lfs_writing = 1;
 	mp = rootfs;
 	do {
-		/*
-		 * The lock check below is to avoid races with mount
-		 * and unmount.
-		 */
+		/* The lock check below is to avoid races with unmount. */
 		if (mp->mnt_stat.f_type == MOUNT_LFS &&
-		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_MPBUSY)) == 0 &&
-		    !vfs_busy(mp)) {
+		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_UNMOUNT)) == 0 &&
+		    !((((struct ufsmount *)mp->mnt_data))->ufsmount_u.lfs)->lfs_dirops ) {
 			/*
 			 * We set the queue to 0 here because we are about to
 			 * write all the dirty buffers we have.  If more come
@@ -93,12 +106,27 @@ lfs_flush()
 			 * get written, so we want the count to reflect these
 			 * new writes after the segwrite completes.
 			 */
-			locked_queue_count = 0;
 			lfs_segwrite(mp, 0);
-			omp = mp;
-			mp = mp->mnt_next;
-			vfs_unbusy(omp);
-		} else
-			mp = mp->mnt_next;
+		}
+		mp = mp->mnt_next;
 	} while (mp != rootfs);
+	lfs_writing = 0;
+}
+
+int
+lfs_check(vp, blkno)
+	struct vnode *vp;
+	daddr_t blkno;
+{
+	extern int lfs_allclean_wakeup;
+	int error;
+
+	if (incore(vp, blkno))
+		return (0);
+	if (locked_queue_count > WRITE_THRESHHOLD)
+		lfs_flush();
+	if (locked_queue_count > WAIT_THRESHHOLD)
+		error = tsleep(&lfs_allclean_wakeup, PCATCH | PUSER,
+		    "buffers", NULL);
+	return (error);
 }
