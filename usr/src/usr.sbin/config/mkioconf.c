@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -544,7 +544,7 @@ hp300_ioconf()
 }
 
 #define ishpibdev(n) (eq(n,"rd") || eq(n,"ct") || eq(n,"mt") || eq(n,"ppi"))
-#define isscsidev(n) (eq(n,"sd") || eq(n,"st"))
+#define isscsidev(n) (eq(n,"sd") || eq(n,"st") || eq(n,"ac"))
 
 hpbadslave(mp, dp)
 	register struct device *dp, *mp;
