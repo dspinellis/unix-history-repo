@@ -1,4 +1,4 @@
-/*	ht.c	4.9	82/12/17	*/
+/*	ht.c	4.10	83/02/10	*/
 
 /*
  * TM03/TU?? tape driver
@@ -24,7 +24,8 @@ htopen(io)
 	register struct iob *io;
 {
 	register int skip;
-	register struct htdevice *htaddr = (struct htdevice *)mbadrv(io->i_unit);
+	register struct htdevice *htaddr =
+	   (struct htdevice *)mbadrv(io->i_unit);
 	int i;
 
 	for (i = 0; httypes[i]; i++)
@@ -115,5 +116,3 @@ htquiet(htaddr)
 		s = htaddr->htds;
 	while ((s & HTDS_DRY) == 0);
 }
-
-
