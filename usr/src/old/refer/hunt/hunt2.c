@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt2.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt2.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -13,11 +13,12 @@ doquery(hpt, nhash, fb, nitem, qitem, master)
 long *hpt;
 FILE *fb;
 char *qitem[];
-union ptr {
-	unsigned *a; 
-	long *b;
-} master;
+unsigned *master;
 {
+	union ptr {
+		unsigned *a; 
+		long *b;
+	} umaster;
 	long k;
 	union ptr prevdrop;
 	int nf = 0, best = 0, nterm = 0, i, g, j;
@@ -32,6 +33,10 @@ union ptr {
 	fprintf(stderr, "first few hashes are %ld %ld %ld %ld %ld\n", hpt[0],hpt[1],hpt[2],hpt[3],hpt[4]);
 	fprintf(stderr, "and frequencies are  %d %d %d %d %d\n",hfreq[0],hfreq[1],hfreq[2],hfreq[3],hfreq[4]);
 # endif
+	if (iflong)
+		umaster.b = (long *) master;
+	else
+		umaster.a = master;
 	_assert (lmaster>0);
 	if (coord==0)
 		coord = (int *) zalloc(lmaster, sizeof(lmaster));
@@ -45,7 +50,7 @@ union ptr {
 	}
 	else
 	{
-		prevdrop.a=master.a;
+		prevdrop.a=umaster.a;
 		prevcoord=coord;
 	}
 # if D1
@@ -80,24 +85,24 @@ union ptr {
 	for(i=0; i<lmaster; i++)
 	{
 		if (iflong)
-			master.b[i] = getl(fb);
+			umaster.b[i] = getl(fb);
 		else
-			master.a[i] = getw(fb);
+			umaster.a[i] = getw(fb);
 		coord[i]=1;
 # if D2
 		if (iflong)
-			fprintf(stderr,"master has %ld\n",(master.b[i]));
+			fprintf(stderr,"umaster has %ld\n",(umaster.b[i]));
 		else
-			fprintf(stderr,"master has %d\n",(master.a[i]));
+			fprintf(stderr,"umaster has %d\n",(umaster.a[i]));
 # endif
 		_assert (i<lmaster);
 		if (iflong)
 		{
-			if (master.b[i] == -1L) break;
+			if (umaster.b[i] == -1L) break;
 		}
 		else
 		{
-			if (master.a[i] == -1) break;
+			if (umaster.a[i] == -1) break;
 		}
 	}
 	nf= i;
@@ -111,9 +116,9 @@ union ptr {
 			for(j=0; j<nf; j++)
 			{
 				if (iflong)
-					prevdrop.b[j] = master.b[j];
+					prevdrop.b[j] = umaster.b[j];
 				else
-					prevdrop.a[j] = master.a[j];
+					prevdrop.a[j] = umaster.a[j];
 				prevcoord[j] = coord[j];
 			}
 		}
@@ -155,15 +160,15 @@ union ptr {
 				{
 					_assert (g<lmaster);
 					if (iflong)
-						master.b[g] = prevdrop.b[j];
+						umaster.b[g] = prevdrop.b[j];
 					else
-						master.a[g] = prevdrop.a[j];
+						umaster.a[g] = prevdrop.a[j];
 					coord[g++] = prevcoord[j++];
 # if D1
 					if (iflong)
-						fprintf(stderr, " not skip g %d doc %d coord %d note %d\n",g,master.b[g-1], coord[g-1],master.b[j-1]);
+						fprintf(stderr, " not skip g %d doc %d coord %d note %d\n",g,umaster.b[g-1], coord[g-1],umaster.b[j-1]);
 					else
-						fprintf(stderr, " not skip g %d doc %ld coord %d nterm %d\n",g,master.a[g-1], coord[g-1],nterm);
+						fprintf(stderr, " not skip g %d doc %ld coord %d nterm %d\n",g,umaster.a[g-1], coord[g-1],nterm);
 # endif
 					continue;
 				}
@@ -172,24 +177,24 @@ union ptr {
 			if (j<nf && (iflong? prevdrop.b[j]: prevdrop.a[j]) == k)
 			{
 				if (iflong)
-					master.b[g]=k;
+					umaster.b[g]=k;
 				else
-					master.a[g]=k;
+					umaster.a[g]=k;
 				coord[g++] = prevcoord[j++]+1;
 # if D1
 				if (iflong)
-					fprintf(stderr, " at g %d item %ld coord %d note %ld\n",g,master.b[g-1],coord[g-1],master.b[j-1]);
+					fprintf(stderr, " at g %d item %ld coord %d note %ld\n",g,umaster.b[g-1],coord[g-1],umaster.b[j-1]);
 				else
-					fprintf(stderr, " at g %d item %d coord %d note %d\n",g,master.a[g-1],coord[g-1],master.a[j-1]);
+					fprintf(stderr, " at g %d item %d coord %d note %d\n",g,umaster.a[g-1],coord[g-1],umaster.a[j-1]);
 # endif
 			}
 			else
 				if (colevel >= nterm)
 				{
 					if (iflong)
-						master.b[g]=k;
+						umaster.b[g]=k;
 					else
-						master.a[g]=k;
+						umaster.a[g]=k;
 					coord[g++] = 1;
 				}
 		}
@@ -202,15 +207,15 @@ union ptr {
 				{
 					_assert(g<lmaster);
 					if (iflong)
-						master.b[g] = prevdrop.b[j];
+						umaster.b[g] = prevdrop.b[j];
 					else
-						master.a[g] = prevdrop.a[j];
+						umaster.a[g] = prevdrop.a[j];
 					coord[g++] = prevcoord[j];
 # if D3
 					if(iflong)
-						fprintf(stderr, "copied over %ld coord %d\n",master.b[g-1], coord[g-1]);
+						fprintf(stderr, "copied over %ld coord %d\n",umaster.b[g-1], coord[g-1]);
 					else
-						fprintf(stderr, "copied over %d coord %d\n",master.a[g-1], coord[g-1]);
+						fprintf(stderr, "copied over %d coord %d\n",umaster.a[g-1], coord[g-1]);
 # endif
 				}
 		nf = g;
@@ -228,9 +233,9 @@ union ptr {
 			if (coord[j]==best)
 			{
 				if (iflong)
-					master.b[g++] = master.b[j];
+					umaster.b[g++] = umaster.b[j];
 				else
-					master.a[g++] = master.a[j];
+					umaster.a[g++] = umaster.a[j];
 			}
 		nf=g;
 # if D1
@@ -248,9 +253,9 @@ union ptr {
 # if D3
 	for(g=0;g<nf;g++)
 		if(iflong)
-			fprintf(stderr,":%ld\n",master.b[g]);
+			fprintf(stderr,":%ld\n",umaster.b[g]);
 		else
-			fprintf(stderr,":%d\n",master.a[g]);
+			fprintf(stderr,":%d\n",umaster.a[g]);
 # endif
 	return(nf);
 }

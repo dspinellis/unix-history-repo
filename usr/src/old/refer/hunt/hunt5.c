@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt5.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt5.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -9,10 +9,7 @@ static char *sccsid = "@(#)hunt5.c	4.2 (Berkeley) %G%";
 extern char *soutput, *tagout, usedir[];
 
 result(master, nf, fc)
-union ptr {
-	unsigned *a; 
-	long *b;
-} master;
+unsigned *master;
 FILE *fc;
 {
 	int i, c;
@@ -20,10 +17,18 @@ FILE *fc;
 	long lp;
 	extern int iflong;
 	char res[100];
+	union ptr {
+		unsigned *a; 
+		long *b;
+	} umaster;
 
+	if (iflong)
+		umaster.b = (long *) master;
+	else
+		umaster.a = master;
 	for(i=0; i<nf; i++)
 	{
-		lp = iflong ? master.b[i] : master.a[i];
+		lp = iflong ? umaster.b[i] : umaster.a[i];
 		fseek(fc,lp, 0);
 		fgets(res, 100, fc);
 		for(s=res; c = *s; s++)

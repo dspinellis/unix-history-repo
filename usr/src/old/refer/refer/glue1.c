@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)glue1.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)glue1.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -11,10 +11,7 @@ int reached = 0;
 FILE *fd = 0;
 int *hfreq, hfrflg;
 int colevel = 0;
-static union firetruck {
-	unsigned *a; 
-	long *b;
-} master;
+unsigned *master = 0;
 int iflong;
 extern char *fgnames[], **fgnamp;
 extern FILE *iopen();
@@ -167,12 +164,9 @@ char *argv[];
 # if D1
 			fprintf(stderr,"Read pointer files\n");
 # endif
-			if (master.a == NULL)
-				if (iflong)
-					master.b = (long *)zalloc(lmaster, sizeof(long));
-				else
-					master.a = (unsigned *)zalloc(lmaster, sizeof(int));
-			if (master.a == NULL)
+			if(master==0)
+				master = (unsigned *) zalloc (lmaster, iflong? sizeof(long): sizeof(unsigned));
+			if (master == NULL)
 				err ("no space for answer list",0);
 		}
 		else
