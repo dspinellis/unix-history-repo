@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)skeleton.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)skeleton.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -68,6 +68,7 @@ char *header[] =
 
 char *body[] =
 {
+    "#define YYABORT goto yyabort",
     "#define YYACCEPT goto yyaccept",
     "#define YYERROR goto yyerrlab",
     "int",
@@ -137,8 +138,14 @@ char *body[] =
     "        goto yyreduce;",
     "    }",
     "    if (yyerrflag) goto yyinrecovery;",
+    "#ifdef lint",
+    "    goto yynewerror;",
+    "#endif",
     "yynewerror:",
     "    yyerror(\"syntax error\");",
+    "#ifdef lint",
+    "    goto yyerrlab;",
+    "#endif",
     "yyerrlab:",
     "    ++yynerrs;",
     "yyinrecovery:",

@@ -1,18 +1,19 @@
      Berkeley Yacc owes much to the unflagging efforts of Keith Bostic.
 His badgering kept me working on it long after I was ready to quit.
 
-     Berkeley Yacc owes much of its speed to Tom Pennello and Frank DeRemer.
-Their excellent algorithm for computing LALR(1) lookaheads, described in their
-almost impenetrable article in TOPLAS 4,4, lies at the core of Berkeley Yacc.
+     Berkeley Yacc is based on the excellent algorithm for computing LALR(1)
+lookaheads developed by Tom Pennello and Frank DeRemer.  The algorithm is
+described in their almost impenetrable article in TOPLAS 4,4.
 
      Finally, much of the credit for the latest version must go to those
-who pointed out deficiencies of my earlier releases.  Among the more
+who pointed out deficiencies of my earlier releases.  Among the most
 prolific contributors were
 
 	  Benson I. Margulies
+	  Dave Gentzel
+	  Peter S. Housel
 	  Dale Smith
 	  Ozan Yigit
-	  Dave Gentzel
 	  John Campbell
 	  Bill Sommerfeld
 	  Paul Hilfinger

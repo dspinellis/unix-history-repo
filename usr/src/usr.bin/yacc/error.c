@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)error.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /* routines for printing error messages  */
@@ -37,7 +37,6 @@ char *msg;
 
 no_space()
 {
-    abort();
     fprintf(stderr, "%s: f - out of space\n", myname);
     done(2);
 }
