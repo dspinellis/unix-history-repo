@@ -1,0 +1,12 @@
+/* LINTLIBRARY */
+
+#include "../mf/mf.h"
+#include <stdio.h>
+
+struct adrx *getadrx(a) char *a; { return getadrx(a); }
+int	isfrom(s) char *s; { return isfrom(s); }
+char   *legal_persion(p) char *p; { return legal_persion(p); }
+int	lequal(a,b) char *a,*b; { return lequal(a,b); }
+struct adrx *seekadrx(a) char *a; { return seekadrx(a); }
+struct adrx *uucpadrx(a) char *a; { return uucpadrx(a); }
+int	vfgets(i,b) FILE *i; char **b; { return vfgets(i,b); }
