@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -47,6 +47,7 @@ hookup(host, port)
 		static struct hostent def;
 		static struct in_addr defaddr;
 		static char namebuf[128];
+		static char *addrbuf;
 		int inet_addr();
 
 		defaddr.s_addr = inet_addr(host);
@@ -57,6 +58,7 @@ hookup(host, port)
 		strcpy(namebuf, host);
 		def.h_name = namebuf;
 		hostname = namebuf;
+		def.h_addr_list = &addrbuf;
 		def.h_addr = (char *)&defaddr;
 		def.h_length = sizeof (struct in_addr);
 		def.h_addrtype = AF_INET;
