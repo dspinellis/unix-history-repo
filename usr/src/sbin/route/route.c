@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <paths.h>
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)route.c	5.17 (Berkeley) %G%";
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #include <sys/mbuf.h>
+#include <sys/kinfo.h>
 
 #include <net/route.h>
 #include <netinet/in.h>
@@ -50,7 +51,7 @@ union	{
 	struct	sockaddr_iso siso;
 } so_dst, so_gate, so_mask; 
 int	s;
-int	forcehost, forcenet, doflush, nflag, xnsflag, qflag, Cflag = 1;
+int	forcehost, forcenet, doflush, nflag, xnsflag, qflag, Cflag;
 int	iflag, osiflag, verbose;
 int	pid;
 struct	sockaddr_in sin = { sizeof(sin), AF_INET };
@@ -101,10 +102,6 @@ main(argc, argv)
 				break;
 			case 'v':
 				verbose++;
-				break;
-
-			case 'N':
-				Cflag = 0; /* Use routing socket */
 			}
 	}
 	pid = getpid();
@@ -171,7 +168,7 @@ flushroutes()
 		exit(1);
 	}
 	if (nl[N_RTREE].n_value)
-		return (treestuff(nl[N_RTREE].n_value));
+		return (treefree());
 	if (nl[N_RTHOST].n_value == 0) {
 		fprintf(stderr,
 		    "route: \"rthost\", symbol not in namelist\n");
@@ -214,96 +211,64 @@ again:
 	free(routehash);
 	return;
 }
-typedef u_char	blob[128];
 
-struct rtbatch {
-	struct	rtbatch *nb;
-	int	ifree;
-	struct	x {
-		struct	rtentry rt;
+treefree()
+{
+	int bufsize, needed, seqno, rlen;
+	char *buf, *next, *lim;
+	register struct rt_msghdr *rtm;
+	struct {
+		struct rt_msghdr m_rtm;
 		union {
-			struct sockaddr sa;
-			blob data;
-		} dst, gate, mask;
-	} x[100];
-} firstbatch, *curbatch = &firstbatch;
+			char u_saddrs[200];
+			struct sockaddr u_sa;
+		} m_u;
+	} m;
 
-w_tree(rn)
-struct radix_node *rn;
-{
-
-	struct radix_node rnode;
-	register struct rtentry *rt;
-	struct sockaddr *dst;
-	register struct x *x;
-
-	kget(rn, rnode);
-	if (rnode.rn_b < 0) {
-		if ((rnode.rn_flags & RNF_ROOT) == 0) {
-			register struct rtbatch *b = curbatch;
-			if ((rnode.rn_flags & RNF_ACTIVE) == 0) {
-				printf("Dead entry in tree: %x\n", rn);
-				exit(1);
-			}
-			if (b->ifree >= 100) {
-				R_Malloc(b->nb, struct rtbatch *,
-						sizeof (*b));
-				if (b->nb) {
-					b = b->nb;
-					Bzero(b, sizeof(*b));
-					curbatch = b;
-				} else {
-					printf("out of space\n");
-					exit(1);
-				}
-			}
-			x = b->x + b->ifree;
-			rt = &x->rt;
-			kget(rn, *rt);
-			dst = &x->dst.sa;
-			kget(rt_key(rt), *dst);
-			if (dst->sa_len > sizeof (*dst))
-				kget(rt_key(rt), x->dst);
-			rt->rt_nodes->rn_key = (char *)dst;
-			kget(rt->rt_gateway, x->gate.sa);
-			if (x->gate.sa.sa_len > sizeof (*dst))
-				kget(rt->rt_gateway, x->gate);
-			rt->rt_gateway = &x->gate.sa;
-			if (Cflag == 0) {
-			    kget(rt_mask(rt), x->mask.sa);
-			    if (x->mask.sa.sa_len > sizeof(x->mask.sa))
-				kget(rt_mask(rt), x->mask);
-			    rt->rt_nodes->rn_mask = (char *)&x->mask.sa;
-			}
-			b->ifree++;
+	if ((needed = getkerninfo(KINFO_RT_DUMP, 0, 0, 0)) < 0)
+		{ perror("route-getkerninfo-estimate"); exit(1);}
+	if ((buf = malloc(needed)) == 0)
+		{ printf("out of space\n");; exit(1);}
+	if ((rlen = getkerninfo(KINFO_RT_DUMP, buf, &needed, 0)) < 0)
+		{ perror("actual retrieval of routing table"); exit(1);}
+	lim = buf + rlen;
+	for (next = buf; next < lim; next += rtm->rtm_msglen) {
+		rtm = (struct rt_msghdr *)next;
+		if ((rtm->rtm_flags & (RTF_GATEWAY|RTF_HOST)) == 0)
+			continue;
+		rtm->rtm_type = RTM_DELETE;
+		rtm->rtm_seq = seqno;
+		if ((rlen = write(s, next, rtm->rtm_msglen)) < 0) {
+			perror("writing to routing socket");
+			printf("got only %d for rlen\n", rlen);
+			return (-1);
 		}
-		if (rnode.rn_dupedkey)
-			w_tree(rnode.rn_dupedkey);
-	} else {
-		rn = rnode.rn_r;
-		w_tree(rnode.rn_l);
-		w_tree(rn);
-	}
-}
-
-treestuff(rtree)
-off_t rtree;
-{
-	struct radix_node_head *rnh, head;
-	register struct rtbatch *b;
-	register int i;
-	    
-	for (kget(rtree, rnh); rnh; rnh = head.rnh_next) {
-		kget(rnh, head);
-		if (head.rnh_af) {
-			w_tree(head.rnh_treetop);
+	again:
+		if ((rlen = read(s, (char *)&m, sizeof (m))) < 0) {
+			perror("reading from routing socket");
+			printf("got only %d for rlen\n", rlen);
+			return (-1);
+		}
+		if ((m.m_rtm.rtm_pid != pid) || (m.m_rtm.rtm_seq != seqno)) {
+			printf("Got response for somebody else's request");
+			goto again;
+		}
+		seqno++;
+		if (qflag)
+			continue;
+		if (verbose) {
+			print_rtmsg(rtm);
+		} else {
+			struct sockaddr *sa = &m.m_u.u_sa;
+			printf("%-20.20s ", (rtm->rtm_flags & RTF_HOST) ?
+			    routename(sa) : netname(sa));
+			sa = (struct sockaddr *)(sa->sa_len + (char *)sa);
+			printf("%-20.20s ", routename(sa));
+			printf("done\n");
 		}
 	}
-	for (b = &firstbatch; b; b = b->nb)
-		for (i = 0; i < b->ifree; i++)
-			d_rtentry(&(b->x[i].rt));
 }
-
+	
 d_ortentry(rt)
 register struct ortentry *rt;
 {
@@ -832,6 +797,7 @@ monitor()
 {
 	int n;
 	char msg[2048];
+	verbose = 1;
 	for(;;) {
 		n = read(s, msg, 2048);
 		printf("got message of size %d\n", n);
