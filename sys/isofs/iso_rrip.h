@@ -28,7 +28,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)iso_rrip.h
+ *	from: @(#)iso_rrip.h
+ *	$Id$
  */
 
 #define NOTYET	1

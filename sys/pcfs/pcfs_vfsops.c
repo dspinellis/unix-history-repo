@@ -15,15 +15,7 @@
  *
  *  October 1992
  *
- *	$Header: /a/cvs/386BSD/src/sys.386bsd/pcfs/pcfs_vfsops.c,v 1.1.1.1 1993/06/12 14:57:13 rgrimes Exp $
- *
- *  April 6, 1992
- *
- *	Changed MOUNT_PCFS to MOUNT_MSDOS, this whole package should be renamed
- *	to msdosfs, but I did not have the time to do it.  Some one please do
- *	this and resubmit it to the patchkit!
- *	Rodney W. Grimes
- *
+ *	$Id$
  */
 
 #include "param.h"

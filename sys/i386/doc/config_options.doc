@@ -30,3 +30,5 @@ options	SYSVSHM			System V shared memory support
 options	"TCP_COMPAT_42"		Tcp/Ip compatible with 4.2
 options	UCONSOLE		Xconsole support
 options	XSERVER			Xserver support
+
+$Id$

@@ -30,7 +30,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)printf.c	5.6 (Berkeley) 5/25/91
+ *	from: @(#)printf.c	5.6 (Berkeley) 5/25/91
+ *	$Id$
  */
 
 /*

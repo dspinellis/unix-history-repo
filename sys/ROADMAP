@@ -46,3 +46,5 @@ wish to examine. To look at a running system, "gdb -k /386bsd /dev/mem".
 For in-kernel debugging, one can compile in the "ddb" debugger and enter
 it by typing CTRL, ALT, and ESC simulatineously. Finally, printfs can be
 scattered in the kernel for debugging, just like user programs. 
+
+$Id$

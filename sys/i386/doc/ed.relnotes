@@ -169,3 +169,5 @@ KNOWN PROBLEMS
 	SMC boards; it's less than 1MB on 8bit boards and less than 2MB/second
 	on the 16bit boards. This can lead to ring-buffer overruns resulting in
 	additional lost data during heavy network traffic.
+
+$Id$

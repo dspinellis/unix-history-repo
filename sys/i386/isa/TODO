@@ -1,3 +1,5 @@
+This is file $Id$
+
 1. add support for "soft" configuration network devices
 2. split console driver into kbd/vga/other drivers
 3. implement additional link layer support items (bpf et al)

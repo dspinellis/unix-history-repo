@@ -15,8 +15,7 @@
  *
  *  October 1992
  *
- *	$Header: /usr/src/CVS/sys/pcfs/pcfs_fat.c,v 1.1.2.2 1993/02/07 21:57:19 friedl Exp $
- *
+ *	$Id$
  */
 
 /*
