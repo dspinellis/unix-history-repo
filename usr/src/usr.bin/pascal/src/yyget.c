@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyget.c 1.2 %G%";
+static	char sccsid[] = "@(#)yyget.c 1.3 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -338,6 +338,12 @@ uninclud()
 		}
 	} else
 		printed = ip->Printed;
+#	ifdef OBJ
+	/*
+	 * For the debugger pdx, we need to note that we've changed files.
+	 */
+	newfile(filename, yyline);
+#endif
 #	ifdef PC
 	    if ( inclev == 0 ) {
 		stabsource( filename );
