@@ -1,4 +1,4 @@
-/*	pk.h	5.2	85/01/22	*/
+/*	pk.h	5.3	85/04/10	*/
 
 struct header {
 	char	sync;
@@ -88,6 +88,11 @@ extern int	pkactive;
 #define	B_COPY	020
 #define	B_MARK	040
 #define	B_SHORT	0100
+
+/* read or write */
+
+#define B_WRITE	0
+#define B_READ	1
 
 /*
  * control messages

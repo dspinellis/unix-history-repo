@@ -1,11 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuclean.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuclean.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
 #include <pwd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #ifdef	NDIR
 #include "ndir.h"

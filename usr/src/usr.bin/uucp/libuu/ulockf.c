@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)ulockf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ulockf.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 
 extern time_t	time();
@@ -21,8 +20,8 @@ extern time_t	time();
  *	return codes:  0  |  FAIL
  */
 
-ulockf(file, atime)
-register char *file;
+ulockf(hfile, atime)
+char *hfile;
 time_t atime;
 {
 	struct stat stbuf;
@@ -30,11 +29,13 @@ time_t atime;
 	register int ret;
 	static int pid = -1;
 	static char tempfile[NAMESIZE];
+	char file[NAMESIZE];
 
 	if (pid < 0) {
 		pid = getpid();
 		sprintf(tempfile, "%s/LTMP.%d", LOCKDIR, pid);
 	}
+	sprintf(file, "%s/%s", LOCKDIR, hfile);
 	if (onelock(pid, tempfile, file) == -1) {
 		/* lock file exists */
 		/* get status to check age of the lock file */
@@ -203,7 +204,7 @@ char *sys;
 {
 	char lname[NAMESIZE];
 
-	sprintf(lname, "%s/%s.%s", LOCKDIR, LOCKPRE, sys);
+	sprintf(lname, "%s.%s", LOCKPRE, sys);
 	return ulockf(lname, (time_t) SLCKTIME ) < 0 ? FAIL : SUCCESS;
 }
 

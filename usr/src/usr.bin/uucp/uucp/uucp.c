@@ -1,9 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucp.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #include "uust.h"
 
@@ -33,7 +32,8 @@ main(argc, argv)
 char *argv[];
 {
 	int ret;
-	register char *sysfile1, *sysfl2, *cp;
+	char *sysfile1, *sysfl2;
+	register char *cp;
 	char file1[MAXFULLNAME], file2[MAXFULLNAME];
 	int avoidgwd = 0;
 
@@ -122,7 +122,7 @@ char *argv[];
 			sysfl2 = Myname;
 		else
 			sprintf(Rmtname, "%.7s", sysfl2);
-		if (versys(sysfl2) != 0) {
+		if (versys(&sysfl2) != 0) {
 			fprintf(stderr, "bad system name: %s\n", sysfl2);
 			cleanup(1);
 		}
@@ -153,7 +153,7 @@ char *argv[];
 				sysfile1 = Myname;
 			else
 				sprintf(Rmtname, "%.7s", sysfile1);
-			if (versys(sysfile1) != 0) {
+			if (versys(&sysfile1) != 0) {
 				fprintf(stderr, "bad system name: %s\n", sysfile1);
 				cleanup(0);
 			}

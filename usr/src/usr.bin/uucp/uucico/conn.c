@@ -1,12 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)conn.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)conn.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <signal.h>
 #include <setjmp.h>
 #include <ctype.h>
-#include <sys/types.h>
 #include <errno.h>
 #ifdef	USG
 #include <termio.h>
@@ -25,8 +24,9 @@ static char sccsid[] = "@(#)conn.c	5.4 (Berkeley) %G%";
 
 extern jmp_buf Sjbuf;
 jmp_buf Cjbuf;
-extern int errno;
+extern int errno, onesys;
 extern char *sys_errlist[];
+extern char MaxGrade, DefMaxGrade;
 
 /* Parity control during login procedure */
 #define	P_ZERO	0
@@ -55,12 +55,8 @@ alarmtr()
 	longjmp(Sjbuf, 1);
 }
 
-/*******
- *	conn(system)
- *	char *system;
- *
- *	conn - place a telephone call to system and
- *	login, etc.
+/*
+ *	place a telephone call to system and login, etc.
  *
  *	return codes:
  *		CF_SYSTEM: don't know system
@@ -70,7 +66,6 @@ alarmtr()
  *		CF_LOGIN: login/password dialog failed
  *
  *		>0  - file no.  -  connect ok
- *
  */
 
 int Dcf = -1;
@@ -82,7 +77,7 @@ char *system;
 {
 	int ret, nf;
 	register int fn = 0;
-	char info[MAXC];
+	char info[MAXC], wkpre[NAMESIZE], file[NAMESIZE];
 	register FILE *fsys;
 	int fcode = 0;
 
@@ -99,6 +94,10 @@ char *system;
 				&& strcmp("LOCAL", Flds[F_LINE]) )
 					fn = CF_TIME;
 		}
+		sprintf(wkpre, "%c.%.7s", CMDPRE, Rmtname);
+		if (!onesys && MaxGrade != DefMaxGrade &&
+			!iswrk(file, "chk", Spool, wkpre)) 
+				fn = CF_TIME;
 		if (fn != CF_TIME && (fn = getto(Flds)) > 0) {
 			Dcf = fn;
 			break;
@@ -232,8 +231,8 @@ register char *in, *out;
 	strcat(out, npart);
 }
 
-/***
- *	rddev - read and decode a line from device file
+/*
+ *	read and decode a line from device file
  *
  *	return code - FAIL at end-of file; 0 otherwise
  */
@@ -257,8 +256,8 @@ FILE *fp;
 	return 0;
 }
 
-/***
- *	finds(fsys, sysnam, info, flds)	set system attribute vector
+/*
+ *	set system attribute vector
  *
  *	return codes:
  *		>0  -  number of arguments in vector - succeeded
@@ -270,7 +269,6 @@ finds(fsys, sysnam, info, flds)
 char *sysnam, info[], *flds[];
 FILE *fsys;
 {
-	char sysn[8];
 	int na;
 	int fcode = 0;
 
@@ -283,10 +281,9 @@ FILE *fsys;
 	 */
 	while (cfgets(info, MAXC, fsys) != NULL) {
 		na = getargs(info, flds, MAXC/10);
-		sprintf(sysn, "%.7s", flds[F_NAME]);
-		if (strcmp(sysnam, sysn) != SAME)
+		if (strncmp(sysnam, flds[F_NAME], 7) != SAME)
 			continue;
-		if (ifdate(flds[F_TIME]))
+		if (ifdate(flds[F_TIME]) != FAIL)
 			/*  found a good entry  */
 			return na;
 		DEBUG(2, "Wrong time ('%s') to call\n", flds[F_TIME]);
@@ -295,10 +292,8 @@ FILE *fsys;
 	return fcode ? fcode : CF_SYSTEM;
 }
 
-/***
- *	login(nf, flds, dcr)		do login conversation
- *	char *flds[];
- *	int nf;
+/*
+ *	do login conversation
  *
  *	return codes:  0  |  FAIL
  */
@@ -410,9 +405,8 @@ struct sg_spds {int sp_val, sp_name;} spds[] = {
 	{0, 0}
 };
 
-/***
- *	fixline(tty, spwant)	set speed/echo/mode...
- *	int tty, spwant;
+/*
+ *	set speed/echo/mode...
  *
  *	return codes:  none
  */
@@ -461,9 +455,8 @@ int tty, spwant;
 
 #define MR 100
 
-/***
- *	expect(str, fn)	look for expected string
- *	char *str;
+/*
+ *	look for expected string
  *
  *	return codes:
  *		0  -  found
@@ -715,8 +708,8 @@ int type;
 
 #define BSPEED B150
 
-/***
- *	genbrk		send a break
+/*
+ *	send a break
  *
  *	return codes;  none
  */
@@ -763,9 +756,8 @@ badbreak:
 #endif !USG
 }
 
-/***
- *	notin(sh, lg)	check for occurrence of substring "sh"
- *	char *sh, *lg;
+/*
+ *	check for occurrence of substring "sh"
  *
  *	return codes:
  *		0  -  found the string
@@ -776,69 +768,60 @@ register char *sh, *lg;
 {
 	while (*lg != '\0') {
 		if (wprefix(sh, lg))
-			return(0);
+			return 0;
 		else
 			lg++;
 	}
-	return(1);
+	return 1;
 }
 
-/*******
- *	ifdate(s)
- *	char *s;
- *
- *	ittvax!swatt
+/*
  *	Allow multiple date specifications separated by '|'.
- *	Calls ifadate, formerly "ifdate".
- *
- *	return codes:
- *		see ifadate
  */
-
-ifdate(s)
-char *s;
+ifdate(p)
+register char *p;
 {
-	register char *p;
-	register int ret;
+	register int ret, g;
 
-	for (p = s; p && (*p == '|' ? *++p : *p); p = index(p, '|'))
-		if (ret = ifadate(p))
-			return ret;
-	return 0;
+	ret = FAIL;
+	MaxGrade = '\0';
+	do {
+		g = ifadate(p);
+		DEBUG(11,"ifadate returns %o\n", g);
+		if (g != FAIL) {
+			ret = SUCCESS;
+			if (g > MaxGrade)
+				MaxGrade = g;
+		}
+		p = index(p, '|');
+	} while (p++ && *p);
+	return ret;
 }
 
-/*******
- *	ifadate(s)
- *	char *s;
- *
- *	ifadate  -  this routine will check a string (s)
+/*
+ *	this routine will check a string (string)
  *	like "MoTu0800-1730" to see if the present
  *	time is within the given limits.
  *	SIDE EFFECT - Retrytime is set
- *
- *	String alternatives:
- *		Wk - Mo thru Fr
- *		zero or one time means all day
- *		Any - any day
  *
  *	return codes:
  *		0  -  not within limits
  *		1  -  within limits
  */
 
-ifadate(s)
-char *s;
+ifadate(string)
+char *string;
 {
 	static char *days[]={
 		"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", 0
 	};
 	time_t clock;
+	register char *s = string;
 	int rtime;
 	int i, tl, th, tn, dayok=0;
 	struct tm *localtime();
 	struct tm *tp;
-	char *index();
-	char *p;
+	char *p, MGrade;
 
 	/*  pick up retry time for failures  */
 	/*  global variable Retrytime is set here  */
@@ -850,6 +833,11 @@ char *s;
 			rtime = 5;
 		Retrytime  = rtime * 60;
 	}
+
+	if ((p = index(s, '@')) == NULL)
+		MGrade = DefMaxGrade;
+	else
+		MGrade = p[1];
 
 	time(&clock);
 	tp = localtime(&clock);
@@ -873,46 +861,38 @@ char *s;
 		}
 		if (prefix("Night", s)) {
 			if (tp->tm_wday == 6  /* Sat */
-				|| tp->tm_hour > 23 || tp->tm_hour < 8)
+				|| tp->tm_hour >= 23 || tp->tm_hour < 8
+					/* Sunday before 5pm */
+				|| (tp->tm_wday == 0 && tp->tm_hour < 17))
 					dayok = 1;
 		}
 		s++;
 	}
 
-	if (dayok == 0)
-		return(0);
+	if (dayok == 0 && s != string)
+		return FAIL;
 	i = sscanf(s, "%d-%d", &tl, &th);
-	if (i < 2)
-		return(1);
+  	if (i < 2)
+  		return MGrade;
 	tn = tp->tm_hour * 100 + tp->tm_min;
-	if (th < tl) {		/* crosses midnight */
+  	if (th < tl) { 		/* crosses midnight */
+  		if (tl <= tn || tn < th)
+  			return MGrade;
+  	} else
+
+	if (i < 2)
+		return MGrade;
+	if (th < tl) { 	/* crosses midnight */
 		if (tl <= tn || tn < th)
-			return(1);
+			return MGrade;
 	} else
 		if (tl <= tn && tn < th)
-			return(1);
-	return(0);
+			return MGrade;
+	return FAIL;
 }
 
-
-/***
- *	char *
- *	lastc(s)	return pointer to last character
- *	char *s;
- *
- */
-char *
-lastc(s)
-register char *s;
-{
-	while (*s != '\0')
-		s++;
-	return s;
-}
-
-/***
- *	char *
- *	fdig(cp)	find first digit in string
+/*
+ *	find first digit in string
  *
  *	return - pointer to first digit in string or end of string
  */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subdir.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)subdir.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -13,7 +13,7 @@ static char sccsid[] = "@(#)subdir.c	5.2 (Berkeley) %G%";
  *
  * Each prefix must be a subdirectory of Spool, owned by uucp!
  * Remember: use cron to uuclean these directories daily,
- * and check them manual every now and then.  Beware complacency!
+ * and check them manually every now and then.  Beware complacency!
  */
 
 static char *prefix[] = {
@@ -65,7 +65,7 @@ char *as;
 	}
 	else
 		if (!inspool)
-			return(as);
+			return as;
 
 	/* look for first prefix which matches, and make subdirectory */
 	for (p = &prefix[0]; *p; p++) {
@@ -73,10 +73,10 @@ char *as;
 			strcat(tptr, *p);
 			strcat(tptr, "/");
 			strcat(tptr, s);
-			return(tptr);
+			return tptr;
 		}
 	}
-	return(as);
+	return as;
 }
 
 /*
@@ -86,7 +86,7 @@ subchdir(s)
 register char *s;
 {
 	inspool = (strcmp(s, Spool) == 0);
-	return(chdir(s));
+	return chdir(s);
 }
 
 /*
@@ -98,8 +98,8 @@ register char *d, pre;
 {
 	if (strcmp(d, Spool) == 0)
 		if (pre == CMDPRE)
-			return(CMDSDIR);
+			return CMDSDIR;
 		else if (pre == XQTPRE)
-			return(XEQTDIR);
-	return(d);
+			return XEQTDIR;
+	return d;
 }

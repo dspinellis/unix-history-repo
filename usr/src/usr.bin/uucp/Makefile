@@ -1,4 +1,4 @@
-#	Makefile	5.7	85/01/22
+#	Makefile	5.8	85/04/10
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -7,14 +7,14 @@
 #
 # Common object files are assembled into a library {uulib.a}
 #
-ALL=	uucp uux uuxqt uucico uulog uuclean uuname uupoll uusnap \
-	uuencode uudecode uusend uucpd uuq
+ALL=	uucico uucp uux uuxqt uulog uuclean uuname uupoll uusnap \
+	uuencode uudecode uusend uucpd uuq acucntrl
 # Common object files placed in uulib.a
 COMMON=	anlwrk.o anyread.o assert.o cfgets.o chkpth.o \
 	cpmv.o expfile.o gename.o getargs.o getprm.o \
 	getpwinfo.o gio.o gnamef.o gnxseq.o gwd.o imsg.o \
 	lastpart.o logent.o mailst.o pk0.o chksum.o pk1.o prefix.o \
-	setline.o shio.o subdir.o sysacct.o systat.o \
+	setline.o subdir.o sysacct.o systat.o \
 	ulockf.o \
 	uucpname.o versys.o xqt.o uucpdefs.o tio.o fio.o
 
@@ -24,14 +24,14 @@ SRCS=	anlwrk.c anyread.c assert.c cfgets.c chkpth.c chksum.c \
 	gio.c gnamef.c gnsys.c gnxseq.c gwd.c imsg.c \
 	ioctl.c lastpart.c logent.c mailst.c ndir.h \
 	pk.h pk0.c pk1.c pkon.c prefix.c \
-	setline.c shio.c subdir.c sysacct.c systat.c tio.c fio.c\
+	setline.c subdir.c sysacct.c systat.c tio.c fio.c\
 	ulockf.c \
 	uuclean.c uucp.c uucp.h uucpdefs.c uucpname.c uudecode.c \
 	uuencode.c uulog.c uuname.c uupoll.c uusend.c uusnap.c \
 	uux.c uuxqt.c \
-	versys.c xqt.c uuq.c
+	versys.c xqt.c uuq.c acucntrl.c
 #These might be useful on non 4.2bsd systems.
-MISC= htonl.c ioctl.c index.c
+MISC= htonl.c ioctl.c index.c mkdir.c
 
 DESTDIR=
 OWNER=	uucp
@@ -46,13 +46,14 @@ SPOOL=	${DESTDIR}/usr/spool/uucp
 XQTDIR=	${SPOOL}/XTMP
 CORRUPT= ${SPOOL}/CORRUPT
 AUDIT=	${SPOOL}/AUDIT
-LCK=	#${SPOOL}/LCK.
+LCK=	${SPOOL}/LCK
+LOG=	${SPOOL}/LOG
 STST=	${SPOOL}/STST
-# The six subdirs {not counting XTMP}.  The order of the D. files is crucial!
+# The six subdirs {not counting XTMP}.
 SUBDIRS=C. D.`uuname -l`X D.`uuname -l` D. X. TM.
 # for make depend
 UNDEF=	-UNDIR -UUNET -USYSIII -UUNAME -UCCWHOAMI -UGETMYHNAME -UDATAKIT \
-	-UBSD4_2
+	-UBSD4_2 -UUSG -UVMS
 
 all:	${ALL} 
 
@@ -104,16 +105,23 @@ uucpd: uucpd.o uucp.h
 uuq: uuq.o uulib.a
 	${CC} -o uuq ${LDFLAGS} uuq.o uulib.a
 
+acucntrl: acucntrl.o
+	${CC} -o acucntrl ${LDFLAGS} acucntrl.o
+
 # Note: mode 700 on ${LIBDIR} would be safer.
 # Also,  L.sys etc should be 600.
 
 mkdirs:
 	-for i in ${LIBDIR} ${SPOOL} ${PUBDIR} ${XQTDIR} ${CORRUPT} \
-		${AUDIT} ${LCK} ${STST} ; do \
+		${AUDIT} ${LCK} ${LOG} ${STST} ; do \
 		rm -f $$i ; mkdir $$i ; \
 		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
 	done
 	chmod 777 ${PUBDIR} ${LCK}
+	-cd ${LOG}; for i in uucico uux uuxqt uucp xferstats; do\
+		rm -f $$i ; mkdir $$i ; \
+		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
+	done
 	-cd ${SPOOL}; for i in ${SUBDIRS} ; do \
 		mkdir $$i; \
 		chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
@@ -127,9 +135,9 @@ uulib.a: ${COMMON}
 	ranlib $@
 
 aculib/aculib.a:
-	cd aculib; make
+	cd aculib; make ${MFLAGS} "CFLAGS=${CFLAGS}"
 
-install:
+install: ${ALL}
 	chown ${OWNER} ${LIBDIR}
 	chgrp ${GROUP} ${LIBDIR}
 	chmod 755 ${LIBDIR}
@@ -142,14 +150,14 @@ install:
 	rm -f ${BIN}/ruusend
 	ln ${BIN}/uusend ${BIN}/ruusend
 	install -s -m 6110 -o ${OWNER} -g ${GROUP} uuxqt ${LIBDIR}
+	install -s -m 6110 -o root -g ${GROUP} acucntrl ${LIBDIR}
 	install -s -m 700 -o root uucpd /etc/uucpd
-	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
 	install -s uuencode ${BIN}
 	install -s uudecode ${BIN}
 
 clean:
 	rm -f *.o ${ALL} uulib.a
-	cd aculib; make clean
+	cd aculib; make ${MFLAGS} clean
 
 depend:
 	for i in *.c; do \
@@ -172,6 +180,8 @@ depend:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 # DEPENDENCIES MUST END AT END OF FILE
+acucntrl.o: acucntrl.c
+acucntrl.o: uucp.h
 anlwrk.o: anlwrk.c
 anlwrk.o: uucp.h
 anlwrk.o: uust.h
@@ -191,7 +201,7 @@ cntrl.o: cntrl.c
 cntrl.o: uucp.h
 cntrl.o: uust.h
 condevs.o: condevs.c
-condevs.o: uucp.h
+condevs.o: condevs.h
 conn.o: conn.c
 conn.o: uucp.h
 cpmv.o: cpmv.c
@@ -203,13 +213,13 @@ fio.o: uucp.h
 gename.o: gename.c
 gename.o: uucp.h
 getargs.o: getargs.c
-getopt.o: getopt.c
+getargs.o: uucp.h
 getprm.o: getprm.c
 getpwinfo.o: getpwinfo.c
 getpwinfo.o: uucp.h
 gio.o: gio.c
-gio.o: pk.h
 gio.o: uucp.h
+gio.o: pk.h
 gnamef.o: gnamef.c
 gnamef.o: uucp.h
 gnsys.o: gnsys.c
@@ -220,6 +230,7 @@ gwd.o: gwd.c
 gwd.o: uucp.h
 imsg.o: imsg.c
 imsg.o: uucp.h
+index.o: index.c
 ioctl.o: ioctl.c
 ioctl.o: uucp.h
 lastpart.o: lastpart.c
@@ -227,16 +238,16 @@ logent.o: logent.c
 logent.o: uucp.h
 mailst.o: mailst.c
 mailst.o: uucp.h
+mkdir.o: mkdir.c
 pk0.o: pk0.c
+pk0.o: uucp.h
 pk0.o: pk.h
 pk1.o: pk1.c
-pk1.o: pk.h
 pk1.o: uucp.h
+pk1.o: pk.h
 prefix.o: prefix.c
 setline.o: setline.c
 setline.o: uucp.h
-shio.o: shio.c
-shio.o: uucp.h
 subdir.o: subdir.c
 subdir.o: uucp.h
 sysacct.o: sysacct.c

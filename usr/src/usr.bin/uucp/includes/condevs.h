@@ -1,11 +1,10 @@
-/*	condevs.h	4.1	85/01/22	*/
+/*	condevs.h	4.2	85/04/10	*/
 
-#include <sys/types.h>
+#include "uucp.h"
 #include <errno.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <sgtty.h>
-#include "uucp.h"
 #ifdef VMSDTR	/* Modem control on vms(works dtr) */
 #include <eunice/eunice.h>
 #define TT$M_MODEM	0x00200000 /* These should be in a '.h' somewhere */
@@ -44,6 +43,10 @@ int novopn(), novcls();
 int df2opn(), df2cls();
 #endif DF02
 
+#ifdef DF112
+int df12popn(), df12topn(), df12cls();
+#endif DF112
+
 #ifdef PNET
 int pnetopn();
 #endif PNET
@@ -51,6 +54,10 @@ int pnetopn();
 #ifdef VENTEL
 int ventopn(), ventcls();
 #endif VENTEL
+
+#ifdef PENRIL
+int penopn(), pencls();
+#endif PENRIL
 
 #ifdef	UNETTCP
 #define TO_ACTIVE	0

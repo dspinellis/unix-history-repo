@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpd.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,7 +10,6 @@ static char sccsid[] = "@(#)uucpd.c	5.2 (Berkeley) %G%";
 #include "uucp.h"
 #include <signal.h>
 #include <errno.h>
-#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -29,8 +28,10 @@ main(argc, argv)
 int argc;
 char **argv;
 {
+#ifndef BSDINETD
 	register int s, tcp_socket;
 	struct servent *sp;
+#endif !BSDINETD
 	extern int errno;
 	int dologout();
 
@@ -95,13 +96,13 @@ char **argv;
 doit(sinp)
 struct sockaddr_in *sinp;
 {
-	char ebuf[32];
 	char user[64];
 	char passwd[64];
 	char *xpasswd, *crypt();
 	struct passwd *pw, *getpwnam();
 
 	alarm(60);
+	printf("login: "); fflush(stdout);
 	if (readline(user, sizeof user) < 0) {
 		fprintf(stderr, "user read\n");
 		return;
@@ -118,6 +119,7 @@ struct sockaddr_in *sinp;
 		return;
 	}
 	if (pw->pw_passwd && *pw->pw_passwd != '\0') {
+		printf("Password: "); fflush(stdout);
 		if (readline(passwd, sizeof passwd) < 0) {
 			fprintf(stderr, "passwd read\n");
 			return;
@@ -139,8 +141,8 @@ struct sockaddr_in *sinp;
 }
 
 readline(p, n)
-	register char *p;
-	register int n;
+register char *p;
+register int n;
 {
 	char c;
 

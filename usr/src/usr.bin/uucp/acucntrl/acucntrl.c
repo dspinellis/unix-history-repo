@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.2 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -46,14 +46,14 @@ static char sccsid[] = "@(#)acucntrl.c	5.1 (Berkeley) %G%";
 /* #define SENSECARRIER */
 
 #include "uucp.h"
-#include <sys/param.h>
 #include <sys/buf.h>
+#include <signal.h>
 #include <sys/conf.h>
 #ifdef BSD4_2
 #include "/sys/vaxuba/ubavar.h"
-#else !BSD4_2
+#else
 #include <sys/ubavar.h>
-#endif !BSD4_2
+#endif
 #include <sys/stat.h>
 #include <nlist.h>
 #include <sgtty.h>
@@ -117,8 +117,8 @@ char usage[] = "Usage: acucntrl {dis|en}able ttydX\n";
 struct utmp utmp;
 char resettty, resetmodem;
 int etcutmp;
-int utmploc;
-int ttyslnbeg;
+off_t utmploc;
+off_t ttyslnbeg;
 
 #define NAMSIZ	sizeof(utmp.ut_name)
 #define	LINSIZ	sizeof(utmp.ut_line)
@@ -133,7 +133,7 @@ int argc; char *argv[];
 	char *device;
 	int devfile;
 	int uid, gid;
-	long lseek();
+	off_t lseek();
 	struct passwd *getpwuid();
 	char *rindex();
 	extern int errno;
@@ -204,7 +204,7 @@ int argc; char *argv[];
 
 	(void)lseek(etcutmp,utmploc, 0);
 
-	i = read(etcutmp,&utmp,sizeof(struct utmp));
+	i = read(etcutmp,(char *)&utmp,sizeof(struct utmp));
 
 	if(
 		i == sizeof(struct utmp) &&
@@ -236,16 +236,16 @@ int argc; char *argv[];
 			exit(1);
 		}
 		/* Try one last time to hang up */
-		if (ioctl(devfile,TIOCCDTR,0) < 0)
+		if (ioctl(devfile,(int)TIOCCDTR,(char *)0) < 0)
 			fprintf(stderr,"On TIOCCDTR ioctl: %s\n",
 				sys_errlist[errno]);
 
-		if (ioctl(devfile, TIOCNXCL,0) < 0)
+		if (ioctl(devfile, (int)TIOCNXCL,(char *)0) < 0)
 			fprintf(stderr,
 			    "Cannot clear Exclusive Use on %s: %s\n",
 				device, sys_errlist[errno]);
 
-		if (ioctl(devfile, TIOCHPCL,0) < 0)
+		if (ioctl(devfile, (int)TIOCHPCL,(char *)0) < 0)
 			fprintf(stderr,
 			    "Cannot set hangup on close on %s: %s\n",
 				device, sys_errlist[errno]);
@@ -259,9 +259,11 @@ int argc; char *argv[];
 		}
 		resetmodem=i;
 
-		settys(ENABLE);
-
-		pokeinit(device,Uname,enable);
+		if (settys(ENABLE)) {
+			fprintf(stderr,"%s already enabled\n",device);
+		} else {
+			pokeinit(device,Uname,enable);
+		}
 		post(device,"");
 
 	} else {
@@ -297,14 +299,17 @@ int argc; char *argv[];
 
 
 		/* poke init */
-		settys(DISABLE);
-		pokeinit(device,Uname,enable);
+		if(settys(DISABLE)) {
+			fprintf(stderr,"%s already disabled\n",device);
+		} else {
+			pokeinit(device,Uname,enable);
+		}
 		post(device,Uname);
 		if((devfile = open(device, 1)) < 0) {
 			fprintf(stderr, "On %s open: %s\n",
 				device, sys_errlist[errno]);
 		} else {
-			if(ioctl(devfile, TIOCSDTR, 0) < 0)
+			if(ioctl(devfile, (int)TIOCSDTR, (char *)0) < 0)
 				fprintf(stderr,
 				    "Cannot set DTR on %s: %s\n",
 					device, sys_errlist[errno]);
@@ -329,7 +334,7 @@ register int len;
 post(device,name)
 char *device, *name;
 {
-	(void)time(&utmp.ut_time);
+	(void)time((time_t *)&utmp.ut_time);
 	strcpyn(utmp.ut_line, device, LINSIZ);
 	strcpyn(utmp.ut_name, name,  NAMSIZ);
 	if (lseek(etcutmp, utmploc, 0)<0)
@@ -345,6 +350,7 @@ pokeinit(device,uname,enable)
 char *uname, *device; int enable;
 {
 	struct utmp utmp;
+	register int i;
 
 	post(device, uname);
 
@@ -353,7 +359,7 @@ char *uname, *device; int enable;
 		fprintf(stderr,
 		    "Cannot send hangup to init process: %s\n",
 			sys_errlist[errno]);
-		settys(resettty);
+		(void)settys(resettty);
 		(void)setmodem(device,resetmodem);
 		exit(1);
 	}
@@ -362,15 +368,16 @@ char *uname, *device; int enable;
 		return;
 
 	/* wait till init has responded, clearing the utmp entry */
+	i=100;
 	do {
 		sleep(1);
 		if (lseek(etcutmp,utmploc,0)<0)
 			fprintf(stderr,"On lseek in /etc/utmp: %s",
 				sys_errlist[errno]);
-		if (read(etcutmp,&utmp,sizeof utmp)<0)
+		if (read(etcutmp,(char *)&utmp,sizeof utmp)<0)
 			fprintf(stderr,"On read from /etc/utmp: %s",
 				sys_errlist[errno]);
-	} while (utmp.ut_name[0] !='\0');
+	} while (utmp.ut_name[0] != '\0' && --i > 0);
 }
 
 /* identify terminal line in ttys */
@@ -414,7 +421,6 @@ settys(enable)
 int enable;
 {
 	int ittysfil;
-	int  lnbeg, foundit, ndevice; 
 	char out,in;
 
 	ittysfil = open(Etcttys, 2);
@@ -423,7 +429,7 @@ int enable;
 			Etcttys, sys_errlist[errno]);
 		exit(1);
 	}
-	(void)lseek(ittysfil,(long)ttyslnbeg,0);
+	(void)lseek(ittysfil,ttyslnbeg,0);
 	if(read(ittysfil,&in,1)<0) {
 		fprintf(stderr,"On %s write: %s\n",
 			Etcttys, sys_errlist[errno]);
@@ -431,13 +437,14 @@ int enable;
 	}
 	resettty = (in == '1');
 	out = enable ? '1' : '0';
-	(void)lseek(ittysfil,(long)ttyslnbeg,0);
+	(void)lseek(ittysfil,ttyslnbeg,0);
 	if(write(ittysfil,&out,1)<0) {
 		fprintf(stderr,"On %s write: %s\n",
 			Etcttys, sys_errlist[errno]);
 		exit(1);
 	}
 	(void)close(ittysfil);
+	return(in==out);
 }
 
 /*
@@ -456,9 +463,15 @@ char *ttyline; int enable;
 	dev_t dev;
 	int kmem;
 	int unit,line,nlines,addr,tflags;
+	int devtype=0;
+	char cflags; short sflags;
+#ifdef BSD4_2
+	int flags;
+#else
+	short flags;
+#endif
 	struct uba_device *ubinfo;
 	struct stat statb;
-	short flags,devtype=0;
 	struct cdevsw cdevsw;
 
 	if(nl[CDEVSW].n_type == 0) {
@@ -476,14 +489,14 @@ char *ttyline; int enable;
 		return(-1);
 	}
 
-	if(statb.st_mode&S_IFMT != S_IFCHR) {
+	if((statb.st_mode&S_IFMT) != S_IFCHR) {
 		fprintf(stderr,"%s is not a character device.\n",ttyline);
 		return(-1);
 	}
 
 	dev = statb.st_rdev;
 	(void)lseek(kmem,
-		(int) &(((struct cdevsw *)NLVALUE(CDEVSW))[major(dev)]),0);
+		(off_t) &(((struct cdevsw *)NLVALUE(CDEVSW))[major(dev)]),0);
 	(void)read(kmem,(char *) &cdevsw,sizeof cdevsw);
 
 	if((int)(cdevsw.d_open) == NLVALUE(DZOPEN)) {
@@ -491,19 +504,19 @@ char *ttyline; int enable;
 		unit = minor(dev) / NDZLINE;
 		line = minor(dev) % NDZLINE;
 		addr = (int) &(((int *)NLVALUE(DZINFO))[unit]);
-		(void)lseek(kmem,(int) NLVALUE(NDZ11),0);
+		(void)lseek(kmem,(off_t) NLVALUE(NDZ11),0);
 	} else if((int)(cdevsw.d_open) == NLVALUE(DHOPEN)) {
 		devtype = DH11;
 		unit = minor(dev) / NDHLINE;
 		line = minor(dev) % NDHLINE;
 		addr = (int) &(((int *)NLVALUE(DHINFO))[unit]);
-		(void)lseek(kmem,(int) NLVALUE(NDH11),0);
+		(void)lseek(kmem,(off_t) NLVALUE(NDH11),0);
 	} else if((int)(cdevsw.d_open) == NLVALUE(DMFOPEN)) {
 		devtype = DMF;
 		unit = minor(dev) / NDMFLINE;
 		line = minor(dev) % NDMFLINE;
 		addr = (int) &(((int *)NLVALUE(DMFINFO))[unit]);
-		(void)lseek(kmem,(int) NLVALUE(NDMF),0);
+		(void)lseek(kmem,(off_t) NLVALUE(NDMF),0);
 	} else {
 		fprintf(stderr,"Device %s (%d/%d) unknown.\n",ttyline,
 		    major(dev),minor(dev));
@@ -517,15 +530,15 @@ char *ttyline; int enable;
 		return(-1);
 	}
 
-	(void)lseek(kmem,addr,0);
+	(void)lseek(kmem,(off_t)addr,0);
 	(void)read(kmem,(char *) &ubinfo,sizeof ubinfo);
-	(void)lseek(kmem,(int) &(ubinfo->ui_flags),0);
+	(void)lseek(kmem,(off_t) &(ubinfo->ui_flags),0);
 	(void)read(kmem,(char *) &flags,sizeof flags);
 
 	tflags = 1<<line;
 	resetmodem = ((flags&tflags) == 0);
 	flags = enable ? (flags & ~tflags) : (flags | tflags);
-	(void)lseek(kmem,(int) &(ubinfo->ui_flags),0);
+	(void)lseek(kmem,(off_t) &(ubinfo->ui_flags),0);
 	(void)write(kmem,(char *) &flags, sizeof flags);
 	switch(devtype) {
 		case DZ11:
@@ -533,24 +546,27 @@ char *ttyline; int enable;
 				fprintf(stderr,"No dzsoftCAR.\n");
 				return(-1);
 			}
-			(void)lseek(kmem,(int) &(((char *)addr)[unit]),0);
-			(void)write(kmem,(char *) &flags, sizeof flags);
+			cflags = flags;
+			(void)lseek(kmem,(off_t) &(((char *)addr)[unit]),0);
+			(void)write(kmem,(char *) &cflags, sizeof cflags);
 			break;
 		case DH11:
 			if((addr = NLVALUE(DHSCAR)) == 0) {
 				fprintf(stderr,"No dhsoftCAR.\n");
 				return(-1);
 			}
-			(void)lseek(kmem,(int) &(((short *)addr)[unit]),0);
-			(void)write(kmem,(char *) &flags, sizeof flags);
+			sflags = flags;
+			(void)lseek(kmem,(off_t) &(((short *)addr)[unit]),0);
+			(void)write(kmem,(char *) &sflags, sizeof sflags);
 			break;
 		case DMF:
 			if((addr = NLVALUE(DMFSCAR)) == 0) {
 				fprintf(stderr,"No dmfsoftCAR.\n");
 				return(-1);
 			}
-			(void)lseek(kmem,(int) &(((short *)addr)[unit]),0);
-			(void)write(kmem,(char *) &flags,2);
+			cflags = flags;
+			(void)lseek(kmem,(off_t) &(((char *)addr)[unit]),0);
+			(void)write(kmem,(char *) &flags, sizeof cflags);
 			break;
 		default:
 			fprintf(stderr,"Unknown device type\n");

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uudecode.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uudecode.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -20,7 +20,6 @@ main(argc, argv)
 char **argv;
 {
 	FILE *in, *out;
-	struct stat sbuf;
 	int mode;
 	char dest[128];
 	char buf[80];

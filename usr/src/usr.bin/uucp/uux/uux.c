@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uux.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)uux.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -41,7 +41,8 @@ char *argv[];
 	char *ap, *cmdp;
 	char prm[BUFSIZ];
 	char syspart[8], rest[MAXFULLNAME];
-	char xsys[8], local[8];
+	char Xsys[8], local[8];
+	char *xsys = Xsys;
 	FILE *fprx, *fpc, *fpd, *fp;
 	extern char *getprm(), *lastpart();
 	extern FILE *ufopen();
@@ -166,7 +167,7 @@ char *argv[];
 		strcpy(xsys, local);
 	sprintf(Rmtname, "%.7s", xsys);
 	DEBUG(4, "xsys %s\n", xsys);
-	if (versys(xsys) != 0) {
+	if (versys(&xsys) != 0) {
 		/*  bad system name  */
 		fprintf(stderr, "bad system name: %s\n", xsys);
 		fclose(fprx);
@@ -289,8 +290,7 @@ char *argv[];
 			if (redir == '<') {
 				fprintf(fprx, "%c %s\n", X_STDIN, dfile);
 				fprintf(fprx, "%c %s\n", X_RQDFILE, dfile);
-			}
-			else {
+			} else {
 				APPCMD(lastpart(rest));
 				fprintf(fprx, "%c %s %s\n", X_RQDFILE,
 				 dfile, lastpart(rest));
@@ -317,8 +317,7 @@ char *argv[];
 			if (redir == '<') {
 				fprintf(fprx, "%c %s\n", X_RQDFILE, dfile);
 				fprintf(fprx, "%c %s\n", X_STDIN, dfile);
-			}
-			else {
+			} else {
 				fprintf(fprx, "%c %s %s\n", X_RQDFILE, dfile,
 				  lastpart(rest));
 				APPCMD(lastpart(rest));
@@ -343,8 +342,7 @@ char *argv[];
 			if (redir == '<') {
 				fprintf(fprx, "%c %s\n", X_RQDFILE, t2file);
 				fprintf(fprx, "%c %s\n", X_STDIN, t2file);
-			}
-			else {
+			} else {
 				fprintf(fprx, "%c %s %s\n", X_RQDFILE, t2file,
 				  lastpart(rest));
 				APPCMD(lastpart(rest));
@@ -408,6 +406,7 @@ char *argv[];
 	}
 	else
 		unlink(subfile(tcfile));
+	exit(0);
 }
 
 #define FTABSIZE 30

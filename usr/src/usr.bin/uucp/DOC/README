@@ -1,5 +1,5 @@
 INSTALLATION GUIDE
-README	5.4	85/01/28
+README	5.5	85/04/10
 
 This version is based on the "rti uucp" that was on the 4.2BSD tape.
 It contains many additional  features and fixes from Usenet,
@@ -15,20 +15,21 @@ to something like:
 	# 	A=uux - -r $h!rmail ($u)
 	Muucp, P=/usr/bin/uux, F=sDFMhuU, S=13, R=23, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
+
 The -a$f provides a return address in case mail fails (So It
 won't go to yourmachine!uucp anymore.) The -gC specifies a grade
 for mail. C is a good choice for mail. News should run at 'd'. This
 way, mail gets sent before news.
 
 The man pages now describe all the options for the various commands.
-make sure you read them. A complete list of differences is too big to consider.
+Make sure you read them. A list of the functional differences is in "Changes".
 
 You should also look through the UUAIDS directory. There are some useful
 programs and hints therein.
 
 Rick Adams
 rick@seismo.ARPA
-January 14, 1985
+March 4, 1985
 
 Tom Truscott, rti!trt,decvax!duke!trt (919)541-6488 Research Triangle Institute
 Bob Gray, gray@berkeley, duke!adiron!bob (315) 336-4989

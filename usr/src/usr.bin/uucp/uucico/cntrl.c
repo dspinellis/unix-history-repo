@@ -1,13 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
-#include <sys/types.h>
 #include <sys/stat.h>
 #include "uust.h"
 
 extern int errno;
+extern int turntime;
+int willturn;
 
 struct Proto {
 	char P_id;
@@ -51,9 +52,12 @@ int (*Rdmsg)()=imsg, (*Rddata)();
 int (*Wrmsg)()=omsg, (*Wrdata)();
 int (*Turnon)(), (*Turnoff)();
 
+struct timeb Now, LastTurned;
 
 static char *YES = "Y";
 static char *NO = "N";
+
+int TransferSucceeded = 1;
 
 /*  failure messages  */
 #define EM_MAX		6
@@ -138,12 +142,30 @@ char *wkpre;
 
 	pnum = getpid();
 	Wfile[0] = '\0';
+	willturn = turntime > 0;
+remaster:
+#ifdef USG
+	time(&LastTurned.time);
+	LastTurned.millitm = 0;
+#else !USG
+	ftime(&LastTurned);
+#endif !USG
+	send_or_receive = RESET;
 top:
 	for (i = 0; i < sizeof wrkvec / sizeof wrkvec[0]; i++)
 		wrkvec[i] = 0;
 	DEBUG(4, "*** TOP ***  -  role=%s\n", role ? "MASTER" : "SLAVE");
 	setline(RESET);
-	send_or_receive = RESET;
+	if (nologinflag) {
+		logent(NOLOGIN, "UUCICO SHUTDOWN");
+		if (Debug)
+			logent("DEBUGGING", "continuing anyway");
+		else {
+			WMESG(HUP, YES);
+			RMESG(HUP, msg, 1);
+			goto process;
+		}
+	}
 	if (role == MASTER) {
 		/* get work */
 		if (ReverseRole || (narg = gtwvec(Wfile, Spool, wkpre, wrkvec)) == 0) {
@@ -250,14 +272,16 @@ sendmsg:
 
 	/* role is slave */
 	RAMESG(msg, 1);
-	goto process;
-
+	if (willturn < 0)
+		willturn = msg[0] == HUP;
+			
 process:
 	DEBUG(4, "PROCESS: msg - %s\n", msg);
 	switch (msg[0]) {
 
 	case RQSTCMPT:
 		DEBUG(4, "RQSTCMPT:\n", CNULL);
+		TransferSucceeded = msg[1] == 'Y';
 		if (msg[1] == 'N') {
 			i = atoi(&msg[2]);
 			if (i<0 || i>EM_MAX) i=0;
@@ -276,6 +300,20 @@ process:
 		if (role == MASTER) {
 			notify(mailopt, W_USER, W_FILE1, Rmtname, &msg[1]);
 		}
+		if (msg[2] == 'M') {
+			extern int Nfiles;
+			WMESG(HUP, "");
+			RMESG(HUP, msg, 1);
+			logent(Rmtname, "TURNAROUND");
+#ifdef USG
+				time(&LastTurned.time);
+				LastTurned.millitm = 0;
+#else !USG
+				ftime(&LastTurned);
+#endif !USG
+			Nfiles = 0; /* force rescan of queue for work */
+			goto process;
+		}
 		goto top;
 
 	case HUP:
@@ -292,7 +330,7 @@ process:
 		if (msg[1] == 'N') {
 			ASSERT(role == MASTER, "WRONG ROLE - HUP", CNULL, role);
 			role = SLAVE;
-			goto top;
+			goto remaster;
 		}
 
 		/* get work */
@@ -304,7 +342,7 @@ process:
 
 		WMESG(HUP, NO);
 		role = MASTER;
-		goto top;
+		goto remaster;
 
 	case XUUCP:
 		if (role == MASTER) {
@@ -455,6 +493,7 @@ process:
 		fflush(fp);
 		if (ferror(fp) || fclose(fp))
 			ret = FAIL;
+
 		if (ret != SUCCESS) {
 			(void) unlinkdf(Dfile);
 			(*Turnoff)();
@@ -463,7 +502,13 @@ process:
 		/* copy to user directory */
 		ntfyopt = index(W_OPTNS, 'n') != NULL;
 		status = xmv(Dfile, filename);
-		WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
+
+		if (willturn && Now.time > (LastTurned.time+turntime)
+			&& iswrk(Wfile, "chk", Spool, wkpre)) {
+				WMESG(RQSTCMPT, status ? EM_RMTCP : "YM");
+				willturn = -1;
+		} else
+			WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
 		if (i == 0)
 			;	/* vanilla file, nothing to do */
 		else if (status == 0) {
@@ -528,7 +573,12 @@ process:
 				strcat(filename, lastpart(W_FILE1));
 			}
 			status = xmv(Dfile, filename);
-			WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
+			if (willturn && Now.time > (LastTurned.time+turntime)
+				&& iswrk(Wfile, "chk", Spool, wkpre)) {
+					WMESG(RQSTCMPT, status ? EM_RMTCP : "YM");
+					willturn = -1;
+			} else
+				WMESG(RQSTCMPT, status ? EM_RMTCP : YES);
 			notify(mailopt, W_USER, filename, Rmtname,
 			  status ? EM_LOCCP : YES);
 			if (status == 0) {

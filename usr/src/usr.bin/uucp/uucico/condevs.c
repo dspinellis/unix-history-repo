@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -58,9 +58,16 @@ struct condev condevs[] = {
 #ifdef DF02
 	{ "ACU", "DF02", Acuopn, df2opn, df2cls },
 #endif DF02
+#ifdef DF112
+	{ "ACU", "DF112P", Acuopn, df12popn, df12cls },
+	{ "ACU", "DF112T", Acuopn, df12topn, df12cls },
+#endif DF112
 #ifdef VENTEL
 	{ "ACU", "ventel", Acuopn, ventopn, ventcls },
 #endif VENTEL
+#ifdef PENRIL
+	{ "ACU", "penril", Acuopn, penopn, pencls },
+#endif PENRIL
 #ifdef VADIC
 	{ "ACU", "vadic", Acuopn, vadopn, vadcls },
 #endif VADIC
@@ -222,10 +229,9 @@ register int fd;
 	}
 }
 
-/***
- *	Acuopn - open an ACU and dial the number.  The condevs table
- *		will be searched until a dialing unit is found that is
- *		free.
+/*
+ *	open an ACU and dial the number.  The condevs table
+ *	will be searched until a dialing unit is found that is free.
  *
  *	return codes:	>0 - file number - o.k.
  *			FAIL - failed
@@ -235,72 +241,89 @@ char devSel[20];	/* used for later unlock() */
 Acuopn(flds)
 register char *flds[];
 {
-    char phone[MAXPH+1];
-    register struct condev *cd;
-    register int fd, acustatus;
-    register FILE *dfp;
-    struct Devices dev;
-    int retval = CF_NODEV;
+	char phone[MAXPH+1];
+	register struct condev *cd;
+	register int fd, acustatus;
+	register FILE *dfp;
+	struct Devices dev;
+	int retval = CF_NODEV;
 
-    exphone(flds[F_PHONE], phone);
-    devSel[0] = '\0';
-    DEBUG(4, "Dialing %s\n", phone);
-    dfp = fopen(DEVFILE, "r");
-    ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
+	exphone(flds[F_PHONE], phone);
+	devSel[0] = '\0';
+	DEBUG(4, "Dialing %s\n", phone);
+	dfp = fopen(DEVFILE, "r");
+	ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
 
-    acustatus = 0;	/* none found, none locked */
-    for(cd = condevs; cd->CU_meth != NULL; cd++) {
-	if (snccmp(flds[F_LINE], cd->CU_meth) == SAME) {
-	    rewind(dfp);
-	    while(rddev(dfp, &dev) != FAIL) {
-		/*
-		 * for each ACU L.sys line, try at most twice
-		 * (TRYCALLS) to establish carrier.  The old way tried every
-		 * available dialer, which on big sites takes forever!
-		 * Sites with a single auto-dialer get one try.
-		 * Sites with multiple dialers get a try on each of two
-		 * different dialers.
-		 * To try 'harder' to connect to a remote site,
-		 * use multiple L.sys entries.
-		 */
-		if (acustatus > TRYCALLS)
-			continue;
-		if (strcmp(flds[F_CLASS], dev.D_class) != SAME)
-		    continue;
-		if (snccmp(flds[F_LINE], dev.D_type) != SAME)
-		    continue;
-		if (dev.D_brand[0] == '\0')
-		    logent("Acuopn","No 'brand' name on ACU");
-		else if (snccmp(dev.D_brand, cd->CU_brand) != SAME)
-		    continue;
-		if (acustatus < 1)
-			acustatus = 1;	/* has been found */
-		if (mlock(dev.D_line) == FAIL)
-		    continue;
+	acustatus = 0;	/* none found, none locked */
+	for(cd = condevs; cd->CU_meth != NULL; cd++) {
+		if (snccmp(flds[F_LINE], cd->CU_meth) == SAME) {
+			rewind(dfp);
+			while(rddev(dfp, &dev) != FAIL) {
+			/*
+			 * for each ACU L.sys line, try at most twice
+			 * (TRYCALLS) to establish carrier.  The old way tried every
+			 * available dialer, which on big sites takes forever!
+			 * Sites with a single auto-dialer get one try.
+			 * Sites with multiple dialers get a try on each of two
+			 * different dialers.
+			 * To try 'harder' to connect to a remote site,
+			 * use multiple L.sys entries.
+			 */
+			if (acustatus > TRYCALLS)
+				continue;
+			if (strcmp(flds[F_CLASS], dev.D_class) != SAME)
+				continue;
+			if (snccmp(flds[F_LINE], dev.D_type) != SAME)
+				continue;
+			if (dev.D_brand[0] == '\0') {
+				logent("Acuopn","No 'brand' name on ACU");
+				continue;
+			}
+			for(cd = condevs; cd->CU_meth != NULL; cd++) {
+				if (snccmp(flds[F_LINE], cd->CU_meth) == SAME
+					&& snccmp(dev.D_brand, cd->CU_brand) == SAME)
+					break;
+			}
+			if (cd->CU_meth == NULL) {
+				logent(dev.D_brand,"unsupported ACU type");
+				continue;
+			}
 
-		DEBUG(4, "Using %s\n", cd->CU_brand);
-		acustatus++;
-		fd = (*(cd->CU_open))(phone, flds, &dev);
-		if (fd > 0) {
-		    CU_end = cd->CU_clos;   /* point CU_end at close func */
-		    fclose(dfp);
-		    strcpy(devSel, dev.D_line);   /* save for later unlock() */
-		    return fd;
-		    }
-		delock(dev.D_line);
-		retval = CF_DIAL;
+			if (acustatus < 1)
+				acustatus = 1;	/* has been found */
+			if (mlock(dev.D_line) == FAIL)
+				continue;
+#ifdef DIALINOUT
+			if (snccmp("inout", dev.D_calldev) == SAME
+				&& disable(dev.D_line) == FAIL) {
+					delock(dev.D_line);
+					continue;
+			}
+#endif DIALINOUT
+
+			DEBUG(4, "Using %s\n", cd->CU_brand);
+			acustatus++;
+			fd = (*(cd->CU_open))(phone, flds, &dev);
+			if (fd > 0) {
+				CU_end = cd->CU_clos;   /* point CU_end at close func */
+				fclose(dfp);
+				strcpy(devSel, dev.D_line);   /* save for later unlock() */
+				return fd;
+			} else
+				delock(dev.D_line);
+			retval = CF_DIAL;
+			}
 		}
-	    }
 	}
-    fclose(dfp);
-    if (acustatus == 0)
-	logent("L-devices", "No appropriate ACU");
-    if (acustatus == 1)
-	logent("DEVICE", "NO");
-    return retval;
+	fclose(dfp);
+	if (acustatus == 0)
+		logent("L-devices", "No appropriate ACU");
+	if (acustatus == 1)
+		logent("DEVICE", "NO");
+	return retval;
 }
 
-#if defined(VENTEL) || defined(NOVATION)
+#if defined(VENTEL) || defined(NOVATION) || defined(DF112)
 /*
  * uucpdelay:  delay execution for numerator/denominator seconds.
  */
@@ -324,7 +347,7 @@ turn off timer.
 #define uucpdelay(num,denom) nap(60*num/denom)
 /*	Sleep in increments of 60ths of second.	*/
 nap (time)
-	register int time;
+register int time;
 {
 	static int fd;
 
@@ -337,7 +360,6 @@ nap (time)
 
 #ifdef FTIME
 #define uucpdelay(num,denom) ftimedelay(1000*num/denom)
-#include <sys/timeb.h>
 ftimedelay(n)
 {
 	static struct timeb loctime;
@@ -371,4 +393,96 @@ register char *str;
 	}
 	DEBUG(6, "\n", CNULL);
 }
-#endif VENTEL || NOVATION
+#endif VENTEL || NOVATION || DF112
+
+#ifdef DIALINOUT
+/* DIALIN/OUT CODE (WLS) */
+/*
+ * disable and reenable:  allow a single line to be use for dialin/dialout
+ *
+ */
+
+char enbdev[16];
+
+disable(dev)
+register char *dev;
+{
+	register char *rdev;
+
+	/* strip off directory prefixes */
+	rdev = dev;
+	while (*rdev)
+		rdev++;
+	while (--rdev >= dev && *rdev != '/')
+		;
+	rdev++;
+
+	if (enbdev[0]) {
+		if (strcmp(enbdev, rdev) == SAME)
+			return SUCCESS;	/* already disabled */
+		delock(enbdev);
+		reenable();		/* else, reenable the old one */
+	}
+	DEBUG(4, "Disable %s\n", rdev);
+	if (enbcall("disable", rdev) == FAIL)
+		return FAIL;
+	logent(rdev, "DISABLED LOGIN");
+	strcpy(enbdev, rdev);
+	return SUCCESS;
+}
+
+reenable()
+{
+	if (enbdev[0] == NULL)
+		return;
+	DEBUG(4, "Reenable %s\n", enbdev);
+	(void) enbcall("enable", enbdev);
+	logent(enbdev, "REENABLED LOGIN");
+	enbdev[0] = '\0';
+}
+
+enbcall(type, dev)
+char *type, *dev;
+{
+	int pid;
+	register char *p;
+	int fildes[2];
+	int status;
+	FILE *fil;
+	char buf[80];
+	
+	fflush(stderr);
+	fflush(stdout);
+	pipe(fildes);
+	if ((pid = fork()) == 0) {
+		DEBUG(4, DIALINOUT, CNULL);
+		DEBUG(4, " %s", type);
+		DEBUG(4, " %s\n", dev);
+		close(fildes[0]);
+		close(0); close(1); close(2);
+		open("/dev/null",0);
+		dup(fildes[1]); dup(fildes[1]);
+		setuid(geteuid());	/* for chown(uid()) in acu program */
+		execl(DIALINOUT, "acu", type, dev, 0);
+		exit(-1);
+	}
+	if (pid<0)
+		return FAIL;
+
+	close(fildes[1]);
+	fil = fdopen(fildes[0],"r");
+	if (fil!=NULL) {
+		setlinebuf(fil);
+		while (fgets(buf, sizeof buf, fil) != NULL) {
+			p = buf + strlen(buf) - 1;
+			if (*p == '\n')
+				*p = '\0';
+			logent(buf,"ACUCNTRL:");
+		}
+	}
+	while(wait(&status) != pid)
+		;
+	fclose(fil);
+	return status ? FAIL : SUCCESS;
+}
+#endif DIALINOUT
