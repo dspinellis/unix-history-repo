@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dkstat.h	7.1 (Berkeley) %G%
+ *	@(#)dkstat.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
 #define	CP_SYS		2
 #define	CP_IDLE		3
 
-#define	DK_NDRIVE	4
+#define	DK_NDRIVE	8
 
 #ifdef KERNEL
 long	cp_time[CPUSTATES];
