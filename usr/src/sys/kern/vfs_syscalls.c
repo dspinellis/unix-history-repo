@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.88 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.89 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -19,6 +19,7 @@
 #include "proc.h"
 #include "uio.h"
 #include "malloc.h"
+#include "dirent.h"
 #include <vm/vm.h>
 
 #ifdef REF_DIAGNOSTIC
@@ -622,7 +623,7 @@ ocreat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	struct args {
+	struct nargs {
 		char	*fname;
 		int	mode;
 		int	crtmode;
@@ -1817,6 +1818,95 @@ out:
 	CHECKREFS("rmdir");
 	return (error);
 }
+
+#ifdef COMPAT_43
+/*
+ * Read a block of directory entries in a file system independent format.
+ */
+ogetdirentries(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	fd;
+		char	*buf;
+		unsigned count;
+		long	*basep;
+	} *uap;
+	int *retval;
+{
+	USES_VOP_LOCK;
+	USES_VOP_READDIR;
+	USES_VOP_UNLOCK;
+	register struct vnode *vp;
+	struct file *fp;
+	struct uio auio, kuio;
+	struct iovec aiov, kiov;
+	struct dirent *dp, *edp;
+	caddr_t dirbuf;
+	int error, readcnt;
+	off_t off;
+
+	if (error = getvnode(p->p_fd, uap->fd, &fp))
+		return (error);
+	if ((fp->f_flag & FREAD) == 0)
+		return (EBADF);
+	vp = (struct vnode *)fp->f_data;
+	if (vp->v_type != VDIR)
+		return (EINVAL);
+	aiov.iov_base = uap->buf;
+	aiov.iov_len = uap->count;
+	auio.uio_iov = &aiov;
+	auio.uio_iovcnt = 1;
+	auio.uio_rw = UIO_READ;
+	auio.uio_segflg = UIO_USERSPACE;
+	auio.uio_procp = p;
+	auio.uio_resid = uap->count;
+	VOP_LOCK(vp);
+	auio.uio_offset = off = fp->f_offset;
+#	if (BYTE_ORDER != LITTLE_ENDIAN)
+		if (vp->v_mount->mnt_maxsymlinklen <= 0)
+			error = VOP_READDIR(vp, &auio, fp->f_cred);
+		else
+#	endif
+	{
+		kuio = auio;
+		kuio.uio_iov = &kiov;
+		kuio.uio_segflg = UIO_SYSSPACE;
+		kiov.iov_len = uap->count;
+		MALLOC(dirbuf, caddr_t, uap->count, M_TEMP, M_WAITOK);
+		kiov.iov_base = dirbuf;
+		error = VOP_READDIR(vp, &kuio, fp->f_cred);
+		if (error == 0) {
+			readcnt = uap->count - kuio.uio_resid;
+			edp = (struct dirent *)&dirbuf[readcnt];
+			for (dp = (struct dirent *)dirbuf; dp < edp; ) {
+				dp->d_type = 0;
+#				if (BYTE_ORDER == LITTLE_ENDIAN)
+					{ u_char tmp = dp->d_namlen;
+					dp->d_namlen = dp->d_type;
+					dp->d_type = tmp; }
+#				endif
+				if (dp->d_reclen > 0) {
+					dp = (struct dirent *)
+					    ((char *)dp + dp->d_reclen);
+				} else {
+					error = EIO;
+					break;
+				}
+			}
+			if (dp >= edp)
+				error = uiomove(dirbuf, readcnt, &auio);
+		}
+		FREE(dirbuf, M_TEMP);
+	}
+	fp->f_offset = auio.uio_offset;
+	VOP_UNLOCK(vp);
+	if (error)
+		return (error);
+	error = copyout((caddr_t)&off, (caddr_t)uap->basep, sizeof(long));
+	*retval = uap->count - auio.uio_resid;
+	return (error);
+}
+#endif
 
 /*
  * Read a block of directory entries in a file system independent format.
