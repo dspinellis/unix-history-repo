@@ -1,4 +1,4 @@
-
+/*	@(#)if_hdh.c	6.2 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -64,23 +64,24 @@ Revision History:
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/mbuf.h"
-#include "../h/buf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/vmmac.h"
+#include "param.h"
+#include "systm.h"
+#include "mbuf.h"
+#include "buf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "vmmac.h"
 
 #include "../net/if.h"
 #include "../netimp/if_imp.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-#include "../vaxif/if_hdhreg.h"
-#include "../vaxif/if_uba.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+
+#include "if_hdhreg.h"
+#include "if_uba.h"
 
 int     hdhprobe(), hdhattach(), hdhrint(), hdhxint();
 struct  uba_device *hdhinfo[NHDH];
@@ -215,7 +216,7 @@ hdhattach(ui)
 	} *ifimp;
 
 	if ((ifimp = (struct ifimpcb *)impattach(ui, hdhreset)) == 0)
-		panic("hdhattach");
+		return;;
 	sc->hdh_if = &ifimp->ifimp_if;
 	ip = &ifimp->ifimp_impcb;
 	sc->hdh_ic = ip;
@@ -241,6 +242,8 @@ int unit, uban;
 	    || (ui->ui_ubanum != uban))
 		return;
 	printf(" hdh%d", unit);
+	sc->hdh_if->if_flags &= ~IFF_RUNNING;
+	sc->hdh_flags = 0;
 	(*sc->hdh_if->if_init)(unit);
 }
 
@@ -291,10 +294,8 @@ int unit;
 	addr = (struct hdhregs *)ui->ui_addr;
 	sc = &hdh_softc[unit];
 
-	if (sc->hdh_flags & HDH_STARTED) {
-		printf("hdh%d: re-init\n", unit);
+	if (sc->hdh_flags & HDH_STARTED)
 		return(1);
-	}
 
 	/*
 	 * Alloc uba resources
@@ -309,6 +310,7 @@ int unit;
 		}
 	}
 
+	sc->hdh_if->if_flags |= IFF_RUNNING;
 	sc->hdh_flags = HDH_STARTED;
 
 	/*
@@ -568,7 +570,8 @@ int unit, lcn, cc, rcnt;
 			 * Queue good packet for input 
 			 */
 			sc->hdh_if->if_ipackets++;
-			m = if_rubaget(&sc->hdh_ifuba[lcn>>1], rcnt, 0);
+			m = if_rubaget(&sc->hdh_ifuba[lcn>>1], rcnt, 0,
+				sc->hdh_if);
 			impinput(unit, m);
 		}
 
