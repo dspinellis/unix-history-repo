@@ -1,4 +1,25 @@
-static char *sccsid = "@(#)mesg.c	4.3 (Berkeley) %G%";
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific written prior permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)mesg.c	4.4 (Berkeley) %G%";
+#endif /* not lint */
+
 /*
  * mesg -- set current tty to accept or
  *	forbid write permission.
@@ -8,51 +29,56 @@ static char *sccsid = "@(#)mesg.c	4.3 (Berkeley) %G%";
  *		n forbid messages
  */
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
 
-struct stat sbuf;
-
-char *tty;
-char *ttyname();
+static char *tty;
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char **argv;
 {
-	int r=0;
-	tty = ttyname(2);
-	if (tty == 0)
-		exit(13);
-	if(stat(tty, &sbuf) < 0) error("cannot stat");
-	if(argc < 2) {
-		if(sbuf.st_mode & 020)
-			fprintf(stderr,"is y\n");
-		else {	r=1;
-			fprintf(stderr,"is n\n");
-		}
-	} else	switch(*argv[1]) {
-		case 'y':
-			newmode(sbuf.st_mode|020); break;
+	struct stat sbuf;
+	char *ttyname();
 
-		case 'n':
-			newmode(sbuf.st_mode&~020); r=1; break;
-
-		default:
-			error("usage: mesg [y] [n]");
+	if (!(tty = ttyname(2))) {
+		fputs("mesg: not a device in /dev.\n", stderr);
+		exit(-1);
+	}
+	if (stat(tty, &sbuf) < 0) {
+		perror("mesg");
+		exit(-1);
+	}
+	if (argc < 2) {
+		if (sbuf.st_mode & 020) {
+			fputs("is y\n", stderr);
+			exit(0);
 		}
-	exit(r);
+		fputs("is n\n", stderr);
+		exit(1);
+	}
+#define	OTHER_WRITE	020
+	switch(*argv[1]) {
+	case 'y':
+		newmode(sbuf.st_mode | OTHER_WRITE);
+		exit(0);
+	case 'n':
+		newmode(sbuf.st_mode &~ OTHER_WRITE);
+		exit(1);
+	default:
+		fputs("usage: mesg [y] [n]\n", stderr);
+		exit(-1);
+	}
+	/*NOTREACHED*/
 }
 
-error(s)
-char *s;
-{
-	fprintf(stderr,"mesg: %s\n",s);
-	exit(-1);
-}
-
+static
 newmode(m)
+	u_short m;
 {
-	if(chmod(tty,m)<0)
-		error("cannot change mode");
+	if (chmod(tty, m) < 0) {
+		perror("mesg");
+		exit(-1);
+	}
 }
