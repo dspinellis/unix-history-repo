@@ -998,9 +998,8 @@ interpreter(base)
 			continue;
 		case O_STLIM:
 			pc.cp++;
-			_stlim = pop4();
-			_stcnt--;
-			LINO();
+			STLIM();
+			popargs(1);
 			continue;
 		case O_LLIMIT:
 			pc.cp++;
