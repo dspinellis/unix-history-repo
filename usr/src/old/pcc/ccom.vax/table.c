@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.14 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.15 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -417,6 +417,18 @@ UNARY MUL,	FOREFF,
 	SCC,	TANY,
 		0,	RNULL,
 		"	HELP HELP HELP\n",
+
+OREG,	INTEMP,
+	SANY,	TANY,
+	SOREG,	TDOUBLE,
+		2*NTEMP,	RESC1,
+		"	movd	AR,A1\n",
+
+OREG,	INTEMP,
+	SANY,	TANY,
+	SOREG,	TANY,
+		NTEMP,	RESC1,
+		"	movZF	AR,A1\n",
 
 REG,	INTEMP,
 	SANY,	TANY,
