@@ -1,13 +1,12 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
-**
-**	@(#)sendmail.h	3.46	%G%
 */
 
 
 
 # ifdef _DEFINE
 # define EXTERN
+static char SmailSccsId[] =	"@(#)sendmail.h	3.47	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -279,6 +278,9 @@ EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
 EXTERN bool	DontSend;	/* mark recipients as QDONTSEND */
 EXTERN bool	NoReturn;	/* don't return letter to sender */
+EXTERN bool	Daemon;		/* running as a daemon */
+EXTERN int	RealUid;	/* when Daemon, real uid of caller */
+EXTERN int	RealGid;	/* when Daemon, real gid of caller */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
 EXTERN int	Debug;		/* debugging level */
 EXTERN int	Errors;		/* set if errors */

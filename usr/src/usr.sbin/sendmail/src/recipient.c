@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.24	%G%";
+static char SccsId[] = "@(#)recipient.c	3.25	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -252,7 +252,7 @@ recipient(a)
 				a->q_flags |= QDONTSEND;
 			}
 			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-			    (*p = '\0', access(buf, 3) < 0))
+			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
 			{
 				a->q_flags |= QBADADDR;
 				giveresponse(EX_CANTCREAT, TRUE, m);

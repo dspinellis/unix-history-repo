@@ -1,10 +1,12 @@
 # include <stdio.h>
+# include <sys/types.h>
+# include <sys/stat.h>
 # include <sysexits.h>
 # include "useful.h"
 # include <ctype.h>
 # include "conf.h"
 
-static char	SccsId[] = "@(#)util.c	3.9	%G%";
+static char	SccsId[] = "@(#)util.c	3.10	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -380,6 +382,35 @@ buildfname(p, login, buf)
 			*bp++ = *p++;
 	}
 	*bp = '\0';
+}
+/*
+**  SAFEFILE -- return true if a file exists and is safe for a user.
+**
+**	Parameters:
+**		fn -- filename to check.
+**		uid -- uid to compare against.
+**		mode -- mode bits that must match.
+**
+**	Returns:
+**		TRUE if fn exists, is owned by uid, and matches mode.
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+safefile(fn, uid, mode)
+	char *fn;
+	int uid;
+	int mode;
+{
+	struct stat stbuf;
+
+	if (stat(fn, &stbuf) >= 0 && stbuf.st_uid == uid &&
+	    (stbuf.st_mode & mode) == mode)
+		return (TRUE);
+	return (FALSE);
 }
 /*
 **  SYSLOG -- fake entry to fool lint

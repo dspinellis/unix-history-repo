@@ -1,12 +1,14 @@
 # include <signal.h>
 # include <pwd.h>
+# include <sys/types.h>
+# include <sys/stat.h>
 # define  _DEFINE
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.41	%G%";
+static char	SccsId[] = "@(#)main.c	3.42	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -138,6 +140,8 @@ main(argc, argv)
 	char ybuf[10];			/* holds tty id */
 	bool aliasinit = FALSE;
 	extern char *ttyname();
+	char cfbuf[60];			/* holds .cf filename */
+	extern bool safefile();
 	bool canrename;
 
 	argv[argc] = NULL;
@@ -303,7 +307,7 @@ main(argc, argv)
 			printf("Version %s Debug %d\n", Version, Debug);
 			break;
 
-		  case 'D':	/* redefine internal macro */
+		  case 'M':	/* redefine internal macro */
 			define(p[2], &p[3]);
 			break;
 # endif DEBUG
@@ -375,6 +379,11 @@ main(argc, argv)
 			GrabTo = TRUE;
 			break;
 
+		  case 'D':	/* run as a daemon */
+			Daemon = TRUE;
+			MailBack = TRUE;
+			break;
+
 		  default:
 			/* at Eric Schmidt's suggestion, this will not be an error....
 			syserr("Unknown flag %s", p);
@@ -384,23 +393,14 @@ main(argc, argv)
 	}
 
 	/*
-	**  Read control file.
+	**  Read system control file.
 	*/
 
 	readcf(ConfFile, safecf);
 
-# ifndef V6
-	p = getenv("HOME");
-	if (p != NULL)
-	{
-		char cfbuf[60];
-
-		define('z', p);
-		(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
-		if (access(cfbuf, 2) == 0)
-			readcf(cfbuf, FALSE);
-	}
-# endif V6
+	/*
+	**  Initialize aliases.
+	*/
 
 	initaliases(AliasFile, aliasinit);
 # ifdef DBM
@@ -411,6 +411,7 @@ main(argc, argv)
 # ifdef DEBUG
 	if (Debug > 15)
 	{
+		/* print configuration table (or at least part of it) */
 		printrules();
 		for (i = 0; i < MAXMAILERS; i++)
 		{
@@ -425,8 +426,22 @@ main(argc, argv)
 # endif DEBUG
 
 	/*
+	**  If a daemon, wait for a request.
+	**	getrequests will always return in a child.
+	*/
+
+	if (Daemon)
+		getrequests();
+
+	/*
 	locname = getname();
 	if (locname == NULL || locname[0] == '\0')
+	{
+		errno = 0;
+		p = getlogin();
+		errno = 0;
+	}
+	if (Daemon || p == NULL)
 	{
 		extern struct passwd *getpwuid();
 		int uid;
@@ -451,6 +466,16 @@ main(argc, argv)
 
 	realname = p;
 
+	/*
+	**  Process passwd file entry.
+	*/
+
+	/* run user's .mailcf file */
+	define('z', pw->pw_dir);
+	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
+	if (safefile(cfbuf, getruid(), S_IREAD))
+		readcf(cfbuf, FALSE);
+
 	/* extract full name from passwd file */
 	if ((fullname == NULL || fullname[0] == '\0') &&
 	    pw != NULL && pw->pw_gecos != NULL)
@@ -466,7 +491,7 @@ main(argc, argv)
 
 	setfrom(from, realname);
 
-	if (argc <= 0 && !GrabTo)
+	if (!Daemon && argc <= 0 && !GrabTo)
 		usrerr("Usage: /etc/sendmail [flags] addr...");
 
 	/*
@@ -488,7 +513,10 @@ main(argc, argv)
 
 	if (GrabTo)
 		DontSend = TRUE;
-	sendtoargv(argv);
+	if (Daemon)
+		getrecipients();
+	else
+		sendtoargv(argv);
 
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
