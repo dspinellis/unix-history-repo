@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -463,8 +463,12 @@ command(top)
 		putchar('\n');
 	for (;;) {
 		printf("%s> ", prompt);
-		if (gets(line) == 0)
-			continue;
+		if (gets(line) == 0) {
+			if (feof(stdin))
+				quit();
+			else
+				continue;
+		}
 		if (line[0] == 0)
 			continue;
 		makeargv();
