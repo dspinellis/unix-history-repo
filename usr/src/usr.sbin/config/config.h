@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)config.h	5.3 (Berkeley) %G%
+ *	@(#)config.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -64,7 +64,7 @@ struct	idlst {
 };
 
 struct device {
-	int	d_type;			/* CONTROLLER, DEVICE, UBA or MBA */
+	int	d_type;			/* CONTROLLER, DEVICE, bus adaptor */
 	struct	device *d_conn;		/* what it is connected to */
 	char	*d_name;		/* name of device (e.g. rk11) */
 	struct	idlst *d_vec;		/* interrupt vectors */
@@ -80,6 +80,7 @@ struct device {
 	struct	device *d_next;		/* Next one in list */
 };
 #define TO_NEXUS	(struct device *)-1
+#define TO_VBA		(struct device *)-2
 
 struct config {
 	char	*c_dev;
@@ -96,7 +97,7 @@ struct config {
 int	machine;
 char	*machinename;
 #define	MACHINE_VAX	1
-#define	MACHINE_SUN	2
+#define	MACHINE_TAHOE	2
 
 /*
  * For each machine, a set of CPU's may be specified as supported.
@@ -137,6 +138,9 @@ char	*sprintf();
 
 #if MACHINE_VAX
 int	seen_mba, seen_uba;
+#endif
+#if MACHINE_TAHOE
+int	seen_vba;
 #endif
 
 struct	device *connect();

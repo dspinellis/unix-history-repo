@@ -5,7 +5,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lang.l	5.2 (Berkeley) %G%
+ *	@(#)lang.l	5.3 (Berkeley) %G%
  */
 
 #include <ctype.h>
@@ -57,6 +57,7 @@ struct kt {
 	{ "timezone",	TIMEZONE },
 	{ "trace",	TRACE },
 	{ "uba",	UBA },
+	{ "vba",	VBA },
 	{ "vector",	VECTOR },
 	{ 0, 0 },
 };

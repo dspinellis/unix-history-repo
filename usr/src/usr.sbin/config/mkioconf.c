@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -262,11 +262,11 @@ vax_ioconf()
 }
 #endif
 
-#if MACHINE_SUN
-sun_ioconf()
+#if MACHINE_TAHOE
+tahoe_ioconf()
 {
-	register struct device *dp, *mp;
-	register int slave;
+	register struct device *dp, *mp, *np;
+	register int vba_n, slave;
 	FILE *fp;
 
 	fp = fopen(path("ioconf.c"), "w");
@@ -275,39 +275,58 @@ sun_ioconf()
 		exit(1);
 	}
 	fprintf(fp, "#include \"../h/param.h\"\n");
+	fprintf(fp, "#include \"../machine/pte.h\"\n");
 	fprintf(fp, "#include \"../h/buf.h\"\n");
 	fprintf(fp, "#include \"../h/map.h\"\n");
-	fprintf(fp, "#include \"../h/vm.h\"\n");
 	fprintf(fp, "\n");
-	fprintf(fp, "#include \"../sundev/mbvar.h\"\n");
+	fprintf(fp, "#include \"../tahoevba/vbavar.h\"\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "#define C (caddr_t)\n\n");
-	fprintf(fp, "\n");
 	/*
-	 * Now generate interrupt vectors for the Multibus
+	 * Now generate interrupt vectors for the versabus
 	 */
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
-		if (dp->d_pri != 0) {
+		if (dp->d_vec != 0) {
+			struct idlst *ip;
 			mp = dp->d_conn;
 			if (mp == 0 || mp == TO_NEXUS ||
-			    !eq(mp->d_name, "mb"))
+			    !eq(mp->d_name, "vba"))
 				continue;
-			fprintf(fp, "extern struct mb_driver %sdriver;\n",
+			fprintf(fp,
+			    "extern struct vba_driver %sdriver;\n",
 			    dp->d_name);
+			fprintf(fp, "extern ");
+			ip = dp->d_vec;
+			for (;;) {
+				fprintf(fp, "X%s%d()", ip->id, dp->d_unit);
+				ip = ip->id_next;
+				if (ip == 0)
+					break;
+				fprintf(fp, ", ");
+			}
+			fprintf(fp, ";\n");
+			fprintf(fp, "int\t (*%sint%d[])() = { ", dp->d_name,
+			    dp->d_unit, dp->d_unit);
+			ip = dp->d_vec;
+			for (;;) {
+				fprintf(fp, "X%s%d", ip->id, dp->d_unit);
+				ip = ip->id_next;
+				if (ip == 0)
+					break;
+				fprintf(fp, ", ");
+			}
+			fprintf(fp, ", 0 } ;\n");
 		}
 	}
-	/*
-	 * Now spew forth the mb_cinfo structure
-	 */
-	fprintf(fp, "\nstruct mb_ctlr mbcinit[] = {\n");
-	fprintf(fp, "/*\t driver,\tctlr,\talive,\taddr,\tintpri */\n");
+	fprintf(fp, "\nstruct vba_ctlr vbminit[] = {\n");
+	fprintf(fp, "/*\t driver,\tctlr,\tvbanum,\talive,\tintr,\taddr */\n");
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
 		if (dp->d_type != CONTROLLER || mp == TO_NEXUS || mp == 0 ||
-		    !eq(mp->d_name, "mb"))
+		    !eq(mp->d_name, "vba"))
 			continue;
-		if (dp->d_pri == 0) {
-			printf("must specify priority for %s%d\n",
+		if (dp->d_vec == 0) {
+			printf("must specify vector for %s%d\n",
 			    dp->d_name, dp->d_unit);
 			continue;
 		}
@@ -317,35 +336,39 @@ sun_ioconf()
 			continue;
 		}
 		if (dp->d_drive != UNKNOWN || dp->d_slave != UNKNOWN) {
-			printf("drives need their own entries; ");
-			printf("dont specify drive or slave for %s%d\n",
+			printf("drives need their own entries; dont ");
+			printf("specify drive or slave for %s%d\n",
 			    dp->d_name, dp->d_unit);
 			continue;
 		}
 		if (dp->d_flags) {
-			printf("controllers (e.g. %s%d) don't have flags, ");
-			printf("only devices do\n",
+			printf("controllers (e.g. %s%d) ",
 			    dp->d_name, dp->d_unit);
+			printf("don't have flags, only devices do\n");
 			continue;
 		}
-		fprintf(fp, "\t{ &%sdriver,\t%d,\t0,\tC 0x%x,\t%d },\n",
-		    dp->d_name, dp->d_unit, dp->d_addr, dp->d_pri);
+		fprintf(fp,
+		    "\t{ &%sdriver,\t%d,\t%s,\t0,\t%sint%d, C 0x%x },\n",
+		    dp->d_name, dp->d_unit, qu(mp->d_unit),
+		    dp->d_name, dp->d_unit, dp->d_addr);
 	}
 	fprintf(fp, "\t0\n};\n");
-	/*
-	 * Now we go for the mb_device stuff
-	 */
-	fprintf(fp, "\nstruct mb_device mbdinit[] = {\n");
+/* versabus devices */
+	fprintf(fp, "\nstruct vba_device vbdinit[] = {\n");
 	fprintf(fp,
-"\t/* driver,  unit, ctlr,  slave,   addr,    pri,    dk, flags*/\n");
+"\t/* driver,  unit, ctlr,  vbanum, slave,   intr,    addr,    dk, flags*/\n");
 	for (dp = dtab; dp != 0; dp = dp->d_next) {
 		mp = dp->d_conn;
 		if (dp->d_unit == QUES || dp->d_type != DEVICE || mp == 0 ||
 		    mp == TO_NEXUS || mp->d_type == MASTER ||
 		    eq(mp->d_name, "mba"))
 			continue;
-		if (eq(mp->d_name, "mb")) {
-			if (dp->d_pri == 0) {
+		np = mp->d_conn;
+		if (np != 0 && np != TO_NEXUS && eq(np->d_name, "mba"))
+			continue;
+		np = 0;
+		if (eq(mp->d_name, "vba")) {
+			if (dp->d_vec == 0) {
 				printf("must specify vector for device %s%d\n",
 				    dp->d_name, dp->d_unit);
 				continue;
@@ -356,23 +379,26 @@ sun_ioconf()
 				continue;
 			}
 			if (dp->d_drive != UNKNOWN || dp->d_slave != UNKNOWN) {
-				printf("drives/slaves can be specified only ");
-				printf("for controllers, not for device %s%d\n",
+				printf("drives/slaves can be specified ");
+				printf("only for controllers, ");
+				printf("not for device %s%d\n",
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
+			vba_n = mp->d_unit;
 			slave = QUES;
 		} else {
-			if (mp->d_conn == 0) {
-				printf("%s%d isn't connected to anything, ",
+			if ((np = mp->d_conn) == 0) {
+				printf("%s%d isn't connected to anything ",
 				    mp->d_name, mp->d_unit);
-				printf("so %s%d is unattached\n",
+				printf(", so %s%d is unattached\n",
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
+			vba_n = np->d_unit;
 			if (dp->d_drive == UNKNOWN) {
-				printf("must specify ``drive number'' for %s%d\n",
-				   dp->d_name, dp->d_unit);
+				printf("must specify ``drive number'' ");
+				printf("for %s%d\n", dp->d_name, dp->d_unit);
 				continue;
 			}
 			/* NOTE THAT ON THE UNIBUS ``drive'' IS STORED IN */
@@ -383,25 +409,26 @@ sun_ioconf()
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
-			if (dp->d_pri != 0) {
-				printf("interrupt priority should not be ");
+			if (dp->d_vec != 0) {
+				printf("interrupt vectors should not be ");
 				printf("given for drive %s%d\n",
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
 			if (dp->d_addr != 0) {
-				printf("csr addresses should be given only");
+				printf("csr addresses should be given only ");
 				printf("on controllers, not on %s%d\n",
 				    dp->d_name, dp->d_unit);
 				continue;
 			}
 			slave = dp->d_drive;
 		}
-		fprintf(fp,
-"\t{ &%sdriver,  %2d,   %s,    %2d,   C 0x%x, %d,  %d,  0x%x },\n",
-		    eq(mp->d_name, "mb") ? dp->d_name : mp->d_name, dp->d_unit,
-		    eq(mp->d_name, "mb") ? " -1" : qu(mp->d_unit),
-		    slave, dp->d_addr, dp->d_pri, dp->d_dk, dp->d_flags);
+		fprintf(fp, "\t{ &%sdriver,  %2d,   %s,",
+		    eq(mp->d_name, "vba") ? dp->d_name : mp->d_name, dp->d_unit,
+		    eq(mp->d_name, "vba") ? " -1" : qu(mp->d_unit));
+		fprintf(fp, "  %s,    %2d,   %s, C 0x%-6x,  %d,  0x%x },\n",
+		    qu(vba_n), slave, intv(dp), dp->d_addr, dp->d_dk,
+		    dp->d_flags);
 	}
 	fprintf(fp, "\t0\n};\n");
 	(void) fclose(fp);
