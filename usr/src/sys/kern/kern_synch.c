@@ -3,12 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.6 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.7 (Berkeley) %G%
  */
 
-#include "../machine/pte.h"
-#include "../machine/psl.h"
-#include "../machine/mtpr.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
