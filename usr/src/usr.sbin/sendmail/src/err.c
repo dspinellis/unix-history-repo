@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	4.4		%G%);
+SCCSID(@(#)err.c	4.5		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -232,7 +232,7 @@ fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 	register char *eb;
 	char *to;
 	char *num;
-	int en;
+	int eno;
 	char *fmt;
 {
 	char del;
@@ -271,11 +271,11 @@ fmtmsg(eb, to, num, eno, fmt, a, b, c, d, e)
 		*eb++ &= 0177;
 
 	/* output the error code, if any */
-	if (errno != 0)
+	if (eno != 0)
 	{
 		extern char *errstring();
 
-		(void) sprintf(eb, ": %s", errstring(errno));
+		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
 	}
 }
