@@ -1,4 +1,4 @@
-#	Makefile	4.2	82/10/24
+#	Makefile	4.3	85/09/07
 
 DESTDIR=
 CFILES=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
@@ -22,7 +22,7 @@ save.o:	save.c	# vax C optimizer bug - infinite loop
 okplay.o: /tmp
 
 install: advent
-	install advent ${DESTDIR}/usr/games/adventure
+	install -s advent ${DESTDIR}/usr/games/adventure
 #	cp okplay /usr/games/adventure
 #	cp advsaver /usr/games/lib
 #	dd if=/usr/games/lib/adventure of=/usr/games/lib/advheader bs=1 count=16
