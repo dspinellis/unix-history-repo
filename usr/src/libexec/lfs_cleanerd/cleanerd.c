@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -157,7 +157,7 @@ main(argc, argv)
 	signal(SIGINT, sig_report);
 	signal(SIGUSR1, sig_report);
 	signal(SIGUSR2, sig_report);
-	if (fs_getmntinfo(&lstatfsp, fs_name, MOUNT_LFS) == 0) {
+	if (fs_getmntinfo(&lstatfsp, fs_name, "lfs") == 0) {
 		/* didn't find the filesystem */
 		err(1, "lfs_cleanerd: filesystem %s isn't an LFS!", fs_name);
 	}
