@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.55 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.56 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.55 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.56 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -485,6 +485,8 @@ myhostname(hostbuf, size)
 {
 	register struct hostent *hp;
 	extern struct hostent *gethostbyname();
+	extern bool getcanonname();
+	extern int h_errno;
 
 	if (gethostname(hostbuf, size) < 0)
 	{
@@ -495,26 +497,33 @@ myhostname(hostbuf, size)
 	{
 		syserr("!My host name (%s) does not seem to exist!", hostbuf);
 	}
-	(void) strncpy(hostbuf, hp->h_name, size - 1);
-	hostbuf[size - 1] = '\0';
+	if (strchr(hp->h_name, '.') != NULL || strchr(hostbuf, '.') == NULL)
+	{
+		(void) strncpy(hostbuf, hp->h_name, size - 1);
+		hostbuf[size - 1] = '\0';
+	}
 
 #if NAMED_BIND
-	/* if still no dot, try DNS directly (i.e., avoid NIS problems) */
-	if (strchr(hostbuf, '.') == NULL)
+	/*
+	**  If still no dot, try DNS directly (i.e., avoid NIS problems).
+	**  This ought to be driven from the configuration file, but
+	**  we are called before the configuration is read.  We could
+	**  check for an /etc/resolv.conf file, but that isn't required.
+	**  All in all, a bit of a mess.
+	*/
+
+	if (strchr(hostbuf, '.') == NULL &&
+	    !getcanonname(hostbuf, size, TRUE) &&
+	    h_errno == TRY_AGAIN)
 	{
-		extern bool getcanonname();
-		extern int h_errno;
+		struct stat stbuf;
 
 		/* try twice in case name server not yet started up */
-		if (!getcanonname(hostbuf, size, TRUE) &&
-		    UseNameServer &&
-		    (h_errno != TRY_AGAIN ||
-		     (sleep(30), !getcanonname(hostbuf, size, TRUE))))
-		{
+		message("My unqualifed host name (%s) unknown to DNS; sleeping for retry",
+			hostbuf);
+		sleep(60);
+		if (!getcanonname(hostbuf, size, TRUE))
 			errno = h_errno + E_DNSBASE;
-			syserr("!My host name (%s) not known to DNS",
-				hostbuf);
-		}
 	}
 #endif
 	return (hp);
@@ -914,7 +923,6 @@ anynet_ntoa(sap)
 
 	switch (sap->sa.sa_family)
 	{
-#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 #ifdef NETUNIX
 	  case AF_UNIX:
 	  	if (sap->sunix.sun_path[0] != '\0')
@@ -922,7 +930,6 @@ anynet_ntoa(sap)
 	  	else
 	  		sprintf(buf, "[UNIX: localhost]");
 		return buf;
-#endif
 #endif
 
 #ifdef NETINET
@@ -991,11 +998,9 @@ hostnamebyanyaddr(sap)
 		break;
 #endif
 
-#ifdef MAYBENEXTRELEASE		/*** UNTESTED *** UNTESTED *** UNTESTED ***/
 	  case AF_UNIX:
 		hp = NULL;
 		break;
-#endif
 
 	  default:
 		hp = gethostbyaddr(sap->sa.sa_data,
