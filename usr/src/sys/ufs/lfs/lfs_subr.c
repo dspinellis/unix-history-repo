@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.7 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -72,23 +72,4 @@ lfs_ifind(fs, ino, page)
 
 	panic("lfs_ifind: dinode %u not found", ino);
 	/* NOTREACHED */
-}
-
-daddr_t
-lfs_itod(fs, ino)
-	struct lfs *fs;
-	ino_t ino;
-{
-	BUF *bp;
-	IFILE *ifp;
-	daddr_t iaddr;
-
-#ifdef VERBOSE
-	printf("lfs_itod %d\n", ino);
-#endif
-	/* Translate an inode number to a disk address. */
-	LFS_IENTRY(ifp, fs, ino, bp);
-	iaddr = ifp->if_daddr;
-	brelse(bp);
-	return (iaddr);
 }

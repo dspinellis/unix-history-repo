@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.7 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.8 (Berkeley) %G%
  */
 
 struct fid;
@@ -28,7 +28,6 @@ int	 lfs_fsync
 DINODE	*lfs_ifind __P((struct lfs *, ino_t, void *));
 int	 lfs_inactive __P((VNODE *, struct proc *));
 int	 lfs_init __P((void));
-daddr_t	 lfs_itod __P((struct lfs *, ino_t));
 int	 lfs_makeinode __P((int, struct nameidata *, struct inode **));
 int	 lfs_mount
 	     __P((MOUNT *, char *, caddr_t, struct nameidata *, struct proc *));
