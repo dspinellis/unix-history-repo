@@ -9,7 +9,7 @@
  *
  * from: $Hdr: sd.c,v 4.300 91/06/27 20:42:56 root Rel41 $ SONY
  *
- *	@(#)sd.c	7.3 (Berkeley) %G%
+ *	@(#)sd.c	7.4 (Berkeley) %G%
  */
 #define	dkblock(bp)	bp->b_blkno
 
@@ -176,8 +176,6 @@ struct defpart defpart_std[] = {
 	},
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 };
-
-
 
 /************* ADDITIONAL SENSE ERROR CODES *************************/
 
@@ -2064,12 +2062,7 @@ sdustart(ii)
 	 * (unless its already there.)
 	 */
 	if (dp->b_active != 2) {
-		dp->b_forw = NULL;
-		if (im->im_tab.b_actf == NULL)
-			im->im_tab.b_actf = dp;
-		else
-			im->im_tab.b_actl->b_forw = dp;
-		im->im_tab.b_actl = dp;
+		im->im_tab.b_actf = dp;
 		dp->b_active = 2;
 	}
 }
@@ -2090,10 +2083,8 @@ loop:
 	 */
 	if ((dp = im->im_tab.b_actf) == NULL)
 		return;
-	if ((bp = dp->b_actf) == NULL) {
-		im->im_tab.b_actf = dp->b_forw;
-		goto loop;
-	}
+	if ((bp = dp->b_actf) == NULL)
+		return;
 	/*
 	 * Mark controller busy, and
 	 * determine destination of this request.
@@ -2122,7 +2113,7 @@ sdexec(bp)
 	struct sc_map *map;
 
 	unit = dev2unit(bp->b_dev);
-	ii= sddinfo[unit];
+	ii = sddinfo[unit];
 	intr = ii->ii_intr;
 	sdd = &sdd_softc[unit];
 	sdc = &sdc_softc[ii->ii_ctlr];
@@ -2940,10 +2931,10 @@ sdintr_done:
 	if (im->im_tab.b_active) {
 		im->im_tab.b_active = 0;
 		im->im_tab.b_errcnt = 0;
-		im->im_tab.b_actf = dp->b_forw;
+		im->im_tab.b_actf = 0;
 		dp->b_active = 0;
 		dp->b_errcnt = 0;
-		dp->b_actf = bp->av_forw;
+		dp->b_actf = bp->b_actf;
 		if (bp == &csdbuf[unit]) {
 			register struct scsi *ksc = &kernscsi[unit];
 			/* copy result */
