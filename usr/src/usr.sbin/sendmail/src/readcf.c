@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.20		%G%);
+SCCSID(@(#)readcf.c	3.21		%G%);
 
 /*
 **  READCF -- read control file.
@@ -57,6 +57,7 @@ readcf(cfname, safe)
 	extern char **copyplist();
 	int class;
 	int ruleset = 0;
+	char exbuf[MAXLINE];
 
 	cf = fopen(cfname, "r");
 	if (cf == NULL)
@@ -85,30 +86,38 @@ readcf(cfname, safe)
 				continue;
 
 			if (*p == '\0')
+			{
 				syserr("invalid rewrite line \"%s\"", buf);
+				break;
+			}
+
+			/* allocate space for the rule header */
+			if (rwp == NULL)
+			{
+				RewriteRules[ruleset] = rwp =
+					(struct rewrite *) xalloc(sizeof *rwp);
+			}
 			else
 			{
-				if (rwp == NULL)
-				{
-					RewriteRules[ruleset] = rwp =
-						(struct rewrite *) xalloc(sizeof *rwp);
-				}
-				else
-				{
-					rwp->r_next = (struct rewrite *) xalloc(sizeof *rwp);
-					rwp = rwp->r_next;
-				}
-				rwp->r_next = NULL;
-
-				rwp->r_lhs = prescan(&buf[1], '\t');
-				if (rwp->r_lhs != NULL)
-					rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
-				while (*p == '\t')
-					p++;
-				rwp->r_rhs = prescan(p, '\t');
-				if (rwp->r_rhs != NULL)
-					rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
+				rwp->r_next = (struct rewrite *) xalloc(sizeof *rwp);
+				rwp = rwp->r_next;
 			}
+			rwp->r_next = NULL;
+
+			/* expand and save the LHS */
+			*p = '\0';
+			(void) expand(&buf[1], exbuf, &exbuf[sizeof exbuf]);
+			rwp->r_lhs = prescan(exbuf, '\t');
+			if (rwp->r_lhs != NULL)
+				rwp->r_lhs = copyplist(rwp->r_lhs, TRUE);
+
+			/* expand and save the RHS */
+			while (*++p == '\t')
+				continue;
+			(void) expand(p, exbuf, &exbuf[sizeof exbuf]);
+			rwp->r_rhs = prescan(exbuf, '\t');
+			if (rwp->r_rhs != NULL)
+				rwp->r_rhs = copyplist(rwp->r_rhs, TRUE);
 			break;
 
 		  case 'S':		/* select rewriting set */
