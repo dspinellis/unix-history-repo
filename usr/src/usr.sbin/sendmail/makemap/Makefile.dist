@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.dist	8.1 (Berkeley) %G%
+#	@(#)Makefile.dist	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -51,9 +51,9 @@ CFLAGS=	-I. $O ${INCDIRS} ${DBMDEF} ${ENVDEF}
 OBJS=	makemap.o ${OBJADD}
 
 LINKS=	${DESTDIR}/usr/ucb/newaliases ${DESTDIR}/usr/ucb/mailq
-BINOWN=	root
-BINGRP=	kmem
-BINMODE=6555
+BINOWN=	bin
+BINGRP=	bin
+BINMODE=555
 
 ALL=	makemap makemap.0
 
