@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.94 (Berkeley) %G%
+#	@(#)READ_ME	8.95 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -95,7 +95,7 @@ If you want to port the new Berkeley make, you can get it from
 ftp.uu.net in the directory /systems/unix/bsd-sources/usr.bin/make.
 Diffs and instructions for building this version of make under
 SunOS 4.1.x are available on ftp.css.itd.umich.edu in
-/pub/systems/sun/Net2-make.sun4.diff.Z.  Diffs and instructions
+/pub/systems/sun/Net2-make-sun4.diff.Z.  Diffs and instructions
 for building this version of make under IBM AIX 3.2.4 are available
 on ftp.uni-stuttgart.de in /sw/src/patches/bsd-make-rus-patches.
 For Ultrix, try ftp.vix.com:~ftp/pub/patches/pmake-for-ultrix.Z.
@@ -1066,4 +1066,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.94, last update %G% 07:14:31)
+(Version 8.95, last update %G% 09:16:01)
