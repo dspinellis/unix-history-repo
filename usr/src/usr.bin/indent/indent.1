@@ -5,7 +5,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)indent.1	8.1 (Berkeley) %G%
+.\"	@(#)indent.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INDENT 1
@@ -237,8 +237,8 @@ paren.  For example, here is how a piece of continued code looks with
 in effect:
 .ne 2
 .Bd -literal -offset indent
-.Li p1 = first_procedure(second_procedure(p2, p3),
-.Li \ \ third_procedure(p4,p5));
+p1 = first_procedure(second_procedure(p2, p3),
+\ \ third_procedure(p4,p5));
 .Ed
 .Pp
 .ne 5
@@ -246,17 +246,17 @@ With
 .Fl lp
 in effect (the default) the code looks somewhat clearer:
 .Bd -literal -offset indent
-.Li p1\ =\ first_procedure(second_procedure(p2,\ p3),
-.Li \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ third_procedure(p4,p5));
+p1\ =\ first_procedure(second_procedure(p2,\ p3),
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ third_procedure(p4,p5));
 .Ed
 .Pp
 .ne 5
 Inserting two more newlines we get:
 .Bd -literal -offset indent
-.Li p1\ =\ first_procedure(second_procedure(p2,
-.Li \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ p3),
-.Li \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ third_procedure(p4
-.Li \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ p5));
+p1\ =\ first_procedure(second_procedure(p2,
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ p3),
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ third_procedure(p4
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ p5));
 .Ed
 .It Fl npro
 Causes the profile files,
