@@ -17,15 +17,19 @@ static char sccsid[] = "@(#)init_disp.c	5.1 (Berkeley) 6/6/85";
 #define USE_OLD_TTY
 #include "talk.h"
 #include <sgtty.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
+
+void	sig_sent();
 
 /* 
  * Set up curses, catch the appropriate signals,
  * and build the various windows.
  */
+void
 init_display()
 {
-	void sig_sent();
 	struct sigvec sigv;
 
 	initscr();
@@ -65,6 +69,7 @@ init_display()
  * the first three characters each talk transmits after
  * connection are the three edit characters.
  */
+void
 set_edit_chars()
 {
 	char buf[3];
@@ -105,6 +110,7 @@ sig_sent()
 /*
  * All done talking...hang up the phone and reset terminal thingy's
  */
+__dead void
 quit()
 {
 

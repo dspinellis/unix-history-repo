@@ -20,15 +20,13 @@ static char sccsid[] = "@(#)msgs.c	5.1 (Berkeley) 6/6/85";
 #include "talk.h"
 
 #define MSG_INTERVAL 4
-#define LONG_TIME 100000
 
 char	*current_state;
 int	current_line = 0;
 
 static	struct itimerval itimer;
 static	struct timeval wait = { MSG_INTERVAL , 0};
-static	struct timeval undo = { LONG_TIME, 0};
-	
+
 void
 disp_msg()
 {
@@ -36,6 +34,7 @@ disp_msg()
 	message(current_state);
 }
 
+void
 start_msgs()
 {
 
@@ -45,6 +44,7 @@ start_msgs()
 	setitimer(ITIMER_REAL, &itimer, (struct itimerval *)0);
 }
 
+void
 end_msgs()
 {
 

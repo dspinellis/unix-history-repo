@@ -10,10 +10,12 @@ static char sccsid[] = "@(#)get_addrs.c	5.1 (Berkeley) 6/6/85";
 #endif not lint
 
 #include "talk_ctl.h"
+#include <netdb.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-struct	hostent *gethostbyname();
-struct	servent *getservbyname();
-
+void
 get_addrs(my_machine_name, his_machine_name)
 	char *my_machine_name;
 	char *his_machine_name;

@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)talk.c	5.1 (Berkeley) 6/6/85";
  *		Modified to run under 4.1c by Peter Moore 3/17/83
  */
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -41,9 +42,10 @@ main(argc, argv)
 	open_ctl();
 	open_sockt();
 	start_msgs();
-	if (!check_local() )
+	if (!check_local())
 		invite_remote();
 	end_msgs();
 	set_edit_chars();
 	talk();
+	return (0);
 }

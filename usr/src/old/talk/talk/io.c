@@ -17,9 +17,11 @@ static char sccsid[] = "@(#)io.c	5.1 (Berkeley) 6/6/85";
 
 #include "talk.h"
 #include <sys/ioctl.h>
-#include <stdio.h>
-#include <errno.h>
 #include <sys/time.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #define A_LONG_TIME 10000000
 #define STDIN_MASK (1<<fileno(stdin))	/* the bit mask for standard
@@ -29,6 +31,7 @@ extern int errno;
 /*
  * The routine to do the actual talking
  */
+void
 talk()
 {
 	register int read_template, sockt_mask;
@@ -49,7 +52,7 @@ talk()
 		read_set = read_template;
 		wait.tv_sec = A_LONG_TIME;
 		wait.tv_usec = 0;
-		nb = select(32, &read_set, 0, 0, &wait);
+		nb = select(32, (fd_set *)&read_set, 0, 0, &wait);
 		if (nb <= 0) {
 			if (errno == EINTR) {
 				read_set = read_template;
@@ -83,21 +86,18 @@ talk()
 }
 
 extern	int errno;
-extern	int sys_nerr;
-extern	char *sys_errlist[];
 
 /*
  * p_error prints the system error message on the standard location
  * on the screen and then exits. (i.e. a curses version of perror)
  */
+__dead void
 p_error(string) 
-	char *string;
+	const char *string;
 {
 	char *sys;
 
-	sys = "Unknown error";
-	if (errno < sys_nerr)
-		sys = sys_errlist[errno];
+	sys = strerror(errno);
 	wmove(my_win.x_win, current_line%my_win.x_nlines, 0);
 	wprintw(my_win.x_win, "[%s : %s (%d)]\n", string, sys, errno);
 	wrefresh(my_win.x_win);
@@ -109,8 +109,9 @@ p_error(string)
 /*
  * Display string in the standard location
  */
+void
 message(string)
-	char *string;
+	const char *string;
 {
 
 	wmove(my_win.x_win, current_line%my_win.x_nlines, 0);
