@@ -1,0 +1,21 @@
+#print
+A very useful command is the command
+  diff x y
+which compares the two files x and y and tells
+you any differences between the files.  If the files
+are the same, it says nothing.  To test that,
+copy file "george" onto file "harry";
+then say
+  diff george harry
+to verify that the files are the same.
+#create george
+london bridge
+is falling down.
+#copyin
+#user
+#uncopyin
+#match diff george harry
+#match diff harry george
+#log
+#next
+12.3b 2

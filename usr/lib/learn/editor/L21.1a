@@ -1,0 +1,17 @@
+#print
+Remember all the basic commands: 'e', 'a', 'w' and 'q'.
+Make a file named 'test' that contains the following lines, exactly
+as presented below.  Then type "ready".
+#create Ref
+maine
+new hampshire
+vermont
+massachusetts
+rhode island
+connecticut
+#print Ref
+#user
+#cmp Ref test
+#log
+#next
+21.1b 5
