@@ -1,0 +1,82 @@
+.\"	@(#)NISTreport.03.89	1.1	89/05/18
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the DASH and Berkeley UNIX Projects\s-2\fP
+.sp
+March 31, 1989
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+David P. Anderson
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+Marc Teitelbaum
+.ce 0
+.sp 2
+.ce
+\fB\s+2DASH Project\s0\fP
+.pp
+The DASH project was not funded by this grant during the period of
+this report.
+The funds were applied to a no-cost extension for the Berkeley UNIX Project
+during the period January to March 1989.
+.sp 2
+.ce
+\fB\s+2Berkeley UNIX Project\s0\fP
+.pp
+During this period of time we finished implementing and testing a routing
+table lookup algorithm suggested by Van Jacobsen which may greatly speed
+up any system acting as a packet switch for CLNP packets.
+.pp
+We redesigned, implemented and tested a new interface for communicating
+routing information between a user level process and the kernel, by
+means of a special type of message based socket.
+.pp
+We received the Wisconsin implementation of TP4, CLNP, and ESIS, incorporated
+them into the Berkeley Kernel revising the interface to TP4 to allow for
+arbitrary length network and transport addresses in a single structure,
+and provided new and uniform means for communicating record boundaries,
+and ancillary data, such as user call data and user disconnect data.
+The code now works well enough to establish a connection directly over
+802.2-3/CLNP/TP4 between two unlike machines (a microvax and a CCI machine).
+.pp
+We completed an implementation begun at Wisconsin of encapsulating CLNP
+packets in IP.  The encapsulation is documented in RFC1070.
+This also has been tested and appears to be working to the same extent
+as the TP code.
+.pp
+The results of the
+additional performance experiments done by
+Van Jacobson of the Lawrence Berkeley Laboratory,
+and several additional performance improvements 
+reported in the last quarter have been
+merged into the Berkeley TCP.
+These improvements along with
+the revised networking delivered with the 4.3BSD Tahoe test release
+have been extracted from the rest of the system and are now
+available as a separate networking release.
+Unlike the Tahoe release that is available only to sites with
+an AT&T source license, the networking release is available
+without any license.
+This eased availability means that it can be used by many
+companies building embedded systems that cannot afford to
+pay UNIX licensing fees for their products.
+.pp
+We are continuing our participation in the IEEE P1003 standardization
+efforts for portable operating systems, with particular attention to
+networking.
+We are continuing to convert the Berkeley UNIX system
+to comply with the P1003.1 standard.
+.pp
+We also are participating in the IETF OSI interoperability working group.
+.pp
+The virtual filesystem interface has been constructed and is now running
+on one of our test machines.
+An early prototype of the interface is being used
+by Rick Macklem at the University of Guelph
+as a platform to build a public domain implementation of NFS.
+We expect that a fully functional NFS will be available in
+our next release.
