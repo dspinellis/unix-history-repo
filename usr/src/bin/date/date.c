@@ -11,30 +11,22 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.15 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Date - print and set date
- * Modified by Riccardo Gusella to work with timed 
  */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <sys/time.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#define TSPTYPES
-#include <protocols/timed.h>
 #include <sys/file.h>
 #include <errno.h>
 #include <syslog.h>
 #include <utmp.h>
 
-#define WTMP "/usr/adm/wtmp"
-#define WAITACK		2	/* seconds */
-#define WAITDATEACK	5	/* seconds */
+#define WTMP	"/usr/adm/wtmp"
 
 struct	timeval tv, now;
 struct	timezone tz;
@@ -42,9 +34,9 @@ char	*ap, *ep, *sp;
 int	uflag;
 
 char	*timezone();
-static	int	dmsize[12] =
+static	int dmsize[12] =
     { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-static char *usage = "usage: date [-u] [yymmddhhmm[.ss]]\n";
+static	char *usage = "usage: date [-u] [yymmddhhmm[.ss]]\n";
 
 struct utmp wtmp[2] = {
 	{ "|", "", "", 0 },
@@ -55,28 +47,14 @@ char	*ctime();
 char	*asctime();
 struct	tm *localtime();
 struct	tm *gmtime();
-
-char *strcpy();
-char *username, *getlogin();
-
-int sock, length, port;
-char hostname[MAXHOSTNAMELEN];
-struct timeval tout;
-struct servent *srvp;
-struct tsp msg;
-struct sockaddr_in sin, dest, from;
+char	*strcpy();
+char	*username, *getlogin();
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int wf;
-	int timed_ack, found;
-	long waittime;
 	register char *tzn;
-	fd_set ready;
-	extern int errno;
-	int bytenetorder(), bytehostorder();
 
 	openlog("date", LOG_ODELAY, LOG_AUTH);
 	(void) gettimeofday(&tv, &tz);
@@ -101,7 +79,6 @@ main(argc, argv)
 	username = getlogin();
 	if (username == NULL)		/* single-user or no tty */
 		username = "root";
-	syslog(LOG_NOTICE, "set by %s", username);
 
 	ap = argv[1];
 	wtmp[0].ut_time = tv.tv_sec;
@@ -116,112 +93,20 @@ main(argc, argv)
 		if (localtime((time_t *)&tv.tv_sec)->tm_isdst)
 			tv.tv_sec -= 60*60;
 	}
-	
-/*
- * Here we set the date in the machines controlled by timedaemons
- * by communicating the new date to the local timedaemon. 
- * If the timedaemon is in the master state, it performs the correction on 
- * all slaves. If it is in the slave state, it notifies the master 
- * that a correction is needed.
- */
+	if (!settime(tv)) {
+		int wf;
 
-	srvp = getservbyname("timed", "udp");
-	if (srvp == 0) {
-		fprintf(stderr, "udp/timed: unknown service\n");
-		goto oldway;
-	}	
-	dest.sin_port = srvp->s_port;
-	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = htonl((u_long)INADDR_ANY);
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
-		if (errno != EPROTONOSUPPORT)
-			perror("socket");
-		goto oldway;
-	}
-
-	sin.sin_family = AF_INET;
-	for (port = IPPORT_RESERVED - 1; port > IPPORT_RESERVED / 2; port--) {
-		sin.sin_port = htons((u_short)port);
-		if (bind(sock, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
-			break;
-		if (errno != EADDRINUSE) {
-			if (errno != EADDRNOTAVAIL)
-				perror("bind");
-			(void) close(sock);
-			goto oldway;
-		}
-	}
-	if (port == IPPORT_RESERVED / 2) {
-		fprintf(stderr, "socket: All ports in use\n");
-		(void) close(sock);
-		goto oldway;
-	}
-
-	msg.tsp_type = TSP_DATE;
-	msg.tsp_vers = TSPVERSION;
-	(void) gethostname(hostname, sizeof(hostname));
-	(void) strcpy(msg.tsp_name, hostname);
-	msg.tsp_time = tv;
-	timevalsub(&msg.tsp_time, &now);
-	bytenetorder(&msg);
-	length = sizeof(struct sockaddr_in);
-	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
-						&dest, length) < 0) {
-		if (errno != ECONNREFUSED)
-			perror("sendto");
-		goto oldway;
-	}
-
-	timed_ack = -1;
-	waittime = WAITACK;
-loop:
-	tout.tv_sec = waittime;
-	tout.tv_usec = 0;
-	FD_ZERO(&ready);
-	FD_SET(sock, &ready);
-	found = select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout);
-	if (found > 0 && FD_ISSET(sock, &ready)) {
-		length = sizeof(struct sockaddr_in);
-		if (recvfrom(sock, (char *)&msg, sizeof(struct tsp), 0, 
-							&from, &length) < 0) {
-			perror("recvfrom");
-			goto oldway;
-		}
-		bytehostorder(&msg);
-
-		switch (msg.tsp_type) {
-
-		case TSP_ACK:
-			timed_ack = TSP_ACK;
-			waittime = WAITDATEACK;
-			goto loop;
-		case TSP_DATEACK:
-			goto display;
-		default:
-			printf("Wrong ack received from timed: %s\n", 
-						tsptype[msg.tsp_type]);
-			timed_ack = -1;
-			break;
-		}
-	}
-
-	if (timed_ack == TSP_ACK)
-		printf("Network date being set\n");
-	else {
-		printf("Communication error with timed\n");
-oldway:
 		if (settimeofday(&tv, (struct timezone *)0) < 0) {
 			perror("settimeofday");
 			goto display;
 		}
-		if ((wf = open(WTMP, 1)) >= 0) {
+		if ((wf = open(WTMP, O_WRONLY|O_APPEND)) >= 0) {
 			(void) time((time_t *)&wtmp[1].ut_time);
-			(void) lseek(wf, (off_t)0L, 2);
 			(void) write(wf, (char *)wtmp, sizeof(wtmp));
 			(void) close(wf);
 		}
 	}
+	syslog(LOG_NOTICE, "set by %s", username);
 
 display:
 	(void) gettimeofday(&tv, (struct timezone *)0);
@@ -312,8 +197,138 @@ gp(dfault)
 	return (c+10*d);
 }
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define TSPTYPES
+#include <protocols/timed.h>
+
+#define WAITACK		2	/* seconds */
+#define WAITDATEACK	5	/* seconds */
+
+extern	int errno;
+/*
+ * Set the date in the machines controlled by timedaemons
+ * by communicating the new date to the local timedaemon. 
+ * If the timedaemon is in the master state, it performs the
+ * correction on all slaves.  If it is in the slave state, it
+ * notifies the master that a correction is needed.
+ */
+settime(tv)
+	struct timeval tv;
+{
+	int s, length, port, timed_ack, found, err;
+	long waittime;
+	fd_set ready;
+	char hostname[MAXHOSTNAMELEN];
+	struct timeval tout;
+	struct servent *sp;
+	struct tsp msg;
+	struct sockaddr_in sin, dest, from;
+
+	sp = getservbyname("timed", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "udp/timed: unknown service\n");
+		return (0);
+	}	
+	dest.sin_port = sp->s_port;
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = htonl((u_long)INADDR_ANY);
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		if (errno != EPROTONOSUPPORT)
+			perror("date: socket");
+		goto bad;
+	}
+	bzero(&sin, sizeof (sin));
+	sin.sin_family = AF_INET;
+	for (port = IPPORT_RESERVED - 1; port > IPPORT_RESERVED / 2; port--) {
+		sin.sin_port = htons((u_short)port);
+		if (bind(s, (struct sockaddr *)&sin, sizeof (sin)) >= 0)
+			break;
+		if (errno != EADDRINUSE) {
+			if (errno != EADDRNOTAVAIL)
+				perror("date: bind");
+			goto bad;
+		}
+	}
+	if (port == IPPORT_RESERVED / 2) {
+		fprintf(stderr, "date: All ports in use\n");
+		goto bad;
+	}
+	msg.tsp_type = TSP_DATE;
+	msg.tsp_vers = TSPVERSION;
+	(void) gethostname(hostname, sizeof (hostname));
+	(void) strncpy(msg.tsp_name, hostname, sizeof (hostname));
+	timevalsub(&tv, &now);
+	msg.tsp_seq = htons((u_short)0);
+	msg.tsp_time.tv_sec = htonl((u_long)tv.tv_sec);
+	msg.tsp_time.tv_usec = htonl((u_long)tv.tv_usec);
+	length = sizeof (struct sockaddr_in);
+	if (connect(s, &dest, length) < 0) {
+		perror("date: connect");
+		goto bad;
+	}
+	if (send(s, &msg, sizeof (struct tsp), 0) < 0) {
+		if (errno != ECONNREFUSED)
+			perror("date: send");
+		goto bad;
+	}
+	timed_ack = -1;
+	waittime = WAITACK;
+loop:
+	tout.tv_sec = waittime;
+	tout.tv_usec = 0;
+	FD_ZERO(&ready);
+	FD_SET(s, &ready);
+	found = select(FD_SETSIZE, &ready, (fd_set *)0, (fd_set *)0, &tout);
+	length = sizeof(err);
+	if (getsockopt(s, SOL_SOCKET, SO_ERROR, &err, &length) == 0 && err) {
+		errno = err;
+		if (errno != ECONNREFUSED)
+			perror("date: send (delayed error)");
+		goto bad;
+	}
+	if (found > 0 && FD_ISSET(s, &ready)) {
+		length = sizeof (struct sockaddr_in);
+		if (recvfrom(s, &msg, sizeof (struct tsp), 0, &from,
+		    &length) < 0) {
+			if (errno != ECONNREFUSED)
+				perror("date: recvfrom");
+			goto bad;
+		}
+		msg.tsp_seq = ntohs(msg.tsp_seq);
+		msg.tsp_time.tv_sec = ntohl(msg.tsp_time.tv_sec);
+		msg.tsp_time.tv_usec = ntohl(msg.tsp_time.tv_usec);
+		switch (msg.tsp_type) {
+
+		case TSP_ACK:
+			timed_ack = TSP_ACK;
+			waittime = WAITDATEACK;
+			goto loop;
+
+		case TSP_DATEACK:
+			close(s);
+			return (1);
+
+		default:
+			fprintf(stderr,
+			    "date: Wrong ack received from timed: %s\n", 
+			    tsptype[msg.tsp_type]);
+			timed_ack = -1;
+			break;
+		}
+	}
+	if (timed_ack == -1)
+		fprintf(stderr,
+		    "date: Can't reach time daemon, time set locally.\n");
+bad:
+	close(s);
+	return (0);
+}
+
 timevalsub(t1, t2)
-struct timeval *t1, *t2;
+	register struct timeval *t1, *t2;
 {
 	t1->tv_sec -= t2->tv_sec;
 	t1->tv_usec -= t2->tv_usec;
@@ -325,20 +340,4 @@ struct timeval *t1, *t2;
 		t1->tv_sec++;
 		t1->tv_usec -= 1000000;
 	}
-}
-
-bytenetorder(ptr)
-struct tsp *ptr;
-{
-	ptr->tsp_seq = htons((u_short)ptr->tsp_seq);
-	ptr->tsp_time.tv_sec = htonl((u_long)ptr->tsp_time.tv_sec);
-	ptr->tsp_time.tv_usec = htonl((u_long)ptr->tsp_time.tv_usec);
-}
-
-bytehostorder(ptr)
-struct tsp *ptr;
-{
-	ptr->tsp_seq = ntohs((u_short)ptr->tsp_seq);
-	ptr->tsp_time.tv_sec = ntohl((u_long)ptr->tsp_time.tv_sec);
-	ptr->tsp_time.tv_usec = ntohl((u_long)ptr->tsp_time.tv_usec);
 }
