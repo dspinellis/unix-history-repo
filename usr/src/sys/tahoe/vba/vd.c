@@ -1,4 +1,4 @@
-/*	vd.c	1.10	86/10/28	*/
+/*	vd.c	1.11	86/11/03	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -8,9 +8,6 @@
 #ifdef VDDCPERF
 #define	DOSCOPE
 #endif
-
-#include "../tahoe/mtpr.h"
-#include "../tahoe/pte.h"
 
 #include "param.h"
 #include "buf.h"
@@ -24,6 +21,10 @@
 #include "vmmac.h"
 #include "proc.h"
 #include "uio.h"
+
+#include "../tahoe/cpu.h"
+#include "../tahoe/mtpr.h"
+#include "../tahoe/pte.h"
 
 #include "../tahoevba/vbavar.h"
 #define	VDGENDATA
