@@ -1,9 +1,9 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.8	(Berkeley) %G%
-#	Mark Horton, U.C. Berkeley
+#	Termcap source file @(#)termcap.src	1.9	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
+#	Mark Horton, Berkeley
 #
 # This file describes capabilities of various terminals, as needed by
 # software such as screen editors.  It does not attempt to describe
@@ -294,7 +294,6 @@ M7|d800|Direct 800/A:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E[1;1H\E[2J:le=^H:bs:cm=\E[%i%d;%dH:\
 	:nd=\E[C:up=\E[A:ce=\E[K:cd=\E[J:\
-	:if=/dskb/rcd/.dinit:\
 	:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:xs:vs=\E[>12l:ve=\E[>12h:\
 	:sf=\ED:sr=\EM:da:db:as=\E[1m:ae=\E[0m:ms:ta=^I:pt:\
 	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:\
@@ -1753,8 +1752,8 @@ v6|tvi950-b|bare tvi950 no is:\
 v7|tvi950-ns|tvi950 w/no standout:\
 	:so@:se@:us@:ue@:tc=tvi950:
 v8|tvi925|925|televideo model 925:\
-	:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
-	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/std:\
+	:hs:xn:am:bs:co#80:li#24:cm=\E=%+ %+ :cl=^Z:cd=\EY:ce=\ET:is=\El\E":\
+	:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dc=\EW:if=/usr/lib/tabset/stdcrt:\
 	:ho=^^:nd=^L:bt=\EI:pt:so=\EG4:se=\EG0:sg#1:us=\EG8:ue=\EG0:ug#1:\
 	:up=^K:do=^V:kb=^H:ku=^K:kd=^V:kl=^H:kr=^L:kh=^^:ma=^V^J^L :\
 	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:k7=^AF\r:\
