@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -130,6 +130,7 @@ main(argc, argv, envp)
 	extern char *getcfname();
 	extern char *optarg;
 	extern char **environ;
+	extern void dumpstate();
 
 	/*
 	**  Check to see if we reentered.
@@ -148,6 +149,11 @@ main(argc, argv, envp)
 
 	/* do machine-dependent initializations */
 	init_md(argc, argv);
+
+	/* arrange to dump state on signal */
+#ifdef SIGUSR1
+	setsignal(SIGUSR1, dumpstate);
+#endif
 
 	/* in 4.4BSD, the table can be huge; impose a reasonable limit */
 	DtableSize = getdtsize();
@@ -1390,4 +1396,21 @@ auth_warning(e, msg, va_alist)
 		VA_END;
 		addheader("X-Authentication-Warning", buf, e);
 	}
+}
+/*
+**  DUMPSTATE -- dump state on user signal
+**
+**	For debugging.
+*/
+
+void
+dumpstate()
+{
+#ifdef LOG
+	syslog(LOG_DEBUG, "--- dumping state on user signal: open file descriptors: ---");
+	printopenfds(TRUE);
+	syslog(LOG_DEBUG, "--- connection cache: ---");
+	mci_dump_all(TRUE);
+	syslog(LOG_DEBUG, "--- end of state dump ---");
+#endif
 }
