@@ -3,7 +3,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mult.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mult.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <mp.h>
@@ -84,7 +84,8 @@ m_mult(a,b,c) struct mint *a,*b,*c;
 	else	c->len=a->len+b->len-1;
 	return;
 }
-tradd(a,b,c) long c; int *a; union g {long xx; struct half yy;} *b;
+union g {long xx; struct half yy;};
+tradd(a,b,c) long c; int *a; union g *b;
 {
 	b->xx= b->xx+c;
 	if(b->yy.high&0100000)
