@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)displayq.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)displayq.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -312,7 +312,7 @@ inform(cf)
 	fclose(cfp);
 	if (!lflag) {
 		blankfill(SIZCOL);
-		printf("%D bytes\n", totsize);
+		printf("%ld bytes\n", totsize);
 		totsize = 0;
 	}
 }
@@ -408,7 +408,7 @@ ldump(nfile, file, copies)
 	else
 		printf("%-32s", nfile);
 	if (*file && !stat(file, &lbuf))
-		printf(" %D bytes", lbuf.st_size);
+		printf(" %ld bytes", lbuf.st_size);
 	else
 		printf(" ??? bytes");
 	putchar('\n');
