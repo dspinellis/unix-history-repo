@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.5 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.6 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -17,25 +17,25 @@ PSRCS = \
 
 SRCS =  \
 	dump.h dumpitime.c \
-	dumpmain.c dumpoptr.c dumptape.c \
+	dumpmain.c dumpoptr.c dumprmt.c dumprtape.c \
 	dumptraverse.c unctime.c
 
 OBJS = \
 	dumpitime.o \
 	dumpmain.o dumpoptr.o \
-	dumptape.o dumptraverse.o unctime.o
+	dumprmt.o dumprtape.o dumptraverse.o unctime.o
 
 DFLAGS =
-CFLAGS = -O -DKERNEL $(DFLAGS)
+CFLAGS = -O $(DFLAGS) -DRDUMP
 
-dump:	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o dump
+rdump:	$(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o rdump -ljobs
 
 install:
-	install -s dump $(DESTDIR)/etc
+	install -s rdump $(DESTDIR)/etc
 
 clean:
-	rm -f *.o dump
+	rm -f *.o rdump
 
 lint:
 	lint $(DFLAGS) $(SRCS)

@@ -1,10 +1,13 @@
-static	char *sccsid = "@(#)main.c	1.6 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.7 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
 int	blockswritten = 0;	/* number of blocks written on current tape */
 int	tapeno = 0;	/* current tape number */
 int	density = 160;	/* density in 0.1" units */
+#ifdef RDUMP
+char	*host;
+#endif
 
 main(argc, argv)
 	int	argc;
@@ -28,6 +31,16 @@ main(argc, argv)
 	incno = '9';
 	uflag = 0;
 	arg = "u";
+#ifdef RDUMP
+	if (argc < 2) {
+		printf("usage: rdump machine ");
+		Exit(X_ABORT);
+	}
+	host = argv[1];
+	argv++, argc--;
+	if (rmthost(host) == 0)
+		Exit(X_ABORT);
+#endif
 	if(argc > 1) {
 		argv++;
 		argc--;
@@ -142,7 +155,12 @@ main(argc, argv)
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
+#ifdef RDUMP
+	msgtail("to %s", tape);
+	msgtail(" on host %s\n", host);
+#else
 	msgtail("to %s\n", tape);
+#endif
 
 	fi = open(disk, 0);
 	if (fi < 0) {
@@ -204,13 +222,19 @@ main(argc, argv)
 	pass(dump, nodmap);
 
 	spcl.c_type = TS_END;
-	for(i = 0; i < NTREC; i++)
+#ifndef RDUMP
+	for(i=0; i<NTREC; i++)
 		spclrec();
+#endif
 	msg("DUMP: %ld tape blocks on %d tape(s)\n",spcl.c_tapea,spcl.c_volume);
 	msg("DUMP IS DONE\n");
 
 	putitime();
+#ifndef RDUMP
 	close(to);
+#else
+	tflush(1);
+#endif
 	rewind();
 	broadcast("DUMP IS DONE!\7\7\n");
 	Exit(X_FINOK);
