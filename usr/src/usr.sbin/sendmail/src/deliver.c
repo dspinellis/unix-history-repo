@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.84.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.121 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1661,19 +1661,22 @@ markfailure(e, q, mci, rcode)
 	switch (rcode)
 	{
 	  case EX_USAGE:
-		stat = "550";
+		stat = "5.5.4";
 		break;
 
 	  case EX_DATAERR:
-		stat = "501";
+		stat = "5.5.2";
+		break;
+
+	  case EX_NOUSER:
+	  case EX_NOHOST:
+		stat = "5.1.1";
 		break;
 
 	  case EX_NOINPUT:
-	  case EX_NOUSER:
-	  case EX_NOHOST:
 	  case EX_CANTCREAT:
 	  case EX_NOPERM:
-		stat = "550";
+		stat = "5.3.0";
 		break;
 
 	  case EX_UNAVAILABLE:
@@ -1681,16 +1684,16 @@ markfailure(e, q, mci, rcode)
 	  case EX_OSFILE:
 	  case EX_PROTOCOL:
 	  case EX_CONFIG:
-		stat = "554";
+		stat = "5.5.0";
 		break;
 
 	  case EX_OSERR:
 	  case EX_IOERR:
-		stat = "451";
+		stat = "4.5.0";
 		break;
 
 	  case EX_TEMPFAIL:
-		stat = "426";
+		stat = "4.2.0";
 		break;
 	}
 	if (stat != NULL && q->q_status == NULL)
