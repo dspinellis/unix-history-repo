@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char rcsid[] = "$Id: uname.c,v 1.1 1993/10/08 00:40:50 jkh Exp $";
+static char rcsid[] = "$Id: uname.c,v 1.2 1994/01/24 02:14:26 rgrimes Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -43,7 +43,7 @@ register int c,space, all=0;
 
 	if ( ! uname(&u) ) {
 		if ( argc == 1 ) {
-			puts(u.nodename);
+			puts(u.sysname);
 		} else {
 			while ( (c = getopt(argc,argv,opts)) != -1 ) {
 					switch ( c ) {
