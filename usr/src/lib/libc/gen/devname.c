@@ -29,7 +29,7 @@ static struct devs {
 	struct	devs *next;
 	dev_t	dev;
 	char	name[MAXNAMLEN+1];
-	char	type;
+	mode_t	type;
 };
 
 #define	hash(x)	((x)&0xff)
@@ -40,6 +40,7 @@ static int devinit;
 char *
 devname(dev, type)
 	dev_t dev;
+	mode_t type;
 {
 	struct devs *devp;
 
@@ -49,7 +50,7 @@ devname(dev, type)
 		struct stat sb;
 		DIR *dp = opendir(_PATH_DEV);
 		int savewd = open(".", O_RDONLY, 0);
-		int specialtype;
+		mode_t specialtype;
 
 		if (savewd == -1 || dp == NULL || chdir(_PATH_DEV) == -1)
 			return (NULL);
@@ -58,10 +59,10 @@ devname(dev, type)
 				continue;
 			switch(sb.st_mode&S_IFMT) {
 			case S_IFCHR:
-				specialtype = 1;
+				specialtype = S_IFCHR;
 				break;
 			case S_IFBLK:
-				specialtype = 0;
+				specialtype = S_IFBLK;
 				break;
 			default:
 				continue;
