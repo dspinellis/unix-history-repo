@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.11 (Berkeley) %G%
+#	@(#)Makefile	8.12 (Berkeley) %G%
 
 #
 #  This Makefile uses the new Berkeley "make" program.  See Makefile.dist
@@ -28,8 +28,8 @@ ALL=	generic-hpux9.cf generic-osf1.cf generic-solaris2.cf \
 	cs-hpux9.cf cs-riscos.cf cs-solaris2.cf \
 		cs-sunos4.1.cf cs-ultrix4.cf cs-osf1.cf \
 	s2k-ultrix4.cf s2k-osf1.cf \
-	chez.cs.cf huginn.cs.cf mail.cs.cf mail.eecs.cf python.cs.cf \
-		ucbarpa.cf ucbvax.cf vangogh.cs.cf
+	chez.cs.cf huginn.cs.cf mail.cs.cf mail.eecs.cf mailspool.cs.cf \
+		python.cs.cf ucbarpa.cf ucbvax.cf vangogh.cs.cf
 
 all: $(ALL)
 
