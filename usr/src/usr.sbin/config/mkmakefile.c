@@ -1,10 +1,11 @@
 /*
- * mkmakefile.c	1.1	81/02/24
+ * mkmakefile.c	1.2	81/02/26
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include "y.tab.h"
 #include "config.h"
 
@@ -63,8 +64,9 @@ makefile()
     char line[80];
 
     read_files();			/* Read in the "files" file */
-    ifp = fopen(path(makefile), "r");
-    ofp = fopen(path(Makefile), "w");
+    ifp = fopen("../unix/makefile", "r");
+    ofp = fopen(path("makefile"), "w");
+    fprintf(ofp, "IDENT=-D%s -D%s\n", raise(ident), cpu_type);
     while(fgets(line, 80, ifp) != NULL)
     {
 	if (*line != '%')
@@ -101,7 +103,7 @@ read_files()
     register char *wd, *this;
     int type;
 
-    fp = fopen(path(files), "r");
+    fp = fopen("../unix/files", "r");
 
     ftab = NULL;
     while((wd = get_word(fp)) != EOF)
@@ -161,7 +163,7 @@ FILE *fp;
 {
     register struct file_list *tp;
     register int lpos, len;
-    register char *cp, och;
+    register char *cp, och, *sp;
 
     fprintf(fp, "OBJS=");
     lpos = 6;
@@ -169,7 +171,8 @@ FILE *fp;
     {
 	if (tp->f_type == INVISIBLE)
 	    continue;
-	cp = tp->f_fn + (len = strlen(tp->f_fn)) - 1;
+	sp = rindex(tp->f_fn, '/') + 1;
+	cp = sp + (len = strlen(sp)) - 1;
 	och = *cp;
 	*cp = 'o';
 	if (len + lpos > 72)
@@ -177,7 +180,7 @@ FILE *fp;
 	    lpos = 8;
 	    fprintf(fp, "\\\n\t");
 	}
-	fprintf(fp, "%s ", tp->f_fn);
+	fprintf(fp, "%s ", sp);
 	lpos += len + 1;
 	*cp = och;
     }
@@ -202,12 +205,12 @@ FILE *fp;
     {
 	if (tp->f_type == INVISIBLE)
 	    continue;
-	if ((len = strlen(tp->f_fn)) + lpos > 72)
+	if ((len = 3 + strlen(tp->f_fn)) + lpos > 72)
 	{
 	    lpos = 8;
 	    fprintf(fp, "\\\n\t");
 	}
-	fprintf(fp, "%s ", tp->f_fn);
+	fprintf(fp, "../%s ", tp->f_fn);
 	lpos += len + 1;
     }
     if (lpos != 8)
@@ -306,4 +309,18 @@ register FILE *f;
 	    fl->f_fn, fl->f_fn);
 	fprintf(f, "\trm -f swap%s.s\n", fl->f_fn);
     }
+}
+
+raise(str)
+register char *str;
+{
+    register char *cp = str;
+
+    while(*str)
+    {
+	if (islower(*str))
+	    *str = toupper(*str);
+	str++;
+    }
+    return cp;
 }

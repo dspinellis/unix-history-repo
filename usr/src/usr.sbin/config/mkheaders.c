@@ -1,5 +1,5 @@
 /*
- *	mkheaders.c	1.3	81/02/25
+ *	mkheaders.c	1.4	81/02/26
  * Make all the .h files for the optional entries
  */
 
@@ -135,8 +135,7 @@ char *dev;
 {
     static char hbuf[80];
 
-    strcpy(hbuf, PREFIX);
-    strcat(hbuf, dev);
+    strcpy(hbuf, path(dev));
     strcat(hbuf, ".h");
     return hbuf;
 }
