@@ -1,0 +1,123 @@
+%    Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Print a template for a name / address / phone book.
+
+/HeadingFont { (Helvetica) findfont 12 scalefont setfont } def
+/HeadingHeight 40 def
+/NameHeading (Name and Address) def
+/NumberHeading (Telephone) def
+
+/AreaCodeFont { (Helvetica) findfont 6 scalefont setfont } def
+
+/SpacerLineWidth 0.3 def
+/SpacerGap 3 def
+
+/InterLineWidth 0.3 def
+/EntryLineWidth 0.8 def
+
+/EntriesPerPage 10 def
+/LinesPerEntry 3 def
+/NameFraction 0.65 def
+
+/InnerMargin 18 def		% We aren't going to bind the sheets after all
+
+% Determine the page height and width.
+clippath pathbbox /SheetHeight exch def /SheetWidth exch def pop pop
+newpath
+% Flip the page sideways
+90 rotate
+% Adjust the sheet dimensions for peculiarities of the BubbleJet....
+	/SheetHeight SheetHeight 48 sub def
+	8 0 translate
+/PageHeight SheetWidth def
+/PageWidth SheetHeight 2 div def
+/BodyHeight PageHeight HeadingHeight sub SpacerGap sub 9 sub def
+
+% Compute the width and height of the name/address and phone number lines.
+/EntryHeight BodyHeight EntriesPerPage div def
+/LineHeight EntryHeight LinesPerEntry div def
+/BodyWidth PageWidth InnerMargin sub def
+/InfoWidth BodyWidth SpacerGap sub def
+/NameAddressWidth InfoWidth NameFraction mul def
+/PhoneNumberX NameAddressWidth SpacerGap add def
+/PhoneNumberWidth InfoWidth NameAddressWidth sub def
+
+% Print one entry at the current origin.
+/PrintEntry
+ {	% Print the area code label
+   AreaCodeFont
+   PhoneNumberX 6 add LineHeight -0.4 mul moveto
+   currentpoint (AREA) show
+   LineHeight -0.4 mul add moveto (CODE) show
+   EntryLineWidth setlinewidth
+   LinesPerEntry -1 1
+    { neg LineHeight mul 0 exch moveto
+      NameAddressWidth 0 rlineto
+      SpacerGap 0 rmoveto
+      PhoneNumberWidth 0 rlineto
+      stroke
+      InterLineWidth setlinewidth
+    } for
+ } def
+
+% Print the heading.  (0,0) is upper left corner of page.
+/PrintHeading
+ { HeadingFont
+   NameHeading stringwidth pop
+   NameAddressWidth exch sub 2 div HeadingHeight -0.75 mul moveto
+   NameHeading show
+   NumberHeading stringwidth pop
+   PhoneNumberWidth exch sub 2 div PhoneNumberX add
+     currentpoint exch pop moveto
+   NumberHeading show
+ } def
+
+% Draw a spacer.  Relative X and Y are on the stack.
+/PrintSpacer
+ { SpacerLineWidth setlinewidth
+   2 copy rlineto
+   dup 0 eq
+    { exch neg exch 0 SpacerGap neg }
+    { neg SpacerGap 0 }
+   ifelse rmoveto rlineto stroke
+ } def
+
+% Print an entire page.
+/PrintPage
+ { PrintHeading
+   0 HeadingHeight neg moveto
+   BodyWidth 0 PrintSpacer
+   NameAddressWidth HeadingHeight SpacerGap add neg moveto
+   0 BodyHeight neg PrintSpacer
+	% Print the entries.
+   gsave
+     0 HeadingHeight SpacerGap add neg translate
+     EntriesPerPage
+      { PrintEntry
+        0 EntryHeight neg translate
+      } repeat
+   grestore
+ } def
+
+% Print a full sheet.
+PrintPage
+PageWidth InnerMargin 2 mul add 0 translate
+PrintPage
+showpage
