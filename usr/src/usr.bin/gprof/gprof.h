@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gprof.h	5.3 (Berkeley) %G%
+ *	@(#)gprof.h	5.4 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -40,14 +40,14 @@ typedef int	bool;
      */
 long	hz;
 
-typedef	short UNIT;		/* unit of profiling */
+typedef	u_short UNIT;		/* unit of profiling */
 char	*a_outname;
 #define	A_OUTNAME		"a.out"
 
 char	*gmonname;
 #define	GMONNAME		"gmon.out"
 #define	GMONSUM			"gmon.sum"
-	
+
     /*
      *	blurbs on the flat and graph profiles.
      */
@@ -139,7 +139,7 @@ int	debug;
      * Each discretized pc sample has
      * a count of the number of samples in its range
      */
-unsigned UNIT	*samples;
+UNIT	*samples;
 
 unsigned long	s_lowpc;	/* lowpc from the profile file */
 unsigned long	s_highpc;	/* highpc from the profile file */
@@ -188,25 +188,36 @@ struct stringlist	*ktolist;
     /*
      *	function declarations
      */
+/*
 		addarc();
+*/
 int		arccmp();
 arctype		*arclookup();
+/*
 		asgnsamples();
 		printblurb();
 		cyclelink();
 		dfn();
+*/
 bool		dfn_busy();
+/*
 		dfn_findcycle();
+*/
 bool		dfn_numbered();
+/*
 		dfn_post_visit();
 		dfn_pre_visit();
 		dfn_self_cycle();
+*/
 nltype		**doarcs();
+/*
 		done();
 		findcalls();
 		flatprofheader();
 		flatprofline();
+*/
 bool		funcsymbol();
+/*
 		getnfile();
 		getpfile();
 		getstrtab();
@@ -215,6 +226,7 @@ bool		funcsymbol();
 		gprofheader();
 		gprofline();
 		main();
+*/
 unsigned long	max();
 int		membercmp();
 unsigned long	min();
@@ -223,6 +235,7 @@ FILE		*openpfile();
 long		operandlength();
 operandenum	operandmode();
 char		*operandname();
+/*
 		printchildren();
 		printcycle();
 		printgprof();
@@ -231,15 +244,20 @@ char		*operandname();
 		printparents();
 		printprof();
 		readsamples();
+*/
 unsigned long	reladdr();
+/*
 		sortchildren();
 		sortmembers();
 		sortparents();
 		tally();
 		timecmp();
 		topcmp();
+*/
 int		totalcmp();
+/*
 		valcmp();
+*/
 
 #define	LESSTHAN	-1
 #define	EQUALTO		0
