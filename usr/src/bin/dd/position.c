@@ -3,13 +3,14 @@
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * Keith Muller of the University of California, San Diego.
+ * Keith Muller of the University of California, San Diego and Lance
+ * Visser of Convex Computer Corporation.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)position.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)position.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
