@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.1 (Berkeley) %G%
+# @(#)Makefile	1.2 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h cr_ex.h
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -37,6 +37,8 @@ CFLAGS=	-O ${CFL}
 	ln $*.c x.c
 	${CC} ${CFLAGS} -p -c x.c
 	mv x.o $*.p ; rm x.c
+
+libcurses: ${HEADERS} crlib
 
 crlib: ${OBJS}
 	${AR} rv crlib $?
@@ -86,3 +88,40 @@ llib-lcurses.ln: llib-lcurses
 install:
 	install -c crlib ${DESTDIR}/usr/lib/libcurses.a
 	ranlib ${DESTDIR}/usr/lib/libcurses.a
+
+addch.c: SCCS/s.addch.c ; sccs get addch.c
+addstr.c: SCCS/s.addstr.c ; sccs get addstr.c
+box.c: SCCS/s.box.c ; sccs get box.c
+clear.c: SCCS/s.clear.c ; sccs get clear.c
+clrtobot.c: SCCS/s.clrtobot.c ; sccs get clrtobot.c
+clrtoeol.c: SCCS/s.clrtoeol.c ; sccs get clrtoeol.c
+cr_ex.h: SCCS/s.cr_ex.h ; sccs get cr_ex.h
+cr_put.c: SCCS/s.cr_put.c ; sccs get cr_put.c
+cr_tty.c: SCCS/s.cr_tty.c ; sccs get cr_tty.c
+curses.c: SCCS/s.curses.c ; sccs get curses.c
+curses.h: SCCS/s.curses.h ; sccs get curses.h
+deleteln.c: SCCS/s.deleteln.c ; sccs get deleteln.c
+delwin.c: SCCS/s.delwin.c ; sccs get delwin.c
+endwin.c: SCCS/s.endwin.c ; sccs get endwin.c
+erase.c: SCCS/s.erase.c ; sccs get erase.c
+getch.c: SCCS/s.getch.c ; sccs get getch.c
+getstr.c: SCCS/s.getstr.c ; sccs get getstr.c
+initscr.c: SCCS/s.initscr.c ; sccs get initscr.c
+insertln.c: SCCS/s.insertln.c ; sccs get insertln.c
+llib-lcurses: SCCS/s.llib-lcurses ; sccs get llib-lcurses
+longname.c: SCCS/s.longname.c ; sccs get longname.c
+move.c: SCCS/s.move.c ; sccs get move.c
+mvprintw.c: SCCS/s.mvprintw.c ; sccs get mvprintw.c
+mvscanw.c: SCCS/s.mvscanw.c ; sccs get mvscanw.c
+mvwin.c: SCCS/s.mvwin.c ; sccs get mvwin.c
+newwin.c: SCCS/s.newwin.c ; sccs get newwin.c
+overlay.c: SCCS/s.overlay.c ; sccs get overlay.c
+overwrite.c: SCCS/s.overwrite.c ; sccs get overwrite.c
+printw.c: SCCS/s.printw.c ; sccs get printw.c
+refresh.c: SCCS/s.refresh.c ; sccs get refresh.c
+scanw.c: SCCS/s.scanw.c ; sccs get scanw.c
+scroll.c: SCCS/s.scroll.c ; sccs get scroll.c
+standout.c: SCCS/s.standout.c ; sccs get standout.c
+touchwin.c: SCCS/s.touchwin.c ; sccs get touchwin.c
+unctrl.c: SCCS/s.unctrl.c ; sccs get unctrl.c
+unctrl.h: SCCS/s.unctrl.h ; sccs get unctrl.h
