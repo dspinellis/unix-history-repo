@@ -1,4 +1,6 @@
 .nr _0 \n(c.
+.\"	@(#)footnote.me	1.3	%G%
+.\"	%beginstrip%
 .de (f			\" *** begin footnote
 .ec
 .if "\\n(.z"|f" .tm Line \\n(c. -- Illegal footnote nesting
@@ -63,9 +65,4 @@
 .	nr ff 1			\" footnote font: Times Roman
 .if \n(fp<=0 \
 .	nr fp 8			\" footnote pointsize
-.if \n(fi<=0 \
-\{\
-.	if n .nr fi 3n		\" footnote indent
-.	if t .nr fi 0.3i
-.\}
 .nr c. \n(_0
