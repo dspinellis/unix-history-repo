@@ -1,5 +1,6 @@
 .\" from Symmetric Computer Systems.
-.\" Modifications Copyright (c) 1987 Regents of the University of California.
+.\" Modifications Copyright (c) 1987,1988
+.\" The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" Redistribution and use in source and binary forms are permitted
@@ -9,7 +10,7 @@
 .\" software without specific prior written permission. This software
 .\" is provided ``as is'' without express or implied warranty.
 .\"
-.\"	@(#)disklabel.8	6.5 (Berkeley) %G%
+.\"	@(#)disklabel.8	6.6 (Berkeley) %G%
 .\"
 .TH DISKLABEL 8 ""
 .UC 5
@@ -76,13 +77,16 @@ rather than going through the system's in-core copy of the label.
 When writing, the in-core copy is also updated if possible.
 This option may allow a label to be installed on a disk
 without kernel support for a label, such as when labels are first installed
-on a system.
+on a system; it must be used when first installing a label on a disk.
 .PP
 The first form of the command is used to examine the label on the named
 disk drive (e.g. hp0 or /dev/rhp0c).
 It will display all of the parameters associated with the drive
 and its partition layout.
-The kernel's in-core label is displayed;
+Unless the
+.B \-r
+flag is given,
+the kernel's in-core copy of the label is displayed;
 if the disk has no label, or the partition types on the disk are incorrect,
 the kernel may have constructed or modified the label.
 If the
@@ -102,14 +106,15 @@ file.
 The drive parameters and partitions are taken from that file.
 If different disks of the same physical type are to have different
 partitions, it will be necessary to have separate disktab entries
-describing each or to edit the label as described below.
-The first optional argument is a pack identification, up to 16 characters.
+describing each, or to edit the label after installation as described below.
+The first optional argument is a pack identification string,
+up to 16 characters long.
 The pack id must be quoted if it contains blanks.
 If the
 .B \-r
 flag is given, the disk sectors containing the label and bootstrap
 will be written directly,
-otherwise the existing label will be modified in place without modifying
+otherwise the existing label will be updated in place without modifying
 the bootstrap.
 If the disk does not already have a label, the
 .B \-r
@@ -123,13 +128,15 @@ The bootstrap programs are located in
 .IR /usr/mdec .
 The names of the bootstrap programs may be specified in
 .IR disktab (5);
-if not specified
-with default names of the form
-.IR disktype boot
+if not specified,
+the default names are of the form
+.IR basename boot
 for the primary (block 0) bootstrap, and
-.RI boot disktype
+.RI boot basename
 for the secondary (block 1-15) bootstrap;
-for example, /usr/mdec/hpboot and /usr/mdec/boothp.
+for example, /usr/mdec/hpboot and /usr/mdec/boothp
+if the disk device is
+.BR hp0 .
 .PP
 An existing disk label may be edited by using the
 .B \-e
@@ -151,8 +158,11 @@ flag,
 .I disklabel
 is capable of restoring a disk label that was formatted
 in a prior operation and saved in an ascii file.
-The prototype file used to create the label is in exactly the same format
-that is produced when reading or editing a label.
+The prototype file used to create the label should be in the same format
+as that produced when reading or editing a label.
+Comments are delimited by
+.B #
+and newline.
 If the
 .B \-r
 option is also given,
@@ -170,3 +180,17 @@ allow, respectively, writing of the pack label area on the selected disk.
 /usr/mdec/boot\fIxx\fP
 .SH "SEE ALSO"
 disktab(5), disklabel(5)
+.SH DIAGNOSTICS
+The kernel device drivers will not allow the size of a disk partition
+to be decreased or the offset of a partition to be changed while it is open.
+Some device drivers create a label containing only a single large partition
+if a disk is unlabeled; thus, the label must be written to the ``a''
+partition of the disk while it is open.
+This sometimes requires the desired label to be set in two steps,
+the first one creating at least one other partition,
+and the second setting the label on the new partition
+while shrinking the ``a'' partition.
+.SH BUGS
+When a disk name is given without a full pathname,
+the constructed device name uses the ``c'' partition on the vax
+and the ``a'' partition on the tahoe.
