@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmd7.c	3.1 %G%";
+static char sccsid[] = "@(#)cmd7.c	3.2 %G%";
 #endif
 
 #include "defs.h"
@@ -45,32 +45,4 @@ register struct ww *w;
 		wwputc('\n', cmdwin);
 	wwcurtowin(cmdwin);
 	sizewin(w, row - w->ww_w.t + 1, col - w->ww_w.l + 1);
-}
-
-sizewin(w, nrow, ncol)
-register struct ww *w;
-{
-	struct ww *back = w->ww_back;
-
-	w->ww_alt.nr = w->ww_w.nr;
-	w->ww_alt.nc = w->ww_w.nc;
-	wwdelete(w);
-	wwsize(w, nrow, ncol);
-	wwadd(w, back);
-	reframe();
-}
-
-iconwin(w)
-register struct ww *w;
-{
-	struct ww_dim new;
-	struct ww *back = w->ww_back;
-
-	new = w->ww_alt;
-	w->ww_alt = w->ww_w;
-	wwdelete(w);
-	wwsize(w, new.nr, new.nc);
-	wwmove(w, new.t, new.l);
-	wwadd(w, back);
-	reframe();
 }
