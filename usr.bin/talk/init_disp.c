@@ -52,7 +52,10 @@ init_display()
 	void sig_sent();
 	struct sigvec sigv;
 
-	initscr();
+	if (!initscr()) {
+		fprintf(stderr, "Couldn't initialize terminal. Is TERM set?\n");
+		exit(1);
+	}
 	(void) sigvec(SIGTSTP, (struct sigvec *)0, &sigv);
 	sigv.sv_mask |= sigmask(SIGALRM);
 	(void) sigvec(SIGTSTP, &sigv, (struct sigvec *)0);
