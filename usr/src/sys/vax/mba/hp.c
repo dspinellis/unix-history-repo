@@ -1,4 +1,4 @@
-/*	hp.c	4.62	83/01/27	*/
+/*	hp.c	4.63	83/02/05	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -142,6 +142,15 @@ struct	size {
 	0, 0,
 	381711, 398,		/* G=cyl 398 thru 841 */
 	291346, 59,		/* H=cyl 59 thru 397 */
+}, hpfj48_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 16 */
+	33440,	17,		/* B=cyl 17 thru 52 */
+	808176,	0,		/* C=cyl 0 thru 841 */
+	0, 0,
+	0, 0,
+	0, 0,
+	465456, 357,		/* G=cyl 357 thru 841 */
+	291346, 53,		/* H=cyl 52 thru 356 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
 
@@ -182,7 +191,9 @@ short	hptypes[] = {
 	-1,
 #define HPDT_EAGLE	11
 	-1,
-#define HPDT_RM02	12
+#define	HPDT_EAGLE48	12
+	-1,
+#define HPDT_RM02	13
 	MBDT_RM02,		/* beware, actually capricorn or eagle */
 	0
 };
@@ -211,6 +222,7 @@ struct hpst {
 	32,	10,	32*10,	823,	si9730_sizes,	/* 9730 */
 	32,	16,	32*16,	1024,	hpam_sizes,	/* AMPEX capricorn */
 	43,	20,	43*20,	842,	hpfj_sizes,	/* Fujitsu EAGLE */
+	48,	20,	48*20,	842,	hpfj48_sizes,	/* 48 sector EAGLE */
 };
 
 u_char	hp_offset[16] = {
@@ -246,78 +258,111 @@ int	hpseek;
 
 /*ARGSUSED*/
 hpattach(mi, slave)
-	struct mba_device *mi;
+	register struct mba_device *mi;
+{
+
+	mi->mi_type = hpmaptype(mi);
+	if (!ML11 && mi->mi_dk >= 0) {
+		struct hpst *st = &hpst[mi->mi_type];
+
+		dk_mspw[mi->mi_dk] = 1.0 / 60 / (st->nsect * 256);
+	}
+}
+
+/*
+ * Map apparent MASSBUS drive type into manufacturer
+ * specific configuration.  For SI controllers this is done
+ * based on codes in the serial number register.  For
+ * EMULEX controllers, the track and sector attributes are
+ * used when the drive type is an RM02 (not supported by DEC).
+ */
+hpmaptype(mi)
+	register struct mba_device *mi;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
-	int ntracks;
-
-	switch (mi->mi_type) {
+	register int type = mi->mi_type;
 
 	/*
 	 * Model-byte processing for SI 9400 controllers.
 	 * NB:  Only deals with RM03 and RM05 emulations.
 	 */
-	case HPDT_RM03:
-	case HPDT_RM05: {
-		register int hpsn;
+	if (type == HPDT_RM03 || type == HPDT_RM05) {
+		int hpsn = hpaddr->hpsn;
 
-		hpsn = hpaddr->hpsn;
 		if ((hpsn & SIMB_LU) != mi->mi_drive)
-			break;
+			return (type);
 		switch ((hpsn & SIMB_MB) & ~(SIMB_S6|SIRM03|SIRM05)) {
 
 		case SI9775D:
 			printf("hp%d: si 9775 (direct)\n", mi->mi_unit);
-			mi->mi_type = HPDT_9775;
+			type = HPDT_9775;
 			break;
 
 		case SI9730D:
 			printf("hp%d: si 9730 (direct)\n", mi->mi_unit);
-			mi->mi_type = HPDT_9730;
+			type = HPDT_9730;
 			break;
 
 		/*
-		 * AMPEX 9300, SI Combination needs a have the drive cleared
-		 * before we start.  We do not know why, but tests show
-		 * that the recalibrate fixes the problem.
+		 * AMPEX 9300, SI Combination needs a have the
+		 * drive cleared before we start.  We do not know
+		 * why, but tests show that the recalibrate fixes
+		 * the problem.
 		 */
 		case SI9766:
 			printf("hp%d: 9776/9300\n", mi->mi_unit);
-			mi->mi_type = HPDT_RM05;
+			type = HPDT_RM05;
 			hpaddr->hpcs1 = HP_RECAL|HP_GO;
 			DELAY(100000);
 			break;
 
 		case SI9762:
 			printf("hp%d: 9762\n", mi->mi_unit);
-			mi->mi_type = HPDT_RM03;
+			type = HPDT_RM03;
 			break;
 		}
-		break;
-		}
+		return (type);
+	}
 
 	/*
-	 * CAPRICORN KLUDGE...poke the holding register
-	 * we believe it's a Capricorn.  Otherwise assume
-	 * its an Eagle.
+	 * EMULEX SC750 or SC780.  Poke the holding register.
 	 */
-	case HPDT_RM02:
+	if (type == HPDT_RM02) {
+		int ntracks, nsectors;
+
 		hpaddr->hpcs1 = HP_NOP;
 		hpaddr->hphr = HPHR_MAXTRAK;
 		ntracks = (hpaddr->hphr & 0xffff) + 1;
 		if (ntracks == 16) {
 			printf("hp%d: capricorn\n", mi->mi_unit);
-			mi->mi_type = HPDT_CAPRICORN;
-		} else if (ntracks == 20) {
-			printf("hp%d: eagle\n", mi->mi_unit);
-			mi->mi_type = HPDT_EAGLE;
-		} else
+			type = HPDT_CAPRICORN;
+			goto done;
+		}
+		if (ntracks != 20) {
 			printf("hp%d: ntracks %d: unknown device\n", ntracks);
+			goto done;
+		}
+		hpaddr->hpcs1 = HP_NOP;
+		hpaddr->hphr = HPHR_MAXSECT;
+		nsectors = (hpaddr->hphr & 0xffff) + 1;
+		printf("hp%d: ", mi->mi_unit);
+		if (nsectors == 43)
+			type = HPDT_EAGLE;
+		else {
+			type = HPDT_EAGLE48;
+			printf("modified ");
+		}
+		printf("eagle\n");
+done:
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
-		break;
+		return (type);
+	} 
 
-	case HPDT_ML11A:
-	case HPDT_ML11B: {
+	/*
+	 * Map all ML11's to the same type.  Also calculate
+	 * transfer rates based on device characteristics.
+	 */
+	if (type == HPDT_ML11A || type == HPDT_ML11B) {
 		register int trt, sz;
 
 		sz = hpaddr->hpmr & HPMR_SZ;
@@ -328,16 +373,9 @@ hpattach(mi, slave)
 			trt = (hpaddr->hpmr & HPMR_TRT) >> 8;
 			dk_mspw[mi->mi_dk] = 1.0 / (1<<(20-trt));
 		}
-		/* A CHEAT - ML11B D.T. SHOULD == ML11A */
-		mi->mi_type = HPDT_ML11A;
-		break;
-		}
+		type = HPDT_ML11A;
 	}
-	if (!ML11 && mi->mi_dk >= 0) {
-		register struct hpst *st = &hpst[mi->mi_type];
-
-		dk_mspw[mi->mi_dk] = 1.0 / 60 / (st->nsect * 256);
-	}
+	return (type);
 }
 
 hpopen(dev)
