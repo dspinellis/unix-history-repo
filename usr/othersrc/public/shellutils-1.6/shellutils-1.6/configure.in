@@ -1,0 +1,64 @@
+dnl Process this file with autoconf to produce a configure script.
+M_INIT(src/stty.c)
+M_SUBST(PROGS)dnl
+M_SUBST(MAN)dnl
+M_PROG_GCC
+M_PROG_INSTALL
+M_PROG_RANLIB
+M_ISC
+M_HEADER_PRESENT(sys/utsname.h, PROGS="$PROGS uname" MAN="$MAN uname.1")
+M_STDC_HEADERS
+M_UNISTD_H
+M_USG
+M_UID_T
+M_SIZE_T
+M_CHAR_UNSIGNED
+M_REPLACE_FUNCS(mktime stime strftime strstr)
+M_MISSING_FUNCS(strerror ftime)
+M_LIBTHING_PRESENT(setpriority,
+[#include <sys/time.h>
+#include <sys/resource.h>],
+[setpriority(0, 0, 0);],
+PROGS="$PROGS nice nohup" MAN="$MAN nice.1 nohup.1")
+case "$PROGS" in
+*nice*) ;;
+*)
+M_LIBTHING_PRESENT(nice, , nice();, 
+M_DEFINE(NICE_PRIORITY) PROGS="$PROGS nice nohup" MAN="$MAN nice.1 nohup.1") ;;
+esac
+
+case "$DEFS" in
+*POSIX*)
+PROGS="$PROGS stty" MAN="$MAN stty.1"
+M_LIBTHING_MISSING(c_line in struct termios,
+[#include <sys/types.h>
+#include <termios.h>], [struct termios t; t.c_line;],
+M_DEFINE(C_LINE_MISSING))
+M_HEADER_PRESENT([sys/ptem.h], M_DEFINE(WINSIZE_IN_PTEM))
+echo checking for broken window size ioctl
+echo "#include <sys/types.h>
+#include <termios.h>" > conftest.c
+test -f $INCLUDEDIR/sys/ptem.h && echo "#include <sys/ptem.h>" >> conftest.c
+echo "main() {
+#ifndef TIOCGWINSZ
+exit(0);
+#else
+struct winsize w;
+exit(ioctl(0, TIOCGWINSZ, &w));
+#endif
+}" >> conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else M_DEFINE(GWINSZ_BROKEN)
+fi
+rm -f conftest conftest.c
+;;
+esac
+
+M_VPRINTF
+M_ALLOCA
+M_STRUCT_TM
+M_TIMEZONE
+M_MINIX
+M_XENIX
+M_OUTPUT(. lib src man)
