@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.18 %G%";
+static	char *sccsid = "@(#)csh.c 4.19 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -23,6 +23,7 @@ bool	nverbose;
 bool	nexececho;
 bool	quitit;
 bool	fast;
+bool	batch;
 bool	prompt = 1;
 bool	enterhist = 0;
 
@@ -126,15 +127,14 @@ main(c, av)
 	 *
 	 * Note that processing of -v/-x is actually delayed till after
 	 * script processing.
-	 *
-	 * We set the first character of our name to be '-' if we are
-	 * a shell running interruptible commands.  Many programs which
-	 * examine ps'es use this to filter such shells out.
 	 */
 	c--, v++;
-	while (c > 0 && (cp = v[0])[0] == '-') {
-		cp++;
+	while (c > 0 && (cp = v[0])[0] == '-' && *++cp != '\0' && !batch) {
 		do switch (*cp++) {
+
+		case 'b':		/* -b	Next arg is input file */
+			batch++;
+			break;
 
 		case 'c':		/* -c	Command input from arg */
 			if (c == 1)
@@ -195,12 +195,13 @@ main(c, av)
 		} while (*cp);
 		v++, c--;
 	}
+argsdone:
 
 	if (quitit)			/* With all due haste, for debugging */
 		signal(SIGQUIT, SIG_DFL);
 
 	/*
-	 * Unless prevented by -, -c, -i, -s, or -t, if there
+	 * Unless prevented by -c, -i, -s, or -t, if there
 	 * are remaining arguments the first of them is the name
 	 * of a shell file from which to read commands.
 	 */
@@ -214,6 +215,11 @@ main(c, av)
 		SHIN = dmove(nofile, FSHIN);	/* Replace FSHIN */
 		prompt = 0;
 		c--, v++;
+	}
+	if (uid != geteuid() && !batch) {
+		errno = EACCES;
+		child++;			/* So this ... */
+		Perror("csh");			/* ... doesn't return */
 	}
 	/*
 	 * Consider input a tty if it really is or we are interactive.
