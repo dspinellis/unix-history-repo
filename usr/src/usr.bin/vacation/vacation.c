@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vacation.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)vacation.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -173,7 +173,7 @@ char **shortp;
 				exit(EX_OK);
 			break;
 		case 'C':		/* "Cc:" */
-			if (!strncmp(buf, "Cc:", 3))
+			if (strncmp(buf, "Cc:", 3))
 				break;
 			cont = 1;
 			goto findme;
