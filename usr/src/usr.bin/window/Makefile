@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	3.5	(Berkeley)	%G%
+#	@(#)Makefile	3.6	(Berkeley)	%G%
 #
 CFLAGS=	-O -R
 LIBC=	/lib/libc.a
@@ -11,7 +11,8 @@ SRCS=	char.c cmd.c cmd1.c cmd2.c cmd3.c cmd4.c cmd5.c cmd6.c cmd7.c \
 	context.c error.c lcmd.c lcmd1.c lcmd2.c main.c mloop.c parser1.c \
 	parser2.c parser3.c parser4.c parser5.c scanner.c startup.c string.c \
 	ttf100.c ttgeneric.c tth19.c tth29.c ttinit.c ttoutput.c tttermcap.c \
-	tttvi925.c ttzentec.c var.c win.c wwadd.c wwalloc.c wwbox.c wwchild.c \
+	tttvi925.c ttwyse60.c ttwyse75.c ttzentec.c \
+	var.c win.c wwadd.c wwalloc.c wwbox.c wwchild.c \
 	wwclose.c wwclreol.c wwclreos.c wwcursor.c wwdata.c wwdelchar.c \
 	wwdelete.c wwdelline.c wwdump.c wwend.c wwenviron.c wwerror.c \
 	wwflush.c wwframe.c wwgets.c wwinit.c wwinschar.c wwinsline.c \
@@ -23,7 +24,8 @@ OBJS=	char.o cmd.o cmd1.o cmd2.o cmd3.o cmd4.o cmd5.o cmd6.o cmd7.o \
 	context.o error.o lcmd.o lcmd1.o lcmd2.o main.o mloop.o parser1.o \
 	parser2.o parser3.o parser4.o parser5.o scanner.o startup.o string.o \
 	ttf100.o ttgeneric.o tth19.o tth29.o ttinit.o ttoutput.o tttermcap.o \
-	tttvi925.o ttzentec.o var.o win.o wwadd.o wwalloc.o wwbox.o wwchild.o \
+	tttvi925.o ttwyse60.o ttwyse75.o ttzentec.o \
+	var.o win.o wwadd.o wwalloc.o wwbox.o wwchild.o \
 	wwclose.o wwclreol.o wwclreos.o wwcursor.o wwdata.o wwdelchar.o \
 	wwdelete.o wwdelline.o wwdump.o wwend.o wwenviron.o wwerror.o \
 	wwflush.o wwframe.o wwgets.o wwinit.o wwinschar.o wwinsline.o \
@@ -151,6 +153,12 @@ tttermcap.o: tttermcap.c tt.h
 tttvi925.o: tttvi925.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 tttvi925.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 tttvi925.o: /usr/include/setjmp.h tt.h
+ttwyse60.o: ttwyse60.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+ttwyse60.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+ttwyse60.o: /usr/include/setjmp.h tt.h
+ttwyse75.o: ttwyse75.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+ttwyse75.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+ttwyse75.o: /usr/include/setjmp.h tt.h
 ttzentec.o: ttzentec.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 ttzentec.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 ttzentec.o: /usr/include/setjmp.h tt.h
@@ -247,7 +255,7 @@ wwopen.o: /usr/include/setjmp.h /usr/include/sys/types.h
 wwopen.o: /usr/include/sys/socket.h
 wwprintf.o: wwprintf.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 wwprintf.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-wwprintf.o: /usr/include/setjmp.h /usr/include/stdio.h
+wwprintf.o: /usr/include/setjmp.h /usr/include/varargs.h /usr/include/stdio.h
 wwpty.o: wwpty.c ww.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 wwpty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 wwpty.o: /usr/include/setjmp.h
