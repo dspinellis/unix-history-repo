@@ -3,9 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.2 (Berkeley) %G%
+ *	@(#)sys_process.c	7.3 (Berkeley) %G%
  */
 
+#define IPCREG
 #include "../machine/reg.h"
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -85,17 +86,6 @@ ptrace()
 	ipc.ip_lock = 0;
 	wakeup((caddr_t)&ipc);
 }
-
-#if defined(vax)
-#define	NIPCREG 16
-int ipcreg[NIPCREG] =
-	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,AP,FP,SP,PC};
-#endif
-#if defined(tahoe)
-#define	NIPCREG 18
-int ipcreg[NIPCREG] =
-	{R0,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12,FP,SP,PC,RACH,RACL};
-#endif
 
 #define	PHYSOFF(p, o) \
 	((physadr)(p)+((o)/sizeof(((physadr)0)->r[0])))
