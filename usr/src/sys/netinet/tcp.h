@@ -1,4 +1,4 @@
-/* tcp.h 1.6 81/10/25 */
+/* tcp.h 1.7 81/10/26 */
 
 /*
  * Tcp header (fits over ip header).

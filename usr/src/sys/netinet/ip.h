@@ -1,4 +1,4 @@
-/* ip.h 1.3 81/10/21 */
+/* ip.h 1.4 81/10/26 */
 
 struct ip {
 	u_char	ip_hl:4,		/* header length */

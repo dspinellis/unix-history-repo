@@ -1,4 +1,4 @@
-/* tcp_input.c 1.3 81/10/25 */
+/* tcp_input.c 1.4 81/10/26 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
