@@ -5,23 +5,8 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * Copying or redistribution in any form is explicitly forbidden
- * unless prior written permission is obtained from William Jolitz or an
- * authorized representative of the University of California, Berkeley.
- *
- * Freely redistributable copies of this code will be available in
- * the near future; for more information contact William Jolitz or
- * the Computer Systems Research Group at the University of California,
- * Berkeley.
- *
- * The name of the University may not be used to endorse or promote
- * products derived from this software without specific prior written
- * permission.  THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE.
- *
  *	@(#)locore.s	5.9 (Berkeley) 1/19/91
+
  */
 
 /*
@@ -35,7 +20,6 @@
 #include "machine/pte.h"
 
 #include "errno.h"
-#include "cmap.h"
 
 #include "machine/trap.h"
 
@@ -74,14 +58,14 @@
 	.set	_APTDpde,0xFDFF7000+4*APDRPDROFF
 
 /*
- * User structure is UPAGES at top of user space.
+ * Access to each processes kernel stack is via a region of
+ * per-process address space (at the beginning), immediatly above
+ * the user process stack.
  */
-	.globl	_u, _Upte, _Upde
-	.set	_u,0xFDBFE000
-	.set	UPDROFF,0x3F6
-	.set	UPTEOFF,0x400-UPAGES	# 0x3FE
-	.set	_Upte,_PTmap+0xFDBFE*4 
-	.set	_Upde,_PTD+UPDROFF*4
+	.set	_kstack, USRSTACK
+	.globl	_kstack
+	.set	PPDROFF,0x3F6
+	.set	PPTEOFF,0x400-UPAGES	# 0x3FE
 
 #define	ENTRY(name) \
 	.globl _/**/name; _/**/name:
@@ -178,7 +162,12 @@ start:	movw	$0x1234,%ax
 	movl	$_edata-SYSTEM,%edi
 	subl	%edi,%ecx
 	addl	$(UPAGES+5)*NBPG,%ecx
-	#	kernel bss + page directory + page table + stack
+/*
+ * Virtual address space of kernel:
+ *
+ *	text | data | bss | page dir | proc0 kernel stack | usr stk map | Sysmap
+ *			     0               1       2       3             4
+ */
 	xorl	%eax,%eax	# pattern
 	cld
 	rep
@@ -215,15 +204,15 @@ start:	movw	$0x1234,%ax
 	movl	%ebx,_atdevphys-SYSTEM	#   remember phys addr of ptes
 	fillkpt
 
- /* map proc 0's _u into sole user page table page (mapping stack & u.) */
+ /* map proc 0's kernel stack into user page table page */
 
 	movl	$ UPAGES,%ecx		# for this many pte s,
-	lea	(1*NBPG)(%esi),%eax	# physical address of _u in proc 0
+	lea	(1*NBPG)(%esi),%eax	# physical address in proc 0
 	lea	(SYSTEM)(%eax),%edx
 	movl	%edx,_proc0paddr-SYSTEM  # remember VA for 0th process init
 	orl	$ PG_V|PG_URKW,%eax	#  having these bits set,
 	lea	(3*NBPG)(%esi),%ebx	# physical address of stack pt in proc 0
-	addl	$(UPTEOFF*4),%ebx
+	addl	$(PPTEOFF*4),%ebx
 	fillkpt
 
 /*
@@ -245,10 +234,10 @@ start:	movw	$0x1234,%ax
 	orl	$ PG_V,%eax		# pde entry is valid
 	movl	%eax, PDRPDROFF*4(%esi)	# which is where PTmap maps!
 
-	/* install a pde to map _u for proc 0 */
+	/* install a pde to map kernel stack for proc 0 */
 	lea	(3*NBPG)(%esi),%eax	# physical address of pt in proc 0
 	orl	$ PG_V,%eax		# pde entry is valid
-	movl	%eax,UPDROFF*4(%esi)		# which is where _u maps!
+	movl	%eax,PPDROFF*4(%esi)	# which is where kernel stack maps!
 
 	/* load base of page directory, and enable mapping */
 	movl	%esi,%eax		# phys address of ptd in proc 0
@@ -280,10 +269,11 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 	movl	%edx,_Crtat
 
 	/* set up bootstrap stack */
-	movl	$ _u+UPAGES*NBPG-4*12,%esp	# bootstrap stack end location
+	movl	$ _kstack+UPAGES*NBPG-4*12,%esp	# bootstrap stack end location
 	xorl	%eax,%eax		# mark end of frames
 	movl	%eax,%ebp
-	movl	%esi, _u+PCB_CR3
+	movl	_proc0paddr, %eax
+	movl	%esi, PCB_CR3(%eax)
 
 	lea	7*NBPG(%esi),%esi	# skip past stack.
 	pushl	%esi
@@ -299,9 +289,9 @@ begin: /* now running relocated at SYSTEM where the system is linked to run */
 	movzwl	__udatasel,%ecx
 	# build outer stack frame
 	pushl	%ecx		# user ss
-	pushl	$_u	# user esp
-	pushl	%eax	# user cs
-	pushl	$0	# user ip
+	pushl	$ USRSTACK	# user esp
+	pushl	%eax		# user cs
+	pushl	$0		# user ip
 	movw	%cx,%ds
 	movw	%cx,%es
 	# movw	%ax,%fs		# double map cs to fs
@@ -321,7 +311,6 @@ __exit:
 	.set	exec,11
 	.set	exit,1
 	.globl	_icode
-	.globl	_initflags
 	.globl	_szicode
 /* gas fucks up offset -- */
 #define	LCALL(x,y)	.byte 0x9a ; .long y; .word x
@@ -349,13 +338,15 @@ _icode:
 	pushl	%eax	# dummy out rta
 	LCALL(0x7,0x0)
 
-init:	.asciz	"/sbin/init"
+init:
+	.asciz	"/sbin/init"
 	.align	2
-_initflags:
+argv:
+	.long	init+6-_icode		# argv[0] = "init" ("/sbin/init" + 6)
+	.long	eicode-_icode		# argv[1] follows icode after copyout
 	.long	0
-argv:	.long	init-_icode
-	.long	_initflags-_icode
-	.long	0
+eicode:
+
 _szicode:
 	.long	_szicode-_icode
 
@@ -643,6 +634,26 @@ _lcr3:
 	popfl		# turns ints on again
 	ret
 
+	# tlbflush()
+	.globl	_tlbflush
+_tlbflush:
+	inb	$0x84,%al	# check wristwatch
+	pushfl
+	popl %ecx
+	cli
+	movl	%esp,%edx
+	movl	$tmpstk,%esp
+	movl	%cr3,%eax
+ 	orl	$ I386_CR3PAT,%eax
+	movl	%eax,%cr3
+	movl	(%edx),%eax	# touch stack
+	movl	%eax,(%edx)
+	movl	%edx,%esp
+	movl	%cr3,%eax
+	pushl %ecx
+	popfl		# turns ints on again
+	ret
+
 	# lcr0(cr0)
 	.globl	_lcr0,_load_cr0
 _lcr0:
@@ -763,7 +774,6 @@ ENTRY(subyte)
 	movl	%eax,_nofault
 	ret
 
-	ALTENTRY(savectx)
 	ENTRY(setjmp)
 	movl	4(%esp),%eax
 	movl	%ebx, 0(%eax)		# save ebx
@@ -875,7 +885,7 @@ Idle:
 idle:
 	call	_spl0
 	cmpl	$0,_whichqs
-	jne	sw1
+	jne	2f
 	hlt		# wait for interrupt
 	jmp	idle
 
@@ -888,52 +898,13 @@ badsw:
  * Swtch()
  */
 ENTRY(swtch)
-	movw	_cpl, %ax
-	movw	%ax, _u+PCB_IML
-	movl	$1,%eax
-	movl	%eax,_noproc
+
 	incl	_cnt+V_SWTCH
-sw1:
-	cli
-	bsfl	_whichqs,%eax	# find a full q
-	jz	idle		# if none, idle
-swfnd:
-	btrl	%eax,_whichqs	# clear q full status
-	jnb	sw1		# if it was clear, look for another
-	pushl	%eax		# save which one we are using
-	shll	$3,%eax
-	addl	$_qs,%eax	# select q
-	pushl	%eax
 
-	cmpl	P_LINK(%eax),%eax	# linked to self? (e.g. not on list)
-	je	badsw		# not possible
-	movl	P_LINK(%eax),%ecx	# unlink from front of process q
-	movl	P_LINK(%ecx),%edx
-	movl	%edx,P_LINK(%eax)
-	movl	P_RLINK(%ecx),%eax
-	movl	%eax,P_RLINK(%edx)
+	/* switch to new process. first, save context as needed */
 
-	popl	%eax
-	popl	%edx
-	cmpl	P_LINK(%ecx),%eax	# q empty
-	je	sw2
-	btsl	%edx,_whichqs		# nope, indicate full
-sw2:
-	movl	$0,%eax
-	movl	%eax,_noproc
-	movl	%eax,_runrun
-	cmpl	$0,P_WCHAN(%ecx)
-	jne	badsw
-	cmpb	$ SRUN,P_STAT(%ecx)
-	jne	badsw
-	movl	%eax,P_RLINK(%ecx)
-
-	movl	P_ADDR(%ecx),%edx
-	movl	PCB_CR3(%edx),%edx
-
-/* switch to new process. first, save context as needed */
-
-	movl	$_u,%ecx
+	movl	_curproc,%ecx
+	movl	P_ADDR(%ecx),%ecx
 
 	movl	(%esp),%eax		# Hardware registers
 	movl	%eax, PCB_EIP(%ecx)
@@ -964,78 +935,127 @@ sw2:
 	movl	_CMAP2,%eax		# save temporary map PTE
 	movl	%eax,PCB_CMAP2(%ecx)	# in our context
 
-#pushal ; pushl %edx ; pushl $LF ; call _pg ; popl %eax ; popl %edx ; popal
+	movw	_cpl, %ax
+	movw	%ax, PCB_IML(%ecx)	# save ipl
+
+	/* save is done, now choose a new process or idle */
+	cli				# XXX?
+	movl	_whichqs,%edi
+2:
+	bsfl	%edi,%eax		# find a full q
+	jz	idle			# if none, idle
+	  # XX update whichqs?
+swfnd:
+	btrl	%eax,%edi		# clear q full status
+	jnb	2b		# if it was clear, look for another
+	movl	%eax,%ebx		# save which one we are using
+
+	shll	$3,%eax
+	addl	$_qs,%eax		# select q
+	movl	%eax,%esi
+
+#ifdef	DIAGNOSTIC
+	cmpl	P_LINK(%eax),%eax # linked to self? (e.g. not on list)
+	je	badsw			# not possible
+#endif
+
+	movl	P_LINK(%eax),%ecx	# unlink from front of process q
+	movl	P_LINK(%ecx),%edx
+	movl	%edx,P_LINK(%eax)
+	movl	P_RLINK(%ecx),%eax
+	movl	%eax,P_RLINK(%edx)
+
+#ifdef doubtful
+	cmpl	P_LINK(%ecx),%esi	# q empty
+	je	3f
+	btsl	%edx,%edi		# nope, set to indicate full
+3:
+	btsl	%edx,%edi		# nope, set to indicate full
+	movl	%edi,_whichqs		# update q status
+#else
+	btsl	%edx,_whichqs		# nope, set to indicate full
+#endif
+	movl	$0,%eax
+	movl	%ecx,_curproc
+	movl	%eax,_want_resched
+
+#ifdef	DIAGNOSTIC
+	cmpl	%eax,P_WCHAN(%ecx)
+	jne	badsw
+	cmpb	$ SRUN,P_STAT(%ecx)
+	jne	badsw
+#endif
+
+	movl	%eax,P_RLINK(%ecx) /* isolate process to run */
+	movl	P_ADDR(%ecx),%edx
+	movl	PCB_CR3(%edx),%ebx
+
+	/* switch address space */
 	movl	%esp,%ecx
 	movl	$tmpstk,%esp
-
- 	orl	$ I386_CR3PAT,%edx
-	inb	$0x84,%al	# check wristwatch
-	movl	%edx,%cr3	# context switch address space
-
+ 	orl	$ I386_CR3PAT,%ebx
+	inb	$0x84,%al	# flush write buffers
+	movl	%ebx,%cr3	# context switch address space
 	movl	(%ecx),%eax	# touch stack, fault if not there
 	movl	%eax,(%ecx)
 	movl	%ecx,%esp
 
-	movl	$_u,%ecx
-
-/* restore context */
-	movl	PCB_EBX(%ecx), %ebx
-	movl	PCB_ESP(%ecx), %esp
-	movl	PCB_EBP(%ecx), %ebp
-	movl	PCB_ESI(%ecx), %esi
-	movl	PCB_EDI(%ecx), %edi
-	movl	PCB_EIP(%ecx), %eax
+	/* restore context */
+	movl	PCB_EBX(%edx), %ebx
+	movl	PCB_ESP(%edx), %esp
+	movl	PCB_EBP(%edx), %ebp
+	movl	PCB_ESI(%edx), %esi
+	movl	PCB_EDI(%edx), %edi
+	movl	PCB_EIP(%edx), %eax
 	movl	%eax, (%esp)
 
 #ifdef NPX
-	movb	PCB_FLAGS(%ecx),%al
+	movb	PCB_FLAGS(%edx),%al
 	/* if fp could be used, a dna trap will do a restore */
 	testb	$ FP_WASUSED,%al
 	je	1f
-	orb	$ FP_NEEDSRESTORE,%al
-	movb	%al, PCB_FLAGS(%ecx)
+	orb	$ FP_NEEDSRESTORE,PCB_FLAGS(%ecx)
 1:
 #endif
 
-	movl	PCB_CMAP2(%ecx),%eax	# get temporary map
+	movl	PCB_CMAP2(%edx),%eax	# get temporary map
 	movl	%eax,_CMAP2		# reload temporary map PTE
-	cmpl	$0,PCB_SSWAP(%ecx)	# do an alternate return?
-	jne	res3			# yes, go reload regs
 
-	call _spl0
-	movl	$0,%eax
-	ret
-
-res3:
-	xorl	%eax,%eax		# inline restore context
-	xchgl	PCB_SSWAP(%ecx),%eax	# addr of saved context, clear it
-
-	movl	 0(%eax),%ebx		# restore ebx
-	movl	 4(%eax),%esp		# restore esp
-	movl	 8(%eax),%ebp		# restore ebp
-	movl	12(%eax),%esi		# restore esi
-	movl	16(%eax),%edi		# restore edi
-	movl	20(%eax),%edx		# get rta
-	movl	%edx,(%esp)		# put in return frame
-
-	pushl	_u+PCB_IML
+	pushl	PCB_IML(%edx)
 	call	_splx
 	popl	%eax
 
-	xorl	%eax,%eax		# return (1);
-	incl	%eax
+	movl	%edx,%eax		# return (1);
 	ret
 
 /*
- * Resume(p_addr)
- * current just used to fillout u. tss so fork can fake a return to swtch
+ * struct proc *swtch_to_inactive(p) ; struct proc *p;
+ *
+ * At exit of a process, move off the address space of the
+ * process and onto a "safe" one. Then, on a temporary stack
+ * return and run code that disposes of the old state.
+ * Since this code requires a parameter from the "old" stack,
+ * pass it back as a return value.
  */
-ENTRY(resume)
-	movl	4(%esp),%ecx
-	# movl	$_u,%ecx
+ENTRY(swtch_to_inactive)
+	popl	%edx			# old pc
+	popl	%eax			# arg, our return value
+	movl	_IdlePTD,%ecx
+	movl	%ecx,%cr3		# good bye address space
+ #write buffer?
+	movl	$tmpstk-4,%esp		# temporary stack, compensated for call
+	jmp	(%edx)			# return, execute remainder of cleanup
+
+/*
+ * savectx(pcb, altreturn)
+ * Update pcb, saving current processor state and arranging
+ * for alternate return ala longjmp in swtch if altreturn is true.
+ */
+ENTRY(savectx)
+	movl	4(%esp), %ecx
 	movw	_cpl, %ax
 	movw	%ax,  PCB_IML(%ecx)
-	movl	(%esp),%eax	
+	movl	(%esp), %eax	
 	movl	%eax, PCB_EIP(%ecx)
 	movl	%ebx, PCB_EBX(%ecx)
 	movl	%esp, PCB_ESP(%ecx)
@@ -1044,17 +1064,27 @@ ENTRY(resume)
 	movl	%edi, PCB_EDI(%ecx)
 #ifdef NPX
 	/* have we ever used fp, and need to save? */
-	testb	$ FP_WASUSED,PCB_FLAGS(%ecx)
+	testb	$ FP_WASUSED, PCB_FLAGS(%ecx)
 	je	1f
-	movl	%cr0,%eax
-	andb 	$0xfb,%al
-	movl	%eax,%cr0
+	movl	%cr0, %edx
+	andb 	$0xfb, %dl
+	movl	%edx, %cr0
 	fnsave	PCB_SAVEFPU(%ecx)
-	orb 	$4,%eax
-	movl	%eax,%cr0
+	orb 	$4, %edx
+	movl	%edx, %cr0
 1:
 #endif
-	movl	$0,%eax
+	movl	_CMAP2, %edx		# save temporary map PTE
+	movl	%edx, PCB_CMAP2(%ecx)	# in our context
+
+	cmpl	$0, 8(%esp)
+	je	1f
+	movl	%esp, %edx		# relocate current sp relative to pcb
+	subl	$_kstack, %edx		#   (sp is relative to kstack):
+	addl	%edx, %ecx		#   pcb += sp - kstack;
+	movl	%eax, (%ecx)		# write return pc at (relocated) sp@
+1:
+	xorl	%eax, %eax		# return 0
 	ret
 
 /*
