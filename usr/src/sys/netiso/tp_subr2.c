@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
- *	@(#)tp_subr2.c	7.5 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.6 (Berkeley) %G%
  *
  * Some auxiliary routines:
  * 		tp_protocol_error: required by xebec- called when a combo of state,
@@ -586,6 +586,73 @@ done:
 	ENDTRACE
 	return error;
 }
+
+
+/* class zero version */
+void
+tp0_stash( tpcb, e )
+	register struct tp_pcb		*tpcb;
+	register struct tp_event	*e;
+{
+#ifndef lint
+#define E e->ATTR(DT_TPDU)
+#else lint
+#define E e->ev_union.EV_DT_TPDU
+#endif lint
+
+	register struct sockbuf *sb = &tpcb->tp_sock->so_rcv;
+	register struct isopcb *isop = (struct isopcb *)tpcb->tp_npcb;
+
+	IFPERF(tpcb)
+		PStat(tpcb, Nb_from_ll) += E.e_datalen;
+		tpmeas(tpcb->tp_lref, TPtime_from_ll, &e->e_time,
+				E.e_seq, PStat(tpcb, Nb_from_ll), E.e_datalen);
+	ENDPERF
+
+	IFDEBUG(D_STASH)
+		printf("stash EQ: seq 0x%x datalen 0x%x eot 0x%x", 
+		E.e_seq, E.e_datalen, E.e_eot);
+	ENDDEBUG
+
+	IFTRACE(D_STASH)
+		tptraceTPCB(TPPTmisc, "stash EQ: seq len eot", 
+		E.e_seq, E.e_datalen, E.e_eot, 0);
+	ENDTRACE
+
+	if ( E.e_eot ) {
+		register struct mbuf *n = E.e_data;
+		n->m_flags |= M_EOR;
+		n->m_act = MNULL; /* set on tp_input */
+	}
+	sbappend(sb, E.e_data);
+	IFDEBUG(D_STASH)
+		dump_mbuf(sb->sb_mb, "stash 0: so_rcv after appending");
+	ENDDEBUG
+	if (tpcb->tp_netservice != ISO_CONS)
+		printf("tp0_stash: tp running over something wierd\n");
+	else {
+		register struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
+		pk_flowcontrol(lcp, sbspace(sb) <= 0, 1);
+	}
+} 
+
+void
+tp0_openflow(tpcb)
+register struct tp_pcb *tpcb;
+{
+	register struct isopcb *isop = (struct isopcb *)tpcb->tp_npcb;
+	if (tpcb->tp_netservice != ISO_CONS)
+		printf("tp0_openflow: tp running over something wierd\n");
+	else {
+		register struct pklcd *lcp = (struct pklcd *)isop->isop_chan;
+		if (lcp->lcd_rxrnr_condition)
+			pk_flowcontrol(lcp, 0, 0);
+	}
+}
+#ifndef TPCONS
+static
+pk_flowcontrol() {}
+#endif
 
 #ifdef TP_PERF_MEAS
 /*
