@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dead_vnops.c	7.2 (Berkeley) %G%
+ *	@(#)dead_vnops.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -32,6 +32,7 @@ int	dead_lookup(),
 	dead_ioctl(),
 	dead_select(),
 	dead_lock(),
+	dead_bmap(),
 	dead_ebadf(),
 	dead_badop(),
 	dead_nullop();
@@ -65,7 +66,7 @@ struct vnodeops dead_vnodeops = {
 	dead_nullop,	/* reclaim */
 	dead_lock,	/* lock */
 	dead_nullop,	/* unlock */
-	dead_badop,	/* bmap */
+	dead_bmap,	/* bmap */
 	dead_strategy,	/* strategy */
 };
 
@@ -229,6 +230,31 @@ dead_lock(vp)
 	if (!locked)
 		return (0);
 	return (VOP_LOCK(vp));
+}
+
+/*
+ * Wait until the vnode has finished changing state.
+ */
+dead_bmap(vp, bn, vpp, bnp)
+	struct vnode *vp;
+	daddr_t bn;
+	struct vnode **vpp;
+	daddr_t *bnp;
+{
+	int locked = 0;
+
+	/*
+	 * We have to wait during times when the vnode is
+	 * in a state of change.
+	 */
+	while (vp->v_flag & VXLOCK) {
+		vp->v_flag |= VXWANT;
+		sleep((caddr_t)vp, PINOD);
+		locked = 1;
+	}
+	if (!locked)
+		return (EIO);
+	return (VOP_BMAP(vp, bn, vpp, bnp));
 }
 
 /*
