@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)idc.c	6.11 (Berkeley) %G%
+ *	@(#)idc.c	6.12 (Berkeley) %G%
  */
 
 #include "rb.h"
@@ -505,7 +505,7 @@ hard:
 				    ui->ui_type?IDCRB80DS_BITS:IDCRB02DS_BITS);
 				bp->b_flags |= B_ERROR;
 			} else if (er & IDC_DCK) {
-				switch (er & IDC_ECS) {
+				switch ((int)(er & IDC_ECS)) {
 				case IDC_ECS_NONE:
 					break;
 				case IDC_ECS_SOFT:
