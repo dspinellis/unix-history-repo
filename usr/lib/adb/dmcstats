@@ -1,0 +1,8 @@
+_dmc_base+3/"NAKS Rcvd: nobufs"tb
+_dmc_base+4/"NAKS Rcvd: header bcc"tb
+_dmc_base+5/"NAKS Rcvd: data bcc"tb
+_dmc_base+6/"NAKS Sent: nobufs"tb
+_dmc_base+7/"NAKS Sent: header bcc"tb
+_dmc_base+8/"NAKS Sent: data bcc"tb
+_dmc_base+9/"REPS Sent"tb
+_dmc_base+10/"REPS Rcvd"tb
