@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_meter.c	7.2 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -392,8 +392,10 @@ next:
 		if (p->p_flag & SSYS)
 			continue;
 		if (p->p_stat) {
-			total.t_vm += p->p_dsize + p->p_ssize;
-			total.t_rm += p->p_rssize;
+			if (p->p_stat != SZOMB) {
+				total.t_vm += p->p_dsize + p->p_ssize;
+				total.t_rm += p->p_rssize;
+			}
 			switch (p->p_stat) {
 
 			case SSLEEP:
