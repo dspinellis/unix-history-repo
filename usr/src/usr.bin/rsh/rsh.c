@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.23.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,7 +42,7 @@ static char sccsid[] = "@(#)rsh.c	5.23.1.1 (Berkeley) %G%";
 
 CREDENTIALS cred;
 Key_schedule schedule;
-int use_kerberos = 1, encrypt;
+int use_kerberos = 1, doencrypt;
 char dst_realm_buf[REALM_SZ], *dest_realm;
 extern char *krb_realmofhost();
 #endif
@@ -158,11 +158,11 @@ main(argc, argv)
 	sp = NULL;
 #ifdef KERBEROS
 	if (use_kerberos) {
-		sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
+		sp = getservbyname((doencrypt ? "ekshell" : "kshell"), "tcp");
 		if (sp == NULL) {
 			use_kerberos = 0;
 			warning("can't get entry for %s/tcp service",
-			    encrypt ? "ekshell" : "kshell");
+			    doencrypt ? "ekshell" : "kshell");
 		}
 	}
 #endif
@@ -198,7 +198,7 @@ try_connect:
 			goto try_connect;
 		}
 	} else {
-		if (encrypt) {
+		if (doencrypt) {
 			(void)fprintf(stderr,
 			    "rsh: the -x flag requires Kerberos authentication.\n");
 			exit(1);
