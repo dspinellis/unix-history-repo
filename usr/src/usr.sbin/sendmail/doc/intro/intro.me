@@ -1,7 +1,7 @@
 .nr DR 1	\" this is a draft copy
 .nr si 3n
 .he 'SENDMAIL''%'
-.if \n(DR .fo '\*-DRAFT\*-'\*(td'\*-DRAFT\*-'
+.fo 'Version 3.21'DRAFT'Last Mod %G%'
 .ls 2
 .+c
 .(l C
@@ -12,57 +12,37 @@ SENDMAIL \*- An Internetwork Mail Router
 Eric Allman\(dg
 .sp 0.5
 .i
-Project INGRES
-Electronics Research Lab
-University of California
-Berkeley, California  94720
+Britton-Lee, Inc.
+1919 Addison Street, Suite 105.
+Berkeley, California 94704.
 .)l
 .sp
 .(l F
 .ce
 ABSTRACT
-
+.sp \n(psu
 Routing mail through a heterogenous internet presents many new
 problems.  Among the worst of these is that of address mapping.
 Historically, this has been handled on an ad hoc basis.  However,
 this approach has become unmanageable as internets grow.
-
+.sp \n(psu
 Sendmail acts a unified "post office" to which all mail can be
 submitted.  Address interpretation is controlled by a production
 system, which can parse both domain-based addressing and old-style
-ad hoc addresses.  Mail is then dispatched to an outgoing mailer.
-This system can expand trivially.  The production system is powerful
+ad hoc addresses.
+The production system is powerful
 enough to rewrite addresses in the message header to conform to the
 standards of a number of common target networks, including old
 (NCP/RFC733) Arpanet, new (TCP/RFC822) Arpanet, UUCP, and Phonenet.
-Sendmail is not intended to perform user interface functions or
-final delivery.  Sendmail also implements an SMTP server, message
+Sendmail also implements an SMTP server, message
 queueing, and aliasing.
-
-This is approach is unique in that it allows external compatibility
-with the old practices, and tries to make the mail system conform to
-the user instead of the other way around.  Although sendmail is not
-intended to circumvent new standards, it is intended to make the
-transition less painful.  Sendmail does require certain base-level
-standards on target mailers such as the basic semantics of certain
-headers and the surface syntax of messages.  New mailers can be added
-trivially; for example, a Purduenet channel was brought up in twenty
-minutes.
 .)l
 .sp 2
 .(f
-This is
-.if \n(DR draft
-version 3.20,
-last modified on %G%.
-.if \n(DR Please do not distribute this version without permission
-.if \n(DR of the author.
-.)f
-.(f
-\(dgAuthor's current address:
-Britton-Lee, Inc.
-1919 Addison Street, Suite 105.
-Berkeley, California 94704.
+\(dgA considerable part of this work
+was done while under the employ
+of the INGRES Project
+at the University of California at Berkeley.
 .)f
 .pp
 .i Sendmail
@@ -82,7 +62,9 @@ Host names and numbers have to be administered by a central authority,
 but usernames can be assigned locally to each host.
 .pp
 In an internet,
-management is distributed.
+multiple networks with different characterstics
+and managements
+must communicate
 In particular,
 the syntax and semantics of resource identification change.
 Certain special cases can be handled trivially
@@ -90,7 +72,7 @@ by ad hoc techniques,
 such as
 providing network names that appear local to hosts
 on other networks,
-as with the Ethernet at Xerox PARC.
+as with the Ethernet at Xerox PARC [ref?].
 However,  the general case is extremely complex.
 For example,
 some networks require point-to-point routing,
@@ -100,15 +82,15 @@ into the system tables,
 while others use end-to-end addressing.
 Some networks use a left-associative syntax
 and others use a right-associative syntax,
-causing ambiguity in addresses.
+causing ambiguity in mixed addresses.
 .pp
-A new set of internet standards seek to eliminate these problems.
+Internet standards seek to eliminate these problems.
 Initially, these proposed expanding the address pairs
 to address triples,
 consisting of
 {network, host, resource}
 triples.
-Network numbers can be universally agreed upon,
+Network numbers must be universally agreed upon,
 and hosts can be assigned locally
 on each network.
 The user level presentation was quickly expanded
@@ -122,8 +104,7 @@ For example,
 an address of the form
 .q "eric@a.cc.berkeley.arpa"
 describes only the logical
-organization of the address space,
-whereas the physical structure is implied.
+organization of the address space.
 .pp
 .i Sendmail
 is intended to help bridge the gap
@@ -218,15 +199,14 @@ should be used whenever possible.
 This resulted as much from political and practical considerations
 as technical.
 .np
-.i Sendmail
-should allow fairly complex environments,
+Easy expansion to
+fairly complex environments,
 including multiple
 connections to a single network type
 (such as with multiple UUCP or Ether nets
-[Metcalfe76]),
-requiring that the contents of an address
-be considered
-as well as the syntax,
+[Metcalfe76]).
+This requires consideration of the contents of an address
+as well as the syntax
 in order to determine the gateway to use.
 For example,
 the ARPANET is bringing up the
@@ -383,7 +363,7 @@ This is normally used to connect to a sendmail process
 on another machine.
 .sh 2 "Operational Description"
 .pp
-When an agent wants to send a message,
+When a client wants to send a message,
 it issues a request to
 .i sendmail
 using one of the three methods described above.
@@ -490,6 +470,19 @@ but they only effect the error message \*- the
 .q "return to sender"
 function is always handled in one of these two ways.
 .)f
+.sh 2 "Message Header Editing"
+.pp
+Certain editing of the message header
+occurs automatically.
+Header lines can be inserted
+under control of the configuration file.
+Some lines can be merged;
+for example,
+a
+.q From:
+line and a
+.q Full-name:
+line can be merged under certain circumstances.
 .sh 2 "Configuration File"
 .pp
 Almost all configuration information is read at runtime
@@ -505,7 +498,7 @@ mailer definitions
 of each mailer),
 and address rewriting rules
 (a limited production system to rewrite addresses
-which is used to effectively parse the addresses).
+which is used to parse and rewrite the addresses).
 .sh 3 Macros
 .pp
 Macros can be used in three ways.
@@ -574,7 +567,6 @@ representing the address
 or it falls off the end.
 When a pattern matches,
 the rule is reapplied until it fails.
-.sh 3 "Option setting"
 .pp
 The configuration file also supports the editing of addresses
 into different formats.
@@ -589,19 +581,14 @@ tef@ucsfcgl.UUCP
 .)b
 to conform to the domain syntax.
 Translations can also be done in the other direction.
-.sh 2 "Message Header Editing"
+.sh 3 "Option setting"
 .pp
-Certain editing of the message header
-occurs automatically.
-Header lines can be inserted
-under control of the configuration file.
-Some lines can be merged;
-for example,
-a
-.q From:
-line and a
-.q Full-name:
-line can be merged under certain circumstances.
+There are a number of options that can be set
+from the configuration file.
+These include the pathnames of various support files,
+timeouts,
+default modes,
+etc.
 .sh 1 "USAGE AND IMPLEMENTATION"
 .sh 2 "Arguments"
 .pp
@@ -649,11 +636,13 @@ but
 .i \euser
 is different from either of them.
 .pp
-The rewriting rules control remaining parsing.
-(Disclaimer: some special processing is done
-after rewriting local names; see below.)
 Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
+The rewriting rules control remaining parsing\**.
+.(f
+\**Disclaimer: some special processing is done
+after rewriting local names; see below.
+.)f
 .sh 2 "Mail to Files and Programs"
 .pp
 Files and programs are legitimate message recipients.
@@ -755,7 +744,7 @@ when a :include: list is changed.
 .sh 2 "Message Collection"
 .pp
 Once all recipients are collected and verified,
-the message is collected either from the input.
+the message is collected.
 The message comes in two parts:
 a message header and a message body,
 separated by a blank line.
@@ -778,7 +767,7 @@ It is completely uninterpreted and untouched,
 except that lines beginning with a dot
 have the dot doubled
 when transmitted over an SMTP channel.
-This extra dot is stripped at the other end.
+This extra dot is stripped by the receiver.
 .sh 2 "Message Delivery"
 .pp
 The send queue is ordered by receiving host
@@ -791,7 +780,7 @@ An argument list is built as the scan proceeds.
 Mail to files is detected during the scan of the send list.
 The interface to the mailer
 is performed using one of the techniques
-described in the following section.
+described in section 2.2.
 .pp
 After the interface is created,
 .i sendmail
@@ -963,16 +952,22 @@ for MMDF;
 this would allow the installer to select either compiled
 or dynamic tables.
 .)f
+.pp
 Since MMDF does not consider backwards compatibility
 as a design goal,
 the address parsing is much less flexible.
-It is slightly harder to integrate a new mailer
-(\c
-.q channel,
-in MMDF parlance)
-into MMDF,
-both systems are designed to accept this,
-and the difference does not seem to be significant.
+.pp
+It is slightly harder to integrate a new channel\**
+.(f
+\**The MMDF equivalent of a
+.i sendmail
+.q mailer.
+.)f
+into MMDF.
+In particular,
+MMDF must know the location and format
+of host tables for all channels,
+and the channel must speak a special protocol.
 .pp
 MMDF strictly separates the submission and delivery phases.
 Although
@@ -1080,8 +1075,8 @@ One surprisingly major annoyance in many internet mailers
 is that the location and format of local mail is built in.
 The feeling seems to be that local mail is so common
 that it should be efficient.
-This does not match our experience.
-On the contrary,
+This does not match our experience;
+on the contrary,
 the location and format of mailboxes seems to vary widely
 from system to system.
 .pp
@@ -1108,7 +1103,7 @@ with a higher-level format.
 It seems clear that common protocols will be changing soon
 to accommodate changing requirements and environments.
 These changes will include modifications to the message header
-[NBS80]
+(e.g., [NBS80])
 or to the body of the message itself
 (such as for multimedia messages
 [Postel80]).
@@ -1118,9 +1113,9 @@ into the existing system.
 .pp
 In tightly coupled environments,
 it would be nice to have a name server integrated into the mail system.
-This would allow a domain such as
+This would allow a site such as
 .q Berkeley
-to appear as a homogenous host,
+to appear as a single host,
 rather than as a collection of hosts,
 and would allow people to move transparently among machines
 without having to change their addresses.
@@ -1176,7 +1171,8 @@ Kurt and Kirk McKusick
 read early copies of this paper,
 giving considerable useful advice.
 .pp
-Special thanks are reserved for Mike Stonebraker and Bob Epstein,
+Special thanks are reserved for Mike Stonebraker at Berkeley
+and Bob Epstein at Britton-Lee,
 who both knowingly allowed me to put so much work into this
 when there were so many other things I really should
 have been working on.
