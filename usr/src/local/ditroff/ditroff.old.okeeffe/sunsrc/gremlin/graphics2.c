@@ -1,5 +1,5 @@
 /*
- * @(#)graphics2.c	1.1	%G%
+ * @(#)graphics2.c	1.2	%G%
  *
  * Line drawing and polygon fill routines for the SUN Gremlin
  * picture editor.  Line drawing courtesy of dsun.c and polygon
@@ -12,12 +12,7 @@
 #include <suntool/tool_hs.h>
 #include "gremlin.h"
 
-#ifdef maybefaster
-extern char *_image;
-extern int _bytesperline, _maxx, _maxy;
-#else
 #define point(sun_x, sun_y)  pr_put(scratch_pr, (sun_x), (sun_y), 1)
-#endif
 
 /* imports from main.c */
 
@@ -41,6 +36,10 @@ extern int HiStipple[];
 /* imports from graphics.c */
 
 extern char stipple_patterns[NSTIPPLES][128];
+extern rasterlength;
+extern bytesperline;
+extern nlines;			/* scratch_pr->pr_size.x */
+extern char *fill;		/* zero origin in filling buffer */
 
 /* imports from C */
 
@@ -48,13 +47,7 @@ extern char *calloc();
 
 /* locals */
 
-static RASTER_LENGTH;
-static BYTES_PER_LINE;
-static NLINES;
-static char *fill;		/* Zero origin in filling buffer */
 static char *stipplebits;
-
-#define pv(x)	((polyvector *)x)
 
 typedef struct poly {
     struct poly *next;		/* doubly-linked lists of vectors */
@@ -66,25 +59,12 @@ typedef struct poly {
     short endx;			/* where vector ends */
 } polyvector;
 
-#ifdef maybefaster
-static char bm[] = { 128, 64, 32, 16, 8, 4, 2, 1};
-point(x, y)
-register x, y;
-{
-    if (x<0 || x>=_maxx || y<0 || y>= _maxy)
-	return;
-    
-    *(_image + (y * _bytesperline) + (x >> 3)) |= bm[x&7];
-}
-#endif
-    
 
 /*
  * Vector from (x1, y1) to (x2, y2) using global linemod and linethickness.
  * Parameters in database coordinates system.
  * Always write to scratch_pr.
- * Stolen from dsun.
- * mro 7/21/84
+ * Borrowed from dsun.
  */
 GRVector(dbx1, dby1, dbx2, dby2)
 float dbx1, dby1, dbx2, dby2;
@@ -278,7 +258,7 @@ float dbx1, dby1, dbx2, dby2;
  * Plots a filled (if requested) circle of the specified radius
  * centered about (x, y).
  * Coordinates are window relative.
- * Stolen from dsun.
+ * Modified from dsun source.
  */
 RoundEnd(x, y, radius, filled)
 register x;
@@ -334,21 +314,12 @@ int radius, filled;
 GRSetStippleStyle(style)
 int style;
 {
-    struct mpr_data *md;
-    struct pixrect *pr;
-
     if ((style <= 0) || (style > NSTIPPLES)) {
 	fprintf(stderr, "GRSetStippleStyle: bad stipple #%d\n", style);
 	return;
     }
 
     stipplebits = stipple_patterns[style-1];
-
-    md = (struct mpr_data *) scratch_pr->pr_data;
-    BYTES_PER_LINE = md->md_linebytes;
-    fill = (char *) md->md_image;
-    RASTER_LENGTH = BYTES_PER_LINE << 3;
-    NLINES = scratch_pr->pr_size.x;
 }
 
 /* >>> stipple fonts must be 32 x 32 bits <<< */
@@ -358,13 +329,20 @@ int style;
 
 
 /*
- *  Fill polygon defined by points in plist using parameters set by
- *  previous call to GRSetStippleStyle().
+ * Fill polygon defined by points in plist using parameters set by
+ * previous call to GRSetStippleStyle().
  *
- *  The scan-line algorithm implemented scans from left to right 
- *  (low x to high x).  It also scans, within a line, from bottom to top 
- *  (high y to low y).  Stipple patterns MUST be a power of two bytes wide
- *  and square (in fact, they must be 32 x 32 bits).
+ * This routine was modified from source for the varian driver.
+ * Because the varian rotates everything 90 degrees before printing,
+ * the x and y coordinates from the window are reversed before
+ * computing the region.  This is just a kludge to get the code
+ * to work as soon as possible.  Better to change this at some point,
+ * but I don't have time now.
+ *
+ * The scan-line algorithm implemented scans from left to right 
+ * (low x to high x).  It also scans, within a line, from bottom to top 
+ * (high y to low y).  Stipple patterns MUST be a power of two bytes wide
+ * and square (in fact, they must be 32 x 32 bits).
  */
 GRStippleFill(plist)
 POINT *plist;
@@ -388,18 +366,22 @@ POINT *plist;
     p1 = plist;
     npts = 0;
 
-    /* convert coordinates to arrays of integers */
+    /*
+     * convert coordinates to arrays of integers exchanging x and y,
+     * and making origin upper right.
+     */
     while (!Nullpoint(p1)) {
 	npts++;
 	x[npts] = dby_to_win(p1->y) - 1;
-	y[npts] = RASTER_LENGTH - 1 - dbx_to_win(p1->x);
+	y[npts] = rasterlength - 1 - dbx_to_win(p1->x);
 	p1 = PTNextPoint(p1);
     }
 
     topstipple = stipplebits;		/* start of stipple pattern */
 
     /* allocate space for raster-fill algorithm */
-    if ((vectptr = pv(calloc(sizeof(polyvector), npts + 6))) == NULL) {
+    if ((vectptr = (polyvector *) calloc(sizeof(polyvector), npts + 6)) == 
+							(polyvector *) NULL) {
 	fprintf(stderr, "unable to allocate space for polygon");
 	return;
     }
@@ -407,7 +389,7 @@ POINT *plist;
     waitinghead = vectptr;
     minx = maxx = x[1];
     miny = maxy = y[1];
-    (vectptr++)->prev = pv(NULL);	/* put dummy entry at start */
+    (vectptr++)->prev = (polyvector *) NULL;	/* put dummy entry at start */
     waitinghead->next = vectptr;
     vectptr->prev = waitinghead;
 
@@ -422,14 +404,9 @@ POINT *plist;
 	register int j;				/* indexes to work off of */
 	register int k;
 
-	if (miny > y[i])			/* remember limits */
-	    miny = y[i];
-	else if (maxy < y[i]) 
-	    maxy = y[i];
-	if (maxx < x[i]) 
-	    maxx = x[i];
-	else if (minx > x[i]) 
-	    minx = x[i];
+	/* remember limits */
+	MINMAX(miny, maxy, y[i]);
+	MINMAX(minx, maxx, x[i]);
 
 	j = i;			/* j points to the higher (lesser) point */
 	k = ++i;
@@ -449,9 +426,16 @@ POINT *plist;
 	vectptr->prev = vectptr - 1;
     }
 
+    /*
+     * keep polygon within bounds of scratch pixrect 
+     * width is checked when actual drawing is done
+     */
+    if (maxx >= scratch_pr->pr_size.y)
+	maxx = scratch_pr->pr_size.y - 1;
+
     /* set now because we didn't know minx before */
     leftstipple = topstipple + (minx & MASK) * BYTEWIDTH;
-    bottompage = fill + minx * BYTES_PER_LINE;
+    bottompage = fill + minx * bytesperline;
     waitinghead->param = minx - 1;
 
     /* if no useable vectors, quit */
@@ -461,7 +445,7 @@ POINT *plist;
     }
 
     vectptr->param = maxx + 1;		/* dummy entry at end, too */
-    vectptr->next = pv(NULL);
+    vectptr->next = (polyvector *) NULL;
 
     activehead = ++vectptr;		/* two dummy entries for active list */
     vectptr->curry = maxy + 1;		/* head */
@@ -483,7 +467,7 @@ POINT *plist;
      */
     while (minx <= maxx) {
 	i = maxx + 1;		/* this is the NEXT time to get a new vector */
-	for (vectptr=waitinghead->next; vectptr!=pv(NULL); ) {
+	for (vectptr=waitinghead->next; vectptr!=(polyvector *) NULL; ) {
 	    if (minx == vectptr->param) {
 		/* 
 		 * The entry in waiting list (vectptr) is ready to go into 
@@ -535,7 +519,7 @@ POINT *plist;
 	    } while ((vectptr = vectptr->next) != activehead);
 
 	    /* draw the span */
-	    if (((unsigned) minx) < NLINES) {
+	    if (((unsigned) minx) < nlines) {
 	      vectptr = activehead->next;
 	      while (vectptr->next != activehead) {
 		register int start;		/* get the beginning */
@@ -543,18 +527,18 @@ POINT *plist;
 		register char *glyph;
 		register char *raster;
 
-		start = (RASTER_LENGTH - 1) - vectptr->curry;
+		start = (rasterlength - 1) - vectptr->curry;
 		vectptr = vectptr->next;
-		length = RASTER_LENGTH - vectptr->curry;
+		length = rasterlength - vectptr->curry;
 		vectptr = vectptr->next;
 
 		/* bound the polygon to the page */
-		if (start >= RASTER_LENGTH)
+		if (start >= rasterlength)
 		    break;
 		if (start < 0) 
 		    start = 0;
-		if (length > RASTER_LENGTH) 
-		    length = RASTER_LENGTH;
+		if (length > rasterlength) 
+		    length = rasterlength;
 		length -= start;		/* length is in pixels */
 
 		i = start & 7;
@@ -640,7 +624,7 @@ POINT *plist;
 	    } else {
 		leftstipple = topstipple;
 	    }
-	    bottompage += BYTES_PER_LINE;
+	    bottompage += bytesperline;
 	} /* while (minx < nextx) */
     } /* while (minx <= maxx) */
 

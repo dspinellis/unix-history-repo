@@ -1,5 +1,5 @@
 /*
- * @(#)display.c	1.1	%G%
+ * @(#)display.c	1.2	%G%
  *
  * This file contains routines to implement the higher level display
  * driver routines for the SUN Gremlin picture editor.
@@ -53,7 +53,6 @@ int minsunx, maxsunx, minsuny, maxsuny;
  * This routine displays an arbitrary element type 
  * using the parameters stored with the element.  
  * Elements are drawn by Exclusive Oring the screen.
- * mro 7/13/84
  */
 DISScreenAdd(element, mask)
 register ELT *element;
@@ -70,8 +69,9 @@ int mask;
     pr_rop(scratch_pr, 0, 0, pix_size.r_width, pix_size.r_height,
 						PIX_SRC, NULL, 0, 0);
 
-    minsunx = minsuny = dbx_to_win(element->ptlist->x);
-    maxsunx = maxsuny = dby_to_win(element->ptlist->y);
+    /* determine bounds for this element */
+    minsunx = maxsunx = dbx_to_win(element->ptlist->x);
+    minsuny = maxsuny = dby_to_win(element->ptlist->y);
 
     if (TEXT(element->type)) {
 	GRSetTextPos(element->textpt, element->type, element->brushf,
@@ -138,18 +138,10 @@ int mask;
 	}
     }
 
-/*
-printf("minsunx=%d maxsunx=%d minsuny=%d maxsuny=%d\n",
-minsunx, maxsunx, minsuny, maxsuny);
-*/
-
     x = minsunx - 8;
-    width = maxsunx + 8 - x;
     y = minsuny - 8;
+    width = maxsunx + 8 - x;
     height = maxsuny + 8 - y;
-/*
-printf("x=%d y=%d width=%d height=%d\n", x, y, width, height);
-*/
 
     if (mask & pixmask)
 	pw_write(pix_pw, x, y, width, height, PIX_SRC ^ PIX_DST, 
@@ -158,24 +150,12 @@ printf("x=%d y=%d width=%d height=%d\n", x, y, width, height);
     if (mask & csetmask)
 	pr_rop(cset_pr, x, y, width, height, PIX_SRC ^ PIX_DST, 
 						    scratch_pr, x, y);
-
-#ifdef oldway
-    if (mask & pixmask)
-	pw_write(pix_pw, 0, 0, pix_size.r_width, pix_size.r_height,
-	    PIX_SRC ^ PIX_DST, scratch_pr, 0, 0);
- 
-    if (mask & csetmask)
-	pr_rop(cset_pr, 0, 0, pix_size.r_width, pix_size.r_height,
-	    PIX_SRC ^ PIX_DST, scratch_pr, 0, 0);
-#endif
-for (x=0;x<10000;x++);
 }  /* end DISScreenAdd */
 
 
 /*
  * This routine erases an arbitrary element type by redrawing the 
  * element with XOR.  This is the same as drawing the element.
- * mro 7/13/84
  */
 DISScreenErase(element, mask)
 register ELT *element;
@@ -187,7 +167,6 @@ register mask;
 
 /*
  * This routine clears the current set pixrect.
- * mro 7/31/84
  */
 DISClearSetDisplay()
 {
@@ -207,4 +186,3 @@ DISClearSetDisplay()
 
     GRClear(csetmask);
 }  /* end DISClearSetDisplay */
-
