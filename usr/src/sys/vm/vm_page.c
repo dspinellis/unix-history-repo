@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	7.10 (Berkeley) %G%
+ *	@(#)vm_page.c	7.11 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -437,52 +437,6 @@ void vm_page_rename(mem, new_object, new_offset)
 	vm_page_unlock_queues();
 }
 
-void		vm_page_init(mem, object, offset)
-	vm_page_t	mem;
-	vm_object_t	object;
-	vm_offset_t	offset;
-{
-#ifdef DEBUG
-#define	vm_page_init(mem, object, offset)  {\
-		(mem)->busy = TRUE; \
-		(mem)->tabled = FALSE; \
-		vm_page_insert((mem), (object), (offset)); \
-		(mem)->absent = FALSE; \
-		(mem)->fictitious = FALSE; \
-		(mem)->page_lock = VM_PROT_NONE; \
-		(mem)->unlock_request = VM_PROT_NONE; \
-		(mem)->laundry = FALSE; \
-		(mem)->active = FALSE; \
-		(mem)->inactive = FALSE; \
-		(mem)->wire_count = 0; \
-		(mem)->clean = TRUE; \
-		(mem)->copy_on_write = FALSE; \
-		(mem)->fake = TRUE; \
-		(mem)->pagerowned = FALSE; \
-		(mem)->ptpage = FALSE; \
-	}
-#else
-#define	vm_page_init(mem, object, offset)  {\
-		(mem)->busy = TRUE; \
-		(mem)->tabled = FALSE; \
-		vm_page_insert((mem), (object), (offset)); \
-		(mem)->absent = FALSE; \
-		(mem)->fictitious = FALSE; \
-		(mem)->page_lock = VM_PROT_NONE; \
-		(mem)->unlock_request = VM_PROT_NONE; \
-		(mem)->laundry = FALSE; \
-		(mem)->active = FALSE; \
-		(mem)->inactive = FALSE; \
-		(mem)->wire_count = 0; \
-		(mem)->clean = TRUE; \
-		(mem)->copy_on_write = FALSE; \
-		(mem)->fake = TRUE; \
-	}
-#endif
-
-	vm_page_init(mem, object, offset);
-}
-
 /*
  *	vm_page_alloc:
  *
@@ -512,7 +466,7 @@ vm_page_t vm_page_alloc(object, offset)
 	simple_unlock(&vm_page_queue_free_lock);
 	splx(spl);
 
-	vm_page_init(mem, object, offset);
+	VM_PAGE_INIT(mem, object, offset);
 
 	/*
 	 *	Decide if we should poke the pageout daemon.
@@ -525,11 +479,11 @@ vm_page_t vm_page_alloc(object, offset)
 	 *	it doesn't really matter.
 	 */
 
-	if ((cnt.v_free_count < cnt.v_free_min) ||
-			((cnt.v_free_count < cnt.v_free_target) &&
-			(cnt.v_inactive_count < cnt.v_inactive_target)))
+	if (cnt.v_free_count < cnt.v_free_min ||
+	    (cnt.v_free_count < cnt.v_free_target &&
+	     cnt.v_inactive_count < cnt.v_inactive_target))
 		thread_wakeup((int)&vm_pages_needed);
-	return(mem);
+	return (mem);
 }
 
 /*
