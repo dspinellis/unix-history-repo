@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.8 83/07/01";
+static	char *sccsid = "@(#)comsat.c	4.9 83/07/04";
 #endif
 
 #include <sys/types.h>
@@ -54,9 +54,6 @@ char **argv;
 	chdir("/usr/spool/mail");
 	if((uf = open("/etc/utmp",0)) < 0)
 		perror("/etc/utmp"), exit(1);
-	if (!debug)
-	while (fork())
-		wait(0);
 	sleep(10);
 	onalrm();
 	signal(SIGALRM, onalrm);
@@ -173,6 +170,7 @@ jkfprintf(tp, name, offset)
 	register FILE *fi;
 	register int linecnt, charcnt;
 	char line[BUFSIZ];
+	int inheader;
 
 	dprintf("HERE %s's mail starting at %d\n",
 	    name, offset);
@@ -184,24 +182,34 @@ jkfprintf(tp, name, offset)
 	/* 
 	 * Print the first 7 lines or 560 characters of the new mail
 	 * (whichever comes first).  Skip header crap other than
-	 * From: and Subject:.
+	 * From, Subject, To, and Date.
 	 */
 	linecnt = 7;
 	charcnt = 560;
+	inheader = 1;
 	while (fgets(line, sizeof (line), fi) != NULL) {
 		register char *cp;
 		char *index();
+		int cnt;
 
 		if (linecnt <= 0 || charcnt <= 0) {  
 			fprintf(tp,"...more...%s\n", cr);
 			return;
 		}
+		if (strncmp(line, "From ", 5) == 0)
+			continue;
+		if (inheader && (line[0] == ' ' || line[0] == '\t'))
+			continue;
 		cp = index(line, ':');
-		if (cp &&
-		    strncmp(line, "Date", cp - line) &&
-		    strncmp(line, "From", cp - line) &&
-		    strncmp(line, "Subject", cp - line) &&
-		    strncmp(line, "To", cp - line))
+		if (cp == 0 || (index(line, ' ') && index(line, ' ') < cp))
+			inheader = 0;
+		else
+			cnt = cp - line;
+		if (inheader &&
+		    strncmp(line, "Date", cnt) &&
+		    strncmp(line, "From", cnt) &&
+		    strncmp(line, "Subject", cnt) &&
+		    strncmp(line, "To", cnt))
 			continue;
 		cp = index(line, '\n');
 		if (cp)
