@@ -8,9 +8,9 @@ divert(-1)
 #
 
 include(`../m4/cf.m4')
-VERSIONID(@(#)mail.cs.mc	2.6 (Berkeley) %G%)
+VERSIONID(@(#)mail.cs.mc	2.7 (Berkeley) %G%)
 OSTYPE(hpux)dnl
-DOMAIN(cs.hidden)dnl
+DOMAIN(cs.exposed)dnl
 MAILER(local)dnl
 MAILER(smtp)dnl
 define(`USERDB_SPEC', `/usr/local/lib/users.cs.db,/usr/local/lib/users.eecs.db')dnl
