@@ -1,4 +1,6 @@
-static	char *sccsid = "@(#)mkfs.c	2.12 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)mkfs.c	2.13 (Berkeley) %G%";
+#endif
 
 /*
  * make file system for cylinder-group style file systems
@@ -82,16 +84,10 @@ static	char *sccsid = "@(#)mkfs.c	2.12 (Berkeley) %G%";
 #include <a.out.h>
 #endif
 
-#ifndef SIMFS
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#else
-#include "../h/param.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#endif
-#include <dir.h>
+#include <sys/dir.h>
 
 #define UMASK		0755
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
