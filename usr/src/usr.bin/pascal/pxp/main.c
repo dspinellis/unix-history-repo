@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -132,6 +132,11 @@ main(argc, argv)
 			case '_':
 				underline++;
 				continue;
+#			ifdef RMOTHERS
+			case 'O':
+				rmothers++;
+				continue;
+#			endif RMOTHERS
 			default:
 				if (c >= '2' && c <= '9') {
 					unit = c - '0';
