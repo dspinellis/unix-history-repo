@@ -1,4 +1,4 @@
-/*	if_ec.c	4.2	82/04/11	*/
+/*	if_ec.c	4.3	82/04/11	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -506,8 +506,8 @@ COUNT(ECREAD);
 		pupproto.sp_protocol = pup->pup_type;
 		pupdst.spup_addr = pup->pup_dport;
 		pupsrc.spup_addr = pup->pup_sport;
-		raw_input(m, &pupproto, (struct sockaddr *)&pupdst,
-		  (struct sockaddr *)&pupsrc);
+		raw_input(m, &pupproto, (struct sockaddr *)&pupsrc,
+		  (struct sockaddr *)&pupdst);
 		goto setup;
 	}
 #endif

@@ -1,4 +1,4 @@
-/*	if_imp.c	4.24	82/04/10	*/
+/*	if_imp.c	4.25	82/04/11	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -330,8 +330,8 @@ COUNT(IMPINPUT);
 		impsrc.sin_addr.s_net = ip->il_network;
 		impsrc.sin_addr.s_host = ip->il_host;
 		impsrc.sin_addr.s_imp = ip->il_imp;
-		raw_input(m, &impproto, (struct sockaddr *)&impdst,
-		  (struct sockaddr *)&impsrc);
+		raw_input(m, &impproto, (struct sockaddr *)&impsrc,
+		  (struct sockaddr *)&impdst);
 		return;
 	}
 	if (IF_QFULL(inq)) {
