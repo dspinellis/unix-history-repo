@@ -1,4 +1,4 @@
-/*	stat.h	4.2	81/02/19	*/
+/*	stat.h	4.3	82/02/27	*/
 
 struct	stat
 {
@@ -20,8 +20,7 @@ struct	stat
 #define		S_IFCHR	0020000	/* character special */
 #define		S_IFBLK	0060000	/* block special */
 #define		S_IFREG	0100000	/* regular */
-#define		S_IFMPC	0030000	/* multiplexed char special */
-#define		S_IFMPB	0070000	/* multiplexed block special */
+#define		S_IFLNK	0120000	/* symbolic link */
 #define	S_ISUID	0004000		/* set user id on execution */
 #define	S_ISGID	0002000		/* set group id on execution */
 #define	S_ISVTX	0001000		/* save swapped text even after use */

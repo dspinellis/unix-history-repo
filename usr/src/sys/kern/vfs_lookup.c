@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.9	82/02/26	*/
+/*	vfs_lookup.c	4.10	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,6 +29,7 @@ namei(func, flag, follow)
 	register char *cp;
 	register struct buf *bp, *nbp;
 	register struct direct *ep;
+	struct inode *pdp;
 	int i, nlink;
 	dev_t d;
 	ino_t ino;
@@ -83,6 +84,7 @@ dirloop:
 	}
 	if (u.u_error)
 		goto out;
+	u.u_pdir = dp;
 	while (i < DIRSIZ)
 		u.u_dbuf[i++] = '\0';
 	if (u.u_dbuf[0] == '\0') {		/* null name, e.g. "/" or "" */
@@ -164,10 +166,13 @@ dirloop:
 		}
 		d = dp->i_dev;
 		ino = dp->i_number;
-		iput(dp);
+		irele(dp);
+		pdp = dp;
 		dp = iget(d, u.u_dent.d_ino);
-		if (dp == NULL)
+		if (dp == NULL)  {
+			iput(pdp);
 			goto out1;
+		}
 		/*
 		 * Check for symbolic link
 		 */
@@ -179,12 +184,14 @@ dirloop:
 				;
 			if (dp->i_size + (cp-ocp) >= BSIZE-1 || ++nlink>8) {
 				u.u_error = ELOOP;
+				iput(pdp);
 				goto out;
 			}
 			bcopy(ocp, nbp->b_un.b_addr+dp->i_size, cp-ocp);
 			bp = bread(dp->i_dev, bmap(dp, (daddr_t)0, B_READ));
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
+				iput(pdp);
 				goto out;
 			}
 			bcopy(bp->b_un.b_addr, nbp->b_un.b_addr, dp->i_size);
@@ -192,6 +199,7 @@ dirloop:
 			cp = nbp->b_un.b_addr;
 			iput(dp);
 			if (*cp == '/') {
+				iput(pdp);
 				while (*cp == '/')
 					cp++;
 				if ((dp = u.u_rdir) == NULL)
@@ -199,12 +207,12 @@ dirloop:
 				ilock(dp);
 				dp->i_count++;
 			} else {
-				dp = iget(d, ino);	/* retrieve directory */
-				if (dp == NULL)
-					goto out1;
+				dp = pdp;
+				ilock(dp);
 			}
 			goto dirloop;
 		}
+		iput(pdp);
 		if (*cp == '/') {
 			while (*cp == '/')
 				cp++;
@@ -220,7 +228,6 @@ dirloop:
 	if (flag==1 && *cp=='\0' && dp->i_nlink) {
 		if (access(dp, IWRITE))
 			goto out;
-		u.u_pdir = dp;
 		if (eo>=0)
 			u.u_offset = eo;
 		dp->i_flag |= IUPD|ICHG;

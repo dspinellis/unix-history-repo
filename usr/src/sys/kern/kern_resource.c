@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.5	81/11/08	*/
+/*	kern_resource.c	4.6	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -35,7 +35,7 @@ sysacct()
 			u.u_error = EBUSY;
 			return;
 		}
-		ip = namei(uchar, 0);
+		ip = namei(uchar, 0, 1);
 		if(ip == NULL)
 			return;
 		if((ip->i_mode & IFMT) != IFREG) {

@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.17	82/01/19	*/
+/*	vfs_syscalls.c	4.18	82/02/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -39,7 +39,7 @@ fstat()
 }
 
 /*
- * Stat system call.
+ * Stat system call.  This version does not follow links.
  */
 stat()
 {
@@ -50,10 +50,29 @@ stat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0);
+	ip = namei(uchar, 0, 0);
 	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
+	iput(ip);
+}
+
+/*
+ * Lstat system call.  This version does follow links.
+ */
+lstat()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		struct stat *sb;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, 0, 1);
+	if (ip == NULL)
+		return;
+	stat1(ip, uap->sb, (off_t)0);
 	iput(ip);
 }
 
@@ -82,7 +101,7 @@ stat1(ip, ub)
 	ds.st_rdev = (dev_t)ip->i_un.i_rdev;
 	ds.st_size = ip->i_size;
 	/*
-	 * Next the dates in the disk
+	 * next the dates in the disk
 	 */
 	bp = bread(ip->i_dev, itod(ip->i_number));
 	dp = bp->b_un.b_dino;
@@ -96,7 +115,79 @@ stat1(ip, ub)
 }
 
 /*
- * Dup system call.
+ * Return target name of a symbolic link
+ */
+readlink()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*name;
+		char	*buf;
+		int	count;
+	} *uap;
+
+	ip = namei(uchar, 0, 0);
+	if (ip == NULL)
+		return;
+	if ((ip->i_mode&IFMT) != IFLNK) {
+		u.u_error = ENXIO;
+		goto out;
+	}
+	uap = (struct a *)u.u_ap;
+	u.u_offset = 0;
+	u.u_base = uap->buf;
+	u.u_count = uap->count;
+	u.u_segflg = 0;
+	readi(ip);
+out:
+	iput(ip);
+	u.u_r.r_val1 = uap->count - u.u_count;
+}
+
+/*
+ * symlink -- make a symbolic link
+ */
+symlink()
+{
+	register struct a {
+		char	*target;
+		char	*linkname;
+	} *uap;
+	register struct inode *ip;
+	register char *tp;
+	register c, nc;
+
+	uap = (struct a *)u.u_ap;
+	tp = uap->target;
+	nc = 0;
+	while (c = fubyte(tp)) {
+		if (c < 0) {
+			u.u_error = EFAULT;
+			return;
+		}
+		tp++;
+		nc++;
+	}
+	u.u_dirp = uap->linkname;
+	ip = namei(uchar, 1, 0);
+	if (ip) {
+		iput(ip);
+		u.u_error = EEXIST;
+		return;
+	}
+	ip = maknode(IFLNK | 0777);
+	if (ip == NULL)
+		return;
+	u.u_base = uap->target;
+	u.u_count = nc;
+	u.u_offset = 0;
+	u.u_segflg = 0;
+	writei(ip);
+	iput(ip);
+}
+
+/*
+ * the dup system call.
  */
 dup()
 {
@@ -157,7 +248,7 @@ smount()
 	if (u.u_error)
 		return;
 	u.u_dirp = (caddr_t)uap->freg;
-	ip = namei(uchar, 0);
+	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return;
 	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR)
@@ -272,7 +363,7 @@ getmdev()
 
 	if (!suser())
 		return(NODEV);
-	ip = namei(uchar, 0);
+	ip = namei(uchar, 0, 1);
 	if (ip == NULL)
 		return(NODEV);
 	if ((ip->i_mode&IFMT) != IFBLK)
