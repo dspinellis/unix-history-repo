@@ -18,17 +18,18 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)updatedb.csh	4.9 (Berkeley) %G%
+#	@(#)updatedb.csh	4.10 (Berkeley) %G%
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/libexec		# for subprograms
+if (! $?TMPDIR) set TMPDIR = /var/tmp	# for temp files
 set FINDHONCHO = root			# for error messages
 set FCODES = /var/db/find.database	# the database
 
-set path = ( $LIBDIR /usr/ucb /bin /usr/bin )
-set bigrams = /tmp/f.bigrams$$
-set filelist = /tmp/f.list$$
-set errs = /tmp/f.errs$$
+set path = ( /bin /usr/bin )
+set bigrams = $TMPDIR/f.bigrams$$
+set filelist = $TMPDIR/f.list$$
+set errs = $TMPDIR/f.errs$$
 
 # Make a file list and compute common bigrams.
 # Alphabetize '/' before any other char with 'tr'.
@@ -41,7 +42,7 @@ nice +10
 find ${SRCHPATHS} -print | tr '/' '\001' | \
    (sort -f; echo $status > $errs) | \
    tr '\001' '/' >$filelist
-$LIBDIR/bigram <$filelist | \
+$LIBDIR/find.bigram <$filelist | \
    (sort; echo $status >> $errs) | uniq -c | sort -nr | \
    awk '{ if (NR <= 128) print $2 }' | tr -d '\012' > $bigrams
 
@@ -50,7 +51,7 @@ $LIBDIR/bigram <$filelist | \
 if { grep -s -v 0 $errs } then
 	echo 'squeeze error: out of sort space' | mail $FINDHONCHO
 else
-	$LIBDIR/code $bigrams < $filelist > $FCODES
+	$LIBDIR/find.code $bigrams < $filelist > $FCODES
 	chmod 644 $FCODES
 	rm $bigrams $filelist $errs
 endif
