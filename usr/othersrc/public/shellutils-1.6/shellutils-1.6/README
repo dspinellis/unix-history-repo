@@ -1,0 +1,64 @@
+This is a package of small shell programming utilities.  They are mostly
+compliant with POSIX.2, where applicable.
+
+nice, stty, and uname require facilities not available on all systems;
+`configure' detects this and does not try to compile them on systems
+where those facilities are missing.
+nohup requires nice.
+
+To compile these programs:
+
+1.  At the top level (the directory this README is in), type
+`./configure'.  This shell script attempts to guess correct values for
+various system-dependent variables used during compilation, and
+creates the Makefiles.  This takes a minute or two.
+
+If you want to compile in a different directory from the one
+containing the source code, `cd' to that directory and run `configure'
+with the option `--srcdir=DIR', where DIR is the directory that
+contains the source code.  The object files and executables will be
+put in the current directory.  This option only works with versions of
+`make' that support the VPATH variable.  `configure' ignores any other
+arguments you give it.
+
+If your system requires unusual options for compilation or linking
+that `configure' doesn't know about, you can give `configure' initial
+values for variables by setting them in the environment; in
+Bourne-compatible shells, you can do that on the command line like
+this:
+$ CC='gcc -traditional' LIBS=-lposix ./configure
+
+2.  If you want to change the directories where the programs will be
+installed, or the optimization options, edit `Makefile' and change
+those values.  If you have an unusual system that needs special
+compilation options that `configure' doesn't know about, and you
+didn't pass them in the environment when running `configure', you
+should add them to `Makefile' now.  Alternately, teach `configure' how
+to figure out that it is being run on a system where they are needed,
+and mail the diffs to the address listed at the end of this file so we
+can include them in the next release.
+
+3.  In the top-level directory, type `make'.  You don't need to
+otherwise touch the Makefiles in the subdirectories or use them
+directly.
+
+4.  If the programs compile successfully, type `make install' to
+install them.
+
+5.  After you have installed the programs and documentation, you can
+remove the binaries from the source directories by typing `make
+mostlyclean'.  Or type `make clean' instead if you also want to remove
+the Makefiles that `configure' created, for instance if you are going
+to recompile the utilities next on another type of machine.
+
+Although these programs have no `-V' or `--version' option, you can
+check which version you have by using `grep' or `strings -' on the
+binaries, e.g., `grep shellutils /usr/local/bin/basename'.
+
+The file `configure.in' is a template for creating `configure' using
+m4 macros (distributed separately under the name `autoconf').  It is
+probably needed only if you want to update `configure' using a newer
+version of autoconf.
+
+Mail suggestions and bug reports for these programs to
+bug-gnu-utils@prep.ai.mit.edu.
