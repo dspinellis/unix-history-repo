@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)stty.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)stty.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -162,8 +162,6 @@ struct modes lmodes[] = {
 	"-tostop",	0, TOSTOP,
 	"mdmbuf",	MDMBUF, 0,
 	"-mdmbuf",	0, MDMBUF,
-	"nohang",	NOHANG, 0,
-	"-nohang",	0, NOHANG,
 	"flusho",	FLUSHO, 0,
 	"-flusho",	0, FLUSHO,
 	"pendin",	PENDIN, 0,
@@ -484,7 +482,6 @@ prmode(tp, ldisc, fmt)
 	lput("-noflsh ",NOFLSH, 0);
 	lput("-tostop ",TOSTOP, 0);
 	lput("-mdmbuf ",MDMBUF, 0);
-	lput("-nohang ",NOHANG, 0);
 	lput("-flusho ",FLUSHO, 0);
 	lput("-pendin ",PENDIN, 0);
 	/*
