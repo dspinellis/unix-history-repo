@@ -4,20 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	7.2 (Berkeley) %G%
+ *	@(#)if_le.c	7.3 (Berkeley) %G%
  *
- * from: $Header: if_le.c,v 1.17 92/07/10 06:45:17 torek Exp $
+ * from: $Header: if_le.c,v 1.23 93/04/21 02:39:38 torek Exp $
  */
 
 #include "bpfilter.h"
 
 /*
  * AMD 7990 LANCE
- *
- * This driver will generate and accept tailer encapsulated packets even
- * though it buys us nothing.  The motivation was to avoid incompatibilities
- * with VAXen, SUNs, and others that handle and benefit from them.
- * This reasoning is dubious.
  */
 #include <sys/param.h>
 #include <sys/device.h>
@@ -95,7 +90,8 @@ struct le_softc {
 	struct	device sc_dev;		/* base device */
 	struct	sbusdev sc_sd;		/* sbus device */
 	struct	intrhand sc_ih;		/* interrupt vectoring */
-	int	sc_interrupts;		/* number of interrupts taken */
+	struct	evcnt sc_intrcnt;	/* # of interrupts, per le */
+	struct	evcnt sc_errcnt;	/* # of errors, per le */
 
 	struct	arpcom sc_ac;		/* common Ethernet structures */
 #define	sc_if	sc_ac.ac_if		/* network-visible interface */
@@ -131,9 +127,7 @@ struct	cfdriver lecd =
 
 /* Forwards */
 void	leattach(struct device *, struct device *, void *);
-#ifdef MULTICAST
 void	lesetladrf(struct le_softc *);
-#endif
 void	lereset(struct device *);
 int	leinit(int);
 int	lestart(struct ifnet *);
@@ -163,6 +157,7 @@ leattach(parent, self, args)
 	register struct sbus_attach_args *sa = args;
 	register volatile struct lereg2 *ler2;
 	struct ifnet *ifp = &sc->sc_if;
+	register struct bootpath *bp;
 	register int a, pri;
 #define	ISQUADALIGN(a) ((((long) a) & 0x3) == 0)
 
@@ -220,6 +215,12 @@ if (!ISQUADALIGN(a))
 	sc->sc_ih.ih_arg = sc;
 	intr_establish(pri, &sc->sc_ih);
 
+	/*
+	 * Set up event counters.
+	 */
+	evcnt_attach(&sc->sc_dev, "intr", &sc->sc_intrcnt);
+	evcnt_attach(&sc->sc_dev, "errs", &sc->sc_errcnt);
+
 	ifp->if_unit = sc->sc_dev.dv_unit;
 	ifp->if_name = "le";
 	ifp->if_mtu = ETHERMTU;
@@ -227,11 +228,7 @@ if (!ISQUADALIGN(a))
 	ifp->if_ioctl = leioctl;
 	ifp->if_output = ether_output;
 	ifp->if_start = lestart;
-#ifdef MULTICAST
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
-#else
-	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
-#endif
 #ifdef IFF_NOTRAILERS
 	/* XXX still compile when the blasted things are gone... */
 	ifp->if_flags |= IFF_NOTRAILERS;
@@ -240,9 +237,16 @@ if (!ISQUADALIGN(a))
 	bpfattach(&sc->sc_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
 #endif
 	if_attach(ifp);
+
+#define SAME_LANCE(bp, sa) \
+	((bp->val[0] == sa->sa_slot && bp->val[1] == sa->sa_offset) || \
+	 (bp->val[0] == -1 && bp->val[1] == sc->sc_dev.dv_unit))
+
+	bp = sa->sa_ra.ra_bp;
+	if (bp != NULL && strcmp(bp->name, "le") == 0 && SAME_LANCE(bp, sa))
+		bootdv = &sc->sc_dev;
 }
 
-#ifdef MULTICAST
 /*
  * Setup the logical address filter
  */
@@ -253,9 +257,8 @@ lesetladrf(sc)
 	register volatile struct lereg2 *ler2 = sc->sc_r2;
 	register struct ifnet *ifp = &sc->sc_if;
 	register struct ether_multi *enm;
-	register u_char *cp;
+	register u_char *cp, c;
 	register u_long crc;
-	register u_long c;
 	register int i, len;
 	struct ether_multistep step;
 
@@ -273,7 +276,7 @@ lesetladrf(sc)
 	ETHER_FIRST_MULTI(step, &sc->sc_ac, enm);
 	while (enm != NULL) {
 		if (bcmp((caddr_t)&enm->enm_addrlo,
-		    (caddr_t)&enm->enm_addrhi, sizeof(enm->enm_addrlo)) == 0) {
+		    (caddr_t)&enm->enm_addrhi, sizeof(enm->enm_addrlo)) != 0) {
 			/*
 			 * We must listen to a range of multicast
 			 * addresses. For now, just accept all
@@ -290,22 +293,24 @@ lesetladrf(sc)
 			return;
 		}
 
+		/*
+		 * One would think, given the AM7990 document's polynomial
+		 * of 0x04c11db6, that this should be 0x6db88320 (the bit
+		 * reversal of the AMD value), but that is not right.  See
+		 * the BASIC listing: bit 0 (our bit 31) must then be set.
+		 */
 		cp = (unsigned char *)&enm->enm_addrlo;
-		c = *cp;
 		crc = 0xffffffff;
-		len = 6;
-		while (len-- > 0) {
-			c = *cp;
+		for (len = 6; --len >= 0;) {
+			c = *cp++;
 			for (i = 0; i < 8; i++) {
 				if ((c & 0x01) ^ (crc & 0x01)) {
 					crc >>= 1;
 					crc = crc ^ 0xedb88320;
-				}
-				else
+				} else
 					crc >>= 1;
 				c >>= 1;
 			}
-			cp++;
 		}
 		/* Just want the 6 most significant bits. */
 		crc = crc >> 26;
@@ -316,7 +321,6 @@ lesetladrf(sc)
 		ETHER_NEXT_MULTI(step, enm);
 	}
 }
-#endif
 
 void
 lereset(dev)
@@ -337,12 +341,7 @@ lereset(dev)
 	ler1->ler1_rdp = LE_C0_STOP;
 
 	/* Setup the logical address filter */
-#ifdef MULTICAST
 	lesetladrf(sc);
-#else
-	ler2->ler2_ladrf[0] = 0;
-	ler2->ler2_ladrf[1] = 0;
-#endif
 
 	/* init receive and transmit rings */
 a = LANCE_ADDR(&ler2->ler2_rbuf[0][0]);
@@ -475,9 +474,10 @@ leintr(dev)
 	csr0 = ler1->ler1_rdp;
 	if ((csr0 & LE_C0_INTR) == 0)
 		return (0);
-	sc->sc_interrupts++;
+	sc->sc_intrcnt.ev_count++;
 
 	if (csr0 & LE_C0_ERR) {
+		sc->sc_errcnt.ev_count++;
 		leerror(sc, csr0);
 		if (csr0 & LE_C0_MERR) {
 			sc->sc_merr++;
@@ -683,24 +683,14 @@ leread(sc, pkt, len)
 #if NBPFILTER > 0
 	/*
 	 * Check if there's a bpf filter listening on this interface.
-	 * If so, hand off the raw packet to enet.
+	 * If so, hand off the raw packet to enet, then discard things
+	 * not destined for us (but be sure to keep broadcast/multicast).
 	 */
 	if (sc->sc_bpf) {
 		bpf_tap(sc->sc_bpf, pkt, len + sizeof(struct ether_header));
-
-		/*
-		 * Keep the packet if it's a broadcast or has our
-		 * physical ethernet address (or if we support
-		 * multicast and it's one).
-		 */
-		if (
-#ifdef MULTICAST
-		    (flags & (M_BCAST | M_MCAST)) == 0 &&
-#else
-		    (flags & M_BCAST) == 0 &&
-#endif
+		if ((flags & (M_BCAST | M_MCAST)) == 0 &&
 		    bcmp(et->ether_dhost, sc->sc_addr,
-			sizeof(et->ether_dhost)) != 0)
+			    sizeof(et->ether_dhost)) != 0)
 			return;
 	}
 #endif
@@ -936,14 +926,13 @@ leioctl(ifp, cmd, data)
 		}
 		break;
 
-#ifdef MULTICAST
 	case SIOCADDMULTI:
-	case SIOCDELMULTI:
-		/* Update our multicast list  */
-		error = (cmd == SIOCADDMULTI) ?
-		    ether_addmulti((struct ifreq *)data, &sc->sc_ac) :
-		    ether_delmulti((struct ifreq *)data, &sc->sc_ac);
+		error = ether_addmulti((struct ifreq *)data, &sc->sc_ac);
+		goto update_multicast;
 
+	case SIOCDELMULTI:
+		error = ether_delmulti((struct ifreq *)data, &sc->sc_ac);
+	update_multicast:
 		if (error == ENETRESET) {
 			/*
 			 * Multicast list has changed; set the hardware
@@ -953,7 +942,6 @@ leioctl(ifp, cmd, data)
 			error = 0;
 		}
 		break;
-#endif
 
 	default:
 		error = EINVAL;
