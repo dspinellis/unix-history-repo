@@ -703,6 +703,7 @@ restlab:
 		stpt->s_value = locxp->e_xvalue;
 		stpt->s_index = dotp - usedot;
 		if (exprisname){
+			stpt->s_type = locxp->e_xtype;
 			switch(stpt->s_ptype){
 				case N_LCSYM:
 					stpt->s_dest = (struct symtab *)exprisname;
