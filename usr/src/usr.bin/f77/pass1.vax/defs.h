@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.1 (Berkeley) %G%
+ *	@(#)defs.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -13,8 +13,17 @@
  *
  * University of Utah CS Dept modification history:
  *
- * $Header: defs.h,v 2.3 85/06/07 21:06:48 root Exp $
  * $Log:	defs.h,v $
+ * Revision 5.3  85/08/10  06:31:09  donn
+ * Added missing definition for intrconv().
+ * 
+ * Revision 5.2  85/08/10  04:01:53  donn
+ * Jerry Berkman's change to add a definition for 'dblflag' and to ifdef
+ * the Fortran 66 compatibility flags.
+ * 
+ * Revision 5.1  85/08/10  03:44:01  donn
+ * 4.3 alpha
+ * 
  * Revision 2.3  85/06/07  21:06:48  root
  * Add copyright
  * 
@@ -83,11 +92,14 @@ extern int maxhash;
 extern int maxext;
 
 extern flag profileflag;
+extern flag dblflag;
 extern flag optimflag;
 extern flag nowarnflag;
 extern flag ftn66flag;
+#ifdef ONLY66
 extern flag no66flag;
 extern flag noextflag;
+#endif
 extern flag shiftcase;
 extern flag undeftype;
 extern flag shortsubs;
@@ -556,7 +568,8 @@ expptr addrof(), call1(), call2(), call3(), call4();
 Tempp mktmpn();
 Addrp builtin(), mktemp(), altmpn(), mkaltemp(), mkaltmpn(), autovar();
 Addrp mkplace(), mkaddr(), putconst(), memversion();
-expptr mkprim(), mklhs(), mkexpr(), mkconv(), mkfunct(), fixexpr(), fixtype();
+expptr mkprim(), mklhs(), mkexpr(), mkconv(), intrconv(), mkfunct();
+expptr fixexpr(), fixtype();
 expptr errnode(), mkintcon();
 tagptr cpexpr();
 ftnint lmin(), lmax(), iarrlen();
