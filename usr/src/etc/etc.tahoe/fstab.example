@@ -1,0 +1,9 @@
+#	@(#)fstab.example	5.1 (Berkeley) %G%
+
+# The following is for the brain-dead console processor on the
+# Tahoe machines.
+/dev/xfd0a:/: /	ufs	xx 1 1
+
+/dev/dk0a /			ufs	rw 1 1
+/dev/dk0b none			swap	sw 0 0
+/dev/dk0c /usr			ufs	rw 1 2
