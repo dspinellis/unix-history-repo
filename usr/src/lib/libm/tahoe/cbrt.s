@@ -17,21 +17,21 @@ _sccsid:
 
 # double cbrt(double arg)
 # W. Kahan, 10/13/80. revised 1/13/84 for keeping sign symmetry
-# Revised and tested by Z. Alex Liu (7/11/87)
+# Re-coded in tahoe assembly language by Z. Alex Liu (7/13/87)
 # Max error less than 0.667 ULPs _if_ +,-,*,/ were all correctly rounded...
 	.globl	_cbrt
 	.globl	_d_cbrt
 	.globl	_dcbrt_
 	.text
-	.align	1
+	.align	2
 _cbrt:
 _d_cbrt:
-	.word	0x01fc		# save r2 to r8
+	.word	0x01fc		# save r2-r8
 	movl	4(fp),r0	# r0:r1 = x
 	movl	8(fp),r1
 	brb	1f
 _dcbrt_:
-	.word	0x01fc		# save r2 to r8
+	.word	0x01fc		# save r2-r8
 	movl	4(fp),r8
 	movl	(r8),r0
 	movl	4(r8),r1	# r0:r1 = x
