@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_uba.c	7.13 (Berkeley) %G%
+ *	@(#)if_uba.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -227,7 +227,7 @@ if_ubaget(ifu, ifr, totlen, off, ifp)
 				struct pte t;
 				t = *ppte; *ppte++ = *cpte; *cpte = t;
 				*ip++ = cpte++->pg_pfnum|ifr->ifrw_proto;
-			/*	mtpr(TBIS, cp); */
+				mtpr(TBIS, cp);
 				cp += NBPG;
 				mtpr(TBIS, (caddr_t)pp);
 				pp += NBPG;
