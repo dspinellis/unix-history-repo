@@ -1,0 +1,132 @@
+
+
+
+MKMANIFEST(1)                                       MKMANIFEST(1)
+
+
+NNAAMMEE
+       mkmanifest  -  create a shell script to restore Unix file-
+       names
+
+SSYYNNOOPPSSIISS
+       mmkkmmaanniiffeesstt [ files ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_k_m_a_n_i_f_e_s_t creates a shell script that  will  aid  in  the
+       restoration  of  Unix  filenames that got clobbered by the
+       MSDOS  filename   restrictions.    MSDOS   filenames   are
+       restricted  to  8 character names, 3 character extensions,
+       upper case only, no device names, and no  illegal  charac-
+       ters.
+
+       The mkmanifest program is compatible with the methods used
+       in _p_c_o_m_m, _a_r_c, and _m_t_o_o_l_s to change  perfectly  good  Unix
+       filenames to fit the MSDOS restrictions.
+
+EEXXAAMMPPLLEE
+       I  want  to  copy  the  following  Unix  files  to a MSDOS
+       diskette (using the _m_c_o_p_y command).
+
+            very_long_name
+            2.many.dots
+            illegal:
+            good.c
+            prn.dev
+            Capital
+
+       _M_c_o_p_y will convert the names to:
+
+            very_lon
+            2xmany.dot
+            illegalx
+            good.c
+            xprn.dev
+            capital
+
+       The command:
+
+       mkmanifest  very_long_name  2.many.dots  illegal:   good.c
+       prn.dev Capital > manifest
+
+       would produce the following:
+
+            mv very_lon very_long_name
+            mv 2xmany.dot 2.many.dots
+            mv illegalx illegal:
+            mv xprn.dev prn.dev
+            mv capital Capital
+
+       Notice that "good.c" did not require any conversion, so it
+       did not appear in the output.
+
+
+
+                              local                             1
+
+
+
+
+
+MKMANIFEST(1)                                       MKMANIFEST(1)
+
+
+       Suppose I've copied  these  files  from  the  diskette  to
+       another  Unix  system,  and  I  now want the files back to
+       their original names.  If the file "manifest" (the  output
+       captured  above) was sent along with those files, it could
+       be used to convert the filenames.
+
+SSEEEE AALLSSOO
+       arc(1), pcomm(1), mtools(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             2
+
+

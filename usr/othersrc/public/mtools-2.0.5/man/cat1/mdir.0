@@ -1,0 +1,66 @@
+
+
+
+MDIR(1)                                                   MDIR(1)
+
+
+NNAAMMEE
+       mdir - display an MSDOS directory
+
+SSYYNNOOPPSSIISS
+       mmddiirr [ --ww ] msdosdirectory
+
+       mmddiirr [ --ww ] msdosfile [ msdosfiles...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_d_i_r displays the contents of an MSDOS directory.
+
+       _M_d_i_r will allow the following command line option:
+
+       ww      Wide  output.  This option will print the filenames
+              across the page without displaying the file size or
+              creation date.
+
+       An error occurs if a component of the path is not a direc-
+       tory.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or  '\'  separator.  The use of the '\' separator or wild-
+       cards will require the names to be enclosed in  quotes  to
+       protect them from the shell.
+
+       The  _m_c_d  command  may be used to establish the device and
+       the current working directory (relative to MSDOS),  other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1)
+
+BBUUGGSS
+       Allows multiple arguments, which does not follow the MSDOS
+       convention.
+
+       There is no /P (pause) option.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+

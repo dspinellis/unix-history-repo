@@ -1,0 +1,66 @@
+
+
+
+MRD(1)                                                     MRD(1)
+
+
+NNAAMMEE
+       mrd - remove an MSDOS subdirectory
+
+SSYYNNOOPPSSIISS
+       mmrrdd msdosdirectory [ msdosdirectories... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_r_d removes a directory from an MSDOS filesystem.
+
+       An error occurs if the directory is not empty.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or '\' separator.  The use of the '\' separator  or  wild-
+       cards  will  require  the directory name to be enclosed in
+       quotes to protect it from the shell.
+
+       The _m_c_d command may be used to establish  the  device  and
+       the  current working directory (relative to MSDOS), other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1), mmd(1)
+
+BBUUGGSS
+       Allows multiple arguments, which does not follow the MSDOS
+       convention.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+

@@ -1,0 +1,66 @@
+
+
+
+MDEL(1)                                                   MDEL(1)
+
+
+NNAAMMEE
+       mdel - delete an MSDOS file
+
+SSYYNNOOPPSSIISS
+       mmddeell [ --vv ] msdosfile [ msdosfiles...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_d_e_l deletes a file on an MSDOS filesystem.
+
+       _M_d_e_l will allow the following command line option:
+
+       vv      Verbose  mode.  Echo the filenames as they are pro-
+              cessed.
+
+       _M_d_e_l  will  ask  for  verification  prior  to  removing  a
+       read-only file.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or '\' separator.  The use of the '\' separator  or  wild-
+       cards  will  require the names to be enclosed in quotes to
+       protect them from the shell.
+
+       The _m_c_d command may be used to establish  the  device  and
+       the  current working directory (relative to MSDOS), other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1)
+
+BBUUGGSS
+       Allows multiple arguments, which does not follow the MSDOS
+       convention.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+

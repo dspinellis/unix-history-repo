@@ -1,0 +1,66 @@
+
+
+
+MTYPE(1)                                                 MTYPE(1)
+
+
+NNAAMMEE
+       mtype - display contents of an MSDOS file
+
+SSYYNNOOPPSSIISS
+       mmttyyppee [ --ttss ] msdosfile [ msdosfiles... ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_t_y_p_e displays the specified MSDOS file on the screen.
+
+       _M_t_y_p_e will allow the following command line options:
+
+       tt      Text  file  viewing.  _M_t_y_p_e will translate incoming
+              carriage return/line feeds to line feeds.
+
+       ss      Strip high bit.  _M_t_y_p_e will strip the high bit from
+              the data.
+
+       MSDOS subdirectory names are supported with either the '/'
+       or '\' separator.  The use of the '\' separator  or  wild-
+       cards  will  require the names to be enclosed in quotes to
+       protect them from the shell.
+
+       The _m_c_d command may be used to establish  the  device  and
+       the  current working directory (relative to MSDOS), other-
+       wise the default is A:/.
+
+SSEEEE AALLSSOO
+       mcd(1), mread(1)
+
+BBUUGGSS
+       Allows multiple arguments, which does not follow the MSDOS
+       convention.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+

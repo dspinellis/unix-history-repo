@@ -1,0 +1,66 @@
+
+
+
+MLABEL(1)                                               MLABEL(1)
+
+
+NNAAMMEE
+       mlabel - make an MSDOS volume label
+
+SSYYNNOOPPSSIISS
+       mmllaabbeell [ --vv ] drive:
+
+DDEESSCCRRIIPPTTIIOONN
+       _M_l_a_b_e_l  displays the current volume label, if present, and
+       prompts the user for a new volume  label.   To  delete  an
+       existing volume label, press return at the prompt.
+
+       _M_l_a_b_e_l will allow the following command line option:
+
+       vv      Verbose  mode.  Display the new volume label if the
+              label supplied is invalid.
+
+       Reasonable care is taken to create a  valid  MSDOS  volume
+       label.   If  an  invalid  label  is specified, _m_l_a_b_e_l will
+       change the label (and display the new label if the verbose
+       mode is set).
+
+SSEEEE AALLSSOO
+       mformat(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              local                             1
+
+
