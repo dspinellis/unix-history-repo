@@ -1,0 +1,66 @@
+
+
+
+NROFF(1)               BSD Reference Manual              NROFF(1)
+
+
+NNAAMMEE
+       nroff - emulate nroff command with groff
+
+SSYYNNOOPPSSIISS
+       nnrrooffff  [  --hhii ] [ --mm_n_a_m_e ] [ --nn_n_u_m ] [ --oo_l_i_s_t ] [ --rr_c_n ] [
+       --TT_n_a_m_e ] [ _f_i_l_e_._._.  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       The nnrrooffff script emulates the nnrrooffff command  using  groff.
+       The --TT option with an argument other than aasscciiii and llaattiinn11
+       will be ignored.  The  --hh  option  is  equivalent  to  the
+       ggrroottttyy  --hh  option.   Other  options  are  as described in
+       ttrrooffff(1).  In addition the  --ee,  --qq  and  --ss  options  are
+       silently ignored.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1), ttrrooffff(1), ggrroottttyy(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        10 August 1992                        1
+
+
+
+
+
