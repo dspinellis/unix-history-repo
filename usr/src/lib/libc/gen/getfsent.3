@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getfsent.3	6.5 (Berkeley) %G%
+.\"	@(#)getfsent.3	6.6 (Berkeley) %G%
 .\"
 .TH GETFSENT 3  ""
 .UC 4
@@ -62,11 +62,9 @@ struct fstab {
 The fields have meanings described in
 .IR fstab (5).
 .PP
-.I Getfsent
-reads the next line of the file, opening the file if necessary.
-.PP
 .I Setfsent
-opens the file, or rewinds it if it is already open.
+opens the file (closing any previously opened file) or rewinds it
+if it is already open.
 .PP
 .I Endfsent
 closes the file.
@@ -74,11 +72,15 @@ closes the file.
 .I Getfsspec
 and
 .I getfsfile
-sequentially search from the beginning of the file until a matching
-special file name or file system file name is found, or until EOF is
-encountered.
+search the entire file (opening it if necessary) for a matching special
+file name or file system file name.
 .PP
-Entries in the file with a type field equivalent to \fIFSTAB_XX\fP
+For programs wishing to read the entire database,
+.I getfsent
+reads the next entry (opening the file if necessary).
+.PP
+All entries in the file with a type field equivalent to
+.I FSTAB_XX
 are ignored.
 .SH FILES
 /etc/fstab
@@ -91,7 +93,7 @@ and
 .I getfsfile
 return a null pointer (0) on EOF or error.
 .I Setfsent
-returns 0 on success, 1 on failure.
+returns 0 on failure, 1 on success.
 .I Endfsent
 returns nothing.
 .SH BUGS
