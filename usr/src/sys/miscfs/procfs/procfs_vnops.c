@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.2 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -249,6 +249,7 @@ procfs_getattr(ap)
 	struct vop_getattr_args *ap;
 {
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
+	struct vattr *vap = ap->a_vap;
 	struct proc *procp;
 	int error;
 
@@ -260,15 +261,15 @@ procfs_getattr(ap)
 	error = 0;
 
 	/* start by zeroing out the attributes */
-	VATTR_NULL(ap->a_vap);
+	VATTR_NULL(vap);
 
 	/* next do all the common fields */
-	(ap->a_vap)->va_type = ap->a_vp->v_type;
-	(ap->a_vap)->va_mode = pfs->pfs_mode;
-	(ap->a_vap)->va_fileid = pfs->pfs_fileno;
-	(ap->a_vap)->va_flags = 0;
-	(ap->a_vap)->va_blocksize = PAGE_SIZE;
-	(ap->a_vap)->va_bytes = ap->a_vap->va_size = 0;
+	vap->va_type = ap->a_vp->v_type;
+	vap->va_mode = pfs->pfs_mode;
+	vap->va_fileid = pfs->pfs_fileno;
+	vap->va_flags = 0;
+	vap->va_blocksize = PAGE_SIZE;
+	vap->va_bytes = vap->va_size = 0;
 
 	/*
 	 * Make all times be current TOD.
@@ -278,8 +279,8 @@ procfs_getattr(ap)
 	 * p_stat structure is not addressible if u. gets
 	 * swapped out for that process.
 	 */
-	microtime(&(ap->a_vap)->va_ctime);
-	(ap->a_vap)->va_atime = ap->a_vap->va_mtime = ap->a_vap->va_ctime;
+	microtime(&vap->va_ctime);
+	vap->va_atime = vap->va_mtime = vap->va_ctime;
 
 	/*
 	 * now do the object specific fields
@@ -293,15 +294,15 @@ procfs_getattr(ap)
 
 	switch (pfs->pfs_type) {
 	case Proot:
-		ap->a_vap->va_nlink = 2;
-		ap->a_vap->va_uid = 0;
-		ap->a_vap->va_gid = 0;
+		vap->va_nlink = 2;
+		vap->va_uid = 0;
+		vap->va_gid = 0;
 		break;
 
 	case Pproc:
-		ap->a_vap->va_nlink = 2;
-		ap->a_vap->va_uid = procp->p_ucred->cr_uid;
-		ap->a_vap->va_gid = procp->p_ucred->cr_gid;
+		vap->va_nlink = 2;
+		vap->va_uid = procp->p_ucred->cr_uid;
+		vap->va_gid = procp->p_ucred->cr_gid;
 		break;
 
 	case Pfile:
@@ -309,13 +310,13 @@ procfs_getattr(ap)
 		break;
 
 	case Pmem:
-		ap->a_vap->va_nlink = 1;
-		ap->a_vap->va_bytes = ap->a_vap->va_size =
+		vap->va_nlink = 1;
+		vap->va_bytes = vap->va_size =
 			ctob(procp->p_vmspace->vm_tsize +
 				    procp->p_vmspace->vm_dsize +
 				    procp->p_vmspace->vm_ssize);
-		ap->a_vap->va_uid = procp->p_ucred->cr_uid;
-		ap->a_vap->va_gid = procp->p_ucred->cr_gid;
+		vap->va_uid = procp->p_ucred->cr_uid;
+		vap->va_gid = procp->p_ucred->cr_gid;
 		break;
 
 	case Pregs:
@@ -323,9 +324,9 @@ procfs_getattr(ap)
 	case Pstatus:
 	case Pnote:
 	case Pnotepg:
-		ap->a_vap->va_nlink = 1;
-		ap->a_vap->va_uid = procp->p_ucred->cr_uid;
-		ap->a_vap->va_gid = procp->p_ucred->cr_gid;
+		vap->va_nlink = 1;
+		vap->va_uid = procp->p_ucred->cr_uid;
+		vap->va_gid = procp->p_ucred->cr_gid;
 		break;
 
 	default:
@@ -611,8 +612,7 @@ procfs_readdir(ap)
 			case 0:
 				/* ship out entry for "curproc" */
 				dp->d_fileno = PROCFS_FILENO(PID_MAX+1, Pproc);
-				dp->d_namlen = 7;
-				bcopy("curproc", dp->d_name, dp->d_namlen+1);
+				dp->d_namlen = sprintf(dp->d_name, "curproc");
 				break;
 
 			default:
