@@ -1,3 +1,7 @@
+/*	@(#)i386.c	6.3 (Berkeley) %G%
+
+Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+
 /* i386.c -- Assemble code for the Intel 80386
    Copyright (C) 1989, Free Software Foundation.
 
