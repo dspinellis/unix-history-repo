@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -17,13 +17,17 @@ static char sccsid[] = "@(#)radixsort.c	5.10 (Berkeley) %G%";
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <errno.h>
+
+static void shellsort __P((const u_char **, int, int, const u_char *, int));
 
 /*
  * __rspartition is the cutoff point for a further partitioning instead
  * of a shellsort.  If it changes check __rsshell_increments.  Both of
  * these are exported, as the best values are data dependent.
  */
-#define	NPARTITION	40
+#define	NPARTITION	30
+
 int __rspartition = NPARTITION;
 int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
 
@@ -32,27 +36,35 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
  * partitioning.  Radixsort exits when the stack is empty.
  *
  * If the buckets are placed on the stack randomly, the worst case is when
- * all the buckets but one contain (npartitions + 1) elements and the bucket
+ * all the buckets but one contain (__rspartition + 1) elements and the bucket
  * pushed on the stack last contains the rest of the elements.  In this case,
  * stack growth is bounded by:
  *
- *	limit = (nelements / (npartitions + 1)) - 1;
+ *	limit = (nelements / (__rspartitions + 1)) - 1;
  *
- * This is a very large number, 52,377,648 for the maximum 32-bit signed int.
+ * This is a very large number, 102,261,125 for the maximum 32-bit signed
+ * integer if NPARTITION is 20.
  *
  * By forcing the largest bucket to be pushed on the stack first, the worst
- * case is when all but two buckets each contain (npartitions + 1) elements,
+ * case is when all but two buckets each contain (__rspartition + 1) elements,
  * with the remaining elements split equally between the first and last
- * buckets pushed on the stack.  In this case, stack growth is bounded when:
+ * buckets pushed on the stack.  In this case, stack growth is bounded by
+ * the recurrence relation:
  *
- *	for (partition_cnt = 0; nelements > npartitions; ++partition_cnt)
- *		nelements =
- *		    (nelements - (npartitions + 1) * (nbuckets - 2)) / 2;
+ * nelements_max[1] = (NBINS-1) * (__rspartition + 1);
+ * nelements_max[i] = (NBINS-3) * (__rspartition + 1) + 2 * npartitions[i-1];
+ * which resolves to:
+ * nelements_max[i] = ((NBINS-2) * (2^i - 1) + 1) * (__rspartitions + 1),
+ *
+ * which yields, for a given nelements,
+ *
+ * i = ceil(log2((((nelements / (__rspartition + 1)) - 1) / (NBINS - 2)) + 1));
+ *
  * The bound is:
  *
- *	limit = partition_cnt * (nbuckets - 1);
+ *	limit = i * (NBINS - 1);
  *
- * This is a much smaller number, 4590 for the maximum 32-bit signed int.
+ * This is a much smaller number, 4845 for the maximum 32-bit signed int.
  */
 #define	NBUCKETS	(UCHAR_MAX + 1)
 
@@ -75,7 +87,6 @@ typedef struct _stack {
 	nmemb = stackp->nmemb; \
 	indx = stackp->indx; \
 }
-
 /*
  * A variant of MSD radix sorting; see Knuth Vol. 3, page 177, and 5.2.5,
  * Ex. 10 and 12.  Also, "Three Partition Refinement Algorithms, Paige
@@ -96,49 +107,54 @@ radixsort(l1, nmemb, tab, endbyte)
 	const u_char *tab;
 	u_int endbyte;
 {
-	register int i, indx, t1, t2;
-	register const u_char **l2;
-	register const u_char **p;
-	register const u_char **bot;
-	register const u_char *tr;
+	register int *cpos, *first, *last, i, indx;
+	register const u_char **bot, **l2, **p, *tr;
 	CONTEXT *stack, *stackp;
-	int c[NBUCKETS + 1], max;
+	int c[NBUCKETS + 1], *max, *recd, t1, t2;
 	u_char ltab[NBUCKETS];
-	static void shellsort();
 
 	if (nmemb <= 1)
-		return(0);
+		return (0);
 
 	/*
 	 * T1 is the constant part of the equation, the number of elements
-	 * on the stack other than the two largest, worst-case buckets.
+	 * represented on the stack between the top and bottom entries.
 	 */
-	t1 = (__rspartition + 1) * (NBUCKETS - 2);
-	for (i = 0, t2 = nmemb; t2 > __rspartition; i += NBUCKETS - 1)
-		t2 = (t2 - t1) >> 1;
+	if (nmemb > __rspartition)
+		t1 = (nmemb / (__rspartition + 1) - 1) / (NBUCKETS - 2) + 1;
+	else
+		t1 = 0;
+	for (i = 0; t1; ++i)
+		t1 /= 2;
 	if (i) {
-		if (!(stack = stackp = (CONTEXT *)malloc(i * sizeof(CONTEXT))))
-			return(-1);
-	} else
+		i *= NBUCKETS - 1;
+		if ((stack = stackp = malloc(i * sizeof(CONTEXT))) == NULL)
+			return (-1);
+	}
+	else
 		stack = stackp = NULL;
 
 	/*
-	 * There are two arrays, one provided by the user (l1), and the
-	 * temporary one (l2).  The data is sorted to the temporary stack,
-	 * and then copied back.  The speedup of using index to determine
-	 * which stack the data is on and simply swapping stacks back and
-	 * forth, thus avoiding the copy every iteration, turns out to not
+	 * There are two arrays, l1 and l2.  The data is sorted into the temp
+	 * stack, and then copied back.  The speedup of using the index to
+	 * determine which stack the data is on and simply swapping stacks back
+	 * and forth, thus avoiding the copy every iteration, turns out to not
 	 * be any faster than the current implementation.
 	 */
-	if (!(l2 = (const u_char **)malloc(sizeof(u_char *) * nmemb)))
-		return(-1);
-
+	if ((l2 = malloc(nmemb * sizeof(u_char **))) == NULL)
+		return (-1);
 	/*
 	 * Tr references a table of sort weights; multiple entries may
 	 * map to the same weight; EOS char must have the lowest weight.
 	 */
-	if (tab)
+	if (tab) {
 		tr = tab;
+		recd = c + tr[endbyte];
+		if (recd != c && recd != c + NBUCKETS - 1) {
+			errno = EINVAL;
+			return (-1);
+		}
+	}
 	else {
 		for (t1 = 0, t2 = endbyte; t1 < t2; ++t1)
 			ltab[t1] = t1 + 1;
@@ -147,39 +163,55 @@ radixsort(l1, nmemb, tab, endbyte)
 			ltab[t1] = t1;
 		tr = ltab;
 	}
+	last = c + NBUCKETS;
+	first = c;
+	endbyte = tr[endbyte];
 
-	/* First sort is entire stack */
+	/* First sort is entire stack. */
 	bot = l1;
 	indx = 0;
 
 	for (;;) {
 		/* Clear bucket count array */
-		bzero((char *)c, sizeof(c));
+		bzero(first, sizeof(c[0]) * (last - first + 1));
+		*recd = 0;
 
 		/*
 		 * Compute number of items that sort to the same bucket
 		 * for this index.
 		 */
-		for (p = bot, i = nmemb; --i >= 0;)
-			++c[tr[(*p++)[indx]]];
+		first = c + NBUCKETS - 1;
+		last = c;
+		for (p = bot, i = nmemb; --i >= 0;) {
+			++*(cpos = c + tr[(*p++)[indx]]);
+			if (cpos > last && cpos != recd)
+				last = cpos;
+			if (cpos < first && cpos != recd)
+				first = cpos;
+		}
+		++last;
 
 		/*
 		 * Sum the number of characters into c, dividing the temp
 		 * stack into the right number of buckets for this bucket,
 		 * this index.  C contains the cumulative total of keys
-		 * before and included in this bucket, and will later be
-		 * used as an index to the bucket.  c[NBUCKETS] contains
+		 * before and included in this bucket, and will later be used
+		 * as an index to the bucket.  c[NBUCKETS] (or *last) contains
 		 * the total number of elements, for determining how many
 		 * elements the last bucket contains.  At the same time
 		 * find the largest bucket so it gets pushed first.
 		 */
-		for (i = max = t1 = 0, t2 = __rspartition; i <= NBUCKETS; ++i) {
-			if (c[i] > t2) {
-				t2 = c[i];
-				max = i;
+		t1 = (c == recd) ? c[0] : 0;
+		t2 = __rspartition;
+		for (i = last - (cpos = max = first); i-- >= 0;) {
+			if (*cpos > t2) {
+				t2 = *cpos;
+				max = cpos;
 			}
-			t1 = c[i] += t1;
+			t1 = *cpos++ += t1;
 		}
+		if (c != recd)
+			*recd += t1;
 
 		/*
 		 * Partition the elements into buckets; c decrements through
@@ -196,34 +228,34 @@ radixsort(l1, nmemb, tab, endbyte)
 
 		++indx;
 		/*
-		 * Sort buckets as necessary; don't sort c[0], it's the
-		 * EOS character bucket, and nothing can follow EOS.
+		 * Sort buckets as necessary; don't sort the EOS character
+		 * bucket c[endbyte] since it is already sorted.  *max is
+		 * pushed first.
 		 */
-		for (i = max; i; --i) {
-			if ((nmemb = c[i + 1] - (t1 = c[i])) < 2)
+		for (i = last - (cpos = max); --i >= 0;) {
+			if ((nmemb =  *(cpos+1) - (t1 = *cpos++)) < 2)
 				continue;
 			p = bot + t1;
 			if (nmemb > __rspartition)
 				STACKPUSH
 			else
-				shellsort(p, indx, nmemb, tr);
+				shellsort(p, indx, nmemb, tr, endbyte);
 		}
-		for (i = max + 1; i < NBUCKETS; ++i) {
-			if ((nmemb = c[i + 1] - (t1 = c[i])) < 2)
+		for (i = max - (cpos = first); --i >= 0;) {
+			if ((nmemb = *(cpos + 1) - (t1 = *cpos++)) < 2)
 				continue;
 			p = bot + t1;
 			if (nmemb > __rspartition)
 				STACKPUSH
 			else
-				shellsort(p, indx, nmemb, tr);
+				shellsort(p, indx, nmemb, tr, endbyte);
 		}
-		/* Break out when stack is empty */
+		/* Break out when stack is empty. */
 		STACKPOP
 	}
-
-	free((char *)l2);
-	free((char *)stack);
-	return(0);
+	free(stack);
+	free(l2);
+	return (0);
 }
 
 /*
@@ -233,11 +265,12 @@ radixsort(l1, nmemb, tab, endbyte)
  * formula (8), page 95.  Roughly O(N^3/2).
  */
 static void
-shellsort(p, indx, nmemb, tr)
-	register u_char **p, *tr;
-	register int indx, nmemb;
+shellsort(p, indx, nmemb, tr, recd)
+	register const u_char **p, *tr;
+	register int indx, nmemb, recd;
 {
-	register u_char ch, *s1, *s2;
+	register const u_char *s1, *s2;
+	register u_char ch;
 	register int incr, *incrp, t1, t2;
 
 	for (incrp = __rsshell_increments; incr = *incrp++;)
@@ -245,7 +278,8 @@ shellsort(p, indx, nmemb, tr)
 			for (t2 = t1 - incr; t2 >= 0;) {
 				s1 = p[t2] + indx;
 				s2 = p[t2 + incr] + indx;
-				while ((ch = tr[*s1++]) == tr[*s2] && ch)
+				while ((ch = tr[*s1++]) == tr[*s2] &&
+				    (ch != recd))
 					++s2;
 				if (ch > tr[*s2]) {
 					s1 = p[t2];

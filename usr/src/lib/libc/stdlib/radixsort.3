@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)radixsort.3	5.7 (Berkeley) %G%
+.\"     @(#)radixsort.3	5.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RADIXSORT 3
@@ -20,7 +20,7 @@
 The
 .Fn radixsort
 function
-is a modified radix sort.
+is a radix sort.
 .Pp
 The
 .Fn radixsort
@@ -47,7 +47,8 @@ must reference an array of
 .Dv UCHAR_MAX
 + 1 bytes which contains the sort
 weight of each possible byte value.
-The end-of-string byte must have a sort weight of 0.
+The end-of-string byte must have a sort weight of 0 or 255
+(for sorting in reverse order).
 More than one byte may have the same sort weight.
 The
 .Fa table
@@ -55,6 +56,12 @@ argument
 is useful for applications which wish to sort different characters
 equally; for example, providing a table with the same weights
 for A-Z as for a-z will result in a case-insensitive sort.
+If
+.Fa table
+is NULL,
+ASCII weights are used and
+.Fa endbyte
+has a sorting weight of 0.
 .Pp
 The
 .Fn radixsort
@@ -77,7 +84,16 @@ Otherwise, \-1 is returned and the global variable
 .Va errno
 is set to indicate the error.
 .Sh ERRORS
-The
+.Bl -tag -width Er
+.It Bq Er EINVAL
+The value of the
+.Fa endbyte
+element of
+.Fa table
+is not 0 or 255.
+.El
+.Pp
+Additionally, the
 .Fn radixsort
 function
 may fail and set
