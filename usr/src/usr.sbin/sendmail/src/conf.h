@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.12 (Berkeley) %G%
+ *	@(#)conf.h	8.13 (Berkeley) %G%
  */
 
 /*
@@ -112,10 +112,12 @@
 #if defined(sun) && !defined(BSD)
 
 # define LA_TYPE	LA_INT
+# define HASSETREUID	1	/* have setreuid(2) call */
 
 # ifdef SOLARIS
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
 #  define SYSTEM5	1	/* use System V definitions */
+#  define setreuid(r, e)	seteuid(e)
 #  include <sys/time.h>
 #  define _PATH_UNIX	"/kernel/unix"
 #  ifndef _PATH_SENDMAILCF
@@ -126,7 +128,6 @@
 # else
 			/* SunOS 4.1.x */
 #  define HASSTATFS	1	/* has the statfs(2) syscall */
-#  define HASSETREUID	1	/* have setreuid(2) call */
 #  include <vfork.h>
 
 # endif
@@ -213,13 +214,13 @@
 */
 
 #ifdef _CONVEX_SOURCE
-# define SYSTEM5	1	/* include all the System V defines */
+# define BSD		1	/* include all the BSD defines */
+# define HASUNAME	1	/* use System V uname(2) system call */
+# define LOCKF		1	/* use System V locking instead of flock */
 # define HASSTATFS	1	/* has the statfs(2) syscall */
 # define HASSETSID	1	/* has POSIX setsid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
-# define HASGETDTABLESIZE 1	/* we have getdtablesize(2) call */
-# define HASSETREUID	1	/* have setreuid(2) call */
-# define HASSETENV	1	/* has setenv(3) call */
+# define NEEDGETOPT	1	/* need replacement for getopt(3) */
 # define LA_TYPE	LA_FLOAT
 #endif
 
