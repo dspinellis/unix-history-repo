@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.15 (Berkeley) %G%
+ *	@(#)telnet.h	5.16 (Berkeley) %G%
  */
 
 #ifndef _TELNET_H_
@@ -48,7 +48,8 @@ extern char *telcmds[];
 
 #define	TELCMD_FIRST	xEOF
 #define	TELCMD_LAST	IAC
-#define	TELCMD_OK(x)	((x) <= TELCMD_LAST && (x) >= TELCMD_FIRST)
+#define	TELCMD_OK(x)	((unsigned int)(x) <= TELCMD_LAST && \
+			 (unsigned int)(x) >= TELCMD_FIRST)
 #define	TELCMD(x)	telcmds[(x)-TELCMD_FIRST]
 
 /* telnet options */
@@ -111,7 +112,7 @@ char *telopts[NTELOPTS+1] = {
 };
 #define	TELOPT_FIRST	TELOPT_BINARY
 #define	TELOPT_LAST	TELOPT_ENCRYPT
-#define	TELOPT_OK(x)	((x) <= TELOPT_LAST && (x) >= TELOPT_FIRST)
+#define	TELOPT_OK(x)	((unsigned int)(x) <= TELOPT_LAST)
 #define	TELOPT(x)	telopts[(x)-TELOPT_FIRST]
 #endif
 
@@ -187,7 +188,7 @@ extern char *slc_names[];
 #define	SLC_NAMES SLC_NAMELIST
 #endif
 
-#define	SLC_NAME_OK(x)	((x) >= 0 && (x) <= NSLC)
+#define	SLC_NAME_OK(x)	((unsigned int)(x) <= NSLC)
 #define SLC_NAME(x)	slc_names[x]
 
 #define	SLC_NOSUPPORT	0
@@ -244,7 +245,7 @@ char *authtype_names[] = {
 extern char *authtype_names[];
 #endif
 
-#define	AUTHTYPE_NAME_OK(x)	((x) >= 0 && (x) < AUTHTYPE_CNT)
+#define	AUTHTYPE_NAME_OK(x)	((unsigned int)(x) < AUTHTYPE_CNT)
 #define	AUTHTYPE_NAME(x)	authtype_names[x]
 
 /*
@@ -281,10 +282,10 @@ extern char *enctype_names[];
 #endif
 
 
-#define	ENCRYPT_NAME_OK(x)	((x) >= 0 && (x) < ENCRYPT_CNT)
+#define	ENCRYPT_NAME_OK(x)	((unsigned int)(x) < ENCRYPT_CNT)
 #define	ENCRYPT_NAME(x)		encrypt_names[x]
 
-#define	ENCTYPE_NAME_OK(x)	((x) >= 0 && (x) < ENCTYPE_CNT)
+#define	ENCTYPE_NAME_OK(x)	((unsigned int)(x) < ENCTYPE_CNT)
 #define	ENCTYPE_NAME(x)		enctype_names[x]
 
 #endif /* !_TELNET_H_ */
