@@ -1,9 +1,10 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.1
+#	@(#)Makefile	1.1
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
-DESTDIR = cc
+LIBDIR = /usr/cc/lib
+LIB = libI77.a
 CFLAGS = -O
 TAPE = /dev/nrmt1
 
@@ -18,16 +19,18 @@ OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
 	dballoc.o err.o util.o
 
-libI77.a:	$(OBJECTS) Version
+all:	$(LIB)
+
+$(LIB):	$(OBJECTS) Version
 	@echo Loading
-	@rm -f libI77.a
-	@ar rc libI77.a $(OBJECTS) Version
-	@chmod 664 libI77.a
-	@echo "Done"
+	@rm -f $(LIB)
+	@ar rc $(LIB) $(OBJECTS) Version
+	@chmod 664 $(LIB)
+	@echo "" > /dev/tty
 
 install:
-#	@mv /usr/$(DESTDIR)/lib/libI77.a /usr/$(DESTDIR)/lib/libI77.a.old
-	cp libI77.a /usr/$(DESTDIR)/lib/libI77.a
+#	@mv $(LIBDIR)/$(LIB) $(LIBDIR)/$(LIB).old
+	cp $(LIB) $(LIBDIR)/$(LIB)
 
 backspace.o:	fio.h backspace.c
 dfe.o:		fio.h dfe.c
@@ -62,12 +65,12 @@ dballoc.o:	dballoc.c
 
 Version:	$(SOURCES)
 	@rm -f Version.c
-	mkvers libI77.a $(SOURCES)
+	mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
 
 clean:
-	rm -f *.o libI77.a tags
+	rm -f *.o $(LIB) libI66.a tags
 
 index:	$(SOURCES)
 	@mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
@@ -83,7 +86,7 @@ wup:	Intro.tx
 	@nroff -ms Intro.tx | ul | more
 
 tape:	
-	@tar cbf 20 $(TAPE) \
+	@tar cbf 20 $(TAPE) mkvers.c mkvers mkindx.c mkindx \
 	Makefile READ_ME NEWS Intro.tx Intro $(SOURCES)
 
 order:
