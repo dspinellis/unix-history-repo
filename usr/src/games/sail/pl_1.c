@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.7 84/02/23";
+static	char *sccsid = "@(#)pl_1.c	2.8 84/12/12";
 #endif
 
 #include "player.h"
@@ -104,7 +104,6 @@ reprint:
 
 	(void) signal(SIGHUP, choke);
 	(void) signal(SIGINT, choke);
-	(void) signal(SIGQUIT, choke);
 
 	hasdriver = sync_exists(game);
 	if (sync_open() < 0) {
@@ -333,9 +332,9 @@ child()
 
 	(void) signal(SIGCHLD, SIG_IGN);
 	do {
-		pid = wait3(&status, WNOHANG|WUNTRACED, (struct rusage *)0);
+		pid = wait3(&status, WNOHANG, (struct rusage *)0);
 		if (pid < 0 || pid > 0 && !WIFSTOPPED(status))
 			hasdriver = 0;
-	} while (pid != 0);
+	} while (pid > 0);
 	(void) signal(SIGCHLD, child);
 }
