@@ -2,6 +2,8 @@
  *
  * Harris - Emulator specific font stuff: bitmap files.
  *
+ * @(#)font2.c	1.2 (CWI) 87/07/10
+ *
  *******************************************************************/
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,7 +28,7 @@ struct chardata {
 struct fontadmin {
 	short physical;
 	short size;
-	struct chardata *ch[128];
+	struct chardata *ch[128+1];	/* we start at index 1 */
 	struct fontadmin *f;
 };
 
@@ -281,7 +283,7 @@ struct chardata *cha[];
 	 *  now go through and fill up the array
 	 */
 	ch = firstc;
-	for( i=0; i<128; i++ )
+	for( i=1; i<=128; i++ )
 	{
 		if( i == ch->charno )
 		{

@@ -1,8 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)put.c	1.2	87/07/06";
-#endif
-
 /********************************************************************
+ *
+ * @(#)put.c	1.2 (CWI) 87/07/10
  *
  * code to put a character
  *
@@ -61,7 +59,7 @@ int c;
 	char *pw;
 	register char *p;
 	register int i, k;
-	int j, ofont, code;
+	int ofont, code;
 	short f;
 
 	if (!output)
@@ -74,22 +72,34 @@ int c;
 		return;
 	}
 	k = ofont = font;
+
+	/* try to find it on this font
+	 */
 	i = fitab[font][c] & BMASK;
-	if (i != 0) {	/* it's on this font */
+	if (i != 0) {	
 		p = codetab[font];
 		pw = widthtab[font];
-	} else if (smnt > 0) {		/* on special (we hope) */
-		for (k=smnt, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1))
-		/*
-		 * Look for the character, start at the special font
-		 * and search further in a wrap around manner 
-		 */ 
+	}
+	/* well, check special font
+	 */
+	else if ((smnt > 0) && ((i = fitab[smnt][c] & BMASK) != 0)) {
+		k = smnt;
+		p = codetab[k];
+		pw = widthtab[k];
+		setfont(k);
+	}
+	/* now just see if we can find something on another font.
+	 */
+	else {
+		for (k=1; k <= nfonts; k++) {
+			if ( k == smnt ) continue;
 			if ((i = fitab[k][c] & BMASK) != 0) {
 				p = codetab[k];
 				pw = widthtab[k];
 				setfont(k);
 				break;
 			}
+		}
 	}
 	if (i == 0 || (code = p[i] & BMASK) == 0 || k > nfonts) {
 #ifdef DEBUGABLE
@@ -100,6 +110,7 @@ int c;
 				fprintf(stderr,"not found \\(%s\n", &chname[chtab[c -128+32]]);
 		}
 #endif DEBUGABLE
+		lastw = (widthtab[font][0] * pstab[size] + dev.unitwidth/2)/dev.unitwidth;
 		return;
 	}
 	if (fontbase[k]->fonttab == 1){
