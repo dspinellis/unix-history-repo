@@ -17,7 +17,7 @@
  *
  * from hp300:	@(#)pmap.h	7.2 (Berkeley) 12/16/90
  *
- *	@(#)pmap.h	1.2 (Berkeley) %G%
+ *	@(#)pmap.h	1.3 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -115,24 +115,7 @@ typedef struct pte	pt_entry_t;	/* Mach page table entry */
 #define	KPTDI_FIRST	0x3f8		/* start of kernel virtual pde's */
 #define	KPTDI_LAST	0x3fA		/* last of kernel virtual pde's */
 
-#define I386_MAX_PTSIZE	NPTEPG*NBPG	/* max size of PT */
-#ifdef old
-#define I386_MAX_KPTSIZE 0x100000 /* max memory to allocate to KPT */
-
-#define	I386_PTBASE	0xfe200000
-#define	I386_PTMAXSIZE	0x01000000
-
-/*
- * Kernel virtual address to page table entry and to physical address.
- */
-#define	kvtopte(va) \
-	(&Sysmap[((unsigned)(va) - VM_MIN_KERNEL_ADDRESS) >> PGSHIFT])
-#define	ptetokv(pt) \
-	((((pt_entry_t *)(pt) - Sysmap) << PGSHIFT) + VM_MIN_KERNEL_ADDRESS)
-#define	kvtophys(va) \
-	((kvtopte(va)->pg_pfnum << PGSHIFT) | ((int)(va) & PGOFSET))
 extern	pt_entry_t	*Sysmap;
-#else
 
 /*
  * Address of current and alternate address space page table maps
@@ -146,11 +129,14 @@ extern int IdlePTD;
 /*
  * virtual address to page table entry and
  * to physical address. Likewise for alternate address space.
+ * Note: these work recursively, thus vtopte of a pte will give
+ * the corresponding pde that in turn maps it.
  */
 #define	vtopte(va)	(PTmap + i386_btop(va))
 #define	kvtopte(va)	vtopte(va)
 #define	ptetov(pt)	(i386_ptob(pt - PTmap)) 
 #define	vtophys(va)  (i386_ptob(vtopte(va)->pg_pfnum) | ((int)(va) & PGOFSET))
+#define ispt(va)	((va) >= UPT_MIN_ADDRESS && (va) <= KPT_MAX_ADDRESS)
 
 #define	avtopte(va)	(APTmap + i386_btop(va))
 #define	ptetoav(pt)	(i386_ptob(pt - APTmap)) 
@@ -162,7 +148,6 @@ extern int IdlePTD;
 
 #define	pdei(va)	(((va)&PD_MASK)>>PD_SHIFT)
 #define	ptei(va)	(((va)&PT_MASK)>>PT_SHIFT)
-#endif
 
 /*
  * Pmap stuff
@@ -206,8 +191,6 @@ typedef struct pv_entry {
 	struct pv_entry	*pv_next;	/* next pv_entry */
 	pmap_t		pv_pmap;	/* pmap where mapping lies */
 	vm_offset_t	pv_va;		/* virtual address for mapping */
-	pd_entry_t	*pv_ptpde;	/* non-zero if VA maps a PT page */
-	pmap_t		pv_ptpmap;	/* if pv_ptpde, pmap for PT page */
 	int		pv_flags;	/* flags */
 } *pv_entry_t;
 
