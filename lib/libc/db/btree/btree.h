@@ -33,7 +33,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)btree.h	8.3 (Berkeley) 9/14/93
+ *	@(#)btree.h	8.4 (Berkeley) 12/18/93
  */
 
 #include <mpool.h>
@@ -294,7 +294,7 @@ typedef struct _btree {
 	indx_t	bt_ovflsize;		/* cut-off for key/data overflow */
 	int	bt_lorder;		/* byte order */
 					/* sorted order */
-	enum { NOT, BACK, FORWARD, } bt_order;
+	enum { NOT, BACK, FORWARD } bt_order;
 	EPGNO	bt_last;		/* last insert */
 
 					/* B: key comparison function */
