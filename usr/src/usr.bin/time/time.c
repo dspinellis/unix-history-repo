@@ -1,58 +1,90 @@
-#ifndef lint
-static	char *sccsid = "@(#)time.c	4.7 (Berkeley) %G%";
-#endif
-
 /*
- * time
+ * Copyright (c) 1987, 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-#include <stdio.h>
-#include <signal.h>
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987, 1988 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)time.c	4.8 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/signal.h>
+#include <stdio.h>
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int status, lflag = 0;
-	register int p;
+	extern int optind;
+	register int pid;
+	int ch, status, lflag;
 	struct timeval before, after;
 	struct rusage ru;
 
-	if (argc<=1)
+	lflag = 0;
+	while ((ch = getopt(argc, argv, "l")) != EOF)
+		switch((char)ch) {
+		case 'l':
+			lflag = 1;
+			break;
+		case '?':
+		default:
+			fprintf(stderr, "usage: time [-l] command.\n");
+			exit(1);
+		}
+
+	if (!(argc -= optind))
 		exit(0);
-	if (strcmp(argv[1], "-l") == 0) {
-		lflag++;
-		argc--;
-		argv++;
-	}
+	argv += optind;
+
 	gettimeofday(&before, (struct timezone *)NULL);
-	p = fork();
-	if (p < 0) {
+	switch(pid = vfork()) {
+	case -1:			/* error */
 		perror("time");
 		exit(1);
+		/* NOTREACHED */
+	case 0:				/* child */
+		execvp(*argv, argv);
+		perror(*argv);
+		_exit(1);
+		/* NOTREACHED */
 	}
-	if (p == 0) {
-		execvp(argv[1], &argv[1]);
-		perror(argv[1]);
-		exit(1);
-	}
+	/* parent */
 	(void)signal(SIGINT, SIG_IGN);
 	(void)signal(SIGQUIT, SIG_IGN);
-	while (wait3(&status, 0, &ru) != p)
-		;
+	while (wait3(&status, 0, &ru) != pid);		/* XXX use waitpid */
 	gettimeofday(&after, (struct timezone *)NULL);
-	if ((status&0377) != 0)
+	if (status&0377)
 		fprintf(stderr, "Command terminated abnormally.\n");
 	after.tv_sec -= before.tv_sec;
 	after.tv_usec -= before.tv_usec;
 	if (after.tv_usec < 0)
 		after.tv_sec--, after.tv_usec += 1000000;
-	printt("real", &after);
-	printt("user", &ru.ru_utime);
-	printt("sys ", &ru.ru_stime);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "%9ld.%02ld real ", after.tv_sec, after.tv_usec/10000);
+	fprintf(stderr, "%9ld.%02ld user ",
+	    ru.ru_utime.tv_sec, ru.ru_utime.tv_usec/10000);
+	fprintf(stderr, "%9ld.%02ld sys\n",
+	    ru.ru_stime.tv_sec, ru.ru_stime.tv_usec/10000);
 	if (lflag) {
 		int hz = 100;			/* XXX */
 		long ticks;
@@ -89,12 +121,4 @@ main(argc, argv)
 			ru.ru_nivcsw, "involuntary context switches");
 	}
 	exit (status>>8);
-}
-
-printt(s, tv)
-	char *s;
-	struct timeval *tv;
-{
-
-	fprintf(stderr, "%9ld.%02ld %s ", tv->tv_sec, tv->tv_usec/10000, s);
 }
