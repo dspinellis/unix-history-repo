@@ -46,7 +46,7 @@ window: ${OBJS} ${LIBC}
 	${CC} -o $@ ${CFLAGS} ${OBJS} -ltermcap
 
 clean: FRC
-	rm -f ${OBJS} core window
+	rm -f ${OBJS} core window make.out tags
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
