@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -105,7 +105,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (debug == 0)
+	if (debug == 0 && tflags == 0)
 		daemon(0, 0);
 	/*
 	 * Any extra argument is considered
