@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.30 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.31 (Berkeley) %G%
  */
 
 /*
@@ -98,8 +98,8 @@ getvfs(fsid)
 
 	mp = rootfs;
 	do {
-		if (mp->m_fsid.val[0] == fsid->val[0] &&
-		    mp->m_fsid.val[1] == fsid->val[1]) {
+		if (mp->m_stat.f_fsid.val[0] == fsid->val[0] &&
+		    mp->m_stat.f_fsid.val[1] == fsid->val[1]) {
 			return (mp);
 		}
 		mp = mp->m_next;
