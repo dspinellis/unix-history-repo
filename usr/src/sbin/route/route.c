@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -234,6 +234,7 @@ netname(sa)
 	u_long net, mask;
 	register u_long i;
 	int subnetshift;
+	char *ns_print();
 
 	switch (sa->sa_family) {
 
@@ -386,15 +387,21 @@ changeroute(argc, argv)
 error(cmd)
 	char *cmd;
 {
+	extern int errno;
 
-	if (errno == ESRCH)
+	switch(errno) {
+	case ESRCH:
 		fprintf(stderr, "not in table\n");
-	else if (errno == EBUSY)
+		break;
+	case EBUSY:
 		fprintf(stderr, "entry in use\n");
-	else if (errno == ENOBUFS)
+		break;
+	case ENOBUFS:
 		fprintf(stderr, "routing table overflow\n");
-	else
+		break;
+	default:
 		perror(cmd);
+	}
 }
 
 char *
