@@ -1,4 +1,4 @@
-/*	cy.c	7.5	87/04/02	*/
+/*	cy.c	7.6	87/04/07	*/
 
 /*
  * Cypher tape driver. Stand alone version.
@@ -44,8 +44,10 @@ cyopen(io)
 {
 	register ctlradr = CYADDR(0);
 
-	if (io->i_unit != 0)
-		_stop("Only 1 cypher supported\n");
+	if (io->i_unit != 0) {
+		printf("Only 1 cypher supported\n");
+		return (ENXIO);
+	}
 	SCP = CYSCP(0);				/* absolute - for setup */
 	CY_RESET(ctlradr);			/* reset the controller */
 	/*
@@ -92,15 +94,19 @@ cyopen(io)
 	if (tpb.tpstatus & CYS_ERR) {
 		printf("Cypher initialization error!\n");
 		cy_print_error(tpb.tpcmd, tpb.tpstatus);
-		_stop("");
+		return (ENXIO);
 	}
 	uncache(&tpb.tpcount);
 	cybufsize = tpb.tpcount;
-	if (cycmd(io, CY_REW) == -1)
-		_stop("Rewind failed!\n");
+	if (cycmd(io, CY_REW) == -1) {
+		printf("cy%d: Rewind failed!\n", io->i_unit);
+		return (ENXIO);
+	}
 	while (io->i_boff > 0) {
-		if (cycmd(io, CY_FSF) == -1)
-			_stop("cy: seek failure!\n");
+		if (cycmd(io, CY_FSF) == -1) {
+			printf("cy%d: seek failure!\n", io->i_unit);
+			return (ENXIO);
+		}
 		io->i_boff--;
 	}
 #ifdef notdef
@@ -115,6 +121,7 @@ cyopen(io)
 	}
 #endif
 #endif
+	return (0);
 }
 
 cyclose(io)
