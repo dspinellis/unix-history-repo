@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.7	(Berkeley)	87/06/18
+#	@(#)Makefile	4.7	(Berkeley)	87/10/26
 #
 #	make file for STYLE and DICTION
 #
