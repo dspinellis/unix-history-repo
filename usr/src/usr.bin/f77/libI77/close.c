@@ -1,12 +1,12 @@
 /*
-char id_close[] = "@(#)close.c	1.4";
+char id_close[] = "@(#)close.c	1.5";
  *
  * close.c  -  f77 file close, flush, exit routines
  */
 
 #include "fio.h"
 
-#define FROM_OPEN	'\1'
+static char FROM_OPEN[] =	"\2";
 
 f_clos(a) cllist *a;
 {	unit *b;
@@ -18,11 +18,11 @@ f_clos(a) cllist *a;
 	errflag = a->cerr;
 	lunit = a->cunit;
 	if(not_legal(lunit)) err(errflag,F_ERUNIT,"close");
-	if(lunit==STDERR && (!a->csta || *a->csta != FROM_OPEN))
+	if(lunit==STDERR && (!a->csta || *a->csta != FROM_OPEN[0]))
 		err(errflag,F_ERUNIT,"can't close stderr");
 	b= &units[lunit];
 	if(!b->ufd) err(errflag,F_ERNOPEN,"close");
-	if(a->csta)
+	if(a->csta && *a->csta != FROM_OPEN[0])
 		switch(lcase(*a->csta))
 		{
 	delete:
@@ -50,7 +50,7 @@ f_exit()
 	ftnint lu, dofirst = YES;
 	cllist xx;
 	xx.cerr=1;
-	xx.csta="\1";
+	xx.csta=FROM_OPEN;
 	for(lu=STDOUT; (dofirst || lu!=STDOUT); lu = ++lu % MXUNIT)
 	{
 		xx.cunit=lu;
