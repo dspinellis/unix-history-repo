@@ -1,0 +1,128 @@
+! $XConsortium: XFontSel.ad,v 1.11 91/07/22 15:28:38 gildea Exp $
+!
+! app-defaults for XFontSel
+!
+! Copyright 1985, 1986, 1987, 1988, 1989 by the
+! Massachusetts Institute of Technology
+!
+! Permission to use, copy, modify, and distribute this
+! software and its documentation for any purpose and without
+! fee is hereby granted, provided that the above copyright
+! notice appear in all copies and that both that copyright
+! notice and this permission notice appear in supporting
+! documentation, and that the name of M.I.T. not be used in
+! advertising or publicity pertaining to distribution of the
+! software without specific, written prior permission.
+! M.I.T. makes no representations about the suitability of
+! this software for any purpose.  It is provided "as is"
+! without express or implied warranty.
+!
+! Author:
+!	Ralph R. Swick, Digital Equipment Corporation/M.I.T. Project Athena
+!	one weekend in November, 1989
+
+*appDefaultsVersion:	1
+
+*pixelSizeList: 7, 30, 40, 50, 60
+*pointSizeList: 250, 300, 350, 400
+
+XFontSel.cursor:	left_ptr
+*allowShellResize:	true
+
+*commandBox.ShowGrip:	false
+*commandBox*top:	chainTop
+*commandBox*bottom:	chainTop
+
+*quitButton.Label:	quit
+*quitButton.left:	chainLeft
+*quitButton.right:	chainLeft
+
+*ownButton.Label:	select
+*ownButton.fromHoriz:	quitButton
+*ownButton.left:	chainLeft
+*ownButton.right:	chainLeft
+
+*countLabel.BorderWidth: 0
+*countLabel.Justify:	right
+*countLabel.Label:	999999 fonts match
+*countLabel.left:	chainRight
+*countLabel.right:	chainRight
+
+*fieldBox.Orientation:	horizontal
+*fieldBox.HSpace:	0
+*fieldBox.HSpace:	0
+
+*dash.label:		-
+*dash.borderWidth:	0
+*dash.internalHeight:	0
+*dash.internalWidth:	0
+
+*fieldBox*MenuButton.BorderWidth:	0
+*fieldBox*MenuButton.internalHeight:	0
+*fieldBox*MenuButton.internalWidth:	0
+*fieldBox*MenuButton.shapeStyle:	rectangle
+
+#ifdef LONG_NAMES
+*fieldBox*field0.Label:	foundry
+*fieldBox*field1.Label: family
+*fieldBox*field2.Label: weight
+*fieldBox*field3.Label: slant
+*fieldBox*field4.Label: set width
+*fieldBox*field5.Label: add style
+*fieldBox*field6.Label: pixel size
+*fieldBox*field7.Label: point size
+*fieldBox*field8.Label: resolutionX
+*fieldBox*field9.Label: resolutionY
+*fieldBox*field10.Label: spacing
+*fieldBox*field11.Label: avg width
+*fieldBox*field12.Label: registry
+*fieldBox*field13.Label: encoding
+#else
+*fieldBox*field0.Label:	fndry
+*fieldBox*field1.Label: fmly
+*fieldBox*field2.Label: wght
+*fieldBox*field3.Label: slant
+*fieldBox*field4.Label: sWdth
+*fieldBox*field5.Label: adstyl
+*fieldBox*field6.Label: pxlsz
+*fieldBox*field7.Label: ptSz
+*fieldBox*field8.Label: resx
+*fieldBox*field9.Label: resy
+*fieldBox*field10.Label: spc
+*fieldBox*field11.Label: avgWdth
+*fieldBox*field12.Label: rgstry
+*fieldBox*field13.Label: encdng
+#endif
+
+!*fieldBox*field11.Sensitive: False
+*fieldBox*field11.menu.Options.ShowUnselectable: False
+*fieldBox*field11.menu*font: -misc-fixed-medium-r-normal--7-*-*-*-c-50-iso8859-1
+
+
+!*field1*menu*courier.Font:
+
+*fontName*skipAdjust:	true
+
+*sampleText*Label: \
+Processing fonts...
+
+*sampleText: \
+ABCDEFGHIJKLMNOPQRSTUVWXYZ\n\
+abcdefghijklmnopqrstuvwxyz\n\
+0123456789\n\
+\340\346\347\353\356\360\361\363\371\375\
+\300\306\307\313\316\320\321\323\331\335
+
+
+*sampleText16: \
+\044\042\044\044\044\046\044\050\044\052\044\053\044\055\044\057\
+\044\061\044\063\044\065\044\067\044\071\044\073\044\075\044\077\n\
+\044\101\044\104\044\106\044\110\044\112\044\113\044\114\044\115\
+\044\116\044\117\044\122\044\125\044\130\044\133\044\136\044\137\n\
+\061\042\061\044\061\046\061\050\061\052\061\053\061\055\061\057\
+\061\061\061\063\061\065\061\067\061\071\061\073\061\075\061\077\n\
+\061\101\061\104\061\106\061\110\061\112\061\113\061\114\061\115\
+\061\116\061\117\061\122\061\125\061\130\061\133\061\136\061\137\n\
+
+*sampleText*allowResize: true
+*sampleText*Height:	 50

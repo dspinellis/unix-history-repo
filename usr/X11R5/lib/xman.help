@@ -1,0 +1,228 @@
+
+
+XMAN is an X Window System manual browsing tool.
+
+
+
+GETTING STARTED
+
+By default, xman starts by creating a small window that contains
+three "buttons" (places on which to click a pointer button).  Two of
+these buttons, Help and Quit, are self-explanatory.  The third, Manual
+Page, creates a new manual page browser window; you may use this
+button to open a new manual page any time xman is running.
+
+A new manual page starts up displaying this help information.  The
+manual page contains three sections.  In the upper left corner are two
+menu buttons.  When the mouse is clicked on either of these buttons a
+menu is popped up.  The contents of these menus is described below.
+Directly to the right of the menu buttons is an informational display.
+This display usually contains the name of the directory or manual page
+being displayed.  It is also used to display warning messages and the
+current version of xman.  The last and largest section is the
+information display.  This section of the application contains either
+a list of manual pages to choose from or the text of a manual page.
+
+To use xman pull down the Sections menu to select a manual section.
+When the section is displayed, click the left pointer button on the
+name of the manual page that you would like to see.  Xman will
+replace the directory listing with the manual page you selected.
+
+That should be enough to get you started.  Once you understand the
+basics of how to use xman, take a look at the rest of this file to see the
+advanced features that are available to make using xman fast and 
+efficient.
+
+
+SCROLLING TEXT
+
+The scroll bars are similar to xterm and xmh scroll bars; clicking the
+left or right pointer button with the pointer at the bottom of the
+scroll bar will scroll the text down or up one page, respectively.
+Clicking with the pointer farther up the scroll bar scrolls
+proportionally less than one page.  Clicking the middle button a
+portion of the way down the scroll bar will move the text window that
+portion of the way down the text.  Holding the middle button and
+moving the pointer up and down allows the text to be scrolled
+dynamically.
+
+You may also type 'f' or <space bar> to scroll down one page, and
+'b' to scroll up one page.
+
+
+RESIZING WINDOWS
+
+You can resize any of the windows in xman with your window manager, 
+and xman will do the best it can to resize everything internally into
+a useful configuration.  The only control over the internal arrangement
+that you have is moving the border between the manual page and directory
+when both are displayed.  This is done by clicking and holding the any 
+pointer button when the cursor is over the small square (grip) on the 
+right side of the screen.  The grip is located on the horizontal line 
+which separates the panes.  The grip may be moved up and down to resize 
+the panes of the screen, and when the pointer button is released xman 
+will move the pane boundary to the newly specified location.
+
+
+MENU COMMANDS
+
+There are two ways to activate the menus.  The first is to click any
+pointer button in the menu button corresponding to the menu you want
+to activate.  The second method is to hold down the "Control" key and 
+click the left pointer button for the Options menu or the middle
+pointer button for the Sections menu.  Reguardless of how the menu
+was activated, selecting items is the same.
+
+Once a menu is activated, continue to hold down the pointer button and
+drag the pointer cursor over the item that you would like to activate.
+Once the item that you want to select is highlighted, select it by 
+releasing the pointer button.  To avoid making a menu selection, move
+the pointer cursor outside the menu and release the button.
+
+Selecting one of the items in the Sections menu will display the
+named directory.
+
+The following commands are available through the Options menu:
+
+Display Directory		Show the current section directory.
+
+Display Manual Page	Show the current manual page.
+
+Help				Create a help window with this text displayed.
+
+Search			Pop up a dialogue box that allows the entire tree
+				of manual pages to be searched for a specific name.
+				A keyword (apropos) search is also available through
+				this dialogue box.
+
+Show Both Screens		Split the manual page display window to display
+				both the current manual page and the directory. 
+Show One Screen		Return to a single screen display of either a 
+			manual page or directory listing.
+
+Remove This Man Page	Remove this manual page, do not quit.
+
+Open New Man Page	Pop up a new manual page browser window.
+
+Show Version		Print the current version of xman to the information
+				display window.  Please include the version number
+				when reporting bugs.
+ 
+Quit				Close all xman windows and quit xman.
+
+
+SUMMARY OF BASIC ACTIONS
+
+In a menu button:
+
+	CLICK:		Pop up a menu
+
+In a directory, manual page, or scroll bar:
+
+	<CONTROL> CLICK LEFT:	    	Pop up the Options menu.
+	<CONTROL> CLICK MIDDLE:	Pop up the Sections menu.
+
+In a  directory:
+
+	CLICK LEFT:				Bring up named manual page
+	<SHIFT> CLICK MIDDLE:		Go to manual page previously chosen.
+
+In a manual page or apropos listing:
+
+	<SHIFT> CLICK MIDDLE:		Go to directory of manual pages.
+
+In scroll bars:
+
+	CLICK LEFT:		Move down - more if pointer is near bottom
+						    of window, less if at top.
+	CLICK MIDDLE:		Move top of page to current pointer position.
+	CLICK RIGHT:		Move up - more if pointer is near bottom
+					  of window, less if at top.
+
+SEARCHING
+
+Xman has a built-in searching utility that allows the user to search
+the entire manual page tree for a specific topic (manual page search)
+or a keyword (apropos search).  The search dialogue box can be activated
+from the Options menu, or by the key Control-s.  If the search is started
+from the small initial topbox xman will open a new manual page if the 
+search was successful, and fail silently if the search was unsuccessful.
+
+Manual page searches are performed starting in the currently
+displayed section.  If no match is found then the remaining sections
+are searched in the order that the sections appear in the Sections
+menu, starting at the top.  The current version of xman immediately
+displays the first manual page that it finds.  If the manual page cannot 
+be found that fact is noted in the informational display.
+
+An apropos search will search a list of short descriptions for all
+manual pages on the system and return a list of all descriptions
+which contain the keyword specified.
+
+
+KEYBOARD ACCELERATORS
+
+Xman contains a set of preinstalled keyboard accelerators.  These are
+a set of key bindings that perform many of the same operations as the menu 
+items.  Since it is not necessary to pull down the menu,  these actions can 
+be performed more quickly, hence the name accelerators.  
+
+The default key bindings for xman are:
+
+Anywhere:
+
+	Control - c		Exit xman
+	Control - h		Create the help window
+	Control - n		Create a new man page
+	Control - q		Exit xman
+	Control - s             Create a search popup 
+
+In a manual page, directory, or help window:
+
+	Control - r		Remove this manual page or help display
+	Control - v		Show the current version of xman
+
+In a manual page or directory:
+
+	Control - d		Display Directory
+	Control - m		Display Man Page
+
+In a manual page only:
+
+	b			Page Back
+	f			Page forward
+	<Space>			Page forward
+	1			One line forward
+	2 			Two lines forward
+	3 			Three lines forward
+	4 			Four lines forward
+
+Note: Control-s does not have any effect in the help window.
+
+
+FURTHER INFORMATION
+
+Xman is highly customizable.  Through the X resource database a user
+can customize the look and feel of this application so that it meets a
+preferred style of interaction.  Almost any configuration that is available 
+dynamically can be specified through resources.  This includes changing the
+size, color, and fonts,	starting with no topbox, showing both screens,
+and rebinding the keyboard accelerators.
+
+The information on customizing xman is contained in the xman manual page,
+I will leave it to you to figure out how to find and display that
+information :-)
+
+
+					Chris D. Peterson
+					MIT X Consortium
+
+CREDITS
+
+Version:    Use 'Show Version' menu item.
+Written By: Chris D. Peterson - formerly MIT X Consortium
+Based Upon: Xman for X10 by Barry Shein - Boston University
+Copyright:  1988, 1989 Massachusetts Institute of Technology
+Edited by Donna Converse and Dave Sternlicht
+
+
