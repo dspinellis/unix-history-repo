@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	1.5 83/10/28";
+static	char *sccsid = "@(#)sync.c	1.6 83/10/28";
 #endif
 
 #include "externs.h"
@@ -30,12 +30,23 @@ register struct ship *ship;
 	Write(W_SIGNAL, from, 1, (int)message, 0, 0, 0);
 }
 
+#include <sys/types.h>
+#include <sys/stat.h>
 sync_exists(game)
 {
 	char buf[sizeof sync_file];
+	struct stat s;
+	time_t t;
 
 	(void) sprintf(buf, SF, game);
-	return access(buf, 0) >= 0;
+	time(&t);
+	if (stat(buf, &s) < 0)
+		return 0;
+	if (s.st_mtime < t - 60*60*2) {		/* 2 hours */
+		unlink(buf);
+		return 0;
+	} else
+		return 1;
 }
 
 sync_open()
