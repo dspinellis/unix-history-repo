@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.92 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.93 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,7 +43,7 @@ struct vnodeopv_entry_desc lfs_vnodeop_entries[] = {
 	{ &vop_create_desc, lfs_create },		/* create */
 	{ &vop_mknod_desc, lfs_mknod },			/* mknod */
 	{ &vop_open_desc, ufs_open },			/* open */
-	{ &vop_close_desc, ufs_close },			/* close */
+	{ &vop_close_desc, lfs_close },			/* close */
 	{ &vop_access_desc, ufs_access },		/* access */
 	{ &vop_getattr_desc, lfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, ufs_setattr },		/* setattr */
@@ -637,3 +637,33 @@ lfs_getattr(ap)
 	vap->va_filerev = ip->i_modrev;
 	return (0);
 }
+/*
+ * Close called
+ *
+ * XXX -- we were using ufs_close, but since it updates the
+ * times on the inode, we might need to bump the uinodes
+ * count.
+ */
+/* ARGSUSED */
+int
+lfs_close(ap)
+	struct vop_close_args /* {
+		struct vnode *a_vp;
+		int  a_fflag;
+		struct ucred *a_cred;
+		struct proc *a_p;
+	} */ *ap;
+{
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
+	int mod;
+
+	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED)) {
+		mod = ip->i_flag & IMOD;
+		ITIMES(ip, &time, &time);
+		if (!mod && ip->i_flag & IMOD)
+			ip->i_lfs->lfs_uinodes++;
+	}
+	return (0);
+}
+
