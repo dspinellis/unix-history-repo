@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)getpar.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpar.c	4.5 (Berkeley) %G%";
 #endif not lint
 
 # include	<stdio.h>
@@ -173,7 +173,7 @@ char	*t;
 
 	if (t == 0)
 		t = " \t\n;";
-	sprintf(format, "%%%d[^%s]", l, t);
+	(void)sprintf(format, "%%%d[^%s]", l, t);
 	while (1)
 	{
 		if ((f = testnl()) && s)

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*************************************************************************
@@ -369,7 +369,7 @@ int v0,v1,v2,v3,v4,v5,v6,v7,v8,v9;
 
 	p.line = ps->line+1; p.col = ps->col+1;
 	move(&p);
-	sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
+	(void)sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
 	pstring(str);
 }
 
@@ -377,7 +377,7 @@ printf(st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9)
 char *st;
 int v0,v1,v2,v3,v4,v5,v6,v7,v8,v9;
 {
-	sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
+	(void)sprintf(str,st,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9);
 	pstring(str);
 }
 
