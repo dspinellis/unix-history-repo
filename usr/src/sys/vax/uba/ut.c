@@ -1,4 +1,4 @@
-/*	ut.c	4.10	82/01/17	*/
+/*	ut.c	4.11	82/03/14	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -84,7 +84,7 @@ utprobe(reg)
 	br=0; cvec=br; br=cvec;
 	utintr(0);
 #endif
-#if 0
+#if notdef
 	/*
 	 * It appears the controller won't interrupt unless the
 	 * slave is off-line...this is as bad as the TS-11.

@@ -1,4 +1,4 @@
-/*	uba.c	4.39	81/12/09	*/
+/*	uba.c	4.40	82/03/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -456,7 +456,7 @@ ubaerror(uban, uh, xx, uvec, uba)
 }
 #endif
 
-#if 0
+#if notdef
 /*
  * This routine allows remapping of previously
  * allocated UNIBUS bdp and map resources
