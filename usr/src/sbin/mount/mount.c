@@ -12,21 +12,20 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/errno.h>
-#include <sys/signal.h>
-#include <sys/ucred.h>
+#include <signal.h>
 #include <sys/mount.h>
 #include <fstab.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 #define DEFAULT_ROOTUID	-2
@@ -38,25 +37,32 @@ static char sccsid[] = "@(#)mount.c	8.6 (Berkeley) %G%";
 	(!strcmp(type, FSTAB_RW) || !strcmp(type, FSTAB_RQ))
 
 int debug, force, verbose, updateflg, mnttype;
-char *mntname, **envp;
-char **vfslist, **makevfslist();
-static void prmount();
+char *mntname;
+char **vfslist;
+static int badvfstype __P((int, char **));
+static int badvfsname __P((char *, char **));
+static int getexecopts __P((char *, char **));
+static struct statfs *getmntpt __P((char *));
+static int getmnttype __P((char *));
+static void getstdopts __P((char *, int *));
+static void getufsopts __P((char *, int *));
+static char **makevfslist __P((char *));
+static int mountfs __P((char *, char *, int, char *, char *, char *));
+static void prmount __P((char *, char *, int));
+static void usage __P((void));
 
-main(argc, argv, arge)
+int
+main(argc, argv)
 	int argc;
 	char **argv;
-	char **arge;
 {
-	extern char *optarg;
-	extern int optind;
-	register struct fstab *fs;
+	struct fstab *fs;
 	int all, ch, rval, flags, ret, pid, i;
 	long mntsize;
-	struct statfs *mntbuf, *getmntpt();
+	struct statfs *mntbuf;
 	char *type, *options = NULL;
 	FILE *pidfile;
 
-	envp = arge;
 	all = 0;
 	type = NULL;
 	mnttype = MOUNT_UFS;
@@ -166,7 +172,7 @@ main(argc, argv, arge)
 		if (options == NULL)
 			options = fs->fs_mntops;
 		else {
-			register char *cp;
+			char *cp;
 
 			/*
 			 * Concat the two strings with the command line
@@ -226,11 +232,12 @@ main(argc, argv, arge)
 	exit (ret);
 }
 
+static int
 mountfs(spec, name, flags, type, options, mntopts)
 	char *spec, *name, *type, *options, *mntopts;
 	int flags;
 {
-	union wait status;
+	int status;
 	pid_t pid;
 	int argc, i;
 	struct ufs_args args;
@@ -291,18 +298,18 @@ mountfs(spec, name, flags, type, options, mntopts)
 				perror("mount: vfork starting file system");
 				return (1);
 			}
-			if (waitpid(pid, (int *)&status, 0) != -1 &&
+			if (waitpid(pid, &status, 0) != -1 &&
 			    WIFEXITED(status) &&
 			    WEXITSTATUS(status) != 0)
 				return (WEXITSTATUS(status));
 			spec = mntname;
 			goto out;
 		}
-		execve(execname, argv, envp);
+		execv(execname, argv);
 		(void) fprintf(stderr, "mount: cannot exec %s for %s: ",
 			execname, name);
 		perror((char *)NULL);
-		exit (1);
+		exit(1);
 		/* NOTREACHED */
 
 	}
@@ -325,22 +332,22 @@ mountfs(spec, name, flags, type, options, mntopts)
 			perror((char *)NULL);
 			break;
 		}
-		return(1);
+		return (1);
 	}
 
 out:
 	if (verbose)
 		prmount(spec, name, flags);
 
-	return(0);
+	return (0);
 }
 
 static void
 prmount(spec, name, flags)
 	char *spec, *name;
-	register short flags;
+	int flags;
 {
-	register int first;
+	int first;
 
 	(void)printf("%s on %s", spec, name);
 	if (!(flags & MNT_VISFLAGMASK)) {
@@ -372,6 +379,7 @@ prmount(spec, name, flags)
 	(void)printf(")\n");
 }
 
+static int
 getmnttype(fstype)
 	char *fstype;
 {
@@ -382,6 +390,7 @@ getmnttype(fstype)
 	return (0);
 }
 
+static void
 usage()
 {
 
@@ -394,11 +403,12 @@ usage()
 	exit(1);
 }
 
+static void
 getstdopts(options, flagp)
 	char *options;
 	int *flagp;
 {
-	register char *opt;
+	char *opt;
 	int negative;
 	char optbuf[BUFSIZ];
 
@@ -467,19 +477,22 @@ getstdopts(options, flagp)
 }
 
 /* ARGSUSED */
+static void
 getufsopts(options, flagp)
 	char *options;
 	int *flagp;
 {
+
 	return;
 }
 
+static int
 getexecopts(options, argv)
 	char *options;
 	char **argv;
 {
-	register int argc = 0;
-	register char *opt;
+	int argc = 0;
+	char *opt;
 
 	for (opt = strtok(options, ","); opt; opt = strtok((char *)NULL, ",")) {
 		if (opt[0] != '-')
@@ -493,12 +506,12 @@ getexecopts(options, argv)
 	return (argc);
 }
 
-struct statfs *
+static struct statfs *
 getmntpt(name)
 	char *name;
 {
 	long mntsize;
-	register long i;
+	long i;
 	struct statfs *mntbuf;
 
 	mntsize = getmntinfo(&mntbuf, MNT_NOWAIT);
@@ -512,42 +525,44 @@ getmntpt(name)
 
 static int skipvfs;
 
+static int
 badvfstype(vfstype, vfslist)
-	short vfstype;
+	int vfstype;
 	char **vfslist;
 {
 
 	if (vfslist == 0)
-		return(0);
+		return (0);
 	while (*vfslist) {
 		if (vfstype == getmnttype(*vfslist))
-			return(skipvfs);
+			return (skipvfs);
 		vfslist++;
 	}
 	return (!skipvfs);
 }
 
+static int
 badvfsname(vfsname, vfslist)
 	char *vfsname;
 	char **vfslist;
 {
 
 	if (vfslist == 0)
-		return(0);
+		return (0);
 	while (*vfslist) {
 		if (strcmp(vfsname, *vfslist) == 0)
-			return(skipvfs);
+			return (skipvfs);
 		vfslist++;
 	}
 	return (!skipvfs);
 }
 
-char **
+static char **
 makevfslist(fslist)
 	char *fslist;
 {
-	register char **av, *nextcp;
-	register int i;
+	char **av, *nextcp;
+	int i;
 
 	if (fslist == NULL)
 		return (NULL);
