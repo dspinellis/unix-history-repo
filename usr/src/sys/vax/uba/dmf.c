@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.13 (Berkeley) %G%
+ *	@(#)dmf.c	6.14 (Berkeley) %G%
  */
 
 #include "dmf.h"
