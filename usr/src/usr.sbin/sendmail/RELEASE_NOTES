@@ -1,3 +1,49 @@
+8.6.2/8.6.2	93/10/15
+	Put a "successful delivery" message in the transcript for
+		addresses that get return-receipts.
+	Put a prominent "this is only a warning" message in warning
+		messages -- some people don't read carefully enough
+		and end up sending the message several times.
+	Include reason for temporary failure in the "warning" return
+		message.  Currently, it just says "cannot send for
+		four hours".
+	Fix the "Original message received" time generated for
+		returntosender messages.  It was previously listed as
+		the current time.  Bug reported by Eric Hagberg of
+		Cornell University Medical College.
+	If there is an error when writing the body of a message,
+		don't send the trailing dot and wait for a response
+		in sender SMTP, as this could cause the connection to
+		hang up under some bizarre circumstances.  From Eric
+		Wassenaar.
+	Fix some server SMTP synchronization problems caused when
+		connections fail during message collection.  From
+		Eric Wassenaar.
+	Fix a problem that can cause srvrsmtp to reject mail if the
+		name server is down -- it accepts the RCPT but rejects
+		the DATA command.  Problem reported by Jim Murray of
+		Stratus.
+	Fix a problem that can cause core dumps if the config file
+		incorrectly resolves to a null hostname.  Reported by
+		Allan Johannesen of WPI.
+	Non-root use of -C flag, dangerous -f flags, and use of -oQ
+		by non-root users were not put into
+		X-Authentication-Warning:s as intended because the
+		config file hadn't set the PrivacyFlags yet.  Fix
+		from Sven-Ove Westberg of the University of Lulea.
+	Under very odd circumstances, the alias file rebuild code
+		could get confused as to whether a database was
+		open or not.
+	Check "vendor code" on the end of V lines -- this is
+		intended to provide a hook for vendor-specific
+		configuration syntax.  (This is a "new feature",
+		but I've made an exception to my rule in a belief
+		that this is a highly exceptional case.)
+	Portability fixes for DG/UX (from Douglas Anderson of NCSC),
+		SCO Unix (from Murray Kucherawy), A/UX, and OSF/1
+		(from Jon Forrest of UC Berkeley)
+	CONFIG: fix ``mailer:host'' form of UUCP relay naming.
+
 8.6.1/8.6	93/10/08
 	Portability fixes for A/UX and Encore UMAX V.
 	Fix error message handling -- if you had a name server down
