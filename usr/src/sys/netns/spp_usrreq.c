@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spp_usrreq.c	7.14 (Berkeley) %G%
+ *	@(#)spp_usrreq.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"

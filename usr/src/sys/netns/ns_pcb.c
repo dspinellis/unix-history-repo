@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ns_pcb.c	7.10 (Berkeley) %G%
+ *	@(#)ns_pcb.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"

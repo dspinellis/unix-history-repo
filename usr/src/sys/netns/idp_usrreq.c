@@ -4,11 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)idp_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)idp_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
@@ -519,7 +518,7 @@ idp_raw_usrreq(so, req, m, nam, control)
 
 	case PRU_ATTACH:
 
-		if (suser(u.u_cred, &u.u_acflag) || (nsp != NULL)) {
+		if (!(so->so_state & SS_PRIV) || (nsp != NULL)) {
 			error = EINVAL;
 			break;
 		}
