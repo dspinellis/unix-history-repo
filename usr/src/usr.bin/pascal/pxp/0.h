@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)0.h	5.1 (Berkeley) %G%
+ *	@(#)0.h	5.2 (Berkeley) %G%
  */
 
 /* #define DEBUG */
@@ -78,7 +78,7 @@ char	profile, onefile;
 #ifdef RMOTHERS
 char	rmothers;
 #endif RMOTHERS
-char	*firstname, *stdoutn;
+char	*firstname, stdoutn[];
 #ifdef DEBUG
 char	fulltrace, errtrace, testtrace, yyunique, typetest;
 #endif
@@ -337,6 +337,7 @@ int	gocnt;
 int	cnts;
 
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 
 typedef enum {FALSE, TRUE} bool;
