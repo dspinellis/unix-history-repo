@@ -1,4 +1,4 @@
-/*	if_en.c	4.60	82/05/24	*/
+/*	if_en.c	4.61	82/05/25	*/
 
 #include "en.h"
 #include "imp.h"
@@ -598,6 +598,6 @@ COUNT(ENLHINIT);
 	ifp->if_dstaddr = esifp->if_addr;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_DIRECT|RTF_HOST);
 }
 #endif
