@@ -1,3 +1,0 @@
-cc -c -O -DSTANDALONE ../$1.c
-ld -s -o $1 srt0.o $1.o -lsa -lc
-rm $1.o

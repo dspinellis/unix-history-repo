@@ -1,4 +1,0 @@
-other::1:
-sys::2:bin,sys
-bin::3:sys,bin
-uucp::4:

@@ -1,8 +1,0 @@
-/etc/mkfs /dev/rrk2 4000
-/etc/mount /dev/rk2 /x
-dir=$1
-shift
-cd /x
-(cd $dir; tar cf - $*) | tar xf -
-cd /
-/etc/umount /dev/rk2

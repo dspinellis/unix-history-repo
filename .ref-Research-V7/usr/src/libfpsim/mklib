@@ -1,1 +1,0 @@
-ar rb fakfp.o /lib/libc.a fpsim.o
