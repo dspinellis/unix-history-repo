@@ -148,6 +148,7 @@ soo_stat(so, ub)
 {
 
 	bzero((caddr_t)ub, sizeof (*ub));
+	ub->st_mode = S_IFSOCK;
 	return ((*so->so_proto->pr_usrreq)(so, PRU_SENSE,
 	    (struct mbuf *)ub, (struct mbuf *)0, 
 	    (struct mbuf *)0));
