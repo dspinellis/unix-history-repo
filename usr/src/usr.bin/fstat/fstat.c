@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -132,20 +132,15 @@ main(argc, argv)
 	register struct passwd *passwd;
 	struct proc *p;
 	int arg, ch, what;
+	char *namelist = NULL, *memfile = NULL;
 
 	arg = 0;
 	what = KINFO_PROC_ALL;
-	while ((ch = getopt(argc, argv, "fnp:u:v")) != EOF)
+	while ((ch = getopt(argc, argv, "fnp:u:vNM")) != EOF)
 		switch((char)ch) {
 		case 'f':
 			fsflg = 1;
 			break;
-		case 'M':
-			/* NOTYET: set kernel to optarg. */
-			usage();
-		case 'N':
-			/* NOTYET: set memory to optarg. */
-			usage();
 		case 'n':
 			nflg = 1;
 			break;
@@ -174,6 +169,12 @@ main(argc, argv)
 		case 'v':
 			vflg = 1;
 			break;
+		case 'N':
+			namelist = optarg;
+			break;
+		case 'M':
+			memfile = optarg;
+			break;
 		case '?':
 		default:
 			usage();
@@ -197,8 +198,7 @@ main(argc, argv)
 		checkfile = 1;
 	}
 
-	/* modify the following to make work on dead kernels */
-	if (kvm_openfiles(NULL, NULL, NULL) == -1) {
+	if (kvm_openfiles(namelist, memfile, NULL) == -1) {
 		fprintf(stderr, "fstat: %s\n", kvm_geterr());
 		exit(1);
 	}
@@ -727,6 +727,6 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: fstat [-fnv] [-p pid] [-u user] [filename ...]\n");
+ "usage: fstat [-fnv] [-p pid] [-u user] [-N system] [-M core] [file ...]\n");
 	exit(1);
 }
