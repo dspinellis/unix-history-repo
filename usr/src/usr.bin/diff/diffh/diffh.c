@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diffh.c 4.1 %G%";
+static	char sccsid[] = "@(#)diffh.c 4.2 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -77,8 +77,6 @@ char **argv;
 {
 	char *s0,*s1;
 	FILE *dopen();
-	extern char _sobuf[];
-	setbuf(stdout, _sobuf);
 	while(*argv[1]=='-') {
 		argc--;
 		argv++;

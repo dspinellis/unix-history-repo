@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)diff.c 4.1 %G%";
+static	char sccsid[] = "@(#)diff.c 4.2 %G%";
 
 #include "diff.h"
 /*
@@ -8,7 +8,6 @@ static	char sccsid[] = "@(#)diff.c 4.1 %G%";
 char	diff[] = DIFF;
 char	diffh[] = DIFFH;
 char	pr[] = PR;
-extern	char _sobuf[];
 
 main(argc, argv)
 	int argc;
@@ -19,7 +18,6 @@ main(argc, argv)
 	ifdef1 = "FILE1"; ifdef2 = "FILE2";
 	status = 2;
 	diffargv = argv;
-	setbuf(stdout, _sobuf);
 	argc--, argv++;
 	while (argc > 2 && argv[0][0] == '-') {
 		argp = &argv[0][1];
