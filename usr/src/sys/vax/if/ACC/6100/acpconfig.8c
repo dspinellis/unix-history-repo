@@ -1,0 +1,715 @@
+.nh
+.TH ACPCONFIG 8C "2 July 1987"
+.UC 8C
+.ds ]W "4.3 BSD
+.SH NAME
+acpconfig \- configure ACC's ACP network interface
+.SH SYNOPSIS
+.B /etc/acpconfig
+.I interface
+[
+.I address
+]
+[
+.I options
+]
+.SH DESCRIPTION
+The
+.I acpconfig
+program is used to administer an ACC ACP
+network interface front-end processor.
+There are numerous options allowing interface configuration,
+maintenance of an address translation table,
+console debugging/logging control, and status inquiries.
+The options are discussed below.
+
+When bringing up an ACP device, the configuration
+parameters can be set for
+external or internal transmit clock and baud rate,
+internal or external loopback, and DTE or DCE mode.
+The configuration parameters are described further in the user manual
+that accompanies your ACP interface.
+For the ACP 5250 and ACP 6250, you may select DDN standard mode,
+DDN basic mode, or PDN (Public Data Network) X.25 service.
+
+When the system is brought up,
+.I acpconfig
+is normally called from /etc/rc.local to
+configure the ACP front end and to define its internet address;
+it can also be used later to redefine the interface's
+internet address or configuration.
+.I acpconfig
+is also used as part of an installation verification procedure
+when the ACP front end and the network interface driver are installed.
+Once a parameter is specified, it applies to subsequent commands unless
+explicitly changed.
+When PDN service is employed,
+.I acpconfig
+is used to add to, delete from, and read the contents of
+an internet-to-X.25 address translation table used by the driver.
+
+The
+.I interface
+parameter is a string of the form \*(lqname unit\*(rq (e.g., \*(lqacp0\*(rq) which
+corresponds to the interface as it is defined in
+your system configuration file. 
+Note that 
+.I acpconfig 
+is always invoked with the 
+.I interface 
+parameter.
+The interface parameter name is
+\*(lqddn\*(rq for ACP 625,
+\*(lqdda\*(rq for ACP 5250/6250, and
+\*(lqacp\*(rq for ACP 5100/6100.
+
+The
+.I address
+is either a host name present in the host name database
+or an internet address expressed in internet standard
+dot notation (e.g., 1.0.0.3).
+
+For each of the following options,
+white space (ASCII SPACE or TAB characters) is
+.I optional
+between the \*(lqminus letter\*(rq flag and the following parameter.
+For example, \*(lq-b 0\*(rq and \*(lq-b0\*(rq are equivalent.
+
+The
+.B -b baud_rate
+and
+.B -u mode
+options apply to all interface types (ddn, dda, and acp).
+All other options
+are specific to the dda (ACP 5250/6250) interface.
+.PP
+.TP 15
+.B -b baud_rate
+.nh
+Select baud rate (which sets internal clocking) or external clocking.
+The baud rate is set to control the speed of the internally
+generated communications circuit clock physically located on the
+ACP front-end hardware, the transmitter clock.
+(A modem's timing signal is an example of an externally
+generated clock source not physically on the ACP front end.)
+The -b flag is specified with a nonzero value for baud rate (internal
+clocking), or a zero value for external clocking.
+The tables below list valid baud rates. 
+.nf
+
+	ACP 5100/6100, ACP 5250/6250  Baud Rate Parameters*
+.cs R 36
+
+    2.00M       250K        30K      2400
+    1.33M       100K      19.2K      1200
+    1.00M        64K       9600
+     500K        56K       4800
+.cs R
+
+
+
+	ACP 625 Baud Rate Parameters*
+.cs R 36
+
+    316000     57600       9600      1760
+    153600     38400       4800      1200
+    115200     28800       2400
+     76800     19200       2150
+.cs R
+.sp
+.fi
+ * These are nominal baud rates.
+In some cases, the
+actual baud rate differs from the nominal baud rate by a few percent.
+Consult your user's manual for further information and descriptions of 
+baud rates.
+The unit of measure is bps unless otherwise specified:
+M = megabits/second, and K = kilobits/second.
+The unit of measure does not need to be supplied with the -b
+flag, it is optional.
+To set the acp0 baud rate to 1.33 megabits/second, enter a command of
+the following form:  \*(lqacpconfig acp0 -b 1.33M -u 1\*(rq.
+External clocking is the default for ACP 5100/6100 and ACP 5250/6250.
+To bring up the link with external clocking (the -b flag may be omitted),
+use a command of the following form: \*(lqacpconfig dda0 -u1\*(rq.
+
+Note that for the ACP 625 device (ddn interface), the clocking
+is not settable by software.
+Only the baud rate can be set by software.
+For the ACP 625, the specification of external or
+internal clocking is a hardware configuration option.
+The ACP 625 is factory configured to transmit a clock signal
+on specified RS-449/422 or RS-232 pins that can be used
+if an external clock is not provided.
+Refer to the ACP 625 User's Manual (ACC P/N 1500015) for more details.
+.TP 15
+.B -s X.25_service
+Specify DDN X.25 standard, DDN X.25 basic, or PDN X.25 service.
+The -s flag is specified with an
+.I X.25_service
+value of 0, 1, or 2.
+.nf
+
+	-s 0   DDN standard X.25 service
+	-s 1   DDN basic X.25 service
+	-s 2   PDN X.25 service
+
+.fi
+As stated in the DDN X.25 specification, the DDN X.25 provides two types
+of service: DDN basic X.25 service and DDN standard X.25 service.
+DDN standard X.25 service provides only local DTE to local DCE support
+of the X.25 connection.
+A reliable transport protocol (i.e., TCP) provides DDN standard X.25
+service.
+DDN basic X.25 service provides end-to-end call management with significance
+as described in CCITT Recommendation X.25.
+.sp 1
+The -s flag is valid only for the ACP 5250 and ACP 6250 devices
+which provide DDN standard mode, DDN basic mode, or PDN X.25 service.
+The default for both devices is DDN standard mode;
+The acpconfig \*(lq-s\*(rq flag may be omitted if
+this is the desired service.
+.sp 1v
+The use of PDN X.25 service requires that an
+address translation table be communicated to the driver, to enable
+it to convert between the internet address and the X.25
+address of all sources and destinations.
+(A conversion algorithm is used for DDN service.)  
+The address table must include entries for the local ACP front end and
+for all destinations, in order for connections to be established.
+Creation and management of the address translation table is accomplished
+by the use of the -A, -a, -d, and -r options.
+.nh
+.TP 15
+.B -A filename
+.nh
+Add the contents of the named file to the driver's address translation table,
+used in PDN mode.
+The filename may be any absolute or relative
+pathname.  The named file must contain lines which consist of an internet
+address followed by white space followed by an X.25 address.
+.sp .5v
+The internet address may either be in standard \*(lqdot\*(rq notation
+(of the form a.b.c.d; see INET(3N)) or the
+name of a host from the system host name database.
+For example, either \*(lq14.2.3.1\*(rq or
+\*(lqhost-name\*(rq is acceptable.  
+The network portion of each internet address must be non-zero.
+.sp .5v
+The X.25 address must be a
+string of from twelve to fourteen ASCII decimal digits, and have a non-zero
+DNIC field (the first four digits, e.g., 3110 for Telenet).
+Thus, an acceptable X.25 address might be \*(lq31103010007600\*(rq.
+The requirement for a minimum length of 12 and a non-zero DNIC may be
+changed by suitable alteration of the #define'd values PDNX25AMIN and
+PDNBADDNIC in the acpconfig.c source file, followed by recompilation.
+.sp .5v
+Blank lines, lines beginning with the character \*(lq#\*(rq, and any characters
+following white space after the X.25 address field are all ignored.
+.sp .5v
+Due to the necessity of reading each entry in the file and passing it to the
+driver for installation in its translation table, execution of the -A
+option may take a noticeable amount of time.  A message is displayed indicating
+that a delay will be observed.
+.sp .5v
+Error messages are displayed if an internet address specified in the
+file is already in the table, or if insufficient space is available in the
+table to add all entries requested.  In the latter case, all entries from
+the file which fit are entered.
+.ne .2i
+.TP 15
+.B -a ipaddr x25addr
+.nh
+Add a single entry to the driver's address translation table,
+used in PDN mode.  The
+.I ipaddr
+field must be an internet address
+of the format prescribed above for the \*(lq-A\*(rq option (e.g., \*(lq14.2.3.1\*(rq or
+\*(lqhost-name\*(rq).  The
+.I x25addr
+field must be an X.25 address of the format
+prescribed above for the \*(lq-A\*(rq option (e.g., \*(lq31102130006578\*(rq).
+An error message is displayed if the specified
+internet address is already in the table, or if insufficient space is
+available in the table to add the requested entry.
+A single acpconfig command may include more than one -a option.
+.TP 15
+.B -d ipaddr
+.nh
+Delete a single entry from the driver's address translation table,
+used in PDN mode. The
+.I ipaddr
+field must be an internet address
+of the format prescribed above for the \*(lq-A\*(rq option (e.g., \*(lq14.2.3.1\*(rq or
+\*(lqhost-name\*(rq).  An error message is displayed if the specified
+internet address is not in the table.
+A single acpconfig command may include more than one -d option.
+.TP 15
+.B -r count
+.nh
+Read address translation table entries;
+the internet address and corresponding X.25 address obtained from the
+first
+.I count
+entries in the driver's address translation table will
+be displayed.  If
+.I count
+is zero, or greater than the maximum size of the table,
+all entries are returned, along with
+an indication of the maximum possible size of the table.
+Internet addresses contained in the address table are displayed
+in normal a.b.c.d format.
+The order in which entries are displayed is dependent
+on the table maintenance algorithm in the driver.
+Currently, the table is sorted on internet address
+as stored internally (d.c.b.a).
+.TP 15
+.B -u mode
+.nh
+Bring up the interface (enable link level) in the specified configuration,
+or bring down the interface (disable link level).
+A
+.I mode
+value of 1 - 4 enables link level with the specified
+loopback configuration and DTE/DCE mode.
+For normal operation, the interface is configured for no loopback;
+external and internal loopback configurations are used only for
+installation verification.
+.nf
+
+	-u 0   bring down the interface
+	-u 1   bring up the interface for normal DTE operation without loopback
+	-u 2   bring up the interface for normal DCE operation without loopback
+	-u 3   bring up the interface in external loopback
+	-u 4   bring up the interface in internal loopback
+
+.fi
+The DTE/DCE mode sets the DTE/DCE address used by the
+link-level protocol to reference the interface.
+When DTE mode is specified (-u 1), the address is 03.
+When DCE mode is specified (-u 2), the address is 01.
+With the exception of the address, no other changes are made by
+specifying DTE or DCE.
+.sp 1v
+When PDN X.25 service has been specified (by -s 2), a -u option to bring up the
+interface (-u 1 through -u 4) will not succeed unless an address translation
+table entry already exists for the ACP front end interface's internet address.
+Otherwise an error message will be displayed, and such an address table entry
+must be added (via a -a or -A option) before the interface can be brought up.
+
+Note that when external loopback is specified with
+\*(lq-u 3\*(rq, you
+should specify a baud rate so that internal clocking is used.
+A front end configured for external loopback will not function
+properly unless a baud rate is set.
+To set external loopback, use a command of the following 
+form:  \*(lqacpconfig dda0 1.0.0.1 -b 500K -u 3\*(rq.
+.TP 15
+.B -m message
+.nh
+Send an arbitrary supervisory message to the ACP 5250/6250.
+.I Message
+is a sequence of arguments each of which represents one byte.
+Arguments beginning with \*(lq0\*(rq (zero) are interpreted
+as octal, others are interpreted as hexadecimal; decimal
+is not supported.  The message is terminated by an argument
+which begins with a dash or by the end of acpconfig's
+argument list.
+Use of this option requires detailed knowledge
+of ACP 5250/6250 supervisory message formats and parameters.
+See Appendix C of the ACP 6250 User's Manual and also
+the section on Supervisory Messages in ch 9 of the
+ACP 6250 User's Manual.
+.TP 15
+.B -n circuits
+.nh
+Limit the number of virtual circuits which may be used at any
+one time to
+.I circuits.
+This allows sites
+connected to Public Data Networks
+to couple driver behavior to the
+characteristics of their PDN subscription.
+This command is not implemented in some
+releases of the ACP 5250/6250 product.
+The maximum and default value
+is the firmware imposed limit of 64
+simultaneous logical channels.
+The link must be down when the -n option
+is invoked.
+.TP 15
+.B -q type
+.nh
+Query the driver or Front End Processor for status.  If the
+.I type
+is 0, a Statistics Response message is solicited from the
+ACP 5250/6250.  The results are written to the standard
+output in tabular form.  With the exception of the packet
+and byte transfer counts, statistics are cleared when
+read.
+
+If the
+.I type
+is 1, a driver status query is performed.  This shows
+the drivers concept of the link state and the driver flags.
+.TP 15
+.B -v key value
+.nh
+Set a driver internal variable symbolized by
+.I key
+to
+.I value.
+Possible key values are
+.I log, debug, packet,
+and
+.I window.
+.nf
+
+	-v log XXX	  Set logging control to XXX hexadecimal
+	-v debug XXX	  Set debug to XXX hexadecimal
+	-v packet DDD	  Set X.25 packet size to DDD decimal
+	-v window DDD	  Set X.25 window size to DDD decimal
+
+.fi
+The
+.I log
+variable controls console logging of certain conditions
+by the driver.
+Bit 1 (value 2) enables the message "all circuits in use"
+to the console should that situation occur.
+Bit 2 (value 4) enables logging of all calls and clears.
+Call and clear logging can be voluminous when the
+link is in heavy use.  The driver defaults this
+value to 2, which is appropriate for most sites.
+Driver error messages are not controlled by this
+logging variable (and are never disabled).
+Example: to enable call and clear logging, and retain
+"all circuits in use" messages use:
+.nf
+
+	/etc/acpconfig dda0 -v log 6
+
+    To disable, use:
+
+	/etc/acpconfig dda0 -v log 2
+
+.fi
+The
+.I debug
+variable controls driver debugging.
+This option is only effective if debugging
+was specified when the driver was compiled.
+Driver error messages are not controlled by this
+debug variable (and are never disabled).
+.sp
+The
+.I packet
+and
+.I window
+variables control the corresponding X.25
+flow control parameters for the unit.
+These variables can only be set if the
+ACP 5250 or ACP 6250 contains firmware
+release 2.0 or above.  The link must
+first be brought down (use the -u 0
+flag to acpconfig), the variables changed,
+and the link brought back up.
+.sp
+If the driver detects that release 2.0
+or higher firmware is installed, it
+will automatically attempt to negotiate
+1024 byte packets with a packet window
+value of 7.  Since this negotiation is
+conducted according to CCITT and DDN
+specification, it should be transparent
+in properly functioning networks.
+These options exist to allow system
+administrators to control the values
+for special situations.
+Example: to restrict the interface to
+a 128 byte packet size and a packet
+window of 2, use:
+.nf
+
+	/etc/acpconfig dda0 -u 0
+	/etc/acpconfig dda0 -v packet 128 -v window 2
+	/etc/acpconfig dda0 -u 1
+
+.fi
+.TP 15
+.B -z
+.nh
+Reset the interface device.
+The interface is the actual front-end hardware plugged into your
+host UNIBUS or QBUS.
+For example, the device may be an ACP 6250.
+To reset the dda0 device give 
+a command of the following form:  \*(lqacpconfig dda0 -z\*(rq.
+A message will appear on the system console telling you
+a device reset is in progress, and to wait for one minute.
+There is a pause during the reset because the powerup diagnostics
+are run for a short period of time.
+.PP
+Use of \*(lq-u 0\*(rq disables link level on the front end.
+Success is indicated by a \*(lqlink disabled\*(rq message on the console
+terminal.
+Two disable commands followed by one enable is not recommended.
+If two disables have been sent (link level disable is aborted)
+then a delay (long enough for the line to settle, 60 seconds) is 
+required before issuing a link enable command.
+In the following sequence, note that the line is disabled 
+each time the parameters are changed:
+.nf
+
+	acpconfig dda0 -u 4
+	acpconfig dda0 -u 0
+	acpconfig dda0 -b 1.33 -u 1
+	acpconfig dda0 -u 0
+	acpconfig dda0 -u 4
+
+.fi
+
+If you try to bring up the interface without first setting the
+internet address, an error message is generated
+and no further processing occurs.
+.PP
+All interface ioctls are limited to the super-user.
+
+.B Example:
+To specify internet address 1.0.0.1, external clock,
+normal DTE operation, and DDN standard X.25 service
+use a command of the following 
+form: \*(lqacpconfig dda0 1.0.0.1 -u 1\*(rq.
+.SH DIAGNOSTICS
+.nh
+Diagnostic messages appear on your terminal to indicate
+that the interface's configuration has been established as specified,
+or an error occurred during acpconfig program execution.
+.PP
+.BR "usage: acpconfig interface [address] [options]"
+.br
+The program was invoked with incorrect arguments.
+.PP
+.BR "acpconfig:  invalid number of arguments".
+.br
+.nh
+The acpconfig program must be invoked with a minimum of 2 arguments,
+the first of which is the interface name.
+.PP
+.BR "acpconfig:  reset in progress, wait 1 minute".
+.br
+This command appears in response to an acpconfig command to reset
+a specified device.
+The delay provides time for the powerup diagnostics to complete.
+.PP
+.BR "acpconfig:  command in progress".
+.br
+The acpconfig command is in progress, expect a small delay.
+Two passes are made with a delay of about 30 seconds
+between attempts.  This message indicates that the second attempt
+is in progress.
+.PP
+.BR "acpconfig:  device not operational".
+.br
+The front end device is not operational.
+Repeat the command.
+In response to the acpconfig command to initialize the front-end device,
+a check is made to verify that powerup diagnostics have completed.
+If the diagnostics have not successfully completed, then there is a
+30 second delay followed by a second attempt to initialize the front end.
+This message indicates that the device was still not operational at the
+time of the second initialization attempt.
+.PP
+.BR "acpconfig:  no internet address assigned to interface".
+.br
+The interface must be assigned an internet address before any of the
+configuration parameters will be accepted.
+You may assign an interface address in the following manner: \*(lqacpconfig 
+dda0 1.0.0.1\*(rq.
+.PP
+.BR "acpconfig:  invalid baud rate '%s'".
+.br
+The baud rate argument for the -b flag must be one of the values listed
+above.
+.PP
+.BR "acpconfig:  '-b 0' invalid for specified interface".
+.br
+The '-b 0' command (for specifying external clocking) does not apply to 
+the specified interface (i.e., ddn?).
+The '-b 0' flag is only valid for ACC ACP devices that support software
+selection of internal or external clocking.
+The ACP 625 device does not.
+In the case of the ACP 625 ddn interface, the clocking is selected
+via strapping options, not software control.
+The use of \*(lq-b 0\*(rq is valid for the ACP 5100/6100 'acp' interfaces
+or the ACP 5250/6250 'dda' interfaces because they support
+software selection of internal or external clocking.
+For more detail consult the user's manuals.
+.PP
+.BR "acpconfig:  ioctl (SIOCGIFFLAGS) no such interface, check CSR
+address if ACP board installed".
+.br
+The specified interface does not exist.
+This message indicates that one of many possible errors exists:  the
+ACP board itself is not installed in the QBUS or UNIBUS, the ACP
+board is in a UNIBUS slot which does not have NPR unwrapped, the driver
+is not installed, the ACP board is installed with a CSR address which
+does not match the one in the system configuration file, or the
+name of the interface was misspelled.
+.PP
+.BR "acpconfig:  ioctl (SIOCACPCONFIG) returns permission denied".
+.br
+You must have sufficient (root) privilege for this operation.
+.PP
+.BR "acpconfig:  socket: <error explanation>".
+.br
+This message indicates that a socket could not be created for the reason given.
+.PP
+.BR "acpconfig: invalid internet address '%s'".
+.br
+This message indicates that the value for the internet address
+is invalid.
+The internet address must be given in \*(lqdot notation\*(rq or be a valid
+host name.
+.PP
+.BR "acpconfig:  invalid mode '%s'".
+.br
+The mode argument for the -u flag must be a value 0 - 4.
+.PP
+.BR "acpconfig: '%s' flag invalid for specified interface".
+.br
+The flag identified does not apply to the specified interface (i.e., acp?).
+The -s, -A, -a, -d, and -r flags are only valid for ACC ACP devices which
+support DDN/PDN X.25 service.
+.PP
+.BR "acpconfig:  invalid X.25 service".
+.br
+The X.25 service argument for the -s flag must be a value 0 - 2.
+.PP
+.BR "acpconfig: processing file '%s'; please wait...".
+.br
+Acpconfig is beginning to read address pairs from
+the named file, as requested by the -A flag; some delay will be observed while
+all addresses are passed to the driver for installation in its address
+translation table.
+.PP
+.BR "acpconfig: cannot open file '%s'".
+.br
+When attempting to read address translation table entries from a file using
+the -A flag, the specified file cannot be opened.
+.PP
+.BR "acpconfig: bad X.25 address length: '%s'".
+.br
+An X.25 address supplied with either the -A or -a flag has an invalid length,
+either greater than 14 or less than the minimum value PDNX25AMIN,
+#define'd in the acpconfig.c source code with the default value of 12.
+If necessary, the value of PDNX25AMIN may be changed and acpconfig recompiled.
+.PP
+.BR "acpconfig: invalid X.25 address '%s'".
+.br
+An X.25 address supplied with either the -A or -a flag includes characters
+which are not decimal digits, which is invalid.
+.PP
+.BR "acpconfig: incomplete X.25 address '%s'".
+.br
+An X.25 address supplied with either the -A or -a flag has the invalid string
+PDNBADDNIC as its first four digits (DNIC field).
+This string is #define'd in the acpconfig.c source code with the default value
+"0000".
+If necessary, the value of PDNBADDNIC may be changed and acpconfig recompiled.
+.PP
+.BR "acpconfig: end of address table (%d entries max)".
+.br
+A request for display of address translation table entries specified more
+entries than the table holds; the maximum table size is noted; all current
+entries have already been displayed.
+.PP
+.BR "acpconfig: address table entry %d: %d.%d.%d.%d ==> %s".
+.br
+This information is displayed for each address translation table entry
+requested via the -r flag.
+%d.%d.%d.%d is an internet address whose corresponding X.25 address is %s.
+.PP
+.BR "acpconfig: ioctl (SIOCACPCONFIG) returns: Operation already in progress".
+.br
+.BR "acpconfig: must shut down interface to change modes between DDN and PDN".
+.br
+An attempt was made, while the interface was up, to change between DDN and
+PDN service via the -s flag.  This is allowed only after bringing the interface 
+down via -u 0.
+.PP
+.BR "acpconfig: -u flag must be last".
+.br
+The -u flag must follow all others in any acpconfig command, in order that
+all requested options may be set before the interface is brought up (or down).
+.PP
+.BR "acpconfig: ioctl (SIOCACPCONFIG) returns: Can't assign requested address".
+.br
+.BR "acpconfig: no local X.25 address translation in table; cannot start up PDN mode".
+.br
+These two messages indicate that
+an attempt was made to start up the interface for PDN service (via
+-s 2 then -u), but no address translation table entry exists for this host's
+internet address.  Use -A or -a to add such a table entry then try again.
+.PP
+.BR "acpconfig: ioctl (SIOCACPCONFIG) returns: Address already in use".
+.br
+An attempt was made to add an entry to the address translation table, but
+an entry was already present in the table for the identical internet
+address; no action was taken.  Note that if the table is already full
+the following message will appear instead.
+.PP
+.BR "acpconfig: ioctl (SIOCACPCONFIG) returns: Not enough core".
+.br
+An attempt was made to add an entry to the address translation table, but
+no space remained in the table.  The maximum size of the table may be determined
+by using the -r 0 flag; increasing the table size may be accomplished only
+by rebuilding the kernel.  An alternative is to delete unused entries via
+the -d flag
+.PP
+.BR "acpconfig: ioctl (SIOCACPCONFIG) returns: Bad address".
+.br
+An attempt was made to delete an internet address from the address translation
+table; that internet address was not found in the table; no action was taken.
+.PP
+.BR "acpconfig: -m message too long"
+.br
+The bytes following the -m option exceeded acpconfig's
+internal buffering.  An alternative is to break the
+long parameter command into two or more commands.
+.PP
+.BR "acpconfig: -v what?".
+.br
+An unknown key value was issued with the acpconfig -v command.
+.PP
+.BR "acpconfig: -v: bad packet size".
+.br
+The packet size argument for the -v flag must be one of the values listed
+above.
+.PP
+.BR "Can't change parameters with link up".
+.BR "Bring the link down and try again".
+.br
+The value of the target parameter cannot be changed until the link is
+brought down via -u 0.
+.PP
+.BR "Changing packet size, window size, or"
+.BR "SVC limit requires firmware"
+.BR "revision 2.0 or greater".
+.br
+The -v packet, -v window, and -n options are not implemented in
+firmware versions previous to 2.0.
+.PP
+.SH "SEE ALSO"
+rc(8), intro(4N), netstat(1), ioctl(2), socket(2), inet(3N), hosts(5),
+ACC ACP devices:  acp(4), dda(4), ddn(4)
+.SH "NOTES"
+The -u flag is positional, it should be the last flag on the command line.
+
+Recommended use of acpconfig is to add a line of the following
+form to /etc/rc:  \*(lqacpconfig dda0 address -u 1\*(rq.
+This command sets the internet address, normal operation (no loopback),
+DTE mode, external clocking, and DDN standard X.25 service.
+
+The most common user error is forgetting to disable the link (-u 0) before
+re-enabling it with new configuration parameters.
