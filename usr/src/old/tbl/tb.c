@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tb.c	4.2 %G%";
+static char sccsid[] = "@(#)tb.c	4.3 %G%";
 #endif
 
  /* tb.c: check which entries exist, also storage allocation */
@@ -40,6 +40,8 @@ int spcount = 0;
 extern char * calloc();
 # define MAXVEC 20
 char *spvecs[MAXVEC];
+
+char *
 chspace()
 {
 char *pp;
@@ -56,6 +58,8 @@ return(pp);
 char *thisvec;
 int tpcount = -1;
 char *tpvecs[MAXPC];
+
+int *
 alocv(n)
 {
 int *tp, *q;
