@@ -14,16 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket2.c	7.8 (Berkeley) %G%
+ *	@(#)uipc_socket2.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "file.h"
-#include "inode.h"
 #include "buf.h"
 #include "malloc.h"
 #include "mbuf.h"
