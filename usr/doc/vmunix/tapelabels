@@ -1,0 +1,27 @@
+
+The contents of this tape are
+distributed to UNIX/32V licensees
+only, subject to the software
+agreement you have with Western
+Electric and an agreement with
+the University of California.
+
+
+
+4.1bsd VAX UNIX System 7/10/81
+
+5 files on tape:
+ 1 (boot stuff) 2 (root dump)
+ 3 (/usr)  4 (/usr/src) 5 (4.0/4.1)
+last three are tar; 1600 bpi
+
+
+
+If you are upgrading from 4.0 by
+extracting the 5th tape file:
+  repeat 4 cp /dev/rmt12 /dev/null
+  tar xbf 20 /dev/rmt12
+then run the extracted script get:
+  csh get
+
+
