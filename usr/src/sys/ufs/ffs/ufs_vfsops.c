@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vfsops.c	7.37 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,6 +23,7 @@
 #include "kernel.h"
 #include "namei.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "mount.h"
 #include "buf.h"
 #include "ucred.h"
@@ -301,7 +302,7 @@ mountfs(devvp, mp)
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
 	ump->um_qinod = NULL;
-	devvp->v_specinfo->si_flags |= SI_MOUNTEDON;
+	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
 	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */

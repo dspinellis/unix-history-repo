@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.34 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.35 (Berkeley) %G%
  */
 
 /*
@@ -25,16 +25,11 @@
 #include "mount.h"
 #include "time.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "namei.h"
 #include "ucred.h"
 #include "errno.h"
 #include "malloc.h"
-
-/*
- * Shorthand notation.
- */
-#define v_hashchain v_specinfo->si_hashchain
-#define v_specnext v_specinfo->si_specnext
 
 /*
  * Remove a mount point from the list of mounted filesystems.
@@ -176,14 +171,6 @@ ndrele(ndp)
 struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
 extern void vclean();
-
-#define	SPECHSZ	64
-#if	((SPECHSZ&(SPECHSZ-1)) == 0)
-#define	SPECHASH(rdev)	(((rdev>>5)+(rdev))&(SPECHSZ-1))
-#else
-#define	SPECHASH(rdev)	(((unsigned)((rdev>>5)+(rdev)))%SPECHSZ)
-#endif
-struct vnode *speclisth[SPECHSZ];
 
 /*
  * Initialize the vnode structures and initialize each file system type.

@@ -14,13 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.24 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "user.h"
 #include "buf.h"
 #include "vnode.h"
+#include "specdev.h"
 #include "mount.h"
 #include "trace.h"
 #include "ucred.h"

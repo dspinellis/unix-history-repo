@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.12 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,6 +17,7 @@
 #include "trace.h"
 #include "map.h"
 #include "vnode.h"
+#include "specdev.h"
 
 #include "machine/pte.h"
 #ifdef SECSIZE
