@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	enpload
 MAN8=	enpload.0
