@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socket.h	8.3 (Berkeley) %G%
+ *	@(#)socket.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _SYS_SOCKET_H_
@@ -296,13 +296,13 @@ int	getpeername __P((int, struct sockaddr *, int *));
 int	getsockname __P((int, struct sockaddr *, int *));
 int	getsockopt __P((int, int, int, void *, int *));
 int	listen __P((int, int));
-int	recv __P((int, void *, int, int));
-int	recvfrom __P((int, void *, int, int,
-		struct sockaddr *, int *));
-int	recvmsg __P((int, struct msghdr *, int));
-int	send __P((int, const void *, int, int));
-int	sendto __P((int, const void *, int, int, const struct sockaddr *, int));
-int	sendmsg __P((int, const struct msghdr *, int));
+ssize_t	recv __P((int, void *, size_t, int));
+ssize_t	recvfrom __P((int, void *, size_t, int, struct sockaddr *, int *));
+ssize_t	recvmsg __P((int, struct msghdr *, int));
+ssize_t	send __P((int, const void *, size_t, int));
+ssize_t	sendto __P((int, const void *,
+	    size_t, int, const struct sockaddr *, int));
+ssize_t	sendmsg __P((int, const struct msghdr *, int));
 int	setsockopt __P((int, int, int, const void *, int));
 int	shutdown __P((int, int));
 int	socket __P((int, int, int));
