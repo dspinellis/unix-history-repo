@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.15	%G%
+#	@(#)Makefile	5.16	%G%
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -10,7 +10,7 @@
 ALL=	uucico uucp uux uuxqt uulog uuclean uuname uupoll uusnap \
 	uuencode uudecode uusend uucpd uuq acucntrl
 # Common object files placed in uulib.a
-COMMON=	anlwrk.o anyread.o assert.o cfgets.o chkpth.o \
+COMMON=	anlwrk.o anyread.o cfgets.o chkpth.o \
 	cpmv.o expfile.o gename.o getargs.o getprm.o \
 	getpwinfo.o gnxseq.o lastpart.o logent.o mailst.o \
 	prefix.o setline.o subdir.o sysacct.o systat.o \
@@ -20,14 +20,14 @@ USRCS=	cico.c cntrl.c conn.c condevs.c gnsys.c pk0.c chksum.c pk1.c tio.c \
 	fio.c gio.c imsg.c 
 OSRCS=	uuclean.c uucp.c uulog.c uuname.c uupoll.c \
 	uusend.c uusnap.c uux.c uuxqt.c uuq.c acucntrl.c
-LSRCS=	anlwrk.c anyread.c assert.c cfgets.c chkpth.c \
+LSRCS=	anlwrk.c anyread.c cfgets.c chkpth.c \
 	cpmv.c expfile.c gename.c getargs.c getprm.c getpwinfo.c \
 	gnxseq.c lastpart.c logent.c mailst.c prefix.c \
 	setline.c subdir.c sysacct.c systat.c ulockf.c \
 	uucpdefs.c uucpname.c versys.c xqt.c
 
-#These might be useful on non 4.2bsd systems.
-MISC= htonl.c ioctl.c index.c mkdir.c getwd.c strpbrk.c
+#These might be useful on non 4.3bsd systems.
+MISC= htonl.c ioctl.c index.c mkdir.c strpbrk.c 
 
 DESTDIR=
 
@@ -187,8 +187,7 @@ cico.o: /usr/include/sys/timeb.h /usr/include/setjmp.h /usr/include/sgtty.h
 cico.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
 cico.o: /usr/include/sys/ttydev.h /usr/include/netdb.h
 cico.o: /usr/include/netinet/in.h /usr/include/sys/socket.h
-cico.o: /usr/include/sys/stat.h /usr/include/sys/time.h /usr/include/time.h
-cico.o: /usr/include/fcntl.h uust.h uusub.h
+cico.o: /usr/include/sys/stat.h uust.h uusub.h
 cntrl.o: cntrl.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 cntrl.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 cntrl.o: /usr/include/sys/stat.h uust.h
@@ -249,7 +248,6 @@ uusnap.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 uusnap.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/ctype.h
 uux.o: uux.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 uux.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
-uux.o: /usr/include/sys/stat.h
 uuxqt.o: uuxqt.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 uuxqt.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 uuxqt.o: /usr/include/sys/stat.h /usr/include/sys/dir.h /usr/include/signal.h
@@ -259,6 +257,13 @@ uuq.o: /usr/include/sys/types.h /usr/include/sys/timeb.h /usr/include/stdio.h
 uuq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
 acucntrl.o: acucntrl.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 acucntrl.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+acucntrl.o: /usr/include/sys/buf.h /usr/include/signal.h
+acucntrl.o: /usr/include/machine/trap.h /usr/include/sys/conf.h
+acucntrl.o: /sys/vaxuba/ubavar.h /usr/include/sys/stat.h /usr/include/nlist.h
+acucntrl.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+acucntrl.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+acucntrl.o: /usr/include/utmp.h /usr/include/pwd.h /usr/include/stdio.h
+acucntrl.o: /usr/include/sys/file.h
 anlwrk.o: anlwrk.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 anlwrk.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 anlwrk.o: /usr/include/sys/stat.h uust.h /usr/include/sys/dir.h
@@ -266,9 +271,6 @@ anlwrk.o: /usr/include/ctype.h
 anyread.o: anyread.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 anyread.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 anyread.o: /usr/include/sys/stat.h
-assert.o: assert.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
-assert.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
-assert.o: /usr/include/sys/time.h /usr/include/time.h /usr/include/errno.h
 cfgets.o: cfgets.c /usr/include/stdio.h
 chkpth.o: chkpth.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 chkpth.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
@@ -305,6 +307,7 @@ mailst.o: /usr/include/sys/timeb.h
 prefix.o: prefix.c
 setline.o: setline.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 setline.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
+strpbrk.o: strpbrk.c
 subdir.o: subdir.c uucp.h /usr/include/stdio.h /usr/include/sysexits.h
 subdir.o: /usr/include/sys/types.h /usr/include/sys/timeb.h
 sysacct.o: sysacct.c /usr/include/sys/types.h
