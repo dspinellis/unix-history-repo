@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -88,7 +88,7 @@ __bt_open(fname, flags, mode, openinfo)
 		if (b.psize &&
 		    (b.psize < MINPSIZE || b.psize > MAX_PAGE_OFFSET ||
 		    b.psize & sizeof(index_t) - 1))
-				goto einval;
+			goto einval;
 
 		/* Minimum number of keys per page; absolute minimum is 2. */
 		if (b.minkeypage) {
@@ -109,11 +109,12 @@ __bt_open(fname, flags, mode, openinfo)
 		else if (b.lorder != BIG_ENDIAN && b.lorder != LITTLE_ENDIAN)
 			goto einval;
 	} else {
-		b.flags = 0;
-		b.minkeypage = DEFMINKEYPAGE;
 		b.compare = __bt_defcmp;
-		b.prefix = __bt_defpfx;
+		b.flags = 0;
 		b.lorder = BYTE_ORDER;
+		b.minkeypage = DEFMINKEYPAGE;
+		b.prefix = __bt_defpfx;
+		b.psize = 0;
 	}
 
 	/* Allocate and initialize DB and BTREE structures. */
