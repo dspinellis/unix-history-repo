@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in.c	7.33 (Berkeley) %G%
+ *	@(#)in.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -409,14 +409,18 @@ in_ifinit(ifp, ia, sin, scrub)
 		ia->ia_netmask = IN_CLASSB_NET;
 	else
 		ia->ia_netmask = IN_CLASSC_NET;
-	ia->ia_net = i & ia->ia_netmask;
 	/*
-	 * The subnet mask includes at least the standard network part,
-	 * but may already have been set to a larger value.
+	 * The subnet mask usually includes at least the standard network part,
+	 * but may may be smaller in the case of supernetting.
+	 * If it is set, we believe it.
 	 */
-	ia->ia_subnetmask |= ia->ia_netmask;
+	if (ia->ia_subnetmask == 0) {
+		ia->ia_subnetmask = ia->ia_netmask;
+		ia->ia_sockmask.sin_addr.s_addr = htonl(ia->ia_subnetmask);
+	} else
+		ia->ia_netmask &= ia->ia_subnetmask;
+	ia->ia_net = i & ia->ia_netmask;
 	ia->ia_subnet = i & ia->ia_subnetmask;
-	ia->ia_sockmask.sin_addr.s_addr = htonl(ia->ia_subnetmask);
 	in_socktrim(&ia->ia_sockmask);
 	/*
 	 * Add route for the network.
