@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.19	83/01/17	*/
+/*	vm_meter.c	4.20	83/04/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,13 +60,9 @@ setupclock()
 	if (lotsfree == 0)
 		lotsfree = LOOPPAGES / 4;
 	if (desfree == 0) {
-#ifndef NOPAGING
 		desfree = (200*1024) / NBPG;
 		if (desfree > LOOPPAGES / 8)
 			desfree = LOOPPAGES / 8;
-#else
-		desfree = (32*1024) / NBPG;
-#endif
 	}
 	if (minfree == 0) {
 		minfree = (64*1024) / NBPG;
@@ -173,11 +169,7 @@ loop:
 	 * and	3. the short (5-second) and longer (30-second) average
 	 *	   memory is less than desirable.
 	 */
-	if (
-#ifdef NOPAGING
-	    freemem == 0 ||
-#endif
-	    kmapwnt || (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
+	if (kmapwnt || (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
 	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
 		desperate = 1;
 		goto hardswap;
@@ -253,11 +245,7 @@ loop:
 	divisor = 1;
 	if (outpri > maxslp/2) {
 		deservin = 1;
-#ifdef NOPAGING
-		divisor = 1;
-#else
 		divisor = 2;
-#endif
 	}
 	needs = p->p_swrss;
 	if (p->p_textp && p->p_textp->x_ccount == 0)
