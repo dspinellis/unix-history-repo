@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ctype.h	5.3 (Berkeley) %G%
+ *	@(#)ctype.h	5.4 (Berkeley) %G%
  */
 
 #ifndef _CTYPE_H_
@@ -21,20 +21,21 @@
 
 extern char	_ctype_[];
 
-#define	isdigit(c)	((_ctype_ + 1)[c] & _N)
-#define	islower(c)	((_ctype_ + 1)[c] & _L)
-#define	isspace(c)	((_ctype_ + 1)[c] & _S)
-#define	ispunct(c)	((_ctype_ + 1)[c] & _P)
-#define	isupper(c)	((_ctype_ + 1)[c] & _U)
-#define	isalpha(c)	((_ctype_ + 1)[c] & (_U|_L))
-#define	isxdigit(c)	((_ctype_ + 1)[c] & (_N|_X))
 #define	isalnum(c)	((_ctype_ + 1)[c] & (_U|_L|_N))
-#define	isprint(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N|_B))
-#define	isgraph(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N))
-#define	iscntrl(c)	((_ctype_ + 1)[c] & _C)
+#define	isalpha(c)	((_ctype_ + 1)[c] & (_U|_L))
 #define	isascii(c)	((unsigned)(c) <= 0177)
-#define	toupper(c)	((c) - 'a' + 'A')
-#define	tolower(c)	((c) - 'A' + 'a')
+#define	isblank(c)	((c) == '\t' || (c) == ' ')
+#define	iscntrl(c)	((_ctype_ + 1)[c] & _C)
+#define	isdigit(c)	((_ctype_ + 1)[c] & _N)
+#define	isgraph(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N))
+#define	islower(c)	((_ctype_ + 1)[c] & _L)
+#define	isprint(c)	((_ctype_ + 1)[c] & (_P|_U|_L|_N|_B))
+#define	ispunct(c)	((_ctype_ + 1)[c] & _P)
+#define	isspace(c)	((_ctype_ + 1)[c] & _S)
+#define	isupper(c)	((_ctype_ + 1)[c] & _U)
+#define	isxdigit(c)	((_ctype_ + 1)[c] & (_N|_X))
 #define	toascii(c)	((c) & 0177)
+#define	tolower(c)	((c) - 'A' + 'a')
+#define	toupper(c)	((c) - 'a' + 'A')
 
 #endif /* !_CTYPE_H_ */
