@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.5	%G%	*/
+/*	subr_prf.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,9 @@
 #include "../h/reboot.h"
 #include "../h/vm.h"
 #include "../h/msgbuf.h"
+#include "../h/dir.h"
+#include "../h/user.h"
+#include "../h/tty.h"
 
 #ifdef TRACE
 #define	TRCBUFS	4096
@@ -78,7 +81,7 @@ loop:
 		s = (char *)*adx;
 		while (c = *s++)
 #ifdef TRACE
-			if (trace) {
+			if (trace == 1) {
 				*trcbufp++ = c;
 				if (trcbufp >= &trcbuf[TRCBUFS]) {
 					trcbufp = trcbuf;
@@ -162,8 +165,8 @@ deverror(bp, o1, o2)
 register struct buf *bp;
 {
 
-	prdev("err", bp->b_dev);
-	printf("bn=%d er=%x,%x\n", bp->b_blkno, o1,o2);
+	printf("bn=%d er=%x,%x", bp->b_blkno, o1,o2);
+	prdev("", bp->b_dev);
 }
 
 #ifdef TRACE
@@ -208,6 +211,18 @@ putchar(c, trace)
 register c;
 {
 
+	if (trace == 2) {
+		register struct tty *tp;
+		register s;
+
+		if ((tp = u.u_ttyp) && (tp->t_state&CARR_ON)) {
+			s = spl7();
+			ttyoutput(c, tp);
+			ttstart(tp);
+			splx(s);
+		}
+		return;
+	}
 #ifdef TRACE
 	if (trace) {
 		*trcbufp++ = c;
@@ -230,4 +245,18 @@ register c;
 	if (c == 0)
 		return;
 	cnputc(c);
+}
+
+/*
+ * print to the current users terminal,
+ * guarantee not to sleep (so can be called by intr routine)
+ * no watermark checking - so no verbose messages
+ */
+
+/*VARARGS1*/
+uprintf(fmt, x1)
+char	*fmt;
+unsigned x1;
+{
+	prf(fmt, &x1, 2);
 }
