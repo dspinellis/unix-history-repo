@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printinst.c 1.1 %G%";
+static char sccsid[] = "@(#)printinst.c 1.2 %G%";
 
 /*
  * decode and print the instructions
@@ -23,11 +23,11 @@ printinst(lowaddr, highaddr)
 ADDRESS lowaddr;
 ADDRESS highaddr;
 {
-	register ADDRESS addr;
+    register ADDRESS addr;
 
-	for (addr = lowaddr; addr <= highaddr; ) {
-		addr = printop(addr);
-	}
+    for (addr = lowaddr; addr <= highaddr; ) {
+	addr = printop(addr);
+    }
 }
 
 /*
@@ -38,11 +38,11 @@ printninst(count, addr)
 int count;
 ADDRESS addr;
 {
-	int i;
+    int i;
 
-	for (i = 0; i < count; i++) {
-		addr = printop(addr);
-	}
+    for (i = 0; i < count; i++) {
+	addr = printop(addr);
+    }
 }
 
 /*
@@ -53,96 +53,100 @@ ADDRESS addr;
 LOCAL ADDRESS printop(addr)
 register ADDRESS addr;
 {
-	int i;
-	PXOP op;
-	OPTAB *o;
-	char subop;
-	short arg;
-	long longarg;
-	union {
-		short i;
-		struct { char c1, c2; } opword;
-	} u;
+    int i;
+    PXOP op;
+    OPTAB *o;
+    char subop;
+    short arg;
+    long longarg;
+    union {
+	short i;
+	struct { char c1, c2; } opword;
+    } u;
 
-	iread(&u.i, addr, sizeof(u.i));
-	op = (PXOP) u.opword.c1;
-	subop = u.opword.c2;
-	o = &optab[op];
-	printf("%5d   %s", addr, o->opname);
-	addr += sizeof(u);
-	for (i = 0; o->argtype[i] != 0; i++) {
-		if (i == 0) {
-			putchar('\t');
+    iread(&u.i, addr, sizeof(u.i));
+    op = (PXOP) u.opword.c1;
+    subop = u.opword.c2;
+    o = &optab[op];
+    printf("%5d   %s", addr, o->opname);
+    addr += sizeof(u);
+    for (i = 0; o->argtype[i] != 0; i++) {
+	if (i == 0) {
+	    putchar('\t');
+	} else {
+	    putchar(',');
+	}
+	switch(o->argtype[i]) {
+	    case ADDR4:
+	    case LWORD:
+		iread(&longarg, addr, sizeof(longarg));
+		printf("%d", longarg);
+		addr += sizeof(long);
+		break;
+
+	    case SUBOP:
+		printf("%d", subop);
+		break;
+
+	    case ADDR2:
+	    case DISP:
+	    case PSUBOP:
+	    case VLEN:
+	    case HWORD:
+		if (i != 0 || subop == 0) {
+		    iread(&arg, addr, sizeof(arg));
+		    addr += sizeof(short);
 		} else {
-			putchar(',');
+		    arg = subop;
 		}
-		switch(o->argtype[i]) {
-			case ADDR4:
-			case LWORD:
-				iread(&longarg, addr, sizeof(longarg));
-				printf("%d", longarg);
-				addr += sizeof(long);
-				break;
+		printf("%d", arg);
+		break;
 
-			case SUBOP:
-				printf("%d", subop);
-				break;
+	    case STRING: {
+		char c;
 
-			case ADDR2:
-			case DISP:
-			case PSUBOP:
-			case VLEN:
-			case HWORD:
-				if (i != 0 || subop == 0) {
-					iread(&arg, addr, sizeof(arg));
-					addr += sizeof(short);
-				} else {
-					arg = subop;
-				}
-				printf("%d", arg);
-				break;
-
-			case STRING: {
-				char c;
-
-				putchar('\'');
-				while (subop > 0) {
-					iread(&c, addr, sizeof(c));
-					if (c == '\0') {
-						break;
-					}
-					putchar(c);
-					subop--;
-					addr++;
-				}
-				addr++;
-				putchar('\'');
-				if ((addr&1) != 0) {
-					addr++;
-				}
-				break;
-			}
-
-			default:
-				panic("bad argtype %d", o->argtype[i]);
-				/*NOTREACHED*/
+		putchar('\'');
+		while (subop > 0) {
+		    iread(&c, addr, sizeof(c));
+		    if (c == '\0') {
+			break;
+		    }
+		    putchar(c);
+		    subop--;
+		    addr++;
 		}
-	}
-	switch(op) {
-		case O_CASE1OP:
-			addr = docase(addr, 1, subop);
-			break;
+		addr++;
+		putchar('\'');
+		if ((addr&1) != 0) {
+		    addr++;
+		}
+		break;
+	    }
 
-		case O_CASE2OP:
-			addr = docase(addr, 2, subop);
-			break;
-
-		case O_CASE4OP:
-			addr = docase(addr, 4, subop);
-			break;
+	    default:
+		panic("bad argtype %d", o->argtype[i]);
+		/*NOTREACHED*/
 	}
-	putchar('\n');
-	return(addr);
+    }
+    switch(op) {
+	case O_CON:
+	    addr += arg;
+	    break;
+
+	case O_CASE1OP:
+	    addr = docase(addr, 1, subop);
+	    break;
+
+	case O_CASE2OP:
+	    addr = docase(addr, 2, subop);
+	    break;
+
+	case O_CASE4OP:
+	    addr = docase(addr, 4, subop);
+	    break;
+    }
+    putchar('\n');
+    return(addr);
 }
 
 /*
@@ -154,44 +158,44 @@ ADDRESS addr;
 int size;
 int n;
 {
-	register int i;
-	char c;
-	short arg;
-	long longarg;
+    register int i;
+    char c;
+    short arg;
+    long longarg;
 
+    iread(&arg, addr, sizeof(arg));
+    printf("\n\t%5d", arg);
+    addr += 2;
+    for (i = 1; i < n; i++) {
 	iread(&arg, addr, sizeof(arg));
-	printf("\n\t%5d", arg);
+	printf(", %5d", arg);
 	addr += 2;
-	for (i = 1; i < n; i++) {
+    }
+    printf("\n\t");
+    for (i = 0; i < n; i++) {
+	switch(size) {
+	    case 1:
+		iread(&c, addr, sizeof(c));
+		printf("%5d", c);
+		break;
+
+	    case 2:
 		iread(&arg, addr, sizeof(arg));
-		printf(", %5d", arg);
-		addr += 2;
-	}
-	printf("\n\t");
-	for (i = 0; i < n; i++) {
-		switch(size) {
-			case 1:
-				iread(&c, addr, sizeof(c));
-				printf("%5d", c);
-				break;
+		printf("%5d", arg);
+		break;
 
-			case 2:
-				iread(&arg, addr, sizeof(arg));
-				printf("%5d", arg);
-				break;
-
-			case 4:
-				iread(&longarg, addr, sizeof(longarg));
-				printf("%5d", longarg);
-				break;
-		}
-		addr += size;
-		if (i < n - 1) {
-			printf(", ");
-		}
+	    case 4:
+		iread(&longarg, addr, sizeof(longarg));
+		printf("%5d", longarg);
+		break;
 	}
-	if ((addr&01) == 01) {
-		addr++;
+	addr += size;
+	if (i < n - 1) {
+	    printf(", ");
 	}
-	return(addr);
+    }
+    if ((addr&01) == 01) {
+	addr++;
+    }
+    return(addr);
 }
