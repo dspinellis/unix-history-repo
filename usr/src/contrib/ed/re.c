@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)re.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)re.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,7 +53,7 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 {
 	int l_cnt, l_flag=0;
 #ifndef REG_STARTEND
-	char *l_offset = strg;
+	char *l_offset=strg, *l_end;
 #endif
 
 	if (n <= 0)
@@ -63,12 +63,9 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 	if (pass)
 		reprematch[0].rm_so = 0;
 	reprematch[0].rm_eo = len;
-	if (!reprematch[0].rm_so)
-		l_flag = 1;
 #else
 	strg = &strg[offset];
-	if (!offset)
-		l_flag = 1;
+	l_end = &strg[strlen(strg)];
 #endif
 	for (l_cnt = 0;;) {
 		if (regexec(reprecomp,
@@ -76,22 +73,20 @@ regexec_n(reprecomp, strg, num_subexp, reprematch, flags, n, offset, pass)
 			l_cnt++;
 		else
 			return (REG_NOMATCH);
-		/* to skip over null RE matchings */
-		if (l_flag)
-			l_flag = 0;
-		else
-			if (reprematch[0].rm_so == reprematch[0].rm_eo) {
-				l_cnt--;
-				if ((++reprematch[0].rm_eo) > len)
-					return (REG_NOMATCH);
-			}
+
 		if (l_cnt >= n)
 			break;
 #ifdef REG_STARTEND
+		if (reprematch[0].rm_so == reprematch[0].rm_eo)
+			reprematch[0].rm_eo++;
 		reprematch[0].rm_so = reprematch[0].rm_eo;
+		if (reprematch[0].rm_so == len)
+			return (REG_NOMATCH);
 		reprematch[0].rm_eo = len;
 #else
 		strg = &strg[reprematch[0].rm_eo];
+		if (strg == l_end)
+                        return (REG_NOMATCH);
 #endif
 		/* if a "^" started the current RE we only loop once */
 		if (RE_sol)
@@ -146,7 +141,7 @@ re_replace(line, num_subexp, repmatch, replacer, offset)
 	 * l_slen[0] == len of what is to be replaced.
 	 * l_slen[1-9] == len of each backref.
 	 */
-	if ((*replacer == '%') && (replacer[1] == 1)) {
+	if ((*replacer == '%') && (replacer[1] == '\0')) {
 		l_string = calloc(l_len_whole - l_slen[0] +
 		    (strlen(l_prev_r)) + 2, sizeof(char));
 		if (l_string == NULL) {
@@ -165,11 +160,13 @@ re_replace(line, num_subexp, repmatch, replacer, offset)
 		l_string[l_len_before + offset] = '\0';
 #endif
 		strcat(l_string, l_prev_r);
+		l_new_rm_eo = strlen(l_string);
 #ifdef REG_STARTEND
 		strcat(l_string, &line[repmatch[0].rm_eo]);
 #else
 		strcat(l_string, &line[repmatch[0].rm_eo + offset]);
 #endif
+		repmatch[0].rm_eo = l_new_rm_eo;
 		return (l_string);
 	}
 

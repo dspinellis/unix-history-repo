@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)r.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)r.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,6 +53,10 @@ r(inputt, errnum)
 		if (sigint_flag && (!sigspecial))
 			SIGINT_ACTION;
 	} else {
+		if (End_default) {
+			End = bottom;
+			End_default = 0;
+		}
 		l_temp = filename(inputt, errnum);
 		if (*errnum == 1)
 			l_filename_read = l_temp;
@@ -136,7 +140,7 @@ r(inputt, errnum)
 		pclose(l_fp);
 	else
 		fclose(l_fp);
-	change_flag = 1;
+	/*change_flag = 1; done in input_lines() already */
 	if (sigint_flag)
 		SIGINT_ACTION;
 	*errnum = 1;

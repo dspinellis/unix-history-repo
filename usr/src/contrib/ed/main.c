@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -95,7 +95,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int l_num, errnum = 0, l_err = 0;
+	int l_num, errnum=0, l_err=0;
 	char *l_fnametmp, *l_col, buf[2];
 	struct winsize win;
 
@@ -228,6 +228,8 @@ cmd_loop(inputt, errnum)
 			start_up_flag = 0;
 			/* simulate the 'e' at startup */
 			e2(inputt, errnum);
+			if (*errnum == 0)
+				goto errmsg2;
 		}
 	}
 	for (;;) {
@@ -250,6 +252,8 @@ cmd_loop(inputt, errnum)
 			case 'e':
 			case 'E':
 				e(inputt, errnum);
+				if (*errnum == 0)
+					goto errmsg2;
 				break;
 			case 'f':
 				f(inputt, errnum);
@@ -354,10 +358,14 @@ cmd_loop(inputt, errnum)
 				/*ss = 'q';*/
 			case 'q':
 			case 'Q':
+				if ((!isatty(STDIN_FILENO)) && (ss == 'q'))
+					ss = 'Q';
 				q(inputt, errnum);
 				break;
 			case 'r':
 				r(inputt, errnum);
+				if (*errnum == 0)
+					goto errmsg2;
 				break;
 			case 's':
 				s(inputt, errnum);
@@ -500,12 +508,10 @@ cmd_loop(inputt, errnum)
 			else if (*errnum < 0) {
 errmsg:				while (((ss = getc(inputt)) != '\n') &&
 				    (ss != EOF));
+				(void)printf("?\n");
+errmsg2:			if (help_flag)
+					(void)printf("%s\n", help_msg);
 				exit_code = 4;
-				if (g_flag == 0) {
-					(void)printf("?\n");
-					if (help_flag)
-						(void)printf("%s\n", help_msg);
-				}
 /* for people wanting scripts to carry on after a cmd error, then
  * define NOENDONSCRIPT on the compile line.
  */

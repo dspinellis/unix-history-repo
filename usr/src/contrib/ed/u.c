@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)u.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)u.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,9 @@ static char sccsid[] = "@(#)u.c	5.4 (Berkeley) %G%";
 
 #include "ed.h"
 #include "extern.h"
+
+struct d_layer *old_d_stk=NULL;
+
 
 /*
  * This restores the buffer to the state it was in just before the
@@ -56,6 +59,7 @@ undo()
 {
 	LINE *l_current, *l_bottom, *l_top;
 	struct u_layer *l_old_u_stk, *l_temp;
+	struct d_layer *l_d_temp;
 
 	sigspecial++;
 	/* This is done because undo can be undone. */
@@ -66,6 +70,10 @@ undo()
 	u_current = current;
 	u_top = top;
 	u_bottom = bottom;
+
+	l_d_temp = old_d_stk;
+	old_d_stk = d_stk;
+	d_stk = l_d_temp;
 
 	l_old_u_stk = u_stk;
 	u_stk = NULL;
@@ -115,6 +123,7 @@ u_clr_stk()
 		free(l_temp);
 	}
 	u_stk = NULL;		/* Just to sure. */
+	old_d_stk = NULL; 	/* so something in use isn't freed! */
 	sigspecial--;
 	if (sigint_flag && (!sigspecial))
 		SIGINT_ACTION;

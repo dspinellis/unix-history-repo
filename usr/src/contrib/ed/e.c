@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -179,4 +179,5 @@ e2(inputt, errnum)
 		}
 	}
 	change_flag = 0;
+	*errnum = 1;
 }
