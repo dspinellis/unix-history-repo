@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.6 %G%";
+static char sccsid[] = "@(#)eval.c 1.7 %G%";
 
 /*
  * Tree evaluation.
@@ -24,7 +24,7 @@ static char sccsid[] = "@(#)eval.c 1.6 %G%";
 
 #include "machine.h"
 
-#define STACKSIZE 2000
+#define STACKSIZE 20000
 
 typedef Char Stack;
 
@@ -81,6 +81,9 @@ register Node p;
     File file;
 
     checkref(p);
+    if(debug_flag[2]) {
+                     fprintf(stderr," evaluating %s \n",showoperator(p->op));
+    }
     switch (degree(p->op)) {
 	case BINARY:
 	    poparg(1, r1, fr1);
@@ -158,6 +161,8 @@ register Node p;
 		len = size(p->nodetype);
 	    }
 	    rpush(addr, len);
+	addr = pop(long);
+        push(long, addr);
 	    break;
 
 	/*
@@ -416,11 +421,19 @@ register Node p;
 	    break;
 
 	case O_WHEREIS:
-	    printwhereis(stdout, p->value.arg[0]->value.sym);
+	    if (p->value.arg[0]->op == O_SYM) {
+		printwhereis(stdout,p->value.arg[0]->value.sym);
+	    } else {
+		printwhereis(stdout,p->value.arg[0]->nodetype);
+	    }
 	    break;
 
 	case O_WHICH:
-	    printwhich(stdout, p->value.arg[0]->value.sym);
+	    if (p->value.arg[0]->op == O_SYM) {
+		printwhich(stdout,p->value.arg[0]->value.sym);
+	    } else {
+		printwhich(stdout,p->value.arg[0]->nodetype);
+	    }
 	    putchar('\n');
 	    break;
 
@@ -446,6 +459,10 @@ register Node p;
 
 	case O_EDIT:
 	    edit(p->value.scon);
+	    break;
+
+        case O_DEBUG:
+            debug(p);
 	    break;
 
 	case O_DUMP:
@@ -569,6 +586,10 @@ register Node p;
 	default:
 	    panic("eval: bad op %d", p->op);
     }
+ if(debug_flag[2]) { 
+	fprintf(stderr," evaluated %s \n",showoperator(p->op));
+ }
+           
 }
 
 /*
