@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.9		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.10		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.9		%G%);
+SCCSID(@(#)srvrsmtp.c	4.10		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -74,10 +74,8 @@ static struct cmd	CmdTab[] =
 	NULL,		CMDERROR,
 };
 
-# ifdef DEBUG
 bool	IsWiz = FALSE;			/* set if we are a wizard */
 char	*WizWord;			/* the wizard word to compare against */
-# endif DEBUG
 bool	InChild = FALSE;		/* true if running in a subprocess */
 bool	OneXact = FALSE;		/* one xaction only this run */
 char	*RealHostName = NULL;		/* verified hostname, set in daemon.c */
