@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_input.c	6.19 (Berkeley) %G%
+ *	@(#)tcp_input.c	6.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -873,9 +873,7 @@ dodata:							/* XXX */
 	/*
 	 * Return any desired output.
 	 */
-#ifdef notyet
-	if (newwin || tp->t_flags & TF_ACKNOW)
-#endif
+	if (newwin || (tp->t_flags & TF_ACKNOW))
 		(void) tcp_output(tp);
 	return;
 
@@ -884,8 +882,7 @@ dropafterack:
 	 * Generate an ACK dropping incoming segment if it occupies
 	 * sequence space, where the ACK reflects our state.
 	 */
-	if ((tiflags&TH_RST) ||
-	    tlen == 0 && (tiflags&(TH_SYN|TH_FIN)) == 0)
+	if (tiflags & TH_RST)
 		goto drop;
 	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
 		tcp_trace(TA_RESPOND, ostate, tp, &tcp_saveti, 0);
