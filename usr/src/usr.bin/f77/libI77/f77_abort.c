@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)f77_abort.c	1.1	%D%
+ *	@(#)f77_abort.c	5.1	%G%
  *
  *	all f77 aborts eventually call f77_abort.
  *	f77_abort cleans up open files and terminates with a dump if needed,
