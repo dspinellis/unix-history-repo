@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.15 (Berkeley) %G%
+ *	@(#)autoconf.c	6.16 (Berkeley) %G%
  */
 
 /*
@@ -217,11 +217,11 @@ probesbi(psbi)
 	union nexcsr nexcsr;
 	int i;
 	
-	nexnum = 0, nxv = nexus;
+	nexnum = 0, nxv = &nexus[nsbi * 16];
 	for (; nexnum < psbi->psb_nnexus; nexnum++, nxp++, nxv++) {
 			/*
 			 * the 16 below shouldn't be there, but the constant
-			 * is used at other points (vax/Locore.c)
+			 * is used at other points (vax/locore.s)
 			 */
 		nxaccess(nxp, Nexmap[nsbi * 16 + nexnum], sizeof(struct nexus));
 		if (badaddr((caddr_t)nxv, 4))
