@@ -14,7 +14,8 @@ enum ctlrfcn {
 	FCN_NULL,	  		/* Illegal sequence */
 
 	FCN_RESET,			/* unlock keyboard */
-	FCN_CAPS_LOCK,
+	FCN_MAKE_SHIFT_LOCK,
+	FCN_BREAK_SHIFT_LOCK,
 
 	FCN_MAKE_SHIFT,			/* shift key pressed DOWN */
 	FCN_BREAK_SHIFT,		/* shift key released */
