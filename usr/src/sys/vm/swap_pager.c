@@ -9,7 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swap_pager.c	7.3 (Berkeley) %G%
+ * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
+ *
+ *	@(#)swap_pager.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -434,17 +436,27 @@ swap_pager_io(swp, m, flags)
 
 	/*
 	 * For reads (pageins) and synchronous writes, we clean up
-	 * all completed async pageouts and check to see if this
-	 * page is currently being cleaned.  If it is, we just wait
-	 * til the operation is done before continuing.
+	 * all completed async pageouts.
 	 */
 	if ((flags & B_ASYNC) == 0) {
 		s = splbio();
+#ifdef DEBUG
+		/*
+		 * Check to see if this page is currently being cleaned.
+		 * If it is, we just wait til the operation is done before
+		 * continuing.
+		 */
 		while (swap_pager_clean(m, flags&B_READ)) {
+			if (swpagerdebug & SDB_ANOM)
+				printf("swap_pager_io: page %x cleaning\n", m);
+
 			swp->sw_flags |= SW_WANTED;
 			assert_wait((int)swp);
 			thread_block();
 		}
+#else
+		(void) swap_pager_clean(m, flags&B_READ);
+#endif
 		splx(s);
 	}
 	/*
@@ -453,8 +465,15 @@ swap_pager_io(swp, m, flags)
 	 * page is already being cleaned.  If it is, or no resources
 	 * are available, we try again later.
 	 */
-	else if (swap_pager_clean(m, B_WRITE) || queue_empty(&swap_pager_free))
+	else if (swap_pager_clean(m, B_WRITE) ||
+		 queue_empty(&swap_pager_free)) {
+#ifdef DEBUG
+		if ((swpagerdebug & SDB_ANOM) &&
+		    !queue_empty(&swap_pager_free))
+			printf("swap_pager_io: page %x already cleaning\n", m);
+#endif
 		return(VM_PAGER_FAIL);
+	}
 
 	/*
 	 * Determine swap block and allocate as necessary.
@@ -516,7 +535,7 @@ swap_pager_io(swp, m, flags)
 	while (bswlist.av_forw == NULL) {
 #ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
-			printf("swpg_io: wait on swbuf for %x (%d)\n",
+			printf("swap_pager_io: wait on swbuf for %x (%d)\n",
 			       m, flags);
 #endif
 		bswlist.b_flags |= B_WANTED;
@@ -557,9 +576,6 @@ swap_pager_io(swp, m, flags)
 		spc->spc_swp = swp;
 		spc->spc_kva = kva;
 		spc->spc_m = m;
-#ifdef DEBUG
-		m->pagerowned = 1;
-#endif
 		bp->b_flags |= B_CALL;
 		bp->b_iodone = swap_pager_iodone;
 		s = splbio();
@@ -577,12 +593,6 @@ swap_pager_io(swp, m, flags)
 			       swp->sw_blocks, swb->swb_block, atop(off));
 #endif
 		swb->swb_mask |= (1 << atop(off));
-		/*
-		 * XXX: Block write faults til we are done.
-		 */
-		m->page_lock = VM_PROT_WRITE;
-		m->unlock_request = VM_PROT_ALL;
-		pmap_copy_on_write(VM_PAGE_TO_PHYS(m));
 		splx(s);
 	}
 #ifdef DEBUG
@@ -626,7 +636,7 @@ swap_pager_io(swp, m, flags)
 		thread_wakeup((int)&bswlist);
 	}
 	if ((flags & B_READ) == 0 && rv == VM_PAGER_OK) {
-		m->clean = 1;
+		m->clean = TRUE;
 		pmap_clear_modify(VM_PAGE_TO_PHYS(m));
 	}
 	splx(s);
@@ -673,7 +683,7 @@ swap_pager_clean(m, rw)
 			if (m && m == spc->spc_m) {
 #ifdef DEBUG
 				if (swpagerdebug & SDB_ANOM)
-					printf("swpg_clean: %x on list, flags %x\n",
+					printf("swap_pager_clean: page %x on list, flags %x\n",
 					       m, spc->spc_flags);
 #endif
 				tspc = spc;
@@ -695,7 +705,7 @@ swap_pager_clean(m, rw)
 		if (tspc && tspc == spc) {
 #ifdef DEBUG
 			if (swpagerdebug & SDB_ANOM)
-				printf("swpg_clean: %x done while looking\n",
+				printf("swap_pager_clean: page %x done while looking\n",
 				       m);
 #endif
 			tspc = NULL;
@@ -708,18 +718,19 @@ swap_pager_clean(m, rw)
 			printf("swpg_clean: free spc %x\n", spc);
 #endif
 	}
+#ifdef DEBUG
 	/*
 	 * If we found that the desired page is already being cleaned
 	 * mark it so that swap_pager_iodone() will not set the clean
 	 * flag before the pageout daemon has another chance to clean it.
 	 */
 	if (tspc && rw == B_WRITE) {
-#ifdef DEBUG
 		if (swpagerdebug & SDB_ANOM)
-			printf("swpg_clean: %x on clean list\n", tspc);
-#endif
+			printf("swap_pager_clean: page %x on clean list\n",
+			       tspc);
 		tspc->spc_flags |= SPC_DIRTY;
 	}
+#endif
 	splx(s);
 
 #ifdef DEBUG
@@ -746,38 +757,42 @@ swap_pager_finish(spc)
 	if (!vm_object_lock_try(object))
 		return(0);
 
-#ifdef DEBUG
-	spc->spc_m->pagerowned = 0;
-#endif
-
 	if (--object->paging_in_progress == 0)
 		thread_wakeup((int) object);
 
+#ifdef DEBUG
 	/*
 	 * XXX: this isn't even close to the right thing to do,
 	 * introduces a variety of race conditions.
 	 *
 	 * If dirty, vm_pageout() has attempted to clean the page
 	 * again.  In this case we do not do anything as we will
-	 * see the page again shortly.  Otherwise, if no error mark
-	 * as clean and inform the pmap system.  If error, mark as
-	 * dirty so we will try again (XXX: could get stuck doing
-	 * this, should give up after awhile).
+	 * see the page again shortly.
 	 */
-	if ((spc->spc_flags & SPC_DIRTY) == 0) {
-		if (spc->spc_flags & SPC_ERROR) {
-			printf("swap_pager: clean of %x failed\n",
-			       VM_PAGE_TO_PHYS(spc->spc_m));
-			spc->spc_m->laundry = TRUE;
-		} else {
-			spc->spc_m->clean = TRUE;
-			pmap_clear_modify(VM_PAGE_TO_PHYS(spc->spc_m));
-		}
+	if (spc->spc_flags & SPC_DIRTY) {
+		if (swpagerdebug & SDB_ANOM)
+			printf("swap_pager_finish: page %x dirty again\n",
+			       spc->spc_m);
+		spc->spc_m->busy = FALSE;
+		PAGE_WAKEUP(spc->spc_m);
+		vm_object_unlock(object);
+		return(1);
 	}
+#endif
 	/*
-	 * XXX: allow blocked write faults to continue
+	 * If no error mark as clean and inform the pmap system.
+	 * If error, mark as dirty so we will try again.
+	 * (XXX could get stuck doing this, should give up after awhile)
 	 */
-	spc->spc_m->page_lock = spc->spc_m->unlock_request = VM_PROT_NONE;
+	if (spc->spc_flags & SPC_ERROR) {
+		printf("swap_pager_finish: clean of page %x failed\n",
+		       VM_PAGE_TO_PHYS(spc->spc_m));
+		spc->spc_m->laundry = TRUE;
+	} else {
+		spc->spc_m->clean = TRUE;
+		pmap_clear_modify(VM_PAGE_TO_PHYS(spc->spc_m));
+	}
+	spc->spc_m->busy = FALSE;
 	PAGE_WAKEUP(spc->spc_m);
 
 	vm_object_unlock(object);
@@ -807,7 +822,7 @@ swap_pager_iodone(bp)
 	}
 #ifdef DEBUG
 	if (queue_end(&swap_pager_inuse, (queue_entry_t)spc))
-		panic("swpg_iodone: bp not found");
+		panic("swap_pager_iodone: bp not found");
 #endif
 
 	spc->spc_flags &= ~SPC_BUSY;
@@ -840,35 +855,6 @@ swap_pager_iodone(bp)
 		bswlist.b_flags &= ~B_WANTED;
 		thread_wakeup((int)&bswlist);
 	}
-#if 0
-	/*
-	 * XXX: this isn't even close to the right thing to do,
-	 * introduces a variety of race conditions.
-	 *
-	 * If dirty, vm_pageout() has attempted to clean the page
-	 * again.  In this case we do not do anything as we will
-	 * see the page again shortly.  Otherwise, if no error mark
-	 * as clean and inform the pmap system.  If error, mark as
-	 * dirty so we will try again (XXX: could get stuck doing
-	 * this, should give up after awhile).
-	 */
-	if ((spc->spc_flags & SPC_DIRTY) == 0) {
-		if (spc->spc_flags & SPC_ERROR) {
-			printf("swap_pager: clean of %x (block %x) failed\n",
-			       VM_PAGE_TO_PHYS(spc->spc_m), blk);
-			spc->spc_m->laundry = TRUE;
-		} else {
-			spc->spc_m->clean = TRUE;
-			pmap_clear_modify(VM_PAGE_TO_PHYS(spc->spc_m));
-		}
-	}
-	/*
-	 * XXX: allow blocked write faults to continue
-	 */
-	spc->spc_m->page_lock = spc->spc_m->unlock_request = VM_PROT_NONE;
-	PAGE_WAKEUP(spc->spc_m);
-#endif
-
 	thread_wakeup((int) &vm_pages_needed);
 	splx(s);
 }
