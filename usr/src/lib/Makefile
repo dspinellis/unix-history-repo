@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.29 (Berkeley) %G%
+#	@(#)Makefile	5.30 (Berkeley) %G%
 
 # Missing: libcompat libdbm libmp libplot
 
