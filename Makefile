@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.39 1994/02/05 08:33:14 rgrimes Exp $
+#	$Id: Makefile,v 1.40 1994/02/18 02:03:17 rgrimes Exp $
 #
 
 SUBDIR=
@@ -22,6 +22,13 @@ SUBDIR+= include
 .if exists(lib)
 SUBDIR+= lib
 .endif
+
+# This contains both libraries and includes, which stuff below depends
+# upon.
+.if exists(kerberosIV) && !defined(NOCRYPT)
+SUBDIR+= kerberosIV
+.endif
+
 .if exists(libexec)
 SUBDIR+= libexec
 .endif
@@ -125,6 +132,9 @@ includes:
 	cd ${.CURDIR}/gnu/lib/libg++;		make beforeinstall
 	cd ${.CURDIR}/lib/libcurses;		make beforeinstall
 	cd ${.CURDIR}/lib/libc;			make beforeinstall
+.if !defined(NOCRYPT) && exists(${.CURDIR}/kerberosIV)
+	cd ${.CURDIR}/kerberosIV/include;	make install
+.endif
 
 # You MUST run this the first time you get the new sources to boot strap
 # the shared library tools onto you system.  This target should only
@@ -163,6 +173,11 @@ libraries:
 	cd ${.CURDIR}/gnu/lib/libregex;		make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/lib/libmalloc;	make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/lex;	make depend all install ${CLEANDIR} obj
+.if exists(${.CURDIR}/kerberosIV) && !defined(NOCRYPT)
+	cd ${.CURDIR}/kerberosIV/des;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/kerberosIV/krb;	make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/kerberosIV/kdc;	make depend all install ${CLEANDIR} obj
+.endif
 
 tools:
 	@echo "--------------------------------------------------------------"
