@@ -1,0 +1,21 @@
+as suftab.s
+strip a.out
+cmp a.out /usr/lib/suftab
+cp a.out /usr/lib/suftab
+
+as roff?.s
+ld -s a.out -l
+cmp a.out /usr/bin/roff
+cp a.out /usr/bin/roff
+
+as nroff[1-5].s roff7.s nroff8.s
+ld -s -n a.out
+cmp a.out /usr/bin/nroff
+cp a.out /usr/bin/nroff
+
+yacc ne.g
+cc -s -O -n ne*.c -ly
+cmp a.out /usr/bin/neqn
+cp a.out /usr/bin/neqn
+
+rm y.tab.c *.o a.out
