@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_uba.c	7.5 (Berkeley) %G%
+ *	@(#)if_uba.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
