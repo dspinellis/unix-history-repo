@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.3 %G%";
+static char sccsid[] = "@(#)main.c 1.4 %G%";
 
 /*
  * Debugger main routine.
@@ -14,7 +14,7 @@ static char sccsid[] = "@(#)main.c 1.3 %G%";
 #include "process.h"
 #include "object.h"
 
-#define FIRST_TIME 0		/* initial value setjmp returns */
+#define FIRST_TIME 0        /* initial value setjmp returns */
 
 LOCAL int firstarg;
 LOCAL jmp_buf env;
@@ -24,39 +24,39 @@ main(argc, argv)
 int argc;
 char **argv;
 {
-	FILE *fp;
-	int i;
+    FILE *fp;
+    int i;
 
-	catcherrs();
-	catchsigs();
-	scanargs(argc, argv);
-	cmdname = argv[0];
-	if ((fp = fopen(objname, "r")) == NIL) {
-		panic("can't read %s", objname);
+    catcherrs();
+    catchsigs();
+    scanargs(argc, argv);
+    cmdname = argv[0];
+    if ((fp = fopen(objname, "r")) == NIL) {
+	panic("can't read %s", objname);
+    } else {
+	fclose(fp);
+    }
+    if (option('r')) {
+	if (setjmp(env) == FIRST_TIME) {
+	    arginit();
+	    for (i = firstarg; i < argc; i++) {
+		newarg(argv[i]);
+	    }
+	    run();
+	    /* NOTREACHED */
 	} else {
-		fclose(fp);
+	    option('r') = FALSE;
 	}
-	if (option('r')) {
-		if (setjmp(env) == FIRST_TIME) {
-			arginit();
-			for (i = firstarg; i < argc; i++) {
-				newarg(argv[i]);
-			}
-			run();
-			/* NOTREACHED */
-		} else {
-			option('r') = FALSE;
-		}
-	} else {
-		initstart();
-		prompt();
-		init();
-	}
-	setjmp(env);
-	signal(SIGINT, catchintr);
-	yyparse();
-	putchar('\n');
-	quit(0);
+    } else {
+	initstart();
+	prompt();
+	init();
+    }
+    setjmp(env);
+    signal(SIGINT, catchintr);
+    yyparse();
+    putchar('\n');
+    quit(0);
 }
 
 /*
@@ -66,9 +66,9 @@ char **argv;
 
 init()
 {
-	initinput();
-	readobj(objname);
-	lexinit();
+    initinput();
+    readobj(objname);
+    lexinit();
 }
 
 /*
@@ -77,9 +77,9 @@ init()
 
 erecover()
 {
-	gobble();
-	prompt();
-	longjmp(env, 1);
+    gobble();
+    prompt();
+    longjmp(env, 1);
 }
 
 /*
@@ -88,9 +88,9 @@ erecover()
 
 LOCAL catchintr()
 {
-	putchar('\n');
-	prompt();
-	longjmp(env, 1);
+    putchar('\n');
+    prompt();
+    longjmp(env, 1);
 }
 
 /*
@@ -101,48 +101,49 @@ LOCAL scanargs(argc, argv)
 int argc;
 char **argv;
 {
-	register int i, j;
-	BOOLEAN done;
+    register int i, j;
+    BOOLEAN done;
 
-	if (streq(argv[0], "pxhdr") || streq(argv[0], "pix")) {
-		objname = argv[1];
-		option('r') = TRUE;
-		option('t') = TRUE;
-		if (streq(argv[0], "pxhdr")) {
-			setargs("pdx", argv[2]);
-			firstarg = 3;
-		} else {
-			setargs("pix", NIL);
-			firstarg = 2;
-		}
-		argv[0] = "pdx";
+    if (streq(argv[0], "pxhdr") || streq(argv[0], "pix")) {
+	objname = argv[1];
+	option('r') = TRUE;
+	option('t') = TRUE;
+	if (streq(argv[0], "pxhdr")) {
+	    setargs("pdx", argv[2]);
+	    firstarg = 3;
 	} else {
-		done = FALSE;
-		i = 1;
-		while (i < argc && !done) {
-			if (argv[i][0] == '-') {
-				for (j = 1; argv[i][j] != '\0'; j++) {
-					switch (argv[i][j]) {
-						case 'r':	/* run program before accepting commands */
-						case 'b':	/* (internal) trace breakpoints */
-						case 'e':	/* (internal) trace execution */
-						case 'h':	/* (internal) display header information */
-							option(argv[i][j]) = TRUE;
-							break;
-
-					default:
-						panic("bad option \"%c\"", argv[i]);
-					}
-				}
-			} else {
-				objname = argv[i];
-				done = TRUE;
-			}
-			i++;
-		}
-		firstarg = i;
-		setargs("pdx", objname);
+	    setargs("pix", NIL);
+	    firstarg = 2;
 	}
+	argv[0] = "pdx";
+    } else {
+	done = FALSE;
+	i = 1;
+	while (i < argc && !done) {
+	    if (argv[i][0] == '-') {
+		for (j = 1; argv[i][j] != '\0'; j++) {
+		    switch (argv[i][j]) {
+			case 'r':   /* run program before accepting commands */
+			case 'i':   /* assume input is a terminal */
+			case 'b':   /* (internal) trace breakpoints */
+			case 'e':   /* (internal) trace execution */
+			case 'h':   /* (internal) display header information */
+			    option(argv[i][j]) = TRUE;
+			    break;
+
+		    default:
+			panic("bad option \"%c\"", argv[i]);
+		    }
+		}
+	    } else {
+		objname = argv[i];
+		done = TRUE;
+	    }
+	    i++;
+	}
+	firstarg = i;
+	setargs("pdx", objname);
+    }
 }
 
 /*
@@ -153,14 +154,14 @@ char **argv;
 quit(r)
 int r;
 {
-	if (option('t')) {
-		unlink(objname);
-	}
-	exit(r);
+    if (option('t')) {
+	unlink(objname);
+    }
+    exit(r);
 }
 
 LOCAL catchsigs()
 {
-	signal(SIGHUP, quit);
-	signal(SIGQUIT, quit);
+    signal(SIGHUP, quit);
+    signal(SIGQUIT, quit);
 }
