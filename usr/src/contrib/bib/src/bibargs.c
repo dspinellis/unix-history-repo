@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.7	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.8	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -31,6 +31,7 @@ static char sccsid[] = "@(#)bibargs.c	2.7	%G%";
    int  edabbrev     = false;   /* abbreviate editors names ?                */
    int  edcapsmcap   = false;   /* print editors in cap small caps           */
    int  ednumrev     = 0;       /* number of editors to reverse              */
+   int	max_klen     = 6;	/* max size of key			     */
    int  sort         = false;   /* sort references ? (default no)            */
    int  foot         = false;   /* footnoted references ? (default endnotes) */
    int  doacite      = true;    /* place citations ? */
@@ -116,6 +117,15 @@ static char sccsid[] = "@(#)bibargs.c	2.7	%G%";
                               break;
                               }
                        break;
+
+	    case 'l':  if (argv[i][2]){
+                          max_klen  = atoi(&argv[i][2]);
+			  if (max_klen > REFSIZE)
+			      error("too long key size");
+		       } else {
+			  error("-l needs a numeric value");
+		       }
+		       break;
 
             case 'v':  doacite = false;
 			/*FALLTHROUGH*/
@@ -712,7 +722,7 @@ char c;
 {  reg char *p, *q, *fp;
    char c;
    char field[REFSIZE];
-   char *getfield(), *aabet(), *aabetlast(), *astro();
+   char *getfield(), *aabet(), *aabetlast(), *fullaabet(), *astro();
 
    getfield("F", field, ref);
    if (field[0] != 0)
@@ -739,6 +749,8 @@ char c;
             cp = aabet(cp, ref);
          else if (c == '3')                     /* Astrophysical Journal style*/
             cp = astro(cp, ref);
+	 else if (c == '8')			/* Full alphabetic */
+	    cp = fullaabet(cp, ref);
          else if (c == '9')                     /* Last name of Senior Author*/
             cp = aabetlast(cp, ref);
 	 else if (c == '0') {			/* print nothing */
@@ -796,6 +808,32 @@ char c;
       }
 return(cp);
 }
+
+/* alternate alphabetic citation style -
+	first two characters of last names of all authors
+	up to max_klen characters.
+*/
+   char *fullaabet(cp, ref)
+   char *cp, ref[];
+{  char field[REFSIZE], temp[100];
+   reg char	*fp;
+   char	*lastcp;
+   int getname();
+   int i;
+
+   lastcp = cp + max_klen;
+   for (i= 1; getname(i, field, temp, ref); i++) {
+      for (fp = field; *fp && (fp < &(field[3])); )
+	 if (cp > lastcp)
+	     break;
+         else if (isalpha(*fp))
+	     *cp++ = *fp++;
+	 else
+	     fp++;
+   }
+   return(cp);
+}
+
 
 /* alternate alphabetic citation style -
 	entire last name of senior author
