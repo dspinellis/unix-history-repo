@@ -1,4 +1,4 @@
-/*	hdb.c	1.8	(Berkeley) 84/10/20
+/*	hdb.c	1.9	(Berkeley) 86/04/14
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -129,8 +129,11 @@ register FILE *file;
 		    }
 		    else {
 			(void) sscanf(string, "%f%f", &x, &y);
-			if ((x == -1.00 && y == -1.00) && (!SUNFILE))
+			if ((x == -1.00 && y == -1.00) && (!SUNFILE)) {
 			    lastpoint = TRUE;
+			} else {
+			    savebounds(xorn(x, y), yorn(x, y));
+			}
 		    }
 		} while (!lastpoint);
 	    } 
