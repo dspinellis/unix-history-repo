@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.6 (Berkeley) %G%
+ *	@(#)rk.c	6.7 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -52,6 +52,8 @@ struct	rk_softc {
 	int	sc_wticks;
 	int	sc_recal;
 } rk_softc[NHK];
+
+#define rkunit(dev)	(minor(dev) >> 3)
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 struct size {
@@ -113,10 +115,6 @@ struct	buf rrkbuf[NRK];
 
 #define	b_cylin	b_resid
 
-#ifdef INTRLVE
-daddr_t	dkblock();
-#endif
-
 int	rkwstart, rkwatch();
 
 rkprobe(reg)
@@ -176,7 +174,7 @@ rkattach(ui)
 rkopen(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NRK || (ui = rkdinfo[unit]) == 0 || ui->ui_alive == 0)
@@ -196,16 +194,24 @@ rkstrategy(bp)
 	int s;
 
 	sz = (bp->b_bcount+511) >> 9;
-	unit = dkunit(bp);
-	if (unit >= NRK)
+	unit = rkunit(bp->b_dev);
+	if (unit >= NRK) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	ui = rkdinfo[unit];
-	if (ui == 0 || ui->ui_alive == 0)
+	if (ui == 0 || ui->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	st = &rkst[ui->ui_type];
 	if (bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > st->sizes[xunit].nblocks)
+	    (bn = bp->b_blkno)+sz > st->sizes[xunit].nblocks) {
+		if (bp->b_blkno == st->sizes[xunit].nblocks +1)
+		    goto done;
+		bp->b_error = EINVAL;
 		goto bad;
+	}
 	bp->b_cylin = bn/st->nspc + st->sizes[xunit].cyloff;
 	s = spl5();
 	dp = &rkutab[ui->ui_unit];
@@ -221,6 +227,7 @@ rkstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -315,8 +322,8 @@ loop:
 		goto loop;
 	}
 	um->um_tab.b_active++;
-	ui = rkdinfo[dkunit(bp)];
-	bn = dkblock(bp);
+	ui = rkdinfo[rkunit(bp->b_dev)];
+	bn = bp->b_blkno;
 	st = &rkst[ui->ui_type];
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
@@ -336,7 +343,7 @@ retry:
 		goto retry;
 	}
 	if ((rkaddr->rkds&RKDS_DREADY) != RKDS_DREADY) {
-		printf("rk%d: not ready", dkunit(bp));
+		printf("rk%d: not ready", rkunit(bp->b_dev));
 		if ((rkaddr->rkds&RKDS_DREADY) != RKDS_DREADY) {
 			printf("\n");
 			rkaddr->rkcs1 = rktypes[ui->ui_type]|RK_DCLR|RK_GO;
@@ -393,7 +400,7 @@ rkintr(rk11)
 		um->um_tab.b_active = 1;
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
-		ui = rkdinfo[dkunit(bp)];
+		ui = rkdinfo[rkunit(bp->b_dev)];
 		dk_busy &= ~(1 << ui->ui_dk);
 		if (bp->b_flags&B_BAD)
 			if (rkecc(ui, CONT))
@@ -411,7 +418,8 @@ rkintr(rk11)
 			}
 #endif
 			if (er & RKER_WLE) {
-				printf("rk%d: write locked\n", dkunit(bp));
+				printf("rk%d: write locked\n",
+					rkunit(bp->b_dev));
 				bp->b_flags |= B_ERROR;
 			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
@@ -525,7 +533,7 @@ rkread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 
 	if (unit >= NRK)
 		return (ENXIO);
@@ -536,7 +544,7 @@ rkwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = idcunit(dev);
 
 	if (unit >= NRK)
 		return (ENXIO);
@@ -561,7 +569,7 @@ rkecc(ui, flag)
 		npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount);
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	bn = dkblock(bp);
+	bn = bp->b_blkno;
 	st = &rkst[ui->ui_type];
 	cn = bp->b_cylin;
 	sn = bn%st->nspc + npf;
@@ -578,7 +586,7 @@ rkecc(ui, flag)
 
 		npf--;
 		reg--;
-		log(KERN_RECOV, "rk%d%c: soft ecc sn%d\n", dkunit(bp),
+		log(KERN_RECOV, "rk%d%c: soft ecc sn%d\n", rkunit(bp->b_dev),
 		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		mask = rk->rkec2;
 		i = rk->rkec1 - 1;		/* -1 makes 0 origin */
@@ -727,7 +735,7 @@ rkdump(dev)
 	register short *rp;
 	struct rkst *st;
 
-	unit = minor(dev) >> 3;
+	unit = idcunit(dev);
 	if (unit >= NRK)
 		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
@@ -787,7 +795,7 @@ rkdump(dev)
 rksize(dev)
 	dev_t dev;
 {
-	int unit = minor(dev) >> 3;
+	int unit = idcunit(dev);
 	struct uba_device *ui;
 	struct rkst *st;
 

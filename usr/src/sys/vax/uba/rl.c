@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rl.c	6.4 (Berkeley) %G%
+ *	@(#)rl.c	6.5 (Berkeley) %G%
  */
 
 #include "rl.h"
@@ -53,6 +53,8 @@ struct	rl_stat {
 	u_short	rl_bpart;	/* bytes transferred */
 } rl_stat[NHL];
 
+#define rlunit(dev)	(minor(dev) >> 3)
+
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
 /* Last cylinder not used. Saved for Bad Sector File */
 struct	size {
@@ -98,10 +100,6 @@ struct	RL02 {
 struct	buf	rrlbuf[NRL];
 
 #define	b_cylin b_resid		/* Last seek as CYL<<1 | HD */
-
-#ifdef INTRLVE
-daddr_t dkblock();
-#endif
 
 int	rlwstart, rlwatch();		/* Have started guardian */
 
@@ -187,7 +185,7 @@ rlattach(ui)
 rlopen(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = rlunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
@@ -205,15 +203,23 @@ rlstrategy(bp)
 	long bn, sz;
 
 	sz = (bp->b_bcount+511) >> 9;
-	drive = dkunit(bp);
-	if (drive >= NRL)
+	drive = rlunit(bp->b_dev);
+	if (drive >= NRL) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	ui = rldinfo[drive];
-	if (ui == 0 || ui->ui_alive == 0)
+	if (ui == 0 || ui->ui_alive == 0) {
+		bp->b_error = ENXIO;
 		goto bad;
+	}
 	if (bp->b_blkno < 0 ||
-	    (bn = dkblock(bp))+sz > rl02.sizes[partition].nblocks)
+	    (bn = bp->b_blkno)+sz > rl02.sizes[partition].nblocks) {
+		if (bp->b_blkno == rl02.sizes[partition].nblocks + 1)
+		    goto done;
+		bp->b_error = EINVAL;
 		goto bad;
+	}
 	/* bn is in 512 byte block size */
 	bp->b_cylin = bn/rl02.nbpc + rl02.sizes[partition].cyloff;
 	s = spl5();
@@ -230,6 +236,7 @@ rlstrategy(bp)
 
 bad:
 	bp->b_flags |= B_ERROR;
+done:
 	iodone(bp);
 	return;
 }
@@ -277,7 +284,7 @@ rlustart(ui)
 	 * Figure out where this transfer is going to
 	 * and see if we are seeked correctly.
 	 */
-	bn = dkblock(bp);		/* Block # desired */
+	bn = bp->b_blkno;		/* Block # desired */
 	/*
 	 * Map 512 byte logical disk blocks
 	 * to 256 byte sectors (rl02's are stupid).
@@ -351,8 +358,8 @@ loop:
 	 * determine destination.
 	 */
 	um->um_tab.b_active++;
-	ui = rldinfo[dkunit(bp)];		/* Controller */
-	bn = dkblock(bp);			/* 512 byte Block number */
+	ui = rldinfo[rlunit(bp->b_dev)];	/* Controller */
+	bn = bp->b_blkno;			/* 512 byte Block number */
 	cyl = bp->b_cylin << 1;			/* Cylinder */
 	cyl |= (bn / rl02.nbpt) & 1;		/* Get head required */
 	sn = (bn % rl02.nbpt) << 1;		/* Sector number */
@@ -407,7 +414,7 @@ rlintr(rl21)
 	rl->rl_softas = 0;
 	dp = um->um_tab.b_actf;
 	bp = dp->b_actf;
-	ui = rldinfo[dkunit(bp)];
+	ui = rldinfo[rlunit(bp->b_dev)];
 	dk_busy &= ~(1 << ui->ui_dk);
 
 	/*
@@ -432,7 +439,7 @@ rlintr(rl21)
 			 * Give up on write protected devices
 			 * immediately.
 			 */
-			printf("rl%d: write protected\n", dkunit(bp));
+			printf("rl%d: write protected\n", rlunit(bp->b_dev));
 			bp->b_flags |= B_ERROR;
 		} else if (++um->um_tab.b_errcnt > 10) {
 			/*
@@ -555,7 +562,7 @@ rlread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = rlunit(dev);
 
 	if (unit >= NRL)
 		return (ENXIO);
@@ -566,7 +573,7 @@ rlwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = rlunit(dev);
 
 	if (unit >= NRL)
 		return (ENXIO);
@@ -673,7 +680,7 @@ rldump(dev)
 rlsize(dev)
 	dev_t dev;
 {
-	register int unit = minor(dev) >> 3;
+	register int unit = rlunit(dev);
 	register struct uba_device *ui;
 
 	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
