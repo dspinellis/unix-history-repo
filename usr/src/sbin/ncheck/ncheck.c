@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)ncheck.c	5.6 (Berkeley) %G%";
 #include <stdio.h>
 
 struct	fs	sblock;
-struct	dinode	itab[MAXIPG];
+struct	dinode	itab[MAXBSIZE/sizeof(struct dinode)];
 struct 	dinode	*gip;
 struct ilist {
 	ino_t	ino;
@@ -144,33 +144,45 @@ check(file)
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j = 0; j < sblock.fs_ipg; j++) {
-			if (itab[j].di_mode != 0)
-				pass1(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				if (itab[j].di_mode != 0)
+					pass1(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	ilist[nxfile+1].ino = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j = 0; j < sblock.fs_ipg; j++) {
-			if (itab[j].di_mode != 0)
-				pass2(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				if (itab[j].di_mode != 0)
+					pass2(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for(j = 0; j < sblock.fs_ipg; j++) {
-			if (itab[j].di_mode != 0)
-				pass3(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				if (itab[j].di_mode != 0)
+					pass3(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	close(fi);
