@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ps.1	6.12 (Berkeley) %G%
+.\"     @(#)ps.1	6.13 (Berkeley) %G%
 .\"
 .TH PS 1 "March 10, 1988"
 .UC 4
@@ -12,7 +12,7 @@ ps \- process status
 .SH SYNOPSIS
 .nf
 .ft B
-ps [ \-aChjlmrSsTuvwx ] [ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ system ] [ core ] [ swap ]
+ps [ \-aChjlmrSTuvwx ] [ \-O|o fmt ] [ \-p pid ] [ \-t tty \] [ system ] [ core ] [ swap ]
 ps [ \-L ]
 .ft R
 .fi
@@ -85,10 +85,6 @@ Sort by current cpu usage, instead of by process ID.
 Change the way the process time is calculated by summing all exited
 children to their parent process.
 .TP
-\-s
-Display information associated with the following keywords:
-uid, pid, sig, sigmask, sigignore, sigcatch, state, tt and command.
-.TP
 \-T
 Display information about processes attached to the device associated
 with the standard input.
@@ -104,7 +100,7 @@ The \-u option implies the \-r option.
 .TP
 \-v
 Display information associated with the following keywords:
-pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trs,
+pid, state, time, sl, re, pagein, vsz, rss, lim, tsiz, trss,
 %cpu, %mem and command.
 The \-v option implies the \-m option.
 .TP
@@ -196,7 +192,7 @@ If the command started less than 24 hours ago, the start time is
 displayed using the ``%l:ps.1p'' format described in 
 .IR strftime (3).
 If the command started less than 7 days ago, the start time is
-displayed using the ``%a6.12p'' format.
+displayed using the ``%a6.13p'' format.
 Otherwise, the start time is displayed using the ``%e%b%y'' format.
 .TP
 state
@@ -367,9 +363,6 @@ resident set size
 resident set size + (text size / text use count) (alias rssize)
 .IP ruid 10
 real user ID
-.IP rusage 10
-an alias for the following keywords: minflt, majflt, nswap, inblock,
-oublock, msgsnd, msgrcv, nsigs, nvcsw and nivcsw.
 .IP ruser 10
 user name (from ruid)
 .IP sess 10
@@ -398,7 +391,7 @@ control terminal device number
 accumulated cpu time, user + system (alias cputime)
 .IP tpgid 10
 control terminal process group ID
-.IP trs 10
+.IP trss 10
 text resident set size (in Kbytes)
 .IP tsess 10
 control terminal session pointer
