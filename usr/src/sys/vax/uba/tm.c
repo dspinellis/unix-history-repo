@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	6.6 (Berkeley) %G%
+ *	@(#)tm.c	6.7 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -77,7 +77,7 @@ struct	uba_driver tmdriver =
 #define	TEUNIT(dev)	(minor(dev)&03)
 #define	TMUNIT(dev)	(tetotm[TEUNIT(dev)])
 #define	T_NOREWIND	04
-#define	T_1600BPI	08
+#define	T_1600BPI	0x8
 
 #define	INF	(daddr_t)1000000L
 
@@ -194,6 +194,12 @@ int	tmtimer();
  * don't block waiting here; if you want to wait
  * for a tape you should timeout in user code.
  */
+
+#ifdef AVIV
+int tmdens[4] = { 0x6000, 0x0000, 0x2000, 0 };
+int tmdiag;
+#endif AVIV
+
 tmopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -210,8 +216,12 @@ tmopen(dev, flag)
 		return (ENXIO);
 	olddens = sc->sc_dens;
 	dens = TM_IE | TM_GO | (ui->ui_slave << 8);
+#ifndef AVIV
 	if ((minor(dev) & T_1600BPI) == 0)
 		dens |= TM_D800;
+#else AVIV
+	dens |= tmdens[(minor(dev)>>3)&03];
+#endif AVIV
 	sc->sc_dens = dens;
 get:
 	tmcommand(dev, TM_SENSE, 1);
@@ -482,7 +492,7 @@ loop:
 #ifdef notdef
 		if (tmreverseop(sc->sc_lastcmd))
 			while (addr->tmer & TMER_SDWN)
-				tmgapsdcnt++;
+				DELAY(10),tmgapsdcnt++;
 		sc->sc_lastcmd = TM_RCOM;		/* will serve */
 #endif
 		sc->sc_timo = 60;	/* premature, but should serve */
@@ -512,7 +522,7 @@ dobpcmd:
 	 */
 	if (tmreverseop(sc->sc_lastcmd) != tmreverseop(bp->b_command))
 		while (addr->tmer & TM_SDWN)
-			tmgapsdcnt++;
+			DELAY(10),tmgapsdcnt++;
 	sc->sc_lastcmd = bp->b_command;
 #endif
 	/*
@@ -597,7 +607,7 @@ tmintr(tm11)
 	 */
 	if (addr->tmcs&TM_ERR) {
 		while (addr->tmer & TMER_SDWN)
-			;			/* await settle down */
+			DELAY(10);			/* await settle down */
 		/*
 		 * If we hit the end of the tape file, update our position.
 		 */
@@ -641,6 +651,23 @@ tmintr(tm11)
 		tprintf(sc->sc_ttyp,
 		    "te%d: hard error bn%d er=%b\n", minor(bp->b_dev)&03,
 		    bp->b_blkno, sc->sc_erreg, TMER_BITS);
+#ifdef	AVIV
+		if (tmdiag) {
+			addr->tmmr = DAB;
+			printf("reject code 0%o", addr->tmmr & DAB_MASK);
+			addr->tmmr = DTS;
+			if (addr->tmmr & DTS_MASK)
+			    printf(", dead track 0%o", addr->tmmr & DTS_MASK);
+			addr->tmmr = RWERR;
+			printf(", read/write errors %b\n",
+			    addr->tmmr & RWERR_MASK,
+			    RWERR_BITS);
+			addr->tmmr = DRSENSE;
+			printf("drive sense %b, ", addr->tmmr & DRSENSE_MASK,
+			    DRSENSE_BITS);
+			printf("fsr %b\n", addr->tmfsr, FSR_BITS);
+		}
+#endif AVIV
 		bp->b_flags |= B_ERROR;
 		goto opdone;
 	}
