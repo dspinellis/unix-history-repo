@@ -10,7 +10,7 @@
 #define	dot	"."
 #define	dotdot	".."
 
-#define	prexit(s)	{ strcpy(np, s); return (NULL); }
+#define	prexit(s)	 { strcpy(esave, (s)); return (NULL); }
 
 static	char *name;
 
@@ -25,6 +25,7 @@ getwd(np)
 {
 	dev_t rdev;
 	ino_t rino;
+	char *esave = np;
 
 	off = -1;
 	*np++ = '/';
@@ -44,10 +45,10 @@ getwd(np)
 		if (d.st_dev == dd.st_dev) {
 			if(d.st_ino == dd.st_ino)
 				goto done;
-			do
+			do {
 				if ((dir = readdir(file)) == NULL)
 					prexit("getwd: read error in ..");
-			while (dir->d_ino != d.st_ino);
+			} while (dir->d_ino != d.st_ino);
 		} else
 			do {
 				if ((dir = readdir(file)) == NULL)
