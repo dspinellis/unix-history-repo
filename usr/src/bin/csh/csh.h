@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.25 (Berkeley) %G%
+ *	@(#)csh.h	5.26 (Berkeley) %G%
  */
 
 /*
@@ -139,8 +139,7 @@ int     opgrp;			/* Initial pgrp and tty pgrp */
  * descriptors it uses away from 0,1,2.
  * Ideally these should be in units which are closed across exec's
  * (this saves work) but for version 6, this is not usually possible.
- * The desired initial values for these descriptors are defined in
- * local.h.
+ * The desired initial values for these descriptors are F{SHIN,...}.
  */
 int   SHIN;			/* Current shell input (script) */
 int   SHOUT;			/* Shell output */
