@@ -133,6 +133,20 @@ Ar|q102|qume102|Qume 102:\
 	:le=^H:li#24:ma=^K^P^L :nd=^L:\
 	:se=\EG0:sg#1:so=\EG4:st=\E1:\
 	:ue=\EG0:ug#1:ul:up=^K:us=\EG8:
+# From ucbvax!mtxinu!sybase!tim (Tim Wood) Fri Sep 27 10:25:24 PDT 1985
+# This entry supports line and character insert and delete, scroll up and
+# down and the arrow keys.  To use it, perform the following on your qvt-101
+#	1) enter SET-UP mode, select the SET 3 line;
+#	2) move the cursor to the EMULATION item and hit SPACE
+#	   until QVT-101B appears
+#	3) enter SHIFT-S
+#	4) exit SET-UP - the terminal is now configured
+Aq|q101|qvt101|qvt-101|Qume 101 $310 special:\
+	:al=\EE:am:bt=\EI:ce=\Et:cl=\E*:dc=\EW:\
+	:dl=\ER:do=^J:ic=\EQ:ei=:im=:md=\E(:me=\EG0:mh=\E):\
+	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:ku=^K:\
+	:vs=\EM4\040\200\200\200:mr=\EG4:ms:\
+	:so=\EG4:se=\EG1:
 # I suspect the xerox1720 is the same as the diablo 1620.
 Ax|x1720|x1700|1700|x1750|xerox 1720:\
 	:co#132:le=^H:bs:hc:os:pt:do=^J:ct=\E2:st=\E1:
