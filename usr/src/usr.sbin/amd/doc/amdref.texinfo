@@ -10,23 +10,11 @@
 @c This code is derived from software contributed to Berkeley by
 @c Jan-Simon Pendry at Imperial College, London.
 @c
-@c Redistribution and use in source and binary forms are permitted provided
-@c that: (1) source distributions retain this entire copyright notice and
-@c comment, and (2) distributions including binaries display the following
-@c acknowledgement:  ``This product includes software developed by the
-@c University of California, Berkeley and its contributors'' in the
-@c documentation or other materials provided with the distribution and in
-@c all advertising materials mentioning features or use of this software.
-@c Neither the name of the University nor the names of its contributors may
-@c be used to endorse or promote products derived from this software without
-@c specific prior written permission.
-@c THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
-@c WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
-@c MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+@c %sccs.include.redist.texinfo%
 @c
-@c	@(#)amdref.texinfo	1.1 (Berkeley) %G%
+@c	@(#)amdref.texinfo	1.2 (Berkeley) %G%
 @c
-@c
+
 @c @setfilename ../info/amd
 @setfilename /usr/local/emacs/info/amd
 @c @smallbook
