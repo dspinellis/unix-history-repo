@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	7.43 (Berkeley) %G%
+ *	@(#)tty.c	7.44 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,6 +29,8 @@
 
 #include "vm/vm.h"
 #include "syslog.h"
+
+static int proc_compare __P((struct proc *p1, struct proc *p2));
 
 /* symbolic sleep message strings */
 char ttyin[] = "ttyin";
@@ -1616,91 +1618,64 @@ ttsetwater(tp)
 }
 
 /*
- * (^T)
  * Report on state of foreground process group.
  */
 ttyinfo(tp)
-	struct tty *tp;
+	register struct tty *tp;
 {
-	register struct proc *p, *pick = NULL;
-	int x, s;
+	register struct proc *p, *pick;
 	struct timeval utime, stime;
-#define	pgtok(a)	(((a)*NBPG)/1024)
+	int tmp;
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
-	/* 
-	 * load average 
-	 */
-	x = (averunnable[0] * 100 + FSCALE/2) >> FSHIFT;
-	ttyprintf(tp, "load: %d.", x/100);
-	ttyoutint(x%100, 10, 2, tp);
+
+	/* Print load average. */
+	tmp = (averunnable[0] * 100 + FSCALE / 2) >> FSHIFT;
+	ttyprintf(tp, "load: %d.%02d ", tmp / 100, tmp % 100);
+
 	if (tp->t_session == NULL)
-		ttyprintf(tp, " not a controlling terminal\n");
+		ttyprintf(tp, "not a controlling terminal\n");
 	else if (tp->t_pgrp == NULL)
-		ttyprintf(tp, " no foreground process group\n");
+		ttyprintf(tp, "no foreground process group\n");
 	else if ((p = tp->t_pgrp->pg_mem) == NULL)
-		ttyprintf(tp, " empty foreground process group\n");
+		ttyprintf(tp, "empty foreground process group\n");
 	else {
-		/* pick interesting process */
-		for (; p != NULL; p = p->p_pgrpnxt) {
+		/* Pick interesting process. */
+		for (pick = NULL; p != NULL; p = p->p_pgrpnxt)
 			if (proc_compare(pick, p))
 				pick = p;
-		}
-		ttyprintf(tp, "  cmd: %s %d [%s] ",
-			pick->p_comm, pick->p_pid,
-			pick->p_stat == SRUN ? "running" :
-			pick->p_wmesg ? pick->p_wmesg : "iowait");
-		/* 
-		 * cpu time 
+
+		ttyprintf(tp, " cmd: %s %d [%s] ", pick->p_comm, pick->p_pid,
+		    pick->p_stat == SRUN ? "running" :
+		    pick->p_wmesg ? pick->p_wmesg : "iowait");
+
+		/*
+		 * Lock out clock if process is running; get user/system
+		 * cpu time.
 		 */
 		if (curproc == pick)
-			s = splclock();
+			tmp = splclock();
 		utime = pick->p_utime;
 		stime = pick->p_stime;
 		if (curproc == pick)
-			splx(s);
-		/* user time */
-		x = (utime.tv_usec + 5000) / 10000; /* scale to 100's */
-		ttyoutint(utime.tv_sec, 10, 1, tp);
-		tputchar('.', tp);
-		ttyoutint(x, 10, 2, tp);
-		tputchar('u', tp);
-		tputchar(' ', tp);
-		/* system time */
-		x = (stime.tv_usec + 5000) / 10000; /* scale to 100's */
-		ttyoutint(stime.tv_sec, 10, 1, tp);
-		tputchar('.', tp);
-		ttyoutint(x, 10, 2, tp);
-		tputchar('s', tp);
-		tputchar(' ', tp);
-		/* 
-		 * pctcpu 
-		 */
-		x = pick->p_pctcpu * 10000 + FSCALE/2 >> FSHIFT;
-		ttyoutint(x/100, 10, 1, tp);
-#ifdef notdef	/* do we really want this ??? */
-		tputchar('.', tp);
-		ttyoutint(x%100, 10, 2, tp);
-#endif
-		ttyprintf(tp, "%% %dk\n", pgtok(pick->p_vmspace->vm_rssize));
+			splx(tmp);
+
+		/* Print user time. */
+		ttyprintf(tp, "%d.%02du ",
+		    utime.tv_sec, (utime.tv_usec + 5000) / 10000);
+
+		/* Print system time. */
+		ttyprintf(tp, "%d.%02ds ",
+		    stime.tv_sec, (stime.tv_usec + 5000) / 10000);
+
+#define	pgtok(a)	(((a) * NBPG) / 1024)
+		/* Print percentage cpu, resident set size. */
+		tmp = pick->p_pctcpu * 10000 + FSCALE / 2 >> FSHIFT;
+		ttyprintf(tp, "%d%% %dk\n",
+		   tmp / 100, pgtok(pick->p_vmspace->vm_rssize));
 	}
 	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
-}
-
-ttyoutint(n, base, min, tp)
-	register int n, base, min;
-	register struct tty *tp;
-{
-	char info[16];
-	register char *p = info;
-
-	while (--min >= 0 || n) {
-		*p++ = "0123456789abcdef"[n%base];
-		n /= base;
-	}
-	while (p > info)
-		ttyoutput(*--p, tp);
 }
 
 /*
@@ -1726,6 +1701,7 @@ ttyoutint(n, base, min, tp)
 #define ONLYB   1
 #define BOTH    3
 
+static int
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
 {
