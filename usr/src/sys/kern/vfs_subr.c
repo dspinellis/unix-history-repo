@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.11 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.12 (Berkeley) %G%
  */
 
 /*
@@ -1005,19 +1005,20 @@ vfinddev(dev, type, vpp)
 vcount(vp)
 	register struct vnode *vp;
 {
-	register struct vnode *vq;
+	register struct vnode *vq, *vnext;
 	int count;
 
+loop:
 	if ((vp->v_flag & VALIASED) == 0)
 		return (vp->v_usecount);
-loop:
-	for (count = 0, vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
+	for (count = 0, vq = *vp->v_hashchain; vq; vq = vnext) {
+		vnext = vq->v_specnext;
 		if (vq->v_rdev != vp->v_rdev || vq->v_type != vp->v_type)
 			continue;
 		/*
 		 * Alias, but not in use, so flush it out.
 		 */
-		if (vq->v_usecount == 0) {
+		if (vq->v_usecount == 0 && vq != vp) {
 			vgone(vq);
 			goto loop;
 		}
