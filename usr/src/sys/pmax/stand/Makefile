@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 DESTDIR=
 STAND=	/stand
@@ -22,7 +22,8 @@ mkboot: mkboot.c
 	${CC} ${CFLAGS} -o $@ mkboot.c
 
 boot: start.o boot.o conf.o sys.o
-	ld -N -T 80100000 -o $@ start.o boot.o conf.o sys.o
+	ld -N -T 80100000 -o $@ start.o boot.o conf.o sys.o \
+		../../libkern/obj/libkern.a
 
 mkboottape: mkboottape.c
 	${CC} ${CFLAGS} -o $@ mkboottape.c
