@@ -1,4 +1,6 @@
 .\" @(#)rpcgen.1	2.2 88/08/02 4.0 RPCSRC
+.ds lq \|(\|
+.ds rq \|)\|
 .TH RPCGEN 1 "18 January 1988"
 .SH NAME
 rpcgen \- an RPC protocol compiler
@@ -132,9 +134,9 @@ data-definitions (a header file)
 Compile into client-side stubs.
 .TP
 .B \-m
-Compile into server-side stubs, but do not generate a \(lqmain\(rq routine.
+Compile into server-side stubs, but do not generate a \*(lqmain\*(rq routine.
 This option is useful for doing callback-routines and for people who
-need to write their own \(lqmain\(rq routine to do initialization.
+need to write their own \*(lqmain\*(rq routine to do initialization.
 .TP
 .BI \-o " outfile"
 Specify the name of the output file.
