@@ -6,10 +6,10 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getlogin.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)getlogin.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <utmp.h>
@@ -19,7 +19,7 @@ int	_logname_valid;		/* known to setlogin() */
 char *
 getlogin()
 {
-	static char logname[UT_NAMESIZE+1];
+	static char logname[MAXLOGNAME + 1];
 
 	if (_logname_valid == 0) {
 		if (_getlogin(logname, sizeof(logname) - 1) < 0)
