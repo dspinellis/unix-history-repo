@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	7.8 (Berkeley) %G%
+ *	@(#)quota.h	7.9 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_
@@ -143,5 +143,14 @@ struct	dquot {
 #else
 #define	DQREF(dq)	dqref(dq)
 #endif /* DIAGNOSTIC */
+
+#else
+
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int	quotactl __P((const char *, int, int, void *));
+__END_DECLS
+
 #endif /* KERNEL */
 #endif /* _QUOTA_ */
