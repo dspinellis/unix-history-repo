@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.vax.c 1.2 %G%";
+static char sccsid[] = "@(#)runtime.vax.c 1.3 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -308,10 +308,10 @@ Boolean dumpvariables;
 	do {
 	    printf("%s", symname(f));
 	    printparams(f, frp);
-	    line = srcline(frp->save_pc);
+	    line = srcline(frp->save_pc - 1);
 	    if (line != 0) {
 		printf(", line %d", line);
-		printf(" in \"%s\"\n", srcfilename(frp->save_pc));
+		printf(" in \"%s\"\n", srcfilename(frp->save_pc - 1));
 	    } else {
 		printf(" at 0x%x\n", frp->save_pc);
 	    }

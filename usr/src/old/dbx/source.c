@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.2 %G%";
+static char sccsid[] = "@(#)source.c 1.3 %G%";
 
 /*
  * Source file management.
@@ -217,14 +217,16 @@ private free_seektab()
 
 /*
  * Figure out current source position.
+ * Have to use "pc - 1" because pc is the address of the next instruction
+ * rather than the current one.
  */
 
 public getsrcpos()
 {
     String filename;
 
-    curline = srcline(pc);
-    filename = srcfilename(pc);
+    curline = srcline(pc - 1);
+    filename = srcfilename(pc - 1);
     setsource(filename);
     cursrcline = curline;
 }
