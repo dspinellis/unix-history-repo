@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -348,7 +348,7 @@ fullname(pw, buf)
 	if (*gecos == '*')
 		gecos++;
 
-	/* see if the full name needs to be quoted */
+	/* find length of final string */
 	l = 0;
 	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
 	{
