@@ -1,4 +1,4 @@
-/*	rk.c	4.11	%G%	*/
+/*	rk.c	4.12	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -7,6 +7,8 @@ int	rkflags,rkerrs;		/* GROT */
  * RK11/RK07 disk driver
  *
  * This driver mimics up.c; see it for an explanation of common code.
+ *
+ * THIS DRIVER DOESN'T DEAL WITH DRIVES SPINNING DOWN AND UP
  */
 #define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
@@ -310,23 +312,38 @@ hkintr(rk11)
 		dk_busy &= ~(1 << ui->ui_dk);
 		if (rkaddr->rkcs1 & RK_CERR) {
 			int recal;
+#ifdef notdef
+			int del = 0;
+#endif
 			u_short ds = rkaddr->rkds;
 			u_short cs2 = rkaddr->rkcs2;
 			u_short er = rkaddr->rker;
 			if (sc->sc_recal)
 				printf("recal CERR\n");
-			rkerrs++;				/* GROT */
-			if (rkflags&1)				/* GROT */
-			printf("%d ds %o cs2 %o er %o\n",	/* GROT */
-			    um->um_tab.b_errcnt, ds, cs2, er);	/* GROT */
-			if (er & RK_WLE)	
-				printf("rk%d is write locked\n", dkunit(bp));
-/* THIS DOESN'T SEEM TO HAPPEN */
-/* OR WAS SOMETHING BROKEN WHEN WE TRIED */
-/* SPINNING A DRIVE DOWN ? */
-			if (ds & RKDS_HARD)
+			rkerrs++;
+#ifdef notdef
+/* THIS ATTEMPTED TO FIND OUT IF THE DRIVE IS SPUN */
+/* DOWN BUT IT DOESN'T SEEM TO WORK... THE DRIVE SEEMS TO */
+/* TELL PAINFULLY LITTLE WHEN IT IS SPUN DOWN (I.E. NOTHING CHANGES) */
+/* THE DRIVE JUST KEEPS SAYING IT WANTS ATTENTION AND BLOWING ALL COMMANDS */
+			if (ds & RK_CDA) {
+				rkaddr->rkcs1 = RK_CDT|RK_CERR;
+				rkaddr->rkcs2 = ui->ui_slave;
+				rkaddr->rkcs1 = RK_CDT|RK_SELECT|RK_GO;
+				rkwait(rkaddr);
+				while ((rkaddr->rkds & RK_SVAL) == 0)
+					if (++del > 512)
+						break;
+			}
+			if (del > 512) {
 				printf("rk%d is down\n", dkunit(bp));
-			if (++um->um_tab.b_errcnt > 28 ||
+				bp->b_flags |= B_ERROR;
+			} else
+#endif
+			if (ds & RK_WLE) {
+				printf("rk%d is write locked\n", dkunit(bp));
+				bp->b_flags |= B_ERROR;
+			} else if (++um->um_tab.b_errcnt > 28 ||
 			    ds&RKDS_HARD || er&RKER_HARD || cs2&RKCS2_HARD) {
 				bp->b_flags |= B_ERROR;
 				harderr(bp);
