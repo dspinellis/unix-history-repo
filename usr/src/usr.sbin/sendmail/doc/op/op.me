@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.22 (Berkeley) %G%
+.\"	@(#)op.me	6.23 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.22
+Version 6.23
 .sp
-For Sendmail Version 6.32
+For Sendmail Version 6.36
 .)l
 .sp 2
 .pp
@@ -2192,7 +2192,17 @@ This specifies the
 {mailer, host, user}
 3-tuple necessary to direct the mailer.
 If the mailer is local
-the host part may be omitted.
+the host part may be omitted\**.
+.(f
+\**You may want to use it for special
+.q "per user"
+extensions.
+For example, at CMU you can send email to
+.q jgm+foo ;
+the part after the plus sign
+is not part of the user name,
+and is passed to the local mailer for local use.
+.)f
 The
 .i mailer
 and
@@ -5787,7 +5797,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.22
+.\"Version 6.23
 .\".ce 0
 .pn 2
 .bp
