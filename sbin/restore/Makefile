@@ -4,7 +4,7 @@ PROG=	restore
 SRCS=	main.c interactive.c restore.c dirs.c symtab.c tape.c utilities.c
 ROBJS=	main.o interactive.o restore.o dirs.o symtab.o rtape.o utilities.o \
 	dumprmt.o
-MAN8=	restore.0 rrestore.0
+MAN8=	restore.8 rrestore.8
 .PATH:	${.CURDIR}/../dump
 CLEANFILES+=dumprmt.o rtape.o rrestore
 

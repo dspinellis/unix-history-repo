@@ -2,7 +2,7 @@
 
 PROG=	nfsiod
 CFLAGS+=-DNFS
-MAN8=	nfsiod.0
+MAN8=	nfsiod.8
 LDADD=	-lutil
 
 .include <bsd.prog.mk>

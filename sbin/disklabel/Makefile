@@ -2,15 +2,9 @@
 
 PROG=	disklabel
 SRCS=	disklabel.c dkcksum.c
-MAN8=	disklabel.0
 BINGRP=operator
 BINMODE=2550
-CLEANFILES=disklabel.5.0
-
-all: disklabel.5.0
-
-beforeinstall:
-	install -c -o ${MANOWN} -g ${MANGRP} -m ${MANMODE} disklabel.5.0 \
-	    ${DESTDIR}${MANDIR}5/disklabel.0
+MAN5=	disklabel.5
+MAN8=	disklabel.8
 
 .include <bsd.prog.mk>

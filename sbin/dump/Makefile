@@ -17,7 +17,7 @@ SRCS=	dumpitime.c dumpmain.c dumpoptr.c dumptape.c dumptraverse.c \
 ROBJS=	dumpitime.o dumprmain.o dumpoptr.o dumprmt.o dumprtape.o \
 	dumptraverse.o unctime.o
 BINGRP=	tty
-MAN8=	dump.0 rdump.0
+MAN8=	dump.8 rdump.8
 CLEANFILES=dumprmain.o dumprtape.o dumprmt.o rdump
 
 all: rdump

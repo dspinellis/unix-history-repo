@@ -2,7 +2,7 @@
 
 PROG=	mount
 CFLAGS+=-DNFS
-MAN8=	mount.0
+MAN8=	mount.8
 DPADD=	${LIBRPC}
 LDADD=	-lrpc
 MLINKS=	mount.8 umount.8
