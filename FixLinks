@@ -4,9 +4,12 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /home/cvs/386BSD/src/FixLinks,v 1.3 1993/06/21 19:47:32 root Exp $
+# $Header: /a/cvs/386BSD/src/FixLinks,v 1.4 1993/07/03 02:01:30 root Exp $
 #
 # $Log: FixLinks,v $
+# Revision 1.4  1993/07/03  02:01:30  root
+# Updated since the links for the gnu stuff are no longer needed.
+#
 # Revision 1.3  1993/06/21  19:47:32  root
 # Added rcs -> ../gnu/rcs
 #
@@ -29,15 +32,11 @@ pushd libexec/uucp ; ln -s sys5.unx sys5.c ; popd
 pushd libexec/uucp ; ln -s sys6.unx sys6.c ; popd
 pushd libexec/uucp ; ln -s sys7.unx sys7.c ; popd
 pushd libexec/uucp ; ln -s sysh.unx sysdep.h ; popd
-pushd usr.bin/tn3270/sys_curses ; ln -s ../telextrn.h telextrn.h ; popd
-pushd usr.bin/tn3270/tools ; ln -s ../api/ebc_disp.h ebc_disp.h ; popd
 pushd usr.bin/yacc/test ; ln -s ../../../libexec/ftpd/ftpcmd.y ftp.y ; popd
 pushd usr.sbin/named ; ln -s /usr/include/arpa/nameser.h nameser.h ; popd
 pushd usr.sbin/named ; ln -s /usr/include/resolv.h resolv.h ; popd
 pushd usr.sbin/sendmail ; ln -s ../../libexec/mail.local mail.local ; popd
 pushd usr.sbin/sendmail ; ln -s ../../bin/rmail rmail ; popd
-pushd usr.sbin/timed/timed ; ln -s cksum.tahoe.c cksum.i386.c ; popd
-pushd share/tmac ; ln -s ../me/strip.sed strip.sed ; popd
 pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
