@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.23 %G%";
+static char sccsid[] = "@(#)interp.c 1.24 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -1458,14 +1458,6 @@ interpreter(base)
 			pc.cp++;
 			push4(SCLCK());
 			continue;
-		case O_DISPOSE:
-			tl = *pc.cp++;		/* tl = size being disposed */
-			if (tl == 0)
-				tl = *pc.usp++;
-			tcp = popaddr();	/* ptr to ptr being disposed */
-			DISPOSE(tcp, tl);
-			*(char **)tcp = (char *)0;
-			continue;
 		case O_NEW:
 			tl = *pc.cp++;		/* tl = size being new'ed */
 			if (tl == 0)
@@ -1476,6 +1468,22 @@ interpreter(base)
 				continue;
 			}
 			NEW(tcp, tl);
+			continue;
+		case O_DISPOSE:
+			tl = *pc.cp++;		/* tl = size being disposed */
+			if (tl == 0)
+				tl = *pc.usp++;
+			tcp = popaddr();	/* ptr to ptr being disposed */
+			DISPOSE(tcp, tl);
+			*(char **)tcp = (char *)0;
+			continue;
+		case O_DFDISP:
+			tl = *pc.cp++;		/* tl = size being disposed */
+			if (tl == 0)
+				tl = *pc.usp++;
+			tcp = popaddr();	/* ptr to ptr being disposed */
+			DFDISPOSE(tcp, tl);
+			*(char **)tcp = (char *)0;
 			continue;
 		case O_DATE:
 			pc.cp++;
