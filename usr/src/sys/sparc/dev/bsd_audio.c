@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bsd_audio.c	7.3 (Berkeley) %G%
+ *	@(#)bsd_audio.c	7.4 (Berkeley) %G%
  *
- * from: $Header: bsd_audio.c,v 1.14 92/07/03 23:21:23 mccanne Exp $ (LBL)
+ * from: $Header: bsd_audio.c,v 1.17 93/04/20 05:31:28 torek Exp $ (LBL)
  */
 #include "bsdaudio.h"
 #if NBSDAUDIO > 0
@@ -55,9 +55,9 @@
  * streams driver in a SunOS kernel.
  */
 #ifdef SUNOS
-#include "sbusdev/bsd_audioreg.h"
-#include "sbusdev/bsd_audiovar.h"
-#include "sbusdev/bsd_audioio.h"
+#include <sbusdev/bsd_audioreg.h>
+#include <sbusdev/bsd_audiovar.h>
+#include <sbusdev/bsd_audioio.h>
 struct selinfo {
 	struct proc *si_proc;
 	int si_coll;
@@ -76,6 +76,7 @@ struct selinfo {
  * Initial/default block size is patchable.
  */
 int audio_blocksize = DEFBLKSIZE;
+int audio_backlog = 400;		/* 50ms in samples */
 
 /*
  * Software state, per AMD79C30 audio chip.
@@ -309,6 +310,7 @@ init_amd(amd)
 static int audio_default_level = 150;
 static void ausetrgain __P((struct audio_softc *, int));
 static void ausetpgain __P((struct audio_softc *, int));
+static void ausetmgain __P((struct audio_softc *, int));
 static int audiosetinfo __P((struct audio_softc *, struct audio_info *));
 static int audiogetinfo __P((struct audio_softc *, struct audio_info *));
 struct sun_audio_info;
@@ -340,6 +342,7 @@ AUDIOOPEN(dev, flags, ifmt, p)
 	sc->sc_au.au_lowat = audio_blocksize;
 	sc->sc_au.au_hiwat = AUCB_SIZE - sc->sc_au.au_lowat;
 	sc->sc_au.au_blksize = audio_blocksize;
+	sc->sc_au.au_backlog = audio_backlog;
 
 	/* set up read and write blocks and `dead sound' zero value. */
 	AUCB_INIT(&sc->sc_au.au_rb);
@@ -360,6 +363,7 @@ AUDIOOPEN(dev, flags, ifmt, p)
 	audio_setmmr2(amd, sc->sc_map.mr_mmr2);
 	ausetrgain(sc, audio_default_level);
 	ausetpgain(sc, audio_default_level);
+	ausetmgain(sc, 0);
 	amd->cr = AMDR_INIT;
 	amd->dr = AMD_INIT_PMS_ACTIVE;
 
@@ -419,9 +423,11 @@ audio_sleep(cb, thresh)
 	register int thresh;
 {
 	register int error;
+	register int s = splaudio();
 
 	cb->cb_thresh = thresh;
 	error = tsleep((caddr_t)cb, (PZERO + 1) | PCATCH, "audio", 0);
+	splx(s);
 	return (error);
 }
 
@@ -430,14 +436,13 @@ AUDIOREAD(dev, uio, ioflag)
 {
 	register struct audio_softc *sc = SOFTC(dev);
 	register struct aucb *cb;
-	register int s, n, head, taildata, error;
+	register int n, head, taildata, error;
 	register int blocksize = sc->sc_au.au_blksize;
 
 	if (uio->uio_resid == 0)
 		return (0);
 	cb = &sc->sc_au.au_rb;
 	error = 0;
-	s = splaudio();
 	cb->cb_drops = 0;
 	sc->sc_rseek = sc->sc_au.au_stamp - AUCB_LEN(cb);
 	do {
@@ -445,13 +450,12 @@ AUDIOREAD(dev, uio, ioflag)
 #ifndef SUNOS
 			if (ioflag & IO_NDELAY) {
 				error = EWOULDBLOCK;
-				goto out;
+				return (error);
 			}
 #endif
 			if ((error = audio_sleep(cb, blocksize)) != 0)
-				goto out;
+				return (error);
 		}
-		splx(s);
 		/*
 		 * The space calculation can only err on the short
 		 * side if an interrupt occurs during processing:
@@ -471,13 +475,11 @@ AUDIOREAD(dev, uio, ioflag)
 			error = UIOMOVE((caddr_t)cb->cb_data + head, n, 
 					UIO_READ, uio);
 		if (error)
-			return (error);
+			break;
 		head = AUCB_MOD(head + n);
-		(void) splaudio();
 		cb->cb_head = head;
 	} while (uio->uio_resid >= blocksize);
-out:
-	splx(s);
+
 	return (error);
 }
 
@@ -486,25 +488,23 @@ AUDIOWRITE(dev, uio, ioflag)
 {
 	register struct audio_softc *sc = SOFTC(dev);
 	register struct aucb *cb = &sc->sc_au.au_wb;
-	register int s, n, tail, tailspace, error, first, watermark, drops;
+	register int n, tail, tailspace, error, first, watermark, drops;
 
 	error = 0;
 	first = 1;
-	s = splaudio();
 	while (uio->uio_resid > 0) {
 		watermark = sc->sc_au.au_hiwat;
 		while (AUCB_LEN(cb) > watermark) {
 #ifndef SUNOS
 			if (ioflag & IO_NDELAY) {
 				error = EWOULDBLOCK;
-				goto out;
+				return (error);
 			}
 #endif
 			if ((error = audio_sleep(cb, watermark)) != 0)
-				goto out;
+				return (error);
 			watermark = sc->sc_au.au_lowat;
 		}
-		splx(s);
 		/*
 		 * The only value that can change on an interrupt is
 		 * cb->cb_head.  We only pull that out once to decide
@@ -514,9 +514,36 @@ AUDIOWRITE(dev, uio, ioflag)
 		 * however, we need to synchronize the accesses to
 		 * au_stamp and cb_head at a high ipl below.
 		 */
-		if ((n = AUCB_SIZE - AUCB_LEN(cb) - 1) > uio->uio_resid)
-			n = uio->uio_resid;
 		tail = cb->cb_tail;
+		if ((n = (AUCB_SIZE - 1) - AUCB_LEN(cb)) > uio->uio_resid) {
+			n = uio->uio_resid;
+			if (cb->cb_head == tail &&
+			    n <= sc->sc_au.au_blksize &&
+			    sc->sc_au.au_stamp - sc->sc_wseek > 400) {
+				/*
+				 * the write is 'small', the buffer is empty
+				 * and we have been silent for at least 50ms
+				 * so we might be dealing with an application
+				 * that writes frames synchronously with
+				 * reading them.  If so, we need an output
+				 * backlog to cover scheduling delays or
+				 * there will be gaps in the sound output.
+				 * Also take this opportunity to reset the
+				 * buffer pointers in case we ended up on
+				 * a bad boundary (odd byte, blksize bytes
+				 * from end, etc.).
+				 */
+				register u_int* ip;
+				register int muzero = 0x7f7f7f7f;
+				register int i = splaudio();
+				cb->cb_head = cb->cb_tail = 0;
+				splx(i);
+				tail = sc->sc_au.au_backlog;
+				ip = (u_int*)cb->cb_data;
+				for (i = tail >> 2; --i >= 0; )
+					*ip++ = muzero;
+			}
+		}
 		tailspace = AUCB_SIZE - tail;
 		if (n > tailspace) {
 			/* write first part at tail and rest at head */
@@ -529,33 +556,29 @@ AUDIOWRITE(dev, uio, ioflag)
 			error = UIOMOVE((caddr_t)cb->cb_data + tail, n, 
 					UIO_WRITE, uio);
 		if (error)
-			return (error);
-		/*
-		 * We cannot do this outside the loop because if the
-		 * buffer is empty, an indeterminate amount of time
-		 * will pass before the output starts to drain.
-		 */
-		(void)splaudio();
+			break;
+
 		tail = AUCB_MOD(tail + n);
 		if (first) {
-			first = 0;
-			sc->sc_wseek = sc->sc_au.au_stamp + AUCB_LEN(cb) + 1;
+			register int s = splaudio();
+			sc->sc_wseek = AUCB_LEN(cb) + sc->sc_au.au_stamp + 1;
 			/* 
 			 * To guarantee that a write is contiguous in the
 			 * sample space, we clear the drop count the first
 			 * time through.  If we later get drops, we will
 			 * break out of the loop below, before writing
 			 * a new frame.
-			 * XXX I think we're one iteration too late!
 			 */
 			cb->cb_drops = 0;
+			cb->cb_tail = tail;
+			splx(s);
+			first = 0;
+		} else {
+			if (cb->cb_drops != 0)
+				break;
+			cb->cb_tail = tail;
 		}
-		cb->cb_tail = tail;
-		if (cb->cb_drops != 0)
-			break;
 	}
-out:
-	splx(s);
 	return (error);
 }
 
@@ -614,6 +637,7 @@ AUDIOIOCTL(dev, cmd, addr, flag, p)
 		s = splaudio();
 		AUCB_INIT(&sc->sc_au.au_rb);
 		AUCB_INIT(&sc->sc_au.au_wb);
+		sc->sc_au.au_stamp = 0;
 		splx(s);
 		sc->sc_wseek = 0;
 		sc->sc_rseek = 0;
@@ -628,10 +652,14 @@ AUDIOIOCTL(dev, cmd, addr, flag, p)
 		break;
 
 	/*
-	 * Timestamp of last frame written.
+	 * How many samples will elapse until mike hears the first
+	 * sample of what we last wrote?
 	 */
 	case AUDIO_WSEEK:
-		*(u_long *)addr = sc->sc_wseek;
+		s = splaudio();
+		*(u_long *)addr = sc->sc_wseek - sc->sc_au.au_stamp
+				  + AUCB_LEN(&sc->sc_au.au_rb);
+		splx(s);
 		break;
 
 	case AUDIO_SETINFO:
@@ -651,9 +679,7 @@ AUDIOIOCTL(dev, cmd, addr, flag, p)
 		break;
 
 	case AUDIO_DRAIN:
-		s = splaudio();
 		error = audio_drain(sc);
-		splx(s);
 		break;
 
 	default:
@@ -770,7 +796,6 @@ audioswintr(sc0)
 		ret = 1;
 		wakeup((caddr_t)&sc->sc_au.au_rb);
 		SELWAKEUP(&sc->sc_rsel);
-		(void) splaudio();
 	}
 	if (sc->sc_au.au_wb.cb_waking != 0) {
 		sc->sc_au.au_wb.cb_waking = 0;
@@ -785,7 +810,7 @@ audioswintr(sc0)
 
 /* Write 16 bits of data from variable v to the data port of the audio chip */
 
-#define	WAMD16(amd, v) ((amd)->dr = v, (amd)->dr = v >> 8)
+#define	WAMD16(amd, v) ((amd)->dr = (v), (amd)->dr = (v) >> 8)
 
 void
 audio_setmap(amd, map)
@@ -836,7 +861,7 @@ audio_setmmr1(amd, mmr1, op, val)
 }
 
 /*
- * Set only the mmr1 regsiter, and one other.
+ * Set the mmr2 register.
  */
 static void
 audio_setmmr2(amd, mmr2)
@@ -850,33 +875,73 @@ audio_setmmr2(amd, mmr2)
 	splx(s);
 }
 
-static u_short ger_coeff[] = {
-	0xaaaa, 0x9bbb, 0x79ac, 0x099a, 0x4199, 0x3199, 0x9cde, 0x9def,
-	0x749c, 0x549d, 0x6aae, 0xabcd, 0xabdf, 0x7429, 0x64ab, 0x6aff,
-	0x2abd, 0xbeef, 0x5cce, 0x75cd, 0x0099, 0x554c, 0x43dd, 0x33dd,
-	0x52ef, 0x771b, 0x5542, 0x41dd, 0x31dd, 0x441f, 0x431f, 0x331f,
-	0x40dd, 0x11dd, 0x440f, 0x411f, 0x311f, 0x5520, 0x10dd, 0x4211,
-	0x410f, 0x111f, 0x600b, 0x00dd, 0x4210, 0x400f, 0x110f, 0x2210,
-	0x7200, 0x4200, 0x2110, 0x100f, 0x2200, 0x1110, 0x000b, 0x2100,
-	0x000f,
+/*
+ * gx, gr & stg gains.  this table must contain 256 elements with
+ * the 0th being "infinity" (the magic value 9008).  The remaining
+ * elements match sun's gain curve (but with higher resolution):
+ * -18 to 0dB in .16dB steps then 0 to 12dB in .08dB steps.
+ */
+static const u_short gx_coeff[256] = {
+	0x9008, 0x8b7c, 0x8b51, 0x8b45, 0x8b42, 0x8b3b, 0x8b36, 0x8b33,
+	0x8b32, 0x8b2a, 0x8b2b, 0x8b2c, 0x8b25, 0x8b23, 0x8b22, 0x8b22,
+	0x9122, 0x8b1a, 0x8aa3, 0x8aa3, 0x8b1c, 0x8aa6, 0x912d, 0x912b,
+	0x8aab, 0x8b12, 0x8aaa, 0x8ab2, 0x9132, 0x8ab4, 0x913c, 0x8abb,
+	0x9142, 0x9144, 0x9151, 0x8ad5, 0x8aeb, 0x8a79, 0x8a5a, 0x8a4a,
+	0x8b03, 0x91c2, 0x91bb, 0x8a3f, 0x8a33, 0x91b2, 0x9212, 0x9213,
+	0x8a2c, 0x921d, 0x8a23, 0x921a, 0x9222, 0x9223, 0x922d, 0x9231,
+	0x9234, 0x9242, 0x925b, 0x92dd, 0x92c1, 0x92b3, 0x92ab, 0x92a4,
+	0x92a2, 0x932b, 0x9341, 0x93d3, 0x93b2, 0x93a2, 0x943c, 0x94b2,
+	0x953a, 0x9653, 0x9782, 0x9e21, 0x9d23, 0x9cd2, 0x9c23, 0x9baa,
+	0x9bde, 0x9b33, 0x9b22, 0x9b1d, 0x9ab2, 0xa142, 0xa1e5, 0x9a3b,
+	0xa213, 0xa1a2, 0xa231, 0xa2eb, 0xa313, 0xa334, 0xa421, 0xa54b,
+	0xada4, 0xac23, 0xab3b, 0xaaab, 0xaa5c, 0xb1a3, 0xb2ca, 0xb3bd,
+	0xbe24, 0xbb2b, 0xba33, 0xc32b, 0xcb5a, 0xd2a2, 0xe31d, 0x0808,
+	0x72ba, 0x62c2, 0x5c32, 0x52db, 0x513e, 0x4cce, 0x43b2, 0x4243,
+	0x41b4, 0x3b12, 0x3bc3, 0x3df2, 0x34bd, 0x3334, 0x32c2, 0x3224,
+	0x31aa, 0x2a7b, 0x2aaa, 0x2b23, 0x2bba, 0x2c42, 0x2e23, 0x25bb,
+	0x242b, 0x240f, 0x231a, 0x22bb, 0x2241, 0x2223, 0x221f, 0x1a33,
+	0x1a4a, 0x1acd, 0x2132, 0x1b1b, 0x1b2c, 0x1b62, 0x1c12, 0x1c32,
+	0x1d1b, 0x1e71, 0x16b1, 0x1522, 0x1434, 0x1412, 0x1352, 0x1323,
+	0x1315, 0x12bc, 0x127a, 0x1235, 0x1226, 0x11a2, 0x1216, 0x0a2a,
+	0x11bc, 0x11d1, 0x1163, 0x0ac2, 0x0ab2, 0x0aab, 0x0b1b, 0x0b23,
+	0x0b33, 0x0c0f, 0x0bb3, 0x0c1b, 0x0c3e, 0x0cb1, 0x0d4c, 0x0ec1,
+	0x079a, 0x0614, 0x0521, 0x047c, 0x0422, 0x03b1, 0x03e3, 0x0333,
+	0x0322, 0x031c, 0x02aa, 0x02ba, 0x02f2, 0x0242, 0x0232, 0x0227,
+	0x0222, 0x021b, 0x01ad, 0x0212, 0x01b2, 0x01bb, 0x01cb, 0x01f6,
+	0x0152, 0x013a, 0x0133, 0x0131, 0x012c, 0x0123, 0x0122, 0x00a2,
+	0x011b, 0x011e, 0x0114, 0x00b1, 0x00aa, 0x00b3, 0x00bd, 0x00ba,
+	0x00c5, 0x00d3, 0x00f3, 0x0062, 0x0051, 0x0042, 0x003b, 0x0033,
+	0x0032, 0x002a, 0x002c, 0x0025, 0x0023, 0x0022, 0x001a, 0x0021,
+	0x001b, 0x001b, 0x001d, 0x0015, 0x0013, 0x0013, 0x0012, 0x0012,
+	0x000a, 0x000a, 0x0011, 0x0011, 0x000b, 0x000b, 0x000c, 0x000e,
+};
+
+/*
+ * second stage play gain.
+ */
+static const u_short ger_coeff[] = {
+	0x431f, /* 5. dB */
+	0x331f, /* 5.5 dB */
+	0x40dd, /* 6. dB */
+	0x11dd, /* 6.5 dB */
+	0x440f, /* 7. dB */
+	0x411f, /* 7.5 dB */
+	0x311f, /* 8. dB */
+	0x5520, /* 8.5 dB */
+	0x10dd, /* 9. dB */
+	0x4211, /* 9.5 dB */
+	0x410f, /* 10. dB */
+	0x111f, /* 10.5 dB */
+	0x600b, /* 11. dB */
+	0x00dd, /* 11.5 dB */
+	0x4210, /* 12. dB */
+	0x110f, /* 13. dB */
+	0x7200, /* 14. dB */
+	0x2110, /* 15. dB */
+	0x2200, /* 15.9 dB */
+	0x000b, /* 16.9 dB */
+	0x000f  /* 18. dB */
 #define NGER (sizeof(ger_coeff) / sizeof(ger_coeff[0]))
-};
-
-static u_short gx_coeff[] = {
-	0x0808, 0x4cb2, 0x3dac, 0x2ae5, 0x2533, 0x2222, 0x2122, 0x1fd3,
-	0x12a2, 0x121b, 0x113b, 0x0bc3, 0x10f2, 0x03ba, 0x02ca, 0x021d,
-	0x015a, 0x0122, 0x0112, 0x00ec, 0x0032, 0x0021, 0x0013, 0x0011,
-	0x000e,
-#define NGX (sizeof(gx_coeff) / sizeof(gx_coeff[0]))
-};
-
-static u_short stg_coeff[] = {
-	0x8b7c, 0x8b44, 0x8b35, 0x8b2a, 0x8b24, 0x8b22, 0x9123, 0x912e,
-	0x912a, 0x9132, 0x913b, 0x914b, 0x91f9, 0x91c5, 0x91b6, 0x9212,
-	0x91a4, 0x9222, 0x9232, 0x92fb, 0x92aa, 0x9327, 0x93b3, 0x94b3,
-	0x9f91, 0x9cea, 0x9bf9, 0x9aac, 0x9a4a, 0xa222, 0xa2a2, 0xa68d,
-	0xaaa3, 0xb242, 0xbb52, 0xcbb2, 0x0808,
-#define NSTG (sizeof(stg_coeff) / sizeof(stg_coeff[0]))
 };
 
 static void
@@ -886,12 +951,8 @@ ausetrgain(sc, level)
 {
 	level &= 0xff;
 	sc->sc_rlevel = level;
-	if (level != 0)
-		sc->sc_map.mr_mmr1 |= AMD_MMR1_GX;
-	else
-		sc->sc_map.mr_mmr1 &=~ AMD_MMR1_GX;
-
-	sc->sc_map.mr_gx = gx_coeff[(level * NGX) / 256];
+	sc->sc_map.mr_mmr1 |= AMD_MMR1_GX;
+	sc->sc_map.mr_gx = gx_coeff[level];
 	audio_setmmr1(sc->sc_au.au_amd, sc->sc_map.mr_mmr1,
 		      AMDR_MAP_GX, sc->sc_map.mr_gx);
 }
@@ -901,16 +962,33 @@ ausetpgain(sc, level)
 	register struct audio_softc *sc;
 	register int level;
 {
+	register int gi, s;
+	register volatile struct amd7930 *amd;
+
 	level &= 0xff;
 	sc->sc_plevel = level;
-	if (level != 0)
-		sc->sc_map.mr_mmr1 |= AMD_MMR1_GER;
-	else
-		sc->sc_map.mr_mmr1 &=~ AMD_MMR1_GER;
-		
-	sc->sc_map.mr_ger = ger_coeff[(level * NGER) / 256];
-	audio_setmmr1(sc->sc_au.au_amd, sc->sc_map.mr_mmr1,
-		      AMDR_MAP_GER, sc->sc_map.mr_ger);
+	sc->sc_map.mr_mmr1 |= AMD_MMR1_GER|AMD_MMR1_GR;
+	level *= 256 + NGER;
+	level >>= 8;
+	if (level >= 256) {
+		gi = level - 256;
+		level = 255;
+	} else
+		gi = 0;
+	sc->sc_map.mr_ger = ger_coeff[gi];
+	sc->sc_map.mr_gr = gx_coeff[level];
+
+	amd = sc->sc_au.au_amd;
+	s = splaudio();
+	amd->cr = AMDR_MAP_MMR1;
+	amd->dr = sc->sc_map.mr_mmr1;
+	amd->cr = AMDR_MAP_GR;
+	gi =  sc->sc_map.mr_gr;
+	WAMD16(amd, gi);
+	amd->cr = AMDR_MAP_GER;
+	gi =  sc->sc_map.mr_ger;
+	WAMD16(amd, gi);
+	splx(s);
 }
 
 static void
@@ -920,12 +998,8 @@ ausetmgain(sc, level)
 {
 	level &= 0xff;
 	sc->sc_mlevel = level;
-	if (level != 0)
-		sc->sc_map.mr_mmr1 |= AMD_MMR1_STG;
-	else
-		sc->sc_map.mr_mmr1 &=~ AMD_MMR1_STG;
-	
-	sc->sc_map.mr_stgr = stg_coeff[(level * NSTG) / 256];
+	sc->sc_map.mr_mmr1 |= AMD_MMR1_STG;
+	sc->sc_map.mr_stgr = gx_coeff[level];
 	audio_setmmr1(sc->sc_au.au_amd, sc->sc_map.mr_mmr1,
 		      AMDR_MAP_STG, sc->sc_map.mr_stgr);
 }
@@ -943,7 +1017,7 @@ audiosetinfo(sc, ai)
 	if (r->gain != ~0)
 		ausetrgain(sc, r->gain);
 	if (ai->monitor_gain != ~0)
-		ausetmgain(sc, p->gain);
+		ausetmgain(sc, ai->monitor_gain);
 	if (p->port == AUDIO_SPEAKER) {
 		sc->sc_map.mr_mmr2 |= AMD_MMR2_LS;
 		audio_setmmr2(sc->sc_au.au_amd, sc->sc_map.mr_mmr2);
@@ -976,6 +1050,8 @@ audiosetinfo(sc, ai)
 		sc->sc_au.au_hiwat = ai->hiwat;
 	if (ai->lowat != ~0 && ai->lowat < AUCB_SIZE)
 		sc->sc_au.au_lowat = ai->lowat;
+	if (ai->backlog != ~0 && ai->backlog < (AUCB_SIZE/2))
+		sc->sc_au.au_backlog = ai->backlog;
 
 	return (0);
 }
@@ -992,7 +1068,7 @@ sunaudiosetinfo(sc, ai)
 	if (r->gain != ~0)
 		ausetrgain(sc, r->gain);
 	if (ai->monitor_gain != ~0)
-		ausetmgain(sc, p->gain);
+		ausetmgain(sc, ai->monitor_gain);
 	if (p->port == AUDIO_SPEAKER) {
 		sc->sc_map.mr_mmr2 |= AMD_MMR2_LS;
 		audio_setmmr2(sc->sc_au.au_amd, sc->sc_map.mr_mmr2);
@@ -1054,6 +1130,7 @@ audiogetinfo(sc, ai)
 	ai->blocksize = sc->sc_au.au_blksize;
 	ai->hiwat = sc->sc_au.au_hiwat;
 	ai->lowat = sc->sc_au.au_lowat;
+	ai->backlog = sc->sc_au.au_backlog;
 
 	return (0);
 }
