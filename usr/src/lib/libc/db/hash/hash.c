@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -123,7 +123,7 @@ hash_open(file, flags, mode, info)
 		/* Verify file type, versions and hash function */
 		if (hashp->MAGIC != HASHMAGIC)
 			RETURN_ERROR(EFTYPE, error1);
-		if (hashp->VERSION != VERSION_NO)
+		if (hashp->VERSION != HASHVERSION)
 			RETURN_ERROR(EFTYPE, error1);
 		if (hashp->hash(CHARKEY, sizeof(CHARKEY)) != hashp->H_CHARKEY)
 			RETURN_ERROR(EFTYPE, error1);
@@ -142,7 +142,7 @@ hash_open(file, flags, mode, info)
 			 */
 			return (NULL);
 		/* Read in bitmaps */
-		bpages = (hashp->SPARES[__log2(hashp->MAX_BUCKET)] +
+		bpages = (hashp->SPARES[hashp->OVFL_POINT] +
 		    (hashp->BSIZE << BYTE_SHIFT) - 1) >>
 		    (hashp->BSHIFT + BYTE_SHIFT);
 
@@ -176,7 +176,7 @@ hash_open(file, flags, mode, info)
 
 #ifdef DEBUG
 	(void)fprintf(stderr,
-"%s\n%s%x\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%x\n%s%x\n%s%d\n%s%d\n",
+"%s\n%s%x\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%x\n%s%x\n%s%d\n%s%d\n",
 	    "init_htab:",
 	    "TABLE POINTER   ", hashp,
 	    "BUCKET SIZE     ", hashp->BSIZE,
@@ -186,6 +186,8 @@ hash_open(file, flags, mode, info)
 	    "SEGMENT SHIFT   ", hashp->SSHIFT,
 	    "FILL FACTOR     ", hashp->FFACTOR,
 	    "MAX BUCKET      ", hashp->MAX_BUCKET,
+	    "OVFL POINT	     ", hashp->OVFL_POINT,
+	    "LAST FREED      ", hashp->LAST_FREED,
 	    "HIGH MASK       ", hashp->HIGH_MASK,
 	    "LOW  MASK       ", hashp->LOW_MASK,
 	    "NSEGS           ", hashp->nsegs,
@@ -227,6 +229,7 @@ init_hash(info)
 	int nelem;
 
 	nelem = 1;
+	hashp->NKEYS = 0;
 	hashp->LORDER = BYTE_ORDER;
 	hashp->BSIZE = DEF_BUCKET_SIZE;
 	hashp->BSHIFT = DEF_BUCKET_SHIFT;
@@ -236,6 +239,7 @@ init_hash(info)
 	hashp->FFACTOR = DEF_FFACTOR;
 	hashp->hash = default_hash;
 	bzero(hashp->SPARES, sizeof(hashp->SPARES));
+	bzero (hashp->BITMAPS, sizeof (hashp->BITMAPS));
 
 	if (info) {
 		if (info->bsize) {
@@ -294,6 +298,9 @@ init_htab(nelem)
 
 	hashp->SPARES[l2] = l2 + 1;
 	hashp->SPARES[l2 + 1] = l2 + 1;
+	hashp->OVFL_POINT = l2;
+	hashp->LAST_FREED = 2;
+
 	/* First bitmap page is at: splitpoint l2 page offset 1 */
 	if (__init_bitmap(OADDR_OF(l2, 1), l2 + 1, 0))
 		return (-1);
@@ -407,7 +414,7 @@ flush_meta()
 	if (!hashp->save_file)
 		return (0);
 	hashp->MAGIC = HASHMAGIC;
-	hashp->VERSION = VERSION_NO;
+	hashp->VERSION = HASHVERSION;
 	hashp->H_CHARKEY = hashp->hash(CHARKEY, sizeof(CHARKEY));
 
 	fp = hashp->fp;
@@ -745,8 +752,11 @@ __expand_table()
 	 * split bucket to the next bucket.
 	 */
 	spare_ndx = __log2(hashp->MAX_BUCKET);
-	if (spare_ndx != (__log2(hashp->MAX_BUCKET - 1)))
-		hashp->SPARES[spare_ndx] = hashp->SPARES[spare_ndx - 1];
+	if ( spare_ndx > hashp->OVFL_POINT ) {
+		hashp->SPARES[spare_ndx] = hashp->SPARES[hashp->OVFL_POINT];
+		hashp->OVFL_POINT = spare_ndx;
+	}
+
 	if (new_bucket > hashp->HIGH_MASK) {
 		/* Starting a new doubling */
 		hashp->LOW_MASK = hashp->HIGH_MASK;
@@ -841,6 +851,8 @@ swap_header_copy(srcp, destp)
 	BLSWAP_COPY(srcp->dsize, destp->dsize);
 	BLSWAP_COPY(srcp->ssize, destp->ssize);
 	BLSWAP_COPY(srcp->sshift, destp->sshift);
+	BLSWAP_COPY(srcp->ovfl_point, destp->ovfl_point);
+	BLSWAP_COPY(srcp->last_freed, destp->last_freed);
 	BLSWAP_COPY(srcp->max_bucket, destp->max_bucket);
 	BLSWAP_COPY(srcp->high_mask, destp->high_mask);
 	BLSWAP_COPY(srcp->low_mask, destp->low_mask);
@@ -870,6 +882,8 @@ swap_header()
 	BLSWAP(hdrp->dsize);
 	BLSWAP(hdrp->ssize);
 	BLSWAP(hdrp->sshift);
+	BLSWAP(hdrp->ovfl_point);
+	BLSWAP(hdrp->last_freed);
 	BLSWAP(hdrp->max_bucket);
 	BLSWAP(hdrp->high_mask);
 	BLSWAP(hdrp->low_mask);

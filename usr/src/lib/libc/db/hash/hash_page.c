@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	5.16 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -618,18 +618,19 @@ overflow_page()
 	register u_long *freep;
 	register int max_free, offset, splitnum;
 	u_short addr;
-	int bit, free_bit, free_page, i, in_use_bits, j;
+	int bit, first_page, free_bit, free_page, i, in_use_bits, j;
 #ifdef DEBUG2
 	int tmp1, tmp2;
 #endif
-	splitnum = __log2(hashp->MAX_BUCKET);
+	splitnum = hashp->OVFL_POINT;
 	max_free = hashp->SPARES[splitnum];
 
 	free_page = (max_free - 1) >> (hashp->BSHIFT + BYTE_SHIFT);
 	free_bit = (max_free - 1) & ((hashp->BSIZE << BYTE_SHIFT) - 1);
 
 	/* Look through all the free maps to find the first free block */
-	for (i = 0; i <= free_page; i++) {
+	first_page = hashp->LAST_FREED >>(hashp->BSHIFT + BYTE_SHIFT);
+	for ( i = first_page; i <= free_page; i++ ) {
 		if (!(freep = (u_long *)hashp->mapp[i]) &&
 		    !(freep = fetch_bitmap(i)))
 			return (NULL);
@@ -637,22 +638,42 @@ overflow_page()
 			in_use_bits = free_bit;
 		else
 			in_use_bits = (hashp->BSIZE << BYTE_SHIFT) - 1;
-
-		for (j = 0, bit = 0; bit <= in_use_bits;
-		    j++, bit += BITS_PER_MAP)
+		
+		if (i == first_page) {
+			bit = hashp->LAST_FREED &
+			    ((hashp->BSIZE << BYTE_SHIFT) - 1);
+			j = bit / BITS_PER_MAP;
+			bit = bit & ~(BITS_PER_MAP - 1);
+		} else {
+			bit = 0;
+			j = 0;
+		}
+		for (; bit <= in_use_bits; j++, bit += BITS_PER_MAP)
 			if (freep[j] != ALL_SET)
 				goto found;
 	}
 
 	/* No Free Page Found */
+	hashp->LAST_FREED = hashp->SPARES[splitnum];
 	hashp->SPARES[splitnum]++;
 	offset = hashp->SPARES[splitnum] -
 	    (splitnum ? hashp->SPARES[splitnum - 1] : 0);
 
+#define	OVMSG	"HASH: Out of overflow pages.  Increase page size\n"
+	if (offset > SPLITMASK) {
+		if (++splitnum >= NCACHED) {
+			(void)write(STDERR_FILENO, OVMSG, sizeof(OVMSG) - 1);
+			return (NULL);
+		}
+		hashp->OVFL_POINT = splitnum;
+		hashp->SPARES[splitnum] = hashp->SPARES[splitnum-1];
+		hashp->SPARES[splitnum-1]--;
+		offset = 0;
+	}
+
 	/* Check if we need to allocate a new bitmap page */
 	if (free_bit == (hashp->BSIZE << BYTE_SHIFT) - 1) {
 		free_page++;
-#define	OVMSG	"hash: out of overflow pages; increase page size\n"
 		if (free_page >= NCACHED) {
 			(void)write(STDERR_FILENO, OVMSG, sizeof(OVMSG) - 1);
 			return (NULL);
@@ -676,6 +697,17 @@ overflow_page()
 		free_bit = 2;
 #endif
 		offset++;
+		if (offset > SPLITMASK) {
+			if (++splitnum >= NCACHED) {
+				(void)write(STDERR_FILENO, OVMSG,
+				    sizeof(OVMSG) - 1);
+				return (NULL);
+			}
+			hashp->OVFL_POINT = splitnum;
+			hashp->SPARES[splitnum] = hashp->SPARES[splitnum-1];
+			hashp->SPARES[splitnum-1]--;
+			offset = 0;
+		}
 	} else {
 		/*
 		 * Free_bit addresses the last used bit.  Bump it to address
@@ -686,10 +718,6 @@ overflow_page()
 	}
 
 	/* Calculate address of the new overflow page */
-	if (offset > SPLITMASK) {
-		(void)write(STDERR_FILENO, OVMSG, sizeof(OVMSG) - 1);
-		return (NULL);
-	}
 	addr = OADDR_OF(splitnum, offset);
 #ifdef DEBUG2
 	(void)fprintf(stderr, "OVERFLOW_PAGE: ADDR: %d BIT: %d PAGE %d\n",
@@ -710,6 +738,8 @@ found:
 	 * it to convert it to a page number.
 	 */
 	bit = 1 + bit + (i * (hashp->BSIZE << BYTE_SHIFT));
+	if (bit >= hashp->LAST_FREED)
+		hashp->LAST_FREED = bit - 1;
 
 	/* Calculate the split number for this page */
 	for (i = 0; (i < splitnum) && (bit > hashp->SPARES[i]); i++);
@@ -745,6 +775,8 @@ __free_ovflpage(obufp)
 	ndx = (((u_short)addr) >> SPLITSHIFT);
 	bit_address =
 	    (ndx ? hashp->SPARES[ndx - 1] : 0) + (addr & SPLITMASK) - 1;
+	 if (bit_address < hashp->LAST_FREED)
+		hashp->LAST_FREED = bit_address;
 	free_page = (bit_address >> (hashp->BSHIFT + BYTE_SHIFT));
 	free_bit = bit_address & ((hashp->BSIZE << BYTE_SHIFT) - 1);
 
