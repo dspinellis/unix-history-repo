@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.14 (Berkeley) %G%
+ *	@(#)dinode.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -29,9 +29,9 @@ struct dinode {
 	u_short		di_ouid;	/*   4: old owner's user id */
 	u_short		di_ogid;	/*   6: old owner's group id */
 	u_quad_t	di_qsize;	/*   8: number of bytes in file */
-	struct timeval	di_atime;	/*  16: time last accessed */
-	struct timeval	di_mtime;	/*  24: time last modified */
-	struct timeval	di_ctime;	/*  32: last time inode changed */
+	struct timespec	di_atime;	/*  16: time last accessed */
+	struct timespec	di_mtime;	/*  24: time last modified */
+	struct timespec	di_ctime;	/*  32: last time inode changed */
 	daddr_t		di_db[NDADDR];	/*  40: disk block addresses */
 	daddr_t		di_ib[NIADDR];	/*  88: indirect blocks */
 	long		di_flags;	/* 100: status, currently unused */
