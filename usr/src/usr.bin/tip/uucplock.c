@@ -29,12 +29,21 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00139
+ * --------------------         -----   ----------------------
+ *
+ * 19 Aug 93	Peter da Silva		Better errors and Taylor UUCP locks
+ *
  */
 
 #ifndef lint
 static char sccsid[] = "@(#)uucplock.c	5.5 (Berkeley) 6/1/90";
 #endif /* not lint */
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/dir.h>
@@ -54,6 +63,8 @@ uu_lock(ttyname)
 	int fd, pid;
 	char tbuf[sizeof(_PATH_LOCKDIRNAME) + MAXNAMLEN];
 	off_t lseek();
+	char text_pid[81];	/* PDS 93 */
+	int len;		/* PDS 93 */
 
 	(void)sprintf(tbuf, _PATH_LOCKDIRNAME, ttyname);
 	fd = open(tbuf, O_RDWR|O_CREAT|O_EXCL, 0660);
@@ -64,14 +75,19 @@ uu_lock(ttyname)
 		 */
 		fd = open(tbuf, O_RDWR, 0);
 		if (fd < 0) {
-			perror("lock open");
+			perror(tbuf);	/* +PDS 93 */
+			fprintf(stderr, "Can't open lock file.\n");
 			return(-1);
 		}
-		if (read(fd, &pid, sizeof(pid)) != sizeof(pid)) {
+		len = read(fd, text_pid, sizeof(text_pid)-1);
+		if(len<=0) {
+			perror(tbuf);
 			(void)close(fd);
-			perror("lock read");
+			fprintf(stderr, "Can't read lock file.\n");
 			return(-1);
 		}
+		text_pid[len] = 0;
+		pid = atol(text_pid);	/* -PDS 93 */
 
 		if (kill(pid, 0) == 0 || errno != ESRCH) {
 			(void)close(fd);	/* process is still running */
@@ -81,15 +97,21 @@ uu_lock(ttyname)
 		 * The process that locked the file isn't running, so
 		 * we'll lock it ourselves
 		 */
+	/* +PDS 93 */
+		fprintf(stderr, "Stale lock on %s PID=%d... overriding.\n",
+			ttyname, pid);
 		if (lseek(fd, 0L, L_SET) < 0) {
+			perror(tbuf);
 			(void)close(fd);
-			perror("lock lseek");
+			fprintf(stderr, "Can't seek lock file.\n");
 			return(-1);
 		}
 		/* fall out and finish the locking process */
 	}
 	pid = getpid();
-	if (write(fd, (char *)&pid, sizeof(pid)) != sizeof(pid)) {
+	sprintf(text_pid, "%10d\n", pid);
+	len = strlen(text_pid);
+	if (write(fd, text_pid, len) != len) {	/* -PDS 93 */
 		(void)close(fd);
 		(void)unlink(tbuf);
 		perror("lock write");
