@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)addbib.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)addbib.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -103,7 +103,11 @@ char *argv;
 		for (i = 0; i < entries; i++)
 		{
 			printf("%s\t", bibskel[i].prompt);
-			fgets(line, BUFSIZ, stdin);
+			if (fgets(line, BUFSIZ, stdin) == NULL)
+			{
+				clearerr(stdin);
+				break;
+			}
 			if (line[0] == '-' && line[1] == '\n')
 			{
 				i -= 2;
@@ -158,6 +162,7 @@ char *argv;
 				}
 				fputs(line, fp);
 			}
+			clearerr(stdin);
 		}
 		fflush(fp);	/* write to file at end of each cycle */
 		if (ferror(fp))
