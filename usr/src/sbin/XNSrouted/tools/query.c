@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -47,7 +47,7 @@ int	s;
 int	timedout, timeout();
 char	packet[MAXPACKETSIZE];
 extern int errno;
-struct sockaddr_ns	myaddr = {AF_NS};
+struct sockaddr_ns	myaddr = {sizeof(myaddr), AF_NS};
 char *ns_ntoa();
 struct ns_addr ns_addr();
 main(argc, argv)
@@ -102,7 +102,7 @@ char *argv[];
 		count--;
 	}
 }
-static struct sockaddr_ns router = {AF_NS};
+static struct sockaddr_ns router = {sizeof(myaddr), AF_NS};
 static struct ns_addr zero_addr;
 static short allones[] = {-1, -1, -1};
 
@@ -111,9 +111,13 @@ char **argv;
 {
 	register struct rip *msg = (struct rip *)packet;
 	char *host = *argv;
+	int flags = 0;
 	struct ns_addr specific;
 
-	argv++; argc--;
+	if (bcmp(*argv, "-r", 3) == 0) {
+		flags = MSG_DONTROUTE; argv++; argc--;
+	}
+	host = *argv;
 	router.sns_addr = ns_addr(host);
 	router.sns_addr.x_port = htons(IDPPORT_RIF);
 	if (ns_hosteq(zero_addr, router.sns_addr)) {
@@ -129,7 +133,7 @@ char **argv;
 		specific.x_port = zero_addr.x_port;
 		printf("Net asked for was %s\n", ns_ntoa(specific));
 	}
-	if (sendto(s, packet, sizeof (struct rip), 0,
+	if (sendto(s, packet, sizeof (struct rip), flags,
 	  &router, sizeof(router)) < 0)
 		perror(host);
 }
