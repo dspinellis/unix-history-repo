@@ -425,5 +425,12 @@ uucppublic      type=dir mode=0777
 # ./tmp
 /set type=file gname=wheel uname=nobody mode=0600
 tmp             type=dir uname=root mode=01777
+
+# ./vi.recover
+/set type=file gname=wheel uname=nobody mode=0600
+vi.recover	type=dir uname=root mode=01777
+# ./vi.recover
+..
+
 # ./tmp
 ..
