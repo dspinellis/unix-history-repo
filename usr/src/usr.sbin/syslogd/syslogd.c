@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,9 +87,7 @@ char	ctty[] = _PATH_CONSOLE;
 
 #define	dprintf		if (Debug) printf
 
-#define UNAMESZ		8	/* length of a login name */
 #define MAXUNAMES	20	/* maximum number of user names */
-#define MAXFNAME	200	/* max file pathname length */
 
 #define NOPRI		0x10	/* the "no priority" priority */
 #define	LOG_MARK	LOG_MAKEPRI(LOG_NFACILITIES, 0)	/* mark "facility" */
@@ -115,12 +113,12 @@ struct filed {
 	time_t	f_time;			/* time this was last written */
 	u_char	f_pmask[LOG_NFACILITIES+1];	/* priority mask */
 	union {
-		char	f_uname[MAXUNAMES][UNAMESZ+1];
+		char	f_uname[MAXUNAMES][UT_NAMESIZE+1];
 		struct {
 			char	f_hname[MAXHOSTNAMELEN+1];
 			struct sockaddr_in	f_addr;
 		} f_forw;		/* forwarding address */
-		char	f_fname[MAXFNAME];
+		char	f_fname[MAXPATHLEN];
 	} f_un;
 	char	f_prevline[MAXSVLINE];		/* last message logged */
 	char	f_lasttime[16];			/* time of last occurrence */
@@ -170,8 +168,7 @@ int	Initialized = 0;	/* set when we have initialized ourselves */
 int	MarkInterval = 20 * 60;	/* interval between marks in seconds */
 int	MarkSeq = 0;		/* mark sequence number */
 
-extern	int errno, sys_nerr;
-extern	char *sys_errlist[];
+extern	int errno;
 extern	char *ctime(), *index(), *calloc();
 
 main(argc, argv)
@@ -345,7 +342,8 @@ main(argc, argv)
 
 usage()
 {
-	fprintf(stderr, "usage: syslogd [-d] [-m markinterval] [-p path] [-f conffile]\n");
+	(void) fprintf(stderr,
+	    "usage: syslogd [-d] [-f conffile] [-m markinterval] [-p path]\n");
 	exit(1);
 }
 
@@ -426,7 +424,7 @@ printsys(msg)
 	int pri, flags;
 	char *lp;
 
-	(void) sprintf(line, "vmunix: ");
+	(void) strcpy(line, "vmunix: ");
 	lp = line + strlen(line);
 	for (p = msg; *p != '\0'; ) {
 		flags = SYNC_FILE | ADDDATE;	/* fsync file after write */
@@ -469,7 +467,8 @@ logmsg(pri, msg, from, flags)
 	int omask, msglen;
 	char *timestamp;
 
-	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n", pri, flags, from, msg);
+	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n",
+	    pri, flags, from, msg);
 
 	omask = sigblock(sigmask(SIGHUP)|sigmask(SIGALRM));
 
@@ -749,7 +748,7 @@ wallmsg(f, iov)
 						break;
 					}
 					if (strncmp(f->f_un.f_uname[i],
-					    ut.ut_name, UNAMESZ) == 0)
+					    ut.ut_name, UT_NAMESIZE) == 0)
 						break;
 				}
 				if (i >= MAXUNAMES)
@@ -758,7 +757,7 @@ wallmsg(f, iov)
 
 			/* compute the device name */
 			p = "/dev/12345678";
-			strncpy(&p[5], ut.ut_line, UNAMESZ);
+			strncpy(&p[5], ut.ut_line, UT_NAMESIZE);
 
 			if (f->f_type == F_WALL) {
 				iov[0].iov_base = greetings;
@@ -855,14 +854,12 @@ domark()
 logerror(type)
 	char *type;
 {
-	char buf[100];
+	char buf[100], *strerror();
 
-	if (errno == 0)
-		(void) sprintf(buf, "syslogd: %s", type);
-	else if ((unsigned) errno > sys_nerr)
-		(void) sprintf(buf, "syslogd: %s: error %d", type, errno);
+	if (errno)
+		(void) sprintf(buf, "syslogd: %s: %s", type, strerror(errno));
 	else
-		(void) sprintf(buf, "syslogd: %s: %s", type, sys_errlist[errno]);
+		(void) sprintf(buf, "syslogd: %s", type);
 	errno = 0;
 	dprintf("%s\n", buf);
 	logmsg(LOG_SYSLOG|LOG_ERR, buf, LocalHostName, ADDDATE);
@@ -1056,7 +1053,7 @@ cfline(line, f)
 
 	dprintf("cfline(%s)\n", line);
 
-	errno = 0;	/* keep sys_errlist stuff out of logerror messages */
+	errno = 0;	/* keep strerror() stuff out of logerror messages */
 
 	/* clear out file entry */
 	bzero((char *) f, sizeof *f);
@@ -1167,9 +1164,9 @@ cfline(line, f)
 		for (i = 0; i < MAXUNAMES && *p; i++) {
 			for (q = p; *q && *q != ','; )
 				q++;
-			(void) strncpy(f->f_un.f_uname[i], p, UNAMESZ);
-			if ((q - p) > UNAMESZ)
-				f->f_un.f_uname[i][UNAMESZ] = '\0';
+			(void) strncpy(f->f_un.f_uname[i], p, UT_NAMESIZE);
+			if ((q - p) > UT_NAMESIZE)
+				f->f_un.f_uname[i][UT_NAMESIZE] = '\0';
 			else
 				f->f_un.f_uname[i][q - p] = '\0';
 			while (*q == ',' || *q == ' ')
