@@ -1,3 +1,7 @@
+Sun Jun  7 19:01:37 1992  Jan-Simon Pendry  (jsp at achilles)
+
+	* Code cut for BSD 4.4 alpha.
+
 Sun May 31 17:28:52 1992  Jan-Simon Pendry  (jsp at achilles)
 
 	* (afs_ops.c) make sure error code is returned to user if there
