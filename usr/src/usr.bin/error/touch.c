@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)touch.c	1.5 (Berkeley) %G%";
+static	char *sccsid = "@(#)touch.c	1.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -647,6 +647,8 @@ mustwrite(base, n, preciousfile)
 			mustwrite(base + nwrote, n - nwrote, preciousfile);
 			return(1);
 		}
+	default:
+		return(0);
 	}
 }
 
@@ -690,6 +692,9 @@ int inquire(fmt, a1, a2)
 	/*VARARGS1*/
 {
 	char	buffer[128];
+
+	if (queryfile == NULL)
+		return(0);
 	for(;;){
 		do{
 			fflush(stdout);
