@@ -1,12 +1,9 @@
-/*	boot.c	7.3	90/06/22	*/
+/*	boot.c	7.4	90/06/30	*/
 
 #include "machine/mtpr.h"
 
 #include "sys/param.h"
 #include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
-#include "ufs/fs.h"
 #include "sys/vm.h"
 #include "sys/reboot.h"
 #include "saio.h"

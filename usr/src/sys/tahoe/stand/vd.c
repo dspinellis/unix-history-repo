@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vd.c	7.15 (Berkeley) %G%
+ *	@(#)vd.c	7.16 (Berkeley) %G%
  */
 
 /*
@@ -17,9 +17,6 @@
 
 #include "sys/param.h"
 #include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
-#include "ufs/fs.h"
 #include "sys/buf.h"
 #include "sys/disklabel.h"
 #include "saio.h"
