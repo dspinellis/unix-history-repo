@@ -1,7 +1,7 @@
 %{
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)token.l 1.1 %G%";
+static char sccsid[] = "@(#)token.l 1.2 %G%";
 
 /*
  * Token definitions for pdx scanner.
@@ -57,12 +57,12 @@ char		.
 ^sh{white}.*$	{ BEGIN 0; yylval.y_string = &yytext[3]; return(SH); }
 ^sh		{ BEGIN 0; yylval.y_string = NIL; return(SH); }
 ^{ident}	{ return(findcmd(yytext)); }
+<file>{filenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
+{qfilenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
 {n}?\.{n}{e}?	{ yylval.y_real = atof(yytext); return(REAL); }
 0{n}		{ yylval.y_long = octal(yytext); return(INT); }
 0x{h}		{ yylval.y_long = hex(yytext); return(INT); }
 {n}		{ yylval.y_long = atol(yytext); return(INT); }
-<file>{filenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
-{qfilenm}	{ yylval.y_string = strdup(yytext); return(FILENAME); }
 at		{ return(AT); }
 {ident}		{ return(ident(yytext)); }
 {string}	{ yylval.y_string = yytext; return(STRING); }
