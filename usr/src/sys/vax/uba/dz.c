@@ -1,4 +1,4 @@
-/*	dz.c	4.15	%G%	*/
+/*	dz.c	4.16	%G%	*/
 
 #include "dz.h"
 #if NDZ11 > 0
@@ -131,6 +131,10 @@ dzattach(ui)
 		pdp++, tp++;
 	}
 	dzsoftCAR[ui->ui_unit] = ui->ui_flags;
+	if (dz_timer == 0) {
+		dz_timer++;
+		timeout(dzscan, (caddr_t)0, HZ);
+	}
 	return (1);
 }
 
@@ -146,10 +150,6 @@ dzopen(dev, flag)
 	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0) {
 		u.u_error = ENXIO;
 		return;
-	}
-	if (dz_timer == 0) {
-		dz_timer++;
-		timeout(dzscan, (caddr_t)0, HZ);
 	}
 	tp = &dz_tty[unit];
 	tp->t_addr = (caddr_t)&dzpdma[unit];
@@ -425,6 +425,8 @@ dzscan()
  
 	for (i = 0; i < dz_cnt ; i++) {
 		dzaddr = dzpdma[i].p_addr;
+		if (dzaddr == 0)
+			continue;
 		tp = &dz_tty[i];
 		bit = 1<<(i&07);
 		if ((dzsoftCAR[i>>3]&bit) || (dzaddr->dzmsr&bit)) {
