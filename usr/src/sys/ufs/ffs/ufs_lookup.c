@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.15 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -118,7 +118,7 @@ ufs_lookup(vp, ndp)
 		if (error == ENOENT)
 			return (error);
 		if (vp == ndp->ni_rdir && ndp->ni_isdotdot)
-			panic("lookup: .. through root");
+			panic("ufs_lookup: .. through root");
 		/*
 		 * Get the next vnode in the path.
 		 * See comment below starting `Step through' for
@@ -126,24 +126,28 @@ ufs_lookup(vp, ndp)
 		 */
 		pdp = dp;
 		dp = VTOI(ndp->ni_vp);
-		vdp = ITOV(dp);
+		vdp = ndp->ni_vp;
 		vpid = vdp->v_id;
 		if (pdp == dp) {
 			VREF(vdp);
+			error = 0;
 		} else if (ndp->ni_isdotdot) {
 			IUNLOCK(pdp);
-			igrab(dp);
+			error = vget(vdp);
 		} else {
-			igrab(dp);
+			error = vget(vdp);
 			IUNLOCK(pdp);
 		}
 		/*
 		 * Check that the capability number did not change
 		 * while we were waiting for the lock.
 		 */
-		if (vpid == vdp->v_id)
-			return (0);
-		iput(dp);
+		if (!error) {
+			if (vpid == vdp->v_id)
+				return (0);
+			else
+				iput(dp);
+		}
 		ILOCK(pdp);
 		dp = pdp;
 		ndp->ni_vp = NULL;
