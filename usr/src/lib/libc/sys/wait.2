@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wait.2	5.1 (Berkeley) %G%
+.\"	@(#)wait.2	6.1 (Berkeley) %G%
 .\"
-.TH WAIT 2 "27 July 1983"
+.TH WAIT 2 ""
 .UC 4
 .SH NAME
 wait, wait3 \- wait for process to terminate
@@ -72,8 +72,8 @@ parameter is defined as above.  The
 .I options
 parameter is used to indicate the call should not block if
 there are no processes which wish to report status (WNOHANG),
-and/or that only children of the current process which are stopped
-due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal should have
+and/or that children of the current process which are stopped
+due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal should also have
 their status reported (WUNTRACED).  If
 .I rusage
 is non-zero, a summary of the resources used by the terminated
