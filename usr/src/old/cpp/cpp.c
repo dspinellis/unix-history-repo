@@ -1,6 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c 1.1 %G%";
+static char sccsid[] = "@(#)cpp.c 1.2 %G%";
 #endif lint
+
 #ifdef FLEXNAMES
 #define	NCPS	128
 #else
@@ -8,6 +9,7 @@ static char sccsid[] = "@(#)cpp.c 1.1 %G%";
 #endif
 
 # include "stdio.h"
+# include "ctype.h"
 /* C command
 /* written by John F. Reiser
 /* July/August 1978
@@ -749,7 +751,22 @@ for (;;) {
 #endif
 	} else if (np==lneloc) {/* line */
 		if (flslvl==0 && pflag==0) {
+			char *cp, *cp2, *savestring();
 			outp=inp=p; *--outp='#'; while (*inp!='\n') p=cotoken(p);
+			cp = outp + 1;
+			while (isspace(*cp) && cp < inp)
+				cp++;
+			while (isdigit(*cp) && cp < inp)
+				cp++;
+			while (*cp != '"' && cp < inp)
+				cp++;
+			if (cp < inp) {
+				cp++;
+				cp2 = cp;
+				while (*cp2 != '"' && cp2 < inp)
+					cp2++;
+				fnames[ifno] = savestring(cp, cp2);
+			}
 			continue;
 		}
 	} else if (*++inp=='\n') outp=inp;	/* allows blank line after # */
@@ -757,6 +774,21 @@ for (;;) {
 	/* flush to lf */
 	++flslvl; while (*inp!='\n') {outp=inp=p; p=cotoken(p);} --flslvl;
 }
+}
+
+char *
+savestring(start, finish)
+	register char *start, *finish;
+{
+	char *retbuf;
+	register char *cp;
+
+	retbuf = (char *) calloc(finish - start + 1, sizeof (char));
+	cp = retbuf;
+	while (start < finish)
+		*cp++ = *start++;
+	*cp = 0;
+	return(retbuf);
 }
 
 struct symtab *
@@ -1047,7 +1079,7 @@ main(argc,argv)
 						pperror("No source file %s",argv[i]); exit(8);
 					}
 					fnames[ifno]=copy(argv[i]);
-					dirs[0]=dirnams[ifno]=trmdir(copy(argv[i]));
+					dirs[0]=dirnams[ifno]=trmdir(argv[i]);
 # ifndef gcos
 /* too dangerous to have file name in same syntactic position
    be input or output file depending on file redirections,
