@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)xx.c	3.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)xx.c	3.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -39,7 +39,27 @@ xxstart()
 	(*tt.tt_start)();
 	if (tt.tt_ntoken > 0)
 		ccstart();
-	xxreset();			/* might be a restart */
+	xxreset1();			/* might be a restart */
+}
+
+xxreset()
+{
+	if (tt.tt_ntoken > 0)
+		ccreset();
+	xxreset1();
+	(*tt.tt_reset)();
+}
+
+xxreset1()
+{
+	register struct xx *xp, *xq;
+
+	for (xp = xx_head; xp != 0; xp = xq) {
+		xq = xp->link;
+		xxfree(xp);
+	}
+	xx_tail = xx_head = 0;
+	xxbufp = xxbuf;
 }
 
 xxend()
@@ -55,7 +75,7 @@ xxend()
 	if (tt.tt_ntoken > 0)
 		ccend();
 	(*tt.tt_end)();
-	(*tt.tt_flush)();
+	ttflush();
 }
 
 struct xx *
@@ -163,7 +183,7 @@ xxclear()
 {
 	register struct xx *xp;
 
-	xxreset();
+	xxreset1();
 	xp = xxalloc();
 	xp->cmd = xc_clear;
 }
@@ -203,16 +223,4 @@ xxwrite(row, col, p, n, m)
 	bcopy(p, xxbufp, n);
 	xxbufp += n;
 	*xxbufp++ = char_sep;
-}
-
-xxreset()
-{
-	register struct xx *xp, *xq;
-
-	for (xp = xx_head; xp != 0; xp = xq) {
-		xq = xp->link;
-		xxfree(xp);
-	}
-	xx_tail = xx_head = 0;
-	xxbufp = xxbuf;
 }

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwend.c	3.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwend.c	3.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -18,6 +18,10 @@ static char sccsid[] = "@(#)wwend.c	3.17 (Berkeley) %G%";
 /*ARGSUSED*/
 wwend(exit)
 {
+	if (tt.tt_checkpoint) {
+		(void) alarm(0);
+		wwdocheckpoint = 0;
+	}
 	xxend();
 	(void) wwsettty(0, &wwoldtty);
 #ifdef TERMINFO

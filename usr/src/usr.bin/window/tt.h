@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tt.h	3.28 (Berkeley) %G%
+ *	@(#)tt.h	3.29 (Berkeley) %G%
  */
 
 /*
@@ -16,6 +16,7 @@
 struct tt {
 		/* startup and cleanup */
 	int (*tt_start)();
+	int (*tt_reset)();
 	int (*tt_end)();
 
 		/* terminal functions */
@@ -36,6 +37,9 @@ struct tt {
 	int (*tt_setmodes)();		/* set display modes */
 	int (*tt_set_token)();		/* define a token */
 	int (*tt_put_token)();		/* refer to a defined token */
+	int (*tt_compress)();		/* begin, end compression */
+	int (*tt_checksum)();		/* compute checksum */
+	int (*tt_checkpoint)();		/* checkpoint protocol */
 	int (*tt_rint)();		/* input processing */
 
 		/* internal variables */
@@ -59,11 +63,12 @@ struct tt {
 	int tt_token_max;		/* maximum token size */
 	int tt_set_token_cost;		/* cost in addition to string */
 	int tt_put_token_cost;		/* constant cost */
+	int tt_ack;			/* checkpoint ack-nack flag */
 
 		/* the frame characters */
 	short *tt_frame;
 
-		/* the output routine */
+		/* ttflush() hook */
 	int (*tt_flush)();
 };
 struct tt tt;
@@ -112,7 +117,7 @@ char *tt_ob;
 char *tt_obp;
 char *tt_obe;
 #define ttputc(c)	(tt_obp < tt_obe ? (*tt_obp++ = (c)) \
-				: ((*tt.tt_flush)(), *tt_obp++ = (c)))
+				: (ttflush(), *tt_obp++ = (c)))
 
 /*
  * Convenience macros for the drivers

@@ -9,17 +9,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lcmd2.c	3.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)lcmd2.c	3.26 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
 #include "defs.h"
 #include "string.h"
 #include "value.h"
 #include "var.h"
 #include "lcmd.h"
-#include <sys/resource.h>
 #include "alias.h"
+#include <sys/types.h>
+#include <sys/resource.h>
 
 /*ARGSUSED*/
 l_iostat(v, a)
@@ -57,9 +57,10 @@ struct value *v, *a;
 	wwprintf(w, "select\terror\tzero\n");
 	wwprintf(w, "%d\t%d\t%d\n",
 		wwnselect, wwnselecte, wwnselectz);
-	wwprintf(w, "read\terror\tzero\tchar\terrorc\n");
-	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
-		wwnread, wwnreade, wwnreadz, wwnreadc, wwnreadec);
+	wwprintf(w, "read\terror\tzero\tchar\tack\tnack\tstat\terrorc\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnread, wwnreade, wwnreadz, wwnreadc, wwnreadack, wwnreadnack,
+		wwnreadstat, wwnreadec);
 	wwprintf(w, "ptyread\terror\tzero\tcontrol\tdata\tchar\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
 		wwnwread, wwnwreade, wwnwreadz,

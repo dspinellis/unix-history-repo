@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.66 (Berkeley) %G%
+ *	@(#)ww.h	3.67 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -198,6 +198,7 @@ int wwdtablesize;		/* result of getdtablesize() call */
 char **wwsmap;			/* the screen map */
 union ww_char **wwos;		/* the old (current) screen */
 union ww_char **wwns;		/* the new (desired) screen */
+union ww_char **wwcs;		/* the checkpointed screen */
 char *wwtouched;		/* wwns changed flags */
 struct ww_update *wwupd;	/* for display update */
 int wwospeed;			/* output baud rate, copied from wwoldtty */
@@ -211,7 +212,8 @@ int wwnwwr, wwnwwra, wwnwwrc;
 int wwntokdef, wwntokuse, wwntokbad, wwntoksave, wwntokc;
 int wwnupdate, wwnupdline, wwnupdmiss;
 int wwnupdscan, wwnupdclreol, wwnupdclreos, wwnupdclreosmiss, wwnupdclreosline;
-int wwnread, wwnreade, wwnreadz, wwnreadc, wwnreadec;
+int wwnread, wwnreade, wwnreadz;
+int wwnreadc, wwnreadack, wwnreadnack, wwnreadstat, wwnreadec;
 int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
 int wwnselect, wwnselecte, wwnselectz;
 
@@ -244,6 +246,9 @@ jmp_buf wwjmpbuf;	/* jmpbuf for above */
 			while (0)
 #define wwclrintr()	(wwintr = 0)
 
+	/* checkpointing */
+int wwdocheckpoint;
+
 	/* the window virtual terminal */
 #define WWT_TERM	"window-v2"
 #define WWT_TERMCAP	"WW|window-v2|window program version 2:\
@@ -270,6 +275,7 @@ char wwterminfopath[1024];
 	/* our functions */
 struct ww *wwopen();
 void wwchild();
+void wwalarm();
 void wwquit();
 char **wwalloc();
 char *wwerror();

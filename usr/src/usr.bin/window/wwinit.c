@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,7 +28,7 @@ wwinit()
 	wwhead.ww_forw = &wwhead;
 	wwhead.ww_back = &wwhead;
 
-	s = sigblock(sigmask(SIGIO) | sigmask(SIGCHLD) |
+	s = sigblock(sigmask(SIGIO) | sigmask(SIGCHLD) | sigmask(SIGALRM) |
 		sigmask(SIGHUP) | sigmask(SIGTERM));
 	if (signal(SIGIO, wwrint) == BADSIG ||
 	    signal(SIGCHLD, wwchild) == BADSIG ||
@@ -187,9 +187,7 @@ wwinit()
 		wwalloc(0, 0, wwnrow, wwncol, sizeof (union ww_char));
 	if (wwos == 0)
 		goto bad;
-	for (i = 0; i < wwnrow; i++)
-		for (j = 0; j < wwncol; j++)
-			wwos[i][j].c_w = ' ';
+	/* wwos is cleared in wwstart1() */
 	wwns = (union ww_char **)
 		wwalloc(0, 0, wwnrow, wwncol, sizeof (union ww_char));
 	if (wwns == 0)
@@ -197,6 +195,13 @@ wwinit()
 	for (i = 0; i < wwnrow; i++)
 		for (j = 0; j < wwncol; j++)
 			wwns[i][j].c_w = ' ';
+	if (tt.tt_checkpoint) {
+		/* wwcs is also cleared in wwstart1() */
+		wwcs = (union ww_char **)
+			wwalloc(0, 0, wwnrow, wwncol, sizeof (union ww_char));
+		if (wwcs == 0)
+			goto bad;
+	}
 
 	wwtouched = malloc((unsigned) wwnrow);
 	if (wwtouched == 0) {
@@ -266,10 +271,15 @@ wwinit()
 		goto bad;
 #endif
 
-	(void) sigsetmask(s);
+	if (tt.tt_checkpoint)
+		if (signal(SIGALRM, wwalarm) == BADSIG) {
+			wwerrno = WWE_SYS;
+			goto bad;
+		}
 	/* catch typeahead before ASYNC was set */
 	(void) kill(getpid(), SIGIO);
-	xxstart();
+	wwstart1();
+	(void) sigsetmask(s);
 	return 0;
 bad:
 	/*
@@ -311,4 +321,42 @@ wwaddcap1(cap, kp)
 	while (*(*kp)++ = *cap++)
 		;
 	(*kp)--;
+}
+
+wwstart()
+{
+	register i;
+
+	(void) wwsettty(0, &wwnewtty);
+	for (i = 0; i < wwnrow; i++)
+		wwtouched[i] = WWU_TOUCHED;
+	wwstart1();
+}
+
+wwstart1()
+{
+	register i, j;
+
+	for (i = 0; i < wwnrow; i++)
+		for (j = 0; j < wwncol; j++) {
+			wwos[i][j].c_w = ' ';
+			if (tt.tt_checkpoint)
+				wwcs[i][j].c_w = ' ';
+		}
+	xxstart();
+	if (tt.tt_checkpoint)
+		wwdocheckpoint = 1;
+}
+
+/*
+ * Reset data structures and terminal from an unknown state.
+ * Restoring wwos has been taken care of elsewhere.
+ */
+wwreset()
+{
+	register i;
+
+	xxreset();
+	for (i = 0; i < wwnrow; i++)
+		wwtouched[i] = WWU_TOUCHED;
 }
