@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)locore.s	5.2 (Berkeley) %G%
+ *	@(#)locore.s	5.3 (Berkeley) %G%
  */
 
 /*
@@ -38,7 +38,7 @@
 	.set	IOPHYSmem,0xa0000
 
 /* IBM "compatible" nop - sensitive macro on "fast" 386 machines */
-#define	NOP	jmp 7f ; nop ; 7:
+#define	NOP	jmp 7f ; nop ; 7: jmp 7f ; nop ; 7:
 
 /*
  * User structure is UPAGES at top of user space.
@@ -61,12 +61,12 @@
 #define	SYSMAP(mname, vname, npte)		\
 _/**/mname:	.globl	_/**/mname;		\
 	.space	(npte)*4;			\
-	.set	_/**/vname,ptes*4096+SYSTEM;	\
+	.set	_/**/vname,ptes*NBPG+SYSTEM;	\
 	.globl	_/**/vname;			\
 	.set	ptes,ptes + npte
 #define	ZSYSMAP(mname, vname, npte)		\
 _/**/mname:	.globl	_/**/mname;		\
-	.set	_/**/vname,ptes*4096+SYSTEM;	\
+	.set	_/**/vname,ptes*NBPG+SYSTEM;	\
 	.globl	_/**/vname;
 
 	.data
@@ -84,6 +84,9 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(mmap,vmmap,1)
 	SYSMAP(alignmap,alignutl,1)	/* XXX */
 	SYSMAP(msgbufmap,msgbuf,MSGBUFPTECNT)
+	/* SYSMAP(EMCmap,EMCbase,1) */
+	SYSMAP(Npxmap,npxutl,UPAGES)
+	SYSMAP(Swtchmap,Swtchbase,UPAGES)
 	.set mbxxx,(NMBCLUSTERS*MCLBYTES)
 	.set mbyyy,(mbxxx>>PGSHIFT)
 	.set mbpgs,(mbyyy+CLSIZE)
@@ -99,7 +102,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	.set	atmemsz,0x100000-0xa0000
 	.set	atpgs,(atmemsz>>PGSHIFT)
 	SYSMAP(ATDevmem,atdevbase,atpgs)
-#define USRIOSIZE 30
+/*#define USRIOSIZE 30*/
 	SYSMAP(Usriomap,usrio,USRIOSIZE+CLSIZE) /* for PHYSIO */
 	ZSYSMAP(ekmempt,kmemlimit,0)
 	SYSMAP(Usrptmap,usrpt,USRPTSIZE+CLSIZE)
@@ -116,28 +119,52 @@ eSysmap:
 	# .set rptes,(ptes)%1024
 	# .set rptes,1024-rptes
 	# .set ptes,ptes+rptes
-	.set Npdes,5
-	.space (NBPG - sz)
+	.set Npdes,10
+	# .space (NBPG - sz)
 
 /*
  * Initialization
  */
 	.data
-	.globl	_cpu
-_cpu:	.long	0	# are we 386, 386sx, or 486
+	.globl	_cpu, _boothowto, _bootdev, _cyloffset, _Maxmem
+_cpu:	.long	0		# are we 386, 386sx, or 486
 	.text
 	.globl	start
 start:				# This is assumed to be location zero!
 	movw	$0x1234,%ax
 	movw	%ax,0x472	# warm boot
 	jmp	1f
-	.space	0x500	# skip over warm boot shit
-1:
-#ifdef notyet
-	# XXX pass parameters on stack
-/* count up memory */
+	.space	0x500		# skip over warm boot shit
+
+	/* enable a20! yecchh!! */
+1:	inb	$0x64,%al
+	andb	$2,%al
+	jnz	1b
+	movb	$0xd1,%al
+	NOP
+	outb	%al,$0x64
+	NOP
+1:	inb	$0x64,%al
+	andb	$2,%al
+	jnz	1b
+	movb	$0xdf,%al
+	NOP
+	outb	%al,$0x60
+
+	/* pass parameters on stack (howto, bootdev, unit, cyloffset) */
+
+	movl	4(%esp),%eax
+	movl	%eax,_boothowto-SYSTEM
+	movl	8(%esp),%eax
+	movl	%eax,_bootdev-SYSTEM
+	movl	12(%esp),%eax
+	movl	%eax, _cyloffset-SYSTEM
+
+	/* count up memory */
+
 	xorl	%eax,%eax		# start with base memory at 0x0
-	movl	$(0xA0000/NBPG),%ecx	# look every 4K up to 640K
+	#movl	$ 0xA0000/NBPG,%ecx	# look every 4K up to 640K
+	movl	$ 0xA0,%ecx		# look every 4K up to 640K
 1:	movl	0(%eax),%ebx		# save location to check
 	movl	$0xa55a5aa5,0(%eax)	# write test pattern
 	cmpl	$0xa55a5aa5,0(%eax)	# does not check yet for rollover
@@ -145,10 +172,12 @@ start:				# This is assumed to be location zero!
 	movl	%ebx,0(%eax)		# restore memory
 	addl	$ NBPG,%eax
 	loop	1b
-2:	movl	%eax,_basemem-SYSTEM
+2:	shrl	$12,%eax
+	movl	%eax,_Maxmem-SYSTEM
 
 	movl	$0x100000,%eax		# next, talley remaining memory
-	movl	$((0xFA0000-0x100000)/NBPG),%ecx
+	#movl	$((0xFFF000-0x100000)/NBPG),%ecx
+	movl	$(0xFFF-0x100),%ecx
 1:	movl	0(%eax),%ebx		# save location to check
 	movl	$0xa55a5aa5,0(%eax)	# write test pattern
 	cmpl	$0xa55a5aa5,0(%eax)	# does not check yet for rollover
@@ -156,8 +185,8 @@ start:				# This is assumed to be location zero!
 	movl	%ebx,0(%eax)		# restore memory
 	addl	$ NBPG,%eax
 	loop	1b
-2:	movl	%eax,_abovemem-SYSTEM
-#endif notyet
+2:	shrl	$12,%eax
+	movl	%eax,_Maxmem-SYSTEM
 
 /* clear memory. */
 	movl	$_edata-SYSTEM,%edi
@@ -169,18 +198,45 @@ start:				# This is assumed to be location zero!
 	addl	$(UPAGES*NBPG)+NBPG+NBPG+NBPG,%ecx
 	#	txt+data+proc zero pt+u.
 	# any other junk?
-	addl	$ NBPG-1,%ecx
-	andl	$~(NBPG-1),%ecx
+	# addl	$ NBPG-1,%ecx
+	# andl	$~(NBPG-1),%ecx
 	# shrl	$2,%ecx	# convert to long word count
 	xorl	%eax,%eax	# pattern
 	cld
 	rep
 	stosb
 
+	/* pass parameters on stack (howto, bootdev, unit, cyloffset) */
+
+	movl	4(%esp),%eax
+	movl	%eax,_boothowto-SYSTEM
+	movl	8(%esp),%eax
+	movl	%eax,_bootdev-SYSTEM
+	movl	12(%esp),%eax
+	movl	%eax, _cyloffset-SYSTEM
+
+#ifdef notdef
+
+	movl	$0x36000,%edi
+	movl	$0x68000,%ecx
+	xorl	%eax,%eax	# pattern
+	cld
+	rep
+	stosb
+
+#endif
+	movl	$0x100000,%edi
+	movl	$0x200000,%ecx
+	xorl	%eax,%eax	# pattern
+	cld
+	rep
+	stosb
 /*
  * Map Kernel
  * N.B. don't bother with making kernel text RO, as 386
  * ignores R/W AND U/S bits on kernel access (only v works) !
+ *
+ * First step - build page tables
  */
 	movl	%esi,%ecx		# this much memory,
 	shrl	$ PGSHIFT,%ecx		# for this many pte s
@@ -196,7 +252,7 @@ start:				# This is assumed to be location zero!
 
 	movl	$1024,%ecx		# for this many pte s,
 	movl	$ PG_V,%eax		#  having these bits set,
-	movl	$_Forkmap-SYSTEM,%ebx	#   in the temporary page table,
+	movl	$_Sysmap+4096-SYSTEM,%ebx	#   in the temporary page table,
 					#    fill in kernel page table.
 1:	movl	%eax,0(%ebx)
 	addl	$ NBPG,%eax			# increment physical address
@@ -214,13 +270,15 @@ start:				# This is assumed to be location zero!
 	addl	$4,%ebx				# next pte
 	loop	1b
 
-/*# map proc 0's page table*/
+/* map proc 0's page table (P1 region) */
+
 	movl	$_Usrptmap-SYSTEM,%ebx	# get pt map address
 	lea	(0*NBPG)(%esi),%eax	# physical address of pt in proc 0
 	orl	$ PG_V,%eax		#  having these bits set,
 	movl	%eax,0(%ebx)
 
- /*# map proc 0's _u*/
+ /* map proc 0's _u */
+
 	movl	$ UPAGES,%ecx		# for this many pte s,
 	lea	(2*NBPG)(%esi),%eax	# physical address of _u in proc 0
 	orl	$ PG_V|PG_URKW,%eax	#  having these bits set,
@@ -235,11 +293,13 @@ start:				# This is assumed to be location zero!
  /*# map proc 0's page directory*/
 	lea	(1*NBPG)(%esi),%eax	# physical address of ptd in proc 0
 	movl	%eax,%edi		# remember ptd physical address
+#ifdef dubious
 	orl	$ PG_V|PG_URKW,%eax	#  having these bits set,
 	lea	(0*NBPG)(%esi),%ebx	# physical address of stack pt in proc 0
 	addl	$(UPTEOFF*4),%ebx
 	addl	$(UPAGES*4),%ebx
 	movl	%eax,0(%ebx)
+#endif
 
 /*
  * Construct a page table directory
@@ -256,7 +316,8 @@ start:				# This is assumed to be location zero!
 	addl	$4,%ebx				# next pde
 	loop	1b
 					# install a pde for temporary double map
-	movl	$_Forkmap-SYSTEM,%eax	# physical address of temp page table
+	movl	$_Sysmap+4096-SYSTEM,%eax	# physical address of temp page table
+	# movl	$_Sysmap-SYSTEM,%eax	# physical address of temp page table
 	orl	$ PG_V,%eax		# pde entry is valid
 	movl	%edi,%ebx		# phys address of ptd in proc 0
 	movl	%eax,0(%ebx)			# which is where temp maps!
@@ -266,15 +327,6 @@ start:				# This is assumed to be location zero!
 	movl	%edi,%ebx		# phys address of ptd in proc 0
 	addl	$(UPDROFF*4), %ebx	# offset of pde for kernel
 	movl	%eax,0(%ebx)		# which is where _u maps!
-
-#ifdef bug
-	movl	$_Sysmap-SYSTEM,%eax	# physical address of kernel page table
-	movl	$0x21,%ebx
-	shll	$2,%ebx
-	addl	%ebx,%eax
-	xorl	%ebx,%ebx
-	movl	%ebx,0(%eax)		# un validate offending pte
-#endif
 
 	movl	%edi,%eax		# phys address of ptd in proc 0
  # orl $0x80000000,%eax
@@ -312,9 +364,9 @@ begin:
 	fninit
 	pushl	$0x262
 	fldcw	0(%esp)
-	popl	%eax
-#ifdef FPUNOTYET
-#endif
+	popl	%ecx
+	fnsave	PCB_SAVEFPU(%eax)
+	movl	%edi,PCB_CR3(%eax)
 	pushl	%edi	# cr3
 	movl	%esi,%eax
 	addl	$(UPAGES*NBPG)+NBPG+NBPG+NBPG,%eax
@@ -345,6 +397,7 @@ begin:
 
 	.globl	__exit
 __exit:
+	call _reset_cpu
 	lidt	xaxa		# invalidate interrupt descriptor
 	movl	$0,%esp		# hardware "freeze" fault
 	ret
@@ -454,6 +507,23 @@ _blkclr:
 	ret
 
 	#
+	# fillw (pat,base,cnt)
+	#
+
+	.globl _fillw
+_fillw:
+	pushl	%edi
+	movl	8(%esp),%eax
+	movl	12(%esp),%edi
+	movl	16(%esp),%ecx
+	# xorl	%eax,%eax
+	cld
+	rep
+	stosw
+	popl	%edi
+	ret
+
+	#
 	# bcopy (src,dst,cnt)
 	# NOTE: does not (yet) handle overlapped copies
 	#
@@ -529,6 +599,21 @@ cpyflt: popl	%edi
 	movl	$ EFAULT,%eax
 	ret
 
+	# insb(port,addr,cnt)
+	.globl	_insb
+_insb:
+	pushl	%edi
+	movw	8(%esp),%dx
+	movl	12(%esp),%edi
+	movl	16(%esp),%ecx
+	cld
+	NOP
+	rep
+	insb
+	NOP
+	movl	%edi,%eax
+	popl	%edi
+	ret
 
 	# insw(port,addr,cnt)
 	.globl	_insw
@@ -614,7 +699,7 @@ _ltr:
 _load_cr3:
 _lcr3:
 	movl	4(%esp),%eax
- # orl $0x80000000,%eax
+ 	# orl	$0x80000000,%eax
 	movl	%eax,%cr3
 	movl	%cr3,%eax
 	ret
@@ -863,14 +948,16 @@ badsw:
  * Swtch()
  */
 ENTRY(swtch)
+	movl	_cpl,%eax
+	movl	%eax,_u+PCB_IML
 	movl	$1,%eax
 	movl	%eax,_noproc
 	incl	_cnt+V_SWTCH
 sw1:
+	cli
 	bsfl	_whichqs,%eax	# find a full q
 	jz	idle		# if none, idle
 swfnd:
-	# cli
 	btrl	%eax,_whichqs	# clear q full status
 	jnb	sw1		# if it was clear, look for another
 	pushl	%eax		# save which one we are using
@@ -900,8 +987,17 @@ sw2:
 	cmpb	$ SRUN,P_STAT(%ecx)
 	jne	badsw
 	movl	%eax,P_RLINK(%ecx)
-	# movl	P_ADDR(%ecx),%edx
-	movl	P_CR3(%ecx),%edx
+
+	movl	P_ADDR(%ecx),%edx
+	movl	(%edx),%eax
+	movl	%eax,_Swtchmap
+	movl	4(%edx),%eax
+	movl	%eax,_Swtchmap+4
+	movl	%cr3,%eax
+	movl	%eax,%cr3
+	movl	_Swtchbase+PCB_CR3,%edx
+
+ # pushal; pushl %edx ; pushl P_CR3(%ecx); pushl $l2; call _pg; popl %eax ; popl %eax; popl %eax ; popal ; .data ; l2: .asciz "s %x %x " ; .text
 
 /* switch to new process. first, save context as needed */
 	movl	$_u,%ecx
@@ -914,19 +1010,16 @@ sw2:
 	movl	%esi, PCB_ESI(%ecx)
 	movl	%edi, PCB_EDI(%ecx)
 
-#ifdef FPUNOTYET
-#endif
+	fsave	PCB_SAVEFPU(%ecx)
 
 	movl	_CMAP2,%eax		# save temporary map PTE
 	movl	%eax,PCB_CMAP2(%ecx)	# in our context
 
-
- # orl $0x80000000,%edx
 	movl	%edx,%cr3	# context switch
 
 	movl	$_u,%ecx
-	.globl	__gsel_tss
-	movw	__gsel_tss,%ax
+	# .globl	__gsel_tss
+	# movw	__gsel_tss,%ax
 	# ltr	%ax
 
 /* restore context */
@@ -938,8 +1031,7 @@ sw2:
 	movl	PCB_EIP(%ecx), %eax
 	movl	%eax, (%esp)
 
-#ifdef FPUNOTYET
-#endif
+	frstor	PCB_SAVEFPU(%ecx)
 
 	movl	PCB_CMAP2(%ecx),%eax	# get temporary map
 	movl	%eax,_CMAP2		# reload temporary map PTE
@@ -947,9 +1039,13 @@ sw2:
 #endif
 	cmpl	$0,PCB_SSWAP(%ecx)	# do an alternate return?
 	jne	res3			# yes, go reload regs
-	call	_spl0
-	# sti
+
+	pushl	PCB_IML(%ecx)
+	call	_splx
+	popl	%eax
+	movl	$0,%eax
 	ret
+
 res3:
 	xorl	%eax,%eax		# inline restore context
 	xchgl	PCB_SSWAP(%ecx),%eax	# addr of saved context, clear it
@@ -963,9 +1059,9 @@ res3:
 	movl	16(%eax),%edi		# restore edi
 	movl	20(%eax),%edx		# get rta
 	movl	%edx,(%esp)		# put in return frame
+	call	_spl0
 	xorl	%eax,%eax		# return (1);
 	incl	%eax
-	sti
 	ret
 
 /*
@@ -985,6 +1081,9 @@ ENTRY(resume)
 	movl	%edi, PCB_EDI(%ecx)
 #ifdef FPUNOTYET
 #endif
+	fsave	PCB_SAVEFPU(%ecx)
+	movl	_cpl,%eax
+	movl	%eax,PCB_IML(%ecx)
 	movl	$0,%eax
 	ret
 
