@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)interp.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <math.h>
@@ -131,11 +131,11 @@ interpreter(base)
 	 */
 	register char *tcp;
 	register short *tsp;
-	register long tl, tl1, tl2;
+	register long tl, tl1, tl2, tl3;
 	double td, td1;
 	struct sze8 t8;
 	register short *tsp1;
-	long *tlp, tl3;
+	long *tlp;
 	char *tcp1;
 	bool tb;
 	struct blockmark *tstp;
@@ -162,11 +162,13 @@ interpreter(base)
 	/*
 	 * set up global environment, then ``call'' the main program
 	 */
-	_display.frame[0].locvars = pushsp((long)(2 * sizeof(struct iorec *)));
+	STACKALIGN(tl, 2 * sizeof(struct iorec *));
+	_display.frame[0].locvars = pushsp(tl);
 	_display.frame[0].locvars += 2 * sizeof(struct iorec *);
 	*(struct iorec **)(_display.frame[0].locvars + OUTPUT_OFF) = OUTPUT;
 	*(struct iorec **)(_display.frame[0].locvars + INPUT_OFF) = INPUT;
-	stp = (struct blockmark *)pushsp((long)(sizeof(struct blockmark)));
+	STACKALIGN(tl, sizeof(struct blockmark));
+	stp = (struct blockmark *)pushsp(tl);
 	_dp = &_display.frame[0];
 	pc.cp = base;
 
@@ -202,7 +204,8 @@ interpreter(base)
 				enableovrflo();
 			pc.cp += (int)tl;	/* skip over proc hdr info */
 			stp->file = curfile;	/* save active file */
-			tcp = pushsp(tl1);	/* tcp = new top of stack */
+			STACKALIGN(tl2, tl1);
+			tcp = pushsp(tl2);	/* tcp = new top of stack */
 			if (_runtst)		/* zero stack frame */
 				blkclr(tcp, tl1);
 			tcp += (int)tl1;	/* offsets of locals are neg */
@@ -224,17 +227,20 @@ interpreter(base)
 			disableovrflo();
 			if (_runtst)
 				enableovrflo();
-			popsp(stp->entry->framesze +	/* pop local vars */
-			     sizeof(struct blockmark) +	/* pop stack frame */
-			     stp->entry->nargs);	/* pop parms */
+			STACKALIGN(tl, stp->entry->framesze);
+			STACKALIGN(tl1, sizeof(struct blockmark));
+			popsp(tl +		/* pop local vars */
+			     tl1 +		/* pop stack frame */
+			     stp->entry->nargs);/* pop parms */
 			continue;
 		case O_CALL:
 			tl = *pc.cp++;
-			tcp = base + *pc.lp++;/* calc new entry point */
-			tcp += sizeof(short);
-			tcp = base + *(long *)tcp;
-			stp = (struct blockmark *)
-				pushsp((long)(sizeof(struct blockmark)));
+			PCLONGVAL(tl1);
+			tcp = base + tl1 + sizeof(short);/* new entry point */
+			GETLONGVAL(tl1, tcp);
+			tcp = base + tl1;
+			STACKALIGN(tl1, sizeof(struct blockmark));
+			stp = (struct blockmark *)pushsp(tl1);
 			stp->lino = _lino;	/* save lino, pc, dp */
 			stp->pc = pc.cp;
 			stp->dp = _dp;
@@ -245,8 +251,8 @@ interpreter(base)
 			pc.cp++;
  			tcp = popaddr(); /* ptr to display save area */
 			tfp = (struct formalrtn *)popaddr();
-			stp = (struct blockmark *)
-				pushsp((long)(sizeof(struct blockmark)));
+			STACKALIGN(tl, sizeof(struct blockmark));
+			stp = (struct blockmark *)pushsp(tl);
 			stp->lino = _lino;	/* save lino, pc, dp */
 			stp->pc = pc.cp;
 			stp->dp = _dp;
@@ -269,17 +275,19 @@ interpreter(base)
 				blkcpy(tcp, tcp + sizeof(struct formalrtn *)
 				    + sizeof(char *), tl);
 			}
- 			popsp((long)
- 			    (sizeof(struct formalrtn *) + sizeof (char *)));
+			STACKALIGN(tl,
+				sizeof(struct formalrtn *) + sizeof (char *));
+ 			popsp(tl);
  			blkcpy(tcp1, &_display.frame[1],
 			    tfp->fbn * sizeof(struct dispsave));
 			continue;
 		case O_FSAV:
 			tfp = (struct formalrtn *)popaddr();
 			tfp->fbn = *pc.cp++;	/* blk number of routine */
-			tcp = base + *pc.lp++;	/* calc new entry point */
-			tcp += sizeof(short);
-			tfp->fentryaddr = (long (*)())(base + *(long *)tcp);
+			PCLONGVAL(tl);
+			tcp = base + tl + sizeof(short);/* new entry point */
+			GETLONGVAL(tl, tcp);
+			tfp->fentryaddr = (long (*)())(base + tl);
 			blkcpy(&_display.frame[1], &tfp->fdisp[0],
 				tfp->fbn * sizeof(struct dispsave));
 			pushaddr(tfp);
@@ -302,12 +310,14 @@ interpreter(base)
 			continue;
 		case O_TRA4:
 			pc.cp++;
-			pc.cp = base + *pc.lp;
+			PCLONGVAL(tl);
+			pc.cp = base + tl;
 			continue;
 		case O_GOTO:
 			tstp = _display.frame[*pc.cp++].stp; /* ptr to
 								exit frame */
-			pc.cp = base + *pc.lp;
+			PCLONGVAL(tl);
+			pc.cp = base + tl;
 			stp = _dp->stp;
 			while (tstp != stp) {
 				if (_dp == &_display.frame[1])
@@ -336,11 +346,11 @@ interpreter(base)
 		case O_PUSH:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
-			tl = (-tl + 1) & ~1;
-			tcp = pushsp(tl);
+				PCLONGVAL(tl);
+			STACKALIGN(tl1, -tl);
+			tcp = pushsp(tl1);
 			if (_runtst)
-				blkclr(tcp, tl);
+				blkclr(tcp, tl1);
 			continue;
 		case O_IF:
 			pc.cp++;
@@ -393,7 +403,7 @@ interpreter(base)
 		case O_RELG:
 			tl2 = *pc.cp++;		/* tc has jump opcode */
 			tl = *pc.usp++;		/* tl has comparison length */
-			tl1 = (tl + 1) & ~1;	/* tl1 has arg stack length */
+			STACKALIGN(tl1, tl);	/* tl1 has arg stack length */
 			tcp = pushsp((long)(0));/* tcp pts to first arg */
 			switch (tl2) {
 			case releq:
@@ -448,7 +458,8 @@ interpreter(base)
 				ERROR("Panic: bad relation %d to RELT*\n", tl2);
 				break;
 			}
-			popsp(tl1 << 1);
+			STACKALIGN(tl, tl1);
+			popsp(tl << 1);
 			push2((short)(tb));
 			continue;
 		case O_REL28:
@@ -561,7 +572,7 @@ interpreter(base)
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.usp++;
-			tl1 = (tl + 1) & ~1;
+			STACKALIGN(tl1, tl);
 			tcp = pushsp((long)(0));
 			blkcpy(tcp, *(char **)(tcp + tl1), tl);
 			popsp(tl1 + sizeof(char *));
@@ -1001,7 +1012,8 @@ interpreter(base)
 			tcp = _display.raw[*pc.ucp++];
 			tcp += *pc.sp++;
 			tl = *pc.usp++;
-			tcp1 = pushsp((tl + 1) & ~1);
+			STACKALIGN(tl1, tl);
+			tcp1 = pushsp(tl1);
 			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_LV:
@@ -1010,38 +1022,47 @@ interpreter(base)
 			continue;
 		case O_LRV1:
 			tcp = _display.raw[*pc.ucp++];
-			push2((short)(*(tcp + *pc.lp++)));
+			PCLONGVAL(tl);
+			push2((short)(*(tcp + tl)));
 			continue;
 		case O_LRV14:
 			tcp = _display.raw[*pc.ucp++];
-			push4((long)(*(tcp + *pc.lp++)));
+			PCLONGVAL(tl);
+			push4((long)(*(tcp + tl)));
 			continue;
 		case O_LRV2:
 			tcp = _display.raw[*pc.ucp++];
-			push2(*(short *)(tcp + *pc.lp++));
+			PCLONGVAL(tl);
+			push2(*(short *)(tcp + tl));
 			continue;
 		case O_LRV24:
 			tcp = _display.raw[*pc.ucp++];
-			push4((long)(*(short *)(tcp + *pc.lp++)));
+			PCLONGVAL(tl);
+			push4((long)(*(short *)(tcp + tl)));
 			continue;
 		case O_LRV4:
 			tcp = _display.raw[*pc.ucp++];
-			push4(*(long *)(tcp + *pc.lp++));
+			PCLONGVAL(tl);
+			push4(*(long *)(tcp + tl));
 			continue;
 		case O_LRV8:
 			tcp = _display.raw[*pc.ucp++];
-			pushsze8(*(struct sze8 *)(tcp + *pc.lp++));
+			PCLONGVAL(tl);
+			pushsze8(*(struct sze8 *)(tcp + tl));
 			continue;
 		case O_LRV:
 			tcp = _display.raw[*pc.ucp++];
-			tcp += (int)*pc.lp++;
+			PCLONGVAL(tl);
+			tcp += tl;
 			tl = *pc.usp++;
-			tcp1 = pushsp((tl + 1) & ~1);
+			STACKALIGN(tl1, tl);
+			tcp1 = pushsp(tl1);
 			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_LLV:
 			tcp = _display.raw[*pc.ucp++];
-			pushaddr(tcp + *pc.lp++);
+			PCLONGVAL(tl);
+			pushaddr(tcp + tl);
 			continue;
 		case O_IND1:
 			pc.cp++;
@@ -1072,7 +1093,8 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.usp++;
 			tcp = popaddr();
-			tcp1 = pushsp((tl + 1) & ~1);
+			STACKALIGN(tl1, tl);
+			tcp1 = pushsp(tl1);
 			blkcpy(tcp, tcp1, tl);
 			continue;
 		case O_CON1:
@@ -1091,18 +1113,21 @@ interpreter(base)
 			continue;
 		case O_CON4:
 			pc.cp++;
-			push4(*pc.lp++);
+			PCLONGVAL(tl);
+			push4(tl);
 			continue;
 		case O_CON8:
 			pc.cp++;
-			push8(*pc.dbp++);
+			tcp = pushsp(sizeof(double));
+			blkcpy(pc.cp, tcp, sizeof(double));
+			pc.dbp++;
 			continue;
 		case O_CON:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.usp++;
-			tl = (tl + 1) & ~1;
-			tcp = pushsp(tl);
+			STACKALIGN(tl1, tl);
+			tcp = pushsp(tl1);
 			blkcpy(pc.cp, tcp, tl);
 			pc.cp += (int)tl;
 			continue;
@@ -1110,7 +1135,7 @@ interpreter(base)
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.usp++;
-			tl1 = (tl + 1) & ~1;
+			STACKALIGN(tl1, tl);
 			tcp = pushsp(tl1);
 			blkcpy(pc.cp, tcp, tl1);
 			pc.cp += (int)((tl + 2) & ~1);
@@ -1119,8 +1144,8 @@ interpreter(base)
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.usp++;
-			tl = (tl + 1) & ~1;
 			pushaddr(pc.cp);
+			tl = (tl + 1) & ~1;
 			pc.cp += (int)tl;
 			continue;
 		case O_RANG2:
@@ -1154,28 +1179,30 @@ interpreter(base)
 		case O_RANG4:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop4();
-			push4(RANG4(tl1, tl, *pc.lp++));
+			PCLONGVAL(tl2);
+			push4(RANG4(tl1, tl, tl2));
 			continue;
 		case O_RANG24:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop2();
-			push2((short)(RANG4(tl1, tl, *pc.lp++)));
+			PCLONGVAL(tl2);
+			push2((short)(RANG4(tl1, tl, tl2)));
 			continue;
 		case O_RSNG4:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop4();
 			push4(RSNG4(tl1, tl));
 			continue;
 		case O_RSNG24:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop2();
 			push2((short)(RSNG4(tl1, tl)));
 			continue;
@@ -1202,8 +1229,10 @@ interpreter(base)
 			continue;
 		case O_PXPBUF:
 			pc.cp++;
-			_cntrs = *pc.lp++;
-			_rtns = *pc.lp++;
+			PCLONGVAL(tl);
+			_cntrs = tl;
+			PCLONGVAL(tl);
+			_rtns = tl;
 			NEW(&_pcpcount, (_cntrs + 1) * sizeof(long));
 			blkclr(_pcpcount, (_cntrs + 1) * sizeof(long));
 			continue;
@@ -1233,25 +1262,27 @@ interpreter(base)
 			tsp1 = tsp;		/* tsp1 = ptr to case values */
 			tl1 = (unsigned short)pop2();/* tl1 = element to find */
 			for(; tl > 0; tl--)	/* look for element */
-				if (tl1 == *tsp1++)
+				if (tl1 == *tsp++)
 					break;
 			if (tl == 0)		/* default case => error */
 				CASERNG(tl1);
-			pc.cp += *(tsp - tl);
+			pc.cp += *(tsp1 - tl);
 			continue;
 		case O_CASE4OP:
 			tl = *pc.cp++;		/* tl = number of cases */
 			if (tl == 0)
 				tl = *pc.usp++;
-			tsp = pc.sp + tl;	/* ptr to end of jump table */
-			tlp = (long *)tsp;	/* tlp = ptr to case values */
+			tsp1 = pc.sp + tl;	/* ptr to end of jump table */
+			tlp = (long *)tsp1;	/* tlp = ptr to case values */
 			tl1 = pop4();		/* tl1 = element to find */
-			for(; tl > 0; tl--)	/* look for element */
-				if (tl1 == *tlp++)
+			for(; tl > 0; tl--) {	/* look for element */
+				GETLONGVAL(tl2, tlp++);
+				if (tl1 == tl2)
 					break;
+			}
 			if (tl == 0)		/* default case => error */
 				CASERNG(tl1);
-			pc.cp += *(tsp - tl);
+			pc.cp += *(tsp1 - tl);
 			continue;
 		case O_ADDT:
 			tl = *pc.cp++;		/* tl has comparison length */
@@ -1388,7 +1419,8 @@ interpreter(base)
 			continue;
 		case O_READE:
 			pc.cp++;
-			push2((short)(READE(curfile, base + *pc.lp++)));
+			PCLONGVAL(tl);
+			push2((short)(READE(curfile, base + tl)));
 			continue;
 		case O_READ4:
 			pc.cp++;
@@ -1472,7 +1504,8 @@ interpreter(base)
 		case O_NAM:
 			pc.cp++;
 			tl = pop4();
-			pushaddr(NAM(tl, base + *pc.lp++));
+			PCLONGVAL(tl1);
+			pushaddr(NAM(tl, base + tl1));
 			continue;
 		case O_MAX:
 			tl = *pc.cp++;
@@ -1622,7 +1655,7 @@ interpreter(base)
 			continue;
 		case O_UNDEF:
 			pc.cp++;
-			pop8();
+			td = pop8();
 			push2((short)(0));
 			continue;
 		case O_ATAN:
@@ -1715,10 +1748,11 @@ interpreter(base)
 		case O_SUCC4:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop4();
 			if (_runtst) {
-				push4(SUCC(tl1, tl, (long)(*pc.lp++)));
+				PCLONGVAL(tl2);
+				push4(SUCC(tl1, tl, (long)(tl2)));
 				continue;
 			}
 			push4(tl1 + 1);
@@ -1751,10 +1785,11 @@ interpreter(base)
 		case O_PRED4:
 			tl = *pc.cp++;
 			if (tl == 0)
-				tl = *pc.lp++;
+				PCLONGVAL(tl);
 			tl1 = pop4();
 			if (_runtst) {
-				push4(PRED(tl1, tl, (long)(*pc.lp++)));
+				PCLONGVAL(tl2);
+				push4(PRED(tl1, tl, (long)(tl2)));
 				continue;
 			}
 			push4(tl1 - 1);
