@@ -1,4 +1,4 @@
-/*	dip.c	1.6	(Berkeley)	84/01/03
+/*	dip.c	1.7	(Berkeley)	84/03/14
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -300,7 +300,8 @@ register FILE *fp;
 			put1s(str);
 			break;
 		case 'D':	/* draw function */
-			fgets(buf, sizeof(buf), fp);
+			if (fgets(buf, sizeof(buf), fp) == NULL)
+			    error(FATAL, "unexpected end of input");
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
@@ -382,13 +383,12 @@ register FILE *fp;
 			t_page(n);
 			break;
 		case 'n':	/* end of line */
-			while (getc(fp) != '\n')
-				;
 			hpos = 0;
-			break;
+
 		case '#':	/* comment */
-			while (getc(fp) != '\n')
-				;
+			do
+				c = getc(fp);
+			while (c != '\n' && c != EOF);
 			break;
 		case 'x':	/* device control */
 			if (devcntrl(fp)) return;
