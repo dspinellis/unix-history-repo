@@ -1,0 +1,34 @@
+#!/bin/csh 
+# csh script to configure lisp
+# use:
+#	lispconf type
+# where type is one of
+#    vax_4_1 vax_4_1a vax_4_1c
+#    vax_eunice_vms sun_4_1c sun_unisoft dual_unisoft
+#
+if ($#argv == 1) then
+  set argument = $argv[1]
+else  
+  set argument = junk
+endif
+
+switch ($argument)
+ case vax_4_1:
+ case vax_4_1a:
+ case vax_4_1c:
+ case vax_eunice_vms:
+ case sun_4_1c: 
+ case sun_unisoft:
+ case dual_unisoft:
+	rm -f franz/h/lconf.h
+	echo "/* this file created by ../../lispconf */" > franz/h/lconf.h
+	echo "#define $argv[1] 1" >> franz/h/lconf.h
+	breaksw
+ default:
+  echo "use: lispconf type"
+  echo " where type is one of "
+  echo " vax_4_1 vax_4_1a vax_4_1c"
+  echo " vax_eunice_vms "
+  echo " sun_4_1c sun_unisoft  dual_unisoft"
+  exit 1
+endsw 
