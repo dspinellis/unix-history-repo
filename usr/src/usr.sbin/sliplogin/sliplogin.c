@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sliplogin.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sliplogin.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,18 +41,14 @@ static char sccsid[] = "@(#)sliplogin.c	5.2 (Berkeley) %G%";
  * /etc/hosts.slip file and if found fd0 is configured as in case 1.
  */
 
-#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/signal.h>
 #include <sys/file.h>
 #include <sys/syslog.h>
-#include <stdio.h>
-#include <errno.h>
-#include <ctype.h>
 #include <netdb.h>
-#include <signal.h>
-#include <string.h>
+
 #if defined(BSD4_4)
 #define TERMIOS
 #endif
@@ -64,17 +60,14 @@ static char sccsid[] = "@(#)sliplogin.c	5.2 (Berkeley) %G%";
 #include <net/if.h>
 #include <net/if_slvar.h>
 
-#ifndef ACCESSFILE
-#define ACCESSFILE "/etc/slip.hosts"
-#endif
-#ifndef LOGINFILE
-#define LOGINFILE "/etc/slip.login"
-#define LOGOUTFILE "/etc/slip.logout"
-#endif
-
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+#include <string.h>
+#include "pathnames.h"
 
 int	unit;
-int     slip_mode;
+int	slip_mode;
 int	speed;
 char	loginargs[BUFSIZ];
 char	loginfile[BUFSIZ];
@@ -104,13 +97,13 @@ findid(name)
 	int i, j, n;
 
 	(void)strcpy(loginname, name);
-	if ((fp = fopen(ACCESSFILE, "r")) == NULL) {
-		perror(ACCESSFILE);
-		syslog(LOG_ERR, "%s: %m\n", ACCESSFILE);
-		exit(3);
+	if ((fp = fopen(_PATH_ACCESS, "r")) == NULL) {
+		(void)fprintf(stderr, "sliplogin: %s: %s\n",
+		    _PATH_ACCESS, strerror(errno));
+		syslog(LOG_ERR, "%s: %m\n", _PATH_ACCESS);
+		exit(1);
 	}
 	while (fgets(loginargs, sizeof(loginargs) - 1, fp)) {
-
 		if (ferror(fp))
 			break;
 		n = sscanf(loginargs, "%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s%*[ \t]%15s\n",
@@ -138,20 +131,20 @@ findid(name)
 		 * one specific to this host.  If none found, try for
 		 * a generic one.
 		 */
-		(void)sprintf(loginfile, "%s.%s", LOGINFILE, name);
+		(void)sprintf(loginfile, "%s.%s", _PATH_LOGIN, name);
 		if (access(loginfile, R_OK|X_OK)) {
-			(void)strcpy(loginfile, LOGINFILE);
-			(void)strcpy(logoutfile, LOGOUTFILE);
+			(void)strcpy(loginfile, _PATH_LOGIN);
+			(void)strcpy(logoutfile, _PATH_LOGOUT);
 			if (access(loginfile, R_OK|X_OK)) {
 				fputs("access denied - no login file\n",
 				      stderr);
 				syslog(LOG_ERR,
 				       "access denied for %s - no %s\n",
-				       name, LOGINFILE);
+				       name, _PATH_LOGIN);
 				exit(5);
 			}
 		} else
-			(void)sprintf(logoutfile, "%s.%s", LOGOUTFILE, name);
+			(void)sprintf(logoutfile, "%s.%s", _PATH_LOGOUT, name);
 
 		(void) fclose(fp);
 		return;
