@@ -6,7 +6,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)ns.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -40,11 +40,11 @@ static char sccsid[] = "@(#)ns.c	5.3 (Berkeley) %G%";
 struct	nspcb nspcb;
 struct	sppcb sppcb;
 struct	socket sockb;
-struct	protosw proto;
 extern	int kmem;
 extern	int Aflag;
 extern	int aflag;
 extern	int nflag;
+extern	char *plural();
 char *ns_prpr();
 
 static	int first = 1;
@@ -68,18 +68,17 @@ nsprotopr(off, name)
 		return;
 	isspp = strcmp(name, "spp") == 0;
 	klseek(kmem, off, 0);
-	read(kmem, &cb, sizeof (struct nspcb));
+	read(kmem, (char *)&cb, sizeof (struct nspcb));
 	nspcb = cb;
 	prev = (struct nspcb *)off;
 	if (nspcb.nsp_next == (struct nspcb *)off)
 		return;
 	for (;nspcb.nsp_next != (struct nspcb *)off; prev = next) {
-		char *cp;
 		off_t ppcb;
 
 		next = nspcb.nsp_next;
 		klseek(kmem, (off_t)next, 0);
-		read(kmem, &nspcb, sizeof (nspcb));
+		read(kmem, (char *)&nspcb, sizeof (nspcb));
 		if (nspcb.nsp_prev != prev) {
 			printf("???\n");
 			break;
@@ -88,12 +87,12 @@ nsprotopr(off, name)
 			continue;
 		}
 		klseek(kmem, (off_t)nspcb.nsp_socket, 0);
-		read(kmem, &sockb, sizeof (sockb));
+		read(kmem, (char *)&sockb, sizeof (sockb));
 		ppcb = (off_t) nspcb.nsp_pcb;
 		if (ppcb) {
 			if (isspp) {
 				klseek(kmem, ppcb, 0);
-				read(kmem, &sppcb, sizeof (sppcb));
+				read(kmem, (char *)&sppcb, sizeof (sppcb));
 			} else continue;
 		} else
 			if (isspp) continue;
@@ -119,7 +118,7 @@ nsprotopr(off, name)
 		printf(" %-22.22s", ns_prpr(&nspcb.nsp_faddr));
 		if (isspp) {
 			extern char *tcpstates[];
-			if (sppcb.s_state < 0 || sppcb.s_state >= TCP_NSTATES)
+			if (sppcb.s_state >= TCP_NSTATES)
 				printf(" %d", sppcb.s_state);
 			else
 				printf(" %s", tcpstates[sppcb.s_state]);
@@ -168,6 +167,7 @@ idp_stats(off, name)
 		return;
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&idpstat, sizeof (idpstat));
+	printf("%s:\n", name);
 	ANY(idpstat.idps_toosmall, "packet", " smaller than a header");
 	ANY(idpstat.idps_tooshort, "packet", " smaller than advertised");
 	ANY(idpstat.idps_badsum, "packet", " with bad checksums");
@@ -187,6 +187,7 @@ static	char *((ns_errnames[])[2]) = {
 /*
  * Dump NS Error statistics structure.
  */
+/*ARGSUSED*/
 nserr_stats(off, name)
 	off_t off;
 	char *name;

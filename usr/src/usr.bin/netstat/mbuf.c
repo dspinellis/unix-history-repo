@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -59,7 +59,7 @@ mbpr(mbaddr)
 		return;
 	}
 	klseek(kmem, mbaddr, 0);
-	if (read(kmem, &mbstat, sizeof (mbstat)) != sizeof (mbstat)) {
+	if (read(kmem, (char *)&mbstat, sizeof (mbstat)) != sizeof (mbstat)) {
 		printf("mbstat: bad read\n");
 		return;
 	}
