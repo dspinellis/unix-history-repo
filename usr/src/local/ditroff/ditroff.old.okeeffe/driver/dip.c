@@ -1,4 +1,4 @@
-/*	dip.c	1.11	(Berkeley)	84/06/01
+/*	dip.c	1.12	(Berkeley)	85/10/29
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -898,12 +898,13 @@ FILE *fp;
 /*----------------------------------------------------------------------------*
  | Routine:	getfontdata ( font, size )
  |
- | Results:	returns the family number of the font/size found.  The font
- |		information pointer, fs, is set to point to data for "font"
- |		at point size "size".  If no information for that font is
- |		available, the info is read in from the appropriate font file.
- |		The table "fontdata" holds all the fonts, and it is cleared
- |		of a random font/size if necessary.
+ | Results:	returns the family number of the font/size found.  If the
+ |		particular point size requested is not found, other sizes are
+ |		searched for.  The font information pointer, fs, is set to
+ |		point to data for "font" at point size "size".  If no infor-
+ |		mation for that font is available, the info is read in from
+ |		the appropriate font file.  The table "fontdata" holds all the
+ |		fonts, and it is cleared of a random font/size if necessary.
  *----------------------------------------------------------------------------*/
 
 int getfontdata(f, s)
@@ -934,10 +935,27 @@ int s;
 		free(fs->glyph);
 		free(fs->cdp);
 	}
-					/* open font file */
-	sprintf(name, "%s/%s.%d", bitdir, fontname[f], pstab[s]);
-	if ((fd = fopen(name, "r")) == NULL)
-		error(FATAL, "can't open %s", name);
+
+	bitbase = s;
+			/* try to open font file - if unsuccessful, hunt for */
+			/* a file of same style, different size to substitute */
+	i = -1;	 /* direction to look in pstab (smaller first) */
+	do {
+	    sprintf(name, "%s/%s.%d", bitdir, fontname[f], pstab[bitbase]);
+	    fd = fopen(name, "r");
+	    if (fd == NULL) {		/* File wasn't found. Try another ps */
+		bitbase += i;
+		if (bitbase < 0) {	/* past beginning - look higher */
+		    i = 1;
+		    bitbase = s + i;
+		}
+		if (bitbase > nsizes)	/* past top - forget it */
+		    i = 0;
+	    }
+	} while (fd == NULL && i != 0);
+
+	if (fd == NULL)			/* completely unsuccessful */
+		error(FATAL,"can't open %s/%s.%d",bitdir,fontname[f],pstab[s]);
 						/* check for proper file mark */
 	for(i = 0; i < FMARK; filemark[i++] = getc(fd));
 	if (strncmp(filemark, "Rast", 4))
