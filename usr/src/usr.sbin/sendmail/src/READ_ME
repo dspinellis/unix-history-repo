@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.90 (Berkeley) %G%
+#	@(#)READ_ME	8.91 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -606,8 +606,8 @@ Solaris 2.x (SunOS 5.x)
 
 Ultrix
 	By default, the IDENT protocol is turned off on Ultrix.  If you
-	are running Ultrix 4.4 or later, or if you have gotten a patch
-	the TCP problem for an earlier version of Ultrix, you can turn
+	are running Ultrix 4.4 or later, or if you have included patch
+	CXO-8919 for Ultrix 4.2 or 4.3 to fix the TCP problem, you can turn
 	IDENT on in the configuration file by setting the "ident" timeout
 	to 30 seconds.
 
@@ -1023,4 +1023,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.90, last update %G% 08:54:14)
+(Version 8.91, last update %G% 07:55:31)
