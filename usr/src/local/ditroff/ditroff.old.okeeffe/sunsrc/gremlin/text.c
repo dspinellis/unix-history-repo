@@ -1,5 +1,5 @@
 /*
- * @(#)text.c	1.1	%G%
+ * @(#)text.c	1.2	%G%
  *
  * Text subwindow routines for the SUN Gremlin picture editor.
  *
@@ -17,6 +17,8 @@
 extern struct pixwin *text_pw;
 extern struct rect text_size;
 extern TOOLINSTALLED;
+extern (*lastcommand)();
+extern lasttext;
 
 /* imports from long.c */
 
@@ -45,8 +47,9 @@ struct pixfont *text_pf;
 #define text_width  (text_pf->pf_defaultsize.x)
 #define text_height  (text_pf->pf_defaultsize.y)
 
-static char text_buf[TEXT_BUFMAX];
-static char mesg_buf[TEXT_BUFMAX];
+static char text_buf[TEXT_BUFMAX] = "";
+static char mesg_buf[TEXT_BUFMAX] = "";
+static char save_buf[TEXT_BUFMAX] = "";
 static char text_erase;
 static char text_kill;
 static char text_erase_word;
@@ -112,8 +115,11 @@ register c;
 	text_cursor(PIX_SRC);
     }
 
-    else if (c == RETURN)	/* new text entry method */
+    else if (c == RETURN) {	/* new text entry method */
+	lastcommand = LGTextSW;
+	lasttext = TRUE;
 	LGTextSW();
+    }
 }
 
 
@@ -125,6 +131,7 @@ register char *s;
     while (text_buf[i] == ' ')
 	i++;
 
+    (void) strcpy(save_buf, &text_buf[i]);
     (void) strcpy(s, &text_buf[i]);
 }
 
@@ -141,6 +148,17 @@ text_putvalue()
 }
 
 
+text_restorebuf()
+{
+    register char *s;
+
+    TxKillLine();
+    s = save_buf;
+    while (*s)
+	text_output(*s++);
+}
+
+
 text_left(ie)
 register struct inputevent *ie;
 {
@@ -152,6 +170,7 @@ text_middle(ie)
 register struct inputevent *ie;
 {
     TxMsgOK();
+    text_restorebuf();
 }
 
 
@@ -197,7 +216,6 @@ TxInit()
 /*
  * This routine marks it OK to output messages again
  * just as if a button had been pressed.
- * mro 7/14/84
  */
 TxMsgOK()
 {
@@ -210,11 +228,10 @@ TxMsgOK()
 
 
 /*
- * TPutMsg outputs a one line message into the text subwindow.
+ * Output a one line message into the text subwindow.
  * If the message follows another without intervening user input,
  * the prompt "More" is output and we wait for a button input event
  * before displaying the new message.
- * mro 9/10/84
  */
 TxPutMsg(msg)
 register char *msg;

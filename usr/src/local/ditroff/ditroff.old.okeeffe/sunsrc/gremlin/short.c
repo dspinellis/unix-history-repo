@@ -1,5 +1,5 @@
 /*
- * @(#)short.c	1.1	%G%
+ * @(#)short.c	1.2	%G%
  *
  * Routines for the "short" commands of the SUN Gremlin picture editor.
  *
@@ -74,6 +74,7 @@ extern help();
 extern TxMsgOK();
 extern TxPutMsg();
 extern text_putvalue();
+extern text_restorebuf();
 
 /* imports from C */
 
@@ -97,9 +98,11 @@ extern GravityOn;                   /* gravity mode flag             */
 extern CHANGED;                     /* PICTURE changed flag          */
 extern CsetOn;			    /* current set displayed on	     */
 
+extern (*lastcommand)();	    /* previous command */
+extern lasttext;		    /* TRUE if previous command wants text */
 extern struct pixwin *pix_pw;
 
-extern SHUpdate(), SHDrawArc(), SHDrawCurve(), SHCopy(),
+extern SHUpdate(), SHAgain(), SHDrawArc(), SHDrawCurve(), SHCopy(),
        SHDefineSet(), SHErase(), SHSetArea(), SHGravity(),
        SHGrid(), SHRotate(), SHScale(), SHTranslate(),
        SHDrawVector(), SHMAdjust(), SHBox(), SHArrow(),
@@ -116,12 +119,13 @@ static char noset[15] = "no current set";
  * The following two arrays define the short commands and the routines
  * that process them.
  */
-static char shcmds[] = { '\14', '1', '2', '3', '4', '?', 'a', 'b',
+static char shcmds[] = { '\14', '.', '1', '2', '3', '4', '?', 'a', 'b',
                           'c', 'd', 'e', 'f', 'g', 'q', 'r',
                           's', 't', 'u', 'v', 'w', 'x', 'z', '\0'};
 
 static (*(shrtns[]))() = {
     SHUpdate,			/* redraw screen */
+    SHAgain,			/* repeat last command */
     SHSave1,                    /* save user symbol */
     SHSave2,                    /* save user symbol */
     SHSave3,                    /* save user symbol */
@@ -185,11 +189,23 @@ register char *command;
 
     if (index >= 0) {
 	GRCurrentSetOn();
+	TxMsgOK();
 	(*(shrtns[index]))();
     }
     else
 	error("no such command");
 }  /* end SHCommand */
+
+
+/*
+ * Repeat previous command.
+ */
+SHAgain()
+{
+    if (lasttext)
+	text_restorebuf();
+    (*lastcommand)();
+}
 
 
 /*
@@ -312,7 +328,7 @@ SHDrawArc()
 
 
 /*
- * mro 8/20/84
+ * Draw curve object.
  */
 SHDrawCurve()
 {
@@ -398,8 +414,7 @@ SHGravity()
 
 
 /*
- * This routine toggles the display of the grid 
- * mro 7/19/84
+ * This routine toggles the display of the grid.
  */
 SHGrid()
 {
@@ -413,7 +428,6 @@ SHGrid()
 /*
  * Manhattan Adjust -
  * This routine toggles the adjustment mode.
- * mro 7/23/84
  */
 SHMAdjust()
 {
@@ -755,7 +769,6 @@ SHScale()
 /*
  * This routine redraws the graphics screen by clearing the screen ,
  * redisplaying the menu and adding each element back to the display.
- * mro 7/18/84
  */
 SHUpdate()
 {

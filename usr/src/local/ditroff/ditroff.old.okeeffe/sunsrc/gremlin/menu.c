@@ -1,5 +1,5 @@
 /*
- * @(#)menu.c	1.1	%G%
+ * @(#)menu.c	1.2  %G%
  *
  * Menu subwindow routines for the SUN Gremlin picture editor.
  *
@@ -42,7 +42,14 @@ extern ELT *MEN[];
 extern SymbolicLines;
 extern FLASH_READY;
 
-static lastint;			/* to save previous command */
+extern (*lastcommand)();	/* previous command */
+extern lasttext;		/* TRUE if previous cmd uses text input */
+
+/* forward references */
+
+extern align_up();
+extern align_down();
+
 
 #define M_CLEAR_POINTS (caddr_t) 1
 #define M_SHOW_POINTS (caddr_t) 2
@@ -127,7 +134,7 @@ extern justify_help(), help(), horizontal_help(), vertical_help(),
 
 extern LGBrush1(), LGBrush2(), LGBrush3(), 
        LGBrush4(), LGBrush5(), LGBrush6(),
-       LGClearpoints(), LGPath(), LGEdit(),
+       LGClearPoints(), LGPath(), LGEdit(),
        LGFont1(), LGFont2(), LGFont3(), LGFont4(), 
        LGGet1(), LGGet2(), LGGet3(), LGGet4(), 
        LGGripe(), LGHMirror(), 
@@ -514,7 +521,6 @@ int HiLineStyle = M_LINESTYLE;
 /*
  * This routine initializatizes the positioning of menu items -
  * currently only necessary for the justify icon.
- * mro 7/18/84
  */
 MNInitMenu()
 {
@@ -557,27 +563,8 @@ MNInitMenu()
 }  /* end MNInitMenu */
 
 
-#ifdef nowextern
-/*
- * draw box with upper left corner at (x0, y0)
- * lower right corner at (x1, y1);
- */
-pw_box(pw, x0, y0, x1, y1, op, value)
-struct pixwin *pw;
-register x0, y0, x1, y1;
-int op, value;
-{
-    pw_vector(pw, x0, y0, x1, y0, op, value);
-    pw_vector(pw, x1, y0, x1, y1, op, value);
-    pw_vector(pw, x1, y1, x0, y1, op, value);
-    pw_vector(pw, x0, y1, x0, y0, op, value);
-}
-#endif
-
-
 /*
  * This routine displays the menu defined by initmenu
- * mro 7/18/84
  */
 MNDisplayMenu()
 {
@@ -660,10 +647,12 @@ register struct inputevent *ie;
     register index;
 
     TxMsgOK();
+    lasttext = FALSE;
 
     if ((index = icon_last) >= 0) {
 	if (index == M_ALIGN) {
-	    menu_align(TRUE);
+	    lastcommand = align_up;
+	    align_up();
 	    return;
 	}
 
@@ -682,7 +671,11 @@ register struct inputevent *ie;
 	    return;
 	}
 
-	(*(menu[index].menu_function))();
+	lastcommand = menu[index].menu_function;
+	if (index == M_TEXT)
+	    lasttext = TRUE;
+	(*lastcommand)();
+	/* (*(menu[index].menu_function))(); */
 	FLASH_READY = 0;	/* don't flash; it may have taken a while */
 	return;
     }
@@ -716,10 +709,12 @@ register struct inputevent *ie;
     register index;
 
     TxMsgOK();
+    lasttext = FALSE;
 
     if ((index = icon_last) >= 0) {
 	if (index == M_ALIGN) {
-	    menu_align(FALSE);
+	    lastcommand = align_down;
+	    align_down();
 	    return;
 	}
 
@@ -728,7 +723,11 @@ register struct inputevent *ie;
 	MNReverse(index);
 	icon_last = -1;
 
-	(*(menu[index].menu_modify))();
+	lastcommand = menu[index].menu_modify;
+	(*lastcommand)();
+	if (index == M_TEXT)
+	    lasttext = TRUE;
+	/* (*(menu[index].menu_modify))(); */
 	FLASH_READY = 0;	/* don't flash; it may have taken a while */
 	return;
     }
@@ -794,6 +793,24 @@ register struct inputevent *ie;
 }
 
 
+/*
+ * Move align to next higher value.
+ */
+align_up()
+{
+    menu_align(TRUE);
+}
+
+
+/*
+ * Move align to next lower value.
+ */
+align_down()
+{
+    menu_align(FALSE);
+}
+
+
 #define ALIGNMAX 512
 menu_align(up)
 int up;
@@ -834,23 +851,25 @@ register struct inputevent *ie;
 
     switch (item->mi_data) {
 	case M_EDIT:
-	    LGEdit();
+	    lastcommand = LGEdit;
 	    break;
 	case M_PATH:
-	    LGPath();
+	    lastcommand = LGPath;
 	    break;
 	case M_READ:
-	    LGRead();
+	    lastcommand = LGRead;
 	    break;
 	case M_SAVE_SET:
-	    LGSave();
+	    lastcommand = LGSave;
 	    break;
 	case M_WRITE:
-	    LGWrite();
+	    lastcommand = LGWrite;
 	    break;
 	default:
-	    break;
+	    return;
     }
+    (*lastcommand)();
+    lasttext = TRUE;
 }
 
 
@@ -866,20 +885,22 @@ register struct inputevent *ie;
 
     switch (item->mi_data) {
 	case M_CLEAR_POINTS:
-	    LGClearPoints();
+	    lastcommand = LGClearPoints;
 	    break;
 	case M_SHOW_POINTS:
-	    LGShowPoints();
+	    lastcommand = LGShowPoints;
 	    break;
 	case M_GRIPE:
-	    LGGripe();
+	    lastcommand = LGGripe;
 	    break;
 	case M_POINT:
-	    LGOPoint();
+	    lastcommand = LGOPoint;
+	    lasttext = TRUE;
 	    break;
 	default:
-	    break;
+	    return;
     }
+    (*lastcommand)();
 }
 
 
@@ -979,7 +1000,7 @@ int x, y;
 	mbottom = mtop + m->menu_icon->pr_height - 1;
 
 	if ((x <= mright) && (y <= mbottom) && (x >= mleft) && (y >= mtop))
-	    return(lastint = i);
+	    return(i);
 
     } while (menu[++i].menu_x != -1);
 

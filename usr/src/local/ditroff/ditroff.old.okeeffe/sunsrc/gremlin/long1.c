@@ -1,5 +1,5 @@
 /*
- * @(#)long1.c	1.1	%G%
+ * @(#)long1.c	1.2	%G%
  *
  * Routines to implement "long" commands in the SUN Gremlin picture editor.
  *
@@ -564,7 +564,6 @@ LGMBrush6()
  * This routine causes text elements in the current set
  * to be redrawn using the new justification mode.
  * mode is 1 - 9 for tl, tc, tr, cl, cc, cl, bl, bc, br
- * mro 8/22/84
  */
 LGMJustify(just)
 int just;
@@ -1122,15 +1121,9 @@ float wx, wy;
     register tx, ty;
 
     CP();						/* eat points first */
-/*
-printf("wx=%5.2f  wy=%5.2f  ", wx, wy);
-*/
 
     cx = SUN_XORIGIN + (pix_size.r_width >> 1);		/* window x center */
     cy = SUN_YORIGIN - (pix_size.r_height >> 1);	/* window y center */
-/*
-printf("cx=%5.2f  cy=%5.2f  ", cx, cy);
-*/
 
     tx = (int) (wx - cx);				/* x translation */
     ty = (int) (wy - cy);				/* y translation */
@@ -1140,9 +1133,6 @@ printf("cx=%5.2f  cy=%5.2f  ", cx, cy);
 
     SUN_XORIGIN += (tx / Gridsize) * Gridsize;
     SUN_YORIGIN += (ty / Gridsize) * Gridsize;
-/*
-printf("XORIGIN=%d  YORIGIN=%d\n", SUN_XORIGIN, SUN_YORIGIN);
-*/
 
     SHUpdate();
 }  /* end LGPan */

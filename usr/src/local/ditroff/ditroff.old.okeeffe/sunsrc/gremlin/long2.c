@@ -1,5 +1,5 @@
 /*
- * @(#)long2.c	1.1	%G%
+ * @(#)long2.c	1.2	%G%
  *
  * More routines to implement "long" commands for the SUN Gremlin
  * picture editor.
@@ -126,16 +126,14 @@ char *eltnames[] = {
     "TOPLEFT", "TOPCENT", "TOPRIGHT", "CENTLEFT", "CENTRIGHT", "BOTCENT"
 };
 
-#ifdef nowextern
-struct prompt prt = { {PROMPT_FLEXIBLE, PROMPT_FLEXIBLE, 
-		       PROMPT_FLEXIBLE, PROMPT_FLEXIBLE}, 
-		       0, (struct pixfont *) NULL, (char *) NULL };
-#endif
-
-char nowrite_msg[] = "NO WRITE SINCE LAST CHANGE!       Press left button to edit new file, middle or right button to cancel.";
-char filexists_msg[] = "FILE EXISTS!  Press left button to overwrite, middle or right button to cancel.";
-static char quit_msg[] = "NO WRITE SINCE LAST CHANGE!       Press left button to confirm quit, middle or right button to cancel.";
-static char quit2_msg[] = "Press left button to confirm quit, middle or right button to cancel.";
+char nowrite_msg[] = "NO WRITE SINCE LAST CHANGE!       Press left button to \
+edit new file, middle or right button to cancel.";
+char filexists_msg[] = "FILE EXISTS!  Press left button to overwrite, middle \
+or right button to cancel.";
+static char quit_msg[] = "NO WRITE SINCE LAST CHANGE!       Press left button \
+to confirm quit, middle or right button to cancel.";
+static char quit2_msg[] = "Press left button to confirm quit, middle or right \
+button to cancel.";
 
 #define BADNUM -1
 #define NONUM -2
@@ -513,69 +511,6 @@ LGRead()
 }  /* end LGRead */
 
 
-#ifdef nowextern
-/*
- * Flush all input events for a window.
- */
-flush_window_input(windowfd)
-int windowfd;
-{
-    int nfds, readfds, writefds, exceptfds;
-    struct timeval timeout;
-    struct inputevent ie;
-
-    do {
-	readfds = 1 << windowfd;
-	writefds = 0;
-	exceptfds = 0;
-	timeout.tv_sec = 0L;
-	timeout.tv_usec = 0L;
-
-	nfds = select(20, &readfds, &writefds, &exceptfds, &timeout);
-	if (nfds > 0)
-	    input_readevent(windowfd, &ie);
-    } while (nfds > 0);
-}
-
-
-/*
- * Display user prompt and wait for affirmative (MS_LEFT)
- * or negative (MS_MIDDLE or MS_RIGHT) input event.
- * Return TRUE if OK to do it, FALSE if not OK.
- * This routine flushes the input event queue for the windowfd
- * handling the prompt.
- */
-prompt_ok(windowfd, msg)
-int windowfd;
-char *msg;
-{
-    struct inputmask im, button_im;
-    struct inputevent ie;
-    int designee;
-
-    win_getinputmask(windowfd, &im, &designee);
-
-    input_imnull(&button_im);
-    win_setinputcodebit(&button_im, MS_LEFT);
-    win_setinputcodebit(&button_im, MS_MIDDLE);
-    win_setinputcodebit(&button_im, MS_RIGHT);
-    win_setinputmask(windowfd, &button_im, NULL, WIN_NULLLINK);
-
-    prt.prt_font = text_pf;
-    prt.prt_windowfd = windowfd;
-    prt.prt_text = msg;
-    
-    flush_window_input(windowfd);
-
-    menu_prompt(&prt, &ie, windowfd);
-
-    win_setinputmask(windowfd, &im, NULL, designee);
-
-    return(ie.ie_code == MS_LEFT);
-}
-#endif
-
-
 /*
  * This routine reads in a new PICTURE for editing
  */
@@ -929,7 +864,6 @@ LGQuit()
 /*
  * Horizontal Adjust -
  * This routine toggles the adjustment mode.
- * mro 7/23/84
  */
 LGHAdjust()
 {
@@ -949,7 +883,6 @@ LGHAdjust()
 /*
  * Vertical Adjust -
  * This routine toggles the adjustment mode.
- * mro 7/23/84
  */
 LGVAdjust()
 {
@@ -969,7 +902,6 @@ LGVAdjust()
 /*
  * This local routine returns 1 if x >= 0
  * otherwise returns -1
- * mro 7/25/84
  */
 static
 sign(x)
@@ -982,7 +914,6 @@ float x;
 /*
  * This routine is called by all mirroring routines to effect the
  * transformation specified by xmat.
- * mro 7/25/84
  */
 static
 mirror(xmat)
@@ -1034,7 +965,6 @@ float xmat[3][2];
  * This routine mirrors the elements in the current set VERTICALLY
  * The mirroring is accomplished by defining a transformation
  * matrix and calling DBXform.
- * mro 7/25/84
  */
 LGVMirror()
 {
@@ -1067,7 +997,6 @@ LGVMirror()
  * This routine mirrors the elements in the current set HORIZONTALLY
  * The mirroring is accomplished by defining a transformation
  * matrix and calling DBXform.
- * mro 7/25/84
  */
 LGHMirror()
 {
@@ -1125,6 +1054,9 @@ LGPath()
 }  /* end LGPath */
 
 
+/*
+ * Sometimes it's important to do nothing.
+ */
 nop()
 {
 }

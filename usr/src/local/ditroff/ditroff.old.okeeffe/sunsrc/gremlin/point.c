@@ -1,5 +1,5 @@
 /*
- * @(#)point.c	1.1	%G%
+ * @(#)point.c	1.2	%G%
  *
  * Routines for manipulating the point data structures of the
  * SUN Gremlin picture editor.
@@ -17,44 +17,6 @@ extern GRFontStrlen();
 /* imports from C */
 
 extern char *malloc();
-
-
-#ifdef oldway
-/*
- * This routine creates a null point and returns a pointer to it.
- */
-POINT *
-PTInit()
-{
-    register POINT *pt;
-
-    pt = (POINT *) malloc(sizeof(POINT));
-    pt->x = nullpt;
-    pt->y = nullpt;
-    pt->nextpt = (POINT *) NULL;
-    return(pt);
-}  /* end PTInit */
-
-
-/*
- * This routine creates a new point with coordinates x and y and 
- * links it into the pointlist.
- */
-POINT *
-PTMakePoint(x, y, plist)
-float x, y;
-register POINT *plist;
-{
-    while (!Nullpoint(plist))
-	plist = plist->nextpt;
-
-    plist->x = x;
-    plist->y = y;
-    plist->nextpt = PTInit();
-
-    return(plist);
-}  /* end PTMakePoint */
-#endif
 
 
 /*
@@ -84,27 +46,6 @@ POINT **pplist;
     point->nextpt = PTInit();
     return(point);
 }  /* end PTMakePoint */
-
-
-#ifdef oldway
-/*
- * This routine removes the specified point from the pointlist and
- * returns it to free storage.  Deletion is done in place by copying the
- * next point over the one to be deleted and then removing the (previously)
- * next point.
- */
-PTDeletePoint(pt)
-register POINT *pt;
-{
-    register POINT *tempt;
-
-    tempt = PTNextPoint(pt);
-    pt->x = tempt->x;
-    pt->y = tempt->y;
-    pt->nextpt = tempt->nextpt;
-    free((char *) tempt);
-}  /* end PTDeletePoint */
-#endif
 
 
 /*
@@ -150,7 +91,6 @@ register POINT **plist;		/* the address of the list from
  * corner of the text display, (3) the midpoint of the bottom edge of 
  * the text display, and (4) the bottom right corner of the text display.
  * A pointer to this list is returned.
- * mro 8/20/84
  */
 POINT *
 PTMakeTextPoints(text, font, size, point, pos)
