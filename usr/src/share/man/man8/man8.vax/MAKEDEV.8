@@ -3,19 +3,19 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)MAKEDEV.8	5.1 (Berkeley) %G%
+.\"	@(#)MAKEDEV.8	5.2 (Berkeley) %G%
 .\"
 .TH MAKEDEV 8 ""
 .UC 7
 .SH NAME
-MAKEDEV \- create device special files
+MAKEDEV \- create system and device special files
 .SH SYNOPSIS
-MAKEDEV device ...
+MAKEDEV name ...
 .SH DESCRIPTION
 The shell script
 .IR MAKEDEV ,
-found in the ``/dev'' directory, is used to
-create the common special files used to interface to peripherals.
+found in the ``/dev'' directory, is used to create the common special
+files.
 See
 .IR special (8)
 for a more complete discussion of special files.
@@ -23,6 +23,10 @@ for a more complete discussion of special files.
 .I MAKEDEV
 takes any number of device names as arguments, where the names are
 the common abbreviation for the device.
+There are two special devices, ``std'' and ``local''.
+The former creates the standard devices for the architecture.
+The latter is for devices specific to the local site, and
+executes the shell file ``MAKEDEV.local''.
 .PP
 The VAX supports the following devices.
 Where a device name is followed by a hash sign (``#''), the hash sign
@@ -199,4 +203,7 @@ unibus versatec parallel interface
 .SH FILES
 /dev		The special file directory.
 .SH SEE ALSO
+.IR mknod (1), 
+.IR intro (4),
+.IR config (8),
 .IR special (8)
