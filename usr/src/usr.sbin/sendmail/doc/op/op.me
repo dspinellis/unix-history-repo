@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.27 (Berkeley) %G%
+.\"	@(#)op.me	6.28 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.27
+Version 6.28
 .sp
-For Sendmail Version 6.42
+For Sendmail Version 6.43
 .)l
 .sp 2
 .pp
@@ -4741,10 +4741,17 @@ flag must be used.
 Some people, believing that it was a security hole
 (it was, once)
 have turned it off and thus crippled debuggers.
-.ip DAEMON
+.ip NETINET
 If set,
-code to run a daemon is compiled in.
-This code is for 4.2 or 4.3BSD.
+support for Internet protocol networking is compiled in.
+Previous versions of
+.b sendmail
+referred to this as
+.sm DAEMON ;
+this old usage is now incorrect.
+.ip NETISO
+If set,
+support for ISO protocol networking is compiled in.
 .ip LOG
 If set,
 the
@@ -5825,7 +5832,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.27
+.\"Version 6.28
 .\".ce 0
 .pn 2
 .bp
