@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,12 @@ static char sccsid[] = "@(#)csh.c	5.25 (Berkeley) %G%";
 #include <string.h>
 #include <locale.h>
 #include <unistd.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
 #include "extern.h"
 #include "pathnames.h"

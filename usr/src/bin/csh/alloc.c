@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -21,7 +21,17 @@ static char sccsid[] = "@(#)alloc.c	5.7 (Berkeley) %G%";
  * but bombs when it runs out.
  */
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
+#include "extern.h"
 
 char   *memtop = NULL;		/* PWP: top of current memory */
 char   *membot = NULL;		/* PWP: bottom of allocatable memory */
@@ -36,11 +46,6 @@ char   *membot = NULL;		/* PWP: bottom of allocatable memory */
 #define	NULL 0
 #endif
 
-typedef unsigned char U_char;	/* we don't really have signed chars */
-typedef unsigned int U_int;
-typedef unsigned short U_short;
-static int findbucket();
-static void morecore();
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -52,26 +57,18 @@ static void morecore();
  * plus the range checking words, and the header word MINUS ONE.
  */
 
-#ifdef SUNOS4
-/*
- * SunOS localtime() overwrites the 9th byte on an 8 byte malloc()....
- * So we align to 16 bytes...
- */
-#define ROUNDUP	15
-#else
 #define ROUNDUP	7
-#endif
 
 #define ALIGN(a) (((a) + ROUNDUP) & ~ROUNDUP)
 
 union overhead {
     union overhead *ov_next;	/* when free */
     struct {
-	U_char  ovu_magic;	/* magic number */
-	U_char  ovu_index;	/* bucket # */
+	u_char  ovu_magic;	/* magic number */
+	u_char  ovu_index;	/* bucket # */
 #ifdef RCHECK
-	U_short ovu_size;	/* actual block size */
-	U_int   ovu_rmagic;	/* range magic number */
+	u_short ovu_size;	/* actual block size */
+	u_int   ovu_rmagic;	/* range magic number */
 #endif
     }       ovu;
 #define	ov_magic	ovu.ovu_magic
@@ -83,7 +80,7 @@ union overhead {
 #define	MAGIC		0xfd	/* magic # on accounting info */
 #define RMAGIC		0x55555555	/* magic # on range info */
 #ifdef RCHECK
-#define	RSLOP		sizeof (U_int)
+#define	RSLOP		sizeof (u_int)
 #else
 #define	RSLOP		0
 #endif
@@ -96,16 +93,14 @@ union overhead {
 #define	NBUCKETS 30
 static union overhead *nextf[NBUCKETS];
 
-#ifdef notdef
-extern char *sbrk();
-
-#endif
+static int	findbucket __P((union overhead *, int));
+static void	morecore __P((int));
 
 /*
  * nmalloc[i] is the difference between the number of mallocs and frees
  * for a given block size.
  */
-static U_int nmalloc[NBUCKETS];
+static u_int nmalloc[NBUCKETS];
 
 
 #ifdef DEBUG
@@ -176,7 +171,7 @@ malloc(nbytes)
     if (nbytes <= 0x10000)
 	p->ov_size = nbytes - 1;
     p->ov_rmagic = RMAGIC;
-    *((U_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
+    *((u_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
 #endif
     return ((ptr_t) (((caddr_t) p) + ALIGN(sizeof(union overhead))));
 #else
@@ -193,7 +188,7 @@ malloc(nbytes)
  */
 static void
 morecore(bucket)
-    register bucket;
+    register int bucket;
 {
     register union overhead *op;
     register int rnu;		/* 2^rnu bytes will be requested */
@@ -230,8 +225,8 @@ morecore(bucket)
      * Round up to minimum allocation size boundary and deduct from block count
      * to reflect.
      */
-    if (((U_int) op) & ROUNDUP) {
-	op = (union overhead *) (((U_int) op + (ROUNDUP + 1)) & ~ROUNDUP);
+    if (((u_int) op) & ROUNDUP) {
+	op = (union overhead *) (((u_int) op + (ROUNDUP + 1)) & ~ROUNDUP);
 	nblks--;
     }
     /*
@@ -269,7 +264,7 @@ free(cp)
 
 #ifdef RCHECK
     if (op->ov_index <= 13)
-	CHECK(*(U_int *) ((caddr_t) op + op->ov_size + 1 - RSLOP) != RMAGIC,
+	CHECK(*(u_int *) ((caddr_t) op + op->ov_size + 1 - RSLOP) != RMAGIC,
 	      "free(%lx) bad range check.", cp);
 #endif
     CHECK(op->ov_index >= NBUCKETS, "free(%lx) bad block index.", cp);
@@ -330,7 +325,7 @@ realloc(cp, nbytes)
     size_t  nbytes;
 {
 #ifndef lint
-    register U_int onb;
+    register u_int onb;
     union overhead *op;
     char   *res;
     register int i;

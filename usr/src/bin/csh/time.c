@@ -6,10 +6,16 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)time.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)time.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
 #include "extern.h"
 

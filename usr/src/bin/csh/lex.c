@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -16,6 +16,12 @@ static char sccsid[] = "@(#)lex.c	5.15 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
 #include "extern.h"
 
@@ -1273,20 +1279,11 @@ top:
 reread:
 	c = bgetc();
 	if (c < 0) {
-#ifdef TERMIOS
 	    struct termios tty;
-#else
-	    struct sgttyb tty;
-#endif
 	    if (wanteof)
 		return (-1);
 	    /* was isatty but raw with ignoreeof yields problems */
-#ifdef TERMIOS
 	    if (tcgetattr(SHIN, &tty) == 0 && (tty.c_lflag & ICANON))
-#else
-	    if (ioctl(SHIN, TIOCGETP, (ioctl_t) & tty) == 0 &&
-		(tty.sg_flags & RAW) == 0)
-#endif
 	    {
 		/* was 'short' for FILEC */
 		int     ctpgrp;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.3 (Berkeley) %G%
+ *	@(#)extern.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -280,58 +280,53 @@ void	tvadd __P((struct timeval *, struct timeval *));
 void	tvsub __P((struct timeval *, struct timeval *, struct timeval *));
 
 /*
- * tc.alloc.c
+ * alloc.c
  */
 #ifndef SYSMALLOC
-#ifdef sun
-extern int free();
+void	free __P((ptr_t));
+ptr_t	malloc __P((size_t));
+ptr_t	realloc __P((ptr_t, size_t));
+ptr_t	calloc __P((size_t, size_t));
 #else
-extern void free();
-#endif
-extern ptr_t malloc();
-extern ptr_t realloc();
-extern ptr_t calloc();
-#else
-extern void Free();
-extern ptr_t Malloc();
-extern ptr_t Realloc();
-extern ptr_t Calloc();
+void	Free __P((ptr_t));
+ptr_t	Malloc __P((size_t));
+ptr_t	Realloc __P((ptr_t, size_t));
+ptr_t	Calloc __P((size_t, size_t));
 #endif				/* SYSMALLOC */
-extern void showall();
+void	showall __P((void));
 
 /*
- * tc.printf.h
+ * printf.h
  */
-extern void xprintf();
-extern void xsprintf();
-extern void xvprintf();
-extern void xvsprintf();
+void	xprintf __P((char *, ...));
+void	xsprintf __P((char *, char *, ...));
+void	xvprintf __P((char *, va_list));
+void	xvsprintf __P((char *, char *, va_list));
 
 /*
- * tc.str.c:
+ * str.c:
  */
 #ifdef SHORT_STRINGS
-extern Char *s_strchr();
-extern Char *s_strrchr();
-extern Char *s_strcat();
+Char	 *s_strchr __P((Char *, int));
+Char	 *s_strrchr __P((Char *, int));
+Char	 *s_strcat __P((Char *, Char *));
 #ifdef NOTUSED
-extern Char *s_strncat();
+Char	 *s_strncat __P((Char *, Char *, size_t));
 #endif
-extern Char *s_strcpy();
-extern Char *s_strncpy();
-extern Char *s_strspl();
-extern int s_strlen();
-extern int s_strcmp();
-extern int s_strncmp();
-extern Char *s_strsave();
-extern Char *s_strend();
-extern Char *s_strspl();
+Char	 *s_strcpy __P((Char *, Char *));
+Char	 *s_strncpy __P((Char *, Char *, size_t));
+Char	 *s_strspl __P((Char *, Char *));
+size_t	  s_strlen __P((Char *));
+int	  s_strcmp __P((Char *, Char *));
+int	  s_strncmp __P((Char *, Char *, size_t));
+Char	 *s_strsave __P((Char *));
+Char	 *s_strend __P((Char *));
 #ifdef NOTUSED
-extern Char *s_strstr();
+Char	 *s_strstr __P((Char *, Char *));
 #endif
-extern Char *str2short();
-extern Char **blk2short();
-extern char *short2str();
-extern char *short2qstr();
-extern char **short2blk();
+Char	 *str2short __P((char *));
+Char	**blk2short __P((char **));
+char	 *short2str __P((Char *));
+char	 *short2qstr __P((Char *));
+char	**short2blk __P((Char **));
 #endif

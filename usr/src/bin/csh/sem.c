@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sem.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)sem.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -17,6 +17,12 @@ static char sccsid[] = "@(#)sem.c	5.15 (Berkeley) %G%";
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
 #include "proc.h"
 #include "extern.h"
