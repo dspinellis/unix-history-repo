@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)ld.c 4.5 %G%";
+static	char sccsid[] = "@(#)ld.c 4.6 %G%";
 
 /*
  * ld - string table version for VAX
@@ -496,11 +496,28 @@ htoi(p)
 
 delexit()
 {
+	struct stat stbuf;
+	long size;
+	char c = 0;
 
 	bflush();
 	unlink("l.out");
 	if (delarg==0 && Aflag==0)
 		chmod(ofilename, ofilemode);
+	/*
+	 * We have to insure that the last block of the data segment
+	 * is allocated a full BLKSIZE block. If the underlying
+	 * file system allocates frags that are smaller than BLKSIZE,
+	 * a full zero filled BLKSIZE block needs to be allocated so 
+	 * that when it is demand paged, the paged in block will be 
+	 * appropriately filled with zeros.
+	 */
+	fstat(biofd, &stbuf);
+	size = round(stbuf.st_size, BLKSIZE);
+	if (size > stbuf.st_size) {
+		lseek(biofd, size - 1, 0);
+		write(biofd, &c, 1);
+	}
 	exit (delarg);
 }
 
