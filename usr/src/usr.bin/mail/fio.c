@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	1.6 %G%";
+static char *SccsId = "@(#)fio.c	1.7 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -20,8 +20,9 @@ static char *SccsId = "@(#)fio.c	1.6 %G%";
 setptr(ibuf)
 	FILE *ibuf;
 {
-	register int count, s, l;
+	register int c;
 	register char *cp, *cp2;
+	register int count, s, l;
 	off_t offset;
 	char linebuf[LINESIZE];
 	char wbuf[LINESIZE];
@@ -38,7 +39,19 @@ setptr(ibuf)
 	maybe = 1;
 	flag = MUSED|MNEW;
 	for (;;) {
-		if ((count = freadline(ibuf, linebuf)) == 0) {
+		cp = linebuf;
+		c = getc(ibuf);
+		while (c != EOF && c != '\n') {
+			if (cp - linebuf >= BUFSIZ - 1) {
+				ungetc(c, ibuf);
+				*cp = 0;
+				break;
+			}
+			*cp++ = c;
+			c = getc(ibuf);
+		}
+		*cp = 0;
+		if (cp == linebuf && c == EOF) {
 			this.m_flag = flag;
 			flag = MUSED|MNEW;
 			this.m_offset = offsetof(offset);
@@ -54,7 +67,11 @@ setptr(ibuf)
 			close(mestmp);
 			return;
 		}
-		if (fputs(linebuf, otf) == NULL || putc('\n', otf) == EOF) {
+		count = cp - linebuf + 1;
+		for (cp = linebuf; *cp;)
+			putc(*cp++, otf);
+		putc('\n', otf);
+		if (ferror(otf)) {
 			perror("/tmp");
 			exit(1);
 		}
