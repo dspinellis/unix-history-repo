@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.26 91/01/21$
  *
- *	@(#)dcm.c	7.16 (Berkeley) %G%
+ *	@(#)dcm.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,8 @@
 #include "sys/param.h"
 #include "sys/systm.h"
 #include "sys/ioctl.h"
-#include "sys/tty.h"
 #include "sys/proc.h"
+#include "sys/tty.h"
 #include "sys/conf.h"
 #include "sys/file.h"
 #include "sys/uio.h"
@@ -882,11 +882,7 @@ dcmstart(tp)
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
 		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
+		selwakeup(&tp->t_wsel);
 	}
 	if (tp->t_outq.c_cc == 0) {
 #ifdef IOSTATS

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: ite.c 1.1 90/07/09$
  *
- *	@(#)ite.c	7.9 (Berkeley) %G%
+ *	@(#)ite.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -298,11 +298,7 @@ itestart(tp)
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t)&tp->t_outq);
 		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
+		selwakeup(&tp->t_wsel);
 	}
 	/*
 	 * Limit the amount of output we do in one burst

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hilvar.h 1.1 90/07/09$
  *
- *	@(#)hilvar.h	7.2 (Berkeley) %G%
+ *	@(#)hilvar.h	7.3 (Berkeley) %G%
  */
 
 #ifndef TRUE
@@ -47,7 +47,7 @@ struct hilloopdev {
 	int	hd_flags;		/* device state */
 	int	hd_qmask;		/* queues this device is mapped to */
 	struct	clist hd_queue;		/* event queue for HPUX-style input */
-	struct	proc *hd_selr;		/* process read selecting */
+	struct	selinfo hd_selr;	/* process read selecting */
 	uid_t	hd_uid;			/* uid of mapping process */
 };
 
@@ -56,7 +56,6 @@ struct hilloopdev {
 #define HIL_PSEUDO	0x02	/* device is virtual */
 #define HIL_READIN	0x04	/* device using read() input interface */
 #define HIL_QUEUEIN	0x08	/* device using shared Q input interface */
-#define HIL_SELCOLL	0x10	/* select collision on device */
 #define HIL_NOBLOCK	0x20	/* device is in non-blocking read mode */
 #define HIL_ASLEEP	0x40	/* process awaiting input on device */
 #define HIL_DERROR	0x80	/* loop has reconfigured, reality altered */
