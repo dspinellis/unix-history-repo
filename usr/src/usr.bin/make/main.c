@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -450,6 +450,8 @@ main(argc, argv)
 	} else if (!ReadMakefile("makefile"))
 		(void)ReadMakefile("Makefile");
 
+	(void)ReadMakefile(".depend");
+
 	Var_Append("MFLAGS", Var_Value(MAKEFLAGS, VAR_GLOBAL), VAR_GLOBAL);
 
 	/* Install all the flags into the MAKE envariable. */
@@ -570,25 +572,29 @@ ReadMakefile(fname)
 		Parse_File("(stdin)", stdin);
 		Var_Set("MAKEFILE", "", VAR_GLOBAL);
 	} else {
+		if (stream = fopen(fname, "r"))
+			goto found;
 		/* if we've chdir'd, rebuild the path name */
 		if (curdir && *fname != '/') {
 			(void)sprintf(path, "%s/%s", curdir, fname);
-			fname = path;
+			if (stream = fopen(path, "r")) {
+				fname = path;
+				goto found;
+			}
 		}
-		if (!(stream = fopen(fname, "r"))) {
-			/* look in -I and system include directories. */
-			if (!(name = Dir_FindFile(fname, parseIncPath)) &&
-			    !(name = Dir_FindFile(fname, sysIncPath)) ||
-			    !(stream = fopen(name, "r")))
-				return(FALSE);
-			fname = name;
-		}
+		/* look in -I and system include directories. */
+		name = Dir_FindFile(fname, parseIncPath);
+		if (!name)
+			name = Dir_FindFile(fname, sysIncPath);
+		if (!name || !(stream = fopen(name, "r")))
+			return(FALSE);
+		fname = name;
 		/*
 		 * set the MAKEFILE variable desired by System V fans -- the
 		 * placement of the setting here means it gets set to the last
 		 * makefile specified, as it is set by SysV make.
 		 */
-		Var_Set("MAKEFILE", fname, VAR_GLOBAL);
+found:		Var_Set("MAKEFILE", fname, VAR_GLOBAL);
 		Parse_File(fname, stream);
 		(void)fclose(stream);
 	}
