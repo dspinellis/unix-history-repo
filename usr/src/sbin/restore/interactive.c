@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -462,7 +462,7 @@ expand(as, rflg, ap)
 	int		count, size;
 	char		dir = 0;
 	char		*rescan = 0;
-	DIR		*dirp;
+	RST_DIR		*dirp;
 	register char	*s, *cs;
 	int		sindex, rindex, lindex;
 	struct direct	*dp;
@@ -651,7 +651,7 @@ printlist(name, ino, basename)
 	register struct direct *dp;
 	static struct arglist alist = { 0, 0, 0, 0, "ls" };
 	struct afile single;
-	DIR *dirp;
+	RST_DIR *dirp;
 
 	if ((dirp = rst_opendir(name)) == NULL) {
 		single.fnum = ino;
