@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -57,12 +57,13 @@ static char sccsid[] = "@(#)fstat.c	5.29 (Berkeley) %G%";
 #include <netinet/in_pcb.h>
 
 #include <errno.h>
-#include <kvm.h>
 #include <nlist.h>
+#include <kvm.h>
 #include <pwd.h>
 #include <stdio.h>
 #include <paths.h>
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define	TEXT	-1
@@ -119,6 +120,9 @@ int maxfiles;
  */
 #define KVM_READ(kaddr, paddr, len) (kvm_read((kaddr), (paddr), (len)) == (len))
 
+void dofiles(), getinetproto(), socktrans(), nfs_filestat(), ufs_filestat();
+void usage(), vtrans();
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -133,9 +137,6 @@ main(argc, argv)
 	what = KINFO_PROC_ALL;
 	while ((ch = getopt(argc, argv, "fnp:u:v")) != EOF)
 		switch((char)ch) {
-		case 'c':
-			/* NOTYET: set count to optarg. */
-			usage();
 		case 'f':
 			fsflg = 1;
 			break;
@@ -173,9 +174,6 @@ main(argc, argv)
 		case 'v':
 			vflg = 1;
 			break;
-		case 'w':
-			/* NOTYET: set wait interval to optarg. */
-			usage();
 		case '?':
 		default:
 			usage();
@@ -258,6 +256,7 @@ int	Pid;
 /*
  * print open files attributed to this process
  */
+void
 dofiles(p)
 	struct proc *p;
 {
@@ -369,18 +368,19 @@ dofiles(p)
 	}
 }
 
+void
 vtrans(vp, i)
 	struct vnode *vp;
+	int i;
 {
+	extern char *devname();
 	struct vnode vn;
 	struct filestat fst;
-	char *filename = NULL;
-	char *badtype = NULL;
-	char *getmnton();
-	extern char *devname();
 	char mode[15];
+	char *badtype, *filename, *getmnton();
 
-	if (!KVM_READ((off_t)vp, &vn, sizeof (struct vnode))) {
+	filename = badtype = NULL;
+	if (!KVM_READ(vp, &vn, sizeof (struct vnode))) {
 		dprintf(stderr, "can't read vnode at %x for pid %d\n",
 			vp, Pid);
 		return;
@@ -458,6 +458,7 @@ vtrans(vp, i)
 	putchar('\n');
 }
 
+void
 ufs_filestat(vp, fsp)
 	struct vnode *vp;
 	struct filestat *fsp;
@@ -471,6 +472,7 @@ ufs_filestat(vp, fsp)
 	fsp->rdev = ip->i_rdev;
 }
 
+void
 nfs_filestat(vp, fsp)
 	struct vnode *vp;
 	struct filestat *fsp;
@@ -525,12 +527,12 @@ getmnton(m)
 	for (mt = mhead; mt != NULL; mt = mt->next)
 		if (m == mt->m)
 			return (mt->mntonname);
-	if (!KVM_READ((off_t)m, &mount, sizeof(struct mount))) {
+	if (!KVM_READ(m, &mount, sizeof(struct mount))) {
 		fprintf(stderr, "can't read mount table at %x\n", m);
 		return (NULL);
 	}
-	if ((mt = (struct mtab *)malloc(sizeof (struct mtab))) == NULL) {
-		fprintf(stderr, "out of memory\n");
+	if ((mt = malloc(sizeof (struct mtab))) == NULL) {
+		fprintf(stderr, "fstat: %s\n", strerror(errno));
 		exit(1);
 	}
 	mt->m = m;
@@ -540,8 +542,10 @@ getmnton(m)
 	return (mt->mntonname);
 }
 
+void
 socktrans(sock, i)
 	struct socket *sock;
+	int i;
 {
 	static char *stypename[] = {
 		"unused",	/* 0 */
@@ -580,7 +584,8 @@ socktrans(sock, i)
 		goto bad;
 	}
 
-	if ((len = kvm_read((off_t)dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
+	if ((len =
+	    kvm_read(dom.dom_name, dname, sizeof(dname) - 1)) < 0) {
 		dprintf(stderr, "can't read domain name at %x\n",
 			dom.dom_name);
 		dname[0] = '\0';
@@ -609,10 +614,12 @@ socktrans(sock, i)
 		getinetproto(proto.pr_protocol);
 		if (proto.pr_protocol == IPPROTO_TCP ) {
 			if (so.so_pcb) {
-				if (kvm_read((off_t)so.so_pcb, (char *)&inpcb, sizeof(struct inpcb))
-				    != sizeof(struct inpcb)){
+				if (kvm_read(so.so_pcb, &inpcb,
+				    sizeof(struct inpcb))
+				    != sizeof(struct inpcb)) {
 					dprintf(stderr, 
-					     "can't read inpcb at %x\n", so.so_pcb);
+					    "can't read inpcb at %x\n",
+					    so.so_pcb);
 					goto bad;
 				}
 				printf(" %x", (int)inpcb.inp_ppcb);
@@ -625,10 +632,10 @@ socktrans(sock, i)
 		/* print address of pcb and connected pcb */
 		if (so.so_pcb) {
 			printf(" %x", (int)so.so_pcb);
-			if (kvm_read((off_t)so.so_pcb, (char *)&unpcb, sizeof(struct unpcb))
-			    != sizeof(struct unpcb)){
+			if (kvm_read(so.so_pcb, &unpcb,
+			    sizeof(struct unpcb)) != sizeof(struct unpcb)){
 				dprintf(stderr, "can't read unpcb at %x\n",
-					so.so_pcb);
+				    so.so_pcb);
 				goto bad;
 			}
 			if (unpcb.unp_conn) {
@@ -660,6 +667,7 @@ bad:
  * getinetproto --
  *	print name of protocol number
  */
+void
 getinetproto(number)
 	int number;
 {
@@ -696,15 +704,14 @@ getfname(filename)
 {
 	struct stat statbuf;
 	DEVS *cur;
-	char *malloc();
 
 	if (stat(filename, &statbuf)) {
 		fprintf(stderr, "fstat: %s: %s\n", strerror(errno),
 		    filename);
 		return(0);
 	}
-	if ((cur = (DEVS *)malloc(sizeof(DEVS))) == NULL) {
-		fprintf(stderr, "fstat: out of space.\n");
+	if ((cur = malloc(sizeof(DEVS))) == NULL) {
+		fprintf(stderr, "fstat: %s\n", strerror(errno));
 		exit(1);
 	}
 	cur->next = devs;
@@ -716,6 +723,7 @@ getfname(filename)
 	return(1);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr,
