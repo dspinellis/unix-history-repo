@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -533,7 +533,7 @@ ndbm_map_close(map)
 		(void) sprintf(buf, "%010ld", curtime());
 		ndbm_map_store(map, "YP_LAST_MODIFIED", buf);
 
-		(void) myhostname(buf, sizeof buf);
+		(void) gethostname(buf, sizeof buf);
 		ndbm_map_store(map, "YP_MASTER_NAME", buf);
 
 		if (inclnull)
