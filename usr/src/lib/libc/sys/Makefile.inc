@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.35 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -79,7 +79,7 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 	select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 shutdown.0 \
 	sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 sigaltstack.0 \
 	sigstack.0 sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 \
-	swapon.0 symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 \
+	swapon.0 symlink.0 sync.0 truncate.0 umask.0 unlink.0 \
 	utimes.0 vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
@@ -97,7 +97,8 @@ MLINKS+=getrlimit.2 setrlimit.2
 MLINKS+=getsockopt.2 setsockopt.2
 MLINKS+=gettimeofday.2 settimeofday.2
 MLINKS+=getuid.2 geteuid.2
-MLINKS+=indir.2 _indir.2
+MLINKS+=indir.2 __indir.2
+MLINKS+=indir.2 syscall.2
 MLINKS+=intro.2 errno.2
 MLINKS+=lseek.2 seek.2
 MLINKS+=mlock.2 munlock.2
