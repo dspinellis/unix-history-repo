@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)print.c	8.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vis.h>
 #include <tzfile.h>
 
 #include "ps.h"
@@ -67,34 +68,45 @@ command(k, ve)
 	VARENT *ve;
 {
 	VAR *v;
+	int left;
+	char *cp, *vis_env, *vis_args;
+
+	if ((vis_args = malloc(strlen(k->ki_args) * 4 + 1)) == NULL)
+		err(1, NULL);
+	strvis(vis_args, k->ki_args, VIS_TAB | VIS_NL | VIS_NOSLASH);
+	if (k->ki_env) {
+		if ((vis_env = malloc(strlen(k->ki_env) * 4 + 1)) == NULL)
+			err(1, NULL);
+		strvis(vis_env, k->ki_env, VIS_TAB | VIS_NL | VIS_NOSLASH);
+	} else
+		vis_env = NULL;
 
 	v = ve->var;
 	if (ve->next == NULL) {
 		/* last field */
 		if (termwidth == UNLIMITED) {
-			if (k->ki_env)
-				(void)printf("%s ", k->ki_env);
-			(void)printf("%s", k->ki_args);
+			if (vis_env)
+				(void)printf("%s ", vis_env);
+			(void)printf("%s", vis_args);
 		} else {
-			int left = termwidth - (totwidth - v->width);
-			char *cp;
-
+			left = termwidth - (totwidth - v->width);
 			if (left < 1) /* already wrapped, just use std width */
 				left = v->width;
-			cp = k->ki_env;
-			if (cp != 0) {
+			if ((cp = vis_env) != NULL) {
 				while (--left >= 0 && *cp)
 					(void)putchar(*cp++);
 				if (--left >= 0)
 					putchar(' ');
 			}
-			cp = k->ki_args;
-			while (--left >= 0 && *cp)
+			for (cp = vis_args; --left >= 0 && *cp != '\0';)
 				(void)putchar(*cp++);
 		}
 	} else
 		/* XXX env? */
-		(void)printf("%-*.*s", v->width, v->width, k->ki_args);
+		(void)printf("%-*.*s", v->width, v->width, vis_args);
+	free(vis_args);
+	if (vis_env != NULL)
+		free(vis_env);
 }
 
 void
