@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.9 (Berkeley) %G%";
 #define	MAXBUF	120
 #define	DEFPREC	6
 
-#define	PUTC(ch, fd)	{++cnt; putc(ch, fd);}
+#define	PUTC(ch)	{++cnt; putc(ch, fp);}
 
 #define	LONGINT		0x01
 #define	LONGDBL		0x02
@@ -39,18 +39,18 @@ x_doprnt(fmt, argp, fp)
 	va_list argp;
 	register FILE *fp;
 {
+	register int base, cnt;
+	register char *bp, *t;
 	register u_long reg_ulong;
 	register long reg_long;
-	register int base;
-	register char *digs, *bp, *t, padc;
 	double _double;
-	char argsize, *_cvt(), buf[MAXBUF];
-	int cnt, n, ladjust, width, prec, size;
+	char argsize, padc, *_cvt(), *digs, buf[MAXBUF];
+	int n, ladjust, width, prec, size;
 
 	digs = "0123456789abcdef";
 	for (cnt = 0; *fmt; ++fmt) {
 		if (*fmt != '%') {
-			PUTC(*fmt, fp);
+			PUTC(*fmt);
 			continue;
 		}
 
@@ -120,7 +120,7 @@ flags:		switch (*++fmt) {
 			char ch;
 
 			ch = va_arg(argp, int);
-			PUTC(ch, fp);
+			PUTC(ch);
 			break;
 		}
 		case 'd':
@@ -134,7 +134,7 @@ flags:		switch (*++fmt) {
 				reg_ulong = reg_long;
 			}
 			if (printsign)
-				PUTC(printsign, fp);
+				PUTC(printsign);
 			base = 10;
 			goto num1;
 		case 'e':
@@ -147,12 +147,12 @@ flags:		switch (*++fmt) {
 pbuf:			size = bp - buf;
 			if (size < width && !ladjust)
 				do {
-					PUTC(padc, fp);
+					PUTC(padc);
 				} while (--width > size);
 			for (t = buf; t < bp; ++t)
-				PUTC(*t, fp);
+				PUTC(*t);
 			for (; width > size; --width)
-				PUTC(padc, fp);
+				PUTC(padc);
 			break;
 		case 'n':
 			*(va_arg(argp, int *)) = cnt;
@@ -170,9 +170,9 @@ pbuf:			size = bp - buf;
 			size = &buf[sizeof(buf) - 1] - bp;
 			if (size < --width && !ladjust)
 				do {
-					PUTC(padc, fp);
+					PUTC(padc);
 				} while (--width > size);
-			PUTC('0', fp);
+			PUTC('0');
 			goto num2;
 		case 'p':
 		case 's':
@@ -186,16 +186,16 @@ pbuf:			size = bp - buf;
 				    n++, bp++);
 				bp = savep;
 				while (n++ < width)
-					PUTC(' ', fp);
+					PUTC(' ');
 			}
 			for (n = 0; *bp; ++bp) {
 				if (++n > prec && prec >= 0)
 					break;
-				PUTC(*bp, fp);
+				PUTC(*bp);
 			}
 			if (n < width && ladjust)
 				do {
-					PUTC(' ', fp);
+					PUTC(' ');
 				} while (++n < width);
 			break;
 		case 'u':
@@ -208,8 +208,8 @@ pbuf:			size = bp - buf;
 		case 'x':
 			GETARG(reg_ulong);
 			if (alternate && reg_ulong) {
-				PUTC('0', fp);
-				PUTC(*fmt, fp);
+				PUTC('0');
+				PUTC(*fmt);
 			}
 			base = 16;
 num1:			bp = buf + sizeof(buf) - 1;
@@ -221,18 +221,18 @@ num1:			bp = buf + sizeof(buf) - 1;
 			for (; size < prec; *bp-- = '0', ++size);
 			if (size < width && !ladjust)
 				do {
-					PUTC(padc, fp);
+					PUTC(padc);
 				} while (--width > size);
 num2:			while (++bp != &buf[MAXBUF])
-				PUTC(*bp, fp);
+				PUTC(*bp);
 			for (; width > size; --width)
-				PUTC(padc, fp);
+				PUTC(padc);
 			digs = "0123456789abcdef";
 			break;
 		case '\0':		/* "%?" prints ?, unless ? is NULL */
 			return(ferror(fp) ? -1 : cnt);
 		default:
-			PUTC(*fmt, fp);
+			PUTC(*fmt);
 		}
 	}
 	return(ferror(fp) ? -1 : cnt);
