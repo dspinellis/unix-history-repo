@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -106,6 +106,10 @@ struct nlist nl[] = {
 	{ "_dmz_tty" },
 #define	SNDMZ	(SNPTY+10)
 	{ "_ndmz" },
+#define	SQD	(SNPTY+11)
+	{ "_qd_tty" },
+#define	SNQD	(SNPTY+12)
+	{ "_nNQD" },
 #endif
 #ifdef tahoe
 #define	SVX	(SNPTY+1)
@@ -477,6 +481,8 @@ dotty()
 	printf(mesg);
 	ttyprt(&tty[0], 0);
 #ifdef vax
+	if (nl[SNQD].n_type != 0) 
+		doqdss();
 	if (nl[SNDZ].n_type != 0)
 		dottytype("dz", SDZ, SNDZ);
 	if (nl[SNDH].n_type != 0)
@@ -496,6 +502,31 @@ dotty()
 		dottytype("pty", SPTY, SNPTY);
 }
 
+/* 
+ * Special case the qdss because there are 4 tty structs per qdss 
+ * and only the first of each is used as a tty.  
+ */
+#ifdef vax
+doqdss()
+{
+	int nqd;
+	register struct tty *tp;
+
+	if (kflg) {
+		nl[SNQD].n_value = clear(nl[SNQD].n_value);
+		nl[SQD].n_value = clear(nl[SQD].n_value);
+	}
+	lseek(fc, (long)nl[SNQD].n_value, 0);
+	read(fc, &nqd, sizeof(nqd));
+	printf("%d qd\n", nqd);
+	lseek(fc, (long)nl[SQD].n_value, 0);
+	read(fc, tty, nqd * sizeof(struct tty) * 4);
+	printf(mesg);
+	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
+		ttyprt(tp, tp - tty);
+}
+#endif
+
 dottytype(name, type, number)
 char *name;
 {
@@ -503,7 +534,7 @@ char *name;
 	register struct tty *tp;
 	extern char *realloc();
 
-	if (tty == (struct tty *)0)
+	if (tty == (struct tty *)0) 
 		return;
 	if (kflg) {
 		nl[number].n_value = clear(nl[number].n_value);
