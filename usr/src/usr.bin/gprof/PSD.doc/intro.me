@@ -1,4 +1,4 @@
-\"	@(#)intro.me	1.2 %G%
+\"	@(#)intro.me	1.3 %G%
 .ls 2
 .sh 1 "Programs to be Profiled"
 .pp
@@ -15,8 +15,8 @@ by one programmer
 who has understood the requirements for
 these abstractions, and has programmed them
 appropriately.
-More frequently, though, the program has
-had multiple authors, and has
+More frequently the program has
+had multiple authors and has
 evolved over time, changing the demands placed
 on the implementation of the abstractions without
 changing the implementation itself.
@@ -32,9 +32,9 @@ The purpose of the \fBgprof\fP profiling tool is to
 help the user evaluate alternative implementations
 of abstractions.
 In fact, we developed this tool in response to our efforts 
-to improve a locally-written code generator [Graham82].
+to improve a code generator we were writing [Graham82].
 .pp
-We take advantage of the fact that the programs
+The \fBgprof\fP design takes advantage of the fact that the programs
 to be measured are large, structured and hierarchical.
 We provide a profile in which the execution time
 for a set of routines that implement an
