@@ -1,7 +1,8 @@
 #
 #  Tested on DG/UX 5.4.2 by A. Bryan Curnutt <bryan@Stoner.COM>.
+#  Updated for DG/UX 5.4.3 by Mark T. Robinson <mtr@ornl.gov>.
 #
-#	@(#)Makefile.dgux	8.3 (Berkeley) %G%
+#	@(#)Makefile.dgux	8.4 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -17,6 +18,7 @@ O=	-O
 DBMDEF=	-DNDBM -DNIS
 
 # environment definitions (e.g., -D_AIX3)
+# use DGUX_5_4_2 for versions prior to 5.4.3.
 ENVDEF=-DDGUX
 
 # see also conf.h for additional compilation flags

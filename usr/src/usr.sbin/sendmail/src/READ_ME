@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.64 (Berkeley) %G%
+#	@(#)READ_ME	8.65 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -162,6 +162,8 @@ RISCOS		Define this if you are running RISC/os from MIPS.
 IRIX		Define this if you are running IRIX from SGI.
 _SCO_unix_	Define this if you are on SCO UNIX.
 _SCO_unix_4_2	Define this if you are on SCO Open Server 3.2v4.
+DGUX		Define this if you are on DG/UX 5.4.3 or later
+DGUX_5_4_2	Define this if you are on DG/UX systems prior to 5.4.3.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -611,7 +613,11 @@ A/UX
 DG/UX
 	Apparently, /bin/mail doesn't work properly for delivery on
 	DG/UX -- the person who has this working, Douglas Anderson
-	<dlander@afterlife.ncsc.mil>, used procmail instead.
+	<dlander@afterlife.ncsc.mil>, used procmail instead.  The
+	problem is that DG/UX /bin/mail requires that an environment
+	variable be set (_FORCE_MAIL_LOCAL_=yes); sendmail has no
+	mechanism for this.  Several people report that procmail works
+	beautifully.
 
 Apollo DomainOS
 	If you are compiling on Apollo, you will have to create an empty
@@ -857,4 +863,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.64, last update %G% 13:08:35)
+(Version 8.65, last update %G% 06:37:14)
