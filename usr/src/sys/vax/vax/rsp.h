@@ -1,4 +1,4 @@
-/*	rsp.h	4.1	83/06/01	*/
+/*	rsp.h	4.2	83/06/01	*/
 
 /*
  * TU58 transfer protocol constants and data structures
@@ -36,7 +36,7 @@ struct tu {
 	int	tu_cerrs;	/* count of checksum errors */
 	int	tu_herrs;	/* count of hard errors */
 	char    tu_dopen[2];	/* drive is open */
-} tu;
+};
 
 /*
  * States
