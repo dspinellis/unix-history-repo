@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.24 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.25 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -49,7 +49,13 @@ BINMODE?=	555
 
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
-all: lib${LIB}.a lib${LIB}_p.a ${MANALL}# llib-l${LIB}.ln
+.if !defined(NOPROFILE)
+_LIBS=lib${LIB}.a lib${LIB}_p.a
+.else
+_LIBS=lib${LIB}.a
+.endif
+
+all: ${_LIBS} ${MANALL}# llib-l${LIB}.ln
 
 OBJS+=	${SRCS:R:S/$/.o/g}
 
