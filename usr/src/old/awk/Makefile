@@ -1,4 +1,4 @@
-#	Makefile	4.1	82/05/07
+#	Makefile	4.2	83/07/08
 #
 CFLAGS=-O
 YFLAGS=-d
@@ -21,7 +21,9 @@ token.c:	awk.h
 	e - <tokenscript
 
 get:
-	for i in $(SOURCE) makefile tokenscript README; do cp /usr/src/cmd/awk/$$i .; done
+	for i in $(SOURCE) Makefile tokenscript README; do \
+		cp /usr/src/bin/awk/$$i .;
+	done
 
 install:
 	install -s awk ${DESTDIR}/bin
@@ -33,7 +35,7 @@ find:
 	egrep -n "$(PAT)" *.[ylhc] awk.def
 
 list:
-	-pr $(SOURCE) makefile tokenscript README EXPLAIN
+	-pr $(SOURCE) Makefile tokenscript README EXPLAIN
 
 lint:
 	lint -spu b.c main.c token.c tran.c run.c lib.c parse.c -lm |\
