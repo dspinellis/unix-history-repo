@@ -1,4 +1,12 @@
 /*
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)x25config.c	5.2 (Berkeley) %G%
+ */
+/*
  * Configure X.25 interface
  *
  * Copyright (c) 1986 University of British Columbia
@@ -60,7 +68,8 @@ struct	cmd {
 };
 
 struct	ifreq ifr;
-struct	x25config x25conf = { AF_CCITT };
+struct	ifreq_x25 ifrx25;
+#define x25conf ifrx25.ifr_xc
 
 char	*myname;
 char	*ifname;	/* interface name */
@@ -86,15 +95,15 @@ int argc;
 	if (ioctl (s, SIOCGIFFLAGS, (char *)&ifr) < 0)
 		syserr ("ioctl (SIOCGIFFLAGS)");
 	ifflags = ifr.ifr_flags;
-	strcpy (ifr.ifr_name, ifname);
-	if (ioctl (s, SIOCGIFADDR, (char *)&ifr) == 0)
-		bcopy ((char *)&ifr.ifr_addr, (char *)&x25conf, sizeof (x25conf));
-
+	strcpy (ifrx25.ifr_name, ifname);
+	if (ioctl (s, SIOCGIFCONF_X25, (char *)&ifrx25) < 0) {
+		x25conf.xc_addr.x25_len = sizeof(x25conf);
+		x25conf.xc_addr.x25_family = AF_CCITT;
+	}
 	if (argc == 2) {
 		status ();
 		exit (0);
 	}
-
 	argv++;
 	while (*argv) {
 		register struct cmd *cp;
@@ -125,10 +134,9 @@ int argc;
 	if (ioctl (s, SIOCSIFFLAGS, (char *)&ifr) < 0)
 		syserr ("ioctl (SIOCSIFFLAGS)");
 
-	strcpy (ifr.ifr_name, ifname);
-	bcopy ((char *)&x25conf, (char *)&ifr.ifr_addr, sizeof (x25conf));
-	if (ioctl (s, SIOCSIFADDR, (char *)&ifr) < 0)
-		syserr ("ioctl (SIOCSIFADDR)");
+	strcpy (ifrx25.ifr_name, ifname);
+	if (ioctl (s, SIOCSIFCONF_X25, (char *)&ifrx25) < 0)
+		syserr ("ioctl (SIOCSIFCONF_X25)");
 	exit (0);
 }
 
@@ -158,7 +166,7 @@ char *fmt;
 
 status ()
 {
-	char addr[sizeof (x25conf.xc_ntn) * 2 + 1];
+	char *addr = x25conf.xc_addr.x25_addr;
 
 	printf ("%s: ", ifname);
 	printb ("interface flags", ifflags, IFFBITS);
@@ -167,8 +175,7 @@ status ()
 	if (x25conf.xc_ltrace)
 		printf ("\ttracing: on\n");
 	printf ("\npacket level:\n");
-	from_bcd (x25conf.xc_ntn, addr, x25conf.xc_ntnlen);
-	printf ("\taddress: %04d %s\n", x25conf.xc_net, addr);
+	printf ("\taddress: %04d %s\n", x25conf.xc_addr.x25_net, addr);
 	printf ("\twindow size: %d\n", x25conf.xc_pwsize);
 	printf ("\tpacket size: %d\n", 1 << x25conf.xc_psize);
 	printf ("\tmax lcn: %d\n", x25conf.xc_maxlcn);
@@ -190,7 +197,7 @@ setifflags (value)
 setdefault (arg)
 {
 
-	x25conf.xc_family = AF_CCITT;
+	x25conf.xc_addr.x25_family = AF_CCITT;
 	x25conf.xc_lproto = CCITTPROTO_HDLC;
 	x25conf.xc_lptype = HDLCPROTO_LAPB;
 	x25conf.xc_lwsize = 7;
@@ -212,7 +219,7 @@ char *arg;
 		net = np->n_net;
 	} else
 		net = atoi (arg);
-	x25conf.xc_net = net;
+	x25conf.xc_addr.x25_net = net;
 }
 
 setntn (arg)
@@ -227,18 +234,16 @@ register char *arg;
 		if ((hp = getx25hostbyname (arg)) == 0)
 			abort ("can't find '%s' in /etc/x25hosts", arg);
 		arg = ((struct sockaddr_x25 *)hp->h_addr)->x25_addr;
-		l = strlen (arg);
+		l = strlen (arg) + 1;
 	} else
-		for (l = 0, p = arg; *p; p++) {
+		for (l = 1, p = arg; *p; p++) {
 			l++;
 			if (*p < '0' || *p > '9')
 				abort ("invalid character in ntn address");
 		}
-	if (l > sizeof (x25conf.xc_ntn) * 2 || l == 0)
+	if (l > sizeof (x25conf.xc_addr.x25_addr))
 		abort ("invalid ntn address");
-
-	x25conf.xc_ntnlen = l;
-	to_bcd (arg, x25conf.xc_ntn);
+	bcopy(arg, x25conf.xc_addr.x25_addr, l);
 }
 
 to_bcd (src, dest)
