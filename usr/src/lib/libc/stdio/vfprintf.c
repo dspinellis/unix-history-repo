@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.44 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -63,20 +63,32 @@ printf(fmt, args)
 	FILE f;
 
 	f._flags = __SWR;
+	f._write = NULL;
 	return (vfprintf(&f, fmt, &args));
 }
 #endif
 
-#define __sprint(fp, uio) cshprintv(uio)
-
 int
-cshprintv(uio)
+__sprint(fp, uio)
+	FILE *fp;
 	register struct __suio *uio;
 {
 	register char *p;
 	register int n, ch, iovcnt;
-	register struct __siov *iov = uio->uio_iov;
+	register struct __siov *iov;
 
+	/* must allow sprintf to work, might as well allow others too */
+	if (fp->_write || fp->_flags & __SSTR) {
+		if (uio->uio_resid == 0) {
+			uio->uio_iovcnt = 0;
+			return (0);
+		}
+		n = __sfvwrite(fp, uio);
+		uio->uio_resid = 0;
+		uio->uio_iovcnt = 0;
+		return (n);
+	}
+	iov = uio->uio_iov;
 	for (iovcnt = uio->uio_iovcnt; --iovcnt >= 0; iov++) {
 		for (p = iov->iov_base, n = iov->iov_len; --n >= 0;) {
 #ifdef CSHPUTCHAR
