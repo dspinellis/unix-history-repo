@@ -4,17 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	7.19 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "malloc.h"
 #include "mbuf.h"
 #include "protosw.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "errno.h"
 #include "stat.h"
 
 #include "../net/if.h"
