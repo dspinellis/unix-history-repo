@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,13 +46,10 @@ main(argc, argv)
 	ftsoptions = FTS_PHYSICAL;
 	save = argv;
 	aflag = sflag = 0;
-	while ((ch = getopt(argc, argv, "aksx")) != EOF)
+	while ((ch = getopt(argc, argv, "asx")) != EOF)
 		switch(ch) {
 		case 'a':
 			aflag = 1;
-			break;
-		case 'k':		/* Delete before 4.4BSD. */
-			(void)fprintf(stderr, "du: -k no longer supported\n");
 			break;
 		case 's':
 			sflag = 1;
