@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.11	81/04/28	*/
+/*	vm_meter.c	4.12	81/06/07	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,31 +78,26 @@ setupclock()
 		maxpgio = (DISKRPM * 2) / 3;
 
 	/*
-	 * Clock to scan using max of ~~15% of processor time for sampling,
-	 *     this estimated to allow maximum of 300 samples per second.
+	 * Clock to scan using max of ~~10% of processor time for sampling,
+	 *     this estimated to allow maximum of 200 samples per second.
 	 * This yields a ``fastscan'' of roughly (with CLSIZE=2):
-	 *	<=1m	2m	3m	4m	>=6m
-	 * 	5s	6s	7s	13s	20s
+	 *	<=1m	2m	3m	4m	8m
+	 * 	5s	10s	15s	20s	40s
 	 */
 	if (nswdev == 1 && physmem*NBPG > 2*1024*(1024-16))
 		printf("WARNING: should run interleaved swap with >= 2Mb\n");
 	if (fastscan == 0)
-		fastscan = (LOOPPAGES/CLSIZE) / 300;
+		fastscan = (LOOPPAGES/CLSIZE) / 200;
 	if (fastscan < 5)
 		fastscan = 5;
-	if (fastscan > maxslp)
-		fastscan = maxslp;
 	if (nswdev == 2)
 		maxpgio = (maxpgio * 3) / 2;
 
 	/*
-	 * Set slow scan time to 1/3 the fast scan time but at most
-	 * maxslp (a macroscopic slow).
+	 * Set slow scan time to 1/2 the fast scan time.
 	 */
 	if (slowscan == 0)
-		slowscan = 3 * fastscan;
-	if (slowscan > maxslp)
-		slowscan = maxslp;
+		slowscan = 2 * fastscan;
 #if defined(BERT) || defined(ERNIE)
 	printf("slowscan %d, fastscan %d, maxpgio %d\n",
 	    slowscan, fastscan, maxpgio);
