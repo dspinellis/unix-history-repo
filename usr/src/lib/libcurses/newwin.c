@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -50,9 +50,10 @@ newwin(nl, nc, by, bx)
 	for (lp = win->topline, i = 0; i < nl; i++, lp = lp->next) {
 		lp->flags = 0;
 		lp->flags &= ~__ISDIRTY;
+		lp->flags &= ~__ISPASTEOL;
 		for (sp = lp->line; sp < lp->line + nc; sp++)
 			*sp = ' ';
-		lp->hash = __hash(lp->line);
+		lp->hash = __hash(lp->line, nc);
 	}
 
 	return (win);
