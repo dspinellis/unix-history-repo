@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.3	%G%
+#	@(#)makefile	1.4	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -63,20 +63,26 @@ dballoc.o:	dballoc.c
 	-ld -r -x $*.o
 	mv a.out $*.o
 
-Version:	$(SOURCES)
+Version:	$(SOURCES) mkvers
 	@rm -f Version.c
 	mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
 
+mkvers:	mkvers.c
+	@cc mkvers.c -o mkvers
+
 clean:
 	rm -f *.o $(LIB) libI66.a tags
 
-index:	$(SOURCES)
+index:	$(SOURCES) mkindx
 	@mkindx "f77 libI77.a Source Listing " Makefile $(SOURCES)
 
 print:	index
 	@pr index Makefile `ls $(SOURCES)` | lpr
+
+mkindx:	mkindx.c
+	@cc mkindx.c -o mkindx
 
 Intro:	Intro.tx
 	@-rm Intro
@@ -86,7 +92,7 @@ wup:	Intro.tx
 	@nroff -ms Intro.tx | ul | more
 
 tape:	
-	@tar cbf 20 $(TAPE) mkvers.c mkvers mkindx.c mkindx \
+	@tar cbf 20 $(TAPE) mkvers.c mkindx.c \
 	Makefile READ_ME NEWS Intro.tx Intro $(SOURCES)
 
 order:
