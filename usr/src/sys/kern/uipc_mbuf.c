@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.16 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -462,8 +462,10 @@ m_pullup(n, len)
 		if (m == 0)
 			goto bad;
 		m->m_len = 0;
-		if (n->m_flags & M_PKTHDR)
+		if (n->m_flags & M_PKTHDR) {
 			M_COPY_PKTHDR(m, n);
+			n->m_flags &= ~M_PKTHDR;
+		}
 	}
 	space = &m->m_dat[MLEN] - (m->m_data + m->m_len);
 	do {
