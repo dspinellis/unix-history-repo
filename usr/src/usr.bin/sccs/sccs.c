@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sccs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)sccs.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 # include <stdio.h>
@@ -1182,7 +1182,7 @@ unedit(fn)
 	struct pfile *pent;
 	extern struct pfile *getpfent();
 	char buf[PFILELG];
-	extern char *makefile();
+	extern char *makefile(), *rindex(), *tail();
 
 	/* make "s." filename & find the trailing component */
 	pfn = makefile(fn);
@@ -1565,7 +1565,6 @@ username()
 	return (pw->pw_name);
 # else
 	extern char *getlogin();
-	extern char *getenv();
 	register char *p;
 
 	p = getenv("USER");
