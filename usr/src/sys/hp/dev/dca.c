@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.1 (Berkeley) %G%
+ *	@(#)dca.c	7.2 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -132,6 +132,7 @@ dcaopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
+	int error;
  
 	unit = UNIT(dev);
 	if (unit >= NDCA || (dca_active & (1 << unit)) == 0)
@@ -158,7 +159,12 @@ dcaopen(dev, flag)
 	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		if (error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+				   ttopen, 0)) {
+			tp->t_state &= ~TS_WOPEN;
+			(void) spl0();
+			return (error);
+		}
 	}
 	(void) spl0();
 	return ((*linesw[tp->t_line].l_open)(dev, tp));
@@ -205,9 +211,14 @@ dcawrite(dev, uio, flag)
 	int unit = UNIT(dev);
 	register struct tty *tp = &dca_tty[unit];
  
-	if (unit == dcaconsole && constty &&
-	    (constty->t_state&(TS_CARR_ON|TS_ISOPEN))==(TS_CARR_ON|TS_ISOPEN))
-		tp = constty;
+	/*
+	 * (XXX) We disallow virtual consoles if the physical console is
+	 * a serial port.  This is in case there is a display attached that
+	 * is not the console.  In that situation we don't need/want the X
+	 * server taking over the console.
+	 */
+	if (constty && unit == dcaconsole)
+		constty = NULL;
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
  
