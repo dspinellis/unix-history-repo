@@ -1,0 +1,51 @@
+.nr _0 \n(c.
+.de (x			\" *** begin index entry
+.ds |X x
+.if \\n(.$ \
+.	ds |X \\$1
+.am %\\*(|X )x
+.sp \\n(xsu
+..
+.de )x			\" *** end index entry
+.ds |x \\n%
+.if \\n(.$ \
+.	ds |x \\$1
+.if "\\*(|x"_" \
+.	ig ..
+.am %\\*(|X ..
+.if \w'\\$2'>(\\n(.l-\\n(.i-\\n(.k) \
+.	ti +\\n(xuu
+\\\\a\\\\t\\$2\\*(|x
+...
+.rm |x
+.rm |X
+..
+.de xp			\" *** print the index
+.br
+.@C 2
+.ls 1
+.vs \\n(.su*\\n($Ru
+.fi
+.ds |X x
+.if \\n(.$ \
+.	ds |X \\$1
+.xl -(\\n(xuu+\w'...'u)
+.di |x
+.%\\*(|X
+.br
+.di
+.rm %\\*(|X
+.xl \\n($lu
+.rm |X
+.ev
+.nf
+.in 0
+.ta \\n(.lu-\\n(xuuR \\n(.luR
+.|x
+.fi
+.in
+.rm |x
+..
+.if \n(xu<=0 \
+.	nr xu 0.5i		\" index undent
+.nr c. \n(_0
