@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)com.c	7.5 (Berkeley) 5/16/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00018
+ * --------------------         -----   ----------------------
+ *
+ * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/com.c,v 1.2 92/01/21 14:34:11 william Exp $";
 
@@ -108,7 +115,7 @@ extern int kgdb_rate;
 extern int kgdb_debug_init;
 #endif
 
-#define	UNIT(x)		(minor(x)-1)
+#define	UNIT(x)		(minor(x))
 
 comprobe(dev)
 struct isa_device *dev;
@@ -131,7 +138,7 @@ struct isa_device *isdp;
 	u_char		unit;
 	int		port = isdp->id_iobase;
 
-	unit = isdp->id_unit - 1;
+	unit = isdp->id_unit;
 	if (unit == comconsole)
 		DELAY(1000);
 	com_addr[unit] = port;
@@ -149,7 +156,7 @@ struct isa_device *isdp;
 	outb(port+com_ier, 0);
 	outb(port+com_mcr, 0 | MCR_IENABLE);
 #ifdef KGDB
-	if (kgdb_dev == makedev(commajor, unit+1)) {
+	if (kgdb_dev == makedev(commajor, unit)) {
 		if (comconsole == unit)
 			kgdb_dev = -1;	/* can't debug over console port */
 		else {
@@ -239,7 +246,7 @@ comclose(dev, flag, mode, p)
 	outb(com+com_cfcr, inb(com+com_cfcr) & ~CFCR_SBREAK);
 #ifdef KGDB
 	/* do not disable interrupts if debugging */
-	if (kgdb_dev != makedev(commajor, unit+1))
+	if (kgdb_dev != makedev(commajor, unit))
 #endif
 	outb(com+com_ier, 0);
 	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
@@ -283,7 +290,7 @@ comintr(unit)
 	register u_char code;
 	register struct tty *tp;
 
-	unit--;
+	unit;
 	com = com_addr[unit];
 	while (1) {
 		code = inb(com+com_iir);
@@ -300,7 +307,7 @@ comintr(unit)
 #define	RCVBYTE() \
 			code = inb(com+com_data); \
 			if ((tp->t_state & TS_ISOPEN) == 0) { \
-				if (kgdb_dev == makedev(commajor, unit+1) && \
+				if (kgdb_dev == makedev(commajor, unit) && \
 				    code == FRAME_END) \
 					kgdb_connect(0); /* trap into kgdb */ \
 			} else \
@@ -359,7 +366,7 @@ comeint(unit, stat, com)
 #ifdef KGDB
 		/* we don't care about parity errors */
 		if (((stat & (LSR_BI|LSR_FE|LSR_PE)) == LSR_PE) &&
-		    kgdb_dev == makedev(commajor, unit+1) && c == FRAME_END)
+		    kgdb_dev == makedev(commajor, unit) && c == FRAME_END)
 			kgdb_connect(0); /* trap into kgdb */
 #endif
 		return;
@@ -616,7 +623,7 @@ comcnprobe(cp)
 	/* make sure hardware exists?  XXX */
 
 	/* initialize required fields */
-	cp->cn_dev = makedev(commajor, unit+1);
+	cp->cn_dev = makedev(commajor, unit);
 	cp->cn_tp = &com_tty[unit];
 #ifdef	COMCONSOLE
 	cp->cn_pri = CN_REMOTE;		/* Force a serial port console */
