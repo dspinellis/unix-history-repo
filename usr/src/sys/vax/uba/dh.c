@@ -1,4 +1,4 @@
-/*	dh.c	4.33	81/05/09	*/
+/*	dh.c	4.34	81/05/18	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -117,7 +117,7 @@ struct dmdevice
 #define	DML_DTR		0000002		/* data terminal ready */
 #define	DML_LE		0000001		/* line enable */
 
-#define	DML_ON		(DML_DTR|DML_LE)
+#define	DML_ON		(DML_DTR|DML_RTS|DML_LE)
 #define	DML_OFF		(DML_LE)
 
 /*
@@ -672,6 +672,7 @@ dmopen(dev)
 	register struct uba_device *ui;
 	register int unit;
 	register int dm;
+	int s;
 
 	unit = minor(dev);
 	dm = unit >> 4;
@@ -683,7 +684,7 @@ dmopen(dev)
 		return;
 	}
 	addr = (struct dmdevice *)ui->ui_addr;
-	(void) spl5();
+	s = spl5();
 	addr->dmcsr &= ~DM_SE;
 	while (addr->dmcsr & DM_BUSY)
 		;
@@ -691,10 +692,10 @@ dmopen(dev)
 	addr->dmlstat = DML_ON;
 	if (addr->dmlstat&DML_CAR)
 		tp->t_state |= CARR_ON;
-	addr->dmcsr = DH_IE|DM_SE;
+	addr->dmcsr = DM_IE|DM_SE;
 	while ((tp->t_state&CARR_ON)==0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
-	(void) spl0();
+	splx(s);
 }
 
 /*
@@ -730,7 +731,7 @@ dmctl(dev, bits, how)
 		addr->dmlstat &= ~bits;
 		break;
 	}
-	addr->dmcsr = DH_IE|DM_SE;
+	addr->dmcsr = DM_IE|DM_SE;
 	splx(s);
 }
 
@@ -771,7 +772,7 @@ dmintr(dm)
 			tp->t_state &= ~CARR_ON;
 		} else
 			tp->t_state |= CARR_ON;
-		addr->dmcsr = DH_IE|DM_SE;
 	}
+	addr->dmcsr = DM_IE|DM_SE;
 }
 #endif
