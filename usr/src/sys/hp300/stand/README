@@ -1,0 +1,66 @@
+The file `bootblock' is an HP boot block set up with the following label:
+
+# /dev//rsd1c:
+type: SCSI
+disk: 
+label: generic boot
+flags:
+bytes/sector: 512
+sectors/track: 32
+tracks/cylinder: 16
+sectors/cylinder: 512
+cylinders: 1160
+rpm: 3600
+interleave: 1
+trackskew: 0
+cylinderskew: 0
+headswitch: 0           # milliseconds
+track-to-track seek: 0  # milliseconds
+drivedata: 0 
+
+8 partitions:
+#        size   offset    fstype   [fsize bsize   cpg]
+  a:    34176      384    4.2BSD     1024  8192    16   # (Cyl.    0*- 67*)
+  b:    65536    34560      swap                        # (Cyl.   67*- 195)
+  c:   593920        0      boot                        # (Cyl.    0 - 1159)
+  d:    34560        0      boot                        # (Cyl.    0 - 67*)
+  e:   409600   100096    unused        0     0         # (Cyl.  195*- 995)
+  f:    84224   509696    unused        0     0         # (Cyl.  995*- 1159*)
+
+This is sized to fit on the smallest HP disk that is around 300mb (7959B).
+	'a' is the same size as vangogh:/nbsd so you can copy over from it.
+	'b' is a 32mb swap partition.
+	'd' includes bootblock+'a' so you can use it to create the root
+	    image (and use it to edit the disklabel if you plan on changing
+	    the 'c' partition).
+	'e' is 200mb and intended for /usr.
+	'f' is what is left over (41mb) and can be used for a very small /var.
+	    It can be grown on larger disks to accomodate a larger /var.
+
+To build a boot image you need a spare disk. Assuming your spare disk
+is /dev/rsd1 and you have a root image in /dev/rsd0a, you do the following:
+
+1. sleep 10000 < /dev/sd1c		(hold open the disk)
+2. disklabel -W /dev/sd1c		(make the label writable)
+3. dd if=bootblock of=/dev/rsd1c	(copy out the bootblock)
+4. <kill the sleep>			(close the disk)
+5. dd if=/dev/rsd0a of=/dev/rsd1a	(copy out the root fs)
+6. dd if=/dev/rsd1d of=rootimage	(create a root image file)
+
+
+The file `bootblock' is created as follows:
+
+1. handcrafting the disklabel and installing with:
+	disklabel -R /dev/rsd1c proto
+
+2. creating the boot program via:
+	cd /sys/hp300/stand
+	make
+	make mkboot
+	./mkboot dboot tboot tcopy nbsdboot.lif
+
+3. install the boot program with:
+	disklabel -B -b nbsdboot.lif /dev/rsd1c
+
+4. copy out the completed boot block:
+	dd if=/dev/rsd1c of=bootblock bs=16b count=24
