@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -368,6 +368,11 @@ extractfile(name)
 		fprintf(stderr, "%s: unknown file mode 0%o\n", name, mode);
 		skipfile();
 		return (FAIL);
+
+	case IFSOCK:
+		vprintf(stdout, "skipped socket %s\n", name);
+		skipfile();
+		return (GOOD);
 
 	case IFDIR:
 		if (mflag) {
