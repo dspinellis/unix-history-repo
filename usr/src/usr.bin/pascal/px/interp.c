@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)interp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <math.h>
@@ -664,7 +664,9 @@ interpreter(base)
 			continue;
 		case O_NIL:
 			pc.cp++;
-			NIL();
+			tcp = popaddr();
+			NIL(tcp);
+			pushaddr(tcp);
 			continue;
 		case O_ADD2:
 			pc.cp++;
@@ -1314,8 +1316,9 @@ interpreter(base)
 			continue;
 		case O_ASRT:
 			pc.cp++;
-			ASRTS();
-			popsp((long)(sizeof(long)+sizeof(char *)));
+			tl = pop4();
+			tcp = popaddr();
+			ASRTS(tl, tcp);
 			continue;
 		case O_FOR1U:
 			tl1 = *pc.cp++;		/* tl1 loop branch */
@@ -1417,8 +1420,20 @@ interpreter(base)
 				popsp((long)(*pc.cp++));
 				continue;
 			}
-			fputc();
-			popsp((long)(*pc.cp++));
+			tl = *pc.cp++;
+			switch (tl - sizeof(FILE *)) {
+			case 2:
+				tl1 = pop2();
+				break;
+			case 4:
+				tl1 = pop4();
+				break;
+			default:
+				ERROR("Panic: bad size to O_WRITEC");
+				/* NOT REACHED */
+			}
+			tcp = popaddr();
+			fputc(tl1, tcp);
 			continue;
 		case O_WRITES:
 			if (_runtst) {
