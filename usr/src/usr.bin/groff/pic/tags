@@ -1,0 +1,191 @@
+add_arrows	object.cc	/^void linear_object::add_arrows(int at_start, int a/
+add_text	object.cc	/^void graphic_object::add_text(text_item *t, int a)/
+aligned	object.cc	/^graphic_object::graphic_object() : ntext(0), text(/
+ap	lex.cc	/^: argc(ac), ap(0)$/
+append	object.cc	/^void object_list::append(object *obj)$/
+arc	tex.cc	/^void tex_output::arc(const position &start, const /
+args	object.cc	/^output::output() : desired_height(0.0), desired_wi/
+argument_macro_input	lex.cc	/^argument_macro_input::~argument_macro_input()$/
+arrow_at_end	object.cc	/^: strt(s), en(e), arrow_at_start(0), arrow_at_end(/
+begin_block	object.cc	/^void output::begin_block(const position &, const p/
+between	pic.y	/^between:$/
+blank	object.cc	/^int object::blank()$/
+block_object	object.cc	/^block_object::~block_object()$/
+center	object.cc	/^position object::center()$/
+choose_delimiter	troff.cc	/^static const char *choose_delimiter(const char *te/
+circle	tex.cc	/^void tex_output::circle(const position &cent, doub/
+clear	lex.cc	/^void input_stack::clear()$/
+command	object.cc	/^void output::command(const char *, const char *, i/
+command_object	object.cc	/^command_object::~command_object()$/
+compute_arc_center	common.cc	/^int compute_arc_center(const position &start, cons/
+compute_scale	object.cc	/^double output::compute_scale(double sc, const posi/
+conditional_expr	pic.y	/^conditional_expr:$/
+copy_file_thru_input	lex.cc	/^copy_file_thru_input::~copy_file_thru_input()$/
+copy_thru_input	lex.cc	/^: in(i), copy_thru_input(b, u)$/
+corner	pic.y	/^corner:$/
+dash_arc	common.cc	/^void common_output::dash_arc(const position &cent,/
+dash_line	common.cc	/^void common_output::dash_line(const position &star/
+dashed_arc	common.cc	/^void common_output::dashed_arc(const position &sta/
+dashed_circle	common.cc	/^void common_output::dashed_circle(const position &/
+dashed_rounded_box	common.cc	/^void common_output::dashed_rounded_box(const posit/
+declare_ptable	lex.cc	/^declare_ptable(char)$/
+define_label	pic.y	/^void define_label(const char *label, const place */
+define_variable	pic.y	/^void define_variable(const char *name, double val)/
+dim	object.cc	/^: dim(d)$/
+do_copy	lex.cc	/^void do_copy(const char *filename)$/
+do_define	lex.cc	/^void do_define()$/
+do_for	lex.cc	/^void do_for(char *var, double from, double to, int/
+do_lookahead	lex.cc	/^void do_lookahead()$/
+do_undef	lex.cc	/^void do_undef()$/
+done	lex.cc	/^: done(0)$/
+done_newline	lex.cc	/^  done_newline(0)$/
+dot	tex.cc	/^void tex_output::dot(const position &pos, const li/
+dot_arc	common.cc	/^void common_output::dot_arc(const position &cent, /
+dot_line	common.cc	/^void common_output::dot_line(const position &start/
+dotted_arc	common.cc	/^void common_output::dotted_arc(const position &sta/
+dotted_circle	common.cc	/^void common_output::dotted_circle(const position &/
+dotted_rounded_box	common.cc	/^void common_output::dotted_rounded_box(const posit/
+draw_arrow	object.cc	/^void draw_arrow(const position &pos, const distanc/
+east	object.cc	/^position object::east()$/
+element	pic.y	/^element:$/
+element_list	pic.y	/^element_list:$/
+ellipse	tex.cc	/^void tex_output::ellipse(const position &cent, con/
+encompass	object.cc	/^void bounding_box::encompass(const position &pos)$/
+end	object.cc	/^position object::end()$/
+end_block	object.cc	/^void output::end_block()$/
+expr	pic.y	/^expr:$/
+expr_pair	pic.y	/^expr_pair:$/
+file_input	lex.cc	/^file_input::~file_input()$/
+filename	lex.cc	/^: lineno(0), ptr(""), filename(fn)$/
+fill	object.cc	/^: rectangle_object(pos), fill(-1.0)$/
+filled_rounded_box	common.cc	/^void common_output::filled_rounded_box(const posit/
+find_label	object.cc	/^place *object::find_label(const char *)$/
+finish_picture	tex.cc	/^void tex_output::finish_picture()$/
+for_input	lex.cc	/^for_input::~for_input()$/
+get	lex.cc	/^int file_input::get()$/
+get_char	lex.cc	/^int input_stack::get_char()$/
+get_delimited	lex.cc	/^int get_delimited()$/
+get_line	lex.cc	/^int copy_thru_input::get_line()$/
+get_location	lex.cc	/^int input::get_location(const char **, int *)$/
+graphic_object	object.cc	/^graphic_object::~graphic_object()$/
+grops_output	troff.cc	/^grops_output::grops_output()$/
+hash	key.cc	/^hash (register const char *str, register int len)$/
+height	object.cc	/^double object::height()$/
+hypot	object.cc	/^double hypot(const position &a)$/
+if	lex.cc	/^      if (c == '\\n')$/
+inget	lex.cc	/^int copy_file_thru_input::inget()$/
+input	lex.cc	/^input::~input()$/
+label	pic.y	/^label:$/
+label_path	pic.y	/^label_path:$/
+last_fill	troff.cc	/^: last_filename(0), last_line_thickness(BAD_THICKN/
+lex_cleanup	lex.cc	/^void lex_cleanup()$/
+lex_error	lex.cc	/^void lex_error(const char *message,$/
+lex_init	lex.cc	/^void lex_init(input *top)$/
+lex_warning	lex.cc	/^void lex_warning(const char *message,$/
+line	tex.cc	/^void tex_output::line(const position &start, const/
+line_object	object.cc	/^: line_object(s, e, p, i)$/
+line_thickness	troff.cc	/^void troff_output::line_thickness(double p)$/
+linear_object	object.cc	/^: v(p), n(i), linear_object(s, e)$/
+lineno	object.cc	/^: s(p), filename(fn), lineno(ln)$/
+lookup_keyword	key.cc	/^lookup_keyword (register const char *str, register/
+lookup_label	pic.y	/^place *lookup_label(const char *label)$/
+lookup_variable	pic.y	/^int lookup_variable(const char *name, double *val)/
+macro_input	lex.cc	/^macro_input::macro_input(const char *str)$/
+make_box	object.cc	/^graphic_object *object_spec::make_box(position *cu/
+make_command_object	object.cc	/^object *make_command_object(char *s, const char *f/
+make_grops_output	troff.cc	/^output *make_grops_output()$/
+make_line	object.cc	/^linear_object *object_spec::make_line(position *cu/
+make_mark_object	object.cc	/^object *make_mark_object()$/
+make_tex_output	tex.cc	/^output *make_tex_output()$/
+make_tpic_output	tex.cc	/^output *make_tpic_output()$/
+make_troff_output	troff.cc	/^output *make_troff_output()$/
+mark_object	object.cc	/^mark_object::mark_object()$/
+middle_element_list	pic.y	/^middle_element_list:$/
+milliinches	tex.cc	/^inline int milliinches(double x)$/
+move_by	object.cc	/^void object::move_by(const position &)$/
+next	object.cc	/^object::object() : prev(0), next(0)$/
+north	object.cc	/^position object::north()$/
+north_east	object.cc	/^position object::north_east()$/
+north_west	object.cc	/^position object::north_west()$/
+nth_primitive	pic.y	/^nth_primitive:$/
+object	object.cc	/^object::~object()$/
+object_spec	object.cc	/^object_spec::~object_spec()$/
+object_type	pic.y	/^object_type:$/
+only	pic.y	/^\/\/ called once only (not once per parse)$/
+operator	object.cc	/^position operator-(const position &a)$/
+optional_by	pic.y	/^optional_by:$/
+optional_ordinal_last	pic.y	/^optional_ordinal_last:$/
+optional_separator	pic.y	/^optional_separator:$/
+origin	object.cc	/^position object::origin()$/
+output	object.cc	/^output::~output()$/
+path	pic.y	/^path:$/
+peek	lex.cc	/^int file_input::peek()$/
+place	pic.y	/^place:$/
+placeless_element	pic.y	/^placeless_element:$/
+point	tex.cc	/^void tex_output::point(const position &pos)$/
+polygon	tex.cc	/^void tex_output::polygon(const position *v, int n,/
+position	object.cc	/^position::position(const place &pl)$/
+position_not_place	pic.y	/^position_not_place:$/
+position_rectangle	object.cc	/^int object_spec::position_rectangle(rectangle_obje/
+prev_default_pen_size	tex.cc	/^: default_pen_size(DEFAULT_PEN_SIZE), prev_default/
+print	object.cc	/^void object::print()$/
+print_text	object.cc	/^void object::print_text()$/
+process_body	lex.cc	/^char *process_body(const char *body)$/
+push	lex.cc	/^void input_stack::push(input *in)$/
+rad	object.cc	/^: closed_object(pos), rad(r)$/
+radius	object.cc	/^double object::radius()$/
+read_line	lex.cc	/^int file_input::read_line()$/
+rectangle_object	object.cc	/^: oblist(ol), tbl(t), rectangle_object(d)$/
+relative_path	pic.y	/^relative_path:$/
+reset	pic.y	/^void reset(const char *nm)$/
+reset_all	pic.y	/^void reset_all()$/
+reset_variables	pic.y	/^reset_variables:$/
+rounded_box	common.cc	/^void common_output::rounded_box(const position &ce/
+separator	pic.y	/^separator:$/
+set_args	object.cc	/^void output::set_args(const char *s)$/
+set_dashed	object.cc	/^void graphic_object::set_dashed(double wid)$/
+set_desired_width_height	object.cc	/^void output::set_desired_width_height(double wid, /
+set_dotted	object.cc	/^void graphic_object::set_dotted(double wid)$/
+set_fill	object.cc	/^void graphic_object::set_fill(double)$/
+set_invisible	object.cc	/^void graphic_object::set_invisible()$/
+set_location	object.cc	/^void output::set_location(const char *, int)$/
+set_pen_size	tex.cc	/^void tex_output::set_pen_size(double ps)$/
+set_thickness	object.cc	/^void graphic_object::set_thickness(double th)$/
+simple_arc	troff.cc	/^void troff_output::simple_arc(const position &star/
+simple_circle	troff.cc	/^void troff_output::simple_circle(int filled, const/
+simple_ellipse	troff.cc	/^void troff_output::simple_ellipse(int filled, cons/
+simple_file_input	lex.cc	/^simple_file_input::~simple_file_input()$/
+simple_if	pic.y	/^simple_if:$/
+simple_line	troff.cc	/^void troff_output::simple_line(const position &sta/
+simple_polygon	troff.cc	/^void troff_output::simple_polygon(int filled, cons/
+simple_spline	troff.cc	/^void troff_output::simple_spline(const position &s/
+solid_arc	common.cc	/^void common_output::solid_arc(const position &cent/
+solid_rounded_box	common.cc	/^void common_output::solid_rounded_box(const positi/
+south	object.cc	/^position object::south()$/
+south_east	object.cc	/^position object::south_east()$/
+south_west	object.cc	/^position object::south_west()$/
+spline	tex.cc	/^void tex_output::spline(const position &start, con/
+sprintf_args	pic.y	/^sprintf_args:$/
+start	object.cc	/^position object::start()$/
+start_picture	tex.cc	/^void tex_output::start_picture(double sc, const po/
+supports_filled_polygons	object.cc	/^int output::supports_filled_polygons()$/
+switch	lex.cc	/^      switch (c) {$/
+tail	object.cc	/^object_list::object_list() : head(0), tail(0)$/
+tex_output	tex.cc	/^tex_output::tex_output()$/
+text	pic.y	/^text:$/
+text_item	object.cc	/^text_item::~text_item()$/
+text_piece	object.cc	/^text_piece::~text_piece()$/
+thickness	object.cc	/^: type(solid), thickness(1.0)$/
+top	pic.y	/^top:$/
+transform	tex.cc	/^inline position tex_output::transform(const positi/
+troff_output	troff.cc	/^troff_output::~troff_output()$/
+type	object.cc	/^object_spec::object_spec(object_type t) : type(t)$/
+until	pic.y	/^until:$/
+update_bounding_box	object.cc	/^void object::update_bounding_box(bounding_box *)$/
+west	object.cc	/^position object::west()$/
+width	object.cc	/^double object::width()$/
+wrap_up_block	object.cc	/^void object_list::wrap_up_block(object_list *ol)$/
+y	object.cc	/^position::position() : x(0.0), y(0.0)$/
+yyerror	lex.cc	/^void yyerror(const char *s)$/
+yylex	lex.cc	/^int yylex()$/
+yyparse	pic.y	/^%%$/

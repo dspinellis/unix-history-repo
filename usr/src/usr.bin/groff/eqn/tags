@@ -1,0 +1,146 @@
+Mmain.cc	main.cc	/^int main(int argc, char **argv)$/
+ab	other.cc	/^: pointer_box(pp), ab(qq)$/
+accent_box	other.cc	/^accent_box::~accent_box()$/
+add_context	lex.cc	/^void add_context(const string &s)$/
+add_quoted_context	lex.cc	/^void add_quoted_context(const string &s)$/
+ap	lex.cc	/^: input(x), argc(ac), ap(0)$/
+append	list.cc	/^void list_box::append(box *pp)$/
+argument_macro_input	lex.cc	/^argument_macro_input::~argument_macro_input()$/
+box	box.cc	/^box::~box()$/
+build_extensible	delim.cc	/^static void build_extensible(const char *ext, cons/
+check_tabs	delim.cc	/^void delim_box::check_tabs(int level)$/
+column	eqn.y	/^column:$/
+column_arg	eqn.y	/^column_arg:$/
+column_element_list	eqn.y	/^column_element_list:$/
+column_list	eqn.y	/^column_list:$/
+compute_metrics	delim.cc	/^int delim_box::compute_metrics(int style)$/
+compute_spacing	list.cc	/^static int compute_spacing(int is_script, int left/
+compute_sublist_width	list.cc	/^void list_box::compute_sublist_width(int n)$/
+compute_subscript_kern	list.cc	/^void list_box::compute_subscript_kern()$/
+cramped_style	box.cc	/^int cramped_style(int style)$/
+debug_print	delim.cc	/^void delim_box::debug_print()$/
+declare_ptable	lex.cc	/^declare_ptable(definition)$/
+define_extensible_string	delim.cc	/^static void define_extensible_string(char *delim, /
+definition	lex.cc	/^definition::~definition()$/
+delim	eqn.y	/^delim:$/
+delim_box	delim.cc	/^delim_box::~delim_box()$/
+do_chartype	lex.cc	/^void do_chartype()$/
+do_definition	lex.cc	/^void do_definition(int is_simple)$/
+do_delim	lex.cc	/^void do_delim()$/
+do_file	main.cc	/^void do_file(const char *filename)$/
+do_gbfont	lex.cc	/^void do_gbfont()$/
+do_gfont	lex.cc	/^void do_gfont()$/
+do_grfont	lex.cc	/^void do_grfont()$/
+do_gsize	lex.cc	/^void do_gsize()$/
+do_ifdef	lex.cc	/^void do_ifdef()$/
+do_include	lex.cc	/^void do_include()$/
+do_set	lex.cc	/^void do_set()$/
+do_space	lex.cc	/^void do_space()$/
+do_text	box.cc	/^void do_text(const char *s)$/
+do_undef	lex.cc	/^void do_undef()$/
+equation	eqn.y	/^equation:$/
+f	other.cc	/^font_box::font_box(char *s, box *pp) : pointer_box/
+file_input	lex.cc	/^file_input::~file_input()$/
+flush_context	lex.cc	/^void flush_context()$/
+font	delim.cc	/^\/\/ on the special font (so no font change will b/
+font_box	other.cc	/^font_box::~font_box()$/
+font_type	text.cc	/^: spacing_type(ORDINARY_TYPE), font_type(DIGIT_TYP/
+from_to	eqn.y	/^from_to:$/
+get	lex.cc	/^int file_input::get()$/
+get_char	lex.cc	/^int get_char()$/
+get_delimited_text	lex.cc	/^void get_delimited_text()$/
+get_gbfont	box.cc	/^const char *get_gbfont()$/
+get_gfont	box.cc	/^const char *get_gfont()$/
+get_grfont	box.cc	/^const char *get_grfont()$/
+get_location	lex.cc	/^int input::get_location(char **, int *)$/
+get_special_char_font_type	text.cc	/^static int get_special_char_font_type(const char */
+handle_char_type	list.cc	/^void list_box::handle_char_type(int st, int ft)$/
+hint	script.cc	/^void script_box::hint(unsigned flags)$/
+ignore_definition	lex.cc	/^void ignore_definition()$/
+init_char_table	text.cc	/^void init_char_table()$/
+init_lex	lex.cc	/^void init_lex(const char *str, const char *filenam/
+init_table	lex.cc	/^void init_table(const char *device)$/
+input	lex.cc	/^input::~input()$/
+interpolate_macro_with_args	lex.cc	/^void interpolate_macro_with_args(const char *body)/
+is_char	text.cc	/^int char_box::is_char()$/
+is_simple	lex.cc	/^definition::definition() : is_macro(1), contents(0/
+left_is_italic	script.cc	/^int script_box::left_is_italic()$/
+lex_error	lex.cc	/^void lex_error(const char *message,$/
+limit_box	limit.cc	/^limit_box::~limit_box()$/
+lineno	lex.cc	/^: macro_input(str, x), lineno(ln)$/
+lookup_font_type	text.cc	/^static int lookup_font_type(const char *type)$/
+lookup_spacing_type	text.cc	/^static int lookup_spacing_type(const char *type)$/
+macro_input	lex.cc	/^macro_input::~macro_input()$/
+make_accent_box	other.cc	/^box *make_accent_box(box *p, box *q)$/
+make_delim_box	delim.cc	/^box *make_delim_box(char *l, box *pp, char *r)$/
+make_limit_box	limit.cc	/^box *make_limit_box(box *pp, box *qq, box *rr)$/
+make_lineup_box	mark.cc	/^box *make_lineup_box(box *p)$/
+make_over_box	over.cc	/^box *make_over_box(box *pp, box *qq)$/
+make_overline_box	other.cc	/^box *make_overline_box(box *p)$/
+make_prime_box	text.cc	/^box *make_prime_box(box *pp)$/
+make_script_box	script.cc	/^box *make_script_box(box *nuc, box *sub, box *sup)/
+make_small_over_box	over.cc	/^box *make_small_over_box(box *pp, box *qq)$/
+make_sqrt_box	sqrt.cc	/^box *make_sqrt_box(box *pp)$/
+make_uaccent_box	other.cc	/^box *make_uaccent_box(box *p, box *q)$/
+make_underline_box	other.cc	/^box *make_underline_box(box *p)$/
+mark	eqn.y	/^mark:$/
+matrix_box	pile.cc	/^matrix_box::matrix_box(column *pp)$/
+next	lex.cc	/^input::input(input *x) : next(x)$/
+next_is_italic	text.cc	/^: c(cc), prev_is_italic(0), next_is_italic(0)$/
+nonsup	eqn.y	/^nonsup:$/
+number	eqn.y	/^number:$/
+output	delim.cc	/^void delim_box::output()$/
+output_string	box.cc	/^void output_string()$/
+over_box	over.cc	/^over_box::~over_box()$/
+overline_char_box	other.cc	/^overline_char_box::overline_char_box()$/
+p	delim.cc	/^: left(l), right(r), p(pp)$/
+peek	lex.cc	/^int file_input::peek()$/
+peek_char	lex.cc	/^int peek_char()$/
+pile_arg	eqn.y	/^pile_arg:$/
+pile_element_list	eqn.y	/^pile_element_list:$/
+pointer_box	mark.cc	/^lineup_box::lineup_box(box *pp) : pointer_box(pp)$/
+prime_box	text.cc	/^prime_box::~prime_box()$/
+ptr	lex.cc	/^: input(p), lineno(0), ptr("")$/
+read_line	lex.cc	/^int file_input::read_line()$/
+reduce_size	over.cc	/^: num(pp), den(qq), reduce_size(is_small)$/
+restore_compatibility	box.cc	/^void restore_compatibility()$/
+right_is_italic	text.cc	/^int char_box::right_is_italic()$/
+script	eqn.y	/^script:$/
+script_box	script.cc	/^script_box::~script_box()$/
+script_style	box.cc	/^int script_style(int style)$/
+set_alignment	pile.cc	/^void column::set_alignment(alignment a)$/
+set_char_type	text.cc	/^void set_char_type(const char *type, char *ch)$/
+set_gbfont	box.cc	/^void set_gbfont(const char *s)$/
+set_gfont	box.cc	/^void set_gfont(const char *s)$/
+set_grfont	box.cc	/^void set_grfont(const char *s)$/
+set_gsize	box.cc	/^void set_gsize(int n)$/
+set_minimum_size	box.cc	/^void set_minimum_size(int n)$/
+set_param	box.cc	/^void set_param(const char *name, int value)$/
+set_script_reduction	box.cc	/^void set_script_reduction(int n)$/
+set_script_size	box.cc	/^void set_script_size()$/
+set_space	box.cc	/^void set_space(int n)$/
+set_spacing_type	text.cc	/^void box::set_spacing_type(char *type)$/
+set_special_char_type	text.cc	/^static void set_special_char_type(const char *ch, /
+show_context	lex.cc	/^void show_context()$/
+simple	eqn.y	/^simple:$/
+size_box	other.cc	/^size_box::~size_box()$/
+space	pile.cc	/^column::column(box *pp) : box_list(pp), align(CENT/
+spacing_type	box.cc	/^box::box() : uid(next_uid++), spacing_type(ORDINAR/
+special_char_box	text.cc	/^special_char_box::special_char_box(const char *t)$/
+split_text	text.cc	/^box *split_text(char *text)$/
+sqrt_over	eqn.y	/^sqrt_over:$/
+start_string	box.cc	/^void start_string()$/
+sty	list.cc	/^list_box::list_box(box *pp) : list(pp), sty(-1)$/
+sup	script.cc	/^: pointer_box(pp), sub(qq), sup(rr)$/
+text	eqn.y	/^text:	TEXT$/
+to	limit.cc	/^: p(pp), from(qq), to(rr)$/
+to_list_box	list.cc	/^list_box *box::to_list_box()$/
+top	eqn.y	/^top:$/
+top_input	lex.cc	/^top_input::~top_input()$/
+top_level	box.cc	/^void box::top_level()$/
+uaccent_box	other.cc	/^uaccent_box::~uaccent_box()$/
+underline_char_box	other.cc	/^underline_char_box::underline_char_box()$/
+usage	main.cc	/^void usage()$/
+yyerror	lex.cc	/^void yyerror(const char *s)$/
+yylex	lex.cc	/^int yylex()$/
+yyparse	eqn.y	/^%%$/
