@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.76 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.77 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1063,6 +1063,22 @@ resetuid:
 			*p = '\0';
 		if (buf[0] == '#' || buf[0] == '\0')
 			continue;
+
+		/* <sp>#@# introduces a comment anywhere */
+		/* for Japanese character sets */
+		for (p = buf; (p = strchr(++p, '#')) != NULL; )
+		{
+			if (p[1] == '@' && p[2] == '#' &&
+			    isascii(p[-1]) && isspace(p[-1]) &&
+			    isascii(p[3]) && isspace(p[3]))
+			{
+				p[-1] = '\0';
+				break;
+			}
+		}
+		if (buf[0] == '\0')
+			continue;
+
 		e->e_to = NULL;
 		message("%s to %s",
 			forwarding ? "forwarding" : "sending", buf);
