@@ -130,7 +130,7 @@ char		*s;
  *	board while we're at it.
  */
 
-int	Lastscore[2] = {0, 0};
+int	Lastscore[2] = {-1, -1};
 
 chkscr(scr, inc)
 int		*scr, inc;
@@ -141,9 +141,9 @@ int		*scr, inc;
 	if (inc != 0) {
 		prpeg(Lastscore[myturn], '.', myturn);
 		Lastscore[myturn] = *scr;
+		*scr += inc;
+		prpeg(*scr, PEG, myturn);
 	}
-	*scr += inc;
-	prpeg(*scr, PEG, myturn);
 	return (*scr >= glimit);
 }
 
@@ -158,19 +158,30 @@ BOOLEAN		myturn;
 {
 	register int	y, x;
 
-	if (score == 0 || score > glimit)
-		return;
 	if (!myturn)
 		y = SCORE_Y + 2;
 	else
 		y = SCORE_Y + 5;
-	x = (score - 1) % 30;
-	if (score > 90 || (score > 30 && score <= 60)) {
-		y++;
-		x = 29 - x;
+
+	if (score <= 0 || score >= glimit) {
+		if (peg == '.')
+			peg = ' ';
+		if (score == 0)
+			x = SCORE_X + 2;
+		else {
+			x = SCORE_X + 2;
+			y++;
+		}
 	}
-	x += x / 5;
-	x += SCORE_X + 3;
+	else {
+		x = (score - 1) % 30;
+		if (score > 90 || (score > 30 && score <= 60)) {
+			y++;
+			x = 29 - x;
+		}
+		x += x / 5;
+		x += SCORE_X + 3;
+	}
 	mvaddch(y, x, peg);
 }
 

@@ -109,15 +109,15 @@ makeboard()
 
     mvaddstr(SCORE_Y + 0, SCORE_X, "+---------------------------------------+");
     mvaddstr(SCORE_Y + 1, SCORE_X, "|                                       |");
-    mvaddstr(SCORE_Y + 2, SCORE_X, "|  .....:.....:.....:.....:.....:.....  |");
-    mvaddstr(SCORE_Y + 3, SCORE_X, "|  .....:.....:.....:.....:.....:.....  |");
+    mvaddstr(SCORE_Y + 2, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
+    mvaddstr(SCORE_Y + 3, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 4, SCORE_X, "|                                       |");
-    mvaddstr(SCORE_Y + 5, SCORE_X, "|  .....:.....:.....:.....:.....:.....  |");
-    mvaddstr(SCORE_Y + 6, SCORE_X, "|  .....:.....:.....:.....:.....:.....  |");
+    mvaddstr(SCORE_Y + 5, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
+    mvaddstr(SCORE_Y + 6, SCORE_X, "| *.....:.....:.....:.....:.....:.....  |");
     mvaddstr(SCORE_Y + 7, SCORE_X, "|                                       |");
     mvaddstr(SCORE_Y + 8, SCORE_X, "+---------------------------------------+");
-    Lastscore[0] = 0;
-    Lastscore[1] = 0;
+    Lastscore[0] = -1;
+    Lastscore[1] = -1;
 }
 
 /*
