@@ -1,4 +1,4 @@
-/*	conf.c	4.2	%G%	*/
+/*	conf.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,46 +22,49 @@ int	nodev();
 #if NHP > 0
 int	hpstrategy(),hpread(),hpwrite(),hpintr();
 struct	buf	hptab;
+#define	HPTAB	&hptab
 #else
 #define	hpstrategy	nodev
 #define	hpread		nodev
 #define	hpwrite		nodev
 #define	hpintr		nodev
-#define	hptab		0
+#define	HTTAB		0
 #endif
  
 #include "../conf/ht.h"
 #if NHT > 0
 int	htopen(),htclose(),htstrategy(),htread(),htwrite();
 struct	buf	httab;
+#define	HTTAB	&httab
 #else
 #define	htopen		nodev
 #define	htclose		nodev
 #define	htstrategy	nodev
 #define	htread		nodev
 #define	htwrite		nodev
-#define	httab		0
+#define	HTTAB		0
 #endif
 
 #include "../conf/up.h"
 #if NUP > 0
 int	upstrategy(),upread(),upwrite(),upreset();
 struct	buf	uptab;
+#define	UPTAB	&uptab
 #else
 #define	upstrategy	nodev
 #define	upread		nodev
 #define	upwrite		nodev
 #define	upreset		nulldev
-#define	uptab		0
+#define	UPTAB		0
 #endif
 
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
 {
-	nulldev,	nulldev,	hpstrategy,	&hptab,		/*0*/
-	htopen,		htclose,	htstrategy,	&httab,		/*1*/
-	nulldev,	nulldev,	upstrategy,	&uptab,		/*2*/
+	nulldev,	nulldev,	hpstrategy,	HPTAB,		/*0*/
+	htopen,		htclose,	htstrategy,	HTTAB,		/*1*/
+	nulldev,	nulldev,	upstrategy,	UPTAB,		/*2*/
 /* 3 reserved for rk07 */
 	nodev,		nodev,		nodev,		0,		/*3*/
 	nodev,		nodev,		swstrategy,	0,		/*4*/
