@@ -1,4 +1,4 @@
-/*	boot.c	6.1	83/07/29	*/
+/*	boot.c	6.2	84/09/18	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -65,8 +65,10 @@ main()
 		} else
 			printf(": %s\n", line);
 		io = open(line, 0);
-		if (io >= 0)
+		if (io >= 0) {
+			loadpcs();
 			copyunix(howto, io);
+		}
 		if (++retry > 2)
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
@@ -107,4 +109,80 @@ copyunix(howto, io)
 	_exit();
 shread:
 	_stop("Short read\n");
+}
+
+/* 750 Patchable Control Store magic */
+
+#include "../vax/mtpr.h"
+#include "../vax/cpu.h"
+#define	PCS_BITCNT	0x2000		/* number of patchbits */
+#define	PCS_MICRONUM	0x400		/* number of ucode locs */
+#define	PCS_PATCHADDR	0xf00000	/* start addr of patchbits */
+#define	PCS_PCSADDR	(PCS_PATCHADDR+0x8000)	/* start addr of pcs */
+#define	PCS_PATCHBIT	(PCS_PATCHADDR+0xc000)	/* patchbits enable reg */
+#define	PCS_ENABLE	0xfff00000	/* enable bits for pcs */
+
+loadpcs()
+{
+	register int *ip;	/* known to be r11 below */
+	register int i;		/* known to be r10 below */
+	register int *jp;	/* known to be r9 below */
+	register int j;
+	static int pcsdone = 0;
+	union cpusid sid;
+	char pcs[100];
+
+	sid.cpusid = mfpr(SID);
+	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95 || pcsdone)
+		return;
+	printf("Updating 11/750 microcode: ");
+	strncpy(pcs, line, strlen("xx(0,0)"));
+	strcat(pcs, "pcs750.bin");
+	i = open(pcs, 0);
+	if (i < 0)
+		return;
+	/*
+	 * We ask for more than we need to be sure we get only what we expect.
+	 * After read:
+	 *	locs 0 - 1023	packed patchbits
+	 *	 1024 - 11264	packed microcode
+	 */
+	if (read(i, (char *)0, 23*512) != 22*512) {
+		printf("Error reading %s\n", pcs);
+		close(i);
+		return;
+	}
+	close(i);
+
+	/*
+	 * Enable patchbit loading and load the bits one at a time.
+	 */
+	*((int *)PCS_PATCHBIT) = 1;
+	ip = (int *)PCS_PATCHADDR;
+	jp = (int *)0;
+	for (i=0; i < PCS_BITCNT; i++) {
+		asm("	extzv	r10,$1,(r9),(r11)+");
+	}
+	*((int *)PCS_PATCHBIT) = 0;
+
+	/*
+	 * Load PCS microcode 20 bits at a time.
+	 */
+	ip = (int *)PCS_PCSADDR;
+	jp = (int *)1024;
+	for (i=j=0; j < PCS_MICRONUM * 4; i+=20, j++) {
+		asm("	extzv	r10,$20,(r9),(r11)+");
+	}
+
+	/*
+	 * Enable PCS.
+	 */
+	i = *jp;		/* get 1st 20 bits of microcode again */
+	i &= 0xfffff;
+	i |= PCS_ENABLE;	/* reload these bits with PCS enable set */
+	*((int *)PCS_PCSADDR) = i;
+
+	sid.cpusid = mfpr(SID);
+	printf("new rev level=%d\n", sid.cpu750.cp_urev);
+	pcsdone = 1;
 }
