@@ -1,5 +1,6 @@
-/*	flp.c	4.1	%G%	*/
+/*	flp.c	4.2	%G%	*/
 
+#if VAX==780
 #include "../h/flp.h"
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -256,3 +257,4 @@ error:
 		break;
 	}
 }
+#endif
