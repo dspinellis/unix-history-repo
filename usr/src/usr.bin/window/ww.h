@@ -14,11 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ww.h	3.50 (Berkeley) %G%
+ *	@(#)ww.h	3.51 (Berkeley) %G%
  */
 
 #include <sgtty.h>
 #include <setjmp.h>
+#include <machine/endian.h>
 
 #define NWW	30		/* maximum number of windows */
 
@@ -104,10 +105,11 @@ struct ww_tty {
 union ww_char {
 	short c_w;		/* as a word */
 	struct {
-#if defined(vax) || defined(MIPSEL)
+#if BYTE_ORDER == LITTLE_ENDIAN || BYTE_ORDER == PDP_ENDIAN
 		char C_c;	/* the character part */
 		char C_m;	/* the mode part */
-#else
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
 		char C_m;	/* the mode part */
 		char C_c;	/* the character part */
 #endif
