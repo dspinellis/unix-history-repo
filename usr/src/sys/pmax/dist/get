@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)get	8.1 (Berkeley) %G%
+#	@(#)get	7.3 (Berkeley) %G%
 #
 
 # Shell script to build a mini-root file system in preparation for building
@@ -22,7 +22,7 @@ then
 fi
 
 # copy in kernel
-cp $DISTROOT/sys/GENERIC.pmax/vmunix .
+cp $DISTROOT/sys/compile/GENERIC.pmax/vmunix .
 
 # create necessary directories
 DIRLIST="bin dev etc a tmp stand sbin usr usr/mdec"
@@ -73,8 +73,12 @@ cp /dev/null dev/MAKEDEV.local
 
 # initialize /etc/passwd
 cat >etc/passwd <<EOF
-root::0:10::/:/bin/sh
+root::0:0::/:/bin/sh
 daemon:*:1:1::/:
+EOF
+cat >etc/master.passwd <<EOF
+root::0:0::0:0::/:/bin/sh
+daemon:*:1:1::0:0::/root:
 EOF
 
 # initialize /etc/group
@@ -91,28 +95,29 @@ EOF
 
 # initialize /etc/fstab
 cat >etc/fstab <<EOF
-/dev/rz0a	/	ufs	xx	1 1
+/dev/rz0a	/	ufs	rw	1 1
 /dev/rz0g	/usr	ufs	xx	1 2
 EOF
 
 # create xtr script
 cat >xtr <<'EOF'
 #!/bin/sh -e
-: ${disk?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
-: ${tape?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
+: ${disk?'Usage: disk=xx0 tape=yy0 [type=zz] xtr'}
+: ${tape?'Usage: disk=xx0 tape=yy0 [type=zz] xtr'}
 echo 'Build root file system'
-disklabel -W ${disk}c ${type}
-disklabel -w -r ${disk}c ${type}
-newfs ${disk}a ${type}
+disklabel -W /dev/r${disk}c ${type}
+disklabel -w -r -B /dev/r${disk}c ${type}
+newfs /dev/r${disk}a ${type}
 sync
+mount -u /
 echo 'Check the file system'
 fsck /dev/r${disk}a
 mount /dev/${disk}a /a
 cd /a
 echo 'Rewind tape'
-mt -f /dev/${tape}0 rew
+mt -f /dev/${tape} rew
 echo 'Restore the dump image of the root'
-restore rsf 2 /dev/${tape}0
+restore rsf 2 /dev/${tape}
 cd /
 sync
 umount /a
