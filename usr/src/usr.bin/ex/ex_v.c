@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.3 %G%";
+static char *sccsid = "@(#)ex_v.c	7.4 %G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -360,13 +360,17 @@ vok(atube)
 vintr()
 {
 	extern jmp_buf readbuf;
+	extern int doingread;
 
 	signal(SIGINT, vintr);
 	if (vcatch)
 		onintr();
 	ungetkey(ATTN);
 	draino();
-	longjmp(readbuf, 1);
+	if (doingread) {
+		doingread = 0;
+		longjmp(readbuf, 1);
+	}
 }
 #endif
 
