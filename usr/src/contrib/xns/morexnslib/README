@@ -1,0 +1,14 @@
+This directory and its subdirectories contains library routines for performing
+typical stub functions associated with various Courier programs but widely
+exported to other programs.  We need to rethink the naming system here!
+Currently implemented:
+
+module	routines			function
+auth	MakeSimpleCredsAndVerifier	as the name suggests, given Name
+					and password
+ch	CH_LookupAddr
+	CH_GetFirstCH
+	CH_GetOtherCH
+	CH_StringToName
+	CH_Enumerate
+	CH_EnumerateAliases
