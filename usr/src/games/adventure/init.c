@@ -1,9 +1,12 @@
 #
 /*      Re-coding of advent in C: data initialization                   */
 
-static char sccsid[] = "	init.c	4.1	82/05/11	";
+static char sccsid[] = "	init.c	4.2	89/03/05	";
 
-# include "hdr.h"
+#include <sys/types.h>
+#include <stdio.h>
+#include "hdr.h"
+#include "pathnames.h"
 
 int blklin = TRUE;
 int setup  = 0;
@@ -19,27 +22,22 @@ char *command;                          /* command we were called with  */
 	linkdata();
 	poof();
 	setup=1;                        /* indicate that data is in     */
-	if (confirm("got the data.  save as \"advent\"? "))
-	{       if (save(command,"advent")<0)   /* save core image      */
-		{       printf("Save failed\n");
-			exit(0);
-		}
+	if (save(command, "adventure") < 0) {
+		fprintf(stderr, "adventure: save failed\n");
+		exit(1);
 	}
-	else exit(0);
-	printf("Save succeeded.  Adding messages.\n");
-	adfd=open("advent",1);
+	adfd=open("adventure",1);
 	lseek(adfd,0L,2);
 	close(datfd);
-	if (fork()==0)                  /* child process                */
-	{       close(1);
-		dup(adfd);              /* output goes to advent file   */
-		execl("/bin/cat","cat",TMPFILE,0);
-		printf("unable to find /bin/cat\n");
+	if (vfork() == 0) {
+		dup2(adfd, 1);
+		execl(_PATH_CAT, "cat", TMPFILE, 0);
+		fprintf(stderr, "adventure: unable to find %s\n", _PATH_CAT);
+		exit(1);
 	}
 	wait(&stat);
 	unlink(TMPFILE);
-	printf("Advent is ready.\n");
-	exit(0);
+	exit(stat);
 }
 
 
@@ -167,11 +165,12 @@ trapdel()                               /* come here if he hits a del   */
 
 
 startup()
-{       int tvec[2];
+{
+	time_t time();
+
 	demo=start(0);
-	time(tvec);
-	srand(tvec[1]|1);               /* random odd seed              */
-/*      srand(371);             */      /* non-random seed                      */
+	srand((int)(time((time_t *)NULL)));	/* random seed */
+	/* srand(371);				/* non-random seed */
 	hinted[3]=yes(65,1,0);
 	newloc=1;
 	setup=3;

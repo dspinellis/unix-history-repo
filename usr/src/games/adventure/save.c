@@ -6,8 +6,9 @@
  *      (but people that do that get what they deserve)
  */
 
-static char sccsid[] = "	save.c	4.2	86/11/17	";
+static char sccsid[] = "	save.c	4.3	89/03/05	";
 
+#include <sys/file.h>
 #include <a.out.h>
 int filesize;                    /* accessible to caller         */
 
@@ -21,13 +22,8 @@ char *cmdfile,*outfile;
 	struct exec header;
 	int counter;
 	char buff[512],pwbuf[120];
-	fdaout=getcmd(cmdfile);         /* open command wherever it is  */
+	fdaout = open(cmdfile, O_RDONLY, 0);	/* open command */
 	if (fdaout<0) return(-1);       /* can do nothing without text  */
-	if ((fd=open(outfile,0))>0)     /* this restriction is so that  */
-	{       printf("Can't use an existing file\n"); /* we don't try */
-		close(fd);              /* to write over the commnd file*/
-		return(-1);
-	}
 	if ((fd=creat(outfile,0755))== -1)
 	{       printf("Cannot create %s\n",outfile);
 		return(-1);
@@ -95,48 +91,4 @@ char *cmdfile,*outfile;
 	write(fd,buff,counter);
 	write(fd,c,header.a_data);         /* write all data in 1 glob     */
 	close(fd);
-}
-
-#define	NULL	0
-
-char	*execat(), *getenv();
-
-getcmd(command)         /* get command name (wherever it is) like shell */
-char *command;
-{
-	char *pathstr;
-	register char *cp;
-	char fname[128];
-	int fd;
-
-	if ((pathstr = getenv("PATH")) == NULL)
-		pathstr = ":/bin:/usr/bin";
-	cp = index(command, '/')? "": pathstr;
-
-	do {
-		cp = execat(cp, command, fname);
-		if ((fd=open(fname,0))>0)
-			return(fd);
-	} while (cp);
-
-	printf("Couldn't open %s\n",command);
-	return(-1);
-}
-
-static char *
-execat(s1, s2, si)
-register char *s1, *s2;
-char *si;
-{
-	register char *s;
-
-	s = si;
-	while (*s1 && *s1 != ':' && *s1 != '-')
-		*s++ = *s1++;
-	if (si != s)
-		*s++ = '/';
-	while (*s2)
-		*s++ = *s2++;
-	*s = '\0';
-	return(*s1? ++s1: 0);
 }
