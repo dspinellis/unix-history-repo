@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)match.c	4.4 (Berkeley) %G%";
+static char *sccsid ="@(#)match.c	4.5 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -409,7 +409,7 @@ expand( p, cookie, cp ) NODE *p;  register char *cp; {
 			continue;
 
 		case 'U': /* for upper half of address, only */
-			upput( getlr( p, *++cp ) );
+			upput( getlr( p, *++cp ), SZLONG );
 			continue;
 
 			}
