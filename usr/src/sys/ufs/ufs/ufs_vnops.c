@@ -1,4 +1,4 @@
-/*	ufs_vnops.c	4.41	82/10/19	*/
+/*	ufs_vnops.c	4.42	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,13 +16,20 @@
 #include "../h/uio.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/nami.h"
 
+/*
+ * Change current working directory (``.'').
+ */
 chdir()
 {
 
 	chdirec(&u.u_cdir);
 }
 
+/*
+ * Change notion of root (``/'') directory.
+ */
 chroot()
 {
 
@@ -30,6 +37,9 @@ chroot()
 		chdirec(&u.u_rdir);
 }
 
+/*
+ * Common routine for chroot and chdir.
+ */
 chdirec(ipp)
 	register struct inode **ipp;
 {
@@ -38,14 +48,14 @@ chdirec(ipp)
 		char	*fname;
 	};
 
-	ip = namei(uchar, 0, 1);
-	if(ip == NULL)
+	ip = namei(uchar, LOOKUP, 1);
+	if (ip == NULL)
 		return;
-	if((ip->i_mode&IFMT) != IFDIR) {
+	if ((ip->i_mode&IFMT) != IFDIR) {
 		u.u_error = ENOTDIR;
 		goto bad;
 	}
-	if(access(ip, IEXEC))
+	if (access(ip, IEXEC))
 		goto bad;
 	iunlock(ip);
 	if (*ipp)
@@ -68,23 +78,28 @@ open()
 		int	flags;
 		int	mode;
 	} *uap;
-	int checkpermissions = 1;
+	int checkpermissions = 1, flags;
 
 	uap = (struct a *)u.u_ap;
-	if (uap->flags&FCREATE) {
-		ip = namei(uchar, 1, 1);
+	flags = uap->flags + 1;
+	if ((flags&FTRUNCATE) && (flags&FWRITE) == 0) {
+		u.u_error = EINVAL;
+		return;
+	}
+	if (flags&FCREATE) {
+		ip = namei(uchar, CREATE, 1);
 		if (ip == NULL) {
 			if (u.u_error)
 				return;
 			ip = maknode(uap->mode&07777&(~ISVTX));
 			checkpermissions = 0;
-			uap->flags &= ~FTRUNCATE;
+			flags &= ~FTRUNCATE;
 		}
 	} else
-		ip = namei(uchar, 0, 1);
+		ip = namei(uchar, LOOKUP, 1);
 	if (ip == NULL)
 		return;
-	open1(ip, ++uap->flags, checkpermissions);
+	open1(ip, flags, checkpermissions);
 }
 
 #ifndef NOCOMPAT
@@ -100,7 +115,7 @@ ocreat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 1, 1);
+	ip = namei(uchar, CREATE, 1);
 	if (ip == NULL) {
 		if (u.u_error)
 			return;
@@ -109,7 +124,7 @@ ocreat()
 			return;
 		open1(ip, FWRITE, 0);
 	} else
-		open1(ip, FWRITE|FTRUNCATE, 0);
+		open1(ip, FWRITE|FTRUNCATE, 1);
 }
 #endif
 
@@ -145,7 +160,7 @@ open1(ip, mode, checkpermissions)
 	 * while doing so in case we block inside flocki.
 	 */
 	flags = 0;
-	if (mode&(FRDLOCK|FWRLOCK)) {
+	if (mode&(FSHLOCK|FEXLOCK)) {
 		iunlock(ip);
 		flags = flocki(ip, 0, mode);
 		ilock(ip);
@@ -153,7 +168,7 @@ open1(ip, mode, checkpermissions)
 			goto bad;
 	}
 	if (mode&FTRUNCATE)
-		itrunc(ip, 0);
+		itrunc(ip, (u_long)0);
 	iunlock(ip);
 	if ((fp = falloc()) == NULL)
 		goto out;
@@ -189,7 +204,7 @@ mknod()
 
 	uap = (struct a *)u.u_ap;
 	if (suser()) {
-		ip = namei(uchar, 1, 0);
+		ip = namei(uchar, CREATE, 0);
 		if (ip != NULL) {
 			u.u_error = EEXIST;
 			goto out;
@@ -225,10 +240,10 @@ link()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0, 1);    /* well, this routine is doomed anyhow */
+	ip = namei(uchar, LOOKUP, 1); /* well, this routine is doomed anyhow */
 	if (ip == NULL)
 		return;
-	if ((ip->i_mode&IFMT)==IFDIR && !suser()) {
+	if ((ip->i_mode&IFMT) == IFDIR && !suser()) {
 		iput(ip);
 		return;
 	}
@@ -237,7 +252,7 @@ link()
 	iupdat(ip, &time, &time, 1);
 	iunlock(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
-	xp = namei(uchar, 1, 0);
+	xp = namei(uchar, CREATE, 0);
 	if (xp != NULL) {
 		u.u_error = EEXIST;
 		iput(xp);
@@ -284,7 +299,7 @@ symlink()
 		nc++;
 	}
 	u.u_dirp = uap->linkname;
-	ip = namei(uchar, 1, 0);
+	ip = namei(uchar, CREATE, 0);
 	if (ip) {
 		iput(ip);
 		u.u_error = EEXIST;
@@ -296,6 +311,7 @@ symlink()
 	if (ip == NULL)
 		return;
 	u.u_error = rdwri(UIO_WRITE, ip, uap->target, nc, 0, 0, (int *)0);
+	/* handle u.u_error != 0 */
 	iput(ip);
 }
 
@@ -306,34 +322,21 @@ symlink()
  */
 unlink()
 {
-	register struct inode *ip, *pp;
 	struct a {
 		char	*fname;
 	};
-	int unlinkingdot = 0;
+	register struct inode *ip, *dp;
 
-	pp = namei(uchar, 2, 0);
-	if (pp == NULL)
+	ip = namei(uchar, DELETE | LOCKPARENT, 0);
+	if (ip == NULL)
 		return;
-
-	/*
-	 * Check for unlink(".")
-	 * to avoid hanging on the iget
-	 */
-	if (pp->i_number == u.u_dent.d_ino) {
-		ip = pp;
-		ip->i_count++;
-		unlinkingdot++;
-	} else
-		ip = iget(pp->i_dev, pp->i_fs, u.u_dent.d_ino);
-	if(ip == NULL)
-		goto out1;
-	if((ip->i_mode&IFMT)==IFDIR && !suser())
+	dp = u.u_pdir;
+	if ((ip->i_mode&IFMT) == IFDIR && !suser())
 		goto out;
 	/*
 	 * Don't unlink a mounted file.
 	 */
-	if (ip->i_dev != pp->i_dev) {
+	if (ip->i_dev != dp->i_dev) {
 		u.u_error = EBUSY;
 		goto out;
 	}
@@ -344,12 +347,11 @@ unlink()
 		ip->i_flag |= ICHG;
 	}
 out:
-	if (unlinkingdot)
+	if (dp == ip)
 		irele(ip);
 	else
 		iput(ip);
-out1:
-	iput(pp);
+	iput(dp);
 }
 
 /*
@@ -397,13 +399,13 @@ saccess()
 	svgid = u.u_gid;
 	u.u_uid = u.u_ruid;
 	u.u_gid = u.u_rgid;
-	ip = namei(uchar, 0, 1);
+	ip = namei(uchar, LOOKUP, 1);
 	if (ip != NULL) {
-		if (uap->fmode&FACCESS_READ && access(ip, IREAD))
+		if ((uap->fmode&FACCESS_READ) && access(ip, IREAD))
 			goto done;
-		if (uap->fmode&FACCESS_WRITE && access(ip, IWRITE))
+		if ((uap->fmode&FACCESS_WRITE) && access(ip, IWRITE))
 			goto done;
-		if (uap->fmode&FACCESS_EXECUTE && access(ip, IEXEC))
+		if ((uap->fmode&FACCESS_EXECUTE) && access(ip, IEXEC))
 			goto done;
 done:
 		iput(ip);
@@ -445,7 +447,7 @@ stat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0, 1);
+	ip = namei(uchar, LOOKUP, 1);
 	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
@@ -464,7 +466,7 @@ lstat()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	ip = namei(uchar, 0, 0);
+	ip = namei(uchar, LOOKUP, 0);
 	if (ip == NULL)
 		return;
 	stat1(ip, uap->sb);
@@ -520,7 +522,7 @@ readlink()
 	} *uap = (struct a *)u.u_ap;
 	int resid;
 
-	ip = namei(uchar, 0, 0);
+	ip = namei(uchar, LOOKUP, 0);
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFLNK) {
@@ -533,6 +535,9 @@ out:
 	u.u_r.r_val1 = uap->count - resid;
 }
 
+/*
+ * Change mode of a file given path name.
+ */
 chmod()
 {
 	struct inode *ip;
@@ -545,8 +550,12 @@ chmod()
 	if ((ip = owner(1)) == NULL)
 		return;
 	chmod1(ip, uap->fmode);
+	iput(ip);
 }
 
+/*
+ * Change mode of a file given a file descriptor.
+ */
 fchmod()
 {
 	struct a {
@@ -565,14 +574,17 @@ fchmod()
 		return;
 	}
 	ip = fp->f_inode;
-	ilock(ip);
-	if (u.u_uid != ip->i_uid && !suser()) {
-		iunlock(ip);
+	if (u.u_uid != ip->i_uid && !suser())
 		return;
-	}
+	ilock(ip);
 	chmod1(ip, uap->fmode);
+	iunlock(ip);
 }
 
+/*
+ * Change the mode on a file.
+ * Inode must be locked before calling.
+ */
 chmod1(ip, mode)
 	register struct inode *ip;
 	register int mode;
@@ -598,9 +610,11 @@ ok:
 	ip->i_flag |= ICHG;
 	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
 		xrele(ip);
-	iput(ip);
 }
 
+/*
+ * Set ownership given a path name.
+ */
 chown()
 {
 	struct inode *ip;
@@ -614,8 +628,12 @@ chown()
 	if (!suser() || (ip = owner(0)) == NULL)
 		return;
 	chown1(ip, uap->uid, uap->gid);
+	iput(ip);
 }
 
+/*
+ * Set ownership given a file descriptor.
+ */
 fchown()
 {
 	struct a {
@@ -635,12 +653,11 @@ fchown()
 		return;
 	}
 	ip = fp->f_inode;
-	ilock(ip);
-	if (!suser()) {
-		iunlock(ip);
+	if (!suser())
 		return;
-	}
+	ilock(ip);
 	chown1(ip, uap->uid, uap->gid);
+	iunlock(ip);
 }
 
 /*
@@ -678,8 +695,8 @@ chown1(ip, uid, gid)
 			change = fragroundup(fs, ip->i_size);
 		change /= DEV_BSIZE;
 	}
-	chkdq(ip, -change, 1);
-	chkiq(ip->i_dev, ip, ip->i_uid, 1);
+	(void)chkdq(ip, -change, 1);
+	(void)chkiq(ip->i_dev, ip, ip->i_uid, 1);
 	dqrele(ip->i_dquot);
 #endif
 	/*
@@ -695,10 +712,9 @@ chown1(ip, uid, gid)
 		ip->i_mode &= ~(ISUID|ISGID);
 #ifdef QUOTA
 	ip->i_dquot = inoquota(ip);
-	chkdq(ip, change, 1);
-	chkiq(ip->i_dev, NULL, uid, 1);
+	(void)chkdq(ip, change, 1);
+	(void)chkiq(ip->i_dev, (struct inode *)NULL, uid, 1);
 #endif
-	iput(ip);
 }
 
 /*
@@ -729,12 +745,18 @@ outime()
 	iput(ip);
 }
 
+/*
+ * Flush any pending I/O.
+ */
 sync()
 {
 
 	update();
 }
 
+/*
+ * Apply an advisory lock on a file descriptor.
+ */
 flock()
 {
 	struct a {
@@ -753,35 +775,38 @@ flock()
 		return;
 	}
 	cmd = uap->how;
-	flags = u.u_pofile[uap->fd] & (RDLOCK|WRLOCK);
+	flags = u.u_pofile[uap->fd] & (SHLOCK|EXLOCK);
 	if (cmd&FUNLOCK) {
 		if (flags == 0) {
 			u.u_error = EINVAL;
 			return;
 		}
 		funlocki(fp->f_inode, flags);
-		u.u_pofile[uap->fd] &= ~(RDLOCK|WRLOCK);
+		u.u_pofile[uap->fd] &= ~(SHLOCK|EXLOCK);
 		return;
 	}
 	/*
 	 * No reason to write lock a file we've already
 	 * write locked, similarly with a read lock.
 	 */
-	if ((flags&WRLOCK) && (cmd&FWRLOCK) ||
-	    (flags&RDLOCK) && (cmd&FRDLOCK))
+	if ((flags&EXLOCK) && (cmd&FEXLOCK) ||
+	    (flags&SHLOCK) && (cmd&FSHLOCK))
 		return;
 	u.u_pofile[uap->fd] = flocki(fp->f_inode, u.u_pofile[uap->fd], cmd);
 }
 
+/*
+ * Truncate a file given its path name.
+ */
 truncate()
 {
 	struct a {
 		char	*fname;
-		int	length;
+		u_long	length;
 	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 
-	ip = namei(uchar, 0, 1);
+	ip = namei(uchar, LOOKUP, 1);
 	if (ip == NULL)
 		return;
 	if (access(ip, IWRITE))
@@ -791,16 +816,18 @@ truncate()
 		goto bad;
 	}
 	itrunc(ip, uap->length);
-	return;
 bad:
 	iput(ip);
 }
 
+/*
+ * Truncate a file given a file descriptor.
+ */
 ftruncate()
 {
 	struct a {
 		int	fd;
-		int	length;
+		u_long	length;
 	} *uap = (struct a *)u.u_ap;
 	struct inode *ip;
 	struct file *fp;
@@ -819,17 +846,267 @@ ftruncate()
 	ip = fp->f_inode;
 	ilock(ip);
 	itrunc(ip, uap->length);
+	iunlock(ip);
 }
 
+/*
+ * Synch an open file.
+ */
+fsync()
+{
+	struct a {
+		int	fd;
+	} *uap = (struct a *)u.u_ap;
+	struct inode *ip;
+	struct file *fp;
+
+	fp = getf(uap->fd);
+	if (fp == NULL)
+		return;
+	if (fp->f_type == DTYPE_SOCKET) {
+		u.u_error = EINVAL;
+		return;
+	}
+	ip = fp->f_inode;
+	ilock(ip);
+	syncip(ip);
+	iunlock(ip);
+}
+
+/*
+ * Rename system call.
+ * 	rename("foo", "bar");
+ * is essentially
+ *	unlink("bar");
+ *	link("foo", "bar");
+ *	unlink("foo");
+ * but ``atomically''.  Can't do full commit without saving state in the
+ * inode on disk which isn't feasible at this time.  Best we can do is
+ * always guarantee the target exists.
+ *
+ * Basic algorithm is:
+ *
+ * 1) Bump link count on source while we're linking it to the
+ *    target.  This also insure the inode won't be deleted out
+ *    from underneath us while we work.
+ * 2) Link source to destination.  If destination already exists,
+ *    delete it first.
+ * 3) Unlink source reference to inode if still around.
+ * 4) If a directory was moved and the parent of the destination
+ *    is different from the source, patch the ".." entry in the
+ *    directory.
+ *
+ * Source and destination must either both be directories, or both
+ * not be directories.  If target is a directory, it must be empty.
+ */
 rename()
 {
-#ifdef notdef
 	struct a {
 		char	*from;
 		char	*to;
 	} *uap;
-#endif
+	register struct inode *ip, *xp, *dp;
+	int oldparent, parentdifferent, doingdirectory;
 
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, LOOKUP | LOCKPARENT, 0);
+	if (ip == NULL)
+		return;
+	dp = u.u_pdir;
+	oldparent = 0, doingdirectory = 0;
+	if ((ip->i_mode&IFMT) == IFDIR) {
+		register struct direct *d;
+
+		d = &u.u_dent;
+		/*
+		 * Avoid "." and ".." for obvious reasons.
+		 */
+		if (d->d_name[0] == '.') {
+			if (d->d_namlen == 1 ||
+			    (d->d_namlen == 2 && d->d_name[1] == '.')) {
+				u.u_error = EINVAL;
+				iput(ip);
+				return;
+			}
+		}
+		oldparent = dp->i_number;
+		doingdirectory++;
+	}
+	irele(dp);
+
+	/*
+	 * 1) Bump link count while we're moving stuff
+	 *    around.  If we crash somewhere before
+	 *    completing our work, the link count
+	 *    may be wrong, but correctable.
+	 */
+	ip->i_nlink++;
+	ip->i_flag |= ICHG;
+	iupdat(ip, &time, &time, 1);
+	iunlock(ip);
+
+	/*
+	 * When the target exists, both the directory
+	 * and target inodes are returned locked.
+	 */
+	u.u_dirp = (caddr_t)uap->to;
+	xp = namei(uchar, CREATE | LOCKPARENT, 0);
+	if (u.u_error)
+		goto out;
+	dp = u.u_pdir;
+	/*
+	 * 2) If target doesn't exist, link the target
+	 *    to the source and unlink the source. 
+	 *    Otherwise, rewrite the target directory
+	 *    entry to reference the source inode and
+	 *    expunge the original entry's existence.
+	 */
+	parentdifferent = oldparent != dp->i_number;
+	if (xp == NULL) {
+		if (dp->i_dev != ip->i_dev) {
+			u.u_error = EXDEV;
+			goto bad;
+		}
+		/*
+		 * Account for ".." in directory.
+		 * When source and destination have the
+		 * same parent we don't fool with the
+		 * link count -- this isn't required
+		 * because we do a similar check below.
+		 */
+		if (doingdirectory && parentdifferent) {
+			dp->i_nlink++;
+			dp->i_flag |= ICHG;
+			iupdat(dp, &time, &time, 1);
+		}
+		direnter(ip);
+		if (u.u_error)
+			goto out;
+	} else {
+		if (xp->i_dev != dp->i_dev || xp->i_dev != ip->i_dev) {
+			u.u_error = EXDEV;
+			goto bad;
+		}
+		/*
+		 * Target must be empty if a directory.
+		 * Also, insure source and target are
+		 * compatible (both directories, or both
+		 * not directories).
+		 */
+		if ((xp->i_mode&IFMT) == IFDIR) {
+			if (!dirempty(xp)) {
+				u.u_error = EEXIST;	/* XXX */
+				goto bad;
+			}
+			if (!doingdirectory) {
+				u.u_error = ENOTDIR;
+				goto bad;
+			}
+		} else if (doingdirectory) {
+			u.u_error = EISDIR;
+			goto bad;
+		}
+		dirrewrite(dp, ip);
+		if (u.u_error)
+			goto bad1;
+		/*
+		 * If this is a directory we know it is
+		 * empty and we can squash the inode and
+		 * any space associated with it.  Otherwise,
+		 * we've got a plain file and the link count
+		 * simply needs to be adjusted.
+		 */
+		if (doingdirectory) {
+			xp->i_nlink = 0;
+			itrunc(xp, (u_long)0);
+		} else
+			xp->i_nlink--;
+		xp->i_flag |= ICHG;
+		iput(xp);
+	}
+
+	/*
+	 * 3) Unlink the source.
+	 */
+	u.u_dirp = uap->from;
+	dp = namei(uchar, DELETE, 0);
+	/*
+	 * Insure directory entry still exists and
+	 * has not changed since the start of all
+	 * this.  If either has occured, forget about
+	 * about deleting the original entry and just
+	 * adjust the link count in the inode.
+	 */
+	if (dp == NULL || u.u_dent.d_ino != ip->i_number) {
+		ip->i_nlink--;
+		ip->i_flag |= ICHG;
+	} else {
+		/*
+		 * If source is a directory, must adjust
+		 * link count of parent directory also.
+		 * If target didn't exist and source and
+		 * target have the same parent, then we
+		 * needn't touch the link count, it all
+		 * balances out in the end.  Otherwise, we
+		 * must do so to reflect deletion of ".."
+		 * done above.
+		 */
+		if (doingdirectory && (xp != NULL || parentdifferent)) {
+			dp->i_nlink--;
+			dp->i_flag |= ICHG;
+		}
+		if (dirremove()) {
+			ip->i_nlink--;
+			ip->i_flag |= ICHG;
+		}
+	}
+	irele(ip);
+	if (dp)
+		iput(dp);
+
+	/*
+	 * 4) Renaming a directory with the parent
+	 *    different requires ".." to be rewritten.
+	 *    The window is still there for ".." to
+	 *    be inconsistent, but this is unavoidable,
+	 *    and a lot shorter than when it was done
+	 *    in a user process.
+	 */
+	if (doingdirectory && parentdifferent && u.u_error == 0) {
+		struct dirtemplate dirbuf;
+
+		u.u_dirp = uap->to;
+		ip = namei(uchar, LOOKUP | LOCKPARENT, 0);
+		if (ip == NULL) {
+			printf("rename: .. went away\n");
+			return;
+		}
+		dp = u.u_pdir;
+		if ((ip->i_mode&IFMT) != IFDIR) {
+			printf("rename: .. not a directory\n");
+			goto stuck;
+		}
+		u.u_error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
+			sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
+		if (u.u_error == 0) {
+			dirbuf.dotdot_ino = dp->i_number;
+			(void) rdwri(UIO_WRITE, ip, (caddr_t)&dirbuf,
+			  sizeof (struct dirtemplate), (off_t)0, 1, (int *)0);
+		}
+stuck:
+		irele(dp);
+		iput(ip);
+	}
+	return;
+bad:
+	iput(u.u_pdir);
+bad1:
+	if (xp)
+		irele(xp);
+out:
+	ip->i_nlink--;
+	ip->i_flag |= ICHG;
+	irele(ip);
 }
 
 /*

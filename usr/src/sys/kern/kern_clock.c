@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.44	82/10/31	*/
+/*	kern_clock.c	4.45	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -247,7 +247,7 @@ softclock(sirret, regs)
 		calltodo.c_next = p1->c_next;
 		p1->c_next = callfree;
 		callfree = p1;
-		(void) splx(s);
+		splx(s);
 		(*func)(arg, a);
 	}
 }

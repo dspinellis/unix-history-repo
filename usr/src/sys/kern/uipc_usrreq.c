@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.2	82/11/03	*/
+/*	uipc_usrreq.c	1.3	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -10,6 +10,7 @@
 #include "../h/unpcb.h"
 #include "../h/un.h"
 #include "../h/inode.h"
+#include "../h/nami.h"
 
 /*
  * Unix communications domain.
@@ -32,7 +33,7 @@ uipc_usrreq(so, req, m, nam, opt)
 
 	case PRU_ATTACH:
 		if (unp) {
-			error = EINVAL;
+			error = EISCONN;
 			break;
 		}
 		error = unp_attach(so);
@@ -40,6 +41,15 @@ uipc_usrreq(so, req, m, nam, opt)
 
 	case PRU_DETACH:
 		unp_detach(unp);
+		break;
+
+	case PRU_BIND:
+		error = unp_bind(unp, nam);
+		break;
+
+	case PRU_LISTEN:
+		if (unp->unp_inode == 0)
+			error = EINVAL;
 		break;
 
 	case PRU_CONNECT:
@@ -50,23 +60,16 @@ uipc_usrreq(so, req, m, nam, opt)
 		unp_disconnect(unp);
 		break;
 
-/* BEGIN QUESTIONABLE */
-	case PRU_ACCEPT: {
-		struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
-
-		if (soun) {
-			bzero((caddr_t)soun, sizeof (*soun));
-			soun->sun_family = AF_UNIX;
-			/* XXX */
-		}
-		}
+	case PRU_ACCEPT:
+		nam->m_len = unp->unp_remaddr->m_len;
+		bcopy(mtod(unp->unp_remaddr, caddr_t),
+		    mtod(nam, caddr_t), (unsigned)nam->m_len);
 		break;
 
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
 		unp_usrclosed(unp);
 		break;
-/* END QUESTIONABLE */
 
 	case PRU_RCVD:
 		switch (so->so_type) {
@@ -118,10 +121,13 @@ uipc_usrreq(so, req, m, nam, opt)
 				}
 			}
 			so2 = unp->unp_conn->unp_socket;
-			if (sbspace(&so2->so_rcv) > 0)		/* XXX */
-				sbappendaddr(so2, m, nam);	/* XXX */
+			/* BEGIN XXX */
+			if (sbspace(&so2->so_rcv) > 0)
+				(void) sbappendaddr(&so2->so_rcv,
+					mtod(nam, struct sockaddr *), m);
+			/* END XXX */
 			if (nam)
-				unp_disconnect(so);
+				unp_disconnect(unp);
 			break;
 
 		case SOCK_STREAM:
@@ -185,12 +191,11 @@ uipc_usrreq(so, req, m, nam, opt)
 int	unp_sendspace = 1024*2;
 int	unp_recvspace = 1024*2;
 
-unp_attach(so, soun)
+unp_attach(so)
 	struct socket *so;
-	struct sockaddr_un *soun;
 {
+	register struct mbuf *m;
 	register struct unpcb *unp;
-	struct mbuf *m;
 	int error;
 	
 	error = soreserve(so, unp_sendspace, unp_recvspace);
@@ -204,15 +209,119 @@ unp_attach(so, soun)
 	unp = mtod(m, struct unpcb *);
 	so->so_pcb = (caddr_t)unp;
 	unp->unp_socket = so;
-	if (soun) {
-		error = unp_bind(unp, soun);
-		if (error) {
-			unp_detach(unp);
-			goto bad;
-		}
-	}
 	return (0);
 bad:
+	return (error);
+}
+
+unp_detach(unp)
+	register struct unpcb *unp;
+{
+	
+	if (unp->unp_inode) {
+		irele(unp->unp_inode);
+		unp->unp_inode = 0;
+	}
+	if (unp->unp_conn)
+		unp_disconnect(unp);
+	while (unp->unp_refs)
+		unp_drop(unp->unp_refs, ECONNRESET);
+	soisdisconnected(unp->unp_socket);
+	unp->unp_socket->so_pcb = 0;
+	m_freem(unp->unp_remaddr);
+	(void) m_free(dtom(unp));
+}
+
+unp_bind(unp, nam)
+	struct unpcb *unp;
+	struct mbuf *nam;
+{
+	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
+	register struct inode *ip;
+	extern schar();
+	int error;
+
+	u.u_dirp = soun->sun_path;
+	soun->sun_path[sizeof(soun->sun_path)-1] = 0;
+	ip = namei(schar, CREATE, 1);
+	if (ip) {
+		iput(ip);
+		return (EEXIST);
+	}
+	ip = maknode(IFSOCK | 0777);
+	if (ip == NULL) {
+		error = u.u_error;		/* XXX */
+		u.u_error = 0;			/* XXX */
+		return (error);
+	}
+	ip->i_socket = unp->unp_socket;
+	unp->unp_inode = ip;
+	iunlock(ip);			/* but keep reference */
+	return (0);
+}
+
+unp_connect(so, nam)
+	struct socket *so;
+	struct mbuf *nam;
+{
+	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
+	struct unpcb *unp = sotounpcb(so);
+	register struct inode *ip;
+	int error;
+	struct socket *so2;
+	struct unpcb *unp2;
+
+	u.u_dirp = soun->sun_path;
+	soun->sun_path[sizeof(soun->sun_path)-1] = 0;
+	ip = namei(schar, LOOKUP, 1);
+	if (ip == 0) {
+		error = u.u_error;
+		u.u_error = 0;
+		return (ENOENT);
+	}
+	if ((ip->i_mode&IFMT) != IFSOCK) {
+		error = ENOTSOCK;
+		goto bad;
+	}
+	so2 = ip->i_socket;
+	if (so2 == 0) {
+		error = ECONNREFUSED;
+		goto bad;
+	}
+	if (so2->so_type != so->so_type) {
+		error = EPROTOTYPE;
+		goto bad;
+	}
+	switch (so->so_type) {
+
+	case SOCK_DGRAM:
+		unp->unp_conn = sotounpcb(so2);
+		unp2 = sotounpcb(so2);
+		unp->unp_nextref = unp2->unp_refs;
+		unp2->unp_refs = unp;
+		break;
+
+	case SOCK_STREAM:
+		if ((so2->so_options&SO_ACCEPTCONN) == 0 ||
+		    (so2 = sonewconn(so2)) == 0) {
+			error = ECONNREFUSED;
+			goto bad;
+		}
+		unp2 = sotounpcb(so2);
+		unp->unp_conn = unp2;
+		unp2->unp_conn = unp;
+		unp2->unp_remaddr = m_copy(nam, 0, (int)M_COPYALL);
+		break;
+
+	default:
+		panic("uipc connip");
+	}
+	soisconnected(so2);
+	soisconnected(so);
+	iput(ip);
+	return (0);
+bad:
+	iput(ip);
 	return (error);
 }
 
@@ -259,31 +368,11 @@ unp_abort(unp)
 	unp_detach(unp);
 }
 
-unp_detach(unp)
-	struct unpcb *unp;
-{
-	
-	if (unp->unp_inode) {
-		irele(unp->unp_inode);
-		unp->unp_inode = 0;
-	}
-	if (unp->unp_conn)
-		unp_disconnect(unp);
-	while (unp->unp_refs)
-		unp_drop(unp->unp_refs, ECONNRESET);
-	soisdisconnected(unp->unp_socket);
-	unp->unp_socket->so_pcb = 0;
-	m_free(dtom(unp));
-}
-
+/*ARGSUSED*/
 unp_usrclosed(unp)
 	struct unpcb *unp;
 {
-	register struct socket *so = unp->unp_socket;
 
-#ifdef sometimes /* ??? */
-	soisdisconnected(unp->unp_socket);
-#endif
 }
 
 unp_drop(unp, errno)
@@ -298,102 +387,4 @@ unp_drop(unp, errno)
 unp_drain()
 {
 
-}
-
-unp_bind(unp, soun)
-	struct unpcb *unp;
-	struct sockaddr_un *soun;
-{
-	register struct inode *ip;
-	int error;
-	extern schar();
-
-	u.u_dirp = soun->sun_path;
-	soun->sun_path[sizeof(soun->sun_path)-1] = 0;
-	ip = namei(schar, 1, 1);
-	if (ip) {
-		iput(ip);
-		return (EEXIST);
-	}
-	ip = maknode(IFSOCK | 0777);
-	if (ip == NULL) {
-		error = u.u_error;		/* XXX */
-		u.u_error = 0;			/* XXX */
-		return (error);
-	}
-	ip->i_socket = unp->unp_socket;
-	unp->unp_inode = ip;
-	iunlock(ip);			/* but keep reference */
-	return (0);
-}
-
-unp_connect(so, soun)
-	struct socket *so;
-	struct sockaddr_un *soun;
-{
-	struct inode *ip;
-	int error;
-
-	u.u_dirp = soun->sun_path;
-	soun->sun_path[sizeof(soun->sun_path)-1] = 0;
-	ip = namei(schar, 0, 1);
-	if (ip == 0) {
-		error = u.u_error;
-		u.u_error = 0;
-		return (ENOENT);
-	}
-	error = unp_connectip(so, ip);
-	return (error);
-}
-
-unp_connectip(so, ip)
-	struct socket *so;
-	struct inode *ip;
-{
-	struct unpcb *unp = sotounpcb(so);
-	struct socket *so2, *so3;
-	int error;
-	struct unpcb *unp2;
-
-	if ((ip->i_mode&IFMT) != IFSOCK) {
-		error = ENOTSOCK;
-		goto bad;
-	}
-	so2 = ip->i_socket;
-	if (so2 == 0) {
-		error = ECONNREFUSED;
-		goto bad;
-	}
-	if (so2->so_type != so->so_type) {
-		error = EPROTOTYPE;
-		goto bad;
-	}
-	switch (so->so_type) {
-
-	case SOCK_DGRAM:
-		unp->unp_conn = sotounpcb(so2);
-		unp2 = sotounpcb(so2);
-		unp->unp_nextref = unp2->unp_refs;
-		unp2->unp_refs = unp;
-		break;
-
-	case SOCK_STREAM:
-		if ((so2->so_options&SO_ACCEPTCONN) == 0 ||
-		    (so3 = sonewconn(so2)) == 0) {
-			error = ECONNREFUSED;
-			goto bad;
-		}
-		unp->unp_conn = sotounpcb(so3);
-		break;
-
-	default:
-		panic("uipc connip");
-	}
-	soisconnected(unp->unp_conn->unp_socket);
-	soisconnected(so);
-	iput(ip);
-	return (0);
-bad:
-	iput(ip);
-	return (error);
 }

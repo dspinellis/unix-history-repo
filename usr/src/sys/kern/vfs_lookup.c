@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.29	82/10/31	*/
+/*	vfs_lookup.c	4.30	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,20 +10,30 @@
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/uio.h"
+#include "../h/nami.h"
 
 struct	buf *blkatoff();
-int	dirchk = 1;
+int	dirchk = 0;
 /*
  * Convert a pathname into a pointer to a locked inode,
  * with side effects usable in creating and removing files.
  * This is a very central and rather complicated routine.
  *
  * The func argument gives the routine which returns successive
- * characters of the name to be translated.  The flag
- * argument is (0, 1, 2) depending on whether the name is to be
- * (looked up, created, deleted).  The follow argument is 1 when
- * symbolic links are to be followed when they occur at the end of
- * the name translation process.
+ * characters of the name to be translated. 
+ *
+ * The flag argument is (LOOKUP, CREATE, DELETE) depending on whether
+ * the name is to be (looked up, created, deleted).  If flag has
+ * LOCKPARENT or'ed into it and the target of the pathname exists,
+ * namei returns both the target and its parent directory locked. 
+ * If the file system is not maintained in a strict tree hierarchy,
+ * this can result in a deadlock situation.  When creating and
+ * LOCKPARENT is specified, the target may not be ".".  When deleting
+ * and LOCKPARENT is specified, the target may be ".", but the caller
+ * must check to insure it does an irele and iput instead of two iputs.
+ *
+ * The follow argument is 1 when symbolic links are to be followed
+ * when they occur at the end of the name translation process.
  *
  * Overall outline:
  *
@@ -36,14 +46,19 @@ int	dirchk = 1;
  *	handle degenerate case where name is null string
  *	search for name in directory, to found or notfound
  * notfound:
- *	if creating, return locked inode, leaving information on avail. slots
+ *	if creating, return locked directory, leaving info on avail. slots
  *	else return error
  * found:
  *	if at end of path and deleting, return information to allow delete
+ *	if at end of path and rewriting (create and LOCKPARENT), lock targe
+ *	  inode and return info to allow rewrite
  *	if .. and on mounted filesys, look in mount table for parent
  *	if symbolic link, massage name in buffer and continue at dirloop
  *	if more components of name, do next level at dirloop
  *	return the answer as locked inode
+ *
+ * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode,
+ *	 but unlocked.
  */
 struct inode *
 namei(func, flag, follow)
@@ -69,7 +84,10 @@ namei(func, flag, follow)
 	int nlink = 0;			/* number of symbolic links taken */
 	struct inode *pdp;		/* saved dp during symlink work */
 	int i;
+	int lockparent;
 
+	lockparent = flag & LOCKPARENT;
+	flag &= ~LOCKPARENT;
 	/*
 	 * Get a buffer for the name to be translated, and copy the
 	 * name into the buffer.
@@ -156,7 +174,7 @@ dirloop2:
 	 * case it doesn't already exist.
 	 */
 	slotstatus = FOUND;
-	if (flag == 1 && *cp == 0) {
+	if (flag == CREATE && *cp == 0) {
 		slotstatus = NONE;
 		slotfreespace = 0;
 		slotneeded = DIRSIZ(&u.u_dent);
@@ -258,10 +276,10 @@ dirloop2:
 /* notfound: */
 	/*
 	 * If creating, and at end of pathname and current
-	 * directory has not been removed, then can consider allowing
-	 * file to be created.
+	 * directory has not been removed, then can consider
+	 * allowing file to be created.
 	 */
-	if (flag == 1 && *cp == 0 && dp->i_nlink != 0) {
+	if (flag == CREATE && *cp == 0 && dp->i_nlink != 0) {
 		/*
 		 * Access for write is interpreted as allowing
 		 * creation of files in the directory.
@@ -321,15 +339,17 @@ found:
 	/*
 	 * If deleting, and at end of pathname, return
 	 * parameters which can be used to remove file.
-	 * Note that in this case we return the directory
-	 * inode, not the inode of the file being deleted.
+	 * If the lockparent flag isn't set, we return only
+	 * the directory (in u.u_pdir), otherwise we go
+	 * on and lock the inode, being careful with ".".
 	 */
-	if (flag == 2 && *cp == 0) {
+	if (flag == DELETE && *cp == 0) {
 		/*
 		 * Write access to directory required to delete files.
 		 */
 		if (access(dp, IWRITE))
 			goto bad;
+		u.u_pdir = dp;		/* for dirremove() */
 		/*
 		 * Return pointer to current entry in u.u_offset,
 		 * and distance past previous entry (if there
@@ -340,8 +360,18 @@ found:
 			u.u_count = 0;
 		else
 			u.u_count = u.u_offset - prevoff;
+		if (lockparent) {
+			if (dp->i_number == u.u_dent.d_ino)
+				dp->i_count++;
+			else {
+				dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+				if (dp == NULL) {
+					iput(u.u_pdir);
+					goto bad;
+				}
+			}
+		}
 		brelse(nbp);
-		u.u_pdir = dp;		/* for dirremove() */
 		return (dp);
 	}
 
@@ -368,6 +398,33 @@ found:
 				goto dirloop2;
 			}
 		}
+	}
+
+	/*
+	 * If rewriting (rename), return the inode and the
+	 * information required to rewrite the present directory
+	 * Must get inode of directory entry to verify it's a
+	 * regular file, or empty directory.  
+	 */
+	if ((flag == CREATE && lockparent) && *cp == 0) {
+		if (access(dp, IWRITE))
+			goto bad;
+		u.u_pdir = dp;		/* for dirrewrite() */
+		/*
+		 * Careful about locking second inode. 
+		 * This can only occur if the target is ".". 
+		 */
+		if (dp->i_number == u.u_dent.d_ino) {
+			u.u_error = EISDIR;		/* XXX */
+			goto bad;
+		}
+		dp = iget(dp->i_dev, fs, u.u_dent.d_ino);
+		if (dp == NULL) {
+			iput(u.u_pdir);
+			goto bad;
+		}
+		brelse(nbp);
+		return (dp);
 	}
 
 	/*
@@ -398,7 +455,7 @@ found:
 		}
 		ovbcopy(cp, nbp->b_un.b_addr + dp->i_size, pathlen);
 		u.u_error =
-		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, dp->i_size,
+		    rdwri(UIO_READ, dp, nbp->b_un.b_addr, (int)dp->i_size,
 			0, 1, (int *)0);
 		if (u.u_error)
 			goto bad2;
@@ -419,7 +476,6 @@ found:
 		fs = dp->i_fs;
 		goto dirloop;
 	}
-	irele(pdp);
 
 	/*
 	 * Not a symbolic link.  If more pathname,
@@ -428,9 +484,14 @@ found:
 	if (*cp == '/') {
 		while (*cp == '/')
 			cp++;
+		irele(pdp);
 		goto dirloop;
 	}
 	brelse(nbp);
+	if (lockparent)
+		u.u_pdir = pdp;
+	else
+		irele(pdp);
 	return (dp);
 bad2:
 	irele(pdp);
@@ -514,7 +575,7 @@ direnter(ip)
 	 * This should never push the size past a new multiple of
 	 * DIRBLKSIZE.
 	 */
-	if (u.u_offset+u.u_count > u.u_pdir->i_size)
+	if (u.u_offset + u.u_count > u.u_pdir->i_size)
 		u.u_pdir->i_size = u.u_offset + u.u_count;
 
 	/*
@@ -522,8 +583,10 @@ direnter(ip)
 	 * entry.
 	 */
 	bp = blkatoff(u.u_pdir, u.u_offset, (char **)&dirbuf);
-	if (bp == 0)
+	if (bp == 0) {
+		iput(u.u_pdir);
 		return;
+	}
 
 	/*
 	 * Find space for the new entry.  In the simple case, the
@@ -570,20 +633,31 @@ direnter(ip)
 	iput(u.u_pdir);
 }
 
+/*
+ * Remove a directory entry after a call to namei, using the
+ * parameters which it left in the u. area.  The u. entry
+ * u_offset contains the offset into the directory of the
+ * entry to be eliminated.  The u_count field contains the
+ * size of the previous record in the directory.  If this
+ * is 0, the first entry is being deleted, so we need only
+ * zero the inode number to mark the entry as free.  If the
+ * entry isn't the first in the directory, we must reclaim
+ * the space of the now empty record by adding the record size
+ * to the size of the previous entry.
+ */
 dirremove()
 {
 	register struct inode *dp = u.u_pdir;
 	register struct buf *bp;
 	struct direct *ep;
 
-	if (u.u_count == 0) {
+	if (u.u_count == 0)
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
-		u.u_dent.d_ino = 0;
 		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
 		    (int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
-	} else {
+	else {
 		/*
 		 * Collapse new free space into previous entry.
 		 */
@@ -595,6 +669,21 @@ dirremove()
 		dp->i_flag |= IUPD|ICHG;
 	}
 	return (1);
+}
+
+/*
+ * Rewrite an existing directory entry to point at the inode
+ * supplied.  The parameters describing the directory entry are
+ * set up by a call to namei.
+ */
+dirrewrite(dp, ip)
+	struct inode *dp, *ip;
+{
+
+	u.u_dent.d_ino = ip->i_number;
+	u.u_error = rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
+		(int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
+	iput(dp);
 }
 
 /*
@@ -626,4 +715,33 @@ blkatoff(ip, offset, res)
 	if (res)
 		*res = bp->b_un.b_addr + base;
 	return (bp);
+}
+
+/*
+ * Check if a directory is empty or not.
+ * Inode supplied must be locked.
+ */
+dirempty(ip)
+	struct inode *ip;
+{
+	register off_t off;
+	struct direct dbuf;
+	register struct direct *dp = &dbuf;
+	int error;
+
+	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
+		error = rdwri(UIO_READ, ip, (caddr_t)dp,
+			sizeof (struct direct), off, 1, (int *)0);
+		if (error)
+			return (0);
+		if (dp->d_ino == 0)
+			continue;
+		if (dp->d_name[0] != '.')
+			return (0);
+		if (dp->d_namlen == 1 ||
+		    (dp->d_namlen == 2 && dp->d_name[1] == '.'))
+			continue;
+		return (0);
+	}
+	return (1);
 }

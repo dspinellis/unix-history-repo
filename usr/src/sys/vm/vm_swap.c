@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.14	82/11/02	*/
+/*	vm_swap.c	4.15	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -10,6 +10,7 @@
 #include "../h/map.h"
 #include "../h/uio.h"
 #include "../h/file.h"
+#include "../h/nami.h"
 
 struct	buf rswbuf;
 /*
@@ -76,7 +77,7 @@ oswapon()
 	dev_t dev;
 	register struct swdevt *sp;
 
-	ip = namei(uchar, 0, 1);
+	ip = namei(uchar, LOOKUP, 1);
 	if (ip == NULL)
 		return;
 	if ((ip->i_mode&IFMT) != IFBLK) {

@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.11	82/10/31	*/
+/*	kern_sig.c	5.12	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -20,6 +20,7 @@
 #include "../h/acct.h"
 #include "../h/uio.h"
 #include "../h/kernel.h"
+#include "../h/nami.h"
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
@@ -693,7 +694,7 @@ core()
 		return (0);
 	u.u_error = 0;
 	u.u_dirp = "core";
-	ip = namei(schar, 1, 1);
+	ip = namei(schar, CREATE, 1);
 	if (ip == NULL) {
 		if (u.u_error)
 			return (0);
@@ -707,7 +708,7 @@ core()
 		u.u_error = EFAULT;
 		goto out;
 	}
-	itrunc(ip, 0);
+	itrunc(ip, (u_long)0);
 	u.u_acflag |= ACORE;
 	/* if (u.u_error == 0) */
 		u.u_error = rdwri(UIO_WRITE, ip,

@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.38	82/10/17	*/
+/*	vfs_cluster.c	4.39	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,8 +12,6 @@
 #include "../h/vm.h"
 #include "../h/trace.h"
 
-int bioprintfs = 0;
-
 /*
  * Read in (if necessary) the block and return a buffer pointer.
  */
@@ -25,12 +23,16 @@ bread(dev, blkno, size)
 {
 	register struct buf *bp;
 
+	if (size == 0)
+		panic("bread: size 0");
 	bp = getblk(dev, blkno, size);
 	if (bp->b_flags&B_DONE) {
 		trace(TR_BREADHIT, dev, blkno);
 		return(bp);
 	}
 	bp->b_flags |= B_READ;
+	if (bp->b_bcount > bp->b_bufsize)
+		panic("bread");
 	(*bdevsw[major(dev)].d_strategy)(bp);
 	trace(TR_BREADMISS, dev, blkno);
 	u.u_ru.ru_inblock++;		/* pay for read */
@@ -60,6 +62,8 @@ breada(dev, blkno, size, rablkno, rabsize)
 		bp = getblk(dev, blkno, size);
 		if ((bp->b_flags&B_DONE) == 0) {
 			bp->b_flags |= B_READ;
+			if (bp->b_bcount > bp->b_bufsize)
+				panic("breada");
 			(*bdevsw[major(dev)].d_strategy)(bp);
 			trace(TR_BREADMISS, dev, blkno);
 			u.u_ru.ru_inblock++;		/* pay for read */
@@ -78,6 +82,8 @@ breada(dev, blkno, size, rablkno, rabsize)
 			trace(TR_BREADHITRA, dev, blkno);
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
+			if (rabp->b_bcount > rabp->b_bufsize)
+				panic("breadrabp");
 			(*bdevsw[major(dev)].d_strategy)(rabp);
 			trace(TR_BREADMISSRA, dev, rablock);
 			u.u_ru.ru_inblock++;		/* pay in advance */
@@ -109,8 +115,8 @@ bwrite(bp)
 	if ((flag&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
 	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
-if (bioprintfs)
-printf("write %x blk %d count %d\n", bp->b_dev, bp->b_blkno, bp->b_bcount);
+	if (bp->b_bcount > bp->b_bufsize)
+		panic("bwrite");
 	(*bdevsw[major(bp->b_dev)].d_strategy)(bp);
 
 	/*
@@ -193,9 +199,13 @@ brelse(bp)
 	 * Stick the buffer back on a free list.
 	 */
 	s = spl6();
-	if (bp->b_flags & (B_ERROR|B_INVAL)) {
+	if (bp->b_bufsize <= 0) {
+		/* block has no buffer ... put at front of unused buffer list */
+		flist = &bfreelist[BQ_EMPTY];
+		binsheadfree(bp, flist);
+	} else if (bp->b_flags & (B_ERROR|B_INVAL)) {
 		/* block has no info ... put at front of most free list */
-		flist = &bfreelist[BQUEUES-1];
+		flist = &bfreelist[BQ_AGE];
 		binsheadfree(bp, flist);
 	} else {
 		if (bp->b_flags & B_LOCKED)
@@ -256,7 +266,7 @@ getblk(dev, blkno, size)
 	daddr_t blkno;
 	int size;
 {
-	register struct buf *bp, *dp, *ep;
+	register struct buf *bp, *dp;
 	int s;
 
 	if ((unsigned)blkno >= 1 << (sizeof(int)*NBBY-PGSHIFT))
@@ -288,35 +298,13 @@ loop:
 	}
 	if (major(dev) >= nblkdev)
 		panic("blkdev");
-	/*
-	 * Not found in the cache, select something from
-	 * a free list.  Preference is to LRU list, then AGE list.
-	 */
-	s = spl6();
-	for (ep = &bfreelist[BQUEUES-1]; ep > bfreelist; ep--)
-		if (ep->av_forw != ep)
-			break;
-	if (ep == bfreelist) {		/* no free blocks at all */
-		ep->b_flags |= B_WANTED;
-		sleep((caddr_t)ep, PRIBIO+1);
-		splx(s);
-		goto loop;
-	}
-	splx(s);
-	bp = ep->av_forw;
-	notavail(bp);
-	if (bp->b_flags & B_DELWRI) {
-		bp->b_flags |= B_ASYNC;
-		bwrite(bp);
-		goto loop;
-	}
-	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
-	bp->b_flags = B_BUSY;
+	bp = getnewbuf();
 	bfree(bp);
 	bremhash(bp);
 	binshash(bp, dp);
 	bp->b_dev = dev;
 	bp->b_blkno = blkno;
+	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
 		goto loop;
 	return(bp);
@@ -330,33 +318,17 @@ struct buf *
 geteblk(size)
 	int size;
 {
-	register struct buf *bp, *dp;
-	int s;
+	register struct buf *bp, *flist;
 
 loop:
-	s = spl6();
-	for (dp = &bfreelist[BQUEUES-1]; dp > bfreelist; dp--)
-		if (dp->av_forw != dp)
-			break;
-	if (dp == bfreelist) {		/* no free blocks */
-		dp->b_flags |= B_WANTED;
-		sleep((caddr_t)dp, PRIBIO+1);
-		goto loop;
-	}
-	splx(s);
-	bp = dp->av_forw;
-	notavail(bp);
-	if (bp->b_flags & B_DELWRI) {
-		bp->b_flags |= B_ASYNC;
-		bwrite(bp);
-		goto loop;
-	}
-	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
-	bp->b_flags = B_BUSY|B_INVAL;
+	bp = getnewbuf();
+	bp->b_flags |= B_INVAL;
 	bfree(bp);
 	bremhash(bp);
-	binshash(bp, dp);
+	flist = &bfreelist[BQ_AGE];
+	binshash(bp, flist);
 	bp->b_dev = (dev_t)NODEV;
+	bp->b_error = 0;
 	if (brealloc(bp, size) == 0)
 		goto loop;
 	return(bp);
@@ -387,11 +359,14 @@ brealloc(bp, size)
 		}
 		if (bp->b_flags & B_LOCKED)
 			panic("brealloc");
-		goto allocit;
+		allocbuf(bp, size);
+		return (1);
 	}
 	bp->b_flags &= ~B_DONE;
-	if (bp->b_dev == NODEV)
-		goto allocit;
+	if (bp->b_dev == NODEV) {
+		allocbuf(bp, size);
+		return (1);
+	}
 
 	/*
 	 * Search cache for any buffers that overlap the one that we
@@ -412,39 +387,90 @@ loop:
 		if (ep->b_bcount == 0 || ep->b_blkno > last ||
 		    ep->b_blkno + (ep->b_bcount / DEV_BSIZE) <= start)
 			continue;
-if (bioprintfs)
-if (ep->b_flags&B_BUSY)
-printf("sleeping on:dev 0x%x, blks %d-%d, flg 0%o allocing dev 0x%x, blks %d-%d, flg 0%o\n",
-ep->b_dev, ep->b_blkno, ep->b_blkno + (ep->b_bcount / DEV_BSIZE) - 1,
-ep->b_flags, bp->b_dev, start, last, bp->b_flags);
 		s = spl6();
 		if (ep->b_flags&B_BUSY) {
 			ep->b_flags |= B_WANTED;
 			sleep((caddr_t)ep, PRIBIO+1);
-			(void) splx(s);
+			splx(s);
 			goto loop;
 		}
-		(void) splx(s);
+		splx(s);
 		notavail(ep);
 		if (ep->b_flags & B_DELWRI) {
-if (bioprintfs)
-printf("DELWRI:dev 0x%x, blks %d-%d, flg 0%o allocing dev 0x%x, blks %d-%d, flg 0%o\n",
-ep->b_dev, ep->b_blkno, ep->b_blkno + (ep->b_bcount / DEV_BSIZE) - 1,
-ep->b_flags, bp->b_dev, start, last, bp->b_flags);
 			bwrite(ep);
 			goto loop;
 		}
 		ep->b_flags |= B_INVAL;
 		brelse(ep);
 	}
-allocit:
-	/*
-	 * Here the buffer is already available, so all we
-	 * need to do is set the size. Someday a better memory
-	 * management scheme will be implemented.
-	 */
-	bp->b_bcount = size;
+	allocbuf(bp, size);
 	return (1);
+}
+
+/*
+ * Expand or contract the actual memory allocated to a buffer.
+ */
+allocbuf(tp, size)
+	register struct buf *tp;
+	int size;
+{
+	register struct buf *bp, *ep;
+	int sizealloc, take;
+
+	sizealloc = roundup(size, CLBYTES);
+	/*
+	 * Buffer size does not change
+	 */
+	if (sizealloc == tp->b_bufsize)
+		goto out;
+	/*
+	 * Buffer size is shrinking.
+	 * Place excess space in a buffer header taken from the
+	 * BQ_EMPTY buffer list and placed on the "most free" list.
+	 * If no extra buffer headers are available, leave the
+	 * extra space in the present buffer.
+	 */
+	if (sizealloc < tp->b_bufsize) {
+		ep = bfreelist[BQ_EMPTY].av_forw;
+		if (ep == &bfreelist[BQ_EMPTY])
+			goto out;
+		notavail(ep);
+		pagemove(tp->b_un.b_addr + sizealloc, ep->b_un.b_addr,
+		    (int)tp->b_bufsize - sizealloc);
+		ep->b_bufsize = tp->b_bufsize - sizealloc;
+		tp->b_bufsize = sizealloc;
+		ep->b_flags |= B_INVAL;
+		ep->b_bcount = 0;
+		brelse(ep);
+		goto out;
+	}
+	/*
+	 * More buffer space is needed. Get it out of buffers on
+	 * the "most free" list, placing the empty headers on the
+	 * BQ_EMPTY buffer header list.
+	 */
+	while (tp->b_bufsize < sizealloc) {
+		take = sizealloc - tp->b_bufsize;
+		bp = getnewbuf();
+		if (take >= bp->b_bufsize)
+			take = bp->b_bufsize;
+		pagemove(&bp->b_un.b_addr[bp->b_bufsize - take],
+		    &tp->b_un.b_addr[tp->b_bufsize], take);
+		tp->b_bufsize += take;
+		bp->b_bufsize = bp->b_bufsize - take;
+		if (bp->b_bcount > bp->b_bufsize)
+			bp->b_bcount = bp->b_bufsize;
+		if (bp->b_bufsize <= 0) {
+			bremhash(bp);
+			binshash(bp, &bfreelist[BQ_EMPTY]);
+			bp->b_dev = (dev_t)NODEV;
+			bp->b_error = 0;
+			bp->b_flags |= B_INVAL;
+		}
+		brelse(bp);
+	}
+out:
+	tp->b_bcount = size;
 }
 
 /*
@@ -454,11 +480,46 @@ bfree(bp)
 	struct buf *bp;
 {
 	/*
-	 * Here the buffer does not change, so all we
-	 * need to do is set the size. Someday a better memory
-	 * management scheme will be implemented.
+	 * This stub is provided to allow the system to reclaim
+	 * memory from the buffer pool. Currently we do not migrate
+	 * memory between the buffer memory pool and the user memory
+	 * pool.
 	 */
 	bp->b_bcount = 0;
+}
+
+/*
+ * Find a buffer which is available for use.
+ * Select something from a free list.
+ * Preference is to AGE list, then LRU list.
+ */
+struct buf *
+getnewbuf()
+{
+	register struct buf *bp, *dp;
+	int s;
+
+loop:
+	s = spl6();
+	for (dp = &bfreelist[BQ_AGE]; dp > bfreelist; dp--)
+		if (dp->av_forw != dp)
+			break;
+	if (dp == bfreelist) {		/* no free blocks */
+		dp->b_flags |= B_WANTED;
+		sleep((caddr_t)dp, PRIBIO+1);
+		goto loop;
+	}
+	splx(s);
+	bp = dp->av_forw;
+	notavail(bp);
+	if (bp->b_flags & B_DELWRI) {
+		bp->b_flags |= B_ASYNC;
+		bwrite(bp);
+		goto loop;
+	}
+	trace(TR_BRELSE, bp->b_dev, bp->b_blkno);
+	bp->b_flags = B_BUSY;
+	return (bp);
 }
 
 /*
@@ -517,6 +578,47 @@ biodone(bp)
 }
 
 /*
+ * Insure that no part of a specified block is in an incore buffer.
+ */
+blkflush(dev, blkno, size)
+	dev_t dev;
+	daddr_t blkno;
+	long size;
+{
+	register struct buf *ep;
+	struct buf *dp;
+	daddr_t start, last;
+	int s;
+
+	start = blkno;
+	last = start + (size / DEV_BSIZE) - 1;
+	dp = BUFHASH(dev, blkno);
+loop:
+	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
+		if (ep->b_dev != dev || (ep->b_flags&B_INVAL))
+			continue;
+		/* look for overlap */
+		if (ep->b_bcount == 0 || ep->b_blkno > last ||
+		    ep->b_blkno + (ep->b_bcount / DEV_BSIZE) <= start)
+			continue;
+		s = spl6();
+		if (ep->b_flags&B_BUSY) {
+			ep->b_flags |= B_WANTED;
+			sleep((caddr_t)ep, PRIBIO+1);
+			splx(s);
+			goto loop;
+		}
+		if (ep->b_flags & B_DELWRI) {
+			splx(s);
+			notavail(ep);
+			bwrite(ep);
+			goto loop;
+		}
+		splx(s);
+	}
+}
+
+/*
  * make sure all write-behind blocks
  * on dev (or NODEV for all)
  * are flushed out.
@@ -532,7 +634,7 @@ bflush(dev)
 
 loop:
 	s = spl6();
-	for (flist = bfreelist; flist < &bfreelist[BQUEUES]; flist++)
+	for (flist = bfreelist; flist < &bfreelist[BQ_EMPTY]; flist++)
 	for (bp = flist->av_forw; bp != flist; bp = bp->av_forw) {
 		if ((bp->b_flags & B_DELWRI) == 0)
 			continue;

@@ -1,4 +1,4 @@
-/*	init_main.c	4.42	82/11/02	*/
+/*	init_main.c	4.43	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,7 @@ extern	struct user u;		/* have to declare it somewhere! */
  *	     - process 2 to page out
  *	     - process 1 execute bootstrap
  *
- * loop at loc something in user mode -- /etc/init
+ * loop at loc 13 (0xd) in user mode -- /etc/init
  *	cannot be executed.
  */
 #ifdef vax
@@ -53,6 +53,7 @@ main(regs)
 	register int i;
 	register struct proc *p;
 	struct fs *fs;
+	int s;
 
 	rqinit();
 #include "loop.h"
@@ -104,9 +105,17 @@ main(regs)
 #if NLOOP > 0
 	loattach();			/* XXX */
 #endif
+	/*
+	 * Block reception of incoming packets
+	 * until protocols have been initialized.
+	 */
+	s = splimp();
 	ifinit();
 #endif
 	domaininit();
+#ifdef INET
+	splx(s);
+#endif
 	ihinit();
 	bhinit();
 	binit();
@@ -235,12 +244,13 @@ binit()
 		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
 		dp->b_flags = B_HEAD;
 	}
-	dp--;				/* dp = &bfreelist[BQUEUES-1]; */
+	dp = &bfreelist[BQ_AGE];
 	for (i = 0; i < nbuf; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
+		bp->b_bcount = 0;
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
-		bp->b_bcount = MAXBSIZE;
+		bp->b_bufsize = 2 * CLBYTES;
 		bp->b_back = dp;
 		bp->b_forw = dp->b_forw;
 		dp->b_forw->b_back = bp;

@@ -1,4 +1,4 @@
-/*	vfs_vnops.c	4.29	82/10/31	*/
+/*	vfs_vnops.c	4.30	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/proc.h"
+#include "../h/nami.h"
 
 /*
  * Openi called to allow handler
@@ -108,7 +109,7 @@ owner(follow)
 {
 	register struct inode *ip;
 
-	ip = namei(uchar, 0, follow);
+	ip = namei(uchar, LOOKUP, follow);
 	if (ip == NULL)
 		return (NULL);
 	if (u.u_uid == ip->i_uid)
