@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* !lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lock.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)lock.c	5.4 (Berkeley) %G%";
+#endif /* !lint */
 
 /*
  * Lock a terminal up until the given key is entered, until the root
@@ -29,6 +29,7 @@ static char sccsid[] = "@(#)lock.c	5.3 (Berkeley) %G%";
 #include <pwd.h>
 #include <sgtty.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #define	TIMEOUT	15
 #define	YES	1
@@ -62,6 +63,10 @@ main(argc, argv)
 			usage();
 		if (argv[0][1] == 'p')
 			use_mine = YES;
+		else if (!isdigit(argv[0][1])) {
+			fprintf(stderr, "lock: illegal option -- %c\n", argv[0][1]);
+			usage();
+		}
 		else if ((sectimeout = atoi(*argv + 1)) <= 0)
 			usage();
 	}
@@ -178,6 +183,6 @@ bye()
 static
 usage()
 {
-	puts("Usage: lock [-p] [-timeout]");
+	fputs("usage: lock [-p] [-timeout]\n", stderr);
 	exit(1);
 }
