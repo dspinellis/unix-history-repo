@@ -64,20 +64,23 @@ max(a,b)
  */
 display(win, text, size)
 	register xwin_t *win;
-	register char *text;
+	register unsigned char *text;
 	int size;
 {
 	register int i;
 	char cch;
 
 	for (i = 0; i < size; i++) {
-		if (*text == '\n') {
+		if (*text == '\n' || *text == '\r') {
 			xscroll(win, 0);
 			text++;
 			continue;
 		}
 		/* erase character */
-		if (*text == win->cerase) {
+		if (   *text == win->cerase
+		    || *text == 010     /* backspace */
+		    || *text == 0177    /* del */
+		   ) {
 			wmove(win->x_win, win->x_line, max(--win->x_col, 0));
 			getyx(win->x_win, win->x_line, win->x_col);
 			waddch(win->x_win, ' ');
@@ -91,7 +94,9 @@ display(win, text, size)
 		 * the beginning of a word or the beginning of
 		 * the line.
 		 */
-		if (*text == win->werase) {
+		if (   *text == win->werase
+		    || *text == 027     /* ^W */
+		   ) {
 			int endcol, xcol, i, c;
 
 			endcol = win->x_col;
@@ -116,7 +121,9 @@ display(win, text, size)
 			continue;
 		}
 		/* line kill */
-		if (*text == win->kill) {
+		if (   *text == win->kill
+		    || *text == 025     /* ^U */
+		   ) {
 			wmove(win->x_win, win->x_line, 0);
 			wclrtoeol(win->x_win);
 			getyx(win->x_win, win->x_line, win->x_col);
@@ -126,6 +133,11 @@ display(win, text, size)
 		if (*text == '\f') {
 			if (win == &my_win)
 				wrefresh(curscr);
+			text++;
+			continue;
+		}
+		if (*text == '\7') {
+			_putchar(*text);
 			text++;
 			continue;
 		}
