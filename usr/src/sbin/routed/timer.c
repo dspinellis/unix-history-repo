@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	4.1 %G%";
+static char sccsid[] = "@(#)timer.c	4.2 %G%";
 #endif
 
 /*
  * Routing Table Management Daemon
  */
-#include "router.h"
+#include "defs.h"
 
 int	timeval = -TIMER_RATE;
 

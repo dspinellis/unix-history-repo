@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	4.1 %G%";
+static char sccsid[] = "@(#)startup.c	4.2 %G%";
 #endif
 
 /*
  * Routing Table Management Daemon
  */
-#include "router.h"
+#include "defs.h"
 #include <net/if.h>
 #include <nlist.h>
 
@@ -18,7 +18,7 @@ int	externalinterfaces = 0;		/* # of remote and local interfaces */
 struct nlist nl[] = {
 #define	N_IFNET		0
 	{ "_ifnet" },
-	0,
+	{ "" },
 };
 
 /*
@@ -117,7 +117,7 @@ ifinit()
 	return;
 bad:
 	sleep(60);
-	close(kmem), close(s), close(snoroute);
+	close(kmem), close(s);
 	execv("/etc/routed", argv0);
 	_exit(0177);
 }
@@ -175,33 +175,17 @@ gwkludge()
 	type = buf + (((BUFSIZ - 64) * 2) / 3);
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
-	dst.sin_family = gate.sin_family = AF_INET;
 	/* format: {net | host} XX gateway XX metric DD [passive]\n */
 #define	readentry(fp) \
 	fscanf((fp), "%s %s gateway %s metric %d %s\n", \
 		type, dname, gname, &metric, qual)
 	for (;;) {
-		struct hostent *host;
-		struct netent *net;
-
 		if (readentry(fp) == EOF)
 			break;
-		if (strcmp(type, "net") == 0) {
-			net = getnetbyname(dname);
-			if (net == 0 || net->n_addrtype != AF_INET)
-				continue;
-			dst.sin_addr = inet_makeaddr(net->n_net, INADDR_ANY);
-		} else if (strcmp(type, "host") == 0) {
-			host = gethostbyname(dname);
-			if (host == 0)
-				continue;
-			bcopy(host->h_addr, &dst.sin_addr, host->h_length);
-		} else
+		if (!getnetorhostname(type, dname, &dst))
 			continue;
-		host = gethostbyname(gname);
-		if (host == 0)
+		if (!gethostnameornumber(gname, &gate))
 			continue;
-		bcopy(host->h_addr, &gate.sin_addr, host->h_length);
 		ifp = (struct interface *)malloc(sizeof (*ifp));
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
@@ -223,4 +207,55 @@ gwkludge()
 		addrouteforif(ifp);
 	}
 	fclose(fp);
+}
+
+getnetorhostname(type, name, sin)
+	char *type, *name;
+	struct sockaddr_in *sin;
+{
+
+	if (strcmp(type, "net") == 0) {
+		struct netent *np = getnetbyname(name);
+		int n;
+
+		if (np->n_addrtype != AF_INET)
+			return (0);
+		if (np == 0)
+			n = inet_network(name);
+		else
+			n = np->n_net;
+		sin->sin_family = AF_INET;
+		sin->sin_addr = inet_makeaddr(n, INADDR_ANY);
+		return (1);
+	}
+	if (strcmp(type, "host") == 0) {
+		struct hostent *hp = gethostbyname(name);
+
+		if (hp->h_addrtype != AF_INET)
+			return (0);
+		if (hp == 0)
+			sin->sin_addr.s_addr = inet_addr(name);
+		else
+			bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+		sin->sin_family = AF_INET;
+		return (1);
+	}
+	return (0);
+}
+
+gethostnameornumber(name, sin)
+	char *name;
+	struct sockaddr_in *sin;
+{
+	struct hostent *hp;
+
+	hp = gethostbyname(name);
+	if (hp) {
+		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
+		sin->sin_family = hp->h_addrtype;
+		return (1);
+	}
+	sin->sin_addr.s_addr = inet_addr(name);
+	sin->sin_family = AF_INET;
+	return (sin->sin_addr.s_addr != -1);
 }

@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.9 %G%";
+static char sccsid[] = "@(#)af.c	4.10 %G%";
 #endif
 
-#include "router.h"
+#include "defs.h"
 
 /*
  * Address family support routines
@@ -31,10 +31,7 @@ inet_hash(sin, hp)
 {
 
 	hp->afh_nethash = inet_netof(sin->sin_addr);
-	hp->afh_hosthash = sin->sin_addr.s_addr;
-#if vax || pdp11
-	hp->afh_hosthash = ntohl(hp->afh_hosthash);
-#endif
+	hp->afh_hosthash = ntohl(sin->sin_addr.s_addr);
 	hp->afh_hosthash &= 0x7fffffff;
 }
 
@@ -52,30 +49,28 @@ inet_portmatch(sin)
 	register struct sockaddr_in *sin;
 {
 	
-#if vax || pdp11
-	sin->sin_port = ntohs(sin->sin_port);
+#ifdef COMPAT
+	if (ntohs(sin->sin_port) == ntohs(sp->s_port) + 1)
+		return (1);
 #endif
-	return (sin->sin_port == sp->s_port || sin->sin_port == sp->s_port+1);
+	return (sin->sin_port == sp->s_port);
 }
 
 /*
  * Verify the message is from a "trusted" port.
  */
 inet_portcheck(sin)
-	register struct sockaddr_in *sin;
+	struct sockaddr_in *sin;
 {
 
-#if vax || pdp11
-	sin->sin_port = ntohs(sin->sin_port);
-#endif
-	return (sin->sin_port <= IPPORT_RESERVED);
+	return (ntohs(sin->sin_port) <= IPPORT_RESERVED);
 }
 
 /*
  * Internet output routine.
  */
-inet_output(s, sin, size)
-	int s;
+inet_output(s, flags, sin, size)
+	int s, flags;
 	struct sockaddr_in *sin;
 	int size;
 {
@@ -84,9 +79,9 @@ inet_output(s, sin, size)
 	dst = *sin;
 	sin = &dst;
 	if (sin->sin_port == 0)
-		sin->sin_port = htons(sp->s_port);
-	if (send(s, sin, packet, size) < 0)
-		perror("send");
+		sin->sin_port = sp->s_port;
+	if (sendto(s, packet, size, flags, sin, sizeof (*sin)) < 0)
+		perror("sendto");
 }
 
 /*
@@ -96,12 +91,14 @@ inet_output(s, sin, size)
 inet_checkhost(sin)
 	struct sockaddr_in *sin;
 {
+
 	return (inet_lnaof(sin->sin_addr) != 0);
 }
 
 inet_canon(sin)
 	struct sockaddr_in *sin;
 {
+
 	sin->sin_port = 0;
 }
 
@@ -123,8 +120,8 @@ null_netmatch(a1, a2)
 }
 
 /*ARGSUSED*/
-null_output(s, a1, n)
-	int s;
+null_output(s, f, a1, n)
+	int s, f;
 	struct sockaddr *a1;
 	int n;
 {
