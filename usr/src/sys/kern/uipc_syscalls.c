@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.6 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -95,7 +95,21 @@ listen()
 	u.u_error = solisten((struct socket *)fp->f_data, uap->backlog);
 }
 
+#ifdef COMPAT_43
 accept()
+{
+	accept1(0);
+}
+
+oaccept()
+{
+	accept1(1);
+}
+
+accept1(compat_43)
+#else
+accept()
+#endif
 {
 	register struct a {
 		int	s;
@@ -169,6 +183,11 @@ noname:
 	nam = m_get(M_WAIT, MT_SONAME);
 	(void) soaccept(so, nam);
 	if (uap->name) {
+#ifdef COMPAT_43
+		if (compat_43)
+			mtod(nam, struct osockaddr *)->sa_family =
+			    mtod(nam, struct sockaddr *)->sa_family;
+#endif
 		if (namelen > nam->m_len)
 			namelen = nam->m_len;
 		/* SHOULD COPY OUT A CHAIN HERE */
@@ -180,13 +199,6 @@ noname:
 	m_freem(nam);
 	splx(s);
 }
-
-#ifdef COMPAT_43
-oaccept()
-{
-	return (accept());
-}
-#endif
 
 connect()
 {
@@ -259,7 +271,7 @@ socketpair()
 		return;
 	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
 	if (u.u_error)
-		goto free;
+		goto freeit;
 	fp1 = falloc();
 	if (fp1 == NULL)
 		goto free2;
@@ -298,7 +310,7 @@ free3:
 	u.u_ofile[sv[0]] = 0;
 free2:
 	(void)soclose(so2);
-free:
+freeit:
 	(void)soclose(so1);
 }
 
@@ -327,6 +339,7 @@ sendto()
 }
 
 #ifdef COMPAT_43
+
 osend()
 {
 	register struct a {
@@ -479,8 +492,24 @@ bad:
 		m_freem(control);
 }
 
+#ifdef COMPAT_43
 recvfrom()
 {
+	recvfrom1(0);
+}
+
+orecvfrom()
+{
+	recvfrom1(1);
+}
+
+recvfrom1(compat_43)
+{	/* vi will want an extra } to be happy! */
+#else
+recvfrom()
+{
+	int compat_43 = 0;
+#endif
 	register struct a {
 		int	s;
 		caddr_t	buf;
@@ -509,15 +538,10 @@ recvfrom()
 	msg.msg_accrights = 0;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, (caddr_t)0, (caddr_t)0);
+	recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr,
+				(caddr_t)0, (caddr_t)0, compat_43);
 }
-
 #ifdef COMPAT_43
-orecvfrom()
-{
-	return (recvfrom());
-}
-
 orecv()
 {
 	register struct a {
@@ -538,7 +562,7 @@ orecv()
 	msg.msg_accrights = 0;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0);
+	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0, 0);
 }
 
 orecvmsg()
@@ -574,7 +598,7 @@ orecvmsg()
 		}
 	    
 	recvit(uap->s, &msg, (caddr_t)&uap->msg->msg_namelen,
-	    (caddr_t)&uap->msg->msg_accrightslen, (caddr_t)0);
+	    (caddr_t)&uap->msg->msg_accrightslen, (caddr_t)0, /* compat_43 */1);
 }
 #endif
 
@@ -586,7 +610,7 @@ recvmsg()
 		int	flags;
 	} *uap = (struct a *)u.u_ap;
 	struct msghdr msg;
-	struct iovec aiov[MSG_MAXIOVLEN];
+	struct iovec aiov[MSG_MAXIOVLEN], *uiov;
 
 	u.u_error = copyin((caddr_t)uap->msg, (caddr_t)&msg, sizeof (msg));
 	if (u.u_error)
@@ -600,6 +624,7 @@ recvmsg()
 		(unsigned)(msg.msg_iovlen * sizeof (aiov[0])));
 	if (u.u_error)
 		return;
+	uiov = msg.msg_iov;
 	msg.msg_iov = aiov;
 	if (msg.msg_accrights)
 		if (useracc((caddr_t)msg.msg_accrights,
@@ -613,12 +638,13 @@ recvmsg()
 			u.u_error = EFAULT;
 			return;
 		}
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0);
-	u.u_error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof (msg));
+	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0, 0);
+	msg.msg_iov = uiov;
+	u.u_error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
 }
 
-recvit(s, mp, namelenp, rightslenp, controllenp)
-	int s;
+recvit(s, mp, namelenp, rightslenp, controllenp, compat_43)
+	int s, compat_43;
 	register struct msghdr *mp;
 	caddr_t namelenp, rightslenp, controllenp;
 {
@@ -668,7 +694,12 @@ recvit(s, mp, namelenp, rightslenp, controllenp)
 		if (len <= 0 || from == 0)
 			len = 0;
 		else {
-			if (len > from->m_len)
+#ifdef COMPAT_43
+			if (compat_43)
+				mtod(from, struct osockaddr *)->sa_family =
+				    mtod(from, struct sockaddr *)->sa_family;
+#endif
+			if (len > from->m_len)		/* ??? */
 				len = from->m_len;
 			(void) copyout(mtod(from, caddr_t),
 			    (caddr_t)mp->msg_name, (unsigned)len);
@@ -815,7 +846,7 @@ pipe()
 		return;
 	u.u_error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
 	if (u.u_error)
-		goto free;
+		goto freeit;
 	rf = falloc();
 	if (rf == NULL)
 		goto free2;
@@ -846,14 +877,28 @@ free3:
 	u.u_ofile[r] = 0;
 free2:
 	(void)soclose(wso);
-free:
+freeit:
 	(void)soclose(rso);
 }
 
 /*
  * Get socket name.
  */
+#ifdef COMPAT_43
 getsockname()
+{
+	getsockname1(0);
+}
+
+ogetsockname()
+{
+	getsockname1(1);
+}
+
+getsockname1(compat_43)
+#else
+getsockname()
+#endif
 {
 	register struct a {
 		int	fdes;
@@ -882,25 +927,37 @@ getsockname()
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
+#ifdef COMPAT_43
+	if (compat_43)
+		mtod(m, struct osockaddr *)->sa_family =
+		    mtod(m, struct sockaddr *)->sa_family;
+#endif
 	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
-	if (u.u_error)
-		goto bad;
-	u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen, sizeof (len));
+	if (u.u_error == 0)
+		u.u_error = copyout((caddr_t)&len, (caddr_t)uap->alen,
+		    sizeof (len));
 bad:
 	m_freem(m);
 }
 
-#ifdef COMPAT_43
-ogetsockname()
-{
-	return (getsockname());
-}
-#endif
-
 /*
  * Get name of peer for connected socket.
  */
+#ifdef COMPAT_43
 getpeername()
+{
+	getpeername1(0);
+}
+
+ogetpeername()
+{
+	getpeername1(1);
+}
+
+getpeername1(compat_43)
+#else
+getpeername()
+#endif
 {
 	register struct a {
 		int	fdes;
@@ -933,6 +990,11 @@ getpeername()
 		goto bad;
 	if (len > m->m_len)
 		len = m->m_len;
+#ifdef COMPAT_43
+	if (compat_43)
+		mtod(m, struct osockaddr *)->sa_family =
+		    mtod(m, struct sockaddr *)->sa_family;
+#endif
 	u.u_error = copyout(mtod(m, caddr_t), (caddr_t)uap->asa, (u_int)len);
 	if (u.u_error)
 		goto bad;
@@ -941,19 +1003,13 @@ bad:
 	m_freem(m);
 }
 
-#ifdef COMPAT_43
-ogetpeername()
-{
-	return (getpeername());
-}
-#endif
-
 sockargs(aname, name, namelen, type)
 	struct mbuf **aname;
 	caddr_t name;
 	int namelen, type;
 {
 	register struct mbuf *m;
+	register struct sockaddr *sa;
 	int error;
 
 	if ((u_int)namelen > MLEN)
@@ -967,6 +1023,12 @@ sockargs(aname, name, namelen, type)
 		(void) m_free(m);
 	else
 		*aname = m;
+	sa = mtod(m, struct sockaddr *);
+#if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
+	if (type == MT_SONAME && sa->sa_family == 0 && sa->sa_len < AF_MAX)
+		sa->sa_family = sa->sa_len;
+#endif
+	sa->sa_len = namelen;
 	return (error);
 }
 
