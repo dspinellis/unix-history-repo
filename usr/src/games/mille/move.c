@@ -6,8 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
+
+#include <termios.h>
 
 #include	"mille.h"
 #ifndef	unctrl

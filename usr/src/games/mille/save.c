@@ -6,15 +6,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)save.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)save.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
-#include	"mille.h"
-#include	<sys/types.h>
-#include	<sys/stat.h>
-#include	<string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <termios.h>
+#include "mille.h"
+
 #ifndef	unctrl
-#include	"unctrl.h"
+#include "unctrl.h"
 #endif
 
 # ifdef	attron
