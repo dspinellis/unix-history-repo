@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.17 (Berkeley) %G%
+ *	@(#)mount.h	8.18 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -61,7 +61,7 @@ struct statfs {
 LIST_HEAD(vnodelst, vnode);
 
 struct mount {
-	TAILQ_ENTRY(mount) mnt_list;		/* mount list */
+	CIRCLEQ_ENTRY(mount) mnt_list;		/* mount list */
 	struct vfsops	*mnt_op;		/* operations on fs */
 	struct vfsconf	*mnt_vfc;		/* configuration info */
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
@@ -264,7 +264,8 @@ int	vfs_lock __P((struct mount *));     /* lock a vfs */
 int	vfs_mountedon __P((struct vnode *));/* is a vfs mounted on vp */
 void	vfs_getnewfsid __P((struct mount *));   /* create a unique fsid */
 void	vfs_unlock __P((struct mount *));   /* unlock a vfs */
-extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
+void	vfs_unmountall __P((void));	    /* unmount all filesystems */
+extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 
 #else /* !KERNEL */
 
