@@ -1,0 +1,52 @@
+.TL
+Subdirectory Performance Enhancement for UUCP
+.AU
+Tom Truscott
+.AI
+Department of Computer Science
+Duke University
+Durham, NC 27706
+
+(919) 684-3048
+.NH
+OVERVIEW
+.PP
+The uucp subdirectory enhancement
+keeps the /usr/spool/uucp directory small
+by putting spool files in various subdirectories.
+This speeds up locking (e.g. for LOGFILE).
+At Duke, "C." files are in "C./",
+"D.duke" files are in "D.duke/",
+and other "D." files are in "D./".
+Multiple subdirectories speeds up the search for a file.
+For example, "C." files are searched for in the "C." subdirectory
+so no time is wasted skipping "D." files.
+Further, since UN*X locks directories during search (namei()),
+having multiple directories permits increased concurrency
+when more than one "uu" process is running.
+.NH
+IMPLEMENTATION
+.NH 2
+CHANGES WHICH ARE EXTERNAL TO UUCP
+.PP
+Certain filenames are remapped at system-call time.
+For example, "/usr/spool/uucp/D.decvax1234" is remapped to
+"/usr/spool/uucp/D./D.decvax1234".
+Also, "D.decvax" is mapped to "D./D.decvax" provided
+that the last chdir(II) was to "/usr/spool/uucp".
+The list of filename prefixes which are mapped are given
+in the prefix table in syskludge.c.
+As distributed, files beginning "D.duke" are put in /usr/spool/uucp/D.duke,
+other "D." files are put in subdirectory "D.",
+and "C." files are put in the "C." subdirectory.
+.PP
+This change is implemented by providing a "syskludge.a"
+library which has special versions of open(II), link(II), etc.
+.SH
+CHANGES TO UUCP ITSELF
+.PP
+When searching for work ("C." files),
+uucp looks in /usr/spool/uucp/C. rather than /usr/spool/uucp.
+.PP
+This change is implemented by minor changes to uucp itself.
+If "C." files were not mapped, no changes to uucp proper would be needed.
