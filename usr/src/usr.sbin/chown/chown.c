@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,8 +34,8 @@ static char sccsid[] = "@(#)chown.c	5.13 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-static int ischown, uid, gid, fflag, rflag, retval;
-static char *gname, *myname;
+int ischown, uid, gid, fflag, rflag, retval;
+char *gname, *myname;
 
 main(argc, argv)
 	int argc;
@@ -96,7 +96,6 @@ main(argc, argv)
 	exit(retval);
 }
 
-static
 setgid(s)
 	register char *s;
 {
@@ -121,7 +120,6 @@ setgid(s)
 	}
 }
 
-static
 setuid(s)
 	register char *s;
 {
@@ -147,7 +145,6 @@ setuid(s)
 	}
 }
 
-static
 change(file)
 	char *file;
 {
@@ -184,7 +181,6 @@ change(file)
 	}
 }
 
-static
 chownerr(file)
 	char *file;
 {
@@ -216,7 +212,6 @@ chownerr(file)
 	err(file);
 }
 
-static
 err(s)
 	char *s;
 {
@@ -229,7 +224,6 @@ err(s)
 	retval = -1;
 }
 
-static
 usage()
 {
 	(void)fprintf(stderr, "usage: %s [-Rf] %s file ...\n", myname,
