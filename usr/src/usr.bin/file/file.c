@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	4.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,8 +26,11 @@ static char sccsid[] = "@(#)file.c	4.20 (Berkeley) %G%";
 #include <ctype.h>
 #include <a.out.h>
 
-extern int	errno;
+#if defined(hp300) || defined(hp800)
+#include <hp300/hpux/hpux_exec.h>
+#endif
 
+extern  int errno;
 int in;
 int i  = 0;
 char buf[BUFSIZ];
@@ -96,6 +99,11 @@ char *file;
 	char ch;
 	struct stat mbuf;
 	char slink[MAXPATHLEN + 1];
+	struct exec *hdr;
+#if defined(hp300) || defined(hp800)
+	int ishpux300 = 0;
+	int ishpux800 = 0;
+#endif
 
 	if (lstat(file, &mbuf) < 0) {
 		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
@@ -132,46 +140,104 @@ char *file;
 	}
 
 	ifile = open(file, 0);
-	if(ifile < 0) {
+	if (ifile < 0) {
 		fprintf(stderr, "file: %s: %s\n", file, strerror(errno));
 		return;
 	}
 	printf("%s:\t", file);
 	in = read(ifile, buf, BUFSIZ);
-	if(in == 0){
+	if (in == 0) {
 		printf("empty\n");
 		return;
 	}
-	switch(*(int *)buf) {
-
-	case 0413:
-		printf("demand paged ");
-
-	case 0410:
-		printf("pure ");
-		goto exec;
+	hdr = (struct exec *) buf;
+#ifdef MID_ZERO		/* if we have a_mid field */
+	switch (hdr->a_mid) {
+	case MID_SUN010:
+		printf("SUN 68010/68020 ");
+		break;
+	case MID_SUN020:
+		printf("SUN 68020 ");
+		break;
+	case MID_HP200:
+		printf("HP200 ");
+		break;
+	case MID_HP300:
+		printf("HP300 ");
+		break;
+#if defined(hp300) || defined(hp800)
+	case MID_HPUX:
+		if (((struct hpux_exec *)buf)->ha_version == BSDVNUM)
+			printf("BSD generated ");
+		printf("HP-UX series 200/300 ");
+		ishpux300 = 1;
+		if (hdr->a_magic == 0406) {
+			printf("relocatable object\n");
+			return;
+		}
+		break;
+	case MID_HPUX800:
+		printf("HP-UX series 800 ");
+		ishpux800 = 1;
+		if (hdr->a_magic == 0x106) {
+			printf("relocatable object\n");
+			return;
+		}
+		break;
+#endif
+#if BYTE_ORDER == BIG_ENDIAN
+	case ((OMAGIC & 0xff) << 8) | (OMAGIC >> 8):
+	case ((NMAGIC & 0xff) << 8) | (NMAGIC >> 8):
+	case ((ZMAGIC & 0xff) << 8) | (ZMAGIC >> 8):
+		printf("byte-swapped (VAX/386) ");
+		hdr->a_magic = ((hdr->a_mid & 0xff) << 8) | (hdr->a_mid >> 8);
+		break;
+	}
+#endif
+#endif /* MID_ZERO, a_mid */
+	switch (hdr->a_magic) {
 
 	case 0411:
 		printf("jfr or pdp-11 unix 411 executable\n");
 		return;
 
-	case 0407:
-exec:
+	case ZMAGIC:
+		printf("demand paged ");
+		/* FALLTHROUGH */
+
+	case NMAGIC:
+		printf("pure ");
+		/* FALLTHROUGH */
+
+	case OMAGIC:
 		if (mbuf.st_mode & S_ISUID)
 			printf("set-uid ");
 		if (mbuf.st_mode & S_ISGID)
 			printf("set-gid ");
 		if (mbuf.st_mode & S_ISVTX)
 			printf("sticky ");
-		printf("executable");
-		if(((int *)buf)[4] != 0) {
-			printf(" not stripped");
-			if(oldo(buf))
-				printf(" (old format symbol table)");
+		if ((mbuf.st_mode & (S_IXUSR|S_IXGRP|S_IXOTH)) == 0 &&
+			(hdr->a_trsize || hdr->a_drsize)) {
+			printf("relocatable object\n");
+			return;
 		}
+		printf("executable");
+#if defined(hp300) || defined(hp800)
+		if (ishpux300) {
+			if (((int *)buf)[9] != 0)
+				printf(" not stripped");
+		} else if (ishpux800) {
+			if (((int *)buf)[24] != 0)
+				printf(" not stripped");
+		} else
+#endif
+		if (hdr->a_syms != 0)
+			printf(" not stripped");
 		printf("\n");
 		return;
+	}
 
+	switch (*(int *)buf) {
 	case 0177555:
 		printf("very old archive\n");
 		return;
@@ -193,7 +259,7 @@ exec:
 		printf("compressed %d bit code data\n", buf[2]&0x1f);
 		return;
 	}
-	if(strncmp(buf, "!<arch>\n__.SYMDEF", 17) == 0 ) {
+	if (strncmp(buf, "!<arch>\n__.SYMDEF", 17) == 0 ) {
 		printf("archive random library\n");
 		return;
 	}
@@ -342,22 +408,6 @@ outa:
 		/*.... */
 	printf("\n");
 }
-
-oldo(cp)
-char *cp;
-{
-	struct exec ex;
-	struct stat stb;
-
-	ex = *(struct exec *)cp;
-	if (fstat(ifile, &stb) < 0)
-		return(0);
-	if (N_STROFF(ex)+sizeof(off_t) > stb.st_size)
-		return (1);
-	return (0);
-}
-
-
 
 troffint(bp, n)
 char *bp;
