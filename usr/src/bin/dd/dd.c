@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -122,13 +122,7 @@ setup()
 	 * record oriented I/O, only need a single buffer.
 	 */
 	if (!(ddflags & (C_BLOCK|C_UNBLOCK))) {
-		if (in.dbsz > out.dbsz)
-			cnt = in.dbsz - 1 - in.dbsz / 2 + in.dbsz;
-		else if (in.dbsz < out.dbsz)
-			cnt = out.dbsz + in.dbsz - 1;
-		else
-			cnt = in.dbsz;
-		if ((in.db = malloc(cnt)) == NULL)
+		if ((in.db = malloc(out.dbsz + in.dbsz - 1)) == NULL)
 			err("%s", strerror(errno));
 		out.db = in.db;
 	} else if ((in.db =
