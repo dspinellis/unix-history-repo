@@ -11,6 +11,17 @@
 MAILER-DAEMON: postmaster
 postmaster: root
 
+# General redirections for pseudo accounts
+bin: root
+daemon: root
+games: root
+ingres: root
+nobody: root
+system: root
+toor: root
+uucp: root
+
+# Well-known aliases
 root:
 manager:
 dumper:
