@@ -1,4 +1,4 @@
-/*	nameser.h	4.1	85/03/01	*/
+/*	nameser.h	4.2	85/03/18	*/
 /*
  * Define constants based on rfc883
  */
@@ -16,6 +16,11 @@
 #else
 #define HTONS(s)
 #endif
+
+/*
+ * Internet nameserver port number
+ */
+#define NAMESERVER_PORT	53
 
 /*
  * Currently defined opcodes
