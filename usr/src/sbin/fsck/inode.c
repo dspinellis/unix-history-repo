@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -68,6 +68,7 @@ iblock(idesc, ilevel, isize)
 	register daddr_t *aplim;
 	int i, n, (*func)(), nif, sizepb;
 	BUFAREA ib;
+	char buf[BUFSIZ];
 	extern int pass1check();
 
 	if (idesc->id_type == ADDR) {
@@ -93,7 +94,9 @@ iblock(idesc, ilevel, isize)
 		for (ap = &ib.b_un.b_indir[nif]; ap < aplim; ap++) {
 			if (*ap == 0)
 				continue;
-			if (dofix(idesc, "PARTIALLY TRUNCATED INODE")) {
+			sprintf(buf, "PARTIALLY TRUNCATED INODE I=%d",
+				idesc->id_number);
+			if (dofix(idesc, buf)) {
 				*ap = 0;
 				dirty(&ib);
 			}
