@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+#	@(#)Makefile	4.8	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -37,7 +37,7 @@ proc: awk.h proc.o token.o
 
 clean: FRC
 #	use *.o, not ${OBJS}
-	rm -f *.o core awk awk.h awk.lx.c y.tab.h proc proctab.c yacc*
+	rm -f *.o core awk awk.h awk.lx.c y.tab.h proc proctab.c yacc* temp
 
 depend: y.tab.h ${SRCS} FRC
 	mkdep ${CFLAGS} ${SRCS}
