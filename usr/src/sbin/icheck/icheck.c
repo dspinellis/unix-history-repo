@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)icheck.c	1.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.18 (Berkeley) %G%";
 
 /*
  * icheck
@@ -447,17 +447,16 @@ makecg()
 		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
 		      sblock.fs_ipg * sizeof(struct dinode));
 		for (i = 0; i < sblock.fs_ipg; i++) {
+			cgrp.cg_cs.cs_nifree++;
+			clrbit(cgrp.cg_iused, i);
 			dp = &itab[i];
-			if (dp == NULL)
-				continue;
 			if ((dp->di_mode & IFMT) != 0) {
 				if ((dp->di_mode & IFMT) == IFDIR)
 					cgrp.cg_cs.cs_ndir++;
+				cgrp.cg_cs.cs_nifree--;
 				setbit(cgrp.cg_iused, i);
 				continue;
 			}
-			cgrp.cg_cs.cs_nifree++;
-			clrbit(cgrp.cg_iused, i);
 		}
 		while (i < MAXIPG) {
 			clrbit(cgrp.cg_iused, i);
