@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)output.c	4.6 %G%";
+static	char sccsid[] = "@(#)output.c	4.7 %G%";
 #endif
 /*
  *
@@ -321,7 +321,7 @@ L_INT lxy; char fmat; int base;
 #ifndef MULD2
 	register char *cp1;
 	cp1=digs; if ((lxy&0xFFFF0000L)==0xFFFF0000L) {*cp1++='-'; lxy= -lxy;}
-	(void)sprintf(cp1,base==16 ? "%x" : "%D",lxy);
+	(void)sprintf(cp1,base==16 ? "%x" : "%ld",lxy);
 	cp1=digs; while (*digitptr++= *cp1++); --digitptr;
 #else
 	L_REAL f ,g; long q;

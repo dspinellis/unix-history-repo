@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)dd.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <sys/file.h>
@@ -418,7 +418,7 @@ number(big)
 
 	case '\0':
 		if (n>=big || n<0) {
-			fprintf(stderr, "dd: argument %D out of range\n", n);
+			fprintf(stderr, "dd: argument %ld out of range\n", n);
 			exit(1);
 		}
 		return(n);
