@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -571,16 +571,16 @@ register FILE *f;
 
 /* Simplified printf function */
 
-printf (fmt, args)
+printf (fmt, va_alist)
 register char *fmt;
-int args;
+va_dcl
 {
-	register int *argp;
+	va_list ap;
 	register char ch;
 	register int ccount;
 
 	ccount = 0;
-	argp = &args;
+	va_start(ap);
 	while (*fmt) {
 		while ((ch = *fmt++) != '%') {
 			if (ch == '\0')
@@ -590,14 +590,13 @@ int args;
 		}
 		switch (*fmt++) {
 		case 'd':
-			ccount += printd (*argp);
+			ccount += printd (va_arg(ap, int));
 			break;
 		case 's':
-			ccount += pr ((char *)*argp);
+			ccount += pr (va_arg(ap, char *));
 			break;
 		case '%':
 			ccount++;
-			argp--;
 			putchar ('%');
 			break;
 		case '0':
@@ -605,8 +604,8 @@ int args;
 		default:
 			break;
 		}
-		++argp;
 	}
+	va_end(ap);
 	return (ccount);
 
 }
@@ -1368,12 +1367,15 @@ register int n;
     }
 }
 
-execute (filename, cmd, args)
+/*VARARGS2*/
+execute (filename, cmd, va_alist)
 char *filename;
-char *cmd, *args;
+char *cmd;
+va_dcl
 {
 	int id;
 	int n;
+	va_list argp;
 
 	fflush (stdout);
 	reset_tty ();
@@ -1384,7 +1386,8 @@ char *cmd, *args;
 		close(0);
 		open("/dev/tty", 0);
 	    }
-	    execv (cmd, &args);
+	    va_start(argp);
+	    execv (cmd, argp);
 	    write (2, "exec failed\n", 12);
 	    exit (1);
 	}
