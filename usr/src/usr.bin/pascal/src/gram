@@ -1,11 +1,13 @@
-"@(#)gram 1.3 %G%"
-/yyval/s//*&/
+"@(#)gram 1.4 %G%"
+/yyval/s/int/union semstack/
+s/ 0//
+/yypv/s/int/union semstack/
 /\*yysterm\[]/,$d
 1;/yyactr/ka
 'a,$s/yypv/yyYpv/g
 'aa
-	register int **yyYpv;
-	register int *p, *q;
+	register union semstack *yyYpv;
+	register struct tnode *p, *q;
 	yyYpv = yypv;
 .
 1;/^##/-w! y.tab.h
@@ -14,6 +16,12 @@
 /yyclearin/d
 /yyerrok/d
 1;/^##/d
+/yyact/s\[]/& =/
+/yypact/s\[]/& =/
+/yyr1/s\[]/& =/
+/yyr2/s\[]/& =/
+/yygo/s\[]/& =/
+/yypgo/s\[]/& =/
 $a
 
 yyEactr(__np__, var)
