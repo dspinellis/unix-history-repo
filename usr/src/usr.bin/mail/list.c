@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)list.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)list.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -42,13 +42,17 @@ getmsglist(buf, vector, flags)
 	register int *ip;
 	register struct message *mp;
 
+	if (msgCount == 0) {
+		*vector = 0;
+		return 0;
+	}
 	if (markall(buf, flags) < 0)
 		return(-1);
 	ip = vector;
 	for (mp = &message[0]; mp < &message[msgCount]; mp++)
 		if (mp->m_flag & MMARK)
 			*ip++ = mp - &message[0] + 1;
-	*ip = NULL;
+	*ip = 0;
 	return(ip - vector);
 }
 
@@ -593,24 +597,19 @@ scaninit()
 
 first(f, m)
 {
-	register int mesg;
 	register struct message *mp;
 
-	mesg = dot - &message[0] + 1;
+	if (msgCount == 0)
+		return 0;
 	f &= MDELETED;
 	m &= MDELETED;
-	for (mp = dot; mp < &message[msgCount]; mp++) {
+	for (mp = dot; mp < &message[msgCount]; mp++)
 		if ((mp->m_flag & m) == f)
-			return(mesg);
-		mesg++;
-	}
-	mesg = dot - &message[0];
-	for (mp = dot-1; mp >= &message[0]; mp--) {
+			return mp - message + 1;
+	for (mp = dot-1; mp >= &message[0]; mp--)
 		if ((mp->m_flag & m) == f)
-			return(mesg);
-		mesg--;
-	}
-	return(NULL);
+			return mp - message + 1;
+	return 0;
 }
 
 /*
