@@ -1,4 +1,4 @@
-/*	hp.c	4.61	83/01/01	*/
+/*	hp.c	4.62	83/01/27	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -495,6 +495,7 @@ hpdtint(mi, mbsr)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
+	register struct hpst *st = &hpst[mi->mi_type];
 	register int er1, er2;
 	int retry = 0;
 
@@ -544,6 +545,12 @@ hpdtint(mi, mbsr)
 		    hphdr[mi->mi_unit] ||
 		    (!ML11 && (er2 & HPER2_HARD))) {
 hard:
+			if (ML11)
+				bp->b_blkno = hpaddr->hpda&0xffff;
+			else
+				bp->b_blkno = (hpaddr->hpdc*st->nspc)&0xffff +
+					  ((hpaddr->hpda>>8)&0xffff)*st->nsect +
+						(hpaddr->hpda&0x1f);
 			harderr(bp, "hp");
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf("mbsr=%b ", mbsr, mbsr_bits);
@@ -556,6 +563,7 @@ hard:
 				printf(" mr2=%o", hpaddr->hpmr2&0xffff);
 			printf("\n");
 			bp->b_flags |= B_ERROR;
+			retry = 0;
 			hprecal[mi->mi_unit] = 0;
 		} else if ((er2 & HPER2_BSE) && !ML11) {
 #ifndef NOBADSECT
