@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.1	82/07/15	*/
+/*	kern_prot.c	5.2	82/07/22	*/
 
 /*
  * System calls related to protection
@@ -20,6 +20,7 @@
 #include "../h/conf.h"
 #include "../h/buf.h"
 #include "../h/mount.h"
+#include "../h/quota.h"
 
 getuid()
 {
@@ -38,6 +39,12 @@ setuid()
 	uap = (struct a *)u.u_ap;
 	uid = uap->uid;
 	if (u.u_ruid == uid || u.u_uid == uid || suser()) {
+#ifdef QUOTA
+		if (u.u_quota->q_uid != uid) {
+			qclean();
+			qstart(getquota(uid, 0, 0));
+		}
+#endif
 		u.u_uid = uid;
 		u.u_procp->p_uid = uid;
 		u.u_ruid = uid;
