@@ -42,5 +42,5 @@ double
 atof(ascii)
 	const char *ascii;
 {
-	return (strtod(ascii, NULL));
+	return(strtod(ascii, (char **)NULL));
 }

@@ -631,7 +631,7 @@ literal:
 				double res;
 
 				*p = 0;
-				res = strtod(buf,(char **) NULL);
+				res = strtod(buf, (char **) NULL);
 				if (flags & LONG)
 					*va_arg(ap, double *) = res;
 				else
