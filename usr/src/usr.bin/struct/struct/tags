@@ -1,0 +1,166 @@
+ANC	2.head.c	/^#define ANC(v,w)	(ntobef[v] <= ntobef[w] && ntoaft/
+ARCCOUNT	3.loop.c	/^#define ARCCOUNT(v)	REACH(v)$/
+BACKEDGE	2.dfs.c	/^#define BACKEDGE(e)	(e < -1)$/
+BRANCHTYPE	3.flow.c	/^#define BRANCHTYPE(v)	(NTYPE(v) == GOVX )$/
+FORMCASE	3.loop.c	/^#define FORMCASE(w)	(DEFINED(w) && !DEFINED(RSIB(w/
+HASLEX	3.flow.c	/^#define HASLEX(t)	(t != GOVX && t != COMPVX && t !/
+MARK	2.dfs.c	/^#define MARK(v)	{REACH(v) = 1; }	\/* mark node v */
+MARKED	2.dfs.c	/^#define MARKED(v)	(REACH(v))$/
+MKEDGE	2.dfs.c	/^#define MKEDGE(e)	{if (e >= -1) e = -(e+3); }	\/* /
+Mmain	main.c	/^main(argc,argv)$/
+NUM	3.reach.c	/^NUM(v)$/
+SETNUM	3.reach.c	/^SETNUM(v,count)$/
+TABOVER	0.graph.c	/^#define TABOVER(n)	tabover(n,stderr)$/
+UNMARK	2.dfs.c	/^#define UNMARK(v)	{REACH(v) = 0; }$/
+UNMKEDGE	2.dfs.c	/^#define UNMKEDGE(e)	{if (e < -1) e = -(e+3); }$/
+accum	1.recog.c	/^accum(str,vlist,f)		\/* build string of indices in/
+act	1.fort.c	/^act(k,c,bufptr)$/
+addchar	1.line.c	/^addchar(c)$/
+addlab	3.branch.c	/^addlab(v)		\/* add labels *\/$/
+addloop	2.dfs.c	/^addloop()	\/* add LOOPVX, ITERVX at nodes entered /
+addref	1.hash.c	/^addref(x,ptr)				\/* put ptr in chain for x or ass/
+addum	1.finish.c	/^addum(v,lst)$/
+append	0.list.c	/^struct list *append(v,ls)		\/* return ls . v *\/$/
+arc	0.parts.c	/^VERT *arc(v,i)$/
+asoc	2.tree.c	/^asoc(v,n)		\/* return # of nodes associated with v/
+balloc	0.alloc.c	/^balloc(n,p,size)		\/* allocate n bytes from corebl/
+bfree	0.alloc.c	/^bfree(p)		\/* free coreblk p *\/$/
+blankline	1.form.c	/^blankline()$/
+build	2.main.c	/^build()$/
+challoc	0.alloc.c	/^challoc(n)$/
+charout	4.form.c	/^charout(c)$/
+chfree	0.alloc.c	/^chfree(p,n)$/
+chkbranch	3.branch.c	/^chkbranch(v,head)$/
+chreach	2.dfs.c	/^chreach()		\/* look for unreachable nodes *\/$/
+classmatch	0.string.c	/^classmatch(c,i)$/
+clear	1.hash.c	/^clear(x)$/
+cntarcs	3.loop.c	/^cntarcs()	\/* count arcs entering each node *\/$/
+comdom	2.dom.c	/^comdom(u,v,dom)			\/* find closest common dominato/
+comfree	1.form.c	/^comfree(posafter)$/
+compcase	1.recog.c	/^compcase(ifflag)		\/* turn computed goto into case/
+compound	4.brace.c	/^compound(v,ch)		\/* return TRUE iff subpart ch of /
+comprint	4.form.c	/^comprint()$/
+comstand	1.form.c	/^comstand(posafter)			\/* standard form comments */
+concat	0.string.c	/^concat(x,y)			\/* allocate space, return xy *\/$/
+connect	1.hash.c	/^connect(x,y)$/
+consls	0.list.c	/^struct list *consls(v,ls)		\/* make list *\/$/
+contfree	1.form.c	/^contfree()			\/* identify continuation lines in fr/
+contin	1.recog.c	/^contin(labe,nest)		\/* handle continue statements /
+contstand	1.form.c	/^contstand()			\/* continuation lines in standard f/
+copychars	0.string.c	/^copychars(cbeg,target,n)		\/* copy n chars from cb/
+copycs	0.string.c	/^copycs(cbeg,target,n)			\/* copy n chars from cbeg/
+create	0.parts.c	/^create(type,arcnum)$/
+dexit	main.c	/^dexit()$/
+dfs	2.dfs.c	/^dfs(v)		\/* depth first search *\/$/
+distinct	1.recog.c	/^distinct(vlist,count,dlist,size)		\/* make dlist i/
+empseek	1.form.c	/^empseek(linebeg)$/
+error	0.alloc.c	/^error(mess1, mess2, mess3)$/
+exchange	2.dfs.c	/^exchange(p1,p2)		\/* exchange values of p1,p2 *\/$/
+exits	3.reach.c	/^exits(v)	\/* set REACH(v) = w if w is only node ou/
+expres	0.parts.c	/^int *expres(v)$/
+faterr	0.alloc.c	/^faterr(mess1, mess2, mess3)$/
+find	0.string.c	/^find(s,ar,size)$/
+fingraph	1.finish.c	/^fingraph()$/
+fixflow	3.flow.c	/^fixflow(v,autolex)$/
+fixhd	3.loop.c	/^fixhd(v,hd,head)$/
+fiximp	1.node.c	/^fiximp(num,labe)		\/* fix implicit links, check ne/
+fixloop	3.loop.c	/^fixloop(v)		\/* find WHILE loops  *\/$/
+fixvalue	1.hash.c	/^fixvalue (x,ptr)$/
+flush	1.line.c	/^flush()$/
+freegraf	0.alloc.c	/^freegraf()$/
+freelabs	1.fort.c	/^freelabs()$/
+freelst	0.list.c	/^freelst(ls)$/
+galloc	0.alloc.c	/^galloc(n)		\/* allocate from graph storage area */
+getargs	0.args.c	/^char *getargs(argc, argv)$/
+getbranch	3.branch.c	/^getbranch(head)$/
+getdom	2.dom.c	/^getdom(inarc,dom)$/
+getflow	3.flow.c	/^getflow()$/
+gethead	2.head.c	/^gethead(head)$/
+getinarc	2.inarc.c	/^getinarc(inarc,head)		\/* construct array "inarc" /
+getline	1.line.c	/^getline(lastline,lastchar,linecom,charcom)$/
+getloop	3.loop.c	/^getloop()$/
+getreach	3.reach.c	/^getreach()		\/* obtain REACH(v) for each node v */
+getswitch	3.loop.c	/^getswitch(v)$/
+getthen	3.then.c	/^getthen(v)		\/* turn IFVX into THEN when appropria/
+gettree	2.tree.c	/^gettree(inarc,dom,head)		\/* build tree *\/$/
+getun	3.loop.c	/^getun(v)		\/* change loop to REPEAT UNTIL if possi/
+getwh	3.loop.c	/^getwh(v)$/
+graf_init	1.init.c	/^graf_init()$/
+hash	1.hash.c	/^hash(x)$/
+hash_check	1.hash.c	/^hash_check()$/
+hash_free	1.hash.c	/^hash_free()$/
+hash_init	1.hash.c	/^hash_init()$/
+inchar	1.form.c	/^inchar()$/
+innerdo	1.recog.c	/^innerdo(labe)		\/* return number of DOVX associate/
+input1	1.line.c	/^input1()$/
+input2	4.form.c	/^input2()$/
+insib	2.tree.c	/^insib(w,v)		\/* make RSIB(w) = v, and make RSIB(ri/
+insloop	2.dfs.c	/^insloop(v)		\/* insert LOOPVX, ITERVX at node numb/
+inspr	3.reach.c	/^LOGICAL inspr(w,pr)		\/* insert w in order in pr, /
+label	1.fort.c	/^long label(i)$/
+labfree	1.form.c	/^labfree(func)			\/* labels in freeform input *\/$/
+labstand	1.form.c	/^labstand(func)			\/* labels in standard form input/
+lchild	0.parts.c	/^VERT *lchild(v,i)$/
+level	0.parts.c	/^int *level(v)$/
+lexval	3.flow.c	/^lexval(v,lastlex)$/
+line_init	1.init.c	/^line_init()$/
+loomem	2.inarc.c	/^loomem(x,y,head)			\/* return TRUE if x is in loop/
+lowanc	2.head.c	/^lowanc(y,z,head)		\/* find the first node in chain/
+lslen	0.list.c	/^lslen(ls)		\/* return number of elements in list l/
+makebr	3.flow.c	/^makebr(w)		\/* make branching node leading to w */
+makeif	1.recog.c	/^makeif(first,labe,test,arc1,arc2)			\/* construct /
+makelab	1.fort.c	/^struct lablist *makelab(x)$/
+makenode	1.node.c	/^makenode(type,addimp,addcom, labe,arcnum,arctype,a/
+maxentry	2.inarc.c	/^maxentry(x,y,head)	\/* return z if z is ITERVX of /
+merge	2.head.c	/^merge(w,y,head)		\/* merge chains of w and y accor/
+mkgraph	1.main.c	/^mkgraph()$/
+mkthen	3.then.c	/^mkthen(v)$/
+morespace	0.alloc.c	/^morespace(n,p,size)		\/* get at least n more wds f/
+ndbrace	4.brace.c	/^ndbrace(v)			\/* determine whether braces needed a/
+negate	3.then.c	/^negate(v)$/
+negpart	0.parts.c	/^int *negpart(v)$/
+nesteddo	1.recog.c	/^nesteddo(labe,v)$/
+newlevel	4.out.c	/^newlevel(v,ch,tab,tabfirst)$/
+nonblchar	1.form.c	/^nonblchar(class,yesno)$/
+null	4.form.c	/^null(c)$/
+number	3.reach.c	/^number(v)$/
+nxtlab	3.branch.c	/^nxtlab()$/
+oneelt	0.list.c	/^oneelt(ls)		\/* return w if w is only elt of ls, U/
+output	4.main.c	/^output()$/
+outrat	4.out.c	/^outrat(v,tab,tabfirst)$/
+parse	1.hash.c	/^parse()$/
+prcode	4.form.c	/^prcode(linecount,tab)$/
+prcom	4.out.c	/^prcom(v)$/
+predic	0.parts.c	/^int *predic(v)$/
+prgraph	0.graph.c	/^prgraph()$/
+prlab	4.out.c	/^prlab(n,tab)$/
+prline	4.form.c	/^prline(str)$/
+prlst	0.list.c	/^prlst(ls)$/
+prog_init	1.init.c	/^prog_init()$/
+prpred	4.out.c	/^prpred(v,addpar)$/
+prstln	4.out.c	/^prstln(v,tab)$/
+prtr	0.graph.c	/^prtr(v,tab)		\/* print tree in form of program ind/
+prtree	0.graph.c	/^prtree()$/
+rdfree	1.form.c	/^rdfree(func)$/
+rdstand	1.form.c	/^rdstand(func)$/
+recognize	1.recog.c	/^recognize(type, ifflag)			\/* if ifflag = 1, state/
+remtilda	1.fort.c	/^remtilda(s)			\/* change ~ to blank *\/$/
+repsearch	2.dfs.c	/^repsearch(v)		\/* repeat df search in order to fil/
+reuse	0.alloc.c	/^reuse(p)		\/* set nxtfree so coreblk can be reused/
+routinit	1.init.c	/^routinit()$/
+search	2.dfs.c	/^search(v)$/
+setsw	0.args.c	/^setsw(str)$/
+slength	0.string.c	/^slength(s)			\/* return number of chars in s, not /
+stlfmt	0.parts.c	/^int *stlfmt(v,n)$/
+str_copy	0.string.c	/^str_copy(s,ptr,length)	\/* copy s at ptr, return l/
+str_eq	0.string.c	/^str_eq(s,t)$/
+stralloc	1.fort.c	/^stralloc(ad,n)			\/* allocate space, copy n chars /
+strerr	0.alloc.c	/^strerr(mess1, mess2, mess3)$/
+structure	3.main.c	/^structure()$/
+tabover	0.graph.c	/^tabover(n,fd)		\/* tab n times *\/$/
+talloc	0.alloc.c	/^talloc(n)		\/* allocate from line-by-line storage /
+unchar	1.form.c	/^unchar(c)$/
+unput1	1.line.c	/^unput1(c)$/
+unput2	4.form.c	/^unput2(c)$/
+uptolow	1.form.c	/^uptolow(c)		\/*translates upper to lower case *\/$/
+vxpart	0.parts.c	/^int *vxpart(v,type,j)$/
