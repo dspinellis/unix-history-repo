@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_sig.c 1.1 90/07/09$
  *
- *	@(#)hpux_sig.c	7.8 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -252,7 +252,7 @@ hpuxsigsuspend(p, uap, retval)
 		return (EFAULT);
 	mask = hpuxtobsdmask(sigset.sigset[0]);
 	ps->ps_oldmask = p->p_sigmask;
-	ps->ps_flags |= SA_OLDMASK;
+	ps->ps_flags |= SAS_OLDMASK;
 	p->p_sigmask = mask &~ sigcantmask;
 	(void) tsleep((caddr_t)ps, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
