@@ -92,7 +92,7 @@ yylex() {
 }
 
 char *rel(op, r1, r2) register char *r1, *r2; {
-	register i;
+	register long i;
 
 	if(ematch(r1, "-*[0-9]*$") && ematch(r2, "[0-9]*$"))
 		i = atol(r1) - atol(r2);
@@ -661,7 +661,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.3 (Berkeley) %G%";
 yyerror(s)
 
 {
