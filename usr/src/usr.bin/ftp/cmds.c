@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -8,13 +8,14 @@ static char sccsid[] = "@(#)cmds.c	4.5 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/socket.h>
 
+#include <arpa/ftp.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <netdb.h>
 #include <stat.h>
 
-#include "ftp.h"
 #include "ftp_var.h"
 
 extern	char *globerr;

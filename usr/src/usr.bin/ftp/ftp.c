@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	4.8 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)ftp.c	4.7 (Berkeley) %G%";
 #include <sys/socket.h>
 
 #include <netinet/in.h>
+#include <arpa/ftp.h>
 
 #include <stdio.h>
 #include <signal.h>
@@ -15,7 +16,6 @@ static char sccsid[] = "@(#)ftp.c	4.7 (Berkeley) %G%";
 #include <errno.h>
 #include <netdb.h>
 
-#include "ftp.h"
 #include "ftp_var.h"
 
 struct	sockaddr_in hisctladdr;
@@ -487,6 +487,11 @@ noport:
 		perror("ftp: socket");
 		return (1);
 	}
+	if (!sendport)
+		if (setsockopt(data, SOL_SOCKET, SO_REUSEADDR, 0, 0) < 0) {
+			perror("ftp: setsockopt (resuse address)");
+			goto bad;
+		}
 	if (bind(data, (char *)&data_addr, sizeof (data_addr), 0) < 0) {
 		perror("ftp: bind");
 		goto bad;
