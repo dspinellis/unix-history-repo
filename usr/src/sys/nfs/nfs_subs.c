@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.56 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.57 (Berkeley) %G%
  */
 
 /*
@@ -984,7 +984,6 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred, slp, nam, rdonlyp)
 	struct mbuf *nam;
 	int *rdonlyp;
 {
-	USES_VOP_UNLOCK;
 	register struct mount *mp;
 	register struct netaddrhash *np;
 	register struct ufsmount *ump;
