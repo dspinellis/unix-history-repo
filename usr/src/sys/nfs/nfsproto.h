@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsproto.h	7.1 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -95,3 +95,43 @@
 
 /* File types */
 typedef enum { NFNON=0, NFREG=1, NFDIR=2, NFBLK=3, NFCHR=4, NFLNK=5 } nfstype;
+
+/* Structs for common parts of the rpc's */
+struct nfsv2_time {
+	u_long	tv_sec;
+	u_long	tv_usec;
+};
+
+struct nfsv2_fattr {
+	u_long	fa_type;
+	u_long	fa_mode;
+	u_long	fa_nlink;
+	u_long	fa_uid;
+	u_long	fa_gid;
+	u_long	fa_size;
+	u_long	fa_blocksize;
+	u_long	fa_rdev;
+	u_long	fa_blocks;
+	u_long	fa_fsid;
+	u_long	fa_fileid;
+	struct nfsv2_time fa_atime;
+	struct nfsv2_time fa_mtime;
+	struct nfsv2_time fa_ctime;
+};
+
+struct nfsv2_sattr {
+	u_long	sa_mode;
+	u_long	sa_uid;
+	u_long	sa_gid;
+	u_long	sa_size;
+	struct nfsv2_time sa_atime;
+	struct nfsv2_time sa_mtime;
+};
+
+struct nfsv2_statfs {
+	u_long	sf_tsize;
+	u_long	sf_bsize;
+	u_long	sf_blocks;
+	u_long	sf_bfree;
+	u_long	sf_bavail;
+};

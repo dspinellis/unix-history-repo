@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,6 +53,9 @@ union nhead {				/* inode LRU cache, Chris Maltby */
 
 struct nfsnode *nfreeh, **nfreet;
 
+#define TRUE	1
+#define	FALSE	0
+
 /*
  * Initialize hash links for nfsnodes
  * and build nfsnode free list.
@@ -73,11 +76,13 @@ nfs_nhinit()
 	np->n_forw = np;
 	np->n_back = np;
 	NFSTOV(np)->v_data = (qaddr_t)np;
+	NFSTOV(np)->v_type = VNON;
 	for (i = nnfsnode; --i > 0; ) {
 		++np;
 		np->n_forw = np;
 		np->n_back = np;
 		NFSTOV(np)->v_data = (qaddr_t)np;
+		NFSTOV(np)->v_type = VNON;
 		*nfreet = np;
 		np->n_freeb = nfreet;
 		nfreet = &np->n_freef;
@@ -111,7 +116,7 @@ nfs_nget(mntp, fhp, npp)
 		fhsum += *fhpp++;
 loop:
 	nh = &nhead[NFSNOHASH(fhsum)];
-	for (np = nh->nh_chain[0]; np != (struct nfsnode *)nh; np = np->n_forw)
+	for (np = nh->nh_chain[0]; np != (struct nfsnode *)nh; np = np->n_forw) {
 		if (mntp == NFSTOV(np)->v_mount &&
 		    !bcmp((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH)) {
 			/*
@@ -142,6 +147,7 @@ loop:
 			return(0);
 		}
 
+	}
 	if ((np = nfreeh) == NULL) {
 		tablefull("nfsnode");
 		*npp = 0;
@@ -159,19 +165,30 @@ loop:
 	 * Now to take nfsnode off the hash chain it was on
 	 * (initially, or after an nflush, it is on a "hash chain"
 	 * consisting entirely of itself, and pointed to by no-one,
-	 * but that doesn't matter), and put it on the chain for
-	 * its new file handle
+	 * but that doesn't matter)
 	 */
 	remque(np);
+	/*
+	 * Flush out any associated bio buffers that might be lying about
+	 */
+	if (vp->v_type == VREG && (np->n_flag & NMODIFIED) == 0) {
+		np->n_flag |= NLOCKED;
+		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
+	}
+	/*
+	 * Insert the nfsnode in the hash queue for its new file handle
+	 */
+	np->n_flag = NLOCKED;
 	insque(np, nh);
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
-#ifdef notyet
+#ifndef notyet
 	cache_purge(vp);
 #endif
-	np->n_flag = NLOCKED;
 	np->n_attrstamp = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
 	np->n_id = ++nextnfsnodeid;
+	np->n_size = 0;
+	np->n_mtime = 0;
 	/*
 	 * Initialize the associated vnode
 	 */
@@ -227,27 +244,27 @@ nfs_inactive(vp)
 		panic("nfs_inactive NULL vp");
 	if (vp->v_count == 0) {
 		np = VTONFS(vp);
-		np->n_flag |= NLOCKED;
-		if (np->n_sillyrename) {
+		sp = np->n_sillyrename;
+		np->n_sillyrename = (struct sillyrename *)0;
+		nfs_lock(vp);
+		if (sp) {
+printf("in silltren inact\n");
 			/*
 			 * Remove the silly file that was rename'd earlier
 			 */
-			sp = np->n_sillyrename;
 			ndp = &sp->s_namei;
 			if (!nfs_nget(vp->v_mount, &sp->s_fh, &dnp)) {
+printf("got the dir\n");
 				ndp->ni_dvp = NFSTOV(dnp);
-				if (sp->s_flag == REMOVE)
-					nfs_removeit(ndp);
-				else
-					nfs_rmdirit(ndp);
+				nfs_removeit(ndp);
 				nfs_nput(ndp->ni_dvp);
 			}
 			crfree(ndp->ni_cred);
 			free((caddr_t)sp, M_TEMP);
-			np->n_sillyrename = (struct sillyrename *)0;
 		}
 		nfs_unlock(vp);
 		np->n_flag = 0;
+#ifdef notdef
 		/*
 		 * Scan the request list for any requests left hanging about
 		 */
@@ -267,6 +284,7 @@ nfs_inactive(vp)
 				rep = rep->r_next;
 		}
 		splx(s);
+#endif
 		/*
 		 * Put the nfsnode on the end of the free list.
 		 */
