@@ -1,4 +1,4 @@
-/*	tm.c	6.1	83/07/29	*/
+/*	tm.c	6.2	83/09/07	*/
 
 #include "te.h"
 #include "ts.h"
