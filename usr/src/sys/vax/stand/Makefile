@@ -1,11 +1,4 @@
-#
-# Copyright (c) 1990 The Regents of the University of California.
-# All rights reserved.
-#
-# %sccs.include.redist.sh
-#
-#	@(#)Makefile	7.24 (Berkeley) %G%
-#
+#	@(#)Makefile	7.25 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
