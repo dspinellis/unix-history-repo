@@ -1,4 +1,4 @@
-/*	srt0.c	1.3	86/11/03	*/
+/*	srt0.c	1.4	86/12/19	*/
 
 #include "../machine/mtpr.h"
 #define	LOCORE
@@ -15,18 +15,22 @@
 
 	.set	HIGH,31		# mask for total disable
 
+#ifndef	REL
+	.globl	_device_space
+_device_space:			# Tapemaster config block, etc.
+	.space	0x1000-RELOC
+
 	.globl	_entry
 _entry:
-#ifndef	REL
 	.word	0x00			# 'call' by relsrt0.
 #endif
 _start:
 	mtpr	$HIGH,$IPL		# just in case
 #ifdef REL
-	movl	$RELOC,sp
+	movl	$BOOTRELOC,sp
 
-	movl	$0x800,r0	/* source address to copy from */
-	movl	$RELOC,r1	/* destination address */
+	movl	$RELOC,r0	/* source address to copy from */
+	movl	$BOOTRELOC,r1	/* destination address */
 	movl	aedata,r2	/* length to copy */
 	addl2	r2,r0
 	addl2	r2,r1
@@ -49,6 +53,7 @@ zloop:
 	bgeq	zloop
 
 	mtpr	$0,$PACC
+	mtpr	$0,$PADC
 	jmp	*abegin
 #endif
 
@@ -71,6 +76,11 @@ __rtt:
 
 	.data
 abegin:	.long	begin
+#ifdef REL
+aend:	.long	_end-BOOTRELOC
+aedata:	.long	_edata-BOOTRELOC
+#else
 aend:	.long	_end-RELOC
 aedata:	.long	_edata-RELOC
+#endif
 ofp:	.long	0
