@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	5.8 (Berkeley) %G%
+ *	@(#)machdep.c	5.9 (Berkeley) %G%
  */
 
 
@@ -341,6 +341,8 @@ struct sigframe {
 	struct	sigcontext sf_sc;
 } ;
 
+extern int kstack[];
+
 /*
  * Send an interrupt to process.
  *
@@ -361,10 +363,11 @@ sendsig(catcher, sig, mask, code)
 	register int *regs;
 	register struct sigframe *fp;
 	struct sigacts *ps = p->p_sigacts;
-	int oonstack;
+	int oonstack, frmtrap;
 
 	regs = p->p_regs;
         oonstack = ps->ps_onstack;
+	frmtrap = curpcb->pcb_flags & FM_TRAP;
 /*#include "dbg.h"
 dprintf(DALLTRAPS|DPAGIN,"s %d %d ", sig, frm);*/
 	/*
@@ -381,7 +384,7 @@ printf("onstack?");
 				- sizeof(struct sigframe));
                 ps->ps_onstack = 1;
 	} else {
-		if (code&0x100)
+		if (frmtrap)
 			fp = (struct sigframe *)(regs[tESP]
 				- sizeof(struct sigframe));
 		else
@@ -393,7 +396,7 @@ printf("onstack?");
 		(void)grow((unsigned)fp);
 
 	if (useracc((caddr_t)fp, sizeof (struct sigframe), B_WRITE) == 0) {
-printf("fail %x %x\n", fp, regs[code&0x100?tESP:sESP]);
+printf("fail %x %x\n", fp, regs[frmtrap?tESP:sESP]);
 		/*
 		 * Process has trashed its stack; give it an illegal
 		 * instruction to halt it in its tracks.
@@ -413,15 +416,11 @@ printf("fail %x %x\n", fp, regs[code&0x100?tESP:sESP]);
 	 */
 	fp->sf_signum = sig;
 	fp->sf_code = code;
-
-	/* indicate trap occured from system call */
-	/*if(!(code&FRMTRAP)) fp->sf_code |= 0x80;*/
-
 	fp->sf_scp = &fp->sf_sc;
 	fp->sf_handler = catcher;
 
 	/* save scratch registers */
-	if(code&0x100) {
+	if(frmtrap) {
 		fp->sf_eax = regs[tEAX];
 		fp->sf_edx = regs[tEDX];
 		fp->sf_ecx = regs[tECX];
@@ -435,13 +434,13 @@ printf("fail %x %x\n", fp, regs[code&0x100?tESP:sESP]);
 	 */
 	fp->sf_sc.sc_onstack = oonstack;
 	fp->sf_sc.sc_mask = mask;
-	if(code&0x100) {
+	if(frmtrap) {
 		fp->sf_sc.sc_sp = regs[tESP];
 		fp->sf_sc.sc_fp = regs[tEBP];
 		fp->sf_sc.sc_pc = regs[tEIP];
 		fp->sf_sc.sc_ps = regs[tEFLAGS];
 		regs[tESP] = (int)fp;
-		regs[tEIP] = (int)p->p_addr->u_pcb.pcb_sigc;
+		regs[tEIP] = (int)((struct pcb *)kstack)->pcb_sigc;
 /*dprintf(DALLTRAPS|DPAGIN,"E ");*/
 	} else {
 		fp->sf_sc.sc_sp = regs[sESP];
@@ -449,7 +448,7 @@ printf("fail %x %x\n", fp, regs[code&0x100?tESP:sESP]);
 		fp->sf_sc.sc_pc = regs[sEIP];
 		fp->sf_sc.sc_ps = regs[sEFLAGS];
 		regs[sESP] = (int)fp;
-		regs[sEIP] = (int)p->p_addr->u_pcb.pcb_sigc;
+		regs[sEIP] = (int)((struct pcb *)kstack)->pcb_sigc;
 /*dprintf(DALLTRAPS|DPAGIN,"e "); */
 	}
 }
@@ -711,7 +710,6 @@ union descriptor ldt[5];
 
 struct	i386tss	tss, panic_tss;
 
-extern int kstack[];
 extern  struct user *proc0paddr;
 
 /* software prototypes -- in more palitable form */
@@ -869,7 +867,7 @@ init386(first) { extern ssdtosd(), lgdt(), lidt(), lldt(), etext;
 	extern int sigcode,szsigcode;
 
 	proc0.p_addr = proc0paddr;
-	/*cninit (SYSTEM+0xa0000);*/
+	cninit (SYSTEM+0xa0000);
 /*pg("init386 first %x &x %x Maxmem %x", first, &x, Maxmem);
 pg("init386 PTmap[0] %x PTD[0] %x", *(int *)PTmap, *(int *)PTD);*/
 
@@ -959,7 +957,7 @@ Maxmem = 8192 *1024 /NBPG;
 	} else	maxmem = 640/4;
 	maxmem = maxmem-1;
 	physmem = maxmem - (0x100 -0xa0);
-pg("maxmem %dk", 4*maxmem);
+/*pg("maxmem %dk", 4*maxmem);*/
 
 	/* call pmap initialization to make new kernel address space */
 /*pg("pmap_bootstrap");*/
@@ -967,8 +965,8 @@ pg("maxmem %dk", 4*maxmem);
 	/* now running on new page tables, configured,and u/iom is accessible */
 
 	/* make a initial tss so microp can get interrupt stack on syscall! */
-	proc0.p_addr->u_pcb.pcbtss.tss_esp0 = (int) kstack + UPAGES*NBPG;
-	proc0.p_addr->u_pcb.pcbtss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
+	proc0.p_addr->u_pcb.pcb_tss.tss_esp0 = (int) kstack + UPAGES*NBPG;
+	proc0.p_addr->u_pcb.pcb_tss.tss_ss0 = GSEL(GDATA_SEL, SEL_KPL) ;
 	_gsel_tss = GSEL(GPROC0_SEL, SEL_KPL);
 /*pg("ltr");*/
 	ltr(_gsel_tss);
