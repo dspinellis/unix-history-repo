@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.4 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
