@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	4.3 (Berkeley) 84/06/05";
+static char sccsid[] = "@(#)subr.c	4.4 (Berkeley) 85/02/05";
 #endif
 
 /*
@@ -325,7 +325,7 @@ speed(val)
 	register struct speedtab *sp;
 
 	if (val <= 15)
-		return(val);
+		return (val);
 
 	for (sp = speedtab; sp->speed; sp++)
 		if (sp->speed == val)
@@ -407,5 +407,58 @@ portselector()
 			break;
 		}
 	sleep(2);	/* wait for connection to complete */
+	return (type);
+}
+
+/*
+ * This auto-baud speed select mechanism is written for the Micom 600
+ * portselector. Selection is done by looking at how the character '\r'
+ * is garbled at the different speeds.
+ */
+#include <sys/time.h>
+
+char *
+autobaud()
+{
+	int rfds;
+	struct timeval timeout;
+	char c, *type = "9600-baud";
+	int null = 0;
+
+	ioctl(0, TIOCFLUSH, &null);
+	rfds = 1 << 0;
+	timeout.tv_sec = 5;
+	timeout.tv_usec = 0;
+	if (select(32, &rfds, (int *)0, (int *)0, &timeout) <= 0)
+		return (type);
+	if (read(0, &c, sizeof(char)) != sizeof(char))
+		return (type);
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 20;
+	(void) select(32, (int *)0, (int *)0, (int *)0, &timeout);
+	ioctl(0, TIOCFLUSH, &null);
+	switch (c & 0377) {
+
+	case 0200:		/* 300-baud */
+		type = "300-baud";
+		break;
+
+	case 0346:		/* 1200-baud */
+		type = "1200-baud";
+		break;
+
+	case  015:		/* 2400-baud */
+	case 0215:
+		type = "2400-baud";
+		break;
+
+	default:		/* 4800-baud */
+		type = "4800-baud";
+		break;
+
+	case 0377:		/* 9600-baud */
+		type = "9600-baud";
+		break;
+	}
 	return (type);
 }
