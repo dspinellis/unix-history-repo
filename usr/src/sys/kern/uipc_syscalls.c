@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.1	81/11/10	*/
+/*	uipc_syscalls.c	4.2	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -23,56 +23,56 @@
  * These routines interface the socket routines to UNIX,
  * isolating the system interface from the socket-protocol interface.
  *
- * DO SPLICE STUFF
- * DO PIPE STUFF
- * DO PORTALS
- * DO ASSOCIATIONS
- * DO NEWFD STUFF
+ * TODO:
+ *	SO_NEWFDONCONN
+ *	SO_INTNOTIFY
  */
 
-/*
- * Socket system call interface.  Copy in arguments
- * set up file descriptor and call internal socket
- * creation routine.
- */
-ssocket()
-{
-	register struct a {
-		int	type;
-		struct	in_addr *ain;
-		int	options;
-	} *uap = (struct a *)u.u_ap;
-	struct in_addr in;
-	struct socket *so0;
-	register struct socket *so;
-	register struct file *fp;
-
-	if ((fp = falloc()) == NULL)
-		return;
-	fp->f_flag = FSOCKET|FREAD|FWRITE;
-	if (copyin((caddr_t)uap->ain, &in, sizeof (in))) {
-		u.u_error = EFAULT;
-		return;
-	}
-	u.u_error = socket(&so0, uap->type, &in, uap->options);
-	if (u.u_error)
-		goto bad;
-	fp->f_socket = so;
-	return;
-bad:
-	u.u_ofile[u.u_r.r_val1] = 0;
-	fp->f_count = 0;
-}
-
+static	struct in_addr localaddr = { PF_LOCAL };
 /*
  * Pipe system call interface.
  */
 spipe()
 {
-
+	register struct file *rf, *wf;
+	struct socket *rso, *wso;
+	int r;
+	struct in_addr waddr;
+	
+	u.u_error = socket(&rso, SOCK_STREAM, &localaddr, SO_ACCEPTCONN);
+	if (u.u_error)
+		return;
+	u.u_error = socket(&wso, SOCK_STREAM, &localaddr, 0);
+	if (u.u_error)
+		goto free;
+	rf = falloc();
+	if (rf == NULL)
+		goto free2;
+	r = u.u_r.r_val1;
+	rf->f_flag = FREAD|FSOCKET;
+	rf->f_socket = rso;
+	wf = falloc();
+	if (wf == NULL)
+		goto free3;
+	wf->f_flag = FWRITE|FSOCKET;
+	wf->f_socket = wso;
+	u.u_r.r_val2 = u.u_r.r_val1;
+	u.u_r.r_val1 = r;
+	if (pi_connect(rso, wso) == 0)
+		goto free4;
+	return;
+free4:
+	wf->f_count = 0;
+	u.u_ofile[u.u_r.r_val1] = 0;
+free3:
+	rf->f_count = 0;
+	u.u_ofile[r] = 0;
+free2:
+	sofree(wso);
+free:
+	sofree(rso);
 }
 
-static	struct in_addr portalproto = { PF_PORTAL, /* rest don't care */ };
 /*
  * Portal system call interface.
  *
@@ -81,7 +81,7 @@ static	struct in_addr portalproto = { PF_PORTAL, /* rest don't care */ };
  * A long sequence of steps is necessary:
  *	1. a socket must be allocated
  *	2. the server name length must be determined
- *	3. the protal must be entered into the file system
+ *	3. the portal must be entered into the file system
  *	4. the portal type and server must be entered into the portals' file
  *	5. a file descriptor referencing the socket+inode must be returned
  * If any errors occur in this process we must back it all out.
@@ -103,7 +103,7 @@ sportal()
 	/*
 	 * Allocate the socket for the portal.
 	 */
-	u.u_error = socket(&so, SOCK_STREAM, &portalproto, SO_NEWFDONCONN);
+	u.u_error = socket(&so, SOCK_STREAM, &localaddr, SO_NEWFDONCONN);
 	if (u.u_error)
 		return;
 
@@ -173,15 +173,15 @@ sportal()
 	fp = falloc();
 	if (fp == NULL)
 		goto bad2;
-	fp->f_flags = FPORTAL|FSOCKET;
+	fp->f_flag = FPORTAL|FSOCKET;
 	fp->f_inode = ip;
-	fp->f_socket = s;
+	fp->f_socket = so;
 
 	/*
 	 * Make the in-core inode reference the socket.
 	 */
-	ip->i_socket = s;
-	prele(ip);
+	ip->i_un.i_socket = so;
+	irele(ip);
 	return;
 bad2:
 	err = u.u_error;
@@ -190,78 +190,76 @@ bad2:
 	unlink();
 	u.u_error = err;
 bad:
-	sofree(s);
-}
-
-/*
- * Close a socket on last file table reference removal.
- * Initiate disconnect if connected.
- * Free socket when disconnect complete.
- */
-skclose(so)
-	register struct socket *so;
-{
-	int s = splnet();		/* conservative */
-
-	if (so->so_pcb == 0)
-		goto discard;
-	if (so->so_state & SS_ISCONNECTED) {
-		u.u_error = disconnect(so, 0);
-		if (u.u_error) {
-			splx(s);
-			return;
-		}
-		if ((so->so_state & SS_ISDISCONNECTING) &&
-		    (so->so_options & SO_NBIO)) {
-			u.u_error = EINPROGRESS;
-			splx(s);
-			return;
-		}
-		while (so->so_state & SS_ISCONNECTED)
-			sleep((caddr_t)&so->so_timeo, PZERO+1);
-	}
-	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
-discard:
 	sofree(so);
-	splx(s);
 }
 
 /*
- * Select a socket.
+ * Splice system call interface.
  */
-soselect(so, flag)
-	register struct socket *so;
-	int flag;
+ssplice()
 {
-	register struct proc *p;
+	register struct a {
+		int	fd1;
+		int	fd2;
+	} *ap = (struct a *)u.u_ap;
+	struct file *f1, *f2;
+	struct socket *pso, *pso2;
 
-	if (soreadable(so))
-		return (1);
-	if ((p = so->so_rcv.sb_sel) && p->p_wchan == (caddr_t)select)
-		so->so_rcv.sb_flags |= SB_COLL;
-	else
-		so->so_rcv.sb_sel = u.u_procp;
-	return (0);
+	f1 = getf(ap->fd1);
+	if (f1 == NULL)
+		return;
+	f2 = getf(ap->fd2);
+	if (f2 == NULL)
+		return;
+	if ((f1->f_flag & FSOCKET) == 0 || (f2->f_flag & FSOCKET) == 0) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	if (f1->f_count > 1 || f2->f_count > 1) {
+		u.u_error = ETOOMANYREFS;
+		return;
+	}
+	u.u_error = pi_splice(f1->f_socket, f2->f_socket);
+	if (u.u_error)
+		return;
+	u.u_ofile[ap->fd1] = 0;
+	u.u_ofile[ap->fd2] = 0;
+	f1->f_count = 0;
+	f2->f_count = 0;
 }
 
 /*
- * Wakeup read sleep/select'ers.
+ * Socket system call interface.  Copy in arguments
+ * set up file descriptor and call internal socket
+ * creation routine.
  */
-sowakeup(so)
-	struct socket *so;
+ssocket()
 {
+	register struct a {
+		int	type;
+		struct	in_addr *ain;
+		int	options;
+	} *uap = (struct a *)u.u_ap;
+	struct in_addr in;
+	struct socket *so0;
+	register struct file *fp;
 
-	if (so->so_rcv.sb_sel && soreadable(so)) {
-		selwakeup(so->so_rcv.sb_sel, so->so_rcv.sb_flags & SB_COLL);
-		so->so_rcv.sb_sel = 0;
-		so->so_rcv.sb_flags &= ~SB_COLL;
+	if ((fp = falloc()) == NULL)
+		return;
+	fp->f_flag = FSOCKET|FREAD|FWRITE;
+	if (copyin((caddr_t)uap->ain, &in, sizeof (in))) {
+		u.u_error = EFAULT;
+		return;
 	}
-	if (so->so_rcv.sb_flags & SB_WAIT) {
-		so->so_rcv.sb_flags &= ~SB_WAIT;
-		wakeup((caddr_t)&so->so_rcv.sb_cc);
-	}
+	u.u_error = socket(&so0, uap->type, &in, uap->options);
+	if (u.u_error)
+		goto bad;
+	fp->f_socket = so0;
+	return;
+bad:
+	u.u_ofile[u.u_r.r_val1] = 0;
+	fp->f_count = 0;
 }
-
 /*
  * Connect socket to foreign peer; system call
  * interface.  Copy in arguments and call internal routine.
@@ -293,13 +291,17 @@ sconnect()
 	if (u.u_error)
 		return;
 	s = splnet();
-	if ((so->so_options & SO_NBIO) && (so->so_state & SS_ISCONN) == 0) {
+	if ((so->so_options & SO_NBIO) &&
+	    (so->so_state & SS_ISCONNECTING)) {
 		u.u_error = EINPROGRESS;
+		splx(s);
 		return;
 	}
-	while ((so->so_state & (SS_ISCONN|SS_ISCONNING)) == SS_ISCONNING)
+	while ((so->so_state & SS_ISCONNECTING) && so->so_error == 0)
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
+	so->so_error = 0;
+	splx(s);
 }
 
 /*
@@ -314,6 +316,7 @@ sdisconnect()
 	} *uap = (struct a *)u.u_ap;
 	in_addr in;
 	register struct file *fp;
+	register struct socket *so;
 	int s;
 
 	if (uap->addr &&
@@ -328,15 +331,21 @@ sdisconnect()
 		u.u_error = ENOTSOCK;
 		return;
 	}
-	u.u_error = disconnect(fp->f_socket, uap->addr ? &in : 0);
+	so = fp->f_socket;
+	u.u_error = disconnect(so, uap->addr ? &in : 0);
 	if (u.u_error)
 		return;
 	s = splnet();
-	if ((so->so_options&SO_NBIO) && (so->so_state&SS_ISCONNECTED))
-		return (EINPROGRESS);
-	while ((so)->so_state & (SS_ISCONNECTED|SS_ISDISCONNECTING) == SS_ISDISCONNECTING)
+	if ((so->so_options&SO_NBIO) && (so->so_state&SS_ISDISCONNECTING)) {
+		u.u_error = EINPROGRESS;
+		splx(s);
+		return;
+	}
+	while (so->so_state & SS_ISDISCONNECTING)
 		sleep((caddr_t)&so->so_timeo, PZERO+1);
 	u.u_error = so->so_error;
+	so->so_error = 0;
+	splx(s);
 }
 
 /*
@@ -367,7 +376,7 @@ ssend()
 	u.u_base = uap->cbuf;
 	u.u_count = uap->count;
 	u.u_segflg = 0;
-	if (useracc(u.u_base, u.u_count, B_READ) == 0 ||
+	if (useracc(uap->cbuf, uap->count, B_READ) == 0 ||
 	    uap->ain && copyin((caddr_t)uap->ain, (caddr_t)&in, sizeof (in))) {
 		u.u_error = EFAULT;
 		return;
@@ -375,3 +384,38 @@ ssend()
 	u.u_error = send(fp->f_socket, uap->ain ? &in : 0);
 }
 
+/*
+ * Receive data on socket.
+ */
+sreceive()
+{
+	register struct a {
+		int	fdes;
+		in_addr	*ain;
+		caddr_t	cbuf;
+		int	count;
+	} *uap = (struct a *)u.u_ap;
+	register struct file *fp;
+	struct in_addr *in;
+
+	fp = getf(uap->fdes);
+	if (fp == 0)
+		return;
+	if ((fp->f_flag & FSOCKET) == 0) {
+		u.u_error = ENOTSOCK;
+		return;
+	}
+	if (uap->count < 0) {
+		u.u_error = EINVAL;
+		return;
+	}
+	u.u_base = uap->cbuf;
+	u.u_count = uap->count;
+	u.u_segflg = 0;
+	if (useracc(uap->cbuf, uap->count, B_WRITE) == 0 ||
+	    uap->ain && copyin((caddr_t)uap->ain, (caddr_t)&in, sizeof (in))) {
+		u.u_error = EFAULT;
+		return;
+	}
+	receive(fp->f_socket, uap->ain ? &in : 0);
+}

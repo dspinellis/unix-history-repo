@@ -1,4 +1,4 @@
-/*	init_main.c	4.19	81/11/08	*/
+/*	init_main.c	4.20	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -84,7 +84,7 @@ main(firstaddr)
 	 */
 	mbinit();
 #ifdef INET
-	prinit();
+	pfinit();
 #endif
 	ihinit();
 	bhinit();

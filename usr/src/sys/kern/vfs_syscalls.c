@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.12	81/11/08	*/
+/*	vfs_syscalls.c	4.13	81/11/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -31,7 +31,7 @@ fstat()
 	if (fp == NULL)
 		return;
 	if (fp->f_flag & FSOCKET)
-		sostat(fp->f_socket);
+		u.u_error = sostat(fp->f_socket, uap->sb);
 	else
 		stat1(fp->f_inode, uap->sb);
 }

@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.8 81/11/08 */
+/* uipc_mbuf.c 1.9 81/11/14 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -37,6 +37,21 @@ m_get(canwait)
 
 COUNT(M_GET);
 	MGET(m, canwait);
+	return (m);
+}
+
+struct mbuf *
+m_getclr(canwait)
+	int canwait;
+{
+	register struct mbuf *m;
+
+COUNT(M_GETCLR);
+	m = m_get(m, canwait);
+	if (m == 0)
+		return (0);
+	m->m_off = MMINOFF;
+	bzero(mtod(m, caddr_t), MLEN);
 	return (m);
 }
 
