@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)heapsort.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)heapsort.c	1.3 (Berkeley) 7/29/91";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -25,7 +25,8 @@ static char sccsid[] = "@(#)heapsort.c	5.2 (Berkeley) %G%";
  * arithmetic gets lost in the time required for comparison function calls.
  */
 #define	SWAP(a, b) { \
-	cnt = size; \
+	int cnt = size; \
+	char	ch; \
 	do { \
 		ch = *a; \
 		*a++ = *b; \
@@ -34,16 +35,29 @@ static char sccsid[] = "@(#)heapsort.c	5.2 (Berkeley) %G%";
 }
 
 /*
+ * Assign one block of size size to another.
+ */
+
+#define ASSIGN(a,b) { \
+	int cnt = size; \
+	char *t1 = a, *t2 = b; \
+	do { \
+		*t1++ = *t2++; \
+	} while (--cnt); \
+}
+
+
+/*
  * Build the list into a heap, where a heap is defined such that for
  * the records K1 ... KN, Kj/2 >= Kj for 1 <= j/2 <= j <= N.
  *
  * There two cases.  If j == nmemb, select largest of Ki and Kj.  If
  * j < nmemb, select largest of Ki, Kj and Kj+1.
  *
- * The initial value depends on if we're building the initial heap or
- * reconstructing it after saving a value.
  */
-#define	HEAP(initval) { \
+#define CREATE(initval) { \
+	int i,j; \
+	char *t,*p; \
 	for (i = initval; (j = i * 2) <= nmemb; i = j) { \
 		p = (char *)bot + j * size; \
 		if (j < nmemb && compar(p, p + size) < 0) { \
@@ -51,9 +65,50 @@ static char sccsid[] = "@(#)heapsort.c	5.2 (Berkeley) %G%";
 			++j; \
 		} \
 		t = (char *)bot + i * size; \
-		if (compar(p, t) <= 0) \
+		if (compar(p,t) <= 0) \
 			break; \
 		SWAP(t, p); \
+	} \
+}
+
+/*
+ * Select the top of the heap and 'heapify'.  Since by far the most expensive
+ * action is the call to the compar function, an considerable optimization
+ * in the average case can be achieved due to the fact that k, the displaced
+ * elememt, is ususally quite small, so it would be preferable to first
+ * heapify, always maintaining the invariant that the larger child is copied
+ * over its parent's record.
+ *
+ * Then, starting from the *bottom* of the heap, finding k's correct
+ * place, again maintianing the invariant.  As a result of the invariant
+ * no element is 'lost' when k is assigned it's correct place in the heap.
+ *
+ * The time savings from this optimization are on the order of 15-20% for the
+ * average case. See Knuth, Vol. 3, page 158, problem 18.
+ */
+
+#define SELECT(initval) { \
+	int	i,j; \
+	char	*p,*t; \
+	for (i = initval; (j = i * 2) <= nmemb; i = j) { \
+		p = (char *)bot + j * size; \
+		if (j < nmemb && compar(p, p + size) < 0) { \
+			p += size; \
+			++j; \
+		} \
+		t = (char *)bot + i * size; \
+		ASSIGN(t, p); \
+	} \
+	while (1) { \
+		j = i; \
+		i = j / 2; \
+		p = (char *)bot + j * size; \
+		t = (char *)bot + i * size; \
+		if ( j == initval || compar(k, t) < 0) { \
+			ASSIGN(p, k); \
+			break; \
+		} \
+		ASSIGN(p, t); \
 	} \
 }
 
@@ -64,13 +119,14 @@ static char sccsid[] = "@(#)heapsort.c	5.2 (Berkeley) %G%";
  * a data set that will trigger the worst case is nonexistent.  Heapsort's
  * only advantage over quicksort is that it requires no additional memory.
  */
+int
 heapsort(bot, nmemb, size, compar)
-	register void *bot;
-	register size_t nmemb, size;
-	int (*compar) __P((const void *, const void *));
+	void   *bot;
+	size_t  nmemb, size;
+	int     (*compar) __P((const void *, const void *));
 {
-	register char *p, *t, ch;
-	register int cnt, i, j, l;
+	char   *p, *t, *k = (char *) malloc(size);
+	int     l;
 
 	if (nmemb <= 1)
 		return (0);
@@ -85,18 +141,20 @@ heapsort(bot, nmemb, size, compar)
 	bot -= size;
 
 	for (l = nmemb / 2 + 1; --l;)
-		HEAP(l);
+		CREATE(l);
 
 	/*
 	 * For each element of the heap, save the largest element into its
-	 * final slot, then recreate the heap.
+	 * final slot, save the displaced element (k), then recreate the
+	 * heap.
 	 */
 	while (nmemb > 1) {
-		p = (char *)bot + size;
-		t = (char *)bot + nmemb * size;
-		SWAP(p, t);
+		p = (char *) bot + size;
+		t = (char *) bot + nmemb * size;
+		ASSIGN(k, t);
+		ASSIGN(t, p);
 		--nmemb;
-		HEAP(1);
+		SELECT(1);
 	}
 	return (0);
 }
