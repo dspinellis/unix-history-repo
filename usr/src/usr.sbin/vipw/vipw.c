@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -167,15 +167,16 @@ check(tfp)
 
 	for (lcnt = 1; fgets(buf, sizeof(buf), tfp); ++lcnt) {
 		/* skip lines that are too big */
-		if (!index(buf, '\n')) {
+		if (!(p = index(buf, '\n'))) {
 			(void)fprintf(stderr, "vipw: line too long");
 			goto bad;
 		}
-		if (!(p = strsep(buf, ":\n")))		/* login */
+		*p = '\0';
+		if (!(p = strsep(buf, ":")))		/* login */
 			goto general;
 		root = !strcmp(p, "root");
-		(void)strsep((char *)NULL, ":\n");	/* passwd */
-		if (!(p = strsep((char *)NULL, ":\n")))	/* uid */
+		(void)strsep((char *)NULL, ":");	/* passwd */
+		if (!(p = strsep((char *)NULL, ":")))	/* uid */
 			goto general;
 		id = atol(p);
 		if (root && id) {
@@ -187,7 +188,7 @@ check(tfp)
 			    p, USHRT_MAX);
 			goto bad;
 		}
-		if (!(p = strsep((char *)NULL, ":\n")))	/* gid */
+		if (!(p = strsep((char *)NULL, ":")))	/* gid */
 			goto general;
 		id = atol(p);
 		if (id > USHRT_MAX) {
@@ -195,12 +196,12 @@ check(tfp)
 			    p, USHRT_MAX);
 			goto bad;
 		}
-		(void)strsep((char *)NULL, ":\n");	/* class */
-		(void)strsep((char *)NULL, ":\n");	/* change */
-		(void)strsep((char *)NULL, ":\n");	/* expire */
-		(void)strsep((char *)NULL, ":\n");	/* gecos */
-		(void)strsep((char *)NULL, ":\n");	/* directory */
-		if (!(p = strsep((char *)NULL, ":\n")))	/* shell */
+		(void)strsep((char *)NULL, ":");	/* class */
+		(void)strsep((char *)NULL, ":");	/* change */
+		(void)strsep((char *)NULL, ":");	/* expire */
+		(void)strsep((char *)NULL, ":");	/* gecos */
+		(void)strsep((char *)NULL, ":");	/* directory */
+		if (!(p = strsep((char *)NULL, ":")))	/* shell */
 			goto general;
 		if (root && *p)				/* empty == /bin/sh */
 			for (setusershell();;)
@@ -211,7 +212,8 @@ check(tfp)
 				}
 				else if (!strcmp(p, sh))
 					break;
-		if (strsep((char *)NULL, ":\n")) {	/* too many */
+		if (p = strsep((char *)NULL, ":")) {	/* too many */
+(void)fprintf(stderr, "got {%s}\n", p);
 general:		(void)fprintf(stderr, "vipw: corrupted entry");
 bad:			(void)fprintf(stderr, "; line #%d.\n", lcnt);
 			(void)fflush(stderr);
