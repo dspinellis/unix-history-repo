@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -19,20 +19,31 @@ static char sccsid[] = "@(#)setterm.c	5.17 (Berkeley) %G%";
 static void zap __P((void));
 
 static char	*sflags[] = {
+		/*       am   bs   da   eo   hc   hz   in   mi   ms  */
 			&AM, &BS, &DA, &EO, &HC, &HZ, &IN, &MI, &MS,
+		/*	 nc   ns   os   ul   xb   xn   xt   xs   xx  */
 			&NC, &NS, &OS, &UL, &XB, &XN, &XT, &XS, &XX
 		};
 
 static char	*_PC,
 		**sstrs[] = {
+		/*	 AL   bc   bt   cd   ce   cl   cm   cr   cs  */
 			&AL, &BC, &BT, &CD, &CE, &CL, &CM, &CR, &CS,
+		/*	 dc   DL   dm   do   ed   ei   k0   k1   k2  */
 			&DC, &DL, &DM, &DO, &ED, &EI, &K0, &K1, &K2,
+		/*	 k3   k4   k5   k6   k7   k8   k9   ho   ic  */
 			&K3, &K4, &K5, &K6, &K7, &K8, &K9, &HO, &IC,
+		/*	 im   ip   kd   ke   kh   kl   kr   ks   ku  */
 			&IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU,
+		/*	 ll   ma   nd   nl    pc   rc   sc   se   SF */
 			&LL, &MA, &ND, &NL, &_PC, &RC, &SC, &SE, &SF,
+		/*	 so   SR   ta   te   ti   uc   ue   up   us  */
 			&SO, &SR, &TA, &TE, &TI, &UC, &UE, &UP, &US,
+		/*	 vb   vs   ve   al   dl   sf   sr   AL	     */
 			&VB, &VS, &VE, &al, &dl, &sf, &sr, &AL_PARM, 
+		/*	 DL	   UP	     DO		 LE	     */
 			&DL_PARM, &UP_PARM, &DOWN_PARM, &LEFT_PARM, 
+		/*	 RI					     */
 			&RIGHT_PARM,
 		};
 
@@ -93,20 +104,6 @@ setterm(type)
 #endif
 	aoftspace = tspace;
 	zap();			/* Get terminal description. */
-
-	/* Handle funny termcap capabilities. */
-	if (CS && SC && RC)
-		AL = DL = "";
-	if (AL_PARM && AL == NULL)
-		AL = "";
-	if (DL_PARM && DL == NULL)
-		DL = "";
-	if (IC) {
-		if (IM == NULL)
-			IM = "";
-		if (EI == NULL)
-			EI = "";
-	}
 
 	/* If we can't tab, we can't backtab, either. */
 	if (!GT)
