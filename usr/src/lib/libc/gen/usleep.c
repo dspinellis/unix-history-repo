@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)usleep.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)usleep.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <sys/time.h>
@@ -22,7 +22,8 @@ static int ringring;
 usleep(n)
 	unsigned n;
 {
-	int sleepx(), omask;
+	int sleepx();
+	long omask;
 	struct itimerval itv, oitv;
 	register struct itimerval *itp = &itv;
 	struct sigvec vec, ovec;
