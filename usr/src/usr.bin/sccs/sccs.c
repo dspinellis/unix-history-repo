@@ -5,7 +5,7 @@
 # include <sysexits.h>
 # include <whoami.h>
 
-static char SccsId[] = "@(#)sccs.c	1.14 %G%";
+static char SccsId[] = "@(#)sccs.c	1.15 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -50,6 +50,9 @@ struct sccsprog SccsProg[] =
 	"prt",		PROG,	0,			PROGPATH(prt),
 	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
 	"what",		PROG,	NO_SDOT,		PROGPATH(what),
+	"edit",		CMACRO,	0,			"get -e",
+	"delget",	CMACRO,	0,			"delta/get",
+	"deled",	CMACRO,	0,			"delta/get -e",
 	"del",		CMACRO,	0,			"delta/get",
 	"delt",		CMACRO,	0,			"delta/get",
 	"fix",		FIX,	0,			NULL,
@@ -60,6 +63,9 @@ struct sccsprog SccsProg[] =
 
 char	*SccsPath = "SCCS";	/* pathname of SCCS files */
 bool	RealUser;		/* if set, running as real user */
+# ifdef DEBUG
+bool	Debug;			/* turn on tracing */
+# endif
 
 main(argc, argv)
 	int argc;
@@ -96,6 +102,12 @@ main(argc, argv)
 				SccsPath = ++p;
 				break;
 
+# ifdef DEBUG
+			  case 'T':		/* trace */
+				Debug++;
+				break;
+# endif
+
 			  default:
 				fprintf(stderr, "Sccs: unknown option -%s\n", p);
 				break;
@@ -118,17 +130,27 @@ command(argv, forkflag)
 	register char *q;
 	char buf[40];
 	extern struct sccsprog *lookup();
+	char *nav[7];
+	char **avp;
+
+# ifdef DEBUG
+	if (Debug)
+	{
+		printf("command:\n");
+		for (avp = argv; *avp != NULL; avp++)
+			printf("    \"%s\"\n", *avp);
+	}
+# endif
 
 	/*
 	**  Look up command.
 	**	At this point, argv points to the command name.
 	*/
 
-	p = *argv;
-	cmd = lookup(p);
+	cmd = lookup(*argv);
 	if (cmd == NULL)
 	{
-		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", p);
+		fprintf(stderr, "Sccs: Unknown command \"%s\"\n", *argv);
 		exit(EX_USAGE);
 	}
 
@@ -145,11 +167,22 @@ command(argv, forkflag)
 	  case CMACRO:		/* command macro */
 		for (p = cmd->sccspath; *p != '\0'; p++)
 		{
+			avp = nav;
+			*avp++ = buf;
 			for (q = buf; *p != '/' && *p != '\0'; p++, q++)
-				*q = *p;
+			{
+				if (*p == ' ')
+				{
+					*q = '\0';
+					*avp++ = &q[1];
+				}
+				else
+					*q = *p;
+			}
 			*q = '\0';
-			argv[0] = buf;
-			command(argv, *p != '\0');
+			*avp = NULL;
+			xcommand(&argv[1], *p != '\0', nav[0], nav[1], nav[2],
+				 nav[3], nav[4], nav[5], nav[6]);
 		}
 		fprintf(stderr, "Sccs internal error: CMACRO\n");
 		exit(EX_SOFTWARE);
@@ -243,6 +276,10 @@ callprog(progpath, flags, argv, forkflag)
 
 	if (forkflag)
 	{
+# ifdef DEBUG
+		if (Debug)
+			printf("Forking\n");
+# endif
 		i = fork();
 		if (i < 0)
 		{
