@@ -1,0 +1,273 @@
+This is a generic INSTALL file for utilities distributions.
+Some features specific to gzip have been added.
+
+To compile this package:
+
+1.  Configure the package for your system.  In the directory that this
+file is in, type `./configure'.  If you're using `csh' on an old
+version of System V, you might need to type `sh configure' instead to
+prevent `csh' from trying to execute `configure' itself. If you
+are using Ultrix, you might need to type `sh5 configure' to avoid
+bugs in /bin/sh. Note that 'sh -x configure' may give different results
+than 'sh configure', making it difficult to debug configure scripts.
+
+The `configure' shell script attempts to guess correct values for
+various system-dependent variables used during compilation, and
+creates the Makefile(s) (one in each subdirectory of the source
+directory).  In some packages it creates a C header file containing
+system-dependent definitions.  It also creates a file `config.status'
+that you can run in the future to recreate the current configuration.
+
+Running `configure' takes a minute or two.  While it is running, it
+prints some messages that tell what it is doing.  If you don't want to
+see the messages, run `configure' with its standard output redirected
+to `/dev/null'; for example, `./configure >/dev/null'.
+
+To compile the package in a different directory from the one
+containing the source code, you must use a version of `make' that
+supports the VPATH variable, such as GNU `make'.  `cd' to the directory
+where you want the object files and executables to go and run
+`configure'.  `configure' automatically checks for the source code in
+the directory that `configure' is in and in `..'.  If for some reason
+`configure' is not in the source code directory that you are
+configuring, then it will report that it can't find the source code.
+In that case, run `configure' with the option `--srcdir=DIR', where
+DIR is the directory that contains the source code.
+
+By default, `make install' will install the package's files in
+/usr/local/bin, /usr/local/lib, /usr/local/man, etc.  You can specify an
+installation prefix other than /usr/local by giving `configure' the option
+`--prefix=PATH'.  Alternately, you can do so by consistently giving a value
+for the `prefix' variable when you run `make', e.g.,
+	make prefix=/usr/gnu
+	make prefix=/usr/gnu install
+
+You can specify separate installation prefixes for
+architecture-specific files and architecture-independent files.  If
+you give `configure' the option `--exec-prefix=PATH' or set the
+`make' variable `exec_prefix' to PATH, the package will use PATH as
+the prefix for installing programs and libraries.  Data files and
+documentation will still use the regular prefix.  Normally, all files
+are installed using the regular prefix.
+
+Another `configure' option is useful mainly in `Makefile' rules for
+updating `config.status' and `Makefile'.  The `--no-create' option
+figures out the configuration for your system and records it in
+`config.status', without actually configuring the package (creating
+`Makefile's and perhaps a configuration header file).  Later, you can
+run `./config.status' to actually configure the package.  You can also
+give `config.status' the `--recheck' option, which makes it re-run
+`configure' with the same arguments you used before.  This option is
+useful if you change `configure'.
+
+`configure' ignores any other arguments that you give it.
+
+If your system requires unusual options for compilation or linking
+that `configure' doesn't know about, you can give `configure' initial
+values for some variables by setting them in the environment.  In
+Bourne-compatible shells, you can do that on the command line like
+this:
+	CC='gcc -traditional' DEFS=-D_POSIX_SOURCE ./configure
+
+For csh compatible shells, you can do something like this:
+
+	(setenv CC 'gcc -traditional' ; ./configure)
+
+The `make' variables that you might want to override with environment
+variables when running `configure' are:
+
+(For these variables, any value given in the environment overrides the
+value that `configure' would choose:)
+CC		C compiler program.
+		Default is `cc', or `gcc' if `gcc' is in your PATH.
+INSTALL		Program to use to install files.
+		Default is `install' if you have it, `cp' otherwise.
+		If you have an non-standard `install', use INSTALL="cp -p"
+
+(For these variables, any value given in the environment is added to
+the value that `configure' chooses:)
+DEFS		Configuration options, in the form `-Dfoo -Dbar ...'
+CFLAGS		Compiler options, such as `-O -g ...'
+LIBS		Libraries to link with, in the form `-lfoo -lbar ...'
+
+If you need to do unusual things to compile the package, we encourage
+you to figure out how `configure' could check whether to do them, and
+mail diffs or instructions to the address given in the README so we
+can include them in the next release.
+
+2.  Type `make' to compile the package.  If you want, you can override
+the `make' variables CFLAGS and LDFLAGS like this:
+
+	make CFLAGS=-O2 LDFLAGS=-s
+
+3.  The package comes with self-tests. If you want to run them,
+type `make check'.
+
+4.  Type `make install' to install programs, data files, and
+documentation. This creates links between gzip, gunzip and zcat.
+You can create additional links uncompress, ungzip and gzcat if
+you prefer these names. You can also create links to unpack and pcat
+if your system uses packed files by default and you want to transform
+them transparently to gzip'ed files.
+
+If you wish to use only the name gzcat and not overwrite an existing zcat, use:
+
+	make ZCAT=gzcat install
+
+The man pages are installed by default with an extension `.1' (one).
+If you want the extension `.l' (lower case L) use:
+
+	make manext=l install
+
+If you are using csh or tcsh, you must type `rehash' after `make install'
+to make sure that the command `gzip' will invoke the new executable.
+
+5.  You can remove the program binaries and object files from the
+source directory by typing `make clean'.  To also remove the
+Makefile(s), the header file containing system-dependent definitions
+(if the package uses one), and `config.status' (all the files that
+`configure' created), type `make distclean'.
+
+The file `configure.in' is used as a template to create `configure' by
+a program called `autoconf'.  You will only need it if you want to
+regenerate `configure' using a newer version of `autoconf'.
+
+6.  You  can add the following  lines  to your  /etc/magic file so that
+file(1), if  your system supports it,  will recognize files created by
+gzip:
+
+0	string		\037\213	gzip compressed data
+>2	byte		8		- deflate method
+>3	byte		&0x1		, ascii
+>3	byte		&0x2		, continuation
+>3	byte		&0x4		, extra field
+>3	byte		&0x8		, original file name
+>3	byte		&0x10		, comment
+>3	byte		&0x20		, encrypted
+>8	byte		2		, max compression
+>8	byte		4		, max speed
+
+If your version of 'file' does not accept octal numbers in strings, replace the
+first line with one of these:
+
+0	short		0x8b1f		gzip compressed data
+0	short		0105437		gzip compressed data
+
+0	short		0x1f8b		gzip compressed data
+0	short		017613		gzip compressed data
+
+Use the first or second form if your machine is a 386 or a Vax or a
+MIPS configured in little-endian mode or any other little-endian
+machine. Use the third or fourth form on big-endian machines.
+On some systems, the field separators must contain only tabs (no spaces).
+
+7. To rename .z files with the new .gz suffix, you can use or adapt
+   the following shell script:
+
+#!/bin/sh
+find . -name '*.z' -type f -print | while read i
+do
+    new=`echo "$i" | sed 's/\.z$/.gz/'`
+    mv "$i" "$new" || echo Failed renaming $i to $new
+done
+
+If you wish to keep the old .z suffix as default without setting the
+GZIP environment variable to "--suffix .z", you can compile gzip with:
+
+   make CFLAGS='-DZ_SUFFIX=\".z\"'
+
+
+8.  Special targets
+
+- For MSDOS, OS/2, VMS, Atari, Amiga, Primos, use the makefile or command
+  file provided in the appropriate subdirectory. For Turbo C++ 1.0, read
+  the warning at the top of Makefile.bor.
+
+- On some systems memcpy() may not work as expected. (Problem found on
+  Pyramid only so far.) If you get "crc error" on some .gz files, add
+  -DNOMEMCPY to CFLAGS and recompile inflate.o. For example:
+    rm -f inflate.o
+    make CFLAGS="-O2 -DNOMEMCPY"
+
+  The memcpy problem affects only gunzip, not gzip. You can safely define
+  -DNOMEMCPY on all systems, but this may degrade performance of gunzip.
+
+- If your system is a pure BSD system but incorrectly links string.h to
+  strings.h, you may get undefined mem* and str* symbols. Try recompiling with
+
+      make clean
+      make CFLAGS="-DNO_STRING_H"
+
+- On some systems (reported on Dec Ultrix), "cc -E" and /lib/cpp behave
+  differently. If you have trouble with the default configuration, try:
+
+    CPP=/lib/cpp ./configure
+    make clean
+    make
+
+- On Ultrix, /bin/sh is too buggy. Use "sh5 configure" instead of "configure".
+  
+- On Mips Dec Ultrix, gunzip behaves non-deterministically with regard
+  to some .gz files. The same command either succeeds or gives a CRC error.
+  This problem is still being investigated. The files produced by gzip
+  are correct (can reliably be extracted on other systems).
+
+- On Xenix, some preprocessors do not define M_XENIX. You may have to do:
+
+	DEFS='-DM_XENIX' ./configure
+
+- On Xenix 2.3.2 for 286, do: make xenix_286
+
+- On Coherent, do: make coherent
+
+- On NeXTstep 3.1, many people (but not all) have had trouble with
+  configure. Try first
+
+    (setenv DEFS -DNO_UTIME_H; ./configure)
+    make test
+
+  If this fails, then try "make next". configure should work correctly
+  on NeXTstep versions up to 3.0.
+
+  To build a gzip package that can run on either the m68k or i386 family,
+  use configure then "make next-fat".
+
+  On some versions of NeXT, either "cc -finline-functions" or "cc -O4"
+  is broken. gzip produces valid .gz files but they are much too large
+  because the string matching code misses most matches. Use "cc -O" instead.
+
+- There is an optimization bug in the IRIX 4.0.5 IDO 4.1 assembler which is
+  triggered by GCC -O.  IDO 4.1.1 should fix this.  If you have to use IDO 4.1
+  then you can avoid the bug in one of the following ways:
+
+  1. Use SGI CC
+  2. Add the -noasmopt flag to GCC
+  3. Reconfigure GCC with the "mips-sgi-irix4loser" target which effectively
+     does the same as specifying "-noasmopt" all by default.
+  4. Don't use -O at all with GCC.
+
+- On Solaris 2.1 for x86, the January 1993 "OEM" compiler release
+  generates bad code. This is fixed in the June 1993 "FCS" release.
+
+- on Sparc with SunOS 4.1.1 and the SC1.0 compiler, the optimizer
+  works up to -O3 but -O4 does not work.
+
+- MSC 5.1 with -Ox and -DDYN_ALLOC generates bad code in inflate.c.
+  The default is static allocation (no DYN_ALLOC) and -Ox works on inflate.c.
+  But -Ox does not work on util.c and unlzh.c, so you must use -Oait -Gs.
+
+- The exit() function in Turbo C++ 1.0 seems to be broken. gzip crashes
+  even if exit(0) is the first statement in main(). The problem is avoided
+  by adding -Dexit=_exit  to CFLAGS in Makefile.bor.
+
+- On dnix 5.3 2.2 cc version 2.37c is buggy. Version 2.38d works.
+
+- On an Alliant running Concentrix, cc (even without optimization) generates
+  incorrect code. You have to use gcc.
+
+- On Cray running CSOS 1.0 with compiler version dev-125, you must compile
+  with the flag "-hnoopt" to avoid an optimizer bug.
+
+- On HPUX, configure can't find a correct install. Use:
+
+   INSTALL=/usr/local/bin/bsdinst ./configure
