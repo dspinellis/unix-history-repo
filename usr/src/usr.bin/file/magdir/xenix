@@ -1,0 +1,5 @@
+# XENIX executable formats: derived empirically; treat as folklore until proven0	short	01006		XENIX (x.out) executable
+>8	short	1		Middle model
+>16	short	>0		not stripped
+0	short	02600		XENIX 8086 relocatable or 80286 small model
+

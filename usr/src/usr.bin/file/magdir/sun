@@ -1,0 +1,21 @@
+# Values for Sun MC680x0 binaries
+0	short		2		mc68020
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	short		1		mc68010
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	short		0		old sun-2
+>2	short		0407		executable
+>2	short		0410		pure executable
+>2	short		0413		demand paged executable
+>16	long		>0		not stripped
+0	long		0x080456	core file
+>128	string		>0		from '%s'
+#
+0	short		05401		byte-swapped demand paged executable
+0	short		010001		byte-swapped demand paged executable

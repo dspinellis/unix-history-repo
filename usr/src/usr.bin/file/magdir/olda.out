@@ -1,0 +1,23 @@
+0	long		0407		executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0407		PDP-11 executable
+>8	short		>0		not stripped
+0	short		0401		unix-rt ldp
+0	short		0405		old overlay
+0	long		0410		pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0410		PDP-11 pure executable
+>8	short		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0411		PDP-11 separate I&D executable
+>8	short		>0		not stripped
+#>2	short		>0		- version %ld
+0	long		0413		demand paged pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	long		0420		demand paged (first page unmapped) pure executable
+>16	long		>0		not stripped
+#>2	short		>0		- version %ld
+0	short		0437		pdp11 kernel overlay

@@ -1,0 +1,5 @@
+#
+# Let us not forget PostScript
+0	string	%!			PostScript text
+>2	string	PS-Adobe-		conforming
+>11	string	1.0			at level %s
