@@ -1,14 +1,43 @@
 /* 
- * Copyright (c) 1993
+ * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)queue.h	8.2 (Berkeley) %G%
+ *	@(#)queue.h	8.3 (Berkeley) %G%
  */
 
 #ifndef	_QUEUE_H_
 #define	_QUEUE_H_
+
+/*
+ * This file defines three types of data structures: lists, tail queues,
+ * and circular queues.
+ *
+ * A list is headed by a single forward pointer (or an array of forward
+ * pointers for a hash table header). The elements are doubly linked
+ * so that an arbitrary element can be removed without a need to
+ * traverse the list. New elements can be added to the list after
+ * an existing element or at the head of the list. A list may only be
+ * traversed in the forward direction.
+ *
+ * A tail queue is headed by a pair of pointers, one to the head of the
+ * list and the other to the tail of the list. The elements are doubly
+ * linked so that an arbitrary element can be removed without a need to
+ * traverse the list. New elements can be added to the list after
+ * an existing element, at the head of the list, or at the end of the
+ * list. A tail queue may only be traversed in the forward direction.
+ *
+ * A circle queue is headed by a pair of pointers, one to the head of the
+ * list and the other to the tail of the list. The elements are doubly
+ * linked so that an arbitrary element can be removed without a need to
+ * traverse the list. New elements can be added to the list before or after
+ * an existing element, at the head of the list, or at the end of the list.
+ * A circle queue may be traversed in either direction, but has a more
+ * complex end of list detection.
+ *
+ * For details on the use of these macros, see the queue(3) manual page.
+ */
 
 /*
  * List definitions.
