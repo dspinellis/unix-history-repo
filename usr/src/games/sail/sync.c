@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	1.1 83/10/10";
+static	char *sccsid = "@(#)sync.c	1.2 83/10/14";
 #endif
 
 #include "externs.h"
@@ -166,9 +166,15 @@ int a, b, c, d;
 		break;
 		}
 	case W_SIGNAL:
+		/*
+		(void) putchar('\7');
+		*/
+		Signal("%s (%c%c): %s", ship, a);
+		/*
 		(void) strncpy(ship->file->signal, (char *)a,
 			sizeof ship->file->signal - 1);
 		ship->file->signal[sizeof ship->file->signal - 1] = 0;
+		*/
 		break;
 	case W_CREW: {
 		register struct shipspecs *s = ship->specs;
