@@ -1,5 +1,5 @@
 /*
- *	@(#)bib.h	2.1	%G%
+ *	@(#)bib.h	2.2	%G%
  */
 /*   various arguments for bib and listrefs processors */
 
@@ -9,6 +9,7 @@
 # define false 0
 # define err  -1
 # define REFSIZE 1024                /* maximum size of reference string    */
+# define MAXFIELD 512                /* maximum size of any field in referece*/
 
 /* reference citation marker genrated in pass 1 */
 
@@ -37,6 +38,14 @@
 /* size limits */
 
 	/* maximum number of characters in common file */
-# define MAXCOMM 300
+# define MAXCOMM 1000
 
 char *malloc();
+
+/* fix needed for systems where open [w]+ doesn't work */
+# ifdef READWRITE
+
+# define READ 1
+# define WRITE 0
+
+#endif
