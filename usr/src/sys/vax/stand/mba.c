@@ -1,4 +1,4 @@
-/*	mba.c	1.4	%G%	*/
+/*	mba.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"

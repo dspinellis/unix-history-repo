@@ -1,4 +1,4 @@
-#	Makefile	1.6	%G%
+#	Makefile	4.1	%G%
 
 DESTDIR=
 CFLAGS = -O -DSTANDALONE

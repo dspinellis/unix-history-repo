@@ -1,4 +1,4 @@
-/*	ls.c	1.1	%G%	*/
+/*	ls.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
