@@ -90,28 +90,72 @@ static char sccsid[] =
  * shown.
  */
 
-static double 
 #if (defined(VAX)||defined(TAHOE)) 	/* VAX D format */
-athfhi =  4.6364760900080611433E-1    , /*Hex  2^ -1   *  .ED63382B0DDA7B */
-athflo =  1.9338828231967579916E-19   , /*Hex  2^-62   *  .E450059CFE92C0 */
-PIo4   =  7.8539816339744830676E-1    , /*Hex  2^  0   *  .C90FDAA22168C2 */	
-at1fhi =  9.8279372324732906796E-1    , /*Hex  2^  0   *  .FB985E940FB4D9 */
-at1flo = -3.5540295636764633916E-18   , /*Hex  2^-57   * -.831EDC34D6EAEA */
-PIo2   =  1.5707963267948966135E0     , /*Hex  2^  1   *  .C90FDAA22168C2 */
-PI     =  3.1415926535897932270E0     , /*Hex  2^  2   *  .C90FDAA22168C2 */
-a1     =  3.3333333333333473730E-1    , /*Hex  2^ -1   *  .AAAAAAAAAAAB75 */
-a2     = -2.0000000000017730678E-1    , /*Hex  2^ -2   * -.CCCCCCCCCD946E */
-a3     =  1.4285714286694640301E-1    , /*Hex  2^ -2   *  .92492492744262 */
-a4     = -1.1111111135032672795E-1    , /*Hex  2^ -3   * -.E38E38EBC66292 */
-a5     =  9.0909091380563043783E-2    , /*Hex  2^ -3   *  .BA2E8BB31BD70C */
-a6     = -7.6922954286089459397E-2    , /*Hex  2^ -3   * -.9D89C827C37F18 */
-a7     =  6.6663180891693915586E-2    , /*Hex  2^ -3   *  .8886B4AE379E58 */
-a8     = -5.8772703698290408927E-2    , /*Hex  2^ -4   * -.F0BBA58481A942 */
-a9     =  5.2170707402812969804E-2    , /*Hex  2^ -4   *  .D5B0F3A1AB13AB */
-a10    = -4.4895863157820361210E-2    , /*Hex  2^ -4   * -.B7E4B97FD1048F */
-a11    =  3.3006147437343875094E-2    , /*Hex  2^ -4   *  .8731743CF72D87 */
-a12    = -1.4614844866464185439E-2    ; /*Hex  2^ -6   * -.EF731A2F3476D9 */
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
+/*static double */
+/*athfhi =  4.6364760900080611433E-1    , /*Hex  2^ -1   *  .ED63382B0DDA7B */
+/*athflo =  1.9338828231967579916E-19   , /*Hex  2^-62   *  .E450059CFE92C0 */
+/*PIo4   =  7.8539816339744830676E-1    , /*Hex  2^  0   *  .C90FDAA22168C2 */	
+/*at1fhi =  9.8279372324732906796E-1    , /*Hex  2^  0   *  .FB985E940FB4D9 */
+/*at1flo = -3.5540295636764633916E-18   , /*Hex  2^-57   * -.831EDC34D6EAEA */
+/*PIo2   =  1.5707963267948966135E0     , /*Hex  2^  1   *  .C90FDAA22168C2 */
+/*PI     =  3.1415926535897932270E0     , /*Hex  2^  2   *  .C90FDAA22168C2 */
+/*a1     =  3.3333333333333473730E-1    , /*Hex  2^ -1   *  .AAAAAAAAAAAB75 */
+/*a2     = -2.0000000000017730678E-1    , /*Hex  2^ -2   * -.CCCCCCCCCD946E */
+/*a3     =  1.4285714286694640301E-1    , /*Hex  2^ -2   *  .92492492744262 */
+/*a4     = -1.1111111135032672795E-1    , /*Hex  2^ -3   * -.E38E38EBC66292 */
+/*a5     =  9.0909091380563043783E-2    , /*Hex  2^ -3   *  .BA2E8BB31BD70C */
+/*a6     = -7.6922954286089459397E-2    , /*Hex  2^ -3   * -.9D89C827C37F18 */
+/*a7     =  6.6663180891693915586E-2    , /*Hex  2^ -3   *  .8886B4AE379E58 */
+/*a8     = -5.8772703698290408927E-2    , /*Hex  2^ -4   * -.F0BBA58481A942 */
+/*a9     =  5.2170707402812969804E-2    , /*Hex  2^ -4   *  .D5B0F3A1AB13AB */
+/*a10    = -4.4895863157820361210E-2    , /*Hex  2^ -4   * -.B7E4B97FD1048F */
+/*a11    =  3.3006147437343875094E-2    , /*Hex  2^ -4   *  .8731743CF72D87 */
+/*a12    = -1.4614844866464185439E-2    ; /*Hex  2^ -6   * -.EF731A2F3476D9 */
+static long athfhix[] = { _0x(6338,3fed), _0x(da7b,2b0d)};
+#define athfhi	(*(double *)athfhix)
+static long athflox[] = { _0x(5005,2164), _0x(92c0,9cfe)};
+#define athflo	(*(double *)athflox)
+static long   PIo4x[] = { _0x(0fda,4049), _0x(68c2,a221)};
+#define   PIo4	(*(double *)PIo4x)
+static long at1fhix[] = { _0x(985e,407b), _0x(b4d9,940f)};
+#define at1fhi	(*(double *)at1fhix)
+static long at1flox[] = { _0x(1edc,a383), _0x(eaea,34d6)};
+#define at1flo	(*(double *)at1flox)
+static long   PIo2x[] = { _0x(0fda,40c9), _0x(68c2,a221)};
+#define   PIo2	(*(double *)PIo2x)
+static long     PIx[] = { _0x(0fda,4149), _0x(68c2,a221)};
+#define     PI	(*(double *)PIx)
+static long     a1x[] = { _0x(aaaa,3faa), _0x(ab75,aaaa)};
+#define     a1	(*(double *)a1x)
+static long     a2x[] = { _0x(cccc,bf4c), _0x(946e,cccd)};
+#define     a2	(*(double *)a2x)
+static long     a3x[] = { _0x(4924,3f12), _0x(4262,9274)};
+#define     a3	(*(double *)a3x)
+static long     a4x[] = { _0x(8e38,bee3), _0x(6292,ebc6)};
+#define     a4	(*(double *)a4x)
+static long     a5x[] = { _0x(2e8b,3eba), _0x(d70c,b31b)};
+#define     a5	(*(double *)a5x)
+static long     a6x[] = { _0x(89c8,be9d), _0x(7f18,27c3)};
+#define     a6	(*(double *)a6x)
+static long     a7x[] = { _0x(86b4,3e88), _0x(9e58,ae37)};
+#define     a7	(*(double *)a7x)
+static long     a8x[] = { _0x(bba5,be70), _0x(a942,8481)};
+#define     a8	(*(double *)a8x)
+static long     a9x[] = { _0x(b0f3,3e55), _0x(13ab,a1ab)};
+#define     a9	(*(double *)a9x)
+static long    a10x[] = { _0x(e4b9,be37), _0x(048f,7fd1)};
+#define    a10	(*(double *)a10x)
+static long    a11x[] = { _0x(3174,3e07), _0x(2d87,3cf7)};
+#define    a11	(*(double *)a11x)
+static long    a12x[] = { _0x(731a,bd6f), _0x(76d9,2f34)};
+#define    a12	(*(double *)a12x)
 #else 	/* IEEE double */
+static double 
 athfhi =  4.6364760900080609352E-1    , /*Hex  2^ -2   *  1.DAC670561BB4F */
 athflo =  4.6249969567426939759E-18   , /*Hex  2^-58   *  1.5543B8F253271 */
 PIo4   =  7.8539816339744827900E-1    , /*Hex  2^ -1   *  1.921FB54442D18 */
