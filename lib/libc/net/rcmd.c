@@ -139,7 +139,7 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 		FD_SET(s, &reads);
 		FD_SET(s2, &reads);
 		errno = 0;
-		if (select(32, &reads, 0, 0, 0) < 1 ||
+		if (select(FD_SETSIZE, &reads, 0, 0, 0) < 1 ||
 		    !FD_ISSET(s2, &reads)) {
 			if (errno != 0)
 				perror("select: setting up stderr");
@@ -254,7 +254,7 @@ again:
 			if (first == 0) {
                                 (void)seteuid(suid);
                                 (void)setegid(sgid);
-                                (void)setgroups(1, &sgid);
+                                (void)setgroups(1, (int *)&sgid);
                         }
 			return(0);
 		}
@@ -293,7 +293,7 @@ bad:
 	if (first == 0) {
 		(void)seteuid(suid);
 		(void)setegid(sgid);
-		(void)setgroups(1, &sgid);
+		(void)setgroups(1, (int *)&sgid);
 	}
 	return (-1);
 }
