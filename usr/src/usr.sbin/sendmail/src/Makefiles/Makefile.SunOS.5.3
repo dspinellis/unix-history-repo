@@ -7,7 +7,7 @@
 #
 #  This has been tested on Solaris 2.3.
 #
-#	@(#)Makefile.SunOS.5.3	8.10 (Berkeley) %G%
+#	@(#)Makefile.SunOS.5.3	8.11 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -31,13 +31,14 @@ ENVDEF=	-DSOLARIS=203
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # library directories
 LIBDIRS=-L/usr/sww/lib
 
 # libraries required on your system
-LIBS=	-lresolv -lsocket -lnsl -lelf
+#  delete -l44bsd if you are not running BIND 4.9.x
+LIBS=	-lresolv -l44bsd -lsocket -lnsl -lelf
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib

@@ -7,7 +7,7 @@
 #
 #	This has been tested on Ultrix 4.2A and 4.3A.
 #
-#	@(#)Makefile.ULTRIX	8.5 (Berkeley) %G%
+#	@(#)Makefile.ULTRIX	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -28,7 +28,7 @@ ENVDEF=	-Olimit 900
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=
@@ -37,7 +37,8 @@ LDOPTS=
 LIBDIRS=-L/usr/sww/lib
 
 # libraries required on your system
-LIBS=	-ldb
+#  delete -lresolv and -l44bsd if you are not running BIND 4.9.x
+LIBS=	-ldb -lresolv -l44bsd
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib

@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.dist	8.13 (Berkeley) %G%
+#	@(#)Makefile.dist	8.14 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -26,7 +26,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=
@@ -35,7 +35,8 @@ LDOPTS=
 LIBDIRS=-L/usr/sww/lib
 
 # libraries required on your system
-LIBS=	-ldb -ldbm
+#  delete -lresolv if you are not running BIND 4.9.x
+LIBS=	-ldb -ldbm -lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/sbin

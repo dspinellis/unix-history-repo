@@ -7,7 +7,7 @@
 #
 #  This has been tested on CxOS 11.0 beta 1 and 10.x.
 #
-#	@(#)Makefile.ConvexOS	8.5 (Berkeley) %G%
+#	@(#)Makefile.ConvexOS	8.6 (Berkeley) %G%
 #
 
 
@@ -29,7 +29,7 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 
 # library directories
 #LIBDIRS=-L/usr/sww/lib

@@ -11,7 +11,7 @@
 #	It should also work on UMIPS-BSD from MIPS, if you still have
 #	any lying around.
 #
-#	@(#)Makefile.BSD43	8.4 (Berkeley) %G%
+#	@(#)Makefile.BSD43	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -32,7 +32,7 @@ ENVDEF=	-DoldBSD43
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 
 # library directories
 #LIBDIRS=-L/usr/sww/lib

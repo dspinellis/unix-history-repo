@@ -2,7 +2,7 @@
 #  Tested on DG/UX 5.4.2 by A. Bryan Curnutt <bryan@Stoner.COM>.
 #  Updated for DG/UX 5.4.3 by Mark T. Robinson <mtr@ornl.gov>.
 #
-#	@(#)Makefile.dgux	8.5 (Berkeley) %G%
+#	@(#)Makefile.dgux	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -24,7 +24,7 @@ ENVDEF=-DDGUX
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # loader options
 LDOPTS=

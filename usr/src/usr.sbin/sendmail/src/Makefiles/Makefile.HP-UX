@@ -7,7 +7,7 @@
 #
 #  This has been tested on HP-UX 8.07 on 7xx series.
 #
-#	@(#)Makefile.HP-UX	8.4 (Berkeley) %G%
+#	@(#)Makefile.HP-UX	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -29,13 +29,14 @@ ENVDEF=
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include/db
+INCDIRS=-I/usr/sww/include
 
 # library directories
 LIBDIRS=-L/usr/sww/lib
 
 # libraries required on your system
-LIBS=	-ldb -ldbm
+#  delete -lresolv if you are not running BIND 4.9.x
+LIBS=	-ldb -ldbm -lresolv
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib

@@ -7,7 +7,7 @@
 #
 #  This has been tested on AIX 3.1.5 and 3.2.3e.
 #
-#	@(#)Makefile.AIX	8.4 (Berkeley) %G%
+#	@(#)Makefile.AIX	8.5 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -32,7 +32,7 @@ ENVDEF=	-D_AIX3
 # see also conf.h for additional compilation flags
 
 # include directories
-#INCDIRS=-I/usr/sww/include/db
+#INCDIRS=-I/usr/sww/include
 
 # library directories
 #LIBDIRS=-L/usr/sww/lib
