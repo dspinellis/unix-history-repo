@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1160,72 +1160,105 @@ printopenfds(logit)
 	bool logit;
 {
 	register int fd;
-	struct stat st;
-	register struct hostent *hp;
-	register char *p;
-	char buf[200];
 	extern int DtableSize;
 
 	for (fd = 0; fd < DtableSize; fd++)
+		dumpfd(fd, FALSE, logit);
+}
+/*
+**  DUMPFD -- dump a file descriptor
+**
+**	Parameters:
+**		fd -- the file descriptor to dump.
+**		printclosed -- if set, print a notification even if
+**			it is closed; otherwise print nothing.
+**		logit -- if set, send output to syslog instead of stdout.
+*/
+
+dumpfd(fd, printclosed, logit)
+	int fd;
+	bool printclosed;
+	bool logit;
+{
+	register struct hostent *hp;
+	register char *p;
+	struct sockaddr_in sin;
+	auto int slen;
+	struct stat st;
+	char buf[200];
+
+	p = buf;
+	sprintf(p, "%3d: ", fd);
+	p += strlen(p);
+
+	if (fstat(fd, &st) < 0)
 	{
-		struct sockaddr_in sin;
-		auto int slen;
-
-		if (fstat(fd, &st) < 0)
-			continue;
-
-		p = buf;
-		sprintf(p, "%3d: mode=%o: ", fd, st.st_mode);
-		p += strlen(p);
-		switch (st.st_mode & S_IFMT)
+		if (printclosed || errno != EBADF)
 		{
-		  case S_IFSOCK:
-			sprintf(p, "SOCK ");
-			p += strlen(p);
-			slen = sizeof sin;
-			if (getsockname(fd, (struct sockaddr *) &sin, &slen) < 0)
-				sprintf(p, "(badsock)");
-			else
-			{
-				hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
-				sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
-							   : hp->h_name, ntohs(sin.sin_port));
-			}
-			p += strlen(p);
-			sprintf(p, "->");
-			p += strlen(p);
-			slen = sizeof sin;
-			if (getpeername(fd, (struct sockaddr *) &sin, &slen) < 0)
-				sprintf(p, "(badsock)");
-			else
-			{
-				hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
-				sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
-							   : hp->h_name, ntohs(sin.sin_port));
-			}
-			break;
-
-		  case S_IFCHR:
-			sprintf(p, "CHR: ");
-			p += strlen(p);
-			goto defprint;
-
-		  case S_IFBLK:
-			sprintf(p, "BLK: ");
-			p += strlen(p);
-			goto defprint;
-
-		  default:
-defprint:
-			sprintf(p, "rdev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
-				major(st.st_rdev), minor(st.st_rdev), st.st_ino,
-				st.st_nlink, st.st_uid, st.st_gid, st.st_size);
-			break;
+			sprintf(p, "CANNOT STAT (%s)", errstring(errno));
+			goto printit;
 		}
-
-		if (logit)
-			syslog(LOG_INFO, "%s", buf);
-		else
-			printf("%s\n", buf);
+		return;
 	}
+
+	slen = fcntl(fd, F_GETFL, NULL);
+	if (slen != -1)
+	{
+		sprintf(p, "fl=0x%x, ", slen);
+		p += strlen(p);
+	}
+
+	sprintf(p, "mode=%o: ", st.st_mode);
+	p += strlen(p);
+	switch (st.st_mode & S_IFMT)
+	{
+	  case S_IFSOCK:
+		sprintf(p, "SOCK ");
+		p += strlen(p);
+		slen = sizeof sin;
+		if (getsockname(fd, (struct sockaddr *) &sin, &slen) < 0)
+			sprintf(p, "(badsock)");
+		else
+		{
+			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
+						   : hp->h_name, ntohs(sin.sin_port));
+		}
+		p += strlen(p);
+		sprintf(p, "->");
+		p += strlen(p);
+		slen = sizeof sin;
+		if (getpeername(fd, (struct sockaddr *) &sin, &slen) < 0)
+			sprintf(p, "(badsock)");
+		else
+		{
+			hp = gethostbyaddr((char *) &sin.sin_addr, slen, AF_INET);
+			sprintf(p, "%s/%d", hp == NULL ? inet_ntoa(sin.sin_addr)
+						   : hp->h_name, ntohs(sin.sin_port));
+		}
+		break;
+
+	  case S_IFCHR:
+		sprintf(p, "CHR: ");
+		p += strlen(p);
+		goto defprint;
+
+	  case S_IFBLK:
+		sprintf(p, "BLK: ");
+		p += strlen(p);
+		goto defprint;
+
+	  default:
+defprint:
+		sprintf(p, "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
+			major(st.st_dev), minor(st.st_dev), st.st_ino,
+			st.st_nlink, st.st_uid, st.st_gid, st.st_size);
+		break;
+	}
+
+printit:
+	if (logit)
+		syslog(LOG_INFO, "%s", buf);
+	else
+		printf("%s\n", buf);
 }

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -109,6 +109,7 @@ dropenvelope(e)
 	**  Extract state information from dregs of send list.
 	*/
 
+	e->e_flags &= ~EF_QUEUERUN;
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 		if (bitset(QQUEUEUP, q->q_flags))
@@ -465,6 +466,11 @@ openxscript(e)
 	if (e->e_xfp == NULL)
 	{
 		syserr("!Can't create transcript stream %s", p);
+	}
+	if (tTd(46, 9))
+	{
+		printf("openxscript(%s):\n  ", p);
+		dumpfd(fileno(e->e_xfp), TRUE, FALSE);
 	}
 }
 /*
