@@ -1,4 +1,4 @@
-/*	uba.c	4.59	82/12/17	*/
+/*	uba.c	4.60	82/12/22	*/
 
 #include "../machine/pte.h"
 
@@ -466,7 +466,8 @@ ubamem(uban, addr, size, doalloc)
 	return(a);
 }
 
-#ifdef notdef
+#include "ik.h"
+#if NIK > 0
 /*
  * Map a virtual address into users address space. Actually all we
  * do is turn on the user mode write protection bits for the particular
