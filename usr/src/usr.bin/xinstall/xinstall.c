@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -63,7 +63,7 @@ main(argc, argv)
 			break;
 		case 'm':
 			if (!(set = setmode(optarg)))
-				err("%s: invalid file mode\n", optarg);
+				err("%s: invalid file mode", optarg);
 			mode = getmode(set, 0);
 			break;
 		case 'o':
@@ -83,9 +83,9 @@ main(argc, argv)
 
 	/* get group and owner id's */
 	if (group && !(gp = getgrnam(group)))
-		err("unknown group %s\n", group);
+		err("unknown group %s", group);
 	if (owner && !(pp = getpwnam(owner)))
-		err("unknown user %s\n", owner);
+		err("unknown user %s", owner);
 
 	no_target = stat(to_name = argv[argc - 1], &to_sb);
 	if (!no_target && (to_sb.st_mode & S_IFMT) == S_IFDIR) {
@@ -100,12 +100,12 @@ main(argc, argv)
 
 	if (!no_target) {
 		if (stat(*argv, &from_sb))
-			err("%s: %s\n", *argv, strerror(errno));
+			err("%s: %s", *argv, strerror(errno));
 		if (!S_ISREG(to_sb.st_mode))
-			err("%s: %s\n", to_name, strerror(EFTYPE));
+			err("%s: %s", to_name, strerror(EFTYPE));
 		if (to_sb.st_dev == from_sb.st_dev &&
 		    to_sb.st_ino == from_sb.st_ino)
-			err("%s and %s are the same file\n", *argv, to_name);
+			err("%s and %s are the same file", *argv, to_name);
 		/* unlink now... avoid ETXTBSY errors later */
 		(void)unlink(to_name);
 	}
@@ -129,9 +129,9 @@ install(from_name, to_name, isdir)
 	/* If try to install NULL file to a directory, fails. */
 	if (isdir || strcmp(from_name, _PATH_DEVNULL)) {
 		if (stat(from_name, &from_sb))
-			err("%s: %s\n", from_name, strerror(errno));
+			err("%s: %s", from_name, strerror(errno));
 		if (!S_ISREG(from_sb.st_mode))
-			err("%s: %s\n", from_name, strerror(EFTYPE));
+			err("%s: %s", from_name, strerror(EFTYPE));
 		/* Build the target path. */
 		if (isdir) {
 			(void)snprintf(pathbuf, sizeof(pathbuf), "%s/%s",
