@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)nice.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nice.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -33,7 +33,8 @@ main(argc, argv)
 		fputs("usage: nice [ -n ] command\n", stderr);
 		exit(1);
 	}
-	if (setpriority(PRIO_PROCESS, 0, nicarg) < 0) {
+	if (setpriority(PRIO_PROCESS, 0, 
+	    getpriority(PRIO_PROCESS, 0) + nicarg) < 0) {
 		perror("setpriority");
 		exit(1);
 	}
