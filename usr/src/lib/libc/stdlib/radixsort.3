@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)radixsort.3	5.3 (Berkeley) %G%
+.\"	@(#)radixsort.3	5.4 (Berkeley) %G%
 .\"
 .TH radixsort 3 ""
 .SH NAME
@@ -76,3 +76,6 @@ may fail and set
 .I errno
 for any of the errors specified for the library routine
 .IR malloc (3).
+.SH BUGS
+.I Nmemb
+must be less than the maximum integer, INT_MAX.
