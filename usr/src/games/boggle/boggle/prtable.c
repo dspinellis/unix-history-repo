@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Barry Brachman.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)prtable.c	5.2 (Berkeley) %G%
+ *	@(#)prtable.c	8.1 (Berkeley) %G%
  */
 
 #include <curses.h>

@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Barry Brachman.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
