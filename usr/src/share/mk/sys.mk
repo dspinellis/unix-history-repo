@@ -1,66 +1,52 @@
 unix=		We run UNIX.
-SHELL=		/bin/sh
 
-.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
-		.8 .7 .6 .5 .4 .3 .2 .1 .0
-
-# for RCS
-#.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h \
-#		.c,v .y,v .l,v .s,v .h,v .8 .7 .6 .5 .4 .3 .2 .1 .0
+.SUFFIXES: .out .a .ln .o .c .F .f .e .r .y .l .s .cl .p .h 
 
 .LIBS:		.a
-#.NULL:		.out
 
-AR=		/usr/bin/ar
+AR=		ar
 ARFLAGS=	rl
+RANLIB=		ranlib
 
-AS=		/usr/bin/as
+AS=		as
 AFLAGS=
 
-CC=		/usr/bin/cc
+CC=		cc
 CFLAGS=		-O
 
-CI=		/usr/new/ci
-CIFLAGS=
-CO=		/usr/new/co
-COFLAGS=
+CPP=		cpp
 
-CPP=		/usr/bin/newcpp
-
-FC=		/usr/bin/f77
-FFLAGS=
+FC=		f77
+FFLAGS=		-O
 EFLAGS=
 
-LEX=		/usr/bin/lex
+LEX=		lex
 LFLAGS=
 
-LINT=		/usr/bin/lint
+LD=		ld
+LDFLAGS=
+
+LINT=		lint
 LINTFLAGS=	-chapbx
 
-MAKE=		/usr/src/usr.bin/pmake/obj/pmake
+MAKE=		make
 
-NROFF=		/usr/bin/nroff
-
-PC=		/usr/bin/pc
+PC=		pc
 PFLAGS=
 
-RC=		/usr/bin/f77
+RC=		f77
 RFLAGS=
 
-YACC=		/usr/bin/yacc
-YFLAGS=
+SHELL=		sh
 
-#.c,v.c .y,v.y .l,v.l .s,v.s .h,v.h:
-#	${CO} ${COFLAGS} ${.IMPSRC} ${.TARGET}
+YACC=		yacc
+YFLAGS=-d
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC}
 
 .p.o:
 	${PC} ${PFLAGS} -c ${.IMPSRC}
-
-.cl.o:
-	class -c ${.IMPSRC}
 
 .e.o .r.o .F.o .f.o:
 	${FC} ${RFLAGS} ${EFLAGS} ${FFLAGS} -c ${.IMPSRC}
@@ -71,12 +57,12 @@ YFLAGS=
 .y.o:
 	${YACC} ${YFLAGS} ${.IMPSRC}
 	${CC} ${CFLAGS} -c y.tab.c -o ${.TARGET}
-	rm y.tab.c
+	rm -f y.tab.c
 
 .l.o:
 	${LEX} ${LFLAGS} ${.IMPSRC}
 	${CC} ${CFLAGS} -c lex.yy.c -o ${.TARGET}
-	rm lex.yy.c
+	rm -f lex.yy.c
 
 .y.c:
 	${YACC} ${YFLAGS} ${.IMPSRC}
@@ -97,12 +83,9 @@ YFLAGS=
 .y.out:
 	${YACC} ${YFLAGS} ${.IMPSRC}
 	${CC} ${CFLAGS} y.tab.c ${LDLIBS} -ly -o ${.TARGET}
-	rm y.tab.c
+	rm -f y.tab.c
 
 .l.out:
 	${LEX} ${LFLAGS} ${.IMPSRC}
 	${CC} ${CFLAGS} lex.yy.c ${LDLIBS} -ll -o ${.TARGET}
-	rm lex.yy.c
-
-.8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	${NROFF} -man -h ${.IMPSRC} > ${.TARGET}
+	rm -f lex.yy.c
