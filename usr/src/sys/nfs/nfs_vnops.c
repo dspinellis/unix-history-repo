@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.14 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -564,10 +564,9 @@ nfs_readlink(vp, uiop, cred)
 /*
  * nfs read call
  */
-nfs_readrpc(vp, uiop, offp, cred)
+nfs_readrpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
-	off_t *offp;
 	struct ucred *cred;
 {
 	register u_long *p;
@@ -588,7 +587,7 @@ nfs_readrpc(vp, uiop, offp, cred)
 		nfsm_reqhead(nfs_procids[NFSPROC_READ], cred, NFSX_FH+NFSX_UNSIGNED*3);
 		nfsm_fhtom(vp);
 		nfsm_build(p, u_long *, NFSX_UNSIGNED*3);
-		*p++ = txdr_unsigned(*offp);
+		*p++ = txdr_unsigned(uiop->uio_offset);
 		*p++ = txdr_unsigned(len);
 		*p = 0;
 		nfsm_request(vp);
@@ -596,7 +595,6 @@ nfs_readrpc(vp, uiop, offp, cred)
 		nfsm_strsiz(retlen, nmp->nm_rsize);
 		nfsm_mtouio(uiop, retlen);
 		m_freem(mrep);
-		*offp += retlen;
 		if (retlen < len)
 			tsiz = 0;
 		else
@@ -609,10 +607,9 @@ nfsmout:
 /*
  * nfs write call
  */
-nfs_writerpc(vp, uiop, offp, cred)
+nfs_writerpc(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
-	off_t *offp;
 	struct ucred *cred;
 {
 	register u_long *p;
@@ -634,14 +631,13 @@ nfs_writerpc(vp, uiop, offp, cred)
 			NFSX_FH+NFSX_UNSIGNED*4);
 		nfsm_fhtom(vp);
 		nfsm_build(p, u_long *, NFSX_UNSIGNED*4);
-		*(p+1) = txdr_unsigned(*offp);
+		*(p+1) = txdr_unsigned(uiop->uio_offset);
 		*(p+3) = txdr_unsigned(len);
 		nfsm_uiotom(uiop, len);
 		nfsm_request(vp);
 		nfsm_loadattr(vp, (struct vattr *)0);
 		m_freem(mrep);
 		tsiz -= len;
-		*offp += len;
 	}
 nfsmout:
 	return (error);
@@ -983,10 +979,9 @@ nfs_rmdir(ndp)
  * order so that it looks more sensible. This appears consistent with the
  * Ultrix implementation of NFS.
  */
-nfs_readdir(vp, uiop, offp, cred)
+nfs_readdir(vp, uiop, cred)
 	register struct vnode *vp;
 	struct uio *uiop;
-	off_t *offp;
 	struct ucred *cred;
 {
 	register long len;
@@ -1005,13 +1000,11 @@ nfs_readdir(vp, uiop, offp, cred)
 	off_t off, savoff;
 	struct direct *savdp;
 
-	nfs_lock(vp);
 	nfsstats.rpccnt[NFSPROC_READDIR]++;
 	nfsm_reqhead(nfs_procids[NFSPROC_READDIR], cred, xid);
 	nfsm_fhtom(vp);
 	nfsm_build(p, u_long *, 2*NFSX_UNSIGNED);
-	off = *offp;
-	*p++ = txdr_unsigned(off);
+	*p++ = txdr_unsigned(uiop->uio_offset);
 	*p = txdr_unsigned(uiop->uio_resid);
 	nfsm_request(vp);
 	siz = 0;
@@ -1066,10 +1059,9 @@ nfs_readdir(vp, uiop, offp, cred)
 		md = md2;
 		dpos = dpos2;
 		nfsm_mtouio(uiop, siz);
-		*offp = off;
+		uiop->uio_offset = off;
 	}
 	nfsm_reqdone;
-	nfs_unlock(vp);
 	return (error);
 }
 
@@ -1314,7 +1306,6 @@ nfs_doio(bp)
 	struct proc *rp;
 	int o, error;
 	int bcnt;
-	off_t off;
 	struct uio uio;
 	struct iovec io;
 
@@ -1325,12 +1316,12 @@ nfs_doio(bp)
 	uiop->uio_segflg = UIO_SYSSPACE;
 	if (bp->b_flags & B_READ) {
 		io.iov_len = uiop->uio_resid = bp->b_bcount;
-		uiop->uio_offset = off = bp->b_blkno*DEV_BSIZE;
+		uiop->uio_offset = bp->b_blkno*DEV_BSIZE;
 		addr = bp->b_un.b_addr;
 		bcnt = bp->b_bcount;
 	} else {
 		io.iov_len = uiop->uio_resid = bp->b_dirtyend-bp->b_dirtyoff;
-		uiop->uio_offset = off = (bp->b_blkno*DEV_BSIZE)+bp->b_dirtyoff;
+		uiop->uio_offset = (bp->b_blkno*DEV_BSIZE)+bp->b_dirtyoff;
 		addr = bp->b_un.b_addr+bp->b_dirtyoff;
 		bcnt = bp->b_dirtyend-bp->b_dirtyoff;
 	}
@@ -1390,10 +1381,10 @@ nfs_doio(bp)
 	}
 	if (bp->b_flags & B_READ) {
 		uiop->uio_rw = UIO_READ;
-		bp->b_error = error = nfs_readrpc(vp, uiop, &off, bp->b_rcred);
+		bp->b_error = error = nfs_readrpc(vp, uiop, bp->b_rcred);
 	} else {
 		uiop->uio_rw = UIO_WRITE;
-		bp->b_error = error = nfs_writerpc(vp, uiop, &off, bp->b_wcred);
+		bp->b_error = error = nfs_writerpc(vp, uiop, bp->b_wcred);
 		if (error) {
 			np = VTONFS(vp);
 			np->n_error = error;
@@ -1425,19 +1416,18 @@ nfs_doio(bp)
  *	associated with the vnode.
  */
 /* ARGSUSED */
-nfs_fsync(vp, fflags, cred)
+nfs_fsync(vp, fflags, cred, waitfor)
 	register struct vnode *vp;
 	int fflags;
 	struct ucred *cred;
+	int waitfor;
 {
 	register struct nfsnode *np = VTONFS(vp);
 	int error;
 
-	nfs_lock(vp);
 	if (np->n_flag & NMODIFIED) {
 		np->n_flag &= ~NMODIFIED;
 		error = nfs_blkflush(vp, (daddr_t)0, np->n_size, FALSE);
 	}
-	nfs_unlock(vp);
 	return (error);
 }
