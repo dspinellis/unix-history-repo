@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)misc.c	1.3 83/10/10";
+static	char *sccsid = "@(#)misc.c	1.4 83/10/14";
 #endif
 #include "externs.h"
 
@@ -128,17 +128,6 @@ int quick;			/* returns true if fromship is */
 		return ang;
 	ang = (ang + 4 - on->file->dir - 1) % 8 + 1;
 	return ang < 5;
-}
-
-rmend(str)
-char *str;
-{
-	register char *p;
-
-	for (p = str; *p; p++)
-		;
-	if (p != str)
-		*--p = 0;
 }
 
 colours(sp)
