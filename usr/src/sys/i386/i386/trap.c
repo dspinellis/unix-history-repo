@@ -5,9 +5,35 @@
  * This code is derived from software contributed to Berkeley by
  * the University of Utah, and William Jolitz.
  *
- * %sccs.include.redist.c%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Berkeley and its contributors.
+ * 4. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
  *
- *	@(#)trap.c	7.13 (Berkeley) %G%
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ *	@(#)trap.c	7.13 (Berkeley) 10/11/92
  */
 
 /*
@@ -57,7 +83,7 @@ trap(frame)
 {
 	register int i;
 	register struct proc *p = curproc;
-	struct timeval syst;
+	u_quad_t sticks;
 	int ucode, type, code, eva;
 	extern int cold;
 
@@ -70,11 +96,11 @@ copyfault:	frame.tf_eip = (int)curpcb->pcb_onfault;
 		return;
 	}
 
-	syst = p->p_stime;
 	if (ISPL(frame.tf_cs) == SEL_UPL) {
 		type |= T_USER;
 		p->p_md.md_regs = (int *)&frame;
 		curpcb->pcb_flags |= FM_TRAP;	/* used by sendsig */
+		sticks = p->p_sticks;
 	}
 
 	ucode=0;
@@ -251,11 +277,8 @@ out:
 			psig(i);
 	}
 	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
+		u_quad_t ticks = p->p_sticks - sticks;
 
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks) {
 #ifdef PROFTIMER
 			extern int profscale;
@@ -284,7 +307,7 @@ syscall(frame)
 	register int i;
 	register struct sysent *callp;
 	register struct proc *p = curproc;
-	struct timeval syst;
+	u_quad_t sticks;
 	int error, opc;
 	int args[8], rval[2];
 	unsigned int code;
@@ -292,7 +315,7 @@ syscall(frame)
 #ifdef lint
 	r0 = 0; r0 = r0; r1 = 0; r1 = r1;
 #endif
-	syst = p->p_stime;
+	sticks = p->p_sticks;
 	if (ISPL(frame.sf_cs) != SEL_UPL)
 		panic("syscall");
 
@@ -371,11 +394,8 @@ done:
 			psig(i);
 	}
 	if (p->p_stats->p_prof.pr_scale) {
-		int ticks;
-		struct timeval *tv = &p->p_stime;
+		u_quad_t ticks = p->p_sticks - sticks;
 
-		ticks = ((tv->tv_sec - syst.tv_sec) * 1000 +
-			(tv->tv_usec - syst.tv_usec) / 1000) / (tick / 1000);
 		if (ticks) {
 #ifdef PROFTIMER
 			extern int profscale;
