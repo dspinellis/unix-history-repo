@@ -13,13 +13,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)intr.c	8.1 (Berkeley) %G%
+ *	@(#)intr.c	8.2 (Berkeley) %G%
  *
- * from: $Header: intr.c,v 1.20 92/11/26 03:04:53 torek Exp $ (LBL)
+ * from: $Header: intr.c,v 1.22 93/09/26 19:48:06 torek Exp $ (LBL)
  */
 
 #include <sys/param.h>
 #include <sys/kernel.h>
+
+#include <vm/vm.h>
 
 #include <net/netisr.h>
 
@@ -46,7 +48,6 @@ strayintr(fp)
 	printf("stray interrupt ipl %x pc=%x npc=%x psr=%b\n",
 	    fp->ipl, fp->pc, fp->npc, fp->psr, PSR_BITS);
 	timesince = time.tv_sec - straytime;
-	straytime = time.tv_sec;
 	if (timesince <= 10) {
 		if (++nstray > 9)
 			panic("crazy interrupts");
@@ -224,9 +225,13 @@ intr_fasttrap(level, vec)
 		    tv->tv_instr[0], tv->tv_instr[1], tv->tv_instr[2],
 		    I_MOVi(I_L3, level), I_BA(0, displ), I_RDPSR(I_L0));
 #endif
+	/* kernel text is write protected -- let us in for a moment */
+	pmap_changeprot(kernel_pmap, (vm_offset_t)tv,
+	    VM_PROT_READ|VM_PROT_WRITE, 1);
 	tv->tv_instr[0] = I_SETHI(I_L3, hi22);	/* sethi %hi(vec),%l3 */
 	tv->tv_instr[1] = I_JMPLri(I_G0, I_L3, lo10);/* jmpl %l3+%lo(vec),%g0 */
 	tv->tv_instr[2] = I_RDPSR(I_L0);	/* mov %psr, %l0 */
+	pmap_changeprot(kernel_pmap, (vm_offset_t)tv, VM_PROT_READ, 1);
 	fastvec |= 1 << level;
 	splx(s);
 }
