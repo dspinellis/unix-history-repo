@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.24	%G%
+**	@(#)sendmail.h	3.25	%G%
 */
 
 
@@ -22,6 +22,12 @@
 # define MAXMAILERS	10	/* maximum mailers known to system */
 # define ALIASFILE	"/usr/lib/aliases"	/* location of alias file */
 # define CONFFILE	"/usr/lib/sendmail.cf"	/* configuration file */
+
+/* values for ArpaMode -- these are ordered!! */
+# define ARPA_NONE	0	/* not in arpanet mode */
+# define ARPA_OLD	1	/* in old arpanet mode */
+# define ARPA_MAIL	2	/* in regular arpanet mail */
+# define ARPA_FILE	3	/* reading over data connection */
 
 
 
@@ -225,7 +231,7 @@ extern STAB	*stab();
 **  Global variables.
 */
 
-extern bool	ArpaFmt;	/* if set, message is in arpanet fmt */
+extern int	ArpaMode;	/* ARPANET handling mode */
 extern bool	FromFlag;	/* if set, "From" person is explicit */
 extern bool	MailBack;	/* mail back response on error */
 extern bool	BerkNet;	/* called from BerkNet */
