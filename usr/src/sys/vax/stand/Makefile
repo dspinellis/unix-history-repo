@@ -14,13 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	7.19 (Berkeley) %G%
+#	@(#)Makefile	7.20 (Berkeley) %G%
 #
 
 DESTDIR=
 STAND=	/stand
-INCPATH=-I. -I../stand -I../h
+INCPATH=-I. -I../stand -I../sys
 VPATH=	../stand:../vax
+C2=	/usr/libexec/c2
 DEFS=	${INCPATH} -DSTANDALONE -DCOMPAT_42
 MACH=	-DVAX8600 -DVAX8200 -DVAX780 -DVAX750 -DVAX730 -DVAX630 -DVAX650
 LS=	/bin/ls
@@ -68,7 +69,7 @@ ${LIBSA}: conf.o dev.o dkbad.o getfile.o gets.o machdep.o prf.o printn.o \
 
 ${DRIVERS}:
 	${CC} -c -S ${COPTS} $*.c
-	/lib/c2 -i $*.s | as -o $*.o
+	${C2} -i $*.s | as -o $*.o
 	rm -f $*.s
 
 # startups
@@ -219,14 +220,14 @@ sm_hp.o: hp.o
 	rm -f sm_hp.c
 	ln -s hp.c sm_hp.c
 	${CC} -S ${SMOPTS} sm_hp.c
-	/lib/c2 -i sm_hp.s | as -o sm_hp.o
+	${C2} -i sm_hp.s | as -o sm_hp.o
 	rm -f sm_hp.s sm_hp.c
 
 sm_up.o: up.o
 	rm -f sm_up.c
 	ln -s up.c sm_up.c
 	${CC} -S ${SMOPTS} sm_up.c
-	/lib/c2 -i sm_up.s | as -o sm_up.o
+	${C2} -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
 sm_sys.o: sys.o
