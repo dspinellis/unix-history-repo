@@ -1,0 +1,36 @@
+.pa 1
+.he 'CHMOD (II)'3/15/72'CHMOD (II)'
+.ti 0
+NAME		chmod  --  change mode of file
+.sp
+.ti 0
+SYNOPSIS	sys chmod; name; mode  / chmod = 15.
+.sp
+.ti 0
+DESCRIPTION	The file whose name
+is given as the null-terminated string pointed to by name____
+has its mode changed to mode____.
+Modes are constructed by or__ing together some
+combination of the following:
+.sp
+.in +3
+ 01 write, non-owner
+ 02 read, non-owner
+ 04 write, owner
+ 10 read, owner
+ 20 executable
+ 40 set user ID on execution
+.in -3
+.sp
+Only the owner of a file (or the super-user) may change the mode.
+.sp
+.ti 0
+SEE ALSO	chmod(I)
+.sp
+.ti 0
+DIAGNOSTICS	Error bit
+(c-bit) set if name____ cannot be found or if current user
+is neither the owner of the file nor the super-user.
+.sp
+.ti 0
+BUGS		--
