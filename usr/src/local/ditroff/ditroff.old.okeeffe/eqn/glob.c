@@ -12,6 +12,7 @@ int	ft;	/* default font */
 char	*device ="va";	/* device for "res" and "minsize" (default = varian) */
 int	res	= 0;	/* resolution of typesetter; no default */
 int	minsize	= 0;	/* min size it can handle; no default */
+int	minvert	= 1;	/* min size it can move vertically; no default */
 FILE	*curfile;	/* current input file */
 int	ifile;
 int	linect;	/* line number in file */
