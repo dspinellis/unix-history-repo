@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.2 %G%"
+SCCSID = "@(#)Makefile 1.3 %G%"
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
@@ -28,7 +28,7 @@ SRCS =	ato.c \
 	yypanic.c yyparse.c yyprint.c yyput.c yyrecover.c yyseman.c yytree.c \
 	p2put.c pcforop.c stab.c pcproc.c pcfunc.c pccaseop.c pclval.c
 
-HDRS =	0.h OPnames.h iorec.h objfmt.h p.a.out.h pc.h pcops.h \
+HDRS =	0.h OPnames.h align.h iorec.h objfmt.h p.a.out.h pc.h pcops.h \
 	send.h tree.h whoami.h yy.h
 
 OTHERS = pas.y opc.c version.c gram pic.c
@@ -68,7 +68,7 @@ y.tab.h: pas.y gram
 	ex - y.tab.c <gram
 	@echo that makes y.tab.h and y.tab.c
 
-opcode.h: OPnames.h
+opcode.h: OPnames.h opc.c
 	cc opc.c -o opc
 	opc >opcode.h
 	${RM} opc opc.c
