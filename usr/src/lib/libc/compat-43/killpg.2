@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)killpg.2	6.1 (Berkeley) %G%
+.\"	@(#)killpg.2	6.2 (Berkeley) %G%
 .\"
 .TH KILLPG 2 ""
 .UC 4
@@ -28,7 +28,7 @@ The sending process and members of the process group must
 have the same effective user ID, otherwise
 this call is restricted to the super-user.
 As a single special case the continue signal SIGCONT may be sent
-to any process which is a descendant of the current process.
+to any process that is a descendant of the current process.
 .SH "RETURN VALUE
 Upon successful completion, a value of 0 is returned.  Otherwise,
 a value of \-1 is returned and the global variable \fIerrno\fP
