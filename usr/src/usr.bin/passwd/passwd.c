@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -39,7 +39,7 @@ main(argc, argv)
 	FILE *tf;
 	DBM *dp;
 
-	if ((progname = index(argv[0], '/')) == NULL)
+	if ((progname = rindex(argv[0], '/')) == NULL)
 		progname = argv[0];
 	else
 		progname++;
@@ -86,7 +86,7 @@ main(argc, argv)
 			dochsh ? "login shell" : "password",
 		    uname);
 	} else
-		uname = *argv;
+		uname = *argv++;
 	pwd = getpwnam(uname);
 	if (pwd == NULL) {
 		fprintf(stderr, "passwd: %s: unknown user.\n", uname);
@@ -100,7 +100,7 @@ main(argc, argv)
 	if (dochfn)
 		cp = getfingerinfo(pwd, u);
 	else if (dochsh)
-		cp = getloginshell(pwd, u);
+		cp = getloginshell(pwd, u, *argv);
 	else
 		cp = getnewpasswd(pwd, u);
 	signal(SIGHUP, SIG_IGN);
@@ -303,9 +303,10 @@ char *okshells[] =
     { "/bin/sh", "/bin/csh", "/bin/oldcsh", "/bin/newcsh", "/usr/new/csh", 0 };
 
 char *
-getloginshell(pwd, u)
+getloginshell(pwd, u, arg)
 	struct passwd *pwd;
 	int u;
+	char *arg;
 {
 	static char newshell[256];
 	register char **cpp;
@@ -313,11 +314,16 @@ getloginshell(pwd, u)
 
 	if (pwd->pw_shell == 0 || *pwd->pw_shell == '\0')
 		pwd->pw_shell = DEFSHELL;
-	printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
-	fgets(newshell, sizeof (newshell) - 1, stdin);
-	cp = index(newshell, '\n');
-	if (cp)
-		*cp = '\0';
+	if (arg != 0) {
+		strncpy(newshell, arg, sizeof newshell - 1);
+		newshell[sizeof newshell - 1] = 0;
+	} else {
+		printf("Old shell: %s\nNew shell: ", pwd->pw_shell);
+		fgets(newshell, sizeof (newshell) - 1, stdin);
+		cp = index(newshell, '\n');
+		if (cp)
+			*cp = '\0';
+	}
 	if (newshell[0] == '\0' || strcmp(newshell, pwd->pw_shell) == 0) {
 		printf("Login shell unchanged.\n");
 		exit(1);
