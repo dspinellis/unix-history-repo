@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -476,13 +476,28 @@ quickch(win)
 	 * Make sure that there is no overlap between the bottom and top 
 	 * regions and the middle scrolled block.
 	 */
-	if (bot < curw)
-		bot = curw - 1;
-	if (top > startw)
-		top = startw;
+	if (bot < curs)
+		bot = curs - 1;
+	if (top > starts)
+		top = starts;
 
 	n = startw - starts;
 
+#ifdef DEBUG
+		__TRACE("#####################################\n");
+		for (i = 0; i < curscr->maxy; i++) {
+			__TRACE("C: %d:", i);
+			for (j = 0; j < curscr->maxx; j++) 
+				__TRACE("%c", 
+			           curscr->lines[i]->line[j].ch);
+			__TRACE("\n");
+			__TRACE("W: %d:", i);
+			for (j = 0; j < win->maxx; j++) 
+				__TRACE("%c", 
+			           win->lines[i]->line[j].ch);
+			__TRACE("\n");
+		}
+#endif 
 	if (n != 0)
 		scrolln(win, starts, startw, curs, curw, top);
 
@@ -496,7 +511,7 @@ quickch(win)
 
 	/*
 	 * Perform the rotation to maintain the consistency of curscr.
-	 * This is hairy!
+	 * This is hairy since we are doing an *in place* rotation.
 	 * Invariants of the loop:
 	 * - I is the index of the current line.
 	 * - Target is the index of the target of line i.
@@ -540,8 +555,8 @@ quickch(win)
 		__TRACE("quickch: n=%d startw=%d curw=%d i = %d target=%d ",
 			n, startw, curw, i, target);
 #endif
-		if (target >= startw && target < curw || target < top || 
-		    target > bot) {
+		if ((target >= startw && target < curw) || target < top 
+		    || target > bot) {
 #ifdef DEBUG
 			__TRACE("-- notdirty");
 #endif
@@ -583,10 +598,15 @@ quickch(win)
 #ifdef DEBUG
 		__TRACE("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 		for (i = 0; i < curscr->maxy; i++) {
-			__TRACE("Q: %d:", i);
+			__TRACE("C: %d:", i);
 			for (j = 0; j < curscr->maxx; j++) 
 				__TRACE("%c", 
 			           curscr->lines[i]->line[j].ch);
+			__TRACE("\n");
+			__TRACE("W: %d:", i);
+			for (j = 0; j < win->maxx; j++) 
+				__TRACE("%c", 
+			           win->lines[i]->line[j].ch);
 			__TRACE("\n");
 		}
 #endif
