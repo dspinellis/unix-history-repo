@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.12 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -534,10 +534,6 @@ struct utmp wtmp[2] = {
 	{ "{", "", "", 0 }
 };
 
-/*
- * Rounding doesn't work well because new time is always
- * truncated, but oldtime is normally distributed.
- */
 logwtmp(otime, ntime)
 struct timeval otime, ntime;
 {
@@ -545,8 +541,8 @@ struct timeval otime, ntime;
 
 	if (otime.tv_sec == ntime.tv_sec)
 		return;
-	wtmp[0].ut_time = otime.tv_sec; /* +(otime.tv_usec + 500000)/1000000;*/
-	wtmp[1].ut_time = ntime.tv_sec; /* +(ntime.tv_usec + 500000)/1000000;*/
+	wtmp[0].ut_time = otime.tv_sec; + (otime.tv_usec + 500000) / 1000000;
+	wtmp[1].ut_time = ntime.tv_sec; + (ntime.tv_usec + 500000) / 1000000;
 	if ((f = open(wtmpfile, O_WRONLY|O_APPEND)) >= 0) {
 		(void) write(f, (char *)wtmp, sizeof(wtmp));
 		(void) close(f);
