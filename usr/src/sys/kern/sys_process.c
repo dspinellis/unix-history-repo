@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	7.33 (Berkeley) %G%
+ *	@(#)sys_process.c	7.34 (Berkeley) %G%
  */
 
 #define IPCREG
@@ -67,9 +67,9 @@ ptrace(curp, uap, retval)
 		return (ESRCH);
 	if (uap->req == PT_ATTACH) {
 		/*
-		 * Must be root if the process has used set user or
-		 * group privileges or does not belong to the real
-		 * user. Must not be already traced.
+		 * Must be root if the process has used set user or group
+		 * privileges or does not belong to the real user.  Must
+		 * not be already traced.  Can't attach to ourselves.
 		 */
 		if ((p->p_flag & SUGID ||
 		    p->p_cred->p_ruid != curp->p_cred->p_ruid) &&
@@ -77,6 +77,8 @@ ptrace(curp, uap, retval)
 			return (error);
 		if (p->p_flag & STRC)
 			return (EALREADY);	/* ??? */
+		if (p->p_pid == curp->p_pid)
+			return (EINVAL);
 		/*
 		 * It would be nice if the tracing relationship was separate
 		 * from the parent relationship but that would require
