@@ -1,4 +1,4 @@
-/*	ip_input.c	1.32	82/03/15	*/
+/*	ip_input.c	1.33	82/03/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -266,6 +266,7 @@ COUNT(IP_REASS);
 		i = (ip->ip_off + ip->ip_len) - q->ip_off;
 		if (i < q->ip_len) {
 			q->ip_len -= i;
+			q->ip_off += i;
 			m_adj(dtom(q), i);
 			break;
 		}
