@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.22 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.23 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -117,6 +117,12 @@ Ag|gsi:\
 # This used to have :pl: - maybe they meant :pt:?
 Aj|aj830|aj832|aj|anderson jacobson:\
 	:do=^J:le=^H:bs:hc:hd=\E9:hu=\E8:os:up=\E7:
+# From Chris Torek <chris@gyre.umd.edu> Thu, 7 Nov 85 18:21:58 EST
+AJ|aj510|AJ510|Anderson-Jacobson model 510:\
+	:ic=:ip=.1*:so=\E"I:us=\E"U:cd=\E'P:ce=\E'L:cl=^L:cm=\E#%+ %+ :\
+	:dl=2*\E&D:ue=\E"U:co#80:li#24:se=\E"I:al=2*\E&I:im=\E'I:ei=\E'J:\
+	:dc=.1*\E'D:up=\EY:nd=\EX:bs:am:mi:ti=\E"N:te=\E"N:\
+	:ku=\EY:kd=\EZ:kl=\EW:kr=\EX:pc=\177:
 # From cbosg!ucbvax!pur-ee!cincy!chris Thu Aug 20 09:09:18 1981
 # This is incomplete, but it's a start.
 An|5520|nec|spinwriter|nec 5520:\
