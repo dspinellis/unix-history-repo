@@ -34,12 +34,28 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_we.c	7.3 (Berkeley) 5/21/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00100
+ * --------------------         -----   ----------------------
+ *
+ * 09 Sep 92	Mike Durkin		Fix Danpex EW-2016 & other 8013 clones
+ *					enable with "options WECOMPAT"
+ * 19 Sep 92	Michael Galassi		Fixed multiboard routing
+ * 20 Sep 92	Barry Lustig		WD8013 16 bit mode -- enable
+ *						with "options WD8013".
  */
 
 /*
  * Modification history
  *
  * 8/28/89 - Initial version(if_wd.c), Tim L Tucker
+ *
+ * 92.09.19 - Changes to allow multiple we interfaces in one box.
+ *          Allowed interupt handler to look at unit other than 0
+ *            Bdry was static, made it into an array w/ one entry per
+ *          interface.  nerd@percival.rain.com (Michael Galassi)
  */
  
 #include "we.h"
@@ -137,6 +153,13 @@ weprobe(is)
 	register struct we_softc *sc = &we_softc[is->id_unit];
 	union we_mem_sel wem;
 	u_char sum;
+#ifdef WD8013						/* 20 Sep 92*/
+	union we_laar laar;
+
+	laar.laar_byte = 0;
+#endif	/* WD8013*/
+
+	wem.ms_byte = 0;				/* 20 Sep 92*/
  
 	/* reset card to force it into a known state. */
 	outb(is->id_iobase, 0x80);
@@ -144,6 +167,15 @@ weprobe(is)
 	outb(is->id_iobase, 0x00);
 	/* wait in the case this card is reading it's EEROM */
 	DELAY(5000);
+
+#ifdef WD8013						/* 20 Sep 92*/
+	/* allow the NIC to access the shared RAM 16 bits at a time */
+
+	laar.addr_l19 = 1;
+	laar.lan_16_en = 1;
+	laar.mem_16_en = 1;
+	outb(is->id_iobase+5, laar.laar_byte);	/* Write a 0xc1 */
+#endif	/* WD8013*/
 
 	/*
 	 * Here we check the card ROM, if the checksum passes, and the
@@ -154,8 +186,14 @@ weprobe(is)
 	 */
 	for (sum = 0, i = 0; i < 8; ++i)
 	    sum += inb(is->id_iobase + WD_ROM_OFFSET + i);
-	if (sum != WD_CHECKSUM)
+	if (sum != WD_CHECKSUM) {		/* 09 Sep 92*/
+#ifdef WECOMPAT
+	    printf( "we: probe: checksum failed... installing anyway\n");
+	    printf( "we: Danpex EW-2016 or other 8013 clone card?\n");
+#else	/* !WECOMPAT*/
             return (0);
+#endif	/* !WECOMPAT*/
+	}
 	sc->we_type = inb(is->id_iobase + WD_ROM_OFFSET + 6);
 #ifdef nope
 	if ((sc->we_type & WD_REVMASK) != 2		/* WD8003E or WD8003S */
@@ -296,7 +334,7 @@ wewatchdog(unit) {
 	weinit(unit);
 }
 
-static Bdry;
+static Bdry[NWE];					/* 19 Sep 92*/
 /*
  * Initialization of interface (really just DS8390). 
  */
@@ -320,13 +358,18 @@ weinit(unit)
 	 * this is stock code...please see the National manual for details.
 	 */
 	s = splhigh();
-Bdry = 0;
+	Bdry[unit] = 0;					/* 19 Sep 92*/
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_stp = 1;
 	wecmd.cs_sta = 0;
 	wecmd.cs_ps = 0;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
+#ifdef WD8013						/* 20 Sep 92*/
+	/* enable 16 bit access if 8013 card */
+	outb(sc->we_io_nic_addr + WD_P0_DCR, WD_D_CONFIG16);
+#else	/* !WD8013*/
 	outb(sc->we_io_nic_addr + WD_P0_DCR, WD_D_CONFIG);
+#endif	/* !WD8013*/
 	outb(sc->we_io_nic_addr + WD_P0_RBCR0, 0);
 	outb(sc->we_io_nic_addr + WD_P0_RBCR1, 0);
 	outb(sc->we_io_nic_addr + WD_P0_RCR, WD_R_MON);
@@ -429,8 +472,6 @@ weintr(unit)
 	union we_command wecmd;
 	union we_interrupt weisr;
 
-	unit =0;
- 
 	/* disable onboard interrupts, then get interrupt status */
 	wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
 	wecmd.cs_ps = 0;
@@ -516,8 +557,8 @@ werint(unit)
 	wecmd.cs_ps = 1;
 	outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 	curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
-if(Bdry)
-	bnry =Bdry;
+	if(Bdry[unit])					/* 19 Sep 92*/
+		bnry = Bdry[unit];
 
 	while (bnry != curr)
 	{
@@ -561,7 +602,7 @@ outofbufs:
 		outb(sc->we_io_nic_addr + WD_P0_COMMAND, wecmd.cs_byte);
 		curr = inb(sc->we_io_nic_addr + WD_P1_CURR);
 	}
-Bdry = bnry;
+	Bdry[unit] = bnry;				/* 19 Sep 92*/
 }
 
 /*

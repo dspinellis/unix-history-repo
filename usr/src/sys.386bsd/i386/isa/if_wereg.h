@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)if_wereg.h	7.1 (Berkeley) 5/9/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00100
+ * --------------------         -----   ----------------------
+ *
+ * 20 Sep 92	Barry Lustig		WD8013 16 bit mode -- enable
+ *						with "options WD8013".
  */
 
 /*
@@ -53,6 +61,24 @@ union we_mem_sel {
 #define ms_enable	msd_decode.msd_enable
 #define ms_reset	msd_decode.msd_reset
     u_char ms_byte;			/* entire byte			*/
+};
+
+/* 20 Sep 92*/
+/*
+ * LA Address Register (LAAR)
+ */
+union we_laar {
+	struct lan_addr_reg {
+		u_char addr_l19_b:1,	/* Address Line 19 for enabling    */
+					/* 16 bit NIC access to shared RAM */
+		unused_b:5,		/* unused (or unknown) bits        */
+		lan_16_en_b:1,		/* Enables 16bit shrd RAM for LAN  */
+		mem_16_en_b:1;		/* Enables 16bit shrd RAM for host */
+	} laar_decode;
+#define addr_l19	laar_decode.addr_l19_b
+#define lan_16_en	laar_decode.lan_16_en_b
+#define mem_16_en	laar_decode.mem_16_en_b
+	u_char laar_byte;		/* entire byte                  */
 };
 
 /*
@@ -235,6 +261,7 @@ union wet_status {
 #define WD_D_FT1	0x40		/* Fifo Threshold Select	*/
 #define WD_D_RES	0x80		/* reserved...			*/
 #define	WD_D_CONFIG	(WD_D_FT1|WD_D_BMS)
+#define WD_D_CONFIG16	(WD_D_FT1|WD_D_BMS|WD_D_LAS|WD_D_WTS)	/* 20 Sep 92*/
 
 /*
  * Configuration constants (interrupt mask register)
