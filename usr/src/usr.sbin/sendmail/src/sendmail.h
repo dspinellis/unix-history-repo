@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.9	%G%
+**	@(#)sendmail.h	3.10	%G%
 */
 
 
@@ -95,7 +95,7 @@ struct mailer
 # define M_USR_UPPER	010000	/* preserve user case distinction */
 # define M_HST_UPPER	020000	/* preserve host case distinction */
 
-# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
+# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM)
 
 extern struct mailer *Mailer[];
 
