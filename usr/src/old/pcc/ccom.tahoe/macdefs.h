@@ -1,4 +1,4 @@
-/*	macdefs.h	1.3	86/02/04	*/
+/*	macdefs.h	1.4	87/12/10	*/
 
 #ifndef _MACDEFS_
 #define _MACDEFS_
@@ -56,14 +56,26 @@ typedef	long	OFFSZ;		/* size in which offsets are kept */
 #define BACKTEMP		/* stack grows negatively for temporaries */
 /*#define FIELDOPS	/* no hardware field support */
 /*#define RTOLBYTES	/* bytes are number from left to right */
+#define ADDROREG		/* can unwind &o, where o is OREG */
+
+#define ASSTRINGS		/* assembler handles string initializations */
+#define STABDOT			/* assembler understands .stabd */
+#define LCOMM			/* assembler supports .lcomm */
+
 #define ENUMSIZE(high,low) INT	/* enums are always stored in full int */
 
-#define ADDROREG
-#define FIXDEF(p)	outstab(p)
-#define FIXARG(p)	fixarg(p)
+#define FIXDEF(p)	if (!nerrors) outstab(p); else
+#define FIXARG(p)	if (!nerrors) fixarg(p); else
+#define FIXSTRUCT(p,q)	if (!nerrors) outstruct(p,q); else
+
 #ifndef ncopy
 #define	ncopy(q, p)	((q)->in = (p)->in)
 #endif
+
+#define aobeg()
+#define aocode(p)
+#define aoend()
+#define deflab(m)	if (!nerrors) printf("L%d:\n", m); else
 
 #define	PRTDCON			/* use machine-specific prtdcon routine */
 extern	prtdcon();
