@@ -1,9 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.12 8/10/83";
-
-static char rcsid[] = "$Header: printsym.c,v 1.3 84/03/27 10:23:14 linton Exp $";
-
+static char sccsid[] = "@(#)printsym.c 1.13 %G%";
 /*
  * Printing of symbolic information.
  */
@@ -43,7 +40,7 @@ private String clname[] = {
     "record", "field", "procedure", "function", "funcvar",
     "ref", "pointer", "file", "set", "range", "label", "withptr",
     "scalar", "string", "program", "improper", "variant",
-    "procparam", "funcparam", "module", "tag", "common", "extref", "typeref"
+    "procparam", "funcparam", "module", "tag", "common", "typeref"
 };
 
 public String classname(s)
@@ -120,9 +117,6 @@ Symbol s;
 /*
  * Print the values of the parameters of the given procedure or function.
  * The frame distinguishes recursive instances of a procedure.
- *
- * If the procedure or function is internal, the argument count is
- * not valid so we ignore it.
  */
 
 public printparams(f, frame)
@@ -133,9 +127,6 @@ Frame frame;
     int n, m, s;
 
     n = nargspassed(frame);
-    if (isinternal(f)) {
-	n = 0;
-    }
     param = f->chain;
     if (param != nil or n > 0) {
 	printf("(");
@@ -225,7 +216,6 @@ Frame frame;
 {
     Address addr;
     int len;
-    Symbol t;
 
     if (isambiguous(s) and ismodule(container(s))) {
 	printname(stdout, s);
@@ -233,13 +223,9 @@ Frame frame;
     } else {
 	printf("%s = ", symname(s));
     }
-/*
- * Not today.
-    t = rtype(s->type);
-    if (t->class == ARRAY and not istypename(t->type, "char")) {
-	printf("ARRAY");
+    if(s->type->class == ARRAY && (! istypename(s->type->type,"char")) ) {
+	printf(" ARRAY ");
     } else {
- */
        if (isvarparam(s)) {
 	   rpush(address(s, frame), sizeof(Address));
 	   addr = pop(Address);
@@ -254,10 +240,7 @@ Frame frame;
        } else {
 	   printf("*** expression too large ***");
        }
-/*
- * Matches brace commented out above.
    }
- */
 }
 
 /*
@@ -270,8 +253,6 @@ Symbol s;
 {
     if (s == nil) {
 	fprintf(f, "(noname)");
-    } else if (s == program) {
-	fprintf(f, ".");
     } else if (isredirected() or isambiguous(s)) {
 	printwhich(f, s);
     } else {
@@ -402,6 +383,7 @@ Symbol s;
 	    break;
 
 	case RANGE:
+
 	    prangetype(s->symvalue.rangev.lowertype);
 	    printf("lower\t%d\n", s->symvalue.rangev.lower);
 	    prangetype(s->symvalue.rangev.uppertype);
@@ -446,9 +428,6 @@ Symbol t;
     Symbol s;
 
     checkref(t);
-    if (t->class == TYPEREF) {
-	resolveRef(t);
-    }
     switch (t->class) {
 	case PROC:
 	case FUNC:
@@ -459,8 +438,6 @@ Symbol t;
 	default:
 	    if (t->language == nil) {
 		error("unknown language");
-	    } else if (t->language == primlang) {
-		(*language_op(findlanguage(".c"), L_PRINTVAL))(t);
 	    } else {
 		(*language_op(t->language, L_PRINTVAL))(t);
 	    }
@@ -475,41 +452,33 @@ Symbol t;
 public printrecord(s)
 Symbol s;
 {
-    Symbol f;
-
     if (s->chain == nil) {
 	error("record has no fields");
     }
     printf("(");
     sp -= size(s);
-    f = s->chain;
-    if (f != nil) {
-	for (;;) {
-	    printfield(f);
-	    f = f->chain;
-	if (f == nil) break;
-	    printf(", ");
-	}
-    }
+    printfield(s->chain);
     printf(")");
 }
 
 /*
- * Print out a field.
+ * Print out a field, first printing out other fields.
+ * This is done because the fields are chained together backwards.
  */
 
-private printfield(f)
-Symbol f;
+private printfield(s)
+Symbol s;
 {
     Stack *savesp;
-    register int off, len;
 
-    printf("%s = ", symname(f));
+    if (s->chain != nil) {
+	printfield(s->chain);
+	printf(", ");
+    }
+    printf("%s = ", symname(s));
     savesp = sp;
-    off = f->symvalue.field.offset;
-    len = f->symvalue.field.length;
-    sp += ((off + len + BITSPERBYTE - 1) div BITSPERBYTE);
-    printval(f);
+    sp += ((s->symvalue.field.offset div BITSPERBYTE) + size(s->type));
+    printval(s);
     sp = savesp;
 }
 
@@ -597,9 +566,7 @@ char c;
     } else if (c > 0 and c < ' ') {
 	putchar('^');
 	putchar(c - 1 + 'A');
-    } else if (c >= ' ' && c <= '~') {
-	putchar(c);
     } else {
-	printf("\\0%o",c);
+	putchar(c);
     }
 }

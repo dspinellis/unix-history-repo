@@ -2,10 +2,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.9 8/17/83";
-
-static char rcsid[] = "$Header: commands.y,v 1.3 84/03/27 10:19:59 linton Exp $";
-
+static char sccsid[] = "@(#)commands.y 1.11 %G%";
 /*
  * Yacc grammar for debugger commands.
  */
@@ -25,10 +22,10 @@ private String curformat = "X";
 %}
 
 %term
-    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DOWN DUMP
+    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DUMP
     EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD NEXT NEXTI NIL NOT OR
-    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS STEP STEPI
-    STOP STOPI TRACE TRACEI UP
+    PRINT PSYM QUIT RUN SH SKIP SOURCE STATUS STEP STEPI
+    STOP STOPI TRACE TRACEI
     USE WHATIS WHEN WHERE WHEREIS WHICH
 
 %term INT REAL NAME STRING
@@ -61,19 +58,19 @@ private String curformat = "X";
 %type <y_long>	    INT count
 %type <y_real>	    REAL
 %type <y_string>    STRING redirectout filename opt_filename mode
-%type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT
-%type <y_name>	    DEBUG DELETE DIV DOWN DUMP
+%type <y_name>	    ALIAS AND ASSIGN AT CALL CATCH CONT DEBUG DELETE DIV DUMP
 %type <y_name>	    EDIT FILE FUNC GRIPE HELP IF IGNORE IN LIST MOD
 %type <y_name>	    NEXT NEXTI NIL NOT OR
-%type <y_name>	    PRINT PSYM QUIT RERUN RETURN RUN SH SKIP SOURCE STATUS
-%type <y_name>	    STEP STEPI STOP STOPI TRACE TRACEI
-%type <y_name>	    UP USE WHATIS WHEN WHERE WHEREIS WHICH
+%type <y_name>	    PRINT PSYM QUIT RUN SH SKIP SOURCE STATUS STEP STEPI
+%type <y_name>	    STOP STOPI TRACE TRACEI
+%type <y_name>	    USE WHATIS WHEN WHERE WHEREIS WHICH
 %type <y_name>	    name NAME keyword
-%type <y_node>      opt_qual_symbol symbol
+%type <y_node>      symbol
 %type <y_node>	    command rcommand cmd step what where examine
 %type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
-%type <y_node>	    integer_list alias_command list_command line_number
+%type <y_node>	    alias_command list_command line_number
+%type <y_node>	    search_command pattern
 %type <y_cmdlist>   actions
 %type <y_list>      sourcepath
 
@@ -157,19 +154,9 @@ command:
 	$$ = build(O_CONT, $2);
 }
 |
-    DELETE integer_list
+    DELETE INT
 {
 	$$ = build(O_DELETE, $2);
-}
-|
-    DOWN
-{
-	$$ = build(O_DOWN, build(O_LCON, (long) 1));
-}
-|
-    DOWN INT
-{
-	$$ = build(O_DOWN, build(O_LCON, (long) $2));
 }
 |
     EDIT shellmode opt_filename
@@ -187,7 +174,7 @@ command:
 	$$ = build(O_FUNC, nil);
 }
 |
-    FUNC opt_qual_symbol
+    FUNC symbol
 {
 	$$ = build(O_FUNC, $2);
 }
@@ -224,16 +211,6 @@ command:
 	} else {
 	    $$ = nil;
 	}
-}
-|
-    RETURN
-{
-	$$ = build(O_RETURN, nil);
-}
-|
-    RETURN opt_qual_symbol
-{
-	$$ = build(O_RETURN, $2);
 }
 |
     runcommand
@@ -293,14 +270,24 @@ command:
 	$$ = build($1, nil, nil, $2);
 }
 |
-    UP
+    WHATIS term
 {
-	$$ = build(O_UP, build(O_LCON, (long) 1));
+	$$ = build(O_WHATIS, $2);
 }
 |
-    UP INT
+    WHEN event '{' actions '}'
 {
-	$$ = build(O_UP, build(O_LCON, (long) $2));
+	$$ = build(O_ADDEVENT, $2, $4);
+}
+|
+    WHEREIS symbol
+{
+	$$ = build(O_WHEREIS, $2);
+}
+|
+    WHICH symbol
+{
+	$$ = build(O_WHICH, $2);
 }
 |
     USE shellmode sourcepath
@@ -321,39 +308,39 @@ command:
 	}
 }
 |
-    WHATIS term
+    search_command
 {
-	$$ = build(O_WHATIS, $2);
-}
-|
-    WHEN event '{' actions '}'
-{
-	$$ = build(O_ADDEVENT, $2, $4);
-}
-|
-    WHEREIS symbol
-{
-	$$ = build(O_WHEREIS, $2);
-}
-|
-    WHICH symbol
-{
-	$$ = build(O_WHICH, $2);
+	$$ = $1;
 }
 ;
+
+
+search_command:
+    '/' pattern
+{
+	$$ = build(O_SEARCH, build(O_LCON, 1), $2);
+}
+|
+    '?' pattern
+{
+	$$ = build(O_SEARCH, build(O_LCON, 0), $2);
+}
+;
+
+pattern:
+    STRING
+{
+	$$ = build(O_SCON, $1);
+}
+;
+
 runcommand:
-    run arglist
+    run { arginit(); } arglist
 |
     run
 ;
 run:
     RUN shellmode
-{
-	arginit();
-	fflush(stdout);
-}
-|
-    RERUN shellmode
 {
 	fflush(stdout);
 }
@@ -367,11 +354,6 @@ arg:
     NAME
 {
 	newarg(ident($1));
-}
-|
-    STRING
-{
-	newarg($1);
 }
 |
     '<' NAME
@@ -466,9 +448,9 @@ rcommand:
 	$$ = $1;
 }
 |
-    CALL term '(' opt_exp_list ')'
+    CALL term
 {
-	$$ = build(O_CALL, $2, $4);
+	$$ = $2;
 }
 |
     DEBUG INT
@@ -598,20 +580,9 @@ list_command:
 	$$ = build(O_LIST, $2, $4);
 }
 |
-    LIST opt_qual_symbol
+    LIST symbol
 {
 	$$ = build(O_LIST, $2);
-}
-;
-integer_list:
-    INT
-{
-	$$ = build(O_LCON, $1);
-}
-|
-    INT integer_list
-{
-	$$ = build(O_COMMA, build(O_LCON, $1), $2);
 }
 ;
 line_number:
@@ -738,7 +709,7 @@ exp:
 	$$ = $1;
 }
 |
-    exp '\\' opt_qual_symbol
+    exp '\\' symbol
 {
 	$$ = build(O_TYPERENAME, $1, $3);
 }
@@ -884,11 +855,6 @@ term:
 	$$ = concrete($2);
 }
 |
-    '#' '(' exp ')' %prec UNARYSIGN
-{
-	$$ = concrete($3);
-}
-|
     term '(' opt_exp_list ')'
 {
 	$$ = build(O_CALL, $1, $3);
@@ -917,26 +883,10 @@ constant:
 	$$ = build(O_SCON, $1);
 }
 ;
-opt_qual_symbol:
-    symbol
-{
-	$$ = $1;
-}
-|
-    opt_qual_symbol '.' name
-{
-	$$ = dot($1, $3);
-}
-;
 symbol:
     name
 {
 	$$ = build(O_SYM, which($1));
-}
-|
-    '.' name
-{
-	$$ = dot(build(O_SYM, program), $2);
 }
 ;
 name:
@@ -951,9 +901,9 @@ name:
 }
 keyword:
     ALIAS | AND | ASSIGN | AT | CALL | CATCH | CONT | DEBUG | DELETE | DIV | 
-    DOWN | DUMP | EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST |
-    MOD | NEXT | NEXTI | NIL | NOT | OR | PRINT | PSYM | QUIT |
-    RERUN | RETURN | RUN | SH | SKIP | SOURCE | STATUS | STEP | STEPI |
-    STOP | STOPI | TRACE | TRACEI | UP |
+    DUMP | EDIT | FILE | FUNC | GRIPE | HELP | IGNORE | IN | LIST | MOD |
+    NEXT | NEXTI | NIL | NOT | OR | PRINT | PSYM | QUIT | RUN |
+    SH | SKIP | SOURCE | STATUS | STEP | STEPI |
+    STOP | STOPI | TRACE | TRACEI |
     USE | WHATIS | WHEN | WHERE | WHEREIS | WHICH
 ;

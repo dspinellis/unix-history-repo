@@ -1,9 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.10 8/10/83";
-
-static char rcsid[] = "$Header: symbols.c,v 1.4 84/03/27 10:24:18 linton Exp $";
-
+static char sccsid[] = "@(#)symbols.c 1.13 %G%";
 /*
  * Symbol management.
  */
@@ -37,7 +34,7 @@ typedef enum {
     BADUSE, CONST, TYPE, VAR, ARRAY, PTRFILE, RECORD, FIELD,
     PROC, FUNC, FVAR, REF, PTR, FILET, SET, RANGE, 
     LABEL, WITHPTR, SCAL, STR, PROG, IMPROPER, VARNT,
-    FPROC, FFUNC, MODULE, TAG, COMMON, EXTREF, TYPEREF
+    FPROC, FFUNC, MODULE, TAG, COMMON, TYPEREF
 } Symclass;
 
 typedef enum { R_CONST, R_TEMP, R_ARG, R_ADJUST } Rangetype; 
@@ -69,10 +66,8 @@ struct Symbol {
 	} rangev;
 	struct {
 	    int offset : 16;	/* offset for of function value */
-	    Boolean src : 1;	/* true if there is source line info */
-	    Boolean inline : 1;	/* true if no separate act. rec. */
-	    Boolean intern : 1; /* internal calling sequence */
-	    int unused : 13;
+	    Boolean src : 8;	/* true if there is source line info */
+	    Boolean inline : 8;	/* true if no separate act. rec. */
 	    Address beginaddr;	/* address of function code */
 	} funcv;
 	struct {		/* variant record info */
@@ -80,8 +75,6 @@ struct Symbol {
 	    Symbol vtorec;
 	    Symbol vtag;
 	} varnt;
-	String typeref;		/* type defined by "<module>:<type>" */
-	Symbol extref;		/* indirect symbol for external reference */
     } symvalue;
     Symbol block;		/* symbol containing this symbol */
     Symbol next_sym;		/* hash chain */
@@ -96,7 +89,6 @@ Symbol t_char;
 Symbol t_int;
 Symbol t_real;
 Symbol t_nil;
-Symbol t_open;
 
 Symbol program;
 Symbol curfunc;
@@ -106,9 +98,6 @@ Symbol curfunc;
 #define isblock(s) (Boolean) ( \
     s->class == FUNC or s->class == PROC or \
     s->class == MODULE or s->class == PROG \
-)
-#define isroutine(s) (Boolean) ( \
-    s->class == FUNC or s->class == PROC \
 )
 
 #define nosource(f) (not (f)->symvalue.funcv.src)
@@ -177,19 +166,23 @@ public Symbol symbol_alloc()
 public symbol_dump(func)
 Symbol func;
 {
-  register Symbol s;
-  register Integer i;
+    register Symbol s;
+    register Integer i;
 
-	printf(" symbols in %s \n",symname(func));
-	for(i=0; i< HASHTABLESIZE; i++)
-	   for(s=hashtab[i]; s != nil; s=s->next_sym)  {
-		if (s->block == func) psym(s);
-		}
+    printf(" symbols in %s \n",symname(func));
+    for (i = 0; i< HASHTABLESIZE; i++) {
+	for (s = hashtab[i]; s != nil; s = s->next_sym) {
+	    if (s->block == func) {
+		psym(s);
+	    }
+	}
+    }
 }
 
 /*
  * Free all the symbols currently allocated.
  */
+
 public symbol_free()
 {
     Sympool s, t;
@@ -267,33 +260,6 @@ Name name;
 }
 
 /*
- * Delete a symbol from the symbol table.
- */
-
-public delete (s)
-Symbol s;
-{
-    register Symbol t;
-    register unsigned int h;
-
-    h = hash(s->name);
-    t = hashtab[h];
-    if (t == nil) {
-	panic("delete of non-symbol '%s'", symname(s));
-    } else if (t == s) {
-	hashtab[h] = s->next_sym;
-    } else {
-	while (t->next_sym != s) {
-	    t = t->next_sym;
-	    if (t == nil) {
-		panic("delete of non-symbol '%s'", symname(s));
-	    }
-	}
-	t->next_sym = s->next_sym;
-    }
-}
-
-/*
  * Dump out all the variables associated with the given
  * procedure, function, or program at the given recursive level.
  *
@@ -324,6 +290,19 @@ Frame frame;
 }
 
 /*
+ * Create base types.
+ */
+
+public symbols_init()
+{
+    t_boolean = maketype("$boolean", 0L, 1L);
+    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
+    t_char = maketype("$char", 0L, 127L);
+    t_real = maketype("$real", 8L, 0L);
+    t_nil = maketype("$nil", 0L, 0L);
+}
+
+/*
  * Create a builtin type.
  * Builtin types are circular in that btype->type->type = btype.
  */
@@ -336,9 +315,8 @@ long upper;
     register Symbol s;
 
     s = newSymbol(identname(name, true), 0, TYPE, nil, nil);
-    s->language = primlang;
+    s->language = findlanguage(".c");
     s->type = newSymbol(nil, 0, RANGE, s, nil);
-    s->type->language = s->language;
     s->type->symvalue.rangev.lower = lower;
     s->type->symvalue.rangev.upper = upper;
     return s;
@@ -381,95 +359,11 @@ Symbol type;
 	if (t->class == VAR or t->class == FIELD or t->class == REF ) {
 	    t = t->type;
 	}
-	if (t->class == TYPEREF) {
-	    resolveRef(t);
-	}
 	while (t->class == TYPE or t->class == TAG) {
 	    t = t->type;
-	    if (t->class == TYPEREF) {
-		resolveRef(t);
-	    }
 	}
     }
     return t;
-}
-
-/*
- * Find the end of a module name.  Return nil if there is none
- * in the given string.
- */
-
-private String findModuleMark (s)
-String s;
-{
-    register char *p, *r;
-    register boolean done;
-
-    p = s;
-    done = false;
-    do {
-	if (*p == ':') {
-	    done = true;
-	    r = p;
-	} else if (*p == '\0') {
-	    done = true;
-	    r = nil;
-	} else {
-	    ++p;
-	}
-    } while (not done);
-    return r;
-}
-
-/*
- * Resolve a type reference by modifying to be the appropriate type.
- *
- * If the reference has a name, then it refers to an opaque type and
- * the actual type is directly accessible.  Otherwise, we must use
- * the type reference string, which is of the form "module:{module:}name".
- */
-
-public resolveRef (t)
-Symbol t;
-{
-    register char *p;
-    char *start;
-    Symbol s, m, outer;
-    Name n;
-
-    if (t->name != nil) {
-	s = t;
-    } else {
-	start = t->symvalue.typeref;
-	outer = program;
-	p = findModuleMark(start);
-	while (p != nil) {
-	    *p = '\0';
-	    n = identname(start, true);
-	    find(m, n) where m->block == outer endfind(m);
-	    if (m == nil) {
-		p = nil;
-		outer = nil;
-		s = nil;
-	    } else {
-		outer = m;
-		start = p + 1;
-		p = findModuleMark(start);
-	    }
-	}
-	if (outer != nil) {
-	    n = identname(start, true);
-	    find(s, n) where s->block == outer endfind(s);
-	}
-    }
-    if (s != nil and s->type != nil) {
-	t->name = s->type->name;
-	t->class = s->type->class;
-	t->type = s->type->type;
-	t->chain = s->type->chain;
-	t->symvalue = s->type->symvalue;
-	t->block = s->type->block;
-    }
 }
 
 public Integer level(s)
@@ -497,9 +391,9 @@ Symbol s;
  *	register	- offset is register number
  */
 
-#define isglobal(s)		(s->level == 1)
-#define islocaloff(s)		(s->level >= 2 and s->symvalue.offset < 0)
-#define isparamoff(s)		(s->level >= 2 and s->symvalue.offset >= 0)
+#define isglobal(s)		(s->level == 1 or s->level == 2)
+#define islocaloff(s)		(s->level >= 3 and s->symvalue.offset < 0)
+#define isparamoff(s)		(s->level >= 3 and s->symvalue.offset >= 0)
 #define isreg(s)		(s->level < 0)
 
 public Address address(s, frame)
@@ -555,7 +449,7 @@ Integer r;
 
     s = insert(n);
     t = newSymbol(nil, 0, PTR, t_int, nil);
-    t->language = primlang;
+    t->language = findlanguage(".s");
     s->language = t->language;
     s->class = VAR;
     s->level = -3;
@@ -590,9 +484,8 @@ Symbol s;
 	error("couldn't find link to type reference");
     }
     find(t, prev->name) where
-	t != prev and t->block->class == MODULE and t->class == prev->class and
-	t->type != nil and t->type->type != nil and
-	t->type->type->class != BADUSE
+	t->type != nil and t->class == prev->class and
+	t->type->class != BADUSE and t->block->class == MODULE
     endfind(t);
     if (t == nil) {
 	error("couldn't resolve reference");
@@ -616,84 +509,22 @@ Symbol s;
 #define MINSHORT -32768
 #define MAXSHORT 32767
 
-/*
- * When necessary, compute the upper bound for an open array (Modula-2 style).
- */
-
-public chkOpenArray (sym)
+public Integer size(sym)
 Symbol sym;
 {
-    Symbol t;
-    Address a;
-    integer n;
-
-    if (sym->class == REF or sym->class == VAR) {
-	t = rtype(sym->type);
-	if (t->class == ARRAY and t->chain == t_open) {
-	    a = address(sym, nil);
-	    dread(&n, a + sizeof(Word), sizeof(n));
-	    t->chain->type->symvalue.rangev.upper = n - 1;
-	}
-    }
-}
-
-public findbounds (u, lower, upper)
-Symbol u;
-long *lower, *upper;
-{
-    Rangetype lbt, ubt;
-    long lb, ub;
-
-    if (u->class == RANGE) {
-	lbt = u->symvalue.rangev.lowertype;
-	ubt = u->symvalue.rangev.uppertype;
-	lb = u->symvalue.rangev.lower;
-	ub = u->symvalue.rangev.upper;
-	if (lbt == R_ARG or lbt == R_TEMP) {
-	    if (not getbound(u, lb, lbt, lower)) {
-		error("dynamic bounds not currently available");
-	    }
-	} else {
-	    *lower = lb;
-	}
-	if (ubt == R_ARG or ubt == R_TEMP) {
-	    if (not getbound(u, ub, ubt, upper)) {
-		error("dynamic bounds not currently available");
-	    }
-	} else {
-	    *upper = ub;
-	}
-    } else if (u->class == SCAL) {
-	*lower = 0;
-	*upper = u->symvalue.iconval - 1;
-    } else {
-	panic("unexpected array bound type");
-    }
-}
-
-public integer size(sym)
-Symbol sym;
-{
-    register Symbol s, t, u;
-    register integer nel, elsize;
+    register Symbol s, t;
+    register int nel, elsize;
     long lower, upper;
-    integer r, off, len;
+    int r;
 
     t = sym;
     checkref(t);
-    if (t->class == TYPEREF) {
-	resolveRef(t);
-    }
     switch (t->class) {
 	case RANGE:
 	    lower = t->symvalue.rangev.lower;
 	    upper = t->symvalue.rangev.upper;
-	    if (upper == 0 and lower > 0) {
-		/* real */
+	    if (upper == 0 and lower > 0) {		/* real */
 		r = lower;
-	    } else if (lower > upper) {
-		/* unsigned long */
-		r = sizeof(long);
 	    } else if (
   		(lower >= MINCHAR and upper <= MAXCHAR) or
   		(lower >= 0 and upper <= MAXUCHAR)
@@ -713,8 +544,24 @@ Symbol sym;
 	    elsize = size(t->type);
 	    nel = 1;
 	    for (t = t->chain; t != nil; t = t->chain) {
-		u = rtype(t);
-		findbounds(u, &lower, &upper);
+		if (t->symvalue.rangev.lowertype == R_ARG or
+		  t->symvalue.rangev.lowertype == R_TEMP)  {
+		    if (not getbound(t, t->symvalue.rangev.lower,
+		      t->symvalue.rangev.lowertype, &lower)) {
+			error("dynamic bounds not currently available");
+		    }
+		} else {
+		    lower = t->symvalue.rangev.lower;
+		}
+		if (t->symvalue.rangev.uppertype == R_ARG or
+		  t->symvalue.rangev.uppertype == R_TEMP) {
+		    if (not getbound(t, t->symvalue.rangev.upper,
+		      t->symvalue.rangev.uppertype, &upper)) {
+			error("dynamic bounds nor currently available");
+		    }
+		} else {
+		    upper = t->symvalue.rangev.upper;
+		}
 		nel *= (upper-lower+1);
 	    }
 	    r = nel*elsize;
@@ -723,7 +570,6 @@ Symbol sym;
 	case REF:
 	case VAR:
 	case FVAR:
-	    chkOpenArray(t);
 	    r = size(t->type);
 	    /*
 	     *
@@ -749,10 +595,7 @@ Symbol sym;
 	    break;
 
 	case FIELD:
-	    off = t->symvalue.field.offset;
-	    len = t->symvalue.field.length;
-	    r = (off + len + 7) div 8 - (off div 8);
-	    /* r = (t->symvalue.field.length + 7) div 8; */
+	    r = (t->symvalue.field.length + 7) div 8;
 	    break;
 
 	case RECORD:
@@ -793,32 +636,13 @@ Symbol sym;
 	    r = sizeof(Symbol);
 	    break;
 
-	case SET:
-	    u = rtype(t->type);
-	    switch (u->class) {
-		case RANGE:
-		    r = u->symvalue.rangev.upper - u->symvalue.rangev.lower + 1;
-		    break;
-
-		case SCAL:
-		    r = u->symvalue.iconval;
-		    break;
-
-		default:
-		    error("expected range for set base type");
-		    break;
-	    }
-	    r = (r + BITSPERBYTE - 1) div BITSPERBYTE;
-	    break;
-
 	default:
 	    if (ord(t->class) > ord(TYPEREF)) {
 		panic("size: bad class (%d)", ord(t->class));
 	    } else {
-		fprintf(stderr, "!! size(%s) ??", classname(t));
+		error("improper operation on a %s", classname(t));
 	    }
-	    r = 0;
-	    break;
+	    /* NOTREACHED */
     }
     return r;
 }
@@ -841,18 +665,7 @@ Symbol s;
 }
 
 /*
- * Test if a type is an open array parameter type.
- */
-
-public Boolean isopenarray (t)
-Symbol t;
-{
-    return (Boolean) (t->class == ARRAY and t->chain == t_open);
-}
-
-/*
- * Test if a symbol is a var parameter, i.e. has class REF but
- * is not an open array parameter (those are treated special).
+ * Test if a symbol is a var parameter, i.e. has class REF.
  */
 
 public Boolean isvarparam(s)
@@ -911,23 +724,6 @@ register Symbol s;
 }
 
 /*
- * Mark a procedure or function as internal, meaning that it is called
- * with a different calling sequence.
- */
-
-public markInternal (s)
-Symbol s;
-{
-    s->symvalue.funcv.intern = true;
-}
-
-public boolean isinternal (s)
-Symbol s;
-{
-    return s->symvalue.funcv.intern;
-}
-
-/*
  * Test if two types match.
  * Equivalent names implies a match in any language.
  *
@@ -938,7 +734,6 @@ public Boolean compatible(t1, t2)
 register Symbol t1, t2;
 {
     Boolean b;
-    Symbol rt1, rt2;
 
     if (t1 == t2) {
 	b = true;
@@ -948,32 +743,15 @@ register Symbol t1, t2;
 	b = isblock(t2);
     } else if (t2 == procsym) {
 	b = isblock(t1);
-    } else if (t1->language == primlang) {
-	if (t2->language == primlang) {
-	    rt1 = rtype(t1);
-	    rt2 = rtype(t2);
-	    b = (boolean) (
-		(rt1->type == t_open and rt2->type == t_int) or
-		(rt2->type == t_open and rt1->type == t_int) or
-		rt1 == rt2
-	    );
-	} else {
-	    b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
-	}
-    } else if (t2->language == primlang) {
-	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
     } else if (t1->language == nil) {
-	if (t2->language == nil) {
-	    b = false;
-	} else {
-	    b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
-	}
+	b = (Boolean) (t2->language == nil or
+	    (*language_op(t2->language, L_TYPEMATCH))(t1, t2));
     } else if (t2->language == nil) {
-	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
-    } else if (isbuiltin(t1) or isbuiltin(t1->type)) {
-	b = (boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
+	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+    } else if ( isbuiltin(t1) or isbuiltin(t1->type) ) {
+	b = (Boolean) (*language_op(t2->language, L_TYPEMATCH))(t1, t2);
     } else {
-	b = (boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
+	b = (Boolean) (*language_op(t1->language, L_TYPEMATCH))(t1, t2);
     }
     return b;
 }
@@ -992,31 +770,8 @@ String name;
     t = type;
     checkref(t);
     b = (Boolean) (
-	t->class == TYPE and streq(ident(t->name), name)
+	t->class == TYPE and t->name == identname(name, true)
     );
-    return b;
-}
-
-/*
- * Determine if a (value) parameter should actually be passed by address.
- */
-
-public boolean passaddr (p, exprtype)
-Symbol p, exprtype;
-{
-    boolean b;
-    Language def;
-
-    if (p == nil) {
-	def = findlanguage(".c");
-	b = (boolean) (*language_op(def, L_PASSADDR))(p, exprtype);
-    } else if (p->language == nil or p->language == primlang) {
-	b = false;
-    } else if (isopenarray(p->type)) {
-	b = true;
-    } else {
-	b = (boolean) (*language_op(p->language, L_PASSADDR))(p, exprtype);
-    }
     return b;
 }
 
@@ -1120,9 +875,6 @@ register Node p;
 	    }
 	    break;
 
-	/*
-	 * Perform a cast if the call is of the form "type(expr)".
-	 */
 	case O_CALL:
 	    p1 = p->value.arg[0];
 	    p->nodetype = rtype(p1->nodetype)->type;
@@ -1141,9 +893,8 @@ register Node p;
 	    if (not compatible(s, t_int)) {
 		if (not compatible(s, t_real)) {
 		    beginerrmsg();
-		    fprintf(stderr, "\"");
 		    prtree(stderr, p->value.arg[0]);
-		    fprintf(stderr, "\" is improper type");
+		    fprintf(stderr, "is improper type");
 		    enderrmsg();
 		} else {
 		    p->op = O_NEGF;
@@ -1155,17 +906,46 @@ register Node p;
 	case O_ADD:
 	case O_SUB:
 	case O_MUL:
-	    binaryop(p, nil);
-	    break;
-
 	case O_LT:
 	case O_LE:
 	case O_GT:
 	case O_GE:
 	case O_EQ:
 	case O_NE:
-	    binaryop(p, t_boolean);
+	{
+	    Boolean t1real, t2real;
+	    Symbol t1, t2;
+
+	    t1 = rtype(p->value.arg[0]->nodetype);
+	    t2 = rtype(p->value.arg[1]->nodetype);
+	    t1real = compatible(t1, t_real);
+	    t2real = compatible(t2, t_real);
+	    if (t1real or t2real) {
+		p->op = (Operator) (ord(p->op) + 1);
+		if (not t1real) {
+		    p->value.arg[0] = build(O_ITOF, p->value.arg[0]);
+		} else if (not t2real) {
+		    p->value.arg[1] = build(O_ITOF, p->value.arg[1]);
+		}
+	    } else {
+		if (t1real) {
+		    convert(&(p->value.arg[0]), t_int, O_NOP);
+		}
+		if (t2real) {
+		    convert(&(p->value.arg[1]), t_int, O_NOP);
+		}
+	    }
+	    if (ord(p->op) >= ord(O_LT)) {
+		p->nodetype = t_boolean;
+	    } else {
+		if (t1real or t2real) {
+		    p->nodetype = t_real;
+		} else {
+		    p->nodetype = t_int;
+		}
+	    }
 	    break;
+	}
 
 	case O_DIVF:
 	    convert(&(p->value.arg[0]), t_real, O_ITOF);
@@ -1194,54 +974,6 @@ register Node p;
 	default:
 	    p->nodetype = nil;
 	    break;
-    }
-}
-
-/*
- * Process a binary arithmetic or relational operator.
- * Convert from integer to real if necessary.
- */
-
-private binaryop (p, t)
-Node p;
-Symbol t;
-{
-    Node p1, p2;
-    Boolean t1real, t2real;
-    Symbol t1, t2;
-
-    p1 = p->value.arg[0];
-    p2 = p->value.arg[1];
-    t1 = rtype(p1->nodetype);
-    t2 = rtype(p2->nodetype);
-    t1real = compatible(t1, t_real);
-    t2real = compatible(t2, t_real);
-    if (t1real or t2real) {
-	p->op = (Operator) (ord(p->op) + 1);
-	if (not t1real) {
-	    p->value.arg[0] = build(O_ITOF, p1);
-	} else if (not t2real) {
-	    p->value.arg[1] = build(O_ITOF, p2);
-	}
-	p->nodetype = t_real;
-    } else {
-	if (size(p1->nodetype) > sizeof(integer)) {
-	    beginerrmsg();
-	    fprintf(stderr, "operation not defined on \"");
-	    prtree(stderr, p1);
-	    fprintf(stderr, "\"");
-	    enderrmsg();
-	} else if (size(p2->nodetype) > sizeof(integer)) {
-	    beginerrmsg();
-	    fprintf(stderr, "operation not defined on \"");
-	    prtree(stderr, p2);
-	    fprintf(stderr, "\"");
-	    enderrmsg();
-	}
-	p->nodetype = t_int;
-    }
-    if (t != nil) {
-	p->nodetype = t;
     }
 }
 
@@ -1291,24 +1023,24 @@ Node *tp;
 Symbol typeto;
 Operator op;
 {
-    Node tree;
-    Symbol s, t;
+#define tree    (*tp)
 
-    tree = *tp;
+    Symbol s;
+
     s = rtype(tree->nodetype);
-    t = rtype(typeto);
-    if (compatible(t, t_real) and compatible(s, t_int)) {
+    typeto = rtype(typeto);
+    if (compatible(typeto, t_real) and compatible(s, t_int)) {
 	tree = build(op, tree);
-    } else if (not compatible(s, t)) {
+    } else if (not compatible(s, typeto)) {
 	beginerrmsg();
-	fprintf(stderr, "expected integer or real, found \"");
-	prtree(stderr, tree);
-	fprintf(stderr, "\"");
+	prtree(stderr, s);
+	fprintf(stderr, " is improper type");
 	enderrmsg();
-    } else if (op != O_NOP and s != t) {
+    } else if (op != O_NOP and s != typeto) {
 	tree = build(op, tree);
     }
-    *tp = tree;
+
+#undef tree
 }
 
 /*
@@ -1372,14 +1104,17 @@ Name fieldname;
 public Node subscript(a, slist)
 Node a, slist;
 {
-    Symbol t;
+Symbol t;
 
-    t = rtype(a->nodetype);
-    if (t->language == nil) {
+   t = rtype(a->nodetype);
+   if(t->language == nil) {
 	error("unknown language");
-    } else {
-	return (Node) (*language_op(t->language, L_BUILDAREF))(a, slist);
-    }
+   }
+   else {
+        return ( (Node)
+        (*language_op(t->language, L_BUILDAREF)) (a,slist)
+               );
+   }
 }
 
 /*
@@ -1390,14 +1125,17 @@ public int evalindex(s, i)
 Symbol s;
 long i;
 {
-    Symbol t;
+Symbol t;
 
-    t = rtype(s);
-    if (t->language == nil) {
+   t = rtype(s);
+   if(t->language == nil) {
 	error("unknown language");
-    } else {
-	return ((*language_op(t->language, L_EVALAREF)) (s, i));
-    }
+   }
+   else {
+        return (
+             (*language_op(t->language, L_EVALAREF)) (s,i)
+               );
+   }
 }
 
 /*
@@ -1437,7 +1175,8 @@ Symclass class;
 }
 
 /*
- * Construct a node for the type of a string.
+ * Construct a node for the type of a string.  While we're at it,
+ * scan the string for '' that collapse to ', and chop off the ends.
  */
 
 private Symbol mkstring(str)
@@ -1445,7 +1184,6 @@ String str;
 {
     register char *p, *q;
     register Symbol s;
-    integer len;
 
     p = str;
     q = str;
@@ -1458,17 +1196,12 @@ String str;
 	++q;
     }
     *q = '\0';
-    len = p - str;
-    if (len == 1) {
-	s = t_char;
-    } else {
-	s = newSymbol(nil, 0, ARRAY, t_char, nil);
-	s->language = primlang;
-	s->chain = newSymbol(nil, 0, RANGE, t_int, nil);
-	s->chain->language = s->language;
-	s->chain->symvalue.rangev.lower = 1;
-	s->chain->symvalue.rangev.upper = len + 1;
-    }
+    s = newSymbol(nil, 0, ARRAY, t_char, nil);
+    s->language = findlanguage(".s");
+    s->chain = newSymbol(nil, 0, RANGE, t_int, nil);
+    s->chain->language = s->language;
+    s->chain->symvalue.rangev.lower = 1;
+    s->chain->symvalue.rangev.upper = p - str + 1;
     return s;
 }
 
@@ -1493,7 +1226,9 @@ Name n;
 {
     register Symbol s, p, t, f;
 
-    find(s, n) where s->class != FIELD and s->class != TAG endfind(s);
+    find(s, n)
+	where s->class != FIELD and s->class != TAG and s->class != MODULE
+    endfind(s);
     if (s == nil) {
 	s = lookup(n);
     }
@@ -1502,24 +1237,12 @@ Name n;
     } else if (s == program or isbuiltin(s)) {
 	t = s;
     } else {
-    /*
-     * Old way
-     *
-	if (not isactive(program)) {
-	    f = program;
-	} else {
-	    f = whatblock(pc);
-	    if (f == nil) {
-		panic("no block for addr 0x%x", pc);
-	    }
-	}
-     *
-     * Now start with curfunc.
-     */
+       /* start with current function */
 	p = curfunc;
 	do {
 	    find(t, n) where
-		t->block == p and t->class != FIELD and t->class != TAG
+		t->block == p and t->class != FIELD and
+		t->class != TAG and t->class != MODULE
 	    endfind(t);
 	    p = p->block;
 	} while (t == nil and p != nil);

@@ -1,9 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)asm.c 1.2 12/15/82";
-
-static char rcsid[] = "$Header: asm.c,v 1.3 84/03/27 10:19:36 linton Exp $";
-
+static char sccsid[] = "@(#)asm.c 1.3 %G%";
 /*
  * Assembly language dependent symbol routines.
  */
@@ -36,8 +33,6 @@ public asm_init()
     language_setop(lang, L_PRINTDECL, asm_printdecl);
     language_setop(lang, L_PRINTVAL, asm_printval);
     language_setop(lang, L_TYPEMATCH, asm_typematch);
-    language_setop(lang, L_HASMODULES, asm_hasmodules);
-    language_setop(lang, L_PASSADDR, asm_passaddr);
 }
 
 /*
@@ -100,15 +95,4 @@ register Symbol s;
 	    printf("0x%x", pop(Integer));
 	    break;
     }
-}
-
-public boolean asm_hasmodules ()
-{
-    return false;
-}
-
-public boolean asm_passaddr (param, exprtype)
-Symbol param, exprtype;
-{
-    return false;
 }

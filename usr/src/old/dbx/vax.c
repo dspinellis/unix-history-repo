@@ -1,9 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)machine.c 1.9 8/5/83";
-
-static char rcsid[] = "$Header: machine.c,v 1.3 84/03/27 10:21:26 linton Exp $";
-
+static char sccsid[] = "@(#)vax.c 1.10 %G%";
 /*
  * Target machine dependent stuff.
  */
@@ -11,7 +8,6 @@ static char rcsid[] = "$Header: machine.c,v 1.3 84/03/27 10:21:26 linton Exp $";
 #include "defs.h"
 #include "machine.h"
 #include "process.h"
-#include "runtime.h"
 #include "events.h"
 #include "main.h"
 #include "symbols.h"
@@ -541,24 +537,17 @@ Boolean isnext;
     register Address addr;
     register Lineno line;
     String filename;
-    Address startaddr, prevaddr;
 
-    startaddr = pc;
-    prevaddr = startaddr;
     addr = nextaddr(pc, isnext);
     if (not inst_tracing and nlhdr.nlines != 0) {
 	line = linelookup(addr);
 	while (line == 0) {
-	    prevaddr = addr;
 	    addr = nextaddr(addr, isnext);
 	    line = linelookup(addr);
 	}
 	curline = line;
     } else {
 	curline = 0;
-    }
-    if (addr == startaddr) {
-	stepto(prevaddr);
     }
     stepto(addr);
     filename = srcfilename(addr);
@@ -577,22 +566,7 @@ Boolean isnext;
  * that branches is the branch address (or relative offset).
  */
 
-private Address findnextaddr();
-
 public Address nextaddr(startaddr, isnext)
-Address startaddr;
-boolean isnext;
-{
-    Address addr;
-
-    addr = usignal(process);
-    if (addr == 0 or addr == 1) {
-	addr = findnextaddr(startaddr, isnext);
-    }
-    return addr;
-}
-
-private Address findnextaddr(startaddr, isnext)
 Address startaddr;
 Boolean isnext;
 {
@@ -612,6 +586,7 @@ Boolean isnext;
     switch (ins) {
 	case O_BRB:
 	case O_BRW:
+	case O_JMP:
 	    addrstatus = BRANCH;
 	    break;
 	    
@@ -625,10 +600,10 @@ Boolean isnext;
 	    } else {
 		addrstatus = KNOWN;
 		stepto(addr);
-		pstep(process, DEFSIG);
+		pstep(process);
 		addr = reg(PROGCTR);
 		pc = addr;
-		setcurfunc(whatblock(pc));
+		curfunc = whatblock(pc);
 		if (not isbperr()) {
 		    printstatus();
 		    /* NOTREACHED */
@@ -651,15 +626,10 @@ Boolean isnext;
 	    addrstatus = KNOWN;
 	    callnews(/* iscall = */ false);
 	    addr = return_addr();
-	    if (addr == pc) {	/* recursive ret to self */
-		pstep(process, DEFSIG);
-	    } else {
-		stepto(addr);
-	    }
+	    stepto(addr);
 	    bpact();
 	    break;
 
-	case O_JMP: /* because it may be jmp (r1) */
 	case O_BNEQ: case O_BEQL: case O_BGTR:
 	case O_BLEQ: case O_BGEQ: case O_BLSS:
 	case O_BGTRU: case O_BLEQU: case O_BVC:
@@ -672,7 +642,7 @@ Boolean isnext;
 	case O_SOBGEQ: case O_SOBGTR:
 	    addrstatus = KNOWN;
 	    stepto(addr);
-	    pstep(process, DEFSIG);
+	    pstep(process);
 	    addr = reg(PROGCTR);
 	    pc = addr;
 	    if (not isbperr()) {
@@ -940,7 +910,7 @@ Integer argc;
     mov(&dest, call.addr, sizeof(call.addr));
     iwrite(&call, pc, sizeof(call));
     setreg(PROGCTR, pc);
-    pstep(process, DEFSIG);
+    pstep(process);
     iwrite(save, pc, sizeof(save));
     pc = reg(PROGCTR);
     if (not isbperr()) {
