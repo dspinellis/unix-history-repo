@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_overflow.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_overflow.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -60,8 +60,9 @@ __ovfl_get(t, p, ssz, buf, bufsz)
 	pgno_t pg;
 	size_t nb, plen, sz;
 
-	pg = *(pgno_t *)p;
-	*ssz = sz = *(size_t *)((char *)p + sizeof(pgno_t));
+	bcopy(p, &pg, sizeof(pgno_t));
+	bcopy((char *)p + sizeof(pgno_t), &sz, sizeof(size_t));
+	*ssz = sz;
 
 #ifdef DEBUG
 	if (pg == P_INVALID || sz == 0)
@@ -127,6 +128,7 @@ __ovfl_put(t, dbt, pg)
 
 		h->pgno = npg;
 		h->nextpg = h->prevpg = P_INVALID;
+		h->flags = P_OVERFLOW;
 		h->lower = h->upper = 0;
 
 		nb = MIN(sz, plen);
@@ -134,7 +136,6 @@ __ovfl_put(t, dbt, pg)
 
 		if (last) {
 			last->nextpg = h->pgno;
-			last->flags |= P_OVERFLOW;
 			mpool_put(t->bt_mp, last, MPOOL_DIRTY);
 		} else
 			*pg = h->pgno;
@@ -166,8 +167,8 @@ __ovfl_delete(t, p)
 	pgno_t pg;
 	size_t plen, sz;
 
-	pg = *(pgno_t *)p;
-	sz = *(size_t *)((char *)p + sizeof(pgno_t));
+	bcopy(p, &pg, sizeof(pgno_t));
+	bcopy((char *)p + sizeof(pgno_t), &sz, sizeof(size_t));
 
 #ifdef DEBUG
 	if (pg == P_INVALID || sz == 0)

@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -87,8 +87,8 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 				return (RET_ERROR);
 			tkey.data = kb;
 			tkey.size = NOVFLSIZE;
-			*(pgno_t *)kb = pg;
-			*(size_t *)(kb + sizeof(pgno_t)) = key->size;
+			bcopy(&pg, kb, sizeof(pgno_t));
+			bcopy(&key->size, kb + sizeof(pgno_t), sizeof(size_t));
 			dflags |= P_BIGKEY;
 			key = &tkey;
 		}
@@ -97,8 +97,8 @@ storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
 				return (RET_ERROR);
 			tdata.data = db;
 			tdata.size = NOVFLSIZE;
-			*(pgno_t *)db = pg;
-			*(size_t *)(db + sizeof(pgno_t)) = data->size;
+			bcopy(&pg, db, sizeof(pgno_t));
+			bcopy(&data->size, db + sizeof(pgno_t), sizeof(size_t));
 			dflags |= P_BIGDATA;
 			data = &tdata;
 		}
