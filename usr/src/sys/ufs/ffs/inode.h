@@ -1,4 +1,4 @@
-/*	inode.h	4.18	82/10/31	*/
+/*	inode.h	4.19	82/10/31	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -63,7 +63,7 @@ struct dinode {
 #define	i_ctime		i_ic.ic_ctime
 #define	i_rdev		i_ic.ic_db[0]
 #define	i_lastr		i_un.if_lastr
-#define	i_socket	is_socket
+#define	i_socket	i_un.is_socket
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
 #define	i_freef		i_un.i_fr.if_freef
