@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.c	8.3 (Berkeley) %G%
+ *	@(#)iso_snpac.c	8.4 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -98,7 +98,7 @@ struct rtentry	*known_is;
  *	These addresses assume on-the-wire transmission of least significant
  *	bit first. This is the method used by 802.3. When these
  *	addresses are passed to the token ring driver, (802.5), they
- *	must be bit-swaped because 802.5 transmission order is MSb first.
+ *	must be bit-swapped because 802.5 transmission order is MSb first.
  *
  *	Furthermore, according to IBM Austin, these addresses are not
  *	true token ring multicast addresses. More work is necessary
