@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.73 (Berkeley) %G%
+ *	@(#)conf.h	8.74 (Berkeley) %G%
  */
 
 /*
@@ -97,7 +97,7 @@
 
 
 /*
-**  HP-UX -- tested for 8.07
+**  HP-UX -- tested for 8.07, 9.00, and 9.01.
 */
 
 # ifdef __hpux
