@@ -1,28 +1,46 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpd.c	5.4 (Berkeley) %G%";
 #endif
 
 /*
- * 4.2BSD TCP/IP server for uucico
+ * 4.2BSD or 2.9BSD TCP/IP server for uucico
  * uucico's TCP channel causes this server to be run at the remote end.
  */
 
 #include "uucp.h"
+#include <netdb.h>
+#ifdef BSD2_9
+#include <sys/localopts.h>
+#include <sys/file.h>
+#endif BSD2_9
 #include <signal.h>
 #include <errno.h>
 #include <sys/socket.h>
-#include <sys/ioctl.h>
 #include <netinet/in.h>
-#include <netdb.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <pwd.h>
 #include <lastlog.h>
+
+#if !defined(BSD4_2) && !defined(BSD2_9)
+--- You must have either BSD4_2 or BSD2_9 defined for this to work
+#endif !BSD4_2 && !BSD2_9
+#if defined(BSD4_2) && defined(BSD2_9)
+--- You may not have both BSD4_2 and BSD2_9 defined for this to work
+#endif	/* check for stupidity */
 
 char lastlog[] = "/usr/adm/lastlog";
 struct	sockaddr_in hisctladdr;
 int hisaddrlen = sizeof hisctladdr;
 struct	sockaddr_in myctladdr;
 int mypid;
+
+char Username[64];
+char *nenv[] = {
+	Username,
+	NULL,
+};
+extern char **environ;
 
 main(argc, argv)
 int argc;
@@ -35,6 +53,7 @@ char **argv;
 	extern int errno;
 	int dologout();
 
+	environ = nenv;
 #ifdef BSDINETD
 	close(1); close(2);
 	dup(0); dup(0);
@@ -54,50 +73,81 @@ char **argv;
 		perror("uucpd: getservbyname");
 		exit(1);
 	}
+	if (fork())
+		exit(0);
 	if ((s=open("/dev/tty", 2)) >= 0){
 		ioctl(s, TIOCNOTTY, (char *)0);
 		close(s);
 	}
 
 	bzero((char *)&myctladdr, sizeof (myctladdr));
-	tcp_socket = socket(AF_INET, SOCK_STREAM, 0, 0);
-	if ( tcp_socket<0 ) {
+	myctladdr.sin_family = AF_INET;
+	myctladdr.sin_port = sp->s_port;
+#ifdef BSD4_2
+	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (tcp_socket < 0) {
 		perror("uucpd: socket");
 		exit(1);
 	}
-	myctladdr.sin_port = sp->s_port;
-	if (bind(tcp_socket, (char *)&myctladdr, sizeof (myctladdr), 0) < 0) {
+	if (bind(tcp_socket, (char *)&myctladdr, sizeof (myctladdr)) < 0) {
 		perror("uucpd: bind");
 		exit(1);
 	}
+	listen(tcp_socket, 3);	/* at most 3 simultaneuos uucp connections */
 	signal(SIGCHLD, dologout);
-	listen(tcp_socket, 5);	/* 5's as good as any */
 
 	for(;;) {
 		s = accept(tcp_socket, &hisctladdr, &hisaddrlen);
 		if (s < 0){
-			if (errno == EINTR)
+			if (errno == EINTR) 
 				continue;
 			perror("uucpd: accept");
 			exit(1);
 		}
-		if (fork()== 0) {
+		if (fork() == 0) {
 			close(0); close(1); close(2);
 			dup(s); dup(s); dup(s);
-			close(tcp_socket);close(s);
+			close(tcp_socket); close(s);
 			doit(&hisctladdr);
 			exit(1);
 		}
 		close(s);
 	}
-#endif
+#endif BSD4_2
+
+#ifdef BSD2_9
+	for(;;) {
+		signal(SIGCHLD, dologout);
+		s = socket(SOCK_STREAM, 0,  &myctladdr,
+			SO_ACCEPTCONN|SO_KEEPALIVE);
+		if (s < 0) {
+			perror("uucpd: socket");
+			exit(1);
+		}
+		if (accept(s, &hisctladdr) < 0) {
+			if (errno == EINTR) {
+				close(s);
+				continue;
+			}
+			perror("uucpd: accept");
+			exit(1);
+		}
+		if (fork() == 0) {
+			close(0); close(1); close(2);
+			dup(s); dup(s); dup(s);
+			close(s);
+			doit(&hisctladdr);
+			exit(1);
+		}
+	}
+#endif BSD2_9
+#endif	!BSDINETD
 }
 
 doit(sinp)
 struct sockaddr_in *sinp;
 {
-	char user[64];
-	char passwd[64];
+	char user[64], passwd[64];
 	char *xpasswd, *crypt();
 	struct passwd *pw, *getpwnam();
 
@@ -131,12 +181,21 @@ struct sockaddr_in *sinp;
 		}
 	}
 	alarm(0);
+	sprintf(Username, "USER=%s", user);
 	dologin(pw, sinp);
-	setegid(pw->pw_gid);
+	setgid(pw->pw_gid);
+#ifdef BSD4_2
 	initgroups(pw->pw_name, pw->pw_gid);
+#endif BSD4_2
 	chdir(pw->pw_dir);
-	seteuid(pw->pw_uid);
+	setuid(pw->pw_uid);
+#ifdef BSD4_2
 	execl(UUCICO, "uucico", (char *)0);
+#endif BSD4_2
+#ifdef BSD2_9
+	sprintf(passwd, "-h%s", inet_ntoa(sinp->sin_addr));
+	execl(UUCICO, "uucico", passwd, (char *)0);
+#endif BSD2_9
 	perror("uucico server: execl");
 }
 
@@ -160,7 +219,14 @@ register int n;
 }
 
 #include <utmp.h>
+#ifdef BSD4_2
 #include <fcntl.h>
+#endif BSD4_2
+
+#ifdef BSD2_9
+#define O_APPEND	0 /* kludge */
+#define wait3(a,b,c)	wait2(a,b)
+#endif BSD2_9
 
 #define	SCPYN(a, b)	strncpy(a, b, sizeof (a))
 
@@ -172,16 +238,19 @@ dologout()
 	int pid, wtmp;
 
 #ifdef BSDINETD
-	while ((pid=wait(&status)) > 0 ) {
+	while ((pid=wait(&status)) > 0) {
 #else  !BSDINETD
-	while ((pid=wait3(&status,WNOHANG,0)) > 0 ) {
+	while ((pid=wait3(&status,WNOHANG,0)) > 0) {
 #endif !BSDINETD
 		wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 		if (wtmp >= 0) {
 			sprintf(utmp.ut_line, "uucp%.4d", pid);
 			SCPYN(utmp.ut_name, "");
 			SCPYN(utmp.ut_host, "");
-			utmp.ut_time = time(0);
+			(void) time(&utmp.ut_time);
+#ifdef BSD2_9
+			(void) lseek(wtmp, 0L, 2);
+#endif BSD2_9
 			(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 			(void) close(wtmp);
 		}
@@ -214,7 +283,10 @@ struct sockaddr_in *sin;
 		SCPYN(utmp.ut_line, line);
 		SCPYN(utmp.ut_name, pw->pw_name);
 		SCPYN(utmp.ut_host, remotehost);
-		utmp.ut_time = time(0);
+		time(&utmp.ut_time);
+#ifdef BSD2_9
+		(void) lseek(wtmp, 0L, 2);
+#endif BSD2_9
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 		(void) close(wtmp);
 	}
