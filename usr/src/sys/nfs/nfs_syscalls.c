@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -208,7 +208,7 @@ nfssvc()
 				printf("mbuf siz=%d\n",siz);
 				panic("Bad nfs svc reply");
 			}
-			error = nfs_udpsend(so, nam, mreq, 0, siz);
+			error = nfs_send(so, nam, mreq, 0, siz);
 			m_freem(nam);
 			if (mrep)
 				m_freem(mrep);
