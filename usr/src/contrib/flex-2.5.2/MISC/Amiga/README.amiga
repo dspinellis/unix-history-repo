@@ -1,0 +1,72 @@
+
+This file, ./MISC/Amiga/README.amiga, describes the necessary steps to get
+the FLEX 2.5.1 program up and running on the Commodore AMIGA with the
+help of SAS/C++ 6.51 and SMake 6.50.  Also it describes the contents of the
+subdirectory ./MISC/Amiga, where `.' denotes the root directory of the
+standard installation of FLEX 2.5.1.
+
+
+FILES ADDED FOR INSTALLING FLEX 2.5.1 ON THE AMIGA
+
+The standard distribution of FLEX 2.5.1 is assumed to be installed on
+your AMIGA computer.  `Installed' means that all source files from the
+original archive are present in a root directory (denoted by `.' in what
+follows) and, if appropriate, one or more subdirectories, on your machine.
+
+The original source files are totally left untouched, the necessary changes
+are applied in the form of `change files'.  For installing FLEX 2.5.1 on
+the AMIGA, several additional files come with this patch.
+
+     -----rw-d       2      738 Apr  3 11:49 config.h
+     -----rw-d       1      169 Apr  3 11:33 libmain.ch
+     -----rw-d       1      159 Apr  3 11:33 libyywrap.ch
+     -----rw-d       1      167 Apr  3 11:33 parse.ych
+     -----rw-d       6     2840 Apr  3 11:34 README.amiga
+     -----rw-d      11     5503 Apr  3 11:45 smakefile
+     Dirs:0    Files:6    Blocks:22    Bytes:9576
+
+
+HOW TO INSTALL FLEX 2.5.1 ON THE AMIGA
+
+Copy all files from ./MISC/Amiga to the root directory of the FLEX 2.5.1
+distribution and edit `SMakefile' as it instructs you.  There shouldn't be
+too many changes necessary.  Then say "make bootflex".  This creates a
+preliminary version of FLEX 2.5.1 without using itself.
+
+WARNING: Don't say "make flex" yet.  Any pre-2.5 version of FLEX will fail
+on the file `scan.l' due to some new features only present in FLEX 2.5.
+
+Then say "make flex".  At least once the FLEX program created in the first
+step will be used.  To make sure that everything is alright, finally say
+"make check".  If you change the code, you should also say "make bigcheck"
+for some more thorough testing.
+
+When you are satisfied with the results, say "make install".  This will
+copy the `flex' binary, the `libfl.lib' file, and the `FlexLexer.h' header
+to the paths specified in the `SMakefile'.
+
+Finally, you should say "make clean" to remove all intermediate files from
+the root directory.  "make veryclean" also removes `flex' and `scan.c'.
+
+
+TROUBLE SHOOTING
+
+FLEX 2.5.1 was ported to the AMIGA and tested with the following setup:
+
+	AMIGA 2000
+	GVP G-Force 030/50/50/8
+	SAS/C++ 6.51
+	SED 2.05
+	BISON 1.22
+	WMERGE from the CWEB distribution
+
+Should you encounter problems with this AMIGA patch for FLEX 2.5.1 or
+should you have ideas for further improvements, like using GnuMake instead
+of SMake, contact the author of this contribution
+
+Andreas Scherer
+Roland-Stra{\ss}e 16
+52070 Aachen
+Germany
+
+<scherer@genesis.informatik.rwth-aachen.de> (Internet)
