@@ -483,7 +483,7 @@ nfile(n)
 	register f;
 	int oldumask = umask(0);		/* should block signals */
 
-	f = creat(n, FILMOD);
+	f = open(n, O_WRONLY|O_EXCL|O_CREAT, FILMOD);
 	(void) umask(oldumask);
 	if (f < 0) {
 		printf("%s: cannot create %s\n", name, n);
