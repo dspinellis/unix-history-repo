@@ -86,11 +86,15 @@ strrchr.po: rindex.c
 	@mv a.out ${.TARGET}
 .endif
 
-MAN3+=	bcmp.0 bcopy.0 bstring.0 bzero.0 ffs.0 index.0 memccpy.0 memchr.0 \
-	memcmp.0 memcpy.0 memmove.0 memset.0 rindex.0 strcasecmp.0 strcat.0 \
-	strchr.0 strcmp.0 strcoll.0 strcpy.0 strcspn.0 strftime.0 string.0 \
-	strlen.0 strmode.0 strdup.0 strpbrk.0 strrchr.0 strsep.0 strspn.0 \
-	strstr.0 strtok.0 strxfrm.0 swab.0
+MAN3+=	string/bcmp.3 string/bcopy.3 string/bstring.3 string/bzero.3 \
+	string/ffs.3 string/index.3 string/memccpy.3 string/memchr.3 \
+	string/memcmp.3 string/memcpy.3 string/memmove.3 string/memset.3 \
+	string/rindex.3 string/strcasecmp.3 string/strcat.3 \
+	string/strchr.3 string/strcmp.3 string/strcoll.3 string/strcpy.3 \
+	string/strcspn.3 string/strftime.3 string/string.3 \
+	string/strlen.3 string/strmode.3 string/strdup.3 string/strpbrk.3 \
+	string/strrchr.3 string/strsep.3 string/strspn.3 \
+	string/strstr.3 string/strtok.3 string/strxfrm.3 string/swab.3
 
 MLINKS+=strcasecmp.3 strncasecmp.3
 MLINKS+=strcat.3 strncat.3

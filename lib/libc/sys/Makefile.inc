@@ -65,22 +65,27 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
 
-MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
-	chdir.0 chflags.0 chmod.0 chown.0 chroot.0 close.0 connect.0 \
-	dup.0 execve.0 _exit.0 fcntl.0 flock.0 fork.0 fsync.0 \
-	getdirentries.0 getdtablesize.0 getfh.0 getfsstat.0 getgid.0 \
-	getgroups.0 gethostid.0 gethostname.0 getitimer.0 getlogin.0 \
-	getpagesize.0 getpeername.0 getpgrp.0 getpid.0 getpriority.0 \
-	getrlimit.0 getrusage.0 getsockname.0 getsockopt.0 \
-	gettimeofday.0 getuid.0 intro.0 ioctl.0 kill.0 link.0 listen.0 \
-	lseek.0 mkdir.0 mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 \
-	mprotect.0 msync.0 munmap.0 nfssvc.0 open.0 pipe.0 \
-	quotactl.0 read.0 readlink.0 reboot.0 recv.0 rename.0 \
-	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setregid.0 setreuid.0 \
-	shutdown.0 sigaction.0 sigprocmask.0 sigreturn.0 sigstack.0 \
-	sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 swapon.0 \
-	symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 utimes.0 \
-	vfork.0 wait.0 write.0
+MAN2+=	sys/accept.2 sys/access.2 sys/acct.2 sys/adjtime.2 sys/async_daemon.2 \
+	sys/bind.2 sys/brk.2 sys/chdir.2 sys/chflags.2 sys/chmod.2 sys/chown.2 \
+	sys/chroot.2 sys/close.2 sys/connect.2 sys/dup.2 sys/execve.2 \
+	sys/_exit.2 sys/fcntl.2 sys/flock.2 sys/fork.2 sys/fsync.2 \
+	sys/getdirentries.2 sys/getdtablesize.2 sys/getfh.2 sys/getfsstat.2 \
+	sys/getgid.2 sys/getgroups.2 sys/gethostid.2 sys/gethostname.2 \
+	sys/getitimer.2 sys/getlogin.2 sys/getpagesize.2 sys/getpeername.2 \
+	sys/getpgrp.2 sys/getpid.2 sys/getpriority.2 sys/getrlimit.2 \
+	sys/getrusage.2 sys/getsockname.2 sys/getsockopt.2 sys/gettimeofday.2 \
+	sys/getuid.2 sys/intro.2 sys/ioctl.2 sys/kill.2 sys/link.2 \
+	sys/listen.2 sys/lseek.2 sys/mkdir.2 sys/mkfifo.2 sys/mknod.2 \
+	sys/madvise.2 sys/mincore.2 sys/mmap.2 sys/mount.2 sys/mprotect.2 \
+	sys/msync.2 sys/munmap.2 sys/nfssvc.2 sys/open.2 sys/pipe.2 \
+	sys/quotactl.2 sys/read.2 sys/readlink.2 sys/reboot.2 sys/recv.2 \
+	sys/rename.2 sys/rmdir.2 sys/select.2 sys/send.2 sys/setgroups.2 \
+	sys/setpgid.2 sys/setregid.2 sys/setreuid.2 sys/shutdown.2 \
+	sys/sigaction.2 sys/sigprocmask.2 sys/sigreturn.2 sys/sigstack.2 \
+	sys/sigsuspend.2 sys/socket.2 sys/socketpair.2 sys/stat.2 \
+	sys/statfs.2 sys/swapon.2 sys/symlink.2 sys/sync.2 sys/syscall.2 \
+	sys/truncate.2 sys/umask.2 sys/unlink.2 sys/utimes.2 \
+	sys/vfork.2 sys/wait.2 sys/write.2
 
 MLINKS+=brk.2 sbrk.2
 MLINKS+=dup.2 dup2.2

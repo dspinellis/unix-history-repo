@@ -26,10 +26,12 @@ SRCS+=	atan2.c sincos.c tan.c
 # ieee
 SRCS+=	cabs.c cbrt.c support.c
 
-MAN3+=	acos.0 acosh.0 asin.0 asinh.0 atan.0 atan2.0 atanh.0 ceil.0 \
-	cos.0 cosh.0 erf.0 exp.0 fabs.0 floor.0 fmod.0 hypot.0 ieee.0 \
-	infnan.0 j0.0 lgamma.0 math.0 rint.0 sin.0 sinh.0 sqrt.0 \
-	tan.0 tanh.0
+MANSRC= ${.CURDIR}/common_source
+
+MAN3+=	acos.3 acosh.3 asin.3 asinh.3 atan.3 atan2.3 atanh.3 ceil.3 \
+	cos.3 cosh.3 erf.3 exp.3 fabs.3 floor.3 fmod.3 hypot.3 ieee.3 \
+	infnan.3 j0.3 lgamma.3 math.3 rint.3 sin.3 sinh.3 sqrt.3 \
+	tan.3 tanh.3
 
 MLINKS+=erf.3 erfc.3
 MLINKS+=exp.3 expm1.3 exp.3 log.3 exp.3 log10.3 exp.3 log1p.3 exp.3 pow.3

@@ -38,17 +38,21 @@ SRCS+=	_setjmp.s alloca.s fabs.s ldexp.s modf.s setjmp.s
 SRCS+=	udiv.s urem.s
 .endif
 
-MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 directory.0 err.0\
-	exec.0 fnmatch.0 frexp.0 fts.0 getcwd.0 getdiskbyname.0 getfsent.0 \
-	getgrent.0 getmntinfo.0 getpass.0 getpwent.0 getsubopt.0 \
-	getttyent.0 getusershell.0 glob.0 initgroups.0 isalnum.0 \
-	isalpha.0 isascii.0 iscntrl.0 isdigit.0 isgraph.0 isinf.0 \
-	islower.0 isprint.0 ispunct.0 isspace.0 isupper.0 isxdigit.0 \
-	ldexp.0 modf.0 nice.0 nlist.0 pause.0 popen.0 psignal.0 \
-	raise.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
-	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
-	times.0 timezone.0 tolower.0 toupper.0 ttyname.0 tzset.0 \
-	ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 vis.0
+MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
+	gen/ctype.3 gen/directory.3 gen/exec.3 gen/fnmatch.3 gen/frexp.3 \
+	gen/fts.3 gen/getcwd.3 gen/getdiskbyname.3 gen/getfsent.3 \
+	gen/getgrent.3 gen/getmntinfo.3 gen/getpass.3 gen/getpwent.3 \
+	gen/getsubopt.3 gen/getttyent.3 gen/getusershell.3 gen/glob.3 \
+	gen/initgroups.3 gen/isalnum.3 gen/isalpha.3 gen/isascii.3 \
+	gen/iscntrl.3 gen/isdigit.3 gen/isgraph.3 gen/isinf.3 gen/islower.3 \
+	gen/isprint.3 gen/ispunct.3 gen/isspace.3 gen/isupper.3 gen/isxdigit.3 \
+	gen/ldexp.3 gen/modf.3 gen/nice.3 gen/nlist.3 gen/pause.3 gen/popen.3 \
+	gen/psignal.3 gen/raise.3 gen/regexp.3 gen/scandir.3 gen/setjmp.3 \
+	gen/setmode.3 gen/setuid.3 gen/siginterrupt.3 gen/signal.3 \
+	gen/sigsetops.3 gen/sleep.3 gen/syslog.3 gen/time.3 gen/times.3 \
+	gen/timezone.3 gen/tolower.3 gen/toupper.3 gen/ttyname.3 gen/tzset.3 \
+	gen/ualarm.3 gen/unvis.3 gen/usleep.3 gen/utime.3 gen/valloc.3 \
+	gen/vis.3
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
