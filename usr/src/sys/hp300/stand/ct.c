@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ct.c	7.6 (Berkeley) %G%
+ *	@(#)ct.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -14,7 +14,7 @@
 
 #include <hp300/dev/ctreg.h>
 
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 #include <hp300/stand/samachdep.h>
 
 struct	ct_iocmd ct_ioc;

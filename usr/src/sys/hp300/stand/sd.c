@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: sd.c 1.9 92/12/21$
  *
- *	@(#)sd.c	7.8 (Berkeley) %G%
+ *	@(#)sd.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
 
 #include <sys/param.h>
 #include <sys/disklabel.h>
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 #include <hp300/stand/samachdep.h>
 
 #include <hp300/dev/scsireg.h>
