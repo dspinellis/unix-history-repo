@@ -1,4 +1,4 @@
-/*	mba.c	4.24	82/03/14	*/
+/*	mba.c	4.25	82/03/31	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -318,43 +318,32 @@ mbasetup(mi)
 {
 	register struct mba_regs *mbap = mi->mi_mba;
 	struct buf *bp = mi->mi_tab.b_actf;
-	register int i;
-	int npf;
+	register int npf;
 	unsigned v;
 	register struct pte *pte, *io;
 	int o;
-	int vaddr;
 	struct proc *rp;
 
-	io = mbap->mba_map;
 	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	npf = btoc(bp->b_bcount + o);
 	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
-	vaddr = o;
-	if (bp->b_flags & B_UAREA) {
-		for (i = 0; i < UPAGES; i++) {
-			if (rp->p_addr[i].pg_pfnum == 0)
-				panic("mba: zero upage");
-			*(int *)io++ = rp->p_addr[i].pg_pfnum | PG_V;
-		}
-	} else if ((bp->b_flags & B_PHYS) == 0) {
+	if ((bp->b_flags & B_PHYS) == 0)
 		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];
-		while (--npf >= 0)
-			*(int *)io++ = pte++->pg_pfnum | PG_V;
-	} else {
-		if (bp->b_flags & B_PAGET)
-			pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
-		else
-			pte = vtopte(rp, v);
-		while (--npf >= 0) {
-			if (pte->pg_pfnum == 0)
-				panic("mba, zero entry");
-			*(int *)io++ = pte++->pg_pfnum | PG_V;
-		}
+	else if (bp->b_flags & B_UAREA)
+		pte = &rp->p_addr[v];
+	else if (bp->b_flags & B_PAGET)
+		pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
+	else
+		pte = vtopte(rp, v);
+	io = mbap->mba_map;
+	while (--npf >= 0) {
+		if (pte->pg_pfnum == 0)
+			panic("mba, zero entry");
+		*(int *)io++ = pte++->pg_pfnum | PG_V;
 	}
 	*(int *)io++ = 0;
-	return (vaddr);
+	return (o);
 }
 
 #if notdef

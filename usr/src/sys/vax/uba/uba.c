@@ -1,4 +1,4 @@
-/*	uba.c	4.41	82/03/29	*/
+/*	uba.c	4.42	82/03/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -142,31 +142,23 @@ ubasetup(uban, bp, flags)
 	splx(a);
 	reg--;
 	ubinfo = (bdp << 28) | (npf << 18) | (reg << 9) | o;
-	io = &uh->uh_uba->uba_map[reg];
 	temp = (bdp << 21) | UBAMR_MRV;
-	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
 	if (bdp && (o & 01))
 		temp |= UBAMR_BO;
-	if (bp->b_flags & B_UAREA) {
-		for (i = UPAGES - bp->b_bcount / NBPG; i < UPAGES; i++) {
-			if (rp->p_addr[i].pg_pfnum == 0)
-				panic("uba: zero upage");
-			*(int *)io++ = rp->p_addr[i].pg_pfnum | temp;
-		}
-	} else if ((bp->b_flags & B_PHYS) == 0) {
+	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
+	if ((bp->b_flags & B_PHYS) == 0)
 		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];
-		while (--npf != 0)
-			*(int *)io++ = pte++->pg_pfnum | temp;
-	} else {
-		if (bp->b_flags & B_PAGET)
-			pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
-		else
-			pte = vtopte(rp, v);
-		while (--npf != 0) {
-			if (pte->pg_pfnum == 0)
-				panic("uba zero uentry");
-			*(int *)io++ = pte++->pg_pfnum | temp;
-		}
+	else if (bp->b_flags & B_UAREA)
+		pte = &rp->p_addr[v];
+	else if (bp->b_flags & B_PAGET)
+		pte = &Usrptmap[btokmx((struct pte *)bp->b_un.b_addr)];
+	else
+		pte = vtopte(rp, v);
+	io = &uh->uh_uba->uba_map[reg];
+	while (--npf != 0) {
+		if (pte->pg_pfnum == 0)
+			panic("uba zero uentry");
+		*(int *)io++ = pte++->pg_pfnum | temp;
 	}
 	*(int *)io++ = 0;
 	return (ubinfo);
