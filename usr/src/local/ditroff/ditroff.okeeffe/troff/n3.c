@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n3.c	2.1 (CWI) 85/07/18";
+static char sccsid[] = "@(#)n3.c	2.2 (CWI) 85/08/14";
 #endif lint
 /*      @(#)n3.c	1.1     */
 /*
@@ -796,6 +796,18 @@ casetl()
 	register tchar *tp;
 	tchar i, delim;
 
+	/*
+	 * bug fix
+	 *
+	 * if .tl is the first thing in the file, the p1
+	 * doesn't come out, also the pagenumber will be 0
+	 *
+	 * tends too confuse the device filter (and the user as well)
+	 */
+	if( dip == d && numtab[NL].val == -1)
+		newline(1);
+
+	/* end fix */
 	dip->nls = 0;
 	skip();
 	if (ismot(delim = getch())) {
