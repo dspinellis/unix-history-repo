@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)iso_snpac.h	7.8 (Berkeley) %G%
+ *	@(#)iso_snpac.h	7.9 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -83,4 +83,4 @@ struct llinfo_llc {
 
 #ifdef	KERNEL
 struct llinfo_llc llinfo_llc;	/* head for linked lists */
-#endif	KERNEL
+#endif	/* KERNEL */
