@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.10 (Berkeley) %G%
+ *	@(#)sendmail.h	8.11 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.10		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.11		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -296,6 +296,7 @@ ENVELOPE
 	char		*e_message;	/* error message */
 	char		*e_statmsg;	/* stat msg (changes per delivery) */
 	char		*e_msgboundary;	/* MIME-style message part boundary */
+	char		*e_origrcpt;	/* original recipient (one only) */
 	char		*e_macro[128];	/* macro definitions */
 };
 
