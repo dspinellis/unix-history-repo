@@ -21,14 +21,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/signal.h>
-#include <sys/wait.h>
 #include <stdio.h>
 
+/*
+ * Special version of popen which avoids call to shell.  This insures noone
+ * may create a pipe to a hidden program as a side effect of a list or dir
+ * command.
+ */
 static uid_t *pids;
 static int fds;
 
@@ -36,9 +40,11 @@ FILE *
 popen(program, type)
 	char *program, *type;
 {
+	register char *cp;
 	FILE *iop;
-	int pdes[2], pid;
-	char *malloc();
+	int argc, gargc, pdes[2], pid;
+	char **pop, *argv[100], *gargv[1000], *vv[2];
+	extern char **glob(), **copyblk(), *strtok();
 
 	if (*type != 'r' && *type != 'w' || type[1])
 		return(NULL);
@@ -53,11 +59,32 @@ popen(program, type)
 	}
 	if (pipe(pdes) < 0)
 		return(NULL);
+
+	/* break up string into pieces */
+	for (argc = 0, cp = program;; cp = NULL)
+		if (!(argv[argc++] = strtok(cp, " \t\n")))
+			break;
+
+	/* glob each piece */
+	gargv[0] = argv[0];
+	for (gargc = argc = 1; argv[argc]; argc++) {
+		if (!(pop = glob(argv[argc]))) {	/* globbing failed */
+			vv[0] = argv[argc];
+			vv[1] = NULL;
+			pop = copyblk(vv);
+		}
+		argv[argc] = (char *)pop;		/* save to free later */
+		while (*pop && gargc < 1000)
+			gargv[gargc++] = *pop++;
+	}
+	gargv[gargc] = NULL;
+
+	iop = NULL;
 	switch(pid = vfork()) {
 	case -1:			/* error */
 		(void)close(pdes[0]);
 		(void)close(pdes[1]);
-		return(NULL);
+		goto free;
 		/* NOTREACHED */
 	case 0:				/* child */
 		if (*type == 'r') {
@@ -73,9 +100,8 @@ popen(program, type)
 			}
 			(void)close(pdes[1]);
 		}
-		execl("/bin/sh", "sh", "-c", program, NULL);
-		_exit(127);
-		/* NOTREACHED */
+		execv(gargv[0], gargv);
+		_exit(1);
 	}
 	/* parent; assume fdopen can't fail...  */
 	if (*type == 'r') {
@@ -86,6 +112,9 @@ popen(program, type)
 		(void)close(pdes[0]);
 	}
 	pids[fileno(iop)] = pid;
+
+free:	for (argc = 1; argv[argc] != NULL; argc++)
+		blkfree((char **)argv[argc]);
 	return(iop);
 }
 
@@ -94,8 +123,8 @@ pclose(iop)
 {
 	register int fdes;
 	long omask;
-	int stat_loc;
-	pid_t waitpid();
+	int pid, stat_loc;
+	u_int waitpid();
 
 	/*
 	 * pclose returns -1 if stream is not associated with a
@@ -105,8 +134,7 @@ pclose(iop)
 		return(-1);
 	(void)fclose(iop);
 	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
-	stat_loc = waitpid(pids[fdes], &stat_loc, 0) == -1 ?
-	    -1 : WEXITSTATUS(stat_loc);
+	while ((pid = wait(&stat_loc)) != pids[fdes] && pid != -1);
 	(void)sigsetmask(omask);
 	pids[fdes] = 0;
 	return(stat_loc);
