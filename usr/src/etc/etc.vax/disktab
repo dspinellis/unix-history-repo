@@ -1,5 +1,7 @@
+# Copyright (c) 1983, 1986 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)disktab	4.19 (Berkeley) %G%
+#	@(#)disktab	4.13.1.1 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
