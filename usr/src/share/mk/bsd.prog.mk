@@ -20,6 +20,7 @@ LIBRPC?=	/usr/lib/sunrpc.a
 LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
 
+.if defined(PROG)
 .if defined(SRCS)
 
 OBJS+=	${SRCS:.c=.o}
@@ -27,7 +28,7 @@ OBJS+=	${SRCS:.c=.o}
 ${PROG}: ${OBJS} ${LIBC} ${DPADD}
 	${CC} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
-.else
+.else defined(PROG)
 
 SRCS= ${PROG}.c
 
@@ -40,6 +41,7 @@ ${PROG}: ${SRCS} ${LIBC} ${DPADD}
 	!defined(MAN4) && !defined(MAN5) && !defined(MAN6) && \
 	!defined(MAN7) && !defined(MAN8) && !defined(NOMAN)
 MAN1=	${PROG}.0
+.endif
 .endif
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 
@@ -90,8 +92,10 @@ realinstall: beforeinstall PROGSUBDIR
 	    chown games.bin ${PROG})
 .endif
 
-install: afterinstall
-afterinstall: realinstall MANINSTALL
+install: afterinstall PROGSUBDIR
+afterinstall: realinstall maninstall
+.else
+install: PROGSUBDIR
 .endif
 
 .if !target(lint)
