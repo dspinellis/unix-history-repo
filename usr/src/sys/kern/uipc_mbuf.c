@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.22	81/12/12	*/
+/*	uipc_mbuf.c	1.23	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -63,6 +63,7 @@ COUNT(M_CLALLOC);
 	case MPG_MBUFS:
 		for (i = ncl * CLBYTES / sizeof (*m); i > 0; i--) {
 			m->m_off = 0;
+			m->m_free = 0;
 			(void) m_free(m);
 			m++;
 		}
