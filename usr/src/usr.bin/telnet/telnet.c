@@ -345,6 +345,7 @@ suboption()
 	    name = getenv("TERM");
 	    if ((name == 0) || ((len = strlen(name)) > 40)) {
 		name = "UNKNOWN";
+		len = strlen(name);
 	    }
 	    if ((len + 4+2) < NETROOM()) {
 		strcpy(namebuf, name);
