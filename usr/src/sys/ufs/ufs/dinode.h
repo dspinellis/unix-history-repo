@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	8.4 (Berkeley) %G%
+ *	@(#)dinode.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -19,6 +19,14 @@
  * numerous dump tapes make this assumption, so we are stuck with it).
  */
 #define	ROOTINO	((ino_t)2)
+
+/*
+ * The Whiteout inode# is a dummy non-zero inode number which will
+ * never be allocated to a real file.  It is used as a place holder
+ * in the directory entry which has been tagged as a DT_W entry.
+ * See the comments about ROOTINO above.
+ */
+#define	WINO	((ino_t)1)
 
 /*
  * A dinode contains all the meta-data associated with a UFS file.
