@@ -1,5 +1,5 @@
 List of Changes to UUCP
-CHANGES	5.6	86/01/13
+CHANGES	5.7	86/02/12
 
 Added support for Eunice.
 
@@ -16,6 +16,7 @@ Added new dialers:
 	Penril
 	Hayes 2400 Smartmodem
 	Concord Data Systems CDS 224
+	ATT 2224 2400 baud modem
 
 Running uucico with debugging on requires read access to L.sys.
 
