@@ -12,7 +12,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)cy.c	1.16 (Berkeley) %G%
+ *	@(#)cy.c	1.17 (Berkeley) %G%
  */
 
 #include "yc.h"
@@ -64,13 +64,6 @@ int	cydebug = 0;
  * before the rewind completes will hang waiting for ccybuf.
  */
 struct	buf ccybuf[NCY];
-
-/*
- * Raw tape operations use rcybuf.  The driver notices when
- * rcybuf is being used and allows the user program to contine
- * after errors and read records not of the standard length.
- */
-struct	buf rcybuf[NCY];
 
 int	cyprobe(), cyslave(), cyattach();
 struct	buf ycutab[NYC];
@@ -435,7 +428,7 @@ cystrategy(bp)
 	bp->av_forw = NULL;
 	vm = ycdinfo[ycunit]->ui_mi;
 	/* BEGIN GROT */
-	if (bp == &rcybuf[CYUNIT(bp->b_dev)]) {
+	if (bp->b_flags & B_RAW) {
 		if (bp->b_bcount >= CYMAXIO) {
 			uprintf("cy%d: i/o size too large\n", vm->um_ctlr);
 			bp->b_error = EINVAL;
@@ -537,32 +530,41 @@ loop:
 		goto dobpcmd;
 	}
 	/*
-	 * The following checks handle boundary cases for operation
-	 * on no-raw tapes.  On raw tapes the initialization of
-	 * yc->yc_nxrec by cyphys causes them to be skipped normally
-	 * (except in the case of retries).
+	 * For raw I/O, save the current block
+	 * number in case we have to retry.
 	 */
-	if (bp->b_blkno > yc->yc_nxrec) {
+	if (bp->b_flags & B_RAW) {
+		if (vm->um_tab.b_errcnt == 0) {
+			yc->yc_blkno = bp->b_blkno;
+			yc->yc_nxrec = yc->yc_blkno + 1;
+		}
+	} else {
 		/*
-		 * Can't read past known end-of-file.
+		 * Handle boundary cases for operation
+		 * on non-raw tapes.
 		 */
-		bp->b_flags |= B_ERROR;
-		bp->b_error = ENXIO;
-		goto next;
+		if (bp->b_blkno > yc->yc_nxrec) {
+			/*
+			 * Can't read past known end-of-file.
+			 */
+			bp->b_flags |= B_ERROR;
+			bp->b_error = ENXIO;
+			goto next;
+		}
+		if (bp->b_blkno == yc->yc_nxrec && bp->b_flags&B_READ) {
+			/*
+			 * Reading at end of file returns 0 bytes.
+			 */
+			bp->b_resid = bp->b_bcount;
+			clrbuf(bp);
+			goto next;
+		}
+		if ((bp->b_flags&B_READ) == 0)
+			/*
+			 * Writing sets EOF.
+			 */
+			yc->yc_nxrec = bp->b_blkno + 1;
 	}
-	if (bp->b_blkno == yc->yc_nxrec && bp->b_flags&B_READ) {
-		/*
-		 * Reading at end of file returns 0 bytes.
-		 */
-		bp->b_resid = bp->b_bcount;
-		clrbuf(bp);
-		goto next;
-	}
-	if ((bp->b_flags&B_READ) == 0)
-		/*
-		 * Writing sets EOF.
-		 */
-		yc->yc_nxrec = bp->b_blkno + 1;
 	if ((blkno = yc->yc_blkno) == bp->b_blkno) {
 		caddr_t addr;
 		int cmd;
@@ -769,7 +771,7 @@ cyintr(cyunit)
 		 * If we were reading raw tape and the only error was that the
 		 * record was too long, then we don't consider this an error.
 		 */
-		if (bp == &rcybuf[cyunit] && (bp->b_flags&B_READ) &&
+		if ((bp->b_flags & (B_READ|B_RAW)) == (B_READ|B_RAW) &&
 		    err == CYER_STROBE) {
 			/*
 			 * Retry reads with the command changed to
@@ -798,7 +800,8 @@ cyintr(cyunit)
 			 * Hard or non-i/o errors on non-raw tape
 			 * cause it to close.
 			 */
-			if (yc->yc_openf > 0 && bp != &rcybuf[cyunit])
+			if ((bp->b_flags&B_RAW) == 0 &&
+			    yc->yc_openf > 0)
 				yc->yc_openf = -1;
 		/*
 		 * Couldn't recover from error.
@@ -954,53 +957,6 @@ cyseteof(bp)
 	}
 	/* eof on read */
 	yc->yc_nxrec = bp->b_blkno;
-}
-
-cyread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = cyphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(cystrategy, &rcybuf[CYUNIT(dev)], dev, B_READ, minphys, uio));
-}
-
-cywrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = cyphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(cystrategy, &rcybuf[CYUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
-/*
- * Check that a raw device exits.
- * If it does, set up the yc_blkno and yc_nxrec
- * so that the tape will appear positioned correctly.
- */
-cyphys(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int ycunit = YCUNIT(dev);
-	register daddr_t a;
-	register struct yc_softc *yc;
-	register struct vba_device *vi;
-
-	if (ycunit >= NYC || (vi = ycdinfo[ycunit]) == 0 || vi->ui_alive == 0)
-		return (ENXIO);
-	yc = &yc_softc[ycunit];
-	a = uio->uio_offset >> DEV_BSHIFT;
-	yc->yc_blkno = a;
-	yc->yc_nxrec = a + 1;
-	return (0);
 }
 
 /*ARGSUSED*/
