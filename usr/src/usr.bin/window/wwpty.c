@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwpty.c	3.8 84/04/15";
+static	char *sccsid = "@(#)wwpty.c	3.9 84/05/16";
 #endif
 
 #include "ww.h"
@@ -16,7 +16,7 @@ register struct ww *w;
 	register int i;
 	int tty;
 	int on = 1;
-	int count = -1;
+	char hasq = 0;
 #define PTY "/dev/XtyXX"
 #define _PT	5
 #define _PQRS	8
@@ -29,9 +29,9 @@ register struct ww *w;
 		w->ww_ttyname[_0_9] = '0';
 		if (access(w->ww_ttyname, 0) < 0)
 			continue;
-		if (count < 0 && (count = c - 'p' - 1) == 0)
-			count = 1;
-		if (--count < 0)
+		if (c != 'p')
+			hasq = 1;
+		else if (hasq)
 			break;
 		for (i = 15; i >= 0; i--) {
 			w->ww_ttyname[_PT] = 'p';
