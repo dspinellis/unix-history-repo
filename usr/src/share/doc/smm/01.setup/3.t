@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.25 (Berkeley) %G%
+.\"	@(#)3.t	6.26 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1692,15 +1692,10 @@ Some additional comments concerning the \*(4B C library:
 The floating point support in the C library has been replaced
 and is now accurate.
 .IP \(bu
-A POSIX 1003.2 compliant version of both basic and extended
-regular expressions is provided as part of the C library.
-.IP \(bu
-The C functions specified by both ANSI C and POSIX 1003.1 and
+The C functions specified by both ANSI C, POSIX 1003.1 and
 1003.2 are now part of the C library.
-This includes support for both file name matching and shell globbing.
-.IP \(bu
-The timezone routines have been replaced with a new timezone
-package and are now accurate.
+This includes support for file name matching, shell globbing
+and both basic and extended regular expressions.
 .IP \(bu
 ANSI C multibyte and wide character support has been integrated.
 The rune functionality from the Bell Labs' Plan 9 system is provided
@@ -1731,7 +1726,60 @@ An application front-end editing library, named libedit, has been
 added to the system.
 .PP
 A superset implementation of the  SunOS kernel memory interface library,
-kvm, has been integrated into the system.
+libkvm, has been integrated into the system.
+.PP
+Timezone support
+The timezone conversion code in the C library uses data files installed in
+.Pn /usr/share/zoneinfo
+to convert from ``GMT'' to various timezones.  The data file for the default
+timezone for the system should be copied to
+.Pn /etc/localtime .
+Other timezones can be selected by setting the TZ environment variable.
+.PP
+The data files initially installed in
+.Pn /usr/share/zoneinfo
+include corrections for leap seconds since the beginning of 1970.
+Thus, they assume that the
+kernel will increment the time at a constant rate during a leap second;
+that is, time just keeps on ticking.  The conversion routines will then
+name a leap second 23:59:60.  For purists, this effectively means that
+the kernel maintains TAI (International Atomic Time) rather than UTC
+(Coordinated Universal Time, aka GMT).
+.PP
+For systems that run current NTP (Network Time Protocol) implementations
+or that wish to conform to the letter of the POSIX.1 law, it is possible
+to rebuild the timezone data files so that leap seconds are not counted.
+(NTP causes the time to jump over a leap second, and POSIX effectively
+requires the clock to be reset by hand when a leap second occurs.
+In this mode, the kernel effectively runs UTC rather than TAI.)
+.PP
+The data files without leap second information
+are constructed from the source directory,
+.Pn /usr/src/share/zoneinfo .
+Change the variable REDO in Makefile
+from ``right'' to ``posix'', and then do
+.DS
+make obj	(if necessary)
+make
+make install
+.DE
+.PP
+You will then need to copy the correct default zone file to
+.Pn /etc/localtime ,
+as the old one would still have used leap seconds, and because the Makefile
+installs a default
+.Pn /etc/localtime
+each time ``make install'' is done.
+.PP
+It is possible to install both sets of timezone data files.  This results
+in subdirectories
+.Pn /usr/share/zoneinfo/right
+and
+.Pn /usr/share/zoneinfo/posix .
+Each contain a complete set of zone files.
+See
+.Pn /usr/src/share/zoneinfo/Makefile
+for details.
 .NH 4
 Additions and changes to other utilities
 .PP
@@ -1805,8 +1853,8 @@ to be useful.
 .NH 2
 Hints on converting from \*(Ps to \*(4B
 .PP
-This section summarizes the most significant changes between
-\*(Ps and \*(4B particularly those that are likely to 
+This section summarizes changes between
+\*(Ps and \*(4B that are likely to 
 cause difficulty in doing the conversion.
 It does not include changes in the network;
 see section 5 for information on setting up the network.
@@ -1862,58 +1910,6 @@ addrlen = strlen(unaddr.sun_path) + sizeof(unaddr.sun_family);
 no longer works as there is an additional
 .Pn sun_len
 field.
-.PP
-The timezone conversion code uses data files installed in
-.Pn /usr/share/zoneinfo
-to convert from ``GMT'' to various timezones.  The data file for the default
-timezone for the system should be copied to
-.Pn /etc/localtime .
-Other timezones can be selected by setting the TZ environment variable.
-.PP
-The data files initially installed in
-.Pn /usr/share/zoneinfo
-include corrections for leap seconds since the beginning of 1970.
-Thus, they assume that the
-kernel will increment the time at a constant rate during a leap second;
-that is, time just keeps on ticking.  The conversion routines will then
-name a leap second 23:59:60.  For purists, this effectively means that
-the kernel maintains TAI (International Atomic Time) rather than UTC
-(Coordinated Universal Time, aka GMT).
-.PP
-For systems that run current NTP (Network Time Protocol) implementations
-or that wish to conform to the letter of the POSIX.1 law, it is possible
-to rebuild the timezone data files so that leap seconds are not counted.
-(NTP causes the time to jump over a leap second, and POSIX effectively
-requires the clock to be reset by hand when a leap second occurs.
-In this mode, the kernel effectively runs UTC rather than TAI.)
-.PP
-The data files without leap second information
-are constructed from the source directory,
-.Pn /usr/src/share/zoneinfo .
-Change the variable REDO in Makefile
-from ``right'' to ``posix'', and then do
-.DS
-make obj	(if necessary)
-make
-make install
-.DE
-.PP
-You will then need to copy the correct default zone file to
-.Pn /etc/localtime ,
-as the old one would still have used leap seconds, and because the Makefile
-installs a default
-.Pn /etc/localtime
-each time ``make install'' is done.
-.PP
-It is possible to install both sets of timezone data files.  This results
-in subdirectories
-.Pn /usr/share/zoneinfo/right
-and
-.Pn /usr/share/zoneinfo/posix .
-Each contain a complete set of zone files.
-See
-.Pn /usr/src/share/zoneinfo/Makefile
-for details.
 .PP
 The kernel's limit on the number of open files has been
 increased from 20 to 64.
