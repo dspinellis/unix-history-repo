@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)arp.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)arp.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)arp.c	5.16 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/file.h>
 #include <sys/socket.h>
-#include <sys/kinfo.h>
+#include <sys/sysctl.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -318,8 +318,8 @@ delete:
 dump(addr)
 u_long addr;
 {
-	int sz, needed, rlen;
-	long op = KINFO_RT_FLAGS | (((long)AF_INET) << 16);
+	int mib[6];
+	size_t needed;
 	char *host, *malloc(), *lim, *buf, *next;
 	struct rt_msghdr *rtm;
 	struct sockaddr_inarp *sin;
@@ -327,13 +327,19 @@ u_long addr;
 	extern int h_errno;
 	struct hostent *hp;
 
-	if ((needed = getkerninfo(op, 0, 0, RTF_LLINFO)) < 0)
-		quit("route-getkerninfo-estimate");
+	mib[0] = CTL_NET;
+	mib[1] = PF_ROUTE;
+	mib[2] = 0;
+	mib[3] = AF_INET;
+	mib[4] = NET_RT_FLAGS;
+	mib[5] = RTF_LLINFO;
+	if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0)
+		quit("route-sysctl-estimate");
 	if ((buf = malloc(needed)) == NULL)
 		quit("malloc");
-	if ((rlen = getkerninfo(op, buf, &needed, RTF_LLINFO)) < 0)
+	if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0)
 		quit("actual retrieval of routing table");
-	lim = buf + rlen;
+	lim = buf + needed;
 	for (next = buf; next < lim; next += rtm->rtm_msglen) {
 		rtm = (struct rt_msghdr *)next;
 		sin = (struct sockaddr_inarp *)(rtm + 1);
