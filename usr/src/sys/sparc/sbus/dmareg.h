@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)dmareg.h	7.1 (Berkeley) %G%
+ *	@(#)dmareg.h	7.2 (Berkeley) %G%
  *
  * from: $Header: dmareg.h,v 1.4 92/06/17 06:59:33 torek Exp $ (LBL)
  */

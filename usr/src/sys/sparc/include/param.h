@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.1 (Berkeley) %G%
+ *	@(#)param.h	7.2 (Berkeley) %G%
  *
  * from: $Header: param.h,v 1.11 92/06/24 08:52:05 torek Exp $ (LBL)
  */

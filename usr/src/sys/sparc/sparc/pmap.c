@@ -6,9 +6,14 @@
  * at Lawrence Berkeley Laboratory under DARPA contract BG 91-66 and
  * contributed to Berkeley.
  *
+ * All advertising materials mentioning features or use of this software
+ * must display the following acknowledgement:
+ *	This product includes software developed by the University of
+ *	California, Lawrence Berkeley Laboratories.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.1 (Berkeley) %G%
+ *	@(#)pmap.c	7.2 (Berkeley) %G%
  *
  * from: $Header: pmap.c,v 1.36 92/07/10 00:03:10 torek Exp $
  */
