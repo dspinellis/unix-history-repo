@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)trsp.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)trsp.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,6 +48,7 @@ static char sccsid[] = "@(#)trsp.c	6.2 (Berkeley) %G%";
 #include <netns/idp_var.h>
 #include <netns/sp.h>
 #include <netns/spidp.h>
+#include <netns/spp_timer.h>
 #include <netns/spp_var.h>
 #define SANAMES
 #include <netns/spp_debug.h>
@@ -321,13 +322,14 @@ spp_trace(act, ostate, asp, sp, si, req)
 		return;
 #define p3(f)  { printf("%s = %x, ", "f", sp->s_/**/f); }
 	if(sflag) {
-		printf("\t"); p3(rack); p3(ralo); p3(snt); p3(flags);
+		printf("\t"); p3(rack); p3(ralo); p3(smax); p3(snxt); p3(flags);
 #undef pf
 #define pf(f) { if (flags&SF_/**/f) { printf("%s%s", cp, "f"); cp = ","; } }
 		flags = sp->s_flags;
 		if (flags || sp->s_oobflags) {
 			char *cp = "<";
-			pf(AK); pf(DELACK); pf(HI); pf(HO);
+			pf(ACKNOW); pf(DELACK); pf(HI); pf(HO);
+			pf(PI); pf(WIN); pf(RXT); pf(RVD);
 			flags = sp->s_oobflags;
 			pf(SOOB); pf(IOOB);
 			printf(">");
