@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 The Regents of the University of California.
+ * Copyright (c) 1983, 1992 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,25 +7,27 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1992 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
+
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 
-#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <fstab.h>
-
-/*
- * dumpfs
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 union {
 	struct fs fs;
@@ -41,40 +43,52 @@ union {
 
 long	dev_bsize = 1;
 
+int	dumpfs __P((char *));
+int	dumpcg __P((char *, int, int));
+void	pbits __P((void *, int));
+void	usage __P((void));
+
+int
 main(argc, argv)
-	char **argv;
+	int argc;
+	char *argv[];
 {
 	register struct fstab *fs;
+	int ch, eval;
 
-	argc--, argv++;
-	if (argc < 1) {
-		fprintf(stderr, "usage: dumpfs fs ...\n");
-		exit(1);
-	}
-	for (; argc > 0; argv++, argc--) {
-		fs = getfsfile(*argv);
-		if (fs == 0)
-			dumpfs(*argv);
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc < 1)
+		usage();
+
+	for (eval = 0; *argv; ++argv)
+		if ((fs = getfsfile(*argv)) == NULL)
+			eval |= dumpfs(*argv);
 		else
-			dumpfs(fs->fs_spec);
-	}
+			eval |= dumpfs(fs->fs_spec);
+	exit(eval);
 }
 
+int
 dumpfs(name)
 	char *name;
 {
-	int c, i, j, k, size;
+	int fd, c, i, j, k, size;
 
-	close(0);
-	if (open(name, 0) != 0) {
-		perror(name);
-		return;
-	}
-	lseek(0, SBOFF, 0);
-	if (read(0, &afs, SBSIZE) != SBSIZE) {
-		perror(name);
-		return;
-	}
+	if ((fd = open(name, O_RDONLY, 0)) < 0)
+		goto err;
+	if (lseek(fd, (off_t)SBOFF, SEEK_SET) == (off_t)-1)
+		goto err;
+	if (read(fd, &afs, SBSIZE) != SBSIZE)
+		goto err;
+
 	if (afs.fs_postblformat == FS_42POSTBLFMT)
 		afs.fs_nrpos = 8;
 	dev_bsize = afs.fs_fsize / fsbtodb(&afs, 1);
@@ -138,13 +152,13 @@ dumpfs(name)
 	for (i = 0, j = 0; i < afs.fs_cssize; i += afs.fs_bsize, j++) {
 		size = afs.fs_cssize - i < afs.fs_bsize ?
 		    afs.fs_cssize - i : afs.fs_bsize;
-		afs.fs_csp[j] = (struct csum *)calloc(1, size);
-		lseek(0, fsbtodb(&afs, (afs.fs_csaddr + j * afs.fs_frag)) *
-		    dev_bsize, 0);
-		if (read(0, afs.fs_csp[j], size) != size) {
-			perror(name);
-			return;
-		}
+		afs.fs_csp[j] = calloc(1, size);
+		if (lseek(fd,
+		    (off_t)(fsbtodb(&afs, (afs.fs_csaddr + j * afs.fs_frag)) *
+		    dev_bsize), SEEK_SET) == (off_t)-1)
+			goto err;
+		if (read(fd, afs.fs_csp[j], size) != size)
+			goto err;
 	}
 	for (i = 0; i < afs.fs_ncg; i++) {
 		struct csum *cs = &afs.fs_cs(&afs, i);
@@ -162,27 +176,37 @@ dumpfs(name)
 	}
 	printf("\n");
 	for (i = 0; i < afs.fs_ncg; i++)
-		dumpcg(name, i);
-	close(0);
+		if (dumpcg(name, fd, i))
+			goto err;
+	(void)close(fd);
+	return (0);
+
+err:	if (fd != -1)
+		(void)close(fd);
+	(void)fprintf(stderr, "dumpfs: %s: %s\n", name, strerror(errno));
+	return (1);
 };
 
-dumpcg(name, c)
+int
+dumpcg(name, fd, c)
 	char *name;
-	int c;
+	int fd, c;
 {
-	int i,j;
+	off_t cur;
+	int i, j;
 
 	printf("\ncg %d:\n", c);
-	lseek(0, fsbtodb(&afs, cgtod(&afs, c)) * dev_bsize, 0);
-	i = lseek(0, 0, 1);
-	if (read(0, (char *)&acg, afs.fs_bsize) != afs.fs_bsize) {
-		printf("dumpfs: %s: error reading cg\n", name);
-		return;
+	if ((cur = lseek(fd, (off_t)(fsbtodb(&afs, cgtod(&afs, c)) * dev_bsize),
+	    SEEK_SET)) == (off_t)-1)
+		return (1);
+	if (read(fd, &acg, afs.fs_bsize) != afs.fs_bsize) {
+		(void)fprintf(stderr, "dumpfs: %s: error reading cg\n", name);
+		return (1);
 	}
-	printf("magic\t%x\ttell\t%x\ttime\t%s",
+	printf("magic\t%x\ttell\t%qx\ttime\t%s",
 	    afs.fs_postblformat == FS_42POSTBLFMT ?
 	    ((struct ocg *)&acg)->cg_magic : acg.cg_magic,
-	    i, ctime(&acg.cg_time));
+	    cur, ctime(&acg.cg_time));
 	printf("cgx\t%d\tncyl\t%d\tniblk\t%d\tndblk\t%d\n",
 	    acg.cg_cgx, acg.cg_ncyl, acg.cg_niblk, acg.cg_ndblk);
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
@@ -211,26 +235,36 @@ dumpcg(name, c)
 		}
 		printf("\n");
 	}
+	return (0);
 };
 
-pbits(cp, max)
-	register char *cp;
+void
+pbits(vp, max)
+	register void *vp;
 	int max;
 {
 	register int i;
-	int count = 0, j;
+	register char *p;
+	int count, j;
 
-	for (i = 0; i < max; i++)
-		if (isset(cp, i)) {
+	for (count = i = 0, p = vp; i < max; i++)
+		if (isset(p, i)) {
 			if (count)
 				printf(",%s", count % 6 ? " " : "\n\t");
 			count++;
 			printf("%d", i);
 			j = i;
-			while ((i+1)<max && isset(cp, i+1))
+			while ((i+1)<max && isset(p, i+1))
 				i++;
 			if (i != j)
 				printf("-%d", i);
 		}
 	printf("\n");
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: dumpfs filesys | device\n");
+	exit(1);
 }
