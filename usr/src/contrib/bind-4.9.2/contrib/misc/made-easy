@@ -1,0 +1,542 @@
+Path: pa.dec.com!decwrl!uunet!munnari.oz.au!uniwa!craig
+From: craig@ecel.uwa.edu.au (Craig Richmond - division)
+Newsgroups: comp.protocols.tcp-ip.domains
+Subject: DNS Made Easy (Well that was the plan anyway)
+Date: 13 May 1993 10:39:31 GMT
+Organization: The University of Western Australia
+Lines: 529
+Distribution: inet
+Message-ID: <1st8h3$laa@uniwa.uwa.edu.au>
+NNTP-Posting-Host: decel.ecel.uwa.edu.au
+Summary: A guide to installing and testing a domain name server
+Keywords: FAQ DNS tutorial step by step
+
+I have written this file because it seems that the same questions seem to
+pop up time and time again and when I had to install DNS from scratch the
+first time, we found very little to help us.
+
+This document covers setting up a Domain Name Server with authority over
+your domain and using a few of the more useful but less well known
+(hopefully this document will take care of that) features of nslookup to
+get information about the DNS and to work out why yours isn't working.
+
+If you are using a Sun Workstation and you want to make NIS interact with
+the DNS, then this is not the FAQ for you (but it may well be when you try
+to set up the DNS).  If someone would like to provide a pointer to the
+appropriate FAQ (I'll include it in here).  I have a copy of one particular
+set of instructions if you need it.
+
+An Overview of the DNS:
+
+The Domain Name System is the software that lets you have name to number
+mappings on your computers.  The name decel.ecel.uwa.edu.au is the number
+130.95.4.2 and vice versa.  This is achieved through the DNS.  The DNS is a
+heirarchy.  There are a small number of root domain name servers that are
+responsible for tracking the top level domains and who is under them.  The
+root domain servers between them know about all the people who have name
+servers that are authoritive for domains under the root.
+
+Being authoritive means that if a server is asked about something in that
+domain, it can say with no ambiguity whether or not a given piece of
+information is true.  For example.  We have domains x.z and y.z.  There are
+by definition authoritive name servers for both of these domains and we
+shall assume that the name server in both of these cases is a machine
+called nic.x.z and nic.y.z but that really makes no difference.
+
+If someone asks nic.x.z whether there is a machine called a.x.z, then
+nic.x.z can authoritively say, yes or no because it is the authoritive name
+server for that domain.  If someone asks nic.x.z whether there is a machine
+called a.y.z then nic.x.z asks nic.y.z whether such a machine exists (and
+caches this for future requests).  It asks nic.y.z because nic.y.z is the
+authoritive name server for the domain y.z.  The information about
+authoritive name servers is stored in the DNS itself and as long as you
+have a pointer to a name server who is more knowledgable than yourself then
+you are set.
+
+When a change is made, it propogates slowly out through the internet to
+eventually reach all machines.  This can take a couple of days, but in all
+reality I have no idea how long the worst case is.
+
+Installing the DNS:
+
+First I'll assume you already have a copy of the Domain Name Server
+software.  It is probably called named or in.named depending on your
+flavour of unix.  I never had to get a copy, but if anyone thinks that
+information should be here then by all means tell me and I'll put it in.
+
+First step is to create the file named.boot.  This describes to named
+(we'll dispense with the in.named.  Take them to be the same) where the
+information that it requires can be found.  This file is normally found in
+/etc/named.boot and I personally tend to leave it there because then I know
+where to find it.  If you don't want to leave it there but place it in a
+directory with the rest of your named files, then there is usually an
+option on named to specify the location of the boot file.
+
+Your typical boot file will look like this if you are an unimportant leaf
+node and there are other name servers at your site.
+
+directory	/etc/namedfiles
+
+primary		ecel.uwa.edu.au				ecel.uwa.domain
+primary		0.0.127.in-addr.arpa			4.95.130.domain
+primary		4.95.130.in-addr.arpa			4.95.130.domain
+cache		.	       				root.cache
+
+The lines mean the following.
+
+directory
+
+This is the path that named will place in front of all file names
+referenced from here on.  If no directory is specified, it looks for files
+relative to /etc.
+
+primary
+
+This is a domain for which this domain is probably authorative for.  You
+put the entire domain name in.  You need forwards and reverse lookups.  The
+first value is the domain to append to every name included in that file.
+(There are some exceptions, but they will be explained later)  The name at
+the end of the line is the name of the file (relative to /etc of the
+directory if you specified one).  The filename can have slashes in it to
+refer to subdirectories so if you have a lot of domains you may want to
+split it up.
+
+BE VERY CAREFUL TO PUT THE NUMBERS BACK TO FRONT FOR THE REVERSE LOOK UP
+FILE.  The hypothetical (or at the moment real) example given above is for
+the subnet ecel.uwa.edu.au whose IP address is 130.95.4.*.  The reverse
+name must be 4.95.130.in-addr.arpa.  It must be backwards and it must end
+with .in-addr.arpa.  If your reverse name lookups don't work, check this.
+If they still don't work, check this again.
+
+cache
+
+This is the information that named uses to get started.  Named must know
+the IP number of some other name servers at least to get started.
+Information in the cache is treated differently depending on your version
+of named.  Some versions of named use the information included in the cache
+permenantly and others retain but ignore the cache information once up and
+running.
+
+secondary (This line is not in the example, but is worth mentioning.
+
+A secondary line indicates that you wish to be a secondary name server for
+this domain.  You do not need to do this usually.  All it does is help make
+the DNS more robust.  You should have at least one secondary server for
+your site, but you do not need to be a secondary server for anyone else.
+You can by all means, but you don't need to be.  If you want to be a
+secondary server for another domain, then place the line
+
+secondary         gu.uwa.edu.au   130.95.100.3 130.95.128.1
+
+in your named.boot.  This will make your named try the servers on both of
+the machines specified to see if it can obtain the information about those
+domains.  You can specify some number of IP addresses for the machines to
+query that probably depends on your machine.  The numbers 3 and 10 spring
+to mind, but I can't remember where from.  Your copy of named will upon
+startup go and query all the information it can get about the domain in
+question and remember it and act as though it were authoritive for that
+domain.
+
+Next you will want to start creating the data files that contain the name
+definitions.
+
+The file ecel.uwa.edu.au. will be used for the example with a couple of
+machines left in for the purpose of the exercise.  Here is a copy of what
+the file looks like with explanations following.
+
+; Authoritative data for ecel.uwa.edu.au
+;
+@		IN	SOA decel.ecel.uwa.edu.au. postmaster.ecel.uwa.edu.au. (
+				93051000	; Serial (yymmddxx)
+				10800		; Refresh 3 hours
+				3600		; Retry   1 hour
+				3600000 	; Expire  1000 hours
+				86400 )		; Minimum 24 hours
+		IN	A			130.95.4.2
+		IN	MX	100  		decel
+		IN	MX	200		munnari.oz.au.
+		IN	MX	500		uunet.UU.NET.
+
+localhost	IN	A		127.0.0.1
+
+decel		IN	A		130.95.4.2
+		IN	HINFO	SUN4/75		 UNIX
+		IN	MX	100	decel
+		IN	MX	200	munnari.oz.au.
+		IN	MX	500	uunet.UU.NET.
+
+gopher		IN	CNAME		decel.ecel.uwa.edu.au.
+
+accfin		IN	A		130.95.4.3
+		IN	HINFO	SUN4/75		 UNIX
+		IN	MX	100	decel
+		IN	MX	200	munnari.oz.au.
+		IN	MX	500	uunet.UU.NET.
+
+chris-mac	IN	A		130.95.4.5
+		IN	HINFO	MACIICi	SYS7.1
+
+The comment character is ';' so the first two lines are just comments
+indicating the contents of the file.
+
+All values from here on have IN in them.  This indicates that the value is
+an InterNet record.  There are a couple of other types, but all you need
+concern yourself with is internet ones.
+
+The SOA record is the Start Of Authority record.  It contains the
+information that other nameservers will learn about this domain and how to
+treat the information they are given about it.  The '@' as the first
+character in the line indicates that you wish to define things about the
+domain for which this file is responsible.  The domain name is found in the
+named.boot file in the corresponding line to this filename.  All
+information listed refers to the most recent machine/domain name so all
+records from the '@' until 'localhost' refer to the '@'.  The SOA record
+has 5 magic numbers.  First magic number is the serial number.  If you
+change the file, change the serial number.  If you don't, no other name
+servers will update their information.  The old information will sit around
+for a very long time.  Refresh is the time between refreshing information
+about the SOA (correct me if I am wrong).  Retry is the frequency of
+retrying if an authorative server cannot be contacted.  Expire is how old
+the information must become before it is dumped.  This is to help the
+information withstand fairly lengthy downtimes of machines or connections
+in the network without having to recollect all the information.  The two
+pieces of information before the 5 magic numbers are the machine that is
+considered the origin of all of this information.  Generally the machine
+that is running your named is a good one for here.  The second is an email
+address for someone who can fix any problems that may occur with the DNS.
+Good ones here are postmaster, hostmaster or root.  NOTE: You use dots and
+not '@' for the email address.  eg root.decel.ecel.uwa.edu.au is correct
+and root@decel.ecel.uwa.edu.au is incorrect.
+
+We now have an address to map ecel.uwa.edu.au to.  The address is
+130.95.4.2 which happens to be decel, our main machine.  If you try to find
+an IP number for the domain ecel.uwa.edu.au it will get you the machine
+decel.ecel.uwa.edu.au's IP number.  This is a nicety which means that
+people who have non-MX record mailers can still mail fred@ecel.uwa.edu.au
+and don't have to find the name of a machine name under the domain to mail.
+
+Now we have a couple of MX records for the domain itself.  The MX records
+specify where to send mail destined for the machine/domain that the MX
+record is for.  In this case we would prefer if all mail for
+fred@ecel.uwa.edu.au is sent to decel.ecel.uwa.edu.au.  If that does not
+work, we would like it to go to munnari.oz.au because there are a number of
+machines that might have no idea how to get to us, but may be able to get
+to munnari.  And failing that, try the site uunet.uu.net.  A small number
+indicates that this site should be tried first.  The larget the number the
+further down the list of sites to try the site is.  NOTE: Not all machines
+have mailers that pay attention to MX records.  Some only pay attention to
+IP numbers.  NOTE:  This is really stupid.
+
+There is an entry for localhost now.  Note that this is somewhat of a
+kludge and should probably be handled far more elegantly.  By placing
+localhost here, a machine comes into existance called
+localhost.ecel.uwa.edu.au.  If you finger it, or telnet to it, you get your
+own machine, because the name lookup returns 127.0.0.1 which is the special
+case for your own machine.  I have used a couple of different DNS packages.
+The old BSD one let you put things into the cache which would always work,
+but would not be exported to other nameservers.  In the newer Sun one, they
+are left in the cache and are mostly ignored once named is up and running.
+This isn't a bad solution, its just not a good one.
+
+Decel is the main machine in our domain.  It has the IP number 130.95.4.2
+and that is what this next line shows.  It also has a HINFO entry.  HINFO
+is Host Info which is meant to be some sort of an indication of what the
+machine is and what it runs.  The values are two white space seperated
+values.  First being the hardware and second being the software.  HINFO is
+not compulsory, its just nice to have sometimes.  We also have some MX
+records so that mail destined for decel has some other avenues before it
+bounces back to the sender if undeliverable.
+
+gopher.ecel.uwa.edu.au is the gopher server in our division.  Now because
+we are cheapskates and don't want to go and splurge on a seperate machine
+just for handling gopher requests we have made it a CNAME to our main
+machine.  While it may seem pointless it does have one main advantage.
+When we discover that our placing terrabytes of pornographic quicktime
+movies on our gopher server (no we haven't and we don't intend to) causes
+an unbearable load on our main machine, we can quickly move the CNAME to
+point at a new machine by changing the name mentioned in the CNAME.  Then
+the slime of the world can continue to get their porno pictures with a
+minimal interuption to the network.  Other good CNAMEs to maintain are
+things like ftp, mailhost, netfind, archie, whois, and even dns (though the
+most obvious use for this fails).  It also makes it easier for people to
+find these services in your domain.
+
+We now have the record for another unix machine called accfin.  Nothing
+special here, but there are no CNAMEs that point to this machine.  Perhaps
+we should put gopher there instead.  Much less load on decel then.
+
+Finally we have a macintosh which belongs to my boss.  All it needs is an
+IP number, and we have included the HINFO so that you can see that it is in
+fact a macIIci running System 7.1.  Take this information with a grain of
+salt because in 5 years time, he will probably still be using a macIIci
+running system 7.1 because nobody ever keeps the DNS information up to
+date.
+
+NOTE:  If Chris had a very high profile and wanted his mac to appear like a
+unix machine as far as internet services were concerned, he could simply
+place an MX record such as 
+
+	IN	MX	100  decel
+
+after his machine and any mail sent to chris@chris-mac.ecel.uwa.edu.au
+would be automatically rerouted to decel.
+
+Reverse Name Lookups:
+
+The reverse name lookup is handled in a most bizarre fashion.  Well it all
+makes sense, but it is not immediately obvious.
+
+All of the reverse name lookups are done by finding the PTR record
+associated with the name w.x.y.z.in-addr.arpa.  So to find the name
+associated with the IP number 1.2.3.4, we look for information stored in
+the DNS under the name 4.3.2.1.in-addr.arpa.  They are organised this way
+so that when you are allocated a B class subnet for example, you get all of
+the IP numbers in the domain 130.95.  Now to turn that into a reverse name
+lookup domain, you have to invert the numbers or your registered domains
+will be spread all over the place.  It is a mess and you need not understand
+the finer points of it all.  All you need to know is that you put the
+reverse name lookup files back to front.
+
+Here is the sample reverse name lookup files to go with our example.
+
+0.0.127.in-addr.arpa
+--
+;  Reverse mapping of domain names 0.0.127.in-addr.arpa
+;
+@		IN	SOA decel.ecel.uwa.edu.au. postmaster.ecel.uwa.edu.au. (
+				91061801	; Serial (yymmddxx)
+				10800		; Refresh 3 hours
+				3600		; Retry   1 hour
+				3600000 	; Expire  1000 hours
+				86400 )		; Minimum 24 hours
+;
+1		IN	PTR	    localhost.
+--
+
+4.95.130.in-addr.arpa
+--
+;	reverse mapping of domain names 4.95.130.in-addr.arpa
+;
+@		IN	SOA decel.ecel.uwa.edu.au. postmaster.ecel.uwa.edu.au. (
+				92050300	; Serial (yymmddxx format)
+				10800		; Refresh	3hHours
+				3600		; Retry		1 hour
+				3600000		; Expire	1000 hours
+				86400 )		; Minimum	24 hours
+2		IN	PTR	decel.ecel.uwa.edu.au.
+3		IN	PTR	accfin.ecel.uwa.edu.au.
+5		IN	PTR	chris-mac.ecel.uwa.edu.au.
+--
+
+It is important to remember that you must have a second start of authority
+record for the reverse name lookups.  Each reverse name lookup file must
+have its own SOA record.  The reverse name lookup on the 127 domain is
+debatable seeing as there is likely to be only one number in the file and
+it is blatantly obvious what it is going to map to.
+
+The SOA details are the same as in the forward mapping.
+
+Each of the numbers listed down the left hand side indicates that the line
+contains information for that number of the subnet.  Each of the subnets
+must be the more significant digits.  eg the 130.95.4 of an IP number
+130.95.4.2 is implicit for all numbers mentioned in the file.
+
+The PTR must point to a machine that can be found in the DNS.  If the name
+is not in the DNS, some versions of named just bomb out at this point.
+
+Reverse name lookups are not compulsory, but nice to have.  It means that
+when people log into machines, they get names indicating where they are
+logged in from.  It makes it easier for you to spot things that are wrong
+and it is far less cryptic than having lots of numbers everywhere.
+
+Troubleshooting your named:
+
+Named doesn't work!  What is wrong?
+
+Step 1:  Run nslookup and see what nameserver it tries to connect you to.
+If nslookup connects you to the wrong nameserver, create a /etc/resolv.conf
+file that points your machine at the correct nameserver.  If there is no
+resolv.conf file, the the resolver uses the nameserver on the local
+machine.
+
+Step 2:  Make sure that named is actually running.
+
+Step 3:  Restart named and see if you get any error messages on the
+console.
+
+Step 4:  If named is running, nslookup connects to the appropriate
+nameserver and nslookup can answer simple questions, but other programs
+such as 'ping' do not work with names, then you need to install resolv+
+most likely.
+
+
+I changed my named database and my local machine has noticed, but nobody
+else has the new information?
+
+Change the serial number in the SOA for any domains that you modified and
+restart named.  Wait an hour and check again.  The information propogates
+out.  It won't change immediately.
+
+
+My local machine knows about all the name server information, but no other
+sites know about me?
+
+Find an upstream nameserver (one that has an SOA for something in your
+domain) and ask them to be a secondary name server for you.  eg if you are
+ecel.uwa.edu.au, ask someone who has an SOA for the domain uwa.edu.au.
+
+
+My forward domain names work, but the backward names do not?
+
+Make sure the numbers are back to front and have the in-addr.arpa on the
+end.
+
+
+How to get useful information from nslookup:
+
+Nslookup is a very useful program but I'm sure there are less than 20
+people worldwide who know how to use it to its full usefulness.  I'm most
+certainly not one of them.  If you don't like using nslookup, there is at
+least one other program called dig, that has most/all(?) of the
+functionality of nslookup and is a hell of a lot easier to use.
+
+To run nslookup, you usually just type nslookup.  It will tell you the
+server it connects to.  You can specify a different server if you want.
+This is useful when you want to tell if your named information is
+consistent with other servers.
+
+Getting name to number mappings.
+
+Type the name of the machine.  Simple 'decel' is enough.  One curious quirk
+of some name resolvers is that if you type a machine name, they will try a
+number of permutations.  For example if my machine is in the domain
+ecel.uwa.edu.au and I try to find a machine called fred, the resolver will
+try the following.
+
+  fred.ecel.uwa.edu.au.
+  fred.uwa.edu.au.
+  fred.edu.au.
+  fred.au.
+  fred.
+
+This can be useful, but more often than not, you would simply prefer a good
+way to make aliases for machines that are commonly referenced.  If you are
+running resolv+, you should just be able to put common machines into the
+host file.
+
+Getting number to name mappings.
+
+Nslookup defaults to finding you the Address of the name specified.  For
+reverse lookups you already have the address and you want to find the
+name that goes with it.  If you read and understood the bit above where it
+describes how to create the number to name mapping file, you would guess
+that you need to find the PTR record instead of the A record.  So you do
+the following.
+
+> set type=ptr
+> 2.4.95.130.in-addr.arpa
+Server:  decel.ecel.uwa.edu.au
+Address:  130.95.4.2
+
+2.4.95.130.in-addr.arpa host name = decel.ecel.uwa.edu.au
+>
+
+nslookup tells you that the ptr for the machine name
+2.4.95.130.in-addr.arpa points to the host decel.ecel.uwa.edu.au.
+
+
+Finding where mail goes when a machine has no IP number.
+
+When a machine is not IP connected, it needs to specify to the world, where
+to send the mail so that it can dial up and collect it every now and then.
+This is accomplished by setting up an MX record for the site and not giving
+it an IP number.  To get the information out of nslookup as to where the
+mail goes, do the following.
+
+> set type=mx
+> dialix.oz.au
+Server:  decel.ecel.uwa.oz.au
+Address:  130.95.4.2
+
+Non-authoritative answer:
+dialix.oz.au    preference = 100, mail exchanger = uniwa.uwa.OZ.AU
+dialix.oz.au    preference = 200, mail exchanger = munnari.OZ.AU
+Authoritative answers can be found from:
+uniwa.uwa.OZ.AU inet address = 130.95.128.1
+munnari.OZ.AU   inet address = 128.250.1.21
+munnari.OZ.AU   inet address = 192.43.207.1
+mulga.cs.mu.OZ.AU       inet address = 128.250.35.21
+mulga.cs.mu.OZ.AU       inet address = 192.43.207.2
+dmssyd.syd.dms.CSIRO.AU inet address = 130.155.16.1
+ns.UU.NET       inet address = 137.39.1.3
+
+You tell nslookup that you want to search for mx records and then you give
+it the name of the machine.  It tells you the preference for the mail
+(small means more preferable), and who the mail should be sent to.  It also
+includes sites that are authorative (have this name in their named database
+files) for this MX record.  There are multiple sites as a backup.  As can
+be seen, our local public internet access company dialix would like all of
+their mail to be sent to uniwa, where they collect it from.  If uniwa is
+not up, send it to munnari and munnari will get it to uniwa eventually.
+
+NOTE: For historical reasons Australia used to be .oz which was changed to
+.oz.au to move to the ISO standard extensions upon the advent of IP.  We
+are now moving to a more normal heirarchy which is where the .edu.au comes
+from.  Pity, I liked having oz.
+
+Getting a list of machines in a domain from nslookup.
+
+Find a server that is authorative for the domain or just generally all
+knowing.  To find a good server, find all the soa records for a given
+domain.  To do this, you set type=soa and enter the domain just like in the
+two previous examples.
+
+Once you have a server type 
+
+> ls gu.uwa.edu.au.
+[uniwa.uwa.edu.au]
+Host or domain name            Internet address
+ gu                             server = mackerel.gu.uwa.edu.au
+ gu                             server = uniwa.uwa.edu.au
+ gu                             130.95.100.3
+ snuffle-upagus                 130.95.100.131
+ mullet                         130.95.100.2
+ mackerel                       130.95.100.3
+ marlin                         130.95.100.4
+ gugate                         130.95.100.1
+ gugate                         130.95.100.129
+ helpdesk                       130.95.100.180
+ lan                            130.95.100.0
+ big-bird                       130.95.100.130
+
+to get a list of all the machines in the domain.
+
+If you wanted to find a list of all of the MX records for the domain, you
+can put a -m flag in the ls command.
+
+> ls -m gu.uwa.edu.au.
+[uniwa.uwa.edu.au]
+Host or domain name            Metric Host
+ gu                             100  mackerel.gu.uwa.edu.au
+ gu                             200  uniwa.uwa.edu.au
+
+This only works for a limited selection of the different types.
+
+
+
+Well that about wraps it up.  If anyone else has any questions or answers
+or comments they think should be in here, mail me and I'll add them.  I'll
+also probably set up an automated posting thing so that this file gets
+posted to the newsgroup once a month or so.  Hope all of this information
+helps someone.  I had to learn it all the hard way and if I can save
+someone that trouble it will have been worth it.
+
+(P.S. I haven't proof read this so if there are any gaping holes, let me
+know ASAP so I can fix them)
+
+Craig
+--
+Craig Richmond.  Computer Officer -  Dept of Economics (morning) 380 3860
+  University of Western Australia    Dept of Education (afternoon)   2388
+craig@ecel.uwa.edu.au Dvorak Keyboards RULE!  "Messes are only acceptable
+if users make them.  Applications aren't allowed this freedom" I.M.VI 2-4
