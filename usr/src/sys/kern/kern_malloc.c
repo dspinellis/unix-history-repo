@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)kern_malloc.c	7.8 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,11 +34,12 @@ long wantkmemmap;
 qaddr_t
 malloc(size, type, flags)
 	unsigned long size;
-	long type, flags;
+	int type, flags;
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
-	long indx, npg, alloc, allocsize, s;
+	long indx, npg, alloc, allocsize;
+	int s;
 	caddr_t va, cp;
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -84,9 +85,9 @@ again:
 			goto again;
 		}
 		alloc -= CLSIZE;		/* convert to base 0 */
-		(void) vmemall(&kmempt[alloc], npg, &proc[0], CSYS);
+		(void) vmemall(&kmempt[alloc], (int)npg, &proc[0], CSYS);
 		va = (caddr_t) kmemxtob(alloc);
-		vmaccess(&kmempt[alloc], va, npg);
+		vmaccess(&kmempt[alloc], va, (int)npg);
 #ifdef KMEMSTATS
 		kbp->kb_total += kbp->kb_elmpercl;
 #endif
@@ -140,11 +141,12 @@ out:
 void
 free(addr, type)
 	caddr_t addr;
-	long type;
+	int type;
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
-	long alloc, size, s;
+	long alloc, size;
+	int s;
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 #endif
@@ -155,7 +157,7 @@ free(addr, type)
 	size = 1 << kup->ku_indx;
 	if (size > MAXALLOCSAVE) {
 		alloc = btokmemx(addr);
-		(void) memfree(&kmempt[alloc], kup->ku_pagecnt, 0);
+		(void) memfree(&kmempt[alloc], (int)kup->ku_pagecnt, 0);
 		rmfree(kmemmap, (long)kup->ku_pagecnt, alloc + CLSIZE);
 		if (wantkmemmap) {
 			wakeup((caddr_t)&wantkmemmap);
@@ -202,14 +204,17 @@ kmeminit()
 	register long indx;
 	int npg;
 
-	if (!powerof2(MAXALLOCSAVE))
-		panic("kmeminit: MAXALLOCSAVE not power of 2");
-	if (MAXALLOCSAVE > MINALLOCSIZE * 32768)
-		panic("kmeminit: MAXALLOCSAVE too big");
-	if (MAXALLOCSAVE < CLBYTES)
-		panic("kmeminit: MAXALLOCSAVE too small");
+#if	((MAXALLOCSAVE & (MAXALLOCSAVE - 1)) != 0)
+		ERROR!_kmeminit:_MAXALLOCSAVE_not_power_of_2
+#endif
+#if	(MAXALLOCSAVE > MINALLOCSIZE * 32768)
+		ERROR!_kmeminit:_MAXALLOCSAVE_too_big
+#endif
+#if	(MAXALLOCSAVE < CLBYTES)
+		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
+#endif
 	npg = ekmempt - kmempt;
-	rminit(kmemmap, npg, (long)CLSIZE, "malloc map", npg);
+	rminit(kmemmap, (long)npg, (long)CLSIZE, "malloc map", npg);
 #ifdef KMEMSTATS
 	for (indx = 0; indx < MINBUCKET + 16; indx++) {
 		if (1 << indx >= CLBYTES)
