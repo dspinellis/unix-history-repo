@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dir.h	7.11 (Berkeley) %G%
+ *	@(#)dir.h	7.12 (Berkeley) %G%
  */
 
 #ifndef _DIR_H_
@@ -79,6 +79,8 @@ struct	direct {
 #define DIRSIZ(oldfmt, dp) \
     ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 #endif
+#define OLDDIRFMT	1
+#define NEWDIRFMT	0
 
 /*
  * Template for manipulating directories.
