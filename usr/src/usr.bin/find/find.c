@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)find.c	4.10 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.11 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -796,32 +796,50 @@ fastfind ( pathpart )
 }
 
 /*
-    extract first glob-free subpattern for fast pre-match;
-    prepend NULL for backwards match; return end of pattern
+    extract last glob-free subpattern in name for fast pre-match;
+    prepend '\0' for backwards match; return end of new pattern
 */
 static char globfree[100];
 
 char *
-patprep ( p )
-	register char *p;
+patprep ( name )
+	char *name;
 {
+	register char *p, *endmark;
 	register char *subp = globfree;
 
-	while ( *p == '*' || *p == '?' )
-		p++;
-	if ( *p == '[' ) {
-		while ( *p != ']' && *p != NULL )
-			p++;
-		p++;
-	}
-	*subp++ = NULL;
-	if ( *p != NULL )		/* copy first noglob string */
-		while ( *p != '*' && *p != '?' && *p != '[' && *p != NULL &&
-		      subp < (globfree + sizeof(globfree)) )
+	*subp++ = '\0';
+	p = name + strlen ( name ) - 1;
+	/*
+	   skip trailing metacharacters (and [] ranges)
+	*/
+	for ( ; p >= name; p-- )
+		if ( index ( "*?", *p ) == 0 )
+			break;
+	if ( p < name )
+		p = name;
+	if ( *p == ']' )
+		for ( p--; p >= name; p-- )
+			if ( *p == '[' ) {
+				p--;
+				break;
+			}
+	if ( p < name )
+		p = name;
+	/*
+	   if pattern has only metacharacters,
+	   check every path (force '/' search)
+	*/
+	if ( (p == name) && index ( "?*[]", *p ) != 0 )
+		*subp++ = '/';					
+	else {				
+		for ( endmark = p; p >= name; p-- )
+			if ( index ( "]*?", *p ) != 0 )
+				break;
+		for ( ++p; (p <= endmark) && subp < (globfree + sizeof ( globfree )); )
 			*subp++ = *p++;
-	else				/* pattern has noglob chars only */
-		*subp++ = '/';		/* ... check every path */
-	*subp = NULL;
+	}
+	*subp = '\0';
 	return ( --subp );
 }
 #endif
