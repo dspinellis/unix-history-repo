@@ -3,8 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)random_.c	5.1	%G%
- */
+ *	@(#)random_.c	5.2	%G%
+ * 
  * Routines to return random values
  *
  * calling sequence:
