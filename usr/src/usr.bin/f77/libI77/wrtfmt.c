@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.3";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.4";
  *
  * formatted write routines
  */
@@ -222,7 +222,7 @@ wrt_G(p,w,d,e,len) ufloat *p; ftnlen len;
 	if(x>=0.1)
 	{
 		for(i=0; i<=d; i++, uplim*=10.0)
-		{	if(x>uplim) continue;
+		{	if(x>=uplim) continue;
 zero:			oldscale=scale;
 			scale=0;
 			ne = e+2;
