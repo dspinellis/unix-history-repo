@@ -25,6 +25,7 @@ char	*dumphist[] =	{ "history", "-h", 0, 0 };
 char	*loadhist[] =	{ "source", "-h", "~/.history", 0 };
 char	HIST = '!';
 char	HISTSUB = '^';
+bool	mflag;
 bool	nofile;
 bool	reenter;
 bool	nverbose;
@@ -149,6 +150,10 @@ main(c, av)
 		case 'i':		/* -i	Interactive, even if !intty */
 			intact++;
 			nofile++;
+			break;
+
+		case 'm':		/* -m	read .cshrc (from su) */
+			mflag++;
 			break;
 
 		case 'n':		/* -n	Don't execute */
@@ -423,23 +428,18 @@ srccat(cp, dp)
 
 	(void) ioctl(unit, FIOCLEX, (char *)0);
 	xfree(ep);
-#ifdef INGRES
-	srcunit(unit, 0, 0);
-#else
-	srcunit(unit, 1, 0);
-#endif
+	srcunit(unit, mflag ? 0 : 1, 0);
 }
 
 /*
- * Source to a unit.  If onlyown it must be our file or our group or
- * we don't chance it.	This occurs on ".cshrc"s and the like.
+ * Source to a unit.
+ * This occurs on ".cshrc"s and the like.
  */
 int	insource;
 static
 srcunit(unit, onlyown, hflg)
 	register int unit;
-	bool onlyown;
-	bool hflg;
+	bool onlyown, hflg;
 {
 	/* We have to push down a lot of state here */
 	/* All this could go into a structure */
