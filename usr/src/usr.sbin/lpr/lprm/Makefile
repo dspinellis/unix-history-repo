@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	lprm
 CFLAGS+=-I${.CURDIR}/../common_source
@@ -9,5 +9,4 @@ BINMODE=6555
 BINDIR=	/usr/bin
 .PATH:	${.CURDIR}/../common_source
 
-.include "../../Makefile.inc"
 .include <bsd.prog.mk>
