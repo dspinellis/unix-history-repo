@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)recipient.c	3.2	%G%";
+static char SccsId[] = "@(#)recipient.c	3.3	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -229,6 +229,7 @@ include(fname, msg)
 {
 	char buf[MAXLINE];
 	register FILE *fp;
+	char *oldto = To;
 
 	fp = fopen(fname, "r");
 	if (fp == NULL)
@@ -246,7 +247,7 @@ include(fname, msg)
 			*p = '\0';
 		if (buf[0] == '\0')
 			continue;
-		To = fname;
+		To = oldto;
 		if (Verbose)
 			message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
