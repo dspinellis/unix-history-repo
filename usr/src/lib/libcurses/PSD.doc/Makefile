@@ -3,12 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.1 (Berkeley) %G%
+#	@(#)Makefile	6.2 (Berkeley) %G%
 #
 #	makefile for screen package documentation
 #
 NROFF=	nroff
 TROFF=	ditroff
+TBL=	dtbl -Pdp
 VFONT=	/usr/lib/vfontedpr
 NFLAGS=	-Tcrt
 TFLAGS= -Pdp
@@ -33,15 +34,15 @@ SOURCE=	macros appen.A.tbl appen.B appen.C intro.0 intro.1 \
 # bold font, and comments in italics.
 #
 
-Curses.doc: ${VFONT} Master macros ${SOURCE}
-	${NROFF} -me ${NFLAGS} Master > Curses.doc
-
 # Don't re-run vgrind unless you want to patch the output files.
 .c.gr:
 	${VFONT} $*.c | grep -v "^'wh" > $*.gr
 
 troff: Master macros ${SOURCE}
 	${TROFF} -me ${TFLAGS} Master ;
+
+Curses.doc: ${VFONT} Master macros ${SOURCE}
+	${NROFF} -me ${NFLAGS} Master > Curses.doc
 
 ${CSOURCE}: ${VFONT}
 
@@ -50,10 +51,10 @@ appen.B: win_st.gr
 appen.C: twinkle1.gr life.gr twinkle2.gr
 
 intro.2.tbl: intro.2
-	tbl intro.2 > intro.2.tbl
+	${TBL} intro.2 > intro.2.tbl
 
 appen.A.tbl: appen.A
-	tbl appen.A > appen.A.tbl
+	${TBL} appen.A > appen.A.tbl
 
 vfontedpr: vfontedpr.c
 	${CC} ${CFLAGS} -o vfontedpr vfontedpr.c
@@ -72,4 +73,5 @@ lpr: Curses
 	-lpq
 
 clean:
-	rm -f ${CSOURCE} appen.A.tbl intro.2.tbl curses.tar vfontedpr Curses.doc
+	rm -f ${CSOURCE} appen.A.tbl intro.2.tbl curses.tar vfontedpr \
+		Curses.doc errs Errs
