@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)unpcb.h	6.2 (Berkeley) %G%
+ *	@(#)unpcb.h	6.3 (Berkeley) %G%
  */
 
 /*
@@ -26,14 +26,21 @@
  * by a number of other sockets and may also reference a socket (not
  * necessarily one which is referencing it).  This generates
  * the need for unp_refs and unp_nextref to be separate fields.
+ *
+ * Stream sockets keep copies of receive sockbuf sb_cc and sb_mbcnt
+ * so that changes in the sockbuf may be computed to modify
+ * back pressure on the sender accordingly.
  */
 struct	unpcb {
 	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	inode *unp_inode;	/* if associated with file */
+	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unpcb *unp_refs;	/* referencing socket linked list */
 	struct 	unpcb *unp_nextref;	/* link in unp_refs list */
-	struct	mbuf *unp_remaddr;	/* address of connected socket */
+	struct	mbuf *unp_addr;		/* bound address of socket */
+	int	unp_cc;			/* copy of rcv.sb_cc */
+	int	unp_mbcnt;		/* copy of rcv.sb_mbcnt */
 };
 
 #define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))
