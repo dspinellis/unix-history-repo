@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cluster.c	7.12 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -595,35 +595,45 @@ blkflush(vp, blkno, size)
 {
 	register struct buf *ep;
 	struct buf *dp;
-	daddr_t start, last;
+	daddr_t curblk, nextblk, ecurblk, lastblk;
 	int s, error, allerrors = 0;
 
-	start = blkno;
-	last = start + btodb(size) - 1;
-	dp = BUFHASH(vp, blkno);
+	/*
+	 * Iterate through each possible hash chain.
+	 */
+	lastblk = blkno + btodb(size) - 1;
+	for (curblk = blkno; curblk <= lastblk; curblk = nextblk) {
+#if RND & (RND-1)
+		nextblk = ((curblk / RND) + 1) * RND;
+#else
+		nextblk = ((curblk & ~(RND-1)) + RND);
+#endif
+		ecurblk = nextblk > lastblk ? lastblk : nextblk - 1;
+		dp = BUFHASH(vp, curblk);
 loop:
-	for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
-		if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
-			continue;
-		/* look for overlap */
-		if (ep->b_bcount == 0 || ep->b_blkno > last ||
-		    ep->b_blkno + btodb(ep->b_bcount) <= start)
-			continue;
-		s = splbio();
-		if (ep->b_flags&B_BUSY) {
-			ep->b_flags |= B_WANTED;
-			sleep((caddr_t)ep, PRIBIO+1);
+		for (ep = dp->b_forw; ep != dp; ep = ep->b_forw) {
+			if (ep->b_vp != vp || (ep->b_flags & B_INVAL))
+				continue;
+			/* look for overlap */
+			if (ep->b_bcount == 0 || ep->b_blkno > ecurblk ||
+			    ep->b_blkno + btodb(ep->b_bcount) <= curblk)
+				continue;
+			s = splbio();
+			if (ep->b_flags&B_BUSY) {
+				ep->b_flags |= B_WANTED;
+				sleep((caddr_t)ep, PRIBIO+1);
+				splx(s);
+				goto loop;
+			}
+			if (ep->b_flags & B_DELWRI) {
+				splx(s);
+				notavail(ep);
+				if (error = bwrite(ep))
+					allerrors = error;
+				goto loop;
+			}
 			splx(s);
-			goto loop;
 		}
-		if (ep->b_flags & B_DELWRI) {
-			splx(s);
-			notavail(ep);
-			if (error = bwrite(ep))
-				allerrors = error;
-			goto loop;
-		}
-		splx(s);
 	}
 	return (allerrors);
 }
