@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.39 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.40 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -482,12 +482,6 @@ nfs_unmount(mp, mntflags, p)
 	}
 	nmp = VFSTONFS(mp);
 	/*
-	 * Clear out the buffer cache
-	 */
-	mntflushbuf(mp, 0);
-	if (mntinvalbuf(mp))
-		return (EBUSY);
-	/*
 	 * Goes something like this..
 	 * - Check for activity on the root vnode (other than ourselves).
 	 * - Call vflush() to clear out vnodes for this file system,
@@ -570,27 +564,46 @@ extern int syncprt;
  * Flush out the buffer cache
  */
 /* ARGSUSED */
-nfs_sync(mp, waitfor)
+nfs_sync(mp, waitfor, cred, p)
 	struct mount *mp;
 	int waitfor;
+	struct ucred *cred;
+	struct proc *p;
 {
-	if (syncprt)
-		ufs_bufstats();
+	USES_VOP_FSYNC;
+	USES_VOP_ISLOCKED;
+	register struct vnode *vp;
+	int error, allerror = 0;
+
 	/*
 	 * Force stale buffer cache information to be flushed.
 	 */
-	mntflushbuf(mp, waitfor == MNT_WAIT ? B_SYNC : 0);
-	return (0);
+loop:
+	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		/*
+		 * If the vnode that we are about to sync is no longer
+		 * associated with this mount point, start over.
+		 */
+		if (vp->v_mount != mp)
+			goto loop;
+		if (VOP_ISLOCKED(vp) || vp->v_dirtyblkhd == NULL)
+			continue;
+		if (vget(vp))
+			goto loop;
+		if (error = VOP_FSYNC(vp, cred, waitfor, p))
+			allerror = error;
+		vput(vp);
+	}
+	return (allerror);
 }
 
 /*
  * At this point, this should never happen
  */
 /* ARGSUSED */
-nfs_fhtovp(mp, fhp, setgen, vpp)
+nfs_fhtovp(mp, fhp, vpp)
 	struct mount *mp;
 	struct fid *fhp;
-	int setgen;
 	struct vnode **vpp;
 {
 
@@ -629,7 +642,7 @@ nfs_start(mp, flags, p)
 nfs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
-	u_int uid;
+	uid_t uid;
 	caddr_t arg;
 	struct proc *p;
 {
