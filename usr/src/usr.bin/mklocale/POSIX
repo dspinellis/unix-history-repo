@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.1 (Berkeley) %G%
+#	@(#)POSIX	8.1 (Berkeley) %G%
 
 /*
  * Standard LOCALE_CTYPE for the C Locale
