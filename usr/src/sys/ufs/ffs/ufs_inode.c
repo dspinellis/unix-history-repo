@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_inode.c	7.31 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -216,7 +216,7 @@ loop:
 		if (++nextgennumber < (u_long)time.tv_sec)
 			nextgennumber = time.tv_sec;
 		ip->i_gen = nextgennumber;
-		if ((vp->v_mount->m_flag & M_RDONLY) == 0)
+		if ((vp->v_mount->mnt_flag & MNT_RDONLY) == 0)
 			ip->i_flag |= IMOD;
 	}
 	*ipp = ip;
@@ -257,7 +257,7 @@ ufs_inactive(vp)
 		return (0);
 	}
 	ILOCK(ip);
-	if (ip->i_nlink <= 0 && (vp->v_mount->m_flag & M_RDONLY) == 0) {
+	if (ip->i_nlink <= 0 && (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
 #ifdef QUOTA
 		if (!getinoquota(ip))
 			(void) chkiq(ip, -1, NOCRED, 0);
@@ -336,7 +336,7 @@ iupdat(ip, ta, tm, waitfor)
 	fs = ip->i_fs;
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
-	if (vp->v_mount->m_flag & M_RDONLY)
+	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
 	error = bread(ip->i_devvp, fsbtodb(fs, itod(fs, ip->i_number)),
 		(int)fs->fs_bsize, NOCRED, &bp);

@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_quota.c	7.1 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.2 (Berkeley) %G%
  */
 #include "param.h"
 #include "time.h"
@@ -359,7 +359,7 @@ quotaon(ndp, mp, type, fname)
 	if (*vpp != vp)
 		quotaoff(mp, type);
 	ump->um_qflags[type] |= QTF_OPENING;
-	mp->m_flag |= M_QUOTA;
+	mp->mnt_flag |= MNT_QUOTA;
 	vp->v_flag |= VSYSTEM;
 	*vpp = vp;
 	/*
@@ -384,7 +384,7 @@ quotaon(ndp, mp, type, fname)
 	 * vp->v_usecount == 0 below should use vp->v_writecnt == 0.
 	 */
 again:
-	for (vp = mp->m_mounth; vp; vp = nextvp) {
+	for (vp = mp->mnt_mounth; vp; vp = nextvp) {
 		nextvp = vp->v_mountf;
 		if (vp->v_usecount == 0)
 			continue;
@@ -416,7 +416,7 @@ quotaoff(mp, type)
 	register struct dquot *dq;
 	register struct inode *ip;
 	
-	if ((mp->m_flag & M_MPBUSY) == 0)
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("quotaoff: not busy");
 	if ((qvp = ump->um_quotas[type]) == NULLVP)
 		return (0);
@@ -426,7 +426,7 @@ quotaoff(mp, type)
 	 * deleting any references to quota file being closed.
 	 */
 again:
-	for (vp = mp->m_mounth; vp; vp = nextvp) {
+	for (vp = mp->mnt_mounth; vp; vp = nextvp) {
 		nextvp = vp->v_mountf;
 		if (vget(vp))
 			goto again;
@@ -449,7 +449,7 @@ again:
 		if (ump->um_quotas[type] != NULLVP)
 			break;
 	if (type == MAXQUOTAS)
-		mp->m_flag &= ~M_QUOTA;
+		mp->mnt_flag &= ~MNT_QUOTA;
 	return (0);
 }
 
@@ -590,10 +590,10 @@ qsync(mp)
 	 * Search vnodes associated with this mount point,
 	 * synchronizing any modified dquot structures.
 	 */
-	if ((mp->m_flag & M_MPBUSY) == 0)
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("qsync: not busy");
 again:
-	for (vp = mp->m_mounth; vp; vp = nextvp) {
+	for (vp = mp->mnt_mounth; vp; vp = nextvp) {
 		nextvp = vp->v_mountf;
 		if (vget(vp))
 			goto again;

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.40 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,10 +84,10 @@ ufs_mountroot()
 
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
-	mp->m_op = &ufs_vfsops;
-	mp->m_flag = M_RDONLY;
-	mp->m_exroot = 0;
-	mp->m_mounth = (struct vnode *)0;
+	mp->mnt_op = &ufs_vfsops;
+	mp->mnt_flag = MNT_RDONLY;
+	mp->mnt_exroot = 0;
+	mp->mnt_mounth = NULLVP;
 	error = mountfs(rootvp, mp);
 	if (error) {
 		free((caddr_t)mp, M_MOUNT);
@@ -99,17 +99,19 @@ ufs_mountroot()
 		return (error);
 	}
 	rootfs = mp;
-	mp->m_next = mp;
-	mp->m_prev = mp;
-	mp->m_vnodecovered = (struct vnode *)0;
+	mp->mnt_next = mp;
+	mp->mnt_prev = mp;
+	mp->mnt_vnodecovered = NULLVP;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	bzero(fs->fs_fsmnt, sizeof(fs->fs_fsmnt));
 	fs->fs_fsmnt[0] = '/';
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
-	(void) copystr(ROOTNAME, mp->m_stat.f_mntfromname, MNAMELEN - 1, &size);
-	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->m_stat);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
+	    MNAMELEN);
+	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
+	    &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) ufs_statfs(mp, &mp->mnt_stat);
 	vfs_unlock(mp);
 	inittodr(fs->fs_time);
 	return (0);
@@ -138,25 +140,25 @@ ufs_mount(mp, path, data, ndp)
 	/*
 	 * Process export requests.
 	 */
-	if ((args.exflags & M_EXPORTED) || (mp->m_flag & M_EXPORTED)) {
-		if (args.exflags & M_EXPORTED)
-			mp->m_flag |= M_EXPORTED;
+	if ((args.exflags & MNT_EXPORTED) || (mp->mnt_flag & MNT_EXPORTED)) {
+		if (args.exflags & MNT_EXPORTED)
+			mp->mnt_flag |= MNT_EXPORTED;
 		else
-			mp->m_flag &= ~M_EXPORTED;
-		if (args.exflags & M_EXRDONLY)
-			mp->m_flag |= M_EXRDONLY;
+			mp->mnt_flag &= ~MNT_EXPORTED;
+		if (args.exflags & MNT_EXRDONLY)
+			mp->mnt_flag |= MNT_EXRDONLY;
 		else
-			mp->m_flag &= ~M_EXRDONLY;
-		mp->m_exroot = args.exroot;
+			mp->mnt_flag &= ~MNT_EXRDONLY;
+		mp->mnt_exroot = args.exroot;
 	}
-	if ((mp->m_flag & M_UPDATE) == 0) {
+	if ((mp->mnt_flag & MNT_UPDATE) == 0) {
 		if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
 			return (error);
 		error = mountfs(devvp, mp);
 	} else {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
-		if (fs->fs_ronly && (mp->m_flag & M_RDONLY) == 0)
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
 			fs->fs_ronly = 0;
 		/*
 		 * Verify that the specified device is the one that
@@ -177,11 +179,12 @@ ufs_mount(mp, path, data, ndp)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
-	(void) copyinstr(args.fspec, mp->m_stat.f_mntfromname, MNAMELEN - 1, 
-		&size);
-	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) ufs_statfs(mp, &mp->m_stat);
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
+	    MNAMELEN);
+	(void) copyinstr(args.fspec, mp->mnt_stat.f_mntfromname, MNAMELEN - 1, 
+	    &size);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) ufs_statfs(mp, &mp->mnt_stat);
 	return (0);
 }
 
@@ -202,7 +205,7 @@ mountfs(devvp, mp)
 	int havepart = 0, blks;
 	int error, i, size;
 	int needclose = 0;
-	int ronly = (mp->m_flag & M_RDONLY) != 0;
+	int ronly = (mp->mnt_flag & MNT_RDONLY) != 0;
 
 	if (error = VOP_OPEN(devvp, ronly ? FREAD : FREAD|FWRITE, NOCRED))
 		return (error);
@@ -286,10 +289,10 @@ mountfs(devvp, mp)
 		brelse(bp);
 		bp = NULL;
 	}
-	mp->m_data = (qaddr_t)ump;
-	mp->m_stat.f_fsid.val[0] = (long)dev;
-	mp->m_stat.f_fsid.val[1] = MOUNT_UFS;
-	mp->m_flag |= M_LOCAL;
+	mp->mnt_data = (qaddr_t)ump;
+	mp->mnt_stat.f_fsid.val[0] = (long)dev;
+	mp->mnt_stat.f_fsid.val[1] = MOUNT_UFS;
+	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
 	ump->um_dev = dev;
 	ump->um_devvp = devvp;
@@ -312,7 +315,7 @@ out:
 	if (ump) {
 		free((caddr_t)ump->um_fs, M_SUPERBLK);
 		free((caddr_t)ump, M_UFSMNT);
-		mp->m_data = (qaddr_t)0;
+		mp->mnt_data = (qaddr_t)0;
 	}
 	return (error);
 }
@@ -351,7 +354,7 @@ ufs_unmount(mp, mntflags)
 	ump = VFSTOUFS(mp);
 		return (error);
 #ifdef QUOTA
-	if (mp->m_flag & M_QUOTA) {
+	if (mp->mnt_flag & MNT_QUOTA) {
 		if (error = vflush(mp, NULLVP, SKIPSYSTEM|flags))
 			return (error);
 		for (i = 0; i < MAXQUOTAS; i++) {
@@ -491,10 +494,10 @@ ufs_statfs(mp, sbp)
 		(fs->fs_dsize - sbp->f_bfree);
 	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
-	if (sbp != &mp->m_stat) {
-		bcopy((caddr_t)mp->m_stat.f_mntonname,
+	if (sbp != &mp->mnt_stat) {
+		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
 			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
-		bcopy((caddr_t)mp->m_stat.f_mntfromname,
+		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
 			(caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
 	}
 	return (0);
@@ -547,7 +550,7 @@ ufs_sync(mp, waitfor)
 	 * Write back each (modified) inode.
 	 */
 loop:
-	for (vp = mp->m_mounth; vp; vp = nvp) {
+	for (vp = mp->mnt_mounth; vp; vp = nvp) {
 		nvp = vp->v_mountf;
 		ip = VTOI(vp);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
@@ -684,7 +687,7 @@ ufs_fhtovp(mp, fhp, vpp)
 	fs = VFSTOUFS(mp)->um_fs;
 	if (ufhp->ufid_ino < ROOTINO ||
 	    ufhp->ufid_ino >= fs->fs_ncg * fs->fs_ipg) {
-		*vpp = (struct vnode *)0;
+		*vpp = NULLVP;
 		return (EINVAL);
 	}
 	tvp.v_mount = mp;
@@ -692,18 +695,18 @@ ufs_fhtovp(mp, fhp, vpp)
 	ip->i_vnode = &tvp;
 	ip->i_dev = VFSTOUFS(mp)->um_dev;
 	if (error = iget(ip, ufhp->ufid_ino, &nip)) {
-		*vpp = (struct vnode *)0;
+		*vpp = NULLVP;
 		return (error);
 	}
 	ip = nip;
 	if (ip->i_mode == 0) {
 		iput(ip);
-		*vpp = (struct vnode *)0;
+		*vpp = NULLVP;
 		return (EINVAL);
 	}
 	if (ip->i_gen != ufhp->ufid_gen) {
 		iput(ip);
-		*vpp = (struct vnode *)0;
+		*vpp = NULLVP;
 		return (EINVAL);
 	}
 	*vpp = ITOV(ip);
