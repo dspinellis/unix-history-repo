@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.49 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -123,9 +123,11 @@ main(argc, argv)
 		case 'v':
 			vacuous = 1;
 			break;
+#ifdef CRYPT
 		case 'x':
 			encrypt = 1;
 			break;
+#endif
 #endif
 		case '?':
 		default:
@@ -256,9 +258,10 @@ doit(f, fromp)
 		confirmed = 1;		/* we sent the null! */
 	}
 #ifdef	KERBEROS
+#ifdef	CRYPT
 	if (encrypt)
 		(void) des_write(f, SECURE_MESSAGE, sizeof(SECURE_MESSAGE));
-
+#endif
 	if (use_kerberos == 0)
 #endif
 	   if (!authenticated && !hostok)

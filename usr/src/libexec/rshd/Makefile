@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	rshd
-CFLAGS+=-DKERBEROS
+CFLAGS+=-DKERBEROS -DCRYPT
 SRCS=	rshd.c des_rw.c
 MAN8=	rshd.0
 DPADD=	${LIBUTIL} ${LIBKRB} ${LIBDES}
