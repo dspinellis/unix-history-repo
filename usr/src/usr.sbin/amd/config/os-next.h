@@ -1,13 +1,4 @@
-/* $Id: os-next.h,v 5.2.1.1 90/10/21 22:31:00 jsp Exp $ */
-
 /*
- * NeXT OS definitions for Amd (automounter)
- *
- * By Bill Trost, Reed College
- * trost%reed@cse.ogi.edu,
- *
- * Derived from the Sun 3.2 definitions for Amd (os-sos3.h).
- *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -18,7 +9,18 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-next.h	5.2 (Berkeley) %G%
+ *	@(#)os-next.h	5.3 (Berkeley) %G%
+ */
+
+/* $Id: os-next.h,v 5.2.1.1 90/10/21 22:31:00 jsp Exp $ */
+
+/*
+ * NeXT OS definitions for Amd (automounter)
+ *
+ * By Bill Trost, Reed College
+ * trost%reed@cse.ogi.edu,
+ *
+ * Derived from the Sun 3.2 definitions for Amd (os-sos3.h).
  */
 
 /*
