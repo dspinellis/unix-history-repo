@@ -1,4 +1,4 @@
-/*	dh.c	3.6	%H%	*/
+/*	dh.c	3.6	5/9/80	*/
 
 /*
  *	DH-11 driver
@@ -73,6 +73,7 @@ extern struct cblock cfree[];
  */
 #define	TURNON	03	/* CD lead + line enable */
 #define	TURNOFF	01	/* line enable */
+#define	DTR	02	/* data terminal ready */
 #define	RQS	04	/* request to send */
 
 /*
@@ -129,9 +130,11 @@ dhopen(dev, flag)
 	dhact |= (1<<(d>>4));
 	if ((tp->t_state&ISOPEN) == 0) {
 		ttychars(tp);
-		tp->t_ispeed = SSPEED;
-		tp->t_ospeed = SSPEED;
-		tp->t_flags = ODDP|EVENP|ECHO;
+		if (tp->t_ispeed == 0) {
+			tp->t_ispeed = SSPEED;
+			tp->t_ospeed = SSPEED;
+			tp->t_flags = ODDP|EVENP|ECHO;
+		}
 		dhparam(d);
 	}
 	if (tp->t_state&XCLUDE && u.u_uid!=0) {
@@ -157,7 +160,7 @@ int  flag;
 	tp = &dh11[d];
 	(*linesw[tp->t_line].l_close)(tp);
 	if (tp->t_state&HUPCLS || (tp->t_state&ISOPEN)==0)
-		dmctl(d, TURNOFF);
+		dmctl(d, TURNOFF, DMSET);
 	ttyclose(tp);
 }
 
@@ -216,13 +219,15 @@ dhrint(dev)
 			if (tp->t_flags&RAW)
 				c = 0;	/* null (for getty) */
 			else
-				c = 0177;	/* DEL (intr) */
-#ifdef BERKNET
+#ifdef IIASA
+				continue;
+#else
+				c = 0177;	/* tun.t_intrc? */
+#endif
 		if (tp->t_line == NETLDISC) {
 			c &= 0177;
-			NETINPUT(c, tp);
+			BKINPUT(c, tp);
 		} else
-#endif
 			(*linesw[tp->t_line].l_rint)(c,tp);
 	}
 	splx(s);
@@ -244,32 +249,22 @@ caddr_t addr;
 	if (ttioccomm(cmd, tp, addr, dev)) {
 		if (cmd==TIOCSETP||cmd==TIOCSETN)
 			dhparam(dev);
-	} else if (cmd==TIOCSBRK) {
-		/* send a break */
-		register int linebit = 1 << (dev&017);
-		extern dhunbrk();
-
-		wflushtty(tp);
-		spl5();
-		((struct device *)tp->t_addr)->dhbreak |= linebit;
-		tp->t_state |= TIMEOUT;
-		timeout(dhunbrk, (caddr_t)tp, 25);	/* 300-500 ms */
-		while (((struct device *)tp->t_addr)->dhbreak & linebit)
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
-		tp->t_state &= ~TIMEOUT;
-		spl0();
-		flushtty(tp);
-		return;
-	} else
+	} else switch(cmd) {
+	case TIOCSBRK:
+		((struct device *)(tp->t_addr))->dhbreak |= 1<<(minor(dev)&017);
+		break;
+	case TIOCCBRK:
+		((struct device *)(tp->t_addr))->dhbreak &= ~(1<<(minor(dev)&017));
+		break;
+	case TIOCSDTR:
+		dmctl(minor(dev), DTR|RQS, DMBIS);
+		break;
+	case TIOCCDTR:
+		dmctl(minor(dev), DTR|RQS, DMBIC);
+		break;
+	default:
 		u.u_error = ENOTTY;
-}
-
-dhunbrk(tp)
-register struct tty *tp;
-{
-
-	((struct device *)tp->t_addr)->dhbreak &= ~ (1 << (minor(tp->t_dev)&017));
-	wakeup((caddr_t)&tp->t_rawq);
+	}
 }
 
 /*
@@ -292,7 +287,7 @@ dhparam(dev)
 	 */
 	if ((tp->t_ispeed)==0) {
 		tp->t_state |= HUPCLS;
-		dmctl(d, TURNOFF);
+		dmctl(d, TURNOFF, DMSET);
 		return;
 	}
 	d = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
@@ -345,7 +340,7 @@ dhxint(dev)
 				tp->t_state &= ~FLUSH;
 			else {
 				addr->un.dhcsrl = (d&017)|IENAB;
-				ndflush(&tp->t_outq, addr->dhcar-UBACVT(tp->t_outq.c_cf));
+				ndflush(&tp->t_outq, (int)addr->dhcar-UBACVT(tp->t_outq.c_cf));
 			}
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);
@@ -383,7 +378,8 @@ register struct tty *tp;
 	if (tp->t_state&ASLEEP && tp->t_outq.c_cc<=TTLOWAT) {
 		tp->t_state &= ~ASLEEP;
 		if (tp->t_chan)
-			mcstart(tp->t_chan, (caddr_t)&tp->t_outq); else
+			mcstart(tp->t_chan, (caddr_t)&tp->t_outq);
+		else
 			wakeup((caddr_t)&tp->t_outq);
 	}
 
@@ -420,7 +416,6 @@ register struct tty *tp;
 	splx(s);
 }
 
-
 /*
  * Stop output on a line.
  * Assume call is made at spl6.
@@ -445,10 +440,15 @@ register struct tty *tp;
 }
 
 int	dhsilo = 16;
+/*
+ * Silo control is fixed strategy
+ * here, paralleling only option available
+ * on DZ-11.
+ */
 /*ARGSUSED*/
-dhtimer(dev)
+dhtimer()
 {
-	register d,cc;
+	register d;
 	register struct device *addr;
 
 	addr = DHADDR; d = 0;
