@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)confhpup.c	7.7 (Berkeley) %G%
+ *	@(#)confhpup.c	7.8 (Berkeley) %G%
  */
 
 #include "sys/param.h"
