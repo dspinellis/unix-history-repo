@@ -1,0 +1,66 @@
+
+
+
+ARCV(8)             UNIX Programmer's Manual		  ARCV(8)
+
+
+
+NAME
+     arcv - convert archives to new format
+
+SYNOPSIS
+     /etc/arcv file ...
+
+DESCRIPTION
+     _A_r_c_v converts archive files (see _a_r(1), _a_r(5)) from 32v and
+     Third Berkeley editions to a new portable format.	The
+     conversion is done in place, and the command refuses to
+     alter a file not in old archive format.
+
+     Old archives are marked with a magic number of 0177545 at
+     the start; new archives have a first line ``!<arch>''.
+
+FILES
+     /tmp/v*, temporary copy
+
+SEE ALSO
+     ar(1), ar(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 7/26/87              4/29/85				1
+
+
+
