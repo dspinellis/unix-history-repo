@@ -1,4 +1,4 @@
-/*	hp.c	4.23	81/03/06	*/
+/*	hp.c	4.24	81/03/07	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -22,7 +22,8 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mba.h"
+#include "../h/mbareg.h"
+#include "../h/mbavar.h"
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 #include "../h/cmap.h"
@@ -80,10 +81,11 @@ int	hpRDIST = _hpRDIST;
 
 short	hptypes[] =
 	{ MBDT_RM03, MBDT_RM05, MBDT_RP06, MBDT_RM80, 0 };
-struct	mba_info *hpinfo[NHP];
-int	hpdkinit(),hpustart(),hpstart(),hpdtint();
+struct	mba_device *hpinfo[NHP];
+int	hpattach(),hpustart(),hpstart(),hpdtint();
 struct	mba_driver hpdriver =
-	{ hpdkinit, hpustart, hpstart, hpdtint, 0, hptypes, hpinfo };
+	{ hpattach, 0, hpustart, hpstart, hpdtint, 0,
+	  hptypes, "hp", 0, hpinfo };
 
 struct hpst {
 	short	nsect;
@@ -114,8 +116,9 @@ daddr_t dkblock();
  
 int	hpseek;
 
-hpdkinit(mi)
-	struct mba_info *mi;
+/*ARGSUSED*/
+hpattach(mi, slave)
+	struct mba_device *mi;
 {
 	register struct hpst *st = &hpst[mi->mi_type];
 
@@ -126,7 +129,7 @@ hpdkinit(mi)
 hpstrategy(bp)
 	register struct buf *bp;
 {
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register struct hpst *st;
 	register int unit;
 	long sz, bn;
@@ -159,7 +162,7 @@ bad:
 }
 
 hpustart(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
@@ -202,7 +205,7 @@ hpustart(mi)
 }
 
 hpstart(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
@@ -226,7 +229,7 @@ hpstart(mi)
 }
 
 hpdtint(mi, mbasr)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	int mbasr;
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
@@ -305,7 +308,7 @@ hpwrite(dev)
 }
 
 hpecc(mi, rm80sse)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	int rm80sse;
 {
 	register struct mba_regs *mbp = mi->mi_mba;
@@ -384,7 +387,7 @@ sse:
 hpdump(dev)
 	dev_t dev;
 {
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register struct mba_regs *mba;
 	struct hpdevice *hpaddr;
 	char *start;
@@ -397,7 +400,7 @@ hpdump(dev)
 	if (unit >= NHP)
 		return (ENXIO);
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
-	mi = phys(hpinfo[unit],struct mba_info *);
+	mi = phys(hpinfo[unit],struct mba_device *);
 	if (mi == 0 || mi->mi_alive == 0)
 		return (ENXIO);
 	mba = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
