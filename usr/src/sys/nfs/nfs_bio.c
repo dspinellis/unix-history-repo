@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -182,6 +182,7 @@ nfs_write(vp, uio, ioflag, cred)
 		count = howmany(NFS_BIOSIZE, CLBYTES);
 		for (i = 0; i < count; i++)
 			munhash(vp, bn + i * CLBYTES / DEV_BSIZE);
+again:
 		bp = getblk(vp, bn, NFS_BIOSIZE);
 		if (bp->b_wcred == NOCRED) {
 			crhold(cred);
@@ -189,42 +190,26 @@ nfs_write(vp, uio, ioflag, cred)
 		}
 		if (bp->b_dirtyend > 0) {
 			/*
-			 * If the new write will leave a contiguous
-			 * dirty area, just update the b_dirtyoff and
-			 * b_dirtyend
-			 * otherwise force a write rpc of the old dirty
-			 * area
+			 * If the new write will leave a contiguous dirty
+			 * area, just update the b_dirtyoff and b_dirtyend,
+			 * otherwise force a write rpc of the old dirty area.
 			 */
 			if (on <= bp->b_dirtyend && (on+n) >= bp->b_dirtyoff) {
 				bp->b_dirtyoff = MIN(on, bp->b_dirtyoff);
 				bp->b_dirtyend = MAX((on+n), bp->b_dirtyend);
 			} else {
-				/*
-				 * Like bwrite() but without the brelse
-				 */
-				bp->b_flags &= ~(B_READ | B_DONE |
-				    B_ERROR | B_DELWRI | B_ASYNC);
-				u.u_ru.ru_oublock++;
-				bp->b_vp->v_numoutput++;
-				VOP_STRATEGY(bp);
-				error = biowait(bp);
-				if (bp->b_flags & B_ERROR) {
-					brelse(bp);
-					if (bp->b_error)
-						error = bp->b_error;
-					else
-						error = EIO;
+				if (error = bwrite(bp))
 					return (error);
-				}
-				bp->b_dirtyoff = on;
-				bp->b_dirtyend = on+n;
+				goto again;
 			}
 		} else {
 			bp->b_dirtyoff = on;
 			bp->b_dirtyend = on+n;
 		}
-		if (error = uiomove(bp->b_un.b_addr + on, n, uio))
+		if (error = uiomove(bp->b_un.b_addr + on, n, uio)) {
+			brelse(bp);
 			return (error);
+		}
 		if ((n+on) == NFS_BIOSIZE) {
 			bp->b_flags |= B_AGE;
 			bawrite(bp);
