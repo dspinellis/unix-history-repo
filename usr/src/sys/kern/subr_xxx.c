@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)subr_xxx.c	7.9 (Berkeley) %G%
+ *	@(#)subr_xxx.c	7.10 (Berkeley) %G%
  */
 
 /*
  * Miscellaneous trivial functions, including many
  * that are often inline-expanded or done in assembler.
  */
-#include "types.h"
+#include "param.h"
+#include "systm.h"
 #include "machine/cpu.h"
-#include "errno.h"
 
 /*
  * Unsupported device function (e.g. writing to read-only device).
@@ -34,7 +34,28 @@ enxio()
 }
 
 /*
- * Return error for unsupported operation.
+ * Unsupported ioctl function.
+ */
+enoioctl()
+{
+
+	return (ENOTTY);
+}
+
+/*
+ * Unsupported system function.
+ * This is used for an otherwise-reasonable operation
+ * that is not supported by the current system binary.
+ */
+enosys()
+{
+
+	return (ENOSYS);
+}
+
+/*
+ * Return error for operation not supported
+ * on a specific object or file type.
  */
 eopnotsupp()
 {
@@ -55,7 +76,7 @@ nullop()
  * Definitions of various trivial functions;
  * usually expanded inline rather than being defined here.
  */
-#if !defined(vax) && !defined(tahoe)
+#ifdef NEED_MINMAX
 imin(a, b)
 	int a, b;
 {
@@ -117,9 +138,9 @@ ulmax(a, b)
 
 	return (a > b ? a : b);
 }
-#endif
+#endif /* NEED_MINMAX */
 
-#if !defined(vax) && !defined(tahoe) && !defined(hp300)
+#ifdef NEED_FFS
 ffs(mask)
 	register long mask;
 {
@@ -133,9 +154,9 @@ ffs(mask)
 		mask >>= 1;
 	}
 }
-#endif
+#endif /* NEED_FFS */
 
-#if !defined(vax) && !defined(hp300)
+#ifdef NEED_BCMP
 bcmp(v1, v2, len)
 	void *v1, *v2;
 	register unsigned len;
@@ -147,7 +168,9 @@ bcmp(v1, v2, len)
 			return (1);
 	return (0);
 }
+#endif /* NEED_BCMP */
 
+#ifdef NEED_STRLEN
 strlen(s1)
 	register char *s1;
 {
@@ -157,4 +180,4 @@ strlen(s1)
 		;
 	return (len);
 }
-#endif
+#endif /* NEED_STRLEN */
