@@ -11,6 +11,7 @@
 /usr/src/games/chess/chess.6
 /usr/src/games/ching/ching.6
 /usr/src/games/cribbage/cribbage.6
+/usr/src/contrib/dungeon/dungeon.6
 /usr/src/games/factor/factor.6
 /usr/src/games/fish/fish.6
 /usr/src/games/fortune/fortune/fortune.6
@@ -27,6 +28,7 @@
 /usr/src/games/pom/pom.6
 /usr/src/games/quiz/quiz.6
 /usr/src/games/rain/rain.6
+/usr/src/games/random/random.6
 /usr/src/games/robots/robots.6
 /usr/src/games/rogue/rogue.6
 /usr/src/games/sail/sail.6

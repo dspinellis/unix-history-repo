@@ -55,11 +55,10 @@
 /usr/src/contrib/bind-4.9.2/man/dig.1
 /usr/src/usr.bin/du/du.1
 /usr/src/bin/sh/bltin/echo.1
-/usr/src/bin/ed/ed.1
+/usr/src/contrib/ed/ed.1
 /usr/src/contrib/emacs-18.57/etc/emacs.1
 /usr/src/contrib/groff-1.08/eqn/eqn.1
 /usr/src/usr.bin/error/error.1
-/usr/src/usr.bin/ex/ex.1
 /usr/src/usr.bin/expand/expand.1
 /usr/src/bin/expr/expr.1
 /usr/src/usr.bin/false/false.1
@@ -85,6 +84,7 @@
 /usr/src/contrib/groff-1.08/grops/grops.1
 /usr/src/contrib/groff-1.08/grotty/grotty.1
 /usr/src/usr.bin/id/groups.1
+/usr/src/contrib/gzip-1.2.4/gzexe.1
 /usr/src/contrib/gzip-1.2.4/gzip.1
 /usr/src/usr.bin/head/head.1
 /usr/src/usr.bin/hexdump/hexdump.1
@@ -131,11 +131,12 @@
 /usr/src/bin/ls/ls.1
 /usr/src/usr.bin/m4/m4.1
 /usr/src/usr.bin/mail/mail.1
+/usr/src/usr.sbin/sendmail/src/mailq.1
 /usr/src/usr.bin/make/make.1
 /usr/src/usr.bin/man/man.1
 /usr/src/contrib/rcs-V5.6/man/merge.1
 /usr/src/usr.bin/mesg/mesg.1
-/usr/src/contrib/mh-6.8/doc/mh.1
+/usr/src/contrib/mh-6.8.3a/doc/mh.1
 /usr/src/usr.bin/mkdep/mkdep.1
 /usr/src/bin/mkdir/mkdir.1
 /usr/src/usr.bin/mkfifo/mkfifo.1
@@ -193,6 +194,7 @@
 /usr/src/lib/librpc/man/man1/rstat.1
 /usr/src/usr.bin/ruptime/ruptime.1
 /usr/src/usr.bin/rwho/rwho.1
+/usr/src/contrib/sc/sc.1
 /usr/src/usr.bin/sccs/sccs.1
 /usr/src/usr.bin/script/script.1
 /usr/src/usr.bin/sed/sed.1
@@ -254,8 +256,9 @@
 /usr/src/usr.bin/uucp/uux/uux.1
 /usr/src/usr.bin/vacation/vacation.1
 /usr/src/usr.bin/vgrind/vgrind.1
-/usr/src/usr.bin/ex/vi.1
+/usr/src/contrib/nvi.1.14/docs/vi.1
 /usr/src/usr.bin/vis/vis.1
+/usr/src/contrib/vmsprep/vmsprep.1
 /usr/src/usr.bin/w/w.1
 /usr/src/share/man/man1/wait.1
 /usr/src/usr.bin/wall/wall.1
@@ -276,3 +279,8 @@
 /usr/src/usr.bin/yacc/yacc.1
 /usr/src/usr.bin/yes/yes.1
 /usr/src/usr.bin/yacc/yyfix.1
+/usr/src/contrib/gzip-1.2.4/zdiff.1
+/usr/src/contrib/gzip-1.2.4/zforce.1
+/usr/src/contrib/gzip-1.2.4/zgrep.1
+/usr/src/contrib/gzip-1.2.4/zmore.1
+/usr/src/contrib/gzip-1.2.4/znew.1
