@@ -1,4 +1,4 @@
-/* proc.h 4.1 %G% */
+/* proc.h 4.2 %G% */
 
 /*
  * C shell - process structure declarations
@@ -26,9 +26,7 @@ struct process	{
 	time_t	p_etime;		/* end time */
 	long	p_stime;		/* system cpu time */
 	long	p_utime;		/* user cpu time */
-#ifdef VMUNIX
-	struct	vtimes p_vtimes;
-#endif
+	struct	rusage p_rusage;
 	char	*p_command;		/* first PMAXLEN chars of command */
 };
 

@@ -1,9 +1,8 @@
-/* csh.h 4.4 %G% */
+/* csh.h 4.5 82/12/30 */
 
 #include "sh.local.h"
-#ifdef VMUNIX
-#include <sys/vtimes.h>
-#endif
+#include <time.h>
+#include <resource.h>
 
 /*
  * C shell
@@ -59,6 +58,7 @@ char	*err;			/* Error message from scanner/parser */
 int	errno;			/* Error from C library routines */
 char	*shtemp;		/* Temp name for << shell files in /tmp */
 time_t	time0;			/* Time at which the shell started */
+struct	rusage ru0;
 
 /*
  * Miscellany
@@ -199,11 +199,7 @@ struct	wordent {
  * process id's from `$$', and modified variable values (from qualifiers
  * during expansion in sh.dol.c) here.
  */
-#ifdef VMUNIX
 char	labuf[BUFSIZ];
-#else
-char	labuf[256];
-#endif
 
 char	*lap;
 
@@ -435,10 +431,6 @@ char	*bname;
 char	*Vsav;
 char	**Vav;
 char	*Vdp;
-#endif
-
-#ifdef VMUNIX
-struct	vtimes zvms;
 #endif
 
 char	**evalvec;
