@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -94,7 +94,7 @@ main(argc, argv, arge)
 	register int cnt;
 	int all, ch, rval, flags, i;
 	long mntsize;
-	struct statfs *mntbuf;
+	struct statfs *mntbuf, *getmntpt();
 	char *type, *options = NULL;
 
 	envp = arge;
@@ -167,6 +167,18 @@ main(argc, argv, arge)
 			prmount(mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname,
 				mntbuf[i].f_flags);
 		exit(0);
+	}
+
+	if (argc == 1 && updateflg) {
+		if ((mntbuf = getmntpt(*argv)) == NULL) {
+			fprintf(stderr,
+			    "mount: unknown special file or file system %s.\n",
+			    *argv);
+			exit(1);
+		}
+		mnttype = mntbuf->f_type;
+		exit(mountfs(mntbuf->f_mntfromname, mntbuf->f_mntonname,
+		    updateflg, type, options, NULL));
 	}
 
 	if (argc == 1) {
@@ -441,6 +453,23 @@ getexecopts(options, argv)
 		argv[argc++] = &opt[3];
 	}
 	return (argc);
+}
+
+struct statfs *
+getmntpt(name)
+	char *name;
+{
+	long mntsize;
+	register long i;
+	struct statfs *mntbuf;
+
+	mntsize = getmntinfo(&mntbuf);
+	for (i = 0; i < mntsize; i++) {
+		if (!strcmp(mntbuf[i].f_mntfromname, name) ||
+		    !strcmp(mntbuf[i].f_mntonname, name))
+			return (&mntbuf[i]);
+	}
+	return ((struct statfs *)0);
 }
 
 #ifdef NFS
