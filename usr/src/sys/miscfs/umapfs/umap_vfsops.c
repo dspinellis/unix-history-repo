@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.2 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
@@ -39,13 +39,12 @@ umapfs_mount(mp, path, data, ndp, p)
 	struct nameidata *ndp;
 	struct proc *p;
 {
-	int i;
-	int error = 0;
 	struct umap_args args;
 	struct vnode *lowerrootvp, *vp;
 	struct vnode *umapm_rootvp;
 	struct umap_mount *amp;
 	u_int size;
+	int error;
 
 #ifdef UMAPFS_DIAGNOSTIC
 	printf("umapfs_mount(mp = %x)\n", mp);
@@ -56,7 +55,7 @@ umapfs_mount(mp, path, data, ndp, p)
 	 */
 	if (mp->mnt_flag & MNT_UPDATE) {
 		return (EOPNOTSUPP);
-		/* return VFS_MOUNT(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, path, data, ndp, p);*/
+		/* return (VFS_MOUNT(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, path, data, ndp, p));*/
 	}
 
 	/*
@@ -106,8 +105,9 @@ umapfs_mount(mp, path, data, ndp, p)
 	amp->info_nentries = args.nentries;
 	amp->info_gnentries = args.gnentries;
 	error = copyin(args.mapdata, (caddr_t)amp->info_mapdata, 
-	    2*sizeof(int)*args.nentries);
-	if (error) return (error);
+	    2*sizeof(u_long)*args.nentries);
+	if (error)
+		return (error);
 
 #ifdef UMAP_DIAGNOSTIC
 	printf("umap_mount:nentries %d\n",args.nentries);
@@ -117,8 +117,9 @@ umapfs_mount(mp, path, data, ndp, p)
 #endif
 
 	error = copyin(args.gmapdata, (caddr_t)amp->info_gmapdata, 
-	    2*sizeof(int)*args.nentries);
-	if (error) return (error);
+	    2*sizeof(u_long)*args.nentries);
+	if (error)
+		return (error);
 
 #ifdef UMAP_DIAGNOSTIC
 	printf("umap_mount:gnentries %d\n",args.gnentries);
@@ -183,7 +184,7 @@ umapfs_start(mp, flags, p)
 	struct proc *p;
 {
 	return (0);
-	/* return VFS_START(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, flags, p); */
+	/* return (VFS_START(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, flags, p)); */
 }
 
 /*
@@ -242,7 +243,7 @@ umapfs_unmount(mp, mntflags, p)
 	 */
 	free(mp->mnt_data, M_UFSMNT);	/* XXX */
 	mp->mnt_data = 0;
-	return 0;
+	return (0);
 }
 
 int
@@ -266,7 +267,7 @@ umapfs_root(mp, vpp)
 	VREF(vp);
 	VOP_LOCK(vp);
 	*vpp = vp;
-	return 0;
+	return (0);
 }
 
 int
@@ -277,7 +278,7 @@ umapfs_quotactl(mp, cmd, uid, arg, p)
 	caddr_t arg;
 	struct proc *p;
 {
-	return VFS_QUOTACTL(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, cmd, uid, arg, p);
+	return (VFS_QUOTACTL(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, cmd, uid, arg, p));
 }
 
 int
@@ -340,7 +341,7 @@ umapfs_vget(mp, ino, vpp)
 	struct vnode **vpp;
 {
 	
-	return VFS_VGET(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, ino, vpp);
+	return (VFS_VGET(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, ino, vpp));
 }
 
 int
@@ -353,7 +354,7 @@ umapfs_fhtovp(mp, fidp, nam, vpp, exflagsp, credanonp)
 	struct ucred**credanonp;
 {
 
-	return VFS_FHTOVP(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, fidp, nam, vpp, exflagsp,credanonp);
+	return (VFS_FHTOVP(MOUNTTOUMAPMOUNT(mp)->umapm_vfs, fidp, nam, vpp, exflagsp,credanonp));
 }
 
 int
@@ -361,7 +362,7 @@ umapfs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;
 {
-	return VFS_VPTOFH(UMAPVPTOLOWERVP(vp), fhp);
+	return (VFS_VPTOFH(UMAPVPTOLOWERVP(vp), fhp));
 }
 
 int umapfs_init __P((void));
