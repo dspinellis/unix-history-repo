@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.19 (Berkeley) %G%
+ *	@(#)proc.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -131,6 +131,13 @@ struct kinfo_proc {
 };
 
 #ifdef KERNEL
+/*
+ * We use process IDs <= PID_MAX;
+ * PID_MAX + 1 must also fit in a pid_t
+ * (used to represent "no process group").
+ */
+#define	PID_MAX		30000
+#define	NO_PID		30001
 #define	PIDHASH(pid)	((pid) & pidhashmask)
 extern	int pidhashmask;		/* in param.c */
 extern	struct proc *pidhash[];		/* in param.c */
