@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.7 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.8 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -131,21 +131,21 @@ printgprof()
 
 	/*
 	 *	Now, sort by time + childtime.
-	 *	include the cycle headers hiding out past nl[nname].
-	 *	don't include the dummy hiding at nl[nname].
+	 *	sorting both the regular function names
+	 *	and cycle headers.
 	 */
-    timesortnlp = (nltype **) calloc( nname + cyclemax , sizeof(nltype *) );
+    timesortnlp = (nltype **) calloc( nname + ncycle , sizeof(nltype *) );
     if ( timesortnlp == (nltype **) 0 ) {
-	fprintf( stderr , "[doarcs] ran out of memory for sorting\n" );
+	fprintf( stderr , "%s: ran out of memory for sorting\n" , whoami );
     }
     for ( index = 0 ; index < nname ; index++ ) {
 	timesortnlp[index] = &nl[index];
     }
-    for ( index = 1 ; index <= cyclemax ; index++ ) {
-	timesortnlp[(nname-1)+index] = &nl[nname+index];
+    for ( index = 1 ; index <= ncycle ; index++ ) {
+	timesortnlp[nname+index-1] = &cyclenl[index];
     }
-    qsort( timesortnlp , nname + cyclemax , sizeof(nltype *) , totalcmp );
-    for ( index = 0 ; index < nname + cyclemax ; index++ ) {
+    qsort( timesortnlp , nname + ncycle , sizeof(nltype *) , totalcmp );
+    for ( index = 0 ; index < nname + ncycle ; index++ ) {
 	timesortnlp[ index ] -> index = index + 1;
     }
 	/*
@@ -153,7 +153,7 @@ printgprof()
 	 */
     printf( "\f\n" );
     gprofheader();
-    for ( index = 0 ; index < nname + cyclemax ; index ++ ) {
+    for ( index = 0 ; index < nname + ncycle ; index ++ ) {
 	parentp = timesortnlp[ index ];
 	if ( zflag == 0 &&
 	     parentp -> ncall == 0 &&

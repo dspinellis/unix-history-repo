@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.10 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.11 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -6,6 +6,11 @@
 #include <a.out.h>
 #include <pagsiz.h>
 #include "gcrt0.h"
+
+    /*
+     *	who am i, for error messages.
+     */
+char	*whoami;
 
     /*
      *	ticks per second
@@ -44,31 +49,31 @@ struct arcstruct {
 };
 typedef struct arcstruct	arctype;
 
-/*
- * The symbol table;
- * for each external in the specified file we gather
- * its address, the number of calls and compute its share of cpu time.
- */
+    /*
+     * The symbol table;
+     * for each external in the specified file we gather
+     * its address, the number of calls and compute its share of cpu time.
+     */
 struct nl {
-	char		*name;		/* the name */
-	unsigned long	value;		/* the pc entry point */
-	double		time;		/* ticks in this routine */
-	double		childtime;	/* cumulative ticks in children */
-	long		ncall;		/* how many times called */
-	long		selfcalls;	/* how many calls to self */
-	int		index;		/* index in the graph list */
-	int		toporder;	/* graph call chain top-sort order */
-	int		cycleno;	/* internal number of cycle on */
-	struct nl	*cyclehead;	/* pointer to head of cycle */
-	struct nl	*cnext;		/* pointer to next member of cycle */
-	arctype		*parents;	/* list of caller arcs */
-	arctype		*children;	/* list of callee arcs */
+    char		*name;		/* the name */
+    unsigned long	value;		/* the pc entry point */
+    double		time;		/* ticks in this routine */
+    double		childtime;	/* cumulative ticks in children */
+    long		ncall;		/* how many times called */
+    long		selfcalls;	/* how many calls to self */
+    int			index;		/* index in the graph list */
+    int			toporder;	/* graph call chain top-sort order */
+    int			cycleno;	/* internal number of cycle on */
+    struct nl		*cyclehead;	/* pointer to head of cycle */
+    struct nl		*cnext;		/* pointer to next member of cycle */
+    arctype		*parents;	/* list of caller arcs */
+    arctype		*children;	/* list of callee arcs */
 };
 typedef struct nl	nltype;
 
 nltype	*nl;			/* the whole namelist */
 nltype	*npe;			/* the virtual end of the namelist */
-int		nname;			/* the number of function names */
+int	nname;			/* the number of function names */
 
     /*
      *	flag which marks a nl entry as topologically ``busy''
@@ -76,36 +81,34 @@ int		nname;			/* the number of function names */
 #define	DFN_BUSY	-1
 
     /* 
-     *	the number of cycles is estimated as this fraction of nnames
-     *	ncycles, the number of allocated cycle namelist entries,
-     *	not to be confused with cyclemax, the number of discovered cycles.
+     *	namelist entries for cycle headers.
+     *	the number of discovered cycles.
      */
-#define	CYCLEFRACTION	( 0.10 )
-int	ncycles;		/* maximum allocated cycle headers */
-int	cyclemax;		/* number of cycles discovered */
+nltype	*cyclenl;		/* cycle header namelist */
+int	ncycle;			/* number of cycles discovered */
 
-/*
- * The header on the gmon.out file.
- * gmon.out consists of one of these headers,
- * and then an array of ncnt samples
- * representing the discretized program counter values.
- *	this should be a struct phdr, but since everything is done
- *	as UNITs, this is in UNITs too.
- */
+    /*
+     * The header on the gmon.out file.
+     * gmon.out consists of one of these headers,
+     * and then an array of ncnt samples
+     * representing the discretized program counter values.
+     *	this should be a struct phdr, but since everything is done
+     *	as UNITs, this is in UNITs too.
+     */
 struct hdr {
-	UNIT	*lowpc;
-	UNIT	*highpc;
-	int	ncnt;
+    UNIT	*lowpc;
+    UNIT	*highpc;
+    int	ncnt;
 };
 
 struct hdr	h;
 
 int	debug;
 
-/*
- * Each discretized pc sample has
- * a count of the number of samples in its range
- */
+    /*
+     * Each discretized pc sample has
+     * a count of the number of samples in its range
+     */
 unsigned UNIT	*samples;
 
 unsigned long	s_lowpc;	/* lowpc from the profile file */

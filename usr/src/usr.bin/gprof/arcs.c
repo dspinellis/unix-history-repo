@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.5 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.6 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -65,8 +65,6 @@ doarcs()
     arctype	*arcp;
     nltype	**topsortnlp;
     long	index;
-    nltype	*childp;
-    double	share;
 
 	/*
 	 *	initialize various things:
@@ -131,87 +129,99 @@ doarcs()
 	 *	propogate children times
 	 */
     for ( index = 0 ; index < nname ; index += 1 ) {
-	parentp = topsortnlp[ index ];
-	for ( arcp = parentp->children ; arcp ; arcp = arcp->arc_childlist ) {
-	    childp = arcp -> arc_childp;
-#	    ifdef DEBUG
-		if ( debug & ARCDEBUG ) {
-			printf( "[doarcs] " );
-			printname( parentp );
-			printf( " calls " );
-			printname( childp );
-			printf( " %d (%d) times\n" ,
-				arcp -> arc_count , childp -> ncall );
-		}
-#	    endif DEBUG
-	    if ( arcp -> arc_count == 0 ) {
-		continue;
-	    }
-	    if ( childp -> ncall == 0 ) {
-		continue;
-	    }
-	    if ( childp == parentp ) {
-		continue;
-	    }
-	    if ( childp -> cyclehead != childp ) {
-		if ( parentp -> cycleno == childp -> cycleno ) {
-		    continue;
-		}
-#		ifdef DEBUG
-		    if ( debug & ARCDEBUG ) {
-			printf( "[doarcs]\t it's a call into cycle %d\n" ,
-				childp -> cycleno );
-		    }
-#		endif DEBUG
-		if ( parentp -> toporder <= childp -> toporder ) {
-		    fprintf( stderr , "[doarcs] toporder botches\n" );
-		}
-		childp = childp -> cyclehead;
-	    } else {
-		if ( parentp -> toporder <= childp -> toporder ) {
-		    fprintf( stderr , "[doarcs] toporder botches\n" );
-		    continue;
-		}
-	    }
-		/*
-		 *	distribute time for this arc
-		 */
-	    arcp -> arc_time = childp -> time *
-				( ( (double) arcp -> arc_count ) /
-				( (double) childp -> ncall ) );
-	    arcp -> arc_childtime = childp -> childtime *
-				( ( (double) arcp -> arc_count ) /
-				( (double) childp -> ncall ) );
-	    share = arcp -> arc_time + arcp -> arc_childtime;
-#	    ifdef DEBUG
-		if ( debug & ARCDEBUG ) {
-		    printf( "[doarcs]\t " );
-		    printname( childp );
-		    printf( " time %8.2f + childtime %8.2f\n" ,
-			childp -> time , childp -> childtime );
-		    printf( "[doarcs]\t this is %d arcs of the %d calls\n",
-			arcp -> arc_count , childp -> ncall );
-		    printf( "[doarcs]\t so this gives %8.2f+%8.2f to %s\n" ,
-			arcp -> arc_time , arcp -> arc_childtime ,
-			parentp -> name );
-		}
-#	    endif DEBUG
-	    parentp -> childtime += share;
-		/*
-		 *	add this share to the cycle header, if any
-		 */
-	    if ( parentp -> cyclehead != parentp ) {
-#		ifdef DEBUG
-		    if ( debug & ARCDEBUG ) {
-			printf( "[doarcs]\t and to cycle %d\n" ,
-				parentp -> cycleno );
-		    }
-#		endif DEBUG
-		parentp -> cyclehead -> childtime += share;
-	    }
-	}
+	propagate( topsortnlp[ index ] );
     }
     printgprof();
+}
+
+propagate( parentp )
+    nltype	*parentp;
+{
+    arctype	*arcp;
+    nltype	*childp;
+    double	share;
+
+	/*
+	 *	gather time from children of this parent.
+	 */
+    for ( arcp = parentp->children ; arcp ; arcp = arcp->arc_childlist ) {
+	childp = arcp -> arc_childp;
+#	ifdef DEBUG
+	    if ( debug & ARCDEBUG ) {
+		printf( "[propagate] " );
+		printname( parentp );
+		printf( " calls " );
+		printname( childp );
+		printf( " %d (%d) times\n" ,
+			arcp -> arc_count , childp -> ncall );
+	    }
+#	endif DEBUG
+	if ( arcp -> arc_count == 0 ) {
+	    continue;
+	}
+	if ( childp -> ncall == 0 ) {
+	    continue;
+	}
+	if ( childp == parentp ) {
+	    continue;
+	}
+	if ( childp -> cyclehead != childp ) {
+	    if ( parentp -> cycleno == childp -> cycleno ) {
+		continue;
+	    }
+#	    ifdef DEBUG
+		if ( debug & ARCDEBUG ) {
+		    printf( "[propagate]\t it's a call into cycle %d\n" ,
+			    childp -> cycleno );
+		}
+#	    endif DEBUG
+	    if ( parentp -> toporder <= childp -> toporder ) {
+		fprintf( stderr , "[propagate] toporder botches\n" );
+	    }
+	    childp = childp -> cyclehead;
+	} else {
+	    if ( parentp -> toporder <= childp -> toporder ) {
+		fprintf( stderr , "[propagate] toporder botches\n" );
+		continue;
+	    }
+	}
+	    /*
+	     *	distribute time for this arc
+	     */
+	arcp -> arc_time = childp -> time *
+			    ( ( (double) arcp -> arc_count ) /
+			    ( (double) childp -> ncall ) );
+	arcp -> arc_childtime = childp -> childtime *
+			    ( ( (double) arcp -> arc_count ) /
+			    ( (double) childp -> ncall ) );
+	share = arcp -> arc_time + arcp -> arc_childtime;
+#	ifdef DEBUG
+	    if ( debug & ARCDEBUG ) {
+		printf( "[propagate]\t " );
+		printname( childp );
+		printf( " time %8.2f + childtime %8.2f\n" ,
+		    childp -> time , childp -> childtime );
+		printf( "[propagate]\t this is %d arcs of the %d calls\n",
+		    arcp -> arc_count , childp -> ncall );
+		printf( "[propagate]\t so this gives %8.2f+%8.2f to %s\n" ,
+		    arcp -> arc_time , arcp -> arc_childtime ,
+		    parentp -> name );
+	    }
+#	endif DEBUG
+	parentp -> childtime += share;
+	    /*
+	     *	add this share to the cycle header, if any
+	     */
+	if ( parentp -> cyclehead != parentp ) {
+#	    ifdef DEBUG
+		if ( debug & ARCDEBUG ) {
+		    printf( "[propagate]\t and to cycle %d\n" ,
+			    parentp -> cycleno );
+		}
+#	    endif DEBUG
+	    parentp -> cyclehead -> childtime += share;
+	}
+    }
 }
 
 cyclelink()
@@ -229,19 +239,24 @@ cyclelink()
 	/*
 	 *	Count the number of cycles, and initialze the cycle lists
 	 */
-    cyclemax = 0;
+    ncycle = 0;
     for ( nlp = nl ; nlp < npe ; nlp++ ) {
 	    /*
 	     *	this is how you find unattached cycles
 	     */
 	if ( nlp -> cyclehead == nlp && nlp -> cnext != 0 ) {
-	    cyclemax += 1;
+	    ncycle += 1;
 	}
     }
-    if ( cyclemax > ncycles ) {
-	fprintf( stderr , "prof: %d cycles in %d names exceeds %f%%\n" ,
-		cyclemax , nname , CYCLEFRACTION * 100.0 );
-	exit( 1 );
+	/*
+	 *	cyclenl is indexed by cycle number:
+	 *	i.e. it is origin 1, not origin 0.
+	 */
+    cyclenl = (nltype *) calloc( ncycle + 1 , sizeof( nltype ) );
+    if ( cyclenl == 0 ) {
+	fprintf( stderr , "%s: No room for %d bytes of cycle headers\n" ,
+		whoami , ( ncycle + 1 ) * sizeof( nltype ) );
+	done();
     }
 	/*
 	 *	now link cycles to true cycleheads,
@@ -253,7 +268,7 @@ cyclelink()
 	    continue;
 	}
 	cycle += 1;
-	cyclenlp = &nl[nname+cycle];
+	cyclenlp = &cyclenl[cycle];
 	cyclenlp -> cycleno = cycle;
 	cyclenlp -> cyclehead = cyclenlp;
 	cyclenlp -> cnext = nlp;
