@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)df.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)df.c	4.9 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <fstab.h>
@@ -20,7 +20,6 @@ char	root[32];
 char	*mpath();
 daddr_t	blkno	= 1;
 
-int	lflag;
 int	iflag;
 
 struct	filsys sblock;
@@ -42,7 +41,7 @@ main(argc, argv)
 		break;
 
 	default:
-		fprintf(stderr, "usage: df [ -i ] [ -l ] [ filsys... ]\n");
+		fprintf(stderr, "usage: df [ -i ] [ filsys... ]\n");
 		exit(0);
 	}
 	argc--, argv++;
