@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.41 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -77,7 +77,7 @@ char *speeds[] = {
 	"1800", "2400", "4800", "9600", "19200", "38400"
 };
 
-#ifdef SUNOS4
+#ifdef OLDSUN
 struct winsize {
 	unsigned short ws_row, ws_col;
 	unsigned short ws_xpixel, ws_ypixel;
@@ -109,7 +109,7 @@ void		writeroob __P((int));
 #ifdef	KERBEROS
 void		warning __P((const char *, ...));
 #endif
-#ifdef SUNOS4
+#ifdef OLDSUN
 int		get_window_size __P((int, struct winsize *));
 #endif
 
@@ -577,7 +577,7 @@ oob(signo)
 
 	out = O_RDWR;
 	rcvd = 0;
-	while (recv(rem, &mark, 1, MSG_OOB) < 0)
+	while (recv(rem, &mark, 1, MSG_OOB) < 0) {
 		switch (errno) {
 		case EWOULDBLOCK:
 			/*
@@ -599,6 +599,7 @@ oob(signo)
 			continue;
 		default:
 			return;
+		}
 	}
 	if (mark & TIOCPKT_WINDOW) {
 		/* Let server know about window size changes */
@@ -662,21 +663,21 @@ int
 reader(omask)
 	int omask;
 {
+	int pid, n, remaining;
+	char *bufp;
 
-#if !defined(BSD) || BSD < 43
-	int pid = -getpid();
+#if BSD >= 43 || defined(SUNOS4)
+	pid = getpid();		/* modern systems use positives for pid */
 #else
-	int pid = getpid();
+	pid = -getpid();	/* old broken systems use negatives */
 #endif
-	int n, remaining;
-	char *bufp = rcvbuf;
-
 	(void)signal(SIGTTOU, SIG_IGN);
 	(void)signal(SIGURG, oob);
 	ppid = getppid();
 	(void)fcntl(rem, F_SETOWN, pid);
 	(void)setjmp(rcvtop);
 	(void)sigsetmask(omask);
+	bufp = rcvbuf;
 	for (;;) {
 		while ((remaining = rcvcnt - (bufp - rcvbuf)) > 0) {
 			rcvstate = WRITING;
@@ -810,10 +811,10 @@ usage()
 }
 
 /*
- * The following routine provides compatibility (such as it is) between 4.2BSD
+ * The following routine provides compatibility (such as it is) between older
  * Suns and others.  Suns have only a `ttysize', so we convert it to a winsize.
  */
-#ifdef SUNOS4
+#ifdef OLDSUN
 int
 get_window_size(fd, wp)
 	int fd;
