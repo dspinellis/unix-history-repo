@@ -1,4 +1,4 @@
-/*	ioctl.h	3.1	%H%	*/
+/*	ioctl.h	3.2	%H%	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -14,7 +14,7 @@ struct tchars {
 };
 struct ltchars {
 	char	t_suspc;	/* stop process signal */
-	char	t_dstopc;	/* delayed stop process signal */
+	char	t_dsuspc;	/* delayed stop process signal */
 	char	t_rprntc;	/* reprint line */
 	char	t_flushc;	/* flush output (toggles) */
 	char	t_werasc;	/* word erase */
@@ -33,7 +33,7 @@ struct ltchars {
 #define LTILDE	010		/* IIASA - hazeltine tilde kludge */
 #define LMDMBUF	020		/* IIASA - start/stop output on carrier intr */
 #define LLITOUT	040		/* IIASA - suppress any output translations */
-#define LTOSTOP	0100		/* send stop for background tty output */
+#define LTOSTOP	0100		/* send stop for any background tty output */
 #define LFLUSHO	0200		/* flush output sent to terminal */
 #define LNOHANG 0400		/* IIASA - don't send hangup on carrier drop */
 #define LETXACK 01000		/* IIASA - diablo style buffer hacking */
