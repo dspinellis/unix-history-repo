@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -149,7 +149,7 @@ gethostbyname(name)
 	char buf[BUFSIZ+1];
 
 	n = res_mkquery(QUERY, name, C_ANY, T_A, (char *)NULL, 0, NULL,
-		hostbuf, sizeof(hostbuf));
+		buf, sizeof(buf));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
@@ -169,7 +169,7 @@ gethostbyaddr(addr, len, type)
 	if (type != AF_INET)
 		return (NULL);
 	n = res_mkquery(IQUERY, (char *)NULL, C_IN, T_A, addr, len, NULL,
-		hostbuf, sizeof(hostbuf));
+		buf, sizeof(buf));
 	if (n < 0) {
 		if (_res.options & RES_DEBUG)
 			printf("res_mkquery failed\n");
