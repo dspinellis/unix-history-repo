@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printnews.c 1.1 %G%";
+static char sccsid[] = "@(#)printnews.c 1.2 %G%";
 
 /*
- * print out news during single step tracing
+ * Print out news during single step tracing.
  *
  * We have to handle all the single stepping possibilities,
  * including combinations.  A combination of single stepping
@@ -21,34 +21,24 @@ static char sccsid[] = "@(#)printnews.c 1.1 %G%";
 
 printnews()
 {
-	if (ss_variables) {
-		prvarnews();
+    if (ss_variables) {
+	prvarnews();
+    }
+    if (trcond()) {
+	if (ss_lines && curline > 0) {
+	    skimsource(srcfilename(pc));
+	    printf("trace:  ");
+	    printlines(curline, curline);
 	}
-	if (trcond()) {
-		if (ss_lines && curline > 0) {
-			printf("trace:  ");
-			printlines(curline, curline);
-		}
-		if (ss_instructions) {
-			printf("inst trace:	");
-			printinst(pc, pc);
-		}
+	if (ss_instructions) {
+	    printf("inst trace: ");
+	    printinst(pc, pc);
 	}
-	bpact();
-	if (stopcond()) {
-		isstopped = TRUE;
-		getsrcinfo();
-		printstatus();
-	}
-}
-
-getsrcinfo()
-{
-	char *filename;
-
+    }
+    bpact();
+    if (stopcond()) {
+	isstopped = TRUE;
 	curline = srcline(pc);
-	filename = srcfilename(pc);
-	if (filename != cursource) {
-		skimsource(filename);
-	}
+	printstatus();
+    }
 }
