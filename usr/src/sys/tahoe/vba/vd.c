@@ -1,4 +1,4 @@
-/*	vd.c	1.5	86/01/12	*/
+/*	vd.c	1.6	86/01/20	*/
 
 #include "fsd.h"
 #if NVD > 0
@@ -31,7 +31,7 @@
 #undef VDGENDATA
 #include "../tahoevba/scope.h"
 
-#define	MAX_BLOCKSIZE	(MAXBPTE*NBPG)
+#define	VDMAXIO		(MAXBPTE*NBPG)
 #define	DUMPSIZE	64	/* controller limit */
 
 #define VDUNIT(x)	(minor(x) >> 3)
@@ -73,12 +73,13 @@ typedef struct {
  */
 typedef struct {
 	char	ctlr_type;	/* controller type */
-	char	*map;		/* i/o page map */
-	char	*utl;		/* mapped i/o space */
+	struct	pte *map;	/* i/o page map */
+	caddr_t	utl;		/* mapped i/o space */
 	u_int	cur_slave:8;	/* last active unit number */
 	u_int	int_expected:1;	/* expect an interupt */
 	u_int	ctlr_started:1;	/* start command was issued */
 	u_int	overlap_seeks:1;/* should overlap seeks */
+	u_int	initdone:1;	/* controller initialization completed */
 	u_int	off_cylinder:16;/* off cylinder bit map */
 	u_int	unit_type[16];	/* slave types */
 	u_int	cur_cyl[16];	/* cylinder last selected */
@@ -87,38 +88,10 @@ typedef struct {
 	fmt_dcb	ctlr_dcb;	/* r/w dcb */
 	fmt_dcb	seek_dcb[4];	/* dcbs for overlapped seeks */
 	/* buffer for raw/swap i/o */
-	char	rawbuf[MAX_BLOCKSIZE];
+	char	rawbuf[VDMAXIO];
 } ctlr_tab;
 
-extern char	vd0utl[];
-#if NVD > 1
-extern char	vd1utl[];
-#endif
-#if NVD > 2
-extern char	vd2utl[];
-#endif
-#if NVD > 3
-extern char	vd3utl[];
-#endif
-
-#define	VDCINIT(map, utl) { \
-    UNKNOWN, (char *)map, utl, 0, FALSE, FALSE, TRUE, 0, \
-	{ UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN, \
-	  UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN,UNKNOWN } \
-}
-ctlr_tab vdctlr_info[NVD] = {
-	VDCINIT(VD0map, vd0utl),
-#if NVD > 1
-	VDCINIT(VD1map, vd1utl),
-#endif
-#if NVD > 2
-	VDCINIT(VD2map, vd2utl),
-#endif
-#if NVD > 3
-	VDCINIT(VD3map, vd3utl),
-#endif
-};
-
+ctlr_tab vdctlr_info[NVD];
 unit_tab vdunit_info[NFSD];
 
 /*
@@ -129,20 +102,43 @@ vdprobe(reg, vm)
 	struct vba_ctlr *vm;
 {
 	register br, cvec;		/* must be r12, r11 */
-	register cdr *cp = (cdr *)reg;
+	register cdr *addr = (cdr *)reg;
+	register ctlr_tab *ci;
+	int i;
 
 	if (badaddr((caddr_t)reg, 2))
 		return (0);
-	cp->cdr_reset = 0xffffffff;
+	ci = &vdctlr_info[vm->um_ctlr];
+	addr->cdr_reset = 0xffffffff;
 	DELAY(1000000);
-	if (cp->cdr_reset != (unsigned)0xffffffff) {
+	if (addr->cdr_reset != (unsigned)0xffffffff) {
+		ci->ctlr_type = SMDCTLR;
+		ci->overlap_seeks = 0;
 		DELAY(1000000);
 	} else {
-		cp->cdr_reserved = 0x0;
+		ci->overlap_seeks = 1;
+		ci->ctlr_type = SMD_ECTLR;
+		addr->cdr_reserved = 0x0;
 		DELAY(3000000);
+		addr->cdr_csr = 0;
+		addr->mdcb_tcf = AM_ENPDA;
+		addr->dcb_tcf = AM_ENPDA;
+		addr->trail_tcf = AM_ENPDA;
+		addr->data_tcf = AM_ENPDA;
+		addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
+		    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
 	}
+	/*
+	 * Allocate page tables.
+	 */
+	vbmapalloc(btoc(VDMAXIO)+1, &ci->map, &ci->utl);
+	/*
+	 * Initialize all the drives to be of an unknown type.
+	 */
+	for (i = 0; i < 15; i++)
+		ci->unit_type[i] = UNKNOWN;
 	br = 0x17, cvec = 0xe0 + vm->um_ctlr;	/* XXX */
-	return (sizeof (*cp));
+	return (sizeof (*addr));
 }
 
 /*
@@ -159,38 +155,20 @@ vdslave(vi, addr)
 	register fmt_dcb *dcb = &ci->ctlr_dcb;
 	register int type;
 
-	if (ci->ctlr_type == UNKNOWN) {
-		addr->cdr_reset = 0xffffffff;
-		DELAY(1000000);
-		if (addr->cdr_reset != (unsigned)0xffffffff) {
-			ci->ctlr_type = SMDCTLR;
-			ci->overlap_seeks = 0;
-			DELAY(1000000);
-		} else {
-			ci->overlap_seeks = 1;
-			ci->ctlr_type = SMD_ECTLR;
-			addr->cdr_reserved = 0x0;
-			DELAY(3000000);
-			addr->cdr_csr = 0;
-			addr->mdcb_tcf = AM_ENPDA;
-			addr->dcb_tcf = AM_ENPDA;
-			addr->trail_tcf = AM_ENPDA;
-			addr->data_tcf = AM_ENPDA;
-			addr->cdr_ccf = CCF_STS | XMD_32BIT | BSZ_16WRD |
-			    CCF_ENP | CCF_EPE | CCF_EDE | CCF_ECE | CCF_ERR;
-		}
-		printf("vd%d: %s controller\n", vi->ui_unit,
+	if (!ci->initdone) {
+		printf("vd%d: %s controller\n", vi->ui_ctlr,
 		    ci->ctlr_type == SMDCTLR ? "smd" : "xsmd");
-		if (vdnotrailer(addr,
-		    vi->ui_ctlr, vi->ui_slave, INIT, 10) & HRDERR) {
-			printf("vd%d: init error\n", vi->ui_unit);
+		if (vdnotrailer(addr, vi->ui_ctlr, vi->ui_slave, INIT, 10) &
+		    HRDERR) {
+			printf("vd%d: init error\n", vi->ui_ctlr);
 			return (0);
 		}
-		if (vdnotrailer(addr,
-		    vi->ui_ctlr, vi->ui_slave, DIAG, 10) & HRDERR) {
-			printf("vd%d: diagnostic error\n", vi->ui_unit);
+		if (vdnotrailer(addr, vi->ui_ctlr, vi->ui_slave, DIAG, 10) &
+		    HRDERR) {
+			printf("vd%d: diagnostic error\n", vi->ui_ctlr);
 			return (0);
 		}
+		ci->initdone = 1;
 	}
 	/*
 	 * Seek on all drive types starting from the largest one.
@@ -218,8 +196,7 @@ vdslave(vi, addr)
 		mdcb->firstdcb = (fmt_dcb *)(PHYS(dcb));
 		mdcb->vddcstat = 0;
 		VDDC_ATTENTION(addr, (fmt_mdcb *)(PHYS(mdcb)), ci->ctlr_type);
-		POLLTILLDONE(addr, dcb, 60, ci->ctlr_type);
-		if (vdtimeout <= 0)
+		if (!vdpoll(ci, addr, 60))
 			printf(" during probe\n");
 		if ((dcb->operrsta&HRDERR) == 0)
 			break;
@@ -263,8 +240,7 @@ vdconfigure_drive(addr, ctlr, slave, type, pass)
 	ci->ctlr_mdcb.firstdcb = (fmt_dcb *)(PHYS(&ci->ctlr_dcb));
 	ci->ctlr_mdcb.vddcstat = 0;
 	VDDC_ATTENTION(addr, (fmt_mdcb *)(PHYS(&ci->ctlr_mdcb)), ci->ctlr_type);
-	POLLTILLDONE(addr, &ci->ctlr_dcb, 5, ci->ctlr_type);
-	if (vdtimeout <= 0) {
+	if (!vdpoll(ci, addr, 5)) {
 		printf(" during config\n");
 		return (0);
 	}
@@ -308,9 +284,9 @@ vdnotrailer(addr, ctlr, unit, function, time)
 	register cdr *addr;
 	int ctlr, unit, function, time;
 {
-	fmt_mdcb *mdcb = &vdctlr_info[ctlr].ctlr_mdcb;
-	fmt_dcb *dcb = &vdctlr_info[ctlr].ctlr_dcb;
-	int type = vdctlr_info[ctlr].ctlr_type;
+	register ctlr_tab *ci = &vdctlr_info[ctlr];
+	fmt_mdcb *mdcb = &ci->ctlr_mdcb;
+	fmt_dcb *dcb = &ci->ctlr_dcb;
 
 	dcb->opcode = function;		/* command */
 	dcb->intflg = NOINT;
@@ -320,9 +296,8 @@ vdnotrailer(addr, ctlr, unit, function, time)
 	dcb->trailcnt = (char)0;
 	mdcb->firstdcb = (fmt_dcb *)(PHYS(dcb));
 	mdcb->vddcstat = 0;
-	VDDC_ATTENTION(addr, (fmt_mdcb *)(PHYS(mdcb)), type);
-	POLLTILLDONE(addr, dcb, time, type);
-	if (vdtimeout <= 0) {
+	VDDC_ATTENTION(addr, (fmt_mdcb *)(PHYS(mdcb)), ci->ctlr_type);
+	if (!vdpoll(ci, addr, time)) {
 		printf(" during init\n");
 		return (DCBCMP|ANYERR|HRDERR|OPABRT);
 	}
@@ -811,8 +786,9 @@ vdwrite_block(caddr, ctlr, unit, addr, block, blocks)
 	register caddr_t addr;
 	register int block, blocks;
 {
-	register fmt_mdcb *mdcb = &vdctlr_info[ctlr].ctlr_mdcb;
-	register fmt_dcb *dcb = &vdctlr_info[ctlr].ctlr_dcb;
+	register ctlr_tab *ci = &vdctlr_info[ctlr];
+	register fmt_mdcb *mdcb = &ci->ctlr_mdcb;
+	register fmt_dcb *dcb = &ci->ctlr_dcb;
 	register unit_tab *ui = &vdunit_info[unit];
 	register fs_tab	 *fs = &ui->info;
 
@@ -830,10 +806,8 @@ vdwrite_block(caddr, ctlr, unit, addr, block, blocks)
 	dcb->trail.rwtrail.disk.cylinder = (short)(block / ui->sec_per_cyl);
 	dcb->trail.rwtrail.disk.track = (char)((block / fs->nsec) % fs->ntrak);
 	dcb->trail.rwtrail.disk.sector = (char)(block % fs->nsec);
-	VDDC_ATTENTION(caddr, (fmt_mdcb *)(PHYS(mdcb)),
-	    vdctlr_info[ctlr].ctlr_type);
-	POLLTILLDONE(caddr, dcb, 5, vdctlr_info[ctlr].ctlr_type);
-	if (vdtimeout <= 0) {
+	VDDC_ATTENTION(caddr, (fmt_mdcb *)(PHYS(mdcb)), ci->ctlr_type);
+	if (!vdpoll(ci, caddr, 5)) {
 		printf(" during dump\n");
 		return (0);
 	}
@@ -906,6 +880,43 @@ reset_drive(addr, ctlr, slave, start)
 		return;
 	if (!vdconfigure_drive(addr, ctlr, slave, type, start))
 		printf("vd%d: drive %d: couldn't reset\n", ctlr, slave);
+}
+
+/*
+ * Poll controller until operation completes
+ * or timeout expires.
+ */
+vdpoll(ci, addr, t)
+	register ctlr_tab *ci;
+	register cdr *addr;
+	register int t;
+{
+	register fmt_dcb *dcb = &ci->ctlr_dcb;
+
+	t *= 1000;
+	uncache(&dcb->operrsta);
+	while ((dcb->operrsta&(DCBCMP|DCBABT)) == 0) {
+		DELAY(1000);
+		uncache(&dcb->operrsta);
+		if (--t <= 0) {
+			printf("vd%d: controller timeout", ci-vdctlr_info);
+			VDDC_ABORT(addr, ci->ctlr_type);
+			DELAY(30000);
+			uncache(&dcb->operrsta);
+			return (0);
+		}
+	}
+	if (ci->ctlr_type == SMD_ECTLR) {
+		uncache(&addr->cdr_csr);
+		while (addr->cdr_csr&CS_GO) {
+			DELAY(50);
+			uncache(&addr->cdr_csr);
+		}
+		DELAY(300);
+	}
+	DELAY(200);
+	uncache(&dcb->operrsta);
+	return (1);
 }
 
 #ifdef notdef
