@@ -1,14 +1,26 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.3	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.4 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	lmain.c parser.c sub1.c sub2.c header.c
 OBJS=	lmain.o parser.o sub1.o sub2.o header.o
+MAN=	lex.0
 
 all: lex
 
@@ -18,32 +30,23 @@ lex: ${OBJS} ${LIBC}
 smallex: ${SRCS} ${LIBC} FRC
 	${CC} -DSMALL ${CFLAGS} ${SRCS} -o $@
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core lex smallex parser.c
 
-depend: ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 lex ${DESTDIR}/usr/bin/lex
 	install -c -o bin -g bin -m 755 ncform ${DESTDIR}/usr/lib/lex/ncform
 	install -c -o bin -g bin -m 755 nrform ${DESTDIR}/usr/lib/lex/nrform
+	install -c -o bin -g bin -m 755 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: ${SRCS} FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: ${SRCS} FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-lmain.o: lmain.c ldefs.c /usr/include/stdio.h once.c
-parser.o: parser.c ldefs.c /usr/include/stdio.h
-sub1.o: sub1.c ldefs.c /usr/include/stdio.h
-sub2.o: sub2.c ldefs.c /usr/include/stdio.h
-header.o: header.c ldefs.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
