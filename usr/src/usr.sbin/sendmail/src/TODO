@@ -1,4 +1,4 @@
-(Version 8.34 of %G%)
+(Version 8.35 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -6,6 +6,8 @@ Key:
   S -- security fix
   E -- enhancement to existing algorithm
 
+
+B *****	Make Group Phrase: address, list; syntax work.
 
 X ****	Multiple queues.
 
