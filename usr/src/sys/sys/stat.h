@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.7 (Berkeley) %G%
+ *	@(#)stat.h	7.8 (Berkeley) %G%
  */
 
 struct stat
@@ -68,7 +68,10 @@ struct stat
 
 #define	S_ISVTX	 0001000		/* save swapped text even after use */
 
-#define S_BLKSIZE	512	/* block size used in the stat struct */
+#define S_BLKSIZE	512		/* block size used in the stat struct */
+
+					/* 0666 */
+#define	DEFFILEMODE	(S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH)
 #endif
 
 #define	S_ISDIR(m)	((m & 0170000) == 0040000)	/* directory */
