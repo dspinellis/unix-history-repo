@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.6 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -73,6 +73,8 @@ cpu_fork(p1, p2)
 	 * part of the stack.  The stack and pcb need to agree;
 	 */
 	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
+	/* cache segtab for ULTBMiss() */
+	p2->p_addr->u_pcb.pcb_segtab = (void *)p2->p_vmspace->vm_pmap.pm_segtab;
 
 	/*
 	 * Arrange for a non-local goto when the new process
