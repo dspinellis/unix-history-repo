@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -249,6 +249,7 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 				register char *p = workbuf + workbuflen;
 				register char *q = freebuf;
 
+bufferchar:
 				/* we have room for more of this field */
 				fixcrlf(freebuf, TRUE);
 				*p++ = '\n';
