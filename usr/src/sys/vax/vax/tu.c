@@ -1,4 +1,4 @@
-/*	tu.c	4.11	82/10/20	*/
+/*	tu.c	4.12	82/11/13	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -31,7 +31,7 @@ int	tudebug;	/* printd */
 
 #define	NTU	((cpu == VAX_750) ? 1 : 2)
 #define DNUM    01      /* mask for drive number (should match NTU) */
-#ifndef MRSP
+#if !defined(MRSP) || lint
 #define	MRSP	(cpu != VAX_750)
 #endif
 #define	NTUBLK	512		/* number of blocks on a TU58 cassette */

@@ -1,4 +1,4 @@
-/*	ubareg.h	4.30	82/05/26	*/
+/*	ubareg.h	4.31	82/11/13	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -85,8 +85,11 @@ struct uba_regs
 #define	UBADPR_NXM	0x40000000	/* nxm from memory */
 #define	UBADPR_UCE	0x20000000	/* uncorrectable error */
 #define	UBADPR_PURGE	0x00000001	/* purge bdp */
-#define	UBA_PURGE750(uba, bdp) \
-    ((uba)->uba_dpr[bdp] |= (UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE))
+/* the DELAY is for a hardware problem */
+#define	UBA_PURGE750(uba, bdp) { \
+    ((uba)->uba_dpr[bdp] |= (UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE)); \
+    DELAY(8); \
+}
 #endif VAX750
  
 /*
@@ -113,7 +116,7 @@ struct uba_regs
 #if !defined(VAX780) && defined(VAX750)
 #define	UBAPURGE(uba, bdp) { \
 	if (cpu==VAX_750) { \
-		UBA_PURGE750((uba), (bdp)); break; \
+		UBA_PURGE750((uba), (bdp)); \
 	} \
 }
 #endif

@@ -1,4 +1,4 @@
-/*	vmparam.h	4.1	82/11/09	*/
+/*	vmparam.h	4.2	82/11/13	*/
 
 /*
  * Machine dependent constants for VAX
@@ -32,7 +32,7 @@
  * Sizes of the system and user portions of the system page table.
  */
 /* SYSPTSIZE IS SILLY; IT SHOULD BE COMPUTED AT BOOT TIME */
-#define	SYSPTSIZE	(12*NPTEPG)
+#define	SYSPTSIZE	(35*NPTEPG)
 #define	USRPTSIZE 	(8*NPTEPG)
 
 /*

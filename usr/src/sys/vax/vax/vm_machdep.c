@@ -1,4 +1,4 @@
-/*	vm_machdep.c	5.1	82/11/06	*/
+/*	vm_machdep.c	5.2	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
@@ -45,6 +45,7 @@ mapin(pte, v, pfnum, count, prot)
 	}
 }
 
+#ifdef notdef
 /*ARGSUSED*/
 mapout(pte, size)
 	register struct pte *pte;
@@ -53,6 +54,7 @@ mapout(pte, size)
 
 	panic("mapout");
 }
+#endif
 
 /*
  * Check that a process will not be too large.
@@ -76,6 +78,9 @@ newptes(pte, v, size)
 {
 	register caddr_t a = ptob(v);
 
+#ifdef lint
+	pte = pte;
+#endif
 	if (size >= 8) {
 		mtpr(TBIA, 0);
 		return;
