@@ -22,19 +22,21 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)apropos.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)apropos.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../man/pathnames.h"
 
 #define	MAXLINELEN	256			/* max line handled */
 
-int *found, foundman;
 char *progname;
+
+static int *found, foundman;
 
 main(argc, argv)
 	int argc;
@@ -44,7 +46,7 @@ main(argc, argv)
 	extern int optind;
 	register char **p;
 	int ch;
-	char *p_augment, *p_path, *config(), *getenv(), *malloc();
+	char *p_augment, *p_path, **getdb();
 
 	progname = "apropos";
 	p_augment = p_path = NULL;
@@ -67,24 +69,25 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
-	if (!p_path && !(p_path = getenv("MANPATH")))
-		p_path = config();
-
 	/*NOSTRICT*/
 	if (!(found = (int *)malloc((u_int)argc)))
 		enomem();
-	bzero((char *)found, argc * sizeof(int));
+	bzero((void *)found, argc * sizeof(int));
 
 	for (p = argv; *p; ++p)			/* convert to lower-case */
 		lowstr(*p, *p);
 
 	if (p_augment)
-		apropos(argv, p_augment);
-	if (p_path)
-		apropos(argv, p_path);
+		apropos(argv, p_augment, 1);
+	if (p_path || (p_path = getenv("MANPATH")))
+		apropos(argv, p_path, 1);
+	else
+		for (p = getdb(); *p; ++p)
+			apropos(argv, *p, 0);
+
 	if (!foundman) {
-		(void)fprintf(stderr, "apropos: no %s file found.\n",
-		    _PATH_WHATIS);
+		(void)fprintf(stderr,
+		    "apropos: : no %s file found.\n", _PATH_WHATIS);
 		exit(1);
 	}
 	for (p = argv; *p; ++p)
@@ -92,30 +95,34 @@ main(argc, argv)
 			(void)printf("%s: nothing appropriate\n", *p);
 }
 
-apropos(argv, path)
+apropos(argv, path, buildpath)
 	char **argv, *path;
+	int buildpath;
 {
-	register char *beg, *end, **p;
-	char fname[MAXPATHLEN + 1];
+	register char *end, *name, **p;
 	char buf[MAXLINELEN + 1], wbuf[MAXLINELEN + 1];
 
-	for (beg = path; beg; beg = end) {	/* through path list */
-		end = index(beg, ':');
-		if (!end)
-			(void)sprintf(fname, "%s/%s", beg, _PATH_WHATIS);
-		else {
-			(void)sprintf(fname, "%.*s/%s", end - beg, beg,
-			    _PATH_WHATIS);
-			++end;
+	for (name = path; name; name = end) {	/* through name list */
+		if (end = index(name, ':'))
+			*end++ = '\0';
+
+		if (buildpath) {
+			char hold[MAXPATHLEN + 1];
+
+			(void)sprintf(hold, "%s/%s", name, _PATH_WHATIS);
+			name = hold;
 		}
-		if (!freopen(fname, "r", stdin))
+
+		if (!freopen(name, "r", stdin))
 			continue;
 
+		foundman = 1;
+
 		/* for each file found */
-		for (foundman = 1; fgets(buf, sizeof(buf), stdin);) {
+		while (fgets(buf, sizeof(buf), stdin)) {
 			if (!index(buf, '\n')) {
 				(void)fprintf(stderr,
-				    "apropos: %s line too long.\n", fname);
+				    "apropos: %s line too long.\n", name);
 				exit(1);
 			}
 			lowstr(buf, wbuf);
