@@ -9,8 +9,5 @@ DPADD=	${LIBUTIL}
 LDADD=	-lutil
 MAN8=	timed.8
 
-cksum.i386.c:
-	ln -s cksum.tahoe.c cksum.i386.c
-
 .include "../../Makefile.inc"
 .include <bsd.prog.mk>
