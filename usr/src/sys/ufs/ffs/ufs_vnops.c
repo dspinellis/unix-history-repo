@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.112.1.2 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.118 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1258,9 +1258,9 @@ ufs_mkdir(ap)
 	dmode = vap->va_mode & 0777;
 	dmode |= IFDIR;
 	/*
-	 * Must simulate part of maknode here to acquire the inode, but
-	 * not have it entered in the parent directory. The entry is made
-	 * later after writing "." and ".." entries.
+	 * Must simulate part of ufs_makeinode here to acquire the inode,
+	 * but not have it entered in the parent directory. The entry is
+	 * made later after writing "." and ".." entries.
 	 */
 	if (error = VOP_VALLOC(dvp, dmode, cnp->cn_cred, &tvp))
 		goto out;
@@ -2065,8 +2065,11 @@ ufs_makeinode(mode, dvp, vpp, cnp)
 		return (error);
 	}
 	ip = VTOI(tvp);
-	ip->i_uid = cnp->cn_cred->cr_uid;
 	ip->i_gid = pdir->i_gid;
+	if ((mode & IFMT) == IFLNK)
+		ip->i_uid = pdir->i_uid;
+	else
+		ip->i_uid = cnp->cn_cred->cr_uid;
 #ifdef QUOTA
 	if ((error = getinoquota(ip)) ||
 	    (error = chkiq(ip, 1, cnp->cn_cred, 0))) {
