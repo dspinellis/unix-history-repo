@@ -50,7 +50,7 @@ SOFTWARE.
 *INCLUDE
 
 {
-/*	@(#)tp.trans	7.6 (Berkeley) %G% */
+/*	@(#)tp.trans	7.7 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -405,13 +405,12 @@ TP_CRSENT		<==		TP_CLOSED								T_CONN_req
 TP_REFWAIT 		<==		[ TP_CRSENT, TP_AKWAIT, TP_OPEN ] 			DR_TPDU 
 	DEFAULT
 	{
-		if ($$.e_datalen > 0 && $P.tp_class != TP_CLASS_0) {
-			/*sbdrop(&$P.tp_Xrcv, $P.tp_Xrcv.sb_cc); /* purge expedited data */
-			sbflush(&$P.tp_Xrcv);
+		sbflush(&$P.tp_Xrcv); /* purge non-delivered data data */
+		if ($$.e_datalen > 0) {
 			sbappendrecord(&$P.tp_Xrcv, $$.e_data);
 			$$.e_data = MNULL;
 		} 
-		tp_indicate(T_DISCONNECT, $P, TP_ERROR_MASK | (u_short)$$.e_reason);
+		tp_indicate(T_DISCONNECT, $P, 0);
 		tp_soisdisconnected($P);
 		if ($P.tp_class != TP_CLASS_0) {
 			if ($P.tp_state == TP_OPEN ) {
@@ -443,8 +442,7 @@ TP_REFWAIT 		<==  	TP_CRSENT  									ER_TPDU
 	DEFAULT
 	{	
 		tp_cuntimeout($P.tp_refp, TM_retrans);
-		tp_indicate(T_DISCONNECT, $P, 
-			TP_ERROR_MASK |(u_short)($$.e_reason | 0x40));
+		tp_indicate(ER_TPDU, $P, $$.e_reason);
 		tp_soisdisconnected($P);
 	}
 ;
@@ -453,7 +451,6 @@ TP_REFWAIT 		<==  	TP_CRSENT  									ER_TPDU
 TP_REFWAIT		<==		TP_CLOSING									DR_TPDU
 	DEFAULT
 	{	 
-		$P.tp_sock->so_error = (u_short)$$.e_reason;
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 		tp_soisdisconnected($P);
 	}
@@ -465,7 +462,7 @@ TP_REFWAIT		<==		TP_CLOSING									DR_TPDU
 TP_REFWAIT		<==		TP_CLOSING									ER_TPDU
 	DEFAULT
 	{	 
-		$P.tp_sock->so_error = (u_short)$$.e_reason;
+		tp_indicate(ER_TPDU, $P, $$.e_reason);
 		tp_cuntimeout($P.tp_refp, TM_retrans);
 		tp_soisdisconnected($P);
 	}
@@ -493,9 +490,7 @@ TP_REFWAIT 		<== 	TP_OPEN  				 					ER_TPDU
 	($P.tp_class == TP_CLASS_0)
 	{
 		tp_soisdisconnecting($P.tp_sock);
-		tp_indicate(T_DISCONNECT, $P, 
-			TP_ERROR_MASK |(u_short)($$.e_reason | 0x40));
-
+		tp_indicate(ER_TPDU, $P, $$.e_reason);
 		tp_soisdisconnected($P);
 		tp_netcmd( $P, CONN_CLOSE );
 	}
@@ -510,8 +505,7 @@ TP_CLOSING 		<== 	[ TP_AKWAIT, TP_OPEN ]  					ER_TPDU
 			tp_cuntimeout($P.tp_refp, TM_sendack);
 		}
 		tp_soisdisconnecting($P.tp_sock);
-		tp_indicate(T_DISCONNECT, $P, 
-			TP_ERROR_MASK |(u_short)($$.e_reason | 0x40));
+		tp_indicate(ER_TPDU, $P, $$.e_reason);
 		$P.tp_retrans = $P.tp_Nretrans;
 		tp_ctimeout($P.tp_refp, TM_retrans, (int)$P.tp_dr_ticks);
 		(void) tp_emit(DR_TPDU_type, $P, 0, E_TP_PROTO_ERR, MNULL);
