@@ -35,6 +35,9 @@ mbastart(io, func)
 	mba->mba_sr = -1;
 	mba->mba_bcr = -io->i_cc;
 	mba->mba_var = vaddr;
+	if (io->i_flgs&F_SSI) {
+		drv->mbd_of |= HPOF_SSEI;
+	}
 	switch (io->i_flgs & F_TYPEMASK) {
 
 	case F_RDDATA:			/* standard read */
