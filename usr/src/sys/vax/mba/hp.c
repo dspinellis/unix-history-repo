@@ -1,4 +1,4 @@
-/*	hp.c	4.73	83/03/19	*/
+/*	hp.c	4.74	83/03/27	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -126,16 +126,6 @@ struct	size {
 	182176,	668,		/* G=cyl 668 thru 1023 */
 	291346,	98,		/* H=cyl 98 thru 667 */
 }, eagle_sizes[8] = {
-#ifdef MONET
-	15884,	0,		/* A=cyl 0 thru 16 */
-	33440,	17,		/* B=cyl 17 thru 52 */
-	808176,	0,		/* C=cyl 0 thru 841 */
-	0, 0,
-	0, 0,
-	0, 0,
-	465456, 357,		/* G=cyl 357 thru 841 */
-	291346, 53,		/* H=cyl 52 thru 356 */
-#else
 	15884,	0,		/* A=cyl 0 thru 16 */
 	66880,	17,		/* B=cyl 17 thru 86 */
 	808320,	0,		/* C=cyl 0 thru 841 */
@@ -144,7 +134,6 @@ struct	size {
 	109296,	728,		/* F=cyl 728 thru 841 */
 	432816,	391,		/* G=cyl 391 thru 841 */
 	291346,	87,		/* H=cyl 87 thru 390 */
-#endif
 }, cdc9300_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 26 */
 	33440,	27,		/* B=cyl 27 thru 81 */
