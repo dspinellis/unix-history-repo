@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	8.10 (Berkeley) %G%
+ *	@(#)tty.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -701,8 +701,8 @@ ttioctl(tp, cmd, data, flag)
 	case TIOCSCTTY:			/* become controlling tty */
 		/* Session ctty vnode pointer set in vnode layer. */
 		if (!SESS_LEADER(p) ||
-		    p->p_session->s_ttyvp ||
-		    (tp->t_session && tp->t_session != p->p_session))
+		    (p->p_session->s_ttyvp || tp->t_session) &&
+		    (tp->t_session != p->p_session))
 			return (EPERM);
 		tp->t_session = p->p_session;
 		tp->t_pgrp = p->p_pgrp;
