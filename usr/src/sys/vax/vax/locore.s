@@ -1,4 +1,4 @@
-/*	locore.s	6.4	83/09/29	*/
+/*	locore.s	6.4	83/11/07	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -1157,7 +1157,7 @@ Fastreclaim:
 	movl	$1,r2			#	type = CTEXT;
 	jbr	3f
 2:
-	subl3	P_SSIZE(r5),$0x3ffff8,r0
+	subl3	P_SSIZE(r5),$(0x400000-UPAGES),r0
 	cmpl	r3,r0
 	jgequ	2f			# } else if (isadsv(p, v)) {
 	ashl	$2,r3,r4
@@ -1167,7 +1167,7 @@ Fastreclaim:
 2:
 	cvtwl	P_SZPT(r5),r4		# } else (isassv(p, v)) {
 	ashl	$7,r4,r4
-	subl2	$(0x3ffff8+UPAGES),r4
+	subl2	$0x400000,r4
 	addl2	r3,r4
 	ashl	$2,r4,r4
 	addl2	P_P0BR(r5),r4		#	sptopte(p, vtosp(p, v));
