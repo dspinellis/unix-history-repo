@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.17.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -329,108 +329,48 @@ makelower(p)
 **		buf -- place to put the result.
 **
 **	Returns:
-**		TRUE -- if the resulting message should be a MIME format.
-**		FALSE -- if MIME is not necessary.
+**		none.
 **
 **	Side Effects:
 **		none.
 */
 
-/* values for should_quote */
-#define NO_QUOTE	0
-#define SHOULD_QUOTE	1
-#define SHOULD_MIME	2
-
-int
 buildfname(gecos, login, buf)
-	register unsigned char *gecos;
-	const unsigned char *login;
-	unsigned char *buf;
+	register char *gecos;
+	char *login;
+	char *buf;
 {
-	register unsigned char *bp = buf;
-	unsigned char *p;
-	int should_quote = NO_QUOTE;
+	register char *p;
+	register char *bp = buf;
+	int l;
 
-	/* make sure specials, SPACE and CTLs are quoted within " " */
-	for (p = gecos; *p && *p != ',' && *p != ';' && *p != '%'; p++)
+	if (*gecos == '*')
+		gecos++;
+
+	/* find length of final string */
+	l = 0;
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
 	{
-		if (*p >= 0200)
-		{
-			should_quote = SHOULD_MIME;
-			break;
-		}
-		switch (*p)
-		{
-		  case '(':
-		  case ')':
-		  case '<':
-		  case '>':
-		  case '@':
-		  case ':':
-		  case '\\':
-		  case '"':
-		  case '.':
-		  case '[':
-		  case ']':
-			should_quote = SHOULD_QUOTE;
-			break;
-		}	
-	}
-	if (should_quote == SHOULD_MIME)
-	{
-		strcpy (bp, "=?iso-8859-1?Q?");
-		bp += 15;
-		for (p = gecos; *p && *p != ',' && *p != ';' && *p != '%'; p++)
-		{
-			if (*p == ' ')
-				*bp++ = '_';
-                        else if (*p == '&')
-                        {
-				(void) strcpy(bp, login);
-				*bp = toupper(*bp);
-				bp += strlen (bp);
-			}
-			else if (*p < 040 || *p >= 200 || 
-				 strchr("_?()<>@:\\\".[]", *p) != NULL)
-			{
-				*bp++ = '=';
-				*bp++ = "0123456789ABCDEF"[(*p >> 4) & 0xf];
-				*bp++ = "0123456789ABCDEF"[*p & 0xf];
-			}
-			else
-				*bp++ = *p;
-		}
-		strcpy (bp, "?= ");
-		bp += 3;
-	}
-	else
-	{
-		if (should_quote)
-			*bp++ = '"';
-		for (p = gecos; *p && *p != ',' && *p != ';' && *p != '%'; p++)
-		{
-			if (*p == '&')
-			{
-				(void) strcpy(bp, login);
-				*bp = toupper(*bp);
-				while (*bp != '\0')
-					bp++;
-			}
-			else
-			{
-				if (*p == '"')
-					*bp++ = '\\';
-				*bp++ = *p;
-			}
-		}
-		if (bp[-1] == '\\')
-			*bp++ = '\\';
-		if (should_quote)
-			*bp++ = '"';
+		if (*p == '&')
+			l += strlen(login);
+		else
+			l++;
 	}
 
+	/* now fill in buf */
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
+	{
+		if (*p == '&')
+		{
+			(void) strcpy(bp, login);
+			*bp = toupper(*bp);
+			while (*bp != '\0')
+				bp++;
+		}
+		else
+			*bp++ = *p;
+	}
 	*bp = '\0';
-	return should_quote == SHOULD_MIME;
 }
 /*
 **  SAFEFILE -- return true if a file exists and is safe for a user.
@@ -1341,7 +1281,7 @@ defprint:
 
 printit:
 	if (logit)
-		syslog(LOG_INFO, "%s", buf);
+		syslog(LOG_DEBUG, "%s", buf);
 	else
 		printf("%s\n", buf);
 }
