@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.7 81/12/12 */
+/* tcp_subr.c 4.8 81/12/12 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,7 +48,6 @@ tcp_template(tp)
 	register struct tcpiphdr *n;
 
 COUNT(TCP_TEMPLATE);
-printf("tcp_template %x\n", tp);
 	m = m_get(1);
 	if (m == 0)
 		return (0);
@@ -95,7 +94,6 @@ tcp_respond(ti, ack, seq, flags)
 	struct mbuf *m;
 
 COUNT(TCP_RESPOND);
-printf("tcp_respond ack %x seq %x flags %x\n", ack, seq, flags);
 	if (flags == 0) {
 		m = m_get(0);
 		if (m == 0)
@@ -129,11 +127,9 @@ printf("tcp_respond ack %x seq %x flags %x\n", ack, seq, flags);
 	ti->ti_off = sizeof (struct tcphdr) >> 2;
 	ti->ti_flags = flags;
 	ti->ti_win = ti->ti_urp = 0;
-printf("before cksum m->m_len %d\n", m->m_len);
 	ti->ti_sum = in_cksum(m, sizeof(struct tcpiphdr));
 	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-printf("to ip_output ip_len %d, m %x\n", ((struct ip *)ti)->ip_len, m);
 	(void) ip_output(m, (struct mbuf *)0);
 }
 
@@ -150,7 +146,6 @@ tcp_newtcpcb(inp)
 	register struct tcpcb *tp;
 COUNT(TCP_NEWTCPCB);
 
-printf("tcp_newtcpcb %x\n", inp);
 	if (m == 0)
 		return (0);
 	tp = mtod(m, struct tcpcb *);
@@ -173,7 +168,6 @@ tcp_drop(tp, errno)
 	struct socket *so = tp->t_inpcb->inp_socket;
 
 COUNT(TCP_DROP);
-printf("tcp_drop %x %d\n", tp, errno);
 	if (TCPS_HAVERCVDSYN(tp->t_state) &&
 	    TCPS_OURFINNOTACKED(tp->t_state)) {
 		tp->t_state = TCPS_CLOSED;
@@ -197,7 +191,6 @@ tcp_close(tp)
 	struct socket *so = tp->t_inpcb->inp_socket;
 
 COUNT(TCP_CLOSE);
-printf("tcp_close %x\n", tp);
 	t = tp->seg_next;
 	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
 		m_freem(dtom(t));

@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.22	81/12/12	*/
+/*	tcp_output.c	4.23	81/12/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,7 +78,6 @@ COUNT(TCP_OUTPUT);
 	/*
 	 * No reason to send a segment, just return.
 	 */
-printf("tcp_output: nothing to send\n");
 	return (0);
 
 send:
@@ -96,7 +95,6 @@ send:
 		m->m_next = m_copy(so->so_snd.sb_mb, off, len);
 		if (m->m_next == 0)
 			len = 0;
-if (m->m_next) printf("copy *mtod()=%x\n", *mtod(m->m_next, char *));
 	}
 	ti = mtod(m, struct tcpiphdr *);
 	if (tp->t_template == 0)
@@ -153,9 +151,6 @@ if (m->m_next) printf("copy *mtod()=%x\n", *mtod(m->m_next, char *));
 		ti->ti_len = htons((u_short)(len + sizeof (struct tcphdr)));
 	ti->ti_sum = in_cksum(m, sizeof (struct tcpiphdr) + len);
 
-printf("tcp_output: ti %x flags %x seq %x ack %x win %d len %d sum %x\n",
-ti, ti->ti_flags, htonl(ti->ti_seq), htonl(ti->ti_ack), htons(ti->ti_win), ti->ti_len, ti->ti_sum);
-
 	/*
 	 * Advance snd_nxt over sequence space of this segment
 	 */
@@ -191,10 +186,8 @@ ti, ti->ti_flags, htonl(ti->ti_seq), htonl(ti->ti_ack), htons(ti->ti_win), ti->t
 	if (tp->t_timer[TCPT_REXMT] == 0 && tp->snd_nxt != tp->snd_una) {
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
-printf("rexmt timer set to %d\n", tp->t_timer[TCPT_REXMT]);
 		tp->t_rxtshift = 0;
 	}
-else printf("REXMT timer is already %d, snd_nxt %x snd_una %x\n", tp->t_timer[TCPT_REXMT], tp->snd_nxt, tp->snd_una);
 
 	/*
 	 * Fill in IP length and desired time to live and
@@ -202,10 +195,8 @@ else printf("REXMT timer is already %d, snd_nxt %x snd_una %x\n", tp->t_timer[TC
 	 */
 	((struct ip *)ti)->ip_len = len + sizeof (struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	if (ip_output(m, tp->t_ipopt) == 0) {
-printf("ip_output failed\n");
+	if (ip_output(m, tp->t_ipopt) == 0)
 		return (0);
-	}
 
 	/*
 	 * Data sent (as far as we can tell).
@@ -213,9 +204,8 @@ printf("ip_output failed\n");
 	 * then remember the size of the advertised window.
 	 * Drop send for purpose of ACK requirements.
 	 */
-	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv)) {
+	if (win > 0 && SEQ_GT(tp->rcv_nxt+win, tp->rcv_adv))
 		tp->rcv_adv = tp->rcv_nxt + win;
-	}
 	tp->t_flags &= ~(TF_ACKNOW|TF_DELACK);
 	if (SEQ_GT(tp->snd_nxt, tp->snd_max))
 		tp->snd_max = tp->snd_nxt;
