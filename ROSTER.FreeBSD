@@ -20,19 +20,27 @@ Thank you!
 
 Legend:
 -------
+contrib = Contributed
+doc	= Documentation
+lib	= User-land library
+misc	= Misc user-land utility (contrib, other)
 ports	= Ported software in /usr/ports
+prog	= User-land program
+share	= Support data files
 sys	= Kernel and system code
 tools	= DOS support utilities
-misc	= Misc user-land utility (contrib, other)
-prog	= User-land program
-lib	= User-land library
-doc	= Documentation
-contrib = Contributed
 
-Catagory		Person			Email addr
+Category                Person                  Email address
 ===============================================================================
+contrib/xntpd           Garrett Wollman         wollman@lcs.mit.edu
 doc/FAQ                 FAQ Team                freebsd-faq@freefall.cdrom.com
-lib/libthread           Chris Provenzano        proven@mit.edu
+lib/libF77              L. Jonas Olsson         ljo@po.cwru.edu
+lib/libc                Garrett Wollman         wollman@lcs.mit.edu
+lib/libcrypt (non-US)   Geoff Rehmet            csgr@cs.ru.ac.za
+lib/libcurses           Andrew Chernov          ache@astral.msk.su
+lib/libkrb	        Garrett Wollman         wollman@lcs.mit.edu
+lib/libpthread          Chris Provenzano        proven@mit.edu
+lib/libtelnet           Garrett Wollman         wollman@lcs.mit.edu
 misc/manctl             Geoff Rehmet            csgr@cs.ru.ac.za
 misc/configit           Gary Clark II           gclarkii@freefall.cdrom.com
 misc/addit              Gary Clark II           gclarkii@freefall.cdrom.com
@@ -70,14 +78,18 @@ ports/zircon            Jordan Hubbard          jkh@freefall.cdrom.com
 ports/zsh               Scott Mace              smace@freefall.cdrom.com
 prog/gdb                Gary Jennejohn          gj@pcs.dec.com
 prog/man                Jordan Hubbard          jkh@freefall.cdrom.com
-sys/VM                  John Dyson              dyson@freefall.cdrom.com
+prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
 sys/fd                  Serge V.Vakulenko       vak@cronyx.msk.su
 sys/i386/*              David Greenman          davidg@root.com
 sys/kern                David Greenman          davidg@root.com
+sys/kern/ntp	        Garrett Wollman         wollman@lcs.mit.edu
 sys/lpt                 Geoff Rehmet            csgr@cs.ru.ac.za
 sys/net*                David Greenman          davidg@root.com
+sys/netinet             Garrett Wollman         wollman@lcs.mit.edu
 sys/netboot             Martin Renters          martin@innovus.com
 sys/scheduler           John Dyson              dyson@freefall.cdrom.com
+sys/syscons             So/ren Schmidt          sos@freefall.cdrom.com
 sys/vm                  David Greenman          davidg@root.com
+sys/vm                  John Dyson              dyson@freefall.cdrom.com
 sys/wt                  Serge V.Vakulenko       vak@cronyx.msk.su
 tools/booteasy          Serge V.Vakulenko       vak@cronyx.msk.su
