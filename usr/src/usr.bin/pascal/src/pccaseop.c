@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.11 %G%";
+static char sccsid[] = "@(#)pccaseop.c 1.12 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -33,6 +33,7 @@ struct ct {
 #endif vax
 #ifdef mc68000
 #   define	FORCENAME	"d0"
+#   define	ADDRTEMP	"a0"
 #endif mc68000
 
     /*
@@ -252,41 +253,91 @@ directsw( ctab , count )
     long	j;
 
 #   ifdef vax
-	putprintf("	casel	%s,$%d,$%d" , 0 , FORCENAME ,
-		ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
-#   endif vax
-#   ifdef mc68000
+	if (opt('J')) {
 	    /*
-	     *	subl	to make d0 a 0-origin byte offset.
+	     *	We have a table of absolute addresses.
+	     *
+	     *	subl2	to make r0 a 0-origin byte offset.
 	     *	cmpl	check against upper limit.
-	     *	bhi	error if out of bounds.
-	     *	addw	to make d0 a 0-origin word offset.
-	     *	movw	pick up a jump-table entry
+	     *	blssu	error if out of bounds.
+	     *	ashl	to make r0 a 0-origin long offset,
 	     *	jmp	and indirect through it.
 	     */
+	    putprintf("	subl2	$%d,%s", 0, ctab[1].cconst, FORCENAME);
+	    putprintf("	cmpl	$%d,%s", 0,
+		    ctab[count].cconst - ctab[1].cconst, FORCENAME);
+	    putprintf("	blssu	%s%d", 0, LABELPREFIX, ctab[0].clabel);
+	    putprintf("	ashl	$2,%s,%s", 0, FORCENAME, FORCENAME);
+	    putprintf("	jmp	*%s%d(%s)", 0,
+		    LABELPREFIX, fromlabel, FORCENAME);
+	} else {
+	    /*
+	     *	We can use the VAX casel instruction with a table
+	     *	of short relative offsets.
+	     */
+	    putprintf("	casel	%s,$%d,$%d" , 0 , FORCENAME ,
+		    ctab[1].cconst , ctab[ count ].cconst - ctab[1].cconst );
+	}
+#   endif vax
+#   ifdef mc68000
+	/*
+	 *	subl	to make d0 a 0-origin byte offset.
+	 *	cmpl	check against upper limit.
+	 *	bhi	error if out of bounds.
+	 */
 	putprintf("	subl	#%d,%s", 0, ctab[1].cconst, FORCENAME);
 	putprintf("	cmpl	#%d,%s", 0,
 		ctab[count].cconst - ctab[1].cconst, FORCENAME);
 	putprintf("	bhi	%s%d", 0, LABELPREFIX, ctab[0].clabel);
-	putprintf("	addw	%s,%s", 0, FORCENAME, FORCENAME);
-	putprintf("	movw	pc@(6,%s:w),%s", 0, FORCENAME, FORCENAME);
-	putprintf("	jmp	pc@(2,%s:w)", 0, FORCENAME);
+	if (opt('J')) {
+	    /*
+	     *	We have a table of absolute addresses.
+	     *
+	     *	asll	to make d0 a 0-origin long offset.
+	     *	movl	pick up a jump-table entry
+	     *	jmp	and indirect through it.
+	     */
+	    putprintf("	asll	#2,%s", 0, FORCENAME, FORCENAME);
+	    putprintf("	movl	pc@(4,%s:l),%s", 0, FORCENAME, ADDRTEMP);
+	    putprintf("	jmp	%s@", 0, ADDRTEMP);
+	} else {
+	    /*
+	     *	We have a table of relative addresses.
+	     *
+	     *	addw	to make d0 a 0-origin word offset.
+	     *	movw	pick up a jump-table entry
+	     *	jmp	and indirect through it.
+	     */
+	    putprintf("	addw	%s,%s", 0, FORCENAME, FORCENAME);
+	    putprintf("	movw	pc@(6,%s:w),%s", 0, FORCENAME, FORCENAME);
+	    putprintf("	jmp	pc@(2,%s:w)", 0, FORCENAME);
+	}
 #   endif mc68000
     putlab( fromlabel );
     i = 1;
     j = ctab[1].cconst;
     while ( i <= count ) {
 	if ( j == ctab[ i ].cconst ) {
-	    putprintf( "	.word	" , 1 );
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
-	    putprintf( "-" , 1 );
-	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    if (opt('J')) {
+		putprintf( "	.long	" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ i ].clabel );
+	    } else {
+		putprintf( "	.word	" , 1 );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
+		putprintf( "-" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    }
 	    i++;
 	} else {
-	    putprintf( "	.word	" , 1 );
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
-	    putprintf( "-" , 1 );
-	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    if (opt('J')) {
+		putprintf( "	.long	" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ 0 ].clabel );
+	    } else {
+		putprintf( "	.word	" , 1 );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
+		putprintf( "-" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    }
 	}
 	j++;
     }
@@ -294,7 +345,8 @@ directsw( ctab , count )
 	    /*
 	     *	execution continues here if value not in range of case.
 	     */
-	putjbr( ctab[0].clabel );
+	if (!opt('J'))
+	    putjbr( ctab[0].clabel );
 #   endif vax
 }
 

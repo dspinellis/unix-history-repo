@@ -3,7 +3,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.8 %G%";
+static char sccsid[] = "@(#)main.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -221,6 +221,9 @@ main(argc, argv)
 			    argc--;
 			    pcname = argv[0];
 			    break;	
+		    case 'J':
+			    togopt( 'J' );
+			    break;
 		    case 'C':
 				/*
 				 * since -t is an ld switch, use -C
