@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.7 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -39,31 +39,69 @@
 
 #define FDL_WANT	0x01
 #define FDL_LOCKED	0x02
-static int fdescvplock;
-static struct vnode *fdescvp[FD_MAX];
+static int fdcache_lock;
+
+dev_t devctty;
 
 #if (FD_STDIN != FD_STDOUT-1) || (FD_STDOUT != FD_STDERR-1)
 FD_STDIN, FD_STDOUT, FD_STDERR must be a sequence n, n+1, n+2
 #endif
 
+#define	NFDCACHE 3
+#define	FD_NHASH(ix) ((ix) & NFDCACHE)
+
+/*
+ * Cache head
+ */
+struct fdcache {
+	struct fdescnode	*fc_forw;
+	struct fdescnode	*fc_back;
+};
+
+static struct fdcache fdcache[NFDCACHE];
+
+/*
+ * Initialise cache headers
+ */
+fdesc_init()
+{
+	struct fdcache *fc;
+
+	devctty = makedev(nchrdev, 0);
+
+	for (fc = fdcache; fc < fdcache + NFDCACHE; fc++)
+		fc->fc_forw = fc->fc_back = (struct fdescnode *) fc;
+}
+
+/*
+ * Compute hash list for given target vnode
+ */
+static struct fdcache *
+fdesc_hash(ix)
+	int ix;
+{
+
+	return (&fdcache[FD_NHASH(ix)]);
+}
+
+int
 fdesc_allocvp(ftype, ix, mp, vpp)
 	fdntype ftype;
 	int ix;
 	struct mount *mp;
 	struct vnode **vpp;
 {
-	struct vnode **nvpp = 0;
+	struct fdcache *fc;
+	struct fdescnode *fd;
 	int error = 0;
 
 loop:
-	/* get stashed copy of the vnode */
-	if (ix >= 0 && ix < FD_MAX) {
-		nvpp = &fdescvp[ix];
-		if (*nvpp) {
-			if (vget(*nvpp, 1))
+	fc = fdesc_hash(ix);
+	for (fd = fc->fc_forw; fd != (struct fdescnode *) fc; fd = fd->fd_forw) {
+		if (fd->fd_ix == ix && fd->fd_vnode->v_mount == mp) {
+			if (vget(fd->fd_vnode, 0))
 				goto loop;
-			VOP_UNLOCK(*nvpp);
-			*vpp = *nvpp;
+			*vpp = fd->fd_vnode;
 			return (error);
 		}
 	}
@@ -72,30 +110,32 @@ loop:
 	 * otherwise lock the array while we call getnewvnode
 	 * since that can block.
 	 */ 
-	if (fdescvplock & FDL_LOCKED) {
-		fdescvplock |= FDL_WANT;
-		sleep((caddr_t) &fdescvplock, PINOD);
+	if (fdcache_lock & FDL_LOCKED) {
+		fdcache_lock |= FDL_WANT;
+		sleep((caddr_t) &fdcache_lock, PINOD);
 		goto loop;
 	}
-	fdescvplock |= FDL_LOCKED;
+	fdcache_lock |= FDL_LOCKED;
 
 	error = getnewvnode(VT_FDESC, mp, fdesc_vnodeop_p, vpp);
 	if (error)
 		goto out;
-	MALLOC((*vpp)->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
-	if (nvpp)
-		*nvpp = *vpp;
-	VTOFDESC(*vpp)->fd_type = ftype;
-	VTOFDESC(*vpp)->fd_fd = -1;
-	VTOFDESC(*vpp)->fd_link = 0;
-	VTOFDESC(*vpp)->fd_ix = ix;
+	MALLOC(fd, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
+	(*vpp)->v_data = fd;
+	fd->fd_vnode = *vpp;
+	fd->fd_type = ftype;
+	fd->fd_fd = -1;
+	fd->fd_link = 0;
+	fd->fd_ix = ix;
+	fc = fdesc_hash(ix);
+	insque(fd, fc);
 
 out:;
-	fdescvplock &= ~FDL_LOCKED;
+	fdcache_lock &= ~FDL_LOCKED;
 
-	if (fdescvplock & FDL_WANT) {
-		fdescvplock &= ~FDL_WANT;
-		wakeup((caddr_t) &fdescvplock);
+	if (fdcache_lock & FDL_WANT) {
+		fdcache_lock &= ~FDL_WANT;
+		wakeup((caddr_t) &fdcache_lock);
 	}
 
 	return (error);
@@ -105,6 +145,7 @@ out:;
  * vp is the current namei directory
  * ndp is the name to locate in that directory...
  */
+int
 fdesc_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode * a_dvp;
@@ -122,14 +163,7 @@ fdesc_lookup(ap)
 	struct vnode *fvp;
 	char *ln;
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup(%x)\n", ap);
-	printf("fdesc_lookup(dp = %x, vpp = %x, cnp = %x)\n", dvp, vpp, ap->a_cnp);
-#endif
 	pname = ap->a_cnp->cn_nameptr;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup(%s)\n", pname);
-#endif
 	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
 		*vpp = dvp;
 		VREF(dvp);	
@@ -156,9 +190,6 @@ fdesc_lookup(ap)
 			*vpp = fvp;
 			fvp->v_type = VDIR;
 			VOP_LOCK(fvp);
-#ifdef FDESC_DIAGNOSTIC
-			printf("fdesc_lookup: newvp = %x\n", fvp);
-#endif
 			return (0);
 		}
 
@@ -174,9 +205,6 @@ fdesc_lookup(ap)
 			*vpp = fvp;
 			fvp->v_type = VFIFO;
 			VOP_LOCK(fvp);
-#ifdef FDESC_DIAGNOSTIC
-			printf("fdesc_lookup: ttyvp = %x\n", fvp);
-#endif
 			return (0);
 		}
 
@@ -201,9 +229,6 @@ fdesc_lookup(ap)
 		}
 
 		if (ln) {
-#ifdef FDESC_DIAGNOSTIC
-			printf("fdesc_lookup: link -> %s\n", ln);
-#endif
 			error = fdesc_allocvp(Flink, fd, dvp->v_mount, &fvp);
 			if (error)
 				goto bad;
@@ -211,16 +236,13 @@ fdesc_lookup(ap)
 			*vpp = fvp;
 			fvp->v_type = VLNK;
 			VOP_LOCK(fvp);
-#ifdef FDESC_DIAGNOSTIC
-			printf("fdesc_lookup: newvp = %x\n", fvp);
-#endif
 			return (0);
 		} else {
 			error = ENOENT;
 			goto bad;
 		}
 
-		/* fall through */
+		/* FALL THROUGH */
 
 	case Fdevfd:
 		if (ap->a_cnp->cn_namelen == 2 && bcmp(pname, "..", 2) == 0) {
@@ -235,9 +257,6 @@ fdesc_lookup(ap)
 				break;
 		}
 
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_lookup: fd = %d, *pname = %x\n", fd, *pname);
-#endif
 		if (*pname != '\0') {
 			error = ENOENT;
 			goto bad;
@@ -248,28 +267,20 @@ fdesc_lookup(ap)
 			goto bad;
 		}
 
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_lookup: allocate new vnode\n");
-#endif
 		error = fdesc_allocvp(Fdesc, FD_DESC+fd, dvp->v_mount, &fvp);
 		if (error)
 			goto bad;
 		VTOFDESC(fvp)->fd_fd = fd;
 		*vpp = fvp;
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_lookup: newvp = %x\n", fvp);
-#endif
 		return (0);
 	}
 
 bad:;
 	*vpp = NULL;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_lookup: error = %d\n", error);
-#endif
 	return (error);
 }
 
+int
 fdesc_open(ap)
 	struct vop_open_args /* {
 		struct vnode *a_vp;
@@ -315,15 +326,8 @@ fdesc_attr(fd, vap, cred, p)
 	struct stat stb;
 	int error;
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_attr: fd = %d, nfiles = %d\n", fd, fdp->fd_nfiles);
-#endif
-	if (fd >= fdp->fd_nfiles || (fp = fdp->fd_ofiles[fd]) == NULL) {
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_attr: fp = %x (EBADF)\n", fp);
-#endif
+	if (fd >= fdp->fd_nfiles || (fp = fdp->fd_ofiles[fd]) == NULL)
 		return (EBADF);
-	}
 
 	switch (fp->f_type) {
 	case DTYPE_VNODE:
@@ -365,12 +369,10 @@ fdesc_attr(fd, vap, cred, p)
 		break;
 	}
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_attr: returns error %d\n", error);
-#endif
 	return (error);
 }
 
+int
 fdesc_getattr(ap)
 	struct vop_getattr_args /* {
 		struct vnode *a_vp;
@@ -383,10 +385,6 @@ fdesc_getattr(ap)
 	struct vattr *vap = ap->a_vap;
 	unsigned fd;
 	int error = 0;
-
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_getattr: stat type = %d\n", VTOFDESC(vp)->fd_type);
-#endif
 
 	switch (VTOFDESC(vp)->fd_type) {
 	case Froot:
@@ -402,7 +400,6 @@ fdesc_getattr(ap)
 			vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
 			vap->va_type = VLNK;
 			vap->va_nlink = 1;
-			/* vap->va_qsize = strlen(VTOFDESC(vp)->fd_link); */
 			vap->va_size = strlen(VTOFDESC(vp)->fd_link);
 			break;
 
@@ -410,7 +407,6 @@ fdesc_getattr(ap)
 			vap->va_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH;
 			vap->va_type = VFIFO;
 			vap->va_nlink = 1;
-			/* vap->va_qsize = 0; */
 			vap->va_size = 0;
 			break;
 
@@ -418,7 +414,6 @@ fdesc_getattr(ap)
 			vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
 			vap->va_type = VDIR;
 			vap->va_nlink = 2;
-			/* vap->va_qsize = 0; */
 			vap->va_size = DEV_BSIZE;
 			break;
 		}
@@ -433,14 +428,10 @@ fdesc_getattr(ap)
 		vap->va_gen = 0;
 		vap->va_flags = 0;
 		vap->va_rdev = 0;
-		/* vap->va_qbytes = 0; */
 		vap->va_bytes = 0;
 		break;
 
 	case Fdesc:
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_getattr: stat desc #%d\n", VTOFDESC(vp)->fd_fd);
-#endif
 		fd = VTOFDESC(vp)->fd_fd;
 		error = fdesc_attr(fd, vap, ap->a_cred, ap->a_p);
 		break;
@@ -453,12 +444,10 @@ fdesc_getattr(ap)
 	if (error == 0)
 		vp->v_type = vap->va_type;
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_getattr: stat returns 0\n");
-#endif
 	return (error);
 }
 
+int
 fdesc_setattr(ap)
 	struct vop_setattr_args /* {
 		struct vnode *a_vp;
@@ -487,13 +476,7 @@ fdesc_setattr(ap)
 	}
 
 	fd = VTOFDESC(ap->a_vp)->fd_fd;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_setattr: fd = %d, nfiles = %d\n", fd, fdp->fd_nfiles);
-#endif
 	if (fd >= fdp->fd_nfiles || (fp = fdp->fd_ofiles[fd]) == NULL) {
-#ifdef FDESC_DIAGNOSTIC
-		printf("fdesc_setattr: fp = %x (EBADF)\n", fp);
-#endif
 		return (EBADF);
 	}
 
@@ -514,9 +497,6 @@ fdesc_setattr(ap)
 		break;
 	}
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_setattr: returns error %d\n", error);
-#endif
 	return (error);
 }
 
@@ -536,6 +516,7 @@ static struct dirtmp {
 	{ 0 }
 };
 
+int
 fdesc_readdir(ap)
 	struct vop_readdir_args /* {
 		struct vnode *a_vp;
@@ -609,19 +590,16 @@ fdesc_readdir(ap)
 	i = uio->uio_offset / UIO_MX;
 	error = 0;
 	while (uio->uio_resid > 0) {
-		if (i >= fdp->fd_nfiles) {
-			/* *ap->a_eofflagp = 1; */
+		if (i >= fdp->fd_nfiles)
 			break;
-		}
+
 		if (fdp->fd_ofiles[i] != NULL) {
 			struct dirent d;
 			struct dirent *dp = &d;
+
 			bzero((caddr_t) dp, UIO_MX);
 
 			dp->d_namlen = sprintf(dp->d_name, "%d", i);
-			/*
-			 * Fill in the remaining fields
-			 */
 			dp->d_reclen = UIO_MX;
 			dp->d_type = DT_UNKNOWN;
 			dp->d_fileno = i + FD_STDIN;
@@ -647,7 +625,7 @@ fdesc_readlink(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
+	struct vnode *vp = ap->a_vp;
 	int error;
 
 	if (vp->v_type != VLNK)
@@ -663,6 +641,7 @@ fdesc_readlink(ap)
 	return (error);
 }
 
+int
 fdesc_read(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
@@ -686,6 +665,7 @@ fdesc_read(ap)
 	return (error);
 }
 
+int
 fdesc_write(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
@@ -709,6 +689,7 @@ fdesc_write(ap)
 	return (error);
 }
 
+int
 fdesc_ioctl(ap)
 	struct vop_ioctl_args /* {
 		struct vnode *a_vp;
@@ -721,10 +702,6 @@ fdesc_ioctl(ap)
 {
 	int error = EOPNOTSUPP;
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_ioctl: type = %d, command = %x\n",
-			VTOFDESC(ap->a_vp)->fd_type, ap->a_command);
-#endif
 	switch (VTOFDESC(ap->a_vp)->fd_type) {
 	case Fctty:
 		error = cttyioctl(devctty, ap->a_command, ap->a_data,
@@ -739,6 +716,7 @@ fdesc_ioctl(ap)
 	return (error);
 }
 
+int
 fdesc_select(ap)
 	struct vop_select_args /* {
 		struct vnode *a_vp;
@@ -763,6 +741,7 @@ fdesc_select(ap)
 	return (error);
 }
 
+int
 fdesc_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
@@ -775,33 +754,21 @@ fdesc_inactive(ap)
 	 * nasty things happening in vgone().
 	 */
 	vp->v_type = VNON;
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_inactive(%x)\n", vp);
-#endif
 	return (0);
 }
 
+int
 fdesc_reclaim(ap)
 	struct vop_reclaim_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
 {
 	struct vnode *vp = ap->a_vp;
-	int ix;
 
-#ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_reclaim(%x)\n", vp);
-#endif
-	ix = VTOFDESC(vp)->fd_ix;
-	if (ix >= 0 && ix < FD_MAX) {
-		if (fdescvp[ix] != vp)
-			panic("fdesc_reclaim");
-		fdescvp[ix] = 0;
-	}
-	if (vp->v_data) {
-		FREE(vp->v_data, M_TEMP);
-		vp->v_data = 0;
-	}
+	remque(VTOFDESC(vp));
+	FREE(vp->v_data, M_TEMP);
+	vp->v_data = 0;
+
 	return (0);
 }
 
@@ -809,6 +776,7 @@ fdesc_reclaim(ap)
  * Print out the contents of a /dev/fd vnode.
  */
 /* ARGSUSED */
+int
 fdesc_print(ap)
 	struct vop_print_args /* {
 		struct vnode *a_vp;
@@ -820,6 +788,7 @@ fdesc_print(ap)
 }
 
 /*void*/
+int
 fdesc_vfree(ap)
 	struct vop_vfree_args /* {
 		struct vnode *a_pvp;
@@ -834,6 +803,7 @@ fdesc_vfree(ap)
 /*
  * /dev/fd vnode unsupported operation
  */
+int
 fdesc_enotsupp()
 {
 
@@ -843,6 +813,7 @@ fdesc_enotsupp()
 /*
  * /dev/fd "should never get here" operation
  */
+int
 fdesc_badop()
 {
 
@@ -853,6 +824,7 @@ fdesc_badop()
 /*
  * /dev/fd vnode null operation
  */
+int
 fdesc_nullop()
 {
 
