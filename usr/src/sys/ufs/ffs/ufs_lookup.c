@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.31	82/11/17	*/
+/*	ufs_lookup.c	4.32	82/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -662,6 +662,7 @@ dirremove()
 		/*
 		 * Collapse new free space into previous entry.
 		 */
+		u.u_error = 0;	/* XXX */
 		bp = blkatoff(dp, (int)(u.u_offset - u.u_count), (char **)&ep);
 		if (bp == 0)
 			return (0);
@@ -723,17 +724,19 @@ blkatoff(ip, offset, res)
  * Inode supplied must be locked.
  */
 dirempty(ip)
-	struct inode *ip;
+	register struct inode *ip;
 {
 	register off_t off;
 	struct direct dbuf;
 	register struct direct *dp = &dbuf;
-	int error;
+	int error, count;
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
 		error = rdwri(UIO_READ, ip, (caddr_t)dp,
-			sizeof (struct direct), off, 1, (int *)0);
-		if (error)
+			sizeof (struct direct), off, 1, &count);
+		count = sizeof (struct direct) - count;
+#define	MINDIRSIZ (sizeof (struct direct) - (MAXNAMLEN + 1))
+		if (error || count < MINDIRSIZ || count < DIRSIZ(dp))
 			return (0);
 		if (dp->d_ino == 0)
 			continue;
