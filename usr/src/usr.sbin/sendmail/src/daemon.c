@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.8		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.9		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	4.8		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.8		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.9		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -65,7 +65,7 @@ static FILE	*MailPort;	/* port that mail comes in on */
 struct sockaddr_in	SendmailAddress;/* internet address of sendmail */
 
 int	DaemonSocket	= -1;		/* fd describing socket */
-char	*NetName	= "ARPA";	/* name of home (local?) network */
+char	*NetName;			/* name of home (local?) network */
 
 getrequests()
 {
