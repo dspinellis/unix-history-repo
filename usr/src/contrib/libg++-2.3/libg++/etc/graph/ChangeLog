@@ -1,0 +1,117 @@
+Tue Nov 17 22:13:11 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* graph.c (main):  exit(-1) on bad args.
+
+Fri Jun 26 11:36:15 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* read_data.cc:  istream::get(char&) can never set the char
+	to EOF (except accidentally), so don't compare the char to EOF.
+	The istream::good() test subsumes it anyway.  Also, use
+	standard istream::putback instead of non-standard unget().
+
+Thu May 14 12:38:57 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* tick_interval.{cc,h}:  Renamed to tick_intvl.{cc,h} to
+	fit in 14 characters.
+	* Makefile.in, graph.cc, ...:  Update correspondingly.
+
+Sat Feb  1 12:55:13 1992  Per Bothner  (bothner at cygnus.com)
+
+	* graph.cc, ePlotFile.h, read_data.{C,h}:
+	Convert to using iostreams facility.
+	* Makefile.in:
+	* read_data.cc, read_data.h:  Combine overloaded read_data()
+	function into a single function.
+	Pass extra filename parameter to read_data (for error
+	messages, since istream::name() is no longer supported).
+	* graph.cc:  Combine to use the single read_data() function.
+	* Makefile.in:  Add $(srcdir)/ as appropriate.
+
+Fri Oct  5 12:29:03 1990  Richard Murphey  (rich at kappa)
+
+	* graph.cc: added the option `-S -1' (i.e. symbol_number == -1)
+	which specifies that symbols are not to be drawn.  This is a slight
+	change from the old convention, but is not consistent with the way
+	line_mode is handled, and both will behave better when `-K' or
+	`-M' are chosen respecively.
+
+Thu Oct  4 15:59:19 1990  Richard Murphey  (rich at taj)
+
+	* graph.cc: the option `-m -1' (i.e. line_style == -1) means that
+	lines are not drawn between points.  This allows you to plot
+	symbols alone at each point.
+
+Tue Jan 16 14:44:46 1990  Rich Murphey  (rich at kalliope)
+
+	* graph.cc: added ability to specify the position of the labels
+	  on the x and y axes using the letters R or L and T or B to indicate
+	  whether the labels appear on the left or right and top or bottom
+	  of the plot.  Also added a description of this to graph.tex.
+
+	* graph.cc: added command line options to specify that the
+	  line style (-L) or symbol (-K) changes whenever the abcissal
+	  data decreases in value.
+
+	* graph.tex: added description of -K and -L options.
+
+Wed Jan  3 12:43:46 1990  Doug Lea  (dl at g.oswego.edu)
+
+        * graph.cc: replaced sprintf calls with dtoa, since sprintf
+        is apparently pretty broken on some systems.
+
+        * eGetOpt, ePlotFile: explicilty list constructrs, since g++
+        no longer allows inheritence of ctors.
+
+Sun Dec  3 21:21:17 1989  Carey R. Murphey  (rich at kalliope)
+
+	* graph.cc: add margins beteen edges of the data and the box
+	  only if the scale is not logarithmic.  Otherwise the
+	  additional margin could cause the value at the end of the
+	  axis to be negative.
+
+Wed Nov  8 20:59:38 1989  Carey R. Murphey  (rich at kalliope)
+
+        * The -c option was incompatible with other versions of graph.
+	  Changed graph.cc to use this option to specify a default
+	  label to be printed at each data point.  Symbols can be
+	  specified now using the `-S' option.
+
+	* Added the option `-z' to prevent graph from reading the standard
+	  input.
+
+	* split out read_data, tick_interval, eGetOpt, and ePlotFile
+	  into separate files.  Had to change the arguments to read_data
+	  to include what used to be passed through global data.
+
+	* graph.cc: changed expressions using ?: to use >? or <? to
+	  find the minimum of ints.
+
+Mon Nov  6 09:50:25 1989  Carey R. Murphey  (rich at kalliope)
+
+	* If there is no data, we can still draw a frame around the
+	  plot with axes and tick marks.  Added if (point.length()=0)
+	  around the code which searches for upper and lower bounds
+	  on the data.  Added it likewise before the code which plots
+	  the data points.
+
+Fri Nov  3 12:51:08 1989  Carey R. Murphey  (rich at kalliope)
+
+	* Removed clipping of output coordinates and replaced it with
+	  a warning.  Now you can generate coordinates which may cause
+	  plot to choke, but you will be warned.
+
+	* added ^L's and comments before each major part of the program.
+	  C-x ] puts you at a comment for the next section of code.
+
+	* shortened inline functions for transformation of coordinates, px,
+	  py, fx, and fy, to a single expression.  Separated out clipping into
+	  a new function, clip, which returns a value between 0 and PLOTSIZE.
+
+	* made usage and copyright notices constants.
+
+    	* skip white space after reading y coordinate and label
+	  so that the test for istream.good() will detect end of file
+	  immediately and drop out of the read loop before trying
+	  to read the next coordinate.
+
+	  
