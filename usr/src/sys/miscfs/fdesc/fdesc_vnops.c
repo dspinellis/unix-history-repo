@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	1.3 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	1.4 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
  */
@@ -31,6 +31,7 @@
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/buf.h>
+#include <sys/dirent.h>
 #include <fdesc/fdesc.h>
 
 /*
@@ -288,8 +289,8 @@ fdesc_readdir (ap)
 			break;
 		}
 		if (fdp->fd_ofiles[i] != NULL) {
-			struct readdir d;
-			struct readdir *dp = &d;
+			struct dirent d;
+			struct dirent *dp = &d;
 			char *cp = dp->d_name;
 #ifdef FDESC_FILEID
 			struct vattr va;
@@ -301,7 +302,8 @@ fdesc_readdir (ap)
 			 * Fill in the remaining fields
 			 */
 			dp->d_reclen = UIO_MX;
-			dp->d_ino = i + 3;
+			dp->d_type = DT_UNKNOWN;
+			dp->d_fileno = i + 3;
 #ifdef FDESC_FILEID
 			/*
 			 * If we want the file ids to match the
