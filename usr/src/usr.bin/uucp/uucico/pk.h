@@ -7,7 +7,10 @@ struct header {
 	char	cntl;
 	char	ccntl;
 };
+
 #define	HDRSIZ	6
+#define	PACKSIZE	64
+#define WINDOWS	3
 
 struct pack {
 	short	p_state;	/* line state */
@@ -41,11 +44,13 @@ struct pack {
 	char	p_is[8];	/* input buffer status */
 	short	p_osum[8];	/* output checksums */
 	short	p_isum[8];	/* input checksums */
-	DSYSTEM;
+	int p_ifn, p_ofn;
 };
+
 #define	CHECK	0125252
 #define	SYN	020
 #define	MOD8	7
+#define	PKASSERT(e, s1, s2, i1) if (!(e)) {assert(s1, s2, i1);pkfail();} else
 #define	ISCNTL(a)	((a & 0300)==0)
 /* MIN may have been defined in <sys/param.h> */
 #undef	MIN
@@ -103,15 +108,8 @@ extern int	pkactive;
 #define	M_INITA	0200
 #define	M_INITB	0100
 
-
-
 #define	PKOPRI	31
 #define	PKIPRI	30
-
-/*
- * allegra.1402, allegra!honey, Peter Honeyman. Increase PKLINES
- * to avoid PKSTART FAILEDs.  (This is a kludge.)
- */
 #define	NPLINES	20
 
 /*
