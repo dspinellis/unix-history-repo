@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.19 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.20 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -431,7 +431,7 @@ R$*			$@ $>0 $1
 
 S0
 
-R<>			$#local $: <>			special case error msgs
+R<@>			$#local $: <>			special case error msgs
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
