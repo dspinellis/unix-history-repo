@@ -15,12 +15,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.58 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.59 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>	
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <fts.h>
 #include <stdlib.h>
@@ -30,7 +31,7 @@ static char sccsid[] = "@(#)ls.c	5.58 (Berkeley) %G%";
 #include "ls.h"
 #include "extern.h"
 
-void	display __P((int, FTSENT *, FTSENT *));
+void	display __P((FTSENT *, FTSENT *));
 int	mastercmp __P((const FTSENT **, const FTSENT **));
 void	traverse __P((int, char **, int));
 
@@ -67,20 +68,21 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
+	static char dot[] = ".", *dotav[] = { dot, NULL };
 	struct winsize win;
 	int ch, fts_options;
 	char *p;
 
 	/* Terminal defaults to -Cq, non-terminal defaults to -1. */
-	if (isatty(1)) {
-		f_nonprint = 1;
-		if (ioctl(1, TIOCGWINSZ, &win) == -1 || !win.ws_col) {
+	if (isatty(STDOUT_FILENO)) {
+		if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &win) == -1 ||
+		    !win.ws_col) {
 			if (p = getenv("COLUMNS"))
 				termwidth = atoi(p);
 		}
 		else
 			termwidth = win.ws_col;
-		f_column = 1;
+		f_column = f_nonprint = 1;
 	} else
 		f_singlecol = 1;
 
@@ -107,7 +109,7 @@ main(argc, argv)
 			f_longform = 1;
 			f_column = f_singlecol = 0;
 			break;
-		/* -c and -u override each other */
+		/* The -c and -u options override each other. */
 		case 'c':
 			f_statustime = 1;
 			f_accesstime = 0;
@@ -132,10 +134,12 @@ main(argc, argv)
 		case 'A':
 			f_listdot = 1;
 			break;
+		/* The -d option turns off the -R option. */
 		case 'S':
 			Sflg++; /* fall into... */
 		case 'd':
 			f_listdir = 1;
+			f_recursive = 0;
 			break;
 		case 'f':
 			f_nosort = 1;
@@ -174,10 +178,6 @@ main(argc, argv)
 	}
 	argc -= optind;
 	argv += optind;
-
-	/* The -d option turns off the -R option. */
-	if (f_listdir)
-		f_recursive = 0;
 
 	/*
 	 * If not -F, -i, -l, -s or -t options, don't require stat
@@ -224,12 +224,12 @@ main(argc, argv)
 
 	if (argc)
 		traverse(argc, argv, fts_options);
-	else {
-		static char dot[] = ".", *dotav[] = { dot, NULL };
+	else
 		traverse(1, dotav, fts_options);
-	}
 	exit(0);
 }
+
+static int output;			/* If anything output. */
 
 /*
  * Traverse() walks the logical directory structure specified by the argv list
@@ -244,15 +244,17 @@ traverse(argc, argv, options)
 {
 	register FTS *ftsp;
 	register FTSENT *p;
-	register int is_ddot;
+	int ch_options;
 	
 	if ((ftsp =
 	    fts_open(argv, options, f_nosort ? NULL : mastercmp)) == NULL)
 		err(1, "fts_open: %s", strerror(errno));
 
-	display(argc, NULL, fts_children(ftsp));
+	display(NULL, fts_children(ftsp, 0));
 	if (f_listdir)
 		return;
+
+	ch_options = !f_recursive && options & FTS_NOSTAT ? FTS_NAMEONLY : 0;
 	while (p = fts_read(ftsp))
 		switch(p->fts_info) {
 		case FTS_DC:
@@ -267,7 +269,25 @@ traverse(argc, argv, options)
 			if (p->fts_level != FTS_ROOTLEVEL &&
 			    p->fts_name[0] == '.' && !f_listdot)
 				break;
-			display(argc, p, fts_children(ftsp));
+
+			/*
+			 * If already output something, put out a newline as
+			 * a separator.  If multiple arguments, precede each
+			 * directory with its name.
+			 */
+			if (output)
+				(void)printf("\n%s:\n", p->fts_path);
+			else if (argc > 1) {
+				(void)printf("%s:\n", p->fts_path);
+				output = 1;
+			}
+
+			/*
+			 * If not recursing down this tree and don't need stat
+			 * info, just get the names.
+			 */
+			display(p, fts_children(ftsp, ch_options));
+
 			if (!f_recursive)
 				(void)fts_set(ftsp, p, FTS_SKIP);
 			break;
@@ -276,14 +296,12 @@ traverse(argc, argv, options)
 }
 
 /*
- * Display() takes a linked list of FTSENT structures and based on the flags
- * set on the command line passes the list along with any other necessary
- * information to the print function (printfcn()).  P always points to the
- * parent directory of the display list.
+ * Display() takes a linked list of FTSENT structures passes the list along
+ * with any other necessary information to the print function (printfcn()).
+ * P points to the parent directory of the display list.
  */
 void
-display(argc, p, list)
-	int argc;
+display(p, list)
 	register FTSENT *p;
 	FTSENT *list;
 {
@@ -298,74 +316,50 @@ display(argc, p, list)
 	 * on the next call to fts_read() on the post-order visit to the
 	 * directory p, and will be signalled in traverse().
 	 */
-	if (list == NULL && (p->fts_level != FTS_ROOTLEVEL || argc != 1)) {
-		(void)printf("\n%s:\n", p->fts_path);
+	if (list == NULL)
 		return;
-	}
 
-	/*
-	 * P can only be NULL if list is the argv list.  This list must be
-	 * handled slightly differently due to the fact that there does not
-	 * exist a proper parent directory and different rules apply to it.
-	 */
 	btotal = 0;
 	maxlen = 0;
-	if (p == NULL)
-		for (cur = list, entries = 0; cur; cur = cur->fts_link) {
-			if (cur->fts_info == FTS_ERR ||
-			    cur->fts_info == FTS_NS) {
-				err(0, "%s: %s",
-				    cur->fts_name, strerror(cur->fts_errno));
-				cur->fts_number = NO_PRINT;
-				continue;
-			}
-			/*
-			 * If cur is a directory, do not print it out now.  Its
-			 * contents will be printed out when fts_read() reads
-			 * it.
-			 */
+	for (cur = list, entries = 0; cur; cur = cur->fts_link) {
+		if (cur->fts_info == FTS_ERR || cur->fts_info == FTS_NS) {
+			err(0, "%s: %s",
+			    cur->fts_name, strerror(cur->fts_errno));
+			cur->fts_number = NO_PRINT;
+			continue;
+		}
+
+		/*
+		 * P is NULL if list is the argv list.  Different rules apply
+		 * to this list.
+		 */
+		if (p == NULL) {
+			/* Directories will be displayed later. */
 			if (cur->fts_info == FTS_D && !f_listdir) {
 				cur->fts_number = NO_PRINT;
 				continue;
 			}
-			++entries;
-			if (f_nonprint)
-				prcopy(cur->fts_name, cur->fts_name,
-				    cur->fts_namelen);
-			if (f_column && cur->fts_namelen > maxlen)
-				maxlen = cur->fts_namelen;
-		}
-	else {
-		if (p->fts_level != FTS_ROOTLEVEL || argc != 1)
-			(void)printf("\n%s:\n", p->fts_path);
-		
-		for (cur = list, entries = 0; cur; cur = cur->fts_link) {
-			if (cur->fts_info == FTS_ERR ||
-			    cur->fts_info == FTS_NS) {
-				err(0, "%s: %s",
-				    cur->fts_name, strerror(cur->fts_errno));
-				cur->fts_number = NO_PRINT;
-				continue;
-			}
-			/* Don't display dot file if -a/-A not set. */
+		} else {
+			/* Only display dot file if -a/-A set. */
 			if (cur->fts_name[0] == '.' && !f_listdot) {
 				cur->fts_number = NO_PRINT;
 				continue;
 			}
-			++entries;
-			if (f_nonprint)
-				prcopy(cur->fts_name, cur->fts_name,
-				       cur->fts_namelen);
-			if (f_column && cur->fts_namelen > maxlen)
-				maxlen = cur->fts_namelen;
 			
 			if (f_longform || f_size)
 				btotal += cur->fts_statp->st_blocks;
 		}
+		if (f_nonprint)
+			prcopy(cur->fts_name, cur->fts_name, cur->fts_namelen);
+		if (f_column && cur->fts_namelen > maxlen)
+			maxlen = cur->fts_namelen;
+		++entries;
 	}
 
-	if (entries)
+	if (entries) {
 		printfcn(list, entries, btotal, maxlen);
+		output = 1;
+	}
 }
 
 /*
