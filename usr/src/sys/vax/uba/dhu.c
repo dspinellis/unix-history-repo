@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	4.2 (Berkeley) %G%
+ *	@(#)dhu.c	4.3 (Berkeley) %G%
  */
 
 /*
@@ -505,7 +505,7 @@ dhuparam(unit)
 	lpar = (dhu_speeds[tp->t_ospeed]<<12) | (dhu_speeds[tp->t_ispeed]<<8);
 	if ((tp->t_ispeed) == B134)
 		lpar |= DHU_LP_BITS6|DHU_LP_PENABLE;
-	else if (tp->t_flags & (RAW|LITOUT))
+	else if (tp->t_flags & (RAW|LITOUT|PASS8))
 		lpar |= DHU_LP_BITS8;
 	else
 		lpar |= DHU_LP_BITS7|DHU_LP_PENABLE;

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	6.9 (Berkeley) %G%
+ *	@(#)dh.c	6.10 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -407,7 +407,7 @@ dhparam(unit)
 	lpar = ((tp->t_ospeed)<<10) | ((tp->t_ispeed)<<6);
 	if ((tp->t_ispeed) == B134)
 		lpar |= BITS6|PENABLE|HDUPLX;
-	else if (tp->t_flags & (RAW|LITOUT))
+	else if (tp->t_flags & (RAW|LITOUT|PASS8))
 		lpar |= BITS8;
 	else
 		lpar |= BITS7|PENABLE;

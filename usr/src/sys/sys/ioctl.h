@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.11 (Berkeley) %G%
+ *	@(#)ioctl.h	6.12 (Berkeley) %G%
  */
 
 /*
@@ -149,7 +149,7 @@ struct winsize {
 #define		NOHANG		0x01000000	/* no SIGHUP on carrier drop */
 #define		L001000		0x02000000
 #define		CRTKIL		0x04000000	/* kill line with " \b " */
-#define		L004000		0x08000000
+#define		PASS8		0x08000000
 #define		CTLECH		0x10000000	/* echo control chars as ^X */
 #define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
 #define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
@@ -169,6 +169,7 @@ struct winsize {
 #define		LFLUSHO		(FLUSHO>>16)
 #define		LNOHANG		(NOHANG>>16)
 #define		LCRTKIL		(CRTKIL>>16)
+#define		LPASS8		(PASS8>>16)
 #define		LCTLECH		(CTLECH>>16)
 #define		LPENDIN		(PENDIN>>16)
 #define		LDECCTQ		(DECCTQ>>16)
