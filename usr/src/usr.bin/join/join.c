@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)join.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)join.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -55,7 +55,7 @@ INPUT input1 = { NULL, 0, 0, 1, NULL, -1, 0, 0, },
       input2 = { NULL, 0, 0, 1, NULL, -1, 0, 0, };
 
 typedef struct {
-	u_long	fileno;		/* file number */
+	u_long	filenum;	/* file number */
 	u_long	fieldno;	/* field number */
 } OLIST;
 OLIST *olist;			/* output field list */
@@ -361,7 +361,7 @@ outoneline(F, lp)
 	 */
 	if (olist)
 		for (cnt = 0; cnt < olistcnt; ++cnt) {
-			if (olist[cnt].fileno == F->number)
+			if (olist[cnt].filenum == F->number)
 				outfield(lp, olist[cnt].fieldno);
 		}
 	else
@@ -383,9 +383,9 @@ outtwoline(F1, lp1, F2, lp2)
 	/* Output a pair of lines according to the join list (if any). */
 	if (olist)
 		for (cnt = 0; cnt < olistcnt; ++cnt)
-			if (olist[cnt].fileno == 1)
+			if (olist[cnt].filenum == 1)
 				outfield(lp1, olist[cnt].fieldno);
-			else /* if (olist[cnt].fileno == 2) */
+			else /* if (olist[cnt].filenum == 2) */
 				outfield(lp2, olist[cnt].fieldno);
 	else {
 		/*
@@ -453,7 +453,7 @@ fieldarg(option)
 			    olistalloc * sizeof(OLIST))) == NULL)
 				enomem();
 		}
-		olist[olistcnt].fileno = token[0] - '0';
+		olist[olistcnt].filenum = token[0] - '0';
 		olist[olistcnt].fieldno = fieldno - 1;
 		++olistcnt;
 	}
