@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.30 (Berkeley) %G%
+ *	@(#)locore.s	6.31 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -241,7 +241,7 @@ SCBVEC(netintr):
 #if NIMP > 0
 	bbcc	$NETISR_IMP,_netisr,1f; calls $0,_impintr; 1:
 #endif
-#ifdef INET
+#if defined(INET) || defined(BBNNET)
 	bbcc	$NETISR_IP,_netisr,1f; calls $0,_ipintr; 1:
 #endif
 #ifdef NS
@@ -689,8 +689,10 @@ start:
 	addl2	$(UPAGES*NBPG)+NBPG+NBPG,r5
 1:	clrq	(r6); acbl r5,$8,r6,1b
 /* trap() and syscall() save r0-r11 in the entry mask (per ../h/reg.h) */
+/* panic() is convenient place to save all for debugging */
 	bisw2	$0x0fff,_trap
 	bisw2	$0x0fff,_syscall
+	bisw2	$0x0fff,_panic
 	calls	$0,_fixctlrmask
 /* initialize system page table: uba vectors and int stack writeable */
 	clrl	r2
