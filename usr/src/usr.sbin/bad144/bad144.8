@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bad144.8	6.3 (Berkeley) %G%
+.\"	@(#)bad144.8	6.4 (Berkeley) %G%
 .\"
 .TH BAD144 8 ""
 .UC 4
@@ -17,7 +17,7 @@ bad144 \- read/write dec standard 144 bad sector information
 ] [
 .B \-v
 ]
-disktype disk
+disk
 [ sno [
 bad ...
 ] ]
@@ -31,7 +31,7 @@ bad ...
 ] [
 .B \-v
 ]
-disktype disk
+disk
 [
 bad ...
 ]
@@ -83,8 +83,8 @@ array are filled with all bits set, a putatively
 illegal value.
 .PP
 .I Bad144
-is invoked by giving a device type (e.g. rk07, rm03, rm05, etc.), and a device
-name (e.g. hk0, hp1, etc.).  With no optional arguments
+is invoked by giving a device name (e.g. hk0, hp1, etc.).
+With no optional arguments
 it reads the first sector of the last track
 of the corresponding disk and prints out the bad sector information.
 It issues a warning if the bad sectors are out of order.
@@ -126,6 +126,21 @@ by reformatting them as unusable sectors.
 preferably while running single-user.
 This option is required unless the sectors have already been marked bad,
 or the system will not be notified that it should use the replacement sector.
+.PP
+The normal procedure for adding new bad sectors to an SMD or RP06 drive
+with an existing bad sector table is the following:
+.IP 1.
+Shut down to single-user operation.
+.IP 2.
+Use ``\c
+.I bad144 \-a \-f
+drive sector ...''
+to add new bad sectors to the table, formatting them as bad.
+The
+.B \-c
+option may also be used if the original sectors may be readable.
+.IP 3.
+Reboot to allow the kernel to reread the bad-sector table from the drive.
 .SH SEE ALSO
 badsect(8),
 format(8V)
