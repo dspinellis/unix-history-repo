@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.17 1994/01/24 02:24:11 davidg Exp $
+ *	$Id: vm_object.c,v 1.18 1994/01/24 05:12:44 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -198,9 +198,6 @@ vm_object_init()
  *	Returns a new object with the given size.
  */
 
-static struct vm_object *objpool;
-static int objpoolcnt;
-
 vm_object_t
 vm_object_allocate(size)
 	vm_size_t	size;
@@ -208,14 +205,8 @@ vm_object_allocate(size)
 	register vm_object_t	result;
 	int s;
 
-	if (objpool) {
-		result = objpool;
-		objpool = result->copy;
-		--objpoolcnt;
-	} else {
-		result = (vm_object_t)
-			malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
-	}
+	result = (vm_object_t)
+		malloc((u_long)sizeof *result, M_VMOBJ, M_WAITOK);
 		
 
 	_vm_object_allocate(size, result);
@@ -346,17 +337,50 @@ vm_object_terminate(object)
 	}
 
 	/*
+	 * optim: get rid of any pages that we can right now
+	 *        so the pageout daemon can't get any more to page
+	 *        out at rundown.
+	 */
+	p = (vm_page_t) queue_first(&object->memq);
+	while (!queue_end(&object->memq, (queue_entry_t) p)) {
+		vm_page_t next = (vm_page_t) queue_next(&p->listq);
+		VM_PAGE_CHECK(p);
+		vm_page_lock_queues();
+
+		if (p->flags & PG_BUSY) {
+			p = next;
+			vm_page_unlock_queues();
+			continue;
+		}
+		if (!object->internal) {
+			if ((p->flags & PG_CLEAN) == 0) {
+				p = next;
+				vm_page_unlock_queues();
+				continue;
+			}
+
+			if (pmap_is_modified(VM_PAGE_TO_PHYS(p))) {
+				p->flags &= ~PG_CLEAN;
+				p = next;
+				vm_page_unlock_queues();
+				continue;
+			}
+		}
+
+		vm_page_free(p);
+		vm_page_unlock_queues();
+		p = next;
+	}
+
+	/*
 	 *	Wait until the pageout daemon is through
 	 *	with the object.
 	 */
 
-	s = splhigh();
 	while (object->paging_in_progress != 0) {
 		vm_object_sleep(object, object, FALSE);
 		vm_object_lock(object);
 	}
-	splx(s);
-
 
 	/*
 	 *	While the paging system is locked,
@@ -439,13 +463,7 @@ vm_object_terminate(object)
 	 *	Free the space for the object.
 	 */
 
-	if (objpoolcnt < 64) {
-		object->copy = objpool;
-		objpool = object;
-		++objpoolcnt;
-		return;
-	} else
-		free((caddr_t)object, M_VMOBJ);
+	free((caddr_t)object, M_VMOBJ);
 }
 
 /*
@@ -478,7 +496,6 @@ vm_object_page_clean(object, start, end)
 	size = end - start;
 
 again:
-	s = splimp();
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p) && ((start == end) || (size != 0) ) ) {
 		if (start == end || (p->offset >= start && p->offset < end)) {
@@ -493,7 +510,7 @@ again:
 
 			if (p->flags & PG_ACTIVE)
 				vm_page_deactivate(p);
-			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
+
 			if ((p->flags & PG_CLEAN) == 0) {
 				p->flags |= PG_BUSY;
 				object->paging_in_progress++;
@@ -504,14 +521,12 @@ again:
 				if (object->paging_in_progress == 0)
 					wakeup((caddr_t) object);
 				PAGE_WAKEUP(p);
-				splx(s);
 				goto again;
 			}
 		}
 next:
 		p = (vm_page_t) queue_next(&p->listq);
 	}
-	splx(s);
 	wakeup((caddr_t)object);
 }
 
@@ -529,7 +544,6 @@ vm_object_deactivate_pages(object)
 {
 	register vm_page_t	p, next;
 
-	int s = splimp();
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		next = (vm_page_t) queue_next(&p->listq);
@@ -543,7 +557,6 @@ vm_object_deactivate_pages(object)
 		vm_page_unlock_queues();
 		p = next;
 	}
-	splx(s);
 }
 
 /*
@@ -690,13 +703,9 @@ vm_object_pmap_remove(object, start, end)
 	p = (vm_page_t) queue_first(&object->memq);
 	while (!queue_end(&object->memq, (queue_entry_t) p)) {
 		if ((start <= p->offset) && (p->offset < end)) {
-			if ((p->flags & PG_CLEAN) 
-				 && pmap_is_modified(VM_PAGE_TO_PHYS(p))) {
-				p->flags &= ~PG_CLEAN;
-			}
+			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			if ((p->flags & PG_CLEAN) == 0)
 				p->flags |= PG_LAUNDRY;
-			pmap_page_protect(VM_PAGE_TO_PHYS(p), VM_PROT_NONE);
 			if (--size <= 0) break;
 		}
 		p = (vm_page_t) queue_next(&p->listq);

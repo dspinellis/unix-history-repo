@@ -77,7 +77,6 @@
 #include "machine/stdarg.h"
 
 extern char kstack[];
-extern int vm_pageout_free_min;
 int	avefree = 0;		/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 /* vm_map_t upages_map; */
@@ -160,7 +159,6 @@ vslock(addr, len)
 	u_int	len;
 {
 	vm_map_pageable(&curproc->p_vmspace->vm_map, trunc_page(addr),
-			/* round_page(addr+len-1), FALSE); */
 			round_page(addr+len), FALSE);
 }
 
@@ -299,8 +297,8 @@ vm_init_limits(p)
 	tmp = ((2 * vm_page_free_count) / 3) - 32;
 	if (vm_page_free_count < 512)
 		tmp = vm_page_free_count;
-	p->p_rlimit[RLIMIT_RSS].rlim_cur = p->p_rlimit[RLIMIT_RSS].rlim_max =
-		ptoa(tmp);
+	p->p_rlimit[RLIMIT_RSS].rlim_cur = ptoa(tmp);
+	p->p_rlimit[RLIMIT_RSS].rlim_max = RLIM_INFINITY;
 }
 
 #include "../vm/vm_pageout.h"
@@ -455,6 +453,7 @@ noswap:
 #define	swappable(p) \
 	(((p)->p_flag & (STRC|SSYS|SLOAD|SLOCK|SKEEP|SWEXIT|SPHYSIO)) == SLOAD)
 
+extern int vm_pageout_free_min;
 /*
  * Swapout is driven by the pageout daemon.  Very simple, we find eligible
  * procs and unwire their u-areas.  We try to always "swap" at least one
@@ -486,8 +485,6 @@ swapout_threads()
 			continue;
 		switch (p->p_stat) {
 		case SRUN:
-			if (p->p_pri <= PUSER) /* possible deadlock unless this check */
-				continue;
 			if ((tpri = p->p_time + p->p_nice * 8) > outpri2) {
 				outp2 = p;
 				outpri2 = tpri;
@@ -496,9 +493,7 @@ swapout_threads()
 			
 		case SSLEEP:
 		case SSTOP:
-			if (p->p_pri <= PRIBIO) /* possible deadlock unless this check */
-				continue;
-			if (p->p_slptime > maxslp || p->p_pri == PWAIT) {
+			if (p->p_slptime > maxslp) {
 				swapout(p);
 				didswap++;
 			} else if ((tpri = p->p_slptime + p->p_nice * 8) > outpri) {
@@ -515,9 +510,9 @@ swapout_threads()
 	 * it (UPAGES pages).
 	 */
 	if (didswap == 0 && (swapinreq && 
-			vm_page_free_count <= (vm_page_free_reserved + UPAGES))) {
+			vm_page_free_count <= vm_pageout_free_min)) {
 		if ((p = outp) == 0 &&
-			(vm_page_free_count < vm_page_free_reserved))
+			(vm_page_free_count <= vm_pageout_free_min))
 			p = outp2;
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPOUT)
@@ -528,6 +523,7 @@ swapout_threads()
 			didswap = 1;
 		}
 	}
+
 	if (didswap) {
 		if (swapinreq)
 			wakeup((caddr_t)&proc0);

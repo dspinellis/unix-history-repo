@@ -38,7 +38,7 @@
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  * from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
  *
- * $Id: swap_pager.c,v 1.13 1994/01/14 16:45:06 davidg Exp $
+ * $Id: swap_pager.c,v 1.14 1994/01/17 09:33:20 davidg Exp $
  */
 
 /*
@@ -123,7 +123,6 @@ struct pagerops swappagerops = {
 extern int nswbuf;
 
 int npendingio = NPENDINGIO;
-int swiopend;
 int pendingiowait;
 int require_swap_init;
 void swap_pager_finish();
@@ -182,8 +181,6 @@ swap_pager_alloc(handle, size, prot, offset)
 		register swp_clean_t spc;
 		if (npendingio > nswbuf)
 			npendingio = nswbuf;
-		if (npendingio > vm_page_count / 32)
-			npendingio = vm_page_count / 32;
 		/*
 		 * kva's are allocated here so that we dont need to keep
 		 * doing kmem_alloc pageables at runtime
@@ -754,11 +751,9 @@ swap_pager_ridpages(m, count, reqpage)
 	int i;
 	int s;
 
-	s = splhigh();
 	for (i = 0; i < count; i++)
 		if (i != reqpage)
 			swap_pager_freepage(m[i]);
-	splx(s);
 }
 
 int swapwritecount=0;
@@ -951,6 +946,10 @@ swap_pager_io(swp, m, count, reqpage, flags)
 	 * get a swap pager clean data structure, block until we get it
 	 */
 		if (queue_empty(&swap_pager_free)) {
+/*
+			if ((flags & (B_ASYNC|B_READ)) == B_ASYNC)
+				return VM_PAGER_TRYAGAIN;
+*/
 			s = splbio();
 			(void) swap_pager_clean(NULL, B_WRITE);
 			while (queue_empty(&swap_pager_free)) { 
@@ -1161,7 +1160,8 @@ retrygetspace:
 		 * optimization, if a page has been read during the
 		 * pageout process, we activate it.
 		 */
-		if (pmap_is_referenced(VM_PAGE_TO_PHYS(m[reqpage])))
+		if ( (m[reqpage]->flags & PG_ACTIVE) == 0 &&
+			pmap_is_referenced(VM_PAGE_TO_PHYS(m[reqpage])))
 			vm_page_activate(m[reqpage]);
 	}
 
@@ -1181,11 +1181,10 @@ retrygetspace:
 				 * is up in the air, but we should put the page
 				 * on a page queue somewhere. (it already is in
 				 * the object).
+				 * After some emperical results, it is best
+				 * to deactivate the readahead pages.
 				 */
-				if (i < (reqpage + 3))
-					vm_page_activate(m[i]);
-				else
-					vm_page_deactivate(m[i]); 
+				vm_page_deactivate(m[i]); 
 
 				/*
 				 * just in case someone was asking for this
@@ -1281,7 +1280,8 @@ swap_pager_finish(spc)
 	 * if a page has been read during pageout, then
 	 * we activate the page.
 	 */
-	if (pmap_is_referenced(VM_PAGE_TO_PHYS(m))) 
+	if ((m->flags & PG_ACTIVE) == 0 &&
+		pmap_is_referenced(VM_PAGE_TO_PHYS(m))) 
 		vm_page_activate(m);
 
 	/*
@@ -1398,3 +1398,13 @@ relpbuf(bp)
 	splx(s);
 }
 
+/*
+ * return true if any swap control structures can be allocated
+ */
+int
+swap_pager_ready() {
+	if( queue_empty( &swap_pager_free)) 
+		return 0;
+	else
+		return 1;
+}

@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id: vm_fault.c,v 1.12 1994/01/14 16:27:15 davidg Exp $
+ * $Id: vm_fault.c,v 1.13 1994/01/17 09:33:31 davidg Exp $
  */
 
 /*
@@ -82,9 +82,9 @@
 #include "resource.h"
 #include "resourcevar.h"
 
-#define VM_FAULT_READ_AHEAD 8
-#define VM_FAULT_READ_AHEAD_MIN 4
-#define VM_FAULT_READ_BEHIND 1
+#define VM_FAULT_READ_AHEAD 3
+#define VM_FAULT_READ_AHEAD_MIN 1
+#define VM_FAULT_READ_BEHIND 2
 #define VM_FAULT_READ (VM_FAULT_READ_AHEAD+VM_FAULT_READ_BEHIND+1)
 extern int swap_pager_full;
 extern int vm_pageout_proc_limit;
@@ -266,11 +266,10 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 *	wait for it and then retry.
 			 */
 			if (m->flags & PG_BUSY) {
-				int s;
 				UNLOCK_THINGS;
 				if (m->flags & PG_BUSY) {
 					m->flags |= PG_WANTED;
-					tsleep((caddr_t)m,PVM,"vmpfw",0);
+					tsleep((caddr_t)m,PSWP,"vmpfw",0);
 				}
 				vm_object_deallocate(first_object);
 				goto RetryFault;
@@ -316,12 +315,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		    || (object == first_object)) {
 
 #if 0
-			if (curproc && (curproc->p_rlimit[RLIMIT_RSS].rlim_max <
+			if (curproc && (vaddr < VM_MAXUSER_ADDRESS) &&
+				(curproc->p_rlimit[RLIMIT_RSS].rlim_max <
 			    curproc->p_vmspace->vm_pmap.pm_stats.resident_count * NBPG)) {
 				UNLOCK_AND_DEALLOCATE;
-				wakeup(&vm_pages_needed);
-				vm_pageout_proc_limit = 1;
-				tsleep(&vm_pageout_proc_limit, PVM, "vmlimt", 0);
+				vm_fault_free_pages(curproc);
 				goto RetryFault;
 			}
 #endif
@@ -558,13 +556,10 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 			vm_page_lock_queues();
 
-			if ((m->flags & PG_CLEAN) && pmap_is_modified(VM_PAGE_TO_PHYS(m)))
-				m->flags &= ~PG_CLEAN;
-
-			if ((m->flags & PG_CLEAN) == 0)
-				m->flags |= PG_LAUNDRY;
 			vm_page_activate(m);
 			pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
+			if ((m->flags & PG_CLEAN) == 0)
+				m->flags |= PG_LAUNDRY;
 			vm_page_unlock_queues();
 
 			/*
@@ -762,15 +757,11 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 				vm_page_activate(old_m);
 
-				if ((old_m->flags & PG_CLEAN) &&
-					pmap_is_modified(VM_PAGE_TO_PHYS(old_m)))
-					old_m->flags &= ~PG_CLEAN;
-
-				if ((old_m->flags & PG_CLEAN) == 0)
-					old_m->flags |= PG_LAUNDRY;
 
 				pmap_page_protect(VM_PAGE_TO_PHYS(old_m),
 						  VM_PROT_NONE);
+				if ((old_m->flags & PG_CLEAN) == 0)
+					old_m->flags |= PG_LAUNDRY;
 				copy_m->flags &= ~PG_CLEAN;
 				vm_page_activate(copy_m);
 				vm_page_unlock_queues();
@@ -902,8 +893,10 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 		else
 			vm_page_unwire(m);
 	}
-	else
+	else {
 		vm_page_activate(m);
+		vm_pageout_deact_bump(m);
+	}
 	vm_page_unlock_queues();
 
 	/*
@@ -1206,6 +1199,12 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 		rbehind = 0;
 	}
 
+	if (vm_page_free_count < vm_page_free_min) {
+		if (rahead > VM_FAULT_READ_AHEAD_MIN)
+			rahead = VM_FAULT_READ_AHEAD_MIN;
+		rbehind = 0;
+	}
+
 	/*
 	 * if we don't have any free pages, then just read one page.
 	 */
@@ -1287,7 +1286,6 @@ vm_fault_additional_pages(first_object, first_offset, m, rbehind, raheada, marra
 		*reqpage = treqpage;
 		return size;
 	}
-	wakeup((caddr_t) &vm_pages_needed);
 	*reqpage = 0;
 	marray[0] = m;
 	return 1;

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.h	7.2 (Berkeley) 4/20/91
- *	$Id: vm_pager.h,v 1.4 1994/01/14 16:27:31 davidg Exp $
+ *	$Id: vm_pager.h,v 1.5 1994/01/17 09:34:03 davidg Exp $
  */
 
 /*
@@ -64,7 +64,7 @@ typedef	struct pager_struct *vm_pager_t;
 
 struct	pagerops {
 	void		(*pgo_init)();		/* initialize pager */
-	vm_pager_t	(*pgo_alloc)(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);		/* allocate pager */
+	vm_pager_t	(*pgo_alloc)(caddr_t, vm_size_t, vm_prot_t, vm_offset_t);	/* allocate pager */
 	void		(*pgo_dealloc)();	/* disassociate */
 	int		(*pgo_getpage)();	/* get (read) page */
 	int		(*pgo_getmulti)();	/* get (read) multiple pages */
@@ -86,7 +86,7 @@ struct	pagerops {
 #define	VM_PAGER_PEND	3
 #define	VM_PAGER_TRYAGAIN 4
 
-#define	VM_PAGER_ALLOC(h, s, p)		(*(pg)->pg_ops->pgo_alloc)(h, s, p)
+#define	VM_PAGER_ALLOC(h, s, p, o)		(*(pg)->pg_ops->pgo_alloc)(h, s, p, o)
 #define	VM_PAGER_DEALLOC(pg)		(*(pg)->pg_ops->pgo_dealloc)(pg)
 #define	VM_PAGER_GET(pg, m, s)		(*(pg)->pg_ops->pgo_getpage)(pg, m, s)
 #define	VM_PAGER_GET_MULTI(pg, m, c, r, s)	(*(pg)->pg_ops->pgo_getmulti)(pg, m, c, r, s)
@@ -95,7 +95,7 @@ struct	pagerops {
 
 #ifdef KERNEL
 extern void vm_pager_init(void);
-extern vm_pager_t vm_pager_allocate(int, caddr_t, vm_size_t, vm_prot_t, int);
+extern vm_pager_t vm_pager_allocate(int, caddr_t, vm_size_t, vm_prot_t, vm_offset_t);
 extern void vm_pager_deallocate(vm_pager_t);
 struct vm_page;
 extern int vm_pager_get(vm_pager_t, struct vm_page *, boolean_t);

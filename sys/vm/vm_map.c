@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.c	7.3 (Berkeley) 4/21/91
- *	$Id: vm_map.c,v 1.9 1993/12/19 00:56:03 wollman Exp $
+ *	$Id: vm_map.c,v 1.10 1994/01/14 16:27:19 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -141,7 +141,6 @@ static vm_offset_t mapvm=0;
 static int mapvmpgcnt=0;
 extern vm_map_t		kernel_map, kmem_map, pager_map;
 extern int vm_page_count;
-void vm_map_save_pmap(vm_map_t map, vm_map_entry_t entry) ;
 
 void
 vm_map_startup()
@@ -192,7 +191,7 @@ vmspace_alloc(min, max, pageable)
 
 	if (mapvmpgcnt == 0 && mapvm == 0) {
 		mapvmpgcnt = (vm_page_count * sizeof(struct vm_map_entry) + NBPG - 1) / NBPG;
-		s = splhigh();
+		s = splimp();
 		mapvm = kmem_alloc_pageable(kmem_map, mapvmpgcnt * NBPG);
 		splx(s);
 		if (!mapvm)
@@ -1523,7 +1522,6 @@ vm_map_delete(map, start, end)
 		/*
 		 * save the pmap info
 	 	 */
-			vm_map_save_pmap(map, entry);
 			pmap_remove(map->pmap, s, e);
 		}
 
@@ -1541,36 +1539,6 @@ vm_map_delete(map, start, end)
 	return(KERN_SUCCESS);
 }
 
-/*
- * 	vm_map_save_pmap
- *	
- *	Save the recorded pmap information into the vm_page_t
- *	data structures.
- *
- */
-void
-vm_map_save_pmap(map, entry)
-	vm_map_t map;
-	vm_map_entry_t entry;
-{
-	vm_map_t tmpm;
-	vm_map_entry_t tmpe;
-	if (entry == 0) {
-		return;
-	} else if (entry->is_sub_map || entry->is_a_map) {
-		tmpm = entry->object.share_map;
-		tmpe = tmpm->header.next;
-		while (tmpe != &tmpm->header) {
-			vm_map_save_pmap(tmpm, tmpe);
-			tmpe = tmpe->next;
-		};
-			
-	} else if (entry->object.vm_object) {
-		vm_object_save_pmap_attributes(entry->object.vm_object,
-			entry->offset, entry->offset + (entry->end - entry->start));
-	}
-}
-	
 /*
  *	vm_map_remove:
  *
@@ -1681,7 +1649,6 @@ vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
 	 */
 
 	if (dst_map->is_main_map) {
-		vm_map_save_pmap(dst_map, dst_entry);
 		pmap_remove(dst_map->pmap, dst_entry->start, dst_entry->end);
 	} else {
 		vm_object_pmap_remove(dst_entry->object.vm_object,
@@ -2039,7 +2006,6 @@ vm_map_copy(dst_map, src_map, dst_addr, len, src_addr, dst_alloc, src_destroy)
 	 */
 	if (src_map->is_main_map && dst_map->is_main_map) {
 		if (src_destroy) {
-			vm_map_save_pmap(src_map, src_entry);
 			pmap_remove(src_map->pmap, src_addr, src_addr + len);
 		}
 	}

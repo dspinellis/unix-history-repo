@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pmap.h	7.4 (Berkeley) 5/7/91
- *	$Id: pmap.h,v 1.2 1993/10/16 16:20:16 rgrimes Exp $
+ *	$Id: pmap.h,v 1.3 1994/01/17 09:33:15 davidg Exp $
  */
 
 /*
@@ -89,7 +89,6 @@ void		pmap_protect();
 void		pmap_enter();
 vm_offset_t	pmap_extract();
 void		pmap_update();
-void		pmap_collect();
 void		pmap_activate();
 void		pmap_deactivate();
 void		pmap_copy();

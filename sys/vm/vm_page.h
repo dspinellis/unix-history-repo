@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.6 1993/12/21 05:51:05 davidg Exp $
+ *	$Id: vm_page.h,v 1.7 1994/01/14 16:27:27 davidg Exp $
  */
 
 /*
@@ -127,6 +127,11 @@ struct vm_page {
 };
 
 typedef struct vm_page	*vm_page_t;
+
+#define DEACT_START	5
+#define	DEACT_DELAY	2
+#define DEACT_CLEAN	1
+#define DEACT_FREE	0
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
@@ -225,7 +230,6 @@ void		vm_page_copy();
 void		vm_page_wire();
 void		vm_page_unwire();
 
-void		vm_set_page_size();
 
 /*
  *	Functions implemented as macros
@@ -265,8 +269,6 @@ extern void pmap_clear_reference(vm_offset_t);
 extern boolean_t pmap_is_referenced(vm_offset_t);
 extern boolean_t pmap_is_modified(vm_offset_t);
 extern vm_offset_t pmap_phys_ddress(int);
-extern boolean_t pmap_testbit(vm_offset_t, int);
-extern void pmap_changebit(vm_offset_t, int, boolean_t);
 
 
 /*

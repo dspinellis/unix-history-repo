@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_page.c,v 1.8 1994/01/14 16:27:26 davidg Exp $
+ *	$Id: vm_page.c,v 1.9 1994/01/17 09:33:52 davidg Exp $
  */
 
 /*
@@ -87,10 +87,6 @@ int		vm_page_bucket_count = 0;	/* How big is array? */
 int		vm_page_hash_mask;		/* Mask for hash function */
 simple_lock_data_t	bucket_lock;		/* lock for all buckets XXX */
 
-vm_size_t	page_size  = 4096;
-vm_size_t	page_mask  = 4095;
-int		page_shift = 12;
-
 queue_head_t	vm_page_queue_free;
 queue_head_t	vm_page_queue_active;
 queue_head_t	vm_page_queue_inactive;
@@ -115,29 +111,6 @@ int	vm_page_free_target = 0;
 int	vm_page_free_min = 0;
 int	vm_page_inactive_target = 0;
 int	vm_page_free_reserved = 0;
-
-/*
- *	vm_set_page_size:
- *
- *	Sets the page size, perhaps based upon the memory
- *	size.  Must be called before any use of page-size
- *	dependent functions.
- *
- *	Sets page_shift and page_mask from page_size.
- */
-void
-vm_set_page_size()
-{
-	page_mask = page_size - 1;
-
-	if ((page_mask & page_size) != 0)
-		panic("vm_set_page_size: page size not a power of two");
-
-	for (page_shift = 0; ; page_shift++)
-		if ((1 << page_shift) == page_size)
-			break;
-}
-
 
 /*
  *	vm_page_startup:
@@ -383,7 +356,6 @@ vm_page_insert(mem, object, offset)
 {
 	register queue_t	bucket;
 	int			spl;
-	vm_page_t tmpm;
 
 	VM_PAGE_CHECK(mem);
 
@@ -397,7 +369,6 @@ vm_page_insert(mem, object, offset)
 	mem->object = object;
 	mem->offset = offset;
 
-	tmpm = vm_page_lookup(object, offset);
 	/*
 	 *	Insert it into the object_object/offset hash table
 	 */
@@ -583,7 +554,8 @@ vm_page_alloc(object, offset)
 		/*
 		 * comment above re: wakeups applies here too...
 		 */
-		wakeup((caddr_t) &vm_pages_needed);
+		if (curproc != pageproc)
+			wakeup((caddr_t) &vm_pages_needed);
 		return(NULL);
 	}
 
@@ -595,6 +567,7 @@ vm_page_alloc(object, offset)
 	mem->flags = PG_BUSY|PG_CLEAN|PG_FAKE;
 	vm_page_insert(mem, object, offset);
 	mem->wire_count = 0;
+	mem->deact = 0;
 	vm_set_intr(spl);
 
 /*
@@ -625,6 +598,7 @@ vm_page_free(mem)
 	spl = vm_disable_intr();
 
 	vm_page_remove(mem);
+	mem->deact = 0;
 	if (mem->flags & PG_ACTIVE) {
 		queue_remove(&vm_page_queue_active, mem, vm_page_t, pageq);
 		mem->flags &= ~PG_ACTIVE;
@@ -738,30 +712,7 @@ vm_page_unwire(mem)
 		vm_page_active_count++;
 		mem->flags |= PG_ACTIVE;
 		vm_page_wire_count--;
-	}
-	vm_set_intr(spl);
-}
-
-/*
- *	vm_page_queue_deactivate:
- *
- *	Place a page onto the inactive list only.
- */
-void
-vm_page_queue_deactivate(m)
-	vm_page_t m;
-{
-	int spl;
-	spl = vm_disable_intr();
-	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
-		if (m->flags & PG_ACTIVE) {
-			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
-			m->flags &= ~PG_ACTIVE;
-			vm_page_active_count--;
-		}
-		queue_enter(&vm_page_queue_inactive, m, vm_page_t, pageq);
-		m->flags |= PG_INACTIVE;
-		vm_page_inactive_count++;
+		vm_pageout_deact_bump(mem);
 	}
 	vm_set_intr(spl);
 }
@@ -793,6 +744,7 @@ vm_page_deactivate(m)
 	 */
 
 	spl = vm_disable_intr();
+	m->deact = 0;
 	if (!(m->flags & PG_INACTIVE) && m->wire_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
 		if (m->flags & PG_ACTIVE) {
@@ -804,15 +756,9 @@ vm_page_deactivate(m)
 		m->flags |= PG_INACTIVE;
 		vm_set_intr(spl);
 		vm_page_inactive_count++;
-		if ((m->flags & PG_CLEAN) &&
-			pmap_is_modified(VM_PAGE_TO_PHYS(m)))
-			m->flags &= ~PG_CLEAN;
+		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 		if ((m->flags & PG_CLEAN) == 0)
 			m->flags |= PG_LAUNDRY;
-	/*
-	 * let page fault back onto active queue if needed
-	 */
-		pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 	} else {
 		vm_set_intr(spl);
 	} 
@@ -828,13 +774,9 @@ void
 vm_page_makefault(m)
 	vm_page_t m;
 {
-	if ((m->flags & PG_CLEAN) &&
-		pmap_is_modified(VM_PAGE_TO_PHYS(m)))
-		m->flags &= ~PG_CLEAN;
+	pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 	if ((m->flags & PG_CLEAN) == 0)
 		m->flags |= PG_LAUNDRY;
-
-	pmap_page_protect(VM_PAGE_TO_PHYS(m), VM_PROT_NONE);
 }
 
 /*
@@ -851,7 +793,7 @@ vm_page_activate(m)
 	int spl;
 	VM_PAGE_CHECK(m);
 
-	m->deact = 2;
+	vm_pageout_deact_bump(m);
 
 	spl = vm_disable_intr();
 
@@ -860,7 +802,6 @@ vm_page_activate(m)
 						pageq);
 		vm_page_inactive_count--;
 		m->flags &= ~PG_INACTIVE;
-			
 	}
 	if (m->wire_count == 0) {
 		if (m->flags & PG_ACTIVE)

@@ -27,7 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *	$Id: procfs_vnops.c,v 1.4 1994/01/06 14:58:29 davidg Exp $
+ *	$Id: procfs_vnops.c,v 1.5 1994/01/14 16:25:06 davidg Exp $
  */
 
 /*
@@ -359,7 +359,7 @@ pfs_getattr (vp, vap, cred, p)
 				procp->p_vmspace->vm_ssize);
 	vap->va_bytes = 0;
 	vap->va_size_rsv = 0;
-	vap->va_blocksize = page_size;
+	vap->va_blocksize = PAGE_SIZE;
 	vap->va_uid = procp->p_ucred->cr_uid;
 	vap->va_gid = procp->p_ucred->cr_gid;
 	if (vap->va_uid != procp->p_cred->p_ruid)

@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.8 1994/01/14 16:27:32 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.9 1994/01/17 09:34:11 davidg Exp $
  */
 
 /*
@@ -777,7 +777,6 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 			 */
 			break;
 		}
-		splx(s);
 
 		foff = m[reqpage]->offset + paging_offset;
 		reqaddr = vnode_pager_addr(vp, foff);
@@ -922,16 +921,15 @@ finishup:
 			 * is up in the air, but we should put the page
 			 * on a page queue somewhere. (it already is in
 			 * the object).
+			 * Result: It appears that emperical results show
+			 * that deactivating pages is best.
 			 */
 			/*
 			 * just in case someone was asking for this
 			 * page we now tell them that it is ok to use
 			 */
 			if (!error) {
-				if (i <= reqpage + 3)
-					vm_page_activate(m[i]);
-				else
-					vm_page_deactivate(m[i]);
+				vm_page_deactivate(m[i]);
 				PAGE_WAKEUP(m[i]);
 				m[i]->flags &= ~PG_FAKE;
 			} else {
