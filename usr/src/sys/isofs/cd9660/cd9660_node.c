@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.c	8.4 (Berkeley) %G%
+ *	@(#)cd9660_node.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -246,7 +246,7 @@ cd9660_reclaim(ap)
  * File attributes
  */
 void
-cd9660_defattr(isodir,inop,bp)
+cd9660_defattr(isodir, inop, bp)
 	struct iso_directory_record *isodir;
 	struct iso_node *inop;
 	struct buf *bp;
@@ -268,13 +268,14 @@ cd9660_defattr(isodir,inop,bp)
 		inop->inode.iso_links = 1;
 	}
 	if (!bp
-	    && ((imp = inop->i_mnt)->im_flags&ISOFSMNT_EXTATT)
+	    && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT)
 	    && (off = isonum_711(isodir->ext_attr_length))) {
-		iso_blkatoff(inop,-off * imp->logical_block_size,&bp2);
+		VOP_BLKATOFF(ITOV(inop), (off_t)-(off << imp->im_bshift), NULL,
+			     &bp2);
 		bp = bp2;
 	}
 	if (bp) {
-		ap = (struct iso_extended_attributes *)bp->b_un.b_addr;
+		ap = (struct iso_extended_attributes *)bp->b_data;
 		
 		if (isonum_711(ap->version) == 1) {
 			if (!(ap->perm[0]&0x40))
@@ -318,13 +319,14 @@ cd9660_deftstamp(isodir,inop,bp)
 	int off;
 	
 	if (!bp
-	    && ((imp = inop->i_mnt)->im_flags&ISOFSMNT_EXTATT)
+	    && ((imp = inop->i_mnt)->im_flags & ISOFSMNT_EXTATT)
 	    && (off = isonum_711(isodir->ext_attr_length))) {
-		iso_blkatoff(inop,-off * imp->logical_block_size,&bp2);
+		VOP_BLKATOFF(ITOV(inop), (off_t)-(off << imp->im_bshift), NULL,
+			     &bp2);
 		bp = bp2;
 	}
 	if (bp) {
-		ap = (struct iso_extended_attributes *)bp->b_un.b_addr;
+		ap = (struct iso_extended_attributes *)bp->b_data;
 		
 		if (isonum_711(ap->version) == 1) {
 			if (!cd9660_tstamp_conv17(ap->ftime,&inop->inode.iso_atime))
@@ -347,8 +349,8 @@ cd9660_deftstamp(isodir,inop,bp)
 
 int
 cd9660_tstamp_conv7(pi,pu)
-char *pi;
-struct timeval *pu;
+	u_char *pi;
+	struct timespec *pu;
 {
 	int i;
 	int crtime, days;
@@ -363,8 +365,8 @@ struct timeval *pu;
 	tz = pi[6];
 	
 	if (y < 1970) {
-		pu->tv_sec  = 0;
-		pu->tv_usec = 0;
+		pu->ts_sec  = 0;
+		pu->ts_nsec = 0;
 		return 0;
 	} else {
 #ifdef	ORIGINAL
@@ -384,17 +386,17 @@ struct timeval *pu;
 		if (-48 <= tz && tz <= 52)
 			crtime -= tz * 15 * 60;
 	}
-	pu->tv_sec  = crtime;
-	pu->tv_usec = 0;
+	pu->ts_sec  = crtime;
+	pu->ts_nsec = 0;
 	return 1;
 }
 
-static unsigned
+static u_int
 cd9660_chars2ui(begin,len)
-	unsigned char *begin;
+	u_char *begin;
 	int len;
 {
-	unsigned rc;
+	u_int rc;
 	
 	for (rc = 0; --len >= 0;) {
 		rc *= 10;
@@ -405,10 +407,10 @@ cd9660_chars2ui(begin,len)
 
 int
 cd9660_tstamp_conv17(pi,pu)
-	unsigned char *pi;
-	struct timeval *pu;
+	u_char *pi;
+	struct timespec *pu;
 {
-	unsigned char buf[7];
+	u_char buf[7];
 	
 	/* year:"0001"-"9999" -> -1900  */
 	buf[0] = cd9660_chars2ui(pi,4) - 1900;
@@ -434,12 +436,14 @@ cd9660_tstamp_conv17(pi,pu)
 	return cd9660_tstamp_conv7(buf,pu);
 }
 
-void
-isodirino(inump,isodir,imp)
-	ino_t *inump;
+ino_t
+isodirino(isodir, imp)
 	struct iso_directory_record *isodir;
 	struct iso_mnt *imp;
 {
-	*inump = (isonum_733(isodir->extent) + isonum_711(isodir->ext_attr_length))
-		 * imp->logical_block_size;
+	ino_t ino;
+
+	ino = (isonum_733(isodir->extent) + isonum_711(isodir->ext_attr_length))
+	      << imp->im_bshift;
+	return (ino);
 }

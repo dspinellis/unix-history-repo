@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -35,6 +35,7 @@
 extern int enodev ();
 
 struct vfsops cd9660_vfsops = {
+	MOUNT_CD9660,
 	cd9660_mount,
 	cd9660_start,
 	cd9660_unmount,
@@ -232,11 +233,11 @@ static iso_mountfs(devvp, mp, p, argp)
 	iso_bsize = ISO_DEFAULT_BLOCK_SIZE;
 	
 	for (iso_blknum = 16; iso_blknum < 100; iso_blknum++) {
-		if (error = bread (devvp, btodb(iso_blknum * iso_bsize),
-				   iso_bsize, NOCRED, &bp))
+		if (error = bread(devvp, iso_blknum * btodb(iso_bsize),
+				  iso_bsize, NOCRED, &bp))
 			goto out;
 		
-		vdp = (struct iso_volume_descriptor *)bp->b_un.b_addr;
+		vdp = (struct iso_volume_descriptor *)bp->b_data;
 		if (bcmp (vdp->id, ISO_STANDARD_ID, sizeof vdp->id) != 0) {
 			error = EINVAL;
 			goto out;
@@ -288,7 +289,7 @@ static iso_mountfs(devvp, mp, p, argp)
 	
 	mp->mnt_data = (qaddr_t)isomp;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_CD9660;
+	mp->mnt_stat.f_fsid.val[1] = makefstype(MOUNT_CD9660);
 	mp->mnt_maxsymlinklen = 0;
 	mp->mnt_flag |= MNT_LOCAL;
 	isomp->im_mountp = mp;
@@ -299,13 +300,13 @@ static iso_mountfs(devvp, mp, p, argp)
 	
 	/* Check the Rock Ridge Extention support */
 	if (!(argp->flags & ISOFSMNT_NORRIP)) {
-		if (error = bread (isomp->im_devvp,
-				   (isomp->root_extent + isonum_711(rootp->ext_attr_length))
-				   * isomp->logical_block_size / DEV_BSIZE,
-				   isomp->logical_block_size,NOCRED,&bp))
+		if (error = bread(isomp->im_devvp,
+				  (isomp->root_extent + isonum_711(rootp->ext_attr_length)) <<
+				  (isomp->im_bshift - DEV_BSHIFT),
+				  isomp->logical_block_size, NOCRED, &bp))
 		    goto out;
 		
-		rootp = (struct iso_directory_record *)bp->b_un.b_addr;
+		rootp = (struct iso_directory_record *)bp->b_data;
 		
 		if ((isomp->rr_skip = cd9660_rrip_offset(rootp,isomp)) < 0) {
 		    argp->flags  |= ISOFSMNT_NORRIP;
@@ -413,9 +414,7 @@ cd9660_root(mp, vpp)
 	struct iso_mnt *imp = VFSTOISOFS(mp);
 	struct iso_directory_record *dp =
 	    (struct iso_directory_record *)imp->root;
-	ino_t ino;
-	
-	isodirino(&ino, dp, imp);
+	ino_t ino = isodirino(dp, imp);
 	
 	/*
 	 * With RRIP we must use the `.' entry of the root directory.
@@ -454,7 +453,11 @@ cd9660_statfs(mp, sbp, p)
 	
 	isomp = VFSTOISOFS(mp);
 
-	sbp->f_type = MOUNT_CD9660;
+#ifdef COMPAT_09
+	sbp->f_type = 5;
+#else
+	sbp->f_type = 0;
+#endif
 	sbp->f_bsize = isomp->logical_block_size;
 	sbp->f_iosize = sbp->f_bsize;	/* XXX */
 	sbp->f_blocks = isomp->volume_space_size;
@@ -468,6 +471,8 @@ cd9660_statfs(mp, sbp, p)
 		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
 			(caddr_t)&sbp->f_mntfromname[0], MNAMELEN);
 	}
+	strncpy(&sbp->f_fstypename[0], mp->mnt_op->vfs_name, MFSNAMELEN);
+	sbp->f_fstypename[MFSNAMELEN] = '\0';
 	/* Use the first spare for flags: */
 	sbp->f_spare[0] = isomp->im_flags;
 	return 0;
@@ -612,14 +617,14 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	if (isodir == 0) {
 		int lbn, off;
 
-		lbn = iso_lblkno(imp, ino);
+		lbn = lblkno(imp, ino);
 		if (lbn >= imp->volume_space_size) {
 			vput(vp);
 			printf("fhtovp: lbn exceed volume space %d\n", lbn);
 			return (ESTALE);
 		}
 	
-		off = iso_blkoff(imp, ino);
+		off = blkoff(imp, ino);
 		if (off + ISO_DIRECTORY_RECORD_SIZE > imp->logical_block_size) {
 			vput(vp);
 			printf("fhtovp: crosses block boundary %d\n",
@@ -628,7 +633,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		}
 	
 		error = bread(imp->im_devvp,
-			      btodb(lbn * imp->logical_block_size),
+			      lbn << (imp->im_bshift - DEV_BSHIFT),
 			      imp->logical_block_size, NOCRED, &bp);
 		if (error) {
 			vput(vp);
@@ -675,7 +680,7 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		ip->iso_start = ino >> imp->im_bshift;
 		if (bp != 0)
 			brelse(bp);
-		if (error = iso_blkatoff(ip, 0, &bp)) {
+		if (error = VOP_BLKATOFF(vp, (off_t)0, NULL, &bp)) {
 			vput(vp);
 			return (error);
 		}
@@ -694,9 +699,10 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 	default:	/* ISO_FTYPE_9660 */
 	    {
 		struct buf *bp2;
+		int off;
 		if ((imp->im_flags & ISOFSMNT_EXTATT)
-		    && isonum_711(isodir->ext_attr_length))
-			iso_blkatoff(ip, -isonum_711(isodir->ext_attr_length),
+		    && (off = isonum_711(isodir->ext_attr_length)))
+			VOP_BLKATOFF(vp, (off_t)-(off << imp->im_bshift), NULL,
 				     &bp2);
 		else
 			bp2 = NULL;
