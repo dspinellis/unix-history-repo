@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_syscalls.c	7.23 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,8 +47,7 @@ socket(p, uap, retval)
 	fp->f_ops = &socketops;
 	if (error = socreate(uap->domain, &so, uap->type, uap->protocol)) {
 		fdp->fd_ofiles[fd] = 0;
-		crfree(fp->f_cred);
-		fp->f_count = 0;
+		ffree(fp);
 	} else {
 		fp->f_data = (caddr_t)so;
 		*retval = fd;
@@ -317,10 +316,10 @@ socketpair(p, uap, retval)
 	retval[1] = sv[1];		/* XXX ??? */
 	return (error);
 free4:
-	fp2->f_count = 0;
+	ffree(fp2);
 	fdp->fd_ofiles[sv[1]] = 0;
 free3:
-	fp1->f_count = 0;
+	ffree(fp1);
 	fdp->fd_ofiles[sv[0]] = 0;
 free2:
 	(void)soclose(so2);
@@ -979,10 +978,10 @@ pipe(p, uap, retval)
 		goto free4;
 	return (0);
 free4:
-	wf->f_count = 0;
+	ffree(wf);
 	fdp->fd_ofiles[retval[1]] = 0;
 free3:
-	rf->f_count = 0;
+	ffree(rf);
 	fdp->fd_ofiles[retval[0]] = 0;
 free2:
 	(void)soclose(wso);
