@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile	1.9 (Berkeley) %G%"
+SCCSID = "@(#)Makefile	1.10 (Berkeley) %G%"
 DESTDIR=
 ED=	-ex
 AS=	-as
@@ -11,16 +11,16 @@ BINDIR=	../pxp
 # Files which are specific to PXP
 #
 LOCOBJ=	Version.o call.o case.o const.o cset.o error.o fdec.o func.o \
-	lab.o lval.o main.o nl.o pmon.o pp.o proc.o rec.o rval.o stat.o \
+	lab.o lval.o main.o pmon.o pp.o proc.o rec.o rval.o stat.o \
 	string.o subr.o type.o var.o y.tab.o yycomm.o yyerror.o \
 	yymain.o yyput.o rmothers.o
 #
 # Files which are shared with pi and pc0
 #
-SRCOBJ=	TRdata.o hash.o tree.o treen.o yycopy.o yycosts.o yyget.o \
+SRCOBJ=	TRdata.o hash.o nl.o tree.o treen.o yycopy.o yycosts.o yyget.o \
 	yyid.o yylex.o yypanic.o yyparse.o yyprint.o yyrecover.o \
 	yyseman.o yytree.o
-SRCSRC=	TRdata.c hash.c tree.c treen.c yycopy.c yycosts.c yyget.c \
+SRCSRC=	TRdata.c hash.c nl.c tree.c treen.c yycopy.c yycosts.c yyget.c \
 	yyid.c yylex.c yypanic.c yyparse.c yyprint.c yyrecover.c \
 	yyseman.c yytree.c
 
@@ -133,6 +133,7 @@ yymain.o: yymain.c
 yyput.o: yyput.c
 TRdata.o: ../src/TRdata.c
 hash.o: ../src/hash.c
+nl.o: ../src/nl.c
 tree.o: ../src/tree.c
 treen.o: ../src/treen.c
 yycopy.o: ../src/yycopy.c
@@ -152,6 +153,10 @@ TRdata.o: 0.h
 hash.o: whoami.h
 hash.o: 0.h
 hash.o: ../src/yy.h
+nl.o: whoami.h
+nl.o: 0.h
+nl.o: opcode.h
+nl.o: ../src/objfmt.h
 tree.o: whoami.h
 tree.o: 0.h
 yycopy.o: whoami.h
