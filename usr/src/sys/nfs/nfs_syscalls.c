@@ -17,12 +17,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "file.h"
 #include "stat.h"
@@ -81,21 +81,21 @@ getfh(p, uap, retval)
 	 * Must be super user
 	 */
 	if (error = suser(ndp->ni_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)&fh, sizeof(fh));
 	fh.fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	error = VFS_VPTOFH(vp, &fh.fh_fid);
 	vput(vp);
 	if (error)
-		RETURN (error);
+		return (error);
 	error = copyout((caddr_t)&fh, (caddr_t)uap->fhp, sizeof (fh));
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -257,7 +257,7 @@ nfssvc(p, uap, retval)
 		};
 	}
 bad:
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -280,12 +280,12 @@ async_daemon(p, uap, retval)
 	 * Must be super user
 	 */
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	/*
 	 * Assign my position or return error if too many already running
 	 */
 	if (nfs_asyncdaemons > NFS_MAXASYNCDAEMON)
-		RETURN (EBUSY);
+		return (EBUSY);
 	myiod = nfs_asyncdaemons++;
 	dp = &nfs_bqueue;
 	/*
@@ -296,7 +296,7 @@ async_daemon(p, uap, retval)
 			nfs_iodwant[myiod] = p;
 			if (error = tsleep((caddr_t)&nfs_iodwant[myiod],
 				PWAIT | PCATCH, "nfsidl", 0))
-				RETURN (error);
+				return (error);
 		}
 		/* Take one off the end of the list */
 		bp = dp->b_actl;
