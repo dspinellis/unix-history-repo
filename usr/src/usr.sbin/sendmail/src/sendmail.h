@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.96 (Berkeley) %G%
+ *	@(#)sendmail.h	8.97 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.96		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.97		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -405,35 +405,35 @@ EXTERN struct rewrite	*RewriteRules[MAXRWSETS];
 */
 
 /* left hand side items */
-# define MATCHZANY	0220	/* match zero or more tokens */
-# define MATCHANY	0221	/* match one or more tokens */
-# define MATCHONE	0222	/* match exactly one token */
-# define MATCHCLASS	0223	/* match one token in a class */
-# define MATCHNCLASS	0224	/* match anything not in class */
-# define MATCHREPL	0225	/* replacement on RHS for above */
+# define MATCHZANY	((u_char)0220)	/* match zero or more tokens */
+# define MATCHANY	((u_char)0221)	/* match one or more tokens */
+# define MATCHONE	((u_char)0222)	/* match exactly one token */
+# define MATCHCLASS	((u_char)0223)	/* match one token in a class */
+# define MATCHNCLASS	((u_char)0224)	/* match anything not in class */
+# define MATCHREPL	((u_char)0225)	/* replacement on RHS for above */
 
 /* right hand side items */
-# define CANONNET	0226	/* canonical net, next token */
-# define CANONHOST	0227	/* canonical host, next token */
-# define CANONUSER	0230	/* canonical user, next N tokens */
-# define CALLSUBR	0231	/* call another rewriting set */
+# define CANONNET	((u_char)0226)	/* canonical net, next token */
+# define CANONHOST	((u_char)0227)	/* canonical host, next token */
+# define CANONUSER	((u_char)0230)	/* canonical user, next N tokens */
+# define CALLSUBR	((u_char)0231)	/* call another rewriting set */
 
 /* conditionals in macros */
-# define CONDIF		0232	/* conditional if-then */
-# define CONDELSE	0233	/* conditional else */
-# define CONDFI		0234	/* conditional fi */
+# define CONDIF		((u_char)0232)	/* conditional if-then */
+# define CONDELSE	((u_char)0233)	/* conditional else */
+# define CONDFI		((u_char)0234)	/* conditional fi */
 
 /* bracket characters for host name lookup */
-# define HOSTBEGIN	0235	/* hostname lookup begin */
-# define HOSTEND	0236	/* hostname lookup end */
+# define HOSTBEGIN	((u_char)0235)	/* hostname lookup begin */
+# define HOSTEND	((u_char)0236)	/* hostname lookup end */
 
 /* bracket characters for generalized lookup */
-# define LOOKUPBEGIN	0205	/* generalized lookup begin */
-# define LOOKUPEND	0206	/* generalized lookup end */
+# define LOOKUPBEGIN	((u_char)0205)	/* generalized lookup begin */
+# define LOOKUPEND	((u_char)0206)	/* generalized lookup end */
 
 /* macro substitution character */
-# define MACROEXPAND	0201	/* macro expansion */
-# define MACRODEXPAND	0202	/* deferred macro expansion */
+# define MACROEXPAND	((u_char)0201)	/* macro expansion */
+# define MACRODEXPAND	((u_char)0202)	/* deferred macro expansion */
 
 /* to make the code clearer */
 # define MATCHZERO	CANONHOST
