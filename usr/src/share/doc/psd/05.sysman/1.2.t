@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.1 (Berkeley) %G%
+.\"	@(#)1.2.t	6.2 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -43,22 +43,22 @@ Protection and sharing options are defined in <mman.h> as:
 .DS
 ._d
 /* protections are chosen from these bits, or-ed together */
-#define	PROT_READ	0x4	/* pages can be read */
-#define	PROT_WRITE	0x2	/* pages can be written */
-#define	PROT_EXEC	0x1	/* pages can be executed */
+#define	PROT_READ	0x04	/* pages can be read */
+#define	PROT_WRITE	0x02	/* pages can be written */
+#define	PROT_EXEC	0x01	/* pages can be executed */
 
 /* mapping type; choose one */
-#define MAP_FILE	0x0001	/* mapped from a file */
-#define MAP_SWAP	0x0002	/* mapped to swap space */
-#define MAP_MEMORY	0x0004	/* mapped to device memory */
+#define MAP_FILE	0x01	/* mapped from a file */
+#define MAP_SWAP	0x02	/* mapped from swap space */
+#define MAP_MEMORY	0x04	/* mapped from device memory */
 
-/* sharing types; choose either SHARED or PRIVATE */
-#define	MAP_SHARED	0x0010	/* share changes */
-#define	MAP_PRIVATE	0x0020	/* changes are private */
+/* sharing types; choose one */
+#define	MAP_SHARED	0x10	/* share changes */
+#define	MAP_PRIVATE	0x20	/* changes are private */
 
-/* other options */
-#define MAP_FIXED	0x0040	/* map segment must be allocated at addr */
-#define MAP_EXTEND	0x0080	/* for MAP_FILE, the file may be extended */
+/* other flags */
+#define MAP_FIXED	0x40	/* map region must be allocated at addr */
+#define MAP_EXTEND	0x80	/* for MAP_FILE, the file may be extended */
 .DE
 The cpu-dependent size of a page is returned by the
 \fIgetpagesize\fP system call:
@@ -69,16 +69,15 @@ result int pagesize;
 .PP
 The call:
 .DS
-caddr_t
-maddr = mmap(addr, len, prot, share, fd, pos);
-result caddr_t maddr; caddr_t addr; int *len, prot, share, fd; off_t pos;
+maddr = mmap(addr, len, prot, flags, fd, pos);
+result caddr_t maddr; caddr_t addr; int *len, prot, flags, fd; off_t pos;
 .DE
 causes the pages starting at \fIaddr\fP and continuing
 for at most \fIlen\fP bytes to be mapped from the object represented by
-descriptor \fIfd\fP, at absolute position \fIpos\fP.
+descriptor \fIfd\fP, starting at byte offset \fIpos\fP.
 The starting address of the region is returned.
-The actual amount mapped is returned in len.
-The parameter \fIshare\fP specifies whether modifications made to
+The actual amount mapped is returned in \fIlen\fP.
+The parameter \fIflags\fP specifies whether modifications made to
 this mapped copy of the page,
 are to be kept \fIprivate\fP, or are to be \fIshared\fP with
 other references.
@@ -91,8 +90,8 @@ A process can move pages within its own memory by using the
 .I mremap
 call:
 .DS
-mremap(addr, len, prot, share, fromaddr);
-caddr_t addr; int len, prot, share; caddr_t fromaddr;
+mremap(addr, len, prot, flags, fromaddr);
+caddr_t addr; int len, prot, flags; caddr_t fromaddr;
 .DE
 This call maps the pages starting at \fIfromaddr\fP to the address specified
 by \fIaddr\fP.
@@ -104,7 +103,7 @@ caddr_t addr; int len;
 .DE
 This call causes further references to these pages
 to generate invalid memory references.
-If the segment is mapped MAP_FILE with mode PROT_WRITE,
+If the region is mapped MAP_FILE with mode PROT_WRITE,
 the file is truncated to the length specified by \fIlen\fP.
 .NH 3
 Page protection control
@@ -147,14 +146,14 @@ that the page is in-core.
 Synchronization primitives
 .PP
 Two routines provide services analogous to the kernel
-sleep and wakeup functions interpreted in the domain of
+\fIsleep\fP and \fIwakeup\fP functions interpreted in the domain of
 shared memory.
-A process may relinquish the processor by calling msleep:
+A process may relinquish the processor by calling \fImsleep\fP:
 .DS
 msleep(addr)
 caddr_t addr;
 .DE
-Addr must lie within a MAP_SHARED segment with at least modes
+\fIAddr\fP must lie within a MAP_SHARED region with at least modes
 PROT_READ and PROT_WRITE.
 The process will remain in a sleeping state
 until some other process issues an \fImwakeup\fP for the same byte
@@ -172,19 +171,19 @@ To acquire a lock a process calls:
 mset(addr)
 caddr_t addr;
 .DE
-\fIMset\fP indivisibly tests and sets the memory location addr.
+\fIMset\fP indivisibly tests and sets the memory location \fIaddr\fP.
 If the the previous value is zero, the process has acquired the lock
 and \fImset\fP returns immediately.
 If the previous value is non-zero, the ``want'' bit is set and
 the test-and-set is retried;
 if the lock is still unavailable \fImset\fP calls \fImsleep\fP and tries again.
-.PP
+.LP
 To release a lock a process calls:
 .DS
 mclear(addr)
 caddr_t addr;
 .DE
-\fIMclear\fP indivisibly tests and clears the memory location addr.
+\fIMclear\fP indivisibly tests and clears the memory location \fIaddr\fP.
 If the ``want'' bit is zero in the previous value,
 \fImclear\fP returns immediately.
 If the ``want'' bit is non-zero in the previous value,
