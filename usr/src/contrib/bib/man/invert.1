@@ -1,4 +1,5 @@
-.TH invert/lookup 1 local
+.TH INVERT 1 "28 July 1983"
+.UC 4
 .SH NAME
 invert, lookup \- create and access an inverted index
 .SH SYNOPSIS
@@ -53,34 +54,34 @@ Some lines of input are ignored for the purpose of collecting keywords.
 .PP
 The following options are available for
 .I invert:
-.IP "-c \fIfile\fP" 8m
+.IP "\-c \fIfile\fP" 8m
 .ns
-.IP -c\fIfile\fP
+.IP \-c\fIfile\fP
 File contains common words, one per line.
 Common words are not used as keys.
 (Default /usr/lib/bmac/common.)
-.IP "-k \fIi\fP"
+.IP "\-k \fIi\fP"
 .ns
-.IP -k\fIi\fP
+.IP \-k\fIi\fP
 Maximum number of keys kept per record. (Default 100)
-.IP "-l \fIi\fP"
+.IP "\-l \fIi\fP"
 .ns
-.IP -l\fIi\fP
+.IP \-l\fIi\fP
 Maximum length of keys. (Default 6)
-.IP "-p \fIfile\fP"
+.IP "\-p \fIfile\fP"
 .ns
-.IP -p\fIfile\fP
+.IP \-p\fIfile\fP
 File is the name of the private index file (output of
 .IR invert ).
 (Default is INDEX.)
 The index must be stored in the current directory.
 (Be careful of the second form.
 The shell will not know to expand the file name.
-E.g. -p~/index won't work; use -p\ ~/index.)
-.IP -s
+E.g. \-p~/index won't work; use \-p\ ~/index.)
+.IP \-s
 Silent.
 Suppress statistics.
-.IP -%\fIstr\fP
+.IP \-%\fIstr\fP
 Ignore lines that begin with %x
 where x is in
 .I str.
@@ -127,7 +128,7 @@ if no references are found.
 .I Invert
 produces a one line message of the form,
 "%D\ documents\ \ \ %D distinct\ keys\ \ %D\ key\ occurrences".
-This can be suppressed with the -s option.
+This can be suppressed with the \-s option.
 .LP
 The message "locate: first key (%s) matched too many refs"
 indicates that the first key matched more references than could be stored
