@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)in_pcb.c	7.17 (Berkeley) %G%
+ *	@(#)in_pcb.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -172,7 +172,8 @@ in_pcbconnect(inp, nam)
 		 * to our address on another net goes to loopback).
 		 */
 		if (ro->ro_rt && (ifp = ro->ro_rt->rt_ifp) &&
-		    (ifp->if_flags & IFF_LOOPBACK) == 0)
+		    (ifp->if_flags & IFF_LOOPBACK) == 0 &&
+		    (ia = (struct in_ifaddr *)ro->ro_rt->rt_ifa) == 0)
 			for (ia = in_ifaddr; ia; ia = ia->ia_next)
 				if (ia->ia_ifp == ifp)
 					break;
