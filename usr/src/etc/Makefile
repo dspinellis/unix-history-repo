@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.13 (Berkeley) %G%
+#	@(#)Makefile	5.14 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -63,6 +63,10 @@ distribution:
 	    ${DESTDIR}/var/run/utmp
 	(cd etc.${MACHINE}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
 	    fstab.* ${DESTDIR}/)
+.if ${MACHINE} == "hp300"
+	(cd etc.hp300; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    MAKEDEV.hpux ${DESTDIR}/)
+.endif
 .if ${MACHINE} == "tahoe"
 	(cd etc.tahoe; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${WCS1} \
 	    ${DESTDIR}/)
