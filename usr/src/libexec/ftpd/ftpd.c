@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.2 (Berkeley) 83/01/15";
+static char sccsid[] = "@(#)ftpd.c	4.3 (Berkeley) 83/01/15";
 #endif
 
 /*
@@ -91,7 +91,7 @@ main(argc, argv)
 	if (fork())
 		exit(0);
 	for (s = 0; s < 10; s++)
-		if (s != 2)		/* don't screw stderr */
+		if (s != 2 && debug)		/* don't screw stderr */
 			(void) close(s);
 	(void) open("/dev/null", 0);
 	(void) dup2(0, 1);
