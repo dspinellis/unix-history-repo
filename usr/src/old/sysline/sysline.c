@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.9 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)sysline.c	5.10 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * sysline - system status display on 25th line of terminal
@@ -220,6 +226,7 @@ char	clr_eol[64];
 char	rev_out[20], rev_end[20];
 char	*arrows, *bell = "\007";
 int	eslok;	/* escapes on status line okay (reverse, cursor addressing) */
+int	hasws = 0;	/* is "ws" explicitly defined? */
 int	columns;
 #define tparm(cap, parm) tgoto((cap), 0, (parm))
 char	*tgoto();
@@ -861,7 +868,7 @@ mailseen()
 	       strncmp(lbuf, "From ", 5) != 0)
 		;
 	if (n < 0) {
-		stringcat("Mail has just arrived", 0);
+		stringcat("Mail has just arrived", -1);
 		goto out;
 	}
 	retval = 1;
@@ -1184,7 +1191,8 @@ initterm()
 
 	/* the "-1" below is to avoid cursor wraparound problems */
 	columns = tgetnum("ws");
-	if (columns < 0)
+	hasws = columns >= 0;
+	if (!hasws)
 		columns = tgetnum("co");
 	columns -= 1;
 	if (window) {
@@ -1303,7 +1311,8 @@ getwinsize()
 	struct winsize winsize;
 
 	/* the "-1" below is to avoid cursor wraparound problems */
-	if (ioctl(2, TIOCGWINSZ, (char *)&winsize) >= 0 && winsize.ws_col != 0)
+	if (!hasws && ioctl(2, TIOCGWINSZ, (char *)&winsize) >= 0 &&
+		winsize.ws_col != 0)
 		columns = winsize.ws_col - 1;
 #endif
 }
