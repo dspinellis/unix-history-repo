@@ -223,9 +223,9 @@ void
 __set_scroll_region(top, bot)
 int top, bot;
 {
-	tputs(SC, 0, __cputchar);
-	tputs(tgoto(CS, bot, top), 0, __cputchar);
-	tputs(RC, 0, __cputchar);
+	tputs(SC, 1, __cputchar);
+	tputs(tgoto(CS, bot, top), 1, __cputchar);
+	tputs(RC, 1, __cputchar);
 }
 
 void

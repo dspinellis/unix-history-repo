@@ -76,7 +76,11 @@ wrefresh(win)
 
 	if (win->flags & __CLEAROK || curscr->flags & __CLEAROK || curwin) {
 		if ((win->flags & __FULLWIN) || curscr->flags & __CLEAROK) {
-			tputs(CL, 0, __cputchar);
+			if (curscr->flags & __WSTANDOUT) {
+				tputs(SE, 0, __cputchar);
+				curscr->flags &= ~__WSTANDOUT;
+			}
+			tputs(CL, win->maxy, __cputchar);
 			ly = 0;
 			lx = 0;
 			if (!curwin) {
@@ -266,9 +270,9 @@ makech(win, wy)
 
 	if (force) {
 		if (CM)
-			tputs(tgoto(CM, lx, ly), 0, __cputchar);
+			tputs(tgoto(CM, lx, ly), 1, __cputchar);
 		else {
-			tputs(HO, 0, __cputchar);
+			tputs(HO, 1, __cputchar);
 			__mvcur(0, 0, ly, lx, 1);
 		}
 	}
@@ -319,7 +323,7 @@ makech(win, wy)
 						tputs(SE, 0, __cputchar);
 						curscr->flags &= ~__WSTANDOUT;
 					}
-					tputs(CE, 0, __cputchar);
+					tputs(CE, 1, __cputchar);
 					lx = wx + win->begx;
 					while (wx++ <= clsp) {
 						csp->ch = ' ';
@@ -699,37 +703,37 @@ scrolln(starts, startw, curs, bot, top)
 			__mvcur(oy, ox, top, 0, 1);
 			/* Scroll up the block */
 			if (DL && (!dl || n > 1))
-				tputs(__tscroll(DL, n), 0, __cputchar);
+				tputs(__tscroll(DL, n), n, __cputchar);
 			else
 				for(i = 0; i < n; i++)
-					tputs(dl, 0, __cputchar);
+					tputs(dl, 1, __cputchar);
 
 			/*
 			 * Push down the bottom region.
 			 */
 			__mvcur(top, 0, bot - n + 1, 0, 1);
 			if (AL && (!al || n > 1))
-				tputs(__tscroll(AL, n), 0, __cputchar);
+				tputs(__tscroll(AL, n), n, __cputchar);
 			else
 				for(i = 0; i < n; i++)
-					tputs(al, 0, __cputchar);
+					tputs(al, 1, __cputchar);
 			__mvcur(bot - n + 1, 0, oy, ox, 1);
 		} else {
 			/* Preserve the bottom lines */
 			__mvcur(oy, ox, bot + n + 1, 0, 1);     /* n < 0 */
 			if (DL && (!dl || -n > 1))
-				tputs(__tscroll(DL, -n), 0, __cputchar);
+				tputs(__tscroll(DL, -n), -n, __cputchar);
 			else
 				for(i = n; i < 0; i++)
-					tputs(dl, 0, __cputchar);
+					tputs(dl, 1, __cputchar);
 			__mvcur(bot + n + 1, 0, top, 0, 1);
 
 			/* Scroll the block down */
 			if (AL && (!al || -n > 1))
-				tputs(__tscroll(AL, -n), 0, __cputchar);
+				tputs(__tscroll(AL, -n), -n, __cputchar);
 			else
 				for(i = n; i < 0; i++)
-					tputs(al, 0, __cputchar);
+					tputs(al, 1, __cputchar);
 			__mvcur(top, 0, oy, ox, 1);
 		}
 	} else {        /* Use change scroll region */
@@ -739,11 +743,11 @@ scrolln(starts, startw, curs, bot, top)
 			__mvcur(oy, ox, bot, 0, 1);
 			/* Scroll up the block */
 			if (SF && n > 1)
-				tputs(__tscroll(SF, n), 0, __cputchar);
+				tputs(__tscroll(SF, n), n, __cputchar);
 			else
 				for(i = 0; i < n; i++)
 					if (NL && __pfast)
-						tputs(NL, 0, __cputchar);
+						tputs(NL, 1, __cputchar);
 					else
 						putchar('\n');
 			__mvcur(bot, 0, oy, ox, 1);
@@ -751,10 +755,10 @@ scrolln(starts, startw, curs, bot, top)
 			__mvcur(oy, ox, top, 0, 1);
 			/* Scroll the block down */
 			if (SR && (!sr || -n > 1))
-				tputs(__tscroll(SR, -n), 0, __cputchar);
+				tputs(__tscroll(SR, -n), -n, __cputchar);
 			else
 				for(i = n; i < 0; i++)
-					tputs(sr, 0, __cputchar);
+					tputs(sr, 1, __cputchar);
 			__mvcur(top, 0, oy, ox, 1);
 		}
 		if (bot != curscr->maxy - 1 || top != 0)
