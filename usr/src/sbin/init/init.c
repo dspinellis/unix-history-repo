@@ -5,19 +5,20 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.14 (Berkeley) %G%";
 #endif not lint
 
-#include <signal.h>
 #include <sys/types.h>
-#include <setjmp.h>
-#include <sys/reboot.h>
-#include <utmp.h>
-#include <errno.h>
 #include <sys/file.h>
-#include <ttyent.h>
+#include <sys/signal.h>
+#include <sys/reboot.h>
 #include <sys/syslog.h>
 #include <sys/stat.h>
+#include <setjmp.h>
+#include <utmp.h>
+#include <errno.h>
+#include <ttyent.h>
+#include "pathnames.h"
 
 #define	CMDSIZ	200	/* max string length for getty or window command*/
 #define	ALL	p = itab; p ; p = p->next
@@ -25,11 +26,11 @@ static char sccsid[] = "@(#)init.c	5.13 (Berkeley) %G%";
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
-char	shell[]	= "/bin/sh";
+char	shell[]	= _PATH_BSHELL;
 char	minus[]	= "-";
-char	runc[]	= "/etc/rc";
-char	utmpf[]	= "/etc/utmp";
-char	ctty[]	= "/dev/console";
+char	runc[]	= _PATH_RC;
+char	utmpf[]	= _PATH_UTMP;
+char	ctty[]	= _PATH_CONSOLE;
 
 struct	tab
 {
