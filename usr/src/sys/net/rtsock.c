@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.3 (Berkeley) %G%
+ *	@(#)rtsock.c	8.3.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -105,6 +105,7 @@ route_output(m, so)
 	register struct rt_msghdr *rtm = 0;
 	register struct rtentry *rt = 0;
 	struct rtentry *saved_nrt = 0;
+	struct radix_node_head *rnh;
 	struct rt_addrinfo info;
 	int len, error = 0;
 	struct ifnet *ifp = 0;
@@ -139,7 +140,7 @@ route_output(m, so)
 		senderr(EINVAL);
 	if (genmask) {
 		struct radix_node *t;
-		t = rn_addmask((caddr_t)genmask, 1, 2);
+		t = rn_addmask((caddr_t)genmask, 0, 1);
 		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
 			genmask = (struct sockaddr *)(t->rn_key);
 		else
@@ -168,25 +169,13 @@ route_output(m, so)
 	case RTM_GET:
 	case RTM_CHANGE:
 	case RTM_LOCK:
-		rt = rtalloc1(dst, 0);
-		if (rt == 0)
+		if ((rnh = rt_tables[dst->sa_family]) == 0)
+			senderr(EAFNOSUPPORT);
+		else if (rt = (struct rtentry *)
+				rnh->rnh_lookup(dst, netmask, rnh))
+			rt->rt_refcnt++;
+		else
 			senderr(ESRCH);
-		if (rtm->rtm_type != RTM_GET) {/* XXX: too grotty */
-			struct radix_node *rn;
-			extern struct radix_node_head *mask_rnhead;
-
-			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
-				senderr(ESRCH);
-			if (netmask && (rn = rn_search(netmask,
-					    mask_rnhead->rnh_treetop)))
-				netmask = (struct sockaddr *)rn->rn_key;
-			for (rn = rt->rt_nodes; rn; rn = rn->rn_dupedkey)
-				if (netmask == (struct sockaddr *)rn->rn_mask)
-					break;
-			if (rn == 0)
-				senderr(ETOOMANYREFS);
-			rt = (struct rtentry *)rn;
-		}
 		switch(rtm->rtm_type) {
 
 		case RTM_GET:
