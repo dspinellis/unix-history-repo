@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	6.6 (Berkeley) %G%
+ *	@(#)mba.c	6.7 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -172,11 +172,8 @@ loop:
 	 * on disks).
 	 */
 	mhp->mh_active = 1;
-	if (mi->mi_driver->md_start) {
-		if ((com = (*mi->mi_driver->md_start)(mi)) == 0)
-			com = (bp->b_flags & B_READ) ?
-			    MB_RCOM|MB_GO : MB_WCOM|MB_GO;
-	} else
+	if (mi->mi_driver->md_start == (int (*)())0 ||
+	    (com = (*mi->mi_driver->md_start)(mi)) == 0)
 		com = (bp->b_flags & B_READ) ? MB_RCOM|MB_GO : MB_WCOM|MB_GO;
 
 	/*
@@ -186,11 +183,11 @@ loop:
 	mbp = mi->mi_mba;
 	mbp->mba_sr = -1;	/* conservative */
 	if (bp->b_bcount >= 0) {
-		mbp->mba_var = mbasetup(mi);
-		mbp->mba_bcr = -bp->b_bcount;
+		mbp->mba_var = mbasetup(mi) + mi->mi_tab.b_bdone;
+		mbp->mba_bcr = -(bp->b_bcount - mi->mi_tab.b_bdone);
 	} else {
-		mbp->mba_var = mbasetup(mi) - bp->b_bcount - 1;
-		mbp->mba_bcr = bp->b_bcount;
+		mbp->mba_var = mbasetup(mi) - bp->b_bcount - mi->mi_tab.b_bdone - 1;
+		mbp->mba_bcr = bp->b_bcount + mi->mi_tab.b_bdone;
 	}
 	mi->mi_drv->mbd_cs1 = com;
 	if (mi->mi_dk >= 0) {
@@ -407,7 +404,7 @@ mbasetup(mi)
 	struct proc *rp;
 
 	v = btop(bp->b_un.b_addr);
-	o = (int)bp->b_un.b_addr & PGOFSET;
+	o = (int)(bp->b_un.b_addr) & PGOFSET;
 	if (bp->b_bcount >= 0)
 		npf = btoc(bp->b_bcount + o);
 	else
