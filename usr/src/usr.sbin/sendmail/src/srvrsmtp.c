@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.38 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.39 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.38 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.39 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -609,7 +609,7 @@ smtp(e)
 						PrivacyFlags))
 			{
 				if (vrfy)
-					message("252 Who's to say?");
+					message("252 Cannot VRFY user; try RCPT to attempt delivery (or try finger)");
 				else
 					message("502 Sorry, we do not allow this operation");
 #ifdef LOG
