@@ -1,9 +1,9 @@
-; Copyright (c) 1985 Regents of the University of California.
-; All rights reserved.
+; Copyright (c) 1985, 1993
+;	The Regents of the University of California.  All rights reserved.
 ;
 ; %sccs.include.redist.semicolon%
 ;
-;	@(#)support.s	5.4 (Berkeley) %G%
+;	@(#)support.s	8.1 (Berkeley) %G%
 ;
 
 ; IEEE recommended functions
