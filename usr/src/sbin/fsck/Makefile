@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1	(Berkeley)	84/03/31
+#	@(#)Makefile	5.2	(Berkeley)	84/08/06
 #
 DESTDIR=
 CFLAGS=	-O
@@ -39,7 +39,7 @@ ufs_tables.o:
 	cc ${CFLAGS} ${INCPATH} -c /sys/sys/ufs_tables.c
 
 install: ${PROG}
-	install ${PROG} ${DESTDIR}/usr/local/${PROG}
+	install ${PROG} ${DESTDIR}/etc/${PROG}
 
 clean:
 	rm -f a.out core ${OBJS} ${PROG}
