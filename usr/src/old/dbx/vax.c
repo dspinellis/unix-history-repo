@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)vax.c	1.11 (Berkeley) %G%";
+static	char sccsid[] = "@(#)vax.c	1.12 (Berkeley) %G%";
 
 /*
  * Target machine dependent stuff.
@@ -572,6 +572,7 @@ public endprogram()
  * is true).  If "isnext" is true, skip over procedure calls.
  */
 
+private Address findnextaddr();
 private Address getcall();
 
 public dostep(isnext)
@@ -589,7 +590,7 @@ Boolean isnext;
 	line = linelookup(addr);
 	while (line == 0) {
 	    prevaddr = addr;
-	    addr = nextaddr(addr, isnext);
+	    addr = findnextaddr(addr, isnext);
 	    line = linelookup(addr);
 	}
 	curline = line;
@@ -615,8 +616,6 @@ Boolean isnext;
  * the machine.  We assume that the last argument in an instruction
  * that branches is the branch address (or relative offset).
  */
-
-private Address findnextaddr();
 
 public Address nextaddr(startaddr, isnext)
 Address startaddr;
