@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.20 (Berkeley) %G%
+ *	@(#)ioctl.h	6.21 (Berkeley) %G%
  */
 
 /*
@@ -56,22 +56,24 @@ struct sgttyb {
  * This information is stored by the kernel
  * in order to provide a consistent interface,
  * but is not used by the kernel.
+ *
+ * Type must be "unsigned short" so that types.h not required.
  */
 struct winsize {
-	u_short	ws_row;			/* rows, in characters */
-	u_short	ws_col;			/* columns, in characters */
-	u_short	ws_xpixel;		/* horizontal size, pixels */
-	u_short	ws_ypixel;		/* vertical size, pixels */
+	unsigned short	ws_row;			/* rows, in characters */
+	unsigned short	ws_col;			/* columns, in characters */
+	unsigned short	ws_xpixel;		/* horizontal size, pixels */
+	unsigned short	ws_ypixel;		/* vertical size, pixels */
 };
 
 /*
  * Pun for SUN.
  */
 struct ttysize {
-	u_short	ts_lines;
-	u_short	ts_cols;
-	u_short	ts_xxx;
-	u_short	ts_yyy;
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
 };
 #define	TIOCGSIZE	TIOCGWINSZ
 #define	TIOCSSIZE	TIOCSWINSZ
