@@ -12,11 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)kgmon.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/file.h>
+#include <sys/sysctl.h>
 #include <sys/gmon.h>
 #include <errno.h>
 #include <kvm.h>
@@ -104,12 +105,19 @@ void
 setprof(int state)
 {
 	struct gmonparam *p = (struct gmonparam *)nl[N_GMONPARAM].n_value;
+	int mib[3], sz;
 
-	if (kvm_write(kd, (u_long)&p->state, (void *)&state, sizeof(state)) !=
-	    sizeof(state))
-		(void)fprintf(stderr,
-		    "kgmon: warning: can't turn profiling %s\n",
-		    state == GMON_PROF_OFF ? "off" : "on");
+	sz = sizeof(state);
+	if (!kflag) {
+		mib[0] = CTL_KERN;
+		mib[1] = KERN_PROF;
+		mib[2] = GPROF_STATE;
+		if (sysctl(mib, 3, NULL, NULL, &state, sz) >= 0)
+			return;
+	} else if (kvm_write(kd, (u_long)&p->state, (void *)&state, sz) == sz)
+		return;
+	(void)fprintf(stderr, "kgmon: warning: cannot turn profiling %s\n",
+	    state == GMON_PROF_OFF ? "off" : "on");
 }
 
 /*
@@ -278,7 +286,11 @@ main(int argc, char **argv)
 #endif
 	if (system == NULL)
 		system = _PATH_UNIX;
-	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
+	if (!kflag)
+		openmode = rflag ? O_RDWR : O_RDONLY;
+	else
+		openmode = 
+		    (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
 	kd = kvm_openfiles(system, kmemf, NULL, openmode, errbuf);
 	if (kd == NULL) {
 		if (openmode == O_RDWR) {
@@ -294,11 +306,7 @@ main(int argc, char **argv)
 		(void)fprintf(stderr, "kgmon: kernel opened read-only\n");
 		if (rflag)
 			(void)fprintf(stderr, "-r supressed\n");
-		if (bflag)
-			(void)fprintf(stderr, "-b supressed\n");
-		if (hflag)
-			(void)fprintf(stderr, "-h supressed\n");
-		rflag = bflag = hflag = 0;
+		rflag = 0;
 	}
 	if (kvm_nlist(kd, nl) < 0) {
 		(void)fprintf(stderr, "kgmon: %s: no namelist\n", system);
@@ -324,13 +332,13 @@ main(int argc, char **argv)
 	else
 		disp = mode;
 	if (pflag) {
-		if (openmode == O_RDONLY && mode == GMON_PROF_ON)
+		if (kflag && openmode == O_RDONLY && mode == GMON_PROF_ON)
 			(void)fprintf(stderr, "data may be inconsistent\n");
 		dumpstate(&gmonparam);
 	}
 	if (rflag)
 		reset(&gmonparam);
-	if (openmode == O_RDWR)
+	if (!kflag || openmode == O_RDWR)
 		setprof(disp);
 	(void)fprintf(stdout, "kernel profiling is %s.\n",
 		      disp == GMON_PROF_OFF ? "off" : "running");
