@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -56,6 +56,7 @@ clean:
 	rm -f a.out core *.s *.o
 	-for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 	rm -f ${STD} ${NSTD}
+	cd games.`machine`; make ${MFLAGS} DESTDIR=${DESTDIR} clean
 
 depend:
 	for i in ${STD} ${NSTD}; do \
