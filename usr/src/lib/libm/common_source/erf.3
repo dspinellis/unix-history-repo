@@ -1,0 +1,42 @@
+From Prof. Kahan at UC at Berkeley
+.EQ
+delim $$
+.EN
+.TH ERF 3M  "9 May 1985"
+.SH NAME
+erf, erfc \- error functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double erf(x)
+.B double x;
+.PP
+.B double erfc(x)
+.B double x;
+.fi
+.SH DESCRIPTION
+.I Erf(x)
+returns the error function of 
+.I x.
+.PP
+.I Erfc(x)
+returns
+.I 1.0\-erf(x).
+.PP
+.I Erf(x)
+is defined by
+${2 over sqrt {pi}} int from 0 to x e sup {-t sup 2} dt$.
+.PP
+The entry for
+.I erfc
+is provided because of the extreme loss of relative accuracy if
+.I erf(x)
+is called for large
+.I x
+and the result subtracted from 1.
+(e.g. for
+.I x
+= 10, 12 places are lost).
+.SH SEE ALSO
+intro(3M)
