@@ -1,4 +1,4 @@
-/*	file.h	4.5	81/03/09	*/
+/*	file.h	4.6	81/04/28	*/
 
 /*
  * One file structure is allocated
@@ -15,6 +15,10 @@ struct	file
 	union {
 		off_t	f_offset;	/* read/write character pointer */
 		struct chan *f_chan;	/* mpx channel pointer */
+		struct port *f_port;	/* port (used for pipes, too) */
+#ifdef CHAOS
+		struct connection *f_conn;
+#endif
 	} f_un;
 };
 
@@ -33,3 +37,4 @@ struct	file *falloc();
 #define	FMPX	010
 #define	FMPY	020
 #define	FMP	030
+#define	FPORT	040
