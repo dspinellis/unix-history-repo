@@ -1,5 +1,5 @@
 /*
- *	@(#)uda.c	6.15 (Berkeley) %G%
+ *	@(#)uda.c	6.16 (Berkeley) %G%
  */
 
 /************************************************************************
@@ -166,6 +166,7 @@ struct  buf udwtab[NUDA];               /* I/O wait queue, per controller */
 int     nNRA = NRA;
 int     nNUDA = NUDA;
 int     udamicro[NUDA];         /* to store microcode level */
+int     udaburst[NUDA] = { 0 };	/* DMA burst size, 0 is default */
 
 
 /*
@@ -724,12 +725,13 @@ udintr(d)
 #ifdef	DEBUG
 		printd("Uda%d Version %d model %d\n",d,udamicro[d]&0xF,
 			(udamicro[d]>>4) & 0xF);
+#endif
 		/*
 		 * Requesting the error status (|= 2)
 		 * may hang older controllers.
 		 */
-		udaddr->udasa = UDA_GO | (udaerror? 2 : 0);
-#endif
+		udaddr->udasa = UDA_GO | ((udaburst[d] - 1) << 2) |
+		     (udaerror? 2 : 0);
 		udaddr->udasa = UDA_GO;
 		sc->sc_state = S_SCHAR;
 
