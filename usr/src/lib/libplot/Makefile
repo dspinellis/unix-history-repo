@@ -1,6 +1,7 @@
-#	Makefile	4.4	83/07/09
+#	Makefile	4.5	83/07/09
 #
 ALL=	libplot libt4014 libt300 libt300s libt450 libvt0
+SUBDIRS=plot t4014 t300 t300s t450 vt0
 
 all:	${ALL}
 
@@ -32,6 +33,6 @@ install: all
 
 clean:
 	rm -f ${ALL} errs a.out core
-	for i in ${ALL}; do \
+	for i in ${SUBDIRS}; do \
 		(cd $$i; make ${MFLAGS} clean); \
 	done
