@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)time.h	5.8 (Berkeley) %G%
+ *	@(#)time.h	5.9 (Berkeley) %G%
  */
+
+#ifndef _TIME_H_
+#define	_TIME_H_
 
 #include <machine/types.h>
 
@@ -42,28 +45,20 @@ struct tm {
 	char	*tm_zone;	/* timezone abbreviation */
 };
 
-#if __STDC__ || c_plusplus
-extern struct tm *gmtime(const time_t *);
-extern struct tm *localtime(const time_t *);
-extern time_t mktime(const struct tm *);
-extern time_t time(time_t *);
-extern clock_t clock(void);
-extern double difftime(const time_t, const time_t);
-extern char *asctime(const struct tm *);
-extern char *ctime(const time_t *);
-extern char *timezone(int , int);
-extern void tzset(void);
-extern void tzsetwall(void);
-#else
-extern struct tm *gmtime();
-extern struct tm *localtime();
-extern clock_t clock();
-extern time_t mktime();
-extern time_t time();
-extern double difftime();
-extern char *asctime();
-extern char *ctime();
-extern char *timezone();
-extern void tzset();
-extern void tzsetwall();
-#endif 
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct tm *gmtime __P((const time_t *));
+struct tm *localtime __P((const time_t *));
+time_t mktime __P((const struct tm *));
+time_t time __P((time_t *));
+clock_t clock __P((void));
+double difftime __P((const time_t, const time_t));
+char *asctime __P((const struct tm *));
+char *ctime __P((const time_t *));
+char *timezone __P((int , int));
+void tzset __P((void));
+void tzsetwall __P((void));
+__END_DECLS
+
+#endif /* !_TIME_H_ */

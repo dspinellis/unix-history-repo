@@ -3,10 +3,12 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tablet.h	7.3 (Berkeley) %G%
+ *	@(#)tablet.h	7.4 (Berkeley) %G%
  */
 
-#ifndef _TABLET_
+#ifndef _TABLET_H_
+#define	_TABLET_H_
+
 /*
  * Tablet line discipline.
  */
@@ -67,3 +69,5 @@ struct	polpos {
 #define BIOSTYPE	_IOW('b', 3, int)	/* set tablet type */
 #define BIOGTYPE	_IOR('b', 4, int)	/* get tablet type*/
 #endif
+
+#endif /* !_TABLET_H_ */

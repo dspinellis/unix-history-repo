@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dir.h	7.2 (Berkeley) %G%
+ *	@(#)dir.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -12,7 +12,8 @@
  * and is provided solely (and temporarily) for backward compatibility.
  */
 
-#ifndef _DIRENT_
+#ifndef _DIR_H_
+#define	_DIR_H_
 
 #include <dirent.h>
 
@@ -31,4 +32,4 @@
 #define DIRSIZ(dp) \
     ((sizeof (struct direct) - (MAXNAMLEN+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
 
-#endif /* _DIRENT_ */
+#endif /* !_DIR_H_ */

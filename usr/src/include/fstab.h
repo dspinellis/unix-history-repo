@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fstab.h	5.10 (Berkeley) %G%
+ *	@(#)fstab.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -37,16 +37,12 @@ struct fstab {
 	int	fs_passno;		/* pass number on parallel dump */
 };
 
-#if __STDC__ || c_plusplus
-extern struct fstab *getfsent(void);
-extern struct fstab *getfsspec(const char *);
-extern struct fstab *getfsfile(const char *);
-extern int setfsent(void);
-extern void endfsent(void);
-#else
-extern struct fstab *getfsent();
-extern struct fstab *getfsspec();
-extern struct fstab *getfsfile();
-extern int setfsent();
-extern void endfsent();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct fstab *getfsent __P((void));
+struct fstab *getfsspec __P((const char *));
+struct fstab *getfsfile __P((const char *));
+int setfsent __P((void));
+void endfsent __P((void));
+__END_DECLS

@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ucred.h	7.4 (Berkeley) %G%
+ *	@(#)ucred.h	7.5 (Berkeley) %G%
  */
 
-#ifndef _UCRED_
-#define	_UCRED_
+#ifndef _UCRED_H_
+#define	_UCRED_H_
 
 /*
  * Credentials.
@@ -28,4 +28,5 @@ struct ucred *crget();
 struct ucred *crcopy();
 struct ucred *crdup();
 #endif KERNEL
-#endif _UCRED_
+
+#endif /* !_UCRED_H_ */

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)string.h	5.6 (Berkeley) %G%
+ *	@(#)string.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _STRING_H_
@@ -20,92 +20,48 @@ typedef	_SIZE_T_	size_t;
 #define	NULL	0
 #endif
 
-#if __STDC__ || c_plusplus
+#include <sys/cdefs.h>
 
-void	*memchr(const void *, int, size_t);
-int	 memcmp(const void *, const void *, size_t);
-void	*memcpy(void *, const void *, size_t);
-void	*memmove(void *, const void *, size_t);
-void	*memset(void *, int, size_t);
-char	*strcat(char *, const char *);
-char	*strchr(const char *, int);
-int	 strcmp(const char *, const char *);
-int	 strcoll(const char *, const char *);
-char	*strcpy(char *, const char *);
-size_t	 strcspn(const char *, const char *);
-char	*strerror(int);
-size_t	 strlen(const char *);
-char	*strncat(char *, const char *, size_t);
-int	 strncmp(const char *, const char *, size_t);
-char	*strncpy(char *, const char *, size_t);
-char	*strpbrk(const char *, const char *);
-char	*strrchr(const char *, int);
-size_t	 strspn(const char *, const char *);
-char	*strstr(const char *, const char *);
-char	*strtok(char *, const char *);
-size_t	 strxfrm(char *, const char *, size_t);
-
-#else
-
-void	*memchr();
-int	 memcmp();
-void	*memcpy();
-void	*memmove();
-void	*memset();
-char	*strcat();
-char	*strchr();
-int	 strcmp();
-int	 strcoll();
-char	*strcpy();
-size_t	 strcspn();
-char	*strerror();
-size_t	 strlen();
-char	*strncat();
-int	 strncmp();
-char	*strncpy();
-char	*strpbrk();
-char	*strrchr();
-size_t	 strspn();
-char	*strstr();
-char	*strtok();
-size_t	 strxfrm();
-
-#endif
+__BEGIN_DECLS
+void	*memchr __P((const void *, int, size_t));
+int	 memcmp __P((const void *, const void *, size_t));
+void	*memcpy __P((void *, const void *, size_t));
+void	*memmove __P((void *, const void *, size_t));
+void	*memset __P((void *, int, size_t));
+char	*strcat __P((char *, const char *));
+char	*strchr __P((const char *, int));
+int	 strcmp __P((const char *, const char *));
+int	 strcoll __P((const char *, const char *));
+char	*strcpy __P((char *, const char *));
+size_t	 strcspn __P((const char *, const char *));
+char	*strerror __P((int));
+size_t	 strlen __P((const char *));
+char	*strncat __P((char *, const char *, size_t));
+int	 strncmp __P((const char *, const char *, size_t));
+char	*strncpy __P((char *, const char *, size_t));
+char	*strpbrk __P((const char *, const char *));
+char	*strrchr __P((const char *, int));
+size_t	 strspn __P((const char *, const char *));
+char	*strstr __P((const char *, const char *));
+char	*strtok __P((char *, const char *));
+size_t	 strxfrm __P((char *, const char *, size_t));
 
 /* Nonstandard routines */
 #ifndef _ANSI_SOURCE
-#if __STDC__ || c_plusplus
-
-int	 bcmp(const char *, const char *, size_t);
-void	 bcopy(const char *, char *, size_t);
-void	 bzero(char *, size_t);
-int	 ffs(int);
-char	*index(const char *, int);
-void	*memccpy(void *, const void *, int, size_t);
-char	*rindex(const char *, int);
-int	 strcasecmp(const char *, const char *);
-char	*strdup(const char *);
-void	 strmode(int, char *);
-int	 strncasecmp(const char *, const char *, size_t);
-char	*strsep(char **, const char *);
-void	 swab(const char *, char *, size_t);
-
-#else
-
-int	 bcmp();
-void	 bcopy();
-void	 bzero();
-int	 ffs();
-char	*index();
-void	*memccpy();
-char	*rindex();
-int	 strcasecmp();
-char	*strdup();
-void	strmode();
-int	 strncasecmp();
-char	*strsep();
-void	 swab();
-
-#endif
+int	 bcmp __P((const char *, const char *, size_t));
+void	 bcopy __P((const char *, char *, size_t));
+void	 bzero __P((char *, size_t));
+int	 ffs __P((int));
+char	*index __P((const char *, int));
+void	*memccpy __P((void *, const void *, int, size_t));
+char	*rindex __P((const char *, int));
+int	 strcasecmp __P((const char *, const char *));
+char	*strdup __P((const char *));
+void	 strmode __P((int, char *));
+int	 strncasecmp __P((const char *, const char *, size_t));
+char	*strsep __P((char **, const char *));
+void	 swab __P((const char *, char *, size_t));
 #endif 
+__END_DECLS
+
 #endif /* _STRING_H_ */

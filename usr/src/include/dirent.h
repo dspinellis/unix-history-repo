@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dirent.h	5.15 (Berkeley) %G%
+ *	@(#)dirent.h	5.16 (Berkeley) %G%
  */
 
-#ifndef _DIRENT_
-#define _DIRENT_
+#ifndef _DIRENT_H_
+#define _DIRENT_H_
 
 /*
  * A directory entry has a struct dirent at the front of it, containing its
@@ -57,28 +57,20 @@ typedef struct _dirdesc {
 
 #endif /* _POSIX_SOURCE */
 
-#if __STDC__ || c_plusplus
-extern DIR *opendir(const char *);
-extern struct dirent *readdir(DIR *);
-extern void rewinddir(DIR *);
-extern int closedir(DIR *);
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+DIR *opendir __P((const char *));
+struct dirent *readdir __P((DIR *));
+void rewinddir __P((DIR *));
+int closedir __P((DIR *));
 #ifndef _POSIX_SOURCE
-extern long telldir(const DIR *);
-extern void seekdir(DIR *, long);
-extern int scandir(const char *, struct dirent ***,
-    int (*)(struct dirent *), int (*)(void *, void *));
-extern int alphasort(const void *, const void *);
+long telldir __P((const DIR *));
+void seekdir __P((DIR *, long));
+int scandir __P((const char *, struct dirent ***,
+    int (*)(struct dirent *), int (*)(void *, void *)));
+int alphasort __P((const void *, const void *));
 #endif
-#else
-extern DIR *opendir();
-extern struct dirent *readdir();
-extern void rewinddir();
-extern int closedir();
-#ifndef _POSIX_SOURCE
-extern long telldir();
-extern void seekdir();
-extern int scandir();
-extern int alphasort();
-#endif
-#endif
-#endif /* _DIRENT_ */
+__END_DECLS
+
+#endif /* !_DIRENT_H_ */

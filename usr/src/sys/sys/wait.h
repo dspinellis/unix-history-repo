@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.13 (Berkeley) %G%
+ *	@(#)wait.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -113,16 +113,13 @@ union wait {
 #endif /* _POSIX_SOURCE */
 
 #ifndef KERNEL
-#if __STDC__ || c_plusplus
 #include <sys/types.h>
-pid_t wait(int *);
-pid_t waitpid(pid_t, int *, int);
-pid_t wait3(int *, int, struct rusage *);
-pid_t wait4(pid_t, int *, int, struct rusage *);
-#else
-pid_t wait();
-pid_t waitpid();
-pid_t wait3();
-pid_t wait4();
-#endif
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+pid_t	wait __P((int *));
+pid_t	wait3 __P((int *, int, struct rusage *));
+pid_t	wait4 __P((pid_t, int *, int, struct rusage *));
+pid_t	waitpid __P((pid_t, int *, int));
+__END_DECLS
 #endif

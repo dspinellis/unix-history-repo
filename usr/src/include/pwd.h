@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pwd.h	5.5 (Berkeley) %G%
+ *	@(#)pwd.h	5.6 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -34,24 +34,16 @@ struct passwd {
 	time_t	pw_expire;		/* account expiration */
 };
 
-#if __STDC__ || c_plusplus
-struct passwd *getpwuid(uid_t);
-struct passwd *getpwnam(const char *);
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+struct passwd *getpwuid __P((uid_t));
+struct passwd *getpwnam __P((const char *));
 #ifndef _POSIX_SOURCE
-struct passwd *getpwent(void);
-int setpwent(void);
-void endpwent(void);
-void setpwfile(const char *);
-int setpassent(int);
+struct passwd *getpwent __P((void));
+int setpwent __P((void));
+void endpwent __P((void));
+void setpwfile __P((const char *));
+int setpassent __P((int));
 #endif
-#else
-struct passwd *getpwuid();
-struct passwd *getpwnam();
-#ifndef _POSIX_SOURCE
-struct passwd *getpwent();
-int setpwent();
-void endpwent();
-void setpwfile();
-int setpassent();
-#endif
-#endif
+__END_DECLS

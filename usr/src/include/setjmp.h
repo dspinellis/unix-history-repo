@@ -4,11 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)setjmp.h	5.2 (Berkeley) %G%
+ *	@(#)setjmp.h	5.3 (Berkeley) %G%
  */
 
-#ifndef _SETJMP_
-#define _SETJMP_
+#ifndef _SETJMP_H_
+#define _SETJMP_H_
 
 #ifdef hp300
 #define _JBLEN	17
@@ -36,23 +36,17 @@ typedef int sigjmp_buf[_JBLEN + 1];
 typedef int jmp_buf[_JBLEN];
 #endif
 
-#if __STDC__ || c_plusplus
-int sigsetjmp(sigjmp_buf, int);
-void siglongjmp(sigjmp_buf, int);
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+int sigsetjmp __P((sigjmp_buf, int));
+void siglongjmp __P((sigjmp_buf, int));
 #ifndef _POSIX_SOURCE
-extern int setjmp(jmp_buf);
-extern int _setjmp(jmp_buf);
-extern void longjmp(jmp_buf, int);
-extern void _longjmp(jmp_buf, int);
+int setjmp __P((jmp_buf));
+int _setjmp __P((jmp_buf));
+void longjmp __P((jmp_buf, int));
+void _longjmp __P((jmp_buf, int));
 #endif
-#else
-int sigsetjmp();
-void siglongjmp();
-#ifndef _POSIX_SOURCE
-extern int setjmp();
-extern int _setjmp();
-extern void longjmp();
-extern void _longjmp();
-#endif
-#endif
-#endif
+__END_DECLS
+
+#endif /* !_SETJMP_H_ */

@@ -3,8 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)exec.h	7.3 (Berkeley) %G%
+ *	@(#)exec.h	7.4 (Berkeley) %G%
  */
+
+#ifndef _EXEC_H_
+#define	_EXEC_H_
 
 /*
  * Header prepended to each a.out file.
@@ -39,3 +42,5 @@ unsigned long	a_drsize;	/* size of data relocation */
 #define	MID_HP300	300	/* hp300 (68020+68881) BSD binary */
 #define	MID_HPUX	0x20C	/* hp200/300 HP-UX binary */
 #define	MID_HPUX800     0x20B   /* hp800 HP-UX binary */
+
+#endif /* !_EXEC_H_ */
