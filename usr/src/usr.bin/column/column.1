@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)column.1	5.6 (Berkeley) %G%
+.\"     @(#)column.1	5.7 (Berkeley) %G%
 .\"
 .Dd 
 .Os BSD 4.4
@@ -61,8 +61,8 @@ The environment variable
 is used to determine the size of
 the screen if no other information is available.
 .Sh EXAMPLES
-.Dl (printf "PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en" \&;
-.Dl ls -l  sed 1d) \&| column -t
+.Dl (printf \&"PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en\&"\ \&; \e
+.Dl ls -l \&| sed 1d) \&| column -t
 .Sh SEE ALSO
 .Xr colrm 1 ,
 .Xr ls 1 ,
