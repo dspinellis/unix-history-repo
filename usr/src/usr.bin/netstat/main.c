@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,9 +84,23 @@ struct nlist nl[] = {
 	{ "_spp_istat"},
 #define N_NSERR		22
 	{ "_ns_errstat"},
-#define N_NIMP		23
+#define	N_CLNPSTAT	23
+	{ "_clnp_stat"},
+#define	IN_TP		24
+	{ "_tp_inpcb" },
+#define	ISO_TP		25
+	{ "_tp_isopcb" },
+#define	ISO_X25		26
+	{ "_x25_isopcb" },
+#define	N_TPSTAT	27
+	{ "_tp_stat" },
+#define	N_X25STAT	28
+	{ "_x25_stat" },
+#define	N_ESISSTAT	29
+	{ "_esis_stat"},
+#define N_NIMP		30
 	{ "_nimp"},
-#define N_RTREE		24
+#define N_RTREE		31
 	{ "_radix_node_head"},
 
     /* BBN Internet protocol implementation */
@@ -109,6 +123,9 @@ extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
 extern	int tcpstats(), udpstats(), ipstats(), icmpstats(), rdpstats();
 extern	int nsprotopr();
 extern	int spp_stats(), idp_stats(), nserr_stats();
+/* iso protocols */
+extern	int iso_protopr();
+extern	int tp_stats(), esis_stats(), clnp_stats();
 
 #define NULLPROTOX	((struct protox *) 0)
 struct protox {
@@ -125,6 +142,8 @@ struct  protox berkprotox[] = {
 	  tcp_stats,	"tcp" },
 	{ N_UDB,	N_UDPSTAT,	1,	protopr,
 	  udp_stats,	"udp" },
+	{ IN_TP,	N_TPSTAT,	1,	protopr,
+	  tp_stats,	"tpip" },
 	{ -1,		N_IPSTAT,	1,	0,
 	  ip_stats,	"ip" },
 	{ -1,		N_ICMPSTAT,	1,	0,
@@ -160,6 +179,23 @@ struct protox nsprotox[] = {
 	{ -1,		-1,		0,	0,
 	  0,		0 }
 };
+
+struct protox isoprotox[] = {
+	{ ISO_TP,	N_TPSTAT,	1,	iso_protopr,
+	  tp_stats,	"tp" },
+#ifdef notdef
+	{ ISO_X25,	N_X25STAT,	1,	x25_protopr,
+	  x25_stats,	"x25" },
+#endif
+	{ -1,		N_CLNPSTAT,	1,	 0,
+	  clnp_stats,	"clnp"},
+	{ -1,		N_ESISSTAT,	1,	 0,
+	  esis_stats,	"esis"},
+	{ -1,		-1,		0,	0,
+	  0,		0 }
+};
+
+struct protox *protoprotox[] = { protox, nsprotox, isoprotox, NULLPROTOX };
 
 struct	pte *Sysmap;
 
@@ -225,6 +261,8 @@ main(argc, argv)
 				af = AF_INET;
 			else if (strcmp(optarg, "unix") == 0)
 				af = AF_UNIX;
+			else if (strcmp(optarg, "iso") == 0)
+				af = AF_ISO;
 			else {
 				fprintf(stderr, "%s: unknown address family\n", optarg);
 				exit(10);
@@ -375,6 +413,18 @@ main(argc, argv)
 					tp->pr_name);
 	}
     }
+    if (af == AF_ISO || af == AF_UNSPEC) {
+	for (tp = isoprotox; tp->pr_name; tp++) {
+		if (sflag) {
+			if (tp->pr_stats)
+				(*tp->pr_stats)(nl[tp->pr_sindex].n_value,
+					tp->pr_name);
+		} else
+			if (tp->pr_cblocks)
+				(*tp->pr_cblocks)(nl[tp->pr_index].n_value,
+					tp->pr_name);
+	}
+    }
     if ((af == AF_UNIX || af == AF_UNSPEC) && !sflag)
 	    unixpr((off_t)nl[N_NFILE].n_value, (off_t)nl[N_FILE].n_value,
 		(struct protosw *)nl[N_UNIXSW].n_value);
@@ -414,12 +464,10 @@ struct protox *
 knownname(name)
 	char *name;
 {
-	struct protox *tp;
+	struct protox **tpp, *tp;
 
-	for (tp = protox; tp->pr_name; tp++)
-		if (strcmp(tp->pr_name, name) == 0)
-			return(tp);
-	for (tp = nsprotox; tp->pr_name; tp++)
+	for (tpp = protoprotox; *tpp; tpp++)
+	    for (tp = *tpp; tp->pr_name; tp++)
 		if (strcmp(tp->pr_name, name) == 0)
 			return(tp);
 	return(NULLPROTOX);
