@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)execve.2	6.10 (Berkeley) %G%
+.\"     @(#)execve.2	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt EXECVE 2
@@ -113,7 +113,7 @@ After any set-user-ID and set-group-ID processing,
 the effective user ID is recorded as the saved set-user-ID,
 and the effective group ID is recorded as the saved set-group-ID.
 These values may be used in changing the effective IDs later (see
-.XR setuid 2 ) .
+.Xr setuid 2 ) .
 .Pp
 The new process also inherits the following attributes from
 the calling process:
