@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.5 (Berkeley) %G%
+ *	@(#)lock.h	8.6 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -20,7 +20,7 @@
 #define NCPUS 1
 
 /*
- * An atomic spin lock.
+ * A simple spin lock.
  *
  * This structure only sets one bit of data, but is sized based on the
  * minimum word size that can be operated on by the hardware test-and-set
@@ -28,9 +28,13 @@
  * will always run to completion or a sleep. It is an error to hold one
  * of these locks while a process is sleeping.
  */
-struct atomic_lk {
+struct simple_lock {
 	int	lock_data;
 };
+
+/*
+ * XXX end of stuff that belongs in <machine/param.h>
+ */
 
 /*
  * The general lock structure.  Provides for multiple shared locks,
@@ -38,7 +42,7 @@ struct atomic_lk {
  * can be gained.
  */
 struct lock {
-	struct	atomic_lk lk_interlock;	/* lock on remaining fields */
+	struct	simple_lock lk_interlock; /* lock on remaining fields */
 	u_int	lk_flags;		/* see below */
 	int	lk_sharecount;		/* # of accepted shared locks */
 	int	lk_exclusivecount;	/* # of recursive exclusive locks */
@@ -109,6 +113,7 @@ struct lock {
 #define LK_HAVE_EXCL	0x00000400	/* exclusive lock obtained */
 #define LK_WAITDRAIN	0x00000800	/* process waiting for lock to drain */
 #define LK_DRAINED	0x00001000	/* lock has been decommissioned */
+
 /*
  * Lock return status.
  *
@@ -140,39 +145,39 @@ int	lockstatus __P((struct lock *));
 /*
  * The simple-lock routines are the primitives out of which the lock
  * package is built. The machine-dependent code must implement an
- * atomic test_and_set operation that indivisibly sets the atomic_lk
+ * atomic test_and_set operation that indivisibly sets the simple_lock
  * to non-zero and returns its old value. It also assumes that the
- * setting of the lock to zero below is indivisible. Atomic locks may
+ * setting of the lock to zero below is indivisible. Simple locks may
  * only be used for exclusive locks.
  */
-__inline void
-atomic_lock_init(lkp)
-	struct atomic_lk *lkp;
+static __inline void
+simple_lock_init(lkp)
+	struct simple_lock *lkp;
 {
 
 	lkp->lock_data = 0;
 }
 
-__inline void
-atomic_lock(lkp)
-	__volatile struct atomic_lk *lkp;
+static __inline void
+simple_lock(lkp)
+	__volatile struct simple_lock *lkp;
 {
 
 	while (test_and_set(&lkp->lock_data))
 		continue;
 }
 
-__inline int
-atomic_lock_try(lkp)
-	__volatile struct atomic_lk *lkp;
+static __inline int
+simple_lock_try(lkp)
+	__volatile struct simple_lock *lkp;
 {
 
 	return (!test_and_set(&lkp->lock_data))
 }
 
-__inline void
-atomic_unlock(lkp)
-	struct atomic_lk *lkp;
+static __inline void
+simple_unlock(lkp)
+	struct simple_lock *lkp;
 {
 
 	lkp->lock_data = 0;
@@ -181,50 +186,53 @@ atomic_unlock(lkp)
 #else /* NCPUS == 1, so no multiprocessor locking is necessary */
 
 #ifdef DEBUG
-__inline void
-atomic_lock_init(alp)
-	struct atomic_lk *alp;
+static __inline void
+simple_lock_init(alp)
+	struct simple_lock *alp;
 {
 
 	alp->lock_data = 0;
 }
 
-__inline void
-atomic_lock(alp)
-	__volatile struct atomic_lk *alp;
+static __inline void
+simple_lock(alp)
+	__volatile struct simple_lock *alp;
 {
+	extern const char *simple_lock_held;
 
 	if (alp->lock_data == 1)
-		panic("atomic lock held");
+		panic(simple_lock_held);
 	alp->lock_data = 1;
 }
 
-__inline int
-atomic_lock_try(alp)
-	__volatile struct atomic_lk *alp;
+static __inline int
+simple_lock_try(alp)
+	__volatile struct simple_lock *alp;
 {
+	extern const char *simple_lock_held;
 
 	if (alp->lock_data == 1)
-		panic("atomic lock held");
+		panic(simple_lock_held);
 	alp->lock_data = 1;
 	return (1);
 }
 
-__inline void
-atomic_unlock(alp)
-	struct atomic_lk *alp;
+static __inline void
+simple_unlock(alp)
+	struct simple_lock *alp;
 {
+	extern const char *simple_lock_not_held;
 
 	if (alp->lock_data == 0)
-		panic("atomic lock not held");
+		panic(simple_lock_not_held);
 	alp->lock_data = 0;
 }
 
 #else /* !DEBUG */
-#define	atomic_lock_init(alp)
-#define	atomic_lock(alp)
-#define	atomic_lock_try(alp)	(1)	/* always succeeds */
-#define	atomic_unlock(alp)
+#define	simple_lock_init(alp)
+#define	simple_lock(alp)
+#define	simple_lock_try(alp)	(1)	/* always succeeds */
+#define	simple_unlock(alp)
 #endif /* !DIAGNOSTIC */
 
 #endif /* NCPUS == 1 */
