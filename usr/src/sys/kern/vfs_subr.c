@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.68 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.69 (Berkeley) %G%
  */
 
 /*
@@ -679,6 +679,7 @@ void vref(vp)
 void vput(vp)
 	register struct vnode *vp;
 {
+
 	VOP_UNLOCK(vp);
 	vrele(vp);
 }
@@ -937,7 +938,6 @@ void vgone(vp)
 {
 	register struct vnode *vq;
 	struct vnode *vx;
-	long count;
 
 	/*
 	 * If a vgone (or vclean) is already in progress,
@@ -980,17 +980,18 @@ void vgone(vp)
 				panic("missing bdev");
 		}
 		if (vp->v_flag & VALIASED) {
-			count = 0;
+			vx = NULL;
 			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
 				if (vq->v_rdev != vp->v_rdev ||
 				    vq->v_type != vp->v_type)
 					continue;
-				count++;
+				if (vx)
+					break;
 				vx = vq;
 			}
-			if (count == 0)
+			if (vx == NULL)
 				panic("missing alias");
-			if (count == 1)
+			if (vq == NULL)
 				vx->v_flag &= ~VALIASED;
 			vp->v_flag &= ~VALIASED;
 		}
