@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.21 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.22 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -661,136 +661,115 @@ ctour
 # ./usr/share/doc/misc
 ..
 
-# ./usr/share/doc/ps1
-ps1
+# ./usr/share/doc/psd
+psd
 
-# ./usr/share/doc/ps1/01.Clang
-01.Clang
-# ./usr/share/doc/ps1/01.Clang
-..
-
-# ./usr/share/doc/ps1/02.f77
-02.f77
-# ./usr/share/doc/ps1/02.f77
-..
-
-# ./usr/share/doc/ps1/03.f77io
-03.f77io
-# ./usr/share/doc/ps1/03.f77io
-..
-
-# ./usr/share/doc/ps1/04.pascal
-04.pascal
-# ./usr/share/doc/ps1/04.pascal
-..
-
-# ./usr/share/doc/ps1/05.as
-05.as
-# ./usr/share/doc/ps1/05.as
-..
-
-# ./usr/share/doc/ps1/06.sysman
-06.sysman
-# ./usr/share/doc/ps1/06.sysman
-..
-
-# ./usr/share/doc/ps1/07.ipctut
-07.ipctut
-# ./usr/share/doc/ps1/07.ipctut
-..
-
-# ./usr/share/doc/ps1/08.ipc
-08.ipc
-# ./usr/share/doc/ps1/08.ipc
-..
-
-# ./usr/share/doc/ps1/09.lint
-09.lint
-# ./usr/share/doc/ps1/09.lint
-..
-
-# ./usr/share/doc/ps1/10.adb
-10.adb
-# ./usr/share/doc/ps1/10.adb
-..
-
-# ./usr/share/doc/ps1/11.dbx
-11.dbx
-# ./usr/share/doc/ps1/11.dbx
-..
-
-# ./usr/share/doc/ps1/12.make
-12.make
-# ./usr/share/doc/ps1/12.make
-..
-
-# ./usr/share/doc/ps1/13.rcs
-13.rcs
-# ./usr/share/doc/ps1/13.rcs
-..
-
-# ./usr/share/doc/ps1/14.sccs
-14.sccs
-# ./usr/share/doc/ps1/14.sccs
-..
-
-# ./usr/share/doc/ps1/15.yacc
-15.yacc
-# ./usr/share/doc/ps1/15.yacc
-..
-
-# ./usr/share/doc/ps1/16.lex
-16.lex
-# ./usr/share/doc/ps1/16.lex
-..
-
-# ./usr/share/doc/ps1/17.m4
-17.m4
-# ./usr/share/doc/ps1/17.m4
-..
-
-# ./usr/share/doc/ps1/18.curses
-18.curses
-# ./usr/share/doc/ps1/18.curses
-..
-
-# ./usr/share/doc/ps1
-..
-
-# ./usr/share/doc/ps2
-ps2
-
-# ./usr/share/doc/ps2/01.cacm
+# ./usr/share/doc/psd/01.cacm
 01.cacm
-# ./usr/share/doc/ps2/01.cacm
+# ./usr/share/doc/psd/01.cacm
 ..
 
-# ./usr/share/doc/ps2/02.summary
-02.summary
-# ./usr/share/doc/ps2/02.summary
+# ./usr/share/doc/psd/02.implement
+02.implement
+# ./usr/share/doc/psd/02.implement
 ..
 
-# ./usr/share/doc/ps2/03.uprog
-03.uprog
-# ./usr/share/doc/ps2/03.uprog
+# ./usr/share/doc/psd/03.iosys
+03.iosys
+# ./usr/share/doc/psd/03.iosys
 ..
 
-# ./usr/share/doc/ps2/04.implement
-04.implement
-# ./usr/share/doc/ps2/04.implement
+# ./usr/share/doc/psd/04.uprog
+04.uprog
+# ./usr/share/doc/psd/04.uprog
 ..
 
-# ./usr/share/doc/ps2/05.iosys
-05.iosys
-# ./usr/share/doc/ps2/05.iosys
+# ./usr/share/doc/psd/05.sysman
+05.sysman
+# ./usr/share/doc/psd/05.sysman
 ..
 
-# ./usr/share/doc/ps2/07.fp
-07.fp
-# ./usr/share/doc/ps2/07.fp
+# ./usr/share/doc/psd/06.Clang
+06.Clang
+# ./usr/share/doc/psd/06.Clang
 ..
 
-# ./usr/share/doc/ps2
+# ./usr/share/doc/psd/07.pascal
+07.pascal
+# ./usr/share/doc/psd/07.pascal
+..
+
+# ./usr/share/doc/psd/08.f77
+08.f77
+# ./usr/share/doc/psd/08.f77
+..
+
+# ./usr/share/doc/psd/09.f77io
+09.f77io
+# ./usr/share/doc/psd/09.f77io
+..
+
+# ./usr/share/doc/psd/10.gdb
+10.gdb
+# ./usr/share/doc/psd/10.gdb
+..
+
+# ./usr/share/doc/psd/11.adb
+11.adb
+# ./usr/share/doc/psd/11.adb
+..
+
+# ./usr/share/doc/psd/12.make
+12.make
+# ./usr/share/doc/psd/12.make
+..
+
+# ./usr/share/doc/psd/13.rcs
+13.rcs
+# ./usr/share/doc/psd/13.rcs
+..
+
+# ./usr/share/doc/psd/14.sccs
+14.sccs
+# ./usr/share/doc/psd/14.sccs
+..
+
+# ./usr/share/doc/psd/15.yacc
+15.yacc
+# ./usr/share/doc/psd/15.yacc
+..
+
+# ./usr/share/doc/psd/16.lex
+16.lex
+# ./usr/share/doc/psd/16.lex
+..
+
+# ./usr/share/doc/psd/17.m4
+17.m4
+# ./usr/share/doc/psd/17.m4
+..
+
+# ./usr/share/doc/psd/18.gprof
+18.gprof
+# ./usr/share/doc/psd/18.gprof
+..
+
+# ./usr/share/doc/psd/19.curses
+19.curses
+# ./usr/share/doc/psd/19.curses
+..
+
+# ./usr/share/doc/psd/20.ipctut
+20.ipctut
+# ./usr/share/doc/psd/20.ipctut
+..
+
+# ./usr/share/doc/psd/21.ipc
+21.ipc
+# ./usr/share/doc/psd/21.ipc
+..
+
+# ./usr/share/doc/psd
 ..
 
 # ./usr/share/doc/smm
