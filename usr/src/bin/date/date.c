@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	4.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -21,7 +21,6 @@ static char sccsid[] = "@(#)date.c	4.9 (Berkeley) %G%";
 #include <utmp.h>
 
 #define WTMP "/usr/adm/wtmp"
-#define	TRIES		3	/* attempts to contact time server */
 #define WAITACK		2	/* seconds */
 #define WAITDATEACK	5	/* seconds */
 
@@ -149,8 +148,8 @@ main(argc, argv)
 	msg.tsp_vers = TSPVERSION;
 	(void) gethostname(hostname, sizeof(hostname));
 	(void) strcpy(msg.tsp_name, hostname);
-	timevalsub(&tv, &now);
 	msg.tsp_time = tv;
+	timevalsub(&msg.tsp_time, &now);
 	bytenetorder(&msg);
 	length = sizeof(struct sockaddr_in);
 	if (sendto(sock, (char *)&msg, sizeof(struct tsp), 0, 
@@ -184,7 +183,7 @@ loop:
 			waittime = WAITDATEACK;
 			goto loop;
 		case TSP_DATEACK:
-			goto oldway;
+			goto display;
 		default:
 			printf("Wrong ack received from timed: %s\n", 
 						tsptype[msg.tsp_type]);
