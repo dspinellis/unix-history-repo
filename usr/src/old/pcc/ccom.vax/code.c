@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)code.c	1.8 (Berkeley) %G%";
+static char *sccsid ="@(#)code.c	1.9 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -83,7 +83,7 @@ deflab( n ){
 	/* output something to define the current position as label n */
 	printf( "L%d:\n", n );
 	}
-#endif deflab
+#endif
 
 int crslab = 10;
 
@@ -121,8 +121,8 @@ efcode(){
 		putstr("	.text\n" );
 #else
 		{ int sz = tsize(t, p->dimoff, p->sizoff) / SZCHAR;
-		if (sz % sizeof (int))
-			sz += sizeof (int) - (sz % sizeof (int));
+		if (sz % (SZINT/SZCHAR))
+			sz += (SZINT/SZCHAR) - (sz % (SZINT/SZCHAR));
 		printf("	.lcomm	L%d,%d\n", i, sz);
 		}
 #endif
@@ -166,7 +166,9 @@ bfcode( a, n ) int a[]; {
 	register temp;
 	register struct symtab *p;
 	int off;
+#ifdef TRUST_REG_CHAR_AND_REG_SHORT
 	char *toreg();
+#endif
 
 	if( nerrors ) return;
 	(void) locctr( PROG );
@@ -206,7 +208,11 @@ bfcode( a, n ) int a[]; {
 			p->sclass = PARAM;  /* forget that it is a register */
 			p->offset = NOOFFSET;
 			(void) oalloc( p, &off );
+#ifdef TRUST_REG_CHAR_AND_REG_SHORT /* and reg double */
 /*tbl*/		printf( "	%s	%d(ap),r%d\n", toreg(p->stype), p->offset/SZCHAR, temp );
+#else
+/*tbl*/		printf( "	movl	%d(ap),r%d\n", p->offset/SZCHAR, temp );
+#endif
 			p->offset = temp;  /* remember register number */
 			p->sclass = REGISTER;   /* remember that it is a register */
 			}
@@ -364,21 +370,19 @@ where(c){ /* print location of error  */
 	}
 
 
+#ifdef TRUST_REG_CHAR_AND_REG_SHORT
 /* tbl - toreg() returns a pointer to a char string
 		  which is the correct  "register move" for the passed type 
  */
 struct type_move {TWORD fromtype; char tostrng[8];} toreg_strs[] =
 	{
+	INT, "movl",
+	UNSIGNED,	"movl",
+	DOUBLE, "movq",
 	CHAR, "cvtbl",
 	SHORT, "cvtwl",
-	INT, "movl",
-	LONG, "movl",
-	FLOAT, "movf",
-	DOUBLE, "movd",
 	UCHAR,	"movzbl",
 	USHORT,	"movzwl",
-	UNSIGNED,	"movl",
-	ULONG,	"movl",
 	0, ""
 	};
 
@@ -395,6 +399,7 @@ char
 	return("movl");
 }
 /* tbl */
+#endif
 
 
 main( argc, argv ) char *argv[]; {
