@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_qe.c	7.7 (Berkeley) %G%
+ *	@(#)if_qe.c	7.8 (Berkeley) %G%
  */
 
 /* from  @(#)if_qe.c	1.15	(ULTRIX)	4/16/86 */
@@ -258,6 +258,7 @@ qeprobe(reg)
 	 * we have to setup the interface by transmitting a setup  packet.
 	 */
 	addr->qe_csr = QE_RESET;
+	addr->qe_csr &= ~QE_RESET;
 	addr->qe_vector = (uba_hd[numuba].uh_lastiv -= 4);
  
 	/*
@@ -345,8 +346,11 @@ qeattach(ui)
 	 */
 	for( i=0 ; i<6 ; i++ )
 		sc->setup_pkt[i][1] = sc->qe_addr[i] = addr->qe_sta_addr[i] & 0xff;  
-	printf("qe%d: hardware address %s\n", ui->ui_unit,
+	addr->qe_vector |= 1;
+	printf("qe%d: %s, hardware address %s\n", ui->ui_unit,
+		addr->qe_vector&01 ? "delqa":"deqna",
 		ether_sprintf(sc->qe_addr));
+	addr->qe_vector &= ~1;
  
 	/*
 	 * Save the vector for initialization at reset time.
