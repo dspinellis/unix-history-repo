@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)write.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)write.c	4.4 (Berkeley) %G%";
 /*
  * write to another user
  */
@@ -9,6 +9,7 @@ static char *sccsid = "@(#)write.c	4.3 (Berkeley) %G%";
 #include <signal.h>
 #include <utmp.h>
 #include <time.h>
+#include <whoami.h>
 
 #define NMAX sizeof(ubuf.ut_name)
 #define LMAX sizeof(ubuf.ut_line)
@@ -135,8 +136,8 @@ cont:
 #ifdef interdata
 	fprintf(tf, "(Interdata) " );
 #endif
-	fprintf(tf, "%s on %s at %d:%02d ...\r\n"
-	       , me, mytty , localclock -> tm_hour , localclock -> tm_min );
+	fprintf(tf, "%s!%s on %s at %d:%02d ...\r\n"
+	       , sysname , me, mytty , localclock -> tm_hour , localclock -> tm_min );
 	fflush(tf);
 	for(;;) {
 		char buf[128];
