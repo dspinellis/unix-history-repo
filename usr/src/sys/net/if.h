@@ -1,4 +1,4 @@
-/*	if.h	4.6	81/12/03	*/
+/*	if.h	4.7	82/01/24	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -69,6 +69,10 @@ struct ifnet {
 	else \
 		(ifq)->ifq_tail->m_act = m; \
 	(ifq)->ifq_tail = m; \
+}
+#define	IF_PREPEND(ifq, m) { \
+	(m)->m_act = (ifq)->ifq_head; \
+	(ifq)->ifq_head = (m); \
 }
 #define	IF_DEQUEUE(ifq, m) { \
 	(m) = (ifq)->ifq_head; \
