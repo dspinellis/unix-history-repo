@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)comp.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)comp.c	5.2 (Berkeley) %G%";
 
 char new[MAX], old[MAX];
 
-main ()
+main()
 {
 	register int i, j;
 	old[0] = '\0';
@@ -35,4 +35,5 @@ main ()
 		old[j] = '\0';
 		fputs(&old[i], stdout);
 	}
+	exit(0);
 }
