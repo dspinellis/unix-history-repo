@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.32 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.33 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1161,10 +1161,10 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-	if( t != t1 && ! asgop(o) )
+	if( (t != t1 || (u && !ISUNSIGNED(p->in.left->in.type))) && ! asgop(o) )
 		p->in.left = makety( p->in.left, tu, 0, (int)tu );
 
-	if( t != t2 || o==CAST)
+	if( t != t2 || (u && !ISUNSIGNED(p->in.right->in.type)) || o==CAST)
 		if ( tu == ENUMTY ) {/* always asgop */
 			p->in.right = makety( p->in.right, INT, 0, INT );
 			p->in.right->in.type = tu;
