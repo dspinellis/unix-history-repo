@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	1.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machdep.c	1.2	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -117,6 +117,10 @@ rewrite(instbuf, argc, argv, target)
 	case 4:
 		sprintf(instbuf, "\t%s\t%s,%s,r%d\n",
 			argv[0], argv[1], argv[2], target);
+		return;
+	case 5:
+		sprintf(instbuf, "\t%s\t%s,%s,%s,r%d\n",
+			argv[0], argv[1], argv[2], argv[3], target);
 		return;
 	default:
 		sprintf(instbuf, "\t%s\t%s", argv[0], argv[1]);
