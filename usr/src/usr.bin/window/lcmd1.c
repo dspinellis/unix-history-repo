@@ -103,7 +103,7 @@ register struct value *v, *a;
 	v->v_num = selwin ? selwin->ww_id + 1 : -1;
 	if (a->v_type == V_ERR)
 		return;
-	if ((w = vtowin(a)) == 0)
+	if ((w = vtowin(a, (struct ww *)0)) == 0)
 		return;
 	setselwin(w);
 }
@@ -155,7 +155,7 @@ register struct value *a;
 {
 	struct ww *w;
 
-	if ((w = vtowin(a)) == 0)
+	if ((w = vtowin(a, selwin)) == 0)
 		return;
 	if ((++a)->v_type != V_ERR && setlabel(w, a->v_str) < 0)
 		error("Out of memory.");
@@ -174,11 +174,11 @@ register struct value *v, *a;
 	struct ww *w;
 	char flag;
 
-	if ((w = vtowin(a)) == 0)
+	if ((w = vtowin(a, selwin)) == 0)
 		return;
 	v->v_type = V_NUM;
 	v->v_num = isfg(w);
-	flag = vtobool(++a, 1, v->v_num);
+	flag = vtobool(++a, v->v_num, v->v_num);
 	if (flag == v->v_num)
 		return;
 	deletewin(w);
@@ -196,7 +196,7 @@ register struct value *v, *a;
 {
 	v->v_type = V_NUM;
 	v->v_num = terse;
-	setterse(vtobool(a, 1, terse));
+	setterse(vtobool(a, terse, terse));
 }
 
 struct lcmd_arg arg_source[] = {
@@ -229,7 +229,7 @@ register struct value *a;
 	char buf[20];
 	struct ww *w;
 
-	if ((w = vtowin(a++)) == 0)
+	if ((w = vtowin(a++, selwin)) == 0)
 		return;
 	while (a->v_type != V_ERR) {
 		if (a->v_type == V_NUM) {
@@ -254,11 +254,11 @@ register struct value *a;
 {
 	struct ww *w;
 
-	if (a->v_type == V_STR && str_match(a->v_str, "all", 1))
+	if (a->v_type == V_STR && str_match(a->v_str, "all", 3))
 		c_close((struct ww *)0);
 	else
 		for (; a->v_type != V_ERR; a++)
-			if ((w = vtowin(a)) != 0)
+			if ((w = vtowin(a, (struct ww *)0)) != 0)
 				c_close(w);
 }
 
@@ -303,13 +303,14 @@ register struct value *v, *a;
 }
 
 struct ww *
-vtowin(v)
+vtowin(v, w)
 register struct value *v;
+struct ww *w;
 {
-	struct ww *w;
-
 	switch (v->v_type) {
 	case V_ERR:
+		if (w != 0)
+			return w;
 		error("No window specified.");
 		return 0;
 	case V_STR:
