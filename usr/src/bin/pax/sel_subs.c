@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sel_subs.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sel_subs.c	1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -353,18 +353,10 @@ trng_add(str)
 	}
 
 	/*
-	 * locate optional flags suffix /{cm}. We only allow a flag suffix(s)
-	 * in write and copy (as none of the formats stores inode change time;
-	 * currently inode change time cannot be set to a specific value by
-	 * any system call).
+	 * locate optional flags suffix /{cm}.
 	 */
-	if ((flgpt = rindex(str, '/')) != NULL) {
+	if ((flgpt = rindex(str, '/')) != NULL)
 		*flgpt++ = '\0';
-		if ((act == LIST) || (act == EXTRACT)) {
-			warn(1,"Time suffix only valid in write or copy modes");
-			return(-1);
-		}
-	}
 
 	for (stpt = str; *stpt != '\0'; ++stpt) {
 		if ((*stpt >= '0') && (*stpt <= '9'))
