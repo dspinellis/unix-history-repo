@@ -16,19 +16,32 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)abort.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)abort.c	5.8 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/signal.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 abort()
 {
-	(void)sigblock(~0L);
-	(void)sigsetmask(~sigmask(SIGABRT));
-	/* leave catch function active to give program a crack at it */
+	sigset_t mask;
+
+	sigfillset(&mask);
+	/*
+	 * don't block SIGABRT to give any handler a chance; we ignore
+	 * any errors -- X311J doesn't allow abort to return anyway.
+	 */
+	sigdelset(&mask, SIGABRT);
+	(void)sigprocmask(SIG_SETMASK, &mask, (sigset_t *)NULL);
 	(void)kill(getpid(), SIGABRT);
-	/* if we got here, it was no good; reset to default and stop */
+
+	/*
+	 * if SIGABRT ignored, or caught and the handler returns, do
+	 * it again, only harder.
+	 */
 	(void)signal(SIGABRT, SIG_DFL);
-	(void)sigsetmask(~sigmask(SIGABRT));
+	(void)sigprocmask(SIG_SETMASK, &mask, (sigset_t *)NULL);
 	(void)kill(getpid(), SIGABRT);
+	exit(1);
 }
