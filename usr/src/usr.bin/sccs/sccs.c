@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.43 %G%";
+static char SccsId[] = "@(#)sccs.c	1.44 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -160,6 +160,7 @@ struct sccsprog
 # define CLEANC		0	/* clean command */
 # define INFOC		1	/* info command */
 # define CHECKC		2	/* check command */
+# define TELLC		3	/* give list of files being edited */
 
 /*
 **  Description of commands known to this program.
@@ -189,6 +190,7 @@ struct sccsprog SccsProg[] =
 	"clean",	CLEAN,	REALUSER,	"",		(char *) CLEANC,
 	"info",		CLEAN,	REALUSER,	"",		(char *) INFOC,
 	"check",	CLEAN,	REALUSER,	"",		(char *) CHECKC,
+	"tell",		CLEAN,	REALUSER,	"",		(char *) TELLC,
 	"unedit",	UNEDIT,	NO_SDOT,	"",		NULL,
 	"diffs",	DIFFS,	NO_SDOT|REALUSER, "",		NULL,
 	NULL,		-1,	0,		"",		NULL
@@ -827,8 +829,13 @@ clean(mode)
 		if (pfp != NULL)
 		{
 			/* the file exists -- report it's contents */
-			while (fgets(pline, sizeof pline, pfp) != NULL)
-				printf("%12s: being edited: %s", basefile, pline);
+			if (mode == TELLC)
+				printf("%s\n", basefile);
+			else
+			{
+				while (fgets(pline, sizeof pline, pfp) != NULL)
+					printf("%12s: being edited: %s", basefile, pline);
+			}
 			fclose(pfp);
 			gotedit = TRUE;
 			continue;
