@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -83,7 +83,7 @@ getfh()
 		RETURN (error);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)&fh, sizeof(fh));
-	fh.fh_fsid = vp->v_mount->m_fsid;
+	fh.fh_fsid = vp->v_mount->m_stat.f_fsid;
 	error = VFS_VPTOFH(vp, &fh.fh_fid);
 	vput(vp);
 	if (error)
