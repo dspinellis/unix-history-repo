@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lexi.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)lexi.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,8 +28,8 @@ static char sccsid[] = "@(#)lexi.c	5.9 (Berkeley) %G%";
  * of token scanned.
  */
 
-#include "indent_globs.h";
-#include "indent_codes.h";
+#include "indent_globs.h"
+#include "indent_codes.h"
 #include "ctype.h"
 
 #define alphanum 1
