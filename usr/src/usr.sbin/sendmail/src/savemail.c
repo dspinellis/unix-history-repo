@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.29 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -219,8 +219,7 @@ savemail(e)
 				state = ESM_POSTMASTER;
 				break;
 			}
-			if (returntosender(e->e_message != NULL ? e->e_message :
-					   "Unable to deliver mail",
+			if (returntosender(e->e_message,
 					   q, (e->e_class >= 0), e) == 0)
 			{
 				state = ESM_DONE;
@@ -243,8 +242,7 @@ savemail(e)
 				state = ESM_USRTMP;
 				break;
 			}
-			if (returntosender(e->e_message != NULL ? e->e_message :
-					   "Unable to deliver mail",
+			if (returntosender(e->e_message,
 					   q, (e->e_class >= 0), e) == 0)
 			{
 				state = ESM_DONE;
