@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.2 %G%";
+static	char *sccsid = "@(#)csh.c 4.3 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -13,6 +13,7 @@ static	char *sccsid = "@(#)csh.c 4.2 %G%";
  */
 
 char	*pathlist[] =	{ ".", "/usr/ucb", "/bin", "/usr/bin", 0 };
+char	*dumphist[] =	{ "history", "-c", "+1000" };
 char	HIST = '!';
 char	HISTSUB = '^';
 bool	nofile;
@@ -22,6 +23,7 @@ bool	nexececho;
 bool	quitit;
 bool	fast;
 bool	prompt = 1;
+bool	enterhist = 0;
 
 main(c, av)
 	int c;
@@ -317,8 +319,10 @@ notty:
 		if (!fast && !arginp && !onelflg)
 			dohash();
 		if (loginsh) {
-			int ldisc;
 			srccat(value("home"), "/.login");
+			enterhist = 1;
+			srccat(value("home"), "/.history");
+			enterhist = 0;
 		}
 	}
 
@@ -525,8 +529,23 @@ srcunit(unit, onlyown)
 
 goodbye()
 {
+	char buf[BUFSIZ];
+	int fp, ftmp, oldidfds;
 
 	if (loginsh) {
+		strcpy(buf, value("home"));
+		strcat(buf, "/.history");
+		fp = creat(buf, 0777);
+		if (fp != -1) {
+			oldidfds = didfds;
+			didfds = 0;
+			ftmp = SHOUT;
+			SHOUT = fp;
+			dohist(dumphist);
+			close(fp);
+			SHOUT = ftmp;
+			didfds = oldidfds;
+		}
 		signal(SIGQUIT, SIG_IGN);
 		sigset(SIGINT, SIG_IGN);
 		signal(SIGTERM, SIG_IGN);
@@ -627,7 +646,7 @@ process(catch)
 		paraml.word = "";
 		t = 0;
 		setexit();
-		justpr = 0;			/* A chance to execute */
+		justpr = enterhist;	/* execute if not entering history */
 
 		/*
 		 * Interruptible during interactive reads
@@ -713,11 +732,12 @@ process(catch)
 			sighold(SIGINT);
 
 		/*
-		 * Save input text on the history list if it
+		 * Save input text on the history list if 
+		 * reading in old history, or it
 		 * is from the terminal at the top level and not
 		 * in a loop.
 		 */
-		if (catch && intty && !whyles)
+		if (enterhist || catch && intty && !whyles)
 			savehist(&paraml);
 
 		/*

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)hist.c 4.1 %G%";
+static	char *sccsid = "@(#)hist.c 4.2 %G%";
 
 #include "sh.h"
 
@@ -69,25 +69,31 @@ hfree(hp)
 dohist(vp)
 	char **vp;
 {
-	int n, rflg = 0;
+	int n, rflg = 0, cflg = 0;
 
 	if (getn(value("history")) == 0)
 		return;
 	if (setintr)
 		sigrelse(SIGINT);
 	vp++;
-	if (*vp && eq(*vp, "-r")) {
-		rflg++;
-		vp++;
+	while (*vp[0] == '-') {
+		if (*vp && eq(*vp, "-c")) {
+			cflg++;
+			vp++;
+		}
+		if (*vp && eq(*vp, "-r")) {
+			rflg++;
+			vp++;
+		}
 	}
 	if (*vp)
 		n = getn(*vp);
 	else
 		n = 1000;
-	dohist1(Histlist.Hnext, &n, rflg);
+	dohist1(Histlist.Hnext, &n, rflg, cflg);
 }
 
-dohist1(hp, np, rflg)
+dohist1(hp, np, rflg, cflg)
 	struct Hist *hp;
 	int *np;
 {
@@ -98,21 +104,23 @@ top:
 	(*np)--;
 	hp->Href++;
 	if (rflg == 0) {
-		dohist1(hp->Hnext, np, rflg);
+		dohist1(hp->Hnext, np, rflg, cflg);
 		if (print)
-			phist(hp);
+			phist(hp, cflg);
 		return;
 	}
 	if (*np >= 0)
-		phist(hp);
+		phist(hp, cflg);
 	hp = hp->Hnext;
 	goto top;
 }
 
-phist(hp)
+phist(hp, cflg)
 	register struct Hist *hp;
+	int cflg;
 {
 
-	printf("%6d\t", hp->Hnum);
+	if (cflg == 0)
+		printf("%6d\t", hp->Hnum);
 	prlex(&hp->Hlex);
 }
