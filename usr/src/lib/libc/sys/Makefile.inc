@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	8.1 (Berkeley) %G%
+#	@(#)Makefile.inc	5.36 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -21,7 +21,7 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	geteuid.o getfh.o getfsstat.o getgid.o getgroups.o getitimer.o \
 	getpeername.o getpgrp.o getpid.o getppid.o getpriority.o \
 	getrlimit.o getrusage.o getsockname.o getsockopt.o gettimeofday.o \
-	getuid.o indir.o ioctl.o kill.o ktrace.o lfs_bmapv.o lfs_markv.o \
+	getuid.o ioctl.o kill.o ktrace.o lfs_bmapv.o lfs_markv.o \
 	lfs_segclean.o lfs_segwait.o link.o listen.o lstat.o \
 	madvise.o mincore.o mkdir.o mkfifo.o mknod.o mlock.o mount.o \
 	mprotect.o msync.o munlock.o munmap.o nfssvc.o open.o \
@@ -32,7 +32,7 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	setsid.o setsockopt.o settimeofday.o setuid.o shutdown.o \
 	sigaction.o sigaltstack.o socket.o socketpair.o stat.o statfs.o \
 	swapon.o symlink.o sync.o umask.o unlink.o unmount.o \
-	utimes.o vadvise.o wait4.o write.o writev.o __sysctl.o __indir.o
+	utimes.o vadvise.o wait4.o write.o writev.o __syscall.o __sysctl.o
 
 PSEUDO=	_exit.o _getlogin.o
 
@@ -70,7 +70,7 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 	getfh.0 getfsstat.0 getgid.0 getgroups.0 getitimer.0 getlogin.0 \
 	getpeername.0 getpgrp.0 getpid.0 getpriority.0 getrlimit.0 \
 	getrusage.0 getsockname.0 getsockopt.0 gettimeofday.0 getuid.0 \
-	indir.0 intro.0 ioctl.0 kill.0 ktrace.0 link.0 listen.0 lseek.0 \
+	intro.0 ioctl.0 kill.0 ktrace.0 link.0 listen.0 lseek.0 \
 	mkdir.0 mkfifo.0 mknod.0 madvise.0 mincore.0 mlock.0 mmap.0 \
 	mount.0 mprotect.0 msync.0 munmap.0 \
 	nfssvc.0 open.0 pathconf.0 pipe.0 profil.0 ptrace.0 quotactl.0 \
@@ -79,7 +79,7 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 bind.0 brk.0 chdir.0 chflags.0 \
 	select.0 send.0 setgroups.0 setpgid.0 setsid.0 setuid.0 shutdown.0 \
 	sigaction.0 sigpending.0 sigprocmask.0 sigreturn.0 sigaltstack.0 \
 	sigstack.0 sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 \
-	swapon.0 symlink.0 sync.0 truncate.0 umask.0 unlink.0 \
+	swapon.0 symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 \
 	utimes.0 vfork.0 wait.0 write.0
 
 MLINKS+=brk.2 sbrk.2
@@ -97,8 +97,6 @@ MLINKS+=getrlimit.2 setrlimit.2
 MLINKS+=getsockopt.2 setsockopt.2
 MLINKS+=gettimeofday.2 settimeofday.2
 MLINKS+=getuid.2 geteuid.2
-MLINKS+=indir.2 __indir.2
-MLINKS+=indir.2 syscall.2
 MLINKS+=intro.2 errno.2
 MLINKS+=lseek.2 seek.2
 MLINKS+=mlock.2 munlock.2
@@ -110,6 +108,7 @@ MLINKS+=send.2 sendmsg.2 send.2 sendto.2
 MLINKS+=setuid.2 setegid.2 setuid.2 seteuid.2 setuid.2 setgid.2
 MLINKS+=stat.2 fstat.2 stat.2 lstat.2
 MLINKS+=statfs.2 fstatfs.2
+MLINKS+=syscall.2 __syscall.2
 MLINKS+=truncate.2 ftruncate.2
 MLINKS+=wait.2 wait3.2 wait.2 wait4.2 wait.2 waitpid.2
 MLINKS+=write.2 writev.2
