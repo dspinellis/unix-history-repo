@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,10 +39,7 @@ main()
 	for (;;) {
 		if (stat(tempname, &begin))
 			pw_error(tempname, 1, 1);
-		if (pw_edit(0)) {
-			(void)fprintf(stderr, "vipw: edit failed\n");
-			pw_error((char *)NULL, 0, 1);
-		}
+		pw_edit(0);
 		if (stat(tempname, &end))
 			pw_error(tempname, 1, 1);
 		if (begin.st_mtime == end.st_mtime) {
