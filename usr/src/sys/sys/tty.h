@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	7.12 (Berkeley) %G%
+ *	@(#)tty.h	7.13 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
@@ -35,8 +35,8 @@ struct tty {
 	void	(*t_stop)();		/* device */
 #endif
 	int	(*t_param)();		/* device */
-	struct	proc *t_rsel;		/* tty */
-	struct	proc *t_wsel;
+	struct	selinfo t_rsel;		/* tty read/oob select */
+	struct	selinfo t_wsel;		/* tty write select */
 	caddr_t	T_LINEP; 		/* XXX */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */
@@ -93,8 +93,6 @@ extern	struct ttychars ttydefaults;
 #define	TS_TTSTOP	0x000100	/* output stopped by ctl-s */
 /* was	TS_HUPCLS	0x000200 	 * hang up upon last close */
 #define	TS_TBLOCK	0x000400	/* tandem queue blocked */
-#define	TS_RCOLL	0x000800	/* collision in read select */
-#define	TS_WCOLL	0x001000	/* collision in write select */
 #define	TS_ASYNC	0x004000	/* tty in async i/o mode */
 /* state for intra-line fancy editing work */
 #define	TS_BKSL		0x010000	/* state for lowercase \ work */
