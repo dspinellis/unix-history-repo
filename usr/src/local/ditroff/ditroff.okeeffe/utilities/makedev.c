@@ -1,5 +1,5 @@
 #ifdef lint
-static char sccsid[] = "@(#)makedev.c	1.1	(CWI)	1.1	85/03/27";
+static char sccsid[] = "@(#)makedev.c	1.2	(CWI)	1.2	85/10/24";
 #endif lint
 /*
   makedev:
@@ -78,7 +78,7 @@ static char sccsid[] = "@(#)makedev.c	1.1	(CWI)	1.1	85/03/27";
 #define	skipline(f)	while(getc(f) != '\n')
 
 struct	dev	dev;
-struct	font	font;
+struct	Font	font;
 
 #define	NSIZE	100	/* maximum number of sizes */
 short	size[NSIZE];
@@ -97,7 +97,11 @@ char	kern[FSIZE];	/* ascender+descender info */
 char	code[FSIZE];	/* actual device codes for a physical font */
 short	fcode[FSIZE];	/* MC:jna physical font number */
 
-#define	NFONT	10	/* max number of default fonts */
+#define	NFONT	60	/* max number of default fonts */
+				/*
+				 * 60 to support Versatec Berkeley style
+				 * filters. Aargh!
+				 */
 char	fname[NFONT][10];	/* temp space to hold default font names */
 
 int	fflag	= 0;	/* on if font table to be written */
@@ -161,7 +165,8 @@ char *argv[];
 			while (fscanf(fin, "%s", p) != EOF) {
 				chtab[dev.nchtab++] = p - chname;
 				if (dev.nchtab > NCH) {
-					fprintf("Too many charnames at %s\n",p);
+					fprintf(stderr,
+						"Too many charnames at %s\n",p);
 					exit(3);
 				}
 				for (i = 0; i < dev.nchtab - 1; i++)
@@ -188,8 +193,31 @@ char *argv[];
 		write(fdout, chname, dev.lchname);
 		totfont = 0;
 		for (i = 0; i < dev.nfonts; i++) {
-			totfont += dofont(fname[i]);
-			write(fdout, &font, sizeof(struct font));
+			/*
+			 * Get fontinfo ...
+			 */
+			dofont(fname[i]);
+			/*
+			 * ... and force space in troff allocated for the
+			 * biggest font possible and limited by makedev
+			 * to be loaded in troff by faking font.nwfont
+			 * (and bumping up the size of DESC.out) by
+			 * recalculating the padded out fontsize (v)
+			 *	jna
+			 */
+			font.nwfont = FSIZE;
+			v = sizeof(struct Font) + 3 * FSIZE + dev.nchtab + 128-32;
+				/*
+				 * This is not correct, we can still
+				 * have too less space if the default
+				 * mounted fonts does not contain a
+				 * fonttab, but I don't want to change
+				 * troff on the moment...
+				 */
+			if(font.fonttab == 1)
+				v += FSIZE * sizeof( short );
+			totfont += v;
+			write(fdout, &font, sizeof(struct Font));
 			write(fdout, width, font.nwfont & BMASK);
 			write(fdout, kern, font.nwfont & BMASK);
 			write(fdout, code, font.nwfont & BMASK);
@@ -344,7 +372,7 @@ printf(buf);
 		fprintf(stderr, "Keyword fontname not specified\n");
 	fclose(fin);
 
-	write(fdout, &font, sizeof(struct font));
+	write(fdout, &font, sizeof(struct Font));
 	write(fdout, width, font.nwfont & BMASK);
 	write(fdout, kern, font.nwfont & BMASK);
 	write(fdout, code, font.nwfont & BMASK);
@@ -352,7 +380,7 @@ printf(buf);
 	if(font.fonttab == 1)
 		write(fdout, fcode, (font.nwfont & BMASK) * sizeof(fcode[0]));
 	close(fdout);
-	v = sizeof(struct font) + 3 * n + dev.nchtab + 128-32;
+	v = sizeof(struct Font) + 3 * n + dev.nchtab + 128-32;
 	if(font.fonttab == 1)
 		v += n * sizeof( short );
 	fprintf(stderr, "%3s: %3d chars, width %3d, size %3d\n",
