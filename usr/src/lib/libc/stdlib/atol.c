@@ -16,26 +16,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)atol.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atol.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <ctype.h>
+#include <stdio.h>
 
 long
-atol(ascii)
-	register char *ascii;
+atol(str)
+	char *str;
 {
-	register long val;
-	int negative = 0;
+	long strtol();
 
-	for (; isascii(*ascii) && isspace(*ascii); ++ascii);
-	if (*ascii == '+')
-		++ascii;
-	else if (*ascii == '-') {
-		++ascii;
-		negative = 1;
-	}
-	for (val = 0; isascii(*ascii) && isdigit(*ascii); ++ascii)
-		val = val * 10 + *ascii - '0';
-	return(negative ? -val : val);
+	return(strtol(str, (char **)NULL, 10));
 }
