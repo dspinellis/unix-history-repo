@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.67		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.68		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -190,6 +190,7 @@ struct envelope
 	ADDRESS	*e_sendqueue;	/* list of message recipients */
 	long	e_msgsize;	/* size of the message in bytes */
 	int	(*e_putfunc)();	/* function used to put the message */
+	short	e_class;	/* message class (priority, junk, etc.) */
 };
 
 typedef struct envelope	ENVELOPE;
@@ -220,14 +221,19 @@ EXTERN WORK	*WorkQ;			/* queue of things to be done */
 **	has been sitting around.  Each priority point is worth
 **	WKPRIFACT bytes of message, and each time we reprocess a
 **	message the size gets reduced by WKTIMEFACT.
+**
+**	The "class" is this number, unadjusted by the age or size of
+**	this message.  Classes with negative representations will have
+**	error messages thrown away if they are not local.
 */
 
-# define PRI_ALERT	20
-# define PRI_QUICK	10
-# define PRI_FIRSTCL	3
+# define PRI_ALERT	50
+# define PRI_QUICK	30
+# define PRI_FIRSTCL	10
 # define PRI_NORMAL	0
 # define PRI_SECONDCL	-10
-# define PRI_THIRDCL	-20
+# define PRI_THIRDCL	-40
+# define PRI_JUNK	-100
 
 # define WKPRIFACT	1800		/* bytes each pri point is worth */
 # define WKTIMEFACT	400		/* bytes each time unit is worth */
