@@ -1,0 +1,50 @@
+This GNU tar 1.10.  Please send bug reports, etc., to
+bug-gnu-utils@prep.ai.mit.edu.  
+
+This is GNU tar.  It is based heavily on John Gilmore's public domain
+tar, but with added features.  The manual is currently being written.
+An old manual, surely riddled with errors, is in tar.texinfo.  Please
+don't send in bug reports about that manual.  In particular, the
+mechanism for doing incremental dumps has been significantly changed.
+
+The mt program is in the GNU cpio distribution.
+
+Various people have been having problems using floppies on a NeXT.
+I've gotten conflicting reports about what should be done to solve the
+problems, and we have no way to test it ourselves.  If you don't have
+"rename" in your C library, you will need to find an implementation.
+I'm not sure if I want to roll in the GNU implementation into tar.
+
+	-mib
+
+User-visible changes since 1.09:
+
+Filename to -G is optional.  -C works right.  
+Names +newer and +newer-mtime work right.
+
+-g is now +incremental
+-G is now +listed-incremental
+
+Sparse files now work correctly.
+
++volume is now called +label.
+
++exclude now takes a filename argument, and +exclude-from does what
++exclude used to do.
+
+Exit status is now correct.
+
++totals keeps track of total I/O and prints it when tar exits.
+
+When using +label with +extract, the label is now a regexp.
+
+New option +tape-length (-L) does multi-volume handling like BSD dump:
+you tell tar how big the tape is and it will prompt at that point
+instead of waiting for a write error.
+
+New backup scripts level-0 and level-1 which might be useful to
+people.  They use a file "backup-specs" for information, and shouldn't
+need local modification.  These are what we use to do all our backups
+at the FSF.
+
+
