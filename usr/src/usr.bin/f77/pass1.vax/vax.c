@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vax.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)vax.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -403,32 +403,32 @@ register Constp cp;
   switch (cp->vtype)
     {
     case TYSHORT:
-      *((short *) shrt) = (short) cp->const.ci;
+      *((short *) shrt) = (short) cp->constant.ci;
       return (shrt);
 
     case TYLONG:
     case TYLOGICAL:
     case TYREAL:
-      *((int *) lng) = cp->const.ci;
+      *((int *) lng) = cp->constant.ci;
       return (lng);
 
     case TYDREAL:
       ip = (int *) quad;
-      jp = (int *) &(cp->const.cd[0]);
+      jp = (int *) &(cp->constant.cd[0]);
       ip[0] = jp[0];
       ip[1] = jp[1];
       return (quad);
 
     case TYCOMPLEX:
       ip = (int *) quad;
-      jp = (int *) &(cp->const.cd[0]);
+      jp = (int *) &(cp->constant.cd[0]);
       ip[0] = jp[0];
       ip[1] = jp[2];
       return (quad);
 
     case TYDCOMPLEX:
       ip = (int *) oct;
-      jp = (int *) &(cp->const.cd[0]);
+      jp = (int *) &(cp->constant.cd[0]);
       *ip++ = *jp++;
       *ip++ = *jp++;
       *ip++ = *jp++;
@@ -917,7 +917,7 @@ if (anylocals == YES)
 if(argvec)
 	{
 	if (argvec->tag != TADDR) badtag ("prolog",argvec->tag);
-	argloc = argvec->memoffset->constblock.const.ci + SZINT;
+	argloc = argvec->memoffset->constblock.constant.ci + SZINT;
 			/* first slot holds count */
 	if(proctype == TYCHAR)
 		{
@@ -979,7 +979,7 @@ for(p = ep->arglist ; p ; p = p->nextp)
 		size = typesize[ q->vtype ];
 		if(q->vtype == TYCHAR)
 			if( ISICON(q->vleng) )
-				size *= q->vleng->constblock.const.ci;
+				size *= q->vleng->constblock.constant.ci;
 			else
 				size = -1;
 
@@ -1009,13 +1009,13 @@ for(p = ep->arglist ; p ; p = p->nextp)
 					p->datap->nameblock.vardesc.varno +
 						ARGOFFSET);
 				}
-			else if(dp->baseoffset->constblock.const.ci != 0)
+			else if(dp->baseoffset->constblock.constant.ci != 0)
 				{
 				char buff[25];
 				if(size > 0)
 					{
 					sprintf(buff, "\tsubl2\t$%ld,%d(ap)",
-						dp->baseoffset->constblock.const.ci * size,
+						dp->baseoffset->constblock.constant.ci * size,
 						p->datap->nameblock.vardesc.varno +
 							ARGOFFSET);
 					}

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optcse.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optcse.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -429,8 +429,8 @@ expptr ep1,ep2;
 			    if (ep1->addrblock.memno == ep2->addrblock.memno &&
 				ISCONST(ep1->addrblock.memoffset) &&
 				ISCONST(ep2->addrblock.memoffset) &&
-				ep1->addrblock.memoffset->constblock.const.ci ==
-				ep2->addrblock.memoffset->constblock.const.ci ) {
+				ep1->addrblock.memoffset->constblock.constant.ci ==
+				ep2->addrblock.memoffset->constblock.constant.ci ) {
 				    return(TRUE); 
 			    }
 			    break;
@@ -447,8 +447,8 @@ expptr ep1,ep2;
 		    (ep2->constblock.vtype)  ) 
 		{
 			union Constant *ap,*bp;
-			ap= &ep1->constblock.const;
-			bp= &ep2->constblock.const;
+			ap= &ep1->constblock.constant;
+			bp= &ep2->constblock.constant;
 			switch(ep1->constblock.vtype)
 
 			{

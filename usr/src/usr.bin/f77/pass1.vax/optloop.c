@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optloop.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optloop.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -635,11 +635,11 @@ expptr p;
     return NO;
 
   if (ISINT(p->constblock.vtype))
-    if (abs(p->constblock.const.ci) <= 1)
+    if (abs(p->constblock.constant.ci) <= 1)
       return YES;
 
   if (ISREAL(p->constblock.vtype))
-    if (abs(p->constblock.const.cd[0]) <= 1.0)
+    if (abs(p->constblock.constant.cd[0]) <= 1.0)
       return YES;
 
   return NO;

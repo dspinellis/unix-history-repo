@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -538,13 +538,13 @@ impldcl( np = mkname(VL, nounder(XL, ep->entryname->extname) ) );
 type = np->vtype;
 if(proctype == TYUNKNOWN)
 	if( (proctype = type) == TYCHAR)
-		procleng = (np->vleng ? np->vleng->constblock.const.ci : (ftnint) (-1));
+		procleng = (np->vleng ? np->vleng->constblock.constant.ci : (ftnint) (-1));
 
 if(proctype == TYCHAR)
 	{
 	if(type != TYCHAR)
 		err("noncharacter entry of character function");
-	else if( (np->vleng ? np->vleng->constblock.const.ci : (ftnint) (-1)) != procleng)
+	else if( (np->vleng ? np->vleng->constblock.constant.ci : (ftnint) (-1)) != procleng)
 		err("mismatched character entry lengths");
 	}
 else if(type == TYCHAR)
@@ -579,7 +579,7 @@ else if(type != TYSUBR)
 	if(retslot == NULL)
 		retslot = autovar(1, TYDREAL, PNULL);
 	np->vstg = STGAUTO;
-	np->voffset = retslot->memoffset->constblock.const.ci;
+	np->voffset = retslot->memoffset->constblock.constant.ci;
 	}
 
 for(p = ep->arglist ; p ; p = p->nextp)
@@ -765,11 +765,11 @@ if(leng <= 0)
 	return(-1);
 if(q->vdim)
 	if( ISICON(q->vdim->nelt) )
-		leng *= q->vdim->nelt->constblock.const.ci;
+		leng *= q->vdim->nelt->constblock.constant.ci;
 	else	return(-1);
 if(q->vleng)
 	if( ISICON(q->vleng) )
-		leng *= q->vleng->constblock.const.ci;
+		leng *= q->vleng->constblock.constant.ci;
 	else 	return(-1);
 return(leng);
 }
@@ -832,7 +832,7 @@ for(q = np->varxptr.namelist ; q ; q = q->nextp)
 		prconi(asmfile, TYSHORT, type );
 		prconi(asmfile, TYSHORT,
 			type==TYCHAR ?
-			    (v->vleng->constblock.const.ci) :
+			    (v->vleng->constblock.constant.ci) :
 					(ftnint) typesize[type]);
 		if(v->vdim)
 			{
@@ -863,12 +863,12 @@ if(dimoffset > 0)
 			int i;
 			prconi(asmfile, TYINT, (ftnint) (dp->ndim) );
 			prconi(asmfile, TYINT,
-				(ftnint) (dp->nelt->constblock.const.ci) );
+				(ftnint) (dp->nelt->constblock.constant.ci) );
 			prconi(asmfile, TYINT,
-				(ftnint) (dp->baseoffset->constblock.const.ci));
+				(ftnint) (dp->baseoffset->constblock.constant.ci));
 			for(i=0; i<dp->ndim ; ++i)
 				prconi(asmfile, TYINT,
-					dp->dims[i].dimsize->constblock.const.ci);
+					dp->dims[i].dimsize->constblock.constant.ci);
 			}
 	}
 
@@ -905,11 +905,11 @@ for(p = extsymtab ; p<nextext ; ++p)
 			v->voffset = p->extleng;
 			v->vardesc.varno = p - extsymtab;
 			if(type == TYCHAR)
-				size = v->vleng->constblock.const.ci;
+				size = v->vleng->constblock.constant.ci;
 			else	size = typesize[type];
 			if(t = v->vdim)
 				if( (neltp = t->nelt) && ISCONST(neltp) )
-					size *= neltp->constblock.const.ci;
+					size *= neltp->constblock.constant.ci;
 				else
 					dclerr("adjustable array in common", v);
 			p->extleng += size;
@@ -995,7 +995,7 @@ register Addrp q;
 
 if(lengp)
 	if( ISICON(lengp) )
-		leng = lengp->constblock.const.ci;
+		leng = lengp->constblock.constant.ci;
 	else	{
 		fatal("automatic variable of nonconstant length");
 		}
@@ -1050,7 +1050,7 @@ if(type==TYUNKNOWN || type==TYERROR)
 
 if(type==TYCHAR)
 	if( ISICON(lengp) )
-		leng = lengp->constblock.const.ci;
+		leng = lengp->constblock.constant.ci;
 	else	{
 		err("adjustable length");
 		return( (Tempp) errnode() );
@@ -1150,7 +1150,7 @@ if(type==TYUNKNOWN || type==TYERROR)
 
 if(type==TYCHAR)
 	if( ISICON(lengp) )
-		leng = lengp->constblock.const.ci;
+		leng = lengp->constblock.constant.ci;
 	else	{
 		err("adjustable length");
 		return( (Addrp) errnode() );
@@ -1171,7 +1171,7 @@ for(oldp=CHNULL, p=templist  ;  p  ;  oldp=p, p=p->nextp)
 	{
 	q = (Addrp) (p->datap);
 	if(q->vtype==type && q->ntempelt==nelt &&
-	    (type!=TYCHAR || q->vleng->constblock.const.ci==leng) )
+	    (type!=TYCHAR || q->vleng->constblock.constant.ci==leng) )
 		{
 		if(oldp)
 			oldp->nextp = p->nextp;
@@ -1181,7 +1181,7 @@ for(oldp=CHNULL, p=templist  ;  p  ;  oldp=p, p=p->nextp)
 
 		if (debugflag[14])
 			fprintf(diagfile,"mkaltmpn reusing offset %d\n",
-				q->memoffset->constblock.const.ci);
+				q->memoffset->constblock.constant.ci);
 		return(q);
 		}
 	}
@@ -1191,7 +1191,7 @@ q->istemp = YES;
 
 if (debugflag[14])
 	fprintf(diagfile,"mkaltmpn new offset %d\n",
-		q->memoffset->constblock.const.ci);
+		q->memoffset->constblock.constant.ci);
 return(q);
 }
 
@@ -1220,7 +1220,7 @@ expptr lengp;
   if (type == TYCHAR)
     {
       if (ISICON(lengp))
-	leng = lengp->constblock.const.ci;
+	leng = lengp->constblock.constant.ci;
       else
 	{
 	  err("adjustable length");
@@ -1235,7 +1235,7 @@ expptr lengp;
     {
       q = (Addrp) (p->datap);
       if (q->vtype == type
-	  && (type != TYCHAR || q->vleng->constblock.const.ci == leng))
+	  && (type != TYCHAR || q->vleng->constblock.constant.ci == leng))
 	{
 	  if (oldp)
 	    oldp->nextp = p->nextp;
@@ -1335,7 +1335,7 @@ else if(v->vtype == TYUNKNOWN)
 			}
 		}
 	}
-else if(v->vtype!=type || (type==TYCHAR && v->vleng->constblock.const.ci!=length) )
+else if(v->vtype!=type || (type==TYCHAR && v->vleng->constblock.constant.ci!=length) )
 	dclerr("incompatible type declarations", v);
 }
 
@@ -1512,7 +1512,7 @@ for(i=0 ; i<nd ; ++i)
 			   frexpr(q);
 			   q = ICON(0);
 			   }
-			if ( q->constblock.const.ci <= 0)
+			if ( q->constblock.constant.ci <= 0)
 			   {
 			   dclerr("array bounds out of sequence", v);
 			   frexpr(q);

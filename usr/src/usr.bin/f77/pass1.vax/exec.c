@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -383,11 +383,11 @@ if(p)
 		}
 	else if( ISINT(p->constblock.vtype) )
 		{
-		q = convic(p->constblock.const.ci);
+		q = convic(p->constblock.constant.ci);
 		n = strlen(q);
 		if(n > 0)
 			{
-			p->constblock.const.ccp = copyn(n, q);
+			p->constblock.constant.ccp = copyn(n, q);
 			p->constblock.vtype = TYCHAR;
 			p->constblock.vleng = (expptr) ICON(n);
 			}
@@ -415,9 +415,9 @@ else
 #define DOLIMIT	par[1]
 #define DOINCR	par[2]
 
-#define CONSTINIT  const[0]
-#define CONSTLIMIT const[1]
-#define CONSTINCR  const[2]
+#define CONSTINIT  constant[0]
+#define CONSTLIMIT constant[1]
+#define CONSTINCR  constant[2]
 
 #define VARSTEP	0
 #define POSSTEP	1
@@ -437,7 +437,7 @@ chainp spec;
   int dotype, incsign;
   Addrp dovarp, dostgp;
   expptr par[3];
-  expptr const[3];
+  expptr constant[3];
   Slotp doslot;
 
   pushctl(CTLDO);
@@ -471,11 +471,11 @@ chainp spec;
 
 
       if (ISCONST(q))
-	const[i] = mkconv(dotype, q);
+	constant[i] = mkconv(dotype, q);
       else
 	{
 	  frexpr(q);
-	  const[i] = NULL;
+	  constant[i] = NULL;
 	}
 
       par[i++] = mkconv(dotype, p);

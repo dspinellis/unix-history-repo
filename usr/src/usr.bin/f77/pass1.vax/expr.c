@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.8 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -183,7 +183,7 @@ register int l;
 register Constp  p;
 
 p = mkconst(TYLOGICAL);
-p->const.ci = l;
+p->constant.ci = l;
 return( (expptr) p );
 }
 
@@ -206,7 +206,7 @@ if(tyint == TYSHORT)
 else
   usetype = tyint;
 p = mkconst(usetype);
-p->const.ci = l;
+p->constant.ci = l;
 return( (expptr) p );
 }
 
@@ -218,7 +218,7 @@ register int l;
 register Constp p;
 
 p = mkconst(TYADDR);
-p->const.ci = l;
+p->constant.ci = l;
 return( (expptr) p );
 }
 
@@ -242,7 +242,7 @@ if(t == TYREAL)
       }
   }
 p = mkconst(t);
-p->const.cd[0] = d;
+p->constant.cd[0] = d;
 return( (expptr) p );
 }
 
@@ -295,7 +295,7 @@ register char *s;
 
   p = mkconst(TYBITSTR);
   p->vleng = ICON(size);
-  p->const.ccp = bp;
+  p->constant.ccp = bp;
 
   return ((expptr) p);
 }
@@ -311,7 +311,7 @@ register char *s;
 
 p = mkconst(TYCHAR);
 p->vleng = ICON(l);
-p->const.ccp = s = (char *) ckalloc(l);
+p->constant.ccp = s = (char *) ckalloc(l);
 while(--l >= 0)
 	*s++ = *v++;
 return( (expptr) p );
@@ -331,11 +331,11 @@ if( ISCONST(realp) && ISNUMERIC(rtype) && ISCONST(imagp) && ISNUMERIC(itype) )
 	{
 	p = mkconst( (rtype==TYDREAL||itype==TYDREAL) ? TYDCOMPLEX : TYCOMPLEX);
 	if( ISINT(rtype) )
-		p->const.cd[0] = realp->constblock.const.ci;
-	else	p->const.cd[0] = realp->constblock.const.cd[0];
+		p->constant.cd[0] = realp->constblock.constant.ci;
+	else	p->constant.cd[0] = realp->constblock.constant.cd[0];
 	if( ISINT(itype) )
-		p->const.cd[1] = imagp->constblock.const.ci;
-	else	p->const.cd[1] = imagp->constblock.const.cd[0];
+		p->constant.cd[1] = imagp->constblock.constant.ci;
+	else	p->constant.cd[1] = imagp->constblock.constant.cd[0];
 	}
 else
 	{
@@ -407,8 +407,8 @@ if( pt == TYADDR && ISNUMERIC(t) )
 if( ISCONST(p) && pt!=TYADDR)
 	{
 	q = (expptr) mkconst(t);
-	consconv(t, &(q->constblock.const),
-		p->constblock.vtype, &(p->constblock.const) );
+	consconv(t, &(q->constblock.constant),
+		p->constblock.vtype, &(p->constblock.constant) );
 	frexpr(p);
 	}
 #if TARGET == PDP11
@@ -447,8 +447,8 @@ if(t == pt)
 else if( ISCONST(p) && pt!=TYADDR)
 	{
 	q = (expptr) mkconst(t);
-	consconv(t, &(q->constblock.const),
-		p->constblock.vtype, &(p->constblock.const) );
+	consconv(t, &(q->constblock.constant),
+		p->constblock.vtype, &(p->constblock.constant) );
 	frexpr(p);
 	}
 #if TARGET == PDP11
@@ -523,9 +523,9 @@ switch(tag)
 	case TCONST:
 		if(e->constblock.vtype == TYCHAR)
 			{
-			e->constblock.const.ccp =
-				copyn(1+strlen(e->constblock.const.ccp),
-					e->constblock.const.ccp);
+			e->constblock.constant.ccp =
+				copyn(1+strlen(e->constblock.constant.ccp),
+					e->constblock.constant.ccp);
 			e->constblock.vleng =
 				(expptr) cpexpr(e->constblock.vleng);
 			}
@@ -590,7 +590,7 @@ switch(p->tag)
 			case TYBITSTR:
 			case TYCHAR:
 			case TYHOLLERITH:
-				free( (charptr) (p->constblock.const.ccp) );
+				free( (charptr) (p->constblock.constant.ccp) );
 				frexpr(p->constblock.vleng);
 			}
 		break;
@@ -1562,10 +1562,10 @@ checkvar = NULL;
 checkcond = NULL;
 if( ISICON(p) )
 	{
-	if(p->constblock.const.ci < 0)
+	if(p->constblock.constant.ci < 0)
 		goto badsub;
 	if( ISICON(dimp->nelt) )
-		if(p->constblock.const.ci < dimp->nelt->constblock.const.ci)
+		if(p->constblock.constant.ci < dimp->nelt->constblock.constant.ci)
 			return(p);
 		else
 			goto badsub;
@@ -1646,7 +1646,7 @@ switch( p->vstg)
 			{
 			t->vleng = (expptr) cpexpr(p->vleng);
 			if( ISICON(t->vleng) )
-				t->varleng = t->vleng->constblock.const.ci;
+				t->varleng = t->vleng->constblock.constant.ci;
 			}
 		if (p->vstg == STGBSS)
 			t->varsize = p->varsize;
@@ -1775,7 +1775,7 @@ switch(v->vstg)
 			{
 			neltp = t->nelt;
 			if (neltp && ISICON(neltp))
-				nelt = neltp->constblock.const.ci;
+				nelt = neltp->constblock.constant.ci;
 			else
 				dclerr("improperly dimensioned array", v);
 			}
@@ -1787,7 +1787,7 @@ switch(v->vstg)
 				eltsize = typesize[TYCHAR];
 			else if (ISICON(v->vleng))
 				eltsize = typesize[TYCHAR] *
-					v->vleng->constblock.const.ci;
+					v->vleng->constblock.constant.ci;
 			else if (v->vleng->tag != TERROR)
 				{
 				errstr("nonconstant string length on %s",
@@ -1806,12 +1806,12 @@ switch(v->vstg)
 		nelt = 1;
 		if(t = v->vdim)
 			if( (neltp = t->nelt) && ISCONST(neltp) )
-				nelt = neltp->constblock.const.ci;
+				nelt = neltp->constblock.constant.ci;
 			else
 				dclerr("adjustable automatic array", v);
 		p = autovar(nelt, v->vtype, v->vleng);
 		v->vardesc.varno = p->memno;
-		v->voffset = p->memoffset->constblock.const.ci;
+		v->voffset = p->memoffset->constblock.constant.ci;
 		frexpr(p);
 		break;
 
@@ -1861,7 +1861,7 @@ if( isupper(c) )
 return(c - 'a');
 }
 
-#define ICONEQ(z, c)  (ISICON(z) && z->constblock.const.ci==c)
+#define ICONEQ(z, c)  (ISICON(z) && z->constblock.constant.ci==c)
 #define COMMUTE	{ e = lp;  lp = rp;  rp = e; }
 
 
@@ -1948,7 +1948,7 @@ switch(opcode)
 
 		if( ISICON(rp) )
 			{
-			if(rp->constblock.const.ci == 0)
+			if(rp->constblock.constant.ci == 0)
 				{
 				if(etype == TYUNKNOWN)
 					break;
@@ -1988,10 +1988,10 @@ switch(opcode)
 	mulop:
 		if( ISICON(rp) )
 			{
-			if(rp->constblock.const.ci == 1)
+			if(rp->constblock.constant.ci == 1)
 				goto retleft;
 
-			if(rp->constblock.const.ci == -1)
+			if(rp->constblock.constant.ci == -1)
 				{
 				frexpr(rp);
 				return( mkexpr(OPNEG, lp, PNULL) );
@@ -2003,8 +2003,8 @@ switch(opcode)
 			if(opcode == OPSTAR)
 				e = mkexpr(OPSTAR, lp->exprblock.rightp, rp);
 			else  if(ISICON(rp) &&
-				(lp->exprblock.rightp->constblock.const.ci %
-					rp->constblock.const.ci) == 0)
+				(lp->exprblock.rightp->constblock.constant.ci %
+					rp->constblock.constant.ci) == 0)
 				e = mkexpr(OPSLASH, lp->exprblock.rightp, rp);
 			else	break;
 
@@ -2036,7 +2036,7 @@ switch(opcode)
 	addop:
 		if( ISICON(rp) )
 			{
-			if(rp->constblock.const.ci == 0)
+			if(rp->constblock.constant.ci == 0)
 				goto retleft;
 			if( ISPLUSOP(lp) && ISICON(lp->exprblock.rightp) )
 				{
@@ -2087,7 +2087,7 @@ switch(opcode)
 
 		if( ISCONST(rp) )
 			{
-			if(rp->constblock.const.ci == 0)
+			if(rp->constblock.constant.ci == 0)
 				if(opcode == OPOR)
 					goto retleft;
 				else
@@ -2100,7 +2100,7 @@ switch(opcode)
 	case OPLSHIFT:
 		if (ISICON(rp))
 			{
-			if (rp->constblock.const.ci == 0)
+			if (rp->constblock.constant.ci == 0)
 				goto retleft;
 			if ((lp->tag == TEXPR) &&
 			    ((lp->exprblock.opcode == OPPLUS) ||
@@ -2399,11 +2399,11 @@ if(rp == 0)
 	switch(opcode)
 		{
 		case OPNOT:
-			lp->constblock.const.ci = ! lp->constblock.const.ci;
+			lp->constblock.constant.ci = ! lp->constblock.constant.ci;
 			return(lp);
 
 		case OPBITNOT:
-			lp->constblock.const.ci = ~ lp->constblock.const.ci;
+			lp->constblock.constant.ci = ~ lp->constblock.constant.ci;
 			return(lp);
 
 		case OPNEG:
@@ -2434,59 +2434,59 @@ switch(opcode)
 		return(e);
 
 	case OPAND:
-		p->const.ci = lp->constblock.const.ci &&
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci &&
+				rp->constblock.constant.ci;
 		break;
 
 	case OPOR:
-		p->const.ci = lp->constblock.const.ci ||
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci ||
+				rp->constblock.constant.ci;
 		break;
 
 	case OPEQV:
-		p->const.ci = lp->constblock.const.ci ==
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci ==
+				rp->constblock.constant.ci;
 		break;
 
 	case OPNEQV:
-		p->const.ci = lp->constblock.const.ci !=
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci !=
+				rp->constblock.constant.ci;
 		break;
 
 	case OPBITAND:
-		p->const.ci = lp->constblock.const.ci &
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci &
+				rp->constblock.constant.ci;
 		break;
 
 	case OPBITOR:
-		p->const.ci = lp->constblock.const.ci |
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci |
+				rp->constblock.constant.ci;
 		break;
 
 	case OPBITXOR:
-		p->const.ci = lp->constblock.const.ci ^
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci ^
+				rp->constblock.constant.ci;
 		break;
 
 	case OPLSHIFT:
-		p->const.ci = lp->constblock.const.ci <<
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci <<
+				rp->constblock.constant.ci;
 		break;
 
 	case OPRSHIFT:
-		p->const.ci = lp->constblock.const.ci >>
-				rp->constblock.const.ci;
+		p->constant.ci = lp->constblock.constant.ci >>
+				rp->constblock.constant.ci;
 		break;
 
 	case OPCONCAT:
-		ll = lp->constblock.vleng->constblock.const.ci;
-		lr = rp->constblock.vleng->constblock.const.ci;
-		p->const.ccp = q = (char *) ckalloc(ll+lr);
+		ll = lp->constblock.vleng->constblock.constant.ci;
+		lr = rp->constblock.vleng->constblock.constant.ci;
+		p->constant.ccp = q = (char *) ckalloc(ll+lr);
 		p->vleng = ICON(ll+lr);
-		s = lp->constblock.const.ccp;
+		s = lp->constblock.constant.ccp;
 		for(i = 0 ; i < ll ; ++i)
 			*q++ = *s++;
-		s = rp->constblock.const.ccp;
+		s = rp->constblock.constant.ccp;
 		for(i = 0; i < lr; ++i)
 			*q++ = *s++;
 		break;
@@ -2495,26 +2495,26 @@ switch(opcode)
 	case OPPOWER:
 		if( ! ISINT(rtype) )
 			return(e);
-		conspower(&(p->const), lp, rp->constblock.const.ci);
+		conspower(&(p->constant), lp, rp->constblock.constant.ci);
 		break;
 
 
 	default:
 		if(ltype == TYCHAR)
 			{
-			lcon.ci = cmpstr(lp->constblock.const.ccp,
-					rp->constblock.const.ccp,
-					lp->constblock.vleng->constblock.const.ci,
-					rp->constblock.vleng->constblock.const.ci);
+			lcon.ci = cmpstr(lp->constblock.constant.ccp,
+					rp->constblock.constant.ccp,
+					lp->constblock.vleng->constblock.constant.ci,
+					rp->constblock.vleng->constblock.constant.ci);
 			rcon.ci = 0;
 			mtype = tyint;
 			}
 		else	{
 			mtype = maxtype(ltype, rtype);
-			consconv(mtype, &lcon, ltype, &(lp->constblock.const) );
-			consconv(mtype, &rcon, rtype, &(rp->constblock.const) );
+			consconv(mtype, &lcon, ltype, &(lp->constblock.constant) );
+			consconv(mtype, &rcon, rtype, &(rp->constblock.constant) );
 			}
-		consbinop(opcode, mtype, &(p->const), &lcon, &rcon);
+		consbinop(opcode, mtype, &(p->constant), &lcon, &rcon);
 		break;
 	}
 
@@ -2591,16 +2591,16 @@ switch(p->vtype)
 	{
 	case TYSHORT:
 	case TYLONG:
-		p->const.ci = - p->const.ci;
+		p->constant.ci = - p->constant.ci;
 		break;
 
 	case TYCOMPLEX:
 	case TYDCOMPLEX:
-		p->const.cd[1] = - p->const.cd[1];
+		p->constant.cd[1] = - p->constant.cd[1];
 		/* fall through and do the real parts */
 	case TYREAL:
 	case TYDREAL:
-		p->const.cd[0] = - p->const.cd[0];
+		p->constant.cd[0] = - p->constant.cd[0];
 		break;
 	default:
 		badtype("consnegop", p->vtype);
@@ -2640,11 +2640,11 @@ if(n < 0)
 	{
 	if( ISINT(type) )
 		{
-		if (ap->const.ci == 0)
+		if (ap->constant.ci == 0)
 			err("zero raised to a negative power");
-		else if (ap->const.ci == 1)
+		else if (ap->constant.ci == 1)
 			return;
-		else if (ap->const.ci == -1)
+		else if (ap->constant.ci == -1)
 			{
 			if (n < -2)
 				n = n + 2;
@@ -2657,10 +2657,10 @@ if(n < 0)
 		return;
 		}
 	n = - n;
-	consbinop(OPSLASH, type, &x, powp, &(ap->const));
+	consbinop(OPSLASH, type, &x, powp, &(ap->constant));
 	}
 else
-	consbinop(OPSTAR, type, &x, powp, &(ap->const));
+	consbinop(OPSTAR, type, &x, powp, &(ap->constant));
 
 for( ; ; )
 	{
@@ -2844,19 +2844,19 @@ switch(p->headblock.vtype)
 	{
 	case TYSHORT:
 	case TYLONG:
-		if(p->constblock.const.ci > 0) return(1);
-		if(p->constblock.const.ci < 0) return(-1);
+		if(p->constblock.constant.ci > 0) return(1);
+		if(p->constblock.constant.ci < 0) return(-1);
 		return(0);
 
 	case TYREAL:
 	case TYDREAL:
-		if(p->constblock.const.cd[0] > 0) return(1);
-		if(p->constblock.const.cd[0] < 0) return(-1);
+		if(p->constblock.constant.cd[0] > 0) return(1);
+		if(p->constblock.constant.cd[0] < 0) return(-1);
 		return(0);
 
 	case TYCOMPLEX:
 	case TYDCOMPLEX:
-		return(p->constblock.const.cd[0]!=0 || p->constblock.const.cd[1]!=0);
+		return(p->constblock.constant.cd[0]!=0 || p->constblock.constant.cd[1]!=0);
 
 	default:
 		badtype( "conssgn", p->constblock.vtype);
@@ -2882,7 +2882,7 @@ rtype = rp->headblock.vtype;
 
 if(ISICON(rp))
 	{
-	if(rp->constblock.const.ci == 0)
+	if(rp->constblock.constant.ci == 0)
 		{
 		frexpr(p);
 		if( ISINT(ltype) )
@@ -2894,7 +2894,7 @@ if(ISICON(rp))
 			return( pp );
 			}
 		}
-	if(rp->constblock.const.ci < 0)
+	if(rp->constblock.constant.ci < 0)
 		{
 		if( ISINT(ltype) )
 			{
@@ -2902,10 +2902,10 @@ if(ISICON(rp))
 			err("integer**negative");
 			return( errnode() );
 			}
-		rp->constblock.const.ci = - rp->constblock.const.ci;
+		rp->constblock.constant.ci = - rp->constblock.constant.ci;
 		p->exprblock.leftp = lp = fixexpr(mkexpr(OPSLASH, ICON(1), lp));
 		}
-	if(rp->constblock.const.ci == 1)
+	if(rp->constblock.constant.ci == 1)
 		{
 		frexpr(rp);
 		free( (charptr) p );
@@ -2998,7 +2998,7 @@ expptr e;
 	if (! ISCONST (e))
 		return (0);
 
-	val = e->constblock.const.ci;
+	val = e->constblock.constant.ci;
 	switch (val)
 		{
 		case 2:		res = 1; break;

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)paramset.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)paramset.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -71,11 +71,11 @@ expptr param_item_vl;
 	  if (type == TYCHAR)
 	    {
 	      if (param_item_nm->vleng != NULL)
-		len = param_item_nm->vleng->constblock.const.ci;
+		len = param_item_nm->vleng->constblock.constant.ci;
 	      else if (ISCONST(param_item_vl) &&
 			param_item_vl->constblock.vtype == TYCHAR)
 		len = param_item_vl->constblock.vleng->
-			constblock.const.ci;
+			constblock.constant.ci;
 	      else
 		len = 1;
 	    }
