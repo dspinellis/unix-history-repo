@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)copy.c	4.4	(Berkeley)	%G%";
+static char sccsid[] = "@(#)copy.c	4.5	(Berkeley)	%G%";
 #endif not lint
 
 #include "stdio.h"
@@ -22,10 +22,11 @@ FILE *fin;
 	char s[100], t[100], s1[100], nm[30];
 	char *r, *tod, c;
 	int *p, tv[2];
-	extern int intrpt(), *action();
-	extern char *wordb();
+	int *action();
 	int nmatch = 0;
 	long mark;
+	extern void intrpt();
+	extern char *wordb();
 
 	if (subdir[0]==0)
 		sprintf(subdir, "%s/%s", direct, sname);

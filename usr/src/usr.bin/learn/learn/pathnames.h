@@ -14,12 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #include <paths.h>
 
-#define	_PATH_DEFPATH	"PATH=%s/bin:"
 #define	_PATH_LEARN	"/usr/libdata/learn"
 #define	_PATH_RM	"/bin/rm"
 #define	_PATH_STTY	"/bin/stty"

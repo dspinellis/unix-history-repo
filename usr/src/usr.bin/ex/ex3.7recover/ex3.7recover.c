@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7recover.c	7.12 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.13 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -23,6 +23,7 @@ static char *sccsid = "@(#)ex3.7recover.c	7.12 (Berkeley) %G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include <sys/dir.h>
+#include <stdarg.h>
 
 char xstr[1];		/* make loader happy */
 short tfile = -1;	/* ditto */
@@ -97,8 +98,8 @@ main(argc, argv)
 	 */
 	cp = ctime(&H.Time);
 	cp[19] = 0;
-	fprintf(stderr, " [Dated: %s", cp);
-	fprintf(stderr, vercnt > 1 ? ", newest of %d saved]" : "]", vercnt);
+	fpr(" [Dated: %s", cp);
+	fpr(vercnt > 1 ? ", newest of %d saved]" : "]", vercnt);
 	H.Flines++;
 
 	/*
@@ -110,7 +111,7 @@ main(argc, argv)
 		 */
 		error(" Not enough core for lines", 0);
 #ifdef DEBUG
-	fprintf(stderr, "%d lines\n", H.Flines);
+	fpr("%d lines\n", H.Flines);
 #endif
 
 	/*
@@ -181,10 +182,10 @@ error(str, inf)
 	int inf;
 {
 
-	fprintf(stderr, str, inf);
+	fpr(str, inf);
 	(void)ioctl(2, TIOCGETP, &tty);
 	if ((tty.sg_flags & RAW) == 0)
-		fprintf(stderr, "\n");
+		fpr("\n");
 	exit(1);
 }
 
@@ -233,7 +234,7 @@ listfiles(dirname)
 		if (dirent->d_name[0] != 'E')
 			continue;
 #ifdef DEBUG
-		fprintf(stderr, "considering %s\n", dirent->d_name);
+		fpr("considering %s\n", dirent->d_name);
 #endif
 		/*
 		 * Name begins with E; open it and
@@ -244,13 +245,13 @@ listfiles(dirname)
 		f = open(dirent->d_name, 0);
 		if (f < 0) {
 #ifdef DEBUG
-			fprintf(stderr, "open failed\n");
+			fpr("open failed\n");
 #endif
 			continue;
 		}
 		if (read(f, (char *) &H, sizeof H) != sizeof H) {
 #ifdef DEBUG
-			fprintf(stderr, "culdnt read hedr\n");
+			fpr("culdnt read hedr\n");
 #endif
 			ignore(close(f));
 			continue;
@@ -258,7 +259,7 @@ listfiles(dirname)
 		ignore(close(f));
 		if (getuid() != H.Uid) {
 #ifdef DEBUG
-			fprintf(stderr, "uid wrong\n");
+			fpr("uid wrong\n");
 #endif
 			continue;
 		}
@@ -269,7 +270,7 @@ listfiles(dirname)
 		enter(fp++, dirent->d_name, ecount);
 		ecount++;
 #ifdef DEBUG
-		fprintf(stderr, "entered file %s\n", dirent->d_name);
+		fpr("entered file %s\n", dirent->d_name);
 #endif
 	}
 	ignore(closedir(dir));
@@ -279,17 +280,17 @@ listfiles(dirname)
 	 * them out.
 	 */
 	if (ecount == 0) {
-		fprintf(stderr, "No files saved.\n");
+		fpr("No files saved.\n");
 		return;
 	}
 	qsort(&svbuf[0], ecount, sizeof svbuf[0], qucmp);
 	for (fp = &svbuf[0]; fp < &svbuf[ecount]; fp++) {
 		cp = ctime(&fp->sf_time);
 		cp[10] = 0;
-		fprintf(stderr, "On %s at ", cp);
+		fpr("On %s at ", cp);
  		cp[16] = 0;
-		fprintf(stderr, &cp[11]);
-		fprintf(stderr, " saved %d lines of file \"%s\"\n",
+		fpr(&cp[11]);
+		fpr(" saved %d lines of file \"%s\"\n",
 		    fp->sf_lines, fp->sf_name);
 	}
 }
@@ -527,7 +528,7 @@ scrapbad()
 	maxt = (size >> SHFT) | (BNDRY-1);
 	bno = (maxt >> OFFBTS) & BLKMSK;
 #ifdef DEBUG
-	fprintf(stderr, "size %ld, maxt %o, bno %d\n", size, maxt, bno);
+	fpr("size %ld, maxt %o, bno %d\n", size, maxt, bno);
 #endif
 
 	/*
@@ -551,7 +552,7 @@ null:
 	 */
 	maxt = ((bno << OFFBTS) | (cnt >> SHFT)) & ~1;
 #ifdef DEBUG
-	fprintf(stderr, "bno %d, cnt %d, maxt %o\n", bno, cnt, maxt);
+	fpr("bno %d, cnt %d, maxt %o\n", bno, cnt, maxt);
 #endif
 
 	/*
@@ -562,30 +563,30 @@ null:
 	for (ip = one; ip <= dol; ip++)
 		if (*ip > maxt) {
 #ifdef DEBUG
-			fprintf(stderr, "%d bad, %o > %o\n", ip - zero, *ip, maxt);
+			fpr("%d bad, %o > %o\n", ip - zero, *ip, maxt);
 #endif
 			if (was == 0)
 				was = ip - zero;
 			*ip = ((HBLKS*BUFSIZ)-8) >> SHFT;
 		} else if (was) {
 			if (bad == 0)
-				fprintf(stderr, " [Lost line(s):");
-			fprintf(stderr, " %d", was);
+				fpr(" [Lost line(s):");
+			fpr(" %d", was);
 			if ((ip - 1) - zero > was)
-				fprintf(stderr, "-%d", (ip - 1) - zero);
+				fpr("-%d", (ip - 1) - zero);
 			bad++;
 			was = 0;
 		}
 	if (was != 0) {
 		if (bad == 0)
-			fprintf(stderr, " [Lost line(s):");
-		fprintf(stderr, " %d", was);
+			fpr(" [Lost line(s):");
+		fpr(" %d", was);
 		if (dol - zero != was)
-			fprintf(stderr, "-%d", dol - zero);
+			fpr("-%d", dol - zero);
 		bad++;
 	}
 	if (bad)
-		fprintf(stderr, "]");
+		fpr("]");
 }
 
 /*
@@ -758,15 +759,15 @@ syserror()
  * Must avoid stdio because expreserve uses sbrk to do memory
  * allocation and stdio uses malloc.
  */
-fprintf(fp, fmt, a1, a2, a3, a4, a5)
-	FILE *fp;
+fpr(fmt)
 	char *fmt;
-	char *a1, *a2, *a3, *a4, *a5;
 {
+	va_list ap;
+	int len;
 	char buf[BUFSIZ];
 
-	if (fp != stderr)
-		return;
-	sprintf(buf, fmt, a1, a2, a3, a4, a5);
-	write(2, buf, strlen(buf));
+	va_start(ap, fmt);
+	len = vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	write(2, buf, len);
 }

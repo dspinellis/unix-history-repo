@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mysys.c	4.7	(Berkeley)	%G%";
+static char sccsid[] = "@(#)mysys.c	4.8	(Berkeley)	%G%";
 #endif not lint
 
 #include <sys/signal.h>
@@ -29,7 +29,7 @@ chgenv()
 	char path[BUFSIZ], exinit[BUFSIZ];
 	char *malloc();
 
-	sprintf(path, _PATH_DEFPATH, direct);
+	sprintf(path, "%s/bin:", direct);
 	sprintf(exinit, "EXINIT=set prompt noopt open window=23");
 #if BSD4_2
 	system("stty old");
