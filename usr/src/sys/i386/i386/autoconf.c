@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)autoconf.c	5.3 (Berkeley) %G%
+ *	@(#)autoconf.c	5.4 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,7 @@
 #include "dmap.h"
 #include "reboot.h"
 
-#include "pte.h"
-#include "../machine/device.h"
+#include "machine/pte.h"
 
 /*
  * The following several variables are related to
@@ -44,24 +43,11 @@ int	cold;		/* cold start flag initialized in locore.s */
  */
 configure()
 {
-	register int *ip;
-	extern caddr_t Sysbase;
-	struct device *dvp;
-	struct driver *dp;
-	register s;
+#include "isa.h"
+#if NISA > 0
+	isa_configure();
+#endif
 
-	for (dvp = devtab; dp = dvp->driver; dvp++) {
-		s = splhigh();
-		dvp->alive = (*dp->probe)(dvp);
-		if (dvp->alive) {
-			printf("%s%d", dp->name, dvp->unit);
-			(*dp->attach)(dvp);
-			printf(" at 0x%x on isa0\n", dvp->ioa);
-		}
-		splx(s);
-	}
-
-/*pg("setroot");*/
 #if GENERICxxx
 	if ((boothowto & RB_ASKNAME) == 0)
 		setroot();
@@ -73,10 +59,63 @@ configure()
 	 * Configure swap area and related system
 	 * parameter based on device(s) used.
 	 */
-/*pg("swapconf");*/
 	swapconf();
 	cold = 0;
 }
+
+#if NISA > 0
+#include "machine/isa/device.h"
+#include "machine/isa/icu.h"
+isa_configure() {
+	struct isa_device *dvp;
+	struct isa_driver *dp;
+
+	splhigh();
+	INTREN(IRQ_SLAVE);
+	for (dvp = isa_devtab_bio; config_isadev(dvp,&biomask); dvp++);
+	for (dvp = isa_devtab_tty; config_isadev(dvp,&ttymask); dvp++);
+	for (dvp = isa_devtab_net; config_isadev(dvp,&netmask); dvp++);
+	for (dvp = isa_devtab_null; config_isadev(dvp,0); dvp++);
+#include "sl.h"
+#if NSL > 0
+	netmask |= ttymask;
+	ttymask |= netmask;
+#endif
+	/* biomask |= ttymask ;  can some tty devices use buffers? */
+	printf("biomask %x ttymask %x netmask %x\n", biomask, ttymask, netmask);
+	splnone();
+}
+
+config_isadev(isdp, mp)
+	struct isa_device *isdp;
+	int *mp;
+{
+	struct isa_driver *dp;
+ 
+	if (dp = isdp->id_driver) {
+		if (isdp->id_maddr) {
+			extern int atdevbase[];
+
+			isdp->id_maddr -= 0xa0000;
+			isdp->id_maddr += (int)&atdevbase;
+		}
+		isdp->id_alive = (*dp->probe)(isdp);
+		if (isdp->id_alive) {
+			printf("%s%d", dp->name, isdp->id_unit);
+			(*dp->attach)(isdp);
+			printf(" at 0x%x ", isdp->id_iobase);
+			if(isdp->id_irq) {
+				printf("irq %d ", ffs(isdp->id_irq)-1);
+				INTREN(isdp->id_irq);
+				if(mp)INTRMASK(*mp,isdp->id_irq);
+			}
+			if (isdp->id_drq != -1) printf("drq %d ", isdp->id_drq);
+			printf("on isa0\n");
+		}
+		return (1);
+	} else	return(0);
+}
+#endif
 
 /*
  * Configure swap space and related parameters.
@@ -107,9 +146,11 @@ swapconf()
 u_long	bootdev;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
-	0,0,		/* 0 = ud */
-	'd','k',	/* 1 = vd */
-	0,0,		/* 2 = xp */
+	'w','d',	/* 0 = wd */
+	's','w',	/* 1 = sw */
+	'f','d',	/* 2 = fd */
+	'w','t',	/* 3 = wt */
+	'x','d',	/* 4 = xd */
 };
 
 #define	PARTITIONMASK	0x7
@@ -135,7 +176,7 @@ setroot()
 	adaptor = (bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK;
 	part = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
 	unit = (bootdev >> B_UNITSHIFT) & B_UNITMASK;
-	mindev = (mindev << PARTITIONSHIFT) + part;
+	mindev = (unit << PARTITIONSHIFT) + part;
 	orootdev = rootdev;
 	rootdev = makedev(majdev, mindev);
 	/*
