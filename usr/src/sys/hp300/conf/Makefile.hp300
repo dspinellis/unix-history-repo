@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh
 #
-#	@(#)Makefile.hp300	7.2 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.3 (Berkeley) %G%
 #
 #
 # Makefile for 4.4 BSD
@@ -90,11 +90,11 @@ assym.s: genassym
 	./genassym >assym.s
 
 genassym:
-	${CC} ${INCLUDES} ${IDENT} ${PARAM} -Dmc68020 -Dhp300 ../hp300/genassym.c
+	${CC} ${INCLUDES} ${IDENT} ${PARAM} -Dmc68020 -Dhp300 -o genassym ../hp300/genassym.c
 
 depend: assym.s param.c
 	mkdep ${COPTS} ${CFILES} ioconf.c
-	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} -o genassym ../hp300/genassym.c
+	mkdep -a -p ${INCLUDES} ${IDENT} ${PARAM} ../hp300/genassym.c
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
