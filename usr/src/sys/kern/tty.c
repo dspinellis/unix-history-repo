@@ -1,4 +1,4 @@
-/*	tty.c	4.20	82/01/25	*/
+/*	tty.c	4.21	82/01/30	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -239,8 +239,12 @@ caddr_t addr;
 		   u.u_procp->p_pgrp != tp->t_pgrp && tp == u.u_ttyp &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
 		   u.u_signal[SIGTTOU] != SIG_IGN &&
-		   u.u_signal[SIGTTOU] != SIG_HOLD &&
+		   u.u_signal[SIGTTOU] != SIG_HOLD
+/*
+						   &&
 		   (u.u_procp->p_flag&SDETACH)==0) {
+*/
+		   ) {
 			gsignal(u.u_procp->p_pgrp, SIGTTOU);
 			sleep((caddr_t)&lbolt, TTOPRI);
 		}
