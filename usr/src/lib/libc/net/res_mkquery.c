@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_mkquery.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -35,8 +35,10 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	char *dnptrs[10], **dpp, **lastdnptr;
 	extern char *index();
 
+#ifdef DEBUG
 	if (_res.options & RES_DEBUG)
 		printf("res_mkquery(%d, %s, %d, %d)\n", op, dname, class, type);
+#endif
 	/*
 	 * Initialize header fields.
 	 */
@@ -64,7 +66,8 @@ res_mkquery(op, dname, class, type, data, datalen, newrr, buf, buflen)
 	if ((_res.options & RES_DEFNAMES) && dname[0] != '\0' &&
 	    index(dname, '.') == NULL) {
 		if (!(_res.options & RES_INIT))
-			res_init();
+			if (res_init() == -1)
+				return(-1);
 		if (_res.defdname[0] != '\0')
 			dname = sprintf(dnbuf, "%s.%s", dname, _res.defdname);
 	}
