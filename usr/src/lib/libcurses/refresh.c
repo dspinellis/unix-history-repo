@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -499,7 +499,7 @@ quickch(win)
 		}
 #endif 
 	if (n != 0)
-		scrolln(win, starts, startw, curs, curw, top);
+		scrolln(win, starts, startw, curs, bot, top);
 
 
 	/* So we don't have to call __hash() each time */
@@ -534,11 +534,11 @@ quickch(win)
 	 * 
 	 * Lines in the rotation can have 3 attributes which are marked on the
 	 * line so that curscr is consistent with the visual screen.
-	 * 1.  Not dirty -- lines inside the scrolling region, top region or
+	 * 1.  Not dirty -- lines inside the scrolled block, top region or
 	 *                  bottom region.
-	 * 2.  Blank lines -- lines in the differential of scrolled block 
-	 *                    between win and curscr in the scrolling region.
-	 *
+	 * 2.  Blank lines -- lines in the differential of the scrolling 
+	 *		      region adjacent to top and bot regions 
+	 *                    depending on scrolling direction.
 	 * 3.  Dirty line -- all other lines are marked dirty.
 	 */
 	sc_region = bot - top + 1;
@@ -561,8 +561,8 @@ quickch(win)
 			__TRACE("-- notdirty");
 #endif
 			win->lines[target]->flags &= ~__ISDIRTY;
-		} else if ((n < 0 && target >= curw && target < curs) ||
-		           (n > 0 && target < startw && target >= starts)) {
+		} else if ((n > 0 && target >= top && target < top + n) ||
+		           (n < 0 && target <= bot && target > bot + n)) {
 			if (clp->hash != blank_hash ||  bcmp(clp->line, 
 			    buf, win->maxx * __LDATASIZE) !=0) {
 				(void)bcopy(buf, clp->line,  
@@ -572,11 +572,12 @@ quickch(win)
 #endif
 				clp->hash = blank_hash;
 				__touchline(win, target, 0, win->maxx - 1, 0);
-			} else 
+			} else {
 				__touchline(win, target, 0, win->maxx - 1, 0);
 #ifdef DEBUG
 				__TRACE(" -- blank line already: dirty");
 #endif
+			}
 		} else {
 #ifdef DEBUG
 			__TRACE(" -- dirty");
@@ -616,9 +617,9 @@ quickch(win)
  * Scrolln performs the scroll by n lines, where n is starts - startw.
  */
 static void
-scrolln(win, starts, startw, curs, curw, top)
+scrolln(win, starts, startw, curs, bot, top)
 	WINDOW *win;
-	int starts, startw, curs, curw, top;
+	int starts, startw, curs, bot, top;
 {
 	int i, oy, ox, n;
 
@@ -638,22 +639,22 @@ scrolln(win, starts, startw, curs, curw, top)
 		/* 
 		 * Push down the bottom region.
 		 */
-		mvcur(top, 0, curw, 0);
+		mvcur(top, 0, bot - n + 1, 0);
 		if (AL)
 			tputs(tscroll(AL, n), 0, __cputchar);
 		else
 			for(i = 0; i < n; i++)
 				tputs(al, 0, __cputchar);
-		mvcur(curw, 0, oy, ox);
+		mvcur(bot - n + 1, 0, oy, ox);
 	} else {
 		/* Preserve the bottom lines */
-		mvcur(oy, ox, curs, 0);
+		mvcur(oy, ox, bot + n + 1, 0);	/* n < 0 */
 		if (DL)
 			tputs(tscroll(DL, -n), 0, __cputchar);
 		else
 		       	for(i = n; i < 0; i++)
 				tputs(dl, 0, __cputchar);
-		mvcur(curs, 0, starts, 0);
+		mvcur(bot + n + 1, 0, top, 0);
 
 		/* Scroll the block down */
 		if (AL)
@@ -661,7 +662,7 @@ scrolln(win, starts, startw, curs, curw, top)
 		else
 			for(i = n; i < 0; i++)
 				tputs(al, 0, __cputchar);
-		mvcur(starts, 0, oy, ox);
+		mvcur(top, 0, oy, ox);
 	}		
 }
 
