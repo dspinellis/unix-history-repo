@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -58,16 +58,16 @@ __bt_put(dbp, key, data, flags)
 
 	switch (flags) {
 	case R_CURSOR:
-		if (ISSET(t, BTF_DELCRSR)) {
-			errno = EINVAL;
-			return (RET_ERROR);
-		}
+		if (!ISSET(t, BTF_SEQINIT))
+			goto einval;
+		if (ISSET(t, BTF_DELCRSR))
+			goto einval;
 		break;
 	case 0:
 	case R_NOOVERWRITE:
 		break;
 	default:
-		errno = EINVAL;
+einval:		errno = EINVAL;
 		return (RET_ERROR);
 	}
 
