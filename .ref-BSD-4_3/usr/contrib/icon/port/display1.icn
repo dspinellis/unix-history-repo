@@ -1,9 +1,0 @@
-#  This program tests functions/display.c
-
-global x, y
-
-procedure main()
-   local a
-   a := 1
-   display(,&output)
-end

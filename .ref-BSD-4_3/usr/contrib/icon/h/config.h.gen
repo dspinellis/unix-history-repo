@@ -1,5 +1,0 @@
-/*
- * Icon configuration. This file is produced when the Icon system is
- * built by icon-setup.
- */
-#define VERSION		"Icon, Version 5.9 interpreter, August 1984"

@@ -1,5 +1,0 @@
-procedure posint()
-   local i
-   i := 0
-   suspend |(i +:= 1)
-end

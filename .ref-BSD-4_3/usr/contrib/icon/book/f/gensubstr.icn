@@ -1,4 +1,0 @@
-procedure gensubstr(s)
-   local i
-   suspend s[(i := 1 to *s):((i + 1) to (*s + 1))]
-end

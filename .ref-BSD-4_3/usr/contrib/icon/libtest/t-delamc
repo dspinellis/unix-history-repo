@@ -1,4 +1,0 @@
-../ibin/delamc -t: t-delamc.dat f1 f2 f3 f4
-ls -s f[0-9]
-cat f[0-9]
-rm -f f[0-9]

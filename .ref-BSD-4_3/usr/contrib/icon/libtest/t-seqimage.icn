@@ -1,8 +1,0 @@
-link "../ilib/seqimage"
-
-procedure main()
-   write(Seqimage{1 to 10,5})
-   write(Seqimage{1 to 10,12})
-   write(Seqimage{1 to 10})
-   write(Seqimage{!"abcdefghijk"})
-end

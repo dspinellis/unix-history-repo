@@ -1,4 +1,0 @@
-../ibin/i-split -g f4.icn <t-i-split.dat
-ls -s f[0-9].icn
-cat f[0-9].icn
-rm -f f[0-9].icn

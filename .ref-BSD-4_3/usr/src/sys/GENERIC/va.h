@@ -1,1 +1,0 @@
-#define NVA 0

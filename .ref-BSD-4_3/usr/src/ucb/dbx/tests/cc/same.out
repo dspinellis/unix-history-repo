@@ -1,8 +1,0 @@
-reading symbolic information ...
-source file "same.c"
-[1] stop in same.same
-[1] stopped in same.same at 0x4e
-0000004e  brb	5e
-same.same() at 0x4e
-main(0x1, 0x7fffebe8, 0x7fffebf0), line 15 in "same.c"
-

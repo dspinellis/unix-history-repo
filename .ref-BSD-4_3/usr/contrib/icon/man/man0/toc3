@@ -1,6 +1,0 @@
-.xx "getenv" "get value for environment variable"
-.xx "iscope" "examine Icon internals"
-.xx "math" "miscellaneous math functions"
-.xx "seek" "seek to position in stream"
-.xx "trig" "trigonometric functions"
-.xx "ttyctl" "primitive control of terminal attributes"

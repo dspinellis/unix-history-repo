@@ -1,7 +1,0 @@
-procedure main()
-   write(exp(2))
-   write(log(2))
-   write(log10(2))
-   write(sqrt(2))
-   log(0)
-end

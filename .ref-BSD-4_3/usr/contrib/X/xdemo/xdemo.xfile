@@ -1,5 +1,0 @@
-m ../CLUlib/x ~CLU/lib/* xdemo
-ext f
-ce ../CLUlib/xdefs ../CLUlib/cursors
-loc f
-o

@@ -1,7 +1,0 @@
-_unhandled_exception = proc (what: string)
-    own stop: bool := false
-    if ~stop
-       then stop := true
-	    save_buffers(winset$reset(), false)
-       end
-    end _unhandled_exception

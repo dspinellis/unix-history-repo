@@ -1,9 +1,0 @@
-procedure main()
-   local a
-   a := list(4)
-   a[1] := create compact("a","b",create |reads(),a[2])
-   a[2] := create compact("b","c",a[1],a[3])
-   a[3] := create compact("c","d",a[2],a[4])
-   a[4] := create compact("d","e",a[3],&main)
-   while writes(@a[4])
-end

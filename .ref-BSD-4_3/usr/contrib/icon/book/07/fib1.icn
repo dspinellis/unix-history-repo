@@ -1,5 +1,0 @@
-procedure fib(i)
-   if i = 1 then return 1
-   if i = 2 then return 1
-   return fib(i - 1) + fib(i - 2)
-end

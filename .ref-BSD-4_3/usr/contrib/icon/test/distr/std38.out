@@ -1,7 +1,0 @@
-&subject := &pos ----> "1"
-&pos :=: &subject ----> 1
-&pos ----> 1
-&subject ----> "1"
-Run-time error 103 at line 13 in std38.icn
-string expected
-offending value: []

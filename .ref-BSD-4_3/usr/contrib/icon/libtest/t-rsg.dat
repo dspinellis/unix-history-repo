@@ -1,5 +1,0 @@
-<expr>::=<term>|<term>+<expr>
-<term>::=<element>|<element>|<element>*<term>
-<element>::=<'xyz'>|<'1233456789'>|<&ucase>|(<expr>)
-<expr>10
-->

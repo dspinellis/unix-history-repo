@@ -1,9 +1,0 @@
-mmdfldir:	@(MHDROPATH)
-mmdflfil:	@(MHDROPFIL)
-uucpldir:	/usr/spool/mail
-uucplfil:	
-mmdelim1:	\001\001\001\001\n
-mmdelim2:	\001\001\001\001\n
-mmailid:	0
-umincproc:
-lockldir:

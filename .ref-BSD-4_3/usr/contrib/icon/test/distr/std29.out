@@ -1,9 +1,0 @@
-1
-system("echo 1") ----> 0
-   1 std29.icn
-system("ls -s std29.icn") ----> 0
-no.file: No such file or directory
-system("wc no.file") ----> 0
-Run-time error 210 at line 12 in std29.icn
-argument to system function too long
-offending value: "                ..."

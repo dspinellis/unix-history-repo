@@ -1,7 +1,0 @@
-procedure expression()
-   return case ?3 of {
-      1  :  term()
-      2  :  term()
-      3  :  term() || "+" || expression()
-      }
-end

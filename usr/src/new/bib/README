@@ -1,0 +1,22 @@
+	@(#)README	2.1 (Berkeley) 4/8/88
+
+Title:		Bib
+
+Authors:	Timothy A. Budd
+		Gary M. Levin
+
+Address:	Department of Computer Science
+		University of Arizona
+		Tucson, Arizona 85721
+		(602) 621-6613
+
+Description:
+
+Bib is a program for collecting and formatting reference lists in
+documents.  It is a preprocessor to the nroff/troff typesetting
+systems, much like the tbl [.tbl.] and eqn [.eqn.] systems.  Bib takes
+two inputs: a document to be formatted and a library of references.
+Imprecise citations in the source document are replaced by more
+conventional citation strings, the appropriate references are selected
+from the reference file, and commands are generated to format both
+citation and the referenced item in the bibliography.

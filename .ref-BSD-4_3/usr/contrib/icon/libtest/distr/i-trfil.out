@@ -1,4 +1,0 @@
-trace.icn: 4	| p2()
-trace.icn: 13	| p2 suspended 3
-trace.icn: 18	| | p2()
-trace.icn: 13	| | p2 suspended 3

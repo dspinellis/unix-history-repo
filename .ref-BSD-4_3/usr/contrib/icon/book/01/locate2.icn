@@ -1,7 +1,0 @@
-procedure locate(s)
-   lineno := 0
-   while line := read() do {
-      lineno := lineno + 1
-      if find(s,line) then write(lineno,": ",line)
-      }
-end

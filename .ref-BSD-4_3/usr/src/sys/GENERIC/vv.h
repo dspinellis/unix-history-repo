@@ -1,1 +1,0 @@
-#define NVV 0

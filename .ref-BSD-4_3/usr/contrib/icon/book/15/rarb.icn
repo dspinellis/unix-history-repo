@@ -1,4 +1,0 @@
-procedure rarb()
-   suspend &subject[.&pos:
-      &pos <- ((*&subject + 1) to &pos by -1)]
-end

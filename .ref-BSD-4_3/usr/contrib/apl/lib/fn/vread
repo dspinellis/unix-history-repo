@@ -1,6 +1,0 @@
-vr { vread name;fd;tm
-fd { 260 Lopen name
-vr { ''
-more: vr { vr,tm { fd Lread 128
-} (0#Rtm)/more
-fd { Lclose fd

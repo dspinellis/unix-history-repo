@@ -1,9 +1,0 @@
-HOW'TO GENERATE:
-	SHARE followers, starters, enders
-	CHOOSE c1, c2 FROM starters
-	WRITE c1^c2
-	WHILE c2 not'in enders:
-		CHOOSE c3 FROM followers[c1, c2]
-		WRITE c3
-		PUT c2, c3 IN c1, c2
-	WRITE /

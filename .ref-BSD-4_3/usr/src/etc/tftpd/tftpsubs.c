@@ -1,1 +1,0 @@
-../../ucb/tftp/tftpsubs.c

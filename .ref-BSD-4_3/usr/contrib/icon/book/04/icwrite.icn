@@ -1,5 +1,0 @@
-procedure icwrite(c)
-   while line := read() do
-      if any(c,line) then write(line)
-   return
-end

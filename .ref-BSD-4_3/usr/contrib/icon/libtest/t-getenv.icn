@@ -1,5 +1,0 @@
-procedure main()
-   write(getenv("HOME"))
-   write(getenv("TERM"))
-   write(getenv("foo")) | stop("\"foo\" is not an environment variable")
-end

@@ -1,8 +1,0 @@
-link "../ilib/bold"
-
-procedure main()
-   while line := read() do {
-      write(image(bold(line)))
-      write(image(uscore(line)))
-      }
-end

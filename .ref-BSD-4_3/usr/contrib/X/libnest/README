@@ -1,4 +1,0 @@
-This directory contains a device dependent X implementation on top of X!
-You too can run a window system in a window....
-
-It can be useful for debugging the device independent parts of the X server.

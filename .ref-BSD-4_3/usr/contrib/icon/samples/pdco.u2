@@ -1,8 +1,0 @@
-impl	local
-global	6
-	0,000005,main,0
-	1,000005,star,1
-	2,000005,Galt,1
-	3,000005,Limit,1
-	4,000005,Ranseq,1
-	5,000005,Seqimage,1

@@ -1,5 +1,0 @@
-procedure main()
-   chars := ''
-   while chars ++:= read()
-   write(*chars)
-end

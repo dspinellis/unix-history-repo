@@ -1,5 +1,0 @@
-#  This program tests rt/suspend.s
-
-procedure main()
-   every write(1 to 10)
-end

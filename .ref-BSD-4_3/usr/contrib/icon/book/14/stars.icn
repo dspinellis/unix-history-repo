@@ -1,3 +1,0 @@
-procedure star(chars)
-   suspend "" | (star(chars) || !chars)
-end

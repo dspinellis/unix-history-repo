@@ -1,8 +1,0 @@
-if receive
-	chdir
-endif
-ignore from date via phone mail-from message-id received
-set keepsave hold preserve dot ignoreeof ask escape=+
-set folder=mbox
-set sendmail=/usr/lib/sendmail
-alias bleric randvax!sdcnet!bli!eric

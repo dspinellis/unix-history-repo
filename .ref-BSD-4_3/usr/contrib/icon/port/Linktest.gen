@@ -1,8 +1,0 @@
-path="PATH"
-for i in `cat set1.tlist`
-do
-   echo Linking $i
-   $path/ilink -D distr/$i.u1
-   mv $i.ux local
-   rm -f $i
-done

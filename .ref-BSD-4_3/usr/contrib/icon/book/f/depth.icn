@@ -1,6 +1,0 @@
-procedure depth(ltree)
-   local count
-   count := 0
-   every count <:= 1 + depth(ltree[2 to *ltree])
-   return count
-end

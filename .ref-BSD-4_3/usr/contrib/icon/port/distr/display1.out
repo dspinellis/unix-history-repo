@@ -1,7 +1,0 @@
-main local identifiers:
-   a = 1
-global identifiers:
-   main = procedure main
-   x = &null
-   y = &null
-   display = function display

@@ -1,9 +1,0 @@
-for i in `cat proc.tlist`
-do
-        rm -f local/$i.out
-        echo Running $i
-	PATH/icont -s t-$i.icn -x <t-$i.dat >local/$i.out 2>&1
-        echo Checking $i
-        diff distr/$i.out local/$i.out
-	rm -f t-$i
-done

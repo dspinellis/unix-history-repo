@@ -1,8 +1,0 @@
-100 - - 4 ----> 104
-100 --4 ----> '01'
-100- - 4 ----> 104
-100 -- 4 ----> '01'
-100 - -4 ----> 104
-Run-time error 102 at line 14 in std32.icn
-numeric expected
-offending value: &null

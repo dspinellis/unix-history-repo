@@ -1,5 +1,0 @@
-procedure main()
-   if not (intext := open("shaw.txt"))
-   then stop("cannot open input file")
-   while write(read(intext))
-end

@@ -1,5 +1,0 @@
-# A shell script to prune the /usr/spool/notes/.utilities/net.log file. We keep the last
-# couple lines for the heck of it.
-# Ray Essick	May 24, 1982
-tail -500 /usr/spool/notes/.utilities/net.log > /usr/spool/notes/.utilities/net.log.$$
-mv /usr/spool/notes/.utilities/net.log.$$ /usr/spool/notes/.utilities/net.log

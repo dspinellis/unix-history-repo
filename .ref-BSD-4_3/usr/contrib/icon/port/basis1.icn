@@ -1,6 +1,0 @@
-#  This program tests the "basis" of the Icon system: iconx/start.s,
-#  rt/setbound.s, lib/invoke.s, iconx/interp.s, lib/efail.s, and
-#  lib/pfail.s
-
-procedure main()
-end

@@ -1,4 +1,0 @@
-cc -s -O -o xed xed.c
-cc -s -O -o aplcvt aplcvt.c
-cc -s -O -o cata cata.c
-make rebuild

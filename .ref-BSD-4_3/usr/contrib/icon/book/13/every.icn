@@ -1,3 +1,0 @@
-procedure Every(e1,e2)
-   while @e1 do @^e2
-end

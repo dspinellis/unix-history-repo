@@ -1,6 +1,0 @@
-alias break(x) "stop at x"
-alias
-break(12)
-run
-unalias break
-break(12)

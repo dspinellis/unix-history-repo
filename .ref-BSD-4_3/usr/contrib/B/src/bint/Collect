@@ -1,9 +1,0 @@
-: 'Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. '
-: '$Header: Collect,v 1.1 85/08/22 16:38:37 timo Exp $'
-
-: 'Collect error messages form all source files'
-
-grep 'MESS([0-9]' $* |
-sed '/syserr/s/.*MESS(\([0-9]*\), *"\(.*\)").*/\1*	\2/
-	s/.*MESS(\([0-9]*\), *"\(.*\)").*/\1	\2/' |
-sort -n

@@ -1,9 +1,0 @@
-procedure main()
-   local line
-   defs := table()
-   defs["vbar"] := [["|"]]
-   defs["left"] := [["<"]]
-   defs["right"] := [[">"]]
-   while line := read() do
-      (define | generate | diagnose)(line)
-end

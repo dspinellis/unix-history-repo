@@ -1,7 +1,0 @@
-stop in put
-run
-where
-print main.i, *(main.p), main.s
-cont
-where
-cont

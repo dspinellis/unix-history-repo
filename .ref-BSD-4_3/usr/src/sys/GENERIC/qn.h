@@ -1,1 +1,0 @@
-#define NQN 0

@@ -1,6 +1,0 @@
-procedure main()
-   while line := read() do {
-      line := line[1:61]	# truncate
-      write(line)
-      }
-end

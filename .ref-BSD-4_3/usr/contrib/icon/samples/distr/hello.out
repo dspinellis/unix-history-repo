@@ -1,6 +1,0 @@
-Hello world
-&version is 'Icon, Version 5.9 interpreter, August 1984'
-&host is 'arizona'
-&options is '-vax -interpex -host gethost -vfork -xpx -sets'
-&dateline is 'Friday, August 31, 1984  1:29 pm'
-&clock is '13:29:00'

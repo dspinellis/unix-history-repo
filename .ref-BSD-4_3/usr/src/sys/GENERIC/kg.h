@@ -1,1 +1,0 @@
-#define NKG 0
