@@ -1,70 +1,103 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)talk.1	6.6 (Berkeley) %G%
+.\"     @(#)talk.1	6.6 (Berkeley) %G%
 .\"
-.TH TALK 1 ""
-.UC 5
-.SH NAME
-talk \- talk to another user
-.SH SYNOPSIS
-.B talk
-person [ ttyname ]
-.SH DESCRIPTION
-\fITalk\fP is a visual communication program which copies lines from your
+.Dd 
+.Dt TALK 1
+.Os BSD 4.2
+.Sh NAME
+.Nm talk
+.Nd talk to another user
+.Sh SYNOPSIS
+.Nm talk
+.Ar person
+.Op Ar ttyname
+.Sh DESCRIPTION
+.Nm Talk
+is a visual communication program which copies lines from your
 terminal to that of another user.
-.PP 
-If you wish to talk to someone on your own machine, then \fIperson\fP
+.Pp
+Options available:
+.Bl -tag -width ttyname
+.It Ar person
+If you wish to talk to someone on your own machine, then
+.Ar person
 is just the person's login name.  If you wish to talk to a user on
-another host, then \fIperson\fP is of the form \fIuser@host\fP.
-.PP
-If you want to talk to a user who is logged in more than once, the
-\fIttyname\fP argument may be used to indicate the appropriate terminal
-name, where \fIttyname\fP is of the form ``ttyXX''.
-.PP
-When first called, \fItalk\fP sends the message
-.PP
-     Message from TalkDaemon@his_machine...
-     talk: connection requested by your_name@your_machine.
-     talk: respond with: talk your_name@your_machine
-.PP
+another host, then
+.Ar person
+is of the form
+.Ql user@host .
+.It Ar ttyname
+If you wish to talk to a user who is logged in more than once, the
+.Ar ttyname
+argument may be used to indicate the appropriate terminal
+name, where
+.Ar ttyname
+is of the form
+.Ql ttyXX .
+.El
+.Pp
+When first called,
+.Nm talk
+sends the message
+.Bd -literal -offset indent -compact
+Message from TalkDaemon@his_machine...
+talk: connection requested by your_name@your_machine.
+talk: respond with: talk your_name@your_machine
+.Ed
+.Pp
 to the user you wish to talk to. At this point, the recipient
 of the message should reply by typing
-.PP
-     talk \ your_name@your_machine
-.PP
+.Pp
+.Dl talk \ your_name@your_machine
+.Pp
 It doesn't matter from which machine the recipient replies, as
 long as his login-name is the same.  Once communication is established,
 the two parties may type simultaneously, with their output appearing
-in separate windows.  Typing control L (^L) will cause the screen to
+in separate windows.  Typing control-L
+.Ql ^L
+will cause the screen to
 be reprinted, while your erase, kill, and word kill characters will
-behave normally.  To exit, just type your interrupt character; \fItalk\fP
+behave normally.  To exit, just type your interrupt character;
+.Nm talk
 then moves the cursor to the bottom of the screen and restores the
 terminal to its previous state.
-.PP
-Permission to talk may be denied or granted by use of the \fImesg\fP
+.Pp
+Permission to talk may be denied or granted by use of the
+.Xr mesg 1
 command.  At the outset talking is allowed.  Certain commands, in
-particular \fInroff\fP and \fIpr\fP, disallow messages in order to
+particular
+.Xr nroff 1
+and
+.Xr pr 1 ,
+disallow messages in order to
 prevent messy output.
-.PP
-.SH FILES
-/etc/hosts	to find the recipient's machine
-.br
-/etc/utmp		to find the recipient's tty
-.SH "SEE ALSO"
-mail(1), mesg(1), who(1), write(1)
-.SH BUGS
-The version of \fItalk\fP(1) released with 4.3BSD uses a protocol that
-is incompatible with the protocol used in the version released with 4.2BSD.
+.Pp
+.Sh FILES
+.Bl -tag -width /var/run/utmp -compact
+.It Pa /etc/hosts
+to find the recipient's machine
+.It Pa /var/run/utmp
+to find the recipient's tty
+.El
+.Sh SEE ALSO
+.Xr mail 1 ,
+.Xr mesg 1 ,
+.Xr who 1 ,
+.Xr write 1
+.Sh BUGS
+The version of
+.Xr talk 1
+released with
+.Bx 4.3
+uses a protocol that
+is incompatible with the protocol used in the version released with
+.Bx 4.2 .
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .
