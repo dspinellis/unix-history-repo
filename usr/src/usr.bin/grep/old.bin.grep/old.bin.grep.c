@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)old.bin.grep.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)old.bin.grep.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -43,6 +43,7 @@ int	cflag;
 int	vflag;
 int	nfile;
 int	hflag	= 1;
+int	oflag;
 int	sflag;
 int	yflag;
 int	wflag;
@@ -77,6 +78,10 @@ char **argv;
 
 		case 'w':
 			wflag++;
+			continue;
+
+		case 'o':
+			oflag++;
 			continue;
 
 		case 'h':
@@ -497,7 +502,7 @@ char *f;
 		fseek(stdin, 0l, 2);
 		return;
 	}
-	if (nfile > 1 && hflag)
+	if (nfile > 1 && hflag || oflag)
 		printf("%s:", f);
 	if (bflag)
 		printf("%u:", blkno);

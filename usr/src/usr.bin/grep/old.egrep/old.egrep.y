@@ -13,7 +13,7 @@
 %left STAR PLUS QUEST
 
 %{
-static char *sccsid = "@(#)old.egrep.y	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)old.egrep.y	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -55,6 +55,7 @@ int	iflag;
 int	lflag;
 int	nflag;
 int	hflag	= 1;
+int	oflag;
 int	sflag;
 int	vflag;
 int	retcode = 0;
@@ -439,6 +440,10 @@ char **argv;
 			hflag = 0;
 			continue;
 
+		case 'o':
+			oflag++;
+			continue;
+
 		case 'b':
 			bflag++;
 			continue;
@@ -576,7 +581,7 @@ char *file;
 							return;
 						}
 						else {
-							if (nfile > 1 && hflag) printf("%s:", file);
+							if (nfile > 1 && hflag || oflag) printf("%s:", file);
 							if (bflag) printf("%d:", blkno);
 							if (nflag) printf("%ld:", lnum);
 							if (p <= nlp) {

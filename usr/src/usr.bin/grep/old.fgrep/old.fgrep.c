@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)old.fgrep.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)old.fgrep.c	4.4 (Berkeley) %G%";
 /*
  * fgrep -- print all lines containing any of a set of keywords
  *
@@ -27,6 +27,7 @@ struct words {
 long	lnum;
 int	bflag, cflag, fflag, lflag, nflag, vflag, xflag, yflag;
 int	hflag	= 1;
+int	oflag;
 int	sflag;
 int	retcode = 0;
 int	nfile;
@@ -48,6 +49,10 @@ char **argv;
 
 		case 'h':
 			hflag = 0;
+			continue;
+
+		case 'o':
+			oflag++;
 			continue;
 
 		case 'b':
@@ -218,7 +223,7 @@ char *file;
 				return;
 			}
 			else {
-				if (nfile > 1 && hflag) printf("%s:", file);
+				if (nfile > 1 && hflag || oflag) printf("%s:", file);
 				if (bflag) printf("%ld:", (blkno-ccount-1)/DEV_BSIZE);
 				if (nflag) printf("%ld:", lnum);
 				if (p <= nlp) {
