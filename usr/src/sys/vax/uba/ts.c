@@ -1,4 +1,4 @@
-/*	ts.c	4.28	82/08/22	*/
+/*	ts.c	4.29	82/09/12	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -694,22 +694,24 @@ tsread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = tsphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio);
+	errno = tsphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
 tswrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = tsphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, uio);
+	errno = tsphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, uio));
 }
 
 /*

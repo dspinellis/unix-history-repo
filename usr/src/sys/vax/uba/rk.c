@@ -1,6 +1,6 @@
 #define	RKDEBUG
 #define RKBDEBUG
-/*	rk.c	4.44	82/08/22	*/
+/*	rk.c	4.45	82/09/12	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -521,9 +521,8 @@ rkread(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRK)
-		u.u_error = ENXIO;
-	else
-		physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys, uio);
+		return (ENXIO);
+	return (physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys, uio));
 }
 
 rkwrite(dev, uio)

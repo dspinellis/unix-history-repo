@@ -1,4 +1,4 @@
-/*	ut.c	4.17	82/08/22	*/
+/*	ut.c	4.18	82/09/12	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -651,11 +651,12 @@ utread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = utphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_READ, minphys, uio);
+	errno = utphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
 /*
@@ -665,10 +666,12 @@ utwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
-	u.u_error = utphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, uio);
+	int errno;
+
+	errno = utphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, uio));
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	uda.c	4.8	82/08/22	*/
+/*	uda.c	4.9	82/09/12	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -795,9 +795,8 @@ udread(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRA)
-		u.u_error = ENXIO;
-	else
-		physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys, uio);
+		return (ENXIO);
+	return (physio(udstrategy, &rudbuf[unit], dev, B_READ, minphys, uio));
 }
 
 udwrite(dev, uio)
@@ -807,9 +806,8 @@ udwrite(dev, uio)
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NRA)
-		u.u_error = ENXIO;
-	else
-		physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys, uio);
+		return (ENXIO);
+	return (physio(udstrategy, &rudbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 udreset(uban)
