@@ -1,9 +1,15 @@
-/*	@(#)tmscp.c	7.15 (Berkeley) %G% */
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tmscp.c	7.16 (Berkeley) %G%
+ */
 
-#ifndef lint
-static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
-#endif lint
-
+/*
+ * sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
+ */
 
 /************************************************************************
  *									*
