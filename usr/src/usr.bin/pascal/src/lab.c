@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.14 %G%";
+static char sccsid[] = "@(#)lab.c 1.15 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -85,7 +85,6 @@ label(r, l)
 		     * gotos for this label via TRA.
 		     */
 		    putlab(l);
-		    /* put(2, O_GOTO | cbn<<8+INDX, (long)p->value[1]); */
 		    put(2, O_GOTO | cbn<<8, (long)p->value[1]);
 #		endif OBJ
 #		ifdef PC
@@ -134,27 +133,43 @@ gotoop(s)
 	    put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PC
-	    if ( cbn != bn ) {
+	    if ( cbn == bn ) {
 		    /*
+		     *	local goto.
+		     */
+		extlabname( extname , p -> symbol , bn );
+		putprintf( "	jbr	%s" , 0 , extname );
+	    } else {
+		    /*
+		     *	Non-local goto.
+		     *
 		     *  Close all active files between top of stack and
 		     *  frame at the destination level.	Then call longjmp
 		     *	to unwind the stack to the destination level.
+		     *
+		     *	For nested routines the end is calculated as:
+		     *	__disply[ bn ] . ap + sizeof( local frame )
+		     *	The size of the local frame is dumped out by
+		     *	the second pass as an assembler constant.
+		     *	The main routine may not be compiled in this
+		     *	module, so its size may not be available.
+		     * 	However all of its variables will be globally
+		     *	declared, so only the known runtime temporaries
+		     *	will be in its stack frame.
 		     */
+		parts[ bn ] |= NONLOCALGOTO;
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PCLOSE" );
-		putRV( DISPLAYNAME , 0 ,
-			bn * sizeof( struct dispsave ) + sizeof ( char * ) ,
-			NGLOBAL , P2PTR | P2INT );
 		if ( bn > 1 ) {
 		    p = lookup( enclosing[ bn - 1 ] );
 		    sprintf( extname, "LF%d+%d", p -> value[ NL_ENTLOC ]
 			, sizeof( int ) );
-		    putleaf( P2ICON , 0 , 0 , P2INT , extname );
 		    p = lookup(s);
+		    putLV( extname , bn , 0 , NNLOCAL , P2PTR | P2CHAR );
 		} else {
-		    putleaf( P2ICON , DPOFF1 + sizeof( int ) , 0 , P2INT , 0 );
+		    putLV( 0 , bn , -( DPOFF1 + sizeof( int ) ) , LOCALVAR ,
+			P2PTR | P2CHAR );
 		}
-		putop( P2MINUS , P2PTR | P2CHAR );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
@@ -165,14 +180,6 @@ gotoop(s)
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
-	    } else {
-		extlabname( extname , p -> symbol , bn );
-		    /*
-		     *	this is a jmp because it's a jump to a global
-		     *	and the assembler doesn't change jbr's into jmp's
-		     *	if the destination is a global symbol.
-		     */
-		putprintf( "	jmp	%s" , 0 , extname );
 	    }
 #	endif PC
 	if (bn == cbn)
