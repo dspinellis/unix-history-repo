@@ -572,7 +572,7 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
    * will not adjust the file pointer for that section correctly.
    */
 
-  lseek (a_out, sizeof (f_hdr) + sizeof (f_ohdr), 0);
+  lseek (a_out, (off_t) sizeof (f_hdr) + sizeof (f_ohdr), 0);
 
   for (scns = f_hdr.f_nscns; scns > 0; scns--)
     {
@@ -696,7 +696,7 @@ copy_text_and_data (new, a_out)
    * we know.  So just copy it.
    */
 
-  lseek (a_out, sizeof (struct filehdr) + sizeof (struct aouthdr), 0);
+  lseek (a_out, (off_t) sizeof (struct filehdr) + sizeof (struct aouthdr), 0);
 
   for (scns = f_hdr.f_nscns; scns > 0; scns--)
     {
@@ -705,14 +705,14 @@ copy_text_and_data (new, a_out)
 
       if (!strcmp (scntemp.s_name, ".text"))
 	{
-	  lseek (new, (long) text_scnptr, 0);
+	  lseek (new, (off_t) text_scnptr, 0);
 	  ptr = (char *) f_ohdr.text_start;
 	  end = ptr + f_ohdr.tsize;
 	  write_segment (new, ptr, end);
 	}
       else if (!strcmp (scntemp.s_name, ".data"))
 	{
-	  lseek (new, (long) data_scnptr, 0);
+	  lseek (new, (off_t) data_scnptr, 0);
 	  ptr = (char *) f_ohdr.data_start;
 	  end = ptr + f_ohdr.dsize;
 	  write_segment (new, ptr, end);
@@ -723,27 +723,27 @@ copy_text_and_data (new, a_out)
 	{
 	  char page[BUFSIZ];
 	  int size, n;
-	  long old_a_out_ptr = lseek (a_out, 0, 1);
+	  long old_a_out_ptr = lseek (a_out, (off_t) 0, 1);
 
-	  lseek (a_out, scntemp.s_scnptr, 0);
+	  lseek (a_out, (off_t) scntemp.s_scnptr, 0);
 	  for (size = scntemp.s_size; size > 0; size -= sizeof (page))
 	    {
 	      n = size > sizeof (page) ? sizeof (page) : size;
 	      if (read (a_out, page, n) != n || write (new, page, n) != n)
 		PERROR ("xemacs");
 	    }
-	  lseek (a_out, old_a_out_ptr, 0);
+	  lseek (a_out, (off_t) old_a_out_ptr, 0);
 	}
     }
 
 #else /* COFF, but not USG_SHARED_LIBRARIES */
 
-  lseek (new, (long) text_scnptr, 0);
+  lseek (new, (off_t) text_scnptr, 0);
   ptr = (char *) f_ohdr.text_start;
   end = ptr + f_ohdr.tsize;
   write_segment (new, ptr, end);
 
-  lseek (new, (long) data_scnptr, 0);
+  lseek (new, (off_t) data_scnptr, 0);
   ptr = (char *) f_ohdr.data_start;
   end = ptr + f_ohdr.dsize;
   write_segment (new, ptr, end);
@@ -761,16 +761,16 @@ copy_text_and_data (new, a_out)
    the extra A_TEXT_OFFSET bytes, only the actual bytes of code.  */
 
 #ifdef A_TEXT_SEEK
-  lseek (new, (long) A_TEXT_SEEK (hdr), 0);
+  lseek (new, (off_t) A_TEXT_SEEK (hdr), 0);
 #else
 #ifdef A_TEXT_OFFSET
   /* Note that on the Sequent machine A_TEXT_OFFSET != sizeof (hdr)
      and sizeof (hdr) is the correct amount to add here.  */
   /* In version 19, eliminate this case and use A_TEXT_SEEK whenever
      N_TXTOFF is not right.  */
-  lseek (new, (long) N_TXTOFF (hdr) + sizeof (hdr), 0);
+  lseek (new, (off_t) N_TXTOFF (hdr) + sizeof (hdr), 0);
 #else
-  lseek (new, (long) N_TXTOFF (hdr), 0);
+  lseek (new, (off_t) N_TXTOFF (hdr), 0);
 #endif /* no A_TEXT_OFFSET */
 #endif /* no A_TEXT_SEEK */
 
@@ -783,7 +783,7 @@ copy_text_and_data (new, a_out)
 /*  This lseek is certainly incorrect when A_TEXT_OFFSET
     and I believe it is a no-op otherwise.
     Let's see if its absence ever fails.  */
-/*  lseek (new, (long) N_TXTOFF (hdr) + hdr.a_text, 0); */
+/*  lseek (new, (off_t) N_TXTOFF (hdr) + hdr.a_text, 0); */
   write_segment (new, ptr, end);
 
 #endif /* not COFF */
@@ -850,10 +850,10 @@ copy_sym (new, a_out, a_name, new_name)
 
 #ifdef COFF
   if (lnnoptr)			/* if there is line number info */
-    lseek (a_out, lnnoptr, 0);	/* start copying from there */
+    lseek (a_out, (off_t) lnnoptr, 0);	/* start copying from there */
   else
 #endif /* COFF */
-    lseek (a_out, SYMS_START, 0);	/* Position a.out to symtab. */
+    lseek (a_out, (off_t) SYMS_START, 0);	/* Position a.out to symtab. */
 
   while ((n = read (a_out, page, sizeof page)) > 0)
     {
@@ -941,7 +941,7 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
       return -1;
     }
 
-  lseek (new, f_hdr.f_symptr, 0);
+  lseek (new, (off_t) f_hdr.f_symptr, 0);
   for (nsyms = 0; nsyms < f_hdr.f_nsyms; nsyms++)
     {
       read (new, &symentry, SYMESZ);
@@ -951,7 +951,7 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
 	  nsyms++;
 	  if (ISFCN (symentry.n_type)) {
 	    auxentry.x_sym.x_fcnary.x_fcn.x_lnnoptr += bias;
-	    lseek (new, -AUXESZ, 1);
+	    lseek (new, (off_t) -AUXESZ, 1);
 	    write (new, &auxentry, AUXESZ);
 	  }
 	}

@@ -74,7 +74,7 @@ get_doc_string (filepos)
   fd = open (name, O_RDONLY, 0);
   if (fd < 0)
     error ("Cannot open doc string file \"%s\"", name);
-  if (0 > lseek (fd, filepos, 0))
+  if (0 > lseek (fd, (off_t) filepos, 0))
     {
       close (fd);
       error ("Position %ld out of range in doc string file \"%s\"",

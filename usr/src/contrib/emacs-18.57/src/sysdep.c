@@ -58,7 +58,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 extern int errno;
 #ifndef VMS
+#ifndef BSD4_4
 extern char *sys_errlist[];
+#endif
 #endif
 
 #ifdef VMS

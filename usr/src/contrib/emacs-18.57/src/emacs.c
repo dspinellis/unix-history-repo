@@ -178,6 +178,25 @@ extern noshare char **environ;
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
 
+/* We don't include crtbegin.o and crtend.o in the link,
+   so these functions and variables might be missed.
+   Provide dummy definitions to avoid error.
+   (We don't have any real constructors or destructors.)  */
+#ifdef __GNUC__
+#ifndef ORDINARY_LINK
+__do_clobal_ctors ()
+{}
+__do_clobal_ctors_aux ()
+{}
+__do_global_dtors ()
+{}
+char * __CTOR_LIST__[2] = { (char *) (-1), 0 };
+char * __DTOR_LIST__[2] = { (char *) (-1), 0 };
+__main ()
+{}
+#endif /* not ORDINARY_LINK */
+#endif /* __GNUC__ */
+
 /* ARGSUSED */
 main (argc, argv, envp)
      int argc;
