@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)mailstats.c	3.4		%G%);
+SCCSID(@(#)mailstats.c	3.5		%G%);
 
 /*
 **  MAILSTATS -- print mail statistics.
@@ -41,7 +41,7 @@ main(argc, argv)
 		if (stat.stat_nf[i] == 0 && stat.stat_nt[i] == 0)
 			continue;
 		printf("%2d ", i);
-		printf("%6d %10dK ", stat.stat_nf[i], stat.stat_bf[i]);
-		printf("%6d %10dK\n", stat.stat_nt[i], stat.stat_bt[i]);
+		printf("%6ld %10ldK ", stat.stat_nf[i], stat.stat_bf[i]);
+		printf("%6ld %10ldK\n", stat.stat_nt[i], stat.stat_bt[i]);
 	}
 }
