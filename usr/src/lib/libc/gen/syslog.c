@@ -7,31 +7,33 @@ static char SccsId[] =	"@(#)syslog.c	4.2 (Berkeley) %G%";
  *
  * This routine looks a lot like printf, except that it
  * outputs to the log file instead of the standard output.
- * Also, it prints the module name in front of lines,
- * and has some other formatting types (or will sometime).
- * Also, it adds a newline on the end of messages.
+ * Also:
+ *	adds a timestamp,
+ *	prints the module name in front of the message,
+ *	has some other formatting types (or will sometime),
+ *	adds a newline on the end of the message.
  *
- * The output of this routine is intended to be read by
- * /etc/syslog, which will add timestamps.
+ * The output of this routine is intended to be read by /etc/syslogd.
  */
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-
+#include <sys/file.h>
 #include <syslog.h>
 #include <netdb.h>
 
-#define	MAXLINE	1024		/* max message size */
-#define BUFSLOP	20		/* space to allow for "extra stuff" */
-#define NULL	0		/* manifest */
+#define	MAXLINE	1024			/* max message size */
+#define NULL	0			/* manifest */
 
-int	LogFile = -1;		/* fd for log */
-int	LogStat	= 0;		/* status bits, set by initlog */
-char	*LogTag = NULL;		/* string to tag the entry with */
-int	LogMask = LOG_DEBUG;	/* lowest priority to be logged */
+static char	logname[] = "/dev/log";
+static char	ctty[] = "/dev/console";
 
-struct sockaddr_in SyslogAddr;
-static char *SyslogHost = LOG_HOST;
+static int	LogFile = -1;		/* fd for log */
+static int	LogStat	= 0;		/* status bits, set by openlog() */
+static char	*LogTag = NULL;		/* string to tag the entry with */
+static int	LogMask = LOG_DEBUG;	/* lowest priority to be logged */
+
+static struct sockaddr SyslogAddr;
 
 extern	int errno, sys_nerr;
 extern	char *sys_errlist[];
@@ -40,98 +42,92 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	int pri;
 	char *fmt;
 {
-	char buf[MAXLINE+BUFSLOP], outline[MAXLINE + 1];
-	register char *b, *f;
+	char buf[MAXLINE + 1], outline[MAXLINE + 1];
+	register char *b, *f, *o;
+	register int c;
+	long now;
+	int pid;
 
-	if (LogFile < 0)
-		openlog(0, 0);
 	/* see if we should just throw out this message */
 	if (pri > LogMask)
 		return;
-	for (b = buf, f = fmt; f && *f; b = buf) {
-		register char c;
-
-		if (pri > 0 && (LogStat & LOG_COOLIT) == 0) {
-			sprintf(b, "<%d>", pri);
-			b += strlen(b);
-		}
-		if (LogStat & LOG_PID) {
-			sprintf(b, "%d ", getpid());
-			b += strlen(b);
-		}
-		if (LogTag) {
-			sprintf(b, "%s: ", LogTag);
-			b += strlen(b);
-		}
-		while ((c = *f++) != '\0' && c != '\n' && b < buf + MAXLINE) {
-			if (c != '%') {
-				*b++ = c;
-				continue;
-			}
-			c = *f++;
-			if (c != 'm') {
-				*b++ = '%', *b++ = c, *b++ = '\0';
-				continue;
-			}
-			if ((unsigned)errno > sys_nerr)
-				sprintf(b, "error %d", errno);
-			else
-				strcat(b, sys_errlist[errno]);
-			b += strlen(b);
-		}
-		if (c == '\0')
-			f--;
-		*b++ = '\n', *b = '\0';
-		sprintf(outline, buf, p0, p1, p2, p3, p4);
-		errno = 0;
-		if (LogStat & LOG_DGRAM)
-			(void) sendto(LogFile, outline, strlen(outline), 0,
-				   &SyslogAddr, sizeof SyslogAddr);
-		else
-			(void) write(LogFile, outline, strlen(outline));
-		if (errno)
-			perror("syslog: sendto");
+	if (LogFile < 0)
+		openlog(NULL, 0, 0);
+	o = outline;
+	if (pri > 0) {
+		sprintf(o, "<%d>", pri);
+		o += strlen(o);
 	}
+	if (LogTag) {
+		strcpy(o, LogTag);
+		o += strlen(o);
+	}
+	if (LogStat & LOG_PID) {
+		sprintf(o, " (%d)", getpid());
+		o += strlen(o);
+	}
+	time(&now);
+	sprintf(o, " %.15s -- ", ctime(&now) + 4);
+	o += strlen(o);
+
+	b = buf;
+	f = fmt;
+	while ((c = *f++) != '\0' && c != '\n' && b < &buf[MAXLINE]) {
+		if (c != '%') {
+			*b++ = c;
+			continue;
+		}
+		if ((c = *f++) != 'm') {
+			*b++ = '%';
+			*b++ = c;
+			continue;
+		}
+		if ((unsigned)errno > sys_nerr)
+			sprintf(b, "error %d", errno);
+		else
+			strcpy(b, sys_errlist[errno]);
+		b += strlen(b);
+	}
+	*b++ = '\n';
+	*b = '\0';
+	sprintf(o, buf, p0, p1, p2, p3, p4);
+	c = strlen(outline);
+	if (c > MAXLINE)
+		c = MAXLINE;
+	if (sendto(LogFile, outline, c, 0, &SyslogAddr, sizeof SyslogAddr) >= 0)
+		return;
+	if (pri > LOG_CRIT)
+		return;
+	pid = fork();
+	if (pid == -1)
+		return;
+	if (pid == 0) {
+		LogFile = open(ctty, O_RDWR);
+		write(LogFile, outline, c);
+		close(LogFile);
+		exit(0);
+	}
+	while (wait((int *)0) != pid)
+		;
 }
 
 /*
  * OPENLOG -- open system log
  */
-openlog(ident, logstat)
+openlog(ident, logstat, logmask)
 	char *ident;
-	int logstat;
+	int logstat, logmask;
 {
-	struct servent *sp;
-	struct hostent *hp;
 
 	LogTag = ident;
 	LogStat = logstat;
+	if (logmask > 0 && logmask <= LOG_DEBUG)
+		LogMask = logmask;
 	if (LogFile >= 0)
 		return;
-	sp = getservbyname("syslog", "udp");
-	hp = gethostbyname(SyslogHost);
-	if (sp == NULL || hp == NULL)
-		goto bad;
-	LogFile = socket(AF_INET, SOCK_DGRAM, 0);
-	if (LogFile < 0) {
-		perror("syslog: socket");
-		goto bad;
-	}
-	bzero(&SyslogAddr, sizeof SyslogAddr);
-	SyslogAddr.sin_family = hp->h_addrtype;
-	bcopy(hp->h_addr, (char *)&SyslogAddr.sin_addr, hp->h_length);
-	SyslogAddr.sin_port = sp->s_port;
-	LogStat |= LOG_DGRAM;
-	return;
-bad:
-	LogStat |= LOG_COOLIT;
-	LogStat &= ~LOG_DGRAM;
-	LogMask = LOG_CRIT;
-	LogFile = open("/dev/console", 1);
-	if (LogFile < 0) {
-		perror("syslog: /dev/console");
-		LogFile = 2;
-	}
+	SyslogAddr.sa_family = AF_UNIX;
+	strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
+	LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
 }
 
 /*
@@ -142,4 +138,17 @@ closelog()
 
 	(void) close(LogFile);
 	LogFile = -1;
+}
+
+/*
+ * SETLOGMASK -- set the log mask level
+ */
+setlogmask(pri)
+	int pri;
+{
+	int opri;
+
+	opri = LogMask;
+	LogMask = pri;
+	return (opri);
 }
