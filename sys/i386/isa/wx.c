@@ -36,7 +36,7 @@ static int wdtest = 0;
  * SUCH DAMAGE.
  *
  *	from: @(#)wx.c	7.2 (Berkeley) 5/9/91
- *	$Id: wx.c,v 1.11 1993/10/16 13:46:31 rgrimes Exp $
+ *	$Id: wx.c,v 1.1 1993/10/26 22:26:38 nate Exp $
  */
 
 /* TODO:peel out buffer at low ipl, speed improvement */
@@ -922,10 +922,24 @@ wdgetctlr(struct disk *du) {
 	if (wdcommand(du, 0, 0, 0, 0, WDCC_READP) != 0
 	    || wdwait(du, WDCS_READY | WDCS_SEEKCMPLT | WDCS_DRQ) != 0) {
 
+#ifndef	MFM
 		/* Old drives don't support WDCC_READP.  Try a seek to 0. */
 		if (wdcommand(du, 0, 0, 0, 0, WDCC_RESTORE | WD_STEP) != 0
 		    || wdwait(du, WDCS_READY | WDCS_SEEKCMPLT) != 0)
 			return (1);
+#else	/* IDE */
+		/*
+		 * Some IDE drives return trash if there is not a unit 1
+		 * out there, need to make sure that it is READY and not BUSY
+		 * before you assume it is there !
+		 */
+		outb(du->dk_port+wd_sdh, WDSD_IBM | (du->dk_unit<<4));
+		DELAY(5000);
+		if ((inb(du->dk_port+wd_status) & (WDCS_READY|WDCS_BUSY)) !=
+			WDCS_READY) {
+			return (1);
+		}
+#endif	/* MFM */
 
 		/* Fake minimal drive geometry for reading the MBR or label. */
 		du->dk_dd.d_secsize = DEV_BSIZE;
