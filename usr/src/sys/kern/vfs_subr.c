@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.76 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.77 (Berkeley) %G%
  */
 
 /*
@@ -1153,7 +1153,7 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 	struct mount *omp;
 	struct vnode *vp;
 	register char *bp = where, *savebp;
-	char *ewhere = where + *acopysize;
+	char *ewhere;
 	int error;
 
 #define VPTRSZ	sizeof (struct vnode *)
@@ -1162,6 +1162,7 @@ kinfo_vnode(op, where, acopysize, arg, aneeded)
 		*aneeded = (numvnodes + KINFO_VNODESLOP) * (VPTRSZ + VNODESZ);
 		return (0);
 	}
+	ewhere = where + *acopysize;
 		
 	do {
 		if (vfs_busy(mp)) {
