@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.11 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -120,25 +120,7 @@ main(argc, argv)
 	get_exportlist();
 	get_mountlist();
 	if (debug == 0) {
-		if (fork())
-			exit(0);
-		{ int s;
-		for (s = 0; s < 10; s++)
-			(void) close(s);
-		}
-		(void) open("/", O_RDONLY);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
-		{ int tt = open("/dev/tty", O_RDWR);
-		  if (tt > 0) {
-			ioctl(tt, TIOCNOTTY, (char *)0);
-			close(tt);
-		  }
-		}
-		(void) setpgrp(0, 0);
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		signal(SIGTTOU, SIG_IGN);
+		daemon(0, 0);
 		signal(SIGINT, SIG_IGN);
 		signal(SIGQUIT, SIG_IGN);
 	}
@@ -161,6 +143,7 @@ main(argc, argv)
 	}
 	svc_run();
 	syslog(LOG_ERR, "Mountd died");
+	exit(1);
 }
 
 /*

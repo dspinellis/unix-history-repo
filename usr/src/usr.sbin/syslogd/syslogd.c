@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.42 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -198,16 +198,9 @@ main(argc, argv)
 	if (argc -= optind)
 		usage();
 
-	if (!Debug) {
-		if (fork())
-			exit(0);
-		for (i = 0; i < 10; i++)
-			(void) close(i);
-		(void) open("/", O_RDONLY, 0);
-		(void) dup2(STDIN_FILENO, STDOUT_FILENO);
-		(void) dup2(STDIN_FILENO, STDERR_FILENO);
-		untty();
-	} else
+	if (!Debug)
+		daemon(0, 0);
+	else
 		setlinebuf(stdout);
 
 	consfile.f_type = F_CONSOLE;
@@ -336,19 +329,6 @@ usage()
 	(void) fprintf(stderr,
 	    "usage: syslogd [-d] [-f conffile] [-m markinterval] [-p path]\n");
 	exit(1);
-}
-
-untty()
-{
-	int i;
-
-	if (!Debug) {
-		i = open(_PATH_TTY, O_RDWR, 0);
-		if (i >= 0) {
-			(void) ioctl(i, (int) TIOCNOTTY, (char *)0);
-			(void) close(i);
-		}
-	}
 }
 
 /*
@@ -494,7 +474,6 @@ logmsg(pri, msg, from, flags)
 		f->f_file = open(ctty, O_WRONLY, 0);
 
 		if (f->f_file >= 0) {
-			untty();
 			fprintlog(f, flags, msg);
 			(void) close(f->f_file);
 		}
@@ -660,10 +639,8 @@ fprintlog(f, flags, msg)
 				if (f->f_file < 0) {
 					f->f_type = F_UNUSED;
 					logerror(f->f_un.f_fname);
-				} else {
-					untty();
+				} else
 					goto again;
-				}
 			} else {
 				f->f_type = F_UNUSED;
 				errno = e;
@@ -1057,10 +1034,8 @@ cfline(line, f)
 			logerror(p);
 			break;
 		}
-		if (isatty(f->f_file)) {
+		if (isatty(f->f_file))
 			f->f_type = F_TTY;
-			untty();
-		}
 		else
 			f->f_type = F_FILE;
 		if (strcmp(p, ctty) == 0)
