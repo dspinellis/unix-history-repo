@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_6.c	2.2 83/12/09";
+static	char *sccsid = "@(#)pl_6.c	2.3 84/02/23";
 #endif
 
 #include "player.h"
@@ -7,14 +7,17 @@ static	char *sccsid = "@(#)pl_6.c	2.2 83/12/09";
 repair()
 {
 	char c;
-	char *repairs;
-	struct shipspecs *ptr;
+	register char *repairs;
+	register struct shipspecs *ptr = mc;
+	register int count;
+
+#define FIX(x, m) (m - ptr->x > count \
+	? (ptr->x += count, count = 0) : (count -= m - ptr->x, ptr->x = m))
 
 	if (repaired || loaded || fired || changed || turned()) {
 		Signal("No hands free to repair", (struct ship *)0);
 		return;
 	}
-	ptr = mc;
 	c = sgetch("Repair (hull, guns, rigging)? ", (struct ship *)0, 1);
 	switch (c) {
 		case 'h':
@@ -30,45 +33,55 @@ repair()
 			Signal("Avast heaving!", (struct ship *)0);
 			return;
 	}
-	repaired = 1;
 	if (++*repairs >= 3) {
+		count = 2;
 		switch (c) {
-		case 'h':
-			if (ptr->hull < ptr->guns/4)
-				Write(W_HULL, ms, 0,
-					ptr->hull + 2, 0, 0, 0);
-			else
-				c = 0;
+		case 'h': {
+			int max = ptr->guns/4;
+			if (ptr->hull < max) {
+				FIX(hull, max);
+				Write(W_HULL, ms, 0, ptr->hull, 0, 0, 0);
+			}
 			break;
+			}
 		case 'g':
 			if (ptr->gunL < ptr->gunR) {
-				if (ptr->gunL + ptr->carL < ptr->guns/5)
-					Write(W_GUNL, ms, 0,
-						ptr->gunL + 2, ptr->carL, 0, 0);
-				else
-					c = 0;
-			} else
-				if (ptr->gunR + ptr->carR < ptr->guns/5)
-					Write(W_GUNR, ms, 0,
-						ptr->gunR + 2, ptr->carR, 0, 0);
-				else
-					c = 0;
+				int max = ptr->guns/5 - ptr->carL;
+				if (ptr->gunL < max) {
+					FIX(gunL, max);
+					Write(W_GUNL, ms, 0, ptr->gunL,
+						ptr->carL, 0, 0);
+				}
+			} else {
+				int max = ptr->guns/5 - ptr->carR;
+				if (ptr->gunR < max) {
+					FIX(gunR, max);
+					Write(W_GUNR, ms, 0, ptr->gunR,
+						ptr->carR, 0, 0);
+				}
+			}
 			break;
 		case 'r':
-			if (!ptr->rig4)
-				Write(W_RIG4, ms, 0,
-					ptr->rig4 + 2, 0, 0, 0);
-			else if (!ptr->rig3)
-				Write(W_RIG3, ms, 0, 2, 0, 0, 0);
-			else if (!ptr->rig2)
-				Write(W_RIG2, ms, 0, 2, 0, 0, 0);
-			else if (ptr->rig1 < 4)
-				Write(W_RIG1, ms, 0, 2, 0, 0, 0);
-			else
-				c = 0;
+#define X 2
+			if (ptr->rig4 >= 0 && ptr->rig4 < X) {
+				FIX(rig4, X);
+				Write(W_RIG4, ms, 0, ptr->rig4, 0, 0, 0);
+			}
+			if (count && ptr->rig3 < X) {
+				FIX(rig3, X);
+				Write(W_RIG3, ms, 0, ptr->rig3, 0, 0, 0);
+			}
+			if (count && ptr->rig2 < X) {
+				FIX(rig2, X);
+				Write(W_RIG2, ms, 0, ptr->rig2, 0, 0, 0);
+			}
+			if (count && ptr->rig1 < X) {
+				FIX(rig1, X);
+				Write(W_RIG1, ms, 0, ptr->rig1, 0, 0, 0);
+			}
 			break;
 		}
-		if (!c) {
+		if (count == 2) {
 			Signal("Repairs completed.", (struct ship *)0);
 			*repairs = 2;
 		} else {
@@ -81,6 +94,7 @@ repair()
 	blockalarm();
 	draw_slot();
 	unblockalarm();
+	repaired = 1;
 }
 
 turned()
