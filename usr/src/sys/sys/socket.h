@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)socket.h	7.6 (Berkeley) %G%
+ *	@(#)socket.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -79,18 +79,21 @@ struct	linger {
 #define	AF_CHAOS	5		/* mit CHAOS protocols */
 #define	AF_NS		6		/* XEROX NS protocols */
 #define	AF_ISO		7		/* ISO protocols */
+#define	AF_OSI		AF_ISO
 #define	AF_ECMA		8		/* european computer manufacturers */
 #define	AF_DATAKIT	9		/* datakit protocols */
 #define	AF_CCITT	10		/* CCITT protocols, X.25 etc */
 #define	AF_SNA		11		/* IBM SNA */
 #define AF_DECnet	12		/* DECnet */
-#define AF_DLI		13		/* Direct data link interface */
+#define AF_DLI		13		/* DEC Direct data link interface */
 #define AF_LAT		14		/* LAT */
 #define	AF_HYLINK	15		/* NSC Hyperchannel */
 #define	AF_APPLETALK	16		/* Apple Talk */
 #define	AF_ROUTE	17		/* Internal Routing Protocol */
+#define	AF_LINK		18		/* Link layer interface */
+#define	pseudo_AF_XTP	19		/* eXpress Transfer Protocol (no AF) */
 
-#define	AF_MAX		18
+#define	AF_MAX		20
 
 /*
  * Structure used by kernel to store most
@@ -100,13 +103,6 @@ struct sockaddr {
 	u_char	sa_len;			/* total length */
 	u_char	sa_family;		/* address family */
 	char	sa_data[14];		/* actually longer; address value */
-};
-/*
- * 4.3 compat sockaddr, move to compat file later
- */
-struct osockaddr {
-	u_short	sa_family;		/* address family */
-	char	sa_data[14];		/* up to 14 bytes of direct address */
 };
 
 /*
@@ -129,6 +125,7 @@ struct sockproto {
 #define	PF_CHAOS	AF_CHAOS
 #define	PF_NS		AF_NS
 #define	PF_ISO		AF_ISO
+#define	PF_OSI		AF_ISO
 #define	PF_ECMA		AF_ECMA
 #define	PF_DATAKIT	AF_DATAKIT
 #define	PF_CCITT	AF_CCITT
@@ -139,6 +136,8 @@ struct sockproto {
 #define	PF_HYLINK	AF_HYLINK
 #define	PF_APPLETALK	AF_APPLETALK
 #define	PF_ROUTE	AF_ROUTE
+#define	PF_LINK		AF_LINK
+#define	PF_XTP		pseudo_AF_XTP	/* really just proto family, no AF */
 
 #define	PF_MAX		AF_MAX
 
@@ -156,15 +155,8 @@ struct msghdr {
 	int	msg_namelen;		/* size of address */
 	struct	iovec *msg_iov;		/* scatter/gather array */
 	int	msg_iovlen;		/* # elements in msg_iov */
-	caddr_t	msg_accrights;		/* access rights sent/received */
-	int	msg_accrightslen;
-	caddr_t	msg_control;		/* ancillary data not conveyable
-					 * by flags; msgs of the form
-					 *	u_short type;
-					 *	u_short count;
-					 *	u_char  data[count];
-					 */
-	int	msg_controllen;
+	caddr_t	msg_control;		/* ancillary data, see below */
+	int	msg_controllen;		/* ancillary data buffer len */
 	int	msg_flags;		/* flags on received message */
 };
 
@@ -174,6 +166,45 @@ struct msghdr {
 #define	MSG_EOR		0x8		/* data completes record */
 #define	MSG_TRUNC	0x10		/* data discarded before delivery */
 #define	MSG_CTRUNC	0x20		/* control data lost before delivery */
+#define	MSG_WAITALL	0x40		/* wait for full request or error */
+
+#define	MSG_MAXIOVLEN	16
+
+/*
+ * Header for ancillary data objects in msg_control buffer.
+ * Used for additional information with/about a datagram
+ * not expressible by flags.  The format is a sequence
+ * of message elements headed by cmsghdr structures.
+ */
+struct cmsghdr {
+	u_int	cmsg_len;		/* data byte count, including hdr */
+	u_int	cmsg_level;		/* originating protocol */
+	u_int	cmsg_type;		/* protocol-specific type */
+/* followed by	u_char  cmsg_data[]; */
+};
+
+/* given pointer to struct adatahdr, return pointer to data */
+#define	CMSG_DATA(cmsg)		((u_char *)((cmsg) + 1))
+
+/* given pointer to struct adatahdr, return pointer to next adatahdr */
+#define	CMSG_NXTHDR(mhdr, cmsg)	\
+	(((caddr_t)(cmsg) + (cmsg)->cmsg_len + sizeof(struct cmsghdr) > \
+	    (mhdr)->msg_control + (mhdr)->msg_controllen) ? \
+	    (struct cmsghdr *)NULL : \
+	    (struct cmsghdr *)((caddr_t)(cmsg) + ALIGN((cmsg)->cmsg_len)))
+
+#define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
+
+/* "Socket"-level control message types: */
+#define	SCM_RIGHTS	0x01		/* access rights (array of int) */
+
+/*
+ * 4.3 compat sockaddr, move to compat file later
+ */
+struct osockaddr {
+	u_short	sa_family;		/* address family */
+	char	sa_data[14];		/* up to 14 bytes of direct address */
+};
 
 /*
  * 4.3-compat message header (move to compat file later).
@@ -186,5 +217,3 @@ struct omsghdr {
 	caddr_t	msg_accrights;		/* access rights sent/received */
 	int	msg_accrightslen;
 };
-
-#define	MSG_MAXIOVLEN	16
