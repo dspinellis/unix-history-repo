@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983, 1988 The Regents of the University of California.
+ * Copyright (c) 1983, 1988, 1989 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -17,12 +17,12 @@
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1988 The Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1988, 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -49,6 +49,10 @@ static char sccsid[] = "@(#)rlogind.c	5.37 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
+#include <sys/ioctl.h>
+#if BSD > 43
+#include <sys/termios.h>
+#endif
 #include <sys/signal.h>
 #include <sys/ioctl.h>
 #include <sys/termios.h>
@@ -74,6 +78,7 @@ static	char term[64] = "TERM=";
 #define	ENVSIZE	(sizeof("TERM=")-1)	/* skip null for concatenation */
 int	keepalive = 1;
 int	check_all = 0;
+int	check_all = 0;
 
 #define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
 
@@ -97,6 +102,9 @@ main(argc, argv)
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch (ch) {
+		case 'a':
+			check_all = 1;
+			break;
 		case 'a':
 			check_all = 1;
 			break;
@@ -128,13 +136,13 @@ main(argc, argv)
 #ifdef	KERBEROS
 	if (use_kerberos && vacuous) {
 		usage();
-		fatal("only one of -k and -v allowed\n");
+		fatal("only one of -k and -v allowed");
 	}
 #endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		syslog(LOG_ERR, "Couldn't get peer name of remote host: %m");
-		fatalperror("Can't get peer name of host");
+		fatalperror("Can't get peer name of remote host");
 	}
 	if (keepalive &&
 	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
@@ -169,7 +177,7 @@ doit(f, fromp)
 	if(c != 0)
 		exit(1);
 #ifdef	KERBEROS
-	if(vacuous)
+	if (vacuous)
 		fatal(f, "Remote host requires Kerberos authentication");
 
 	alarm(0);
@@ -187,7 +195,7 @@ doit(f, fromp)
 #endif
 	}
 #ifndef OLD_LOGIN
-	else if (local_domain(hp->h_name)) {
+	else if (check_all || local_domain(hp->h_name)) {
 		/*
 		 * If name returned by gethostbyaddr is in our domain,
 		 * attempt to verify that we haven't been fooled by someone
@@ -198,15 +206,21 @@ doit(f, fromp)
 		remotehost[sizeof(remotehost) - 1] = 0;
 		hp = gethostbyname(remotehost);
 		if (hp)
+#ifdef h_addr	/* 4.2 hack */
 		    for (; hp->h_addr_list[0]; hp->h_addr_list++)
 			if (!bcmp(hp->h_addr_list[0], (caddr_t)&fromp->sin_addr,
 			    sizeof(fromp->sin_addr))) {
 				hostok++;
 				break;
 			}
+#else
+			if (!bcmp(hp->h_addr, (caddr_t)&fromp->sin_addr,
+			    sizeof(fromp->sin_addr)))
+				hostok++;
+#endif
 	} else
 		hostok++;
-#endif
+#endif /* OLD_LOGIN */
 
 	if (use_kerberos) {
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
@@ -216,7 +230,7 @@ doit(f, fromp)
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval]);
 		else if(!hostok)
-			fatal(f, "krlogind: Host address mismatch.\r\n");
+			fatal(f, "krlogind: Host address mismatch.");
 	} else
 #ifndef OLD_LOGIN
 	{
@@ -270,19 +284,17 @@ gotpty:
 	if (t < 0)
 		fatalperror(f, line);
 	setup_term(t);
-#ifdef DEBUG
-	{
-		int tt = open("/dev/tty", O_RDWR);
-		if (tt > 0) {
-			(void)ioctl(tt, TIOCNOTTY, 0);
-			(void)close(tt);
-		}
-	}
-#endif
+
 	pid = fork();
 	if (pid < 0)
 		fatalperror(f, "");
 	if (pid == 0) {
+#if BSD > 43
+		if (setsid() < 0)
+			fatalperror(f, "setsid");
+		if (ioctl(t, TIOCSCTTY, 0) < 0)
+			fatalperror(f, "ioctl(sctty)");
+#endif
 		close(f), close(p);
 		dup2(t, 0), dup2(t, 1), dup2(t, 2);
 		close(t);
@@ -562,8 +574,26 @@ setup_term(fd)
 	int fd;
 {
 	register char *cp = index(term, '/'), **cpp;
-	struct sgttyb sgttyb;
 	char *speed;
+#if BSD > 43
+	struct termios tt;
+
+	tcgetattr(fd, &tt);
+	if (cp) {
+		*cp++ = '\0';
+		speed = cp;
+		cp = index(speed, '/');
+		if (cp)
+			*cp++ = '\0';
+		cfsetspeed(&tt, atoi(speed));
+	}
+
+	tt.c_iflag = TTYDEF_IFLAG;
+	tt.c_oflag = TTYDEF_OFLAG;
+	tt.c_lflag = TTYDEF_LFLAG;
+	tcsetattr(fd, TCSADFLUSH, &tt);
+#else
+	struct sgttyb sgttyb;
 
 	(void)ioctl(fd, TIOCGETP, &sgttyb);
 	if (cp) {
@@ -580,6 +610,7 @@ setup_term(fd)
 	}
 	sgttyb.sg_flags = ECHO|CRMOD|ANYP|XTABS;
 	(void)ioctl(fd, TIOCSETP, &sgttyb);
+#endif
 
 	env[0] = term;
 	env[1] = 0;
@@ -588,8 +619,8 @@ setup_term(fd)
 
 /*
  * Check whether host h is in our local domain,
- * as determined by the part of the name following
- * the first '.' in its name and in ours.
+ * defined as sharing the last two components of the domain part,
+ * or the entire domain part if the local domain has only one component.
  * If either name is unqualified (contains no '.'),
  * assume that the host is local, as it will be
  * interpreted as such.
@@ -598,12 +629,32 @@ local_domain(h)
 	char *h;
 {
 	char localhost[MAXHOSTNAMELEN];
-	char *p1, *p2 = index(h, '.');
+	char *p1, *p2, *topdomain();
 
+	localhost[0] = 0;
 	(void) gethostname(localhost, sizeof(localhost));
-	p1 = index(localhost, '.');
+	p1 = topdomain(localhost);
+	p2 = topdomain(h);
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
+}
+
+char *
+topdomain(h)
+	char *h;
+{
+	register char *p;
+	char *maybe = NULL;
+	int dots = 0;
+
+	for (p = h + strlen(h); p >= h; p--) {
+		if (*p == '.') {
+			if (++dots == 2)
+				return (p);
+			maybe = p;
+		}
+	}
+	return (maybe);
 }
 #endif /* OLD_LOGIN */
