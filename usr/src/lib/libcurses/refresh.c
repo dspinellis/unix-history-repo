@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
+#include <string.h>
 
 static int curwin;
 static short ly, lx;
@@ -28,7 +29,6 @@ int
 wrefresh(win)
 	register WINDOW *win;
 {
-	register WINDOW *orig;
 	register int retval;
 	register short wy;
 
@@ -117,7 +117,7 @@ wrefresh(win)
 		}
 	}
 	retval = OK;
-ret:
+
 	_win = NULL;
 	(void)fflush(stdout);
 	return (retval);
@@ -166,113 +166,117 @@ makech(win, wy)
 		ce = NULL;
 
 	while (wx <= lch) {
-		if (*nsp != *csp) {
-			domvcur(ly, lx, y, wx + win->_begx);
-#ifdef DEBUG
-			__TRACE("makech: 1: wx = %d, lx = %d\n", wx, lx);
-#endif
-			ly = y;
-			lx = wx + win->_begx;
-			while (*nsp != *csp && wx <= lch) {
-				if (ce != NULL && wx >= nlsp && *nsp == ' ') {
-					/* Check for clear to end-of-line. */
-					ce = &curscr->_y[ly][COLS - 1];
-					while (*ce == ' ')
-						if (ce-- <= csp)
-							break;
-					clsp = ce - curscr->_y[ly] - win->_begx;
-#ifdef DEBUG
-				__TRACE("makech: clsp = %d, nlsp = %d\n",
-				    clsp, nlsp);
-#endif
-					if (clsp - nlsp >= strlen(CE)
-					    && clsp < win->_maxx) {
-#ifdef DEBUG
-						__TRACE("makech: using CE\n");
-#endif
-						tputs(CE, 0, __cputchar);
-						lx = wx + win->_begx;
-						while (wx++ <= clsp)
-							*csp++ = ' ';
-						return (OK);
-					}
-					ce = NULL;
+		if (*nsp == *csp) {
+			if (wx <= lch) {
+				while (*nsp == *csp && wx <= lch) {
+					nsp++;
+					if (!curwin)
+						csp++;
+					++wx;
 				}
-				/* Enter/exit standout mode as appropriate. */
-				if (SO && (*nsp & _STANDOUT) !=
-				    (curscr->_flags & _STANDOUT)) {
-					if (*nsp & _STANDOUT) {
-						tputs(SO, 0, __cputchar);
-						curscr->_flags |= _STANDOUT;
-					} else {
-						tputs(SE, 0, __cputchar);
-						curscr->_flags &= ~_STANDOUT;
-					}
-				}
-				wx++;
-				if (wx >= win->_maxx && wy == win->_maxy - 1)
-					if (win->_scroll) {
-						if (curscr->_flags & _STANDOUT
-						    && win->_flags & _ENDLINE)
-							if (!MS) {
-								tputs(SE, 0,
-								    __cputchar);
-								curscr->_flags &= ~_STANDOUT;
-							}
-						if (!curwin)
-							putchar((*csp = *nsp) & 0177);
-						else
-							putchar(*nsp & 0177);
-						if (win->_flags & _FULLWIN && !curwin)
-							scroll(curscr);
-						ly = win->_begy + win->_cury;
-						lx = win->_begx + win->_curx;
-						return (OK);
-					} else
-						if (win->_flags & _SCROLLWIN) {
-							lx = --wx;
-							return (ERR);
-						}
-				if (!curwin)
-					putchar((*csp++ = *nsp) & 0177);
-				else
-					putchar(*nsp & 0177);
-#ifdef DEBUG
-				__TRACE("makech: putchar(%c)\n", *nsp & 0177);
-#endif
-				if (UC && (*nsp & _STANDOUT)) {
-					putchar('\b');
-					tputs(UC, 0, __cputchar);
-				}
-				nsp++;
+				continue;
 			}
-#ifdef DEBUG
-			__TRACE("makech: 2: wx = %d, lx = %d\n", wx, lx);
-#endif
-			if (lx == wx + win->_begx)	/* If no change. */
-				break;
-			lx = wx + win->_begx;
-			if (lx >= COLS && AM) {
-				lx = 0;
-				ly++;
-				/*
-				 * xn glitch: chomps a newline after auto-wrap.
-				 * we just feed it now and forget about it.
-				 */
-				if (XN) {
-					putchar('\n');
-					putchar('\r');
-				}
-			}
-		} else if (wx <= lch)
-			while (*nsp == *csp && wx <= lch) {
-				nsp++;
-				if (!curwin)
-					csp++;
-				++wx;
-			}
-		else
 			break;
+		}
+		domvcur(ly, lx, y, wx + win->_begx);
+#ifdef DEBUG
+		__TRACE("makech: 1: wx = %d, lx = %d\n", wx, lx);
+#endif
+		ly = y;
+		lx = wx + win->_begx;
+		while (*nsp != *csp && wx <= lch) {
+			if (ce != NULL && wx >= nlsp && *nsp == ' ') {
+				/* Check for clear to end-of-line. */
+				ce = &curscr->_y[ly][COLS - 1];
+				while (*ce == ' ')
+					if (ce-- <= csp)
+						break;
+				clsp = ce - curscr->_y[ly] - win->_begx;
+#ifdef DEBUG
+			__TRACE("makech: clsp = %d, nlsp = %d\n", clsp, nlsp);
+#endif
+				if (clsp - nlsp >= strlen(CE) &&
+				    clsp < win->_maxx) {
+#ifdef DEBUG
+					__TRACE("makech: using CE\n");
+#endif
+					tputs(CE, 0, __cputchar);
+					lx = wx + win->_begx;
+					while (wx++ <= clsp)
+						*csp++ = ' ';
+					return (OK);
+				}
+				ce = NULL;
+			}
+
+			/* Enter/exit standout mode as appropriate. */
+			if (SO && (*nsp & _STANDOUT) !=
+			    (curscr->_flags & _STANDOUT)) {
+				if (*nsp & _STANDOUT) {
+					tputs(SO, 0, __cputchar);
+					curscr->_flags |= _STANDOUT;
+				} else {
+					tputs(SE, 0, __cputchar);
+					curscr->_flags &= ~_STANDOUT;
+				}
+			}
+
+			wx++;
+			if (wx >= win->_maxx && wy == win->_maxy - 1)
+				if (win->_scroll) {
+					if (curscr->_flags & _STANDOUT
+					    && win->_flags & _ENDLINE)
+						if (!MS) {
+							tputs(SE, 0,
+							    __cputchar);
+							curscr->_flags &=
+							    ~_STANDOUT;
+						}
+					if (!curwin)
+						putchar((*csp = *nsp) & 0177);
+					else
+						putchar(*nsp & 0177);
+					if (win->_flags & _FULLWIN && !curwin)
+						scroll(curscr);
+					ly = win->_begy + win->_cury;
+					lx = win->_begx + win->_curx;
+					return (OK);
+				} else
+					if (win->_flags & _SCROLLWIN) {
+						lx = --wx;
+						return (ERR);
+					}
+			if (!curwin)
+				putchar((*csp++ = *nsp) & 0177);
+			else
+				putchar(*nsp & 0177);
+#ifdef DEBUG
+			__TRACE("makech: putchar(%c)\n", *nsp & 0177);
+#endif
+			if (UC && (*nsp & _STANDOUT)) {
+				putchar('\b');
+				tputs(UC, 0, __cputchar);
+			}
+			nsp++;
+		}
+#ifdef DEBUG
+		__TRACE("makech: 2: wx = %d, lx = %d\n", wx, lx);
+#endif
+		if (lx == wx + win->_begx)	/* If no change. */
+			break;
+		lx = wx + win->_begx;
+		if (lx >= COLS && AM) {
+			lx = 0;
+			ly++;
+			/*
+			 * xn glitch: chomps a newline after auto-wrap.
+			 * we just feed it now and forget about it.
+			 */
+			if (XN) {
+				putchar('\n');
+				putchar('\r');
+			}
+		}
 #ifdef DEBUG
 		__TRACE("makech: 3: wx = %d, lx = %d\n", wx, lx);
 #endif
