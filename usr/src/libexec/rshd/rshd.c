@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	4.15 83/05/03";
+static char sccsid[] = "@(#)rshd.c	4.16 83/06/12";
 #endif
 
 #include <sys/ioctl.h>
@@ -24,7 +24,7 @@ int	options;
 /* VARARGS 1 */
 int	error();
 /*
- * remote execute server:
+ * remote shell server:
  *	remuser\0
  *	locuser\0
  *	command\0
@@ -34,7 +34,7 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	int f;
+	int f, linger;
 	struct sockaddr_in from;
 	struct servent *sp;
 
@@ -83,11 +83,14 @@ main(argc, argv)
 		perror("rshd: setsockopt (SO_DEBUG)");
 	if (setsockopt(f, SOL_SOCKET, SO_KEEPALIVE, 0, 0) < 0)
 		perror("rshd: setsockopt (SO_KEEPALIVE)");
+	linger = 60;			/* XXX */
+	if (setsockopt(f, SOL_SOCKET, SO_LINGER, &linger, 0) < 0)
+		perror("rshd: setsockopt (SO_LINGER)");
 	if (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
 		perror("rshd: bind");
 		exit(1);
 	}
-	sigset(SIGCHLD, reapchild);
+	signal(SIGCHLD, reapchild);
 	listen(f, 10);
 	for (;;) {
 		int g, len = sizeof (from);
