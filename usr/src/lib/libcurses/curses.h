@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.27 (Berkeley) %G%
+ *	@(#)curses.h	5.28 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -137,9 +137,10 @@ extern char	*ttytype;		/* Full name of current terminal. */
 #define	OK	(1)			/* Success return. */
 
 /* Standard screen pseudo functions. */
-#define	addbytes(da, co)		waddbytes(stdscr, da, co)
+#define	addbytes(s, n)			__waddbytes(stdscr, s, n, 0)
 #define	addch(ch)			waddch(stdscr, ch)
-#define	addstr(str)			waddbytes(stdscr, str, strlen(str))
+#define	addnstr(s, n)			waddnstr(stdscr, s, n)
+#define	addstr(s)			__waddbytes(stdscr, s, strlen(s), 0)
 #define	clear()				wclear(stdscr)
 #define	clrtobot()			wclrtobot(stdscr)
 #define	clrtoeol()			wclrtoeol(stdscr)
@@ -147,7 +148,7 @@ extern char	*ttytype;		/* Full name of current terminal. */
 #define	deleteln()			wdeleteln(stdscr)
 #define	erase()				werase(stdscr)
 #define	getch()				wgetch(stdscr)
-#define	getstr(str)			wgetstr(stdscr, str)
+#define	getstr(s)			wgetstr(stdscr, s)
 #define	inch()				winch(stdscr)
 #define	insch(ch))			winsch(stdscr, ch)
 #define	insertln()			winsertln(stdscr)
@@ -155,46 +156,51 @@ extern char	*ttytype;		/* Full name of current terminal. */
 #define	refresh()			wrefresh(stdscr)
 #define	standend()			wstandend(stdscr)
 #define	standout()			wstandout(stdscr)
+#define	waddbytes(w, s, n)		__waddbytes(w, s, n, 0)
+#define	waddstr(w, s)			__waddbytes(w, s, strlen(s), 0)
 
 /* Standard screen plus movement pseudo functions. */
-#define	mvaddbytes(y, x, da, co)	mvwaddbytes(stdscr, y, x, da, co)
+#define	mvaddbytes(y, x, s, n)		mvwaddbytes(stdscr, y, x, s, n)
 #define	mvaddch(y, x, ch)		mvwaddch(stdscr, y, x, ch)
-#define	mvaddstr(y, x, str)		mvwaddstr(stdscr, y, x, str)
+#define	mvaddnstr(y, x, s, n)		mvwaddnstr(stdscr, y, x, s, n)
+#define	mvaddstr(y, x, s)		mvwaddstr(stdscr, y, x, s)
 #define	mvdelch(y, x)			mvwdelch(stdscr, y, x)
 #define	mvgetch(y, x)			mvwgetch(stdscr, y, x)
-#define	mvgetstr(y, x, str)		mvwgetstr(stdscr, y, x, str)
+#define	mvgetstr(y, x, s)		mvwgetstr(stdscr, y, x, s)
 #define	mvinch(y, x)			mvwinch(stdscr, y, x)
 #define	mvinsch(y, x, c)		mvwinsch(stdscr, y, x, c)
-#define	mvwaddbytes(win, y, x, da, co) \
-	(wmove(win, y, x) == ERR ? ERR : waddbytes(win, da, co))
-#define	mvwaddch(win, y, x, ch) \
-	(wmove(win, y, x) == ERR ? ERR : waddch(win, ch))
-#define	mvwaddstr(win, y, x, str) \
-	(wmove(win, y, x) == ERR ? ERR : waddbytes(win, str, strlen(str)))
-#define	mvwdelch(win, y, x) \
-	(wmove(win, y, x) == ERR ? ERR : wdelch(win))
-#define	mvwgetch(win, y, x) \
-	(wmove(win, y, x) == ERR ? ERR : wgetch(win))
-#define	mvwgetstr(win, y, x, str) \
-	(wmove(win, y, x) == ERR ? ERR : wgetstr(win, str))
-#define	mvwinch(win, y, x) \
-	(wmove(win, y, x) == ERR ? ERR : winch(win))
-#define	mvwinsch(win, y, x, c) \
-	(wmove(win, y, x) == ERR ? ERR : winsch(win, c))
+#define	mvwaddbytes(w, y, x, s, n) \
+	(wmove(w, y, x) == ERR ? ERR : __waddbytes(w, s, n, 0))
+#define	mvwaddch(w, y, x, ch) \
+	(wmove(w, y, x) == ERR ? ERR : waddch(w, ch))
+#define	mvwaddnstr(w, y, x, s, n) \
+	(wmove(w, y, x) == ERR ? ERR : waddnstr(w, s, n))
+#define	mvwaddstr(w, y, x, s) \
+	(wmove(w, y, x) == ERR ? ERR : __waddbytes(w, s, strlen(s), 0))
+#define	mvwdelch(w, y, x) \
+	(wmove(w, y, x) == ERR ? ERR : wdelch(w))
+#define	mvwgetch(w, y, x) \
+	(wmove(w, y, x) == ERR ? ERR : wgetch(w))
+#define	mvwgetstr(w, y, x, s) \
+	(wmove(w, y, x) == ERR ? ERR : wgetstr(w, s))
+#define	mvwinch(w, y, x) \
+	(wmove(w, y, x) == ERR ? ERR : winch(w))
+#define	mvwinsch(w, y, x, c) \
+	(wmove(w, y, x) == ERR ? ERR : winsch(w, c))
 
 /* Psuedo functions. */
-#define	clearok(win, bf) \
-	((bf) ? (win->flags |= __CLEAROK) : (win->flags &= ~__CLEAROK))
-#define	flushok(win, bf) \
-	((bf) ? (win->flags |= __FLUSH) : (win->flags &= ~__FLUSH))
-#define	getyx(win, y, x) \
-	(y) = win->cury, (x) = win->curx
-#define	leaveok(win, bf) \
-	((bf) ? (win->flags |= __LEAVEOK) : (win->flags &= ~__LEAVEOK))
-#define	scrollok(win, bf) \
-	((bf) ? (win->flags |= __SCROLLOK) : (win->flags &= ~__SCROLLOK))
-#define	winch(win) \
-	(win->lines[win->cury]->line[win->curx].ch & 0177)
+#define	clearok(w, bf) \
+	((bf) ? ((w)->flags |= __CLEAROK) : ((w)->flags &= ~__CLEAROK))
+#define	flushok(w, bf) \
+	((bf) ? ((w)->flags |= __FLUSH) : ((w)->flags &= ~__FLUSH))
+#define	getyx(w, y, x) \
+	(y) = (w)->cury, (x) = (w)->curx
+#define	leaveok(w, bf) \
+	((bf) ? ((w)->flags |= __LEAVEOK) : ((w)->flags &= ~__LEAVEOK))
+#define	scrollok(w, bf) \
+	((bf) ? ((w)->flags |= __SCROLLOK) : ((w)->flags &= ~__SCROLLOK))
+#define	winch(w) \
+	((w)->lines[(w)->cury]->line[(w)->curx].ch & 0177)
 
 /* Public function prototypes. */
 int	 box __P((WINDOW *, int, int));
@@ -237,9 +243,8 @@ int	 touchoverlap __P((WINDOW *, WINDOW *));
 int	 touchwin __P((WINDOW *));
 int 	 vwprintw __P((WINDOW *, const char *, _BSD_VA_LIST_));
 int      vwscanw __P((WINDOW *, const char *, _BSD_VA_LIST_));
-int	 waddbytes __P((WINDOW *, const char *, int));
 int	 waddch __P((WINDOW *, int));
-int	 waddstr __P((WINDOW *, const char *));
+int	 waddnstr __P((WINDOW *, const char *, int));
 int	 wclear __P((WINDOW *));
 int	 wclrtobot __P((WINDOW *));
 int	 wclrtoeol __P((WINDOW *));
