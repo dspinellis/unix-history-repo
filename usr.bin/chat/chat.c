@@ -78,7 +78,7 @@ extern int strlen();
 #  ifdef HDB
 #   define	LOCK_DIR	"/usr/spool/locks"
 #  else /* HDB */
-#   define	LOCK_DIR	"/usr/spool/uucp"
+#   define	LOCK_DIR	"/var/spool/lock"
 #  endif /* HDB */
 #endif /* LOCK_DIR */
 
