@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.63 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.64 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.63 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.64 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -535,6 +535,7 @@ smtp(e)
 
 			/* collect the text of the message */
 			collect(InChannel, TRUE, doublequeue, NULL, e);
+			flush_errors(TRUE);
 			if (Errors != 0)
 				goto abortmessage;
 
@@ -542,7 +543,7 @@ smtp(e)
 			e->e_flags &= ~EF_CLRQUEUE;
 
 			/* from now on, we have to operate silently */
-			HoldErrs = TRUE;
+			buffer_errors();
 			e->e_errormode = EM_MAIL;
 
 			/*
