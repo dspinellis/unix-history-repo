@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.10 (Berkeley) 83/12/01";
+static	char *sccsid = "@(#)server.c	4.11 (Berkeley) 83/12/09";
 #endif
 
 #include "defs.h"
@@ -931,11 +931,11 @@ rmchk(opts)
  * Check the current directory (initialized by the 'T' command to server())
  * for extraneous files and remove them.
  */
-clean(opts)
+clean(cp)
+	register char *cp;
 {
 	DIR *d;
 	register struct direct *dp;
-	register char *cp;
 	struct stat stb;
 	char *otp;
 	int len, opts;
