@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hack.tty.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hack.tty.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
@@ -258,7 +258,7 @@ register int c;
 char *
 parse()
 {
-	static char inline[COLNO];
+	static char inputline[COLNO];
 	register foo;
 
 	flags.move = 1;
@@ -267,23 +267,23 @@ parse()
 		multi = 10*multi+foo-'0';
 	if(multi) {
 		multi--;
-		save_cm = inline;
+		save_cm = inputline;
 	}
-	inline[0] = foo;
-	inline[1] = 0;
+	inputline[0] = foo;
+	inputline[1] = 0;
 	if(foo == 'f' || foo == 'F'){
-		inline[1] = getchar();
+		inputline[1] = getchar();
 #ifdef QUEST
-		if(inline[1] == foo) inline[2] = getchar(); else
+		if(inputline[1] == foo) inputline[2] = getchar(); else
 #endif QUEST
-		inline[2] = 0;
+		inputline[2] = 0;
 	}
 	if(foo == 'm' || foo == 'M'){
-		inline[1] = getchar();
-		inline[2] = 0;
+		inputline[1] = getchar();
+		inputline[2] = 0;
 	}
 	clrlin();
-	return(inline);
+	return(inputline);
 }
 
 char
