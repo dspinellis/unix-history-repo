@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ls.h	5.5 (Berkeley) %G%
+ *	@(#)ls.h	5.6 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
@@ -25,6 +25,15 @@ typedef struct _lsstruct {
 	int len;			/* file name length */
 	struct stat lstat;		/* lstat(2) for file */
 } LS;
+
+/*
+ * overload -- we probably have to save blocks and/or maxlen with the lstat
+ * array, so tabdir() stuffs it into unused fields in the first stat structure.
+ * If there's ever a type larger than u_long, fix this.  Any calls to qsort
+ * must save and restore the values.
+ */
+#define	st_btotal	st_flags
+#define	st_maxlen	st_gen
 
 extern int errno;
 
