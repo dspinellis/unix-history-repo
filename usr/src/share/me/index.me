@@ -1,19 +1,20 @@
 .nr _0 \n(c.
-.\"	@(#)index.me	2.4	%G%
+.\"	@(#)index.me	2.5	%G%
 .\"	%beginstrip%
 .de (x			\" *** begin index entry
-.ie "\\n(.z"" \
+.\" please note these cases MUST be in this order
+.ie !"\\n(.z"" \
+\{\
+.	ev 2			\" if in a diversion, save & process later
+\!.(x \\$1
+.\}
+.el \
 \{\
 .	ds |X x
 .	if \\n(.$ \
 .		ds |X \\$1
 .	am %\\*(|X )x
 .	sp \\n(xsu
-.\}
-.el \
-\{\
-.	ev 2
-\!.(x \\$1
 .\}
 ..
 .de )x			\" *** end index entry
@@ -34,7 +35,7 @@
 .\}
 .el \
 \{\
-.	br
+.	br			\" if in a diversion, save & process later
 \!.)x \\$1 \\$2
 .	ev
 .\}
