@@ -19,9 +19,9 @@ DGROUP	group	CONST, _BSS, _DATA
 
 _TEXT	segment
 
-	public	dirconio
+	public	_dirconio
 
-dirconio	proc	near
+_dirconio	proc	near
 	push	bp
 	mov	bp,sp
 
@@ -37,7 +37,7 @@ dirconiodone:
 	mov	sp,bp
 	pop	bp
 	ret
-dirconio	endp
+_dirconio	endp
 
 _TEXT	ends
 
