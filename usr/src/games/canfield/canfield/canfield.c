@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)canfield.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)canfield.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -155,7 +155,7 @@ struct betinfo {
 	long	wins;		/* total winnings */
 	long	worth;		/* net worth after costs */
 };
-struct betinfo this, total;
+struct betinfo this, game, total;
 bool startedgame = FALSE, infullgame = FALSE;
 time_t acctstart;
 int dbfd = -1;
@@ -181,9 +181,9 @@ movebox()
 		break;
 	}
 	move(moverow, boxcol);
-	printw("|                          |");
+	printw("|                                  |");
 	move(msgrow, boxcol);
-	printw("|                          |");
+	printw("|                                  |");
 	switch (status) {
 	case BETTINGBOX:
 		printbottombettingbox();
@@ -204,31 +204,31 @@ movebox()
 printtopinstructions()
 {
 	    move(tboxrow, boxcol);
-	    printw("*--------------------------*");
+	    printw("*----------------------------------*");
 	    move(tboxrow + 1, boxcol);
-	    printw("|         MOVES            |");
+	    printw("|         MOVES                    |");
 	    move(tboxrow + 2, boxcol);
-	    printw("|s# = stock to tableau     |");
+	    printw("|s# = stock to tableau             |");
 	    move(tboxrow + 3, boxcol);
-	    printw("|sf = stock to foundation  |");
+	    printw("|sf = stock to foundation          |");
 	    move(tboxrow + 4, boxcol);
-	    printw("|t# = talon to tableau     |");
+	    printw("|t# = talon to tableau             |");
 	    move(tboxrow + 5, boxcol);
-	    printw("|tf = talon to foundation  |");
+	    printw("|tf = talon to foundation          |");
 	    move(tboxrow + 6, boxcol);
-	    printw("|## = tableau to tableau   |");
+	    printw("|## = tableau to tableau           |");
 	    move(tboxrow + 7, boxcol);
-	    printw("|#f = tableau to foundation|");
+	    printw("|#f = tableau to foundation        |");
 	    move(tboxrow + 8, boxcol);
-	    printw("|ht = hand to talon        |");
+	    printw("|ht = hand to talon                |");
 	    move(tboxrow + 9, boxcol);
-	    printw("|c = toggle card counting  |");
+	    printw("|c = toggle card counting          |");
 	    move(tboxrow + 10, boxcol);
-	    printw("|b = present betting info  |");
+	    printw("|b = present betting information   |");
 	    move(tboxrow + 11, boxcol);
-	    printw("|q = quit to end the game  |");
+	    printw("|q = quit to end the game          |");
 	    move(tboxrow + 12, boxcol);
-	    printw("|==========================|");
+	    printw("|==================================|");
 }
 
 /*
@@ -238,31 +238,31 @@ printtopbettingbox()
 {
 
 	    move(tboxrow, boxcol);
-	    printw("*--------------------------*");
+	    printw("*----------------------------------*");
 	    move(tboxrow + 1, boxcol);
-	    printw("|Costs        Hand   Total |");
+	    printw("|Costs        Hand   Game    Total |");
 	    move(tboxrow + 2, boxcol);
-	    printw("| Hands                    |");
+	    printw("| Hands                            |");
 	    move(tboxrow + 3, boxcol);
-	    printw("| Inspections              |");
+	    printw("| Inspections                      |");
 	    move(tboxrow + 4, boxcol);
-	    printw("| Games                    |");
+	    printw("| Games                            |");
 	    move(tboxrow + 5, boxcol);
-	    printw("| Runs                     |");
+	    printw("| Runs                             |");
 	    move(tboxrow + 6, boxcol);
-	    printw("| Information              |");
+	    printw("| Information                      |");
 	    move(tboxrow + 7, boxcol);
-	    printw("| Think time               |");
+	    printw("| Think time                       |");
 	    move(tboxrow + 8, boxcol);
-	    printw("|Total Costs               |");
+	    printw("|Total Costs                       |");
 	    move(tboxrow + 9, boxcol);
-	    printw("|Winnings                  |");
+	    printw("|Winnings                          |");
 	    move(tboxrow + 10, boxcol);
-	    printw("|Net Worth                 |");
+	    printw("|Net Worth                         |");
 	    move(tboxrow + 11, boxcol);
-	    printw("|Return                    |");
+	    printw("|Return                            |");
 	    move(tboxrow + 12, boxcol);
-	    printw("|==========================|");
+	    printw("|==================================|");
 }
 
 /*
@@ -274,10 +274,10 @@ clearabovemovebox()
 
 	for (i = 0; i <= 11; i++) {
 		move(tboxrow + i, boxcol);
-		printw("                            ");
+		printw("                                    ");
 	}
 	move(tboxrow + 12, boxcol);
-	printw("*--------------------------*");
+	printw("*----------------------------------*");
 }
 
 /*
@@ -286,11 +286,11 @@ clearabovemovebox()
 printbottominstructions()
 {
 	    move(bboxrow, boxcol);
-	    printw("|Replace # with the number |");
+	    printw("|Replace # with the number of the  |");
 	    move(bboxrow + 1, boxcol);
-	    printw("|of the tableau you want.  |");
+	    printw("|tableau you want.                 |");
 	    move(bboxrow + 2, boxcol);
-	    printw("*--------------------------*");
+	    printw("*----------------------------------*");
 }
 
 /*
@@ -299,11 +299,11 @@ printbottominstructions()
 printbottombettingbox()
 {
 	    move(bboxrow, boxcol);
-	    printw("|x = toggle information box|");
+	    printw("|x = toggle information box        |");
 	    move(bboxrow + 1, boxcol);
-	    printw("|i = list instructions     |");
+	    printw("|i = list playing instructions     |");
 	    move(bboxrow + 2, boxcol);
-	    printw("*--------------------------*");
+	    printw("*----------------------------------*");
 }
 
 /*
@@ -314,10 +314,10 @@ clearbelowmovebox()
 	int i;
 
 	move(bboxrow, boxcol);
-	printw("*--------------------------*");
+	printw("*----------------------------------*");
 	for (i = 1; i <= 2; i++) {
 		move(bboxrow + i, boxcol);
-		printw("                            ");
+		printw("                                    ");
 	}
 }
 
@@ -582,6 +582,7 @@ fndbase(cp, column, row)
 				cardsoff++;
 				if (infullgame) {
 					this.wins += valuepercardup;
+					game.wins += valuepercardup;
 					total.wins += valuepercardup;
 				}
 			} else 
@@ -644,6 +645,7 @@ startgame()
 	shuffle(deck);
 	initgame();
 	this.hand = costofhand;
+	game.hand += costofhand;
 	total.hand += costofhand;
 	this.inspection = 0;
 	this.game = 0;
@@ -800,6 +802,7 @@ movetotalon()
 		if (timesthru != 4) {
 			printw("Talon is now the new hand");
 			this.runs += costofrunthroughhand;
+			game.runs += costofrunthroughhand;
 			total.runs += costofrunthroughhand;
 			while (talon != NIL) {
 				transit(&talon, &hand);
@@ -839,6 +842,7 @@ movetotalon()
 		if (Cflag) {
 			if (talon->paid == FALSE && talon->visible == TRUE) {
 				this.information += costofinformation;
+				game.information += costofinformation;
 				total.information += costofinformation;
 				talon->paid = TRUE;
 			}
@@ -882,6 +886,7 @@ showstat()
 		if (ptr->paid == FALSE && ptr->visible == TRUE) {
 			ptr->paid = TRUE;
 			this.information += costofinformation;
+			game.information += costofinformation;
 			total.information += costofinformation;
 		}
 		printcard(col, row, ptr);
@@ -893,6 +898,7 @@ showstat()
 		if (ptr->paid == FALSE && ptr->visible == TRUE) {
 			ptr->paid = TRUE;
 			this.information += costofinformation;
+			game.information += costofinformation;
 			total.information += costofinformation;
 		}
 		INCRHAND(row, col);
@@ -930,6 +936,7 @@ usedtalon()
 		talon->visible = TRUE;
 		if (Cflag) {
 			this.information += costofinformation;
+			game.information += costofinformation;
 			total.information += costofinformation;
 			talon->paid = TRUE;
 			printcard(coldcol, coldrow, talon);
@@ -1006,8 +1013,8 @@ showcards()
  */
 updatebettinginfo()
 {
-	long thiscosts, totalcosts;
-	double thisreturn, totalreturn;
+	long thiscosts, gamecosts, totalcosts;
+	double thisreturn, gamereturn, totalreturn;
 	time_t now;
 	register long dollars;
 
@@ -1018,38 +1025,44 @@ updatebettinginfo()
 		if (dollars > maxtimecharge)
 			dollars = maxtimecharge;
 		this.thinktime += dollars;
+		game.thinktime += dollars;
 		total.thinktime += dollars;
 	}
 	thiscosts = this.hand + this.inspection + this.game +
 		this.runs + this.information + this.thinktime;
+	gamecosts = game.hand + game.inspection + game.game +
+		game.runs + game.information + game.thinktime;
 	totalcosts = total.hand + total.inspection + total.game +
 		total.runs + total.information + total.thinktime;
 	this.worth = this.wins - thiscosts;
+	game.worth = game.wins - gamecosts;
 	total.worth = total.wins - totalcosts;
 	thisreturn = ((double)this.wins / (double)thiscosts - 1.0) * 100.0;
+	gamereturn = ((double)game.wins / (double)gamecosts - 1.0) * 100.0;
 	totalreturn = ((double)total.wins / (double)totalcosts - 1.0) * 100.0;
 	if (status != BETTINGBOX)
 		return;
 	move(tboxrow + 2, boxcol + 13);
-	printw("%4d%9d", this.hand, total.hand);
+	printw("%4d%8d%9d", this.hand, game.hand, total.hand);
 	move(tboxrow + 3, boxcol + 13);
-	printw("%4d%9d", this.inspection, total.inspection);
+	printw("%4d%8d%9d", this.inspection, game.inspection, total.inspection);
 	move(tboxrow + 4, boxcol + 13);
-	printw("%4d%9d", this.game, total.game);
+	printw("%4d%8d%9d", this.game, game.game, total.game);
 	move(tboxrow + 5, boxcol + 13);
-	printw("%4d%9d", this.runs, total.runs);
+	printw("%4d%8d%9d", this.runs, game.runs, total.runs);
 	move(tboxrow + 6, boxcol + 13);
-	printw("%4d%9d", this.information, total.information);
+	printw("%4d%8d%9d", this.information, game.information,
+		total.information);
 	move(tboxrow + 7, boxcol + 13);
-	printw("%4d%9d", this.thinktime, total.thinktime);
+	printw("%4d%8d%9d", this.thinktime, game.thinktime, total.thinktime);
 	move(tboxrow + 8, boxcol + 13);
-	printw("%4d%9d", thiscosts, totalcosts);
+	printw("%4d%8d%9d", thiscosts, gamecosts, totalcosts);
 	move(tboxrow + 9, boxcol + 13);
-	printw("%4d%9d", this.wins, total.wins);
+	printw("%4d%8d%9d", this.wins, game.wins, total.wins);
 	move(tboxrow + 10, boxcol + 13);
-	printw("%4d%9d", this.worth, total.worth);
+	printw("%4d%8d%9d", this.worth, game.worth, total.worth);
 	move(tboxrow + 11, boxcol + 13);
-	printw("%4.0f%%%8.1f%%", thisreturn, totalreturn);
+	printw("%4.0f%%%7.1f%%%8.1f%%", thisreturn, gamereturn, totalreturn);
 }
 
 /*
@@ -1201,6 +1214,7 @@ movetofound(cp, source)
 					cardsoff++;
 					if (infullgame) {
 						this.wins += valuepercardup;
+						game.wins += valuepercardup;
 						total.wins += valuepercardup;
 					}
 					mtfdone = TRUE;
@@ -1349,6 +1363,7 @@ movecard()
 				srcpile = 'q';
 			} else {
 				this.inspection += costofinspection;
+				game.inspection += costofinspection;
 				total.inspection += costofinspection;
 				srcpile = osrcpile;
 				destpile = odestpile;
@@ -1393,8 +1408,10 @@ movecard()
 				}
 				infullgame = TRUE;
 				this.wins += valuepercardup * cardsoff;
+				game.wins += valuepercardup * cardsoff;
 				total.wins += valuepercardup * cardsoff;
 				this.game += costofgame;
+				game.game += costofgame;
 				total.game += costofgame;
 				movetotalon();
 				break;
