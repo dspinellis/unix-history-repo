@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c20.c	4.7 (Berkeley) %G%";
+static	char sccsid[] = "@(#)c20.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -12,6 +12,7 @@ static	char sccsid[] = "@(#)c20.c	4.7 (Berkeley) %G%";
 
 char _sibuf[BUFSIZ], _sobuf[BUFSIZ];
 int ioflag;
+int fflag;
 long	isn	= 2000000;
 struct optab *oplook();
 struct optab *getline();
@@ -49,7 +50,9 @@ char **argv;
 	while (argc>0) {/* get flags */
 		if (**argv=='+') debug++;
 		else if (**argv=='-') {
-			if ((*argv)[1]=='i') ioflag++; else nflag++;
+			if ((*argv)[1]=='i') ioflag++;
+			else if ((*argv)[1]=='f') fflag++;
+			else nflag++;
 		} else if (infound==0) {
 			if (freopen(*argv, "r", stdin) ==NULL) {
 				fprintf(stderr,"C2: can't find %s\n", *argv);
@@ -333,6 +336,26 @@ output()
 		if (casebas==0) printf("L%d:\n",casebas=isn++);
 		printf(".word	L%d-L%d\n", t->labno, casebas);
 		continue;
+	case MOV:
+		if (!fflag) goto std;
+		if (t->forw) if(t->forw->op == CBR) goto std;
+		if (*t->code == '$') goto std;
+		if (t->subop == FFLOAT)
+			{
+			printf("movl\t%s\n", t->code);
+			continue;
+			}
+		if (t->subop == DFLOAT || t->subop == GFLOAT)
+			{
+			printf("movq\t%s\n", t->code);
+			continue;
+			}
+		if (t->subop == HFLOAT)
+			{
+			printf("movo\t%s\n", t->code);
+			continue;
+			}
+		goto std;
 
 	}
 }
