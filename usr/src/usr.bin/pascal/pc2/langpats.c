@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.8 %G%";
+static char sccsid[] = "@(#)langpats.c 1.9 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -88,20 +88,18 @@ struct pats {
 	{ "2,_TRUNC\n",
 "	cvtdl	(sp)+,r0\n" },
 
-	{ "1,_FCALL\n",
-"	movl	(sp),r0\n\
+	{ "2,_FCALL\n",
+"	movl	4(sp),r0\n\
 	ashl	$3,4(r0),r1\n\
-	movc3	r1,__disply+8,8(r0)[r1]\n\
-	movl	(sp),r0\n\
+	movc3	r1,__disply+8,*(sp)+\n\
+	movl	(sp)+,r0\n\
 	ashl	$3,4(r0),r1\n\
-	movc3	r1,8(r0),__disply+8\n\
-	movl	*(sp)+,r0\n" },
+	movc3	r1,8(r0),__disply+8\n" },
 
 	{ "2,_FRTN\n",
-"	popr	$0x1\n\
+"	movl	(sp)+,r0\n\
 	ashl	$3,4(r0),r1\n\
-	movc3	r1,8(r0)[r1],__disply+8\n\
-	popr	$0x1\n" },
+	movc3	r1,*(sp)+,__disply+8\n" },
 
 	{ "3,_FSAV\n",
 "	movl	8(sp),r0\n\

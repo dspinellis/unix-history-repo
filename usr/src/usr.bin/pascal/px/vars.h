@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.6 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.7 %G%"; */
 
 #include <stdio.h>
 
@@ -190,9 +190,9 @@ union disply {
  * formal routine structure
  */
 struct formalrtn {
-	char		*entryaddr;
-	long		cbn;
-	struct disp	disp[2*MAXLVL];
+	char		*fentryaddr;		/* formal entry point */
+	long		fbn;			/* block number of function */
+	struct disp	fdisp[ MAXLVL ];	/* saved at first passing */
 };
 
 /*
