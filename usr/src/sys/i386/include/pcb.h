@@ -7,14 +7,14 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)pcb.h	5.2 (Berkeley) %G%
+ *	@(#)pcb.h	5.3 (Berkeley) %G%
  */
 
 /*
  * Intel 386 process control block
  */
 #include "tss.h"
-#include "npx.h"
+#include "../i386/npx.h"
 
 struct pcb {
 	struct	i386tss pcbtss;
