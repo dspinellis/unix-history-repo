@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.15 (Berkeley) 85/08/09";
 #endif
 
 /*
@@ -161,12 +161,17 @@ main(argc, argv)
 			pwd->pw_shell);
 	}
 	endpwent();
-	(void) fclose(tf);
 	if (dp != NULL && dbm_error(dp))
 		fprintf(stderr, "Warning: dbm_store failed\n");
+	if (ferror(tf)) {
+		fprintf(stderr, "Warning: %s write error, %s not updated\n",
+		    temp, passwd);
+		goto out;
+	}
+	(void) fclose(tf);
 	dbm_close(dp);
 	if (rename(temp, passwd) < 0) {
-		fprintf(stderr, "passwd: "), perror("rename");
+		perror("passwd: rename");
 	out:
 		unlink(temp);
 		exit(1);
