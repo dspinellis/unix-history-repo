@@ -20,9 +20,9 @@
 #include "wait.h"
 #include "vm.h"
 #include "file.h"
-#include "mbuf.h"
 #include "inode.h"
 #include "syslog.h"
+#include "malloc.h"
 
 /*
  * Exit system call: pass back caller's arg
@@ -50,12 +50,13 @@ exit(rv)
 	register int i;
 	register struct proc *p, *q, *nq;
 	register int x;
-	struct mbuf *m = m_getclr(M_WAIT, MT_ZOMBIE);
 
 #ifdef PGINPROF
 	vmsizmon();
 #endif
 	p = u.u_procp;
+	MALLOC(p->p_ru, struct rusage *, sizeof(struct rusage),
+		M_ZOMBIE, M_WAITOK);
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
 	p->p_sigignore = ~0;
@@ -138,7 +139,6 @@ exit(rv)
 	}
 done:
 	p->p_xstat = rv;
-	p->p_ru = mtod(m, struct rusage *);
 	*p->p_ru = u.u_ru;
 	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
@@ -231,7 +231,7 @@ loop:
 				*ru = *p->p_ru;
 			if (p->p_ru) {
 				ruadd(&u.u_cru, p->p_ru);
-				(void) m_free(dtom(p->p_ru));
+				FREE(p->p_ru, M_ZOMBIE);
 				p->p_ru = 0;
 			}
 			p->p_stat = NULL;
