@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -397,7 +397,7 @@ deliver(firstto, editfcn)
 	if (mci == NULL)
 	{
 		/* catastrophic error */
-		rcode = -1;
+		rcode = EX_OSERR;
 		goto give_up;
 	}
 	else if (mci->mci_state != MCIS_OPEN)

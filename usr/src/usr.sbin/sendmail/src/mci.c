@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mci.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mci.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -199,12 +199,18 @@ mci_get(host, m)
 			mci->mci_exitstat, mci->mci_errno);
 	}
 
-	/* try poking this to see if it is still usable */
-	switch (mci->mci_state)
+	if (mci->mci_state == MCIS_OPEN)
 	{
-	  case MCIS_OPEN:
+		/* poke the connection to see if it's still alive */
 		smtpnoop(mci);
-		break;
+
+		/* reset the stored state in the event of a timeout */
+		if (mci->mci_state != MCIS_OPEN)
+		{
+			mci->mci_errno = 0;
+			mci->mci_exitstat = EX_OK;
+			mci->mci_state = MCIS_CLOSED;
+		}
 	}
 
 	return mci;

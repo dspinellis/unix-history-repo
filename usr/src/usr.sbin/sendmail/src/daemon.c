@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	6.4 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.5 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	6.4 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	6.5 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -232,7 +232,7 @@ getrequests()
 			}
 
 #ifdef LOG
-			if (LogLevel > 9)
+			if (LogLevel > 10)
 			{
 				/* log connection information */
 				syslog(LOG_INFO, "connect from %s (%s)",
@@ -383,7 +383,7 @@ makeconnection(host, port, outfile, infile, usesecureport)
 		if (sp == NULL)
 		{
 			syserr("makeconnection: server \"smtp\" unknown");
-			return (EX_OSFILE);
+			return (EX_OSERR);
 		}
 		addr.sin_port = sp->s_port;
 	}
