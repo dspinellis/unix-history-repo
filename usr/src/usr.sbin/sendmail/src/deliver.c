@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.94 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.95 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2137,7 +2137,8 @@ putbody(mci, e, separator)
 
 		/* determine end of buffer; allow for short mailer lines */
 		buflim = &buf[sizeof buf - 1];
-		if (mci->mci_mailer->m_linelimit < sizeof buf - 1)
+		if (mci->mci_mailer->m_linelimit > 0 &&
+		    mci->mci_mailer->m_linelimit < sizeof buf - 1)
 			buflim = &buf[mci->mci_mailer->m_linelimit - 1];
 
 		/* copy temp file to output with mapping */
@@ -2255,7 +2256,8 @@ putbody(mci, e, separator)
 					continue;
 				}
 putch:
-				if (pos > mci->mci_mailer->m_linelimit &&
+				if (mci->mci_mailer->m_linelimit > 0 &&
+				    pos > mci->mci_mailer->m_linelimit &&
 				    c != '\n')
 				{
 					putc('!', mci->mci_out);
