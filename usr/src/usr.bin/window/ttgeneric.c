@@ -1,9 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.5 83/08/15";
+static	char *sccsid = "@(#)ttgeneric.c	3.6 83/08/15";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+
+char *tgetstr();
+char *tgoto();
 
 char gen_frame[16] = {
 	' ', '|', '-', '+',
@@ -16,8 +19,6 @@ int gen_row, gen_col;
 char gen_modes;
 char gen_availmodes;
 char gen_insert;
-
-char *tgetstr();
 
 char *gen_CM;
 char *gen_IM;
