@@ -1,4 +1,4 @@
-/*	locore.s	4.36	81/03/09	*/
+/*	locore.s	4.37	81/03/09	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -492,13 +492,13 @@ _badaddr:
 	ret
 	.align	2
 9:
-	casel	_cpu,$1,$VAX_MAX-1
+	casel	_cpu,$1,$VAX_MAX
 0:
 	.word	8f-0b		# 0 is 780
 	.word	5f-0b		# 1 is 750
 5:
 #if VAX750
-	mtpr	$0xf,MCESR
+	mtpr	$0xf,$MCESR
 #endif
 	brb	1f
 8:
