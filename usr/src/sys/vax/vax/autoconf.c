@@ -1,4 +1,4 @@
-/*	autoconf.c	4.28	81/03/16	*/
+/*	autoconf.c	4.29	81/03/21	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -14,6 +14,9 @@
  *	#if VAX750
  * which may be incorrect after more processors are introduced if they
  * are like either of these machines.
+ *
+ * TODO:
+ *	use pcpu info about whether a ubasr exists
  */
 
 #include "mba.h"
@@ -196,7 +199,8 @@ unconfig:
 		}
 	}
 #if VAX780
-	{ int ubawatch(); timeout(ubawatch, (caddr_t)0, hz); }
+	if (cpu == VAX_780)
+		{ int ubawatch(); timeout(ubawatch, (caddr_t)0, hz); }
 #endif
 }
 
@@ -372,6 +376,10 @@ unifind(vubp, pubp, vumem, pumem)
 #if VAX750
 	case VAX_750:
 		uhp->uh_bdpfree = (1<<NBDP750) - 1;
+		break;
+#endif
+#if VAX730
+	case VAX_730:
 		break;
 #endif
 	}
