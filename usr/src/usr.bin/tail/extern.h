@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 #define	WR(p, size) \
