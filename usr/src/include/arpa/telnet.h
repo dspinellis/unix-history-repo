@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.11 (Berkeley) %G%
+ *	@(#)telnet.h	5.12 (Berkeley) %G%
  */
 
 /*
@@ -87,9 +87,9 @@ extern char *telcmds[];
 #define TELOPT_XDISPLOC	35	/* X Display Location */
 #define TELOPT_ENVIRON	36	/* Environment variables */
 #define	TELOPT_AUTHENTICATION 37/* Authenticate */
+#define	TELOPT_ENCRYPT	38	/* Encryption option */
 #define	TELOPT_EXOPL	255	/* extended-options-list */
 
-#define	TELOPT_ENCRYPT	51	/* Encryption option - EXPERIMENTAL */
 
 #define	NTELOPTS	(1+TELOPT_ENCRYPT)
 #ifdef TELOPTS
@@ -103,8 +103,7 @@ char *telopts[NTELOPTS+1] = {
 	"TACACS UID", "OUTPUT MARKING", "TTYLOC",
 	"3270 REGIME", "X.3 PAD", "NAWS", "TSPEED", "LFLOW",
 	"LINEMODE", "XDISPLOC", "ENVIRON", "AUTHENTICATION",
-	"38", "39", "40", "41", "42", "43", "44", "45", "46",
-	"47", "48", "49", "50", "X-ENCRYPT",
+	"ENCRYPT",
 	0,
 };
 #define	TELOPT_FIRST	TELOPT_BINARY
