@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)nfsd.8	5.9 (Berkeley) %G%
+.\"	@(#)nfsd.8	5.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NFSD 8
@@ -16,12 +16,8 @@ server
 .Sh SYNOPSIS
 .Nm nfsd
 .Op Fl r
-.Bk -words
-.Op Fl t Ar msk,mtch,hostadr1,hostadr2,...
-.Ek
-.Bk -words
-.Op Fl u Ar msk,mtch,numprocs
-.Ek
+.Op Fl u
+.Op Fl t
 .Op Ar numprocs
 .Sh DESCRIPTION
 .Nm Nfsd
@@ -58,57 +54,8 @@ clients.
 Serve
 .Tn UDP NFS
 clients.
-.El
-.Pp
-The following arguments to the
-.Fl u
-or
-.Fl t
-options are used to specify parameters for service using the respective
-protocol:
-.Bl -tag -width Ds
-.It Ar msk , mtch
-These arguments permit restriction of
-.Tn NFS
-services
-to a subset of the host addresses. The
-.Ar msk
-and
-.Ar mtch
-are applied to the client host address as follows:
-.Pp
-.Bd -filled -offset indent -compact
-if ((
-.Ar host_address No \&& Em msk
-) ==
-.Ar mtch
-)
-.br
-	\- service the client request
-.br
-else
-.br
-	\- drop the request
-.Ed
-.It Ar hostadr1 , ...
-You may also specify zero or more specific host addresses to be accepted
-as well as ones that pass the
-.Ar msk , mtch
-test above.
-This may only be done for transport protocols that are connection based, such
-as
-.Tn TCP .
-For the internet domain,
-.Ar msk , mtch
-and
-.Ar hostadrs
-are specified in internet
-.Em dot
-notation.
 .It Ar numprocs
-Specifies how many servers to fork off. This may only be specified for
-non-connection based protocols such as
-.Tn UDP .
+Specifies how many servers to fork off.
 .El
 .Pp
 If neither
@@ -119,15 +66,14 @@ are specified,
 .Ar numprocs
 servers for
 .Tn UDP
-accepting requests from all clients are started.
+transport are started. (compatibility)
 If
 .Ar numprocs
-is not specified, it defaults to 1.
+is not specified, it defaults to 4.
 .Pp
 For example:
 .Bd -literal
-nfsd \-u 255.255.255.0,131.104.48.0,4 \-t \e
-	255.255.0.0,131.104.0.0,131.102.31.2
+nfsd \-u \-t 6
 .Ed
 .Bl -item -offset indent
 .It
@@ -135,49 +81,7 @@ Serves
 .Tn UDP
 and
 .Tn TCP
-transports. For
-.Tn UDP ,
-it runs 4 daemons that accept requests
-from any client on subnet 131.104.48.
-For
-.Tn TCP ,
-it accepts connections from any client on network 131.104
-plus the client with the address 131.102.31.2.
-.El
-.Bd -literal
-nfsd \-u 255.255.240.0,131.104.0.0,6 \-t 0,0
-.Ed
-.Bl -item -offset indent
-.It
-Serves
-.Tn UDP
-and
-.Tn TCP
-transports.
-For
-.Tn UDP ,
-it runs 6 daemons that accept requests from clients with
-addresses in the range 131.104.0.x - 131.104.15.x.
-For
-.Tn TCP ,
-it accepts connections from any client.
-.El
-.Pp
-.Li nfsd \-u 0,0,4
-.Bl -item -offset indent
-.It
-Serves any
-.Tn UDP
-client with 4 servers, only.
-.El
-.Pp
-.Li nfsd 4
-.Bl -item -offset indent
-.It
-Serves any
-.Tn UDP
-client with 4 servers, only. (Compatibility)
-.El
+transports using 6 daemons in the kernel.
 .Pp
 A server should typically run enough daemons to handle
 the maximum level of concurrency from its clients,
@@ -194,12 +98,6 @@ RFC1094.
 .Xr nfssvc 2 ,
 .Xr mountd 8 ,
 .Xr portmap 8
-.Sh BUGS
-The client host address restrictions specified here are unrelated to
-the mount restrictions specified in
-.Pa /etc/exports
-for
-.Xr mountd 8 .
 .Sh HISTORY
 The
 .Nm
