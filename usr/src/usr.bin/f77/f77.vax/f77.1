@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)f77.1	6.1 (Berkeley) %G%
+.\"	@(#)f77.1	6.2 (Berkeley) %G%
 .\"
 .TH F77 1 ""
 .UC 4
@@ -46,12 +46,16 @@ Suppress loading and produce `.o' files for each source
 file.
 .TP
 .B \-g
-Have the compiler produce additional symbol table information for
-.IR dbx (1).
-Also pass the
+Produce additional symbol table information for
+.IR dbx (1)
+and pass the
 .B \-lg
 flag to
-.IR ld (1).
+.IR ld (1)
+so that on abnormal terminations, the memory image is written
+to file \fIcore\fP.
+Incompatible with
+.BR \-O .
 .TP
 .BR \-o " output"
 Name the final output file
@@ -95,6 +99,8 @@ options, then in directories on a standard list. (`.F' suffix files only).
 .B \-O
 Invoke an
 object-code optimizer.
+Incompatible with
+.BR \-g .
 .TP
 .B \-S
 Compile the named programs, and leave the
@@ -103,6 +109,9 @@ assembler-language output on corresponding files suffixed `.s'.
 .PP
 The following options are peculiar to
 .IR f77 .
+.TP
+.B \-d
+Used for debugging the compiler.
 .TP
 .B \-i2
 On machines which support short integers, make the default integer constants
@@ -119,6 +128,8 @@ it with the Ratfor or EFL preprocessor.
 .TP
 .SM
 .BR \-onetrip
+.TP
+.BR \-1
 Compile DO loops that are performed at least once if reached.
 (Fortran 77 DO loops are not performed at all if the upper limit is smaller than the lower limit.)
 .TP
@@ -131,9 +142,11 @@ executes.
 .TP
 .BR \-C
 Compile code to check that subscripts are within declared array bounds.
+For multi-dimensional arrays, only the equivalent linear subscript is checked.
 .TP
 .BR \-F
-Apply the C, EFL, or Ratfor preprocessors to relevant files, put the
+Apply the C preprocessor to `.F' files, and the EFL, or Ratfor preprocessors
+to `.e' and `.r' files, put the
 result in the file with the suffix changed to `.f', but do not compile.
 .TP
 .BI \-E x
@@ -184,6 +197,20 @@ These programs, together with the results of any
 compilations specified, are loaded (in the order
 given) to produce an executable program with name
 `a.out'.
+.PP
+Programs compiled with
+.I f77
+produce memory dumps in file
+.I core
+upon abnormal termination if the
+.B \(mig
+flag was specified during loading.
+If the environment variable
+.I f77_dump_flag
+is set to a value beginning with
+.BR y or n ,
+dumps for abnormal terminations are respectively forced or
+suppressed.
 .SH FILES
 .nf
 .ta \w'/usr/lib/libF77_p.a   'u
@@ -198,10 +225,13 @@ a.out	loaded output
 /usr/lib/libF77.a	intrinsic function library
 /usr/lib/libI77.a	Fortran I/O library
 /usr/lib/libU77.a	UNIX interface library
+/usr/lib/libm.a	math library
+/lib/libc.a	C library, see section 3
 /usr/lib/libF77_p.a	profiling intrinsic function library
 /usr/lib/libI77_p.a	profiling Fortran I/O library
 /usr/lib/libU77_p.a	profiling UNIX interface library
-/lib/libc.a	C library, see section 3
+/usr/lib/libm_p.a	profiling math library
+/usr/lib/libc_p.a	profiling C library, see section 3
 mon.out	file produced for analysis by prof(1).
 gmon.out	file produced for analysis by gprof(1).
 .fi
@@ -215,7 +245,9 @@ D. L. Wasley,
 .I
 Introduction to the f77 I/O Library
 .br
-prof(1), gprof(1), cc(1), ld(1), efl(1), ratfor(1)
+fpr(1), fsplit(1), ld(1), ar(1), ranlib(1), dbx(1), intro(3f)
+.br
+efl(1), ratfor(1), struct(1), prof(1), gprof(1), cc(1)
 .SH DIAGNOSTICS
 The diagnostics produced by
 .I f77
@@ -223,6 +255,4 @@ itself are intended to be
 self-explanatory.
 Occasional messages may be produced by the loader.
 .SH BUGS
-Formats in format statements are translated by the compiler;
-formats in I/O statements are translated during execution by the
-I/O library.
+Files longer than about 50,000 lines must be split up to be compiled.
