@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_balloc.c	7.8 (Berkeley) %G%
+ *	@(#)ffs_balloc.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -327,15 +327,15 @@ balloc(ip, bn, size, bpp, flags)
 		return (0);
 	}
 	brelse(bp);
-	nbp = getblk(vp, lbn, fs->fs_bsize);
-	nbp->b_blkno = fsbtodb(fs, nb);
-	if ((flags & B_CLRBUF) && (nbp->b_flags & (B_DONE|B_DELWRI)) == 0) {
-		brelse(nbp);
+	if (flags & B_CLRBUF) {
 		error = bread(vp, lbn, (int)fs->fs_bsize, NOCRED, &nbp);
 		if (error) {
 			brelse(nbp);
 			return (error);
 		}
+	} else {
+		nbp = getblk(vp, lbn, fs->fs_bsize);
+		nbp->b_blkno = fsbtodb(fs, nb);
 	}
 	*bpp = nbp;
 	return (0);
