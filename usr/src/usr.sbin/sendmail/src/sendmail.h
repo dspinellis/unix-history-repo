@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.58 (Berkeley) %G%
+ *	@(#)sendmail.h	8.59 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.58		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.59		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -904,6 +904,7 @@ EXTERN struct
 	time_t	to_quit;	/* QUIT command */
 	time_t	to_miscshort;	/* misc short commands (NOOP, VERB, etc) */
 	time_t	to_ident;	/* IDENT protocol requests */
+	time_t	to_fileopen;	/* opening :include: and .forward files */
 			/* following are per message */
 	time_t	to_q_return;	/* queue return timeout */
 	time_t	to_q_warning;	/* queue warning timeout */

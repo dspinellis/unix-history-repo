@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1104,7 +1104,7 @@ struct optioninfo
 	"QueueFactor",		'q',		FALSE,
 	"QueueDirectory",	'Q',		FALSE,
 	"DontPruneRoutes",	'R',		FALSE,
-	"ReadTimeout",		'r',		TRUE,
+	"Timeouts",		'r',		TRUE,
 	"StatusFile",		'S',		FALSE,
 	"SuperSafe",		's',		TRUE,
 	"QueueTimeout",		'T',		FALSE,
@@ -1863,6 +1863,7 @@ settimeouts(val)
 		TimeOuts.to_nextcommand = (time_t) 1 HOUR;
 		TimeOuts.to_miscshort = (time_t) 2 MINUTES;
 		TimeOuts.to_ident = (time_t) 30 SECONDS;
+		TimeOuts.to_fileopen = (time_t) 60 SECONDS;
 		return;
 	}
 
@@ -1890,10 +1891,10 @@ settimeouts(val)
 		}
 		else
 		{
-			register char *q = strchr(val, '=');
+			register char *q = strchr(val, ':');
 			time_t to;
 
-			if (q == NULL)
+			if (q == NULL && (q = strchr(val, '=')) == NULL)
 			{
 				/* syntax error */
 				continue;
@@ -1925,6 +1926,12 @@ settimeouts(val)
 				TimeOuts.to_miscshort = to;
 			else if (strcasecmp(val, "ident") == 0)
 				TimeOuts.to_ident = to;
+			else if (strcasecmp(val, "fileopen") == 0)
+				TimeOuts.to_fileopen = to;
+			else if (strcasecmp(val, "queuewarn") == 0)
+				TimeOuts.to_q_warning = to;
+			else if (strcasecmp(val, "queuereturn") == 0)
+				TimeOuts.to_q_return = to;
 			else
 				syserr("settimeouts: invalid timeout %s", val);
 		}

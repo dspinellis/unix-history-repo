@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.46 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.47 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -897,7 +897,10 @@ include(fname, forwarding, ctladdr, sendq, e)
 		rval = EOPENTIMEOUT;
 		goto resetuid;
 	}
-	ev = setevent((time_t) 60, includetimeout, 0);
+	if (TimeOuts.to_fileopen > 0)
+		ev = setevent(TimeOuts.to_fileopen, includetimeout, 0);
+	else
+		ev = NULL;
 
 	/* the input file must be marked safe */
 	rval = safefile(fname, uid, gid, uname, sfflags, S_IREAD);
@@ -918,7 +921,8 @@ include(fname, forwarding, ctladdr, sendq, e)
 				printf("include: open: %s\n", errstring(rval));
 		}
 	}
-	clrevent(ev);
+	if (ev != NULL)
+		clrevent(ev);
 
 resetuid:
 
