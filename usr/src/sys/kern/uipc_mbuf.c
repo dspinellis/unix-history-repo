@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	6.1	83/07/29	*/
+/*	uipc_mbuf.c	6.2	84/02/22	*/
 
 #include "../machine/pte.h"
 
@@ -181,13 +181,11 @@ m_copy(m, off, len)
 {
 	register struct mbuf *n, **np;
 	struct mbuf *top, *p;
-	int type;
 
 	if (len == 0)
 		return (0);
 	if (off < 0 || len < 0)
 		panic("m_copy");
-	type = m->m_type;
 	while (off > 0) {
 		if (m == 0)
 			panic("m_copy");
@@ -204,7 +202,7 @@ m_copy(m, off, len)
 				panic("m_copy");
 			break;
 		}
-		MGET(n, M_WAIT, type);
+		MGET(n, M_WAIT, m->m_type);
 		*np = n;
 		if (n == 0)
 			goto nospace;
