@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 static char rcsid[] = "$Header: runtime.c,v 1.5 84/12/26 10:41:52 linton Exp $";
@@ -801,7 +801,11 @@ Node arglist;
     int argc, args_size;
 
     savesp = sp;
-    argc = evalargs(proc, arglist);
+    if (varIsSet("$unsafecall")) {
+	argc = unsafe_evalargs(proc, arglist);
+    } else {
+	argc = evalargs(proc, arglist);
+    }
     args_size = sp - savesp;
     setreg(STKP, reg(STKP) - args_size);
     dwrite(savesp, reg(STKP), args_size);
@@ -948,6 +952,28 @@ Node arglist;
 	    sp = savesp;
 	    error("not enough parameters to %s", symname(proc));
 	}
+    }
+    return count;
+}
+
+/*
+ * Evaluate an argument list without concern for matching the formal
+ * parameters of a function in type or quantity.  Useful for functions
+ * like C's printf().
+ */
+
+private integer unsafe_evalargs(proc, arglist)
+Symbol proc;
+Node arglist;
+{
+    Node p;
+    Integer count;
+
+    count = 0;
+    for (p = arglist; p != nil; p = p->value.arg[1]) {
+	assert(p->op == O_COMMA);
+	eval(p->value.arg[0]);
+	++count;
     }
     return count;
 }
