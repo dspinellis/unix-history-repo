@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.16	83/02/10	*/
+/*	raw_cb.c	4.17	83/05/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,6 +9,8 @@
 
 #include "../net/if.h"
 #include "../net/raw_cb.h"
+#include "../netinet/in.h"
+#include "../netpup/pup.h"
 
 #include "../vax/mtpr.h"
 
@@ -87,10 +89,6 @@ raw_bind(so, nam)
 
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
-{
-#include "../h/domain.h"
-#include "../netinet/in.h"
-#include "../netinet/in_systm.h"
 /* BEGIN DUBIOUS */
 	/*
 	 * Should we verify address not already in use?
@@ -98,12 +96,15 @@ raw_bind(so, nam)
 	 */
 	switch (addr->sa_family) {
 
+#ifdef INET
 	case AF_IMPLINK:
-	case AF_INET:
+	case AF_INET: {
 		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
 		    if_ifwithaddr(addr) == 0)
 			return (EADDRNOTAVAIL);
 		break;
+	}
+#endif
 
 #ifdef PUP
 	/*
@@ -114,7 +115,6 @@ raw_bind(so, nam)
 	 * converting internet to PUP would be very expensive.
 	 */
 	case AF_PUP: {
-#include "../netpup/pup.h"
 		struct sockaddr_pup *spup = (struct sockaddr_pup *)addr;
 		struct sockaddr_in inpup;
 
@@ -132,7 +132,6 @@ raw_bind(so, nam)
 	default:
 		return (EAFNOSUPPORT);
 	}
-}
 /* END DUBIOUS */
 	rp = sotorawcb(so);
 	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof (*addr));
