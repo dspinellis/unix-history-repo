@@ -27,7 +27,7 @@ SRCS+=	adddf3.s addsf3.s ashlsi3.s ashrsi3.s cmpdf2.s cmpsf2.s divdf3.s \
 	negdf2.s negsf2.s saveregs.c subdf3.s subsf3.s truncdfsf2.s udivsi3.s \
 	umodsi3.s umulsi3.s
 .elif (${MACHINE} == "i386")
-SRCS+=	_setjmp.s alloca.s fabs.s ldexp.c modf.s setjmp.s
+SRCS+=	_setjmp.s alloca.s fabs.s ldexp.c modf.s setjmp.s sigsetjmp.s
 SRCS+=	divsi3.s fixdfsi.s fixunsdfsi.s udivsi3.s
 .elif (${MACHINE} == "tahoe")
 CFLAGS+=-I/sys
