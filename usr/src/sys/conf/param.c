@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.c	7.21 (Berkeley) %G%
+ *	@(#)param.c	7.22 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -38,7 +38,7 @@
 #endif
 int	hz = HZ;
 int	tick = 1000000 / HZ;
-int	tickadj = 240000 / (60 * HZ);		/* can adjust 240ms in 60s */
+int	tickadj = 30000 / (60 * HZ);		/* can adjust 30ms in 60s */
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 16 * MAXUSERS)
 int	maxproc = NPROC;
