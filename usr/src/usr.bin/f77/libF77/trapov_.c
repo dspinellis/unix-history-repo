@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trapov_.c	5.4	%G%
+ *	@(#)trapov_.c	5.5	%G%
  *
  *	Fortran/C floating-point overflow handler
  *
@@ -159,6 +159,7 @@ trapov_(count, rtnval)
  */
 
 /*ARGSUSED*/
+void
 got_overflow(signo, codeword, myaddr, pc, ps)
 	char *myaddr, *pc;
 {
@@ -226,6 +227,7 @@ ovcnt_()
  */
 
 /*ARGSUSED*/
+void
 got_illegal_instruction(signo, codeword, myaddr, trap_pc, ps)
 	char *myaddr, *trap_pc;
 {
@@ -240,9 +242,10 @@ got_illegal_instruction(signo, codeword, myaddr, trap_pc, ps)
 	opcode = fetch_byte() & 0xff;
 	no_reserved = 0;
 	if (codeword != RES_OPR_F || !is_floating_operation(opcode)) {
-		if (sigill_default > (SIG_VAL)7)
-			return((*sigill_default)(signo, codeword, myaddr, trap_pc, ps));
-		else
+		if (sigill_default > (SIG_VAL)7) {
+			(*sigill_default)(signo, codeword, myaddr, trap_pc, ps);
+			return;
+		} else
 			sigdie(signo, codeword, myaddr, trap_pc, ps);
 			/* NOTREACHED */
 	}

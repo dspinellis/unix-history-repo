@@ -4,7 +4,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trpfpe_.c	5.5	%G%
+ *	@(#)trpfpe_.c	5.6	%G%
  *
  *
  *	Fortran floating-point error handler
@@ -148,7 +148,7 @@ static union {
 static int	max_messages	= 1;		/* the user can tell us */
 static int	fpe_count	= 0;		/* how bad is it ? */
        long	fpeflt_		= 0;	/* fortran "common /fpeflt/ flag" */
-static int	(*sigfpe_dfl)()	= SIG_DFL;	/* if we can't fix it ... */
+static sig_t	sigfpe_dfl	= SIG_DFL;	/* if we can't fix it ... */
 
 /*
  * The fortran unit control table
