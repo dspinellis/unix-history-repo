@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.1 (Berkeley) %G%
+#       @(#)makesendmail	8.2 (Berkeley) %G%
 #
 
 #
@@ -43,7 +43,7 @@ elif [ -r obj.$arch ]; then
 elif [ -r obj.$rel ]; then
 	obj=obj.$rel
 elif [ -r Makefile.$os ]; then
-	obj=obj.$arch.$os.$rel
+	obj=obj.$os.$arch.$rel
 	echo "Creating $obj using Makefile.$os"
 	mkdir $obj
 	(cd $obj; ln -s ../*.[ch] .; ln -s ../Makefile.$os Makefile)
