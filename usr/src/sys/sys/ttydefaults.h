@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	1.4 (Berkeley) %G%
+ *	@(#)ttydefaults.h	7.1 (Berkeley) %G%
  */
 
 /*
@@ -36,7 +36,7 @@
 #define CQUOTE		'\\'
 #define	CEOT		CEOF
 
-/* COMPAT_43 */
+/* aliases */
 #define	CBRK		CEOL
 #define CRPRNT		CREPRINT
 #define CFLUSH		CFLUSHO
@@ -44,9 +44,9 @@
 /*
  * Settings on first open of a tty.
  */
-#define	TTYDEF_IFLAG	(BRKINT | ISTRIP | IMAXBEL | IEXTEN | IXON)
+#define	TTYDEF_IFLAG	(BRKINT | ISTRIP | IMAXBEL | IXON)
 #define TTYDEF_OFLAG	(0)
-#define TTYDEF_LFLAG	(ECHO | ICANON | ISIG)
+#define TTYDEF_LFLAG	(ECHO | ICANON | ISIG | IEXTEN)
 #define TTYDEF_CFLAG	(CREAD | CS7 | PARENB | HUPCL)
 #define TTYDEF_SPEED	(B9600)
 
