@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.5 %G%";
+static char *SccsId = "@(#)names.c	2.6 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -306,6 +306,7 @@ outof(names, fo, hp)
 			wait(&s);
 			switch (pid = fork()) {
 			case 0:
+				sigchild();
 				sigsys(SIGHUP, SIG_IGN);
 				sigsys(SIGINT, SIG_IGN);
 				sigsys(SIGQUIT, SIG_IGN);
