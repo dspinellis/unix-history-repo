@@ -1,0 +1,8 @@
+as - -o fp.o fp?.s
+as - -o printf.o printf.s
+as - -o putc.o putc.s
+as - -o treen.o treen.s
+as - -o yycopy.o yycopy.s
+cc -S perror.c
+ed - < :datafix perror.s
+as - -o perror.o perror.s
