@@ -1,5 +1,16 @@
 (Version 4.1 of 7/25/83)
 
+-- get rid of MAXMAILERS, just allocate them as you go; merge the stats
+	structure in with the MAILERS structure; change the longs in
+	said structure into u_longs; print the file in ASCII, lock the
+	file before reading/printing.
+
+-- clean up sysexits; get rid of EX_BASE, most of sysexits.c is duplicated
+	in deliver.c
+
+-- mailq; split it out, by default, just # of messages, also add sort
+	by machine?
+
  ******	Finish properly implementing SMTP:
 	- check correct name in HELO exchange (?)
 
