@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.8 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -802,15 +802,16 @@ core()
 	if (error = vn_open(ndp, FCREAT|FWRITE, 0644))
 		return (error);
 	vp = ndp->ni_vp;
+	VOP_LOCK(vp);
 	if (vp->v_type != VREG ||
 	    VOP_GETATTR(vp, &vattr, u.u_cred) ||
 	    vattr.va_nlink != 1) {
-		error = EFAULT;
-		goto out;
+		vput(vp);
+		return (EFAULT);
 	}
 #ifdef MMAP
 	{ register int fd;
-	/* unmasp funky devices in the user's address space */
+	/* unmap funky devices in the user's address space */
 	for (fd = 0; fd < u.u_lastfile; fd++)
 		if (u.u_ofile[fd] && (u.u_pofile[fd] & UF_MAPPED))
 			munmapfd(fd);
@@ -821,20 +822,18 @@ core()
 	VOP_SETATTR(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
-	    UIO_SYSSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
+	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),
-		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES),
-		    UIO_USERSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
+		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
+		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
 		    (int)ctob(u.u_ssize),
-		    (off_t)ctob(UPAGES) + ctob(u.u_dsize),
-		    UIO_USERSPACE, IO_UNIT, ndp->ni_cred, (int *)0);
-out:
-	if (vp)
-		vrele(vp);
+		    (off_t)ctob(UPAGES) + ctob(u.u_dsize), UIO_USERSPACE,
+		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
+	vput(vp);
 	return (error);
 }
