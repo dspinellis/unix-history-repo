@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_input.c	7.12 (Berkeley) %G%
+ *	@(#)ip_input.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1045,5 +1045,5 @@ ip_forward(m)
 		break;
 	}
 sendicmp:
-	icmp_error(m, type, code, dest);
+	icmp_error(mcopy, type, code, dest);
 }
