@@ -23,7 +23,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.6 (Berkeley) %G%
+ *	@(#)locore.s	7.7 (Berkeley) %G%
  */
 
 /*
@@ -1369,6 +1369,8 @@ NON_LEAF(MachKernGenException, KERN_EXC_FRAME_SIZE, ra)
 	.set	at
 	.set	reorder
 END(MachKernGenException)
+	.globl	MachKernGenExceptionEnd
+MachKernGenExceptionEnd:
 
 /*----------------------------------------------------------------------------
  *
@@ -1910,7 +1912,7 @@ END(clearsoftnet)
 /*
  * Set/change interrupt priority routines.
  */
-
+#ifdef NOTDEF
 LEAF(MachEnableIntr)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG	# read status register
@@ -1921,6 +1923,7 @@ LEAF(MachEnableIntr)
 	nop
 	.set	reorder
 END(MachEnableIntr)
+#endif /* NOTDEF */
 
 #include <sys/cdefs.h>
 
@@ -1962,10 +1965,10 @@ END(spl8)
 LEAF(splx)
 	.set	noreorder
 	mfc0	v0, MACH_COP_0_STATUS_REG
+	j	ra
 	mtc0	a0, MACH_COP_0_STATUS_REG
 	.set	reorder
-	j	ra
-	END(splx)
+END(splx)
 
 /*----------------------------------------------------------------------------
  *
@@ -3188,20 +3191,32 @@ LEAF(to_monitor)
 	beq	a0, zero, 1f
 	nop
 1:
-#endif /* RB_PWOFF */
+#endif
 	li	v0, MACH_SR_BOOT_EXC_VEC	# no interrupt and
 	mtc0	v0, MACH_COP_0_STATUS_REG	# boot strap exception vector
 	nop
 	nop
 	nop
 	nop
-
-#ifdef notyet /* KU:XXX */
-	la	a1, MONARG
+	li	a1, MACH_MONARG_ADDR|MACH_UNCACHED_MEMORY_ADDR
 	sw	a0, (a1)			# pass argument(howto)
-#endif
 	move	a0, zero			# syscall(#0)
 	syscall
 	nop
 	.set	reorder
 END(to_monitor)
+
+/*
+ * getpcps(pc, sp)
+ *      int *pc, *sp;
+ * return value: sr
+ */
+LEAF(getpcsp)
+	.set    noreorder
+	mfc0    v0, MACH_COP_0_STATUS_REG
+	sw      ra, (a0)
+	.set    reorder
+	sw      sp, (a1)
+	j       ra
+	.set	reorder
+END(getpcps)
