@@ -1,0 +1,13 @@
+whatis Color
+whatis ColorSet
+stop in p
+run
+step
+where
+step
+print sets.s
+step
+step
+step
+where
+print sets.s
