@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)ranlib.c 4.6 %G%";
+static	char sccsid[] = "@(#)ranlib.c 4.7 %G%";
 #endif
 /*
  * ranlib - create table of contents for archive; string table version
@@ -68,21 +68,23 @@ char **argv;
 			fread((char *)&exp, 1, sizeof(struct exec), fi);
 			if (N_BADMAG(exp))
 				continue;
+			if (!strncmp(tempnm, archdr.ar_name, sizeof(archdr.ar_name)))
+				continue;
 			if (exp.a_syms == 0) {
 				fprintf(stderr, "ranlib: warning: %s(%s): no symbol table\n", *argv, archdr.ar_name);
 				continue;
 			}
 			o = N_STROFF(exp) - sizeof (struct exec);
 			if (ftell(fi)+o+sizeof(ssiz) >= off) {
-				fprintf(stderr, "ranlib: %s(%s): old format .o file\n", *argv, archdr.ar_name);
-				exit(1);
+				fprintf(stderr, "ranlib: warning: %s(%s): old format .o file\n", *argv, archdr.ar_name);
+				continue;
 			}
 			fseek(fi, o, 1);
 			fread((char *)&ssiz, 1, sizeof (ssiz), fi);
 			if (ssiz < sizeof ssiz){
 				/* sanity check */
-				fprintf(stderr, "ranlib: %s(%s): mangled string table\n", *argv, archdr.ar_name);
-				exit(1);
+				fprintf(stderr, "ranlib: warning: %s(%s): mangled string table\n", *argv, archdr.ar_name);
+				continue;
 			}
 			strtab = (char *)calloc(1, ssiz);
 			if (strtab == 0) {
