@@ -1,4 +1,15 @@
-/*	sys_machdep.c	1.1	86/01/05	*/
+
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
+ *
+ * %sccs.include.noredist.c%
+ *
+ *	@(#)sys_machdep.c	5.2 (Berkeley) %G%
+ */
 
 #include "../h/param.h"
 #include "../h/systm.h"
