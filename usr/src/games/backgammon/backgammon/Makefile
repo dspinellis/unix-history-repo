@@ -1,4 +1,4 @@
-#	Makefile	1.2	82/10/24
+#	Makefile	1.3	82/11/27
 
 DESTDIR=
 CFLAGS= -O -DV7
@@ -30,12 +30,6 @@ data.o tutor.o: back.h tutor.h
 #	Update message.  /tmp is always changing, so use it to ensure execution
 message.c: /tmp
 	ex - message.c < Mesgfix
-
-#	Save subroutine.  Uses "execl" which execl's itself to backgammon
-save.c: execl
-	ex - save.c < Savefix
-execl: execl.c
-	cc -O -o execl execl.c
 
 #	Documentation
 backgammon.doc: backgammon.src
