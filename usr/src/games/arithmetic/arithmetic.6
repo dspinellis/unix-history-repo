@@ -1,0 +1,68 @@
+.\"	@(#)arithmetic.6	4.1 (Berkeley) %G%
+.\"
+.TH ARITHMETIC 6 
+.AT 3
+.SH NAME
+arithmetic \- provide drill in number facts
+.SH SYNOPSIS
+.B /usr/games/arithmetic
+[
+.B +\-x/
+] [ range ]
+.SH DESCRIPTION
+.I Arithmetic
+types out simple arithmetic problems,
+and waits for an answer to be typed in.
+If the answer is correct,
+it types back \*(lqRight!\*(rq,
+and a new problem.
+If the answer is wrong,
+it replies \*(lqWhat?\*(rq,
+and waits for another answer.
+Every twenty problems, it publishes
+statistics on correctness and the time required
+to answer.
+.PP
+To quit the program,
+type an interrupt (delete).
+.PP
+The first optional argument determines the kind of problem
+to be generated;
+.B +\-x/
+respectively cause
+addition, subtraction, multiplication, and division
+problems to be generated.
+One or more characters can be given;
+if more than one is given, the different types of
+problems will be mixed in random order; default is
+.B +\-
+.PP
+.I Range
+is a decimal number;
+all addends, subtrahends, differences, multiplicands, divisors,
+and quotients will be less than or equal to the value of
+.IR range .
+Default
+.I range
+is 10.
+.PP
+At the start, all numbers less than or equal to
+.I range
+are equally likely
+to appear.
+If the respondent makes a mistake,
+the numbers in the problem which was missed
+become more likely to reappear.
+.PP
+As a matter of educational philosophy, the program will
+not give correct answers,
+since the learner should, in principle,
+be able to calculate them.
+Thus the program is intended to provide drill for
+someone just past the first learning stage,
+not to teach number facts
+.I de
+.IR novo .
+For almost all users,
+the relevant statistic should be
+time per problem, not percent correct.
