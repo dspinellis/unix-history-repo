@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkfs.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkfs.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
@@ -561,7 +561,7 @@ next:
 		initcg(cylno, utime);
 		if (mfs)
 			continue;
-		if (cylno % 9 == 0)
+		if (cylno % 8 == 0)
 			printf("\n");
 		printf(" %d,", fsbtodb(&sblock, cgsblock(&sblock, cylno)));
 	}
