@@ -7,10 +7,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_bio.c	7.30 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/resourcevar.h>
 #include <sys/proc.h>
 #include <sys/buf.h>

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_socket.c	7.34 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.35 (Berkeley) %G%
  */
 
 /*
@@ -15,6 +15,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/mount.h>
 #include <sys/kernel.h>
