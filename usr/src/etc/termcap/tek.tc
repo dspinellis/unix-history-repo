@@ -1,0 +1,68 @@
+# # --------------------------------
+#
+# X: TEKTRONIX
+#
+Xa|tek|tek4012|4012|tektronix 4012:\
+	:cr=^M:do=^J:bl=^G:\
+	:is=\E^O:le=^H:bs:cl=1000\E^L:co#75:ns:li#35:os:
+Xb|tek4013|4013|tektronix 4013:\
+	:as=\E^N:ae=\E^O:tc=4012:
+Xc|tek4014|4014|tektronix 4014:\
+	:is=\E^O\E9:co#81:li#38:dF#1000:tc=tek4012:
+Xd|tek4015|4015|tektronix 4015:\
+	:as=\E^N:ae=\E^O:tc=4014:
+Xe|tek4014-sm|4014-sm|tektronix 4014 in small font:\
+	:is=\E^O\E\072:co#121:li#58:tc=tek4014:
+Xf|tek4015-sm|4015-sm|tektronix 4015 in small font:\
+	:as=\E^N:ae=\E^O:tc=4014sm:
+# I think the 1000UP is supposed to be so expensive it never happens.
+X4|tek4023|4023|tex|tektronix 4023:\
+	:cr=^M:do=^J:nl=^J:bl=^G:\
+	:so=^_P:se=^_@:cm=\034%r%+ %+ :nd=\t:le=^H:bs:cl=4\E^L:co#80:li#24:am:\
+	:up=1000UP:vt#4:
+# Can't use cursor motion because it's memory relative, and because
+# it only works in the workspace, not the monitor.  Same for home.
+# Likewise, standout only works in the workspace.
+# 145 ms padding on al and AL taken out since it doesn't seem to be needed much.
+X5|4025|4027|4024|tek4025|tek4027|tek4024|4025cu|4027cu|tektronix 4024/4025/4027:\
+	:cr=^M:sf=^F^J:do=^F^J:bl=^G:\
+	:is=\41com 31\r\n^_sto 9 17 25 33 41 49 57 65 73\r:\
+	:ks=^_lea p4 /h/\r^_lea p8 /k/\r^_lea p6 / /\r^_lea p2 /j/\r^_lea f5 /H/\r^_lea p5 /H/\r:\
+	:ke=^_lea p2\r^_lea p4\r^_lea p6\r^_lea p8\r^_lea p5\r^_lea f5\r:\
+	:am:le=^H:bs:da:db:ta=^I:pt:li#34:co#80:cl=^_era\r\n\n:up=^K:nd=^_rig\r:\
+	:al=^_up\r^_ili\r:dl=^_dli\r^F:\
+	:dc=^_dch\r:im=^_ich\r:ei=^F^_dow\r^K:nl=^F\n:\
+	:cd=^_dli 50\r:CC=^_:\
+	:AL=^_up\r^_ili %d\r:DL=^_dli %d\r^F:\
+	:UP=^_up %d\r:DO=^_dow %d\r:LE=^_lef %d\r:RI=^_rig %d\r:
+X7|4025-17|4027-17|tek 4025 17 line window:\
+	:li#17:tc=4025:
+X8|4025-17ws|4027-17ws|tek 4025 17 line window in workspace:\
+	:is=\41com 31\r\n^_sto 9,17,25,33,41,49,57,65,73\r^_wor 17\r^_mon 17\r:\
+	:ti=^_wor h\r:te=^_mon h\r:so=^_att e\r:se=^_att s\r:tc=4025-17:
+X9|4025ex|4027ex|tek 4025 w/!:\
+	:ti=\41com 31\r:te=^_com 33\r:\
+	:is=^_com 33\r\n\41sto 9,17,25,33,41,49,57,65,73\r:tc=4025:
+# From cbosg!teklabs!davem Wed Sep 16 21:11:41 1981
+# Here's the comamnd file that I use to get rogue to work on the 4025.
+# It should work with any program using the old curses (e.g. it better
+# not try to scroll, or cursor addressing won't work.  Also, you can't
+# see the cursor.)
+# (This "learns" the arrow keys for rogue. I have adapted it for termcap - mrh)
+Xr|4025-cr|tek 4025 for curses and rogue:\
+	:is=\41com 31\r\n^_sto 9 17 25 33 41 49 57 65 73\r:\
+	:am:le=^H:bs:ta=^I:pt:li#33:co#80:cm=^_jum%i%d,%d;:up=^K:cr=^M:\
+	:do=^F^J:bl=^G:cl=^_era;:nd=^_rig;:nl=^F\n:ti=^_wor 33h:te=^_wor 0:
+# next two lines commented out since curses only allows 128 chars, sigh.
+	:ti=^_lea p1/b/^_lea p2/j/^_lea p3/n/^_lea p4/h/^_lea p5/ /^_lea p6/l/^_lea p7/y/^_lea p8/k/^_lea p9/u/^_lea p./f/^_lea pt/`era w/13^_lea p0/s/^_wor 33h:\
+	:te=^_lea p1^_lea p2^_lea p3^_lea p4^_lea pt^_lea p5^_lea p6^_lea p7^_lea p8^_lea p9/la/13^_lea p.^_lea p0^_wor 0:
+# The 4110 series may be a wonderful graphics series, but they make the 4025
+# look good for screen editing.  In the dialog area, you can't move the cursor
+# off the bottom line.  Out of the dialog area, ^K moves it up, but there
+# is no way to scroll.
+# The 4110 graphics terminal series
+Xs|4112|4113|4114|tek4112|tektronix 4110 series:\
+	:up=^k:le=^H:cr=^M:nl=^J:do=^J:bl=^G:bs:am:cl=\E^L:li#34:co#80:\
+	:ti=\EKA0\ELV0\EMG0:te=\EKA1\ELV1:
+Xt|4112-nd|4112 not in dialog area:up=^K:ns:tc=4112:
+Xu|4112-5|4112 in 5 line dialog area:li#5:tc=4112:
