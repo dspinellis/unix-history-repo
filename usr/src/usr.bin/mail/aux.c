@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)aux.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)aux.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -116,7 +116,7 @@ hfield(field, mp)
 	ibuf = setinput(mp);
 	if ((lc = mp->m_lines - 1) < 0)
 		return NOSTR;
-	if (readline(ibuf, linebuf) < 0)
+	if (readline(ibuf, linebuf, LINESIZE) < 0)
 		return NOSTR;
 	while (lc > 0) {
 		if ((lc = gethfield(ibuf, linebuf, lc, &colon)) < 0)
@@ -146,7 +146,7 @@ gethfield(f, linebuf, rem, colon)
 	for (;;) {
 		if (--rem < 0)
 			return -1;
-		if ((c = readline(f, linebuf)) <= 0)
+		if ((c = readline(f, linebuf, LINESIZE)) <= 0)
 			return -1;
 		for (cp = linebuf; isprint(*cp) && *cp != ' ' && *cp != ':';
 		     cp++)
@@ -168,7 +168,7 @@ gethfield(f, linebuf, rem, colon)
 			ungetc(c = getc(f), f);
 			if (c != ' ' && c != '\t')
 				break;
-			if ((c = readline(f, line2)) < 0)
+			if ((c = readline(f, line2, LINESIZE)) < 0)
 				break;
 			rem--;
 			for (cp2 = line2; *cp2 == ' ' || *cp2 == '\t'; cp2++)
@@ -495,7 +495,7 @@ name1(mp, reptype)
 		return cp;
 	ibuf = setinput(mp);
 	namebuf[0] = 0;
-	if (readline(ibuf, linebuf) < 0)
+	if (readline(ibuf, linebuf, LINESIZE) < 0)
 		return(savestr(namebuf));
 newname:
 	for (cp = linebuf; *cp && *cp != ' '; cp++)
@@ -506,7 +506,7 @@ newname:
 	     *cp && *cp != ' ' && *cp != '\t' && cp2 < namebuf + LINESIZE - 1;)
 		*cp2++ = *cp++;
 	*cp2 = '\0';
-	if (readline(ibuf, linebuf) < 0)
+	if (readline(ibuf, linebuf, LINESIZE) < 0)
 		return(savestr(namebuf));
 	if ((cp = index(linebuf, 'F')) == NULL)
 		return(savestr(namebuf));

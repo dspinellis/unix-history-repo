@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -153,7 +153,7 @@ printhead(mesg)
 	int subjlen;
 
 	mp = &message[mesg-1];
-	readline(setinput(mp), headline);
+	(void) readline(setinput(mp), headline, LINESIZE);
 	if ((subjline = hfield("subject", mp)) == NOSTR)
 		subjline = hfield("subj", mp);
 	/*
@@ -362,7 +362,7 @@ top(msgvec)
 		if (!lineb)
 			printf("\n");
 		for (lines = 0; lines < c && lines <= topl; lines++) {
-			if (readline(ibuf, linebuf) < 0)
+			if (readline(ibuf, linebuf, LINESIZE) < 0)
 				break;
 			puts(linebuf);
 			lineb = blankline(linebuf);
