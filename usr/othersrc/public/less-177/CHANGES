@@ -1,0 +1,124 @@
+	Major changes between "less" versions 123 and 170
+
+* New option -j allows target lines to be positioned anywhere on screen.
+
+* New option -S truncates displayed line at the screen width,
+  rather than wrapping onto the next line.
+
+* New option -y limits amount of forward scroll.
+
+* New option -T specifies a "tags" file.
+
+* Non-printable, non-control characters are displayed in octal.
+  Such characters, as well as control characters, are displayed 
+  in blinking mode.
+
+* New command -+ sets an option to its default.
+* New command -- sets an option to the opposite of its default.
+
+* Lesskey file may have a string appended to a key's action,
+  which acts as though typed in after the command.
+
+* New commands ESC-^F and ESC-^B match arbitrary types of brackets.
+
+* New command F monitors a growing file (like "tail -f").
+
+* New command | pipes a section of the input file into a shell command.
+
+* New command :x directly jumps to a file in the command line list.
+
+* Search commands have been enhanced and reorganized:
+	n	Repeat search, same direction.
+	N	Repeat search, opposite direction.
+	ESC-/	Search forward thru file boundaries
+	ESC-?	Search backward thru file boundaries
+	ESC-n	Repeat search thru file boundaries, same direction.
+	ESC-N	Repeat search thru file boundaries, opposite direction.
+  Special character * causes search to search thru file boundaries.
+  Special character @ causes search to begin at start/end of file list.
+
+* Examining a new file adds it to the command line list.
+  A list of files, or an expression which matches more than one file,
+  may be examined; all of them are added to the command line list.
+
+* Environment variables LESSCHARSET and LESSCHARDEF can define
+  a non-ASCII character set.
+
+* Partial support for MSDOS, including options -R for repainting screen
+  on quit, -v/-V to select video mode, and -W to change window size.
+
+
+======================================================================
+
+
+	Major changes between "less" versions 97 and 123
+
+* New option (-N) causes line numbers to be displayed in the
+  text of the file (like vi "set nu").
+
+* New option (-?) prints help message immediately.
+
+* New option (-r) displays "raw" control characters, without
+  mapping them to ^X notation.
+
+* New option (-f) forces less to open non-regular files
+  (directories, etc).
+
+* New option (-k) can be used to specify lesskey files by name.
+
+* New option (-y) can be used to set a forward scroll limit
+  (like -h sets a backward scroll limit).
+
+* File marks (set by the m command) are now preserved when a new
+  file is edited.  The ' command can thus be used to switch files.
+
+* New command ESC-/ searches all files (on the command line) 
+  for a pattern.
+
+* New command ESC-n repeats previous search, spanning files.
+
+* The N command has been changed to repeat the previous search
+  in the reverse direction.  The old N command is still available 
+  via :n.
+
+* New command ESC-N repeats previous search in the reverse
+  direction and spanning files.
+
+* 8 bit characters are now supported.  A new option (-g) can be 
+  used to strip off the eighth bit (the previous behavior).
+
+* Options which take a following string (like -t) may now
+  optionally have a space between the option letter and the string.
+
+* Six new commands { } ( ) [ and ] can be used to match
+  brackets of specific types, similar to vi % command.
+
+* New commands z and w move forward/backward one window and
+  simultaneously set the window size.
+
+* Prompt string expansion now has %L for line number of the last
+  line in the file, and %E for the name of the editor.
+  Also, % escapes which refer to a line (b=bottom, t=top, etc.)
+  can use j for the jump target line.
+
+* New environment variable LESSEDIT can be used to tailor the
+  command string passed to the editor by the v command.
+
+* Examining a file which was previously examined will return
+  to the same position in the file.
+
+* A "%" is expanded to the current filename and a "#" to the 
+  previous filename, in both shell commands and the E command.
+  (Previously % worked only in shell commands and # worked 
+  only in the E command.)
+
+* New command ":ta" is equivalent to "-t".
+
+* New command "s" is equivalent to "-l".
+
+* The - command may be followed by "+X" to revert to the default
+  for option X, or "-X" to get the opposite of the default.
+
+* Lesskey files may now include characters after the action as
+  extra input to be parsed after the action; for example:
+  "toggle-option X" to toggle a specific option X.
