@@ -1,10 +1,21 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)byteorder.3	6.2 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.TH BYTEORDER 3N ""
+.\"	@(#)byteorder.3	6.3 (Berkeley) %G%
+.\"
+.TH BYTEORDER 3 ""
 .UC 5
 .SH NAME
 htonl, htons, ntohl, ntohs \- convert values between host and network byte order
@@ -33,12 +44,11 @@ these routines are defined as null macros in the include file
 .PP
 These routines are most often used in conjunction with Internet
 addresses and ports as returned by
-.IR gethostbyname (3N)
+.IR gethostbyname (3)
 and
-.IR getservent (3N).
+.IR getservent (3).
 .SH "SEE ALSO"
-gethostbyname(3N),
-getservent(3N)
+gethostbyname(3), getservent(3)
 .SH BUGS
 The VAX handles bytes backwards from most everyone else in
 the world.  This is not expected to be fixed in the near future.
