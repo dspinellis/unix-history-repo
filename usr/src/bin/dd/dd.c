@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)dd.c	8.3 (Berkeley) %G%";
 
 static void dd_close __P((void));
 static void dd_in __P((void));
+static void getfdtype __P((IO *));
 static void setup __P((void));
 
 IO	in, out;		/* input/output state */
@@ -68,21 +69,6 @@ main(argc, argv)
 
 	dd_close();
 	exit(0);
-}
-
-static void
-getfdtype(io)
-	IO *io;
-{
-	struct mtget mt;
-	struct stat sb;
-
-	if (fstat(io->fd, &sb))
-		err(1, "%s", io->name);
-	if (S_ISCHR(sb.st_mode))
-		io->flags |= ioctl(io->fd, MTIOCGET, &mt) ? ISCHR : ISTAPE;
-	else if (lseek(io->fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE)
-		io->flags |= ISPIPE;		/* XXX fixed in 4.4BSD */
 }
 
 static void
@@ -184,6 +170,21 @@ setup()
 		else
 			ctab = ddflags & C_LCASE ? u2l : l2u;
 	(void)time(&st.start);			/* Statistics timestamp. */
+}
+
+static void
+getfdtype(io)
+	IO *io;
+{
+	struct mtget mt;
+	struct stat sb;
+
+	if (fstat(io->fd, &sb))
+		err(1, "%s", io->name);
+	if (S_ISCHR(sb.st_mode))
+		io->flags |= ioctl(io->fd, MTIOCGET, &mt) ? ISCHR : ISTAPE;
+	else if (lseek(io->fd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE)
+		io->flags |= ISPIPE;		/* XXX fixed in 4.4BSD */
 }
 
 static void
