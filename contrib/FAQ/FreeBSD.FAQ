@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.32 1994/06/11 18:00:34 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.33 1994/06/12 15:13:31 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -304,19 +304,13 @@ Buslogic             BT-445 Series <VLB> (but see section 1.5)
                      BT-545 Series <ISA>
                      BT-742 Series <EISA>
                      BT-747 Series <EISA>
-Future Domain        TMC-950 Series <ISA> (See below)
-Seagate              ST-01/02 Series <ISA> (See below)
+Future Domain        TMC-8XX/950 Series <ISA> (CURRENT ONLY)
+Seagate              ST-01/02 Series <ISA> (CURRENT ONLY)
 UltraStor            UH-14f Series <ISA>
                      UH-34f Series <EISA/VLB>
 
 There is supposed to be a UltraStor 24f driver floating around, but
 we're not sure where (could someone please point us at it?).   
-
-The Seagate and Future Domain SCSI cards are supported through contributed
-code.  Please see the installation notes in:
-        /usr/src/contrib/FAQ/programs/SCSI/st01fd950/README.seagate
-for instructions on how to install these drivers.  There maybe some 
-problems with these drivers.  
 
 2.3:  What CD-ROM drives are supported by FreeBSD?
 
