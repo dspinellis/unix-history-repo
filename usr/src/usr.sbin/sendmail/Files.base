@@ -1,4 +1,4 @@
-#	@(#)Files.base	8.25 (Berkeley) %G%
+#	@(#)Files.base	8.26 (Berkeley) %G%
 FAQ
 KNOWNBUGS
 Makefile
@@ -117,5 +117,6 @@ src/Makefiles/Makefile.UMAX
 src/Makefiles/Makefile.UNICOS
 src/Makefiles/Makefile.Utah
 src/Makefiles/Makefile.uts.systemV
+test/t_seteuid.c
 test/t_setreuid.c
 test/Results
