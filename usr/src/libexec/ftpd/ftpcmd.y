@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.21 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.22 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -491,7 +491,7 @@ username:	STRING
 
 password:	/* empty */
 		= {
-			*(char **)&($$) = "";
+			*(char **)&($$) = (char *)calloc(1, sizeof(char));
 		}
 	|	STRING
 	;
