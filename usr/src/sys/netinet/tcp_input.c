@@ -1,4 +1,4 @@
-/* tcp_input.c 1.10 81/10/30 */
+/* tcp_input.c 1.11 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -543,7 +543,7 @@ COUNT(RCV_CTLDAT);
 		for (m = up->uc_sbuf; m != NULL; m = m->m_next)
 			last += m->m_len;
 		if (tp->snd_nxt <= last || (tp->tc_flags&TC_SND_FIN))
-			sent = send(tp);
+			sent = tcp_send(tp);
 	}
 
 /* set for retrans */
