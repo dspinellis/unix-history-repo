@@ -1,4 +1,4 @@
-/*	machdep.c	4.6	%G%	*/
+/*	machdep.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -15,8 +15,13 @@
 #include "../h/uba.h"
 #include "../h/cons.h"
 #include "../h/reboot.h"
+#include "../h/conf.h"
+#include <frame.h>
 
-char	version[] = "VM/UNIX (Berkeley Version 4.1) 11/10/80 \n";
+int	coresw = 0;
+int	printsw = 0;
+
+char	version[] = "VM/UNIX (Berkeley Version machdep.c) 81/02/07 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -57,7 +62,8 @@ startup(firstaddr)
 	printf("real mem  = %d\n", ctob(maxmem));
 
 	/*
-	 */			/* Bell labs style comment */
+	 * Clear warm-restart inhibit flag.
+	 */
 	tocons(TXDB_CWSI);
 	tocons(TXDB_CCSI);
 
@@ -120,6 +126,8 @@ clkinit(base)
 	 * Have been told that VMS keeps time internally with base TODRZERO.
 	 * If this is correct, then this routine and VMS should maintain
 	 * the same date, and switching shouldn't be painful.
+	 * (Unfortunately, VMS keeps local time, so when you run UNIX
+	 * and VMS, VMS runs on GMT...).
 	 */
 	if (todr < TODRZERO) {
 		printf("WARNING: todr too small (battery backup failed?)");
@@ -280,28 +288,17 @@ bad:
 
 dorti()
 {
-	struct frame {
-		int	handler;
-		unsigned int
-			psw:16,
-			mask:12,
-			:1,
-			s:1,
-			spa:2;
-		int	savap;
-		int	savfp;
-		int	savpc;
-	} frame;
+	struct frame frame;
 	register int sp;
 	register int reg, mask;
 	extern int ipcreg[];
 
 	(void) copyin((caddr_t)u.u_ar0[FP], (caddr_t)&frame, sizeof (frame));
 	sp = u.u_ar0[FP] + sizeof (frame);
-	u.u_ar0[PC] = frame.savpc;
-	u.u_ar0[FP] = frame.savfp;
-	u.u_ar0[AP] = frame.savap;
-	mask = frame.mask;
+	u.u_ar0[PC] = frame.fr_savpc;
+	u.u_ar0[FP] = frame.fr_savfp;
+	u.u_ar0[AP] = frame.fr_savap;
+	mask = frame.fr_mask;
 	for (reg = 0; reg <= 11; reg++) {
 		if (mask&1) {
 			u.u_ar0[ipcreg[reg]] = fuword((caddr_t)sp);
@@ -309,9 +306,9 @@ dorti()
 		}
 		mask >>= 1;
 	}
-	sp += frame.spa;
-	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.psw;
-	if (frame.s)
+	sp += frame.fr_spa;
+	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.fr_psw;
+	if (frame.fr_s)
 		sp += 4 + 4 * (fuword((caddr_t)sp) & 0xff);
 	/* phew, now the rei */
 	u.u_ar0[PC] = fuword((caddr_t)sp);
@@ -418,12 +415,16 @@ boot(panic, arghowto)
 	}
 	splx(0x1f);			/* extreme priority */
 	devtype = major(rootdev);
-	if (howto&RB_HALT)
-		tocons(TXDB_DONE);
-	else if (panic == RB_PANIC)
-		;			/* cold or warm start */
-	else
+	if (howto&RB_HALT) {
+		printf("halting (in tight loop); hit\n\t^P\n\tHALT\n\n");
+		mtpr(IPL, 0x1f);
+		for (;;)
+			;
+	} else {
+		if (panic == RB_PANIC)
+			doadump();
 		tocons(TXDB_BOOT);
+	}
 #if VAX==750
 	{ asm("movl r11,r5"); }		/* where boot flags go on comet */
 #endif
@@ -441,4 +442,18 @@ tocons(c)
 	while ((mfpr(TXCS)&TXCS_RDY) == 0)
 		continue;
 	mtpr(TXDB, c);
+}
+
+/*
+ * Doadump comes here after turning off memory management and
+ * getting on the dump stack, either when called above, or by
+ * the auto-restart code.
+ */
+dumpsys()
+{
+
+	if ((minor(dumpdev)&07) != 1)
+		return;
+	printf("\ndumping to dev %x, offset %d\n", dumpdev, dumplo);
+	printf("dump %s\n", (*bdevsw[major(dumpdev)].d_dump)(dumpdev) ? "failed" : "succeeded");
 }
