@@ -1,12 +1,8 @@
-int	trc = -1;
-int	trcw = 0;
 int	csdel0 = 30;
-int	csdel1 = 0;
 int	csdel2 = 0;
 int	asdel = 500;
-int	csdel3 = 100;
 int	softas;
-/*	%H%	3.9	%G%	*/
+/*	%H%	3.10	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -398,7 +394,6 @@ done:
 	uptab.b_actl = dp;
 
 out:
-	if (csdel1) DELAY(csdel1);
 	return (didie);
 }
 
