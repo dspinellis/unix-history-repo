@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -50,8 +50,8 @@ fts_open(argv, options, compar)
 	int len;
 
 	/* Allocate/initialize the stream */
-	if (!(sp = (FTS *)malloc((u_int)sizeof(FTS))))
-		return(NULL);
+	if ((sp = malloc((u_int)sizeof(FTS))) == NULL)
+		return (NULL);
 	bzero(sp, sizeof(FTS));
 	sp->fts_compar = compar;
 	sp->fts_options = options;
@@ -124,13 +124,13 @@ fts_open(argv, options, compar)
 	if (!ISSET(FTS_NOCHDIR) && (sp->fts_rfd = open(".", O_RDONLY, 0)) < 0)
 		SET(FTS_NOCHDIR);
 
-	return(sp);
+	return (sp);
 
 mem3:	free(sp->fts_cur);
 mem2:	fts_lfree(root);
 	free(parent);
 mem1:	free(sp);
-	return(NULL);
+	return (NULL);
 }
 
 static void
@@ -199,9 +199,9 @@ fts_close(sp)
 	/* Set errno and return. */
 	if (!ISSET(FTS_NOCHDIR) && saved_errno) {
 		errno = saved_errno;
-		return(-1);
+		return (-1);
 	}
-	return(0);
+	return (0);
 }
 
 /*
@@ -222,7 +222,7 @@ fts_read(sp)
 
 	/* If finished or unrecoverable error, return NULL. */
 	if (!sp->fts_cur || ISSET(FTS_STOP))
-		return(NULL);
+		return (NULL);
 
 	/* Set current node pointer. */
 	p = sp->fts_cur;
@@ -234,7 +234,7 @@ fts_read(sp)
 	/* Any type of file may be re-visited; re-stat and re-turn. */
 	if (instr == FTS_AGAIN) {
 		p->fts_info = fts_stat(sp, p, 0);
-		return(p);
+		return (p);
 	}
 
 	/*
@@ -244,7 +244,7 @@ fts_read(sp)
 	if (instr == FTS_FOLLOW &&
 	    (p->fts_info == FTS_SL || p->fts_info == FTS_SLNONE)) {
 		p->fts_info = fts_stat(sp, p, 1);
-		return(p);
+		return (p);
 	}
 
 	/* Directory in pre-order. */
@@ -257,7 +257,7 @@ fts_read(sp)
 				sp->fts_child = NULL;
 			}
 			p->fts_info = FTS_DP;
-			return(p);
+			return (p);
 		} 
 
 		/*
@@ -280,13 +280,13 @@ fts_read(sp)
 			}
 		} else if (!(sp->fts_child = fts_build(sp, BREAD))) {
 			if ISSET(FTS_STOP)
-				return(NULL);
+				return (NULL);
 			if (p->fts_level == FTS_ROOTLEVEL &&
 			    FCHDIR(sp, sp->fts_rfd)) {
 				SET(FTS_STOP);
-				return(NULL);
+				return (NULL);
 			}
-			return(p);
+			return (p);
 		}
 		p = sp->fts_child;
 		sp->fts_child = NULL;
@@ -301,7 +301,7 @@ next:	tmp = p;
 		/* If reached the top, load the paths for the next root. */
 		if (p->fts_level == FTS_ROOTLEVEL) {
 			fts_load(sp, p);
-			return(sp->fts_cur = p);
+			return (sp->fts_cur = p);
 		}
 
 		/* User may have called fts_set on the node. */
@@ -315,7 +315,7 @@ next:	tmp = p;
 name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		*t++ = '/';
 		bcopy(p->fts_name, t, p->fts_namelen + 1);
-		return(sp->fts_cur = p);
+		return (sp->fts_cur = p);
 	}
 
 	/* Move up to the parent node. */
@@ -329,7 +329,7 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		 */
 		free(p);
 		errno = 0;
-		return(sp->fts_cur = NULL);
+		return (sp->fts_cur = NULL);
 	}
 
 	sp->fts_path[p->fts_pathlen] = '\0';
@@ -342,12 +342,12 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	if (p->fts_level == FTS_ROOTLEVEL) {
 		if (FCHDIR(sp, sp->fts_rfd)) {
 			SET(FTS_STOP);
-			return(NULL);
+			return (NULL);
 		}
 	}
 	else if (CHDIR(sp, "..")) {
 		SET(FTS_STOP);
-		return(NULL);
+		return (NULL);
 	}
 
 	/* 
@@ -362,7 +362,7 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		p->fts_info = FTS_ERR;
 	} else
 		p->fts_info = FTS_DP;
-	return(sp->fts_cur = p);
+	return (sp->fts_cur = p);
 }
 
 /*
@@ -378,7 +378,7 @@ fts_set(sp, p, instr)
 	int instr;
 {
 	p->fts_instr = instr;
-	return(0);
+	return (0);
 }
 
 FTSENT *
@@ -399,7 +399,7 @@ fts_children(sp)
 	 */
 	errno = 0;
 	if (ISSET(FTS_STOP) || p->fts_info != FTS_D && p->fts_info != FTS_DNR)
-		return(NULL);
+		return (NULL);
 
 	/* Free up any previous child list. */
 	if (sp->fts_child)
@@ -414,15 +414,15 @@ fts_children(sp)
 	 */
 	if (p->fts_level != FTS_ROOTLEVEL || p->fts_accpath[0] == '/' ||
 	    ISSET(FTS_NOCHDIR))
-		return(sp->fts_child = fts_build(sp, BCHILD));
+		return (sp->fts_child = fts_build(sp, BCHILD));
 
 	if ((fd = open(".", O_RDONLY, 0)) < 0)
-		return(NULL);
+		return (NULL);
 	sp->fts_child = fts_build(sp, BCHILD);
 	if (fchdir(fd))
-		return(NULL);
+		return (NULL);
 	(void)close(fd);
-	return(sp->fts_child);
+	return (sp->fts_child);
 }
 
 /*
@@ -462,7 +462,7 @@ fts_build(sp, type)
 	if (!(dirp = opendir(cur->fts_accpath))) {
 		if (type == BREAD)
 			cur->fts_info = FTS_DNR;
-		return(NULL);
+		return (NULL);
 	}
 
 	/*
@@ -540,7 +540,7 @@ mem1:				saved_errno = errno;
 				errno = saved_errno;
 				cur->fts_info = FTS_ERR;
 				SET(FTS_STOP);
-				return(NULL);
+				return (NULL);
 			}
 			maxlen = sp->fts_pathlen - sp->fts_cur->fts_pathlen - 1;
 		}
@@ -592,20 +592,20 @@ mem1:				saved_errno = errno;
 	if (descend && (!nitems || type == BCHILD) && CHDIR(sp, "..")) {
 		cur->fts_info = FTS_ERR;
 		SET(FTS_STOP);
-		return(NULL);
+		return (NULL);
 	}
 
 	/* If we didn't find anything, just do the post-order visit */
 	if (!nitems) {
 		if (type == BREAD)
 			cur->fts_info = FTS_DP;
-		return(NULL);
+		return (NULL);
 	}
 
 	/* Sort the entries. */
 	if (sp->fts_compar && nitems > 1)
 		head = fts_sort(sp, head, nitems);
-	return(head);
+	return (head);
 }
 
 static u_short
@@ -626,15 +626,15 @@ fts_stat(sp, p, follow)
 			saved_errno = errno;
 			if (!lstat(p->fts_accpath, &p->fts_statb)) {
 				errno = 0;
-				return(FTS_SLNONE);
+				return (FTS_SLNONE);
 			} 
 			errno = saved_errno;
 			bzero(&p->fts_statb, sizeof(struct stat));
-			return(FTS_NS);
+			return (FTS_NS);
 		}
 	} else if (lstat(p->fts_accpath, &p->fts_statb)) {
 		bzero(&p->fts_statb, sizeof(struct stat));
-		return(FTS_NS);
+		return (FTS_NS);
 	}
 
 	/*
@@ -655,19 +655,19 @@ fts_stat(sp, p, follow)
 			if (ino == t->fts_statb.st_ino &&
 			    dev == t->fts_statb.st_dev) {
 				p->fts_cycle = t;
-				return(FTS_DC);
+				return (FTS_DC);
 			}
-		return(FTS_D);
+		return (FTS_D);
 	}
 	if (S_ISLNK(p->fts_statb.st_mode))
-		return(FTS_SL);
+		return (FTS_SL);
 	if (S_ISREG(p->fts_statb.st_mode))
-		return(FTS_F);
-	return(FTS_DEFAULT);
+		return (FTS_F);
+	return (FTS_DEFAULT);
 }
 
 #define	R(type, nelem, ptr) \
-	(type *)realloc((void *)ptr, (u_int)((nelem) * sizeof(type)))
+	realloc((void *)ptr, (u_int)((nelem) * sizeof(type)))
 
 static FTSENT *
 fts_sort(sp, head, nitems)
@@ -689,7 +689,7 @@ fts_sort(sp, head, nitems)
 		if (!(sp->fts_array =
 		    R(FTSENT *, sp->fts_nitems, sp->fts_array))) {
 			sp->fts_nitems = 0;
-			return(head);
+			return (head);
 		}
 	}
 	for (ap = sp->fts_array, p = head; p; p = p->fts_link)
@@ -698,7 +698,7 @@ fts_sort(sp, head, nitems)
 	for (head = *(ap = sp->fts_array); --nitems; ++ap)
 		ap[0]->fts_link = ap[1];
 	ap[0]->fts_link = NULL;
-	return(head);
+	return (head);
 }
 
 static FTSENT *
@@ -714,8 +714,8 @@ fts_alloc(sp, name, len)
 	 * we allocate enough extra space after the structure to store
 	 * it.
 	 */
-	if (!(p = (FTSENT *)malloc((size_t)(sizeof(FTSENT) + len))))
-		return(NULL);
+	if ((p = malloc((size_t)(sizeof(FTSENT) + len))) == NULL)
+		return (NULL);
 	bcopy(name, p->fts_name, len + 1);
 	p->fts_namelen = len;
 	p->fts_path = sp->fts_path;
@@ -723,7 +723,7 @@ fts_alloc(sp, name, len)
 	p->fts_cderr = 0;
 	p->fts_number = 0;
 	p->fts_pointer = NULL;
-	return(p);
+	return (p);
 }
 
 static void
@@ -752,5 +752,5 @@ fts_path(sp, size)
 	int size;
 {
 	sp->fts_pathlen += size + 128;
-	return(sp->fts_path = R(char, sp->fts_pathlen, sp->fts_path));
+	return (sp->fts_path = R(char, sp->fts_pathlen, sp->fts_path));
 }
