@@ -1,4 +1,4 @@
-/*	dr.c	1.2	86/11/23	*/
+/*	dr.c	1.3	86/11/23	*/
 
 #include "dr.h"
 #if NDR > 0
@@ -72,9 +72,9 @@ drprobe(reg, vi)
 
     dr = (struct rsdevice *)reg;
 #ifdef notdef
-    dr->dr_intvec = --vi->ui_hd->vh_lastiv;
+    dr->dr_intvect = --vi->ui_hd->vh_lastiv;
 #else
-    dr->dr_intvec = DRINTV+vi->ui_unit;
+    dr->dr_intvect = DRINTV+vi->ui_unit;
 #endif
 #ifdef DR_DEBUG
     printf("dprobe: Set interrupt vector %lx and init\n",dr->dr_intvec);
@@ -85,7 +85,7 @@ drprobe(reg, vi)
 #ifdef DR_DEBUG
     printf("drprobe: Initial status %lx\n",status & 0xffff);
 #endif
-    br = 0x18, cvec = dr->dr_intvec;	/* XXX */
+    br = 0x18, cvec = dr->dr_intvect;	/* XXX */
     return (sizeof (struct rsdevice));		/* DR11 exist */
 }
 
@@ -482,18 +482,20 @@ int flag;
     	dra->currenttimo = 0;
 	break;
 
-    case DR11STAT:
+    case DR11STAT: {
+	register struct dr11io *dr = (struct dr11io *)data;
     	/* Copy back dr11 status to user */
-    	data->arg[0] = dra->dr_flags;
-    	data->arg[1] = rsaddr->dr_cstat;
-    	data->arg[2] = dra->dr_istat;	/* Status reg. at last interrupt */
-    	data->arg[3] = rsaddr->dr_data;	/* P-i/o input data */
+    	dr->arg[0] = dra->dr_flags;
+    	dr->arg[1] = rsaddr->dr_cstat;
+    	dr->arg[2] = dra->dr_istat;	/* Status reg. at last interrupt */
+    	dr->arg[3] = rsaddr->dr_data;	/* P-i/o input data */
     	status = (ushort)((rsaddr->dr_addmod << 8) & 0xff00);
-    	data->arg[4] = status | (ushort)(rsaddr->dr_intvect & 0xff);
-    	data->arg[5] = rsaddr->dr_range;
-    	data->arg[6] = rsaddr->dr_rahi;
-    	data->arg[7] = rsaddr->dr_ralo;
+    	dr->arg[4] = status | (ushort)(rsaddr->dr_intvect & 0xff);
+    	dr->arg[5] = rsaddr->dr_range;
+    	dr->arg[6] = rsaddr->dr_rahi;
+    	dr->arg[7] = rsaddr->dr_ralo;
 	break;
+    }
     case DR11LOOP:
 	/* Perform loopback test -- MUST HAVE LOOPBACK CABLE ATTACHED --
 	   Test results are printed on system console */
