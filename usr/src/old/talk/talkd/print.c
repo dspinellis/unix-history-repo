@@ -31,7 +31,7 @@ print_response(response)
 {
     	extern FILE *debugout;
 	
-	printf(debugout
+	fprintf(debugout
 		, "type is %d, answer is %d, id = %d\n\n", response->type
 		, response->answer, response->id_num);
 	fflush(debugout);

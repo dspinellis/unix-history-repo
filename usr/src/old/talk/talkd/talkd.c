@@ -34,7 +34,7 @@ CTL_RESPONSE	response;
 int	sockt;
 int	debug = 0;
 FILE	*debugout;
-int	timeout();
+void	timeout();
 long	lastmsgtime;
 
 char	hostname[32];
@@ -64,8 +64,8 @@ main(argc, argv)
 		extern int errno;
 
 		fromlen = sizeof(from);
-		cc = recvfrom(0, (char *)&request, sizeof (request), 0,
-		    &from, &fromlen);
+		cc = recvfrom(0, (char *) &request, sizeof (request), 0,
+		    (struct sockaddr *)&from, &fromlen);
 		if (cc != sizeof(request)) {
 			if (cc < 0 && errno != EINTR)
 			perror("recvfrom");
@@ -77,13 +77,14 @@ main(argc, argv)
 		process_request(&request, &response);
 		/* can block here, is this what I want? */
 		cc = sendto(sockt, (char *) &response,
-		    sizeof (response), 0, &request.ctl_addr,
+		    sizeof (response), 0, (struct sockaddr *)&request.ctl_addr,
 		    sizeof (request.ctl_addr));
 		if (cc != sizeof(response))
 			perror("sendto");
 	}
 }
 
+void
 timeout()
 {
 
