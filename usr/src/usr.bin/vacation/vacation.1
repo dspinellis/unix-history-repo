@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vacation.1	6.1 (Berkeley) %G%
+.\"	@(#)vacation.1	6.2 (Berkeley) %G%
 .\"
 .TH VACATION 1 ""
 .UC 6
@@ -13,9 +13,6 @@ vacation \- return ``I am on vacation'' indication
 .B \-I
 .br
 .B vacation
-[
-.BI \-t N
-]
 user
 .SH DESCRIPTION
 .I Vacation
@@ -41,24 +38,24 @@ expects a file
 .I \&.vacation.msg
 in your home directory containing a message to be sent back
 to each sender.
+It should be an entire message
+(including headers).
 For example, it might say:
 .PP
 .in +5
 .nf
+From: eric@ucbmonet.Berkeley.EDU (Eric Allman)
+Subject: I am on vacation
+Delivered-By-The-Graces-Of: the Vacation program
+
 I am on vacation until July 22.  If you have something urgent,
-please contact Joe Kalash (IngVAX:kalash).
+please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
 	--eric
 .fi
 .in -5
 .PP
 This message will only be sent once a week to each unique
 sender.
-This timeout can be reset using the
-.B \-t
-flag;
-a trailing `s', `m', `h', `d', or `w'
-scales the number to seconds, minutes, hours, days, or weeks
-respectively.
 The people who have sent you messages are kept in the files
 .I \&.vacation.pag
 and
@@ -82,6 +79,13 @@ to determine the sender.
 If this is not present,
 a nasty diagnostic is produced.
 .IR Sendmail (8)
-includes this automatically.
+includes the ``From'' line automatically.
+.PP
+No message is sent
+if the initial
+``From'' line includes the string
+``-REQUEST@''
+or if a ``Precedence: bulk'' or ``Precedence: junk'' line
+is included in the header.
 .SH SEE\ ALSO
 sendmail(8)
