@@ -1,4 +1,4 @@
-/*	if_vv.c	4.2	82/06/12	*/
+/*	if_vv.c	4.3	82/06/13	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -28,7 +28,6 @@
 #include "../net/route.h"
 
 #include "vv.h"
-#include "imp.h"
 
 /*
  * N.B. - if WIRECENTER is defined wrong, it can well break
@@ -135,10 +134,6 @@ COUNT(VVATTACH);
 	vs->vs_if.if_ubareset = vvreset;
 	vs->vs_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16;
 	if_attach(&vs->vs_if);
-#if NIMP == 0
-	if (ui->ui_flags & ~0xff)
-		vvlhinit((ui->ui_flags &~ 0xff) | 0x0a);
-#endif
 }
 
 /*
@@ -596,41 +591,5 @@ vvprt_hex(s, l)
 		"0123456789abcdef"[z & 0x0f]
 		);
 	}
-}
-#endif
-
-#if NIMP == 0 && NVV > 0
-/*
- * Logical host interface driver.
- * Allows host to appear as an ARPAnet
- * logical host.  Must also have routing
- * table entry set up to forward packets
- * to appropriate geteway on localnet.
- */
-struct	ifnet vvlhif;
-int	looutput();
-
-/*
- * Called by localnet interface to allow logical
- * host interface to "attach".  
- */
-vvlhinit(vvifp, addr)
-	struct ifnet *vvifp;
-	int addr;
-{
-	register struct ifnet *ifp = &vvlhif;
-	register struct sockaddr_in *sin;
-
-COUNT(VVLHINIT);
-	ifp->if_name = "lh";
-	ifp->if_mtu = VVMTU;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr.s_addr = addr;
-	ifp->if_net = netpart(sin->sin_addr);
-	ifp->if_flags = IFF_UP;
-	ifp->if_output = looutput;
-	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
 }
 #endif

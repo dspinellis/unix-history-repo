@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.26	82/04/24	*/
+/*	in_pcb.c	4.27	82/06/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -144,7 +144,7 @@ COUNT(IN_PCBCONNECT);
 	if (sin->sin_addr.s_addr == 0 || sin->sin_port == 0)
 		return (EADDRNOTAVAIL);
 	if (inp->inp_laddr.s_addr == 0) {
-		ifp = if_ifonnetof(sin->sin_addr.s_net);
+		ifp = if_ifonnetof(in_netof(sin->sin_addr));
 		if (ifp == 0) {
 			/*
 			 * We should select the interface based on

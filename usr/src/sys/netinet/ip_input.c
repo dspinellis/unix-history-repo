@@ -1,4 +1,4 @@
-/*	ip_input.c	1.43	82/05/02	*/
+/*	ip_input.c	1.44	82/06/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -481,7 +481,7 @@ COUNT(IP_DOOPTIONS);
 				break;
 			ip->ip_dst = sin[1];
 			if (opt == IPOPT_SSRR &&
-			    if_ifonnetof(ip->ip_dst.s_net) == 0)
+			    if_ifonnetof(in_netof(ip->ip_dst)) == 0)
 				goto bad;
 			break;
 

@@ -1,4 +1,4 @@
-/*	if.c	4.15	82/05/04	*/
+/*	if.c	4.16	82/06/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -147,45 +147,4 @@ if_down(ifp)
 {
 	ifp->if_flags &= ~IFF_UP;
 	pfctlinput(PRC_IFDOWN, (caddr_t)&ifp->if_addr);
-}
-
-/*
- * Formulate an Internet address from network + host.  Used in
- * building addresses stored in the ifnet structure.
- */
-struct in_addr
-if_makeaddr(net, host)
-	int net, host;
-{
-	u_long addr;
-
-	if (net < 128)
-		addr = (net << 24) | host;
-	else if (net < 65536)
-		addr = (net << 16) | host;
-	else
-		addr = (net << 8) | host;
-#ifdef vax
-	addr = htonl(addr);
-#endif
-	return (*(struct in_addr *)&addr);
-}
-
-/*
- * Initialize an interface's routing
- * table entry according to the network.
- * INTERNET SPECIFIC.
- */
-if_rtinit(ifp, flags)
-	register struct ifnet *ifp;
-	int flags;
-{
-	struct sockaddr_in sin;
-
-	if (ifp->if_flags & IFF_ROUTE)
-		return;
-	bzero((caddr_t)&sin, sizeof (sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr = if_makeaddr(ifp->if_net, 0);
-	rtinit(&sin, &ifp->if_addr, flags);
 }

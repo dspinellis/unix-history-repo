@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.15	82/06/12	*/
+/*	if_dmc.c	4.16	82/06/13	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -44,7 +44,7 @@ struct	uba_driver dmcdriver =
 	{ dmcprobe, 0, dmcattach, 0, dmcstd, "dmc", dmcinfo };
 
 #define	DMC_AF	0xff		/* 8 bits of address type in ui_flags */
-#define	DMC_NET	0xff00		/* 8 bits of net number in ui_flags */
+#define	DMC_NET	0xffffff00	/* 24 bits of net number in ui_flags */
 
 /*
  * DMC software status per interface.

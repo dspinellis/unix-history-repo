@@ -1,4 +1,4 @@
-/* in.h 4.12 82/06/05 */
+/*	in.h	4.13	82/06/13	*/
 
 /*
  * Constants and structures defined by the internet system,
@@ -91,27 +91,29 @@ struct in_addr {
  * Macros for dealing with Class A/B/C network
  * numbers.  High 3 bits of uppermost byte indicates
  * how to interpret the remainder of the 32-bit
- * Internet address.
+ * Internet address.  The macros may be used in time
+ * time critical sections of code, while subroutine
+ * versions also exist use in other places.
  */
-#ifdef vax || pdp11
+#if vax || pdp11
+#define	IN_CLASSA	0x00000080
 #define	IN_CLASSA_NET	0x000000ff	/* 8 bits of net # */
 #define	IN_CLASSA_LNA	0xffffff00
-#define	IN_CLASSB	0x00000008
+#define	IN_CLASSB	0x00000040
 #define	IN_CLASSB_NET	0x0000ffff	/* 16 bits of net # */
 #define	IN_CLASSB_LNA	0xffff0000
-#define	IN_CLASSC	0x0000000c
 #define	IN_CLASSC_NET	0x00ffffff	/* 24 bits of net # */
 #define	IN_CLASSC_LNA	0xff000000
 #endif
 
-#define	inetpart(in) \
-	((((in).s_addr&IN_CLASSC)==IN_CLASSC)?((in).s_addr&IN_CLASSC_NET):\
-	 ((((in).s_addr&IN_CLASSB)==IN_CLASSB)?((in).s_addr&IN_CLASSB_NET):\
-	  ((in).s_addr&IN_CLASSA_NET)))
-#define	lnapart(in) \
-	((((in).s_addr&IN_CLASSC)==IN_CLASSC)?((in).s_addr&IN_CLASSC_LNA) : \
-	 ((((in).s_addr&IN_CLASSB)==IN_CLASSB)?((in).s_addr&IN_CLASSB_LNA) : \
-	  ((in).s_addr&IN_CLASSA_LNA)))
+#define	IN_NETOF(in) \
+	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_NET : \
+		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_NET : \
+			(in).s_addr&IN_CLASSC_NET)
+#define	IN_LNAOF(in) \
+	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
+		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
+			(in).s_addr&IN_CLASSC_LNA)
 
 #define	INADDR_ANY	0x00000000
 

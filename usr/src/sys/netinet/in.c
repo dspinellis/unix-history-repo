@@ -1,4 +1,4 @@
-/*	in.c	4.1	82/06/13	*/
+/*	in.c	4.2	82/06/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -7,6 +7,8 @@
 #include "../h/socketvar.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
+#include "../net/if.h"
+#include "../net/route.h"
 #include "../net/af.h"
 
 #ifdef INET
