@@ -1,4 +1,4 @@
-/*	tcp_input.c	6.5	84/10/18	*/
+/*	tcp_input.c	6.6	84/10/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -183,10 +183,11 @@ tcp_input(m0)
 	tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 
 	/*
-	 * Process options.
+	 * Process options if not in LISTEN state,
+	 * else do it below (after getting remote address).
 	 */
-	if (om) {
-		tcp_dooptions(tp, om);
+	if (om && tp->t_state != TCPS_LISTEN) {
+		tcp_dooptions(tp, om, ti);
 		om = 0;
 	}
 
@@ -247,6 +248,10 @@ tcp_input(m0)
 			tp = 0;
 			goto drop;
 		}
+		if (om) {
+			tcp_dooptions(tp, om, ti);
+			om = 0;
+		}
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);
@@ -292,6 +297,7 @@ tcp_input(m0)
 		if (SEQ_GT(tp->snd_una, tp->iss)) {
 			soisconnected(so);
 			tp->t_state = TCPS_ESTABLISHED;
+			tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
 			(void) tcp_reass(tp, (struct tcpiphdr *)0);
 		} else
 			tp->t_state = TCPS_SYN_RECEIVED;
@@ -452,6 +458,7 @@ trimthenstep6:
 		tp->t_timer[TCPT_REXMT] = 0;
 		soisconnected(so);
 		tp->t_state = TCPS_ESTABLISHED;
+		tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
 		(void) tcp_reass(tp, (struct tcpiphdr *)0);
 		tp->snd_wl1 = ti->ti_seq - 1;
 		/* fall into ... */
@@ -764,9 +771,10 @@ drop:
 	return;
 }
 
-tcp_dooptions(tp, om)
+tcp_dooptions(tp, om, ti)
 	struct tcpcb *tp;
 	struct mbuf *om;
+	struct tcpiphdr *ti;
 {
 	register u_char *cp;
 	int opt, optlen, cnt;
@@ -792,8 +800,11 @@ tcp_dooptions(tp, om)
 		case TCPOPT_MAXSEG:
 			if (optlen != 4)
 				continue;
+			if (!(ti->ti_flags & TH_SYN))
+				continue;
 			tp->t_maxseg = *(u_short *)(cp + 2);
 			tp->t_maxseg = ntohs((u_short)tp->t_maxseg);
+			tp->t_maxseg = MIN(tp->t_maxseg, tcp_mss(tp));
 			break;
 		}
 	}
@@ -935,4 +946,52 @@ present:
 drop:
 	m_freem(dtom(ti));
 	return (0);
+}
+
+/*
+ *  Determine a reasonable value for maxseg size.
+ *  If the route is known, use one that can be handled
+ *  on the given interface without forcing IP to fragment.
+ *  If bigger than a page (CLSIZE), round down to nearest pagesize
+ *  to utilize pagesize mbufs.
+ *  If interface pointer is unavailable, or the destination isn't local,
+ *  use a conservative size (512 or the default IP max size),
+ *  as we can't discover anything about intervening gateways or networks.
+ *
+ *  This is ugly, and doesn't belong at this level, but has to happen somehow.
+ */
+tcp_mss(tp)
+register struct tcpcb *tp;
+{
+	struct route *ro;
+	struct ifnet *ifp;
+	int mss;
+	struct inpcb *inp;
+
+	inp = tp->t_inpcb;
+	ro = &inp->inp_route;
+	if ((ro->ro_rt == (struct rtentry *)0) ||
+	    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
+		/* No route yet, so try to acquire one */
+		if (inp->inp_faddr.s_addr != INADDR_ANY) {
+			ro->ro_dst.sa_family = AF_INET;
+			((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
+				inp->inp_faddr;
+			rtalloc(ro);
+		}
+		if ((ro->ro_rt == 0) || (ifp = ro->ro_rt->rt_ifp) == 0)
+			return (MIN(IP_MSS - sizeof(struct tcpiphdr), 512));
+	}
+
+	mss = ifp->if_mtu - sizeof(struct tcpiphdr);
+#if	(CLBYTES & (CLBYTES - 1)) == 0
+	if (mss > CLBYTES)
+		mss &= ~(CLBYTES-1);
+#else
+	if (mss > CLBYTES)
+		mss = mss / CLBYTES * CLBYTES;
+#endif
+	if (in_localaddr(tp->t_inpcb->inp_faddr))
+		return(mss);
+	return (MIN(mss, MIN(IP_MSS - sizeof(struct tcpiphdr), 512)));
 }

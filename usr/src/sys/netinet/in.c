@@ -1,4 +1,4 @@
-/*	in.c	6.4	84/08/29	*/
+/*	in.c	6.5	84/10/19	*/
 
 #include "param.h"
 #include "mbuf.h"
@@ -147,6 +147,36 @@ in_lnaof(in)
 		}
 	}
 	return (host);
+}
+
+/*
+ * Return 1 if an internet address is for a ``local'' host.
+ */
+in_localaddr(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+	register u_long net;
+	register struct ifnet *ifp;
+
+	if (IN_CLASSA(i))
+		net = (i & IN_CLASSA_NET) >> IN_CLASSA_NSHIFT;
+	else if (IN_CLASSB(i))
+		net = (i & IN_CLASSB_NET) >> IN_CLASSB_NSHIFT;
+	else
+		net = (i & IN_CLASSC_NET) >> IN_CLASSC_NSHIFT;
+
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (ifp->if_addr.sa_family != AF_INET)
+			continue;
+		if (ifp->if_flags & IFF_LOCAL) {
+			if (ifp->if_net == net)
+				return (1);
+			if ((ifp->if_net >> SUBNETSHIFT) == net)
+				return (1);
+		}
+	}
+	return (0);
 }
 
 /*

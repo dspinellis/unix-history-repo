@@ -1,4 +1,4 @@
-/*	in_pcb.c	6.2	84/08/29	*/
+/*	in_pcb.c	6.3	84/10/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -113,13 +113,34 @@ in_pcbconnect(inp, nam)
 	if (inp->inp_laddr.s_addr == INADDR_ANY) {
 		ifp = if_ifonnetof(in_netof(sin->sin_addr));
 		if (ifp == 0) {
-			/*
-			 * We should select the interface based on
-			 * the route to be used, but for udp this would
-			 * result in two calls to rtalloc for each packet
-			 * sent; hardly worthwhile...
+			register struct route *ro;
+
+			/* 
+			 * If route is known or can be allocated now,
+			 * our src addr is taken from the i/f, else punt.
 			 */
-			ifp = if_ifwithaf(AF_INET);
+			ro = &inp->inp_route;
+#define	satosin(sa)	((struct sockaddr_in *)(sa))
+			if (ro->ro_rt &&
+			    satosin(&ro->ro_dst)->sin_addr.s_addr !=
+			    sin->sin_addr.s_addr) {
+				RTFREE(ro->ro_rt);
+				ro->ro_rt = (struct rtentry *)0;
+			}
+			if ((ro->ro_rt == (struct rtentry *)0) ||
+			    (ifp = ro->ro_rt->rt_ifp) == (struct ifnet *)0) {
+				/* No route yet, so try to acquire one */
+				ro->ro_dst.sa_family = AF_INET;
+				((struct sockaddr_in *) &ro->ro_dst)->sin_addr =
+					sin->sin_addr;
+				rtalloc(ro);
+				if (ro->ro_rt == 0)
+					ifp = (struct ifnet *) 0;
+				else
+					ifp = ro->ro_rt->rt_ifp;
+			}
+			if (ifp == 0)
+				ifp = if_ifwithaf(AF_INET);
 			if (ifp == 0)
 				return (EADDRNOTAVAIL);
 		}
