@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)pte.h	5.2 (Berkeley) %G%
+ *	@(#)pte.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -88,6 +88,14 @@ unsigned int
 #define	PG_URKR		0x00000004
 #define	PG_URKW		0x00000004
 #define	PG_UW		0x00000006
+
+/*
+ * Page Protection Exception bits
+ */
+
+#define PGEX_P		0x01	/* Protection violation vs. not present */
+#define PGEX_W		0x02	/* during a Write cycle */
+#define PGEX_U		0x04	/* access from User mode (UPL) */
 
 /*
  * Pte related macros
