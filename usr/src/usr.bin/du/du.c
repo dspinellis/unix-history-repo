@@ -1,13 +1,11 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dir.h>
-
-#define howmany(x, y)	(((x) + (y) - 1) / (y))
 
 char	path[BUFSIZ], name[BUFSIZ];
 int	aflg;
@@ -30,6 +28,7 @@ main(argc, argv)
 {
 	long kbytes = 0;
 	register char *np;
+	int pid;
 
 	argc--, argv++;
 again:
@@ -48,19 +47,32 @@ again:
 		argc = 1;
 	}
 	do {
-		(void) strcpy(path, *argv);
-		(void) strcpy(name, *argv);
-		if (np = rindex(name, '/')) {
-			*np++ = '\0';
-			if (chdir(*name ? name : "/") < 0) {
-				perror(*name ? name : "/");
+		if (argc > 1) {
+			pid = fork();
+			if (pid == -1) {
+				fprintf(stderr, "No more processes.\n");
 				exit(1);
 			}
-		} else
-			np = path;
-		kbytes = descend(path, *np ? np : ".");
-		if (sflg)
-			printf("%ld\t%s\n", kbytes, path);
+			if (pid != 0)
+				wait((int *)0);
+		}
+		if (argc == 1 || pid == 0) {
+			(void) strcpy(path, *argv);
+			(void) strcpy(name, *argv);
+			if (np = rindex(name, '/')) {
+				*np++ = '\0';
+				if (chdir(*name ? name : "/") < 0) {
+					perror(*name ? name : "/");
+					exit(1);
+				}
+			} else
+				np = path;
+			kbytes = descend(path, *np ? np : ".");
+			if (sflg)
+				printf("%ld\t%s\n", kbytes, path);
+			if (argc > 1)
+				exit(1);
+		}
 		argc--, argv++;
 	} while (argc > 0);
 	exit(0);
