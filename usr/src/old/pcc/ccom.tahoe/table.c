@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)table.c	1.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)table.c	1.14 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -232,6 +232,22 @@ OPLOG,	FORCC,
 	SAREG|AWD,	TDOUBLE,
 		0,	RESCC,
 		"	cmpZL2	AL,AR\nZP",
+
+#ifdef FORT
+/* some implicit conversions made explicit to help f77 out (sigh) */
+OPLOG,	FORCC,
+	SAREG|AWD,	TFLOAT,
+	SAREG|AWD,	TDOUBLE,
+		0,	RESCC,
+		"	ldfd	AL\n	cmpd	AR\nZP",
+
+/* ought to flip this comparison, save an instruction */
+OPLOG,	FORCC,
+	SAREG|AWD,	TDOUBLE,
+	SAREG|AWD,	TFLOAT,
+		NAREG|NEVEN|NASR,	RESCC,
+		"	ldfd	AR\n	std	A1\n	cmpd2	AL,A1\nZP",
+#endif
 
 CCODES,	INAREG|INTAREG,
 	SANY,	TANY,
