@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.8 82/12/03";
+static	char *sccsid = "@(#)ls.c	4.9 83/05/09";
 #endif
 
 /*
@@ -605,6 +605,8 @@ struct	utmp utmp;
 
 char	names[NUID][NMAX+1];
 char	groups[NGID][NMAX+1];
+char	outrangename[NMAX+1];
+int	outrangeuid = -1;
 
 char *
 getname(uid)
@@ -615,13 +617,34 @@ getname(uid)
 
 	if (uid >= 0 && uid < NUID && names[uid][0])
 		return (&names[uid][0]);
-	if (init == 2)
+	if (uid >= 0 && uid == outrangeuid)
+		return (outrangename);
+	if (init == 2) {
+		if (uid < NUID)
+			return (0);
+		setpwent();
+		while (pw = getpwent()) {
+			if (pw->pw_uid != uid)
+				continue;
+			outrangeuid = pw->pw_uid;
+			strncpy(outrangename, pw->pw_name, NUID);
+			endpwent();
+			return (outrangename);
+		}
+		endpwent();
 		return (0);
+	}
 	if (init == 0)
 		setpwent(), init = 1;
 	while (pw = getpwent()) {
-		if (pw->pw_uid < 0 || pw->pw_uid >= NUID)
+		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
+			if (pw->pw_uid == uid) {
+				outrangeuid = pw->pw_uid;
+				strncpy(outrangename, pw->pw_name, NUID);
+				return (outrangename);
+			}
 			continue;
+		}
 		if (names[pw->pw_uid][0])
 			continue;
 		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
