@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -44,8 +44,8 @@ struct	sockaddr loopaddr;		/* our address on loopback */
 ifinit()
 {
 	struct interface ifs, *ifp;
-	int s, n;
-	char buf[BUFSIZ];
+	int s;
+	char buf[BUFSIZ], *cp, *cplim;
         struct ifconf ifc;
         struct ifreq ifreq, *ifr;
         struct sockaddr_in *sin;
@@ -65,7 +65,16 @@ ifinit()
         }
         ifr = ifc.ifc_req;
 	lookforinterfaces = 0;
-        for (n = ifc.ifc_len / sizeof (struct ifreq); n > 0; n--, ifr++) {
+#ifdef RTM_ADD
+#define max(a, b) (a > b ? a : b)
+#define size(p)	max((p).sa_len, sizeof(p))
+#else
+#define size(p) (sizeof (p))
+#endif
+	cplim = buf + ifc.ifc_len; /*skip over if's with big ifr_addr's */
+	for (cp = buf; cp < cplim;
+			cp += sizeof (ifr->ifr_name) + size(ifr->ifr_addr)) {
+		ifr = (struct ifreq *)cp;
 		bzero((char *)&ifs, sizeof(ifs));
 		ifs.int_addr = ifr->ifr_addr;
 		ifreq = *ifr;
