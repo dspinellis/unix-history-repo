@@ -14,12 +14,13 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	htable.c parse.c scan.c
 OBJS=	htable.o parse.o scan.o
+MAN=	htable.0
 
 all: htable
 
@@ -30,33 +31,21 @@ y.tab.h:
 	yacc -d parse.y
 	rm -f y.tab.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core htable parse.c scan.c y.tab.h
 
-depend: ${SRCS} y.tab.h FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS} y.tab.h
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o bin -g bin -m 755 htable ${DESTDIR}/etc/htable
+	install -c -o bin -g bin -m 444 htable.0 ${DESTDIR}/usr/man/cat8
 
-lint: ${SRCS} FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-htable.o: htable.c /usr/include/stdio.h /usr/include/ctype.h
-htable.o: /usr/include/errno.h /usr/include/netdb.h htable.h
-htable.o: /usr/include/sys/types.h /usr/include/netinet/in.h
-htable.o: /usr/include/sys/socket.h /usr/include/arpa/inet.h
-parse.o: parse.c htable.h /usr/include/sys/types.h /usr/include/netinet/in.h
-parse.o: /usr/include/stdio.h
-scan.o: scan.c /usr/include/stdio.h y.tab.h htable.h /usr/include/sys/types.h
-scan.o: /usr/include/netinet/in.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
