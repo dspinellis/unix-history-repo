@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_sl.c	7.14 (Berkeley) %G%
+ *	@(#)if_sl.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,8 @@
  *
  * Converted to 4.3BSD Beta by Chris Torek.
  * Other changes made at Berkeley, based in part on code by Kirk Smith.
+ * W. Jolitz, added slip abort & time domain window
+ * also added Van Jacobson's hdr compression code
  */
 
 /* $Header: if_sl.c,v 1.12 85/12/20 21:54:55 chris Exp $ */
@@ -44,6 +46,7 @@
 #if NSL > 0
 
 #include "param.h"
+#include "dir.h"
 #include "user.h"
 #include "mbuf.h"
 #include "buf.h"
@@ -52,6 +55,8 @@
 #include "ioctl.h"
 #include "file.h"
 #include "tty.h"
+#include "kernel.h"
+#include "conf.h"
 #include "errno.h"
 
 #include "if.h"
@@ -62,7 +67,9 @@
 #include "../netinet/in_systm.h"
 #include "../netinet/in_var.h"
 #include "../netinet/ip.h"
+#include "slcompress.h"
 #endif
+#include "if_slvar.h"
 
 #include "machine/mtpr.h"
 
@@ -74,17 +81,43 @@
 #define	SLIP_HIWAT	1000	/* don't start a new packet if HIWAT on queue */
 #define	CLISTRESERVE	1000	/* Can't let clists get too low */
 
-struct sl_softc {
-	struct	ifnet sc_if;	/* network-visible interface */
-	short	sc_flags;	/* see below */
-	short	sc_ilen;	/* length of input-packet-so-far */
-	struct	tty *sc_ttyp;	/* pointer to tty structure */
-	char	*sc_mp;		/* pointer to next available buf char */
-	char	*sc_buf;	/* input buffer */
-} sl_softc[NSL];
+/*
+ * SLIP ABORT ESCAPE MECHANISM:
+ *	(inspired by HAYES modem escape arrangement)
+ *	1sec escape 1sec escape 1sec escape { 1sec escape 1sec escape }
+ *	signals a "soft" exit from slip mode by usermode process
+ *	(hard exit unimplemented -- currently system dependant)
+ */
 
-/* flags */
-#define	SC_ESCAPED	0x0001	/* saw a FRAME_ESCAPE */
+#define	ABT_ESC		'\033'	/* can't be t_intr - distant host must know it*/
+#define ABT_WAIT	1	/* in seconds - idle before an escape & after */
+#define ABT_RECYCLE	(5*2+2)	/* in seconds - time window processing abort */
+
+/* a "soft" abort means to pass a suggestion to user code to abort slip */
+#define ABT_SOFT	3	/* count of escapes */
+
+/* a "hard" abort means to force abort slip within the kernel -- process jam? */
+#define ABT_HARD	5	/* count of escapes */
+
+/*
+ * SLIP TIME WINDOW:
+ *	Only accept packets with octets that come at least this often.
+ *	With non-reliable but fast modems (FAX, Packet Radio), we assume that
+ *	packets come in groups (time domain), and that fractional groups that
+ *	come erratically are just noise that will foul subsequent packets.
+ *	We reject them on a time filter basis.
+ *
+ *	This is a very coarse filter, because error correcting modems like the
+ *	telebit take there own sweet time encoding/decoding packets. If you
+ *	are using an MNP,PEP or other such arrangement, this won't help much.
+ *	If you are using packet radio, use the millisecond time val with
+ *	as small a resolution as possible. In any case, the coarse filter
+ *	saves noisey lines about 50 % of the time.
+ */
+
+#define	TIME_WINDOW	2	/* max seconds between valid packet chars */
+
+struct sl_softc	 sl_softc[NSL];
 
 #define FRAME_END	 	0300		/* Frame End */
 #define FRAME_ESCAPE		0333		/* Frame Esc */
@@ -139,6 +172,9 @@ slopen(dev, tp)
 			sc->sc_ilen = 0;
 			if (slinit(sc) == 0)
 				return (ENOBUFS);
+#ifdef INET
+			sl_compress_init(&sc->sc_comp);
+#endif
 			tp->t_sc = (caddr_t)sc;
 			sc->sc_ttyp = tp;
 			ttyflush(tp, FREAD | FWRITE);
@@ -169,6 +205,7 @@ slclose(tp)
 		tp->t_sc = NULL;
 		MCLFREE((struct mbuf *)sc->sc_buf);
 		sc->sc_buf = 0;
+		sc->sc_mp = (char *) 4; /*XXX!?! */
 	}
 	splx(s);
 }
@@ -182,19 +219,35 @@ sltioctl(tp, cmd, data, flag)
 	struct tty *tp;
 	caddr_t data;
 {
+	struct sl_softc *sc = (struct sl_softc *)tp->t_sc;
+	int s;
 
-	if (cmd == TIOCGETD) {
-		*(int *)data = ((struct sl_softc *)tp->t_sc)->sc_if.if_unit;
-		return (0);
-	}
-	if (cmd == TIOCMGET) {
+	switch (cmd) {
+	case TIOCGETD:
+		*(int *)data = sc->sc_if.if_unit;
+		break;
+	case TIOCMGET:
 		if (tp->t_state&TS_CARR_ON)
 			*(int *)data = TIOCM_CAR ;
-		else
-			*(int *)data = 0 ;
-		return (0);
+		else	*(int *)data = 0 ;
+
+		if (sc->sc_flags&SC_ABORT)
+			*(int *)data |= TIOCM_DTR ;
+		break;
+	case SLIOCGFLAGS:
+		*(int *)data = sc->sc_flags;
+		break;
+	case SLIOCSFLAGS:
+#define	SC_MASK	(SC_COMPRESS|SC_NOICMP)
+		s = splimp();
+		sc->sc_flags =
+		    (sc->sc_flags &~ SC_MASK) | ((*(int *)data) & SC_MASK);
+		splx(s);
+		break;
+	default:
+		return (-1);
 	}
-	return (-1);
+	return (0);
 }
 
 /*
@@ -229,6 +282,21 @@ sloutput(ifp, m, dst)
 		return (EHOSTUNREACH);
 	}
 	s = splimp();
+#ifdef INET
+	if (sc->sc_flags & (SC_COMPRESS|SC_NOICMP)) {
+		register struct ip *ip = mtod(m, struct ip *);
+		if (ip->ip_p == IPPROTO_TCP) {
+			/* add stuff to TOS routing */
+			if (sc->sc_flags & SC_COMPRESS)
+				(void) sl_compress_tcp(m, ip, &sc->sc_comp);
+		} else if ((sc->sc_flags & SC_NOICMP) &&
+		    ip->ip_p == IPPROTO_ICMP) {
+			m_freem(m);
+			splx(s);
+			return (0);
+		}
+	}
+#endif
 	if (IF_QFULL(&ifp->if_snd)) {
 		IF_DROP(&ifp->if_snd);
 		splx(s);
@@ -455,8 +523,38 @@ slinput(c, tp)
 	sc = (struct sl_softc *)tp->t_sc;
 	if (sc == NULL)
 		return;
+	if (!(tp->t_state&TS_CARR_ON))	/*XXX*/
+		return;
 
 	c &= 0xff;
+
+	/* if we see an abort after "idle" time, count it */
+	if ((c&0x7f) == ABT_ESC && time.tv_sec >= sc->sc_lasttime + ABT_WAIT) {
+		sc->sc_abortcount++;
+		/* record when the first abort escape arrived */
+		if (sc->sc_abortcount == 1) sc->sc_starttime = time.tv_sec;
+	}
+
+	/* if we have an abort, see that we have not run out of time, or
+	   that we have an "idle" time after the complete escape sequence */
+	if (sc->sc_abortcount) {
+		if (time.tv_sec >= sc->sc_starttime + ABT_RECYCLE)
+			sc->sc_abortcount = 0;
+		if (sc->sc_abortcount >= ABT_SOFT
+		&& time.tv_sec >= sc->sc_lasttime + ABT_WAIT)
+			sc->sc_flags |= SC_ABORT;
+	}
+
+	if (sc->sc_ilen && time.tv_sec >= sc->sc_lasttime + TIME_WINDOW) {
+		sc->sc_flags &= ~SC_ESCAPED;
+		sc->sc_mp = sc->sc_buf;
+		sc->sc_ilen = 0;
+		sc->sc_if.if_ierrors++;
+		return;
+	}
+
+	sc->sc_lasttime = time.tv_sec;
+
 	if (sc->sc_flags & SC_ESCAPED) {
 		sc->sc_flags &= ~SC_ESCAPED;
 		switch (c) {
@@ -482,13 +580,19 @@ slinput(c, tp)
 			if (sc->sc_ilen == 0)	/* ignore */
 				return;
 			m = sl_btom(sc, sc->sc_ilen, &sc->sc_if);
+			sc->sc_mp = sc->sc_buf;
+			sc->sc_ilen = 0;
 			if (m == NULL) {
 				sc->sc_if.if_ierrors++;
 				return;
 			}
-			sc->sc_mp = sc->sc_buf;
-			sc->sc_ilen = 0;
 			sc->sc_if.if_ipackets++;
+#ifdef INET
+			{ u_char type = *mtod(m, u_char *);
+			  if (!(m = sl_uncompress_tcp(m, type&0xf0, &sc->sc_comp)))
+				return;
+			}
+#endif
 			s = splimp();
 			if (IF_QFULL(&ipintrq)) {
 				IF_DROP(&ipintrq);
