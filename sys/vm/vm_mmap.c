@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id$
+ *	$Id: vm_mmap.c,v 1.8 1993/10/16 16:20:39 rgrimes Exp $
  */
 
 /*
@@ -157,7 +157,9 @@ smmap(p, uap, retval)
 	if ((flags & MAP_FIXED) && (addr & page_mask) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t) round_page(uap->len);
-	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
+	if (addr + size >= VM_MAXUSER_ADDRESS)
+		return(EINVAL);
+	if ((size != 0) && (addr >= addr + size))
 		return(EINVAL);
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
@@ -336,6 +338,8 @@ munmap(p, uap, retval)
 	if (size == 0)
 		return(0);
 	if (addr + size >= VM_MAXUSER_ADDRESS)
+		return(EINVAL);
+	if (addr >= addr + size)
 		return(EINVAL);
 	if (!vm_map_is_allocated(&p->p_vmspace->vm_map, addr, addr+size,
 	    FALSE))
