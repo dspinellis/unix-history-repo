@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.15 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -30,8 +30,6 @@ char *opcodes[] = {
 	"6",
 	"7",
 	"8",
-	"9",
-	"10",
 	"UPDATEA",
 	"UPDATED",
 	"UPDATEM",
@@ -318,6 +316,24 @@ p_rr(cp, msg, file)
 		putc('\n',file);
 		break;
 
+#ifdef ALLOW_T_UNSPEC
+        case T_UNSPEC:
+                {
+                        int NumBytes = 8;
+                        char *DataPtr;
+                        int i;
+
+                        if (dlen < NumBytes) NumBytes = dlen;
+                        fprintf(file, "\tFirst %d bytes of hex data:",
+                                NumBytes);
+                        for (i = 0, DataPtr = cp; i < NumBytes; i++, DataPtr++)
+                                fprintf(file, " %x", *DataPtr);
+                        fputs("\n", file);
+                        cp += dlen;
+                }
+                break;
+#endif ALLOW_T_UNSPEC
+
 	default:
 		fprintf(file,"\t???\n");
 		cp += dlen;
@@ -386,6 +402,10 @@ p_type(type)
 		return("UID");
 	case T_GID:
 		return("GID");
+#ifdef ALLOW_T_UNSPEC
+        case T_UNSPEC:
+                return("UNSPEC");
+#endif ALLOW_T_UNSPEC
 	default:
 		return (sprintf(nbuf, "%d", type));
 	}
