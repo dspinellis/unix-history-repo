@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uda.c	7.23 (Berkeley) %G%
+ *	@(#)uda.c	7.24 (Berkeley) %G%
  */
 
 /*
@@ -827,12 +827,14 @@ uda_rainit(ui, flags)
 	/*
 	 * Set up default sizes until we have the label, or longer
 	 * if there is none.  Set secpercyl, as readdisklabel wants
-	 * to compute b_cylin (although we do not need it).
+	 * to compute b_cylin (although we do not need it), and set
+	 * nsectors in case diskerr is called.
 	 */
 	lp->d_secpercyl = 1;
 	lp->d_npartitions = 1;
 	lp->d_secsize = 512;
 	lp->d_secperunit = ra->ra_dsize;
+	lp->d_nsectors = ra->ra_geom.rg_nsectors;
 	lp->d_partitions[0].p_size = lp->d_secperunit;
 	lp->d_partitions[0].p_offset = 0;
 
@@ -1906,8 +1908,6 @@ udadump(dev)
 	 */
 	start = 0;
 	num = maxfree;
-	if (dumplo < 0)
-		return (EINVAL);
 	if (dumplo + num >= maxsz)
 		num = maxsz - dumplo;
 	blkoff += dumplo;
