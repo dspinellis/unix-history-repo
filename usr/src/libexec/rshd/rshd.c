@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.17.1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -197,7 +197,7 @@ doit(fromp)
 		ipproto = ip->p_proto;
 	else
 		ipproto = IPPROTO_IP;
-	if (getsockopt(0, ipproto, IP_OPTIONS, (char *)optbuf, &optsize) == 0 &&
+	if (!getsockopt(0, ipproto, IP_OPTIONS, (char *)optbuf, &optsize) &&
 	    optsize != 0) {
 		lp = lbuf;
 		for (cp = optbuf; optsize > 0; cp++, optsize--, lp += 3)
@@ -274,10 +274,6 @@ doit(fromp)
 			}
 #ifdef h_addr	/* 4.2 hack */
 			for (; ; hp->h_addr_list++) {
-				if (!bcmp(hp->h_addr_list[0],
-				    (caddr_t)&fromp->sin_addr,
-				    sizeof(fromp->sin_addr)))
-					break;
 				if (hp->h_addr_list[0] == NULL) {
 					syslog(LOG_NOTICE,
 					  "Host addr %s not listed for host %s",
@@ -286,6 +282,10 @@ doit(fromp)
 					error("Host address mismatch\n");
 					exit(1);
 				}
+				if (!bcmp(hp->h_addr_list[0],
+				    (caddr_t)&fromp->sin_addr,
+				    sizeof(fromp->sin_addr)))
+					break;
 			}
 #else
 			if (bcmp(hp->h_addr, (caddr_t)&fromp->sin_addr,
