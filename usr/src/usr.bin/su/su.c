@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,7 +66,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fprintf(stderr, "usage: su [-fl] [login]\n");
+			fprintf(stderr, "usage: su [-flm] [login]\n");
 			exit(1);
 		}
 	argv += optind;
