@@ -1,9 +1,16 @@
 #include "tdef.h"
 
 /* You may want to change these names */
+/* these SHOULD be defined in the makefile */
 
 #ifndef FONTDIR
-#define FONTDIR "/usr/lib/font"
+#	define FONTDIR "/usr/lib/font"
+#endif
+#ifndef MACROLIB
+#	define MACROLIB "/usr/lib/tmac/tmac.xxxxx"
+#endif
+#ifndef MACROINDEX
+#	define MACROINDEX 19
 #endif
 
 #ifndef NROFF
@@ -35,8 +42,8 @@ int	r[NN] = {	/* read-only number registers at beginning */
 int	pto = 10000;
 int	pfrom = 1;
 int	print = 1;
-char	nextf[NS] = "/usr/local/lib/ditmac/tmac.xxxxx";
-int	nfi = 27;
+char	nextf[NS] = MACROLIB;
+int	nfi = MACROINDEX;
 #ifdef NROFF
 char	termtab[NS] = "/usr/lib/term/tab37";
 #endif
