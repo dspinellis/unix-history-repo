@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_loop.c	7.13 (Berkeley) 4/26/91
- *	$Id$
+ *	$Id: if_loop.c,v 1.2 1993/10/16 17:43:19 rgrimes Exp $
  */
 
 /*
@@ -76,7 +76,11 @@
 static caddr_t lo_bpf;
 #endif
 
+#ifdef TINY_LOMTU
 #define	LOMTU	(1024+512)
+#else /* reasonable MTU */
+#define LOMTU	65535			/* maximum MTU for IP */
+#endif /* reasonable MTU */
 
 struct	ifnet loif;
 int	looutput(), loioctl();
