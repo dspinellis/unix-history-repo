@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cntrl.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)cntrl.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -699,8 +699,17 @@ fptcl(str)
 register char *str;
 {
 	register struct Proto *p;
+	struct stat stbuf;
 
+	if (fstat(Ifn, &stbuf) < 0)
+		return ('\0');
 	for (p = Ptbl; p->P_id != '\0'; p++) {
+		/*
+		 * Hack to avoid using network protocol if not connected
+		 * to network.
+		 */
+		if ((stbuf.st_mode & S_IFMT) != S_IFSOCK && p->P_id == 'n')
+			continue;
 		if (index(str, p->P_id) != NULL) {
 			return(p->P_id);
 		}
@@ -729,8 +738,21 @@ register char *str;
 {
 	register struct Proto *p;
 	register char *s;
+	struct stat stbuf;
 
-	for (p = Ptbl, s = str; (*s++ = p->P_id) != '\0'; p++);
+	if (fstat(Ofn, &stbuf) < 0)
+		stbuf.st_mode = S_IFCHR;
+	for (p = Ptbl, s = str; p->P_id != '\0'; p++) {
+		/*
+		 * Hack to avoid using network protocol if not connected
+		 * to network.
+		 */
+		if ((stbuf.st_mode & S_IFMT) != S_IFSOCK && p->P_id == 'n')
+			continue;
+		*s++ = p->P_id;
+	}
+	*s = '\0';
+
 	return(str);
 }
 
