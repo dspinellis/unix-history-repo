@@ -1,4 +1,4 @@
-.\"	@(#)resolver.5	5.2 (Berkeley) %G%
+.\"	@(#)resolver.5	5.3 (Berkeley) %G%
 .\"
 .TH RESOLVER 5 "1 January 1986"
 .UC 4
@@ -9,28 +9,28 @@ resolver configuration file
 The resolver configuration file contains information that is read
 by the resolver routines the first time they are invoked in a process.
 The file is designed to be human readable and contains a list of
-name-value pairs which provide various types of resolver information.
+name-value pairs that provide various types of resolver information.
 .LP
 The different configuration options are:
 .TP
 \fBnameserver\fP
-followed by the Internet address (in dot notation) of a nameserver
-that the resolver should query.  At least one nameserver should be
-listed.  Up to MAXNS (currently 3) nameservers may be listed, in which
+followed by the Internet address (in dot notation) of a name server
+that the resolver should query.  At least one name server should be
+listed.  Up to MAXNS (currently 3) name servers may be listed, in that
 case the resolver library queries tries them in the order listed.
-(The algorithm used is to try a nameserver, and if the query times out,
-try the next, until out of nameservers, then repeat trying all the nameservers
-until a maximum number of retries has been made).
+(The algorithm used is to try a name server, and if the query times out,
+try the next, until out of name servers, then repeat trying all the name servers
+until a maximum number of retries are made).
 .TP
 \fBdomain\fP
-followed by a domain name, which is
-the default domain to append to names which do not have a dot in them.
+followed by a domain name, that is
+the default domain to append to names that do not have a dot in them.
 This defaults to empty (the root domain).
 .LP
 The name value pair must appear on a single line, and the keyword
 (e.g. \fBnameserver\fP) must start the line.  The value follows
-the keyword, separated by whitespace.
+the keyword, separated by white space.
 .SH FILES
 .I /etc/resolv.conf
 .SH SEE ALSO
-gethostent(3n), resolver(3), named(8)
+gethostent(3n), resolver(3), named(8), BIND - Operations Guide
