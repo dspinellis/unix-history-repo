@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
+ * Copyright (c) 1993 The Regents of the University of California.
  * All rights reserved.
  *
  * This software was developed by the Computer Systems Engineering group
@@ -12,14 +12,17 @@
  *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
- *
- *	@(#)eeprom.c	5.1 (Berkeley) %G%
  */
+
 #ifndef lint
-const char copyright[] =
-"@(#) Copyright (c) 1992 Lawrence Berkeley Laboratory\nAll rights reserved.\n";
-static const char sccsid[] = "@(#)eeprom.c	5.1 (Berkeley) %G%";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1993 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)eeprom.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * eeprom - openprom control utility
