@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.33 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -223,7 +223,7 @@ update:
 	 */
 	cache_purge(vp);
 	if (!error) {
-		TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+		CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
 		checkdirs(vp);
 		VOP_UNLOCK(vp);
 		vfs_unlock(mp);
@@ -355,9 +355,11 @@ dounmount(mp, flags, p)
 	if (error) {
 		vfs_unlock(mp);
 	} else {
-		vrele(coveredvp);
-		TAILQ_REMOVE(&mountlist, mp, mnt_list);
-		mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		CIRCLEQ_REMOVE(&mountlist, mp, mnt_list);
+		if (coveredvp != NULLVP) {
+			vrele(coveredvp);
+			mp->mnt_vnodecovered->v_mountedhere = (struct mount *)0;
+		}
 		mp->mnt_vfc->vfc_refcount--;
 		vfs_unlock(mp);
 		if (mp->mnt_vnodelist.lh_first != NULL)
@@ -385,12 +387,12 @@ sync(p, uap, retval)
 	register struct mount *mp, *nmp;
 	int asyncflag;
 
-	for (mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
 		/*
 		 * Get the next pointer in case we hang on vfs_busy
 		 * while we are being unmounted.
 		 */
-		nmp = mp->mnt_list.tqe_next;
+		nmp = mp->mnt_list.cqe_next;
 		/*
 		 * The lock check below is to avoid races with mount
 		 * and unmount.
@@ -406,7 +408,7 @@ sync(p, uap, retval)
 			 * Get the next pointer again, as the next filesystem
 			 * might have been unmounted while we were sync'ing.
 			 */
-			nmp = mp->mnt_list.tqe_next;
+			nmp = mp->mnt_list.cqe_next;
 			vfs_unbusy(mp);
 		}
 	}
@@ -523,8 +525,9 @@ getfsstat(p, uap, retval)
 
 	maxcount = SCARG(uap, bufsize) / sizeof(struct statfs);
 	sfsp = (caddr_t)SCARG(uap, buf);
-	for (count = 0, mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
-		nmp = mp->mnt_list.tqe_next;
+	count = 0;
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+		nmp = mp->mnt_list.cqe_next;
 		if (sfsp && count < maxcount &&
 		    ((mp->mnt_flag & MNT_MLOCK) == 0)) {
 			sp = &mp->mnt_stat;
