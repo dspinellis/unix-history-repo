@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.8 (Berkeley) %G%
+ *	@(#)extern.h	5.9 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -119,7 +119,7 @@ void	func __P((struct command *, struct biltins *));
 struct	biltins *
 	isbfunc __P((struct command *));
 void	prvars __P((void));
-void	search __P((int, int, Char *));
+void	gotolab __P((Char *));
 int	srchx __P((Char *));
 void	unalias __P((Char **, struct command *));
 void	wfree __P((void));
