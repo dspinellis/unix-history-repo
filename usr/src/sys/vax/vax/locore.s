@@ -1,4 +1,4 @@
-/*	locore.s	4.29	81/02/26	*/
+/*	locore.s	4.30	81/02/26	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -336,6 +336,10 @@ eSysmap:
  *
  * ipl 0x1f; mapen 0; scbb, pcbb, sbr, slr, isp, ksp not set
  */
+	.data
+	.globl	_cpu
+_cpu:	.long	0
+	.text
 	.globl	start
 start:
 	.word	0
@@ -346,7 +350,8 @@ start:
 	mtpr	$_Syssize,$P0LR			## GROT ??
 	movl	$_intstack+NISP*NBPG,sp		# set ISP
 	mfpr	$SID,r0
-	extzv	$24,$8,r0,_cpu
+	movab	_cpu,r1
+	extzv	$24,$8,r0,(r1)
 /* init RPB */
 	movab	_rpb,r0
 	movl	r0,(r0)+			# rp_selfref
@@ -491,7 +496,7 @@ _badaddr:
 	ret
 	.align	2
 9:
-	casel	_cpu,$0,$VAX_MAX-1
+	casel	_cpu,$1,$VAX_MAX-1
 0:
 	.word	8f-0b		# 0 is 780
 	.word	5f-0b		# 1 is 750
