@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.6";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.7";
  *
  * formatted write routines
  */
@@ -77,6 +77,7 @@ w_ned(p,ptr) char *ptr; struct syl *p;
 wr_mvcur()
 {	int n;
 	if(tab) return((*dotab)());
+	if (cursor < 0) return(errno=F_ERSEEK);
 	while(cursor--) PUT(' ')
 	return(cursor=0);
 }
