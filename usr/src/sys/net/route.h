@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.h	8.4 (Berkeley) %G%
+ *	@(#)route.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -214,6 +214,8 @@ struct route_cb {
 struct	route_cb route_cb;
 struct	rtstat	rtstat;
 struct	radix_node_head *rt_tables[AF_MAX+1];
+
+struct socket;
 
 void	 route_init __P((void));
 int	 route_output __P((struct mbuf *, struct socket *));
