@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.15 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.16 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -130,12 +130,12 @@ main(argc, argv)
 	 *         	density				tape size
 	 * 9-track	1600 bpi (160 bytes/.1")	2300 ft.
 	 * 9-track	6250 bpi (625 bytes/.1")	2300 ft.
-	 * cartridge	8000 bpi (100 bytes/.1")	4000 ft. (450*9 - slop)
+ 	 * cartridge	8000 bpi (100 bytes/.1")	1700 ft. (450*4 - slop)
 	 */
 	if (density == 0)
 		density = cartridge ? 100 : 160;
 	if (tsize == 0)
-		tsize = cartridge ? 4000L*120L : 2300L*120L;
+ 		tsize = cartridge ? 1700L*120L : 2300L*120L;
 
 #ifdef RDUMP
 	{ char *index();
