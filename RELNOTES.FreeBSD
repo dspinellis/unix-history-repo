@@ -65,8 +65,7 @@ Please see special notes in /usr/src/KNOWNBUGS (filed under bt742a.c) for
 details concerning possible buggy firmware and undocumented switch settings
 that may be necessary for proper operation of your controller.
 
-DTC 3290 EISA SCSI controller in 1542 emulation mode (as long as
-you have less than 16MB of main memory).
+DTC 3290 EISA SCSI controller in 1542 emulation mode.
 
 Ultra Store 14F and 34F.
 
@@ -77,16 +76,16 @@ inteface card) is the only way a CD ROM drive may be currently
 attached to a FreeBSD system; we do not support SoundBlaster CDROM
 interface, or other "mini SCSI" adapters.
 
-The limitation some controllers have with >16MB of memory (as noted)
-is due to the fact that the ISA bus only has a DMA address space of 24 bits.
+Some controllers have limitations with the way they deal with >16MB of memory,
+due to the fact that the ISA bus only has a DMA address space of 24 bits.
 If you do your arithmetic, you'll see that this makes it impossible to do
 direct DMA to any address >16MB.  This limitation is even true of some
 EISA controllers (which are normally 32 bit) when they're configured to
 emulate an ISA card, which they then do in *all* respects.  This problem
 is avoided entirely by IDE controllers (which do not use DMA), true EISA
-controllers (like the UltraStor or Adaptec 1742A) or VLB (local bus)
-controllers.
-
+controllers (like the UltraStor or Adaptec 1742A) and most VLB (local bus)
+controllers.  In these cases, the system will use "bounce buffers" to
+to talk to the controller, and is generally the default.
 
 
 2.2. Ethernet cards
@@ -297,4 +296,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.26 1994/03/22 16:43:59 jkh Exp $
+$Id: RELNOTES.FreeBSD,v 1.27 1994/03/24 21:57:38 davidg Exp $
