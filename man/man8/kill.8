@@ -1,0 +1,36 @@
+.pa 1
+.he 'KILL (VIII)'1/20/73'KILL (VIII)'
+.ti 0
+NAME		kill -- terminate process with extreme prejudice
+.sp
+.ti 0
+SYNOPSIS	/usr/adm/kill_____________ processnumber
+.sp
+.ti 0
+DESCRIPTION	After ps__
+(q.v.) has given you the unique ID of a process, you can terminate
+it by this command.
+A core image is produced in the process's working directory.
+
+Only the super-user can exercise this privilege.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	ps (VIII)
+.sp
+.ti 0
+DIAGNOSTICS	yes
+.sp
+.ti 0
+BUGS		If the process
+has executed sys nice (II)
+and there is another process which has not, but
+which loops,
+the first process cannot be done in properly,
+since it has to be swapped in so as cooperate
+in its own murder.
+
+It would also be nice if ordinary people could
+kill their own processes.
