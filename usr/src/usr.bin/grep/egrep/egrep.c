@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -49,6 +49,7 @@ static char sccsid[] = "@(#)egrep.c	5.1 (Berkeley) %G%";
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <regexp.h>		/* must be henry spencer's version */
 
 #define	MIN(A, B)	((A) > (B) ? (B) : (A))
@@ -299,13 +300,13 @@ char *
 pfile(pfname)			/* absorb expression from file */
 	char *pfname;
 {
-	FILE *pf;
+	int fd;
 	struct stat patstat;
 	static char *pat;
 
-	if ((pf = fopen(pfname, "r")) == NULL)
+	if ((fd = open(pfname, O_RDONLY, 0)) < 0)
 		oops("can't read pattern file");
-	if (fstat(fileno(pf), &patstat) != 0)
+	if (fstat(fd, &patstat) != 0)
 		oops("can't stat pattern file");
 	if (patstat.st_size > PATSIZE) {
 		if (fgrepflag) {	/* defer to unix version */
@@ -316,10 +317,9 @@ pfile(pfname)			/* absorb expression from file */
 	}
 	if ((pat = malloc((unsigned) patstat.st_size + 1)) == NULL)
 		oops("out of memory to read pattern file");
-	if (patstat.st_size !=
-	    fread(pat, sizeof(char), (int) patstat.st_size + 1, pf))
+	if (patstat.st_size != read(fd, pat, (int)patstat.st_size))
 		oops("error reading pattern file");
-	(void) fclose(pf);
+	(void) close(fd);
 
 	pat[patstat.st_size] = EOS;
 	if (pat[patstat.st_size - 1] == NL)	/* NOP for egrep; helps grep */
