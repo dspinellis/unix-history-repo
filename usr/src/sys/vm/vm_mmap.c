@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *
- *	@(#)vm_mmap.c	7.5 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ getpagesize(p, uap, retval)
 	int *retval;
 {
 
-	*retval = NBPG * CLSIZE;
+	*retval = PAGE_SIZE;
 	return (0);
 }
 
