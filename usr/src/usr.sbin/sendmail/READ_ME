@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.7 (Berkeley) %G%
+ *	@(#)READ_ME	8.8 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -65,6 +65,17 @@ There are other files you should read.  Rooted in this directory are:
 	Details on compiling and installing sendmail.
   cf/README
 	Details on configuring sendmail.
+  doc/op/op.me
+	The sendmail Installation & Operations Guide.  Be warned: if
+	you are running this off on SunOS or some other system with an
+	old version of -me, you need to add the following macro to the
+	macros:
+
+		.de sm
+		\s-1\\$1\\s0\\$2
+		..
+
+	This sets a word in a smaller pointsize.
 
 
 +--------------+
@@ -134,6 +145,25 @@ are running MH you may wish to install the patch in contrib/mh.patch
 that will prevent these warning reports.  This patch also works
 with the old version of sendmail, so it's safe to go ahead and
 install it.
+
+
++-----------+
+| MAKEFILES |
++-----------+
+
+The Makefiles in this release use the new Berkeley "make" that is
+available in BSD Net/2 and 4.4BSD.  If you are using this version
+of make, you may notice one or two places where the Makefile includes
+"../../Makefile.inc".  This file is not included with the sendmail
+distribution because it's not part of sendmail.  However, it is,
+in toto:
+
+	#	@(#)Makefile.inc	8.1 (Berkeley) 6/6/93
+
+	BINDIR?=	/usr/sbin
+
+The other directories should all have Makefile.dist files that work
+on the old make.  For more details, see src/READ_ME.
 
 
 +---------------------+
