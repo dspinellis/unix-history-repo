@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.58 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.59 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,7 +33,7 @@
 #include <ufs/ffs/fs.h>
 #include <ufs/ffs/ffs_extern.h>
 
-static int ffs_sbupdate __P((struct ufsmount *, int));
+int ffs_sbupdate __P((struct ufsmount *, int));
 
 struct vfsops ufs_vfsops = {
 	ffs_mount,
@@ -104,7 +104,7 @@ ffs_mountroot()
  *
  * mount system call
  */
-static int
+int
 ffs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
@@ -385,8 +385,8 @@ ffs_statfs(mp, sbp, p)
 	if (fs->fs_magic != FS_MAGIC)
 		panic("ffs_statfs");
 	sbp->f_type = MOUNT_UFS;
-	sbp->f_fsize = fs->fs_fsize;
-	sbp->f_bsize = fs->fs_bsize;
+	sbp->f_bsize = fs->fs_fsize;
+	sbp->f_iosize = fs->fs_bsize;
 	sbp->f_blocks = fs->fs_dsize;
 	sbp->f_bfree = fs->fs_cstotal.cs_nbfree * fs->fs_frag +
 		fs->fs_cstotal.cs_nffree;
@@ -542,7 +542,7 @@ ffs_vptofh(vp, fhp)
 /*
  * Write a superblock and associated information back to disk.
  */
-static int
+int
 ffs_sbupdate(mp, waitfor)
 	struct ufsmount *mp;
 	int waitfor;
