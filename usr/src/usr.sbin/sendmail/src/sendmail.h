@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.70 (Berkeley) %G%
+ *	@(#)sendmail.h	8.71 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.70		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.71		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -276,6 +276,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_RECEIPTTO	0x0400	/* this field has return receipt info */
 # define H_ERRORSTO	0x0800	/* this field has error address info */
 # define H_CTE		0x1000	/* this field is a content-transfer-encoding */
+# define H_CTYPE	0x2000	/* this is a content-type field */
 /*
 **  Information about currently open connections to mailers, or to
 **  hosts that we have looked up recently.
@@ -356,9 +357,9 @@ ENVELOPE
 	short		e_sendmode;	/* message send mode */
 	short		e_errormode;	/* error return mode */
 	short		e_timeoutclass;	/* message timeout class */
-	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *));
+	int		(*e_puthdr)__P((MCI *, HDR *, ENVELOPE *, int));
 					/* function to put header of message */
-	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *));
+	int		(*e_putbody)__P((MCI *, ENVELOPE *, char *, int));
 					/* function to put body of message */
 	struct envelope	*e_parent;	/* the message this one encloses */
 	struct envelope *e_sibling;	/* the next envelope of interest */
@@ -787,6 +788,13 @@ struct prival
 #define SFF_MUSTOWN		0x0001	/* user must own this file */
 #define SFF_NOSLINK		0x0002	/* file cannot be a symbolic link */
 #define SFF_ROOTOK		0x0004	/* ok for root to own this file */
+
+
+/*
+**  Flags passed to putheader and putbody.
+*/
+
+#define PF_NOBODYPART		0x0001	/* don't send the body part */
 
 
 /*

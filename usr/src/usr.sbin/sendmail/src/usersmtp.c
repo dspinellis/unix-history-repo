@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -609,8 +609,8 @@ smtpdata(m, mci, e)
 	**  Output the actual message.
 	*/
 
-	(*e->e_puthdr)(mci, e->e_header, e);
-	(*e->e_putbody)(mci, e, NULL);
+	(*e->e_puthdr)(mci, e->e_header, e, 0);
+	(*e->e_putbody)(mci, e, NULL, 0);
 
 	/*
 	**  Cleanup after sending message.

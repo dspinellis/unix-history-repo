@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -375,8 +375,8 @@ savemail(e)
 				mcibuf.mci_flags |= MCIF_7BIT;
 
 			putfromline(&mcibuf, e);
-			(*e->e_puthdr)(&mcibuf, e->e_header, e);
-			(*e->e_putbody)(&mcibuf, e, NULL);
+			(*e->e_puthdr)(&mcibuf, e->e_header, e, 0);
+			(*e->e_putbody)(&mcibuf, e, NULL, 0);
 			putline("\n", &mcibuf);
 			(void) fflush(fp);
 			state = ferror(fp) ? ESM_PANIC : ESM_DONE;
@@ -554,6 +554,7 @@ returntosender(msg, returnq, sendbody, e)
 **		mci -- the mailer connection information.
 **		e -- the envelope we are working in.
 **		separator -- any possible MIME separator.
+**		flags -- to modify the behaviour.
 **
 **	Returns:
 **		none
@@ -562,7 +563,7 @@ returntosender(msg, returnq, sendbody, e)
 **		Outputs the body of an error message.
 */
 
-errbody(mci, e, separator)
+errbody(mci, e, separator, flags)
 	register MCI *mci;
 	register ENVELOPE *e;
 	char *separator;
@@ -571,6 +572,7 @@ errbody(mci, e, separator)
 	char *p;
 	register ADDRESS *q;
 	bool printheader;
+	int pflags = flags;
 	char buf[MAXLINE];
 
 	if (bitset(MCIF_INHEADER, mci->mci_flags))
@@ -835,6 +837,8 @@ errbody(mci, e, separator)
 
 	if (bitset(EF_NORETURN, e->e_parent->e_flags))
 		SendBody = FALSE;
+	if (!SendBody)
+		pflags |= PF_NOBODYPART;
 	putline("", mci);
 	if (e->e_parent->e_df != NULL)
 	{
@@ -854,9 +858,9 @@ errbody(mci, e, separator)
 			putline("Content-Type: message/rfc822", mci);
 			putline("", mci);
 		}
-		putheader(mci, e->e_parent->e_header, e->e_parent);
+		putheader(mci, e->e_parent->e_header, e->e_parent, pflags);
 		if (SendBody)
-			putbody(mci, e->e_parent, e->e_msgboundary);
+			putbody(mci, e->e_parent, e->e_msgboundary, pflags);
 		else
 		{
 			putline("", mci);

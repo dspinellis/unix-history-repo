@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.107 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.108 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1462,8 +1462,8 @@ tryhost:
 		*/
 
 		putfromline(mci, e);
-		(*e->e_puthdr)(mci, e->e_header, e);
-		(*e->e_putbody)(mci, e, NULL);
+		(*e->e_puthdr)(mci, e->e_header, e, 0);
+		(*e->e_putbody)(mci, e, NULL, 0);
 
 		/* get the exit status */
 		rcode = endmailer(mci, e, pv);
@@ -2116,6 +2116,7 @@ putfromline(mci, e)
 **		e -- the envelope to put out.
 **		separator -- if non-NULL, a message separator that must
 **			not be permitted in the resulting message.
+**		flags -- to modify the behaviour.
 **
 **	Returns:
 **		none.
@@ -2129,10 +2130,11 @@ putfromline(mci, e)
 #define OS_CR		1	/* read a carriage return */
 #define OS_INLINE	2	/* putting rest of line */
 
-putbody(mci, e, separator)
+putbody(mci, e, separator, flags)
 	register MCI *mci;
 	register ENVELOPE *e;
 	char *separator;
+	int flags;
 {
 	char buf[MAXLINE];
 
@@ -2504,8 +2506,8 @@ mailfile(filename, ctladdr, e)
 			mcibuf.mci_flags |= MCIF_7BIT;
 
 		putfromline(&mcibuf, e);
-		(*e->e_puthdr)(&mcibuf, e->e_header, e);
-		(*e->e_putbody)(&mcibuf, e, NULL);
+		(*e->e_puthdr)(&mcibuf, e->e_header, e, 0);
+		(*e->e_putbody)(&mcibuf, e, NULL, 0);
 		putline("\n", &mcibuf);
 		if (ferror(f))
 		{
