@@ -1,4 +1,4 @@
-/*	@(#)if_hdh.c	6.3 (Berkeley) %G% */
+/*	@(#)if_hdh.c	6.4 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -276,11 +276,8 @@ hdhinit(unit)
 int unit;
 {	
 	register struct hdh_softc *sc;
-	register struct hdhregs *addr;
 	register struct uba_device *ui;
-	register struct umc_chan *up;
-	register struct mbuf *m, *n;
-	int i, s, ubano;
+	int i;
 
 #ifdef HDHDEBUG
 	printf("HDH INIT\n");
@@ -291,7 +288,6 @@ int unit;
 		printf("hdh%d: not alive\n", unit);
 		return(0);
 	}
-	addr = (struct hdhregs *)ui->ui_addr;
 	sc = &hdh_softc[unit];
 
 	if (sc->hdh_flags & HDH_STARTED)
@@ -461,8 +457,7 @@ int unit;
 	register struct hdh_softc *sc = &hdh_softc[unit];
 	register struct hdh_chan *hc;
 	register struct hdhregs *addr = (struct hdhregs *)hdhinfo[unit]->ui_addr;
-	register struct mbuf *m;
-	int lcn, type, cc, cnt, s;
+	int lcn, type, cc, cnt;
 
 	/*
 	 * Check for hardware errors.
@@ -597,9 +592,7 @@ int unit, lcn, cc, rcnt;
 {
 	register struct hdh_softc *sc = &hdh_softc[unit];
 	register struct hdh_chan *hc = &sc->hdh_chan[lcn];
-	register struct uba_device *ui;
 	short *p;
-	int i;
 	
 
 	/* was it read or write? */
@@ -664,7 +657,6 @@ int unit, len;
 char *msg;
 {
 	register struct hdh_softc *sc = &hdh_softc[unit];
-	register struct hdh_chan *hc = &sc->hdh_chan[HDHSUPW];
 	register struct mbuf *m;
 	register char *p;
 	register int cnt;
@@ -686,5 +678,4 @@ char *msg;
 
 	return(1);
 }
-
 #endif NHDH
