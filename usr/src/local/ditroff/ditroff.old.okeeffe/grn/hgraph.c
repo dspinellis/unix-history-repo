@@ -1,4 +1,4 @@
-/*	hgraph.c	1.4	(Berkeley) 83/08/23
+/*	hgraph.c	1.5	(Berkeley) 83/09/19
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -104,10 +104,16 @@ int justify;
 POINT pnt;
 char string[];
 {
+    int savelasty = lasty;		/* vertical motion for text is to be */
+					/*   ignored.  save current y here */
+
+    printf(".nr g8 \\n(.d\n", string);	/* save current vertical position. */
     printf(".ds g9 \"%s", string);	/* define string containing the text. */
     tmove(&pnt);			/* move to positioning point */
     switch (justify) {
 					/* local vertical motions */
+					/* (the numbers here are used to be */
+					/* somewhat compatible with gprint) */
         case CENTLEFT:
         case CENTCENT:
        case CENTRIGHT:	printf("\\v'0.85n'");		/* down half */
@@ -129,7 +135,10 @@ char string[];
        case CENTRIGHT:
         case TOPRIGHT:	printf("\\h'-\\w'\\*(g9'u'");		/* back whole */
     }
-    printf("\\*(g9");			/* now print the text. */
+    printf("\\*(g9\n");			/* now print the text. */
+    printf(".sp |\\n(g8u");		/* restore vertical position */
+    lasty = savelasty;		/* vertical position is restored to */
+				/*   what it was before text was printed */
 } /* end HGPutText */
 
 
@@ -270,7 +279,7 @@ POINT *ptr;
     if (dy = iy - lasty) {
 	printf(".sp %du\n", dy);
     }
-    lastyline = lasty = iy;
+    lastyline = lasty = iy;		/* lasty is always set to current */
     if (dx = ix - lastx) {
 	printf("\\h'%du'", dx);
 	lastx = ix;
