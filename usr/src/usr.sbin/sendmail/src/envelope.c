@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -558,7 +558,8 @@ setsender(from, e, delimptr, internal)
 	**	Username can return errno != 0 on non-errors.
 	*/
 
-	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP)
+	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP ||
+	    OpMode == MD_DAEMON)
 		realname = from;
 	if (realname == NULL || realname[0] == '\0')
 		realname = username();
@@ -692,7 +693,7 @@ setsender(from, e, delimptr, internal)
 		if (FullName != NULL && !internal)
 			define('x', FullName, e);
 	}
-	else if (!internal)
+	else if (!internal && OpMode != MD_DAEMON)
 	{
 		if (e->e_from.q_home == NULL)
 			e->e_from.q_home = getenv("HOME");

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.19 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -259,13 +259,13 @@ putoutmsg(msg, holdmsg)
 		msg[0] = '5';
 
 	(void) fflush(stdout);
-	if (OpMode == MD_SMTP)
+	if (OpMode == MD_SMTP || OpMode == MD_DAEMON)
 		fprintf(OutChannel, "%s\r\n", msg);
 	else
 		fprintf(OutChannel, "%s\n", &msg[4]);
 	if (TrafficLogFile != NULL)
 		fprintf(TrafficLogFile, "%05d >>> %s\n", getpid(),
-			OpMode == MD_SMTP ? msg : &msg[4]);
+			(OpMode == MD_SMTP || OpMode == MD_DAEMON) ? msg : &msg[4]);
 	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
 	if (!ferror(OutChannel))

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -62,7 +62,8 @@ sendall(e, mode)
 	**  addresses to be sent.
 	*/
 
-	if (bitset(EF_FATALERRS, e->e_flags) && OpMode == MD_SMTP)
+	if (bitset(EF_FATALERRS, e->e_flags) &&
+	    (OpMode == MD_SMTP || OpMode == MD_DAEMON))
 	{
 		e->e_flags |= EF_CLRQUEUE;
 		return;
@@ -604,7 +605,8 @@ deliver(e, firstto)
 
 #ifdef NAMED_BIND
 	/* unless interactive, try twice, over a minute */
-	if (OpMode == MD_DAEMON || OpMode == MD_SMTP) {
+	if (OpMode == MD_DAEMON || OpMode == MD_SMTP)
+	{
 		_res.retrans = 30;
 		_res.retry = 2;
 	}
@@ -1220,7 +1222,7 @@ tryhost:
 				}
 				(void) close(rpvect[1]);
 			}
-			else if (OpMode == MD_SMTP || HoldErrs)
+			else if (OpMode == MD_SMTP || OpMode == MD_DAEMON || HoldErrs)
 			{
 				/* put mailer output in transcript */
 				if (dup2(fileno(e->e_xfp), STDOUT_FILENO) < 0)
