@@ -1,4 +1,4 @@
-/*	initgroups.c	4.3	83/05/01	*/
+/*	initgroups.c	4.4	83/06/17	*/
 
 /*
  * initgroups
@@ -33,6 +33,7 @@ fprintf(stderr, "initgroups: %s is in too many groups\n", uname);
 			}
 	}
 toomany:
+	endgrent();
 	if (setgroups(ngroups, groups) < 0) {
 		perror("setgroups");
 		return (1);
