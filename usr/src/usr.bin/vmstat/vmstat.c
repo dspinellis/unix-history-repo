@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -399,7 +399,7 @@ dosum()
 	printf("%9d device interrupts\n", sum.v_intr);
 	printf("%9d software interrupts\n", sum.v_soft);
 #ifdef vax
-	printf("%9d pseduo-dma dz interrupts\n", sum.v_pdma);
+	printf("%9d pseudo-dma dz interrupts\n", sum.v_pdma);
 #endif
 	printf("%9d traps\n", sum.v_trap);
 	printf("%9d system calls\n", sum.v_syscall);
