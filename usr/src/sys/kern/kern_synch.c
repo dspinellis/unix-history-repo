@@ -1,4 +1,4 @@
-/*	kern_synch.c	6.5	84/12/20	*/
+/*	kern_synch.c	6.6	85/03/18	*/
 
 #include "../machine/pte.h"
 
@@ -138,8 +138,21 @@ sleep(chan, pri)
 
 	rp = u.u_procp;
 	s = splhigh();
-	if ((chan==0 || rp->p_stat != SRUN || rp->p_rlink) &&
-	    panicstr == (char *) NULL)
+	if (panicstr) {
+		/*
+		 * After a panic, just give interrupts a chance,
+		 * then just return; don't run any other procs 
+		 * or panic below, in case this is the idle process
+		 * and already asleep.
+		 * The splnet should be spl0 if the network was being used
+		 * by the filesystem, but for now avoid network interrupts
+		 * that might cause another panic.
+		 */
+		(void) splnet();
+		splx(s);
+		return;
+	}
+	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
 		panic("sleep");
 	rp->p_wchan = chan;
 	rp->p_slptime = 0;
