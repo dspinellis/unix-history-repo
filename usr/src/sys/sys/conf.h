@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	7.9 (Berkeley) %G%
+ *	@(#)conf.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -29,7 +29,7 @@ struct bdevsw {
 };
 
 #ifdef KERNEL
-struct bdevsw bdevsw[];
+extern struct bdevsw bdevsw[];
 #endif
 
 struct cdevsw {
@@ -50,7 +50,7 @@ struct cdevsw {
 };
 
 #ifdef KERNEL
-struct cdevsw cdevsw[];
+extern struct cdevsw cdevsw[];
 
 /* symbolic sleep message strings */
 extern char devopn[], devio[], devwait[], devin[], devout[];
@@ -71,7 +71,7 @@ struct linesw {
 };
 
 #ifdef KERNEL
-struct linesw linesw[];
+extern struct linesw linesw[];
 #endif
 
 struct swdevt {
@@ -86,5 +86,5 @@ struct swdevt {
 };
 
 #ifdef KERNEL
-struct swdevt swdevt[];
+extern struct swdevt swdevt[];
 #endif
