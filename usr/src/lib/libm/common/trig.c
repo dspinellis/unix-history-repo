@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.3 (ucb.elefunt) %G%";
+"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.4 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SIN(X), COS(X), TAN(X)
@@ -113,23 +113,28 @@ static char sccsid[] =
  */
 
 #if (defined(VAX)||defined(TAHOE))
+#ifdef VAX
+#define _0x(A,B)	0x/**/A/**/B
+#else	/* VAX */
+#define _0x(A,B)	0x/**/B/**/A
+#endif	/* VAX */
 /*thresh =  2.6117239648121182150E-1    , Hex  2^ -1   *  .85B8636B026EA0 */
 /*PIo4   =  7.8539816339744830676E-1    , Hex  2^  0   *  .C90FDAA22168C2 */
 /*PIo2   =  1.5707963267948966135E0     , Hex  2^  1   *  .C90FDAA22168C2 */
 /*PI3o4  =  2.3561944901923449203E0     , Hex  2^  2   *  .96CBE3F9990E92 */
 /*PI     =  3.1415926535897932270E0     , Hex  2^  2   *  .C90FDAA22168C2 */
 /*PI2    =  6.2831853071795864540E0     ; Hex  2^  3   *  .C90FDAA22168C2 */
-static long    threshx[] = { 0xb8633f85, 0x6ea06b02};
+static long    threshx[] = { _0x(b863,3f85), _0x(6ea0,6b02)};
 #define   thresh    (*(double*)threshx)
-static long      PIo4x[] = { 0x0fda4049, 0x68c2a221};
+static long      PIo4x[] = { _0x(0fda,4049), _0x(68c2,a221)};
 #define     PIo4    (*(double*)PIo4x)
-static long      PIo2x[] = { 0x0fda40c9, 0x68c2a221};
+static long      PIo2x[] = { _0x(0fda,40c9), _0x(68c2,a221)};
 #define     PIo2    (*(double*)PIo2x)
-static long      PI3o4x[] = { 0xcbe34116, 0x0e92f999};
+static long      PI3o4x[] = { _0x(cbe3,4116), _0x(0e92,f999)};
 #define     PI3o4    (*(double*)PI3o4x)
-static long        PIx[] = { 0x0fda4149, 0x68c2a221};
+static long        PIx[] = { _0x(0fda,4149), _0x(68c2,a221)};
 #define       PI    (*(double*)PIx)
-static long       PI2x[] = { 0x0fda41c9, 0x68c2a221};
+static long       PI2x[] = { _0x(0fda,41c9), _0x(68c2,a221)};
 #define      PI2    (*(double*)PI2x)
 #else   /* IEEE double  */
 static double
@@ -278,19 +283,19 @@ double x;
 /*S4     = -2.5051841873876551398E-8    , Hex  2^-25   * -.D73195374CE1D3 */
 /*S5     =  1.6028995389845827653E-10   , Hex  2^-32   *  .B03D9C6D26CCCC */
 /*S6     = -6.2723499671769283121E-13   ; Hex  2^-40   * -.B08D0B7561EA82 */
-static long        S0x[] = { 0xaaaabf2a, 0xaa71aaaa};
+static long        S0x[] = { _0x(aaaa,bf2a), _0x(aa71,aaaa)};
 #define       S0    (*(double*)S0x)
-static long        S1x[] = { 0x88883d08, 0x477f8888};
+static long        S1x[] = { _0x(8888,3d08), _0x(477f,8888)};
 #define       S1    (*(double*)S1x)
-static long        S2x[] = { 0x0d00ba50, 0x1057cf8a};
+static long        S2x[] = { _0x(0d00,ba50), _0x(1057,cf8a)};
 #define       S2    (*(double*)S2x)
-static long        S3x[] = { 0xef1c3738, 0xbedca326};
+static long        S3x[] = { _0x(ef1c,3738), _0x(bedc,a326)};
 #define       S3    (*(double*)S3x)
-static long        S4x[] = { 0x3195b3d7, 0xe1d3374c};
+static long        S4x[] = { _0x(3195,b3d7), _0x(e1d3,374c)};
 #define       S4    (*(double*)S4x)
-static long        S5x[] = { 0x3d9c3030, 0xcccc6d26};
+static long        S5x[] = { _0x(3d9c,3030), _0x(cccc,6d26)};
 #define       S5    (*(double*)S5x)
-static long        S6x[] = { 0x8d0bac30, 0xea827561};
+static long        S6x[] = { _0x(8d0b,ac30), _0x(ea82,7561)};
 #define       S6    (*(double*)S6x)
 #else	/* IEEE double  */
 static double
@@ -363,17 +368,17 @@ double z;
 /*C3     = -2.7557313470902390219E-7    , Hex  2^-21   * -.93F27BB593E805 */
 /*C4     =  2.0875623401082232009E-9    , Hex  2^-28   *  .8F74C8FA1E3FF0 */
 /*C5     = -1.1355178117642986178E-11   ; Hex  2^-36   * -.C7C32D0A5C5A63 */
-static long        C0x[] = { 0xaaaa3e2a, 0xa9f0aaaa};
+static long        C0x[] = { _0x(aaaa,3e2a), _0x(a9f0,aaaa)};
 #define       C0    (*(double*)C0x)
-static long        C1x[] = { 0x0b60bbb6, 0x0ccab60a};
+static long        C1x[] = { _0x(0b60,bbb6), _0x(0cca,b60a)};
 #define       C1    (*(double*)C1x)
-static long        C2x[] = { 0x0d0038d0, 0x098fcdcd};
+static long        C2x[] = { _0x(0d00,38d0), _0x(098f,cdcd)};
 #define       C2    (*(double*)C2x)
-static long        C3x[] = { 0xf27bb593, 0xe805b593};
+static long        C3x[] = { _0x(f27b,b593), _0x(e805,b593)};
 #define       C3    (*(double*)C3x)
-static long        C4x[] = { 0x74c8320f, 0x3ff0fa1e};
+static long        C4x[] = { _0x(74c8,320f), _0x(3ff0,fa1e)};
 #define       C4    (*(double*)C4x)
-static long        C5x[] = { 0xc32dae47, 0x5a630a5c};
+static long        C5x[] = { _0x(c32d,ae47), _0x(5a63,0a5c)};
 #define       C5    (*(double*)C5x)
 #else	/* IEEE double  */
 static double
