@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	7.5 (Berkeley) %G%
+ *	@(#)lfs_extern.h	7.6 (Berkeley) %G%
  */
 
 struct fid;
@@ -17,6 +17,7 @@ struct uio;
 
 __BEGIN_DECLS
 u_long	 cksum __P((void *, size_t));				/* XXX */
+int	 lfs_balloc __P((struct vnode *, u_long, daddr_t, struct buf **));
 int	 lfs_blkatoff __P((struct vnode *, off_t, char **, struct buf **));
 int	 lfs_bmap __P((VNODE *, daddr_t, VNODE **, daddr_t *));
 int	 lfs_bmaparray __P((VNODE *, daddr_t, daddr_t *, INDIR *, int *));
