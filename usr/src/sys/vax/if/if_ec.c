@@ -1,4 +1,4 @@
-/*	if_ec.c	4.20	82/06/23	*/
+/*	if_ec.c	4.21	82/06/30	*/
 
 #include "ec.h"
 
@@ -75,7 +75,7 @@ ecprobe(reg)
 {
 	register int br, cvec;		/* r11, r10 value-result */
 	register struct ecdevice *addr = (struct ecdevice *)reg;
-	register caddr_t ecbuf = (caddr_t) &umem[0][0600000];
+	register caddr_t ecbuf = (caddr_t) &umem[numuba][0600000];
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -98,7 +98,7 @@ ecprobe(reg)
 	 * Tell the system that the board has memory here, so it won't
 	 * attempt to allocate the addresses later.
 	 */
-	ubamem(0, 0600000, 32*2);
+	ubamem(numuba, 0600000, 32*2);
 
 	/*
 	 * Make a one byte packet in what should be buffer #0.
@@ -111,6 +111,7 @@ ecprobe(reg)
 	addr->ec_xcr = EC_XINTEN|EC_XWBN;
 	DELAY(100000);
 	addr->ec_xcr = EC_XCLR;
+	/* will this work if there's a collision? */
 	if (cvec > 0 && cvec != 0x200) {
 		cvec -= 010;
 		br += 2;		/* rcv is xmit + 2 */
