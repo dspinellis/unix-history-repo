@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.25	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.26	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -172,6 +172,7 @@ parse(addr, a, copyf)
 # define SPACE		5
 # define DOLLAR		6
 # define GETONE		7
+# define MACRO		8
 
 char **
 prescan(addr, delim)
@@ -225,14 +226,16 @@ prescan(addr, delim)
 				break;
 			}
 
-			nstate = toktype(c);
+			if (c == '$' && delim == '\t')
+				nstate = DOLLAR;
+			else
+				nstate = toktype(c);
 			switch (state)
 			{
 			  case QSTRING:		/* in quoted string */
 				break;
 
 			  case ATOM:		/* regular atom */
-				/* state = nstate; */
 				if (nstate != ATOM)
 				{
 					state = EOTOK;
@@ -295,9 +298,7 @@ prescan(addr, delim)
 					break;
 
 				  default:
-					c = '$';
-					state = OPER;
-					p--;
+					state = MACRO;
 					break;
 				}
 				break;
@@ -308,17 +309,26 @@ prescan(addr, delim)
 
 			if (state == EOTOK || state == SPACE)
 				break;
-			if (c == '$' && delim == '\t')
-			{
-				state = DOLLAR;
+			if (state == DOLLAR)
 				continue;
-			}
 
 			/* squirrel it away */
 			if (q >= &buf[sizeof buf - 5])
 			{
 				usrerr("Address too long");
 				return (NULL);
+			}
+			if (state == MACRO)
+			{
+				char mbuf[3];
+
+				mbuf[0] = '$';
+				mbuf[1] = c;
+				mbuf[2] = '\0';
+				(void) expand(mbuf, q, &buf[sizeof buf - 5]);
+				q += strlen(q);
+				state = EOTOK;
+				break;
 			}
 			*q++ = c;
 
