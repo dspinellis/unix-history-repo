@@ -14,45 +14,37 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 # -DLOG		log games in /usr/adm
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	dm.c
 OBJS=
+MAN=	dm.0 dm.config.0
 
 all: dm
 
 dm: ${LIBC}
 	${CC} -o $@ ${CFLAGS} dm.c
 
-clean: FRC
+clean:
 	rm -f core dm
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o games -g kmem -m 6755 dm ${DESTDIR}/usr/games
 #	install -c -o games -g bin -m 444 dm.config ${DESTDIR}/usr/games
+	install -c -o bin -g bin -m 444 dm.0 ${DESTDIR}/usr/man/cat8
+	install -c -o bin -g bin -m 444 dm.config.0 ${DESTDIR}/usr/man/cat5
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-dm: dm.c /usr/include/sys/param.h /usr/include/sys/types.h
-dm: /usr/include/signal.h /usr/include/machine/trap.h
-dm: /usr/include/machine/machparam.h /usr/include/sys/file.h
-dm: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/resource.h
-dm: /usr/include/pwd.h /usr/include/utmp.h /usr/include/nlist.h
-dm: /usr/include/stdio.h /usr/include/ctype.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
