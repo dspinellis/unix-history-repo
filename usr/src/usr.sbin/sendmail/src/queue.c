@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.45 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.46 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.45 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.46 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -170,11 +170,13 @@ notemp:
 	if (buf[0] != '\0')
 		fprintf(tfp, "F%s\n", buf);
 
-	/* $r and $s macro values */
+	/* $r and $s and $_ macro values */
 	if ((p = macvalue('r', e)) != NULL)
 		fprintf(tfp, "$r%s\n", p);
 	if ((p = macvalue('s', e)) != NULL)
 		fprintf(tfp, "$s%s\n", p);
+	if ((p = macvalue('_', e)) != NULL)
+		fprintf(tfp, "$_%s\n", p);
 
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);

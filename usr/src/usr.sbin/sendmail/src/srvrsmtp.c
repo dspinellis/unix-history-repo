@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.38 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.39 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -116,7 +116,6 @@ smtp(e)
 	expand("\201e", inp, &inp[sizeof inp], e);
 	message("220 %s", inp);
 	SmtpPhase = "startup";
-	sendinghost = NULL;
 	protocol = NULL;
 	gothello = FALSE;
 	gotmail = FALSE;
@@ -201,42 +200,28 @@ smtp(e)
 				SmtpPhase = "HELO";
 			}
 			setproctitle("%s: %s", CurHostName, inp);
-			if (strcasecmp(p, MyHostName) == 0)
-			{
-				/*
-				**  Didn't know about alias or MX,
-				**  or connected to an echo server
-				*/
-
-				message("553 %s config error: mail loops back to myself",
-					MyHostName);
-				break;
-			}
-			(void) strcpy(hostbuf, p);
-			(void) strcat(hostbuf, " (");
-			(void) strcat(hostbuf, anynet_ntoa(&RealHostAddr));
+			define('s', newstr(p), e);
 			if (strcasecmp(p, RealHostName) != 0)
 			{
 				auth_warning(e, "Host %s claimed to be %s",
 					RealHostName, p);
-				(void) strcat(hostbuf, "; ");
-				(void) strcat(hostbuf, RealHostName);
 			}
-			(void) strcat(hostbuf, ")");
-			sendinghost = newstr(hostbuf);
+			p = macvalue('_', e);
+			if (p == NULL)
+				p = macvalue('s', e);
 			message("250", "%s Hello %s, pleased to meet you", HostName, p);
 			break;
 
 		  case CMDMAIL:		/* mail -- designate sender */
 			SmtpPhase = "MAIL";
 
-			/* force a sending host even if no HELO given */
-			if (sendinghost == NULL && macvalue('s', e) == NULL)
-				sendinghost = RealHostName;
-
 			/* check for validity of this command */
 			if (!gothello)
 			{
+				/* set sending host to our known value */
+				if (macvalue('s', e) == NULL)
+					define('s', RealHostName, e);
+
 				if (bitset(PRIV_NEEDMAILHELO, PrivacyFlags))
 				{
 					message("503 Polite people say HELO first");
@@ -264,8 +249,6 @@ smtp(e)
 			/* fork a subprocess to process this command */
 			if (runinchild("SMTP-MAIL", e) > 0)
 				break;
-			if (sendinghost != NULL)
-				define('s', sendinghost, e);
 			if (protocol == NULL)
 				protocol = "SMTP";
 			define('r', protocol, e);
