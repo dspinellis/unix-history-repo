@@ -1,10 +1,10 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)ae0	6.2 (Berkeley) %G%
+.\"	@(#)ae0	6.3 (Berkeley) %G%
 .\"
 .nr P1 1
-.EH 'USD:13-%''Advanced Editing on \s-2UNIX\s+2'
-.OH 'Advanced Editing on \s-2UNIX\s+2''USD:13-%'
+.EH 'USD:10-%''Advanced Editing on \s-2UNIX\s+2'
+.OH 'Advanced Editing on \s-2UNIX\s+2''USD:10-%'
 .....TM 76-1273-8 39199 39199-11
 .\".RP
 .TL
