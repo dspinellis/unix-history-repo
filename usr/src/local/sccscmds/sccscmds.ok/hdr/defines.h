@@ -5,7 +5,7 @@
 
 /*
  *	defines.h 2.3 of 5/18/78
- *	defines.h 1.3 of %G%
+ *	defines.h 4.1 of %G%
  */
 
 # define CTLSTR		"%c%c\n"
@@ -113,7 +113,7 @@ struct	deltab {
 	int	d_serial;
 	int	d_pred;
 	long	d_datetime;
-	char	d_pgmr[8];
+	char	d_pgmr[SZLNAM];
 	char	d_type;
 };
 
@@ -183,8 +183,8 @@ struct packet {
 /*
 	size of login name
 */
-# define SZLNAM	(9)	/* size of login name */
-# define LNLNAM	(8)	/* length of login name */
+# define SZLNAM	9	/* size of login name */
+# define LNLNAM	8	/* length of login name */
 
 
 struct	stats {
@@ -197,7 +197,7 @@ struct	stats {
 struct	pfile	{
 	struct	sid	pf_gsid;
 	struct	sid	pf_nsid;
-	char	pf_user[8];
+	char	pf_user[SZLNAM];
 	long	pf_date;
 	char	*pf_ilist;
 	char	*pf_elist;
