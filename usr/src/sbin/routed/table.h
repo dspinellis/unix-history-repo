@@ -1,4 +1,4 @@
-/*	table.h	4.2	84/04/09	*/
+/*	table.h	4.3	84/05/03	*/
 
 /*
  * Routing table management daemon.
@@ -43,7 +43,8 @@ struct rt_entry {
 #define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
 #define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
 
-#define	ROUTEHASHSIZ	19
+#define	ROUTEHASHSIZ	32		/* must be a power of 2 */
+#define	ROUTEHASHMASK	(ROUTEHASHSIZ - 1)
 
 /*
  * "State" of routing table entry.

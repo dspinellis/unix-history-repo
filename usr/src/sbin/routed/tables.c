@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -32,7 +32,7 @@ rtlookup(dst)
 		return (0);
 	(*afswitch[dst->sa_family].af_hash)(dst, &h);
 	hash = h.afh_hosthash;
-	rh = &hosthash[hash % ROUTEHASHSIZ];
+	rh = &hosthash[hash & ROUTEHASHMASK];
 again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
 		if (rt->rt_hash != hash)
@@ -43,7 +43,7 @@ again:
 	if (doinghost) {
 		doinghost = 0;
 		hash = h.afh_nethash;
-		rh = &nethash[hash % ROUTEHASHSIZ];
+		rh = &nethash[hash & ROUTEHASHMASK];
 		goto again;
 	}
 	return (0);
@@ -67,7 +67,7 @@ rtfind(dst)
 		return (0);
 	(*afswitch[af].af_hash)(dst, &h);
 	hash = h.afh_hosthash;
-	rh = &hosthash[hash % ROUTEHASHSIZ];
+	rh = &hosthash[hash & ROUTEHASHMASK];
 
 again:
 	for (rt = rh->rt_forw; rt != (struct rt_entry *)rh; rt = rt->rt_forw) {
@@ -85,7 +85,7 @@ again:
 	if (doinghost) {
 		doinghost = 0;
 		hash = h.afh_nethash;
-		rh = &nethash[hash % ROUTEHASHSIZ];
+		rh = &nethash[hash & ROUTEHASHMASK];
 		match = afswitch[af].af_netmatch;
 		goto again;
 	}
@@ -108,10 +108,10 @@ rtadd(dst, gate, metric, state)
 	flags = (*afswitch[af].af_ishost)(dst) ? RTF_HOST : 0;
 	if (flags & RTF_HOST) {
 		hash = h.afh_hosthash;
-		rh = &hosthash[hash % ROUTEHASHSIZ];
+		rh = &hosthash[hash & ROUTEHASHMASK];
 	} else {
 		hash = h.afh_nethash;
-		rh = &nethash[hash % ROUTEHASHSIZ];
+		rh = &nethash[hash & ROUTEHASHMASK];
 	}
 	rt = (struct rt_entry *)malloc(sizeof (*rt));
 	if (rt == 0)
@@ -208,7 +208,7 @@ rtdefault()
 	rt->rt_dst = inet_default;
 	rt->rt_router = rt->rt_dst;
 	(*afswitch[AF_INET].af_hash)(&rt->rt_dst, &h);
-	rh = &nethash[h.afh_nethash % ROUTEHASHSIZ];
+	rh = &nethash[h.afh_nethash & ROUTEHASHMASK];
 	rt->rt_metric = 0;
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | RTF_GATEWAY;
