@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.12 (Berkeley) %G%
+.\"	@(#)2.t	6.13 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -245,11 +245,10 @@ program to format additional SCSI disks.
 .NH 4
 Step 2: copying the root filesystem from tape to disk
 .PP
-There are two approaches to getting the root filesystem from tape to disk.
-If you have an extra disk, the easiest approach is to use
+Once you have a formatted second disk you can use the
 .Xr dd (1)
-under HP-UX to copy the root filesystem image from the tape to the beginning
-of the second disk.
+command under HP-UX to copy the root filesystem image from
+the tape to the beginning of the second disk.
 For HP's, the root filesystem image is the first file on the tape.
 It includes a disklabel and bootblock along with the root filesystem.
 An example command to copy the image from tape to the beginning of a disk is:
@@ -265,18 +264,22 @@ and
 .Xr disk (7)
 man pages for details.
 .PP
+Note that an HP SCSI magneto-optical disk will work fine as a second disk.
+\*(4B will boot and run (albeit slowly) from one.
+Also note that if you have a SCSI disk, you don't necessarily have to use
+HP-UX (or an HP) to create the boot disk.
+Any machine and operating system that will allow you to copy the
+raw disk image out to block 0 of the disk will do.
+.PP
 If you have only a single machine with a single disk,
-you need to use the more difficult approach of booting a
-standalone copy program, and using that to copy the
+you may still be able to install and boot \*(4B if you have an
+HP-IB cartridge tape drive.
+If so, you can use a more difficult approach of booting a
+standalone copy program from the tape, and using that to copy the
 root filesystem image from the tape to the disk.
-If your distribution is on 8mm tape and you have an 8mm drive attached
-to the target machine, you should be able to boot from the distribution
-tape directly.
-If you have the 9-track distribution or only have a CS80 cartridge or
-4mm DAT drive, you will need to create your own boot tape.
 To do this, you need to extract the first file of the distribution tape
-(the root image), copy it over to a machine with a supported HP tape
-drive and then create a bootable cartridge or DAT tape.
+(the root image), copy it over to a machine with a cartridge drive
+and then copy the image onto tape.
 For example:
 .DS
 .ft CW
