@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_fork.c	7.12 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -93,7 +93,6 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  /* child */
-		u.u_start = time;
 		u.u_acflag = AFORK;
 		return;
 	}
@@ -202,6 +201,8 @@ again:
 	rpp->p_cptr = NULL;
 	rip->p_cptr = rpp;
 	rpp->p_time = 0;
+	bzero((caddr_t)&rpp->p_utime, sizeof (struct timeval));
+	bzero((caddr_t)&rpp->p_stime, sizeof (struct timeval));
 	rpp->p_cpu = 0;
 	rpp->p_sigmask = rip->p_sigmask;
 	rpp->p_sigcatch = rip->p_sigcatch;
@@ -263,8 +264,12 @@ again:
 	 * from being swapped.
 	 */
 	rip->p_flag |= SKEEP;
-	if (procdup(rpp, isvfork))
+	if (procdup(rpp, isvfork)) {
+		(void) splclock();
+		u.u_start = time;
+		(void) spl0();
 		return (1);
+	}
 
 	/*
 	 * Make child runnable and add to run queue.
