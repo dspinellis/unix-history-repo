@@ -1,4 +1,4 @@
-.\"	@(#)license	1.10 (Berkeley) %G%
+.\"	@(#)license	1.11 (Berkeley) %G%
 .\"
 .nr LL 6.8i
 .OF '(4/94)'''
@@ -143,10 +143,10 @@ OF THE LICENSED MATERIAL.
 LICENSEE may reproduce and/or distribute any copies of the
 LICENSED MATERIAL or derivative works, in source or binary form,
 provided LICENSEE complies with the requirements set forth in
-Attachment A.
+Exhibit B.
 In addition, any written materials, including, but not limited to,
 documentation, shall include the appropriate copyright notice and
-the acknowledgement set forth in paragraph 3 of Attachment A.
+the acknowledgement set forth in paragraph 3 of Exhibit B.
 .IP 11.
 .I Sublicensing 
 .I and 
@@ -165,7 +165,7 @@ sublicense contain the terms and conditions set forth in paragraphs 4, 5,
 .I Code.
 THE REGENTS will deliver to
 LICENSEE one copy of source code materials
-for LICENSED MATERIAL as noted in Attachment A.
+for LICENSED MATERIAL as noted in Exhibit A.
 .IP 13.
 .I Authority.
 LICENSEE warrants that the individual who executes
@@ -181,7 +181,7 @@ court or United States federal court in California.
 .IP 15.
 .I Entire
 .I Agreement.
-This Agreement, including Attachment A, contains the entire
+This Agreement, including Exhibit B, contains the entire
 Agreement between the parties and supersedes all prior written or
 oral agreements with respect to the subject matter hereof.
 .IP 16.
@@ -223,15 +223,31 @@ Date:\l'2.6i'~~Date:\l'2.6i'
 .R
 .TE
 .bp
-.ll 5.8i
-.nr LL 5.8i
+.ll 6.8i
+.nr LL 6.8i
+.ls 4
 .ce 2
 .ps 14
 .B "4.4BSD-LITE"
 .ps 10
-.B "ATTACHMENT A"
-.\".ps 12
+.B "EXHIBIT A"
+.nf
+.sp 3
+.ta 6i
+\l'.5i'  4.4BSD, 9 track tape, 6250 bpi  $1000
+\l'.5i'  4.4BSD, 8mm Exabyte  $1000
+.bp
+.fi
+.ll 5.8i
+.nr LL 5.8i
+.ls 4
+.ce 2
+.ps 14
+.B "4.4BSD-LITE"
+.ps 10
+.B "EXHIBIT B"
 .sp 4
+.ls 1
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
 are met:
