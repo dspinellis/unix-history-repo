@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	7.17 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.18 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/proc.h>
 #include <sys/systm.h>
 #include <sys/kernel.h>
+#include <sys/sysctl.h>
 
 #include <vm/vm.h>
 
@@ -72,60 +73,35 @@ loadav(avg)
 }
 
 /*
- * Load average information
+ * Attributes associated with virtual memory.
  */
-/* ARGSUSED */
-int
-kinfo_loadavg(op, where, acopysize, arg, aneeded)
-	int op;
-	register char *where;
-	int *acopysize, arg, *aneeded;
-{
-	int buflen, error;
-
-	*aneeded = sizeof(averunnable);
-	if (where == NULL)
-		return (0);
-	/*
-	 * Check for enough buffering.
-	 */
-	buflen = *acopysize;
-	if (buflen < sizeof(averunnable)) {
-		*acopysize = 0;
-		return (0);
-	}
-	/*
-	 * Copyout averunnable structure.
-	 */
-	averunnable.fscale = FSCALE;
-	if (error = copyout((caddr_t)&averunnable, where, sizeof(averunnable)))
-		return (error);
-	*acopysize = sizeof(averunnable);
-	return (0);
-}
-
-/*
- * Calculate and return vmtotals structure.
- */
-int
-kinfo_meter(op, where, acopysize, arg, aneeded)
-	int op;
-	caddr_t where;
-	int *acopysize, arg, *aneeded;
+vm_sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+	int *name;
+	u_int namelen;
+	void *oldp;
+	u_int *oldlenp;
+	void *newp;
+	u_int newlen;
 {
 	struct vmtotal vmtotals;
-	int error;
 
-	*aneeded = sizeof(struct vmtotal);
-	if (where == NULL)
-		return (0);
-	if (*acopysize < sizeof(struct vmtotal))
-		return (EINVAL);
-	vmtotal(&vmtotals);
-	if (error = copyout((caddr_t)&vmtotals, where, sizeof(struct vmtotal)))
-		return (error);
-	*acopysize = sizeof(struct vmtotal);
-	return (0);
+	/* all sysctl names at this level are terminal */
+	if (namelen != 1)
+		return (ENOTDIR);		/* overloaded */
+
+	switch (name[0]) {
+	case VM_LOADAVG:
+		averunnable.fscale = FSCALE;
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &averunnable,
+		    sizeof(averunnable)));
+	case VM_METER:
+		vmtotal(&vmtotals);
+		return (sysctl_rdstruct(oldp, oldlenp, newp, &vmtotals,
+		    sizeof(vmtotals)));
+	default:
+		return (EOPNOTSUPP);
+	}
+	/* NOTREACHED */
 }
 
 /*
