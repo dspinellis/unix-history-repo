@@ -1,4 +1,4 @@
-.\"	@(#)exp.3	6.3 (Berkeley) %G%
+.\"	@(#)exp.3	6.2 (Berkeley) %G%
 .\"
 .TH EXP 3M  ""
 .AT 3
@@ -36,6 +36,9 @@ returns the base 10 logarithm.
 .PP
 .I Pow
 returns
+.if n \
+.I x**y.
+.if t \
 .I  x\u\s8y\s10\d.
 .PP
 .I Sqrt
