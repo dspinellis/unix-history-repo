@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1985 Regents of the University of California.
+ * Copyright (c) 1985, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -191,7 +191,7 @@ p_rr(cp, msg, file)
 {
 	int type, class, dlen, n, c;
 	struct in_addr inaddr;
-	char *cp1;
+	char *cp1, cp2;
 
 	if ((cp = p_cdname(cp, msg, file)) == NULL)
 		return (NULL);			/* compression error */
@@ -211,6 +211,7 @@ p_rr(cp, msg, file)
 	case T_A:
 		switch (class) {
 		case C_IN:
+		case C_HS:
 			bcopy(cp, (char *)&inaddr, sizeof(inaddr));
 			if (dlen == 4) {
 				fprintf(file,"\tinternet address = %s\n",
@@ -275,13 +276,21 @@ p_rr(cp, msg, file)
 		cp = p_cdname(cp, msg, file);
 		break;
 
-	case T_TXT:
-		if (n = *cp++) {
-			fprintf(file, "\tTEXT=%.*s\n", n, cp);
-			cp += n;
-		} else
-			fprintf(file, "\tTEXT=\"\"\n");
-		break;
+  	case T_TXT:
+		(void) fputs("\t\"", file);
+		cp2 = cp1 + dlen;
+		while (cp < cp2) {
+			if (n = (unsigned char) *cp++) {
+				for (c = n; c > 0 && cp < cp2; c--)
+					if (*cp == '\n') {
+					    (void) putc('\\', file);
+					    (void) putc(*cp++, file);
+					} else
+					    (void) putc(*cp++, file);
+			}
+		}
+		(void) fputs("\"\n", file);
+  		break;
 
 	case T_MINFO:
 		fprintf(file,"\trequests = ");
