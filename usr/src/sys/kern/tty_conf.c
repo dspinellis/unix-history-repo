@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_conf.c	6.8 (Berkeley) %G%
+ *	@(#)tty_conf.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,23 +28,35 @@ int	bkopen(),bkclose(),bkread(),bkinput(),bkioctl();
 #if NTB > 0
 int	tbopen(),tbclose(),tbread(),tbinput(),tbioctl();
 #endif
+#include "sl.h"
+#if NSL > 0
+int	slopen(),slclose(),slinput(),sltioctl(),slstart();
+#endif
+
 
 struct	linesw linesw[] =
 {
-	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
+	ttyopen, ttylclose, ttread, ttwrite, nullioctl,	/* 0- OTTYDISC */
 	ttyinput, nodev, nulldev, ttstart, ttymodem,
 #if NBK > 0
-	bkopen, bkclose, bkread, ttwrite, bkioctl,
+	bkopen, bkclose, bkread, ttwrite, bkioctl,	/* 1- NETLDISC */
 	bkinput, nodev, nulldev, ttstart, nullmodem,
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
 #endif
-	ttyopen, ttylclose, ttread, ttwrite, nullioctl,
+	ttyopen, ttylclose, ttread, ttwrite, nullioctl,	/* 2- NTTYDISC */
 	ttyinput, nodev, nulldev, ttstart, ttymodem,
 #if NTB > 0
 	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nullmodem,		/* 3 */
+	tbinput, nodev, nulldev, ttstart, nullmodem,	/* 3- TABLDISC */
+#else
+	nodev, nodev, nodev, nodev, nodev,
+	nodev, nodev, nodev, nodev, nodev,
+#endif
+#if NSL > 0
+	slopen, slclose, nodev, nodev, sltioctl,
+	slinput, nodev, nulldev, slstart, nulldev,	/* 4- SLIPDISC */
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
