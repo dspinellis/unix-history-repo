@@ -22,7 +22,7 @@ mail or news).  First, pick up the sup_bin.tgz package from:
 Second, read the file /usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.sup.faq.
 
 This file describes how to setup sup on your machine.  You may also
-want to look at `/usr/src/contrib/FAQ/other/FreeBSD.*.supfile',
+want to look at `/usr/src/contrib/FAQ/OTHER-FAQS/FreeBSD.*.supfile',
 which are a set of supfiles for supping from freefall.cdrom.com
 
 
