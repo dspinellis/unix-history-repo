@@ -4,22 +4,41 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)tocrc	4.1 (Berkeley) %G%
+#	@(#)tocrc	5.1 (Berkeley) %G%
 #
 tmp=/tmp/toc$$
-troff=vtroff
+troff=itroff
 trap "rm $tmp ; exit" 2 3 15
-if [ $# -eq 2 ]
+if [ $# -eq 2 -a $1 = "3" ]
+then
+	: create toc input files for section 3 only
+
+	( cd man3 ; for x in 3 3f 3m 3n 3s 3x 3c
+	    do
+		/usr/lib/getNAME -t *.$x |
+		sed \
+			-e 's/.s-2//g' \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e 's/ *$/./' \
+			-e 's/.TH.*	//' \
+		> ../man0/tocx$x
+	    done
+	)
+elif [ $# -eq 2 ]
 then
 	: create toc input file for one section only
 
 	( cd man$1 ; /usr/lib/getNAME -t *.* |
 		sed \
+			-e 's/.s-2//g' \
 			-e 's/.s-1//g' \
 			-e 's/.s0//g' \
 			-e 's/.s+1//g' \
 			-e 's/  *.-  */: /' \
-			-e 's/$/./' \
+			-e 's/ *$/./' \
 			-e 's/.TH.*	//' \
 		> ../man0/tocx$1
 	)
@@ -38,24 +57,30 @@ else case $1 in
 
 		if [ ! -f man0/tocx1 ]
 		then
-			echo "tocx? files missing; must run tocrc all first"
+			echo "tocx* files missing; must run tocrc all first"
 			exit
 		fi
 		sed \
 			-e 's/(1c)/(1C)/' \
-			-e 's/(1m)/(1M)/' \
 			-e 's/(1g)/(1G)/' \
 			-e 's/(3c)/(3C)/' \
 			-e 's/(3m)/(3M)/' \
 			-e 's/(3s)/(3S)/' \
+			-e 's/(3x)/(3X)/' \
+			-e 's/(3f)/(3F)/' \
+			-e 's/(4f)/(4F)/' \
+			-e 's/(4n)/(4N)/' \
+			-e 's/(4p)/(4P)/' \
+			-e 's/(8c)/(8C)/' \
+			-e 's/(8v)/(8V)/' \
 			-e '/"\."/d' \
-			man0/tocx? man0/cshcmd \
+			man0/tocx* man0/cshcmd \
 		> /tmp/cattoc
 
 		ptx -r -t -b break -f -w 108 -i man0/ignore \
 		    /tmp/cattoc man0/ptxx
 
-		for x in 1 2 3 4 5 6 7 8
+		for x in 1 2 3 3f 3m 3n 3s 3x 3c 4 5 6 7 8
 		do
 			< man0/tocx$x grep '^intro' >$tmp
 				sed \
