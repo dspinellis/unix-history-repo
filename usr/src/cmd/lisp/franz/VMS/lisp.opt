@@ -1,0 +1,45 @@
+!
+!	Franz lisp link options file:
+!
+! trickiness required:
+!	For Franz to work at all, crt0.s must start at virtual address 0.
+!	This is assumed in the code.  To accomplish this there is a cluster
+!	called CRT0 which forces crt0.s to start at virtual address 0.
+!
+!	For savelisp/restorelisp to work properly data in data.c must be
+!	contiguous.  With the initial data being FirstAlloc and the last
+!	data being ZFreeSpace.  This is accomplished by declaring a cluster
+!	called DATA to hold the contiguous data.  data.c is put in this
+!	cluster as is the special psect $000_FIRSTALLOC, which is defined
+!	in VMSHACKS.MAR and forces FirstAlloc to be the 1st thing in the
+!	cluster.  ZFreeSpace is the last thing by virtue of its name being
+!	last alphabetically.  We also declare everything mentioned in
+!	orderit.s to be in this cluster (just in case).
+!	It turns out that malloc requires its internal variables to be
+!	before ZFreeSpace in memory, so we put it in a cluster (MALLOC)
+!	all by itself.
+!
+!
+! optional trickiness:
+!	To keep the various nice DEMAND ZERO sections together, i have a
+!	cluster called DATA_DZERO in which i can stuff any obviously demand
+!	zero psects.
+!
+!- ---
+lisp.o,eval.o,eval2.o,inits.o,io.o,error.o,sysat.o,talloc.o,-
+lam1.o,lam2.o,lam3.o,lam4.o,lam5.o,lam6.o,lam7.o,lam8.o,lamr.o,-
+lamnop.o,fex1.o,fex2.o,fex3.o,fex4.o,fexr.o,reset.o,fpipe.o,dmcount.o,-
+bigmath.o,subbig.o,pbignum.o,divbig.o,inewint.o,ffasl.o,nfasl.o,vmssys,-
+qfuncl.o,bind.o,trace.o,evalf.o,filbuf.o,dvadvise.o,vmshacks,fopen.o
+cluster=CRT0,0,,crt0.o
+cluster=MALLOC,,,malloc.o
+cluster=DATA,,,data.o
+collect=DATA,$000_FIRSTALLOC,retval,orgbnp,orgnp,rlevel,errp,-
+piport,poport,vtemp,bnp,sigintcnt,rsetsw,lispsys,stattab,bnplim,-
+nplim,chkport,zeroq,atmlen,hunk_items,hunk_pages,hunk_name,-
+itemp,header,strbuf,GCtime,datalim,beginsweep,usehole,curhbeg,-
+hasht,exception,hash,sigstruck,sigacts,sigdelay,keywait,-
+atomval,lastrtab,rbktf,rdrport,contval,errport,tint,gftab,-
+proport,namptr,bcdtrsw,ftemp,argptr,ttemp,lctrace,trcur,-
+pbuf,mcounts,globtag,syml,fakenp,fakelbot,zfreespace
+collect=DATA_DZERO,BITMAPQ,_SIBUF,_SOBUF
