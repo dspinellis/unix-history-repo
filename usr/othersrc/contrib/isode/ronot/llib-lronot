@@ -1,0 +1,241 @@
+/* llib-lronot - lint library for -lronot */
+
+/*
+ *				  NOTICE
+ *
+ *    Acquisition, use, and distribution of this module and related
+ *    materials are subject to the restrictions of a license agreement.
+ *    Consult the Preface in the User's Manual for the full terms of
+ *    this agreement.
+ *
+ */
+
+
+/* LINTLIBRARY */
+
+#include "ronot.h"
+
+/* ^L   RO-BIND.INDICATION */
+
+/* ARGSUSED */
+
+int       RoBindInit (vecp, vec, acs, rni)
+int                       vecp;
+char                    **vec;
+struct AcSAPstart       * acs;
+struct RoNOTindication  * rni;
+{
+	return ( RoBindInit (vecp, vec, acs, rni) );
+}
+
+int       ParseRoBindArgument (acs, rni)
+struct AcSAPstart       * acs;
+struct RoNOTindication  * rni;
+{
+	return ( ParseRoBindArgument (acs, rni) );
+}
+
+/* ^L   RO-BIND.RESULT */
+
+/* ARGSUSED */
+
+int       RoBindResult (sd, context, respondtitle, respondaddr, ctxlist,
+                defctxresult, prequirements, srequirements, isn, settings,
+                ref, bindrespe, rni)
+int                       sd;
+OID                       context;
+AEI                       respondtitle;
+struct PSAPaddr         * respondaddr;
+struct PSAPctxlist      * ctxlist;
+int                       defctxresult;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * ref;
+PE                        bindrespe;
+struct RoNOTindication  * rni;
+{
+	return ( RoBindResult (sd, context, respondtitle, respondaddr, ctxlist,
+                defctxresult, prequirements, srequirements, isn, settings,
+                ref, bindrespe, rni) );
+}
+
+/* ^L   RO-BIND.ERROR */
+
+/* ARGSUSED */
+
+int       RoBindError (sd, context, respondtitle,
+                respondaddr, ctxlist, defctxresult, prequirements,
+                srequirements, isn, settings, ref, binderrpe, rni)
+int                       sd;
+OID                       context;
+AEI                       respondtitle;
+struct PSAPaddr         * respondaddr;
+struct PSAPctxlist      * ctxlist;
+int                       defctxresult;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * ref;
+PE                        binderrpe;
+struct RoNOTindication  * rni;
+{
+	return ( RoBindError (sd, context, respondtitle,
+                respondaddr, ctxlist, defctxresult, prequirements,
+                srequirements, isn, settings, ref, binderrpe, rni) );
+}
+
+/* ^L   RO-BIND.REJECT */
+
+/* ARGSUSED */
+
+int       RoBindReject (acs, status, reason, rni)
+struct AcSAPstart       * acs;
+int			  status;
+int			  reason;
+struct RoNOTindication  * rni;
+{
+	return ( RoBindReject (acs, status, reason, rni) );
+}
+
+/*  RO-BIND.REQUEST */
+
+/* ARGSUSED */
+
+int	RoAsynBindRequest (context, callingtitle, calledtitle,
+		callingaddr, calledaddr, ctxlist, defctxname,
+		prequirements, srequirements, isn, settings, ref,
+		bindargpe, qos, acc, rni, async)
+OID                       context;
+AEI                       callingtitle;
+AEI                       calledtitle;
+struct PSAPaddr         * callingaddr;
+struct PSAPaddr         * calledaddr;
+struct PSAPctxlist      * ctxlist;
+OID                       defctxname;
+int                       prequirements;
+int                       srequirements;
+long                      isn;
+int                       settings;
+struct SSAPref          * ref;
+PE                        bindargpe;
+struct QOStype          * qos;
+struct AcSAPconnect     * acc;
+struct RoNOTindication  * rni;
+int                       async;
+{
+	return ( RoAsynBindRequest (context, callingtitle, calledtitle,
+                callingaddr, calledaddr, ctxlist, defctxname,
+                prequirements, srequirements, isn, settings, ref,
+                bindargpe, qos, acc, rni, async) );
+}
+
+/* ^L   RO-BIND.RETRY */
+
+/* ARGSUSED */
+
+int       RoAsynBindRetry (ad, do_next_nsap, acc, rni)
+int                       ad;
+int                       do_next_nsap;
+struct AcSAPconnect     * acc;
+struct RoNOTindication  * rni;
+{
+	return ( RoAsynBindRetry (ad, do_next_nsap, acc, rni) );
+}
+
+/* ARGSUSED */
+
+int       ParseRoBindResponse (acc, rni)
+struct AcSAPconnect *acc;
+struct RoNOTindication  * rni;
+{
+	return ( ParseRoBindResponse (acc, rni) );
+}
+
+/* ^L   RO-UNBIND.REQUEST */
+
+/* ARGSUSED */
+
+int       RoUnBindRequest (sd, unbindargpe, secs, acr, rni)
+int                       sd;
+PE                        unbindargpe;
+int                       secs;
+struct AcSAPrelease     * acr;
+struct RoNOTindication  * rni;
+{
+	return ( RoUnBindRequest (sd, unbindargpe, secs, acr, rni) );
+}
+
+/* ^L   RO-UNBIND.RETRY */
+
+/* ARGSUSED */
+
+int       RoUnBindRetry (sd, secs, acr, rni)
+int                       sd;
+int                       secs;
+struct AcSAPrelease     * acr;
+struct RoNOTindication  * rni;
+{
+	return ( RoUnBindRetry (sd, secs, acr, rni) );
+}
+
+/* ARGSUSED */
+
+int       ParseRoUnBindResponse (acr, rni)
+struct AcSAPrelease     * acr;
+struct RoNOTindication  * rni;
+{
+	return ( ParseRoUnBindResponse (acr, rni) );
+}
+
+/* ^L   RO-UNBIND.RESULT */
+
+/* ARGSUSED */
+
+int       RoUnBindResult (sd, unbindrespe, rni)
+int                       sd;
+PE                        unbindrespe;
+struct RoNOTindication  * rni;
+{
+	return ( RoUnBindResult (sd, unbindrespe, rni) );
+}
+
+/* ^L   RO-UNBIND.ERROR */
+
+/* ARGSUSED */
+
+int       RoUnBindError (sd, unbinderrpe, rni)
+int                       sd;
+PE                        unbinderrpe;
+struct RoNOTindication  * rni;
+{
+	return ( RoUnBindError (sd, unbinderrpe, rni) );
+}
+
+/* ^L   RO-UNBIND.REJECT */
+
+/* ARGSUSED */
+
+int       RoUnBindReject (sd, status, reason, rni)
+int                       sd;
+int                       status;
+int                       reason;
+struct RoNOTindication  * rni;
+{
+	return ( RoUnBindReject (sd, status, reason, rni) );
+}
+
+/* ^L   ACSAP interface */
+
+/* ARGSUSED */
+
+int       acs2roblose (rni, event, aca)
+struct RoNOTindication  * rni;
+char                    * event;
+struct AcSAPabort       * aca;
+{
+	return ( acs2roblose (rni, event, aca) );
+}
+
