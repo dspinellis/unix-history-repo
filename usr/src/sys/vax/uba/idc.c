@@ -1,4 +1,4 @@
-/*	idc.c	6.2	84/08/29	*/
+/*	idc.c	6.3	84/12/20	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -151,19 +151,25 @@ idcslave(ui, reg)
 	(void) idcwait(idcaddr, 0);
 	i = idcaddr->idcmpr;
 	idcaddr->idccsr = IDC_CRDY|(1<<(ui->ui_slave+16));
-	/* read header to synchronize microcode */
 	(void) idcwait(idcaddr, 0);
-	idcaddr->idccsr = (ui->ui_slave<<8)|IDC_RHDR;
-	(void) idcwait(idcaddr, 0);
-	if (idcaddr->idccsr & IDC_ERR)
-		return (0);
-	i = idcaddr->idcmpr;		/* read header word 1 */
-	i = idcaddr->idcmpr;		/* read header word 2 */
+	if (idcaddr->idccsr&IDC_R80) {
+		/* read header to synchronize microcode */
+		idcaddr->idccsr = (ui->ui_slave<<8)|IDC_RHDR;
+		(void) idcwait(idcaddr, 0);
+		if (idcaddr->idccsr & IDC_ERR)
+			return (0);
+		i = idcaddr->idcmpr;		/* read header word 1 */
+		i = idcaddr->idcmpr;		/* read header word 2 */
 #ifdef lint
-	i = i;
+		i = i;
 #endif
-	if (idcaddr->idccsr&IDC_R80)
 		ui->ui_type = 1;
+	} else
+		/*
+		 * RB02 may not have pack spun up, just look for drive error.
+		 */
+		if (idcaddr->idccsr & IDC_DE)
+			return (0);
 	return (1);
 }
 
