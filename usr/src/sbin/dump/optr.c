@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)optr.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)optr.c	1.9 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -26,7 +26,7 @@ struct	Group *getgrnam();
  *	that dump needs attention.
  */
 int	timeout;
-char	*attnmessage;		/* attemtion message */
+char	*attnmessage;		/* attention message */
 query(question)
 	char	*question;
 {
@@ -56,7 +56,7 @@ query(question)
 				back = 0;
 				goto done;
 		} else {
-			msg("\"Yes\" or \"No\" ONLY!\n");
+			msg("\"Yes\" or \"No\"?\n");
 			alarmcatch();
 		}
 	}
@@ -89,8 +89,8 @@ alarmcatch()
  */
 interrupt()
 {
-	msg("Interrupt received. Do >>>YOU<<< know what are you doing?\n");
-	if (query("Do you really want to abort dump?"))
+	msg("Interrupt received.\n");
+	if (query("Do you want to abort dump?"))
 		dumpabort();
 	signal(SIGINT, interrupt);
 }
