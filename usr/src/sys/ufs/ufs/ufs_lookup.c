@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.43 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.44 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -701,7 +701,7 @@ ufs_direnter(ip, dvp, cnp)
 	error = VOP_BWRITE(bp);
 	dp->i_flag |= IUPD|ICHG;
 	if (!error && dp->i_endoff && dp->i_endoff < dp->i_size)
-		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC);
+		error = VOP_TRUNCATE(dvp, (off_t)dp->i_endoff, IO_SYNC, NOCRED);
 	return (error);
 }
 
