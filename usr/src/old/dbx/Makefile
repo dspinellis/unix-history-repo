@@ -3,8 +3,8 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -22,11 +22,14 @@
 AOUT	= tdbx
 DEST	= /usr/ucb/dbx
 
+# Install the mail address of the person maintaining dbx below
+# as -DMAINTAINER.  A null string disables gripes.
+
 CC	= cc
-CFLAGS	= '-DMAINTAINER="linton@shasta"' -g
+CFLAGS	= '-DMAINTAINER=""' -O
 
 LD = cc
-LDFLAGS	= -g
+LDFLAGS	= 
 LIBRARIES =
 
 # LD	= /bin/oldld
@@ -179,7 +182,7 @@ cleandefs:
 	rm -f ${HDR} y.tab.h
 
 install:
-	install ${AOUT} ${DEST}
+	install -s ${AOUT} ${DEST}
 
 #
 # Create a tar file called "tape" containing relevant files.
