@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.4		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.4.1.1		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.4		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.4.1.1		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -285,6 +285,7 @@ readaliases(aliasfile, init)
 {
 	register char *p;
 	char *p2;
+	char *lhs;
 	char *rhs;
 	bool skipping;
 	int naliases, bytes, longest;
@@ -336,26 +337,45 @@ readaliases(aliasfile, init)
 
 		/*
 		**  Process the LHS
+		**
 		**	Find the final colon, and parse the address.
-		**	It should resolve to a local name -- this will
-		**	be checked later (we want to optionally do
-		**	parsing of the RHS first to maximize error
-		**	detection).
+		**	It should resolve to a local name.
+		**
+		**	Alternatively, it can be "@hostname" for host
+		**	aliases -- all we do here is map case.  Hostname
+		**	need not be a single token.
 		*/
 
 		for (p = line; *p != '\0' && *p != ':' && *p != '\n'; p++)
 			continue;
-		if (*p++ != ':')
+		if (*p != ':')
 		{
 			syserr("%s, line %d: syntax error", aliasfile, lineno);
 			continue;
 		}
-		if (parseaddr(line, &al, 1, ':') == NULL)
+		*p++ = '\0';
+		if (line[0] == '@')
 		{
-			syserr("illegal alias name");
-			continue;
+			/* a host alias */
+			makelower(line);
+			lhs = line;
 		}
-		loweraddr(&al);
+		else
+		{
+			/* a user alias */
+			if (parseaddr(line, &al, 1, ':') == NULL)
+			{
+				syserr("illegal alias name");
+				continue;
+			}
+			loweraddr(&al);
+			if (al.q_mailer != LocalMailer)
+			{
+				syserr("cannot alias non-local names");
+				continue;
+			}
+			lhs = al.q_user;
+		}
 
 		/*
 		**  Process the RHS.
@@ -438,17 +458,12 @@ readaliases(aliasfile, init)
 				break;
 			LineNumber++;
 		}
-		if (al.q_mailer != LocalMailer)
-		{
-			syserr("cannot alias non-local names");
-			continue;
-		}
 
 		/*
 		**  Insert alias into symbol table or DBM file
 		*/
 
-		lhssize = strlen(al.q_user) + 1;
+		lhssize = strlen(lhs) + 1;
 		rhssize = strlen(rhs) + 1;
 
 # ifdef DBM
@@ -528,4 +543,87 @@ forward(user, sendq)
 
 	/* we do have an address to forward to -- do it */
 	include(buf, "forwarding", user, sendq);
+}
+/*
+**  MAPHOST -- given a host description, produce a mapping.
+**
+**	This is done by looking up the name in the alias file,
+**	preceeded by an "@".  This can be used for UUCP mapping.
+**	For example, a call with {blia, ., UUCP} as arguments
+**	might return {ucsfcgl, !, blia, ., UUCP} as the result.
+**
+**	We first break the input into three parts -- before the
+**	lookup, the lookup itself, and after the lookup.  We
+**	then do the lookup, concatenate them together, and rescan
+**	the result.
+**
+**	Parameters:
+**		pvp -- the parameter vector to map.
+**
+**	Returns:
+**		The result of the mapping.  If nothing found, it
+**		should just concatenate the three parts together and
+**		return that.
+**
+**	Side Effects:
+**		none.
+*/
+
+char **
+maphost(pvp)
+	char **pvp;
+{
+	register char **avp;
+	register char **bvp;
+	char *p;
+	char buf1[MAXNAME];
+	char buf2[MAXNAME];
+	char buf3[MAXNAME];
+	extern char **prescan();
+
+	/*
+	**  Extract the three parts of the input as strings.
+	*/
+
+	/* find the part before the lookup */
+	for (bvp = pvp; *bvp != NULL && **bvp != MATCHLOOKUP; bvp++)
+		continue;
+	if (*bvp == NULL)
+		return (pvp);
+	p = *bvp;
+	*bvp = NULL;
+	cataddr(pvp, buf1, sizeof buf1);
+	*bvp++ = p;
+
+	/* find the rest of the lookup */
+	for (avp = bvp; *pvp != NULL && **bvp != MATCHELOOKUP; bvp++)
+		continue;
+	if (*bvp == NULL)
+		return (pvp);
+	p = *bvp;
+	*bvp = NULL;
+	cataddr(avp, buf2, sizeof buf2);
+	*bvp++ = p;
+
+	/* save the part after the lookup */
+	cataddr(bvp, buf3, sizeof buf3);
+
+	/*
+	**  Now look up the middle part.
+	*/
+
+	p = aliaslookup(buf2);
+	if (p != NULL)
+		strcpy(buf2, p);
+
+	/*
+	**  Put the three parts back together and break into tokens.
+	*/
+
+	strcat(buf1, buf2);
+	strcat(buf1, buf3);
+	avp = prescan(buf1, '\0');
+
+	/* return this mapping */
+	return (avp);
 }

@@ -4,7 +4,7 @@
 # include "sendmail.h"
 # include <sys/file.h>
 
-SCCSID(@(#)main.c	4.9		%G%);
+SCCSID(@(#)main.c	4.9.1.1		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -717,6 +717,7 @@ struct metamac	MetaMacros[] =
 
 	/* these are RHS metasymbols */
 	'#', CANONNET,	'@', CANONHOST,	':', CANONUSER,	'>', CALLSUBR,
+	'{', MATCHLOOKUP,		'}', MATCHELOOKUP,
 
 	/* and finally the conditional operations */
 	'?', CONDIF,	'|', CONDELSE,	'.', CONDFI,
