@@ -1,12 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)cset.c 1.9 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)cset.c 1.8 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "tree_ty.h"
 #ifdef PC
 #include "pc.h"
 #include "pcops.h"
@@ -38,17 +41,17 @@ static char sccsid[] = "@(#)cset.c 1.9 %G%";
  */
 bool
 precset( r , settype , csetp )
-	int		*r;
+	struct tnode	*r;
 	struct nl	*settype;
 	struct csetstr	*csetp;
 {
-	register int		*e;
+	register struct tnode	*e;
 	register struct nl	*t;
 	register struct nl	*exptype;
-	register int		*el;
-	register int		*pairp;
-	register int		*singp;
-	int			*ip;
+	register struct tnode	*el;
+	register struct tnode	*pairp;
+	register struct tnode	*singp;
+	struct tnode		*ip;
 	int			lower;
 	int			upper;
 	bool			setofint;
@@ -81,12 +84,12 @@ precset( r , settype , csetp )
 		 * The type of the constant set
 		 * by evaluating one of its members.
 		 */
-	    e = r[2];
+	    e = r->cset_node.el_list;
 	    if (e == NIL) {
 		    /*
 		     *	tentative for [], return type of `intset'
 		     */
-		settype = lookup( intset );
+		settype = lookup( (char *) intset );
 		if ( settype == NIL ) {
 		    panic( "empty set" );
 		}
@@ -104,15 +107,15 @@ precset( r , settype , csetp )
 			csetp -> comptime = FALSE;
 		return csetp -> comptime;
 	    }
-	    e = e[1];
+	    e = e->list_node.list;
 	    if (e == NIL) {
 		return csetp -> comptime;
 	    }
-	    if (e[0] == T_RANG) {
-		    e = e[1];
+	    if (e->tag == T_RANG) {
+		    e = e->rang.expr1;
 	    }
 	    codeoff();
-	    t = rvalue(e, NIL , RREQ );
+	    t = rvalue(e, NLNIL , RREQ );
 	    codeon();
 	    if (t == NIL) {
 		return csetp -> comptime;
@@ -135,7 +138,7 @@ precset( r , settype , csetp )
 		    return csetp -> comptime;
 	    }
 	    if (isa(t, "i")) {
-		    settype = lookup(intset);
+		    settype = lookup((char *) intset);
 		    if (settype == NIL)
 			    panic("intset");
 		    settype = settype->type;
@@ -158,7 +161,7 @@ precset( r , settype , csetp )
 				return csetp -> comptime;
 			if (exptype->class != RANGE)
 				exptype = exptype->type;
-			settype = defnl(0, SET, exptype, 0);
+			settype = defnl((char *) 0, SET, exptype, 0);
 	    }
 	}
 	csetp -> csettype = settype;
@@ -173,18 +176,18 @@ precset( r , settype , csetp )
 	pairp = NIL;
 	singp = NIL;
 	codeoff();
-	while ( el = r[2] ) {
-		e = el[1];
+	while ( el = r->cset_node.el_list ) {
+		e = el->list_node.list;
 		if (e == NIL) {
 			    /*
 			     *	don't hang this one anywhere.
 			     */
 			csetp -> csettype = NIL;
-			r[2] = el[2];
+			r->cset_node.el_list = el->list_node.next;
 			continue;
 		}
-		if (e[0] == T_RANG) {
-			if ( csetp -> comptime && constval( e[2] ) ) {
+		if (e->tag == T_RANG) {
+			if ( csetp -> comptime && constval( e->rang.expr2 ) ) {
 #ifdef CONSETS
 			    t = con.ctype;
 			    if ( con.crval < lower || con.crval > upper ) {
@@ -198,16 +201,16 @@ precset( r , settype , csetp )
 #endif CONSETS
 			} else {
 			    csetp -> comptime = FALSE;
-			    t = rvalue(e[2], NIL , RREQ );
+			    t = rvalue(e->rang.expr2, NLNIL , RREQ );
 			    if (t == NIL) {
-				    rvalue(e[1], NIL , RREQ );
+				    (void) rvalue(e->rang.expr1, NLNIL , RREQ );
 				    goto pairhang;
 			    }
 			}
-			if (incompat(t, exptype, e[2])) {
+			if (incompat(t, exptype, e->rang.expr2)) {
 				cerror("Upper bound of element type clashed with set type in constant set");
 			}
-			if ( csetp -> comptime && constval( e[1] ) ) {
+			if ( csetp -> comptime && constval( e->rang.expr1 ) ) {
 #ifdef CONSETS
 			    t = con.ctype;
 			    if ( con.crval < lower || con.crval > upper ) {
@@ -221,12 +224,12 @@ precset( r , settype , csetp )
 #endif CONSETS
 			} else {
 			    csetp -> comptime = FALSE;
-			    t = rvalue(e[1], NIL , RREQ );
+			    t = rvalue(e->rang.expr1, NLNIL , RREQ );
 			    if (t == NIL) {
 				    goto pairhang;
 			    }
 			}
-			if (incompat(t, exptype, e[1])) {
+			if (incompat(t, exptype, e->rang.expr1)) {
 				cerror("Lower bound of element type clashed with set type in constant set");
 			}
 pairhang:
@@ -234,10 +237,10 @@ pairhang:
 			     *	remove this range from the tree list and 
 			     *	hang it on the pairs list.
 			     */
-			ip = el[2];
-			el[2] = pairp;
-			pairp = r[2];
-			r[2] = ip;
+			ip = el->list_node.next;
+			el->list_node.next = pairp;
+			pairp = r->cset_node.el_list;
+			r->cset_node.el_list = ip;
 			csetp -> paircnt++;
 		} else {
 			if ( csetp -> comptime && constval( e ) ) {
@@ -254,7 +257,7 @@ pairhang:
 #endif CONSETS
 			} else {
 			    csetp -> comptime = FALSE;
-			    t = rvalue((int *) e, NLNIL , RREQ );
+			    t = rvalue( e, NLNIL , RREQ );
 			    if (t == NIL) {
 				    goto singhang;
 			    }
@@ -267,30 +270,30 @@ singhang:
 			     *	take this expression off the tree list and
 			     *	hang it on the list of singletons.
 			     */
-			ip = el[2];
-			el[2] = singp;
-			singp = r[2];
-			r[2] = ip;
+			ip = el->list_node.next;
+			el->list_node.next = singp;
+			singp = r->cset_node.el_list;
+			r->cset_node.el_list = ip;
 			csetp -> singcnt++;
 		}
 	}
 	codeon();
 #	ifdef PC
 	    if ( pairp != NIL ) {
-		for ( el = pairp ; el[2] != NIL ; el = el[2] ) /* void */;
-		el[2] = singp;
-		r[2] = pairp;
+		for ( el = pairp ; el->list_node.next != NIL ; el = el->list_node.next ) /* void */;
+		el->list_node.next = singp;
+		r->cset_node.el_list = pairp;
 	    } else {
-		r[2] = singp;
+		r->cset_node.el_list = singp;
 	    }
 #	endif PC
 #	ifdef OBJ
 	    if ( singp != NIL ) {
-		for ( el = singp ; el[2] != NIL ; el = el[2] ) /* void */;
-		el[2] = pairp;
-		r[2] = singp;
+		for ( el = singp ; el->list_node.next != NIL ; el = el->list_node.next ) /* void */;
+		el->list_node.next = pairp;
+		r->cset_node.el_list = singp;
 	    } else {
-		r[2] = pairp;
+		r->cset_node.el_list = pairp;
 	    }
 #	endif OBJ
 	if ( csetp -> csettype == NIL ) {
@@ -335,24 +338,24 @@ long	mask[] = {
      */
 #endif CONSETS
 postcset( r , csetp )
-    int			*r;
+    struct tnode	*r;
     struct csetstr	*csetp;
     {
-	register int	*el;
-	register int	*e;
+	register struct tnode	*el;
+	register struct tnode	*e;
 	int		lower;
 	int		upper;
 	int		lowerdiv;
 	int		lowermod;
 	int		upperdiv;
 	int		uppermod;
-	int		label;
 	long		*lp;
 	long		*limit;
 	long		tempset[ COMPSETSZE ];
 	long		temp;
 	char		*cp;
 #	ifdef PC
+	    int		label;
 	    char	labelname[ BUFSIZ ];
 #	endif PC
 
@@ -363,12 +366,12 @@ postcset( r , csetp )
 	    for ( lp = &tempset[0] ; lp < limit ; lp++ ) {
 		*lp = 0;
 	    }
-	    for ( el = r[2] ; el != NIL ; el = el[2] ) {
-		e = el[1];
-		if ( e[0] == T_RANG ) {
-		    constval( e[1] );
+	    for ( el = r->cset_node.el_list ; el != NIL ; el = el->list_node.next ) {
+		e = el->list_node.list;
+		if ( e->tag == T_RANG ) {
+		    (void) constval( e->rang.expr1 );
 		    lower = con.crval;
-		    constval( e[2] );
+		    (void) constval( e->rang.expr2 );
 		    upper = con.crval;
 		    if ( upper < lower ) {
 			continue;
@@ -390,7 +393,7 @@ postcset( r , csetp )
 			tempset[ upperdiv ] |= ~mask[ uppermod + 1 ];
 		    }
 		} else {
-		    constval( e );
+		    (void) constval( e );
 		    temp = con.crval - set.lwrb;
 		    cp = (char *)tempset;
 		    cp[temp >> LG2BITSBYTE] |= (1 << (temp & MSKBITSBYTE));
@@ -399,30 +402,30 @@ postcset( r , csetp )
 	    if ( !CGENNING )
 		return;
 #	    ifdef PC
-		label = getlab();
+		label = (int) getlab();
 		putprintf("	.data" , 0 );
 		aligndot(A_SET);
-		putlab( label );
+		(void) putlab( (char *) label );
 		lp = &( tempset[0] );
 		limit = &tempset[ ( set.uprbp >> LG2BITSLONG ) + 1 ];
 		while (lp < limit) {
-		    putprintf("	.long	0x%x", 1, *lp++);
+		    putprintf("	.long	0x%x", 1, (int) (*lp++));
 		    for (temp = 2 ; temp <= 8 && lp < limit ; temp++) {
-			putprintf(",0x%x", 1, *lp++);
+			putprintf(",0x%x", 1, (int) (*lp++));
 		    }
 		    putprintf("", 0);
 		}
 		putprintf("	.text", 0);
-		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , label );
+		sprintf( labelname , PREFIXFORMAT , LABELPREFIX , (char *) label );
 		putleaf( P2ICON , 0 , 0 , P2PTR | P2STRTY , labelname );
 #	    endif PC
 #	    ifdef OBJ
-		put(2, O_CON, (int)(((set.uprbp >> LG2BITSLONG) + 1) *
+		(void) put(2, O_CON, (int)(((set.uprbp >> LG2BITSLONG) + 1) *
 				 (BITSPERLONG >> LG2BITSBYTE)));
 		lp = &( tempset[0] );
 		limit = &tempset[ ( set.uprbp >> LG2BITSLONG ) + 1 ];
 		while ( lp < limit ) {
-		    put(2, O_CASE4, *lp ++);
+		    (void) put(2, O_CASE4, (int) (*lp ++));
 		}
 #	    endif OBJ
 #else
@@ -430,35 +433,35 @@ postcset( r , csetp )
 #endif CONSETS
 	} else {
 #	    ifdef PC
-		putleaf( P2ICON , csetp -> paircnt , 0 , P2INT , 0 );
+		putleaf( P2ICON , (int) csetp -> paircnt , 0 , P2INT , (char *) 0 );
 		putop( P2LISTOP , P2INT );
-		putleaf( P2ICON , csetp -> singcnt , 0 , P2INT , 0 );
+		putleaf( P2ICON , (int) csetp -> singcnt , 0 , P2INT , (char *) 0 );
 		putop( P2LISTOP , P2INT );
-		for ( el = r[2] ; el != NIL ; el = el[2] ) {
-		    e = el[1];
-		    if ( e[0] == T_RANG ) {
-			rvalue( e[2] , NIL , RREQ );
+		for ( el = r->cset_node.el_list ; el != NIL ; el = el->list_node.next ) {
+		    e = el->list_node.list;
+		    if ( e->tag == T_RANG ) {
+			(void) rvalue( e->rang.expr2 , NLNIL , RREQ );
 			putop( P2LISTOP , P2INT );
-			rvalue( e[1] , NIL , RREQ );
+			(void) rvalue( e->rang.expr1 , NLNIL , RREQ );
 			putop( P2LISTOP , P2INT );
 		    } else {
-			rvalue( e , NIL , RREQ );
+			(void) rvalue( e , NLNIL , RREQ );
 			putop( P2LISTOP , P2INT );
 		    }
 		}
 #	    endif PC
 #	    ifdef OBJ
-		for ( el = r[2] ; el != NIL ; el = el[2] ) {
-		    e = el[1];
-		    if ( e[0] == T_RANG ) {
-			stkrval( e[1] , NIL , RREQ );
-			stkrval( e[2] , NIL , RREQ );
+		for ( el = r->cset_node.el_list ; el != NIL ; el = el->list_node.next ) {
+		    e = el->list_node.list;
+		    if ( e->tag == T_RANG ) {
+			(void) stkrval( e->rang.expr1 , NLNIL , (long) RREQ );
+			(void) stkrval( e->rang.expr2 , NLNIL , (long) RREQ );
 		    } else {
-			stkrval( e , NIL , RREQ );
+			(void) stkrval( e , NLNIL , (long) RREQ );
 		    }
 		}
-		put(2 , O_CON24 , (int)csetp -> singcnt );
-		put(2 , O_CON24 , (int)csetp -> paircnt );
+		(void) put(2 , O_CON24 , (int)csetp -> singcnt );
+		(void) put(2 , O_CON24 , (int)csetp -> paircnt );
 #	    endif OBJ
 	}
 }
