@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file_subs.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)file_subs.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -138,7 +138,7 @@ file_close(arcn, fd)
 
 	/*
 	 * IMPORTANT SECURITY NOTE:
-	 * if not preserving mode or whe cannot set uid/gid, then PROHIBIT
+	 * if not preserving mode or we cannot set uid/gid, then PROHIBIT
 	 * set uid/gid bits
 	 */
 	if (!pmode || res)
@@ -179,7 +179,7 @@ lnk_creat(arcn)
 	}
 
 	if (S_ISDIR(sb.st_mode)) {
-		warn(1, "A hard links to the directory %s is not allowed",
+		warn(1, "A hard link to the directory %s is not allowed",
 		    arcn->ln_name);
 		return(-1);
 	}
@@ -218,7 +218,7 @@ cross_lnk(arcn)
 
 /*
  * chk_same()
- *	In copy mode, if we are not trying to make hard links between the src
+ *	In copy mode if we are not trying to make hard links between the src
  *	and destinations, make sure we are not going to overwrite ourselves by
  *	accident. This slows things down a little, but we have to protect all
  *	those people who make typing errors.
@@ -265,9 +265,9 @@ chk_same(arcn)
  * Return:
  *	0 if successful (or we are done with this file but no error, such as
  *	finding the from file exists and the user has set -k).
- *	1 when ign set, indicates we couldn't make the link but try to
- *	copy/extract the file as that might work.
- *	-1 an error occurred.
+ *	1 when ign was set to indicates we could not make the link but we
+ *	should try to copy/extract the file as that might work (and is an
+ *	allowed option). -1 an error occurred.
  */
 
 #if __STDC__
@@ -398,7 +398,8 @@ node_creat(arcn)
 			/*
 			 * Skip sockets, operation has no meaning under BSD
 			 */
-			warn(0, "%s not created, sockets are not supported",
+			warn(0,
+			    "%s skipped. Sockets cannot be copied or extracted",
 			    arcn->name);
 			return(-1);
 		case PAX_SLK:
@@ -409,11 +410,12 @@ node_creat(arcn)
 		case PAX_HLK:
 		case PAX_HRG:
 		case PAX_REG:
-			/*
-			 * should never be called to create these
-			 */
 		default:
-			warn(1,"Unknown file system type skip: %s",arcn->name);
+			/*
+			 * we should never get here
+			 */
+			warn(0, "%s has an unknown file type, skipping",
+				arcn->name);
 			return(-1);
 		}
 
@@ -451,7 +453,7 @@ node_creat(arcn)
 
 	/*
 	 * IMPORTANT SECURITY NOTE:
-	 * if not preserving mode or whe cannot set uid/gid, then PROHIBIT any
+	 * if not preserving mode or we cannot set uid/gid, then PROHIBIT any
 	 * set uid/gid bits
 	 */
 	if (!pmode || res)
@@ -603,11 +605,12 @@ chk_path(name, st_uid, st_gid)
 
 		/*
 		 * if it exists we assume it is a directory, it is not within
-		 * the spec (at least it seems to reads that way) to alter the
+		 * the spec (at least it seems to read that way) to alter the
 		 * file system for nodes NOT EXPLICITLY stored on the archive.
 		 * If that assumption is changed, you would test the node here
 		 * and figure out how to get rid of it (probably like some
-		 * recursive unlink())
+		 * recursive unlink()) or fix up the directory permissions if
+		 * required (do an access()).
 		 */
 		if (lstat(name, &sb) == 0) {
 			*(spt++) = '/';
