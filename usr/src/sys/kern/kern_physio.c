@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_physio.c	8.1 (Berkeley) %G%
+ *	@(#)kern_physio.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -64,10 +64,10 @@ physio(strat, bp, dev, rw, mincnt, uio)
 		bp->b_proc = p;
 #ifdef HPUXCOMPAT
 		if (ISHPMMADDR(iov->iov_base))
-			bp->b_un.b_addr = (caddr_t)HPMMBASEADDR(iov->iov_base);
+			bp->b_data = (caddr_t)HPMMBASEADDR(iov->iov_base);
 		else
 #endif
-		bp->b_un.b_addr = iov->iov_base;
+		bp->b_data = iov->iov_base;
 		while (iov->iov_len > 0) {
 			bp->b_flags = B_BUSY | B_PHYS | B_RAW | rw;
 			bp->b_dev = dev;
@@ -76,7 +76,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			(*mincnt)(bp);
 			requested = bp->b_bcount;
 			p->p_flag |= SPHYSIO;
-			vslock(a = bp->b_un.b_addr, requested);
+			vslock(a = bp->b_data, requested);
 			vmapbuf(bp);
 			(*strat)(bp);
 			s = splbio();
@@ -89,7 +89,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 				wakeup((caddr_t)bp);
 			splx(s);
 			done = bp->b_bcount - bp->b_resid;
-			bp->b_un.b_addr += done;
+			(char *)bp->b_data += done;
 			iov->iov_len -= done;
 			uio->uio_resid -= done;
 			uio->uio_offset += done;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_subr.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -51,7 +51,7 @@ lfs_blkatoff(ap)
 		return (error);
 	}
 	if (ap->a_res)
-		*ap->a_res = bp->b_un.b_addr + blkoff(fs, ap->a_offset);
+		*ap->a_res = (char *)bp->b_data + blkoff(fs, ap->a_offset);
 	*ap->a_bpp = bp;
 	return (0);
 }
@@ -119,7 +119,7 @@ lfs_segunlock(fs)
 			/* Free allocated segment summary */
 			fs->lfs_offset -= LFS_SUMMARY_SIZE / DEV_BSIZE;
 			brelvp(*sp->bpp);
-			free((*sp->bpp)->b_un.b_addr, M_SEGMENT);
+			free((*sp->bpp)->b_data, M_SEGMENT);
 			free(*sp->bpp, M_SEGMENT);
 		} else
 			printf ("unlock to 0 with no summary");

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	8.2 (Berkeley) %G%
+ *	@(#)kern_sig.c	8.3 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -787,10 +787,10 @@ psignal(p, signum)
 		}
 
 		/*
-		 * If process is sleeping interruptibly, then
-		 * simulate a wakeup so that when it is continued,
-		 * it will be made runnable and can look at the signal.
-		 * But don't setrun the process, leave it stopped.
+		 * If process is sleeping interruptibly, then simulate a
+		 * wakeup so that when it is continued, it will be made
+		 * runnable and can look at the signal.  But don't make
+		 * the process runnable, leave it stopped.
 		 */
 		if (p->p_wchan && p->p_flag & SSINTR)
 			unsleep(p);
@@ -815,7 +815,7 @@ runfast:
 	if (p->p_pri > PUSER)
 		p->p_pri = PUSER;
 run:
-	setrun(p);
+	setrunnable(p);
 out:
 	splx(s);
 }

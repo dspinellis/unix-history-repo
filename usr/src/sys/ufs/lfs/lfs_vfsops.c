@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -219,7 +219,7 @@ lfs_mountfs(devvp, mp, p)
 	/* Read in the superblock. */
 	if (error = bread(devvp, LFS_LABELPAD / size, LFS_SBPAD, NOCRED, &bp))
 		goto out;
-	fs = bp->b_un.b_lfs;
+	fs = (struct lfs *)bp->b_data;
 
 	/* Check the basics. */
 	if (fs->lfs_magic != LFS_MAGIC || fs->lfs_bsize > MAXBSIZE ||
@@ -231,7 +231,7 @@ lfs_mountfs(devvp, mp, p)
 	/* Allocate the mount structure, copy the superblock into it. */
 	ump = (struct ufsmount *)malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
 	fs = ump->um_lfs = malloc(sizeof(struct lfs), M_UFSMNT, M_WAITOK);
-	bcopy(bp->b_un.b_addr, fs, sizeof(struct lfs));
+	bcopy(bp->b_data, fs, sizeof(struct lfs));
 	if (sizeof(struct lfs) < LFS_SBPAD)			/* XXX why? */
 		bp->b_flags |= B_INVAL;
 	brelse(bp);
@@ -501,7 +501,7 @@ lfs_vget(mp, ino, vpp)
 		*vpp = NULL;
 		return (error);
 	}
-	ip->i_din = *lfs_ifind(fs, ino, bp->b_un.b_dino);
+	ip->i_din = *lfs_ifind(fs, ino, (struct dinode *)bp->b_data);
 	brelse(bp);
 
 	/*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_bmap.c	8.2 (Berkeley) %G%
+ *	@(#)ufs_bmap.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -166,12 +166,12 @@ ufs_bmaparray(vp, bn, bnp, ap, nump, runp)
 			}
 		}
 
-		daddr = bp->b_un.b_daddr[xap->in_off];
+		daddr = ((daddr_t *)bp->b_data)[xap->in_off];
 		if (num == 1 && daddr && runp)
 			for (bn = xap->in_off + 1;
 			    bn < MNINDIR(ump) && *runp < maxrun &&
-			    is_sequential(ump, bp->b_un.b_daddr[bn - 1],
-			    bp->b_un.b_daddr[bn]);
+			    is_sequential(ump, ((daddr_t *)bp->b_data)[bn - 1],
+			    ((daddr_t *)bp->b_data)[bn]);
 			    ++bn, ++*runp);
 	}
 	if (bp)

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.2 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -335,43 +335,44 @@ ioctl(p, uap, retval)
 	int *retval;
 {
 	register struct file *fp;
-	register struct filedesc *fdp = p->p_fd;
+	register struct filedesc *fdp;
 	register int com, error;
 	register u_int size;
-	caddr_t memp = 0;
+	caddr_t data, memp;
+	int tmp;
 #define STK_PARAMS	128
 	char stkbuf[STK_PARAMS];
-	caddr_t data = stkbuf;
-	int tmp;
 
+	fdp = p->p_fd;
 	if ((u_int)uap->fd >= fdp->fd_nfiles ||
 	    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
 		return (EBADF);
-	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
-		return (EBADF);
-	com = uap->com;
 
-	if (com == FIOCLEX) {
-		fdp->fd_ofileflags[uap->fd] |= UF_EXCLOSE;
-		return (0);
-	}
-	if (com == FIONCLEX) {
+	if ((fp->f_flag & (FREAD | FWRITE)) == 0)
+		return (EBADF);
+
+	switch (com = uap->com) {
+	case FIONCLEX:
 		fdp->fd_ofileflags[uap->fd] &= ~UF_EXCLOSE;
+		return (0);
+	case FIOCLEX:
+		fdp->fd_ofileflags[uap->fd] |= UF_EXCLOSE;
 		return (0);
 	}
 
 	/*
-	 * Interpret high order word to find
-	 * amount of data to be copied to/from the
-	 * user's address space.
+	 * Interpret high order word to find amount of data to be
+	 * copied to/from the user's address space.
 	 */
 	size = IOCPARM_LEN(com);
 	if (size > IOCPARM_MAX)
 		return (ENOTTY);
+	memp = NULL;
 	if (size > sizeof (stkbuf)) {
 		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
-	}
+	} else
+		data = stkbuf;
 	if (com&IOC_IN) {
 		if (size) {
 			error = copyin(uap->data, data, (u_int)size);
@@ -641,7 +642,7 @@ selwakeup(sip)
 		s = splhigh();
 		if (p->p_wchan == (caddr_t)&selwait) {
 			if (p->p_stat == SSLEEP)
-				setrun(p);
+				setrunnable(p);
 			else
 				unsleep(p);
 		} else if (p->p_flag & SSEL)

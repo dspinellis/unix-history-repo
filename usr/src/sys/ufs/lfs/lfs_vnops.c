@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -435,9 +435,9 @@ lfs_close(ap)
 	int mod;
 
 	if (vp->v_usecount > 1 && !(ip->i_flag & ILOCKED)) {
-		mod = ip->i_flag & IMOD;
+		mod = ip->i_flag & IMODIFIED;
 		ITIMES(ip, &time, &time);
-		if (!mod && ip->i_flag & IMOD)
+		if (!mod && ip->i_flag & IMODIFIED)
 			ip->i_lfs->lfs_uinodes++;
 	}
 	return (0);

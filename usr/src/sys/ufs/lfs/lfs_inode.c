@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_inode.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -66,21 +66,21 @@ lfs_update(ap)
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		return (0);
 	ip = VTOI(vp);
-	if ((ip->i_flag & (IUPD | IACC | ICHG | IMOD)) == 0)
+	if ((ip->i_flag & (IUPDATE | IACCESS | ICHANGE | IMODIFIED)) == 0)
 		return (0);
-	if (ip->i_flag & IACC)
+	if (ip->i_flag & IACCESS)
 		ip->i_atime.ts_sec = ap->a_access->tv_sec;
-	if (ip->i_flag & IUPD) {
+	if (ip->i_flag & IUPDATE) {
 		ip->i_mtime.ts_sec = ap->a_modify->tv_sec;
 		(ip)->i_modrev++;
 	}
-	if (ip->i_flag & ICHG)
+	if (ip->i_flag & ICHANGE)
 		ip->i_ctime.ts_sec = time.tv_sec;
-	ip->i_flag &= ~(IUPD | IACC | ICHG);
+	ip->i_flag &= ~(IUPDATE | IACCESS | ICHANGE);
 
-	if (!(ip->i_flag & IMOD))
+	if (!(ip->i_flag & IMODIFIED))
 		++(VFSTOUFS(vp->v_mount)->um_lfs->lfs_uinodes);
-	ip->i_flag |= IMOD;
+	ip->i_flag |= IMODIFIED;
 
 	/* If sync, push back the vnode and any dirty blocks it may have. */
 	return (ap->a_waitfor & LFS_SYNC ? lfs_vflush(vp) : 0);
@@ -149,7 +149,7 @@ lfs_truncate(ap)
 #endif
 		bzero((char *)&ip->i_shortlink, (u_int)ip->i_size);
 		ip->i_size = 0;
-		ip->i_flag |= ICHG|IUPD;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		return (VOP_UPDATE(vp, &tv, &tv, 0));
 	}
 	vnode_pager_setsize(vp, (u_long)length);
@@ -158,7 +158,7 @@ lfs_truncate(ap)
 
 	/* If length is larger than the file, just update the times. */
 	if (ip->i_size <= length) {
-		ip->i_flag |= ICHG|IUPD;
+		ip->i_flag |= IUPDATE | ICHANGE;
 		return (VOP_UPDATE(vp, &tv, &tv, 0));
 	}
 
@@ -190,7 +190,7 @@ lfs_truncate(ap)
 		ip->i_size = length;
 		size = blksize(fs);
 		(void)vnode_pager_uncache(vp);
-		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
+		bzero((char *)bp->b_data + offset, (u_int)(size - offset));
 		allocbuf(bp, size);
 		if (e1 = VOP_BWRITE(bp))
 			return (e1);
@@ -234,7 +234,7 @@ lfs_truncate(ap)
 				    inp->in_lbn, fs->lfs_bsize, NOCRED, &bp))
 					panic("lfs_truncate: bread bno %d",
 					    inp->in_lbn);
-				daddrp = bp->b_un.b_daddr + inp->in_off;
+				daddrp = (daddr_t *)bp->b_data + inp->in_off;
 				for (i = inp->in_off;
 				    i++ <= a_end[depth].in_off;) {
 					daddr = *daddrp++;
@@ -244,8 +244,8 @@ lfs_truncate(ap)
 				if (inp->in_off == 0)
 					brelse (bp);
 				else {
-					bzero(bp->b_un.b_daddr + inp->in_off,
-					    fs->lfs_bsize - 
+					bzero((daddr_t *)bp->b_data +
+					    inp->in_off, fs->lfs_bsize - 
 					    inp->in_off * sizeof(daddr_t));
 					if (e1 = VOP_BWRITE(bp)) 
 						return (e1);
@@ -283,7 +283,7 @@ lfs_truncate(ap)
 #endif
 	ip->i_blocks -= fsbtodb(fs, blocksreleased);
 	fs->lfs_bfree +=  fsbtodb(fs, blocksreleased);
-	ip->i_flag |= ICHG|IUPD;
+	ip->i_flag |= IUPDATE | ICHANGE;
 	/*
 	 * Traverse dirty block list counting number of dirty buffers
 	 * that are being deleted out of the cache, so that the lfs_avail
