@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.9 %G%";
+static char sccsid[] = "@(#)object.c 1.10 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -44,7 +44,6 @@ private Boolean strip_ = false;
 
 private Filetab *filep;
 private Linetab *linep, *prevlinep;
-private Address curfaddr;
 
 #define curfilename() (filep-1)->filename
 
@@ -276,28 +275,29 @@ register struct nlist *np;
     }
     switch (np->n_type) {
 
-/* Build a symbol for the common; all GSYMS that follow will be chained;
- * the head of this list is kept in common.offset, the tail in common.chain
- */
- 	case N_BCOMM:
- 	    if(curcomm) {
-	    curcomm->symvalue.common.chain = commchain;
+    /*
+     * Build a symbol for the common; all GSYMS that follow will be chained;
+     * the head of this list is kept in common.offset, the tail in common.chain
+     */
+	case N_BCOMM:
+ 	    if (curcomm) {
+		curcomm->symvalue.common.chain = commchain;
 	    }
 	    curcomm = lookup(n);
-	    if (  curcomm == nil) {
-		  curcomm = insert(n);
-		  curcomm->class = COMMON;
-		  curcomm->block = curblock;
-		  curcomm->level = program->level;
-		  curcomm->symvalue.common.chain = nil;
+	    if (curcomm == nil) {
+		curcomm = insert(n);
+		curcomm->class = COMMON;
+		curcomm->block = curblock;
+		curcomm->level = program->level;
+		curcomm->symvalue.common.chain = nil;
 	    }
 	    commchain = curcomm->symvalue.common.chain;
-	break;
+	    break;
 
 	case N_ECOMM:
-	    if(curcomm) {
-	    curcomm->symvalue.common.chain = commchain;
-	    curcomm = nil;
+	    if (curcomm) {
+		curcomm->symvalue.common.chain = commchain;
+		curcomm = nil;
 	    }
 	    break;
 				   
@@ -446,32 +446,50 @@ register struct nlist *np;
 	    t->symvalue.funcv.beginaddr = np->n_value;
 	    newfunc(t);
 	    findbeginning(t);
-	}  else if ( (np->n_type&N_TYPE) == N_BSS ){
+	} else if ((np->n_type&N_TYPE) == N_BSS) {
 	    find(t, n) where
-		t->class  == COMMON
+		t->class == COMMON
 	    endfind(t);
-	    if(t != nil) {
-		for(u= (Symbol) t->symvalue.common.offset;
-                        u != nil ;u=u->symvalue.common.chain){
-		   u->symvalue.offset = u->symvalue.common.offset + np->n_value;
-		   }
-            }
-        }
-        else {
-	    find(t, n) where
-		t->class == VAR and t->level == program->level
-	    endfind(t);
-	    if (t == nil) {
-		t = insert(n);
-		t->language = findlanguage(".s");
-		t->class = VAR;
-		t->type = t_int;
-		t->block = curblock;
-		t->level = program->level;
+	    if (t != nil) {
+		u = (Symbol) t->symvalue.common.offset;
+		while (u != nil) {
+		    u->symvalue.offset = u->symvalue.common.offset+np->n_value;
+		    u = u->symvalue.common.chain;
+		}
+            } else {
+		check_var(np, n);
 	    }
-	    t->symvalue.offset = np->n_value;
+        } else {
+	    check_var(np, n);
 	}
     }
+}
+
+/*
+ * Check to see if a namelist entry refers to a variable.
+ * If not, create a variable for the entry.  In any case,
+ * set the offset of the variable according to the value field
+ * in the entry.
+ */
+
+private check_var(np, n)
+struct nlist *np;
+register Name n;
+{
+    register Symbol t;
+
+    find(t, n) where
+	t->class == VAR and t->level == program->level
+    endfind(t);
+    if (t == nil) {
+	t = insert(n);
+	t->language = findlanguage(".s");
+	t->class = VAR;
+	t->type = t_int;
+	t->level = program->level;
+    }
+    t->block = curblock;
+    t->symvalue.offset = np->n_value;
 }
 
 /*
@@ -992,19 +1010,21 @@ Integer nf, nl;
 
 /*
  * Add a file to the file table.
+ *
+ * If the new address is the same as the previous file address
+ * this routine used to not enter the file, but this caused some
+ * problems so it has been removed.  It's not clear that this in
+ * turn may not also cause a problem.
  */
 
 private enterfile(filename, addr)
 String filename;
 Address addr;
 {
-    if (addr != curfaddr) {
-	filep->addr = addr;
-	filep->filename = filename;
-	filep->lineindex = linep - linetab;
-	++filep;
-	curfaddr = addr;
-    }
+    filep->addr = addr;
+    filep->filename = filename;
+    filep->lineindex = linep - linetab;
+    ++filep;
 }
 
 /*
