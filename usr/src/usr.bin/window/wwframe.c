@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)wwframe.c	3.1 83/08/11";
 #endif
 
 #include "ww.h"

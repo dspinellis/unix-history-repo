@@ -1,17 +1,24 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwclreol.c	3.1 83/08/09";
+static	char *sccsid = "@(#)wwclreol.c	3.2 83/08/11";
 #endif
 
 #include "ww.h"
+
+wwclreol(w, line, col)
+struct ww *w;
+{
+	wwclreol1(w, line, col, 0);
+}
 
 /*
  * Clear w to the end of line.
  * If cleared is true, then the screen line has already been cleared
  * previously.
  */
-wwclreol(w, line, col, cleared)
+wwclreol1(w, line, col, cleared)
 register struct ww *w;
-int line;
+int line, col;
+char cleared;
 {
 	register i;
 	int row = line - w->ww_scroll;
