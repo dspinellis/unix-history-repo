@@ -1,4 +1,4 @@
-/*	tmreg.h	4.3	81/02/21	*/
+/*	tmreg.h	4.4	81/02/25	*/
 
 /*
  * TM11 controller registers
@@ -27,6 +27,9 @@ struct device {
 #define	TM_WIRG		0000014		/* write with xtra interrecord gap */
 #define	TM_REW		0000016		/* rewind */
 #define	TM_SENSE	TM_IE		/* sense (internal to driver) */
+
+#define	tmreverseop(cmd)		((cmd)==TM_SREV || (cmd)==TM_REW)
+
 /* TM_SNS is a pseudo-op used to get tape status */
 #define	TM_IE		0000100		/* interrupt enable */
 #define	TM_CUR		0000200		/* control unit is ready */
@@ -39,6 +42,7 @@ struct device {
 #define	TM_RWS		0000002		/* tape unit rewinding */
 #define	TM_WRL		0000004		/* tape unit write protected */
 #define	TM_SDWN		0000010		/* gap settling down */
+#define	TM_CH7		0000020		/* 7 channel tape */
 #define	TM_BOT		0000040		/* at beginning of tape */
 #define	TM_SELR		0000100		/* tape unit properly selected */
 #define	TM_NXM		0000200		/* non-existant memory */
@@ -50,6 +54,10 @@ struct device {
 #define	TM_CRE		0020000		/* cyclic redundancy error */
 #define	TM_EOF		0040000		/* end of file */
 #define	TM_ILC		0100000		/* illegal command */
+
+#define	TMEREG_BITS	\
+"\10\20ILC\17EOF\16CRE\15PAE\14BGL\13EOT\12RLE\11BTE\10NXM\
+\7SELR\6BOT\5CH7\4SDWN\3WRL\2RWS\1TUR"
 
 #define	TM_HARD		(TM_ILC|TM_EOT)
 #define	TM_SOFT		(TM_CRE|TM_PAE|TM_BGL|TM_RLE|TM_BTE|TM_NXM)

@@ -1,4 +1,4 @@
-/*	hpreg.h	4.3	81/02/23	*/
+/*	hpreg.h	4.4	81/02/25	*/
 
 struct hpdevice
 {
@@ -65,6 +65,10 @@ struct hpdevice
 /* bits 1-5 are spare */
 #define	HP_OM		0000001		/* offset mode */
 
+#define	HP_DREADY	(HP_DPR|HP_DRY|HP_MOL|HP_VV)
+#define	HPDS_BITS \
+"\10\20ATA\17ERR\16PIP\15MOL\14WRL\13LST\12PGM\11DPR\10DRY\7VV\1OM"
+
 /* hper1 */
 #define	HP_DCK		0100000		/* data check */
 #define	HP_UNS		0040000		/* drive unsafe */
@@ -83,6 +87,9 @@ struct hpdevice
 #define	HP_ILR		0000002		/* illegal register */
 #define	HP_ILF		0000001		/* illegal function */
 
+#define	HPER1_BITS \
+"\10\20DCK\17UNS\16OPI\15DTE\14WLE\13IAE\12AOE\11HCRC\10HCE\
+\7ECH\6WCF\5FER\4PAR\3RMR\2ILR\1ILF"
 /* THIS NEEDS TO BE DOUBLE CHECKED... */
 #define	HPER1_HARD    (HP_UNS|HP_WLE|HP_IAE|HP_AOE|HP_FER|HP_RMR|HP_ILR|HP_ILF)
 
@@ -96,6 +103,8 @@ struct hpdevice
 #define	HP_DVC		0000200		/* device check */
 #define	HP_DPE		0000010		/* data parity error */
 
+#define	HPER2_BITS \
+"\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\4DPE"
 #define	HPER2_HARD    (HP_BSE|HP_OPE)
 
 /* hpof */
