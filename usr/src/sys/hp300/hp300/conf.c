@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	8.2 (Berkeley) %G%
+ *      @(#)conf.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -336,6 +336,29 @@ iszerodev(dev)
 {
 
 	return (major(dev) == 2 && minor(dev) == 12);
+}
+
+/*
+ * Routine to determine if a device is a tty.
+ *
+ * A minimal stub routine can always return 0.
+ */
+istty(dev)
+	dev_t dev;
+{
+
+	switch (major(dev)) {
+	case 0:
+	case 1:
+	case 4:
+	case 5:
+	case 12:
+	case 13:
+	case 15:
+		return (1);
+	default:
+		return (0);
+	}
 }
 
 /*
