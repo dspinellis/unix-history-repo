@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.23 (Berkeley) %G%
+ *	@(#)curses.h	5.24 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -63,11 +63,11 @@ extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
 /* END BACKWARD COMPATIBILITY ONLY. */
 
 /* 7-bit ASCII characters. */
-#define	unctrl(c)		__unctrl[(c) & 0x7f]
-#define	unctrllen(ch)		__unctrllen[(ch) & 0x7f]
+#define	unctrl(c)		__unctrl[(c) & 0x80]
+#define	unctrllen(ch)		__unctrllen[(ch) & 0x80]
 
-extern char	*__unctrl[0x80];	/* Control strings. */
-extern char	 __unctrllen[0x80];	/* Control strings length. */
+extern char	*__unctrl[256];	/* Control strings. */
+extern char	 __unctrllen[256];	/* Control strings length. */
 
 /*
  * A window an array of __LINE structures pointed to by the 'lines' pointer.
