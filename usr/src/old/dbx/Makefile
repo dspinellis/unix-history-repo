@@ -19,6 +19,8 @@
 .SUFFIXES:
 .SUFFIXES: .h .c .s .o
 
+#MACHINE	= vax
+MACHINE	= tahoe
 AOUT	= tdbx
 DESTDIR	=
 DEST	= /usr/ucb/dbx
@@ -106,7 +108,7 @@ SRC = \
     asm.c \
     events.c \
     c.c \
-    cerror.s \
+    cerror.${MACHINE}.s \
     check.c \
     coredump.c \
     debug.c \
@@ -116,7 +118,6 @@ SRC = \
     languages.c \
     library.c \
     lists.c \
-    machine.c \
     main.c \
     mappings.c \
     modula-2.c \
@@ -126,13 +127,14 @@ SRC = \
     pascal.c \
     printsym.c \
     process.c \
-    runtime.c \
     scanner.c \
     source.c \
     stabstring.c \
     symbols.c \
     tree.c \
-    ops.c
+    ${MACHINE}.c \
+    runtime.${MACHINE}.c \
+    ops.${MACHINE}.c
 
 .c.o:
 	@echo "compiling $*.c"
@@ -160,6 +162,22 @@ profile: ${HDR} ${OBJ}
 
 y.tab.c: commands.y
 	yacc -d commands.y
+
+cerror.s: cerror.${MACHINE}.s
+	@rm -f cerror.s
+	@ln -s cerror.${MACHINE}.s cerror.s
+
+machine.c: ${MACHINE}.c
+	@rm -f machine.c
+	@ln -s ${MACHINE}.c machine.c
+
+ops.c:	ops.${MACHINE}.c
+	@rm -f ops.c
+	@ln -s ops.${MACHINE}.c ops.c
+
+runtime.c: runtime.${MACHINE}.c
+	@rm -f runtime.c
+	@ln -s runtime.${MACHINE}.c runtime.c
 
 makedefs: makedefs.c library.o cerror.o
 	${CC} makedefs.c library.o cerror.o -o makedefs
