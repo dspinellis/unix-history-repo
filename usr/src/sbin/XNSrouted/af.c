@@ -37,13 +37,19 @@ struct afswitch afswitch[AF_MAX] =
 
 struct sockaddr_ns xnnet_default = { AF_NS };
 
+union ns_net ns_anynet;
+union ns_net ns_zeronet;
+
 xnnet_hash(sns, hp)
 	register struct sockaddr_ns *sns;
 	struct afhash *hp;
 {
 	register long hash = 0;
 	register u_short *s = sns->sns_addr.x_host.s_host;
-	hp->afh_nethash = xnnet(sns->sns_addr.x_net);
+	union ns_net_u net;
+
+	net.net_e = sns->sns_addr.x_net;
+	hp->afh_nethash = net.long_e;
 	hash = *s++; hash <<= 8; hash += *s++; hash <<= 8; hash += *s;
 	hp->afh_hosthash = hash;
 }
@@ -51,8 +57,7 @@ xnnet_hash(sns, hp)
 xnnet_netmatch(sxn1, sxn2)
 	struct sockaddr_ns *sxn1, *sxn2;
 {
-
-	return (xnnet(sxn1->sns_addr.x_net) == xnnet(sxn2->sns_addr.x_net));
+	return (ns_neteq(sxn1->sns_addr, sxn2->sns_addr));
 }
 
 /*
@@ -91,13 +96,13 @@ xnnet_output(flags, sns, size)
 	 * don't know their addresses yet; send to that address on
 	 * ALL connected nets
 	 */
-	 if (ns_netof(sns->sns_addr) == 0L) {
+	 if (ns_neteqnn(sns->sns_addr.x_net, ns_zeronet)) {
 	 	extern  struct interface *ifnet;
 	 	register struct interface *ifp;
 		
 		for (ifp = ifnet; ifp; ifp = ifp->int_next) {
-			ns_netof(sns->sns_addr) = 
-				ns_netof(((struct sockaddr_ns *)&ifp->int_addr)->sns_addr);
+			sns->sns_addr.x_net = 
+				satons_addr(ifp->int_addr).x_net;
 			if (sendto(s, msg, size, flags, sns, sizeof (*sns)) < 0)
 				syslog(LOG_ERR,"sendto: %m");
 		}
