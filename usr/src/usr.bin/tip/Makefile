@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 # Files are:
 #	/etc/remote		remote host description file
@@ -38,7 +38,7 @@ BINGRP=	dialer
 BINMODE=4510
 LINKS=	${BINDIR}/tip ${BINDIR}/cu
 MLINKS=	tip.1 cu.1
-SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c remcap.c \
+SRCS=	acu.c acutab.c cmds.c cmdtab.c cu.c hunt.c log.c partab.c  \
 	remote.c tip.c tipout.c uucplock.c value.c vars.c biz22.c courier.c \
 	df.c dn11.c hayes.c v3451.c v831.c ventel.c
 
