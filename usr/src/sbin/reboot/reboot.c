@@ -12,109 +12,145 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/syslog.h>
-#include <sys/syscall.h>
 #include <sys/reboot.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <pwd.h>
-#include <stdio.h>
 #include <errno.h>
+#include <syslog.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+void err __P((const char *fmt, ...));
+void usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	int howto;
-	register char *argp;
-	register i;
-	register ok = 0;
-	register qflag = 0;
-	int needlog = 1;
-	char *user, *getlogin();
+	register int i;
 	struct passwd *pw;
+	int ch, howto, nflag, qflag, sverrno;
+	char *user;
 
-	openlog("reboot", 0, LOG_AUTH);
-	argc--, argv++;
-	howto = 0;
-	while (argc > 0) {
-		if (!strcmp(*argv, "-q"))
-			qflag++;
-		else if (!strcmp(*argv, "-n"))
+	howto = nflag = qflag = 0;
+	while ((ch = getopt(argc, argv, "nq")) != EOF)
+		switch(ch) {
+		case 'n':
+			nflag = 1;
 			howto |= RB_NOSYNC;
-		else if (!strcmp(*argv, "-l"))
-			needlog = 0;
-		else {
-			fprintf(stderr,
-			    "usage: reboot [ -n ][ -q ]\n");
-			exit(1);
+			break;
+		case 'q':
+			qflag = 1;
+			howto |= RB_NOSYNC;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		argc--, argv++;
+	argc -= optind;
+	argv += optind;
+
+	if (geteuid())
+		err("%s", strerror(EPERM));
+
+	if (qflag) {
+		reboot(howto);
+		err("%s", strerror(errno));
 	}
 
-	if (needlog) {
-		user = getlogin();
-		if (user == (char *)0 && (pw = getpwuid(getuid())))
-			user = pw->pw_name;
-		if (user == (char *)0)
-			user = "root";
-		syslog(LOG_CRIT, "rebooted by %s", user);
-	}
+	/*
+	 * Do a sync early on, so disks start transfers while we're off
+	 * killing processes.  Don't worry about writes done before the
+	 * processes die, the reboot system call syncs the disks.
+	 */
+	if (!nflag)
+		sync();
 
-	signal(SIGHUP, SIG_IGN);	/* for remote connections */
-	if (kill(1, SIGTSTP) == -1) {
-		fprintf(stderr, "reboot: can't idle init\n");
-		exit(1);
-	}
+	/* Just stop init -- if we fail, we'll restart it. */
+	if (kill(1, SIGTSTP) == -1)
+		err("SIGTSTP init: %s", strerror(errno));
 	sleep(1);
-	(void) kill(-1, SIGTERM);	/* one chance to catch it */
+
+	/* Ignore the SIGHUP we get when our parent shell dies. */
+	(void)signal(SIGHUP, SIG_IGN);
+
+	/* Send a SIGTERM first, a chance to save the buffers. */
+	if (kill(-1, SIGTERM) == -1)
+		err("SIGTERM processes: %s", strerror(errno));
 	sleep(5);
 
-	if (!qflag) for (i = 1; ; i++) {
+	for (i = 1;; ++i) {
 		if (kill(-1, SIGKILL) == -1) {
-			extern int errno;
-
 			if (errno == ESRCH)
 				break;
-
-			perror("reboot: kill");
-			kill(1, SIGHUP);
-			exit(1);
+			goto restart;
 		}
 		if (i > 5) {
-			fprintf(stderr,
-			    "CAUTION: some process(es) wouldn't die\n");
+			(void)fprintf(stderr,
+			    "WARNING: some process(es) wouldn't die\n");
 			break;
 		}
-		setalarm(2 * i);
-		pause();
+		(void)sleep(2 * i);
 	}
 
-	if (!qflag && (howto & RB_NOSYNC) == 0) {
+	/* Log the reboot. */
+	if (!nflag) {
+		openlog("reboot", 0, LOG_AUTH | LOG_CONS);
+
+		if ((user = getlogin()) == NULL)
+			user = (pw = getpwuid(getuid())) ? pw->pw_name : "???";
+		syslog(LOG_CRIT, "rebooted by %s", user);
 		logwtmp("~", "shutdown", "");
-		sync();
-		setalarm(5);
-		pause();
 	}
-	syscall(SYS_reboot, howto);
-	perror("reboot");
-	kill(1, SIGHUP);
-	exit(1);
+
+	reboot(howto);
+	/* NOTREACHED */
+
+restart:
+	sverrno = errno;
+	err("%s%s", kill(1, SIGHUP) == -1 ? "(can't restart init)" : "",
+	    strerror(sverrno));
+	/* NOTREACHED */
 }
 
 void
-dingdong()
+usage()
 {
-	/* RRRIIINNNGGG RRRIIINNNGGG */
+	(void)fprintf(stderr, "usage: reboot [-nq]\n");
+	exit(1);
 }
 
-setalarm(n)
-	int n;
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
 {
-	signal(SIGALRM, dingdong);
-	alarm(n);
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "reboot: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
