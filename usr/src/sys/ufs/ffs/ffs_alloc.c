@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_alloc.c	7.12 (Berkeley) %G%
+ *	@(#)ffs_alloc.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -59,19 +59,18 @@ extern unsigned char	*fragtbl[];
  *   2) quadradically rehash into other cylinder groups, until an
  *      available block is located.
  */
-alloc(ip, bpref, size, bpp, flags)
+alloc(ip, lbn, bpref, size, bnp)
 	register struct inode *ip;
-	daddr_t bpref;
+	daddr_t lbn, bpref;
 	int size;
-	struct buf **bpp;
-	int flags;
+	daddr_t *bnp;
 {
 	daddr_t bno;
 	register struct fs *fs;
 	register struct buf *bp;
 	int cg, error;
 	
-	*bpp = 0;
+	*bnp = 0;
 	fs = ip->i_fs;
 	if ((unsigned)size > fs->fs_bsize || fragoff(fs, size) != 0) {
 		printf("dev = 0x%x, bsize = %d, size = %d, fs = %s\n",
@@ -94,18 +93,12 @@ alloc(ip, bpref, size, bpp, flags)
 		cg = dtog(fs, bpref);
 	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, size,
 		(u_long (*)())alloccg);
-	if (bno <= 0)
-		goto nospace;
-	ip->i_blocks += btodb(size);
-	ip->i_flag |= IUPD|ICHG;
-#ifdef SECSIZE
-	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size, fs->fs_dbsize);
-#else SECSIZE
-	bp = getblk(ip->i_devvp, fsbtodb(fs, bno), size);
-	if (flags & B_CLRBUF)
-		clrbuf(bp);
-	*bpp = bp;
-	return (0);
+	if (bno > 0) {
+		ip->i_blocks += btodb(size);
+		ip->i_flag |= IUPD|ICHG;
+		*bnp = bno;
+		return (0);
+	}
 nospace:
 	fserr(fs, "file system full");
 	uprintf("\n%s: write failed, file system is full\n", fs->fs_fsmnt);
@@ -120,16 +113,17 @@ nospace:
  * the original block. Failing that, the regular block allocator is
  * invoked to get an appropriate block.
  */
-realloccg(ip, bprev, bpref, osize, nsize, bpp)
+realloccg(ip, lbprev, bpref, osize, nsize, bpp)
 	register struct inode *ip;
-	daddr_t bprev, bpref;
+	off_t lbprev;
+	daddr_t bpref;
 	int osize, nsize;
 	struct buf **bpp;
 {
 	register struct fs *fs;
 	struct buf *bp, *obp;
 	int cg, request;
-	daddr_t bno, bn;
+	daddr_t bprev, bno, bn;
 	int i, error, count;
 	
 	*bpp = 0;
@@ -142,7 +136,7 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 	}
 	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
-	if (bprev == 0) {
+	if ((bprev = ip->i_db[lbprev]) == 0) {
 		printf("dev = 0x%x, bsize = %d, bprev = %d, fs = %s\n",
 		    ip->i_dev, fs->fs_bsize, bprev, fs->fs_fsmnt);
 		panic("realloccg: bad bprev");
@@ -151,28 +145,31 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 	if (error = chkdq(ip, (long)btodb(nsize - osize), 0))
 		return (error);
 #endif
+	/*
+	 * Allocate the extra space in the buffer.
+	 */
+	if (error = bread(ITOV(ip), lbprev, osize, NOCRED, &bp)) {
+		brelse(bp);
+		return (error);
+	}
+	brealloc(bp, nsize);
+	bp->b_flags |= B_DONE;
+	bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
+	ip->i_blocks += btodb(nsize - osize);
+	ip->i_flag |= IUPD|ICHG;
+	/*
+	 * Check for extension in the existing location.
+	 */
 	cg = dtog(fs, bprev);
-	bno = fragextend(ip, cg, (long)bprev, osize, nsize);
-	if (bno != 0) {
-		do {
-#ifdef SECSIZE
-			bp = bread(ip->i_dev, fsbtodb(fs, bno), osize,
-			    fs->fs_dbsize);
-#else SECSIZE
-			error = bread(ip->i_devvp, fsbtodb(fs, bno),
-				osize, NOCRED, &bp);
-			if (error) {
-				brelse(bp);
-				return (error);
-			}
-		} while (brealloc(bp, nsize) == 0);
-		bp->b_flags |= B_DONE;
-		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
-		ip->i_blocks += btodb(nsize - osize);
-		ip->i_flag |= IUPD|ICHG;
+	if (bno = fragextend(ip, cg, (long)bprev, osize, nsize)) {
+		if (bp->b_blkno != bno)
+			panic("bad blockno");
 		*bpp = bp;
 		return (0);
 	}
+	/*
+	 * Allocate a new disk location.
+	 */
 	if (bpref >= fs->fs_size)
 		bpref = 0;
 	switch ((int)fs->fs_optim) {
@@ -225,19 +222,7 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize,
 		    fs->fs_dbsize);
 #else SECSIZE
-		error = bread(ip->i_devvp, fsbtodb(fs, bprev), 
-			osize, NOCRED, &obp);
-		if (error) {
-			brelse(obp);
-			return (error);
-		}
-		bn = fsbtodb(fs, bno);
-#ifdef SECSIZE
-		bp = getblk(ip->i_dev, bn, nsize, fs->fs_dbsize);
-#else SECSIZE
-		bp = getblk(ip->i_devvp, bn, nsize);
-#endif SECSIZE
-		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
+		bp->b_blkno = bn = fsbtodb(fs, bno);
 		count = howmany(osize, CLBYTES);
 		for (i = 0; i < count; i++)
 #ifdef SECSIZE
@@ -245,12 +230,6 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 #else SECSIZE
 			munhash(ip->i_dev, bn + i * CLBYTES / DEV_BSIZE);
 #endif SECSIZE
-		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
-		if (obp->b_flags & B_DELWRI) {
-			obp->b_flags &= ~B_DELWRI;
-			u.u_ru.ru_oublock--;		/* delete charge */
-		}
-		brelse(obp);
 		blkfree(ip, bprev, (off_t)osize);
 		if (nsize < request)
 			blkfree(ip, bno + numfrags(fs, nsize),
@@ -260,6 +239,7 @@ realloccg(ip, bprev, bpref, osize, nsize, bpp)
 		*bpp = bp;
 		return (0);
 	}
+	brelse(bp);
 nospace:
 	/*
 	 * no space available
