@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.35 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.35.1.1 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -532,16 +532,13 @@ R$* < @ $-:$+ > $*	$# $2 $@ $3 $: $1 @ $3 $4	found a match',
 `dnl')
 
 # short circuit local delivery so forwarded email works
+R$* < @ $=w . >		$: < $R @ $H > $1 < @ $2 . >	if both relay & hub ...
+R<$+ @ $+ > $* < $+ >	$: $>_SET_95_ < $H > $3 < $4 >	... send direct to hub
+R<$* @ $* > $* < $+ >	$: $3 < $4 >
 ifdef(`_LOCAL_NOT_STICKY_',
-`R$=L < @ $=w . >		$#_LOCAL_ $: @ $1			special local names
-R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
-`R$+ < @ $=w . >		$: $1 < @ $2 . @ $H >		first try hub
-ifdef(`_OLD_SENDMAIL_',
-`R$+ < $+ @ $-:$+ >	$# $3 $@ $4 $: $1 $2		yep ....
-R$+ < $+ @ $+ >		$#relay $@ $3 $: $1 $2		yep ....
-R$+ < $+ @ >		$#_LOCAL_ $: $1			nope, local address',
-`R$+ < $+ @ $+ >		$#_LOCAL_ $: $1			yep ....
-R$+ < $+ @ >		$#_LOCAL_ $: @ $1			nope, local address')')
+`R$+ < @ $=w . >		$#_LOCAL_ $: $1			dispose directly',
+`R$+ < @ $=w . >		$: $>_SET_95_ < $H > $1 < @ $2 . >	sticky local names
+R$+ < @ $=w . >		$#_LOCAL_ $: @ $1		sticky local names')
 undivert(4)dnl
 
 ifdef(`_NO_UUCP_', `dnl',
@@ -605,6 +602,7 @@ R$+			$: $(dequote $1 $)		strip quotes
 R$+ $=O $+		$@ $>_SET_97_ $1 $2 $3			try again
 
 # handle locally delivered names
+R$=L			$: $>_SET_95_ < $H > $1		special local names
 R$=L			$#_LOCAL_ $: @ $1			special local names
 R$+			$#_LOCAL_ $: $1			regular local names
 
@@ -616,11 +614,8 @@ R$+			$#_LOCAL_ $: $1			regular local names
 S5
 
 # see if we have a relay or a hub
-R$+			$: < $R > $1			try relay
-R< > $+			$: < $H > $1			try hub
-R< > $+			$@ $1				nope, give up
-R< $- : $+ > $+		$: $>_SET_95_ < $1 : $2 > $3 < @ $2 >
-R< $+ > $+		$@ $>_SET_95_ < $1 > $2 < @ $1 >')
+R$+			$: $>_SET_95_ < $R > $1		try relay
+R$+			$: $>_SET_95_ < $H > $1		try hub')
 ifdef(`MAILER_TABLE',
 `
 
