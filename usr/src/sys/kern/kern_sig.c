@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.17	83/05/27	*/
+/*	kern_sig.c	5.18	83/05/30	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -73,13 +73,14 @@ kill1(ispgrp, signo, who)
 	register struct proc *p;
 	int f, priv = 0;
 
-	if (signo == 0 || signo > NSIG)
+	if (signo < 0 || signo > NSIG)
 		return (EINVAL);
 	if (who > 0 && !ispgrp) {
 		p = pfind(who);
 		if (p == 0 || u.u_uid && u.u_uid != p->p_uid)
 			return (ESRCH);
-		psignal(p, signo);
+		if (signo)
+			psignal(p, signo);
 		return (0);
 	}
 	if (who == -1 && u.u_uid == 0)
@@ -106,7 +107,8 @@ kill1(ispgrp, signo, who)
 		    (signo != SIGCONT || !inferior(p)))
 			continue;
 		f++;
-		psignal(p, signo);
+		if (signo)
+			psignal(p, signo);
 	}
 	return (f == 0 ? ESRCH : 0);
 }
