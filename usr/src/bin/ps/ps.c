@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ int	totwidth;		/* calculated width of requested variables */
 
 static int needuser, needcomm;
 
-enum sort { SORTMEM, SORTCPU } sortby;
+enum sort { DEFAULT, SORTMEM, SORTCPU } sortby = DEFAULT;
 
 uid_t	getuid();
 char	*ttyname();
@@ -53,7 +53,6 @@ char	*ttyname();
 #define	JFMT	"user pid ppid pgid sess jobc state tt time command"
 #define LFMT \
 	"uid pid ppid cpu pri nice vsz rss wchan state tt time command"
-#define	SFMT	"uid pid sig sigmask sigignore sigcatch state tt command"
 #define UFMT \
 	"user pid %cpu %mem vsz rss tt state start time command"
 #define	VFMT \
@@ -137,10 +136,6 @@ main(argc, argv)
 		case 'S':
 			sumrusage = 1;
 			break;
-		case 's':
-			parsefmt(SFMT);
-			fmt = 1;
-			break;
 		case 'T':
 			if ((optarg = ttyname(STDIN_FILENO)) == NULL)
 				error("stdin: not a terminal");
@@ -159,7 +154,7 @@ main(argc, argv)
 				ttypath = optarg;
 			if (stat(ttypath, &stbuf) == -1) {
 				(void)fprintf(stderr,
-				    "ps: %s: %s\n", strerror(ttypath));
+				    "ps: %s: %s\n", ttypath, strerror(errno));
 				exit(1);
 			}
 			if (!S_ISCHR(stbuf.st_mode))

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -98,9 +98,6 @@ VAR var[] = {
 	{"rssize", "", "rsz"},
 	{"rsz", "RSZ", NULL, 0, rssize, 4},
 	{"ruid", "RUID", NULL, 0, pvar, UIDLEN, POFF(p_ruid), USHORT, UIDFMT},
-	{"rusage", "",
-		"minflt majflt nswap inblock oublock msgsnd msgrcv nsigs \
-		 nvcsw nivcsw"},
 	{"ruser", "RUSER", NULL, LJUST, runame, USERLEN},
 	{"sess", "SESS", NULL, 0, evar, 6, EOFF(e_sess), KPTR, "x"},
 	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_sig), LONG, "x"},
