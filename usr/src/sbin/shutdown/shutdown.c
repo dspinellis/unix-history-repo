@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)shutdown.c	4.10 (Berkeley) 81/06/12";
+static	char *sccsid = "@(#)shutdown.c	4.11 (Berkeley) 82/02/01";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -6,6 +6,7 @@ static	char *sccsid = "@(#)shutdown.c	4.10 (Berkeley) 81/06/12";
 #include <utmp.h>
 #include <time.h>
 #include <sys/types.h>
+#include <whoami.h>
 /*
  *	/etc/shutdown when [messages]
  *
@@ -282,8 +283,8 @@ warn(term, sdt, nowtime)
 
 	if (shutter)
 		fprintf(term,
-		    "\007\007*** System shutdown message from %s ***\n",
-		    shutter);
+		    "\007\007*** System shutdown message from %s!%s ***\n",
+		    sysname,shutter);
 	else
 		fprintf(term,
 		    "\007\007*** System shutdown message ***\n");
@@ -360,7 +361,7 @@ time_t now;
 	for (mess = nolog2; *mess; mess++)
 		fprintf(fp, " %s", *mess);
 	if (shutter)
-		fprintf(fp, " (by %s)", shutter);
+		fprintf(fp, " (by %s!%s)", sysname,shutter);
 	fputc('\n', fp);
 	fclose(fp);
 }
