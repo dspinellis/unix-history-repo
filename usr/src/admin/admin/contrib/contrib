@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.40 (Berkeley) %G%
+.\"	@(#)contrib	5.41 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -9,6 +9,11 @@
 .\" two lines.
 .\"
 .ds CH
+.ps 16
+.ce
+The Computer Stystems Research Group 1979 \- 1993
+.sp 3
+.ps 10
 .nf
 CSRG Technical Staff
 .sp 1
@@ -24,7 +29,6 @@ Miriam Amos Nihart
 Keith Sklower
 Marc Teitelbaum
 Michael Toy
-Jean Wood
 .sp 3
 CSRG Administration and Support
 .sp 1
@@ -37,11 +41,11 @@ Bob Kridle
 David Mosher
 Pauline Schwartz
 Mark Seiden
+Jean Wood
 .fi
 .sp 3
-The following organizations have funded the CSRG since the 4.3BSD
-release, have provided people or have provided hardware to support
-our research.
+The following organizations funded the CSRG with grants,
+gifts, personnel, and/or hardware.
 .sp 1
 .nf
 Compaq Computer Corporation
@@ -55,7 +59,7 @@ UUNET Technologies Inc.
 .fi
 .bp
 .lp
-The following are people and organizations that have provided a
+The following are people and organizations that provided a
 large subsystem for the BSD releases.
 .sp
 .TS
@@ -109,9 +113,9 @@ X25 	University of British Columbia
 .TE
 .bp
 .lp
-The following are people and organizations that have provided a specific
+The following are people and organizations that provided a specific
 item, program, library routine or program maintenance for the BSD system.
-(Their contribution may not be part of the current release.)
+(Their contribution may not be part of the final 4.4BSD release.)
 .sp
 .ps 9
 .vs 11
