@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.9 (Berkeley) %G%
+ *	@(#)trap.c	7.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -198,9 +198,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 			entry |= PG_M;
 			pte->pt_entry = entry;
 			vadr &= ~PGOFSET;
-			printf("trap: ktlbmod: TLBupdate hi %x lo %x i %x\n",
-				vadr, entry,
-				MachTLBUpdate(vadr, entry)); /* XXX */
+			MachTLBUpdate(vadr, entry);
 			pa = entry & PG_FRAME;
 #ifdef ATTR
 			pmap_attributes[atop(pa)] |= PMAP_ATTR_MOD;
@@ -237,8 +235,7 @@ trap(statusReg, causeReg, vadr, pc, args)
 		pte->pt_entry = entry;
 		vadr = (vadr & ~PGOFSET) |
 			(pmap->pm_tlbpid << VMMACH_TLB_PID_SHIFT);
-		printf("trap: utlbmod: TLBupdate hi %x lo %x i %x\n",
-			vadr, entry, MachTLBUpdate(vadr, entry)); /* XXX */
+		MachTLBUpdate(vadr, entry);
 		pa = entry & PG_FRAME;
 #ifdef ATTR
 		pmap_attributes[atop(pa)] |= PMAP_ATTR_MOD;
@@ -649,8 +646,6 @@ trap(statusReg, causeReg, vadr, pc, args)
 #endif
 		panic("trap");
 	}
-	printf("trap: pid %d '%s' sig %d adr %x pc %x ra %x\n", p->p_pid,
-		p->p_comm, i, vadr, pc, p->p_md.md_regs[RA]); /* XXX */
 	trapsignal(p, i, ucode);
 out:
 	/*
