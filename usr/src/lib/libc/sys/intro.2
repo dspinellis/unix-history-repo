@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	6.12 (Berkeley) %G%
+.\"     @(#)intro.2	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -402,7 +402,7 @@ to arbitrate between multiple jobs contending for the same terminal;
 .Xr csh 1
 and
 .Xr tty 4 ) .
-.It  Real User ID and Real Group ID
+.It "Real User ID and Real Group ID"
 Each user on the system is identified by a positive integer
 termed the real user ID.
 .Pp
@@ -415,7 +415,7 @@ the real group ID.
 All processes have a real user ID and real group ID.
 These are initialized from the equivalent attributes
 of the process that created it.
-.It  Effective User Id, Effective Group Id, and Access Groups
+.It "Effective User Id, Effective Group Id, and Access Groups"
 Access to system resources is governed by three values:
 the effective user ID, the effective group ID, and the
 group access list.
@@ -479,7 +479,9 @@ as part of
 file names because of the special meaning attached to these characters
 by the shell.
 .It  Path Name
-A path name is a NUL-terminated character string starting with an
+A path name is a
+.Tn NUL Ns -terminated
+character string starting with an
 optional slash
 .Ql \&/ ,
 followed by zero or more directory names separated
@@ -508,7 +510,7 @@ and
 .Em dot-dot
 respectively.  Dot refers to the directory itself and
 dot-dot refers to its parent directory.
-.It  Root Directory and Current Working Directory
+.It "Root Directory and Current Working Directory"
 Each process has associated with it a concept of a root directory
 and a current working directory for the purpose of resolving path
 name searches.  A process's root directory need not be the root
@@ -578,10 +580,10 @@ communications protocols.  Each protocol set supports addresses
 of a certain format.  An Address Family is the set of addresses
 for a specific group of protocols.  Each socket has an address
 chosen from the address family in which the socket was created.
-.Tp
 .Sh SEE ALSO
 intro(3), perror(3)
 .Sh HISTORY
 An
-.Nm
-appeared in Version 6 AT&T UNIX.
+.Nm intro
+appeared in
+.At v6 .
