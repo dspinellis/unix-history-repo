@@ -20,8 +20,6 @@
 #include "netisr.h"
 #include "raw_cb.h"
 
-#include "machine/mtpr.h"
-
 /*
  * Initialize raw connection block q.
  */
