@@ -21,13 +21,13 @@ main()
 	if ((i%8) == 0) {
 	    printf("\n");
 	}
-	printf("\t0x%2x,", ebcasc[0][disp_ebc[i]]);
+	printf("\t0x%02x,", ebcasc[0][disp_ebc[i]]);
     }
     for (i = sizeof disp_ebc; i < 256; i++) {
 	if ((i%8) == 0) {
 	    printf("\n");
 	}
-	printf("\t0x%2x,", ' ');
+	printf("\t0x%02x,", ' ');
     }
     printf("\n};\n");
 
