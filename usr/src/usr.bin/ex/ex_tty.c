@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.2	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.3	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -32,7 +32,7 @@ gettmode()
 	normf = tty;
 	UPPERCASE = (tty.c_iflag & IUCLC) != 0;
 	GT = (tty.c_oflag & TABDLY) != TAB3 && !XT;
-	NONL = (tty.c_oflag & OCRNL) == 0;
+	NONL = (tty.c_oflag & ONLCR) == 0;
 #endif
 }
 
