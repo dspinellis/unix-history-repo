@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -298,7 +298,7 @@ make_lfs(fd, lp, partp, minfree, block_size, seg_size)
 		segp->su_lastmod = 0;
 		segp->su_nbytes = 0;
 		segp->su_ninos = 0;
-		segp->su_nsums = 1;
+		segp->su_nsums = 0;
 	}
 
 	/*
