@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.8 (Berkeley) 86/12/15";
+static char sccsid[] = "@(#)route.c	5.9 (Berkeley) 87/02/03";
 #endif
 
 #include <stdio.h>
@@ -39,6 +39,7 @@ struct bits {
 	{ RTF_GATEWAY,	'G' },
 	{ RTF_HOST,	'H' },
 	{ RTF_DYNAMIC,	'D' },
+	{ RTF_MODIFIED,	'M' },
 	{ 0 }
 };
 
