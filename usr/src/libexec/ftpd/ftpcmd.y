@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.1 83/01/13";
+static char sccsid[] = "@(#)ftpcmd.y	4.2 83/01/15";
 #endif
 
 #include <sys/types.h>
@@ -154,49 +154,55 @@ cmd:		USER SP username CRLF
 		}
 	|	RETR check_login SP pathname CRLF
 		= {
-			if ($2)
+			if ($2 && $4 != NULL)
 				retrieve(0, $4);
-			free($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	STOR check_login SP pathname CRLF
 		= {
-			if ($2)
+			if ($2 && $4 != NULL)
 				store($4, "w");
-			free($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	APPE check_login SP pathname CRLF
 		= {
-			if ($2)
+			if ($2 && $4 != NULL)
 				store($4, "a");
-			free($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	NLST check_login CRLF
 		= {
 			if ($2)
-				retrieve("ls", "");
+				retrieve("ls -C", "");
 		}
 	|	NLST check_login SP pathname CRLF
 		= {
-			if ($2)
-				retrieve("ls %s", $4);
-			free($4);
+			if ($2 && $4 != NULL)
+				retrieve("ls -C %s", $4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	LIST check_login CRLF
 		= {
 			if ($2)
-				retrieve("ls -l", "");
+				retrieve("ls -lg", "");
 		}
 	|	LIST check_login SP pathname CRLF
 		= {
-			if ($2)
-				retrieve("ls -l %s", $4);
-			free($4);
+			if ($2 && $4 != NULL)
+				retrieve("ls -lg %s", $4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	DELE check_login SP pathname CRLF
 		= {
-			if ($2)
+			if ($2 && $4 != NULL)
 				delete($4);
-			free($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	CWD check_login CRLF
 		= {
@@ -205,9 +211,10 @@ cmd:		USER SP username CRLF
 		}
 	|	CWD check_login SP pathname CRLF
 		= {
-			if ($2)
+			if ($2 && $4 != NULL)
 				cwd($4);
-			free($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	rename_cmd
 	|	HELP CRLF
@@ -224,20 +231,22 @@ cmd:		USER SP username CRLF
 		}
 	|	XMKD check_login SP pathname CRLF
 		= {
-			if ($2)
-				do_mkdir($4);
-			free($4);
+			if ($2 && $4 != NULL)
+				makedir($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	XRMD check_login SP pathname CRLF
 		= {
-			if ($2)
-				do_rmdir($4);
-			free($4);
+			if ($2 && $4 != NULL)
+				removedir($4);
+			if ($4 != NULL)
+				free($4);
 		}
 	|	XPWD check_login CRLF
 		= {
 			if ($2)
-				do_pwd();
+				pwd();
 		}
 	|	XCUP check_login CRLF
 		= {
@@ -364,8 +373,10 @@ pathname:	pathstring
 	= {
 		if ($1 && strncmp($1, "~", 1) == 0) {
 			$$ = (int)*glob($1);
-			if (globerr != NULL)
+			if (globerr != NULL) {
 				reply(550, globerr);
+				$$ = NULL;
+			}
 			free($1);
 		} else
 			$$ = $1;
@@ -392,9 +403,9 @@ rename_from:	RNFR check_login SP pathname CRLF
 	= {
 		char *from = 0, *renamefrom();
 
-		if ($2)
+		if ($2 && $4)
 			from = renamefrom($4);
-		if (from == 0)
+		if (from == 0 && $4)
 			free($4);
 		$$ = (int)from;
 	}
@@ -515,7 +526,9 @@ getline(s, n, iop)
 	if (c < 0 && cs == s)
 		return (NULL);
 	*cs++ = '\0';
-	fprintf(stderr, "FTPD: command: '%s'\n", s);
+	fprintf(stderr, "FTPD: command: %s", s);
+	if (c != '\n')
+		putc('\n', stderr);
 	fflush(stderr);
 	return (s);
 }
@@ -732,10 +745,8 @@ help(s)
 				c = cmdtab + j * lines + i;
 				printf("%s%c", c->name,
 					c->implemented ? ' ' : '*');
-				if (c + lines >= &cmdtab[NCMDS]) {
-					printf("\r\n");
+				if (c + lines >= &cmdtab[NCMDS])
 					break;
-				}
 				w = strlen(c->name);
 				while (w < width) {
 					putchar(' ');
