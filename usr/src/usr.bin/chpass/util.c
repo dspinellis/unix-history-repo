@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -44,8 +44,8 @@ ttoa(tval)
 		bcopy("None", tbuf, 6);
 	else {
 		tp = localtime(&tval);
-		(void)sprintf(tbuf, "%02d %s 19%02d", tp->tm_mday,
-		    months[tp->tm_mon], tp->tm_year);
+		(void)sprintf(tbuf, "%s %d, 19%d", months[tp->tm_mon],
+		    tp->tm_mday, tp->tm_year);
 	}
 	return(tbuf);
 } 
@@ -68,10 +68,7 @@ atot(p, store)
 		(void)time(&tval);
 		lt = localtime(&tval);
 	}
-	if (!(t = strsep(p, " \t")) || !isdigit(*t))
-		goto bad;
-	day = atoi(t);
-	if (!(t = strsep((char *)NULL, " \t")))
+	if (!(t = strtok(p, " \t")))
 		goto bad;
 	for (mp = months;; ++mp) {
 		if (!*mp)
@@ -81,7 +78,10 @@ atot(p, store)
 			break;
 		}
 	}
-	if (!(t = strsep((char *)NULL, " \t")) || !isdigit(*t))
+	if (!(t = strtok((char *)NULL, " \t,")) || !isdigit(*t))
+		goto bad;
+	day = atoi(t);
+	if (!(t = strtok((char *)NULL, " \t,")) || !isdigit(*t))
 		goto bad;
 	year = atoi(t);
 	if (day < 1 || day > 31 || month < 1 || month > 12 || !year)
