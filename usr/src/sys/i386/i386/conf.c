@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)conf.c	5.5 (Berkeley) %G%
+ *	@(#)conf.c	5.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,8 +17,7 @@
 #include "tty.h"
 #include "conf.h"
 
-int	nulldev();
-int	nodev();
+int	nullop(), enxio(), enodev(), rawread(), rawwrite(), swstrategy();
 int	rawread(), rawwrite(), swstrategy();
 
 #include "wd.h"
@@ -26,13 +25,13 @@ int	rawread(), rawwrite(), swstrategy();
 int	wdopen(),wdclose(),wdstrategy(),wdread(),wdwrite(),wdioctl();
 int	wddump(),wdsize();
 #else
-#define	wdopen		nodev
-#define	wdclose		nodev
-#define	wdstrategy	nodev
-#define	wdread		nodev
-#define	wdwrite		nodev
-#define	wdioctl		nodev
-#define	wddump		nodev
+#define	wdopen		enxio
+#define	wdclose		enxio
+#define	wdstrategy	enxio
+#define	wdread		enxio
+#define	wdwrite		enxio
+#define	wdioctl		enxio
+#define	wddump		enxio
 #define	wdsize		NULL
 #endif
 
@@ -41,13 +40,13 @@ int	wddump(),wdsize();
 int	xdopen(),xdclose(),xdstrategy(),xdread(),xdwrite(),xdioctl();
 int	xddump(),xdsize();
 #else
-#define	xdopen		nodev
-#define	xdclose		nodev
-#define	xdstrategy	nodev
-#define	xdread		nodev
-#define	xdwrite		nodev
-#define	xdioctl		nodev
-#define	xddump		nodev
+#define	xdopen		enxio
+#define	xdclose		enxio
+#define	xdstrategy	enxio
+#define	xdread		enxio
+#define	xdwrite		enxio
+#define	xdioctl		enxio
+#define	xddump		enxio
 #define	xdsize		NULL
 #endif
 
@@ -56,30 +55,30 @@ int	xddump(),xdsize();
 int	wtopen(),wtclose(),wtstrategy(),wtread(),wtwrite(),wtioctl();
 int	wtdump(),wtsize();
 #else
-#define	wtopen		nodev
-#define	wtclose		nodev
-#define	wtstrategy	nodev
-#define	wtread		nodev
-#define	wtwrite		nodev
-#define	wtioctl		nodev
-#define	wtdump		nodev
+#define	wtopen		enxio
+#define	wtclose		enxio
+#define	wtstrategy	enxio
+#define	wtread		enxio
+#define	wtwrite		enxio
+#define	wtioctl		enxio
+#define	wtdump		enxio
 #define	wtsize		NULL
 #endif
 
 #include "fd.h"
 #if NFD > 0
 int	Fdopen(),fdclose(),fdstrategy(),fdread(),fdwrite();
-#define	fdioctl		nodev
-#define	fddump		nodev
+#define	fdioctl		enxio
+#define	fddump		enxio
 #define	fdsize		NULL
 #else
-#define	Fdopen		nodev
-#define	fdclose		nodev
-#define	fdstrategy	nodev
-#define	fdread		nodev
-#define	fdwrite		nodev
-#define	fdioctl		nodev
-#define	fddump		nodev
+#define	Fdopen		enxio
+#define	fdclose		enxio
+#define	fdstrategy	enxio
+#define	fdread		enxio
+#define	fdwrite		enxio
+#define	fdioctl		enxio
+#define	fddump		enxio
 #define	fdsize		NULL
 #endif
 
@@ -89,21 +88,20 @@ struct bdevsw	bdevsw[] =
 {
 	{ wdopen,	wdclose,	wdstrategy,	wdioctl,	/*0*/
 	  wddump,	wdsize,		NULL },
-	{ nodev,	nodev,		swstrategy,	nodev,		/*1*/
-	  nodev,	nodev,		NULL },
+	{ enodev,	enodev,		swstrategy,	enodev,		/*1*/
+	  enodev,	enodev,		NULL },
 	{ Fdopen,	fdclose,	fdstrategy,	fdioctl,	/*2*/
 	  fddump,	fdsize,		NULL },
 	{ wtopen,	wtclose,	wtstrategy,	wtioctl,	/*3*/
 	  wtdump,	wtsize,		B_TAPE },
 	{ xdopen,	xdclose,	xdstrategy,	xdioctl,	/*4*/
-	  xddump,	xdsize,		NULL },
+	  xddump,	xdsize,		NULL }
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
 int	cnopen(),cnclose(),cnread(),cnwrite(),cnioctl();
-extern	struct tty cons;
 
-int	syopen(),syread(),sywrite(),syioctl(),syselect();
+int	cttyopen(), cttyread(), cttywrite(), cttyioctl(), cttyselect();
 
 int 	mmrw();
 #define	mmselect	seltrue
@@ -115,32 +113,32 @@ int	ptcopen(),ptcclose(),ptcread(),ptcwrite(),ptcselect();
 int	ptyioctl();
 struct	tty pt_tty[];
 #else
-#define ptsopen		nodev
-#define ptsclose	nodev
-#define ptsread		nodev
-#define ptswrite	nodev
-#define ptcopen		nodev
-#define ptcclose	nodev
-#define ptcread		nodev
-#define ptcwrite	nodev
-#define ptyioctl	nodev
+#define ptsopen		enxio
+#define ptsclose	enxio
+#define ptsread		enxio
+#define ptswrite	enxio
+#define ptcopen		enxio
+#define ptcclose	enxio
+#define ptcread		enxio
+#define ptcwrite	enxio
+#define ptyioctl	enxio
 #define	pt_tty		NULL
-#define	ptcselect	nodev
-#define	ptsstop		nulldev
+#define	ptcselect	enxio
+#define	ptsstop		nullop
 #endif
 
 #include "com.h"
 #if NCOM > 0
 int	comopen(),comclose(),comread(),comwrite(),comioctl();
-#define comreset	nodev
+#define comreset	enxio
 extern	struct tty com_tty[];
 #else
-#define comopen		nodev
-#define comclose	nodev
-#define comread		nodev
-#define comwrite	nodev
-#define comioctl	nodev
-#define comreset	nodev
+#define comopen		enxio
+#define comclose	enxio
+#define comread		enxio
+#define comwrite	enxio
+#define comioctl	enxio
+#define comreset	enxio
 #define	com_tty		NULL
 #endif
 
@@ -151,42 +149,39 @@ int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
 {
-	cnopen,		cnclose,	cnread,		cnwrite,	/*0*/
-	cnioctl,	nulldev,	nulldev,	&cons,
-	ttselect,	nodev,		NULL,
-	syopen,		nulldev,	syread,		sywrite,	/*1*/
-	syioctl,	nulldev,	nulldev,	NULL,
-	syselect,	nodev,		NULL,
-	nulldev,	nulldev,	mmrw,		mmrw,		/*2*/
-	nodev,		nulldev,	nulldev,	NULL,
-	mmselect,	nodev,		NULL,
-	wdopen,		wdclose,	wdread,		wdwrite,	/*3*/
-	wdioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		wdstrategy,
-	nulldev,	nulldev,	rawread,	rawwrite,	/*4*/
-	nodev,		nodev,		nulldev,	NULL,
-	nodev,		nodev,		swstrategy,
-	ptsopen,	ptsclose,	ptsread,	ptswrite,	/*5*/
-	ptyioctl,	ptsstop,	nulldev,	pt_tty,
-	ttselect,	nodev,		NULL,
-	ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*6*/
-	ptyioctl,	nulldev,	nulldev,	pt_tty,
-	ptcselect,	nodev,		NULL,
-	logopen,	logclose,	logread,	nodev,		/*7*/
-	logioctl,	nodev,		nulldev,	NULL,
-	logselect,	nodev,		NULL,
-	comopen,	comclose,	comread,	comwrite,	/*8*/
-	comioctl,	nodev,		comreset,	com_tty,
-	ttselect,	nodev,		NULL,
-	Fdopen,		fdclose,	fdread,		fdwrite,	/*9*/
-	fdioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		fdstrategy,
-	wtopen,		wtclose,	wtread,		wtwrite,	/*A*/
-	wtioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		wtstrategy,
-	xdopen,		xdclose,	xdread,		xdwrite,	/*B*/
-	xdioctl,	nodev,		nulldev,	NULL,
-	seltrue,	nodev,		xdstrategy,
+	{ cnopen,	cnclose,	cnread,		cnwrite,	/*0*/
+	  cnioctl,	nullop,		nullop,		NULL,
+	  ttselect,	enodev,		NULL },
+	{ cttyopen,	nullop,		cttyread,	cttywrite,	/*1*/
+	  cttyioctl,	nullop,		nullop,		NULL,
+	  cttyselect,	enodev,		NULL },
+	{ wdopen,	wdclose,	wdread,		wdwrite,	/*3*/
+	  wdioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		wdstrategy },
+	{ nullop,	nullop,		rawread,	rawwrite,	/*4*/
+	  enodev,	enodev,		nullop,		NULL,
+	  enodev,	enodev,		swstrategy },
+	{ ptsopen,	ptsclose,	ptsread,	ptswrite,	/*5*/
+	  ptyioctl,	ptsstop,	nullop,		pt_tty,
+	  ttselect,	enodev,		NULL },
+	{ ptcopen,	ptcclose,	ptcread,	ptcwrite,	/*6*/
+	  ptyioctl,	nullop,		nullop,		pt_tty,
+	  ptcselect,	enodev,		NULL },
+	{ logopen,	logclose,	logread,	enodev,		/*7*/
+	  logioctl,	enodev,		nullop,		NULL,
+	  logselect,	enodev,		NULL },
+	{ comopen,	comclose,	comread,	comwrite,	/*8*/
+	  comioctl,	enodev,		comreset,	com_tty,
+	  ttselect,	enodev,		NULL },
+	{ Fdopen,	fdclose,	fdread,		fdwrite,	/*9*/
+	  fdioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		fdstrategy },
+	{ wtopen,	wtclose,	wtread,		wtwrite,	/*A*/
+	  wtioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		wtstrategy },
+	{ xdopen,	xdclose,	xdread,		xdwrite,	/*B*/
+	  xdioctl,	enodev,		nullop,		NULL,
+	  seltrue,	enodev,		xdstrategy },
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
