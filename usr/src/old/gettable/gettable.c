@@ -1,5 +1,6 @@
+
 #ifndef lint
-static char sccsid[] = "@(#)gettable.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gettable.c	4.3 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -36,9 +37,9 @@ main(argc, argv)
 		fprintf(stderr, "usage: gettable host [ file ]\n");
 		exit(1);
 	}
-	sp = getservbyname("nicname", "tcp");
+	sp = getservbyname("hostnames", "tcp");
 	if (sp == NULL) {
-		fprintf(stderr, "gettable: nicname/tcp: unknown service\n");
+		fprintf(stderr, "gettable: hostnames/tcp: unknown service\n");
 		exit(3);
 	}
 	host = *argv;
@@ -90,7 +91,7 @@ main(argc, argv)
 			continue;
 		}
 		if (equaln(buf, "ERR", 3)) {
-			fprintf(stderr, "gettable: nicname error: %s", buf);
+			fprintf(stderr, "gettable: hostnames error: %s", buf);
 			continue;
 		}
 		fprintf(hf, "%s\n", buf);
