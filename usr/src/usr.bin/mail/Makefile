@@ -1,29 +1,32 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	2.2 %G%";
+# Sccs Id = "@(#)Makefile	2.3 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
 XSTR=/usr/ucb/xstr
 DESTDIR=/usr/src
 CTAGS=/usr/ucb/ctags -w
-VPRINT=/usr/ucb/vprint
+VPRINT=/usr/ucb/print
 CGRAF=/ja/rigel/rigel/bin/cgraf
+CGRAPH=/ja/rigel/rigel/bin/cgraph
+NMKINDEX=/ja/rigel/rigel/bin/nmkindex
+DIRTCLOD=/ja/rigel/rigel/bin/dirtclod
 LIBES=-ljobs
 ED=-ed
 AS=-as
 RM=-rm
-OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o edit.o fio.o \
+OBJS=aux.o cmd1.o cmd2.o cmd3.o cmdtab.o collect.o config.o edit.o fio.o \
 	getname.o head.o v7.local.o lock.o optim.o names.o lex.o list.o main.o \
 	quit.o send.o strings.o temp.o tty.o vars.o version.o \
 	errlst.o str.o npopen.o
 
-SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c edit.c fio.c \
+SRCS=aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c config.c edit.c fio.c \
 	getname.c head.c v7.local.c lock.c optim.c names.c lex.c list.c main.c \
 	quit.c send.c strings.c temp.c tty.c vars.c errlst.c
 
-HDRS=rcv.h def.h glob.h v7.local.h local.h
+HDRS=rcv.h configdefs.h def.h glob.h v7.local.h local.h
 
 S = $(SRCS) $(HDRS)
 
@@ -77,6 +80,9 @@ str.o: strings
 	mv xs.o str.o
 	$(RM) xs.c
 
+config.o:	config.c
+	$(CC) -R -c config.c
+
 cmdtab.o: cmdtab.c
 	$(CC) -R -c $(CFLAGS) cmdtab.c
 
@@ -91,8 +97,12 @@ errlst.o: errlst.c
 version.c: #	/tmp
 	/bin/sh version > version.c
 
-print:
-	@$(VPRINT) makefile rcv.h def.h glob.h local.h v7.local.h $(SRCS) fmt.c;
+print:	$S fmt.c
+	$(CGRAPH) > mail.g;
+	$(NMKINDEX) > mail.i;
+	$(DIRTCLOD) -x mail.i -p mail.g > mail.x
+	@$(VPRINT) makefile mail.x rcv.h def.h glob.h local.h v7.local.h \
+	    $(SRCS) fmt.c;
 
 wc:
 	@wc rcv.h def.h glob.h local.h v7.local.h $(SRCS)
