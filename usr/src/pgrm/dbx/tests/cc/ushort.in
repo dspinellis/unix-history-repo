@@ -1,0 +1,4 @@
+stop at 10
+run
+print u
+print u.s
