@@ -1,4 +1,4 @@
-/*	uipc_socket2.c	6.5	84/11/02	*/
+/*	uipc_socket2.c	6.6	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -350,10 +350,12 @@ sbreserve(sb, cc)
 	struct sockbuf *sb;
 {
 
+	if ((unsigned) cc > SB_MAX)
+		return (0);
 	/* someday maybe this routine will fail... */
 	sb->sb_hiwat = cc;
 	/* * 2 implies names can be no more than 1 mbuf each */
-	sb->sb_mbmax = cc<<1;
+	sb->sb_mbmax = MAX(cc * 2, SB_MAX);
 	return (1);
 }
 
