@@ -1,0 +1,132 @@
+
+
+
+PR(1L)                                                     PR(1L)
+
+
+NNAAMMEE
+       pr - convert text files for printing
+
+SSYYNNOOPPSSIISS
+       pprr [+PAGE] [-COLUMN] [-abcdfFmrtv] [-e[in-tab-char[in-tab-
+       width]]] [-h header] [-i[out-tab-char[out-tab-width]]] [-l
+       page-length]   [-n[number-separator[digits]]]   [-o  left-
+       margin] [-s[column-separator]] [-w page-width] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the  GNU  version  of  pprr.   pprr
+       prints  on  the standard output a paginated and optionally
+       multicolumn copy of the text files given  on  the  command
+       line,  or  of  the standard input if no files are given or
+       when the file name `-' is encountered.  Form feeds in  the
+       input cause page breaks in the output.
+
+   OOPPTTIIOONNSS
+       +_P_A_G_E  Begin printing with page _P_A_G_E.
+
+       -_C_O_L_U_M_N
+              Produce  _C_O_L_U_M_N-column  output  and  print  columns
+              down.  The column width is automatically  decreased
+              as  _C_O_L_U_M_N  increases; unless you use the -_w option
+              to increase the page width  as  well,  this  option
+              might cause some columns to be truncated.
+
+       -_a     Print columns across rather than down.
+
+       -_b     Balance columns on the last page.
+
+       -_c     Print  control characters using hat notation (e.g.,
+              `^G'); print other unprintable characters in  octal
+              backslash notation.
+
+       -_d     Double space the output.
+
+       -_e[_i_n-_t_a_b-_c_h_a_r[_i_n-_t_a_b-_w_i_d_t_h]]
+              Expand  tabs to spaces on input.  Optional argument
+              _i_n-_t_a_b-_c_h_a_r is the  input  tab  character,  default
+              tab.   Optional  argument _i_n-_t_a_b-_w_i_d_t_h is the input
+              tab character's width, default 8.
+
+       -_F, -_f Use a formfeed instead of newlines to separate out-
+              put pages.
+
+       -_h _h_e_a_d_e_r
+              Replace  the filename in the header with the string
+              _h_e_a_d_e_r.
+
+       -_i[_o_u_t-_t_a_b-_c_h_a_r[_o_u_t-_t_a_b-_w_i_d_t_h]]
+              Replace spaces with tabs on output.  Optional argu-
+              ment  _o_u_t-_t_a_b-_c_h_a_r  is  the  output  tab character,
+              default tab.  Optional  argument  _o_u_t-_t_a_b-_w_i_d_t_h  is
+
+
+
+                                                                1
+
+
+
+
+
+PR(1L)                                                     PR(1L)
+
+
+              the output tab character's width, default 8.
+
+       -_l _p_a_g_e-_l_e_n_g_t_h
+              Set  the  page  length  to  _p_a_g_e-_l_e_n_g_t_h lines.  The
+              default is 66.  If _p_a_g_e-_l_e_n_g_t_h is less than 10, the
+              headers  and  footers  are  omitted,  as  if the -_t
+              option had been given.
+
+       -_m     Print all files in parallel, one in each column.
+
+       -_n[_n_u_m_b_e_r-_s_e_p_a_r_a_t_o_r[_d_i_g_i_t_s]]
+              Precede each column with a line number; with paral-
+              lel  files,  precede  each line with a line number.
+              Optional argument _n_u_m_b_e_r-_s_e_p_a_r_a_t_o_r is the character
+              to  print after each number, default tab.  Optional
+              argument _d_i_g_i_t_s is the number of  digits  per  line
+              number, default 5.
+
+       -_o _l_e_f_t-_m_a_r_g_i_n
+              Offset  each  line with a margin _l_e_f_t-_m_a_r_g_i_n spaces
+              wide.  The total page width is this offset plus the
+              width set with the -_w option.
+
+       -_r     Do  not  print  a  warning message when an argument
+              file cannot be opened.   Failure  to  open  a  file
+              still makes the exit status nonzero, however.
+
+       -_s[_c_o_l_u_m_n-_s_e_p_a_r_a_t_o_r]
+              Separate  columns  by  the single character _c_o_l_u_m_n-
+              _s_e_p_a_r_a_t_o_r, default tab, instead of spaces.
+
+       -_t     Do not print  the  5-line  header  and  the  5-line
+              trailer  that are normally on each page, and do not
+              fill out the bottoms of pages (with blank lines  or
+              formfeeds).
+
+       -_v     Print  unprintable  characters  in  octal backslash
+              notation.
+
+       -_w _p_a_g_e-_w_i_d_t_h
+              Set the page  width  to  _p_a_g_e-_w_i_d_t_h  columns.   The
+              default is 72.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                2
+
+

@@ -1,0 +1,66 @@
+
+
+
+SPLIT(1L)                                               SPLIT(1L)
+
+
+NNAAMMEE
+       split - split a file into pieces
+
+SSYYNNOOPPSSIISS
+       sspplliitt  [-lines] [-l lines] [-b bytes[bkm]] [-C bytes[bkm]]
+       [--lines=lines]       [--bytes=bytes[bkm]]        [--line-
+       bytes=bytes[bkm]] [infile [outfile-prefix]]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the  GNU  version of sspplliitt.
+       sspplliitt creates one or more output files (as many as  neces-
+       sary)  containing  consecutive  sections of the _i_n_f_i_l_e, or
+       the standard input if none is given or  the  name  `-'  is
+       given.   By  default,  sspplliitt  puts 1000 lines of the input
+       file, or whatever is left if it is less  than  that,  into
+       each output file.
+
+       The  output  file  names consist of a prefix followed by a
+       group of letters, chosen so that concatenating the  output
+       files  in  sorted order by file name produces the original
+       input file, in order.  The default output file name prefix
+       is  `x'.   If  the _o_u_t_f_i_l_e-_p_r_e_f_i_x argument is given, it is
+       used as the output file name prefix instead.
+
+   OOPPTTIIOONNSS
+       -_l_i_n_e_s, -_l _l_i_n_e_s, --_l_i_n_e_s=_l_i_n_e_s
+              Put _l_i_n_e_s lines of the input file into each  output
+              file.
+
+       -_b _b_y_t_e_s[_b_k_m], --_b_y_t_e_s=_b_y_t_e_s[_b_k_m]
+              Put  _b_y_t_e_s bytes of the input file into each output
+              file.  _b_y_t_e_s is a nonzero integer, optionally  fol-
+              lowed by one of the following characters to specify
+              a different unit.
+
+              b      512-byte blocks.
+
+              k      1-kilobyte blocks.
+
+              m      1-megabyte blocks.
+
+       -_C _b_y_t_e_s[_b_k_m], --_l_i_n_e-_b_y_t_e_s=_b_y_t_e_s[_b_k_m]
+              Put into each output file as many complete lines of
+              the  input  file  as  is possible without exceeding
+              _b_y_t_e_s bytes.  If a line that is longer  than  _b_y_t_e_s
+              bytes  occurs, put _b_y_t_e_s bytes of it into each out-
+              put file until less than _b_y_t_e_s bytes  of  the  line
+              are  left,  then  continue normally.  _b_y_t_e_s has the
+              same format as for the --_b_y_t_e_s option.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+                                                                1
+
+

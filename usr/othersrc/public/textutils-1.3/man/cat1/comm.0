@@ -1,0 +1,66 @@
+
+
+
+COMM(1L)                                                 COMM(1L)
+
+
+NNAAMMEE
+       comm - compare two sorted files line by line
+
+SSYYNNOOPPSSIISS
+       ccoommmm [-123] file1 file2
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual page documents the GNU version of ccoommmm.  ccoommmm
+       prints lines that are common, and lines that  are  unique,
+       to  two  input files.  The two files must be sorted before
+       ccoommmm can be used.  The file name `-'  means  the  standard
+       input.
+
+       With  no options, ccoommmm produces three column output.  Col-
+       umn one contains lines unique to _f_i_l_e_1,  column  two  con-
+       tains  lines  unique  to  _f_i_l_e_2, and column three contains
+       lines common to both files.
+
+   OOPPTTIIOONNSS
+       The options -_1, -_2, and -_3 suppress printing of the corre-
+       sponding columns.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

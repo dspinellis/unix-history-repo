@@ -1,0 +1,66 @@
+
+
+
+CMP(1L)                                                   CMP(1L)
+
+
+NNAAMMEE
+       cmp - compare two files
+
+SSYYNNOOPPSSIISS
+       ccmmpp [-cls] [--show-chars] [--verbose] [--silent] [--quiet]
+       file1 [file2]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version  of  ccmmpp.   ccmmpp
+       compares  the  two  given files, and if they differ, tells
+       the first byte and line number  where  they  differ.   The
+       file  name  `-' is always the standard input.  If one file
+       name is omitted, the standard input is used as well.
+
+       It exits with the value
+
+       0      The files are identical.
+
+       1      The files differ.
+
+       2      An error occurred.
+
+   OOPPTTIIOONNSS
+       -_c, --_s_h_o_w-_c_h_a_r_s
+              Print  the  differing  characters  like  `cat   -t'
+              (except that newlines are printed as `^J').
+
+       -_l, --_v_e_r_b_o_s_e
+              Print  the  (decimal) offsets and (octal) values of
+              all differing bytes.
+
+       -_s, --_s_i_l_e_n_t, --_q_u_i_e_t
+              Do not print anything; only return an  exit  status
+              indicating whether the files differ.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

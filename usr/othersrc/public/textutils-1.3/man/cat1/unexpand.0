@@ -1,0 +1,66 @@
+
+
+
+UNEXPAND(1L)                                         UNEXPAND(1L)
+
+
+NNAAMMEE
+       unexpand - convert spaces to tabs
+
+SSYYNNOOPPSSIISS
+       uunneexxppaanndd  [-tab1[,tab2[,...]]] [-t tab1[,tab2[,...]]] [-a]
+       [--tabs=tab1[,tab2[,...]]] [--all] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU  version  of  uunneexxppaanndd.
+       uunneexxppaanndd  writes  the  contents of each given file, or the
+       standard input if none are given or when a file named  `-'
+       is  given,  to the standard output, with strings of two or
+       more space or tab characters converted to as many tabs  as
+       possible  followed  by  as  many spaces as are needed.  By
+       default, uunneexxppaanndd converts only initial  spaces  and  tabs
+       (those  that  precede  all non space or tab characters) on
+       each line.  It preserves backspace characters in the  out-
+       put; they decrement the column count for tab calculations.
+       By default, tabs are set at every 8th column.
+
+   OOPPTTIIOONNSS
+       -, -_t, --_t_a_b_s _t_a_b_1[,_t_a_b_2[,...]]
+              If only one tab stop is given, set  the  tabs  _t_a_b_1
+              spaces  apart instead of the default 8.  Otherwise,
+              set the tabs at columns _t_a_b_1, _t_a_b_2, etc.  (numbered
+              from  0)  and leave spaces and tabs beyond the tab-
+              stops given unchanged.  If the tabstops are  speci-
+              fied with the -_t or --_t_a_b_s option, they can be sep-
+              arated by blanks as well as by commas.  This option
+              implies the -_a option.
+
+       -_a, --_a_l_l
+              Convert  all strings of two or more spaces or tabs,
+              not just initial ones, to tabs.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+
