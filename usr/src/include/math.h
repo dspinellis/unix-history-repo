@@ -1,12 +1,16 @@
-/*	math.h	4.3	%G%	*/
+/*	math.h	4.4	%G%	*/
 
 extern double asinh(), acosh(), atanh();
 extern double erf(), erfc();
-extern double E(), L(), exp(), log(), log10(), pow();
+extern double exp(), expm1(), log(), log10(), log1p(), pow();
 extern double fabs(), floor(), ceil();
-extern double gamma();
+extern double lgama();
 extern double hypot(), cabs();
 extern double copysign(), drem(), logb(), scalb();
+extern int finite();
+#ifdef vax
+extern double infnan();
+#endif
 extern double j0(), j1(), jn(), y0(), y1(), yn();
 extern double sin(), cos(), tan(), asin(), acos(), atan(), atan2();
 extern double sinh(), cosh(), tanh();
