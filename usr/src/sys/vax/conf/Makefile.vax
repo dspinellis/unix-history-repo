@@ -1,4 +1,4 @@
-#	Makefile.vax	6.6	%G%
+#	Makefile.vax	6.7	%G%
 #
 # Makefile for 4.2 BSD
 #
@@ -79,16 +79,16 @@ assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../vax/rpb.h
 	cc ${IDENT} ${PARAM} ../vax/genassym.c; ./a.out >assym.s; rm -f a.out
 
-../h/param.h: /usr/include/signal.h
+../h/param.h: ../h/signal.h
 	${TOUCH} ../h/param.h
 ../h/tty.h:  ../h/ttychars.h ../h/ttydev.h
 	${TOUCH} ../h/tty.h
-../h/ioctl.h: /usr/include/sgtty.h ../h/ttychars.h ../h/ttydev.h
+../h/ioctl.h: ../h/ttychars.h ../h/ttydev.h
 	${TOUCH} ../h/ioctl.h
 ../h/namei.h: ../h/uio.h
 	${TOUCH} ../h/namei.h
 ../h/user.h: ../vax/pcb.h ../h/dmap.h ../h/types.h ../h/namei.h \
-    /usr/include/errno.h
+    ../h/errno.h
 	${TOUCH} ../h/user.h
 ../h/vm.h: ../h/vmmac.h ../h/vmmeter.h ../h/vmparam.h ../h/vmsystm.h
 	${TOUCH} ../h/vm.h
