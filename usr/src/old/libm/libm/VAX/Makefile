@@ -1,5 +1,13 @@
 From Prof. Kahan at UC at Berkeley
-MORE=atan2.o cabs.o cbrt.o sqrt.o sincos.o tan.o argred.o support.o infnan.o
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	1.3	(Berkeley)	%G%
+#
+MORE=	atan2.o cabs.o cbrt.o sqrt.o sincos.o tan.o argred.o support.o \
+	infnan.o
 
 .s.o:
 ####	insert additional code for profiling

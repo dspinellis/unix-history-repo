@@ -1,11 +1,27 @@
 #
-#	@(#)Makefile	5.1	(Berkeley)	85/07/12
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-libg.a:	dbxxx.s
-	as dbxxx.s -o libg.a
+#	@(#)Makefile	5.2	(Berkeley)	%G%
+#
+CFLAGS=	-O
+LIBC=	/lib/libc.a
+SRCS=
+OBJS=
 
-install: libg.a
-	install -c libg.a ${DESTDIR}/usr/lib
+all: libg.a
 
-clean:
-	rm -f libg.a
+libg.a: dbxxx.s
+	${AS} dbxxx.s -o $@
+
+clean: FRC
+	rm -f ${OBJS} core libg.a
+
+install: FRC
+	install -o bin -g bin -m 644 libg.a ${DESTDIR}/usr/lib/libg.a
+
+depend:
+lint:
+tags:
+FRC:
