@@ -1,0 +1,2 @@
+Mnfsd	nfsd.c	/^main(argc, argv, envp)$/
+syslog	nfsd.c	/^#define	syslog(e, s)	fprintf(stderr,(s))$/
