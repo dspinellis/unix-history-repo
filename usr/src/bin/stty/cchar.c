@@ -6,12 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cchar.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cchar.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
 #include <err.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,6 +43,8 @@ struct cchar cchars1[] = {
 	{ "status",	VSTATUS, 	CSTATUS },
 	{ "stop",	VSTOP,		CSTOP },
 	{ "susp",	VSUSP,		CSUSP },
+	{ "vmin",	VMIN,		CMIN },
+	{ "vtime",	VTIME,		CTIME },
 	{ "werase",	VWERASE,	CWERASE },
 	{ NULL },
 };
@@ -60,7 +63,8 @@ csearch(argvp, ip)
 {
 	register struct cchar *cp;
 	struct cchar tmp;
-	char *arg, *name;
+	long val;
+	char *arg, *ep, *name;
 	static int c_cchar __P((const void *, const void *));
 		
 	name = **argvp;
@@ -82,7 +86,24 @@ csearch(argvp, ip)
 #define CHK(s)  (*arg == s[0] && !strcmp(arg, s))
 	if (CHK("undef") || CHK("<undef>"))
 		ip->t.c_cc[cp->sub] = _POSIX_VDISABLE;
-	else if (arg[0] == '^')
+	else if (cp->sub == VMIN || cp->sub == VTIME) {
+		val = strtol(arg, &ep, 10);
+		if (val == _POSIX_VDISABLE) {
+			warnx("value of %ld would disable the option -- %s",
+			    val, name);
+			usage();
+		}
+		if (val > UCHAR_MAX) {
+			warnx("maximum option value is %d -- %s",
+			    UCHAR_MAX, name);
+			usage();
+		}
+		if (*ep != '\0') {
+			warnx("option requires a numeric argument -- %s", name);
+			usage();
+		}
+		ip->t.c_cc[cp->sub] = val;
+	} else if (arg[0] == '^')
 		ip->t.c_cc[cp->sub] = (arg[1] == '?') ? 0177 :
 		    (arg[1] == '-') ? _POSIX_VDISABLE : arg[1] & 037;
 	else
