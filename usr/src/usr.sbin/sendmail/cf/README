@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.38 (Berkeley) %G%
+		@(#)README	8.39 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -191,6 +191,10 @@ FAX_MAILER_PATH		[/usr/local/lib/fax/mailfax] The program used to
 			submit FAX messages.
 FAX_MAILER_MAX		[100000] The maximum size message accepted for
 			transmission by FAX.
+POP_MAILER_PATH		[/usr/lib/mh/spop] The pathname of the POP mailer.
+POP_MAILER_FLAGS	[Penu] Flags added to POP mailer.  Flags "lsDFM"
+			are always added.
+POP_MAILER_ARGS		[pop $u] The arguments passed to the POP mailer.
 
 +---------+
 | DOMAINS |
