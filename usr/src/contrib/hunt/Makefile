@@ -19,7 +19,7 @@ POBJ=		hunt.o connect.o playit.o otto.o
 # Installation destinations
 BINDIR=		/usr/games
 LIBDIR=		/usr/libexec
-MANDIR=		/usr/man/man6
+MANDIR=		/usr/contrib/man/cat6
 
 #
 # Game parameter flags are:
@@ -130,13 +130,13 @@ shar:
 #
 # System installation
 #
-install:	all
-	-cmp -s huntd ${LIBDIR}/huntd || install -c huntd ${LIBDIR}/huntd
-	-cmp -s hunt ${BINDIR}/hunt || install -c hunt ${BINDIR}/hunt
-	-cmp -s hunt.6 ${MANDIR}/hunt.6 \
-		|| install -m 444 -c hunt.6 ${MANDIR}/hunt.6
-	-cmp -s huntd.6 ${MANDIR}/huntd.6 \
-		|| install -m 444 -c huntd.6 ${MANDIR}/huntd.6
+install:
+	install -s -o bin -g bin -m 555 huntd ${LIBDIR}/huntd
+	install -s -o bin -g bin -m 555 hunt ${BINDIR}/hunt
+	nroff -man hunt.6 > ${MANDIR}/hunt.0
+	nroff -man huntd.6 > ${MANDIR}/huntd.0
+	chown bin.bin ${MANDIR}/hunt.0 ${MANDIR}/huntd.0
+	chmod 444 ${MANDIR}/hunt.0 ${MANDIR}/huntd.0
 
 #
 # Object file dependencies
