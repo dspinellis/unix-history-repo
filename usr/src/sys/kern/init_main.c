@@ -1,4 +1,4 @@
-/*	init_main.c	4.47	83/03/01	*/
+/*	init_main.c	4.48	83/03/31	*/
 
 #include "../machine/pte.h"
 
@@ -84,7 +84,7 @@ main(regs)
 #endif
 	u.u_cmask = CMASK;
 	for (i = 1; i < NGROUPS; i++)
-		u.u_groups[i] = -1;
+		u.u_groups[i] = NOGROUP;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
