@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -112,7 +112,9 @@ inet_maskof(in)
 	register u_long mask;
 	register struct interface *ifp;
 
-	if (IN_CLASSA(i)) {
+	if (i == 0) {
+		mask = 0;
+	} else if (IN_CLASSA(i)) {
 		mask = IN_CLASSA_NET;
 	} else if (IN_CLASSB(i)) {
 		mask = i & IN_CLASSB_NET;
