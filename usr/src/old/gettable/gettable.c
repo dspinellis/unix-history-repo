@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)gettable.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)gettable.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -33,6 +33,8 @@ main(argc, argv)
 	register struct hostent *hp;
 	struct servent *sp;
 	int version = 0;
+	int beginseen = 0;
+	int endseen = 0;
 
 	argv++, argc--;
 	if (**argv == '-') {
@@ -96,20 +98,44 @@ main(argc, argv)
 	while (fgets(buf, sizeof(buf), sfi) != NULL) {
 		len = strlen(buf);
 		buf[len-2] = '\0';
-		if (equaln(buf, "BEGIN", 5) || equaln(buf, "END", 3)) {
+		if (!version && equaln(buf, "BEGIN", 5)) {
+			if (beginseen || endseen) {
+				fprintf(stderr,
+				    "gettable: BEGIN sequence error\n");
+				exit(90);
+			}
+			beginseen++;
+			continue;
+		}
+		if (!version && equaln(buf, "END", 3)) {
+			if (!beginseen || endseen) {
+				fprintf(stderr,
+				    "gettable: END sequence error\n");
+				exit(91);
+			}
+			endseen++;
 			continue;
 		}
 		if (equaln(buf, "ERR", 3)) {
-			fprintf(stderr, "gettable: hostnames error: %s", buf);
-			continue;
+			fprintf(stderr,
+			    "gettable: hostname service error: %s", buf);
+			exit(92);
 		}
 		fprintf(hf, "%s\n", buf);
 	}
 	fclose(hf);
-	if (version)
-		fprintf(stderr, "Version number received.\n");
-	else
+	if (!version) {
+		if (!beginseen) {
+			fprintf(stderr, "gettable: no BEGIN seen\n");
+			exit(93);
+		}
+		if (!endseen) {
+			fprintf(stderr, "gettable: no END seen\n");
+			exit(94);
+		}
 		fprintf(stderr, "Host table received.\n");
+	} else
+		fprintf(stderr, "Version number received.\n");
 	close(s);
 	fprintf(stderr, "Connection to %s closed\n", host);
 	exit(0);
