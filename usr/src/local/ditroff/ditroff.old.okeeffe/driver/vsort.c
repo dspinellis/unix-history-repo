@@ -1,68 +1,28 @@
-/* vsort.c	1.2	83/07/29
+/* vsort.c	1.3	83/07/30
  *
  *	sort troff output into troff output that only goes one
  *	direction down the page.
  */
 
-/*******************************************************************************
-
-output language from troff:
-all numbers are character strings
-
-sn	size in points
-fn	font as number from 1-n
-cx	ascii character x
-Cxyz	funny char xyz. terminated by white space
-Hn	go to absolute horizontal position n
-Vn	go to absolute vertical position n (down is positive)
-hn	go n units horizontally (relative)
-vn	ditto vertically
-nnc	move right nn, then print c (exactly 2 digits!)
-		(this wart is an optimization that shrinks output file size
-		 about 35% and run-time about 15% while preserving ascii-ness)
-Dt ...\n	draw operation 't':
-	Dt x		line thickness setting
-	Ds x		line style (bit mask) setting
-	Dl x y		line from here by x,y
-	Dc d		circle of diameter d with left side here
-	De x y		ellipse of axes x,y with left side here
-	Da x y r	arc counter-clockwise by x,y of radius r
-	D~ (or Dg) x y x y ...	wiggly line by x,y then x,y ...
-nb a	end of line (information only -- no action needed)
-	b = space before line, a = after
-p	new page begins -- set v to 0
-#...\n	comment
-x ...\n	device control functions:
-	x i	init
-	x T s	name of device is s
-	x r n h v	resolution is n/inch
-		h = min horizontal motion, v = min vert
-	x p	pause (can restart)
-	x s	stop -- done for ever
-	x t	generate trailer
-	x f n s	font position n contains font s
-	x H n	set character height to n
-	x S n	set slant to N
-
-	Subcommands like "i" are often spelled out like "init".
-
-*******************************************************************************/
 
 #include	<stdio.h>
 #include	<ctype.h>
 
 
+#define DEBUGABLE	/* compile-time flag for debugging */
 #define	FATAL	1
-#define	NVLIST	1500
-#define	OBUFSIZ	40000
-#define	SLOP	1000
+#define	NVLIST	1500	/* size of list of vertical spans */
+#define	OBUFSIZ	40000	/* size of character buffer before sorting */
+#define	SLOP	1000	/* extra bit of buffer to allow for passing OBUFSIZ */
 
 #define hgoto(n)	hpos = n
 #define hmot(n)		hgoto(hpos + (n))
 #define vmot(n)		vgoto(vpos + (n))
 
 
+#ifdef DEBUGABLE
 int	dbg	= 0;	/* debug flag != 0 means do debug output */
+#endif
 int	size	= 10;	/* current size */
 int	font	= 1;	/* current font */
 int	thick	= 3;	/* line thickness */
@@ -97,6 +57,7 @@ char *argv[];
 
 	while (argc > 1 && **++argv == '-') {
 	    switch ((*argv)[1]) {
+#ifdef DEBUGABLE
 		case 'd':
 			dbg = atoi(&(*argv)[2]);
 			if (dbg == 0) {
@@ -105,6 +66,7 @@ char *argv[];
 			} else
 			    obufsiz = dbg;
 			break;
+#endif
 	    }
 	    argc--;
 	}
@@ -163,7 +125,9 @@ register FILE *fp;
 	char buf[SLOP];
 
 	while ((c = getc(fp)) != EOF) {
+#ifdef DEBUGABLE
 	    if (dbg) fprintf(stderr, "%c i=%d V=%d\n", c, op-obuf, vpos);
+#endif
 	    if (op > obuf + obufsiz)
 		oflush();
 	    switch (c) {
@@ -244,10 +208,19 @@ register FILE *fp;
 				break;
 			case 'a':	/* arc */
 				sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
-				sprintf(op, "D%s", buf);
+
+				if ((m += m1) < 0)	/* set m1 to highest */
+				    m1 = vpos + m;	 /* of the endpoints */
+				else		
+				    m1 = vpos;		/* can't be any more */
+				m1 -= (((n += n1) < 0) ?	 /* than 1/2 */
+					-n : n) >> 1;	/* horiz diff higher */
+
+				startspan(m1 < 0 ? 0 : m1);
+				sprintf(op, "V%d D%s", vpos, buf);
 				op += strlen(op);
-				hmot(n + n1);
-				vmot(m + m1);
+				hmot(n);
+				vmot(m);
 				break;
 			case '~':	/* wiggly line */
 			case 'g':	/* gremlin curve */
@@ -346,7 +319,9 @@ oflush()	/* sort, then dump out contents of obuf */
 	register int i;
 	int compar();
 
+#ifdef DEBUGABLE
 	if (dbg) fprintf(stderr, "into oflush, V=%d\n", vpos);
+#endif
 	if (op == obuf)
 		return;
  	qsort((char *) vlist, nvlist, sizeof (struct vlist), compar);
