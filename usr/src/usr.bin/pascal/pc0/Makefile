@@ -1,7 +1,9 @@
-SCCSID = "@(#)Makefile 1.21 %G%"
-INSTALLNAME = $(DESTDIR)/usr/lib/pc0
+SCCSID = "@(#)Makefile 1.22 %G%"
+INSTALLDIR = $(DESTDIR)/usr/lib
+INSTALLNAME = ${INSTALLDIR}/pc0
 WHOAMI = pc
 VERSION = 2.1
+DATE = 1.22
 
 MKSTR = /usr/ucb/mkstr
 EYACC = /usr/ucb/eyacc
@@ -24,6 +26,7 @@ SRCS =	ato.c \
 	lab.c lookup.c lval.c stklval.c \
 	main.c nl.c proc.c put.c \
 	rec.c rval.c stkrval.c\
+	savenl.c \
 	stat.c string.c subr.c \
 	tmps.c tree.c type.c var.c \
 	TRdata.c \
@@ -42,6 +45,7 @@ OBJS =	ato.o \
 	lab.o lookup.o lval.o stklval.o \
 	main.o nl.o proc.o put.o \
 	rec.o rval.o stkrval.o\
+	savenl.o \
 	stat.o string.o subr.o \
 	tmps.o tree.o type.o var.o \
 	TRdata.o \
@@ -61,8 +65,8 @@ ${SRCS} ${HDRS} ${OTHERS}:
 .c.o:
 	${RM} ${TMPDIR}/$*.c
 	${MKSTR} - ${ERRORSTRINGS} ${TMPDIR}/ $*.c
-	cd ${TMPDIR}; ${CC} ${CFLAGS} -I.. -c $*.c;\
-		rm -f ../$*.o; mv $*.o  ../$*.o
+	cd ${TMPDIR} ; \
+	    ${CC} ${CFLAGS} -I.. -c $*.c ; rm -f ../$*.o ; mv $*.o  ../$*.o
 	${RM} ${TMPDIR}/$*.c
 
 whoami.h:
@@ -85,10 +89,13 @@ pTree.h:
 	echo "/* this is not pTree.h */" > pTree.h
 
 config.c: CONFIG.c makefile
-	  sed "s?VERSION?${VERSION}?g" < CONFIG.c \
-	| sed "s?LIBDIR?${LIBDIR}?g" \
-	| sed "s?ERRORSTRINGS?${ERRORSTRINGS}?g" \
-	| sed "s?HOWFILE?${HOWFILE}?g" > config.c
+	sed -e "s?VERSION?${VERSION}?g" \
+	    -e "s?DATE?${DATE}?g" \
+	    -e "s?INSTALLDIR?${INSTALLDIR}?g" \
+	    -e "s?LIBDIR?${LIBDIR}?g" \
+	    -e "s?ERRORSTRINGS?${ERRORSTRINGS}?g" \
+	    -e "s?HOWFILE?${HOWFILE}?g" \
+	    < CONFIG.c >config.c
 
 clean:
 	${RM} *.o ${TMPDIR}/*.c
@@ -110,8 +117,6 @@ print:	sources
 	@pr yy.h yy*.c
 
 install: a.out
-	sccs edit CONFIG.c ; sccs delget CONFIG.c
-	make a.out
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
 	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
 	cp a.out ${INSTALLDIR}/pi
@@ -282,11 +287,11 @@ rval.o: pcops.h
 savenl.o: whoami.h
 savenl.o: 0.h
 savenl.o: objfmt.h
-savenl.o: defs.h
-savenl.o: object.h
-savenl.o: object/objsym.rep
-savenl.o: mappings.h
-savenl.o: mappings/filetab.h
+savenl.o: ../pdx/defs.h
+savenl.o: ../pdx/object.h
+savenl.o: ../pdx/object/objsym.rep
+savenl.o: ../pdx/mappings.h
+savenl.o: ../pdx/mappings/filetab.h
 stat.o: whoami.h
 stat.o: 0.h
 stat.o: tree.h
