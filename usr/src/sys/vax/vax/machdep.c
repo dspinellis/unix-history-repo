@@ -1,13 +1,12 @@
-/*	machdep.c	4.43	81/11/07	*/
+/*	machdep.c	4.44	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#ifdef BBNNET
-#include "../inet/inet.h"
-#include "../inet/inet_systm.h"
-#include "../inet/inet_host.h"
-#include "../h/socket.h"
-#endif BBNNET
+#ifdef INET
+#include "../net/inet.h"
+#include "../net/inet_systm.h"
+#include "../net/inet_host.h"
+#endif INET
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
@@ -33,7 +32,7 @@
 #include "../h/callout.h"
 #include "../h/cmap.h"
 #include <frame.h>
-#include "../h/port.h"
+#include "../h/mbuf.h"
 #include "../h/rpb.h"
 #include "../h/msgbuf.h"
 
@@ -116,17 +115,15 @@ startup(firstaddr)
 	valloclim(file, struct file, nfile, fileNFILE);
 	valloclim(proc, struct proc, nproc, procNPROC);
 	valloclim(text, struct text, ntext, textNTEXT);
-	valloc(port, struct port, nport);
 	valloc(cfree, struct cblock, nclist);
 	valloc(callout, struct callout, ncallout);
 	valloc(swapmap, struct map, nswapmap = nproc * 2);
 	valloc(argmap, struct map, ARGMAPSIZE);
 	valloc(kernelmap, struct map, nproc);
-#ifdef BBNNET
-	valloc(netmap, struct map, nnetpages/2);
-	valloclim(contab, struct ucb, nnetcon, conNCON);
+	valloc(mbmap, struct map, nmbpages/2);
+#ifdef INET
 	valloclim(host, struct host, nhost, hostNHOST);
-#endif BBNNET
+#endif INET
 	/*
 	 * Now allocate space for core map
 	 */
@@ -168,13 +165,7 @@ startup(firstaddr)
 	maxmem = freemem;
 	printf("avail mem = %d\n", ctob(maxmem));
 	rminit(kernelmap, USRPTSIZE, 1, "usrpt", nproc);
-
-#ifdef BBNNET
-	/*
-	 * Initialize network buffer management map.
-	 */
-	rminit(netmap, nnetpages-1, 1, "netpage", nnetpages/2);
-#endif BBNNET
+	rminit(mbmap, nmbpages-1, 1, "mbpages", nmbpages/2);
 
 	/*
 	 * Configure the system.
