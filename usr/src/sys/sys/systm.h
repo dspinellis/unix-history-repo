@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)systm.h	7.28 (Berkeley) %G%
+ *	@(#)systm.h	8.1 (Berkeley) %G%
  */
 
 /*
