@@ -50,7 +50,7 @@ SOFTWARE.
 *INCLUDE
 
 {
-/*	@(#)tp.trans	7.4 (Berkeley) %G% */
+/*	@(#)tp.trans	7.5 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -1238,18 +1238,6 @@ SAME 			<==		TP_OPEN 									AK_TPDU
 ;
 
 /* TP4, and TP0 after sending a CC or possibly a CR */
-SAME			<==		TP_OPEN 			 						XAK_TPDU
-	DEFAULT
-	{
-		IFTRACE(D_ACKRECV)
-			tptrace(TPPTmisc, "BOGUS XACK eventtype ", $E.ev_number, 0, 0,0);
-		ENDTRACE
-		if( $P.tp_class != TP_CLASS_0 ) {
-			tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
-		} 
-	}
-;
-/* TP4, and TP0 after sending a CC or possibly a CR */
 SAME			<==		TP_OPEN 			 						 AK_TPDU
 	DEFAULT
 	{
@@ -1285,7 +1273,7 @@ SAME			<==		TP_OPEN 			 						 AK_TPDU
 	/* end of the above hack */
 
 /* TP4 only */
-SAME			<== 	TP_OPEN 										XAK_TPDU
+SAME			<== 	TP_OPEN										XAK_TPDU
 	( tp_goodXack($P, $$.e_seq) )
 	/* tp_goodXack checks for good ack, removes the correct 
 	 * tpdu from the queue and  returns 1 if ack was legit, 0 if not.
@@ -1299,6 +1287,19 @@ SAME			<== 	TP_OPEN 										XAK_TPDU
 
 		/* resume normal data */
 		tp_send($P);
+	}
+;
+
+/* TP4, and TP0 after sending a CC or possibly a CR */
+SAME			<==		TP_OPEN 			 						XAK_TPDU
+	DEFAULT
+	{
+		IFTRACE(D_ACKRECV)
+			tptrace(TPPTmisc, "BOGUS XACK eventtype ", $E.ev_number, 0, 0,0);
+		ENDTRACE
+		if( $P.tp_class != TP_CLASS_0 ) {
+			tp_ctimeout($P.tp_refp, TM_inact, (int)$P.tp_inact_ticks);
+		} 
 	}
 ;
 

@@ -49,6 +49,7 @@ struct tp_stat {
 	u_long ts_inv_dref;
 	u_long ts_inv_pval;
 	u_long ts_inv_sufx;
+	u_long ts_inv_aclass;
 
 	u_long ts_xtd_fmt;
 	u_long ts_use_txpd;

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.9 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.10 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -168,24 +168,24 @@ static u_char tpdu_info[][4] =
  	/* DT_TPDU_type 0xf */		0x5,		0x8,	0x3,		0x0,
 };
 
+#define CHECK(Phrase, Erval, Stat, Whattodo, Loc)\
+	if(Phrase) { error = (Erval); errlen = (int)(Loc); IncStat(Stat); \
+	goto Whattodo; }
+
 /* 
  * WHENEVER YOU USE THE FOLLOWING MACRO,
  * BE SURE THE TPDUTYPE IS A LEGIT VALUE FIRST! 
  */
 
-#define WHILE_OPTIONS(P, hdr,format)\
-{	register  caddr_t		P;\
-	P = (caddr_t)(hdr) +\
-	tpdu_info[(hdr)->tpdu_type][(format)];\
-	while( P < (caddr_t)(hdr) + (int)((hdr)->tpdu_li) ) {
+#define WHILE_OPTIONS(P, hdr, format)\
+{	register caddr_t P = tpdu_info[(hdr)->tpdu_type][(format)] + (caddr_t)hdr;\
+	caddr_t PLIM = 1 + hdr->tpdu_li + (caddr_t)hdr;\
+	for (;; P += 2 + ((struct tp_vbp *)P)->tpv_len) {\
+		CHECK((P > PLIM), E_TP_LENGTH_INVAL, ts_inv_length,\
+				respond, P - (caddr_t)hdr);\
+		if (P == PLIM) break;
 
-#define END_WHILE_OPTIONS(P)\
-	P = P  + 2 + (int)((struct tp_vbp *)P)->tpv_len ;\
-} }
-
-#define CHECK(Phrase, Erval, Stat, Whattodo, Loc)\
-	if(Phrase) { error = (Erval); errloc = (caddr_t)(Loc); IncStat(Stat); \
-	goto Whattodo; }
+#define END_WHILE_OPTIONS(P) } }
 
 /* end groan */
 
@@ -376,21 +376,21 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	register struct tpdu 	*hdr = mtod(m, struct tpdu *);
 	struct socket 			*so;
 	struct tp_event 		e;
-	int 					error;
+	int 					error = 0;
 	unsigned 				dutype;
-	u_short 				dref, sref, acktime, subseq; /*VAX*/
-	u_char 					preferred_class, class_to_use;
-	u_char					opt, dusize, addlopt, version;
+	u_short 				dref, sref = 0, acktime = 2, subseq = 0; /*VAX*/
+	u_char 					preferred_class = 0, class_to_use = 0;
+	u_char					opt, dusize = TP_DFL_TPDUSIZE, addlopt = 0, version;
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
 #endif TP_PERF_MEAS
-	u_char					fsufxlen;
-	u_char					lsufxlen;
-	caddr_t					fsufxloc, lsufxloc;
-	int						tpdu_len;
-	u_int 					takes_data;
-	u_int					fcc_present; 
-	caddr_t					errloc;
+	u_char					fsufxlen = 0;
+	u_char					lsufxlen = 0;
+	caddr_t					fsufxloc = 0, lsufxloc = 0;
+	int						tpdu_len = 0;
+	u_int 					takes_data = FALSE;
+	u_int					fcc_present = FALSE; 
+	int						errlen = 0;
 	struct tp_conn_param 	tpp;
 	int						tpcons_output();
 
@@ -403,20 +403,6 @@ again:
 		printf("tp_input(0x%x, ... 0x%x)\n", m, cons_channel);
 	ENDDEBUG
 
-
-	tpdu_len = 0;
-	tpcb = (struct tp_pcb *)0;
-	fsufxlen = 0; fsufxloc = 0;
-	lsufxlen = 0; lsufxloc = 0;
-	errloc = 0; error = 0;
-	addlopt = 0;
-	acktime = 2;
-	dusize = TP_DFL_TPDUSIZE;
-	sref = 0;
-	subseq = 0;
-	takes_data = FALSE;
-	fcc_present = FALSE;
-	preferred_class = 0; class_to_use = 0;
 
 	/* 
 	 * get the actual tpdu length - necessary for monitoring
@@ -496,9 +482,6 @@ again:
 	if ( dutype == CR_TPDU_type ) {
 		u_char alt_classes = 0;
 
-#ifdef notdef  /* This is done up above */
-		sref = hdr->tpdu_CRsref;
-#endif notdef
 		preferred_class = 1 << hdr->tpdu_CRclass;
 		opt = hdr->tpdu_CRoptions;
 
@@ -511,9 +494,9 @@ again:
 				IFDEBUG(D_TPINPUT)
 					printf("CR dusize 0x%x\n", dusize);
 				ENDDEBUG
-				CHECK( (dusize < TP_MIN_TPDUSIZE || dusize > TP_MAX_TPDUSIZE),
-						E_TP_INV_PVAL, ts_inv_pval, respond,
-						(1 + (caddr_t)&vbptr(P)->tpv_val - P) )
+				/* COS tests: NBS IA (Dec. 1987) Sec. 4.5.2.1 */
+				if (dusize < TP_MIN_TPDUSIZE || dusize > TP_MAX_TPDUSIZE)
+						dusize = TP_DFL_TPDUSIZE;
 				break;
 			case	TPP_addl_opt:
 				vb_getval(P, u_char, addlopt);
@@ -559,13 +542,12 @@ again:
 
 			case	TPP_vers:
 				/* not in class 0; 1 octet; in CR_TPDU only */
-				/* Iso says if version wrong, use default version????? */
+				/* COS tests says if version wrong, use default version!?XXX */
 				CHECK( (vbval(P, u_char) != TP_VERSION ), 
 					E_TP_INV_PVAL, ts_inv_pval, setversion,
-					(1 + (caddr_t)&vbptr(P)->tpv_val - P) );
+					(1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr) );
 			setversion:
 				version = vbval(P, u_char);
-
 				break;
 			case	TPP_acktime:
 				vb_getval(P, u_short, acktime);
@@ -582,12 +564,17 @@ again:
 				{
 					u_char *aclass = 0;
 					register int i;
+					static u_char bad_alt_classes[5] =
+						{ ~0, ~3, ~5, ~0xf, ~0x1f};
 
+					aclass = 
+						(u_char *) &(((struct tp_vbp *)P)->tpv_val);
 					for (i = ((struct tp_vbp *)P)->tpv_len; i>0; i--) {
-						aclass = 
-							(u_char *) &(((struct tp_vbp *)P)->tpv_val);
-						alt_classes |= (1<<((*aclass)>>4));
+						alt_classes |= (1<<((*aclass++)>>4));
 					}
+					CHECK( (bad_alt_classes[hdr->tpdu_CRclass] & alt_classes),
+						E_TP_INV_PVAL, ts_inv_aclass, respond,
+						((caddr_t)aclass) - (caddr_t)hdr);
 					IFDEBUG(D_TPINPUT)
 						printf("alt_classes 0x%x\n", alt_classes);
 					ENDDEBUG
@@ -880,13 +867,13 @@ again:
 		} else {
 
 			CHECK( ((int)dref <= 0 || dref >= N_TPREF) ,
-				E_TP_MISM_REFS,ts_inv_dref, respond,
+				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 			CHECK( ((tpcb = tp_ref[dref].tpr_pcb ) == (struct tp_pcb *) 0 ), 
-				E_TP_MISM_REFS,ts_inv_dref, respond,
+				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 			CHECK( (tpcb->tp_refp->tpr_state == REF_FREE), 
-				E_TP_MISM_REFS,ts_inv_dref, respond,
+				E_TP_MISM_REFS,ts_inv_dref, nonx_dref,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 		}
 
@@ -929,13 +916,17 @@ again:
 					vb_getval(P, u_char, addlopt);
 					break;
 			caseof( CC_TPDU_type, TPP_tpdu_size ): 
+				{
+					u_char odusize = dusize;
 					vb_getval(P, u_char, dusize);
-					CHECK( (dusize < TP_MIN_TPDUSIZE || dusize > 
-						TP_MAX_TPDUSIZE), E_TP_INV_PVAL, ts_inv_pval, respond,
-						(1 + (caddr_t)&vbptr(P)->tpv_val - P) )
+					CHECK( (dusize < TP_MIN_TPDUSIZE ||
+							dusize > TP_MAX_TPDUSIZE || dusize > odusize),
+						E_TP_INV_PVAL, ts_inv_pval, respond,
+						(1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr) )
 					IFDEBUG(D_TPINPUT)
 						printf("CC dusize 0x%x\n", dusize);
 					ENDDEBUG
+				}
 					break;
 			caseof( CC_TPDU_type, TPP_calling_sufx):
 					IFDEBUG(D_TPINPUT)
@@ -1125,11 +1116,7 @@ again:
 					(1+lsufxloc - (caddr_t)hdr))
 			}
 
-#ifdef notdef
-			e.ATTR(CC_TPDU).e_sref =  (u_short)hdr->tpdu_CCsref;
-#else
 			e.ATTR(CC_TPDU).e_sref =  sref;
-#endif notdef
 			e.ATTR(CC_TPDU).e_cdt  =  hdr->tpdu_CCcdt;
 			takes_data = TRUE;
 			e.ev_number = CC_TPDU;
@@ -1137,25 +1124,14 @@ again:
 			break;
 
 		case DC_TPDU_type:
-#ifdef notdef
-			if (hdr->tpdu_DCsref != tpcb->tp_fref)
-				printf("INPUT: inv sufx DCsref 0x%x, tp_fref 0x%x\n",
-					hdr->tpdu_DCsref, tpcb->tp_fref);
-#else
 			if (sref != tpcb->tp_fref)
 				printf("INPUT: inv sufx DCsref 0x%x, tp_fref 0x%x\n",
 					sref, tpcb->tp_fref);
-#endif notdef
 					
-#ifdef notdef
-			CHECK( (hdr->tpdu_DCsref != tpcb->tp_fref), 
-				E_TP_MISM_REFS, ts_inv_sufx, respond,
-				(1 + (caddr_t)&hdr->tpdu_DCsref - (caddr_t)hdr))
-#else
 			CHECK( (sref != tpcb->tp_fref), 
-				E_TP_MISM_REFS, ts_inv_sufx, respond,
+				E_TP_MISM_REFS, ts_inv_sufx, discard,
 				(1 + (caddr_t)&hdr->tpdu_DCsref - (caddr_t)hdr))
-#endif notdef
+		
 			e.ev_number = DC_TPDU;
 			IncStat(ts_DC_rcvd);
 			break;
@@ -1164,30 +1140,18 @@ again:
 			IFTRACE(D_TPINPUT)
 				tptrace(TPPTmisc, "DR recvd", hdr->tpdu_DRreason, 0, 0, 0);
 			ENDTRACE
-#ifdef vax
-			if(sref != tpcb->tp_fref)
+			if (sref != tpcb->tp_fref) {
 				printf("INPUT: inv sufx DRsref 0x%x tp_fref 0x%x\n",
 					sref, tpcb->tp_fref);
+			}
 					
-			CHECK( (sref != tpcb->tp_fref), 
-				E_TP_MISM_REFS,ts_inv_sufx, respond,
+			CHECK( (sref != 0 && sref != tpcb->tp_fref &&
+					tpcb->tp_state != TP_CRSENT), 
+				(TP_ERROR_SNDC | E_TP_MISM_REFS),ts_inv_sufx, respond,
 				(1 + (caddr_t)&hdr->tpdu_DRsref - (caddr_t)hdr))
 
 			e.ATTR(DR_TPDU).e_reason = hdr->tpdu_DRreason;
 			e.ATTR(DR_TPDU).e_sref =  (u_short)sref;
-#else
-			if(hdr->tpdu_DRsref != tpcb->tp_fref)
-				printf("INPUT: inv sufx DRsref 0x%x tp_fref 0x%x\n",
-					hdr->tpdu_DRsref, tpcb->tp_fref);
-					
-			CHECK( (hdr->tpdu_DRsref != tpcb->tp_fref), 
-				E_TP_MISM_REFS,ts_inv_sufx, respond,
-				(1 + (caddr_t)&hdr->tpdu_DRsref - (caddr_t)hdr))
-
-			e.ATTR(DR_TPDU).e_reason = 
-				hdr->tpdu_DRreason;
-			e.ATTR(DR_TPDU).e_sref =  (u_short)hdr->tpdu_DRsref;
-#endif vax
 			takes_data = TRUE;
 			e.ev_number = DR_TPDU;
 			IncStat(ts_DR_rcvd);
@@ -1472,17 +1436,27 @@ discard:
 	IncStat(ts_recv_drop);
 	return (ProtoHook)0;
 
+nonx_dref:
+	switch (dutype) {
+	default:
+		goto discard;
+	case CC_TPDU_type:
+		/* error = E_TP_MISM_REFS; */
+		break;
+	case DR_TPDU_type:
+		error |= TP_ERROR_SNDC;
+	}
 respond:
 	IFDEBUG(D_ERROR_EMIT)
-		printf("RESPOND: error 0x%x, errloc 0x%x\n", error, errloc);
+		printf("RESPOND: error 0x%x, errlen 0x%x\n", error, errlen);
 	ENDDEBUG
 	IFTRACE(D_TPINPUT)
-		tptrace(TPPTmisc, "tp_input RESPOND m error sref",  m,error,sref,0);
+		tptrace(TPPTmisc, "tp_input RESPOND m error sref", m, error, sref, 0);
 	ENDTRACE
-	if( sref == 0 )
+	if (sref == 0)
 		goto discard;
 	(void) tp_error_emit(error, (u_long)sref, (struct sockaddr_iso *)faddr,
-				(struct sockaddr_iso *)laddr, m, (int)errloc, tpcb,
+				(struct sockaddr_iso *)laddr, m, errlen, tpcb,
 				(int)cons_channel, dgout_routine);
 	IFDEBUG(D_ERROR_EMIT)
 		printf("tp_input after error_emit\n");
