@@ -63,6 +63,8 @@ extern char *sys_errlist[];
 #endif
 #endif
 
+char __progname[] = "emacs";
+
 #ifdef VMS
 #include <rms.h>
 #include <ttdef.h>
