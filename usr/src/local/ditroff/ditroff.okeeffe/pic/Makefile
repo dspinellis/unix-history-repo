@@ -1,5 +1,5 @@
 #
-#	Makefile	(CWI)	1.2	85/07/23
+#	Makefile	(CWI)	1.3	85/10/24
 #
 CFLAGS= -g
 YFLAGS= -d
@@ -41,8 +41,6 @@ pic.ydef:	ytab.h
 
 install: all
 	install -s pic ${DESTDIR}${BINDIR}/pic
-	install -s vpic ${DESTDIR}${BINDIR}/vpic
-	install -s pltroff ${DESTDIR}${BINDIR}/pltroff
 	install -c -m 644 pic.1 ${DESTDIR}/usr/man/manl/pic.1
 
 clean:
