@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.5	%G%	*/
+/*	vfs_syscalls.c	4.6	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -244,8 +244,8 @@ found:
 	flag = !bp->b_un.b_filsys->s_ronly;
 	mp->m_bufp = NULL;
 	brelse(bp);
+	mpurge(mp - &mount[0]);
 	if (!stillopen) {
-		mpurge(mp - &mount[0]);
 		(*bdevsw[major(dev)].d_close)(dev, flag);
 		binval(dev);
 	}
