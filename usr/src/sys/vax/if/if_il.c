@@ -1,4 +1,4 @@
-/*	if_il.c	4.9	82/06/23	*/
+/*	if_il.c	4.10	82/06/24	*/
 
 #include "il.h"
 
@@ -274,7 +274,7 @@ ilcint(unit)
 	register struct il_softc *is = &il_softc[unit];
 	struct uba_device *ui = ilinfo[unit];
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
-	short status;
+	short csr;
 
 	if ((is->is_flags & ILF_OACTIVE) == 0) {
 		printf("il%d: stray xmit interrupt, csr=%b\n", unit,
@@ -282,6 +282,7 @@ ilcint(unit)
 		return;
 	}
 
+	csr = addr->il_csr;
 	/*
 	 * Hang receive buffer if it couldn't
 	 * be done earlier (in ilrint).
@@ -296,17 +297,17 @@ ilcint(unit)
 		is->is_flags &= ~ILF_RCVPENDING;
 	}
 	is->is_flags &= ~ILF_OACTIVE;
-	status = addr->il_csr & IL_STATUS;
+	csr &= IL_STATUS;
 	switch (is->is_lastcmd) {
 
 	case ILC_XMIT:
 		is->is_if.if_opackets++;
-		if (status > ILERR_RETRIES)
+		if (csr > ILERR_RETRIES)
 			is->is_if.if_oerrors++;
 		break;
 
 	case ILC_STAT:
-		if (status == ILERR_SUCCESS)
+		if (csr == ILERR_SUCCESS)
 			iltotal(is);
 		break;
 	}
