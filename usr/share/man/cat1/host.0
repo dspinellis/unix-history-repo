@@ -1,0 +1,264 @@
+
+
+
+HOST(1)                BSD Reference Manual               HOST(1)
+
+
+NNAAMMEE
+       rhost - look up host names using domain server
+
+SSYYNNOOPPSSIISS
+       rhost  [-l] [-v] [-w] [-r] [-d] [-t querytype] [-a] host [
+       server ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _H_o_s_t looks for information about Internet hosts.  It  gets
+       this information from a set of interconnected servers that
+       are spread across the country.  By default, it simply con­
+       verts  between host names and Internet addresses.  However
+       with the -t or -a options, it can be used to find  all  of
+       the  information about this host that is maintained by the
+       domain server.
+
+       The arguments can be either host names  or  host  numbers.
+       The  program first attempts to interpret them as host num­
+       bers.  If this fails, it will treat them as host names.  A
+       host number consists of first decimal numbers separated by
+       dots, e.g. 128.6.4.194 A host name consists of names sepa­
+       rated  by  dots,  e.g. topaz.rutgers.edu.  Unless the name
+       ends in a dot, the local domain is automatically tacked on
+       the end.  Thus a Rutgers user can say "host topaz", and it
+       will actually look up "topaz.rutgers.edu".  If this fails,
+       the name is tried unchanged (in this case, "topaz").  This
+       same convention is used for mail and other network  utili­
+       ties.  The actual suffix to tack on the end is obtained by
+       looking at the results of a  "hostname"  call,  and  using
+       everything  starting  at  the first dot.  (See below for a
+       description of how to customize the host name lookup.)
+
+       The first argument is the host name you want to  look  up.
+       If  this is a number, an "inverse query" is done, i.e. the
+       domain system looks in a separate set of databases used to
+       convert numbers to names.
+
+       The second argument is optional.  It allows you to specify
+       a particular server to query.  If you don't  specify  this
+       argument,  the default server (normally the local machine)
+       is used.
+
+       If a name is specified, you may see output of  three  dif­
+       ferent kinds.  Here is an example that shows all of them:
+          % host sun4
+          sun4.rutgers.edu is a nickname for ATHOS.RUTGERS.EDU
+          ATHOS.RUTGERS.EDU has address 128.6.5.46
+          ATHOS.RUTGERS.EDU has address 128.6.4.4
+          ATHOS.RUTGERS.EDU mail is handled by ARAMIS.RUTGERS.EDU
+       The user has typed the command  "host  sun4".   The  first
+       line   indicates   that  the  name  "sun4.rutgers.edu"  is
+
+
+
+4.4BSD                                                          1
+
+
+
+
+
+
+
+
+HOST(1)                BSD Reference Manual               HOST(1)
+
+
+       actually  a  nickname.   The   official   host   name   is
+       "ATHOS.RUTGERS.EDU'.  The next two lines show the address.
+       If a system has more than  one  network  interface,  there
+       will  be a separate address for each.  The last line indi­
+       cates that ATHOS.RUTGERS.EDU  does  not  receive  its  own
+       mail.   Mail for it is taken by ARAMIS.RUTGERS.EDU.  There
+       may be more than one such line, since  some  systems  have
+       more than one other system that will handle mail for them.
+       Technically, every system that can receive  mail  is  sup­
+       posed  to  have  an  entry  of  this  kind.  If the system
+       receives its own mail, there should be an entry  the  men­
+       tions  the system itself, for example "XXX mail is handled
+       by XXX".  However many systems that receive their own mail
+       do  not  bother  to  mention that fact.  If a system has a
+       "mail is handled by" entry, but no address, this indicates
+       that  it  is not really part of the Internet, but a system
+       that is on the network will forward mail to  it.   Systems
+       on  Usenet,  Bitnet,  and  a number of other networks have
+       entries of this kind.
+
+       There are a number of options that can be used before  the
+       host  name.   Most of these options are meaningful only to
+       the staff who have to maintain the domain database.
+
+       The option -w causes host to wait forever for a  response.
+       Normally it will time out after around a minute.
+
+       The option -v causes printout to be in a "verbose" format.
+       This is the official domain master file format,  which  is
+       documented  in  the  man  page  for "named".  Without this
+       option, output still follows this format in general terms,
+       but  some  attempt is made to make it more intelligible to
+       normal users.  Without -v, "a", "mx", and "cname"  records
+       are  written  out  as "has address", "mail is handled by",
+       and "is a nickname for", and TTL and class fields are  not
+       shown.
+
+       The  option  -r  causes  recursion to be turned off in the
+       request.  This means that the name server will return only
+       data  it  has  in its own database.  It will not ask other
+       servers for more information.
+
+       The option -d turns on  debugging.   Network  transactions
+       are shown in detail.
+
+       The  option  -t allows you to specify a particular type of
+       information to be looked up.  The arguments are defined in
+       the  man  page for "named".  Currently supported types are
+       a, ns, md, mf, cname, soa, mb, mg,  mr,  null,  wks,  ptr,
+       hinfo,  minfo,  mx, uinfo, uid, gid, unspec, and the wild­
+       card, which may be written as either "any" or "*".   Types
+
+
+
+4.4BSD                                                          2
+
+
+
+
+
+
+
+
+HOST(1)                BSD Reference Manual               HOST(1)
+
+
+       must  be given in lower case.  Note that the default is to
+       look first for "a", and then "mx", except that if the ver­
+       bose option is turned on, the default is only "a".
+
+       The option -a (for "all") is equivalent to "-v -t any".
+
+       The option -l causes a listing of a complete domain.  E.g.
+          host -l rutgers.edu
+       will give a  listing  of  all  hosts  in  the  rutgers.edu
+       domain.   The -t option is used to filter what information
+       is presented, as you would expect.  The default is address
+       information,  which  also include PTR and NS records.  The
+       command
+          host -l -v -t any rutgers.edu
+       will give a complete download of the zone  data  for  rut­
+       gers.edu,  in  the  official master file format.  (However
+       the SOA record  is  listed  twice,  for  arcane  reasons.)
+       NOTE:  -l is implemented by doing a complete zone transfer
+       and then filtering out the information the you have  asked
+       for.  This command should be used only if it is absolutely
+       necessary.
+
+CCUUSSTTOOMMIIZZIINNGG HHOOSSTT NNAAMMEE LLOOOOKKUUPP
+       In general, if the name supplied by the user does not have
+       any  dots  in it, a default domain is appended to the end.
+       This domain can be defined  in  /etc/resolv.conf,  but  is
+       normally  derived  by  taking the local hostname after its
+       first dot.  The user can override this, and specify a dif­
+       ferent  default  domain,  using  the  environment variable
+       _L_O_C_A_L_D_O_M_A_I_N.  In addition, the user  can  supply  his  own
+       abbreviations  for  host  names.  They should be in a file
+       consisting of one line per abbreviation.  Each  line  con­
+       tains  an  abbreviation,  a  space, and then the full host
+       name.  This file must be  pointed  to  by  an  environment
+       variable _H_O_S_T_A_L_I_A_S_E_S, which is the name of the file.
+
+SSeeee AAllssoo
+       named (8)
+
+BBUUGGSS
+       Unexpected effects can happen when you type a name that is
+       not part of the local domain.  Please always keep in  mind
+       the fact that the local domain name is tacked onto the end
+       of every name, unless it ends in  a  dot.   Only  if  this
+       fails is the name used unchanged.
+
+       The  -l option only tries the first name server listed for
+       the domain that you have requested.   If  this  server  is
+       dead,  you  may need to specify a server manually. E.g. to
+       get a listing of  foo.edu,  you  could  try  "host  -t  ns
+       foo.edu"  to  get  a  list  of  all  the  name servers for
+
+
+
+4.4BSD                                                          3
+
+
+
+
+
+
+
+
+HOST(1)                BSD Reference Manual               HOST(1)
+
+
+       foo.edu, and then try "host -l foo.edu xxx" for all xxx on
+       the list of name servers, until you find one that works.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4BSD                                                          4
+
+
+
+
+

@@ -1,0 +1,176 @@
+DD(1)                        BSD Reference Manual                        DD(1)
+
+NNAAMMEE
+     dddd - convert and copy a file
+
+SSYYNNOOPPSSIISS
+     dddd [operands ...]
+
+DDEESSCCRRIIPPTTIIOONN
+     The dddd utility copies the standard input to the standard output.  Input
+     data is read and written in 512-byte blocks.  If input reads are short,
+     input from multiple reads are aggregated to form the output block.  When
+     finished, dddd displays the number of complete and partial input and output
+     blocks and truncated input records to the standard error output.
+
+     The following operands are available:
+
+     bbss==_n     Set both input and output block size, superseding the iibbss and
+              oobbss operands.  If no conversion values other than nnooeerrrroorr,
+              nnoottrruunncc or ssyynncc are specified, then each input block is copied
+              to the output as a single block without any aggregation of short
+              blocks.
+
+     ccbbss==_n    Set the conversion record size to _n bytes.  The conversion
+              record size is required by the record oriented conversion val-
+              ues.
+
+     ccoouunntt==_n  Copy only _n input blocks.
+
+     ffiilleess==_n  Copy _n input files before terminating.  This operand is only ap-
+              plicable when the input device is a tape.
+
+     iibbss==_n    Set the input block size to _n bytes instead of the default 512.
+
+     iiff==_f_i_l_e  Read input from _f_i_l_e instead of the standard input.
+
+     oobbss==_n    Set the output block size to _n bytes instead of the default 512.
+
+     ooff==_f_i_l_e  Write output to _f_i_l_e instead of the standard output.  Any regu-
+              lar output file is truncated unless the nnoottrruunncc conversion value
+              is specified.  If an initial portion of the output file is
+              skipped (see the sseeeekk operand) the output file is truncated at
+              that point.
+
+     sseeeekk==_n   Seek _n blocks from the beginning of the output before copying.
+              On non-tape devices, a lseek(2) operation is used.  Otherwise,
+              existing blocks are read and the data discarded.  If the user
+              does not have read permission for the tape, it is positioned us-
+              ing the tape ioctl(2) function calls.  If the seek operation is
+              past the end of file, space from the current end of file to the
+              specified offset is filled with blocks of NUL bytes.
+
+     sskkiipp==_n   Skip _n blocks from the beginning of the input before copying.
+              On input which supports seeks, a lseek(2) operation is used.
+              Otherwise, input data is read and discarded.  For pipes, the
+              correct number of bytes is read.  For all other devices, the
+              correct number of blocks is read without distinguishing between
+              a partial or complete block being read.
+
+     ccoonnvv== vvaalluuee[, vvaalluuee ......]
+              Where vvaalluuee is one of the symbols from the following list.
+
+              aasscciiii, oollddaasscciiii
+                       The same as the uunnbblloocckk value except that characters
+                       are translated from ECBDIC to ASCII before the records
+                       are converted.  (These values imply uunnbblloocckk if the
+                       operand ccbbss is also specified.)  There are two conver-
+                       sion maps for ASCII. The value aasscciiii specifies the rec-
+                       ommended one which is compatible with System V.  The
+                       value oollddaasscciiii specifies the one used in historic AT&T
+                       and pre-4.3BSD-reno systems.
+
+              bblloocckk    Treats the input as a sequence of newline or end-of-
+                       file terminated variable length records independent of
+                       input and output block boundaries.  Any trailing new-
+                       line character is discarded.  Each input record is con-
+                       verted to a fixed length output record where the length
+                       is specified by the ccbbss operand.  Input records shorter
+                       than the conversion record size are padded with spaces.
+                       Input records longer than the conversion record size
+                       are truncated.  The number of truncated input records,
+                       if any, are reported to the standard error output at
+                       the completion of the copy.
+
+              eebbccddiicc, iibbmm, oollddeebbccddiicc, oollddiibbmm
+                       The same as the bblloocckk value except that characters are
+                       translated from ASCII to EBCDIC after the records are
+                       converted.  (These values imply bblloocckk if the operand
+                       ccbbss is also specified.)  There are four conversion maps
+                       for EBCDIC. The value eebbccddiicc specifies the recommended
+                       one which is compatible with AT&T System V UNIX.  The
+                       value iibbmm is a slightly different mapping, which is
+                       compatible with the AT&T System V UNIX iibbmm value.  The
+                       values oollddeebbccddiicc and oollddiibbmm are maps used in historic
+                       AT&T and pre-4.3BSD-reno systems.
+
+              llccaassee    Transform uppercase characters into lowercase charac-
+                       ters.
+
+              nnooeerrrroorr  Do not stop processing on an input error.  When an in-
+                       put error occurs, a diagnostic message followed by the
+                       current input and output block counts will be written
+                       to the standard error output in the same format as the
+                       standard completion message.  If the ssyynncc conversion is
+                       also specified, any missing input data will be replaced
+                       with NUL bytes (or with spaces if a block oriented con-
+                       version value was specified) and processed as a normal
+                       input buffer.  If the ssyynncc conversion is not specified,
+                       the input block is omitted from the output.  On input
+                       files which are not tapes or pipes, the file offset
+                       will be positioned past the block in which the error
+                       occurred using lseek(2).
+
+              nnoottrruunncc  Do not truncate the output file.  This will preserve
+                       any blocks in the output file not explicitly written by
+                       dddd. The nnoottrruunncc value is not supported for tapes.
+
+              sswwaabb     Swap every pair of input bytes.  If an input buffer has
+                       an odd number of bytes, the last byte will be ignored
+                       during swapping.
+
+              ssyynncc     Pad every input block to the input buffer size.  Spaces
+                       are used for pad bytes if a block oriented conversion
+                       value is specified, otherwise NUL bytes are used.
+
+              uuccaassee    Transform lowercase characters into uppercase charac-
+                       ters.
+
+              uunnbblloocckk  Treats the input as a sequence of fixed length records
+                       independent of input and output block boundaries.  The
+                       length of the input records is specified by the ccbbss
+                       operand.  Any trailing space characters are discarded
+                       and a newline character is appended.
+
+     Where sizes are specified, a decimal number of bytes is expected.  If the
+     number ends with a ``b'', ``k'', ``m'' or ``w'', the number is multiplied
+     by 512, 1024 (1K), 1048576 (1M) or the number of bytes in an integer, re-
+     spectively.  Two or more numbers may be separated by an ``x'' to indicate
+     a product.
+
+     When finished, dddd displays the number of complete and partial input and
+     output blocks, truncated input records and odd-length byte-swapping
+     blocks to the standard error output.  A partial input block is one where
+     less than the input block size was read.  A partial output block is one
+     where less than the output block size was written.  Partial output blocks
+     to tape devices are considered fatal errors.  Otherwise, the rest of the
+     block will be written.  Partial output blocks to character devices will
+     produce a warning message.  A truncated input block is one where a vari-
+     able length record oriented conversion value was specified and the input
+     line was too long to fit in the conversion record or was not newline ter-
+     minated.
+
+     Normally, data resulting from input or conversion or both are aggregated
+     into output blocks of the specified size.  After the end of input is
+     reached, any remaining output is written as a block.  This means that the
+     final output block may be shorter than the output block size.
+
+     If dddd receives a SIGINFO (see the ``status'' argument for stty(1))  sig-
+     nal, the current input and output block counts will be written to the
+     standard error output in the same format as the standard completion mes-
+     sage.  If dddd receives a SIGINT signal, the current input and output block
+     counts will be written to the standard error output in the same format as
+     the standard completion message and dddd will exit.
+
+     The dddd utility exits 0 on success and >0 if an error occurred.
+
+SSEEEE AALLSSOO
+     cp(1),  mt(1),  tr(1)
+
+SSTTAANNDDAARRDDSS
+     The dddd utility is expected to be a superset of the IEEE Std1003.2
+     (``POSIX'') standard.  The ffiilleess operand and the aasscciiii, eebbccddiicc, iibbmm,
+     oollddaasscciiii, oollddeebbccddiicc and oollddiibbmm values are extensions to the POSIX stan-
+     dard.
+
+4.4BSD                           June 30, 1993                               3

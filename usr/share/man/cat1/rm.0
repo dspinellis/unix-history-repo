@@ -1,0 +1,62 @@
+RM(1)                        BSD Reference Manual                        RM(1)
+
+NNAAMMEE
+     rrmm - remove directory entries
+
+SSYYNNOOPPSSIISS
+     rrmm [--ff | --ii] [--ddRRrr] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The rrmm utility attempts to remove the non-directory type files specified
+     on the command line.  If the permissions of the file do not permit writ-
+     ing, and the standard input device is a terminal, the user is prompted
+     (on the standard error output) for confirmation.
+
+     The options are as follows:
+
+     --dd    Attempt to remove directories as well as other types of files.
+
+     --ff    Attempt to remove the files without prompting for confirmation, re-
+           gardless of the file's permissions.  If the file does not exist, do
+           not display a diagnostic message or modify the exit status to re-
+           flect an error.  The --ff option overrides any previous --ii options.
+
+     --ii    Request confirmation before attempting to remove each file, regard-
+           less of the file's permissions, or whether or not the standard in-
+           put device is a terminal.  The --ii option overrides any previous --ff
+           options.
+
+     --RR    Attempt to remove the file hierarchy rooted in each file argument.
+           The --RR option implies the --dd option.  If the --ii option is speci-
+           fied, the user is prompted for confirmation before each directory's
+           contents are processed (as well as before the attempt is made to
+           remove the directory).  If the user does not respond affirmatively,
+           the file hierarchy rooted in that directory is skipped.
+
+     --rr    Equivalent to --RR.
+
+     The rrmm utility removes symbolic links, not the files referenced by the
+     links.
+
+     It is an error to attempt to remove the files ``.'' and ``..''.
+
+     The rrmm utility exits 0 if all of the named files or file hierarchies were
+     removed, or if the --ff option was specified and all of the existing files
+     or file hierarchies were removed.  If an error occurs, rrmm exits with a
+     value >0.
+
+SSEEEE AALLSSOO
+     rmdir(1),  unlink(2),  fts(3),  symlink(7)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The rrmm utility differs from historical implementations in that the --ff op-
+     tion only masks attempts to remove non-existent files instead of masking
+     a large variety of errors.
+
+     Also, historical BSD implementations prompted on the standard output, not
+     the standard error output.
+
+SSTTAANNDDAARRDDSS
+     The rrmm command is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+4.4BSD                           May 31, 1993                                1

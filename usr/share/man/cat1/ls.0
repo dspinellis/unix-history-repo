@@ -1,0 +1,193 @@
+LS(1)                        BSD Reference Manual                        LS(1)
+
+NNAAMMEE
+     llss - list directory contents
+
+SSYYNNOOPPSSIISS
+     llss [--CCFFRRaaccddiillqqrrssttuu11] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     For each operand that names a _f_i_l_e of a type other than directory, llss
+     displays its name as well as any requested, associated information.  For
+     each operand that names a _f_i_l_e of type directory, llss displays the names
+     of files contained within that directory, as well as any requested, asso-
+     ciated information.
+
+     If no operands are given, the contents of the current directory are dis-
+     played.  If more than one operand is given, non-directory operands are
+     displayed first; directory and non-directory operands are sorted sepa-
+     rately and in lexicographical order.
+
+     The following options are available:
+
+     --AA      List all entries except for `.' and `..'. Always set for the su-
+             per-user.
+
+     --CC      Force multi-column output; this is the default when output is to
+             a terminal.
+
+     --FF      Display a slash (/) immediately after each pathname that is a di-
+             rectory, an asterisk (*) after each that is executable, and an at
+             sign (@) after each symbolic link.
+
+     --LL      If argument is a symbolic link, list the file or directory the
+             link references rather than the link itself.
+
+     --RR      Recursively list subdirectories encountered.
+
+     --TT      Display complete time information for the file, including month,
+             day, hour, minute, second, and year.
+
+     --aa      Include directory entries whose names begin with a dot (.).
+
+     --cc      Use time when file status was last changed for sorting or print-
+             ing.
+
+     --dd      Directories are listed as plain files (not searched recursively)
+             and symbolic links in the argument list are not indirected
+             through.
+
+     --ff      Output is not sorted.
+
+     --ii      For each file, print the file's file serial number (inode num-
+             ber).
+
+     --ll      (The lowercase letter ``ell.'')  List in long format. (See be-
+             low.)  If the output is to a terminal, a total sum for all the
+             file sizes is output on a line before the long listing.
+
+     --oo      Include the file flags in a long (--ll) output
+
+     --qq      Force printing of non-graphic characters in file names as the
+             character `?'; this is the default when output is to a terminal.
+
+     --rr      Reverse the order of the sort to get reverse lexicographical or-
+
+             der or the oldest entries first.
+
+     --ss      Display the number of file system blocks actually used by each
+             file, in units of 512 bytes, where partial units are rounded up
+             to the next integer value.  If the output is to a terminal, a to-
+             tal sum for all the file sizes is output on a line before the
+             listing.
+
+     --tt      Sort by time modified (most recently modified first) before sort-
+             ing the operands by lexicographical order.
+
+     --uu      Use time of last access, instead of last modification of the file
+             for sorting (--tt) or printing (--ll).
+
+     --11      (The numeric digit ``one.'')  Force output to be one entry per
+             line.  This is the default when output is not to a terminal.
+
+     The --11, --CC, and --ll options all override each other; the last one speci-
+     fied determines the format used.
+
+     The --cc, and --uu options override each other; the last one specified deter-
+     mines the file time used.
+
+     By default, llss lists one entry per line to standard output; the excep-
+     tions are to terminals or when the --CC option is specified.
+
+     File information is displayed with one or more <blank>s separating the
+     information associated with the --ii, --ss, and --ll options.
+
+   TThhee LLoonngg FFoorrmmaatt
+     If the --ll option is given, the following information is displayed for
+     each file: file mode, number of links, owner name, group name, number of
+     bytes in the file, abbreviated month, day-of-month file was last modi-
+     fied, hour file last modified, minute file last modified, and the path-
+     name.  In addition, for each directory whose contents are displayed, the
+     total number of 512-byte blocks used by the files in the directory is
+     displayed on a line by itself immediately before the information for the
+     files in the directory.
+
+     If the owner or group names are not a known user or group name the numer-
+     ic ID's are displayed.
+
+     If the file is a character special or block special file, the major and
+     minor device numbers for the file are displayed in the size field. If the
+     file is a symbolic link the pathname of the linked-to file is preceded by
+     ``->''.
+
+     The file mode printed under the -l option consists of the the entry type,
+     owner permissions, and group permissions.  The entry type character de-
+     scribes the type of file, as follows:
+
+           bb     Block special file.
+           cc     Character special file.
+           dd     Directory.
+           ll     Symbolic link.
+           ss     Socket link.
+           --     Regular file.
+
+     The next three fields are three characters each: owner permissions, group
+     permissions, and other permissions.  Each field has three character posi-
+     tions:
+
+           1.   If rr, the file is readable; if --, it is not readable.
+
+
+
+           2.   If ww, the file is writable; if --, it is not writable.
+
+           3.   The first of the following that applies:
+
+                      SS     If in the owner permissions, the file is not exe-
+                            cutable and set-user-ID mode is set.  If in the
+                            group permissions, the file is not executable and
+                            set-group-ID mode is set.
+
+                      ss     If in the owner permissions, the file is exe-
+                            cutable and set-user-ID mode is set.  If in the
+                            group permissions, the file is executable and set-
+                            group-ID mode is set.
+
+                      xx     The file is executable or the directory is search-
+                            able.
+
+                      --     The file is neither readable, writeable, exec-
+                            tutable, or set-user-ID or set-group-ID mode nor
+                            sticky. (See below.)
+
+                These next two apply only to the third character in the last
+                group (other permissions).
+
+                      TT     The sticky bit is set (mode 1000), but not execute
+                            or search permission. (See chmod(1) or sticky(8).)
+
+
+                      tt     The sticky bit is set (mode 1000), and is
+                            searcheable or executable.  (See chmod(1) or
+                            sticky(8).)
+
+     The llss utility exits 0 on success, and >0 if an error occurs.
+
+EENNVVIIRROONNMMEENNTTAALL VVAARRIIAABBLLEESS
+     The following environment variables affect the execution of llss:
+
+     BLOCKSIZE  If the environmental variable BLOCKSIZE is set, the block
+                counts (see --ss) will be displayed in units of that size block.
+
+     COLUMNS    If this variable contains a string representing a decimal in-
+                teger, it is used as the column position width for displaying
+                multiple-text-column output.  The llss utility calculates how
+                many pathname text columns to display based on the width pro-
+                vided.  (See --CC.)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The group field is now automatically included in the long listing for
+     files in order to be compatible with the IEEE Std1003.2 (``POSIX'') spec-
+     ification.
+
+SSEEEE AALLSSOO
+     chmod(1),  symlink(7),  sticky(8)
+
+HHIISSTTOORRYY
+     A llss command appeared in Version 6 AT&T UNIX.
+
+SSTTAANNDDAARRDDSS
+     The llss function is expected to be a superset of the IEEE Std1003.2
+     (``POSIX'') specification.
+
+4.4BSD                           May 31, 1993                                3

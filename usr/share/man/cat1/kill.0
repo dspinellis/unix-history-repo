@@ -1,0 +1,55 @@
+KILL(1)                      BSD Reference Manual                      KILL(1)
+
+NNAAMMEE
+     kkiillll - terminate or signal a process
+
+SSYYNNOOPPSSIISS
+     kkiillll [--ssiiggnnaall__nnaammee] _p_i_d ...
+     kkiillll [--ssiiggnnaall__nnuummbbeerr] _p_i_d ...
+     kkiillll [--ll]
+
+DDEESSCCRRIIPPTTIIOONN
+     The kill utility sends the TERM signal to the processes specified by the
+     pid operand(s).
+
+     Only the super-user may send signals to other users' processes.
+
+     The options are as follows:
+
+     --ll      List the signal names.
+
+     --ssiiggnnaall__nnaammee
+             A symbolic signal name specifying the signal to be sent instead
+             of the default TERM. The --ll option displays the signal names.
+
+     --ssiiggnnaall__nnuummbbeerr
+             A non-negative decimal integer, specifying the signal to be sent
+             instead of the default TERM.
+
+     Some of the more commonly used signals:
+
+           -1     -1      (super-user broadcast to all processes, or user
+                          broadcast to user's processes)
+           0      0       (sh(1) only, signals all members of process group)
+           2      INT     (interrupt)
+           3      QUIT    (quit)
+           6      ABRT    (abort)
+           9      KILL    (non-catchable, non-ignorable kill)
+           14     ALRM    (alarm clock)
+           15     TERM    (software termination signal)
+
+     KKiillll is a built-in to csh(1);  it allows job specifiers of the form
+     ``%...'' as arguments so process id's are not as often used as kkiillll argu-
+     ments.  See csh(1) for details.
+
+SSEEEE AALLSSOO
+     csh(1),  ps(1),  kill(2),  sigvec(2)
+
+HHIISSTTOORRYY
+     A kkiillll command appeared in Version 6 AT&T UNIX.
+
+BBUUGGSS
+     A replacement for the command ``kill 0'' for csh(1) users should be pro-
+     vided.
+
+4.4BSD                           May 31, 1993                                1

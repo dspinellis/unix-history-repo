@@ -1,0 +1,414 @@
+STTY(1)                      BSD Reference Manual                      STTY(1)
+
+NNAAMMEE
+     ssttttyy - set the options for a terminal device interface
+
+SSYYNNOOPPSSIISS
+     ssttttyy [--aa | --ee | --gg] [--ff _f_i_l_e] [operands]
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttttyy utility sets or reports on terminal characteristics for the de-
+     vice that is its standard input.  If no options or operands are speci-
+     fied, it reports the settings of a subset of characteristics as well as
+     additional ones if they differ from their default values.  Otherwise it
+     modifies the terminal state according to the specified arguments.  Some
+     combinations of arguments are mutually exclusive on some terminal types.
+
+     The following options are available:
+
+     --aa      Display all the current settings for the terminal to standard
+             output as per IEEE Std1003.2 (``POSIX'').
+
+     --ee      Display all the current settings for the terminal to standard
+             output in the traditional BSD ``all'' and ``everything'' formats.
+
+     --ff      Open and use the terminal named by _f_i_l_e rather than using stan-
+             dard input.  The file is opened using the O_NONBLOCK flag of
+             ooppeenn(), making it possible to set or display settings on a termi-
+             nal that might otherwise block on the open.
+
+     --gg      Display all the current settings for the terminal to standard
+             output in a form that may be used as an argument to a subsequent
+             invocation of ssttttyy to restore the current terminal state as per
+             IEEE Std1003.2 (``POSIX'').
+
+     The following arguments are available to set the terminal characteris-
+     tics:
+
+   CCoonnttrrooll MMooddeess::
+
+     Control mode flags affect hardware characteristics associated with the
+     terminal.  This corresponds to the c_cflag in the termios structure.
+
+     ppaarreennbb (--ppaarreennbb)
+                 Enable (disable) parity generation and detection.
+
+     ppaarroodddd (--ppaarroodddd)
+                 Select odd (even) parity.
+
+     ccss55 ccss66 ccss77 ccss88
+                 Select character size, if possible.
+
+     _n_u_m_b_e_r      Set terminal baud rate to the number given, if possible.  If
+                 the baud rate is set to zero, modem control is no longer as-
+                 serted.
+
+     iissppeeeedd _n_u_m_b_e_r
+                 Set terminal input baud rate to the number given, if possi-
+                 ble.  If the input baud rate is set to zero, the input baud
+                 rate is set to the value of the output baud rate.
+
+     oossppeeeedd _n_u_m_b_e_r
+                 Set terminal output baud rate to the number given, if possi-
+                 ble.  If the output baud rate is set to zero, modem control
+
+
+                 is no longer asserted.
+
+     ssppeeeedd _n_u_m_b_e_r
+                 This sets both iissppeeeedd and oossppeeeedd to _n_u_m_b_e_r.
+
+     hhuuppccll (--hhuuppccll)
+                 Stop asserting modem control (do not stop asserting modem
+                 control) on last close.
+
+     hhuupp (--hhuupp)  Same as hupcl (--hhuuppccll).
+
+     ccssttooppbb (--ccssttooppbb)
+                 Use two (one) stop bits per character.
+
+     ccrreeaadd (--ccrreeaadd)
+                 Enable (disable) the receiver.
+
+     ccllooccaall (--ccllooccaall)
+                 Assume a line without (with) modem control.
+
+     ccrrttssccttss (--ccrrttssccttss)
+                 Enable RTS/CTS flow control.
+
+   IInnppuutt MMooddeess::
+     This corresponds to the c_iflag in the termios structure.
+
+     iiggnnbbrrkk (--iiggnnbbrrkk)
+                 Ignore (do not ignore) break on input.
+
+     bbrrkkiinntt (--bbrrkkiinntt)
+                 Signal (do not signal) INTR on break.
+
+     iiggnnppaarr (--iiggnnppaarr)
+                 Ignore (do not ignore) parity errors.
+
+     ppaarrmmrrkk (--ppaarrmmrrkk)
+                 Mark (do not mark) parity errors.
+
+     iinnppcckk (--iinnppcckk)
+                 Enable (disable) input parity checking.
+
+     iissttrriipp (--iissttrriipp)
+                 Strip (do not strip) input characters to seven bits.
+
+     iinnllccrr (--iinnllccrr)
+                 Map (do not map) NL to CR on input.
+
+     iiggnnccrr (--iiggnnccrr)
+                 Ignore (do not ignore) CR on input.
+
+     iiccrrnnll (--iiccrrnnll)
+                 Map (do not map) CR to NL on input.
+
+     iixxoonn (--iixxoonn)
+                 Enable (disable) START/STOP output control.  Output from the
+                 system is stopped when the system receives STOP and started
+                 when the system receives START, or if iixxaannyy is set, any char-
+                 acter restarts output.
+
+     iixxooffff (--iixxooffff)
+                 Request that the system send (not send) START/STOP characters
+                 when the input queue is nearly empty/full.
+
+     iixxaannyy (--iixxaannyy)
+
+
+                 Allow any character (allow only START) to restart output.
+
+     iimmaaxxbbeell (--iimmaaxxbbeell)
+                 The system imposes a limit of MAX_INPUT (currently 255) char-
+                 acters in the input queue.  If iimmaaxxbbeell is set and the input
+                 queue limit has been reached, subsequent input causes the
+                 system to send an ASCII BEL character to the output queue
+                 (the terminal beeps at you).  Otherwise, if iimmaaxxbbeell is unset
+                 and the input queue is full, the next input character causes
+                 the entire input and output queues to be discarded.
+
+   OOuuttppuutt MMooddeess::
+     This corresponds to the c_oflag of the termios structure.
+
+     ooppoosstt (--ooppoosstt)
+                 Post-process output (do not post-process output; ignore all
+                 other output modes).
+
+     oonnllccrr (--oonnllccrr)
+                 Map (not not map) NL to on output.
+
+     ooxxttaabbss (--ooxxttaabbss)
+                 Expand (do not expand) tabs to spaces on output.
+
+   LLooccaall MMooddeess::
+
+     Local mode flags (lflags) affect various and sundry characteristics of
+     terminal processing.  Historically the term "local" pertained to new job
+     control features implemented by Jim Kulp on a Pdp 11/70 at IIASA. Later
+     the driver ran on the first VAX at Evans Hall, UC Berkeley, where the job
+     control details were greatly modified but the structure definitions and
+     names remained essentially unchanged.  The second interpretation of the
+     'l' in lflag is ``line discipline flag'' which corresponds to the _c___l_f_l_a_g
+     of the _t_e_r_m_i_o_s structure.
+
+     iissiigg (--iissiigg)
+                 Enable (disable) the checking of characters against the spe-
+                 cial control characters INTR, QUIT, and SUSP.
+
+     iiccaannoonn (--iiccaannoonn)
+                 Enable (disable) canonical input (ERASE and KILL processing).
+
+     iieexxtteenn (--iieexxtteenn)
+                 Enable (disable) any implementation defined special control
+                 characters not currently controlled by icanon, isig, or ixon.
+
+     eecchhoo (--eecchhoo)
+                 Echo back (do not echo back) every character typed.
+
+     eecchhooee (--eecchhooee)
+                 The ERASE character shall (shall not) visually erase the last
+                 character in the current line from the display, if possible.
+
+     eecchhookk (--eecchhookk)
+                 Echo (do not echo) NL after KILL character.
+
+     eecchhookkee (--eecchhookkee)
+                 The KILL character shall (shall not) visually erase the the
+                 current line from the display, if possible.
+
+     eecchhoonnll (--eecchhoonnll)
+                 Echo (do not echo) NL, even if echo is disabled.
+
+     eecchhooccttll (--eecchhooccttll)
+                 If eecchhooccttll is set, echo control characters as ^X.  Otherwise
+
+                 control characters echo as themselves.
+
+     eecchhoopprrtt (--eecchhoopprrtt)
+                 For printing terminals. If set, echo erased characters back-
+                 wards within ``\'' and ``/''.  Otherwise, disable this fea-
+                 ture.
+
+     nnooffllsshh (--nnooffllsshh)
+                 Disable (enable) flush after INTR, QUIT, SUSP.
+
+     ttoossttoopp (--ttoossttoopp)
+                 Send (do not send) SIGTTOU for background output.  This caus-
+                 es background jobs to stop if they attempt terminal output.
+
+     aallttwweerraassee (--aallttwweerraassee)
+                 Use (do not use) an alternate word erase algorithm when pro-
+                 cessing WERASE characters.  This alternate algorithm consid-
+                 ers sequences of alphameric/underscores as words.  It also
+                 skips the first preceding character in its classification (as
+                 a convenience since the one preceding character could have
+                 been erased with simply an ERASE character.)
+
+     mmddmmbbuuff (--mmddmmbbuuff)
+                 If set, flow control output based on condition of Carrier De-
+                 tect.  Otherwise writes return an error if Carrier Detect is
+                 low (and Carrier is not being ignored with the CLOCAL flag.)
+
+     fflluusshhoo (--fflluusshhoo)
+                 Indicates output is (is not) being discarded.
+
+     ppeennddiinn (--ppeennddiinn)
+                 Indicates input is (is not) pending after a switch from non-
+                 canonical to canonical mode and will be re-input when a read
+                 becomes pending or more input arrives.
+
+   CCoonnttrrooll CChhaarraacctteerrss::
+
+     _c_o_n_t_r_o_l_-_c_h_a_r_a_c_t_e_r _s_t_r_i_n_g
+                 Set _c_o_n_t_r_o_l_-_c_h_a_r_a_c_t_e_r to _s_t_r_i_n_g. If string is a single char-
+                 acter, the control character is set to that character.  If
+                 string is the two character sequence "^-" or the string "un-
+                 def" the control character is disabled (i.e. set to
+                 {_POSIX_VDISABLE}.)
+
+                 Recognized control-characters:
+
+
+                       control-
+                       character    Subscript    Description
+                       _________    _________    _______________
+                       eof          VEOF         EOF character
+                       eol          VEOL         EOL character
+                       eol2         VEOL2        EOL2 character
+                       erase        VERASE       ERASE character
+                       werase       VWERASE      WERASE character
+                       intr         VINTR        INTR character
+                       kill         VKILL        KILL character
+                       quit         VQUIT        QUIT character
+                       susp         VSUSP        SUSP character
+                       start        VSTART       START character
+                       stop         VSTOP        STOP character
+                       dsusp        VDSUSP       DSUSP character
+                       lnext        VLNEXT       LNEXT character
+                       reprint      VREPRINT     REPRINT character
+                       status       VSTATUS      STATUS character
+
+
+     mmiinn _n_u_m_b_e_r
+
+     ttiimmee _n_u_m_b_e_r
+                 Set the value of min or time to number.  MIN and TIME are
+                 used in Non-Canonical mode input processing (-icanon).
+
+   CCoommbbiinnaattiioonn MMooddeess::
+
+     _s_a_v_e_d _s_e_t_t_i_n_g_s
+                 Set the current terminal characteristics to the saved set-
+                 tings produced by the --gg option.
+
+     eevveennpp or ppaarriittyy
+                 Enable parenb and cs7; disable parodd.
+
+     ooddddpp        Enable parenb, cs7, and parodd.
+
+     --ppaarriittyy, --eevveennpp, --ooddddpp
+                 Disable parenb, and set cs8.
+
+     nnll (--nnll)    Enable (disable) icrnl.  In addition -nl unsets inlcr and
+                 igncr.
+
+     eekk          Reset ERASE and KILL characters back to system defaults.
+
+     ssaannee        Resets all modes to reasonable values for interactive termi-
+                 nal use.
+
+     ttttyy         Set the line discipline to the standard terminal line disci-
+                 pline TTYDISC.
+
+     ccrrtt (--ccrrtt)  Set (disable) all modes suitable for a CRT display device.
+
+     kkeerrnniinnffoo (--kkeerrnniinnffoo)
+                 Enable (disable) the system generated status line associated
+                 with processing a STATUS character (usually set to ^T).  The
+                 status line consists of the system load average, the current
+                 command name, its process ID, the event the process is wait-
+                 ing on (or the status of the process), the user and system
+                 times, percent cpu, and current memory usage.
+
+     ccoolluummnnss _n_u_m_b_e_r
+                 The terminal size is recorded as having _n_u_m_b_e_r columns.
+
+     ccoollss _n_u_m_b_e_r
+                 is an alias for ccoolluummnnss..
+
+     rroowwss _n_u_m_b_e_r
+                 The terminal size is recorded as having _n_u_m_b_e_r rows.
+
+     ddeecc         Set modes suitable for users of Digital Equipment Corporation
+                 systems ( ERASE, KILL, and INTR characters are set to ^?, ^U,
+                 and ^C; ixany is disabled, and crt is enabled.)
+
+     eexxttpprroocc (--eexxttpprroocc)
+                 If set, this flag indicates that some amount of terminal pro-
+                 cessing is being performed by either the terminal hardware or
+                 by the remote side connected to a pty.
+
+     rraaww (--rraaww)  If set, change the modes of the terminal so that no input or
+                 output processing is performed. If unset, change the modes of
+                 the terminal to some reasonable state that performs input and
+                 output processing.  Note that since the terminal driver no
+                 longer has a single RAW bit, it is not possible to intuit
+                 what flags were set prior to setting rraaww. This means that un-
+                 setting rraaww may not put back all the setting that were previ-
+                 ously in effect.  To set the terminal into a raw state and
+                 then accurately restore it, the following shell code is rec-
+                 ommended:
+
+                 save_state=$(stty -g)
+                 stty raw
+                 ...
+                 stty "$save_state"
+
+
+     ssiizzee        The size of the terminal is printed as two numbers on a sin-
+                 gle line, first rows, then columns.
+
+   CCoommppaattaabbiilliittyy MMooddeess::
+
+     These modes remain for compatability with the previous version of the
+     stty command.
+
+     aallll         Reports all the terminal modes as with ssttttyy --aa except that
+                 the control characters are printed in a columnar format.
+
+     eevveerryytthhiinngg  Same as aallll.
+
+     ccooookkeedd      Same as ssaannee.
+
+     ccbbrreeaakk      If set, enables bbrrkkiinntt, iixxoonn, iimmaaxxbbeell, ooppoosstt, iissiigg, iieexxtteenn,
+                 and --iiccaannoonn. If unset, same as ssaannee.
+
+     nneeww         Same as ttttyy.
+
+     oolldd         Same as ttttyy.
+
+     nneewwccrrtt (--nneewwccrrtt)
+                 Same as ccrrtt.
+
+     ppaassss88       The converse of ppaarriittyy.
+
+     ttaannddeemm (--ttaannddeemm)
+                 Same as iixxooffff.
+
+     ddeeccccttllqq (--ddeeccccttllqq)
+                 The converse of iixxaannyy.
+
+     ccrrtteerraassee (--ccrrtteerraassee)
+                 Same as eecchhooee.
+
+     ccrrttbbss (--ccrrttbbss)
+                 Same as eecchhooee.
+
+     ccrrttkkiillll (--ccrrttkkiillll)
+                 Same as eecchhookkee.
+
+     ccttlleecchhoo (--ccttlleecchhoo)
+                 Same as eecchhooccttll.
+
+     pprrtteerraassee (--pprrtteerraassee)
+                 Same as eecchhoopprrtt.
+
+     lliittoouutt (--lliittoouutt)
+                 The converse of ooppoosstt.
+
+     ttaabbss (--ttaabbss)
+                 The converse of ttaabbss.
+
+
+     bbrrkk _v_a_l_u_e   Same as the control character eeooll.
+
+     fflluusshh _v_a_l_u_e
+                 Same as the control character ddiissccaarrdd.
+
+     rrpprrnntt _v_a_l_u_e
+                 Same as the control character rreepprriinntt.
+
+     The ssttttyy utility exits with a value of 0 if successful, and >0 if an er-
+     ror occurs.
+
+SSEEEE AALLSSOO
+     termios(4)
+
+SSTTAANNDDAARRDDSS
+     The ssttttyy function is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble.  The flags --ee and --ff are extensions to the standard.
+
+4.4BSD                           May 31, 1993                                7

@@ -1,0 +1,113 @@
+DATE(1)                      BSD Reference Manual                      DATE(1)
+
+NNAAMMEE
+     ddaattee - display or set date and time
+
+SSYYNNOOPPSSIISS
+     ddaattee [--dd _d_s_t] [--rr _s_e_c_o_n_d_s] [--tt _m_i_n_u_t_e_s___w_e_s_t] [--nnuu] [++_f_o_r_m_a_t]
+          [[yy[mm[dd[hh]]]]mm[.ss]]
+
+DDEESSCCRRIIPPTTIIOONN
+     DDaattee displays the current date and time when invoked without arguments.
+     Providing arguments will format the date and time in a user-defined way
+     or set the date.  Only the superuser may set the date.
+
+     The options are as follows:
+
+     --dd      Set the kernel's value for daylight savings time.  If _d_s_t is non-
+             zero, future calls to gettimeofday(2) will return a non-zero
+             `tz_dsttime'.
+
+     --nn      The utility timed(8) is used to synchronize the clocks on groups
+             of machines.  By default, if timed is running, ddaattee will set the
+             time on all of the machines in the local group.  The --nn option
+             stops ddaattee from setting the time for other than the current ma-
+             chine.
+
+     --rr      Print out the date and time in _s_e_c_o_n_d_s from the Epoch.
+
+     --tt      Set the kernel's value for minutes west of GMT. _M_i_n_u_t_e_s___w_e_s_t
+             specifies the number of minutes returned in `tz_minuteswest' by
+             future calls to gettimeofday(2).
+
+     --uu      Display or set the date in UCT (universal) time.
+
+     An operand with a leading plus (``+'') sign signals a user-defined format
+     string which specifies the format in which to display the date and time.
+     The format string may contain any of the conversion specifications de-
+     scribed in the strftime(3) manual page, as well as any arbitrary text.
+     The format string for the default display is:
+
+           ``%a %b %e %H:%M:%S %Z n''.
+
+     If an operand does not have a leading plus sign, it is interpreted as a
+     value for setting the system's notion of the current date and time.  The
+     canonical representation for setting the date and time is:
+
+           _y_y      Year in abbreviated form (.e.g 89 for 1989).
+           _m_m      Numeric month.  A number from 1 to 12.
+           _d_d      Day, a number from 1 to 31.
+           _h_h      Hour, a number from 0 to 23.
+           _m_m      Minutes, a number from 0 to 59.
+           _._s_s     Seconds, a number from 0 to 61 (59 plus a a maximum of two
+                   leap seconds).
+
+     Everything but the minutes is optional.
+
+     Time changes for Daylight Saving and Standard time and leap seconds and
+     years are handled automatically.
+
+EEXXAAMMPPLLEESS
+     The command:
+
+           date ``+DATE: %m/%d/%y%nTIME: %H:%M:0n''
+
+
+     will display:
+
+           DATE: 11/21/87
+           TIME: 13:36:16
+
+     The command:
+
+           date 8506131627
+
+     sets the date to ``June 13, 1985, 4:27 PM''.
+
+     The command:
+
+           date 1432
+
+     sets the time to 2:32 PM, without modifying the date.
+
+FFIILLEESS
+     /var/log/wtmp      A record of date resets and time changes.
+     /var/log/messages  A record of the user setting the time.
+
+SSEEEE AALLSSOO
+     gettimeofday(2),  strftime(3),  utmp(5),  timed(8)
+
+     R. Gusella, and S. Zatti, _T_S_P_: _T_h_e _T_i_m_e _S_y_n_c_h_r_o_n_i_z_a_t_i_o_n _P_r_o_t_o_c_o_l _f_o_r _U_N_I_X
+     _4_._3_B_S_D.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Exit status is 0 on success, 1 if unable to set the date, and 2 if able
+     to set the local date, but unable to set it globally.
+
+     Occasionally, when timed synchronizes the time on many hosts, the setting
+     of a new time value may require more than a few seconds.  On these occa-
+     sions, ddaattee prints: `Network time being set'. The message `Communication
+     error with timed' occurs when the communication between ddaattee and timed
+     fails.
+
+BBUUGGSS
+     The system attempts to keep the date in a format closely compatible with
+     VMS. VMS, however, uses local time (rather than GMT) and does not under-
+     stand daylight-savings time.  Thus, if you use both UNIX and VMS, VMS
+     will be running on GMT.
+
+SSTTAANNDDAARRDDSS
+     The ddaattee command is expected to be compatible with IEEE Std1003.2
+     (``POSIX'').
+
+4.4BSD                           June 1, 1993                                2

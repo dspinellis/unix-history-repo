@@ -1,0 +1,66 @@
+
+
+
+NAMED.RELOAD(8)    BSD System Manager's Manual    NAMED.RELOAD(8)
+
+
+NNAAMMEE
+       named.reload  -  cause  the name server to synchronize its
+       database
+
+DDEESSCCRRIIPPTTIIOONN
+       This command sends a SIGHUP to the  running  name  server.
+       This signal is documented in _n_a_m_e_d(8).
+
+BBUUGGSS
+       Does  not check to see if the name server is actually run-
+       ning, and could use a  stale  PID  cache  file  which  may
+       result in the death of an unrelated process.
+
+SSEEEE AALLSSOO
+       named(8), named.restart(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.2 Berkeley Distribution June 28, 1993                         1
+
+
+
+
+

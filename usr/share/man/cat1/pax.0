@@ -1,0 +1,543 @@
+PAX(1)                       BSD Reference Manual                       PAX(1)
+
+NNAAMMEE
+     ppaaxx - read and write file archives and copy directory hierarchies
+
+SSYYNNOOPPSSIISS
+     ppaaxx [--ccddnnvv] [--ff _a_r_c_h_i_v_e] [--ss _r_e_p_l_s_t_r] _._._. [--UU _u_s_e_r] _._._. [--GG _g_r_o_u_p] _._._.
+         [--TT [_f_r_o_m___d_a_t_e] [_,_t_o___d_a_t_e]] _._._. [_p_a_t_t_e_r_n _._._.]
+
+     ppaaxx --rr [--ccddiikknnuuvvDDYYZZ] [--ff _a_r_c_h_i_v_e] [--oo _o_p_t_i_o_n_s] _._._. [--pp _s_t_r_i_n_g] _._._.
+         [--ss _r_e_p_l_s_t_r] _._._. [--EE _l_i_m_i_t] [--UU _u_s_e_r] _._._. [--GG _g_r_o_u_p] _._._. [--TT
+         [_f_r_o_m___d_a_t_e] [_,_t_o___d_a_t_e]] _._._. [_p_a_t_t_e_r_n _._._.]
+
+     ppaaxx --ww [--ddiittuuvvHHLLXX] [--bb _b_l_o_c_k_s_i_z_e] [[--aa] [--ff _a_r_c_h_i_v_e]] [--xx _f_o_r_m_a_t]
+         [--ss _r_e_p_l_s_t_r] _._._. [--oo _o_p_t_i_o_n_s] _._._. [--UU _u_s_e_r] _._._. [--GG _g_r_o_u_p] _._._.
+         [--BB _b_y_t_e_s] [--TT [_f_r_o_m___d_a_t_e] [_,_t_o___d_a_t_e] [_/_[_c_]_[_m_]]] _._._. [_f_i_l_e _._._.]
+
+     ppaaxx --rr --ww [--ddiikkllnnttuuvvDDHHLLXXYYZZ] [--pp _s_t_r_i_n_g] _._._. [--ss _r_e_p_l_s_t_r] _._._. [--UU _u_s_e_r]
+         _._._. [--GG _g_r_o_u_p] _._._. [--TT [_f_r_o_m___d_a_t_e] [_,_t_o___d_a_t_e] [_/_[_c_]_[_m_]]] _._._. [_f_i_l_e
+         _._._.] _d_i_r_e_c_t_o_r_y
+
+DDEESSCCRRIIPPTTIIOONN
+     PPaaxx will read, write, and list the members of an archive file, and will
+     copy directory hierarchies.  PPaaxx supports a wide variety of different
+     archive formats.  These archive formats are described in more detail un-
+     der the --xx option.
+
+     The operand _d_i_r_e_c_t_o_r_y specifies a destination directory pathname.  PPaaxx
+     will exit with a non-zero exit status if the _d_i_r_e_c_t_o_r_y operand does not
+     exist, or it is not writable by the user, or it is not of type directory.
+
+     The operand _p_a_t_t_e_r_n is used to select one or more pathnames of archive
+     members using the pattern matching notation described by fnmatch(3).
+     When no _p_a_t_t_e_r_n_s are specified, all members of the archive will be se-
+     lected.  When a _p_a_t_t_e_r_n matches a directory, the entire file hierarchy
+     rooted at that directory will be selected.  If at the completion of oper-
+     ation a _p_a_t_t_e_r_n operand did not select at least one archive member, ppaaxx
+     will write these _p_a_t_t_e_r_n operands in a diagnostic message to standard
+     error and then exit with a non-zero exit status.
+
+     The operand _f_i_l_e specifies the pathname of a file to be copied or
+     archived.  If at the completion of operation a _f_i_l_e operand did not se-
+     lect at least one archived file, ppaaxx will write these _f_i_l_e operand path-
+     names in a diagnostic message to standard error and then exit with a non-
+     zero exit status.
+
+     PPaaxx operates in one of four operational modes based on the presence of
+     the --rr and the --ww options.  These operational modes are: _l_i_s_t, _r_e_a_d,
+     _w_r_i_t_e, and _c_o_p_y_.
+
+     <none>  _L_i_s_t. PPaaxx will write to standard output a table of contents of
+             the members of the archive file read from standard input, whose
+             pathnames match the specified _p_a_t_t_e_r_n_s_. The table of contents is
+             written with one filename per line and is not buffered more than
+             a single line at a time.
+
+     --rr      _R_e_a_d. PPaaxx extracts the members of the archive file read from the
+             standard input, with pathnames matching the specified _p_a_t_t_e_r_n_s_.
+             The format and the blocking of the archive is automatically de-
+             termined on input.  When an extracted file is a directory, the
+             entire file hierarchy rooted at that directory is extracted.  All
+             extracted files are created relative to the current file hierar-
+             chy.  The ownership, access and modification times, and file mode
+             of the extracted files are discussed in more detail under the --pp
+
+             option.
+
+     --ww      _W_r_i_t_e. PPaaxx writes an archive containing the _f_i_l_e operands to
+             standard output using the specified archive format.  When no _f_i_l_e
+             operands are specified, a list of files to copy, one per line, is
+             read from standard input. A _f_i_l_e operand that is also a directory
+             will include the entire file hierarchy rooted at that directory.
+
+     --rr --ww   _C_o_p_y. PPaaxx copies the _f_i_l_e operands to the destination _d_i_r_e_c_t_o_r_y.
+             When no _f_i_l_e operands are specified, a list of files to copy, one
+             per line, is read from the standard input. A _f_i_l_e operand that is
+             also a directory will include the entire file hierarchy rooted at
+             that directory.  The effect of the _c_o_p_y is as if the copied files
+             were written to an archive file and then subsequently extracted,
+             except that there may be hard links between the original and the
+             copied files (see the --ll option below).
+
+             _W_a_r_n_i_n_g: The destination _d_i_r_e_c_t_o_r_y must not be one of the _f_i_l_e
+             operands or a member of a file hierarchy rooted at one of the
+             _f_i_l_e operands.  The result of a _c_o_p_y under these conditions is
+             unpredictable.
+
+     While processing a damaged archive during a _r_e_a_d or _l_i_s_t operation, ppaaxx
+     will attempt to recover from media defects and will search through the
+     archive to locate and process the largest number of archive members pos-
+     sible (see the --EE option for more details on error handling).
+
+OOPPTTIIOONNSS
+     The following options are supported:
+
+     --rr    Read an archive file from standard input and extract the specified
+           _f_i_l_e_s. If any intermediate directories are needed in order to ex-
+           tract an archive member, these directories will be created as if
+           mkdir(2) was called with the bitwise inclusive OR of S_IRWXU,
+           S_IRWXG, and S_IRWXO as the mode argument.  When the selected
+           archive format supports the specification of linked files and these
+           files cannot be linked while the archive is being extracted, ppaaxx
+           will write a diagnostic message to standard error and exit with a
+           non-zero exit status at the completion of operation.
+
+     --ww    Write files to the standard output in the specified archive format.
+           When no _f_i_l_e operands are specified, standard input is read for a
+           list of pathnames, one per line, without any leading or trailing
+           <blanks>.
+
+     --aa    Append _f_i_l_e_s to the end of an archive that was previously written.
+           If an archive format is not specified with a --xx option, the format
+           currently being used in the archive will be selected.  Any attempt
+           to append to an archive in a format different from the format al-
+           ready used in the archive will cause ppaaxx to exit immediately with a
+           non-zero exit status.  The blocking size used in the archive volume
+           where writing starts will continue to be used for the remainder of
+           that archive volume.
+
+           _W_a_r_n_i_n_g: Many storage devices are not able to support the opera-
+           tions necessary to perform an append operation.  Any attempt to ap-
+           pend to an archive stored on such a device may damage the archive
+           or have other unpredictable results.  Tape drives in particular are
+           more likely to not support an append operation.  An archive stored
+           in a regular file system file or on a disk device will usually sup-
+           port an append operation.
+
+     --bb _b_l_o_c_k_s_i_z_e
+           When _w_r_i_t_i_n_g an archive, block the output at a positive decimal in-
+           teger number of bytes per write to the archive file.  The _b_l_o_c_k_s_i_z_e
+           must be a multiple of 512 bytes with a maximum of 32256 bytes.  A
+           _b_l_o_c_k_s_i_z_e can end with k or b to specify multiplication by 1024
+           (1K) or 512, respectively.  A pair of _b_l_o_c_k_s_i_z_e_s can be separated
+           by x to indicate a product.  A specific archive device may impose
+           additional restrictions on the size of blocking it will support.
+           When blocking is not specified, the default _b_l_o_c_k_s_i_z_e is dependent
+           on the specific archive format being used (see the --xx option).
+
+     --cc    Match all file or archive members _e_x_c_e_p_t those specified by the
+           _p_a_t_t_e_r_n and _f_i_l_e operands.
+
+     --dd    Cause files of type directory being copied or archived, or archive
+           members of type directory being extracted, to match only the direc-
+           tory file or archive member and not the file hierarchy rooted at
+           the directory.
+
+     --ff _a_r_c_h_i_v_e
+           Specify _a_r_c_h_i_v_e as the pathname of the input or output archive,
+           overriding the default standard input (for _l_i_s_t and _r_e_a_d) or
+           standard output (for _w_r_i_t_e). A single archive may span multiple
+           files and different archive devices.  When required, ppaaxx will
+           prompt for the pathname of the file or device of the next volume in
+           the archive.
+
+     --ii    Interactively rename files or archive members.  For each archive
+           member matching a _p_a_t_t_e_r_n operand or each file matching a _f_i_l_e
+           operand, ppaaxx will prompt to _/_d_e_v_/_t_t_y giving the name of the file,
+           its file mode and its modification time.  PPaaxx will then read a line
+           from _/_d_e_v_/_t_t_y. If this line is blank, the file or archive member is
+           skipped.  If this line consists of a single period, the file or
+           archive member is processed with no modification to its name.  Oth-
+           erwise, its name is replaced with the contents of the line.  PPaaxx
+           will immediately exit with a non-zero exit status if <EOF> is en-
+           countered when reading a response or if _/_d_e_v_/_t_t_y cannot be opened
+           for reading and writing.
+
+     --kk    Do not overwrite existing files.
+
+     --ll    Link files. (The letter ell).  In the _c_o_p_y mode ( --rr --ww), hard
+           links are made between the source and destination file hierarchies
+           whenever possible.
+
+     --nn    Select the first archive member that matches each _p_a_t_t_e_r_n operand.
+           No more than one archive member is matched for each _p_a_t_t_e_r_n. When
+           members of type directory are matched, the file hierarchy rooted at
+           that directory is also matched (unless --dd is also specified).
+
+     --oo _o_p_t_i_o_n_s
+           Information to modify the algorithm for extracting or writing
+           archive files which is specific to the archive format specified by
+           --xx. In general, _o_p_t_i_o_n_s take the form: nnaammee==vvaalluuee
+
+     --pp _s_t_r_i_n_g
+           Specify one or more file characteristic options (privileges).  The
+           _s_t_r_i_n_g option-argument is a string specifying file characteristics
+           to be retained or discarded on extraction.  The string consists of
+           the specification characters aa, ee, mm, oo, and pp. Multiple character-
+           istics can be concatenated within the same string and multiple --pp
+           options can be specified.  The meaning of the specification charac-
+           ters are as follows:
+
+           aa   Do not preserve file access times.  By default, file access
+               times are preserved whenever possible.
+
+           ee   `Preserve everything', the user ID, group ID, file mode bits,
+               file access time, and file modification time.  This is intended
+               to be used by _r_o_o_t, someone with all the appropriate privi-
+               leges, in order to preserve all aspects of the files as they
+               are recorded in the archive.  The ee flag is the sum of the oo
+               and pp flags.
+
+           mm   Do not preserve file modification times.  By default, file mod-
+               ification times are preserved whenever possible.
+
+           oo   Preserve the user ID and group ID.
+
+           pp   `Preserve' the file mode bits.  This intended to be used by a
+               _u_s_e_r with regular privileges who wants to preserve all aspects
+               of the file other than the ownership.  The file times are pre-
+               served by default, but two other flags are offered to disable
+               this and use the time of extraction instead.
+
+           In the preceding list, `preserve' indicates that an attribute
+           stored in the archive is given to the extracted file, subject to
+           the permissions of the invoking process.  Otherwise the attribute
+           of the extracted file is determined as part of the normal file cre-
+           ation action.  If neither the ee nor the oo specification character
+           is specified, or the user ID and group ID are not preserved for any
+           reason, ppaaxx will not set the S_ISUID (_s_e_t_u_i_d) and S_ISGID (_s_e_t_g_i_d)
+           bits of the file mode.  If the preservation of any of these items
+           fails for any reason, ppaaxx will write a diagnostic message to
+           standard error. Failure to preserve these items will affect the fi-
+           nal exit status, but will not cause the extracted file to be delet-
+           ed.  If the file characteristic letters in any of the string op-
+           tion-arguments are duplicated or conflict with each other, the
+           one(s) given last will take precedence.  For example, if
+                 --pp _e_m_e
+           is specified, file modification times are still preserved.
+
+     --ss _r_e_p_l_s_t_r
+           Modify the file or archive member names specified by the _p_a_t_t_e_r_n or
+           _f_i_l_e operands according to the substitution expression _r_e_p_l_s_t_r, us-
+           ing the syntax of the ed(1) utility regular expressions.  The for-
+           mat of these regular expressions are:
+                 /old/new/[gp]
+           As in ed(1),  oolldd is a basic regular expression and nneeww can contain
+           an ampersand (&), \n (where n is a digit) back-references, or
+           subexpression matching.  The oolldd string may also contain <newline>
+           characters.  Any non-null character can be used as a delimiter (/
+           is shown here).  Multiple --ss expressions can be specified.  The ex-
+           pressions are applied in the order they are specified on the com-
+           mand line, terminating with the first successful substitution.  The
+           optional trailing gg continues to apply the substitution expression
+           to the pathname substring which starts with the first character
+           following the end of the last successful substitution. The first
+           unsuccessful substitution stops the operation of the gg option.  The
+           optional trailing pp will cause the final result of a successful
+           substitution to be written to standard error in the following for-
+           mat:
+                 <original pathname> >> <new pathname>
+           File or archive member names that substitute to the empty string
+           are not selected and will be skipped.
+
+     --tt    Reset the access times of any file or directory read or accessed by
+           ppaaxx to be the same as they were before being read or accessed by
+           ppaaxx.
+
+     --uu    Ignore files that are older (having a less recent file modification
+           time) than a pre-existing file or archive member with the same
+           name.  During _r_e_a_d, an archive member with the same name as a file
+           in the file system will be extracted if the archive member is newer
+           than the file.  During _w_r_i_t_e, a file system member with the same
+           name as an archive member will be written to the archive if it is
+           newer than the archive member.  During _c_o_p_y, the file in the desti-
+           nation hierarchy is replaced by the file in the source hierarchy or
+           by a link to the file in the source hierarchy if the file in the
+           source hierarchy is newer.
+
+     --vv    During a _l_i_s_t operation, produce a verbose table of contents using
+           the format of the ls(1) utility with the --ll option.  For pathnames
+           representing a hard link to a previous member of the archive, the
+           output has the format:
+                 <ls -l listing> == <link name>
+           For pathnames representing a symbolic link, the output has the for-
+           mat:
+                 <ls -l listing> => <link name>
+           Where <ls -l listing> is the output format specified by the ls(1)
+           utility when used with the --ll option.  Otherwise for all the other
+           operational modes ( _r_e_a_d, _w_r_i_t_e, and _c_o_p_y), pathnames are written
+           and flushed to standard error without a trailing <newline> as soon
+           as processing begins on that file or archive member.  The trailing
+           <newline>, is not buffered, and is written only after the file has
+           been read or written.
+
+     --xx _f_o_r_m_a_t
+           Specify the output archive format, with the default format being
+           _u_s_t_a_r. PPaaxx currently supports the following formats:
+
+           _c_p_i_o     The extended cpio interchange format specified in the IEEE
+                    Std1003.2 (``POSIX'') standard.  The default blocksize for
+                    this format is 5120 bytes.  Inode and device information
+                    about a file (used for detecting file hard links by this
+                    format) which may be truncated by this format is detected
+                    by ppaaxx and is repaired.
+
+           _b_c_p_i_o    The old binary cpio format.  The default blocksize for
+                    this format is 5120 bytes.  This format is not very
+                    portable and should not be used when other formats are
+                    available.  Inode and device information about a file
+                    (used for detecting file hard links by this format) which
+                    may be truncated by this format is detected by ppaaxx and is
+                    repaired.
+
+           _s_v_4_c_p_i_o  The System V release 4 cpio.  The default blocksize for
+                    this format is 5120 bytes.  Inode and device information
+                    about a file (used for detecting file hard links by this
+                    format) which may be truncated by this format is detected
+                    by ppaaxx and is repaired.
+
+           _s_v_4_c_r_c   The System V release 4 cpio with file crc checksums.  The
+                    default blocksize for this format is 5120 bytes.  Inode
+                    and device information about a file (used for detecting
+                    file hard links by this format) which may be truncated by
+                    this format is detected by ppaaxx and is repaired.
+
+           _t_a_r      The old BSD tar format as found in BSD4.3.  The default
+                    blocksize for this format is 10240 bytes.  Pathnames
+                    stored by this format must be 100 characters or less in
+                    length.  Only _r_e_g_u_l_a_r files, _h_a_r_d _l_i_n_k_s, _s_o_f_t _l_i_n_k_s, and
+                    _d_i_r_e_c_t_o_r_i_e_s will be archived (other file system types are
+                    not supported).  For backwards compatability with even
+                    older tar formats, a --oo option can be used when writing an
+                    archive to omit the storage of directories.  This option
+                    takes the form:
+                          --oo wwrriittee__oopptt==nnooddiirr
+
+           _u_s_t_a_r    The extended tar interchange format specified in the IEEE
+                    Std1003.2 (``POSIX'') standard.  The default blocksize for
+                    this format is 10240 bytes.  Pathnames stored by this for-
+                    mat must be 250 characters or less in length.
+
+           PPaaxx will detect and report any file that it is unable to store or
+           extract as the result of any specific archive format restrictions.
+           The individual archive formats may impose additional restrictions
+           on use.  Typical archive format restrictions include (but are not
+           limited to): file pathname length, file size, link pathname length
+           and the type of the file.
+
+     --BB _b_y_t_e_s
+           Limit the number of bytes written to a single archive volume to
+           _b_y_t_e_s. The _b_y_t_e_s limit can end with m, k, or b to specify multipli-
+           cation by 1048576 (1M), 1024 (1K) or 512, respectively.  A pair of
+           _b_y_t_e_s limits can be separated by x to indicate a product.
+
+           _W_a_r_n_i_n_g: Only use this option when writing a archive to a device
+           which supports an end of file read condition based on last (or
+           largest) write offset (such as a regular file or a tape drive).
+           The use of this option with a floppy or hard disk is not recommend-
+           ed.
+
+     --DD    This option is the same as the --uu option, except that the file in-
+           ode change time is checked instead of the file modification time.
+           The file inode change time can be used to select files whose inode
+           information (e.g. uid, gid, etc.) is newer than a copy of the file
+           in the destination _d_i_r_e_c_t_o_r_y.
+
+     --EE _l_i_m_i_t
+           Limit the number of consecutive read faults while trying to read a
+           flawed archives to _l_i_m_i_t. With a positive _l_i_m_i_t, ppaaxx will attempt
+           to recover from an archive read error and will continue processing
+           starting with the next file stored in the archive.  A _l_i_m_i_t of 0
+           will cause ppaaxx to stop operation after the first read error is de-
+           tected on an archive volume.  A _l_i_m_i_t of NONE will cause ppaaxx to at-
+           tempt to recover from read errors forever.  The default _l_i_m_i_t is a
+           small positive number of retries.
+
+           _W_a_r_n_i_n_g_: Using this option with NONE should be used with extreme
+           caution as ppaaxx may get stuck in an infinite loop on a very badly
+           flawed archive.
+
+     --GG _g_r_o_u_p
+           Select a file based on its _g_r_o_u_p name, or when starting with a ##, a
+           numeric gid.  A '\' can be used to escape the ##. Multiple --GG op-
+           tions may be supplied and checking stops with the first match.
+
+     --HH    Follow only command line symbolic links while performing a physical
+           file system traversal.
+
+     --LL    Follow all symbolic links to perform a logical file system traver-
+           sal.
+
+     --TT _[_f_r_o_m___d_a_t_e_]_[_,_t_o___d_a_t_e_]_[_/_[_c_]_[_m_]_]
+           Allow files to be selected based on a file modification or inode
+           change time falling within a specified time range of _f_r_o_m___d_a_t_e to
+           _t_o___d_a_t_e (the dates are inclusive).  If only a _f_r_o_m___d_a_t_e is sup-
+           plied, all files with a modification or inode change time equal to
+           or younger are selected.  If only a _t_o___d_a_t_e is supplied, all files
+           with a modification or inode change time equal to or older will be
+           selected.  When the _f_r_o_m___d_a_t_e is equal to the _t_o___d_a_t_e, only files
+           with a modification or inode change time of exactly that time will
+           be selected.
+
+           When ppaaxx is in the _w_r_i_t_e or _c_o_p_y mode, the optional trailing field
+           _[_c_]_[_m_] can be used to determine which file time (inode change, file
+           modification or both) are used in the comparison.  If neither is
+           specified, the default is to use file modification time only.  The
+           _m specifies the comparison of file modification time (the time when
+           the file was last written).  The _c specifies the comparison of in-
+           ode change time (the time when the file inode was last changed;
+           e.g. a change of owner, group, mode, etc).  When _c and _m are both
+           specified, then the modification and inode change times are both
+           compared.  The inode change time comparison is useful in selecting
+           files whose attributes were recently changed or selecting files
+           which were recently created and had their modification time reset
+           to an older time (as what happens when a file is extracted from an
+           archive and the modification time is preserved).  Time comparisons
+           using both file times is useful when ppaaxx is used to create a time
+           based incremental archive (only files that were changed during a
+           specified time range will be archived).
+
+           A time range is made up of six different fields and each field must
+           contain two digits.  The format is:
+                 [yy[mm[dd[hh]]]]mm[.ss]
+           Where yyyy is the last two digits of the year, the first mmmm is the
+           month (from 01 to 12), dddd is the day of the month (from 01 to 31),
+           hhhh is the hour of the day (from 00 to 23), the second mmmm is the
+           minute (from 00 to 59), and ssss is the seconds (from 00 to 59).  The
+           minute field mmmm is required, while the other fields are optional
+           and must be added in the following order:
+                 hhhh, dddd, mmmm, yyyy.
+           The ssss field may be added independently of the other fields.  Time
+           ranges are relative to the current time, so
+                 --TT _1_2_3_4_/_c_m
+           would select all files with a modification or inode change time of
+           12:34 PM today or later.  Multiple --TT time range can be supplied
+           and checking stops with the first match.
+
+     --UU _u_s_e_r
+           Select a file based on its _u_s_e_r name, or when starting with a ##, a
+           numeric uid.  A '\' can be used to escape the ##. Multiple --UU op-
+           tions may be supplied and checking stops with the first match.
+
+     --XX    When traversing the file hierarchy specified by a pathname, do not
+           descend into directories that have a different device ID.  See the
+           st_dev field as described in stat(2) for more information about de-
+           vice ID's.
+
+     --YY    This option is the same as the --DD option, except that the inode
+           change time is checked using the pathname created after all the
+           file name modifications have completed.
+
+     --ZZ    This option is the same as the --uu option, except that the modifica-
+           tion time is checked using the pathname created after all the file
+           name modifications have completed.
+
+     The options that operate on the names of files or archive members ( --cc,
+     --ii, --nn, --ss, --uu, --vv, --DD, --GG, --TT, --UU, --YY, and --ZZ) interact as follows.
+
+     When extracting files during a _r_e_a_d operation, archive members are
+     `selected', based only on the user specified pattern operands as modified
+     by the --cc, --nn, --uu, --DD, --GG, --TT, --UU options.  Then any --ss and --ii options
+     will modify in that order, the names of these selected files.  Then the
+     --YY and --ZZ options will be applied based on the final pathname.  Finally
+     the --vv option will write the names resulting from these modifications.
+
+     When archiving files during a _w_r_i_t_e operation, or copying files during a
+     _c_o_p_y operation, archive members are `selected', based only on the user
+     specified pathnames as modified by the --nn, --uu, --DD, --GG, --TT, and --UU options
+     (the --DD option only applies during a copy operation).  Then any --ss and --ii
+     options will modify in that order, the names of these selected files.
+     Then during a _c_o_p_y operation the --YY and the --ZZ options will be applied
+     based on the final pathname.  Finally the --vv option will write the names
+     resulting from these modifications.
+
+     When one or both of the --uu or --DD options are specified along with the --nn
+     option, a file is not considered selected unless it is newer than the
+     file to which it is compared.
+
+EEXXAAMMPPLLEESS
+     The command:
+           pax -w -f /dev/rst0 .
+     copies the contents of the current directory to the device _/_d_e_v_/_r_s_t_0.
+
+     The command:
+           pax -r -v -f filename
+     gives the verbose table of contents for an archive stored in _f_i_l_e_n_a_m_e.
+
+     The following commands:
+           mkdir newdir
+           cd olddir
+           pax -rw . newdir
+     will copy the entire _o_l_d_d_i_r directory hierarchy to _n_e_w_d_i_r.
+
+     The command:
+           pax -r -s ',^//*usr//*,,' -f a.pax
+     reads the archive _a_._p_a_x, with all files rooted in ``/usr'' into the
+     archive extracted relative to the current directory.
+
+     The command:
+           pax -rw -i . dest_dir
+     can be used to interactively select the files to copy from the current
+     directory to _d_e_s_t___d_i_r.
+
+     The command:
+           pax -r -pe -U root -G bin -f a.pax
+     will extract all files from the archive _a_._p_a_x which are owned by _r_o_o_t
+     with group _b_i_n and will preserve all file permissions.
+
+     The command:
+           pax -r -w -v -Y -Z home /backup
+     will update (and list) only those files in the destination directory
+     _/_b_a_c_k_u_p which are older (less recent inode change or file modification
+     times) than files with the same name found in the source file tree _h_o_m_e.
+
+SSTTAANNDDAARRDDSS
+     The ppaaxx utility is a superset of the IEEE Std1003.2 (``POSIX'') standard.
+     The options --BB, --DD, --EE, --GG, --HH, --TT, --UU, --YY, --ZZ, the archive formats
+     _b_c_p_i_o, _s_v_4_c_p_i_o, _s_v_4_c_r_c, _t_a_r, and the flawed archive handling during _l_i_s_t
+     and _r_e_a_d operations are extensions to the POSIX standard.
+
+AAUUTTHHOORR
+     Keith Muller at the University of California, San Diego
+
+EERRRROORRSS
+     ppaaxx will exit with one of the following values:
+
+     0   All files were processed successfully.
+
+     1   An error occurred.
+
+     Whenever ppaaxx cannot create a file or a link when reading an archive or
+     cannot find a file when writing an archive, or cannot preserve the user
+     ID, group ID, or file mode when the --pp option is specified, a diagnostic
+     message is written to standard error and a non-zero exit status will be
+     returned, but processing will continue.  In the case where pax cannot
+     create a link to a file, ppaaxx will not create a second copy of the file.
+
+
+     If the extraction of a file from an archive is prematurely terminated by
+     a signal or error, ppaaxx may have only partially extracted a file the user
+     wanted.  Additionally, the file modes of extracted files and directories
+     may have incorrect file bits, and the modification and access times may
+     be wrong.
+
+     If the creation of an archive is prematurely terminated by a signal or
+     error, ppaaxx may have only partially created the archive which may violate
+     the specific archive format specification.
+
+     If while doing a _c_o_p_y, ppaaxx detects a file is about to overwrite itself,
+     the file is not copied, a diagnostic message is written to standard error
+     and when ppaaxx completes it will exit with a non-zero exit status.
+
+4.4BSD                           May 31, 1993                                9

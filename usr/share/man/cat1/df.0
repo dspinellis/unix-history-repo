@@ -1,0 +1,53 @@
+DF(1)                        BSD Reference Manual                        DF(1)
+
+NNAAMMEE
+     ddff - display free disk space
+
+SSYYNNOOPPSSIISS
+     ddff [--iinn] [--tt _t_y_p_e] [_f_i_l_e | _f_i_l_e_s_y_s_t_e_m _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     DDff displays statistics about the amount of free disk space on the speci-
+     fied _f_i_l_e_s_y_s_t_e_m or on the filesystem of which _f_i_l_e is a part.  Values are
+     displayed in 512-byte per block block counts.  If neither a file or a
+     filesystem operand is specified, statistics for all mounted filesystems
+     are displayed (subject to the --tt option below).
+
+     The following options are available:
+
+     --ii      Include statistics on the number of free inodes.
+
+     --nn      Print out the previously obtained statistics from the filesys-
+             tems.  This option should be used if it is possible that one or
+             more filesystems are in a state such that they will not be able
+             to provide statistics without a long delay.  When this option is
+             specified, ddff will not request new statistics from the filesys-
+             tems, but will respond with the possibly stale statistics that
+             were previously obtained.
+
+     --tt      Only print out statistics for filesystems of the specified types.
+             The recognized types are: ufs, nfs, mfs, lfs, pc, fdesc, portal
+             and kernfs, along with the aggregates: all (the default), local
+             (ufs, mfs, lfs), and misc (fdesc, portal, kernfs).  The string
+             ``no'' may be prepending to a type to get its complement (e.g.
+             ``nonfs'' to get non-NFS filesystems).  The first --tt option over-
+             rides the default, additional such options will add to (or sub-
+             tract from) the current set of types; e.g. either ``df -t ufs -t
+             lfs'' or ``df -t local -t nomfs'' will display statistics for UFS
+             and LFS filesystems.
+
+EENNVVIIRROONNMMEENNTTAALL VVAARRIIAABBLLEESS
+     BLOCKSIZE  If the environmental variable BLOCKSIZE is set, the block
+                counts will be displayed in units of that size block.
+
+BBUUGGSS
+     The --nn and --tt flags are ignored if a file or filesystem is specified.
+
+SSEEEE AALLSSOO
+     quota(1),  statfs(2),  fstatfs(2),  getfsstat(2),  getmntinfo(3),
+     fstab(5),  mount(8),  quot(8)
+
+HHIISSTTOORRYY
+     A ddff command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        May 31, 1993                                1

@@ -1,0 +1,66 @@
+
+
+
+NAMED.RESTART(8)   BSD System Manager's Manual   NAMED.RESTART(8)
+
+
+NNAAMMEE
+       named.restart - stop and restart the name server
+
+DDEESSCCRRIIPPTTIIOONN
+       This  command  sends  a SIGKILL to the running name server
+       and then starts a new one.
+
+BBUUGGSS
+       Does not check to see if the name server is actually  run-
+       ning,  and  could  use  a  stale  PID cache file which may
+       result in the death of an unrelated process.
+
+       Does not wait after killing the old server before starting
+       a  new  one;  since the server could take some time to die
+       and the new one will experience a fatal error if  the  old
+       one isn't gone by the time it starts, you can be left in a
+       situation where you have no name server at all.
+
+SSEEEE AALLSSOO
+       named(8), named.reload(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.2 Berkeley Distribution June 28, 1993                         1
+
+
+
+
+
