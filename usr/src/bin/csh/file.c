@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)file.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)file.c	5.5 (Berkeley) %G%";
 #endif
 
 #ifdef FILEC
@@ -29,6 +29,8 @@ static char *sccsid = "@(#)file.c	5.4 (Berkeley) %G%";
 #define ESC	'\033'
 
 typedef enum {LIST, RECOGNIZE} COMMAND;
+
+int	sortscmp();			/* defined in sh.glob.c */
 
 /*
  * Put this here so the binary can be patched with adb to enable file
@@ -125,13 +127,6 @@ catn(des, src, count)
 	*des = '\0';
 }
 
-static
-max(a, b)
-{
-
-	return (a > b ? a : b);
-}
-
 /*
  * Like strncpy but always leave room for trailing \0
  * and always null terminate.
@@ -148,34 +143,51 @@ copyn(des, src, count)
 	*des = '\0';
 }
 
-/*
- * For qsort()
- */
-static
-fcompare(file1, file2)
-	char **file1, **file2;
-{
-
-	 return (strcmp(*file1, *file2));
-}
-
 static char
 filetype(dir, file)
 	char *dir, *file;
 {
-	char path[512];
+	char path[MAXPATHLEN];
 	struct stat statb;
 
-	if (dir) {
-		catn(strcpy(path, dir), file, sizeof path);
-		if (stat(path, &statb) >= 0) {
-			if (statb.st_mode & S_IFDIR)
-				return ('/');
+	catn(strcpy(path, dir), file, sizeof path);
+	if (lstat(path, &statb) == 0) {
+		switch(statb.st_mode & S_IFMT) {
+		    case S_IFDIR:
+			return ('/');
+
+		    case S_IFLNK:
+			if (stat(path, &statb) == 0 &&	    /* follow it out */
+			   (statb.st_mode & S_IFMT) == S_IFDIR)
+				return ('>');
+			else
+				return ('@');
+
+		    case S_IFSOCK:
+			return ('=');
+
+		    default:
 			if (statb.st_mode & 0111)
 				return ('*');
 		}
 	}
 	return (' ');
+}
+
+static int donewin;
+static struct winsize win;
+
+static
+winch()
+{
+
+	if (ioctl(SHIN, TIOCGWINSZ, (char *)&win) < 0) {
+		win.ws_col = 80;
+		signal(SIGWINCH, SIG_IGN);
+	}
+	if (win.ws_col == 0)
+		win.ws_col = 80;
+	donewin = 1;
 }
 
 /*
@@ -187,10 +199,16 @@ print_by_column(dir, items, count)
 {
 	register int i, rows, r, c, maxwidth = 0, columns;
 
+	if (!donewin) {
+		signal(SIGWINCH, winch);
+		winch();
+	}
 	for (i = 0; i < count; i++)
-		maxwidth = max(maxwidth, strlen(items[i]));
+		maxwidth = maxwidth > (r = strlen(items[i])) ? maxwidth : r;
 	maxwidth += 2;			/* for the file tag and space */
-	columns = 78 / maxwidth;
+	columns = win.ws_col / maxwidth;
+	if (columns == 0)
+		columns = 1;
 	rows = (count + (columns - 1)) / columns;
 	for (r = 0; r < rows; r++) {
 		for (c = 0; c < columns; c++) {
@@ -199,15 +217,15 @@ print_by_column(dir, items, count)
 				register int w;
 
 				printf("%s", items[i]);
-				putchar(filetype(dir, items[i]));
+				putchar(dir ? filetype(dir, items[i]) : ' ');
 				if (c < columns - 1) {	/* last column? */
 					w = strlen(items[i]) + 1;
 					for (; w < maxwidth; w++)
-						printf(" ");
+						putchar(' ');
 				}
 			}
 		}
-		printf("\n");
+		putchar('\n');
 	}
 }
 
@@ -317,7 +335,7 @@ getentry(dir_fd, looking_for_lognames)
 	register struct direct *dirp;
 
 	if (looking_for_lognames) {
-		if ((pw = getpwent ()) == NULL)
+		if ((pw = getpwent()) == NULL)
 			return (NULL);
 		return (pw->pw_name);
 	}
@@ -413,7 +431,7 @@ again:	/* search for matches */
 		ignoring = FALSE;
 		nignored = 0;
 		if (looking_for_lognames)
-			(void)setpwent();
+			(void) setpwent();
 		else
 			rewinddir(dir_fd);
 		goto again;
@@ -434,7 +452,7 @@ again:	/* search for matches */
 		return (numitems);
 	}
 	if (command == LIST) {
-		qsort((char *)items, numitems, sizeof(items[1]), fcompare);
+		qsort((char *)items, numitems, sizeof(items[1]), sortscmp);
 		print_by_column(looking_for_lognames ? NULL : tilded_dir,
 		    items, numitems);
 		if (items != NULL)
@@ -456,9 +474,9 @@ recognize(extended_name, entry, name_length, numitems)
 	char *extended_name, *entry;
 {
 
-	if (numitems == 1)				/* 1st match */
+	if (numitems == 1)			/* 1st match */
 		copyn(extended_name, entry, MAXNAMLEN);
-	else {					/* 2nd and subsequent matches */
+	else {					/* 2nd & subsequent matches */
 		register char *x, *ent;
 		register int len = 0;
 
