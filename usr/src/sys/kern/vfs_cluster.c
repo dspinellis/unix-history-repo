@@ -1,4 +1,4 @@
-/*	vfs_cluster.c	4.40	82/12/17	*/
+/*	vfs_cluster.c	4.41	82/12/19	*/
 
 #include "../machine/pte.h"
 
@@ -112,7 +112,7 @@ bwrite(bp)
 	register flag;
 
 	flag = bp->b_flags;
-	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI | B_AGE);
+	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
 	if ((flag&B_DELWRI) == 0)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
 	trace(TR_BWRITE, bp->b_dev, bp->b_blkno);
@@ -124,16 +124,12 @@ bwrite(bp)
 	 * If the write was synchronous, then await i/o completion.
 	 * If the write was "delayed", then we put the buffer on
 	 * the q of blocks awaiting i/o completion status.
-	 * Otherwise, the i/o must be finished and we check for
-	 * an error.
 	 */
 	if ((flag&B_ASYNC) == 0) {
 		biowait(bp);
 		brelse(bp);
 	} else if (flag & B_DELWRI)
 		bp->b_flags |= B_AGE;
-	else
-		u.u_error = geterror(bp);
 }
 
 /*
