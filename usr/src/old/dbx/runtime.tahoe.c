@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)runtime.tahoe.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)runtime.tahoe.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -795,6 +795,11 @@ Node arglist;
     int argc, args_size;
 
     savesp = sp;
+    if (varIsSet("$unsafecall")) {
+	argc = unsafe_evalargs(proc, arglist);
+    } else {
+	argc = evalargs(proc, arglist);
+    }
     argc = evalargs(proc, arglist);
     args_size = sp - savesp;
     setreg(STKP, reg(STKP) - args_size);
