@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)disktab	4.13 (Berkeley) %G%
+#	@(#)disktab	4.14 (Berkeley) %G%
 #
 # Disk geometry and partition layout tables. 
 # Key:
@@ -31,8 +31,11 @@
 #	f[a-h]	partition fragment sizes in bytes
 #	t[a-h]	partition types (filesystem, swap, etc)
 #
+# WARNING:
 # On drives that contain bad-sector replacement areas,
-# partitions do not overlap the bad-sector replacements.
+# `c' partitions DO overlap the bad-sector replacements.
+# This may change again.
+# Other partitions do not overlap the bad-sector replacement area.
 #
 # Existing entries may also be used for other compatible drives
 # with the same geometry.
@@ -40,68 +43,80 @@
 #
 # Drives on hp
 #
+# drive-type parameters for SMD disks:
+#	d0	binary flags: 1=skip-sector support (RM80)
+#	d1	mindist (closest #sectors from desired for starting transfer)
+#	d2	maxdist (farthest #sectors from desired for starting transfer)
+#	d3	sdist (distance from desired sector for search)
+# NOTE: c partitions include bad-sector replacement areas!
 rm03|RM03|DEC RM03:\
 	:ty=removable:ns#32:nt#5:nc#823:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
-	:pc#131520:oc#0:bc#8192:fc#1024:\
+	:pc#131680:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49440:bd#4096:fd#512:\
 	:pe#55936:oe#65440:be#8192:fe#1024:\
 	:pf#10080:of#121440:bf#8192:ff#1024:\
 	:pg#82080:og#49440:bg#8192:fg#1024:
+#	:pc#131520:oc#0:bc#8192:fc#1024:
 rm05|RM05|DEC RM05:\
 	:ty=removable:ns#32:nt#19:nc#823:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
-	:pc#500224:oc#0:bc#8192:fc#1024:\
+	:pc#500384:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#341696:bd#4096:fd#512:\
 	:pe#55936:oe#358112:be#8192:fe#1024:\
 	:pf#86176:of#414048:bf#8192:ff#1024:\
 	:pg#158528:og#341696:bg#8192:fg#1024:\
 	:ph#291346:oh#49856:bh#8192:fh#1024:
+#	:pc#500224:oc#0:bc#8192:fc#1024:
 rp06|RP06|DEC RP06:\
 	:ty=removable:ns#22:nt#19:nc#815:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
-	:pc#340516:oc#0:bc#8192:fc#1024:\
+	:pc#340670:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49324:bd#4096:fd#512:\
 	:pe#55936:oe#65208:be#8192:fe#1024:\
 	:pf#219296:of#121220:bf#8192:ff#1024:\
 	:pg#291192:og#49324:bg#8192:fg#1024:
+#	:pc#340516:oc#0:bc#8192:fc#1024:
 rm80|RM80|DEC RM80:\
 	:ty=winchester:ns#31:nt#14:nc#559:sf:\
 	:dt=SMD:d0#1:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16058:bb#8192:fb#1024:tb=swap:\
-	:pc#242420:oc#0:bc#8192:fc#1024:\
+	:pc#242606:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49910:bd#4096:fd#512:\
 	:pe#55936:oe#65968:be#8192:fe#1024:\
 	:pf#120466:of#121954:bf#8192:ff#1024:\
 	:pg#192510:og#49910:bg#8192:fg#1024:
+#	:pc#242420:oc#0:bc#8192:fc#1024:
 rp05|RP05|DEC RP05:\
 	:ty=removable:ns#22:nt#19:nc#411:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
-	:pc#171644:oc#0:bc#8192:fc#1024:\
+	:pc#171798:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49324:bd#4096:fd#512:\
 	:pe#55936:oe#65208:be#8192:fe#1024:\
 	:pf#50424:of#121220:bf#8192:ff#1024:\
 	:pg#122320:og#49324:bg#8192:fg#1024:
+#	:pc#171644:oc#0:bc#8192:fc#1024:
 rp07|RP07|DEC RP07:\
 	:ty=winchester:ns#50:nt#32:nc#630:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16000:bb#8192:fb#1024:tb=swap:\
-	:pc#1007800:oc#0:bc#8192:fc#1024:\
+	:pc#1008000:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#376000:bd#4096:fd#512:\
 	:pe#307200:oe#392000:be#8192:fe#1024:\
 	:pf#308600:of#699200:bf#8192:ff#1024:\
 	:pg#631800:og#376000:bg#8192:fg#1024:\
 	:ph#291346:oh#83200:bh#8192:fh#1024:
+#	:pc#1007800:oc#0:bc#8192:fc#1024:
 ml11|ml11a|ml11b|ML11A|ML11B|DEC disk emulator:\
 	:ty=simulated:dt=SMD:ns#1:nt#1:nc#2000:
 9775|CDC 9775:\
@@ -109,55 +124,73 @@ ml11|ml11a|ml11b|ML11A|ML11B|DEC disk emulator:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16640:bb#8192:fb#1024:tb=swap:\
-	:pc#1077600:oc#0:bc#8192:fc#1024:\
+	:pc#1077760:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#376320:bd#4096:fd#512:\
 	:pe#307200:oe#392960:be#8192:fe#1024:\
 	:pf#377440:of#700160:bf#8192:ff#1024:\
 	:pg#701280:og#376320:bg#8192:fg#1024:\
 	:ph#291346:oh#84480:bh#8192:fh#1024:
+#	:pc#1077600:oc#0:bc#8192:fc#1024:
 9730|CDC 9730:\
 	:ty=removable:ns#32:nt#10:nc#823:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
-	:pc#263200:oc#0:bc#8192:fc#1024:\
+	:pc#263360:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49600:bd#4096:fd#512:\
 	:pe#55936:oe#65600:be#8192:fe#1024:\
 	:pf#141600:of#121600:bf#8192:ff#1024:\
 	:pg#213600:og#49600:bg#8192:fg#1024:
+#	:pc#263200:oc#0:bc#8192:fc#1024:
 capricorn|330|Capricorn|Ampex Capricorn:\
 	:ty=winchester:ns#32:nt#16:nc#1024:sf:\
 	:dt=smd:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16384:bb#8192:fb#1024:tb=swap:\
-	:pc#524128:oc#0:bc#8192:fc#1024:\
+	:pc#524488:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#342016:bd#4096:fd#512:\
 	:pe#55936:oe#358400:be#8192:fe#1024:\
 	:pf#109408:of#414720:bf#8192:ff#1024:\
 	:pg#182112:og#342016:bg#8192:fg#1024:\
 	:ph#291346:oh#50176:bh#8192:fh#1024:
+#	:pc#524128:oc#0:bc#8192:fc#1024:
 eagle|Eagle|2351|2351A|Fujitsu Eagle 2351A (48 sectors):\
 	:ty=winchester:ns#48:nt#20:nc#842:rm#3961:sf:\
 	:dt=smd:d0#0:d1#3:d2#8:d3#15:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16320:bb#8192:fb#1024:tb=swap:\
-	:pc#808128:oc#0:bc#8192:fc#1024:\
+	:pc#808320:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#375360:bd#4096:fd#512:\
 	:pe#307200:oe#391680:be#8192:fe#1024:\
 	:pf#109248:of#698880:bf#8192:ff#1024:\
 	:pg#432768:og#375360:bg#8192:fg#1024:\
 	:ph#291346:oh#83520:bh#8192:fh#1024:
+#	:pc#808128:oc#0:bc#8192:fc#1024:
 2361|doubleeagle|Fujitsu 2361 (Double Eagle, 64 sectors):\
 	:ty=winchester:ns#64:nt#20:nc#842:sf:\
 	:dt=SMD:d0#0:d1#3:d2#8:d3#15:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16640:bb#8192:fb#1024:tb=swap:\
-	:pc#1077568:oc#0:bc#8192:fc#1024:\
+	:pc#1077760:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#376320:bd#4096:fd#512:\
 	:pe#307200:oe#392960:be#8192:fe#1024:\
 	:pf#377408:of#700160:bf#8192:ff#1024:\
 	:pg#701248:og#376320:bg#8192:fg#1024:\
 	:ph#291346:oh#84480:bh#8192:fh#1024:
+#	:pc#1077568:oc#0:bc#8192:fc#1024:
+
+2361a|doubleeagle|Fujitsu 2361 (Double Eagle, 68 sectors):\
+	:ty=winchester:ns#68:nt#20:nc#842:sf:\
+	:dt=SMD:d0#0:d1#3:d2#8:d3#15:\
+	:pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#66880:ob#16320:bb#8192:fb#1024:tb=swap:\
+	:pc#1145120:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#376720:bd#4096:fd#512:\
+	:pe#307200:oe#393040:be#8192:fe#1024:\
+	:pf#444516:of#700400:bf#8192:ff#1024:\
+	:pg#768196:og#376720:bg#8192:fg#1024:\
+	:ph#291346:oh#84320:bh#8192:fh#1024:
+#	:pc#1144916:oc#0:bc#8192:fc#1024:
 #
 # IDC disks
 #
@@ -185,16 +218,18 @@ rk06|RK06|DEC RK06:\
 	:dt=old DEC:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#11154:ob#15906:bb#4096:fb#512:tb=swap:\
-	:pc#26978:oc#0:bc#4096:fc#512:
+	:pc#27126:oc#0:bc#4096:fc#512:
+#	:pc#26978:oc#0:bc#4096:fc#512:
 rk07|RK07|DEC RK07:\
 	:ty=removable:ns#22:nt#3:nc#815:sf:\
 	:dt=old DEC:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#10032:ob#15906:bb#8192:fb#1024:tb=swap:\
-	:pc#53636:oc#0:bc#4096:fc#512:\
+	:pc#53790:oc#0:bc#4096:fc#512:\
 	:pd#15884:od#25938:bd#4096:fd#512:\
 	:pf#11792:of#41844:bf#4096:ff#1024:\
 	:pg#27698:og#25938:bg#4096:fg#512:
+#	:pc#53636:oc#0:bc#4096:fc#512:
 #
 # Disks normally on up
 #
@@ -203,43 +238,47 @@ rk07|RK07|DEC RK07:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
-	:pc#263200:oc#0:bc#8192:fc#1024:\
+	:pc#263360:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49600:bd#4096:fd#512:\
 	:pe#55936:oe#65600:be#8192:fe#1024:\
 	:pf#141600:of#121600:bf#8192:ff#1024:\
 	:pg#213600:og#49600:bg#8192:fg#1024:
+#	:pc#263200:oc#0:bc#8192:fc#1024:
 9300|Ampex 9300:\
 	:ty=removable:ns#32:nt#19:nc#815:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
-	:pc#495360:oc#0:bc#8192:fc#1024:\
+	:pc#495520:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#341696:bd#4096:fd#512:\
 	:pe#55936:oe#358112:be#8192:fe#1024:\
 	:pf#81312:of#414048:bf#8192:ff#1024:\
 	:pg#153664:og#341696:bg#8192:fg#1024:\
 	:ph#291346:oh#49856:bh#8192:fh#1024:
+#	:pc#495360:oc#0:bc#8192:fc#1024:
 9766|CDC 9766:\
 	:ty=removable:ns#32:nt#19:nc#823:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16416:bb#8192:fb#1024:tb=swap:\
-	:pc#500224:oc#0:bc#8192:fc#1024:\
+	:pc#500384:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#341696:bd#4096:fd#512:\
 	:pe#55936:oe#358112:be#8192:fe#1024:\
 	:pf#86176:of#414048:bf#8192:ff#1024:\
 	:pg#158528:og#341696:bg#8192:fg#1024:\
 	:ph#291346:oh#49856:bh#8192:fh#1024:
+#	:pc#500224:oc#0:bc#8192:fc#1024:
 980|9762|AMPEX DM980|CDC 9762:\
 	:ty=removable:ns#32:nt#5:nc#823:sf:\
 	:dt=SMD:d0#0:d1#1:d2#4:d3#7:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#16000:bb#8192:fb#1024:tb=swap:\
-	:pc#131520:oc#0:bc#8192:fc#1024:\
+	:pc#131680:oc#0:bc#8192:fc#1024:\
 	:pd#15884:od#49440:bd#4096:fd#512:\
 	:pe#55936:oe#65440:be#8192:fe#1024:\
 	:pf#10080:of#121440:bf#8192:ff#1024:\
 	:pg#82080:og#49440:bg#8192:fg#1024:
+#	:pc#131520:oc#0:bc#8192:fc#1024:
 #
 # Disk on a UDA50
 # NOTE: new partition sizes since 4.2.
@@ -248,7 +287,7 @@ rk07|RK07|DEC RK07:\
 #	4.2 compatible use a-b-d-e where 4.2 g == d; 4.2 h == e
 #	UCB compatible use a-b-h-g where UCB h == h; UCB g == g
 ra60|RA60|DEC RA60 Removable:\
-	:ty=removable:ns#42:nt#4:nc#2382:so:\
+	:ty=removable:ns#42:nt#4:nc#2382:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
@@ -263,7 +302,7 @@ ra60|RA60|DEC RA60 Removable:\
 #	4.2 compatible use a-b-f-h where 4.2 g == f; 4.2 h == h
 #	UCB compatible use a-b-e where UCB h == e
 ra80|RA80|DEC RA80 Winchester:\
-	:ty=winchester:ns#31:nt#14:nc#546:so:\
+	:ty=winchester:ns#31:nt#14:nc#546:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#8192:fb#1024:tb=swap:\
@@ -277,7 +316,7 @@ ra80|RA80|DEC RA80 Winchester:\
 #	When compiled as COMPAT_42 d-e-f are used for 4.2 compatible as:
 #		4.2 g == d; 4.2 h == e; 4.2 f == f
 ra81|RA81|DEC RA81 Winchester:\
-	:ty=winchester:ns#51:nt#14:nc#1248:so:\
+	:ty=winchester:ns#51:nt#14:nc#1248:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16422:bb#8192:fb#1024:tb=swap:\
@@ -291,7 +330,7 @@ ra81|RA81|DEC RA81 Winchester:\
 #	When compiled as RACOMPAT d-e-f are used for 4.2 compatible as:
 #		4.2 g == d; 4.2 h == e; 4.2 f == f
 racompat81|compat_42ra81|COMPAT_42RA81|DEC COMPAT_42RA81 Winchester:\
-	:ty=winchester:ns#51:nt#14:nc#1248:so:\
+	:ty=winchester:ns#51:nt#14:nc#1248:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#66880:ob#16422:bb#8192:fb#1024:tb=swap:\
@@ -304,7 +343,7 @@ racompat81|compat_42ra81|COMPAT_42RA81|DEC COMPAT_42RA81 Winchester:\
 #
 # UCB RA81: use a-b-h-g or a-b-h-d-e-f
 ucbra81|UCBRA81|DEC UCBRA81 Winchester:\
-	:ty=winchester:ns#51:nt#14:nc#1248:so:\
+	:ty=winchester:ns#51:nt#14:nc#1248:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#4096:fb#512:tb=swap:\
@@ -315,9 +354,34 @@ ucbra81|UCBRA81|DEC UCBRA81 Winchester:\
 	:pg#648466:og#242606:bg#4096:fg#1024:\
 	:ph#193282:oh#49324:bh#4096:fh#512:
 #
+# RA82: standard, use a-b-h-g or a-b-h-d-e-f
+ra82|RA81|DEC RA82 Winchester:\
+	:ty=winchester:ns#57:nt#15:nc#1423:\
+	:dt=MSCP:\
+	:pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#66880:ob#16245:bb#8192:fb#1024:tb=swap:\
+	:pc#1216665:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#375345:bd#4096:fd#512:\
+	:pe#307200:oe#391590:be#8192:fe#1024:\
+	:pf#517275:of#699390:bf#8192:ff#1024:\
+	:pg#841320:og#375345:bg#8192:fg#1024:\
+	:ph#291346:oh#83790:bh#8192:fh#1024:
+# RA70
+ra70|RA70|DEC RA70:\
+	:ty=winchester:ns#33:nt#11:nc#1507:\
+	:dt=MSCP:\
+	:pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#33440:ob#15972:bb#8192:fb#1024:tb=swap:\
+	:pc#547041:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#341220:bd#4096:fd#512:\
+	:pe#55936:oe#357192:be#8192:fe#1024:\
+	:pf#133584:of#413457:bf#8192:ff#1024:\
+	:pg#205821:og#341220:bg#8192:fg#1024:\
+	:ph#291346:oh#49731:bh#8192:fh#1024:
+#
 # RC25
 rc25|RC25:\
-	:ty=winchester:ns#42:nt#4:nc#302:so:\
+	:ty=winchester:ns#42:nt#4:nc#302:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#10032:ob#15884:bb#8192:fb#1024:tb=swap:\
@@ -326,7 +390,7 @@ rc25|RC25:\
 #
 #  Disks on RQDX Q-bus controllers
 rd52|RD52|DEC RD52 on Microvax:\
-	:ty=winchester:ns#18:nt#7:nc#480:so:\
+	:ty=winchester:ns#18:nt#7:nc#480:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#4096:fa#1024:\
 	:pb#9766:ob#15884:bb#4096:fb#512:tb=swap:\
@@ -334,7 +398,7 @@ rd52|RD52|DEC RD52 on Microvax:\
 	:pg#34830:og#25650:bg#4096:fg#512:\
 #
 rd53|RD53|DEC RD53 on Microvax:\
-	:ty=winchester:ns#18:nt#8:nc#963:so:\
+	:ty=winchester:ns#18:nt#8:nc#963:\
 	:dt=MSCP:\
 	:pa#15884:oa#0:ba#8192:fa#1024:\
 	:pb#33440:ob#15884:bb#4096:fb#512:tb=swap:\
@@ -343,6 +407,17 @@ rd53|RD53|DEC RD53 on Microvax:\
 	:pf#105232:of#33440:bf#4096:ff#512:\
 	:pg#89348:og#49324:bg#4096:fg#512:
 	:ph#122788:oh#15884:bh#4096:fh#512:\
+#
+rd54|RD54|DEC RD54 on Microvax:\
+	:ty=winchester:ns#17:nt#15:nc#1225:\
+	:dt=MSCP:\
+	:pa#15884:oa#0:ba#8192:fa#1024:\
+	:pb#33440:ob#16065:bb#8192:fb#1024:tb=swap:\
+	:pc#312375:oc#0:bc#8192:fc#1024:\
+	:pd#15884:od#49725:bd#4096:fd#512:\
+	:pe#55936:oe#65790:be#8192:fe#1024:\
+	:pf#190485:of#121890:bf#8192:ff#1024:\
+	:pg#262650:og#49725:bg#8192:fg#1024:
 #
 # RX02 floppy disk drives
 #
