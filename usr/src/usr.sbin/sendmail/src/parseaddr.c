@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -143,9 +143,9 @@ parseaddr(addr, a, flags, delim, delimptr, e)
 	*/
 
 	queueup = FALSE;
-	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 		queueup = TRUE;
-	if (rewrite(pvp, 0, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 0, 0, e) == EX_TEMPFAIL)
 		queueup = TRUE;
 
 
@@ -681,6 +681,7 @@ toktype(c)
 **	Parameters:
 **		pvp -- pointer to token vector.
 **		ruleset -- the ruleset to use for rewriting.
+**		reclevel -- recursion level (to catch loops).
 **		e -- the current envelope.
 **
 **	Returns:
@@ -725,9 +726,10 @@ static char control_init_data[] = {
 static int nrw;
 
 void
-rewrite(pvp, ruleset, e)
+rewrite(pvp, ruleset, reclevel, e)
 	char **pvp;
 	int ruleset;
+	int reclevel;
 	register ENVELOPE *e;
 {
 	nrw = 0;
@@ -766,6 +768,11 @@ _rewrite(pvp, ruleset)
 	if (ruleset < 0 || ruleset >= MAXRWSETS)
 	{
 		syserr("554 rewrite: illegal ruleset number %d", ruleset);
+		return EX_CONFIG;
+	}
+	if (reclevel++ > 50)
+	{
+		syserr("rewrite: infinite recursion, ruleset %d", ruleset);
 		return EX_CONFIG;
 	}
 	if (pvp == NULL)
@@ -1729,7 +1736,7 @@ badaddr:
 
 	if (m->m_r_rwset > 0)
 		rewrite(tv, m->m_r_rwset);
-	(void) rewrite(tv, 4, e);
+	(void) rewrite(tv, 4, 0, e);
 
 	/* save the result for the command line/RCPT argument */
 	cataddr(tv, NULL, buf, sizeof buf, '\0');
@@ -1981,7 +1988,7 @@ remotename(name, m, flags, pstat, e)
 	pvp = prescan(name, '\0', pvpbuf, sizeof pvpbuf, NULL);
 	if (pvp == NULL)
 		return (name);
-	if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 		*pstat = EX_TEMPFAIL;
 	if (bitset(RF_ADDDOMAIN, flags) && e->e_fromdomain != NULL)
 	{
@@ -1998,7 +2005,7 @@ remotename(name, m, flags, pstat, e)
 
 			while ((*pxp++ = *qxq++) != NULL)
 				continue;
-			if (rewrite(pvp, 3, e) == EX_TEMPFAIL)
+			if (rewrite(pvp, 3, 0, e) == EX_TEMPFAIL)
 				*pstat = EX_TEMPFAIL;
 		}
 	}
@@ -2015,7 +2022,7 @@ remotename(name, m, flags, pstat, e)
 	{
 	if (rwset > 0)
 	{
-		if (rewrite(pvp, rwset, e) == EX_TEMPFAIL)
+		if (rewrite(pvp, rwset, 0, e) == EX_TEMPFAIL)
 			*pstat = EX_TEMPFAIL;
 	}
 
@@ -2026,7 +2033,7 @@ remotename(name, m, flags, pstat, e)
 	**	may be used as a default to the above rules.
 	*/
 
-	if (rewrite(pvp, 4, e) == EX_TEMPFAIL)
+	if (rewrite(pvp, 4, 0, e) == EX_TEMPFAIL)
 		*pstat = EX_TEMPFAIL;
 
 	/*
@@ -2143,7 +2150,7 @@ maplocaluser(a, sendq, e)
 	if (pvp == NULL)
 		return;
 
-	(void) rewrite(pvp, 5, e);
+	(void) rewrite(pvp, 5, 0, e);
 	if (pvp[0] == NULL || (pvp[0][0] & 0377) != CANONNET)
 		return;
 

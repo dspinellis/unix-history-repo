@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -729,9 +729,9 @@ setsender(from, e, delimptr, internal)
 # endif
 		finis();
 	}
-	(void) rewrite(pvp, 3, e);
-	(void) rewrite(pvp, 1, e);
-	(void) rewrite(pvp, 4, e);
+	(void) rewrite(pvp, 3, 0, e);
+	(void) rewrite(pvp, 1, 0, e);
+	(void) rewrite(pvp, 4, 0, e);
 	bp = buf + 1;
 	cataddr(pvp, NULL, bp, sizeof buf - 2, '\0');
 	if (*bp == '@')

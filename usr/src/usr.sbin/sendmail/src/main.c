@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -907,7 +907,7 @@ main(argc, argv, envp)
 				{
 					int stat;
 
-					stat = rewrite(pvp, atoi(p), CurEnv);
+					stat = rewrite(pvp, atoi(p), 0, CurEnv);
 					if (stat != EX_OK)
 						printf("== Ruleset %s status %d\n",
 							p, stat);
