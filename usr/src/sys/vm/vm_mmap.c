@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.1 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.32 (Berkeley) %G%
  */
 
 /*
@@ -477,7 +477,7 @@ mlock(p, uap, retval)
 		       p->p_pid, uap->addr, uap->len);
 #endif
 	addr = (vm_offset_t)uap->addr;
-	if ((addr & PAGE_MASK) || uap->len < 0)
+	if ((addr & PAGE_MASK) || uap->addr + uap->len < uap->addr)
 		return (EINVAL);
 	size = round_page((vm_size_t)uap->len);
 	if (atop(size) + cnt.v_wire_count > vm_page_max_wired)
@@ -515,7 +515,7 @@ munlock(p, uap, retval)
 		       p->p_pid, uap->addr, uap->len);
 #endif
 	addr = (vm_offset_t)uap->addr;
-	if ((addr & PAGE_MASK) || uap->len < 0)
+	if ((addr & PAGE_MASK) || uap->addr + uap->len < uap->addr)
 		return (EINVAL);
 #ifndef pmap_wired_count
 	if (error = suser(p->p_ucred, &p->p_acflag))
@@ -545,7 +545,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_pager_t pager;
 	boolean_t fitit;
 	vm_object_t object;
-	struct vnode *vp;
+	struct vnode *vp = NULL;
 	int type;
 	int rv = KERN_SUCCESS;
 
