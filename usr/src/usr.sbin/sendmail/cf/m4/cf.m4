@@ -116,6 +116,7 @@ define(`confREFUSE_LA', `12')
 define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 define(`confMIME_FORMAT_ERRORS', `True')
+define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.2 (Berkeley) %G%')
