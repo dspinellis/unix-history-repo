@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.19 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,7 +110,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 	 * If there's a read-ahead block, start i/o
 	 * on it also (as above).
 	 */
-	if (rablkno && !incore(vp, rablkno)) {
+	if (!incore(vp, rablkno)) {
 		rabp = getblk(vp, rablkno, rabsize);
 #endif SECSIZE
 		if (rabp->b_flags & (B_DONE|B_DELWRI)) {
