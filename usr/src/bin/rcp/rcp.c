@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -240,7 +240,7 @@ toremote(targ, argc, argv)
 				    thost, targ);
 			} else
 				(void)snprintf(bp, len,
-				    "%s %s -n %s %s '%s%s%s:%s'",
+				    "exec %s %s -n %s %s '%s%s%s:%s'",
 				    _PATH_RSH, argv[i], cmd, src,
 				    tuser ? tuser : "", tuser ? "@" : "",
 				    thost, targ);
@@ -293,7 +293,7 @@ tolocal(argc, argv)
 			    strlen(argv[argc - 1]) + 20;
 			if (!(bp = malloc(len)))
 				err(1, NULL);
-			(void)snprintf(bp, len, "%s%s%s %s %s", _PATH_CP,
+			(void)snprintf(bp, len, "exec %s%s%s %s %s", _PATH_CP,
 			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
 			    argv[i], argv[argc - 1]);
 			if (susystem(bp, userid))
@@ -486,7 +486,6 @@ sink(argc, argv)
 	char *argv[];
 {
 	static BUF buffer;
-	register char *cp;
 	struct stat stb;
 	struct timeval tv[2];
 	enum { YES, NO, DISPLAYED } wrerr;
@@ -494,7 +493,7 @@ sink(argc, argv)
 	off_t i, j;
 	int amt, count, exists, first, mask, mode, ofd, omode;
 	int setimes, size, targisdir, wrerrno;
-	char ch, *np, *targ, *why, *vect[1], buf[BUFSIZ];
+	char ch, *cp, *np, *targ, *why, *vect[1], buf[BUFSIZ];
 
 #define	atime	tv[0]
 #define	mtime	tv[1]
@@ -758,8 +757,7 @@ again:
 int
 response()
 {
-	register char *cp;
-	char ch, resp, rbuf[BUFSIZ];
+	char ch, *cp, resp, rbuf[BUFSIZ];
 
 	if (read(rem, &resp, sizeof(resp)) != sizeof(resp))
 		lostconn(0);
