@@ -1,4 +1,4 @@
-/* ip_input.c 1.28 81/12/22 */
+/* ip_input.c 1.29 81/12/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -67,13 +67,13 @@ next:
 	splx(s);
 	if (m == 0)
 		return;
-	if (m->m_len < sizeof (struct ip) &&
-	    m_pullup(m, sizeof (struct ip)) == 0)
-		goto bad;
+	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct ip)) &&
+	    (m = m_pullup(m, sizeof (struct ip))) == 0)
+		return;
 	ip = mtod(m, struct ip *);
 	if ((hlen = ip->ip_hl << 2) > m->m_len) {
-		if (m_pullup(m, hlen) == 0)
-			goto bad;
+		if ((m = m_pullup(m, hlen)) == 0)
+			return;
 		ip = mtod(m, struct ip *);
 	}
 	if (ipcksum)
