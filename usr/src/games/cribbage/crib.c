@@ -22,62 +22,50 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)crib.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)crib.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
+# include	<sys/signal.h>
 # include	<curses.h>
-# include	<signal.h>
 # include	"deck.h"
 # include	"cribbage.h"
 # include	"cribcur.h"
-
-
-# define	LOGFILE		"/usr/games/lib/criblog"
-# define	INSTRCMD	"ul /usr/games/lib/crib.instr | more -f"
-
+# include	"pathnames.h"
 
 main(argc, argv)
 int	argc;
 char	*argv[];
 {
+	extern char *optarg;
+	extern int optind;
 	register  char		*p;
+	int ch;
 	BOOLEAN			playing;
 	char			*s;		/* for reading arguments */
-	char			bust;		/* flag for arg reader */
 	FILE			*f;
 	FILE			*fopen();
-	char			*getline();
-	int			bye();
+	char			*getline(), *getlogin();
+	void			rint();
 
-	while (--argc > 0) {
-	    if ((*++argv)[0] != '-') {
-		fprintf(stderr, "\n\ncribbage: usage is 'cribbage [-eqr]'\n");
-		exit(1);
-	    }
-	    bust = FALSE;
-	    for (s = argv[0] + 1; *s != NULL; s++) {
-		switch (*s) {
-		    case 'e':
+	while ((ch = getopt(argc, argv, "eqr")) != EOF)
+		switch(ch) {
+		case 'e':
 			explain = TRUE;
 			break;
-		    case 'q':
+		case 'q':
 			quiet = TRUE;
 			break;
-		    case 'r':
+		case 'r':
 			rflag = TRUE;
 			break;
-		    default:
-			fprintf(stderr, "\n\ncribbage: usage is 'cribbage [-eqr]'\n");
-			exit(2);
-			break;
+		case '?':
+		default:
+			(void) fprintf(stderr, "usage: cribbage [-eqr]\n");
+			exit(1);
 		}
-		if (bust)
-		    break;
-	    }
-	}
 
 	initscr();
-	signal(SIGINT, bye);
+	signal(SIGINT, rint);
 	crmode();
 	noecho();
 	Playwin = subwin(stdscr, PLAY_Y, PLAY_X, 0, 0);
@@ -93,8 +81,10 @@ char	*argv[];
 	    msg("Do you need instructions for cribbage? ");
 	    if (getuchar() == 'Y') {
 		endwin();
+		clear();
+		mvcur(0, COLS - 1, LINES - 1, 0);
 		fflush(stdout);
-		system(INSTRCMD);
+		instructions();
 		crmode();
 		noecho();
 		clear();
@@ -115,12 +105,18 @@ char	*argv[];
 	    playing = (getuchar() == 'Y');
 	} while (playing);
 
-	if ((f = fopen(LOGFILE, "a")) != NULL) {
-	    fprintf(f, "Won %5.5d, Lost %5.5d\n",  cgames, pgames);
-	    fclose(f);
+	if (f = fopen(_PATH_LOG, "a")) {
+		(void)fprintf(f, "%s: won %5.5d, lost %5.5d\n",
+		   getlogin(), cgames, pgames);
+		(void)fclose(f);
 	}
-
 	bye();
+	if (!f) {
+		(void)fprintf(stderr, "\ncribbage: can't open %s.\n",
+		    _PATH_LOG);
+		exit(1);
+	}
+	exit(0);
 }
 
 /*
