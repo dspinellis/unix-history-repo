@@ -1,4 +1,4 @@
-/*	subr_prf.c	3.4	%G%	*/
+/*	subr_prf.c	3.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -127,11 +127,10 @@ panic(s)
 char *s;
 {
 	panicstr = s;
-	update();
 	printf("panic: %s\n", s);
 	spl0();
 	for(;;)
-		boot(RB_PANIC, RB_AUTOBOOT);		/* 0 = automatic */
+		boot(RB_PANIC, RB_AUTOBOOT);
 }
 
 /*
