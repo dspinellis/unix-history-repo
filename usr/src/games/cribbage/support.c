@@ -144,7 +144,7 @@ int		*scr, inc;
 	}
 	*scr += inc;
 	prpeg(*scr, PEG, myturn);
-	return (*scr > glimit);
+	return (*scr >= glimit);
 }
 
 /*
