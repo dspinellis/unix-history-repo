@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	8.8 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -159,7 +159,7 @@ kernfs_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	VOP_REVOKE(rootvp, 0);
+	vgone(rootvp);
 	/*
 	 * Finally, throw away the kernfs_mount structure
 	 */

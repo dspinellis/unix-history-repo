@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_vnops.c	8.15 (Berkeley) %G%
+ *	@(#)procfs_vnops.c	8.16 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_vnops.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -193,7 +193,7 @@ procfs_bmap(ap)
  *
  * for procfs, check if the process is still
  * alive and if it isn't then just throw away
- * the vnode by calling VOP_REVOKE().  this may
+ * the vnode by calling vgone().  this may
  * be overkill and a waste of time since the
  * chances are that the process will still be
  * there and PFIND is not free.
@@ -208,7 +208,7 @@ procfs_inactive(ap)
 	struct pfsnode *pfs = VTOPFS(ap->a_vp);
 
 	if (PFIND(pfs->pfs_pid) == 0)
-		VOP_REVOKE(ap->a_vp);
+		vgone(ap->a_vp);
 
 	return (0);
 }

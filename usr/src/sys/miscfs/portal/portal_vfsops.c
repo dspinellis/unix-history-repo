@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)portal_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)portal_vfsops.c	8.10 (Berkeley) %G%
  *
  * $Id: portal_vfsops.c,v 1.5 1992/05/30 10:25:27 jsp Exp jsp $
  */
@@ -156,7 +156,7 @@ portal_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	VOP_REVOKE(rootvp, 0);
+	vgone(rootvp);
 	/*
 	 * Shutdown the socket.  This will cause the select in the
 	 * daemon to wake up, and then the accept will get ECONNABORTED

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1995
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.7 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
@@ -231,7 +231,7 @@ umapfs_unmount(mp, mntflags, p)
 	/*
 	 * And blow it away for future re-use
 	 */
-	VOP_REVOKE(umapm_rootvp, 0);
+	vgone(umapm_rootvp);
 	/*
 	 * Finally, throw away the umap_mount structure
 	 */
