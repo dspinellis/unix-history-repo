@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_subr.c	8.1 (Berkeley) %G%
+ *	@(#)null_subr.c	8.2 (Berkeley) %G%
  *
  * $Id: lofs_subr.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -70,38 +70,6 @@ struct vnode *lowervp;
 	return (&null_node_cache[NULL_NHASH(lowervp)]);
 }
 
-
-/*
- * XXX - this should go elsewhere.
- * Just like vget, but with no lock at the end.
- */
-int
-vget_nolock(vp)
-	register struct vnode *vp;
-{
-	extern struct vnode *vfreeh, **vfreet;
-	register struct vnode *vq;
-
-	if (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
-		sleep((caddr_t)vp, PINOD);
-		return (1);
-	}
-	if (vp->v_usecount == 0) {
-		if (vq = vp->v_freef)
-			vq->v_freeb = vp->v_freeb;
-		else
-			vfreet = vp->v_freeb;
-		*vp->v_freeb = vq;
-		vp->v_freef = NULL;
-		vp->v_freeb = NULL;
-	}
-	VREF(vp);
-	/* VOP_LOCK(vp); */
-	return (0);
-}
-
-
 /*
  * Return a VREF'ed alias for lower vnode if already exists, else 0.
  */
@@ -130,7 +98,7 @@ loop:
 			 * stuff, but we don't want to lock
 			 * the lower node.
 			 */
-			if (vget_nolock(vp)) {
+			if (vget(vp, 0)) {
 				printf ("null_node_find: vget failed.\n");
 				goto loop;
 			};
