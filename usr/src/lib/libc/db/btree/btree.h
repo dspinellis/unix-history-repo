@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.5 (Berkeley) %G%
+ *	@(#)btree.h	5.6 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -54,7 +54,8 @@ typedef struct PAGE {
 } PAGE;
 
 /* First and next index. */
-#define	BTDATAOFF	(sizeof(PAGE) - sizeof(index_t))
+#define	BTDATAOFF	(sizeof(pgno_t) + sizeof(pgno_t) + sizeof(pgno_t) + \
+			    sizeof(u_long) + sizeof(index_t) + sizeof(index_t))
 #define	NEXTINDEX(p)	(((p)->lower - BTDATAOFF) / sizeof(index_t))
 
 /*
