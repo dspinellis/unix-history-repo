@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+#	@(#)Makefile	4.9	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS= -O
@@ -16,7 +16,7 @@ rrestore: ${OBJS} rtape.o dumprmt.o
 	cc ${LDFLAGS} -o rrestore ${OBJS} rtape.o dumprmt.o -ljobs
 
 rtape.o: rtape.c
-	cc ${CFLAGS} -c -DRRESTOR rtape.c
+	cc ${CFLAGS} -c -DRRESTORE rtape.c
 
 install: rrestore restore
 	install restore ${DESTDIR}/etc/restore
