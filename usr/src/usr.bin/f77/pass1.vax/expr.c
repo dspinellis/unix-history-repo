@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid[] = "@(#)expr.c	5.7 (Berkeley) %G%";
+static char *sccsid[] = "@(#)expr.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,19 @@ static char *sccsid[] = "@(#)expr.c	5.7 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	expr.c,v $
+ * Revision 5.13  86/05/07  18:54:23  donn
+ * Adjusted the warning for OPEQ with logical operands -- this is now printed
+ * in mkexpr since cktype can be called several times on the same operands
+ * (argh -- how slow can this compiler get?!).
+ * 
+ * Revision 5.12  86/05/07  17:40:54  donn
+ * Make the lengths of expr nodes be copied by cpexpr and freed by frexpr.
+ * 
+ * Revision 5.11  86/05/07  16:57:17  donn
+ * Logical data is supposed to be compared using .eqv. and .neqv., but we
+ * will support .eq. and .ne. with a warning.  Other relational operators
+ * now provoke errors when used with logical operands.
+ * 
  * Revision 5.10  86/04/26  13:24:30  donn
  * Someone forgot about comparisons of logical constants in consbinop() --
  * the results of such tests were garbage.
@@ -522,6 +535,7 @@ switch(tag)
 	case TEXPR:
 		e->exprblock.leftp =  (expptr) cpexpr(p->exprblock.leftp);
 		e->exprblock.rightp = (expptr) cpexpr(p->exprblock.rightp);
+		e->addrblock.vleng =  (expptr) cpexpr(e->addrblock.vleng);
 		break;
 
 	case TLIST:
@@ -611,6 +625,8 @@ switch(p->tag)
 		frexpr(p->exprblock.leftp);
 		if(p->exprblock.rightp)
 			frexpr(p->exprblock.rightp);
+		if(p->exprblock.vleng)
+			frexpr(p->exprblock.vleng);
 		break;
 
 	case TLIST:
@@ -2113,11 +2129,21 @@ switch(opcode)
 	case OPGT:
 	case OPLE:
 	case OPGE:
+		break;
+
 	case OPEQ:
 	case OPNE:
+		/*
+		 * This warning is here instead of in cktype because
+		 * cktype repeats warnings (it can be run more
+		 * than once on an expression).
+		 */
+		if (ltype == TYLOGICAL)
+			warn("logical operand of nonlogical operator");
+		break;
 
 	case OPCONCAT:
-		break;
+
 	case OPMIN:
 	case OPMAX:
 
@@ -2223,6 +2249,11 @@ switch(op)
 			{
 			if(lt != rt)
 				ERR("illegal comparison")
+			if(lt == TYLOGICAL)
+				{
+				if(op!=OPEQ && op!=OPNE)
+					ERR("order comparison of complex data")
+				}
 			}
 
 		else if( ISCOMPLEX(lt) || ISCOMPLEX(rt) )
