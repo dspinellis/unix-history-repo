@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.20	82/10/31	*/
+/*	if_dmc.c	4.21	82/11/13	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -23,6 +23,7 @@ int dmcdebug = 1;
 #include <errno.h>
 
 #include "../net/if.h"
+#include "../net/netisr.h"
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -336,7 +337,7 @@ dmcxint(unit)
 			goto setup;
 		if (IF_QFULL(inq)) {
 			IF_DROP(inq);
-			(void) m_freem(m);
+			m_freem(m);
 		} else
 			IF_ENQUEUE(inq, m);
 
@@ -356,7 +357,7 @@ setup:
 		sc->sc_if.if_opackets++;
 		sc->sc_oactive = 0;
 		if (sc->sc_ifuba.ifu_xtofree) {
-			(void) m_freem(sc->sc_ifuba.ifu_xtofree);
+			m_freem(sc->sc_ifuba.ifu_xtofree);
 			sc->sc_ifuba.ifu_xtofree = 0;
 		}
 		if (sc->sc_if.if_snd.ifq_head == 0)
@@ -397,7 +398,8 @@ dmcoutput(ifp, m, dst)
 
 	printd("dmcoutput\n");
 	if (dst->sa_family != (ui->ui_flags & DMC_AF)) {
-		printf("dmc%d: af%d not supported\n", ifp->if_unit, pf);
+		printf("dmc%d: af%d not supported\n", ifp->if_unit,
+			dst->sa_family);
 		m_freem(m);
 		return (EAFNOSUPPORT);
 	}
