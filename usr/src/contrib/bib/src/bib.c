@@ -253,8 +253,26 @@ main(argc, argv)
    char huntstr[HUNTSIZE];
 {  char rf[REFSIZE], ref[REFSIZE], *r, *hunt();
    int  i, match(), getwrd();
+   char	*realhstr;
 
-   r = hunt(huntstr);
+   realhstr = huntstr;
+   if (strncmp(huntstr, "$C$", 3) == 0){
+	char *from, *to;
+	for(from = huntstr + 3, to = citetemplate; *from; from++, to++){
+		switch(*from){
+		case '\0':
+		case ' ':
+		case '\n':
+		case '\t':	goto outcopy;
+		default:	*to = *from;
+		}
+	}
+   outcopy: ;
+	*to = 0;
+	*from = 0;
+	realhstr = from + 1;
+   }
+   r = hunt(realhstr);
    if (r != NULL) {
       /* exapand defined string */
       strcpy(rf, r);
@@ -285,7 +303,7 @@ main(argc, argv)
       return(refspos[numrefs]);
       }
    else {
-      bibwarning("no reference matching %s\n", huntstr);
+      bibwarning("no reference matching %s\n", realhstr);
       return( (long) -1 );
       }
 }
