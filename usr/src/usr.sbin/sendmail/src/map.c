@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -353,6 +353,9 @@ nis_map_init(map, mapname, args)
 	char *mapname;
 	char *args;
 {
+	int yperr;
+	char *master;
+
 	/* parse arguments */
 	map_parseargs(map, &args);
 	if (map->map_file == NULL)
@@ -362,7 +365,15 @@ nis_map_init(map, mapname, args)
 	}
 	if (map->map_domain == NULL)
 		yp_get_default_domain(&map->map_domain);
-	return TRUE;
+
+	/* check to see if this map actually exists */
+	yperr = yp_master(map->map_domain, map->map_file, &master);
+	if (yperr == 0)
+		return TRUE;
+	if (!bitset(MF_OPTIONAL, map->map_flags))
+		syserr("Cannot bind to domain %s: %s", map->map_domain,
+			yperr_string(yperr));
+	return FALSE;
 }
 /*
 **  NIS_MAP_LOOKUP -- look up a datum in a NIS map
