@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00006
+ * --------------------         -----   ----------------------
+ *
+ * 17 Aug 92	Christoph Robitschko	Fixed parent of chroot panic
  */
 
 #include "param.h"
@@ -325,7 +332,7 @@ dirloop:
 	 */
 	if (ndp->ni_isdotdot) {
 		for (;;) {
-			if (dp == ndp->ni_rootdir) {
+/* 17 Aug 92*/		if ((dp == ndp->ni_rootdir) || (dp == rootdir)) {
 				ndp->ni_dvp = dp;
 				ndp->ni_vp = dp;
 				VREF(dp);
