@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.13 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -132,8 +132,6 @@ int	inosumbad;
 int	offsumbad;
 int	frsumbad;
 
-#define	howmany(x, y)	(((x)+((y)-1))/(y))
-#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
 #define	zapino(x)	(*(x) = zino)
 struct	dinode zino;
 
@@ -661,16 +659,7 @@ out5:
 	if (fixcg) {
 		if (preen == 0)
 			printf("** Phase 6 - Salvage Cylinder Groups\n");
-		for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
-			sblock.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
-			getblk((char *)sblock.fs_csp[i],
-			       csaddr(&sblock) + (i * FRAG), BSIZE);
-		}
 		makecg();
-		for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
-			bwrite(&dfile, (char *)sblock.fs_csp[i],
-			       csaddr(&sblock) + (i * FRAG), BSIZE);
-		}
 		n_ffree = sblock.fs_cstotal.cs_nffree;
 		n_bfree = sblock.fs_cstotal.cs_nbfree;
 	}
@@ -1456,6 +1445,11 @@ makecg()
 	sblock.fs_cstotal.cs_nffree = 0;
 	sblock.fs_cstotal.cs_nifree = 0;
 	sblock.fs_cstotal.cs_ndir = 0;
+	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+		sblock.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
+		getblk((char *)sblock.fs_csp[i],
+		       csaddr(&sblock) + (i * FRAG), BSIZE);
+	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		dbase = cgbase(c, &sblock);
 		dmax = dbase + sblock.fs_fpg;
@@ -1545,6 +1539,10 @@ makecg()
 		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
 		*cs = cgrp.cg_cs;
 		bwrite(&dfile, &cgrp, cgtod(c, &sblock), sblock.fs_cgsize);
+	}
+	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+		bwrite(&dfile, (char *)sblock.fs_csp[i],
+		       csaddr(&sblock) + (i * FRAG), BSIZE);
 	}
 	sblock.fs_ronly = 0;
 	sblock.fs_fmod = 0;
