@@ -1,17 +1,17 @@
-/*	vfs_bio.c	6.3	84/08/07	*/
+/*	vfs_bio.c	6.4	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
-#include "../h/proc.h"
-#include "../h/seg.h"
-#include "../h/vm.h"
-#include "../h/trace.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "conf.h"
+#include "proc.h"
+#include "seg.h"
+#include "vm.h"
+#include "trace.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.

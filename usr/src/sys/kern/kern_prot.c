@@ -1,4 +1,4 @@
-/*	kern_prot.c	6.1	83/07/29	*/
+/*	kern_prot.c	6.2	84/08/29	*/
 
 /*
  * System calls related to processes and protection
@@ -6,20 +6,20 @@
 
 #include "../machine/reg.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/proc.h"
-#include "../h/timeb.h"
-#include "../h/times.h"
-#include "../h/reboot.h"
-#include "../h/fs.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/mount.h"
-#include "../h/quota.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "inode.h"
+#include "proc.h"
+#include "timeb.h"
+#include "times.h"
+#include "reboot.h"
+#include "fs.h"
+#include "conf.h"
+#include "buf.h"
+#include "mount.h"
+#include "quota.h"
 
 getpid()
 {

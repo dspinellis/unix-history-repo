@@ -1,17 +1,17 @@
-/*	subr_log.c	6.2	84/07/17	*/
+/*	subr_log.c	6.3	84/08/29	*/
 
 /*
  * Error log buffer for kernel printf's.
  */
 
-#include "../h/param.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/ioctl.h"
-#include "../h/msgbuf.h"
-#include "../h/file.h"
-#include "../h/errno.h"
+#include "param.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "ioctl.h"
+#include "msgbuf.h"
+#include "file.h"
+#include "errno.h"
 
 #define LOG_RDPRI	(PZERO + 1)
 

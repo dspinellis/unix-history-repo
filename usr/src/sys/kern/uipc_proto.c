@@ -1,10 +1,10 @@
-/*	uipc_proto.c	6.2	84/08/21	*/
+/*	uipc_proto.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
-#include "../h/mbuf.h"
+#include "param.h"
+#include "socket.h"
+#include "protosw.h"
+#include "domain.h"
+#include "mbuf.h"
 
 /*
  * Definitions of protocols supported in the UNIX domain.

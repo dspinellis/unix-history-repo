@@ -1,13 +1,13 @@
-/*	kern_time.c	6.2	84/06/06	*/
+/*	kern_time.c	6.3	84/08/29	*/
 
 #include "../machine/reg.h"
 
-#include "../h/param.h"
-#include "../h/dir.h"		/* XXX */
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/inode.h"
-#include "../h/proc.h"
+#include "param.h"
+#include "dir.h"		/* XXX */
+#include "user.h"
+#include "kernel.h"
+#include "inode.h"
+#include "proc.h"
 
 /* 
  * Time of day and interval timer support.

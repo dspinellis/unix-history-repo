@@ -1,19 +1,19 @@
-/*	tty_tty.c	6.1	83/07/29	*/
+/*	tty_tty.c	6.2	84/08/29	*/
 
 /*
  * Indirect driver for controlling tty.
  *
  * THIS IS GARBAGE: MUST SOON BE DONE WITH struct inode * IN PROC TABLE.
  */
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/conf.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/proc.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "conf.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "proc.h"
+#include "uio.h"
 
 /*ARGSUSED*/
 syopen(dev, flag)

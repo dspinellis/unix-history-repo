@@ -1,21 +1,21 @@
-/*	ufs_vnops.c	6.13	84/07/27	*/
+/*	ufs_vnops.c	6.14	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/file.h"
-#include "../h/stat.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/buf.h"
-#include "../h/proc.h"
-#include "../h/quota.h"
-#include "../h/uio.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/mount.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "file.h"
+#include "stat.h"
+#include "inode.h"
+#include "fs.h"
+#include "buf.h"
+#include "proc.h"
+#include "quota.h"
+#include "uio.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "mount.h"
 
 extern	struct fileops inodeops;
 struct	file *getinode();

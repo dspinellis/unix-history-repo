@@ -1,11 +1,11 @@
-/*	subr_prof.c	6.3	84/08/12	*/
+/*	subr_prof.c	6.4	84/08/29	*/
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 
 #ifdef GPROF
-#include "../h/gprof.h"
-#include "../h/param.h"
-#include "../h/systm.h"
+#include "gprof.h"
+#include "param.h"
+#include "systm.h"
 
 /*
  * Froms is actually a bunch of unsigned shorts indexing tos

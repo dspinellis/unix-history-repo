@@ -1,11 +1,11 @@
-/*	uipc_pipe.c	6.1	83/07/29	*/
+/*	uipc_pipe.c	6.2	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/unpcb.h"
+#include "param.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "unpcb.h"
 
 #define	PIPSIZ	4096
 

@@ -1,20 +1,20 @@
-/*	kern_descrip.c	6.4	84/08/22	*/
+/*	kern_descrip.c	6.5	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/inode.h"
-#include "../h/proc.h"
-#include "../h/conf.h"
-#include "../h/file.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/mount.h"
-#include "../h/stat.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "inode.h"
+#include "proc.h"
+#include "conf.h"
+#include "file.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "mount.h"
+#include "stat.h"
 
-#include "../h/ioctl.h"
+#include "ioctl.h"
 
 /*
  * Descriptor management.

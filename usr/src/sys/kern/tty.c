@@ -1,21 +1,21 @@
-/*	tty.c	6.9	84/02/15	*/
+/*	tty.c	6.10	84/08/29	*/
 
 #include "../machine/reg.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/tty.h"
-#include "../h/proc.h"
-#include "../h/inode.h"
-#include "../h/file.h"
-#include "../h/conf.h"
-#include "../h/buf.h"
-#include "../h/dk.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "tty.h"
+#include "proc.h"
+#include "inode.h"
+#include "file.h"
+#include "conf.h"
+#include "buf.h"
+#include "dk.h"
+#include "uio.h"
+#include "kernel.h"
 
 /*
  * Table giving parity for characters and indicating

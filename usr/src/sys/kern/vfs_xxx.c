@@ -1,18 +1,18 @@
-/*	vfs_xxx.c	6.2	84/07/08	*/
+/*	vfs_xxx.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/mount.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/conf.h"
+#include "param.h"
+#include "systm.h"
+#include "inode.h"
+#include "fs.h"
+#include "mount.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "conf.h"
 
 #ifdef COMPAT
-#include "../h/file.h"
-#include "../h/kernel.h"
+#include "file.h"
+#include "kernel.h"
 
 /*
  * Oh, how backwards compatibility is ugly!!!

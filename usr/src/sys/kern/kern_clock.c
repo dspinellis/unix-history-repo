@@ -1,25 +1,25 @@
-/*	kern_clock.c	6.8	84/08/22	*/
+/*	kern_clock.c	6.9	84/08/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dk.h"
-#include "../h/callout.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/kernel.h"
-#include "../h/proc.h"
-#include "../h/vm.h"
-#include "../h/text.h"
+#include "param.h"
+#include "systm.h"
+#include "dk.h"
+#include "callout.h"
+#include "dir.h"
+#include "user.h"
+#include "kernel.h"
+#include "proc.h"
+#include "vm.h"
+#include "text.h"
 
 #ifdef vax
 #include "../vax/mtpr.h"
 #endif
 
 #ifdef GPROF
-#include "../h/gprof.h"
+#include "gprof.h"
 #endif
 
 #define ADJTIME		/* For now... */

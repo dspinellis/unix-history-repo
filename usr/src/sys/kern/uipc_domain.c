@@ -1,11 +1,11 @@
-/*	uipc_domain.c	6.2	84/08/21	*/
+/*	uipc_domain.c	6.3	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/socket.h"
-#include "../h/protosw.h"
-#include "../h/domain.h"
-#include "../h/time.h"
-#include "../h/kernel.h"
+#include "param.h"
+#include "socket.h"
+#include "protosw.h"
+#include "domain.h"
+#include "time.h"
+#include "kernel.h"
 
 #define	ADDDOMAIN(x)	{ \
 	extern struct domain x/**/domain; \

@@ -1,14 +1,14 @@
-/*	kern_acct.c	6.4	84/07/15	*/
+/*	kern_acct.c	6.5	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/inode.h"
-#include "../h/fs.h"
-#include "../h/kernel.h"
-#include "../h/acct.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "inode.h"
+#include "fs.h"
+#include "kernel.h"
+#include "acct.h"
+#include "uio.h"
 
 /*
  * SHOULD REPLACE THIS WITH A DRIVER THAT CAN BE READ TO SIMPLIFY.

@@ -1,19 +1,19 @@
-/*	subr_xxx.c	6.4	84/08/22	*/
+/*	subr_xxx.c	6.5	84/08/29	*/
 
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/conf.h"
-#include "../h/inode.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/buf.h"
-#include "../h/proc.h"
-#include "../h/fs.h"
-#include "../h/vm.h"
-#include "../h/cmap.h"
-#include "../h/uio.h"
+#include "param.h"
+#include "systm.h"
+#include "conf.h"
+#include "inode.h"
+#include "dir.h"
+#include "user.h"
+#include "buf.h"
+#include "proc.h"
+#include "fs.h"
+#include "vm.h"
+#include "cmap.h"
+#include "uio.h"
 
 /*
  * Routine placed in illegal entries in the bdevsw and cdevsw tables.

@@ -1,17 +1,17 @@
-/*	uipc_socket2.c	6.3	84/08/21	*/
+/*	uipc_socket2.c	6.4	84/08/29	*/
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/file.h"
-#include "../h/inode.h"
-#include "../h/buf.h"
-#include "../h/mbuf.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "file.h"
+#include "inode.h"
+#include "buf.h"
+#include "mbuf.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
 
 /*
  * Primitive routines for operating on sockets and socket buffers

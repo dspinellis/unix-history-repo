@@ -1,20 +1,20 @@
-/*	sys_process.c	6.1	83/07/29	*/
+/*	sys_process.c	6.2	84/08/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
 #include "../machine/pte.h"
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/inode.h"
-#include "../h/text.h"
-#include "../h/seg.h"
-#include "../h/vm.h"
-#include "../h/buf.h"
-#include "../h/acct.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "proc.h"
+#include "inode.h"
+#include "text.h"
+#include "seg.h"
+#include "vm.h"
+#include "buf.h"
+#include "acct.h"
 
 /*
  * Priority for tracing
