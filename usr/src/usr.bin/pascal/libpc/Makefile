@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.27 (Berkeley) %G%
+#	@(#)Makefile	1.28 (Berkeley) %G%
 
 LIB=	pc
 CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
@@ -17,5 +17,9 @@ SYS=	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
 	blkclr.c blkcpy.c
 EXTN=	APPEND.c SEEK.c TELL.c
 SRCS=	${CMDS} ${SYS} ${EXTN}
+
+beforeinstall:
+	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    unixio.h unixio.i ${DESTDIR}/usr/include/pascal
 
 .include <bsd.lib.mk>
