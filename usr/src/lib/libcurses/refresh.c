@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -97,7 +97,7 @@ wrefresh(win)
 #endif
 		if (!curwin)
 			curscr->lines[wy]->hash = win->lines[wy]->hash;
-		if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT))
+		if (win->lines[wy]->flags & (__ISDIRTY | __FORCEPAINT)) {
 			if (makech(win, wy) == ERR)
 				return (ERR);
 			else {
@@ -115,6 +115,9 @@ wrefresh(win)
 					win->lines[wy]->flags &= ~__ISDIRTY;
 				}
 			}
+
+		} else
+			win->lines[wy]->flags &= ~__ISPASTEOL;
 #ifdef DEBUG
 		__TRACE("\t%d\t%d\n", *win->lines[wy]->firstchp, 
 			*win->lines[wy]->lastchp);
