@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c 4.1 %G%";
+static	char sccsid[] = "@(#)setup.c 4.2 %G%";
 #
 /*
  *
@@ -62,11 +62,9 @@ setsym()
 			txtmap.f1=txtmap.f2=TXTHDRSIZ;
 			switch (magic) {
 
-			case 0412:
-				txtmap.f1=txtmap.f2=(CLSIZE*NBPG);
 			case 0407:
 				txtmap.b1=0;
-				txtmap.e1=symbas;
+				txtmap.e1=0;
 				txtmap.b2=datbas=0;
 				txtmap.e2=symbas;
 				break;
