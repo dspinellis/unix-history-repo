@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gomoku.h	8.1 (Berkeley) %G%
+ *	@(#)gomoku.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -113,9 +113,8 @@
 #define MAXA		6
 #define MAXB		2
 #define MAXCOMBO	0x600
-#define MAXDEPTH	5
 
-union	combo {
+union	comboval {
 	struct {
 #if BYTE_ORDER == BIG_ENDIAN
 		u_char	a;	/* # moves to complete force */
@@ -130,29 +129,52 @@ union	combo {
 };
 
 /*
- * This structure is used to record combinations of two more frames.
- * This is so we can do it incrementally in makemove() and because
- * we don't want to combine frames with <1,x> combos.
+ * This structure is used to record information about single frames (F) and
+ * combinations of two more frames (C).
+ * For combinations of two or more frames, there is an additional
+ * array of pointers to the frames of the combination which is sorted
+ * by the index into the frames[] array. This is used to prevent duplication
+ * since frame A combined with B is the same as B with A.
+ *	struct combostr *c_sort[size c_nframes];
+ * The leaves of the tree (frames) are numbered 0 (bottom, leftmost)
+ * to c_nframes - 1 (top, right). This is stored in c_frameindex and
+ * c_dir if C_LOOP is set.
  */
 struct combostr {
 	struct combostr	*c_next;	/* list of combos at the same level */
 	struct combostr	*c_prev;	/* list of combos at the same level */
-	struct combostr	*c_link[2];	/* previous level or NULL if level 1 */
-	union combo	c_combo;	/* combo value for this level */
-	u_short		c_vertex;	/* intersection or frame head */
+	struct combostr	*c_link[2];	/* C:previous level or F:NULL */
+	union comboval	c_linkv[2];	/* C:combo value for link[0,1] */
+	union comboval	c_combo;	/* C:combo value for this level */
+	u_short		c_vertex;	/* C:intersection or F:frame head */
 	u_char		c_nframes;	/* number of frames in the combo */
-	u_char		c_dir;		/* which direction */
-	u_char		c_flg;		/* combo flags */
-	u_char		c_refcnt;	/* # higher levels that point to us */
+	u_char		c_dir;		/* C:loop frame or F:frame direction */
+	u_char		c_flg;		/* C:combo flags */
+	u_char		c_frameindex;	/* C:intersection frame index */
+	u_char		c_framecnt[2];	/* number of frames left to attach */
+	u_char		c_emask[2];	/* C:bit mask of completion spots for
+					 * link[0] and link[1] */
+	u_char		c_voff[2];	/* C:vertex offset within frame */
 };
 
-/* flag values for s_flg */
-#define C_LOOP		0x01		/* link[1] intersects previous frame */
+/* flag values for c_flg */
+#define C_OPEN_0	0x01		/* link[0] is an open ended frame */
+#define C_OPEN_1	0x02		/* link[1] is an open ended frame */
+#define C_LOOP		0x04		/* link[1] intersects previous frame */
+#define C_MARK		0x08		/* indicates combo processed */
 
+/*
+ * This structure is used for recording the completion points of
+ * multi frame combos.
+ */
 struct	elist {
-	struct elist	*e_next;	/* list of combos */
-	struct combostr	*e_combo;	/* the combo */
-	struct combostr	*e_frame;	/* the 1st level combo that connects */
+	struct elist	*e_next;	/* list of completion points */
+	struct combostr	*e_combo;	/* the whole combo */
+	u_char		e_off;		/* offset in frame of this empty spot */
+	u_char		e_frameindex;	/* intersection frame index */
+	u_char		e_framecnt;	/* number of frames left to attach */
+	u_char		e_emask;	/* real value of the frame's emask */
+	union comboval	e_fval;		/* frame combo value */
 };
 
 /*
@@ -164,12 +186,14 @@ struct	spotstr {
 	short		s_occ;		/* color of occupant */
 	short		s_wval;		/* weighted value */
 	int		s_flg;		/* flags for graph walks */
-	union combo	s_fval[2][4];	/* combo value for [color][frame] */
-	union combo	s_combo[2];	/* minimum combo value for BLK & WHT */
+	struct combostr	*s_frame[4];	/* level 1 combo for frame[dir] */
+	union comboval	s_fval[2][4];	/* combo value for [color][frame] */
+	union comboval	s_combo[2];	/* minimum combo value for BLK & WHT */
 	u_char		s_level[2];	/* number of frames in the min combo */
 	u_char		s_nforce[2];	/* number of <1,x> combos */
-	struct combostr	*s_frame[4];	/* level 1 combo for frame[dir] */
-	struct elist	*s_empty[2];	/* level n combo for [color] */
+	struct elist	*s_empty;	/* level n combo completion spots */
+	struct elist	*s_nempty;	/* level n+1 combo completion spots */
+	int		dummy[2];	/* XXX */
 };
 
 /* flag values for s_flg */
@@ -184,15 +208,26 @@ struct	spotstr {
 #define BFLAG		0x010000	/* frame intersects border or dead */
 #define BFLAGALL	0x0F0000	/* all frames dead */
 
+/*
+ * This structure is used to store overlap information between frames.
+ */
+struct	ovlp_info {
+	int		o_intersect;	/* intersection spot */
+	struct combostr	*o_fcombo;	/* the connecting combo */
+	u_char		o_link;		/* which link to update (0 or 1) */
+	u_char		o_off;		/* offset in frame of intersection */
+	u_char		o_frameindex;	/* intersection frame index */
+};
+
 extern	char	*letters;
-extern	char	*color[];
 extern	char	fmtbuf[];
+extern	char	pdir[];
 
 extern	int     dd[4];
 extern	struct	spotstr	board[BAREA];		/* info for board */
-extern	struct	combostr frames[FAREA];		/* storage for all frames */
+extern	struct	combostr frames[FAREA];		/* storage for single frames */
 extern	struct	combostr *sortframes[2];	/* sorted, non-empty frames */
-extern	char	overlap[FAREA * FAREA];		/* frame [a][b] overlap */
+extern	u_char	overlap[FAREA * FAREA];		/* frame [a][b] overlap */
 extern	short	intersect[FAREA * FAREA];	/* frame [a][b] intersection */
 extern	int	movelog[BSZ * BSZ];		/* history of moves */
 extern	int	movenum;

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemove.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemove.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gomoku.h"
@@ -33,10 +33,10 @@ makemove(us, mv)
 	int us, mv;
 {
 	register struct spotstr *sp, *fsp;
-	register union combo *cp;
+	register union comboval *cp;
 	struct spotstr *osp;
 	struct combostr *cbp, *cbp1;
-	union combo *cp1;
+	union comboval *cp1;
 	register int i, f, r, d, n;
 	int space, val, bmask;
 
@@ -178,5 +178,98 @@ makemove(us, mv)
 	    ;
 	}
 
+	update_overlap(osp);
+
 	return(MOVEOK);
+}
+
+/*
+ * fix up the overlap array due to updating spot osp.
+ */
+update_overlap(osp)
+	struct spotstr *osp;
+{
+	register struct spotstr *sp, *sp1, *sp2;
+	register int i, f, r, r1, d, d1, n;
+	int a, b, bmask, bmask1;
+	struct spotstr *esp;
+	char *str;
+
+	for (r = 4; --r >= 0; ) {			/* for each direction */
+	    d = dd[r];
+	    sp1 = osp;
+	    bmask = BFLAG << r;
+	    for (f = 0; f < 6; f++, sp1 -= d) {		/* for each frame */
+		if (sp1->s_occ == BORDER)
+		    break;
+		if (sp1->s_flg & bmask)
+		    continue;
+		/*
+		 * Update all other frames that intersect the current one
+		 * to indicate whether they still overlap or not.
+		 * Since F1 overlap F2 == F2 overlap F1, we only need to
+		 * do the rows 0 <= r1 <= r. The r1 == r case is special
+		 * since the two frames can overlap at more than one point.
+		 */
+		str = &overlap[(a = sp1->s_frame[r] - frames) * FAREA];
+		sp2 = sp1 - d;
+		for (i = f + 1; i < 6; i++, sp2 -= d) {
+		    if (sp2->s_occ == BORDER)
+			break;
+		    if (sp2->s_flg & bmask)
+			continue;
+		    /*
+		     * count the number of empty spots to see if there is
+		     * still an overlap.
+		     */
+		    n = 0;
+		    sp = sp1;
+		    for (b = i - f; b < 5; b++, sp += d) {
+			if (sp->s_occ == EMPTY) {
+			    esp = sp;	/* save the intersection point */
+			    n++;
+			}
+		    }
+		    b = sp2->s_frame[r] - frames;
+		    if (n == 0) {
+			if (sp->s_occ == EMPTY) {
+			    str[b] &= 0xA;
+			    overlap[b * FAREA + a] &= 0xC;
+			    intersect[a * FAREA + b] = n = sp - board;
+			    intersect[b * FAREA + a] = n;
+			} else {
+			    str[b] = 0;
+			    overlap[b * FAREA + a] = 0;
+			}
+		    } else if (n == 1) {
+			if (sp->s_occ == EMPTY) {
+			    str[b] &= 0xAF;
+			    overlap[b * FAREA + a] &= 0xCF;
+			} else {
+			    str[b] &= 0xF;
+			    overlap[b * FAREA + a] &= 0xF;
+			}
+			intersect[a * FAREA + b] = n = esp - board;
+			intersect[b * FAREA + a] = n;
+		    }
+		    /* else no change, still multiple overlap */
+		}
+
+		/* the other directions can only intersect at spot osp */
+		for (r1 = r; --r1 >= 0; ) {
+		    d1 = dd[r1];
+		    bmask1 = BFLAG << r1;
+		    sp = osp;
+		    for (i = 6; --i >= 0; sp -= d1) {	/* for each spot */
+			if (sp->s_occ == BORDER)
+			    break;
+			if (sp->s_flg & bmask1)
+			    continue;
+			b = sp->s_frame[r1] - frames;
+			str[b] = 0;
+			overlap[b * FAREA + a] = 0;
+		    }
+		}
+	    }
+	}
 }
