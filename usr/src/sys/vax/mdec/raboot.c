@@ -1,4 +1,4 @@
-/*	raboot.c	4.1	83/02/16	*/
+/*	raboot.c	4.2	83/02/20	*/
 
 /*
  * From 4.1 boot sector code by Scott Comer (Rice University).
