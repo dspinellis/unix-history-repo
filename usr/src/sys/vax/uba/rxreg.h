@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rxreg.h	7.1 (Berkeley) %G%
+ *	@(#)rxreg.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -68,12 +68,13 @@ RXES_DNER\4RXES_ACLO\3RXES_ID\1RXES_CRC"
 /* 
  * Ioctl commands, move to dkio.h later
  */
-#define RXIOC_FORMAT	_IOW(d, 1, int)	/* format the disk */
-#define RXIOC_WDDS	_IOW(d, 2, int)	/* write `deleted data' mark */
-					/* on next sector */
-#define RXIOC_RDDSMK	_IOR(d, 3, int)	/* did last read sector contain */
-					/* `deleted data'?*/
-#define	RXIOC_GDENS	_IOR(d, 4, int)	/* return density of current disk */
+#define RXIOC_FORMAT	_IOW('d', 1, int)	/* format the disk */
+#define RXIOC_WDDS	_IOW('d', 2, int)	/* write `deleted data' mark */
+						/* on next sector */
+#define RXIOC_RDDSMK	_IOR('d', 3, int)	/* did last read sector */
+						/* contain `deleted data'?*/
+#define	RXIOC_GDENS	_IOR('d', 4, int)	/* return density of current */
+						/* disk */
 
 #ifdef RXDEFERR
 /*
