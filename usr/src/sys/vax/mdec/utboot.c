@@ -1,4 +1,4 @@
-/*	utboot.c	4.1	83/02/16	*/
+/*	utboot.c	4.2	83/02/20	*/
 
 /*
  * VAX tape boot block for distribution tapes
@@ -161,14 +161,14 @@ rew:
 /* rrec: read 1 block from mag tape into page (r0) */
 rrec:
 	/* pushl r0; movzbl $'r,r0; bsbw putc; movl (sp)+,r0; */
-	jsb	xtquiet
+	jsb	utquiet
 	movw	$-BLKSIZ,UTFC(%rUT)
 	movw	$-256,UTWC(%rUT)		/* !!!!!!!!!!!!!! */
 	bisl3	$MRV|MR_BDP1,r0,UBA_MAP(%rUBA)
 	movw	$0,UTBA(%rUT)
 	movw	$UTDENS,UTTC(%rUT)	/* select drive */
 	movw	$UT_RCOM+GO,UTCS1(%rUT)
-	jsb	xtquiet
+	jsb	utquiet
 	bisl2	$BNE,UBA_DPR1(%rUBA)
 	tstw	UTER(%rUT)
 	jgeq	2f
@@ -197,9 +197,9 @@ putc:
 	extzv	$0,$7,r0,r0
 	mtpr	r0,$TXDB
 	rsb
-xtquiet:
+utquiet:
 	movw	UTCS1(%rUT),r2
-	bbc	$UT_crdy,r2,xtquiet
+	bbc	$UT_crdy,r2,utquiet
 1:
 	movw	UTDS(%rUT),r2
 	bbs	$UT_gapsd,r2,1b
