@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.4 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.5 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -15,8 +15,6 @@
 #include "dir.h"
 #include "user.h"
 #include "proc.h"
-#include "file.h"
-#include "inode.h"
 #include "vm.h"
 #include "kernel.h"
 #include "buf.h"
