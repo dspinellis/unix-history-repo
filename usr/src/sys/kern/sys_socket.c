@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_socket.c	7.11 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
