@@ -7,17 +7,17 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)SYS.h	5.2 (Berkeley) %G%
+ *	@(#)SYS.h	5.3 (Berkeley) %G%
  */
 
 #include <syscall.h>
 
 #ifdef PROF
 #define	ENTRY(x)	.globl _/**/x; \
-			.data; 1:; .long 0; .text; _/**/x:	.align 4; \
+			.data; 1:; .long 0; .text; .align 2; _/**/x: \
 			movl $1b,%eax; call mcount
 #else
-#define	ENTRY(x)	.globl _/**/x; .text; .align 4; _/**/x: 
+#define	ENTRY(x)	.globl _/**/x; .text; .align 2; _/**/x: 
 #endif PROF
 #define	SYSCALL(x)	2: jmp cerror; ENTRY(x); lea SYS_/**/x,%eax; LCALL(7,0); jb 2b
 #define	PSEUDO(x,y)	ENTRY(x); lea SYS_/**/y, %eax; ; LCALL(7,0)
