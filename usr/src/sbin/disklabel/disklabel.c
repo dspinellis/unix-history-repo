@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)disklabel.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)disklabel.c	5.12 (Berkeley) %G%";
 /* from static char sccsid[] = "@(#)disklabel.c	1.2 (Symmetric) 11/28/85"; */
 #endif
 
@@ -66,41 +66,70 @@ char	namebuf[BBSIZE], *np = namebuf;
 struct	disklabel lab;
 struct	disklabel *readlabel(), *makebootarea();
 char	bootarea[BBSIZE];
+char	boot0[MAXPATHLEN];
+char	boot1[MAXPATHLEN];
 
-enum	{ READ, WRITE, EDIT, RESTORE } op = READ;
+enum	{ UNSPEC, EDIT, NOWRITE, READ, RESTORE, WRITE, WRITEABLE } op = UNSPEC;
 
 int	rflag;
+
+#ifdef DEBUG
+int	debug;
+#endif
 
 main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	extern int	optind;
+	extern int optind;
 	register struct disklabel *lp;
-	FILE	*t;
-	int	ch, f;
+	FILE *t;
+	int ch, f;
 	char *name = 0, *type;
 
-	while ((ch = getopt(argc, argv, "Rerw")) != EOF)
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "NRWerw")) != EOF)
+		switch (ch) {
+			case 'N':
+				if (op != UNSPEC)
+					usage();
+				op = NOWRITE;
+				break;
 			case 'R':
+				if (op != UNSPEC)
+					usage();
 				op = RESTORE;
 				break;
+			case 'W':
+				if (op != UNSPEC)
+					usage();
+				op = WRITEABLE;
+				break;
 			case 'e':
+				if (op != UNSPEC)
+					usage();
 				op = EDIT;
 				break;
 			case 'r':
 				++rflag;
 				break;
 			case 'w':
+				if (op != UNSPEC)
+					usage();
 				op = WRITE;
 				break;
+#ifdef DEBUG
+			case 'd':
+				debug++;
+				break;
+#endif
 			case '?':
 			default:
 				usage();
 		}
 	argc -= optind;
 	argv += optind;
+	if (op == UNSPEC)
+		op = READ;
 	if (argc < 1)
 		usage();
 
@@ -124,34 +153,47 @@ main(argc, argv)
 	case EDIT:
 		if (argc != 1)
 			usage();
-		lp = readlabel(f, rflag);
+		lp = readlabel(f);
 		if (edit(lp))
 			writelabel(f, bootarea, lp);
 		break;
+	case NOWRITE: {
+		int flag = 0;
+		if (ioctl(f, DIOCWLABEL, (char *)&flag) < 0)
+			Perror("ioctl DIOCWLABEL");
+		break;
+	}
 	case READ:
 		if (argc != 1)
 			usage();
-		lp = readlabel(f, 0);
+		lp = readlabel(f);
 		display(stdout, lp);
 		(void) checklabel(lp);
 		break;
 	case RESTORE:
 #ifdef BOOT
-		if (argc == 4) {
-			xxboot = argv[2];
-			bootxx = argv[3];
-		} else
+		if (rflag) {
+			if (argc == 4) {	/* [ priboot secboot ] */
+				xxboot = argv[2];
+				bootxx = argv[3];
+				lab.d_secsize = DEV_BSIZE;	/* XXX */
+				lab.d_bbsize = BBSIZE;		/* XXX */
+			}
+			else if (argc == 3) 	/* [ disktype ] */
+				makelabel(argv[2], (char *)NULL, &lab);
+			else {
+				fprintf(stderr,
+"Must specify either disktype or bootfiles with -r flag of RESTORE option\n");
+				exit(1);
+			}
+		}
+		else
 #endif
 		if (argc != 2)
 			usage();
-		lab.d_secsize = DEV_BSIZE;			/* XXX */
-		lab.d_bbsize = BBSIZE;				/* XXX */
 		lp = makebootarea(bootarea, &lab);
 		if (!(t = fopen(argv[1],"r")))
 			Perror(argv[1]);
-#ifdef BOOT
-		rflag = 1;		/* force bootstrap to be written */
-#endif
 		if (getasciilabel(t, lp))
 			writelabel(f, bootarea, lp);
 		break;
@@ -173,21 +215,30 @@ main(argc, argv)
 		makelabel(type, name, &lab);
 		lp = makebootarea(bootarea, &lab);
 		*lp = lab;
-#ifdef BOOT
-		rflag = 1;		/* force bootstrap to be written */
-#endif
 		if (checklabel(lp) == 0)
 			writelabel(f, bootarea, lp);
 		break;
+	case WRITEABLE: {
+		int flag = 1;
+		if (ioctl(f, DIOCWLABEL, (char *)&flag) < 0)
+			Perror("ioctl DIOCWLABEL");
+		break;
+	}
 	}
 	exit(0);
 }
 
+/*
+ * Construct a prototype disklabel from /etc/disktab.  As a side
+ * effect, set the names of the primary and secondary boot files
+ * if specified.
+ */
 makelabel(type, name, lp)
 	char *type, *name;
 	register struct disklabel *lp;
 {
 	register struct disklabel *dp;
+	char *strcpy();
 
 	dp = getdiskbyname(type);
 	if (dp == NULL) {
@@ -195,8 +246,34 @@ makelabel(type, name, lp)
 		exit(1);
 	}
 	*lp = *dp;
+#ifdef BOOT
+	/*
+	 * Check if disktab specifies the bootstraps (b0 or b1).
+	 */
+	if (!xxboot && lp->d_boot0) {
+		if (*lp->d_boot0 != '/')
+			(void)sprintf(boot0, "%s/%s", BOOTDIR, lp->d_boot0);
+		else
+			(void)strcpy(boot0, lp->d_boot0);
+		xxboot = boot0;
+	}
+	if (!bootxx && lp->d_boot1) {
+		if (*lp->d_boot1 != '/')
+			(void)sprintf(boot1, "%s/%s", BOOTDIR, lp->d_boot1);
+		else
+			(void)strcpy(boot1, lp->d_boot1);
+		bootxx = boot1;
+	}
+	/*
+	 * If bootstraps not specified anywhere, makebootarea()
+	 * will choose ones based on the name of the disk special
+	 * file. E.g. /dev/ra0 -> raboot, bootra
+	 */
+#endif /*BOOT*/
+	/* d_packname is union d_boot[01], so zero */
+	bzero(lp->d_packname, sizeof(lp->d_packname));
 	if (name)
-		(void)strncpy(lp->d_name, name, sizeof(lp->d_name));
+		(void)strncpy(lp->d_packname, name, sizeof(lp->d_packname));
 }
 
 writelabel(f, boot, lp)
@@ -205,21 +282,40 @@ writelabel(f, boot, lp)
 	register struct disklabel *lp;
 {
 	register int i;
-	long	lseek();
+	int flag;
+	off_t lseek();
 
 	lp->d_magic = DISKMAGIC;
 	lp->d_magic2 = DISKMAGIC;
 	lp->d_checksum = 0;
 	lp->d_checksum = dkcksum(lp);
 	if (rflag) {
-		(void)lseek(f, (off_t)0, L_SET);
-		if (write(f, boot, lp->d_bbsize) < lp->d_bbsize)
-			Perror("write");
-		if (ioctl(f, DIOCSDINFO, lp) < 0)
+		/*
+		 * First set the kernel disk label,
+		 * then write a label to the raw disk.
+		 * If the SDINFO ioctl fails because it is unimplemented,
+		 * keep going; otherwise, the kernel consistency checks
+		 * may prevent us from changing the current (in-core)
+		 * label.
+		 */
+		if (ioctl(f, DIOCSDINFO, lp) < 0 &&
+		    errno != ENODEV && errno != ENOTTY)
 			Perror("ioctl DIOCSDINFO");
+		(void)lseek(f, (off_t)0, L_SET);
+		/*
+		 * write enable label sector before write (if necessary),
+		 * disable after writing.
+		 */
+		flag = 1;
+		if (ioctl(f, DIOCWLABEL, &flag) < 0)
+			perror("ioctl DIOCWLABEL");
+		if (write(f, boot, lp->d_bbsize) != lp->d_bbsize)
+			Perror("write");
+		flag = 0;
+		(void) ioctl(f, DIOCWLABEL, &flag);
 	} else if (ioctl(f, DIOCWDINFO, lp) < 0)
 		Perror("ioctl DIOCWDINFO");
-#if vax
+#ifdef vax
 	if (lp->d_type == DTYPE_SMD && lp->d_flags & D_BADSECT) {
 		daddr_t alt;
 
@@ -239,25 +335,17 @@ writelabel(f, boot, lp)
 
 /*
  * Fetch disklabel for disk.
- * If needboot is given, need bootstrap too.
  * Use ioctl to get label unless -r flag is given.
  */
 struct disklabel *
-readlabel(f, needboot)
-	int f, needboot;
+readlabel(f)
+	int f;
 {
 	register struct disklabel *lp;
 
-	if (needboot || rflag) {
-		lp = (struct disklabel *)(bootarea + LABELOFFSET);
+	if (rflag) {
 		if (read(f, bootarea, BBSIZE) < BBSIZE)
 			Perror(specname);
-	} else
-		lp = &lab;
-	if (rflag == 0) {
-		if (ioctl(f, DIOCGDINFO, lp) < 0)
-			Perror("ioctl DIOCGDINFO");
-	} else {
 		for (lp = (struct disklabel *)bootarea;
 		    lp <= (struct disklabel *)(bootarea + BBSIZE - sizeof(*lp));
 		    lp = (struct disklabel *)((char *)lp + 16))
@@ -269,8 +357,13 @@ readlabel(f, needboot)
 		    dkcksum(lp) != 0) {
 			fprintf(stderr,
 	"Bad pack magic number (label is damaged, or pack is unlabeled)\n");
-			exit(1);
+			/* lp = (struct disklabel *)(bootarea + LABELOFFSET); */
+			exit (1);
 		}
+	} else {
+		lp = &lab;
+		if (ioctl(f, DIOCGDINFO, lp) < 0)
+			Perror("ioctl DIOCGDINFO");
 	}
 	return (lp);
 }
@@ -285,8 +378,15 @@ makebootarea(boot, dp)
 	int b;
 #ifdef BOOT
 	char	*dkbasename;
+#endif /*BOOT*/
 
-	if (xxboot == NULL) {
+	lp = (struct disklabel *)(boot + (LABELSECTOR * dp->d_secsize) +
+	    LABELOFFSET);
+#ifdef BOOT
+	if (!rflag)
+		return (lp);
+
+	if (xxboot == NULL || bootxx == NULL) {
 		dkbasename = np;
 		if ((p = rindex(dkname, '/')) == NULL)
 			p = dkname;
@@ -296,17 +396,28 @@ makebootarea(boot, dp)
 			*np++ = *p++;
 		*np++ = '\0';
 
-		(void)sprintf(np, "%s/%sboot", BOOTDIR, dkbasename);
-		if (access(np, F_OK) < 0 && dkbasename[0] == 'r')
-			dkbasename++;
-		xxboot = np;
-		(void)sprintf(xxboot, "%s/%sboot", BOOTDIR, dkbasename);
-		np += strlen(xxboot) + 1;
-
-		bootxx = np;
-		(void)sprintf(bootxx, "%s/boot%s", BOOTDIR, dkbasename);
-		np += strlen(bootxx) + 1;
+		if (xxboot == NULL) {
+			(void)sprintf(np, "%s/%sboot", BOOTDIR, dkbasename);
+			if (access(np, F_OK) < 0 && dkbasename[0] == 'r')
+				dkbasename++;
+			xxboot = np;
+			(void)sprintf(xxboot, "%s/%sboot", BOOTDIR, dkbasename);
+			np += strlen(xxboot) + 1;
+		}
+		if (bootxx == NULL) {
+			(void)sprintf(np, "%s/boot%s", BOOTDIR, dkbasename);
+			if (access(np, F_OK) < 0 && dkbasename[0] == 'r')
+				dkbasename++;
+			bootxx = np;
+			(void)sprintf(bootxx, "%s/boot%s", BOOTDIR, dkbasename);
+			np += strlen(bootxx) + 1;
+		}
 	}
+#ifdef DEBUG
+	if (debug)
+		fprintf(stderr, "bootstraps: xxboot = %s, bootxx = %s\n",
+			xxboot, bootxx);
+#endif
 
 	b = open(xxboot, O_RDONLY);
 	if (b < 0)
@@ -320,10 +431,8 @@ makebootarea(boot, dp)
 	if (read(b, &boot[dp->d_secsize], (int)(dp->d_bbsize-dp->d_secsize)) < 0)
 		Perror(bootxx);
 	(void)close(b);
-#endif
+#endif /*BOOT*/
 
-	lp = (struct disklabel *)(boot + (LABELSECTOR * dp->d_secsize) +
-	    LABELOFFSET);
 	for (p = (char *)lp; p < (char *)lp + sizeof(struct disklabel); p++)
 		if (*p) {
 			fprintf(stderr,
@@ -346,7 +455,7 @@ display(f, lp)
 	else
 		fprintf(f, "type: %d\n", lp->d_type);
 	fprintf(f, "disk: %.*s\n", sizeof(lp->d_typename), lp->d_typename);
-	fprintf(f, "label: %.*s\n", sizeof(lp->d_name), lp->d_name);
+	fprintf(f, "label: %.*s\n", sizeof(lp->d_packname), lp->d_packname);
 	fprintf(f, "flags:");
 	if (lp->d_flags & D_REMOVABLE)
 		fprintf(f, " removeable");
@@ -443,7 +552,8 @@ edit(lp)
 			break;
 		fd = fopen(tmpfil, "r");
 		if (fd == NULL) {
-			fprintf(stderr, "%s: Can't reopen for reading\n");
+			fprintf(stderr, "%s: Can't reopen for reading\n",
+				tmpfil);
 			break;
 		}
 		bzero((char *)&label, sizeof(label));
@@ -578,7 +688,8 @@ getasciilabel(f, lp)
 			continue;
 		}
 		if (streq(cp, "flags")) {
-			for (v = 0; (cp = tp) && *cp != '\0'; tp = word(cp)) {
+			for (v = 0; (cp = tp) && *cp != '\0';) {
+				tp = word(cp);
 				if (streq(cp, "removeable"))
 					v |= D_REMOVABLE;
 				else if (streq(cp, "ecc"))
@@ -621,7 +732,7 @@ getasciilabel(f, lp)
 			continue;
 		}
 		if (streq(cp, "label")) {
-			strncpy(lp->d_name, tp, sizeof (lp->d_name));
+			strncpy(lp->d_packname, tp, sizeof (lp->d_packname));
 			continue;
 		}
 		if (streq(cp, "bytes/sector")) {
@@ -775,10 +886,15 @@ getasciilabel(f, lp)
 					pp->p_fstype = cpp - fstypenames;
 					goto gottype;
 				}
-			v = atoi(cp);
-			if ((unsigned)v >= FSMAXTYPES)
+			if (isdigit(*cp))
+				v = atoi(cp);
+			else
+				v = FSMAXTYPES;
+			if ((unsigned)v >= FSMAXTYPES) {
 				fprintf(stderr, "line %d: %s %s\n", lineno,
 				    "Warning, unknown filesystem type", cp);
+				v = FS_UNUSED;
+			}
 			pp->p_fstype = v;
 	gottype:
 
@@ -893,7 +1009,7 @@ checklabel(lp)
 		pp = &lp->d_partitions[i];
 		if (pp->p_size || pp->p_offset)
 			Warning("unused partition %c: size %d offset %d\n",
-			    pp->p_size, pp->p_offset);
+			    'a' + i, pp->p_size, pp->p_offset);
 	}
 	return (errors);
 }
@@ -918,17 +1034,19 @@ Perror(str)
 usage()
 {
 #ifdef BOOT
-	fprintf(stderr, "%-62s%s\n%-62s%s\n%-62s%s\n%-62s%s\n",
+	fprintf(stderr, "%-62s%s\n%-62s%s\n%-62s%s\n%-62s%s\n%-62s%s\n",
 "usage: disklabel [-r] disk", "(to read label)",
 "or disklabel -w [-r] disk type [ packid ] [ xxboot bootxx ]", "(to write label)",
 "or disklabel -e [-r] disk", "(to edit label)",
-"or disklabel -R [-r] disk protofile [ xxboot bootxx ]", "(to restore label)");
+"or disklabel -R [-r] disk protofile [ type | xxboot bootxx ]", "(to restore label)",
+"or disklabel [-NW] disk", "(to write disable/enable label)");
 #else
-	fprintf(stderr, "%-43s%s\n%-43s%s\n%-43s%s\n%-43s%s\n",
+	fprintf(stderr, "%-43s%s\n%-43s%s\n%-43s%s\n%-43s%s\n%-43s%s\n",
 "usage: disklabel [-r] disk", "(to read label)",
 "or disklabel -w [-r] disk type [ packid ]", "(to write label)",
 "or disklabel -e [-r] disk", "(to edit label)",
-"or disklabel -R [-r] disk protofile", "(to restore label)");
+"or disklabel -R [-r] disk protofile", "(to restore label)",
+"or disklabel [-NW] disk", "(to write disable/enable label)");
 #endif
 	exit(1);
 }
