@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.115 (Berkeley) %G%
+#	@(#)termcap.src	5.116 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -480,6 +480,22 @@ tab132wrv:\
 # requirements in MS.
 mw2|Multiwriter 2:\
 	:do=^J:co#132:hc:os:
+# SCO console and SOS-Syscons console for 386bsd
+scoansi|SCO Extended ANSI standard crt:\
+	:al=\E[L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%d;%dH:co#80:\
+	:dc=\E[P:dl=\E[M:do=\E[B:bt=\E[Z:ei=:ho=\E[H:ic=\E[@:im=:li#25:\
+	:nd=\E[C:pt:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:up=\E[A:\
+	:k1=\E[M:k2=\E[N:k3=\E[O:k4=\E[P:k5=\E[Q:k6=\E[R:\
+	:k7=\E[S:k8=\E[T:k9=\E[U:k0=\E[V:\
+	:kb=^h:ku=\E[A:kd=\E[B:kl=\E[D:kr=\E[C:eo:sf=\E[S:sr=\E[T:\
+	:mb=\E[5m:md=\E[1m:me=\E[m:\
+	:GS=\E[12m:GE=\E[10m:GV=\63:GH=D:\
+	:GC=E:GL=\64:GR=C:RT=^J:G1=?:G2=Z:G3=@:G4=Y:G5=;:G6=I:G7=H:G8=<:\
+	:GU=A:GD=B:\
+	:CW=\E[M:NU=\E[N:RF=\E[O:RC=\E[P:\
+	:WL=\E[S:WR=\E[T:CL=\E[U:CR=\E[V:\
+	:HM=\E[H:EN=\E[F:PU=\E[I:PD=\E[G:\
+	:Gc=N:Gd=K:Gh=M:Gl=L:Gu=J:Gv=\072:
 trs80|trs-80|radio shack trs-80 Model I:\
 	:do=^J:am:le=^H:bs:co#64:li#16:
 d800|Direct 800/A:\
