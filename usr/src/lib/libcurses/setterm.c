@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.13
+ * %G% (Berkeley) @(#)setterm.c	1.14
  */
 
 # include	"curses.ext"
@@ -107,7 +107,6 @@ zap() {
 
 	reg bool	**fp;
 	reg char	*namp, ***sp;
-	reg int		SG, UG;
 	extern char	*tgetstr();
 
 	/*
@@ -141,9 +140,11 @@ zap() {
 # endif
 		namp += 2;
 	} while (*namp);
-	SG = tgetnum("sg");
-	UG = tgetnum("ug");
-	if ((SG > 0 || !SO) && (UG <= 0 && US)) {
+	if (tgetnum("sg") > 0)
+		SO = NULL;
+	if (tgetnum("ug") > 0)
+		US = NULL;
+	if (!SO && US) {
 		SO = US;
 		SE = UE;
 	}
