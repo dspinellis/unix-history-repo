@@ -254,8 +254,8 @@ GAP2_Create(conn, BDTproc, sessionparams, transports,
 		dup2(t, 2);
 		if (t > 2) close(t);
 		envinit[0] = "TERM=network";
-		envinit[1] = sprintf(wsenv, "WORKSTATION=%s",
-				     xntoa(who.sns_addr));
+		(void)sprintf(wsenv, "WORKSTATION=%s", xntoa(who.sns_addr));
+		envinit[1] = wsenv;
 		envinit[2] = (char*) 0;
 #ifdef DEBUG
 		BUGOUT("about to exec /bin/login");
