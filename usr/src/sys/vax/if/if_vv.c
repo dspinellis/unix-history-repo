@@ -1,4 +1,4 @@
-/*	if_vv.c	4.1	82/06/04	*/
+/*	if_vv.c	4.2	82/06/12	*/
 
 /*
  * Proteon 10 Meg Ring Driver.
@@ -295,7 +295,7 @@ retry:
 	vs->vs_oactive = 1;
 	vvxint(unit);
 	splx(s);
-	if_rtinit(&vs->vs_if, RTF_DIRECT|RTF_UP);
+	if_rtinit(&vs->vs_if, RTF_UP);
 }
 
 /*
@@ -631,6 +631,6 @@ COUNT(VVLHINIT);
 	ifp->if_flags = IFF_UP;
 	ifp->if_output = looutput;
 	if_attach(ifp);
-	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_DIRECT|RTF_UP|RTF_HOST);
+	rtinit(&ifp->if_addr, &ifp->if_addr, RTF_UP|RTF_HOST);
 }
 #endif
