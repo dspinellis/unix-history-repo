@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -710,9 +710,10 @@ domem()
 {
 	register struct kmembuckets *kp;
 	register struct kmemstats *ks;
-	register int i;
-	int size;
+	register int i, j;
+	int len, size, first;
 	long totuse = 0, totfree = 0, totreq = 0;
+	char *name;
 	struct kmemstats kmemstats[M_LAST];
 	struct kmembuckets buckets[MINBUCKET + 16];
 
@@ -732,18 +733,60 @@ domem()
 	}
 
 	kread(X_KMEMSTAT, kmemstats, sizeof(kmemstats));
-	(void)printf("\nMemory statistics by type\n");
+	(void)printf("\nMemory usage type by bucket size\n");
+	(void)printf("    Size  Type(s)\n");
+	kp = &buckets[MINBUCKET];
+	for (j =  1 << MINBUCKET; j < 1 << (MINBUCKET + 16); j <<= 1, kp++) {
+		if (kp->kb_calls == 0)
+			continue;
+		first = 1;
+		len = 8;
+		for (i = 0, ks = &kmemstats[0]; i < M_LAST; i++, ks++) {
+			if (ks->ks_calls == 0)
+				continue;
+			if ((ks->ks_size & j) == 0)
+				continue;
+			name = kmemnames[i] ? kmemnames[i] : "undefined";
+			len += 2 + strlen(name);
+			if (first)
+				printf("%8d  %s", j, name);
+			else
+				printf(",");
+			if (len >= 80) {
+				printf("\n\t ");
+				len = 10 + strlen(name);
+			}
+			if (!first)
+				printf(" %s", name);
+			first = 0;
+		}
+		printf("\n");
+	}
+
 	(void)printf(
-"      Type  In Use  MemUse   HighUse  Limit Requests  TypeLimit KernLimit\n");
+	    "\nMemory statistics by type                        Type  Kern\n");
+	(void)printf(
+"      Type  InUse MemUse HighUse  Limit Requests Limit Limit Size(s)\n");
 	for (i = 0, ks = &kmemstats[0]; i < M_LAST; i++, ks++) {
 		if (ks->ks_calls == 0)
 			continue;
-		(void)printf("%10s %6ld %7ldK %8ldK %5ldK %8ld %6u %9u\n",
+		(void)printf("%11s%6ld%6ldK%7ldK%6ldK%9ld%5u%6u",
 		    kmemnames[i] ? kmemnames[i] : "undefined",
 		    ks->ks_inuse, (ks->ks_memuse + 1023) / 1024,
 		    (ks->ks_maxused + 1023) / 1024,
 		    (ks->ks_limit + 1023) / 1024, ks->ks_calls,
 		    ks->ks_limblocks, ks->ks_mapblocks);
+		first = 1;
+		for (j =  1 << MINBUCKET; j < 1 << (MINBUCKET + 16); j <<= 1) {
+			if ((ks->ks_size & j) == 0)
+				continue;
+			if (first)
+				printf("  %d", j);
+			else
+				printf(",%d", j);
+			first = 0;
+		}
+		printf("\n");
 		totuse += ks->ks_memuse;
 		totreq += ks->ks_calls;
 	}
