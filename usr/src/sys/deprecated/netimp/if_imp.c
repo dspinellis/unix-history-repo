@@ -1,4 +1,4 @@
-/*	if_imp.c	4.49	83/02/23	*/
+/*	if_imp.c	4.50	83/06/13	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -7,6 +7,8 @@
  *
  * The IMP-host protocol is handled here, leaving
  * hardware specifics to the lower level interface driver.
+ *
+ * NB: only handles IMPS on class A networks.
  */
 #include "../machine/pte.h"
 
@@ -20,6 +22,7 @@
 #include "../h/time.h"
 #include "../h/kernel.h"
 #include "../h/errno.h"
+#include "../h/ioctl.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -71,7 +74,7 @@ static char *impmessage[] = {
 	"for emergency reset"
 };
 
-int	impdown(), impinit(), impoutput();
+int	impdown(), impinit(), impioctl(), impoutput();
 
 /*
  * IMP attach routine.  Called from hardware device attach routine
@@ -92,13 +95,9 @@ impattach(ui, reset)
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
-	ifp->if_net = ui->ui_flags;
 	ifp->if_reset = reset;
-	/* the host and imp fields will be filled in by the imp */
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, 0);
 	ifp->if_init = impinit;
+	ifp->if_ioctl = impioctl;
 	ifp->if_output = impoutput;
 	/* reset is handled at the hardware level */
 	if_attach(ifp);
@@ -115,13 +114,18 @@ impinit(unit)
 {
 	int s = splimp();
 	register struct imp_softc *sc = &imp_softc[unit];
+	struct sockaddr_in *sin;
 
+	sin = (struct sockaddr_in *)&sc->sc_if;
+	if (in_netof(sin->sin_addr) == 0)
+		return;
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
 		sc->imp_state = IMPS_DOWN;
 		sc->imp_if.if_flags &= ~IFF_UP;
 		splx(s);
 		return;
 	}
+	sc->sc_if.if_flags |= IFF_RUNNING;
 	sc->imp_state = IMPS_INIT;
 	impnoops(sc);
 	splx(s);
@@ -580,6 +584,42 @@ impnoops(sc)
 	}
 	if (sc->imp_cb.ic_oactive == 0)
 		(*sc->imp_cb.ic_start)(sc->imp_if.if_unit);
+}
+
+/*
+ * Process an ioctl request.
+ */
+impioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
+	int cmd;
+	caddr_t data;
+{
+	struct ifreq *ifr = (struct ifreq *)data;
+	struct sockaddr_in *sin;
+	int s = splimp(), error = 0;
+
+	switch (cmd) {
+
+	case SIOCSIFADDR:
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, -1);	/* delete previous route */
+		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+		ifp->if_net = in_netof(sin->sin_addr);
+		sin = (struct sockaddr_in *)&ifp->if_addr;
+		sin->sin_family = AF_INET;
+		/* host number filled in already, or filled in later */
+		sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
+		if (ifp->if_flags & IFF_RUNNING)
+			if_rtinit(ifp, RTF_UP);
+		else
+			impinit(ifp->if_unit);
+		break;
+
+	default:
+		error = EINVAL;
+	}
+	splx(s);
+	return (error);
 }
 
 #ifdef IMPLEADERS
