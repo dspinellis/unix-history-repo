@@ -1,10 +1,11 @@
-#	@(#)Makefile	5.7.1.1 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # ieee		- for most IEEE machines, we hope.
 # mc68881	- the, ahem, mc68881.
 # national	- for those ieee machines whose floating point implementation
 #		  has similar byte ordering as the NATIONAL 32016 with 32081.
 # i386		- i387 NPX, currently the same as "national"
+# mips		- for MIPS achitecture machines
 # tahoe		- for the tahoe double format.
 # vax		- for the vax D_floating format
 
@@ -42,8 +43,21 @@ SRCS+=	cabs.c cbrt.c
 .elif (${MACHINE} == "i386")
 
 HARDWARE=i387
-.PATH:	${.CURDIR}/common_source ${.CURDIR}/common \
-	${.CURDIR}/ieee
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/ieee
+CFLAGS+= -Dnational
+# common_source
+SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c exp.c \
+	exp__E.c expm1.c floor.c fmod.c lgamma.c j0.c j1.c jn.c log.c \
+	log10.c log1p.c log__L.c pow.c sinh.c tanh.c
+# common
+SRCS+=	atan2.c sincos.c tan.c
+# ieee
+SRCS+=	cabs.c cbrt.c support.c
+
+.elif (${MACHINE} == "mips")
+
+HARDWARE=${MACHINE}
+.PATH:	${.CURDIR}/common_source ${.CURDIR}/common ${.CURDIR}/ieee
 CFLAGS+= -Dnational
 # common_source
 SRCS+=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c exp.c \
