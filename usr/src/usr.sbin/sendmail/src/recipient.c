@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.85 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.86 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1192,8 +1192,8 @@ getctladdr(a)
 **	that exists as a real user.
 **
 **	This is to handle the case of:
-**		Andrew.Chang:	awc
-**		awc:		Andrew.Chang@mail.server.
+**		awc:		Andrew.Chang
+**		Andrew.Chang:	awc@mail.server
 **	which is a problem only on mail.server.
 **
 **	Parameters:
