@@ -14,17 +14,59 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)strings.h	5.6 (Berkeley) %G%
+ *	@(#)strings.h	5.7 (Berkeley) %G%
  */
 
-/* Routines described in string(3) */
-char	*strcat(), *strncat(), *strcpy(), *strncpy(), *index(), *rindex();
-int	strcmp(), strncmp(), strcasecmp(), strncasecmp(), strlen();
-
-/* Routines described in memory(BA_LIB); System V compatibility */
-char	*memccpy(), *memchr(), *memcpy(), *memset(), *strchr(),
-	*strdup(), *strpbrk(), *strrchr(), *strsep(), *strtok();
-int	memcmp(), strcspn(), strspn();
-
-/* Routines from ANSI X3J11 */
-char	*strerror();
+#ifdef __STDC__
+extern int memcmp(const char *, const char *, int);
+extern int strcasecmp(const char *, const char *);
+extern int strcmp(const char *, const char *);
+extern int strcspn(const char *, const char *);
+extern int strlen(const char *);
+extern int strncasecmp(const char *, const char *, int);
+extern int strncmp(const char *, const char *, int);
+extern int strspn(const char *, const char *);
+extern char *index(const char *, int);
+extern char *memccpy(char *, const char *, int, int);
+extern char *memchr(const char *, int, int);
+extern char *memcpy(char *, const char *, int);
+extern char *memset(char *, int, int);
+extern char *rindex(const char *, int);
+extern char *strcat(char *, const char *);
+extern char *strchr(const char *, int);
+extern char *strcpy(char *, const char *);
+extern char *strdup(const char *);
+extern char *strerror(int);
+extern char *strncat(char *, const char *, int);
+extern char *strncpy(char *, const char *, int);
+extern char *strpbrk(const char *, const char *);
+extern char *strrchr(const char *, int);
+extern char *strsep(char *, const char *);
+extern char *strtok(char *, const char *);
+#else
+extern int memcmp();
+extern int strcasecmp();
+extern int strcmp();
+extern int strcspn();
+extern int strlen();
+extern int strncasecmp();
+extern int strncmp();
+extern int strspn();
+extern char *index();
+extern char *memccpy();
+extern char *memchr();
+extern char *memcpy();
+extern char *memset();
+extern char *rindex();
+extern char *strcat();
+extern char *strchr();
+extern char *strcpy();
+extern char *strdup();
+extern char *strerror();
+extern char *strncat();
+extern char *strncpy();
+extern char *strpbrk();
+extern char *strrchr();
+extern char *strsep();
+extern char *strtok();
+#endif

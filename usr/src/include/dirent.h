@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dirent.h	5.7 (Berkeley) %G%
+ *	@(#)dirent.h	5.8 (Berkeley) %G%
  */
 
 #ifndef _DIRENT_
@@ -60,13 +60,28 @@ typedef struct _dirdesc {
 #ifndef NULL
 #define NULL 0
 #endif
-extern	DIR *opendir();
-extern	struct dirent *readdir();
-extern	long telldir();
-extern	void seekdir();
-extern	void closedir();
+
 extern	long _rewinddir;
 #define rewinddir(dirp) \
 	_seekdir((dirp), _rewinddir), \
 	_rewinddir = telldir(dirp)
+
+#ifdef __STDC__
+extern DIR *opendir(const char *);
+extern struct dirent *readdir(DIR *);
+extern long telldir(const DIR *);
+extern void seekdir(DIR *, long);
+extern void closedir(DIR *);
+extern int scandir(const char *, struct direct *(*[]),
+    int (* )(struct direct *), int (* )(char *, char *));
+extern int alphasort(const struct direct **, const struct direct **);
+#else
+extern DIR *opendir();
+extern struct dirent *readdir();
+extern long telldir();
+extern void seekdir();
+extern void closedir();
+extern int scandir();
+extern int alphasort();
+#endif
 #endif /* _DIRENT_ */

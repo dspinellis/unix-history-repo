@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)time.h	5.1 (Berkeley) %G%
+ *	@(#)time.h	5.2 (Berkeley) %G%
  */
 
 struct tm {
@@ -31,6 +31,26 @@ struct tm {
 	char	*tm_zone;	/* timezone abbreviation */
 };
 
-void tzset();
-struct tm *gmtime(), *localtime();
-char *asctime(), *ctime(), *timezone();
+#ifdef __STDC__
+extern struct tm *gmtime(const time_t *);
+extern struct tm *localtime(const time_t *);
+extern time_t mktime(const struct tm *);
+extern time_t time(time_t *);
+extern double difftime(const time_t, const time_t);
+extern char *asctime(const struct tm *);
+extern char *ctime(const time_t *);
+extern char *timezone(int , int);
+extern void tzset(void);
+extern void tzsetwall(void);
+#else
+extern struct tm *gmtime();
+extern struct tm *localtime();
+extern time_t mktime();
+extern time_t time();
+extern double difftime();
+extern char *asctime();
+extern char *ctime();
+extern char *timezone();
+extern void tzset();
+extern void tzsetwall();
+#endif 
