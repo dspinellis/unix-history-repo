@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.30 (Berkeley) %G%
+		@(#)README	8.31 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -247,17 +247,18 @@ smtp		The Simple Mail Transport Protocol mailer.  This does
 		RELAY_HOST or MAILER_HUB.
 
 uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
-		defines two mailers, "uucp" and "suucp".  The latter
-		is for when you know that the UUCP mailer at the other
-		end can handle multiple recipients in one transfer.
-		When you invoke this, sendmail looks for all names in
+		defines two mailers, "uucp-old" (a.k.a. "uucp") and
+		"uucp-new" (a.k.a. "suucp").  The latter is for when you
+		know that the UUCP mailer at the other end can handle
+		multiple recipients in one transfer.  If the smtp mailer
+		is also included in your configuration, two other mailers
+		("uucp-dom" and "uucp-uudom") are also defined.  When you
+		include the uucp mailer, sendmail looks for all names in
 		the $=U class and sends them to the uucp-old mailer; all
 		names in the $=Y class are sent to uucp-new; and all
 		names in the $=Z class are sent to uucp-uudom.  Note that
 		this is a function of what version of rmail runs on
 		the receiving end, and hence may be out of your control.
-		If smtp is defined, it also defines "uucp-dom" and
-		"uucp-uudom" mailers that use domain-style rewriting.
 		See the section below describing UUCP mailers in more
 		detail.
 
@@ -514,7 +515,8 @@ The four mailers are:
 
     uucp-dom
 	This UUCP mailer keeps everything as domain addresses.
-	Basically, it uses the SMTP mailer rewriting rules.
+	Basically, it uses the SMTP mailer rewriting rules.  This mailer
+	is only included if MAILER(smtp) is also specified.
 
 	Unfortunately, a lot of UUCP mailer transport agents require
 	bangified addresses in the envelope, although you can use
@@ -528,7 +530,8 @@ The four mailers are:
 	local hostname, unless there is no host name on the address
 	at all (e.g., "wolf") or the host component is a UUCP host name
 	instead of a domain name ("somehost!wolf" instead of
-	"some.dom.ain!wolf").
+	"some.dom.ain!wolf").  This is also included only if MAILER(smtp)
+	is also specified.
 
 Examples:
 
