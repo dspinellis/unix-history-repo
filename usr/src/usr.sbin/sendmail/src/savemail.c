@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -197,7 +197,8 @@ savemail(e)
 
 			if (state == ESM_MAIL)
 			{
-				if (e->e_errorqueue == NULL)
+				if (e->e_errorqueue == NULL &&
+				    strcmp(e->e_from.q_paddr, "<>") != 0)
 					(void) sendtolist(e->e_from.q_paddr,
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
@@ -208,6 +209,12 @@ savemail(e)
 							  (ADDRESS *) NULL,
 							  &e->e_errorqueue, e);
 				q = e->e_errorqueue;
+				if (q == NULL)
+				{
+					/* this is an error-error */
+					state = ESM_USRTMP;
+					break;
+				}
 			}
 			else
 			{
