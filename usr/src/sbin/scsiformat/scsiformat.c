@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsiformat.c	5.2 (Berkeley) %G%
+ *	@(#)scsiformat.c	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -31,14 +31,23 @@ struct {
 	struct scsi_modesense_hdr h;
 	u_char p[126-12];
 } msbuf;
+u_char mselbuf[24];
 
+struct scsi_fmt_cdb cap = {
+	10,
+	CMD_READ_CAPACITY, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+struct scsi_fmt_cdb format = {
+	6,
+	CMD_FORMAT_UNIT, 0, 0, 0, 0, 0
+};
 struct scsi_fmt_cdb inq = {
 	6,
 	CMD_INQUIRY, 0, 0, 0, sizeof(inqbuf), 0
 };
-struct scsi_fmt_cdb cap = {
-	10,
-	CMD_READ_CAPACITY, 0, 0, 0, 0, 0, 0, 0, 0, 0
+struct scsi_fmt_cdb modeselect = {
+	6,
+	CMD_MODE_SELECT, 0x11, 0, 0, sizeof(mselbuf), 0
 };
 struct scsi_fmt_cdb modesense = {
 	6,
@@ -49,6 +58,7 @@ int fd;
 char *device;
 
 void	do_command __P((int, struct scsi_fmt_cdb *, u_char *, int));
+void	do_format __P((void));
 void	print_capacity __P((void));
 void	print_inquiry __P((void));
 u_char *print_mode_page __P((u_char *));
@@ -56,7 +66,7 @@ void	print_mode_sense __P((void));
 void	usage __P((void));
 
 int
-main (argc, argv)
+main(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -83,6 +93,8 @@ main (argc, argv)
 	print_inquiry();
 	print_capacity();
 	print_mode_sense();
+
+	do_format();
 	exit(0);
 }
 
@@ -305,6 +317,69 @@ print_mode_page(cp)
 }
 
 void
+pr_sense(fd)
+	int fd;
+{
+	static struct scsi_fmt_sense s;
+
+	if (ioctl(fd, SDIOCSENSE, &s) < 0)
+		(void)fprintf(stderr,
+		    "scsiformat: SDIOCSENSE: %s\n", strerror(errno));
+
+	(void)printf("scsi status 0x%x", s.status);
+	if (s.status & STS_CHECKCOND) {
+		struct scsi_xsense *sp = (struct scsi_xsense *)s.sense;
+
+		(void)printf(" sense class %d, code %d", sp->class, sp->code);
+		if (sp->class == 7) {
+			(void)printf(", key %d", sp->key);
+			if (sp->valid)
+				(void)printf(", blk %d", *(int *)&sp->info1);
+		}
+	}
+	(void)printf("\n");
+}
+
+void
+do_format()
+{
+	static int on = 1;
+	static int off = 0;
+	static u_char fmtbuf[128];
+	struct scsi_modesel_hdr *ms = (struct scsi_modesel_hdr *)mselbuf;
+
+	ms->block_desc_len = 8;
+	ms->block_length = 512;
+	mselbuf[12] = 32;
+	mselbuf[13] = 10;
+	mselbuf[14] = 1;
+
+	if (ioctl(fd, SDIOCSFORMAT, &on) < 0) {
+		(void)fprintf(stderr,
+		    "scsiformat: SDIOCSFORMAT (on): %s\n", strerror(errno));
+		return;
+	}
+	if (ioctl(fd, SDIOCSCSICOMMAND, &modeselect) < 0)
+		(void)fprintf(stderr,
+		    "scsiformat: modeselect cmd: %s\n", strerror(errno));
+	else if (write(fd, mselbuf, sizeof(mselbuf)) < 0) {
+		(void)fprintf(stderr,
+		    "scsiformat: modeselect write: %s\n", strerror(errno));
+		pr_sense(fd);
+	} else if (ioctl(fd, SDIOCSCSICOMMAND, &format) < 0)
+		(void)fprintf(stderr,
+		    "scsiformat: format cmd: %s\n", strerror(errno));
+	else if (write(fd, fmtbuf, sizeof(fmtbuf)) < 0) {
+		(void)fprintf(stderr,
+		    "scsiformat: format write: %s\n", strerror(errno));
+		pr_sense(fd);
+	}
+	if (ioctl(fd, SDIOCSFORMAT, &off) < 0)
+		(void)fprintf(stderr,
+		    "scsiformat: SDIOCSFORMAT (off): %s\n", strerror(errno));
+}
+
+void
 do_command(fd, cdb, buf, len)
 	int fd;
 	struct scsi_fmt_cdb *cdb;
@@ -322,9 +397,11 @@ do_command(fd, cdb, buf, len)
 	if (ioctl(fd, SDIOCSCSICOMMAND, cdb) < 0)
 		(void)fprintf(stderr,
 		    "scsiformat: SDIOCSCSICOMMAND: %s\n", strerror(errno));
-	else if (read(fd, buf, len) < 0)
+	else if (read(fd, buf, len) < 0) {
 		(void)fprintf(stderr,
 		    "scsiformat: read: %s\n", strerror(errno));
+		pr_sense(fd);
+	}
 
 	if (ioctl(fd, SDIOCSFORMAT, &off) < 0)
 		(void)fprintf(stderr,
