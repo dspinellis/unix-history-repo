@@ -18,7 +18,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)less.h	5.4 (Berkeley) %G%
+ *	@(#)less.h	5.5 (Berkeley) %G%
  */
 
 /*
@@ -52,9 +52,6 @@ typedef	int		HANDLER;
 #define	FILENAME	128	/* Max size of a filename */
 
 #define	EOI		(0)
-#ifndef NULL
-#define	NULL		(0)
-#endif
 
 #define	READ_INTR	(-2)
 
