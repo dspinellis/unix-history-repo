@@ -11,16 +11,16 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.20 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
+#include <dirent.h>
 #include <sys/vm.h>
 #include <sys/text.h>
 #include <sys/stat.h>
@@ -143,15 +143,19 @@ struct	asav {
 	size_t	a_size, a_rss, a_tsiz, a_txtrss;
 	short	a_xccount;
 	char	a_tty[MAXNAMLEN+1];
-	dev_t	a_ttyd;
+	int   	a_pgid;
+	int     a_session;
+	dev_t   a_ttyd;
+	int     a_tsession;
+	int   	a_tpgid;
 	time_t	a_cpu;
 	size_t	a_maxrss;
+	pid_t   a_ppid;
 };
 
 char	*lhdr;
 int	wcwidth;		/* width of the wchan field for sprintf*/
 struct	lsav {
-	short	l_ppid;
 	u_char	l_cpu;
 	int	l_addr;
 	caddr_t	l_wchan;
@@ -159,6 +163,7 @@ struct	lsav {
 
 char	*uhdr;
 char	*shdr;
+char	*jhdr;
 
 char	*vhdr;
 struct	vsav {
@@ -187,7 +192,7 @@ char	*psdb	= PSFILE;
 
 int	chkpid = -1;
 int	aflg, cflg, eflg, gflg, kflg, lflg, nflg, sflg,
-	uflg, vflg, xflg, Uflg;
+	uflg, vflg, xflg, Uflg, jflg;
 int	nchans;				/* total # of wait channels */
 char	*tptr;
 char	*gettty(), *getcmd(), *getname(), *savestr(), *state();
@@ -309,6 +314,9 @@ main(argc, argv)
 		case 'g':
 			gflg++;
 			break;
+		case 'j':
+			jflg++;
+			break;
 		case 'k':
 			kflg++;
 			break;
@@ -415,6 +423,8 @@ main(argc, argv)
 		register struct savcom *sp = &savcom[i];
 		if (lflg)
 			lpr(sp);
+		else if (jflg)
+			jpr(sp);
 		else if (vflg)
 			vpr(sp);
 		else if (uflg)
@@ -736,7 +746,9 @@ printhdr()
 		(void)sprintf(hdr, lhdr, wcwidth, "WCHAN");
 	} else if (vflg)
 		hdr = vhdr;
-	else if (uflg) {
+	else if (jflg) {
+		hdr = jhdr;
+	} else if (uflg) {
 		/* add enough on so that it can hold the sprintf below */
 		if ((hdr = malloc(strlen(uhdr) + 10)) == NULL) {
 			fprintf(stderr, "ps: out of memory\n");
@@ -745,7 +757,7 @@ printhdr()
 		(void)sprintf(hdr, uhdr, nflg ? " UID" : "USER    ");
 	} else
 		hdr = shdr;
-	if (lflg+vflg+uflg+sflg == 0)
+	if (lflg+vflg+uflg+sflg+jflg == 0)	/* this code is ICK */
 		hdr += strlen("SSIZ ");
 	cmdstart = strlen(hdr);
 	printf("%s COMMAND\n", hdr);
@@ -926,16 +938,15 @@ donecand:
 }
 
 char *
-gettty()
+gettty(dev)
+	dev_t dev;
 {
 	register char *p;
 	register struct ttys *dp;
 	struct stat stb;
 	int x;
 
-	if (u.u_ttyp == 0)
-		return(" ?");
-	x = u.u_ttyd & 017;
+	x = dev & 017;
 	for (dp = &allttys[cand[x]]; dp != &allttys[-1];
 	     dp = &allttys[dp->cand]) {
 		if (dp->ttyd == -1) {
@@ -945,7 +956,7 @@ gettty()
 			else
 				dp->ttyd = -2;
 		}
-		if (dp->ttyd == u.u_ttyd)
+		if (dp->ttyd == dev)
 			goto found;
 	}
 	/* ick */
@@ -957,7 +968,7 @@ gettty()
 			else
 				dp->ttyd = -2;
 		}
-		if (dp->ttyd == u.u_ttyd)
+		if (dp->ttyd == dev)
 			goto found;
 	}
 	return ("?");
@@ -974,18 +985,54 @@ save()
 	register struct asav *ap;
 	register char *cp;
 	register struct text *xp;
-	char *ttyp, *cmdp;
+	char *ttyp = "?", *cmdp;
+	struct pgrp pgrp;
+	struct pgrp tpgrp;
+	struct session session;
+	struct tty tty;
+	int hasctty = 0;
 
 	if (mproc->p_stat != SZOMB && getu() == 0)
 		return;
-	ttyp = gettty();
+	sp = &savcom[npr];
+	sp->ap = ap = (struct asav *)calloc(1, sizeof (struct asav));
+	ap->a_pgid = -1;
+	ap->a_session = -1;
+	ap->a_ttyd = -1;
+	ap->a_tsession = -1;
+	ap->a_tpgid = -1;
+	klseek(kmem, mproc->p_pgrp, 0);
+	if (read(kmem, &pgrp, sizeof(pgrp)) != sizeof(pgrp))
+		fprintf(stderr, "ps: can't read pgrp\n");
+	else {
+		ap->a_pgid = pgrp.pg_id;
+		ap->a_session = (int)pgrp.pg_session;
+		klseek(kmem, pgrp.pg_session, 0);
+		if (read(kmem, &session, sizeof(session)) != sizeof(session))
+			fprintf(stderr, "ps: can't read session\n");
+		else {
+			if (session.s_ttyp != 0) {
+				klseek(kmem, session.s_ttyp, 0);
+				if (read(kmem, &tty, sizeof(tty)) == sizeof(tty)) {
+					ttyp = gettty(tty.t_dev);
+					ap->a_ttyd = tty.t_dev;
+					ap->a_tsession = (int)tty.t_session;
+					if (tty.t_pgrp != 0) {
+						klseek(kmem, tty.t_pgrp, 0);
+						if (read(kmem, &tpgrp, sizeof(tpgrp)) ==
+						    sizeof(tpgrp))
+							ap->a_tpgid = tpgrp.pg_id;
+					}
+				} else
+					fprintf(stderr, "ps: can't read tty\n");
+			}
+		}
+	}
 	if (xflg == 0 && ttyp[0] == '?' || tptr && strncmp(tptr, ttyp, 2))
 		return;
-	sp = &savcom[npr];
 	cmdp = getcmd();
 	if (cmdp == 0)
 		return;
-	sp->ap = ap = (struct asav *)calloc(1, sizeof (struct asav));
 	sp->ap->a_cmdp = cmdp;
 #define e(a,b) ap->a = mproc->b
 	e(a_flag, p_flag); e(a_stat, p_stat); e(a_nice, p_nice);
@@ -998,7 +1045,6 @@ save()
 	} else {
 		ap->a_size = mproc->p_dsize + mproc->p_ssize;
 		e(a_rss, p_rssize); 
-		ap->a_ttyd = u.u_ttyd;
 		ap->a_cpu = u.u_ru.ru_utime.tv_sec + u.u_ru.ru_stime.tv_sec;
 		if (sumcpu)
 			ap->a_cpu += u.u_cru.ru_utime.tv_sec + u.u_cru.ru_stime.tv_sec;
@@ -1009,6 +1055,7 @@ save()
 			ap->a_xccount = xp->x_ccount;
 		}
 	}
+	e(a_ppid, p_ppid); 
 #undef e
 	ap->a_maxrss = mproc->p_maxrss;
 	if (lflg) {
@@ -1017,7 +1064,7 @@ save()
 		sp->s_un.lp = lp = (struct lsav *)
 			calloc(1, sizeof (struct lsav));
 #define e(a,b) lp->a = mproc->b
-		e(l_ppid, p_ppid); e(l_cpu, p_cpu);
+		e(l_cpu, p_cpu);
 		if (ap->a_stat != SZOMB)
 			e(l_wchan, p_wchan);
 #undef e
@@ -1158,7 +1205,7 @@ getcmd()
 	if (mproc->p_stat == SZOMB || mproc->p_flag&(SSYS|SWEXIT))
 		return ("");
 	if (cflg) {
-		(void) strncpy(cmdbuf, u.u_comm, sizeof (u.u_comm));
+		(void) strncpy(cmdbuf, mproc->p_comm, sizeof (mproc->p_comm));
 		return (savestr(cmdbuf));
 	}
 	if ((mproc->p_flag & SLOAD) == 0 || argaddr == 0) {
@@ -1209,7 +1256,7 @@ getcmd()
 	(void) strncpy(cmdbuf, cp, &argspac.argc[CLSIZE*NBPG] - cp);
 	if (cp[0] == '-' || cp[0] == '?' || cp[0] <= ' ') {
 		(void) strcat(cmdbuf, " (");
-		(void) strncat(cmdbuf, u.u_comm, sizeof(u.u_comm));
+		(void) strncat(cmdbuf, mproc->p_comm, sizeof(mproc->p_comm));
 		(void) strcat(cmdbuf, ")");
 	}
 	return (savestr(cmdbuf));
@@ -1219,7 +1266,7 @@ bad:
 	    mproc->p_pid, file);
 retucomm:
 	(void) strcpy(cmdbuf, " (");
-	(void) strncat(cmdbuf, u.u_comm, sizeof (u.u_comm));
+	(void) strncat(cmdbuf, mproc->p_comm, sizeof (mproc->p_comm));
 	(void) strcat(cmdbuf, ")");
 	return (savestr(cmdbuf));
 }
@@ -1234,7 +1281,7 @@ lpr(sp)
 
 	printf("%7x %4d %5u %5u %2d %3d %2d %4x %5d %4d",
 	    (ap->a_flag &~ SPTECHG),				/* XXX */
-	    ap->a_uid, ap->a_pid, lp->l_ppid,
+	    ap->a_uid, ap->a_pid, ap->a_ppid,
 	    lp->l_cpu > 99 ? 99 : lp->l_cpu, ap->a_pri-PZERO,
 	    ap->a_nice, lp->l_addr, pgtok(ap->a_size), pgtok(ap->a_rss));
 	if (lp->l_wchan == 0)
@@ -1245,6 +1292,27 @@ lpr(sp)
 		printf(" %*.*s", wcwidth, abs(wcwidth), getchan(lp->l_wchan));
 	printf(" %-2.3s ", state(ap));
 	ptty(ap->a_tty);
+	ptime(ap);
+}
+
+char *jhdr = 
+" UID   PID  PPID  PGID SESSION STAT TT TPGID TSESSION  TIME";
+jpr(sp)
+	struct savcom *sp;
+{
+	register struct asav *ap = sp->ap;
+
+	printf("%4d %5u %5u %5u %8x %-2.3s ", ap->a_uid, ap->a_pid, ap->a_ppid,
+		ap->a_pgid, ap->a_session, state(ap));
+	ptty(ap->a_tty);
+	if (ap->a_tpgid == -1)
+		printf("   -   ");
+	else
+		printf(" %5u ", ap->a_tpgid);
+	if (ap->a_tsession == -1)
+		printf("     -    ");
+	else
+		printf("%8x ", ap->a_tsession);
 	ptime(ap);
 }
 
