@@ -1,4 +1,4 @@
-/*	hp.c	4.16	83/02/20	*/
+/*	hp.c	4.17	83/03/01	*/
 
 /*
  * RP??/RM?? disk driver
@@ -6,7 +6,6 @@
  * Also supports header io operations and
  * commands to write check header and data.
  */
-
 #include "../h/param.h"
 #include "../h/inode.h"
 #include "../h/fs.h"
@@ -21,24 +20,35 @@
 
 #define	MASKREG(reg)	((reg)&0xffff)
 
-#define MAXBADDESC	126
-#define SECTSIZ 	512	/* sector size in bytes */
-#define HDRSIZ		4	/* number of bytes in sector header */
-#define MAXECC		5	/* max # bits allow in ecc error w/ F_ECCLM */
+#define	MAXBADDESC	126
+#define	SECTSIZ 	512	/* sector size in bytes */
+#define	HDRSIZ		4	/* number of bytes in sector header */
+#define	MAXECC		5	/* max # bits allow in ecc error w/ F_ECCLM */
 
 char	hp_type[MAXNMBA*8] = { 0 };
 extern	struct st hpst[];
 
 short	hptypes[] = {
-	MBDT_RM03,	MBDT_RM05,	MBDT_RP06,	MBDT_RM80,
-	MBDT_RP05,	MBDT_RP07,	MBDT_ML11A,	MBDT_ML11B,
-	-1 /*9755*/,	-1 /*9730*/,	-1 /*Cap*/,	-1 /* Eagle */,
-	-1 /* Eagle */,	MBDT_RM02,	0
+	MBDT_RM03,
+	MBDT_RM05,
+	MBDT_RP06,
+	MBDT_RM80,
+	MBDT_RP05,
+	MBDT_RP07,
+	MBDT_ML11A,
+	MBDT_ML11B,
+	-1,		/* 9755 */
+	-1,		/* 9730 */
+	-1,		/* Capricorn */
+	-1,		/* Eagle */
+	MBDT_RM02,	/* actually something else */
+	-1,		/* 9300 */
+	0
 };
 
-#define RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
-#define ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
-#define RM80 (hptypes[hp_type[unit]] == MBDT_RM80)
+#define	RP06 (hptypes[hp_type[unit]] <= MBDT_RP06)
+#define	ML11 (hptypes[hp_type[unit]] == MBDT_ML11A)
+#define	RM80 (hptypes[hp_type[unit]] == MBDT_RM80)
 
 u_char	hp_offset[16] = {
     HPOF_P400, HPOF_M400, HPOF_P400, HPOF_M400,
@@ -47,15 +57,22 @@ u_char	hp_offset[16] = {
     0, 0, 0, 0,
 };
 
-struct dkbad hpbad[MAXNMBA*8];
-int sectsiz;
+struct	dkbad hpbad[MAXNMBA*8];
+int	ssect[MAXNMBA*8];		/* 1 when on track w/skip sector */
+
+int	hpdebug[MAXNMBA*8];
+#define	HPF_BSEDEBUG	01	/* debugging bad sector forwarding */
+#define	HPF_ECCDEBUG	02	/* debugging ecc correction */
+
+int	sectsiz;
 
 /*
  * When awaiting command completion, don't
  * hang on to the status register since
- * this ties up the controller.
+ * this ties up some controllers.
  */
-#define	HPWAIT(addr)	while ((((addr)->hpds)&HPDS_DRY)==0) DELAY(500);
+#define	HPWAIT(addr) \
+	while ((((addr)->hpds)&HPDS_DRY)==0) DELAY(500);
 
 hpopen(io)
 	register struct iob *io;
@@ -66,8 +83,7 @@ hpopen(io)
 
 	mbainit(UNITTOMBA(unit));
 	if (hp_type[unit] == 0) {
-		register type = hpaddr->hpdt & MBDT_TYPE;
-		register int i;
+		register i, type = hpaddr->hpdt & MBDT_TYPE;
 		struct iob tio;
 
 		for (i = 0; hptypes[i]; i++)
@@ -81,10 +97,7 @@ found:
 			hpaddr->hpof = HPOF_FMT22;
 		hp_type[unit] = hpmaptype(hpaddr, i, unit);
 		/*
-		 * Read in the bad sector table:
-		 *	copy the contents of the io structure
-		 *	to tio for use during the bb pointer
-		 *	read operation.
+		 * Read in the bad sector table.
 		 */
 		st = &hpst[hp_type[unit]];
 		tio = *io;
@@ -111,18 +124,15 @@ found:
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 }
 
-int	ssect;		/* set to 1 if we are on a track with skip sectors */
-
 hpstrategy(io, func)
 	register struct iob *io;
 {
 	register unit = io->i_unit;
 	struct mba_regs *mba = mbamba(unit);
-	daddr_t bn;
+	daddr_t bn, startblock;
 	struct hpdevice *hpaddr = (struct hpdevice *)mbadrv(unit);
 	struct st *st = &hpst[hp_type[unit]];
 	int cn, tn, sn, bytecnt, bytesleft; 
-	daddr_t startblock;
 	char *membase;
 	int er1, er2, hprecal;
 
@@ -136,7 +146,7 @@ hpstrategy(io, func)
 			hpaddr->hpof = HPOF_FMT22;
 	}
 	io->i_errcnt = 0;
-	ssect = 0;
+	ssect[unit] = 0;
 	bytecnt = io->i_cc;
 	membase = io->i_ma;
 	startblock = io->i_bn;
@@ -147,7 +157,7 @@ restart:
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
-	sn = sn%st->nsect + ssect;
+	sn = sn%st->nsect + ssect[unit];
 
 	HPWAIT(hpaddr);
 	mba->mba_sr = -1;
@@ -160,28 +170,32 @@ restart:
 	if (mbastart(io, func) != 0)		/* start transfer */
 		return (-1);
 	HPWAIT(hpaddr);
+	/*
+	 * Successful data transfer, return.
+	 */
 	if ((hpaddr->hpds&HPDS_ERR) == 0 && (mba->mba_sr&MBSR_EBITS) == 0)
 		return (bytecnt);
 
-	/* ------- error handling ------- */
-
-	if (bytesleft = MASKREG(mba->mba_bcr>>16)) 
-		bytesleft |= 0xffff0000;	/* sign ext */
-	bn = io->i_bn + (io->i_cc + bytesleft)/sectsiz;
+	/*
+	 * Error handling.  Calculate location of error.
+	 */
+	bytesleft = MASKREG(mba->mba_bcr);
+	if (bytesleft) 
+		bytesleft |= 0xffff0000;	/* sxt */
+	bn = io->i_bn + (io->i_cc + bytesleft) / sectsiz;
 	cn = bn/st->nspc;
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn = sn%st->nsect;
 	er1 = MASKREG(hpaddr->hper1);
 	er2 = MASKREG(hpaddr->hper2);
-#ifdef HPDEBUG
-	printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b \n",
-		cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
-	printf("er1=%b er2=%b", er1, HPER1_BITS, er2, HPER2_BITS);
-	printf("\nbytes left: %d, of 0x%x, da 0x%x",-bytesleft,
-	hpaddr->hpof, hpaddr->hpda);
-	printf("\n");
-#endif
+	if (hpdebug[unit] & (HPF_ECCDEBUG|HPF_BSEDEBUG)) {
+		printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b\n",
+			cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
+		printf("er1=%b er2=%b\n", er1, HPER1_BITS, er2, HPER2_BITS);
+		printf("bytes left: %d, of 0x%x, da 0x%x\n",-bytesleft,
+			hpaddr->hpof, hpaddr->hpda);
+	}
 	if (er1 & HPER1_HCRC) {
 		er1 &= ~(HPER1_HCE|HPER1_FER);
 		er2 &= ~HPER2_BSE;
@@ -194,7 +208,7 @@ restart:
 		return (-1);
 	}
 	/*
-	 * No bad sector handling on RP06's yet.
+	 * Interpret format error bit as a bad block on RP06's.
 	 */
 	if (MASKREG(er1) == HPER1_FER && RP06)
 		goto badsect;
@@ -213,7 +227,7 @@ hard0:
 		if (mba->mba_sr & (MBSR_WCKUP|MBSR_WCKLWR))
 			io->i_error = EWCK;
 hard:
-		io->i_errblk = bn + ssect;
+		io->i_errblk = bn + ssect[unit];
 		printf("hp error: (cyl,trk,sec)=(%d,%d,%d) ds=%b \n",
 			   cn, tn, sn, MASKREG(hpaddr->hpds), HPDS_BITS);
 		printf("er1=%b er2=%b", er1, HPER1_BITS, er2, HPER2_BITS);
@@ -221,10 +235,9 @@ hard:
 			printf(" mr1=%o", MASKREG(hpaddr->hpmr));
 		if (hpaddr->hpmr2)
 			printf(" mr2=%o", MASKREG(hpaddr->hpmr2));
-#ifdef HPDEBUG
-		printf("dc: %d, da: 0x%x",MASKREG(hpaddr->hpdc),
-		  MASKREG(hpaddr->hpda));
-#endif
+		if (hpdebug[unit] & (HPF_BSEDEBUG|HPF_ECCDEBUG))
+			printf(" dc=%d, da=0x%x",MASKREG(hpaddr->hpdc),
+			  MASKREG(hpaddr->hpda));
 		hpaddr->hpcs1 = HP_DCLR|HP_GO;
 		printf("\n");
 		return (-1);
@@ -239,7 +252,7 @@ hard:
 	 */
 	if ((er2 & HPER2_BSE) && !ML11) {
 badsect:
-		if (!ssect && (er2&HPER2_SSE))
+		if (!ssect[unit] && (er2&HPER2_SSE))
 			goto skipsect;
 		if (io->i_flgs & F_NBSF) {
 			io->i_error = EBSE;	
@@ -254,14 +267,14 @@ badsect:
 	/*
 	 * Skip sector handling.
 	 */
-	if (RM80 && er2&HPER2_SSE) {
+	if (RM80 && (er2 & HPER2_SSE)) {
 skipsect:
 		(void) hpecc(io, SSE);
-		ssect = 1;
+		ssect[unit] = 1;
 		goto success;
 	}
 	/*
-	 * ECC correction.
+	 * ECC correction?
 	 */
 	if ((er1 & (HPER1_DCK|HPER1_ECH)) == HPER1_DCK) {
 		if (hpecc(io, ECC) == 0)
@@ -278,7 +291,7 @@ skipsect:
 	/* 
 	 * Every fourth retry recalibrate.
 	 */
-	if (((io->i_errcnt&07) == 4) ) {
+	if (((io->i_errcnt & 07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
 		hprecal = 1;
 		goto again;
@@ -327,10 +340,9 @@ again:
 		io->i_bn = bn;
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
-#ifdef HPDEBUG
-		printf("restart: bl %d, byte %d, mem 0x%x hprecal %d\n",
-			io->i_bn, io->i_cc, io->i_ma, hprecal);
-#endif
+		if (hpdebug[unit] & (HPF_ECCDEBUG|HPF_BSEDEBUG))
+			printf("restart: bn=%d, cc=%d, ma=0x%x hprecal=%d\n",
+			  io->i_bn, io->i_cc, io->i_ma, hprecal);
 		goto restart;
 	}
 	return (bytecnt);
@@ -346,15 +358,14 @@ hpecc(io, flag)
 	register struct st *st = &hpst[hp_type[unit]];
 	int npf, bn, cn, tn, sn, bcr;
 
-	if (bcr = MASKREG(mbp->mba_bcr>>16))
-		bcr |= 0xffff0000;		/* sign extend */
+	bcr = MASKREG(mbp->mba_bcr);
+	if (bcr)
+		bcr |= 0xffff0000;		/* sxt */
 	npf = (bcr + io->i_cc) / sectsiz;	/* # sectors read */
-	bn = io->i_bn + npf + ssect;		/* physical block #*/
-#ifdef HPECCDEBUG
-	printf("bcr %d npf %d ssect %d sectsiz %d i_cc %d\n", bcr, npf,
-		ssect, sectsiz, io->i_cc);
-#endif
-
+	bn = io->i_bn + npf + ssect[unit];	/* physical block #*/
+	if (hpdebug[unit]&HPF_ECCDEBUG)
+		printf("bcr=%d npf=%d ssect=%d sectsiz=%d i_cc=%d\n",
+			bcr, npf, ssect[unit], sectsiz, io->i_cc);
 	/*
 	 * ECC correction logic.
 	 */
@@ -367,22 +378,22 @@ hpecc(io, flag)
 		mask = MASKREG(rp->hpec2);
 		i = MASKREG(rp->hpec1) - 1;	/* -1 makes 0 origin */
 		bit = i&07;
-		o = (i&~07) >> 3;
+		o = (i & ~07) >> 3;
 		rp->hpcs1 = HP_DCLR | HP_GO;
 		while (o <sectsiz && npf*sectsiz + o < io->i_cc && bit > -11) {
 			addr = io->i_ma + (npf*sectsiz) + o;
-#ifdef HPECCDEBUG
-			printf("addr %x old:%x ",addr, (*addr&0xff));
-#endif
 			/*
 			 * No data transfer occurs with a write check,
 			 * so don't correct the resident copy of data.
 			 */
-			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0)
+			if ((io->i_flgs & (F_CHECK|F_HCHECK)) == 0) {
+				if (hpdebug[unit] & HPF_ECCDEBUG)
+					printf("addr=%x old=%x ", addr,
+						(*addr & 0xff));
 				*addr ^= (mask << bit);
-#ifdef HPECCDEBUG
-			printf("new:%x\n",(*addr&0xff));
-#endif
+				if (hpdebug[unit] & HPF_ECCDEBUG)
+					printf("new=%x\n",(*addr & 0xff));
+			}
 			o++, bit -= 8;
 			if ((io->i_flgs & F_ECCLM) && ecccnt++ >= MAXECC)
 				return (1);
@@ -409,9 +420,8 @@ hpecc(io, flag)
 		int bbn;
 
 		rp->hpcs1 = HP_DCLR | HP_GO;
-#ifdef HPDEBUG
-		printf("hpecc: BSE @ bn %d\n", bn);
-#endif
+		if (hpdebug[unit] & HPF_BSEDEBUG)
+			printf("hpecc: BSE @ bn %d\n", bn);
 		cn = bn/st->nspc;
 		sn = bn%st->nspc;
 		tn = sn/st->nsect;
@@ -426,16 +436,14 @@ hpecc(io, flag)
 		sn = sn%st->nsect;
 		io->i_cc = sectsiz;
 		io->i_ma += npf*sectsiz;
-#ifdef HPDEBUG 
-		printf("revector to cn %d tn %d sn %d mem: 0x%x\n", 
-			cn, tn, sn, io->i_ma);
-#endif 
-		rp->hpof &= ~HPOF_SSEI;	/* clear skip sector inhibit if set */
+		if (hpdebug[unit] & HPF_BSEDEBUG)
+			printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
+		rp->hpof &= ~HPOF_SSEI;
 		mbp->mba_sr = -1;
 		rp->hpdc = cn;
 		rp->hpda = (tn<<8) + sn;
 		mbastart(io,io->i_flgs);
-		io->i_errcnt = 0;	/* error has been corrected */
+		io->i_errcnt = 0;
 		HPWAIT(rp);
 		return (rp->hpds&HPDS_ERR);
 	}
@@ -452,8 +460,17 @@ hpioctl(io, cmd, arg)
 	register unit = io->i_unit;
 	struct st *st = &hpst[hp_type[unit]], *tmp;
 	struct mba_drv *drv = mbadrv(unit);
+	int flag;
 
 	switch(cmd) {
+
+	case SAIODEBUG:
+		flag = (int)arg;
+		if (flag > 0)
+			hpdebug[unit] |= flag;
+		else
+			hpdebug[unit] &= ~flag;
+		return (0);
 
 	case SAIODEVDATA:
 		if ((drv->mbd_dt&MBDT_TAP) == 0) {
