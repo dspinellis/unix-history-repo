@@ -1,4 +1,4 @@
-/*	if_imp.h	4.3	82/02/12	*/
+/*	if_imp.h	4.4	82/02/21	*/
 
 /*
  * Structure of IMP 1822 long leader.
@@ -14,9 +14,9 @@ struct control_leader {
 		u_short	dl_short;
 		u_char	dl_char[2];
 	} dlun;
-#define dl_imp		dlun.dl_short	/* imp field */
-#define dl_impno	dlun.dl_char[1]	/* imp number */
-#define dl_lh		dlun.dl_char[0]	/* logical host */
+#define	dl_imp		dlun.dl_short	/* imp field */
+#define	dl_impno	dlun.dl_char[1]	/* imp number */
+#define	dl_lh		dlun.dl_char[0]	/* logical host */
 	u_char	dl_link;	/* link number */
 	u_char	dl_subtype;	/* message subtype */
 };
@@ -47,7 +47,7 @@ struct imp_leader {
 #define	IMP_NFF		0xf	/* 96-bit (new) format */
 #define	IMP_TRACE	0x8	/* trace message route */
 
-#define IMP_DMASK	0x3	/* host going down mask */
+#define	IMP_DMASK	0x3	/* host going down mask */
 
 /*
  * IMP-host message types.
@@ -136,7 +136,7 @@ struct imp_leader {
  * The assumption is if you've got multiple IMPs, then they all run
  * on top of the same type of device, or they must have different units.
  */
-struct	impcb {
+struct impcb {
 	char	ic_oactive;		/* output in progress */
 	int	(*ic_init)();		/* hardware init routine */
 	int	(*ic_start)();		/* hardware start output routine */
@@ -154,7 +154,7 @@ struct	impcb {
 #define	IMPTV_DOWN	(30*60)		/* going down timer 30 secs */
 
 #ifdef IMPLEADERS
-char * impleaders[IMPTYPE_READY+1] = {
+char *impleaders[IMPTYPE_READY+1] = {
 	"DATA", "BADLEADER", "DOWN", "bad", "NOOP", "RFNM", "HOSTDEAD",
 	"HOSTUNREACH", "BADDATA", "INCOMPLETE", "RESET", "RETRY",
 	"NOTIFY", "TRYING", "READY"

@@ -1,4 +1,4 @@
-/*	if_accreg.h	4.1	82/02/04	*/
+/*	if_accreg.h	4.2	82/02/21	*/
 
 /*
  * ACC LH/DH-11 interface
@@ -29,7 +29,7 @@ struct accdevice {
 #define	ACC_ERR		0x8000		/* error present */
 #define	ACC_NXM		0x4000		/* non-existant memory */
 #define	ACC_RDY		0x0080		/* ready */
-#define ACC_IE		0x0040		/* interrupt enable */
+#define	ACC_IE		0x0040		/* interrupt enable */
 #define	ACC_RESET	0x0002		/* reset interface */
 #define	ACC_GO		0x0001		/* start operation */
 
