@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)calendar.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)calendar.c	4.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -101,7 +101,7 @@ cal()
 			while ((ch = getchar()) != '\n' && ch != EOF);
 		if (buf[0] == '\0')
 			continue;
-		if (!isspace(buf[0]))
+		if (buf[0] != '\t')
 			printing = isnow(buf) ? 1 : 0;
 		if (printing)
 			(void)fprintf(fp, "%s\n", buf);
