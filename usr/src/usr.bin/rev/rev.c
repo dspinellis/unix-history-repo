@@ -1,46 +1,48 @@
-static char *sccsid = "@(#)rev.c	4.2 (Berkeley) %G%";
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)rev.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <stdio.h>
 
-/* reverse lines of a file */
-
-#define N 256
-char line[N];
-FILE *input;
-
-main(argc,argv)
-char **argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	register i,c;
-	input = stdin;
+	register char *t, *bp;
+	char buf[BUFSIZ];
+
+	bp = buf;
 	do {
-		if(argc>1) {
-			if((input=fopen(argv[1],"r"))==NULL) {
-				fprintf(stderr,"rev: cannot open %s\n",
-					argv[1]);
-				exit(1);
-			}
+		if (argc > 1 && !freopen(*++argv, "r", stdin)) {
+			fprintf(stderr, "rev: cannot open %s.\n", *argv);
+			exit(1);
 		}
-		for(;;){
-			for(i=0;i<N;i++) {
-				line[i] = c = getc(input);
-				switch(c) {
-				case EOF:
-					goto eof;
-				default:
-					continue;
-				case '\n':
-					break;
-				}
-				break;
-			}
-			while(--i>=0)
-				putc(line[i],stdout);
-			putc('\n',stdout);
+		while (fgets(bp, sizeof(buf), stdin)) {
+			for (t = bp; *t; ++t);
+			if (*--t == '\n')
+				--t;
+			for (; t >= bp; --t)
+				putchar(*t);
+			putchar('\n');
 		}
-eof:
-		fclose(input);
-		argc--;
-		argv++;
-	} while(argc>1);
+	} while(--argc > 1);
 	exit(0);
 }
