@@ -1,9 +1,9 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1980, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.C	6.5 (Berkeley) %G%
+.\"	@(#)appen.C	8.1 (Berkeley) %G%
 .\"
 .ie t .oh '\*(Ln Appendix A''PS1:19-%'
 .eh 'PS1:19-%''\*(Ln Appendix A'
