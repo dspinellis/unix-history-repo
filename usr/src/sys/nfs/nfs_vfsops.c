@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.16 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -148,8 +148,8 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 *     simply makes the major dev number tick up. The upper bound is
 	 *     set to major dev 127 to avoid any sign extention problems
 	 */
-	mp->m_fsid.val[0] = makedev(nblkdev, 0);
-	mp->m_fsid.val[1] = MOUNT_NFS;
+	mp->m_stat.f_fsid.val[0] = makedev(nblkdev, 0);
+	mp->m_stat.f_fsid.val[1] = MOUNT_NFS;
 	if (++nfs_mntid == 0)
 		++nfs_mntid;
 	tfsid.val[0] = makedev(nblkdev, nfs_mntid);
@@ -162,7 +162,7 @@ mountnfs(argp, mp, saddr, pth, hst)
 		error = ENOENT;
 		goto bad;
 	}
-	mp->m_fsid.val[0] = tfsid.val[0];
+	mp->m_stat.f_fsid.val[0] = tfsid.val[0];
 	nmp->nm_mountp = mp;
 	nmp->nm_flag = argp->flags;
 	nmp->nm_rto = NFS_TIMEO;
@@ -172,8 +172,8 @@ mountnfs(argp, mp, saddr, pth, hst)
 	nmp->nm_wsize = NFS_WSIZE;
 	nmp->nm_rsize = NFS_RSIZE;
 	bcopy((caddr_t)argp->fh, (caddr_t)&nmp->nm_fh, sizeof(nfsv2fh_t));
-	bcopy(hst, nmp->nm_host, sizeof nmp->nm_host);
-	bcopy(pth, nmp->nm_path, sizeof nmp->nm_path);
+	bcopy(hst, mp->m_stat.f_mntfromname, MNAMELEN);
+	bcopy(pth, mp->m_stat.f_mntonname, MNAMELEN);
 
 	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo > 0) {
 		nmp->nm_rto = argp->timeo;
@@ -215,11 +215,8 @@ mountnfs(argp, mp, saddr, pth, hst)
 	if (error = nfs_connect(nmp, saddr))
 		goto bad;
 
-	/*
-	 * Set to CLBYTES so that vinifod() doesn't get confused.
-	 * Actually any exact multiple of CLBYTES will do
-	 */
-	mp->m_bsize = mp->m_fsize = CLBYTES;
+	if (error = nfs_statfs(mp, &mp->m_stat))
+		goto bad;
 	/*
 	 * A reference count is needed on the nfsnode representing the
 	 * remote root.  If this object is not persistent, then backward
@@ -234,8 +231,8 @@ mountnfs(argp, mp, saddr, pth, hst)
 	 * Unlock it, but keep the reference count.
 	 */
 	nfs_unlock(NFSTOV(np));
-
 	return (0);
+
 bad:
 	nfs_disconnect(nmp);
 	FREE(nmp, M_NFSMNT);
