@@ -211,7 +211,7 @@ struct snpa_hdr		*inbound_shp;	/* subnetwork header of inbound packet */
 	int						error;	/* return value of route function */
 	struct sockaddr			*next_hop;	/* next hop for dgram */
 	struct ifnet			*ifp;	/* ptr to outgoing interface */
-	struct route			route;	/* filled in by clnp_route */
+	struct route_iso		route;	/* filled in by clnp_route */
 	extern int				iso_systype;
 
 	clnp = mtod(m, struct clnp_fixed *);
@@ -375,7 +375,7 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
  */
 clnp_route(dst, ro, flags, first_hop, ifp)
 struct iso_addr		*dst;			/* ptr to datagram destination */
-struct route		*ro;			/* existing route structure */
+struct route_iso	*ro;			/* existing route structure */
 int					flags;			/* flags for routing */
 struct sockaddr		**first_hop;	/* result: fill in with ptr to firsthop */
 struct ifnet		**ifp;			/* result: fill in with ptr to interface */
