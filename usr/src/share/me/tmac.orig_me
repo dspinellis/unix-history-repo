@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tmac.orig_me	2.36 (Berkeley) %G%
+.\"	@(#)tmac.orig_me	2.37 (Berkeley) %G%
 .\"
 .\"	%beginstrip%
 .\"
@@ -21,7 +21,7 @@
 .\"*		1919 Addison Street Suite 105				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.36	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.37	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
@@ -173,10 +173,10 @@
 .rr ?H
 .nr ?c \\n(?C
 .rr ?C
-.rn |4 |0
-.rn |5 |1
-.rn |6 |2
-.rn |7 |3
+.if !"\\*(|4"" .rn |4 |0
+.if !"\\*(|5"" .rn |5 |1
+.if !"\\*(|6"" .rn |6 |2
+.if !"\\*(|7"" .rn |7 |3
 .nr _w 0			\" reset max footnote width
 .nr ?W 0			\" no wide floats this page (yet)
 .nr ?I 1
