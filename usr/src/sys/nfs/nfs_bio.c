@@ -29,7 +29,7 @@
 #include <nfs/nfsmount.h>
 #include <nfs/nqnfs.h>
 
-struct buf *nfsincore(), *nfs_getcacheblk(), *nfsgetblk();
+struct buf *incore(), *nfs_getcacheblk();
 extern struct queue_entry nfs_bufq;
 extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern int nfs_numasync;
@@ -170,7 +170,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 		    for (nra = 0; nra < nmp->nm_readahead &&
 			(lbn + 1 + nra) * biosize < np->n_size; nra++) {
 			rabn = (lbn + 1 + nra) * (biosize / DEV_BSIZE);
-			if (!nfsincore(vp, rabn)) {
+			if (!incore(vp, rabn)) {
 			    rabp = nfs_getcacheblk(vp, rabn, biosize, p);
 			    if (!rabp)
 				return (EINTR);
@@ -191,7 +191,7 @@ nfs_bioread(vp, uio, ioflag, cred)
 		 * Otherwise, get the block and write back/read in,
 		 * as required.
 		 */
-		if ((bp = nfsincore(vp, bn)) &&
+		if ((bp = incore(vp, bn)) &&
 		    (bp->b_flags & (B_BUSY | B_WRITEINPROG)) ==
 		    (B_BUSY | B_WRITEINPROG))
 			got_buf = 0;
@@ -276,7 +276,7 @@ again:
 		rabn = bp->b_blkno;
 		if (nfs_numasync > 0 && nmp->nm_readahead > 0 &&
 		    rabn != 0 && rabn != np->n_direofoffset &&
-		    !nfsincore(vp, rabn)) {
+		    !incore(vp, rabn)) {
 			rabp = nfs_getcacheblk(vp, rabn, NFS_DIRBLKSIZ, p);
 			if (rabp) {
 			    if ((rabp->b_flags & (B_DONE | B_DELWRI)) == 0) {
@@ -525,14 +525,14 @@ nfs_getcacheblk(vp, bn, size, p)
 	struct nfsmount *nmp = VFSTONFS(vp->v_mount);
 
 	if (nmp->nm_flag & NFSMNT_INT) {
-		bp = nfsgetblk(vp, bn, size, PCATCH, 0);
+		bp = getblk(vp, bn, size, PCATCH, 0);
 		while (bp == (struct buf *)0) {
 			if (nfs_sigintr(nmp, (struct nfsreq *)0, p))
 				return ((struct buf *)0);
-			bp = nfsgetblk(vp, bn, size, 0, 2 * hz);
+			bp = getblk(vp, bn, size, 0, 2 * hz);
 		}
 	} else
-		bp = nfsgetblk(vp, bn, size, 0, 0);
+		bp = getblk(vp, bn, size, 0, 0);
 	return (bp);
 }
 
@@ -575,7 +575,7 @@ nfs_vinvalbuf(vp, flags, cred, p, intrflg)
 	 * Now, flush as required.
 	 */
 	np->n_flag |= NFLUSHINPROG;
-	error = nfsvinvalbuf(vp, flags, cred, p, slpflag, 0);
+	error = vinvalbuf(vp, flags, cred, p, slpflag, 0);
 	while (error) {
 		if (intrflg && nfs_sigintr(nmp, (struct nfsreq *)0, p)) {
 			np->n_flag &= ~NFLUSHINPROG;
@@ -585,7 +585,7 @@ nfs_vinvalbuf(vp, flags, cred, p, intrflg)
 			}
 			return (EINTR);
 		}
-		error = nfsvinvalbuf(vp, flags, cred, p, 0, slptimeo);
+		error = vinvalbuf(vp, flags, cred, p, 0, slptimeo);
 	}
 	np->n_flag &= ~(NMODIFIED | NFLUSHINPROG);
 	if (np->n_flag & NFLUSHWANT) {
