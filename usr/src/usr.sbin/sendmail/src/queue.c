@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.25 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.26 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.25 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.26 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -861,7 +861,7 @@ dowork(id, forkflag, requeueflag, e)
 		e->e_flags |= EF_QUEUERUN|EF_GLOBALERRS;
 		e->e_errormode = EM_MAIL;
 		e->e_id = id;
-		GrabTo = FALSE;
+		GrabTo = UseErrorsTo = FALSE;
 		if (forkflag)
 		{
 			disconnect(1, e);
