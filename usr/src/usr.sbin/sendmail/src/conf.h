@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.168 (Berkeley) %G%
+ *	@(#)conf.h	8.169 (Berkeley) %G%
  */
 
 /*
@@ -214,12 +214,8 @@ extern int	syslog(int, char *, ...);
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
 # define IP_SRCROUTE	1	/* can check IP source routing */
 # define FORK		fork	/* no vfork primitive available */
-# if !defined(IRIX64) && !defined(IRIX5)
-#  define WAITUNION	1	/* use "union wait" as wait argument type */
-# endif
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
-# define ARGV_T		const char **
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 # define SFS_BAVAIL	f_bfree		/* alternate field name */
 # define LA_TYPE	LA_INT
@@ -227,6 +223,12 @@ extern int	syslog(int, char *, ...);
 #  define NAMELISTMASK	0x7fffffffffffffff	/* mask for nlist() values */
 # else
 #  define NAMELISTMASK	0x7fffffff		/* mask for nlist() values */
+# endif
+# if defined(IRIX64) || defined(IRIX5)
+#  define ARGV_T	char *const *
+# else
+#  define ARGV_T	const char **
+#  define WAITUNION	1	/* use "union wait" as wait argument type */
 # endif
 #endif
 
