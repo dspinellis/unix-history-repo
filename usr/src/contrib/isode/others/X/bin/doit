@@ -1,0 +1,3 @@
+#!/bin/csh
+setenv DISPLAY perky:X0
+xinit xt -- ./Xsun >& /tmp/foo; kbd_mode -a

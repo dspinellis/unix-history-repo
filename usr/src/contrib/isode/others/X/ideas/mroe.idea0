@@ -1,0 +1,77 @@
+(Message inbox:17)
+Replied: Tue, 17 Oct 89 10:47:51 +0100
+Replied: ucl-isode@uk.ac.ucl.cs
+Received: from vs6.cs.ucl.ac.uk by pyr1.Cs.Ucl.AC.UK   via Ethernet with SMTP
+           id aa02057; 16 Oct 89 18:44 GMT-0:00
+To: Jon Crowcroft <J.Crowcroft@uk.ac.ucl.cs>
+cc: ucl-isode@uk.ac.ucl.cs
+Subject: Re: Moron X Window protocol on ISODE TS 
+In-reply-to: Jon Crowcroft's message of Mon, 16 Oct 89 11:45:46 +0100.
+Date: Mon, 16 Oct 89 18:42:41 +0100
+From: Mike Roe <M.Roe@uk.ac.ucl.cs>
+Source-Info:  toast.cs.ucl.ac.uk
+
+
+>  >2. (possibly related) addressing.
+>  >X uses user friendly names for m/c:displays.#
+>  >What would you advise i use as T-SAPs and does this go in one of the
+>  >magic isoentities/isoservices files? - i need loadsa help on that part
+>  >of the junk.
+
+a. isoservices is only used for dynamic servers (those started by tsapd).
+
+b. The choice of TSEL is vital only for dynamic servers (tsapd looks at it
+   to decide what to exec). For a static server over RFC-1006 transport, the
+   IP address will uniquely identify the server (choose whatever you like
+   as a TSEL -- it can't clash with anything else). If
+   you've got a real OSI TS in the kernel, though, the TSEL matters even for
+   static servers. I'd use string selectors "X0", "X1" etc.
+
+c. It sounds like you need an entry in isoentities for each display. Something
+   like:
+
+   vs1 xserver0  <random object identifier> "" "" "X0"
+          TCP vs1 <port>
+
+  BEWARE: The format may be different in ISODE 6.0.
+
+  I don't know whether you'll need a separate port for each display or not.
+
+> (*dah dah) Authentication
+
+It looks like you should be using transport layer encryption here. (Rather
+than presentation layer, as used by X.500 for example).
+
+The big problem with T-layer encryption is how you exchange session keys:
+I dont know of any agreed method for doing this. Also, the CR is probably
+not big enough to hold an authenticator.
+
+A thought has just occurred to me: 
+**** Session layer encryption ****
+
+The security architecture (ISO 7498-2-1988(E)) is of the opinion that the 
+session layer cannot be used to provide any security service. However, it
+now seems to me that providing encryption at the same level as dialog
+control is a perfectly natural thing to do: Consider for example
+expedited data, or recovery after a T-later failure. The session layer is
+particularly well-placed to know which part of the key-stream to use.o
+
+Also, it means you can use a Transport Service Bridge ...
+
+
+>  >4. does anyone have the T-Serice part of the ISODE manual i could
+>  >borrow?
+
+Ok, you can borrow mine.
+
+> 5. Has anyone looked at non  blocking T-Service - X requires this to
+> run well (though it can run over blocking), luckily it doesnt require
+> asynch (phew), but it does like doing writes (T-DATA-REQ's) without
+> haning around... (the converse, polling for reads seems ok since i can
+> use ?select i spose...)?
+
+Non-blocking session could be quite entertaining...
+(Non-deadlocking session was bad enough).
+
+
+Mike
