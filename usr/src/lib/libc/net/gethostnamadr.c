@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -24,6 +24,7 @@ static char *h_addr_ptrs[MAXADDRS + 1];
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
 static char hostbuf[BUFSIZ+1];
+static struct in_addr host_addr;
 
 
 static struct hostent *
@@ -36,7 +37,7 @@ getanswer(msg, msglen, iquery)
 	register int n;
 	char answer[PACKETSZ];
 	char *eom, *bp, **ap;
-	int type, class, ancount, buflen;
+	int type, class, ancount, qdcount, buflen;
 	int haveanswer, getclass;
 	char **hap;
 
@@ -54,6 +55,7 @@ getanswer(msg, msglen, iquery)
 	 */
 	hp = (HEADER *) answer;
 	ancount = ntohs(hp->ancount);
+	qdcount = ntohs(hp->qdcount);
 	if (hp->rcode != NOERROR || ancount == 0) {
 #ifdef DEBUG
 		if (_res.options & RES_DEBUG)
@@ -64,7 +66,7 @@ getanswer(msg, msglen, iquery)
 	bp = hostbuf;
 	buflen = sizeof(hostbuf);
 	cp = answer + sizeof(HEADER);
-	if (hp->qdcount) {
+	if (qdcount) {
 		if (iquery) {
 			if ((n = dn_expand(answer, cp, bp, buflen)) < 0)
 				return (NULL);
@@ -74,6 +76,8 @@ getanswer(msg, msglen, iquery)
 			bp += n;
 			buflen -= n;
 		} else
+			cp += dn_skip(cp) + QFIXEDSZ;
+		while (--qdcount > 0)
 			cp += dn_skip(cp) + QFIXEDSZ;
 	} else if (iquery)
 		return (NULL);
@@ -101,6 +105,15 @@ getanswer(msg, msglen, iquery)
 			bp += n;
 			buflen -= n;
 			continue;
+		}
+		if (type == T_PTR) {
+			if ((n = dn_expand(answer, cp, bp, buflen)) < 0) {
+				cp += n;
+				continue;
+			}
+			cp += n;
+			host.h_name = bp;
+			return(&host);
 		}
 		if (type != T_A)  {
 #ifdef DEBUG
@@ -175,10 +188,17 @@ gethostbyaddr(addr, len, type)
 {
 	int n;
 	char buf[BUFSIZ+1];
+	register struct hostent *hp;
+	char qbuf[MAXDNAME];
 
 	if (type != AF_INET)
 		return (NULL);
-	n = res_mkquery(IQUERY, (char *)NULL, C_IN, T_A, addr, len, NULL,
+	(void)sprintf(qbuf, "%d.%d.%d.%d.in-addr.arpa",
+		(*(unsigned *)addr >> 24 & 0xff),
+		(*(unsigned *)addr >> 16 & 0xff),
+		(*(unsigned *)addr >> 8 & 0xff),
+		(*(unsigned *)addr & 0xff));
+	n = res_mkquery(QUERY, qbuf, C_IN, T_PTR, NULL, 0, NULL,
 		buf, sizeof(buf));
 	if (n < 0) {
 #ifdef DEBUG
@@ -187,7 +207,12 @@ gethostbyaddr(addr, len, type)
 #endif
 		return (NULL);
 	}
-	return(getanswer(buf, n, 1));
+	if ((hp = getanswer(buf, n, 1)) == NULL)
+		return(NULL);
+	hp->h_addrtype = type;
+	hp->h_length = len;
+	h_addr_ptrs[0] = (char *)host_addr;
+	h_addr_ptrs[1] = (char *)0;
+	host_addr = *(struct in_addr *)addr;
+	return(hp);
 }
-
-
