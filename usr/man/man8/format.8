@@ -1,0 +1,77 @@
+.TH FORMAT 8 4/26/81
+.UC 4
+.SH NAME
+format \- how to format disks
+.SH DESCRIPTION
+.PP
+Warning:  These instructions are for people with 11/780 CPU's.  We don't
+know how to do this for 11/750 cpus (yet at least), you'll have to
+figure it out yourself; if you do call us and tell us how.
+.PP
+The formatting procedures are different for each type of disk.  Listed
+here are the formatting procedures for RK07's, RP0X, RM0X and Emulex Unibus
+Disks.
+.PP
+You should shut down UNIX and halt the machine to do any disk formatting.
+Make certain you put in the pack you want formatted.  It is also a good idea
+to spin down or write protect the disks you don't want to format, just in case.
+.PP
+.B Formatting a RK07.
+Load the floppy labled, "RX11 VAX DSK LD DEV #1" in the floppy disk drive,
+and type the following commands:
+.nf
+	>>>BOOT
+	DIAGNOSTIC SUPERVISOR.  ZZ-ESSAA-X5.0-119  23-JAN-1980 12:44:40.03
+	DS>ATTACH DW780 SBI DW0 3 5
+	DS>ATTACH RK07 DW0 DMA0
+	DS>SELECT DMA0
+	DS>LOAD EVRAC
+	DS>START/SEC:PACKINIT
+.fi
+.PP
+.B Formatting a RP0X.
+Follow the above procedures except that the ATTACH and SELECT lines should
+read.
+.nf
+	DS>ATTACH RH780 SBI RH0 8 5
+	DS>ATTACH RP0X RH0 DBA0		(RP0X is, e.g. RP06)
+	DS>SELECT DBA0
+.fi
+.PP
+This is for drive 0 on mba0; use 9 instead of 8 for mba1, etc.
+.PP
+.B Formatting a RM0X.
+Follow the above procedures except that the ATTACH and SELECT lines should
+read.
+.nf
+	DS>ATTACH RH780 SBI RH0 8 5
+	DS>ATTACH RM0X RH0 DRA0
+	DS>SELECT DRA0
+.fi
+.PP
+.B Formatting an Emulex Unibus Disk.
+Type these commands on the console:
+.nf
+	>>>SET REL:2013FDC0
+	>>>SET DEF WORD
+	>>>SET DEF OCT
+	>>>SET DEF PHYS
+	>>>U
+	>>>I
+	>>>D/P 10 0
+	>>>D/P 0 21
+	>>>D/P 36 177777
+	>>>D/P 0 77
+	(figure out when it is done)
+	>>>SET REL:0
+	>>>SET DEF LONG
+	>>>SET DEF HEX
+.fi
+.PP
+Once a disk is formatted, you'll still have to build file systems on it
+with mkfs(8) before you can use it with UNIX.
+.PP
+Don't forget to put your UNIX console floppy back
+in the floppy disk drive.
+.SH SEE ALSO
+bad144(8), badsect(8), mkfs(8)
