@@ -1,0 +1,19 @@
+#	@(#)README.68040	7.1 (Berkeley) %G%
+
+In order to do floating point on the 68040 you need to incorporate the HP-UX
+7.05 version of Motorola's FP emulation library as hpux_float.o in this
+directory.  Unfortunately, we cannot distribute this file.  To roll your own:
+
+1. Extract m68040_float.o from /etc/conf/libkreq.a on an HP-UX 7.05 machine
+   (you may be able to use a version of the file from more recent PUXen,
+   but it hasn't been tried).  Note that you must do this under HP-UX since
+   the archive format is slightly different.
+
+2. Convert it to a.out format with "hpcvt".
+
+3. Move it to /sys/hp300/hp300/hpux_float.o
+
+4. Build a new kernel with the option HPFPLIB in the config file.
+
+You can build a kernel without the FP library by configuring a kernel without
+the HPFPLIB option, but be warned that many binaries will not run.
