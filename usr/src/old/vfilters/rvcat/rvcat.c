@@ -1,11 +1,4 @@
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <sgtty.h>
-#include <pwd.h>
-#include <sys/vcmd.h>
-#include <vfont.h>
-
+/*	rvcat.c	4.2	83/03/17	*/
 /*
  * Cat Simulator for Versatec and Varian
  * Modified for Varian with rotated fonts: wnj 5/30/80.
@@ -15,7 +8,10 @@
  *	0116 - lead 64* following byte
  */ 
 
-static char *sccsid ="@(#)rvcat.c	4.2 (Berkeley) %G%";
+#include <signal.h>
+#include <stdio.h>
+#include <sys/vcmd.h>
+#include <vfont.h>
 
 int	prtmode[] = {VPRINT, 0, 0};
 int	pltmode[] = {VPLOT, 0, 0};
@@ -356,11 +352,8 @@ char spectab[128] = {
 	'8'	/*section mark*/
 };
 
-
 onintr()
 {
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
 	signal(SIGTERM, SIG_IGN);
 	exit(1);
 }
@@ -369,23 +362,16 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	char *namearg;
-	char *hostarg;
-	char *acctfile;
+	char *namearg = NULL;
+	char *hostarg = NULL;
+	char *acctfile = NULL;
 
-	if (signal(SIGINT, SIG_IGN) == SIG_DFL) {
-		signal(SIGPIPE, SIG_IGN);
-		signal(SIGINT, onintr);
-		signal(SIGHUP, onintr);
-	} else
-		signal(SIGHUP, SIG_IGN);
-	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
-		signal(SIGTERM, onintr);
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTERM, onintr);
 
 	varian = 1;	/* Default is the varian */
-	namearg = NULL;
-	hostarg = NULL;
-	acctfile = NULL;
 	BYTES_PER_LINE = VA_BYTES_PER_LINE;
 	BUFFER_SIZE = VA_BUFFER_SIZE;
 
@@ -448,7 +434,7 @@ readrm()
 			exit(2);
 		}
 	cp = fnbuf;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < MAXF; i++) {
 		fontname[i] = cp;
 		while (read(rmfd, &c, 1) == 1 && c != '\n')
 			*cp++ = c;
@@ -700,6 +686,7 @@ getfont()
 	sprintf(cbuf, "%s.%dr", fontname[fnum], size);
 	font = open(cbuf, 0);
 	if (font == -1) {
+		fprintf(stderr, "rvcat: ");
 		perror(cbuf);
 		fontwanted = 0;
 		return (-1);

@@ -1,4 +1,4 @@
-/*		lpf.c	4.7	83/03/07
+/*		lpf.c	4.8	83/03/17
  * 	filter which reads the output of nroff and converts lines
  *	with ^H's to overwritten lines.  Thus this works like 'ul'
  *	but is much better: it can handle more than 2 overwrites
@@ -23,15 +23,26 @@ char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
-main(argc, argv)
-int argc;
-char *argv[];
+onintr()
+{
+	signal(SIGTERM, SIG_IGN);
+	exit(1);
+}
+
+main(argc, argv) 
+	int argc;
+	char *argv[];
 {
 	register FILE *p = stdin, *o = stdout;
 	register int i, col;
 	register char *cp;
 	int done, linedone, maxrep;
 	char ch, *limit;
+
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTERM, onintr);
 
 	while (--argc) {
 		if (*(cp = *++argv) == '-') {
