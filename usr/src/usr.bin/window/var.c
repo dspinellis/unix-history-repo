@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)var.c	3.1 83/11/22";
+static	char *sccsid = "@(#)var.c	3.2 83/12/06";
 #endif
 
 #include "value.h"
@@ -37,6 +37,30 @@ struct value *v;
 }
 
 struct var *
+var_setstr(name, str)
+char *name;
+char *str;
+{
+	struct value v;
+
+	v.v_type = V_STR;
+	v.v_str = str;
+	return var_set(name, &v);
+}
+
+struct var *
+var_setnum(name, num)
+char *name;
+int num;
+{
+	struct value v;
+
+	v.v_type = V_NUM;
+	v.v_num = num;
+	return var_set(name, &v);
+}
+
+struct var *
 var_lookup(name)
 char *name;
 {
@@ -54,12 +78,6 @@ char *name;
 	return r;
 }
 
-var_walk(func)
-int (*func)();
-{
-	var_walk1(var_head, func);
-}
-
 var_walk1(r, func)
 register struct var *r;
 int (*func)();
@@ -67,7 +85,7 @@ int (*func)();
 	if (r == 0)
 		return;
 	var_walk1(r->r_left, func);
-	(*func)();
+	(*func)(r);
 	var_walk1(r->r_right, func);
 }
 
@@ -84,4 +102,5 @@ register struct var *r;
 			p = &(*p)->r_right;
 	}
 	*p = r;
+	r->r_left = r->r_right = 0;
 }
