@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rlogin.1	5.1 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.1 (Berkeley) %G%
 .\"
-.TH RLOGIN 1C "10 February 1983"
+.TH RLOGIN 1C ""
 .UC 5
 .SH NAME
 rlogin \- remote login
@@ -13,11 +13,15 @@ rlogin \- remote login
 rhost [
 \fB\-e\fR\fI\|c\fR
 ] [
+.B \-8
+] [
 .B \-l
 username ]
 .br
 rhost [
 \fB\-e\fR\fIc\fR
+] [
+.B \-8
 ] [
 .B \-l
 username ]
@@ -52,8 +56,18 @@ terminal type (as given in your environment TERM variable).
 All echoing takes place at the remote site, so that (except for
 delays) the rlogin is transparent.  Flow control via ^S and ^Q and
 flushing of input and output on interrupts are handled properly.
+The optional argument
+.B \-8
+allows an eight-bit data path,
+otherwise parity bits are stripped.
 A line of the form ``~.'' disconnects from the remote host, where
-``~'' is the escape character.  A different escape character may
+``~'' is the escape character.
+Similarly, the line ``~^Z'' (where ^Z, control-Z, is the suspend character)
+will suspend the rlogin session.
+Substitution of the delayed-suspend character (normally ^Y)
+for the suspend character suspends the send portion of the rlogin,
+but allows output from the remote system.
+A different escape character may
 be specified by the
 .B \-e
 option.
