@@ -1,0 +1,132 @@
+.TH ClearinghouseSupport 3 Cornell
+.SH NAME
+CH_StringToName,
+CH_LookupAddr,
+CH_GetFirstCH,
+CH_GetOtherCH,
+CH_Enumerate,
+CH_EnumerateAliases
+\- Clearinghouse support routines.
+.SH SYNOPSIS
+.nf
+.B "#include <courier/CH.h>"
+.B "#include <courier/Clearinghouse2.h>
+.PP
+.B "Clearinghouse2_ObjectName CH_StringToName(str, defaults)"
+.B "	char *str;"
+.B "	Clearinghouse2_ObjectName *defaults;"
+.PP
+.B "CourierConnection * CH_GetFirstCH()"
+.PP
+.B "CourierConnection * CH_GetOtherCH(conn, hint)"
+.B "	CourierConnection *conn;"
+.B "	Clearinghouse2_ObjectName hint;"
+.PP
+.B "struct xn_addr * CH_LookupAddr(pattern,property)"
+.B "	Clearinghouse2_ObjectNamePattern pattern;"
+.B "	Clearinghouse2_Property property;"
+.PP
+.B "int CH_Enumerate(pattern, property, eachName)"
+.B "	Clearinghouse2_ObjectNamePattern pattern;"
+.B "	Clearinghouse2_Property property;"
+.B "	int (*eachName)();"
+.PP
+.B "CH_EnumerateAliases(pattern,eachName)"
+.B "	Clearinghouse2_ObjectNamePattern pattern;"
+.B "	int (*eachName)();"
+.B "int eachName(name)"
+.B "	Clearinghouse2_ObjectName name;"
+.f
+.PP
+Link with
+.BR "-lcourier" .
+.SH DESCRIPTION
+.PP
+Given a string in standard format (e.g. ``jqj:Computer Science:cornell-univ''),
+.I CH_StringToName
+returns an ObjectName containing broken out fields for object, domain, and
+organization.  If the string is incomplete, e.g. ``jqj'' or 
+``::cornell-univ'', the unspecified values are filled in from
+.IR defaults .
+.I Defaults
+may be NULL, in which case 0-length strings are used as defaults.
+.PP
+Given a Clearinghouse three part name (possibly containing wild cards)
+and the property number on which a NetworkAddress is expected to occur,
+.I CH_LookupAddr
+returns a pointer to an xn_addr structure associated with that name.
+Note that the xn_addr structure is statically allocated!
+If
+.I property
+is given as 0, then the addressList property (actually 4) is used;
+this is the typical property for storing Clearinghouse addresses of
+objects.  Returns 0 if any error occurs, if the name given is not
+registered, or if it does not have the specified property.
+If a name has several network addresses (e.g. a gateway machine), only
+the first or primary address is returned; to obtain all addresses use
+the remote procedure
+.IR Clearinghouse2_RetrieveAddresses .
+Users who require greater control than is provided by
+.I CH_LookupAddress
+should call
+.I Clearinghouse2_RetrieveItem
+directly.
+.PP
+The routine
+.I CH_GetFirstCH
+returns an XNS Courier connection to a nearby clearinghouse, useful
+for Clearinghouse remote procedure calls.  Since the Clearinghouse is
+distributed, that instance of the CH may not contain the data desired;
+in such cases, a remote CH procedure call will return the error
+``WrongServer'' with a hint as to the correct server, and the user
+may retry the operation after connecting (using 
+.IR CH_GetOtherCH )
+to the clearinghouse specified by the hint.
+.nf
+conn = CH_GetFirstCH();
+DURING
+    objectname = Clearinghouse2_LookupObject(name, agent);
+HANDLER {
+    if (Exception.Code == Clearinghouse2_WrongServer) {
+        hint = CourierErrArgs(Clearinghouse2_WrongServerArgs, hint);
+       ch2conn = CH_GetOtherCH(conn, hint);
+       CourierClose(conn);
+       objectname = Clearinghouse2_LookupObject(name, agent);
+    }
+    else exit(1);
+END_HANDLER
+}
+.f
+.PP
+.I CH_Enumerate
+and
+.I CH_EnumerateAliases
+each accept a pointer to a user-supplied function 
+.I eachProc
+which is called once for each name in the local Clearinghouse
+satisfying the 
+.I pattern
+(which may contain wildcards in its local object part only) supplied.
+.I CH_Enumerate
+enumerates over all distinguished objects (i.e. no aliases) matching
+the specified pattern and having the specified
+.IR property .
+If no specific property is desired, 0 should be used to obtain all
+names.
+.I CH_EnumerateAliases
+is similar, except that
+.I eachProc
+is called once for each alias matching the specified pattern.
+.SH FILES
+/usr/lib/local/libcourier.a	-lcourier library.
+.SH SEE ALSO
+clearinghouse(3N)
+.br
+``XNS Courier Under Unix''.
+.br
+``Clearinghouse Protocol,'' XSIS 078404 (April 1984).
+.SH DIAGNOSTICS
+.SH BUGS
+Probably lots of them.
+.SH AUTHOR
+J.Q. Johnson

@@ -1,0 +1,7 @@
+The subdirectories of this directory contain various pieces of example
+programs that may be useful to prospective Courier applications programmers.
+Note that NO guarantee is made that these programs will even compile
+without errors, much less that they are correct.
+
+Maybe by the next release we'll have time to clean them up and produce
+some real examples.
