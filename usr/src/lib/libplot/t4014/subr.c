@@ -1,6 +1,13 @@
+/*-
+ * Copyright (c) 1983 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	4.2 (Berkeley) %G%";
-#endif
+static char sccsid[] = "@(#)subr.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <stdio.h>
 float obotx = 0.;

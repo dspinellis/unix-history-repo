@@ -1,19 +1,21 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)open.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)open.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * Displays plot files on an HP7221 plotter.
  * Cloned from bgplot.c and gigiplot.c by Jim Kleckner
  * Thu Jun 30 13:35:04 PDT 1983
- *  Requires a handshaking program such as hp7221cat to get
- *  the plotter open and ready.
+ *
+ * Requires a handshaking program such as hp7221cat to get the plotter
+ * open and ready.
  */
 
 #include <signal.h>
