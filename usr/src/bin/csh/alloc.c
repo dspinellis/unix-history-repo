@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -242,11 +242,7 @@ morecore(bucket)
 
 #endif
 
-#ifdef sun
-int
-#else
 void
-#endif
 free(cp)
     ptr_t   cp;
 {
