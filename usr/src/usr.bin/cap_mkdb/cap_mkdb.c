@@ -36,6 +36,15 @@ DB *capdbp;
 int verbose;
 char *capdb, *capname, buf[8 * 1024];
 
+HASHINFO openinfo = {
+	4096,		/* bsize */
+	16,		/* ffactor */
+	256,		/* nelem */
+	2048 * 1024,	/* cachesize */
+	NULL,		/* hash() */
+	0		/* lorder */
+};
+
 /*
  * Mkcapdb creates a capability hash database for quick retrieval of capability
  * records.  The database contains 2 types of entries: records and references
@@ -77,8 +86,8 @@ main(argc, argv)
 	(void)snprintf(buf, sizeof(buf), "%s.db", capname ? capname : *argv);
 	if ((capname = strdup(buf)) == NULL)
 		err(1, "");
-	if ((capdbp = dbopen(capname,
-	    O_CREAT | O_TRUNC | O_RDWR, DEFFILEMODE, DB_HASH, NULL)) == NULL)
+	if ((capdbp = dbopen(capname, O_CREAT | O_TRUNC | O_RDWR,
+	    DEFFILEMODE, DB_HASH, &openinfo)) == NULL)
 		err(1, "%s", buf);
 
 	if (atexit(dounlink))
