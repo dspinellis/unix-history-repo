@@ -8,28 +8,25 @@ Revised on 5/10/85, 5/13/85, 6/14/85, 8/20/85.
 ******************************************************************************
 *  This is a description of the upgraded elementary functions (listed in 1). *
 *  Bessel functions (j0, j1, jn, y0, y1, yn), floor, and fabs passed over    *
-*  from 4.2BSD without change. The name of the log-gamma program was changed *
-*  from gamma to lgama to prevent collisions with customary usage everywhere *
-*  else, and a minor inaccuracy at negative arguments was corrected. Three   *
-*  lines that contain "errno" in erf.c (error function erf, erfc) have been  *
-*  deleted to prevent overwriting the system "errno". No more is said about  *
-*  lgama.c and erf.c herein.               				     *
+*  from 4.2BSD without change. Three lines that contain "errno in erf.c      *
+*  (error function erf, erfc) have been deleted to prevent overwriting the   *
+*  system "errno". 							     *
 ******************************************************************************
 
 0. Total number of files: 40
 
   ( unchanges files from 4.2BSD, total 4 )
-    floor.c
+    floor.c	gamma.c
 
   ( new files for 4.3BSD, total 36 )
     IEEE/Makefile	VAX/cabs.s	asinh.c		jn.c
-    IEEE/atan2.c	VAX/cbrt.s	atan.c		lgama.c
-    IEEE/cabs.c		VAX/infnan.s	cosh.c		log.c
-    IEEE/cbrt.c		VAX/support.s	erf.c		log__L.c
-    IEEE/trig.c		VAX/sincos.s	exp.c		log1p.c
-    Makefile		VAX/tan.s	exp__E.c	pow.c
-    README		VAX/argred.s	expm1.c		sinh.c
-    VAX/Makefile	acosh.c		j0.c		tanh.c
+    IEEE/atan2.c	VAX/cbrt.s	atan.c		log.c
+    IEEE/cabs.c		VAX/infnan.s	cosh.c		log__L.c
+    IEEE/cbrt.c		VAX/support.s	erf.c		log1p.c
+    IEEE/trig.c		VAX/sincos.s	exp.c		pow.c
+    Makefile		VAX/tan.s	exp__E.c	sinh.c
+    README		VAX/argred.s	expm1.c		tanh.c
+    VAX/Makefile	acosh.c		j0.c
     VAX/atan2.s		asincos.c	j1.c
 
 1. Functions implemented :
