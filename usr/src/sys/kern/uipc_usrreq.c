@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	6.1	83/07/29	*/
+/*	uipc_usrreq.c	6.2	83/09/08	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -471,7 +471,7 @@ unp_externalize(rights)
 		fp = *rp;
 		u.u_ofile[f] = fp;
 		fp->f_msgcount--;
-		*(int *)rp = f;
+		*(int *)rp++ = f;
 	}
 	return (0);
 }
