@@ -6,7 +6,7 @@
 
 # ifdef _DEFINE
 # define EXTERN
-static char SmailSccsId[] =	"@(#)sendmail.h	3.52	%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.52.1.1	%G%";
 # else  _DEFINE
 # define EXTERN extern
 # endif _DEFINE
@@ -43,6 +43,17 @@ extern char	Arpa_Info[];	/* the message number for Arpanet info */
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
+**
+**	Each address is on two chains and in one tree.
+**		The q_next chain is used to link together addresses
+**		  for one mailer (and is rooted in a mailer).
+**		The q_chain chain is used to maintain a list of
+**		  addresses originating from one call to sendto, and
+**		  is used primarily for printing messages.
+**		The q_alias, q_sibling, and q_child tree maintains
+**		  a complete tree of the aliases.  q_alias points to
+**		  the parent -- obviously, there can be several, and
+**		  so this points to "one" of them.  Ditto for q_sibling.
 */
 
 struct address
@@ -56,9 +67,12 @@ struct address
 	short		q_uid;		/* user-id of receiver (if known) */
 	short		q_gid;		/* group-id of receiver (if known) */
 	char		*q_home;	/* home dir (local mailer only) */
-	struct address	*q_next;	/* chain */
-	struct address	*q_alias;	/* address this results from */
+	char		*q_fullname;	/* full name of this person */
 	time_t		q_timeout;	/* timeout for this address */
+	struct address	*q_next;	/* chain */
+	struct address	*q_alias;	/* parent in alias tree */
+	struct address	*q_sibling;	/* sibling in alias tree */
+	struct address	*q_child;	/* child in alias tree */
 };
 
 typedef struct address ADDRESS;
@@ -68,6 +82,7 @@ typedef struct address ADDRESS;
 # define QGOODUID	000004	/* the q_uid q_gid fields are good */
 # define QPRIMARY	000010	/* set from argv */
 # define QQUEUEUP	000020	/* queue for later transmission */
+# define QPSEUDO	000040	/* only on the list for verification */
 
 
 

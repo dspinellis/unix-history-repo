@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.54	%G%";
+static char SccsId[] = "@(#)deliver.c	3.54.1.1	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -57,7 +57,7 @@ deliver(firstto, editfcn)
 	bool tempfail = FALSE;
 
 	errno = 0;
-	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
+	if (!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags))
 		return (0);
 
 # ifdef DEBUG
@@ -162,7 +162,7 @@ deliver(firstto, editfcn)
 			break;
 
 		/* if already sent or not for this host, don't send */
-		if ((!ForceMail && bitset(QDONTSEND, to->q_flags)) ||
+		if ((!ForceMail && bitset(QDONTSEND|QPSEUDO, to->q_flags)) ||
 		    strcmp(to->q_host, host) != 0)
 			continue;
 
@@ -1084,7 +1084,7 @@ sendall(verifyonly)
 			if (verifyonly)
 			{
 				To = q->q_paddr;
-				if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
+				if (!bitset(QDONTSEND|QBADADDR|QPSEUDO, q->q_flags))
 				{
 					if (bitset(M_LOCAL, q->q_mailer->m_flags))
 						message(Arpa_Info, "deliverable");

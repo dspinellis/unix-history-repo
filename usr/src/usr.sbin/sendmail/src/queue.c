@@ -4,7 +4,7 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.4	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.4.1.1	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -505,6 +505,7 @@ readqf(cf)
 {
 	register FILE *f;
 	char buf[MAXLINE];
+	extern ADDRESS *sendto();
 
 	/*
 	**  Open the file created by queueup.
@@ -528,7 +529,7 @@ readqf(cf)
 		switch (buf[0])
 		{
 		  case 'R':		/* specify recipient */
-			sendto(&buf[1], 1, (ADDRESS *) NULL);
+			(void) sendto(&buf[1], 1, (ADDRESS *) NULL, 0);
 			break;
 
 		  case 'H':		/* header */

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.33	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.33.1.1	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -732,8 +732,7 @@ buildaddr(tv, a)
 
 	if (a == NULL)
 		a = (ADDRESS *) xalloc(sizeof *a);
-	a->q_flags = 0;
-	a->q_home = NULL;
+	clear((char *) a, sizeof *a);
 
 	/* figure out what net/mailer to use */
 	if (**tv != CANONNET)
@@ -900,18 +899,31 @@ printaddr(a, follow)
 	register ADDRESS *a;
 	bool follow;
 {
+	static int indent;
+	register int i;
+
 	while (a != NULL)
 	{
+		for (i = indent; i > 0; i--)
+			printf("\t");
 		printf("%x=", a);
 		(void) fflush(stdout);
 		printf("%s: mailer %d (%s), host `%s', user `%s'\n", a->q_paddr,
 		       a->q_mailer->m_mno, a->q_mailer->m_name, a->q_host, a->q_user);
-		printf("\tnext=%x, flags=%o, rmailer %d\n", a->q_next,
-		       a->q_flags, a->q_rmailer);
-
+		for (i = indent; i > 0; i--)
+			printf("\t");
+		printf("\tnext=%x, flags=%o, rmailer %d, alias=%x, sibling=%x, child=%x\n",
+		       a->q_next, a->q_flags, a->q_rmailer, a->q_alias,
+		       a->q_sibling, a->q_child);
+		
+		/* follow the chain if appropriate */
 		if (!follow)
 			return;
-		a = a->q_next;
+		
+		indent++;
+		printaddr(a->q_child, TRUE);
+		indent--;
+		a = a->q_sibling;
 	}
 	if (!follow)
 		printf("[NULL]\n");
