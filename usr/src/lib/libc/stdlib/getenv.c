@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getenv.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)getenv.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdlib.h>
@@ -55,7 +55,7 @@ __findenv(name, offset)
 	for (p = environ; (c = *p) != NULL; ++p)
 		if (strncmp(c, name, len) == 0 && c[len] == '=') {
 			*offset = p - environ;
-			return (c + 1);
+			return (c + len + 1);
 		}
 	return (NULL);
 }
