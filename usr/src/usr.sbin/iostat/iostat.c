@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.9 (Berkeley) 83/09/25";
+static	char *sccsid = "@(#)iostat.c	4.10 (Berkeley) 83/10/19";
 /*
  * iostat
  */
@@ -36,16 +36,17 @@ struct nlist nl[] = {
 #define	X_DK_MSPW	8
 	{ "_hz" },
 #define	X_HZ		9
-
+	{ "_phz" },
+#define	X_PHZ		10
 #ifdef vax
 	{ "_mbdinit" },
-#define X_MBDINIT	10
+#define X_MBDINIT	11
 	{ "_ubdinit" },
-#define X_UBDINIT	11
+#define X_UBDINIT	12
 #endif
 #ifdef sun
 	{ "_mbdinit" },
-#define X_MBDINIT	10
+#define X_MBDINIT	11
 #endif
 	{ 0 },
 };
@@ -67,6 +68,7 @@ struct
 
 int	mf;
 int	hz;
+int	phz;
 double	etime;
 
 main(argc, argv)
@@ -135,6 +137,10 @@ loop:
 	read(mf, s.dk_mspw, sizeof s.dk_mspw);
 	lseek(mf, (long)nl[X_HZ].n_value, 0);
 	read(mf, &hz, sizeof hz);
+	lseek(mf, (long)nl[X_PHZ].n_value, 0);
+	read(mf, &phz, sizeof phz);
+	if (phz)
+		hz = phz;
 	for (i = 0; i < DK_NDRIVE; i++) {
 #define X(fld)	t = s.fld[i]; s.fld[i] -= s1.fld[i]; s1.fld[i] = t
 		X(dk_xfer); X(dk_seek); X(dk_wds); X(dk_time);
