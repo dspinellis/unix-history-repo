@@ -2,34 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vi.in	5.1 (Berkeley) %G%
+.\"	@(#)vi.in	6.1 (Berkeley) %G%
 .\"
+.EH 'USD:15-%''An Introduction to Display Editing with Vi'
+.OH 'An Introduction to Display Editing with Vi''USD:15-%'
 .bd S 3
 .if t .ds dg \(dg
 .if n .ds dg +
 .if t .ds dd \(dd
 .if n .ds dd ++
-.de v2
-\*(dd
-.FS
-\*(dd
-Not available in all v2 editors due to memory constraints.
-.FE
-..
-.de v3
-\*(dd\*(dd
-.FS
-\*(dd\*(dd
-Version 3 only.
-.FE
-..
-.RP
+.\".RP
 .TL
 An Introduction to Display Editing with Vi
 .AU
 William Joy
-.sp
-\fI\s-2Revised for versions 3.5/2.13 by\s0\fP
+.AU
 Mark Horton
 .AI
 Computer Science Division
@@ -161,11 +148,12 @@ the type of your terminal:
 .DS
 % \fBsetenv TERM\fP 2621
 .DE
-This command works with the shell
+This command works with the
 .I csh
-on both version 6 and 7 systems.
-If you are using the standard version 7 shell then you should give
-the commands
+shell.
+If you are using the standard Bourne shell
+.I sh
+then you should give the commands
 .DS
 $ \fBTERM=\fP2621
 $ \fBexport TERM\fP
@@ -366,15 +354,12 @@ with a line which is farther back in the file at the top.
 If you want to see more of the file below where you are, you can
 hit \fB^E\fR to expose one more line at the bottom of the screen,
 leaving the cursor where it is.
-.v3
 The command \fB^Y\fR (which is hopelessly non-mnemonic, but next to \fB^U\fR
 on the keyboard) exposes one more line at the top of the screen.
 .PP
 There are other ways to move around in the file; the keys \fB^F\fR and \fB^B\fR
-.v2
-move forward and backward a page, keeping
-a couple of lines of continuity
-between screens
+move forward and backward a page,
+keeping a couple of lines of continuity between screens
 so that it is possible to read through a file using these rather than
 \fB^D\fR and \fB^U\fR if you wish.
 .PP
@@ -464,7 +449,6 @@ Now try just moving the cursor around on the screen.
 If your terminal has arrow keys (4 or 5 keys with arrows
 going in each direction) try them and convince yourself
 that they work.
-(On certain terminals using v2 editors, they won't.)
 If you don't have working arrow keys, you can always use
 .B h ,
 .B j ,
@@ -539,14 +523,14 @@ lw(.50i)b a.
 \fR\s-2SPACE\s0\fP	advance the cursor one position
 ^B	backwards to previous page
 ^D	scrolls down in the file
-^E	exposes another line at the bottom (v3)
+^E	exposes another line at the bottom
 ^F	forward to next page
 ^G	tell what is going on
 ^H	backspace the cursor
 ^N	next line, same column
 ^P	previous line, same column
 ^U	scrolls up in the file
-^Y	exposes another line at the top (v3)
+^Y	exposes another line at the top
 +	next line, at the beginning
 \-	previous line, at the beginning
 /	scan for a following string forwards
@@ -564,7 +548,6 @@ w	word after this word
 .TE
 .NH 2
 View
-.v2
 .PP
 If you want to use the editor to look at a file,
 rather than to make changes,
@@ -1088,7 +1071,6 @@ and then give a \fBz\fR command.
 You should follow the \fBz\fR command with a \s-2RETURN\s0 if you want
 the line to appear at the top of the window, a \fB.\fR if you want it
 at the center, or a \fB\-\fR if you want it at the bottom.
-(\fBz.\fP, \fBz-\fP, and \fBz+\fP are not available on all v2 editors.)
 .NH 1
 Special topics
 .NH 2
@@ -1220,7 +1202,7 @@ are \fIex\fP commands.
 which are to be run every time you start up \fIex\fP, \fIedit\fP,
 or \fIvi\fP.
 A typical list includes a \fBset\fP command, and possibly a few
-\fBmap\fP commands (on v3 editors).
+\fBmap\fP commands.
 Since it is advisable to get these commands on one line, they can
 be separated with the | character, for example:
 .DS
@@ -1236,28 +1218,22 @@ makes @ delete a line,
 and makes # delete a character,
 (the second
 .B map ).
-(See section 6.9 for a description of the \fBmap\fP command,
-which only works in version 3.)
+(See section 6.9 for a description of the \fBmap\fP command)
 This string should be placed in the variable EXINIT in your environment.
-If you use \fIcsh\fP, put this line in the file
+If you use the shell \fIcsh\fP,
+put this line in the file
 .I .login
 in your home directory:
 .DS
 setenv EXINIT \(aa\fBset\fP ai aw terse|\fBmap\fP @ dd|\fBmap\fP # x\(aa
 .DE
-If you use the standard v7 shell, put these lines in the file
+If you use the standard shell \fIsh\fP,
+put these lines in the file
 .I .profile
 in your home directory:
 .DS
 EXINIT=\(aa\fBset\fP ai aw terse|\fBmap\fP @ dd|\fBmap\fP # x\(aa
 export EXINIT
-.DE
-On a version 6 system, the concept of environments is not present.
-In this case, put the line in the file
-.I .exrc
-in your home directory.
-.DS
-\fBset\fP ai aw terse|\fBmap\fP @ dd|\fBmap\fP # x
 .DE
 Of course, the particulars of the line would depend on which options
 you wanted to set.
@@ -1349,12 +1325,7 @@ lines broken near the right margin automatically.  You can cause this
 to happen by giving the command
 \fB:se wm=10\fR\s-2CR\s0.
 This causes all lines to be broken at a space at least 10 columns
-from the right hand edge of the screen.*
-.FS
-* This feature is not available on some v2 editors.
-In v2 editors where it is available, the break can only occur to the
-right of the specified boundary instead of to the left.
-.FE
+from the right hand edge of the screen.
 .PP
 If the editor breaks an input line and you wish to put it back together
 you can tell it to join the lines with \fBJ\fR.  You can give \fBJ\fR
@@ -1426,12 +1397,7 @@ with a blank line.  Back up to the beginning of the list, and then give
 the command \fB!}sort\fR\s-2CR\s0.  This says to sort the next paragraph
 of material, and the blank line ends a paragraph.
 .NH 2
-Commands for editing \s-2LISP\s0\*(dg
-.FS
-\*(dg
-The \s-2LISP\s0 features are not available on some v2 editors
-due to memory constraints.
-.FE
+Commands for editing \s-2LISP\s0
 .PP
 If you are editing a \s-2LISP\s0 program you should set the option
 .I lisp
@@ -1472,11 +1438,7 @@ When you are editing \s-2LISP\s0,, the \fB[[\fR and \fR]]\fR advance
 and retreat to lines beginning with a \fB(\fR, and are useful for dealing
 with entire function definitions.
 .NH 2
-Macros\*(dd
-.FS
-\*(dd
-The macro feature is available only in version 3 editors.
-.FE
+Macros
 .PP
 .I Vi
 has a parameterless macro facility, which lets you set it up so that
@@ -1600,7 +1562,6 @@ and
 .I rhs .
 .NH
 Word Abbreviations
-.v3
 .PP
 A feature similar to macros in input mode is word abbreviation.
 This allows you to type a short word and have it expanded into
@@ -1813,7 +1774,6 @@ If the \fB:ta\fR command will require the editor to switch files, then
 you must \fB:w\fR or abandon any changes before switching.  You can repeat
 the \fB:ta\fR command without any arguments to look for the same tag
 again.
-(The tag feature is not available in some v2 editors.)
 .NH 2
 More about searching for strings
 .PP
@@ -1951,7 +1911,6 @@ are typed.\*(dd
 \*(dd The \e character you give will not echo until you type another
 key.
 .FE
-.v2
 .NH 2
 Vi and ex
 .PP
