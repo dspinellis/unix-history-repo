@@ -2,7 +2,7 @@
 # Copyright (c) 1986, 1993 Regents of the University of California.
 # All rights reserved.
 #
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 #
 SRCS=	man1 man2 man3 man4 man5 man6 man7 man8
 
@@ -11,32 +11,14 @@ PRINTER=Pps
 TBL=	tbl
 TROFF=	groff
 
-all: title.urm.${PRINTER} preface.${PRINTER} intro.${PRINTER} \
-     toc.${PRINTER} ptx.${PRINTER} title.prm.${PRINTER}
+all: title.urm.${PRINTER} title.prm.${PRINTER}
 
-print: title.urm.${PRINTER} preface.${PRINTER} intro.${PRINTER} \
-     toc.${PRINTER} ptx.${PRINTER} title.prm.${PRINTER}
+print: title.urm.${PRINTER} title.prm.${PRINTER}
 	lpr -${PRINTER} title.urm.${PRINTER}
-	lpr -${PRINTER} preface.${PRINTER}
-	lpr -${PRINTER} intro.${PRINTER}
-	lpr -${PRINTER} toc.${PRINTER}
-	lpr -${PRINTER} ptx.${PRINTER}
 	lpr -${PRINTER} title.prm.${PRINTER}
 
-title.urm.${PRINTER}: title.urm
-	${TROFF} title.urm >title.urm.${PRINTER}
-
-preface.${PRINTER}: preface.ms
-	${TBL} preface.ms | ${TROFF} ${MACROS} >preface.${PRINTER}
-
-intro.${PRINTER}: intro.ms
-	${TROFF} ${MACROS} intro.ms >intro.${PRINTER}
-
-toc.${PRINTER}: ${SRCS} toc.in ptxx
-	${TROFF} toc.in >toc.${PRINTER}
-
-ptx.${PRINTER}: ${SRCS} ptx.in ptxx
-	${TROFF} ptx.in >ptx.${PRINTER}
+title.urm.${PRINTER}: title.urm ptxx
+	${TBL} title.urm | ${TROFF} ${MACROS} >title.urm.${PRINTER}
 
 title.prm.${PRINTER}: ${SRCS} title.prm ptxx
 	${TROFF} title.prm >title.prm.${PRINTER}
@@ -83,5 +65,5 @@ man8pages: man8
 	for i in `cat man8`; do groff -man $$i >>man8pages; done;
 
 clean:
-	rm -f title.urm.[PT]* preface.[PT]* intro.[PT]* toc.[PT]* ptx.[PT]* \
-	title.prm.[PT]* toc? tocx? ptxx *.spell errs Errs make.out
+	rm -f title.urm.[PT]* title.prm.[PT]* toc? tocx? ptxx \
+		*.spell errs Errs make.out
