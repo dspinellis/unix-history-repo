@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -262,7 +262,9 @@ bufferchar:
 			if (mstate == MS_BODY)
 			{
 				/* just put the character out */
-				fputc(c, tf);
+				if (MaxMessageSize <= 0 ||
+				    e->e_msgsize <= MaxMessageSize)
+					fputc(c, tf);
 				continue;
 			}
 
@@ -355,8 +357,12 @@ nextstate:
 			}
 
 			/* if not a blank separator, write it out */
-			while (*bp != '\0')
-				fputc(*bp++, tf);
+			if (MaxMessageSize <= 0 ||
+			    e->e_msgsize <= MaxMessageSize)
+			{
+				while (*bp != '\0')
+					fputc(*bp++, tf);
+			}
 			break;
 		}
 		bp = buf;
