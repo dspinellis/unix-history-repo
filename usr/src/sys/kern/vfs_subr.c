@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.62 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.63 (Berkeley) %G%
  */
 
 /*
@@ -137,10 +137,13 @@ void vattr_null(vap)
 {
 
 	vap->va_type = VNON;
+	vap->va_size = vap->va_bytes = VNOVAL;
+#ifdef _NOQUAD
+	vap->va_size_rsv = vap->va_bytes_rsv = VNOVAL;
+#endif
 	vap->va_mode = vap->va_nlink = vap->va_uid = vap->va_gid =
-		vap->va_fsid = vap->va_fileid = vap->va_size =
-		vap->va_size_rsv = vap->va_blocksize = vap->va_rdev =
-		vap->va_bytes = vap->va_bytes_rsv =
+		vap->va_fsid = vap->va_fileid =
+		vap->va_blocksize = vap->va_rdev =
 		vap->va_atime.tv_sec = vap->va_atime.tv_usec =
 		vap->va_mtime.tv_sec = vap->va_mtime.tv_usec =
 		vap->va_ctime.tv_sec = vap->va_ctime.tv_usec =
