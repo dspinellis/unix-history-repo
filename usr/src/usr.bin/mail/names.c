@@ -8,7 +8,7 @@
 
 #include "rcv.h"
 
-static char *SccsId = "@(#)names.c	2.3 %G%";
+static char *SccsId = "@(#)names.c	2.4 %G%";
 
 /*
  * Allocate a single element of a name list,
@@ -609,7 +609,7 @@ mechk(names)
 	register struct name *np;
 
 	for (np = names; np != NIL; np = np->n_flink)
-		if ((np->n_type & GDEL) == 0 && equal(myname, np->n_name)) {
+		if ((np->n_type & GDEL) == 0 && equal(np->n_name, myname)) {
 			selfsent++;
 			return;
 		}
@@ -768,7 +768,6 @@ count(np)
 /*
  * Delete the given name from a namelist.
  */
-
 struct name *
 delname(np, name)
 	register struct name *np;
@@ -777,7 +776,7 @@ delname(np, name)
 	register struct name *p;
 
 	for (p = np; p != NIL; p = p->n_flink)
-		if (equal(p->n_name, name)) {
+		if (icequal(p->n_name, name)) {
 			if (p->n_blink == NIL) {
 				if (p->n_flink != NIL)
 					p->n_flink->n_blink = NIL;
