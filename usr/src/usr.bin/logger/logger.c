@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -85,11 +85,11 @@ main(argc, argv)
 			len = strlen(*argv);
 			if (p + len < endp && p > buf) {
 				*--p = '\0';
-				syslog(pri, buf);
+				syslog(pri, "%s", buf);
 				p = buf;
 			}
 			if (len > sizeof(buf) - 1) {
-				syslog(pri, *argv++);
+				syslog(pri, "%s", *argv++);
 				if (!--argc)
 					break;
 			} else {
@@ -103,14 +103,14 @@ main(argc, argv)
 		}
 		if (p != buf) {
 			*p = '\0';
-			syslog(pri, buf);
+			syslog(pri, "%s", buf);
 		}
 		exit(0);
 	}
 
 	/* main loop */
 	while (fgets(buf, sizeof(buf), stdin) != NULL)
-		syslog(pri, buf);
+		syslog(pri, "%s", buf);
 
 	exit(0);
 }
