@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotas.ms	6.1 (Berkeley) %G%
+.\"	@(#)quotas.ms	6.2 (Berkeley) %G%
 .\"
 .EH 'SMM:4-%''Disc Quotas in a \s-2UNIX\s+2 Environment'
 .OH 'Disc Quotas in a \s-2UNIX\s+2 Environment''SMM:4-%'
@@ -202,13 +202,13 @@ in the quota file should be checked for consistency with
 the actual number of blocks and files allocated to
 the user.
 The
-\fIquotachk\fP\|(8)
+\fIquotacheck\fP\|(8)
 command can be used to accomplish this.
 It is not necessary to dismount the filesystem, or disable
 the quota system to run this command, though on
 active filesystems inaccurate results may occur.
 This does no real harm in most cases, another run of
-.I quotachk
+.I quotacheck
 when the filesystem is idle will certainly correct any inaccuracy.
 .PP
 The super-user may use the
