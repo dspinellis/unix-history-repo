@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)assorted.c	1.2 83/07/20";
+static	char *sccsid = "@(#)assorted.c	1.3 83/10/28";
 #endif
 
 #include "externs.h"
@@ -173,7 +173,8 @@ int rig, shot, hittable, roll;
 		}
 		makesignal(on, message, (struct ship *)0);
 	}
-	if (Chit > 1 && on->file->readyL&R_INITIAL && on->file->readyR&R_INITIAL || Chit == 4) {
+	/*
+	if (Chit > 1 && on->file->readyL&R_INITIAL && on->file->readyR&R_INITIAL) {
 		on->specs->qual--;
 		if (on->specs->qual <= 0) {
 			makesignal(on, "crew mutinying!", (struct ship *)0);
@@ -183,6 +184,7 @@ int rig, shot, hittable, roll;
 			makesignal(on, "crew demoralized", (struct ship *)0);
 		Write(W_QUAL, on, 0, on->specs->qual, 0, 0, 0);
 	}
+	*/
 	if (!hull)
 		strike(on, from);
 }
