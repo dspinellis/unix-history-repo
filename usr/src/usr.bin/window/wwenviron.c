@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.7 84/01/11";
+static	char *sccsid = "@(#)wwenviron.c	3.8 84/01/13";
 #endif
 
 #include "ww.h"
@@ -31,7 +31,7 @@ register struct ww *wp;
 	(void) dup2(i, 2);
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
-	if (ioctl(0, (int)TIOCSPGRP, &pgrp) < 0)
+	if (ioctl(0, (int)TIOCSPGRP, (char *)&pgrp) < 0)
 		return;
 	(void) setpgrp(pgrp, pgrp);
 
