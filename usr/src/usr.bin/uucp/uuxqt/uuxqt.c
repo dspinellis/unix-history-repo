@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuxqt.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuxqt.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -11,6 +11,8 @@ static char sccsid[] = "@(#)uuxqt.c	5.3 (Berkeley) %G%";
 #include <sys/dir.h>
 #endif
 #include <signal.h>
+
+#define BADCHARS	"&^|(`\\<>;"
 
 #define APPCMD(d) {\
 char *p;\
@@ -29,6 +31,7 @@ int Notify[NCMDS+1];
 #define	NT_NO	2	/* if should not notify ever (-n equivalent) */
 
 extern int Nfiles;
+char *sindex();
 
 int notiok = 1;
 int nonzero = 0;
@@ -278,6 +281,11 @@ doprocess:
 		 */
 		if (cmdp > buf && cmdp[0] == '\0' && cmdp[-1] == ' ')
 			*--cmdp = '\0';
+		if (sindex(user, BADCHARS) != NULL) {
+			sprintf(lbuf, "%s INVALID CHARACTER IN USERNAME", user);
+			logent(cmd, lbuf);
+			strcpy(user, "postmaster");
+		}
 		if (argnok || badfiles) {
 			sprintf(lbuf, "%s XQT DENIED", user);
 			logent(cmd, lbuf);
@@ -551,19 +559,7 @@ register char *xc, *cmd;
 	register char **ptr;
 
 #ifndef ALLOK
-	/* don't allow sh command strings `....` */
-	/* don't allow redirection of standard in or out  */
-	/* don't allow other funny stuff */
-	/* but there are probably total holes here */
-	/* post-script.  ittvax!swatt has a uuxqt that solves this. */
-	/* This version of uuxqt will shortly disappear */
-	if (index(cmd, '`') != NULL
-	  || index(cmd, '>') != NULL
-	  || index(cmd, ';') != NULL
-	  || index(cmd, '^') != NULL
-	  || index(cmd, '&') != NULL
-	  || index(cmd, '|') != NULL
-	  || index(cmd, '<') != NULL) {
+	if (sindex(cmd, BADCHARS) != NULL) {
 		DEBUG(1,"MAGIC CHARACTER FOUND\n", CNULL);
 		return FAIL;
 	}
@@ -663,4 +659,23 @@ char *user, *rmt, *file;
 	else
 		mailst(ruser, "Mail failed.  Letter returned to sender.\n", CNULL);
 	return;
+}
+
+/*
+ * this is like index, but takes a string as the second argument
+ */
+char *
+sindex(str, chars)
+register char *str, *chars;
+{
+	register char *cp;
+
+	do {
+		cp = chars - 1;
+		while (*++cp) {
+			if (*str == *cp)
+				return str;
+		}
+	} while (*str++);
+	return NULL;
 }
