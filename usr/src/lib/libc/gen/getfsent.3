@@ -2,12 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getfsent.3	6.3 (Berkeley) %G%
+.\"	@(#)getfsent.3	6.4 (Berkeley) %G%
 .\"
 .TH GETFSENT 3  ""
 .UC 4
 .SH NAME
-getfsent, getfsspec, getfsfile, getfstype, setfsent, endfsent \- get file system descriptor file entry
+getfsent, getfsspec, getfsfile, setfsent, endfsent \- get file system descriptor file entry
 .SH SYNOPSIS
 .nf
 .B #include <fstab.h>
@@ -20,9 +20,6 @@ getfsent, getfsspec, getfsfile, getfstype, setfsent, endfsent \- get file system
 .B struct fstab *getfsfile(file)
 .B char *file;
 .PP
-.B struct fstab *getfstype(type)
-.B char *type;
-.PP
 .B int setfsent()
 .PP
 .B int endfsent()
@@ -30,11 +27,11 @@ getfsent, getfsspec, getfsfile, getfstype, setfsent, endfsent \- get file system
 .SH DESCRIPTION
 .IR Getfsent ,
 .IR getfsspec ,
-.IR getfstype ,
 and
 .I getfsfile
 each return a pointer to an object with the following structure
-containing the broken-out fields of a line in the file system description file,
+containing the broken-out fields of a line in the file system
+description file,
 .IR < fstab.h >.
 .RS
 .PP
@@ -67,10 +64,11 @@ closes the file.
 and
 .I getfsfile
 sequentially search from the beginning of the file until a matching
-special file name or file system file name is found,
-or until EOF is encountered.
-.I Getfstype
-does likewise, matching on the file system type field.
+special file name or file system file name is found, or until EOF is
+encountered.
+.PP
+Entries in the file with a type field equivalent to \fIFSTAB_XX\fP
+are ignored.
 .SH FILES
 /etc/fstab
 .SH "SEE ALSO"
