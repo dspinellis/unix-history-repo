@@ -1,0 +1,28 @@
+COLRM(1)                     BSD Reference Manual                     COLRM(1)
+
+NNAAMMEE
+     ccoollrrmm - remove columns from a file
+
+SSYYNNOOPPSSIISS
+     ccoollrrmm [_s_t_a_r_t [_s_t_o_p]]
+
+DDEESSCCRRIIPPTTIIOONN
+     CCoollrrmm removes selected columns from the lines of a file.  A column is de-
+     fined as a single character in a line.  Input is read from the standard
+     input.  Output is written to the standard output.
+
+     If only the _s_t_a_r_t column is specified, columns numbered less than the
+     _s_t_a_r_t column will be written.  If both _s_t_a_r_t and _s_t_o_p columns are speci-
+     fied, columns numbered less than the _s_t_a_r_t column or greater than the
+     _s_t_o_p column will be written.  Column numbering starts with one, not zero.
+
+     Tab characters increment the column count to the next multiple of eight.
+     Backspace characters decrement the column count by one.
+
+SSEEEE AALLSSOO
+     awk(1),  column(1),  cut(1),  paste(1)
+
+HHIISSTTOORRYY
+     The ccoollrrmm command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1

@@ -1,0 +1,52 @@
+CHFLAGS(1)                   BSD Reference Manual                   CHFLAGS(1)
+
+NNAAMMEE
+     cchhffllaaggss - change file flags
+
+SSYYNNOOPPSSIISS
+     cchhffllaaggss [--RR [--HH | --LL | --PP]] _f_l_a_g_s _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The cchhffllaaggss utility modifies the file flags of the listed files as speci-
+     fied by the _f_l_a_g_s operand.
+
+     The options are as follows:
+
+     --HH      If the --RR option is specified, symbolic links on the command line
+             are followed.  (Symbolic links encountered in the tree traversal
+             are not followed.)
+
+     --LL      If the --RR option is specified, all symbolic links are followed.
+
+     --PP      If the --RR option is specified, no symbolic links are followed.
+
+     --RR      Change the file flags for the file hierarchies rooted in the
+             files instead of just the files themselves.
+
+     Flags are a comma separated list of keywords.  The following keywords are
+     currently defined:
+
+           opaque  set the opaque flag (owner or super-user only)
+           nodump  set the nodump flag (owner or super-user only)
+           sappnd  set the system append-only flag (super-user only)
+           schg    set the system immutable flag (super-user only)
+           uappnd  set the user append-only flag (owner or super-user only)
+           uchg    set the user immutable flag (owner or super-user only)
+
+     Putting the letters ``no'' before an option causes the flag to be turned
+     off.  For example:
+
+           nouchg  the immutable bit should be cleared
+
+     Symbolic links do not have flags, so unless the --HH or --LL option is set,
+     cchhffllaaggss on a symbolic link always succeeds and has no effect.  The --HH, --LL
+     and --PP options are ignored unless the --RR option is specified.  In addi-
+     tion, these options override each other and the command's actions are de-
+     termined by the last one specified.
+
+     The cchhffllaaggss utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     chflags(2),  stat(2),  fts(3),  symlink(7)
+
+4.4BSD                            May 2, 1995                                1

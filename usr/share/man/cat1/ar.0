@@ -1,0 +1,160 @@
+AR(1)                        BSD Reference Manual                        AR(1)
+
+NNAAMMEE
+     aarr - create and maintain library archives
+
+SSYYNNOOPPSSIISS
+     aarr --dd [--TTvv] _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --mm [--TTvv] _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --mm [--aabbiiTTvv] _p_o_s_i_t_i_o_n _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --pp [--TTvv] _a_r_c_h_i_v_e [_f_i_l_e _._._.]
+     aarr --qq [--ccTTvv] _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --rr [--ccuuTTvv] _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --rr [--aabbcciiuuTTvv] _p_o_s_i_t_i_o_n _a_r_c_h_i_v_e _f_i_l_e _._._.
+     aarr --tt [--TTvv] _a_r_c_h_i_v_e [_f_i_l_e _._._.]
+     aarr --xx [--oouuTTvv] _a_r_c_h_i_v_e [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The aarr utility creates and maintains groups of files combined into an
+     archive.  Once an archive has been created, new files can be added and
+     existing files can be extracted, deleted, or replaced.
+
+     Files are named in the archive by a single component, i.e., if a file
+     referenced by a path containing a slash (``/'') is archived it will be
+     named by the last component of that path.  When matching paths listed on
+     the command line against file names stored in the archive, only the last
+     component of the path will be compared.
+
+     All informational and error messages use the path listed on the command
+     line, if any was specified; otherwise the name in the archive is used.
+     If multiple files in the archive have the same name, and paths are listed
+     on the command line to ``select'' archive files for an operation, only
+     the _f_i_r_s_t file with a matching name will be selected.
+
+     The normal use of aarr is for the creation and maintenance of libraries
+     suitable for use with the loader (see ld(1)),  although it is not re-
+     stricted to this purpose.  The options are as follows:
+
+     --aa      A positioning modifier used with the options --rr and --mm. The files
+             are entered or moved _a_f_t_e_r the archive member _p_o_s_i_t_i_o_n, which
+             must be specified.
+
+     --bb      A positioning modifier used with the options --rr and --mm. The files
+             are entered or moved _b_e_f_o_r_e the archive member _p_o_s_i_t_i_o_n, which
+             must be specified.
+
+     --cc      Whenever an archive is created, an informational message to that
+             effect is written to standard error.  If the --cc option is speci-
+             fied, aarr creates the archive silently.
+
+     --dd      Delete the specified archive files.
+
+     --ii      Identical to the --bb option.
+
+     --mm      Move the specified archive files within the archive.  If one of
+             the options --aa, --bb or --ii is specified, the files are moved before
+             or after the _p_o_s_i_t_i_o_n file in the archive.  If none of those op-
+             tions are specified, the files are moved to the end of the
+             archive.
+
+     --oo      Set the access and modification times of extracted files to the
+             modification time of the file when it was entered into the
+             archive.  This will fail if the user is not the owner of the ex-
+             tracted file or the super-user.
+
+     --pp      Write the contents of the specified archive files to the standard
+             output.  If no files are specified, the contents of all the files
+             in the archive are written in the order they appear in the
+             archive.
+
+     --qq      (Quickly) append the specified files to the archive.  If the
+             archive does not exist a new archive file is created.  Much
+             faster than the --rr option, when creating a large archive piece-
+             by-piece, as no checking is done to see if the files already ex-
+             ist in the archive.
+
+     --rr      Replace or add the specified files to the archive.  If the
+             archive does not exist a new archive file is created.  Files that
+             replace existing files do not change the order of the files with-
+             in the archive.  New files are appended to the archive unless one
+             of the options --aa, --bb or --ii is specified.
+
+     --TT      Select and/or name archive members using only the first fifteen
+             characters of the archive member or command line file name.  The
+             historic archive format had sixteen bytes for the name, but some
+             historic archiver and loader implementations were unable to han-
+             dle names that used the entire space.  This means that file names
+             that are not unique in their first fifteen characters can subse-
+             quently be confused.  A warning message is printed to the stan-
+             dard error output if any file names are truncated.  (See ar(5)
+             for more information.)
+
+     --tt      List the specified files in the order in which they appear in the
+             archive, each on a separate line.  If no files are specified, all
+             files in the archive are listed.
+
+     --uu      Update files.  When used with the --rr option, files in the archive
+             will be replaced only if the disk file has a newer modification
+             time than the file in the archive.  When used with the --xx option,
+             files in the archive will be extracted only if the archive file
+             has a newer modification time than the file on disk.
+
+     --vv      Provide verbose output.  When used with the --dd, --mm, --qq or --xx op-
+             tions, aarr gives a file-by-file description of the archive modifi-
+             cation.  This description consists of three, white-space separat-
+             ed fields: the option letter, a dash (``-'') and the file name.
+             When used with the --rr option, aarr displays the description as
+             above, but the initial letter is an ``a'' if the file is added to
+             the archive and an ``r'' if the file replaces a file already in
+             the archive.
+
+             When used with the --pp option, the name of each printed file, en-
+             closed in less-than (``<'') and greater-than (``>'') characters,
+             is written to the standard output before the contents of the
+             file; it is preceded by a single newline character, and followed
+             by two newline characters.
+
+             When used with the --tt option, aarr displays an ``ls -l'' style
+             listing of information about the members of the archive.  This
+             listing consists of eight, white-space separated fields: the file
+             permissions (see strmode(3)),  the decimal user and group ID's
+             separated by a single slash (``/''), the file size (in bytes),
+             the file modification time (in the date(1) format ``%b %e %H:%M
+             %Y''), and the name of the file.
+
+     --xx      Extract the specified archive members into the files named by the
+             command line arguments.  If no members are specified, all the
+             members of the archive are extracted into the current directory.
+
+             If the file does not exist, it is created; if it does exist, the
+             owner and group will be unchanged.  The file access and modifica-
+             tion times are the time of the extraction (but see the --oo op-
+             tion).  The file permissions will be set to those of the file
+             when it was entered into the archive; this will fail if the user
+             is not the owner of the extracted file or the super-user.
+
+     The aarr utility exits 0 on success, and >0 if an error occurs.
+
+EENNVVIIRROONNMMEENNTT
+     TMPDIR  The pathname of the directory to use when creating temporary
+             files.
+
+FFIILLEESS
+     /tmp    default temporary file directory
+     ar.XXXXXX
+             temporary file names
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     By default, aarr writes archives that may be incompatible with historic
+     archives, as the format used for storing archive members with names
+     longer than fifteen characters has changed.  This implementation of aarr is
+     backward compatible with previous versions of aarr in that it can read and
+     write (using the --TT option) historic archives.  The --TT option is provided
+     for compatibility only, and will be deleted in a future release.  See
+     ar(5) for more information.  The aarr utility is expected to offer a super-
+     set of the IEEE Std1003.2 (``POSIX'') functionality.
+
+SSEEEE AALLSSOO
+     ld(1),  ranlib(1),  strmode(3),  ar(5)
+
+4.4BSD                          April 28, 1995                               3

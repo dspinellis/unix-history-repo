@@ -1,0 +1,53 @@
+CAP_MKDB(1)                  BSD Reference Manual                  CAP_MKDB(1)
+
+NNAAMMEE
+     ccaapp__mmkkddbb - create capability database
+
+SSYYNNOOPPSSIISS
+     ccaapp__mmkkddbb [--vv] [--ff _o_u_t_f_i_l_e] _f_i_l_e_1 [_f_i_l_e_2 _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     CCaapp__mmkkddbb builds a hashed database out of the getcap(3) logical database
+     constructed by the concatenation of the specified files .
+
+     The database is named by the basename of the first file argument and the
+     string ``.db''. The getcap(3) routines can access the database in this
+     form much more quickly than they can the original text file(s).
+
+     The ``tc'' capabilities of the records are expanded before the record is
+     stored into the database.
+
+     The options as as follows:
+
+     --ff _o_u_t_f_i_l_e
+             Specify a different database basename.
+
+     --vv      Print out the number of capability records in the database.
+
+FFOORRMMAATT
+     Each record is stored in the database using two different types of keys.
+
+     The first type is a key which consists of the first capability of the
+     record (not including the trailing colon (``:'')) with a data field con-
+     sisting of a special byte followed by the rest of the record.  The spe-
+     cial byte is either a 0 or 1, where a 0 means that the record is okay,
+     and a 1 means that there was a ``tc'' capability in the record that
+     couldn't be expanded.
+
+     The second type is a key which consists of one of the names from the
+     first capability of the record with a data field consisting a special
+     byte followed by the the first capability of the record.  The special
+     byte is a 2.
+
+     In normal operation names are looked up in the database, resulting in a
+     key/data pair of the second type.  The data field of this key/data pair
+     is used to look up a key/data pair of the first type which has the real
+     data associated with the name.
+
+RREETTUURRNN VVAALLUUEE
+     The ccaapp__mmkkddbb utility exits 0 on success and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     dbopen(3),  getcap(3),  termcap(5)
+
+4.4BSD                           June 6, 1993                                1

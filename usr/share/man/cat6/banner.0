@@ -1,0 +1,30 @@
+BANNER(6)                    BSD Reference Manual                    BANNER(6)
+
+NNAAMMEE
+     bbaannnneerr - print large banner on printer
+
+SSYYNNOOPPSSIISS
+     bbaannnneerr [--ww _n] _m_e_s_s_a_g_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     BBaannnneerr prints a large, high quality banner on the standard output.  If
+     the message is omitted, it prompts for and reads one line of its standard
+     input.  If --ww is given, the output is changed from a width of 132 to _n,
+     suitable for a narrow terminal.
+
+     The output should be printed on paper of the appropriate width, with no
+     breaks between the pages.
+
+BBUUGGSS
+     Several ASCII characters are not defined, notably <, >, [, ], \, ^, _, {,
+     }, |, and ~.  Also, the characters ", ', and & are funny looking (but in
+     a useful way.)
+
+     The --ww option is implemented by skipping some rows and columns.  The
+     smaller it gets, the grainier the output.  Sometimes it runs letters to-
+     gether.
+
+AAUUTTHHOORR
+     Mark Horton
+
+4.4BSD                          April 29, 1995                               1
