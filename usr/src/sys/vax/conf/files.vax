@@ -8,6 +8,7 @@ vax/flp.c		standard
 vax/in_cksum.c		optional inet
 vax/machdep.c		standard
 vax/mem.c		standard
+vax/sys_machdep.c	standard
 vax/trap.c		standard
 vax/tu.c		standard
 vax/udiv.s		standard
