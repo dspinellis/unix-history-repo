@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.9 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.10 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -265,9 +265,9 @@ int		iso_cmpnetaddr();
 int 	iso_putsufx(); 
 int 	iso_getsufx(); 
 int 	iso_recycle_tsuffix(); 
-int		tpcons_mtu(); 
 int		iso_pcbbind(); 
 int		tpcons_pcbconnect(); 
+int		tpclnp_mtu();
 int		iso_pcbdisconnect(); 
 int 	iso_pcbdetach(); 
 int 	iso_pcballoc(); 
@@ -310,7 +310,7 @@ struct nl_protosw nl_protosw[] = {
 	{ AF_ISO, iso_putnetaddr, iso_getnetaddr, iso_cmpnetaddr,
 		iso_putsufx, iso_getsufx,
 		iso_recycle_tsuffix,
-		tpcons_mtu, iso_pcbbind, tpcons_pcbconnect,
+		tpclnp_mtu, iso_pcbbind, tpcons_pcbconnect,
 		iso_pcbdisconnect,	iso_pcbdetach,
 		iso_pcballoc,
 		tpcons_output, tpcons_output, iso_nlctloutput,
