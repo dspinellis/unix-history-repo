@@ -833,6 +833,10 @@ docmd(glob)
 			return ERR;
 		} else if (!(sflags & SGF))
 			sgflag &= 0xff;
+		if (*ibufp != '\n' && *(ibufp + 1) == '\n') {
+			sprintf(errmsg, "invalid pattern delimiter");
+			return ERR;
+		}
 		tpat = pat;
 		spl1();
 		if ((!sflags || (sflags & SGR))
