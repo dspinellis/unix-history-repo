@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uuclean.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuclean.c	5.7	%G%";
 #endif
 
 #include <signal.h>
@@ -39,11 +39,11 @@ struct timeb Now;
 main(argc, argv)
 char *argv[];
 {
-	DIR *dirp;
-	char file[NAMESIZE];
+	register DIR *dirp;
+	register struct direct *dentp;
 	time_t nomtime, ptime;
 	struct stat stbuf;
-	int mflg=0;
+	int mflg = 0;
 
 	strcpy(Progname, "uuclean");
 	uucpname(Myname);
@@ -89,12 +89,12 @@ char *argv[];
 	}
 
 	time(&ptime);
-	while (gnamef(dirp, file)) {
-		if (checkprefix && !chkpre(file))
+	while (dentp = readdir(dirp)) {
+		if (checkprefix && !chkpre(dentp->d_name))
 			continue;
 
-		if (stat(file, &stbuf) == -1) {
-			DEBUG(4, "stat on %s failed\n", file);
+		if (stat(dentp->d_name, &stbuf) == -1) {
+			DEBUG(4, "stat on %s failed\n", dentp->d_name);
 			continue;
 		}
 
@@ -103,12 +103,12 @@ char *argv[];
 			continue;
 		if ((ptime - stbuf.st_mtime) < nomtime)
 			continue;
-		if (file[0] == CMDPRE)
-			notfyuser(file);
-		DEBUG(4, "unlink file %s\n", file);
-		unlink(file);
+		if (dentp->d_name[0] == CMDPRE)
+			notfyuser(dentp->d_name);
+		DEBUG(4, "unlink file %s\n", dentp->d_name);
+		unlink(dentp->d_name);
 		if (mflg)
-			sdmail(file, stbuf.st_uid);
+			sdmail(dentp->d_name, stbuf.st_uid);
 	}
 
 	closedir(dirp);
