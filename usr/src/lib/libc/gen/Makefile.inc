@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.52 (Berkeley) %G%
+#	@(#)Makefile.inc	5.53 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -39,7 +39,7 @@ MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 daemon.0 \
 	time.0 times.0 timezone.0 ttyname.0 tzset.0 ualarm.0 unvis.0 \
 	usleep.0 utime.0 valloc.0 vis.0
 
-MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
+MLINKS+=crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
 	ctime.3 localtime.3 ctime.3 mktime.3
 MLINKS+=directory.3 closedir.3 directory.3 dirfd.3 directory.3 opendir.3 \
