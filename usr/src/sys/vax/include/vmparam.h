@@ -1,4 +1,4 @@
-/*	vmparam.h	6.2	84/08/12	*/
+/*	vmparam.h	6.3	85/03/07	*/
 
 /*
  * Machine dependent constants for VAX
@@ -97,11 +97,12 @@
 
 /*
  * Paging thresholds (see vm_sched.c).
- * Strategy of 4/22/81:
- *	lotsfree is 1/4 of memory free.
+ * Strategy of 1/19/85:
+ *	lotsfree is 512k bytes, but at most 1/4 of memory
  *	desfree is 200k bytes, but at most 1/8 of memory
  *	minfree is 64k bytes, but at most 1/2 of desfree
  */
+#define	LOTSFREE	(512 * 1024)
 #define	LOTSFREEFRACT	4
 #define	DESFREE		(200 * 1024)
 #define	DESFREEFRACT	8
