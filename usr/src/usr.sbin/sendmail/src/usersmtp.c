@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.20 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.20.1.1 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.20 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.20.1.1 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -34,8 +34,6 @@ static char sccsid[] = "@(#)usersmtp.c	5.20 (Berkeley) %G% (without SMTP)";
 char	SmtpMsgBuffer[MAXLINE];		/* buffer for commands */
 char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 char	SmtpError[MAXLINE] = "";	/* save failure error messages */
-FILE	*SmtpOut;			/* output file */
-FILE	*SmtpIn;			/* input file */
 int	SmtpPid;			/* pid of mailer */
 
 /* following represents the state of the SMTP connection */
@@ -82,10 +80,9 @@ smtpinit(m, pvp)
 	if (SmtpState == SMTP_OPEN)
 		syserr("smtpinit: already open");
 
-	SmtpIn = SmtpOut = NULL;
 	SmtpState = SMTP_CLOSED;
 	SmtpError[0] = '\0';
-	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
+	mci = openmailer(m, pvp, (ADDRESS *) NULL, TRUE);
 	if (SmtpPid < 0)
 	{
 		if (tTd(18, 1))
@@ -195,7 +192,7 @@ smtpinit(m, pvp)
 
   tempfail1:
 	/* log this as an error to avoid sure-to-be-void connections */
-	st = stab(CurHostName, ST_HOST, ST_ENTER);
+	st = stab(CurHostName, ST_MCONINFO + m->m_mno, ST_ENTER);
 	st->s_host.ho_exitstat = EX_TEMPFAIL;
 	st->s_host.ho_errno = errno;
 
@@ -324,13 +321,13 @@ smtpfinish(m, editfcn)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(m)
-	register MAILER *m;
+smtpquit(mci)
+	register MCONINFO *mci;
 {
 	int i;
 
 	/* if the connection is already closed, don't bother */
-	if (SmtpIn == NULL)
+	if (mci->mci_state == MCI_CLOSED)
 		return;
 
 	/* send the quit message if not a forced quit */
@@ -342,14 +339,8 @@ smtpquit(m)
 			return;
 	}
 
-	/* now actually close the connection */
-	(void) fclose(SmtpIn);
-	(void) fclose(SmtpOut);
-	SmtpIn = SmtpOut = NULL;
-	SmtpState = SMTP_CLOSED;
-
-	/* and pick up the zombie */
-	i = endmailer(SmtpPid, m->m_argv[0]);
+	/* now actually close the connection and pick up the zombie */
+	i = endmailer(mci, m->m_argv[0]);
 	if (i != EX_OK)
 		syserr("smtpquit %s: stat %d", m->m_argv[0], i);
 }

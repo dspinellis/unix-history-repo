@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.30 (Berkeley) %G%
+ *	@(#)sendmail.h	5.30.1.1 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.30		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.30.1.1		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -344,7 +344,6 @@ typedef struct symtab	STAB;
 # define s_address	s_value.sv_addr
 # define s_mailer	s_value.sv_mailer
 # define s_alias	s_value.sv_alias
-# undef s_host
 
 extern STAB	*stab();
 

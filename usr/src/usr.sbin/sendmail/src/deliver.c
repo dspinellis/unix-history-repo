@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.54.1.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -590,18 +590,15 @@ sendoff(e, m, pvp, ctladdr)
 	int (*editfcn)();
 	ADDRESS *ctladdr;
 {
-	auto FILE *mfile;
-	auto FILE *rfile;
 	register int i;
 	extern putmessage();
-	int pid;
 
 	/*
 	**  Create connection to mailer.
 	*/
 
-	pid = openmailer(m, pvp, ctladdr, FALSE, &mfile, &rfile);
-	if (pid < 0)
+	mci = openmailer(m, pvp, ctladdr, FALSE);
+	if (mci == NULL)
 		return (-1);
 
 	/*
@@ -612,11 +609,12 @@ sendoff(e, m, pvp, ctladdr)
 		editfcn = putmessage;
 	
 	(*editfcn)(mfile, m, FALSE);
-	(void) fclose(mfile);
-	if (rfile != NULL)
-		(void) fclose(rfile);
+	putfromline(mci->mci_out, m);
+	(*e->e_puthdr)(mci->mci_out, m, e);
+	putline("\n", mci->mci_out, m);
+	(*e->e_putbody)(mci->mci_out, m, e);
 
-	i = endmailer(pid, pvp[0]);
+	i = endmailer(mci, pvp[0]);
 
 	/* arrange a return receipt if requested */
 	if (e->e_receiptto != NULL && bitnset(M_LOCAL, m->m_flags))
@@ -646,11 +644,21 @@ sendoff(e, m, pvp, ctladdr)
 **		none.
 */
 
-endmailer(pid, name)
-	int pid;
+endmailer(mci, name)
+	register MCONINFO *mci;
 	char *name;
 {
 	int st;
+
+	/* close any connections */
+	if (mci->mci_in != NULL)
+		(void) fclose(mci->mci_in);
+	if (mci->mci_out != NULL)
+		(void) fclose(mci->mci_out);
+	mci->mci_in = mci->mci_out = NULL;
+	mci->mci_state = MCIS_CLOSED;
+	if (bitset(MCIF_TEMP, mci->mci_flags))
+		xfree(mci);
 
 	/* in the IPC case there is nothing to wait for */
 	if (pid == 0)
@@ -684,31 +692,25 @@ endmailer(pid, name)
 **		pvp -- parameter vector to pass to mailer.
 **		ctladdr -- controlling address for user.
 **		clever -- create a full duplex connection.
-**		pmfile -- pointer to mfile (to mailer) connection.
-**		prfile -- pointer to rfile (from mailer) connection.
 **
 **	Returns:
-**		pid of mailer ( > 0 ).
-**		-1 on error.
-**		zero on an IPC connection.
+**		The mail connection info struct for this connection.
+**		NULL on failure.
 **
 **	Side Effects:
 **		creates a mailer in a subprocess.
 */
 
-openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
+MCONINFO *
+openmailer(m, pvp, ctladdr, clever)
 	MAILER *m;
 	char **pvp;
 	ADDRESS *ctladdr;
 	bool clever;
-	FILE **pmfile;
-	FILE **prfile;
 {
 	int pid;
 	int mpvect[2];
 	int rpvect[2];
-	FILE *mfile = NULL;
-	FILE *rfile = NULL;
 	extern FILE *fdopen();
 
 	if (tTd(11, 1))
@@ -732,9 +734,12 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	/* check for Local Person Communication -- not for mortals!!! */
 	if (strcmp(m->m_mailer, "[LPC]") == 0)
 	{
-		*pmfile = stdout;
-		*prfile = stdin;
-		return (0);
+		mci = xalloc(sizeof *mci);
+		mci->mci_in = stdin;
+		mci->mci_out = stdout;
+		mci->mci_pid = 0;
+		mci->mci_state = MCIS_OPEN;
+		return mci;
 	}
 
 	if (strcmp(m->m_mailer, "[IPC]") == 0 ||
@@ -764,19 +769,12 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		}
 		if (i != EX_OK)
 		{
-			/* enter status of this host */
-			if (st == NULL)
-				st = stab(pvp[1], ST_HOST, ST_ENTER);
-			st->s_host.ho_exitstat = i;
-			st->s_host.ho_errno = errno;
-			ExitStat = i;
-			return (-1);
 		}
 		else
 			return (0);
 #else DAEMON
 		syserr("openmailer: no IPC");
-		return (-1);
+		return NULL;
 #endif DAEMON
 	}
 
@@ -784,7 +782,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	if (pipe(mpvect) < 0)
 	{
 		syserr("openmailer: pipe (to mailer)");
-		return (-1);
+		return NULL;
 	}
 
 #ifdef SMTP
@@ -794,7 +792,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 		syserr("openmailer: pipe (from mailer)");
 		(void) close(mpvect[0]);
 		(void) close(mpvect[1]);
-		return (-1);
+		return NULL;
 	}
 #endif SMTP
 
@@ -827,7 +825,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 			(void) close(rpvect[1]);
 		}
 #endif SMTP
-		return (-1);
+		return NULL;
 	}
 	else if (pid == 0)
 	{
@@ -913,19 +911,21 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**  Set up return value.
 	*/
 
+	mci = xalloc(sizeof *mci);
 	(void) close(mpvect[0]);
-	mfile = fdopen(mpvect[1], "w");
+	mci->mci_out = fdopen(mpvect[1], "w");
 	if (clever)
 	{
 		(void) close(rpvect[1]);
-		rfile = fdopen(rpvect[0], "r");
-	} else
-		rfile = NULL;
+		mci->mci_in = fdopen(rpvect[0], "r");
+	}
+	else
+	{
+		mci->mci_flags |= MCIF_TEMP;
+		mci->mci_in = NULL;
+	}
 
-	*pmfile = mfile;
-	*prfile = rfile;
-
-	return (pid);
+	return mci;
 }
 /*
 **  GIVERESPONSE -- Interpret an error response from a mailer

@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.42 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42.1.1 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.42 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.42.1.1 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -262,9 +262,8 @@ clrdaemon()
 **	Parameters:
 **		host -- the name of the host.
 **		port -- the port number to connect to.
-**		outfile -- a pointer to a place to put the outfile
-**			descriptor.
-**		infile -- ditto for infile.
+**		mci -- a pointer to the mail connection information
+**			structure to be filled in.
 **		usesecureport -- if set, use a low numbered (reserved)
 **			port to provide some rudimentary authentication.
 **
@@ -276,11 +275,10 @@ clrdaemon()
 **		none.
 */
 
-makeconnection(host, port, outfile, infile, usesecureport)
+makeconnection(host, port, mci, usesecureport)
 	char *host;
 	u_short port;
-	FILE **outfile;
-	FILE **infile;
+	register MCONINFO *mci;
 	bool usesecureport;
 {
 	register int i, s;
