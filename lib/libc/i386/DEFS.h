@@ -35,35 +35,41 @@
  *
  *	from: @(#)DEFS.h	5.1 (Berkeley) 4/23/90
  *
- *	$Id: DEFS.h,v 1.2 1993/10/09 08:30:43 davidg Exp $
+ *	$Id: DEFS.h,v 1.3 1994/02/13 20:50:21 jkh Exp $
  */
 
+/* XXX should use align 4,0x90 for -m486. */
 #define _START_ENTRY	.align 2,0x90;
-#define _MID_ENTRY	.data; .align 2; 1:; .long 0;		\
-			.text; lea 1b,%eax;
+#if 0
+/* Data is not used, except perhaps by non-g prof, which we don't support. */
+#define _MID_ENTRY	.data; .align 2; 8:; .long 0;		\
+			.text; lea 8b,%eax;
+#else
+#define _MID_ENTRY
+#endif
 
 #ifdef PROF
 
 #define ALTENTRY(x)	_START_ENTRY	\
 			.globl _/**/x; .type _/**/x,@function; _/**/x:; \
 			_MID_ENTRY	\
-			call mcount; jmp 2f
+			call mcount; jmp 9f
 
 #define ENTRY(x)	_START_ENTRY \
 			.globl _/**/x; .type _/**/x,@function; _/**/x:; \
 			_MID_ENTRY	\
-			call mcount; 2:
+			call mcount; 9:
 
 
 #define	ALTASENTRY(x)	_START_ENTRY	\
 			.globl x; .type x,@function; x:;	\
 			_MID_ENTRY	\
-			call mcount; jmp 2f
+			call mcount; jmp 9f
 
 #define	ASENTRY(x)	_START_ENTRY	\
 			.globl x; .type x,@function; x:;	\
 			_MID_ENTRY	\
-			call mcount; 2:
+			call mcount; 9:
 
 #else	/* !PROF */
 
