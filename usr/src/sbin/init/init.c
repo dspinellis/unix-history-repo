@@ -32,9 +32,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00022
+ * CURRENT PATCH LEVEL:         3       00023
  * --------------------         -----   ----------------------
  *
+ * 24 Jul 92	Nate Williams		Fixed utmp removal, wtmp info
  * 31 Jul 92	Christoph Robitschko	Fixed run level change code
  * 04 Sep 92	Paul Kranenburg		Fixed kill -1 and kill -15 for
  *					daemons started from /etc/rc.
@@ -315,6 +316,7 @@ top:
 		}
 		for(tt = ttytab; tt < ttytabend; tt++)
 			if(pid == tt->tt_pid) {
+/* 24 Jul 92*/			if (logout(tt->tt_name)) logwtmp(tt->tt_name,"","");
 				if(drain && !(tt->tt_status & TTY_LOGIN)) {
 					free(tt->tt_name);
 					free(tt->tt_getty);
