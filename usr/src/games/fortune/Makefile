@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.7 (Berkeley) %G%
+#	@(#)Makefile	1.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -52,16 +52,16 @@ install: ${MAN}
 	    ${DESTDIR}/usr/share/games/fortune
 	install -o bin -g bin -m 444 fortunes.dat startrek.dat zippy.dat \
 	    ${DESTDIR}/usr/share/games/fortune
-	./strfile -rsx noobscene
-	install -c -o bin -g bin -m 444 noobscene \
-	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
-	install -o bin -g bin -m 444 noobscene.dat \
-	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
-#	./strfile -rsx fortunes-o.rot
-#	install -c -o bin -g bin -m 444 fortunes-o.rot \
+#	./strfile -rsx noobscene
+#	install -c -o bin -g bin -m 444 noobscene \
 #	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
-#	install -o bin -g bin -m 444 fortunes-o.rot.dat \
+#	install -o bin -g bin -m 444 noobscene.dat \
 #	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
+	./strfile -rsx fortunes-o.rot
+	install -c -o bin -g bin -m 444 fortunes-o.rot \
+	    ${DESTDIR}/usr/share/games/fortune/fortunes-o
+	install -o bin -g bin -m 444 fortunes-o.rot.dat \
+	    ${DESTDIR}/usr/share/games/fortune/fortunes-o.dat
 
 lint: ${SRCS}
 	lint ${CFLAGS} fortune.c
