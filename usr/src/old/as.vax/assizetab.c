@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)assizetab.c 4.3 %G%";
+static char sccsid[] = "@(#)assizetab.c 4.4 %G%";
 #endif not lint
 
 #ifdef AS
@@ -92,6 +92,7 @@ int	ty_NORELOC[] = {
 	1,	/* TYPH */
 	1	/* TYPNONE */
 };
+#ifndef ADB
 /*
  *	Convert TYP[BWLQOFDGH] into {1 if a floating point number}
  */
@@ -107,6 +108,7 @@ int	ty_float[] = {
 	1,	/* TYPH */
 	0	/* TYPNONE */
 };
+#endif
 #ifdef AS
 /*
  *	Convert TYP[BWLQOFDGH] into {LEN1 ... LEN16}
@@ -139,6 +141,7 @@ int	ty_nbyte[] = {
 	16,	/* TYPH */
 	0	/* TYPNONE */
 };
+#ifndef ADB
 /*
  *	Convert TYP[BWLQOFDGH] into lg{1 ... 16}
  */
@@ -170,3 +173,4 @@ char	*ty_string[] = {
 	"unpackd",	/* TYPUNPACKED */
 	"??snark??"	/* TYPNONE */
 };
+#endif
