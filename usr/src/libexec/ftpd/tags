@@ -1,0 +1,54 @@
+LOGBYTES	ftpd.c	/^#define LOGBYTES(cmd, file, cnt) \\$/
+LOGCMD	ftpd.c	/^#define LOGCMD(cmd, file) \\$/
+LOGCMD2	ftpd.c	/^#define LOGCMD2(cmd, file1, file2) \\$/
+Mftpd	ftpd.c	/^main(argc, argv, envp)$/
+UC	ftpd.c	/^#define UC(b) (((int) b) & 0xff)$/
+ack	ftpd.c	/^ack(s)$/
+checkuser	ftpd.c	/^checkuser(name)$/
+copy	ftpcmd.c	/^copy(s)$/
+curdir	ftpd.c	/^curdir()$/
+cwd	ftpd.c	/^cwd(path)$/
+dataconn	ftpd.c	/^dataconn(name, size, mode)$/
+delete	ftpd.c	/^delete(name)$/
+dolog	ftpd.c	/^dolog(sin)$/
+dologout	ftpd.c	/^dologout(status)$/
+end_login	ftpd.c	/^end_login()$/
+fatal	ftpd.c	/^fatal(s)$/
+ftpd_pclose	popen.c	/^ftpd_pclose(iop)$/
+ftpd_popen	popen.c	/^ftpd_popen(program, type)$/
+getdatasock	ftpd.c	/^getdatasock(mode)$/
+getline	ftpcmd.c	/^getline(s, n, iop)$/
+gunique	ftpd.c	/^gunique(local)$/
+help	ftpcmd.c	/^help(ctab, s)$/
+logwtmp	logwtmp.c	/^logwtmp(line, name, host)$/
+lookup	ftpcmd.c	/^lookup(p, cmd)$/
+lostconn	ftpd.c	/^lostconn(signo)$/
+lreply	ftpd.c	/^lreply(n, fmt, va_alist)$/
+makedir	ftpd.c	/^makedir(name)$/
+myoob	ftpd.c	/^myoob(signo)$/
+nack	ftpd.c	/^nack(s)$/
+pass	ftpd.c	/^pass(passwd)$/
+passive	ftpd.c	/^passive()$/
+perror_reply	ftpd.c	/^perror_reply(code, string)$/
+pwd	ftpd.c	/^pwd()$/
+receive_data	ftpd.c	/^receive_data(instr, outstr)$/
+removedir	ftpd.c	/^removedir(name)$/
+renamecmd	ftpd.c	/^renamecmd(from, to)$/
+renamefrom	ftpd.c	/^renamefrom(name)$/
+reply	ftpd.c	/^reply(n, fmt, va_alist)$/
+retrieve	ftpd.c	/^retrieve(cmd, name)$/
+send_data	ftpd.c	/^send_data(instr, outstr, blksize)$/
+send_file_list	ftpd.c	/^send_file_list(whichf)$/
+setproctitle	ftpd.c	/^setproctitle(fmt, va_alist)$/
+sgetpwnam	ftpd.c	/^sgetpwnam(name)$/
+sgetsave	ftpd.c	/^sgetsave(s)$/
+sizecmd	ftpcmd.c	/^sizecmd(filename)$/
+statcmd	ftpd.c	/^statcmd()$/
+statfilecmd	ftpd.c	/^statfilecmd(filename)$/
+store	ftpd.c	/^store(name, mode, unique)$/
+toolong	ftpcmd.c	/^toolong(signo)$/
+upper	ftpcmd.c	/^upper(s)$/
+user	ftpd.c	/^user(name)$/
+yyerror	ftpd.c	/^yyerror(s)$/
+yylex	ftpcmd.c	/^yylex()$/
+yyparse	ftpcmd.c	/^yyparse()$/
