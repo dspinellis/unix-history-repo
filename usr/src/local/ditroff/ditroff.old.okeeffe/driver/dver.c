@@ -1,4 +1,4 @@
-/* dver.c	1.6	83/07/09
+/* dver.c	1.7	83/07/29
  *
  * Versatec driver for the new troff
  *
@@ -76,7 +76,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dver.c	1.6	83/07/09";
+char	SccsId[]= "dver.c	1.7	83/07/29";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -110,8 +110,8 @@ int	size	= -1;	/* current point size being use */
 int	font	= -1;	/* current font - not using any to start with */
 int	hpos;		/* horizontal position we are to be at next; left = 0 */
 int	vpos;		/* current vertical position (down positive) */
-int	horig;		/* h origin of current block (just a marker) */
-int	vorig;		/* v origin of current block (just a marker) */
+extern	linethickness;	/* thickness (in pixels) of any drawn objects */
+extern	linmod;		/* line style (a bit mask - dotted, etc.) of objects */
 int	lastw;		/* width of last character printed */
 
 
@@ -591,8 +591,8 @@ struct state {
 	int	sfont;
 	int	shpos;
 	int	svpos;
-	int	shorig;
-	int	svorig;
+	int	sstyle;
+	int	sthick;
 };
 struct	state	state[MAXSTATE];
 struct	state	*statep = state;
@@ -601,16 +601,12 @@ t_push()	/* begin a new block */
 {
 	statep->ssize = size;
 	statep->sfont = font;
-	statep->shorig = horig;
-	statep->svorig = vorig;
+	statep->sstyle = linmod;
+	statep->sthick = linethickness;
 	statep->shpos = hpos;
 	statep->svpos = vpos;
-	horig = hpos;
-	vorig = vpos;
-	hpos = vpos = 0;
 	if (statep++ >= state+MAXSTATE)
 		error(FATAL, "{ nested too deep");
-	hpos = vpos = 0;
 }
 
 t_pop()	/* pop to previous state */
@@ -621,8 +617,8 @@ t_pop()	/* pop to previous state */
 	font = statep->sfont;
 	hpos = statep->shpos;
 	vpos = statep->svpos;
-	horig = statep->shorig;
-	vorig = statep->svorig;
+	linmod = statep->sstyle;
+	linethickness = statep->sthick;
 }
 
 t_page(n)	/* do whatever new page functions */
