@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.9 84/02/28";
+static	char *sccsid = "@(#)dr_1.c	2.10 84/03/08";
 #endif
 
 #include "driver.h"
@@ -443,7 +443,10 @@ next()
 				p = "Driver";
 			if (islower(*p))
 				*p = toupper(*p);
-			strcpy(bestship->file->captain, p);
+			strncpy(bestship->file->captain, p,
+				sizeof bestship->file->captain);
+			bestship->file->captain
+				[sizeof bestship->file->captain - 1] = 0;
 			log(bestship);
 		}
 		sync_close(1);
