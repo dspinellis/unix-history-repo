@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -30,7 +30,6 @@ static struct mbtypes {
 	{ MT_ATABLE,	"address resolution tables" },
 	{ MT_FTABLE,	"fragment reassembly queue headers" },
 	{ MT_SONAME,	"socket names and addresses" },
-	{ MT_ZOMBIE,	"zombie process information" },
 	{ MT_SOOPTS,	"socket options" },
 	{ MT_RIGHTS,	"access rights" },
 	{ MT_IFADDR,	"interface addresses" }, 
@@ -85,9 +84,7 @@ mbpr(mbaddr)
 			(mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE]) - totmbufs);
 	printf("%u/%u mapped pages in use\n",
 		mbstat.m_clusters - mbstat.m_clfree, mbstat.m_clusters);
-	printf("%u interface pages allocated\n", mbstat.m_space);
-	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES +
-	    mbstat.m_space * CLBYTES;
+	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES;
 	totfree = mbstat.m_mtypes[MT_FREE]*MSIZE + mbstat.m_clfree * CLBYTES;
 	printf("%u Kbytes allocated to network (%d%% in use)\n",
 		totmem / 1024, (totmem - totfree) * 100 / totmem);
