@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)nfsstat.1	5.5 (Berkeley) %G%
+.\"     @(#)nfsstat.1	5.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NFSSTAT 1
@@ -15,8 +15,9 @@
 statistics
 .Sh SYNOPSIS
 .Nm nfsstat
-.Op Fl i
-.Op Ar system Op Ar corefile
+.Op Fl M Ar core
+.Op Fl N Ar system
+.Op Fl w Ar wait
 .Sh DESCRIPTION
 .Nm Nfsstat
 displays statistics kept about
@@ -25,36 +26,35 @@ client and server activity.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
-.It Fl i
-Subsequent lines are summaries over the last
-.Ar interval
-seconds.
-The command
-.Dq Li nfsstat 5
-will print what
+.It Fl M
+Extract values associated with the name list from the specified core
+instead of the default
+.Pa /dev/kmem .
+.It Fl N
+Extract the name list from the specified system instead of the default
+.Pa /vmunix .
+.It Fl w
+Display a shorter summary of
 .Tn NFS
-is doing every five seconds.
+activity for both the client and server at
+.Ar wait
+second intervals.
 .El
-.Pp
-A second argument is taken to be the file containing the system's namelist.
-Otherwise,
-.Pa /vmunix
-is used.
-A third argument tells
-.Nm nfsstat
-where to look for
-.Pa core  .
-Otherwise,
-.Pa /dev/kmem
-is used.
 .Sh FILES
 .Bl -tag -width /dev/kmem -compact
-.It Pa /dev/kmem
 .It Pa /vmunix
+default kernel namelist
+.It Pa /dev/kmem
+default memory file
 .El
 .Sh SEE ALSO
-.Xr netstat  1  ,
-.Xr vmstat  1
+.Xr fstat 1 ,
+.Xr netstat 1 ,
+.Xr ps 1 ,
+.Xr systat 1 ,
+.Xr vmstat 1 ,
+.Xr iostat 8 ,
+.Xr pstat 8 ,
 .Sh HISTORY
 .Nm Nfsstat
 is
