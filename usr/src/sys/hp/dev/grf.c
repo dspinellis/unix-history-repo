@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: grf.c 1.28 89/08/14$
+ * from: Utah $Hdr: grf.c 1.31 91/01/21$
  *
- *	@(#)grf.c	7.7 (Berkeley) %G%
+ *	@(#)grf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -100,13 +100,13 @@ grfconfig()
 	register struct hp_device *hd, *nhd;
 
 	for (hw = sc_table; hw->hw_type; hw++) {
-	        if (hw->hw_type != BITMAP)
+	        if (!HW_ISDEV(hw, D_BITMAP))
 			continue;
 		/*
 		 * Found one, now match up with a logical unit number
 		 */
 		nhd = NULL;		
-		addr = hw->hw_addr;
+		addr = hw->hw_kva;
 		for (hd = hp_dinit; hd->hp_driver; hd++) {
 			if (hd->hp_driver != &grfdriver || hd->hp_alive)
 				continue;
@@ -122,7 +122,7 @@ grfconfig()
 			 * Not wildcarded.
 			 * If exact match done searching, else keep looking.
 			 */
-			if ((caddr_t)sctoaddr(hd->hp_addr) == addr) {
+			if (sctova(hd->hp_addr) == addr) {
 				nhd = hd;
 				break;
 			}
@@ -130,9 +130,8 @@ grfconfig()
 		/*
 		 * Found a match, initialize
 		 */
-		if (nhd && grfinit(addr, nhd->hp_unit)) {
+		if (nhd && grfinit(addr, nhd->hp_unit))
 			nhd->hp_addr = addr;
-		}
 	}
 }
 
@@ -306,12 +305,12 @@ grflock(gp, block)
 	if (gp->g_pid) {
 #ifdef DEBUG
 		if (grfdebug & GDB_LOCK)
-			printf("  lock[0] %d lockslot %d lock[lockslot] %d\n",
-			       gp->g_locks[0], gp->g_lockpslot,
-			       gp->g_locks[gp->g_lockpslot]);
+			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
+			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
+			       gp->g_lock->gl_locks[gp->g_lockpslot]);
 #endif
-		gp->g_locks[0] = 0;
-		if (gp->g_locks[gp->g_lockpslot] == 0) {
+		gp->g_lock->gl_lockslot = 0;
+		if (gp->g_lock->gl_locks[gp->g_lockpslot] == 0) {
 			gp->g_lockp = NULL;
 			gp->g_lockpslot = 0;
 		}
@@ -337,8 +336,8 @@ grflock(gp, block)
 		if (grfdebug & GDB_LOCK)
 			printf("  slot %d\n", slot);
 #endif
-		gp->g_lockpslot = gp->g_locks[0] = slot;
-		gp->g_locks[slot] = 1;
+		gp->g_lockpslot = gp->g_lock->gl_lockslot = slot;
+		gp->g_lock->gl_locks[slot] = 1;
 	}
 #endif
 	return(0);
@@ -359,12 +358,12 @@ grfunlock(gp)
 	if (gp->g_pid) {
 #ifdef DEBUG
 		if (grfdebug & GDB_LOCK)
-			printf("  lock[0] %d lockslot %d lock[lockslot] %d\n",
-			       gp->g_locks[0], gp->g_lockpslot,
-			       gp->g_locks[gp->g_lockpslot]);
+			printf(" lockpslot %d lockslot %d lock[lockslot] %d\n",
+			       gp->g_lock->gl_lockslot, gp->g_lockpslot,
+			       gp->g_lock->gl_locks[gp->g_lockpslot]);
 #endif
-		gp->g_locks[gp->g_lockpslot] = gp->g_locks[0] = 0;
-		gp->g_lockpslot = 0;
+		gp->g_lock->gl_locks[gp->g_lockpslot] = 0;
+		gp->g_lockpslot = gp->g_lock->gl_lockslot = 0;
 	}
 #endif
 	if (gp->g_flags & GF_WANTED) {
@@ -548,15 +547,17 @@ grfdevno(dev)
 {
 	int unit = GRFUNIT(dev);
 	struct grf_softc *gp = &grf_softc[unit];
-	int newdev;
+	int newdev, sc;
 
 	if (unit >= NGRF || (gp->g_flags&GF_ALIVE) == 0)
 		return(bsdtohpuxdev(dev));
 	/* magic major number */
 	newdev = 12 << 24;
 	/* now construct minor number */
-	if (gp->g_display.gd_regaddr != (caddr_t)GRFIADDR)
-		newdev |= ((u_int)gp->g_display.gd_regaddr-EXTIOBASE) | 0x200;
+	if (gp->g_display.gd_regaddr != (caddr_t)GRFIADDR) {
+		sc = patosc(gp->g_display.gd_regaddr);
+		newdev |= (sc << 16) | 0x200;
+	}
 	if (dev & GRFIMDEV)
 		newdev |= 0x02;
 	else if (dev & GRFOVDEV)
