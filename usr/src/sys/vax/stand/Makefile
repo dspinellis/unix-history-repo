@@ -9,9 +9,10 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.10 (Berkeley) %G%
+#	@(#)Makefile	7.11 (Berkeley) %G%
 #
-DESTDIR=/
+DESTDIR=
+STAND=/stand
 INCPATH=-I. -I../stand -I../h
 VPATH=	../stand:../vax
 COPTS=	${INCPATH} -DSTANDALONE -DCOMPAT_42 \
@@ -231,8 +232,9 @@ depend: ${SRCS} FRC
 	mkdep ${INCPATH} -DSTANDALONE ${SRCS} ${DUMMIES}
 
 install: FRC
-	install -c -s -o bin -g bin -m 644 format copy drtest ${DESTDIR}/
+	install -c -s -o bin -g bin -m 644 format copy drtest ${DESTDIR}${STAND}
 	install -c -o bin -g bin -m 644 boot pcs750.bin ${DESTDIR}/
+	-mkdir ../vaxdist/tp
 	cp tpcopy ../vaxdist/tp/copy
 	cp tpboot ../vaxdist/tp/boot
 	cp tpformat ../vaxdist/tp/format
