@@ -2558,17 +2558,21 @@ gen_ffssi2 (operand0, operand1)
      rtx operand1;
 {
   rtx operand2;
-  rtx operands[3];
+  rtx operand3;
+  rtx operands[4];
   rtx _val = 0;
   start_sequence ();
   operands[0] = operand0;
   operands[1] = operand1;
-operands[2] = gen_reg_rtx (SImode);
+operands[3] = gen_reg_rtx (SImode);
   operand0 = operands[0];
   operand1 = operands[1];
   operand2 = operands[2];
-  emit_insn (gen_rtx (SET, VOIDmode, operand2, gen_rtx (PLUS, SImode, gen_rtx (FFS, SImode, operand1), constm1_rtx)));
-  emit_insn (gen_rtx (SET, VOIDmode, operand0, gen_rtx (PLUS, SImode, operand2, const1_rtx)));
+  operand3 = operands[3];
+  emit (gen_rtx (PARALLEL, VOIDmode, gen_rtvec (2,
+		gen_rtx (SET, VOIDmode, operand3, gen_rtx (PLUS, SImode, gen_rtx (FFS, SImode, operand1), constm1_rtx)),
+		gen_rtx (CLOBBER, VOIDmode, gen_rtx (SCRATCH, SImode, 0)))));
+  emit_insn (gen_rtx (SET, VOIDmode, operand0, gen_rtx (PLUS, SImode, operand3, const1_rtx)));
  _done:
   _val = gen_sequence ();
  _fail:
@@ -2582,17 +2586,21 @@ gen_ffshi2 (operand0, operand1)
      rtx operand1;
 {
   rtx operand2;
-  rtx operands[3];
+  rtx operand3;
+  rtx operands[4];
   rtx _val = 0;
   start_sequence ();
   operands[0] = operand0;
   operands[1] = operand1;
-operands[2] = gen_reg_rtx (HImode);
+operands[3] = gen_reg_rtx (HImode);
   operand0 = operands[0];
   operand1 = operands[1];
   operand2 = operands[2];
-  emit_insn (gen_rtx (SET, VOIDmode, operand2, gen_rtx (PLUS, HImode, gen_rtx (FFS, HImode, operand1), constm1_rtx)));
-  emit_insn (gen_rtx (SET, VOIDmode, operand0, gen_rtx (PLUS, HImode, operand2, const1_rtx)));
+  operand3 = operands[3];
+  emit (gen_rtx (PARALLEL, VOIDmode, gen_rtvec (2,
+		gen_rtx (SET, VOIDmode, operand3, gen_rtx (PLUS, HImode, gen_rtx (FFS, HImode, operand1), constm1_rtx)),
+		gen_rtx (CLOBBER, VOIDmode, gen_rtx (SCRATCH, HImode, 0)))));
+  emit_insn (gen_rtx (SET, VOIDmode, operand0, gen_rtx (PLUS, HImode, operand3, const1_rtx)));
  _done:
   _val = gen_sequence ();
  _fail:
@@ -2654,6 +2662,7 @@ add_clobbers (pattern, insn_code_number)
 
   switch (insn_code_number)
     {
+    case 250:
     case 223:
       XVECEXP (pattern, 0, 1) = gen_rtx (CLOBBER, VOIDmode, gen_rtx (SCRATCH, SImode, 0));
       break;
@@ -2668,6 +2677,7 @@ add_clobbers (pattern, insn_code_number)
       XVECEXP (pattern, 0, 4) = gen_rtx (CLOBBER, VOIDmode, gen_rtx (SCRATCH, SImode, 0));
       break;
 
+    case 252:
     case 25:
     case 24:
     case 23:

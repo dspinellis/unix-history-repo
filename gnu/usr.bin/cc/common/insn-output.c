@@ -2834,10 +2834,13 @@ output_250 (operands, insn)
 {
   rtx xops[2];
 
-  xops[0] = operands[0];
-  xops[1] = constm1_rtx;
-  output_asm_insn (AS2 (mov%L0,%1,%0), xops);
-  return AS2 (bsf%L0,%1,%0);
+  xops[0] = const1_rtx;
+  xops[1] = operands[1];
+  output_asm_insn (AS2 (bsf%L1,%1,%0), operands);
+  output_asm_insn (AS2 (cmp%L1,%0,%1), xops);
+  output_asm_insn (AS2 (sbb%L0,%2,%2), operands);
+  output_asm_insn (AS2 (or%L0,%2,%0), operands);
+  return "";
 }
 }
 
@@ -2850,10 +2853,13 @@ output_252 (operands, insn)
 {
   rtx xops[2];
 
-  xops[0] = operands[0];
-  xops[1] = constm1_rtx;
-  output_asm_insn (AS2 (mov%W0,%1,%0), xops);
-  return AS2 (bsf%W0,%1,%0);
+  xops[0] = const1_rtx;
+  xops[1] = operands[1];
+  output_asm_insn (AS2 (bsf%W1,%1,%0), operands);
+  output_asm_insn (AS2 (cmp%W1,%0,%1), xops);
+  output_asm_insn (AS2 (sbb%W0,%2,%2), operands);
+  output_asm_insn (AS2 (or%W0,%2,%0), operands);
+  return "";
 }
 }
 
@@ -4258,10 +4264,10 @@ const int insn_n_operands[] =
     5,
     5,
     4,
-    2,
-    2,
-    2,
-    2,
+    3,
+    3,
+    3,
+    3,
     4,
     4,
     4,
@@ -4792,10 +4798,10 @@ char *const insn_operand_constraint[][MAX_RECOG_OPERANDS] =
     { "", "", "", "", "", },
     { "=&r", "S", "D", "c", "i", },
     { "S", "D", "c", "i", },
-    { "", "", },
-    { "=&r", "rm", },
-    { "", "", },
-    { "=&r", "rm", },
+    { "", "", "", },
+    { "=&r", "rm", "=r", },
+    { "", "", "", },
+    { "=&r", "rm", "=r", },
     { "=f,f", "0,fm", "fm,0", "", },
     { "=f", "rm", "0", "", },
     { "=f,f", "fm,0", "0,f", "", },
@@ -5059,10 +5065,10 @@ const enum machine_mode insn_operand_mode[][MAX_RECOG_OPERANDS] =
     { SImode, BLKmode, BLKmode, SImode, SImode, },
     { SImode, SImode, SImode, SImode, SImode, },
     { SImode, SImode, SImode, SImode, },
-    { SImode, SImode, },
-    { SImode, SImode, },
-    { HImode, HImode, },
-    { HImode, SImode, },
+    { SImode, SImode, SImode, },
+    { SImode, SImode, SImode, },
+    { HImode, HImode, HImode, },
+    { HImode, HImode, HImode, },
     { DFmode, DFmode, DFmode, DFmode, },
     { DFmode, SImode, DFmode, DFmode, },
     { DFmode, SFmode, DFmode, DFmode, },
@@ -5326,10 +5332,10 @@ const char insn_operand_strict_low[][MAX_RECOG_OPERANDS] =
     { 0, 0, 0, 0, 0, },
     { 0, 0, 0, 0, 0, },
     { 0, 0, 0, 0, },
-    { 0, 0, },
-    { 0, 0, },
-    { 0, 0, },
-    { 0, 0, },
+    { 0, 0, 0, },
+    { 0, 0, 0, },
+    { 0, 0, 0, },
+    { 0, 0, 0, },
     { 0, 0, 0, 0, },
     { 0, 0, 0, 0, },
     { 0, 0, 0, 0, },
@@ -5609,10 +5615,10 @@ int (*const insn_operand_predicate[][MAX_RECOG_OPERANDS])() =
     { general_operand, general_operand, general_operand, general_operand, immediate_operand, },
     { general_operand, address_operand, address_operand, register_operand, immediate_operand, },
     { address_operand, address_operand, register_operand, immediate_operand, },
-    { general_operand, general_operand, },
-    { general_operand, general_operand, },
-    { general_operand, general_operand, },
-    { general_operand, general_operand, },
+    { general_operand, general_operand, scratch_operand, },
+    { register_operand, general_operand, scratch_operand, },
+    { general_operand, general_operand, scratch_operand, },
+    { register_operand, general_operand, scratch_operand, },
     { register_operand, nonimmediate_operand, nonimmediate_operand, binary_387_op, },
     { register_operand, general_operand, general_operand, binary_387_op, },
     { register_operand, general_operand, general_operand, binary_387_op, },

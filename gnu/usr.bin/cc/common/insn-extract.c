@@ -62,6 +62,13 @@ insn_extract (insn)
       ro[3] = *(ro_loc[3] = &XEXP (pat, 1));
       break;
 
+    case 252:
+    case 250:
+      ro[0] = *(ro_loc[0] = &XEXP (XVECEXP (pat, 0, 0), 0));
+      ro[1] = *(ro_loc[1] = &XEXP (XEXP (XEXP (XVECEXP (pat, 0, 0), 1), 0), 0));
+      ro[2] = *(ro_loc[2] = &XEXP (XVECEXP (pat, 0, 1), 0));
+      break;
+
     case 248:
       ro[0] = *(ro_loc[0] = &XEXP (XEXP (XEXP (XVECEXP (pat, 0, 0), 1), 0), 0));
       ro[1] = *(ro_loc[1] = &XEXP (XEXP (XEXP (XVECEXP (pat, 0, 0), 1), 1), 0));
@@ -271,8 +278,6 @@ insn_extract (insn)
       ro[1] = *(ro_loc[1] = &XVECEXP (XEXP (pat, 1), 0, 0));
       break;
 
-    case 252:
-    case 250:
     case 130:
     case 127:
     case 124:

@@ -1205,35 +1205,35 @@ recog_3 (x0, insn, pnum_clobbers)
   L1147:
   ro[0] = x1;
   goto L1148;
-  L1227:
+  L1236:
   switch (GET_MODE (x1))
     {
     case SImode:
-      if (general_operand (x1, SImode))
+      if (register_operand (x1, SImode))
 	{
 	  ro[0] = x1;
-	  goto L1228;
+	  goto L1237;
 	}
       break;
     case HImode:
-      if (general_operand (x1, HImode))
+      if (register_operand (x1, HImode))
 	{
 	  ro[0] = x1;
-	  goto L1234;
+	  goto L1252;
 	}
       break;
     case DFmode:
       if (register_operand (x1, DFmode))
 	{
 	  ro[0] = x1;
-	  goto L1240;
+	  goto L1258;
 	}
       break;
     case SFmode:
       if (register_operand (x1, SFmode))
 	{
 	  ro[0] = x1;
-	  goto L1269;
+	  goto L1287;
 	}
     }
   goto ret0;
@@ -3206,7 +3206,7 @@ recog_3 (x0, insn, pnum_clobbers)
   if (GET_CODE (x1) == CALL && 1)
     goto L1149;
   x1 = XEXP (x0, 0);
-  goto L1227;
+  goto L1236;
 
   L1149:
   x2 = XEXP (x1, 0);
@@ -3219,7 +3219,7 @@ recog_3 (x0, insn, pnum_clobbers)
   if (GET_MODE (x2) == QImode && GET_CODE (x2) == MEM && 1)
     goto L1155;
   x1 = XEXP (x0, 0);
-  goto L1227;
+  goto L1236;
 
   L1150:
   x2 = XEXP (x1, 1);
@@ -3239,7 +3239,7 @@ recog_3 (x0, insn, pnum_clobbers)
       goto L1156;
     }
   x1 = XEXP (x0, 0);
-  goto L1227;
+  goto L1236;
 
   L1156:
   x2 = XEXP (x1, 1);
@@ -3250,72 +3250,78 @@ recog_3 (x0, insn, pnum_clobbers)
 	return 236;
       }
   x1 = XEXP (x0, 0);
-  goto L1227;
-
-  L1228:
-  x1 = XEXP (x0, 1);
-  if (GET_MODE (x1) == SImode && GET_CODE (x1) == PLUS && 1)
-    goto L1229;
-  goto ret0;
-
-  L1229:
-  x2 = XEXP (x1, 0);
-  if (GET_MODE (x2) == SImode && GET_CODE (x2) == FFS && 1)
-    goto L1230;
-  goto ret0;
-
-  L1230:
-  x3 = XEXP (x2, 0);
-  if (general_operand (x3, SImode))
-    {
-      ro[1] = x3;
-      goto L1231;
-    }
-  goto ret0;
-
-  L1231:
-  x2 = XEXP (x1, 1);
-  if (GET_CODE (x2) == CONST_INT && XWINT (x2, 0) == -1 && 1)
-    return 250;
-  goto ret0;
-
-  L1234:
-  x1 = XEXP (x0, 1);
-  if (GET_MODE (x1) == HImode && GET_CODE (x1) == PLUS && 1)
-    goto L1235;
-  goto ret0;
-
-  L1235:
-  x2 = XEXP (x1, 0);
-  if (GET_MODE (x2) == HImode && GET_CODE (x2) == FFS && 1)
-    goto L1236;
-  goto ret0;
-
-  L1236:
-  x3 = XEXP (x2, 0);
-  if (general_operand (x3, SImode))
-    {
-      ro[1] = x3;
-      goto L1237;
-    }
-  goto ret0;
+  goto L1236;
 
   L1237:
-  x2 = XEXP (x1, 1);
-  if (GET_CODE (x2) == CONST_INT && XWINT (x2, 0) == -1 && 1)
-    return 252;
+  x1 = XEXP (x0, 1);
+  if (GET_MODE (x1) == SImode && GET_CODE (x1) == PLUS && 1)
+    goto L1238;
+  goto ret0;
+
+  L1238:
+  x2 = XEXP (x1, 0);
+  if (GET_MODE (x2) == SImode && GET_CODE (x2) == FFS && 1)
+    goto L1239;
+  goto ret0;
+
+  L1239:
+  x3 = XEXP (x2, 0);
+  if (general_operand (x3, SImode))
+    {
+      ro[1] = x3;
+      goto L1240;
+    }
   goto ret0;
 
   L1240:
+  x2 = XEXP (x1, 1);
+  if (GET_CODE (x2) == CONST_INT && XWINT (x2, 0) == -1 && pnum_clobbers != 0 && 1)
+    {
+      *pnum_clobbers = 1;
+      return 250;
+    }
+  goto ret0;
+
+  L1252:
+  x1 = XEXP (x0, 1);
+  if (GET_MODE (x1) == HImode && GET_CODE (x1) == PLUS && 1)
+    goto L1253;
+  goto ret0;
+
+  L1253:
+  x2 = XEXP (x1, 0);
+  if (GET_MODE (x2) == HImode && GET_CODE (x2) == FFS && 1)
+    goto L1254;
+  goto ret0;
+
+  L1254:
+  x3 = XEXP (x2, 0);
+  if (general_operand (x3, HImode))
+    {
+      ro[1] = x3;
+      goto L1255;
+    }
+  goto ret0;
+
+  L1255:
+  x2 = XEXP (x1, 1);
+  if (GET_CODE (x2) == CONST_INT && XWINT (x2, 0) == -1 && pnum_clobbers != 0 && 1)
+    {
+      *pnum_clobbers = 1;
+      return 252;
+    }
+  goto ret0;
+
+  L1258:
   x1 = XEXP (x0, 1);
   if (binary_387_op (x1, DFmode))
     {
       ro[3] = x1;
-      goto L1246;
+      goto L1264;
     }
   goto ret0;
 
-  L1246:
+  L1264:
   x2 = XEXP (x1, 0);
   switch (GET_MODE (x2))
     {
@@ -3323,37 +3329,37 @@ recog_3 (x0, insn, pnum_clobbers)
       switch (GET_CODE (x2))
 	{
 	case FLOAT:
-	  goto L1247;
+	  goto L1265;
 	case FLOAT_EXTEND:
-	  goto L1253;
+	  goto L1271;
 	case SUBREG:
 	case REG:
 	case MEM:
 	  if (nonimmediate_operand (x2, DFmode))
 	    {
 	      ro[1] = x2;
-	      goto L1242;
+	      goto L1260;
 	    }
 	}
     }
-  L1258:
+  L1276:
   if (general_operand (x2, DFmode))
     {
       ro[1] = x2;
-      goto L1259;
+      goto L1277;
     }
   goto ret0;
 
-  L1247:
+  L1265:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SImode))
     {
       ro[1] = x3;
-      goto L1248;
+      goto L1266;
     }
   goto ret0;
 
-  L1248:
+  L1266:
   x2 = XEXP (x1, 1);
   if (general_operand (x2, DFmode))
     {
@@ -3363,16 +3369,16 @@ recog_3 (x0, insn, pnum_clobbers)
       }
   goto ret0;
 
-  L1253:
+  L1271:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SFmode))
     {
       ro[1] = x3;
-      goto L1254;
+      goto L1272;
     }
   goto ret0;
 
-  L1254:
+  L1272:
   x2 = XEXP (x1, 1);
   if (general_operand (x2, DFmode))
     {
@@ -3382,7 +3388,7 @@ recog_3 (x0, insn, pnum_clobbers)
       }
   goto ret0;
 
-  L1242:
+  L1260:
   x2 = XEXP (x1, 1);
   if (nonimmediate_operand (x2, DFmode))
     {
@@ -3391,22 +3397,22 @@ recog_3 (x0, insn, pnum_clobbers)
 	return 253;
       }
   x2 = XEXP (x1, 0);
-  goto L1258;
+  goto L1276;
 
-  L1259:
+  L1277:
   x2 = XEXP (x1, 1);
   if (GET_MODE (x2) != DFmode)
     goto ret0;
   switch (GET_CODE (x2))
     {
     case FLOAT:
-      goto L1260;
+      goto L1278;
     case FLOAT_EXTEND:
-      goto L1266;
+      goto L1284;
     }
   goto ret0;
 
-  L1260:
+  L1278:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SImode))
     {
@@ -3416,7 +3422,7 @@ recog_3 (x0, insn, pnum_clobbers)
       }
   goto ret0;
 
-  L1266:
+  L1284:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SFmode))
     {
@@ -3426,46 +3432,46 @@ recog_3 (x0, insn, pnum_clobbers)
       }
   goto ret0;
 
-  L1269:
+  L1287:
   x1 = XEXP (x0, 1);
   if (binary_387_op (x1, SFmode))
     {
       ro[3] = x1;
-      goto L1275;
+      goto L1293;
     }
   goto ret0;
 
-  L1275:
+  L1293:
   x2 = XEXP (x1, 0);
   switch (GET_MODE (x2))
     {
     case SFmode:
       if (GET_CODE (x2) == FLOAT && 1)
-	goto L1276;
+	goto L1294;
       if (nonimmediate_operand (x2, SFmode))
 	{
 	  ro[1] = x2;
-	  goto L1271;
+	  goto L1289;
 	}
     }
-  L1281:
+  L1299:
   if (general_operand (x2, SFmode))
     {
       ro[1] = x2;
-      goto L1282;
+      goto L1300;
     }
   goto ret0;
 
-  L1276:
+  L1294:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SImode))
     {
       ro[1] = x3;
-      goto L1277;
+      goto L1295;
     }
   goto ret0;
 
-  L1277:
+  L1295:
   x2 = XEXP (x1, 1);
   if (general_operand (x2, SFmode))
     {
@@ -3475,7 +3481,7 @@ recog_3 (x0, insn, pnum_clobbers)
       }
   goto ret0;
 
-  L1271:
+  L1289:
   x2 = XEXP (x1, 1);
   if (nonimmediate_operand (x2, SFmode))
     {
@@ -3484,15 +3490,15 @@ recog_3 (x0, insn, pnum_clobbers)
 	return 258;
       }
   x2 = XEXP (x1, 0);
-  goto L1281;
+  goto L1299;
 
-  L1282:
+  L1300:
   x2 = XEXP (x1, 1);
   if (GET_MODE (x2) == SFmode && GET_CODE (x2) == FLOAT && 1)
-    goto L1283;
+    goto L1301;
   goto ret0;
 
-  L1283:
+  L1301:
   x3 = XEXP (x2, 0);
   if (general_operand (x3, SImode))
     {
@@ -4046,11 +4052,22 @@ recog_5 (x0, insn, pnum_clobbers)
   L1125:
   ro[0] = x2;
   goto L1126;
-  L1286:
-  if (register_operand (x2, SImode))
+  L1228:
+  switch (GET_MODE (x2))
     {
-      ro[0] = x2;
-      goto L1287;
+    case SImode:
+      if (register_operand (x2, SImode))
+	{
+	  ro[0] = x2;
+	  goto L1229;
+	}
+      break;
+    case HImode:
+      if (register_operand (x2, HImode))
+	{
+	  ro[0] = x2;
+	  goto L1244;
+	}
     }
   goto ret0;
 
@@ -4657,7 +4674,7 @@ recog_5 (x0, insn, pnum_clobbers)
   if (GET_CODE (x2) == CALL && 1)
     goto L1138;
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1138:
   x3 = XEXP (x2, 0);
@@ -4670,7 +4687,7 @@ recog_5 (x0, insn, pnum_clobbers)
       goto L1128;
     }
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1139:
   x4 = XEXP (x3, 0);
@@ -4748,7 +4765,7 @@ recog_5 (x0, insn, pnum_clobbers)
       goto L1129;
     }
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1129:
   x1 = XVECEXP (x0, 0, 1);
@@ -4756,7 +4773,7 @@ recog_5 (x0, insn, pnum_clobbers)
     goto L1130;
   x1 = XVECEXP (x0, 0, 0);
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1130:
   x2 = XEXP (x1, 0);
@@ -4764,7 +4781,7 @@ recog_5 (x0, insn, pnum_clobbers)
     goto L1131;
   x1 = XVECEXP (x0, 0, 0);
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1131:
   x2 = XEXP (x1, 1);
@@ -4772,7 +4789,7 @@ recog_5 (x0, insn, pnum_clobbers)
     goto L1132;
   x1 = XVECEXP (x0, 0, 0);
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1132:
   x3 = XEXP (x2, 0);
@@ -4780,7 +4797,7 @@ recog_5 (x0, insn, pnum_clobbers)
     goto L1133;
   x1 = XVECEXP (x0, 0, 0);
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
   L1133:
   x3 = XEXP (x2, 1);
@@ -4791,57 +4808,143 @@ recog_5 (x0, insn, pnum_clobbers)
     }
   x1 = XVECEXP (x0, 0, 0);
   x2 = XEXP (x1, 0);
-  goto L1286;
+  goto L1228;
 
-  L1287:
+  L1229:
   x2 = XEXP (x1, 1);
-  if (GET_MODE (x2) == SImode && GET_CODE (x2) == UNSPEC && XINT (x2, 1) == 0 && XVECLEN (x2, 0) == 3 && 1)
-    goto L1288;
+  if (GET_MODE (x2) != SImode)
+    goto ret0;
+  switch (GET_CODE (x2))
+    {
+    case PLUS:
+      goto L1230;
+    case UNSPEC:
+      if (XINT (x2, 1) == 0 && XVECLEN (x2, 0) == 3 && 1)
+	goto L1306;
+    }
   goto ret0;
 
-  L1288:
+  L1230:
+  x3 = XEXP (x2, 0);
+  if (GET_MODE (x3) == SImode && GET_CODE (x3) == FFS && 1)
+    goto L1231;
+  goto ret0;
+
+  L1231:
+  x4 = XEXP (x3, 0);
+  if (general_operand (x4, SImode))
+    {
+      ro[1] = x4;
+      goto L1232;
+    }
+  goto ret0;
+
+  L1232:
+  x3 = XEXP (x2, 1);
+  if (GET_CODE (x3) == CONST_INT && XWINT (x3, 0) == -1 && 1)
+    goto L1233;
+  goto ret0;
+
+  L1233:
+  x1 = XVECEXP (x0, 0, 1);
+  if (GET_CODE (x1) == CLOBBER && 1)
+    goto L1234;
+  goto ret0;
+
+  L1234:
+  x2 = XEXP (x1, 0);
+  if (scratch_operand (x2, SImode))
+    {
+      ro[2] = x2;
+      return 250;
+    }
+  goto ret0;
+
+  L1306:
   x3 = XVECEXP (x2, 0, 0);
   if (GET_MODE (x3) == BLKmode && GET_CODE (x3) == MEM && 1)
-    goto L1289;
+    goto L1307;
   goto ret0;
 
-  L1289:
+  L1307:
   x4 = XEXP (x3, 0);
   if (address_operand (x4, SImode))
     {
       ro[1] = x4;
-      goto L1290;
+      goto L1308;
     }
   goto ret0;
 
-  L1290:
+  L1308:
   x3 = XVECEXP (x2, 0, 1);
   if (register_operand (x3, QImode))
     {
       ro[2] = x3;
-      goto L1291;
+      goto L1309;
     }
   goto ret0;
 
-  L1291:
+  L1309:
   x3 = XVECEXP (x2, 0, 2);
   if (immediate_operand (x3, SImode))
     {
       ro[3] = x3;
-      goto L1292;
+      goto L1310;
     }
   goto ret0;
 
-  L1292:
+  L1310:
   x1 = XVECEXP (x0, 0, 1);
   if (GET_CODE (x1) == CLOBBER && 1)
-    goto L1293;
+    goto L1311;
   goto ret0;
 
-  L1293:
+  L1311:
   x2 = XEXP (x1, 0);
   if (rtx_equal_p (x2, ro[1]) && 1)
     return 262;
+  goto ret0;
+
+  L1244:
+  x2 = XEXP (x1, 1);
+  if (GET_MODE (x2) == HImode && GET_CODE (x2) == PLUS && 1)
+    goto L1245;
+  goto ret0;
+
+  L1245:
+  x3 = XEXP (x2, 0);
+  if (GET_MODE (x3) == HImode && GET_CODE (x3) == FFS && 1)
+    goto L1246;
+  goto ret0;
+
+  L1246:
+  x4 = XEXP (x3, 0);
+  if (general_operand (x4, HImode))
+    {
+      ro[1] = x4;
+      goto L1247;
+    }
+  goto ret0;
+
+  L1247:
+  x3 = XEXP (x2, 1);
+  if (GET_CODE (x3) == CONST_INT && XWINT (x3, 0) == -1 && 1)
+    goto L1248;
+  goto ret0;
+
+  L1248:
+  x1 = XVECEXP (x0, 0, 1);
+  if (GET_CODE (x1) == CLOBBER && 1)
+    goto L1249;
+  goto ret0;
+
+  L1249:
+  x2 = XEXP (x1, 0);
+  if (scratch_operand (x2, HImode))
+    {
+      ro[2] = x2;
+      return 252;
+    }
   goto ret0;
  ret0: return -1;
 }
