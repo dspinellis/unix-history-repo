@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.70 (Berkeley) %G%
+#	@(#)READ_ME	8.71 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -290,6 +290,19 @@ SFS_TYPE	Encodes how your kernel can locate the amount of free
 		<sys/vfs.h>, <sys/mount.h>, or <sys/statfs.h> respectively,
 		or SFS_STATVFS (6) if you have the two-argument statvfs(2)
 		call.  The default if nothing is defined is SFS_NONE.
+SPT_TYPE	Encodes how your system can display what a process is doing
+		on a ps(1) command (SPT stands for Set Process Title).  Can
+		be set to:
+		SPT_NONE (0) -- Don't try to set the process title at all.
+		SPT_REUSEARGV (1) -- Pad out your argv with the information;
+			this is the default if none specified.
+		SPT_BUILTIN (2) -- The system library has setproctitle.
+		SPT_PSTAT (3) -- Use the PSTAT_SETCMD option to pstat(2)
+			to set the process title; this is used by HP-UX.
+		SPT_PSSTRINGS (4) -- Use the magic PS_STRINGS pointer (4.4BSD).
+SPT_PADCHAR	Character used to pad the process title; if undefined,
+		the space character (0x20) is used.  This is ignored if
+		SPT_TYPE != SPT_REUSEARGV
 ERRLIST_PREDEFINED
 		If set, assumes that some header file defines sys_errlist.
 		This may be needed if you get type conflicts on this
@@ -368,9 +381,6 @@ MATCHGECOS	Permit fuzzy matching of user names against the full
 		name (GECOS) field in the /etc/passwd file.  This should
 		probably be on, since you can disable it from the config
 		file if you want to.  Defined by default in conf.h.
-SETPROCTITLE	Try to set the string printed by "ps" to something
-		informative about what sendmail is doing.  Defined by
-		default in conf.h.
 
 
 +---------------------+
@@ -880,4 +890,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.70, last update %G% 18:07:44)
+(Version 8.71, last update %G% 16:46:51)

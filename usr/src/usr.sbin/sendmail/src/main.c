@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -220,7 +220,6 @@ main(argc, argv, envp)
 	UserEnviron[j] = NULL;
 	environ = UserEnviron;
 
-# ifdef SETPROCTITLE
 	/*
 	**  Save start and extent of argv for setproctitle.
 	*/
@@ -230,7 +229,6 @@ main(argc, argv, envp)
 		LastArgv = envp[i - 1] + strlen(envp[i - 1]);
 	else
 		LastArgv = argv[argc - 1] + strlen(argv[argc - 1]);
-# endif /* SETPROCTITLE */
 
 	if (setsignal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) setsignal(SIGINT, intsig);
