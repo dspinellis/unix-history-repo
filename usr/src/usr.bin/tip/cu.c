@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cu.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cu.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -84,7 +84,7 @@ cumain(argc, argv)
 	}
 	if (i == -1) {
 		printf("link down\n");
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 		exit(3);
 	}
 	setbuf(stdout, NULL);
@@ -98,7 +98,7 @@ cumain(argc, argv)
 	if (connect()) {
 		printf("Connect failed\n");
 		daemon_uid();
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 		exit(1);
 	}
 	if (!HW)
