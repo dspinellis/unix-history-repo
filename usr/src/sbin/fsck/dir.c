@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)dir.c	5.4 (Berkeley) %G%";
 
 char	*endpathname = &pathname[BUFSIZ - 2];
 char	*lfname = "lost+found";
+int	lfmode = 01777;
 struct	dirtemplate emptydir = { 0, DIRBLKSIZ };
 struct	dirtemplate dirhead = { 0, 12, 1, ".", 0, DIRBLKSIZ - 12, 2, ".." };
 
@@ -311,7 +312,7 @@ linkup(orphan, pdir)
 		} else {
 			pwarn("NO lost+found DIRECTORY");
 			if (preen || reply("CREATE")) {
-				lfdir = allocdir(ROOTINO, 0);
+				lfdir = allocdir(ROOTINO, 0, lfmode);
 				if (lfdir != 0) {
 					if (makeentry(ROOTINO, lfdir, lfname) != 0) {
 						if (preen)
@@ -337,7 +338,7 @@ linkup(orphan, pdir)
 		if (reply("REALLOCATE") == 0)
 			return (0);
 		oldlfdir = lfdir;
-		if ((lfdir = allocdir(ROOTINO, 0)) == 0) {
+		if ((lfdir = allocdir(ROOTINO, 0, lfmode)) == 0) {
 			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY\n\n");
 			return (0);
 		}
@@ -485,15 +486,16 @@ bad:
 /*
  * allocate a new directory
  */
-allocdir(parent, request)
+allocdir(parent, request, mode)
 	ino_t parent, request;
+	int mode;
 {
 	ino_t ino;
 	char *cp;
 	DINODE *dp;
 	register BUFAREA *bp;
 
-	ino = allocino(request, IFDIR|0755);
+	ino = allocino(request, IFDIR|mode);
 	dirhead.dot_ino = ino;
 	dirhead.dotdot_ino = parent;
 	dp = ginode(ino);

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fsck.h	5.7 (Berkeley) %G%
+ *	@(#)fsck.h	5.8 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	 /* limit on dup blks (per inode) */
@@ -160,6 +160,7 @@ ino_t	imax;			/* number of inodes */
 ino_t	lastino;		/* hiwater mark of inodes */
 ino_t	lfdir;			/* lost & found directory inode number */
 char	*lfname;		/* lost & found directory name */
+int	lfmode;			/* lost & found directory creation mode */
 
 off_t	maxblk;			/* largest logical blk in file */
 off_t	bmapsz;			/* num chars in blockmap */
