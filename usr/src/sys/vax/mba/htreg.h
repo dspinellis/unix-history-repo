@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)htreg.h	7.1 (Berkeley) %G%
+ *	@(#)htreg.h	7.2 (Berkeley) %G%
  */
 
 struct	htdevice
@@ -103,6 +103,7 @@ struct	htdevice
 /* bits 8-10 are density select */
 #define	HTTC_800BPI	0001400		/* in bits 8-10, dens=1600 */
 #define	HTTC_1600BPI	0002000		/* in bits 8-10, dens=800 */
+#define	HTTC_6250BPI	0003400		/* in bits 8-10, dens=6250 */
 /* bits 4-7 are format select */
 #define	HTTC_PDP11	0000300		/* in bits 4-7, pdp11 normal format */
 #define	HTTC_EVEN	0000010		/* select even parity */
