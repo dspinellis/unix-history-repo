@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.5	%G%";
+static char *sccsid = "@(#)ex_io.c	7.6	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -816,6 +816,7 @@ clrstats()
 iostats()
 {
 
+	(void) fsync(io);
 	close(io);
 	io = -1;
 	if (hush == 0) {
