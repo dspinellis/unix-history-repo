@@ -1,0 +1,173 @@
+.\" Copyright (c) 1994 The Regents of the University of California.
+.\" All rights reserved.
+.\" 
+.\" This code is derived from software donated to Berkeley by
+.\" Jan-Simon Pendry.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mount_union.8	8.1 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MOUNT_UNION 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mount_union
+.Nd mount union filesystems
+.Sh SYNOPSIS
+.Nm mount_union
+.Op Fl above
+.Op Fl below
+.Op Fl replace
+.Ar directory uniondir
+.Sh DESCRIPTION
+The
+.Nm mount_union
+command
+attaches
+.Ar directory
+(called the
+.Em upper
+layer)
+above
+.Ar uniondir
+(called the
+.Em lower
+layer)
+in such a way that the contents of both directories are remain visible.
+.Nm mount_union
+is setuid root and can be used by any user.
+The kernel enforces security by only allow attempts to mount
+onto a directory to which the current user has write permission.
+.Pp
+Once the mount is complete, the lower layer becomes read-only
+when accessed via
+.Ar uniondir .
+The union operation applies recursively down the directory tree
+now rooted at
+.Em uniondir .
+This differs from the
+.Em union
+option to
+.Xr mount 8
+which only applies the union operation to the mount point itself,
+and then only for lookups.
+.Pp
+Filenames are looked up firstly in the upper layer and then in the
+lower layer.
+If a directory is found in the lower layer, and there is no entry
+in the upper layer, then a
+.Em shadow
+directory will be created in the upper layer.
+It will be owned by the user who originally did the union mount,
+with mode 0777 modified by the umask in effect at that time.
+.Pp
+If a file exists in the upper layer then there is no way to access
+a file with the same name in the lower layer.
+If necessary, a combination of loopback and union mounts can be made
+which will still allow the lower files to be accessed by a different
+pathname.
+.Pp
+Except in the case of a directory,
+access to an object is granted via the normal filesystem access checks.
+For directories, the current user must have access to both the upper
+and lower directories (should they both exist).
+.Pp
+Requests to create or modify objects in
+.Ar uniondir
+are passed to the upper layer with the exception of a few special cases.
+An attempt to open for writing a file which exists in the lower layer
+causes a copy of the
+.Em entire
+file to be made to the upper layer, and then for the upper layer copy
+to be opened.
+Similarly, an attempt to truncate a lower layer file to zero length
+causes an empty file to be created in the upper layer.
+.Pp
+The union filesystem actually deals with namespace, rather than
+individual filesystems.
+This means that any filesystems which are mounted under
+.Ar uniondir
+will take part in the union operation.
+.Pp
+The options are:
+.Bl -tag -width indent
+.It Fl above
+This is the default mode of operation, where
+.Ar directory
+becomes the upper layer,
+and
+.Ar uniondir
+becomes the lower layer.
+.It Fl below
+This inverts the sense of
+.Fl above
+such that
+.Ar directory
+becomes the lower layer and
+.Ar uniondir
+becomes the upper layer.
+.Ar uniondir
+is still the mount point.
+.It Fl replace
+This simply hides the lower layer completely in
+the same way as mounting with
+.Xr mount_lofs 8
+or
+.Xr mount_null 8 .
+.Sh EXAMPLES
+The commands
+.Bd -literal -offset indent
+mount -t iso9660 -o ro /dev/cd0a /usr/src
+mount -t union -o -above /var/obj /usr/src
+.Ed
+.Pp
+mount the CD-ROM drive
+.Pa /dev/cd0a
+on
+.Pa /usr/src
+and then attaches
+.Pa /var/obj
+on top.
+For most purposes the effect of this is to make the
+source tree appear writable
+even though it is stored on a CD-ROM.
+.Pp
+The command
+.Bd -literal -offset indent
+mount -t union -o -below /sys $HOME/sys
+.Ed
+.Pp
+attaches the system source tree below the
+.Pa sys
+directory in the user's home directory.
+This allows individual users to make private changes
+to the source, and build new kernels, without those
+changes becoming visible to other users.
+Note that the files in the lower layer remain
+accessible via
+.Pa /sys .
+.Sh SEE ALSO
+.Xr mount 2 ,
+.Xr unmount 2 ,
+.Xr fstab 5 ,
+.Xr mount_lofs 8 ,
+.Xr mount_null 8
+.Sh BUGS
+Without whiteout support from the filesystem backing the upper layer,
+there is no way that delete and rename operations on lower layer
+objects can be done.
+.Dv EROFS
+is returned for this kind of operations along with any others
+which would make modifictions to the lower layer, such as
+.Xr chmod 1 .
+.Pp
+Running
+.Xr find 1
+over a union tree has the side-effect of creating
+a tree of shadow directories in the upper layer.
+.Sh HISTORY
+The
+.Nm mount_union
+command first appeared in
+.Bx 4.4 .
