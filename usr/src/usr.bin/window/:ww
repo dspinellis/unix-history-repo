@@ -1,0 +1,8 @@
+./"forw"16t"back"16t"state"8t"wstate"8t"modes"nppbbb
++/"xxx"8t"index"8t"order"nbbb++
++/"w.nr"16t"w.nc"nDDn
++/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
++/"nline"8t"scroll"8t"cur.r"16t"cur.c"nddDD
++/"win"16t"buf"16t"cov"16t"nvis"npppp
++/"pty"16t"tty"16t"pid"16t"ttyname"nDDD11C
++/t
