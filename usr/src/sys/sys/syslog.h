@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)syslog.h	7.10 (Berkeley) %G%
+ *	@(#)syslog.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -30,6 +30,7 @@
 #define LOG_LPR		(6<<3)	/* line printer subsystem */
 #define LOG_NEWS	(7<<3)	/* network news subsystem */
 #define LOG_UUCP	(8<<3)	/* UUCP subsystem */
+#define LOG_CRON	(9<<3)	/* clock daemon */
 	/* other codes through 15 reserved for system use */
 #define LOG_LOCAL0	(16<<3)	/* reserved for local use */
 #define LOG_LOCAL1	(17<<3)	/* reserved for local use */
