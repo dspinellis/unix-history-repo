@@ -620,7 +620,8 @@ getaddr(which, s, hpp)
 	su->sin.sin_len = sizeof(su->sin);
 	if (hpp == 0) hpp = &hp;
 	*hpp = 0;
-	if (forcenet == 0 && (val = inet_addr(s)) != -1) {
+	if (((val = inet_addr(s)) != -1) &&
+	    (which != RTA_DST || forcenet == 0)) {
 		su->sin.sin_addr.s_addr = val;
 		if (inet_lnaof(su->sin.sin_addr) != INADDR_ANY)
 			return (1);
@@ -753,7 +754,7 @@ struct {
 rtmsg(cmd, flags)
 {
 	static int seq;
-	int len = sizeof(m_rtmsg), rlen;
+	int rlen;
 	extern int errno;
 	register char *cp = m_rtmsg.m_space;
 	register int l;
@@ -780,17 +781,17 @@ rtmsg(cmd, flags)
 	NEXTADDR(RTA_GATEWAY, so_gate);
 	NEXTADDR(RTA_NETMASK, so_mask);
 	NEXTADDR(RTA_GENMASK, so_genmask);
-	m_rtmsg.m_rtm.rtm_msglen = cp - (char *)&m_rtmsg;
+	m_rtmsg.m_rtm.rtm_msglen = l = cp - (char *)&m_rtmsg;
 	m_rtmsg.m_rtm.rtm_type = cmd;
 	if (verbose)
-		print_rtmsg(&m_rtmsg.m_rtm, len);
-	if ((rlen = write(s, (char *)&m_rtmsg, len)) < 0) {
+		print_rtmsg(&m_rtmsg.m_rtm, l);
+	if ((rlen = write(s, (char *)&m_rtmsg, l)) < 0) {
 		perror("writing to routing socket");
 		printf("got only %d for rlen\n", rlen);
 		return (-1);
 	}
 again:
-	if ((rlen = read(s, (char *)&m_rtmsg, len)) < 0) {
+	if ((rlen = read(s, (char *)&m_rtmsg, l)) < 0) {
 		perror("reading from routing socket");
 		printf("got only %d for rlen\n", rlen);
 		return (-1);
