@@ -1,7 +1,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.7 %G%";
+static char sccsid[] = "@(#)runtime.c 1.8 %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with
@@ -359,7 +359,9 @@ Boolean dumpvariables;
 	f = whatblock(frp->save_pc);
 	do {
 	    printf("%s", symname(f));
-	    printparams(f, frp);
+	    if (not isinline(f)) {
+		printparams(f, frp);
+	    }
 	    line = srcline(frp->save_pc - 1);
 	    if (line != 0) {
 		printf(", line %d", line);
@@ -371,9 +373,13 @@ Boolean dumpvariables;
 		dumpvars(f, frp);
 		putchar('\n');
 	    }
-	    frp = nextframe(frp);
-	    if (frp != nil) {
-		f = whatblock(frp->save_pc);
+	    if (isinline(f)) {
+		f = container(f);
+	    } else {
+		frp = nextframe(frp);
+		if (frp != nil) {
+		    f = whatblock(frp->save_pc);
+		}
 	    }
 	} while (frp != nil and f != program);
 	if (dumpvariables) {
