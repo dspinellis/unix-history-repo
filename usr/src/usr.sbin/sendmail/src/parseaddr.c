@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.52 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1155,11 +1155,19 @@ rewrite(pvp, ruleset, reclevel, e)
 			}
 			else
 			{
+				int ruleset;
+				STAB *s;
+
 				bcopy((char *) &npvp[2], (char *) pvp,
 					(int) (avp - npvp - 2) * sizeof *avp);
 				if (tTd(21, 3))
 					printf("-----callsubr %s\n", npvp[1]);
-				stat = rewrite(pvp, atoi(npvp[1]), reclevel, e);
+				s = stab(npvp[1], ST_RULESET, ST_FIND);
+				if (s == NULL)
+					ruleset = atoi(npvp[1]);
+				else
+					ruleset = s->s_ruleset;
+				stat = rewrite(pvp, ruleset, reclevel, e);
 				if (rstat == EX_OK || stat == EX_TEMPFAIL)
 					rstat = stat;
 				if (*pvp != NULL && (**pvp & 0377) == CANONNET)

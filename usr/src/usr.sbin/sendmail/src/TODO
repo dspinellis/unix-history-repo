@@ -1,4 +1,4 @@
-(Version 8.31 of %G%)
+(Version 8.32 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -32,8 +32,6 @@ X ****	Add uucp-bang mailer that strips off any domain name from
 
 X ****	"quote" map (inverse of dequote).  Lets you turn node::user
 	into "node::user"@DECNET.gateway
-
-X ****	Named rulesets.
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
 
