@@ -6,9 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <stdlib.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -188,8 +189,25 @@ nonl()
 void
 __startwin()
 {
+	static char *stdbuf;
+	static size_t len;
+
 	(void)fflush(stdout);
-	(void)setvbuf(stdout, NULL, _IOFBF, 0);
+
+	/*
+	 * Some C libraries default to a 1K buffer when talking to a tty.
+	 * With a larger screen, especially across a network, we'd like
+	 * to get it to all flush in a single write.  Make it twice as big
+	 * as just the characters (so that we have room for cursor motions
+	 * and standout information) but no more than 8K.
+	 */
+	if (stdbuf == NULL) {
+		if ((len = LINES * COLS * 2) > 8192)
+			len = 8192;
+		if ((stdbuf = malloc(len)) == NULL)
+			len = 0;
+	}
+	(void)setvbuf(stdout, stdbuf, _IOFBF, len);
 
 	tputs(TI, 0, __cputchar);
 	tputs(VS, 0, __cputchar);
