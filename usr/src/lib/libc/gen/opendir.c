@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)opendir.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)opendir.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -35,14 +35,14 @@ opendir(name)
 		return NULL;
 	}
 	/*
-	 * If CLSIZE is an exact multiple of DIRBLKSIZ, use a CLSIZE
+	 * If CLBYTES is an exact multiple of DIRBLKSIZ, use a CLBYTES
 	 * buffer that it cluster boundary aligned.
 	 * Hopefully this can be a big win someday by allowing page trades
 	 * to user space to be done by getdirentries()
 	 */
-	if ((CLSIZE % DIRBLKSIZ) == 0) {
-		dirp->dd_buf = malloc(CLSIZE);
-		dirp->dd_len = CLSIZE;
+	if ((CLBYTES % DIRBLKSIZ) == 0) {
+		dirp->dd_buf = malloc(CLBYTES);
+		dirp->dd_len = CLBYTES;
 	} else {
 		dirp->dd_buf = malloc(DIRBLKSIZ);
 		dirp->dd_len = DIRBLKSIZ;
