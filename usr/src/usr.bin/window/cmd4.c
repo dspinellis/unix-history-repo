@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.3 83/08/22";
+static	char *sccsid = "@(#)cmd4.c	3.4 83/11/22";
 #endif
 
 #include "defs.h"
@@ -70,5 +70,6 @@ c_colon()
 		wwdelete(cmdwin);
 	else
 		wwcurtowin(cmdwin);
-	dolongcmd(buf);
+	if (dolongcmd(buf) < 0)
+		error("Out of memory.");
 }
