@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.1 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.2 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.1 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.2 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -61,8 +61,6 @@ int	SmtpState;			/* connection state, see below */
 **		creates connection and sends initial protocol.
 */
 
-jmp_buf	CtxGreeting;
-
 smtpinit(m, pvp)
 	struct mailer *m;
 	register MCI *mci;
@@ -70,8 +68,13 @@ smtpinit(m, pvp)
 {
 	register int r;
 	EVENT *gte;
-	static int greettimeout();
 	extern STAB *stab();
+
+	if (tTd(17, 1))
+	{
+		printf("smtpinit ");
+		mci_dump(mci);
+	}
 
 	/*
 	**  Open the connection to the mailer.
@@ -79,6 +82,7 @@ smtpinit(m, pvp)
 
 	if (SmtpState == SMTP_OPEN)
 	SmtpError[0] = '\0';
+	CurHostName = mci->mci_host;		/* XXX UGLY XXX */
 	switch (mci->mci_state)
 	{
 	  case MCIS_ACTIVE:
@@ -103,7 +107,7 @@ smtpinit(m, pvp)
 	}
 	SmtpState = SMTP_OPEN;
 
-	mci->mci_phase = "user open";
+	SmtpPhase = mci->mci_phase = "user open";
 	mci->mci_state = MCIS_OPENING;
 
 	/*
@@ -112,10 +116,7 @@ smtpinit(m, pvp)
 	**	happen.
 	*/
 
-	if (setjmp(CtxGreeting) != 0)
-		goto tempfail1;
-	gte = setevent((time_t) 300, greettimeout, 0);
-	clrevent(gte);
+	r = reply(m, mci, e, (time_t) 300);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		goto tempfail1;
 
@@ -149,8 +150,10 @@ smtpinit(m, pvp)
   tempfail1:
   tempfail2:
 	mci->mci_exitstat = EX_TEMPFAIL;
-	mci->mci_errno = errno;
-	smtpquit(m, mci, e);
+	if (mci->mci_errno == 0)
+		mci->mci_errno = errno;
+	if (mci->mci_state != MCIS_CLOSED)
+		smtpquit(m, mci, e);
 	return;
 
   unavailable:
@@ -213,20 +216,14 @@ smtpmailfrom(m, mci, e)
 	mci->mci_exitstat = EX_PROTOCOL;
 	return EX_PROTOCOL;
 }
-
-
-static
-greettimeout()
-{
-	/* timeout reading the greeting message */
-	longjmp(CtxGreeting, 1);
-}
 /*
 **  SMTPRCPT -- designate recipient.
 **
 **	Parameters:
 **		to -- address of recipient.
 **		m -- the mailer we are sending to.
+**		mci -- the connection info for this transaction.
+**		e -- the envelope for this transaction.
 **
 **	Returns:
 **		exit status corresponding to recipient status.
@@ -302,9 +299,9 @@ smtpfinish(m, editfcn)
 		nmessage(Arpa_Info, ">>> .");
 
 	/* check for the results of the transaction */
-	mci->mci_phase = "result wait";
+	SmtpPhase = mci->mci_phase = "result wait";
 	setproctitle("%s %s: %s", e->e_id, CurHostName, mci->mci_phase);
-	r = reply(m, mci, e);
+	r = reply(m, mci, e, ReadTimeout);
 	if (r < 0)
 		return (EX_TEMPFAIL);
 	mci->mci_state = MCIS_OPEN;
@@ -363,7 +360,7 @@ smtprset(m, mci, e)
 	int r;
 
 	smtpmessage("RSET", m, mci);
-	r = reply(m, mci, e);
+	r = reply(m, mci, e, ReadTimeout);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return EX_TEMPFAIL;
 	else if (REPLYTYPE(r) == 2)
@@ -384,7 +381,7 @@ smtpnoop(mci)
 	ENVELOPE *e = &BlankEnvelope;
 
 	smtpmessage("NOOP", m, mci);
-	r = reply(m, mci, e);
+	r = reply(m, mci, e, ReadTimeout);
 	if (REPLYTYPE(r) != 2)
 		smtpquit(m, mci, e);
 	return r;
@@ -394,6 +391,9 @@ smtpnoop(mci)
 **
 **	Parameters:
 **		m -- the mailer we are reading the reply from.
+**		mci -- the mailer connection info structure.
+**		e -- the current envelope.
+**		timeout -- the timeout for reads.
 **
 **	Returns:
 **		reply code it reads.
@@ -445,6 +445,7 @@ reply(m)
 				errno = EPIPE;
 # endif /* ECONNRESET */
 
+			mci->mci_errno = errno;
 			message(Arpa_TSyserr, "reply: read error from %s",
 				mci->mci_host);
 			/* if debugging, pause so we can see state */
