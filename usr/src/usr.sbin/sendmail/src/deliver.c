@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.56	%G%";
+static char SccsId[] = "@(#)deliver.c	3.57	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -815,11 +815,21 @@ putmessage(fp, m, xdot)
 
 	/*
 	**  Output "From" line unless supressed
+	**
+	**  >>>>>>>>>>	One of the ugliest hacks seen by human eyes is
+	**  >>>>>>>>>>	contained herein: UUCP wants those stupid
+	**  >> NOTE >>	"remote from <host>" lines.  Why oh why does a
+	**  >>>>>>>>>>	well-meaning programmer such as myself have to
+	**  >>>>>>>>>>	deal with this kind of antique garbage????
 	*/
 
 	if (!bitset(M_NHDR, m->m_flags))
 	{
-		(void) expand("$l", buf, &buf[sizeof buf - 1]);
+		if (strcmp(m->m_name, "uucp") == 0)
+			(void) expand("From $f  $d remote from $h", buf,
+					&buf[sizeof buf - 1]);
+		else
+			(void) expand("$l", buf, &buf[sizeof buf - 1]);
 		fprintf(fp, "%s\n", buf);
 	}
 
