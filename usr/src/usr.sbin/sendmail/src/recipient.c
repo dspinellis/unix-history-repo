@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -356,7 +356,7 @@ recipient(a, sendq, e)
 			{
 #ifdef LOG
 				if (LogLevel > 2)
-					syslog(LOG_ERR, "%s: include %s: transient error: %e",
+					syslog(LOG_ERR, "%s: include %s: transient error: %s",
 						e->e_id, a->q_user, errstring(ret));
 #endif
 				a->q_flags |= QQUEUEUP;
