@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_sig.c	7.3 (Berkeley) %G%
+ *	@(#)hpux_sig.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "hpux.h"
@@ -68,7 +68,7 @@ hpuxsigvec(p, uap, retval)
 
 	sig = hpuxtobsdsig(uap->signo);
 	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP)
-		RETURN (EINVAL);
+		return (EINVAL);
 	sv = &vec;
 	if (uap->osv) {
 		sv->sv_handler = u.u_signal[sig];
@@ -86,14 +86,14 @@ hpuxsigvec(p, uap, retval)
 #endif
 		error = copyout((caddr_t)sv, (caddr_t)uap->osv, sizeof (vec));
 		if (error)
-			RETURN (error);
+			return (error);
 	}
 	if (uap->nsv) {
 		error = copyin((caddr_t)uap->nsv, (caddr_t)sv, sizeof (vec));
 		if (error)
-			RETURN (error);
+			return (error);
 		if (sig == SIGCONT && sv->sv_handler == SIG_IGN)
-			RETURN (EINVAL);
+			return (EINVAL);
 		setsigvec(p, sig, (struct sigaction *)sv);
 #if 0
 /* XXX -- SOUSIG no longer exists, do something here */
@@ -101,7 +101,7 @@ hpuxsigvec(p, uap, retval)
 			p->p_flag |= SOUSIG;		/* XXX */
 #endif
 	}
-	RETURN (0);
+	return (0);
 }
 
 hpuxsigblock(p, uap, retval)
@@ -116,7 +116,7 @@ hpuxsigblock(p, uap, retval)
 	*retval = bsdtohpuxmask(p->p_sigmask);
 	p->p_sigmask |= hpuxtobsdmask(uap->mask) &~ sigcantmask;
 	(void) spl0();
-	RETURN (0);
+	return (0);
 }
 
 hpuxsigsetmask(p, uap, retval)
@@ -131,7 +131,7 @@ hpuxsigsetmask(p, uap, retval)
 	*retval = bsdtohpuxmask(p->p_sigmask);
 	p->p_sigmask = hpuxtobsdmask(uap->mask) &~ sigcantmask;
 	(void) spl0();
-	RETURN (0);
+	return (0);
 }
 
 hpuxsigpause(p, uap, retval)
@@ -143,7 +143,7 @@ hpuxsigpause(p, uap, retval)
 {
 
 	uap->mask = hpuxtobsdmask(uap->mask);
-	RETURN (sigsuspend(p, uap, retval));
+	return (sigsuspend(p, uap, retval));
 }
 
 /* not totally correct, but close enuf' */
@@ -161,7 +161,7 @@ hpuxkill(p, uap, retval)
 		if (uap->signo == 0)
 			uap->signo = NSIG;
 	}
-	RETURN (kill(p, uap, retval));
+	return (kill(p, uap, retval));
 }
 
 ohpuxssig(p, uap, retval)
@@ -186,11 +186,11 @@ ohpuxssig(p, uap, retval)
 	    (sv->sv_handler != SIG_DFL && sv->sv_handler != SIG_IGN &&
 	     ((int)sv->sv_handler) & 1)) {
 		psignal(p, SIGSYS);
-		RETURN (0);
+		return (0);
 	}
 	if (a <= 0 || a >= NSIG || a == SIGKILL || a == SIGSTOP ||
 	    a == SIGCONT && sv->sv_handler == SIG_IGN)
-		RETURN (EINVAL);
+		return (EINVAL);
 	sv->sv_mask = 0;
 	sv->sv_flags = SV_INTERRUPT;
 	*retval = (int)u.u_signal[a];
@@ -198,7 +198,7 @@ ohpuxssig(p, uap, retval)
 #if 0
 	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */
 #endif
-	RETURN (0);
+	return (0);
 }
 
 /* signal numbers: convert from HPUX to BSD */
