@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.24 (Berkeley) %G%
+ *	@(#)inode.h	7.25 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -43,8 +43,8 @@ struct inode {
 #define	i_fs	inode_u.fs
 #define	i_lfs	inode_u.lfs
 	struct	dquot *i_dquot[MAXQUOTAS]; /* pointer to dquot structures */
-	struct	lockf *i_lockf;	/* head of byte-level lock list */
 	u_quad_t i_modrev;	/* revision level for lease */
+	struct	lockf *i_lockf;	/* head of byte-level lock list */
 	pid_t	i_lockholder;	/* DEBUG: holder of inode lock */
 	pid_t	i_lockwaiter;	/* DEBUG: latest blocked for inode lock */
 	/*
