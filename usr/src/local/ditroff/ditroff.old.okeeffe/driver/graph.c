@@ -230,8 +230,10 @@ int pic;
     npts--;	/* npts must point to the last coordinate in x and y */
 				/* now, actually DO the curve */
     if (output) {
-	if (pic)
+	if (pic > 0)
 	    picurve(x, y, npts);
+	else if (pic < 0)
+	    polygon(x, y, npts);
 	else
 	    HGCurve(x, y, npts);
     }
@@ -349,11 +351,10 @@ int y1;
 {
     register int dx;
     register int dy;
-    register int res1;
-    int res2;
+    register int res;
+    register int slope;
     int xinc;
     int yinc;
-    int slope;
 
     xinc = 1;
     yinc = 1;
@@ -366,30 +367,29 @@ int y1;
         dy = -dy;
     }
     slope = xinc*yinc;
-    res1 = 0;
-    res2 = 0;
-    if (dx >= dy) 
+    if (dx >= dy) {
+	res = (dy >> 1) - (dx >> 1);
         while (x0 != x1) {
-            if((x0+slope*y0)&linmod) point(x0, y0);
-            if (res1 > res2) {
-                res2 += dx - res1;
-                res1 = 0;
+            if ((x0+slope*y0)&linmod) point(x0, y0);
+            if (res >= 0) {
+                res -= dx;
                 y0 += yinc;
             }
-            res1 += dy;
+            res += dy;
             x0 += xinc;
         } 
-    else 
+    } else {
+	res = (dx >> 1) - (dy >> 1);
         while (y0 != y1) {
-            if((x0+slope*y0)&linmod) point(x0, y0);
-            if (res1 > res2) {
-                res2 += dy - res1;
-                res1 = 0;
+            if ((x0+slope*y0)&linmod) point(x0, y0);
+            if (res >= 0) {
+                res -= dy;
                 x0 += xinc;
             }
-            res1 += dx;
+            res += dx;
             y0 += yinc;
         }
+    }
     if((x1+slope*y1)&linmod) point(x1, y1);
 }
 
@@ -778,10 +778,10 @@ int y1;
 		theta =  pi / 2.0 - atan( ((double) dx)/((double) dy) );
 		wx = j * sin(theta);
 		wy = j * cos(theta);
-		xs = x0 + wx * xdir;
-		ys = y0 - wy * ydir;
-		xe = x1 + wx * xdir;
-		ye = y1 - wy * ydir;
+		xs = x0 + (int) (wx * xdir + 0.4);
+		ys = y0 - (int) (wy * ydir + 0.4);
+		xe = x1 + (int) (wx * xdir + 0.4);
+		ye = y1 - (int) (wy * ydir + 0.4);
 	    }
 	    line(xs, ys, xe, ye);
         }  /* end for */
