@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tmps.c 1.9.1.1 %G%";
+static char sccsid[] = "@(#)tmps.c 1.13 %G%";
 #endif
 
 #include "whoami.h"
@@ -101,7 +101,6 @@ tmpalloc(size, type, mode)
 			if (offset < op->low_water[REG_GENERAL]) {
 				op->low_water[REG_GENERAL] = offset;
 			}
-			nlp = defnl(0, VAR, type, offset );
 			nlp -> extra_flags = NLOCAL | NREGVAR;
 			putlbracket(ftnno, op);
 			return nlp;
