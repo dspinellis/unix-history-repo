@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.1	%G%
+#	Termcap source file @(#)termcap.src	1.2	%G%
 #	Mark Horton, U.C. Berkeley
 #
 # This file describes capabilities of various terminals, as needed by
@@ -491,14 +491,38 @@ Ms|swtp|ct82|southwest technical products ct82:\
 	:is=^\^r^^^s^^^d^]^w^i^s^^^]^^^o^]^w^r^i:
 Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
-Mu|sun|sun microsystems inc workstation:\
-	:am:bs:cl=^L:li#34:co#80:\
-	:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:ce=\E[K:cd=\E[J:vs=\E[r:ve=\E[3r:\
+# SUN MicroSystems Inc.
+# the vs/ve and MT termcap capabilities do not work very well
+# on the sun.  Right now, the first entry works best.
+Mu|sun|SUN microsystems inc:\
+	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:am:bs:mi:ms:pt:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:pt:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:mi:dc=\E[P:ms:\
-	:so=\E[7m:se=\E[m:
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
+#what does the :MT: do?  Taking it out seems to have fixed the sun entry.
+Mu|origsun|sun:\
+	:am:bs:mi:MT:ms:pt:\
+	:li#34:co#80:\
+	:cl=^L:\
+        :cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+        :ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+        :kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
+#the following entry uses vs/ve very unsuccessfully.
+Mu|badsun|sun:\
+	:am:bs:mi:ms:pt:\
+	:li#34:co#80:\
+	:cl=^L:\
+        :cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+        :ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+        :kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
+	:vs=\E[r:ve=\E[3r:
+#end SUN
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -1150,13 +1174,12 @@ bs|sb1|superbee|superb|beehive super bee:\
 #	1/2 bright on, goto(line#0, col#?)
 # fs - from status line - 1/2 bright off, select window 0
 # ds - disable status display - set bkgnd status mesg with illegal window #
-
-
 c8|c108|c108-8p|concept108-8p|concept 108 w/8 pages:\
 	:i2=\EU\E z"\Ev^A\177 !p\E ;"\E z \Ev  ^A\177p\Ep\n:\
 	:te=\Ev  ^A\177p\Ep\r\n:tc=c108-4p:
 cS|c108|c108-4p|concept108-4p|concept 108 w/4 pages:\
-	:es:hs:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :ds=\E ;\177:\
+	:es:hs:\
+	:ts=\E z"\E?\E^C\Ea %+ :fs=\E z :ds=\E ;\177:\
 	:i2=\EU\E z"\Ev\177 !p\E ;"\E z \Ev  \177p\Ep\n:\
 	:do=^J:bl=^G:pt:\
 	:is=\EU\E F\Ef\E7\E5\E8\El\ENH\EK\E\200\Eo&\200\Eo\47\E\E!\E^G!\E^HA@ :\
@@ -1171,14 +1194,17 @@ cS|c108|c108-4p|concept108-4p|concept 108 w/4 pages:\
 cR|c108-rv-8p|concept108-rv-8p|concept 108 w/8 pages, in reverse video:\
 	:vb=\EK\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ek:\
 	:is=\EU\E F\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200\Eo\47\E\E!\E^G!\E^HA@ :\
+	:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :\
 	:tc=c108-8p:
 cT|c108-rv-4p|concept108-rv-4p|concept 108 w/4 pages, in reverse video:\
 	:vb=\EK\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ek:\
 	:is=\EU\E F\Ef\E7\E5\E8\El\ENH\Ek\E\200\Eo&\200\Eo\47\E\E!\E^G!\E^HA@ :\
+	:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :\
 	:tc=c108-4p:
 ca|c108-na|c108-na-8p|concept108-na-8p|concept 108 w/8 pages, no arrows:\
 	:ks@:ke@:k7=\E;:k8=\E<:k9=\E=:tc=c108-8p
 cA|c108-rv-na|c108-rv-na-8p|concept 108 w/8 pages, no arrows in rev video:\
+	:ts=\E z"\E?\E^C\EE\Ea %+ :fs=\Ee\E z :\
 	:ks@:ke@:k7=\E;:k8=\E<:k9=\E=:tc=c108-rv8p
 # this needs new frotz in the cm capability for 2-char addrs when > 95....
 cw|c108-w|c108-w-8p|concept108-w-8p|concept 108 w/8 pages in wide mode:\
