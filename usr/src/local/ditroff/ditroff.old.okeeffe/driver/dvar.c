@@ -1,4 +1,4 @@
-/*	dvar.c	1.6	83/10/06
+/*	dvar.c	1.7	83/10/22
  *
  * Varian driver for the new troff
  *
@@ -78,7 +78,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dvar.c	1.6	83/10/06";
+char	SccsId[]= "dvar.c	1.7	83/10/22";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -136,8 +136,13 @@ int	lastw;		/* width of last character printed */
 
 int	pltmode[] = { VPLOT };
 int	prtmode[] = { VPRINT };
-char	buffer[BUFFER_SIZE];	/* Big line buffers  */
-char *	buf0p = &buffer[0];	/* Zero origin in circular buffer  */
+char	buffer1[BUFFER_SIZE];	/* Big line buffers  */
+char	buffer2[BUFFER_SIZE];
+char *	fill = &buffer1[0];	/* Zero origin in filling buffer */
+char *	empty = &buffer2[0];	/* Zero origin in emptying buffer */
+char *	elevel = &buffer2[0];	/* current position in emptying buffer */
+int	emptypos = NLINES;	/* amount of emptying done (initially "done") */
+
 
 char *	calloc();
 char *	nalloc();
@@ -163,14 +168,11 @@ struct	dispatch{
 };
 
 struct	fontdes {
-	int	fnum;
+	int	fnum;		/* if == -1, then this position is empty */
 	int	psize;
 	struct	dispatch *disp;
 	char	*bits;
-} fontdes[NFONTS] = {
-	-1,
-	-1
-};
+} fontdes[NFONTS+1];		/* initialized at program start */
 
 struct dispatch *dispatch;
 int	cfnum = -1;
@@ -186,8 +188,10 @@ int	npsize = 10;
 main(argc, argv)
 char *argv[];
 {
-	FILE *fp;
+	register FILE *fp;
+	register int i;
 
+	for (i = 0; i <= NFONTS; fontdes[i++].fnum = -1);
 	while (--argc > 0 && **++argv == '-') {
 		switch ((*argv)[1]) {
 		case 'F':
@@ -422,6 +426,17 @@ register FILE *fp;
 		default:
 			error(FATAL, "unknown input character %o %c", c, c);
 		}
+		if (emptypos < NLINES) {	/* for each input operation */
+			slop_lines(1);		/* put out an output line */
+#ifdef DRIVER
+			if (emptypos == NLINES) {
+				ioctl(OUTFILE, VSETSTATE, prtmode);
+				if (write(OUTFILE, "\f", 2) != 2)
+					exit(RESTART);
+				ioctl(OUTFILE, VSETSTATE, pltmode);
+			}
+#endif
+		}
 	}
 }
 
@@ -517,7 +532,7 @@ fileinit()
 	}
 #endif
 
-	sprintf(temp, "%s/devvar/DESC.out", fontdir);
+	sprintf(temp, "%s/devva/DESC.out", fontdir);
 	if ((fin = open(temp, 0)) < 0)
 		error(FATAL, "can't open tables for %s", temp);
 	read(fin, &dev, sizeof(struct dev));
@@ -594,7 +609,7 @@ char *s, *s1;
 	if (strcmp(s, fontbase[n]->namefont) == 0)
 		return;
 	if (s1 == NULL || s1[0] == '\0')
-		sprintf(temp, "%s/devvar/%s.out", fontdir, s);
+		sprintf(temp, "%s/devva/%s.out", fontdir, s);
 	else
 		sprintf(temp, "%s/%s.out", s1, s);
 	if ((fin = open(temp, 0)) < 0)
@@ -676,18 +691,20 @@ t_page(n)	/* do whatever new page functions */
 	int i;
 
 
-	if (output) {
-		if (++scount >= spage) {
-			t_reset('p');
-			scount = 0;
-		}
-		slop_lines(NLINES);
+	if (emptypos < NLINES) {		/* finish off last page, if */
+		slop_lines(NLINES - emptypos);	/* it's not done yet */
 #ifdef DRIVER
 		ioctl(OUTFILE, VSETSTATE, prtmode);
 		if (write(OUTFILE, "\f", 2) != 2)
 			exit(RESTART);
 		ioctl(OUTFILE, VSETSTATE, pltmode);
 #endif
+	}
+	if (output) {
+		emptypos = 0;		/* set emptying to be started */
+		elevel = fill;		/* swap buffer pointers */
+		fill = empty;
+		empty = elevel;
 	}
 
 	vpos = 0;
@@ -780,21 +797,18 @@ char *s;
 	}
 }
 
+
 t_reset(c)
 {	
-	output = 1;
-	switch(c){
-	case 'p':
-		slop_lines(NLINES);
-		break;
-	case 's':
-		slop_lines(NLINES);
+	if (c == 's') {
+		t_page();
+		output = 0;
+		t_page();
 #ifdef DRIVER
 		ioctl(OUTFILE, VSETSTATE, prtmode);
 		if (write(OUTFILE, "\f", 2) != 2)
 			exit(RESTART);
 #endif
-		break; /* no Return */
 	}
 }
 
@@ -940,10 +954,9 @@ char *s, *si;
 		}
 	}
 	fontname[n] = s;
-	for(i = 0;i < NFONTS;i++)	/* free the bits of that font */
+	for(i = 0;i <= NFONTS;i++)	/* free the bits of that font */
 		if (fontdes[i].fnum == n){
 			nfree(fontdes[i].bits);
-			fontdes[i].bits = 0;
 			fontdes[i].fnum = -1;
 		}
 }
@@ -1075,11 +1088,10 @@ relfont()
     register int newfont;
 
     for (newfont = 0; newfont < NFONTS; newfont++)
-	if (fontdes [newfont].bits == (char *) -1  ||  !fontdes [newfont].bits)
+	if (fontdes [newfont].fnum == -1)
 	    break;
-    if (fontdes [newfont].bits != (char *) -1  &&  fontdes [newfont].bits) {
+    if (fontdes [newfont].fnum != -1) {
 	nfree (fontdes [newfont].bits);
-	fontdes [newfont].bits = (char *)0;
 #ifdef DEBUGABLE
 	if (dbg) fprintf (stderr, "freeing position %d\n", newfont);
     } else {
@@ -1087,7 +1099,7 @@ relfont()
 	    fprintf (stderr, "taking, not freeing, position %d\n", newfont);
 #endif
     }
-    fontdes[newfont].bits = 0;
+    fontdes[newfont].fnum = -1;
     return (newfont);
 }
 
@@ -1096,12 +1108,9 @@ int nbytes;
 {
 	register int i;
 
-	for (i = 0; i <= NFONTS; i++)
-	    if (fontdes[i].bits != (char *)-1 && fontdes[i].bits != (char *)0)
-		nfree(fontdes[i].bits);
 	for (i = 0; i <= NFONTS; i++) {
-		fontdes[i].fnum = fontdes[i].psize = -1;
-		fontdes[i].bits = 0;
+		if (fontdes[i].fnum != -1) nfree(fontdes[i].bits);
+		fontdes[i].fnum = -1;
 		cfnum = cpsize = -1;
 	}
 	return(nalloc(nbytes,1));
@@ -1135,18 +1144,18 @@ int code;		/* character to print */
 	addr = bits + dis->addr;
 	llen = (dis->up + dis->down + 7) >> 3;
 	nlines = dis->right + dis->left;
-	scanp = buf0p + (hpos - dis->left) * BYTES_PER_LINE
-			- (1 + ((dis->down + vpos) >> 3));
-	if (scanp < &buffer[0])
-	    scanp += sizeof buffer;
+	scanp = fill + (hpos + 1 - dis->left) * BYTES_PER_LINE
+			- (1 + ((dis->down + vpos - 1) >> 3));
+	if (scanp < fill)
+	    scanp += BUFFER_SIZE;
 	scanp_inc = BYTES_PER_LINE - llen;
-	off8 = ((dis->down + vpos) &07);
+	off8 = ((dis->down + vpos - 1) &07);
 	offset = off8 - 8;
 	for (i = 0; i < nlines; i++) {
-	    if (scanp >= &buffer[BUFFER_SIZE])
+	    if (scanp >= fill + BUFFER_SIZE)
 		scanp -= BUFFER_SIZE;
 	    count = llen;
-	    if (scanp + count < &buffer[BUFFER_SIZE]) {
+	    if (scanp + count < fill + BUFFER_SIZE) {
 		do {
 		    fontdata = *(unsigned *)addr;
 		    addr += 4;
@@ -1171,17 +1180,16 @@ slop_lines(nlines)
 int nlines;
 
 /* Output "nlines" lines from the buffer, and clear that section of the  */
-/* buffer.	*/
+/* buffer.	Also updates the pointers to the emptying buffer */
 
 {
 	unsigned usize;
 
 	usize = BYTES_PER_LINE * nlines;
-	vwrite(buf0p, usize);
-	vclear(buf0p, usize);
-#ifdef DRIVER
-	ioctl(OUTFILE, VSETSTATE, pltmode);
-#endif
+	vwrite(elevel, usize);
+	vclear(elevel, usize);
+	elevel += usize;
+	emptypos += nlines;
 }
 
 vwrite(buf,usize)
@@ -1266,6 +1274,6 @@ register int x;
 register int y;
 {
     if ((unsigned)(y=RASTER_LENGTH-y) < RASTER_LENGTH && (unsigned)x < NLINES) {
-	buffer [x * BYTES_PER_LINE + (y >> 3)] |= 1 << (7 - (y & 07));
+	*(fill + x * BYTES_PER_LINE + (y >> 3)) |= 1 << (7 - (y & 07));
     }
 }
