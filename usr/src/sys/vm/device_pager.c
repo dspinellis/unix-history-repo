@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	8.3 (Berkeley) %G%
+ *	@(#)device_pager.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -27,8 +27,8 @@
 #include <vm/vm_page.h>
 #include <vm/device_pager.h>
 
-queue_head_t	dev_pager_list;		/* list of managed devices */
-queue_head_t	dev_pager_fakelist;	/* list of available vm_page_t's */
+struct pagerlst	dev_pager_list;		/* list of managed devices */
+struct pglist	dev_pager_fakelist;	/* list of available vm_page_t's */
 
 #ifdef DEBUG
 int	dpagerdebug = 0;
@@ -66,8 +66,8 @@ dev_pager_init()
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_init()\n");
 #endif
-	queue_init(&dev_pager_list);
-	queue_init(&dev_pager_fakelist);
+	TAILQ_INIT(&dev_pager_list);
+	TAILQ_INIT(&dev_pager_fakelist);
 }
 
 static vm_pager_t
@@ -143,7 +143,7 @@ top:
 		pager->pg_ops = &devicepagerops;
 		pager->pg_type = PG_DEVICE;
 		pager->pg_data = devp;
-		queue_init(&devp->devp_pglist);
+		TAILQ_INIT(&devp->devp_pglist);
 		/*
 		 * Allocate object and associate it with the pager.
 		 */
@@ -161,7 +161,7 @@ top:
 			free((caddr_t)pager, M_VMPAGER);
 			goto top;
 		}
-		queue_enter(&dev_pager_list, pager, vm_pager_t, pg_list);
+		TAILQ_INSERT_TAIL(&dev_pager_list, pager, pg_list);
 #ifdef DEBUG
 		if (dpagerdebug & DDB_ALLOC) {
 			printf("dev_pager_alloc: pager %x devp %x object %x\n",
@@ -196,7 +196,7 @@ dev_pager_dealloc(pager)
 	if (dpagerdebug & DDB_FOLLOW)
 		printf("dev_pager_dealloc(%x)\n", pager);
 #endif
-	queue_remove(&dev_pager_list, pager, vm_pager_t, pg_list);
+	TAILQ_REMOVE(&dev_pager_list, pager, pg_list);
 	/*
 	 * Get the object.
 	 * Note: cannot use vm_object_lookup since object has already
@@ -211,8 +211,8 @@ dev_pager_dealloc(pager)
 	/*
 	 * Free up our fake pages.
 	 */
-	while (!queue_empty(&devp->devp_pglist)) {
-		queue_remove_first(&devp->devp_pglist, m, vm_page_t, pageq);
+	while ((m = devp->devp_pglist.tqh_first) != NULL) {
+		TAILQ_REMOVE(&devp->devp_pglist, m, pageq);
 		dev_pager_putfake(m);
 	}
 	free((caddr_t)devp, M_VMPGDATA);
@@ -255,8 +255,8 @@ dev_pager_getpage(pager, m, sync)
 	 * up the original.
 	 */
 	page = dev_pager_getfake(paddr);
-	queue_enter(&((dev_pager_t)pager->pg_data)->devp_pglist,
-		    page, vm_page_t, pageq);
+	TAILQ_INSERT_TAIL(&((dev_pager_t)pager->pg_data)->devp_pglist, page,
+	    pageq);
 	vm_object_lock(object);
 	vm_page_lock_queues();
 	vm_page_free(m);
@@ -304,14 +304,15 @@ dev_pager_getfake(paddr)
 	vm_page_t m;
 	int i;
 
-	if (queue_empty(&dev_pager_fakelist)) {
+	if (dev_pager_fakelist.tqh_first == NULL) {
 		m = (vm_page_t)malloc(PAGE_SIZE, M_VMPGDATA, M_WAITOK);
 		for (i = PAGE_SIZE / sizeof(*m); i > 0; i--) {
-			queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
+			TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
 			m++;
 		}
 	}
-	queue_remove_first(&dev_pager_fakelist, m, vm_page_t, pageq);
+	m = dev_pager_fakelist.tqh_first;
+	TAILQ_REMOVE(&dev_pager_fakelist, m, pageq);
 	m->flags = PG_BUSY | PG_CLEAN | PG_FAKE | PG_FICTITIOUS;
 	m->phys_addr = paddr;
 	m->wire_count = 1;
@@ -326,5 +327,5 @@ dev_pager_putfake(m)
 	if (!(m->flags & PG_FICTITIOUS))
 		panic("dev_pager_putfake: bad page");
 #endif
-	queue_enter(&dev_pager_fakelist, m, vm_page_t, pageq);
+	TAILQ_INSERT_TAIL(&dev_pager_fakelist, m, pageq);
 }

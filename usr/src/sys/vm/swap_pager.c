@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.4 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -54,13 +54,15 @@ int	swpagerdebug = 0x100;
 #define SDB_ANOMPANIC	0x200
 #endif
 
+TAILQ_HEAD(swpclean, swpagerclean);
+
 struct swpagerclean {
-	queue_head_t		spc_list;
-	int			spc_flags;
-	struct buf		*spc_bp;
-	sw_pager_t		spc_swp;
-	vm_offset_t		spc_kva;
-	vm_page_t		spc_m;
+	TAILQ_ENTRY(swpagerclean)	spc_list;
+	int				spc_flags;
+	struct buf			*spc_bp;
+	sw_pager_t			spc_swp;
+	vm_offset_t			spc_kva;
+	vm_page_t			spc_m;
 } swcleanlist[NPENDINGIO];
 typedef struct swpagerclean *swp_clean_t;
 
@@ -87,9 +89,9 @@ int		swap_pager_poip;	/* pageouts in progress */
 int		swap_pager_piip;	/* pageins in progress */
 #endif
 
-queue_head_t	swap_pager_inuse;	/* list of pending page cleans */
-queue_head_t	swap_pager_free;	/* list of free pager clean structs */
-queue_head_t	swap_pager_list;	/* list of "named" anon regions */
+struct swpclean	swap_pager_inuse;	/* list of pending page cleans */
+struct swpclean	swap_pager_free;	/* list of free pager clean structs */
+struct pagerlst	swap_pager_list;	/* list of "named" anon regions */
 
 static int		swap_pager_finish __P((swp_clean_t));
 static void 		swap_pager_init __P((void));
@@ -127,15 +129,15 @@ swap_pager_init()
 		printf("swpg_init()\n");
 #endif
 	dfltpagerops = &swappagerops;
-	queue_init(&swap_pager_list);
+	TAILQ_INIT(&swap_pager_list);
 
 	/*
 	 * Initialize clean lists
 	 */
-	queue_init(&swap_pager_inuse);
-	queue_init(&swap_pager_free);
+	TAILQ_INIT(&swap_pager_inuse);
+	TAILQ_INIT(&swap_pager_free);
 	for (i = 0, spc = swcleanlist; i < NPENDINGIO; i++, spc++) {
-		queue_enter(&swap_pager_free, spc, swp_clean_t, spc_list);
+		TAILQ_INSERT_TAIL(&swap_pager_free, spc, spc_list);
 		spc->spc_flags = SPC_FREE;
 	}
 
@@ -262,7 +264,7 @@ swap_pager_alloc(handle, size, prot, foff)
 		vm_object_t object;
 
 		swp->sw_flags = SW_NAMED;
-		queue_enter(&swap_pager_list, pager, vm_pager_t, pg_list);
+		TAILQ_INSERT_TAIL(&swap_pager_list, pager, pg_list);
 		/*
 		 * Consistant with other pagers: return with object
 		 * referenced.  Can't do this with handle == NULL
@@ -273,7 +275,8 @@ swap_pager_alloc(handle, size, prot, foff)
 		vm_object_setpager(object, pager, 0, FALSE);
 	} else {
 		swp->sw_flags = 0;
-		queue_init(&pager->pg_list);
+		pager->pg_list.tqe_next = NULL;
+		pager->pg_list.tqe_prev = NULL;
 	}
 	pager->pg_handle = handle;
 	pager->pg_ops = &swappagerops;
@@ -311,7 +314,7 @@ swap_pager_dealloc(pager)
 	 */
 	swp = (sw_pager_t) pager->pg_data;
 	if (swp->sw_flags & SW_NAMED) {
-		queue_remove(&swap_pager_list, pager, vm_pager_t, pg_list);
+		TAILQ_REMOVE(&swap_pager_list, pager, pg_list);
 		swp->sw_flags &= ~SW_NAMED;
 	}
 #ifdef DEBUG
@@ -505,10 +508,10 @@ swap_pager_io(swp, m, flags)
 	 * are available, we try again later.
 	 */
 	else if (swap_pager_clean(m, B_WRITE) ||
-		 queue_empty(&swap_pager_free)) {
+		 swap_pager_free.tqh_first == NULL) {
 #ifdef DEBUG
 		if ((swpagerdebug & SDB_ANOM) &&
-		    !queue_empty(&swap_pager_free))
+		    swap_pager_free.tqh_first != NULL)
 			printf("swap_pager_io: page %x already cleaning\n", m);
 #endif
 		return(VM_PAGER_FAIL);
@@ -577,11 +580,11 @@ swap_pager_io(swp, m, flags)
 	 */
 	if ((flags & (B_READ|B_ASYNC)) == B_ASYNC) {
 #ifdef DEBUG
-		if (queue_empty(&swap_pager_free))
+		if (swap_pager_free.tqh_first == NULL)
 			panic("swpg_io: lost spc");
 #endif
-		queue_remove_first(&swap_pager_free,
-				   spc, swp_clean_t, spc_list);
+		spc = swap_pager_free.tqh_first;
+		TAILQ_REMOVE(&swap_pager_free, spc, spc_list);
 #ifdef DEBUG
 		if (spc->spc_flags != SPC_FREE)
 			panic("swpg_io: bad free spc");
@@ -595,7 +598,7 @@ swap_pager_io(swp, m, flags)
 		bp->b_iodone = swap_pager_iodone;
 		s = splbio();
 		swp->sw_poip++;
-		queue_enter(&swap_pager_inuse, spc, swp_clean_t, spc_list);
+		TAILQ_INSERT_TAIL(&swap_pager_inuse, spc, spc_list);
 
 #ifdef DEBUG
 		swap_pager_poip++;
@@ -687,12 +690,12 @@ swap_pager_clean(m, rw)
 		 * at splbio() to avoid conflicts with swap_pager_iodone.
 		 */
 		s = splbio();
-		spc = (swp_clean_t) queue_first(&swap_pager_inuse);
-		while (!queue_end(&swap_pager_inuse, (queue_entry_t)spc)) {
+		for (spc = swap_pager_inuse.tqh_first;
+		     spc != NULL;
+		     spc = spc->spc_list.tqe_next) {
 			if ((spc->spc_flags & SPC_DONE) &&
 			    swap_pager_finish(spc)) {
-				queue_remove(&swap_pager_inuse, spc,
-					     swp_clean_t, spc_list);
+				TAILQ_REMOVE(&swap_pager_inuse, spc, spc_list);
 				break;
 			}
 			if (m && m == spc->spc_m) {
@@ -703,13 +706,12 @@ swap_pager_clean(m, rw)
 #endif
 				tspc = spc;
 			}
-			spc = (swp_clean_t) queue_next(&spc->spc_list);
 		}
 
 		/*
 		 * No operations done, thats all we can do for now.
 		 */
-		if (queue_end(&swap_pager_inuse, (queue_entry_t)spc))
+		if (spc == NULL)
 			break;
 		splx(s);
 
@@ -727,7 +729,7 @@ swap_pager_clean(m, rw)
 		}
 		spc->spc_flags = SPC_FREE;
 		vm_pager_unmap_page(spc->spc_kva);
-		queue_enter(&swap_pager_free, spc, swp_clean_t, spc_list);
+		TAILQ_INSERT_TAIL(&swap_pager_free, spc, spc_list);
 #ifdef DEBUG
 		if (swpagerdebug & SDB_WRITE)
 			printf("swpg_clean: free spc %x\n", spc);
@@ -831,14 +833,13 @@ swap_pager_iodone(bp)
 		printf("swpg_iodone(%x)\n", bp);
 #endif
 	s = splbio();
-	spc = (swp_clean_t) queue_first(&swap_pager_inuse);
-	while (!queue_end(&swap_pager_inuse, (queue_entry_t)spc)) {
+	for (spc = swap_pager_inuse.tqh_first;
+	     spc != NULL;
+	     spc = spc->spc_list.tqe_next)
 		if (spc->spc_bp == bp)
 			break;
-		spc = (swp_clean_t) queue_next(&spc->spc_list);
-	}
 #ifdef DEBUG
-	if (queue_end(&swap_pager_inuse, (queue_entry_t)spc))
+	if (spc == NULL)
 		panic("swap_pager_iodone: bp not found");
 #endif
 
