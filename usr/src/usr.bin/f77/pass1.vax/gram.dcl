@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.dcl	5.2 (Berkeley) %G%
+ *	@(#)gram.dcl	5.3 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,17 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.dcl,v $
+ * Revision 5.7  85/12/21  07:29:08  donn
+ * Rule out CHARACTER*(*) declarations in main programs.
+ * 
+ * Revision 5.6  85/12/18  20:10:26  donn
+ * Enforce more strict ordering of specification statements. per the
+ * standard.  Some duplicated code is now concentrated in the nonterminal
+ * 'inside', which is used to indicate the start of a program.
+ * 
+ * Revision 5.5  85/11/25  00:23:59  donn
+ * 4.3 beta
+ * 
  * Revision 5.4  85/08/20  23:37:33  donn
  * Fix from Jerry Berkman to prevent length problems with -r8.
  * 
@@ -46,20 +57,12 @@ spec:	  dcl
 		  saveall = YES; }
 	| SSAVE in_dcl savelist
 		{ NO66("SAVE statement"); }
-	| SFORMAT
+	| SFORMAT inside
 		{
-		if (parstate == OUTSIDE)
-			{
-			newproc();
-			startproc(PNULL, CLMAIN);
-			parstate = INSIDE;
-			}
-		if (parstate < INDCL)
-			parstate = INDCL;
 		fmtstmt(thislabel);
 		setfmt(thislabel);
 		}
-	| SPARAM in_dcl SLPAR paramlist SRPAR
+	| SPARAM in_param SLPAR paramlist SRPAR
 		{ NO66("PARAMETER statement"); }
 	;
 
@@ -108,7 +111,7 @@ lengspec:
 		if( ! ISICON(p) || p->constblock.const.ci<0 )
 			{
 			$$ = 0;
-			dclerr("- length must be a positive integer value",
+			dclerr("length must be a positive integer value",
 				PNULL);
 			}
 		else if( dblflag )
@@ -122,7 +125,22 @@ lengspec:
 			$$ = p->constblock.const.ci;
 		}
 	| SSTAR intonlyon SLPAR SSTAR SRPAR intonlyoff
-		{ NO66("length specification *(*)"); $$ = -1; }
+		{
+		NO66("length specification *(*)");
+		if( parstate < INSIDE )
+			{
+			dclerr("variable length function or variable length string in main program", PNULL);
+			$$ = 0;
+			}
+		else
+		if( procclass == CLMAIN )
+			{
+			dclerr("variable length string in main program", PNULL);
+			$$ = 0;
+			}
+		else
+			$$ = -1;
+		}
 	;
 
 common:	  SCOMMON in_dcl var
@@ -219,6 +237,12 @@ paramitem:  name SEQUALS expr
 		{ paramset( $1, $3 ); }
 	;
 
+in_param:	inside
+		{ if(parstate > INDCL)
+			dclerr("parameter statement out of order", PNULL);
+		}
+	;
+
 var:	  name dims
 		{ if(ndim>0) setbound($1, ndim, dims); }
 	;
@@ -268,7 +292,7 @@ label:	  SICON
 		{ $$ = execlab( convci(toklen, token) ); }
 	;
 
-implicit:  SIMPLICIT in_dcl implist
+implicit:  SIMPLICIT in_implicit implist
 		{ NO66("IMPLICIT statement"); }
 	| implicit SCOMMA implist
 	;
@@ -278,6 +302,12 @@ implist:  imptype SLPAR letgroups SRPAR
 
 imptype:   { needkwd = 1; } type
 		{ vartype = $2; }
+	;
+
+in_implicit:	inside
+		{ if(parstate >= INDCL)
+			dclerr("implicit statement out of order", PNULL);
+		}
 	;
 
 letgroups: letgroup
@@ -324,17 +354,21 @@ namelistlist:  name
 		{ $$ = hookup($1, mkchain($3, CHNULL)); }
 	;
 
-in_dcl:
-		{ switch(parstate)	
+inside:
+		{ if(parstate < INSIDE)
 			{
-			case OUTSIDE:	newproc();
-					startproc(PNULL, CLMAIN);
-			case INSIDE:	parstate = INDCL;
-			case INDCL:	break;
-
-			default:
-				dclerr("declaration among executables", PNULL);
+			newproc();
+			startproc(PNULL, CLMAIN);
+			parstate = INSIDE;
 			}
+		}
+	;
+
+in_dcl:	inside
+		{ if(parstate < INDCL)
+			parstate = INDCL;
+		  if(parstate > INDCL)
+			dclerr("declaration among executables", PNULL);
 		}
 	;
 
@@ -348,13 +382,8 @@ data1:	SDATA in_data datapair
     |	data1 opt_comma datapair
     ;
 
-in_data:
-		{ if(parstate == OUTSIDE)
-			{
-			newproc();
-			startproc(PNULL, CLMAIN);
-			}
-		  if(parstate < INDATA)
+in_data:	inside
+		{ if(parstate < INDATA)
 			{
 			enddcl();
 			parstate = INDATA;
