@@ -1,12 +1,12 @@
-static	char sccsid[] = "@(#)nm.c 3.1 %G%";
+static	char sccsid[] = "@(#)nm.c 3.2 %G%";
 /*
  * nm - print name list; VAX string table version
  */
 #include <sys/types.h>
-#include <newar.h>
+#include <ar.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <newa.out.h>
+#include <a.out.h>
 #include <stab.h>
 #include <pagsiz.h>
 #include <stat.h>
@@ -132,7 +132,7 @@ namelist()
 			continue;
 		}
 		if (N_STROFF(mag_un.mag_exp) + sizeof (off_t) >
-		    stb.st_size)
+		    (archive ? off : stb.st_size))
 			error(1, "old format .o (no string table) or truncated file");
 		i = 0;
 		if (strp)
