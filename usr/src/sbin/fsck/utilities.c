@@ -131,7 +131,7 @@ getdatablk(blkno, size)
 	register BUFAREA *bp;
 
 	for (bp = bufhead.b_next; bp != &bufhead; bp = bp->b_next)
-		if (bp->b_bno == blkno)
+		if (bp->b_bno == fsbtodb(&sblock, blkno))
 			goto foundit;
 	for (bp = bufhead.b_prev; bp != &bufhead; bp = bp->b_prev)
 		if ((bp->b_flags & B_INUSE) == 0)
@@ -162,12 +162,13 @@ getblk(bp, blk, size)
 	daddr_t dblk;
 
 	fcp = &dfile;
-	if (bp->b_bno == blk)
+	dblk = fsbtodb(&sblock, blk);
+	if (bp->b_bno == dblk)
 		return (bp);
 	flush(fcp, bp);
 	diskreads++;
-	bp->b_errs = bread(fcp, bp->b_un.b_buf, fsbtodb(&sblock, blk), size);
-	bp->b_bno = blk;
+	bp->b_errs = bread(fcp, bp->b_un.b_buf, dblk, size);
+	bp->b_bno = dblk;
 	bp->b_size = size;
 	return (bp);
 }
