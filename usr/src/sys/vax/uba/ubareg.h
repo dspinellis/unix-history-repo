@@ -1,4 +1,4 @@
-/*	ubareg.h	4.10	81/02/22	*/
+/*	ubareg.h	4.11	81/02/23	*/
 
 /*
  * UNIBUS adaptor
@@ -173,6 +173,7 @@ struct uba_driver {
 	struct	uba_dinfo **ud_dinfo;	/* backpointers to ubdinit structs */
 	char	*ud_mname;		/* name of a controller */
 	struct	uba_minfo **ud_minfo;	/* backpointers to ubminit structs */
+	short	ud_xclu;		/* want exclusive use of bdp's */
 };
 
 /*
