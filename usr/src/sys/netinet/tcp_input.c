@@ -1,4 +1,4 @@
-/* tcp_input.c 1.28 81/11/23 */
+/* tcp_input.c 1.29 81/11/24 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -146,9 +146,7 @@ COUNT(TCP_INPUT);
 			goto bad;
 		}
 		if (tiflags&TH_RST) {
-			tcp_error(tp, ENETRESET);
-			tcp_detach(tp);				/* 70 */
-			tp->t_state = CLOSED;
+			tcp_drop(tp, ENETRESET);
 			goto bad;
 		}
 		goto good;
@@ -171,9 +169,7 @@ COUNT(TCP_INPUT);
 			goto bad;
 
 		default:
-			tcp_error(tp, ENETRESET);
-			tcp_detach(tp);				/* 66 */
-			tp->t_state = CLOSED;
+			tcp_drop(tp, ENETRESET);
 			goto bad;
 		}
 		/*NOTREACHED*/
@@ -244,7 +240,6 @@ good:
 		tcp_ctldat(tp, ti, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
 			tp->t_finack = T_2ML;			/* 3 */
-			tp->tc_flags &= ~TC_WAITED_2_ML;
 			nstate = CLOSE_WAIT;
 		} else {
 			tp->t_init = T_INIT / 2;		/* 4 */
@@ -259,10 +254,8 @@ good:
 		}
 		tcp_ctldat(tp, ti, 1);
 		if (tp->tc_flags&TC_FIN_RCVD) {
-			if ((tiflags&TH_ACK) == 0) {
+			if ((tiflags&TH_ACK) == 0)
 				tp->t_finack = T_2ML;		/* 9 */
-				tp->tc_flags &= ~TC_WAITED_2_ML;
-			}
 			nstate = CLOSE_WAIT;
 			goto done;
 		}
@@ -305,14 +298,12 @@ input:
 				break;
 			}
 			tp->t_finack = T_2ML;
-			tp->tc_flags &= ~TC_WAITED_2_ML;
 			nstate = j ? TIME_WAIT : CLOSING;	/* 28:26 */
 			break;
 
 		case FIN_W2:
 			if (tp->tc_flags&TC_FIN_RCVD) {
 				tp->t_finack = T_2ML;		/* 29 */
-				tp->tc_flags &= ~TC_WAITED_2_ML;
 				nstate = TIME_WAIT;
 				break;
 			}
@@ -326,7 +317,6 @@ input:
 			    ti->ti_ackno <= tp->seq_fin) {
 				tcp_ctldat(tp, ti, 0);		/* 30 */
 				tp->t_finack = T_2ML;
-				tp->tc_flags &= ~TC_WAITED_2_ML;
 			} else
 				(void) tcp_sndctl(tp);		/* 31 */
 			goto done;
@@ -338,13 +328,12 @@ input:
 		if (tiflags&TH_FIN) {
 			tcp_ctldat(tp, ti, 0);
 			tp->t_finack = T_2ML;
-			tp->tc_flags &= ~TC_WAITED_2_ML;
 			if (j)
 				nstate = TIME_WAIT;		/* 23 */
 			goto done;
 		}
 		if (j) {
-			if (tp->tc_flags&TC_WAITED_2_ML)
+			if (tp->t_finack == 0)
 				if (rcv_empty(tp)) {
 					sorwakeup(inp->inp_socket);
 					nstate = CLOSED;	/* 15 */
@@ -375,8 +364,7 @@ input:
 		if ((tiflags&TH_FIN) && (tiflags&TH_ACK) &&
 		    ti->ti_ackno <= tp->seq_fin) {
 			tcp_ctldat(tp, ti, 0);
-			tp->t_finack = T_2ML;
-			tp->tc_flags &= ~TC_WAITED_2_ML;	/* 30 */
+			tp->t_finack = T_2ML;			/* 30 */
 		}
 		goto done;
 	}

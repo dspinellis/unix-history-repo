@@ -1,5 +1,5 @@
 #define IMPLOOP
-/*	ip_output.c	1.18	81/11/23	*/
+/*	ip_output.c	1.19	81/11/24	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -73,6 +73,7 @@ COUNT(IP_OUTPUT);
 			mhip->ip_len = len;
 			mhip->ip_off |= IP_MF;
 		}
+		mhip->ip_len += sizeof (struct ip);
 		mh->m_next = m_copy(m, off, len);
 		if (mh->m_next == 0) {
 			(void) m_free(mh);

@@ -1,10 +1,9 @@
-/*	udp_usrreq.c	4.9	81/11/23	*/
+/*	udp_usrreq.c	4.10	81/11/24	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/mbuf.h"
-#define	PRUREQUESTS
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"

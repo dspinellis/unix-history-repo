@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.5	81/11/18	*/
+/*	tcp_var.h	4.6	81/11/24	*/
 
 /*
  * Kernel variables for tcp.
@@ -76,20 +76,17 @@ struct tcpcb {
 /* tc_flags values */
 #define	TC_ACK_DUE	0x0001		/* must we send ACK */
 #define	TC_CANCELLED	0x0002		/* retransmit timer cancelled */
-/* ... */
-#define	TC_FIN_RCVD	0x0008		/* FIN received */
-#define	TC_FORCE_ONE	0x0010		/* force sending of one byte */
-#define	TC_NEW_WINDOW	0x0020		/* received new window size */
-#define	TC_REXMT	0x0040		/* this msg is a retransmission */
-#define	TC_SND_FIN	0x0080		/* FIN should be sent */
-#define	TC_SND_RST	0x0100		/* RST should be sent */
-#define	TC_SND_URG	0x0200		/* urgent data to send */
-#define	TC_SYN_ACKED	0x0400		/* SYN has been ACKed */
-#define	TC_SYN_RCVD	0x0800		/* SYN has been received */
-#define	TC_USR_CLOSED	0x1000		/* user has closed connection */
-#define	TC_WAITED_2_ML	0x2000		/* wait time for FIN ACK is up */
-#define	TC_NET_KEEP	0x4000		/* don't free this net input */
-#define	TC_USR_ABORT	0x8000		/* user has closed and does not expect
+#define	TC_FIN_RCVD	0x0004		/* FIN received */
+#define	TC_FORCE_ONE	0x0008		/* force sending of one byte */
+#define	TC_NEW_WINDOW	0x0010		/* received new window size */
+#define	TC_REXMT	0x0020		/* this msg is a retransmission */
+#define	TC_SND_FIN	0x0040		/* FIN should be sent */
+#define	TC_SND_RST	0x0080		/* RST should be sent */
+#define	TC_SND_URG	0x0100		/* urgent data to send */
+#define	TC_SYN_ACKED	0x0200		/* SYN has been ACKed */
+#define	TC_SYN_RCVD	0x0400		/* SYN has been received */
+#define	TC_USR_CLOSED	0x0800		/* user has closed connection */
+#define	TC_USR_ABORT	0x1000		/* user has closed and does not expect
 					   to receive any more data */
 /*
  * TCP timers.
