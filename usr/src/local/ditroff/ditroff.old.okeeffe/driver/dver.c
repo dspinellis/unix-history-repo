@@ -1,4 +1,4 @@
-/*	dver.c	1.12	84/02/27
+/*	dver.c	1.13	84/03/16
  *
  * VAX Versatec driver for the new troff
  *
@@ -81,13 +81,11 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.12	84/02/27";
+char	SccsId[]= "dver.c	1.13	84/03/16";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
 int	olist[20];	/* pairs of page numbers */
-int	spage	= 9999;	/* stop every spage pages */
-int	scount	= 0;
 struct	dev	dev;
 struct	font	*fontbase[NFONTS+1];
 short *	pstab;		/* point size table pointer */
@@ -210,11 +208,6 @@ char *argv[];
 			if (dbg == 0) dbg = 1;
 			break;
 #endif
-		case 's':
-			spage = atoi(operand(&argc, &argv));
-			if (spage <= 0)
-				spage = 9999;
-			break;
 		}
 	}
 #ifdef DRIVER
@@ -310,8 +303,9 @@ register FILE *fp;
 	while ((c = getc(fp)) != EOF) {
 		switch (c) {
 		case '\n':	/* when input is text */
-		case ' ':
 		case 0:		/* occasional noise creeps in */
+		case '\t':
+		case ' ':
 			break;
 		case '{':	/* push down current environment */
 			t_push();
@@ -333,11 +327,13 @@ register FILE *fp;
 			put1s(str);
 			break;
 		case 't':	/* straight text */
-			(void) fgets(buf, sizeof(buf), fp);
+			if (fgets(buf, sizeof(buf), fp) == NULL)
+			    error(FATAL, "unexpected end of input");
 			t_text(buf);
 			break;
 		case 'D':	/* draw function */
-			(void) fgets(buf, sizeof(buf), fp);
+			if (fgets(buf, sizeof(buf), fp) == NULL)
+			    error(FATAL, "unexpected end of input");
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 			    sscanf(buf+1, "%d %d", &n, &m);
@@ -373,7 +369,7 @@ register FILE *fp;
 			}
 			break;
 		case 's':
-			fscanf(fp, "%d", &n);	/* ignore fractional sizes */
+			fscanf(fp, "%d", &n);
 			setsize(t_size(n));
 			break;
 		case 'f':
@@ -381,7 +377,6 @@ register FILE *fp;
 			setfont(t_font(str));
 			break;
 		case 'H':	/* absolute horizontal motion */
-			/* fscanf(fp, "%d", &n); */
 			while ((c = getc(fp)) == ' ')
 				;
 			k = 0;
@@ -419,13 +414,12 @@ register FILE *fp;
 			t_page(n);
 			break;
 		case 'n':	/* end of line */
-			while (getc(fp) != '\n')
-				;
 			t_newline();
-			break;
+
 		case '#':	/* comment */
-			while (getc(fp) != '\n')
-				;
+			do
+				c = getc(fp);
+			while (c != '\n' && c != EOF);
 			break;
 		case 'x':	/* device control */
 			if (devcntrl(fp)) return;
@@ -733,14 +727,16 @@ int page;
     register int outsize;
 
     if (page == PAGEEND) {		/* set outsize to inch boundary */
-	outsize = (maxv + (RES - 1) - pagelen) / RES;
+	outsize = (maxv + (RES - 2) - pagelen) / RES;
 	vorigin = pagelen = 0;		/* reset for new page */
 	if (outsize < 1) return;	/* if outsize <= zero, forget it */
 
-	outsize *= RES * BYTES_PER_LINE;	/* are assured that outsize */
-	vwrite(buf0p, outsize);			/* will NOT be > BUFFER_SIZE */
-	vclear(buf0p, outsize);			/* since vsort makes sure of */
-    } else {					/* putting P commands in */
+	outsize *= RES * BYTES_PER_LINE;
+	vwrite(buf0p, outsize > BUFFER_SIZE ? BUFFER_SIZE : outsize);
+	vclear(buf0p, BUFFER_SIZE);
+	while ((outsize -= BUFFER_SIZE) > 0)
+	    vwrite(buf0p, outsize > BUFFER_SIZE ? BUFFER_SIZE : outsize);
+    } else {
 	vorigin += NLINES;
 	pagelen += NLINES;
 	vwrite(buf0p, BUFFER_SIZE);
@@ -847,7 +843,6 @@ vgoto (n)
 int n;
 {
 	vpos = n;
-	if (vpos > maxv) maxv = vpos;
 }
 
 
@@ -1141,7 +1136,7 @@ int code;		/* character to print */
     register int i;		/* loop counter */
     register int count;		/* font data ptr */
     register unsigned fontdata;	/* font data temporary */
-    register int off8;		/* offset + 8 */
+    register int off8;		/* reverse of offset */
 
     if (fontwanted)
 	if (getfont()) return;
@@ -1154,8 +1149,8 @@ int code;		/* character to print */
 	scanp = buf0p + (vpos - (vorigin + dis->up)) * BYTES_PER_LINE
 			+ (hpos - dis->left) / 8;
 	scanp_inc = BYTES_PER_LINE - llen;
-	offset = - ((hpos - dis->left) &07);
-	off8 = offset + 8;
+	offset = (hpos - dis->left) &07;
+	off8 = 8 - offset;
 	for (i = 0; i < nlines; i++) {
 	    if ((unsigned) (scanp + (count = llen)) > (unsigned) BUFBOTTOM)
 		return;
@@ -1165,7 +1160,7 @@ int code;		/* character to print */
 		    addr += 4;
 		    if (count < 4)
 			fontdata &= ~strim[count];
-		    *(unsigned*)scanp |=(fontdata << offset) & ~M[off8];
+		    *(unsigned*)scanp |=(fontdata >> offset) & ~M[off8];
 		    scanp++;
 		    *(unsigned*)scanp |=(fontdata << off8) & ~N[off8];
 		    scanp += 3;
@@ -1256,10 +1251,14 @@ char *cp;
  * it is left out.  Things outside the x boundary are wrapped around the end.
  */
 point(x, y)
-int x, y;
+register int x;
+register int y;
 {
     register char *ptr = buf0p + (y - vorigin) * BYTES_PER_LINE + (x >> 3);
 
-    if (ptr <= BUFBOTTOM && ptr >= BUFTOP)	/* ignore it if it wraps over */
-	*ptr |= 1 << (7 - (x & 07));
+    if (ptr > BUFBOTTOM || ptr < BUFTOP)	/* ignore if it's off buffer */
+	return;
+
+    *ptr |= 1 << (7 - (x & 07));
+    if (y > maxv) maxv = y;
 }
