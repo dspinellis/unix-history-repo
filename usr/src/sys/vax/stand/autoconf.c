@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.6 (Berkeley) %G%
+ *	@(#)autoconf.c	7.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -161,7 +161,8 @@ configure()
 				if (nuba >= MAXNUBA)	/* sorry */
 					break;
 				ubaddr8200[nuba] = (struct uba_regs *)bi;
-				uioaddr8200[nuba] = (caddr_t)UMEM8200(i);
+				uioaddr8200[nuba] = (caddr_t)UMEM8200(i) +
+				    UBAIOADDR;
 				((struct dwbua_regs *)bi)->bua_csr |=
 				    BUACSR_UPI;
 				nuba++;
