@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	8.14 (Berkeley) %G%
+ *	@(#)init_main.c	8.15 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -67,7 +67,6 @@ main(framep)
 	register int i;
 	int s;
 	register_t rval[2];
-	extern int (*mountroot) __P((void));
 	extern struct pdevinit pdevinit[];
 	extern void roundrobin __P((void *));
 	extern void schedcpu __P((void *));
