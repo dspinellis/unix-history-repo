@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)msgs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)msgs.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -96,7 +96,7 @@ int	msg;
 int	prevmsg;
 int	lct;
 int	nlines;
-int	Lpp = NLINES;
+int	Lpp = 0;
 time_t	t;
 time_t	keep;
 struct	sgttyb	otty;
@@ -396,9 +396,14 @@ int argc; char *argv[];
 
 #ifdef V7
 	if (totty) {
-		if (tgetent(inbuf, getenv("TERM")) <= 0
-		    || (Lpp = tgetnum("li")) <= 0) {
-			Lpp = NLINES;
+		struct winsize win;
+		if (ioctl(fileno(stdout), TIOCGWINSZ, &win) != -1)
+			Lpp = win.ws_row;
+		if (Lpp <= 0) {
+			if (tgetent(inbuf, getenv("TERM")) <= 0
+			    || (Lpp = tgetnum("li")) <= 0) {
+				Lpp = NLINES;
+			}
 		}
 	}
 #endif
