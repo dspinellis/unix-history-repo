@@ -1,4 +1,4 @@
-(Version 8.6 of %G%)
+(Version 8.7 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -16,7 +16,7 @@ X ****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
 X ****	Merge Sun changes.  [8.7]
 
 X ****	Provide a way to turn off all DNS lookup in the I option, e.g.,
-	``OIoff''.
+	``OIoff''.  [8.7]
 
 X ****	Should have new mailer flags to override LocalMailer stuff:
 	- M_ALIASABLE (A) -- can use as the LHS of an alias.
@@ -30,6 +30,11 @@ X ****	Should have new mailer flags to override LocalMailer stuff:
 	  should also be split apart.
 	[8.8]
 
+E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
+	all cases except null input; change calls to be more sceptical
+	about the return value, checking this bit instead of just
+	checking for == NULL.  (Eric Wassenaar)  [8.7]
+
 E ***	Dynamically allocate MAXNAME buffers for headers.
 
 X ***	Add ability to disable Return-Receipt-To: on a privacy flag. [8.8]
@@ -38,16 +43,21 @@ X ***	Add -P to set precedence (e.g., -Pbulk). [8.8]  (BCX)
 
 X ***	Runtime option to enable/disable IDENT protocol.
 
-X ***	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
-
-X ***	Allow /address in -bt mode to expand address through ruleset 0,
-	aliases, etc. and display results.  [8.8]
-
 E ***	Don't send ErrMsgFile to postmaster bounces.  (Josh Smith,
 	josh@osiris.ac.hmc.edu).
 
 X ***	Add "user" map to look up a user name via getpwnam -- so that
 	non-local names can be forwarded to another site.  [8.8]
+
+X **	Allow $x in -bt mode to expand macro "x".  (BCX)  [8.8]
+
+X **	Allow /address in -bt mode to expand address through ruleset 0,
+	aliases, etc. and display results.  [8.8]
+
+X **	"R mailer address" in -bt mode does remotename on address.
+
+E **	Adjust "infinite loop in rule" code to handle entire ruleset
+	(Code from Michael Corrigan).
 
 E **	Allow :include: from command line (not SMTP) to assist in
 	"personal list" management -- i.e., creating lists that
@@ -83,6 +93,15 @@ X **	User database extensions for mailing lists:
 	list:precedence -- Precedence: value for new message
 	list:envelopefrom -- envelope "from" value for new message
 	others?  [8.8]
+
+B **	Restore `T' line to eliminate X-Authentication-Warning: at
+	inappropriate times.  (Christophe Wolfhugel)
+	- T could become a shorthand for Ct -- i.e., create a new
+	  predefined class.
+	- Eliminate "<user> set sender to <address>" message entirely?
+	  (this is the workaround)
+
+X *	-V flag to print state of all (?) compilation flags.
 
 X *	Handle Expires: header field (if still in queue).
 
