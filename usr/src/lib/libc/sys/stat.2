@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)stat.2	6.5 (Berkeley) %G%
+.\"	@(#)stat.2	6.6 (Berkeley) %G%
 .\"
 .TH STAT 2 ""
 .UC 4
@@ -85,13 +85,12 @@ The contents of the structure pointed to by
 .PP
 .TP 12
 st_atime
-Time when file data was last read or modified.  Changed by the following system
+Time when file data was last accessed.  Changed by the following system
 calls:
 .IR mknod (2),
 .IR utimes (2),
-.IR read (2),
 and
-.IR write (2).
+.IR read (2).
 For reasons of efficiency, 
 st_atime is not set when a directory
 is searched, although this would be more logical.
