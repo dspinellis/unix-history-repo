@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)FCALL.c 1.3 %G%";
+static char sccsid[] = "@(#)FCALL.c 1.4 %G%";
 
 #include "h00vars.h"
 
