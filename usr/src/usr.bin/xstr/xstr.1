@@ -1,123 +1,133 @@
 .\" Copyright (c) 1980 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)xstr.1	6.3 (Berkeley) %G%
-.TH XSTR 1 ""
-.UC
-.SH NAME
-xstr \- extract strings from C programs to implement shared strings
-.SH SYNOPSIS
-.B xstr
-[
-.B \-c
-] [
-.B \-
-] [
-file
-]
-.SH DESCRIPTION
-.I Xstr
+.\"     @(#)xstr.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt XSTR 1
+.Os BSD 3
+.Sh NAME
+.Nm xstr
+.Nd "extract strings from C programs to implement shared strings"
+.Sh SYNOPSIS
+.Nm xstr
+.Op Fl c
+.Op Fl 
+.Op Ar file
+.Sh DESCRIPTION
+.Nm Xstr
 maintains a file
-.I strings
+.Pa strings
 into which strings in component parts of a large program are hashed.
 These strings are replaced with references to this common area.
 This serves to implement shared constant strings, most useful if they
 are also read-only.
-.PP
-The command
-.PP
-.DT
-	\fBxstr \-c\fR name
-.PP
-will extract the strings from the C source in name, replacing
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl
+.Nm Xstr
+reads from the standard input.
+.It Fl c
+.Nm Xstr
+will extract the strings from the C source
+.Ar file
+or the standard input
+.Pq Fl ,
+replacing
 string references by expressions of the form (&xstr[number])
 for some number.
 An appropriate declaration of
-.I xstr
+.Nm xstr
 is prepended to the file.
 The resulting C text is placed in the file
-.I x.c,
+.Pa x.c ,
 to then be compiled.
 The strings from this file are placed in the
-.I strings
+.Pa strings
 data base if they are not there already.
 Repeated strings and strings which are suffices of existing strings
 do not cause changes to the data base.
-.PP
+.El
+.Pp
 After all components of a large program have been compiled a file
-.I xs.c
+.Pa xs.c
 declaring the common
-.I xstr
+.Nm xstr
 space can be created by a command of the form
-.PP
-.DT
-	\fBxstr\fR
-.PP
-This
-.I xs.c
-file should then be compiled and loaded with the rest
+.Bd -literal -offset indent
+xstr
+.Ed
+.Pp
+The file
+.Pa xs.c
+should then be compiled and loaded with the rest
 of the program.
 If possible, the array can be made read-only (shared) saving
 space and swap overhead.
-.PP
-.I Xstr
+.Pp
+.Nm Xstr
 can also be used on a single file.
 A command
-.PP
-.DT
-	\fBxstr\fR name
-.PP
+.Bd -literal -offset indent
+xstr name
+.Ed
+.Pp
 creates files
-.I x.c
+.Pa x.c
 and
-.I xs.c
+.Pa xs.c
 as before, without using or affecting any
-.I strings
+.Pa strings
 file in the same directory.
-.PP
+.Pp
 It may be useful to run
-.I xstr
+.Nm xstr
 after the C preprocessor if any macro definitions yield strings
 or if there is conditional code which contains strings
 which may not, in fact, be needed.
-.I Xstr
-reads from its standard input when the argument `\-' is given.
 An appropriate command sequence for running
-.I xstr
+.Nm xstr
 after the C preprocessor is:
-.PP
-.nf
-.DT
-	\fBcc \-E\fR name.c | \fBxstr \-c\fR \-
-	\fBcc \-c\fR x.c
-	\fBmv\fR x.o name.o
-.fi
-.PP
-.I Xstr
+.Pp
+.Bd -literal -offset indent -compact
+cc \-E name.c | xstr \-c \-
+cc \-c x.c
+mv x.o name.o
+.Ed
+.Pp
+.Nm Xstr
 does not touch the file
-.I strings
+.Pa strings
 unless new items are added, thus
-.I make
+.Xr make 1
 can avoid remaking
-.I xs.o
+.Pa xs.o
 unless truly necessary.
-.SH FILES
-.DT
-strings		Data base of strings
-.br
-x.c		Massaged C source
-.br
-xs.c		C source for definition of array `xstr'
-.br
-/tmp/xs*	Temp file when `xstr name' doesn't touch
-.I strings
-.SH "SEE ALSO"
-mkstr(1)
-.SH BUGS
+.Sh FILES
+.Bl -tag -width /tmp/xsxx* -compact
+.It Pa strings
+Data base of strings
+.It Pa x.c
+Massaged C source
+.It Pa xs.c
+C source for definition of array `xstr'
+.It Pa /tmp/xs*
+Temp file when `xstr name' doesn't touch
+.Pa strings
+.El
+.Sh SEE ALSO
+.Xr mkstr 1
+.Sh BUGS
 If a string is a suffix of another string in the data base,
 but the shorter string is seen first by
-.I xstr
+.Nm xstr
 both strings will be placed in the data base, when just
 placing the longer one there will do.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 3.0 .
