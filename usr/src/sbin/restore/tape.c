@@ -5,11 +5,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
-#include <dumprestor.h>
+#include <protocols/dumprestore.h>
 #include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <sys/file.h>
