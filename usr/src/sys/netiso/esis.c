@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)esis.c	7.15 (Berkeley) %G% */
+/*	@(#)esis.c	7.16 (Berkeley) %G% */
 #ifndef lint
 static char *rcsid = "$Header: esis.c,v 4.10 88/09/15 18:57:03 hagens Exp $";
 #endif
@@ -968,7 +968,7 @@ struct mbuf *m;
 		goto release;
 	}
 	ifp = ifa->ifa_ifp;
-	sn_len = ifp->if_addrlen;
+	sn_len = sdl->sdl_alen;
 	IFDEBUG(D_ISISOUTPUT)
 		u_char *cp = (u_char *)LLADDR(sdl), *cplim = cp + sn_len;
 		printf("isis_output: ifp 0x%x (%s%d), to: ",
