@@ -145,7 +145,7 @@ extern char	ArpaFmt;	/* if set, message is in arpanet fmt */
 extern char	FromFlag;	/* if set, "From" person is explicit */
 extern char	Debug;		/* if set, debugging info */
 extern char	MailBack;	/* mail back response on error */
-extern char	EchoBack;	/* echo the message on error */
+extern char	BerkNet;	/* called from BerkNet */
 extern char	WriteBack;	/* write back response on error */
 extern char	NoAlias;	/* if set, don't do any aliasing */
 extern char	ForceMail;	/* if set, mail even if already got a copy */

@@ -93,27 +93,15 @@ savemail()
 	}
 
 	/*
-	**  If echoing the bad mail, do it.
-	**	Output the transcript and a message saying that the
-	**	message will be mailed back; then fall through to
-	**	the MailBack case.
+	**  If called from Eric Schmidt's network, do special mailback.
+	**	Fundamentally, this is the mailback case except that
+	**	it returns an OK exit status (assuming the return
+	**	worked).
 	*/
 
-	if (EchoBack || WriteBack)
+	if (BerkNet)
 	{
-		xfile = fopen(Transcript, "r");
-		if (xfile == NULL)
-			syserr("Cannot open %s", Transcript);
-		fflush(stdout);
-	}
-	else
-		xfile = NULL;
-
-	if (EchoBack)
-	{
-		while (fgets(buf, sizeof buf, xfile) != NULL)
-			fputs(buf, stderr);
-		fprintf(stderr, "\nThe unsent mail will be returned to you\n");
+		ExitStat = EX_OK;
 		MailBack++;
 	}
 
@@ -135,17 +123,18 @@ savemail()
 		}
 		else
 		{
+			xfile = fopen(Transcript, "r");
+			if (xfile == NULL)
+				syserr("Cannot open %s", Transcript);
 			printf("\r\nMessage from %s\r\n", MY_NAME);
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) && !ferror(stdout))
 				fputs(buf, stdout);
 			if (ferror(stdout))
 				syserr("savemail: stdout: write err");
+			fclose(xfile);
 		}
 	}
-
-	if (xfile != NULL)
-		fclose(xfile);
 
 	/*
 	**  If mailing back, do it.
