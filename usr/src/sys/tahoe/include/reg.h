@@ -1,6 +1,13 @@
-/*
- *	@(#)reg.h	7.1 (Berkeley) %G%
- *	from reg.h	4.2	81/02/19
+/*-
+ * Copyright (c) 1986 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)reg.h	7.2 (Berkeley) %G%
  */
 
 /*

@@ -1,4 +1,14 @@
-/*	srt0.c	7.1	91/05/05	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)srt0.c	7.2 (Berkeley) %G%
+ */
 
 #include "../include/mtpr.h"
 #define	LOCORE

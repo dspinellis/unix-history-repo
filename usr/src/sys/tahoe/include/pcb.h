@@ -1,9 +1,13 @@
-/*
- * Copyright (c) 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)pcb.h	7.1 (Berkeley) %G%
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)pcb.h	7.2 (Berkeley) %G%
  */
 
 /*

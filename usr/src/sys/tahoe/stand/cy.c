@@ -1,4 +1,14 @@
-/*	cy.c	7.12	91/05/04	*/
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Computer Consoles Inc.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)cy.c	7.13 (Berkeley) %G%
+ */
 
 /*
  * Cypher tape driver. Stand alone version.
