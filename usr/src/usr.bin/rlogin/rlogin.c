@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.32.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -136,6 +136,14 @@ main(argc, argv)
 		case 'l':
 			user = optarg;
 			break;
+#ifdef CRYPT
+#ifdef KERBEROS
+		case 'x':
+			doencrypt = 1;
+			des_set_key(cred.session, schedule);
+			break;
+#endif
+#endif
 		case '?':
 		default:
 			usage();
@@ -161,11 +169,11 @@ main(argc, argv)
 	sp = NULL;
 #ifdef KERBEROS
 	if (use_kerberos) {
-		sp = getservbyname((encrypt ? "eklogin" : "klogin"), "tcp");
+		sp = getservbyname((doencrypt ? "eklogin" : "klogin"), "tcp");
 		if (sp == NULL) {
 			use_kerberos = 0;
 			warning("can't get entry for %s/tcp service",
-			    encrypt ? "eklogin" : "klogin");
+			    doencrypt ? "eklogin" : "klogin");
 		}
 	}
 #endif
@@ -258,14 +266,14 @@ setsignal(sig, act)
 done(status)
 	int status;
 {
-	int w;
+	int w, wstatus;
 
 	mode(0);
 	if (child > 0) {
 		/* make sure catch_child does not snap it up */
 		(void)signal(SIGCHLD, SIG_DFL);
 		if (kill(child, SIGKILL) >= 0)
-			while ((w = wait((union wait *)0)) > 0 && w != child);
+			while ((w = wait(&wstatus)) > 0 && w != child);
 	}
 	exit(status);
 }
@@ -277,7 +285,8 @@ catch_child()
 	int pid;
 
 	for (;;) {
-		pid = wait3(&status, WNOHANG|WUNTRACED, (struct rusage *)0);
+		pid = wait3((int *)&status,
+		    WNOHANG|WUNTRACED, (struct rusage *)0);
 		if (pid == 0)
 			return;
 		/* if the child (reader) dies, just quit */
@@ -362,9 +371,26 @@ writer()
 				continue;
 			}
 			if (c != escapechar)
+#ifdef CRYPT
+#ifdef KERBEROS
+				if (doencrypt)
+					(void)des_write(rem, &escapechar, 1);
+				else
+#endif
+#endif
 					(void)write(rem, &escapechar, 1);
 		}
 
+#ifdef CRYPT
+#ifdef KERBEROS
+		if (doencrypt) {
+			if (des_write(rem, &c, 1) == 0) {
+				msg("line gone");
+				break;
+			}
+		} else
+#endif
+#endif
 			if (write(rem, &c, 1) == 0) {
 				msg("line gone");
 				break;
@@ -531,6 +557,13 @@ reader(omask)
 		rcvcnt = 0;
 		rcvstate = READING;
 
+#ifdef CRYPT
+#ifdef KERBEROS
+		if (doencrypt)
+			rcvcnt = des_read(rem, rcvbuf, sizeof(rcvbuf));
+		else
+#endif
+#endif
 			rcvcnt = read(rem, rcvbuf, sizeof (rcvbuf));
 		if (rcvcnt == 0)
 			return (0);
@@ -628,7 +661,11 @@ usage()
 	(void)fprintf(stderr,
 	    "usage: rlogin [ -%s]%s[-e char] [ -l username ] host\n",
 #ifdef KERBEROS
+#ifdef CRYPT
+	    "8ELx", " [-k realm] ");
+#else
 	    "8EL", " [-k realm] ");
+#endif
 #else
 	    "8EL", " ");
 #endif
