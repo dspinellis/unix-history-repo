@@ -39,7 +39,7 @@ char copyright[] =
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)rm.c	4.26 (Berkeley) 3/10/91";*/
-static char rcsid[] = "$Id: rm.c,v 1.11 1993/11/16 23:59:17 jtc Exp $";
+static char rcsid[] = "$Id: rm.c,v 1.3 1993/11/22 23:53:17 jtc Exp $";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -117,7 +117,7 @@ main(argc, argv)
 			rmfile(argv);
 	}
 
-	exit(retval);
+	exit(fflag ? 0 : retval);
 }
 
 void
