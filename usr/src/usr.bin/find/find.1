@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)find.1	8.4 (Berkeley) %G%
+.\"	@(#)find.1	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FIND 1
@@ -239,12 +239,14 @@ Note, the first character of a symbolic mode may not be a dash (``\-'').
 .It Ic -print
 This primary always evaluates to true.
 It prints the pathname of the current file to standard output.
-The expression is appended to the user specified expression if neither
+If none of
 .Ic -exec ,
-.Ic -ls
+.Ic -ls ,
 or
 .Ic \&-ok
-is specified.
+is specified, the given expression shall be effectively replaced by
+.Cm \&( Ns Ar given\& expression Ns Cm \&) 
+.Ic -print .
 .It Ic -prune
 This primary always evaluates to true.
 It causes
