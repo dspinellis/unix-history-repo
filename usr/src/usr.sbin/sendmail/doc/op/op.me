@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.4 (Berkeley) %G%
+.\"	@(#)op.me	6.5 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.4
+Version 6.5
 .sp
 For Sendmail Version 6.7
 .)l
@@ -121,6 +121,7 @@ in this version of
 The appendixes give a brief
 but detailed explanation of a number of features
 not described in the rest of the paper.
+.bp 5
 .sh 1 "BASIC INSTALLATION"
 .pp
 .i
@@ -1252,7 +1253,7 @@ for this run only.
 .pp
 Some options have security implications.
 Sendmail allows you to set these,
-but refuses to root as root thereafter.
+but refuses to run as root thereafter.
 .sh 1 "TUNING"
 .pp
 There are a number of configuration parameters
@@ -2290,9 +2291,9 @@ macro is set to the address of the sender
 relative to the recipient.
 For example,
 if I send to
-.q bollard@matisse
+.q bollard@matisse.CS.Berkeley.EDU
 from the machine
-.q ucbarpa
+.q vangogh.CS.Berkeley.EDU
 the
 .b $f
 macro will be
@@ -2300,7 +2301,7 @@ macro will be
 and the
 .b $g
 macro will be
-.q eric@ucbarpa.
+.q eric@vangogh.CS.Berkeley.EDU.
 .pp
 The
 .b $<
@@ -3387,7 +3388,7 @@ is a digit)
 is replaced by the corresponding
 .i argument .
 Argument zero
-is always the original pattern.
+is always the database key.
 For example, the rule
 .(b
 .ta 1.5i
@@ -3592,14 +3593,16 @@ should be hints rather than solid information.
 .pp
 For example,
 a typical site on our local ether network is
-.q monet.
+.q monet
+(actually
+.q monet.CS.Berkeley.EDU ).
 When monet receives mail for delivery,
 it checks whether it knows
 that the destination host is directly reachable;
 if so, mail is sent to that host.
 If it receives mail for any unknown host,
 it just passes it directly to
-.q ucbvax,
+.q ucbvax.CS.Berkeley.EDU ,
 our master host.
 Ucbvax may determine that the host name is illegal
 and reject the message,
@@ -3933,19 +3936,19 @@ that do not already contain a domain spec.
 For example,
 a message of the form:
 .(b
-From: eric@ucbarpa
-To: wnj@monet, mckusick
+From: eric@vangogh.CS.Berkeley.EDU
+To: wnj@monet.CS.Berkeley.EDU, mckusick
 .)b
 will be modified to:
 .(b
-From: eric@ucbarpa
-To: wnj@monet, mckusick@ucbarpa
+From: eric@vangogh.CS.Berkeley.EDU
+To: wnj@monet.CS.Berkeley.EDU, mckusick@vangogh.CS.Berkeley.EDU
 .)b
 .i "if and only if"
 the
 .q C
 flag is defined in the mailer corresponding to
-.q eric@ucbarpa.
+.q eric@vangogh.CS.Berkeley.EDU.
 .pp
 Other flags are described
 in Appendix C.
@@ -3970,7 +3973,7 @@ From: eric
 .)b
 might be changed to be:
 .(b
-From: eric@ucbarpa
+From: eric@vangogh.CS.Berkeley.EDU
 .)b
 or
 .(b
@@ -5324,7 +5327,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.4
+.\"Version 6.5
 .\".ce 0
 .pn 2
 .bp
