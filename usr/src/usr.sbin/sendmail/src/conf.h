@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.123 (Berkeley) %G%
+ *	@(#)conf.h	8.124 (Berkeley) %G%
  */
 
 /*
@@ -538,6 +538,34 @@ extern int		errno;
 
 
 /*
+**  Altos System V.
+**	Contributed by Tim Rice <timr@crl.com>.
+*/
+
+#ifdef ALTOS_SYS_V
+# include <limits.h>
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define WAITUNION	1	/* use "union wait" as wait argument type */
+# define NEEDFSYNC	1	/* no fsync(2) in system library */
+# define FORK		fork
+# define MAXPATHLEN	PATHSIZE
+# define LA_TYPE	LA_SHORT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
+# define TZ_TYPE	TZ_TM_NAME	/* use tm->tm_name */
+# undef NETUNIX			/* no unix domain socket support */
+# undef WIFEXITED
+# undef WEXITSTATUS
+# define strtoul	strtol	/* gcc library bogosity */
+
+typedef unsigned short	uid_t;
+typedef unsigned short	gid_t;
+typedef short		pid_t;
+#endif
+
+
+/*
 **  ConvexOS 11.0 and later
 **
 **	"Todd C. Miller" <millert@mroe.cs.colorado.edu> claims this
@@ -1020,9 +1048,11 @@ extern int	syslog(int, char *, ...);
 # ifndef TZ_TYPE
 #  define TZ_TYPE	TZ_TZNAME	/* use tzname[] vector */
 # endif
-# define bcopy(s, d, l)		(memmove((d), (s), (l)))
-# define bzero(d, l)		(memset((d), '\0', (l)))
-# define bcmp(s, d, l)		(memcmp((s), (d), (l)))
+# ifndef ALTOS_SYS_V
+#  define bcopy(s, d, l)	(memmove((d), (s), (l)))
+#  define bzero(d, l)		(memset((d), '\0', (l)))
+#  define bcmp(s, d, l)		(memcmp((s), (d), (l)))
+# endif
 #endif
 
 /* general POSIX defines */
@@ -1219,7 +1249,7 @@ struct utsname
 };
 #endif /* HASUNAME */
 
-#if !defined(MAXHOSTNAMELEN) && !defined(_SCO_unix_) && !defined(NonStop_UX_BXX)
+#if !defined(MAXHOSTNAMELEN) && !defined(_SCO_unix_) && !defined(NonStop_UX_BXX) && !defined(ALTOS_SYS_V)
 # define MAXHOSTNAMELEN	256
 #endif
 
