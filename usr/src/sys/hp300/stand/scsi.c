@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.7 (Berkeley) %G%
+ *	@(#)scsi.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -24,7 +24,7 @@
 #include <hp300/dev/scsireg.h>
 #include <hp300/stand/scsivar.h>
 
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 #include <hp300/stand/samachdep.h>
 
 struct	scsi_softc scsi_softc[NSCSI];

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hpib.c	7.7 (Berkeley) %G%
+ *	@(#)hpib.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 #include <hp/dev/device.h>
 #include <hp300/stand/hpibvar.h>
 
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 #include <hp300/stand/samachdep.h>
 
 int	internalhpib = IIOV(0x478000);

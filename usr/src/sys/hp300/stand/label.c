@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: label.c 1.1 92/12/05$
  *
- *	@(#)label.c	7.1 (Berkeley) %G%
+ *	@(#)label.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@
 
 #include <sys/param.h>
 #include <sys/disklabel.h>
-#include <stand/saio.h>
+#include <stand.att/saio.h>
 
 /*
  * Attempt to read a disk label from a device using the indicated stategy
