@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.4 (Berkeley) %G%
+ *	@(#)sd.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -460,6 +460,9 @@ sdgetinfo(dev)
 #endif
 	printf("defining `c' partition as entire disk\n");
 	pi[2].p_size = sc->sc_blks;
+	/* XXX reset other info since readdisklabel screws with it */
+	lp->d_npartitions = 3;
+	pi[0].p_size = 0;
 	return(0);
 }
 
