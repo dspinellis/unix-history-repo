@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.2 (Berkeley) %G%
+#	@(#)cf.m4	2.3 (Berkeley) %G%
 #
 
 
@@ -32,14 +32,13 @@ define(`MAILER', `PUSHDIVERT(7)include(../mailer/$1.m4)POPDIVERT`'')
 define(`DOMAIN', `include(../domain/$1.m4)')
 define(`FEATURE', `include(../feature/$1.m4)')
 define(`HACK', `include(../hack/$1.m4)')
-#define(`VERSIONID', `PUSHDIVERT(1)#	$1
-#POPDIVERT')
-define(`VERSIONID', ``#####'  $1  #####')
-m4wrap(`include(../m4/proto.m4)')
+define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
-define(`UUCPSMTP', `R DOL(*) < @' $1 `.UUCP > DOL(*)	DOL(1) < @ $2 > DOL(3)')
+define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(3)')
 define(`CONCAT', `$1$2$3$4$5$6$7')
 define(`DOL', ``$'$1')
+
+m4wrap(`include(`../m4/proto.m4')')
 
 divert(0)dnl
