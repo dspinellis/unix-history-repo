@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)ifconfig.8	6.14 (Berkeley) %G%
+.\"     @(#)ifconfig.8	6.15 (Berkeley) %G%
 .\"
 .Dd 
 .Dt IFCONFIG 8
@@ -209,12 +209,12 @@ hosts that have made such requests.
 Currently used by Internet protocols only.
 .It Fl trailers
 Disable the use of a ``trailer'' link level encapsulation.
-.It Cm llc[0-3]
+.It Cm link[0-2]
 Enable special processing of the link level of the interface.
 These three options are interface specific in actual effect, however,
 they are in general used to select special modes of operation. An example
 of this is to enable SLIP compression. Currently, only used by SLIP.
-.It Fl llc[0-3]
+.It Fl link[0-2]
 Disables special processing at the link level with the specified interface.
 .It Cm up
 Mark an interface ``up''. 
