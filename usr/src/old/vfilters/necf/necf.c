@@ -1,11 +1,17 @@
-/*	necf.c	1.3	81/06/01	*/
+/*	necf.c	1.4	81/08/24	*/
 #include <stdio.h>
 #include <sgtty.h>
 #include <signal.h>
 
 #define PAGESIZE	66
 
+#ifdef TTY
+#ifndef BAUDRATE
+#	define BAUDRATE	B300
+#endif
+
 struct sgttyb tty;
+#endif
 
 main()
 {
@@ -19,11 +25,13 @@ main()
 	signal(SIGQUIT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
 
-	tty.sg_ispeed = tty.sg_ospeed = B9600;
+#ifdef TTY
+	tty.sg_ispeed = tty.sg_ospeed = BAUDRATE;
 	tty.sg_erase = tty.sg_kill = -1;
 	tty.sg_flags = (ANYP|XTABS|LDECCTQ);
 	if (ioctl(1, TIOCSETP, (char *)&tty) < 0)
 		exit (2);
+#endif
 	setbuf(stdout, _sobuf);
 #ifdef SHEETFEEDER
 	printf("\033=\033\033\033O\f");
@@ -39,8 +47,10 @@ main()
 		}
 		if (lnumber >= 2) {
 #endif
+#ifdef TTY
 			if ((cp = rindex(line, '\n')) != NULL)
 				*cp = '\r';
+#endif
 			printf("%s", line);
 #ifdef SHEETFEEDER
 		}
