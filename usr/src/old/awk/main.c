@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.5 (Berkeley) %G%";
 #endif
 
 #include "stdio.h"
@@ -33,9 +33,13 @@ main(argc, argv) int argc; char *argv[]; {
 		/* character after f to see if it's -f file or -Fx.
 		*/
 		if (argv[0][0] == '-' && TOLOWER(argv[0][1]) == 'f' && argv[0][2] == '\0') {
-			yyin = fopen(argv[1], "r");
-			if (yyin == NULL)
-				error(FATAL, "can't open %s", argv[1]);
+			if (argv[1][0] == '-' && argv[1][1] == '\0')
+				yyin = stdin;
+			else {
+				yyin = fopen(argv[1], "r");
+				if (yyin == NULL)
+					error(FATAL, "can't open %s", argv[1]);
+			}
 			argc--;
 			argv++;
 			break;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lib.c	4.4 9/17/84";
+static char sccsid[] = "@(#)lib.c	4.6 (Berkeley) %G%";
 #endif
 
 #include "stdio.h"
@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)lib.c	4.4 9/17/84";
 #include "awk.h"
 #include "ctype.h"
 
+extern FILE	*yyin;	/* lex input file */
 FILE	*infile	= NULL;
 char	*file;
 #define	RECSIZE	(5 * 512)
@@ -57,8 +58,12 @@ getrec()
 			}
 			*FILENAME = file = *svargv;
 			dprintf("opening file %s\n", file, NULL, NULL);
-			if (*file == '-')
-				infile = stdin;
+			if (*file == '-') {
+				if (yyin == stdin)
+					error(FATAL, "standard input already used for reading commands");
+				else
+					infile = stdin;
+			}
 			else if ((infile = fopen(file, "r")) == NULL)
 				error(FATAL, "can't open %s", file);
 		}
