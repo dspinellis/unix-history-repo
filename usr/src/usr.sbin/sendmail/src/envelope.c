@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.8		%G%);
+SCCSID(@(#)envelope.c	4.9		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -389,8 +389,10 @@ setsender(from)
 {
 	register char **pvp;
 	char *realname = NULL;
+	register struct passwd *pw;
 	char buf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
+	extern struct passwd *getpwnam();
 	extern char *macvalue();
 	extern char **prescan();
 	extern bool safefile();
@@ -447,16 +449,13 @@ setsender(from)
 	loweraddr(&CurEnv->e_from);
 	SuprErrs = FALSE;
 
-	if (CurEnv->e_from.q_mailer == LocalMailer)
+	if (CurEnv->e_from.q_mailer == LocalMailer &&
+	    (pw = getpwnam(CurEnv->e_from.q_user)) != NULL)
 	{
-		register struct passwd *pw;
-		extern struct passwd *getpwnam();
-
 		/*
 		**  Process passwd file entry.
 		*/
 
-		pw = getpwnam(CurEnv->e_from.q_user);
 
 		/* extract home directory */
 		CurEnv->e_from.q_home = newstr(pw->pw_dir);
