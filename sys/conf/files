@@ -1,4 +1,4 @@
-# $Id$
+# $Id: files,v 1.7 1993/10/16 16:31:52 rgrimes Exp $
 #
 ddb/db_access.c		optional ddb
 ddb/db_aout.c		optional ddb
@@ -76,7 +76,6 @@ kern/vfs_lookup.c	standard
 kern/vfs_subr.c		standard
 kern/vfs_syscalls.c	standard
 kern/vfs_vnops.c	standard
-net/af.c		standard
 net/bpf.c		optional bpfilter
 net/bpf_filter.c	optional bpfilter
 net/if.c		standard
