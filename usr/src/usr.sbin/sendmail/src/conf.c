@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1784,6 +1784,16 @@ getcfname()
 {
 	if (ConfFile != NULL)
 		return ConfFile;
+#ifdef NETINFO
+	{
+		extern char *ni_propval();
+		char *cflocation;
+
+		cflocation = ni_propval("/locations/sendmail", "sendmail.cf");
+		if (cflocation != NULL)
+			return cflocation;
+	}
+#endif
 	return _PATH_SENDMAILCF;
 }
 /*
@@ -1907,3 +1917,116 @@ solaris_gethostbyaddr(addr, len, type)
 }
 
 #endif
+/*
+**  NI_PROPVAL -- netinfo property value lookup routine
+**
+**	Parameters:
+**		directory -- the Netinfo directory name.
+**		propname -- the Netinfo property name.
+**
+**	Returns:
+**		NULL -- if:
+**			1. the directory is not found
+**			2. the property name is not found
+**			3. the property contains multiple values
+**			4. some error occured
+**		else -- the location of the config file.
+**
+**	Notes:
+**      	Caller should free the return value of ni_proval
+*/
+
+#ifdef NETINFO
+
+# include <netinfo/ni.h>
+
+# define LOCAL_NETINFO_DOMAIN    "."
+# define PARENT_NETINFO_DOMAIN   ".."
+# define MAX_NI_LEVELS           256
+
+char *
+ni_propval(directory, propname)
+	char *directory;
+	char *propname;
+{
+	char *propval;
+	int i;
+	void *ni = NULL;
+	void *lastni = NULL;
+	ni_status nis;
+	ni_id nid;
+	ni_namelist ninl;
+
+	/*
+	**  If the passed directory and property name are found
+	**  in one of netinfo domains we need to search (starting
+	**  from the local domain moving all the way back to the
+	**  root domain) set propval to the property's value
+	**  and return it.
+	*/
+
+	for (i = 0; i < MAX_NI_LEVELS; ++i)
+	{
+		if (i == 0)
+		{
+			nis = ni_open(NULL, LOCAL_NETINFO_DOMAIN, &ni);
+		}
+		else
+		{
+			if (lastni != NULL)
+				ni_free(lastni);
+			lastni = ni;
+			nis = ni_open(lastni, PARENT_NETINFO_DOMAIN, &ni);
+		}
+
+		/*
+		**  Don't bother if we didn't get a handle on a
+		**  proper domain.  This is not necessarily an error.
+		**  We would get a positive ni_status if, for instance
+		**  we never found the directory or property and tried
+		**  to open the parent of the root domain!
+		*/
+
+		if (nis != 0)
+			break;
+
+		/*
+		**  Find the path to the server information.
+		*/
+
+		if (ni_pathsearch(ni, &nid, directory) != 0)
+			continue;
+
+		/*
+		**  Find "host" information.
+		*/
+
+		if (ni_lookupprop(ni, &nid, propname, &ninl) != 0)
+			continue;
+
+		/*
+		**  If there's only one name in
+		**  the list, assume we've got
+		**  what we want.
+		*/
+
+		if (ninl.ni_namelist_len == 1)
+		{
+			propval = ni_name_dup(ninl.ni_namelist_val[0]);
+			break;
+		}
+	}
+
+	/*
+	**  Clean up.
+	*/
+
+	if (ni != NULL)
+		ni_free(ni);
+	if (lastni != NULL && ni != lastni)
+		ni_free(lastni);
+
+	return propval;
+}
+
+#endif /* NETINFO */
