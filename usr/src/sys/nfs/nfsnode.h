@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	7.23 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.24 (Berkeley) %G%
  */
 
 /*
@@ -34,8 +34,8 @@ struct nfsnode {
 	nfsv2fh_t n_fh;			/* NFS File Handle */
 	long	n_flag;			/* Flag for locking.. */
 	struct	vnode *n_vnode;		/* vnode associated with this node */
-	time_t	n_attrstamp;		/* Time stamp for cached attributes */
 	struct	vattr n_vattr;		/* Vnode attribute cache */
+	time_t	n_attrstamp;		/* Time stamp for cached attributes */
 	struct	sillyrename *n_sillyrename; /* Ptr to silly rename struct */
 	off_t	n_size;			/* Current size of file */
 	int	n_error;		/* Save write error value */
