@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.20 (Berkeley) %G%
+#	@(#)Makefile	1.21 (Berkeley) %G%
 #
 # make file for pdx
 #
@@ -25,10 +25,9 @@
 #
 
 DESTDIR	=
-HOME	= /usr/src/ucb/pdx
 LIB	= library.o cerror.o
 SRCDIR	= ../src/
-INSTALL	= ${DESTDIR}/usr/ucb/pdx
+INSTALL	= ${DESTDIR}/usr/bin/pdx
 
 RM	= /bin/rm -f
 CFLAGS	= -I.. -I../${SRCDIR} -DOBJ -DADDR32 -O
@@ -183,7 +182,7 @@ ${OBJECT}readobj.o ${OBJECT}readsym.o: ${SRCDIR}objfmt.h
 install: a.out
 	install -s a.out ${INSTALL}
 
-clean:
+cleandir clean:
 	${RM} a.out *.o */*.o
 
 depend:
