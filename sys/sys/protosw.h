@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)protosw.h	7.8 (Berkeley) 4/28/91
- *	$Id: protosw.h,v 1.2 1993/10/16 17:17:22 rgrimes Exp $
+ *	$Id: protosw.h,v 1.3 1993/11/07 17:52:56 wollman Exp $
  */
 
 #ifndef _SYS_PROTOSW_H_
@@ -160,27 +160,41 @@ char *prurequests[] = {
 #define	PRC_UNREACH_PORT	11	/* bad port # */
 /* was	PRC_UNREACH_NEEDFRAG	12	   (use PRC_MSGSIZE) */
 #define	PRC_UNREACH_SRCFAIL	13	/* source route failed */
-#define	PRC_REDIRECT_NET	14	/* net routing redirect */
-#define	PRC_REDIRECT_HOST	15	/* host routing redirect */
-#define	PRC_REDIRECT_TOSNET	16	/* redirect for type of service & net */
-#define	PRC_REDIRECT_TOSHOST	17	/* redirect for tos & host */
-#define	PRC_TIMXCEED_INTRANS	18	/* packet lifetime expired in transit */
-#define	PRC_TIMXCEED_REASS	19	/* lifetime expired on reass q */
-#define	PRC_PARAMPROB		20	/* header incorrect */
+#define PRC_UNREACH_NETUNKNOWN	14	/* network unknown */
+#define PRC_UNREACH_HOSTUNKNOWN	15	/* host unknown */
+#define PRC_UNREACH_ISOLATED	16	/* source host is isolated */
+#define PRC_UNREACH_NETADMIN	17	/* communication administratively */
+#define PRC_UNREACH_HOSTADMIN	18	/* prohibited with net/host */
+#define PRC_UNREACH_TOSNET	19	/* net unreachable with this TOS */
+#define PRC_UNREACH_TOSHOST	20	/* host unreachable with this TOS */
 
-#define	PRC_NCMDS		21
+#define	PRC_REDIRECT_NET	21	/* net routing redirect */
+#define	PRC_REDIRECT_HOST	22	/* host routing redirect */
+#define	PRC_REDIRECT_TOSNET	23	/* redirect for type of service & net */
+#define	PRC_REDIRECT_TOSHOST	24	/* redirect for tos & host */
+#define	PRC_TIMXCEED_INTRANS	25	/* packet lifetime expired in transit */
+#define	PRC_TIMXCEED_REASS	26	/* lifetime expired on reass q */
+#define	PRC_PARAMPROB		27	/* header incorrect */
+#define PRC_OPTION_MISSING	28	/* required option missing */
+#define PRC_MTUCHANGED		29	/* lower layer MTU has changed */
+
+#define	PRC_NCMDS		30
 
 #define	PRC_IS_REDIRECT(cmd)	\
 	((cmd) >= PRC_REDIRECT_NET && (cmd) <= PRC_REDIRECT_TOSHOST)
+#define PRC_IS_UNREACH(cmd)	\
+	((cmd) >= PRC_UNREACH_NET && (cmd) <= PRC_UNREACH_TOSHOST)
 
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
 	"IFDOWN", "ROUTEDEAD", "#2", "DEC-BIT-QUENCH2",
 	"QUENCH", "MSGSIZE", "HOSTDEAD", "#7",
 	"NET-UNREACH", "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
-	"#12", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
+	"#12", "SRCFAIL-UNREACH", "NET-UNKNOWN", "HOST-UNKNOWN",
+	"HOST-ISOLATED", "NET-ADMIN-UNREACH", "HOST-ADMIN-UNREACH",
+	"TOSNET-UNREACH", "TOSHOST-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
 	"TOSNET-REDIRECT", "TOSHOST-REDIRECT", "TX-INTRANS", "TX-REASS",
-	"PARAMPROB"
+	"PARAMPROB", "OPTION-MISSING", "MTU-CHANGED"
 };
 #endif
 
