@@ -24,11 +24,11 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/* $Header: clnp_frag.c,v 4.2 88/06/29 14:58:40 hagens Exp $ */
-/* $Source: /usr/argo/sys/netiso/RCS/clnp_frag.c,v $ */
+/* $Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $ */
+/* $Source: /var/src/sys/netiso/RCS/clnp_frag.c,v $ */
 
 #ifndef lint
-static char *rcsid = "$Header: clnp_frag.c,v 4.2 88/06/29 14:58:40 hagens Exp $";
+static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/09 16:20:26 hagens Exp $";
 #endif lint
 
 #ifdef ISO
@@ -120,6 +120,19 @@ int				flags;		/* flags passed to clnp_output */
 		while (total_len > 0) {
 			int		frag_size;
 			int		last_frag = 0;		/* true if this is the last fragment */
+
+			IFDEBUG(D_FRAG)
+				struct mbuf *mdump = frag_hdr;
+				int tot_mlen = 0;
+				printf("clnp_fragment: total_len %d:\n", total_len);
+				while (mdump != NULL) {
+					printf("\tmbuf x%x, m_len %d\n", 
+						mdump, mdump->m_len);
+					tot_mlen += mdump->m_len;
+					mdump = mdump->m_next;
+				}
+				printf("clnp_fragment: sum of mbuf chain %d:\n", tot_mlen);
+			ENDDEBUG
 			
 			frag_size = min(total_len, ifp->if_mtu - clnp->cnf_hdr_len);
 
@@ -192,10 +205,8 @@ int				flags;		/* flags passed to clnp_output */
 			IFDEBUG(D_DUMPOUT)
 				struct mbuf *mdump = frag_hdr;
 				printf("clnp_fragment: sending dg:\n");
-/* 				dump_buf(mtod(mdump, caddr_t), mdump->m_len);*/
 				while (mdump != NULL) {
-					printf("mbuf x%x, m_len %d\n", mdump, mdump->m_len);
-/*  					dump_buf(mtod(mdump, caddr_t), mdump->m_len);*/
+					printf("\tmbuf x%x, m_len %d\n", mdump, mdump->m_len);
 					mdump = mdump->m_next;
 				}
 			ENDDEBUG
@@ -541,12 +552,22 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
 		/* bytes is number of bytes left in front of data */
 		bytes = clnp->cnf_hdr_len - pad;
 
+		IFDEBUG(D_REASS)
+			printf("clnp_insert_frag: clnp x%x requires %d alignment\n",
+				clnp, pad);
+		ENDDEBUG
+
 		/* make it word aligned if necessary */
 		if (pad)
 			m_adj(m, pad);
 
 		cf = mtod(m, struct clnp_frag *);
 		cf->cfr_bytes = bytes;
+
+		IFDEBUG(D_REASS)
+			printf("clnp_insert_frag: cf now x%x, cfr_bytes %d\n", cf,
+				cf->cfr_bytes);
+		ENDDEBUG
 	}
 	cf->cfr_first = first;
 	cf->cfr_last = last;
@@ -614,21 +635,28 @@ struct clnp_fragl	*cfh;		/* fragment header */
 
 			IFDEBUG(D_REASS)
 				struct mbuf *mdump;
+				int l;
 				printf("clnp_comp_pdu: merging fragments\n");
-				printf("clnp_comp_pdu: 1st: [%d ... %d]\n", cf->cfr_first, 
-					cf->cfr_last);
+				printf("clnp_comp_pdu: 1st: [%d ... %d] (bytes %d)\n", 
+					cf->cfr_first, cf->cfr_last, cf->cfr_bytes);
 				mdump = cf->cfr_data;
+				l = 0;
 				while (mdump != NULL) {
 					printf("\tmbuf x%x, m_len %d\n", mdump, mdump->m_len);
+					l += mdump->m_len;
 					mdump = mdump->m_next;
 				}
-				printf("clnp_comp_pdu: 2nd: [%d ... %d]\n", cf_next->cfr_first, 
-					cf_next->cfr_last);
+				printf("\ttotal len: %d\n", l);
+				printf("clnp_comp_pdu: 2nd: [%d ... %d] (bytes %d)\n", 
+					cf_next->cfr_first, cf_next->cfr_last, cf_next->cfr_bytes);
 				mdump = cf_next->cfr_data;
+				l = 0;
 				while (mdump != NULL) {
 					printf("\tmbuf x%x, m_len %d\n", mdump, mdump->m_len);
+					l += mdump->m_len;
 					mdump = mdump->m_next;
 				}
+				printf("\ttotal len: %d\n", l);
 			ENDDEBUG
 
 			cf->cfr_last = cf_next->cfr_last;
@@ -636,6 +664,10 @@ struct clnp_fragl	*cfh;		/* fragment header */
 			 *	After this m_adj, the cf_next ptr is useless because we
 			 *	have adjusted the clnp_frag structure away...
 			 */
+			IFDEBUG(D_REASS)
+				printf("clnp_comp_pdu: shaving off %d bytes\n", 
+					cf_next_hdr.cfr_bytes);
+			ENDDEBUG
 			m_adj(cf_next_hdr.cfr_data, cf_next_hdr.cfr_bytes);
 			m_cat(cf->cfr_data, cf_next_hdr.cfr_data);
 			cf->cfr_next = next_frag;
