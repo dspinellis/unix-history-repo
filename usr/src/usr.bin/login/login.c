@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -427,7 +427,7 @@ main(argc, argv)
 		strncpy(term, stypeof(tty), sizeof(term));
 	(void)setenv("TERM", term, 0);
 	(void)setenv("USER", pwd->pw_name, 1);
-	(void)setenv("PATH", "/usr/ucb:/bin:/usr/bin:", 0);
+	(void)setenv("PATH", _PATH_DEFPATH, 0);
 
 	if (tty[sizeof("tty")-1] == 'd')
 		syslog(LOG_INFO, "DIALUP %s, %s", tty, pwd->pw_name);
