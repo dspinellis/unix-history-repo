@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.fullnames	2.11	%G%";
+#	"@(#)bibinc.fullnames	2.12	%G%";
 # full journal names, and other names
 #
 # journals
@@ -11,11 +11,14 @@ D COMP IEEE Computer
 D COMPJOUR The Computer Journal
 D COMPLANG Journal of Computer Languages
 D COMPSUR ACM Computing Surveys
+D HCI Human-Computer Interaction
+D HUMFACT Human Factors
 D I&C Information and Control
 D IBMJRD IBM Journal of Research and Development
 D IBMSJ IBM Systems Journal
 D IEEESW IEEE Software
 D IEEETSE IEEE Transactions on Software Engineering
+D IEEETSMC IEEE Transactions on Systems, Man, and Cybernetics
 D IEEETC IEEE Transactions on Computers
 D IJCIS International Journal of Computer and Information Sciences
 D IJMMS International Journal of Man-Machine Studies
@@ -28,6 +31,7 @@ D NMATH Numerical Mathematics
 D SIAMJC Siam Journal on Computing
 D SIAMJNA Siam Journal on Numerical Analysis
 D SIGACT S\&IGACT News
+D SIGCHI ACM S\&IGCHI Bulletin
 D SIGPLAN SI\&GPLAN Notices
 D SIGSOFT Software Engineering Notes
 D SP&E Software\(emPractice & Experience
@@ -66,6 +70,15 @@ D CCC84 PROC of the ACM SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
 D CHI83 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
 %C Boston, MA\
 %D DEC 1983
+D CHI85 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
+%C San Francisco, CA\
+%D APR 1985
+D CHI86 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
+%C Boston, MA\
+%D APR 1986
+D CHI87 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
+%C Toronto, Canada\
+%D APR 1987
 D ICSE International CONF on Software Engineering
 D ICSE3 PROC 3rd ICSE\
 %D MAY 1978
@@ -80,6 +93,28 @@ D ICSE6 PROC 6th ICSE\
 D ICSE7 PROC 7th ICSE\
 %C Orlando, FL\
 %D APR 1984
+D ICSE8 PROC 8th ICSE\
+%C London\
+%D AUG 1985
+D ICSE9 PROC 9th ICSE\
+%C Monterey, CA\
+%D MAR 1987
+D IJCAI International Joint CONF on Artificial Intelligence
+D OIS82 PROC S\&IGOA CONF on Office Information Systems\
+%C Philadelphia, PA\
+%D JUN 1982
+D OIS84 PROC Second ACM-S\&IGOA CONF on Office Information Systems\
+%C Toronto, Canada\
+%D JUN 1984
+D OIS86 PROC Third ACM-S\&IGOIS CONF on Office Information Systems\
+%C Providence, RI\
+%D OCT 1986
+D OOPS86 Object-Oriented Programming Systems, Languages and Applications CONF Proceedings\
+%C Portland, OR\
+%D NOV 1986
+D OOPS87 Object-Oriented Programming Systems, Languages and Applications CONF Proceedings\
+%C Orlando, FL\
+%D OCT 1987
 D PLISS83 PROC ACM SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
 %C San Francisco, CA\
 %D JUN 1983\
@@ -124,12 +159,16 @@ D POPL13 CONF Record of the Thirteenth POPL\
 D POPL14 CONF Record of the Fourteenth POPL\
 %C Munich, West Germany\
 %D JAN 1987
-D OOPS86 Object-Oriented Programming Systems, Languages and Applications CONF Proceedings\
-%C Portland, OR\
-%D NOV 1986
 D PSDE84 PROC of the ACM S\&IGSOFT/S\&IGPLAN Software Engineering SYMP on Practical Software Development Environments\
 %C Pittsburgh, PA\
 %D APR 1984
+D PSDE86 PROC of the ACM S\&IGSOFT/S\&IGPLAN Software Engineering SYMP on Practical Software Development Environments\
+%C Palo Alto, CA\
+%D DEC 1986
+D SEEPIL Workshop on Software Engineering Environments for\
+Programming-in-the-Large\
+%C Harwichport, MA\
+%D JUN 1985
 D TEXT81 PROC of the ACM S\&IGPLAN S\&IGOA SYMP on Text Manipulation\
 %C Portland, OR\
 %D JUN 1981
@@ -144,6 +183,7 @@ D ADA80 PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIG
 %V 15\
 %N 11
 D FJCC Fall Joint Computer Conference
+D SJCC Spring Joint Computer CONF
 D JER3 PROC Third Jerusalem CONF on Information Technology\
 %C Jerusalem, Israel\
 %D AUG 1978
@@ -192,8 +232,11 @@ D BTLHO Bell Laboratories\
 D CMU Carnegie-Mellon University\
 %C Pittsburgh, PA
 D CMUCS CSD, CMU
+D CSLI Center for the Study of Language and Information\
+%C Stanford, CA
 D DG Data General
 #
+D IBMRD IBM CORP, Research Division
 D MITLCS MIT Laboratory for Computer Science\
 %C Cambridge, MA
 D MITAI MIT Artificial Intelligence Laboratory\
@@ -207,3 +250,6 @@ D UCBCS Computer Science Division, EECS, UCB\
 %C CA
 D UCBERL ERL, EECS, UCB\
 %C CA
+D XEROXISL Intelligent Systems Laboratory, XEROXPARC
+D XEROXPARC Xerox Palo Alto Research Center\
+%C Palo Alto, CA
