@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)comsat.c	4.5 82/12/23";
+static	char *sccsid = "@(#)comsat.c	4.6 83/05/27";
 #endif
 
 #include <sys/types.h>
@@ -19,7 +19,8 @@ static	char *sccsid = "@(#)comsat.c	4.5 82/12/23";
 /*
  * comsat
  */
-#define	dprintf	if (0) printf
+int	debug = 0;
+#define	dprintf	if (debug) printf
 
 #define MAXUTMP 100		/* down from init */
 
@@ -47,17 +48,15 @@ char **argv;
 		fprintf(stderr, "comsat: biff/udp: unknown service\n");
 		exit(1);
 	}
-#ifndef DEBUG
+	if (!debug)
 	if (fork())
 		exit();
-#endif
 	chdir("/usr/spool/mail");
 	if((uf = open("/etc/utmp",0)) < 0)
 		perror("/etc/utmp"), exit(1);
-#ifndef DEBUG
+	if (!debug)
 	while (fork())
 		wait(0);
-#endif
 	sleep(10);
 	onalrm();
 	sigset(SIGALRM, onalrm);
@@ -141,7 +140,7 @@ notify(utp, offset)
 {
 	FILE *tp;
 	struct sgttyb gttybuf;
-	char tty[20];
+	char tty[20], hostname[32];
 	char name[sizeof (utmp[0].ut_name) + 1];
 	struct stat stb;
 
@@ -156,15 +155,16 @@ notify(utp, offset)
 		dprintf("fopen failed\n");
 		return;
 	}
-	gtty(fileno(tp),&gttybuf);
+	ioctl(fileno(tp), TIOCGETP, &gttybuf);
 	cr = (gttybuf.sg_flags & CRMOD) ? "" : "\r";
+	gethostname(hostname, sizeof (hostname));
 	strncpy(name, utp->ut_name, sizeof (utp->ut_name));
 	name[sizeof (name) - 1] = 0;
-	fprintf(tp,"%s\n\007New mail for %s\007 has arrived:%s\n",
-	    cr, name, cr);
+	fprintf(tp,"%s\n\007New mail for %s@%s\007 has arrived:%s\n",
+	    cr, name, hostname, cr);
 	fprintf(tp,"----%s\n", cr);
 	jkfprintf(tp, name, offset);
-	 fclose(tp);
+	fclose(tp);
 }
 
 jkfprintf(tp, name, offset)
@@ -172,6 +172,7 @@ jkfprintf(tp, name, offset)
 {
 	register FILE *fi;
 	register int linecnt, charcnt;
+	char line[BUFSIZ];
 
 	dprintf("HERE %s's mail starting at %d\n",
 	    name, offset);
@@ -180,33 +181,33 @@ jkfprintf(tp, name, offset)
 		return;
 	}
 	fseek(fi, offset, 0);
+	/* 
+	 * Print the first 7 lines or 560 characters of the new mail
+	 * (whichever comes first).  Skip header crap other than
+	 * From: and Subject:.
+	 */
 	linecnt = 7;
 	charcnt = 560;
-	/* 
-	 * print the first 7 lines or 560 characters of the new mail
-	 * (whichever comes first)
-	 */
-	for (;;) {
-		register ch;
+	while (fgets(line, sizeof (line), fi) != NULL) {
+		register char *cp;
+		char *index();
 
-	 	if ((ch = getc(fi)) == EOF) {  
-			fprintf(tp,"----%s\n", cr);
-			break;
-		}
-		if (ch == '\n') {  
-			fprintf(tp,"%s\n", cr);
-		 	if (linecnt-- < 0) {  
-				fprintf(tp,"...more...%s\n", cr);
-				break;
-			}
-		} else if(linecnt <= 0) {  
+		if (linecnt <= 0 || charcnt <= 0) {  
 			fprintf(tp,"...more...%s\n", cr);
 			break;
-		} else
-			putc(ch, tp);
-		if (charcnt-- == 0) {   
-			fprintf(tp, "%s\n", cr);
-			break;
 		}
+		cp = index(line, ':');
+		if (cp &&
+		    strncmp(line, "Date", cp - line) &&
+		    strncmp(line, "From", cp - line) &&
+		    strncmp(line, "Subject", cp - line) &&
+		    strncmp(line, "To", cp - line))
+			continue;
+		cp = index(line, '\n');
+		if (cp)
+			*cp = '\0';
+		fprintf(tp,"%s%s\n", line, cr);
+		linecnt--, charcnt -= strlen(line);
 	}
+	fprintf(tp,"----%s\n", cr);
 }
