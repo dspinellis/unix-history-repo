@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)size.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)size.c	4.3 (Berkeley) %G%";
 /*
  * size
  */
@@ -28,8 +28,8 @@ char **argv;
 			printf("size: %s not found\n", *argv);
 			continue;
 		}
-		fread((char *)&buf, sizeof(buf), 1, f);
-		if(N_BADMAG(buf)) {
+		if (fread((char *)&buf, sizeof(buf), 1, f) != 1 ||
+		    N_BADMAG(buf)) {
 			printf("size: %s not an object file\n", *argv);
 			fclose(f);
 			continue;
