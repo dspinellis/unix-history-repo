@@ -1,6 +1,11 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.13  1993/10/31  01:45:26  ljo
+# Re-enabled rules for .cc.o, .C.o, and .cxx.o. Re-enabled and fixed
+# depend rule for .C, .cc, and .cxx files. Now doesn't use the -+
+# option to mkdep, and handles -nostdinc++.
+#
 # Revision 1.12  1993/10/08  12:19:22  rgrimes
 # This fix is from Chris Demetriou
 # You need a SUFFIX: line that has nothing on it so that the built-in
@@ -169,21 +174,11 @@ cleandir:
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
-.if !target(depend)
-depend: .depend
-.depend: ${SRCS}
-	rm -f .depend
-	files="${.ALLSRC:M*.c}"; \
-	if [ "$$files" != "" ]; then \
-	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
-	fi
-	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
-	if [ "$$files" != "  " ]; then \
-	  mkdep -a ${MKDEP} ${CXXFLAGS:M-nostd*} ${CXXFLAGS:M-[ID]*} $$files; \
-	fi
+.if defined(SRCS)
+afterdepend:
 	@(TMP=/tmp/_depend$$$$; \
-	    sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.po:/' < .depend > $$TMP; \
-	    mv $$TMP .depend)
+	sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.po \1.so:/' < .depend > $$TMP; 
+	mv $$TMP .depend)
 .endif
 
 .if !target(install)
@@ -254,3 +249,5 @@ obj:
 	fi;
 .endif
 .endif
+
+.include <bsd.dep.mk>
