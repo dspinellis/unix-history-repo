@@ -20,3 +20,6 @@ print:
 sourcelist:	${ALLSOURCE}
 	@for i in ${ALLSOURCE}; \
 		do (echo ${DIRPATH}/$$i); done
+
+.DEFAULT:
+	sccs get $<
