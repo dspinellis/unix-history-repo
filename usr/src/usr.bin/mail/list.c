@@ -9,7 +9,7 @@
  * Message list handling.
  */
 
-static char *SccsId = "@(#)list.c	1.3 %G%";
+static char *SccsId = "@(#)list.c	1.4 %G%";
 
 /*
  * Convert the user string of message numbers and
@@ -41,15 +41,48 @@ getmsglist(buf, vector, flags)
  * on error.
  */
 
+/*
+ * Bit values for colon modifiers.
+ */
+
+#define	CMNEW		01		/* New messages */
+#define	CMOLD		02		/* Old messages */
+#define	CMUNREAD	04		/* Unread messages */
+#define	CMDELETED	010		/* Deleted messages */
+#define	CMREAD		020		/* Read messages */
+
+/*
+ * The following table describes the letters which can follow
+ * the colon and gives the corresponding modifier bit.
+ */
+
+struct coltab {
+	char	co_char;		/* What to find past : */
+	int	co_bit;			/* Associated modifier bit */
+	int	co_mask;		/* m_status bits to mask */
+	int	co_equal;		/* ... must equal this */
+} coltab[] = {
+	'n',		CMNEW,		MNEW,		MNEW,
+	'o',		CMOLD,		MNEW,		0,
+	'u',		CMUNREAD,	MREAD,		0,
+	'd',		CMDELETED,	MDELETED,	MDELETED,
+	'r',		CMREAD,		MREAD,		MREAD,
+	0,		0,		0,		0
+};
+
+static	int	lastcolmod;
+
 markall(buf, f)
 	char buf[];
 {
 	register char **np;
 	register int i;
+	register struct message *mp;
 	char *namelist[NMLSIZE], *bufp;
-	int tok, beg, mc, star, other, valdot;
+	int tok, beg, mc, star, other, valdot, colmod, colresult;
 
 	valdot = dot - &message[0] + 1;
+	colmod = 0;
 	for (i = 1; i <= msgCount; i++)
 		unmark(i);
 	bufp = buf;
@@ -119,7 +152,17 @@ number:
 				return(-1);
 			}
 			other++;
-			*np++ = savestr(lexstring);
+			if (lexstring[0] == ':') {
+				colresult = evalcol(lexstring[1]);
+				if (colresult == 0) {
+					printf("Unknown colon modifier \"%s\"\n",
+					    lexstring);
+					return(-1);
+				}
+				colmod |= colresult;
+			}
+			else
+				*np++ = savestr(lexstring);
 			break;
 
 		case TDOLLAR:
@@ -140,6 +183,7 @@ number:
 		}
 		tok = scan(&bufp);
 	}
+	lastcolmod = colmod;
 	*np = NOSTR;
 	mc = 0;
 	if (star) {
@@ -161,7 +205,7 @@ number:
 	 * if any user names were given.
 	 */
 
-	if (np > namelist && mc == 0)
+	if ((np > namelist || colmod != 0) && mc == 0)
 		for (i = 1; i <= msgCount; i++)
 			if ((message[i-1].m_flag & (MSAVED|MDELETED)) == f)
 				mark(i);
@@ -209,6 +253,54 @@ number:
 			return(-1);
 		}
 	}
+
+	/*
+	 * If any colon modifiers were given, go through and
+	 * unmark any messages which do not satisfy the modifiers.
+	 */
+
+	if (colmod != 0) {
+		for (i = 1; i <= msgCount; i++) {
+			register struct coltab *colp;
+
+			mp = &message[i - 1];
+			for (colp = &coltab[0]; colp->co_char; colp++)
+				if (colp->co_bit & colmod)
+					if ((mp->m_flag & colp->co_mask)
+					    != colp->co_equal)
+						unmark(i);
+			
+		}
+		for (mp = &message[0]; mp < &message[msgCount]; mp++)
+			if (mp->m_flag & MMARK)
+				break;
+		if (mp >= &message[msgCount]) {
+			register struct coltab *colp;
+
+			printf("No messages satisfy");
+			for (colp = &coltab[0]; colp->co_char; colp++)
+				if (colp->co_bit & colmod)
+					printf(" :%c", colp->co_char);
+			printf("\n");
+			return(-1);
+		}
+	}
+	return(0);
+}
+
+/*
+ * Turn the character after a colon modifier into a bit
+ * value.
+ */
+evalcol(col)
+{
+	register struct coltab *colp;
+
+	if (col == 0)
+		return(lastcolmod);
+	for (colp = &coltab[0]; colp->co_char; colp++)
+		if (colp->co_char == col)
+			return(colp->co_bit);
 	return(0);
 }
 
