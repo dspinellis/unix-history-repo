@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)langpats.c	2.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)langpats.c	2.8 (Berkeley) %G%";
 #endif
 
 #include "inline.h"
@@ -87,12 +87,6 @@ struct pats language_ptab[] = {
 	ashl	$9,r5,r0\n\
 	movpsl	-(sp)\n\
 	jsb	_Resume\n" },
-
-	{ "3,_strncmp\n",
-"	movl	(sp)+,r1\n\
-	movl	(sp)+,r3\n\
-	movl	(sp)+,r5\n\
-	cmpc3	r5,(r1),(r3)\n" },
 
 	{ "3,_copyin\n",
 "	movl	(sp)+,r1\n\
