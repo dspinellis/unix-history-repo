@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,7 +9,7 @@ static char sccsid[] = "@(#)syslogd.c	4.3 (Berkeley) %G%";
  * Each line may have a priority, signified as "<n>" as
  * the first three characters of the line.  If this is
  * not present, a default priority (DefPri) is used, which
- * starts out as LOG_NOTICE.  The default priority can get
+ * starts out as LOG_ERR.  The default priority can get
  * changed using "<*>n".
  *
  * To kill syslogd, send a signal 15 (terminate).  A signal 1 (hup) will
@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)syslogd.c	4.3 (Berkeley) %G%";
 #include <sysexits.h>
 #include <sys/socket.h>
 #include <sys/file.h>
+#include <sys/msgbuf.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <netinet/in.h>
@@ -87,7 +88,7 @@ struct	susers Susers[NSUSERS];
 
 int	Debug;			/* debug flag */
 int	LogFile;		/* log file descriptor */
-int	DefPri = LOG_NOTICE;	/* the default priority for untagged msgs */
+int	DefPri = LOG_ERR;	/* the default priority for untagged msgs */
 int	Sumask;			/* lowest priority written to super-users */
 int	MarkIntvl = 15;		/* mark interval in minutes */
 char	*ConfFile = defconf;	/* configuration file */
@@ -106,11 +107,11 @@ main(argc, argv)
 {
 	register int i;
 	register char *p;
-	int funix, finet, defreadfds, len;
+	int klog, funix, finet, defreadfds, len;
 	struct sockaddr_un sun, fromunix;
 	struct sockaddr_in sin, frominet;
 	FILE *fp;
-	char line[MAXLINE + 1];
+	char line[MSG_BSIZE + 1];
 	extern int die(), domark();
 
 	sun.sun_family = AF_UNIX;
@@ -192,6 +193,10 @@ main(argc, argv)
 		defreadfds |= 1 << finet;
 		inet = 1;
 	}
+	if ((klog = open("/dev/klog", O_RDONLY)) >= 0)
+		defreadfds |= 1 << klog;
+	else
+		dprintf("can't open /dev/klog (%d)\n", errno);
 
 	/* tuck my process id away */
 	fp = fopen(defpid, "w");
@@ -228,6 +233,15 @@ main(argc, argv)
 			domain = AF_INET;
 			len = sizeof frominet;
 			i = recvfrom(finet, line, MAXLINE, 0, &frominet, &len);
+		} else {
+			i = read(klog, line, sizeof(line) - 1);
+			if (i < 0) {
+				logerror("read");
+				continue;
+			}
+			line[i] = '\0';
+			printsys(line);
+			continue;
 		}
 		if (i < 0) {
 			if (errno == EINTR)
@@ -238,7 +252,7 @@ main(argc, argv)
 		if (domain == AF_INET && !chkhost(&frominet))
 			continue;
 		line[i] = '\0';
-		printline(domain == AF_UNIX, line);
+		printline(domain != AF_INET, line);
 	}
 }
 
@@ -253,7 +267,7 @@ printline(local, msg)
 {
 	register char *p, *q;
 	register int c;
-	char line[MAXLINE + sizeof(rhost) + 4];
+	char line[MAXLINE + 1];
 	int pri;
 
 	/* test for special codes */
@@ -281,7 +295,7 @@ printline(local, msg)
 
 	q = line;
 	while ((c = *p++ & 0177) != '\0' && c != '\n' &&
-	    q < &line[sizeof(line) - 2]) {
+	    q < &line[sizeof(line) - 1]) {
 		if (iscntrl(c)) {
 			*q++ = '^';
 			*q++ = c ^ 0100;
@@ -291,6 +305,54 @@ printline(local, msg)
 	*q = '\0';
 
 	logmsg(pri, line, local ? host : rhost);
+}
+
+/*
+ * Take a raw input line from /dev/klog, split and format similar to syslog().
+ */
+
+printsys(msg)
+	char *msg;
+{
+	register char *p, *q;
+	register int c;
+	char line[MAXLINE + 1];
+	int pri;
+	long now;
+
+	time(&now);
+	for (p = msg; *p != '\0'; ) {
+		/* test for special codes */
+		pri = DefPri;
+		if (p[0] == '<' && p[2] == '>') {
+			switch (p[1]) {
+			case '*':	/* reset default message priority */
+				dprintf("default priority = %c\n", p[3]);
+				c = p[3] - '0';
+				if ((unsigned) c <= 9)
+					DefPri = c;
+				break;
+
+			case '$':	/* reconfigure */
+				dprintf("reconfigure\n");
+				init();
+			}
+			p++;
+			pri = *p++ - '0';
+			p++;
+			if ((unsigned) pri > LOG_DEBUG)
+				pri = DefPri;
+		}
+
+		q = line;
+		sprintf(q, "vmunix: %.15s-- ", ctime(&now) + 4);
+		q += strlen(q);
+		while ((c = *p++) != '\0' && c != '\n' &&
+		    q < &line[sizeof(line) - 1])
+			*q++ = c;
+		*q = '\0';
+		logmsg(pri, line, host);
+	}
 }
 
 /*
