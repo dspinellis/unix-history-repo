@@ -1,9 +1,9 @@
-#	@(#)README	5.3 (Berkeley) %G%
+#	@(#)README	5.4 (Berkeley) %G%
 
 The potentially offensive fortunes are not installed by default on BSD
 systems.  If you're absolutely, *positively*, without-a-shadow-of-a-doubt
-sure that your user community wants them installed, change the macro TYPE
-in "datfiles/Makefile" and do an install.
+sure that your user community wants them installed, whack the Makefile
+in the subdirectory datfiles, and do "make all install".
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 	Some years ago, my neighbor Avery said to me: "There has not been an
