@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.5 81/10/29 */
+/* uipc_mbuf.c 1.6 81/10/30 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -10,8 +10,8 @@
 #include "../h/mbuf.h"
 #include "../inet/inet.h"
 #include "../inet/inet_systm.h"
-#include "../inet/tcp.h"
 #include "../inet/ip.h"
+#include "../inet/tcp.h"
 #include "../h/vm.h"
 
 struct mbuf *
@@ -53,7 +53,7 @@ COUNT(M_MORE);
 	return (m);
 }
 
-m_freem(m)                      /* free mbuf chain headed by m */
+m_freem(m)
 	register struct mbuf *m;
 {
 	register struct mbuf *n;
@@ -65,15 +65,16 @@ COUNT(M_FREEM);
 	cnt = 0;
 	s = splimp();
 	do {
-		MFREE(m, n);
+		if (m->m_off > MMAXOFF)
+			cnt += NMBPG;
 		cnt++;
+		MFREE(m, n);
 	} while (m = n);
 	splx(s);
 	return (cnt);
 }
 
-
-mbufinit()                      /* init network buffer mgmt system */
+mbufinit()
 {
 	register struct mbuf *m;
 	register i;
@@ -92,6 +93,27 @@ COUNT(MBUFINIT);
 	mbstat.m_bufs = 32;
 	mbstat.m_lowat = 16;
 	mbstat.m_hiwat = 32;
+	{ int i,j,k,n;
+	n = 32;
+	k = n << 1;
+	if ((i = rmalloc(netmap, n)) == 0)
+		return (0);
+	j = i<<1;
+	m = pftom(i);
+	/* should use vmemall sometimes */
+	if (memall(&Netmap[j], k, proc, CSYS) == 0) {
+		printf("botch\n");
+		return;
+	}
+	vmaccess(&Netmap[j], (caddr_t)m, k);
+	for (j=0; j < n; j++) {
+		m->m_off = 0;
+		m->m_next = mpfree;
+		mpfree = m;
+		m += NMBPG;
+		nmpfree++;
+	}
+	}
 }
 
 pg_alloc(n)
@@ -126,9 +148,6 @@ COUNT(PG_ALLOC);
 m_expand()
 {
 	register i;
-	register struct ipq *fp;
-	register struct ip *q;
-	register struct tcb *tp;
 	register struct mbuf *m, *n;
 	int need, needp, needs;
 
@@ -137,33 +156,52 @@ COUNT(M_EXPAND);
 	needp = need >> 3;
 	if (pg_alloc(needp))
 		return (1);
-	for (i=0; i < needp; i++, need-=NMBPG)
-		if (needp == 1 || pg_alloc(1) == 0)		/* ??? */
+	for (i=0; i < needp; i++, need -= NMBPG)
+		if (pg_alloc(1) == 0)
 			goto steal;
 	return (need < needs);
 steal:
-#ifdef notdef
-	/* free fragments */
-	/* free unacks */
-#endif
-	return (need < needs);
+	/* while (not enough) ask protocols to free code */
+	;
 }
 
 #ifdef notdef
 m_relse()
 {
-COUNT(M_RELSE);
 
+COUNT(M_RELSE);
 }
 #endif
 
-struct mbuf *
+m_cat(m, n)
+	register struct mbuf *m, *n;
+{
+
+	while (m->m_next)
+		m = m->m_next;
+	while (n)
+		if (m->m_off + m->m_len + n->m_len <= MMAXOFF) {
+			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, n->m_len);
+			m->m_len += n->m_len;
+			n = m_free(n);
+		} else {
+			m->m_next = n;
+			m = n;
+			n = m->m_next;
+		}
+}
+
 m_adj(mp, len)
 	struct mbuf *mp;
 	register len;
 {
 	register struct mbuf *m, *n;
 
+/*
+	for (m = mp; m; m = m->m_next) {
+		printf("a %x %d\n", m, m->m_len);
+	}
+*/
 COUNT(M_ADJ);
 	if ((m = mp) == NULL)
 		return;
@@ -215,22 +253,4 @@ COUNT(MTOPHYS);
 	pte = &Netmap[i];
 	addr = (pte->pg_pfnum << PGSHIFT) | ((int)m & PGOFSET);
 	return (addr);
-}
-
-m_cat(m, n)
-	register struct mbuf *m, *n;
-{
-
-	while (m->m_next)
-		m = m->m_next;
-	while (n)
-		if (m->m_off + m->m_len + n->m_len <= MMAXOFF) {
-			bcopy(mtod(n, caddr_t), mtod(m, caddr_t) + m->m_len, n->m_len);
-			m->m_len += n->m_len;
-			n = m_free(n);
-		} else {
-			m->m_next = n;
-			m = n;
-			n = m->m_next;
-		}
 }
