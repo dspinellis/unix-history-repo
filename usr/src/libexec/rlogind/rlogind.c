@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.43 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -81,8 +81,6 @@ static	char term[64] = "TERM=";
 int	keepalive = 1;
 int	check_all = 0;
 int	check_all = 0;
-
-#define	SUPERUSER(pwd)	((pwd)->pw_uid == 0)
 
 extern	int errno;
 int	reapchild();
@@ -226,13 +224,13 @@ doit(f, fromp)
 #endif /* OLD_LOGIN */
 
 	if (use_kerberos) {
+		if (!hostok)
+			fatal(f, "krlogind: Host address mismatch.", 0);
 		retval = do_krb_login(hp->h_name, fromp, encrypt);
-		if (retval == 0 && hostok)
+		if (retval == 0)
 			authenticated++;
 		else if (retval > 0)
 			fatal(f, krb_err_txt[retval], 0);
-		else if (!hostok)
-			fatal(f, "krlogind: Host address mismatch.", 0);
 		write(f, &c, 1);
 		confirmed = 1;		/* we sent the null! */
 	} else
@@ -550,12 +548,12 @@ do_rlogin(host)
 	getstr(lusername, sizeof(lusername), "locuser too long");
 	getstr(term+ENVSIZE, sizeof(term)-ENVSIZE, "Terminal type too long");
 
-	if (getuid())
-		return(-1);
 	pwd = getpwnam(lusername);
 	if (pwd == NULL)
 		return(-1);
-	return(ruserok(host, SUPERUSER(pwd), rusername, lusername));
+	if (pwd->pw_uid == 0)
+		return(-1);
+	return(ruserok(host, 0, rusername, lusername));
 }
 
 
