@@ -1,4 +1,4 @@
-/*	ip_input.c	1.62	83/01/17	*/
+/*	ip_input.c	1.63	83/02/05	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -207,7 +207,7 @@ found:
 		m = dtom(ip);
 	} else
 		if (fp)
-			(void) ip_freef(fp);
+			ip_freef(fp);
 
 	/*
 	 * Switch out to protocol's input routine.
@@ -357,20 +357,18 @@ dropfrag:
  * Free a fragment reassembly header and all
  * associated datagrams.
  */
-struct ipq *
 ip_freef(fp)
 	struct ipq *fp;
 {
-	register struct ipasfrag *q;
-	struct mbuf *m;
+	register struct ipasfrag *q, *p;
 
-	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next)
+	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = p) {
+		p = q->ipf_next;
+		ip_deq(q);
 		m_freem(dtom(q));
-	m = dtom(fp);
-	fp = fp->next;
-	remque(fp->prev);
-	(void) m_free(m);
-	return (fp);
+	}
+	remque(fp);
+	(void) m_free(dtom(fp));
 }
 
 /*
@@ -413,11 +411,12 @@ ip_slowtimo()
 		splx(s);
 		return;
 	}
-	while (fp != &ipq)
-		if (--fp->ipq_ttl == 0)
-			fp = ip_freef(fp);
-		else
-			fp = fp->next;
+	while (fp != &ipq) {
+		--fp->ipq_ttl;
+		fp = fp->next;
+		if (fp->prev->ipq_ttl == 0)
+			ip_freef(fp->prev);
+	}
 	splx(s);
 }
 
@@ -428,7 +427,7 @@ ip_drain()
 {
 
 	while (ipq.next != &ipq)
-		(void) ip_freef(ipq.next);
+		ip_freef(ipq.next);
 }
 
 /*
