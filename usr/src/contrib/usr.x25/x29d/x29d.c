@@ -18,8 +18,10 @@
 
 #include <errno.h>
 #include <netdb.h>
-#include <sgtty.h>
 #include <signal.h>
+#include <sys/ioctl.h>
+#include <sys/termios.h>
+#include <paths.h>
 
 #include "../h/x29.h"
 
@@ -35,9 +37,10 @@ char	pibuf[BUFSIZ], fibuf[BUFSIZ];
 int	pty, net;
 extern	char **environ;
 extern	int errno;
-char	line[sizeof("/dev/ptyp0")];
+char	line[MAXPATHLEN];
 char	console[] = "/dev/console";
 short	packet_size;
+short	debug;
 char	*tracefn;		/* trace file name */
 char	*server;
 short	send_banner;
@@ -129,7 +132,6 @@ register char **argv;
 	register int s, pid;
 	register char *p;
 
-#ifdef waterloo
 	/*
 	 * If this host doesn't support X.25, give up.
 	 */
@@ -137,9 +139,9 @@ register char **argv;
 	if (s < 0 && errno == EPROTONOSUPPORT)
 		fatal(2, "X.25 is not supported on this machine");
 	close(s);
-#endif
 	netp = lookup ("ccitt1978");
 	sock.x25_family = AF_CCITT;
+	sock.x25_len = sizeof(sock);
 	sock.x25_opts.op_flags = X25_MQBIT;
 	sock.x25_udata[0] = ITI_CALL;
 	sock.x25_udlen = 4;
@@ -171,6 +173,10 @@ register char **argv;
 				sock.x25_opts.op_flags |= X25_REVERSE_CHARGE;
 				break;
 
+			case 'd':
+				debug++;
+				break;
+
 			case 't':
 				if (argc > 1) {
 					argc--; argv++;
@@ -186,19 +192,8 @@ register char **argv;
 			server = *argv;
 	if (server == 0)
 		fatal (1, "no server specified");
-	if (fork())
-		exit(0);
-	for (s = 0; s < 10; s++)
-		(void) close(s);
-	(void) open("/", 0);
-	(void) dup2(0, 1);
-	(void) dup2(0, 2);
-	{ int tt = open("/dev/tty", 2);
-	  if (tt > 0) {
-		ioctl(tt, TIOCNOTTY, (char *)0);
-		close(tt);
-	  }
-	}
+	if (debug == 0)
+		daemon(0, 0);
 
 	while((s = socket(AF_CCITT, SOCK_STREAM, 0)) < 0)
 		sleep(60);
@@ -249,6 +244,7 @@ reapchild()
 
 char	*envinit[] = { "TERM=ccitt", 0 };
 int	cleanup();
+struct termios term;
 
 /*
  * Get a pty, scan input lines.
@@ -257,51 +253,14 @@ doit(who)
 struct sockaddr_x25 *who;
 {
 	register char *cp;
-	register int i, p, t;
-	struct sgttyb b;
-	struct stat sb;
+	int i, p, t;
 
-	strcpy(line, "/dev/ptyp0");
-	cp = line;
-	for (t = 'p'; ; t++) {
-		cp[strlen("/dev/pty")] = t;
-		if (stat(line, &sb) < 0)
-			break;
-		for (i = 0; i < 16; i++) {
-			cp[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
-			p = open(cp, 2);
-			if (p > 0)
-				goto gotpty;
-		}
-	}
-	fatal(net, "All pty ports in use");
-	/*NOTREACHED*/
-gotpty:
-	pty = p;
-	(void) dup2(net, 0);
-	cp[strlen("/dev/")] = 't';
-	t = open("/dev/tty", 2);
-	if (t >= 0) {
-		ioctl(t, TIOCNOTTY, (char *)0);
-		close(t);
-	}
-	t = open(cp, 2);	/* slave side of pty */
-	if (t < 0)
-		fatalperror(cp, errno);
-	ioctl(t, TIOCGETP, (char *)&b);
-	b.sg_flags = CRMOD|XTABS|ANYP|ECHO;
-	ioctl(t, TIOCSETP, &b);
 	packet_size = 1 << who->x25_opts.op_psize;
-	if ((i = fork()) < 0)
-		fatalperror("fork", errno);
-	if (i)
+	i = forkpty(&pty, line, &term, 0);
+	if (i > 0)
 		x29d();
-	close(net);
-	close(p);
-	(void) dup2(t, 0);
-	(void) dup2(t, 1);
-	(void) dup2(t, 2);
-	close(t);
+	if (i < 0)
+		fatalperror("fork", errno);
 	environ = envinit;
 	call_server (who);
 	/*NOTREACHED*/
@@ -406,6 +365,7 @@ x29d()
 	ioctl(net, FIONBIO, (char *)&on);
 	ioctl(pty, FIONBIO, (char *)&on);
 	ioctl(pty, TIOCPKT, (char *)&on);
+#define TIOCREMECHO 5 /*  to make compile */
 	ioctl(pty, TIOCREMECHO, (char *)&on);	/* enable special pty mode */
 	signal(SIGPIPE, SIG_IGN);	/* why not cleanup?  --kwl */
 	signal(SIGTSTP, SIG_IGN);
@@ -414,8 +374,6 @@ x29d()
 
 	signal(SIGTTOU, SIG_IGN);
 	signal(SIGURG, x25_interrupt);	/* for out-of-band data */
-	pgrp = -getpgrp(0);
-	ioctl(net, SIOCSPGRP, (char *)&pgrp);
 
 	if (netp->n_proflen)
 		(void) write(net, netp->n_profile, netp->n_proflen);
@@ -539,32 +497,31 @@ x29d()
 
 x25_interrupt()
 {
-	struct sgttyb b;
-	struct tchars tchars;
+	struct termios tt;
 	int zero = 0;
 
 	signal(SIGURG, x25_interrupt);
-	ioctl(pty, TIOCGETP, (char *)&b);
-	if (b.sg_flags & RAW)
+	tcgetattr(pty, &tt);
+	if (tt.c_lflag & ISIG) {
+		tcsetattr(pty, TCSAFLUSH, &tt);
+		(void) write(pty, &tt.c_cc[VINTR], 1);
+	} else
 		(void) write(pty, "\0", 1);
-	else {
-		ioctl(pty, TIOCFLUSH, (char *)&zero);
-		ioctl(pty, TIOCGETC, (char *)&tchars);
-		(void) write(pty, &tchars.t_intrc, 1);
-	}
 }
 
 cleanup()
 {
-	struct sgttyb sg;
-	struct stat st;
+	char *p;
 
-	ioctl(pty, TIOCGETP, (char *)&sg);    /* flushes output buffer */
-	ioctl(pty, TIOCSETP, (char *)&sg);
-	(void) stat(line, &st);
-	rmut();
-	vhangup();			/* XXX */
-	setuid(st.st_uid);
+	p = line + sizeof(_PATH_DEV) - 1;
+	if (logout(p))
+		logwtmp(p, "", "");
+	(void)chmod(line, 0666);
+	(void)chown(line, 0, 0);
+	*p = 'p';
+	(void)chmod(line, 0666);
+	(void)chown(line, 0, 0);
+	shutdown(net, 2);
 	exit(1);
 }
 
@@ -577,18 +534,20 @@ set_x29_parameters()
 {
 	register char *p;
 	register int f;
-	struct sgttyb b;
+	struct termios b;
 
 	if (netp->n_type == X25NET)
 		return (0);
-	ioctl(pty, TIOCGETP, (char *)&b);
-	f = b.sg_flags;
+	tcgetattr(pty, &b);
 	p = pibuf;
 	*p++ = Q_BIT;
 	*p++ = X29_SET_PARMS;
-	*p++ = X29_ESCAPE_TO_CMD_CODE;	*p++ = (f & (RAW|CBREAK)) == 0;
-	*p++ = X29_ECHO_CODE;		*p++ = (f & ECHO) != 0;
-	*p++ = X29_FORWARDING_SIGNAL_CODE;	*p++ = (f & (RAW|CBREAK)) ? 0 : 126;
+	/* *p++ = X29_ESCAPE_TO_CMD_CODE; *p++ = (f & (RAW|CBREAK)) == 0;*/
+	*p++ = X29_ESCAPE_TO_CMD_CODE; *p++ = (b.c_lflag & ICANON) != 0;
+
+	*p++ = X29_ECHO_CODE; *p++ = (b.c_lflag & ECHO) != 0;
+	*p++ = X29_FORWARDING_SIGNAL_CODE;
+			*p++ = (b.c_lflag & ISIG) ? 0 : 126;
 
 	/*
 	 * The value of 10 (0.5 seconds) for the idle timer when
@@ -599,26 +558,24 @@ set_x29_parameters()
 	 * be changed to suit local requirements.
 	 */
 
-	*p++ = X29_IDLE_TIMER_CODE;	*p++ = (f & (RAW|CBREAK)) ? 10 : 0;
-	*p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (f & TANDEM) != 0;
-	*p++ = X29_XON_XOFF_CODE;	*p++ = (f & RAW) == 0;
-	if(netp->n_type == CCITT1980) {
-		struct ltchars ltc;
+	/**p++ = X29_IDLE_TIMER_CODE;	*p++ = (f & (RAW|CBREAK)) ? 10 : 0;*/
+	*p++ = X29_IDLE_TIMER_CODE; *p++ = (b.c_lflag & ICANON)  ? 0 : 10;
 
-		ioctl(pty, TIOCGLTC, (char *)&ltc);
+	/**p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (f & TANDEM) != 0;*/
+	*p++ = X29_AUX_DEV_CONTROL_CODE;*p++ = (b.c_iflag & IXOFF) != 0;
+	*p++ = X29_XON_XOFF_CODE;	*p++ = (b.c_iflag & IXON) != 0;
+	if(netp->n_type == CCITT1980) {
 		*p++ = X29_LF_AFTER_CR;
-		*p++ = (f & (RAW|CBREAK) || (f & ECHO) == 0) ? 0 : 4;
-		*p++ = X29_EDITING;
-		*p++ = (f & (RAW|CBREAK)) == 0;
-		*p++ = X29_CHARACTER_DELETE;
-		*p++ = (f & (RAW|CBREAK)) || b.sg_erase & 0200 ?
-			0 : b.sg_erase;
-		*p++ = X29_LINE_DELETE;
-		*p++ = (f & (RAW|CBREAK)) || b.sg_kill & 0200 ?
-			0 : b.sg_kill;
-		*p++ = X29_LINE_DISPLAY;
-		*p++ = (f & (RAW|CBREAK)) || ltc.t_rprntc & 0200 ?
-			0 : ltc.t_rprntc;
+		/* *p++ = (f & (RAW|CBREAK) || (f & ECHO) == 0) ? 0 : 4; */
+		*p++ = (0 == (b.c_lflag & ICANON) || 0 == (b.c_lflag & ECHO)) ?
+			0 : 4;
+
+		*p++ = X29_EDITING; *p++ = (b.c_lflag & ICANON) != 0;
+#define ctlchar(x) \
+  (0 == (b.c_lflag & ICANON) || b.c_cc[x] == _POSIX_VDISABLE) ? 0 : b.c_cc[x]
+		*p++ = X29_CHARACTER_DELETE; *p++ = ctlchar(VERASE);
+		*p++ = X29_LINE_DELETE; *p++ = ctlchar(VKILL);
+		*p++ = X29_LINE_DISPLAY; *p++ = ctlchar(VREPRINT);
 	}
 	return (p - pibuf);
 }
@@ -644,12 +601,12 @@ x29_qbit(n)
 					B110, B0, B300, B1200, B600,
 					B0, B0, B0, B0, B0, B0, B0,
 					B2400, B4800, B9600, EXTA };
-				struct sgttyb b;
+				struct termios b;
 
 				if(*++p >= 0 && *p < sizeof(speeds)) {
-					ioctl(pty, TIOCGETP, (char *)&b);
-					b.sg_ispeed = b.sg_ospeed = speeds[*p];
-					ioctl(pty, TIOCSETN, (char *)&b);
+					tcgetattr(pty, &b);
+					cfsetspeed(&b, speeds[*p]);
+					tcsetattr(pty, TCSANOW, &b);
 				}
 			} else if(*p == X29_DISCARD_OUTPUT_CODE && *++p != 0) {
 				char message[4];
@@ -695,63 +652,6 @@ x29_qbit(n)
 			(void) write(fd, buf, p-buf);
 		}
 	}
-}
-
-/*
- * HACK!
- * This program does not use or need any stdio routines.
- * Defining this procedure prevents all of the stdio
- * code from being loaded.
- */
-
-exit(code)
-{
-	_exit(code);
-}
-
-#include <utmp.h>
-
-struct	utmp wtmp;
-char	wtmpf[]	= "/usr/adm/wtmp";
-char	utmp[] = "/etc/utmp";
-#define SCPYN(a, b)	strncpy(a, b, sizeof (a))
-#define SCMPN(a, b)	strncmp(a, b, sizeof (a))
-
-rmut()
-{
-	register int f, found = 0;
-
-	f = open(utmp, 2);
-	if (f >= 0) {
-		while(read(f, (char *)&wtmp, sizeof (wtmp)) == sizeof (wtmp)) {
-			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
-				continue;
-			(void) lseek(f, -(long)sizeof (wtmp), 1);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			(void) write(f, (char *)&wtmp, sizeof (wtmp));
-			found++;
-		}
-		close(f);
-	}
-	if (found) {
-		f = open(wtmpf, 1);
-		if (f >= 0) {
-			SCPYN(wtmp.ut_line, line+5);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			(void) lseek(f, (long)0, 2);
-			(void) write(f, (char *)&wtmp, sizeof (wtmp));
-			close(f);
-		}
-	}
-	chmod(line, 0666);
-	chown(line, 0, 0);
-	line[strlen("/dev/")] = 'p';
-	chmod(line, 0666);
-	chown(line, 0, 0);
 }
 
 x29d_trace(s, bp, n)
