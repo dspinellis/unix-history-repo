@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O -I..
 SRCS=	atan2.c sincos.c tan.c
@@ -31,7 +31,7 @@ MAN=
 
 all: ../libm.a ../libm_p.a
 
-../libm.a ../libm_p.a: ${OBJS} FRC
+../libm.a ../libm_p.a: ${OBJS}
 	cd ../profiled; ar cru ../libm_p.a ${OBJS}
 	ar cru ../libm.a ${OBJS}
 
