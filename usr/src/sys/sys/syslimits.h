@@ -14,12 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)syslimits.h	7.1 (Berkeley) %G%
+ *	@(#)syslimits.h	7.2 (Berkeley) %G%
  */
 
 #define	ARG_MAX		20480	/* max bytes for an exec function */
 #define	CHILD_MAX	40	/* max simultaneous processes */
-#define	LINK_MAX	8	/* max file link count */
+#define	LINK_MAX	32767	/* max file link count */
 #define	MAX_CANON	255	/* max bytes in terminal canonical input line */
 #define	MAX_INPUT	255	/* max bytes in terminal input */
 #define	NAME_MAX	255	/* max number of bytes in a file name */
