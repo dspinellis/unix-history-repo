@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ec.c	7.2 (Berkeley) %G%
+ *	@(#)if_ec.c	7.3 (Berkeley) %G%
  */
 
 #include "ec.h"
@@ -475,8 +475,10 @@ ecrint(unit)
 	/*
 	 * Out of sync with hardware, should never happen?
 	 */
-	if ((rmd->rfd0 & COM0_C) == 0 || (rmd->count & RBD_F) == 0)
-		return ec_rxstart(ec);
+	if ((rmd->rfd0 & COM0_C) == 0 || (rmd->count & RBD_F) == 0) {
+		ecrerror(unit, "out of sync, resetting");
+		return ecreset(unit);
+	}
 	/*
 	 * Process all buffers with valid data
 	 */
