@@ -1,5 +1,4 @@
-/* USE <wait.h> */
-static	char sccsid[] = "@(#)cc.c 3.3 %G%";
+static	char sccsid[] = "@(#)cc.c 3.4 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -23,7 +22,6 @@ char	*savestr(), *strspl(), *setsuf();
 int	idexit();
 char	**av, **clist, **llist, **plist;
 int	cflag, eflag, gflag, oflag, pflag, sflag, wflag, Rflag, exflag, proflag;
-int	cps8;
 char	*dflag;
 int	exfail;
 char	*chpass;
@@ -48,15 +46,6 @@ main(argc, argv)
 	for (i = 1; i < argc; i++) {
 		if (*argv[i] == '-') switch (argv[i][1]) {
 
-		case '8':
-			cps8++;
-			cpp = "/usr/bin/8cpp";
-			ccom = "/usr/lib/8ccom";
-			c2 = "/usr/bin/8c2";
-			as = "/usr/bin/8as";
-			ld = "/usr/bin/8ld";
-			crt0 = "/usr/lib/8crt0";
-			continue;
 		case 'S':
 			sflag++;
 			cflag++;
@@ -161,7 +150,7 @@ main(argc, argv)
 		}
 	}
 	if (proflag)
-		crt0 = cps8 ? "/usr/lib/8mcrt0.o" : "/usr/new/mcrt0.o";
+		crt0 = "/usr/new/mcrt0.o";
 	if (nc==0)
 		goto nocom;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
