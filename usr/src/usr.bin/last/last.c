@@ -12,26 +12,24 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)last.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)last.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * last
- */
 #include <sys/param.h>
 #include <sys/stat.h>
 
+#include <err.h>
 #include <fcntl.h>
+#include <paths.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <tzfile.h>
 #include <unistd.h>
 #include <utmp.h>
-#include <paths.h>
 
-#define	SECDAY	(24*60*60)			/* seconds in a day */
 #define	NO	0				/* false/no */
 #define	YES	1				/* true/yes */
 
@@ -69,7 +67,7 @@ void	 wtmp __P((void));
 int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern int optind;
 	extern char *optarg;
@@ -78,7 +76,7 @@ main(argc, argv)
 
 	maxrec = -1;
 	while ((ch = getopt(argc, argv, "0123456789f:h:t:")) != EOF)
-		switch((char)ch) {
+		switch (ch) {
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			/*
@@ -107,7 +105,8 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
-			fputs("usage: last [-#] [-f file] [-t tty] [-h hostname] [user ...]\n", stderr);
+			(void)fprintf(stderr,
+	"usage: last [-#] [-f file] [-t tty] [-h hostname] [user ...]\n");
 			exit(1);
 		}
 
@@ -140,10 +139,8 @@ wtmp()
 	int	bytes, wfd;
 	char	*ct, *crmsg;
 
-	if ((wfd = open(file, O_RDONLY, 0)) < 0 || fstat(wfd, &stb) == -1) {
-		perror(file);
-		exit(1);
-	}
+	if ((wfd = open(file, O_RDONLY, 0)) < 0 || fstat(wfd, &stb) == -1)
+		err(1, "%s", file);
 	bl = (stb.st_size + sizeof(buf) - 1) / sizeof(buf);
 
 	(void)time(&buf[0].ut_time);
@@ -151,12 +148,9 @@ wtmp()
 	(void)signal(SIGQUIT, onintr);
 
 	while (--bl >= 0) {
-		if (lseek(wfd, (long)(bl * sizeof(buf)), L_SET) == -1 ||
-		    (bytes = read(wfd, (char *)buf, sizeof(buf))) == -1) {
-			fprintf(stderr, "last: %s: ", file);
-			perror((char *)NULL);
-			exit(1);
-		}
+		if (lseek(wfd, (off_t)(bl * sizeof(buf)), L_SET) == -1 ||
+		    (bytes = read(wfd, buf, sizeof(buf))) == -1)
+			err(1, "%s", file);
 		for (bp = &buf[bytes / sizeof(buf[0]) - 1]; bp >= buf; --bp) {
 			/*
 			 * if the terminal line is '~', the machine stopped.
@@ -171,7 +165,12 @@ wtmp()
 				    UT_NAMESIZE) ? "crash" : "shutdown";
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
-					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n",
+					    UT_NAMESIZE, UT_NAMESIZE,
+					    bp->ut_name, UT_LINESIZE,
+					    UT_LINESIZE, bp->ut_line,
+					    UT_HOSTSIZE, UT_HOSTSIZE,
+					    bp->ut_host, ct, ct + 11);
 					if (maxrec != -1 && !--maxrec)
 						return;
 				}
@@ -185,7 +184,11 @@ wtmp()
 			    && !bp->ut_line[1]) {
 				if (want(bp, NO)) {
 					ct = ctime(&bp->ut_time);
-					printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s \n",
+				    UT_NAMESIZE, UT_NAMESIZE, bp->ut_name,
+				    UT_LINESIZE, UT_LINESIZE, bp->ut_line,
+				    UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host,
+				    ct, ct + 11);
 					if (maxrec && !--maxrec)
 						return;
 				}
@@ -203,7 +206,11 @@ wtmp()
 			}
 			if (bp->ut_name[0] && want(bp, YES)) {
 				ct = ctime(&bp->ut_time);
-				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s ", UT_NAMESIZE, UT_NAMESIZE, bp->ut_name, UT_LINESIZE, UT_LINESIZE, bp->ut_line, UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host, ct, ct + 11);
+				printf("%-*.*s  %-*.*s %-*.*s %10.10s %5.5s ",
+				UT_NAMESIZE, UT_NAMESIZE, bp->ut_name,
+				UT_LINESIZE, UT_LINESIZE, bp->ut_line,
+				UT_HOSTSIZE, UT_HOSTSIZE, bp->ut_host,
+				ct, ct + 11);
 				if (!T->logout)
 					puts("  still logged in");
 				else {
@@ -212,12 +219,16 @@ wtmp()
 						printf("- %s", crmsg);
 					}
 					else
-						printf("- %5.5s", ctime(&T->logout)+11);
+						printf("- %5.5s",
+						    ctime(&T->logout)+11);
 					delta = T->logout - bp->ut_time;
-					if (delta < SECDAY)
-						printf("  (%5.5s)\n", asctime(gmtime(&delta))+11);
+					if (delta < SECSPERDAY)
+						printf("  (%5.5s)\n",
+						    asctime(gmtime(&delta))+11);
 					else
-						printf(" (%ld+%5.5s)\n", delta / SECDAY, asctime(gmtime(&delta))+11);
+						printf(" (%ld+%5.5s)\n",
+						    delta / SECSPERDAY,
+						    asctime(gmtime(&delta))+11);
 				}
 				if (maxrec != -1 && !--maxrec)
 					return;
@@ -324,16 +335,14 @@ hostconv(arg)
 {
 	static int first = 1;
 	static char *hostdot, name[MAXHOSTNAMELEN];
-	char *argdot, *index();
+	char *argdot;
 
 	if (!(argdot = index(arg, '.')))
 		return;
 	if (first) {
 		first = 0;
-		if (gethostname(name, sizeof(name))) {
-			perror("last: gethostname");
-			exit(1);
-		}
+		if (gethostname(name, sizeof(name)))
+			err(1, "gethostname");
 		hostdot = index(name, '.');
 	}
 	if (hostdot && !strcasecmp(hostdot, argdot))
@@ -381,7 +390,7 @@ void
 onintr(signo)
 	int signo;
 {
-	char *ct, *ctime();
+	char *ct;
 
 	ct = ctime(&buf[0].ut_time);
 	printf("\ninterrupted %10.10s %5.5s \n", ct, ct + 11);
