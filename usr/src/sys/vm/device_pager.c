@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device_pager.c	8.4 (Berkeley) %G%
+ *	@(#)device_pager.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -42,11 +42,11 @@ static vm_pager_t	 dev_pager_alloc
 			    __P((caddr_t, vm_size_t, vm_prot_t, vm_offset_t));
 static void		 dev_pager_dealloc __P((vm_pager_t));
 static int		 dev_pager_getpage
-			    __P((vm_pager_t, vm_page_t, boolean_t));
+			    __P((vm_pager_t, vm_page_t *, int, boolean_t));
 static boolean_t	 dev_pager_haspage __P((vm_pager_t, vm_offset_t));
 static void		 dev_pager_init __P((void));
 static int		 dev_pager_putpage
-			    __P((vm_pager_t, vm_page_t, boolean_t));
+			    __P((vm_pager_t, vm_page_t *, int, boolean_t));
 static vm_page_t	 dev_pager_getfake __P((vm_offset_t));
 static void		 dev_pager_putfake __P((vm_page_t));
 
@@ -56,7 +56,8 @@ struct pagerops devicepagerops = {
 	dev_pager_dealloc,
 	dev_pager_getpage,
 	dev_pager_putpage,
-	dev_pager_haspage
+	dev_pager_haspage,
+	vm_pager_clusternull
 };
 
 static void
@@ -142,6 +143,7 @@ top:
 		pager->pg_handle = handle;
 		pager->pg_ops = &devicepagerops;
 		pager->pg_type = PG_DEVICE;
+		pager->pg_flags = 0;
 		pager->pg_data = devp;
 		TAILQ_INIT(&devp->devp_pglist);
 		/*
@@ -220,9 +222,10 @@ dev_pager_dealloc(pager)
 }
 
 static int
-dev_pager_getpage(pager, m, sync)
+dev_pager_getpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
-	vm_page_t m;
+	vm_page_t *mlist;
+	int npages;
 	boolean_t sync;
 {
 	register vm_object_t object;
@@ -230,11 +233,17 @@ dev_pager_getpage(pager, m, sync)
 	vm_page_t page;
 	dev_t dev;
 	int (*mapfunc)(), prot;
+	vm_page_t m;
 
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
-		printf("dev_pager_getpage(%x, %x)\n", pager, m);
+		printf("dev_pager_getpage(%x, %x, %x, %x)\n",
+		       pager, mlist, npages, sync);
 #endif
+
+	if (npages != 1)
+		panic("dev_pager_getpage: cannot handle multiple pages");
+	m = *mlist;
 
 	object = m->object;
 	dev = (dev_t)pager->pg_handle;
@@ -271,14 +280,16 @@ dev_pager_getpage(pager, m, sync)
 }
 
 static int
-dev_pager_putpage(pager, m, sync)
+dev_pager_putpage(pager, mlist, npages, sync)
 	vm_pager_t pager;
-	vm_page_t m;
+	vm_page_t *mlist;
+	int npages;
 	boolean_t sync;
 {
 #ifdef DEBUG
 	if (dpagerdebug & DDB_FOLLOW)
-		printf("dev_pager_putpage(%x, %x)\n", pager, m);
+		printf("dev_pager_putpage(%x, %x, %x, %x)\n",
+		       pager, mlist, npages, sync);
 #endif
 	if (pager == NULL)
 		return;
