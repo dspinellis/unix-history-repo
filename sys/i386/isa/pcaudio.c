@@ -27,9 +27,11 @@
  *	$Id$ 
  */
 
-#include "param.h"
+#include "systm.h"
 #include "uio.h"
 #include "ioctl.h"
+#include "proc.h"
+#include "file.h"
 #include "sound/ulaw.h"
 #include "machine/cpufunc.h"
 #include "machine/pio.h"
@@ -41,7 +43,7 @@
 #include "pca.h"
 #if NPCA > 0
 
-#define BUF_SIZE 	8192
+#define BUF_SIZE 	4*8192
 #define SAMPLE_RATE	8000
 #define INTERRUPT_RATE	16000
 
@@ -61,6 +63,8 @@ static struct pca_status {
 	char		current;	/* current buffer */
 	unsigned char	oldval;		/* old timer port value */
 	char		timer_on;	/* is playback running */
+	char		coll;		/* select collision */
+	pid_t		wsel;		/* pid of select'ing proc */
 } pca_status;
 
 static char buffer1[BUF_SIZE];
@@ -77,6 +81,7 @@ int pcaclose(dev_t dev, int flag);
 int pcaopen(dev_t dev, int flag);
 int pcawrite(dev_t dev, struct uio *uio, int flag);
 int pcaioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p);
+int pcaselect(dev_t dev, int rw, struct proc *p);
 
 struct	isa_driver pcadriver = {
 	pcaprobe, pcaattach, "pca",
@@ -290,10 +295,12 @@ pcawrite(dev_t dev, struct uio *uio, int flag)
 				if (pca_start()) 
 					return EBUSY;
 		}
+#if 0
 		if (pca_status.in_use[0] && pca_status.in_use[1]) {
 			pca_sleep = 1;
 			tsleep((caddr_t)&pca_sleep, PZERO|PCATCH, "pca_wait",0);
 		}
+#endif
 	} 
 	return 0;
 }
@@ -302,7 +309,7 @@ pcawrite(dev_t dev, struct uio *uio, int flag)
 int
 pcaioctl(dev_t dev, int cmd, caddr_t data, int flag, struct proc *p)
 {
-audio_info_t *auptr;
+	audio_info_t *auptr;
 
 	switch(cmd) {
 
@@ -366,7 +373,6 @@ void
 pcaintr(int regs)
 {
 	if (pca_status.index < pca_status.in_use[pca_status.current]) {
-#if 1
 		disable_intr();
 		__asm__("outb %0,$0x61\n"
 			"andb $0xFE,%0\n"
@@ -377,18 +383,10 @@ pcaintr(int regs)
 			: : "a" ((char)pca_status.buffer[pca_status.index]),
 			    "b" ((long)volume_table) );
 		enable_intr();
-#else
-		disable_intr();
-		outb(IO_PPI, pca_status.oldval);
-		outb(IO_PPI, pca_status.oldval & 0xFE);
-		outb(TIMER_CNTR2, 
-			volume_table[pca_status.buffer[pca_status.index]]);
-		enable_intr();
-#endif
 		pca_status.counter += pca_status.scale;
 		pca_status.index = (pca_status.counter >> 8);
 	}
-	else {
+	if (pca_status.index >= pca_status.in_use[pca_status.current]) {
 		pca_status.index = pca_status.counter = 0;
 		pca_status.in_use[pca_status.current] = 0;
 		pca_status.current ^= 1;
@@ -397,7 +395,38 @@ pcaintr(int regs)
 			wakeup((caddr_t)&pca_sleep);
 			pca_sleep = 0;
 		}
+		if (pca_status.wsel) {
+			selwakeup(pca_status.wsel, pca_status.coll);
+			pca_status.wsel = 0;
+			pca_status.coll = 0;
+		}
 	}
 }
 
+
+int
+pcaselect(dev_t dev, int rw, struct proc *p)
+{
+ 	int s = spltty();
+ 	struct proc *p1;
+
+ 	switch (rw) {
+
+	case FWRITE:
+ 		if (!pca_status.in_use[0] || !pca_status.in_use[1]) {
+ 			splx(s);
+ 			return(1);
+ 		}
+ 		if (pca_status.wsel && (p1 = pfind(pca_status.wsel))
+		    && p1->p_wchan == (caddr_t)&selwait)
+ 			pca_status.coll = 1;
+ 		else
+ 			pca_status.wsel = p->p_pid;
+ 		splx(s);
+ 		return 0;
+	default:
+ 		splx(s);
+ 		return(0); 
+	}
+}
 #endif
