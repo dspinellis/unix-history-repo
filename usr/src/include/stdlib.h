@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.19 (Berkeley) %G%
+ *	@(#)stdlib.h	5.20 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -100,6 +100,7 @@ int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 char	*initstate __P((unsigned, char *, int));
 int	 radixsort __P((const u_char **, int, const u_char *, u_int));
+int	 sradixsort __P((const u_char **, int, const u_char *, u_int));
 long	 random __P((void));
 char	*setstate __P((char *));
 void	 srandom __P((unsigned));
