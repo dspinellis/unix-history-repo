@@ -1,4 +1,4 @@
-#	disktab	4.2	83/07/07
+#	disktab	4.3	83/07/20
 # Disk geometry and partition layout tables. 
 # Key:
 #	ty	type of disk
@@ -160,6 +160,14 @@ rk07|RK07|DEC RK07:\
 	:pf#86176:bf#4096:ff#1024:\
 	:pg#158528:bg#4096:fg#512:\
 	:ph#291346:bh#4096:fh#1024:
+980|AMPEX DM980:\
+	:ty=removable:ns#32:nt#5:nc#823:\
+	:pa#15884:ba#8192:fa#1024:\
+	:pb#33440:pc#131680:\
+	:pd#15884:bd#8192:fd#1024:\
+	:pe#55936:be#4096:fe#512:\
+	:pf#10080:bf#4096:ff#1024:\
+	:pg#82080:bg#4096:fg#1024:
 #
 # Disk on a UDA50
 # NOTE: the space normally reserved for the bad sector
