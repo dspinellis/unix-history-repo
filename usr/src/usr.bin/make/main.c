@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -183,6 +183,11 @@ rearg:	while((c = getopt(argc, argv, "D:I:d:ef:ij:knqrst")) != EOF) {
 				case 'v':
 					debug |= DEBUG_VAR;
 					break;
+				default:
+					(void)fprintf(stderr,
+				"make: illegal argument to d option -- %c\n",
+					    *modules);
+					usage();
 				}
 			Var_Append(MAKEFLAGS, "-d", VAR_GLOBAL);
 			Var_Append(MAKEFLAGS, optarg, VAR_GLOBAL);
@@ -755,7 +760,7 @@ enomem()
 usage()
 {
 	(void)fprintf(stderr,
-"usage: make [-eiknqrst] [-D variable] [-d flags] [-f makefile ]\n\t\
-[-I directory] [-j max_jobs] [variable=value]\n");
+"usage: make [-eiknqrst] [-D variable] [-d flags] [-f makefile ]\n\
+            [-I directory] [-j max_jobs] [variable=value]\n");
 	exit(2);
 }
