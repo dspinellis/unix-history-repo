@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pccons.c	5.11 (Berkeley) %G%
+ *	@(#)pccons.c	5.12 (Berkeley) %G%
  */
 
 /*
@@ -260,23 +260,19 @@ pcstart(tp)
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 	do {
-	if (tp->t_outq.c_cc <= tp->t_lowat) {
-		if (tp->t_state&TS_ASLEEP) {
-			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)&tp->t_outq);
+		if (tp->t_outq.c_cc <= tp->t_lowat) {
+			if (tp->t_state&TS_ASLEEP) {
+				tp->t_state &= ~TS_ASLEEP;
+				wakeup((caddr_t)&tp->t_outq);
+			}
+			selwakeup(&tp->t_wsel);
 		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
-	}
-	if (tp->t_outq.c_cc == 0)
-		goto out;
-	c = getc(&tp->t_outq);
-	splx(s);
-	sput(c,0x7);
-	s = spltty();
+		if (tp->t_outq.c_cc == 0)
+			goto out;
+		c = getc(&tp->t_outq);
+		splx(s);
+		sput(c, 0x7);
+		s = spltty();
 	} while(1);
 out:
 	splx(s);
