@@ -44,7 +44,7 @@
 .Op Ar system
 .Op Ar core
 .Nm netstat
-.Op Fl himnrs
+.Op Fl himnrRs
 .Op Fl f Ar address_family
 .Op Fl M Ar core
 .Op Fl N Ar system
@@ -139,6 +139,10 @@ Show the routing tables.
 When
 .Fl s
 is also present, show routing statistics instead.
+.It Fl R
+Show multicast routing statistics.  When
+.Fl s
+is also present, show multicast routing statistics instead.
 .It Fl f Ar address_family 
 Limit statistics or address control block reports to those
 of the specified
