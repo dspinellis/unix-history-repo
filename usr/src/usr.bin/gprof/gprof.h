@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.4 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.5 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -135,13 +135,82 @@ typedef int	bool;
 #define	FALSE	0
 #define	TRUE	1
 
-int	timecmp();
-int	valcmp();
-int	totalcmp();
+    /*
+     *	opcode of the `calls' instruction
+     */
+#define	CALLS	0xfb
 
-nltype	*nllookup();
+    /*
+     *	register for pc relative addressing
+     */
+#define	PC	0xf
+
+enum opermodes {
+    literal, indexed, reg, regdef, autodec, autoinc, autoincdef, 
+    bytedisp, bytedispdef, worddisp, worddispdef, longdisp, longdispdef,
+    immediate, absolute, byterel, bytereldef, wordrel, wordreldef,
+    longrel, longreldef
+};
+typedef enum opermodes	operandenum;
+
+struct modebyte {
+    unsigned int	regfield:4;
+    unsigned int	modefield:4;
+};
+
+    /*
+     *	function declarations
+     */
+		addarc();
+int		arccmp();
 arctype		*arclookup();
+		asgnsamples();
+		cyclelink();
+		dfn();
 bool		dfn_busy();
+		dfn_findcycle();
+bool		dfn_numbered();
+		dfn_post_visit();
+		dfn_pre_visit();
+		dfn_self_cycle();
+		doarcs();
+		done();
+		findcalls();
+		flatprofheader();
+		flatprofline();
+		getnfile();
+		getpfile();
+		getstrtab();
+		getsymtab();
+		gettextspace();
+		gprofheader();
+		gprofline();
+		main();
+unsigned long	max();
+int		membercmp();
+unsigned long	min();
+nltype		*nllookup();
+FILE		*openpfile();
+long		operandlength();
+operandenum	operandmode();
+char		*operandname();
+		printchildren();
+		printcycle();
+		printgprof();
+		printmembers();
+		printname();
+		printparents();
+		printprof();
+		readsamples();
+unsigned long	reladdr();
+		sortchildren();
+		sortmembers();
+		sortparents();
+		tally();
+		timecmp();
+		topcmp();
+int		totalcmp();
+		valcmp();
 
 #define	LESSTHAN	-1
 #define	EQUALTO		0

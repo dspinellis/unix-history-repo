@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.4 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.5 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -241,7 +241,8 @@ getpfile(filename)
     fclose(pfile);
 }
 
-FILE *openpfile(filename)
+FILE *
+openpfile(filename)
     char *filename;
 {
     FILE	*pfile;
@@ -328,7 +329,7 @@ asgnsamples()
     double		time;
     unsigned long	pcl, pch;
     register int	i;
-    int			overlap;
+    unsigned long	overlap;
     unsigned long	svalue0, svalue1;
 
     /* read samples and assign to namelist symbols */
@@ -379,16 +380,18 @@ asgnsamples()
 }
 
 
+unsigned long
 min(a, b)
-    unsigned a,b;
+    unsigned long a,b;
 {
     if (a<b)
 	return(a);
     return(b);
 }
 
+unsigned long
 max(a, b)
-    unsigned a,b;
+    unsigned long a,b;
 {
     if (a>b)
 	return(a);
