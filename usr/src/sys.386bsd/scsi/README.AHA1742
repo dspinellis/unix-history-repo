@@ -1,0 +1,24 @@
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00098
+ * --------------------         -----   ----------------------
+ *
+ * 16 Feb 93	Julian Elischer		ADDED for SCSI system
+
+Just a note:
+The new bootblocks do not work with the 1742 in extended mode:
+They DO however love it in standard mode.
+
+The driver  automatically switches the board to extended mode when
+it finds it
+so leave your 1742 board in standard mode and just boot with the new bootblocks.
+
+When unix starts the board will magically be in extended mode 
+and when it is rebooted the bios will take it back to standard mode again.
+
+Eventually I will fix the bootblocks, but this works just as well.
+
+julian
+
+
