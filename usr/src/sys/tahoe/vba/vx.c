@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vx.c	7.12 (Berkeley) %G%
+ *	@(#)vx.c	7.13 (Berkeley) %G%
  */
 
 #include "vx.h"
@@ -247,9 +247,10 @@ vxopen(dev, flag)
  * Close a VX line.
  */
 /*ARGSUSED*/
-vxclose(dev, flag)
+vxclose(dev, flag, mode, p)
 	dev_t dev;
-	int flag;
+	int flag, mode;
+	struct proc *p;
 {
 	register struct tty *tp;
 	int unit, s, error = 0;
@@ -257,7 +258,7 @@ vxclose(dev, flag)
 	unit = minor(dev);
 	tp = &vx_tty[unit];
 	s = spl8();
-	(*linesw[tp->t_line].l_close)(tp);
+	(*linesw[tp->t_line].l_close)(tp, flag);
 	if (tp->t_cflag & HUPCL || (tp->t_state & TS_ISOPEN) == 0)
 		vcmodem(dev, VMOD_OFF);
 	/* wait for the last response */
