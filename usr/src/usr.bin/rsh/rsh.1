@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rsh.1	6.2 (Berkeley) %G%
+.\"	@(#)rsh.1	6.3 (Berkeley) %G%
 .\"
 .TH RSH 1 ""
 .UC 5
@@ -53,7 +53,7 @@ unless you specify a different remote name with the
 .B \-l
 option.
 This remote name must be equivalent (in the sense of
-.IR rlogin (1C))
+.IR rlogin (1))
 to the originating account; no provision
 is made for specifying a password with a command.
 .PP
@@ -61,7 +61,7 @@ If you omit
 .I command,
 then instead of executing a single command, you will be logged in
 on the remote host using
-.IR rlogin (1C).
+.IR rlogin (1).
 .PP
 Shell metacharacters which are not quoted are interpreted
 on local machine, while quoted metacharacters are interpreted on
