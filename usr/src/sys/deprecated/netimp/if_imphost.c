@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.4	82/02/16	*/
+/*	if_imphost.c	4.5	82/02/21	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -85,7 +85,7 @@ COUNT(HOSTENTER);
 	mtod(dtom(hp0), struct hmbuf *)->hm_count++;
 	hp = hp0;
 	hp->h_addr = addr;
-	hp->h_status = HOSTS_UP;
+	hp->h_qcnt = 0;
 
 foundhost:
 	hp->h_refcnt++;		/* know new structures have 0 val */
@@ -165,4 +165,23 @@ COUNT(HOSTRELEASE);
 		mprev = &m->m_next;
 	*mprev = mh->m_next;
 	(void) m_free(mh);
+}
+
+/*
+ * Remove a packet from the holding q.
+ * The RFNM counter is also bumped.
+ */
+struct mbuf *
+hostdeque(hp)
+	register struct host *hp;
+{
+	register struct mbuf *m;
+
+	hp->h_rfnm--;
+	HOST_DEQUE(hp, m);
+	if (m)
+		return (m);
+	if (hp->h_rfnm == 0)
+		hostfree(hp);
+	return (0);
 }
