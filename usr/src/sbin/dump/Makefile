@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.9 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.10 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -41,11 +41,13 @@ install: rdump dump
 	install -s rdump $(DESTDIR)/etc
 	install -s dump $(DESTDIR)/etc
 
-dumprmain.o: dumprmain.c
-	cc -c -DRDUMP dumprmain.c
+dumprmain.o: dumpmain.c
+	cp dumpmain.c dumprmain.c
+	${CC} -c -DRDUMP ${CFLAGS} dumprmain.c
+	rm -f dumprmain.c
 
 clean:
-	rm -f *.o rdump dump errs
+	rm -f *.o rdump dump errs dumprmain.c
 
 lint:
 	lint $(DFLAGS) $(SRCS)

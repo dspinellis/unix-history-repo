@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)traverse.c	1.12 (Berkeley) %G%";
+static	char *sccsid = "@(#)traverse.c	1.13 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -146,7 +146,7 @@ dmpindir(blk, lvl, size)
 	if (blk != 0)
 		bread(fsbtodb(sblock, blk), (char *)idblk, sblock->fs_bsize);
 	else
-		blkclr(idblk, sblock->fs_bsize);
+		bzero(idblk, sblock->fs_bsize);
 	if (lvl <= 0) {
 		if (*size < NINDIR(sblock) * sblock->fs_bsize)
 			cnt = howmany(*size, sblock->fs_fsize);
@@ -314,11 +314,4 @@ bread(da, ba, c)
 				breaderrors = 0;
 		}
 	}
-}
-
-blkclr(cp, size)
-	char *cp;
-	long size;
-{
-	asm("movc5	$0,(r0),$0,8(ap),*4(ap)");
 }

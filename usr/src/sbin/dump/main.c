@@ -1,10 +1,12 @@
-static	char *sccsid = "@(#)main.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.11 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
 int	blockswritten = 0;	/* number of blocks written on current tape */
 int	tapeno = 0;	/* current tape number */
-int	density = 160;	/* density in 0.1" units */
+int	density = 0;	/* density in bytes/0.1" */
+int	ntrec = NTREC;	/* # tape blocks in each tape record */
+int	cartridge = 0;	/* Assume non-cartridge tape */
 #ifdef RDUMP
 char	*host;
 #endif
@@ -20,7 +22,7 @@ main(argc, argv)
 
 	time(&(spcl.c_date));
 
-	tsize = 2300L*12L*10L;
+	tsize = 0;	/* Default later, based on 'c' option for cart tapes */
 	tape = TAPE;
 	disk = DISK;
 	increm = NINCREM;
@@ -79,6 +81,18 @@ main(argc, argv)
 		}
 		break;
 
+	case 'b':			/* blocks per tape write */
+		if(argc > 1) {
+			argv++;
+			argc--;
+			ntrec = atol(*argv);
+		}
+		break;
+
+	case 'c':			/* Tape is cart. not 9-track */
+		cartridge++;
+		break;
+
 	case '0':			/* dump level */
 	case '1':
 	case '2':
@@ -109,6 +123,20 @@ main(argc, argv)
 		argc--;
 		disk = *argv;
 	}
+
+	/*
+	 * Determine how to default tape size and density
+	 *
+	 *         	density				tape size
+	 * 9-track	1600 bpi (160 bytes/.1")	2300 ft.
+	 * 9-track	6250 bpi (625 bytes/.1")	2300 ft.
+	 * cartridge	8000 bpi (100 bytes/.1")	4000 ft. (450*9 - slop)
+	 */
+	if (density == 0)
+		density = cartridge ? 100 : 160;
+	if (tsize == 0)
+		tsize = cartridge ? 4000L*120L : 2300L*120L;
+
 #ifdef RDUMP
 	{ char *index();
 	  host = tape;
@@ -194,16 +222,34 @@ main(argc, argv)
 	bmapest(clrmap);
 	bmapest(nodmap);
 
-	fetapes =
+	if (cartridge) {
+		/* Estimate number of tapes, assuming streaming stops at
+		   the end of each block written, and not in mid-block.
+		   Assume no erroneous blocks; this can be compensated for
+		   with an artificially low tape size. */
+		fetapes = 
+		(	  esize		/* blocks */
+			* TP_BSIZE	/* bytes/block */
+			* (1.0/density)	/* 0.1" / byte */
+		  +
+			  esize		/* blocks */
+			* (1.0/ntrec)	/* streaming-stops per block */
+			* 15.48		/* 0.1" / streaming-stop */
+		) * (1.0 / tsize );	/* tape / 0.1" */
+	} else {
+		/* Estimate number of tapes, for old fashioned 9-track tape */
+		int tenthsperirg = (density == 625) ? 3 : 7;
+		fetapes =
 		(	  esize		/* blocks */
 			* TP_BSIZE	/* bytes / block */
 			* (1.0/density)	/* 0.1" / byte */
 		  +
 			  esize		/* blocks */
-			* (1.0/NTREC)	/* IRG's / block */
+			* (1.0/ntrec)	/* IRG's / block */
+			* tenthsperirg	/* 0.1" / IRG */
 			* 7		/* 0.1" / IRG */
-		) * (1.0 / tsize )	/* tape / 0.1" */
-	;
+		) * (1.0 / tsize );	/* tape / 0.1" */
+	}
 	etapes = fetapes;		/* truncating assignment */
 	etapes++;
 	/* count the nodemap on each additional tape */
@@ -211,6 +257,8 @@ main(argc, argv)
 		bmapest(nodmap);
 	esize += i + 10;	/* headers + 10 trailer blocks */
 	msg("estimated %ld tape blocks on %3.2f tape(s).\n", esize, fetapes);
+
+	alloctape();			/* Allocate tape buffer */
 
 	otape();			/* bitmap is the first to tape write */
 	time(&(tstart_writing));
@@ -224,7 +272,7 @@ main(argc, argv)
 
 	spcl.c_type = TS_END;
 #ifndef RDUMP
-	for(i=0; i<NTREC; i++)
+	for(i=0; i<ntrec; i++)
 		spclrec();
 #endif
 	msg("DUMP: %ld tape blocks on %d tape(s)\n",spcl.c_tapea,spcl.c_volume);
