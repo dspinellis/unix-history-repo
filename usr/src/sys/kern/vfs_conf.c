@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	8.7 (Berkeley) %G%
+ *	@(#)vfs_conf.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -57,13 +57,6 @@ extern	struct vfsops nfs_vfsops;
 #define	NFS_VFSOPS	&nfs_vfsops
 #else
 #define	NFS_VFSOPS	NULL
-#endif
-
-#ifdef LOFS
-extern	struct vfsops lofs_vfsops;
-#define	LOFS_VFSOPS	&lofs_vfsops
-#else
-#define	LOFS_VFSOPS	NULL
 #endif
 
 #ifdef FDESC
@@ -136,7 +129,7 @@ struct vfsops *vfssw[] = {
 	MFS_VFSOPS,		/* 3 = MOUNT_MFS */
 	NULL,			/* 4 = MOUNT_PC */
 	LFS_VFSOPS,		/* 5 = MOUNT_LFS */
-	LOFS_VFSOPS,		/* 6 = MOUNT_LOFS */
+	NULL,			/* 6 = MOUNT_LOFS */
 	FDESC_VFSOPS,		/* 7 = MOUNT_FDESC */
 	PORTAL_VFSOPS,		/* 8 = MOUNT_PORTAL */
 	NULL_VFSOPS,		/* 9 = MOUNT_NULL */
@@ -170,7 +163,6 @@ extern struct vnodeopv_desc spec_vnodeop_opv_desc;
 extern struct vnodeopv_desc nfsv2_vnodeop_opv_desc;
 extern struct vnodeopv_desc spec_nfsv2nodeop_opv_desc;
 extern struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc;
-extern struct vnodeopv_desc lofs_vnodeop_opv_desc;
 extern struct vnodeopv_desc fdesc_vnodeop_opv_desc;
 extern struct vnodeopv_desc portal_vnodeop_opv_desc;
 extern struct vnodeopv_desc null_vnodeop_opv_desc;
@@ -209,9 +201,6 @@ struct vnodeopv_desc *vfs_opv_descs[] = {
 #ifdef FIFO
 	&fifo_nfsv2nodeop_opv_desc,
 #endif
-#endif
-#ifdef LOFS
-	&lofs_vnodeop_opv_desc,
 #endif
 #ifdef FDESC
 	&fdesc_vnodeop_opv_desc,
