@@ -34,7 +34,7 @@ eqn(argc,argv) int argc; char *argv[];{
 		if (in[0]=='.' && in[1]=='E' && in[2]=='Q') {
 			for (i=11; i<100; used[i++]=0);
 			printf("%s",in);
-			printf(".nr 99 \\n(.s\n.nr 98 \\n(.f\n");
+			printf(".nr 99 \\n(.s\n.nr 98 \\n(.f\n.af 98 01\n");
 			markline = 0;
 			init();
 			yyparse();
@@ -81,7 +81,7 @@ getline(s) register char *s; {
 inline() {
 	int ds;
 
-	printf(".nr 99 \\n(.s\n.nr 98 \\n(.f\n");
+	printf(".nr 99 \\n(.s\n.nr 98 \\n(.f\n.af 98 01\n");
 	ds = oalloc();
 	printf(".rm %d \n", ds);
 	do{
@@ -114,7 +114,7 @@ putout(p1) int p1; {
 		printf("\\x'0-%s'", spaceval);
 	else if (before > 0)
 		printf("\\x'0-%du'", before);
-	printf("\\f%c\\s%d\\*(%d%s\\s\\n(99\\f\\n(98",
+	printf("\\f%c\\s%d\\*(%d%s\\s\\n(99\\f(\\n(98",
 		gfont, gsize, p1, rfont[p1] == ITAL ? "\\|" : "");
 	after = ebase[p1] - VERT( EM(0.2, ps) );
 	if (spaceval == NULL && after > 0)
