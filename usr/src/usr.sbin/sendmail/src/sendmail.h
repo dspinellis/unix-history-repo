@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.25 (Berkeley) %G%
+ *	@(#)sendmail.h	5.26 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.25		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.26		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -226,6 +226,8 @@ struct envelope
 	char		*e_to;		/* the target person */
 	char		*e_receiptto;	/* return receipt address */
 	ADDRESS		e_from;		/* the person it is from */
+	char		*e_sender;	/* string version of from person */
+	char		*e_returnpath;	/* string version of return path */
 	char		**e_fromdomain;	/* the domain part of the sender */
 	ADDRESS		*e_returnto;	/* place to return the message to */
 	ADDRESS		*e_sendqueue;	/* list of message recipients */
@@ -549,6 +551,7 @@ EXTERN struct	sockaddr_in RealHostAddr;/* address of host we are talking to */
 EXTERN char	*CurHostName;	/* current host we are dealing with */
 EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
 EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
+EXTERN bool	LogUsrErrs;	/* syslog user errors (e.g., SMTP RCPT cmd) */
 extern char	*ConfFile;	/* location of configuration file [conf.c] */
 extern char	*FreezeFile;	/* location of frozen memory image [conf.c] */
 extern char	Arpa_Info[];	/* the reply code for Arpanet info [conf.c] */

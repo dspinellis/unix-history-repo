@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -106,6 +106,13 @@ usrerr(fmt, a, b, c, d, e)
 
 	fmtmsg(MsgBuf, CurEnv->e_to, Arpa_Usrerr, errno, fmt, a, b, c, d, e);
 	puterrmsg(MsgBuf);
+
+# ifdef LOG
+	if (LogLevel > 1 && LogUsrErrs)
+		syslog(LOG_NOTICE, "%s: %s",
+			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
+			&MsgBuf[4]);
+# endif LOG
 
 	if (QuickAbort)
 		longjmp(TopFrame, 1);

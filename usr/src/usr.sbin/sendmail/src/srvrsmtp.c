@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.31 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.32 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.31 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.32 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -128,6 +128,7 @@ smtp()
 			finis();
 		QuickAbort = FALSE;
 		HoldErrs = FALSE;
+		LogUsrErrs = FALSE;
 
 		/* setup for the read */
 		CurEnv->e_to = NULL;
@@ -253,6 +254,7 @@ smtp()
 				break;
 			}
 			QuickAbort = TRUE;
+			LogUsrErrs = TRUE;
 			p = skipword(p, "to");
 			if (p == NULL)
 				break;

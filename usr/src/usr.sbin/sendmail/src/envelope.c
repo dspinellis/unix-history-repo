@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -545,7 +545,34 @@ setsender(from)
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
 	cataddr(pvp, buf, sizeof buf);
-	define('f', newstr(buf), CurEnv);
+	CurEnv->e_sender = CurEnv->e_returnpath = newstr(buf);
+
+# ifdef USERDB
+	if (CurEnv->e_from.q_mailer == LocalMailer)
+	{
+		extern char *udbsender();
+		register char *p = udbsender(from);
+
+		if (p != NULL)
+		{
+			/*
+			**  We have an alternate address for the sender
+			*/
+
+			pvp = prescan(p, '\0', pvpbuf);
+			if (pvp != NULL)
+			{
+				rewrite(pvp, 3);
+				rewrite(pvp, 1);
+				rewrite(pvp, 4);
+				cataddr(pvp, buf, sizeof buf);
+				CurEnv->e_sender = newstr(buf);
+			}
+		}
+	}
+# endif /* USERDB */
+
+	define('f', CurEnv->e_sender, CurEnv);
 
 	/* save the domain spec if this mailer wants it */
 	if (CurEnv->e_from.q_mailer != NULL &&

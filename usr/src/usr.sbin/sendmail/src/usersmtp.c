@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	5.16 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.17 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	5.16 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	5.17 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -182,7 +182,7 @@ smtpinit(m, pvp)
 	**	Designates the sender.
 	*/
 
-	expand("\001g", buf, &buf[sizeof buf - 1], CurEnv);
+	expand("\001<", buf, &buf[sizeof buf - 1], CurEnv);
 	if (CurEnv->e_from.q_mailer == LocalMailer ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
