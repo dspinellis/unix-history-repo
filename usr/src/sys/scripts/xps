@@ -1,16 +1,32 @@
+# xps
+# kernel ps
+#
+#	@(#)xps	7.1 (Berkeley) %G%
+
 define xps
 
-	set $p = allproc
+	set $i = 0
 
-	printf "      proc   pid      flag st      wchan comm\n"
-	while ($p)
-		printf "%#10x %5d %8x  %2x %#10x %s", $p, $p->p_pid, \
-			$p->p_flag, $p->p_stat, $p->p_wchan, \
-			(char *) $p->p_comm
-		if ($p->p_wmesg)
-			printf " (%s)", $p->p_wmesg
+	while ($i < 2)
+
+		if ($i == 0)
+			set $p = allproc
 		end
-		printf "\n"
-		set $p = $p->p_nxt
+		if ($i == 1)
+			set $p = zombproc
+		end
+
+		printf "      proc   pid      flag st      wchan comm\n"
+		while ($p)
+			printf "%#10x %5d %8x  %2x %#10x %s", $p, $p->p_pid, \
+				$p->p_flag, $p->p_stat, $p->p_wchan, \
+				(char *) $p->p_comm
+			if ($p->p_wmesg)
+				printf " (%s)", $p->p_wmesg
+			end
+			printf "\n"
+			set $p = $p->p_nxt
+		end
+		set $i++
 	end
 end
