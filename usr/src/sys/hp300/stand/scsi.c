@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1988 University of Utah.
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Van Jacobson of Lawrence Berkeley Laboratory and the Systems
@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: scsi.c 1.3 90/01/27$
  *
- *	@(#)scsi.c	7.8 (Berkeley) %G%
+ *	@(#)scsi.c	8.1 (Berkeley) %G%
  */
 
 /*
