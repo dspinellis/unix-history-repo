@@ -4,12 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.16 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "vnode.h"
 #include "proc.h"
@@ -18,10 +19,13 @@
 #include "socketvar.h"
 #include "stat.h"
 #include "ioctl.h"
+#include "malloc.h"
+#include "syslog.h"
 
 /*
  * Descriptor management.
  */
+int nofile = NOFILE;		/* per-process maximum open files */
 
 /*
  * System calls on descriptors.
@@ -33,7 +37,7 @@ getdtablesize(p, uap, retval)
 	int *retval;
 {
 
-	*retval = NOFILE;
+	*retval = nofile;
 	return (0);
 }
 
@@ -48,6 +52,7 @@ dup(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	struct file *fp;
 	int fd, error;
 
@@ -56,15 +61,16 @@ dup(p, uap, retval)
 	 */
 	if (uap->i &~ 077) { uap->i &= 077; return (dup2(p, uap, retval)); }
 
-	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
+	if ((unsigned)uap->i >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->i)) == NULL)
 		return (EBADF);
-	if (error = ufalloc(0, &fd))
+	if (error = ufalloc(fdp, 0, &fd))
 		return (error);
-	u.u_ofile[fd] = fp;
-	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	OFILE(fdp, fd) = fp;
+	OFILEFLAGS(fdp, fd) = OFILEFLAGS(fdp, uap->i) &~ UF_EXCLOSE;
 	fp->f_count++;
-	if (fd > u.u_lastfile)
-		u.u_lastfile = fd;
+	if (fd > fdp->fd_lastfile)
+		fdp->fd_lastfile = fd;
 	*retval = fd;
 	return (0);
 }
@@ -81,26 +87,32 @@ dup2(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
-	int error;
+	int i, error;
 
-	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
-		return (EBADF);
-	if (uap->j < 0 || uap->j >= NOFILE)
+	if ((unsigned)uap->i >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->i)) == NULL ||
+	    (unsigned)uap->j >= nofile)
 		return (EBADF);
 	*retval = uap->j;
 	if (uap->i == uap->j)
 		return (0);
-	if (u.u_ofile[uap->j]) {
-		if (u.u_pofile[uap->j] & UF_MAPPED)
-			munmapfd(uap->j);
-		error = closef(u.u_ofile[uap->j]);
+	if ((unsigned)uap->j >= fdp->fd_maxfiles) {
+		if (error = ufalloc(fdp, uap->j, &i))
+			return (error);
+		if (uap->j != i)
+			panic("dup2: ufalloc");
+	} else if (OFILE(fdp, uap->j)) {
+		if (OFILEFLAGS(fdp, uap->j) & UF_MAPPED)
+			(void) munmapfd(p, uap->j);
+		error = closef(OFILE(fdp, uap->j));
 	}
-	u.u_ofile[uap->j] = fp;
-	u.u_pofile[uap->j] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	OFILE(fdp, uap->j) = fp;
+	OFILEFLAGS(fdp, uap->j) = OFILEFLAGS(fdp, uap->i) &~ UF_EXCLOSE;
 	fp->f_count++;
-	if (uap->j > u.u_lastfile)
-		u.u_lastfile = uap->j;
+	if (uap->j > fdp->fd_lastfile)
+		fdp->fd_lastfile = uap->j;
 	/*
 	 * dup2() must succeed even though the close had an error.
 	 */
@@ -121,25 +133,26 @@ fcntl(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register char *pop;
 	int i, error;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
-	pop = &u.u_pofile[uap->fdes];
+	pop = &OFILEFLAGS(fdp, uap->fdes);
 	switch(uap->cmd) {
 	case F_DUPFD:
-		if (uap->arg < 0 || uap->arg >= NOFILE)
+		if ((unsigned)uap->arg >= nofile)
 			return (EINVAL);
-		if (error = ufalloc(uap->arg, &i))
+		if (error = ufalloc(fdp, uap->arg, &i))
 			return (error);
-		u.u_ofile[i] = fp;
-		u.u_pofile[i] = *pop &~ UF_EXCLOSE;
+		OFILE(fdp, i) = fp;
+		OFILEFLAGS(fdp, i) = *pop &~ UF_EXCLOSE;
 		fp->f_count++;
-		if (i > u.u_lastfile)
-			u.u_lastfile = i;
+		if (i > fdp->fd_lastfile)
+			fdp->fd_lastfile = i;
 		*retval = i;
 		return (0);
 
@@ -247,18 +260,19 @@ close(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register u_char *pf;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
-	pf = (u_char *)&u.u_pofile[uap->fdes];
+	pf = (u_char *)&OFILEFLAGS(fdp, uap->fdes);
 	if (*pf & UF_MAPPED)
-		munmapfd(uap->fdes);
-	u.u_ofile[uap->fdes] = NULL;
-	while (u.u_lastfile >= 0 && u.u_ofile[u.u_lastfile] == NULL)
-		u.u_lastfile--;
+		(void) munmapfd(p, uap->fdes);
+	OFILE(fdp, uap->fdes) = NULL;
+	while (fdp->fd_lastfile >= 0 && OFILE(fdp, fdp->fd_lastfile) == NULL)
+		fdp->fd_lastfile--;
 	*pf = 0;
 	return (closef(fp));
 }
@@ -275,12 +289,13 @@ fstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct stat ub;
 	int error;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
 	switch (fp->f_type) {
 
@@ -304,32 +319,69 @@ fstat(p, uap, retval)
 /*
  * Allocate a user file descriptor.
  */
-ufalloc(want, result)
+int fdexpand, fdreexpand;
+
+ufalloc(fdp, want, result)
+	register struct filedesc *fdp;
 	register int want;
 	int *result;
 {
+	int last, osize, ofiles, nfiles;
+	struct file **newofile;
+	char *newofileflags;
 
-	for (; want < NOFILE; want++) {
-		if (u.u_ofile[want] == NULL) {
-			u.u_pofile[want] = 0;
-			if (want > u.u_lastfile)
-				u.u_lastfile = want;
-			*result = want;
-			return (0);
+	for (;;) {
+		last = (fdp->fd_maxfiles < nofile) ? fdp->fd_maxfiles : nofile;
+		for (; want < last; want++) {
+			if (OFILE(fdp, want) == NULL) {
+				OFILEFLAGS(fdp, want) = 0;
+				if (want > fdp->fd_lastfile)
+					fdp->fd_lastfile = want;
+				*result = want;
+				return (0);
+			}
 		}
+		if (fdp->fd_maxfiles >= nofile)
+			return (EMFILE);
+		if (fdp->fd_maxfiles == NDFILE) {
+			fdp->fd_moreofiles = (struct file **)
+			    malloc(NDEXTENT * OFILESIZE, M_FILE, M_WAITOK);
+			fdp->fd_moreofileflags =
+			    (char *)&fdp->fd_moreofiles[NDEXTENT];
+			bzero((char *)fdp->fd_moreofiles, NDEXTENT * OFILESIZE);
+			fdp->fd_maxfiles = NDFILE + NDEXTENT;
+			fdexpand++;
+			continue;
+		}
+		ofiles = fdp->fd_maxfiles - NDFILE;
+		osize = ofiles * OFILESIZE;
+		nfiles = (2 * osize) / OFILESIZE;
+		newofile = (struct file **) malloc(2 * osize, M_FILE, M_WAITOK);
+		newofileflags = (char *)&newofile[nfiles];
+		bzero((char *)newofile, 2 * osize);
+		bcopy((char *)fdp->fd_moreofiles, (char *)newofile,
+			sizeof(struct file *) * ofiles);
+		bcopy((char *)fdp->fd_moreofileflags, (char *)newofileflags,
+			sizeof(char) * ofiles);
+		free(fdp->fd_moreofiles, M_FILE);
+		fdp->fd_moreofiles = newofile;
+		fdp->fd_moreofileflags = newofileflags;
+		fdp->fd_maxfiles = NDFILE + nfiles;
+		fdreexpand++;
 	}
-	return (EMFILE);
 }
 
 /*
  * Check to see if any user file descriptors are available.
  */
-ufavail()
+ufavail(fdp)
+	register struct filedesc *fdp;
 {
-	register int i, avail = 0;
+	register int i, avail;
 
-	for (i = 0; i < NOFILE; i++)
-		if (u.u_ofile[i] == NULL)
+	avail = nofile - fdp->fd_maxfiles;
+	for (i = 0; i < fdp->fd_maxfiles; i++)
+		if (OFILE(fdp, i) == NULL)
 			avail++;
 	return (avail);
 }
@@ -341,14 +393,15 @@ struct	file *lastf;
  * Initialize the descriptor
  * to point at the file structure.
  */
-falloc(resultfp, resultfd)
+falloc(p, resultfp, resultfd)
+	register struct proc *p;
 	struct file **resultfp;
 	int *resultfd;
 {
 	register struct file *fp;
 	int error, i;
 
-	if (error = ufalloc(0, &i))
+	if (error = ufalloc(p->p_fd, 0, &i))
 		return (error);
 	if (lastf == 0)
 		lastf = file;
@@ -361,7 +414,7 @@ falloc(resultfp, resultfd)
 	tablefull("file");
 	return (ENFILE);
 slot:
-	u.u_ofile[i] = fp;
+	OFILE(p->p_fd, i) = fp;
 	fp->f_count = 1;
 	fp->f_data = 0;
 	fp->f_offset = 0;
@@ -373,6 +426,75 @@ slot:
 	if (resultfd)
 		*resultfd = i;
 	return (0);
+}
+
+/*
+ * Duplicate a filedesc structure.
+ */
+struct filedesc *
+fddup(fdp, justref)
+	register struct filedesc *fdp;
+	int justref;
+{
+	register struct filedesc *newfdp;
+	register struct file *fp;
+	register int i;
+	int j, last;
+
+	if (justref) {
+		fdp->fd_refcnt++;
+		return (fdp);
+	}
+	MALLOC(newfdp, struct filedesc *, sizeof(*fdp), M_FILE, M_WAITOK);
+	bcopy((char *)fdp, (char *)newfdp, sizeof(*fdp));
+	VREF(newfdp->fd_cdir);
+	if (newfdp->fd_rdir)
+		VREF(newfdp->fd_rdir);
+	newfdp->fd_refcnt = 1;
+	newfdp->fd_maxfiles = NDFILE;
+	if (fdp->fd_lastfile > NDFILE &&
+	    ufalloc(newfdp, fdp->fd_lastfile, &j)) {
+		log(LOG_ERR, "fddup: lost file descriptor(s)");
+		last = newfdp->fd_maxfiles;
+	} else
+		last = fdp->fd_lastfile;
+	for (i = 0; i <= last; i++) {
+		fp = OFILE(fdp, i);
+		if (fp == NULL)
+			continue;
+		fp->f_count++;
+		OFILE(newfdp, i) = fp;
+		OFILEFLAGS(newfdp, i) = OFILEFLAGS(fdp, i);
+	}
+	return (newfdp);
+}
+
+/*
+ * Release a filedesc structure.
+ */
+fdrele(fdp)
+	register struct filedesc *fdp;
+{
+	struct file *f;
+	register int i;
+
+	if (fdp->fd_refcnt > 1) {
+		fdp->fd_refcnt--;
+		return;
+	}
+	for (i = 0; i <= fdp->fd_lastfile; i++) {
+		if (f = OFILE(fdp, i)) {
+			OFILE(fdp, i) = NULL;
+			OFILEFLAGS(fdp, i) = 0;
+			(void) closef(f);
+		}
+	}
+	if (fdp->fd_maxfiles > NDFILE)
+		FREE(fdp->fd_moreofiles, M_FILE);
+	vrele(fdp->fd_cdir);
+	if (fdp->fd_rdir)
+		vrele(fdp->fd_rdir);
+	FREE(fdp, M_FILE);
 }
 
 /*
@@ -410,10 +532,11 @@ flock(p, uap, retval)
 	} *uap;
 	int *retval;
 {
+	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 
-	if ((unsigned)uap->fdes >= NOFILE ||
-	    (fp = u.u_ofile[uap->fdes]) == NULL)
+	if ((unsigned)uap->fdes >= fdp->fd_maxfiles ||
+	    (fp = OFILE(fdp, uap->fdes)) == NULL)
 		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
 		return (EOPNOTSUPP);
@@ -462,7 +585,8 @@ fdopen(dev, mode, type)
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */
-dupfdopen(indx, dfd, mode)
+dupfdopen(fdp, indx, dfd, mode)
+	register struct filedesc *fdp;
 	register int indx, dfd;
 	int mode;
 {
@@ -476,8 +600,8 @@ dupfdopen(indx, dfd, mode)
 	 * falloc could allocate an already closed to-be-dup'd descriptor
 	 * as the new descriptor.
 	 */
-	fp = u.u_ofile[indx];
-	if ((u_int)dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL ||
+	fp = OFILE(fdp, indx);
+	if ((u_int)dfd >= fdp->fd_maxfiles || (wfp = OFILE(fdp, dfd)) == NULL ||
 	    fp == wfp)
 		return (EBADF);
 
@@ -487,10 +611,37 @@ dupfdopen(indx, dfd, mode)
 	 */
 	if (((mode & (FREAD|FWRITE)) | wfp->f_flag) != wfp->f_flag)
 		return (EACCES);
-	u.u_ofile[indx] = wfp;
-	u.u_pofile[indx] = u.u_pofile[dfd];
+	OFILE(fdp, indx) = wfp;
+	OFILEFLAGS(fdp, indx) = OFILEFLAGS(fdp, dfd);
 	wfp->f_count++;
-	if (indx > u.u_lastfile)
-		u.u_lastfile = indx;
+	if (indx > fdp->fd_lastfile)
+		fdp->fd_lastfile = indx;
 	return (0);
 }
+
+#if defined(vax) || defined(tahoe)
+/*
+ * Brain dead routines to compensate for limitations in PCC
+ */
+struct file **
+ofilefunc(fdp, indx)
+	struct filedesc *fdp;
+	int indx;
+{
+
+	if (indx < NDFILE)
+		return (&fdp->fd_ofile[indx]);
+	return (&fdp->fd_moreofiles[indx - NDFILE]);
+}
+
+char *
+ofileflagsfunc(fdp, indx)
+	struct filedesc *fdp;
+	int indx;
+{
+
+	if (indx < NDFILE)
+		return (&fdp->fd_ofileflags[indx]);
+	return (&fdp->fd_moreofileflags[indx - NDFILE]);
+}
+#endif

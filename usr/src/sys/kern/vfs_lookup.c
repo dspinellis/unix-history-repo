@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.22 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,6 +14,7 @@
 #include "mount.h"
 #include "errno.h"
 #include "malloc.h"
+#include "filedesc.h"
 
 #ifdef KTRACE
 #include "user.h"
@@ -64,6 +65,8 @@
 namei(ndp)
 	register struct nameidata *ndp;
 {
+	struct proc *p = u.u_procp;		/* XXX */
+	register struct filedesc *fdp;	/* pointer to file descriptor state */
 	register char *cp;		/* pointer into pathname argument */
 	register struct vnode *dp = 0;	/* the directory we are searching */
 	register int i;		   	/* Temp counter */
@@ -80,6 +83,7 @@ namei(ndp)
 	/*
 	 * Setup: break out flag bits into variables.
 	 */
+	fdp = p->p_fd;
 	ndp->ni_dvp = NULL;
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
@@ -111,7 +115,7 @@ namei(ndp)
 		ndp->ni_ptr = ndp->ni_pnbuf;
 	}
 	ndp->ni_loopcnt = 0;
-	dp = ndp->ni_cdir;
+	dp = fdp->fd_cdir;
 	VREF(dp);
 #ifdef KTRACE
 	if (KTRPOINT(u.u_procp, KTR_NAMEI))
@@ -129,7 +133,7 @@ start:
 			ndp->ni_ptr++;
 			ndp->ni_pathlen--;
 		}
-		if ((dp = ndp->ni_rdir) == NULL)
+		if ((dp = fdp->fd_rdir) == NULL)
 			dp = rootdir;
 		VREF(dp);
 	}
@@ -211,7 +215,7 @@ dirloop:
 	 */
 	if (ndp->ni_isdotdot) {
 		for (;;) {
-			if (dp == ndp->ni_rdir || dp == rootdir) {
+			if (dp == fdp->fd_rdir || dp == rootdir) {
 				ndp->ni_dvp = dp;
 				ndp->ni_vp = dp;
 				VREF(dp);

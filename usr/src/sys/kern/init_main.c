@@ -2,13 +2,14 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.31 (Berkeley) %G%
+ *	@(#)init_main.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "dir.h"
 #include "user.h"
+#include "filedesc.h"
 #include "kernel.h"
 #include "fs.h"
 #include "mount.h"
@@ -52,6 +53,7 @@ main(firstaddr)
 	register int i;
 	register struct proc *p;
 	register struct pgrp *pg;
+	register struct filedesc *fdp;
 	int s;
 
 	rqinit();
@@ -124,8 +126,16 @@ main(firstaddr)
 	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
 	ndinit(&u.u_nd);
 
-	u.u_cmask = cmask;
-	u.u_lastfile = -1;
+	/*
+	 * Create the file descriptor table for process 0.
+	 */
+	fdp = (struct filedesc *)malloc(sizeof(*fdp), M_FILE, M_WAITOK);
+	bzero((char *)fdp, sizeof(struct filedesc));
+	p->p_fd = fdp;
+	fdp->fd_refcnt = 1;
+	fdp->fd_cmask = cmask;
+	fdp->fd_lastfile = -1;
+	fdp->fd_maxfiles = NDFILE;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
@@ -194,7 +204,7 @@ main(firstaddr)
 	iunlock(rootdir);
 	u.u_cdir = iget(rootdev, fs, (ino_t)ROOTINO);
 	iunlock(u.u_cdir);
-	u.u_rdir = NULL;
+	fdp->fd_rdir = NULL;
 	boottime = u.u_start =  time;
 
 	/*

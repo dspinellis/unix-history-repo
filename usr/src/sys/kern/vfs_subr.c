@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.48 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.49 (Berkeley) %G%
  */
 
 /*
@@ -168,11 +168,6 @@ nddup(ndp, newndp)
 {
 
 	ndinit(newndp);
-	newndp->ni_cdir = ndp->ni_cdir;
-	VREF(newndp->ni_cdir);
-	newndp->ni_rdir = ndp->ni_rdir;
-	if (newndp->ni_rdir)
-		VREF(newndp->ni_rdir);
 	newndp->ni_cred = ndp->ni_cred;
 	crhold(newndp->ni_cred);
 }
@@ -184,9 +179,6 @@ ndrele(ndp)
 	register struct nameidata *ndp;
 {
 
-	vrele(ndp->ni_cdir);
-	if (ndp->ni_rdir)
-		vrele(ndp->ni_rdir);
 	crfree(ndp->ni_cred);
 }
 
