@@ -1,4 +1,4 @@
-/*	ts.c	4.23	82/02/03	*/
+/*	ts.c	4.24	82/07/13	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -404,7 +404,7 @@ loop:
 	 * sc->sc_nxrec by tsphys causes them to be skipped normally
 	 * (except in the case of retries).
 	 */
-	if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+	if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 		/*
 		 * Can't read past known end-of-file.
 		 */
@@ -412,7 +412,7 @@ loop:
 		bp->b_error = ENXIO;
 		goto next;
 	}
-	if (dbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+	if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
 	    bp->b_flags&B_READ) {
 		/*
 		 * Reading at end of file returns 0 bytes.
@@ -425,14 +425,14 @@ loop:
 		/*
 		 * Writing sets EOF
 		 */
-		sc->sc_nxrec = dbtofsb(bp->b_blkno) + 1;
+		sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	/*
 	 * If the data transfer command is in the correct place,
 	 * set up all the registers except the csr, and give
 	 * control over to the UNIBUS adapter routines, to
 	 * wait for resources to start the i/o.
 	 */
-	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
+	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
 		tc->c_size = bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0)
 			cmd = TS_WCOM;
@@ -451,12 +451,12 @@ loop:
 	 * This happens for raw tapes only on error retries.
 	 */
 	um->um_tab.b_active = SSEEK;
-	if (blkno < dbtofsb(bp->b_blkno)) {
+	if (blkno < bdbtofsb(bp->b_blkno)) {
 		bp->b_command = TS_SFORW;
-		tc->c_repcnt = dbtofsb(bp->b_blkno) - blkno;
+		tc->c_repcnt = bdbtofsb(bp->b_blkno) - blkno;
 	} else {
 		bp->b_command = TS_SREV;
-		tc->c_repcnt = blkno - dbtofsb(bp->b_blkno);
+		tc->c_repcnt = blkno - bdbtofsb(bp->b_blkno);
 	}
 dobpcmd:
 	/*
@@ -645,7 +645,7 @@ ignoreerr:
 		goto opdone;
 
 	case SSEEK:
-		sc->sc_blkno = dbtofsb(bp->b_blkno);
+		sc->sc_blkno = bdbtofsb(bp->b_blkno);
 		goto opcont;
 
 	default:
@@ -674,19 +674,19 @@ tsseteof(bp)
 	register struct ts_softc *sc = &ts_softc[tsunit];
 
 	if (bp == &ctsbuf[TSUNIT(bp->b_dev)]) {
-		if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
+		if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
 			/* reversing */
-			sc->sc_nxrec = dbtofsb(bp->b_blkno) - sc->sc_sts.s_rbpcr;
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) - sc->sc_sts.s_rbpcr;
 			sc->sc_blkno = sc->sc_nxrec;
 		} else {
 			/* spacing forward */
-			sc->sc_blkno = dbtofsb(bp->b_blkno) + sc->sc_sts.s_rbpcr;
+			sc->sc_blkno = bdbtofsb(bp->b_blkno) + sc->sc_sts.s_rbpcr;
 			sc->sc_nxrec = sc->sc_blkno - 1;
 		}
 		return;
 	} 
 	/* eof on read */
-	sc->sc_nxrec = dbtofsb(bp->b_blkno);
+	sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 }
 
 tsread(dev)
@@ -727,7 +727,7 @@ tsphys(dev)
 		return;
 	}
 	sc = &ts_softc[tsunit];
-	a = dbtofsb(u.u_offset >> 9);
+	a = bdbtofsb(u.u_offset >> 9);
 	sc->sc_blkno = a;
 	sc->sc_nxrec = a + 1;
 }
