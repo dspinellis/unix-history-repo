@@ -2,22 +2,109 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.4	4.1 (Berkeley) %G%
+.\"	@(#)intro.4	5.1 (Berkeley) %G%
 .\"
-.TH INTRO 4 4/1/81
+.TH INTRO 4 "27 July 1983"
 .UC 4
 .SH NAME
-intro \- introduction to special files
+intro \- introduction to special files and hardware support
 .SH DESCRIPTION
-This section describes the special files and related driver functions
-available on the system.
-In this section the SYNOPSIS section gives a sample specification
-of the related drivers for use in a system description to the
+This section describes the special files, related driver functions,
+and networking support
+available in the system.
+In this part of the manual, the SYNOPSIS section of
+each configurable device gives a sample specification
+for use in constructing a system description for the
 .IR config (8)
 program.
 The DIAGNOSTICS section lists messages which may appear on the console
 and in the system error log
-/usr/adm/messages
+.I /usr/adm/messages
 due to errors in device operation.
+.PP
+This section contains both devices
+which may be configured into the system, ``4'' entries,
+and network related information,
+``4N'', ``4P'', and ``4F'' entries;
+The networking support is introduced in
+.IR intro (4N).
+.SH "VAX DEVICE SUPPORT"
+This section describes the hardware supported on the DEC VAX-11.
+Software support for these devices comes in two forms.  A hardware
+device may be supported with a character or block
+.IR "device driver" ,
+or it may be used within the networking subsystem and have a
+.IR "network interface driver" .
+Block and character devices are accessed through files in the file
+system of a special type; c.f.
+.IR mknod (8).
+Network interfaces are indirectly accessed through the interprocess
+communication facilities provided by the system; see
+.IR socket (2).
+.PP
+A hardware device is identified to the system at configuration time
+and the appropriate device or network interface driver is then compiled
+into the system.  When the resultant system is booted, the
+autoconfiguration facilities in the system probe for the device
+on either the UNIBUS or MASSBUS and, if found, enable the software
+support for it.  If a UNIBUS device does not respond at autoconfiguration
+time it is not accessible at any time afterwards.  To
+enable a UNIBUS device which did not autoconfigure, the system will have to
+be rebooted.  If a
+MASSBUS device comes ``on-line'' after the autoconfiguration sequence
+it will be dynamically autoconfigured into the running system.
+.PP
+The autoconfiguration system is described in
+.IR autoconf (4).
+VAX specific device support is described in ``4V'' entries.
+A list of the supported devices is given below.
 .SH SEE ALSO
+intro(4),
+intro(4N),
+autoconf(4),
 config(8)
+.SH "LIST OF DEVICES"
+The devices listed below are supported in this incarnation of
+the system.  Devices are indicated by their functional interface.
+If second vendor products provide functionally identical interfaces
+they should be usable with the supplied software.
+(\fBBeware however that we promise the software works
+ONLY with the hardware indicated on the appropriate manual page.\fP)
+.sp
+.ta 1.0i
+.nf
+acc	ACC LH/DH IMP communications interface
+ad	Data translation A/D interface
+css	DEC IMP-11A communications interface
+ct	C/A/T phototypesetter
+dh	DH-11 emulators, terminal multiplexor
+dmc	DEC DMC-11/DMR-11 point-to-point communications device
+dmf	DEC DMF-32 terminal multiplexor
+dn	DEC DN-11 autodialer interface
+dz	DZ-11 terminal multiplexor
+ec	3Com 10Mb/s Ethernet controller
+en	Xerox 3Mb/s Ethernet controller (obsolete)
+kg	KL-11/DL-11W line clock
+fl	VAX-11/780 console floppy interface
+hk	RK6-11/RK06 and RK07 moving head disk
+hp	MASSBUS disk interface (with RP06, RM03, RM05, etc.)
+ht	TM03 MASSBUS tape drive interface (with TE-16, TU-45, TU-77)
+hy	DR-11B or GI-13 interface to an NSC Hyperchannel
+ik	Ikonas frame buffer graphics device interface
+il	Interlan 10Mb/s Ethernet controller
+lp	LP-11 parallel line printer interface
+mt	TM78 MASSBUS tape drive interface
+pcl	DEC PCL-11 communications interface
+ps	Evans and Sutherland Picture System 2 graphics interface
+rx	DEC RX02 floppy interface
+tm	TM-11/TE-10 tape drive interface
+ts	TS-11 tape drive interface
+tu	VAX-11/730 TU58 console cassette interface
+uda	DEC UDA-50 disk controller
+un	DR-11W interface to Ungermann-Bass
+up	Emulex SC-21V UNIBUS disk controller
+ut	UNIBUS TU-45 tape drive interface
+uu	TU58 dual cassette drive interface (DL11)
+va	Benson-Varian printer/plotter interface
+vp	Versatec printer/plotter interface
+vv	Proteon proNET 10Mb/s ring network interface
