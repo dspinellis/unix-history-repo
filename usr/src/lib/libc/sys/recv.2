@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)recv.2	6.1 (Berkeley) %G%
+.\"	@(#)recv.2	6.2 (Berkeley) %G%
 .\"
 .TH RECV 2 ""
 .UC 5
@@ -43,7 +43,7 @@ are used to receive messages from a socket.
 .PP
 The 
 .I recv
-call may be used only on a 
+call is normally used only on a 
 .I connected
 socket (see
 .IR connect (2)),
@@ -85,13 +85,13 @@ call may be used to determine when more data arrives.
 .PP
 The
 .I flags
-argument to a send call is formed by 
+argument to a recv call is formed by 
 .IR or 'ing
 one or more of the values,
 .PP
 .nf
 .RS
-.DT
+.ta \w'#define\ \ 'u +\w'MSG_DONTROUTE\ \ \ 'u +\w'0x\0\0\0\ \ 'u
 #define	MSG_OOB	0x1	/* process out-of-band data */
 #define	MSG_PEEK	0x2	/* peek at incoming message */
 .RE
@@ -132,11 +132,14 @@ and
 .I msg_iovlen
 describe the scatter gather locations, as described in
 .IR read (2).
-Access rights to be sent along with the message are specified
+A buffer to receive any access rights sent along with the message is specified
 in 
 .IR msg_accrights ,
 which has length
 .IR msg_accrightslen .
+Access rights are currently limited to file descriptors,
+which each occupy the size of an
+.BR int .
 .SH "RETURN VALUE
 These calls return the number of bytes received, or \-1
 if an error occurred.
@@ -161,4 +164,4 @@ any data was available for the receive.
 The data was specified to be received into a non-existent
 or protected part of the process address space.
 .SH SEE ALSO
-read(2), send(2), socket(2)
+fcntl(2), read(2), send(2), select(2), getsockopt(2), socket(2)

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)send.2	6.2 (Berkeley) %G%
+.\"	@(#)send.2	6.3 (Berkeley) %G%
 .\"
 .TH SEND 2 ""
 .UC 5
@@ -68,7 +68,7 @@ If no messages space is available at the socket to hold
 the message to be transmitted, then
 .I send
 normally blocks, unless the socket has been placed in
-non-blocking i/o mode.
+non-blocking I/O mode.
 The
 .IR select (2)
 call may be used to determine when it is possible to
@@ -76,8 +76,19 @@ send more data.
 .PP
 The
 .I flags
-parameter may be set to MSG_OOB to send \*(lqout-of-band\*(rq
-data on sockets that support this notion (e.g. SOCK_STREAM).
+parameter may include one or more of the following:
+.PP
+.nf
+.RS
+.ta \w'#define\ \ 'u +\w'MSG_DONTROUTE\ \ \ 'u +\w'0x\0\0\0\ \ 'u
+#define	MSG_OOB	0x1	/* process out-of-band data */
+#define	MSG_DONTROUTE	0x4	/* bypass routing, use direct interface */
+.RE
+.fi
+The flag MSG_OOB is used to send \*(lqout-of-band\*(rq
+data on sockets that support this notion (e.g. SOCK_STREAM);
+the underlying protocol must also support \*(lqout-of-band\*(rq data.
+MSG_DONTROUTE is usually used only by diagnostic or routing programs.
 .PP
 See 
 .IR recv (2)
@@ -105,5 +116,14 @@ and the size of the message to be sent made this impossible.
 [EWOULDBLOCK]
 The socket is marked non-blocking and the requested operation
 would block.
+.TP 20
+[ENOBUFS]
+The system was unable to allocate an internal buffer.
+The operation may succeed when buffers become available.
+.TP 20
+[ENOBUFS]
+The output queue for a network interface was full.
+This generally indicates that the interface has stopped sending,
+but may be caused by transient congestion.
 .SH SEE ALSO
-recv(2), socket(2)
+fcntl(2), recv(2), select(2), getsockopt(2), socket(2), write(2)
