@@ -1,0 +1,113 @@
+Debugging GNU Emacs
+Copyright (c) 1985 Richard M. Stallman.
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and permission notice are preserved,
+   and that the distributor grants the recipient permission
+   for further redistribution as permitted by this notice.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them.
+
+On 4.2 you will probably find that dbx does not work for
+debugging GNU Emacs.  For one thing, dbx does not keep the
+inferior process's terminal modes separate from its own.
+For another, dbx does not put the inferior in a separate
+process group, which makes trouble when an inferior uses
+interrupt input, which GNU Emacs must do on 4.2.
+
+dbx has also been observed to have other problems,
+such as getting incorrect values for register variables
+in stack frames other than the innermost one.
+
+The Emacs distribution now contains GDB, the new source-level
+debugger for the GNU system.  GDB works for debugging Emacs.
+GDB currently runs on vaxes under 4.2 and on Sun 2 and Sun 3
+systems.
+
+
+** Some useful techniques
+
+`Fsignal' is a very useful place to stop in.
+All Lisp errors go through there.
+
+It is useful, when debugging, to have a guaranteed way
+to return to the debugger at any time.  If you are using
+interrupt-drived input, which is the default, then Emacs is using
+RAW mode and the only way you can do it is to store
+the code for some character into the variable stop_character:
+
+    set stop_character = 29
+
+makes Control-] (decimal code 29) the stop character.
+Typing Control-] will cause immediate stop.  You cannot
+use the set command until the inferior process has been started.
+Put a breakpoint early in `main', or suspend the Emacs,
+to get an opportunity to do the set command.
+
+If you are using cbreak input (see the Lisp function set-input-mode),
+then typing Control-g will cause a SIGINT, which will return control
+to the debugger immediately unless you have done
+
+    ignore 3  (in dbx)
+or  handle 3 nostop noprint  (in gdb)
+
+You will note that most of GNU Emacs is written to avoid
+declaring a local variable in an inner block, even in
+cases where using one would be the cleanest thing to do.
+This is because dbx cannot access any of the variables
+in a function which has even one variable defined in an
+inner block.  A few functions in GNU Emacs do have variables
+in inner blocks, only because I wrote them before realizing
+that dbx had this problem and never rewrote them to avoid it.
+
+I believe that GDB does not have such a problem.
+
+
+** If GDB does not run and your debuggers can't load Emacs.
+
+On some systems, no debugger can load Emacs with a symbol table,
+perhaps because they all have fixed limits on the number of symbols
+and Emacs exceeds the limits.  Here is a method that can be used
+in such an extremity.  Do
+
+    nm -n temacs > nmout
+    strip temacs
+    adb temacs
+    0xd:i
+    0xe:i
+    14:i
+    17:i
+    :r -l loadup   (or whatever)
+
+It is necessary to refer to the file `nmout' to convert
+numeric addresses into symbols and vice versa.
+
+It is useful to be running under a window system.
+Then, if Emacs becomes hopelessly wedged, you can create
+another window to do kill -9 in.  kill -ILL is often
+useful too, since that may make Emacs dump core or return
+to adb.
+
+
+** Debugging incorrect screen updating.
+
+To debug Emacs problems that update the screen wrong, it is useful
+to have a record of what input you typed and what Emacs sent to the
+screen.  To make these records, do
+
+(open-dribble-file "~/.dribble")
+(open-termscript "~/.termscript")
+
+The dribble file contains all characters read by Emacs from the
+terminal, and the termscript file contains all characters it sent to
+the terminal.  The use of the directory `~/' prevents interference
+with any other user.
+
+If you have unreproduceable display problems, put those two expressions
+in your ~/.emacs file.  When the problem happens, exit the Emacs that
+you were running, kill it, and rename the two files.  Then you can start
+another Emacs without clobbering those files, and use it to examine them.
