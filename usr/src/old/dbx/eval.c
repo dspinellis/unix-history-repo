@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.5 %G%";
+static char sccsid[] = "@(#)eval.c 1.6 %G%";
 
 /*
  * Tree evaluation.
@@ -297,7 +297,7 @@ register Node p;
 	    break;
 
 	case O_CONT:
-	    cont();
+	    cont(p->value.lcon);
 	    printnews();
 	    break;
 
@@ -328,11 +328,14 @@ register Node p;
 		printname(stdout, curfunc);
 		putchar('\n');
 	    } else {
-		curfunc = p->value.arg[0]->value.sym;
-		if (isblock(curfunc) and not ismodule(curfunc)) {
-		    error("%s is not a procedure or function",
-			symname(curfunc));
+		s = p->value.arg[0]->value.sym;
+		find(f, s->name) where
+		    f->class == FUNC or f->class == PROC
+		endfind(f);
+		if (f == nil) {
+		    error("%s is not a procedure or function", symname(s));
 		}
+		curfunc = f;
 		addr = codeloc(curfunc);
 		if (addr != NOADDR) {
 		    setsource(srcfilename(addr));
@@ -476,17 +479,11 @@ register Node p;
 	case O_TRACE:
 	case O_TRACEI:
 	    trace(p);
-	    if (isstdin()) {
-		status();
-	    }
 	    break;
 
 	case O_STOP:
 	case O_STOPI:
 	    stop(p);
-	    if (isstdin()) {
-		status();
-	    }
 	    break;
 
 	case O_ADDEVENT:
@@ -766,6 +763,9 @@ Node cond;
     }
     action = build(O_TRACEON, (op == O_TRACEI), buildcmdlist(action));
     action->value.trace.event = addevent(event, buildcmdlist(action));
+    if (isstdin()) {
+	printevent(action->value.trace.event);
+    }
 }
 
 /*
@@ -779,6 +779,7 @@ Node cond;
 {
     Node event, wh;
     Command action;
+    Event e;
 
     if (exp->op == O_LCON) {
 	wh = build(O_QLINE, build(O_SCON, cursource), exp);
@@ -794,7 +795,10 @@ Node cond;
     if (cond) {
 	action = build(O_IF, cond, buildcmdlist(action));
     }
-    addevent(event, buildcmdlist(action));
+    e = addevent(event, buildcmdlist(action));
+    if (isstdin()) {
+	printevent(e);
+    }
 }
 
 /*
@@ -809,6 +813,7 @@ Node cond;
 {
     Node event;
     Command action;
+    Event e;
 
     if (op == O_TRACEI) {
 	event = build(O_EQ, build(O_SYM, pcsym), place);
@@ -819,7 +824,10 @@ Node cond;
     if (cond != nil) {
 	action = build(O_IF, cond, buildcmdlist(action));
     }
-    addevent(event, buildcmdlist(action));
+    e = addevent(event, buildcmdlist(action));
+    if (isstdin()) {
+	printevent(e);
+    }
 }
 
 /*
@@ -849,6 +857,7 @@ Node cond;
     Node event;
     Command action;
     Cmdlist actionlist;
+    Event e;
 
     action = build(O_PRINTCALL, p);
     actionlist = list_alloc();
@@ -860,7 +869,10 @@ Node cond;
 	actionlist = buildcmdlist(build(O_IF, cond, actionlist));
     }
     event = build(O_EQ, build(O_SYM, procsym), build(O_SYM, p));
-    addevent(event, actionlist);
+    e = addevent(event, actionlist);
+    if (isstdin()) {
+	printevent(e);
+    }
 }
 
 /*
@@ -888,6 +900,9 @@ Node cond;
     action = build(O_TRACEON, (op == O_TRACEI), buildcmdlist(action));
     event = build(O_EQ, build(O_SYM, procsym), build(O_SYM, p));
     action->value.trace.event = addevent(event, buildcmdlist(action));
+    if (isstdin()) {
+	printevent(action->value.trace.event);
+    }
 }
 
 /*
@@ -900,6 +915,7 @@ Node p;
     Node exp, place, cond;
     Symbol s;
     Command action;
+    Event e;
 
     exp = p->value.arg[0];
     place = p->value.arg[1];
@@ -915,7 +931,10 @@ Node p;
     } else if (place->op == O_SYM) {
 	s = place->value.sym;
 	cond = build(O_EQ, build(O_SYM, procsym), build(O_SYM, s));
-	addevent(cond, buildcmdlist(build(O_STOPX)));
+	e = addevent(cond, buildcmdlist(build(O_STOPX)));
+	if (isstdin()) {
+	    printevent(e);
+	}
     } else {
 	stopinst(p->op, place, cond);
     }
@@ -927,13 +946,17 @@ Node place;
 Node cond;
 {
     Node event;
+    Event e;
 
     if (op == O_STOP) {
 	event = build(O_EQ, build(O_SYM, linesym), place);
     } else {
 	event = build(O_EQ, build(O_SYM, pcsym), place);
     }
-    addevent(event, buildcmdlist(build(O_STOPX)));
+    e = addevent(event, buildcmdlist(build(O_STOPX)));
+    if (isstdin()) {
+	printevent(e);
+    }
 }
 
 /*
@@ -959,6 +982,9 @@ Node cond;
     action = build(O_TRACEON, (op == O_STOPI), buildcmdlist(action));
     event = build(O_EQ, build(O_SYM, procsym), build(O_SYM, p));
     action->value.trace.event = addevent(event, buildcmdlist(action));
+    if (isstdin()) {
+	printevent(action->value.trace.event);
+    }
 }
 
 /*
