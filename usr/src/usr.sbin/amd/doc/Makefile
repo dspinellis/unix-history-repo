@@ -11,15 +11,17 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 
-MKARG = -f ../Makefile.top PROG=doc
-SHELL = /bin/sh
+PROG = amdref
+SRCS = amdref.texinfo
 
-doc: FRC
-	@${MAKE} ${MKARG} $@
+${PROG}: amdref.dvi
 
-install count clean lint:
+amdref.dvi: ${SRCS}
+	-tex amdref; tex amdref
 
-FRC:
+clean:
+	-rm -f amdref.aux amdref.cp amdref.dvi amdref.fn amdref.ky \
+		amdref.log amdref.pg amdref.toc amdref.tp amdref.vr

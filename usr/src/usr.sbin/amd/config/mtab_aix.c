@@ -1,5 +1,5 @@
 /*
- * $Id: mtab_aix.c,v 5.2 90/06/23 22:20:36 jsp Rel $
+ * $Id: mtab_aix.c,v 5.2.1.1 90/10/21 22:30:40 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_aix.c	5.1 (Berkeley) %G%
+ *	@(#)mtab_aix.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -32,7 +32,12 @@ struct vmount *mp;
 	new_mp->mnt_opts = strdup(vmt2dataptr(mp, VMT_ARGS));
 	switch (mp->vmt_gfstype) {
 	case MNT_JFS:  ty = MTAB_TYPE_UFS; break;
-	case MNT_NFS:  ty = MTAB_TYPE_NFS; break;
+	case MNT_NFS:
+		ty = MTAB_TYPE_NFS;
+		new_mp->mnt_fsname = str3cat(new_mp->mnt_fsname,
+				vmt2dataptr(mp, VMT_HOSTNAME),
+				":", new_mp->mnt_fsname);
+		break;
 	default:  ty = "unknown"; break;
 	}
 	new_mp->mnt_type = strdup(ty);

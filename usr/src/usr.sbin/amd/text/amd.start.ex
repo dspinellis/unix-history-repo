@@ -2,7 +2,7 @@
 #
 # Start amd
 #
-# $Id: amd.start.ex,v 5.2 90/06/23 22:21:29 jsp Rel $
+# $Id: amd.start.ex,v 5.2.1.1 90/10/21 22:31:39 jsp Exp $
 #
 # Copyright (c) 1989 Jan-Simon Pendry
 # Copyright (c) 1989 Imperial College of Science, Technology & Medicine
@@ -14,7 +14,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)amd.start.ex	5.1 (Berkeley) %G%
+#	@(#)amd.start.ex	5.2 (Berkeley) %G%
 #
 PATH=/usr/local/etc:/bin:/usr/bin:/usr/ucb:$PATH export PATH
 

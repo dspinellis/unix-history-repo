@@ -1,4 +1,4 @@
-/* $Id: os-hpux.h,v 5.2 90/06/23 22:20:47 jsp Rel $ */
+/* $Id: os-hpux.h,v 5.2.1.4 91/03/03 20:49:43 jsp Alpha $ */
 
 /*
  * HP/9000 HP-UX definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-hpux.h	5.1 (Berkeley) %G%
+ *	@(#)os-hpux.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -41,19 +41,20 @@
  * Byte ordering
  */
 #undef ARCH_ENDIAN
-#if defined(hp9000s200) || defined(hp9000s300)
+#if defined(hp9000s200) || defined(hp9000s300) || defined(hp9000s800)
 #define	ARCH_ENDIAN	"big"
 #endif
-/*
-#if defined(hp9000s800)
-#define ARCH_ENDIAN	"unknown"
+
+#ifndef __hpux
+#define	HPUX_VERSION_6
 #endif
-*/
 
 /*
- * No support for syslog()
+ * No support for syslog() prior to 7.0
  */
+#ifdef HPUX_VERSION_6
 #undef HAS_SYSLOG
+#endif
 
 /*
  * No support for ndbm
@@ -78,7 +79,7 @@
  */
 #undef WAIT
 #define	WAIT	"uwait.h"
-#ifndef SIGCHLD
+#ifdef HPUX_VERSION_6
 #define SIGCHLD	SIGCLD
 #endif
 #define	SYS5_SIGNALS
@@ -87,7 +88,8 @@
  * Miscellaneous HP-UX definitions
  */
 
-#define	MISC_RPC
+#define NEED_XDR_POINTER
+#define	NEED_CLNT_SPERRNO
 
 /*
  * Use <fcntl.h> rather than <sys/file.h>
@@ -99,9 +101,17 @@
  */
 #define LOCK_FCNTL
 
-#ifdef __GNUC__
-#define alloca(sz) __builtin_alloca(sz)
-#endif
+/*
+ * Additional fields in struct mntent
+ * are fixed up here
+ */
+#define FIXUP_MNTENT(mntp) { \
+	(mntp)->mnt_time = clocktime(); \
+}
+#define FIXUP_MNTENT_DUP(mntp, mp) { \
+	(mntp)->mnt_time = (mp)->mnt_time; \
+}
+
 #define	bzero(ptr, len)	memset(ptr, 0, len)
 #define bcopy(from, to, len) memcpy(to, from, len)
 #define getpagesize() (2048)

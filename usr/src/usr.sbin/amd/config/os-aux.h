@@ -1,4 +1,4 @@
-/* $Id: os-aux.h,v 5.2 90/06/23 22:20:37 jsp Rel $ */
+/* $Id: os-aux.h,v 5.2.1.1 90/10/21 22:30:42 jsp Exp $ */
 
 /*
  * A/UX macII definitions for Amd (automounter)
@@ -14,7 +14,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-aux.h	5.1 (Berkeley) %G%
+ *	@(#)os-aux.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -41,11 +41,6 @@
  */
 #undef ARCH_ENDIAN
 #define	ARCH_ENDIAN	"big"
-
-/*
- * Has support for syslog()
- */
-#define HAS_SYSLOG
 
 /*
  * No support for ndbm

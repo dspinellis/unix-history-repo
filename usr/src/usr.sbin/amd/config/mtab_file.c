@@ -1,5 +1,5 @@
 /*
- * $Id: mtab_file.c,v 5.2 90/06/23 22:20:54 jsp Rel $
+ * $Id: mtab_file.c,v 5.2.1.2 91/03/03 20:51:24 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_file.c	5.1 (Berkeley) %G%
+ *	@(#)mtab_file.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"
@@ -81,9 +81,144 @@ again:
 #endif /* LOCK_FCNTL */
 #endif /* MTAB_LOCKING */
 
+static FILE *open_locked_mtab(mtab_file, mode, fs)
+char *mtab_file;
+char *mode;
+char *fs;
+{
+	FILE *mfp = 0;
+
+#ifdef UPDATE_MTAB
+	/*
+	 * There is a possible race condition if two processes enter
+	 * this routine at the same time.  One will be blocked by the
+	 * exclusive lock below (or by the shared lock in setmntent)
+	 * and by the time the second process has the exclusive lock
+	 * it will be on the wrong underlying object.  To check for this
+	 * the mtab file is stat'ed before and after all the locking
+	 * sequence, and if it is a different file then we assume that
+	 * it may be the wrong file (only "may", since there is another
+	 * race between the initial stat and the setmntent).
+	 *
+	 * Simpler solutions to this problem are invited...
+	 */
+	int racing = 2;
+#ifdef MTAB_LOCKING
+	int rc;
+	int retries = 0;
+	struct stat st_before, st_after;
+#endif /* MTAB_LOCKING */
+
+	if (mnt_file) {
+#ifdef DEBUG
+		dlog("Forced close on %s in read_mtab", mtab_file);
+#endif /* DEBUG */
+		endmntent(mnt_file);
+		mnt_file = 0;
+	}
+
+#ifdef MTAB_LOCKING
+again:
+	if (mfp) {
+		endmntent(mfp);
+		mfp = 0;
+	}
+
+	clock_valid = 0;
+	if (stat(mtab_file, &st_before) < 0) {
+		plog(XLOG_ERROR, "%s: stat: %m", mtab_file);
+		if (errno == ESTALE) {
+			/* happens occasionally */
+			sleep(1);
+			goto again;
+		}
+		return 0;
+	}
+#endif /* MTAB_LOCKING */
+#endif /* UPDATE_MTAB */
+
+eacces:
+	mfp = setmntent(mtab_file, mode);
+	if (!mfp) {
+		/*
+		 * Since setmntent locks the descriptor, it
+		 * is possible it can fail... so retry if
+		 * needed.
+		 */
+		if (errno == EACCES || errno == EAGAIN) {
+#ifdef DEBUG
+			dlog("Blocked, trying to obtain exclusive mtab lock");
+#endif /* DEBUG */
+			goto eacces;
+		} else if (errno == ENFILE && retries++ < NFILE_RETRIES) {
+			sleep(1);
+			goto eacces;
+		}
+
+		plog(XLOG_ERROR, "setmntent(\"%s\", \"%s\"): %m", mtab_file, mode);
+		return 0;
+	}
+
+#ifdef MTAB_LOCKING
+#ifdef UPDATE_MTAB
+	/*
+	 * At this point we have an exclusive lock on the mount list,
+	 * but it may be the wrong one so...
+	 */
+
+	/*
+	 * Need to get an exclusive lock on the current
+	 * mount table until we have a new copy written
+	 * out, when the lock is released in free_mntlist.
+	 * flock is good enough since the mount table is
+	 * not shared between machines.
+	 */
+	do
+		rc = lock(fileno(mfp));
+	while (rc < 0 && errno == EINTR);
+	if (rc < 0) {
+		plog(XLOG_ERROR, "Couldn't lock %s: %m", mtab_file);
+		endmntent(mfp);
+		return 0;
+	}
+	/*
+	 * Now check whether the mtab file has changed under our feet
+	 */
+	if (stat(mtab_file, &st_after) < 0) {
+		plog(XLOG_ERROR, "%s: stat", mtab_file);
+		goto again;
+	}
+
+	if (st_before.st_dev != st_after.st_dev ||
+		st_before.st_ino != st_after.st_ino) {
+			struct timeval tv;
+			if (racing == 0) {
+				/* Sometimes print a warning */
+				plog(XLOG_WARNING,
+					"Possible mount table race - retrying %s", fs);
+			}
+			racing = (racing+1) & 3;
+			/*
+			 * Take a nap.  From: Doug Kingston <dpk@morgan.com>
+			 */
+			tv.tv_sec = 0;
+			tv.tv_usec = (mypid & 0x07) << 17;
+			if (tv.tv_usec)
+				if (select(0, (voidp) 0, (voidp) 0, (voidp) 0, &tv) < 0)
+					plog(XLOG_WARNING, "mtab nap failed: %m");
+
+			goto again;
+	}
+#endif /* UPDATE_MTAB */
+#endif /* MTAB_LOCKING */
+
+	return mfp;
+}
+
 /*
  * Unlock the mount table
  */
+void unlock_mntlist P((void));
 void unlock_mntlist()
 {
 	/*
@@ -186,7 +321,7 @@ struct mntent *mp;
 	int retries = 0;
 	FILE *mfp;
 enfile:
-	mfp = setmntent(mtab, "a");
+	mfp = open_locked_mtab(mtab, "a", mp->mnt_dir);
 	if (mfp) {
 #ifdef MTAB_STRIPNL
 		mtab_stripnl(mp->mnt_opts);
@@ -218,6 +353,13 @@ struct mntent *mp;
 	new_mp->mnt_freq = mp->mnt_freq;
 	new_mp->mnt_passno = mp->mnt_passno;
 
+#ifdef FIXUP_MNTENT_DUP
+	/*
+	 * Additional fields get dup'ed here
+	 */
+	FIXUP_MNTENT_DUP(new_mp, mp);
+#endif
+
 	return new_mp;
 }
 
@@ -230,121 +372,10 @@ char *fs;
 	mntlist **mpp, *mhp;
 
 	struct mntent *mep;
-	FILE *mfp = 0;
+	FILE *mfp = open_locked_mtab(mtab, "r+", fs);
 
-#ifdef UPDATE_MTAB
-	/*
-	 * There is a possible race condition if two processes enter
-	 * this routine at the same time.  One will be blocked by the
-	 * exclusive lock below (or by the shared lock in setmntent)
-	 * and by the time the second process has the exclusive lock
-	 * it will be on the wrong underlying object.  To check for this
-	 * the mtab file is stat'ed before and after all the locking
-	 * sequence, and if it is a different file then we assume that
-	 * it may be the wrong file (only "may", since there is another
-	 * race between the initial stat and the setmntent).
-	 *
-	 * Simpler solutions to this problem are invited...
-	 */
-	int racing = 0;
-#ifdef MTAB_LOCKING
-	int rc;
-	int retries = 0;
-	struct stat st_before, st_after;
-#endif /* MTAB_LOCKING */
-
-	if (mnt_file) {
-#ifdef DEBUG
-		dlog("Forced close on %s in read_mtab", mtab);
-#endif /* DEBUG */
-		endmntent(mnt_file);
-		mnt_file = 0;
-	}
-
-#ifdef MTAB_LOCKING
-again:
-	if (mfp) {
-		endmntent(mfp);
-		mfp = 0;
-	}
-
-	clock_valid = 0;
-	if (stat(mtab, &st_before) < 0) {
-		plog(XLOG_ERROR, "%s: stat: %m", mtab);
-		if (errno == ESTALE) {
-			/* happens occasionally */
-			sleep(1);
-			goto again;
-		}
+	if (!mfp)
 		return 0;
-	}
-#endif /* MTAB_LOCKING */
-#endif /* UPDATE_MTAB */
-
-eacces:
-	mfp = setmntent(mtab, "r+");
-	if (!mfp) {
-		/*
-		 * Since setmntent locks the descriptor, it
-		 * is possible it can fail... so retry if
-		 * needed.
-		 */
-		if (errno == EACCES || errno == EAGAIN) {
-#ifdef DEBUG
-			dlog("Blocked, trying to obtain exclusive mtab lock");
-#endif /* DEBUG */
-			goto eacces;
-		} else if (errno == ENFILE && retries++ < NFILE_RETRIES) {
-			sleep(1);
-			goto eacces;
-		}
-
-		plog(XLOG_ERROR, "setmntent(\"%s\", \"r+\"): %m", mtab);
-		return 0;
-	}
-
-#ifdef MTAB_LOCKING
-#ifdef UPDATE_MTAB
-	/*
-	 * At this point we have an exclusive lock on the mount list,
-	 * but it may be the wrong one so...
-	 */
-
-	/*
-	 * Need to get an exclusive lock on the current
-	 * mount table until we have a new copy written
-	 * out, when the lock is released in free_mntlist.
-	 * flock is good enough since the mount table is
-	 * not shared between machines.
-	 */
-	do
-		rc = lock(fileno(mfp));
-	while (rc < 0 && errno == EINTR);
-	if (rc < 0) {
-		plog(XLOG_ERROR, "Couldn't lock %s: %m", mtab);
-		endmntent(mfp);
-		return 0;
-	}
-	/*
-	 * Now check whether the mtab file has changed under our feet
-	 */
-	if (stat(mtab, &st_after) < 0) {
-		plog(XLOG_ERROR, "%s: stat", mtab);
-		goto again;
-	}
-
-	if (st_before.st_dev != st_after.st_dev ||
-		st_before.st_ino != st_after.st_ino) {
-			if (racing == 0) {
-				/* Sometimes print a warning */
-				plog(XLOG_WARNING,
-					"Possible mount table race - retrying %s", fs);
-			}
-			racing = (racing+1) & 3;
-			goto again;
-	}
-#endif /* UPDATE_MTAB */
-#endif /* MTAB_LOCKING */
 
 	mpp = &mhp;
 

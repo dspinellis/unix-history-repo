@@ -1,4 +1,4 @@
-/* $Id: os-sos4.h,v 5.2 90/06/23 22:20:52 jsp Rel $ */
+/* $Id: os-sos4.h,v 5.2.1.2 91/03/03 20:50:41 jsp Alpha $ */
 
 /*
  * SunOS 4.0 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-sos4.h	5.1 (Berkeley) %G%
+ *	@(#)os-sos4.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -79,3 +79,12 @@
  * Add support for SunOS 4 automounter files
  */
 #define	SUNOS4_COMPAT
+
+/*
+ * System Vr4 / SunOS 4.1 compatibility
+ * - put dev= in the options list
+ *
+ * From: Brent Callaghan <brent@eng.sun.com>
+ */
+#define	MNTINFO_DEV	"dev"
+#define MNTINFO_PREF	""

@@ -1,5 +1,5 @@
 /*
- * $Id: mtab_bsd.c,v 5.2 90/06/23 22:20:40 jsp Rel $
+ * $Id: mtab_bsd.c,v 5.2.1.1 90/10/21 22:30:46 jsp Exp $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_bsd.c	5.1 (Berkeley) %G%
+ *	@(#)mtab_bsd.c	5.2 (Berkeley) %G%
  */
 
 #include "am.h"

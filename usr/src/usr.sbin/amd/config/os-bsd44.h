@@ -1,4 +1,4 @@
-/* $Id: os-bsd44.h,v 5.2 90/06/23 22:20:38 jsp Rel $ */
+/* $Id: os-bsd44.h,v 5.2.1.2 90/11/04 23:17:39 jsp Exp $ */
 
 /*
  * 4.4 BSD definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-bsd44.h	5.1 (Berkeley) %G%
+ *	@(#)os-bsd44.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
  * This is the implementation release number, not
  * the protocol revision number.
  */
-#define	RPC_3
+#define	RPC_4
 
 /*
  * Which version of the NFS interface are we using.
@@ -40,6 +40,11 @@
  * Does this OS have NDBM support?
  */
 #define OS_HAS_NDBM
+
+/*
+ * 4.4 doesn't provide NIS.
+ */
+#undef HAS_NIS_MAPS
 
 /*
  * The mount table is obtained from the kernel
@@ -98,7 +103,6 @@ XXX - Probably no hope of running Amd on this machine!
 /*
  * Miscellaneous 4.4 BSD bits
  */
-#define MISC_RPC
 #define	NEED_MNTOPT_PARSER
 #define	SHORT_MOUNT_NAME
 
@@ -145,3 +149,9 @@ struct mntent {
  * mounted filesystem.
  */
 #define	NFS_ARGS_NEEDS_PATH
+
+/*
+ * 4.4 has RE support built in
+ */
+#undef RE_HDR
+#define RE_HDR <regexp.h>

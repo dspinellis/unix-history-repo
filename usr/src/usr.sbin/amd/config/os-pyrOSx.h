@@ -1,4 +1,4 @@
-/* $Id: os-pyrOSx.h,v 5.2 90/06/23 22:20:50 jsp Rel $ */
+/* $Id: os-pyrOSx.h,v 5.2.1.1 90/10/21 22:31:02 jsp Exp $ */
 
 /*
  * Pyramid OSx definitions for Amd (automounter)
@@ -14,7 +14,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-pyrOSx.h	5.1 (Berkeley) %G%
+ *	@(#)os-pyrOSx.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@
 /*
  * Byte ordering
  */
+#undef ARCH_ENDIAN
 #define	ARCH_ENDIAN	"big"
 
 /*

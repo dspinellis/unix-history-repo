@@ -1,4 +1,4 @@
-/* $Id: os-concentrix.h,v 5.2 90/06/23 22:20:41 jsp Rel $ */
+/* $Id: os-concentrix.h,v 5.2.1.1 90/10/21 22:30:47 jsp Exp $ */
 
 /*
  * Alliant Concentrix 5.0.0 definitions for Amd (automounter)
@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)os-concentrix.h	5.1 (Berkeley) %G%
+ *	@(#)os-concentrix.h	5.2 (Berkeley) %G%
  */
 
 /*

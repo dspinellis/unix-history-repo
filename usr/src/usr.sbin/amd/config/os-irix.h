@@ -12,20 +12,9 @@
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry at Imperial College, London.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by Imperial College of Science, Technology and Medicine, London, UK.
- * The names of the College and University may not be used to endorse
- * or promote products derived from this software without specific
- * prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  *
- *	@(#)os-irix.h	5.1 (Berkeley) %G%
+ *	@(#)os-irix.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -115,4 +104,5 @@
 #define MOUNT_HELPER_SOURCE "mount_irix.c"
 
 #define	MNTINFO_DEV	"fsid"
+ * %sccs.include.redist.c%
 #define	MNTINFO_PREF	"0x"

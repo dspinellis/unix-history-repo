@@ -1,5 +1,5 @@
 /*
- * $Id: amq.x,v 5.2 90/06/23 22:20:11 jsp Rel $
+ * $Id: amq.x,v 5.2.1.2 91/03/17 17:39:36 jsp Alpha $
  *
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
@@ -11,7 +11,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)amq.x	5.1 (Berkeley) %G%
+ *	@(#)amq.x	5.2 (Berkeley) %G%
  */
 
 /*
@@ -142,5 +142,17 @@ program AMQ_PROGRAM {
 		 */
 		amq_mount_info_list
 		AMQPROC_GETMNTFS(void) = 6;
+
+		/*
+		 * Mount a filesystem
+		 */
+		int
+		AMQPROC_MOUNT(amq_string) = 7;
+
+		/*
+		 * Get version info
+		 */
+		amq_string
+		AMQPROC_GETVERS(void) = 8;
 	} = 1;
 } = 300019;	/* Allocated by Sun, 89/8/29 */
