@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -138,11 +138,22 @@ descend(endp)
 	if ((info.st_mode&S_IFMT) == S_IFDIR) {
 		if (info.st_dev != device && !crossmounts)
 			return(0L);
-		if (chdir(endp) || !(dir = opendir("."))) {
+		if (chdir(endp)) {
 			(void)fprintf(stderr, "du: %s: %s\n",
 			    path, strerror(errno));
 			return(total);
-		} 
+		}
+		if (!(dir = opendir("."))) {
+			(void)fprintf(stderr, "du: %s: %s\n",
+			    path, strerror(errno));
+			if (chdir("..")) {
+				/* very unlikely */
+				(void)fprintf(stderr, "du: ..: %s\n",
+				    strerror(errno));
+				exit(1);
+			}
+			return(total);
+		}
 		for (; *endp; ++endp);
 		if (endp[-1] != '/')
 			*endp++ = '/';
