@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_machdep.c	7.4 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,6 @@
 #include "user.h"
 #include "proc.h"
 #include "cmap.h"
-#include "mount.h"
 #include "vm.h"
 #include "text.h"
 #include "kernel.h"
