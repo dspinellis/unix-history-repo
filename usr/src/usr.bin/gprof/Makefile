@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.18 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.19 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -6,6 +6,7 @@ LINTFLAGS = -x -a -n ${DFLAGS}
 
 RM=	/bin/rm -f
 INSTALL=cp
+PR=pr
 
 GPROFHDRS =	gprof.h
 GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c calls.c hertz.c \
@@ -28,11 +29,11 @@ gcrt0.h:
 	cp /usr/src/libc/csu/gcrt0.h gcrt0.h
 
 print:
-	@ ls -l | pr
-	@ pr makefile
-	@ pr gcrt0.h
-	@ pr ${GPROFHDRS} ${GPROFSRCS}
-	@ pr gprof.flat.blurb gprof.callg.blurb
+	@ ls -l | ${PR}
+	@ ${PR} makefile
+	@ ${PR} gcrt0.h
+	@ ${PR} ${GPROFHDRS} ${GPROFSRCS}
+	@ ${PR} gprof.flat.blurb gprof.callg.blurb
 
 lint:
 	lint ${LINTFLAGS} ${DFLAGS} ${GPROFSRCS}
