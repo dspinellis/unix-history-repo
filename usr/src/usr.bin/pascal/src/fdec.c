@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.20 %G%";
+static char sccsid[] = "@(#)fdec.c 1.21 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -51,7 +51,17 @@ funcext(fp)
 	struct nl *fp;
 {
 
+#ifdef OBJ
+	error("Procedures or functions cannot be declared external.");
+#endif OBJ
+
 #ifdef PC
+	    /*
+	     *	save the counter for this function
+	     */
+	if ( monflg ) {
+	    fp -> value[ NL_CNTR ] = bodycnts[ cbn ];
+	}
  	if (opt('s')) {
 		standard();
 		error("External procedures and functions are not standard");
@@ -64,9 +74,6 @@ funcext(fp)
 			error("External procedures and functions can only be declared at the outermost level.");
 	}
 #endif PC
-#ifdef OBJ
-	error("Procedures or functions cannot be declared external.");
-#endif OBJ
 
 	return(fp);
 }
