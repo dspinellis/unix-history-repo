@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.5 (Berkeley) %G%
+	@(#)syscalls.master	8.6 (Berkeley) %G%
 ; System call name/number "master" file.
 ; (See syscalls.conf to see what it is processed into.)
 ;
@@ -63,7 +63,7 @@
 			    int flags); }
 19	COMPAT_43	{ long lseek(int fd, long offset, int whence); }
 20	STD		{ pid_t getpid(void); }
-21	STD		{ int mount(int type, char *path, int flags, \
+21	STD		{ int mount(char *type, char *path, int flags, \
 			    caddr_t data); }
 22	STD		{ int unmount(char *path, int flags); }
 23	STD		{ int setuid(uid_t uid); }
