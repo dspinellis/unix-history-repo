@@ -4,13 +4,13 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 
 PROG=	telnet
 
 CFLAGS+=-DTERMCAP -DKLUDGELINEMODE -DUSE_TERMIO -DAUTHENTICATE -DENCRYPT
-CFLAGS+=-I/usr/src/lib
+CFLAGS+=-I${.CURDIR}/../../lib
 
 CFLAGS+= -DKRB4
 
