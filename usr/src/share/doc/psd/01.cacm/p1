@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)p1	6.3 (Berkeley) %G%
+.\"	@(#)p1	6.4 (Berkeley) %G%
 .\"
-.OH 'The UNIX Time-Sharing System''PS2:1-%'
-.EH 'PS2:1-%''The UNIX Time-Sharing System'
+.OH 'The UNIX Time-Sharing System''PSD:1-%'
+.EH 'PSD:1-%''The UNIX Time-Sharing System'
 .ds n \s+2
 .hw above-mentioned
 .ds s \s-2
