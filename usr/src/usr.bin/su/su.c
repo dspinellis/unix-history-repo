@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -129,7 +129,7 @@ ok:
 		cleanenv[4] = getenv("TERM");
 		environ = cleanenv;
 	}
-	if (strcmp(user, "root"))
+	if (fulllogin || strcmp(user, "root") != 0)
 		setenv("USER", pwd->pw_name, userbuf);
 	setenv("SHELL", shell, shellbuf);
 	setenv("HOME", pwd->pw_dir, homebuf);
