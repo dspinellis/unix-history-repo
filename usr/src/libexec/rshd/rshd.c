@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.17.1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /* From:
@@ -44,6 +44,7 @@ static char sccsid[] = "@(#)rshd.c	5.26 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/signal.h>
+#include <sys/signal.h>
 #include <sys/time.h>
 
 #include <netinet/in.h>
@@ -56,13 +57,16 @@ static char sccsid[] = "@(#)rshd.c	5.26 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include "pathnames.h"
+#include "pathnames.h"
 
 int	errno;
 int	keepalive = 1;
 int	check_all = 0;
+int	check_all = 0;
 char	*index(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
+int	sent_null;
 int	sent_null;
 
 /*ARGSUSED*/
@@ -80,7 +84,6 @@ main(argc, argv)
 	openlog("rshd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "ln")) != EOF)
 		switch (ch) {
 		case 'a':
 			check_all = 1;
@@ -99,7 +102,6 @@ main(argc, argv)
 
 	argc -= optind;
 	argv += optind;
-
 
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -269,7 +271,9 @@ doit(fromp)
 				    remotehost);
 				error("Couldn't look up address for your host\n");
 				exit(1);
-			} else for (; ; hp->h_addr_list++) {
+			}
+#ifdef h_addr	/* 4.2 hack */
+			for (; ; hp->h_addr_list++) {
 				if (!bcmp(hp->h_addr_list[0],
 				    (caddr_t)&fromp->sin_addr,
 				    sizeof(fromp->sin_addr)))
@@ -283,6 +287,17 @@ doit(fromp)
 					exit(1);
 				}
 			}
+#else
+			if (bcmp(hp->h_addr, (caddr_t)&fromp->sin_addr,
+			    sizeof(fromp->sin_addr))) {
+				syslog(LOG_NOTICE,
+				  "Host addr %s not listed for host %s",
+				    inet_ntoa(fromp->sin_addr),
+				    hp->h_name);
+				error("Host address mismatch\n");
+				exit(1);
+			}
+#endif
 		}
 		hostname = hp->h_name;
 	} else
@@ -315,7 +330,9 @@ doit(fromp)
 		error("Logins currently disabled.\n");
 		exit(1);
 	}
+
 	(void) write(2, "\0", 1);
+	sent_null = 1;
 	sent_null = 1;
 
 	if (port) {
@@ -463,6 +480,7 @@ doit(fromp)
 #endif
 		dup2(pv[1], 2);
 		close(pv[1]);
+		close(pv[1]);
 	}
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = _PATH_BSHELL;
@@ -483,6 +501,10 @@ doit(fromp)
 	else
 		cp = pwd->pw_shell;
 	endpwent();
+	if (pwd->pw_uid == 0)
+		syslog(LOG_INFO|LOG_AUTH, "ROOT shell from %s@%s, comm: %s\n",
+		    remuser, hostname, cmdbuf);
+	endpwent();
 	if (pwd->pw_uid == 0) {
 #ifdef	KERBEROS
 		if (use_kerberos)
@@ -501,6 +523,12 @@ doit(fromp)
 	exit(1);
 }
 
+/*
+ * Report error to client.
+ * Note: can't be used until second socket has connected
+ * to client, or older clients will hang waiting
+ * for that connection first.
+ */
 /*
  * Report error to client.
  * Note: can't be used until second socket has connected
@@ -553,12 +581,31 @@ local_domain(h)
 	char *p1, *p2, *topdomain();
 
 	localhost[0] = 0;
+	localhost[0] = 0;
 	(void) gethostname(localhost, sizeof(localhost));
 	p1 = topdomain(localhost);
 	p2 = topdomain(h);
 	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
 		return(1);
 	return(0);
+}
+
+char *
+topdomain(h)
+	char *h;
+{
+	register char *p;
+	char *maybe = NULL;
+	int dots = 0;
+
+	for (p = h + strlen(h); p >= h; p--) {
+		if (*p == '.') {
+			if (++dots == 2)
+				return (p);
+			maybe = p;
+		}
+	}
+	return (maybe);
 }
 
 char *
