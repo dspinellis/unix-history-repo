@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)init_main.c	7.41 (Berkeley) 5/15/91
- *	$Id$
+ *	$Id: init_main.c,v 1.7 1993/10/08 10:50:42 rgrimes Exp $
  */
 
 #include "param.h"
@@ -326,6 +326,8 @@ main()
 		if (boothowto&RB_FASTBOOT)
 			*ip++ = 'f';
 #endif
+		if (ip == initflags + 1)
+			*ip++ = '-';
 		*ip++ = '\0';
 
 		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
