@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.37 (Berkeley) %G%
+	@(#)syscalls.master	7.38 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -242,7 +242,7 @@
 183	STD	1 seteuid
 #ifdef LFS
 184	STD	4 lfs_bmapv
-185	STD	6 lfs_markv
+185	STD	4 lfs_markv
 186	STD	3 lfs_segclean
 187	STD	3 lfs_segwait
 #else
