@@ -18,7 +18,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)less.h	5.3 (Berkeley) %G%
+ *	@(#)less.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -80,7 +80,6 @@ typedef	int		HANDLER;
 #define	BE_CHAR		'\204'	/* Exit boldface mode */
 
 #define	CONTROL(c)		((c)&037)
-#define	SIGNAL(sig,func)	signal(sig,func)
 
 #include <sys/param.h>
 #include <sys/file.h>
