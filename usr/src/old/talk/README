@@ -1,0 +1,35 @@
+Talk consists of two parts:
+
+    talk itself, which is the user interface. Talk initiates the
+	 talk requests and negotiates with the suitable talk daemons.
+
+    talkd, the talk daemon. Talkd announces an invitation to talk
+	 to a user on its' local machine and acts like a rendezvous
+	 point for inter-machine talks. The socket address's of
+	 the invitING talk process is kept at the local talkd of
+	 the invitEE. Talkd must run as root, and should be forked
+	 off on boot along with the other daemons. There is
+	 no provision for automatic restart of talkd. If for
+	 some reason it dies, it must be restarted by hand. Since
+	 talkd opens a special addresses socket (517 at the present 
+	 time), the first talkd to run will lock out any other
+	 talkd. The locked out talkd will sit and bitch every
+	 15 seconds for about five minutes, so don't leave it running.
+
+
+So, to install:
+
+	run 'make install' from the top of the talk source directory.
+	The install will fail if an older version of talkd is still
+	running. If it does fail because of a 'text file busy' error,
+	kill the old talkd and 'make install' again.
+
+	execute '/usr/lib/talkd' to start the daemon immediately.
+
+	Install a line in /etc/rc or /etc/rc.local to fork talkd off in
+	background on reboot. 
+
+	Try talk. If it immediately fails with 'Bad system call', then
+	you should recompile ctl.c with the -DGETSOCK flag and remake
+	talk. This makes talk use getsockname (actually syscall(150))
+	instead socketaddr(). This will go away once 4.1c stabilizes.
