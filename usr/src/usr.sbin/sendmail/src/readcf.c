@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.74.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -253,7 +253,6 @@ readcf(cfname)
 						botch = "$0-$9";
 						break;
 
-#if	0
 					  case CANONNET:
 						botch = "$#";
 						break;
@@ -261,7 +260,6 @@ readcf(cfname)
 					  case CANONUSER:
 						botch = "$:";
 						break;
-#endif	/* 0 */
 
 					  case CALLSUBR:
 						botch = "$>";
@@ -1255,7 +1253,7 @@ struct optioninfo
 	"MatchGECOS",		'G',		FALSE,
 	"HelpFile",		'H',		FALSE,
 	"MaxHopCount",		'h',		FALSE,
-	"NameServerOptions",	'I',		FALSE,
+	"ResolverOptions",	'I',		FALSE,
 	"IgnoreDots",		'i',		TRUE,
 	"ForwardPath",		'J',		FALSE,
 	"SendMimeErrors",	'j',		TRUE,
@@ -1285,9 +1283,9 @@ struct optioninfo
 	"QueueLA",		'x',		FALSE,
 	"RefuseLA",		'X',		FALSE,
 	"RecipientFactor",	'y',		FALSE,
-	"ForkQueueRuns",	'Y',		FALSE,
+	"ForkEachJob",		'Y',		FALSE,
 	"ClassFactor",		'z',		FALSE,
-	"TimeFactor",		'Z',		FALSE,
+	"RetryFactor",		'Z',		FALSE,
 #define O_BSP		0x80
 	"BrokenSmtpPeers",	O_BSP,		TRUE,
 #define O_QUEUESORTORD	0x81
@@ -1308,6 +1306,8 @@ struct optioninfo
 	"NoRecipientAction",	O_NORCPTACTION,	TRUE,
 #define O_SAFEFILEENV	0x89
 	"SafeFileEnvironment",	O_SAFEFILEENV,	FALSE,
+#define O_MAXMSGSIZE	0x8a
+	"MaxMessageSize",	O_MAXMSGSIZE,	FALSE,
 
 	NULL,			'\0',		FALSE,
 };
@@ -1901,6 +1901,10 @@ setoption(opt, val, sticky)
 
 	  case O_SAFEFILEENV:	/* chroot() environ for writing to files */
 		SafeFileEnv = newstr(val);
+		break;
+
+	  case O_MAXMSGSIZE:	/* maximum message size */
+		MaxMessageSize = atol(p);
 		break;
 
 	  default:
