@@ -1,21 +1,18 @@
-/*	up.c	4.45.1.1	82/10/10	*/
+/*	up.c	4.61	82/11/26	*/
+.f
 
 #include "up.h"
 #if NSC > 0
 /*
- * UNIBUS disk driver with:
- *	overlapped seeks,
- *	ECC recovery, and
- *	bad sector forwarding.
+ * UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
  * TODO:
+ *	Add bad sector forwarding code
  *	Check that offset recovery code works
  */
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/cpu.h"
-#include "../h/nexus.h"
 #include "../h/dk.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
@@ -23,13 +20,15 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mtpr.h"
 #include "../h/vm.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
 #include "../h/cmap.h"
-#include "../h/dkbad.h"
-#include "../h/upreg.h"
+#include "../h/uio.h"
+
+#include "../vax/cpu.h"
+#include "../vax/nexus.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/upreg.h"
 
 struct	up_softc {
 	int	sc_softas;
@@ -106,7 +105,6 @@ u_short	upstd[] = { 0776700, 0774400, 0776300, 0 };
 struct	uba_driver scdriver =
     { upprobe, upslave, upattach, updgo, upstd, "up", updinfo, "sc", upminfo };
 struct	buf	uputab[NUP];
-char upinit[NUP];
 
 struct	upst {
 	short	nsect;
@@ -122,17 +120,13 @@ struct	upst {
 };
 
 u_char	up_offset[16] = {
-	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
-	UPOF_P800, UPOF_M800, UPOF_P800, UPOF_M800, 
-	UPOF_P1200, UPOF_M1200, UPOF_P1200, UPOF_M1200,
-	0, 0, 0, 0
+    UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
+    UPOF_P800, UPOF_M800, UPOF_P800, UPOF_M800, 
+    UPOF_P1200, UPOF_M1200, UPOF_P1200, UPOF_M1200,
+    0, 0, 0, 0
 };
 
 struct	buf	rupbuf[NUP];
-#ifndef NOBADSECT
-struct 	buf	bupbuf[NUP];
-struct	dkbad	upbad[NUP];
-#endif
 
 #define	b_cylin b_resid
 
@@ -156,7 +150,7 @@ upprobe(reg)
 	((struct updevice *)reg)->upcs1 = UP_IE|UP_RDY;
 	DELAY(10);
 	((struct updevice *)reg)->upcs1 = 0;
-	return (1);
+	return (sizeof (struct updevice));
 }
 
 upslave(ui, reg)
@@ -197,6 +191,14 @@ upattach(ui)
 	else if (upaddr->uphr == 15)
 		ui->ui_type = 2;		/* ampex hack */
 	upaddr->upcs2 = UPCS2_CLR;
+/*
+	upaddr->uphr = UPHR_MAXCYL;
+	printf("maxcyl %d\n", upaddr->uphr);
+	upaddr->uphr = UPHR_MAXTRAK;
+	printf("maxtrak %d\n", upaddr->uphr);
+	upaddr->uphr = UPHR_MAXSECT;
+	printf("maxsect %d\n", upaddr->uphr);
+*/
 }
  
 upstrategy(bp)
@@ -297,28 +299,12 @@ upustart(ui)
 	 * If drive has just come up,
 	 * setup the pack.
 	 */
-	if ((upaddr->upds & UPDS_VV) == 0 || upinit[ui->ui_unit] == 0) {
-#ifndef NOBADSECT
-		struct buf *bbp = &bupbuf[ui->ui_unit];
-#endif
+	if ((upaddr->upds & UPDS_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
-		upinit[ui->ui_unit] = 1;
 		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_IE|UP_PRESET|UP_GO;
 		upaddr->upof = UPOF_FMT22;
 		didie = 1;
-#ifndef NOBADSECT
-		st = &upst[ui->ui_type];
-		bbp->b_flags = B_READ|B_BUSY;
-		bbp->b_dev = bp->b_dev;
-		bbp->b_bcount = 512;
-		bbp->b_un.b_addr = (caddr_t)&upbad[ui->ui_unit];
-		bbp->b_blkno = st->ncyl * st->nspc - st->nsect;
-		bbp->b_cylin = st->ncyl - 1;
-		dp->b_actf = bbp;
-		bbp->av_forw = bp;
-		bp = bbp;
-#endif
 	}
 	/*
 	 * If drive is offline, forget about positioning.
@@ -524,12 +510,6 @@ upintr(sc21)
 	dk_busy &= ~(1 << ui->ui_dk);
 	if ((upaddr->upcs2&07) != ui->ui_slave)
 		upaddr->upcs2 = ui->ui_slave;
-#ifndef NOBADSECT
-	if (bp->b_flags&B_BAD) {
-		if (upecc(ui, CONT))
-			return;
-	}
-#endif
 	/*
 	 * Check for and process errors on
 	 * either the drive or the controller.
@@ -553,22 +533,12 @@ upintr(sc21)
 			 * After 28 retries (16 without offset, and
 			 * 12 with offset positioning) give up.
 			 */
-	hard:
 			harderr(bp, "up");
-			printf("cn=%d tn=%d sn=%d cs2=%b er1=%b er2=%b\n",
-			        upaddr->updc, ((upaddr->upda)>>8)&077,
-			        (upaddr->upda)&037,
-				upaddr->upcs2, UPCS2_BITS,
-				upaddr->uper1, UPER1_BITS,
-				upaddr->uper2, UPER2_BITS);
+			printf("cs2=%b er1=%b er2=%b\n",
+			    upaddr->upcs2, UPCS2_BITS,
+			    upaddr->uper1, UPER1_BITS,
+			    upaddr->uper2, UPER2_BITS);
 			bp->b_flags |= B_ERROR;
-		} else if (upaddr->uper2 & UPER2_BSE) {
-#ifndef NOBADSECT
-			if (upecc(ui, BSE))
-				return;
-			else
-#endif
-				goto hard;
 		} else {
 			/*
 			 * Retriable error.
@@ -577,7 +547,7 @@ upintr(sc21)
 			 * Otherwise fall through and retry the transfer
 			 */
 			if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK) {
-				if (upecc(ui, ECC))
+				if (upecc(ui))
 					return;
 			} else
 				um->um_tab.b_active = 0; /* force retry */
@@ -687,26 +657,26 @@ doattn:
 		upaddr->upcs1 = UP_IE;
 }
 
-upread(dev)
+upread(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NUP)
-		u.u_error = ENXIO;
-	else
-		physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys);
+		return (ENXIO);
+	return (physio(upstrategy, &rupbuf[unit], dev, B_READ, minphys, uio));
 }
 
-upwrite(dev)
+upwrite(dev, uio)
 	dev_t dev;
+	struct uio *uio;
 {
 	register int unit = minor(dev) >> 3;
 
 	if (unit >= NUP)
-		u.u_error = ENXIO;
-	else
-		physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys);
+		return (ENXIO);
+	return (physio(upstrategy, &rupbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 /*
@@ -715,9 +685,8 @@ upwrite(dev)
  * the transfer may be going to an odd memory address base and/or
  * across a page boundary.
  */
-upecc(ui, flag)
+upecc(ui)
 	register struct uba_device *ui;
-	int flag;
 {
 	register struct updevice *up = (struct updevice *)ui->ui_addr;
 	register struct buf *bp = uputab[ui->ui_unit].b_actf;
@@ -735,12 +704,7 @@ upecc(ui, flag)
 	 * mapping (the first part of) the transfer.
 	 * O is offset within a memory page of the first byte transferred.
 	 */
-#ifndef NOBADSECT
-	if (flag == CONT)
-		npf = bp->b_error;
-	else
-#endif
-	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount);
+	npf = btop((up->upwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
@@ -750,97 +714,38 @@ upecc(ui, flag)
 	printf("npf %d reg %x o %d mask %o pos %d\n", npf, reg, o, mask,
 	    up->upec1);
 #endif
-	bn = dkblock(bp);
-	st = &upst[ui->ui_type];
-	cn = bp->b_cylin;
-	sn = bn%st->nspc + npf;
-	tn = sn/st->nsect;
-	sn %= st->nsect;
-	cn += tn/st->ntrak;
-	tn %= st->ntrak;
-	ubapurge(um);
-	um->um_tab.b_active=2;
 	/*
-	 * action taken depends on the flag
+	 * Flush the buffered data path, and compute the
+	 * byte and bit position of the error.  The variable i
+	 * is the byte offset in the transfer, the variable byte
+	 * is the offset from a page boundary in main memory.
 	 */
-	switch(flag){
-	case ECC:
-		npf--;
-		reg--;
-		mask = up->upec2;
-		printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
-			'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
-		/*
-		 * Flush the buffered data path, and compute the
-		 * byte and bit position of the error.  The variable i
-		 * is the byte offset in the transfer, the variable byte
-		 * is the offset from a page boundary in main memory.
-		 */
-		i = up->upec1 - 1;		/* -1 makes 0 origin */
-		bit = i&07;
-		i = (i&~07)>>3;
-		byte = i + o;
-		/*
-		 * Correct while possible bits remain of mask.  Since mask
-		 * contains 11 bits, we continue while the bit offset is > -11.
-		 * Also watch out for end of this block and the end of the whole
-		 * transfer.
-		 */
-		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
-			addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
-				(byte & PGOFSET);
+	ubapurge(um);
+	i = up->upec1 - 1;		/* -1 makes 0 origin */
+	bit = i&07;
+	i = (i&~07)>>3;
+	byte = i + o;
+	/*
+	 * Correct while possible bits remain of mask.  Since mask
+	 * contains 11 bits, we continue while the bit offset is > -11.
+	 * Also watch out for end of this block and the end of the whole
+	 * transfer.
+	 */
+	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
+		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
+		    (byte & PGOFSET);
 #ifdef UPECCDEBUG
-			printf("addr %x map reg %x\n",
-				addr, *(int *)(&ubp->uba_map[reg+btop(byte)]));
-			printf("old: %x, ", getmemc(addr));
+		printf("addr %x map reg %x\n",
+		    addr, *(int *)(&ubp->uba_map[reg+btop(byte)]));
+		printf("old: %x, ", getmemc(addr));
 #endif
-			putmemc(addr, getmemc(addr)^(mask<<bit));
+		putmemc(addr, getmemc(addr)^(mask<<bit));
 #ifdef UPECCDEBUG
-			printf("new: %x\n", getmemc(addr));
+		printf("new: %x\n", getmemc(addr));
 #endif
-			byte++;
-			i++;
-		}
-		if (up->upwc == 0)
-			return (0);
-		npf++;
-		reg++;
-		break;
-#ifndef NOBADSECT
-	case BSE:
-		/*
-		 * if not in bad sector table, return 0
-		 */
-		if ((bn = isbad(&upbad[ui->ui_unit], cn, tn, sn)) < 0)
-			return(0);
-		/*
-		 * flag this one as bad
-		 */
-		bp->b_flags |= B_BAD;
-		bp->b_error = npf + 1;
-#ifdef UPECCDEBUG
-		printf("BSE: restart at %d\n",npf+1);
-#endif
-		bn = st->ncyl * st->nspc -st->nsect - 1 - bn;
-		cn = bn / st->nspc;
-		sn = bn % st->nspc;
-		tn = sn / st->nsect;
-		sn %= st->nsect;
-		up->upwc = -(512 / sizeof (short));
-#ifdef UPECCDEBUG
-		printf("revector to cn %d tn %d sn %d\n", cn, tn, sn);
-#endif
-		break;
-	case CONT:
-#ifdef UPECCDEBUG
-		printf("upecc, CONT: bn %d cn %d tn %d sn %d\n", bn, cn, tn, sn);
-#endif
-		bp->b_flags &= ~B_BAD;
-		up->upwc = -((bp->b_bcount - (int)ptob(npf)) / sizeof(short));
-		if (up->upwc == 0)
-			return(0);
-		break;
-#endif
+		byte++;
+		i++;
+		bit -= 8;
 	}
 	if (up->upwc == 0) {
 		um->um_tab.b_active = 0;
@@ -857,13 +762,21 @@ upecc(ui, flag)
 	up->upcs1 |= UP_GO;
 #else
 	up->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
+	bn = dkblock(bp);
+	st = &upst[ui->ui_type];
+	cn = bp->b_cylin;
+	sn = bn%st->nspc + npf + 1;
+	tn = sn/st->nsect;
+	sn %= st->nsect;
+	cn += tn/st->ntrak;
+	tn %= st->ntrak;
 	up->updc = cn;
 	up->upda = (tn << 8) | sn;
-	ubaddr = (int)ptob(reg) + o;
+	ubaddr = (int)ptob(reg+1) + o;
 	up->upba = ubaddr;
 	cmd = (ubaddr >> 8) & 0x300;
-	cmd |= ((bp->b_flags&B_READ)?UP_RCOM:UP_WCOM)|UP_IE|UP_GO;
-	um->um_tab.b_errcnt = 0;
+	cmd |= UP_IE|UP_GO|UP_RCOM;
+	um->um_tab.b_active = 2;	/* continuing transfer ... */
 	up->upcs1 = cmd;
 #endif
 	return (1);
@@ -892,7 +805,7 @@ upreset(uban)
 		up_softc[sc21].sc_wticks = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		((struct updevice *)(um->um_addr))->upcs2 = UPCS2_CLR;
 		for (unit = 0; unit < NUP; unit++) {
@@ -983,8 +896,8 @@ updump(dev)
 	} while ((upaddr->upds & UP_RDY) == 0);
 	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY)
 		return (EFAULT);
-	st = &upst[ui->ui_type];
 	start = 0;
+	st = &upst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
 	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
 		return (EINVAL);

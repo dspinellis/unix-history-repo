@@ -1,4 +1,4 @@
-/*	ut.c	4.22	82/11/13	*/
+/*	ut.c	4.23	82/11/26	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -778,7 +778,7 @@ utreset(uban)
 		um->um_tab.b_actf = um->um_tab.b_actl = 0;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		((struct utdevice *)(um->um_addr))->utcs1 = UT_CLEAR|UT_GO;
 		((struct utdevice *)(um->um_addr))->utcs2 |= UTCS2_CLR;

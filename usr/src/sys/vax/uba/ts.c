@@ -1,4 +1,4 @@
-/*	ts.c	4.35	82/10/20	*/
+/*	ts.c	4.36	82/11/26	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -751,7 +751,7 @@ tsreset(uban)
 			ts_softc[ts11].sc_openf = -1;
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
-			ubadone(um);
+			um->um_ubinfo = 0;
 		}
 		if ((ui = tsdinfo[ts11]) && ui->ui_mi == um && ui->ui_alive) {
 			dp = &tsutab[ts11];
