@@ -1,0 +1,45 @@
+.TH AS 1 "UNIX/32V"
+.SH NAME
+as \- assembler
+.SH SYNOPSIS
+.B as
+[
+.B \-d124
+] [
+.B \-o
+objfile ] [ file ]
+.SH DESCRIPTION
+.I As
+assembles the named file, or the standard input if no file is specified.
+The optional argument
+.B \-d
+may be used to specify the number of bytes to be assembled for offsets
+which involve forward or external references.  The default is four bytes,
+i.e.,
+.B \-d4
+\&.
+All undefined symbols in the assembly
+are treated as global.
+.PP
+The output of the assembly is left on the file
+.I objfile;
+if that is omitted,
+.B a.out
+is used.
+.SH FILES
+.ta \w'/tmp/a[ab][a\-h]t\(**\ \ 'u
+/tmp/as\(**	temporary
+.br
+/tmp/a[ab][a\-h]t\(**	temporary
+.br
+a.out		object
+.SH "SEE ALSO"
+ld(1),
+nm(1),
+adb(1),
+a.out(5)
+.SH DIAGNOSTICS
+Error messages are intended to be self explanatory.
+.SH BUGS
+Syntax errors can cause incorrect line numbers
+in following diagnostics.
