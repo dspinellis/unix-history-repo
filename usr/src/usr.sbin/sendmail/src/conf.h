@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.17 (Berkeley) %G%
+ *	@(#)conf.h	5.18 (Berkeley) %G%
  */
 
 /*
@@ -47,12 +47,11 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 
-	/*
-	 * Use query type of ANY if possible (NO_WILDCARD_MX), which will
-	 * find types CNAME, A, and MX, and will cause all existing records
-	 * to be cached by our local server.  If there is (might be) a
-	 * wildcard MX record in the local domain or its parents that are
-	 * searched, we can't use ANY; it would cause fully-qualified names
-	 * to match as names in a local domain.
-	 */
-# define NO_WILDCARD_MX	1
+/*
+**  Older systems don't have this error code -- it should be in
+**  /usr/include/sysexits.h.
+*/
+
+# ifndef EX_CONFIG
+# define EX_CONFIG	78	/* configuration error */
+# endif
