@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.3	%G%	*/
+/*	ufs_lookup.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -58,13 +58,6 @@ cloop:
 		goto out;
 	if(c == '\0')
 		return(dp);
-
-#ifdef CHAOS
-	if((dp->i_mode&IFMT) == IFCHR && cdevpath & (1 << major(dp->i_un.i_rdev)) ) {
-		u.u_dirp--;
-		return(dp);
-	}
-#endif
 
 	/*
 	 * If there is another component,
