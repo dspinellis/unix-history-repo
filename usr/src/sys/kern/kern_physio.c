@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.8 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,13 +90,13 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 		bp->b_pfcent = pfcent;
 	} else
 		bp->b_un.b_addr = addr;
+	if (bp->b_vp)
+		panic("swap: active vp");
+	VREF(vp);
+	bp->b_vp = vp;
+	bp->b_dev = vp->v_rdev;
 	while (nbytes > 0) {
 		bp->b_blkno = dblkno;
-		bp->b_dev = vp->v_rdev;
-		if (bp->b_vp)
-			brelvp(bp);
-		VREF(vp);
-		bp->b_vp = vp;
 		bp->b_bcount = nbytes;
 		minphys(bp);
 		c = bp->b_bcount;
@@ -126,6 +126,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, vp, pfcent)
 		dblkno += btodb(c);
 	}
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
+	brelvp(bp);
 	freeswbuf(bp);
 	return (error);
 }
