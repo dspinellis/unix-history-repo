@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)snull.c	4.1);
+SCCSID(@(#)snull.c	4.2);
 USXALLOC();
 
 int	Debug	0;
@@ -19,7 +19,7 @@ struct deltalist {
 	int ds_ser;
 	int ds_pred;
 	long ds_datetime;
-	char ds_pgmr[8];
+	char ds_pgmr[SZLNAM];
 	char ds_type;
 	struct stats ds_stats;
 	int ds_insnull;
@@ -359,7 +359,7 @@ mkdelt()
 			else
 				nulldel->ds_pred = oldp->ds_ser;
 			nulldel->ds_datetime = ptr->ds_datetime;
-			substr(logname(),nulldel->ds_pgmr,0,7);
+			substr(logname(),nulldel->ds_pgmr,0,LNLNAM);
 			nulldel->ds_type = 'D';
 			nulldel->ds_stats.s_ins = 0;
 			nulldel->ds_stats.s_del = 0;

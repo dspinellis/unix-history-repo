@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)delta.c	4.2);
+SCCSID(@(#)delta.c	4.3);
 USXALLOC();
 
 char	Diffpgm[]	"/usr/local/bdiff";
@@ -318,7 +318,7 @@ int orig_nlines;
 	else
 		dt.d_pred = opred;
 	dt.d_datetime = Timenow;
-	substr(logname(),dt.d_pgmr,0,7);
+	substr(logname(),dt.d_pgmr,0,LNLNAM);
 	dt.d_type = 'D';
 	del_ba(&dt,str);
 	putline(pkt,str);
