@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_output.c	8.1 (Berkeley) %G%
+ *	@(#)tcp_output.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -364,7 +364,23 @@ send:
 	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN && 
 	    tp->snd_nxt == tp->snd_max)
 		tp->snd_nxt--;
-	ti->ti_seq = htonl(tp->snd_nxt);
+	/*
+	 * If we are doing retransmissions, then snd_nxt will
+	 * not reflect the first unsent octet.  For ACK only
+	 * packets, we do not want the sequence number of the
+	 * retransmitted packet, we want the sequence number
+	 * of the next unsent octet.  So, if there is no data
+	 * (and no SYN or FIN), use snd_max instead of snd_nxt
+	 * when filling in ti_seq.  But if we are in persist
+	 * state, snd_max might reflect one byte beyond the
+	 * right edge of the window, so use snd_nxt in that
+	 * case, since we know we aren't doing a retransmission.
+	 * (retransmit and persist are mutually exclusive...)
+	 */
+	if (len || (flags & (TH_SYN|TH_FIN)) || tp->t_timer[TCPT_PERSIST])
+		ti->ti_seq = htonl(tp->snd_nxt);
+	else
+		ti->ti_seq = htonl(tp->snd_max);
 	ti->ti_ack = htonl(tp->rcv_nxt);
 	if (optlen) {
 		bcopy((caddr_t)opt, (caddr_t)(ti + 1), optlen);
