@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ktrace.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ktrace.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,7 +36,7 @@ main(argc, argv)
 	char *tracefile;
 
 	clear = NOTSET;
-	append = ops = pidset = 0;
+	append = ops = pidset = inherit = 0;
 	trpoints = DEF_POINTS;
 	tracefile = DEF_TRACEFILE;
 	while ((ch = getopt(argc,argv,"aCcdf:g:ip:t:")) != EOF)
