@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.6 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.7 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -103,6 +103,8 @@ cmd:		USER SP username CRLF
 				else {
 				    reply(331, "Password required for %s.", $3);
 				}
+			} else {
+				reply(530, "User %s access denied.", $3);
 			}
 			free((char *) $3);
 		}
