@@ -1,4 +1,4 @@
-/*	vm_machdep.c	1.7	86/12/15	*/
+/*	vm_machdep.c	1.8	87/03/13	*/
 
 #include "../machine/pte.h"
 
@@ -13,8 +13,8 @@
 #include "text.h"
 #include "kernel.h"
 
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
+#include "cpu.h"
+#include "mtpr.h"
 
 /*
  * Set a red zone in the kernel stack after the u. area.
@@ -200,8 +200,8 @@ pagemove(from, to, size)
 
 	if (size % CLBYTES)
 		panic("pagemove");
-	fpte = &Sysmap[btop(from - 0xC0000000)];
-	tpte = &Sysmap[btop(to - 0xC0000000)];
+	fpte = &Sysmap[btop(from - KERNBASE)];
+	tpte = &Sysmap[btop(to - KERNBASE)];
 	while (size > 0) {
 		*tpte++ = *fpte;
 		*(int *)fpte++ = 0;
@@ -214,32 +214,14 @@ pagemove(from, to, size)
 	}
 }
 
-#ifndef vtopte
-/*
- * Convert a virtual page 
- * number to a pte address.
- */
-/*VARARGS1*/
-struct pte *
-vtopte(p, v)
-	register struct proc *p;
-{
-
-	if ((v & 0x300000) == 0x300000)
-		return (struct pte *)(mfpr(SBR) + 0xc0000000 + (v&0xfffff)*4);
-	if (p == 0) {
-		printf("vtopte v %x\n", v);		/* XXX */
-		panic("vtopte (no proc)");
-	}
-	if (v < p->p_tsize + p->p_dsize)
-		return (p->p_p0br + v);
-	return (p->p_addr + (v - BTOPUSRSTACK));
-}
-#endif
-
 /*
  * Code and data key management routines.
  *
+ * The array ckey_cnt maintains the count of processes currently
+ * sharing each code key.  The array ckey_cache maintains a record
+ * of all code keys used since the last flush of the code cache.
+ * Such keys may not be reused, even if unreferenced, until
+ * the cache is flushed.  The data cache key handling is analogous.
  * The arrays ckey_cnt and ckey_cache are allways kept in such a way
  * that the following invariant holds:
  *	ckey_cnt > 0	=>'s	ckey_cache == 1
@@ -250,6 +232,8 @@ vtopte(p, v)
  * which is just the reciprocal of the 1'st invariant.
  * Equivalent invariants hold for the data key arrays.
  */
+struct	keystats ckeystats = { NCKEY - 1 };
+struct	keystats dkeystats = { NDKEY - 1 };
 
 /* 
  * Release a code key.
@@ -264,6 +248,8 @@ ckeyrelease(key)
 		printf("ckeyrelease: key = %d\n", key);
 		ckey_cnt[key] = 0;
 	}
+	if (ckey_cnt[key] == 0)
+		ckeystats.ks_dirty++;
 	splx(s);
 }
 
@@ -281,115 +267,109 @@ dkeyrelease(key)
 		dkey_cnt[key] = 0;
 	}
 	splx(s);	
+	dkeystats.ks_dirty++;
 }
 
-struct	keystats ckeystats;
-struct	keystats dkeystats;
+/*
+ * Invalidate the data cache for a process
+ * by exchanging cache keys.
+ */
+dkeyinval(p)
+	register struct proc *p;
+{
+	register int key;
+	int s;
+
+	dkeystats.ks_inval++;
+	s = spl8();
+	if (--dkey_cnt[p->p_dkey] != 0)
+		dkey_cnt[p->p_dkey] = 0;
+	if (p == u.u_procp) {
+		p->p_dkey = getdatakey();
+		mtpr(DCK, p->p_dkey);
+	} else
+		p->p_dkey = 0;
+	splx(s);	
+}
+
 /* 
  * Get a code key.
  */
 getcodekey()
 {
-	register int i, s, freekey, sharedkey;
+	register int i, s, freekey;
 	register struct proc *p;
+	int desparate = 0;
+	static int lastkey = MAXCKEY;
 
 	ckeystats.ks_allocs++;
 	s = spl8();
 	freekey = 0;
-	for (i = 1; i <= MAXCKEY; i++) {
+	for (i = lastkey + 1; ; i++) {
+		if (i > MAXCKEY)
+			i = 1;
 		if ((int)ckey_cache[i] == 0) {	/* free key, take it */
 			ckey_cache[i] = 1, ckey_cnt[i] = 1;
 			splx(s);
-			ckeystats.ks_free++;
+			ckeystats.ks_allocfree++;
+			ckeystats.ks_avail--;
+			lastkey = i;
 			return (i);
 		}
-		if (ckey_cnt[i] == 0) {		/* save for potential use */
-			if (freekey == 0)
-				freekey = i;
-		} else if (ckey_cnt[i] > 1 && i != MAXCKEY)
-			sharedkey = i;
+		if (ckey_cnt[i] == 0)		/* save for potential use */
+			freekey = i;
+		if (i == lastkey)
+			break;
 	}
 	/*
 	 * All code keys were marked as being in cache.
-	 * Moreover, we are assured that sharedkey has a meaningful value,
-	 * since we know that the init process and the shell are around
-	 * and they have shared text!
-	 */
-	/*
 	 * If a key was in the cache, but not in use, grab it.
 	 */
 	if (freekey != 0) {
+purge:
 		/*
-		 * If we've run out of bonified free keys,
+		 * If we've run out of free keys,
 		 * try and free up some other keys to avoid
 		 * future cache purges.
 		 */
-		for (i = 1; i <= MAXCKEY; i++)
-			if (ckey_cnt[i] == 0)
-				ckey_cache[i] = 0;
 		ckey_cnt[freekey] = 1, ckey_cache[freekey] = 1;
+		for (i = 1; i <= MAXCKEY; i++)
+			if (ckey_cnt[i] == 0) {
+				ckey_cache[i] = 0;
+				ckeystats.ks_avail++;
+			}
 		mtpr(PACC, 0);
 		splx(s);
+		ckeystats.ks_dirty = 0;
 		ckeystats.ks_norefs++;
 		return (freekey);
 	}
 
 	/*
 	 * All keys are marked as in the cache and in use.
-	 *
-	 * Strip some process of their code key. First time,
-	 * 1) Try hard not to do that to kernel processes !!
-	 * 2) Try hard NOT to strip shared text processes of
-	 *    their (shared) key, because then they'll run
-	 *    with different keys from now on, i.e. less efficient
-	 *    cache utilization.
+	 * Release all unshared keys.
 	 */
-	for (p = proc; p < procNPROC; p++)
-		/*
-		 * Look for a meaningful key but not
-		 * used and not shared text.
-		 */
-		if (p->p_ckey && p->p_ckey != MAXCKEY &&
-		    ckey_cnt[p->p_ckey] < 2) {
+steal:
+	for (p = allproc; p; p = p->p_nxt)
+		if (p->p_ckey != 0 && (p->p_flag & SSYS) == 0) {
 			i = p->p_ckey;
-			p->p_ckey = 0;
-			ckey_cnt[i] = 1, ckey_cache[i] = 1;
-			mtpr(PACC, 0);
-			splx(s);
-			ckeystats.ks_taken++;
-			return (i);
+			if (ckey_cnt[i] == 1 || desparate) {
+				if (--ckey_cnt[i]) {
+					freekey = i;
+					p->p_ckey = 0;
+					if (p->p_textp)
+						p->p_textp->x_ckey = 0;
+				}
+			}
 		}
 
-	/*
-	 * Second time around!
-	 * Highly unlikely situation. It means that all keys are
-	 * allocated AND shared (i.e. we have at least 510 active
-	 * processes).
-	 * Strip some of them. We pick some key (known to be shared
-	 * by several processes) and strip the poor process group.
-	 * At least 2 processes will loose but we gain one key to be reused.
-	 * The way 'shared_key' was produced (above) virtually assures
-	 * us that this key isn't the 'init' group key (1) nor the
-	 * 'shell' group key (2 or 3). It's probably something like 254.
-	 * Could be more straightforward to strip all processes, but it's
-	 * better to invest in one more loop here and keep the cache
-	 * utilization to a maximum.
-	 */
-	for (p = proc; p < procNPROC; p++)
-		if (p->p_ckey == sharedkey) {
-			p->p_ckey = 0;
-			ckey_cnt[sharedkey]--;
-		}
-	if (ckey_cnt[sharedkey] != 0) {
-		printf("getcodekey: key = %d cnt = %d\n",
-		    sharedkey, ckey_cnt[sharedkey]);
-		panic("getcodekey");
+	if (freekey) {
+		ckeystats.ks_taken++;
+		goto purge;
+	} else {
+		desparate++;
+		goto steal;
 	}
-	ckey_cnt[sharedkey] = 1, ckey_cache[sharedkey] = 1;
-	mtpr(PACC, 0);
-	splx(s);
-	ckeystats.ks_shared++;
-	return (sharedkey);
 }
 
 /* 
@@ -398,76 +378,83 @@ getcodekey()
  * General strategy:
  * 1) Try to find a data key that isn't in the cache. Allocate it.
  * 2) If all data keys are in the cache, find one which isn't
- *    allocated. Clear all status and allocate this one.
- * 3) If all of them are allocated, pick some process, strip him
- *    of the data key and allocate it. We (cold-bloodedly) pick
- *    one process to be the poor looser because that's the
- *    easiest way to do it and because this extreme situation
- *    ( >255 active processes ) is expected to be temporary,
- *    after which 1) or 2) above should be the usual case.
- * The poor looser is the first process which has a data key.
- * However, we try to spare known kernel processes and daemons
- * (fired at bootstrap time), by searching from proc[LOOSER] and on.
+ *    allocated.  Mark all unallocated keys as not in cache and
+ *    allocate this one.
+ * 3) If all of them are allocated, free the all process' keys
+ *    and let them reclaim then as they run.
  */
 getdatakey()
 {
-	register int i, s, freekey;
+	register int i, freekey;
 	register struct proc *p;
+	int s;
+	static int lastkey = MAXDKEY;
 
 	dkeystats.ks_allocs++;
 	s = spl8();
 	freekey = 0;
-	for (i = 1; i <= MAXDKEY; i++) {
+	for (i = lastkey + 1; ; i++) {
+		if (i > MAXDKEY)
+			i = 1;
 		if ((int)dkey_cache[i] == 0) {	/* free key, take it */
 			dkey_cache[i] = 1, dkey_cnt[i] = 1;
 			splx(s);
-			dkeystats.ks_free++;
+			dkeystats.ks_allocfree++;
+			dkeystats.ks_avail--;
+			lastkey = i;
 			return (i);
 		}
-		if (dkey_cnt[i] == 0 && freekey == 0)
+		if (dkey_cnt[i] == 0)
 			freekey = i;
+		if (i == lastkey)
+			break;
 	}
+purge:
 	if (freekey) {
 		/*
 		 * Try and free up some more keys to avoid
 		 * future allocations causing a cache purge.
 		 */
-		for (i = 1; i < MAXDKEY; i++)
-			if (dkey_cnt[i] == 0)
-				dkey_cache[i] = 0;
 		dkey_cnt[freekey] = 1, dkey_cache[freekey] = 1;
+		for (i = 1; i <= MAXDKEY; i++)
+			if (dkey_cnt[i] == 0) {
+				dkey_cache[i] = 0;
+				dkeystats.ks_avail++;
+			}
 		mtpr(PADC, 0);
 		splx(s);
 		dkeystats.ks_norefs++;
+		dkeystats.ks_dirty = 0;
 		return (freekey);
 	}
 
 	/*
 	 * Now, we have to take a code from someone.
+	 * May as well take them all, so we get them
+	 * from all of the idle procs.
 	 */
-#define LOOSER 20
-	for (p = &proc[LOOSER]; p < procNPROC; p++)
-		if (p->p_dkey != 0) {
-			i = p->p_dkey;
+	for (p = allproc; p; p = p->p_nxt)
+		if (p->p_dkey != 0 && (p->p_flag & SSYS) == 0) {
+			freekey = p->p_dkey;
+			dkey_cnt[freekey] = 0;
 			p->p_dkey = 0;
-			dkey_cnt[i] = 1;
-			dkey_cache[i] = 1;
-			mtpr(PADC, 0);
-			splx(s);
-			dkeystats.ks_taken++;
-			return (i);
 		}
-	panic("getdatakey");
-	/*NOTREACHED*/
+	dkeystats.ks_taken++;
+	goto purge;
 }
 
 /*VARGARGS1*/
 vtoph(p, v)
 	register struct proc *p;
-	register unsigned v;
+	unsigned v;
 {
 	register struct pte *pte;
+	register unsigned pg;
 
-	pte = vtopte(p, btop(v));
+	pg = btop(v);
+	if (pg >= BTOPKERNBASE)
+		pte = &Sysmap[pg - BTOPKERNBASE];
+	else
+		pte = vtopte(p, pg);
 	return ((pte->pg_pfnum << PGSHIFT) + (v & PGOFSET));
 }
