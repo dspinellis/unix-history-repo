@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
+static char sccsid[] = "@(#)bibargs.c	2.4	%G%";
 #endif not lint
 /*
         Authored by: Tim Budd, University of Arizona, 1983.
@@ -40,17 +40,19 @@ static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
    char pfile[120];             /* private file name                         */
    int  personal = false;       /* personal file given ? (default no)        */
    char citetemplate[80] = "1"; /* citation template                         */
-   char *words[MAXDEFS];        /* defined words                             */
-   char *defs[MAXDEFS];         /* defined word definitions                  */
-   int  wordtop = -1;           /* top of defined words array                */
+   struct wordinfo words[MAXDEFS];     /* defined words */
+   struct wordinfo *wordhash[HASHSIZE];
+   struct wordinfo *wordsearch();
+   int  wordtop = 0;           /* number of defined words         */
 
 /* where output goes */
    extern FILE *tfd;
 /* reference file information */
-   extern long int refspos[];
+   extern struct refinfo refinfo[];
    extern char reffile[];
+#ifndef INCORE
    extern FILE *rfd;
-   extern char *citestr[];
+#endif not INCORE
    extern int numrefs;
 
 /* doargs - read command argument line for both bib and listrefs
@@ -67,9 +69,7 @@ static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
 
    numfiles = 0;
    style = true;
-   words[0] = walloc("BMACLIB");
-   defs[0]  = walloc(BMACLIB);
-   wordtop++;
+   wordstuff("BMACLIB", BMACLIB);
    fputs(".ds l] ",tfd);
    fputs(BMACLIB, tfd);
    fputs("\n", tfd);
@@ -93,7 +93,7 @@ static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
                        break;
 
             case 'c':  if (argv[i][2] == 0)
-                          error("citation string expected");
+                          error("citation string expected for 'c'");
                        else
                           for (p = citetemplate,q = &argv[i][2]; *p++ = *q++; );
                        break;
@@ -183,7 +183,7 @@ static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
                        break;
 
             default:   fputs(argv[i], stderr);
-                       error(": invalid switch");
+                       error("'%c' invalid switch", argv[i][1]);
             }
       else { /* file name */
          numfiles++;
@@ -193,8 +193,7 @@ static char sccsid[] = "@(#)bibargs.c	2.3	%G%";
             }
          fd = fopen(argv[i], "r");
          if (fd == NULL) {
-            fputs(argv[i], stderr);
-            error(": can't open");
+            error("can't open file %s", argv[i]);
             }
          else {
             strcpy(bibfname, argv[i]);
@@ -264,21 +263,15 @@ incfile(np)
 
          case 'D': if ((i = getwrd(line, 1, word)) == 0)
                       error("word expected in definition");
-                   for (j = 0; j <= wordtop; j++)
-                      if (strcmp(word, words[j]) == 0)
-                         break;
-                   if (j > wordtop) {
-                      if ((j = ++wordtop) > MAXDEFS)
-                         error("too many defintions");
-                      words[wordtop] = walloc(word);
-                      }
+		   if (wordsearch(word))
+			break;
                    for (p = &line[i]; *p == ' '; p++) ;
                    for (strcpy(dline, p); dline[strlen(dline)-1] == '\\'; ){
                        dline[strlen(dline)-1] = '\n';
                        if (tfgets(line, LINELENGTH, fd) == NULL) break;
                        strcat(dline, line);
                        }
-                   defs[j] = walloc(dline);
+		   wordstuff(word, dline);
                    break;
 
          case 'E': for (p = &line[1]; *p; p++)
@@ -340,21 +333,27 @@ incfile(np)
 }
 
 /* bibwarning - print out a warning message */
-  bibwarning(msg, arg)
-  char *msg, *arg;
+  /*VARARGS1*/
+  bibwarning(msg, a1, a2)
+  char *msg;
 {
   fprintf(stderr,"`%s', line %d: ", bibfname, biblineno);
-  fprintf(stderr, msg, arg);
+  fprintf(stderr, msg, a1, a2);
 }
 
 /* error - report unrecoverable error message */
-  error(str)
-  char str[];
+  /*VARARGS1*/
+  error(str, a1, a2)
+  char *str;
 {
-  bibwarning("%s\n", str);
-  exit(1);
+  bibwarning(str, a1, a2);
+  /*
+   *	clean up temp files and exit
+   */
+  cleanup(1);
 }
 
+#ifndef INCORE
 #ifdef READWRITE
 /*
 ** fixrfd( mode ) -- re-opens the rfd file to be read or write,
@@ -371,10 +370,12 @@ register int mode;
 		rfd = freopen(reffile, ((mode == READ)? "r" : "a"), rfd);
 		cur_mode = mode;
 		if (rfd == NULL)
-		      error("Hell!  Couldn't re-open reference file");
+		      error("Hell!  Couldn't re-open reference file %s",
+			reffile);
 	}
 }
 #endif
+#endif not INCORE
 
 
 /* tfgets - fgets which trims off newline */
@@ -382,7 +383,7 @@ register int mode;
    char line[];
    int  n;
    FILE *ptr;
-{  char *p;
+{  reg char *p;
 
    p = fgets(line, n, ptr);
    if (p == NULL)
@@ -396,8 +397,8 @@ register int mode;
 
 /* getwrd - place next word from in[i] into out */
 int getwrd(in, i, out)
-   char in[], out[];
-   int i;
+   reg char in[], out[];
+   reg int i;
 {  int j;
 
    j = 0;
@@ -431,59 +432,111 @@ char c;
       return(true);
    return(false);
 }
-
-/* expand - expand reference, replacing defined words */
    expand(line)
    char *line;
-{  char line2[REFSIZE], word[LINELENGTH], *p, *q, *w;
-   int  replaced, i;
+{  char line2[REFSIZE], word[LINELENGTH];
+   reg	struct wordinfo *wp;
+   reg	char *p, *q, *w;
+   reg	int i;
 
-   replaced  = true;
-   while (replaced) {
-      replaced = false;
-      p = line;
-      q = line2;
-      while (*p) {
-         if (isalnum(*p)) {
-            for (w = word; *p && iswordc(*p); )
-               *w++ = *p++;
-            *w = 0;
-            for (i = 0; i <= wordtop; i++)
-               if (strcmp(word, words[i]) == 0) {
-                  strcpy(word, defs[i]);
-                  replaced = true;
-                  break;
-                  }
-            for (w = word; *w; )
-               *q++ = *w++;
-            }
-         else
-            *q++ = *p++;
-         }
-      *q = 0;
-      p = line;
-      q = line2;
-      while (*p++ = *q++);
-      }
+	q = line2;
+	for (p = line; *p; /*VOID*/){
+		if (isalnum(*p)) {
+			for (w = word; *p && iswordc(*p); ) *w++ = *p++;
+			*w = 0;
+			if (wp = wordsearch(word)){
+				strcpy(word, wp->wi_def);
+				expand(word);
+			}
+			strcpy(q, word);
+			q += strlen(q);
+		} else {
+			*q++ = *p++;
+		}
+	}
+	*q = 0;
+	strcpy(line, line2);
+}
+
+/* wordstuff- save a word and its definition, building a hash table */
+   wordstuff(word, def)
+   char *word, *def;
+{
+   int i;
+   if (wordtop >= MAXDEFS)
+	error("too many definitions, max of %d", MAXDEFS);
+   words[wordtop].wi_length = strlen(word);
+   words[wordtop].wi_word = word ? walloc(word) : 0;
+   words[wordtop].wi_def = def ? walloc(def) : 0;
+   i = strhash(word);
+   words[wordtop].wi_hp = wordhash[i];
+   wordhash[i] = &words[wordtop];
+   wordtop++;
+}
+   struct wordinfo *wordsearch(word)
+   char *word;
+{
+   reg int i;
+   reg int lg;
+   reg struct wordinfo *wp;
+   lg = strlen(word);
+   for (wp = wordhash[strhash(word)]; wp; wp = wp->wi_hp){
+	if (wp->wi_length == lg && (strcmp(wp->wi_word, word) == 0)){
+		return(wp);
+	}
+   }
+   return(0);
+}
+
+   int strhash(str)
+   reg char *str;
+{
+   reg int value = 0;
+   for (value = 0; *str; value <<= 2, value += *str++)/*VOID*/;
+   value %= HASHSIZE;
+   if (value < 0)
+	value += HASHSIZE;
+   return(value);
 }
 
 /* rdref - read text for an already cited reference */
-   rdref(i, ref)
-   long int  i;
+   rdref(p, ref)
+   struct refinfo *p;
    char ref[REFSIZE];
 {
    ref[0] = 0;
+#ifndef INCORE
 #ifdef READWRITE
    fixrfd( READ );                      /* fix access mode of rfd, if nec. */
 #endif
-   fseek(rfd, i, 0);
-   fread(ref, 1, REFSIZE, rfd);
+   fseek(rfd, p->ri_pos, 0);
+   fread(ref, p->ri_length, 1, rfd);
+#else INCORE
+   strcpy(ref, p->ri_ref);
+#endif INCORE
+}
+
+/* wrref - write text for a new reference */
+   wrref(p, ref)
+   struct refinfo *p;
+   char ref[REFSIZE];
+{
+#ifndef INCORE
+#ifdef READWRITE
+    fixrfd( WRITE );                 /* fix access mode of rfd, if nec. */
+#else
+    fseek(rfd, p->ri_pos, 0);        /* go to end of rfd */
+#endif
+    fwrite(ref, p->ri_length, 1, rfd);
+#else INCORE
+   p->ri_ref = walloc(ref);
+#endif INCORE
 }
 
 /* breakname - break a name into first and last name */
    breakname(line, first, last)
    char line[], first[], last[];
-{  char *p, *q, *r, *t, *f;
+{  reg char *t, *f, *q, *r, *p;
 
    for (t = line; *t != '\n'; t++);
    for (t--; isspace(*t); t--);
@@ -512,8 +565,8 @@ char c;
 
 /* match - see if string1 is a substring of string2 (case independent)*/
    int match(str1, str2)
-   char str1[], str2[];
-{  int  i, j;
+   reg char str1[], str2[];
+{  reg int  j, i;
    char a, b;
 
    for (i = 0; str2[i]; i++) {
@@ -533,7 +586,7 @@ char c;
 
 /* scopy - append a copy of one string to another */
    char *scopy(p, q)
-   char *p, *q;
+   reg char *p, *q;
 {
    while (*p++ = *q++)
       ;
@@ -542,14 +595,15 @@ char c;
 
 /* rcomp - reference comparison routine for qsort utility */
    int rcomp(ap, bp)
-   long int *ap, *bp;
+   struct refinfo *ap, *bp;
 {  char ref1[REFSIZE], ref2[REFSIZE], field1[MAXFIELD], field2[MAXFIELD];
-   char *p, *q, *getfield();
+   reg	char *p, *q;
+   char *getfield();
    int  neg, res;
    int  fields_found;
 
-   rdref(*ap, ref1);
-   rdref(*bp, ref2);
+   rdref(ap, ref1);
+   rdref(bp, ref2);
    for (p = sortstr; *p; p = q) {
       if (*p == '-') {
          p++;
@@ -619,18 +673,17 @@ char c;
 }
 
 /* makecites - make citation strings */
-   makecites(citestr)
-   char *citestr[];
+   makecites()
 {  char ref[REFSIZE], tempcite[100], *malloc();
-   int  i;
+   reg int  i;
 
-   for (i = 0; i <= numrefs; i++) {
-      rdref(refspos[i], ref);
+   for (i = 0; i < numrefs; i++) {
+      rdref(&refinfo[i], ref);
       bldcite(tempcite, i, ref);
-      citestr[i] = malloc(2 + strlen(tempcite)); /* leave room for disambig */
-      if (citestr[i] == NULL)
+      refinfo[i].ri_cite = malloc(2 + strlen(tempcite)); /* leave room for disambig */
+      if (refinfo[i].ri_cite == NULL)
          error("out of storage");
-      strcpy(citestr[i], tempcite);
+      strcpy(refinfo[i].ri_cite, tempcite);
       }
 }
 
@@ -638,7 +691,9 @@ char c;
    bldcite(cp, i, ref)
    char *cp, ref[];
    int  i;
-{  char *p, *q, c, *fp, field[REFSIZE];
+{  reg char *p, *q, *fp;
+   char c;
+   char field[REFSIZE];
    char *getfield(), *aabet(), *aabetlast(), *astro();
 
    getfield("F", field, ref);
@@ -700,7 +755,8 @@ char c;
         if 3 or more authors - first letter of first three authors */
    char *aabet(cp, ref)
    char *cp, ref[];
-{  char field[REFSIZE], temp[100], *np, *fp;
+{  char field[REFSIZE], temp[100];
+   reg char *np, *fp;
    int j, getname();
 
    if (getname(1, field, temp, ref)) {
@@ -725,7 +781,7 @@ return(cp);
    char *aabetlast(cp, ref)
    char *cp, ref[];
 {  char field[REFSIZE], temp[100];
-   char	*fp;
+   reg char	*fp;
    int getname();
 
    if (getname(1, field, temp, ref)) {
@@ -742,7 +798,8 @@ return(cp);
         if 4 or more authors - last name et al. date */
    char *astro(cp, ref)
    char *cp, ref[];
-{  char name1[100], name2[100], name3[100], temp[100], *fp;
+{  char name1[100], name2[100], name3[100], temp[100];
+   reg char *fp;
    int getname();
 
    if (getname(1, name1, temp, ref)) {
@@ -777,7 +834,8 @@ return(cp);
 /* getfield - get a single field from reference */
    char *getfield(ptr, field, ref)
    char *ptr, field[], ref[];
-{  char *p, *q, temp[100];
+{  reg	char *p, *q;
+   char	temp[100];
    int  n, len, i, getname();
 
    field[0] = 0;
@@ -833,7 +891,7 @@ return(cp);
    int getname(n, last, first, ref)
    int  n;
    char last[], first[], ref[];
-{  char *p;
+{  reg char *p;
    int  m;
 
    m = n;
@@ -871,21 +929,21 @@ return(cp);
 /* disambiguate - compare adjacent citation strings, and if equal, add
                   single character disambiguators */
    disambiguate()
-{  int i, j;
+{  reg int i, j;
    char adstr[2];
 
    for (i = 0; i < numrefs; i = j) {
       j = i + 1;
-      if (strcmp(citestr[i], citestr[j])==0) {
+      if (strcmp(refinfo[i].ri_cite, refinfo[j].ri_cite)==0) {
          adstr[0] = 'a'; adstr[1] = 0;
-         for (j = i+1; strcmp(citestr[i],citestr[j]) == 0; j++) {
+         for(j = i+1; strcmp(refinfo[i].ri_cite,refinfo[j].ri_cite) == 0; j++) {
             adstr[0] = 'a' + (j-i);
-            strcat(citestr[j], adstr);
             if (j == numrefs)
                break;
+            strcat(refinfo[j].ri_cite, adstr);
             }
          adstr[0] = 'a';
-         strcat(citestr[i], adstr);
+         strcat(refinfo[i].ri_cite, adstr);
          }
      }
 }
@@ -898,7 +956,9 @@ return(cp);
    char *first, *last, name[];
    int reverse;
 {
-   char newfirst[120], newlast[120], *p, *q, *f, *l, *scopy();
+   char newfirst[120], newlast[120];
+   reg char *p, *q, *f, *l;
+   char *scopy();
    int  flag;
 
    if (abbrev) {
@@ -1026,10 +1086,12 @@ return(cp);
    dumpref(i, ofd)
    int i;
    FILE *ofd;
-{  char ref[REFSIZE], *p, line[REFSIZE];
+{  char ref[REFSIZE], line[REFSIZE];
+   reg char *p, *q;
+   char *from;
    int numauths, maxauths, numeds, maxeds;
 
-   rdref(refspos[i], ref);
+   rdref(&refinfo[i], ref);
    maxauths = maxeds = 0;
    numauths = numeds = 0;
    for (p = ref; *p; p++)
@@ -1037,20 +1099,37 @@ return(cp);
          if (*(p+1) == 'A') maxauths++;
          else if (*(p+1) == 'E') maxeds++;
    fprintf(ofd, ".[-\n");
-   fprintf(ofd, ".ds [F %s\n",citestr[i]);
-   fseek(rfd, (long) refspos[i], 0);
+   fprintf(ofd, ".ds [F %s\n", refinfo[i].ri_cite);
+#ifndef INCORE
+   fseek(rfd, (long)refinfo[i].ri_pos, 0);
    while (fgets(line, REFSIZE, rfd) != NULL) {
-      if (line[0] == 0)        break;
-      else if (line[0] == '.') fprintf(ofd,"%s",line);
-      else {
-         if (line[0] == '%') {
-            for (p = &line[2]; *p == ' '; p++);
-            if (line[1] == 'A')       numauths++;
-            else if (line[1] == 'E')  numeds++;
-
-            doline(line[1], p, numauths, maxauths, numeds, maxeds, ofd);
-            }
-         }
-      }
+#else INCORE
+   for (q = line, from = refinfo[i].ri_ref; *from; /*VOID*/) { /*} */
+	if (*from == '\n'){
+		*q++ = '\n';
+		*q = 0;
+		q = line;
+		from++;
+	} else {
+		*q++ = *from++;
+		continue;
+	}
+#endif INCORE
+	switch(line[0]){
+	case 0:
+		goto doneref;
+	case '.':
+		fprintf(ofd, "%s", line);
+		break;
+	case '%':
+		switch(line[1]){
+		case 'A':	numauths++;	break;
+		case 'E':	numeds++;	break;
+		}
+		for (p = &line[2]; *p == ' '; p++) /*VOID*/;
+		doline(line[1], p, numauths, maxauths, numeds, maxeds, ofd);
+	}
+   }
+   doneref:;
    fprintf(ofd,".][\n");
 }
