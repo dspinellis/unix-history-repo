@@ -34,7 +34,7 @@
 #ifndef lint
 /* From: static char sccsid[] = "@(#)route.c	5.20 (Berkeley) 11/29/90"; */
 static const char route_c_rcsid[] =
-	"$Id$";
+	"$Id: route.c,v 1.6 1993/11/17 20:19:24 wollman Exp $";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -410,7 +410,7 @@ register struct rtentry *rt;
 	    printf("\n    %7d%c", rt->rt_rmx.rmx_mtu, 
 		   (rt->rt_rmx.rmx_locks & RTV_MTU) ? '*' : ' ');
 	  else
-	    printf("\n    %-7s ", "-");
+	    printf("\n    %7s ", "-");
 
 	  /*
 	   * Hop count
@@ -419,7 +419,7 @@ register struct rtentry *rt;
 	    printf(" %7d%c", rt->rt_rmx.rmx_hopcount,
 		   (rt->rt_rmx.rmx_locks & RTV_HOPCOUNT) ? '*' : ' ');
 	  else
-	    printf(" %-6s ", "-");
+	    printf(" %7s ", "-");
 	  
 	  /*
 	   * Expiration time
@@ -428,7 +428,7 @@ register struct rtentry *rt;
 	    printf(" %7d%c", rt->rt_rmx.rmx_expire,
 		   (rt->rt_rmx.rmx_locks & RTV_EXPIRE) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 
 	  /*
 	   * Receive pipe size (bytes)
@@ -437,7 +437,7 @@ register struct rtentry *rt;
 	    printf(" %7d%c", rt->rt_rmx.rmx_recvpipe,
 		   (rt->rt_rmx.rmx_locks & RTV_RPIPE) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 
 	  /*
 	   * Send pipe size (bytes)
@@ -446,7 +446,7 @@ register struct rtentry *rt;
 	    printf(" %7d%c", rt->rt_rmx.rmx_sendpipe,
 		   (rt->rt_rmx.rmx_locks & RTV_SPIPE) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 
 	  /*
 	   * Slow-start threshold (bytes)
@@ -455,7 +455,7 @@ register struct rtentry *rt;
 	    printf(" %7d%c", rt->rt_rmx.rmx_ssthresh,
 		   (rt->rt_rmx.rmx_locks & RTV_SSTHRESH) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 
 	  /*
 	   * Round-trip time (seconds)
@@ -464,7 +464,7 @@ register struct rtentry *rt;
 	    printf(" %7.4f%c", (1.0 * rt->rt_rmx.rmx_rtt) / RTM_RTTUNIT,
 		   (rt->rt_rmx.rmx_locks & RTV_RTT) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 
 	  /*
 	   * Round-trip time variance (seconds)
@@ -473,7 +473,7 @@ register struct rtentry *rt;
 	    printf(" %7.4f%c", (1.0 * rt->rt_rmx.rmx_rttvar) / RTM_RTTUNIT,
 		   (rt->rt_rmx.rmx_locks & RTV_RTTVAR) ? '*' : ' ');
 	  else
-	    printf(" %-7s ", "-");
+	    printf(" %7s ", "-");
 	} else {		/* no -a flag */
 	  if(rt->rt_rmx.rmx_mtu)
 	    printf(" %6d", rt->rt_rmx.rmx_mtu);
