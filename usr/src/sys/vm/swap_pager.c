@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	8.8 (Berkeley) %G%
+ *	@(#)swap_pager.c	8.9 (Berkeley) %G%
  */
 
 /*
@@ -819,15 +819,13 @@ swap_pager_clean(rw)
 				break;
 			}
 		}
+		splx(s);
 
 		/*
 		 * No operations done, thats all we can do for now.
 		 */
-		if (spc == NULL) {
-			splx(s);
+		if (spc == NULL)
 			break;
-		}
-		splx(s);
 
 		/*
 		 * Found a completed operation so finish it off.
