@@ -1,0 +1,66 @@
+
+
+
+XHOST(1)	    UNIX Programmer's Manual		 XHOST(1)
+
+
+
+NAME
+     xhost - X window system access control program
+
+SYNOPSIS
+     xhost [+-]host ...
+
+DESCRIPTION
+     _X_h_o_s_t is used to add and delete hosts to the list of
+     machines X will accept connections from.  This is an elemen-
+     tary form of privacy control, since otherwise X would be
+     willing to create windows for anyone on the internet.  It is
+     only sufficient for a workstation (single user) environment,
+     though it does limit the worst abuses.
+
+     If you want to set up hosts that you always trust, you can
+     specify them in your login file, or you can specify the
+     hosts in the file /_e_t_c/_X*._h_o_s_t_s, where * is the number of
+     the display on the machine.
+
+     Specifying a host name (with an optional leading plus sign)
+     adds that host to the list; use a leading minus sign to
+     delete a host.
+
+     DECnet nodes should be specified as names with trailing
+     ``::''.
+
+     This program can only be executed on the machine the display
+     is connected to.
+
+     It is possible to remove the current host from the access
+     list. Be warned that you can't undo this without logging
+     out.
+
+     _X_h_o_s_t with no arguments will print the current hosts allowed
+     to access your display.
+
+FILES
+     /etc/X*.hosts
+
+SEE ALSO
+     X(8C), xterm(1)
+
+ENVIRONMENT
+     DISPLAY   -    To find out which X you are using.
+
+AUTHOR
+     Copyright 1985 by Massachusetts Institute of Technology.
+     See _X(_1) for a complete copyright notice.
+     Bob Scheifler, MIT Laboratory for Computer Science, Jim Get-
+     tys, MIT Project Athena (DEC).
+
+
+
+
+
+Printed 9/15/87          25 January 1986			1
+
+
+

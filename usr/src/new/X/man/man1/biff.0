@@ -1,0 +1,132 @@
+
+
+
+BIFF(1)             UNIX Programmer's Manual		  BIFF(1)
+
+
+
+NAME
+     biff - be notified if mail arrives and who it is from
+
+SYNOPSIS
+     biff [ yn ]
+
+DESCRIPTION
+     _B_i_f_f informs the system whether you want to be notified when
+     mail arrives during the current terminal session.	The com-
+     mand
+
+	  biff y
+
+     enables notification; the command
+
+	  biff n
+
+     disables it.  When mail notification is enabled, the header
+     and first few lines of the message will be printed on your
+     screen whenever mail arrives.  A ``biff y'' command is often
+     included in the file ._l_o_g_i_n or ._p_r_o_f_i_l_e to be executed at
+     each login.
+
+     _B_i_f_f operates asynchronously.  For synchronous notification
+     use the MAIL variable of _s_h(1) or the _m_a_i_l variable of
+     _c_s_h(1).
+
+X WINDOW SYSTEM
+     If you are logged in under the X window system, a popup win-
+     dow is used instead of a message to your login window.  To
+     delete the window, click any mouse button with the mouse in
+     the window.  Properties of the window can be controlled with
+     options for _b_i_f_f in your ._X_d_e_f_a_u_l_t_s file.	The following
+     options are recognized:
+
+     Background
+	     To determine the background color.
+
+     Border  To determine the border color.
+
+     BorderWidth
+	     To determine the border width.  Default is 2.
+
+     BodyFont
+	     To determine text font.  Default is 8x13.
+
+     Foreground
+	     To determine the foreground color.
+
+     InternalBorder
+	     To determine the padding around the text.	Default
+	     is 2.
+
+
+
+Printed 9/15/87         4 September 1985			1
+
+
+
+
+
+
+BIFF(1)             UNIX Programmer's Manual		  BIFF(1)
+
+
+
+     Mouse   To determine the mouse cursor color.
+
+     Offset  To determine the vertical position of the window.
+	     Positive is offset from the top of the screen, nega-
+	     tive is from the bottom.  Default is 2.  Window is
+	     centered horizontally.
+
+     ReverseVideo
+	     If ``on'', the window should be white on black
+	     instead of black on white.  Default is off.
+
+     Timeout In the event you don't click in the window, speci-
+	     fies the maximum number of minutes the window should
+	     remain on the screen.  Value of zero means infinite.
+	     Default is zero.
+
+     Volume  Controls the volume of the bell.  Default is zero.
+
+SEE ALSO
+     csh(1), sh(1), mail(1), X(1), comsat(8C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87         4 September 1985			2
+
+
+

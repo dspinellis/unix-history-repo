@@ -1,0 +1,198 @@
+
+
+
+XPERFMON(1)	    UNIX Programmer's Manual	      XPERFMON(1)
+
+
+
+NAME
+     xperfmon - X window system Unix performance monitoring tool
+
+SYNOPSIS
+     xperfmon option [ option ] [ _h_o_s_t:_d_i_s_p_l_a_y ]
+
+DESCRIPTION
+     This program allows you to monitor the performance of Unix
+     on a machine.  The information will be plotted graphically
+     on a window.  The possible options are user cpu time (user),
+     system cpu time (system), idle cpu time (idle), free memory
+     (free), disk transfers (disk), interrupts (interrupts),
+     input packets (input), output packets (output), collision
+     packets (collision).  Any or all of these options can be
+     specified at once.  By default, _x_p_e_r_f_m_o_n displays all of
+     these statistics.
+
+     -bd _c_o_l_o_r
+	     Specify the border color.	On monochrome displays,
+	     should be ``white'', ``black'', or ``gray''; gray is
+	     the default.
+
+     -bg _c_o_l_o_r
+	     Specify the background color.  On monochrome
+	     displays, should be ``white'' or ``black''; black is
+	     the default.
+
+     -bw _p_i_x_e_l_s
+	     Specify the width in pixels of the border around the
+	     _x_p_e_r_f_m_o_n window. The default value is 3 pixels.
+
+     -fg _c_o_l_o_r
+	     Specify the graph color.  On monochrome displays,
+	     should be ``white'' or ``black''; white is the
+	     default.
+
+     -fn _f_o_n_t_n_a_m_e
+	     The hostname will be displayed in the specified font
+	     (if none is specified, this defaults to 6x10).
+
+     -hl _c_o_l_o_r
+	     Specify the hostname and scale line color; the
+	     default is to make it the same as the graph color.
+
+     -rv     Cause _x_p_e_r_f_m_o_n to produce all output in black-on-
+	     white instead of white-on-black.
+
+     -fw     Cause _x_p_e_r_f_m_o_n to produce all output in white-on-
+	     black instead of black-on-white.
+
+     -scale _i_n_t_e_g_e_r
+	     Specify the minimum number of divisions on the graph
+
+
+
+Printed 9/15/87            2 July 1985				1
+
+
+
+
+
+
+XPERFMON(1)	    UNIX Programmer's Manual	      XPERFMON(1)
+
+
+
+	     (default 1).  _x_p_e_r_f_m_o_n is free to use more divisions
+	     if the load gets too high to display, but it will
+	     never use fewer divisions than this.
+
+     -u _s_e_c_o_n_d_s
+	     Set the update rate.
+
+     =_g_e_o_m_e_t_r_y
+	     Allows you to position the window on the screen.
+	     See _X(_1) for a full description of geometry specifi-
+	     cations.
+
+     [_h_o_s_t]:[_d_i_s_p_l_a_y]
+	     Normally, _x_p_e_r_f_m_o_n gets the host and display number
+	     to use from the environment variable ``DISPLAY''.
+	     Either or both can be specified with this option.
+	     _h_o_s_t specifies which machine to create the _x_p_e_r_f_m_o_n
+	     window on, and _d_i_s_p_l_a_y specifies the display number.
+	     For example, ``mit-grape-nehi:0'' creates an _x_p_e_r_f_-
+	     _m_o_n on display 0 on machine mit-grape-nehi. Either
+	     value can be defaulted by omission but `:' is neces-
+	     sary to specify one or both.
+
+X DEFAULTS
+     Background
+	     Set the background color.
+
+     Foreground
+	     Set the graph color.
+
+     BodyFont
+	     Set the hostname font.
+
+     BorderColor
+	     Set the border color.
+
+     BorderWidth
+	     Set the border width of the window.
+
+     Border  Set the internal border of the window.
+
+     Highlight
+	     Set the hostname and scale line color.
+
+     ReverseVideo
+	     If ``on'', reverse the definition of foreground and
+	     background color.
+
+     Scale   Set the minimum scale.
+
+     Update  Set the update interval.
+
+
+
+
+Printed 9/15/87            2 July 1985				2
+
+
+
+
+
+
+XPERFMON(1)	    UNIX Programmer's Manual	      XPERFMON(1)
+
+
+
+ENVIRONMENT
+     DISPLAY - to get the default host and display number.
+
+AUTHOR
+     Stephen Sutphen (University of Alberta).
+
+BUGS
+     This program is a CPU pig, getting the information out of
+     the kernel.
+
+SEE ALSO
+     X(8C)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87            2 July 1985				3
+
+
+

@@ -1,0 +1,264 @@
+
+
+
+XSHELL(1)	    UNIX Programmer's Manual		XSHELL(1)
+
+
+
+NAME
+     xshell - X Window System, key/button command exec
+
+SYNOPSIS
+     xshell [ _o_p_t_i_o_n_s ] [ _h_o_s_t:_d_i_s_p_l_a_y ] ...
+
+DESCRIPTION
+     _X_s_h_e_l_l is a program for starting up X applications with a
+     single key or button stroke.  It displays a scallop shell
+     icon in which button and key presses stand for different
+     commands.	The user can bind a command string to any key or
+     button by inserting a line like the following in his or her
+
+	 xshell.action.keyname:   command to be exec'ed
+
+     Keynames are simply letters, numbers, and symbols as they
+     appear on the keyboard (e.g. a, $, 9), or one of the follow-
+     ing special names (taken from the X keyboard definitions):
+
+	 KEYPAD0	      FUNC1	       E1
+	 KEYPAD.	      FUNC2	       E2
+	 ENTER		      FUNC3	       E3
+	 KEYPAD1	      FUNC4	       E4
+	 KEYPAD2	      FUNC5	       E5
+	 KEYPAD3	      FUNC6	       E6
+	 KEYPAD4	      FUNC7	       LEFTARROW
+	 KEYPAD5	      FUNC8	       RIGHTARROW
+	 KEYPAD6	      FUNC9	       DOWNARROW
+	 KEYPAD,	      FUNC10	       UPARROW
+	 KEYPAD7	      FUNC11	       SHIFT
+	 KEYPAD8	      FUNC12	       CONTROL
+	 KEYPAD9	      FUNC13	       LOCK
+	 KEYPAD-	      FUNC14	       SYMBOL
+	 PF1		      FUNC15
+	 PF2		      FUNC16
+	 PF3		      FUNC17
+	 PF4		      FUNC18
+	 LEFTBUTTON	      FUNC19
+	 MIDDLEBUTTON	      FUNC29
+	 RIGHTBUTTON
+
+
+     Thus, the following `.Xdefaults' definitions specify that
+     the Left Button will spawn a terminal window, the Middle
+     Button an editor, the Right Button a calculator, $ a Bourne
+     shell, and # a superuser shell:
+
+	 xshell.action.LeftButton:	 xterm =80x65-0+0 -fn 6x10
+	 xshell.action.MiddleButton:	 xted =80x65+0-0
+	 xshell.action.RightButton:	 xterm =20x20-0-0 -fn 6x10 -e dc
+	 xshell.action.$:		 xterm =80x65+0+0 -fn 6x10 -e sh
+	 xshell.action.#:		 xterm =80x65+0+0 -fn 6x10 -e su
+
+
+
+Printed 9/15/87          31 October 1985			1
+
+
+
+
+
+
+XSHELL(1)	    UNIX Programmer's Manual		XSHELL(1)
+
+
+
+     _X_s_h_e_l_l breaks the command string up into words by removing
+     all white space (i.e.  tabs and spaces) and uses the vfork()
+     and execvp() system calls to spawn off the command.  A more
+     complicated parsing algorithm could easily be added, but the
+     current method is adequate (and fast and memory efficient).
+
+     One thing to keep in mind is that _x_s_h_e_l_l is NOT a window
+     manager.  It was written to make popping up frequently used
+     utilities as painless as possible (how many times have you
+     found that you need just 1 more window....).  It might make
+     a nice addition to some of the more verbose window managers,
+     but it runs quite nicely as a separate program.
+
+
+ARGUMENTS
+     _X_s_h_e_l_l is designed to be somewhat compatible with _x_c_l_o_c_k in
+     the arguments that it takes.  However, _x_s_h_e_l_l will allow you
+     to abbreviate its longer flags to any length you chose.
+     Thus, the -reverse flag can be spelled out, given as -rev,
+     or even just -r:
+
+     -fg _c_o_l_o_r On color displays, determines the color of the
+	       foreground.
+
+     -bg _c_o_l_o_r On color displays, determines the color of the
+	       background.
+
+     -bd _c_o_l_o_r On color displays, determines the color of the
+	       border.
+
+     -bw _p_i_x_e_l_s
+	       Specify the width in pixels of the border around
+	       the _x_s_h_e_l_l window.
+
+     -v[olume] _n
+	       Volume for calls to _X_F_e_e_p, used when errors (such
+	       as unbound key) are found.
+
+     -f[lash] _n
+	       Number of times to flash the shell window to ack-
+	       nowledge a button or key press.
+
+     -d[elay] _n
+	       One-hundredths of a second to wait between flashs
+	       (default is 5).
+
+     -r[everse]
+	       Reverse video (swap foreground and background).
+
+     -q[uiet]  Do not `feep' on errors (see volume).
+
+
+
+
+
+Printed 9/15/87          31 October 1985			2
+
+
+
+
+
+
+XSHELL(1)	    UNIX Programmer's Manual		XSHELL(1)
+
+
+
+     -s[mall]  Use a smaller (48x48) version of the shell icon.
+	       The default icon is 96x96.
+
+     =_g_e_o_m_e_t_r_y By default _x_s_h_e_l_l will create a window the size of
+	       whatever icon you select; the standard X window
+	       geometry argument will override this.  See _X(_1)
+	       for details.
+
+     _h_o_s_t:_d_i_s_p_l_a_y
+	       specifies the display on which to put the _x_s_h_e_l_l
+	       window.	This overrides the DISPLAY environment
+	       variable.
+
+
+X DEFAULTS
+     To make invoking _x_s_h_e_l_l easier, each of the flags listed
+     above may be specified in the user's
+
+     Foreground
+	       gives the foreground color.
+
+     Background
+	       gives the background color.
+
+     Border    gives the border color.
+
+     BorderWidth
+	       gives the border width.
+
+     ReverseVideo
+	       if "on", the shell icon should be white on black
+	       instead of black on white.
+
+     Volume    gives the volume to use in calls to XFeep().
+
+     Flash     gives the number of times to flash the shell win-
+	       dow to acknowledge key or button presses.
+
+     Delay     gives hundredths of a second to wait in between
+	       flashes.
+
+     Quiet     prevents _x_s_h_e_l_l from feeping at you when you mis-
+	       type.
+
+     IconSize  if "small", a halfsize (48x48) version of the
+	       scallopshell is used.
+
+     WindowGeometry
+	       gives the shell window size using standard X
+	       =WxH+X+Y notation.
+
+
+
+
+
+Printed 9/15/87          31 October 1985			3
+
+
+
+
+
+
+XSHELL(1)	    UNIX Programmer's Manual		XSHELL(1)
+
+
+
+ENVIRONMENT
+     DISPLAY   To get the default host and display number.
+
+
+SEE ALSO
+     xwm(1), xnwm(1), X(1), execl(3), vfork(2)
+
+DIAGNOSTICS
+     If -quiet is not given on the command line or
+     ``xshell.Quiet: on'' does not appear in the user's ._X_d_e_-
+     _f_a_u_l_t_s, _x_s_h_e_l_l will `feep' if a key or button is pressed for
+     which there is no definition in the ._X_d_e_f_a_u_l_t_s file.
+
+AUTHOR
+     Copyright 1985, Cognition Inc.
+
+     Jim Fulton (Cognition Inc.)
+
+BUGS
+     _X_s_h_e_l_l uses the XGetDefault call to fetch the command string
+     for a given key.  Thus, you cannot bind the colon (``:'')
+     character to a command.
+
+     A more `user-friendly' interface could include dialog boxes
+     that the user could pop up to type in a command directly so
+     that a full shell doesn't have to be started.  Then again,
+     it is nice and compact now and if you really need to do that
+     more than once you should use a real shell.
+
+     This program along with _x_w_m(_1) and _x_n_w_m have been mostly
+     superceded by _u_w_m(_1).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Printed 9/15/87          31 October 1985			4
+
+
+
