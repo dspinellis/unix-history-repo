@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)names.c 1.3 2/16/83";
-
-static char rcsid[] = "$Header: names.c,v 1.3 84/03/27 10:22:19 linton Exp $";
+static	char sccsid[] = "@(#)names.c	1.4 (Berkeley) %G%";
 
 /*
  * Name are the internal representation for identifiers.

@@ -1,3 +1,5 @@
+/*	defs.h	1.2	84/06/23	*/
+
 /*
  * Public definitions, common to all.
  */

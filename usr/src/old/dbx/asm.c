@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)asm.c 1.2 12/15/82";
-
-static char rcsid[] = "$Header: asm.c,v 1.3 84/03/27 10:19:36 linton Exp $";
+static	char sccsid[] = "@(#)asm.c	1.3 (Berkeley) %G%";
 
 /*
  * Assembly language dependent symbol routines.

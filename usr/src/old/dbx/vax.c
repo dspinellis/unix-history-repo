@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)machine.c 1.9 8/5/83";
-
-static char rcsid[] = "$Header: machine.c,v 1.3 84/03/27 10:21:26 linton Exp $";
+static	char sccsid[] = "@(#)vax.c	1.10 (Berkeley) %G%";
 
 /*
  * Target machine dependent stuff.

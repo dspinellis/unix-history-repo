@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char rcsid[] = "$Header: mkdate.c,v 1.3 84/03/27 10:21:59 linton Exp $";
+static	char sccsid[] = "@(#)mkdate.c	1.3 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/time.h>

@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)fortran.c	1.3	5/20/83";
-
-static char rcsid[] = "$Header: fortran.c,v 1.3 84/03/27 10:20:53 linton Exp $";
+static	char sccsid[] = "@(#)fortran.c	1.5 (Berkeley) %G%";
 
 /*
  * FORTRAN dependent symbol routines.

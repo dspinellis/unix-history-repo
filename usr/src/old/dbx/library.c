@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)library.c 1.3 8/7/83";
-
-static char rcsid[] = "$Header: library.c,v 1.3 84/03/27 10:21:12 linton Exp $";
+static	char sccsid[] = "@(#)library.c	1.5 (Berkeley) %G%";
 
 /*
  * General purpose routines.

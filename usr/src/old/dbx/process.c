@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.12 8/19/83";
-
-static char rcsid[] = "$Header: process.c,v 1.3 84/03/27 10:23:24 linton Exp $";
+static	char sccsid[] = "@(#)process.c	1.13 (Berkeley) %G%";
 
 /*
  * Process management.

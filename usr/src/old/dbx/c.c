@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)c.c 1.6 8/5/83";
-
-static char rcsid[] = "$Header: c.c,v 1.3 84/03/27 10:19:40 linton Exp $";
+static	char sccsid[] = "@(#)c.c	1.8 (Berkeley) %G%";
 
 /*
  * C-dependent symbol routines.

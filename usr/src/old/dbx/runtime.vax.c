@@ -1,9 +1,7 @@
 
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)runtime.c 1.8 8/10/83";
-
-static char rcsid[] = "$Header: runtime.c,v 1.3 84/03/27 10:23:40 linton Exp $";
+static	char sccsid[] = "@(#)runtime.vax.c	1.11 (Berkeley) %G%";
 
 /*
  * Runtime organization dependent routines, mostly dealing with

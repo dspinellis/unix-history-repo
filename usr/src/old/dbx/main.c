@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)main.c 1.5 5/17/83";
-
-static char rcsid[] = "$Header: main.c,v 1.3 84/03/27 10:21:40 linton Exp $";
+static	char sccsid[] = "@(#)main.c	1.7 (Berkeley) %G%";
 
 /*
  * Debugger main routine.

@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.14 10/22/83";
-
-static char rcsid[] = "$Header: object.c,v 1.4 84/03/27 10:22:25 linton Exp $";
+static	char sccsid[] = "@(#)object.c	1.15 (Berkeley) %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.

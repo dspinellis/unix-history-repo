@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.5 8/10/83";
-
-static char rcsid[] = "$Header: tree.c,v 1.3 84/03/27 10:24:40 linton Exp $";
+static	char sccsid[] = "@(#)tree.c	1.6 (Berkeley) %G%";
 
 /*
  * Parse tree management.

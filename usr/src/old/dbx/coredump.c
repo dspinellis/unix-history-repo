@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)coredump.c 1.4 1/25/83";
-
-static char rcsid[] = "$Header: coredump.c,v 1.3 84/03/27 10:20:10 linton Exp $";
+static	char sccsid[] = "@(#)coredump.c	1.5 (Berkeley) %G%";
 
 /*
  * Deal with the core dump anachronism.

@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)pascal.c 1.2 12/15/82";
-
-static char rcsid[] = "$Header: pascal.c,v 1.3 84/03/27 10:23:04 linton Exp $";
+static	char sccsid[] = "@(#)pascal.c	1.3 (Berkeley) %G%";
 
 /*
  * Pascal-dependent symbol routines.

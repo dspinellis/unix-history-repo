@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)eval.c 1.10 8/17/83";
-
-static char rcsid[] = "$Header: eval.c,v 1.3 84/03/27 10:20:23 linton Exp $";
+static	char sccsid[] = "@(#)eval.c	1.12 (Berkeley) %G%";
 
 /*
  * Tree evaluation.

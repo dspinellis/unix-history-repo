@@ -1,3 +1,4 @@
+#	Makefile	4.9	84/06/23
 #
 # make file for debugger "dbx"
 #
@@ -8,7 +9,8 @@
 .SUFFIXES: .h .c .s .o
 
 AOUT	= tdbx
-DEST	= /usr/local/bin/dbx
+DESTDIR=
+DEST	= ${DESTDIR}/usr/ucb/dbx
 
 LIBRARIES =
 

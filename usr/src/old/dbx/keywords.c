@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)keywords.c 1.3 5/18/83";
-
-static char rcsid[] = "$Header: keywords.c,v 1.3 84/03/27 10:21:05 linton Exp $";
+static	char sccsid[] = "@(#)keywords.c	1.4 (Berkeley) %G%";
 
 /*
  * Keyword management.

@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)languages.c 1.3 5/18/83";
-
-static char rcsid[] = "$Header: languages.c,v 1.3 84/03/27 10:21:09 linton Exp $";
+static	char sccsid[] = "@(#)languages.c	1.4 (Berkeley) %G%";
 
 /*
  * Language management.

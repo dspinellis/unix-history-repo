@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)events.c 1.3 4/8/83";
-
-static char rcsid[] = "$Header: events.c,v 1.3 84/03/27 10:20:41 linton Exp $";
+static	char sccsid[] = "@(#)events.c	1.4 (Berkeley) %G%";
 
 /*
  * Event/breakpoint managment.

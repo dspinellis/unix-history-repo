@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.8 8/5/83";
-
-static char rcsid[] = "$Header: scanner.c,v 1.3 84/03/27 10:23:50 linton Exp $";
+static	char sccsid[] = "@(#)scanner.c	1.9 (Berkeley) %G%";
 
 /*
  * Debugger scanner.

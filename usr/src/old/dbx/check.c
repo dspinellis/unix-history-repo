@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)check.c 1.5 8/10/83";
-
-static char rcsid[] = "$Header: check.c,v 1.3 84/03/27 10:19:54 linton Exp $";
+static	char sccsid[] = "@(#)check.c	1.6 (Berkeley) %G%";
 
 /*
  * Check a tree for semantic correctness.

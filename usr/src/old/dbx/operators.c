@@ -1,8 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)operators.c 1.4 5/18/83";
-
-static char rcsid[] = "$Header: operators.c,v 1.3 84/03/27 10:22:38 linton Exp $";
+static	char sccsid[] = "@(#)operators.c	1.6 (Berkeley) %G%";
 
 /*
  * Tree node classes.
