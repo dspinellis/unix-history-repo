@@ -1,4 +1,12 @@
 #	%W% (Berkeley) %G%
+#
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00120
+# --------------------         -----   ----------------------
+#
+# 28 Mar 93	Rodney W. Grimes	Added null tags and depend targets
+#
 
 TMACOWN?=	bin
 TMACGRP?=	bin
@@ -13,7 +21,11 @@ clean:
 
 cleandir:
 
+depend:
+
 obj:
+
+tags:
 
 install:
 	-for t in $(TMACS); do \
