@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.15	%G%";
+char id_libF77[] = "@(#)main.c	2.16	%G%";
 
 #include <stdio.h>
 #include <signal.h>

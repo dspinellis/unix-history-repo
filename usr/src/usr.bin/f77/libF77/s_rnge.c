@@ -1,5 +1,5 @@
 /*
- *	"@(#)s_rnge.c	1.1"
+ *	"@(#)s_rnge.c	1.2"
  */
 
 #include <stdio.h>

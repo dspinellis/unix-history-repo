@@ -1,5 +1,5 @@
 /*
- *	"@(#)subout.c	1.1"
+ *	"@(#)subout.c	1.2"
  */
 
 #include <stdio.h>

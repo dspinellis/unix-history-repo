@@ -1,5 +1,5 @@
 /*
- *	"@(#)c_div.c	1.1"
+ *	"@(#)c_div.c	1.2"
  */
 
 #include "complex"
