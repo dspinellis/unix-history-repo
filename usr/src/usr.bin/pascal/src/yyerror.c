@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yyerror.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yyerror.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -45,6 +45,9 @@ yerror(s, a1, a2, a3, a4, a5)
 		errpfx = 'E';
 		return;
 	}
+	/* no continuations allowed here */
+	if (errpfx == ' ')
+		errpfx = 'E';
 #ifdef PXP
 	flush();
 	ofout = fout[0];
