@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.28 (Berkeley) %G%
+#	@(#)Makefile	7.29 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -33,7 +33,7 @@ SRCS=	boot.c bootxx.c cat.c copy.c drtest.c format.c format.c machdep.c \
 DUMMIES=confxx.c
 SMOBJ=	bootxx.o sm_autoconf.o 
 LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
-SMLIBS=	${STAND}/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	${STAND}/small/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
 
 
 # These drivers don't have ecc correction and bad sector forwarding;
@@ -50,7 +50,7 @@ all: ${ALL}
 ${STAND}/obj/libsa.a:
 	cd ${STAND}; make
 ${STAND}/obj/libsmsa.a:
-	cd ${STAND}; make LIB=smsa CFLAGS='-O -DSMALL'
+	cd ${STAND}/small; make
 
 libdrive.a: conf.o dkbad.o machdep.o prf.o qfont.o ${DOBJS}
 	ar crv $@ $?
@@ -261,6 +261,8 @@ clean:
 	rm -f *.o *.exe *.i sm_*.c libsa.a
 	rm -f boot[a-wyz][a-z].c conf[a-wyz][a-z].c confkra.c
 	rm -f ${ALL} a.out core errs sboot bootconf.c
+	cd ${STAND}; make clean
+	cd ${STAND}/small; make clean
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
