@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -82,7 +82,7 @@ DFLAGS=	-DAS
 CFLAGS=	-O ${DFLAGS}
 
 all as: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+	${CC} -o as ${CFLAGS} ${OBJS}
 
 .c.o:	astoks.h ${HDRS}
 	${CC} ${CFLAGS} -c $*.c
