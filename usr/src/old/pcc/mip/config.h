@@ -1,4 +1,4 @@
-/*	config.h	4.4	90/02/21	*/
+/*	config.h	4.5	90/11/16	*/
 
 #ifndef _CONFIG_
 #define	_CONFIG_
@@ -20,15 +20,15 @@
 /*
  * Table sizes.
  */
-#define TREESZ		1000		/* parse tree table size */
-#define BCSZ		100		/* break/continue table size */
-#define SYMTSZ		4000		/* symbol table size */
-#define DIMTABSZ 	5000		/* dimension/size table size */
-#define PARAMSZ		300		/* parameter stack size */
-#define SWITSZ		500		/* switch table size */
+#define TREESZ		2000		/* parse tree table size */
+#define BCSZ		200		/* break/continue table size */
+#define SYMTSZ		8000		/* symbol table size */
+#define DIMTABSZ 	10000		/* dimension/size table size */
+#define PARAMSZ		600		/* parameter stack size */
+#define SWITSZ		1000		/* switch table size */
 #define	DELAYS		20		/* delayed evaluation table size */
 #define NRECUR		(10*TREESZ)	/* maximum eval recursion depth */
-#define	MAXSCOPES	(SYMTSZ/30)	/* maximum active scopes */
+#define	MAXSCOPES	200		/* maximum active scopes ('{' depth) */
 
 /* in case anyone still uses fixed length names */
 #ifndef FLEXNAMES
