@@ -13,7 +13,7 @@ extern int errno;
 
 #include "../general/general.h"
 #include "../api/api.h"
-#include "api_exch.h"
+#include "../apilib/api_exch.h"
 
 #include "../general/globals.h"
 
@@ -27,16 +27,18 @@ static int sock = -1;
 static enum { DEAD, UNCONNECTED, CONNECTED } state;
 
 static int
-    storage_address,		/* Address we have */
+    storage_location,		/* Address we have */
     storage_length = 0,		/* Length we have */
     storage_must_send = 0,	/* Storage belongs on other side of wire */
     storage_accessed = 0;	/* The storage is accessed (so leave alone)! */
 
 static long storage[250];
 
-union REGS inputRegs;
-struct SREGS inputSregs;
+static union REGS inputRegs;
+static struct SREGS inputSregs;
 
+
+static void
 kill_connection()
 {
     state = DEAD;
@@ -46,138 +48,31 @@ kill_connection()
 
 
 static int
-child_died()
-{
-    union wait *status;
-    register int pid;
-
-    while ((pid = wait3(&status, WNOHANG, 0)) > 0) {
-	if (pid == shell_pid) {
-	    char inputbuffer[100];
-
-	    shell_active = 0;
-	    if (sock != -1) {
-		(void) close(sock);
-		sock = -1;
-		printf("[Hit return to continue]");
-		fflush(stdout);
-		(void) gets(inputbuffer);
-		setconnmode();
-		ConnectScreen();	/* Turn screen on (if need be) */
-	    }
-	}
-    }
-    signal(SIGCHLD, child_died);
-}
-
-static int
-nextchar()
-{
-    unsigned char c;
-
-    if (read(sock, &c, 1) != 1) {
-	return -1;
-    } else {
-	return c;
-    }
-}
-
-static int
-checktype(type)
-int type;
-{
-    int was;
-
-    if ((was = nextchar()) != type) {
-	fprintf(stderr, "Wrong type of data.  Should be 0x%02x, was 0x%02x.\n",
-		type, was);
-	return -1;
-    } else {
-	return 0;
-    }
-}
-
-
-static int
-fill(where, length)
-char	*where;
-int	length;
-{
-    while (length) {
-	int i;
-
-	if ((i = read(sock, where, length)) < 0) {
-	    perror("read");
-	    return -1;
-	} else {
-	    length -= i;
-	    where += i;
-	}
-    }
-}
-
-
-static int
-nextlength()
-{
-    short length;
-
-    if (fill(&length, sizeof length) == -1) {
-	return -1;
-    } else {
-	return ntohs(length);
-    }
-}
-
-
-static int
-nextaddress()
-{
-    long address;
-
-    return fill(&address, sizeof address);
-}
-
-
-
-static int
-nextbytes(type, where, length)
-int	type;
-char	*where;
-int	length;
-{
-    int was;
-
-    if (checktype(type) == -1) {
-	return -1;
-    }
-    if ((was = nextlength()) != length) {
-	fprintf(stderr, "Type 0x%02x had bad length.  Should be %d, was %d.\n",
-		type, length, was);
-	return -1;
-    } else {
-	return fill(where, length);
-    }
-}
-
-static int
 nextstore()
 {
-    if (nextchar() != EXCH_HEREIS) {
+    struct storage_descriptor sd;
+
+    if (api_exch_incommand(EXCH_HEREIS) == -1) {
 	fprintf(stderr, "Bad data from other side.\n");
 	fprintf(stderr, "(Encountered at %s, %s.)\n", __FILE__, __LINE__);
 	return -1;
     }
-    if ((storage_address = nextaddress()) == -1) {
+    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	storage_length = 0;
 	return -1;
     }
-    if ((storage_length = nextlength()) > sizeof storage) {
+    storage_length = ntohs(sd.length);
+    storage_location = ntohl(sd.location);
+    if (storage_length > sizeof storage) {
 	fprintf(stderr, "API client tried to send too much storage (%d).\n",
 		storage_length);
+	storage_length = 0;
 	return -1;
     }
-    return fill((char *)storage, storage_length);
+    if (api_exch_intype(EXCH_TYPE_BYTES, storage_length, (char *)storage) == -1) {
+	storage_length = 0;
+	return -1;
+    }
 }
 
 
@@ -185,13 +80,17 @@ static int
 doreject(message)
 char	*message;
 {
+    struct storage_descriptor sd;
     int length = strlen(message);
-    char buffer[100];
 
-    length = htons(length);
-    sprintf(buffer, "%c%c%c%s", EXCH_REJECTED, length>>8, length&0xff, buffer);
-    if (write(sock, buffer, length+3) != length+3) {
-	perror("writing API socket");
+    if (api_exch_outcommand(EXCH_REJECTED) == -1) {
+	return -1;
+    }
+    sd.length = htons(length);
+    if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES, length, message) == -1) {
 	return -1;
     }
     return 0;
@@ -211,44 +110,36 @@ doconnect()
     char
 	promptbuf[100],
 	buffer[200];
-    int promptlen, passwdlen;
     int length;
     int was;
+    struct storage_descriptor sd;
 
     if ((pwent = getpwuid(geteuid())) == 0) {
 	return -1;
     }
     sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
-    promptlen = strlen(promptbuf);
-    passwdlen = strlen(pwent->pw_name);
-    sprintf(buffer, "%c%c%c%s%c%c%s", EXCH_SEND_AUTH,
-		promptlen>>8, promptlen&0xff, promptbuf,
-		passwdlen>>8, passwdlen&0xff, pwent->pw_name);
-    length = strlen(buffer);
-    if (write(sock, buffer, length) != length) {
-	perror("write to API socket");
+    api_exch_outcommand(EXCH_SEND_AUTH);
+    api_exch_outtype(EXCH_TYPE_BYTES, strlen(promptbuf), promptbuf);
+    api_exch_outtype(EXCH_TYPE_BYTES, strlen(pwent->pw_name), pwent->pw_name);
+    if (api_exch_incommand(EXCH_AUTH) == -1) {
 	return -1;
     }
-    if ((was = nextchar()) != EXCH_AUTH) {
-	fprintf(stderr,
-	    "API client sent command 0x%02x when EXCH_AUTH expected.\n", was);
+    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
     }
-    if ((length = nextlength()) > sizeof buffer) {
+    sd.length = ntohs(sd.length);
+    if (sd.length > sizeof buffer) {
 	doreject("Password entered was too long");
 	return 0;
     }
-    if (fill(buffer, length) == -1) {
+    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
 	return -1;
     }
-    buffer[length] = 0;
+    buffer[sd.length] = 0;
 
     /* Is this the correct password? */
     if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) == 0) {
-	char code = EXCH_CONNECTED;
-	if (write(sock, &code, 1) != 1) {
-	    perror("writing to API socket");
-	    return -1;
-	}
+	api_exch_outcommand(EXCH_CONNECTED);
     } else {
 	doreject("Invalid password");
 	sleep(10);		/* Don't let us do too many of these */
@@ -260,8 +151,8 @@ doconnect()
 void
 freestorage()
 {
-    int i, j;
     char buffer[40];
+    struct storage_descriptor sd;
 
     if (storage_accessed) {
 	fprintf(stderr, "Internal error - attempt to free accessed storage.\n");
@@ -273,27 +164,27 @@ freestorage()
 	return;
     }
     storage_must_send = 0;
-    i = htonl(storage_address);
-    j = htonl(storage_length);
-    sprintf(buffer, "%c%c%c%c%c%c%c",
-		EXCH_HEREIS, i>>24, i>>16, i>>8, i, j>>8, j);
-    if (write(sock, buffer, 5) != 5) {
-	perror("writing to API socket");
+    if (api_exch_outcommand(EXCH_HEREIS) == -1) {
 	kill_connection();
 	return;
     }
-    if (write(sock, (char *)storage, storage_length) != storage_length) {
-	perror("writing to API socket");
+    sd.length = htons(storage_length);
+    sd.location = htonl(storage_location);
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	kill_connection();
+	return;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES, storage_length, (char *)storage) == -1) {
 	kill_connection();
 	return;
     }
 }
 
 
-void
+static int
 getstorage(address, length)
 {
-    int i, j;
+    struct storage_descriptor sd;
     char buffer[40];
 
     freestorage();
@@ -308,19 +199,21 @@ getstorage(address, length)
 	return;
     }
     storage_must_send = 0;
-    i = htonl(storage_address);
-    j = htonl(storage_length);
-    sprintf(buffer, "%c%c%c%c%c%c%c",
-		EXCH_GIMME, i>>24, i>>16, i>>8, i, j>>8, j);
-    if (write(sock, buffer, 5) != 5) {
-	perror("writing to API socket");
+    if (api_exch_outcommand(EXCH_GIMME) == -1) {
 	kill_connection();
-	return;
+	return -1;
+    }
+    sd.location = htonl(storage_location);
+    sd.length = htons(storage_length);
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	kill_connection();
+	return -1;
     }
     if (nextstore() == -1) {
 	kill_connection();
-	return;
+	return -1;
     }
+    return 0;
 }
 
 void
@@ -341,7 +234,7 @@ int
 	return;
     }
     getstorage(di, length);
-    memcpy(local, storage+(di-storage_address), length);
+    memcpy(local, storage+(di-storage_location), length);
 }
 
 void
@@ -364,7 +257,7 @@ int
     freestorage();
     memcpy((char *)storage, local, length);
     storage_length = length;
-    storage_address = di;
+    storage_location = di;
     storage_must_send = 1;
 }
 
@@ -419,7 +312,7 @@ shell_continue()
 	pause();			/* Nothing to do */
 	break;
     case UNCONNECTED:
-	if (nextchar() != EXCH_CONNECT) {
+	if (api_exch_incommand(EXCH_CONNECT) == -1) {
 	    kill_connection();
 	} else {
 	    switch (doconnect()) {
@@ -434,17 +327,58 @@ shell_continue()
 	}
 	break;
     case CONNECTED:
-	if (nextchar() == EXCH_REQUEST) {
-	    /* Eat up request packet. */
-	    nextbytes(&inputRegs, sizeof inputRegs);
-	    nextbytes(&inputSregs, sizeof inputSregs);
-	    nextstore();		/* Initial storage sent */
-	    handle_api(&inputRegs, &inputSregs);
-	} else {
+	if (api_exch_incommand(EXCH_REQUEST) == -1) {
 	    kill_connection();
+	} else if (api_exch_intype(EXCH_TYPE_BYTES, sizeof inputRegs,
+				(char *)&inputRegs) == -1) {
+	    kill_connection();
+	} else if (api_exch_intype(EXCH_TYPE_BYTES, sizeof inputSregs,
+				(char *)&inputSregs) == -1) {
+	    kill_connection();
+	} else if (nextstore() == -1) {
+	    kill_connection();
+	} else {
+	    handle_api(&inputRegs, &inputSregs);
+	    freestorage();			/* Send any storage back */
+	    if (api_exch_outcommand(EXCH_REPLY) == -1) {
+		kill_connection();
+	    } else if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof inputRegs,
+				(char *)&inputRegs) == -1) {
+		kill_connection();
+	    } else if (api_exch_outtype(EXCH_TYPE_BYTES, sizeof inputSregs,
+				(char *)&inputSregs) == -1) {
+		kill_connection();
+	    }
+	    /* Done, and it all worked! */
 	}
     }
     return shell_active;
+}
+
+
+static int
+child_died()
+{
+    union wait *status;
+    register int pid;
+
+    while ((pid = wait3(&status, WNOHANG, 0)) > 0) {
+	if (pid == shell_pid) {
+	    char inputbuffer[100];
+
+	    shell_active = 0;
+	    if (sock != -1) {
+		(void) close(sock);
+		sock = -1;
+		printf("[Hit return to continue]");
+		fflush(stdout);
+		(void) gets(inputbuffer);
+		setconnmode();
+		ConnectScreen();	/* Turn screen on (if need be) */
+	    }
+	}
+    }
+    signal(SIGCHLD, child_died);
 }
 
 
@@ -538,6 +472,8 @@ char	*argv[];
 			perror("accepting API connection");
 		    }
 		    sock = i;
+		    api_exch_init(sock);
+		    state = UNCONNECTED;
 		    break;
 		}
 	    }
