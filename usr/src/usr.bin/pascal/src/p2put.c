@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.3 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.4 %G%";
 
     /*
      *	functions to help pi put out
@@ -173,7 +173,7 @@ putleaf( op , lval , rval , type , name )
 		p2word( lval );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2ICON | %3d | %d	" 
+			fprintf( stdout , "P2ICON | %3d | 0x%x	" 
 			       , name != NIL , type );
 			fprintf( stdout , "%d\n" , lval );
 		    }
@@ -187,7 +187,7 @@ putleaf( op , lval , rval , type , name )
 		    p2word( lval );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2NAME | %3d | %d	" 
+			fprintf( stdout , "P2NAME | %3d | 0x%x	" 
 			       , lval != 0 , type );
 			if ( lval )
 			    fprintf( stdout , "%d	" , lval );
@@ -199,7 +199,8 @@ putleaf( op , lval , rval , type , name )
 		p2word( TOF77( P2REG , rval , type ) );
 #		ifdef DEBUG
 		    if ( opt( 'k' ) ) {
-			fprintf( stdout , "P2REG | %3d | %d\n" , rval , type );
+			fprintf( stdout , "P2REG | %3d | 0x%x\n" ,
+				rval , type );
 		    }
 #		endif
 		break;
@@ -460,7 +461,7 @@ typerecur( np , quals )
 		     *	formal procedures and functions are pointers
 		     *	to structures which describe their environment.
 		     */
-		return ADDTYPE( P2PTR , P2STRTY );
+		return ( P2PTR | P2STRTY );
 	    default :
 		panic( "p2type" );
 	}
@@ -493,7 +494,7 @@ putop( op , type )
 	p2word( TOF77( op , 0 , type ) );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "%s (%d) |   0 | %d\n"
+		fprintf( stdout , "%s (%d) |   0 | 0x%x\n"
 			, p2opnames[ op ] , op , type );
 	    }
 #	endif
@@ -519,7 +520,7 @@ putstrop( op , type , size , alignment )
 	p2word( alignment );
 #	ifdef DEBUG
 	    if ( opt( 'k' ) ) {
-		fprintf( stdout , "%s (%d) |   0 | %d	%d %d\n"
+		fprintf( stdout , "%s (%d) |   0 | 0x%x	%d %d\n"
 			, p2opnames[ op ] , op , type , size , alignment );
 	    }
 #	endif
