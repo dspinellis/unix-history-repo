@@ -1,4 +1,4 @@
-(Version 8.21 of %G%)
+(Version 8.22 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -6,10 +6,6 @@ Key:
   S -- security fix
   E -- enhancement to existing algorithm
 
-B ****	CNAME loops cause message to be both queued and bounced.
-	"Right" fix is to change dropenvelope et al to do one or
-	the other, but could this cause other problems?
-	Eric Hagberg <hagberg@med.cornell.edu>
 
 X ****	8 -> 7 bit MIME conversion.
 
@@ -75,8 +71,12 @@ X ****	Named rulesets.
 
 ? ****	Should $( [1.2.3.4] $) convert the address to a name?
 
-X ****	Let I option include retry count etc.
-	drl@vuse.vanderbilt.edu (David R. Linn)
+E ****	Change collect() handling to use high level timeouts instead
+	of per-line timeouts -- the current mechanism is swamping
+	the machine with system calls.  (Look at KJS code.)
+
+E ***	Long term host status -- store host status on disk for sharing
+	between runs.
 
 X ***	Extend I option to allow setting of retry and timeout values.
 	drl@vuse.vanderbilt.edu (David R. Linn).
@@ -117,8 +117,6 @@ E ***	Have daemons that start up check the alias database for
 E ***	Eliminate E qf line and e_errorqueue; use e_errorsto a la
 	e_receiptto.  This simplifies and gives symmetry.  (Eric
 	Wassenaar)
-
-B ***	Fix syslog buffer overflow problems.
 
 X ***	DECNET_RELAY support in configs.
 
