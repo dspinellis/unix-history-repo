@@ -101,6 +101,8 @@ pass2()
 	inpend = &inpsort[inplast];
 	for (inpp = inpsort; inpp < inpend; inpp++) {
 		inp = *inpp;
+		if (inp->i_isize == 0)
+			continue;
 		if (inp->i_isize < MINDIRSIZE) {
 			direrror(inp->i_number, "DIRECTORY TOO SHORT");
 			inp->i_isize = MINDIRSIZE;
@@ -138,7 +140,7 @@ pass2()
 	 */
 	for (inpp = inpsort; inpp < inpend; inpp++) {
 		inp = *inpp;
-		if (inp->i_parent == 0)
+		if (inp->i_parent == 0 || inp->i_isize == 0)
 			continue;
 		if (statemap[inp->i_parent] == DFOUND &&
 		    statemap[inp->i_number] == DSTATE)
@@ -177,6 +179,7 @@ pass2check(idesc)
 	register struct inoinfo *inp;
 	int n, entrysize, ret = 0;
 	struct dinode *dp;
+	char *errmsg;
 	struct direct proto;
 	char namebuf[MAXPATHLEN + 1];
 	char pathbuf[MAXPATHLEN + 1];
@@ -310,7 +313,11 @@ again:
 		case FCLEAR:
 			if (idesc->id_entryno <= 2)
 				break;
-			fileerror(idesc->id_number, dirp->d_ino, "DUP/BAD");
+			if (statemap[dirp->d_ino] == DCLEAR)
+				errmsg = "ZERO LENGTH DIRECTORY";
+			else
+				errmsg = "DUP/BAD";
+			fileerror(idesc->id_number, dirp->d_ino, errmsg);
 			if ((n = reply("REMOVE")) == 1)
 				break;
 			dp = ginode(dirp->d_ino);
@@ -326,13 +333,6 @@ again:
 
 		case DFOUND:
 			inp = getinoinfo(dirp->d_ino);
-			if (inp->i_isize == 0) {
-				direrror(dirp->d_ino, "ZERO LENGTH DIRECTORY");
-				if ((n = reply("REMOVE")) == 1) {
-					statemap[dirp->d_ino] = DCLEAR;
-					break;
-				}
-			}
 			if (inp->i_parent != 0 && idesc->id_entryno > 2) {
 				getpathname(pathbuf, idesc->id_number,
 				    idesc->id_number);
