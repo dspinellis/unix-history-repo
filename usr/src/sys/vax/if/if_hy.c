@@ -31,8 +31,8 @@
 #include "../netinet/ip_var.h"
 
 #include "../vaxif/if_hy.h"
+#include "../vaxif/if_hyreg.h"
 #include "../vaxif/if_uba.h"
-#include "../vaxif/if_hyroute.h"
 
 #include "../vax/mtpr.h"
 #include "../vaxuba/ubareg.h"
