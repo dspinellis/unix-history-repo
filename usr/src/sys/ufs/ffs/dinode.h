@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dinode.h	7.6 (Berkeley) %G%
+ *	@(#)dinode.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -54,6 +54,7 @@ struct dinode {
 
 /* file modes */
 #define	IFMT		0170000		/* type of file */
+#define	IFIFO		0010000		/* named pipe (fifo) */
 #define	IFCHR		0020000		/* character special */
 #define	IFDIR		0040000		/* directory */
 #define	IFBLK		0060000		/* block special */
