@@ -1,4 +1,4 @@
-/*	tcp_timer.c	6.4	84/11/01	*/
+/*	tcp_timer.c	6.5	84/11/14	*/
 
 #include "param.h"
 #include "systm.h"
@@ -126,8 +126,7 @@ tcp_timers(tp, timer)
 	/*
 	 * Retransmission timer went off.  Message has not
 	 * been acked within retransmit interval.  Back off
-	 * to a longer retransmit interval and retransmit all
-	 * unacknowledged messages in the window.
+	 * to a longer retransmit interval and retransmit one segment.
 	 */
 	case TCPT_REXMT:
 		tp->t_rxtshift++;
@@ -135,6 +134,12 @@ tcp_timers(tp, timer)
 			tp = tcp_drop(tp, ETIMEDOUT);
 			break;
 		}
+		/*
+		 * If losing, let the lower level know
+		 * and try for a better route.
+		 */
+		if (tp->t_rxtshift > TCP_MAXRXTSHIFT / 2)
+			in_rtchange(tp->t_inpcb);
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		if (tcpexprexmtbackoff) {
