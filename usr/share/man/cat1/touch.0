@@ -1,0 +1,75 @@
+TOUCH(1)                     BSD Reference Manual                     TOUCH(1)
+
+NNAAMMEE
+     ttoouucchh - change file access and modification times
+
+SSYYNNOOPPSSIISS
+     ttoouucchh [--aaccffmm] [--rr _f_i_l_e] [--tt --[[[[CCCC]]YYYY]]MMMMDDDDhhhhmmmm[[..SSSS]]] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttoouucchh utility sets the modification and access times of files to the
+     current time of day.  If the file doesn't exist, it is created with de-
+     fault permissions.
+
+     The following options are available:
+
+     --aa      Change the access time of the file.  The modification time of the
+             file is not changed unless the --mm flag is also specified.
+
+     --cc      Do not create the file if it does not exist.  The ttoouucchh utility
+             does not treat this as an error.  No error messages are displayed
+             and the exit value is not affected.
+
+     --ff      Attempt to force the update, even if the file permissions do not
+             currently permit it.
+
+     --mm      Change the modification time of the file.  The access time of the
+             file is not changed unless the --aa flag is also specified.
+
+     --rr      Use the access and modifications times from the specified file
+             instead of the current time of day.
+
+     --tt      Change the access and modification times to the specified time.
+             The argument should be in the form ``[[CC]YY]MMDDhhmm[.SS]''
+             where each pair of letters represents the following:
+
+                   _C_C      The first two digits of the year (the century).
+                   _Y_Y      The second two digits of the year.  If ``YY'' is
+                           specified, but ``CC'' is not, a value for ``YY''
+                           between 69 and 99 results in a ``YY'' value of 19.
+                           Otherwise, a ``YY'' value of 20 is used.
+                   _M_M      The month of the year, from 1 to 12.
+                   _D_D      the day of the month, from 1 to 31.
+                   _h_h      The hour of the day, from 0 to 23.
+                   _m_m      The minute of the hour, from 0 to 59.
+                   _S_S      The second of the minute, from 0 to 61.
+
+             If the ``CC'' and ``YY'' letter pairs are not specified, the val-
+             ues default to the current year.  If the ``SS'' letter pair is
+             not specified, the value defaults to 0.
+
+     The ttoouucchh utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     utimes(2)
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The obsolescent form of ttoouucchh, where a time format is specified as the
+     first argument, is supported.  When no --rr or --tt option is specified,
+     there are at least two arguments, and the first argument is a string of
+     digits either eight or ten characters in length, the first argument is
+     interprested as a time specification of the form ``MMDDhhmm[YY]''.
+
+     The ``MM'', ``DD'', ``hh'' and ``mm'' letter pairs are treated as their
+     counterparts specified to the --tt option.  If the ``YY'' letter pair is in
+     the range 69 to 99, the year is set to 1969 to 1999, otherwise, the year
+     is set in the 21st century.
+
+HHIISSTTOORRYY
+     A ttoouucchh command appeared in Version 7 AT&T UNIX.
+
+SSTTAANNDDAARRDDSS
+     The ttoouucchh function is expected to be a superset of the IEEE Std1003.2
+     (``POSIX'') specification.
+
+4.4BSD                           June 6, 1993                                2

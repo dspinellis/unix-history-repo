@@ -1,0 +1,35 @@
+RANLIB(1)                    BSD Reference Manual                    RANLIB(1)
+
+NNAAMMEE
+     rraannlliibb - table-of-contents for archive libraries
+
+SSYYNNOOPPSSIISS
+     rraannlliibb [--tt] _f_i_l_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     RRaannlliibb creates a table of external references for archive libraries, nor-
+     mally used by the loader, ld(1).  This table is is named ``__.SYMDEF''
+     and is prepended to the archive.  Files in the archive which are not exe-
+     cutable and symbols which are uninteresting to the loader are ignored.
+
+     The options are as follows:
+
+     --tt      Set the modification time of the __.SYMDEF file.  This time is
+             compared by the loader with the modification time of the archive
+             to verify that the table is up-to-date with respect to the
+             archive.  If the modification time has been changed without any
+             change to the archive (for example, by a cp(1)),  the --tt option
+             can be used to ``touch'' the modification time so that it appears
+             that the table is up-to-date.  This is also useful after using
+             the --tt option of make(1).
+
+FFIILLEESS
+     /tmp/ranlib.XXXXXX  Temporary file names.
+
+SSEEEE AALLSSOO
+     ar(1),  ld(1),  lorder(1),  nm(1),  ranlib(5)
+
+HHIISSTTOORRYY
+     A rraannlliibb command appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

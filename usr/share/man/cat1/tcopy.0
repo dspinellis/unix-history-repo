@@ -1,0 +1,34 @@
+TCOPY(1)                     BSD Reference Manual                     TCOPY(1)
+
+NNAAMMEE
+     ttccooppyy - copy and/or verify mag tapes
+
+SSYYNNOOPPSSIISS
+     ttccooppyy [--ccvv] [--ss _m_a_x_b_l_k] [_s_r_c [_d_e_s_t]]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccooppyy is designed to copy magnetic tapes.  The only assumption made about
+     the tape is that there are two tape marks at the end.  TTccooppyy with only a
+     source tape (_r_m_t_0 by default) specified will print information about the
+     sizes of records and tape files.  If a destination is specified a copy
+     will be made of the source tape.  The blocking on the destination tape
+     will be identical to that used on the source tape.  Copying a tape will
+     yield the same output as if just printing the sizes.
+
+     Options:
+
+     --cc        Copy _s_r_c to _d_e_s_t and then verify that the two tapes are identi-
+               cal.
+
+     --ss _m_a_x_b_l_k
+               Specify a maximum block size, _m_a_x_b_l_k.
+
+     --vv        Given the two tapes, and _d_e_s_t verify that they are identical.
+
+SSEEEE AALLSSOO
+     mtio(4)
+
+HHIISSTTOORRYY
+     The ttccooppyy command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                1

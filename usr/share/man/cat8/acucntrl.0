@@ -1,0 +1,198 @@
+
+
+
+ACUCNTRL(8)        BSD System Manager's Manual        ACUCNTRL(8)
+
+
+NNAAMMEE
+       acucntrl - turn around tty line between dialin and dialout
+
+SSYYNNOOPPSSIISS
+       //uussrr//lliibb//uuuuccpp//aaccuuccnnttrrll keyword ttyline
+
+DDEESSCCRRIIPPTTIIOONN
+       _A_c_u_c_n_t_r_l turns around terminal line,  enabling  it  to  be
+       used  for  both  dialin and dialout.  On dialin a terminal
+       line is assumed to have  modem control enabled and a getty
+       process in existence waiting for logins.  On dialout modem
+       control is disabled and there is no getty process.
+
+       This program must be run setuid to root.
+
+       _k_e_y_w_o_r_d is chosen from the list: _d_i_s_a_b_l_e  or  _d_i_a_l_o_u_t,  to
+       condition  a  line  for  dialout; and _e_n_a_b_l_e or _d_i_a_l_i_n, to
+       condition a line for dialin.
+
+       When the line is conditioned for dialing  out,  the  login
+       name of the real uid of the process is placed in /etc/utmp
+       in capitals.  This declares that the line is  in  use  and
+       acts  as  an  additional locking mechanism.  _A_c_u_c_n_t_r_l will
+       refuse to act if the /etc/utmp entry for the line  is  not
+       null,  is  not  the  the user's login name (capitalized or
+       not), and if the process is not running as the  superuser.
+       The  last condition is to allow the superuser to clear the
+       state of the line.
+
+       Turning modem control on or off is handled by poking  into
+       /dev/kmem.   It  is  currently implemented for dz, dh, and
+       dmf lines.
+
+       Under 4.2 BSD the program will also refuse  to  disable  a
+       line  if  carrier  is  sensed on it.  This is to avoid the
+       dead period where someone has just dialed in and made  the
+       connection but has not yet logged in.
+
+       _T_t_y_l_i_n_e  can  be  either  of  the  form tty* or /dev/tty*.
+       Enabling/disabling a line whose name does not  begin  with
+       ttyd?  is prohibited unless the real uid of the process is
+       0 or if the login name corresponding to the  real  uid  is
+       uucp.  This is a security precaution.
+
+       Steps taken when disabling (_i._e.  setup for dialing out)
+
+       1)     check input arguments
+
+       2)     look  in /etc/utmp to check that the line is not in
+              use by another user
+
+
+
+
+4.3 Berkeley Distribution  June 6, 1993                         1
+
+
+
+
+
+
+
+
+ACUCNTRL(8)        BSD System Manager's Manual        ACUCNTRL(8)
+
+
+       3)     disable modem control on line
+
+       4)     check for carrier on device
+
+       5)     change owner of device to real uid
+
+       6)     edit /etc/ttys,  changing the  first  character  of
+              the appropriate line to 0
+
+       7)     send  a hangup to process 1 to poke init to disable
+              getty
+
+       8)     post uid name in capitals in /etc/utmp to let world
+              know device has been grabbed
+
+       9)     make sure that DTR is on
+
+       Steps taken when enabling (_i._e.  setup for dialin)
+
+       1)     check input arguments
+
+       2)     look  in /etc/utmp to check that the line is not in
+              use by another user
+
+       3)     make sure modem control on line is disabled
+
+       4)     turn off DTR to make sure line is hung up
+
+       5)     condition line: clear exclusive use and set  hangup
+              on close modes
+
+       6)     turn on modem control
+
+       7)     edit  /etc/ttys,   changing  the first character of
+              the appropriate line to 1
+
+       8)     send a hangup to process 1 to poke init  to  enable
+              getty
+
+       9)     clear uid name for /etc/utmp
+
+HHIISSTTOORRYY
+       First written by Allan Wilkes (fisher!allan)
+
+       Modified June 8,1983 by W.Sebok (astrovax!wls) to poke the
+       kernel rather than use a kernel hack to turn on/off  modem
+       control,  using a subroutine stolen from a program written
+       by Tsutomu Shimomura {astrovax,escher}!tsutomu
+
+       Worked over many times by W.Sebok (_i._e.  hacked to death)
+
+
+
+
+4.3 Berkeley Distribution  June 6, 1993                         2
+
+
+
+
+
+
+
+
+ACUCNTRL(8)        BSD System Manager's Manual        ACUCNTRL(8)
+
+
+FFIILLEESS
+       /dev/kmem, /vmunix, /etc/ttys, /etc/utmp, /dev/tty*
+
+BBUUGGSS
+       Sensing carrier requires the 4.2 BSD TIOCMGET ioctl  call.
+       Unfortunately this ioctl is not implemented in the vanilla
+       4.2 BSD dh driver even though the dz and dmf  drivers  use
+       an  emulation  of  the DH11's modem control bits. This has
+       been fixed here.
+
+       Some time (currently 2 seconds) is required  between  dis-
+       abling  modem  control  and  opening  the device.  This is
+       probably because of  a  race  with  getty  whose  open  is
+       finally being allowed to complete.  This time interval may
+       not be enough on a loaded system.  Because of this problem
+       and the above problem with the dh driver there is deliber-
+       ately no error  message  given  when  the  TIOCMGET  ioctl
+       fails.
+
+       Previously  there was similar synchronization problem with
+       the init process.  When dialins are disabled the  capital-
+       ized  name  of the process cannot be posted into /etc/utmp
+       until init has finished clearing /etc/utmp.   However  one
+       does  not  know  how long that will take, and, on a loaded
+       system,  it can take quite a while.  This  was  solved  by
+       the  strategy  of  1) posting the name, 2) poking init, 3)
+       going into a loop where the  process  repeatedly  waits  a
+       second  and checks whether the entry has been cleared from
+       /etc/utmp, and 4) posting the name again.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.3 Berkeley Distribution  June 6, 1993                         3
+
+
+
+
+

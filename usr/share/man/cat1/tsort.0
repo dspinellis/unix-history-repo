@@ -1,0 +1,34 @@
+TSORT(1)                     BSD Reference Manual                     TSORT(1)
+
+NNAAMMEE
+     ttssoorrtt - topological sort of a directed graph
+
+SSYYNNOOPPSSIISS
+     ttssoorrtt [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTssoorrtt takes a list of pairs of node names representing directed arcs in a
+     graph and prints the nodes in topological order on standard output.  In-
+     put is taken from the named _f_i_l_e, or from standard input if no file is
+     given.
+
+     Node names in the input are separated by white space and there must be an
+     even number of nodes.
+
+     Presence of a node in a graph can be represented by an arc from the node
+     to itself.  This is useful when a node is not connected to any other
+     nodes.
+
+     If the graph contains a cycle (and therefore cannot be properly sorted),
+     one of the arcs in the cycle is ignored and the sort continues.  Cycles
+     are reported on standard error.
+
+SSEEEE AALLSSOO
+     ar(1)
+
+HHIISSTTOORRYY
+     A ttssoorrtt command appeared in Version 7 AT&T UNIX.  This ttssoorrtt command and
+     manual page are derived from sources contributed to Berkeley by Michael
+     Rendell of Memorial University of Newfoundland.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,40 @@
+SPLIT(1)                     BSD Reference Manual                     SPLIT(1)
+
+NNAAMMEE
+     sspplliitt - split a file into pieces
+
+SSYYNNOOPPSSIISS
+     sspplliitt [--_n] [--bb _b_y_t_e_s] [_f_i_l_e [_n_a_m_e]]
+
+DDEESSCCRRIIPPTTIIOONN
+     The sspplliitt utility reads the given _f_i_l_e and splits it up in to smaller
+     files.
+
+     Available options:
+
+     --_l_i_n_e_s     Create files of length --_n lines long.
+
+     --bb _b_y_t_e_s   Create files of length _b_y_t_e_s. If no output file length is
+                specified, the file size will default to a lenght of 1000
+                lines.
+
+     Available operands:
+
+     --     Read from the standard input.
+
+     _f_i_l_e  A pathname specifying the _f_i_l_e to be split.  If no _f_i_l_e operand is
+           given, sspplliitt reads from the standard input.
+
+     _n_a_m_e  If the _n_a_m_e operand is given, the output files will begin with the
+           prefix _n_a_m_e and each sequential portion of the split file receives
+           a lexically ordered suffix in the range of [_a_a_-_z_z]. If the operand
+           _n_a_m_e is not specified, the default prefix of _x is be used.
+
+BBUUGGSS
+     If you provide _n_a_m_e, sspplliitt can only create 676 separate files.  The de-
+     fault naming convention allows 2028 separate files.
+
+HHIISSTTOORRYY
+     A sspplliitt command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

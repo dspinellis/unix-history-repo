@@ -1,0 +1,41 @@
+UULOG(1)                     BSD Reference Manual                     UULOG(1)
+
+NNAAMMEE
+     uuuulloogg - display UUCP log entries
+
+SSYYNNOOPPSSIISS
+     uuuulloogg [--ss _s_y_s] [--uu _u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The uuuulloogg program displays uucp(1) and uux(1) log entries from the file
+     _/_v_a_r_/_s_p_o_o_l_/_u_u_c_p_/_L_O_G_F_I_L_E.
+
+     Options supported by uuuulloogg:
+
+     --ss _s_y_s        Display all entries logged which include the system named
+                   _s_y_s.
+
+     --uu _u_s_e_r       Display only entries which include the user name _u_s_e_r.
+
+FFIILLEESS
+     /usr/spool/uucp/LOGFILE    Logfile of all uucp events.
+
+SSEEEE AALLSSOO
+     uucp(1),  uux(1).
+
+NNOOTTEESS
+     Very early releases of UUCP used separate log files for each of the UUCP
+     utilities; uuuulloogg was used to merge the individual logs into a master
+     file.  This capability has not been necessary for some time and is no
+     longer supported.
+
+BBUUGGSS
+     UUCP's recording of which user issued a request is unreliable.
+
+     The uuuulloogg program is little more than an overspecialized version of
+     grep(1).
+
+HHIISSTTOORRYY
+     A uuuulloogg command appeared in Version 32V AT&T UNIX.
+
+4.3 Berkeley Distribution        June 6, 1993                                1

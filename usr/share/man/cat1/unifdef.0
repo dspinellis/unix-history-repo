@@ -1,0 +1,72 @@
+UNIFDEF(1)                   BSD Reference Manual                   UNIFDEF(1)
+
+NNAAMMEE
+     uunniiffddeeff - remove ifdef'ed lines
+
+SSYYNNOOPPSSIISS
+     uunniiffddeeff [--tt --ll --cc --DD_s_y_m --UU_s_y_m --iiDD_s_y_m --iiDD_s_y_m] _._._. [_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUnniiffddeeff is useful for removing ifdef'ed lines from a file while otherwise
+     leaving the file alone.  UUnniiffddeeff acts on #ifdef, #ifndef, #else, and #en-
+     dif lines, and it knows only enough about C to know when one of these is
+     inactive because it is inside a comment, or a single or double quote.
+     Parsing for quotes is very simplistic: when it finds an open quote, it
+     ignores everything (except escaped quotes) until it finds a close quote,
+     and it will not complain if it gets to the end of a line and finds no
+     backslash for continuation.
+
+     Available options:
+     --DD_s_y_m
+     --UU_s_y_m   Specify which symbols to define or undefine.  and the lines in-
+             side those ifdefs will be copied to the output or removed as ap-
+             propriate.  The ifdef, ifndef, else, and endif lines associated
+             with _s_y_m will also be removed.  Ifdefs involving symbols you
+             don't specify and ``#if'' control lines are untouched and copied
+             out along with their associated ifdef, else, and endif lines.  If
+             an ifdef X occurs nested inside another ifdef X, then the inside
+             ifdef is treated as if it were an unrecognized symbol.  If the
+             same symbol appears in more than one argument, the last occur-
+             rence dominates.
+
+     --cc      If the --cc flag is specified, then the operation of uunniiffddeeff is
+             complemented, i.e. the lines that would have been removed or
+             blanked are retained and vice versa.
+
+     --ll      Replace removed lines with blank lines instead of deleting them.
+     --tt      Disables parsing for C comments and quotes useful for plain text
+             (not C code).
+
+     --iiDD_s_y_m
+     --iiUU_s_y_m  Ignore ifdefs.  If your C code uses ifdefs to delimit non-C
+             lines, such as comments or code which is under construction, then
+             you must tell uunniiffddeeff which symbols are used for that purpose so
+             that it won't try to parse for quotes and comments inside those
+             ifdefs.  One specifies ignored ifdefs with --iiDD_s_y_m and --iiUU_s_y_m sim-
+             ilar to --DD_s_y_m and --UU_s_y_m above.
+
+     UUnniiffddeeff copies its output to _s_t_d_o_u_t and will take its input from _s_t_d_i_n if
+     no _f_i_l_e argument is given.
+
+     UUnniiffddeeff works nicely with the --DD_s_y_m option added to diff(1) as of the 4.1
+     Berkeley Software Distribution.
+
+SSEEEE AALLSSOO
+     diff(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     Inappropriate else or endif.
+     Premature EOF with line numbers of the unterminated #ifdefs.
+
+     Exit status is 0 if output is exact copy of input, 1 if not, 2 if trou-
+     ble.
+
+BBUUGGSS
+     Should try to deal with ``#if'' lines.
+
+     Doesn't work correctly if input contains null characters.
+
+HHIISSTTOORRYY
+     The uunniiffddeeff command appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                2

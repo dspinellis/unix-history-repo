@@ -1,0 +1,47 @@
+UNAME(1)                     BSD Reference Manual                     UNAME(1)
+
+NNAAMMEE
+     uunnaammee - display information about the system
+
+SSYYNNOOPPSSIISS
+     uunnaammee [--aammnnrrssvv]
+
+DDEESSCCRRIIPPTTIIOONN
+     The uunnaammee command writes the name of the operating system to the standard
+     output.  When options are specified, strings representing one or more
+     system characteristics are written to the standard output.
+
+     The options are as follows:
+
+     --aa      Behave as though the options --mm, --nn, --rr, --ss, and --vv were speci-
+             fied.
+
+     --mm      Write the type of the current hardware platform to standard out-
+             put.
+
+     --nn      Write the name of the system to standard output.
+
+     --rr      Write the current release level of the operating system to stan-
+             dard output.
+
+     --ss      Write the type of the operating system to standard output.
+
+     --vv      Write the version level of this release of the operating system
+             to standard output.
+
+     If the --aa flag is specified, or multiple flags are specified, all output
+     is written on a single line, separated by spaces.
+
+     The uunnaammee utility exits 0 on success, and >0 if an error occurs.
+
+SSEEEE AALLSSOO
+     sysctl(1),  sysctl(2)
+
+HHIISSTTOORRYY
+     The uunnaammee command appeared in 4.4BSD.
+
+SSTTAANNDDAARRDDSS
+     The llss function is expected to conform to the IEEE Std1003.2 (``POSIX'')
+     specification.
+
+4.4BSD                           June 6, 1993                                1

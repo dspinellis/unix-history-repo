@@ -1,0 +1,23 @@
+UUNAME(1)                    BSD Reference Manual                    UUNAME(1)
+
+NNAAMMEE
+     uuuunnaammee - list names of UUCP hosts
+
+SSYYNNOOPPSSIISS
+     uuuunnaammee [--ll]
+
+DDEESSCCRRIIPPTTIIOONN
+     UUuunnaammee lists the UUCP names of known systems.
+
+     Available option:
+
+     --ll      Return the local system name; this may differ from the host-
+             name(1) for the system if the hostname is very long.
+
+SSEEEE AALLSSOO
+     uucp(1),  uux(1).
+
+HHIISSTTOORRYY
+     The uuuunnaammee command appeared in 4.0BSD.
+
+4.3 Berkeley Distribution        June 6, 1993                                1
