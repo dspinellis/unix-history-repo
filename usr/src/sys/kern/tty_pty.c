@@ -1,9 +1,13 @@
-/*	tty_pty.c	4.3	%G%	*/
+/*	tty_pty.c	4.4	%G%	*/
 
 /*
  * Pseudo-teletype Driver
  * (Actually two drivers, requiring two entries in 'cdevsw')
  */
+#include "pty.h"
+
+#if WANTPTY > 0
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/tty.h"
@@ -11,9 +15,6 @@
 #include "../h/user.h"
 #include "../h/conf.h"
 #include "../h/buf.h"
-#include "../pty.h"
-
-#if WANTPTY > 0
 
 #define NPTY 16                 /* Number of pseudo-teletypes */
 #define BUFSIZ 100              /* Chunk size iomoved from user */
