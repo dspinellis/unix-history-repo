@@ -1,4 +1,4 @@
-/*	autoconf.c	1.6	86/07/16	*/
+/*	autoconf.c	1.7	86/11/25	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -387,12 +387,8 @@ setroot()
 		for (vbap = vbdinit; vbap->ui_driver; vbap++)
 			if (vbap->ui_alive && vbap->ui_slave == unit &&
 			   vbap->ui_vbanum == adaptor &&
-#ifdef notdef
 			   vbap->ui_driver->ud_dname[0] == devname[majdev][0] &&
 			   vbap->ui_driver->ud_dname[1] == devname[majdev][1])
-#else
-			   1)	/* can't match names 'cuz of driver bogosity */
-#endif
 				break;
 		if (vbap->ui_driver == 0)
 			return;
