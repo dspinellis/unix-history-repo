@@ -63,7 +63,8 @@ double x;
 		big+a;
 		return x;
 	}
-	return x+x*sin__S(x*x);
+	a = x*x;
+	return x+x*sin__S(a);
 }
 
 double
@@ -83,7 +84,8 @@ double x;
 		}
 		else {			/* ... in [PI/4,3PI/4] */
 			a = PIo2-a;
-			return a+a*sin__S(a*a);	/* rtn. S(PI/2-|x|) */ 
+			c = a*a;
+			return a+a*sin__S(c);	/* rtn. S(PI/2-|x|) */ 
 		}
 	}
 	if (a < small) {

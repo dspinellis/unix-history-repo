@@ -29,19 +29,10 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00068
- * --------------------         -----   ----------------------
- *
- * 17 Dec 1992	Karl Lehenbauer 	Removed defines for rint() to
- *					add it's use in 386BSD.
  */
-  static char rcsid[] = "$Header: /usr/bill/working/sys/kern/RCS/tty_pty.c,v 1.3 92/01/21 21:31:23 william Exp $";
 
 #ifndef lint
-static char sccsid[] = "@(#)floor.c	5.7 (Berkeley) 10/9/90";
+static char sccsid[] = "@(#)floor.c	5.8 (Berkeley) 10/1/92";
 #endif /* not lint */
 
 #include "mathimpl.h"
@@ -54,10 +45,6 @@ ic(L, 4503599627370496.0E0, 52, 1.0)			  /* 2**52 */
 #define	L	vccast(L)
 #endif
 
-
-double ceil();
-double floor();
-
 /*
  * floor(x) := the largest integer no larger than x;
  * ceil(x) := -floor(-x), for all real x.
@@ -69,7 +56,7 @@ double
 floor(x)
 double x;
 {
-	double y;
+	volatile double y;
 
 	if (
 #if !defined(vax)&&!defined(tahoe)
@@ -90,7 +77,7 @@ double
 ceil(x)
 double x;
 {
-	double y;
+	volatile double y;
 
 	if (
 #if !defined(vax)&&!defined(tahoe)
@@ -107,6 +94,7 @@ double x;
 	}
 }
 
+#ifndef ns32000			/* rint() is in ./NATIONAL/support.s */
 /*
  * algorithm for rint(x) in pseudo-pascal form ...
  *
@@ -132,7 +120,8 @@ double
 rint(x)
 double x;
 {
-	double s,t;
+	double s;
+	volatile double t;
 	const double one = 1.0;
 
 #if !defined(vax)&&!defined(tahoe)
@@ -145,3 +134,4 @@ double x;
 	t = x + s;				/* x+s rounded to integer */
 	return (t - s);
 }
+#endif	/* not national */

@@ -32,7 +32,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	5.7 (Berkeley) 10/9/90";
+static char sccsid[] = "@(#)pow.c	5.9 (Berkeley) 12/16/92";
 #endif /* not lint */
 
 /* POW(X,Y)  
@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)pow.c	5.7 (Berkeley) 10/9/90";
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/8/85; 
  * REVISED BY K.C. NG on 7/10/85.
- *
+ * KERNEL pow_P() REPLACED BY P. McILROY 7/22/92.
  * Required system supported functions:
  *      scalb(x,n)      
  *      logb(x)         
@@ -49,9 +49,8 @@ static char sccsid[] = "@(#)pow.c	5.7 (Berkeley) 10/9/90";
  *	drem(x,y)
  *
  * Required kernel functions:
- *	exp__E(a,c)	...return  exp(a+c) - 1 - a*a/2
- *	log__L(x)	...return  (log(1+x) - 2s)/s, s=x/(2+x) 
- *	pow_p(x,y)	...return  +(anything)**(finite non zero)
+ *	exp__D(a,c)			exp(a + c) for |a| << |c|
+ *	struct d_double dlog(x)		r.a + r.b, |r.b| < |r.a|
  *
  * Method
  *	1. Compute and return log(x) in three pieces:
@@ -69,10 +68,12 @@ static char sccsid[] = "@(#)pow.c	5.7 (Berkeley) 10/9/90";
  *	(anything) ** 1  is itself;
  *	(anything) ** NaN is NaN;
  *	NaN ** (anything except 0) is NaN;
- *	+-(anything > 1) ** +INF is +INF;
+ *	+(anything > 1) ** +INF is +INF;
+ *	-(anything > 1) ** +INF is NaN;
  *	+-(anything > 1) ** -INF is +0;
  *	+-(anything < 1) ** +INF is +0;
- *	+-(anything < 1) ** -INF is +INF;
+ *	+(anything < 1) ** -INF is +INF;
+ *	-(anything < 1) ** -INF is NaN;
  *	+-1 ** +-INF is NaN and signal INVALID;
  *	+0 ** +(anything except 0, NaN)  is +0;
  *	-0 ** +(anything except 0, NaN, odd integer)  is +0;
@@ -104,154 +105,97 @@ static char sccsid[] = "@(#)pow.c	5.7 (Berkeley) 10/9/90";
  */
 
 #include <errno.h>
-#include <limits.h>
+#include <math.h>
+
 #include "mathimpl.h"
 
-vc(ln2hi,  6.9314718055829871446E-1  ,7217,4031,0000,f7d0,   0, .B17217F7D00000)
-vc(ln2lo,  1.6465949582897081279E-12 ,bcd5,2ce7,d9cc,e4f1, -39, .E7BCD5E4F1D9CC)
-vc(invln2, 1.4426950408889634148E0   ,aa3b,40b8,17f1,295c,   1, .B8AA3B295C17F1)
-vc(sqrt2,  1.4142135623730950622E0   ,04f3,40b5,de65,33f9,   1, .B504F333F9DE65)
+#if (defined(vax) || defined(tahoe))
+#define TRUNC(x)	x = (double) (float) x
+#define _IEEE		0
+#else
+#define _IEEE		1
+#define endian		(((*(int *) &one)) ? 1 : 0)
+#define TRUNC(x) 	*(((int *) &x)+endian) &= 0xf8000000
+#define infnan(x)	0.0
+#endif		/* vax or tahoe */
 
-ic(ln2hi,  6.9314718036912381649E-1,   -1, 1.62E42FEE00000)
-ic(ln2lo,  1.9082149292705877000E-10, -33, 1.A39EF35793C76)
-ic(invln2, 1.4426950408889633870E0,     0, 1.71547652B82FE)
-ic(sqrt2,  1.4142135623730951455E0,     0, 1.6A09E667F3BCD)
+const static double zero=0.0, one=1.0, two=2.0, negone= -1.0;
 
-#ifdef vccast
-#define	ln2hi	vccast(ln2hi)
-#define	ln2lo	vccast(ln2lo)
-#define	invln2	vccast(invln2)
-#define	sqrt2	vccast(sqrt2)
-#endif
-
-const static double zero=0.0, half=1.0/2.0, one=1.0, two=2.0, negone= -1.0;
-
-static double pow_p(double, double);
+static double pow_P __P((double, double));
 
 double pow(x,y)  	
 double x,y;
 {
 	double t;
-
-	if     (y==zero)      return(one);
-	else if(y==one
-#if !defined(vax)&&!defined(tahoe)
-		||x!=x
-#endif	/* !defined(vax)&&!defined(tahoe) */
-		) return( x );      /* if x is NaN or y=1 */
-#if !defined(vax)&&!defined(tahoe)
-	else if(y!=y)         return( y );      /* if y is NaN */
-#endif	/* !defined(vax)&&!defined(tahoe) */
-	else if(!finite(y))                     /* if y is INF */
-	     if((t=copysign(x,one))==one) return(zero/zero);
-	     else if(t>one) return((y>zero)?y:zero);
-	     else return((y<zero)?-y:zero);
-	else if(y==two)       return(x*x);
-	else if(y==negone)    return(one/x);
-
-    /* sign(x) = 1 */
-	else if(copysign(one,x)==one) return(pow_p(x,y));
+	if (y==zero)
+		return (one);
+	else if (y==one || (_IEEE && x != x))
+		return (x);		/* if x is NaN or y=1 */
+	else if (_IEEE && y!=y)		/* if y is NaN */
+		return (y);
+	else if (!finite(y))		/* if y is INF */
+		if ((t=fabs(x))==one)	/* +-1 ** +-INF is NaN */
+			return (y - y);
+		else if (t>one)
+			return ((y<0)? zero : ((x<zero)? y-y : y));
+		else
+			return ((y>0)? zero : ((x<0)? y-y : -y));
+	else if (y==two)
+		return (x*x);
+	else if (y==negone)
+		return (one/x);
+    /* x > 0, x == +0 */
+	else if (copysign(one, x) == one)
+		return (pow_P(x, y));
 
     /* sign(x)= -1 */
 	/* if y is an even integer */
-	else if ( (t=drem(y,two)) == zero)	return( pow_p(-x,y) );
+	else if ( (t=drem(y,two)) == zero)
+		return (pow_P(-x, y));
 
 	/* if y is an odd integer */
-	else if (copysign(t,one) == one) return( -pow_p(-x,y) );
+	else if (copysign(t,one) == one)
+		return (-pow_P(-x, y));
 
 	/* Henceforth y is not an integer */
-	else if(x==zero)	/* x is -0 */
-	    return((y>zero)?-x:one/(-x));
-	else {			/* return NaN */
-#if defined(vax)||defined(tahoe)
-	    return (infnan(EDOM));	/* NaN */
-#else	/* defined(vax)||defined(tahoe) */
-	    return(zero/zero);
-#endif	/* defined(vax)||defined(tahoe) */
-	}
+	else if (x==zero)	/* x is -0 */
+		return ((y>zero)? -x : one/(-x));
+	else if (_IEEE)
+		return (zero/zero);
+	else
+		return (infnan(EDOM));
 }
-
-#ifndef mc68881
-/* pow_p(x,y) return x**y for x with sign=1 and finite y */
-static double pow_p(x,y)       
-double x,y;
+/* kernel function for x >= 0 */
+static double
+#ifdef _ANSI_SOURCE
+pow_P(double x, double y)
+#else
+pow_P(x, y) double x, y;
+#endif
 {
-        double c,s,t,z,tx,ty;
-	volatile double errtmp;
-#ifdef tahoe
-	double tahoe_tmp;
-#endif	/* tahoe */
-        float sx,sy;
-	long k=0;
-        int n,m;
+	struct Double s, t, log__D();
+	double  exp__D(), huge = 1e300, tiny = 1e-300;
 
-	if(x==zero||!finite(x)) {           /* if x is +INF or +0 */
-#if defined(vax)||defined(tahoe)
-	     return((y>zero)?x:infnan(ERANGE));	/* if y<zero, return +INF */
-#else	/* defined(vax)||defined(tahoe) */
-	     return((y>zero)?x:one/x);
-#endif	/* defined(vax)||defined(tahoe) */
-	}
-	if(x==1.0) return(x);	/* if x=1.0, return 1 since y is finite */
+	if (x == 1)
+		return (one);
+	if (y >= 7e18)		/* infinity */
+		if (x < 1)
+			return(tiny*tiny);
+		else if (_IEEE)
+			return (huge*huge);
+		else
+			return (infnan(ERANGE));
 
-    /* reduce x to z in [sqrt(1/2)-1, sqrt(2)-1] */
-        z=scalb(x,-(n=logb(x)));  
-#if !defined(vax)&&!defined(tahoe)	/* IEEE double; subnormal number */
-        if(n <= -1022) {n += (m=logb(z)); z=scalb(z,-m);} 
-#endif	/* !defined(vax)&&!defined(tahoe) */
-        if(z >= sqrt2 ) {n += 1; z *= half;}  z -= one ;
+	/* Return exp(y*log(x)), using simulated extended */
+	/* precision for the log and the multiply.	  */
 
-    /* log(x) = nlog2+log(1+z) ~ nlog2 + t + tx */
-	s=z/(two+z); c=z*z*half; tx=s*(c+log__L(s*s)); 
-	t= z-(c-tx); tx += (z-t)-c;
-
-   /* if y*log(x) is neither too big nor too small */
-	if((s=logb(y)+logb(n+t)) < 12.0) 
-	    if(s>-60.0) {
-
-	/* compute y*log(x) ~ mlog2 + t + c */
-        	s=y*(n+invln2*t);
-                m=s+copysign(half,s);   /* m := nint(y*log(x)) */ 
-
-	   /*
-	    * The case where y is an integer can be handled faster.
-	    * Be careful to avoid overflow while checking if it is an integer.
-	    * XXX - this is probably still wrong - can (long)y*n overflow?
-	    */
-		if(y >= (double)LONG_MIN && y <= (double)LONG_MAX
-		   && (double)(long)y==y) {	/* y is an integer */
-		    k = m-(long)y*n;
-		    sx=t; tx+=(t-sx); }
-		else	{		/* if y is not an integer */    
-		    k =m;
-	 	    tx+=n*ln2lo;
-		    sx=(c=n*ln2hi)+t; tx+=(c-sx)+t; }
-
-                sy=y; ty=y-sy;          /* y ~ sy + ty */
-#ifdef tahoe
-		s = (tahoe_tmp = sx)*sy-k*ln2hi;
-#else	/* tahoe */
-		s=(double)sx*sy-k*ln2hi;        /* (sy+ty)*(sx+tx)-kln2 */
-#endif	/* tahoe */
-		z=(tx*ty-k*ln2lo);
-		tx=tx*sy; ty=sx*ty;
-		t=ty+z; t+=tx; t+=s;
-		c= -((((t-s)-tx)-ty)-z);
-
-	    /* return exp(y*log(x)) */
-		t += exp__E(t,c); return(scalb(one+t,m));
-	     }
-	/* end of if log(y*log(x)) > -60.0 */
-	    
-	    else
-		/* exp(+- tiny) = 1 with inexact flag */
-			{errtmp=ln2hi+ln2lo; return(one);}
-	    else if(copysign(one,y)*(n+invln2*t) <zero)
-		/* exp(-(big#)) underflows to zero */
-	        	return(scalb(one,-5000)); 
-	    else
-	        /* exp(+(big#)) overflows to INF */
-	    		return(scalb(one, 5000)); 
-
+	s = log__D(x);
+	t.a = y;
+	TRUNC(t.a);
+	t.b = y - t.a;
+	t.b = s.b*y + t.b*s.a;
+	t.a *= s.a;
+	s.a = t.a + t.b;
+	s.b = (t.a - s.a) + t.b;
+	return (exp__D(s.a, s.b));
 }
-#endif /* mc68881 */
