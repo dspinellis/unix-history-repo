@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.24.1.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -613,7 +613,8 @@ recvrequest(cmd, local, remote, mode)
 	FILE *fout, *din = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)(); 
 	int abortrecv(), oldverbose, oldtype = 0, is_retr, tcrflag, nfnd;
-	char *buf, *bufp, *gunique(), msg;
+	char *bufp, *gunique(), msg;
+	static char *buf;
 	static int bufsize;
 	long bytes = 0, hashbytes = HASHBYTES;
 	struct fd_set mask;
@@ -776,6 +777,7 @@ recvrequest(cmd, local, remote, mode)
 		if (buf == NULL) {
 			perror("malloc");
 			bufsize = 0;
+			bufsize = 0;
 			goto abort;
 		}
 		bufsize = st.st_blksize;
@@ -787,7 +789,7 @@ recvrequest(cmd, local, remote, mode)
 	case TYPE_L:
 		errno = d = 0;
 		while ((c = read(fileno(din), buf, bufsize)) > 0) {
-			if ((d = write(fileno(fout), bufp, c)) != c)
+			if ((d = write(fileno(fout), buf, c)) != c)
 				break;
 			bytes += c;
 			if (hash) {
