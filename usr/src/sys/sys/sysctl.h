@@ -62,7 +62,8 @@ struct ctlname {
 #define	CTL_DEBUG	5		/* debugging parameters */
 #define	CTL_HW		6		/* generic cpu/io */
 #define	CTL_MACHDEP	7		/* machine dependent */
-#define	CTL_MAXID	8		/* number of valid top-level ids */
+#define	CTL_USER	8		/* user-level */
+#define	CTL_MAXID	9		/* number of valid top-level ids */
 
 #define CTL_NAMES { \
 	{ 0, 0 }, \
@@ -73,29 +74,42 @@ struct ctlname {
 	{ "debug", CTLTYPE_NODE }, \
 	{ "hw", CTLTYPE_NODE }, \
 	{ "machdep", CTLTYPE_NODE }, \
+	{ "user", CTLTYPE_NODE }, \
 }
 
 /*
  * CTL_KERN identifiers
  */
-#define	KERN_OSTYPE	 1		/* string: system version */
-#define	KERN_OSRELEASE	 2		/* string: system release */
-#define	KERN_OSREV	 3		/* int: system revision */
-#define	KERN_VERSION	 4		/* string: compile time info */
-#define	KERN_MAXVNODES	 5		/* int: max vnodes */
-#define	KERN_MAXPROC	 6		/* int: max simultaneous processes */
-#define	KERN_MAXFILES	 7		/* int: max open files */
-#define	KERN_ARGMAX	 8		/* int: max arguments to exec */
-#define	KERN_SECURELVL	 9		/* int: system security level */
-#define	KERN_HOSTNAME	10		/* string: hostname */
-#define	KERN_HOSTID	11		/* int: host identifier */
-#define	KERN_CLOCKRATE	12		/* struct: struct clockrate */
-#define	KERN_VNODE	13		/* struct: vnode structures */
-#define	KERN_PROC	14		/* struct: process entries */
-#define	KERN_FILE	15		/* struct: file entries */
-#define	KERN_PROF	16		/* node: kernel profiling info */
-#define	KERN_POSIX1	17		/* int: POSIX.1 version */
-#define	KERN_MAXID	18		/* number of valid kern ids */
+#define	KERN_OSTYPE	 	 1	/* string: system version */
+#define	KERN_OSRELEASE	 	 2	/* string: system release */
+#define	KERN_OSREV	 	 3	/* int: system revision */
+#define	KERN_VERSION	 	 4	/* string: compile time info */
+#define	KERN_MAXVNODES	 	 5	/* int: max vnodes */
+#define	KERN_MAXPROC	 	 6	/* int: max simultaneous processes */
+#define	KERN_MAXFILES	 	 7	/* int: max open files */
+#define	KERN_ARGMAX	 	 8	/* int: max arguments to exec */
+#define	KERN_SECURELVL	 	 9	/* int: system security level */
+#define	KERN_HOSTNAME		10	/* string: hostname */
+#define	KERN_HOSTID		11	/* int: host identifier */
+#define	KERN_CLOCKRATE		12	/* struct: struct clockrate */
+#define	KERN_VNODE		13	/* struct: vnode structures */
+#define	KERN_PROC		14	/* struct: process entries */
+#define	KERN_FILE		15	/* struct: file entries */
+#define	KERN_PROF		16	/* node: kernel profiling info */
+#define	KERN_POSIX1		17	/* int: POSIX.1 version */
+#define	KERN_NGROUPS		18	/* int: # of supplemental group ids */
+#define	KERN_JOB_CONTROL	19	/* int: is job control available */
+#define	KERN_SAVED_IDS		20	/* int: saved set-user/group-ID */
+#define	KERN_LINK_MAX		21	/* int: max file link count */
+#define	KERN_MAX_CANON		22	/* int: max bytes in term canon input */
+#define	KERN_MAX_INPUT		23	/* int: max bytes in term input */
+#define	KERN_NAME_MAX		24	/* int: max bytes in file name */
+#define	KERN_PATH_MAX		25	/* int: max bytes in pathname */
+#define	KERN_PIPE_BUF		26	/* int: max bytes for atomic pipe  */
+#define	KERN_CHOWN_RESTRICTED	27	/* int: chown requires privilege */
+#define	KERN_NO_TRUNC		28	/* int: no path truncation */
+#define	KERN_VDISABLE		29	/* int: terminal character disable */
+#define	KERN_MAXID		30	/* number of valid kern ids */
 
 #define CTL_KERN_NAMES { \
 	{ 0, 0 }, \
@@ -116,6 +130,18 @@ struct ctlname {
 	{ "file", CTLTYPE_STRUCT }, \
 	{ "profiling", CTLTYPE_NODE }, \
 	{ "posix1version", CTLTYPE_INT }, \
+	{ "ngroups", CTLTYPE_INT }, \
+	{ "job_control", CTLTYPE_INT }, \
+	{ "saved_ids", CTLTYPE_INT }, \
+	{ "link_max", CTLTYPE_INT }, \
+	{ "max_canon", CTLTYPE_INT }, \
+	{ "max_input", CTLTYPE_INT }, \
+	{ "name_max", CTLTYPE_INT }, \
+	{ "path_max", CTLTYPE_INT }, \
+	{ "pipe_buf", CTLTYPE_INT }, \
+	{ "chown_restricted", CTLTYPE_INT }, \
+	{ "no_trunc", CTLTYPE_INT }, \
+	{ "vdisable", CTLTYPE_INT }, \
 }
 
 /* 
@@ -194,6 +220,51 @@ struct kinfo_proc {
 	{ "pagesize", CTLTYPE_INT }, \
 	{ "disknames", CTLTYPE_STRUCT }, \
 	{ "diskstats", CTLTYPE_STRUCT }, \
+}
+
+/*
+ * CTL_USER definitions
+ */
+#define	USER_CS_PATH		 1	/* string: _CS_PATH */
+#define	USER_BC_BASE_MAX	 2	/* int: BC_BASE_MAX */
+#define	USER_BC_DIM_MAX		 3	/* int: BC_DIM_MAX */
+#define	USER_BC_SCALE_MAX	 4	/* int: BC_SCALE_MAX */
+#define	USER_BC_STRING_MAX	 5	/* int: BC_STRING_MAX */
+#define	USER_COLL_WEIGHTS_MAX	 6	/* int: COLL_WEIGHTS_MAX */
+#define	USER_EXPR_NEST_MAX	 7	/* int: EXPR_NEST_MAX */
+#define	USER_LINE_MAX		 8	/* int: LINE_MAX */
+#define	USER_RE_DUP_MAX		 9	/* int: RE_DUP_MAX */
+#define	USER_POSIX2_VERSION	10	/* int: POSIX2_VERSION */
+#define	USER_POSIX2_C_BIND	11	/* int: POSIX2_C_BIND */
+#define	USER_POSIX2_C_DEV	12	/* int: POSIX2_C_DEV */
+#define	USER_POSIX2_CHAR_TERM	13	/* int: POSIX2_CHAR_TERM */
+#define	USER_POSIX2_FORT_DEV	14	/* int: POSIX2_FORT_DEV */
+#define	USER_POSIX2_FORT_RUN	15	/* int: POSIX2_FORT_RUN */
+#define	USER_POSIX2_LOCALEDEF	16	/* int: POSIX2_LOCALEDEF */
+#define	USER_POSIX2_SW_DEV	17	/* int: POSIX2_SW_DEV */
+#define	USER_POSIX2_UPE		18	/* int: POSIX2_UPE */
+#define	USER_MAXID		19	/* number of valid user ids */
+
+#define	CTL_USER_NAMES { \
+	{ 0, 0 }, \
+	{ "cs_path", CTLTYPE_STRING }, \
+	{ "bc_base_max", CTLTYPE_INT }, \
+	{ "bc_dim_max", CTLTYPE_INT }, \
+	{ "bc_scale_max", CTLTYPE_INT }, \
+	{ "bc_string_max", CTLTYPE_INT }, \
+	{ "coll_weights_max", CTLTYPE_INT }, \
+	{ "expr_nest_max", CTLTYPE_INT }, \
+	{ "line_max", CTLTYPE_INT }, \
+	{ "re_dup_max", CTLTYPE_INT }, \
+	{ "posix2_version", CTLTYPE_INT }, \
+	{ "posix2_c_bind", CTLTYPE_INT }, \
+	{ "posix2_c_dev", CTLTYPE_INT }, \
+	{ "posix2_char_term", CTLTYPE_INT }, \
+	{ "posix2_fort_dev", CTLTYPE_INT }, \
+	{ "posix2_fort_run", CTLTYPE_INT }, \
+	{ "posix2_localedef", CTLTYPE_INT }, \
+	{ "posix2_sw_dev", CTLTYPE_INT }, \
+	{ "posix2_upe", CTLTYPE_INT }, \
 }
 
 /*

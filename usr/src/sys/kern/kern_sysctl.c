@@ -55,7 +55,8 @@ struct sysctl_args {
 	size_t	newlen;
 };
 
-sysctl(p, uap, retval)
+int
+__sysctl(p, uap, retval)
 	struct proc *p;
 	register struct sysctl_args *uap;
 	int *retval;
@@ -178,24 +179,14 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (sysctl_rdint(oldp, oldlenp, newp, BSD));
 	case KERN_VERSION:
 		return (sysctl_rdstring(oldp, oldlenp, newp, version));
-	case KERN_POSIX1:
-		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VERSION));
+	case KERN_MAXVNODES:
+		return(sysctl_int(oldp, oldlenp, newp, newlen, &desiredvnodes));
 	case KERN_MAXPROC:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxproc));
 	case KERN_MAXFILES:
 		return (sysctl_int(oldp, oldlenp, newp, newlen, &maxfiles));
-	case KERN_MAXVNODES:
-		return(sysctl_int(oldp, oldlenp, newp, newlen, &desiredvnodes));
 	case KERN_ARGMAX:
 		return (sysctl_rdint(oldp, oldlenp, newp, ARG_MAX));
-	case KERN_HOSTNAME:
-		error = sysctl_string(oldp, oldlenp, newp, newlen,
-		    hostname, sizeof(hostname));
-		if (!error)
-			hostnamelen = newlen;
-		return (error);
-	case KERN_HOSTID:
-		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostid));
 	case KERN_SECURELVL:
 		level = securelevel;
 		if ((error = sysctl_int(oldp, oldlenp, newp, newlen, &level)) ||
@@ -205,19 +196,57 @@ kern_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 			return (EPERM);
 		securelevel = level;
 		return (0);
+	case KERN_HOSTNAME:
+		error = sysctl_string(oldp, oldlenp, newp, newlen,
+		    hostname, sizeof(hostname));
+		if (!error)
+			hostnamelen = newlen;
+		return (error);
+	case KERN_HOSTID:
+		return (sysctl_int(oldp, oldlenp, newp, newlen, &hostid));
 	case KERN_CLOCKRATE:
 		return (sysctl_clockrate(oldp, oldlenp));
-	case KERN_FILE:
-		return (sysctl_file(oldp, oldlenp));
 	case KERN_VNODE:
 		return (sysctl_vnode(oldp, oldlenp));
 	case KERN_PROC:
 		return (sysctl_doproc(name + 1, namelen - 1, oldp, oldlenp));
+	case KERN_FILE:
+		return (sysctl_file(oldp, oldlenp));
 #ifdef GPROF
 	case KERN_PROF:
 		return (sysctl_doprof(name + 1, namelen - 1, oldp, oldlenp,
 		    newp, newlen));
 #endif
+	case KERN_POSIX1:
+		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VERSION));
+	case KERN_NGROUPS:
+		return (sysctl_rdint(oldp, oldlenp, newp, NGROUPS_MAX));
+	case KERN_JOB_CONTROL:
+		return (sysctl_rdint(oldp, oldlenp, newp, 1));
+	case KERN_SAVED_IDS:
+#ifdef _POSIX_SAVED_IDS
+		return (sysctl_rdint(oldp, oldlenp, newp, 1));
+#else
+		return (sysctl_rdint(oldp, oldlenp, newp, 0));
+#endif
+	case KERN_LINK_MAX:
+		return (sysctl_rdint(oldp, oldlenp, newp, LINK_MAX));
+	case KERN_MAX_CANON:
+		return (sysctl_rdint(oldp, oldlenp, newp, MAX_CANON));
+	case KERN_MAX_INPUT:
+		return (sysctl_rdint(oldp, oldlenp, newp, MAX_INPUT));
+	case KERN_NAME_MAX:
+		return (sysctl_rdint(oldp, oldlenp, newp, NAME_MAX));
+	case KERN_PATH_MAX:
+		return (sysctl_rdint(oldp, oldlenp, newp, PATH_MAX));
+	case KERN_PIPE_BUF:
+		return (sysctl_rdint(oldp, oldlenp, newp, PIPE_BUF));
+	case KERN_CHOWN_RESTRICTED:
+		return (sysctl_rdint(oldp, oldlenp, newp, 1));
+	case KERN_NO_TRUNC:
+		return (sysctl_rdint(oldp, oldlenp, newp, 0));
+	case KERN_VDISABLE:
+		return (sysctl_rdint(oldp, oldlenp, newp, _POSIX_VDISABLE));
 	default:
 		return (EOPNOTSUPP);
 	}
