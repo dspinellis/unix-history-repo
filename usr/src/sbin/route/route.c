@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -232,7 +232,7 @@ netname(sa)
 	static char line[50];
 	struct netent *np = 0;
 	u_long net, mask;
-	register i;
+	register u_long i;
 	int subnetshift;
 
 	switch (sa->sa_family) {
@@ -241,7 +241,7 @@ netname(sa)
 	    {	struct in_addr in;
 		in = ((struct sockaddr_in *)sa)->sin_addr;
 
-		in.s_addr = ntohl(in.s_addr);
+		i = in.s_addr = ntohl(in.s_addr);
 		if (in.s_addr == 0)
 			cp = "default";
 		else if (!nflag) {
