@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.17 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -155,8 +155,8 @@ fts_load(sp, p)
 	}
 	p->fts_accpath = p->fts_path = sp->fts_path;
 
-	sp->rdev = p->fts_statb.st_dev;
 	p->fts_info = fts_stat(sp, p, 0);
+	sp->rdev = p->fts_statb.st_dev;
 	return(1);
 }
 
