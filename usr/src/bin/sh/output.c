@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -200,6 +200,15 @@ out1fmt(char *fmt, ...) {
 	va_end(ap);
 }
 
+void
+dprintf(char *fmt, ...) {
+	va_list ap;
+
+	va_start(ap, fmt);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+	flushout(out2);
+}
 
 void
 fmtstr(char *outbuf, int length, char *fmt, ...) {
@@ -248,6 +257,19 @@ out1fmt(va_alist)
 	va_end(ap);
 }
 
+void
+dprintf(va_alist)
+	va_dcl
+	{
+	va_list ap;
+	char *fmt;
+
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	doformat(out2, fmt, ap);
+	va_end(ap);
+	flushout(out2);
+}
 
 void
 fmtstr(va_alist)
