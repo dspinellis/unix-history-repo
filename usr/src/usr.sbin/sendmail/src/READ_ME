@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.81 (Berkeley) %G%
+#	@(#)READ_ME	8.82 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -42,6 +42,8 @@ traditional make, but isn't customized for any particular architecture.
 Jim Wilson of Cygnus believes he has found the problem -- it will
 probably be fixed in GCC 2.5.6 -- but until this is verified, be
 very suspicious of gcc -O.
+
+This problem is reported to have been fixed in gcc 2.6.
 
 **************************************************************************
 **  IMPORTANT:  Read the appropriate paragraphs in the section on	**
@@ -947,4 +949,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.81, last update %G% 19:21:42)
+(Version 8.82, last update %G% 12:42:42)
