@@ -16,16 +16,18 @@ struct sccsprog
 struct sccsprog SccsProg[] =
 {
 	"admin",	0,			"/usr/sccs/admin",
+	"chghist",	0,			"/usr/sccs/rmdel",
 	"comb",		0,			"/usr/sccs/comb",
 	"delta",	0,			"/usr/sccs/delta",
 	"get",		0,			"/usr/sccs/get",
+	"help",		F_NOSDOT,		"/usr/sccs/help",
 	"prt",		0,			"/usr/sccs/prt",
 	"rmdel",	0,			"/usr/sccs/rmdel",
 	"what",		F_NOSDOT,		"/usr/sccs/what",
 	NULL,		0,			NULL
 };
 
-char	*SccsPath = "sccs/s.";
+char	*SccsPath = "SCCS/s.";
 
 main(argc, argv)
 	int argc;
@@ -80,27 +82,19 @@ main(argc, argv)
 
 	/*
 	**  Build new argument vector.
-	**	This is in three phases.
-	**	1.  Copy program name.
-	**	2.  Copy program flags with no translation.
-	**	3.  Copy program files, with possible translation.
 	*/
 
-	/*  1: copy program name  */
 	av = newargv;
 	*av++ = p;
 
-	/*  2: copy program flags, no translation  */
-	while (--argc > 0 && *(p = *++argv) == '-')
-		*av++ = p;
-
-	/*  3: copy program filename arguments  */
-	while (argc-- > 0)
+	/* copy program filename arguments and flags */
+	while (--argc > 0)
 	{
-		if ((cmd->sccsflags & F_NOSDOT) == 0)
-			*av++ = makefile(*argv++);
+		p = *++argv;
+		if ((cmd->sccsflags & F_NOSDOT) == 0 && *p != '-')
+			*av++ = makefile(p);
 		else
-			*av++ = *argv++;
+			*av++ = p;
 	}
 	
 	/* terminate argument vector */
