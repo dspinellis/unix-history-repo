@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wd.c	7.2 (Berkeley) %G%
+ *	@(#)wd.c	7.3 (Berkeley) %G%
  */
 
 /* TODO:peel out buffer at low ipl,
@@ -1092,7 +1092,7 @@ outb(0x461,0);	/* disable failsafe timer */
 			blkcnt = secpercyl - (blknum % secpercyl);
 			    /* keep transfer within current cylinder */
 #endif
-		pmap_enter(pmap_kernel(), vmmap, addr, VM_PROT_READ, TRUE);
+		pmap_enter(kernel_pmap, vmmap, addr, VM_PROT_READ, TRUE);
 
 		/* compute disk address */
 		cylin = blknum / secpercyl;
