@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.30 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -276,10 +276,14 @@ getnewpasswd(pwd, u)
 		}
 		else if (++insist == 4)
 			break;
-		if (checkpass(pwbuf))
+		if (strlen(pwbuf) <= 4)
+			puts("Please enter a longer password.");
+		else for (pw = pwbuf; *pw && islower(*pw); ++pw);
+		if (*pw)
 			break;
+		puts("Please don't use an all-lower case password.\nUnusual capitalization, control characters or digits are suggested.");
 	}
-	if (strcmp(pwbuf, getpass("Retype new password:")) != 0) {
+	if (strcmp(pwbuf, getpass("Retype new password:"))) {
 		puts("Mismatch - password unchanged.");
 		exit(1);
 	}
