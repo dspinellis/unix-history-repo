@@ -1,4 +1,4 @@
-/*	llib-lc	1.7	83/07/06	*/
+/*	llib-lc	1.8	83/09/09	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -80,7 +80,7 @@ int	mprotect( a, l, p) char * a; { return 0;}
 int	mremap( a, l, p, s, f) char * a, f; { return 0;}
 int	munmap( a, l) char * a; { return 0;}
 #endif
-	/* VARARGS */
+	/* VARARGS2 */
 int	open(f, m, stuff) char *f; { return(0); }
 int	pipe(f) int f[2]; { return(0); }
 	profil(b, s, o, i) char *b; {;}
