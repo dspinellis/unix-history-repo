@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.85 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.86 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -787,6 +787,9 @@ deliver(e, firstto)
 			giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, e);
 			continue;
 		}
+#if NAMED_BIND
+		h_errno = 0;
+#endif
 		rcode = checkcompat(to, e);
 		if (rcode != EX_OK)
 		{
@@ -923,6 +926,9 @@ deliver(e, firstto)
 		printav(pv);
 	}
 	errno = 0;
+#if NAMED_BIND
+	h_errno = 0;
+#endif
 
 	CurHostName = m->m_mailer;
 
