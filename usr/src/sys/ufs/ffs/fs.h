@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	7.1 (Berkeley) %G%
+ *	@(#)fs.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -107,7 +107,7 @@
  * is defined by MAXCSBUFS. It is currently parameterized for a
  * maximum of two million cylinders.
  */
-#define MAXMNTLEN 512
+#define MAXMNTLEN 384
 #define MAXCSBUFS 32
 
 /*
@@ -168,13 +168,19 @@ struct	fs
 	long	fs_nindir;		/* value of NINDIR */
 	long	fs_inopb;		/* value of INOPB */
 	long	fs_nspf;		/* value of NSPF */
+/* yet another configuration parameter */
 	long	fs_optim;		/* optimization preference, see below */
-	long	fs_sparecon[5];		/* reserved for future constants */
+/* these fields are derived from the hardware */
+	long	fs_npsect;		/* # sectors/track including spares */
+	long	fs_interleave;		/* hardware sector interleave */
+	long	fs_trackskew;		/* sector 0 skew, per track */
+	long	fs_headswitch;		/* head switch time, usec */
+	long	fs_trkseek;		/* track-to-track seek, usec */
 /* sizes determined by number of cylinder groups and their sizes */
 	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
 	long	fs_cgsize;		/* cylinder group size */
-/* these fields should be derived from the hardware */
+/* these fields are derived from the hardware */
 	long	fs_ntrak;		/* tracks per cylinder */
 	long	fs_nsect;		/* sectors per track */
 	long  	fs_spc;   		/* sectors per cylinder */
@@ -192,6 +198,7 @@ struct	fs
 	char   	fs_ronly;   		/* mounted read-only flag */
 	char   	fs_flags;   		/* currently unused flag */
 	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
+	long	fs_sparecon[32];	/* reserved for future constants */
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
@@ -307,7 +314,9 @@ struct	cg {
 #define cbtocylno(fs, bno) \
     ((bno) * NSPF(fs) / (fs)->fs_spc)
 #define cbtorpos(fs, bno) \
-    ((bno) * NSPF(fs) % (fs)->fs_spc % (fs)->fs_nsect * NRPOS / (fs)->fs_nsect)
+    (((bno) * NSPF(fs) % (fs)->fs_spc / (fs)->fs_nsect * (fs)->fs_trackskew + \
+     (bno) * NSPF(fs) % (fs)->fs_spc % (fs)->fs_nsect * (fs)->fs_interleave) % \
+     (fs)->fs_nsect * NRPOS / (fs)->fs_npsect)
 
 /*
  * The following macros optimize certain frequently calculated
