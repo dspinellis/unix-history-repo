@@ -1,4 +1,4 @@
-/*	@(#)trek.h	4.1	(Berkeley)	83/03/23	*/
+/*	@(#)trek.h	4.2	(Berkeley)	83/05/27	*/
 
 #
 /*
@@ -43,7 +43,7 @@ struct quad		/* definition for each quadrant */
 	char	holes;		/* number of black holes in this quadrant */
 	int	scanned;	/* star chart entry (see below) */
 	char	stars;		/* number of stars in this quadrant */
-	char	systemname;	/* starsystem name (see below) */
+	char	qsystemname;	/* starsystem name (see below) */
 };
 
 # define	Q_DISTRESSED	0200
@@ -134,7 +134,7 @@ struct device	Device[NDEV];
 struct event
 {
 	char	x, y;			/* coordinates */
-	float	date;			/* trap stardate */
+	double	date;			/* trap stardate */
 	char	evcode;			/* event type */
 	char	systemname;		/* starsystem name */
 };
@@ -158,8 +158,8 @@ struct kling
 {
 	char	x, y;		/* coordinates */
 	int	power;		/* power left */
-	float	dist;		/* distance to Enterprise */
-	float	avgdist;	/* average over this move */
+	double	dist;		/* distance to Enterprise */
+	double	avgdist;	/* average over this move */
 	char	srndreq;	/* set if surrender has been requested */
 };
 
@@ -197,14 +197,14 @@ struct xy
 /* information regarding the state of the starship */
 struct
 {
-	float	warp;		/* warp factor */
-	float	warp2;		/* warp factor squared */
-	float	warp3;		/* warp factor cubed */
+	double	warp;		/* warp factor */
+	double	warp2;		/* warp factor squared */
+	double	warp3;		/* warp factor cubed */
 	char	shldup;		/* shield up flag */
 	char	cloaked;	/* set if cloaking device on */
 	int	energy;		/* starship's energy */
 	int	shield;		/* energy in shields */
-	float	reserves;	/* life support reserves */
+	double	reserves;	/* life support reserves */
 	int	crew;		/* ship's complement */
 	int	brigfree;	/* space left in brig */
 	char	torped;		/* torpedoes */
@@ -217,6 +217,7 @@ struct
 	char	sinsbad;	/* Space Inertial Navigation System condition */
 	char	*shipname;	/* name of current starship */
 	char	ship;		/* current starship */
+	int	distressed	/* number of distress calls */
 }	Ship;
 
 /* sinsbad is set if SINS is working but not calibrated */
@@ -248,7 +249,7 @@ struct
 	char	shldchg;	/* set if shields changed this move */
 	char	newquad;	/* set if just entered this quadrant */
 	char	resting;	/* set if this move is a rest */
-	float	time;		/* time used this move */
+	double	time;		/* time used this move */
 }	Move;
 
 /* parametric information */
@@ -256,32 +257,32 @@ struct
 {
 	char	bases;		/* number of starbases */
 	char	klings;		/* number of klingons */
-	float	date;		/* stardate */
-	float	time;		/* time left */
-	float	resource;	/* Federation resources */
+	double	date;		/* stardate */
+	double	time;		/* time left */
+	double	resource;	/* Federation resources */
 	int	energy;		/* starship's energy */
 	int	shield;		/* energy in shields */
-	float	reserves;	/* life support reserves */
+	double	reserves;	/* life support reserves */
 	int	crew;		/* size of ship's complement */
 	int	brigfree;	/* max possible number of captives */
 	char	torped;		/* photon torpedos */
-	float	damfac[NDEV];	/* damage factor */
-	float	dockfac;	/* docked repair time factor */
-	float	regenfac;	/* regeneration factor */
+	double	damfac[NDEV];	/* damage factor */
+	double	dockfac;	/* docked repair time factor */
+	double	regenfac;	/* regeneration factor */
 	int	stopengy;	/* energy to do emergency stop */
 	int	shupengy;	/* energy to put up shields */
 	int	klingpwr;	/* Klingon initial power */
 	int	warptime;	/* time chewer multiplier */
-	float	phasfac;	/* Klingon phaser power eater factor */
+	double	phasfac;	/* Klingon phaser power eater factor */
 	char	moveprob[6];	/* probability that a Klingon moves */
-	float	movefac[6];	/* Klingon move distance multiplier */
-	float	eventdly[NEVENTS];	/* event time multipliers */
-	float	navigcrud[2];	/* navigation crudup factor */
+	double	movefac[6];	/* Klingon move distance multiplier */
+	double	eventdly[NEVENTS];	/* event time multipliers */
+	double	navigcrud[2];	/* navigation crudup factor */
 	int	cloakenergy;	/* cloaking device energy per stardate */
-	float	damprob[NDEV];	/* damage probability */
-	float	hitfac;		/* Klingon attack factor */
+	double	damprob[NDEV];	/* damage probability */
+	double	hitfac;		/* Klingon attack factor */
 	int	klingcrew;	/* number of Klingons in a crew */
-	float	srndrprob;	/* surrender probability */
+	double	srndrprob;	/* surrender probability */
 	int	energylow;	/* low energy mark (cond YELLOW) */
 }	Param;
 
@@ -292,9 +293,9 @@ struct
 {
 	char	bases;		/* number of starbases */
 	char	klings;		/* number of klingons */
-	float	date;		/* stardate */
-	float	time;		/* time left */
-	float	resource;	/* Federation resources */
+	double	date;		/* stardate */
+	double	time;		/* time left */
+	double	resource;	/* Federation resources */
 	char	distressed;	/* number of currently distressed quadrants */
 	struct event	*eventptr[NEVENTS];	/* pointer to event structs */
 	struct xy	base[MAXBASES];		/* locations of starbases */

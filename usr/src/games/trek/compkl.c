@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)compkl.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)compkl.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -76,5 +76,4 @@ sortkl()
 				f = 1;
 			}
 	}
-	return;
 }

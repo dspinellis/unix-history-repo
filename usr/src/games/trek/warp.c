@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)warp.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)warp.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -25,14 +25,14 @@ int	fl, c;
 double	d;
 {
 	int			course;
-	float			power;
-	float			dist;
-	float			time;
-	float			speed;
+	double			power;
+	double			dist;
+	double			time;
+	double			speed;
 	double			frac;
 	register int		percent;
 	register int		i;
-	extern float		move();
+	extern double		move();
 
 	if (Ship.cond == DOCKED)
 		return (printf("%s is docked\n", Ship.shipname));
@@ -78,8 +78,8 @@ double	d;
 	if (Ship.warp > 6.0 && ranf(100) < 20 + 15 * (Ship.warp - 6.0))
 	{
 		frac = franf();
-		dist =* frac;
-		time =* frac;
+		dist *= frac;
+		time *= frac;
 		damage(WARP, (frac + 1.0) * Ship.warp * (franf() + 0.25) * 0.20);
 	}
 
@@ -88,7 +88,7 @@ double	d;
 
 	/* see how far we actually went, and decrement energy appropriately */
 	dist = Move.time * speed;
-	Ship.energy =- dist * Ship.warp3 * (Ship.shldup + 1);
+	Ship.energy -= dist * Ship.warp3 * (Ship.shldup + 1);
 
 	/* test for bizarre events */
 	if (Ship.warp <= 9.0)
@@ -113,24 +113,24 @@ double	d;
 		{
 			/* positive time warp */
 			time = (Ship.warp - 8.0) * dist * (franf() + 1.0);
-			Now.date =+ time;
+			Now.date += time;
 			printf("Positive time portal entered -- it is now Stardate %.2f\n",
 				Now.date);
 			for (i = 0; i < MAXEVENTS; i++)
 			{
 				percent = Event[i].evcode;
 				if (percent == E_FIXDV || percent == E_LRTB)
-					Event[i].date =+ time;
+					Event[i].date += time;
 			}
 			return;
 		}
 
 		/* s/he got lucky: a negative time portal */
 		time = Now.date;
-		i = Etc.snapshot;
-		bmove(i, &Quad, sizeof Quad);
-		bmove(i =+ sizeof Quad, &Event, sizeof Event);
-		bmove(i =+ sizeof Event, &Now, sizeof Now);
+		i = (int) Etc.snapshot;
+		bmove(i, Quad, sizeof Quad);
+		bmove(i += sizeof Quad, Event, sizeof Event);
+		bmove(i += sizeof Event, &Now, sizeof Now);
 		printf("Negative time portal entered -- it is now Stardate %.2f\n",
 			Now.date);
 		for (i = 0; i < MAXEVENTS; i++)

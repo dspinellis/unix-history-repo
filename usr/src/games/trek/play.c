@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)play.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)play.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -15,33 +15,37 @@ static char sccsid[] = "@(#)play.c	4.1	(Berkeley)	%G%";
 **	attack if the move was not free, and checkcond() to check up
 **	on how we are doing after the move.
 */
+extern int	abandon(), capture(), shield(), computer(), dcrept(),
+		destruct(), dock(), help(), impulse(), lrscan(),
+		warp(), dumpgame(), rest(), shell(), srscan(),
+		reset(), torped(), visual(), setwarp(), undock(), phaser();
 
-struct cvntab	Comtab[]
+struct cvntab	Comtab[] =
 {
-	"abandon",		"",			&abandon,		0,
-	"ca",			"pture",		&capture,		0,
-	"cl",			"oak",			&shield,		-1,
-	"c",			"omputer",		&computer,		0,
-	"da",			"mages",		&dcrept,		0,
-	"destruct",		"",			&destruct,		0,
-	"do",			"ck",			&dock,			0,
-	"help",			"",			&help,			0,
-	"i",			"mpulse",		&impulse,		0,
-	"l",			"rscan",		&lrscan,		0,
-	"m",			"ove",			&warp,			0,
-	"p",			"hasers",		&phaser,		0,
-	"ram",			"",			&warp,			1,
-	"dump",			"",			&dumpgame,		0,
-	"r",			"est",			&rest,			0,
-	"shell",		"",			&shell,			0,
-	"sh",			"ield",			&shield,		0,
-	"s",			"rscan",		&srscan,		0,
-	"st",			"atus",			&srscan,		-1,
-	"terminate",		"",			&reset,			0,
-	"t",			"orpedo",		&torped,		0,
-	"u",			"ndock",		&undock,		0,
-	"v",			"isual",		&visual,		0,
-	"w",			"arp",			&setwarp,		0,
+	"abandon",		"",			abandon,	0,
+	"ca",			"pture",		capture,	0,
+	"cl",			"oak",			shield,	-1,
+	"c",			"omputer",		computer,	0,
+	"da",			"mages",		dcrept,	0,
+	"destruct",		"",			destruct,	0,
+	"do",			"ck",			dock,		0,
+	"help",			"",			help,		0,
+	"i",			"mpulse",		impulse,	0,
+	"l",			"rscan",		lrscan,	0,
+	"m",			"ove",			warp,		0,
+	"p",			"hasers",		phaser,	0,
+	"ram",			"",			warp,		1,
+	"dump",			"",			dumpgame,	0,
+	"r",			"est",			rest,		0,
+	"shell",		"",			shell,		0,
+	"sh",			"ield",			shield,	0,
+	"s",			"rscan",		srscan,	0,
+	"st",			"atus",			srscan,	-1,
+	"terminate",		"",			reset,		0,
+	"t",			"orpedo",		torped,	0,
+	"u",			"ndock",		undock,	0,
+	"v",			"isual",		visual,	0,
+	"w",			"arp",			setwarp,	0,
 	0
 };
 

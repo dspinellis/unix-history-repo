@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)srscan.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)srscan.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -20,7 +20,7 @@ static char sccsid[] = "@(#)srscan.c	4.1	(Berkeley)	%G%";
 **	The current quadrant is filled in on the computer chart.
 */
 
-char	*Color[4]
+char	*Color[4] =
 {
 	"GREEN",
 	"DOCKED",
@@ -150,8 +150,8 @@ int	f;
 		printf("%d ", i);
 	printf("\n");
 
-	if (q->systemname & Q_DISTRESSED)
+	if (q->qsystemname & Q_DISTRESSED)
 		printf("Distressed ");
-	if (q->systemname)
+	if (q->qsystemname)
 		printf("Starsystem %s\n", systemname(q));
 }

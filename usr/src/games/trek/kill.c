@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)kill.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)kill.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -28,19 +28,19 @@ int	ix, iy;
 	printf("   *** Klingon at %d,%d destroyed ***\n", ix, iy);
 
 	/* remove the scoundrel */
-	Now.klings =- 1;
+	Now.klings -= 1;
 	Sect[ix][iy] = EMPTY;
-	Quad[Ship.quadx][Ship.quady].klings =- 1;
+	Quad[Ship.quadx][Ship.quady].klings -= 1;
 	/* %%% IS THIS SAFE???? %%% */
-	Quad[Ship.quadx][Ship.quady].scanned =- 100;
-	Game.killk =+ 1;
+	Quad[Ship.quadx][Ship.quady].scanned -= 100;
+	Game.killk += 1;
 
 	/* find the Klingon in the Klingon list */
 	for (i = 0; i < Etc.nkling; i++)
 		if (ix == Etc.klingon[i].x && iy == Etc.klingon[i].y)
 		{
 			/* purge him from the list */
-			Etc.nkling =- 1;
+			Etc.nkling -= 1;
 			for (; i < Etc.nkling; i++)
 				bmove(&Etc.klingon[i+1], &Etc.klingon[i], sizeof Etc.klingon[i]);
 			break;
@@ -73,12 +73,12 @@ int	qx, qy;
 	if (!damaged(SSRADIO))
 		/* then update starchart */
 		if (q->scanned < 1000)
-			q->scanned =- 10;
+			q->scanned -= 10;
 		else
 			if (q->scanned > 1000)
 				q->scanned = -1;
 	q->bases = 0;
-	Now.bases =- 1;
+	Now.bases -= 1;
 	for (b = Now.base; ; b++)
 		if (qx == b->x && qy == b->y)
 			break;
@@ -114,6 +114,7 @@ int	f;	/* f != 0 -- this quad;  f < 0 -- Enterprise's fault */
 	register struct quad	*q;
 	register struct event	*e;
 	register char		*name;
+	char			*systemname();
 
 	if (f)
 	{
@@ -126,23 +127,23 @@ int	f;	/* f != 0 -- this quad;  f < 0 -- Enterprise's fault */
 		printf("Inhabited starsystem %s at %d,%d destroyed\n",
 			name, x, y);
 		if (f < 0)
-			Game.killinhab =+ 1;
+			Game.killinhab += 1;
 	}
 	else
 	{
 		/* different quadrant */
 		q = &Quad[x][y];
 	}
-	if (q->systemname & Q_DISTRESSED)
+	if (q->qsystemname & Q_DISTRESSED)
 	{
 		/* distressed starsystem */
-		e = &Event[q->systemname & Q_SYSTEM];
+		e = &Event[q->qsystemname & Q_SYSTEM];
 		printf("Distress call for %s invalidated\n",
 			Systemname[e->systemname]);
 		unschedule(e);
 	}
-	q->systemname = 0;
-	q->stars =- 1;
+	q->qsystemname = 0;
+	q->stars -= 1;
 }
 
 
@@ -181,12 +182,12 @@ int	f;		/* set if user is to be informed */
 			{
 				printf("Distress call for %s in quadrant %d,%d nullified\n",
 					Systemname[e->systemname], x, y);
-				q->systemname = e->systemname;
+				q->qsystemname = e->systemname;
 				unschedule(e);
 			}
 			else
 			{
-				e->evcode =| E_GHOST;
+				e->evcode |= E_GHOST;
 			}
 		}
 	}

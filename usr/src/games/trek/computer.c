@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)computer.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)computer.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
 # include	"getpar.h"
-
+# include	<stdio.h>
 /*
 **  On-Board Computer
 **
@@ -51,17 +51,17 @@ static char sccsid[] = "@(#)computer.c	4.1	(Berkeley)	%G%";
 **	command processor.
 */
 
-struct cvntab	Cputab[]
+struct cvntab	Cputab[] =
 {
-	"ch",			"art",			1,		0,
-	"t",			"rajectory",		2,		0,
-	"c",			"ourse",		3,		0,
-	"m",			"ove",			3,		1,
-	"s",			"core",			4,		0,
-	"p",			"heff",			5,		0,
-	"w",			"arpcost",		6,		0,
-	"i",			"mpcost",		7,		0,
-	"d",			"istresslist",		8,		0,
+	"ch",			"art",			(int (*)())1,		0,
+	"t",			"rajectory",		(int (*)())2,		0,
+	"c",			"ourse",		(int (*)())3,		0,
+	"m",			"ove",			(int (*)())3,		1,
+	"s",			"core",			(int (*)())4,		0,
+	"p",			"heff",			(int (*)())5,		0,
+	"w",			"arpcost",		(int (*)())6,		0,
+	"i",			"mpcost",		(int (*)())7,		0,
+	"d",			"istresslist",		(int (*)())8,		0,
 	0
 };
 
@@ -74,8 +74,8 @@ computer()
 	struct cvntab		*r;
 	int			cost;
 	int			course;
-	float			dist, time;
-	float			warpfact;
+	double			dist, time;
+	double			warpfact;
 	struct quad		*q;
 	register struct event	*e;
 
@@ -187,7 +187,7 @@ computer()
 			dist = getfltpar("range");
 			if (dist < 0.0)
 				break;
-			dist =* 10.0;
+			dist *= 10.0;
 			cost = pow(0.90, dist) * 98.0 + 0.5;
 			printf("Phasers are %d%% effective at that range\n", cost);
 			break;
@@ -257,7 +257,7 @@ computer()
 				exit(1);
 			if (i == '\n')
 			{
-				ungetc(i, 0);
+				ungetc(i, stdin);
 				return;
 			}
 		}
@@ -277,10 +277,10 @@ int	tqx;
 int	tqy;
 int	tsx;
 int	tsy;
-float	*dist;
+double	*dist;
 {
 	double			dx, dy;
-	float			quadsize;
+	double			quadsize;
 	double			angle;
 	register int		course;
 
@@ -293,7 +293,7 @@ float	*dist;
 	angle = atan2(dy, dx);
 	/* make it 0 -> 2 pi */
 	if (angle < 0.0)
-		angle =+ 6.283185307;
+		angle += 6.283185307;
 	/* convert from radians to degrees */
 	course = angle * 57.29577951 + 0.5;
 	dx = dx * dx + dy * dy;
@@ -304,7 +304,7 @@ float	*dist;
 
 prkalc(course, dist)
 int	course;
-float	dist;
+double	dist;
 {
 	printf(": course %d  dist %.3f\n", course, dist);
 }

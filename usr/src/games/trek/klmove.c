@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)klmove.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)klmove.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -55,7 +55,7 @@ int	fl;
 			continue;
 		/* compute distance to move */
 		motion = ranf(75) - 25;
-		motion =* k->avgdist * Param.movefac[2 * Move.newquad + fl];
+		motion *= k->avgdist * Param.movefac[2 * Move.newquad + fl];
 		/* compute direction */
 		dx = Ship.sectx - k->x + ranf(3) - 1;
 		dy = Ship.secty - k->y + ranf(3) - 1;
@@ -86,15 +86,15 @@ int	fl;
 				qx = Ship.quadx;
 				qy = Ship.quady;
 				if (lookx < 0)
-					qx =- 1;
+					qx -= 1;
 				else
 					if (lookx >= NSECTS)
-						qx =+ 1;
+						qx += 1;
 				if (looky < 0)
-					qy =- 1;
+					qy -= 1;
 				else
 					if (looky >= NSECTS)
-						qy =+ 1;
+						qy += 1;
 				if (qx < 0 || qx >= NQUADS || qy < 0 || qy >= NQUADS ||
 						Quad[qx][qy].stars < 0 || Quad[qx][qy].klings > MAXKLQUAD - 1)
 					break;
@@ -104,16 +104,16 @@ int	fl;
 						k->x, k->y, qx, qy);
 					motion = Quad[qx][qy].scanned;
 					if (motion >= 0 && motion < 1000)
-						Quad[qx][qy].scanned =+ 100;
+						Quad[qx][qy].scanned += 100;
 					motion = Quad[Ship.quadx][Ship.quady].scanned;
 					if (motion >= 0 && motion < 1000)
-						Quad[Ship.quadx][Ship.quady].scanned =- 100;
+						Quad[Ship.quadx][Ship.quady].scanned -= 100;
 				}
 				Sect[k->x][k->y] = EMPTY;
-				Quad[qx][qy].klings =+ 1;
-				Etc.nkling =- 1;
+				Quad[qx][qy].klings += 1;
+				Etc.nkling -= 1;
 				bmove(&Etc.klingon[Etc.nkling], k, sizeof *k);
-				Quad[Ship.quadx][Ship.quady].klings =- 1;
+				Quad[Ship.quadx][Ship.quady].klings -= 1;
 				k = 0;
 				break;
 			}
