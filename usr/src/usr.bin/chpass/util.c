@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -140,7 +140,7 @@ print(fp, pw)
 	p = strsep((char *)NULL, ",");
 	fprintf(fp, "Location: %s\n", p ? p : "");
 	p = strsep((char *)NULL, ",");
-	fprintf(fp, "Home Phone: %s\n", p ? p : "");
-	p = strsep((char *)NULL, ",");
 	fprintf(fp, "Office Phone: %s\n", p ? p : "");
+	p = strsep((char *)NULL, ",");
+	fprintf(fp, "Home Phone: %s\n", p ? p : "");
 }
