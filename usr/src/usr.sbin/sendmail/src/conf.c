@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)conf.c	1.3	%G%";
+static char SccsId[] = "@(#)conf.c	1.4	%G%";
 # include <whoami.h>
 
 /*
@@ -185,16 +185,8 @@ struct parsetab ParseTab[] =
 **	Side Effects:
 **		none
 **
-**	Requires:
-**		getlogin (sys)
-**		getpwuid (sys)
-**		getuid (sys)
-**
 **	Called By:
 **		main
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 char *
@@ -243,19 +235,8 @@ getname()
 **	WARNING:
 **		Return value is in a local buffer.
 **
-**	Requires:
-**		stat (sys)
-**		ttyn (sys)
-**		open (sys)
-**		read (sys)
-**		close (sys)
-**		seek (sys)
-**
 **	Called By:
 **		savemail
-**
-**	History:
-**		1/12/80 -- written.
 */
 
 # include <sys/types.h>
@@ -312,9 +293,6 @@ ttypath()
 **	Side Effects:
 **		none
 **
-**	Requires:
-**		fopen (sys)
-**
 **	Called By:
 **		deliver
 **
@@ -350,12 +328,6 @@ fdopen(fd, type)
 **
 **	Side Effects:
 **		none.
-**
-**	Requires:
-**		none.
-**
-**	History:
-**		3/14/80 -- written.  Why isn't this in -lS?
 */
 
 index(s, c)
@@ -392,19 +364,8 @@ index(s, c)
 **	WARNING:
 **		Return value is in a local buffer.
 **
-**	Requires:
-**		stat (sys)
-**		ttyn (sys)
-**		open (sys)
-**		read (sys)
-**		close (sys)
-**		seek (sys)
-**
 **	Called By:
 **		savemail
-**
-**	History:
-**		1/12/80 -- written.
 */
 
 # include <sys/types.h>

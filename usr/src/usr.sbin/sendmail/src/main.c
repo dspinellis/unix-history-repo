@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.4	%G%";
+static char	SccsId[] = "@(#)main.c	1.5	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -77,9 +77,6 @@ static char	SccsId[] = "@(#)main.c	1.4	%G%";
 **		mailers; it is their responsibility to make them
 **		correct.
 **
-**	Defined Constants:
-**		none
-**
 **	Compilation Flags:
 **		BADMAIL -- the mailer used for local mail doesn't
 **			return the standard set of exit codes.  This
@@ -98,32 +95,6 @@ static char	SccsId[] = "@(#)main.c	1.4	%G%";
 **		chmod 755 a.out
 **		mv a.out delivermail
 **
-**	Requires:
-**		signal (sys)
-**		setbuf (sys)
-**		initlog (libX)
-**		open (sys)
-**		lseek (sys)
-**		close (sys)
-**		dup (sys)
-**		printf (sys)
-**		syserr
-**		atoi (sys)
-**		freopen (sys)
-**		openxscript
-**		maketemp
-**		getname
-**		strcmp (sys)
-**		getuid (sys)
-**		parse
-**		usrerr
-**		finis
-**		sendto
-**		alias
-**		recipient
-**		nxtinq
-**		deliver
-**
 **	Deficiencies:
 **		It ought to collect together messages that are
 **			destined for a single host and send these
@@ -133,9 +104,6 @@ static char	SccsId[] = "@(#)main.c	1.4	%G%";
 **
 **	Author:
 **		Eric Allman, UCB/INGRES
-**
-**	History:
-**		12/26/79 -- first written.
 */
 
 
@@ -452,11 +420,6 @@ main(argc, argv)
 /*
 **  FINIS -- Clean up and exit.
 **
-**	Algorithm:
-**		if we should remove the input
-**			remove the input
-**		exit
-**
 **	Parameters:
 **		none
 **
@@ -466,13 +429,6 @@ main(argc, argv)
 **	Side Effects:
 **		exits delivermail
 **
-**	Requires:
-**		unlink (sys)
-**		exit (sys)
-**		savemail
-**		InFileName -- the file to remove
-**		ExitStat -- the status to exit with
-**
 **	Called By:
 **		main
 **		via signal on interrupt.
@@ -480,9 +436,6 @@ main(argc, argv)
 **	Deficiencies:
 **		It may be that it should only remove the input
 **			file if there have been no errors.
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 finis()
@@ -520,23 +473,6 @@ finis()
 **	Side Effects:
 **		Temp file is created and filled.
 **
-**	Requires:
-**		creat (sys)
-**		close (sys)
-**		syserr
-**		mktemp (sys)
-**		fopen (sys)
-**		fgets (sys)
-**		makemsgid
-**		fprintf (sys)
-**		fputs (sys)
-**		isspace (sys)
-**		matchhdr
-**		prescan
-**		ferror (sys)
-**		clearerr (sys)
-**		freopen (sys)
-**
 **	Called By:
 **		main
 **
@@ -550,9 +486,6 @@ finis()
 **		protocol, but seems reasonable in practice.  In
 **		any case, the only problem is that error responses
 **		may be sent to the wrong person.
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 char *
@@ -686,16 +619,8 @@ maketemp()
 **	Side Effects:
 **		Stores a message-id into MsgId.
 **
-**	Requires:
-**		sprintf (sys)
-**		getpid (sys)
-**		time (sys)
-**
 **	Called By:
 **		maketemp
-**
-**	History:
-**		2/3/80 -- written.
 */
 
 makemsgid()
@@ -722,18 +647,8 @@ makemsgid()
 **		Turns the standard output into a special file
 **			somewhere.
 **
-**	Requires:
-**		mktemp (sys)
-**		chmod (sys)
-**		freopen (sys)
-**		syserr
-**		setbuf (sys)
-**
 **	Called By:
 **		main
-**
-**	History:
-**		1/11/80 -- written.
 */
 
 openxscrpt()

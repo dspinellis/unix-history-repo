@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	1.2	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	1.3	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -39,28 +39,11 @@ static char	SccsId[] = "@(#)parseaddr.c	1.2	%G%";
 **	Side Effects:
 **		none
 **
-**	Defined Constants:
-**		none
-**
-**	Requires:
-**		usrerr
-**		strcpy (sys)
-**		isalpha (sys)
-**		xalloc
-**		prescan
-**		flagset
-**		makelower
-**		printf (sys)
-**		ParseTab -- the parse table.
-**
 **	Called By:
 **		main
 **		sendto
 **		alias
 **		savemail
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 addrq *
@@ -267,14 +250,8 @@ parse(addr, a, copyf)
 **	Side Effects:
 **		String pointed to by p is translated to lower case.
 **
-**	Requires:
-**		isupper (sys)
-**
 **	Called By:
 **		parse
-**
-**	History:
-**		12/26/79 -- written.
 */
 
 makelower(p)
@@ -324,18 +301,9 @@ makelower(p)
 **	Side Effects:
 **		buf gets clobbered.
 **
-**	Requires:
-**		isspace (sys)
-**		any
-**		usrerr
-**
 **	Called By:
 **		parse
 **		maketemp
-**
-**	History:
-**		12/30/79 -- broken from parse; comment processing
-**			added.
 */
 
 char *

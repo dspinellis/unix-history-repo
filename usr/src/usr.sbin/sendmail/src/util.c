@@ -1,17 +1,9 @@
 # include <sysexits.h>
 # include "useful.h"
 
-static char	SccsId[] = "@(#)util.c	1.2	%G%";
+static char	SccsId[] = "@(#)util.c	1.3	%G%";
 
 /*
-**  UTIL.C -- General Purpose Routines
-**
-**	Defines:
-**		stripquotes
-**		xalloc
-**		any
-*/
-/*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
 **
 **	Runs through a string and strips off unquoted quote
@@ -26,14 +18,8 @@ static char	SccsId[] = "@(#)util.c	1.2	%G%";
 **	Side Effects:
 **		none.
 **
-**	Requires:
-**		none.
-**
 **	Called By:
 **		deliver
-**
-**	History:
-**		3/5/80 -- written.
 */
 
 stripquotes(s)
@@ -65,16 +51,8 @@ stripquotes(s)
 **	Side Effects:
 **		Memory is allocated.
 **
-**	Requires:
-**		malloc
-**		syserr
-**		exit
-**
 **	Called By:
 **		lots of people.
-**
-**	History:
-**		12/31/79 -- written.
 */
 
 char *
@@ -107,14 +85,8 @@ xalloc(sz)
 **	Side Effects:
 **		none.
 **
-**	Requires:
-**		none.
-**
 **	Called By:
 **		prescan
-**
-**	History:
-**		3/5/80 -- written.
 */
 
 any(c, s)

@@ -1,6 +1,6 @@
 # include <time.h>
 
-static char SccsId[] = "@(#)arpadate.c	1.2	%G%";
+static char SccsId[] = "@(#)arpadate.c	1.3	%G%";
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -17,16 +17,6 @@ static char SccsId[] = "@(#)arpadate.c	1.2	%G%";
 **	WARNING:
 **		date is stored in a local buffer -- subsequent
 **		calls will overwrite.
-**
-**	Requires:
-**		time (sys)
-**		ctime (sys)
-**		strcpy (sys)
-**		strcat (sys)
-**		localtime (sys)
-**
-**	History:
-**		1/15/80 -- written.
 */
 
 arpadate()
