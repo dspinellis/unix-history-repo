@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.8 (Berkeley) %G%
+ *	@(#)pathnames.h	5.9 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -26,4 +26,4 @@
 #define	_PATH_MASTER_RC	"/usr/share/misc/Mail.rc"
 #define	_PATH_MBOX	"/var/spool/mail/"
 #define	_PATH_MORE	"/usr/bin/more"
-#define	_PATH_SENDMAIL	"/usr/libexec/sendmail"
+#define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
