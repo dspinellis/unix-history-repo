@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.24.1.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -385,8 +385,9 @@ abortsend()
 
 #define HASHBYTES 1024
 
-sendrequest(cmd, local, remote)
+sendrequest(cmd, local, remote, printnames)
 	char *cmd, *local, *remote;
+	int printnames;
 {
 	FILE *fin, *dout = 0, *popen();
 	int (*closefunc)(), pclose(), fclose(), (*oldintr)(), (*oldintp)();
@@ -398,6 +399,12 @@ sendrequest(cmd, local, remote)
 	struct timeval start, stop;
 	char *mode;
 
+	if (verbose && printnames) {
+		if (local && *local != '-')
+			printf("local: %s ", local);
+		if (remote)
+			printf("remote: %s\n", remote);
+	}
 	if (proxy) {
 		proxtrans(cmd, local, remote);
 		return;
@@ -570,7 +577,7 @@ sendrequest(cmd, local, remote)
 	if (oldintp)
 		(void) signal(SIGPIPE, oldintp);
 	if (bytes > 0)
-		ptransfer("sent", bytes, &start, &stop, local, remote);
+		ptransfer("sent", bytes, &start, &stop);
 	return;
 abort:
 	(void) gettimeofday(&stop, (struct timezone *)0);
@@ -592,7 +599,7 @@ abort:
 	if (closefunc != NULL && fin != NULL)
 		(*closefunc)(fin);
 	if (bytes > 0)
-		ptransfer("sent", bytes, &start, &stop, local, remote);
+		ptransfer("sent", bytes, &start, &stop);
 }
 
 jmp_buf	recvabort;
@@ -607,7 +614,7 @@ abortrecv()
 	longjmp(recvabort, 1);
 }
 
-recvrequest(cmd, local, remote, mode)
+recvrequest(cmd, local, remote, mode, printnames)
 	char *cmd, *local, *remote, *mode;
 {
 	FILE *fout, *din = 0, *popen();
@@ -624,6 +631,12 @@ recvrequest(cmd, local, remote, mode)
 	extern char *malloc();
 
 	is_retr = strcmp(cmd, "RETR") == 0;
+	if (is_retr && verbose && printnames) {
+		if (local && *local != '-')
+			printf("local: %s ", local);
+		if (remote)
+			printf("remote: %s\n", remote);
+	}
 	if (proxy && is_retr) {
 		proxtrans(cmd, local, remote);
 		return;
@@ -872,7 +885,7 @@ break2:
 	(void) fclose(din);
 	(void) getreply(0);
 	if (bytes > 0 && is_retr)
-		ptransfer("received", bytes, &start, &stop, local, remote);
+		ptransfer("received", bytes, &start, &stop);
 	if (oldtype) {
 		if (!debug)
 			verbose = 0;
@@ -964,7 +977,7 @@ abort:
 	if (din)
 		(void) fclose(din);
 	if (bytes > 0)
-		ptransfer("received", bytes, &start, &stop, local, remote);
+		ptransfer("received", bytes, &start, &stop);
 	(void) signal(SIGINT,oldintr);
 }
 
@@ -1056,8 +1069,8 @@ dataconn(mode)
 	return (fdopen(data, mode));
 }
 
-ptransfer(direction, bytes, t0, t1, local, remote)
-	char *direction, *local, *remote;
+ptransfer(direction, bytes, t0, t1)
+	char *direction;
 	long bytes;
 	struct timeval *t0, *t1;
 {
@@ -1071,11 +1084,6 @@ ptransfer(direction, bytes, t0, t1, local, remote)
 		bs = bytes / nz(s);
 		printf("%ld bytes %s in %.2g seconds (%.2g Kbytes/s)\n",
 		    bytes, direction, s, bs / 1024.);
-	} else {
-		if (local && *local != '-')
-			printf("local: %s ", local);
-		if (remote)
-			printf("remote: %s\n", remote);
 	}
 }
 
