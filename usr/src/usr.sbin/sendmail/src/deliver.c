@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.44 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -374,7 +374,8 @@ deliver(firstto, editfcn)
 	if (editfcn == NULL)
 		editfcn = putmessage;
 #ifdef NAMED_BIND
-	_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);		/* XXX */
+	if (ConfigLevel < 2)
+		_res.options &= ~(RES_DEFNAMES | RES_DNSRCH);	/* XXX */
 #endif
 		}
 		if (Nmx >= 0)
