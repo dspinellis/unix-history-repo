@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)score.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)score.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -25,45 +25,45 @@ long score()
 	if (r < 1.0)
 		r = 1.0;
 	r = Game.killk / r;
-	s =+ (t = 400 * r);
+	s += (t = 400 * r);
 	if (t != 0)
 		printf("Kill rate %.2f Klingons/stardate  \t%6d\n", r, t);
 	r = Now.klings;
-	r =/ Game.killk + 1;
-	s =+ (t = -400 * r);
+	r /= Game.killk + 1;
+	s += (t = -400 * r);
 	if (t != 0)
 		printf("Penalty for %d klingons remaining\t%6d\n", Now.klings, t);
 	if (Move.endgame > 0)
 	{
-		s =+ (t = 100 * (u = Game.skill));
+		s += (t = 100 * (u = Game.skill));
 		printf("Bonus for winning a %s%s game\t\t%6d\n", Skitab[u - 1].abrev, Skitab[u - 1].full, t);
 	}
 	if (Game.killed)
 	{
-		s =- 500;
+		s -= 500;
 		printf("Penalty for getting killed\t\t  -500\n");
 	}
-	s =+ (t = -100 * (u = Game.killb));
+	s += (t = -100 * (u = Game.killb));
 	if (t != 0)
 		printf("%d starbases killed\t\t\t%6d\n", u, t);
-	s =+ (t = -100 * (u = Game.helps));
+	s += (t = -100 * (u = Game.helps));
 	if (t != 0)
 		printf("%d calls for help\t\t\t%6d\n", u, t);
-	s =+ (t = -5 * (u = Game.kills));
+	s += (t = -5 * (u = Game.kills));
 	if (t != 0)
 		printf("%d stars destroyed\t\t\t%6d\n", u, t);
-	s =+ (t = -150 * (u = Game.killinhab));
+	s += (t = -150 * (u = Game.killinhab));
 	if (t != 0)
 		printf("%d inhabited starsystems destroyed\t%6d\n", u, t);
 	if (Ship.ship != ENTERPRISE)
 	{
-		s =- 200;
+		s -= 200;
 		printf("penalty for abandoning ship\t\t  -200\n");
 	}
-	s =+ (t = 3 * (u = Game.captives));
+	s += (t = 3 * (u = Game.captives));
 	if (t != 0)
 		printf("%d Klingons captured\t\t\t%6d\n", u, t);
-	s =+ (t = -(u = Game.deaths));
+	s += (t = -(u = Game.deaths));
 	if (t != 0)
 		printf("%d casualties\t\t\t\t%6d\n", u, t);
 	printf("\n***  TOTAL\t\t\t%14ld\n", s);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)externs.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)externs.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -8,7 +8,7 @@ static char sccsid[] = "@(#)externs.c	4.1	(Berkeley)	%G%";
 **	global variable definitions
 */
 
-struct device	Device[NDEV]
+struct device	Device[NDEV] =
 {
 	"warp drive",		"Scotty",
 	"S.R. scanners",	"Scotty",
@@ -28,7 +28,7 @@ struct device	Device[NDEV]
 	"*ERR 15*",		"Nobody"
 };
 
-char	*Systemname[NINHAB]
+char	*Systemname[NINHAB] =
 {
 	"ERROR",
 	"Talos IV",

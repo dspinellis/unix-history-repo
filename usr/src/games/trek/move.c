@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)move.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)move.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -65,18 +65,18 @@ float	speed;
 	/* initialize delta factors for move */
 	angle = course * 0.0174532925;
 	if (damaged(SINS))
-		angle =+ Param.navigcrud[1] * (franf() - 0.5);
+		angle += Param.navigcrud[1] * (franf() - 0.5);
 	else
 		if (Ship.sinsbad)
-			angle =+ Param.navigcrud[0] * (franf() - 0.5);
+			angle += Param.navigcrud[0] * (franf() - 0.5);
 	dx = -cos(angle);
 	dy = sin(angle);
 	bigger = fabs(dx);
 	dist = fabs(dy);
 	if (dist > bigger)
 		bigger = dist;
-	dx =/ bigger;
-	dy =/ bigger;
+	dx /= bigger;
+	dy /= bigger;
 
 	/* check for long range tractor beams */
 	/****  TEMPORARY CODE == DEBUGGING  ****/
@@ -90,7 +90,7 @@ float	speed;
 	if (time > evtime && Etc.nkling < 3)
 	{
 		/* then we got a LRTB */
-		evtime =+ 0.005;
+		evtime += 0.005;
 		time = evtime;
 	}
 	else
@@ -111,8 +111,8 @@ float	speed;
 
 	for (i = 0; i < n; i++)
 	{
-		ix = (x =+ dx);
-		iy = (y =+ dy);
+		ix = (x += dx);
+		iy = (y += dy);
 #		ifdef xTRACE
 		if (Trace)
 			printf("ix = %d, x = %.2f, iy = %d, y = %.2f\n", ix, x, iy, y);
@@ -164,7 +164,7 @@ float	speed;
 				iy = y - dy;
 				printf("Computer reports navigation error; %s stopped at %d,%d\n",
 					Ship.shipname, ix, iy);
-				Ship.energy =- Param.stopengy * speed;
+				Ship.energy -= Param.stopengy * speed;
 				break;
 			}
 			/* test for a black hole */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)impulse.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)impulse.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -43,5 +43,5 @@ impulse()
 		printf("(He's finally gone mad)\n");
 	}
 	Move.time = move(0, course, time, 0.095);
-	Ship.energy =- 20 + 100 * Move.time * 0.095;
+	Ship.energy -= 20 + 100 * Move.time * 0.095;
 }

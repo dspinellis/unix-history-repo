@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ram.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)ram.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -43,7 +43,7 @@ int	ix, iy;
 		killb(Ship.quadx, Ship.quady);
 		/* don't penalize the captain if it wasn't his fault */
 		if (!damaged(SINS))
-			Game.killb =+ 1;
+			Game.killb += 1;
 		break;
 	}
 	sleep(2);
@@ -51,8 +51,8 @@ int	ix, iy;
 
 	/* select the number of deaths to occur */
 	i = 10 + ranf(20 * Game.skill);
-	Game.deaths =+ i;
-	Ship.crew =- i;
+	Game.deaths += i;
+	Ship.crew -= i;
 	printf("McCoy: Take it easy Jim; we had %d casualties.\n", i);
 
 	/* damage devices with an 80% probability */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)nova.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)nova.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 # include	"trek.h"
@@ -40,10 +40,10 @@ int	x, y;
 	else
 	{
 		Sect[x][y] = HOLE;
-		Quad[Ship.quadx][Ship.quady].holes =+ 1;
+		Quad[Ship.quadx][Ship.quady].holes += 1;
 	}
-	Quad[Ship.quadx][Ship.quady].stars =- 1;
-	Game.kills =+ 1;
+	Quad[Ship.quadx][Ship.quady].stars -= 1;
+	Game.kills += 1;
 	for (i = x - 1; i <= x + 1; i++)
 	{
 		if (i < 0 || i >= NSECTS)
@@ -74,7 +74,7 @@ int	x, y;
 
 			  case BASE:
 				killb(i, j);
-				Game.killb =+ 1;
+				Game.killb += 1;
 				break;
 
 			  case ENTERPRISE:
@@ -83,15 +83,15 @@ int	x, y;
 				if (Ship.shldup)
 					if (Ship.shield >= se)
 					{
-						Ship.shield =- se;
+						Ship.shield -= se;
 						se = 0;
 					}
 					else
 					{
-						se =- Ship.shield;
+						se -= Ship.shield;
 						Ship.shield = 0;
 					}
-				Ship.energy =- se;
+				Ship.energy -= se;
 				if (Ship.energy <= 0)
 					lose(L_SUICID);
 				break;
