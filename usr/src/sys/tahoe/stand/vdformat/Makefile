@@ -1,14 +1,14 @@
-#	Makefile	1.1	86/07/05
+#	Makefile	1.2	86/11/04
 #
 COPTS=	-DSTANDALONE -DTAHOE -I../../h -I../..
 CFLAGS=	-O ${COPTS}
-RELOC=	70000
+RELOC=	800
 LDTOPT= -T ${RELOC} -e _entry -x
-SRCS=	cmd.c config.c correct.c delete.c exercise.c format.c help.c \
+SRCS=	cmd.c cons.c config.c correct.c delete.c exercise.c format.c help.c \
 	info.c io.c list.c maps.c proc_cmd.c profile.c relocate.c \
 	reset.c smd.c smd_e.c start.c status.c strpbrk.c strspn.c strtok.c \
 	util.c vdfmt.c verify.c
-OBJS=	cmd.o config.o correct.o delete.o exercise.o format.o help.o \
+OBJS=	cmd.o cons.o config.o correct.o delete.o exercise.o format.o help.o \
 	info.o io.o list.o maps.o proc_cmd.o profile.o relocate.o \
 	reset.o smd.o smd_e.o start.o status.o strpbrk.o strspn.o strtok.o \
 	util.o vdfmt.o verify.o
@@ -17,8 +17,7 @@ ALL=	vdformat
 all: ${ALL}
 
 vdformat: ${OBJS} ../srt0.o ../libsa.a
-	ld ${LDTOPT} ../srt0.o ${OBJS} ../libsa.a -lc
-	mv a.out vdformat
+	ld -o vdformat ${LDTOPT} ../srt0.o ${OBJS} ../libsa.a -lc
 
 clean:
 	rm -f ${OBJS} ${ALL} a.out core t.c errs tags Makefile.bak

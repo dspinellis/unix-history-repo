@@ -1,4 +1,4 @@
-/*	cmd.c	1.1	86/07/05	*/
+/*	cmd.c	1.2	86/11/04	*/
 
 #include	"vdfmt.h"
 #include	"cmd.h"
@@ -52,7 +52,7 @@ int			*tokens;
 	int		*t_ptr;
 	char		line[133];
 
-	gets(line);
+	agets(line);
 	/* Check for help, status, or kill */
 	cmd_parse(primary, line, tokens);
 	t_ptr = tokens;
@@ -227,7 +227,7 @@ int	*tokens, *table, (*help)();
 	char		*ptr, line[133];
 
 	condition_list(table, -1);
-	gets(line);
+	agets(line);
 	if(!line[0]) {
 		*tokens = -1;
 		return;
@@ -294,7 +294,7 @@ int	(*help)();
 	char	line[80];
 	int	results;
 
-	gets(line);
+	agets(line);
 	if(!*line)
 		return -1;
 	/* Check for help, status, or kill */
@@ -334,7 +334,7 @@ int	(*help)();
 {
 	int	tokens[20], *t_ptr;
 
-	gets(line);
+	agets(line);
 	if(!*line)
 		return;
 	/* Check for help, status, or kill */
@@ -396,14 +396,17 @@ cmd_status()
 boolean get_yes_no(str)
 register char	*str;
 {
+	extern int	wait_for_char;
 	char		answer[80];
 	boolean		retval;
+	int		old_wait_status = wait_for_char;
 
+	wait_for_char = 1;
 	for(;;) {
 		if(*str)
 			print("%s", str);
 		printf("? [Yes/No] ");
-		gets(answer);
+		agets(answer);
 		if((answer[0] == 'Y') || (answer[0] == 'y')) {
 			retval = true;
 			break;
@@ -415,6 +418,7 @@ register char	*str;
 		print("\n");
 		print("A 'Yes' or 'No' must be entered!\n\n");
 	}
+	wait_for_char = old_wait_status;
 	return retval;
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -34,7 +34,8 @@ unsigned long	sync;
 **	Looks for two maps in a row that are the same.
 */
 
-boolean read_map(flags)
+boolean
+read_map(flags)
 short	flags;
 {
 	register int	trk, i;
@@ -66,7 +67,9 @@ short	flags;
 					load_free_table();
 					return true;
 				}
-			} 
+else
+printf("%d: junk, slot %d/%d\n", trk, i, bad_map->bs_count);
+			}
 			blkzero(bad_map, bytes_trk);
 			bad_map->bs_id = 0;
 			bad_map->bs_max = MAX_FLAWS;
@@ -92,22 +95,31 @@ boolean read_bad_sector_map()
 	blkzero(bad_map, bytes_trk);
 	bad_map->bs_id = 0;
 	bad_map->bs_max = MAX_FLAWS;
-	if(C_INFO.type == SMD_ECTLR) {
+	if (C_INFO.type == SMD_ECTLR) {
 		access_dsk((char *)save, &dskaddr, RD_RAW, 1, 1);
-		if(align_buf((unsigned long *)save, CDCSYNC) == true) {
+		if (align_buf((unsigned long *)save, CDCSYNC) == true) {
+printf("Reading manufacturer's flaw maps...");
 			read_flaw_map();
-			return false;
-		}
-		if(read_map(NRM) == false) {
+printf("\n");
+			return (false);
+		} else if (read_map(NRM) == true) {
+			return (true);
+		} else {
+printf("Scanning for old relocations...");
 			get_smde_relocations();
+printf("\n");
 			return false;
 		}
+	} else {
+		if (read_map(WPT) == true)
+			return (true);
+		else {
+printf("Scanning for old relocations...");
+			get_relocations_the_hard_way();
+printf("\n");
+			return (false);
+		}
 	}
-	else if(read_map(WPT) == false) {
-		get_relocations_the_hard_way();
-		return false;
-	}
-	return true;
 }
 
 
@@ -241,7 +253,7 @@ write_bad_sector_map()
 	dskaddr.cylinder = (CURRENT->vc_ncyl - NUMMAP);
 	for(trk=0; trk<CURRENT->vc_ntrak; trk++) {
 		for(sec = 0; sec < CURRENT->vc_nsec; sec++) {
-			blkcopy((char *)&bs_map_space[sec * SECSIZ],
+			blkcopy((char *)bs_map_space + (sec * SECSIZ),
 			    (char *)scratch, SECSIZ);
 			dskaddr.track = trk;
 			dskaddr.sector = sec;
@@ -391,7 +403,7 @@ bs_entry	*b;
 				return 0;
 			else if(a->bs_offset < b->bs_offset)
 				return -1;
-		}
+		 }
 		else if(a->bs_trk < b->bs_trk)
 			return -1;
 	}
@@ -409,6 +421,10 @@ bs_entry	*entry;
 	register int	i;
 
 	if(bm->bs_count > MAX_FLAWS)
+		return;
+	if (entry->bs_cyl >= CURRENT->vc_ncyl ||
+	    entry->bs_trk >= CURRENT->vc_ntrak ||
+	    entry->bs_offset >= CURRENT->vc_traksize)
 		return;
 	for(i=0; i<bm->bs_count; i++) {
 		if(((bm->list[i].bs_cyl == entry->bs_cyl)) &&
