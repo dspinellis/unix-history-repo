@@ -1,4 +1,4 @@
-.\"	@(#)tt09	5.1 (Berkeley) %G%
+.\"	@(#)tt09	6.1 (Berkeley) %G%
 .\"
 .NH
 Titles, Pages and Numbering
@@ -12,7 +12,7 @@ Suppose you want a title at the top of each page,
 saying just
 .sp 3p
 .lt 2.8i
-.tl '~~~~left top'center top'right top~~~~'
+.tl 'left top'center top'right top'
 .lt
 .sp 3p
 In
@@ -23,10 +23,11 @@ one can say
 ^fo 'left bottom'center bottom'right bottom'
 .P2
 to get headers and footers automatically on every page.
-Alas, this doesn't work in
+Alas, this doesn't work so easily in
 .UL troff ,
 a serious hardship for the novice.
-Instead you have to do a lot of specification.
+Instead you have to do a lot of specification (or use
+a macro package, which makes it effortless).
 .PP
 You have to say what the actual title is (easy);
 when to print it (easy enough);
