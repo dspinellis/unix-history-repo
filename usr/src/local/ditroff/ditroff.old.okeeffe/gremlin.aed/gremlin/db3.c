@@ -1,5 +1,4 @@
-
-/* db3.c -
+/* @(#)db3.c	1.2	%G%
  *
  *
  * Copyright -C- 1982 Barry S. Roitblat
