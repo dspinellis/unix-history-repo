@@ -1,12 +1,9 @@
-/*	pup.h	4.5	82/04/10	*/
+/*	pup.h	4.6	83/05/30	*/
 
-/*
- * PUP port addressing.
- */
-struct pupport {
-	u_char	pp_net;
-	u_char	pp_host;
-	u_long	pp_socket;
+struct	pupport {
+	u_char	pup_net;
+	u_char	pup_host;
+	u_char	pup_socket[4];
 };
 
 /*
@@ -17,16 +14,21 @@ struct pup_header {
 	u_char	pup_tcontrol;		/* transport control */
 	u_char	pup_type;		/* protocol type */
 	u_long	pup_id;			/* used by protocols */
-	struct	pupport pup_dport, pup_sport;
-#define	pup_dnet	pup_dport.pp_net
-#define	pup_dhost	pup_dport.pp_host
-#define	pup_dsocket	pup_dport.pp_socket
-#define	pup_snet	pup_sport.pp_net
-#define	pup_shost	pup_sport.pp_host
-#define	pup_ssocket	pup_sport.pp_socket
+	u_char	pup_dnet;		/* destination */
+	u_char	pup_dhost;
+	u_char	pup_dsock[4];
+	u_char	pup_snet;		/* source */
+	u_char	pup_shost;
+	u_char	pup_ssock[4];
 };
 
 #define	PUP_TRACE	01		/* trace pup in network */
+
+#define	MINPUPSIZ	(sizeof (struct pup_header) + sizeof (short))
+#define	MAXPUPDATA	532
+#define	MAXPUPSIZ	(MINPUPSIZ + MAXPUPDATA)
+
+#define	PUP_NOCKSUM	0xffff		/* no checksum supplied */
 
 /*
  * A sockaddr, as seen through the eyes of PUP.
@@ -34,10 +36,8 @@ struct pup_header {
 struct sockaddr_pup {
 	short	spup_family;
 	short	spup_zero1;
-	struct	pupport spup_addr;
+	u_char	spup_net;
+	u_char	spup_host;
+	u_char	spup_sock[4];
 	char	spup_zero2[4];
 };
-
-#define	sp_net		spup_addr.pp_net
-#define	sp_host		spup_addr.pp_host
-#define	sp_socket	spup_addr.pp_socket
