@@ -1,12 +1,9 @@
-/*	if_enp.c	1.4	86/12/15	*/
+/*	if_enp.c	1.5	87/04/29	*/
 
 #include "enp.h"
 #if NENP > 0
 /*
- * Modified 3Com Ethernet Controller interface
- * enp modifications added S. F. Holmgren
- *
- * UNTESTED WITH 4.3
+ * CMC ENP-20 Ethernet Controller.
  */
 #include "param.h"
 #include "systm.h"
@@ -44,9 +41,13 @@
 #include "../tahoevba/vbavar.h"
 #include "../tahoeif/if_enpreg.h"
 
-#define	ENPVEC	0xc1
 #define ENPSTART	0xf02000	/* standard enp start addr */
 #define	ENPUNIT(dev)	(minor(dev))	/* for enp ram devices */
+/* macros for dealing with longs in i/o space */
+#define	ENPGETLONG(a)	((((u_short *)(a))[0] << 16)|(((u_short *)(a))[1]))
+#define	ENPSETLONG(a,v) \
+   { register u_short *wp = (u_short *)(a); \
+     wp[0] = ((u_short *)&(v))[0]; wp[1] = ((u_short *)&(v))[1];}
 
 int	enpprobe(), enpattach(), enpintr();
 long	enpstd[] = { 0xfff41000, 0xfff61000, 0 };
@@ -67,11 +68,8 @@ struct  mbuf *enpget();
 struct  enp_softc {
 	struct  arpcom es_ac;           /* common ethernet structures */
 #define es_if		es_ac.ac_if
-#define es_enaddr	es_ac.ac_enaddr
-	short	es_flags;		/* flags for devices */
+#define es_addr	es_ac.ac_enaddr
 	short	es_ivec;		/* interrupt vector */
-	struct	pte *es_map;		/* map for dual ported memory */
-	caddr_t	es_ram;			/* virtual address of mapped memory */
 } enp_softc[NENP]; 
 extern	struct ifnet loif;
 
@@ -105,23 +103,10 @@ enpattach(ui)
 {
 	struct enp_softc *es = &enp_softc[ui->ui_unit];
 	register struct ifnet *ifp = &es->es_if;
-	register struct enpdevice *addr = (struct enpdevice *)ui->ui_addr;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "enp";
 	ifp->if_mtu = ETHERMTU;
-	/*
-	 * Get station's addresses.
-	 */
-	enpcopy((u_char *)&addr->enp_addr.e_baseaddr, es->es_enaddr,
-	    sizeof (es->es_enaddr));
-	printf("enp%d: hardware address %s\n", ui->ui_unit,
-	    ether_sprintf(es->es_enaddr));
-	/*
-	 * Allocate and map ram.
-	 */
-	vbmemalloc(128, ((caddr_t)addr)+0x1000, &es->es_map, &es->es_ram);
-
 	ifp->if_init = enpinit;
 	ifp->if_ioctl = enpioctl;
 	ifp->if_output = enpoutput;
@@ -164,7 +149,6 @@ enpinit(unit)
 		s = splimp();
 		RESET_ENP(addr);
 		DELAY(200000);
-		addr->enp_intrvec = es->es_ivec;
 		es->es_if.if_flags |= IFF_RUNNING;
 		splx(s);
 	}
@@ -212,7 +196,7 @@ enpread(es, bcbp)
 	 * Remember that type was trailer by setting off.
 	 */
 	len = bcbp->b_msglen - sizeof (struct ether_header);
-	enp = (struct ether_header *)bcbp->b_addr;
+	enp = (struct ether_header *)ENPGETLONG(&bcbp->b_addr);
 #define enpdataaddr(enp, off, type) \
     ((type)(((caddr_t)(((char *)enp)+sizeof (struct ether_header))+(off))))
 	enp->ether_type = ntohs((u_short)enp->ether_type);
@@ -237,7 +221,7 @@ enpread(es, bcbp)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = enpget(bcbp->b_addr, len, off, &es->es_if);
+	m = enpget((u_char *)enp, len, off, &es->es_if);
 	if (m == 0)
 		goto setup;
 	if (off) {
@@ -324,8 +308,8 @@ enpoutput(ifp, m0, dst)
 			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ETHERTYPE_IP;
-			*(mtod(m, u_short *) + 1) = m->m_len;
+			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
+			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
 			goto gottrailertype;
 		}
 		type = ETHERTYPE_IP;
@@ -391,8 +375,8 @@ gottype:
 	}
 	enp = mtod(m, struct ether_header *);
 	bcopy((caddr_t)edst, (caddr_t)enp->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)es->es_enaddr, (caddr_t)enp->ether_shost,
-	    sizeof (es->es_enaddr));
+	bcopy((caddr_t)es->es_addr, (caddr_t)enp->ether_shost,
+	    sizeof (es->es_addr));
 	enp->ether_type = htons((u_short)type);
 
 	/*
@@ -435,7 +419,7 @@ enpput(unit, m)
 		return (1);	
 	bcbp = (BCB *)ringget((RING *)&addr->enp_hostfree);
 	bcbp->b_len = 0;
-	bp = (u_char *)bcbp->b_addr;
+	bp = (u_char *)ENPGETLONG(&bcbp->b_addr);
 	for (mp = m; mp; mp = mp->m_next) {
 		len = mp->m_len;
 		if (len == 0)
@@ -445,7 +429,7 @@ enpput(unit, m)
 		bp += len;
 		bcbp->b_len += len;
 	}
-	bcbp->b_len = MAX(ETHERMIN, bcbp->b_len);
+	bcbp->b_len = MAX(ETHERMIN+sizeof (struct ether_header), bcbp->b_len);
 	bcbp->b_reserved = 0;
 	if (ringput((RING *)&addr->enp_toenp, bcbp) == 1)
 		INTR_ENP(addr);
@@ -586,7 +570,7 @@ enpioctl(ifp, cmd, data)
 				enpsetaddr(ifp->if_unit, addr,
 				    ina->x_host.c_host);
 			} else
-				ina->x_host = *(union ns_host *)es->es_enaddr;
+				ina->x_host = *(union ns_host *)es->es_addr;
 			enpinit(ifp->if_unit);
 			break;
 		}
@@ -618,18 +602,23 @@ enpsetaddr(unit, addr, enaddr)
 	struct enpdevice *addr;
 	u_char *enaddr;
 {
-	u_char *cp;
-	int i, code;
 
-	cp = &addr->enp_addr.e_baseaddr.ea_addr[0];
-	for (i = 0; i < 6; i++)
-		*cp++ = ~*enaddr++;
-	enpcopy((u_char *)&addr->enp_addr.e_listsize, (u_char *)&code,
-	    sizeof (code)); 
-	code |= E_ADDR_SUPP;
-	enpcopy((u_char *)&code, (u_char *)&addr->enp_addr.e_listsize,
-	    sizeof (code)); 
+	enpcopy(enaddr, addr->enp_addr.e_baseaddr.ea_addr,
+	    sizeof (struct ether_addr));
 	enpinit(unit);
+	enpgetaddr(unit, addr);
+}
+
+enpgetaddr(unit, addr)
+	int unit;
+	struct enpdevice *addr;
+{
+	struct enp_softc *es = &enp_softc[unit];
+
+	enpcopy(addr->enp_addr.e_baseaddr.ea_addr, es->es_addr,
+	    sizeof (struct ether_addr));
+	printf("enp%d: hardware address %s\n",
+	    unit, ether_sprintf(es->es_addr));
 }
 
 /* 
@@ -681,7 +670,7 @@ ringput(rp, v)
 
 	idx = (rp->r_wrtidx + 1) & (rp->r_size-1);
 	if (idx != rp->r_rdidx) {
-		rp->r_slot[rp->r_wrtidx] = (int)v;
+		ENPSETLONG(&rp->r_slot[rp->r_wrtidx], v);
 		rp->r_wrtidx = idx;
 		if ((idx -= rp->r_rdidx) < 0)
 			idx += rp->r_size;
@@ -697,7 +686,7 @@ ringget(rp)
 	register int i = 0;
 
 	if (rp->r_rdidx != rp->r_wrtidx) {
-		i = rp->r_slot[rp->r_rdidx];
+		i = ENPGETLONG(&rp->r_slot[rp->r_rdidx]);
 		rp->r_rdidx = (++rp->r_rdidx) & (rp->r_size-1);
 	}
 	return (i);
@@ -735,7 +724,6 @@ enpr_read(dev, uio)
 {
 	register struct iovec *iov;
 	struct enpdevice *addr;
-	int error;
 
 	if (uio->uio_offset > RAM_SIZE)
 		return (ENODEV);
@@ -743,9 +731,8 @@ enpr_read(dev, uio)
 	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
 		iov->iov_len = RAM_SIZE - uio->uio_offset;
 	addr = (struct enpdevice *)enpinfo[ENPUNIT(dev)]->ui_addr;
-	error = useracc(iov->iov_base, (unsigned)iov->iov_len, 0);
-	if (error)
-		return (error);
+	if (useracc(iov->iov_base, (unsigned)iov->iov_len, 0) == 0)
+		return (EFAULT);
 	enpcopy((u_char *)&addr->enp_ram[uio->uio_offset],
 	    (u_char *)iov->iov_base, (u_int)iov->iov_len);
 	uio->uio_resid -= iov->iov_len;
@@ -759,7 +746,6 @@ enpr_write(dev, uio)
 {
 	register struct enpdevice *addr;
 	register struct iovec *iov;
-	register error;
 
 	addr = (struct enpdevice *)enpinfo[ENPUNIT(dev)]->ui_addr;
 	iov = uio->uio_iov;
@@ -767,9 +753,8 @@ enpr_write(dev, uio)
 		return (ENODEV);
 	if (uio->uio_offset + iov->iov_len > RAM_SIZE)
 		iov->iov_len = RAM_SIZE - uio->uio_offset;
-	error =  useracc(iov->iov_base, (unsigned)iov->iov_len, 1);
-	if (error)
-		return (error);
+	if (useracc(iov->iov_base, (unsigned)iov->iov_len, 1) == 0)
+		return (EFAULT);
 	enpcopy((u_char *)iov->iov_base,
 	    (u_char *)&addr->enp_ram[uio->uio_offset], (u_int)iov->iov_len);
 	uio->uio_resid -= iov->iov_len;
@@ -782,28 +767,34 @@ enpr_ioctl(dev, cmd, data)
 	dev_t dev;
 	caddr_t data;
 {
-	register struct enpdevice *addr;
 	register unit = ENPUNIT(dev);
+	struct enpdevice *addr;
 
 	addr = (struct enpdevice *)enpinfo[unit]->ui_addr;
 	switch(cmd) {
 
 	case ENPIOGO:
-/* not needed if prom based version */
-		addr->enp_base = (int)addr;
+		ENPSETLONG(&addr->enp_base, addr);
 		addr->enp_intrvec = enp_softc[unit].es_ivec;
 		ENP_GO(addr, ENPSTART);
 		DELAY(200000);
 		enpinit(unit);
-		addr->enp_state = S_ENPRUN;  /* it is running now */
-/* end of not needed */
+		/*
+		 * Fetch Ethernet address after link level
+		 * is booted (firmware copies manufacturer's
+		 * address from on-board ROM).
+		 */
+		enpgetaddr(unit, addr);
+		addr->enp_state = S_ENPRUN;
 		break;
 
 	case ENPIORESET:
 		RESET_ENP(addr);
-		addr->enp_state = S_ENPRESET;  /* it is reset now */
+		addr->enp_state = S_ENPRESET;
 		DELAY(100000);
 		break;
+	default:
+		return (EINVAL);
 	}
 	return (0);
 }
