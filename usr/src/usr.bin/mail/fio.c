@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.8 %G%";
+static char *SccsId = "@(#)fio.c	2.9 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -508,6 +508,7 @@ expand(name)
 	}
 	sprintf(cmdbuf, "echo %s", name);
 	if ((pid = vfork()) == 0) {
+		sigchild();
 		Shell = value("SHELL");
 		if (Shell == NOSTR)
 			Shell = SHELL;
