@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.89 (Berkeley) %G%
+ *	@(#)conf.h	8.90 (Berkeley) %G%
  */
 
 /*
@@ -291,7 +291,7 @@ extern long	dgux_inet_addr();
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# ifdef HASFLOCK
+# ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
 # define LA_TYPE	LA_INT
@@ -403,7 +403,7 @@ typedef int		pid_t;
 # define MACH386	1
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
-# ifdef HASFLOCK
+# ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
 # define NEEDGETOPT	1	/* need a replacement for getopt(3) */
@@ -527,7 +527,7 @@ extern int		errno;
 #ifdef RISCOS
 
 # define HASUNSETENV	1	/* has unsetenv(3) call */
-# ifdef HASFLOCK
+# ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
 # define WAITUNION	1	/* use "union wait" as wait argument type */
