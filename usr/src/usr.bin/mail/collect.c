@@ -7,7 +7,7 @@
  * ~ escapes.
  */
 
-static char *SccsId = "@(#)collect.c	1.2 %G%";
+static char *SccsId = "@(#)collect.c	1.3 %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
@@ -26,10 +26,10 @@ static char *SccsId = "@(#)collect.c	1.2 %G%";
  */
 
 static	int	(*savesig)();		/* Previous SIGINT value */
+static	int	(*savehup)();		/* Previous SIGHUP value */
 static	FILE	*newi;			/* File for saving away */
 static	FILE	*newo;			/* Output side of same */
 static	int	hf;			/* Ignore interrups */
-static	int	nofault;		/* Soft signal if set */
 static	int	hadintr;		/* Have seen one SIGINT so far */
 
 static	jmp_buf	coljmp;			/* To get back to work */
@@ -39,7 +39,7 @@ collect(hp)
 	struct header *hp;
 {
 	FILE *ibuf, *fbuf, *obuf;
-	int lc, cc, escape, collrub(), intack(), stopdot;
+	int lc, cc, escape, collrub(), intack(), stopdot, collhup;
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
@@ -51,10 +51,11 @@ collect(hp)
 		hf = 1;
 	else
 		hf = 0;
-	nofault = 1;
 	hadintr = 0;
-	if ((savesig = signal(SIGINT, SIG_IGN)) != SIG_IGN)
-		signal(SIGINT, hf ? intack : collrub);
+	if ((savesig = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
+		sigset(SIGINT, hf ? intack : collrub), sighold(SIGINT);
+	if ((savehup = sigset(SIGHUP, SIG_IGN)) != SIG_IGN)
+		sigset(SIGHUP, collrub), sighold(SIGINT);
 	newi = NULL;
 	newo = NULL;
 	if ((obuf = fopen(tempMail, "w")) == NULL) {
@@ -92,7 +93,8 @@ collect(hp)
 		escape = *cp;
 	for (;;) {
 		setjmp(coljmp);
-		nofault = 0;
+		sigrelse(SIGINT);
+		sigrelse(SIGHUP);
 		flush();
 		if (readline(stdin, linebuf) <= 0)
 			break;
@@ -106,7 +108,6 @@ collect(hp)
 			continue;
 		}
 		c = linebuf[1];
-		nofault= 0;
 		switch (c) {
 		default:
 			/*
@@ -146,7 +147,6 @@ collect(hp)
 			 * Escape to command mode, but be nice!
 			 */
 
-			nofault = 0;
 			execute(&linebuf[2], 1);
 			break;
 
@@ -163,7 +163,6 @@ collect(hp)
 			 * Act like an interrupt happened.
 			 */
 
-			nofault = 0;
 			hadintr++;
 			collrub(SIGINT);
 			exit(1);
@@ -304,7 +303,6 @@ collect(hp)
 			break;
 
 		case '?':
-			nofault = 0;
 			if ((fbuf = fopen(THELPFILE, "r")) == NULL) {
 				printf("No help just now.\n");
 				break;
@@ -325,7 +323,6 @@ collect(hp)
 
 			fflush(obuf);
 			rewind(ibuf);
-			nofault = 0;
 			printf("-------\nMessage contains:\n");
 			puthead(hp, stdout, GTO|GSUBJECT|GCC|GBCC|GNL);
 			t = getc(ibuf);
@@ -370,7 +367,8 @@ collect(hp)
 eof:
 	fclose(obuf);
 	rewind(ibuf);
-	signal(SIGINT, savesig);
+	sigset(SIGINT, savesig);
+	sigset(SIGHUP, savehup);
 	noreset = 0;
 	return(ibuf);
 
@@ -379,7 +377,8 @@ err:
 		fclose(ibuf);
 	if (obuf != NULL)
 		fclose(obuf);
-	signal(SIGINT, savesig);
+	sigset(SIGINT, savesig);
+	sigset(SIGHUP, savehup);
 	noreset = 0;
 	return(NULL);
 }
@@ -392,8 +391,8 @@ psig(n)
 {
 	register (*wassig)();
 
-	wassig = signal(n, SIG_IGN);
-	signal(n, wassig);
+	wassig = sigset(n, SIG_IGN);
+	sigset(n, wassig);
 	return((int) wassig);
 }
 
@@ -464,7 +463,7 @@ mesedit(ibuf, obuf, c)
 	extern char tempMail[], tempEdit[];
 	register char *edit;
 
-	sig = signal(SIGINT, SIG_IGN);
+	sig = sigset(SIGINT, SIG_IGN);
 	if (stat(tempEdit, &sbuf) >= 0) {
 		printf("%s: file exists\n", tempEdit);
 		goto out;
@@ -493,7 +492,7 @@ mesedit(ibuf, obuf, c)
 	pid = vfork();
 	if (pid == 0) {
 		if (sig != SIG_IGN)
-			signal(SIGINT, SIG_DFL);
+			sigsys(SIGINT, SIG_DFL);
 		execl(edit, edit, tempEdit, 0);
 		perror(edit);
 		_exit(1);
@@ -534,7 +533,7 @@ mesedit(ibuf, obuf, c)
 fix:
 	perror(tempEdit);
 out:
-	signal(SIGINT, sig);
+	sigset(SIGINT, sig);
 	newi = ibuf;
 	return(obuf);
 }
@@ -568,7 +567,7 @@ mespipe(ibuf, obuf, cmd)
 		return(obuf);
 	}
 	remove(tempEdit);
-	savesig = signal(SIGINT, SIG_IGN);
+	savesig = sigset(SIGINT, SIG_IGN);
 	fflush(obuf);
 	rewind(ibuf);
 	if ((Shell = value("SHELL")) == NULL)
@@ -611,13 +610,13 @@ mespipe(ibuf, obuf, cmd)
 	newi = ni;
 	fclose(ibuf);
 	fclose(obuf);
-	signal(SIGINT, savesig);
+	sigset(SIGINT, savesig);
 	return(no);
 
 err:
 	fclose(no);
 	fclose(ni);
-	signal(SIGINT, savesig);
+	sigset(SIGINT, savesig);
 	return(obuf);
 }
 
@@ -714,7 +713,7 @@ transmit(mailp, obuf)
 
 /*
  * On interrupt, go here to save the partial
- * message on #/dead.letter.
+ * message on ~/dead.letter.
  * Then restore signals and execute the normal
  * signal routine.  We only come here if signals
  * were previously set anyway.
@@ -725,33 +724,16 @@ collrub(s)
 	register FILE *dbuf;
 	register int c;
 
-#ifdef V7
-	signal(s, SIG_IGN);
-#else
-	signal(SIGINT, SIG_IGN);
-#endif
-	if (nofault) {
-#ifdef V7
-		signal(s, collrub);
-#else
-		signal(SIGINT, collrub);
-#endif
-		return;
-	}
-	if (hadintr == 0) {
+	if (s == SIGINT && hadintr == 0) {
 		hadintr++;
 		clrbuf(stdout);
 		printf("\n(Interrupt -- one more to kill letter)\n");
-#ifdef V7
-		signal(s, collrub);
-#else
-		signal(SIGINT, collrub);
-#endif
+		sigset(s, collrub);
 		longjmp(coljmp, 1);
 	}
 	fclose(newo);
 	rewind(newi);
-	if (value("nosave") != NOSTR || fsize(newi) == 0)
+	if (s == SIGINT && value("nosave") != NOSTR || fsize(newi) == 0)
 		goto done;
 	if ((dbuf = fopen(deadletter, "w")) == NULL)
 		goto done;
@@ -762,9 +744,14 @@ collrub(s)
 
 done:
 	fclose(newi);
-	signal(SIGINT, savesig);
-	if (rcvmode)
-		stop();
+	sigset(SIGINT, savesig);
+	sigset(SIGHUP, savehup);
+	if (rcvmode) {
+		if (s == SIGHUP)
+			hangup(SIGHUP);
+		else
+			stop();
+	}
 	else
 		exit(1);
 }
@@ -776,11 +763,9 @@ done:
 intack(s)
 {
 	
-	signal(SIGINT, SIG_IGN);
 	puts("@");
 	fflush(stdout);
 	clearerr(stdin);
-	signal(SIGINT, intack);
 }
 
 /*
