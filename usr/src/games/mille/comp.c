@@ -1,18 +1,18 @@
 /*
  * Copyright (c) 1982 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
-char copyright[] =
-"@(#) Copyright (c) 1982 Regents of the University of California.\n\
- All rights reserved.\n";
-#endif not lint
-
-#ifndef lint
-static char sccsid[] = "@(#)comp.c	5.1 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)comp.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 # include	"mille.h"
 
@@ -88,18 +88,22 @@ norm:
 		Movetype = M_DRAW;
 		return;
 	}
+#ifdef DEBUG
 	if (Debug)
 		fprintf(outf, "CALCMOVE: cango = %d, canstop = %d, safe = %d\n",
 			cango, canstop, safe);
+#endif
 	if (foundend)
 		foundend = !check_ext(TRUE);
 	for (i = 0; safe && i < HAND_SZ; i++) {
 		if (issafety(pp->hand[i])) {
 			if (onecard(op) || (foundend && cango && !canstop)) {
+#ifdef DEBUG
 				if (Debug)
 					fprintf(outf,
 						"CALCMOVE: onecard(op) = %d, foundend = %d\n",
 						onecard(op), foundend);
+#endif
 playsafe:
 				Movetype = M_PLAY;
 				Card_no = i;
@@ -115,10 +119,12 @@ playsafe:
 				card = (Topcard - Deck) - roll(1, 10);
 				if ((!pp->mileage) != (!op->mileage))
 					card -= 7;
+#ifdef DEBUG
 				if (Debug)
 					fprintf(outf,
 						"CALCMOVE: card = %d, DECK_SZ / 4 = %d\n",
 						card, DECK_SZ / 4);
+#endif
 				if (card < DECK_SZ / 4)
 					goto playsafe;
 			}
@@ -143,9 +149,11 @@ redoit:
 	for (i = 0; i < HAND_SZ; i++) {
 		card = pp->hand[i];
 		if (issafety(card) || playit[i] == (cango != 0)) {
+#ifdef DEBUG
 			if (Debug)
 				fprintf(outf, "CALCMOVE: switch(\"%s\")\n",
 					C_name[card]);
+#endif
 			switch (card) {
 			  case C_25:	case C_50:
 				diff = End - pp->mileage;
@@ -333,9 +341,11 @@ normbad:
 				curmin = *value;
 			}
 		}
+#ifdef DEBUG
 		if (Debug)
 			mvprintw(i + 6, 2, "%3d %-14s", *value,
 				 C_name[pp->hand[i]]);
+#endif
 		value++;
 	}
 	if (!pp->can_go && !isrepair(pp->battle))
@@ -343,9 +353,13 @@ normbad:
 	if (cango) {
 play_it:
 		mvaddstr(MOVE_Y + 1, MOVE_X, "PLAY\n");
+#ifdef DEBUG
 		if (Debug)
 			getmove();
 		if (!Debug || Movetype == M_DRAW) {
+#else
+		if (Movetype == M_DRAW) {
+#endif
 			Movetype = M_PLAY;
 			Card_no = nummax;
 		}
@@ -356,9 +370,13 @@ play_it:
 			goto play_it;
 		}
 		mvaddstr(MOVE_Y + 1, MOVE_X, "DISCARD\n");
+#ifdef DEBUG
 		if (Debug)
 			getmove();
 		if (!Debug || Movetype == M_DRAW) {
+#else
+		if (Movetype == M_DRAW) {
+#endif
 			Movetype = M_DISCARD;
 			Card_no = nummin;
 		}
