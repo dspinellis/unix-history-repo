@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)icheck.8	6.1 (Berkeley) %G%
+.\"	@(#)icheck.8	6.2 (Berkeley) %G%
 .\"
 .TH ICHECK 8 ""
 .UC 4
@@ -11,8 +11,6 @@ icheck \- file system storage consistency check
 .SH SYNOPSIS
 .B /etc/icheck
 [
-.B \-s
-]  [
 .B \-b
 numbers ]
 [ filesystem ]
@@ -26,7 +24,7 @@ is obsoleted for normal consistency checking by
 examines a file system,
 builds a bit map of used blocks,
 and compares this bit map against
-the free list maintained on the file system.
+the free map maintained on the file system.
 If the file system is not specified,
 a set of default file systems
 is checked.
@@ -43,30 +41,7 @@ single-, double-, and triple-indirect blocks and directory blocks.
 The number of free blocks.
 .IP ""
 The number of blocks missing; i.e. not in any file
-nor in the free list.
-.PP
-The
-.B \-s
-option causes
-.I icheck
-to ignore the actual free list and reconstruct a new one
-by rewriting the super-block of the file system.
-The file system should be dismounted while this is done;
-if this is not possible (for example if
-the root file system has to be salvaged)
-care should be taken that the system is quiescent and that
-it is rebooted immediately afterwards so that the old, bad in-core
-copy of the super-block will not continue to be used.
-Notice also that
-the words in the super-block
-which indicate the size of the free list and of the
-i-list are believed.
-If the super-block has been curdled
-these words will have to be patched.
-The
-.B \-s
-option
-causes the normal output reports to be suppressed.
+nor in any free map.
 .PP
 Following the
 .B \-b
@@ -91,13 +66,6 @@ If a read error is encountered,
 the block number of the bad block is printed and
 .I icheck
 considers it to contain 0.
-`Bad freeblock' means that
-a block number outside the available space was encountered in the free list.
-`\fIn\fR dups in free'
-means that
-.IR n ""
-blocks were found in the free list which
-duplicate blocks either in some file or in the earlier part of the free list.
 .SH BUGS
 Since
 .I icheck
@@ -106,6 +74,3 @@ may be produced if applied to active file systems.
 .PP
 It believes even preposterous super-blocks and
 consequently can get core images.
-.PP
-The system should be fixed so that the reboot after fixing the root
-file system is not necessary.
