@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.26	82/01/17	*/
+/*	uipc_socket.c	4.27	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -606,19 +606,7 @@ COUNT(SOIOCTL);
 		}
 		return;
 	}
+	/* type/protocol specific ioctls */
 	}
-	switch (so->so_type) {
-
-	case SOCK_STREAM:
-		break;
-
-	case SOCK_DGRAM:
-		break;
-
-	case SOCK_RDM:
-		break;
-
-	case SOCK_RAW:
-		break;
-	}
+	u.u_error = EOPNOTSUPP;
 }
