@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.29 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -334,8 +334,10 @@ getfsstat(scp)
 	count = 0;
 	do {
 		if (sfsp && count < maxcount && ((mp->m_flag & M_MLOCK) == 0)) {
-			if (error = VFS_STATFS(mp, &sb))
-				RETURN (error);
+			if (error = VFS_STATFS(mp, &sb)) {
+				mp = mp->m_prev;
+				continue;
+			}
 			sb.f_flags = mp->m_flag & M_VISFLAGMASK;
 			sb.f_fsid = mp->m_fsid;
 			if (error = copyout((caddr_t)&sb, sfsp, sizeof(sb)))
