@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	<sys/types.h>
@@ -80,9 +80,14 @@ char	*av[];
 	if (Tbl.str_delims[2] == 0)
 		Tbl.str_delims[2] = Tbl.str_delims[0];
 
-	do {
+	for (;;) {
 		getfort();
-	} while ((Sflag && !is_short()) || (Lflag && !is_long()));
+		if (Sflag && !is_short())
+			continue;
+		if (Lflag && !is_long())
+			continue;
+		break;
+	}
 
 	fseek(Inf, Seekpts[0], 0);
 	while (c = getc(Inf)) {
@@ -175,9 +180,11 @@ register char	*av[];
 					break;
 				  case 's':	/* short ones only */
 					Sflag++;
+					Lflag = 0;
 					break;
 				  case 'l':	/* long ones only */
 					Lflag++;
+					Sflag = 0;
 					break;
 				  case 'o':	/* offensive ones only */
 					Oflag++;
