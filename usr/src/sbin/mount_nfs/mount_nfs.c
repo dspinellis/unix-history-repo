@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -231,7 +231,7 @@ main(argc, argv, arge)
 						perror("nqnfs");
 						exit(1);
 					}
-					exit();
+					exit(0);
 				}
 				(void) setsid();
 				(void) close(0);
@@ -277,7 +277,7 @@ syslog(LOG_ERR,"ktlen=%d\n", kt.length);
 				syslog(LOG_ERR, "nfssvc err %m");
 			}
 		}
-		exit();
+		exit(0);
 	} else
 		exit(1);
 }
@@ -414,7 +414,7 @@ getnfsargs(spec, nfsargsp)
 						perror("nqnfs");
 						exit(1);
 					}
-					exit();
+					exit(0);
 				}
 				(void) setsid();
 				(void) close(0);
