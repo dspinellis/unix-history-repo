@@ -6,18 +6,17 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fts.h>
 #include <string.h>
 #include <stdlib.h>
-
-extern int errno;
 
 FTSENT *fts_alloc(), *fts_build(), *fts_cycle(), *fts_sort(), *fts_root();
 short fts_stat();
@@ -36,6 +35,10 @@ short fts_stat();
 #define	ROOTLEVEL	0
 #define	ROOTPARENTLEVEL	-1
 
+/* fts_build flags */
+#define	BCHILD		1		/* from ftschildren */
+#define	BREAD		2		/* from ftsread */
+
 static FTS *stream;			/* current stream pointer */
 
 FTS *
@@ -48,14 +51,21 @@ ftsopen(argv, options, compar)
 	register FTSENT *p, *root;
 	register int nitems, maxlen;
 	FTSENT *parent, *tmp;
-	char wd[MAXPATHLEN], *getwd(), *strdup();
+	char *fts_path();
 
 	/* allocate/initialize the stream */
 	if (!(stream = sp = (FTS *)malloc((u_int)sizeof(FTS))))
 		return(NULL);
 	bzero(sp, sizeof(FTS));
 	sp->fts_compar = compar;
+
+	/*
+	 * logical walks turn on NOCHDIR; symbolic links are just too
+	 * hard to deal with.
+	 */
 	sp->fts_options = options;
+	if (options & FTS_LOGICAL)
+		sp->fts_options |= FTS_NOCHDIR;
 
 	/* allocate/initialize root's parent */
 	if (!(parent = fts_alloc("", 0)))
@@ -117,22 +127,22 @@ ftsopen(argv, options, compar)
 		goto mem3;
 
 	/*
-	 * if using chdir(2), do a getwd() to insure that we can get back
-	 * here; this could be avoided for some paths, but probably not
-	 * worth the effort.  Slashes, symbolic links, and ".." are all
-	 * fairly nasty problems.  Note, if we can't get the current
-	 * working directory we run anyway, just more slowly.
+	 * if using chdir(2), grab a file descriptor pointing to dot to insure
+	 * that we can get back here; this could be avoided for some paths,
+	 * but almost certainly not worth the effort.  Slashes, symbolic links,
+	 * and ".." are all fairly nasty problems.  Note, if we can't get the
+	 * descriptor we run anyway, just more slowly.
 	 */
 	if (!(options & FTS_NOCHDIR) &&
-	    (!getwd(wd) || !(sp->fts_wd = strdup(wd))))
+	    (sp->fts_sd = open(".", O_RDONLY, 0)) < 0)
 		sp->fts_options |= FTS_NOCHDIR;
 
 	return(sp);
 
-mem3:	(void)free((char *)sp->fts_cur);
+mem3:	(void)free((void *)sp->fts_cur);
 mem2:	fts_lfree(root);
-	(void)free((char *)parent);
-mem1:	(void)free((char *)sp);
+	(void)free((void *)parent);
+mem1:	(void)free((void *)sp);
 	return(NULL);
 }
 
@@ -173,16 +183,16 @@ ftsclose(sp)
 		for (p = sp->fts_cur; p->fts_level > ROOTPARENTLEVEL;) {
 			freep = p;
 			p = p->fts_link ? p->fts_link : p->fts_parent;
-			(void)free((char *)freep);
+			(void)free((void *)freep);
 		}
-		(void)free((char *)p);
+		(void)free((void *)p);
 	}
 
 	/* free up child linked list, sort array, path buffer */
 	if (sp->fts_child)
 		fts_lfree(sp->fts_child);
 	if (sp->fts_array)
-		(void)free((char *)sp->fts_array);
+		(void)free((void *)sp->fts_array);
 	(void)free((char *)sp->fts_path);
 
 	/*
@@ -190,12 +200,12 @@ ftsclose(sp)
 	 * free up the directory buffer
 	 */
 	if (!(sp->fts_options & FTS_NOCHDIR)) {
-		saved_errno = chdir(sp->fts_wd) ? errno : 0;
-		(void)free(sp->fts_wd);
+		saved_errno = fchdir(sp->fts_sd) ? errno : 0;
+		(void)close(sp->fts_sd);
 	}
 
 	/* free up the stream pointer */
-	(void)free((char *)sp);
+	(void)free((void *)sp);
 
 	/* set errno and return */
 	if (!(sp->fts_options & FTS_NOCHDIR) && saved_errno) {
@@ -209,11 +219,10 @@ FTSENT *
 ftsread(sp)
 	register FTS *sp;
 {
-	register FTSENT *p;
+	register FTSENT *p, *tmp;
 	register int instr;
+	register char *cp;
 	static int cd;
-	FTSENT *tmp;
-	char *cp;
 
 	/* if finished or unrecoverable error, return NULL */
 	if (!sp->fts_cur || sp->fts_options & FTS__STOP)
@@ -239,90 +248,102 @@ ftsread(sp)
 		return(p);
 	}
 
-	if (p->fts_info == FTS_D)
+	/* following a symbolic link */
+	if (p->fts_info == FTS_SL && instr == FTS_FOLLOW) {
+		p->fts_info = fts_stat(p, 1);
+		return(p);
+	}
+
+	/* directory in pre-order */
+	if (p->fts_info == FTS_D) {
+		/* may have been skipped or crossed mount point */
 		if (instr == FTS_SKIP || sp->fts_options & FTS_XDEV &&
 		    p->fts_statb.st_dev != sp->sdev) {
 			if (sp->fts_child) {
 				fts_lfree(sp->fts_child);
 				sp->fts_child = NULL;
 			}
-		} else {
-			if (!sp->fts_child &&
-			    (!(sp->fts_child = fts_build(sp, 1))))
+			goto next;
+		} 
+
+		/* read the directory if necessary, and return first entry */
+		if (sp->fts_child) 
+			if (CHDIR(sp, p->fts_accpath)) {
+				fts_lfree(sp->fts_child);
+				p->fts_info = FTS_DNX;
+			} else {
+				p = sp->fts_child;
+				cp = sp->fts_path + NAPPEND(p->fts_parent);
+				*cp++ = '/';
+				bcopy(p->fts_name, cp, p->fts_namelen + 1);
+			}
+		else {
+			if (!(sp->fts_child = fts_build(sp, BREAD)))
 				return(p);
 			p = sp->fts_child;
-			sp->fts_child = NULL;
-			return(sp->fts_cur = p);
 		}
-	else if (p->fts_info == FTS_SL && instr == FTS_FOLLOW) {
-		p->fts_info = fts_stat(p, 1);
-		return(p);
+		sp->fts_child = NULL;
+		return(sp->fts_cur = p);
 	}
 
-	/*
-	 * user may have called ftsset on pointer returned by ftschildren;
-	 * handle it here.
-	 */
-	for (p = p->fts_link; p;) {
-		instr = p->fts_instr;
-		if (instr == FTS_FOLLOW) {
-			p->fts_info = fts_stat(p, 1);
-			p->fts_instr = 0;
-			break;
-		}
-		if (instr == FTS_SKIP) {
-			tmp = p;
-			p = p->fts_link;
-			(void)free((char *)tmp);
-			continue;
-		}
-		p->fts_instr = 0;
-		break;
-	}
-
-	/* go to next node on this level */
-	if (p) {
+	/* move to next node on this level */
+next:	tmp = p;
+	if (p = p->fts_link) {
 		/*
 		 * if root level node, set up paths and return.  If not the
 		 * first time, and it's not an absolute pathname, get back
-		 * to wherever we started from.
+		 * to starting directory.
 		 */
 		if (p->fts_level == ROOTLEVEL) {
 			fts_load(p);
-			(void)free((char *)sp->fts_cur);
+			(void)free((void *)tmp);
 			if (cd &&
-			    p->fts_path[0] != '/' && CHDIR(sp, sp->fts_wd)) {
-				/* return target path for error msg */
-				p->fts_path = sp->fts_wd;
+			    p->fts_path[0] != '/' && FCHDIR(sp, sp->fts_sd)) {
+				/* should never happen... */
+				p->fts_path = "starting directory";
 				p->fts_info = FTS_ERR;
 				sp->fts_options |= FTS__STOP;
 				return(sp->fts_cur = p);
-			}
+			} 
 			cd = 1;
 			p->fts_info = fts_stat(p, 0);
 			sp->sdev = p->fts_statb.st_dev;
 		} else {
-			(void)free((char *)sp->fts_cur);
+			(void)free((void *)tmp);
+
+			/* user may have called ftsset on node */
+			if (p->fts_instr == FTS_SKIP)
+				goto next;
+			if (p->fts_instr == FTS_FOLLOW) {
+				p->fts_info = fts_stat(p, 1);
+				p->fts_instr = 0;
+			}
+
+			/* fill in the paths */
 			cp = sp->fts_path + NAPPEND(p->fts_parent);
 			*cp++ = '/';
 			bcopy(p->fts_name, cp, p->fts_namelen + 1);
+
+			/* check for directory cycles */
 			if (p->fts_info == FTS_D && (tmp = fts_cycle(p))) {
 				sp->fts_savelink = p->fts_link;
 				p->fts_link = tmp;
+				p->fts_info = FTS_DC;
 			}
 		}
 		return(sp->fts_cur = p);
 	}
 
-	/* go to parent */
-	p = sp->fts_cur->fts_parent;
-	(void)free((char *)sp->fts_cur);
+	/* move to parent */
+	p = tmp->fts_parent;
+	(void)free((void *)tmp);
+
 	if (p->fts_level == ROOTPARENTLEVEL) {
 		/*
 		 * done; free everything up and set errno to 0 so the user
 		 * can distinguish between error and EOF.
 		 */
-		(void)free((char *)p);
+		(void)free((void *)p);
 		errno = 0;
 		return(sp->fts_cur = NULL);
 	}
@@ -356,24 +377,45 @@ FTSENT *
 ftschildren(sp)
 	register FTS *sp;
 {
+	register FTSENT *p;
+	int fd;
+
 	/*
 	 * set errno to 0 so that user can tell the difference between an
 	 * error and a directory without entries.
 	 */
 	errno = 0;
-	if (sp->fts_cur->fts_info != FTS_D || sp->fts_options & FTS__STOP)
+	p = sp->fts_cur;
+	if (p->fts_info != FTS_D || sp->fts_options & FTS__STOP)
 		return(NULL);
 	if (sp->fts_child)
 		fts_lfree(sp->fts_child);
-	return(sp->fts_child = fts_build(sp, 0));
+
+	/*
+	 * if using chdir on a relative path and called BEFORE ftsread on the
+	 * root of a traversal, we can lose because we need to chdir into the
+	 * subdirectory, and we don't know where the current directory is to
+	 * get back so that the upcoming chdir by ftsread will work.
+	 */
+	if (p->fts_level != ROOTLEVEL || p->fts_accpath[0] == '/' ||
+	    sp->fts_options & FTS_NOCHDIR)
+		return(sp->fts_child = fts_build(sp, BCHILD));
+
+	if ((fd = open(".", O_RDONLY, 0)) < 0)
+		return(NULL);
+	sp->fts_child = fts_build(sp, BCHILD);
+	if (fchdir(fd))
+		return(NULL);
+	(void)close(fd);
+	return(sp->fts_child);
 }
 
 #define	ISDOT(a)	(a[0] == '.' && (!a[1] || a[1] == '.' && !a[2]))
 
-static FTSENT *
-fts_build(sp, set_node)
+FTSENT *
+fts_build(sp, type)
 	register FTS *sp;
-	int set_node;
+	int type;
 {
 	register struct dirent *dp;
 	register FTSENT *p, *head;
@@ -384,7 +426,7 @@ fts_build(sp, set_node)
 
 	p = sp->fts_cur;
 	if (!(dirp = opendir(p->fts_accpath))) {
-		if (set_node) {
+		if (type == BREAD) {
 			errno = 0;
 			p->fts_info = FTS_DNR;
 		}
@@ -405,12 +447,14 @@ fts_build(sp, set_node)
 	    sp->fts_options & FTS_NOSTAT && sp->fts_options & FTS_PHYSICAL ?
 	    p->fts_statb.st_nlink - (sp->fts_options & FTS_SEEDOT ? 0 : 2) : -1;
 
-	if (nlinks || set_node) {
+	/* if told to descend or found links and not told not to descend. */
+	if (nlinks || type == BREAD) {
 		if (FCHDIR(sp, dirfd(dirp))) {
-			if (set_node) {
+			if (type == BREAD) {
 				errno = 0;
 				p->fts_info = FTS_DNX;
 			}
+			(void)closedir(dirp);
 			return(NULL);
 		}
 		descend = 1;
@@ -439,15 +483,16 @@ fts_build(sp, set_node)
 				/* quit: this stream no longer has a path */
 				sp->fts_options |= FTS__STOP;
 				saved_errno = errno;
-				(void)free((char *)p);
+				(void)free((void *)p);
 mem1:				fts_lfree(head);
-				if (set_node)
+				if (type == BREAD)
 					p->fts_info = FTS_ERR;
 				if (descend && CHDIR(sp, "..")) {
 					saved_errno = errno;
 					sp->fts_options |= FTS__STOP;
 				}
 				errno = saved_errno;
+				(void)closedir(dirp);
 				return(NULL);
 			}
 			maxlen = sp->fts_pathlen - sp->fts_cur->fts_pathlen - 1;
@@ -477,27 +522,34 @@ mem1:				fts_lfree(head);
 	}
 	(void)closedir(dirp);
 
-	if (descend && (!nitems || !set_node) && CHDIR(sp, "..")) {
+	/* reset the path */
+	if (cp - 1 > sp->fts_path)
+		--cp;
+	*cp = '\0';
+
+	/*
+	 * if descended: if were called from ftsread and didn't find anything,
+	 * or were called from ftschildren, get back.
+	 */
+	if (descend && (!nitems || type == BCHILD) && CHDIR(sp, "..")) {
 		sp->fts_options |= FTS__STOP;
 		p->fts_info = FTS_ERR;
-		*--cp = '\0';
 		return(NULL);
 	}
 
 	if (!nitems) {
-		if (set_node)
+		if (type == BREAD)
 			p->fts_info = FTS_DP;
-		*--cp = '\0';
 		return(NULL);
 	}
 
 	if (sp->fts_compar && nitems > 1)
 		head = fts_sort(head, nitems);
 
-	if (set_node)
-		bcopy(head->fts_name, cp, head->fts_namelen + 1);
-	else
-		*--cp = '\0';
+	if (type == BREAD) {
+		*cp = '/';
+		bcopy(head->fts_name, cp + 1, head->fts_namelen + 1);
+	}
 	return(head);
 }
 
@@ -550,7 +602,7 @@ fts_cycle(p)
 }
 
 #define	R(type, nelem, ptr) \
-	(type *)realloc((char *)ptr, (u_int)((nelem) * sizeof(type)))
+	(type *)realloc((void *)ptr, (u_int)((nelem) * sizeof(type)))
 
 static FTSENT *
 fts_sort(head, nitems)
@@ -576,7 +628,7 @@ fts_sort(head, nitems)
 	}
 	for (ap = stream->fts_array, p = head; p; p = p->fts_link)
 		*ap++ = p;
-	qsort((char *)stream->fts_array, nitems, sizeof(FTSENT *),
+	qsort((void *)stream->fts_array, nitems, sizeof(FTSENT *),
 	    stream->fts_compar);
 	for (head = *(ap = stream->fts_array); --nitems; ++ap)
 		ap[0]->fts_link = ap[1];
@@ -595,7 +647,7 @@ fts_alloc(name, len)
 	 * variable sized structures; the name is the last element so
 	 * allocate enough extra space after the structure to hold it.
 	 */
-	if (!(p = (FTSENT *)malloc((u_int)(sizeof(FTSENT) + len))))
+	if (!(p = (FTSENT *)malloc((size_t)(sizeof(FTSENT) + len))))
 		return(NULL);
 	bcopy(name, p->fts_name, len + 1);
 	p->fts_namelen = len;
@@ -614,7 +666,7 @@ fts_lfree(head)
 
 	while (p = head) {
 		head = head->fts_link;
-		(void)free((char *)p);
+		(void)free((void *)p);
 	}
 }
 
@@ -625,13 +677,13 @@ fts_lfree(head)
  * Add an extra 128 bytes to the requested size so that we don't realloc
  * the path 2 bytes at a time.
  */
-static
+static char *
 fts_path(size)
 	int size;
 {
 	stream->fts_pathlen += size + 128;
-	return((int)(stream->fts_path =
-	    R(char, stream->fts_pathlen, stream->fts_path)));
+	return(stream->fts_path =
+	    R(char, stream->fts_pathlen, stream->fts_path));
 }
 
 static FTSENT *
