@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.4 (Berkeley) %G%
+.\"	@(#)tty.4	6.5 (Berkeley) %G%
 .\"
 .TH TTY 4 ""
 .UC 4
@@ -550,7 +550,7 @@ BS0	0
 BS1	0100000
 VTDELAY	0040000	Select form-feed and vertical-tab delays:
 FF0	0
-FF1	0100000
+FF1	0040000
 CRDELAY	0030000	Select carriage-return delays:
 CR0	0
 CR1	0010000
@@ -558,7 +558,7 @@ CR2	0020000
 CR3	0030000
 TBDELAY	0006000	Select tab delays:
 TAB0	0
-TAB1	0001000
+TAB1	0002000
 TAB2	0004000
 XTABS	0006000
 NLDELAY	0001400	Select new-line delays:
@@ -785,7 +785,7 @@ struct tchars {
 .ft R
 .PP
 The default values for these characters are
-^?, ^\e\|, ^Q, ^S, ^D, and \-1.
+^C, ^\e\|, ^Q, ^S, ^D, and \-1.
 A character value of \-1
 eliminates the effect of that character.
 The
