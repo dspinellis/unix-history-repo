@@ -1,4 +1,4 @@
-/*	tty.c	4.25	82/08/01	*/
+/*	tty.c	4.26	82/08/04	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -1017,7 +1017,7 @@ loop:
 					tp->t_lstate |= LSBKSL;
 					continue;
 				}
-			if (c == tlun.t_dsuspc) {
+			if (tp->t_line == NTTYDISC && c == tlun.t_dsuspc) {
 				ttsignal(tp, SIGTSTP);
 				if (first) {
 					sleep((caddr_t)&lbolt, TTIPRI);
