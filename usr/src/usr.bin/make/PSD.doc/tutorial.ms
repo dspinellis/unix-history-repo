@@ -1,72 +1,57 @@
-'\" Copyright (c) 1988, 1989 by Adam de Boor
-'\" Copyright (c) 1989 by Berkeley Softworks
-'\" Copyright (c) 1988, 1989, 1993
-'\"	The Regents of the University of California.  All rights reserved.
-'\"
-'\" This code is derived from software contributed to Berkeley by
-'\" Adam de Boor.
-'\"
-'\" %sccs.include.redist.roff%
-'\"
-'\"	@(#)tutorial.ms	5.2 (Berkeley) %G%
-'\"
-
-'\" xH is a macro to provide numbered headers that are automatically stuffed
-'\" into a table-of-contents, properly indented, etc. If the first argument
-'\" is numeric, it is taken as the depth for numbering (as for .NH), else
-'\" the default (1) is assumed.
-'\"
-'\" $Id: tutorial.ms,v 1.4 89/01/08 20:20:22 adam Exp Locker: adam $
-'\"
-'\" @P The initial paragraph distance.
-'\" @Q The piece of section number to increment (or 0 if none given)
-'\" @R Section header.
-'\" @S Indent for toc entry
-'\" @T Argument to NH (can't use @Q b/c giving 0 to NH resets the counter)
+.\" Copyright (c) 1988, 1989 by Adam de Boor
+.\" Copyright (c) 1989 by Berkeley Softworks
+.\" Copyright (c) 1988, 1989, 1993
+.\"	The Regents of the University of California.  All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Adam de Boor.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tutorial.ms	5.3 (Berkeley) %G%
+.\"
+.EH 'PSD:12-%''PMake \*- A Tutorial'
+.OH 'PMake \*- A Tutorial''PSD:9-%'
+.PD
+.\" xH is a macro to provide numbered headers that are automatically stuffed
+.\" into a table-of-contents, properly indented, etc. If the first argument
+.\" is numeric, it is taken as the depth for numbering (as for .NH), else
+.\" the default (1) is assumed.
+.\"
+.\" $Id: tutorial.ms,v 1.4 89/01/08 20:20:22 adam Exp Locker: adam $
+.\"
+.\" @P The initial paragraph distance.
+.\" @Q The piece of section number to increment (or 0 if none given)
+.\" @R Section header.
+.\" @S Indent for toc entry
+.\" @T Argument to NH (can't use @Q b/c giving 0 to NH resets the counter)
 .de xH
-.nr @Q 0
-.ds @T
-'\" This stuff exercises a bug in nroff. It used to read
-'\" .ie \\$1, but if $1 was non-numeric, nroff would process the
-'\" commands after the first in the true body, as well as the
-'\" false body. Why, I don't know. The bit with @U is a kludge, and
-'\" the initial assignment of 0 is necessary
-.nr @U 0
-.nr @U \\$1
-.ie \\n(@U>0  \{\
-.	nr @Q \\$1
-.	ds @T \\$1
-.	ds @R \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-'\}
-.el .ds @R \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
-.nr @S (\\n(@Q-1)*5
-.nr @P \\n(PD
-.ie \\n(@S==-5 .nr @S 0
-.el .nr PD 0
-.NH \\*(@T
-\\*(@R
-.XS \\n(PN \\n(@S
-\\*(SN \\*(@R
+.NH \\$1
+\\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.nr PD .1v
+.XS \\n%
+.ta 0.6i
+\\*(SN	\\$2
 .XE
-.nr PD \\n(@P
+.nr PD .3v
 ..
-'\" CW is used to place a string in fixed-width or switch to a
-'\" fixed-width font.
-'\" C is a typewriter font for a laserwriter. Use something else if
-'\" you don't have one...
+.\" CW is used to place a string in fixed-width or switch to a
+.\" fixed-width font.
+.\" C is a typewriter font for a laserwriter. Use something else if
+.\" you don't have one...
 .de CW
 .ie !\\n(.$ .ft C
 .el \&\\$3\fC\\$1\fP\\$2
 ..
-'\" Anything I put in a display I want to be in fixed-width
+.\" Anything I put in a display I want to be in fixed-width
 .am DS
 .CW
 ..
-'\" The stuff in .No produces a little stop sign in the left margin
-'\" that says NOTE in it. Unfortunately, it does cause a break, but
-'\" hey. Can't have everything. In case you're wondering how I came
-'\" up with such weird commands, they came from running grn on a
-'\" gremlin file...
+.\" The stuff in .No produces a little stop sign in the left margin
+.\" that says NOTE in it. Unfortunately, it does cause a break, but
+.\" hey. Can't have everything. In case you're wondering how I came
+.\" up with such weird commands, they came from running grn on a
+.\" gremlin file...
 .de No
 .br
 .ne 0.5i
@@ -76,7 +61,7 @@
 .nr g3 \\n(.f
 .nr g4 \\n(.s
 .sp -1
-.st cf
+.\" .st cf
 \D's -1u'\D't 5u'
 .sp -1
 \h'50u'\D'l 71u 0u'\D'l 50u 50u'\D'l 0u 71u'\D'l -50u 50u'\D'l -71u 0u'\D'l -50u -50u'\D'l 0u -71u'\D'l 50u -50u'
@@ -106,7 +91,6 @@
 .el .IP "\&" 2
 ..
 .po +.3i
-.RP
 .TL
 PMake \*- A Tutorial
 .AU
@@ -117,7 +101,7 @@ Berkeley Softworks
 Berkeley, CA 94704
 adam@bsw.uu.net
 \&...!uunet!bsw!adam
-.FS "\&
+.FS
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appears in all copies.
@@ -125,8 +109,8 @@ The University of California, Berkeley Softworks, and Adam de Boor make no
 representations about the suitability of this software for any
 purpose.  It is provided "as is" without express or implied warranty.
 .FE
-.LP
-.xH Introduction
+.PP
+.xH 1 Introduction
 .LP
 PMake is a program for creating other programs, or anything else you
 can think of for it to do.  The basic idea behind PMake is that, for
@@ -155,7 +139,7 @@ Things in chapter 3 make life much easier, while those in chapter 4
 are strictly for those who know what they are doing. Chapter 5 has
 definitions for the jargon I use and chapter 6 contains possible
 solutions to the problems presented throughout the tutorial.
-.xH The Basics of PMake
+.xH 1 The Basics of PMake
 .LP
 PMake takes as input a file that tells a) which files depend on which
 other files to be complete and b) what to do about files that are
@@ -1544,7 +1528,7 @@ flags.
 .xH 2 Exercises
 .ce
 \s+4\fBTBA\fP\s0
-.xH Short-cuts and Other Nice Things
+.xH 1 Short-cuts and Other Nice Things
 .LP
 Based on what I've told you so far, you may have gotten the impression
 that PMake is just a way of storing away commands and making sure you
@@ -2004,8 +1988,8 @@ to the target of the transformation rule when the rule is applied.
 .Ix 0 def attributes
 .Ix 0 ref source
 .Ix 0 ref target
-.nr pw \w'.EXPORTSAME  'u
-.IP .DONTCARE \n(pwu
+.nr pw 12
+.IP .DONTCARE \n(pw
 .Ix 0 def attributes .DONTCARE
 .Ix 0 def .DONTCARE
 If a target is marked with this attribute and PMake can't figure out
@@ -2017,7 +2001,7 @@ attempting to touch the target if it is given the
 .B \-t
 flag.
 .Ix 0 ref flags -t
-.IP .EXEC \n(pwu
+.IP .EXEC \n(pw
 .Ix 0 def attributes .EXEC
 .Ix 0 def .EXEC
 This attribute causes its shell script to be executed while having no
@@ -2072,14 +2056,14 @@ as a source. This is because none of the other targets can be made
 until
 .CW init
 has been made, thus they depend on it.
-.IP .EXPORT \n(pwu
+.IP .EXPORT \n(pw
 .Ix 0 def attributes .EXPORT
 .Ix 0 def .EXPORT
 This is used to mark those targets whose creation should be sent to
 another machine if at all possible. This may be used by some
 exportation schemes if the exportation is expensive. You should ask
 your system administrator if it is necessary.
-.IP .EXPORTSAME \n(pwu
+.IP .EXPORTSAME \n(pw
 .Ix 0 def attributes .EXPORTSAME
 .Ix 0 def .EXPORTSAME
 Tells the export system that the job should be exported to a machine
@@ -2091,14 +2075,14 @@ operating system type), while others (e.g. compiling a program with
 .CW cc )
 must be performed on a machine with the same architecture. Not all
 export systems will support this attribute.
-.IP .IGNORE \n(pwu
+.IP .IGNORE \n(pw
 .Ix 0 def attributes .IGNORE
 .Ix 0 def .IGNORE attribute
 Giving a target the
 .CW .IGNORE
 attribute causes PMake to ignore errors from any of the target's commands, as
 if they all had `\-' before them.
-.IP .INVISIBLE \n(pwu
+.IP .INVISIBLE \n(pw
 .Ix 0 def attributes .INVISIBLE
 .Ix 0 def .INVISIBLE
 This allows you to specify one target as a source for another without
@@ -2124,7 +2108,7 @@ the
 rule couldn't be applied. This is not as useful as it should be, and
 the semantics may change (or the whole thing go away) in the
 not-too-distant future.
-.IP .JOIN \n(pwu
+.IP .JOIN \n(pw
 .Ix 0 def attributes .JOIN
 .Ix 0 def .JOIN
 This is another way to avoid performing some operations in parallel
@@ -2184,7 +2168,7 @@ being created if the
 .B \-t
 flag was given.
 .Ix 0 ref flags -t
-.IP .MAKE \n(pwu
+.IP .MAKE \n(pw
 .Ix 0 def attributes .MAKE
 .Ix 0 def .MAKE
 The
@@ -2204,7 +2188,7 @@ correctly), printing what it would have executed if you hadn't
 included the
 .B \-n
 flag.
-.IP .NOEXPORT \n(pwu
+.IP .NOEXPORT \n(pw
 .Ix 0 def attributes .NOEXPORT
 .Ix 0 def .NOEXPORT attribute
 If possible, PMake will attempt to export the creation of all targets to
@@ -2215,7 +2199,7 @@ machine. If you give the target the
 attribute, it will be run locally, even if you've given PMake the
 .B "\-L 0"
 flag.
-.IP .NOTMAIN \n(pwu
+.IP .NOTMAIN \n(pw
 .Ix 0 def attributes .NOTMAIN
 .Ix 0 def .NOTMAIN
 Normally, if you do not specify a target to make in any other way,
@@ -2232,7 +2216,7 @@ definitely
 the Main Target.
 This allows you to place targets in an included makefile and
 have PMake create something else by default.
-.IP .PRECIOUS \n(pwu
+.IP .PRECIOUS \n(pw
 .Ix 0 def attributes .PRECIOUS
 .Ix 0 def .PRECIOUS attribute
 When PMake is interrupted (you type control-C at the keyboard), it
@@ -2244,12 +2228,12 @@ effect of the `::' operator is to mark the targets as
 .CW .PRECIOUS .
 .Ix 0 ref operator double-colon
 .Ix 0 ref ::
-.IP .SILENT \n(pwu
+.IP .SILENT \n(pw
 .Ix 0 def attributes .SILENT
 .Ix 0 def .SILENT attribute
 Marking a target with this attribute keeps its commands from being
 printed when they're executed, just as if they had an `@' in front of them.
-.IP .USE \n(pwu
+.IP .USE \n(pw
 .Ix 0 def attributes .USE
 .Ix 0 def .USE
 By giving a target this attribute, you turn it into PMake's equivalent
@@ -2261,7 +2245,7 @@ If the target already has commands, the
 .CW .USE
 target's commands are added to the end. If more than one .USE-marked
 source is given to a target, the rules are applied sequentially.
-.IP "\&" \n(pwu
+.IP "\&" \n(pw
 The typical .USE rule (as I call them) will use the sources of the
 target to which it is applied (as stored in the
 .CW .ALLSRC
@@ -2287,7 +2271,7 @@ MAKELIB         : .USE
 .DE
 .Ix 0 ref variable local .TARGET
 .Ix 0 ref variable local .ALLSRC
-.IP "\&" \n(pwu
+.IP "\&" \n(pw
 Several system makefiles (not to be confused with The System Makefile)
 make use of these  .USE rules to make your
 life easier (they're in the default, system makefile directory...take a look).
@@ -2312,12 +2296,12 @@ I won't describe them all in detail because some of them are rather
 complex and I'll describe them in more detail than you'll want in
 chapter 4.
 The targets are as follows:
-.nr pw \w'.MAKEFLAGS  'u
-.IP .BEGIN \n(pwu
+.nr pw 10
+.IP .BEGIN \n(pw
 .Ix 0 def .BEGIN
 Any commands attached to this target are executed before anything else
 is done. You can use it for any initialization that needs doing.
-.IP .DEFAULT \n(pwu
+.IP .DEFAULT \n(pw
 .Ix 0 def .DEFAULT
 This is sort of a .USE rule for any target (that was used only as a
 source) that PMake can't figure out any other way to create. It's only
@@ -2330,7 +2314,7 @@ variable of a target that inherits
 commands is set to the target's own name.
 .Ix 0 ref .IMPSRC
 .Ix 0 ref variable local .IMPSRC
-.IP .END \n(pwu
+.IP .END \n(pw
 .Ix 0 def .END
 This serves a function similar to
 .CW .BEGIN ,
@@ -2340,11 +2324,11 @@ function of being a place on which PMake can hang commands you put off
 to the end. Thus the script for this target will be executed before
 any of the commands you save with the ``.\|.\|.''.
 .Ix 0 ref ...
-.IP .EXPORT \n(pwu
+.IP .EXPORT \n(pw
 The sources for this target are passed to the exportation system compiled
 into PMake. Some systems will use these sources to configure
 themselves. You should ask your system administrator about this.
-.IP .IGNORE \n(pwu
+.IP .IGNORE \n(pw
 .Ix 0 def .IGNORE target
 .Ix 0 ref .IGNORE attribute
 .Ix 0 ref attributes .IGNORE
@@ -2355,7 +2339,7 @@ giving the
 .B \-i
 flag when you invoke PMake \*- errors are ignored for all commands.
 .Ix 0 ref flags -i
-.IP .INCLUDES \n(pwu
+.IP .INCLUDES \n(pw
 .Ix 0 def .INCLUDES target
 .Ix 0 def variable global .INCLUDES
 .Ix 0 def .INCLUDES variable
@@ -2393,12 +2377,12 @@ cc $(.INCLUDES) -c xprogram.c
 (Note: the
 .CW .INCLUDES
 variable is not actually filled in until the entire makefile has been read.)
-.IP .INTERRUPT \n(pwu
+.IP .INTERRUPT \n(pw
 .Ix 0 def .INTERRUPT
 When PMake is interrupted,
 it will execute the commands in the script for this target, if it
 exists.
-.IP .LIBS \n(pwu
+.IP .LIBS \n(pw
 .Ix 0 def .LIBS target
 .Ix 0 def .LIBS variable
 .Ix 0 def variable global .LIBS
@@ -2415,12 +2399,12 @@ linker on your system doesn't accept the
 flag, though the
 .CW .LIBS
 variable will always be defined once the makefile has been read.
-.IP .MAIN \n(pwu
+.IP .MAIN \n(pw
 .Ix 0 def .MAIN
 If you didn't give a target (or targets) to create when you invoked
 PMake, it will take the sources of this target as the targets to
 create.
-.IP .MAKEFLAGS \n(pwu
+.IP .MAKEFLAGS \n(pw
 .Ix 0 def .MAKEFLAGS target
 This target provides a way for you to always specify flags for PMake
 when the makefile is used. The flags are just as they would be typed
@@ -2431,7 +2415,7 @@ though the
 and
 .B \-r
 flags have no effect.
-.IP .NULL \n(pwu
+.IP .NULL \n(pw
 .Ix 0 def .NULL
 .Ix 0 ref suffix null
 .Ix 0 ref "null suffix"
@@ -2439,7 +2423,7 @@ This allows you to specify what suffix PMake should pretend a file has
 if, in fact, it has no known suffix. Only one suffix may be so
 designated. The last source on the dependency line is the suffix that
 is used (you should, however, only give one suffix.\|.\|.).
-.IP .PATH \n(pwu
+.IP .PATH \n(pw
 .Ix 0 def .PATH
 If you give sources for this target, PMake will take them as
 directories in which to search for files it cannot find in the current
@@ -2447,7 +2431,7 @@ directory. If you give no sources, it will clear out any directories
 added to the search path before. Since the effects of this all get
 very complex, I'll leave it til chapter four to give you a complete
 explanation.
-.IP .PATH\fIsuffix\fP \n(pwu
+.IP .PATH\fIsuffix\fP \n(pw
 .Ix 0 ref .PATH
 This does a similar thing to
 .CW .PATH ,
@@ -2457,7 +2441,7 @@ have been defined already. Look at
 (section 4.1)
 .Rm 6 4.1
 for more information.
-.IP .PRECIOUS \n(pwu
+.IP .PRECIOUS \n(pw
 .Ix 0 def .PRECIOUS target
 .Ix 0 ref .PRECIOUS attribute
 .Ix 0 ref attributes .PRECIOUS
@@ -2469,14 +2453,14 @@ attribute to each source on the dependency line, unless there are no
 sources, in which case the
 .CW .PRECIOUS
 attribute is given to every target in the file.
-.IP .RECURSIVE \n(pwu
+.IP .RECURSIVE \n(pw
 .Ix 0 def .RECURSIVE
 .Ix 0 ref attributes .MAKE
 .Ix 0 ref .MAKE
 This target applies the
 .CW .MAKE
 attribute to all its sources. It does nothing if you don't give it any sources.
-.IP .SHELL \n(pwu
+.IP .SHELL \n(pw
 .Ix 0 def .SHELL
 PMake is not constrained to only using the Bourne shell to execute
 the commands you put in the makefile. You can tell it some other shell
@@ -2485,7 +2469,7 @@ to use with this target. Check out
 (section 4.4)
 .Rm 7 4.4
 for more information.
-.IP .SILENT \n(pwu
+.IP .SILENT \n(pw
 .Ix 0 def .SILENT target
 .Ix 0 ref .SILENT attribute
 .Ix 0 ref attributes .SILENT
@@ -2497,7 +2481,7 @@ attribute to each of its sources. If there are no sources on the
 dependency line, then it is as if you gave PMake the
 .B \-s
 flag and no commands will be echoed.
-.IP .SUFFIXES \n(pwu
+.IP .SUFFIXES \n(pw
 .Ix 0 def .SUFFIXES
 This is used to give new file suffixes for PMake to handle. Each
 source is a suffix PMake should recognize. If you give a
@@ -2705,7 +2689,7 @@ $($(FOO))
 What do you do? Hint: no further variable expansion is performed after
 modifiers are applied, thus if you cause a $ to occur in the
 expansion, that's what will be in the result.
-.xH PMake for Gods
+.xH 1 PMake for Gods
 .LP
 This chapter is devoted to those facilities in PMake that allow you to
 do a great deal in a makefile with very little work, as well as do
@@ -2937,7 +2921,7 @@ _MAKELIB_MK	=
 
 #include	<po.mk>
 
-.po.a .o.a	:
+\&.po.a .o.a	:
 	...
 	rm -f $(.MEMBER)
 
@@ -3011,11 +2995,11 @@ AND, which takes precedence over OR.  This precedence may be
 overridden with parentheses, and an expression may be parenthesized to
 your heart's content.  Each term looks like a call on one of four
 functions:
-.nr pw \w'defined  'u
+.nr pw 9
 .Ix 0 def make
 .Ix 0 def conditional make
 .Ix 0 def if make
-.IP make \n(pwu
+.IP make \n(pw
 The syntax is
 .CW make( \fItarget\fP\c
 .CW )
@@ -3027,7 +3011,7 @@ specified on the command line, or as the source for a
 target (note that the sources for
 .CW .MAIN
 are only used if no targets were given on the command line).
-.IP defined \n(pwu
+.IP defined \n(pw
 .Ix 0 def defined
 .Ix 0 def conditional defined
 .Ix 0 def if defined
@@ -3038,7 +3022,7 @@ and is true if
 .I variable
 is defined. Certain variables are defined in the system makefile that
 identify the system on which PMake is being run.
-.IP exists \n(pwu
+.IP exists \n(pw
 .Ix 0 def exists
 .Ix 0 def conditional exists
 .Ix 0 def if exists
@@ -3051,7 +3035,7 @@ that defined by
 targets, not by
 .CW .PATH \fIsuffix\fP
 targets).
-.IP empty \n(pwu
+.IP empty \n(pw
 .Ix 0 def empty
 .Ix 0 def conditional empty
 .Ix 0 def if empty
@@ -3551,7 +3535,7 @@ are still some targets unmade (PMake keeps a running count of how many
 targets are left to be made), there is a cycle in the graph. PMake does
 a depth-first traversal of the graph to find all the targets that
 weren't made and prints them out one by one.
-.xH Answers to Exercises
+.xH 1 Answers to Exercises
 .IP (3.1)
 This is something of a trick question, for which I apologize. The
 trick comes from the UNIX definition of a suffix, which PMake doesn't
@@ -3605,11 +3589,11 @@ another variable, then invoke the other variable directly:
 You can then use
 .CW $(*PTR) '' ``
 to your heart's content.
-.xH Glossary of Jargon
 .de Gp
 .XP
 \&\fB\\$1:\fP
 ..
+.xH 1 Glossary of Jargon
 .Gp "attribute"
 A property given to a target that causes PMake to treat it differently.
 .Gp "command script"
@@ -3710,12 +3694,12 @@ it. Expansion may be altered by means of modifiers.
 A place in which to store text that may be retrieved later. Also used
 to define the local environment. Conditionals exist that test whether
 a variable is defined or not.
-'\" Output table of contents last, with an entry for the index, making
-'\" sure to save and restore the last real page number for the index...
+.\" Output table of contents last, with an entry for the index, making
+.\" sure to save and restore the last real page number for the index...
 .nr @n \n(PN+1
-.XS \n(@n 0
+.XS \n(@n
 Index
 .XE
 .nr %% \n%
-.TC
+.PX
 .nr % \n(%%
