@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -68,20 +68,21 @@ __bt_search(t, key, exactp)
 			}
 		}
 
-		/*
-		 * No match found.  Base is the smallest index greater than
-		 * key but may be an illegal index.  Use base if it's a leaf
-		 * page, decrement it by one if it's an internal page.  This
-		 * is safe because internal pages can't be empty.
-		 */
-		index = h->flags & P_BLEAF ? base : base - 1;
-
 		/* If it's a leaf page, we're done. */
 		if (h->flags & P_BLEAF) {
-			e.index = index;
+			e.index = base;
 			*exactp = 0;
 			return (&e);
 		}
+
+		/*
+		 * No match found.  Base is the smallest index greater than
+		 * key and may be zero or a last + 1 index.  If it's non-zero,
+		 * decrement by one, and record the internal page which should
+		 * be a parent page for the key.  If a split later occurs, the
+		 * inserted page will be to the right of the saved page.
+		 */
+		index = base ? base - 1 : base;
 
 next:		if (__bt_push(t, h->pgno, index) == RET_ERROR)
 			return (NULL);
