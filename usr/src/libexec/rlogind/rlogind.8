@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.5 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.6 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
@@ -71,9 +71,9 @@ process as described in
 .IR rshd (8),
 but if automatic authentication fails, it reprompts the user
 to login as one finds on a standard terminal line.  The
-.I -p
+.I -l
 option prevents any authentication based on the user's
-``.rhosts'' file.
+``.rhosts'' file, unless the user is the superuser.
 .PP
 The parent of the login process manipulates the master side of
 the pseduo terminal, operating as an intermediary
