@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cu.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cu.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -77,7 +77,8 @@ cumain(argc, argv)
 	 * The "cu" host name is used to define the
 	 * attributes of the generic dialer.
 	 */
-	if ((i = hunt(sprintf(sbuf, "cu%d", BR))) == 0) {
+	(void)sprintf(sbuf, "cu%d", BR);
+	if ((i = hunt(sbuf)) == 0) {
 		printf("all ports busy\n");
 		exit(3);
 	}
