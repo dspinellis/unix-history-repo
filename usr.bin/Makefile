@@ -11,8 +11,8 @@ SUBDIR=	ar basename biff cal calendar checknr chpass cksum cmp col \
 	passwd paste printenv printf quota ranlib rdist ref renice rev rlogin \
 	rsh ruptime rwho sccs script sed shar showmount size soelim split \
 	strings strip su symorder tail talk tcopy tee telnet tftp time \
-	tip touch tput tr true tset tsort tty ul unexpand unifdef uniq \
-	unvis users uudecode uuencode vacation vgrind vis vmstat \
+	tip tn3270 touch tput tr true tset tsort tty ul unexpand unifdef \
+	uniq unvis users uudecode uuencode vacation vgrind vis vmstat \
 	w wall wc what whereis which who whoami whois \
 	window write xargs xinstall xstr yacc yes
 	
