@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)column.1	5.8 (Berkeley) %G%
+.\"     @(#)column.1	5.9 (Berkeley) %G%
 .\"
 .Dd 
 .Os
@@ -13,9 +13,9 @@
 .Nd columnate lists
 .Sh SYNOPSIS
 .Nm column
-.Op Fl c Ns Ar columns
-.Op Fl s Ns Ar sep
 .Op Fl tx
+.Op Fl c Ar columns
+.Op Fl s Ar sep
 .Op Ar
 .Sh DESCRIPTION
 The
@@ -59,7 +59,7 @@ is used to determine the size of
 the screen if no other information is available.
 .El
 .Sh EXAMPLES
-.Dl (printf \&"PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en\&"\ \&; \e
+.Dl (printf \&"PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en\&"\ \&;\ \&\e
 .Dl ls -l \&| sed 1d) \&| column -t
 .Sh SEE ALSO
 .Xr colrm 1 ,
