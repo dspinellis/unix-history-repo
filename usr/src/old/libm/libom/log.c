@@ -1,4 +1,4 @@
-/*	@(#)log.c	4.2	%G%	*/
+/*	@(#)log.c	4.3	%G%	*/
 
 /*
 	log returns the natural logarithm of its floating

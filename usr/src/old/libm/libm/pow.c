@@ -1,41 +1,216 @@
-/*	@(#)pow.c	4.2	%G%	*/
+/* 
+ * Copyright (c) 1985 Regents of the University of California.
+ * 
+ * Use and reproduction of this software are granted  in  accordance  with
+ * the terms and conditions specified in  the  Berkeley  Software  License
+ * Agreement (in particular, this entails acknowledgement of the programs'
+ * source, and inclusion of this notice) with the additional understanding
+ * that  all  recipients  should regard themselves as participants  in  an
+ * ongoing  research  project and hence should  feel  obligated  to report
+ * their  experiences (good or bad) with these elementary function  codes,
+ * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
+ */
 
-/*
-	computes a^b.
-	uses log and exp
-*/
+#ifndef lint
+static char sccsid[] = "@(#)pow.c	4.3 (Berkeley) %G%";
+#endif not lint
 
-#include	<errno.h>
-int errno;
-double log(), exp();
+/* POW(X,Y)  
+ * RETURN X**Y 
+ * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
+ * CODED IN C BY K.C. NG, 1/8/85; 
+ * REVISED BY K.C. NG on 5/12/85.
+ *
+ * Required system supported functions:
+ *      scalb(x,n)      
+ *      logb(x)         
+ *	copysign(x,y)	
+ *	finite(x)	
+ *	drem(x,y)
+ *
+ * Required kernel functions:
+ *	exp__E(a,c)	...return  exp(a+c) - 1 - a*a/2
+ *	log__L(x)	...return  (log(1+x) - 2s)/s, s=x/(2+x) 
+ *	pow_p(x,y)	...return  +(anything)**(finite non zero)
+ *
+ * Method
+ *	1. Compute and return log(x) in three pieces:
+ *		log(x) = n*ln2 + hi + lo,
+ *	   where n is an integer.
+ *	2. Perform y*log(x) by simulating muti-precision arithmetic and 
+ *	   return the answer in three pieces:
+ *		y*log(x) = m*ln2 + hi + lo,
+ *	   where m is an integer.
+ *	3. Return x**y = exp(y*log(x))
+ *		= 2^m * ( exp(hi+lo) ).
+ *
+ * Special cases:
+ *	(anything) ** 0  is 1 ;
+ *	(anything) ** 1  is itself;
+ *	(anything) ** NAN is NAN;
+ *	NAN ** (anything except 0) is NAN;
+ *	+-(anything > 1) ** +INF is +INF;
+ *	+-(anything > 1) ** -INF is +0;
+ *	+-(anything < 1) ** +INF is +0;
+ *	+-(anything < 1) ** -INF is +INF;
+ *	+-1 ** +-INF is NAN and signal INVALID;
+ *	+0 ** +(anything except 0, NAN)  is +0;
+ *	-0 ** +(anything except 0, NAN, odd integer)  is +0;
+ *	+0 ** -(anything except 0, NAN)  is +INF and signal DIV-BY-ZERO;
+ *	-0 ** -(anything except 0, NAN, odd integer)  is +INF with signal;
+ *	-0 ** (odd integer) = -( +0 ** (odd integer) );
+ *	+INF ** +(anything except 0,NAN) is +INF;
+ *	+INF ** -(anything except 0,NAN) is +0;
+ *	-INF ** (odd integer) = -( +INF ** (odd integer) );
+ *	-INF ** (even integer) = ( +INF ** (even integer) );
+ *	-INF ** -(anything except integer,NAN) is NAN with signal;
+ *	-(x=anything) ** (k=integer) is (-1)**k * (x ** k);
+ *	-(anything except 0) ** (non-integer) is NAN with signal;
+ *
+ * Accuracy:
+ *	pow(x,y) returns x**y nearly rounded. In particular, on a SUN, a VAX,
+ *	and a Zilog Z8000,
+ *			pow(integer,integer)
+ *	always returns the correct integer provided it is representable.
+ *	In a test run with 100,000 random arguments with 0 < x, y < 20.0
+ *	on a VAX, the maximum observed error was 1.79 ulps (units in the 
+ *	last place).
+ *
+ * Constants :
+ * The hexadecimal values are the intended ones for the following constants.
+ * The decimal values may be used, provided that the compiler will convert
+ * from decimal to binary accurately enough to produce the hexadecimal values
+ * shown.
+ */
 
-double
-pow(arg1,arg2)
-double arg1, arg2;
-{
-	double temp;
-	long l;
-
-#ifdef vax
-	asm("	bispsw	$0xe0");
+#ifdef VAX	/* VAX D format */
+#include <errno.h>
+extern errno;
+/* double static */
+/* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
+/* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
+/* invln2 =  1.4426950408889634148E0     , Hex  2^  1   *  .B8AA3B295C17F1 */
+/* sqrt2  =  1.4142135623730950622E0     ; Hex  2^  1   *  .B504F333F9DE65 */
+static long     ln2hix[] = { 0x72174031, 0x0000f7d0};
+static long     ln2lox[] = { 0xbcd52ce7, 0xd9cce4f1};
+static long    invln2x[] = { 0xaa3b40b8, 0x17f1295c};
+static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
+#define    ln2hi    (*(double*)ln2hix)
+#define    ln2lo    (*(double*)ln2lox)
+#define   invln2    (*(double*)invln2x)
+#define    sqrt2    (*(double*)sqrt2x)
+#else		/* IEEE double format */
+double static
+ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
+ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
+invln2 =  1.4426950408889633870E0     , /*Hex  2^  0   *  1.71547652B82FE */
+sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
 #endif
-	if(arg1 <= 0.) {
-		if(arg1 == 0.) {
-			if(arg2 <= 0.)
-				goto domain;
-			return(0.);
-		}
-		l = arg2;
-		if(l != arg2)
-			goto domain;
-		temp = exp(arg2 * log(-arg1));
-		if(l & 1)
-			temp = -temp;
-		return(temp);
-	}
-	return(exp(arg2 * log(arg1)));
 
-domain:
-	errno = EDOM;
-	return(0.);
+double static zero=0.0, half=1.0/2.0, one=1.0, two=2.0, negone= -1.0;
+
+double pow(x,y)  	
+double x,y;
+{
+	double drem(),pow_p(),copysign(),t;
+	int finite();
+
+	if     (y==zero)      return(one);
+	else if(y==one||x!=x) return( x );      /* if x is NAN or y=1 */
+	else if(y!=y)         return( y );      /* if y is NAN */
+	else if(!finite(y))                     /* if y is INF */
+	     if((t=copysign(x,one))==one) return(zero/zero);
+	     else if(t>one) return((y>zero)?y:zero);
+	     else return((y<zero)?-y:zero);
+	else if(y==two)       return(x*x);
+	else if(y==negone)    return(one/x);
+
+    /* sign(x) = 1 */
+	else if(copysign(one,x)==one) return(pow_p(x,y));
+
+    /* sign(x)= -1 */
+	/* if y is an even integer */
+	else if ( (t=drem(y,two)) == zero)	return( pow_p(-x,y) );
+
+	/* if y is an odd integer */
+	else if (copysign(t,one) == one) return( -pow_p(-x,y) );
+
+	/* Henceforth y is not an integer */
+	else if(x==zero)	/* x is -0 */
+	    return((y>zero)?-x:one/(-x));
+	else {			/* return NAN */
+#ifdef VAX
+	    errno = EDOM;
+#endif
+	    return(zero/zero);
+	}
+}
+
+/* pow_p(x,y) return x**y for x with sign=1 and finite y */
+static double pow_p(x,y)       
+double x,y;
+{
+        double logb(),scalb(),copysign(),log__L(),exp__E();
+        double c,s,t,z,tx,ty;
+        float sx,sy;
+	long k=0;
+        int n,m;
+
+	if(x==zero||!finite(x)) {           /* if x is +INF or +0 */
+#ifdef VAX
+	     if (y<zero) errno = ERANGE;
+#endif
+	     return((y>zero)?x:one/x);
+	}
+
+    /* reduce x to z in [sqrt(1/2)-1, sqrt(2)-1] */
+        z=scalb(x,-(n=logb(x)));  
+#ifndef VAX 	/* subnormal number */
+        if(n <= -1022) {n += (m=logb(z)); z=scalb(z,-m);} 
+#endif
+        if(z >= sqrt2 ) {n += 1; z *= half;}  z -= one ;
+
+    /* log(x) = nlog2+log(1+z) ~ nlog2 + t + tx */
+	s=z/(two+z); c=z*z*half; tx=s*(c+log__L(s*s)); 
+	t= z-(c-tx); tx += (z-t)-c;
+
+   /* if y*log(x) is neither too big nor too small */
+	if((s=logb(y)+logb(n+t)) < 12.0) 
+	    if(s>-60.0) {
+
+	/* compute y*log(x) ~ mlog2 + t + c */
+        	s=y*(n+invln2*t);
+                m=s+copysign(half,s);   /* m := nint(y*log(x)) */ 
+		k=y; 
+		if((double)k==y) {	/* if y is an integer */
+		    k = m-k*n;
+		    sx=t; tx+=(t-sx); }
+		else	{		/* if y is not an integer */    
+		    k =m;
+	 	    tx+=n*ln2lo;
+		    sx=(c=n*ln2hi)+t; tx+=(c-sx)+t; }
+	   /* end of checking whether k==y */
+
+                sy=y; ty=y-sy;          /* y ~ sy + ty */
+		s=(double)sx*sy-k*ln2hi;        /* (sy+ty)*(sx+tx)-kln2 */
+		z=(tx*ty-k*ln2lo);
+		tx=tx*sy; ty=sx*ty;
+		t=ty+z; t+=tx; t+=s;
+		c= -((((t-s)-tx)-ty)-z);
+
+	    /* return exp(y*log(x)) */
+		t += exp__E(t,c); return(scalb(one+t,m));
+	     }
+	/* end of if log(y*log(x)) > -60.0 */
+	    
+	    else
+		/* exp(+- tiny) = 1 */
+			return(one);
+	    else if(copysign(one,y)*(n+invln2*t) <zero)
+		/* exp(-(big#)) underflows to zero */
+	        	return(scalb(one,-5000)); 
+	    else
+	        /* exp(+(big#)) overflows to INF */
+	    		return(scalb(one, 5000)); 
+
 }

@@ -1,4 +1,4 @@
-/*	@(#)exp.c	4.1	%G%	*/
+/*	@(#)exp.c	4.2	%G%	*/
 
 /*
 	exp returns the exponential function of its
