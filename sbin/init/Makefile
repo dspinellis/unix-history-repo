@@ -7,7 +7,7 @@ NOMAN=noman
 LDFLAGS=
 
 beforeinstall:
-	rm -f ${DESTDIR}/sbin/init.old
-	ln ${DESTDIR}/sbin/init ${DESTDIR}/sbin/init.old
+	rm -f ${DESTDIR}${BINDIR}/init.old
+	- ln ${DESTDIR}${BINDIR}/init ${DESTDIR}${BINDIR}/init.old
 
 .include <bsd.prog.mk>
