@@ -42,11 +42,11 @@ sys/kern_subr.c		standard
 sys/kern_synch.c	standard
 sys/kern_time.c		standard
 sys/kern_xxx.c		standard
-sys/log.c		standard
 sys/quota_kern.c	standard
 sys/quota_subr.c	standard
 sys/quota_sys.c		standard
 sys/quota_ufs.c		standard
+sys/subr_log.c		standard
 sys/subr_mcount.c	optional profiling-routine
 sys/subr_prf.c		standard
 sys/subr_rmap.c		standard
