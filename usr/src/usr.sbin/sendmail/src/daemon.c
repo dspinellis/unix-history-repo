@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.76 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.77 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.76 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.77 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -749,7 +749,10 @@ gothostent:
 
 		if (sp == NULL)
 		{
-			syserr("554 makeconnection: service \"smtp\" unknown");
+#ifdef LOG
+			if (LogLevel > 2)
+				syslog(LOG_ERR, "makeconnection: service \"smtp\" unknown");
+#endif
 			port = htons(25);
 		}
 		else
