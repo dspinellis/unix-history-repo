@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.22 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -39,15 +39,16 @@ BUFAREA asblk;
     /* inode map */	howmany((fs)->fs_ipg, NBBY) + \
     /* block map */	howmany((fs)->fs_cpg * (fs)->fs_spc / NSPF(fs), NBBY))
 
-char	*calloc();
+char	*malloc(), *calloc();
 char	*index();
+struct	disklabel *getdisklabel();
 
 setup(dev)
 	char *dev;
 {
 	dev_t rootdev;
 	long cg, ncg, size, asked, i, j;
-	struct disklabel *getdisklabel(), *lp;
+	struct disklabel *lp;
 	struct stat statb;
 	struct fs proto;
 
@@ -90,9 +91,9 @@ setup(dev)
 	lfdir = 0;
 	initbarea(&sblk);
 	initbarea(&asblk);
-	sblk.b_un.b_buf = (char *)malloc(SBSIZE);
-	asblk.b_un.b_buf = (char *)malloc(SBSIZE);
-	if (sblk.b_un.b_buf == 0 || asblk.b_un.b_buf == 0)
+	sblk.b_un.b_buf = malloc(SBSIZE);
+	asblk.b_un.b_buf = malloc(SBSIZE);
+	if (sblk.b_un.b_buf == NULL || asblk.b_un.b_buf == NULL)
 		errexit("cannot allocate space for superblock\n");
 	if (lp = getdisklabel((char *)NULL, dfile.rfdes))
 		dev_bsize = secsize = lp->d_secsize;
@@ -307,7 +308,7 @@ readsb(listerr)
 	 * When an alternate super-block is specified this check is skipped.
 	 */
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
-	if (asblk.b_errs != NULL)
+	if (asblk.b_errs)
 		return (0);
 	if (bflag) {
 		havesb = 1;
@@ -376,7 +377,6 @@ calcsb(dev, devfd, fs)
 	register struct partition *pp;
 	register char *cp;
 	int i;
-	struct disklabel *getdisklabel();
 
 	cp = index(dev, '\0') - 1;
 	if (cp == (char *)-1 || (*cp < 'a' || *cp > 'h') && !isdigit(*cp)) {
