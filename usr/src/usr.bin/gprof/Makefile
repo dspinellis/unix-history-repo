@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.7 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.8 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = ${DFLAGS}
@@ -21,7 +21,7 @@ gmcrt0.s: gmcrt0.c gmcrt0.h gmcrt0.ex
 	mv gmcrt0.S gmcrt0.s
 
 profit: profit.o gmcrt0.o
-	/bin/ld -X gmcrt0.o -o profit profit.o -lcp
+	/bin/ld -X gmcrt0.o -o profit profit.o -lc_p
 
 profit.o:
 	cc -p -c profit.c
@@ -36,7 +36,7 @@ calls.o: calls.c gprof.h
 PGPROF = p.gprof.o p.arcs.o p.dfn.o p.lookup.o p.printgprof.o p.calls.o
 
 p.gprof: ${PGPROF}
-	/bin/ld -X gmcrt0.o -o p.gprof ${PGPROF} -lcp
+	/bin/ld -X gmcrt0.o -o p.gprof ${PGPROF} -lc_p
 
 p.gprof.o: gprof.c gprof.h
 	cat gprof.c > p.gprof.c
