@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.3 (Berkeley) %G%
+#	@(#)POSIX	5.4 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -31,62 +31,38 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	POSIX does not specify this behavior.  This implementation follows
 	historic practice.
 
- 2.	Historic implementations ignore comments in the text of the i
-	and a commands.  This implementation follows historic practice.
-
-TK	I can't duplicate this -- the BSD version of sed doesn't, i.e.
-TK		i\
-TK		foo\
-TK	#comment\
-TK		bar
-TK	prints
-TK
-TK		foo
-TK		#comment
-TK		bar
-
- 3.	Historical versions of sed required that the w flag be the last
+ 2.	Historical versions of sed required that the w flag be the last
 	flag to an s command as it takes an additional argument.  This
 	is obvious, but not specified in POSIX.
 
- 4.	Historical versions of sed required that whitespace follow a w
+ 3.	Historical versions of sed required that whitespace follow a w
 	flag to an s command.  This is not specified in POSIX.  This
 	implementation permits whitespace but does not require it.
 
- 5.	Historical versions of sed permitted any number of whitespace
+ 4.	Historical versions of sed permitted any number of whitespace
 	characters to follow the w command.  This is not specified in
 	POSIX.  This implementation permits whitespace but does not
 	require it.
 
- 6.	The rule for the l command differs from historic practice.  Table
+ 5.	The rule for the l command differs from historic practice.  Table
 	2-15 includes the various ANSI C escape sequences, including \\
 	for backslash.  Some historical versions of sed displayed two
-	digit octal numbers, too, not three as specified by POSIX.  The
-	POSIX specification is a cleanup, and this implementation follows
-	it.
+	digit octal numbers, too, not three as specified by POSIX.  POSIX
+	is a cleanup, and is followed by this implementation.
 
- 7.	The specification for ! does not specify that for a single
+ 6.	The POSIX specification for ! does not specify that for a single
 	command the command must not contain an address specification
-	whereas the command list can contain address specifications.
+	whereas the command list can contain address specifications.  The
+	specification for ! implies that "3!/hello/p" works, and it never
+	has, historically.  (Note, "3!{ /hello/p }" does work.)
 
-TK	I think this is wrong: the script:
-TK
-TK	3!p
-TK
-TK	works fine.  Am I misunderstanding your point?
-DDS	Yes.  By the definition of command by POSIX 3!/hello/p should work
-DDS	just as 3!{/hello/p} does.  The current implementation follows
-DDS	historic practice and does not implement it.
-TK	I *still* don't understand.... Would you please try to explain
-TK	it one more time?  Thanks...
-
- 8.	POSIX does not specify what happens with consecutive ! commands
+ 7.	POSIX does not specify what happens with consecutive ! commands
 	(e.g. /foo/!!!p).  Historic implementations allow any number of
 	!'s without changing the behaviour.  (It seems logical that each
 	one might reverse the behaviour.)  This implementation follows
 	historic practice.
 
- 9.	Historic versions of sed permitted commands to be separated
+ 8.	Historic versions of sed permitted commands to be separated
 	by semi-colons, e.g. 'sed -ne '1p;2p;3q' printed the first
 	three lines of a file.  This is not specified by POSIX.
 	Note, the ; command separator is not allowed for the commands
@@ -94,7 +70,7 @@ TK	it one more time?  Thanks...
 	command.  This implementation follows historic practice and
 	implements the ; separator.
 
-10.	Historic versions of sed terminated the script if EOF was reached
+ 9.	Historic versions of sed terminated the script if EOF was reached
 	during the execution of the 'n' command, i.e.:
 
 	sed -e '
@@ -106,19 +82,19 @@ TK	it one more time?  Thanks...
 	did not produce any output.  POSIX does not specify this behavior.
 	This implementation follows historic practice.
 
-11.	POSIX does not specify that the q command causes all lines that
+10.	POSIX does not specify that the q command causes all lines that
 	have been appended to be output and that the pattern space is
 	printed before exiting.  This implementation follows historic
 	practice.
 
-12.	Historical implementations do not output the change text of a c
+11.	Historical implementations do not output the change text of a c
 	command in the case of an address range whose second line number
 	is greater than the first (e.g. 3,1).  POSIX requires that the
 	text be output.  Since the historic behavior doesn't seem to have
 	any particular purpose, this implementation follows the POSIX
 	behavior.
 
-13.	POSIX does not specify whether address ranges are checked and
+12.	POSIX does not specify whether address ranges are checked and
 	reset if a command is not executed due to a jump.  The following
 	program, with the input "one\ntwo\nthree\nfour\nfive" can behave
 	in different ways depending on whether the the /one/,/three/c
@@ -136,82 +112,61 @@ TK	it one more time?  Thanks...
 	to output some text if the pattern /one/,/three/ occurs but only
 	if it occurs outside of the range of lines 2 to 4.
 
-14.	Historical implementations allow an output suppressing #n at the
+13.	Historical implementations allow an output suppressing #n at the
 	beginning of -e arguments as well as in a script file.  POSIX
 	does not specify this.  This implementation follows historical
 	practice.
 
-15.	POSIX does not specify whether more than one numeric flag is
-	allowed on the s command.  Historic practice is to specify only
-	a single flag.
-
-TK	What's historic practice?  Currently we don't report an error or
-TK	do all of the flags.
-DDS	Historic practice is a single flag.  We follow it.  POSIX
-DDS	should be more precise.
-TK	It actually seems reasonable to do multiple flags, i.e. display
-TK	two or more of the matched patterns.  Since it's unambiguous (only
-TK	1-9 are allowed, so /19 *has* to be 1 and 9, not nineteen, we can't
-TK	break any existing scripts.
-
-16.	POSIX does not explicitly specify how sed behaves if no script is
+14.	POSIX does not explicitly specify how sed behaves if no script is
 	specified.  Since the sed Synopsis permits this form of the command,
 	and the language in the Description section states that the input
 	is output, it seems reasonable that it behave like the cat(1)
 	command.  Historic sed implementations behave differently for "ls |
-	sed" (no output) and "ls | sed -e#" (like cat).  This implementation
-	behaves like cat in both cases.
+	sed", where they produce no output, and "ls | sed -e#", where they
+	behave like cat.  This implementation behaves like cat in both cases.
 
-17.	The POSIX requirement to open all wfiles from the beginning makes
+15.	The POSIX requirement to open all wfiles from the beginning makes
 	sed behave nonintuitively when the w commands are preceded by
 	addresses or are within conditional blocks.  This implementation
 	follows historic practice and POSIX, by default, and provides the
-	-a option for more reasonable behavior.
+	-a option which opens the files only when they are needed.
 
-18.	POSIX does not specify how escape sequences other than \n and \D
+16.	POSIX does not specify how escape sequences other than \n and \D
 	(where D is the delimiter character) are to be treated.  This is
-	reasonable, however, it doesn't state that the backslash is to be
-	discarded from the output regardless.  A strict reading of POSIX
-	would be that "echo xyz | sed s/./\a" would display "\ayz".  As
-	historic sed implementations always discarded the backslash, this
-	implementation does as well.
+	reasonable, however, it also doesn't state that the backslash is
+	to be discarded from the output regardless.  A strict reading of
+	POSIX would be that "echo xyz | sed s/./\a" would display "\ayz".
+	As historic sed implementations always discarded the backslash,
+	this implementation does as well.
 
-19.	POSIX specifies that an address can be "empty".  This implies that
-	constructs like ,d or 1,d and ,5d are allowed.  This is not true
-	for historic implementations of sed.  This implementation follows
-	historic practice.
+17.	POSIX specifies that an address can be "empty".  This implies
+	that constructs like ",d" or "1,d" and ",5d" are allowed.  This
+	is not true for historic implementations or this implementation
+	of sed.
 
-20.	The b t and : commands are documented in POSIX to ignore leading
+18.	The b t and : commands are documented in POSIX to ignore leading
 	white space, but no mention is made of trailing white space.
 	Historic implementations of sed assigned different locations to
 	the labels "x" and "x ".  This is not useful, and leads to subtle
-	programming errors.  This implementation ignores trailing whitespace.
+	programming errors, but it is historic practice and changing it
+	could theoretically break working scripts.
 
-TK	I think that line 11347 points out the the synopsis shows
-TK	which are valid.
-DDS	I am talking about _trailing_ white space.  In our implementation
-DDS	and historic implementation the label can contain _significant_
-DDS	white space at its end.  This is obscure and not explained in
-DDS	POSIX.
-TK	I think we should delete trailing white space for the above
-TK	reason.
-
-21.	Although POSIX specifies that reading from files that do not exist
+19.	Although POSIX specifies that reading from files that do not exist
 	from within the script must not terminate the script, it does not
 	specify what happens if a write command fails.  Historic practice
-	is to fail immediately if the file cannot be open or written.  This
-	implementation follows historic practice.
+	is to fail immediately if the file cannot be opened or written.
+	This implementation follows historic practice.
 
-22.	Historic practice is that the \n construct can be used for either
+20.	Historic practice is that the \n construct can be used for either
 	string1 or string2 of the y command.  This is not specified by
 	POSIX.  This implementation follows historic practice.
 
-23.	POSIX does not specify if the "Nth occurrence" of an RE in a
+21.	POSIX does not specify if the "Nth occurrence" of an RE in a
 	substitute command is an overlapping or a non-overlapping one,
 	i.e. what is the result of s/a*/A/2 on the pattern "aaaaa aaaaa".
 	Historical practice is to drop core or only do non-overlapping
-	expressions.  This implementation follows historic practice.
+	RE's.  This implementation only does on-overlapping RE's.
 
-24.	Historic implementations of sed ignore the regular expression
-	delimiter characters within character classes.  This is not
-	specified in POSIX.  This implementation follows historic practice.
+22.	Historic implementations of sed ignore the RE delimiter characters
+	within character classes.  This is not specified in POSIX.  This
+	implementation follows historic practice.
