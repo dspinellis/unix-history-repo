@@ -137,6 +137,7 @@ typedef struct address ADDRESS;
 # define QSELFREF	000200	/* this address references itself */
 # define QVERIFIED	000400	/* verified, but not expanded */
 # define QREPORT	001000	/* report this address in return message */
+# define QBOGUSSHELL	002000	/* this entry has an invalid shell listed */
 
 # define NULLADDR	((ADDRESS *) NULL)
 # define QPSEUDO	000040	/* only on the list for verification */
