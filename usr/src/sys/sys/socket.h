@@ -1,4 +1,4 @@
-/*	socket.h	6.3	84/09/01	*/
+/*	socket.h	6.4	84/09/04	*/
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -26,15 +26,17 @@
 #define	SO_LINGER	0x80		/* linger on close if data present */
 
 /*
- * Pseudo flags for disabling options.
+ * Structure used for manipulating linger option.
  */
-#define	SO_DONTDEBUG		(~SO_DEBUG)
-#define	SO_DONTREUSEADDR	(~SO_REUSEADDR)
-#define	SO_DONTKEEPALIVE	(~SO_KEEPALIVE)
-#define	SO_ROUTE		(~SO_DONTROUTE)
-#define	SO_DONTBROADCAST	(~SO_BROADCAST)
-#define	SO_DONTUSELOOPBACK	(~SO_USELOOPBACK)
-#define	SO_DONTLINGER		(~SO_LINGER)
+struct	linger {
+	int	l_onoff;		/* option on/off */
+	int	l_linger;		/* linger time */
+};
+
+/*
+ * Level number for (get/set)sockopt() to apply to socket itself.
+ */
+#define	SOL_SOCKET	0xffff		/* options for socket level */
 
 /*
  * Address families.
@@ -89,11 +91,6 @@ struct sockproto {
 #define	PF_SNA		AF_SNA
 
 #define	PF_MAX		12
-
-/*
- * Level number for (get/set)sockopt() to apply to socket itself.
- */
-#define	SOL_SOCKET	0xffff		/* options for socket level */
 
 /*
  * Maximum queue length specifiable by listen.
