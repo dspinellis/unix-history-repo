@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.23	81/12/12	*/
+/*	tcp_output.c	4.24	81/12/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -18,6 +18,7 @@
 #include "../net/tcp_timer.h"
 #include "../net/tcp_var.h"
 #include "../net/tcpip.h"
+#include "../net/tcp_debug.h"
 #include "../errno.h"
 
 char *tcpstates[]; /* XXX */
@@ -188,6 +189,12 @@ send:
 		    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 		tp->t_rxtshift = 0;
 	}
+
+	/*
+	 * Trace.
+	 */
+	if (tp->t_inpcb->inp_socket->so_options & SO_DEBUG)
+		tcp_trace(TA_OUTPUT, tp->t_state, tp, ti, 0);
 
 	/*
 	 * Fill in IP length and desired time to live and
