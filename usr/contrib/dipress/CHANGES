@@ -1,0 +1,116 @@
+RELEASE 2.0
+
+[-everything-]
+linted for non-portable constructs.  This has caused many of the library
+functions to take longs as arguments rather than int's as in the old days.
+This package has been tested on a Sun.  That should shake out most of the
+byte swap problems.  The only things that still bomb on lint are: stackres,
+restotext and ipmetrics.  Ipmetrics does seem to work on a Sun and Vax though.
+
+[include]
+iptokens.h incorrectly called maskunderline makeunderline
+
+[ipf]
+New: counts pages in a way that should be compatible with the Berkeley spooler.
+
+[ipmetrics]
+Contributed by Lee Moore.  A new conf.troff and conf.tex directories
+have been added for creating metrics files for each of these composition
+systems.  Since Berkeley hasn't finished the TeX to Interpress converter
+yet, we haven't been able to test the output on that system.  In particular,
+how on specifies characters not in character set zero remains a mystery.
+A man page was also written for this utility.
+
+[libip]
+As mentioned above, these routines are now linted.  There is a lint
+library ./lib/llib-lip.ln that gives programmers the ability to lint
+code that uses the library.  Many routines take long's as arguments
+instead of int's.
+
+[qip]
+We use a program called "qip" that hooks into BRL's MDQS system.  Since
+most places don't have this system, we provide a shell script that
+can be modified for local conditions.  Look at the script to see
+how to use it.
+
+[restotext]
+Contributed by Keith Knox.  Converts and RES file to text form.
+
+[stackres]
+Contributed by Keith Knox.  Executes and RES file and prints out what's
+on the stack.
+
+[texttoip]
+Bug fix: truncate output file on open.  Made it use the same include
+files as everybody else.
+
+RELEASE 1.3
+
+[dipress]
+Modify bitmap.c to output scan lines in multiple of 32 bits for compatibility
+with new Xerox print services.  Bell code removed!!!
+
+[doc]
+Typo on page 17 in char-chart.me ( \(-| right perpindicular).  Added diff
+for eqn/sqrt.c to get better looking square roots.
+
+[iptroff]
+Added the -q (quiet) option to not print information on the passes out.
+This is handy when running programs in the background.  It is assumed
+with the -t option.
+
+[makefiles]
+Changed all the makefiles to pass around destinations for the install commmand.
+Also changed the destination directories to match 4.3 contributed software
+conventions.
+
+RELEASE 1.2
+
+[charset]
+Add conditional compilation code for VMS VAX-11 C
+Add -o option for output file, modify so -s is point size.
+
+[dipress]
+Extended available fonts to include many new characters.
+See .../doc/char-chart.me for available character mappings
+
+[doc]
+Created documentation for interpress subroutine library
+
+[include]
+Added to operator.h to include macros for a more complete operator interface.
+Add conditional compilation for VMS VAX-11 C
+
+[iptotext]
+Add -d option to force dump of pixel arrays (default now is to not dump them)
+Add conditional compilation for VMS VAX-11 C
+Fix bug that caused non-printable characters to print as ascii (stripped high
+order bit during isprint check)
+
+[libip]
+Add conditional compilation for VMS VAX-11 C
+
+[maha]
+Add conditional compilation for VMS VAX-11 C
+
+[texttoip]
+Add conditional compilation for VMS VAX-11 C
+
+RELEASE 1.1
+
+[charset]
+Character sets numbers are now interpreted as being in base eight (8).
+Formerly, they were in base ten (10).  This (non-upwardly compatible) change
+was made because character-sets are almost always refered to in base 8
+by the XNS Architecture documentation.
+
+[iptroff]
+The name itroff has been changed to iptroff since itroff is used
+at many places to be Imagen Troff.
+
+[misc]
+Update to README file on how to customize the troff preprocessors.
+
+RELEASE 1.0
+
+base release.
