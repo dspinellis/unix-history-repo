@@ -1,4 +1,4 @@
-/*	locore.s	1.7	86/01/29	*/
+/*	locore.s	1.8	86/07/16	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -743,6 +743,8 @@ start:
 	movab	_u+PCB_SIGC,r1
 	movl	$19,r2
 	movblk
+/* save boot device in global _bootdev */
+	movl	r10,_bootdev
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
 /* calculate firstaddr, and call main() */
