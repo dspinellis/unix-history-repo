@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -635,7 +635,7 @@ restart(argc, argv)
  * Enable printing on the specified printer and startup the daemon.
  */
 void
-start(argc, argv)
+startcmd(argc, argv)
 	int argc;
 	char *argv[];
 {

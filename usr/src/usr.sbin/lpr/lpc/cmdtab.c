@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/cdefs.h>
@@ -41,7 +41,7 @@ struct cmd cmdtab[] = {
 	{ "help",	helphelp,	help,		0 },
 	{ "quit",	quithelp,	quit,		0 },
 	{ "restart",	restarthelp,	restart,	0 },
-	{ "start",	starthelp,	start,		1 },
+	{ "start",	starthelp,	startcmd,	1 },
 	{ "status",	statushelp,	status,		0 },
 	{ "stop",	stophelp,	stop,		1 },
 	{ "topq",	topqhelp,	topq,		1 },
