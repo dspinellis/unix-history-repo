@@ -33,14 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)wd.c	7.3 (Berkeley) 5/4/91
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00049
- * --------------------         -----   ----------------------
- *
- * 06 Sep 92	Robert D. Thrush	Fix for HD not booting after install
+ *	from: @(#)wd.c	7.3 (Berkeley) 5/4/91
+ *	$Id$
  */
 
 /*  device driver for winchester disk  */

@@ -29,13 +29,8 @@
  * This bootblock does not support fdisk partitions, and can only be used
  * as the master boot block.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00088
- * --------------------         -----   ----------------------
- *
- * 23 Oct 92	Joerg Lohse		changed ccb opcode for compatibility
- *					with Adaptec AHA-1542A
+ *	from: 386BSD 0.1
+ *	$Id$
  */
 
 #include "param.h"

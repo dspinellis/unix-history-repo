@@ -33,7 +33,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)fdbootblk.c	7.2 (Berkeley) 5/4/91
+ *	from: @(#)fdbootblk.c	7.2 (Berkeley) 5/4/91
+ *	$Id$
  */
 
 /*
@@ -45,15 +46,8 @@
  *	execute.
  *
  *	No attempt is made to handle disk errors.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00073
- * --------------------         -----   ----------------------
- *
- * 22 Jan 93	Frank Maclachlan        Fixed NOP's to read correct register
- *
  */
+
 /*#include "/sys/i386/isa/isa.h"
 #include "/sys/i386/isa/fdreg.h"*/
 #define	NOP	inb	$0x84,%al

@@ -45,13 +45,14 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * I/O interface to driver.
- *
- * $Header: /usr/bill/working/sys/kern/RCS/subr_rlist.c,v 1.2 92/01/21 21:29:31 william Exp $";
+ *	from: 386BSD 0.1
+ *	$Id$
  */
 
 /*
+ * I/O interface to driver.
  */
+
 struct iob {
 	int i_dev;
 	int i_adapt;
