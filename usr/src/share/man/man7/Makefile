@@ -14,11 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-MDIR=	${DESTDIR}/usr/man/cat7
+MDIR=	${DESTDIR}/usr/share/man/cat7
 OBJS=	ascii.0 environ.0 eqnchar.0 hier.0 hostname.0 intro.0 mailaddr.0 \
-	man.0 me.0 ms.0 term.0
+	man.0 ms.0 operator.0 term.0
 
 all clean depend lint tags:
 
