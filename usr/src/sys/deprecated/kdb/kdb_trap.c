@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1986 Regents of the University of California.
+ * Copyright (c) 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_trap.c	7.5 (Berkeley) %G%
+ *	@(#)kdb_trap.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -45,6 +45,8 @@ kdb(type, code, curproc)
 		/* fall thru... */
 	case CONTIN:
 		return (1);
+	case PANIC:
+		return (0);
 	case 0:
 		if (nextpcs(type))
 			printf("breakpoint%16t");

@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1986 Regents of the University of California.
+ * Copyright (c) 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_pcs.c	7.2 (Berkeley) %G%
+ *	@(#)kdb_pcs.c	7.3 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -75,6 +75,11 @@ subpcs(modif)
 	case 'c': case 'C':
 		runmode=CONTIN;
 		break;
+
+		/* kill */
+	case 'k': case 'K':
+		reset(PANIC);
+		/* NOTREACHED */
 
 	default:
 		error(BADMOD);

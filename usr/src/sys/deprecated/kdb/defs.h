@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1986 Regents of the University of California.
+ * Copyright (c) 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	7.7 (Berkeley) %G%
+ *	@(#)defs.h	7.8 (Berkeley) %G%
  */
 
 /*
@@ -53,6 +53,7 @@ struct	pcb kdbpcb;		/* must go before redef.h */
 #define	NEXT	6
 #define	SINGLE	7
 #define	CONTIN	8
+#define	PANIC	9
 
 #define LINSIZ	256
 #define MAXOFF	1024
