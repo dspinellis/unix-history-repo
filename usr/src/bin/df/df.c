@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)df.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)df.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
@@ -57,7 +57,7 @@ char **argv;
 		read(i, mtab, sizeof mtab);	/* Probably returns short */
 		close(i);
 	}
-	printf("Filesystem  Mounted on  blocks\t  used\t  free");
+	printf("Filesystem  Mounted on  kbytes\t  used\t  free");
 	if (lflag)
 		printf("\thardway");
 	printf("\t%% used");
