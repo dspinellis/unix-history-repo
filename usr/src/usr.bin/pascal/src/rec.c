@@ -118,7 +118,7 @@ variants(p, r)
 	if (r == NIL)
 		return;
 	ct = gtype(r[3]);
-	if ( isnta( ct , "bcsi" ) ) {
+	if ( ( ct != NIL ) && ( isnta( ct , "bcsi" ) ) ) {
 	    error("Tag fields cannot be %ss" , nameof( ct ) );
 	}
 	line = r[1];
