@@ -5,14 +5,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_mkquery.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_mkquery.c	6.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
-#include <arpa/resolv.h>
+#include <resolv.h>
 
 extern	char *sprintf();
 
