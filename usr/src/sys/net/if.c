@@ -1,4 +1,4 @@
-/*	if.c	4.25	83/02/10	*/
+/*	if.c	4.26	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,6 +6,8 @@
 #include "../h/protosw.h"
 #include "../h/time.h"
 #include "../h/kernel.h"
+#include "../h/ioctl.h"
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/af.h"
@@ -169,4 +171,113 @@ if_slowtimo()
 			(*ifp->if_watchdog)(ifp->if_unit);
 	}
 	timeout(if_slowtimo, (caddr_t)0, hz / IFNET_SLOWHZ);
+}
+
+/*
+ * Service a socket ioctl request directed
+ * to an interface.
+ */
+ifrequest(cmd, data)
+	int cmd;
+	caddr_t data;
+{
+	register struct ifnet *ifp;
+	register struct ifreq *ifr;
+	register char *cp;
+	int unit, s;
+
+	ifr = (struct ifreq *)data;
+	for (cp = ifr->ifr_name; *cp; cp++)
+		if (*cp >= '0' && *cp <= '9')
+			break;
+	if (*cp == 0)
+		return (ENXIO);		/* couldn't find unit */
+	unit = *cp - '0', *cp = 0;
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (bcmp(ifp->if_name, ifr->ifr_name, cp - ifr->ifr_name))
+			continue;
+		if (unit == ifp->if_unit)
+			goto found;
+	}
+	return (ENXIO);
+
+found:
+	switch (cmd) {
+
+	case SIOCGIFADDR:
+		ifr->ifr_addr = ifp->if_addr;
+		break;
+
+	case SIOCSIFADDR:
+		if_rtinit(ifp, -1);	/* delete previous route */
+		s = splimp();
+		ifp->if_addr = ifr->ifr_addr;
+		(*ifp->if_init)(unit);
+		splx(s);
+		break;
+
+	case SIOCGIFDSTADDR:
+		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
+			return (EINVAL);
+		ifr->ifr_dstaddr = ifp->if_dstaddr;
+		break;
+
+	case SIOCSIFDSTADDR:
+		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
+			return (EINVAL);
+		s = splimp();
+		ifp->if_dstaddr = ifr->ifr_dstaddr;
+		splx(s);
+		break;
+
+	case SIOCGIFFLAGS:
+		ifr->ifr_flags = ifp->if_flags;
+		break;
+
+	case SIOCSIFFLAGS:
+		if ((ifr->ifr_flags & IFF_UP) == 0 &&
+		    (ifp->if_flags & IFF_UP)) {
+			s = splimp();
+			if_down(ifp);
+			splx(s);
+		}
+		ifp->if_flags = ifr->ifr_flags;
+		break;
+
+	default:
+		return (EINVAL);
+	}
+	return (0);
+}
+
+/*
+ * Return interface configuration
+ * of system.  List may be used
+ * in later ioctl's (above) to get
+ * other information.
+ */
+ifconf(cmd, data)
+	int cmd;
+	caddr_t data;
+{
+	register struct ifconf *ifc = (struct ifconf *)data;
+	register struct ifnet *ifp = ifnet;
+	register char *cp;
+	struct ifreq ifr;
+	int space = ifc->ifc_len, error = 0;
+
+	for (; space > sizeof (ifr) && ifp; ifp = ifp->if_next) {
+		bcopy(ifp->if_name, ifr.ifr_name, sizeof (ifr.ifr_name));
+		for (cp = ifr.ifr_name; *cp; cp++)
+			;
+		*cp = '0' + ifp->if_unit;
+		ifr.ifr_addr = ifp->if_addr;
+		error = copyout((caddr_t)&ifr, ifc->ifc_buf, sizeof (ifr));
+		if (error)
+			break;
+		space -= sizeof (ifr);
+		ifc->ifc_req++;
+	}
+	ifc->ifc_len -= space;
+	return (error);
 }
