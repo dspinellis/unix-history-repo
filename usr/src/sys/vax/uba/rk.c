@@ -1,4 +1,4 @@
-/*	rk.c	4.9	%G%	*/
+/*	rk.c	4.10	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -39,8 +39,8 @@ struct	size
 	int	cyloff;
 } rk7_sizes[] ={
 	15884,	0,		/* A=cyl 0 thru 240 */
-	10032,	146,		/* B=cyl 241 thru 392 */
-	53790,	246,		/* C=cyl 0 thru 814 */
+	10032,	241,		/* B=cyl 241 thru 392 */
+	53790,	0,		/* C=cyl 0 thru 814 */
 	0,	0,
 	0,	0,
 	0,	0,
@@ -444,6 +444,7 @@ rkecc(ui)
 	}
 	ubp->uba_dpr[(um->um_ubinfo>>28)&0x0f] |= UBA_BNE;
 	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
+	printf("mask %x pos %x\n", mask, i+1);
 	bit = i&07;
 	i = (i&~07)>>3;
 	byte = i + o;
