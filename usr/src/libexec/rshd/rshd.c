@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -167,7 +167,8 @@ doit(f, fromp)
 		exit(1);
 #endif
 	}
-	if (ruserok(hp->h_name, pwd->pw_uid == 0, remuser, locuser) < 0) {
+	if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
+	    ruserok(hp->h_name, pwd->pw_uid == 0, remuser, locuser) < 0) {
 		error("Permission denied.\n");
 		exit(1);
 	}
