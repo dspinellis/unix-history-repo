@@ -1,4 +1,4 @@
-/*	route.h	4.8	82/06/12	*/
+/*	route.h	4.9	83/05/12	*/
 
 /*
  * Kernel resident routing tables.
@@ -23,13 +23,6 @@ struct route {
 	caddr_t	ro_pcb;			/* not used yet */
 #endif
 };
-#ifdef KERNEL
-/*
- * The route ``routetoif'' is a special atom passed to the output routines
- * to implement the SO_DONTROUTE option.
- */
-struct	route routetoif;
-#endif
 
 /*
  * We distinguish between routes to hosts and routes to networks,
