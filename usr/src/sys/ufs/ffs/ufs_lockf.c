@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lockf.c	7.4 (Berkeley) %G%
+ *	@(#)ufs_lockf.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -606,7 +606,7 @@ lf_print(tag, lock)
 	register struct lockf *lock;
 {
 	
-	printf("%s: lock 0x%X for ", tag, lock);
+	printf("%s: lock 0x%lx for ", tag, lock);
 	if (lock->lf_flags & F_POSIX)
 		printf("proc %d", ((struct proc *)(lock->lf_id))->p_pid);
 	else
@@ -636,7 +636,7 @@ lf_printlist(tag, lock)
 		major(lock->lf_inode->i_dev),
 		minor(lock->lf_inode->i_dev));
 	for (lf = lock->lf_inode->i_lockf; lf; lf = lf->lf_next) {
-		printf("\tlock 0x%X for ", lf);
+		printf("\tlock 0x%lx for ", lf);
 		if (lf->lf_flags & F_POSIX)
 			printf("proc %d", ((struct proc *)(lf->lf_id))->p_pid);
 		else
