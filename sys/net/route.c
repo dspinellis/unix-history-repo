@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)route.c	7.22 (Berkeley) 6/27/91
- *	$Id: route.c,v 1.4 1993/11/25 01:34:10 wollman Exp $
+ *	$Id: route.c,v 1.5 1993/12/19 00:52:06 wollman Exp $
  */
 
 #include "param.h"
@@ -370,6 +370,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	register struct rtentry *rt;
 	register struct radix_node *rn;
 	register struct radix_node_head *rnh;
+	struct ifnet *ifp;
 	struct ifaddr *ifa, *ifa_ifwithdstaddr();
 	struct sockaddr *ndst;
 	u_char af = dst->sa_family;
@@ -396,8 +397,17 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			panic ("rtrequest delete");
 		rt = (struct rtentry *)rn;
 		rt->rt_flags &= ~RTF_UP;
-		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest)
-			ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
+		if ((ifa = rt->rt_ifa) && ifa->ifa_rtrequest){
+			if(ifp = rt->rt_ifp){
+				struct ifaddr *tifa;
+				for (tifa = ifp->if_addrlist; tifa; tifa = tifa->ifa_next) {
+					if(tifa == ifa){
+						ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
+						break;
+					}
+				}
+			}
+		}
 		rttrash++;
 		if (rt->rt_refcnt <= 0)
 			rtfree(rt);
