@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_syscalls.c	6.20 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	6.21 (Berkeley) %G%
  */
 
 #include "param.h"
