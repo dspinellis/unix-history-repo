@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)C.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)C.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)C.c	8.1 (Berkeley) %G%";
 
 static int func_entry(), str_entry();
 static void hash_entry();
+static void skip_string();
 
 /*
  * c_entries --
@@ -74,10 +75,13 @@ endtok:			if (sp > tok) {
 				token = NO;
 			continue;
 
-		/* we ignore quoted strings and comments in their entirety */
+		/*
+		 * We ignore quoted strings and character constants
+		 * completely.
+		 */
 		case '"':
 		case '\'':
-			(void)skip_key(c);
+			(void)skip_string(c);
 			break;
 
 		/*
@@ -204,17 +208,48 @@ storec:			if (!intoken(c)) {
  * func_entry --
  *	handle a function reference
  */
-static
+static int
 func_entry()
 {
 	register int	c;		/* current character */
+	int		level = 0;	/* for matching '()' */
 
+	/*
+	 * Find the end of the assumed function declaration.
+	 * Note that ANSI C functions can have type definitions so keep
+	 * track of the parentheses nesting level.
+	 */
+	while (GETC(!=,EOF)) {
+		switch ((char)c) {
+		case '\'':
+		case '"':
+			/* skip strings and character constants */
+			skip_string(c);
+			break;
+		case '/':
+			/* skip comments */
+			if (GETC(==,'*'))
+				skip_comment();
+			break;
+		case '(':
+			level++;
+			break;
+		case ')':
+			if (level == 0)
+				goto fnd;
+			level--;
+			break;
+		case '\n':
+			SETLINE;
+		}
+	}
+	return(NO);
+fnd:
 	/*
 	 * we assume that the character after a function's right paren
 	 * is a token character if it's a function and a non-token
 	 * character if it's a declaration.  Comments don't count...
 	 */
-	(void)skip_key((int)')');
 	for (;;) {
 		while (GETC(!=,EOF) && iswhite(c))
 			if (c == (int)'\n')
@@ -361,9 +396,36 @@ skip_comment()
 }
 
 /*
+ * skip_string --
+ *	skip to the end of a string or character constant.
+ */
+void
+skip_string(key)
+	register int	key;
+{
+	register int	c,
+			skip;
+
+	for (skip = NO; GETC(!=,EOF); )
+		switch ((char)c) {
+		case '\\':		/* a backslash escapes anything */
+			skip = !skip;	/* we toggle in case it's "\\" */
+			break;
+		case '\n':
+			SETLINE;
+			/*FALLTHROUGH*/
+		default:
+			if (c == key && !skip)
+				return;
+			skip = NO;
+		}
+}
+
+/*
  * skip_key --
  *	skip to next char "key"
  */
+int
 skip_key(key)
 	register int	key;
 {
@@ -380,10 +442,25 @@ skip_key(key)
 		case '|':		/* of these chars occurs, we may */
 			retval = YES;	/* have moved out of the rule */
 			break;		/* not used by C */
+		case '\'':
+		case '"':
+			/* skip strings and character constants */
+			skip_string(c);
+			break;
+		case '/':
+			/* skip comments */
+			if (GETC(==,'*')) {
+				skip_comment();
+				break;
+			}
+			(void)ungetc(c,inf);
+			c = '/';
+			goto norm;
 		case '\n':
 			SETLINE;
 			/*FALLTHROUGH*/
 		default:
+		norm:
 			if (c == key && !skip)
 				return(retval);
 			skip = NO;
