@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_cache.c	7.4 (Berkeley) %G%
+ *	@(#)vfs_cache.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,6 +23,7 @@
 #include "vnode.h"
 #include "namei.h"
 #include "errno.h"
+#include "malloc.h"
 
 /*
  * Name caching works as follows:
@@ -45,21 +46,15 @@
 /*
  * Structures associated with name cacheing.
  */
-#define	NCHHASH		128	/* size of hash table */
-
-#if	((NCHHASH)&((NCHHASH)-1)) != 0
-#define	NHASH(vp, h)	((((unsigned)(h) >> 6) + (h)) % (NCHHASH))
-#else
-#define	NHASH(vp, h)	((((unsigned)(h) >> 6) + (h)) & ((NCHHASH)-1))
-#endif
-
 union nchash {
 	union	nchash *nch_head[2];
 	struct	namecache *nch_chain[2];
-} nchash[NCHHASH];
+} *nchashtbl;
 #define	nch_forw	nch_chain[0]
 #define	nch_back	nch_chain[1]
 
+u_long	nchash;				/* size of hash table - 1 */
+long	numcache;			/* number of cache entries allocated */
 struct	namecache *nchhead, **nchtail;	/* LRU chain pointers */
 struct	nchstats nchstats;		/* cache effectiveness statistics */
 
@@ -94,7 +89,7 @@ cache_lookup(ndp)
 		return (0);
 	}
 	dvp = ndp->ni_dvp;
-	nhp = &nchash[NHASH(dvp, ndp->ni_hash)];
+	nhp = &nchashtbl[ndp->ni_hash & nchash];
 	for (ncp = nhp->nch_forw; ncp != (struct namecache *)nhp;
 	    ncp = ncp->nc_forw) {
 		if (ncp->nc_dvp == dvp &&
@@ -184,7 +179,12 @@ cache_enter(ndp)
 	/*
 	 * Free the cache slot at head of lru chain.
 	 */
-	if (ncp = nchhead) {
+	if (numcache < desiredvnodes) {
+		ncp = (struct namecache *)
+			malloc(sizeof *ncp, M_CACHE, M_WAITOK);
+		bzero((char *)ncp, sizeof *ncp);
+		numcache++;
+	} else if (ncp = nchhead) {
 		/* remove from lru chain */
 		*ncp->nc_prev = ncp->nc_nxt;
 		if (ncp->nc_nxt)
@@ -193,48 +193,46 @@ cache_enter(ndp)
 			nchtail = ncp->nc_prev;
 		/* remove from old hash chain */
 		remque(ncp);
-		/* grab the inode we just found */
-		ncp->nc_vp = ndp->ni_vp;
-		if (ndp->ni_vp)
-			ncp->nc_vpid = ndp->ni_vp->v_id;
-		else
-			ncp->nc_vpid = 0;
-		/* fill in cache info */
-		ncp->nc_dvp = ndp->ni_dvp;
-		ncp->nc_dvpid = ndp->ni_dvp->v_id;
-		ncp->nc_nlen = ndp->ni_namelen;
-		bcopy(ndp->ni_ptr, ncp->nc_name, (unsigned)ncp->nc_nlen);
-		/* link at end of lru chain */
-		ncp->nc_nxt = NULL;
-		ncp->nc_prev = nchtail;
-		*nchtail = ncp;
-		nchtail = &ncp->nc_nxt;
-		/* and insert on hash chain */
-		nhp = &nchash[NHASH(ndp->ni_vp, ndp->ni_hash)];
-		insque(ncp, nhp);
-	}
+	} else
+		return;
+	/* grab the vnode we just found */
+	ncp->nc_vp = ndp->ni_vp;
+	if (ndp->ni_vp)
+		ncp->nc_vpid = ndp->ni_vp->v_id;
+	else
+		ncp->nc_vpid = 0;
+	/* fill in cache info */
+	ncp->nc_dvp = ndp->ni_dvp;
+	ncp->nc_dvpid = ndp->ni_dvp->v_id;
+	ncp->nc_nlen = ndp->ni_namelen;
+	bcopy(ndp->ni_ptr, ncp->nc_name, (unsigned)ncp->nc_nlen);
+	/* link at end of lru chain */
+	ncp->nc_nxt = NULL;
+	ncp->nc_prev = nchtail;
+	*nchtail = ncp;
+	nchtail = &ncp->nc_nxt;
+	/* and insert on hash chain */
+	nhp = &nchashtbl[ndp->ni_hash & nchash];
+	insque(ncp, nhp);
 }
 
 /*
- * Name cache initialization, from main() when we are booting
+ * Name cache initialization, from vfs_init() when we are booting
  */
 nchinit()
 {
 	register union nchash *nchp;
-	register struct namecache *ncp;
+	long nchashsize;
 
 	nchhead = 0;
 	nchtail = &nchhead;
-	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
-		ncp->nc_forw = ncp;			/* hash chain */
-		ncp->nc_back = ncp;
-		ncp->nc_nxt = NULL;			/* lru chain */
-		*nchtail = ncp;
-		ncp->nc_prev = nchtail;
-		nchtail = &ncp->nc_nxt;
-		/* all else is zero already */
-	}
-	for (nchp = nchash; nchp < &nchash[NCHHASH]; nchp++) {
+	nchashsize = roundup((desiredvnodes + 1) * sizeof *nchp / 2,
+		NBPG * CLSIZE);
+	nchashtbl = (union nchash *)malloc(nchashsize, M_CACHE, M_WAITOK);
+	for (nchash = 1; nchash <= nchashsize / sizeof *nchp; nchash <<= 1)
+		/* void */;
+	nchash = (nchash >> 1) - 1;
+	for (nchp = &nchashtbl[nchash]; nchp >= nchashtbl; nchp--) {
 		nchp->nch_head[0] = nchp;
 		nchp->nch_head[1] = nchp;
 	}
@@ -247,14 +245,18 @@ nchinit()
 cache_purge(vp)
 	struct vnode *vp;
 {
+	union nchash *nhp;
 	struct namecache *ncp;
 
 	vp->v_id = ++nextvnodeid;
 	if (nextvnodeid != 0)
 		return;
-	for (ncp = namecache; ncp < &namecache[nchsize]; ncp++) {
-		ncp->nc_vpid = 0;
-		ncp->nc_dvpid = 0;
+	for (nhp = &nchashtbl[nchash]; nhp >= nchashtbl; nhp--) {
+		for (ncp = nhp->nch_forw; ncp != (struct namecache *)nhp;
+		    ncp = ncp->nc_forw) {
+			ncp->nc_vpid = 0;
+			ncp->nc_dvpid = 0;
+		}
 	}
 	vp->v_id = ++nextvnodeid;
 }
