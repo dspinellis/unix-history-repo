@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.18 (Berkeley) %G%
+ *	@(#)trap.c	7.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1289,10 +1289,26 @@ pmax_errintr()
 static void
 kn02_errintr()
 {
+	u_int erradr, chksyn;
 
-	printf("erradr %x\n", *(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR));
-	*(unsigned *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
+	erradr = *(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR);
+	chksyn = *(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CHKSYN);
+	*(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR) = 0;
 	MachEmptyWriteBuffer();
+
+	if (!(erradr & KN02_ERR_VALID))
+		return;
+	printf("%s memory %s %s error at 0x%x\n",
+		(erradr & KN02_ERR_CPU) ? "CPU" : "DMA",
+		(erradr & KN02_ERR_WRITE) ? "write" : "read",
+		(erradr & KN02_ERR_ECCERR) ? "ECC" : "timeout",
+		(erradr & KN02_ERR_ADDRESS));
+	if (erradr & KN02_ERR_ECCERR) {
+		*(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CHKSYN) = 0;
+		MachEmptyWriteBuffer();
+		printf("ECC 0x%x\n", chksyn);
+	}
+	panic("Mem error interrupt");
 }
 
 #ifdef DS5000_240
