@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	7.30 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -368,9 +368,9 @@ loop:
 		return (bp);
 	}
 	bp = getnewbuf();
-	bfree(bp);
 	bremhash(bp);
 	bgetvp(vp, bp);
+	bp->b_bcount = 0;
 	bp->b_lblkno = blkno;
 #ifdef SECSIZE
 	bp->b_blksize = secsize;
@@ -379,7 +379,7 @@ loop:
 	bp->b_error = 0;
 	bp->b_resid = 0;
 	binshash(bp, dp);
-	brealloc(bp, size);
+	allocbuf(bp, size);
 	return (bp);
 }
 
@@ -397,34 +397,88 @@ geteblk(size)
 		panic("geteblk: size too big");
 	bp = getnewbuf();
 	bp->b_flags |= B_INVAL;
-	bfree(bp);
 	bremhash(bp);
 	flist = &bfreelist[BQ_AGE];
+	bp->b_bcount = 0;
 #ifdef SECSIZE
 	bp->b_blksize = DEV_BSIZE;
 #endif SECSIZE
 	bp->b_error = 0;
 	bp->b_resid = 0;
 	binshash(bp, flist);
-	brealloc(bp, size);
+	allocbuf(bp, size);
 	return (bp);
 }
 
 /*
- * Allocate space associated with a buffer.
+ * Expand or contract the actual memory allocated to a buffer.
+ * If no memory is available, release buffer and take error exit
  */
-brealloc(bp, size)
-	register struct buf *bp;
+allocbuf(tp, size)
+	register struct buf *tp;
 	int size;
 {
-	daddr_t start, last;
-	register struct buf *ep;
-	struct buf *dp;
-	int s;
+	register struct buf *bp, *ep;
+	int sizealloc, take, s;
 
-	if (size == bp->b_bcount)
-		return;
-	allocbuf(bp, size);
+	sizealloc = roundup(size, CLBYTES);
+	/*
+	 * Buffer size does not change
+	 */
+	if (sizealloc == tp->b_bufsize)
+		goto out;
+	/*
+	 * Buffer size is shrinking.
+	 * Place excess space in a buffer header taken from the
+	 * BQ_EMPTY buffer list and placed on the "most free" list.
+	 * If no extra buffer headers are available, leave the
+	 * extra space in the present buffer.
+	 */
+	if (sizealloc < tp->b_bufsize) {
+		ep = bfreelist[BQ_EMPTY].av_forw;
+		if (ep == &bfreelist[BQ_EMPTY])
+			goto out;
+		s = splbio();
+		bremfree(ep);
+		ep->b_flags |= B_BUSY;
+		splx(s);
+		pagemove(tp->b_un.b_addr + sizealloc, ep->b_un.b_addr,
+		    (int)tp->b_bufsize - sizealloc);
+		ep->b_bufsize = tp->b_bufsize - sizealloc;
+		tp->b_bufsize = sizealloc;
+		ep->b_flags |= B_INVAL;
+		ep->b_bcount = 0;
+		brelse(ep);
+		goto out;
+	}
+	/*
+	 * More buffer space is needed. Get it out of buffers on
+	 * the "most free" list, placing the empty headers on the
+	 * BQ_EMPTY buffer header list.
+	 */
+	while (tp->b_bufsize < sizealloc) {
+		take = sizealloc - tp->b_bufsize;
+		bp = getnewbuf();
+		if (take >= bp->b_bufsize)
+			take = bp->b_bufsize;
+		pagemove(&bp->b_un.b_addr[bp->b_bufsize - take],
+		    &tp->b_un.b_addr[tp->b_bufsize], take);
+		tp->b_bufsize += take;
+		bp->b_bufsize = bp->b_bufsize - take;
+		if (bp->b_bcount > bp->b_bufsize)
+			bp->b_bcount = bp->b_bufsize;
+		if (bp->b_bufsize <= 0) {
+			bremhash(bp);
+			binshash(bp, &bfreelist[BQ_EMPTY]);
+			bp->b_dev = (dev_t)NODEV;
+			bp->b_error = 0;
+			bp->b_flags |= B_INVAL;
+		}
+		brelse(bp);
+	}
+out:
+	tp->b_bcount = size;
+	return (1);
 }
 
 /*
