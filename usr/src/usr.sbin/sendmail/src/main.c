@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.111		%G%);
+SCCSID(@(#)main.c	3.112		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -290,12 +290,7 @@ main(argc, argv)
 			if (p[2] == '\0')
 				QueueDir = "mqueue";
 			else
-			{
-				if (strlen(&p[2]) > 50)
-					syserr("Absurd length Queue path");
-				else
-					QueueDir = &p[2];
-			}
+				QueueDir = &p[2];
 			break;
 
 		  case 'T':	/* set timeout interval */
@@ -430,6 +425,13 @@ main(argc, argv)
 		syserr("No prog mailer defined");
 	else
 		ProgMailer = st->s_mailer;
+
+	/* operate in queue directory */
+	if (chdir(QueueDir) < 0)
+	{
+		syserr("cannot chdir(%s)", QueueDir);
+		exit(EX_SOFTWARE);
+	}
 
 	/*
 	**  Initialize aliases.
@@ -744,18 +746,6 @@ setfrom(from, realname)
 	{
 		DefUid = CurEnv->e_from.q_uid;
 		DefGid = CurEnv->e_from.q_gid;
-	}
-
-	/*
-	**  Set up the $r and $s macros to show who it came from.
-	*/
-
-	if (macvalue('s') == NULL && CurEnv->e_from.q_host != NULL &&
-	    CurEnv->e_from.q_host[0] != '\0')
-	{
-		define('s', CurEnv->e_from.q_host);
-
-		/* should determine network type here */
 	}
 
 	/*

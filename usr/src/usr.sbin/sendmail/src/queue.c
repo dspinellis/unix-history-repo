@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.41		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.42		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.41		%G%);
+SCCSID(@(#)queue.c	3.42		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -211,7 +211,6 @@ orderq()
 	WORK wlist[WLSIZE];
 	int wn = 0;
 	extern workcmpf();
-	extern char *QueueDir;
 
 	/* clear out old WorkQ */
 	for (w = WorkQ; w != NULL; )
@@ -225,10 +224,10 @@ orderq()
 	}
 
 	/* open the queue directory */
-	f = opendir(QueueDir);
+	f = opendir(".");
 	if (f == NULL)
 	{
-		syserr("orderq: cannot open %s", QueueDir);
+		syserr("orderq: cannot open \"%s\" as \".\"", QueueDir);
 		return;
 	}
 
@@ -238,23 +237,15 @@ orderq()
 
 	while (wn < WLSIZE && (d = readdir(f)) != NULL)
 	{
-		char cbuf[MAXNAME];
 		char lbuf[MAXNAME];
 		FILE *cf;
-		register char *p;
 
 		/* is this an interesting entry? */
 		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
 
-		/* yes -- find the control file location */
-		(void) strcpy(cbuf, QueueDir);
-		(void) strcat(cbuf, "/");
-		p = &cbuf[strlen(cbuf)];
-		(void) strcpy(p, d->d_name);
-
-		/* open control file */
-		cf = fopen(cbuf, "r");
+		/* yes -- open control file */
+		cf = fopen(d->d_name, "r");
 		if (cf == NULL)
 		{
 			/* this may be some random person sending hir msgs */
@@ -262,7 +253,7 @@ orderq()
 			errno = 0;
 			continue;
 		}
-		wlist[wn].w_name = newstr(cbuf);
+		wlist[wn].w_name = newstr(d->d_name);
 
 		/* extract useful information */
 		while (fgets(lbuf, sizeof lbuf, cf) != NULL)
@@ -386,7 +377,7 @@ dowork(w)
 		QueueRun = TRUE;
 		MailBack = TRUE;
 		CurEnv->e_qf = w->w_name;
-		CurEnv->e_id = &w->w_name[strlen(QueueDir) + 3];
+		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
 		if (LogLevel > 11)
 			syslog(LOG_DEBUG, "%s: dowork, pid=%d", CurEnv->e_id,
