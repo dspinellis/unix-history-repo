@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -226,11 +226,13 @@ main(argc, argv)
 		sectnewp = addlist("_section_new");
 		if ((sectp = section)->list.qe_next != NULL)
 			sectp = sectp->list.qe_next;
-		while (sectp != NULL) {
+		for (; sectp != NULL; sectp = sectp->list.qe_next) {
 			if (sectp->s[strlen(sectp->s) - 1] != '/') {
-				tp = sectp;
-				sectp = sectp->list.qe_next;
-				queue_remove(&section->list, tp, ENTRY *, list);
+				(void)snprintf(buf, sizeof(buf),
+				    "%s{/%s,}", sectp->s, machine);
+				if ((tp = malloc(sizeof(ENTRY))) == NULL ||
+				    (tp->s = strdup(buf)) == NULL)
+					err(1, NULL);
 				queue_enter_tail(&sectnewp->list,
 				    tp, ENTRY *, list);
 				continue;
@@ -247,7 +249,6 @@ main(argc, argv)
 				queue_enter_tail(&sectnewp->list,
 				    tp, ENTRY *, list);
 			}
-			sectp = sectp->list.qe_next;
 		}
 		sectnewp->s = section->s;
 		defp = sectnewp;
@@ -436,7 +437,19 @@ manual(page, list, pg)
 		/* Find out if it's really a man page. */
 		for (cnt = 1; cnt <= pg->gl_matchc; ++cnt) {
 
-			/* Try the _suffix key words first. */
+			/*
+			 * Try the _suffix key words first.
+			 *
+			 * XXX
+			 * Older versions of man.conf didn't have the suffix
+			 * key words, it was assumed that everything was a .0.
+			 * We just test for .0 first, it's fast and probably
+			 * going to hit.
+			 */
+			if (!fnmatch("*.0",
+			    pg->gl_pathv[pg->gl_pathc - cnt], 0))
+				goto easy;
+
 			sufp = getlist("_suffix");
 			if (sufp != NULL)
 				sufp = sufp->list.qe_next;
@@ -451,7 +464,7 @@ manual(page, list, pg)
 				}
 			}
 			if (found) {
-				anyfound = 1;
+easy:				anyfound = 1;
 				if (!f_all)
 					break;
 				continue;
