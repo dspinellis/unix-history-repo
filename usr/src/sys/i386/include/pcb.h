@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pcb.h	8.1 (Berkeley) %G%
+ *	@(#)pcb.h	8.2 (Berkeley) %G%
  */
 
 /*

@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 1982, 1986, 1988, 1990, 1993
- *	Regents of the University of California.  All rights reserved.
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)udp_usrreq.c	8.3 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>

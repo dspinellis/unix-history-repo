@@ -1,14 +1,13 @@
 /*
  * Copyright (c) 1992, 1993
  *	The Regents of the University of California.  All rights reserved.
- * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
  * the UCLA Ficus project.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	8.2 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	8.3 (Berkeley) %G%
  *
  * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
