@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -635,9 +635,9 @@ rewrite(pvp, ruleset)
 			if (tTd(21, 35))
 			{
 				printf("operator=");
-				xputs(ap);
-				printf(", token=");
 				xputs(rp);
+				printf(", token=");
+				xputs(ap);
 				printf("\n");
 			}
 			if (rp == NULL)
