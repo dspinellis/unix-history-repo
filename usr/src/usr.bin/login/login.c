@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -158,7 +158,7 @@ main(argc, argv)
 	ioctl(0, TIOCSLTC, &ltc);
 	ioctl(0, TIOCSETC, &tc);
 	ioctl(0, TIOCSETP, &ttyb);
-	for (t = getdtablesize(); t > 3; t--)
+	for (t = getdtablesize(); t > 2; t--)
 		close(t);
 	ttyn = ttyname(0);
 	if (ttyn == (char *)0)
@@ -311,7 +311,7 @@ main(argc, argv)
 		close(f);
 	}
 	chown(ttyn, pwd->pw_uid, pwd->pw_gid);
-	if (!hflag)					/* XXX */
+	if (!hflag && !rflag)					/* XXX */
 		ioctl(0, TIOCSWINSZ, &win);
 	chmod(ttyn, 0622);
 	setgid(pwd->pw_gid);
@@ -496,7 +496,6 @@ doremoteterm(term, tp)
 {
 	register char *cp = index(term, '/'), **cpp;
 	char *speed;
-	struct winsize ws;
 
 	if (cp) {
 		*cp++ = '\0';
@@ -509,30 +508,43 @@ doremoteterm(term, tp)
 				tp->sg_ispeed = tp->sg_ospeed = cpp-speeds;
 				break;
 			}
-		ws.ws_row = ws.ws_col = -1;
-		ws.ws_xpixel = ws.ws_ypixel = -1;
-		if (cp) {
-			ws.ws_row = atoi(cp);
-			cp = index(cp, ',');
-			if (cp == 0)
-				goto done;
-			ws.ws_col = atoi(++cp);
-			cp = index(cp, ',');
-			if (cp == 0)
-				goto done;
-			ws.ws_xpixel = atoi(++cp);
-			cp = index(cp, ',');
-			if (cp == 0)
-				goto done;
-			ws.ws_ypixel = atoi(++cp);
-		}
-done:
-		if (ws.ws_row != -1 && ws.ws_col != -1 &&
-		    ws.ws_xpixel != -1 && ws.ws_ypixel != -1)
-			win = ws;
+		compatsiz(cp);
 	}
 	tp->sg_flags = ECHO|CRMOD|ANYP|XTABS;
 }
+
+/* BEGIN TRASH
+ *
+ * This is here only long enough to get us by to the revised rlogin
+ */
+compatsiz(cp)
+	char *cp;
+{
+	struct winsize ws;
+
+	ws.ws_row = ws.ws_col = -1;
+	ws.ws_xpixel = ws.ws_ypixel = -1;
+	if (cp) {
+		ws.ws_row = atoi(cp);
+		cp = index(cp, ',');
+		if (cp == 0)
+			goto done;
+		ws.ws_col = atoi(++cp);
+		cp = index(cp, ',');
+		if (cp == 0)
+			goto done;
+		ws.ws_xpixel = atoi(++cp);
+		cp = index(cp, ',');
+		if (cp == 0)
+			goto done;
+		ws.ws_ypixel = atoi(++cp);
+	}
+done:
+	if (ws.ws_row != -1 && ws.ws_col != -1 &&
+	    ws.ws_xpixel != -1 && ws.ws_ypixel != -1)
+		ioctl(0, TIOCSWINSZ, &ws);
+}
+/* END TRASH */
 
 /*
  * Set the value of var to be arg in the Unix 4.2 BSD environment env.
