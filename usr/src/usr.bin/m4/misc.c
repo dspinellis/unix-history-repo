@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,10 +18,13 @@ static char sccsid[] = "@(#)misc.c	5.5 (Berkeley) %G%";
  * by: oz
  */
  
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "mdef.h"
 #include "extr.h" 
- 
-extern char *malloc();
+#include "pathnames.h"
  
 /*
  * indx - find the index of second str in the
@@ -156,6 +159,7 @@ char *s;
  */
 static char *msg = "\ninterrupted.";
  
+void
 onintr() {
         error(msg);
 }
@@ -175,22 +179,7 @@ killdiv() {
                 }
 }
  
-/*
- * save a string somewhere..
- *
- */
-char *strsave(s)
-char *s;
-{
-	register int n;
-        char *p;
-
-        if ((p = malloc (n = strlen(s)+1)) != NULL)
-                (void) memcpy(p, s, n);
-        return (p);
-}
- 
 usage() {
-        fprintf(stderr, "Usage: m4 [-Dname[=val]] [-Uname]\n");
+        fprintf(stderr, "usage: m4 [-Dname[=val]] [-Uname]\n");
         exit(1);
 }

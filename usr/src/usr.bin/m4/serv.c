@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)serv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)serv.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,12 +18,15 @@ static char sccsid[] = "@(#)serv.c	5.2 (Berkeley) %G%";
  * by: oz
  */
  
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "mdef.h"
 #include "extr.h" 
+#include "pathnames.h"
 
 extern ndptr lookup();
 extern ndptr addent();
-extern char  *strsave();
  
 char *dumpfmt = "`%s'\t`%s'\n"; /* format string for dumpdef   */
  
@@ -107,7 +110,7 @@ register char *defn;
         if (!*defn)
                 p->defn = null;
         else
-                p->defn = strsave(defn);
+                p->defn = strdup(defn);
         p->type = MACRTYPE;
 }
  
@@ -149,7 +152,7 @@ register char *defn;
         if (!*defn)
                 p->defn = null;
         else
-                p->defn = strsave(defn);
+                p->defn = strdup(defn);
         p->type = MACRTYPE;
 }
  
