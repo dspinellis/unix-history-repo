@@ -1,4 +1,4 @@
-/*	printjob.c	4.4	83/05/19	*/
+/*	printjob.c	4.5	83/05/23	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -587,10 +587,14 @@ sendfile(type, file)
 	}
 	(void) sprintf(buf, "%c%d %s\n", type, stb.st_size, file);
 	amt = strlen(buf);
-	if (write(pfd, buf, amt) != amt)
+	if (write(pfd, buf, amt) != amt) {
+		(void) close(f);
 		return(1);
-	if (noresponse())
+	}
+	if (noresponse()) {
+		(void) close(f);
 		return(1);
+	}
 	sizerr = 0;
 	for (i = 0; i < stb.st_size; i += BUFSIZ) {
 		amt = BUFSIZ;
@@ -598,8 +602,10 @@ sendfile(type, file)
 			amt = stb.st_size - i;
 		if (sizerr == 0 && read(f, buf, amt) != amt)
 			sizerr = 1;
-		if (write(pfd, buf, amt) != amt)
+		if (write(pfd, buf, amt) != amt) {
+			(void) close(f);
 			return(1);
+		}
 	}
 	(void) close(f);
 	if (sizerr) {
