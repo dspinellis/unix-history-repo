@@ -1,4 +1,4 @@
-.\"	@(#)tt12	5.1 (Berkeley) %G%
+.\"	@(#)tt12	6.1 (Berkeley) %G%
 .\"
 .NH
 Conditionals
@@ -82,11 +82,11 @@ other conditions that can be tested with
 .BD .if .
 For example, is the current page even or odd?
 .P1
-^if e ^tl ''even page title''
-^if o ^tl ''odd page title''
+^if o ^tl 'odd page title''- % -'
+^if e ^tl '- % -''even page title'
 .P2
-gives facing pages different titles
-when used inside an appropriate new page macro.
+gives facing pages different titles and page numbers on the
+outside edge when used inside an appropriate new page macro.
 .PP
 Two other conditions
 are
