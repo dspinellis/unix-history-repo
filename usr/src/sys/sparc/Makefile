@@ -1,18 +1,21 @@
-#	@(#)Makefile	7.1 (Berkeley) %G%
-#
-# from: $Header: Makefile,v 1.11 92/06/03 21:48:05 leres Exp $ (LBL)
+#	@(#)Makefile	7.2 (Berkeley) %G%
 
-# Location of tags file
-TAGS=	../../compile/GENERIC/tags
-TAGS1=	../compile/GENERIC/tags1
+# Makefile for sparc tags file
 
-# Directories in which to place sparc tags links
-DSPARC=	dev fpu include rcons sbus sparc sunos
+.include "../kern/Make.tags.inc"
 
 all:
-	@echo '"make links" only'
+	@echo "make tags only"
 
-links:
-	-for i in ${DSPARC}; do \
-	    (cd $$i && rm -f tags; ln -s ${TAGS}); done
-	rm -f tags ; ln -s ${TAGS1} tags
+SPARC=	/sys/sparc/dev/*.[ch] /sys/sparc/fpu/*.[ch] \
+	/sys/sparc/include/*.[ch] /sys/sparc/rcons/*.[ch] \
+	/sys/sparc/sbus/*.[ch] /sys/sparc/sparc/*.[ch] \
+	/sys/sparc/sunos/*.[ch]
+ASPARC=	/sys/sparc/sparc/*.s
+
+tags::
+	-ctags -dt ${COMM} ${SPARC}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${ASPARC} | \
+	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
+		>> tags
+	sort -o tags tags

@@ -1,33 +1,20 @@
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	7.6 (Berkeley) %G%
 
 # Makefile for tahoe tags file
 
 .include "../kern/Make.tags.inc"
 
 all:
-	@echo "make tags or links only"
+	@echo "make tags only"
 
-TTAHOE=	../tahoe/tags
-STAHOE=	../tahoe/tahoe/*.[ch] ../tahoe/include/*.h ../tahoe/if/*.[ch] \
-	../tahoe/vba/*.[ch] ../tahoe/align/*.[ch] ../tahoe/math/*.h
-ATAHOE=	../tahoe/tahoe/*.s ../tahoe/math/*.s
+TAHOE=	/sys/tahoe/conf/*.[ch] /sys/tahoe/if/*.[ch] \
+	/sys/tahoe/include/*.[ch] /sys/tahoe/tahoe/*.[ch] \
+	/sys/tahoe/vba/*.[ch]
+ATAHOE=	/sys/tahoe/tahoe/*.s
 
-
-# Directories in which to place tahoe tags links
-DTAHOE=	if vba align math include
-
-tags: FRC
-	-ctags -dtf ${TTAHOE} ${COMM} ${STAHOE}
-	egrep "^SCBVEC(.*)" ${ATAHOE} | \
-	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
-		>> ${TTAHOE}
-	egrep "^ENTRY(.*)|^JSBENTRY(.*)" ${ATAHOE} | \
+tags::
+	-ctags -dt ${COMM} ${TAHOE}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${ATAHOE} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
-		>> ${TTAHOE}
-	sort -o ${TTAHOE} ${TTAHOE}
-
-links:
-	-for i in ${DTAHOE}; do \
-	    (cd $$i && rm -f tags; ln -s ../tags tags); done
-
-FRC:
+		>> tags
+	sort -o tags tags

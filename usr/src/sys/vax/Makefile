@@ -1,32 +1,20 @@
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	7.6 (Berkeley) %G%
 
 # Makefile for vax tags file
 
 .include "../kern/Make.tags.inc"
 
 all:
-	@echo "make tags or links only"
+	@echo "make tags only"
 
-TVAX=	../vax/tags
-SVAX=	../vax/if/*.[ch]  ../vax/mba/*.[ch] ../vax/uba/*.[ch] \
-	../vax/bi/*.[ch] ../vax/vax/*.[ch] ../vax/include/*.h
-AVAX=	../vax/vax/*.s
+VAX=	/sys/vax/bi/*.[ch] /sys/vax/conf/*.[ch] /sys/vax/if/*.[ch] \
+	/sys/vax/include/*.[ch] /sys/vax/mba/*.[ch] /sys/vax/uba/*.[ch] \
+	/sys/vax/vax/*.[ch]
+AVAX=	/sys/vax/vax/*.s
 
-# Directories in which to place vax tags links
-DVAX=	if mba uba bi include
-
-tags: FRC
-	-ctags -dtf ${TVAX} ${COMM} ${SVAX}
-	egrep "^SCBVEC(.*)" ${AVAX} | \
-	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);X\3 \1 /^\2(\3\4$$/;" \
-		>> ${TVAX}
-	egrep "^ENTRY(.*)|^JSBENTRY(.*)" ${AVAX} | \
+tags::
+	-ctags -dt ${COMM} ${VAX}
+	egrep "^ENTRY(.*)|^ALTENTRY(.*)" ${AVAX} | \
 	    sed "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \1 /^\2(\3\4$$/;" \
-		>> ${TVAX}
-	sort -o ${TVAX} ${TVAX}
-
-links:
-	-for i in ${DVAX}; do \
-	    (cd $$i && rm -f tags; ln -s ../tags tags); done
-
-FRC:
+		>> tags
+	sort -o tags tags
