@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.6	81/04/28	*/
+/*	vfs_lookup.c	4.7	81/05/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,9 +32,6 @@ int (*func)();
 	int i;
 	dev_t d;
 	off_t eo;
-#ifdef CHAOS
-	extern long cdevpath;
-#endif
 
 	/*
 	 * If name starts with '/' start from
@@ -63,12 +60,18 @@ cloop:
 		return(dp);
 
 #ifdef CHAOS
-	if((dp->i_mode & IFMT) == IFCHR &&
-	   (cdevpath & (1 << major(dp->i_un.i_rdev)))) {
-		u.u_dirp--;
+	/*
+	 *      If the current node is a character
+	 *      special file with the SUID bit set, return anyway.
+	 *	This lets the Chaos open decode the rest of the name in its own
+	 *      peculiar way.  jrl 3/81
+	 */
+	if((dp->i_mode&(IFMT|ISUID)) == (IFCHR|ISUID)) {
+		u.u_dirp--;     /* back up to the slash or null */
 		return(dp);
 	}
 #endif
+
 	/*
 	 * If there is another component,
 	 * Gather up name into
@@ -117,8 +120,8 @@ seloop:
 	u.u_segflg = 1;
 	eo = 0;
 	bp = NULL;
-	if (dp == u.u_rdir && u.u_dent.d_name[0] == '.' &&
-	    u.u_dent.d_name[1] == '.' && u.u_dent.d_name[2] == 0)
+	if (dp == u.u_rdir && u.u_dbuf[0] == '.' &&
+	    u.u_dbuf[1] == '.' && u.u_dbuf[2] == 0)
 		goto cloop;
 
 eloop:
