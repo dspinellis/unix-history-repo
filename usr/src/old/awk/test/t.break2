@@ -1,0 +1,10 @@
+	{ x[NR] = $0 }
+END {
+	for (i in x) {
+		print i, x[i]
+		if (x[i] ~ /shen/)
+			break
+	}
+	print "got here"
+	print i, x[i]
+}

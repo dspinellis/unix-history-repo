@@ -1,0 +1,2 @@
+$1%2==1	{print >"oddtemp"}
+$1%2==0	{print >"eventemp"}
