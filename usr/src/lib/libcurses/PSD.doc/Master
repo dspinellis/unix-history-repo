@@ -3,10 +3,11 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Master	6.4 (Berkeley) %G%
+.\"	@(#)Master	6.5 (Berkeley) %G%
 .\"
 .ds Ln Screen Package
 .so macros
+.so c_macros
 .so intro.0
 .pn 3
 .bp
@@ -15,9 +16,8 @@
 .so intro.3
 .so intro.4
 .so intro.5
-.so appen.A.tbl
-.so c_macros
-.so appen.B
+.so intro.6
+.bp
 .so appen.C
 .pn 2
 .oh '\*(Ln''PS1:18-%'
