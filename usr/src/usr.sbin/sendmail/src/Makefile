@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.18 (Berkeley) %G%
+#	@(#)Makefile	5.19 (Berkeley) %G%
 
 PROG=	sendmail
 CFLAGS+=-I${.CURDIR} -DVMUNIX
@@ -23,7 +23,7 @@ beforeinstall:
 	    ${DESTDIR}/etc/sendmail.fc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
 	    ${DESTDIR}/var/log/sendmail.st
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf \
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/sendmail.hf \
 	    ${DESTDIR}/usr/share/misc
 
 .include <bsd.prog.mk>
