@@ -1,0 +1,13 @@
+#
+# Sample NNTP access file.  "read" implies "xfer".
+# Note that "default" must be the first entry in the
+# table.
+#
+# This does NOT support subnets.  Only class A, B, C networks
+# and hosts are supported here.
+#
+# host/net	read/xfer/no	post/no
+#
+default		xfer		no
+ucb-ether	read		post
+bugs		read		no

@@ -1,0 +1,21 @@
+SYSLOG INFO
+
+If LOG is defined, the following informational messages are
+logged at LOG_INFO.  Note that all messages are preceded by
+the host name executing the command.
+
+host connect			"host" connected to the server.
+host refused connection		"host" tried to connect, but was denied.
+host group newsgroup		"host" isssued GROUP to "newsgroup".
+host ihave artid rejected	"host" offered "artid", we already had it.
+host ihave artid accepted failed	"host" offered "artid", we didn't
+host ihave artid accepted succeeded	have it, and the rnews worked or not.
+host post rejected		"host" tried to POST, but was denied.
+host post succeeded		"host" tried to POST, inews worked.
+host post failed		"host" tried to POST, inews failed.
+host exit %d aritcles %d groups	"host" quit, having read a total of %d
+				articles and %d groups.
+host times user %d system %d elapsed %d
+				"host" quit, having used %d user seconds,
+				%d system seconds, and %d real-time elapsed
+				seconds.
