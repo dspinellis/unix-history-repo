@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.11	(Berkeley)	%G%
+#	@(#)Makefile	4.12	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -17,7 +17,7 @@ SCRIPT=	false true
 STD=	ar cat cc chgrp chmod cmp date dd df du echo ed expr \
 	grep hostid hostname kill ld ln login ls mail mkdir mt nice \
 	nm od pagesize passwd pr pwd rm rmail rmdir size strip stty su sync \
-	tar tee test wall who write
+	tar tee test time wall who write
 
 # Programs that must run setuid to root
 #
@@ -25,14 +25,14 @@ SETUID=	chgrp df login mail passwd su
 
 # C programs that live in the current directory and need explicit make lines.
 #
-NSTD=	ps time
+NSTD=	ps
 
-all:	${SUBDIR} ${STD} ${NSTD} cp
+all:	${SUBDIR} ${STD} ${NSTD} cp mv
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
 
-${STD} cp mv:
+${STD} mv cp:
 	${CC} ${CFLAGS} -o $@ $@.c
 
 # take care with cp and mv, install uses them
@@ -78,9 +78,6 @@ depend:
 
 ps:
 	cc ${CFLAGS} -o ps ps.c -lm
-
-time:
-	cc ${CFLAGS} -o time time.c -ljobs
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
