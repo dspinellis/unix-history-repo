@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.11 (Berkeley) 83/05/28";
+static char sccsid[] = "@(#)rwhod.c	4.12 (Berkeley) 83/06/01";
 #endif
 
 #include <sys/types.h>
@@ -155,12 +155,10 @@ main()
 			continue;
 		}
 #endif
-#ifdef notyet
 		if (wd.wd_vers != WHODVERSION)
 			continue;
 		if (wd.wd_type != WHODTYPE_STATUS)
 			continue;
-#endif
 		if (!verify(wd.wd_hostname)) {
 			fprintf(stderr, "rwhod: malformed host name from %x\n",
 				from.sin_addr);
@@ -173,7 +171,6 @@ main()
 			perror(path);
 			continue;
 		}
-#ifdef notyet
 #if vax || pdp11
 		{
 			int i, n = (cc - WHDRSIZE)/sizeof(struct utmp);
@@ -187,11 +184,11 @@ main()
 			we = wd.wd_we;
 			for (i = 0; i < n; i++) {
 				we->we_idle = ntohl(we->we_idle);
-				we->we_utmp.ut_time = ntohl(we->we_utmp.ut_time);
+				we->we_utmp.ut_time =
+				    ntohl(we->we_utmp.ut_time);
 				we++;
 			}
 		}
-#endif
 #endif
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
@@ -251,11 +248,7 @@ onalrm()
 				   sizeof (utmp[i].ut_line));
 				bcopy(utmp[i].ut_name, we->we_utmp.out_name,
 				   sizeof (utmp[i].ut_name));
-#ifdef notyet
 				we->we_utmp.out_time = htonl(utmp[i].ut_time);
-#else
-				we->we_utmp.out_time = utmp[i].ut_time;
-#endif
 				if (we >= wlast)
 					break;
 				we++;
@@ -265,29 +258,17 @@ onalrm()
 	we = mywd.wd_we;
 	for (i = 0; i < utmpent; i++) {
 		if (stat(we->we_utmp.out_line, &stb) >= 0)
-#ifdef notyet
 			we->we_idle = htonl(now - stb.st_atime);
-#else
-			we->we_idle = now - stb.st_atime;
-#endif
 		we++;
 	}
 	(void) lseek(kmemf, (long)nl[NL_AVENRUN].n_value, 0);
 	(void) read(kmemf, (char *)avenrun, sizeof (avenrun));
 	for (i = 0; i < 3; i++)
-#ifdef notyet
 		mywd.wd_loadav[i] = htonl(avenrun[i] * 100);
-#else
-		mywd.wd_loadav[i] = avenrun[i] * 100;
-#endif
 	cc = (char *)we - (char *)&mywd;
-#ifdef notyet
 	mywd.wd_sendtime = htonl(time(0));
 	mywd.wd_vers = WHODVERSION;
 	mywd.wd_type = WHODTYPE_STATUS;
-#else
-	mywd.wd_sendtime = time(0);
-#endif
 	for (np = neighbors; np != NULL; np = np->n_next)
 		(void) sendto(s, (char *)&mywd, cc, 0,
 			np->n_addr, np->n_addrlen);
@@ -320,9 +301,7 @@ loop:
 	}
 	(void) lseek(kmemf, (long)nl[NL_BOOTTIME].n_value, 0);
 	(void) read(kmemf, (char *)&mywd.wd_boottime, sizeof (mywd.wd_boottime));
-#ifdef notyet
 	mywd.wd_boottime = htonl(mywd.wd_boottime);
-#endif
 }
 
 /*
