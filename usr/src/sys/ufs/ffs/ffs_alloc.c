@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	6.2	83/09/28	*/
+/*	ffs_alloc.c	6.3	84/02/06	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
