@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.119 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.120 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1885,6 +1885,42 @@ ufsfifo_close(ap)
 	return (VOCALL (fifo_vnodeop_p, VOFFSET(vop_close), ap));
 }
 #endif /* FIFO */
+
+/*
+ * Return POSIX pathconf information applicable to ufs filesystems.
+ */
+ufs_pathconf(ap)
+	struct vop_pathconf_args /* {
+		struct vnode *a_vp;
+		int a_name;
+		int *a_retval;
+	} */ *ap;
+{
+
+	switch (ap->a_name) {
+	case _PC_LINK_MAX:
+		*ap->a_retval = LINK_MAX;
+		return (0);
+	case _PC_NAME_MAX:
+		*ap->a_retval = NAME_MAX;
+		return (0);
+	case _PC_PATH_MAX:
+		*ap->a_retval = PATH_MAX;
+		return (0);
+	case _PC_PIPE_BUF:
+		*ap->a_retval = PIPE_BUF;
+		return (0);
+	case _PC_CHOWN_RESTRICTED:
+		*ap->a_retval = 1;
+		return (0);
+	case _PC_NO_TRUNC:
+		*ap->a_retval = 1;
+		return (0);
+	default:
+		return (EINVAL);
+	}
+	/* NOTREACHED */
+}
 
 /*
  * Advisory record locking support
