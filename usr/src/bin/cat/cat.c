@@ -1,7 +1,7 @@
 /*
  * Concatenate files.
  */
-static	char *Sccsid = "@(#)cat.c	4.3 (Berkeley) %G%";
+static	char *Sccsid = "@(#)cat.c	4.4 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -74,7 +74,8 @@ char **argv;
 			}
 		}
 		if (fstat(fileno(fi), &statb) == 0) {
-			if (statb.st_dev==dev && statb.st_ino==ino) {
+			if ((statb.st_mode & S_IFMT) == S_IFREG &&
+			    statb.st_dev==dev && statb.st_ino==ino) {
 				fprintf(stderr, "cat: input %s is output\n",
 				   fflg?"-": *argv);
 				fclose(fi);
