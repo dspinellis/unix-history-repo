@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.2	%G%	*/
+/*	lfs_inode.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -64,8 +64,6 @@ ino_t ino;
  * In all cases, a pointer to a locked
  * inode structure is returned.
  *
- * printf warning: no inodes -- if the inode
- *	structure is full
  * panic: no imt -- if the mounted file
  *	system is not in the mount table.
  *	"cannot happen"
@@ -107,7 +105,7 @@ loop:
 		ip = &inode[ip->i_hlink];
 	}
 	if(ifreel < 0) {
-		printf("Inode table overflow\n");
+		tablefull("inode");
 		u.u_error = ENFILE;
 		return(NULL);
 	}
