@@ -242,7 +242,14 @@ p_rtnode()
 		sprintf(nbuf, " %d refs, ", rmask.rm_refs);
 		printf(" mk = %8.8x {(%d),%s",
 			rm, -1 - rmask.rm_b, rmask.rm_refs ? nbuf : " ");
-		p_sockaddr(kgetsa((struct sockaddr *)rmask.rm_mask), 0, -1);
+		if (rmask.rm_flags & RNF_NORMAL) {
+			struct radix_node rnode_aux;
+			printf(nbuf, " <normal>, ");
+			kget(rmask.rm_leaf, rnode_aux);
+			p_sockaddr(
+			 kgetsa((struct sockaddr *)rnode_aux.rn_mask), 0, -1);
+		} else
+		    p_sockaddr(kgetsa((struct sockaddr *)rmask.rm_mask), 0, -1);
 		putchar('}');
 		if (rm = rmask.rm_mklist)
 			printf(" ->");
