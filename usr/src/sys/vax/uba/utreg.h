@@ -1,4 +1,4 @@
-/*	utreg.h	81/11/04	4.1	*/
+/*	utreg.h	81/11/06	4.2	*/
 
 /*
  * System Industries Model 9700 Tape Drive
@@ -10,7 +10,7 @@ struct	utdevice
 	u_short	utcs1;		/* control status register 1 */
 	short	utwc;		/* word count register */
 	u_short	utba;		/* low 16-bits of bus address */
-	u_short	utfc;		/* frame counter */
+	short	utfc;		/* frame counter */
 	u_short	utcs2;		/* control status register 2 */
 	u_short	utds;		/* drive status register */
 	u_short	uter;		/* error register */
@@ -132,9 +132,12 @@ struct	utdevice
 #define	UTER_ILR	0000002		/* illegal register (always 0) */
 #define	UTER_ILF	0000001		/* illegal function */
 
-/* those errors we consider "hard" errors */
-#define	UTER_HARD	(UTER_UNS|UTER_DTE|UTER_NEF|UTER_NSG|UTER_PEF|UTER_INC|\
-			 UTER_DPAR|UTER_FMT|UTER_RPE|UTER_RMR|UTER_ILF)
+/*
+ * These errors we consider "hard"; UTER_OPI and UTER_RPE
+ * are considered "soft", at least for the moment.
+ */
+#define	UTER_HARD	(UTER_UNS|UTER_NEF|UTER_DPAR|UTER_FMT|UTER_RMR|\
+			 UTER_ILR|UTER_ILF)
 
 #define	UTER_BITS \
 "\10\20COR\17UNS\16DOPI\15DTE\14NEF\13CS\12FCE\11NSG\10PEF\
@@ -165,3 +168,4 @@ struct	utdevice
 
 #define	b_repcnt  b_bcount
 #define	b_command b_resid
+#define	b_state	  b_active  
