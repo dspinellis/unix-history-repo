@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	3.7 84/01/13";
+static	char *sccsid = "@(#)wwspawn.c	3.8 84/04/08";
 #endif
 
 #include "ww.h"
@@ -7,38 +7,44 @@ static	char *sccsid = "@(#)wwspawn.c	3.7 84/01/13";
 
 /*
  * There is a dead lock with vfork and closing of pseudo-ports.
- * So we have to be sneaky.
+ * So we have to be sneaky about error reporting.
  */
-/*VARARGS3*/
-wwspawn(wp, file, argv0)
+wwspawn(wp, file, argv)
 register struct ww *wp;
-char *file, *argv0;
+char *file;
+char **argv;
 {
-	extern int errno;
-	extern char *sys_errlist[];
 	int pid;
+	int ret;
+	char erred = 0;
 
 	(void) sighold(SIGCHLD);
 	switch (pid = vfork()) {
 	case -1:
 		wwerrno = WWE_SYS;
-		(void) sigrelse(SIGCHLD);
-		return -1;
+		ret = -1;
+		break;
 	case 0:
-		wwenviron(wp);
-		errno = 0;
-		execv(file, &argv0);
+		if (wwenviron(wp) >= 0)
+			execvp(file, argv);
+		erred = 1;
 		_exit(1);
 	default:
-		if (errno != 0) {
+		if (erred) {
 			wwerrno = WWE_SYS;
-			(void) sigrelse(SIGCHLD);
-			return -1;
+			ret = -1;
 		} else {
 			wp->ww_pid = pid;
 			wp->ww_state = WWS_HASPROC;
-			(void) sigrelse(SIGCHLD);
-			return pid;
+			ret = pid;
 		}
 	}
+	(void) sigrelse(SIGCHLD);
+	/*
+	if (wp->ww_socket >= 0) {
+		(void) close(wp->ww_socket);
+		wp->ww_socket = -1;
+	}
+	*/
+	return ret;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.8 84/04/08";
+static	char *sccsid = "@(#)error.c	3.9 84/04/08";
 #endif
 
 #include "defs.h"
@@ -17,7 +17,7 @@ char *fmt;
 
 	if (cx.x_type != X_FILE) {
 		if (terse)
-			wwputc(ctrl(g), cmdwin);
+			wwbell();
 		else {
 			wwprintf(cmdwin, fmt, a, b, c, d, e, f, g, h);
 			wwputs("  ", cmdwin);

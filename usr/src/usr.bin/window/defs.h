@@ -1,5 +1,5 @@
 /*
- *	@(#)defs.h	3.13 84/04/05	
+ *	@(#)defs.h	3.14 84/04/08	
  */
 
 #include "ww.h"
@@ -19,8 +19,8 @@ struct ww *fgwin;		/* the last foreground window */
 
 #define isfg(w)		((w)->ww_order <= fgwin->ww_order)
 
-char *shell;			/* the shell program */
-char *shellname;		/* the shell program name (for argv[0]) */
+char *shell[128];		/* the shell argv */
+char *shellfile;		/* the shell program */
 int nbufline;			/* default buffer size for new windows */
 char escapec;			/* the escape character */
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.9 84/03/06";
+static	char *sccsid = "@(#)wwiomux.c	3.10 84/04/08";
 #endif
 
 #include "ww.h"
@@ -36,7 +36,7 @@ loop:
 		if (w->ww_pty < 0)
 			continue;
 		imask |= 1 << w->ww_pty;
-		if (w->ww_obc > 0 && !w->ww_stopped)
+		if (w->ww_obq > w->ww_obp && !w->ww_stopped)
 			noblock = 1;
 	}
 
@@ -60,53 +60,58 @@ loop:
 
 	if (n < 0)
 		wwnselecte++;
-	else {
-		if (n == 0)
-			wwnselectz++;
-		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
-			if (w->ww_pty >= 0 && imask & 1 << w->ww_pty) {
-				wwnwread++;
-				p = w->ww_obp + w->ww_obc;
-				if (p == w->ww_ob)
+	else if (n == 0)
+		wwnselectz++;
+	else
+		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
+			if (w->ww_pty < 0 || (imask & 1 << w->ww_pty) == 0)
+				continue;
+			wwnwread++;
+			p = w->ww_obq;
+			if (w->ww_ispty) {
+				if (p == w->ww_ob) {
 					w->ww_obp++;
-				else
+					w->ww_obq++;
+				} else
 					p--;
 				c = *p;
-				n = read(w->ww_pty, p, w->ww_obe - p);
-				if (n < 0) {
-					wwnwreade++;
-					(void) close(w->ww_pty);
-					w->ww_pty = -1;
-					continue;
-				} else if (n == 0) {
-					wwnwreadz++;
-				} else if (*p == TIOCPKT_DATA) {
-					n--;
-					wwnwreadd++;
-					wwnwreadc += n;
-					w->ww_obc += n;
-				} else {
-					wwnwreadp++;
-					if (*p & TIOCPKT_STOP)
-						w->ww_stopped = 1;
-					if (*p & TIOCPKT_START)
-						w->ww_stopped = 0;
-					if (*p & TIOCPKT_FLUSHWRITE) {
-						w->ww_stopped = 0;
-						w->ww_obp = w->ww_ob;
-						w->ww_obc = 0;
-					}
-				}
-				*p = c;
 			}
-	}
+			n = read(w->ww_pty, p, w->ww_obe - p);
+			if (n < 0) {
+				wwnwreade++;
+				(void) close(w->ww_pty);
+				w->ww_pty = -1;
+				continue;
+			} else if (n == 0) {
+				wwnwreadz++;
+			} else if (!w->ww_ispty) {
+				wwnwreadd++;
+				wwnwreadc += n;
+				w->ww_obq += n;
+			} else if (*p == TIOCPKT_DATA) {
+				n--;
+				wwnwreadd++;
+				wwnwreadc += n;
+				w->ww_obq += n;
+			} else {
+				wwnwreadp++;
+				if (*p & TIOCPKT_STOP)
+					w->ww_stopped = 1;
+				if (*p & TIOCPKT_START)
+					w->ww_stopped = 0;
+				if (*p & TIOCPKT_FLUSHWRITE) {
+					w->ww_stopped = 0;
+					w->ww_obq = w->ww_obp = w->ww_ob;
+				}
+			}
+			if (w->ww_ispty)
+				*p = c;
+		}
 	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
-		if (w->ww_pty >= 0 && w->ww_obc != 0 && !w->ww_stopped) {
-			n = wwwrite(w, w->ww_obp, w->ww_obc);
-			if (w->ww_obc -= n)
-				w->ww_obp += n;
-			else
-				w->ww_obp = w->ww_ob;
+		if (w->ww_pty >= 0 && w->ww_obq > w->ww_obp && !w->ww_stopped) {
+			n = wwwrite(w, w->ww_obp, w->ww_obq - w->ww_obp);
+			if ((w->ww_obp += n) == w->ww_obq)
+				w->ww_obq = w->ww_obp = w->ww_ob;
 			if (wwinterrupt())
 				return;
 			break;

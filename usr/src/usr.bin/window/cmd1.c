@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.24 84/04/08";
+static	char *sccsid = "@(#)cmd1.c	3.25 84/04/08";
 #endif
 
 #include "defs.h"
@@ -70,7 +70,7 @@ c_window()
 		wwputc('\n', cmdwin);
 	wwcurtowin(cmdwin);
 	(void) openwin(id, row, col, xrow-row+1, xcol-col+1, nbufline,
-		(char *) 0);
+		(char *) 0, 1, 1, shellfile, shell);
 }
 
 getpos(row, col, minrow, mincol, maxrow, maxcol)
@@ -130,7 +130,7 @@ int maxrow, maxcol;
 		default:
 			if (!terse)
 				wwputs("\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
-			wwputc(ctrl(g), cmdwin);
+			wwbell();
 		}
 	}
 	return oldrow != *row || oldcol != *col;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.28 84/04/08";
+static	char *sccsid = "@(#)cmd.c	3.29 84/04/08";
 #endif
 
 #include "defs.h"
@@ -147,7 +147,7 @@ docmd()
 					}
 				} else {
 					if (!terse)
-						wwputc(ctrl(g), cmdwin);
+						wwbell();
 					error("Type ? for help.");
 				}
 			}
@@ -187,7 +187,7 @@ getwin()
 	else if (c >= '1' && c < NWINDOW + '1')
 		w = window[c - '1'];
 	if (w == 0)
-		wwputc(ctrl(g), cmdwin);
+		wwbell();
 	if (!terse)
 		wwputc('\n', cmdwin);
 	return w;

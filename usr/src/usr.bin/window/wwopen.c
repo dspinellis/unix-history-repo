@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	3.15 84/01/16";
+static	char *sccsid = "@(#)wwopen.c	3.16 84/04/08";
 #endif
 
 #include "ww.h"
+#include <sys/types.h>
+#include <sys/socket.h>
 
 struct ww *
 wwopen(flags, nrow, ncol, row, col, nline)
@@ -18,6 +20,7 @@ wwopen(flags, nrow, ncol, row, col, nline)
 		goto bad;
 	}
 	w->ww_pty = -1;
+	w->ww_socket = -1;
 
 	for (i = 0; i < NWW && wwindex[i] != 0; i++)
 		;
@@ -59,10 +62,23 @@ wwopen(flags, nrow, ncol, row, col, nline)
 			goto bad;
 		if (wwsettty(w->ww_pty, &wwwintty) < 0)
 			goto bad;
-		if ((w->ww_ob = malloc(512)) == 0)
+		w->ww_ispty = 1;
+	} else if (flags & WWO_SOCKET) {
+		int d[2];
+		if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, d) < 0) {
+			wwerrno = WWE_SYS;
 			goto bad;
+		}
+		w->ww_pty = d[0];
+		w->ww_socket = d[1];
+	}
+	if (flags & (WWO_PTY|WWO_SOCKET)) {
+		if ((w->ww_ob = malloc(512)) == 0) {
+			wwerrno = WWE_NOMEM;
+			goto bad;
+		}
 		w->ww_obe = w->ww_ob + 512;
-		w->ww_obp = w->ww_ob;
+		w->ww_obp = w->ww_obq = w->ww_ob;
 	}
 
 	w->ww_win = wwalloc(w->ww_w.t, w->ww_w.l,
@@ -121,7 +137,10 @@ bad:
 			free((char *)(w->ww_nvis + w->ww_w.t));
 		if (w->ww_ob != 0)
 			free(w->ww_ob);
-		(void) close(w->ww_pty);
+		if (w->ww_pty >= 0)
+			(void) close(w->ww_pty);
+		if (w->ww_socket >= 0)
+			(void) close(w->ww_socket);
 		free((char *)w);
 	}
 	return 0;

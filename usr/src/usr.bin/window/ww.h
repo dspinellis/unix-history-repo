@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.28 84/04/08	
+ *	@(#)ww.h	3.29 84/04/08	
  */
 
 #include <sgtty.h>
@@ -54,14 +54,16 @@ struct ww {
 	char ww_hasframe;	/* frame it */
 
 		/* things for the window process and io */
-	int ww_pty;		/* file descriptor of pty */
+	char ww_ispty;		/* ww_pty is really a pty, not socket pair */
+	char ww_stopped;	/* output stopped */
+	int ww_pty;		/* file descriptor of pty or socket pair */
+	int ww_socket;		/* other end of socket pair */
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
 	char *ww_ob;		/* output buffer */
 	char *ww_obe;		/* end of ww_ob */
-	char *ww_obp;		/* current position in ww_ob */
-	int ww_obc;		/* character count */
-	char ww_stopped;	/* output stopped */
+	char *ww_obp;		/* current read position in ww_ob */
+	char *ww_obq;		/* current write position in ww_ob */
 
 		/* things for the user, they really don't belong here */
 	char ww_center;		/* center the label */
@@ -123,9 +125,10 @@ union ww_char {
 
 	/* flags to wwopen() */
 #define WWO_PTY		0x01		/* want pty */
-#define WWO_REVERSE	0x02		/* make it all reverse video */
-#define WWO_GLASS	0x04		/* make it all glass */
-#define WWO_FRAME	0x08		/* this is a frame window */
+#define WWO_SOCKET	0x02		/* want socket pair */
+#define WWO_REVERSE	0x04		/* make it all reverse video */
+#define WWO_GLASS	0x08		/* make it all glass */
+#define WWO_FRAME	0x10		/* this is a frame window */
 
 	/* special ww_index value */
 #define WWX_NOBODY	NWW
@@ -182,6 +185,7 @@ int wwnwread, wwnwreade, wwnwreadz, wwnwreadd, wwnwreadc, wwnwreadp;
 int wwnselect, wwnselecte, wwnselectz;
 
 	/* quicky macros */
+#define wwbell()	write(1, "\7", 1)
 #define wwsetcursor(r,c) (wwcursorrow = (r), wwcursorcol = (c))
 #define wwcurtowin(w)	wwsetcursor((w)->ww_cur.r, (w)->ww_cur.c)
 #define wwunbox(w)	wwunframe(w)

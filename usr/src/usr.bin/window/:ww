@@ -8,8 +8,8 @@
 +/"cur.r"16t"cur.c"nDD
 +/"win"16t"buf"16t"fmap"16t"nvis"npppp
 +/"wstate"8t"modes"8t"insert"8t"mapnl"8t"noupd"n5b
-+/"unctrl"8t"nointr"8t"hascurs"8t"hasframe"n4b3+
-+/"pty"16t"pid"16t"ttyname"nDD11C+
-+/"ob"16t"obe"16t"obp"16t"obc"n3pD
-+/"stopped"nb3+
++/"unctrl"8t"nointr"8t"hascurs"8t"hasframe"n4b
++/"ispty"8t"stopped"8t"pty"16t"socket"16t"pid"nbb+3D
++/"ttyname"n11C+
++/"ob"16t"obe"16t"obp"16t"obq"n4p
 +/"center"8t"id"8t"label"16t"altpos.r"16t"altpos.c"n2b2+pDD

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd2.c	3.2 84/04/07";
+static	char *sccsid = "@(#)lcmd2.c	3.3 84/04/08";
 #endif
 
 #include "defs.h"
@@ -43,7 +43,7 @@ struct value *v, *a;
 }
 
 struct lcmd_arg arg_time[] = {
-	{ "who",	1,	V_STR },
+	{ "who",	1,	ARG_STR },
 	0
 };
 
@@ -187,4 +187,38 @@ register struct var *r;
 		break;
 	}
 	return 0;
+}
+
+struct lcmd_arg arg_shell[] = {
+	{ "shell",	1,	ARG_STR },
+	0
+};
+
+l_shell(v, a)
+struct value *v, *a;
+{
+	register char **pp;
+
+	if (a->v_type == V_ERR) {
+		if ((v->v_str = str_cpy(shellfile)) != 0)
+			v->v_type = V_STR;
+		return;
+	}
+	if (v->v_str = shellfile) {
+		v->v_type = V_STR;
+		for (pp = shell + 1; *pp; pp++)
+			str_free(*pp);
+	}
+	if (mkargv(a->v_str, shell, sizeof shell / sizeof *shell) < 0)
+		*shell = 0;
+	for (pp = shell; *pp; pp++)
+		if ((*pp = str_cpy(*pp)) == 0) {
+			/* just leave shell[] the way it is */
+			p_memerror();
+		}
+	if (shellfile = *shell)
+		if (*shell = rindex(shellfile, '/'))
+			(*shell)++;
+		else
+			*shell = shellfile;
 }
