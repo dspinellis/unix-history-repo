@@ -1,4 +1,4 @@
-/* @(#)getpwent.c	4.3 (Berkeley) %G% */
+/* @(#)getpwent.c	4.4 (Berkeley) 84/06/19 */
 #include <stdio.h>
 #include <pwd.h>
 #include <ndbm.h>
@@ -36,7 +36,7 @@ static char *
 pwskip(p)
 register char *p;
 {
-	while (*p && *p != ':')
+	while (*p && *p != ':' && *p != '\n')
 		++p;
 	if (*p)
 		*p++ = 0;
