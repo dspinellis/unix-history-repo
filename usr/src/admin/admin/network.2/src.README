@@ -3,7 +3,7 @@ This file is intended to be a simple, preliminary guide to finding your
 way around and compiling the programs.  We apologize that this
 distribution has so little in the way of compatibility with previous
 systems.  We had hoped that we could provide compatibility with at least
-4.3BSD, but we simply didn't have sufficient time to accomplished the
+4.3BSD, but we simply did not have sufficient time to accomplished the
 task.
 
 First, there has been a major reorganization of the file system.  (You
@@ -14,11 +14,11 @@ unchanged, i.e.  /dev is the same as always.)
 
 	/etc		configuration files (NO BINARIES)
 	/bin		binaries needed when running single-user
-	/sbin		same as /bin, but binaries for the root user
+	/sbin		binaries for the root user when running single-user
 
 	/var		per machine variable directories
 	/var/mail	the old /usr/spool/mail
-	/var/spool	the old spool directories
+	/var/spool	the old /usr/spool directories
 	/var/tmp	the old /usr/tmp
 	/var/acct	the old /usr/adm
 	/var/log	log files
@@ -28,7 +28,7 @@ unchanged, i.e.  /dev is the same as always.)
 	/usr/lib	system libraries (NO BINARIES)
 	/usr/libdata	system datafiles
 	/usr/libexec	programs executed by other programs
-	/usr/sbin	same as /usr/bin, but binaries for the root user
+	/usr/sbin	the rest of the binaries for the root user
 	/usr/share	architecture independent files
 
 The directories containing the source tree parallel the directories where
