@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.62 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.63 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1162,7 +1162,6 @@ enoughspace(msize)
 #   define FSBLOCKSIZE	fs.f_bsize
 #  endif
 # endif
-	long blocksneeded;
 	extern int errno;
 
 	if (MinBlocksFree <= 0 && msize <= 0)

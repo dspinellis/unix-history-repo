@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -469,7 +469,6 @@ dfopen(filename, omode, cmode)
 	int cmode;
 {
 	register int tries;
-	FILE *fp;
 	int fd;
 	register struct omodes *om;
 	struct stat st;
@@ -531,8 +530,8 @@ putline(l, fp, m)
 	/* strip out 0200 bits -- these can look like TELNET protocol */
 	if (bitnset(M_7BITS, m->m_flags))
 	{
-		for (p = l; svchar = *p; ++p)
-			if (svchar & 0200)
+		for (p = l; (svchar = *p) != '\0'; ++p)
+			if (bitset(0200, svchar))
 				*p = svchar &~ 0200;
 	}
 

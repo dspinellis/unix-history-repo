@@ -11,7 +11,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	6.51 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	6.52 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -445,7 +445,6 @@ readaliases(map, af, automatic)
 	bool skipping;
 	long naliases, bytes, longest;
 	ADDRESS al, bl;
-	register STAB *s;
 	char line[BUFSIZ];
 
 	/*
