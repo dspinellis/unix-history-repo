@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ni.c	4.3 %G%";
+static char sccsid[] = "@(#)ni.c	4.4 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -25,10 +25,10 @@ int pto = 10000;
 int pfrom = 1;
 int print = 1;
 char nextf[NS] = _PATH_TMAC;
-int nfi = 19;
+int nfi = sizeof(_PATH_TMAC) - 1;
 #ifdef NROFF
-char termtab[NS] = _PATH_TABLPR;
-int tti = 17;
+char termtab[NS] = _PATH_TERM;
+int tti = sizeof(_PATH_TERM) - 1;
 #endif
 #ifndef NROFF
 int oldbits = -1;

@@ -1,8 +1,9 @@
 #ifndef lint
-static char sccsid[] = "@(#)n1.c	4.9 %G%";
+static char sccsid[] = "@(#)n1.c	4.10 %G%";
 #endif lint
 
 #include "tdef.h"
+#include "pathnames.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -200,7 +201,9 @@ options:
 			q = &argv[0][2];
 			while((*p++ = *q++) != 0);
 			if (access(nextf, 4) < 0) {
-char *local = "/usr/local/lib/tmac/tmac.\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+				char local[NS];
+
+				strcpy(local, _PATH_LOCAL_TMAC);
 				strcat(local, &argv[0][2]);
 				if (access(local, 4) == 0)
 					strcpy(nextf, local);
