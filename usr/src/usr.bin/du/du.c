@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.7 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -115,12 +115,15 @@ descend(base, name)
 			printf("%ld\t%s\n", kbytes, base);
 		return (kbytes);
 	}
-	if (chdir(name) < 0)
-		return (0);
 	if (dirp != NULL)
 		closedir(dirp);
-	dirp = opendir(".");
+	dirp = opendir(name);
 	if (dirp == NULL) {
+		perror(base);
+		*ebase0 = 0;
+		return (0);
+	}
+	if (chdir(name) < 0) {
 		perror(base);
 		*ebase0 = 0;
 		return (0);
@@ -134,6 +137,10 @@ descend(base, name)
 		*ebase = 0;
 		if (dirp == NULL) {
 			dirp = opendir(".");
+			if (dirp == NULL) {
+				perror(".");
+				return (0);
+			}
 			seekdir(dirp, curoff);
 		}
 	}
