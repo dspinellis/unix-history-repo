@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.54 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.55 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -1426,6 +1426,24 @@ slc_update()
 	return(need_update);
 }
 
+#ifdef	ENV_HACK
+/*
+ * Earlier version of telnet/telnetd from the BSD code had
+ * the definitions of VALUE and VAR reversed.  To ensure
+ * maximum interoperability, we assume that the server is
+ * an older BSD server, until proven otherwise.  The newer
+ * BSD servers should be able to handle either definition,
+ * so it is better to use the wrong values if we don't
+ * know what type of server it is.
+ */
+int env_auto = 1;
+int env_var = ENV_VALUE;
+int env_value = ENV_VAR;
+#else
+#define env_var ENV_VAR
+#define env_value ENV_VALUE
+#endif
+
 	void
 env_opt(buf, len)
 	register unsigned char *buf;
@@ -1441,7 +1459,23 @@ env_opt(buf, len)
 			env_opt_add(NULL);
 		} else for (i = 1; i < len; i++) {
 			switch (buf[i]&0xff) {
+			case ENV_VAR:
+#ifdef	ENV_HACK
+				if (env_auto) {
+					/* The server has correct definitions */
+					env_var = ENV_VAR;
+					env_value = ENV_VALUE;
+				}
+				/* FALL THROUGH */
+#endif
 			case ENV_VALUE:
+				/*
+				 * Although ENV_VALUE is not legal, we will
+				 * still recognize it, just in case it is an
+				 * old server that has VAR & VALUE mixed up...
+				 */
+				/* FALL THROUGH */
+			case ENV_USERVAR:
 				if (ep) {
 					*epc = 0;
 					env_opt_add(ep);
@@ -1456,10 +1490,10 @@ env_opt(buf, len)
 					*epc++ = buf[i];
 				break;
 			}
-			if (ep) {
-				*epc = 0;
-				env_opt_add(ep);
-			}
+		}
+		if (ep) {
+			*epc = 0;
+			env_opt_add(ep);
 		}
 		env_opt_end(1);
 		break;
@@ -1545,7 +1579,7 @@ env_opt_add(ep)
 		opt_replyend = opt_reply + len;
 	}
 	if (opt_welldefined(ep))
-		*opt_replyp++ = ENV_VAR;
+		*opt_replyp++ = env_var;
 	else
 		*opt_replyp++ = ENV_USERVAR;
 	for (;;) {
@@ -1564,7 +1598,7 @@ env_opt_add(ep)
 			*opt_replyp++ = c;
 		}
 		if (ep = vp) {
-			*opt_replyp++ = ENV_VALUE;
+			*opt_replyp++ = env_value;
 			vp = NULL;
 		} else
 			break;
