@@ -1,0 +1,414 @@
+Fri Oct 16 03:17:08 1992  John Gilmore  (gnu@cygnus.com)
+
+	* getopt.h:  Update to Revised Standard FSF Version.
+
+Thu Oct 15 21:43:22 1992  K. Richard Pixley  (rich@sendai.cygnus.com)
+
+	* getopt.h (struct option): use the provided enum for has_arg.
+
+	* demangle.h (AUTO_DEMANGLING, GNU_DEMANGLING,
+	  LUCID_DEMANGLING): ultrix compilers require enums to be
+	  enums and ints to be ints and casts where they meet.  cast some
+	  enums into ints.
+
+Thu Oct 15 04:35:51 1992  John Gilmore  (gnu@cygnus.com)
+
+	* bfd.h:  Update after comment changes.
+
+Thu Oct  8 09:03:02 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* bfd.h (bfd_get_symbol_leading_char): new macro for getting in xvec
+
+Thu Sep  3 09:10:50 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* bfd.h (struct reloc_howto_struct):  size needs to be signed if
+	it's going to hold negative values.
+
+Sun Aug 30 17:50:27 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* demangle.h:  New file, moved from ../gdb.  Made independent
+	of gdb.  Allow demangling style option to be passed as a
+	parameter to cplus_demangle(), but using the
+	current_demangling_style global as the default.
+
+Sat Aug 29 10:07:55 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.h:  Merge comment change from current FSF version.
+
+Thu Aug 27 12:59:29 1992  Brendan Kehoe  (brendan@cygnus.com)
+
+	* bfd.h: add we32k
+
+Tue Aug 25 15:07:47 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* bfd.h: new after Z8000 stuff
+
+Mon Aug 17 09:01:23 1992  Ken Raeburn  (raeburn@cygnus.com)
+
+	* bfd.h: Regenerated after page/segment size changes.
+
+Sat Aug  1 13:46:31 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.h: Merge changes from current FSF version.
+
+Mon Jul 20 21:06:23 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.h (area_id, flags):  Remove, replace with extra_arg,
+	use_extra_arg, and maybe_empty_object.
+	* obstack.h (OBSTACK_MAYBE_EMPTY_OBJECT, OBSTACK_MMALLOC_LIKE):
+	Remove, replaced by maybe_empty_object and use_extra_arg bitfields.
+	* obstack.h (obstack_full_begin, _obstack_begin):  Remove area_id
+	and flags arguments.
+	* obstack.h (obstack_alloc_arg):  New macro to set extra_arg.
+
+Thu Jul 16 08:12:44 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* bfd.h: new after adding BFD_IS_RELAXABLE
+
+Sat Jul  4 03:22:23 1992  John Gilmore  (gnu at cygnus.com)
+
+	* bfd.h:  Regen after adding BSF_FILE.
+
+Mon Jun 29 14:18:36 1992  Fred Fish  (fnf at sunfish)
+
+	* obstack.h:  Convert bcopy() use to memcpy(), which is more 
+	portable, more standard, and can take advantage of gcc's builtin
+	functions for increased performance.
+
+Thu Jun 25 04:46:08 1992  John Gilmore  (gnu at cygnus.com)
+
+	* ansidecl.h (PARAMS):  Incorporate this macro from gdb's defs.h.
+	It's a cleaner way to forward-declare function prototypes.
+
+Fri Jun 19 15:46:32 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* bfd.h:  HPPA merge.
+
+Tue Jun 16 21:30:56 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* getopt.h: gratuitous white space changes merged from other prep
+	  releases.
+
+Thu Jun 11 01:10:55 1992  John Gilmore  (gnu at cygnus.com)
+
+	* bfd.h:  Regen'd from bfd.c after removing elf_core_tdata_struct.
+
+Mon May 18 17:29:03 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* getopt.h: merged changes from make-3.62.11.
+
+	* getopt.h: merged changes from grep-1.6 (alpha).
+
+Fri May  8 14:53:32 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* getopt.h: merged changes from bison-1.18.
+
+Sat Mar 14 17:25:20 1992  Fred Fish  (fnf@cygnus.com)
+
+	* obstack.h:  Add "area_id" and "flags" members to obstack
+	structure.  Add obstack_chunkfun() and obstack_freefun() to
+	set functions explicitly.  Convert maybe_empty_object to
+	a bit in "flags".
+
+Thu Feb 27 22:01:02 1992  Per Bothner  (bothner@cygnus.com)
+
+	* wait.h (WIFSTOPPED):  Add IBM rs6000-specific version.
+
+Fri Feb 21 20:49:20 1992  John Gilmore  (gnu at cygnus.com)
+
+	* obstack.h:  Add obstack_full_begin.
+	* bfd.h, obstack.h:  Protolint.
+
+Thu Jan 30 01:18:42 1992  John Gilmore  (gnu at cygnus.com)
+
+	* bfd.h:  Remove comma from enum declaration.
+
+Mon Jan 27 22:01:13 1992  Steve Chamberlain  (sac at cygnus.com)
+
+	* bfd.h : new target entr, bfd_relax_section 
+
+Wed Dec 18 17:19:44 1991  Stu Grossman  (grossman at cygnus.com)
+
+	* bfd.h, ieee.h, opcode/m68k.h, opcode/sparc.h:  ANSIfy enums.
+
+Thu Dec 12 20:59:56 1991  John Gilmore  (gnu at cygnus.com)
+
+	* fopen-same.h, fopen-bin.h:  New files for configuring
+	whether fopen distinguishes binary files or not.  For use
+	by host-dependent config files.
+
+Sat Nov 30 20:46:43 1991  Steve Chamberlain  (sac at rtl.cygnus.com)
+
+	* bfd.h: change the documentation format.
+
+	* created coff, elf and opcode and aout directories. Moved:
+
+	aout64.h	==> aout/aout64.h
+	ar.h		==> aout/ar.h
+	a.out.encap.h	==> aout/encap.h
+	a.out.host.h	==> aout/host.h
+	a.out.hp.h	==> aout/hp.h
+	a.out.sun4.h	==> aout/sun4.h
+	ranlib.h	==> aout/ranlib.h
+	reloc.h		==> aout/reloc.h
+	stab.def	==> aout/stab.def
+	stab.gnu.h	==> aout/stab_gnu.h
+
+	coff-a29k.h	==> coff/a29k.h
+	coff-h8300.h	==> coff/h8300.h
+	coff-i386.h	==> coff/i386.h
+	coff-i960.h	==> coff/i960.h
+	internalcoff.h	==> coff/internal.h
+	coff-m68k.h	==> coff/m68k.h
+	coff-m88k.h	==> coff/m88k.h
+	coff-mips.h	==> coff/mips.h
+	coff-rs6000.h	==> coff/rs6000.h
+
+	elf-common.h	==> elf/common.h
+	dwarf.h		==> elf/dwarf.h
+	elf-external.h	==> elf/external.h
+	elf-internal.h  ==> elf/internal.h
+
+	a29k-opcode.h	==> opcode/a29k.h
+	arm-opcode.h	==> opcode/arm.h
+	h8300-opcode.h	==> opcode/h8300.h
+	i386-opcode.h	==> opcode/i386.h
+	i860-opcode.h	==> opcode/i860.h
+	i960-opcode.h	==> opcode/i960.h
+	m68k-opcode.h	==> opcode/m68k.h
+	m88k-opcode.h	==> opcode/m88k.h
+	mips-opcode.h	==> opcode/mips.h
+	np1-opcode.h	==> opcode/np1.h
+	ns32k-opcode.h	==> opcode/ns32k.h
+	pn-opcode.h	==> opcode/pn.h
+	pyr-opcode.h	==> opcode/pyr.h
+	sparc-opcode.h	==> opcode/sparc.h
+	tahoe-opcode.h	==> opcode/tahoe.h
+	vax-opcode.h	==> opcode/vax.h
+
+
+
+Wed Nov 27 10:38:31 1991  Steve Chamberlain  (sac at rtl.cygnus.com)
+
+	* internalcoff.h: (internal_scnhdr) took out #def dependency, now
+	s_nreloc and s_nlnno are always long. 	(internal_reloc): allways
+	has an offset field now. 
+
+Fri Nov 22 08:12:58 1991  John Gilmore  (gnu at cygnus.com)
+
+	* coff-rs6000.h:  Lint; use unsigned chars for external fields.
+	* internalcoff.h:  Lint; cast storage classes to signed char.
+
+Thu Nov 21 21:01:05 1991  Per Bothner  (bothner at cygnus.com)
+
+	* stab.def: Remove the GNU extended type codes (e.g. N_SETT).
+	* aout64.h:  The heuristic for distinguishing between
+	sunos-style and bsd-style ZMAGIC files (wrt. where the
+	text segment starts) is moved into (the default definition of)
+	the macro N_HEADER_IN_TEXT.  This definition is only used
+	if no other definition is used - e.g. bfd/newsos3.c defines
+	N_HEADER_IN_TEXT(x) to be always 0 (as before).
+
+Thu Nov 21 11:53:03 1991  John Gilmore  (gnu at cygnus.com)
+
+	* aout64.h (N_TXTADDR, N_TXTOFF, N_TXTSIZE):  New definitions
+	that should handle all uses.  LOGICAL_ versions deleted.
+	Eliminate N_HEADER_IN_TEXT, using a_entry to determine which
+	kind of zmagic a.out file we are looking at.
+	* coff-rs6000.h:  Typo.
+
+Tue Nov 19 18:43:37 1991  Per Bothner  (bothner at cygnus.com)
+
+	(Note:  This is a revised entry, as was aout64.h.)
+	* aout64.h:  Some cleanups of N_TXTADDR and N_TXTOFF:
+	Will now work for both old- and new-style ZMAGIC files,
+	depending on N_HEADER_IN_TEXT macro.
+	Add LOGICAL_TXTADDR, LOICAL_TXTOFF and LOGICAL_TXTSIZE
+	that don't count the exec header as part
+	of the text segment, to be consistent with bfd.
+	* a.out.sun4.h:  Simplified/fixed for previous change.
+
+Mon Nov 18 00:02:06 1991  Fred Fish  (fnf at cygnus.com)
+
+	* dwarf.h:  Update to DWARF draft 5 version from gcc2.
+
+Thu Nov 14 19:44:59 1991  Per Bothner  (bothner at cygnus.com)
+
+	* stab.def:  Added defs for extended GNU symbol types,
+	such as N_SETT.  These are normally ifdef'd out (because
+	of conflicts with a.out.gnu.h), but are used by bfb_stab_name().
+
+Thu Nov 14 19:17:03 1991  Fred Fish  (fnf at cygnus.com)
+
+	* elf-common.h:  Add defines to support ELF symbol table code.
+
+Mon Nov 11 19:01:06 1991  Fred Fish  (fnf at cygnus.com)
+
+	* elf-internal.h, elf-external.h, elf-common.h:  Add support for
+	note sections, which are used in ELF core files to hold copies
+	of various /proc structures.
+
+Thu Nov  7 08:58:26 1991  Steve Chamberlain  (sac at cygnus.com)
+
+	* internalcoff.h: took out the M88 dependency in the lineno
+	struct.
+	* coff-m88k.h: defines GET_LINENO_LNNO and PUT_LINENO_LNNO to use
+	32bit linno entries.
+	* a29k-opcode.h: fixed encoding of mtacc
+
+Sun Nov  3 11:54:22 1991  Per Bothner  (bothner at cygnus.com)
+
+	* bfd.h: Updated from ../bfd/bfd-in.h (q.v).
+
+Fri Nov  1 11:13:53 1991  John Gilmore  (gnu at cygnus.com)
+
+	* internalcoff.h:  Add x_csect defines.
+
+Fri Oct 25 03:18:20 1991  John Gilmore  (gnu at cygnus.com)
+
+	* Rename COFF-related files in `coff-ARCH.h' form.
+	coff-a29k.h, coff-i386.h, coff-i960.h, coff-m68k.h, coff-m88k.h,
+	coff-mips.h, coff-rs6000.h to be exact.
+
+Thu Oct 24 22:11:11 1991  John Gilmore  (gnu at cygnus.com)
+
+	RS/6000 support, by Metin G. Ozisik, Mimi Phûông-Thåo Võ, and
+	John Gilmore.
+
+	* a.out.gnu.h:  Update slightly.
+	* bfd.h:  Add new error code, fix doc, add bfd_arch_rs6000.
+	* internalcoff.h:  Add more F_ codes for filehdr.  Add
+	rs/6000-dependent fields to aouthdr.  Add storage classes
+	to syments.  Add 6000-specific auxent.  Add r_size in reloc.
+	* rs6000coff.c:  New file.
+
+Thu Oct 24 04:13:20 1991  Fred Fish  (fnf at cygnus.com)
+
+	* dwarf.h: New file for dwarf support.  Copied from gcc2
+	distribution.
+
+Wed Oct 16 13:31:45 1991  John Gilmore  (gnu at cygnus.com)
+
+	* aout64.h:  Remove PAGE_SIZE defines; they are target-dependent.
+	Add N_FN_SEQ for N_FN symbol type used on Sequent machines.
+	* stab.def:  Include N_FN_SEQ in table.
+	* bout.h:  External formats of structures use unsigned chars.
+
+Fri Oct 11 12:40:43 1991  Steve Chamberlain  (steve at cygnus.com)
+
+	* bfd.h:upgrade from bfd.c
+	* internalcoff.h: add n_name, n_zeroes and n_offset macros
+	* amdcoff.h: Define OMAGIC and AOUTHDRSZ.
+
+Fri Oct 11 10:58:06 1991  Per Bothner  (bothner at cygnus.com)
+
+	* a.out.host.h: Change SEGMENT_SIZE to 0x1000 for Sony.
+	* bfd.h (align_power): Add (actually move) comment.
+
+Tue Oct  8 15:29:32 1991  Per Bothner  (bothner at cygnus.com)
+
+	* sys/h-rtbsd.h: Define MISSING_VFPRINT (for binutils/bucomm.c).
+
+Sun Oct  6 19:24:39 1991  John Gilmore  (gnu at cygnus.com)
+
+	* aout64.h:  Move struct internal_exec to ../bfd/libaout.h so
+	it can be shared by all `a.out-family' code.  Rename
+	EXTERNAL_LIST_SIZE to EXTERNAL_NLIST_SIZE.  Use basic types
+	for nlist members, and make strx integral rather than pointer.
+	More commentary on n_type values.
+	* bout.h:  Provide a struct external_exec rather than an
+	internal_exec.
+	* m68kcoff.h:  Remove `tagentries' which snuck in from the i960
+	COFF port.
+
+Fri Oct  4 01:25:59 1991  John Gilmore  (gnu at cygnus.com)
+
+	* h8300-opcode.h:  Remove `_enum' from the typedef for an enum.
+	* bfd.h:  Update to match bfd changes.
+
+	* sys/h-i386mach.h, sysdep.h:  Add 386 Mach host support.
+
+Tue Oct  1 04:58:42 1991  John Gilmore  (gnu at cygnus.com)
+
+	* bfd.h, elf-common.h, elf-external.h, elf-internal.h: 
+	Add preliminary ELF support, sufficient for GDB, from Fred Fish.
+	* sysdep.h, sys/h-amix.h:  Support Amiga SVR4.
+
+	* sys/h-vaxult.h:  Make it work.  (David Taylor <taylor@think.com>)
+	* a.out.vax.h:  Remove unused and confusing file.
+
+Mon Sep 30 12:52:35 1991  Per Bothner  (bothner at cygnus.com)
+
+	* sysdep.h: Define NEWSOS3_SYS, and use it.
+
+Fri Sep 20 13:38:21 1991  John Gilmore  (gnu at cygnus.com)
+
+	* a.out.gnu.h (N_FN):  Its value *really is* 0x1F.
+	Fix it, and add comments warning about or-ing N_EXT with it
+	and/or N_WARNING.
+	* aout64.h (N_FN):  Fix value, add comments about N_EXT.
+	* stab.def (table at end):  Update to show all the type
+	values <0x20, including low order bits.  Move N_FN to
+	its rightful place.
+
+Tue Sep 17 17:41:37 1991  Stu Grossman  (grossman at cygnus.com)
+
+	* sys/h-irix3.h:  sgi/irix support.
+
+Tue Sep 17 07:52:59 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* stab.def (N_DEFD):  Add GNU Modula-2 debug stab, from Andrew
+	Beers.
+
+Thu Sep 12 14:12:59 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* internalcoff.h (SYMNMLEN, FILNMLEN, DIMNUM):  Define these
+	for internalcoff, separately from the various external coff's.
+	* amdcoff.h, bcs88kcoff.h, i386coff.h, intel-coff.h, m68kcoff.h,
+	m88k-bcs.h: Prefix SYMNMLEN, FILNMLEN, and DIMNUM with E_'s for
+	the external struct definitions.
+	* ecoff.h: Remove these #define's, kludge no longer needed.
+
+	* sys/h-ultra3.h:  Add new Ultracomputer host.
+	* sysdep.h:  Add ULTRA3_SYM1_SYS and use it.
+
+Tue Sep 10 10:11:46 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* i386coff.h (LINESZ):  Always 6, not based on sizeof().
+	(Fix from Peter Schauer <pes@regent.e-technik.tu-muenchen.de>.)
+
+Wed Sep  4 08:58:37 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* a.out.gnu.h, aout64.h:  Add N_WARNING.  Change N_FN to 0x0E,
+	to match SunOS and BSD.  Add N_COMM as 0x12 for SunOS shared lib
+	support.
+	* stab.def:  Add N_COMM to table, fix overlap comment.
+
+Tue Sep  3 06:29:20 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	Merge with latest FSF versions of these files.
+
+	* stab.gnu.h:  Add LAST_UNUSED_STAB_CODE.
+	* stab.def:  Update to GPL2.  Move N_WARNING out, since not a
+	debug symbol.  Change comments, and reorder table to numeric
+	order.  Update final table comment.
+	(N_DSLINE, N_BSLINE):  Renumber from 0x66 and 0x68, to 0x46 and 0x48.
+
+	* obstack.h:  GPL2.  Merge.
+
+Fri Aug 23 01:54:23 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* a.out.gnu.h, a.out.sun4.h:  Make SEGMENT_SIZE able to depend
+	on the particular a.out being examined.
+	* a.out.sun4.h:  Define segment sizes for Sun-3's and Sun-4's.
+	* FIXME:  a.out.gnu.h is almost obsolete.
+	* FIXME:  a.out.sun4.h should be renamed a.out.sun.h now.
+
+Wed Aug 21 20:32:13 1991  John Gilmore  (gnu at cygint.cygnus.com)
+
+	* Start a ChangeLog for the includes directory.
+
+	* a.out.gnu.h (N_FN):  Fix value -- was 15, should be 0x1E.
+	* stab.def:  Update allocation table in comments at end,
+	to reflect reality as I know it.
+
