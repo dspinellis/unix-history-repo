@@ -1,4 +1,4 @@
-/*	uipc_mbuf.c	1.23	81/12/20	*/
+/*	uipc_mbuf.c	1.24	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -175,6 +175,7 @@ COUNT(M_MORE);
 	}
 #define m_more(x) (panic("m_more"), (struct mbuf *)0)
 	MGET(m, type);
+#undef m_more
 	return (m);
 }
 
