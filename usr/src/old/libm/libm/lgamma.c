@@ -1,4 +1,4 @@
-/*	@(#)lgamma.c	4.1	%G%	*/
+/*	@(#)lgamma.c	4.2	%G% */
 
 /*
 	C program for floating point log gamma function
@@ -12,15 +12,20 @@
 	are #5243 from Hart & Cheney; for expansion
 	around infinity they are #5404.
 
-	Calls log and sin.
+	Calls log, drem and sin.
 */
 
 #include <errno.h>
 #include <math.h>
+#ifdef VAX
+static long	NaN_[] = {0x8000, 0x0};
+#define NaN	(*(double *) NaN_)
+#endif
+
 
 int	errno;
 int	signgam = 0;
-static double goobie	= 0.9189385332046727417803297;
+static double goobie	= 0.9189385332046727417803297;	/* log(2*pi)/2 */
 static double pi	= 3.1415926535897932384626434;
 
 #define M 6
@@ -86,17 +91,35 @@ neg(arg)
 double arg;
 {
 	double temp;
-	double log(), sin(), pos();
+	double log(), sin(), drem(), pos();
 
 	arg = -arg;
-	temp = sin(pi*arg);
+     /*
+      * to see if arg were a true integer, the old code used the
+      * mathematically correct observation:
+      * sin(n*pi) = 0 <=> n is an integer.
+      * but in finite precision arithmetic, sin(n*PI) will NEVER
+      * be zero simply because n*PI is a rational number.  hence
+      *	it failed to work with our newer, more accurate sin()
+      * which uses true pi to do the argument reduction...
+      *	temp = sin(pi*arg);
+      */
+	temp = drem(arg, 1.e0);
 	if(temp == 0.) {
 		errno = EDOM;
+#ifdef VAX
+		return (NaN);
+#else
 		return(HUGE);
+#endif
 	}
-	if(temp < 0.) temp = -temp;
-	else signgam = -1;
-	return(-log(arg*pos(arg)*temp/pi));
+
+	temp = drem(arg, 2.e0);
+	if (temp < 0.)
+	    temp = -temp;
+	else
+	    signgam = -1;
+	return(-log(arg*pos(arg)*sin(pi*temp)/pi));
 }
 
 static double
