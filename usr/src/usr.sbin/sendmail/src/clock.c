@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clock.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)clock.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -52,6 +52,7 @@ setevent(intvl, func, arg)
 		return (NULL);
 	}
 
+	(void) setsignal(SIGALRM, SIG_IGN);
 	(void) time(&now);
 
 	/* search event queue for correct position */
@@ -165,19 +166,6 @@ tick()
 				ev->ev_func, ev->ev_arg, ev->ev_pid);
 
 		/* we must be careful in here because ev_func may not return */
-		(void) setsignal(SIGALRM, tick);
-#ifdef SIG_UNBLOCK
-		/* unblock SIGALRM signal */
-		sigemptyset(&ss);
-		sigaddset(&ss, SIGALRM);
-		sigprocmask(SIG_UNBLOCK, &ss, NULL);
-#else
-#ifdef SIGVTALRM
-		/* reset 4.2bsd signal mask to allow future alarms */
-		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
-#endif /* SIGVTALRM */
-#endif /* SIG_UNBLOCK */
-
 		f = ev->ev_func;
 		arg = ev->ev_arg;
 		pid = ev->ev_pid;
@@ -191,6 +179,22 @@ tick()
 			else
 				(void) alarm(3);
 		}
+
+		/* restore signals so that we can take ticks while in ev_func */
+		(void) setsignal(SIGALRM, tick);
+#ifdef SIG_UNBLOCK
+		/* unblock SIGALRM signal */
+		sigemptyset(&ss);
+		sigaddset(&ss, SIGALRM);
+		sigprocmask(SIG_UNBLOCK, &ss, NULL);
+#else
+#ifdef SIGVTALRM
+		/* reset 4.2bsd signal mask to allow future alarms */
+		(void) sigsetmask(sigblock(0) & ~sigmask(SIGALRM));
+#endif /* SIGVTALRM */
+#endif /* SIG_UNBLOCK */
+
+		/* call ev_func */
 		(*f)(arg);
 		(void) alarm(0);
 		now = curtime();
