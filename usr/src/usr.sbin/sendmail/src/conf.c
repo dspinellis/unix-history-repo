@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.126 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.127 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -316,7 +316,7 @@ setupmaps()
 #ifdef HESIOD
 	MAPDEF("hesiod", NULL, MCF_ALIASOK|MCF_ALIASONLY,
 		map_parseargs, null_map_open, null_map_close,
-		hesiod_map_lookup, null_map_store);
+		hes_map_lookup, null_map_store);
 #endif
 
 #ifdef NETINFO
@@ -329,6 +329,13 @@ setupmaps()
 	MAPDEF("dns", NULL, 0,
 		dns_map_init, null_map_open, null_map_close,
 		dns_map_lookup, null_map_store);
+#endif
+
+#if NAMED_BIND
+	/* best MX DNS lookup */
+	MAPDEF("bestmx", NULL, MCF_OPTFILE,
+		map_parseargs, null_map_open, null_map_close,
+		bestmx_map_lookup, null_map_store);
 #endif
 
 	MAPDEF("host", NULL, 0,
@@ -406,6 +413,47 @@ inithostmaps()
 	char *maptype[MAXMAPSTACK];
 	short mapreturn[MAXMAPACTIONS];
 	char buf[MAXLINE];
+
+	/*
+	**  Set up default hosts maps.
+	*/
+
+#if 0
+	nmaps = switch_map_find("hosts", maptype, mapreturn);
+	for (i = 0; i < nmaps; i++)
+	{
+		if (strcmp(maptype[i], "files") == 0 &&
+		    stab("hosts.files", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "hosts.files text -k 0 -v 1 /etc/hosts");
+			makemapentry(buf);
+		}
+#ifdef NAMED_BIND
+		else if (strcmp(maptype[i], "dns") == 0 &&
+		    stab("hosts.dns", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "hosts.dns dns A");
+			makemapentry(buf);
+		}
+#endif
+#ifdef NISPLUS
+		else if (strcmp(maptype[i], "nisplus") == 0 &&
+		    stab("hosts.nisplus", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "hosts.nisplus nisplus -k name -v address -d hosts.org_dir");
+			makemapentry(buf);
+		}
+#endif
+#ifdef NIS
+		else if (strcmp(maptype[i], "nis") == 0 &&
+		    stab("hosts.nis", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "hosts.nis nis -d -k 0 -v 1 hosts.byname");
+			makemapentry(buf);
+		}
+#endif
+	}
+#endif
 
 	/*
 	**  Make sure we have a host map.
@@ -487,6 +535,14 @@ inithostmaps()
 		    stab("users.nis", ST_MAP, ST_FIND) == NULL)
 		{
 			strcpy(buf, "users.nis nis -m -d passwd.byname");
+			makemapentry(buf);
+		}
+#endif
+#ifdef HESIOD
+		else if (strcmp(maptype[i], "hesiod") == 0) &&
+		    stab("users.hesiod", ST_MAP, ST_FIND) == NULL)
+		{
+			strcpy(buf, "users.hesiod hesiod");
 			makemapentry(buf);
 		}
 #endif
