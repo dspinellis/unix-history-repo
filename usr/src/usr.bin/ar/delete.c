@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delete.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)delete.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -51,6 +51,7 @@ delete(argv)
 		put_header(&cf, (struct stat *)NULL);
 		copyfile(&cf, chdr.size);
 	}
+	eval = 0;
 	ORPHANS;
 
 	size = lseek(tfd, (off_t)0, SEEK_CUR);
