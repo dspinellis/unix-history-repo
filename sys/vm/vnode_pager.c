@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.13 1994/03/14 21:54:34 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.14 1994/03/19 22:24:40 davidg Exp $
  */
 
 /*
@@ -588,13 +588,16 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 	 */
 	kva = 0;
 	mapsize = 0;
-	if (!VOP_BMAP(vp, 0, &dp, 0) &&
-		rw == UIO_READ && dp->v_type == VBLK &&
-		vp->v_mount->mnt_stat.f_type == MOUNT_UFS) {
+	if (!VOP_BMAP(vp, m[reqpage]->offset+paging_offset, &dp, 0) &&
+		rw == UIO_READ && (dp->v_type == VBLK &&
+		(vp->v_mount->mnt_stat.f_type == MOUNT_UFS)) ||
+		 (vp->v_mount->mnt_stat.f_type == MOUNT_NFS)) {
 		/*
-		 * we do not block for a kva, notice we default to a kva conservative behavior
+		 * we do not block for a kva, notice we default to a kva
+		 * conservative behavior
 		 */
-		kva = kmem_alloc_pageable(pager_map, (mapsize = count*NBPG));
+		kva = kmem_alloc_pageable(pager_map,
+			(mapsize = count*NBPG));
 		if( !kva) {
 			for (i = 0; i < count; i++) {
 				if (i != reqpage) {
@@ -606,6 +609,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 			kva = vm_pager_map_page(m[0]);
 			reqpage = 0;
 			count = 1;
+			mapsize = count*NBPG;
 		}
 	}
 
@@ -786,7 +790,7 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		}
 
 		/*
-		 * Scan forward and stop for the first discontiguous
+		 * Scan forward and stop for the first non-contiguous
 		 * entry or stop for a page being in buffer cache.
 		 */
 		failflag = 0;
@@ -851,7 +855,9 @@ vnode_pager_io(vnp, m, count, reqpage, rw)
 		bp->b_flags = B_BUSY | B_READ | B_CALL;
 		bp->b_iodone = vnode_pager_iodone;
 		/* B_PHYS is not set, but it is nice to fill this in */
-		bp->b_proc = &proc0;
+		/* bp->b_proc = &proc0; */
+		bp->b_proc = curproc;
+		bp->b_rcred = bp->b_wcred = bp->b_proc->p_ucred;
 		bp->b_un.b_addr = (caddr_t) kva;
 		bp->b_blkno = firstaddr / DEV_BSIZE;
 		bp->b_vp = dp;
