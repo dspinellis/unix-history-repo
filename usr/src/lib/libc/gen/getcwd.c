@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcwd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcwd.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -35,50 +35,84 @@ getwd(store)
 	struct stat s, tmp;
 	dev_t root_dev;
 	ino_t root_ino;
-	char path[MAXPATHLEN], up[MAXPATHLEN], *strerror();
+	int save_errno, found;
+	char path[MAXPATHLEN], up[MAXPATHLEN], *file, *strerror();
 
-	if (stat("/", &s))
+	if (stat("/", &s)) {
+		file = "/";
 		goto err;
+	}
 	root_dev = s.st_dev;
 	root_ino = s.st_ino;
-	if (stat(".", &s))
+	if (stat(".", &s)) {
+		file = ".";
 		goto err;
+	}
 	pp = path + sizeof(path) - 1;
 	*pp = '\0';
 	for (pu = up, first = 1;; first = 0) {
 		if (root_dev == s.st_dev && root_ino == s.st_ino) {
 			*store = '/';
-			(void)strcpy(store + 1, pp);
-			return(store);
+			(void) strcpy(store + 1, pp);
+			return (store);
 		}
 		*pu++ = '.';
 		*pu++ = '.';
 		*pu = '\0';
 		if (!(dir = opendir(up))) {
-			(void)strcpy(path, "getwd: opendir failed.");
-			return((char *)NULL);
+			file = up;
+			goto err;
 		}
 		*pu++ = '/';
-		while (dp = readdir(dir)) {
-			if (dp->d_name[0] == '.' && (!dp->d_name[1] ||
-			    dp->d_name[1] == '.' && !dp->d_name[2]))
+		found = 0;
+		file = NULL;
+		while (errno = 0, dp = readdir(dir)) {
+			if (dp->d_name[0] == '.' && (dp->d_name[1] == '\0' ||
+			    dp->d_name[1] == '.' && dp->d_name[2] == '\0'))
 				continue;
 			bcopy(dp->d_name, pu, dp->d_namlen + 1);
-			if (lstat(up, &tmp))
-				goto err;
+			if (lstat(up, &tmp)) {
+				file = dp->d_name;
+				save_errno = errno;
+				continue;
+			}
 			if (tmp.st_dev == s.st_dev && tmp.st_ino == s.st_ino) {
 				if (!first)
 					*--pp = '/';
 				pp -= dp->d_namlen;
 				bcopy(dp->d_name, pp, dp->d_namlen);
+				found = 1;
 				break;
 			}
 		}
+		if (errno) {
+			save_errno = errno;
+			file = up;
+		}
 		closedir(dir);
 		*pu = '\0';
+		if (!found) {
+			/*
+			 * We didn't find the current level in its parent
+			 * directory; figure out what to complain about.
+			 */
+			if (file) {
+				errno = save_errno;
+				goto err;
+			}
+			(void) sprintf(store, "%s not found in %s?\n",
+				first ? "." : pp, up);
+			return ((char *)NULL);
+		}
+
+		/* stat "." at current level, then ascend */
 		if (lstat(up, &s)) {
-err:			(void)sprintf(store, "getwd: %s", strerror(errno));
-			return((char *)NULL);
+			file = up;
+			goto err;
 		}
 	}
+
+err:
+	(void) sprintf(store, "getwd: %s: %s", file, strerror(errno));
+	return ((char *)NULL);
 }
