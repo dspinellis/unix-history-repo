@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chroot.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)chroot.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -39,7 +39,7 @@ main(argc, argv)
 		(void)fprintf(stderr, "usage: chroot newroot [command]\n");
 		exit(1);
 	}
-	if (chdir(argv[1]) || chroot(argv[1]))
+	if (chdir(argv[1]) || chroot("."))
 		fatal(argv[1]);
 	if (argv[2]) {
 		execvp(argv[2], &argv[2]);
