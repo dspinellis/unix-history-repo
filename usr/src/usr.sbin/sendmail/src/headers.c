@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.49		%G%);
+SCCSID(@(#)headers.c	3.50		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -576,7 +576,7 @@ commaize(h, p, fp, oldstyle, m)
 	register char *obp;
 	int opos;
 	bool firstone = TRUE;
-	char obuf[MAXLINE];
+	char obuf[MAXLINE + 3];
 
 	/*
 	**  Output the address list translated by the
@@ -678,7 +678,7 @@ commaize(h, p, fp, oldstyle, m)
 		}
 
 		/* strip off quote bits as we output */
-		while (*name != '\0')
+		while (*name != '\0' && obp < &obuf[MAXLINE])
 		{
 			if (bitset(0200, *name))
 				*obp++ = '\\';
