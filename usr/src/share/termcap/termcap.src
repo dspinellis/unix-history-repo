@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.4 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.5 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -973,7 +973,8 @@ TD|dmd|5620|ttydmd|tty5620|5620	terminal 88 columns:\
 	:co#88:li#70:am:bs:pt:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:cl=\E[H\E[J:cd=\E[J:ce=\E[K:al=\E[L:dl=\E[M:\
 	:im=:ei=:ic=\E[@:dm=:ed=:dc=\E[P:sr=\E[T:sf=\E[S:\
-	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:
+	:kl=\E[D:kr=\E[C:ku=\E[A:kd=\E[B:kh=\E[H:\
+	:so=\E[7m:se=\E[0m:us=\E[4m:ue=\E[0m:
 # # --------------------------------
 #
 # V: VISUAL
