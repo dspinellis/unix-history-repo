@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)process.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -39,7 +39,6 @@ static SPACE HS, PS, SS;
 #define	hsl		HS.len
 
 static inline int	 applies __P((struct s_command *));
-static void		 cspace __P((SPACE *, char *, size_t, enum e_spflag));
 static void		 flush_appends __P((void));
 static void		 lputs __P((char *));
 static inline int	 regexec_e __P((regex_t *, const char *, int, int));
@@ -289,7 +288,8 @@ substitute(cp)
 {
 	SPACE tspace;
 	regex_t *re;
-	int n, re_off;
+	size_t re_off;
+	int n;
 	char *endp, *s;
 
 	s = ps;
