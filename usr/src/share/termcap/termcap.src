@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.5	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.6	(Berkeley) %G%
 #	Mark Horton, U.C. Berkeley
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
@@ -1522,7 +1522,7 @@ ik|infotonKAS:\
 # k: HEATHKIT (ZENITH)
 #
 kA|h19-a|heath-ansi|heathkit-a|heathkit h19 ansi mode:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
+	:cr=^M:nl=^J:bl=^G:\
 	:al=1*\E[1L:am:le=^H:bs:cd=\E[J:ce=\E[K:cl=\E[2J:cm=\E[%i%2;%2H:co#80:\
 	:dc=\E[1P:dl=1*\E[1M:do=\E[1B:ei=\E[4l:ho=\E[H:im=\E[4h:li#24:mi:\
 	:nd=\E[1C:as=\E[10m:ae=\E[11m:ms:ta=^I:pt:se=\E[0m:so=\E[7m:up=\E[1A:\
@@ -1535,7 +1535,7 @@ kB|h19-bs|heathkit w/keypad shifted:\
 kU|h19-us|heathkit w/keypad shifted/underscore cursor:\
 	:ks=\Et:ke=\Eu:tc=h19-u:
 kb|h19|heath|h19-b|heathkit|heath-19|z19|zenith|heathkit h19:\
-	:cr=^M:do=^J:nl=^J:bl=^G:\
+	:cr=^M:nl=^J:bl=^G:\
 	:al=1*\EL:am:le=^H:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:\
 	:dl=1*\EM:do=\EB:ei=\EO:ho=\EH:im=\E@:li#24:mi:nd=\EC:as=\EF:ae=\EG:\
 	:ms:ta=^I:pt:sr=\EI:se=\Eq:so=\Ep:up=\EA:vs=\Ex4:ve=\Ey4:\
