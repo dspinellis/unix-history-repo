@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)sys_machdep.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -27,7 +27,8 @@
 resuba()
 {
 
-	if (suser())
+	if (u.u_error = suser(u.u_cred, &u.u_acflag))
+		return;
 	if (u.u_arg[0] < numuba)
 		ubareset(u.u_arg[0]);
 }
