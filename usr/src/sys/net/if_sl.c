@@ -1,4 +1,4 @@
-/*	@(#)if_sl.c	5.6 (Berkeley) %G% */
+/*	@(#)if_sl.c	5.7 (Berkeley) %G% */
 
 /*
  * Serial Line interface
@@ -496,7 +496,7 @@ slinput(c, tp)
 			return;
 		}
 	}
-	if (sc->sc_ilen++ >= SLMTU) {
+	if (++sc->sc_ilen > SLMTU) {
 		sc->sc_if.if_ierrors++;
 		sc->sc_mp = sc->sc_buf + sizeof(struct ifnet *);
 		sc->sc_ilen = 0;
