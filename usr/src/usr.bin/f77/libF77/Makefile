@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 #
 # Makefile for f77 math & startup lib, libF77.a
 
@@ -54,27 +54,29 @@ all: Version ${LIBRARY} ${LIBRARY_P}
 
 ${LIBRARY}: ${OBJS}
 		@echo "Loading ${LIBRARY} ... "
-		@ar cru ${LIBRARY} ${OBJS} Version
-		ranlib ${LIBRARY}
+		@if [ -d obj ]; then cd obj; fi; \
+			ar cru ${LIBRARY} ${OBJS} Version; \
+			ranlib ${LIBRARY}
 
 ${LIBRARY_P}: ${OBJS}
 		@echo "Loading ${LIBRARY_P} ... "
-		@cd profiled; ar cru ../${LIBRARY_P} ${OBJS} Version
-		ranlib ${LIBRARY_P}
+		@if [ -d obj ]; then cd obj; fi; \
+			cd profiled; ar cru ../${LIBRARY_P} ${OBJS} Version; \
+			ranlib ../${LIBRARY_P}
 
-Version: ${SRCS} mkvers
+Version: ${SRCS} obj/mkvers
 	@rm -f Version.c
-	./mkvers ${LIBRARY} ${SRCS} > Version.c
+	./obj/mkvers ${LIBRARY} ${SRCS} > Version.c
 	${CC} -c Version.c
-	mv -f Version.o Version
+	mv -f obj/Version.o obj/Version
 	@rm -f profiled/Version
-	ln Version profiled/Version
+	ln obj/Version profiled/Version
 
 mkvers: mkvers.c
 	@${CC} mkvers.c -o mkvers
 
 clean:
-	rm -f ${OBJS} Usef profiled/*.o ${LIBRARY} ${LIBRARY_P} Usef mkvers
+	rm -f ${OBJS} obj/Usef profiled/*.o ${LIBRARY} ${LIBRARY_P} obj/mkvers
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -96,7 +98,7 @@ trapov_.o: trapov_.c
 	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
 		| ex - trapov_.s;
 	as trapov_.s -o trapov_.o;
-	mv trapov_.o profiled/trapov_.o
+	mv obj/trapov_.o profiled/trapov_.o
 	rm trapov_.s
 	${CC} -S $(OPTIONS) trapov_.c
 	(echo "g/.set	L[0-9][0-9]*,0x0$$/s/0x0/0xf10/"; echo "x") \
@@ -117,9 +119,8 @@ Usef: Usef.c
 	${CC} -O Usef.c -o Usef
 
 .c.o:
-	@${CC} -p `Usef $*` ${CFLAGS} -c $*.c
+	@${CC} -p `obj/Usef $*` ${CFLAGS} -c $*.c
+	@-ld -x -r -o profiled/$*.o $*.o
+	${CC} `obj/Usef $*` ${CFLAGS} -c $*.c
 	@-ld -x -r $*.o
-	@mv a.out profiled/$*.o
-	${CC} `Usef $*` ${CFLAGS} -c $*.c
-	@-ld -x -r $*.o
-	@mv a.out $*.o
+	@if [ -d obj ]; then cd obj; fi; mv a.out $*.o
