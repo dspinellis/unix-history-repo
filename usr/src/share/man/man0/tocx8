@@ -1,0 +1,140 @@
+intro(8) intro: introduction to system maintenance and operation commands.
+ac(8) ac: display connect time accounting.
+acucntrl(8) acucntrl: turn around tty line between dialin and dialout.
+adduser(8) adduser: procedure for adding new users.
+amd(8) amd: automatically mount file systems.
+amq(8) amq: automounter query tool.
+arp(8) arp: address resolution display and control.
+bad144(8) bad144: read/write dec standard 144 bad sector information.
+badsect(8) badsect: create files to contain bad sectors.
+boot_hp300(8) boot: system bootstrapping procedures.
+bugfiler(8) bugfiler: file bug reports in folders automatically.
+chown(8) chown: change file owner and group.
+chroot(8) chroot: change root directory.
+clri(8) clri: clear i-node.
+comsat(8) comsat: biff server.
+config(8) config: build system configuration files.
+crash(8) crash: UNIX system failures.
+cron(8) cron: clock daemon.
+dev_mkdb(8) dev_mkdb: create /dev database.
+disklabel(8) disklabel: read and write disk pack label.
+diskpart(8) diskpart: calculate default disk partition sizes.
+dm(8) dm: dungeon master.
+dmesg(8) dmesg: display the system message buffer.
+dump(8) dump: filesystem backup.
+dumpfs(8) dumpfs: dump file system information.
+dumplfs(8) dumplfs: dump file system information.
+edquota(8) edquota: edit user quotas.
+eeprom(8) eeprom: openprom control utility.
+ext_srvtab(8) ext_srvtab: extract service key files from Kerberos key distribution center database.
+fastboot(8) fastboot, fasthalt: reboot/halt the system without checking the disks.
+fingerd(8) fingerd: remote user information server.
+format(8) format: how to format disks and tapes.
+fsck(8) fsck: filesystem consistency check and interactive repair.
+fsdb(8) fsdb: file system debugger.
+fsinfo(8) fsinfo: co-ordinate site-wide filesystem information.
+ftpd(8) ftpd: Internet File Transfer Protocol server.
+getty(8) getty: set terminal mode.
+icheck(8) icheck: file system storage consistency check.
+ifconfig(8) ifconfig: configure network interface parameters.
+inetd(8) inetd: internet super-server.
+init(8) init: process control initialization.
+iostat(8) iostat: report I/O statistics.
+kdb_destroy(8) kdb_destroy: destroy Kerberos key distribution center database.
+kdb_edit(8) kdb_edit: Kerberos key distribution center database editing utility.
+kdb_init(8) kdb_init: initialize Kerberos key distribution center database.
+kdb_util(8) kdb_util: Kerberos key distribution center database utility.
+kgmon(8) kgmon: generate a dump of the operating system's profile buffers.
+kpasswdd(8) kpasswdd: Kerberos password changing daemon.
+kstash(8) kstash: stash Kerberos key distribution center database master key.
+kvm_mkdb(8) kvm_mkdb: create kernel database.
+lfs_cleanerd(8) lfs_cleanerd: garbage collect a log-structured file system.
+lpc(8) lpc: line printer control program.
+lpd(8) lpd: line printer spooler daemon.
+mail.local(8) mail.local: store mail in a mailbox.
+makedev(8) makedev: make system special files.
+MAKEDEV(8) MAKEDEV: create system and device special files.
+makekey(8) makekey: make encrypted keys or passwords.
+makemap(8) makemap: create database maps for sendmail.
+make_keypair(8) make_keypair: generate Kerberos host key pair.
+mk-amd-map(8) mk-amd-map: create database maps for Amd.
+mknod(8) mknod: build special file.
+mkproto(8) mkproto: construct a prototype file system.
+mount(8) mount, umount: mount and dismount file systems.
+mountd(8) mountd: service remote NFS mount requests.
+mount_fdesc(8) mount_fdesc: mount the file-descriptor file system.
+mount_kernfs(8) mount_kernfs: mount the /kern file system.
+mount_lfs(8) mount_lfs: mount a log-structured file system.
+mount_lofs(8) mount_lofs: mount a virtual copy of an existing filesystem sub-tree.
+mount_nfs(8) mount_nfs: mount nfs file systems.
+mount_null(8) mount_null: demonstrate the use of a null file system layer.
+mount_portal(8) mount_portal: mount the portal daemon.
+mount_umap(8) mount_umap: sample file system layer.
+mtree(8) mtree: map a directory hierarchy.
+named(8) named: Internet domain name server.
+named-xfer(8) named-xfer: ancillary agent for inbound zone transfers.
+named.reload(8) named.reload: cause the name server to synchronize its database.
+named.restart(8) named.restart: stop and restart the name server.
+ncheck(8) ncheck: generate names from i-numbers.
+newfs(8) newfs, mfs: construct a new file system.
+newlfs(8) newlfs: construct a new LFS file system.
+nfsd(8) nfsd: remote NFS server.
+nfsiod(8) nfsiod: local NFS asynchronous I/O server.
+nologin(8) nologin: politely refuse a login.
+nvi.recover(8) nvi.recover: send mail about recoverable files.
+pac(8) pac: printer/plotter accounting information.
+ping(8) ping: send ICMP ECHO_REQUEST packets to network hosts.
+portmap(8) portmap: DARPA port to RPC program number mapper.
+pstat(8) pstat: display system data structures.
+pwd_mkdb(8) pwd_mkdb: generate the password databases.
+quot(8) quot: display total block usage per user for a file system.
+quotacheck(8) quotacheck: filesystem quota consistency checker.
+quotaon(8) quotaon, quotaoff: turn filesystem quotas on and off.
+rbootd(8) rbootd: HP remote boot server.
+rc(8) rc: command script for auto\-reboot and daemons.
+reboot(8) reboot, halt: stopping and restarting the system.
+registerd(8) registerd: Kerberos registration daemon.
+renice(8) renice: alter priority of running processes.
+repquota(8) repquota: summarize quotas for a file system.
+restore(8) restore: restore files or file systems from backups made with dump.
+rexecd(8) rexecd: remote execution server.
+rlogind(8) rlogind: remote login server.
+rmail(8) rmail: handle remote mail received via uucp.
+rmt(8) rmt: remote magtape protocol module.
+route(8) route: manually manipulate the routing tables (Interim).
+routed(8) routed: network routing daemon.
+rshd(8) rshd: remote shell server.
+rwhod(8) rwhod: system status server.
+sa(8) sa, accton: system accounting.
+savecore(8) savecore: save a core dump of the operating system.
+scsiformat(8) scsiformat: format SCSI disks and show SCSI parameters.
+sendmail(8) sendmail: send mail over the internet.
+showmount(8) showmount: show remote nfs mounts on host.
+shutdown(8) shutdown: close down the system at a given time.
+slattach(8) slattach: attach serial lines as network interfaces.
+sliplogin(8) sliplogin: attach a serial line network interface.
+sticky(8) sticky: sticky text and append-only directories.
+strfile(8) strfile, unstr: create a random access file for storing strings.
+swapon(8) swapon: specify additional device for paging and swapping.
+sync(8) sync: force completion of pending disk writes (flush cache).
+sysctl(8) sysctl: get or set kernel state.
+syslogd(8) syslogd: log systems messages.
+talkd(8) talkd: remote user communication server.
+telnetd(8) telnetd: DARPA TELNET protocol server.
+tftpd(8) tftpd: Internet Trivial File Transfer Protocol server.
+timed(8) timed: time server daemon.
+timedc(8) timedc: timed control program.
+traceroute(8) traceroute: print the route packets take to network host.
+trpt(8) trpt: transliterate protocol trace.
+trsp(8) trsp: transliterate sequenced packet protocol trace.
+tunefs(8) tunefs: tune up an existing file system.
+update(8) update: flush internal filesystem caches to disk frequently.
+uucico(8) uucico, uucpd: transfer files queued by uucp or uux.
+uuclean(8) uuclean: uucp spool directory clean-up.
+uupoll(8) uupoll: poll a remote UUCP site.
+uusnap(8) uusnap: show snapshot of the UUCP system.
+uuxqt(8) uuxqt: UUCP execution file interpreter.
+vipw(8) vipw: edit the password file.
+vmstat(8) vmstat: report virtual memory statistics.
+XNSrouted(8) XNSrouted: NS Routing Information Protocol daemon.
+zic(8) zic: time zone compiler.
