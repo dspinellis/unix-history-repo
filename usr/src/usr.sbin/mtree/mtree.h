@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtree.h	5.3 (Berkeley) %G%
+ *	@(#)mtree.h	5.4 (Berkeley) %G%
  */
 
 #include <string.h>
@@ -31,13 +31,13 @@ typedef struct _info {
 #define	F_TYPE	0x100				/* file type */
 	u_short	flags;				/* items set */
 
-	off_t	st_size;
+	off_t	st_size;			/* size */
 	u_long	cksum;				/* check sum */
-	uid_t	st_uid;
-	gid_t	st_gid;
+	uid_t	st_uid;				/* owner */
+	gid_t	st_gid;				/* group */
 #define	MBITS	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
-	mode_t	st_mode;
-	nlink_t	st_nlink;
+	mode_t	st_mode;			/* mode */
+	nlink_t	st_nlink;			/* link count */
 	char	*slink;				/* symbolic link reference */
 } INFO;
 
@@ -46,9 +46,10 @@ typedef struct _entry {
 	struct _entry	*next, *prev;		/* left, right */
 	INFO	info;				/* node info structure */
 #define	F_DONE	0x01				/* directory done */
-#define	F_VISIT	0x02				/* visited this node */
+#define	F_MAGIC	0x02				/* name has magic chars */
+#define	F_VISIT	0x04				/* visited this node */
 	u_char	flags;				/* flags */
-	char	*name;				/* node name */
+	char	name[1];			/* file name (must be last) */
 } ENTRY;
 
 #define	RP(p)	(p->fts_path + 2)

@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fts.h>
+#include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
 #include "mtree.h"
@@ -76,7 +77,9 @@ vwalk()
 		}
 
 		for (ep = level; ep; ep = ep->next)
-			if (!strcmp(ep->name, p->fts_name)) {
+			if (ep->flags & F_MAGIC && fnmatch(ep->name,
+			    p->fts_name, FNM_PATHNAME|FNM_QUOTE) ||
+			    !strcmp(ep->name, p->fts_name)) {
 				ep->flags |= F_VISIT;
 				if (ep->info.flags&F_IGN) {
 					(void)ftsset(t, p, FTS_SKIP);
