@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)adb.1	5.11 (Berkeley) %G%
+.\"	@(#)adb.1	5.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ADB 1
@@ -117,7 +117,7 @@ are expressions.
 The interpretation of an address depends on the context it is used in.
 If a subprocess is being debugged then addresses are interpreted
 in the usual way in the address space of the subprocess.
-If the operating system is being debugged either post-mortem or using
+If the operating system is being debugged, either post-mortem or using
 the special file
 .Pa /dev/mem
 to interactively examine and/or modify memory, the maps are set to map
@@ -285,7 +285,7 @@ Bitwise conjunction.
 .It Va e1 Ns Li \&| Ns Va e2 
 Bitwise disjunction.
 .It Va e1 Ns Li # Ns Va e2 
-.Va E1
+.Va e1
 rounded up to the next multiple of
 .Va e2 .
 .El
@@ -330,7 +330,7 @@ itself is printed in the styles indicated by the format
 .Va f .
 (For
 .Va i
-format zero values are assumed
+format, zero values are assumed
 for the parts of the instruction that reference
 subsequent words.)
 .El
@@ -340,7 +340,7 @@ A
 consists of one or more characters that specify a style of printing.
 Each format character may be preceded by a decimal integer
 that is a repeat count for the format character.
-While stepping through a format
+While stepping through a format,
 .Ad dot
 is incremented by the amount given for each format letter.
 If no format is given then the last format is used.
@@ -393,7 +393,7 @@ Print 4 bytes in signed hexadecimal.
 .It Ic f Va 4 
 Print 4 bytes as a floating point number.
 .It Ic F Va 8 
-Print 8 bytes as a double floating point number.
+Print 8 bytes as a double precision floating point number.
 .It Ic b Va 1 
 Print 1 byte in unsigned octal.
 .It Ic c Va 1 
@@ -407,6 +407,8 @@ and the delete character is printed as
 .Ql ^? .
 .It Ic s Va n 
 Print the addressed characters until a zero character is reached.
+.Ar n
+is the length of the string including its zero terminator.
 .It Ic S Va n 
 Print a string using the
 .Ql ^X
@@ -445,7 +447,7 @@ Print the addressed value in symbolic form using
 the same rules for symbol lookup as
 .Ic a .
 .It Ic t Va 0 
-When preceded by an integer tabs to the next appropriate tab stop.
+When preceded by an integer, tabs to the next appropriate tab stop.
 For example,
 .Li 8t
 moves to the next 8-space tab stop.
@@ -453,6 +455,7 @@ moves to the next 8-space tab stop.
 Print a space.
 .It Ic n Va 0 
 Print a newline.
+.ne 2v
 .It Ic \*(Lq...\*(Rq Va 0
 Print the enclosed string.
 .It Ic \&^
@@ -555,7 +558,7 @@ are:
 .Bl -tag -width filexx
 .It Cm < Ns Va file 
 Read commands from
-.Va file
+.Va file .
 If this command is executed in a file, further commands
 in the file are not seen.
 If
@@ -692,7 +695,7 @@ An argument starting with < or > causes the standard
 input or output to be established for the command.
 .It Cm c Ns Va s 
 The subprocess is continued with signal
-.Va s
+.Va s ;
 see
 .Xr sigvec 2 .
 If
@@ -774,14 +777,14 @@ corresponding to a written
 .Ad address
 is calculated as follows.
 .Bd -filled -offset indent
-\*(aDb1\*(sY\*(<=\*(aRaddress \*(sY\(->
-\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf1\*(sY-\*(aDf1,
+\*(aDb1\*(sY\*(<=\*(aRaddress\*(<=\*(aDe1 \*(sY\(->
+\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf1\*(sY-\*(aDb1,
 otherwise
 .Ed
 .Pp
 .Bd -filled -offset indent
-\*(aDb1\*(sY\*(<=\*(aRaddress \*(sY\(->
-\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf2\*(sY-\*(aDf2\*(dF
+\*(aDb2\*(sY\*(<=\*(aRaddress\*(<=\*(aDe2 \*(sY\(->
+\*(aRfile address\*(dF=\*(aRaddress\*(sY+\*(aDf2\*(sY-\*(aDb2\*(dF
 .Ed
 .Pp
 otherwise, the requested
