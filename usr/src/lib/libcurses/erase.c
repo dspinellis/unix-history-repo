@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)erase.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)erase.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,7 +24,7 @@ werase(win)
 	register __LDATA *sp, *end, *start, *maxx;
 
 #ifdef DEBUG
-	__TRACE("werase: (%0.2o)\n", win);
+	__CTRACE("werase: (%0.2o)\n", win);
 #endif
 	for (y = 0; y < win->maxy; y++) {
 		minx = -1;

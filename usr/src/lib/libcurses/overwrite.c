@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overwrite.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)overwrite.c	5.14 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -24,7 +24,7 @@ overwrite(win1, win2)
 	register int x, y, endy, endx, starty, startx;
 
 #ifdef DEBUG
-	__TRACE("overwrite: (%0.2o, %0.2o);\n", win1, win2);
+	__CTRACE("overwrite: (%0.2o, %0.2o);\n", win1, win2);
 #endif
 	starty = max(win1->begy, win2->begy);
 	startx = max(win1->begx, win2->begx);
@@ -33,7 +33,7 @@ overwrite(win1, win2)
 	if (starty >= endy || startx >= endx)
 		return (OK);
 #ifdef DEBUG
-	__TRACE("overwrite: from (%d, %d) to (%d, %d)\n",
+	__CTRACE("overwrite: from (%d, %d) to (%d, %d)\n",
 	    starty, startx, endy, endx);
 #endif
 	x = endx - startx;

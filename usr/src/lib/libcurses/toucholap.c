@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)toucholap.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)toucholap.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -22,19 +22,19 @@ touchoverlap(win1, win2)
 	register int y, endy, endx, starty, startx;
 
 #ifdef DEBUG
-	__TRACE("touchoverlap: (%0.2o, %0.2o);\n", win1, win2);
+	__CTRACE("touchoverlap: (%0.2o, %0.2o);\n", win1, win2);
 #endif
 	starty = max(win1->begy, win2->begy);
 	startx = max(win1->begx, win2->begx);
 	endy = min(win1->maxy + win1->begy, win2->maxy + win2->begx);
 	endx = min(win1->maxx + win1->begx, win2->maxx + win2->begx);
 #ifdef DEBUG
-	__TRACE("touchoverlap: from (%d,%d) to (%d,%d)\n",
+	__CTRACE("touchoverlap: from (%d,%d) to (%d,%d)\n",
 	    starty, startx, endy, endx);
-	__TRACE("touchoverlap: win1 (%d,%d) to (%d,%d)\n",
+	__CTRACE("touchoverlap: win1 (%d,%d) to (%d,%d)\n",
 	    win1->begy, win1->begx, win1->begy + win1->maxy,
 	    win1->begx + win1->maxx);
-	__TRACE("touchoverlap: win2 (%d,%d) to (%d,%d)\n",
+	__CTRACE("touchoverlap: win2 (%d,%d) to (%d,%d)\n",
 	    win2->begy, win2->begx, win2->begy + win2->maxy,
 	    win2->begx + win2->maxx);
 #endif

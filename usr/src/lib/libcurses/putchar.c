@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)putchar.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)putchar.c	5.6 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -17,7 +17,7 @@ __cputchar(ch)
 {
 
 #ifdef DEBUG
-	__TRACE("__cputchar: %s\n", unctrl(ch));
+	__CTRACE("__cputchar: %s\n", unctrl(ch));
 #endif
 	(void)putchar(ch);
 }

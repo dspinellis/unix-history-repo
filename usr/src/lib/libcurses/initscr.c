@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)initscr.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)initscr.c	5.15 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -23,7 +23,7 @@ initscr()
 	register char *sp;
 
 #ifdef DEBUG
-	__TRACE("initscr\n");
+	__CTRACE("initscr\n");
 #endif
 	__echoit = 1;
         __pfast = __rawmode = __noqch = 0;
@@ -60,7 +60,7 @@ initscr()
 	(void)signal(SIGTSTP, __stop_signal_handler);
 
 #ifdef DEBUG
-	__TRACE("initscr: LINES = %d, COLS = %d\n", LINES, COLS);
+	__CTRACE("initscr: LINES = %d, COLS = %d\n", LINES, COLS);
 #endif
 	__startwin();
 
