@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.27 (Berkeley) %G%
+#	@(#)Makefile	7.28 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -24,17 +24,17 @@ SMOPTS=	${DEFS} -DSMALL -DVAX750 -DVAX630 -DVAX650
 730OPTS=-O ${DEFS} -DVAX730
 CFLAGS=	-O ${DEFS} ${MACH}
 
-LIBSA=	libsa.a
-SASRC=  bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
-	printf.c read.c sys.c write.c
 DRIVERS=autoconf.c hp.c hpmaptype.c ht.c idc.c kdb.c mba.c mt.c qdcons.c \
 	qvcons.c rk.c rl.c tm.c tmscp.c ts.c uba.c uda.c up.c upmaptype.c \
 	ut.c
 DOBJS=	${DRIVERS:.c=.o}
 SRCS=	boot.c bootxx.c cat.c copy.c drtest.c format.c format.c machdep.c \
-	prf.c qfont.c conf.c ../vax/dkbad.c ${DRIVERS} ${SASRC}
+	prf.c qfont.c conf.c ../vax/dkbad.c ${DRIVERS}
 DUMMIES=confxx.c
-SMOBJ=	bootxx.o sm_sys.o sm_autoconf.o 
+SMOBJ=	bootxx.o sm_autoconf.o 
+LIBS=	${STAND}/obj/libsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+SMLIBS=	${STAND}/obj/libsmsa.a libdrive.a ${DESTDIR}/usr/lib/libc.a
+
 
 # These drivers don't have ecc correction and bad sector forwarding;
 # they are placed in the file system boot area for 750's.  If your
@@ -47,9 +47,14 @@ ALL=	boot tpboot cat copy tpcopy format tpformat drtest ls \
 
 all: ${ALL}
 
-${LIBSA}: conf.o dkbad.o machdep.o prf.o qfont.o ${SASRC:.c=.o} ${DOBJS}
-	ar crv ${LIBSA} $?
-	ranlib ${LIBSA}
+${STAND}/obj/libsa.a:
+	cd ${STAND}; make
+${STAND}/obj/libsmsa.a:
+	cd ${STAND}; make LIB=smsa CFLAGS='-O -DSMALL'
+
+libdrive.a: conf.o dkbad.o machdep.o prf.o qfont.o ${DOBJS}
+	ar crv $@ $?
+	ranlib $@
 
 ${DOBJS}:
 	${CC} -c -S ${COPTS} $*.c
@@ -69,8 +74,8 @@ relsrt0.o: srt0.c ../include/mtpr.h ../include/cpu.h
 
 # bootable from tape
 
-tpboot: tpboot.o relsrt0.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o tpboot.o ${LIBSA} -lc
+tpboot: tpboot.o relsrt0.o ${LIBS}
+	ld -N -T ${RELOC} relsrt0.o tpboot.o ${LIBS}
 	strip a.out; dd if=a.out of=tpboot ibs=32 skip=1; rm -f a.out
 
 tpboot.o: boot.o
@@ -79,12 +84,12 @@ tpboot.o: boot.o
 	${CC} -c ${CFLAGS} -DJUSTASK $*.c
 	rm -f $*.c
 
-tpcopy: copy.o tpsrt0.o ${LIBSA}
-	ld -N tpsrt0.o copy.o ${LIBSA} -lc
+tpcopy: copy.o tpsrt0.o ${LIBS}
+	ld -N tpsrt0.o copy.o ${LIBS}
 	strip a.out; dd if=a.out of=tpcopy ibs=32 skip=1; rm -f a.out
 
-tpformat: tpformat.o tpsrt0.o confhpup.o ${LIBSA}
-	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBSA} -lc
+tpformat: tpformat.o tpsrt0.o confhpup.o ${LIBS}
+	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBS}
 	strip a.out; dd if=a.out of=tpformat ibs=32 skip=1; rm -f a.out
 
 tpformat.o: format.o
@@ -95,8 +100,8 @@ tpformat.o: format.o
 
 # bootable from floppy or real disks
 
-boot: boot.o relsrt0.o bootconf.o ${LIBSA}
-	ld -N -T ${RELOC} -o $@ relsrt0.o boot.o bootconf.o ${LIBSA} -lc
+boot: boot.o relsrt0.o bootconf.o ${LIBS}
+	ld -N -T ${RELOC} -o $@ relsrt0.o boot.o bootconf.o ${LIBS}
 
 bootconf.o: conf.o
 	rm -f $*.c
@@ -104,20 +109,20 @@ bootconf.o: conf.o
 	${CC} -c ${CFLAGS} -DBOOT $*.c
 	rm -f $*.c
 
-copy: copy.o srt0.o getfile.o ${LIBSA}
-	ld -N -o $@ srt0.o copy.o getfile.o ${LIBSA} -lc
+copy: copy.o srt0.o getfile.o ${LIBS}
+	ld -N -o $@ srt0.o copy.o getfile.o ${LIBS}
 
-cat: cat.o srt0.o getfile.o ${LIBSA}
-	ld -N -o $@ srt0.o cat.o getfile.o ${LIBSA} -lc
+cat: cat.o srt0.o getfile.o ${LIBS}
+	ld -N -o $@ srt0.o cat.o getfile.o ${LIBS}
 
-ls: ls.o srt0.o ${LIBSA}
-	ld -N -o $@ srt0.o ls.o ${LIBSA} -lc
+ls: ls.o srt0.o ${LIBS}
+	ld -N -o $@ srt0.o ls.o ${LIBS}
 
-format: format.o srt0.o confhpup.o ${LIBSA}
-	ld -N -o $@ srt0.o format.o confhpup.o ${LIBSA} -lc
+format: format.o srt0.o confhpup.o ${LIBS}
+	ld -N -o $@ srt0.o format.o confhpup.o ${LIBS}
 
-drtest: drtest.o srt0.o confhpup.o ${LIBSA}
-	ld -N -o $@ srt0.o drtest.o confhpup.o ${LIBSA} -lc
+drtest: drtest.o srt0.o confhpup.o ${LIBS}
+	ld -N -o $@ srt0.o drtest.o confhpup.o ${LIBS}
 
 # for 730s minimize size to avoid microcode botch
 # (won't load files larger than 12.5 Kbytes)
@@ -128,8 +133,8 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 	${CC} -c ${730OPTS} $*.c
 	rm -f $*.c
 
-730boot: 730boot.o relsrt0.o 730bootconf.o ${LIBSA}
-	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o ${LIBSA} -lc
+730boot: 730boot.o relsrt0.o 730bootconf.o ${LIBS}
+	ld -N -T ${RELOC} -o 730boot relsrt0.o 730boot.o 730bootconf.o ${LIBS}
 
 730bootconf.o: conf.o
 	rm -f $*.c
@@ -137,14 +142,14 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 	${CC} -c ${730OPTS} -DBOOT $*.c
 	rm -f $*.c
 
-730copy: copy.o srt0.o 730conf.o ${LIBSA}
-	ld -N -o $@ srt0.o copy.o 730conf.o ${LIBSA} -lc
+730copy: copy.o srt0.o 730conf.o ${LIBS}
+	ld -N -o $@ srt0.o copy.o 730conf.o ${LIBS}
 
-730drtest: drtest.o srt0.o confup.o ${LIBSA}
-	ld -N -o $@ srt0.o drtest.o confup.o ${LIBSA} -lc
+730drtest: drtest.o srt0.o confup.o ${LIBS}
+	ld -N -o $@ srt0.o drtest.o confup.o ${LIBS}
 
-730format: format.o srt0.o confup.o ${LIBSA}
-	ld -N -o $@ srt0.o format.o confup.o ${LIBSA} -lc
+730format: format.o srt0.o confup.o ${LIBS}
+	ld -N -o $@ srt0.o format.o confup.o ${LIBS}
 
 730conf.o: conf.o
 	rm -f $*.c
@@ -158,43 +163,43 @@ drtest: drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o confrk.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confrk.o ${SMOBJ} ${LIBSA} -lc
+boothk: relsrt0.o confrk.o ${SMOBJ} ${LIBS}
+	ld -N -T ${RELOC} relsrt0.o confrk.o ${SMOBJ} ${LIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
-boothp: relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${LIBSA} -lc
+boothp: relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${SMLIBS}
+	ld -N -T ${RELOC} relsrt0.o confhp.o sm_hp.o ${SMOBJ} ${SMLIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
-bootkra: relsrt0.o confkra.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confkra.o ${SMOBJ} ${LIBSA} -lc
+bootkra: relsrt0.o confkra.o ${SMOBJ} ${SMLIBS}
+	ld -N -T ${RELOC} relsrt0.o confkra.o ${SMOBJ} ${SMLIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
-bootup: relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confup.o sm_up.o ${SMOBJ} ${LIBSA} -lc
+bootup: relsrt0.o confup.o sm_up.o ${SMOBJ} ${SMLIBS}
+	ld -N -T ${RELOC} relsrt0.o confup.o sm_up.o ${SMOBJ} ${SMLIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
-bootra: relsrt0.o confra.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confra.o ${SMOBJ} ${LIBSA} -lc
+bootra: relsrt0.o confra.o ${SMOBJ} ${SMLIBS}
+	ld -N -T ${RELOC} relsrt0.o confra.o ${SMOBJ} ${SMLIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
 	ls -l $@
 
-bootrl: relsrt0.o confrl.o ${SMOBJ} ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o confrl.o ${SMOBJ} ${LIBSA} -lc
+bootrl: relsrt0.o confrl.o ${SMOBJ} ${SMLIBS}
+	ld -N -T ${RELOC} relsrt0.o confrl.o ${SMOBJ} ${SMLIBS}
 	size a.out
 	rm -f $@
 	strip a.out;dd if=a.out of=$@ ibs=32 skip=1;rm -f a.out
@@ -214,12 +219,6 @@ sm_up.o: up.o
 	${C2} -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
-sm_sys.o: ${STAND}/sys.c
-	rm -f sm_sys.c
-	ln -s ${STAND}/sys.c sm_sys.c
-	${CC} -c -O ${SMOPTS} sm_sys.c
-	rm -f sm_sys.c
-
 sm_autoconf.o: autoconf.o
 	rm -f sm_autoconf.c
 	ln -s autoconf.c sm_autoconf.c
@@ -232,6 +231,9 @@ confkra.o: confkra.c confxx.o
 confup.o: confup.c confxx.o
 confra.o: confra.c confxx.o
 confrl.o: confrl.c confxx.o
+
+# These are currently not compiled using -DSMALL; doing so would result in
+# some extra space.  See the i386/stand code for examples.
 
 confxx.o:
 	touch confxx.o
@@ -266,7 +268,7 @@ cleandir: clean
 depend: ${SRCS}
 	mkdep ${INCPATH} -DSTANDALONE ${SRCS} ${DUMMIES}
 
-install: FRC
+install:
 	install -c -s -o bin -g bin -m 644 \
 	    format cat copy drtest ls ${DESTDIR}/stand
 	[ -d ../vaxdist/tp ] || mkdir ../vaxdist/tp
@@ -308,5 +310,3 @@ lint: ${SRCS}
 
 tags: ${SRCS}
 	ctags ${SRCS} ${DUMMIES}
-
-FRC:
