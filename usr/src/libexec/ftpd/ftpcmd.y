@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.4 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.5 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -118,7 +118,7 @@ cmd:		USER SP username CRLF
 				(void) close(pdata);
 			}
 			pdata = -1;
-			ack((char *) $1);
+			reply(200, "PORT command successful.");
 		}
 	|	PASV CRLF
 		= {
@@ -164,7 +164,7 @@ cmd:		USER SP username CRLF
 				break;
 
 			default:
-				reply(502, "Unimplemented STRU type.");
+				reply(504, "Unimplemented STRU type.");
 			}
 		}
 	|	MODE SP mode_code CRLF
@@ -181,7 +181,7 @@ cmd:		USER SP username CRLF
 		}
 	|	ALLO SP NUMBER CRLF
 		= {
-			ack((char *) $1);
+			reply(202, "ALLO command ignored.");
 		}
 	|	RETR check_login SP pathname CRLF
 		= {
@@ -237,7 +237,7 @@ cmd:		USER SP username CRLF
 		}
 	|	ABOR CRLF
 		= {
-			ack((char *) $1);
+			reply(225, "ABOR command successful.");
 		}
 	|	CWD check_login CRLF
 		= {
@@ -262,7 +262,7 @@ cmd:		USER SP username CRLF
 		}
 	|	NOOP CRLF
 		= {
-			ack((char *) $1);
+			reply(200, "NOOP command successful.");
 		}
 	|	XMKD check_login SP pathname CRLF
 		= {
@@ -417,6 +417,11 @@ mode_code:	S
 
 pathname:	pathstring
 	= {
+		/*
+		 * Problem: this production is used for all pathname
+		 * processing, but only gives a 550 error reply.
+		 * This is a valid reply in some cases but not in others.
+		 */
 		if ($1 && strncmp((char *) $1, "~", 1) == 0) {
 			$$ = (int)*glob((char *) $1);
 			if (globerr != NULL) {
@@ -830,7 +835,7 @@ help(s)
 			columns = 1;
 		lines = (NCMDS + columns - 1) / columns;
 		for (i = 0; i < lines; i++) {
-			printf("    ");
+			printf("   ");
 			for (j = 0; j < columns; j++) {
 				c = cmdtab + j * lines + i;
 				printf("%s%c", c->name,
@@ -852,7 +857,7 @@ help(s)
 	upper(s);
 	c = lookup(s);
 	if (c == (struct tab *)0) {
-		reply(504, "Unknown command %s.", s);
+		reply(502, "Unknown command %s.", s);
 		return;
 	}
 	if (c->implemented)
