@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_bio.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_bio.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -48,10 +48,8 @@ nfs_read(vp, uio, offp, ioflag, cred)
 	struct buf *bp;
 	struct vattr vattr;
 	daddr_t lbn, bn, rablock;
-	int error = 0;
-	int diff;
+	int diff, error = 0;
 	long n, on;
-	int count;
 
 	if (!(ioflag & IO_NODELOCKED))
 		nfs_lock(vp);
@@ -66,7 +64,6 @@ nfs_read(vp, uio, offp, ioflag, cred)
 		return (error);
 	}
 	uio->uio_offset = *offp;
-	count = uio->uio_resid;
 	if (uio->uio_rw != UIO_READ)
 		panic("nfs_read mode");
 	if (vp->v_type != VREG)
@@ -159,11 +156,7 @@ nfs_write(vp, uio, offp, ioflag, cred)
 	struct buf *bp;
 	struct nfsnode *np = VTONFS(vp);
 	daddr_t lbn, bn;
-	int i, n, on;
-	int flags, count, size;
-	int error = 0;
-	int cnt;
-	u_long osize;
+	int i, n, on, cnt, count, error = 0;
 
 	if ((ioflag & IO_NODELOCKED) == 0)
 		nfs_lock(vp);
