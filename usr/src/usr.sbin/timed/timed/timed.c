@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	1.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -88,7 +88,7 @@ char **argv;
 	struct sockaddr_in *sin;
 	
 
-	Mflag = SLAVE;
+	Mflag = 0;
 	on = 1;
 	backoff = 1;
 	fj = "/usr/adm/timed.log";
@@ -107,7 +107,7 @@ char **argv;
 			switch (**argv) {
 
 			case 'M':
-				Mflag = MASTER; 
+				Mflag = 1; 
 				break;
 			case 't':
 				trace = ON; 
