@@ -1,0 +1,41 @@
+.TH DSACONFIG 8 "06 Jun 1989"
+.\" $Header: /f/osi/others/quipu/tools/dsaconfig/RCS/dsaconfig.8,v 7.2 91/02/22 09:29:41 mrose Interim $
+.\"
+.\"
+.\" $Log:	dsaconfig.8,v $
+.\" Revision 7.2  91/02/22  09:29:41  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  90/10/18  11:33:35  mrose
+.\" psi
+.\" 
+.\" Revision 7.0  89/11/23  22:02:37  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+dsaconfig \- build a database directory for a Level-1 DSA
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDdsaconfig
+\%[\-d]
+\fIwildlife\fR
+.in -.5i
+.SH DESCRIPTION
+The \fIdsaconfig\fR program reads the file \fIwildlife\fR.dsa and
+creates a new directory, \fIwildlife/\fR, containing the initial
+database for a Level-1 DSA.
+.SH FILES
+.nf
+.ta \w'\*(EDdsaptailor  'u
+\*(EDdsaptailor	QUIPU DUA tailoring file
+\*(EDfredrc	Whitepages tailoring file
+.re
+.fi
+.SH "SEE ALSO"
+\fIPSI White Pages Pilot Project: Administrator's Guide\fR
+.SH DIAGNOSTICS
+All obvious.
+.SH AUTHOR
+Marshall T. Rose,
+Performance Systems International

@@ -1,0 +1,47 @@
+#!/bin/sh
+awk '
+BEGIN {
+	mapping["filestore"] 	= "iso ftam"
+	mapping["terminal"] 	= "iso vt"
+	mapping["passwdstore"]  = "isode passwd lookup demo"
+	mapping["Z39.50"]	= "IRP Z39.50"
+	mapping["pp-qmgr"] 	= "pp qmgr interface"
+	mapping["\"pp qmgr\""] 	= "pp qmgr interface"
+}
+{
+	if ( substr($0,1,1) == "#" )
+		next
+	if ( $1 == "" )
+		next
+
+	if (new == "" ) {
+		tmp = $2
+		for (i=3; i<=NF -2; i++)
+			tmp = tmp " " $i
+
+		if ( $NF == "\\" ) 
+			new = $1
+		else {
+			if ($1 == "default")
+				continue
+			if (mapping [tmp] == "")
+				printf "%-14s %-20s %s\n", $1, tmp, $NF
+			else
+				printf "%-14s %-20s %s\n", $1, mapping[tmp], $NF
+		}
+	} else {
+		if (substr($1,1,1) == "\\")
+			$1 = substr ($1,2)
+
+		if (new == "default")
+			next
+		if (mapping [tmp] == "")
+			printf "%-14s %-20s %s\n", new, tmp, $1
+		else
+			printf "%-14s %-20s %s\n", new, mapping[tmp], $1
+
+		new = ""
+	}
+
+} ' 
+

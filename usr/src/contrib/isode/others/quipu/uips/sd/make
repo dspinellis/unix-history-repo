@@ -1,0 +1,2 @@
+: run this script through /bin/sh
+exec /bin/make TOPDIR=../../../../ -f ../../../../config/CONFIG.make -f Makefile ${1+"$@"}

@@ -1,0 +1,75 @@
+Pod version 2
+~~~~~~~~~~~~~~~
+
+	POD is a prototype X-windows based directory user agent (DUA).
+	It is intended for novice users, and, as such, has limited 
+	functionality. There are no facilities to add entries or to modify
+	the RDNs of entries, though most other entry modifications are
+	permitted.
+
+INFO
+~~~~
+	The 'pod' directory has been to designed to fit directly into the
+ 	'isode' source tree. Specifically, in the directory 
+	
+		'others/quipu/uips'.
+
+	POD requires X11r4 and the associated X toolkit and Athena 
+ 	widget libraries.
+
+	Two Postscript documents are provided, `pod.man.ps' a user manual,
+	and `pod.guide.ps' an introductory user guide.
+
+COMPILATION
+~~~~~~~~~~~
+	To compile type
+	
+			./make
+
+	This should build 'xpod'. To test run ,
+
+			xpod -test
+
+	which runs POD and tells it to read it's config files from the
+	source directory.
+	
+INSTALLATION
+~~~~~~~~~~~~
+	Modify the Makefile to suit your system. The location of the 
+	'app-defaults' directory (described by APPDEFDIR) might require 
+	modification. Installation of POD can be performed by typing 
+	
+		./make inst-all
+
+	This will install 'pod' and any supporting files/directories, these
+  	being configuration directories, help directories and the system
+	manual pages.
+
+	if you want to install and clean up the source directory type
+
+		./make install
+	
+Bug reports and comments.
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	All bug reports and other requests to 'X500@brunel.ac.uk'.
+	If there are any comments/criticisms you would like to make
+	about POD, send them to the above address also as these can
+	and (gasp!) often will be fused into the design for further DUAs
+	(new designs are currently being implemented under X using the
+	Athena widgets and for MS-DOS using Windows 286/386, with
+	a planned version for X using the Motif widget set).
+		
+
+Andrew Findlay 	<Andrew.Findlay@brunel.ac.uk>
+Damanjit Mahl	<Damanjit.Mahl@brunel.ac.uk>
+Stefan Nahajski	<Stefan.Nahajski@brunel.ac.uk>
+
+
+
+	
+
+
+
+
+

@@ -1,0 +1,8 @@
+: run this script through /bin/sh
+: $Header: /f/osi/others/quipu/uips/pod/RCS/make,v 7.1 91/02/22 09:31:35 mrose Interim $
+M=/bin/make
+if [ -f /usr/bin/make ]; then
+    M=/usr/bin/make
+fi
+
+exec $M TOPDIR=../../../../ -f ../../../../config/CONFIG.make -f Makefile ${1+"$@"}

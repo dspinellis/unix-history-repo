@@ -1,0 +1,29 @@
+###############################################################################
+#
+# fredrc - System-wide fred tailoring file
+# 
+# $Header: /f/osi/others/quipu/uips/fred/RCS/fredrc,v 7.2 91/02/22 09:30:46 mrose Interim $
+#
+#
+# $Log:	fredrc,v $
+# Revision 7.2  91/02/22  09:30:46  mrose
+# Interim 6.8
+# 
+# Revision 7.1  90/01/11  18:36:34  mrose
+# real-sync
+# 
+# Revision 7.0  89/11/23  22:08:58  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+area			"@c=@(country)@o=@(organization)"
+area	organization	"@c=@(country)"
+area	unit		"@c=@(country)@o=@(organization)"
+area	locality	"@"
+area	person		"@c=@(country)@o=@(organization)"
+area	dsa		"@c=@(country)"
+area	role		"@c=@(country)@o=@(organization)"
+
+set	manager		"@(mailbox)"

@@ -1,0 +1,82 @@
+.TH add_alias 1 "26 Jun 1990"
+.\" $Header: /f/osi/others/quipu/uips/manage/RCS/add_alias.1c,v 7.2 91/02/22 09:31:59 mrose Interim $
+.\"
+.\"
+.\" $Log:	add_alias.1c,v $
+.\" Revision 7.2  91/02/22  09:31:59  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  91/01/24  14:43:11  mrose
+.\" update
+.\" 
+.\" Revision 7.0  90/06/26  14:52:30  mrose
+.\" *** empty log message ***
+.\" 
+.SH NAME
+add_alias \- adding aliases to the database
+.br
+delete_alias \- deleting aliases from the database
+.br
+alias_chk \- checking aliases in the database
+.SH SYNOPSIS
+.in +.5i
+.B \*(SDadd_alias
+\% <alias_name>
+\% <object>
+.br
+.B \*(SDdel_alias
+\% <alias_name>
+.br
+.B \*(SDalias_chk
+\% <object>
+.in -.5i
+.SH DESCRIPTION
+New management functions in the management dish.
+.br
+Add_alias attempts to add the first argument to the database as an 
+alias to the second argument.
+.br
+
+.br
+Del_alias removes the alias specified.
+.br
+
+.br
+Alias_chk checks the object specified or checks all aliases below the object
+specified if the object is a leaf or not. It checks to see if and only if
+the four types of object that are allowed are present, that the aliased
+object points back to this alias, and that the schema of the aliased object
+fits.
+.LP
+Examples of valid arguments are:
+.in +.5i
+add_alias cn=newalias cn=incads
+.br
+add_alias cn=newalias <sequence number>
+.br
+add_alias cn=newalias <DN> (ie @c=GB@o=Brunel)
+.br
+
+.br
+del_alias cn=newalias
+.br
+del_alias 1
+.br
+del_alias <DN> (ie @c=GB@o=Brunel)
+.br
+
+.br
+alias_chk cn=newalias
+.br
+alias_chk 1
+.br
+alias_chk <DN> (ie @c=GB@o=Cambridge University)
+.br
+.in -.5i
+.SH "SEE ALSO"
+.br
+dish(1)
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 5: QUIPU\fR
+.SH AUTHOR
+Steve Titcombe, UCL 1991
