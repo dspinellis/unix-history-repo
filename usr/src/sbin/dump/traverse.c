@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,8 +38,14 @@ static char sccsid[] = "@(#)traverse.c	5.24 (Berkeley) %G%";
 #define	HASDUMPEDFILE	0x1
 #define	HASSUBDIRS	0x2
 
+#ifdef	FS_44INODEFMT
+typedef	quad_t fsizeT;
+#else
+typedef	long fsizeT;
+#endif
+
 static	int dirindir __P((ino_t ino, daddr_t blkno, int level, long *size));
-static	void dmpindir __P((ino_t ino, daddr_t blk, int level, quad_t *size));
+static	void dmpindir __P((ino_t ino, daddr_t blk, int level, fsizeT *size));
 static	int searchdir __P((ino_t ino, daddr_t blkno, long size, long filesize));
 
 /*
@@ -82,6 +88,24 @@ blockest(dp)
 	return (blkest + 1);
 }
 
+/* Auxiliary macro to pick up files changed since previous dump. */
+#ifdef FS_44INODEFMT
+#define	CHANGEDSINCE(dp, t) \
+	((dp)->di_mtime.ts_sec >= (t) || (dp)->di_ctime.ts_sec >= (t))
+#else
+#define	CHANGEDSINCE(dp, t) \
+	((dp)->di_mtime >= (t) || (dp)->di_ctime >= (t))
+#endif
+
+/* The WANTTODUMP macro decides whether a file should be dumped. */
+#ifdef UF_NODUMP
+#define	WANTTODUMP(dp) \
+	(CHANGEDSINCE(dp, spcl.c_ddate) && \
+	 (nonodump || ((dp)->di_flags & UF_NODUMP) != UF_NODUMP))
+#else
+#define	WANTTODUMP(dp) CHANGEDSINCE(dp, spcl.c_ddate)
+#endif
+
 /*
  * Dump pass 1.
  *
@@ -99,29 +123,19 @@ mapfiles(maxino, tapesize)
 	register struct dinode *dp;
 	int anydirskipped = 0;
 
-	for (ino = 0; ino <= maxino; ino++) {
+	for (ino = ROOTINO; ino < maxino; ino++) {
 		dp = getino(ino);
 		if ((mode = (dp->di_mode & IFMT)) == 0)
 			continue;
 		SETINO(ino, usedinomap);
 		if (mode == IFDIR)
 			SETINO(ino, dumpdirmap);
-		if (
-#ifdef FS_44INODEFMT
-		    (dp->di_mtime.ts_sec >= spcl.c_ddate ||
-		     dp->di_ctime.ts_sec >= spcl.c_ddate)
-		    && (dp->di_flags & UF_NODUMP) != UF_NODUMP
-#else
-		    dp->di_mtime >= spcl.c_ddate ||
-		     dp->di_ctime >= spcl.c_ddate
-#endif
-		    ) {
+		if (WANTTODUMP(dp)) {
 			SETINO(ino, dumpinomap);
-			if (mode != IFREG && mode != IFDIR && mode != IFLNK) {
+			if (mode != IFREG && mode != IFDIR && mode != IFLNK)
 				*tapesize += 1;
-				continue;
-			}
-			*tapesize += blockest(dp);
+			else
+				*tapesize += blockest(dp);
 			continue;
 		}
 		if (mode == IFDIR)
@@ -159,12 +173,12 @@ mapdirs(maxino, tapesize)
 	long filesize;
 	int ret, change = 0;
 
-	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
-		if ((ino % NBBY) == 0)
+	isdir = 0;		/* XXX just to get gcc to shut up */
+	for (map = dumpdirmap, ino = 1; ino < maxino; ino++) {
+		if (((ino - 1) % NBBY) == 0)	/* map is offset by 1 */
 			isdir = *map++;
 		else
 			isdir >>= 1;
-		ino++;
 		if ((isdir & 1) == 0 || TSTINO(ino, dumpinomap))
 			continue;
 		dp = getino(ino);
@@ -298,7 +312,7 @@ dumpino(dp, ino)
 	ino_t ino;
 {
 	int ind_level, cnt;
-	quad_t size;
+	fsizeT size;
 	char buf[TP_BSIZE];
 
 	if (newtape) {
@@ -375,7 +389,7 @@ dmpindir(ino, blk, ind_level, size)
 	ino_t ino;
 	daddr_t blk;
 	int ind_level;
-	quad_t *size;
+	fsizeT *size;
 {
 	int i, cnt;
 	daddr_t idblk[MAXNINDIR];
