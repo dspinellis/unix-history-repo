@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)if.c	4.4 82/11/14";
+static char sccsid[] = "@(#)if.c	4.5 84/09/17";
 #endif
 
 #include <sys/types.h>
@@ -96,13 +96,11 @@ sidewaysintpr(interval, off)
 {
 	struct ifnet ifnet;
 	off_t firstifnet;
-	extern char _sobuf[];
 	register struct iftot *ip, *total;
 	register int line;
 	struct iftot *lastif, *sum, *interesting;
 	int maxtraffic;
 
-	setbuf(stdout, _sobuf);
 	klseek(kmem, off, 0);
 	read(kmem, &firstifnet, sizeof (off_t));
 	lastif = iftot;
