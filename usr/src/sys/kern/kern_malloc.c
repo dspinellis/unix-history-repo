@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.31 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.32 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -75,7 +75,7 @@ malloc(size, type, flags)
 #ifdef DIAGNOSTIC
 	long *end, *lp;
 	int copysize;
-	short savedtype;
+	char *savedtype;
 #endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
@@ -137,8 +137,8 @@ malloc(size, type, flags)
 		 * bucket, don't assume the list is still empty.
 		 */
 		savedlist = kbp->kb_next;
-		kbp->kb_next = va + (npg * NBPG) - allocsize;
-		for (cp = kbp->kb_next; ; cp -= allocsize) {
+		kbp->kb_next = cp = va + (npg * NBPG) - allocsize;
+		for (;;) {
 			freep = (struct freelist *)cp;
 #ifdef DIAGNOSTIC
 			/*
@@ -152,7 +152,8 @@ malloc(size, type, flags)
 #endif /* DIAGNOSTIC */
 			if (cp <= va)
 				break;
-			freep->next = cp - allocsize;
+			cp -= allocsize;
+			freep->next = cp;
 		}
 		freep->next = savedlist;
 	}
@@ -160,17 +161,22 @@ malloc(size, type, flags)
 	kbp->kb_next = ((struct freelist *)va)->next;
 #ifdef DIAGNOSTIC
 	freep = (struct freelist *)va;
-	savedtype = freep->type;
+	savedtype = (unsigned)freep->type < M_LAST ?
+		memname[freep->type] : "???";
+#if BYTE_ORDER == BIG_ENDIAN
 	freep->type = WEIRD_ADDR >> 16;
+#endif
+#if BYTE_ORDER == LITTLE_ENDIAN
+	freep->type = WEIRD_ADDR;
+#endif
 	freep->next = (caddr_t)WEIRD_ADDR;
 	end = (long *)&va[copysize];
 	for (lp = (long *)va; lp < end; lp++) {
 		if (*lp == WEIRD_ADDR)
 			continue;
 		printf("%s %d of object 0x%x size %d %s %s (0x%x != 0x%x)\n",
-		    "Data modified on freelist: word", lp - (long *)va,
-		    va, size, "previous type", memname[savedtype], *lp,
-		    WEIRD_ADDR);
+			"Data modified on freelist: word", lp - (long *)va,
+			va, size, "previous type", savedtype, *lp, WEIRD_ADDR);
 		break;
 	}
 	freep->spare0 = 0;
