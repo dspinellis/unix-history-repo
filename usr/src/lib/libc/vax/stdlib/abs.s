@@ -6,10 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)abs.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)abs.s	5.6 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
-ENTRY(abs)
+#include "DEFS.h"
+
+ENTRY(abs, 0)
 	movl	4(ap),r0
 	jgeq	1f
 	mnegl	r0,r0
