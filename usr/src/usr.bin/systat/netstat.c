@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -109,7 +109,7 @@ closenetstat(w)
 	}
 }
 
-static struct nlist nlst[] = {
+static struct nlist nl[] = {
 #define	X_TCB	0
 	{ "_tcb" },
 #define	X_UDB	1
@@ -120,11 +120,11 @@ static struct nlist nlst[] = {
 int
 initnetstat()
 {
-	if (kvm_nlist(kd, nlst)) {
-		nlisterr(nlst);
+	if (kvm_nlist(kd, nl)) {
+		nlisterr(nl);
 		return(0);
 	}
-	if (nlst[X_TCB].n_value == 0) {
+	if (nl[X_TCB].n_value == 0) {
 		error("No symbols in namelist");
 		return(0);
 	}
@@ -144,7 +144,7 @@ fetchnetstat()
 	void *off;
 	int istcp;
 
-	if (nlst[X_TCB].n_value == 0)
+	if (nl[X_TCB].n_value == 0)
 		return;
 	for (p = netcb.ni_forw; p != (struct netinfo *)&netcb; p = p->ni_forw)
 		p->ni_seen = 0;
@@ -254,7 +254,7 @@ enter(inp, so, state, proto)
 void
 labelnetstat()
 {
-	if (nlst[X_TCB].n_type == 0)
+	if (nl[X_TCB].n_type == 0)
 		return;
 	wmove(wnd, 0, 0); wclrtobot(wnd);
 	mvwaddstr(wnd, 0, LADDR, "Local Address");

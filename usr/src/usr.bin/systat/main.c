@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,7 +23,7 @@ static char sccsid[] = "@(#)main.c	5.11 (Berkeley) %G%";
 #include "systat.h"
 #include "extern.h"
 
-static struct nlist nlst[] = {
+static struct nlist nl[] = {
 #define X_FIRST		0
 #define	X_HZ		0
 	{ "_hz" },
@@ -80,11 +80,11 @@ main(argc, argv)
 		error("%s", errbuf);
 		exit(1);
 	}
-	if (kvm_nlist(kd, nlst)) {
-		nlisterr(nlst);
+	if (kvm_nlist(kd, nl)) {
+		nlisterr(nl);
 		exit(1);
 	}
-	if (nlst[X_FIRST].n_type == 0) {
+	if (nl[X_FIRST].n_type == 0) {
 		fprintf(stderr, "Couldn't namelist.\n");
 		exit(1);
 	}
