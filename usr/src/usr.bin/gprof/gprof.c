@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.6 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.7 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -411,15 +411,15 @@ funcsymbol( nlistp )
     struct nlist	*nlistp;
 {
     extern char	*strtab;	/* string table from a.out */
-    extern int	aflag;		/* if static functions desired */
+    extern int	aflag;		/* if static functions aren't desired */
     char	*name;
 
 	/*
 	 *	must be a text symbol,
-	 *	and static text symbols qualify if aflag set.
+	 *	and static text symbols don't qualify if aflag set.
 	 */
     if ( ! (  ( nlistp -> n_type == ( N_TEXT | N_EXT ) )
-	   || ( ( nlistp -> n_type == N_TEXT ) && aflag ) ) ) {
+	   || ( ( nlistp -> n_type == N_TEXT ) && ( aflag == 0 ) ) ) ) {
 	return FALSE;
     }
 	/*
