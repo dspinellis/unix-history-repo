@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.54	83/03/31	*/
+/*	vfs_syscalls.c	4.55	83/04/01	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -624,7 +624,7 @@ chown()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	if ((ip = owner(0)) == NULL)
+	if (!suser() || (ip = owner(0)) == NULL)
 		return;
 	u.u_error = chown1(ip, uap->uid, uap->gid);
 	iput(ip);
@@ -652,7 +652,7 @@ fchown()
 		return;
 	}
 	ip = fp->f_inode;
-	if (ip->i_uid != u.u_uid && !suser())
+	if (!suser())
 		return;
 	ilock(ip);
 	u.u_error = chown1(ip, uap->uid, uap->gid);
@@ -675,8 +675,6 @@ chown1(ip, uid, gid)
 		uid = ip->i_uid;
 	if (gid == -1)
 		gid = ip->i_gid;
-	if (u.u_uid && ip->i_gid != gid && !groupmember(gid))
-		return (EPERM);
 #ifdef QUOTA
 	/*
 	 * This doesn't allow for holes in files (which hopefully don't
