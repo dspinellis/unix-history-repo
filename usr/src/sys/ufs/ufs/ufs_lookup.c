@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.30 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -18,7 +18,11 @@
 #include "fs.h"
 
 struct	nchstats nchstats;
+#ifdef DIAGNOSTIC
 int	dirchk = 1;
+#else
+int	dirchk = 0;
+#endif
 
 /*
  * Convert a component of a pathname into a pointer to a locked inode.
