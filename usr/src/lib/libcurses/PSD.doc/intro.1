@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.1	5.1 (Berkeley) %G%
+.\"	@(#)intro.1	6.1 (Berkeley) %G%
 .\"
 .bp
 .sh 1 Overview
@@ -49,12 +49,14 @@ Sometimes called
 .bi terminal
 .bi screen .
 The package's idea of what the terminal's screen currently looks like,
-i.e., what the user sees now.
+.i i.e. ,
+what the user sees now.
 This is a special
 .i screen :
 .Ip screen
 This is a subset of windows which are as large as the terminal screen,
-i.e., they start at the upper left hand corner
+.i i.e. ,
+they start at the upper left hand corner
 and encompass the lower right hand corner.
 One of these,
 .Vn stdscr ,
@@ -88,8 +90,8 @@ for the programmer to do it, too.
 Also,
 compilations should have the following form:
 .(l
-.ie t \fBcc\fR [ \fIflags\fR ] file ... \fB\-lcurses \-ltermlib\fR
-.el \fIcc\fR [ flags ] file ... \fI\-lcurses \-ltermlib\fR
+.ie t \fBcc\fR [ \fIflags\fR ] file ... \fB\-lcurses \-ltermcap\fR
+.el \fIcc\fR [ flags ] file ... \fI\-lcurses \-ltermcap\fR
 .)l
 .sh 2 "Screen Updating"
 .pp
@@ -156,7 +158,7 @@ Also, changes can be made to windows in any order,
 without regard to motion efficiency.
 Then, at will,
 the programmer can effectively say
-.q "make it look like this,"
+.q "make it look like this" ,
 and let the package worry about the best way to do this.
 .sh 2 "Naming Conventions"
 .pp
