@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.32 (Berkeley) %G%
+.\"	@(#)contrib	5.33 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -48,13 +48,13 @@ Intel 386/486 support	Bill Jolitz and TeleMuse
 ISODE	Marshall Rose
 Job control	Jim Kulp
 Kerberos	Project Athena and MIT
-LFS	Margo Seltzer, Mendel Rosenblum
+LFS	Margo Seltzer, Mendel Rosenblum, Carl Staelin
 Math library	K.C. Ng, Z-S. Alex Liu, S. McDonald, P. Tang and W. Kahan
 Multicast support	Stephen Deering
 NFS	Rick Macklem
 NFS automounter	Jan-Simon Pendry
 Network device drivers	Micom-Interlan and Excelan
-Omron Luna support	Akito Fujita
+Omron Luna support	Akito Fujita and Shigeto Mochida
 Quotas	Robert Elz
 RPC support	Sun Microsystems Inc.
 Shared library support	Rob Gingell and Sun Microsystems Inc.
@@ -68,6 +68,7 @@ Timezone support	Arthur David Olson
 Transport/Network OSI layers	IBM Corp. and the University of Wisconsin
 User level XNS	Cornell University
 X25 	University of British Columbia
+Versatec printer/plotter support	University of Toronto
 VAX 3000 support	Mt. Xinu and Tom Ferrin
 VAX BI support	Chris Torek
 VAX device support	Digital Equipment Corp.
@@ -224,8 +225,8 @@ mountd(8)	Herb Hasler
 mprof(1)	Ben Zorn
 msgs(1)	David Wasley
 mv(1)	Ken Smith
-named(8)	Douglas Terry
-named(8)	Kevin Dunlap
+named/bind(8)	Douglas Terry
+named/bind(8)	Kevin Dunlap
 news(1)	Rick Adams (and a cast of thousands)
 nm(1)	Hans Huebner
 packet filter	Steven McCanne
@@ -238,6 +239,7 @@ phantasia(6)	C. Robertson
 phantasia(6)	Edward A. Estes
 ping(8)	Mike Muuss
 pom(6)	Keith E. Brandt
+pr(1)	Keith Muller
 primes(6)	Landon Curt Noll
 qsort(3)	Doug McIlroy
 qsort(3)	Earl Cohen
@@ -250,6 +252,7 @@ radixsort(3)	Peter McIlroy
 rain(6)	Eric P. Scott
 ranlib(1)	Hugh A. Smith
 rcs(1)	Walter F. Tichy
+rdist(1)	Michael Cooper
 regex(3)	Henry Spencer
 robots(6)	Ken Arnold
 rogue(6)	Timothy C. Stoehr
@@ -276,6 +279,7 @@ talk(1)	Clem Cole
 talk(1)	Kipp Hickman
 talk(1)	Peter Moore
 telnet(1)	Dave Borman
+telnet(1)	Paul Borman
 termcap(5)	John A. Kunze
 termcap(5)	Mark Horton
 test(1)	Kenneth Almquist
