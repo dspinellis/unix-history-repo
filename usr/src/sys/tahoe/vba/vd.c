@@ -1,4 +1,4 @@
-/*	vd.c	1.23	88/04/23	*/
+/*	vd.c	1.24	88/05/14	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -93,7 +93,6 @@ struct	dksoftc {
 #define	OPEN		4		/* intialized and ready */
 #define	OPENRAW		5		/* open, no label */
 
-struct	buf rdkbuf[NDK];	/* raw i/o buffer headers */
 struct	buf dkutab[NDK];	/* i/o queue headers */
 struct	disklabel dklabel[NDK];	/* pack labels */
 
@@ -820,28 +819,6 @@ vdsofterr(vd, bp, dcb)
 	else
 		log(LOG_WARNING, "dk%d%c: soft ecc sn%d\n",
 		    unit, part, bp->b_blkno);
-}
-
-vdread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = vdunit(dev);
-
-	if (unit >= NDK)
-		return (ENXIO);
-	return (physio(vdstrategy, &rdkbuf[unit], dev, B_READ, minphys, uio));
-}
-
-vdwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = vdunit(dev);
-
-	if (unit >= NDK)
-		return (ENXIO);
-	return (physio(vdstrategy, &rdkbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 vdioctl(dev, cmd, data, flag)
