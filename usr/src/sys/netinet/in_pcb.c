@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.17	82/02/27	*/
+/*	in_pcb.c	4.18	82/03/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -130,11 +130,12 @@ COUNT(IN_PCBCONNECT);
 		ifp = if_ifonnetof(sin->sin_addr.s_addr);
 		if (ifp == 0)
 			ifp = ifnet;
-		inp->inp_laddr = ifp->if_addr;
 	}
 	if (in_pcblookup(inp->inp_head,
 	    sin->sin_addr, sin->sin_port, inp->inp_laddr, inp->inp_lport, 0))
 		return (EADDRINUSE);
+	if (inp->inp_laddr.s_addr == 0)
+		inp->inp_laddr = ifp->if_addr;
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
@@ -157,6 +158,7 @@ in_pcbdisconnect(inp)
 
 COUNT(IN_PCBDISCONNECT);
 	inp->inp_faddr.s_addr = 0;
+	inp->inp_fport = 0;
 	if (inp->inp_socket->so_state & SS_USERGONE)
 		in_pcbdetach(inp);
 }
@@ -181,11 +183,11 @@ in_pcbdetach(inp)
  * SHOULD ALLOW MATCH ON MULTI-HOMING ONLY
  */
 struct inpcb *
-in_pcblookup(head, faddr, fport, laddr, lport, enter)
+in_pcblookup(head, faddr, fport, laddr, lport, flags)
 	struct inpcb *head;
 	struct in_addr faddr, laddr;
 	u_short fport, lport;
-	int enter;
+	int flags;
 {
 	register struct inpcb *inp, *match = 0;
 	int matchwild = 3, wildcard;
@@ -202,13 +204,14 @@ in_pcblookup(head, faddr, fport, laddr, lport, enter)
 				wildcard++;
 		}
 		if (inp->inp_faddr.s_addr != 0) {
-			if (inp->inp_faddr.s_addr != faddr.s_addr)
+			if (inp->inp_faddr.s_addr != faddr.s_addr ||
+			    inp->inp_fport != fport)
 				continue;
 		} else {
 			if (faddr.s_addr != 0)
 				wildcard++;
 		}
-		if (enter == 0 && wildcard)
+		if (wildcard && (flags & INPLOOKUP_WILDCARD) == 0)
 			continue;
 		if (wildcard < matchwild) {
 			match = inp;
@@ -216,10 +219,6 @@ in_pcblookup(head, faddr, fport, laddr, lport, enter)
 			if (matchwild == 0)
 				break;
 		}
-	}
-	if (match && enter) {
-		match->inp_laddr = laddr;
-		in_setsockaddr(match);
 	}
 	return (match);
 }

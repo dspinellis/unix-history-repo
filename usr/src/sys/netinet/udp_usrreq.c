@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.20	82/02/27	*/
+/*	udp_usrreq.c	4.21	82/03/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -86,7 +86,8 @@ COUNT(UDP_INPUT);
 	 * control block to anchor network and host address.
 	 */
 	inp = in_pcblookup(&udb,
-	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport, 1);
+	    ui->ui_src, ui->ui_sport, ui->ui_dst, ui->ui_dport,
+		INPLOOKUP_WILDCARD);
 	if (inp == 0)
 		goto bad;
 
@@ -233,6 +234,7 @@ COUNT(UDP_USRREQ);
 		if (addr) {
 			in_pcbdisconnect(inp);
 			inp->inp_laddr = laddr;
+			in_setsockaddr(inp);
 		}
 		}
 		break;

@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.55	82/02/27	*/
+/*	tcp_input.c	1.56	82/03/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -45,6 +45,7 @@ tcp_input(m0)
 	struct socket *so;
 	int todrop, acked;
 	short ostate;
+	struct in_addr laddr;
 
 COUNT(TCP_INPUT);
 	/*
@@ -126,7 +127,8 @@ COUNT(TCP_INPUT);
 	 * address stored in the block to reflect anchoring.
 	 */
 	inp = in_pcblookup
-		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport, 1);
+		(&tcb, ti->ti_src, ti->ti_sport, ti->ti_dst, ti->ti_dport,
+		INPLOOKUP_WILDCARD);
 
 	/*
 	 * If the state is CLOSED (i.e., TCB does not exist) then
@@ -189,13 +191,20 @@ COUNT(TCP_INPUT);
 			goto drop;
 		tcp_in.sin_addr = ti->ti_src;
 		tcp_in.sin_port = ti->ti_sport;
-		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in))
+		laddr = inp->inp_laddr;
+		if (inp->inp_laddr.s_addr == 0)
+			inp->inp_laddr = ti->ti_dst;
+		if (in_pcbconnect(inp, (struct sockaddr *)&tcp_in)) {
+			inp->inp_laddr = laddr;
 			goto drop;
+		}
 		tp->t_template = tcp_template(tp);
 		if (tp->t_template == 0) {
 			in_pcbdisconnect(inp);
+			inp->inp_laddr = laddr;
 			goto drop;
 		}
+		in_setsockaddr(inp);
 		tp->iss = tcp_iss; tcp_iss += TCP_ISSINCR/2;
 		tp->irs = ti->ti_seq;
 		tcp_sendseqinit(tp);
@@ -354,6 +363,9 @@ trimthenstep6:
 			inp->inp_ppcb = 0;
 			tp = tcp_newtcpcb(inp);
 			tp->t_state = TCPS_LISTEN;
+			inp->inp_faddr.s_addr = 0;
+			inp->inp_fport = 0;
+			inp->inp_laddr.s_addr = 0;	/* not quite right */
 			goto drop;
 		}
 		tcp_drop(tp, ECONNREFUSED);
