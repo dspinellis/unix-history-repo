@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.29	83/01/04	*/
+/*	tcp_timer.c	4.30	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -107,6 +107,7 @@ int	tcpexprexmtbackoff = 0;
 /*
  * TCP timer processing.
  */
+struct tcpcb *
 tcp_timers(tp, timer)
 	register struct tcpcb *tp;
 	int timer;
@@ -119,8 +120,8 @@ tcp_timers(tp, timer)
 	 * control block.
 	 */
 	case TCPT_2MSL:
-		tcp_close(tp);
-		return;
+		tp = tcp_close(tp);
+		break;
 
 	/*
 	 * Retransmission timer went off.  Message has not
@@ -131,8 +132,8 @@ tcp_timers(tp, timer)
 	case TCPT_REXMT:
 		tp->t_rxtshift++;
 		if (tp->t_rxtshift > TCP_MAXRXTSHIFT) {
-			tcp_drop(tp, ETIMEDOUT);
-			return;
+			tp = tcp_drop(tp, ETIMEDOUT);
+			break;
 		}
 		TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 		    (int)tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
@@ -149,7 +150,7 @@ tcp_timers(tp, timer)
 		tp->snd_nxt = tp->snd_una;
 		/* this only transmits one segment! */
 		(void) tcp_output(tp);
-		return;
+		break;
 
 	/*
 	 * Persistance timer into zero window.
@@ -160,7 +161,7 @@ tcp_timers(tp, timer)
 		tp->t_force = 1;
 		(void) tcp_output(tp);
 		tp->t_force = 0;
-		return;
+		break;
 
 	/*
 	 * Keep-alive timer went off; send something
@@ -187,9 +188,10 @@ tcp_timers(tp, timer)
 		} else
 			tp->t_idle = 0;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
-		return;
+		break;
 	dropit:
-		tcp_drop(tp, ETIMEDOUT);
-		return;
+		tp = tcp_drop(tp, ETIMEDOUT);
+		break;
 	}
+	return (tp);
 }

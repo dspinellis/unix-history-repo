@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.38	83/01/04	*/
+/*	tcp_subr.c	4.39	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -172,8 +172,9 @@ tcp_newtcpcb(inp)
  * the specified error.  If connection is synchronized,
  * then send a RST to peer.
  */
+struct tcpcb *
 tcp_drop(tp, errno)
-	struct tcpcb *tp;
+	register struct tcpcb *tp;
 	int errno;
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
@@ -183,14 +184,14 @@ tcp_drop(tp, errno)
 		(void) tcp_output(tp);
 	}
 	so->so_error = errno;
-	tcp_close(tp);
+	return (tcp_close(tp));
 }
 
 tcp_abort(inp)
 	struct inpcb *inp;
 {
 
-	tcp_close((struct tcpcb *)inp->inp_ppcb);
+	(void) tcp_close((struct tcpcb *)inp->inp_ppcb);
 }
 
 /*
@@ -199,6 +200,7 @@ tcp_abort(inp)
  *	discard internet protocol block
  *	wake up any sleepers
  */
+struct tcpcb *
 tcp_close(tp)
 	register struct tcpcb *tp;
 {
@@ -219,6 +221,7 @@ tcp_close(tp)
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
 	in_pcbdetach(inp);
+	return ((struct tcpcb *)0);
 }
 
 tcp_drain()

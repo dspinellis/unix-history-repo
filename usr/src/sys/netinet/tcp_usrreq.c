@@ -1,4 +1,4 @@
-/*	tcp_usrreq.c	1.72	83/01/13	*/
+/*	tcp_usrreq.c	1.73	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,7 +78,7 @@ tcp_usrreq(so, req, m, nam)
 		error = tcp_attach(so);
 		if (error)
 			break;
-		if (so->so_options & SO_LINGER && so->so_linger == 0)
+		if ((so->so_options & SO_LINGER) && so->so_linger == 0)
 			so->so_linger = TCP_LINGERTIME;
 		tp = sototcpcb(so);
 		break;
@@ -92,11 +92,9 @@ tcp_usrreq(so, req, m, nam)
 	 */
 	case PRU_DETACH:
 		if (tp->t_state > TCPS_LISTEN)
-			tcp_disconnect(tp);
-		else {
-			tcp_close(tp);
-			tp = 0;
-		}
+			tp = tcp_disconnect(tp);
+		else
+			tp = tcp_close(tp);
 		break;
 
 	/*
@@ -160,7 +158,7 @@ tcp_usrreq(so, req, m, nam)
 	 * SHOULD IMPLEMENT LATER PRU_CONNECT VIA REALLOC TCPCB.
 	 */
 	case PRU_DISCONNECT:
-		tcp_disconnect(tp);
+		tp = tcp_disconnect(tp);
 		break;
 
 	/*
@@ -183,8 +181,9 @@ tcp_usrreq(so, req, m, nam)
 	 */
 	case PRU_SHUTDOWN:
 		socantsendmore(so);
-		tcp_usrclosed(tp);
-		error = tcp_output(tp);
+		tp = tcp_usrclosed(tp);
+		if (tp)
+			error = tcp_output(tp);
 		break;
 
 	/*
@@ -211,7 +210,7 @@ tcp_usrreq(so, req, m, nam)
 	 * Abort the TCP.
 	 */
 	case PRU_ABORT:
-		tcp_drop(tp, ECONNABORTED);
+		tp = tcp_drop(tp, ECONNABORTED);
 		break;
 
 /* SOME AS YET UNIMPLEMENTED HOOKS */
@@ -259,7 +258,7 @@ tcp_usrreq(so, req, m, nam)
 	 * routine for tracing's sake.
 	 */
 	case PRU_SLOWTIMO:
-		tcp_timers(tp, (int)nam);
+		tp = tcp_timers(tp, (int)nam);
 		req |= (int)nam << 8;		/* for debug's sake */
 		break;
 
@@ -314,21 +313,24 @@ bad:
  * current input data; switch states based on user close, and
  * send segment to peer (with FIN).
  */
+struct tcpcb *
 tcp_disconnect(tp)
-	struct tcpcb *tp;
+	register struct tcpcb *tp;
 {
 	struct socket *so = tp->t_inpcb->inp_socket;
 
 	if (tp->t_state < TCPS_ESTABLISHED)
-		tcp_close(tp);
+		tp = tcp_close(tp);
 	else if (so->so_linger == 0)
-		tcp_drop(tp, 0);
+		tp = tcp_drop(tp, 0);
 	else {
 		soisdisconnecting(so);
 		sbflush(&so->so_rcv);
-		tcp_usrclosed(tp);
-		(void) tcp_output(tp);
+		tp = tcp_usrclosed(tp);
+		if (tp)
+			(void) tcp_output(tp);
 	}
+	return (tp);
 }
 
 /*
@@ -341,8 +343,9 @@ tcp_disconnect(tp)
  * for peer to send FIN or not respond to keep-alives, etc.
  * We can let the user exit from the close as soon as the FIN is acked.
  */
+struct tcpcb *
 tcp_usrclosed(tp)
-	struct tcpcb *tp;
+	register struct tcpcb *tp;
 {
 
 	switch (tp->t_state) {
@@ -350,7 +353,7 @@ tcp_usrclosed(tp)
 	case TCPS_LISTEN:
 	case TCPS_SYN_SENT:
 		tp->t_state = TCPS_CLOSED;
-		tcp_close(tp);
+		tp = tcp_close(tp);
 		break;
 
 	case TCPS_SYN_RECEIVED:
@@ -362,6 +365,7 @@ tcp_usrclosed(tp)
 		tp->t_state = TCPS_LAST_ACK;
 		break;
 	}
-	if (tp->t_state >= TCPS_FIN_WAIT_2)
+	if (tp && tp->t_state >= TCPS_FIN_WAIT_2)
 		soisdisconnected(tp->t_inpcb->inp_socket);
+	return (tp);
 }

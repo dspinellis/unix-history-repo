@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.17	82/12/20	*/
+/*	tcp_var.h	4.18	83/01/17	*/
 
 /*
  * Kernel variables for tcp.
@@ -75,4 +75,6 @@ struct	tcpstat {
 struct	inpcb tcb;		/* head of queue of active tcpcb's */
 struct	tcpstat tcpstat;	/* tcp statistics */
 struct	tcpiphdr *tcp_template();
+struct	tcpcb *tcp_close(), *tcp_drop();
+struct	tcpcb *tcp_timers(), *tcp_disconnect(), *tcp_usrclosed();
 #endif

@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.86	83/01/08	*/
+/*	tcp_input.c	1.87	83/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -257,10 +257,8 @@ tcp_input(m0)
 		     SEQ_GT(ti->ti_ack, tp->snd_max)))
 			goto dropwithreset;
 		if (tiflags & TH_RST) {
-			if (tiflags & TH_ACK) {
-				tcp_drop(tp, ECONNREFUSED);
-				tp = 0;
-			}
+			if (tiflags & TH_ACK)
+				tp = tcp_drop(tp, ECONNREFUSED);
 			goto drop;
 		}
 		if ((tiflags & TH_SYN) == 0)
@@ -364,10 +362,9 @@ trimthenstep6:
 	 * If data is received on a connection after the
 	 * user processes are gone, then RST the other end.
 	 */
-	if (so->so_state & SS_NOFDREF && tp->t_state > TCPS_CLOSE_WAIT &&
+	if ((so->so_state & SS_NOFDREF) && tp->t_state > TCPS_CLOSE_WAIT &&
 	    ti->ti_len) {
-		tcp_close(tp);
-		tp = 0;
+		tp = tcp_close(tp);
 		goto dropwithreset;
 	}
 
@@ -384,23 +381,20 @@ trimthenstep6:
 	if (tiflags&TH_RST) switch (tp->t_state) {
 
 	case TCPS_SYN_RECEIVED:
-		tcp_drop(tp, ECONNREFUSED);
-		tp = 0;
+		tp = tcp_drop(tp, ECONNREFUSED);
 		goto drop;
 
 	case TCPS_ESTABLISHED:
 	case TCPS_FIN_WAIT_1:
 	case TCPS_FIN_WAIT_2:
 	case TCPS_CLOSE_WAIT:
-		tcp_drop(tp, ECONNRESET);
-		tp = 0;
+		tp = tcp_drop(tp, ECONNRESET);
 		goto drop;
 
 	case TCPS_CLOSING:
 	case TCPS_LAST_ACK:
 	case TCPS_TIME_WAIT:
-		tcp_close(tp);
-		tp = 0;
+		tp = tcp_close(tp);
 		goto drop;
 	}
 
@@ -409,8 +403,7 @@ trimthenstep6:
 	 * error and we send an RST and drop the connection.
 	 */
 	if (tiflags & TH_SYN) {
-		tcp_drop(tp, ECONNRESET);
-		tp = 0;
+		tp = tcp_drop(tp, ECONNRESET);
 		goto dropwithreset;
 	}
 
@@ -544,10 +537,8 @@ trimthenstep6:
 		 * and return.
 		 */
 		case TCPS_LAST_ACK:
-			if (ourfinisacked) {
-				tcp_close(tp);
-				tp = 0;
-			}
+			if (ourfinisacked)
+				tp = tcp_close(tp);
 			goto drop;
 
 		/*
