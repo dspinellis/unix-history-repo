@@ -1,26 +1,28 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	1.5 83/07/22";
+static	char *sccsid = "@(#)cmd.c	1.6 83/07/28";
 #endif
 
 #include "defs.h"
 
 struct ww *getwin();
-struct ww *openwin();
-char *strtime();
 
 docmd()
 {
 	register char c;
 	register struct ww *w;
-	char buf;
 
 top:
-	Wunhide(cmdwin->ww_win);
+	if (!terse)
+		Wunhide(cmdwin->ww_win);
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 1);
 	while ((c = bgetc()) >= 0) {
 		wwputs("\r\n", cmdwin);
 		switch (c) {
+		default:
+			if (c == escapec)
+				goto foo;
+			break;
 		case 'r':
 		case 'R':
 		case 'h': case 'j': case 'k': case 'l':
@@ -29,7 +31,7 @@ top:
 		case CTRL(b):
 		case CTRL(f):
 		case CTRL([):
-		case ESCAPE:
+		foo:
 			if (selwin == 0) {
 				wwputs("No window.  ", cmdwin);
 				continue;
@@ -63,6 +65,9 @@ top:
 			break;
 		case 'Q':
 			doquery();
+			break;
+		case 'e':
+			doescape();
 			break;
 		case 'r':
 			selwin->ww_refresh = 0;
@@ -109,9 +114,6 @@ top:
 		case '?':
 			dohelp();
 			break;
-		case ESCAPE:
-			buf = ESCAPE;
-			write(selwin->ww_pty, &buf, 1);
 		case CTRL([):
 			goto out;
 		case CTRL(z):
@@ -123,6 +125,10 @@ top:
 				goto out;
 			break;
 		default:
+			if (c == escapec) {
+				write(selwin->ww_pty, &escapec, 1);
+				goto out;
+			}
 			Ding();
 			wwprintf(cmdwin, "Type ? for help.  ");
 			break;
@@ -138,7 +144,8 @@ out:
 		wwsetcurwin(selwin);
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 0);
-	Whide(cmdwin->ww_win);
+	if (!terse)
+		Whide(cmdwin->ww_win);
 }
 
 struct ww *
@@ -181,5 +188,9 @@ register struct ww *w;
 
 	buf[0] = w->ww_ident + '0';
 	buf[1] = 0;
-	wwlabel(w, buf, mode);
+	wwlabel(w, 1, buf, mode);
+	/*
+	if (w->ww_label)
+		wwlabel(w, 3, w->ww_label, mode);
+	*/
 }
