@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tty.c	7.7 (Berkeley) %G%
+ *	@(#)tty_tty.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -32,8 +32,11 @@ syopen(dev, flag)
 
 	if (ttyvp == NULL)
 		return (ENXIO);
-	if (error = VOP_ACCESS(ttyvp,
-	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), u.u_cred))
+	VOP_LOCK(ttyvp);
+	error = VOP_ACCESS(ttyvp,
+	   (flag&FREAD ? VREAD : 0) | (flag&FWRITE ? VWRITE : 0), u.u_cred);
+	VOP_UNLOCK(ttyvp);
+	if (error)
 		return (error);
 	return (VOP_OPEN(ttyvp, flag, NOCRED));
 }
