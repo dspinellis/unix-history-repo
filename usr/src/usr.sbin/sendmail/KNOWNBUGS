@@ -9,14 +9,16 @@ but which have not been fixed in the current release.  You probably
 want to get the most up to date version of this from FTP.CS.Berkeley.EDU
 in /ucb/sendmail/KNOWNBUGS.
 
-* "SYSERR: openmailer(local): fd 1 not open" message
+This list is not guaranteed to be complete, especially for fixed bugs.
+Many bugs are reported and fixed without ever making it as far as this
+file.  See the file RELEASE_NOTES (in the root directory of the sendmail
+distribution) for more details.
 
-  File descriptor 1 (standard output) should not be closed during normal
-  processing.  This is checked periodically, and sometimes this condition
-  is found and this message is produced.  Sendmail repairs the problem,
-  and the mail is still delivered, but I still don't know why it happens.
-  (There was a bug that was fixed in 8.6.beta.13 that might be related,
-  but I think this bug still exists.)
+
++----------------------------------------------+
+| THE FOLLOWING PROBLEMS ARE STILL OUTSTANDING |
++----------------------------------------------+
+
 
 * Null bytes are not handled properly.
 
@@ -111,4 +113,47 @@ in /ucb/sendmail/KNOWNBUGS.
   in the sockets emulation.  (Errno 22 is EINVAL "Invalid Argument"
   on all the systems I have available, including Solaris 2.x.)
 
-(Version 8.13, last updated %G%)
+
++-------------------------------------------+
+| THE FOLLOWING PROBLEMS ARE FIXED IN 8.6.5 |
++-------------------------------------------+
+
+* Route-addrs missing angle brackets.
+
+  There are cases where route-addrs do not get angle brackets around them,
+  such as in the "-r" flag on mailers or in the From_ line created when
+  mailing to files.
+
+* No "exposed users" in "nullrelay" configuration.
+
+  The "nullrelay" configuration hides all addresses behind the mail
+  hub name.  Some sites might prefer to expose some names such as
+  root.  This information is always available in Received: lines.
+
+* owner-* alias that uses :include: broken.
+
+  If you have aliases set up as:
+
+	owner-listname:		:include:/some/file
+
+  sendmail will break because it considers this a "sender address",
+  which is not permitted to use the :include: syntax.  The easiest
+  workaround is to change this to:
+
+	owner-listname:		:include:/some/file,
+
+  (note the trailing comma); a somewhat cleaner solution is to use:
+
+	owner-listname:		listname-request
+	listname-request:	:include:/some/file
+
+* "SYSERR: openmailer(local): fd 1 not open" message
+
+  File descriptor 1 (standard output) should not be closed during normal
+  processing.  This is checked periodically, and sometimes this condition
+  is found and this message is produced.  Sendmail repairs the problem,
+  and the mail is still delivered, but I still don't know why it happens.
+  (There was a bug that was fixed in 8.6.beta.13 that might be related,
+  but I think this bug still exists.)
+
+(Version 8.14, last updated %G%)
