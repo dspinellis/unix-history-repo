@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.11 83/08/26	
+ *	@(#)ww.h	3.12 83/09/01	
  */
 
 #include <stdio.h>
@@ -29,6 +29,7 @@ struct ww {
 	char ww_mapnl :1;	/* map \n to \r\n */
 	char ww_haspty :1;	/* has pty */
 	char ww_hascursor :1;	/* has fake cursor */
+	char ww_hasframe :1;	/* frame it */
 	char ww_index;		/* the index, for wwindex[] */
 	char ww_order;		/* the overlapping order */
 	struct ww_dim ww_w;	/* window dimemsions */
@@ -45,7 +46,6 @@ struct ww {
 	int ww_pid;		/* pid of process, if WWS_HASPROC true */
 	char ww_ttyname[11];	/* "/dev/ttyp?" */
 	/* below are things for the user */
-	char ww_hasframe :1;	/* frame it */
 	char ww_center :1;	/* center the label */
 	int ww_id;		/* the user id */
 	char *ww_label;		/* the user supplied label */
