@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -26,11 +26,11 @@ static char sccsid[] = "@(#)tar.c	5.4 (Berkeley) %G%";
 #include <sys/time.h>
 #include <signal.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #define TBLOCK	512
 #define NBLOCK	20
 #define NAMSIZ	100
-#define FILEBLOCK 20
 
 #define	writetape(b)	writetbuf(b, 1)
 #define	min(a,b)  ((a) < (b) ? (a) : (b))
@@ -80,7 +80,6 @@ int	Bflag;
 int	Fflag;
 
 int	mt;
-int	mtdev = 1;
 int	term;
 int	chksum;
 int	recno;
@@ -107,6 +106,7 @@ char	magtape[] = "/dev/rmt8";
 char	*malloc();
 char	*sprintf();
 char	*strcat();
+char	*strcpy();
 char	*rindex();
 char	*getcwd();
 char	*getwd();
@@ -254,32 +254,11 @@ char	*argv[];
 		if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
 			signal(SIGTERM, onterm);
 #endif
-		if (strcmp(usefile, "-") == 0) {
-			if (cflag == 0) {
-				fprintf(stderr,
-			 "tar: can only create standard output archives\n");
-				done(1);
-			}
-			vfile = stderr;
-			setlinebuf(vfile);
-			mt = dup(1);
-		} else if ((mt = open(usefile, 2)) < 0) {
-			if (cflag == 0 || (mt =  creat(usefile, 0666)) < 0) {
-				fprintf(stderr,
-					"tar: cannot open %s\n", usefile);
-				done(1);
-			}
-		}
+		mt = openmt(usefile, 1);
 		dorep(argv);
 		done(0);
 	}
-	if (strcmp(usefile, "-") == 0) {
-		mt = dup(0);
-		Bflag++;
-	} else if ((mt = open(usefile, 0)) < 0) {
-		fprintf(stderr, "tar: cannot open %s\n", usefile);
-		done(1);
-	}
+	mt = openmt(usefile, 0);
 	if (xflag)
 		doxtract(argv);
 	else
@@ -292,6 +271,52 @@ usage()
 	fprintf(stderr,
 "tar: usage: tar -{txru}[cvfblmhopwBi] [tapefile] [blocksize] file1 file2...\n");
 	done(1);
+}
+
+int
+openmt(tape, writing)
+	char *tape;
+	int writing;
+{
+	register char *rmtape;
+	extern char *rmterr;
+
+	if (strcmp(tape, "-") == 0) {
+		/*
+		 * Read from standard input or write to standard output.
+		 */
+		if (writing) {
+			if (cflag == 0) {
+				fprintf(stderr,
+			 "tar: can only create standard output archives\n");
+				done(1);
+			}
+			vfile = stderr;
+			setlinebuf(vfile);
+			mt = dup(1);
+		} else {
+			mt = dup(0);
+			Bflag++;
+		}
+	} else {
+		/*
+		 * Use file or tape on local machine.
+		 */
+		if (writing) {
+			if (cflag)
+				mt = open(tape, O_RDWR|O_CREAT|O_TRUNC,
+				    0666);
+			else
+				mt = open(tape, O_RDWR);
+		} else
+			mt = open(tape, O_RDONLY);
+		if (mt < 0) {
+			fprintf(stderr, "tar: ");
+			perror(tape);
+			done(1);
+		}
+	}
+	return(mt);
 }
 
 dorep(argv)
@@ -328,9 +353,10 @@ dorep(argv)
 		cp2 = *argv;
 		if (!strcmp(cp2, "-C") && argv[1]) {
 			argv++;
-			if (chdir(*argv) < 0)
+			if (chdir(*argv) < 0) {
+				fprintf(stderr, "tar: can't change directories to ");
 				perror(*argv);
-			else
+			} else
 				(void) getcwd(wdir);
 			argv++;
 			continue;
@@ -342,6 +368,7 @@ dorep(argv)
 		if (cp2 != *argv) {
 			*cp2 = '\0';
 			if (chdir(*argv) < 0) {
+				fprintf(stderr, "tar: can't change directories to ");
 				perror(*argv);
 				continue;
 			}
@@ -440,18 +467,8 @@ putfile(longname, shortname, parent)
 	else
 		i = stat(shortname, &stbuf);
 	if (i < 0) {
-		switch (errno) {
-		case EACCES:
-			fprintf(stderr, "tar: %s: cannot open file\n", longname);
-			break;
-		case ENOENT:
-			fprintf(stderr, "tar: %s: no such file or directory\n",
-			    longname);
-			break;
-		default:
-			fprintf(stderr, "tar: %s: cannot stat file\n", longname);
-			break;
-		}
+		fprintf(stderr, "tar: ");
+		perror(longname);
 		return;
 	}
 	if (tfile != NULL && checkupdate(longname) == 0)
@@ -528,6 +545,7 @@ putfile(longname, shortname, parent)
 		}
 		i = readlink(shortname, dblock.dbuf.linkname, NAMSIZ - 1);
 		if (i < 0) {
+			fprintf(stderr, "tar: can't read symbolic link ");
 			perror(longname);
 			return;
 		}
@@ -543,7 +561,8 @@ putfile(longname, shortname, parent)
 
 	case S_IFREG:
 		if ((infile = open(shortname, 0)) < 0) {
-			fprintf(stderr, "tar: %s: cannot open file\n", longname);
+			fprintf(stderr, "tar: ");
+			perror(longname);
 			return;
 		}
 		tomodes(&stbuf);
@@ -610,7 +629,10 @@ putfile(longname, shortname, parent)
 		close(infile);
 		if (bigbuf != buf)
 			free(bigbuf);
-		if (blocks != 0 || i != 0)
+		if (i < 0) {
+			fprintf("tar: Read error on ");
+			perror(longname);
+		} else if (blocks != 0 || i != 0)
 			fprintf(stderr, "tar: %s: file changed size\n",
 			    longname);
 		while (--blocks >=  0)
@@ -675,8 +697,9 @@ gotit:
 					unlink(dblock.dbuf.name);
 			}
 			if (symlink(dblock.dbuf.linkname, dblock.dbuf.name)<0) {
-				fprintf(stderr, "tar: %s: symbolic link failed\n",
+				fprintf(stderr, "tar: %s: symbolic link failed: ",
 				    dblock.dbuf.name);
+				perror("");
 				continue;
 			}
 			if (vflag)
@@ -702,8 +725,9 @@ gotit:
 					unlink(dblock.dbuf.name);
 			}
 			if (link(dblock.dbuf.linkname, dblock.dbuf.name) < 0) {
-				fprintf(stderr, "tar: %s: cannot link\n",
-				    dblock.dbuf.name);
+				fprintf(stderr, "tar: can't link %s to %s: ",
+				    dblock.dbuf.name, dblock.dbuf.linkname);
+				perror("");
 				continue;
 			}
 			if (vflag)
@@ -712,8 +736,9 @@ gotit:
 			continue;
 		}
 		if ((ofile = creat(dblock.dbuf.name,stbuf.st_mode&0xfff)) < 0) {
-			fprintf(stderr, "tar: %s - cannot create\n",
+			fprintf(stderr, "tar: can't create %s: ",
 			    dblock.dbuf.name);
+			perror("");
 			passtape();
 			continue;
 		}
@@ -733,8 +758,9 @@ gotit:
 			nread = readtbuf(&bufp, nwant);
 			if (write(ofile, bufp, (int)min(nread, bytes)) < 0) {
 				fprintf(stderr,
-				    "tar: %s: HELP - extract write error\n",
+				    "tar: %s: HELP - extract write error",
 				    dblock.dbuf.name);
+				perror("");
 				done(2);
 			}
 			bytes -= nread;
@@ -821,10 +847,10 @@ pmode(st)
 	register int **mp;
 
 	for (mp = &m[0]; mp < &m[9];)
-		select(*mp++, st);
+		selectbits(*mp++, st);
 }
 
-select(pairp, st)
+selectbits(pairp, st)
 	int *pairp;
 	struct stat *st;
 {
@@ -1120,10 +1146,8 @@ readtbuf(bufpp, size)
 	register int i;
 
 	if (recno >= nblock || first == 0) {
-		if ((i = bread(mt, tbuf, TBLOCK*nblock)) < 0) {
-			fprintf(stderr, "tar: tape read error\n");
-			done(3);
-		}
+		if ((i = bread(mt, tbuf, TBLOCK*nblock)) < 0)
+			mterr("read", i, 3);
 		if (first == 0) {
 			if ((i % TBLOCK) != 0) {
 				fprintf(stderr, "tar: tape blocksize error\n");
@@ -1149,16 +1173,16 @@ writetbuf(buffer, n)
 	register char *buffer;
 	register int n;
 {
+	int i;
 
 	if (first == 0) {
 		getbuf();
 		first = 1;
 	}
 	if (recno >= nblock) {
-		if (write(mt, tbuf, TBLOCK*nblock) < 0) {
-			fprintf(stderr,"tar: tape write error\n");
-			done(2);
-		}
+		i = write(mt, tbuf, TBLOCK*nblock);
+		if (i != TBLOCK*nblock)
+			mterr("write", i, 2);
 		recno = 0;
 	}
 
@@ -1169,10 +1193,9 @@ writetbuf(buffer, n)
 	 *  residual to the tape buffer.
 	 */
 	while (recno == 0 && n >= nblock) {
-		if (write(mt, buffer, TBLOCK*nblock) < 0) {
-			fprintf(stderr,"tar: tape write error\n");
-			done(2);
-		}
+		i = write(mt, buffer, TBLOCK*nblock);
+		if (i != TBLOCK*nblock)
+			mterr("write", i, 2);
 		n -= nblock;
 		buffer += (nblock * TBLOCK);
 	}
@@ -1181,10 +1204,9 @@ writetbuf(buffer, n)
 		bcopy(buffer, (char *)&tbuf[recno++], TBLOCK);
 		buffer += TBLOCK;
 		if (recno >= nblock) {
-			if (write(mt, tbuf, TBLOCK*nblock) < 0) {
-					fprintf(stderr,"tar: tape write error\n");
-					done(2);
-			}
+			i = write(mt, tbuf, TBLOCK*nblock);
+			if (i != TBLOCK*nblock)
+				mterr("write", i, 2);
 			recno = 0;
 		}
 	}
@@ -1195,11 +1217,16 @@ writetbuf(buffer, n)
 
 backtape()
 {
+	static int mtdev = 1;
 	static struct mtop mtop = {MTBSR, 1};
-
+	struct mtget mtget;
+	
+	if (mtdev == 1)
+		mtdev = ioctl(mt, MTIOCGET, &mtget);
 	if (mtdev == 0) {
 		if (ioctl(mt, MTIOCTOP, &mtop) < 0) {
-			fprintf(stderr, "tar: tape backspace error\n");
+			fprintf(stderr, "tar: tape backspace error: ");
+			perror("");
 			done(4);
 		}
 	} else
@@ -1209,7 +1236,23 @@ backtape()
 
 flushtape()
 {
-	write(mt, tbuf, TBLOCK*nblock);
+	int i;
+
+	i = write(mt, tbuf, TBLOCK*nblock);
+	if (i != TBLOCK*nblock)
+		mterr("write", i, 2);
+}
+
+mterr(operation, i, exitcode)
+	char *operation;
+	int i;
+{
+	fprintf(stderr, "tar: tape %s error: ", operation);
+	if (i < 0)
+		perror("");
+	else
+		fprintf(stderr, "unexpected EOF\n");
+	done(exitcode);
 }
 
 bread(fd, buf, size)
@@ -1249,23 +1292,16 @@ getcwd(buf)
 getbuf()
 {
 	
-	if (mtdev == 1) {
+	if (nblock == 0) {
 		fstat(mt, &stbuf);
 		if ((stbuf.st_mode & S_IFMT) == S_IFCHR)
-			mtdev = 0;
-		else
-			mtdev = -1;
-	}
-	if (nblock == 0) {
-		if (mtdev == 0)
-			nblock = FILEBLOCK;
+			nblock = NBLOCK;
 		else {
-			fstat(mt, &stbuf);
-			nblock = stbuf.st_blocks / TBLOCK;
+			nblock = stbuf.st_blksize / TBLOCK;
+			if (nblock == 0)
+				nblock = NBLOCK;
 		}
 	}
-	if (nblock == 0)
-		nblock = FILEBLOCK;
 	tbuf = (union hblock *)malloc(nblock*TBLOCK);
 	if (tbuf == NULL) {
 		fprintf(stderr, "tar: blocksize %d too big, can't get memory\n",
@@ -1340,8 +1376,10 @@ setimes(path, mt)
 	tv[0].tv_sec = time((time_t *) 0);
 	tv[1].tv_sec = mt;
 	tv[0].tv_usec = tv[1].tv_usec = 0;
-	if (utimes(path, tv) < 0)
-		fprintf(stderr, "tar: can't set time on %s\n", path);
+	if (utimes(path, tv) < 0) {
+		fprintf(stderr, "tar: can't set time on %s: ", path);
+		perror("");
+	}
 }
 
 char *
