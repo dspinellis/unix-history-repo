@@ -1,4 +1,4 @@
-/*	locore.s	4.55	81/11/07	*/
+/*	locore.s	4.56	81/11/08	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -169,7 +169,7 @@ SCBVEC(softclock):
 	calls $2,_softclock			# softclock(pc,psl)
 	POPR; 
 	rei
-#ifdef BBNNET
+#ifdef INET
 SCBVEC(netintr):
 	PUSHR
 	calls $0,_netintr
@@ -348,9 +348,7 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(msgbufmap,msgbuf		,MSGBUFPTECNT	)
 	SYSMAP(camap	,cabase		,16*CLSIZE	)
 	SYSMAP(ecamap	,calimit	,0		)
-#ifdef BBNNET
-	SYSMAP(Netmap	,netutl		,NNETPAGES*CLSIZE)
-#endif
+	SYSMAP(Mbmap	,mbutl		,NMBPAGES*CLSIZE)
 
 eSysmap:
 	.globl	_Syssize
