@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.52 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.53 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.52 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.53 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -237,24 +237,10 @@ esmtp_check(line, firstline, m, mci, e)
 	register MCI *mci;
 	ENVELOPE *e;
 {
-	register char *l;
-
-	for (l = line; (l = strchr(++l, 'E')) != NULL; )
-	{
-		if (strncmp(l, "ESMTP ", 6) == 0)
-		{
-			mci->mci_flags |= MCIF_ESMTP;
-			break;
-		}
-	}
-	for (l = line; (l = strchr(++l, '8')) != NULL; )
-	{
-		if (strncmp(l, "8BIT OK", 7) == 0)
-		{
-			mci->mci_flags |= MCIF_8BITOK;
-			break;
-		}
-	}
+	if (strstr(line, "ESMTP ") != NULL)
+		mci->mci_flags |= MCIF_ESMTP;
+	if (strstr(line, "8BIT OK") != NULL)
+		mci->mci_flags |= MCIF_8BITOK;
 }
 /*
 **  HELO_OPTIONS -- process the options on a HELO line.
