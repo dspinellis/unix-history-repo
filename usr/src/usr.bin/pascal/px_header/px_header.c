@@ -1,9 +1,3 @@
-#include <pagsiz.h>
-#include <sys/types.h>
-#include <a.out.h>
-#include "whoami.h"
-#include "objfmt.h"
-
 /*
  * pxheader - program to sit in front of interpreter code to make shell mods
  *	      unnecessary to make Pascal obj's look like real programs.
@@ -11,13 +5,19 @@
  * This program lives in /usr/lib/px_header
  * Bill Joy UCB February 6, 1978
  */
-static	char *sccsid = "@(#)px_header.c	1.1 (Berkeley) %G%";
 
-extern	errno;
+static char sccsid[] = "@(#)px_header.c 1.2 %G%";
 
-#define	BUFSIZ	BSIZE
+#include <stdio.h>
+#include <sys/types.h>
+#include <a.out.h>
+#include "whoami.h"
+#include "objfmt.h"
+
 #define	ETXTBSY	26
 #define	ADDR_LC	HEADER_BYTES - sizeof (struct exec) - sizeof (struct pxhdr)
+
+extern	errno;
 
 main(argc, argv)
 	register int argc;
@@ -43,8 +43,8 @@ main(argc, argv)
 		error("Try again.\n");
 	if (i == 0) {
 		close(pv[0]);
-		ip = (unsigned short *) (ADDR_LC);
-		i = ((struct pxhdr *)(ADDR_LC))->objsize + sizeof(struct pxhdr);
+		ip = (unsigned short *)(ADDR_LC);
+		i = ((struct pxhdr *)(ip))->objsize + sizeof(struct pxhdr);
 		while (i != 0) {
 			j = (i > 0 && i < BUFSIZ) ? i : BUFSIZ;
 			write(pv[1], ip, j);

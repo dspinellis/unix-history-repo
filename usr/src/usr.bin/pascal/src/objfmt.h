@@ -1,19 +1,20 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static	char sccsid[] = "@(#)objfmt.h 1.4 %G%"; */
+/* static char sccsid[] = "@(#)objfmt.h 1.5 %G%"; */
 
 #ifdef OBJ
 	/*
 	 *	the creation time, the size and the magic number of the obj file
 	 */
     struct pxhdr {
-	    int	maketime;
-	    int	objsize;
+	    long	maketime;
+	    long	objsize;
 	    short	magicnum;
     };
 
 #   define	HEADER_BYTES	1024		/* the size of px_header */
 #   define PX_HEADER "/usr/lib/px_header"	/* px_header's name */
+#   define PI_COMP "/usr/ucb/pi"		/* the compiler's name */
 #   define PX_INTRP "/usr/ucb/px"		/* the interpreter's name */
 #   define INDX 1				/* amt to shift display index */
 #endif OBJ
@@ -24,10 +25,14 @@
 #ifdef OBJ
 #   define	ERR_STRNGS	"/usr/lib/pi2.0strings"
 #   define	ERR_PATHLEN	9
+#   define	HOW_STRNGS	"/usr/lib/how_pi\0"
+#   define	HOW_PATHLEN	9
 #endif OBJ
 #ifdef PC
 #   define	ERR_STRNGS	"/usr/lib/pc2.0strings"
 #   define	ERR_PATHLEN	9
+#   define	HOW_STRNGS	"/usr/lib/how_pc\0"
+#   define	HOW_PATHLEN	9
 #endif PC
 
 	    /*
@@ -37,6 +42,8 @@
 #	define PTR_AS O_AS4
 #	define PTR_RV O_RV4
 #	define PTR_IND O_IND4
+#	define PTR_CON O_CON4
+#	define PTR_DUP O_SDUP4
 #	define PTR_DCL unsigned long		/* for pointer variables */
 #	define SHORTADDR 32768			/* maximum short address */
 #	define TOOMUCH 65536			/* maximum variable size */
@@ -76,11 +83,14 @@
 #	define PTR_AS O_AS2
 #	define PTR_RV O_RV2
 #	define PTR_IND O_IND2
+#	define PTR_CON O_CON2
+#	define PTR_DUP O_SDUP2
 #	define PTR_DCL char *
 #	define TOOMUCH 50000
 #	define SHORTADDR 65536
-#	define MAXSET 65536			/* maximum set size */
-#	define DPOFF2 16
+#	define MAXSET 65536		/* maximum set size */
+#	define DPOFF1 0
+#	define DPOFF2 18		/* sizeof(struct stack) */
 #	define INPUT_OFF -2
 #	define OUTPUT_OFF -4
 #	define MAGICNUM 0404
