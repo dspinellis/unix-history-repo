@@ -40,7 +40,7 @@ main(argc,argv)
 	register int i,j;
 	int hard;
 	char *ptr=0,*ttype;
-	struct passwd *pwe,*getpwuid();
+	struct passwd *pwe;
 
 /*
  *	first task is to identify the player

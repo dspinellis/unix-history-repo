@@ -1,12 +1,7 @@
 /* fortune.c		 Larn is copyrighted 1986 by Noah Morgan. */
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifndef BSD4.1
 #include <fcntl.h>
-#else
-#define O_RDONLY 0
-#endif
 
 #include "header.h"
 /*

@@ -14,7 +14,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pom.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)pom.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,13 +41,15 @@ static char sccsid[] = "@(#)pom.c	5.2 (Berkeley) %G%";
 #define	Pzero	  192.917585	/* lunar mean long of perigee at EPOCH */
 #define	Nzero	  55.204723	/* lunar mean long of node at EPOCH */
 
+double dtor(), potm(), adj360();
+
 main()
 {
 	extern int errno;
 	struct timeval tp;
 	struct timezone tzp;
 	struct tm *GMT, *gmtime();
-	double days, today, tomorrow, dtor(), adj360(), potm();
+	double days, today, tomorrow;
 	int cnt;
 	char *strerror();
 

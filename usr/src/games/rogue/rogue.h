@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rogue.h	5.5 (Berkeley) %G%
+ *	@(#)rogue.h	5.6 (Berkeley) %G%
  */
 
 /*
@@ -434,7 +434,7 @@ unsigned short gr_what_is();
 long rrandom();
 long lget_number();
 long xxx();
-int byebye(), onintr(), error_save();
+void byebye(), onintr(), error_save();
 
 struct rogue_time {
 	short year;		/* >= 1987 */

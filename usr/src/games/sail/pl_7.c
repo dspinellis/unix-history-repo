@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pl_7.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pl_7.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "player.h"
@@ -35,7 +35,7 @@ initscreen()
 	(void) leaveok(turn_w, 1);
 #ifdef SIGTSTP
 	{
-		int susp();
+		void susp();
 		(void) signal(SIGTSTP, susp);
 	}
 #endif
@@ -54,6 +54,7 @@ cleanupscreen()
 	}
 }
 
+void
 newturn()
 {
 	repaired = loaded = fired = changed = 0;
@@ -443,6 +444,7 @@ adjustview()
 }
 
 #ifdef SIGTSTP
+void
 susp()
 {
 	blockalarm();

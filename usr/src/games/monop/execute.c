@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)execute.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)execute.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
@@ -137,11 +137,11 @@ save() {
 
 	reg char	*sp;
 	reg int		outf, num;
-	TIME		tme, *tp;
-	int		*dat_end, junk[18];
+	time_t		t;
+	int		*dat_end;
+	struct stat	sb;
 	unsgn		start, end;
 
-	tp = &tme;
 	printf("Which file do you wish to save it in? ");
 	sp = buf;
 	while ((*sp++=getchar()) != '\n')
@@ -152,7 +152,7 @@ save() {
 	 * check for existing files, and confirm overwrite if needed
 	 */
 
-	if (stat(buf, junk) > -1
+	if (stat(buf, &sb) > -1
 	    && getyn("File exists.  Do you wish to overwrite? ", yn_only) > 0)
 		return;
 
@@ -161,8 +161,8 @@ save() {
 		return;
 	}
 	printf("\"%s\" ", buf);
-	time(tp);			/* get current time		*/
-	strcpy(buf, ctime(tp));
+	time(&t);			/* get current time		*/
+	strcpy(buf, ctime(&t));
 	for (sp = buf; *sp != '\n'; sp++)
 		continue;
 	*sp = '\0';
@@ -227,7 +227,7 @@ reg char	*file; {
 		start += num;
 	}
 	close(inf);
-	strcpy(buf, ctime(sbuf.st_mtime));
+	strcpy(buf, ctime(&sbuf.st_mtime));
 	for (sp = buf; *sp != '\n'; sp++)
 		continue;
 	*sp = '\0';

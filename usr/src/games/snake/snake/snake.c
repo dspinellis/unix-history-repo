@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -71,7 +71,7 @@ char **argv;
 	int ch, i, j, k;
 	time_t time();
 	long atol();
-	int stop();
+	void stop();
 
 	(void)time(&tv);
 	srandom((int)tv);
@@ -101,7 +101,7 @@ char **argv;
 	i = MIN(lcnt, ccnt);
 	if (i < 4) {
 		cook();
-		printf("snake: screen too small for a fair game.\n");
+		pr("snake: screen too small for a fair game.\n");
 		exit(1);
 	}
 
@@ -344,7 +344,7 @@ mainloop()
 				win(&finish);
 				ll();
 				cook();
-				printf("You have won with $%d.\n",cashvalue);
+				pr("You have won with $%d.\n",cashvalue);
 				fflush(stdout);
 				logit("won");
 				post(cashvalue,0);
@@ -438,7 +438,7 @@ int	iscore, flag;
 	short	uid;
 	short	oldbest=0;
 	short	allbwho=0, allbscore=0;
-	struct	passwd *p, *getpwuid();
+	struct	passwd *p;
 
 	/*
 	 * Neg uid, 0, and 1 cannot have scores recorded.
@@ -455,9 +455,9 @@ int	iscore, flag;
 		if (score > oldbest) {
 			lseek(rawscores, ((long)uid)*sizeof(short), 0);
 			write(rawscores, &score, sizeof(short));
-			printf("You bettered your previous best of $%d\n", oldbest);
+			pr("You bettered your previous best of $%d\n", oldbest);
 		} else
-			printf("Your best to date is $%d\n", oldbest);
+			pr("Your best to date is $%d\n", oldbest);
 
 		/* See if we have a new champ */
 		p = getpwuid(allbwho);
@@ -466,15 +466,17 @@ int	iscore, flag;
 			write(rawscores, &score, sizeof(short));
 			write(rawscores, &uid, sizeof(short));
 			if (p != NULL)
-				printf("You beat %s's old record of $%d!\n", p->pw_name, allbscore);
+				pr("You beat %s's old record of $%d!\n",
+				    p->pw_name, allbscore);
 			else
-				printf("You set a new record!\n");
+				pr("You set a new record!\n");
 		} else
-			printf("The highest is %s with $%d\n", p->pw_name, allbscore);
+			pr("The highest is %s with $%d\n",
+			    p->pw_name, allbscore);
 		close(rawscores);
 	} else
 		if (!flag)
-			printf("Unable to post score.\n");
+			pr("Unable to post score.\n");
 	return (1);
 }
 
@@ -547,7 +549,7 @@ struct point *sp, *np;
 		else
 			vp -= wt[i];
 	if (i==8) {
-		printf("failure\n"); 
+		pr("failure\n"); 
 		i=0;
 		while (wt[i]==0) i++;
 	}
@@ -578,7 +580,7 @@ int w;{
 	for(j=0;j<3;j++){
 		clear();
 		delay(5);
-		aprintf(&p,str);
+		apr(&p,str);
 		delay(10);
 	}
 	setup();
@@ -604,19 +606,19 @@ snap()
 	if (! stretch(&money)) if (! stretch(&finish)) delay(10);
 	if(you.line < 3){
 		point(&p,you.col,0);
-		remove(&p);
+		chk(&p);
 	}
 	if(you.line > lcnt-4){
 		point(&p,you.col,lcnt-1);
-		remove(&p);
+		chk(&p);
 	}
 	if(you.col < 10){
 		point(&p,0,you.line);
-		remove(&p);
+		chk(&p);
 	}
 	if(you.col > ccnt-10){
 		point(&p,ccnt-1,you.line);
-		remove(&p);
+		chk(&p);
 	}
 	fflush(stdout);
 }
@@ -631,13 +633,13 @@ struct point *ps;{
 				pchar(&p,'v');
 			delay(10);
 			for (;p.line > you.line;p.line--)
-				remove(&p);
+				chk(&p);
 		} else {
 			for (p.line = you.line-1;p.line >= ps->line;p.line--)
 				pchar(&p,'^');
 			delay(10);
 			for (;p.line < you.line;p.line++)
-				remove(&p);
+				chk(&p);
 		}
 		return(1);
 	} else if(abs(ps->line-you.line) < 3){
@@ -647,13 +649,13 @@ struct point *ps;{
 				pchar(&p,'>');
 			delay(10);
 			for (;p.col > you.col;p.col--)
-				remove(&p);
+				chk(&p);
 		} else {
 			for (p.col = you.col-1;p.col >= ps->col;p.col--)
 				pchar(&p,'<');
 			delay(10);
 			for (;p.col < you.col;p.col++)
-				remove(&p);
+				chk(&p);
 		}
 		return(1);
 	}
@@ -669,7 +671,7 @@ struct point *ps;{
 	if(ps->line == 0)ps->line++;
 	if(ps->line == LINES -1)ps->line--;
 	if(ps->col == COLUMNS -1)ps->col--;
-	aprintf(point(&x,ps->col-1,ps->line-1),"/*\\\r* *\r\\*/");
+	apr(point(&x,ps->col-1,ps->line-1),"/*\\\r* *\r\\*/");
 	for (j=0;j<20;j++){
 		pchar(ps,'@');
 		delay(1);
@@ -677,12 +679,12 @@ struct point *ps;{
 		delay(1);
 	}
 	if (post(cashvalue,1)) {
-		aprintf(point(&x,ps->col-1,ps->line-1),"   \ro.o\r\\_/");
+		apr(point(&x,ps->col-1,ps->line-1),"   \ro.o\r\\_/");
 		delay(6);
-		aprintf(point(&x,ps->col-1,ps->line-1),"   \ro.-\r\\_/");
+		apr(point(&x,ps->col-1,ps->line-1),"   \ro.-\r\\_/");
 		delay(6);
 	}
-	aprintf(point(&x,ps->col-1,ps->line-1),"   \ro.o\r\\_/");
+	apr(point(&x,ps->col-1,ps->line-1),"   \ro.o\r\\_/");
 }
 win(ps)
 struct point *ps;
@@ -744,7 +746,7 @@ pushsnake()
 			i = (cashvalue) % 10;
 			bonus = ((rand()>>8) & 0377)% 10;
 			ll();
-			printf("%d\n", bonus);
+			pr("%d\n", bonus);
 			delay(30);
 			if (bonus == i) {
 				spacewarp(1);
@@ -753,9 +755,11 @@ pushsnake()
 				return(1);
 			}
 			if ( loot >= penalty ){
-				printf("You and your $%d have been eaten\n",cashvalue);
+				pr("You and your $%d have been eaten\n",
+				    cashvalue);
 			} else {
-				printf("The snake ate you.  You owe $%d.\n",-cashvalue);
+				pr("The snake ate you.  You owe $%d.\n",
+				    -cashvalue);
 			}
 			logit("eaten");
 			length(moves);
@@ -765,7 +769,7 @@ pushsnake()
 	return(0);
 }
 	
-remove(sp)
+chk(sp)
 struct point *sp;
 {
 	int j;
@@ -808,12 +812,13 @@ int won;
 	p.line = p.col = 1;
 	if(won>0){
 		move(&p);
-		printf("$%d",won);
+		pr("$%d",won);
 	}
 }
 
+void
 stop(){
-	signal(SIGINT,1);
+	signal(SIGINT,SIG_IGN);
 	ll();
 	length(moves);
 	done();
@@ -834,7 +839,7 @@ suspend()
 length(num)
 int num;
 {
-	printf("You made %d moves.\n",num);
+	pr("You made %d moves.\n",num);
 }
 
 logit(msg)
@@ -845,7 +850,8 @@ char *msg;
 
 	if ((logfile=fopen(_PATH_LOGFILE, "a")) != NULL) {
 		time(&t);
-		fprintf(logfile, "%s $%d %dx%d %s %s", getlogin(), cashvalue, lcnt, ccnt, msg, ctime(&t));
+		fprintf(logfile, "%s $%d %dx%d %s %s",
+		    getlogin(), cashvalue, lcnt, ccnt, msg, ctime(&t));
 		fclose(logfile);
 	}
 }

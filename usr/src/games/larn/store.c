@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)store.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)store.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	store.c		Larn is copyrighted 1986 by Noah Morgan. */
@@ -152,12 +152,37 @@ dnd_2hed()
 	lprcat("Also be advised, if you break 'em, you pay for 'em.");
 	}
 
+static void dnditem();
+
 dnd_hed()
 	{
 	register int i;
 	for (i=dnditm; i<26+dnditm; i++)	dnditem(i);
 	cursor(50,18); lprcat("You have ");
 	}
+
+static void
+handsfull()
+{
+	lprcat("\nYou can't carry anything more!");
+	lflush();
+	nap(2200);
+}
+
+static void
+outofstock()
+{
+	lprcat("\nSorry, but we are out of that item.");
+	lflush();
+	nap(2200);
+}
+
+static void nogold()
+{
+	lprcat("\nYou don't have enough gold to pay for that!");
+	lflush();
+	nap(2200);
+}
 
 dndstore()
   {
@@ -215,21 +240,12 @@ dndstore()
   }
 
 /*
-	function for the players hands are full
- */
-static handsfull()
-	{ lprcat("\nYou can't carry anything more!"); lflush(); nap(2200); }
-static outofstock()
-	{ lprcat("\nSorry, but we are out of that item."); lflush(); nap(2200); }
-static nogold()
-	{ lprcat("\nYou don't have enough gold to pay for that!"); lflush(); nap(2200); }
-
-/*
 	dnditem(index)
 
 	to print the item list;  used in dndstore() enter with the index into itm
  */
-static dnditem(i)
+static void
+dnditem(i)
 	register int i;
 	{
 	register int j,k;
@@ -371,6 +387,8 @@ oschool()
  *	for the first national bank of Larn
  */
 int lasttime=0;	/* last time he was in bank */
+static void banktitle();
+
 obank()
 	{
 	banktitle("    Welcome to the First National Bank of Larn.");
@@ -379,7 +397,8 @@ obank2()
 	{
 	banktitle("Welcome to the 5th level branch office of the First National Bank of Larn.");
 	}
-static banktitle(str)
+static void
+banktitle(str)
 	char *str;
 	{
 	nosignal = 1; /* disable signals */

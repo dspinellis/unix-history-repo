@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rain.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rain.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,7 +51,8 @@ main(argc, argv)
 	char *TI, *tcp, *mp, tcb[100],
 		*malloc(), *getenv(), *strcpy(), *tgetstr();
 	long cols, lines, random();
-	int xpos[5], ypos[5], onsig();
+	int xpos[5], ypos[5];
+	static void onsig();
 
 	if (!(term = getenv("TERM"))) {
 		fprintf(stderr, "%s: TERM: parameter not set\n", *argv);
@@ -195,7 +196,7 @@ main(argc, argv)
 	}
 }
 
-static
+static void
 onsig()
 {
 	tputs(LL, 1, fputchar);
