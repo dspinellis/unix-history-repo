@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)socket.2	6.3 (Berkeley) %G%
+.\"	@(#)socket.2	6.4 (Berkeley) %G%
 .\"
 .TH SOCKET 2 ""
 .UC 5
@@ -15,28 +15,31 @@ socket \- create an endpoint for communication
 #include <sys/socket.h>
 .PP
 .ft B
-s = socket(af, type, protocol)
-int s, af, type, protocol;
+s = socket(domain, type, protocol)
+int s, domain, type, protocol;
 .fi
 .SH DESCRIPTION
 .I Socket
 creates an endpoint for communication and returns a descriptor.
 .PP
 The
-.I af
-parameter specifies an address format with which addresses specified
-in later operations using the socket should be interpreted.  These
-formats are defined in the include file
+.I domain
+parameter specifies a communications domain within which
+communication will take place; this selects the protocol family
+which should be used.
+The protocol family generally is the same as the address family
+for the addresses supplied in later operations on the socket.
+These families are defined in the include file
 .IR <sys/socket.h> .
 The currently understood formats are
 .PP
 .RS
 .nf
 .ta 1.25i 1.75i
-AF_UNIX	(UNIX path names),
-AF_INET	(ARPA Internet addresses),
-AF_NS	(Xerox Network Systems addresses), and
-AF_IMPLINK	(IMP \*(lqhost at IMP\*(rq addresses).
+PF_UNIX	(UNIX internal protocols),
+PF_INET	(ARPA Internet protocols),
+PF_NS	(Xerox Network Systems protocols), and
+PF_IMPLINK	(IMP \*(lqhost at IMP\*(rq link layer).
 .fi
 .RE
 .PP
@@ -56,8 +59,8 @@ SOCK_RDM
 .RE
 .PP
 A SOCK_STREAM type provides sequenced, reliable,
-two-way connection based byte streams with an out-of-band data
-transmission mechanism.
+two-way connection based byte streams.
+An out-of-band data transmission mechanism may be supported.
 A SOCK_DGRAM socket supports
 datagrams (connectionless, unreliable messages of
 a fixed (typically small) maximum length).
@@ -66,8 +69,8 @@ two-way connection-based data transmission path for datagrams
 of fixed maximum length; a consumer may be required to read
 an entire packet with each read system call.
 This facility is protocol specific, and presently implemented
-only for AF_NS.
-SOCK_RAW sockets provide access to internal network interfaces.
+only for PF_NS.
+SOCK_RAW sockets provide access to internal network protocols and interfaces.
 The types SOCK_RAW,
 which is available only to the super-user, and
 SOCK_RDM, which is planned,
@@ -77,13 +80,11 @@ The
 .I protocol
 specifies a particular protocol to be used with the socket.
 Normally only a single protocol exists to support a particular
-socket type using a given address format.  However, it is possible
-that many protocols may exist in which case a particular protocol
+socket type within a given protocol family.  However, it is possible
+that many protocols may exist, in which case a particular protocol
 must be specified in this manner.  The protocol number to use is
 particular to the \*(lqcommunication domain\*(rq in which communication
 is to take place; see
-.IR services (3N)
-and
 .IR protocols (3N).
 .PP
 Sockets of type SOCK_STREAM
@@ -139,101 +140,52 @@ SOCK_DGRAM and SOCK_RAW
 sockets allow sending of datagrams to correspondents
 named in
 .IR send (2)
-calls.  It is also possible to receive datagrams at
-such a socket with
-.IR recv (2).
+calls.  Datagrams are generally received with
+.IR recvfrom (2),
+which returns the next datagram with its return address.
 .PP
 An 
 .IR fcntl (2)
 call can be used to specify a process group to receive
 a SIGURG signal when the out-of-band data arrives.
+It may also enable non-blocking I/O
+and asynchronous notification of I/O events
+via SIGIO.
 .PP
 The operation of sockets is controlled by socket level
 .IR options .
 These options are defined in the file
-.RI < sys/socket.h >
-and explained below.  
-.I Setsockopt
+.RI < sys/socket.h >.
+.IR Setsockopt (2)
 and
 .IR getsockopt (2)
 are used to set and get options, respectively.
-Options other than SO_LINGER take an 
-.I int
-parameter, which should non-zero if the option is to be
-enabled, or zero if it is to be disabled; SO_LINGER
-uses a
-.I struct linger
-parameter, defined in
-.RI < sys/socket.h >,
-which specifies the desired state of the option and the
-linger interval (see below).
-.PP
-.RS
-.DT
-.nf
-SO_DEBUG 		turn on recording of debugging information
-SO_REUSEADDR	allow local address reuse
-SO_KEEPALIVE	keep connections alive
-SO_DONTROUTE	do not route outgoing messages
-SO_LINGER 	linger on close if data present
-SO_BROADCAST	permit transmission of broadcast messages
-.fi
-.RE
-.PP
-SO_DEBUG enables debugging in the underlying protocol modules.
-SO_REUSEADDR indicates the rules used in validating addresses supplied
-in a
-.IR bind (2)
-call should allow reuse of local addresses.  SO_KEEPALIVE enables the
-periodic transmission of messages on a connected socket.  Should the
-connected party fail to respond to these messages, the connection is
-considered broken and processes using the socket are notified via a
-SIGPIPE signal.  SO_DONTROUTE indicates that outgoing messages should
-bypass the standard routing facilities.  Instead, messages are directed
-to the appropriate network interface according to the network portion
-of the destination address.  SO_LINGER
-controls the action taken when unsent messags
-are queued on socket and a 
-.IR close (2)
-is performed.
-If the socket promises reliable delivery of data and SO_LINGER is set,
-the system will block the process on the 
-.I close
-attempt until it is able to transmit the data or until it decides it
-is unable to deliver the information (a timeout period, termed the
-linger interval, is specified in the
-.IR setsockopt 
-call when SO_LINGER is requested). 
-If SO_LINGER is disabled and a 
-.I close
-is issued, the system will process the close in a manner that allows
-the process to continue as quickly as possible.
 .SH "RETURN VALUE
 A \-1 is returned if an error occurs, otherwise the return
 value is a descriptor referencing the socket.
 .SH "ERRORS
 The \fIsocket\fP call fails if:
 .TP 20
-[EAFNOSUPPORT]
-The specified address family is not supported in this version
-of the system.
-.TP 20
-[ESOCKTNOSUPPORT]
-The specified socket type is not supported in this address family.
-.TP 20
 [EPROTONOSUPPORT]
-The specified protocol is not supported.
+The protocol type or the specified protocol is not supported
+within this domain.
 .TP 20
 [EMFILE]
 The per-process descriptor table is full.
 .TP 20
+[ENFILE]
+The system file table is full.
+.TP 20
+[EACCESS]
+Permission to create a socket of the specified type and/or protocol
+is denied.
+.TP 20
 [ENOBUFS]
-No buffer space is available.  The socket cannot be created.
+Insufficient buffer space is available.
+The socket cannot be created until sufficient resources are freed.
 .SH SEE ALSO
 accept(2), bind(2), connect(2), getsockname(2), getsockopt(2),
-ioctl(2), listen(2), recv(2),
-select(2), send(2), shutdown(2), socketpair(2)
+ioctl(2), listen(2), read(2), recv(2),
+select(2), send(2), shutdown(2), socketpair(2), write(2)
 .br
-``A 4.2BSD Interprocess Communication Primer''.
-.SH BUGS
-The use of keepalives is a questionable feature for this layer.
+``An Advanced 4.3BSD Interprocess Communication Tutorial.''
