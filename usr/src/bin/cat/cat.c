@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)cat.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -46,11 +46,8 @@ main(argc, argv)
 	int ch;
 	char *strerror();
 
-	while ((ch = getopt(argc, argv, "-benstuv")) != EOF)
+	while ((ch = getopt(argc, argv, "benstuv")) != EOF)
 		switch (ch) {
-		case '-':
-			--optind;
-			goto done;
 		case 'b':
 			bflag = nflag = 1;	/* -b implies -n */
 			break;
@@ -77,7 +74,7 @@ main(argc, argv)
 			    "usage: cat [-benstuv] [-] [file ...]\n");
 			exit(1);
 		}
-done:	argv += optind;
+	argv += optind;
 
 	if (bflag || eflag || nflag || sflag || tflag || vflag)
 		cook_args(argv);
