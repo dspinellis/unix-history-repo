@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -48,7 +48,7 @@ usage:
 
 	argv++, argc--;
 	if (*argv[0] == '-') {
-		switch (*argv[1]) {
+		switch (argv[0][1]) {
 		case 'n':
 			nflag++;
 			break;
