@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.3 (Berkeley) %G%
+.\"	@(#)ctime.3	6.4 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
@@ -88,7 +88,7 @@ If the second argument is 0, the standard name is used,
 otherwise the Daylight Saving version.
 If the required name does not appear in a table
 built into the routine,
-the difference from GMT is produced; e.g.
+the difference from GMT is produced; e.g.,
 in Afghanistan
 .I timezone(-(60*4+30), 0)
 is appropriate because it is 4:30 ahead of GMT
