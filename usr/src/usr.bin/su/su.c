@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,7 +41,7 @@ static char sccsid[] = "@(#)su.c	5.18 (Berkeley) %G%";
 #include <kerberosIV/krb.h>
 #include <netdb.h>
 
-#define	ARGSTR	"-flmn"
+#define	ARGSTR	"-Kflm"
 
 int use_kerberos = 1;
 #else
@@ -58,7 +58,7 @@ main(argc, argv)
 	register char *p, **g;
 	struct group *gr;
 	uid_t ruid, getuid();
-	int asme, ch, fulllogin, fastlogin, prio;
+	int asme, ch, asthem, fastlogin, prio;
 	enum { UNSET, YES, NO } iscsh = UNSET;
 	char *user, *shell, *username, *cleanenv[2], *nargv[4], **np;
 	char shellbuf[MAXPATHLEN];
@@ -66,24 +66,26 @@ main(argc, argv)
 
 	np = &nargv[3];
 	*np-- = NULL;
-	asme = fulllogin = fastlogin = 0;
+	asme = asthem = fastlogin = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch((char)ch) {
+#ifdef KERBEROS
+		case 'K':
+			use_kerberos = 0;
+			break;
+#endif
 		case 'f':
 			fastlogin = 1;
 			break;
 		case '-':
 		case 'l':
-			fulllogin = 1;
+			asme = 0;
+			asthem = 1;
 			break;
 		case 'm':
 			asme = 1;
+			asthem = 0;
 			break;
-#ifdef KERBEROS
-		case 'n':
-			use_kerberos = 0;
-			break;
-#endif
 		case '?':
 		default:
 			(void)fprintf(stderr, "usage: su [%s] [login]\n",
@@ -188,7 +190,7 @@ main(argc, argv)
 	}
 
 	if (!asme) {
-		if (fulllogin) {
+		if (asthem) {
 			p = getenv("TERM");
 			cleanenv[0] = _PATH_SEARCHPATH;
 			cleanenv[1] = NULL;
@@ -199,7 +201,7 @@ main(argc, argv)
 				exit(1);
 			}
 		}
-		if (fulllogin || pwd->pw_uid)
+		if (asthem || pwd->pw_uid)
 			(void)setenv("USER", pwd->pw_name, 1);
 		(void)setenv("HOME", pwd->pw_dir, 1);
 		(void)setenv("SHELL", shell, 1);
@@ -213,7 +215,7 @@ main(argc, argv)
 	}
 
 	/* csh strips the first character... */
-	*np = fulllogin ? "-su" : iscsh == YES ? "_su" : "su";
+	*np = asthem ? "-su" : iscsh == YES ? "_su" : "su";
 
 	if (pwd->pw_uid == 0)
 		syslog(LOG_NOTICE|LOG_AUTH, "%s on %s", username, mytty());
