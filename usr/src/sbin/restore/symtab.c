@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	3.7	(Berkeley)	83/03/23";
+static char sccsid[] = "@(#)symtab.c	3.8	(Berkeley)	83/03/27";
 #endif
 
 /*
@@ -265,7 +265,6 @@ moveentry(ep, newname)
 {
 	struct entry *np;
 	char *cp;
-	long len;
 
 	np = lookupparent(newname);
 	if (np == NIL)
@@ -413,8 +412,8 @@ dumpsymtable(filename, checkpt)
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
 			ep->e_index = mynum++;
-			fwrite(ep->e_name, sizeof(char),
-			       allocsize(ep->e_namlen), fd);
+			(void) fwrite(ep->e_name, sizeof(char),
+			       (int)allocsize(ep->e_namlen), fd);
 		}
 	}
 	/*
@@ -424,7 +423,8 @@ dumpsymtable(filename, checkpt)
 	stroff = 0;
 	for (i = ROOTINO; i < maxino; i++) {
 		for (ep = lookupino(i); ep != NIL; ep = ep->e_links) {
-			bcopy((char *)ep, (char *)tep, sizeof(struct entry));
+			bcopy((char *)ep, (char *)tep,
+				(long)sizeof(struct entry));
 			tep->e_name = (char *)stroff;
 			stroff += allocsize(ep->e_namlen);
 			tep->e_parent = (struct entry *)ep->e_parent->e_index;
@@ -440,7 +440,7 @@ dumpsymtable(filename, checkpt)
 			if (ep->e_next != NIL)
 				tep->e_next =
 					(struct entry *)ep->e_next->e_index;
-			fwrite((char *)tep, sizeof(struct entry), 1, fd);
+			(void) fwrite((char *)tep, sizeof(struct entry), 1, fd);
 		}
 	}
 	/*
@@ -451,7 +451,7 @@ dumpsymtable(filename, checkpt)
 			tentry = NIL;
 		else
 			tentry = (struct entry *)entry[i]->e_index;
-		fwrite((char *)&tentry, sizeof(struct entry *), 1, fd);
+		(void) fwrite((char *)&tentry, sizeof(struct entry *), 1, fd);
 	}
 	hdr.volno = checkpt;
 	hdr.maxino = maxino;
@@ -459,13 +459,13 @@ dumpsymtable(filename, checkpt)
 	hdr.stringsize = stroff;
 	hdr.dumptime = dumptime;
 	hdr.dumpdate = dumpdate;
-	fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
+	(void) fwrite((char *)&hdr, sizeof(struct symtableheader), 1, fd);
 	if (ferror(fd)) {
 		perror("fwrite");
 		panic("output error to file %s writing symbol table\n",
 			filename);
 	}
-	fclose(fd);
+	(void) fclose(fd);
 }
 
 /*
