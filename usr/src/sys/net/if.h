@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.h	6.13 (Berkeley) %G%
+ *	@(#)if.h	6.14 (Berkeley) %G%
  */
 
 /*
@@ -205,12 +205,9 @@ struct	ifconf {
 
 #ifdef KERNEL
 #include "../net/if_arp.h"
-#ifdef INET
-struct	ifqueue	ipintrq;		/* ip packet input queue */
-#endif
 struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet *ifnet;
-struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet(), *ifa_ifwithaf();
+struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet();
 struct	ifaddr *ifa_ifwithdstaddr();
 #else KERNEL
 #include <net/if_arp.h>

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.c	6.12 (Berkeley) %G%
+ *	@(#)if.c	6.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,6 +143,7 @@ ifa_ifwithnet(addr)
 	return ((struct ifaddr *)0);
 }
 
+#ifdef notdef
 /*
  * Find an interface using a specific address family
  */
@@ -159,6 +160,7 @@ ifa_ifwithaf(af)
 			return (ifa);
 	return ((struct ifaddr *)0);
 }
+#endif
 
 /*
  * Mark an interface down and notify protocols of
