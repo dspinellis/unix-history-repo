@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.83 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.84 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -205,12 +205,12 @@ ffs_read(ap)
 	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
 		panic("ffs_read type");
+	if (type == IFLNK && ip->i_size < vp->v_mount->mnt_maxsymlinklen)
+		panic("read short symlink");
 #endif
 	if (uio->uio_resid == 0)
 		return (0);
 	fs = ip->i_fs;
-	if (uio->uio_offset + uio->uio_resid > fs->fs_maxfilesize)
-		return (EFBIG);
 	ip->i_flag |= IACC;
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
