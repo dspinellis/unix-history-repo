@@ -1,0 +1,8 @@
+for i
+do
+	echo "echo x - $i"
+	echo "sed 's/^X//' >$i <<'*-*-END-of-$i-*-*'"
+	sed 's/^/X/' $i
+	echo "*-*-END-of-$i-*-*"
+done
+echo exit
