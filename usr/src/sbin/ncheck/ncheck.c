@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -281,7 +281,8 @@ readdir(dirp)
 	for(;;) {
 		if (dirp->loc >= dirp->ip->di_size)
 			return NULL;
-		if ((lbn = lblkno(&sblock, dirp->loc)) == 0) {
+		if (blkoff(&sblock, dirp->loc) == 0) {
+			lbn = lblkno(&sblock, dirp->loc);
 			d = bmap(lbn);
 			if(d == 0)
 				return NULL;
