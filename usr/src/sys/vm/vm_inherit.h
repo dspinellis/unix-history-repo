@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_inherit.h	7.3 (Berkeley) %G%
+ *	@(#)vm_inherit.h	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -54,4 +54,4 @@
 
 #define VM_INHERIT_DEFAULT	VM_INHERIT_COPY
 
-#endif	_VM_INHERIT_
+#endif /* _VM_INHERIT_ */

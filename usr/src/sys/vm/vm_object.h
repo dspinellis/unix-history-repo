@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	7.8 (Berkeley) %G%
+ *	@(#)vm_object.h	7.9 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -99,7 +99,7 @@ vm_object_t	kmem_object;
 
 #define	vm_object_cache_lock()		simple_lock(&vm_cache_lock)
 #define	vm_object_cache_unlock()	simple_unlock(&vm_cache_lock)
-#endif	KERNEL
+#endif /* KERNEL */
 
 #define	vm_object_lock_init(object)	simple_lock_init(&(object)->Lock)
 #define	vm_object_lock(object)		simple_lock(&(object)->Lock)
@@ -140,4 +140,4 @@ void		 vm_object_shadow __P((vm_object_t *,
 void		 vm_object_shutdown __P((void));
 void		 vm_object_terminate __P((vm_object_t));
 #endif
-#endif	_VM_OBJECT_
+#endif /* _VM_OBJECT_ */

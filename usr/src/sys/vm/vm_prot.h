@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_prot.h	7.2 (Berkeley) %G%
+ *	@(#)vm_prot.h	7.3 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -73,4 +73,4 @@ typedef int		vm_prot_t;
 
 #define VM_PROT_ALL	(VM_PROT_READ|VM_PROT_WRITE|VM_PROT_EXECUTE)
 
-#endif	_VM_PROT_
+#endif /* _VM_PROT_ */
