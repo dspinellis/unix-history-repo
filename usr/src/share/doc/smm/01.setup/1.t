@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.t	6.6 (Berkeley) %G%
+.\"	@(#)1.t	6.7 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -74,7 +74,7 @@ UNIX device naming
 Device names have a different syntax depending on whether you are talking
 to the standalone system or a running UNIX kernel.
 The standalone system syntax is currently architecture dependent and is
-described in the various architecture specific sections.
+described in the various architecture specific sections as applicable.
 When not running standalone, devices are available via files in the
 .Pn /dev/
 directory.
@@ -85,7 +85,7 @@ For example,
 refers to the second partition (``b'') of
 SCSI (``sd'') drive number ``2'', while
 .Pn /dev/rmt0
-refers to 9-track tape (``mt'') unit ``0''.
+refers to the raw (``r'') interface of 9-track tape (``mt'') unit ``0''.
 .PP
 The mapping of physical addressing information (e.g. controller, target)
 to a logical unit number is dependent on the system configuration.
