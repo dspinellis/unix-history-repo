@@ -55,23 +55,27 @@ struct exch_exch {
  */
 
 #define	EXCH_CMD_ASSOCIATE	0	/* Connect [client->server] */
+	/*
+	 * struct storage_desc
+	 * char key[]
+	 */
 #define	EXCH_CMD_DISASSOCIATE	1	/* Disconnect [client->server] */
 #define	EXCH_CMD_SEND_AUTH	2	/* Send password [server->client] */
 	/*
-	 * struct storeage_desc
+	 * struct storage_desc
 	 * char prompt[]
-	 * struct storeage_desc
+	 * struct storage_desc
 	 * char seed[]
 	 */
 #define	EXCH_CMD_AUTH		3	/* Authorization [client->server] */
 	/*
-	 * struct storeage_desc
+	 * struct storage_desc
 	 * char authenticator[]
 	 */
 #define	EXCH_CMD_ASSOCIATED	4	/* Connected [server->client] */
 #define	EXCH_CMD_REJECTED	5	/* Too bad [server->client] */
 	/*
-	 * struct storeage_desc
+	 * struct storage_desc
 	 * char message[]
 	 */
 

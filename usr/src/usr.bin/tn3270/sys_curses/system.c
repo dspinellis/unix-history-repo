@@ -1,4 +1,7 @@
 #include <sys/types.h>
+#include <sys/inode.h>
+#include <sys/file.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/wait.h>
@@ -32,6 +35,8 @@ extern int errno;
 #endif
 
 static int shell_pid = 0;
+static char key[50];			/* Actual key */
+static char *keyname;			/* Name of file with key in it */
 
 static char *ourENVlist[200];		/* Lots of room */
 
@@ -73,8 +78,8 @@ nextstore()
 	storage_length = 0;
 	return -1;
     }
-    storage_length = ntohs(sd.length);
-    storage_location = ntohl(sd.location);
+    storage_length = sd.length;
+    storage_location = sd.location;
     if (storage_length > sizeof storage) {
 	fprintf(stderr, "API client tried to send too much storage (%d).\n",
 		storage_length);
@@ -100,7 +105,7 @@ char	*message;
     if (api_exch_outcommand(EXCH_CMD_REJECTED) == -1) {
 	return -1;
     }
-    sd.length = htons(length);
+    sd.length = length;
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
@@ -115,6 +120,12 @@ char	*message;
  * doassociate()
  *
  * Negotiate with the other side and try to do something.
+ *
+ * Returns:
+ *
+ *	-1:	Error in processing
+ *	 0:	Invalid password entered
+ *	 1:	Association OK
  */
 
 static int
@@ -128,37 +139,12 @@ doassociate()
     int was;
     struct storage_descriptor sd;
 
-    if ((pwent = getpwuid(geteuid())) == 0) {
-	return -1;
-    }
-    sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
-    if (api_exch_outcommand(EXCH_CMD_SEND_AUTH) == -1) {
-	return -1;
-    }
-    sd.length = htons(strlen(promptbuf));
-    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
-	return -1;
-    }
-    if (api_exch_outtype(EXCH_TYPE_BYTES, strlen(promptbuf), promptbuf) == -1) {
-	return -1;
-    }
-    sd.length = htons(strlen(pwent->pw_name));
-    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
-	return -1;
-    }
-    if (api_exch_outtype(EXCH_TYPE_BYTES,
-			strlen(pwent->pw_name), pwent->pw_name) == -1) {
-	return -1;
-    }
-    if (api_exch_incommand(EXCH_CMD_AUTH) == -1) {
-	return -1;
-    }
     if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
-    sd.length = ntohs(sd.length);
+    sd.length = sd.length;
     if (sd.length > sizeof buffer) {
-	doreject("Password entered was too long");
+	doreject("(internal error) Authentication key too long");
 	return -1;
     }
     if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
@@ -166,30 +152,73 @@ doassociate()
     }
     buffer[sd.length] = 0;
 
-    /* Is this the correct password? */
-    if (strlen(pwent->pw_name)) {
-	char *ptr;
-	int i;
+    if (strcmp(buffer, key) != 0) {
+	if ((pwent = getpwuid(geteuid())) == 0) {
+	    return -1;
+	}
+	sprintf(promptbuf, "Enter password for user %s:", pwent->pw_name);
+	if (api_exch_outcommand(EXCH_CMD_SEND_AUTH) == -1) {
+	    return -1;
+	}
+	sd.length = strlen(promptbuf);
+	if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+									== -1) {
+	    return -1;
+	}
+	if (api_exch_outtype(EXCH_TYPE_BYTES, strlen(promptbuf), promptbuf)
+									== -1) {
+	    return -1;
+	}
+	sd.length = strlen(pwent->pw_name);
+	if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+									== -1) {
+	    return -1;
+	}
+	if (api_exch_outtype(EXCH_TYPE_BYTES,
+			    strlen(pwent->pw_name), pwent->pw_name) == -1) {
+	    return -1;
+	}
+	if (api_exch_incommand(EXCH_CMD_AUTH) == -1) {
+	    return -1;
+	}
+	if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd)
+									== -1) {
+	    return -1;
+	}
+	sd.length = sd.length;
+	if (sd.length > sizeof buffer) {
+	    doreject("Password entered was too long");
+	    return -1;
+	}
+	if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
+	    return -1;
+	}
+	buffer[sd.length] = 0;
 
-	ptr = pwent->pw_name;
-	i = 0;
-	while (i < sd.length) {
-	    buffer[i++] ^= *ptr++;
-	    if (*ptr == 0) {
-		ptr = pwent->pw_name;
+	/* Is this the correct password? */
+	if (strlen(pwent->pw_name)) {
+	    char *ptr;
+	    int i;
+
+	    ptr = pwent->pw_name;
+	    i = 0;
+	    while (i < sd.length) {
+		buffer[i++] ^= *ptr++;
+		if (*ptr == 0) {
+		    ptr = pwent->pw_name;
+		}
 	    }
 	}
-    }
-    if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) == 0) {
-	if (api_exch_outcommand(EXCH_CMD_ASSOCIATED) == -1) {
-	    return -1;
-	} else {
-	    return 1;
+	if (strcmp(crypt(buffer, pwent->pw_passwd), pwent->pw_passwd) != 0) {
+	    doreject("Invalid password");
+	    sleep(10);		/* Don't let us do too many of these */
+	    return 0;
 	}
+    }
+    if (api_exch_outcommand(EXCH_CMD_ASSOCIATED) == -1) {
+	return -1;
     } else {
-	doreject("Invalid password");
-	sleep(10);		/* Don't let us do too many of these */
-	return 0;
+	return 1;
     }
 }
 
@@ -214,8 +243,8 @@ freestorage()
 	kill_connection();
 	return;
     }
-    sd.length = htons(storage_length);
-    sd.location = htonl(storage_location);
+    sd.length = storage_length;
+    sd.location = storage_location;
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	kill_connection();
 	return;
@@ -254,8 +283,8 @@ int
     storage_location = address;
     storage_length = length;
     if (copyin) {
-	sd.location = htonl(storage_location);
-	sd.length = htons(storage_length);
+	sd.location = storage_location;
+	sd.length = storage_length;
 	if (api_exch_outtype(EXCH_TYPE_STORE_DESC,
 					sizeof sd, (char *)&sd) == -1) {
 	    kill_connection();
@@ -498,6 +527,7 @@ child_died()
 	    setconnmode();
 	    ConnectScreen();	/* Turn screen on (if need be) */
 	    (void) close(serversock);
+	    (void) unlink(keyname);
 	}
     }
     signal(SIGCHLD, child_died);
@@ -520,8 +550,46 @@ char	*argv[];
     struct sockaddr_in server;
     char sockNAME[100];
     static char **whereAPI = 0;
+    int fd;
+    struct timeval tv;
+    long ikey;
+    extern long random();
+    extern char *mktemp();
 
-    /* First, create the socket which will be connected to */
+    /* First, create verification file. */
+    do {
+	keyname = mktemp("/tmp/apiXXXXXX");
+	fd = open(keyname, O_RDWR|O_CREAT|O_EXCL, IREAD|IWRITE);
+    } while ((fd == -1) && (errno == EEXIST));
+
+    if (fd == -1) {
+	perror("open");
+	return 0;
+    }
+
+    /* Now, get seed for random */
+
+    if (gettimeofday(&tv, 0) == -1) {
+	perror("gettimeofday");
+	return 0;
+    }
+    srandom(tv.tv_usec);		/* seed random number generator */
+    do {
+	ikey = random();
+    } while (ikey == 0);
+    sprintf(key, "%lu\n", ikey);
+    if (write(fd, key, strlen(key)) != strlen(key)) {
+	perror("write");
+	return 0;
+    }
+    key[strlen(key)-1] = 0;		/* Get rid of newline */
+
+    if (close(fd) == -1) {
+	perror("close");
+	return 0;
+    }
+
+    /* Next, create the socket which will be connected to */
     serversock = socket(AF_INET, SOCK_STREAM, 0);
     if (serversock < 0) {
 	perror("opening API socket");
@@ -543,11 +611,12 @@ char	*argv[];
     /* Get name to advertise in address list */
     strcpy(sockNAME, "API3270=");
     gethostname(sockNAME+strlen(sockNAME), sizeof sockNAME-strlen(sockNAME));
-    if (strlen(sockNAME) > (sizeof sockNAME-10)) {
+    if (strlen(sockNAME) > (sizeof sockNAME-(10+strlen(keyname)))) {
 	fprintf(stderr, "Local hostname too large; using 'localhost'.\n");
 	strcpy(sockNAME, "localhost");
     }
     sprintf(sockNAME+strlen(sockNAME), ":%d", ntohs(server.sin_port));
+    sprintf(sockNAME+strlen(sockNAME), ":%s", keyname);
 
     if (whereAPI == 0) {
 	char **ptr, **nextenv;

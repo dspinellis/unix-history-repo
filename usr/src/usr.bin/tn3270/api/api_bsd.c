@@ -29,8 +29,12 @@ char	*string;		/* if non-zero, where to connect to */
 {
     struct sockaddr_in server;
     struct hostent *hp;
+    struct storage_descriptor sd;
     char *getenv();
     char thehostname[100];
+    char keyname[100];
+    char inkey[100];
+    FILE *keyfile;
     int sock;
     int port;
     int i;
@@ -44,7 +48,7 @@ char	*string;		/* if non-zero, where to connect to */
 	}
     }
 
-    if (sscanf(string, "%[^:]:%d", thehostname, &port) != 2) {
+    if (sscanf(string, "%[^:]:%d:%s", thehostname, &port, keyname) != 3) {
 	fprintf(stderr, "API3270 environmental variable has bad format.\n");
 	return -1;
     }
@@ -74,8 +78,23 @@ char	*string;		/* if non-zero, where to connect to */
     if (api_exch_outcommand(EXCH_CMD_ASSOCIATE) == -1) {
 	return -1;
     }
+    keyfile = fopen(keyname, "r");
+    if (keyfile == 0) {
+	perror("fopen");
+	return -1;
+    }
+    if (fscanf(keyfile, "%s\n", inkey) != 1) {
+	perror("fscanf");
+	return -1;
+    }
+    sd.length = strlen(inkey)+1;
+    if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
+	return -1;
+    }
+    if (api_exch_outtype(EXCH_TYPE_BYTES, sd.length, inkey) == -1) {
+	return -1;
+    }
     while ((i = api_exch_nextcommand()) != EXCH_CMD_ASSOCIATED) {
-	struct storage_descriptor sd;
 	int passwd_length;
 	char *passwd, *getpass();
 	char buffer[200];
@@ -86,7 +105,6 @@ char	*string;		/* if non-zero, where to connect to */
 					sizeof sd, (char *)&sd) == -1) {
 		return -1;
 	    }
-	    sd.length = ntohs(sd.length);
 	    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
 		return -1;
 	    }
@@ -100,7 +118,6 @@ char	*string;		/* if non-zero, where to connect to */
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 		return -1;
 	    }
-	    sd.length = ntohs(sd.length);
 	    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
 		return -1;
 	    }
@@ -110,7 +127,6 @@ char	*string;		/* if non-zero, where to connect to */
 	    if (api_exch_intype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 		return -1;
 	    }
-	    sd.length = ntohs(sd.length);
 	    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length, buffer) == -1) {
 		return -1;
 	    }
@@ -127,7 +143,7 @@ char	*string;		/* if non-zero, where to connect to */
 		    }
 		}
 	    }
-	    sd.length = htons(passwd_length);
+	    sd.length = passwd_length;
 	    if (api_exch_outcommand(EXCH_CMD_AUTH) == -1) {
 		return -1;
 	    }
@@ -169,8 +185,8 @@ int length;
     if (api_exch_outtype(EXCH_TYPE_SREGS, sizeof *sregs, (char *)sregs) == -1) {
 	return -1;
     }
-    sd.length = htons(length);
-    sd.location = (long) htonl(parms);
+    sd.length = length;
+    sd.location = (long) parms;
     if (api_exch_outtype(EXCH_TYPE_STORE_DESC, sizeof sd, (char *)&sd) == -1) {
 	return -1;
     }
@@ -192,8 +208,8 @@ int length;
 				== -1) {
 		return -1;
 	    }
-	    if (api_exch_outtype(EXCH_TYPE_BYTES, ntohs(sd.length),
-			    ntohl(sd.location)) == -1) {
+	    if (api_exch_outtype(EXCH_TYPE_BYTES, sd.length,
+			    sd.location) == -1) {
 		return -1;
 	    }
 	    break;
@@ -203,8 +219,8 @@ int length;
 		return -1;
 	    }
 	    /* XXX Validty check HEREIS? */
-	    if (api_exch_intype(EXCH_TYPE_BYTES, ntohs(sd.length),
-			    ntohl(sd.location)) == -1) {
+	    if (api_exch_intype(EXCH_TYPE_BYTES, sd.length,
+			    sd.location) == -1) {
 		return -1;
 	    }
 	    break;
