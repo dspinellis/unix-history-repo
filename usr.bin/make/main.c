@@ -35,12 +35,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00015
- * --------------------         -----   ----------------------
- *
- * 17 Mar 92	John Woods		Fix "make - make" bug
  */
 
 #ifndef lint
@@ -371,12 +365,11 @@ main(argc, argv)
 		exit(2);
 	}
 	if (!lstat(path, &sb)) {
-		obj_is_elsewhere = 1;
 		if (chdir(path)) {
-			(void)fprintf(stderr, "make: %s: %s.\n",
+			(void)fprintf(stderr, "make: Warning: can't cd to %s: %s.\n",
 			    path, strerror(errno));
-			exit(2);
-		}
+		} else
+			obj_is_elsewhere = 1;
 	}
 
 	create = Lst_Init(FALSE);
