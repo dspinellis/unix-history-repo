@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dcm.c	7.2 (Berkeley) %G%
+ *	@(#)dcm.c	7.3 (Berkeley) %G%
  */
 
 #ifdef DCMCONSOLE
@@ -18,8 +18,7 @@
 #include "../dev/device.h"
 #include "../dev/dcmreg.h"
 
-#define CONSPORT	(1)
-struct dcmdevice *CONSOLE = NULL;
+struct dcmdevice *dcmcnaddr = NULL;
 
 dcmprobe(cp)
 	struct consdev *cp;
@@ -28,16 +27,16 @@ dcmprobe(cp)
 	register struct hp_hw *hw;
 	register struct dcmdevice *dcm;
 
-	for (hw = sc_table; hw < &sc_table[MAX_CTLR]; hw++)
-	        if (hw->hw_type == COMMDCM && !badaddr((caddr_t)hw->hw_addr))
+	for (hw = sc_table; hw < &sc_table[MAXCTLRS]; hw++)
+	        if (HW_ISDEV(hw, D_COMMDCM) && !badaddr((caddr_t)hw->hw_kva))
 			break;
-	if (hw->hw_type != COMMDCM) {
+	if (!HW_ISDEV(hw, D_COMMDCM)) {
 		cp->cn_pri = CN_DEAD;
 		return;
 	}
-	CONSOLE = (struct dcmdevice *)hw->hw_addr;
+	dcmcnaddr = (struct dcmdevice *) hw->hw_kva;
 
-	dcm = CONSOLE;
+	dcm = dcmcnaddr;
 	switch (dcm->dcm_rsid) {
 	case DCMID:
 		cp->cn_pri = CN_NORMAL;
@@ -54,8 +53,8 @@ dcmprobe(cp)
 dcminit(cp)
 	struct consdev *cp;
 {
-	register struct dcmdevice *dcm = CONSOLE;
-	register int port = CONSPORT;
+	register struct dcmdevice *dcm = dcmcnaddr;
+	register int port = CONUNIT;
 
 	dcm->dcm_ic = IC_ID;
 	while (dcm->dcm_thead[port].ptr != dcm->dcm_ttail[port].ptr)
@@ -72,13 +71,13 @@ dcminit(cp)
 #ifndef SMALL
 dcmgetchar()
 {
-	register struct dcmdevice *dcm = CONSOLE;
+	register struct dcmdevice *dcm = dcmcnaddr;
 	register struct dcmrfifo *fifo;
 	register struct dcmpreg *pp;
 	register unsigned head;
 	int c, stat, port;
 
-	port = CONSPORT;
+	port = CONUNIT;
 	pp = dcm_preg(dcm, port);
 	head = pp->r_head & RX_MASK;
 	if (head == (pp->r_tail & RX_MASK))
@@ -102,13 +101,13 @@ dcmgetchar()
 dcmputchar(c)
 	register int c;
 {
-	register struct dcmdevice *dcm = CONSOLE;
+	register struct dcmdevice *dcm = dcmcnaddr;
 	register struct dcmpreg *pp;
 	register int timo;
 	unsigned tail;
 	int port, stat;
 
-	port = CONSPORT;
+	port = CONUNIT;
 	pp = dcm_preg(dcm, port);
 	tail = pp->t_tail & TX_MASK;
 	timo = 50000;

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.2 (Berkeley) %G%
+ *	@(#)dca.c	7.3 (Berkeley) %G%
  */
 
 #ifdef DCACONSOLE
@@ -18,18 +18,19 @@
 #include "../include/cpu.h"
 #include "../hp300/cons.h"
 
-#define CONSDEV	(0)
-#define CONSOLE ((struct dcadevice *)(EXTIOBASE + (9 * IOCARDSIZE)))
+struct dcadevice *dcacnaddr = 0;
 
 dcaprobe(cp)
 	struct consdev *cp;
 {
-	register struct dcadevice *dca = CONSOLE;
+	register struct dcadevice *dca;
 
-	if (badaddr((char *)CONSOLE)) {
+	dcacnaddr = (struct dcadevice *) sctoaddr(CONSCODE);
+	if (badaddr((char *)dcacnaddr)) {
 		cp->cn_pri = CN_DEAD;
 		return;
 	}
+	dca = dcacnaddr;
 	switch (dca->dca_irid) {
 	case DCAID0:
 	case DCAID1:
@@ -48,7 +49,7 @@ dcaprobe(cp)
 dcainit(cp)
 	struct consdev *cp;
 {
-	register struct dcadevice *dca = CONSOLE;
+	register struct dcadevice *dca = dcacnaddr;
 
 	dca->dca_irid = 0xFF;
 	DELAY(100);
@@ -62,7 +63,7 @@ dcainit(cp)
 #ifndef SMALL
 dcagetchar()
 {
-	register struct dcadevice *dca = CONSOLE;
+	register struct dcadevice *dca = dcacnaddr;
 	short stat;
 	int c;
 
@@ -81,7 +82,7 @@ dcagetchar()
 dcaputchar(c)
 	register int c;
 {
-	register struct dcadevice *dca = CONSOLE;
+	register struct dcadevice *dca = dcacnaddr;
 	register int timo;
 	short stat;
 

@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: ite.c 1.19 89/08/22$
+ * from: Utah $Hdr: ite.c 1.20 91/01/21$
  *
- *	@(#)ite.c	7.2 (Berkeley) %G%
+ *	@(#)ite.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -68,10 +68,10 @@ iteconfig()
 	struct ite_softc *ip;
 
 	i = 0;
-	for (hw = sc_table; hw < &sc_table[MAX_CTLR]; hw++) {
-		if (hw->hw_type != BITMAP)
+	for (hw = sc_table; hw < &sc_table[MAXCTLRS]; hw++) {
+	        if (!HW_ISDEV(hw, D_BITMAP))
 			continue;
-		gr = (struct grfreg *) hw->hw_addr;
+		gr = (struct grfreg *) hw->hw_kva;
 		/* XXX: redundent but safe */
 		if (badaddr((caddr_t)gr) || gr->gr_id != GRFHWID)
 			continue;
@@ -101,7 +101,7 @@ iteconfig()
 		fboff = (gr->gr_fbomsb << 8) | gr->gr_fbolsb;
 		ip->fbbase = (caddr_t) (*((u_char *)ip->regbase+fboff) << 16);
 		/* DIO II: FB offset is relative to select code space */
-		if (ip->regbase >= (caddr_t)0x1000000)
+		if (ip->regbase >= (caddr_t)DIOIIBASE)
 			ip->fbbase += (int)ip->regbase;
 		ip->flags = ITE_ALIVE|ITE_CONSOLE;
 		ip->type = dtype;
