@@ -1,17 +1,24 @@
-.\" the first six requests below are mandatory,
-.Dt MDOC.TEMPLATE
+.\" The following requests are required for all man pages.
+.Dt DOCUMENT_TITLE
 .Os BSD 4.4
-.Dd January 1 1990
+.Dd DATE
 .Sh NAME
 .Sh SYNOPSIS
 .Sh DESCRIPTION
-.\"  These sections should be used when appropriate
-.Sh ENVIRONMENT
-.Sh EXAMPLES
-.Sh FILES
-.Sh SEE ALSO
-.Sh STANDARDS
-.Sh HISTORY
-.Sh AUTHORS
-.Sh DIAGNOSTICS
-.Sh ERRORS
+.\" The following requests should be uncommented and used where appropriate.
+.\" This next request is for sections 2 and 3 function return values only.
+.\" .Sh RETURN VALUES
+.\" This next request is for sections 1, 6, 7 & 8 only
+.\" .Sh ENVIRONMENT
+.\" .Sh FILES
+.\" .Sh EXAMPLES
+.\" This next request is for sections 1, 6, 7 & 8 only
+.\"     (command return values (to shell) and fprintf/stderr type diagnostics)
+.\" .Sh DIAGNOSTICS
+.\" The next request is for sections 2 and 3 error and signal handling only.
+.\" .Sh ERRORS
+.\" .Sh SEE ALSO
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh BUGS
