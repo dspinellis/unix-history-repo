@@ -1,4 +1,4 @@
-#	Makefile	4.29	83/04/02
+#	Makefile	4.30	83/06/16
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -142,7 +142,7 @@ bootra: relsrt0.o bootra.o confra.o /usr/lib/libsa.a
 	cp a.out b.out;strip b.out;dd if=b.out of=bootra ibs=32 skip=1;rm b.out
 
 bootrl: relsrt0.o bootrl.o confrl.o /usr/lib/libsa.a
-	ld -N -T ${RELOC} relsrt0.o bootrl.o confra.o -lsa -lc
+	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o -lsa -lc
 	cp a.out b.out;strip b.out;dd if=b.out of=bootrl ibs=32 skip=1;rm b.out
 
 boothp.o: boothp.c ../h/param.h ../h/inode.h ../machine/pte.h ../h/reboot.h

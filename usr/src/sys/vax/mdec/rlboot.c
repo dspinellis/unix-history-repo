@@ -1,4 +1,4 @@
-/*	rlboot.c	4.2	83/02/20	*/
+/*	rlboot.c	4.3	83/06/16	*/
 
 /*
  * RL02 1st level boot program: loads next 7.5Kbytes from
@@ -67,13 +67,14 @@ start:
 /* read in the boot program */
 	.set	PROGSIZE,(BOOTSIZE*HLBPSECT)
 start2:
-	movw	$1,HL_da(r10)			/* seek to sector 1 */
-        movw    $HL_SEEK+HL_GO,HL_cs(r10)
+	movw	$1,HL_da(r10)			/* seek to cylinder 0 */
+	movw    $HL_SEEK+HL_GO,HL_cs(r10)
 1:
         movw    HL_cs(r10),r0
         bbc     $HL_pRDY,r0,1b
         bbs     $HL_pERR,r0,hlerr
-	movw	$1,HL_da(r10)			/* read program */
+	/* Rl has 256 byte sectors */
+	movw	$2,HL_da(r10)			/* read program */
 	movw	$-PROGSIZE/2,HL_wc(r10)
 	clrl	r0
 1:
@@ -86,7 +87,7 @@ start2:
         movw    HL_cs(r10),r0
         bbc     $HL_pRDY,r0,1b
         bbs     $HL_pERR,r0,hlerr
-        brw	done
+	brw	done
 hlerr:
         halt				/* ungraceful */
 done:
@@ -95,7 +96,7 @@ clrcor:
         clrq    (r3)
         acbl    $RELOC,$8,r3,clrcor
 /* run loaded program */
-        movl    $8,r10			/* major("/dev/hl0a") */
+        movl    $14,r10			/* major("/dev/hl0a") */
         calls   $0,*$0
         brw     start2
 physUBA:
