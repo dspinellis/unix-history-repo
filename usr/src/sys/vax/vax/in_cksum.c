@@ -1,7 +1,8 @@
-/* in_cksum.c 1.4 81/10/20 */
+/* in_cksum.c 1.5 81/10/21 */
 
 #include <sys/types.h>
 #include "../bbnnet/net.h"
+#include "../bbnnet/mbuf.h"
 #include "../bbnnet/count.h"
 
 /*

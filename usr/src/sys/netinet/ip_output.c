@@ -1,6 +1,9 @@
-/* ip_output.c 1.2 81/10/18 */
+/* ip_output.c 1.3 81/10/21 */
+
 #include "../h/param.h"
 #include "../bbnnet/net.h"
+#include "../bbnnet/mbuf.h"
+#include "../bbnnet/host.h"
 #include "../bbnnet/tcp.h"
 #include "../bbnnet/ip.h"
 #include "../bbnnet/imp.h"
