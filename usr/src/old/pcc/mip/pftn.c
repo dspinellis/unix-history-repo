@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)pftn.c	1.27 (Berkeley) %G%";
+static char *sccsid ="@(#)pftn.c	1.28 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -706,7 +706,8 @@ talign( ty, s) register unsigned ty; register s; {
 		switch( (ty>>i)&TMASK ){
 
 		case FTN:
-			cerror( "compiler takes alignment of function");
+			uerror( "can't assign to function" );
+			return( ALCHAR );
 		case PTR:
 			return( ALPOINT );
 		case ARY:
