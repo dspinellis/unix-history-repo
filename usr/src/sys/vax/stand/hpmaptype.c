@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	6.3 (Berkeley) %G%
+ *	@(#)hpmaptype.c	6.4 (Berkeley) %G%
  */
 
 /*
@@ -32,6 +32,7 @@ short	cdc9775_off[8] = { 0, 13, 0, -1, -1, -1, 294, 66 };
 short	cdc9730_off[8] = { 0, 50, 0, -1, -1, -1, 155, -1 };
 short	capricorn_off[8] = { 0, 32, 0, 668, 723, 778, 668, 98 };
 short	eagle_off[8] =	{ 0, 17, 0, 391, 408, 728, 391, 87 };
+short	fj2361_off[8] = { 0, 13, 0, 294, 307, 547, 294, 66 };
 /* END SHOULD BE READ IN */
 
 /*
@@ -54,6 +55,7 @@ short	hptypes[] = {
 	MBDT_RM02,	/* actually something else */
 	-1,		/* 9300 */
 	-1,		/* 9766 */
+	-1,		/* 2361 */
 	0
 };
 
@@ -88,6 +90,8 @@ struct st hpst[] = {
 	32,	19,	32*19,	815,	rm05_off,	/* Ampex 9300 */
 #define	HPDT_9766	14
 	32,	19,	32*19,	823,	rm05_off,	/* CDC 9766 */
+#define HPDT_2361	15
+	64,	20,	64*20,	842,	fj2361_off,	/* Fuji 2361 */
 };
 #define	NTYPES	(sizeof(hpst) / sizeof(hpst[0]))
 
