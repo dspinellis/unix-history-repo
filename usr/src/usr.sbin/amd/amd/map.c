@@ -1,4 +1,4 @@
-/*
+/*-
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
  * Copyright (c) 1990 The Regents of the University of California.
@@ -9,11 +9,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)map.c	1.2 (Berkeley) 6/25/91
- *
  * $Id: map.c,v 5.2.2.1 1992/02/09 15:08:36 jsp beta $
- *
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)map.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "am.h"
 
