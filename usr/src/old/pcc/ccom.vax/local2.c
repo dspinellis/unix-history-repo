@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.2 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -136,7 +136,7 @@ tlen(p) NODE *p;
 
 mixtypes(p, q) NODE *p, *q;
 {
-	register tp, tq;
+	register TWORD tp, tq;
 
 	tp = p->in.type;
 	tq = q->in.type;
@@ -207,15 +207,29 @@ zzzcode( p, c ) register NODE *p; {
 
 		if (xdebug) eprint(p, 0, &val, &val);
 		r = getlr(p, 'R');
-		if (optype(p->in.op) == LTYPE || p->in.op == UNARY MUL)
+		if (p->in.op == ASSIGN)
+			l = getlr(p, 'L');
+		else if (p->in.op == SCONV)
 			{
 			l = resc;
-			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
+#ifdef FORT
+			l->in.type = r->in.type;
+#else
+			l->in.type = r->in.type==FLOAT ? DOUBLE : r->in.type;
+#endif
+			r = getlr(p, 'L');
 			}
 		else
-			l = getlr(p, 'L');
+			{		/* OPLTYPE */
+			l = resc;
+#ifdef FORT
+			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
+#else
+			l->in.type = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
+#endif
+			}
 		if (r->in.op == ICON)
-			if(r->in.name[0] == '\0')
+			if (r->in.name[0] == '\0')
 				{
 				if (r->tn.lval == 0)
 					{
@@ -244,52 +258,30 @@ zzzcode( p, c ) register NODE *p; {
 						: (r->tn.lval <= 65535 ? USHORT
 						: INT ))))) : r->in.type );
 				}
-				else
-					{
-					printf("moval");
-					printf("	");
-					acon(r);
-					printf(",");
-					adrput(l);
-					return;
-					}
+			else
+				{
+				printf("moval");
+				printf("	");
+				acon(r);
+				printf(",");
+				adrput(l);
+				return;
+				}
 
 		if (l->in.op == REG && l->in.type != FLOAT && l->in.type != DOUBLE)
 			{
-			if( tlen(l) < tlen(r) )
+			if (tlen(l) < tlen(r) && !mixtypes(l,r))
 				{
-				if (!mixtypes(l,r))
-					{
-					!ISUNSIGNED(l->in.type)?
-						printf("cvt"):
-						printf("movz");
-					prtype(l);
-					printf("l");
-					goto ops;
-					}
+				if (ISUNSIGNED(l->in.type))
+					printf("movz");
 				else
-					{
 					printf("cvt");
-					prtype(r);
-					prtype(l);
-					printf("	");
-					adrput(r);
-					printf(",");
-					adrput(l);
-					printf("cvt");
-					prtype(l);
-					printf("l");
-					printf("	");
-					adrput(l);
-					printf(",");
-					adrput(l);
-					return;
-					}
+				prtype(l);
+				printf("l");
+				goto ops;
 				}
 			else
-				{
-			l->in.type = INT;
-				}
+				l->in.type = INT;
 			}
 		if (!mixtypes(l,r))
 			{
@@ -392,7 +384,7 @@ zzzcode( p, c ) register NODE *p; {
 		register NODE *n;
 		extern int xdebug;
 
-		n = getlr ( p, c);
+		n = getlr( p, c );
 		if (xdebug) printf("->%d<-", n->in.type);
 
 		prtype(n);
@@ -496,7 +488,11 @@ setregs(){ /* set up temporary registers */
 	}
 
 szty(t){ /* size, in registers, needed to hold thing of type t */
+#ifdef FORT
+	return( (t==DOUBLE) ? 2 : 1 );
+#else
 	return( (t==DOUBLE||t==FLOAT) ? 2 : 1 );
+#endif
 	}
 
 rewfld( p ) NODE *p; {
@@ -966,16 +962,17 @@ lastchance( p, cook ) NODE *p; {
 optim2( p ) register NODE *p; {
 	/* do local tree transformations and optimizations */
 
-	register NODE *r;
+	register NODE *l, *r;
+	int m, ml;
 
 	switch( p->in.op ) {
 
 	case AND:
 		/* commute L and R to eliminate compliments and constants */
-		if( (p->in.left->in.op==ICON&&p->in.left->in.name[0]==0) || p->in.left->in.op==COMPL ) {
-			r = p->in.left;
+		if( (l = p->in.left)->in.op == ICON && l->in.name[0] == 0 ||
+		    l->in.op == COMPL ) {
 			p->in.left = p->in.right;
-			p->in.right = r;
+			p->in.right = l;
 			}
 	case ASG AND:
 		/* change meaning of AND to ~R&L - bic on pdp11 */
@@ -988,13 +985,37 @@ optim2( p ) register NODE *p; {
 			p->in.right = r->in.left;
 			}
 		else { /* insert complement node */
-			p->in.right = talloc();
-			p->in.right->in.op = COMPL;
-			p->in.right->in.rall = NOPREF;
-			p->in.right->in.type = r->in.type;
-			p->in.right->in.left = r;
-			p->in.right->in.right = NULL;
+			p->in.right = l = talloc();
+			l->in.op = COMPL;
+			l->in.rall = NOPREF;
+			l->in.type = r->in.type;
+			l->in.left = r;
+			l->in.right = NULL;
 			}
+		break;
+
+	case SCONV:
+		m = (p->in.type == FLOAT || p->in.type == DOUBLE);
+		ml = ((l = p->in.left)->in.type == FLOAT || l->in.type == DOUBLE);
+		if( m != ml ) break;
+		m = p->in.type;
+		ml = l->in.type;
+		/* meaningful ones are conversion of int to char, int to short,
+		   and short to char, and unsigned version of them */
+		if( m==CHAR || m==UCHAR ){
+			if( ml!=CHAR && ml!= UCHAR )
+				break;
+			}
+		else if( m==SHORT || m==USHORT ){
+			if( ml!=CHAR && ml!=UCHAR && ml!=SHORT && ml!=USHORT )
+				break;
+			}
+
+		/* clobber conversion */
+		if( tlen( p ) == tlen( l ) && l->in.op != FLD )
+			l->in.type = p->in.type;
+		ncopy( p, l );
+		l->in.op = FREE;
 		break;
 
 		}
