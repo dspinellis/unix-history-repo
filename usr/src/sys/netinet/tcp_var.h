@@ -1,4 +1,4 @@
-/*	tcp_var.h	4.16	82/01/18	*/
+/*	tcp_var.h	4.17	82/12/20	*/
 
 /*
  * Kernel variables for tcp.
@@ -22,9 +22,6 @@ struct tcpcb {
 #define	TF_DELACK	0x02			/* ack, but try to delay it */
 #define	TF_DONTKEEP	0x04			/* don't use keep-alives */
 #define	TF_NOOPT	0x08			/* don't use tcp options */
-#ifdef TCPTRUEOOB
-#define	TF_DOOOB	0x10			/* do use out of band data */
-#endif
 	struct	tcpiphdr *t_template;	/* skeletal packet for transmit */
 	struct	inpcb *t_inpcb;		/* back pointer to internet pcb */
 /*
@@ -61,15 +58,6 @@ struct tcpcb {
 	char	t_oobflags;		/* have some */
 	char	t_iobc;			/* input character */
 #define	TCPOOB_HAVEDATA	0x01
-
-#ifdef TCPTRUEOOB
-#define	TCPOOB_OWEACK	0x02
-#define	TCPOOB_NEEDACK	0x04
-	u_char	t_iobseq;		/* input receive sequence number */
-	tcp_seq	t_oobmark;		/* output mark position */
-	char	t_oobc;			/* output character */
-	u_char	t_oobseq;		/* output transmit sequence number */
-#endif
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)
