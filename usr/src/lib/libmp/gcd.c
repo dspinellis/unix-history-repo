@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gcd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)gcd.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <mp.h>
@@ -31,7 +31,7 @@ invert(a, b, c) MINT *a, *b, *c;
 	int i = 0;
 	x.len = y.len = z.len = w.len = Aold.len = 0;
 	Anew.len = 1;
-	Anew.val = xalloc(1);
+	Anew.val = xalloc(1, "invert");
 	*Anew.val = 1;
 	move(b, &x);
 	move(a, &y);
