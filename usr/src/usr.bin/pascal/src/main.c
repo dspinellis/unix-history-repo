@@ -3,7 +3,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.7 %G%";
+static char sccsid[] = "@(#)main.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -94,7 +94,11 @@ main(argc, argv)
 		pexit(NOSTART);
 	}
 #	ifdef OBJ
-	    opt('g') = opt('p') = opt('t') = opt('b') = 1;
+	    opt('p') = opt('t') = opt('b') = 1;
+#ifdef vax
+	    /* pdx is currently supported only on the vax */
+	    opt('g') = 1;
+#endif vax
 	    while (argc > 0) {
 		    cp = argv[0];
 		    if (*cp++ != '-')
