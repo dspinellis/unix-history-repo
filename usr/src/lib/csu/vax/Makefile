@@ -9,12 +9,13 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
 #	gcrt0	C run time start off for profiling, ``gprof'' conventions
 #
+DEFS=-DLIBC_SCCS
 SRCS=	crt0.c mon.c gmon.c
 OBJS=	crt0.o mcrt0.o gcrt0.o mon.o gmon.o
 TAGSFILE=tags

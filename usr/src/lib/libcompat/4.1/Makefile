@@ -9,8 +9,9 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
+DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
 STDSRCS=ftime.c gtty.c nice.c pause.c rand.c stty.c tell.c \
 	times.c utime.c vlimit.c vtimes.c
