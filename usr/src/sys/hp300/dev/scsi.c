@@ -1,3 +1,6 @@
+#ifndef DEBUG
+#define DEBUG
+#endif
 /*
  * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
@@ -7,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.5 (Berkeley) %G%
+ *	@(#)scsi.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -90,6 +93,8 @@ scsiabort(hs, hd, where)
 	char *where;
 {
 	int len;
+	int maxtries;	/* XXX - kludge till I understand whats *supposed* to happen */
+	int startlen;	/* XXX - kludge till I understand whats *supposed* to happen */
 	u_char junk;
 
 	printf("scsi%d: abort from %s: phase=0x%x, ssts=0x%x, ints=0x%x\n",
@@ -106,13 +111,21 @@ scsiabort(hs, hd, where)
 	len = (hd->scsi_tch << 16) | (hd->scsi_tcm << 8) | hd->scsi_tcl;
 
 	/* for that many bus cycles, try to send an abort msg */
-	for (len += 1024; (hd->scsi_ssts & SSTS_INITIATOR) && --len >= 0; ) {
+	for (startlen = (len += 1024); (hd->scsi_ssts & SSTS_INITIATOR) && --len >= 0; ) {
 		hd->scsi_scmd = SCMD_SET_ATN;
+		maxtries = 1000;
 		while ((hd->scsi_psns & PSNS_REQ) == 0) {
 			if (! (hd->scsi_ssts & SSTS_INITIATOR))
 				goto out;
 			DELAY(1);
+			if (--maxtries == 0) {
+				printf("-- scsiabort gave up after 1000 tries (startlen = %d len = %d)\n",
+					startlen, len);
+				goto out2;
+			}
+
 		}
+out2:
 		if ((hd->scsi_psns & PHASE) == MESG_OUT_PHASE)
 			hd->scsi_scmd = SCMD_RST_ATN;
 		hd->scsi_pctl = hd->scsi_psns & PHASE;
@@ -698,6 +711,14 @@ finishxfer(hs, hd, target)
 	DELAY(1);
 	hd->scsi_sctl &=~ SCTL_CTRLRST;
 	hd->scsi_hconf = 0;
+	/*
+	 * The following delay is definitely needed when trying to
+	 * write on a write protected disk (in the optical jukebox anyways),
+	 * but we shall see if other unexplained machine freezeups
+	 * also stop occuring...  A value of 5 seems to work but
+	 * 10 seems safer considering the potential consequences.
+	 */
+	DELAY(10);
 	hs->sc_stat[0] = 0xff;
 	hs->sc_msg[0] = 0xff;
 	hd->scsi_csr = 0;
