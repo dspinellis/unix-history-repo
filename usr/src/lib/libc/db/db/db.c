@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)db.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)db.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -36,15 +36,8 @@ dbopen(fname, flags, mode, type, openinfo)
 	return (NULL);
 }
 
-DB *
-__hash_open(fname, flags, mode, openinfo)
-	const char *fname;
-	int flags, mode;
-	const HASHINFO *openinfo;
-{ return (NULL); }
-
 static int __db_edel __P((const DB *, const DBT *, u_int));
-static int __db_eget __P((const DB *, DBT *, DBT *, u_int));
+static int __db_eget __P((const DB *, const DBT *, DBT *, u_int));
 static int __db_eput __P((const DB *dbp, const DBT *, const DBT *, u_int));
 static int __db_eseq __P((const DB *, DBT *, DBT *, u_int));
 static int __db_esync __P((const DB *));
@@ -79,7 +72,8 @@ __db_edel(dbp, key, flags)
 static int
 __db_eget(dbp, key, data, flag)
 	const DB *dbp;
-	DBT *key, *data;
+	const DBT *key;
+	DBT *data;
 	u_int flag;
 {
 	return (RET_ERROR);
