@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.6 (Berkeley) %G%
+ *	@(#)mt.c	7.7 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -29,6 +29,7 @@
 #include "conf.h"
 #include "file.h"
 #include "user.h"
+#include "proc.h"
 #include "map.h"
 #include "ioctl.h"
 #include "mtio.h"
@@ -68,7 +69,7 @@ struct	mu_softc {
 	int	sc_i_mtas;	/* mtas at slave attach time */
 	int	sc_i_mtner;	/* mtner at slave attach time */
 	int	sc_i_mtds;	/* mtds at slave attach time */
-	struct	tty *sc_ttyp;	/* record user's tty for errors */
+	caddr_t	sc_ctty;	/* record user's tty for errors */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } mu_softc[NMU];
@@ -199,7 +200,8 @@ mtopen(dev, flag)
 	sc->sc_flags = 0;
 	sc->sc_blks = 0;
 	sc->sc_softerrs = 0;
-	sc->sc_ttyp = u.u_ttyp;
+	sc->sc_ctty = (caddr_t)(u.u_procp->p_flag&SCTTY ? 
+			u.u_procp->p_session->s_ttyp : 0);
 	return (0);
 }
 
@@ -500,7 +502,7 @@ mtdtint(mi, mbsr)
 	case MTER_OFFLINE:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			tprintf(sc->sc_ttyp, "mu%d: offline\n",
+			tprintf(sc->sc_ctty, "mu%d: offline\n",
 			    MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
@@ -509,14 +511,14 @@ mtdtint(mi, mbsr)
 	case MTER_NOTAVL:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			tprintf(sc->sc_ttyp, "mu%d: offline (port selector)\n",
+			tprintf(sc->sc_ctty, "mu%d: offline (port selector)\n",
 			    MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
 		break;
 
 	case MTER_FPT:
-		tprintf(sc->sc_ttyp, "mu%d: no write ring\n",
+		tprintf(sc->sc_ctty, "mu%d: no write ring\n",
 		    MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		break;
@@ -528,7 +530,7 @@ mtdtint(mi, mbsr)
 
 		/* code 010 means a garbage record, nothing serious. */
 		if ((er & MTER_FAILCODE) == (010 << MTER_FSHIFT)) {
-			tprintf(sc->sc_ttyp,
+			tprintf(sc->sc_ctty,
 			    "mu%d: rn=%d bn=%d unreadable record\n",
 			    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno);
 			bp->b_flags |= B_ERROR;
@@ -548,7 +550,7 @@ mtdtint(mi, mbsr)
 		 * error processing.  This is a bit messy, so leave
 		 * well enough alone.
 		 */
-		tprintf(sc->sc_ttyp, "\
+		tprintf(sc->sc_ctty, "\
 mu%d: hard error (data transfer) rn=%d bn=%d mbsr=%b er=0%o ds=%b\n",
 		    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno,
 		    mbsr, mbsr_bits, er,
@@ -667,7 +669,7 @@ mtndtint(mi)
 		return (MBN_SKIP);	/* ignore "rewind started" interrupt */
 
 	case MTER_NOTCAP:
-		tprintf(sc->sc_ttyp, "mu%d: blank tape\n", MUUNIT(bp->b_dev));
+		tprintf(sc->sc_ctty, "mu%d: blank tape\n", MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 
@@ -700,7 +702,7 @@ mtndtint(mi)
 		return (MBN_RETRY);
 
 	case MTER_FPT:
-		tprintf(sc->sc_ttyp, "mu%d: no write ring\n",
+		tprintf(sc->sc_ctty, "mu%d: no write ring\n",
 		    MUUNIT(bp->b_dev));
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
@@ -712,7 +714,7 @@ mtndtint(mi)
 			return(MBN_DONE);
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			tprintf(sc->sc_ttyp, "mu%d: offline\n",
+			tprintf(sc->sc_ctty, "mu%d: offline\n",
 			    MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
@@ -721,7 +723,7 @@ mtndtint(mi)
 	case MTER_NOTAVL:
 		if (sc->sc_openf > 0) {
 			sc->sc_openf = -1;
-			tprintf(sc->sc_ttyp, "mu%d: offline (port selector)\n",
+			tprintf(sc->sc_ctty, "mu%d: offline (port selector)\n",
 			    MUUNIT(bp->b_dev));
 		}
 		bp->b_flags |= B_ERROR;
@@ -733,7 +735,7 @@ mtndtint(mi)
 		/* fall through */
 
 	default:
-		tprintf(sc->sc_ttyp, "\
+		tprintf(sc->sc_ctty, "\
 mu%d: hard error (non data transfer) rn=%d bn=%d er=0%o ds=%b\n",
 		    MUUNIT(bp->b_dev), sc->sc_blkno, bp->b_blkno,
 		    er, MASKREG(sc->sc_dsreg), mtds_bits);
