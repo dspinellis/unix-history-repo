@@ -1,4 +1,4 @@
-/*	if_imp.c	4.42	82/10/21	*/
+/*	if_imp.c	4.43	82/10/22	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -76,8 +76,9 @@ int	impdown(), impinit(), impoutput();
  * structures.  This is then used by the device's attach routine
  * set up its back pointers. 
  */
-impattach(ui)
+impattach(ui, reset)
 	struct uba_device *ui;
+	int (*reset)();
 {
 	struct imp_softc *sc = &imp_softc[ui->ui_unit];
 	register struct ifnet *ifp = &sc->imp_if;
@@ -88,6 +89,7 @@ impattach(ui)
 	ifp->if_name = "imp";
 	ifp->if_mtu = IMPMTU - sizeof(struct imp_leader);
 	ifp->if_net = ui->ui_flags;
+	ifp->if_ubareset = reset;
 	/* the host and imp fields will be filled in by the imp */
 	sin = (struct sockaddr_in *)&ifp->if_addr;
 	sin->sin_family = AF_INET;

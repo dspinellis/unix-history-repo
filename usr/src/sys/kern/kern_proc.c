@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.43	82/10/21	*/
+/*	kern_proc.c	4.44	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -331,7 +331,7 @@ bad:
 	if (bp)
 		brelse(bp);
 	if (bno)
-		rmfree(argmap, ctod(clrnd((int) btoc(NCARGS))), bno);
+		rmfree(argmap, (long)ctod(clrnd((int) btoc(NCARGS))), bno);
 	iput(ip);
 }
 

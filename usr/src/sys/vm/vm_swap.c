@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.11	82/10/21	*/
+/*	vm_swap.c	4.12	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,7 +53,7 @@ swread(dev, uio)
 	struct uio *uio;
 {
 
-	physio(swstrategy, &rswbuf, dev, B_READ, minphys, uio);
+	return (physio(swstrategy, &rswbuf, dev, B_READ, minphys, uio));
 }
 
 swwrite(dev, uio)
@@ -61,7 +61,7 @@ swwrite(dev, uio)
 	struct uio *uio;
 {
 
-	physio(swstrategy, &rswbuf, dev, B_WRITE, minphys, uio);
+	return (physio(swstrategy, &rswbuf, dev, B_WRITE, minphys, uio));
 }
 
 /*

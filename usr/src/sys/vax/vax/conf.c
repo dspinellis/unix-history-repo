@@ -1,4 +1,4 @@
-/*	conf.c	4.60	82/10/21	*/
+/*	conf.c	4.61	82/10/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -425,7 +425,7 @@ struct cdevsw	cdevsw[] =
 	nodev,
 #endif
 	udopen,		nulldev,	udread,		udwrite,	/*9*/
-	udioctl,	nodev,		udreset,		0,
+	nodev,		nodev,		udreset,		0,
 	seltrue,
 	vaopen,		vaclose,	nodev,		vawrite,	/*10*/
 	vaioctl,	nulldev,	vareset,	0,
