@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc_compare.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc_compare.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -37,6 +37,11 @@ static char sccsid[] = "@(#)proc_compare.c	5.2 (Berkeley) %G%";
 
 #define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p_stat == SIDL))
 
+#define	TESTAB(a, b)	((a)<<1 | (b))
+#define	ONLYA	0x10
+#define	ONLYB	0x01
+#define	BOTH	0x11
+
 proc_compare(p1, p2)
 	register struct proc *p1, *p2;
 {
@@ -46,12 +51,12 @@ proc_compare(p1, p2)
 	/*
 	 * see if at least one of them is runnable
 	 */
-	switch (isrun(p1)<<1 | isrun(p2)) {
-	case 0x01:
+	switch (TESTAB(isrun(p1), isrun(p2))) {
+	case ONLYA:
 		return (1);
-	case 0x10:
+	case ONLYB:
 		return (0);
-	case 0x11:
+	case BOTH:
 		/*
 		 * tie - favor one with highest recent cpu utilization
 		 */
@@ -59,6 +64,17 @@ proc_compare(p1, p2)
 			return (1);
 		if (p1->p_cpu > p2->p_cpu)
 			return (0);
+		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
+	}
+	/*
+	 * weed out zombies
+	 */
+	switch (TESTAB(p1->p_stat == SZOMB, p2->p_stat == SZOMB)) {
+	case ONLYA:
+		return (1);
+	case ONLYB:
+		return (0);
+	case BOTH:
 		return (p2->p_pid > p1->p_pid);	/* tie - return highest pid */
 	}
 	/* 
