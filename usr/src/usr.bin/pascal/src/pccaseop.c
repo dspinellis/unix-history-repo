@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.3 %G%";
+static	char sccsid[] = "@(#)pccaseop.c 1.4 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -65,6 +65,7 @@ pccaseop( tcase )
     long	nr;
     long	goc;
     int		casecmp();
+    bool	dupcases;
 
     goc = gocnt;
 	/*
@@ -176,6 +177,7 @@ pccaseop( tcase )
 	}
 	putjbr( endlabel );
     }
+    noreach = nr;
 	/*
 	 *	default action is to call error
 	 */
@@ -193,11 +195,16 @@ pccaseop( tcase )
 	/*
 	 *  check for duplicates
 	 */
+    dupcases = FALSE;
     for ( ctp = &ctab[1] ; ctp < &ctab[ count ] ; ctp++ ) {
 	if ( ctp[0].cconst == ctp[1].cconst ) {
-	    error("Muliply defined label in case, lines %d and %d" ,
+	    error("Multiply defined label in case, lines %d and %d" ,
 		    ctp[0].cline , ctp[1].cline );
+	    dupcases = TRUE;
 	}
+    }
+    if ( dupcases ) {
+	return;
     }
 	/*
 	 *  choose a switch algorithm and implement it:
@@ -214,7 +221,6 @@ pccaseop( tcase )
 	itesw( ctab , count );
     }
     putlab( endlabel );
-    noreach = nr;
     if ( goc != gocnt ) {
 	    putcnt();
     }
