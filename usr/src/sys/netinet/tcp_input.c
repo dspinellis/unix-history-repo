@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_input.c	8.3 (Berkeley) %G%
+ *	@(#)tcp_input.c	8.4 (Berkeley) %G%
  */
 
 #ifndef TUBA_INCLUDE
@@ -1510,7 +1510,7 @@ tcp_xmit_timer(tp, rtt)
 int
 tcp_mss(tp, offer)
 	register struct tcpcb *tp;
-	u_short offer;
+	u_int offer;
 {
 	struct route *ro;
 	register struct rtentry *rt;
