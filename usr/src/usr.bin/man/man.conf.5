@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)man.conf.5	8.2 (Berkeley) %G%
+.\"	@(#)man.conf.5	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAN.CONF 5
@@ -65,9 +65,11 @@ The possible keywords and their meanings are as follows:
 .It _build
 Man file names, regardless of their format, are expected to end in
 a ``.*'' pattern, i.e. a ``.'' followed by some suffix.
-The first field of a _build line lists a suffix globbing pattern which
-indicates files which need to be reformated or manipulated in
-some way before being displayed to the user.
+The first field of a _build line lists a suffix which indicates
+files which need to be reformated or manipulated in some way before
+being displayed to the user.
+The suffix may contain the normal shell globbing characters (NOT
+including curly braces (``{}'')).
 The rest of the line must be a shell command line, the standard
 output of which is the manual page in a format which may be directly
 displayed to the user.
@@ -88,9 +90,11 @@ options.
 .It _suffix
 Man file names, regardless of their format are expected to end in
 a ``.*'' pattern, i.e. a ``.'' followed by some suffix.
-Each field of a _suffix line is a suffix globbing pattern which
-indicates files which do not need to be reformatted or manipulated
+Each field of a _suffix line is a suffix which indicates
+files which do not need to be reformatted or manipulated
 in any way, but which may be directly displayed to the user.
+Each suffix may contain the normal shell globbing characters (NOT
+including curly braces (``{}'')).
 .It _version
 The version of the configuration file.
 .It _whatdb
@@ -160,4 +164,6 @@ Standard manual directory search path.
 .Xr machine 1 ,
 .Xr man 1 ,
 .Xr whatis 1 ,
-.Xr whereis 1
+.Xr whereis 1 ,
+.Xr fnmatch 3 ,
+.Xr glob 3
