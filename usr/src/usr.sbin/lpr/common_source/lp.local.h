@@ -1,4 +1,4 @@
-/*	lp.local.h	4.4	83/08/24	*/
+/*	lp.local.h	4.5	84/07/24	*/
 /*
  * Possibly, local parameters to the spooling system
  */
@@ -44,11 +44,6 @@
  *   want otherwise, change this mode.
  */
 #define FILMOD		0660
-
-/*
- * We choose not to include this from <sys/param.h>
- */
-#define NOFILE		20
 
 /*
  * Printer is assumed to support LINELEN (for block chars)
