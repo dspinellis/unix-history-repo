@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)gettytab.5	6.5 (Berkeley) %G%
+.\"	@(#)gettytab.5	6.6 (Berkeley) %G%
 .\"
 .TH GETTYTAB 5 ""
 .UC 5
@@ -83,6 +83,7 @@ ln	str	^V	``literal next'' character
 lo	str	/usr/bin/login	program to exec when name obtained
 nd	num	0	newline (line-feed) delay
 nl	bool	false	terminal has (or might have) a newline character
+np	bool	false	terminal uses all 8 bits for display, thus no parity
 nx	str	default	next table (for auto speed selection)
 op	bool	false	terminal uses odd parity
 os	num	unused	output speed
@@ -214,6 +215,11 @@ to allow any parity on input, but generate odd parity output.
 Note: this only applies while getty is being run,
 terminal driver limitations prevent a more complete
 implementation.
+For terminals that use the full eight bit for character set (like the
+IBM PC console and DEC VT 220 terminals), 
+.B np
+may be specified to provide no parity on output, which superceeds the
+above mentioned parity options.
 .I Getty
 does not check parity of input characters in
 .I RAW
