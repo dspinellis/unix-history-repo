@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)udp_usrreq.c	7.11 (Berkeley) %G%
+ *	@(#)udp_usrreq.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -238,8 +238,9 @@ udp_output(inp, m)
 	    inp->inp_socket->so_options & (SO_DONTROUTE | SO_BROADCAST)));
 }
 
-u_long	udp_sendspace = 2048;		/* really max datagram size */
-u_long	udp_recvspace = 4 * (1024+sizeof(struct sockaddr_in)); /* 4 1K dgrams */
+u_long	udp_sendspace = 9216;		/* really max datagram size */
+u_long	udp_recvspace = 40 * (1024 + sizeof(struct sockaddr_in));
+					/* 40 1K datagrams */
 
 /*ARGSUSED*/
 udp_usrreq(so, req, m, nam, rights, control)
