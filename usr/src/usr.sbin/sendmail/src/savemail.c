@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.48 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.49 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -720,7 +720,7 @@ errbody(mci, e, separator, flags)
 		putline("", mci);
 		(void) sprintf(buf, "--%s", e->e_msgboundary);
 		putline(buf, mci);
-		putline("Content-Type: message/delivery-status", mci);
+		putline("Content-Type: message/X-delivery-status-1", mci);
 		putline("", mci);
 
 		/*
