@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.18 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.19 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -68,7 +68,7 @@ SOFTWARE.
 #include "iso.h"
 #include "iso_errno.h"
 
-int tp_attach(), tp_driver();
+int tp_attach(), tp_driver(), tp_pcbbind();
 int TNew;
 int TPNagle1, TPNagle2;
 struct tp_pcb *tp_listeners, *tp_intercepts;
@@ -435,30 +435,19 @@ tp_usrreq(so, req, m, nam, controlp)
 		break;
 
 	case PRU_BIND:
-		error =  (tpcb->tp_nlproto->nlp_pcbbind)(tpcb->tp_npcb, nam);
-		if (error == 0) {
-			(tpcb->tp_nlproto->nlp_getsufx)(tpcb->tp_npcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL);
-		}
+		error =  tp_pcbbind(tpcb, nam);
 		break;
 
 	case PRU_LISTEN:
-		if (tpcb->tp_lsuffixlen == 0) {
-			if (error = (tpcb->tp_nlproto->nlp_pcbbind)(tpcb->tp_npcb, MNULL))
-				break;
-			(tpcb->tp_nlproto->nlp_getsufx)(tpcb->tp_npcb, &tpcb->tp_lsuffixlen,
-				tpcb->tp_lsuffix, TP_LOCAL);
-		}
-		if (tpcb->tp_next == 0) {
-			tpcb->tp_next = tpcb->tp_prev = tpcb;
+		if (tpcb->tp_state != TP_CLOSED || tpcb->tp_lsuffixlen == 0 ||
+				tpcb->tp_next == 0)
+			error = EINVAL;
+		else {
+			remque(tpcb);
 			tpcb->tp_nextlisten = tp_listeners;
-			tp_listeners = tpcb;
+			tpcb->tp_next = tpcb->tp_prev = tp_listeners = tpcb;
+			error = DoEvent(T_LISTEN_req);
 		}
-		IFDEBUG(D_TPISO)
-			if (tpcb->tp_state != TP_CLOSED)
-				printf("LISTEN ERROR: state 0x%x\n", tpcb->tp_state);
-		ENDDEBUG
-		error = DoEvent(T_LISTEN_req);
 		break;
 
 	case PRU_CONNECT2:
