@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_sig.c	7.35 (Berkeley) 6/28/91
- *	$Id$
+ *	$Id: kern_sig.c,v 1.5 1993/10/16 15:24:27 rgrimes Exp $
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1061,12 +1061,12 @@ coredump(p)
 	sprintf(name, "%s.core", p->p_comm);
 	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
-	if ((error = vn_open(&nd, p, FWRITE, 0644)) == 0)
+	if ((error = vn_open(&nd, p, FWRITE, 0600)) == 0)
 		exists = 1;
 	else
 		exists = 0;
 	if (error == ENOENT)
-		error = vn_open(&nd, p, O_CREAT | FWRITE, 0644);
+		error = vn_open(&nd, p, O_CREAT | FWRITE, 0600);
 	if (error)
 		return (error);
 	vp = nd.ni_vp;
