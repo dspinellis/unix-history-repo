@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -99,7 +99,6 @@ struct	proc *aproc;
 #define IGINT		(1+3*1)		/* ignoring both SIGINT & SIGQUIT */
 
 char	*getargs();
-char	*fread();
 char	*ctime();
 char	*rindex();
 FILE	*popen();
