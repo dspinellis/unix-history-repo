@@ -31,8 +31,6 @@
  * SUCH DAMAGE.
  */
 
-#ifndef PW_COMPACT
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -43,6 +41,18 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+
+/* #define PW_COMPACT */
+/* Compact pwd.db/spwd.db structure by Alex G. Bulushev, bag@demos.su */
+#ifdef PW_COMPACT
+# define HI_BSIZE 1024
+# define HI_NELEM 4500
+# define HI_CACHE (1024 * 1024)
+#else
+# define HI_BSIZE 2048
+# define HI_NELEM 4500
+# define HI_CACHE (4000 * 1024)
+#endif
 
 #define	INSECURE	1
 #define	SECURE		2
@@ -64,7 +74,9 @@ pw_fastmkdb(new_pwd)
 	DB *dp, *edp;
 	sigset_t set;
 	DBT data, key;
-	int ch, cnt;
+#ifdef PW_COMPACT
+	DBT pdata, sdata;
+#endif
 	char buf[MAX(MAXPATHLEN, LINE_MAX * 2)], tbuf[1024];
 	char buf2[MAX(MAXPATHLEN, LINE_MAX * 2)];
 	int uid;
@@ -72,10 +84,10 @@ pw_fastmkdb(new_pwd)
 	HASHINFO openinfo;
 
 	/* Hash database parameters */
-	openinfo.bsize=2048;
+	openinfo.bsize=HI_BSIZE;
 	openinfo.ffactor=32;
-	openinfo.nelem=4500;		/* Default value was 300 */
-	openinfo.cachesize=4000*1024;	/* Default value was 512 */
+	openinfo.nelem=HI_NELEM;       /* Default value was 300 */
+	openinfo.cachesize=HI_CACHE;   /* Default value was 512 */
 	openinfo.hash=NULL;
 	openinfo.lorder=0;
 
@@ -109,6 +121,12 @@ pw_fastmkdb(new_pwd)
 	bcopy((char *)new_pwd, (char *)&pwd, sizeof(struct passwd));
 	data.data = (u_char *)buf;
 	key.data = (u_char *)tbuf;
+#ifdef PW_COMPACT
+	pdata.data = (u_char *)&globcnt;
+	pdata.size = sizeof(int);
+	sdata.data = (u_char *)pwd.pw_passwd;
+	sdata.size = strlen(pwd.pw_passwd) + 1;
+#endif
 #define	COMPACT(e)	t = e; while (*p++ = *t++);
 
 	/* Create insecure data. */
@@ -116,7 +134,9 @@ pw_fastmkdb(new_pwd)
 	gid = pwd.pw_gid;
 	p = buf;
 	COMPACT(pwd.pw_name);
+#ifndef PW_COMPACT
 	COMPACT("*");
+#endif
 	bcopy((char *)&uid, p, sizeof(uid));
 	p += sizeof(int);
 	bcopy((char *)&gid, p, sizeof(gid));
@@ -136,7 +156,22 @@ pw_fastmkdb(new_pwd)
 	len = strlen(pwd.pw_name);
 	bcopy(pwd.pw_name, tbuf + 1, len);
 	key.size = len + 1;
+#ifdef PW_COMPACT
+	if ((dp->put)(dp, &key, &pdata, 0) == -1)
+#else
 	if ((dp->put)(dp, &key, &data, 0) == -1)
+#endif
+		error("put");
+
+	/* Store insecure by uid. */
+	tbuf[0] = _PW_KEYBYUID;
+	bcopy((char *)&uid, tbuf + 1, sizeof(uid));
+	key.size = sizeof(uid) + 1;
+#ifdef PW_COMPACT
+	if ((dp->put)(dp, &key, &pdata, 0) == -1)
+#else
+	if ((dp->put)(dp, &key, &data, 0) == -1)
+#endif
 		error("put");
 
 	/* Store insecure by number. */
@@ -146,19 +181,17 @@ pw_fastmkdb(new_pwd)
 	if ((dp->put)(dp, &key, &data, 0) == -1)
 		error("put");
 
-	/* Store insecure by uid. */
-	tbuf[0] = _PW_KEYBYUID;
-	bcopy((char *)&uid, tbuf + 1, sizeof(uid));
-	key.size = sizeof(uid) + 1;
-	if ((dp->put)(dp, &key, &data, 0) == -1)
-		error("put");
-
 	(void)(dp->close)(dp);
 
 	/* Open the encrypted password database. */
 	edp = dbopen(_PATH_SMP_DB, O_RDWR, PERM_SECURE, DB_HASH, &openinfo);
 	if (!edp)
 		error(_PATH_SMP_DB);
+#ifdef PW_COMPACT
+	/* Store secure. */
+	if ((edp->put)(edp, &key, &sdata, 0) == -1)
+		error("put");
+#else
 
 	/* Create secure data. */
 	p = buf;
@@ -199,6 +232,7 @@ pw_fastmkdb(new_pwd)
 	key.size = sizeof(uid) + 1;
 	if ((edp->put)(edp, &key, &data, 0) == -1)
 		error("put");
+#endif
 
 	(void)(edp->close)(edp);
 
@@ -232,4 +266,3 @@ error(name)
 	(void)fprintf(stderr, "%s: %s: %s\n", progname, name, strerror(errno));
 	return(-1);
 }
-#endif /* PW_COMPACT */

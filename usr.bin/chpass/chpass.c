@@ -172,7 +172,6 @@ main(argc, argv)
 
 	pw_copy(pfd, tfd, pw);
 
-#ifndef PW_COMPACT
 	/*
 	 * Attempt a recovery if the incremental database update failed by
 	 * handing off to the real password hashing program to remake the
@@ -182,10 +181,8 @@ main(argc, argv)
 	if (pw_fastmkdb(pw) < 0) {
 	rebuild:
 		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n", progname);
-#endif
 		if(!pw_mkdb())
 			pw_error((char *)NULL, 0, 1);
-#ifndef PW_COMPACT
 	}
         else {
                    tfd = pw_tmp();
@@ -201,7 +198,6 @@ main(argc, argv)
 	           mv(tempname, _PATH_PASSWD);
                      
         }
-#endif
 	exit(0);
 }
 

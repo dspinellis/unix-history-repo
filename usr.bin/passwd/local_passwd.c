@@ -33,7 +33,7 @@
 
 #ifndef lint
 /*static char sccsid[] = "from: @(#)local_passwd.c	5.5 (Berkeley) 5/6/91";*/
-static char rcsid[] = "$Id: local_passwd.c,v 1.5 1994/05/14 19:40:57 ache Exp $";
+static char rcsid[] = "$Id: local_passwd.c,v 1.6 1994/05/14 20:20:25 ache Exp $";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -81,7 +81,6 @@ local_passwd(uname)
 	pw->pw_change = 0;
 	pw_copy(pfd, tfd, pw);
 
-#ifndef PW_COMPACT
 	/*
 	 * Attempt a recovery if the incremental database update failed by
 	 * handing off to the real password hashing program to remake the
@@ -90,12 +89,9 @@ local_passwd(uname)
 	 */
 	if (pw_fastmkdb(pw) < 0) {
 		fprintf(stderr,"%s: WARNING!! Password database mangled, recreating it from scratch\n", progname);
-#endif
 		if(!pw_mkdb())
 			pw_error((char *)NULL, 0, 1);
-#ifndef PW_COMPACT
 	}
-#endif
 	return(0);
 }
 
