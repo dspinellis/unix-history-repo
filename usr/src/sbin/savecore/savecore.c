@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)savecore.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)savecore.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -340,14 +340,13 @@ check_space()
 	Lseek(dfd, (long)(SBLOCK * DEV_BSIZE), 0);
 	Read(dfd, (char *)&fs, sizeof fs);
 	close(dfd);
-	spacefree = fs.fs_cstotal.cs_nbfree * fs.fs_bsize / 1024;
-	if (read_number("minfree") > spacefree) {
+	spacefree = freespace(&fs, fs.fs_minfree) * fs.fs_fsize / 1024;
+	if (spacefree < read_number("minfree")) {
 		fprintf(stderr,
 		   "savecore: Dump omitted, not enough space on device\n");
 		return (0);
 	}
-	if (fs.fs_cstotal.cs_nbfree * fs.fs_frag + fs.fs_cstotal.cs_nffree <
-	    fs.fs_dsize * fs.fs_minfree / 100)
+	if (freespace(&fs, fs.fs_minfree) < 0)
 		fprintf(stderr,
 			"Dump performed, but free space threshold crossed\n");
 	return (1);
