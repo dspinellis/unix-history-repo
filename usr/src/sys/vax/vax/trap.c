@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.6 (Berkeley) %G%
+ *	@(#)trap.c	7.7 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -146,8 +146,8 @@ trap(sp, type, code, pc, psl)
 	trapsignal(i, ucode);
 out:
 	p = u.u_procp;
-	if (p->p_cursig || ISSIG(p))
-		psig();
+	if (i = CURSIG(p))
+		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -164,8 +164,8 @@ out:
 		swtch();
 		if (ISSIG(p))
 			psig();
-		if (ISSIG(p))
-			psig();
+		if (i = CURSIG(p))
+			psig(i);
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
@@ -191,7 +191,7 @@ syscall(sp, type, code, pc, psl)
 	register int i;				/* known to be r9 below */
 	register struct sysent *callp;
 	register struct proc *p = u.u_procp;
-	int opc;
+	int error, opc;
 	struct timeval syst;
 
 	syst = u.u_ru.ru_stime;
@@ -217,8 +217,8 @@ syscall(sp, type, code, pc, psl)
 		}
 	}
 	if ((i = callp->sy_narg * sizeof (int)) &&
-	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
-		locr0[R0] = u.u_error;
+	    (error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
+		locr0[R0] = error;
 		locr0[PS] |= PSL_C;	/* carry bit */
 #ifdef KTRACE
                 if (KTRPOINT(p, KTR_SYSCALL))
@@ -232,25 +232,21 @@ syscall(sp, type, code, pc, psl)
 #endif
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
-	if (setjmp(&u.u_qsave)) {
-		if (u.u_error == 0 && u.u_eosys != RESTARTSYS)
-			u.u_error = EINTR;
-	} else {
-		u.u_eosys = NORMALRETURN;
-		(*(callp->sy_call))(&u);
-	}
-	if (u.u_eosys == NORMALRETURN) {
-		if (u.u_error) {
-			locr0[R0] = u.u_error;
+	error = (*(callp->sy_call))(&u);
+	error = u.u_error;		/* XXX */
+	if (error == ERESTART)
+		pc = opc;
+	else if (error != EJUSTRETURN) {
+		if (error) {
+			locr0[R0] = error;
 			locr0[PS] |= PSL_C;	/* carry bit */
 		} else {
 			locr0[R0] = u.u_r.r_val1;
 			locr0[R1] = u.u_r.r_val2;
 			locr0[PS] &= ~PSL_C;
 		}
-	} else if (u.u_eosys == RESTARTSYS)
-		pc = opc;
-	/* else if (u.u_eosys == JUSTRETURN) */
+	}
+	/* else if (error == EJUSTRETURN) */
 		/* nothing to do */
 done:
 	/*
@@ -258,8 +254,8 @@ done:
 	 * if this is a child returning from fork syscall.
 	 */
 	p = u.u_procp;
-	if (p->p_cursig || ISSIG(p))
-		psig();
+	if (i = CURSIG(p))
+		psig(i);
 	p->p_pri = p->p_usrpri;
 	if (runrun) {
 		/*
@@ -274,6 +270,8 @@ done:
 		setrq(p);
 		u.u_ru.ru_nivcsw++;
 		swtch();
+		if (i = CURSIG(p))
+			psig(i);
 	}
 	if (u.u_prof.pr_scale) {
 		int ticks;
