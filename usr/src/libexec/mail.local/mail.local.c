@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -299,7 +299,9 @@ tryagain:
 
 	/* Get the starting offset of the new message for biff. */
 	curoff = lseek(mbfd, (off_t)0, SEEK_END);
-	(void)snprintf(biffmsg, sizeof(biffmsg), "%s@%qd\n", name, curoff);
+	(void)snprintf(biffmsg, sizeof(biffmsg),
+		sizeof curoff > sizeof(long) ? "%s@%qd\n" : "%s@%ld\n", 
+		name, curoff);
 
 	/* Copy the message into the file. */
 	if (lseek(fd, (off_t)0, SEEK_SET) == (off_t)-1) {
