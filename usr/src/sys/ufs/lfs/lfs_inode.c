@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.38 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -230,8 +230,9 @@ iput(ip)
  * Last reference to an inode, write the inode out and if necessary,
  * truncate and deallocate the file.
  */
-ufs_inactive(vp)
+ufs_inactive(vp, p)
 	struct vnode *vp;
+	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
 	int mode, error = 0;
