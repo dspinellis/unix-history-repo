@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
- *	@(#)tp_subr.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_subr.c	7.4 (Berkeley) %G%
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -541,8 +541,8 @@ tp_send(tpcb)
 
 		IFTRACE(D_DATA)
 			tptraceTPCB( TPPTmisc, 
-				"tp_send emitting DT lowseq eotsdu_reached",
-				lowseq, eotsdu_reached, 0, 0);
+				"tp_send emitting DT lowseq eotsdu_reached len",
+				lowseq, eotsdu_reached, len, 0);
 		ENDTRACE
 		if( tpcb->tp_sock->so_error =
 			tp_emit(DT_TPDU_type, tpcb, lowseq, eotsdu_reached, m) )  {
