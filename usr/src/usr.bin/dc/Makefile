@@ -1,19 +1,40 @@
 #
-#	@(#)Makefile	5.1	(Berkeley)	87/05/31
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-DESTDIR=
-SRCS=	dc.c dc.h
-CFLAGS=	-O
+#	@(#)Makefile	5.4	(Berkeley)	%G%
+#
+CFLAGS=	-O -I.
+LIBC=	/lib/libc.a
+SRCS=	dc.c
+OBJS=	dc.h
 
 all: dc
 
-dc:	dc.c dc.h
-	${CC} ${CFLAGS} dc.c -o dc
+dc:	dc.c ${LIBC}
+	${CC} ${CFLAGS} dc.c -o $@
 
-install: dc
-	install -s dc ${DESTDIR}/usr/bin/dc
+clean: FRC
+	rm -f ${OBJS} core dc
 
-clean:
-	rm -f *.o dc a.out errs core
+depend: FRC
+	mkdep -p ${CFLAGS} ${SRCS}
 
-depend:
+install: FRC
+	install -s -o bin -g bin -m 755 dc ${DESTDIR}/usr/bin/dc
+
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
+
+tags: FRC
+	ctags ${SRCS}
+
+FRC:
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+
+dc: dc.c /usr/include/stdio.h /usr/include/signal.h dc.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
