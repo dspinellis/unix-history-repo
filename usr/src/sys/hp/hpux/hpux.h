@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux.h 1.33 93/08/05$
  *
- *	@(#)hpux.h	8.2 (Berkeley) %G%
+ *	@(#)hpux.h	8.3 (Berkeley) %G%
  */
 
 #include <hp/hpux/hpux_exec.h>
@@ -214,6 +214,7 @@ struct hpuxsigaction {
 #define	HPUXSIG_SETMASK	2	/* set specified signal set */
 
 /* sysconf stuff */
+#define HPUX_SYSCONF_CLKTICK	2
 #define HPUX_SYSCONF_OPENMAX	4
 #define HPUX_SYSCONF_CPUTYPE	10001
 #define HPUX_SYSCONF_CPUM020	0x20C

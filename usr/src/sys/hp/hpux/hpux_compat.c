@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.64 93/08/05$
  *
- *	@(#)hpux_compat.c	8.2 (Berkeley) %G%
+ *	@(#)hpux_compat.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -634,6 +634,11 @@ hpuxsysconf(p, uap, retval)
 	int *retval;
 {
 	switch (uap->name) {
+
+	/* clock ticks per second */
+	case HPUX_SYSCONF_CLKTICK:
+		*retval = hz;
+		break;
 
 	/* open files */
 	case HPUX_SYSCONF_OPENMAX:
