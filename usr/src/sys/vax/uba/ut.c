@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ut.c	7.2 (Berkeley) %G%
+ *	@(#)ut.c	7.3 (Berkeley) %G%
  */
 
 #include "tj.h"
@@ -38,7 +38,6 @@
 #include "ubavar.h"
 #include "utreg.h"
 
-struct	buf	rutbuf[NUT];	/* bufs for raw i/o */
 struct	buf	cutbuf[NUT];	/* bufs for control operations */
 struct	buf	tjutab[NTJ];	/* bufs for slave queue headers */
 
@@ -251,6 +250,7 @@ utstrategy(bp)
 	int tjunit = TJUNIT(bp->b_dev);
 	register struct uba_ctlr *um;
 	register struct buf *dp;
+	int s;
 
 	/*
 	 * Put transfer at end of unit queue
@@ -258,7 +258,7 @@ utstrategy(bp)
 	dp = &tjutab[tjunit];
 	bp->av_forw = NULL;
 	um = tjdinfo[tjunit]->ui_mi;
-	(void) spl5();
+	s = spl5();
 	if (dp->b_actf == NULL) {
 		dp->b_actf = bp;
 		/*
@@ -279,7 +279,7 @@ utstrategy(bp)
 	 */
 	if (um->um_tab.b_state == 0)
 		utstart(um);
-	(void) spl0();
+	splx(s);
 }
 
 utstart(um)
@@ -353,25 +353,38 @@ loop:
 		goto dobpcmd;
 	}
 	/*
-	 * The following checks boundary conditions for operations
-	 * on non-raw tapes.  On raw tapes the initialization of
-	 * sc->sc_nxrec by utphys causes them to be skipped normally
-	 * (except in the case of retries).
+	 * For raw I/O, save the current block
+	 * number in case we have to retry.
 	 */
-	if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
-		/* can't read past end of file */
-		bp->b_flags |= B_ERROR;
-		bp->b_error = ENXIO;
-		goto next;
+	if (bp->b_flags & B_RAW) {
+		if (um->um_tab.b_errcnt == 0) {
+			sc->sc_blkno = bdbtofsb(bp->b_blkno);
+			sc->sc_nxrec = sc->sc_blkno + 1;
+		}
 	}
-	if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec && (bp->b_flags&B_READ)) {
-		/* read at eof returns 0 count */
-		bp->b_resid = bp->b_bcount;
-		clrbuf(bp);
-		goto next;
+	else {
+		/*
+		 * Handle boundary cases for operation
+		 * on non-raw tapes.
+		 */
+		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+			/* can't read past end of file */
+			bp->b_flags |= B_ERROR;
+			bp->b_error = ENXIO;
+			goto next;
+		}
+		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		    (bp->b_flags&B_READ)) {
+			/*
+			 * Reading at end of file returns 0 bytes.
+			 */
+			bp->b_resid = bp->b_bcount;
+			clrbuf(bp);
+			goto next;
+		}
+		if ((bp->b_flags&B_READ) == 0)
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	}
-	if ((bp->b_flags&B_READ) == 0)
-		sc->sc_nxrec = bdbtofsb(bp->b_blkno)+1;
 	/*
 	 * If the tape is correctly positioned, set up all the
 	 * registers but the csr, and give control over to the
@@ -519,7 +532,7 @@ utintr(ut11)
 		 * was that the record was too long, then we don't consider
 		 * this an error.
 		 */
-		if (bp == &rutbuf[UTUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
+		if ((bp->b_flags & (B_READ|B_RAW)) == (B_READ|B_RAW) &&
 		    (sc->sc_erreg&UTER_FCE))
 			sc->sc_erreg &= ~UTER_FCE;
 		if (sc->sc_erreg == 0)
@@ -545,7 +558,7 @@ utintr(ut11)
 		 * Hard or non-I/O errors on non-raw tape
 		 * cause it to close.
 		 */
-		if (sc->sc_openf > 0 && bp != &rutbuf[UTUNIT(bp->b_dev)])
+		if ((bp->b_flags&B_RAW) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
 		/*
 		 * Couldn't recover error.
@@ -692,56 +705,6 @@ uttimer(dev)
 		(void) splx(x);
 	}
 	timeout(uttimer, (caddr_t)dev, 5*hz);
-}
-
-/*
- * Raw interface for a read
- */
-utread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = utphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_READ, minphys, uio));
-}
-
-/*
- * Raw interface for a write
- */
-utwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = utphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(utstrategy, &rutbuf[UTUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
-/*
- * Check for valid device number dev and update our notion
- * of where we are on the tape
- */
-utphys(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int tjunit = TJUNIT(dev);
-	register struct tj_softc *sc;
-	register struct uba_device *ui;
-
-	if (tjunit >= NTJ || (ui=tjdinfo[tjunit]) == 0 || ui->ui_alive == 0)
-		return (ENXIO);
-	sc = &tj_softc[tjunit];
-	sc->sc_blkno = bdbtofsb(uio->uio_offset>>9);
-	sc->sc_nxrec = sc->sc_blkno+1;
-	return (0);
 }
 
 /*ARGSUSED*/

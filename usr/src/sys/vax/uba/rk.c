@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	7.2 (Berkeley) %G%
+ *	@(#)rk.c	7.3 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -110,8 +110,6 @@ u_char 	rk_offset[16] =
   { RKAS_P400,RKAS_M400,RKAS_P400,RKAS_M400,RKAS_P800,RKAS_M800,RKAS_P800,
     RKAS_M800,RKAS_P1200,RKAS_M1200,RKAS_P1200,RKAS_M1200,0,0,0,0
   };
-
-struct	buf rrkbuf[NRK];
 
 #define	b_cylin	b_resid
 
@@ -529,28 +527,6 @@ rkwait(addr)
 
 	while ((addr->rkcs1 & RK_CRDY) == 0)
 		;
-}
-
-rkread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = rkunit(dev);
-
-	if (unit >= NRK)
-		return (ENXIO);
-	return (physio(rkstrategy, &rrkbuf[unit], dev, B_READ, minphys, uio));
-}
-
-rkwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = rkunit(dev);
-
-	if (unit >= NRK)
-		return (ENXIO);
-	return (physio(rkstrategy, &rrkbuf[unit], dev, B_WRITE, minphys, uio));
 }
 
 rkecc(ui, flag)

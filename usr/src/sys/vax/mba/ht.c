@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ht.c	7.5 (Berkeley) %G%
+ *	@(#)ht.c	7.6 (Berkeley) %G%
  */
 
 #include "tu.h"
@@ -38,7 +38,6 @@
 #include "mbavar.h"
 #include "htreg.h"
 
-struct	buf	rhtbuf[NHT];
 struct	buf	chtbuf[NHT];
 
 short	httypes[] =
@@ -57,7 +56,7 @@ struct	mba_driver htdriver =
 #define	H_NOREWIND	04
 #define	H_DENS(dev)	((minor(dev) >> 3) & 03)
 
-#define HTUNIT(dev)	(tutoht[TUUNIT(dev)])
+#define HTUNIT(dev)	(tuinfo[TUUNIT(dev)]->ms_ctlr)
 
 #define	INF	(daddr_t)1000000L	/* a block number that wont exist */
 
@@ -70,13 +69,10 @@ struct	tu_softc {
 	u_short	sc_dsreg;
 	short	sc_resid;
 	short	sc_dens;
-	struct	mba_device *sc_mi;
-	int	sc_slave;
 	struct	tty *sc_ttyp;		/* record user's tty for errors */
 	int	sc_blks;	/* number of I/O operations since open */
 	int	sc_softerrs;	/* number of soft I/O errors since open */
 } tu_softc[NTU];
-short	tutoht[NTU];
 
 /*
  * Bits for sc_flags.
@@ -100,15 +96,11 @@ htslave(mi, ms, sn)
 	struct mba_slave *ms;
 	int sn;
 {
-	register struct tu_softc *sc = &tu_softc[ms->ms_unit];
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 
 	htaddr->httc = sn;
 	if (htaddr->htdt & HTDT_SPR) {
-		sc->sc_mi = mi;
-		sc->sc_slave = sn;
 		tuinfo[ms->ms_unit] = ms;
-		tutoht[ms->ms_unit] = mi->mi_unit;
 		return (1);
 	} else
 		return (0);
@@ -121,19 +113,19 @@ htopen(dev, flag)
 	int flag;
 {
 	register int tuunit;
-	register struct mba_device *mi;
 	register struct tu_softc *sc;
+	register struct mba_slave *ms;
 	int olddens, dens;
 
 	tuunit = TUUNIT(dev);
-	if (tuunit >= NTU || tuinfo[tuunit]->ms_alive == 0 || 
-	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0)
+	if (tuunit >= NTU || (ms = tuinfo[tuunit]) == NULL ||
+	    ms->ms_alive == 0 || htinfo[ms->ms_ctlr]->mi_alive == 0)
 		return (ENXIO);
 	if ((sc = &tu_softc[tuunit])->sc_openf)
 		return (EBUSY);
 	sc->sc_openf = 1;
 	olddens = sc->sc_dens;
-	dens = sc->sc_dens = htdens[H_DENS(dev)] | HTTC_PDP11 | sc->sc_slave;
+	dens = sc->sc_dens = htdens[H_DENS(dev)] | HTTC_PDP11 | ms->ms_slave;
 	htcommand(dev, HT_SENSE, 1);
 	sc->sc_dens = olddens;
 	if ((sc->sc_dsreg & HTDS_MOL) == 0) {
@@ -260,19 +252,28 @@ htustart(mi)
 		return (MBU_NEXT);
 	}
 	if (bp != &chtbuf[HTUNIT(bp->b_dev)]) {
-		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
-			bp->b_flags |= B_ERROR;
-			bp->b_error = ENXIO;
-			return (MBU_NEXT);
+		/* transfer: check positioning */
+		if (bp->b_flags & B_RAW) {
+			/* raw transfer: record position for retry */
+			if (mi->mi_tab.b_errcnt == 0) {
+				sc->sc_blkno = bdbtofsb(bp->b_blkno);
+				sc->sc_nxrec = sc->sc_blkno + 1;
+			}
+		} else {
+			if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+				bp->b_flags |= B_ERROR;
+				bp->b_error = ENXIO;
+				return (MBU_NEXT);
+			}
+			if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+			    bp->b_flags&B_READ) {
+				bp->b_resid = bp->b_bcount;
+				clrbuf(bp);
+				return (MBU_NEXT);
+			}
+			if ((bp->b_flags&B_READ)==0)
+				sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 		}
-		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
-		    bp->b_flags&B_READ) {
-			bp->b_resid = bp->b_bcount;
-			clrbuf(bp);
-			return (MBU_NEXT);
-		}
-		if ((bp->b_flags&B_READ)==0)
-			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	} else {
 		if (bp->b_command == HT_SENSE)
 			return (MBU_NEXT);
@@ -332,7 +333,7 @@ htdtint(mi, mbsr)
 	if ((ds&(HTDS_ERR|HTDS_MOL)) != HTDS_MOL || mbs & MBSR_EBITS) {
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		mbclrattn(mi);
-		if (bp == &rhtbuf[HTUNIT(bp->b_dev)]) {
+		if (bp->b_flags & B_RAW) {
 			er &= ~HTER_FCE;
 			mbs &= ~(MBSR_DTABT|MBSR_MBEXC);
 		}
@@ -435,49 +436,6 @@ htndtint(mi)
 	else
 		sc->sc_blkno = bdbtofsb(bp->b_blkno);
 	return (MBN_RETRY);
-}
-
-htread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = htphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys, uio));
-}
-
-htwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = htphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
-htphys(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int htunit;
-	register struct tu_softc *sc;
-	register struct mba_device *mi;
-	daddr_t a;
-
-	htunit = HTUNIT(dev);
-	if (htunit >= NHT || (mi = htinfo[htunit]) == 0 || mi->mi_alive == 0)
-		return (ENXIO);
-	a = uio->uio_offset >> 9;
-	sc = &tu_softc[TUUNIT(dev)];
-	sc->sc_blkno = bdbtofsb(a);
-	sc->sc_nxrec = bdbtofsb(a)+1;
-	return (0);
 }
 
 /*ARGSUSED*/

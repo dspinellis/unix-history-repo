@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	7.4 (Berkeley) %G%
+ *	@(#)ts.c	7.5 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -48,14 +48,6 @@
  * before the rewind completes will hang waiting for ctsbuf.
  */
 struct	buf	ctsbuf[NTS];
-
-/*
- * Raw tape operations use rtsbuf.  The driver
- * notices when rtsbuf is being used and allows the user
- * program to continue after errors and read records
- * not of the standard length (BSIZE).
- */
-struct	buf	rtsbuf[NTS];
 
 /*
  * Driver unibus interface routines and variables.
@@ -461,7 +453,7 @@ loop:
 	 * For raw I/O, save the current block
 	 * number in case we have to retry.
 	 */
-	if (bp == &rtsbuf[tsunit]) {
+	if (bp->b_flags & B_RAW) {
 		if (um->um_tab.b_errcnt == 0)
 			sc->sc_blkno = bdbtofsb(bp->b_blkno);
 	} else {
@@ -648,7 +640,7 @@ tsintr(tsunit)
 			 * If we were reading raw tape and the record was too
 			 * long or too short, we don't consider this an error.
 			 */
-			if (bp == &rtsbuf[tsunit] && bp->b_flags&B_READ &&
+			if ((bp->b_flags & (B_READ|B_RAW)) == (B_READ|B_RAW) &&
 			    sc->sc_ts.t_sts.s_xs0&(TS_RLS|TS_RLL))
 				goto ignoreerr;
 			/* FALLTHROUGH */
@@ -668,7 +660,8 @@ tsintr(tsunit)
 				 * Non-i/o errors on non-raw tape
 				 * cause it to close.
 				 */
-				if (sc->sc_openf > 0 && bp != &rtsbuf[tsunit])
+				if ((bp->b_flags&B_RAW) == 0 &&
+				    sc->sc_openf > 0)
 					sc->sc_openf = -1;
 			}
 			break;
@@ -783,28 +776,11 @@ tsseteof(bp)
 	sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 }
 
-tsread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_READ, minphys, uio));
-}
-
-tswrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-
-	return (physio(tsstrategy, &rtsbuf[TSUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
 tsreset(uban)
 	int uban;
 {
 	register struct uba_ctlr *um;
 	register struct uba_device *ui;
-	register struct buf *dp;
 	register int ts11, i;
 
 	for (ts11 = 0; ts11 < NTS; ts11++) {

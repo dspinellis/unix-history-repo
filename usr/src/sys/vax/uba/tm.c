@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tm.c	7.3 (Berkeley) %G%
+ *	@(#)tm.c	7.4 (Berkeley) %G%
  */
 
 #include "te.h"
@@ -51,14 +51,6 @@
  * before the rewind completes will hang waiting for ctmbuf.
  */
 struct	buf	ctmbuf[NTM];
-
-/*
- * Raw tape operations use rtmbuf.  The driver
- * notices when rtmbuf is being used and allows the user
- * program to continue after errors and read records
- * not of the standard length (BSIZE).
- */
-struct	buf	rtmbuf[NTM];
 
 /*
  * Driver unibus interface routines and variables.
@@ -182,8 +174,8 @@ tmattach(ui)
 	struct uba_device *ui;
 {
 	/*
-	 * Tetotm is used in TMUNIT to index the ctmbuf and rtmbuf
-	 * arrays given a te unit number.
+	 * Tetotm is used in TMUNIT to index the ctmbuf
+	 * array given a te unit number.
 	 */
 	tetotm[ui->ui_unit] = ui->ui_mi->um_ctlr;
 }
@@ -457,33 +449,43 @@ loop:
 		goto dobpcmd;
 	}
 	/*
-	 * The following checks handle boundary cases for operation
-	 * on non-raw tapes.  On raw tapes the initialization of
-	 * sc->sc_nxrec by tmphys causes them to be skipped normally
-	 * (except in the case of retries).
+	 * For raw I/O, save the current block
+	 * number in case we have to retry.
 	 */
-	if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
-		/*
-		 * Can't read past known end-of-file.
-		 */
-		bp->b_flags |= B_ERROR;
-		bp->b_error = ENXIO;
-		goto next;
+	if (bp->b_flags & B_RAW) {
+		if (um->um_tab.b_errcnt == 0) {
+			sc->sc_blkno = bdbtofsb(bp->b_blkno);
+			sc->sc_nxrec = sc->sc_blkno + 1;
+		}
 	}
-	if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
-	    bp->b_flags&B_READ) {
+	else {
 		/*
-		 * Reading at end of file returns 0 bytes.
+		 * Handle boundary cases for operation
+		 * on non-raw tapes.
 		 */
-		bp->b_resid = bp->b_bcount;
-		clrbuf(bp);
-		goto next;
+		if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+			/*
+			 * Can't read past known end-of-file.
+			 */
+			bp->b_flags |= B_ERROR;
+			bp->b_error = ENXIO;
+			goto next;
+		}
+		if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec &&
+		    bp->b_flags&B_READ) {
+			/*
+			 * Reading at end of file returns 0 bytes.
+			 */
+			bp->b_resid = bp->b_bcount;
+			clrbuf(bp);
+			goto next;
+		}
+		if ((bp->b_flags&B_READ) == 0)
+			/*
+			 * Writing sets EOF
+			 */
+			sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	}
-	if ((bp->b_flags&B_READ) == 0)
-		/*
-		 * Writing sets EOF
-		 */
-		sc->sc_nxrec = bdbtofsb(bp->b_blkno) + 1;
 	/*
 	 * If the data transfer command is in the correct place,
 	 * set up all the registers except the csr, and give
@@ -640,7 +642,7 @@ tmintr(tm11)
 		 * If we were reading raw tape and the only error was that the
 		 * record was too long, then we don't consider this an error.
 		 */
-		if (bp == &rtmbuf[TMUNIT(bp->b_dev)] && (bp->b_flags&B_READ) &&
+		if ((bp->b_flags & (B_READ|B_RAW)) == (B_READ|B_RAW) &&
 		    (addr->tmer&(TMER_HARD|TMER_SOFT)) == TMER_RLE)
 			goto ignoreerr;
 		/*
@@ -664,7 +666,7 @@ tmintr(tm11)
 			 * Hard or non-i/o errors on non-raw tape
 			 * cause it to close.
 			 */
-			if (sc->sc_openf>0 && bp != &rtmbuf[TMUNIT(bp->b_dev)])
+			if ((bp->b_flags&B_RAW) == 0 && sc->sc_openf > 0)
 				sc->sc_openf = -1;
 		/*
 		 * Couldn't recover error
@@ -802,53 +804,6 @@ tmseteof(bp)
 	} 
 	/* eof on read */
 	sc->sc_nxrec = bdbtofsb(bp->b_blkno);
-}
-
-tmread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = tmphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_READ, minphys, uio));
-}
-
-tmwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	int errno;
-
-	errno = tmphys(dev, uio);
-	if (errno)
-		return (errno);
-	return (physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_WRITE, minphys, uio));
-}
-
-/*
- * Check that a raw device exists.
- * If it does, set up sc_blkno and sc_nxrec
- * so that the tape will appear positioned correctly.
- */
-tmphys(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int teunit = TEUNIT(dev);
-	register daddr_t a;
-	register struct te_softc *sc;
-	register struct uba_device *ui;
-
-	if (teunit >= NTE || (ui=tedinfo[teunit]) == 0 || ui->ui_alive == 0)
-		return (ENXIO);
-	sc = &te_softc[teunit];
-	a = bdbtofsb(uio->uio_offset >> 9);
-	sc->sc_blkno = a;
-	sc->sc_nxrec = a + 1;
-	return (0);
 }
 
 tmreset(uban)

@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	7.2 (Berkeley) %G% */
+/*	@(#)tmscp.c	7.3 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -199,7 +199,6 @@ struct uba_device *tmsdinfo[NTMS];
  * ifdef other tmscp devices here if they allow more than 1 unit/controller
  */
 struct uba_device *tmscpip[NTMSCP][1];
-struct buf rtmsbuf[NTMS];		/* raw i/o buffer */
 struct buf ctmscpbuf[NTMSCP];		/* internal cmd buffer (for ioctls) */
 struct buf tmsutab[NTMS];		/* Drive queue */
 struct buf tmscpwtab[NTMSCP];		/* I/O wait queue, per controller */
@@ -1876,39 +1875,6 @@ tmscpcmd(op, tmscpp, tmscpaddr)
 		}
 	return(1);
 }
-
-
-/*
- * Perform raw read
- */
-
-tmscpread(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = TMSUNIT(dev);
-
-	if (unit >= NTMS)
-		return (ENXIO);
-	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_READ, minphys, uio));
-}
-
-
-/*
- * Perform raw write
- */
-
-tmscpwrite(dev, uio)
-	dev_t dev;
-	struct uio *uio;
-{
-	register int unit = TMSUNIT(dev);
-
-	if (unit >= NTMS)
-		return (ENXIO);
-	return (physio(tmscpstrategy, &rtmsbuf[unit], dev, B_WRITE, minphys, uio));
-}
-
 
 /*
  * Catch ioctl commands, and call the "command" routine to do them.
