@@ -1,0 +1,58 @@
+.TH BIND 2 2/12/83
+.SH NAME
+bind \- bind a name to a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/socket.h>
+.PP
+.ft B
+bind(s, name, namelen)
+int s;
+struct sockaddr *name;
+int namelen;
+.fi
+.SH DESCRIPTION
+.I Bind
+assigns gives a name to a unnamed socket.
+When a socket is created 
+with
+.IR socket (2)
+it exists in a name space (address family)
+but has no name assigned.
+The
+.I Bind
+requests the
+.IR name ,
+be assigned to the socket.
+.SH "RETURN VALUE
+If the bind is successful, a 0 value is returned.
+A return value of \-1 indicates an error, which is
+further specified in the global \fIerrno\fP.
+.SH ERRORS
+The \fIbind\fP call will fail if:
+.TP 20
+[EBADF]
+\fIS\fP is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+\fIS\fP is not a socket.
+.TP 20
+[EADDRNOTAVAIL]
+The specified address is not available from the local machine.
+.TP 20
+[EADDRINUSE]
+The specified address is already in use.
+.TP 20
+[EINVAL]
+The socket is already bound to an address.
+.TP 20
+[EACCESS]
+The requested address is protected, and the current user
+has inadequate permission to access it.
+.TP 20
+[EFAULT]
+The \fIname\fP parameter is not in a valid part of the user
+address space.
+.SH SEE ALSO
+connect(2), listen(2), socket(2), sockaddr(2)

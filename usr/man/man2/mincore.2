@@ -1,0 +1,33 @@
+.TH MINCORE 2 2/13/83
+.SH NAME
+mincore \- find out about core resident pages
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.PP
+.ft B
+mincore(addr, len, vec)
+caddr_t addr; int len; char *vec;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Mincore
+returns a character array 
+.I vec 
+describing the core residency of the pages
+beginning at
+.I addr
+and continuing for 
+.I len
+bytes.  Each entry in 
+.I vec
+corresponds to a single page; a 1 indicates
+the page is core resident, 0 otherwise.
+.SH "RETURN VALUE
+???
+.SH ERRORS
+???
+.SH "SEE ALSO"
+getpagesize(2), madvise(2), mremap(2), munmap(2)

@@ -1,0 +1,49 @@
+.TH SOCKETPAIR 2 2/13/83
+.SH NAME
+socketpair \- create a pair of connected sockets
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/socket.h>
+.PP
+.ft B
+socketpair(d, type, protocol, sv)
+int d, type, protocol;
+int sv[2];
+.fi
+.SH DESCRIPTION
+.ft B
+This 4.2 call is not implemented in 4.1c.
+.ft R
+.PP
+The
+.I socketpair
+system call
+creates an unnamed pair of connected sockets in
+the specified address family,
+of the specified
+.I type
+and using the optionally specified
+.IR protocol .
+.SH DIAGNOSTICS
+A 0 is returned if the call succeeds, \-1 if it fails.
+.SH ERRORS
+The call succeeds unless:
+.TP 20
+[EMFILE]
+Too many descriptors are in use by this process.
+.TP 20
+[EAFNOSUPPORT]
+The specified address family is not supported on this machine.
+.TP 20
+[EPROTONOSUPPORT]
+The specified protocol is not supported on this machine.
+.TP 20
+[EOPNOSUPPORT]
+The specified protocol does not support creation of socket pairs.
+.TP 20
+[EFAULT]
+The address \fIsv\fP does not specify a valid part of the
+process address space.
+.SH "SEE ALSO"
+read(2), write(2), pipe(2)

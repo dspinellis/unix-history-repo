@@ -1,0 +1,28 @@
+.TH MUNMAP 2 2/13/83
+.SH NAME
+munmap \- unmap pages of memory
+.SH SYNOPSIS
+.nf
+.ft B
+#include <mman.h>
+.PP
+.ft B
+munmap(addr, len)
+caddr_t addr; int len;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Munmap
+causes the pages starting at
+.I addr
+and continuing for 
+.I len
+bytes to refer to private pages which will
+be initialized to zero on reference.
+.SH "RETURN VALUE
+???
+.SH ERRORS
+???
+.SH "SEE ALSO"
+mincore(2) mremap(2), munmap(2)

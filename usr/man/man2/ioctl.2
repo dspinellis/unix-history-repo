@@ -1,0 +1,109 @@
+.TH IOCTL 2 2/13/83
+.SH NAME
+ioctl \- control device
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/ioctl.h>
+.PP
+.ft B
+ioctl(d, request, argp)
+int d;
+int request;
+char *argp;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Ioctl
+performs a variety of functions
+on open descriptors.  In particular, many operating
+characteristics of character special files (e.g. terminals)
+may be controlled with
+.I ioctl
+requests.
+The writeups of various devices in section 4 discuss how
+.I ioctl
+applies to them.
+.PP
+An  ioctl
+.I request
+has encoded in it whether the argument is an \*(lqin\*(rq parameter
+or \*(lqout\*(rq parameter, and the size of the argument \fIargp\fP in bytes.
+Macros and defines used in specifying an ioctl
+.I request
+are located in the file
+.IR <sys/ioctl.h> .
+.PP
+The following calls apply to any descriptor:
+.RS
+.ft B
+.nf
+ioctl(d, FIOCLEX, 0);
+ioctl(d, FIONCLEX, 0);
+.fi
+.ft R
+.RE
+.LP
+The first causes the file to be closed automatically during a successful
+.I exec
+operation; the second reverses the effect of the first.
+.PP
+.RS
+.ft B
+.nf
+ioctl(d, FIONREAD, &count)
+int count;
+.fi
+.ft R
+.RE
+.LP
+returns, in the longword
+.I count
+the number of characters available for reading from
+.I fildes.
+.SH "RETURN VALUE
+If an error has occurred, a value of \-1 is returned and
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Ioctl
+will fail if one or more of the following are true:
+.TP 15
+[EBADF]
+\fID\fP is not a valid descriptor.
+.TP 15
+[ENOTTY]
+\fID\fP is not associated with a character
+special device.
+.TP 15
+[ENOTTY]
+The specified request does not apply to the kind
+of object which the descriptor \fId\fP references.
+.TP 15
+[EINVAL]
+\fIRequest\fP or \fIargp\fP is not valid.
+.SH "SEE ALSO"
+dk(4), mt(4), tty(4)
+.SH BUGS
+The following call is a temporary replacement for the as yet not
+implemented
+.IR setdopt (2)
+call:
+.PP
+.RS
+.ft B
+.nf
+ioctl(fildes, FIONBIO, onoff);
+int *onoff;
+.ft R
+.fi
+.RE
+.LP
+The parameter 
+.I onoff
+specifies whether non-blocking i/o is desired on the specified descriptor.
+This applies to terminals, pipes, pseudo-terminals and sockets and
+specifies that operations are to return EWOULDBLOCK rather than
+blocking.  A
+.IR select (2)
+operation may be used to determine when i/o is possible without busy polling.

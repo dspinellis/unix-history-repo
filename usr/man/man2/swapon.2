@@ -1,0 +1,55 @@
+.TH SWAPON 2 2/13/83
+.SH NAME
+swapon, swapoff \- add/delete a swap device for interleaved paging/swapping
+.SH SYNOPSIS
+.nf
+.ft B
+index = swapon(blkdev, size, q)
+int index;
+char *blkdev;
+int size, q;
+.PP
+.ft B
+swapoff(index, messily)
+int index, messily;
+.fi
+.SH DESCRIPTION
+.ft B
+This 4.2 call is not implemented in 4.1c.
+.ft R
+.PP
+.I Swapon
+makes the argument block device available to the system for
+allocation for paging and swapping.  The number of blocks to be
+made available is specified as
+.I size
+and the \*(lqquality factor\*(rq
+is specified as
+.IR q.
+The latter quantity helps the system decide how to divide the
+paging and swapping load.  Higher
+.IR q 's
+suggest secondary choices for swap areas.  The returned 
+.I index
+may be used in a later
+.I swapoff
+call.
+.PP
+.I Swapoff
+removes the usage of the swap device number
+.I index
+as a system swapping device.  If
+.I messily
+is not set, then the system attempts to pull pages
+off this device by migrating them to other devices.
+If
+.I messily 
+is set (e.g. if the device has crashed), then processes
+using the device may have bad things happen to them.
+.SH "RETURN VALUE
+A 0 return indicates success; \-1 indicates a problem.
+.SH ERRORS
+To be described.
+.SH "SEE ALSO"
+swapon(8)
+.SH BUGS

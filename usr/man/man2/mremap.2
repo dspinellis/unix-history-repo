@@ -1,0 +1,44 @@
+.TH MREMAP 2 2/12/83
+.SH NAME
+mremap \- remap pages of memory
+.SH SYNOPSIS
+.nf
+.ft B
+#include <mman.h>
+#include <sys/types.h>
+.PP
+.ft B
+mremap(addr, len, prot, share, fromaddr)
+caddr_t addr; int len, prot, share; caddr_t fromaddr;
+.fi
+.SH DESCRIPTION
+\fBThis 4.2 call is not implemented in 4.1c.\fP
+.PP
+.I Mremap
+causes the pages starting at
+.I fromaddr
+and continuing for 
+.I len
+bytes to be mapped to the address
+.IR addr .
+The parameter 
+.I share
+specifies whether modifications made to this mapped
+copy of the page are to be kept
+.I private 
+or are to be 
+.I shared
+with other references.
+The parameter
+.I prot
+specifies the accessibility of the newly mapped pages.
+The
+.I addr
+and
+.I len
+parameters must be multiples of the hardware page size
+(obtained with the 
+.IR getpagesize (2)
+call).
+.SH "SEE ALSO"
+getpagesize(2), madvise(2), mmap(2), munmap(2)

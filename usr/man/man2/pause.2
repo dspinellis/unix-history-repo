@@ -1,0 +1,28 @@
+.TH PAUSE 2 2/13/83
+.SH NAME
+pause \- stop until signal
+.SH SYNOPSIS
+.B pause()
+.SH DESCRIPTION
+.I Pause
+never returns normally.
+It is used to give up control while waiting for
+a signal from
+.IR kill (2)
+or
+.IR alarm (2).
+Upon termination of a signal handler started during a
+.I pause,
+the
+.I pause
+call will return.
+.SH "RETURN VALUE
+Always returns \-1.
+.SH ERRORS
+.I Pause
+always returns:
+.TP 15
+[EINTR]
+The call was interrupted.
+.SH "SEE ALSO
+kill(2), select(2)

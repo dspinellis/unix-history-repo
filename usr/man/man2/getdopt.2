@@ -1,0 +1,96 @@
+.TH GETDOPT 2
+.UC 4.2
+.SH NAME
+getdopt, setdopt \- get/set options associated with a descriptor 
+.SH SYNOPSIS
+.nf
+.ft B 
+#include <descrip.h>
+.PP
+.ft B
+getdopt(d, whichway, dopt)
+int d, whichway;
+struct dopt *dopt;
+.PP
+.ft B
+setdopt(d, whichway, dopt)
+int d, whichway;
+struct dopt *dopt;
+.fi
+.SH DESCRIPTION
+\fBN.B. This call is proposed for 4.2bsd, but not implemented in 4.1c.\fP
+.PP
+I/O operations on descriptors are normally blocking in case 
+a request can not be immediately completed.  This mode of
+operation may be altered to be 
+.I "non-blocking"
+or
+.I "asynchronous"
+through the 
+.I setdopt
+call.  The
+.I getdopt
+call allows a process to find out what mode a descriptor
+is presently using.
+.PP
+The descriptor is indicated as
+.IR d .
+The
+.I whichway
+parameter is formed by 
+.BR or 'ing 
+together the following:
+.PP
+.nf
+.RS
+.DT
+DOPT_INPUT		0x1	apply to input
+DOPT_OUTPUT	0x2	apply to all output
+DOPT_EXCEPT	0x4	apply to any exceptional conditions
+.RE
+.fi
+.PP
+.I Dopt
+is a pointer to a structure of the form
+.PP
+.nf
+.RS
+.DT
+struct dopt {
+	int	do_flags;
+	int	do_pid;
+};
+.sp 1
+#define	DOFLAG_DONTBLOCK	0x1
+#define	DOFLAG_SIGNALPROC	0x2
+#define	DOFLAG_SIGNALPGRP	0x4
+.RE
+.fi
+.PP
+Operations on a non-blocking descriptor will either complete
+immediately, note an error EWOULDBLOCK, partially complete an
+input or output operation, returning a partial count or return
+an error EINPROGRESS noting the requested operation is in progress.
+.PP
+A descriptor which has signalling enabled will cause the specified
+process and/or process group to be signalled, with a SIGIO when
+input, output, or an in-progress operation completes, or with a SIGURG
+signal when an exceptional condition arises.
+.SH "RETURN VALUE
+If the call succeeds, then the call returns a 0 value.
+If an error occurs, a value \-1 is returned and an error
+indication is stored in the global variable \fIerrno\fP\|.
+.SH ERRORS
+The possible errors for \fIgetdopt\fP are:
+.TP 15
+[EBADF]
+\fID\fP is not a valid descriptor.
+.TP 15
+[EFAULT]
+The \fIdopt\fP argument is at an illegal address.
+.TP 15
+[EACCESS]
+The process or process group specified in \fIsetdopt\fP
+is not allowed to be signalled by the current process.
+.SH "SEE ALSO"
+select(2), signal(2)

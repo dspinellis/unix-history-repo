@@ -1,0 +1,80 @@
+.TH FLOCK 2 2/13/83
+.SH NAME
+flock \- apply or remove an advisory lock on an open file
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/file.h>
+.PP
+.ft B
+flock(fd, operation)
+int fd;
+.fi
+.SH DESCRIPTION
+.I Flock
+applies or removes an
+.I advisory
+lock on the file associated with the file descriptor
+.IR fd .
+The
+.I operation
+parameter is formed by
+.IR or ing
+the appropriate values together from:
+.PP
+.RS
+ FSHLOCK	apply advisory shared lock
+ FEXLOCK	apply advisory exclusive lock
+ FUNLOCK	remove existing lock
+ FNBLOCK	do not block
+.RE
+.PP
+Advisory locks allow cooperating processes to perform
+consistent operations on files, but do not guarantee
+consistency (i.e. processes may still access files
+without using advisory locks possibly resulting in
+inconsistencies).
+.PP
+The locking mechanism allows two types of locks:
+.I shared
+locks and
+.I exclusive
+locks.
+At any time multiple shared locks may be applied to a file,
+but at no time are multiple exclusive, or both shared and exclusive,
+locks allowed simultaneously on a file.  
+.PP
+A shared lock may be
+.I upgraded
+to an exclusive lock, and vice versa, simply by specifying
+the appropriate lock type; this results in the previous
+lock being released and the new lock applied (possibly
+after other processes have gained and released the lock).
+.SH NOTES
+Processes blocked awaiting a lock are interruptible.
+An exclusive locked file descriptor may be duplicated through
+.IR dup (2)
+or
+.IR fork (2)
+resulting in multiple processes actively holding an exclusive lock.
+.SH "RETURN VALUE
+Zero is returned if the operation was sucessful;
+on an error a \-1 is returned and an error code is left in
+the global location \fIerrno\fP.
+.SH "ERRORS
+The \fIflock\fP call fails if:
+.TP 15
+[EWOULDBLOCK]
+The file is locked and the FNBLOCK option was specified.
+.TP 15
+[EBADF]
+The argument \fIfd\fP is an invalid descriptor.
+.TP 15
+[EINVAL]
+The argument \fIfd\fP refers to an object other than a file.
+.SH "SEE ALSO"
+open(2), dup(2), fork(2)
+.SH BUGS
+This locking mechanism should be resolved with the
+.I lockf
+mechanism of the /usr/group standard.

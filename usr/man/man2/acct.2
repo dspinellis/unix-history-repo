@@ -1,0 +1,41 @@
+.TH ACCT 2 2/13/82
+.SH NAME
+acct \- turn accounting on or off
+.SH SYNOPSIS
+.nf
+.ft B
+acct(file)
+char *file;
+.ft R
+.fi
+.SH DESCRIPTION
+The system is prepared to write a record
+in an accounting
+.I file
+for each process as it terminates.
+This
+call, with a null-terminated string naming an existing file
+as argument, turns on accounting;
+records for each terminating process are appended to
+.IR file .
+An argument of 0 causes accounting to be turned off.
+.PP
+The accounting file format is given in
+.IR acct (5).
+.SH NOTES
+Accounting is automatically turned off when the file system the
+accounting file resides on runs out of space; it is not, however
+turned back on when space becomes available.
+.SH DIAGNOSTICS
+On error \-1 is returned.
+The file must exist and the call may be exercised only by the super-user.
+It is erroneous to try to turn on accounting when it is already on.
+.SH ERRORS
+To be supplied.
+.SH "SEE ALSO"
+acct(5), sa(8)
+.SH BUGS
+No accounting is produced for programs running
+when a crash occurs.
+In particular nonterminating programs are never
+accounted for.
