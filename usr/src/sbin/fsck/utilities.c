@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -358,7 +358,7 @@ getpathname(namebuf, curdir, ino)
 	struct inodesc idesc;
 	extern int findname();
 
-	if (statemap[ino] != DSTATE && statemap[ino] != DFOUND) {
+	if (statemap[curdir] != DSTATE && statemap[curdir] != DFOUND) {
 		strcpy(namebuf, "?");
 		return;
 	}
@@ -374,14 +374,14 @@ getpathname(namebuf, curdir, ino)
 		idesc.id_number = ino;
 		idesc.id_func = findino;
 		idesc.id_name = "..";
-		if ((ckinode(getcacheino(ino), &idesc) & FOUND) == 0)
+		if ((ckinode(ginode(ino), &idesc) & FOUND) == 0)
 			break;
 	namelookup:
 		idesc.id_number = idesc.id_parent;
 		idesc.id_parent = ino;
 		idesc.id_func = findname;
 		idesc.id_name = namebuf;
-		if ((ckinode(getcacheino(idesc.id_number), &idesc)&FOUND) == 0)
+		if ((ckinode(ginode(idesc.id_number), &idesc)&FOUND) == 0)
 			break;
 		len = strlen(namebuf);
 		cp -= len;
