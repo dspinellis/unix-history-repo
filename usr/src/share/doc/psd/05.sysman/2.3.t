@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.3.t	6.4 (Berkeley) %G%
+.\"	@(#)2.3.t	8.1 (Berkeley) %G%
 .\"
 .sh "Interprocess communications
 .NH 3
