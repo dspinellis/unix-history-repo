@@ -3,30 +3,29 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	6.1 (Berkeley) %G%
 #
 #	makefile for screen package documentation
 #
 NROFF=	nroff
-TROFF=	vtroff
+TROFF=	ditroff
 VFONT=	/usr/lib/vfontedpr
 NFLAGS=	-Tcrt
-TFLAGS=
+TFLAGS= -Pdp
 CFLAGS=	-O -n -s
-BINDIR=	/usr/doc/curses
-TARFILE=cf curdoc.tar
+BINDIR=	/usr/doc/ps1/18.curses
 
 DOCS=	doc.I doc.II doc.III doc.IV
-RAW=	macros c_macros appen.B appen.A appen.C disclaim intro.0 intro.1 \
-	intro.2 intro.3 intro.4 intro.5 ${DOCS} curses.3
+RAW=	macros c_macros appen.B appen.A appen.C intro.0 intro.1 \
+	intro.2 intro.3 intro.4 intro.5 ${DOCS} curses.3x
 
 CRAW=	win_st.c twinkle1.c twinkle2.c life.c
 CSOURCE=win_st.gr twinkle1.gr twinkle2.gr life.gr
-SOURCE=	macros appen.A.tbl appen.B appen.C disclaim intro.0 intro.1 \
+SOURCE=	macros appen.A.tbl appen.B appen.C intro.0 intro.1 \
 	intro.2.tbl intro.3 intro.4 intro.5
 
-#.SUFFIXES:
-#.SUFFIXES: .c .gr
+.SUFFIXES:
+.SUFFIXES: .c .gr
 
 #
 # this section formats C input source into nice troffable (or nroffable)
@@ -38,12 +37,13 @@ Curses.doc: ${VFONT} Master macros ${SOURCE}
 	${NROFF} -me ${NFLAGS} Master > Curses.doc
 
 # Don't re-run vgrind unless you want to patch the output files.
-#.c.gr:
-#	${VFONT} $*.c > $*.gr
+.c.gr:
+	${VFONT} $*.c | grep -v "^'wh" > $*.gr
 
-${CSOURCE}: ${VFONT}
 troff: Master macros ${SOURCE}
 	${TROFF} -me ${TFLAGS} Master ;
+
+${CSOURCE}: ${VFONT}
 
 intro.5: ${DOCS}
 appen.B: win_st.gr
@@ -64,12 +64,12 @@ spell: ${SOURCE}
 install:
 	cp Makefile ${RAW} ${BINDIR}
 
-tar:
-	tar rv${TARFILE} Master ${RAW} ${CRAW} Makefile vfontedpr.c
+ar:
+	ar crv curdoc.ar Master ${RAW} ${CRAW} Makefile
 
 lpr: Curses
 	-lpr Curses ; lpq
 	-lpq
 
 clean:
-	rm -f ${CSOURCE} appen.A.tbl intro.2.tbl curses.tar vfontedpr
+	rm -f ${CSOURCE} appen.A.tbl intro.2.tbl curses.tar vfontedpr Curses.doc
