@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)arff.c	4.8 (Berkeley) 81/11/13";
+static	char *sccsid = "@(#)arff.c	4.9 (Berkeley) 82/06/27";
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,7 +22,7 @@ struct rt_ent {
 	char	rt_pad;		/* unusued */
 	char	rt_stat;	/* type of entry, or end of seg */
 	u_short	rt_name[3];	/* name, 3 words in rad50 form */
-	short	rt_len;		/* length of file */
+	u_short	rt_len;		/* length of file */
 	char	rt_chan;	/* only used in temporary files */
 	char	rt_job;		/* only used in temporary files */
 	struct rt_dat rt_date;	/* creation date */
