@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.20 (Berkeley) %G%
+ *	@(#)hp.c	6.21 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -830,7 +830,7 @@ hpecc(mi, flag)
 	if (bp->b_flags & B_BAD)
 		npf = bp->b_error;
 	else
-		npf = btodb(bp->b_bcount - bcr);
+		npf = btodb(bp->b_bcount - bcr + 511);
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	bn = bp->b_blkno;
 	cn = bp->b_cylin;
