@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	7.11 (Berkeley) %G%
+ *	@(#)dz.c	7.12 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -155,7 +155,7 @@ dzopen(dev, flag)
 {
 	register struct tty *tp;
 	register int unit;
-	int error, dzparam();
+	int error = 0, dzparam();
  
 	unit = minor(dev);
 	if (unit >= dz_cnt || dzpdma[unit].p_addr == 0)
