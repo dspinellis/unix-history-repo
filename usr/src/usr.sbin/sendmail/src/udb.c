@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef USERDB
-static char sccsid [] = "@(#)udb.c	8.11 (Berkeley) %G% (with USERDB)";
+static char sccsid [] = "@(#)udb.c	8.12 (Berkeley) %G% (with USERDB)";
 #else
-static char sccsid [] = "@(#)udb.c	8.11 (Berkeley) %G% (without USERDB)";
+static char sccsid [] = "@(#)udb.c	8.12 (Berkeley) %G% (without USERDB)";
 #endif
 #endif
 
@@ -88,6 +88,8 @@ struct option
 **	Parameters:
 **		a -- address to expand.
 **		sendq -- pointer to head of sendq to put the expansions in.
+**		aliaslevel -- the current alias nesting depth.
+**		e -- the current envelope.
 **
 **	Returns:
 **		EX_TEMPFAIL -- if something "odd" happened -- probably due
@@ -106,9 +108,10 @@ int		UdbSock = -1;
 bool		UdbInitialized = FALSE;
 
 int
-udbexpand(a, sendq, e)
+udbexpand(a, sendq, aliaslevel, e)
 	register ADDRESS *a;
 	ADDRESS **sendq;
+	int aliaslevel;
 	register ENVELOPE *e;
 {
 	int i;
@@ -219,9 +222,7 @@ udbexpand(a, sendq, e)
 					syslog(LOG_INFO, "%s: expand %s => %s",
 						e->e_id, e->e_to, user);
 #endif
-				AliasLevel++;
-				naddrs += sendtolist(user, a, sendq, e);
-				AliasLevel--;
+				naddrs += sendtolist(user, a, sendq, aliaslevel + 1, e);
 
 				if (user != buf)
 					free(user);
@@ -321,9 +322,7 @@ udbexpand(a, sendq, e)
 				syslog(LOG_INFO, "%s: hesiod %s => %s",
 					e->e_id, e->e_to, user);
 #endif
-			AliasLevel++;
-			naddrs = sendtolist(user, a, sendq, e);
-			AliasLevel--;
+			naddrs = sendtolist(user, a, sendq, aliaslevel + 1, e);
 
 			if (user != buf)
 				free(user);
@@ -379,9 +378,7 @@ udbexpand(a, sendq, e)
 			(void) sprintf(user, "%s@%s", a->q_user, up->udb_fwdhost);
 			message("expanded to %s", user);
 			a->q_flags &= ~QSELFREF;
-			AliasLevel++;
-			naddrs = sendtolist(user, a, sendq, e);
-			AliasLevel--;
+			naddrs = sendtolist(user, a, sendq, aliaslevel + 1, e);
 			if (naddrs > 0 && !bitset(QSELFREF, a->q_flags))
 			{
 				if (tTd(28, 5))
@@ -956,9 +953,10 @@ hes_udb_get(key, info)
 #else /* not USERDB */
 
 int
-udbexpand(a, sendq, e)
+udbexpand(a, sendq, aliaslevel, e)
 	ADDRESS *a;
 	ADDRESS **sendq;
+	int aliaslevel;
 	ENVELOPE *e;
 {
 	return EX_OK;

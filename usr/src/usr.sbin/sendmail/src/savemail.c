@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -232,12 +232,12 @@ savemail(e, sendbody)
 			if (ExitStat == EX_CONFIG || ExitStat == EX_SOFTWARE)
 			{
 				(void) sendtolist("postmaster",
-					  NULLADDR, &e->e_errorqueue, e);
+					  NULLADDR, &e->e_errorqueue, 0, e);
 			}
 			if (!emptyaddr(&e->e_from))
 			{
 				(void) sendtolist(e->e_from.q_paddr,
-					  NULLADDR, &e->e_errorqueue, e);
+					  NULLADDR, &e->e_errorqueue, 0, e);
 			}
 
 			/*
@@ -277,7 +277,7 @@ savemail(e, sendbody)
 			*/
 
 			q = NULL;
-			if (sendtolist("postmaster", NULL, &q, e) <= 0)
+			if (sendtolist("postmaster", NULL, &q, 0, e) <= 0)
 			{
 				syserr("553 cannot parse postmaster!");
 				ExitStat = EX_SOFTWARE;
@@ -330,7 +330,7 @@ savemail(e, sendbody)
 				Verbose = oldverb;
 				e->e_to = buf;
 				q = NULL;
-				(void) sendtolist(buf, &e->e_from, &q, e);
+				(void) sendtolist(buf, &e->e_from, &q, 0, e);
 				if (q != NULL &&
 				    !bitset(QBADADDR, q->q_flags) &&
 				    deliver(e, q) == 0)
