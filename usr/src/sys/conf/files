@@ -73,6 +73,7 @@ ufs/ufs_subr.c		standard
 ufs/ufs_tables.c	standard
 ufs/ufs_vfsops.c	standard
 ufs/ufs_vnops.c		standard
+ufs/mfs_vnops.c		optional MFS
 nfs/nfs_client.c	optional nfs
 nfs/nfs_node.c		optional nfs
 nfs/nfs_serv.c		optional nfs
