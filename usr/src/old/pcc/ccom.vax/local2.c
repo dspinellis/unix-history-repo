@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.38 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.39 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -626,7 +626,7 @@ sconv( p, forarg ) register NODE *p; {
 
 	else if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
 	    mixtypes(l, r)) {
-		int label1, label2;
+		int label1;
 		NODE *x = NULL;
 
 #if defined(FORT) || defined(SPRECC)
@@ -642,33 +642,20 @@ sconv( p, forarg ) register NODE *p; {
 			}
 
 		label1 = getlab();
-		label2 = getlab();
 
-		putstr("movl\t");
+		putstr("cvtl");
+		prtype(l);
+		putchar('\t');
 		adrput(r);
 		putchar(',');
 		adrput(l);
-		putstr("\n\tjbsc\t$31,");
-		adrput(l);
-		printf(",L%d\n\tcvtl", label1);
-		prtype(l);
-		putchar('\t');
-		adrput(l);
-		putchar(',');
-		adrput(l);
-		printf("\n\tjbr\tL%d\nL%d:\n\tcvtl", label2, label1);
-		prtype(l);
-		putchar('\t');
-		adrput(l);
-		putchar(',');
-		adrput(l);
-		putstr("\n\tadd");
+		printf("\n\tjgeq\tL%d\n\tadd", label1);
 		prtype(l);
 		putstr("2\t$0");
 		prtype(l);
-		putstr("2.147483648e9,");
+		putstr("4.294967296e9,");
 		adrput(l);
-		printf("\nL%d:", label2);
+		printf("\nL%d:", label1);
 
 #if defined(FORT) || defined(SPRECC)
 		if (!forarg)
