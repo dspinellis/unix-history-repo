@@ -1,4 +1,4 @@
-/*	vd.c	7.9	88/05/24	*/
+/*	vd.c	7.10	88/06/14	*/
 
 /*
  * Stand alone driver for the VDDC/SMDE controller 
@@ -342,6 +342,7 @@ struct	dkcompat {
 #define	NPART	2
 	int	poff[NPART];		/* [a+b] for bootstrapping */
 } dkcompat[] = {
+	{ 64, 20,  842,  512, 0, 61440 },	/* 2361a eagle */
 	{ 48, 24,  711,  512, 0, 61056 },	/* xsd */
 	{ 44, 20,  842,  512, 0, 52800 },	/* eagle */
 	{ 64, 10,  823,  512, 0, 38400 },	/* fuji 360 */
