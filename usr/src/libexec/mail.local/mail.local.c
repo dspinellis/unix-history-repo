@@ -1,30 +1,30 @@
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	4.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	4.22 (Berkeley) %G%";
 #endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <pwd.h>
 #include <utmp.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <setjmp.h>
 #include <sysexits.h>
 
 #define SENDMAIL	"/usr/lib/sendmail"
 
+	/* copylet flags */
+#define REMOTE		1		/* remote mail, add rmtmsg */
+#define ORDINARY	2
+#define ZAP		3		/* zap header and trailing empty line */
+#define	FORWARD		4
 
-/*copylet flags */
-	/*remote mail, add rmtmsg */
-#define REMOTE	1
-	/* zap header and trailing empty line */
-#define ZAP	3
-#define ORDINARY 2
-#define	FORWARD	4
-#define	LSIZE	256
-#define	MAXLET	300	/* maximum number of letters */
-#define	MAILMODE (~0600)		/* mode of created mail */
+#define	LSIZE		256
+#define	MAXLET		300		/* maximum number of letters */
+#define	MAILMODE	0600		/* mode of created mail */
 
 char	line[LSIZE];
 char	resp[LSIZE];
@@ -41,19 +41,17 @@ char	lettmp[] = "/tmp/maXXXXX";
 char	maildir[] = "/usr/spool/mail/";
 char	mailfile[] = "/usr/spool/mail/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char	dead[] = "dead.letter";
-char	*netname = "vax";
 char	forwmsg[] = " forwarded\n";
 FILE	*tmpf;
 FILE	*malf;
 char	*my_name;
 char	*getlogin();
-struct	passwd	*getpwuid();
 int	error;
 int	changed;
 int	forward;
 char	from[] = "From ";
 long	ftell();
-int	delete();
+int	delex();
 char	*ctime();
 int	flgf;
 int	flgp;
@@ -66,13 +64,11 @@ main(argc, argv)
 char **argv;
 {
 	register i;
-	char sobuf[BUFSIZ];
 
-	setbuf(stdout, sobuf);
 	mktemp(lettmp);
 	unlink(lettmp);
 	my_name = getlogin();
-	if (my_name == NULL || strlen(my_name) == 0) {
+	if (my_name == NULL || *my_name == '\0') {
 		struct passwd *pwent;
 		pwent = getpwuid(getuid());
 		if (pwent==NULL)
@@ -80,14 +76,18 @@ char **argv;
 		else
 			my_name = pwent->pw_name;
 	}
-	if(setjmp(sjbuf)) done();
-	for (i=SIGHUP; i<=SIGTERM; i++)
-		setsig(i, delete);
-	tmpf = fopen(lettmp, "w");
-	if (tmpf == NULL) {
-		fprintf(stderr, "mail: cannot open %s for writing\n", lettmp);
+	if (setjmp(sjbuf))
 		done();
-	}
+	for (i=SIGHUP; i<=SIGTERM; i++)
+		setsig(i, delex);
+	tmpf = fopen(lettmp, "w+r");
+	if (tmpf == NULL)
+		panic("mail: %s: cannot open for writing", lettmp);
+	/*
+	 * This protects against others reading mail from temp file and
+	 * if we exit, the file will be deleted already.
+	 */
+	unlink(lettmp);
 	if (argv[0][0] == 'r')
 		rmail++;
 	if (argv[0][0] != 'r' &&	/* no favors for rmail*/
@@ -102,7 +102,7 @@ setsig(i, f)
 int i;
 int (*f)();
 {
-	if(signal(i, SIG_IGN)!=SIG_IGN)
+	if (signal(i, SIG_IGN) != SIG_IGN)
 		signal(i, f);
 }
 
@@ -118,7 +118,7 @@ any(c, str)
 }
 
 printmail(argc, argv)
-char **argv;
+	char **argv;
 {
 	int flg, i, j, print;
 	char *p, *getarg();
@@ -126,53 +126,57 @@ char **argv;
 
 	setuid(getuid());
 	cat(mailfile, maildir, my_name);
+#ifdef notdef
 	if (stat(mailfile, &statb) >= 0
 	    && (statb.st_mode & S_IFMT) == S_IFDIR) {
 		strcat(mailfile, "/");
 		strcat(mailfile, my_name);
 	}
-	for (; argc>1; argv++, argc--) {
-		if (argv[1][0]=='-') {
-			if (argv[1][1]=='q')
-				delflg = 0;
-			else if (argv[1][1]=='p') {
-				flgp++;
-				delflg = 0;
-			} else if (argv[1][1]=='f') {
-				if (argc>=3) {
-					strcpy(mailfile, argv[2]);
-					argv++;
-					argc--;
-				}
-			} else if (argv[1][1]=='r') {
-				forward = 1;
-			} else if (argv[1][1]=='h') {
-				forward = 1;
-			} else {
-				fprintf(stderr, "mail: unknown option %c\n", argv[1][1]);
-				done();
-			}
-		} else
+#endif
+	for (; argc > 1; argv++, argc--) {
+		if (argv[1][0] != '-')
 			break;
+		switch (argv[1][1]) {
+
+		case 'p':
+			flgp++;
+			/* fall thru... */
+		case 'q':
+			delflg = 0;
+			break;
+
+		case 'f':
+			if (argc >= 3) {
+				strcpy(mailfile, argv[2]);
+				argv++, argc--;
+			}
+			break;
+
+		case 'b':
+			forward = 1;
+			break;
+
+		default:
+			panic("unknown option %c", argv[1][1]);
+			/*NOTREACHED*/
+		}
 	}
 	malf = fopen(mailfile, "r");
 	if (malf == NULL) {
-		fprintf(stdout, "No mail.\n");
+		printf("No mail.\n");
 		return;
 	}
-	lock(mailfile);
+	flock(fileno(malf), LOCK_SH);
 	copymt(malf, tmpf);
-	fclose(malf);
-	fclose(tmpf);
-	unlock();
-	tmpf = fopen(lettmp, "r");
+	fclose(malf);			/* implicit unlock */
+	fseek(tmpf, 0, L_SET);
 
 	changed = 0;
 	print = 1;
 	for (i = 0; i < nlet; ) {
 		j = forward ? i : nlet - i - 1;
-		if(setjmp(sjbuf)) {
-			print=0;
+		if (setjmp(sjbuf)) {
+			print = 0;
 		} else {
 			if (print)
 				copylet(j, stdout, ORDINARY);
@@ -183,26 +187,26 @@ char **argv;
 			continue;
 		}
 		setjmp(sjbuf);
-		fprintf(stdout, "? ");
+		fputs("? ", stdout);
 		fflush(stdout);
 		if (fgets(resp, LSIZE, stdin) == NULL)
 			break;
 		switch (resp[0]) {
 
 		default:
-			fprintf(stderr, "usage\n");
+			printf("usage\n");
 		case '?':
 			print = 0;
-			fprintf(stderr, "q\tquit\n");
-			fprintf(stderr, "x\texit without changing mail\n");
-			fprintf(stderr, "p\tprint\n");
-			fprintf(stderr, "s[file]\tsave (default mbox)\n");
-			fprintf(stderr, "w[file]\tsame without header\n");
-			fprintf(stderr, "-\tprint previous\n");
-			fprintf(stderr, "d\tdelete\n");
-			fprintf(stderr, "+\tnext (no delete)\n");
-			fprintf(stderr, "m user\tmail to user\n");
-			fprintf(stderr, "! cmd\texecute cmd\n");
+			printf("q\tquit\n");
+			printf("x\texit without changing mail\n");
+			printf("p\tprint\n");
+			printf("s[file]\tsave (default mbox)\n");
+			printf("w[file]\tsame without header\n");
+			printf("-\tprint previous\n");
+			printf("d\tdelete\n");
+			printf("+\tnext (no delete)\n");
+			printf("m user\tmail to user\n");
+			printf("! cmd\texecute cmd\n");
 			break;
 
 		case '+':
@@ -233,7 +237,7 @@ char **argv;
 			}
 			if (resp[1] == '\n' || resp[1] == '\0') {
 				p = getenv("HOME");
-				if(p != 0)
+				if (p != 0)
 					cat(resp+1, p, "/mbox");
 				else
 					cat(resp+1, "", "mbox");
@@ -241,7 +245,8 @@ char **argv;
 			for (p = resp+1; (p = getarg(lfil, p)) != NULL; ) {
 				malf = fopen(lfil, "a");
 				if (malf == NULL) {
-					fprintf(stdout, "mail: cannot append to %s\n", lfil);
+					printf("mail: %s: cannot append\n",
+					    lfil);
 					flg++;
 					continue;
 				}
@@ -269,7 +274,7 @@ char **argv;
 				continue;
 			}
 			for (p = resp+1; (p = getarg(lfil, p)) != NULL; )
-				if (!sendrmt(j, lfil, "/bin/mail"))	/* couldn't send it */
+				if (!sendrmt(j, lfil, "/bin/mail"))
 					flg++;
 			if (flg)
 				print = 0;
@@ -298,54 +303,46 @@ char **argv;
 		copyback();
 }
 
-copyback()	/* copy temp or whatever back to /usr/spool/mail */
+/* copy temp or whatever back to /usr/spool/mail */
+copyback()
 {
-	register i, n, c;
-	int new = 0;
+	register i, c;
+	int fd, new = 0, oldmask;
 	struct stat stbuf;
 
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	lock(mailfile);
-	stat(mailfile, &stbuf);
+#define	mask(s)	(1 << ((s) - 1))
+	oldmask = sigblock(mask(SIGINT)|mask(SIGHUP)|mask(SIGQUIT));
+#undef mask
+	fd = open(mailfile, O_RDWR | O_CREAT, MAILMODE);
+	if (fd >= 0) {
+		flock(fd, LOCK_EX);
+		malf = fdopen(fd, "r+w");
+	}
+	if (fd < 0 || malf == NULL)
+		panic("can't rewrite %s", lfil);
+	fstat(fd, &stbuf);
 	if (stbuf.st_size != let[nlet].adr) {	/* new mail has arrived */
-		malf = fopen(mailfile, "r");
-		if (malf == NULL) {
-			fprintf(stdout, "mail: can't re-read %s\n", mailfile);
-			done();
-		}
-		fseek(malf, let[nlet].adr, 0);
-		fclose(tmpf);
-		tmpf = fopen(lettmp, "a");
-		fseek(tmpf, let[nlet].adr, 0);
-		while ((c = fgetc(malf)) != EOF)
-			fputc(c, tmpf);
-		fclose(malf);
-		fclose(tmpf);
-		tmpf = fopen(lettmp, "r");
+		fseek(malf, let[nlet].adr, L_SET);
+		fseek(tmpf, let[nlet].adr, L_SET);
+		while ((c = getc(malf)) != EOF)
+			putc(c, tmpf);
 		let[++nlet].adr = stbuf.st_size;
 		new = 1;
+		fseek(malf, 0, L_SET);
 	}
-	malf = fopen(mailfile, "w");
-	if (malf == NULL) {
-		fprintf(stderr, "mail: can't rewrite %s\n", lfil);
-		done();
-	}
-	n = 0;
+	ftruncate(fd, 0);
 	for (i = 0; i < nlet; i++)
-		if (let[i].change != 'd') {
+		if (let[i].change != 'd')
 			copylet(i, malf, ORDINARY);
-			n++;
-		}
-	fclose(malf);
+	fclose(malf);		/* implict unlock */
 	if (new)
-		fprintf(stdout, "new mail arrived\n");
-	unlock();
+		printf("New mail has arrived.\n");
+	sigsetmask(oldmask);
 }
 
-copymt(f1, f2)	/* copy mail (f1) to temp (f2) */
-FILE *f1, *f2;
+/* copy mail (f1) to temp (f2) */
+copymt(f1, f2)
+	FILE *f1, *f2;
 {
 	long nextadr;
 
@@ -365,23 +362,37 @@ copylet(n, f, type)
 {
 	int ch;
 	long k;
+	char hostname[32];
 
-	fseek(tmpf, let[n].adr, 0);
+	fseek(tmpf, let[n].adr, L_SET);
 	k = let[n+1].adr - let[n].adr;
-	while(k-- > 1 && (ch=fgetc(tmpf))!='\n')
-		if(type!=ZAP) fputc(ch,f);
-	if(type==REMOTE) {
-		char hostname[32];
+	while (k-- > 1 && (ch = getc(tmpf)) != '\n')
+		if (type != ZAP)
+			putc(ch, f);
+	switch (type) {
+
+	case REMOTE:
 		gethostname(hostname, sizeof (hostname));
 		fprintf(f, " remote from %s\n", hostname);
-	} else if (type==FORWARD)
+		break;
+
+	case FORWARD:
 		fprintf(f, forwmsg);
-	else if(type==ORDINARY)
-		fputc(ch,f);
-	while(k-->1)
-		fputc(ch=fgetc(tmpf), f);
-	if(type!=ZAP || ch!= '\n')
-		fputc(fgetc(tmpf), f);
+		break;
+
+	case ORDINARY:
+		putc(ch, f);
+		break;
+
+	default:
+		panic("Bad letter type %d to copylet.", type);
+	}
+	while (k-- > 1) {
+		ch = getc(tmpf);
+		putc(ch, f);
+	}
+	if (type != ZAP || ch != '\n')
+		putc(getc(tmpf), f);
 }
 
 isfrom(lp)
@@ -408,15 +419,14 @@ char **argv;
 	int dflag;
 
 	dflag = 0;
-	if (argc < 1)
+	if (argc < 1) {
 		fprintf(stderr, "puke\n");
+		return;
+	}
 	for (vp = argv, ap = newargv + 1; (*ap = *vp++) != 0; ap++)
-	{
 		if (ap[0][0] == '-' && ap[0][1] == 'd')
 			dflag++;
-	}
-	if (!dflag)
-	{
+	if (!dflag) {
 		/* give it to sendmail, rah rah! */
 		unlink(lettmp);
 		ap = newargv+1;
@@ -442,10 +452,8 @@ char **argv;
 		argc--;
 		switch (cp[1]) {
 		case 'r':
-			if (argc <= 0) {
+			if (argc <= 1)
 				usage();
-				done();
-			}
 			if (strcmp(my_name, "root") == 0 ||
 			    strcmp(my_name, "daemon") == 0 ||
 			    strcmp(my_name, "network") == 0 ||
@@ -461,10 +469,8 @@ char **argv;
 			break;
 
 		case 'h':
-			if (argc <= 0) {
+			if (argc <= 1)
 				usage();
-				done();
-			}
 			hseqno = atoi(argv[1]);
 			argv++;
 			argc--;
@@ -475,69 +481,52 @@ char **argv;
 		
 		default:
 			usage();
-			done();
 		}
 	}
-	if (argc <= 1) {
+	if (argc <= 1)
 		usage();
-		done();
-	}
 	if (gaver == 0)
 		strcpy(truename, my_name);
-	/*
-	if (argc > 4 && strcmp(argv[1], "-r") == 0) {
-		strcpy(truename, argv[2]);
-		argc -= 2;
-		argv += 2;
-		fgets(line, LSIZE, stdin);
-		if (strncmp("From", line, 4) == 0)
-			line[0] = '\0';
-	} else
-		strcpy(truename, my_name);
-	*/
 	time(&iop);
 	fprintf(tmpf, "%s%s %s", from, truename, ctime(&iop));
 	iop = ftell(tmpf);
-	flgf = 1;
-	for (first = 1;; first = 0) {
-		if (first && line[0] == '\0' && fgets(line, LSIZE, stdin) == NULL)
-			break;
-		if (!first && fgets(line, LSIZE, stdin) == NULL)
-			break;
-		if (line[0] == '.' && line[1] == '\n' && isatty(fileno(stdin)))
+	flgf = first = 1;
+	for (;;) {
+		if (first) {
+			first = 0;
+			if (*line == '\0' && fgets(line, LSIZE, stdin) == NULL)
+				break;
+		} else {
+			if (fgets(line, LSIZE, stdin) == NULL)
+				break;
+		}
+		if (*line == '.' && line[1] == '\n' && isatty(fileno(stdin)))
 			break;
 		if (isfrom(line))
-			fputs(">", tmpf);
+			putc('>', tmpf);
 		fputs(line, tmpf);
 		flgf = 0;
 	}
-	fputs("\n", tmpf);
+	putc('\n', tmpf);
 	nlet = 1;
 	let[0].adr = 0;
 	let[1].adr = ftell(tmpf);
-	fclose(tmpf);
 	if (flgf)
 		return;
-	tmpf = fopen(lettmp, "r");
-	if (tmpf == NULL) {
-		fprintf(stderr, "mail: cannot reopen %s for reading\n", lettmp);
-		return;
-	}
-	while (--argc > 0) {
+	while (--argc > 0)
 		if (!sendmail(0, *++argv, truename))
 			error++;
-	}
 	if (error && safefile(dead)) {
 		setuid(getuid());
 		malf = fopen(dead, "w");
 		if (malf == NULL) {
-			fprintf(stdout, "mail: cannot open %s\n", dead);
+			printf("mail: cannot open %s\n", dead);
 			fclose(tmpf);
 			return;
 		}
 		copylet(0, malf, ZAP);
 		fclose(malf);
-		fprintf(stdout, "Mail saved in %s\n", dead);
+		printf("Mail saved in %s\n", dead);
 	}
 	fclose(tmpf);
 }
@@ -572,7 +561,7 @@ char *rcmd;
 		}
 	*p = '\0';
 	if ((!local && *name=='\0') || (local && *rsys=='\0')) {
-		fprintf(stdout, "null name\n");
+		printf("null name\n");
 		return(0);
 	}
 skip:
@@ -607,194 +596,113 @@ usage()
 
 	fprintf(stderr, "Usage: mail [ -f ] people . . .\n");
 	error = EX_USAGE;
+	done();
 }
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-struct sockaddr_in biffaddr;
+
+notifybiff(msg)
+	char *msg;
+{
+	static struct sockaddr_in addr;
+	static int f = -1;
+
+	if (addr.sin_family == 0) {
+		struct hostent *hp = gethostbyname("localhost");
+		struct servent *sp = getservbyname("biff", "udp");
+
+		if (hp && sp) {
+			addr.sin_family = hp->h_addrtype;
+			bcopy(hp->h_addr, &addr.sin_addr, hp->h_length);
+			addr.sin_port = sp->s_port;
+		}
+	}
+	if (addr.sin_family) {
+		if (f < 0)
+			f = socket(AF_INET, SOCK_DGRAM, 0);
+		sendto(f, msg, strlen(msg)+1, 0, &addr, sizeof (addr));
+	}
+}
 
 sendmail(n, name, fromaddr)
-int n;
-char *name;
-char *fromaddr;
+	int n;
+	char *name, *fromaddr;
 {
-	char file[100];
-	register char *p;
-	register mask;
-	struct passwd *pw, *getpwnam();
+	char file[256];
+	int mask, fd;
+	struct passwd *pw;
+#ifdef notdef
 	struct stat statb;
+#endif
 	char buf[128];
-	int f;
-	struct hostent *hp = NULL;
-	struct servent *sp = NULL;
 
-	for(p=name; *p!='!'&&*p!='^' &&*p!='\0'; p++)
-		;
-	if (*p == '!'|| *p=='^')
-		return(sendrmt(n, name, 0));
+	if (any(name, "!^"))
+		return (sendrmt(n, name, 0));
 	if ((pw = getpwnam(name)) == NULL) {
-		fprintf(stdout, "mail: can't send to %s\n", name);
+		printf("mail: can't send to %s\n", name);
 		return(0);
 	}
 	cat(file, maildir, name);
+#ifdef notdef
 	if (stat(file, &statb) >= 0 && (statb.st_mode & S_IFMT) == S_IFDIR) {
 		strcat(file, "/");
 		strcat(file, name);
 	}
-	mask = umask(MAILMODE);
+#endif
 	if (!safefile(file))
 		return(0);
-	lock(file);
-	malf = fopen(file, "a");
-	umask(mask);
-	if (malf == NULL) {
-		unlock();
-		fprintf(stdout, "mail: cannot append to %s\n", file);
+	fd = open(file, O_WRONLY | O_CREAT, MAILMODE);
+	if (fd >= 0) {
+		flock(fd, LOCK_EX);
+		malf = fdopen(fd, "a");
+	}
+	if (fd < 0 || malf == NULL) {
+		close(fd);
+		printf("mail: %s: cannot append\n", file);
 		return(0);
 	}
-	chown(file, pw->pw_uid, pw->pw_gid);
-	{
-		hp = gethostbyname("localhost");
-		sp = getservbyname("biff", "udp");
-		if (hp && sp) {
-			f = socket(AF_INET, SOCK_DGRAM, 0, 0);
-			sprintf(buf, "%s@%d\n", name, ftell(malf)); 
-		}
-	}
+	fchown(fd, pw->pw_uid, pw->pw_gid);
+	sprintf(buf, "%s@%d\n", name, ftell(malf)); 
 	copylet(n, malf, ORDINARY);
 	fclose(malf);
-	if (hp && sp) {
-		biffaddr.sin_family = hp->h_addrtype;
-		bcopy(hp->h_addr, &biffaddr.sin_addr, hp->h_length);
-		biffaddr.sin_port = sp->s_port;
-		sendto(f, buf, strlen(buf)+1, 0, &biffaddr, sizeof (biffaddr));
-		close(f);
-	}
-	unlock();
+	notifybiff(buf);
 	return(1);
 }
 
-delete(i)
+delex(i)
 {
-	setsig(i, delete);
-	fprintf(stderr, "\n");
-	if(delflg)
+	setsig(i, delex);
+	putc('\n', stderr);
+	if (delflg)
 		longjmp(sjbuf, 1);
 	done();
 }
 
-/*
- * Lock the specified mail file by setting the file mailfile.lock.
- * We must, of course, be careful to unlink the lock file by a call
- * to unlock before we stop.  The algorithm used here is to see if
- * the lock exists, and if it does, to check its modify time.  If it
- * is older than 30 seconds, we assume error and set our own file.
- * Otherwise, we wait for 5 seconds and try again.
- */
-
-char	*maillock	= ".lock";		/* Lock suffix for mailname */
-char	*lockname	= "/usr/spool/mail/tmXXXXXX";
-char	locktmp[30];				/* Usable lock temporary */
-char	curlock[50];				/* Last used name of lock */
-int	locked;					/* To note that we locked it */
-
-lock(file)
-char *file;
-{
-	register int f;
-	struct stat sbuf;
-	long curtime;
-	int statfailed;
-
-	if (locked || flgf)
-		return(0);
-	strcpy(curlock, file);
-	strcat(curlock, maillock);
-	strcpy(locktmp, lockname);
-	mktemp(locktmp);
-	unlink(locktmp);
-	statfailed = 0;
-	for (;;) {
-		f = lock1(locktmp, curlock);
-		if (f == 0) {
-			locked = 1;
-			return(0);
-		}
-		if (stat(curlock, &sbuf) < 0) {
-			if (statfailed++ > 5)
-				return(-1);
-			sleep(5);
-			continue;
-		}
-		statfailed = 0;
-		time(&curtime);
-		if (curtime < sbuf.st_ctime + 30) {
-			sleep(5);
-			continue;
-		}
-		unlink(curlock);
-	}
-}
-
-/*
- * Remove the mail lock, and note that we no longer
- * have it locked.
- */
-
-unlock()
-{
-
-	unlink(curlock);
-	locked = 0;
-}
-
-/*
- * Attempt to set the lock by creating the temporary file,
- * then doing a link/unlink.  If it fails, return -1 else 0
- */
-
-lock1(tempfile, name)
-	char tempfile[], name[];
-{
-	register int fd;
-
-	fd = creat(tempfile, 0);
-	if (fd < 0)
-		return(-1);
-	close(fd);
-	if (link(tempfile, name) < 0) {
-		unlink(tempfile);
-		return(-1);
-	}
-	unlink(tempfile);
-	return(0);
-}
-
 done()
 {
-	if(locked)
-		unlock();
+
 	unlink(lettmp);
-	unlink(locktmp);
 	exit(error);
 }
 
 cat(to, from1, from2)
-char *to, *from1, *from2;
+	char *to, *from1, *from2;
 {
-	int i, j;
+	register char *cp, *dp;
 
-	j = 0;
-	for (i=0; from1[i]; i++)
-		to[j++] = from1[i];
-	for (i=0; from2[i]; i++)
-		to[j++] = from2[i];
-	to[j] = 0;
+	cp = to;
+	for (dp = from1; *cp = *dp++; cp++)
+		;
+	for (dp = from2; *cp++ = *dp++; )
+		;
 }
 
-char *getarg(s, p)	/* copy p... into s, update p */
-register char *s, *p;
+/* copy p... into s, update p */
+char *
+getarg(s, p)
+	register char *s, *p;
 {
 	while (*p == ' ' || *p == '\t')
 		p++;
@@ -814,8 +722,20 @@ safefile(f)
 	if (lstat(f, &statb) < 0)
 		return (1);
 	if (statb.st_nlink != 1 || (statb.st_mode & S_IFMT) == S_IFLNK) {
-		fprintf(stderr, "mail: %s has more than one link or is a symbolic link\n", f);
+		fprintf(stderr,
+		    "mail: %s has more than one link or is a symbolic link\n",
+		    f);
 		return (0);
 	}
 	return (1);
+}
+
+panic(msg, a1, a2, a3)
+	char *msg;
+{
+
+	fprintf(stderr, "mail: ");
+	fprintf(stderr, msg, a1, a2, a3);
+	fprintf(stderr, "\n");
+	done();
 }

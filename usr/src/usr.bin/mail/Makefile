@@ -1,4 +1,4 @@
-#	Makefile	2.15	83/08/18
+#	Makefile	2.16	84/07/19
 #
 # Berkeley Mail
 #
