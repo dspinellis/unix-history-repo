@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shell.h	5.1 (Berkeley) %G%
+ *	@(#)shell.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -42,8 +42,6 @@ typedef void *pointer;
 #define NULL (void *)0
 #endif
 #else /* not __STDC__ */
-#define const
-#define volatile
 typedef char *pointer;
 #ifndef NULL
 #define NULL 0
