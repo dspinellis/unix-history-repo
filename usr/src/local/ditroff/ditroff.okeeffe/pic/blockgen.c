@@ -1,61 +1,77 @@
 #ifndef lint
-static char sccsid[] = "@(#)blockgen.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)blockgen.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 
+#define	NBRACK	20	/* depth of [...] */
+#define	NBRACE	20	/* depth of {...} */
 
-struct pushstack stack[20];
+struct pushstack stack[NBRACK];
 int	nstack	= 0;
+struct pushstack bracestack[NBRACE];
+int	nbstack	= 0;
 
-struct obj *leftthing(c)	/* called for {... or [... */
+obj *leftthing(c)	/* called for {... or [... */
+			/* really ought to be separate functions */
 	int c;
 {
-	struct obj *p;
+	obj *p;
 
-	stack[nstack].p_x = curx;
-	stack[nstack].p_y = cury;
-	stack[nstack].p_hvmode = hvmode;
 	if (c == '[') {
+		if (nstack >= NBRACK)
+			fatal("[...] nested too deep");
+		stack[nstack].p_x = curx;
+		stack[nstack].p_y = cury;
+		stack[nstack].p_hvmode = hvmode;
 		curx = cury = 0;
 		stack[nstack].p_xmin = xmin;
 		stack[nstack].p_xmax = xmax;
 		stack[nstack].p_ymin = ymin;
 		stack[nstack].p_ymax = ymax;
+		nstack++;
 		xmin = ymin = 30000;
 		xmax = ymax = -30000;
 		p = makenode(BLOCK, 7);
 		p->o_val[4] = nobj;	/* 1st item within [...] */
 		if (p->o_nobj != nobj-1)
 			fprintf(stderr, "nobjs wrong%d %d\n", p->o_nobj, nobj);
-	}
-	else
+	} else {
+		if (nbstack >= NBRACK)
+			fatal("{...} nested too deep");
+		bracestack[nbstack].p_x = curx;
+		bracestack[nbstack].p_y = cury;
+		bracestack[nbstack].p_hvmode = hvmode;
+		nbstack++;
 		p = NULL;
-	nstack++;
+	}
 	return(p);
 }
 
-struct obj *rightthing(p, c)	/* called for ... ] or ... } */
-	struct obj *p;
+obj *rightthing(p, c)	/* called for ... ] or ... } */
+	obj *p;
 {
-	struct obj *q;
+	obj *q;
 
-	nstack--;
-	curx = stack[nstack].p_x;
-	cury = stack[nstack].p_y;
-	hvmode = stack[nstack].p_hvmode;
 	if (c == '}') {
+		nbstack--;
+		curx = bracestack[nbstack].p_x;
+		cury = bracestack[nbstack].p_y;
+		hvmode = bracestack[nbstack].p_hvmode;
 		q = makenode(MOVE, 0);
 		dprintf("M %g %g\n", curx, cury);
 	} else {
+		nstack--;
+		curx = stack[nstack].p_x;
+		cury = stack[nstack].p_y;
+		hvmode = stack[nstack].p_hvmode;
 		q = makenode(BLOCKEND, 7);
 		q->o_val[4] = p->o_nobj + 1;	/* back pointer */
 		p->o_val[5] = q->o_nobj - 1;	/* forward pointer */
 		p->o_val[0] = xmin; p->o_val[1] = ymin;
 		p->o_val[2] = xmax; p->o_val[3] = ymax;
-		p->o_dotdash = q->o_dotdash = (int) stack[nstack+1].p_symtab;
+		p->o_symtab = q->o_symtab = stack[nstack+1].p_symtab;
 		xmin = stack[nstack].p_xmin;
 		ymin = stack[nstack].p_ymin;
 		xmax = stack[nstack].p_xmax;
@@ -64,18 +80,15 @@ struct obj *rightthing(p, c)	/* called for ... ] or ... } */
 	return(q);
 }
 
-struct obj *blockgen(p, type, q)	/* handles [...] */
-	struct obj *p, *q;
+obj *blockgen(p, type, q)	/* handles [...] */
+	obj *p, *q;
 	int type;
 {
-	static float prevh = HT;
-	static float prevw = WID;	/* golden mean, sort of */
-	int i, invis, at, ddtype;
-	float ddval;
-	int with;
-	float h, w, xwith, ywith;
+	int i, invis, at, ddtype, with;
+	float ddval, h, w, xwith, ywith;
 	float x0, y0, x1, y1, cx, cy;
-	struct obj *ppos;
+	obj *ppos;
+	Attr *ap;
 
 	invis = at = 0;
 	with = xwith = ywith = 0;
@@ -86,28 +99,25 @@ struct obj *blockgen(p, type, q)	/* handles [...] */
 	cy = (p->o_val[3] + p->o_val[1]) / 2;
 	dprintf("cx,cy=%g,%g\n", cx, cy);
 	for (i = 0; i < nattr; i++) {
-		switch (attr[i].a_type) {
+		ap = &attr[i];
+		switch (ap->a_type) {
 		case HEIGHT:
-			h = attr[i].a_val.f;
+			h = ap->a_val.f;
 			break;
 		case WIDTH:
-			w = attr[i].a_val.f;
-			break;
-		case SAME:
-			h = prevh;
-			w = prevw;
+			w = ap->a_val.f;
 			break;
 		case WITH:
-			with = attr[i].a_val.i;	/* corner */
+			with = ap->a_val.i;	/* corner */
 			break;
 		case PLACE:	/* actually with position ... */
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			xwith = cx - ppos->o_x;
 			ywith = cy - ppos->o_y;
 			with = PLACE;
 			break;
 		case AT:
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			curx = ppos->o_x;
 			cury = ppos->o_y;
 			at++;
@@ -115,8 +125,8 @@ struct obj *blockgen(p, type, q)	/* handles [...] */
 		case INVIS:
 			invis = INVIS;
 			break;
-		case LJUST: case RJUST: case CENTER: case SPREAD: case FILL: case ABOVE: case BELOW:
-			savetext(attr[i].a_type, attr[i].a_val.p);
+		case TEXTATTR:
+			savetext(ap->a_sub, ap->a_val.p);
 			break;
 		}
 	}
@@ -175,15 +185,13 @@ struct obj *blockgen(p, type, q)	/* handles [...] */
 		q->o_val[i] = p->o_val[i];
 	stack[nstack+1].p_symtab = NULL;	/* so won't be found again */
 	blockadj(p);	/* fix up coords for enclosed blocks */
-	prevh = h;
-	prevw = w;
 	return(p);
 }
 
 blockadj(p)	/* adjust coords in block starting at p */
-	struct obj *p;
+	obj *p;
 {
-	struct obj *q;
+	obj *q;
 	float dx, dy;
 	int n, lev;
 

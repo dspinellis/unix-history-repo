@@ -1,28 +1,29 @@
 #ifndef lint
-static char sccsid[] = "@(#)movegen.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)movegen.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 
-struct obj *movegen(type)
+obj *movegen(type)
 {
 	static float prevdx, prevdy;
 	int i, some;
 	float defx, defy, dx, dy;
-	struct obj *p;
-	struct obj *ppos;
+	obj *p;
+	obj *ppos;
 	static int xtab[] = { 1, 0, -1, 0 };	/* R=0, U=1, L=2, D=3 */
 	static int ytab[] = { 0, 1, 0, -1 };
+	Attr *ap;
 
 	defx = getfval("movewid");
 	defy = getfval("moveht");
 	dx = dy = some = 0;
 	for (i = 0; i < nattr; i++) {
-		switch (attr[i].a_type) {
-		case LJUST: case RJUST: case CENTER: case SPREAD: case FILL: case ABOVE: case BELOW:
-			savetext(attr[i].a_type, attr[i].a_val.p);
+		ap = &attr[i];
+		switch (ap->a_type) {
+		case TEXTATTR:
+			savetext(ap->a_sub, ap->a_val.p);
 			break;
 		case SAME:
 			dx = prevdx;
@@ -30,40 +31,40 @@ struct obj *movegen(type)
 			some++;
 			break;
 		case LEFT:
-			dx -= (attr[i].a_val.f==0) ? defx : attr[i].a_val.f;
+			dx -= (ap->a_sub==DEFAULT) ? defx : ap->a_val.f;
 			some++;
 			hvmode = L_DIR;
 			break;
 		case RIGHT:
-			dx += (attr[i].a_val.f==0) ? defx : attr[i].a_val.f;
+			dx += (ap->a_sub==DEFAULT) ? defx : ap->a_val.f;
 			some++;
 			hvmode = R_DIR;
 			break;
 		case UP:
-			dy += (attr[i].a_val.f==0) ? defy : attr[i].a_val.f;
+			dy += (ap->a_sub==DEFAULT) ? defy : ap->a_val.f;
 			some++;
 			hvmode = U_DIR;
 			break;
 		case DOWN:
-			dy -= (attr[i].a_val.f==0) ? defy : attr[i].a_val.f;
+			dy -= (ap->a_sub==DEFAULT) ? defy : ap->a_val.f;
 			some++;
 			hvmode = D_DIR;
 			break;
 		case TO:
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			dx = ppos->o_x - curx;
 			dy = ppos->o_y - cury;
 			some++;
 			break;
 		case BY:
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			dx = ppos->o_x;
 			dy = ppos->o_y;
 			some++;
 			break;
 		case FROM:
 		case AT:
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			curx = ppos->o_x;
 			cury = ppos->o_y;
 			break;

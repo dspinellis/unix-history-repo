@@ -1,7 +1,6 @@
 #ifndef lint
-static char sccsid[] = "@(#)symtab.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)symtab.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	<ctype.h>
 #include	"pic.h"
@@ -85,8 +84,34 @@ struct symtab *lookup(s)	/* find s in symtab */
 freesymtab(p)	/* free space used by symtab at p */
 	struct symtab *p;
 {
-	for ( ; p != NULL; p = p->s_next) {
+	struct symtab *q;
+
+	for ( ; p != NULL; p = q) {
+		q = p->s_next;
 		free(p->s_name);	/* assumes done with tostring */
 		free(p);
 	}
+}
+
+freedef(s)	/* free definition for string s */
+	char *s;
+{
+	struct symtab *p, *q, *op;
+
+	for (p = op = q = stack[nstack].p_symtab; p != NULL; p = p->s_next) {
+		if (strcmp(s, p->s_name) == 0) { 	/* got it */
+			if (p->s_type != DEFNAME)
+				break;
+			if (p == op)	/* 1st elem */
+				stack[nstack].p_symtab = p->s_next;
+			else
+				q->s_next = p->s_next;
+			free(p->s_name);
+			free(p->s_val.p);
+			free(p);
+			return;
+		}
+		q = p;
+	}
+	yyerror("%s is not defined at this point", s);
 }

@@ -1,19 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)print.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)print.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
-int xxx;
 print()
 {
-	struct obj *p;
-	int i, j, m;
+	obj *p;
+	int i, j, k, m;
 	float x0, y0, x1, y1, ox, oy, dx, dy, ndx, ndy;
 
 	for (i = 0; i < nobj; i++) {
-		xxx = i;
 		p = objlist[i];
 		ox = p->o_x;
 		oy = p->o_y;
@@ -36,25 +33,16 @@ print()
 			y1 = oy + y1 / 2;
 			if (p->o_attr & INVIS || p->o_type == BLOCK)
 				;	/* nothing at all */
-			else if (p->o_dotdash == 0)
-				box(x0, y0, x1, y1);
+			else if (p->o_attr & (DOTBIT|DASHBIT))
+				dotbox(x0, y0, x1, y1, p->o_attr, p->o_ddval);
 			else
-				dotbox(x0, y0, x1, y1, p->o_dotdash, p->o_ddval);
+				box(x0, y0, x1, y1);
 			if (ishor(m))
 				move(isright(m) ? x1 : x0, oy);	/* right side */
 			else
 				move(ox, isdown(m) ? y0 : y1);	/* bottom */
 			break;
 		case BLOCKEND:
-			break;
-			x0 = ox - x1 / 2;
-			y0 = oy - y1 / 2;
-			x1 = ox + x1 / 2;
-			y1 = oy + y1 / 2;
-			if (ishor(m))
-				move(isright(m) ? x1 : x0, oy);	/* right side */
-			else
-				move(ox, isdown(m) ? y0 : y1);	/* bottom */
 			break;
 		case CIRCLE:
 			move(ox, oy);
@@ -81,16 +69,15 @@ print()
 			dotext(p);
 			if (p->o_attr & HEAD1)
 				arrow(x1 - (y1 - oy), y1 + (x1 - ox),
-				      x1, y1, p->o_val[4], p->o_val[5]);
+				      x1, y1, p->o_val[4], p->o_val[5], p->o_val[5]/p->o_val[6]/2, p->o_nhead);
                         if (p->o_attr & INVIS)
                                 /* probably wrong when it's cw */
                                 move(x1, y1);
                         else
-				arc(ox, oy, x1, y1, p->o_val[2], p->o_val[3], p->o_val[6]
-					,(p->o_attr&CW_ARC));
+				arc(ox, oy, x1, y1, p->o_val[2], p->o_val[3]);
 			if (p->o_attr & HEAD2)
 				arrow(p->o_val[2] + p->o_val[3] - oy, p->o_val[3] - (p->o_val[2] - ox),
-				      p->o_val[2], p->o_val[3], p->o_val[4], p->o_val[5]);
+				      p->o_val[2], p->o_val[3], p->o_val[4], p->o_val[5], -p->o_val[5]/p->o_val[6]/2, p->o_nhead);
 			if (p->o_attr & CW_ARC)
 				move(x1, y1);	/* because drawn backwards */
 			break;
@@ -100,45 +87,39 @@ print()
 			move((ox + x1)/2, (oy + y1)/2);	/* center */
 			dotext(p);
 			if (p->o_attr & HEAD1)
-				arrow(ox + p->o_val[5], oy + p->o_val[6], ox, oy, p->o_val[2], p->o_val[3]);
+				arrow(ox + p->o_val[5], oy + p->o_val[6], ox, oy, p->o_val[2], p->o_val[3], 0.0, p->o_nhead);
                         if (p->o_attr & INVIS)
                                 move(x1, y1);
 			else if (p->o_type == SPLINE)
 				spline(ox, oy, p->o_val[4], &p->o_val[5]);
 			else {
-				int i, j;
 				dx = ox;
 				dy = oy;
-				for (i=0, j=5; i < p->o_val[4]; i++, j += 2) {
+				for (k=0, j=5; k < p->o_val[4]; k++, j += 2) {
 					ndx = dx + p->o_val[j];
 					ndy = dy + p->o_val[j+1];
-					if (p->o_dotdash == 0)
-						line(dx, dy, ndx, ndy);
+					if (p->o_attr & (DOTBIT|DASHBIT))
+						dotline(dx, dy, ndx, ndy, p->o_attr, p->o_ddval);
 					else
-						dotline(dx, dy, ndx, ndy, p->o_dotdash, p->o_ddval);
+						line(dx, dy, ndx, ndy);
 					dx = ndx;
 					dy = ndy;
 				}
 			}
 			if (p->o_attr & HEAD2) {
-				int i, j;
 				dx = ox;
 				dy = oy;
-				for (i = 0, j = 5; i < p->o_val[4] - 1; i++, j += 2) {
+				for (k = 0, j = 5; k < p->o_val[4] - 1; k++, j += 2) {
 					dx += p->o_val[j];
 					dy += p->o_val[j+1];
 				}
-				arrow(dx, dy, x1, y1, p->o_val[2], p->o_val[3]);
+				arrow(dx, dy, x1, y1, p->o_val[2], p->o_val[3], 0.0, p->o_nhead);
 			}
 			break;
 		case MOVE:
-			move(ox, oy);
-			dotext(p);
-			break;
 		case TEXT:
 			move(ox, oy);
-			label((char *)p->o_attr, p->o_dotdash, 0);	/* string in funny place */
-			free((char *)p->o_attr);
+			dotext(p);
 			break;
 		}
 	}
@@ -159,7 +140,7 @@ dotline(x0, y0, x1, y1, ddtype, ddval) /* dotted line */
 	/* don't save dot/dash value */
 	dx = x1 - x0;
 	dy = y1 - y0;
-	if (ddtype == DOT) {
+	if (ddtype & DOTBIT) {
 		numdots = sqrt(dx*dx + dy*dy) / prevval + 0.5;
 		if (numdots > 0)
 			for (i = 0; i <= numdots; i++) {
@@ -167,7 +148,7 @@ dotline(x0, y0, x1, y1, ddtype, ddval) /* dotted line */
 				move(x0 + (a * dx), y0 + (a * dy));
 				dot();
 			}
-	} else if (ddtype == DASH) {
+	} else if (ddtype & DASHBIT) {
 		double d, dashsize, spacesize;
 		d = sqrt(dx*dx + dy*dy);
 		if (d <= 2 * prevval) {
@@ -202,7 +183,7 @@ dotbox(x0, y0, x1, y1, ddtype, ddval)	/* dotted or dashed box */
 }
 
 dotext(p)	/* print text strings of p in proper vertical spacing */
-	struct obj *p;
+	obj *p;
 {
 	int i, nhalf;
 

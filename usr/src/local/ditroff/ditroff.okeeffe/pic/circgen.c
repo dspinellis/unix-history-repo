@@ -1,22 +1,22 @@
 #ifndef lint
-static char sccsid[] = "@(#)circgen.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)circgen.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 
-struct obj *circgen(type)
+obj *circgen(type)
 {
 	static float rad[2] = { HT2, WID2 };
 	static float rad2[2] = { HT2, HT2 };
 	static float x0, y0, x1, y1, x2, y2;
-	int i, at, t, invis, with;
+	int i, at, t, invis, ddtype, with;
 	float xwith, ywith;
-	float r, r2;
-	struct obj *p, *ppos;
+	float r, r2, ddval;
+	obj *p, *ppos;
+	Attr *ap;
 
-	at = invis = 0;
+	at = invis = ddtype = 0;
 	with = xwith = ywith = 0;
 	t = (type == CIRCLE) ? 0 : 1;
 	if (type == CIRCLE)
@@ -25,30 +25,31 @@ struct obj *circgen(type)
 		r = getfval("ellipsewid") / 2;
 		r2 = getfval("ellipseht") / 2;
 	}
-	for (i = 0; i < nattr; i++)
-		switch (attr[i].a_type) {
-		case LJUST: case RJUST: case CENTER: case SPREAD: case FILL: case ABOVE: case BELOW:
-			savetext(attr[i].a_type, attr[i].a_val.p);
+	for (i = 0; i < nattr; i++) {
+		ap = &attr[i];
+		switch (ap->a_type) {
+		case TEXTATTR:
+			savetext(ap->a_sub, ap->a_val.p);
 			break;
 		case RADIUS:
-			r = attr[i].a_val.f;
+			r = ap->a_val.f;
 			break;
 		case DIAMETER:
 		case WIDTH:
-			r = attr[i].a_val.f / 2;
+			r = ap->a_val.f / 2;
 			break;
 		case HEIGHT:
-			r2 = attr[i].a_val.f / 2;
+			r2 = ap->a_val.f / 2;
 			break;
 		case SAME:
 			r = rad[t];
 			r2 = rad2[t];
 			break;
 		case WITH:
-			with = attr[i].a_val.i;
+			with = ap->a_val.i;
 			break;
 		case AT:
-			ppos = attr[i].a_val.o;
+			ppos = ap->a_val.o;
 			curx = ppos->o_x;
 			cury = ppos->o_y;
 			at++;
@@ -56,7 +57,16 @@ struct obj *circgen(type)
 		case INVIS:
 			invis = INVIS;
 			break;
+		case DOT:
+		case DASH:
+			ddtype = ap->a_type==DOT ? DOTBIT : DASHBIT;
+			if (ap->a_sub == DEFAULT)
+				ddval = getfval("dashwid");
+			else
+				ddval = ap->a_val.f;
+			break;
 		}
+	}
 	if (type == CIRCLE)
 		r2 = r;	/* probably superfluous */
 	if (with) {
@@ -89,7 +99,7 @@ struct obj *circgen(type)
 	if (r <= 0 || r2 <= 0) {
 		yyerror("%s has invalid radius %g\n", (type==CIRCLE) ? "circle" : "ellipse", r<r2 ? r : r2);
 	}
-	p->o_attr = invis;
+	p->o_attr = invis | ddtype;
 	extreme(curx+r, cury+r2);
 	extreme(curx-r, cury-r2);
 	if (type == CIRCLE)

@@ -1,12 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	1.1 (CWI) 85/07/19";
+static char sccsid[] = "@(#)misc.c	2.1 (CWI) 85/07/23";
 #endif lint
-
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
 
-setdir(n)	/* set direction from n */
+setdir(n)	/* set direction (hvmode) from LEFT, RIGHT, etc. */
 	int n;
 {
 	switch (n) {
@@ -18,8 +17,18 @@ setdir(n)	/* set direction from n */
 	return(hvmode);
 }
 
+curdir()	/* convert current dir (hvmode) to RIGHT, LEFT, etc. */
+{
+	switch (hvmode) {
+	case R_DIR:	return RIGHT;
+	case L_DIR:	return LEFT;
+	case U_DIR:	return UP;
+	case D_DIR:	return DOWN;
+	}
+}
+
 float getcomp(p, t)	/* return component of a position */
-	struct obj *p;
+	obj *p;
 	int t;
 {
 	switch (t) {
@@ -60,16 +69,86 @@ float getcomp(p, t)	/* return component of a position */
 	}
 }
 
-makeattr(type, val)	/* add attribute type and val */
-	int type;
+float	exprlist[100];
+int	nexpr	= 0;
+
+exprsave(f)
+	float f;
+{
+	exprlist[nexpr++] = f;
+}
+
+char *sprintgen(fmt)
+	char *fmt;
+{
+	int i;
+	char buf[1000];
+
+	sprintf(buf, fmt, exprlist[0], exprlist[1], exprlist[2], exprlist[3], exprlist[4]);
+	nexpr = 0;
+	free(fmt);
+	return tostring(buf);
+}
+
+makefattr(type, sub, f)	/* float attr */
+	int type, sub;
+	float f;
+{
+	YYSTYPE val;
+	val.f = f;
+	makeattr(type, sub, val);
+}
+
+makeoattr(type, o)	/* obj* attr */
+	obj *o;
+{
+	YYSTYPE val;
+	val.o = o;
+	makeattr(type, 0, val);
+}
+
+makeiattr(type, i)	/* int attr */
+	int i;
+{
+	YYSTYPE val;
+	val.i = i;
+	makeattr(type, 0, val);
+}
+
+maketattr(sub, p)	/* text attribute: takes two */
+	char *p;
+{
+	YYSTYPE val;
+	val.p = p;
+	makeattr(TEXTATTR, sub, val);
+}
+
+addtattr(sub)		/* add text attrib to existing item */
+{
+	attr[nattr-1].a_sub |= sub;
+}
+
+makevattr(p)	/* varname attribute */
+	char *p;
+{
+	YYSTYPE val;
+	val.p = p;
+	makeattr(VARNAME, 0, val);
+}
+
+makeattr(type, sub, val)	/* add attribute type and val */
+	int type, sub;
 	YYSTYPE val;
 {
 	if (type == 0 && val.i == 0) {	/* clear table for next stat */
 		nattr = 0;
 		return;
 	}
-	dprintf("attr %d:  %d %d\n", nattr, type, val.i);
+	if (nattr >= nattrlist)
+		attr = (Attr *) grow(attr, "attr", nattrlist += 100, sizeof(Attr));
+	dprintf("attr %d:  %d %d %d\n", nattr, type, sub, val.i);
 	attr[nattr].a_type = type;
+	attr[nattr].a_sub = sub;
 	attr[nattr].a_val = val;
 	nattr++;
 }
@@ -77,13 +156,13 @@ makeattr(type, val)	/* add attribute type and val */
 printexpr(f)	/* print expression for debugging */
 	float f;
 {
-	dprintf("%g\n", f);
+	printf("%g\n", f);
 }
 
 printpos(p)	/* print position for debugging */
-	struct obj *p;
+	obj *p;
 {
-	dprintf("%g, %g\n", p->o_x, p->o_y);
+	printf("%g, %g\n", p->o_x, p->o_y);
 }
 
 char *tostring(s)
@@ -100,10 +179,10 @@ char *tostring(s)
 	return(p);
 }
 
-struct obj *makepos(x, y)	/* make a osition cell */
+obj *makepos(x, y)	/* make a osition cell */
 	float x, y;
 {
-	struct obj *p;
+	obj *p;
 
 	p = makenode(PLACE, 0);
 	p->o_x = x;
@@ -111,11 +190,11 @@ struct obj *makepos(x, y)	/* make a osition cell */
 	return(p);
 }
 
-struct obj *makebetween(f, p1, p2)	/* make position between p1 and p2 */
+obj *makebetween(f, p1, p2)	/* make position between p1 and p2 */
 	float f;
-	struct obj *p1, *p2;
+	obj *p1, *p2;
 {
-	struct obj *p;
+	obj *p;
 
 	dprintf("fraction = %.2f\n", f);
 	p = makenode(PLACE, 0);
@@ -124,13 +203,25 @@ struct obj *makebetween(f, p1, p2)	/* make position between p1 and p2 */
 	return(p);
 }
 
-struct obj *getpos(p, corner)	/* find position of point */
-	struct obj *p;
+obj *getpos(p, corner)	/* find position of point */
+	obj *p;
 	int corner;
 {
-	float x, y, x1, y1;
+	float x, y;
 
-	dprintf("getpos %o %d\n", p, corner);
+	whatpos(p, corner, &x, &y);
+	return makepos(x, y);
+}
+
+whatpos(p, corner, px, py)	/* what is the position (no side effect) */
+	obj *p;
+	int corner;
+	float *px, *py;
+{
+	float x, y, x1, y1;
+	extern double sqrt();
+
+	dprintf("whatpos %o %d\n", p, corner);
 	x = p->o_x;
 	y = p->o_y;
 	x1 = p->o_val[0];
@@ -151,12 +242,33 @@ struct obj *getpos(p, corner)	/* find position of point */
 		case NW:	x -= x1 / 2; y += y1 / 2; break;
 		case START:
 			if (p->o_type == BLOCK)
-				return getpos(objlist[(int)p->o_val[2]], START);
+				return whatpos(objlist[(int)p->o_val[2]], START, px, py);
 		case END:
 			if (p->o_type == BLOCK)
-				return getpos(objlist[(int)p->o_val[3]], END);
+				return whatpos(objlist[(int)p->o_val[3]], END, px, py);
 		}
 		break;
+	case ARC:
+		switch (corner) {
+		case START:
+			if (p->o_attr & CW_ARC) {
+				x = p->o_val[2]; y = p->o_val[3];
+			} else {
+				x = x1; y = y1;
+			}
+			break;
+		case END:
+			if (p->o_attr & CW_ARC) {
+				x = x1; y = y1;
+			} else {
+				x = p->o_val[2]; y = p->o_val[3];
+			}
+			break;
+		}
+		if (corner == START || corner == END)
+			break;
+		x1 = y1 = sqrt((x1-x)*(x1-x) + (y1-y)*(y1-y));
+		/* Fall Through! */
 	case CIRCLE:
 	case ELLIPSE:
 		switch (corner) {
@@ -177,6 +289,7 @@ struct obj *getpos(p, corner)	/* find position of point */
 		switch (corner) {
 		case START:	break;	/* already in place */
 		case END:	x = x1; y = y1; break;
+		default: /* change! */
 		case CENTER:	x = (x+x1)/2; y = (y+y1)/2; break;
 		case NORTH:	if (y1 > y) { x = x1; y = y1; } break;
 		case SOUTH:	if (y1 < y) { x = x1; y = y1; } break;
@@ -184,40 +297,23 @@ struct obj *getpos(p, corner)	/* find position of point */
 		case WEST:	if (x1 < x) { x = x1; y = y1; } break;
 		}
 		break;
-	case ARC:
-		switch (corner) {
-		case START:
-			if (p->o_attr & CW_ARC) {
-				x = p->o_val[2]; y = p->o_val[3];
-			} else {
-				x = x1; y = y1;
-			}
-			break;
-		case END:
-			if (p->o_attr & CW_ARC) {
-				x = x1; y = y1;
-			} else {
-				x = p->o_val[2]; y = p->o_val[3];
-			}
-			break;
-		}
-		break;
 	}
-	dprintf("getpos returns %g %g\n", x, y);
-	return(makepos(x, y));
+	dprintf("whatpos returns %g %g\n", x, y);
+	*px = x;
+	*py = y;
 }
 
-struct obj *gethere(n)	/* make a place for curx,cury */
+obj *gethere(n)	/* make a place for curx,cury */
 {
 	dprintf("gethere %g %g\n", curx, cury);
 	return(makepos(curx, cury));
 }
 
-struct obj *getlast(n, t)	/* find n-th previous occurrence of type t */
+obj *getlast(n, t)	/* find n-th previous occurrence of type t */
 	int n, t;
 {
 	int i, k;
-	struct obj *p;
+	obj *p;
 
 	k = n;
 	for (i = nobj-1; i >= 0; i--) {
@@ -237,11 +333,11 @@ struct obj *getlast(n, t)	/* find n-th previous occurrence of type t */
 	return(NULL);
 }
 
-struct obj *getfirst(n, t)	/* find n-th occurrence of type t */
+obj *getfirst(n, t)	/* find n-th occurrence of type t */
 	int n, t;
 {
 	int i, k;
-	struct obj *p;
+	obj *p;
 
 	k = n;
 	for (i = 0; i < nobj; i++) {
@@ -261,8 +357,8 @@ struct obj *getfirst(n, t)	/* find n-th occurrence of type t */
 	return(NULL);
 }
 
-struct obj *getblock(p, s)	/* find variable s in block p */
-	struct obj *p;
+obj *getblock(p, s)	/* find variable s in block p */
+	obj *p;
 	char *s;
 {
 	struct symtab *stp;
@@ -271,7 +367,7 @@ struct obj *getblock(p, s)	/* find variable s in block p */
 		yyerror(".%s is not in that block", s);
 		return(NULL);
 	}
-	for (stp = (struct symtab *) p->o_dotdash; stp != NULL; stp = stp->s_next)
+	for (stp = p->o_symtab; stp != NULL; stp = stp->s_next)
 		if (strcmp(s, stp->s_name) == 0) {
 			dprintf("getblock found x,y= %g,%g\n",
 				(stp->s_val.o)->o_x, (stp->s_val.o)->o_y);
@@ -281,21 +377,36 @@ struct obj *getblock(p, s)	/* find variable s in block p */
 	return(NULL);
 }
 
-struct obj *fixpos(p, x, y)
-	struct obj *p;
+obj *fixpos(p, x, y)
+	obj *p;
 	float x, y;
 {
 	dprintf("fixpos returns %g %g\n", p->o_x + x, p->o_y + y);
 	return makepos(p->o_x + x, p->o_y + y);
 }
 
-struct obj *makenode(type, n)
+obj *addpos(p, q)
+	obj *p, *q;
+{
+	dprintf("addpos returns %g %g\n", p->o_x+q->o_x, p->o_y+q->o_y);
+	return makepos(p->o_x+q->o_x, p->o_y+q->o_y);
+}
+
+obj *subpos(p, q)
+	obj *p, *q;
+{
+	dprintf("subpos returns %g %g\n", p->o_x-q->o_x, p->o_y-q->o_y);
+	return makepos(p->o_x-q->o_x, p->o_y-q->o_y);
+}
+
+obj *makenode(type, n)
 	int type, n;
 {
-	struct obj *p;
+	obj *p;
 	int i;
+	extern char *calloc();
 
-	p = (struct obj *) malloc(sizeof(struct obj) + (n-1)*sizeof(float));
+	p = (obj *) calloc(1, sizeof(obj) + (n-1)*sizeof(float));
 	if (p == NULL) {
 		yyerror("out of space in makenode\n");
 		exit(1);
@@ -309,13 +420,9 @@ struct obj *makenode(type, n)
 	p->o_nt1 = ntext1;
 	p->o_nt2 = ntext;
 	ntext1 = ntext;	/* ready for next caller */
-	p->o_attr = p->o_dotdash = p->o_ddval = 0;
-	for (i = 0; i < n; i++)
-		p->o_val[i] = 0;
-	if (nobj >= MAXOBJ) {
-		yyerror("objlist overflow\n");
-		exit(1);
-	}
+	if (nobj >= nobjlist)
+		objlist = (obj **) grow(objlist, "objlist",
+			nobjlist += 100, sizeof(obj *));
 	objlist[nobj++] = p;
 	return(p);
 }
