@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.16 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -345,16 +345,15 @@ loop:
 	for (vp = *vpp; vp; vp = vp->v_specnext) {
 		if (nvp_rdev != vp->v_rdev || nvp->v_type != vp->v_type)
 			continue;
-		if (vget(vp))
-			goto loop;
 		/*
 		 * Alias, but not in use, so flush it out.
 		 */
-		if (vp->v_count == 1) {
-			vput(vp);
+		if (vp->v_count == 0) {
 			vgone(vp);
 			goto loop;
 		}
+		if (vget(vp))
+			goto loop;
 		break;
 	}
 	if (vp == NULL || vp->v_tag != VT_NON) {
@@ -587,6 +586,28 @@ void vclean(vp, doclose)
 }
 
 /*
+ * Eliminate all activity associated with  the requested vnode
+ * and with all vnodes aliased to the requested vnode.
+ */
+void vgoneall(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq, **vpp;
+
+	if (vp->v_flag & VALIASED) {
+		vpp = &speclisth[SPECHASH(vp->v_rdev)];
+	loop:
+		for (vq = *vpp; vq; vq = vq->v_specnext) {
+			if (vq->v_rdev != vp->v_rdev || vp == vq)
+				continue;
+			vgone(vq);
+			goto loop;
+		}
+	}
+	vgone(vp);
+}
+
+/*
  * Eliminate all activity associated with a vnode
  * in preparation for reuse.
  */
@@ -659,4 +680,32 @@ void vgone(vp)
 		vfreeh = vp;
 	}
 	vp->v_type = VBAD;
+}
+
+/*
+ * Calculate the total number of references to a special device.
+ */
+vcount(vp)
+	register struct vnode *vp;
+{
+	register struct vnode *vq, **vpp;
+	int count;
+
+	if ((vp->v_flag & VALIASED) == 0)
+		return (vp->v_count);
+	vpp = &speclisth[SPECHASH(vp->v_rdev)];
+loop:
+	for (count = 0, vq = *vpp; vq; vq = vq->v_specnext) {
+		if (vq->v_rdev != vp->v_rdev)
+			continue;
+		/*
+		 * Alias, but not in use, so flush it out.
+		 */
+		if (vq->v_count == 0) {
+			vgone(vq);
+			goto loop;
+		}
+		count += vq->v_count;
+	}
+	return (count);
 }
