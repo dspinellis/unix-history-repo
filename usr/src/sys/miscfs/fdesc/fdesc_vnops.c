@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	1.2 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	1.3 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
  */
@@ -40,7 +40,6 @@
 fdesc_lookup (ap)
 	struct vop_lookup_args *ap;
 {
-	/*USES_VOP_LOCK;*/
 	struct vnode **vpp = ap->a_vpp;
 	struct vnode *dvp = ap->a_dvp;
 	char *pname;
@@ -141,7 +140,6 @@ fdesc_attr(fd, vap, cred, p)
 	struct ucred *cred;
 	struct proc *p;
 {
-	USES_VOP_GETATTR;
 	struct filedesc *fdp = p->p_fd;
 	struct file *fp;
 	int error;
@@ -226,7 +224,6 @@ fdesc_getattr (ap)
 fdesc_setattr (ap)
 	struct vop_setattr_args *ap;
 {
-	USES_VOP_SETATTR;
 	struct filedesc *fdp = ap->a_p->p_fd;
 	struct file *fp;
 	unsigned fd;
@@ -287,7 +284,7 @@ fdesc_readdir (ap)
 	error = 0;
 	while (uio->uio_resid > 0) {
 		if (i >= fdp->fd_nfiles) {
-			*ap->a_eofflagp = 1;
+			/* *ap->a_eofflagp = 1; */
 			break;
 		}
 		if (fdp->fd_ofiles[i] != NULL) {
@@ -474,7 +471,6 @@ struct vnodeopv_entry_desc fdesc_vnodeop_entries[] = {
 	{ &vop_islocked_desc, fdesc_islocked },	/* islocked */
 	{ &vop_advlock_desc, fdesc_advlock },	/* advlock */
 	{ &vop_blkatoff_desc, fdesc_blkatoff },	/* blkatoff */
-	{ &vop_vget_desc, fdesc_vget },	/* vget */
 	{ &vop_valloc_desc, fdesc_valloc },	/* valloc */
 	{ &vop_vfree_desc, fdesc_vfree },	/* vfree */
 	{ &vop_truncate_desc, fdesc_truncate },	/* truncate */
