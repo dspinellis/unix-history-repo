@@ -4,7 +4,7 @@
 #
 #	This kernel is NOT MEANT to be runnable!
 #
-#	$Id: LINT,v 1.74 1994/06/02 06:45:01 jkh Exp $
+#	$Id: LINT,v 1.75 1994/06/02 12:18:27 csgr Exp $
 #
 
 machine		"i386"
@@ -28,7 +28,7 @@ config		"386bsd"	root on wd0 swap on wd0 and sd0 dumps on wd0
 options		"COM_MULTIPORT"		#Multiport support in sys/isa/sio.c
 
 options		"COMPAT_43"		#compatible with BSD 4.3
-options		"SYMTAB_SPACE=113498"	#This kernel needs LOTS of symtable
+options		"SYMTAB_SPACE=119000"	#This kernel needs LOTS of symtable
 options		GATEWAY			#internetwork gateway
 options		KTRACE			#kernel tracing
 
