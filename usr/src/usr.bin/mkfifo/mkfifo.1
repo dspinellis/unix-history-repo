@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkfifo.1	8.1 (Berkeley) %G%
+.\"     @(#)mkfifo.1	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MKFIFO 1
@@ -16,20 +16,12 @@
 .Nd make fifos
 .Sh SYNOPSIS
 .Nm mkfifo
-.Op Fl p
 .Ar fifo_name  ...
 .Sh DESCRIPTION
 .Nm Mkfifo
 creates the fifos requested, in the order specified,
 using mode
 .Li \&0777 .
-.Pp
-Options available are:
-.Bl -tag -width Ds
-.It Fl p
-Create intermediate directories as required.  If this option is not
-specified, the full path prefix of each operand must already exist.
-.El
 .Pp
 .Nm Mkfifo
 requires write permission in the parent directory.
@@ -44,7 +36,8 @@ utility is expected to be
 compliant.
 .Sh SEE ALSO
 .Xr mkdir 1 ,
-.Xr rm 1,
+.Xr mknod 1 ,
+.Xr rm 1 ,
 .Xr mkfifo 2
 .Sh HISTORY
 The
