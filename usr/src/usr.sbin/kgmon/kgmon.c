@@ -8,11 +8,11 @@
 char copyright[] =
 "@(#) Copyright (c) 1983 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)kgmon.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/param.h>
 #include <machine/pte.h>
@@ -24,17 +24,11 @@ static char sccsid[] = "@(#)kgmon.c	5.3 (Berkeley) %G%";
 #include <sys/gprof.h>
 
 #define	PROFILING_ON	0
-#define PROFILING_OFF	3
+#define	PROFILING_OFF	3
 
-/*
- * froms is actually a bunch of unsigned shorts indexing tos
- */
-u_short	*froms;
-struct	tostruct *tos;
-char	*s_lowpc;
 u_long	s_textsize;
+off_t	sbuf, klseek(), lseek();
 int	ssiz;
-off_t	sbuf;
 
 struct nlist nl[] = {
 #define	N_SYSMAP	0
@@ -58,17 +52,8 @@ struct nlist nl[] = {
 	0,
 };
 
-#if defined(vax)
-#define	clear(x)	((x) &~ 0x80000000)
-#endif
-#if defined(tahoe)
-#define	clear(x)	((x) &~ 0xc0000000)
-#endif
-
 struct	pte *Sysmap;
 
-char	*system = "/vmunix";
-char	*kmemf = "/dev/kmem";
 int	kmem;
 int	bflag, hflag, kflag, rflag, pflag;
 int	debug = 0;
@@ -77,52 +62,57 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int mode, disp, openmode = O_RDONLY;
+	extern char *optarg;
+	extern int optind;
+	int ch, mode, disp, openmode;
+	char *system, *kmemf, *malloc();
 
-	argc--, argv++;
-	while (argc > 0 && argv[0][0] == '-') {
-		switch (argv[0][1]) {
+	while ((ch = getopt(argc, argv, "bhpr")) != EOF)
+		switch((char)ch) {
 		case 'b':
 			bflag++;
-			openmode = O_RDWR;
 			break;
 		case 'h':
 			hflag++;
-			openmode = O_RDWR;
-			break;
-		case 'r':
-			rflag++;
-			openmode = O_RDWR;
 			break;
 		case 'p':
 			pflag++;
-			openmode = O_RDWR;
+			break;
+		case 'r':
+			rflag++;
 			break;
 		default:
-			printf("Usage: kgmon [ -b -h -r -p system memory ]\n");
+			fputs("usage: kgmon [-bhrp] [system [core]]\n", stderr);
 			exit(1);
 		}
-		argc--, argv++;
-	}
+
+	openmode = (bflag || hflag || pflag || rflag) ? O_RDWR : O_RDONLY;
+
+	kmemf = "/dev/kmem";
 	if (argc > 0) {
 		system = *argv;
 		argv++, argc--;
+		if (argc > 0) {
+			kmemf = *argv;
+			kflag++;
+		}
 	}
-	nlist(system, nl);
-	if (nl[0].n_type == 0) {
+	else
+		system = "/vmunix";
+
+	if (nlist(system, nl) < 0 || nl[0].n_type == 0) {
 		fprintf(stderr, "%s: no namelist\n", system);
 		exit(2);
 	}
-	if (argc > 0) {
-		kmemf = *argv;
-		kflag++;
+	if (!nl[N_PROFILING].n_value) {
+		fputs("profiling: not defined in kernel.\n", stderr);
+		exit(10);
 	}
 	kmem = open(kmemf, openmode);
 	if (kmem < 0) {
 		openmode = O_RDONLY;
 		kmem = open(kmemf, openmode);
 		if (kmem < 0) {
-			fprintf(stderr, "cannot open ");
 			perror(kmemf);
 			exit(3);
 		}
@@ -133,22 +123,21 @@ main(argc, argv)
 			fprintf(stderr, "-b supressed\n");
 		if (hflag)
 			fprintf(stderr, "-h supressed\n");
-		rflag = 0;
-		bflag = 0;
-		hflag = 0;
+		rflag = bflag = hflag = 0;
 	}
 	if (kflag) {
 		off_t off;
 
-		off = clear(nl[N_SYSMAP].n_value);
-		lseek(kmem, off, L_SET);
-		nl[N_SYSSIZE].n_value *= 4;
-		Sysmap = (struct pte *)malloc(nl[N_SYSSIZE].n_value);
-		if (Sysmap == 0) {
-			perror("Sysmap");
-			exit(4);
+		Sysmap = (struct pte *)
+		   malloc((u_int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
+		if (!Sysmap) {
+			fputs("arp: can't get memory for Sysmap.\n", stderr);
+			exit(1);
 		}
-		read(kmem, Sysmap, nl[N_SYSSIZE].n_value);
+		off = nl[N_SYSMAP].n_value & ~KERNBASE;
+		(void)lseek(kmem, off, L_SET);
+		(void)read(kmem, (char *)Sysmap,
+		    (int)(nl[N_SYSSIZE].n_value * sizeof(struct pte)));
 	}
 	mode = kfetch(N_PROFILING);
 	if (hflag)
@@ -170,14 +159,13 @@ main(argc, argv)
 
 dumpstate()
 {
-	int i;
-	int fd;
-	off_t kfroms, ktos;
-	int fromindex, endfrom, fromssize, tossize;
-	u_long frompc;
-	int toindex;
 	struct rawarc rawarc;
-	char buf[BUFSIZ];
+	struct tostruct *tos;
+	u_long frompc;
+	off_t kfroms, ktos;
+	u_short *froms;		/* froms is a bunch of u_shorts indexing tos */
+	int i, fd, fromindex, endfrom, fromssize, tossize, toindex;
+	char buf[BUFSIZ], *s_lowpc, *malloc();
 
 	turnonoff(PROFILING_OFF);
 	fd = creat("gmon.out", 0666);
@@ -187,30 +175,30 @@ dumpstate()
 	}
 	ssiz = kfetch(N_SSIZ);
 	sbuf = kfetch(N_SBUF);
-	klseek(kmem, (off_t)sbuf, L_SET);
+	(void)klseek(kmem, (off_t)sbuf, L_SET);
 	for (i = ssiz; i > 0; i -= BUFSIZ) {
 		read(kmem, buf, i < BUFSIZ ? i : BUFSIZ);
 		write(fd, buf, i < BUFSIZ ? i : BUFSIZ);
 	}
 	s_textsize = kfetch(N_S_TEXTSIZE);
 	fromssize = s_textsize / HASHFRACTION;
-	froms = (u_short *)malloc(fromssize);
+	froms = (u_short *)malloc((u_int)fromssize);
 	kfroms = kfetch(N_FROMS);
-	klseek(kmem, kfroms, L_SET);
+	(void)klseek(kmem, kfroms, L_SET);
 	i = read(kmem, ((char *)(froms)), fromssize);
 	if (i != fromssize) {
 		fprintf(stderr, "read froms: request %d, got %d", fromssize, i);
-		perror("");
+		perror((char *)NULL);
 		exit(5);
 	}
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
-	tos = (struct tostruct *)malloc(tossize);
+	tos = (struct tostruct *)malloc((u_int)tossize);
 	ktos = kfetch(N_TOS);
-	klseek(kmem, ktos, L_SET);
+	(void)klseek(kmem, ktos, L_SET);
 	i = read(kmem, ((char *)(tos)), tossize);
 	if (i != tossize) {
 		fprintf(stderr, "read tos: request %d, got %d", tossize, i);
-		perror("");
+		perror((char *)NULL);
 		exit(6);
 	}
 	s_lowpc = (char *)kfetch(N_S_LOWPC);
@@ -232,7 +220,7 @@ dumpstate()
 			rawarc.raw_frompc = frompc;
 			rawarc.raw_selfpc = (u_long)tos[toindex].selfpc;
 			rawarc.raw_count = tos[toindex].count;
-			write(fd, &rawarc, sizeof (rawarc));
+			write(fd, (char *)&rawarc, sizeof (rawarc));
 		}
 	}
 	close(fd);
@@ -240,9 +228,8 @@ dumpstate()
 
 resetstate()
 {
-	int i;
 	off_t kfroms, ktos;
-	int fromssize, tossize;
+	int i, fromssize, tossize;
 	char buf[BUFSIZ];
 
 	turnonoff(PROFILING_OFF);
@@ -251,7 +238,7 @@ resetstate()
 	sbuf = kfetch(N_SBUF);
 	ssiz -= sizeof(struct phdr);
 	sbuf += sizeof(struct phdr);
-	klseek(kmem, (off_t)sbuf, L_SET);
+	(void)klseek(kmem, (off_t)sbuf, L_SET);
 	for (i = ssiz; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("sbuf write");
@@ -260,7 +247,7 @@ resetstate()
 	s_textsize = kfetch(N_S_TEXTSIZE);
 	fromssize = s_textsize / HASHFRACTION;
 	kfroms = kfetch(N_FROMS);
-	klseek(kmem, kfroms, L_SET);
+	(void)klseek(kmem, kfroms, L_SET);
 	for (i = fromssize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("kforms write");
@@ -268,7 +255,7 @@ resetstate()
 		}
 	tossize = (s_textsize * ARCDENSITY / 100) * sizeof(struct tostruct);
 	ktos = kfetch(N_TOS);
-	klseek(kmem, ktos, L_SET);
+	(void)klseek(kmem, ktos, L_SET);
 	for (i = tossize; i > 0; i -= BUFSIZ)
 		if (write(kmem, buf, i < BUFSIZ ? i : BUFSIZ) < 0) {
 			perror("ktos write");
@@ -279,14 +266,8 @@ resetstate()
 turnonoff(onoff)
 	int onoff;
 {
-	off_t off;
-
-	if ((off = nl[N_PROFILING].n_value) == 0) {
-		printf("profiling: not defined in kernel\n");
-		exit(10);
-	}
-	klseek(kmem, off, L_SET);
-	write(kmem, (char *)&onoff, sizeof (onoff));
+	(void)klseek(kmem, (long)nl[N_PROFILING].n_value, L_SET);
+	(void)write(kmem, (char *)&onoff, sizeof (onoff));
 }
 
 kfetch(index)
@@ -310,14 +291,14 @@ kfetch(index)
 	return (value);
 }
 
+off_t
 klseek(fd, base, off)
-	int fd, base, off;
+	int fd, off;
+	off_t base;
 {
-
-	if (kflag) {
-		/* get kernel pte */
-		base = clear(base);
-		base = ((int)ptob(Sysmap[btop(base)].pg_pfnum))+(base&(NBPG-1));
+	if (kflag) {	/* get kernel pte */
+		base &= ~KERNBASE;
+		base = ctob(Sysmap[btop(base)].pg_pfnum) + (base & PGOFSET);
 	}
 	return (lseek(fd, base, off));
 }
