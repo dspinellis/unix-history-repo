@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.13 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -127,9 +127,14 @@ fgoto()
 		destline = outline;
 	if (CA) {
 		cgp = tgoto(CM, destcol, destline);
-		if (plod(strlen(cgp)) > 0)
+
+		/*
+		 * Need this condition due to inconsistent behavior
+		 * of backspace on the last column.
+		 */
+		if (outcol != COLS - 1 && plod(strlen(cgp)) > 0)
 			plod(0);
-		else
+		else 
 			tputs(cgp, 0, __cputchar);
 	} else
 		plod(0);
