@@ -1,4 +1,4 @@
-/*
+/* pltroff.c	(Berkeley)	1.2	83/08/09
  *	This version has code generators to drive the old-style troff
  *	that produces output for the Graphic Systems C/A/T.  
  *	Very few people actually have a C/A/T; they instead typically
@@ -32,14 +32,9 @@ extern	int	res;
 extern	int	DX;	/* step size in x */
 extern	int	DY;	/* step size in y */
 
-#define	DEV202	1
-#define	DEVAPS	2
-#define	DEVCAT	3
-#define	DEV450	4
-extern	int	devtype;
 int	minline	= 245;	/* draw lines shorter than this with dots on 202 */
-		/* ought to be point-size dependent, but what's that? */
-		/* this is big enough to handle 202 up to 36 points */
+			/* ought to be point-size dependent, but what's that? */
+			/* this is big enough to handle 202 up to 36 points */
 int	drawdot	= '.';	/* character to use when drawing */
 
 int	useDline	= 1;	/* if set, produce \D for all lines */
@@ -284,10 +279,8 @@ cont(x, y)	/* continue line from here to x,y */
 	if (!useDline && dv == 0 && abs(dh) > minline)	/* horizontal */
 		printf("\\l'%du'\n", dh);
 	else if (!useDline && dh == 0 && abs(dv) > minline) {	/* vertical */
-		if (devtype == DEV202)
-			printf("\\L'%du\\(vr'\n", dv);
-		else
-			printf("\\v'-.25m'\\L'%du\\(br'\\v'.25m'\n", dv);	/* add -.25m correction if use \(br */
+		printf("\\v'-.25m'\\L'%du\\(br'\\v'.25m'\n", dv);
+					/* add -.25m correction if use \(br */
 	} else {
 		if (OLDSTYLE)
 			drawline(dh, dv);
@@ -473,15 +466,7 @@ linemod(s)
 
 dot() {
 	hvflush();
-	/* what character to draw here depends on what's available. */
-	/* on the 202, l. is good but small. */
-	/* on other typesetters, use a period and hope */
-	if (OLDSTYLE)
-		printf("\\&.\n");
-	else if (devtype == DEV202)
-		printf("\\z\\(l.\\(l.\\z\\(l.\\(l.\n");
-	else
-		printf("\\&.\n");
+	printf("\\&.\n");
 	flyback();
 }
 
