@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software developed by the Computer Systems
  * Engineering group at Lawrence Berkeley Laboratory under DARPA
@@ -12,7 +12,7 @@
  *
  * from: sys/fbio.h		7.2 (Berkeley) 4/1/92
  *
- *	@(#)fbio.h	7.3 (Berkeley) %G%
+ *	@(#)fbio.h	8.1 (Berkeley) %G%
  */
 
 /*

@@ -1,14 +1,14 @@
 /*-
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1990,1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993, 19901992
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
  * from: hp/dev/grf.c		7.13 (Berkeley) 7/12/92
  *
- *	@(#)fb.c	7.4 (Berkeley) %G%
+ *	@(#)fb.c	8.1 (Berkeley) %G%
  */
 
 /*
