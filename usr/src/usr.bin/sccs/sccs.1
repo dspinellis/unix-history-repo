@@ -89,10 +89,15 @@ It is useful for fixing small compiler bugs, etc.
 Since it doesn't leave audit trails,
 it should be used carefully.
 .IP clean
-Takes no arguments.
 This routine removes everything from the current directory
 that can be recreated from SCCS files.
 It will not remove any files being edited.
+If the
+.B \-b
+flag is given, branches are ignored in the determination
+of whether they are being edited;
+this is dangerous if you are keeping the branches in the
+same directory.
 .IP unedit
 This is the opposite of an ``edit''
 or a ``get \-e''.
@@ -101,6 +106,12 @@ since any changes you made since the get
 will be irretrievably lost.
 .IP info
 Gives a listing of all files being edited.
+If the
+.B \-b
+flag is given,
+branches (i.e.,
+\s-1SID\s0's with two or fewer components)
+are ignored.
 .IP check
 Like ``info''
 except that nothing is printed if nothing is being edited,
@@ -116,6 +127,10 @@ before a version is installed.
 Gives a newline-separated list
 of the files being edited
 on the standard output.
+Takes the
+.B \-b
+flag like 
+``info'' and ``check''.
 .IP diffs
 Gives a ``diff'' listing between the current version of the
 program(s) you have out for editing and the versions
