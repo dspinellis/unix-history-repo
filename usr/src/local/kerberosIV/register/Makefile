@@ -27,7 +27,7 @@ INCDIR=	/usr/include/kerberos
 SRC1=	registerd.c
 SRC2=	register.c
 SRC3=	make_keypair.c
-OBJS=
+OBJS=	register.o registerd.o make_keypair.o
 MAN=	register.0 registerd.0 make_keypair.0
 
 all: registerd register make_keypair
@@ -52,7 +52,7 @@ depend: ${SRC1} ${SRC2} ${SRC3}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 registerd ${DESTDIR}/etc/registerd
-	install -s -o bin -g bin -m 755 register ${DESTDIR}/usr/local/register
+	install -s -o root -g bin -m 4755 register ${DESTDIR}/usr/local/register
 	install -c -o bin -g bin -m 444 registerd.0 ${DESTDIR}/usr/man/cat8
 	install -c -o bin -g bin -m 444 register.0 ${DESTDIR}/usr/man/cat1
 	install -c -o bin -g bin -m 444 make_keypair.0 ${DESTDIR}/usr/man/cat8
