@@ -1,4 +1,4 @@
-@(#)README	2.4 (Berkeley) %G%
+@(#)README	2.5 (Berkeley) %G%
 
 This document describes the sendmail configuration files being used
 at Berkeley.  There have been several previous versions.  This file
@@ -67,7 +67,7 @@ honest!
 
 You need this line!
 
-	VERSIONID(<SCCS or RCS version id>)
+	VERSIONID(`<SCCS or RCS version id>')
 
 VERSIONID is a macro that stuffs the version information into the
 resulting file.  We use SCCS; you could use RCS, something else, or
