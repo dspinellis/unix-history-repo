@@ -1,11 +1,27 @@
+%union {
+	char	*str;
+	int	val;
+	struct	idlst *lst;
+}
+
 %token	MACHINE
 %token	CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
-%token	CONTROLLER PSEUDO_DEVICE FLAGS ID SEMICOLON NUMBER FPNUMBER TRACE
-%token	DISK SLAVE AT HZ TIMEZONE DST MAXUSERS
-%token	MASTER PRIORITY COMMA MINUS EQUALS
+%token	CONTROLLER PSEUDO_DEVICE FLAGS SEMICOLON TRACE
+%token	DISK SLAVE HZ TIMEZONE DST MAXUSERS
+%token	MASTER PRIORITY COMMA MINUS EQUALS AT
+
+%token	<str>	ID
+%token	<val>	NUMBER
+%token	<val>	FPNUMBER
+
+%type	<str>	Save_id
+%type	<str>	Opt_value
+%type	<str>	Dev
+%type	<lst>	Id_list
+
 %{
 
-/*	config.y	1.15	82/10/24	*/
+/*	config.y	1.16	82/10/25	*/
 
 #include "config.h"
 #include <stdio.h>
@@ -14,28 +30,35 @@ struct	device cur;
 struct	device *curp = 0;
 char	*temp_id;
 char	*val_id;
+char	*malloc();
 
 %}
 %%
 Configuration:
 	Many_specs
-	;
+		;
 
 Many_specs:
 	Many_specs Spec
-	|
-	;
+		|
+	/* lambda */
+		;
 
 Spec:
-	Device_spec SEMICOLON  = { newdev(&cur); } |
-	Config_spec SEMICOLON |
-	TRACE SEMICOLON = { do_trace = ! do_trace; } |
-	SEMICOLON |
+	Device_spec SEMICOLON
+	      = { newdev(&cur); } |
+	Config_spec SEMICOLON
+		|
+	TRACE SEMICOLON
+	      = { do_trace = !do_trace; } |
+	SEMICOLON
+		|
 	error SEMICOLON
-	;
+		;
 
 Config_spec:
-	MACHINE Save_id = {
+	MACHINE Save_id
+	    = {
 		if (!strcmp($2, "vax")) {
 			machine = MACHINE_VAX;
 			machinename = "vax";
@@ -44,155 +67,186 @@ Config_spec:
 			machinename = "sun";
 		} else
 			yyerror("Unknown machine type");
-		} |
-	CPU Save_id = {
-		    struct cputype *cp = malloc(sizeof (struct cputype));
-		    cp->cpu_name = ns($2);
-		    cp->cpu_next = cputype;
-		    cputype = cp;
-		    free(temp_id);
-		    } |
-	OPTIONS Opt_list |
-	IDENT ID = { ident = ns($2); } |
-	CONFIG Save_id ID = { mkconf(temp_id, $3); free(temp_id); } |
-	HZ NUMBER = {
-		yyerror("HZ specification obsolete; delete");
-		hz = 60;
-		} |
-	TIMEZONE NUMBER = { timezone = 60 * $2; check_tz(); } |
-	TIMEZONE NUMBER DST = { timezone = 60 * $2; dst = 1; check_tz(); } |
-	TIMEZONE FPNUMBER = { timezone = $2; check_tz(); } |
-	TIMEZONE FPNUMBER DST = { timezone = $2; dst = 1; check_tz(); } |
-	TIMEZONE MINUS NUMBER =
-	    { timezone = -60 * $3; check_tz(); } |
-	TIMEZONE MINUS NUMBER DST =
-	    { timezone = -60 * $3; dst = 1; check_tz(); } |
-	TIMEZONE MINUS FPNUMBER =
-	    { timezone = -$3; check_tz(); } |
-	TIMEZONE MINUS FPNUMBER DST =
-	    { timezone = -$3; dst = 1; check_tz(); } |
-	MAXUSERS NUMBER = { maxusers = $2; }
-	;
+	      } |
+	CPU Save_id
+	      = {
+		struct cputype *cp =
+		    (struct cputype *)malloc(sizeof (struct cputype));
+		cp->cpu_name = ns($2);
+		cp->cpu_next = cputype;
+		cputype = cp;
+		free(temp_id);
+	      } |
+	OPTIONS Opt_list
+		|
+	IDENT ID
+	      = { ident = ns($2); } |
+	CONFIG Save_id ID
+	      = { mkconf(temp_id, $3); free(temp_id); } |
+	HZ NUMBER
+	      = { yyerror("HZ specification obsolete; delete"); } |
+	TIMEZONE NUMBER
+	      = { timezone = 60 * $2; check_tz(); } |
+	TIMEZONE NUMBER DST
+	      = { timezone = 60 * $2; dst = 1; check_tz(); } |
+	TIMEZONE FPNUMBER
+	      = { timezone = $2; check_tz(); } |
+	TIMEZONE FPNUMBER DST
+	      = { timezone = $2; dst = 1; check_tz(); } |
+	TIMEZONE MINUS NUMBER
+	      = { timezone = -60 * $3; check_tz(); } |
+	TIMEZONE MINUS NUMBER DST
+	      = { timezone = -60 * $3; dst = 1; check_tz(); } |
+	TIMEZONE MINUS FPNUMBER
+	      = { timezone = -$3; check_tz(); } |
+	TIMEZONE MINUS FPNUMBER DST
+	      = { timezone = -$3; dst = 1; check_tz(); } |
+	MAXUSERS NUMBER
+	      = { maxusers = $2; };
 
 Opt_list:
-	Opt_list COMMA Option |
+	Opt_list COMMA Option
+		|
 	Option
-	;
+		;
 
 Option:
-	Save_id = {
-		    struct opt *op = malloc(sizeof (struct opt));
-		    op->op_name = ns($1);
-		    op->op_next = opt;
-		    op->op_value = 0;
-		    opt = op;
-		    free(temp_id);
-	} |
-	Save_id EQUALS Opt_value = {
-		    struct opt *op = malloc(sizeof (struct opt));
-		    op->op_name = ns($1);
-		    op->op_next = opt;
-		    op->op_value = ns($3);
-		    opt = op;
-		    free(temp_id);
-		    free(val_id);
-	}
-	;
+	Save_id
+	      = {
+		struct opt *op = (struct opt *)malloc(sizeof (struct opt));
+		op->op_name = ns($1);
+		op->op_next = opt;
+		op->op_value = 0;
+		opt = op;
+		free(temp_id);
+	      } |
+	Save_id EQUALS Opt_value
+	      = {
+		struct opt *op = (struct opt *)malloc(sizeof (struct opt));
+		op->op_name = ns($1);
+		op->op_next = opt;
+		op->op_value = ns($3);
+		opt = op;
+		free(temp_id);
+		free(val_id);
+	      } ;
 
 Opt_value:
-	ID = { $$ = val_id = ns($1); } |
-	NUMBER = { char nb[16]; sprintf(nb, "%d", $1); $$ = val_id = ns(nb); }
-	;
+	ID
+	      = { $$ = val_id = ns($1); } |
+	NUMBER
+	      = { char nb[16]; $$ = val_id = ns(sprintf(nb, "%d", $1)); };
 
 
 Save_id:
-	ID = { $$ = temp_id = ns($1); }
+	ID
+	      = { $$ = temp_id = ns($1); }
 	;
 
 Dev:
-	UBA  = { $$ = ns("uba"); } |
-	MBA  = { $$ = ns("mba"); } |
-	ID = { $$ = ns($1); }
+	UBA
+	      = { $$ = ns("uba"); } |
+	MBA
+	      = { $$ = ns("mba"); } |
+	ID
+	      = { $$ = ns($1); }
 	;
 
 Device_spec:
-	DEVICE Dev_name Dev_info Int_spec = {  cur.d_type = DEVICE; } |
-	MASTER Dev_name Dev_info Int_spec = {  cur.d_type = MASTER; } |
-	DISK Dev_name Dev_info Int_spec =
-				{  cur.d_dk = 1; cur.d_type = DEVICE; } |
-	CONTROLLER Dev_name Dev_info Int_spec = {  cur.d_type = CONTROLLER; } |
-	PSEUDO_DEVICE Init_dev Dev = {
-			cur.d_name = $3;
-			cur.d_type = PSEUDO_DEVICE;
-		  } |
-	PSEUDO_DEVICE Init_dev Dev NUMBER = {
-			cur.d_name = $3;
-			cur.d_type = PSEUDO_DEVICE;
-			cur.d_slave = $4;
-		}
-	;
+	DEVICE Dev_name Dev_info Int_spec
+	      = { cur.d_type = DEVICE; } |
+	MASTER Dev_name Dev_info Int_spec
+	      = { cur.d_type = MASTER; } |
+	DISK Dev_name Dev_info Int_spec
+	      = { cur.d_dk = 1; cur.d_type = DEVICE; } |
+	CONTROLLER Dev_name Dev_info Int_spec
+	      = { cur.d_type = CONTROLLER; } |
+	PSEUDO_DEVICE Init_dev Dev
+	      = {
+		cur.d_name = $3;
+		cur.d_type = PSEUDO_DEVICE;
+		} |
+	PSEUDO_DEVICE Init_dev Dev NUMBER
+	      = {
+		cur.d_name = $3;
+		cur.d_type = PSEUDO_DEVICE;
+		cur.d_slave = $4;
+		};
 
 Dev_name:
-	Init_dev Dev NUMBER =	{
-			cur.d_name = $2;
-			if (eq($2, "mba"))
-			    seen_mba = 1;
-			else if (eq($2, "uba"))
-			    seen_uba = 1;
-			cur.d_unit = $3;
-		}
-	;
+	Init_dev Dev NUMBER
+	      = {
+		cur.d_name = $2;
+		if (eq($2, "mba"))
+			seen_mba = 1;
+		else if (eq($2, "uba"))
+			seen_uba = 1;
+		cur.d_unit = $3;
+		};
 
 Init_dev:
-	= { init_dev(&cur); }
-	;
+	/* lambda */
+	      = { init_dev(&cur); };
 
 Dev_info:
 	Con_info Info_list
-	|
-	;
+		|
+	/* lambda */
+		;
 
 Con_info:
-	AT Dev NUMBER = {
+	AT Dev NUMBER
+	      = {
 		if (eq(cur.d_name, "mba") || eq(cur.d_name, "uba"))
 			yyerror(sprintf(errbuf,
-				"%s must be connected to a nexus", cur.d_name));
+			    "%s must be connected to a nexus", cur.d_name));
 		cur.d_conn = connect($2, $3);
-	} |
-	AT NEXUS NUMBER = { check_nexus(&cur, $3); cur.d_conn = TO_NEXUS; }
-	;
+		} |
+	AT NEXUS NUMBER
+	      = { check_nexus(&cur, $3); cur.d_conn = TO_NEXUS; };
     
 Info_list:
 	Info_list Info
-	|
-	;
+		|
+	/* lambda */
+		;
 
 Info:
-	CSR NUMBER = { cur.d_addr = $2; } |
-	DRIVE NUMBER = { cur.d_drive = $2; } |
-	SLAVE NUMBER =
-	{
-		if (cur.d_conn != 0 && cur.d_conn != TO_NEXUS
-		    && cur.d_conn->d_type == MASTER)
+	CSR NUMBER
+	      = { cur.d_addr = $2; } |
+	DRIVE NUMBER
+	      = { cur.d_drive = $2; } |
+	SLAVE NUMBER
+	      = {
+		if (cur.d_conn != 0 && cur.d_conn != TO_NEXUS &&
+		    cur.d_conn->d_type == MASTER)
 			cur.d_slave = $2;
 		else
 			yyerror("can't specify slave--not to master");
-	} |
-	FLAGS NUMBER = { cur.d_flags = $2; }
-	;
+		} |
+	FLAGS NUMBER
+	      = { cur.d_flags = $2; };
 
 Int_spec:
-	VECTOR Id_list = { cur.d_vec = $2; } |
-	PRIORITY NUMBER = { cur.d_pri = $2; } |
-	;
+	VECTOR Id_list
+	      = { cur.d_vec = $2; } |
+	PRIORITY NUMBER
+	      = { cur.d_pri = $2; } |
+	/* lambda */
+		;
 
 Id_list:
-	Save_id =
-	    { struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
-	      a->id = $1; a->id_next = 0; $$ = a; } |
+	Save_id
+	      = {
+		struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
+		a->id = $1; a->id_next = 0; $$ = a;
+		} |
 	Save_id Id_list =
-	    { struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
-	      a->id = $1; a->id_next = $2; $$ = a; } ;
+		{
+		struct idlst *a = (struct idlst *)malloc(sizeof(struct idlst));
+	        a->id = $1; a->id_next = $2; $$ = a;
+		};
+
 %%
 
 yyerror(s)
@@ -211,9 +265,9 @@ ns(str)
 {
 	register char *cp;
 
-	cp = malloc(strlen(str)+1);
-	strcpy(cp, str);
-	return cp;
+	cp = malloc((unsigned)(strlen(str)+1));
+	(void) strcpy(cp, str);
+	return (cp);
 }
 
 /*
