@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)sym.c 4.1 %G%";
+static	char sccsid[] = "@(#)sym.c 4.2 %G%";
 /*
  * adb - symbol table routines
  */
@@ -119,7 +119,7 @@ psymoff(v, type, s)
 
 	if (v) 
 		w = findsym(v, type);
-	if (v==0 || w >= maxoff || (KVTOPH(v) < maxoff && w))
+	if (v==0 || w >= maxoff || (INKERNEL(v) && KVTOPH(v) < maxoff && w))
 		printf(LPRMODE, v);
 	else {
 		printf("%s", cursym->n_un.n_name);
