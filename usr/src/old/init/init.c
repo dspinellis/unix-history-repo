@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.12 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -8,6 +8,7 @@ static	char *sccsid = "@(#)init.c	4.11 (Berkeley) %G%";
 #include <setjmp.h>
 #include <sys/reboot.h>
 #include <errno.h>
+#include <sys/file.h>
 
 #define	LINSIZ	sizeof(wtmp.ut_line)
 #define	TABSIZ	100
@@ -15,6 +16,7 @@ static	char *sccsid = "@(#)init.c	4.11 (Berkeley) %G%";
 #define	EVER	;;
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
+#define	mask(s)	(1 << ((s)-1))
 
 char	shell[]	= "/bin/sh";
 char	getty[]	 = "/etc/getty";
@@ -54,21 +56,23 @@ int	idle();
 char	*strcpy(), *strcat();
 long	lseek();
 
-#ifndef sun
+struct	sigvec rvec = { reset, mask(SIGHUP), 0 };
+
+#ifdef vax
 main()
 {
 	register int r11;		/* passed thru from boot */
-#else sun
+#else
 main(argc, argv)
 	char **argv;
 {
-#endif sun
+#endif
 	int howto, oldhowto;
 
 	time0 = time(0);
-#ifndef sun
+#ifdef vax
 	howto = r11;
-#else sun
+#else
 	if (argc > 1 && argv[1][0] == '-') {
 		char *cp;
 
@@ -85,14 +89,14 @@ main(argc, argv)
 	} else {
 		howto = RB_SINGLE;
 	}
-#endif sun
-	setjmp(sjbuf);
-	signal(SIGTERM, reset);
+#endif
+	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
 	signal(SIGSTOP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
-	for(EVER) {
+	(void) setjmp(sjbuf);
+	for (EVER) {
 		oldhowto = howto;
 		howto = RB_SINGLE;
 		if (setjmp(shutpass) == 0)
@@ -115,15 +119,15 @@ shutdown()
 
 	close(creat(utmp, 0644));
 	signal(SIGHUP, SIG_IGN);
-	for(ALL) {
+	for (ALL) {
 		term(p);
 		p->line[0] = 0;
 	}
 	signal(SIGALRM, shutreset);
 	alarm(30);
-	for(i=0; i<5; i++)
+	for (i = 0; i < 5; i++)
 		kill(-1, SIGKILL);
-	while(wait((int *)0) != -1)
+	while (wait((int *)0) != -1)
 		;
 	alarm(0);
 	shutend();
@@ -152,11 +156,10 @@ shutend()
 
 	acct(0);
 	signal(SIGALRM, SIG_DFL);
-	for(i=0; i<10; i++)
+	for (i = 0; i < 10; i++)
 		close(i);
-	f = open(wtmpf, 1);
+	f = open(wtmpf, O_WRONLY|O_APPEND);
 	if (f >= 0) {
-		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "shutdown");
 		SCPYN(wtmp.ut_host, "");
@@ -164,7 +167,7 @@ shutend()
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
-	return(1);
+	return (1);
 }
 
 single()
@@ -173,25 +176,22 @@ single()
 	register xpid;
 	extern	errno;
 
-   do {
-	pid = fork();
-	if(pid == 0) {
-/*
-		alarm(300);
-*/
-		signal(SIGTERM, SIG_DFL);
-		signal(SIGHUP, SIG_DFL);
-		signal(SIGALRM, SIG_DFL);
-		open(ctty, 2);
-		dup(0);
-		dup(0);
-		execl(shell, minus, (char *)0);
-		exit(0);
-	}
-	while((xpid = wait((int *)0)) != pid)
-		if (xpid == -1 && errno == ECHILD)
-			break;
-   } while (xpid == -1);
+	do {
+		pid = fork();
+		if (pid == 0) {
+			signal(SIGTERM, SIG_DFL);
+			signal(SIGHUP, SIG_DFL);
+			signal(SIGALRM, SIG_DFL);
+			(void) open(ctty, O_RDWR);
+			dup2(0, 1);
+			dup2(0, 2);
+			execl(shell, minus, (char *)0);
+			exit(0);
+		}
+		while ((xpid = wait((int *)0)) != pid)
+			if (xpid == -1 && errno == ECHILD)
+				break;
+	} while (xpid == -1);
 }
 
 runcom(oldhowto)
@@ -201,23 +201,22 @@ runcom(oldhowto)
 	int status;
 
 	pid = fork();
-	if(pid == 0) {
-		open("/", 0);
-		dup(0);
-		dup(0);
+	if (pid == 0) {
+		(void) open("/", O_RDONLY);
+		dup2(0, 1);
+		dup2(0, 2);
 		if (oldhowto & RB_SINGLE)
 			execl(shell, shell, runc, (char *)0);
 		else
 			execl(shell, shell, runc, "autoboot", (char *)0);
 		exit(1);
 	}
-	while(wait(&status) != pid)
+	while (wait(&status) != pid)
 		;
-	if(status)
-		return(0);
-	f = open(wtmpf, 1);
+	if (status)
+		return (0);
+	f = open(wtmpf, O_WRONLY|O_APPEND);
 	if (f >= 0) {
-		lseek(f, 0L, 2);
 		SCPYN(wtmp.ut_line, "~");
 		SCPYN(wtmp.ut_name, "reboot");
 		SCPYN(wtmp.ut_host, "");
@@ -229,45 +228,90 @@ runcom(oldhowto)
 		write(f, (char *)&wtmp, sizeof(wtmp));
 		close(f);
 	}
-	return(1);
+	return (1);
 }
 
-setmerge()
-{
-
-	signal(SIGHUP, setmerge);
-	mergflag = 1;
-}
-
+struct	sigvec	mvec = { merge, mask(SIGTERM), 0 };
+/*
+ * Multi-user.  Listen for users leaving, SIGHUP's
+ * which indicate ttys has changed, and SIGTERM's which
+ * are used to shutdown the system.
+ */
 multiple()
 {
 	register struct tab *p;
 	register pid;
 
-loop:
-	mergflag = 0;
-	signal(SIGHUP, setmerge);
-	for(EVER) {
+	sigvec(SIGHUP, &mvec, (struct sigvec *)0);
+	for (EVER) {
 		pid = wait((int *)0);
-		if(mergflag) {
-			merge();
-			goto loop;
-		}
-		if(pid == -1)
+		if (pid == -1)
 			return;
-		for(ALL)
-			if(p->pid == pid || p->pid == -1) {
+		for (ALL)
+			if (p->pid == pid || p->pid == -1) {
 				rmut(p);
 				dfork(p);
 			}
 	}
 }
 
+/*
+ * Merge current contents of ttys file
+ * into in-core table of configured tty lines.
+ * Entered as signal handler for SIGHUP.
+ */
+#define	FOUND	1
+#define	CHANGE	2
+
+merge()
+{
+	register struct tab *p;
+
+	fi = open(ifile, 0);
+	if (fi < 0)
+		return;
+	for (ALL)
+		p->xflag = 0;
+	while (rline()) {
+		for (ALL) {
+			if (SCMPN(p->line, line.line))
+				continue;
+			p->xflag |= FOUND;
+			if (line.comn != p->comn) {
+				p->xflag |= CHANGE;
+				p->comn = line.comn;
+			}
+			goto contin1;
+		}
+		for (ALL) {
+			if (p->line[0] != 0)
+				continue;
+			SCPYN(p->line, line.line);
+			p->xflag |= FOUND|CHANGE;
+			p->comn = line.comn;
+			goto contin1;
+		}
+	contin1:
+		;
+	}
+	close(fi);
+	for (ALL) {
+		if ((p->xflag&FOUND) == 0) {
+			term(p);
+			p->line[0] = 0;
+		}
+		if (p->xflag&CHANGE) {
+			term(p);
+			dfork(p);
+		}
+	}
+}
+
 term(p)
-register struct tab *p;
+	register struct tab *p;
 {
 
-	if(p->pid != 0) {
+	if (p->pid != 0) {
 		rmut(p);
 		kill(p->pid, SIGKILL);
 	}
@@ -280,97 +324,50 @@ rline()
 
 loop:
 	c = get();
-	if(c < 0)
+	if (c < 0)
 		return(0);
-	if(c == 0)
+	if (c == 0)
 		goto loop;
 	line.flag = c;
 	c = get();
-	if(c <= 0)
+	if (c <= 0)
 		goto loop;
 	line.comn = c;
 	SCPYN(line.line, "");
-	for (i=0; i<LINSIZ; i++) {
+	for (i = 0; i < LINSIZ; i++) {
 		c = get();
-		if(c <= 0)
+		if (c <= 0)
 			break;
 		line.line[i] = c;
 	}
-	while(c > 0)
+	while (c > 0)
 		c = get();
-	if(line.line[0] == 0)
+	if (line.line[0] == 0)
 		goto loop;
-	if(line.flag == '0')
+	if (line.flag == '0')
 		goto loop;
 	strcpy(tty, dev);
 	strncat(tty, line.line, LINSIZ);
-	if(access(tty, 06) < 0)
+	if (access(tty, 06) < 0)
 		goto loop;
-	return(1);
+	return (1);
 }
 
 get()
 {
 	char b;
 
-	if(read(fi, &b, 1) != 1)
-		return(-1);
-	if(b == '\n')
-		return(0);
-	return(b);
-}
-
-#define	FOUND	1
-#define	CHANGE	2
-
-merge()
-{
-	register struct tab *p;
-
-	fi = open(ifile, 0);
-	if(fi < 0)
-		return;
-	for(ALL)
-		p->xflag = 0;
-	while(rline()) {
-		for(ALL) {
-			if (SCMPN(p->line, line.line))
-				continue;
-			p->xflag |= FOUND;
-			if(line.comn != p->comn) {
-				p->xflag |= CHANGE;
-				p->comn = line.comn;
-			}
-			goto contin1;
-		}
-		for(ALL) {
-			if(p->line[0] != 0)
-				continue;
-			SCPYN(p->line, line.line);
-			p->xflag |= FOUND|CHANGE;
-			p->comn = line.comn;
-			goto contin1;
-		}
-	contin1:
-		;
-	}
-	close(fi);
-	for(ALL) {
-		if((p->xflag&FOUND) == 0) {
-			term(p);
-			p->line[0] = 0;
-		}
-		if((p->xflag&CHANGE) != 0) {
-			term(p);
-			dfork(p);
-		}
-	}
+	if (read(fi, &b, 1) != 1)
+		return (-1);
+	if (b == '\n')
+		return (0);
+	return (b);
 }
 
 #include <sys/ioctl.h>
 
 dfork(p)
-struct tab *p;
+	struct tab *p;
 {
 	register pid;
 	time_t t;
@@ -390,7 +387,7 @@ struct tab *p;
 		}
 	}
 	pid = fork();
-	if(pid == 0) {
+	if (pid == 0) {
 		int oerrno, f;
 		extern int errno;
 
@@ -399,25 +396,25 @@ struct tab *p;
 		strcpy(tty, dev);
 		strncat(tty, p->line, LINSIZ);
 		if (dowait) {
-			f = open("/dev/console", 1);
+			f = open("/dev/console", O_WRONLY);
 			write(f, "init: ", 6);
 			write(f, tty, strlen(tty));
 			write(f, ": getty failing, sleeping\n\r", 27);
 			close(f);
 			sleep(30);
-			if ((f = open("/dev/tty", 2)) >= 0) {
+			if ((f = open("/dev/tty", O_RDWR)) >= 0) {
 				ioctl(f, TIOCNOTTY, 0);
 				close(f);
 			}
 		}
 		chown(tty, 0, 0);
 		chmod(tty, 0622);
-		if (open(tty, 2) < 0) {
+		if (open(tty, O_RDWR) < 0) {
 			int repcnt = 0;
 			do {
 				oerrno = errno;
 				if (repcnt % 10 == 0) {
-					f = open("/dev/console", 1);
+					f = open("/dev/console", O_WRONLY);
 					write(f, "init: ", 6);
 					write(f, tty, strlen(tty));
 					write(f, ": ", 2);
@@ -432,12 +429,12 @@ struct tab *p;
 				}
 				repcnt++;
 				sleep(60);
-			} while (open(tty, 2) < 0);
+			} while (open(tty, O_RDWR) < 0);
 			exit(0);	/* have wrong control tty, start over */
 		}
 		vhangup();
 		signal(SIGHUP, SIG_DFL);
-		open(tty, 2);
+		(void) open(tty, O_RDWR);
 		close(0);
 		dup(1);
 		dup(0);
@@ -449,15 +446,18 @@ struct tab *p;
 	p->pid = pid;
 }
 
+/*
+ * Remove utmp entry.
+ */
 rmut(p)
-register struct tab *p;
+	register struct tab *p;
 {
 	register f;
 	int found = 0;
 
-	f = open(utmp, 2);
-	if(f >= 0) {
-		while(read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
+	f = open(utmp, O_RDWR);
+	if (f >= 0) {
+		while (read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
 			if (SCMPN(wtmp.ut_line, p->line) || wtmp.ut_name[0]==0)
 				continue;
 			lseek(f, -(long)sizeof(wtmp), 1);
@@ -470,13 +470,12 @@ register struct tab *p;
 		close(f);
 	}
 	if (found) {
-		f = open(wtmpf, 1);
+		f = open(wtmpf, O_WRONLY|O_APPEND);
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, p->line);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
-			lseek(f, (long)0, 2);
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			close(f);
 		}
@@ -485,7 +484,16 @@ register struct tab *p;
 
 reset()
 {
+
 	longjmp(sjbuf, 1);
+}
+
+jmp_buf	idlebuf;
+
+idlehup()
+{
+
+	longjmp(idlebuf, 1);
 }
 
 idle()
@@ -493,19 +501,19 @@ idle()
 	register struct tab *p;
 	register pid;
 
-	signal(SIGTSTP, idle);
+	signal(SIGHUP, idlehup);
 	for (;;) {
-		pid = wait((int *) 0);
-		if (mergflag)
+		if (setjmp(idlebuf))
 			return;
-		if (pid == -1)
-			pause();
-		else {
-			for (ALL)
-				if (p->pid == pid) {
-					rmut(p);
-					p->pid = -1;
-				}
+		pid = wait((int *) 0);
+		if (pid == -1) {
+			sigpause(0);
+			continue;
 		}
+		for (ALL)
+			if (p->pid == pid) {
+				rmut(p);
+				p->pid = -1;
+			}
 	}
 }
