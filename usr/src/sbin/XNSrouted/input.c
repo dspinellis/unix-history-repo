@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Includes material written at Cornell University by Bill Nesheim,
+ * by permission of the author.
+ */
+
+
 #ifndef lint
-static char rcsid[] = "$Header$";
-#endif
+static char sccsid[] = "@(#)input.c	5.3 (Berkeley) %G%";
+#endif not lint
 
 /*
  * XNS Routing Table Management Daemon
@@ -48,8 +58,6 @@ rip_input(from, size)
 	switch (ntohs(msg->rip_cmd)) {
 
 	case RIPCMD_REQUEST:
-		/* Be quiet if we don't have anything interesting to talk about */
-		if (!supplier) return;	
 		newsize = 0;
 		while (size > 0) {
 			if (size < sizeof (struct netinfo))
@@ -71,6 +79,14 @@ rip_input(from, size)
 			 * request for specific nets
 			 */
 			rt = rtlookup(xns_nettosa(n->rip_dst));
+			if (tracepackets > 1) {
+				fprintf(ftrace,
+					"specific request for %d",
+					ntohl(xnnet(n->rip_dst[0])));
+				fprintf(ftrace,
+					"yields route %x",
+					rt);
+			}
 			n->rip_metric = htons( rt == 0 ? HOPCNT_INFINITY :
 				min(rt->rt_metric+1, HOPCNT_INFINITY));
 			n++, newsize += sizeof (struct netinfo);
@@ -79,8 +95,13 @@ rip_input(from, size)
 			msg->rip_cmd = htons(RIPCMD_RESPONSE);
 			newsize += sizeof (u_short);
 			/* should check for if with dstaddr(from) first */
-			if(ifp = if_ifwithnet(from))
-			    (*afp->af_output)(0, from, newsize);
+			(ifp = if_ifwithnet(from));
+			(*afp->af_output)(0, from, newsize);
+			if (tracepackets > 1) {
+				fprintf(ftrace,
+					", request arriving on interface %x\n",
+					ifp);
+			}
 		}
 		return;
 
@@ -98,17 +119,26 @@ rip_input(from, size)
 				rt->rt_timer = 0;
 			return;
 		}
-		/* update timer for interface on which the packet arrived */
-		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE))
+		/* Update timer for interface on which the packet arrived.
+		 * If from other end of a point-to-point link that isn't
+		 * in the routing tables, (re-)add the route.
+		 */
+		if ((rt = rtfind(from)) && (rt->rt_state & RTS_INTERFACE)) {
+			if(tracepackets > 1) fprintf(ftrace, "Got route\n");
 			rt->rt_timer = 0;
+		} else if (ifp = if_ifwithdstaddr(from)) {
+			if(tracepackets > 1) fprintf(ftrace, "Got partner\n");
+			addrouteforif(ifp);
+		}
 		for (; size > 0; size -= sizeof (struct netinfo), n++) {
+			struct sockaddr *sa;
 			if (size < sizeof (struct netinfo))
 				break;
 			if ((unsigned) ntohs(n->rip_metric) > HOPCNT_INFINITY)
 				continue;
-			rt = rtfind(xns_nettosa(n->rip_dst));
+			rt = rtfind(sa = xns_nettosa(n->rip_dst));
 			if (rt == 0) {
-				rtadd(xns_nettosa(n->rip_dst), from, ntohs(n->rip_metric), 0);
+				rtadd(sa, from, ntohs(n->rip_metric), 0);
 				continue;
 			}
 
