@@ -1,10 +1,9 @@
-.\"	@(#)Cover.dist	1.2 (Berkeley) %G%
+.\"	@(#)Cover.dist	1.3 (Berkeley) %G%
 .\"
 .\" use -ms
 .\"
 .so HEADERS
 .FH
-.sp .75i
 .tl '''June 30, 1993'
 .LP
 Dear Colleague:
@@ -20,9 +19,10 @@ and the ``Programmer Supplementary Documents'' (PSD), however,
 source for these manuals is contained on the
 distribution tape in \f(CW/usr/src/share/doc/usd\fP
 and \f(CW/usr/src/share/doc/psd\fP respectively.
-The distribution includes complete sources for the SPARC,
-MIPS and HP 68K architectures and binaries for the one architecture
-that you have selected.
+The distribution includes complete sources for the
+Sun Microsystems SPARCstation, DEC 3100/5000, HP 9000/300, Omron Luna,
+Sony NEWS, and 386/486-based PC architectures
+and binaries for the one architecture that you have selected.
 .PP
 Before attempting to install your tape, you should carefully read
 the document ``Installing and Operating 4.4BSD'';
@@ -64,14 +64,11 @@ If you redistribute or use code from this distribution in your own
 products, please remember that due credit to the University is required
 by the license agreement and the source code copyright notice.
 .sp 2
-.ti +2.5i
+.in +2.5i
 Sincerely yours,
 .sp 3
-.ti +2.5i
 Marshall Kirk McKusick
-.br
-.ti +2.5i
+.sp 3
 Keith Bostic
 .br
-.ti +2.5i
 Computer Systems Research Group
