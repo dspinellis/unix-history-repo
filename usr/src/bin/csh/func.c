@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -895,33 +895,32 @@ dounsetenv(v)
 
     name = (Char *) xmalloc((size_t) (maxi + 1) * sizeof(Char));
 
-    v++;
-    maxi = 1;
-    while (maxi)
-	for (maxi = 0, ep = STR_environ; *ep; ep++) {
-	    for (n = name, p = *ep; *p && *p != '='; *n++ = *p++);
-	    *n = '\0';
-	    if (!Gmatch(name, *v))
-		continue;
-	    maxi = 1;
-	    if (eq(name, STRLANG) || eq(name, STRLC_CTYPE)) {
+    while (++v && *v)
+	for (maxi = 1; maxi;)
+	    for (maxi = 0, ep = STR_environ; *ep; ep++) {
+		for (n = name, p = *ep; *p && *p != '='; *n++ = *p++);
+		*n = '\0';
+		if (!Gmatch(name, *v))
+		    continue;
+		maxi = 1;
+		if (eq(name, STRLANG) || eq(name, STRLC_CTYPE)) {
 #ifdef NLS
-		int     k;
+		    int     k;
 
-		(void) setlocale(LC_ALL, "");
-		for (k = 0200; k <= 0377 && !Isprint(k); k++);
-		AsciiOnly = k > 0377;
+		    (void) setlocale(LC_ALL, "");
+		    for (k = 0200; k <= 0377 && !Isprint(k); k++);
+		    AsciiOnly = k > 0377;
 #else
-		AsciiOnly = getenv("LANG") == NULL &&
-		    getenv("LC_CTYPE") == NULL;
+		    AsciiOnly = getenv("LANG") == NULL &&
+			getenv("LC_CTYPE") == NULL;
 #endif				/* NLS */
+		}
+		/*
+		 * Delete name, and start again cause the environment changes
+		 */
+		Unsetenv(name);
+		break;
 	    }
-	    /*
-	     * Delete name, and start again cause the environment changes
-	     */
-	    Unsetenv(name);
-	    break;
-	}
     xfree((ptr_t) name), name = NULL;
 }
 
