@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.10 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -178,8 +178,8 @@ extern unsigned char fragtbl[];
 char	*devname;
 
 main(argc, argv)
-int	argc;
-char	*argv[];
+	int	argc;
+	char	*argv[];
 {
 	struct fstab *fsp;
 	int pid, passno, anygtr, sumstatus;
@@ -697,7 +697,7 @@ out5:
 
 /* VARARGS1 */
 error(s1, s2, s3, s4)
-char *s1;
+	char *s1;
 {
 
 	printf(s1, s2, s3, s4);
@@ -705,7 +705,7 @@ char *s1;
 
 /* VARARGS1 */
 errexit(s1, s2, s3, s4)
-char *s1;
+	char *s1;
 {
 	error(s1, s2, s3, s4);
 	exit(8);
@@ -908,7 +908,7 @@ pass2(dirp)
 		}
 	*pathp = 0;
 	n = 0;
-	if (inum > imax || inum < ROOTINO)
+	if (inum > imax || inum <= 0)
 		n = direrr("I OUT OF RANGE");
 	else {
 again:
@@ -943,7 +943,7 @@ again:
 }
 
 pass4(blk, size)
-daddr_t blk;
+	daddr_t blk;
 {
 	register daddr_t *dlp;
 	int res = KEEPON;
@@ -1038,8 +1038,8 @@ descend()
 }
 
 dirscan(blk, nf)
-daddr_t blk;
-int nf;
+	daddr_t blk;
+	int nf;
 {
 	register DIRECT *dirp;
 	register DIRECT *edirp;
@@ -1068,6 +1068,7 @@ int nf;
 				p2 = &direntry.d_name[DIRSIZ];
 				while (p1 > (char *)dirp)
 					*--p1 = *--p2;
+				dirty(&fileblk);
 				sbdirty();
 			} else
 				n &= ~ALTERD;
@@ -1079,7 +1080,7 @@ int nf;
 }
 
 direrr(s)
-char *s;
+	char *s;
 {
 	register DINODE *dp;
 
@@ -1125,7 +1126,7 @@ adjust(lcnt)
 }
 
 clri(s, flg)
-char *s;
+	char *s;
 {
 	register DINODE *dp;
 
@@ -1149,7 +1150,7 @@ char *s;
 }
 
 setup(dev)
-char *dev;
+	char *dev;
 {
 	dev_t rootdev;
 	struct stat statb;
