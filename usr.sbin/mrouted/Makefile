@@ -2,7 +2,7 @@
 # Makefile for mrouted, a multicast router, and its auxiliary programs,
 # map-mbone and mrinfo.
 #
-# $Id: Makefile,v 1.5 1993/06/24 05:11:16 deering Exp $
+# $Id: Makefile,v 1.1.1.1 1994/05/17 20:59:34 jkh Exp $
 #
 # Modified by: Jim Lowe for FreeBSD 5/17/94
 #
@@ -18,6 +18,7 @@ MRINFO_OBJS=	mrinfo.o
 HDRS=		defs.h dvmrp.h route.h vif.h
 SRCS= ${IGMP_SRCS} ${ROUTER_SRCS} ${MAPPER_SRCS} ${MRINFO_SRCS}
 OBJS= ${IGMP_OBJS} ${ROUTER_OBJS} ${MAPPER_OBJS} ${MRINFO_OBJS}
+CLEANFILES+=mrouted map-mbone mrinfo
 
 MAN8= mrouted.8
 
