@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 1990, 1993
+ * Copyright (c) 1990, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)misc.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)misc.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -37,7 +37,7 @@ brace_subst(orig, store, path, len)
 	register char ch, *p;
 
 	plen = strlen(path);
-	for (p = *store; ch = *orig; ++orig)
+	for (p = *store; (ch = *orig) != '\0'; ++orig)
 		if (ch == '{' && orig[1] == '}') {
 			while ((p - *store) + plen > len)
 				if (!(*store = realloc(*store, len *= 2)))
@@ -95,7 +95,7 @@ emalloc(len)
 {
 	void *p;
 
-	if (p = malloc(len))
-		return (p);
-	err(1, NULL);
+	if ((p = malloc(len)) == NULL)
+		err(1, NULL);
+	return (p);
 }

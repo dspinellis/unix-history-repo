@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -326,7 +326,7 @@ f_fstype(plan, entry)
 		 */
 		if (entry->fts_info == FTS_SL ||
 		    entry->fts_info == FTS_SLNONE) {
-			if (p = strrchr(entry->fts_accpath, '/'))
+			if ((p = strrchr(entry->fts_accpath, '/')) != NULL)
 				++p;
 			else
 				p = entry->fts_accpath;
@@ -1033,13 +1033,11 @@ palloc(t, f)
 {
 	PLAN *new;
 
-	if (new = malloc(sizeof(PLAN))) {
-		new->type = t;
-		new->eval = f;
-		new->flags = 0;
-		new->next = NULL;
-		return (new);
-	}
-	err(1, NULL);
-	/* NOTREACHED */
+	if ((new = malloc(sizeof(PLAN))) == NULL)
+		err(1, NULL);
+	new->type = t;
+	new->eval = f;
+	new->flags = 0;
+	new->next = NULL;
+	return (new);
 }
