@@ -1,9 +1,9 @@
 .\" Copyright (c) 1985, 1987, 1990, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)vacation.1	6.8 (Berkeley) %G%
+.\"	@(#)vacation.1	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt VACATION 1
@@ -117,7 +117,7 @@ please contact Joe Kalash <kalash@ucbingres.Berkeley.EDU>.
 .Pp
 .Nm Vacation
 reads the first line from the standard input for a
-.Tn UNIX
+.Ux
 .Dq From
 line to determine the sender.
 .Xr Sendmail 8
@@ -132,7 +132,7 @@ with incorrect arguments, or with non-existent
 are logged in the system log file, using
 .Xr syslog 8 .
 .Sh FILES
-.Bl -tag -width vacation.dirx -compact
+.Bl -tag -width "vacation.dirxxx" -compact
 .It Pa ~/.vacation.dir
 database file
 .It Pa ~/.vacation.msg
@@ -145,6 +145,6 @@ database file
 .Xr syslog 8
 .Sh HISTORY
 The
-.Nm
+.Nm vacation
 command appeared in
 .Bx 4.3 .
