@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.6	(Berkeley)	%G%
+#	@(#)Makefile	5.7	(Berkeley)	%G%
 #
 # makefile for line printer spooling system
 #
@@ -42,7 +42,7 @@ SRCS=	lpd.c lpr.c lpq.c lprm.c pac.c lpd.c cmds.c cmdtab.c printjob.c \
 OBJS=	${L1OBJS} ${L2OBJS} ${L3OBJS} ${L4OBJS} ${L5OBJS} ${L6OBJS} ${L7OBJS}
 ALL=	lpd lpr lpq lprm lpc lptest pac
 
-all:	${ALL} FILTERS
+all:	${ALL} FILTERS VFILTERS
 
 lpd:	${L1OBJS} ${LIBC}
 	${CC} -o $@ ${L1OBJS}
@@ -68,12 +68,18 @@ pac: ${L7OBJS} ${LIBC}
 FILTERS:
 	cd filters; make ${MFLAGS}
 
+VFILTERS:
+	cd vfilters; make ${MFLAGS}
+
 clean: FRC
 	rm -f ${OBJS} core ${ALL}
 	cd filters; make ${MFLAGS} clean
+	cd vfilters; make ${MFLAGS} clean
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
+	cd filters; make ${MFLAGS} depend
+	cd vfilters; make ${MFLAGS} depend
 
 install: FRC
 	install -s -o ${ROOT} -g ${SPGRP} -m 6711 lpd ${DESTDIR}/${LIBDIR}/lpd
@@ -87,6 +93,7 @@ install: FRC
 	chgrp ${SPGRP} ${DESTDIR}/${SPLDIR}
 	chmod 775 ${DESTDIR}/${SPLDIR}
 	cd filters; make ${MFLAGS} DESTDIR=${DESTDIR} install
+	cd vfilters; make ${MFLAGS} DESTDIR=${DESTDIR} install
 
 lint: FRC
 	lint ${CFLAGS} ${L1SRCS}
@@ -114,33 +121,35 @@ FRC:
 
 lpd.o: lpd.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 lpd.o: /usr/include/sys/types.h /usr/include/signal.h
-lpd.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-lpd.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpd.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpd.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpd.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+lpd.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+lpd.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
+lpd.o: /usr/include/sys/socket.h /usr/include/sys/un.h
+lpd.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
+lpd.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
+lpd.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
 lpd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 lpd.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
 lpd.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
 lpr.o: lpr.c /usr/include/stdio.h /usr/include/sys/types.h
 lpr.o: /usr/include/sys/file.h /usr/include/sys/stat.h /usr/include/pwd.h
-lpr.o: /usr/include/grp.h /usr/include/signal.h /usr/include/ctype.h
-lpr.o: /usr/include/syslog.h lp.local.h /usr/include/a.out.h
-lpr.o: /usr/include/sys/exec.h /usr/include/ar.h
+lpr.o: /usr/include/grp.h /usr/include/signal.h /usr/include/machine/trap.h
+lpr.o: /usr/include/ctype.h /usr/include/syslog.h lp.local.h
+lpr.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
 lpq.o: lpq.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 lpq.o: /usr/include/sys/types.h /usr/include/signal.h
-lpq.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-lpq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpq.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpq.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpq.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+lpq.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+lpq.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
+lpq.o: /usr/include/sys/socket.h /usr/include/sys/un.h
+lpq.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
+lpq.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
+lpq.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
 lpq.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 lpq.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
 lpq.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
 lprm.o: lprm.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 lprm.o: /usr/include/sys/types.h /usr/include/signal.h
-lprm.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-lprm.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
+lprm.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+lprm.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
 lprm.o: /usr/include/sys/socket.h /usr/include/sys/un.h
 lprm.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
 lprm.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
@@ -152,18 +161,19 @@ pac.o: pac.c /usr/include/stdio.h lp.local.h /usr/include/a.out.h
 pac.o: /usr/include/sys/exec.h /usr/include/ar.h
 lpd.o: lpd.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 lpd.o: /usr/include/sys/types.h /usr/include/signal.h
-lpd.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-lpd.o: /usr/include/sys/dir.h /usr/include/sys/stat.h /usr/include/sys/socket.h
-lpd.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
-lpd.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
-lpd.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+lpd.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+lpd.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
+lpd.o: /usr/include/sys/socket.h /usr/include/sys/un.h
+lpd.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
+lpd.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
+lpd.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
 lpd.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 lpd.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
 lpd.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
 cmds.o: cmds.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 cmds.o: /usr/include/sys/types.h /usr/include/signal.h
-cmds.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-cmds.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
+cmds.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+cmds.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
 cmds.o: /usr/include/sys/socket.h /usr/include/sys/un.h
 cmds.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
 cmds.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
@@ -175,42 +185,44 @@ cmds.o: /usr/include/sys/time.h /usr/include/time.h
 cmdtab.o: cmdtab.c lpc.h
 printjob.o: printjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 printjob.o: /usr/include/sys/types.h /usr/include/signal.h
-printjob.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-printjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-printjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-printjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-printjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-printjob.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-printjob.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-printjob.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
-printjob.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
+printjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+printjob.o: /usr/include/sys/file.h /usr/include/sys/dir.h
+printjob.o: /usr/include/sys/stat.h /usr/include/sys/socket.h
+printjob.o: /usr/include/sys/un.h /usr/include/netinet/in.h
+printjob.o: /usr/include/netdb.h /usr/include/pwd.h /usr/include/syslog.h
+printjob.o: /usr/include/signal.h /usr/include/sys/wait.h /usr/include/sgtty.h
+printjob.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+printjob.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
+printjob.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
+printjob.o: /usr/include/ar.h
 recvjob.o: recvjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 recvjob.o: /usr/include/sys/types.h /usr/include/signal.h
-recvjob.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-recvjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-recvjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-recvjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-recvjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-recvjob.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-recvjob.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-recvjob.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
-recvjob.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
-recvjob.o: /usr/include/sys/fs.h
+recvjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+recvjob.o: /usr/include/sys/file.h /usr/include/sys/dir.h
+recvjob.o: /usr/include/sys/stat.h /usr/include/sys/socket.h
+recvjob.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
+recvjob.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
+recvjob.o: /usr/include/sys/wait.h /usr/include/sgtty.h
+recvjob.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+recvjob.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
+recvjob.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
+recvjob.o: /usr/include/ar.h /usr/include/sys/fs.h
 displayq.o: displayq.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 displayq.o: /usr/include/sys/types.h /usr/include/signal.h
-displayq.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-displayq.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-displayq.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-displayq.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-displayq.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-displayq.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-displayq.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-displayq.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
-displayq.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
+displayq.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+displayq.o: /usr/include/sys/file.h /usr/include/sys/dir.h
+displayq.o: /usr/include/sys/stat.h /usr/include/sys/socket.h
+displayq.o: /usr/include/sys/un.h /usr/include/netinet/in.h
+displayq.o: /usr/include/netdb.h /usr/include/pwd.h /usr/include/syslog.h
+displayq.o: /usr/include/signal.h /usr/include/sys/wait.h /usr/include/sgtty.h
+displayq.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+displayq.o: /usr/include/sys/ttydev.h /usr/include/ctype.h /usr/include/errno.h
+displayq.o: lp.local.h /usr/include/a.out.h /usr/include/sys/exec.h
+displayq.o: /usr/include/ar.h
 rmjob.o: rmjob.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 rmjob.o: /usr/include/sys/types.h /usr/include/signal.h
-rmjob.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-rmjob.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
+rmjob.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+rmjob.o: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
 rmjob.o: /usr/include/sys/socket.h /usr/include/sys/un.h
 rmjob.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
 rmjob.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
@@ -223,12 +235,12 @@ startdaemon.o: /usr/include/sys/socket.h /usr/include/sys/un.h lp.local.h
 startdaemon.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
 common.o: common.c lp.h /usr/include/stdio.h /usr/include/sys/param.h
 common.o: /usr/include/sys/types.h /usr/include/signal.h
-common.o: /usr/include/machine/machparam.h /usr/include/sys/file.h
-common.o: /usr/include/sys/dir.h /usr/include/sys/stat.h
-common.o: /usr/include/sys/socket.h /usr/include/sys/un.h
-common.o: /usr/include/netinet/in.h /usr/include/netdb.h /usr/include/pwd.h
-common.o: /usr/include/syslog.h /usr/include/signal.h /usr/include/sys/wait.h
-common.o: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+common.o: /usr/include/machine/trap.h /usr/include/machine/machparam.h
+common.o: /usr/include/sys/file.h /usr/include/sys/dir.h
+common.o: /usr/include/sys/stat.h /usr/include/sys/socket.h
+common.o: /usr/include/sys/un.h /usr/include/netinet/in.h /usr/include/netdb.h
+common.o: /usr/include/pwd.h /usr/include/syslog.h /usr/include/signal.h
+common.o: /usr/include/sys/wait.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 common.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 common.o: /usr/include/ctype.h /usr/include/errno.h lp.local.h
 common.o: /usr/include/a.out.h /usr/include/sys/exec.h /usr/include/ar.h
