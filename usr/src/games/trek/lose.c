@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lose.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lose.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
+# include	<setjmp.h>
 
 /*
 **  PRINT OUT LOSER MESSAGES
@@ -39,6 +40,8 @@ char	*Losemsg[] =
 lose(why)
 int	why;
 {
+	extern jmp_buf	env;
+
 	Game.killed = 1;
 	sleep(1);
 	printf("\n%s\n", Losemsg[why - 1]);
@@ -52,5 +55,5 @@ int	why;
 	Move.endgame = -1;
 	score();
 	skiptonl(0);
-	reset();
+	longjmp(env, 1);
 }

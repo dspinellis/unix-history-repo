@@ -6,11 +6,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)play.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)play.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
 # include	"getpar.h"
+# include	<setjmp.h>
 
 /*
 **  INSTRUCTION READ AND MAIN PLAY LOOP
@@ -25,7 +26,7 @@ static char sccsid[] = "@(#)play.c	5.5 (Berkeley) %G%";
 extern int	abandon(), capture(), shield(), computer(), dcrept(),
 		destruct(), dock(), help(), impulse(), lrscan(),
 		warp(), dumpgame(), rest(), srscan(),
-		reset(), torped(), visual(), setwarp(), undock(), phaser();
+		myreset(), torped(), visual(), setwarp(), undock(), phaser();
 
 struct cvntab	Comtab[] =
 {
@@ -47,13 +48,20 @@ struct cvntab	Comtab[] =
 	"sh",			"ield",			shield,	0,
 	"s",			"rscan",		srscan,	0,
 	"st",			"atus",			srscan,	-1,
-	"terminate",		"",			reset,		0,
+	"terminate",		"",			myreset,	0,
 	"t",			"orpedo",		torped,	0,
 	"u",			"ndock",		undock,	0,
 	"v",			"isual",		visual,	0,
 	"w",			"arp",			setwarp,	0,
 	0
 };
+
+myreset()
+{
+	extern jmp_buf env;
+
+	longjmp(env, 1);
+}
 
 play()
 {
