@@ -9,10 +9,10 @@ PUSHDIVERT(-1)
 ifdef(`SMTP_MAILER_FLAGS',,
 	`define(`SMTP_MAILER_FLAGS',
 		`ifdef(`_OLD_SENDMAIL_', `L', `')')')
+define(_NULL_CLIENT_ONLY_, `1')
+ifelse(_ARG_, `', `errprint(`Feature "nullclient" requires argument')',
+	`define(`MAIL_HUB', _ARG_)')
 POPDIVERT
-############################################
-###   Null Client Mailer specification   ###
-############################################
 
 #
 #  This is used only for relaying mail from a client to a hub when
@@ -21,9 +21,15 @@ POPDIVERT
 #  sendmail.
 #
 
-VERSIONID(`@(#)nullclient.m4	8.1 (Berkeley) %G%')
+VERSIONID(`@(#)nullclient.m4	8.2 (Berkeley) %G%')
+
+PUSHDIVERT(7)
+############################################
+###   Null Client Mailer specification   ###
+############################################
 
 ifdef(`confRELAY_MAILER',,
 	`define(`confRELAY_MAILER', `nullclient')')dnl
 
 Mnullclient,	P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), A=IPC $h
+POPDIVERT
