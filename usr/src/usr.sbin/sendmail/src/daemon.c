@@ -3,7 +3,7 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.6		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	4.7		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +11,7 @@ SCCSID(@(#)daemon.c	4.6		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.6		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	4.7		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -313,7 +313,10 @@ myhostname(hostbuf, size)
 	gethostname(hostbuf, size);
 	hp = gethostbyname(hostbuf);
 	if (hp != NULL)
+	{
+		strcpy(hostbuf, hp->h_name);
 		return (hp->h_aliases);
+	}
 	else
 		return (NULL);
 }
