@@ -1,0 +1,7 @@
+cc -o tek  driver.o -l4014 -lm
+cc -o t300 driver.o -l300 -lm
+cc -o t300s driver.o -l300s -lm
+cc -o t450 driver.o -l450 -lm
+cc  -c chrtab.c
+cc  -c vplot.c
+cc -o vplot vplot.o chrtab.o
