@@ -1,5 +1,5 @@
 #! /bin/sh
-#	@(#)MAKEDEV	4.6	%G%
+#	@(#)MAKEDEV	4.7	%G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices (for 730 must be followed by tu0 & tu1)
@@ -72,7 +72,7 @@ ht*|tm*|ts*|mt*|ut*)
 		/etc/mknod rmt$twelve	c $chr $twelve
 		if [ $i = ut ] 
 		then
-			/etc/mknod mt$twelve	b $blk $twenty
+			/etc/mknod mt$twenty	b $blk $twenty
 			/etc/mknod rmt$twenty	c $chr $twenty
 		fi
 		umask 77
