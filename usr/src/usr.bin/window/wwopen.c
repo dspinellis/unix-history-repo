@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwopen.c	1.3 83/07/18";
+static	char *sccsid = "@(#)wwopen.c	1.4 83/07/19";
 #endif
 
 #include "ww.h"
@@ -7,7 +7,7 @@ static	char *sccsid = "@(#)wwopen.c	1.3 83/07/18";
 #include <sys/stat.h>
 
 struct ww *
-wwopen(flag, id, nrow, ncol, row, col)
+wwopen(mode, id, nrow, ncol, row, col)
 {
 	register struct ww *w = 0;
 
@@ -15,7 +15,7 @@ wwopen(flag, id, nrow, ncol, row, col)
 	if (w == 0)
 		goto bad;
 	w->ww_pty = w->ww_tty = -1;
-	switch (flag) {
+	switch (mode) {
 	case WW_PTY:
 		if (wwgetpty(w) < 0)
 			goto bad;
@@ -32,6 +32,7 @@ wwopen(flag, id, nrow, ncol, row, col)
 	if ((w->ww_win = Wopen(id, col, row, ncol, nrow, ncol, nrow)) == 0)
 		goto bad;
 	Woncursor(w->ww_win, 0);		/* don't show cursor */
+	w->ww_mode = mode;
 	w->ww_ident = id;
 	w->ww_icol = w->ww_col = col;
 	w->ww_irow = w->ww_row = row;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd3.c	1.1 83/07/18";
+static	char *sccsid = "@(#)cmd3.c	1.2 83/07/19";
 #endif
 
 #include "defs.h"
@@ -29,7 +29,12 @@ doclose(c)
 				w = (w1 = w)->ww_next;
 				if (w1 == selwin)
 					setselwin(0);
-				wwclose(w1);
+				if (w->ww_state == WW_HASPROC && w->ww_pid == 0)
+				{
+					wwprintf(cmdwin, "%d: pid == 0.  ",
+						w->ww_ident);
+				} else
+					wwclose(w1);
 			} else
 				w = w->ww_next;
 		}

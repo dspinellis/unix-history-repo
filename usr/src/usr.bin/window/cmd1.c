@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	1.1 83/07/18";
+static	char *sccsid = "@(#)cmd1.c	1.2 83/07/19";
 #endif
 
 #include "defs.h"
@@ -30,14 +30,13 @@ dowindow()
 	row = 1;
 	for (;;) {
 		wwsetcursor(row, col);
-		while (bpeekc() < 0) {
-			wwflush();
+		while (bpeekc() < 0)
 			bread();
-		}
 		switch (getpos(&row, &col, 0, 0)) {
 		case -1:
 			WBoxActive = 0;
-			goto out;
+			wwputs("\r\nCancelled.  ", cmdwin);
+			return;
 		case 1:
 			break;
 		case 0:
@@ -45,21 +44,20 @@ dowindow()
 		}
 		break;
 	}
-	wwprintf(cmdwin, "%d %d.  Upper left corner: ", col, row);
+	wwputs("\r\nLower right corner: ", cmdwin);
 	xcol = col + 1;
 	xrow = row + 1;
 	for (;;) {
 		Wbox(col, row, xcol - col + 1, xrow - row + 1);
 		wwsetcursor(xrow, xcol);
 		wwflush();
-		while (bpeekc() < 0) {
-			wwflush();
+		while (bpeekc() < 0)
 			bread();
-		}
 		switch (getpos(&xrow, &xcol, row + 1, col + 1)) {
 		case -1:
 			WBoxActive = 0;
-			goto out;
+			wwputs("\r\nCancelled.  ", cmdwin);
+			return;
 		case 1:
 			break;
 		case 0:
@@ -68,9 +66,9 @@ dowindow()
 		break;
 	}
 	WBoxActive = 0;
-	wwprintf(cmdwin, "%d %d.  ", xcol, xrow);
+	wwputs("\r\n", cmdwin);
 	if ((w = wwopen(WW_PTY, id, xrow-row+1, xcol-col+1, row, col)) == 0) {
-		wwprintf(cmdwin, "Can't open window.  ");
+		wwputs("Can't open window.  ", cmdwin);
 		return;
 	}
 	wwframe(w);
@@ -94,8 +92,6 @@ dowindow()
 		setselwin(w);
 	else
 		wwsetcurrent(cmdwin);
-out:
-	wwputs("\r\n", cmdwin);
 }
 
 getpos(row, col, minrow, mincol)
@@ -148,6 +144,7 @@ register int *row, *col, minrow, mincol;
 		case '\r':
 			return 1;
 		default:
+			wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
 			Ding();
 		}
 	}

@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	1.3 83/07/18";
+static	char *sccsid = "@(#)wwspawn.c	1.4 83/07/19";
 #endif
 
 #include "ww.h"
+
+extern int _wwdtablesize;
 
 wwfork(wp)
 register struct ww *wp;
@@ -42,7 +44,7 @@ register struct ww *wp;
 	dup2(wp->ww_tty, 0);
 	dup2(wp->ww_tty, 1);
 	dup2(wp->ww_tty, 2);
-	for (i = getdtablesize() - 1; i > 2; i--)
+	for (i = _wwdtablesize - 1; i > 2; i--)
 		close(i);
 	/*
 	i = open("/dev/tty");

@@ -1,8 +1,10 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	1.3 83/07/18";
+static	char *sccsid = "@(#)wwiomux.c	1.4 83/07/19";
 #endif
 
 #include "ww.h"
+
+extern int _wwdtablesize;
 
 wwforce(imask)
 register int *imask;
@@ -14,7 +16,7 @@ register int *imask;
 	for (w = wwhead; w; w = w->ww_next)
 		if (w->ww_pty >= 0)
 			*imask |= 1 << w->ww_pty;
-	n = select(getdtablesize(), imask,
+	n = select(_wwdtablesize, imask,
 		(int *)0, (int *)0, (struct timeval *)0);
 	if (n <= 0)
 		return -1;
