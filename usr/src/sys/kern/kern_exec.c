@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.5	84/07/23	*/
+/*	kern_exec.c	6.6	84/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -284,6 +284,7 @@ badarg:
 	u.u_ar0[SP] = ap;
 	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
+	cc = 0;
 	for (;;) {
 		ap += NBPW;
 		if (na == ne) {
@@ -294,18 +295,23 @@ badarg:
 			break;
 		(void) suword((caddr_t)ap, ucp);
 		do {
-			if (nc % (CLSIZE*NBPG) == 0) {
+			if (cc <= 0) {
 				if (bp)
 					brelse(bp);
-				bp = bread(argdev, bno + ctod(nc / NBPG),
-				    CLSIZE*NBPG);
+				cc = CLSIZE*NBPG;
+				bp = bread(argdev, bno + ctod(nc / NBPG), cc);
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
 			}
-			(void) subyte((caddr_t)ucp++, (cc = *cp++));
-			nc++;
-		} while(cc&0377);
+			error = copyoutstr(cp, (caddr_t)ucp, cc, &len);
+			ucp += len;
+			cp += len;
+			nc += len;
+			cc -= len;
+		} while (error == ENOENT);
+		if (error == EFAULT)
+			panic("exec: EFAULT");
 	}
 	(void) suword((caddr_t)ap, 0);
 	setregs(exdata.ex_exec.a_entry);
