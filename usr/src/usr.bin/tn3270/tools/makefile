@@ -19,12 +19,12 @@ ALLH = dohits.h ectype.h
 ALLO =	prt3270.o mkdctype.o ectype.o \
 		mkastods.o mkdstoas.o mkhits.o dohits.o mkastosc.o
 
-ALLEXE = prt3270 mkdctype ectype mkastods mkdstoas mkhits mkastosc
+ALLEXE	=	mkastods mkastosc mkdctype mkdstoas mkhits prt3270
 
 tools:
 	@echo Need to specify WHICH tool ...
 
-all:	mkastosc mkhits mkastods mkdstoas mkdctype prt3270
+all:	${ALLEXE}
 	@echo done.
 
 prt3270:	prt3270.o ../general/globals.o ../ascii/ebctab.o
