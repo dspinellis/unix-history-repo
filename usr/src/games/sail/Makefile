@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	1.14 83/10/31
+# Makefile	@(#)Makefile	1.15 83/10/31
 #
 CC=	cc
 CTAGS=	ctags -w
@@ -18,7 +18,7 @@ COMMONOBJS=	assorted.o game.o globals.o misc.o parties.o sync.o
 LFILES=		sail.log.c
 LOBJS=		sail.log.o
 HDRS=		externs.h player.h driver.h machdep.h
-OTHERFILES	 Makefile sail.6
+OTHERFILES=	Makefile sail.6
 CTAGFILES=	${DFILES} ${PFILES} ${LFILES} ${COMMONFILES}
 JUNKFILES=	make.out
 PLIBS=		-lcurses -ltermlib
