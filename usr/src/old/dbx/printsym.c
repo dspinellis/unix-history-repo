@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.7 %G%";
+static char sccsid[] = "@(#)printsym.c 1.8 %G%";
 
 /*
  * Printing of symbolic information.
@@ -178,11 +178,27 @@ Symbol s;
     switch (s->class) {
 	case VAR:
 	case FVAR:
-	    t = rtype(s->type);
-	    b = (Boolean) (
-		not isparam(s) and
-		t != nil and t->class != FILET and t->class != SET
-	    );
+	    if (isparam(s)) {
+		b = false;
+	    } else {
+		t = rtype(s->type);
+		if (t == nil) {
+		    b = false;
+		} else {
+		    switch (t->class) {
+			case FILET:
+			case SET:
+			case VARNT:
+			case BADUSE:
+			    b = false;
+			    break;
+
+			default:
+			    b = true;
+			    break;
+		    }
+		}
+	    }
 	    break;
 
 	default:
