@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getnetent.3	6.1 (Berkeley) %G%
+.\"	@(#)getnetent.3	6.2 (Berkeley) %G%
 .\"
 .TH GETNETENT 3N ""
 .UC 5
@@ -21,12 +21,13 @@ struct netent *getnetbyname(name)
 char *name;
 .PP
 .ft B
-struct netent *getnetbyaddr(net)
+struct netent *getnetbyaddr(net, type)
 long net;
+int type;
 .PP
 .ft B
 setnetent(stayopen)
-int stayopen
+int stayopen;
 .PP
 .ft B
 endnetent()
@@ -45,10 +46,10 @@ fields of a line in the network data base,
 .PP
 .nf
 struct	netent {
-	char	*n_name;	/* official name of net */
-	char	**n_aliases;	/* alias list */
-	int	n_addrtype;	/* net number type */
-	long	n_net;		/* net number */
+	char		*n_name;	/* official name of net */
+	char		**n_aliases;	/* alias list */
+	int		n_addrtype;	/* net number type */
+	unsigned long	n_net;		/* net number */
 };
 .ft R
 .ad
@@ -91,7 +92,7 @@ and
 sequentially search from the beginning
 of the file until a matching
 net name or
-net address is found,
+net address and type is found,
 or until EOF is encountered.
 Network numbers are supplied in host order.
 .SH FILES
