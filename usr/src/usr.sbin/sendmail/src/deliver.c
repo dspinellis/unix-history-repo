@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.99		%G%);
+SCCSID(@(#)deliver.c	3.100		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -874,7 +874,8 @@ giveresponse(stat, force, m)
 
 # ifdef LOG
 	if (LogLevel > ((stat == 0 || stat == EX_TEMPFAIL) ? 3 : 2))
-		syslog(LOG_INFO, "%s: to=%s, stat=%s", MsgId, CurEnv->e_to, statmsg);
+		syslog(LOG_INFO, "%s: to=%s, stat=%s", CurEnv->e_id,
+				  CurEnv->e_to, statmsg);
 # endif LOG
 # ifdef QUEUE
 	if (stat != EX_TEMPFAIL)
@@ -1517,6 +1518,8 @@ sendall(e, verifyonly)
 checkerrors(e)
 	register ENVELOPE *e;
 {
+	register ADDRESS *q;
+
 # ifdef DEBUG
 	if (tTd(4, 1))
 	{
@@ -1530,12 +1533,16 @@ checkerrors(e)
 		savemail();
 
 	/* queue up anything laying around */
-	if (e->e_queueup)
+	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
+		if (bitset(QQUEUEUP, q->q_flags))
+		{
 # ifdef QUEUE
-		queueup(e, FALSE);
+			queueup(e, FALSE);
 # else QUEUE
-		syserr("finis: trying to queue %s", e->e_df);
+			syserr("checkerrors: trying to queue %s", e->e_df);
 # endif QUEUE
+			break;
+		}
 	}
 }

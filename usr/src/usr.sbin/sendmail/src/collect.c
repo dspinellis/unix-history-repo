@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.48		%G%);
+SCCSID(@(#)collect.c	3.49		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -40,8 +40,6 @@ maketemp(from)
 	char buf[MAXFIELD+1];
 	register char *p;
 	extern char *hvalue();
-	extern char *mktemp();
-	static char tempfname[60];
 	extern char *macvalue();
 	extern char *index();
 
@@ -49,17 +47,14 @@ maketemp(from)
 	**  Create the temp file name and create the file.
 	*/
 
-	(void) strcpy(tempfname, QueueDir);
-	(void) strcat(tempfname, "/dfXXXXXX");
-	(void) mktemp(tempfname);
-	if ((tf = dfopen(tempfname, "w")) == NULL)
+	CurEnv->e_df = newstr(queuename(CurEnv, 'd'));
+	if ((tf = dfopen(CurEnv->e_df, "w")) == NULL)
 	{
-		syserr("Cannot create %s", tempfname);
+		syserr("Cannot create %s", CurEnv->e_df);
 		NoReturn = TRUE;
 		finis();
 	}
-	(void) chmod(tempfname, 0600);
-	CurEnv->e_df = tempfname;
+	(void) chmod(CurEnv->e_df, 0600);
 
 	/*
 	**  Create the Received: line if we want to.
@@ -255,8 +250,8 @@ maketemp(from)
 
 # ifdef LOG
 	if (LogLevel > 1)
-		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n", MsgId,
-		       CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
+		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n",
+		       CurEnv->e_id, CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
 		       CurEnv->e_class);
 # endif LOG
 	return;

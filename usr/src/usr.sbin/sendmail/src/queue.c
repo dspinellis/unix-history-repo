@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.33		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.34		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.33		%G%);
+SCCSID(@(#)queue.c	3.34		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -33,32 +33,30 @@ queueup(e, queueall)
 	register ENVELOPE *e;
 	bool queueall;
 {
-	char cf[MAXNAME];
+	char *tf;
+	char *qf;
 	char buf[MAXLINE];
-	register FILE *cfp;
+	register FILE *tfp;
 	register HDR *h;
 	register ADDRESS *q;
-	extern char *mktemp();
 	register int i;
 
 	/*
 	**  Create control file.
 	*/
 
-	(void) strcpy(cf, QueueDir);
-	(void) strcat(cf, "/tfXXXXXX");
-	(void) mktemp(cf);
-	cfp = fopen(cf, "w");
-	if (cfp == NULL)
+	tf = newstr(queuename(e, 't'));
+	tfp = fopen(tf, "w");
+	if (tfp == NULL)
 	{
-		syserr("queueup: cannot create control file %s", cf);
+		syserr("queueup: cannot create temp file %s", tf);
 		return;
 	}
-	(void) chmod(cf, 0600);
+	(void) chmod(tf, 0600);
 
 # ifdef DEBUG
 	if (tTd(40, 1))
-		printf("queueing in %s\n", cf);
+		printf("queueing in %s\n", tf);
 # endif DEBUG
 
 	/*
@@ -69,14 +67,12 @@ queueup(e, queueall)
 	{
 		register FILE *dfp;
 
-		(void) strcpy(buf, QueueDir);
-		(void) strcat(buf, "/dfXXXXXX");
-		e->e_df = newstr(mktemp(buf));
+		e->e_df = newstr(queuename(e, 'd'));
 		dfp = fopen(e->e_df, "w");
 		if (dfp == NULL)
 		{
 			syserr("queueup: cannot create %s", e->e_df);
-			(void) fclose(cfp);
+			(void) fclose(tfp);
 			return;
 		}
 		(void) chmod(e->e_df, 0600);
@@ -89,19 +85,19 @@ queueup(e, queueall)
 	*/
 
 	/* output name of data file */
-	fprintf(cfp, "D%s\n", e->e_df);
+	fprintf(tfp, "D%s\n", e->e_df);
 
 	/* output name of sender */
-	fprintf(cfp, "S%s\n", e->e_from.q_paddr);
+	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
 	/* output timeout */
-	fprintf(cfp, "T%ld\n", TimeOut);
+	fprintf(tfp, "T%ld\n", TimeOut);
 
 	/* output message priority */
-	fprintf(cfp, "P%ld\n", e->e_msgpriority);
+	fprintf(tfp, "P%ld\n", e->e_msgpriority);
 
 	/* output message class */
-	fprintf(cfp, "C%d\n", e->e_class);
+	fprintf(tfp, "C%d\n", e->e_class);
 
 	/* output macro definitions */
 	/* I don't think this is needed any more.....
@@ -110,7 +106,7 @@ queueup(e, queueall)
 		register char *p = e->e_macro[i];
 
 		if (p != NULL && i != (int) 'b')
-			fprintf(cfp, "M%c%s\n", i, p);
+			fprintf(tfp, "M%c%s\n", i, p);
 	}
 	.....  */
 
@@ -126,7 +122,7 @@ queueup(e, queueall)
 # endif DEBUG
 		if (queueall ? !bitset(QDONTSEND, q->q_flags) :
 			       bitset(QQUEUEUP, q->q_flags))
-			fprintf(cfp, "R%s\n", q->q_paddr);
+			fprintf(tfp, "R%s\n", q->q_paddr);
 	}
 
 	/* output headers for this message */
@@ -135,36 +131,36 @@ queueup(e, queueall)
 	{
 		if (h->h_value == NULL || h->h_value[0] == '\0')
 			continue;
-		fprintf(cfp, "H");
+		fprintf(tfp, "H");
 		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
-			mfdecode(h->h_mflags, cfp);
-		fprintf(cfp, "%s: ", h->h_field);
+			mfdecode(h->h_mflags, tfp);
+		fprintf(tfp, "%s: ", h->h_field);
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
-			fprintf(cfp, "%s\n", buf);
+			fprintf(tfp, "%s\n", buf);
 		}
 		else
-			fprintf(cfp, "%s\n", h->h_value);
+			fprintf(tfp, "%s\n", h->h_value);
 	}
 
 	/*
 	**  Clean up.
 	*/
 
-	(void) fclose(cfp);
-	(void) strcpy(buf, QueueDir);
-	(void) strcat(buf, "/cfXXXXXX");
-	(void) mktemp(buf);
-	if (link(cf, buf) < 0)
-		syserr("cannot link(%s, %s), df=%s", cf, buf, e->e_df);
+	(void) fclose(tfp);
+	qf = queuename(e, 'q');
+	(void) unlink(qf);
+	if (link(tf, qf) < 0)
+		syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
 	else
-		(void) unlink(cf);
+		(void) unlink(tf);
+	e->e_qf = NULL;
 
 # ifdef LOG
 	/* save log info */
 	if (LogLevel > 9)
-		syslog(LOG_INFO, "%s queueup: cf=%s, df=%s\n", MsgId, buf, e->e_df);
+		syslog(LOG_INFO, "%s queueup: qf=%s, df=%s\n", e->e_id, qf, e->e_df);
 # endif LOG
 
 	/* disconnect this temp file from the job */
@@ -365,7 +361,7 @@ orderq()
 		register char *p;
 
 		/* is this an interesting entry? */
-		if (d->d_name[0] != 'c' || d->d_name[1] != 'f')
+		if (d->d_name[0] != 'q' || d->d_name[1] != 'f')
 			continue;
 
 		/* yes -- find the control file location */
@@ -513,23 +509,19 @@ dowork(w)
 		FatalErrors = FALSE;
 		QueueRun = TRUE;
 		MailBack = TRUE;
+		CurEnv->e_qf = w->w_name;
+		CurEnv->e_id = &w->w_name[strlen(QueueDir) + 3];
 
 		/* don't use the headers from sendmail.cf... */
 		CurEnv->e_header = NULL;
 		chompheader("from: $q", TRUE);
 
 		/* create the link to the control file during processing */
-		(void) strcpy(buf, QueueDir);
-		(void) strcat(buf, "/tfXXXXXX");
-		(void) mktemp(buf);
-		if (link(w->w_name, buf) < 0)
+		if (link(w->w_name, queuename(CurEnv, 'l')) < 0)
 		{
-			/* this can happen normally; another queuer sneaks in */
-			/* syserr("dowork: link(%s, %s)", w->w_name, buf); */
+			/* being processed by another queuer */
 			exit(EX_OK);
 		}
-		ControlFile = newstr(buf);
-		(void) unlink(w->w_name);
 
 		/* create ourselves a transcript file */
 		openxscrpt();
@@ -538,7 +530,7 @@ dowork(w)
 		initsys();
 
 		/* read the queue control file */
-		readqf(buf);
+		readqf(CurEnv->e_qf);
 		eatheader();
 
 		/* do the delivery */
@@ -552,10 +544,6 @@ dowork(w)
 # endif DEBUG
 		if (CurEnv->e_queueup && CurTime > TimeOut)
 			timeout(w);
-
-		/* get rid of the temporary file -- a new cf will be made */
-		ControlFile = NULL;
-		(void) unlink(buf);
 
 		/* finish up and exit */
 		finis();

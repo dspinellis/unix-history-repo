@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.95		%G%);
+SCCSID(@(#)main.c	3.96		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -147,7 +147,6 @@ main(argc, argv)
 	argv[argc] = NULL;
 	InChannel = stdin;
 	OutChannel = stdout;
-	MsgId = "<none>";
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
@@ -413,7 +412,8 @@ main(argc, argv)
 	}
 
 	/*
-	**  Read system control file.
+	**  Do basic initialization.
+	**	Read system control file.
 	**	Extract special fields for local use.
 	*/
 
@@ -812,8 +812,6 @@ finis()
 	**	This clause will arrange to return error messages.
 	*/
 
-	if (ControlFile != NULL)
-		CurEnv->e_queueup = TRUE;
 	checkerrors(CurEnv);
 
 	/*
@@ -822,10 +820,7 @@ finis()
 
 	if (Transcript != NULL)
 		xunlink(Transcript);
-	if (CurEnv->e_df != NULL)
-		xunlink(CurEnv->e_df);
-	if (ControlFile != NULL)
-		xunlink(ControlFile);
+	dropenvelope(CurEnv);
 	exit(ExitStat);
 }
 /*
@@ -1122,6 +1117,100 @@ newenvelope(e)
 	e->e_errorqueue = NULL;
 	e->e_parent = CurEnv;
 	e->e_df = NULL;
+	e->e_qf = NULL;
+	e->e_id = NULL;
 
 	return (e);
+}
+/*
+**  DROPENVELOPE -- deallocate an envelope.
+**
+**	Parameters:
+**		e -- the envelope to deallocate.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		housekeeping necessary to dispose of an envelope.
+*/
+
+dropenvelope(e)
+	register ENVELOPE *e;
+{
+	if (e->e_df != NULL)
+		xunlink(e->e_df);
+	if (e->e_qf != NULL)
+		xunlink(e->e_qf);
+	if (e->e_id != NULL)
+		xunlink(queuename(e, 'l'));
+}
+/*
+**  QUEUENAME -- build a file name in the queue directory for this envelope.
+**
+**	Assigns an id code if one does not already exist.
+**
+**	Parameters:
+**		e -- envelope to build it in/from.
+**		type -- the file type, used as the first character
+**			of the file name.
+**
+**	Returns:
+**		a pointer to the new file name (in a static buffer).
+**
+**	Side Effects:
+**		Will create the lf and qf files if no id code is
+**		already assigned.  This will cause the envelope
+**		to be modified.
+*/
+
+char *
+queuename(e, type)
+	register ENVELOPE *e;
+	char type;
+{
+	static char buf[MAXNAME];
+
+	if (e->e_id == NULL)
+	{
+		char counter = 'a' - 1;
+		char qf[MAXNAME];
+		char lf[MAXNAME];
+		int fx;
+
+		/* find a unique id */
+		fx = strlen(QueueDir) + 3;
+		(void) sprintf(qf, "%s/qf_%05d", QueueDir, getpid());
+		strcpy(lf, qf);
+		lf[fx - 2] = 'l';
+
+		for (;;)
+		{
+			qf[fx] = lf[fx] = ++counter;
+			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
+				continue;
+			errno = 0;
+			if (close(creat(lf, 0600)) < 0)
+				continue;
+			if (link(lf, qf) < 0)
+				(void) unlink(lf);
+			else
+				break;
+		}
+		e->e_qf = newstr(qf);
+		e->e_id = &e->e_qf[fx];
+# ifdef DEBUG
+		if (tTd(7, 1))
+			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
+# endif DEBUG
+	}
+
+	if (type == '\0')
+		return (NULL);
+	(void) sprintf(buf, "%s/%cf%s", QueueDir, type, e->e_id);
+# ifdef DEBUG
+	if (tTd(7, 2))
+		printf("queuename: %s\n", buf);
+# endif DEBUG
+	return (buf);
 }

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.27		%G%);
+SCCSID(@(#)err.c	3.28		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -50,9 +50,10 @@ syserr(fmt, a, b, c, d, e)
 			ExitStat = EX_OSERR;
 	}
 
+	(void) queuename(CurEnv, '\0');
 # ifdef LOG
 	if (LogLevel > 0)
-		syslog(LOG_ERR, "%s: %s", MsgId, &MsgBuf[4]);
+		syslog(LOG_ERR, "%s: %s", CurEnv->e_id, &MsgBuf[4]);
 # endif LOG
 	errno = 0;
 	if (QuickAbort)

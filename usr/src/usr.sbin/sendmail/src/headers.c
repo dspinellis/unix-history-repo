@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.25		%G%);
+SCCSID(@(#)headers.c	3.26		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -365,6 +365,7 @@ eatheader()
 	register HDR *h;
 	register char *p;
 	char buf[MAXLINE];
+	char *msgid;
 
 # ifdef DEBUG
 	if (tTd(32, 2))
@@ -381,18 +382,25 @@ eatheader()
 	/* message id */
 	h = hrvalue("message-id");
 	if (h == NULL)
-		syserr("No Message-Id spec");
+		msgid = NULL;
 	else if (bitset(H_DEFAULT, h->h_flags))
 	{
 		(void) expand(h->h_value, buf, &buf[sizeof buf - 1], CurEnv);
-		MsgId = newstr(buf);
+		msgid = buf;
 	}
 	else
-		MsgId = h->h_value;
+		msgid = h->h_value;
+	if (msgid != NULL)
+	{
 # ifdef DEBUG
-	if (tTd(32, 1))
-		printf("Message-Id: %s\n", MsgId);
+		if (tTd(32, 1))
+			printf("Message-Id: %s\n", msgid);
 # endif DEBUG
+# ifdef LOG
+		if (LogLevel > 1)
+			syslog(LOG_INFO, "%s: messageid=%s", CurEnv->e_id, msgid);
+# endif LOG
+	}
 
 	/* message priority */
 	if (!QueueRun)
