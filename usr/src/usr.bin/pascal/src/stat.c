@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)stat.c 1.11.1.1 %G%";
+static char sccsid[] = "@(#)stat.c 1.13 %G%";
 #endif
 
 #include "whoami.h"
@@ -245,7 +245,6 @@ withop(s)
 		     *	since we have to use it before we know its type;
 		     *	but we use its runtime location for the with pointer.
 		     */
-		tempnlp = tmpalloc(sizeof(int *), nl + TPTR, REGOK);
 #		ifdef OBJ
 		    (void) put(2, O_LV | cbn <<8+INDX, tempnlp -> value[ NL_OFFS ] );
 #		endif OBJ

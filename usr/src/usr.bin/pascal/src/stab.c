@@ -1,7 +1,7 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)stab.c 1.8.1.1 %G%";
+static	char sccsid[] = "@(#)stab.c 1.10 %G%";
 #endif
 
     /*
@@ -197,19 +197,19 @@ stabsource(filename)
 	 *	for separate compilation
 	 */
     putprintf("	.stabs	\"%s\",0x%x,0,0x%x,0x%x", 0,
-	    filename, N_PC, N_PSO, N_FLAGCHECKSUM);
+	    (int) filename, N_PC, N_PSO, N_FLAGCHECKSUM);
 	/*
 	 *	for sdb
 	 */
     if ( ! opt('g') ) {
 	    return;
     }
-    label = getlab();
+    label = (int) getlab();
     putprintf( "	.stabs	\"" , 1 );
-    putprintf( NAMEFORMAT , 1 , filename );
+    putprintf( NAMEFORMAT , 1 , (int) filename );
     putprintf( "\",0x%x,0,0," , 1 , N_SO );
-    putprintf( PREFIXFORMAT , 0 , LLABELPREFIX , label );
-    putprintf( PREFIXFORMAT , 1 , LLABELPREFIX , label );
+    putprintf( PREFIXFORMAT , 0 , (int) LLABELPREFIX , label );
+    putprintf( PREFIXFORMAT , 1 , (int) LLABELPREFIX , label );
     putprintf( ":" , 0 );
 }
 
@@ -222,7 +222,7 @@ stabinclude(filename, firsttime)
     char	*filename;
     bool	firsttime;
 {
-    int	label;
+    int		label;
     long	check;
     
 	/*
@@ -234,19 +234,18 @@ stabinclude(filename, firsttime)
 	check = N_FLAGCHECKSUM;
     }
     putprintf("	.stabs	\"%s\",0x%x,0,0x%x,0x%x", 0,
-	    filename, N_PC, N_PSOL, check);
+	    (int) filename, N_PC, N_PSOL, check);
 	/*
 	 *	for sdb
 	 */
     if ( ! opt('g') ) {
 	    return;
     }
-    label = getlab();
-    putprintf( "	.stabs	\"" , 1 );
-    putprintf( NAMEFORMAT , 1 , filename );
+    label = (int) getlab();
+    putprintf( NAMEFORMAT , 1 , (int) filename );
     putprintf( "\",0x%x,0,0," , 1 , N_SOL );
-    putprintf( PREFIXFORMAT , 0 , LLABELPREFIX , label );
-    putprintf( PREFIXFORMAT , 1 , LLABELPREFIX , label );
+    putprintf( PREFIXFORMAT , 0 , (int) LLABELPREFIX , label );
+    putprintf( PREFIXFORMAT , 1 , (int) LLABELPREFIX , label );
     putprintf( ":" , 0 );
 }
 
