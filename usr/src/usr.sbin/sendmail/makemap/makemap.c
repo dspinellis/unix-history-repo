@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -54,6 +54,7 @@ main(argc, argv)
 	bool inclnull = FALSE;
 	bool notrunc = FALSE;
 	bool allowreplace = FALSE;
+	bool allowdups = FALSE;
 	bool verbose = FALSE;
 	bool foldcase = TRUE;
 	int exitstat;
@@ -76,6 +77,9 @@ main(argc, argv)
 		void	*dbx;
 	} dbp;
 	union dbent key, val;
+#ifdef NEWDB
+	BTREEINFO bti;
+#endif
 	char ibuf[BUFSIZE];
 	char fbuf[MAXNAME];
 	extern char *optarg;
@@ -83,12 +87,16 @@ main(argc, argv)
 
 	progname = argv[0];
 
-	while ((opt = getopt(argc, argv, "Nforv")) != EOF)
+	while ((opt = getopt(argc, argv, "Ndforv")) != EOF)
 	{
 		switch (opt)
 		{
 		  case 'N':
 			inclnull = TRUE;
+			break;
+
+		  case 'd':
+			allowdups = TRUE;
 			break;
 
 		  case 'f':
@@ -144,7 +152,7 @@ main(argc, argv)
 	switch (type)
 	{
 	  case T_ERR:
-		fprintf(stderr, "Usage: %s [-N] [-o] [-v] type mapname\n", progname);
+		fprintf(stderr, "Usage: %s [-N] [-d] [-f] [-o] [-r] [-v] type mapname\n", progname);
 		exit(EX_USAGE);
 
 	  case T_UNKNOWN:
@@ -162,6 +170,26 @@ main(argc, argv)
 		fprintf(stderr, "%s: Type %s not supported in this version\n",
 			progname, typename);
 		exit(EX_UNAVAILABLE);
+
+#ifdef NEWDB
+	  case T_BTREE:
+		bzero(&bti, sizeof bti);
+		if (allowdups)
+			bti.flags |= R_DUP;
+		break;
+
+	  case T_HASH:
+#endif
+#ifdef NDBM
+	  case T_DBM:
+#endif
+		if (allowdups)
+		{
+			fprintf(stderr, "%s: Type %s does not support -d (allow dups)\n",
+				progname, typename);
+			exit(EX_UNAVAILABLE);
+		}
+		break;
 	}
 
 	/*
@@ -203,7 +231,7 @@ main(argc, argv)
 		break;
 
 	  case T_BTREE:
-		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, NULL);
+		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, &bti);
 		break;
 #endif
 
