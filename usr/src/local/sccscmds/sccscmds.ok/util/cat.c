@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)cat	2.2";
+static char Sccsid[] = "@(#)cat.c	1.2	%G%";
 /*
 	Concatenate strings.
  

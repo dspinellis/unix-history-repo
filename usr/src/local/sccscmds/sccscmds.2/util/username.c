@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)username	2.1";
+static char Sccsid[] = "@(#)username.c	1.2	%G%";
 /*
 	Gets user's login name.
 	Note that the argument must be an integer.

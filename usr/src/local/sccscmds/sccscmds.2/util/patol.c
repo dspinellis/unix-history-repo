@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)patol	2.1";
+static char Sccsid[] = "@(#)patol.c	1.2	%G%";
 /*
 	Function to convert ascii string to long.  Converts
 	positive numbers only.  Returns -1 if non-numeric

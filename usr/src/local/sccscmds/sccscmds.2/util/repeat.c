@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)repeat	2.2";
+static char Sccsid[] = "@(#)repeat.c	1.2	%G%";
 /*
 	Set `result' equal to `str' repeated `repfac' times.
 	Return `result'.

@@ -1,4 +1,4 @@
-static char Sccsid[] "@(#)substr	2.2";
+static char Sccsid[] = "@(#)substr.c	1.2	%G%";
 /*
 	Place the `len' length substring of `as' starting at `as[origin]'
 	in `aresult'.
