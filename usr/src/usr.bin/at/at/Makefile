@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	5.6	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -12,28 +23,23 @@ OBJS=	atq.o atrm.o at.o atrun.o
 ATRUNDIR=	/usr/lib
 SPOOLDIRS=	/usr/spool/at /usr/spool/at/past
 SPOOLFILES=	/usr/spool/at/lasttimedone
+MAN=	at.0 atq.0 atrm.0
 
 all: atq atrm at atrun
 
-at: at.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ at.c
+at atq atrm atrun: ${LIBC}
+	${CC} ${CFLAGS} -o $@ $@.c
 
-atq: atq.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ atq.c
-
-atrm: atrm.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ atrm.c
-
-atrun: atrun.c ${LIBC}
-	${CC} ${CFLAGS} -o $@ atrun.c
-
-clean: FRC
+clean:
 	rm -f ${OBJS} core atq atrm at atrun
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	-for i in ${SPOOLDIRS}; do \
 		mkdir ${DESTDIR}/$$i > /dev/null 2>&1; \
 		chown root ${DESTDIR}/$$i; \
@@ -51,40 +57,17 @@ install: FRC
 	install -s -o root -g bin -m 4755 atq ${DESTDIR}/usr/bin
 	install -s -o root -g bin -m 4755 at ${DESTDIR}/usr/bin
 	install -s -o root -g bin -m 4755 atrm ${DESTDIR}/usr/bin
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} atq.c
 	lint ${CFLAGS} atrm.c
 	lint ${CFLAGS} at.c
 	lint ${CFLAGS} atrun.c
 
-tags: FRC
+tags: ${SRCS}
 	ctags atq.c
 	ctags -a atrm.c
 	ctags -a at.c
 	ctags -a atrun.c
 	sort -o tags tags
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-atq: atq.c /usr/include/stdio.h /usr/include/sys/types.h
-atq: /usr/include/sys/file.h /usr/include/sys/dir.h /usr/include/sys/stat.h
-atq: /usr/include/sys/time.h /usr/include/time.h /usr/include/pwd.h
-atq: /usr/include/ctype.h
-atrm: atrm.c /usr/include/stdio.h /usr/include/pwd.h /usr/include/ctype.h
-atrm: /usr/include/sys/types.h /usr/include/sys/dir.h /usr/include/sys/file.h
-atrm: /usr/include/sys/stat.h
-at: at.c /usr/include/stdio.h /usr/include/ctype.h /usr/include/signal.h
-at: /usr/include/pwd.h /usr/include/sys/param.h /usr/include/sys/types.h
-at: /usr/include/signal.h /usr/include/machine/machparam.h
-at: /usr/include/sys/time.h /usr/include/time.h /usr/include/sys/file.h
-atrun: atrun.c /usr/include/stdio.h /usr/include/sys/param.h
-atrun: /usr/include/sys/types.h /usr/include/signal.h
-atrun: /usr/include/machine/machparam.h /usr/include/sys/dir.h
-atrun: /usr/include/sys/file.h /usr/include/sys/time.h /usr/include/time.h
-atrun: /usr/include/sys/stat.h /usr/include/pwd.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1987 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.8	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -12,6 +23,7 @@ OBJS=	awk.lx.o b.o main.o token.o tran.o lib.o run.o parse.o proctab.o \
 	freeze.o
 SRCS=	awk.lx.c b.c lib.c main.c parse.c proctab.c freeze.c run.c \
 	token.c tran.c
+MAN=	awk.0
 
 all: awk
 
@@ -35,37 +47,21 @@ proctab.c: proc
 proc: awk.h proc.o token.o
 	${CC} -o $@ proc.o token.o
 
-clean: FRC
-#	use *.o, not ${OBJS}
+clean:
 	rm -f *.o core awk awk.h awk.lx.c y.tab.h proc proctab.c yacc* temp
 
-depend: y.tab.h ${SRCS} FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: y.tab.h ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install:
+install: ${MAN}
 	install -s -o bin -g bin -m 755 awk ${DESTDIR}/bin/awk
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: proctab.c FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-awk.lx.o: awk.lx.c /usr/include/stdio.h awk.h awk.def
-b.o: b.c awk.def /usr/include/stdio.h awk.h
-lib.o: lib.c /usr/include/stdio.h awk.def awk.h /usr/include/ctype.h
-main.o: main.c /usr/include/stdio.h /usr/include/ctype.h awk.def awk.h
-parse.o: parse.c awk.def awk.h /usr/include/stdio.h
-proctab.o: proctab.c awk.def
-freeze.o: freeze.c /usr/include/stdio.h
-run.o: run.c awk.def /usr/include/math.h awk.h /usr/include/stdio.h
-run.o: /usr/include/fcntl.h
-token.o: token.c awk.h
-tran.o: tran.c /usr/include/stdio.h awk.def awk.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
