@@ -1,3 +1,4 @@
+                                 RELEASE NOTES
                                     FreeBSD
                                   Release 1.0
 
@@ -271,4 +272,4 @@ hope you enjoy this release of FreeBSD!
 
 			The FreeBSD Core Group
 
-$Id: RELNOTES.FreeBSD,v 1.12 1993/10/14 00:29:19 rgrimes Exp $
+$Id: RELNOTES.FreeBSD,v 1.13 1993/10/16 11:43:32 rgrimes Exp $
