@@ -1,35 +1,27 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.
+/*-
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)subr_rmap.c	7.9 (Berkeley) 5/11/91
+ *	from: @(#)subr_rmap.c	8.1 (Berkeley) 6/10/93
  */
 
-#include "param.h"
-#include "systm.h"
-#include "map.h"
-#include "dmap.h"		/* XXX */
-#include "proc.h"
-#include "kernel.h"
+#include <sys/param.h>
+#include <sys/map.h>
+#include <sys/proc.h>
 
-/*
- * Resource map handling routines.
- */
-
-/*
- * Initialize map mp to have (mapsize-2) segments
- * and to be called ``name'', which we print if
- * the slots become so fragmented that we lose space.
- * The map itself is initialized with size elements free
- * starting at addr.
- */
-rminit(mp, size, addr, name, mapsize)
-	register struct map *mp;
-	long size, addr;
-	char *name;
-	int mapsize;
+void
+rminit(a1, a2, a3, a4, a5)
+	struct map *a1;
+	long a2, a3;
+	char *a4;
+	int a5;
 {
 
 	/*
@@ -39,9 +31,9 @@ rminit(mp, size, addr, name, mapsize)
 }
 
 long
-rmalloc(mp, size)
-	register struct map *mp;
-	long size;
+rmalloc(a1, a2)
+	struct map *a1;
+	long a2;
 {
 
 	/*
@@ -50,9 +42,10 @@ rmalloc(mp, size)
 	return (0);
 }
 
-rmfree(mp, size, addr)
-	struct map *mp;
-	long size, addr;
+void
+rmfree(a1, a2, a3)
+	struct map *a1;
+	long a2, a3;
 {
 
 	/*

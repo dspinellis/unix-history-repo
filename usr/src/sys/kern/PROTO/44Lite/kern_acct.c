@@ -1,68 +1,71 @@
-/*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.
+/*-
+ * Copyright (c) 1982, 1986, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
  *
  * %sccs.include.redist.c%
  *
- *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
+ *	from: @(#)kern_acct.c	8.1 (Berkeley) 6/14/93
  */
 
-#include "param.h"
-#include "systm.h"
-#include "namei.h"
-#include "resourcevar.h"
-#include "proc.h"
-#include "ioctl.h"
-#include "termios.h"
-#include "tty.h"
-#include "vnode.h"
-#include "mount.h"
-#include "kernel.h"
-#include "file.h"
-#include "acct.h"
-#include "syslog.h"
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/mount.h>
+#include <sys/vnode.h>
+#include <sys/file.h>
+#include <sys/syslog.h>
+#include <sys/kernel.h>
 
-/*
- * Values associated with enabling and disabling accounting
- */
-int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
-int	acctresume = 4;		/* resume when free space risen to > 4% */
-struct	timeval chk = { 15, 0 };/* frequency to check space for accounting */
-struct  vnode *acctp;		/* file to which to do accounting */
-struct  vnode *savacctp;	/* file to which to do accounting when space */
-
-/*
- * Enable or disable process accounting.
- *
- * If a non-null filename is given, that file is used to store accounting
- * records on process exit. If a null filename is given process accounting
- * is suspended. If accounting is enabled, the system checks the amount
- * of freespace on the filesystem at timeval intervals. If the amount of
- * freespace is below acctsuspend percent, accounting is suspended. If
- * accounting has been suspended, and freespace rises above acctresume,
- * accounting is resumed.
- */
-/* ARGSUSED */
-sysacct(p, uap, retval)
-	struct proc *p;
-	struct args {
-		char	*fname;
-	} *uap;
-	int *retval;
+struct acct_args {
+	char	*fname;
+};
+acct(a1, a2, a3)
+	struct proc *a1;
+	struct acct_args *a2;
+	int *a3;
 {
-
 	/*
 	 * Body deleted.
 	 */
 	return (ENOSYS);
 }
 
+acct_process(a1)
+	struct proc *a1;
+{
+
+	/*
+	 * Body deleted.
+	 */
+	return;
+}
+
 /*
  * Periodically check the file system to see if accounting
  * should be turned on or off.
  */
-acctwatch(resettime)
-	struct timeval *resettime;
+
+/*
+ * Values associated with enabling and disabling accounting
+ */
+int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
+int	acctresume = 4;		/* resume when free space risen to > 4% */
+int	acctchkfreq = 15;	/* frequency (in seconds) to check space */
+
+/*
+ * SHOULD REPLACE THIS WITH A DRIVER THAT CAN BE READ TO SIMPLIFY.
+ */
+struct	vnode *acctp;
+struct	vnode *savacctp;
+
+/* ARGSUSED */
+void
+acctwatch(a)
+	void *a;
 {
 	struct statfs sb;
 
@@ -72,30 +75,16 @@ acctwatch(resettime)
 			acctp = savacctp;
 			savacctp = NULL;
 			log(LOG_NOTICE, "Accounting resumed\n");
+		}
+	} else {
+		if (acctp == NULL)
 			return;
+		(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
+		if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
+			savacctp = acctp;
+			acctp = NULL;
+			log(LOG_NOTICE, "Accounting suspended\n");
 		}
 	}
-	if (acctp == NULL)
-		return;
-	(void)VFS_STATFS(acctp->v_mount, &sb, (struct proc *)0);
-	if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
-		savacctp = acctp;
-		acctp = NULL;
-		log(LOG_NOTICE, "Accounting suspended\n");
-	}
-	timeout(acctwatch, (caddr_t)resettime, hzto(resettime));
-}
-
-/*
- * This routine calculates an accounting record for a process and,
- * if accounting is enabled, writes it to the accounting file.
- */
-acct(p)
-	register struct proc *p;
-{
-
-	/*
-	 * Body deleted.
-	 */
-	return;
+	timeout(acctwatch, NULL, acctchkfreq * hz);
 }
