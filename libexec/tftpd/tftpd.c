@@ -69,7 +69,7 @@ static char sccsid[] = "@(#)tftpd.c	5.13 (Berkeley) 2/26/91";
 #define	TIMEOUT		5
 
 extern	int errno;
-struct	sockaddr_in sin = { AF_INET };
+struct	sockaddr_in s_in = { AF_INET };
 int	peer;
 int	rexmtval = TIMEOUT;
 int	maxtimeout = 5*TIMEOUT;
@@ -164,7 +164,7 @@ main(ac, av)
 		syslog(LOG_ERR, "socket: %m\n");
 		exit(1);
 	}
-	if (bind(peer, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+	if (bind(peer, (struct sockaddr *)&s_in, sizeof (s_in)) < 0) {
 		syslog(LOG_ERR, "bind: %m\n");
 		exit(1);
 	}

@@ -61,6 +61,8 @@ char copyright[] =
 #include <stdlib.h>
 #include <paths.h>
 
+int fatal(char *fmt, ...);
+
 #define	COMPAT			/* allow non-labeled disks */
 
 /*
@@ -556,8 +558,7 @@ rewritelabel(s, fd, lp)
 }
 
 /*VARARGS*/
-fatal(fmt)
-	char *fmt;
+fatal(char *fmt, ...)
 {
 	va_list ap;
 

@@ -2,7 +2,7 @@
 # Fixed to use bsd.coe.montana.edu as a bugs host - rgrimes 4/04/93
 
 PROG=	bugfiler
-CFLAGS+=-I${.CURDIR} -D"BUGS_HOME \"owner-386bsd_bugs@bsd.coe.montana.edu\""
+CFLAGS+=-I${.CURDIR} -DBUGS_HOME=\"owner-386bsd_bugs@bsd.coe.montana.edu\"
 SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
 BINOWN=	root
 BINMODE=4555
