@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/*	ex_tune.h	7.6	84/04/10	*/
+/*	ex_tune.h	7.7	84/10/22	*/
 /*
  * Definitions of editor parameters and limits
  */
@@ -105,9 +105,9 @@
 #define	TUBECOLS	160	/* Number of screen columns for visual */
 #define	TUBESIZE	5000	/* Maximum screen size for visual */
 #else
-#define	TUBELINES	66
+#define	TUBELINES	70
 #define	TUBECOLS	160
-#define	TUBESIZE	6600	/* 66 * 100 */
+#define	TUBESIZE	7000	/* 70 * 100 */
 #endif
 
 /*
