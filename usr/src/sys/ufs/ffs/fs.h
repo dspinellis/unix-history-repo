@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	7.16 (Berkeley) %G%
+ *	@(#)fs.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -177,7 +177,8 @@ struct fs {
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
 	long	fs_cpc;			/* cyl per cycle in postbl */
 	short	fs_opostbl[16][8];	/* old rotation block list head */
-	long	fs_sparecon[52];	/* reserved for future constants */
+	long	fs_sparecon[51];	/* reserved for future constants */
+	long	fs_maxsymlinklen;	/* max length of an internal symlink */
 	long	fs_inodefmt;		/* format of on-disk inodes */
 	u_quad_t fs_maxfilesize;	/* maximum representable file size */
 	quad_t	fs_qbmask;		/* ~fs_bmask - for use with quad size */
