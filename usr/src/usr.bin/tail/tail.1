@@ -1,54 +1,87 @@
-.\" Copyright (c) 1980, 1990 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
 .\"		@(#)tail.1	6.5 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
 .\"
-.TH TAIL 1 "%Q"
-.UC 4
-.SH NAME
-tail \- deliver the last part of a file
-.SH SYNOPSIS
-.B tail
-[\fB+-\fP]\fBnumber\fP[\fBlbc\fP][\fBrf\fP] [\fBfile\fP]
-.SH DESCRIPTION
-.I Tail
-copies the named file to the standard output beginning
-at a designated place.
-If no file is named, the standard input is used.
-.PP
-Copying begins at distance
-.I +number
-from the beginning, or
-.I \-number
-from the end of the input.
-.I Number
-is counted in units of lines, blocks or characters,
-according to the appended option
-.B l,
-.B b
-or
-.B c.
-When no units are specified, counting is by lines.
-.PP
+.\"     @(#)tail.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt TAIL 1
+.Os BSD 4
+.Sh NAME
+.Nm tail
+.Nd deliver the last part of a file
+.Sh SYNOPSIS
+.Nm tail
+.Oo Cm \\*(Pm Ns Ar number
+.Op Ns Cm lbc Op Ns Cm fr
+.Oc
+.Op Ar file
+.Sh DESCRIPTION
+The
+.Nm tail
+utility copies its input file to the standard output
+beginning at a designated place.
+The argument
+.Ar number
+is counted in
+units of blocks, characters or lines (default),
+according to the appended option suffixes
+.Cm b , c
+and
+.Cm l .
+Copying begins at the point in the file indicated by the
+.Cm \\*(Pm Ns Ar number
+option, where
+.Cm + Ns Ar number
+is a positive offset relative to the beginning of the file
+and
+.Cm \&- Ns Ar number
+is a negative offset relative to the end of the file or standard
+input.
+.Pp
+Appended options:
+.Bl -tag -width Ds
+.It Cm b
+The argument
+.Ar number
+refers to blocks.
+.It Cm c
+The argument
+.Ar number
+refers to characters (bytes).
+.It Cm f
 Specifying
-.B r
-causes tail to print lines from the end of the file in reverse order.
-The default for
-.B r
-is to print the entire file this way.
-Specifying
-.B f
+.Cm f
 causes
-.I tail
+.Nm tail
 to not quit at end of file, but rather wait and try to read repeatedly
 in hopes that the file will grow.
-.SH "SEE ALSO"
-dd(1)
-.SH BUGS
-Tails relative to the end of the file
-are treasured up in a buffer, and thus 
-are limited in length.
-.PP
-Various kinds of anomalous behavior may happen
-with character special files.
+.It Cm l
+The argument
+.Ar number
+refers to line.
+.It Cm r
+Lines are printed from
+.Ar file
+in reverse order.
+The default for
+.Ar r
+is to print the entire file this way.
+.El
+.Pp
+The
+.Nm tail
+utility exits 0 on success, and >0 if an error occurs.
+.Sh SEE ALSO
+.Xr dd 1
+.Sh BUGS
+The behaviour of
+.Nm tail
+on binary or special files is unpredictable.
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v7 .
