@@ -1,4 +1,4 @@
-/*	llib-lc	1.15	84/12/11	*/
+/*	llib-lc	1.16	85/04/08	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -268,7 +268,7 @@ long	ftell(f) FILE *f; { return(0L); }
 int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
 int	getw(f) FILE *f; { return 0;}
 char *	gets( s ) char *s; { return(s); }
-struct	_iobuf _iob[_NFILE];
+extern	struct _iobuf _iob[];
 int	pclose( f ) FILE *f; { return 0; }
 FILE *	popen( c, t ) char *c, *t; { return(stdin); }
 	/* VARARGS */
