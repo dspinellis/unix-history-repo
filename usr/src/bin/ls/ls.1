@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ls.1	6.18 (Berkeley) %G%
+.\"     @(#)ls.1	6.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LS 1
@@ -93,6 +93,10 @@ option, causing the sizes to be reported in kilobytes.
 (The lowercase letter ``ell.'')  List in long format. (See below.)
 If the output is to a terminal, a total sum for all the file
 sizes is output on a line before the long listing.
+.It Fl g
+Include the file flags in a long
+.Pq Fl l
+output
 .It Fl q
 Force printing of non-graphic characters in file names as
 the character `?'; this is the default when output is to a terminal.

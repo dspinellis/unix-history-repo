@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@ static int	printaname __P((LS *));
 static void	printlink __P((char *));
 static void	printtime __P((time_t));
 static int	printtype __P((u_int));
+static char	*flags_from_fid __P((long));
 
 void
 printscol(stats, num)
@@ -64,6 +65,9 @@ printlong(stats, num)
 		if (f_group)
 			(void)printf("%-*s ", UT_NAMESIZE,
 			    group_from_gid(stats->lstat.st_gid, 0));
+		if (f_flags)
+			(void)printf("%-*s ", FLAGSWIDTH,
+			    flags_from_fid(stats->lstat.st_flags));
 		if (S_ISCHR(stats->lstat.st_mode) ||
 		    S_ISBLK(stats->lstat.st_mode))
 			(void)printf("%3d, %3d ", major(stats->lstat.st_rdev),
@@ -218,4 +222,31 @@ printlink(name)
 	}
 	path[lnklen] = '\0';
 	(void)printf(" -> %s", path);
+}
+
+char *
+flags_from_fid(flags)
+	long flags;
+{
+	static char buf[FLAGSWIDTH + 1];
+	int size;
+
+	size = FLAGSWIDTH;
+	buf[0] = '\0';
+	if (size && (flags & NODUMP)) {
+		strncat(buf, "nodump", size);
+		size -= 6;
+	} else {
+		strncat(buf, "dump", size);
+		size -= 4;
+	}
+	if (size && (flags & IMMUTABLE)) {
+		strncat(buf, ",nochg", size);
+		size -= 6;
+	}
+	if (size && (flags & ARCHIVED)) {
+		strncat(buf, ",arch", size);
+		size -= 5;
+	}
+	return (buf);
 }
