@@ -1,23 +1,33 @@
 /*
- * Copyright (c) 1985 The Regents of the University of California.
+ * Copyright (c) 1985, 1990 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)math.h	5.7 (Berkeley) %G%
+ *	@(#)math.h	5.8 (Berkeley) %G%
  */
 
 #ifndef	_MATH_H_
 #define	_MATH_H_
 
-#if defined(vax) || defined(tahoe)
-#define	HUGE_VAL	1.701411733192644270e+38
+#if defined(vax) || defined(tahoe)		/* DBL_MAX from float.h */
+#define	HUGE_VAL	1.701411834604692294E+38
 #else
 #define	HUGE_VAL	1e500			/* IEEE: positive infinity */
 #endif
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if defined(vax) || defined(tahoe)
+/*
+ * HUGE for the VAX and Tahoe converts to the largest possible F-float value.
+ * This implies an understanding of the conversion behavior of atof(3).  It
+ * was defined to be the largest float so that overflow didn't occur when it
+ * was assigned to a single precision number.  HUGE_VAL is strongly preferred.
+ */
+#define	HUGE	1.701411733192644270E+38		
+#else
 #define	HUGE	HUGE_VAL
+#endif
 #endif
 
 #define	M_E		2.7182818284590452354	/* e */
