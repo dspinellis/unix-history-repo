@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_exec.c	7.23 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -533,7 +533,7 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	struct ucred *cred;
 {
 	register struct proc *p = u.u_procp;
-	size_t ts, ds, ids, uds, ss;
+	segsz_t ts, ds, ids, uds, ss;
 	off_t toff;
 
 #ifdef HPUXCOMPAT
@@ -641,7 +641,7 @@ getxfile(vp, ep, flags, nargc, uid, gid, cred)
 	if ((flags & SPAGV) && p->p_textp)
 		vinifod(p, (struct fpte *)dptopte(p, 0),
 		    PG_FTEXT, p->p_textp->x_vptr,
-		    (long)(1 + ts/CLSIZE), (size_t)btoc(ep->a_data));
+		    (long)(1 + ts/CLSIZE), (segsz_t)btoc(ep->a_data));
 
 #if defined(vax) || defined(tahoe)
 	/* THIS SHOULD BE DONE AT A LOWER LEVEL, IF AT ALL */
