@@ -1,0 +1,609 @@
+ADDCH	../ex/ex_subst.c	/^#define	ADDCH(ch) {							\\$/
+ADDNSTR	../svi/svi_screen.h	/^#define	ADDNSTR(str, len) {						\\$/
+ADDSTR	../svi/svi_screen.h	/^#define	ADDSTR(str) {							\\$/
+ADD_SPACE_GOTO	../common/mem.h	/^#define	ADD_SPACE_GOTO(sp, bp, blen, nlen) {				\\/
+ADD_SPACE_RET	../common/mem.h	/^#define	ADD_SPACE_RET(sp, bp, blen, nlen) {				\\$/
+BINC_GOTO	../common/mem.h	/^#define	BINC_GOTO(sp, lp, llen, nlen) {					\\$/
+BINC_RET	../common/mem.h	/^#define	BINC_RET(sp, lp, llen, nlen) {					\\$/
+BUILD	../ex/ex_subst.c	/^#define	BUILD(sp, l, len) {						\\$/
+CALL	../common/options_f.c	/^#define	CALL(f)								\\$/
+CALLOC	../common/mem.h	/^#define	CALLOC(sp, p, cast, nmemb, size) {				\\$/
+CALLOC_NOMSG	../common/mem.h	/^#define	CALLOC_NOMSG(sp, p, cast, nmemb, size) {		/
+CALLOC_RET	../common/mem.h	/^#define	CALLOC_RET(sp, p, cast, nmemb, size) {				/
+CBNAME	../common/cut.h	/^#define	CBNAME(sp, cbp, nch) {						\\$/
+CLR_INTERRUPT	../common/gs.h	/^#define	CLR_INTERRUPT(sp) {						\\$/
+DECL	../common/options_f.c	/^#define	DECL(f)								\\$/
+EXP	../ex/excmd.h.stub	/^#define	EXP(sp)	((EX_PRIVATE *)((sp)->ex_private))/
+EXPROTO	../ex/excmd.h.stub	/^#define	EXPROTO(name)	int name __P((SCR *, EXCMDAR/
+FREE	../common/mem.h	/^#define	FREE(p, sz) {							\\$/
+FREETAG	../ex/ex_tag.c	/^#define	FREETAG(tp) {							\\$/
+FREETAGF	../ex/ex_tag.c	/^#define	FREETAGF(tfp) {							\\$/
+FREE_CDPATH	../ex/ex_cd.c	/^#define	FREE_CDPATH(cdp) {						\\$/
+FREE_SPACE	../common/mem.h	/^#define	FREE_SPACE(sp, bp, blen) {					\\$/
+F_CLR	../common/vi.h	/^#define	F_CLR(p, f)	(p)->flags &= ~(f)$/
+F_ISSET	../common/vi.h	/^#define	F_ISSET(p, f)	((p)->flags & (f))$/
+F_SET	../common/vi.h	/^#define	F_SET(p, f)	(p)->flags |= (f)$/
+GETLINE_ERR	../common/exf.h	/^#define	GETLINE_ERR(sp, lno) {						\\$/
+GET_SPACE_GOTO	../common/mem.h	/^#define	GET_SPACE_GOTO(sp, bp, blen, nlen) {				\\/
+GET_SPACE_RET	../common/mem.h	/^#define	GET_SPACE_RET(sp, bp, blen, nlen) {				\\$/
+HALFSCREEN	../svi/svi_screen.h	/^#define	HALFSCREEN(sp)	((sp)->t_maxrows \/ 2)	\/* /
+HALFTEXT	../svi/svi_screen.h	/^#define	HALFTEXT(sp)	((sp)->t_rows \/ 2)	\/* Half /
+INFOLINE	../svi/svi_screen.h	/^#define	INFOLINE(sp)	((sp)->t_maxrows)	\/* Info li/
+INTERRUPTED	../common/gs.h	/^#define	INTERRUPTED(sp)							\\$/
+IN_EX_MODE	../common/screen.h	/^#define	IN_EX_MODE(sp)			\/* If in ex mode. *\/		/
+IN_VI_MODE	../common/screen.h	/^#define	IN_VI_MODE(sp)			\/* If in vi mode. *\/		/
+ISCMD	../vi/vcmd.h	/^#define	ISCMD(p, key)	((p) == &vikeys[key])$/
+ISINFOLINE	../svi/svi_screen.h	/^#define	ISINFOLINE(sp, smp)	(((smp) - HMAP) == INF/
+ISMOTION	../vi/vcmd.h	/^#define	ISMOTION(vp)	(vp->rkp != NULL && F_ISSET(v/
+ISSMALLSCREEN	../svi/svi_screen.h	/^#define	ISSMALLSCREEN(sp)	((sp)->t_minrows != (sp)/
+IS_ESCAPE	../ex/excmd.h.stub	/^#define	IS_ESCAPE(sp, ch)						\\$/
+IS_SPLIT_SCREEN	../vi/v_scroll.c	/^#define	IS_SPLIT_SCREEN(sp)						\\$/
+KEY	../vi/vi.c	/^#define	KEY(key, map) {							\\$/
+KEYS_WAITING	../common/term.h	/^#define	KEYS_WAITING(sp)	((sp)->gp->i_cnt)$/
+KEY_LEN	../common/gs.h	/^#define	KEY_LEN(sp, ch)							\\$/
+KEY_NAME	../common/gs.h	/^#define	KEY_NAME(sp, ch)						\\$/
+KEY_VAL	../common/gs.h	/^#define	KEY_VAL(sp, ch)							\\$/
+LF_CLR	../common/vi.h	/^#define	LF_CLR(f)	flags &= ~(f)$/
+LF_INIT	../common/vi.h	/^#define	LF_INIT(f)	flags = (f)$/
+LF_ISSET	../common/vi.h	/^#define	LF_ISSET(f)	(flags & (f))$/
+LF_SET	../common/vi.h	/^#define	LF_SET(f)	flags |= (f)$/
+MALLOC	../common/mem.h	/^#define	MALLOC(sp, p, cast, size) {					\\$/
+MALLOC_NOMSG	../common/mem.h	/^#define	MALLOC_NOMSG(sp, p, cast, size) {				\\$/
+MALLOC_RET	../common/mem.h	/^#define	MALLOC_RET(sp, p, cast, size) {					\\$/
+MAPPED_KEYS_WAITING	../common/term.h	/^#define	MAPPED_KEYS_WAITING(sp)						\\$/
+MAX	../common/util.h	/^#define	MAX(_a,_b)	((_a)<(_b)?(_b):(_a))$/
+MEMMOVE	../common/mem.h	/^#define	MEMMOVE(p, t, len)	memmove(p, t, (len) * s/
+MEMSET	../common/mem.h	/^#define	MEMSET(p, value, len)	memset(p, value, (le/
+MIN	../common/util.h	/^#define	MIN(_a,_b)	((_a)<(_b)?(_a):(_b))$/
+MOVE	../svi/svi_screen.h	/^#define	MOVE(sp, lno, cno) {						\\$/
+MOVEA	../svi/svi_screen.h	/^#define	MOVEA(sp, lno, cno) {						\\$/
+MSGS_WAITING	../svi/svi_ex.c	/^#define	MSGS_WAITING(sp)						\\$/
+Mmain	../common/main.c	/^main(argc, argv)$/
+NADD_SLONG	../common/util.h	/^#define	NADD_SLONG(sp, v1, v2)						\\$/
+NADD_USLONG	../common/util.h	/^#define	NADD_USLONG(sp, v1, v2)						\\$/
+NEEDFILE	../ex/excmd.h.stub	/^#define	NEEDFILE(sp, cmdp) {						\\$/
+NEEDNEWLINE	../ex/ex_subst.c	/^#define	NEEDNEWLINE(sp) {						\\$/
+NEEDSP	../ex/ex_subst.c	/^#define	NEEDSP(sp, len, pnt) {						\\$/
+NNFITS	../common/util.h	/^#define	NNFITS(min, cur, add)						\\$/
+NPFITS	../common/util.h	/^#define	NPFITS(max, cur, add)						\\$/
+OI	../common/options.c	/^#define	OI(opt, str, setdef) {						\\$/
+O_CLR	../common/options.h.stub	/^#define	O_CLR(sp, o)		(sp)->opts[(o)].o_cur.val = /
+O_D_CLR	../common/options.h.stub	/^#define	O_D_CLR(sp, o)		(sp)->opts[(o)].o_def.val /
+O_D_ISSET	../common/options.h.stub	/^#define	O_D_ISSET(sp, o)	((sp)->opts[(o)].o_def.va/
+O_D_SET	../common/options.h.stub	/^#define	O_D_SET(sp, o)		(sp)->opts[(o)].o_def.val /
+O_D_STR	../common/options.h.stub	/^#define	O_D_STR(sp, o)		(sp)->opts[(o)].o_def.str$/
+O_D_VAL	../common/options.h.stub	/^#define	O_D_VAL(sp, o)		(sp)->opts[(o)].o_def.val$/
+O_ISSET	../common/options.h.stub	/^#define	O_ISSET(sp, o)		((sp)->opts[(o)].o_cur.val/
+O_SET	../common/options.h.stub	/^#define	O_SET(sp, o)		(sp)->opts[(o)].o_cur.val = /
+O_STR	../common/options.h.stub	/^#define	O_STR(sp, o)		(sp)->opts[(o)].o_cur.str$/
+O_VAL	../common/options.h.stub	/^#define	O_VAL(sp, o)		(sp)->opts[(o)].o_cur.val$/
+QREM_HEAD	../common/term.c	/^#define	QREM_HEAD(len) {						\\$/
+QREM_TAIL	../common/term.c	/^#define	QREM_TAIL(len) {						\\$/
+REALLOC	../common/mem.h	/^#define	REALLOC(sp, p, cast, size) {					\\$/
+RUN_EXRC	../sex/sex_screen.c	/^#define	RUN_EXRC(p) {							\\$/
+RUN_ICMD	../sex/sex_screen.c	/^#define	RUN_ICMD(s) {							\\$/
+SCREEN_COLS	../svi/svi_screen.h	/^#define	SCREEN_COLS(sp)							\\$/
+SETSIG	../common/signal.c	/^#define	SETSIG(signal, flags, handler) {				\\$/
+SEX_NORAW	../sex/sex_screen.h	/^#define	SEX_NORAW(tp)							\\$/
+SEX_RAW	../sex/sex_screen.h	/^#define	SEX_RAW(tp) {							\\$/
+SIGBLOCK	../common/gs.h	/^#define	SIGBLOCK(gp) \\$/
+SIGUNBLOCK	../common/gs.h	/^#define	SIGUNBLOCK(gp) \\$/
+SIZE_HMAP	../svi/svi_screen.h	/^#define	SIZE_HMAP(sp)	(SVP(sp)->srows + 1)$/
+SKIP_PAST_NEWLINE	../ex/ex_tag.c	/^#define	SKIP_PAST_NEWLINE(p, back)	while (p < back/
+SMAP_CACHE	../svi/svi_screen.h	/^#define	SMAP_CACHE(smp)		((smp)->c_ecsize != 0)$/
+SMAP_FLUSH	../svi/svi_screen.h	/^#define	SMAP_FLUSH(smp)		((smp)->c_ecsize = 0)$/
+STOP_OFF	../vi/vcmd.h	/^#define	STOP_OFF(c, stop)	(stop - (c) % stop)$/
+SVI_SCR_CFLUSH	../svi/svi_screen.h	/^#define	SVI_SCR_CFLUSH(svp)	svp->ss_lno = OOBLNO$/
+SVP	../svi/svi_screen.h	/^#define	SVP(sp)		((SVI_PRIVATE *)((sp)->svi_privat/
+SXP	../sex/sex_screen.h	/^#define	SXP(sp)		((SEX_PRIVATE *)((sp)->sex_privat/
+TAB_OFF	../svi/svi_screen.h	/^#define	TAB_OFF(sp, c)	(O_VAL(sp, O_TABSTOP) - (c)/
+TRACE	../common/util.c	/^TRACE(sp, fmt, va_alist)$/
+VIP	../vi/vcmd.h	/^#define	VIP(sp)	((VI_PRIVATE *)((sp)->vi_private))/
+VIPROTO	../vi/vcmd.h	/^#define	VIPROTO(name)	int name __P((SCR *, VICMDAR/
+Xvidattr	../sex/sex_refresh.c	/^Xvidattr(sp, attr)$/
+_HMAP	../svi/svi_screen.h	/^#define	_HMAP(sp)	(SVP(sp)->h_smap)$/
+_TMAP	../svi/svi_screen.h	/^#define	_TMAP(sp)	(SVP(sp)->t_smap)$/
+__key_len	../common/term.c	/^__key_len(sp, ch)$/
+__key_name	../common/term.c	/^__key_name(sp, ach)$/
+__key_val	../common/term.c	/^__key_val(sp, ch)$/
+__term_read_grow	../common/term.c	/^__term_read_grow(sp, add)$/
+abbr_save	../ex/ex_abbrev.c	/^abbr_save(sp, fp)$/
+aci	../ex/ex_append.c	/^aci(sp, cmdp, cmd)$/
+argv_alloc	../ex/ex_argv.c	/^argv_alloc(sp, len)$/
+argv_exp0	../ex/ex_argv.c	/^argv_exp0(sp, excp, cmd, cmdlen)$/
+argv_exp1	../ex/ex_argv.c	/^argv_exp1(sp, excp, cmd, cmdlen, is_bang)$/
+argv_exp2	../ex/ex_argv.c	/^argv_exp2(sp, excp, cmd, cmdlen)$/
+argv_exp3	../ex/ex_argv.c	/^argv_exp3(sp, excp, cmd, cmdlen)$/
+argv_fexp	../ex/ex_argv.c	/^argv_fexp(sp, excp, cmd, cmdlen, p, lenp, bpp, ble/
+argv_free	../ex/ex_argv.c	/^argv_free(sp)$/
+argv_init	../ex/ex_argv.c	/^argv_init(sp, excp)$/
+argv_sexp	../ex/ex_argv.c	/^argv_sexp(sp, bpp, blenp, lenp)$/
+b_search	../common/search.c	/^b_search(sp, fm, rm, ptrn, eptrn, flagp)$/
+baud_from_bval	../common/options_f.c	/^baud_from_bval(sp)$/
+bdisplay	../ex/ex_display.c	/^bdisplay(sp)$/
+binary_search	../ex/ex_tag.c	/^binary_search(string, front, back)$/
+binc	../common/util.c	/^binc(sp, bp, bsizep, min)$/
+busy_off	../common/signal.c	/^busy_off(sp)$/
+busy_on	../common/signal.c	/^busy_on(sp, msg)$/
+bword	../vi/v_word.c	/^bword(sp, vp, type)$/
+cb_rotate	../common/cut.c	/^cb_rotate(sp)$/
+compare	../ex/ex_tag.c	/^compare(s1, s2, back)$/
+correct	../vi/v_search.c	/^correct(sp, vp, isdelta)$/
+cs_bblank	../vi/getc.c	/^cs_bblank(sp, csp)$/
+cs_fblank	../vi/getc.c	/^cs_fblank(sp, csp)$/
+cs_fspace	../vi/getc.c	/^cs_fspace(sp, csp)$/
+cs_init	../vi/getc.c	/^cs_init(sp, csp)$/
+cs_next	../vi/getc.c	/^cs_next(sp, csp)$/
+cs_prev	../vi/getc.c	/^cs_prev(sp, csp)$/
+ctag_conv	../common/search.c	/^ctag_conv(sp, ptrnp, replacedp)$/
+cut	../common/cut.c	/^cut(sp, namep, fm, tm, flags)$/
+cut_line	../common/cut.c	/^cut_line(sp, lno, fcno, clen, cbp)$/
+db	../ex/ex_display.c	/^db(sp, cbp, name)$/
+delete	../common/delete.c	/^delete(sp, fm, tm, lmode)$/
+digraph	../ex/ex_digraph.c	/^digraph(sp, key1, key2)$/
+digraph_init	../ex/ex_digraph.c	/^digraph_init(sp)$/
+digraph_save	../ex/ex_digraph.c	/^digraph_save(sp, fd)$/
+do_digraph	../ex/ex_digraph.c	/^do_digraph(sp, bang, extra)$/
+eword	../vi/v_word.c	/^eword(sp, vp, type)$/
+ex	../ex/ex.c	/^ex(sp)$/
+ex_abbr	../ex/ex_abbrev.c	/^ex_abbr(sp, cmdp)$/
+ex_append	../ex/ex_append.c	/^ex_append(sp, cmdp)$/
+ex_args	../ex/ex_args.c	/^ex_args(sp, cmdp)$/
+ex_at	../ex/ex_at.c	/^ex_at(sp, cmdp)$/
+ex_badaddr	../ex/ex.c	/^ex_badaddr(sp, cp, ba, nret)$/
+ex_bang	../ex/ex_bang.c	/^ex_bang(sp, cmdp)$/
+ex_bg	../ex/ex_screen.c	/^ex_bg(sp, cmdp)$/
+ex_cbuild	../ex/ex_util.c	/^ex_cbuild(cmdp, cmd_id, naddr, lno1, lno2, force, /
+ex_cd	../ex/ex_cd.c	/^ex_cd(sp, cmdp)$/
+ex_cdalloc	../ex/ex_cd.c	/^ex_cdalloc(sp, str)$/
+ex_cdfree	../ex/ex_cd.c	/^ex_cdfree(sp)$/
+ex_cfile	../ex/ex.c	/^ex_cfile(sp, filename, flags)$/
+ex_change	../ex/ex_append.c	/^ex_change(sp, cmdp)$/
+ex_cmd	../ex/ex.c	/^ex_cmd(sp, cmd, cmdlen, pflags)$/
+ex_comlog	../ex/ex.c	/^ex_comlog(sp, exp)$/
+ex_comm_search	../ex/ex.c	/^ex_comm_search(name, len)$/
+ex_comment	../ex/ex_util.c	/^ex_comment(sp)$/
+ex_copy	../ex/ex_move.c	/^ex_copy(sp, cmdp)$/
+ex_delete	../ex/ex_delete.c	/^ex_delete(sp, cmdp)$/
+ex_digraph	../ex/ex_digraph.c	/^ex_digraph(sp, cmdp)$/
+ex_display	../ex/ex_display.c	/^ex_display(sp, cmdp)$/
+ex_edit	../ex/ex_edit.c	/^ex_edit(sp, cmdp)$/
+ex_end	../ex/ex_init.c	/^ex_end(sp)$/
+ex_equal	../ex/ex_equal.c	/^ex_equal(sp, cmdp)$/
+ex_exec_proc	../ex/ex_shell.c	/^ex_exec_proc(sp, cmd, p1, p2)$/
+ex_fg	../ex/ex_screen.c	/^ex_fg(sp, cmdp)$/
+ex_file	../ex/ex_file.c	/^ex_file(sp, cmdp)$/
+ex_getline	../ex/ex_util.c	/^ex_getline(sp, fp, lenp)$/
+ex_global	../ex/ex_global.c	/^ex_global(sp, cmdp)$/
+ex_help	../ex/ex_usage.c	/^ex_help(sp, cmdp)$/
+ex_icmd	../ex/ex.c	/^ex_icmd(sp, cmd, len, flags)$/
+ex_init	../ex/ex_init.c	/^ex_init(sp)$/
+ex_insert	../ex/ex_append.c	/^ex_insert(sp, cmdp)$/
+ex_is_abbrev	../ex/ex.c	/^ex_is_abbrev(name, len)$/
+ex_is_unmap	../ex/ex.c	/^ex_is_unmap(name, len)$/
+ex_join	../ex/ex_join.c	/^ex_join(sp, cmdp)$/
+ex_ldisplay	../ex/ex_print.c	/^ex_ldisplay(sp, lp, len, col, flags)$/
+ex_line	../ex/ex.c	/^ex_line(sp, cur, cmdp, cmdlenp, isaddrp, isdeltap)/
+ex_list	../ex/ex_print.c	/^ex_list(sp, cmdp)$/
+ex_map	../ex/ex_map.c	/^ex_map(sp, cmdp)$/
+ex_mark	../ex/ex_mark.c	/^ex_mark(sp, cmdp)$/
+ex_message	../ex/ex_util.c	/^ex_message(sp, cmdp, which)$/
+ex_mkexrc	../ex/ex_mkexrc.c	/^ex_mkexrc(sp, cmdp)$/
+ex_move	../ex/ex_move.c	/^ex_move(sp, cmdp)$/
+ex_ncheck	../ex/ex_util.c	/^ex_ncheck(sp, force)$/
+ex_next	../ex/ex_args.c	/^ex_next(sp, cmdp)$/
+ex_number	../ex/ex_print.c	/^ex_number(sp, cmdp)$/
+ex_open	../ex/ex_open.c	/^ex_open(sp, cmdp)$/
+ex_optchange	../ex/ex_init.c	/^ex_optchange(sp, opt)$/
+ex_pr	../ex/ex_print.c	/^ex_pr(sp, cmdp)$/
+ex_prchars	../ex/ex_print.c	/^ex_prchars(sp, lpp, colp, len, rep)$/
+ex_preserve	../ex/ex_preserve.c	/^ex_preserve(sp, cmdp)$/
+ex_prev	../ex/ex_args.c	/^ex_prev(sp, cmdp)$/
+ex_print	../ex/ex_print.c	/^ex_print(sp, fp, tp, flags)$/
+ex_put	../ex/ex_put.c	/^ex_put(sp, cmdp)$/
+ex_quit	../ex/ex_quit.c	/^ex_quit(sp, cmdp)$/
+ex_range	../ex/ex.c	/^ex_range(sp, excp, cmdp, cmdlenp)$/
+ex_read	../ex/ex_read.c	/^ex_read(sp, cmdp)$/
+ex_readfp	../ex/ex_read.c	/^ex_readfp(sp, name, fp, fm, nlinesp, success_msg)$/
+ex_recover	../ex/ex_preserve.c	/^ex_recover(sp, cmdp)$/
+ex_resize	../ex/ex_screen.c	/^ex_resize(sp, cmdp)$/
+ex_rew	../ex/ex_args.c	/^ex_rew(sp, cmdp)$/
+ex_rleave	../ex/ex_util.c	/^ex_rleave(sp)$/
+ex_s	../ex/ex_subst.c	/^ex_s(sp, cmdp)$/
+ex_scprint	../ex/ex_print.c	/^ex_scprint(sp, fp, tp)$/
+ex_screen_copy	../ex/ex_init.c	/^ex_screen_copy(orig, sp)$/
+ex_screen_end	../ex/ex_init.c	/^ex_screen_end(sp)$/
+ex_script	../ex/ex_script.c	/^ex_script(sp, cmdp)$/
+ex_sdisplay	../ex/ex_screen.c	/^ex_sdisplay(sp)$/
+ex_set	../ex/ex_set.c	/^ex_set(sp, cmdp)$/
+ex_shell	../ex/ex_shell.c	/^ex_shell(sp, cmdp)$/
+ex_shiftl	../ex/ex_shift.c	/^ex_shiftl(sp, cmdp)$/
+ex_shiftr	../ex/ex_shift.c	/^ex_shiftr(sp, cmdp)$/
+ex_sleave	../ex/ex_util.c	/^ex_sleave(sp)$/
+ex_source	../ex/ex_source.c	/^ex_source(sp, cmdp)$/
+ex_split	../ex/ex_screen.c	/^ex_split(sp, cmdp)$/
+ex_stop	../ex/ex_stop.c	/^ex_stop(sp, cmdp)$/
+ex_subagain	../ex/ex_subst.c	/^ex_subagain(sp, cmdp)$/
+ex_subtilde	../ex/ex_subst.c	/^ex_subtilde(sp, cmdp)$/
+ex_tagalloc	../ex/ex_tag.c	/^ex_tagalloc(sp, str)$/
+ex_tagcopy	../ex/ex_tag.c	/^ex_tagcopy(orig, sp)$/
+ex_tagdisplay	../ex/ex_tag.c	/^ex_tagdisplay(sp)$/
+ex_tagfirst	../ex/ex_tag.c	/^ex_tagfirst(sp, tagarg)$/
+ex_tagfree	../ex/ex_tag.c	/^ex_tagfree(sp)$/
+ex_tagpop	../ex/ex_tag.c	/^ex_tagpop(sp, cmdp)$/
+ex_tagpush	../ex/ex_tag.c	/^ex_tagpush(sp, cmdp)$/
+ex_tagtop	../ex/ex_tag.c	/^ex_tagtop(sp, cmdp)$/
+ex_unabbr	../ex/ex_abbrev.c	/^ex_unabbr(sp, cmdp)$/
+ex_undo	../ex/ex_undo.c	/^ex_undo(sp, cmdp)$/
+ex_unknown	../ex/ex.c	/^ex_unknown(sp, cmd, len)$/
+ex_unmap	../ex/ex_map.c	/^ex_unmap(sp, cmdp)$/
+ex_usage	../ex/ex_usage.c	/^ex_usage(sp, cmdp)$/
+ex_v	../ex/ex_global.c	/^ex_v(sp, cmdp)$/
+ex_version	../ex/ex_version.c	/^ex_version(sp, cmdp)$/
+ex_visual	../ex/ex_visual.c	/^ex_visual(sp, cmdp)$/
+ex_viusage	../ex/ex_usage.c	/^ex_viusage(sp, cmdp)$/
+ex_wn	../ex/ex_write.c	/^ex_wn(sp, cmdp)$/
+ex_wq	../ex/ex_write.c	/^ex_wq(sp, cmdp)$/
+ex_write	../ex/ex_write.c	/^ex_write(sp, cmdp)$/
+ex_writefp	../ex/ex_write.c	/^ex_writefp(sp, name, fp, fm, tm, nlno, nch)$/
+ex_xit	../ex/ex_write.c	/^ex_xit(sp, cmdp)$/
+ex_yank	../ex/ex_yank.c	/^ex_yank(sp, cmdp)$/
+ex_z	../ex/ex_z.c	/^ex_z(sp, cmdp)$/
+exrc_isok	../sex/sex_screen.c	/^exrc_isok(sp, sbp, path, rootown, rootid)$/
+exwr	../ex/ex_write.c	/^exwr(sp, cmdp, cmd)$/
+f_search	../common/search.c	/^f_search(sp, fm, rm, ptrn, eptrn, flagp)$/
+file_add	../common/exf.c	/^file_add(sp, name)$/
+file_aline	../common/line.c	/^file_aline(sp, update, lno, p, len)$/
+file_aw	../common/exf.c	/^file_aw(sp, flags)$/
+file_backup	../common/exf.c	/^file_backup(sp, name, bname)$/
+file_cinit	../common/exf.c	/^file_cinit(sp)$/
+file_dline	../common/line.c	/^file_dline(sp, lno)$/
+file_end	../common/exf.c	/^file_end(sp, ep, force)$/
+file_gline	../common/line.c	/^file_gline(sp, lno, lenp)$/
+file_iline	../common/line.c	/^file_iline(sp, lno, p, len)$/
+file_init	../common/exf.c	/^file_init(sp, frp, rcv_name, flags)$/
+file_lline	../common/line.c	/^file_lline(sp, lnop)$/
+file_lock	../common/exf.c	/^file_lock(sp, name, fdp, fd, iswrite)$/
+file_m1	../common/exf.c	/^file_m1(sp, force, flags)$/
+file_m2	../common/exf.c	/^file_m2(sp, force)$/
+file_m3	../common/exf.c	/^file_m3(sp, force)$/
+file_rline	../common/line.c	/^file_rline(sp, lno, lenp)$/
+file_sline	../common/line.c	/^file_sline(sp, lno, p, len)$/
+file_write	../common/exf.c	/^file_write(sp, fm, tm, name, flags)$/
+filter_ldisplay	../ex/filter.c	/^filter_ldisplay(sp, fp)$/
+filtercmd	../ex/filter.c	/^filtercmd(sp, fm, tm, rp, cmd, ftype)$/
+fword	../vi/v_word.c	/^fword(sp, vp, type)$/
+getptrn	../vi/v_search.c	/^getptrn(sp, prompt, ptrnp, lenp)$/
+global	../ex/ex_global.c	/^global(sp, cmdp, cmd)$/
+global_insdel	../ex/ex_global.c	/^global_insdel(sp, op, lno)$/
+goto_adjust	../vi/v_scroll.c	/^goto_adjust(vp)$/
+gs_end	../common/main.c	/^gs_end(gp)$/
+gs_init	../common/main.c	/^gs_init()$/
+h_alrm	../common/signal.c	/^h_alrm(signo)$/
+h_hup	../common/signal.c	/^h_hup(signo)$/
+h_int	../common/signal.c	/^h_int(signo)$/
+h_term	../common/signal.c	/^h_term(signo)$/
+h_winch	../common/signal.c	/^h_winch(signo)$/
+inc_buf	../vi/v_put.c	/^inc_buf(sp, vp)$/
+inc_err	../vi/v_increment.c	/^inc_err(sp, nret)$/
+inword	../vi/vcmd.h	/^#define	inword(ch)	(isalnum(ch) || (ch) == '_')$/
+isblank	../common/term.h	/^#define	isblank(ch)	((ch) == ' ' || (ch) == '\\t')/
+ishex	../vi/v_increment.c	/^#define	ishex(c)	(isdigit(c) || strchr("abcdefABCD/
+isoctal	../vi/v_increment.c	/^#define	isoctal(c)	(isdigit(c) && (c) != '8' && (c/
+key_init	../common/term.c	/^key_init(sp)$/
+keycmp	../common/term.c	/^keycmp(ap, bp)$/
+linear_search	../ex/ex_tag.c	/^linear_search(string, front, back)$/
+log_backward	../common/log.c	/^log_backward(sp, rp)$/
+log_cursor	../common/log.c	/^log_cursor(sp)$/
+log_cursor1	../common/log.c	/^log_cursor1(sp, type)$/
+log_end	../common/log.c	/^log_end(sp, ep)$/
+log_forward	../common/log.c	/^log_forward(sp, rp)$/
+log_init	../common/log.c	/^log_init(sp, ep)$/
+log_line	../common/log.c	/^log_line(sp, lno, action)$/
+log_mark	../common/log.c	/^log_mark(sp, lmp)$/
+log_setline	../common/log.c	/^log_setline(sp)$/
+log_trace	../common/log.c	/^log_trace(sp, msg, rno, p)$/
+map_save	../ex/ex_map.c	/^map_save(sp, fp)$/
+mark	../vi/v_mark.c	/^mark(sp, vp, cmd)$/
+mark_end	../common/mark.c	/^mark_end(sp, ep)$/
+mark_find	../common/mark.c	/^mark_find(sp, key)$/
+mark_get	../common/mark.c	/^mark_get(sp, key, mp)$/
+mark_init	../common/mark.c	/^mark_init(sp, ep)$/
+mark_insdel	../common/mark.c	/^mark_insdel(sp, op, lno)$/
+mark_set	../common/mark.c	/^mark_set(sp, key, value, userset)$/
+msg_app	../common/msg.c	/^msg_app(gp, sp, inv_video, p, len)$/
+msg_cat	../common/msg.c	/^msg_cat(gp, str, lenp)$/
+msg_close	../common/msg.c	/^msg_close(gp)$/
+msg_open	../common/msg.c	/^msg_open(sp, file)$/
+msg_print	../common/msg.c	/^msg_print(sp, s, needfree)$/
+msg_rpt	../common/msg.c	/^msg_rpt(sp, is_message)$/
+msg_status	../common/msg.c	/^msg_status(sp, lno, showlast)$/
+msgq	../common/msg.c	/^msgq(sp, mt, fmt, va_alist)$/
+nget_slong	../common/util.c	/^nget_slong(sp, valp, p, endp, base)$/
+nget_uslong	../common/util.c	/^nget_uslong(sp, valp, p, endp, base)$/
+nonblank	../common/util.c	/^nonblank(sp, lno, cnop)$/
+noprev	../vi/v_ch.c	/^noprev(sp)$/
+notfound	../vi/v_ch.c	/^notfound(sp, ch)$/
+obsolete	../common/main.c	/^obsolete(argv)$/
+opt_dup	../common/options_f.c	/^opt_dup(sp, opt, str)$/
+opt_putenv	../common/options_f.c	/^opt_putenv(s)$/
+opts_abbcmp	../common/options.c	/^opts_abbcmp(a, b)$/
+opts_cmp	../common/options.c	/^opts_cmp(a, b)$/
+opts_copy	../common/options.c	/^opts_copy(orig, sp)$/
+opts_dump	../common/options.c	/^opts_dump(sp, type)$/
+opts_free	../common/options.c	/^opts_free(sp)$/
+opts_init	../common/options.c	/^opts_init(sp, oargs)$/
+opts_prefix	../common/options.c	/^opts_prefix(name)$/
+opts_print	../common/options.c	/^opts_print(sp, op)$/
+opts_save	../common/options.c	/^opts_save(sp, fp)$/
+opts_set	../common/options.c	/^opts_set(sp, argv, setdef, usage)$/
+proc_wait	../ex/filter.c	/^proc_wait(sp, pid, cmd, okpipe)$/
+put	../common/put.c	/^put(sp, cbp, namep, cp, rp, append)$/
+rcv_copy	../common/recover.c	/^rcv_copy(sp, wfd, fname)$/
+rcv_email	../common/recover.c	/^rcv_email(sp, fname)$/
+rcv_gets	../common/recover.c	/^rcv_gets(buf, len, fd)$/
+rcv_init	../common/recover.c	/^rcv_init(sp)$/
+rcv_list	../common/recover.c	/^rcv_list(sp)$/
+rcv_mailfile	../common/recover.c	/^rcv_mailfile(sp, issync, cp_path)$/
+rcv_mktemp	../common/recover.c	/^rcv_mktemp(sp, path, dname, perms)$/
+rcv_on	../common/signal.c	/^rcv_on(sp)$/
+rcv_read	../common/recover.c	/^rcv_read(sp, frp)$/
+rcv_sync	../common/recover.c	/^rcv_sync(sp, flags)$/
+rcv_tmp	../common/recover.c	/^rcv_tmp(sp, ep, name)$/
+re_conv	../common/search.c	/^re_conv(sp, ptrnp, replacedp)$/
+re_error	../common/search.c	/^re_error(sp, errcode, preg)$/
+regsub	../ex/ex_subst.c	/^regsub(sp, ip, lbp, lbclenp, lblenp, match)$/
+resetup	../common/search.c	/^resetup(sp, rep, dir, ptrn, epp, flagp)$/
+s	../ex/ex_subst.c	/^s(sp, cmdp, s, re, flags)$/
+scr_update	../common/line.c	/^scr_update(sp, lno, op, current)$/
+screen_end	../common/screen.c	/^screen_end(sp)$/
+screen_init	../common/screen.c	/^screen_init(orig, spp)$/
+search	../ex/ex_tag.c	/^search(sp, name, tname, tag)$/
+search_addr	../vi/v_search.c	/^search_addr(sp, vp, dir)$/
+seq_delete	../common/seq.c	/^seq_delete(sp, input, ilen, stype)$/
+seq_dump	../common/seq.c	/^seq_dump(sp, stype, isname)$/
+seq_find	../common/seq.c	/^seq_find(sp, lastqp, input, ilen, stype, ispartial/
+seq_mdel	../common/seq.c	/^seq_mdel(qp)$/
+seq_save	../common/seq.c	/^seq_save(sp, fp, prefix, stype)$/
+seq_set	../common/seq.c	/^seq_set(sp, name, nlen, input, ilen, output, olen,/
+set_alt_name	../common/util.c	/^set_alt_name(sp, name)$/
+set_txt_std	../vi/v_text.c	/^set_txt_std(sp, vp, init)$/
+sex_abort	../sex/sex_screen.c	/^sex_abort()$/
+sex_bell	../sex/sex_util.c	/^sex_bell(sp)$/
+sex_busy	../sex/sex_util.c	/^sex_busy(sp, msg)$/
+sex_confirm	../sex/sex_confirm.c	/^sex_confirm(sp, fp, tp)$/
+sex_get	../sex/sex_get.c	/^sex_get(sp, tiqh, prompt, flags)$/
+sex_key_read	../sex/sex_term.c	/^sex_key_read(sp, nrp, timeout)$/
+sex_noop	../sex/sex_screen.c	/^sex_noop()$/
+sex_nope	../sex/sex_screen.c	/^sex_nope(sp)$/
+sex_optchange	../sex/sex_util.c	/^sex_optchange(sp, opt)$/
+sex_refresh	../sex/sex_refresh.c	/^sex_refresh(sp)$/
+sex_screen_copy	../sex/sex_screen.c	/^sex_screen_copy(orig, sp)$/
+sex_screen_edit	../sex/sex_screen.c	/^sex_screen_edit(sp)$/
+sex_screen_end	../sex/sex_screen.c	/^sex_screen_end(sp)$/
+sex_screen_exrc	../sex/sex_screen.c	/^sex_screen_exrc(sp)$/
+sex_screen_icmd	../sex/sex_screen.c	/^sex_screen_icmd(sp, s)$/
+sex_screen_init	../sex/sex_screen.c	/^sex_screen_init(sp)$/
+sex_screen_setup	../sex/sex_screen.c	/^sex_screen_setup(sp, tp)$/
+sex_screen_teardown	../sex/sex_screen.c	/^sex_screen_teardown(sp, tp, needwait)$/
+sex_suspend	../sex/sex_util.c	/^sex_suspend(sp)$/
+shift	../ex/ex_shift.c	/^shift(sp, cmdp, rl)$/
+sig_end	../common/signal.c	/^sig_end(sp)$/
+sig_init	../common/signal.c	/^sig_init(sp)$/
+sig_sync	../common/signal.c	/^sig_sync(signo, flags)$/
+smsg	../common/search.c	/^smsg(sp, msg)$/
+so_se_init	../sex/sex_refresh.c	/^so_se_init(sp)$/
+sscr_end	../ex/ex_script.c	/^sscr_end(sp)$/
+sscr_exec	../ex/ex_script.c	/^sscr_exec(sp, lno)$/
+sscr_getprompt	../ex/ex_script.c	/^sscr_getprompt(sp)$/
+sscr_init	../ex/ex_script.c	/^sscr_init(sp)$/
+sscr_input	../ex/ex_script.c	/^sscr_input(sp)$/
+sscr_matchprompt	../ex/ex_script.c	/^sscr_matchprompt(sp, lp, line_len, lenp)$/
+sscr_setprompt	../ex/ex_script.c	/^sscr_setprompt(sp, buf, len)$/
+svi_bell	../svi/svi_util.c	/^svi_bell(sp)$/
+svi_bg	../svi/svi_split.c	/^svi_bg(csp)$/
+svi_busy	../svi/svi_util.c	/^svi_busy(sp, msg)$/
+svi_change	../svi/svi_smap.c	/^svi_change(sp, lno, op)$/
+svi_clear	../svi/svi_util.c	/^svi_clear(sp)$/
+svi_cm_private	../svi/svi_relative.c	/^svi_cm_private(sp, lno, off, cno)$/
+svi_cm_public	../svi/svi_relative.c	/^svi_cm_public(sp, lno, cno)$/
+svi_column	../svi/svi_relative.c	/^svi_column(sp, cp)$/
+svi_confirm	../svi/svi_confirm.c	/^svi_confirm(sp, fp, tp)$/
+svi_crel	../svi/svi_screen.c	/^svi_crel(sp, count)$/
+svi_curses_end	../svi/svi_curses.c	/^svi_curses_end(sp)$/
+svi_curses_init	../svi/svi_curses.c	/^svi_curses_init(sp)$/
+svi_deleteln	../svi/svi_smap.c	/^svi_deleteln(sp, cnt)$/
+svi_dtoh	../svi/svi_screen.c	/^svi_dtoh(sp, emsg)$/
+svi_ex_cmd	../svi/svi_ex.c	/^svi_ex_cmd(sp, exp, rp)$/
+svi_ex_divider	../svi/svi_ex.c	/^svi_ex_divider(sp)$/
+svi_ex_done	../svi/svi_ex.c	/^svi_ex_done(sp, rp, nopaint)$/
+svi_ex_inv	../svi/svi_ex.c	/^svi_ex_inv(sp)$/
+svi_ex_run	../svi/svi_ex.c	/^svi_ex_run(sp, rp)$/
+svi_ex_scroll	../svi/svi_ex.c	/^svi_ex_scroll(sp, chp, flags)$/
+svi_ex_write	../svi/svi_ex.c	/^svi_ex_write(cookie, line, llen)$/
+svi_fg	../svi/svi_split.c	/^svi_fg(csp, name)$/
+svi_fmap	../svi/svi_term.c	/^svi_fmap(sp, stype, from, flen, to, tlen)$/
+svi_gdbrefresh	../svi/svi_util.c	/^svi_gdbrefresh()$/
+svi_get	../svi/svi_get.c	/^svi_get(sp, tiqh, prompt, flags)$/
+svi_insertln	../svi/svi_smap.c	/^svi_insertln(sp, cnt)$/
+svi_join	../svi/svi_split.c	/^svi_join(csp, nsp)$/
+svi_keypad	../svi/svi_util.c	/^svi_keypad(sp, on)$/
+svi_line	../svi/svi_line.c	/^svi_line(sp, smp, yp, xp)$/
+svi_modeline	../svi/svi_refresh.c	/^svi_modeline(sp)$/
+svi_msgflush	../svi/svi_ex.c	/^svi_msgflush(sp)$/
+svi_number	../svi/svi_line.c	/^svi_number(sp)$/
+svi_opt_screens	../svi/svi_relative.c	/^svi_opt_screens(sp, lno, cnop)$/
+svi_optchange	../svi/svi_util.c	/^svi_optchange(sp, opt)$/
+svi_paint	../svi/svi_refresh.c	/^svi_paint(sp, flags)$/
+svi_rabs	../svi/svi_split.c	/^svi_rabs(sp, count, adj)$/
+svi_rcm	../svi/svi_relative.c	/^svi_rcm(sp, lno)$/
+svi_refresh	../svi/svi_refresh.c	/^svi_refresh(sp)$/
+svi_screen_copy	../svi/svi_screen.c	/^svi_screen_copy(orig, sp)$/
+svi_screen_edit	../svi/svi_screen.c	/^svi_screen_edit(sp)$/
+svi_screen_end	../svi/svi_screen.c	/^svi_screen_end(sp)$/
+svi_screen_init	../svi/svi_screen.c	/^svi_screen_init(sp)$/
+svi_screens	../svi/svi_relative.c	/^svi_screens(sp, lp, llen, lno, cnop)$/
+svi_sm_1down	../svi/svi_smap.c	/^svi_sm_1down(sp)$/
+svi_sm_1up	../svi/svi_smap.c	/^svi_sm_1up(sp)$/
+svi_sm_cursor	../svi/svi_smap.c	/^svi_sm_cursor(sp, smpp)$/
+svi_sm_delete	../svi/svi_smap.c	/^svi_sm_delete(sp, lno)$/
+svi_sm_down	../svi/svi_smap.c	/^svi_sm_down(sp, rp, count, scmd, smp)$/
+svi_sm_erase	../svi/svi_smap.c	/^svi_sm_erase(sp)$/
+svi_sm_fill	../svi/svi_smap.c	/^svi_sm_fill(sp, lno, pos)$/
+svi_sm_insert	../svi/svi_smap.c	/^svi_sm_insert(sp, lno)$/
+svi_sm_next	../svi/svi_smap.c	/^svi_sm_next(sp, p, t)$/
+svi_sm_nlines	../svi/svi_smap.c	/^svi_sm_nlines(sp, from_sp, to_lno, max)$/
+svi_sm_position	../svi/svi_smap.c	/^svi_sm_position(sp, rp, cnt, pos)$/
+svi_sm_prev	../svi/svi_smap.c	/^svi_sm_prev(sp, p, t)$/
+svi_sm_reset	../svi/svi_smap.c	/^svi_sm_reset(sp, lno)$/
+svi_sm_scroll	../svi/svi_smap.c	/^svi_sm_scroll(sp, rp, count, scmd)$/
+svi_sm_up	../svi/svi_smap.c	/^svi_sm_up(sp, rp, count, scmd, smp)$/
+svi_split	../svi/svi_split.c	/^svi_split(sp, argv, argc)$/
+svi_suspend	../svi/svi_util.c	/^svi_suspend(sp)$/
+svi_swap	../svi/svi_split.c	/^svi_swap(csp, nsp, name)$/
+svi_term_end	../svi/svi_term.c	/^svi_term_end(sp)$/
+svi_term_init	../svi/svi_term.c	/^svi_term_init(sp)$/
+tag_get	../ex/ex_tag.c	/^tag_get(sp, tag, tagp, filep, searchp)$/
+tail	../common/util.c	/^tail(path)$/
+term_flush	../common/term.c	/^term_flush(sp, msg, flags)$/
+term_init	../common/term.c	/^term_init(sp)$/
+term_key	../common/term.c	/^term_key(sp, chp, flags)$/
+term_key_queue	../common/term.c	/^term_key_queue(sp)$/
+term_key_set	../common/term.c	/^term_key_set(gp, name, val)$/
+term_push	../common/term.c	/^term_push(sp, s, nchars, flags)$/
+term_read_grow	../common/term.c	/^#define	term_read_grow(sp)						\\$/
+term_user_key	../common/term.c	/^term_user_key(sp, chp)$/
+term_window	../common/term.c	/^term_window(sp, sigwinch)$/
+text_free	../common/cut.c	/^text_free(tp)$/
+text_init	../common/cut.c	/^text_init(sp, p, len, total_len)$/
+text_lfree	../common/cut.c	/^text_lfree(headp)$/
+txt_Rcleanup	../vi/v_ntext.c	/^txt_Rcleanup(sp, tiqh, tp, lp, olen)$/
+txt_abbrev	../vi/v_ntext.c	/^txt_abbrev(sp, tp, pushcp, isinfoline, didsubp, tu/
+txt_ai_resolve	../vi/v_ntext.c	/^txt_ai_resolve(sp, tp)$/
+txt_auto	../vi/v_ntext.c	/^txt_auto(sp, lno, aitp, len, tp)$/
+txt_backup	../vi/v_ntext.c	/^txt_backup(sp, tiqh, tp, flagsp)$/
+txt_display	../sex/sex_get.c	/^txt_display(sp, tp, off, colp)$/
+txt_err	../vi/v_ntext.c	/^txt_err(sp, tiqh)$/
+txt_hex	../vi/v_ntext.c	/^txt_hex(sp, tp)$/
+txt_indent	../vi/v_ntext.c	/^txt_indent(sp, tp)$/
+txt_margin	../vi/v_ntext.c	/^txt_margin(sp, tp, chp, wmtp, flags, didbreak)$/
+txt_nomorech	../vi/v_ntext.c	/^txt_nomorech(sp)$/
+txt_outdent	../vi/v_ntext.c	/^txt_outdent(sp, tp)$/
+txt_resolve	../vi/v_ntext.c	/^txt_resolve(sp, tiqh, flags)$/
+txt_showmatch	../vi/v_ntext.c	/^txt_showmatch(sp)$/
+txt_unmap	../vi/v_ntext.c	/^txt_unmap(sp, tp, iflagsp)$/
+ulcase	../vi/v_ulcase.c	/^ulcase(sp, lno, lp, len, scno, ecno)$/
+usage	../common/main.c	/^usage(is_ex)$/
+v_Put	../vi/v_put.c	/^v_Put(sp, vp)$/
+v_Replace	../vi/v_text.c	/^v_Replace(sp, vp)$/
+v_Undo	../vi/v_undo.c	/^v_Undo(sp, vp)$/
+v_Xchar	../vi/v_xchar.c	/^v_Xchar(sp, vp)$/
+v_again	../vi/v_ex.c	/^v_again(sp, vp)$/
+v_alias	../vi/vi.c	/^v_alias(sp, vp, kp)$/
+v_at	../vi/v_ex.c	/^v_at(sp, vp)$/
+v_bmark	../vi/v_mark.c	/^v_bmark(sp, vp)$/
+v_bottom	../vi/v_scroll.c	/^v_bottom(sp, vp)$/
+v_buildps	../vi/v_paragraph.c	/^v_buildps(sp)$/
+v_cfirst	../vi/v_left.c	/^v_cfirst(sp, vp)$/
+v_chF	../vi/v_ch.c	/^v_chF(sp, vp)$/
+v_chT	../vi/v_ch.c	/^v_chT(sp, vp)$/
+v_change	../vi/v_text.c	/^v_change(sp, vp)$/
+v_chf	../vi/v_ch.c	/^v_chf(sp, vp)$/
+v_chrepeat	../vi/v_ch.c	/^v_chrepeat(sp, vp)$/
+v_chrrepeat	../vi/v_ch.c	/^v_chrrepeat(sp, vp)$/
+v_cht	../vi/v_ch.c	/^v_cht(sp, vp)$/
+v_cmd	../vi/vi.c	/^v_cmd(sp, dp, vp, ismotion, comcountp, mappedp)$/
+v_comlog	../vi/vi.c	/^v_comlog(sp, vp)$/
+v_count	../vi/vi.c	/^v_count(sp, fkey, countp)$/
+v_cr	../vi/v_scroll.c	/^v_cr(sp, vp)$/
+v_delete	../vi/v_delete.c	/^v_delete(sp, vp)$/
+v_dollar	../vi/v_right.c	/^v_dollar(sp, vp)$/
+v_down	../vi/v_scroll.c	/^v_down(sp, vp)$/
+v_end	../vi/v_init.c	/^v_end(sp)$/
+v_eof	../vi/v_util.c	/^v_eof(sp, mp)$/
+v_eol	../vi/v_util.c	/^v_eol(sp, mp)$/
+v_ex	../vi/v_ex.c	/^v_ex(sp, vp)$/
+v_exmode	../vi/v_ex.c	/^v_exmode(sp, vp)$/
+v_filter	../vi/v_ex.c	/^v_filter(sp, vp)$/
+v_first	../vi/v_left.c	/^v_first(sp, vp)$/
+v_fmark	../vi/v_mark.c	/^v_fmark(sp, vp)$/
+v_home	../vi/v_scroll.c	/^v_home(sp, vp)$/
+v_hpagedown	../vi/v_scroll.c	/^v_hpagedown(sp, vp)$/
+v_hpageup	../vi/v_scroll.c	/^v_hpageup(sp, vp)$/
+v_iA	../vi/v_text.c	/^v_iA(sp, vp)$/
+v_iI	../vi/v_text.c	/^v_iI(sp, vp)$/
+v_iO	../vi/v_text.c	/^v_iO(sp, vp)$/
+v_ia	../vi/v_text.c	/^v_ia(sp, vp)$/
+v_ii	../vi/v_text.c	/^v_ii(sp, vp)$/
+v_increment	../vi/v_increment.c	/^v_increment(sp, vp)$/
+v_init	../vi/v_init.c	/^v_init(sp)$/
+v_io	../vi/v_text.c	/^v_io(sp, vp)$/
+v_isempty	../vi/v_util.c	/^v_isempty(p, len)$/
+v_join	../vi/v_ex.c	/^v_join(sp, vp)$/
+v_key	../vi/vi.c	/^v_key(sp, ikeyp, map)$/
+v_keyword	../vi/vi.c	/^v_keyword(sp, vp)$/
+v_left	../vi/v_left.c	/^v_left(sp, vp)$/
+v_lgoto	../vi/v_scroll.c	/^v_lgoto(sp, vp)$/
+v_linedown	../vi/v_scroll.c	/^v_linedown(sp, vp)$/
+v_lineup	../vi/v_scroll.c	/^v_lineup(sp, vp)$/
+v_mark	../vi/v_mark.c	/^v_mark(sp, vp)$/
+v_match	../vi/v_match.c	/^v_match(sp, vp)$/
+v_middle	../vi/v_scroll.c	/^v_middle(sp, vp)$/
+v_motion	../vi/vi.c	/^v_motion(sp, dm, vp, mappedp)$/
+v_mulcase	../vi/v_ulcase.c	/^v_mulcase(sp, vp)$/
+v_ncol	../vi/v_left.c	/^v_ncol(sp, vp)$/
+v_nomove	../vi/v_util.c	/^v_nomove(sp)$/
+v_ntext	../vi/v_ntext.c	/^v_ntext(sp, tiqh, tm, lp, len, rp, prompt, ai_line/
+v_optchange	../vi/v_init.c	/^v_optchange(sp, opt)$/
+v_pagedown	../vi/v_scroll.c	/^v_pagedown(sp, vp)$/
+v_pageup	../vi/v_scroll.c	/^v_pageup(sp, vp)$/
+v_paragraphb	../vi/v_paragraph.c	/^v_paragraphb(sp, vp)$/
+v_paragraphf	../vi/v_paragraph.c	/^v_paragraphf(sp, vp)$/
+v_put	../vi/v_put.c	/^v_put(sp, vp)$/
+v_redraw	../vi/v_redraw.c	/^v_redraw(sp, vp)$/
+v_replace	../vi/v_replace.c	/^v_replace(sp, vp)$/
+v_right	../vi/v_right.c	/^v_right(sp, vp)$/
+v_screen	../vi/v_screen.c	/^v_screen(sp, vp)$/
+v_screen_copy	../vi/v_init.c	/^v_screen_copy(orig, sp)$/
+v_screen_end	../vi/v_init.c	/^v_screen_end(sp)$/
+v_searchN	../vi/v_search.c	/^v_searchN(sp, vp)$/
+v_searchb	../vi/v_search.c	/^v_searchb(sp, vp)$/
+v_searchf	../vi/v_search.c	/^v_searchf(sp, vp)$/
+v_searchn	../vi/v_search.c	/^v_searchn(sp, vp)$/
+v_searchw	../vi/v_search.c	/^v_searchw(sp, vp)$/
+v_sectionb	../vi/v_section.c	/^v_sectionb(sp, vp)$/
+v_sectionf	../vi/v_section.c	/^v_sectionf(sp, vp)$/
+v_sentenceb	../vi/v_sentence.c	/^v_sentenceb(sp, vp)$/
+v_sentencef	../vi/v_sentence.c	/^v_sentencef(sp, vp)$/
+v_shiftl	../vi/v_ex.c	/^v_shiftl(sp, vp)$/
+v_shiftr	../vi/v_ex.c	/^v_shiftr(sp, vp)$/
+v_sof	../vi/v_util.c	/^v_sof(sp, mp)$/
+v_sol	../vi/v_util.c	/^v_sol(sp)$/
+v_status	../vi/v_status.c	/^v_status(sp, vp)$/
+v_stop	../vi/v_stop.c	/^v_stop(sp, vp)$/
+v_strdup	../common/util.c	/^v_strdup(sp, str, len)$/
+v_subst	../vi/v_text.c	/^v_subst(sp, vp)$/
+v_switch	../vi/v_ex.c	/^v_switch(sp, vp)$/
+v_tagpop	../vi/v_ex.c	/^v_tagpop(sp, vp)$/
+v_tagpush	../vi/v_ex.c	/^v_tagpush(sp, vp)$/
+v_ulcase	../vi/v_ulcase.c	/^v_ulcase(sp, vp)$/
+v_undo	../vi/v_undo.c	/^v_undo(sp, vp)$/
+v_up	../vi/v_scroll.c	/^v_up(sp, vp)$/
+v_wordB	../vi/v_word.c	/^v_wordB(sp, vp)$/
+v_wordE	../vi/v_word.c	/^v_wordE(sp, vp)$/
+v_wordW	../vi/v_word.c	/^v_wordW(sp, vp)$/
+v_wordb	../vi/v_word.c	/^v_wordb(sp, vp)$/
+v_worde	../vi/v_word.c	/^v_worde(sp, vp)$/
+v_wordw	../vi/v_word.c	/^v_wordw(sp, vp)$/
+v_xchar	../vi/v_xchar.c	/^v_xchar(sp, vp)$/
+v_yank	../vi/v_yank.c	/^v_yank(sp, vp)$/
+v_z	../vi/v_z.c	/^v_z(sp, vp)$/
+v_zero	../vi/v_left.c	/^v_zero(sp, vp)$/
+v_zexit	../vi/v_zexit.c	/^v_zexit(sp, vp)$/
+vi	../vi/vi.c	/^vi(sp)$/
+vi_putchar	../common/util.c	/^vi_putchar(ch)$/
+vidattr	../sex/sex_refresh.c	/^#define	vidattr(attr)	Xvidattr(sp, attr)$/
+xaw_screen_copy	../xaw/xaw_screen.c	/^xaw_screen_copy(orig, sp)$/
+xaw_screen_edit	../xaw/xaw_screen.c	/^xaw_screen_edit(sp)$/
+xaw_screen_end	../xaw/xaw_screen.c	/^xaw_screen_end(sp)$/
+xaw_screen_init	../xaw/xaw_screen.c	/^xaw_screen_init(sp)$/
