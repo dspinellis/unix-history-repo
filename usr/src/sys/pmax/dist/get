@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)get	7.2 (Berkeley) %G%
+#	@(#)get	8.1 (Berkeley) %G%
 #
 
 # Shell script to build a mini-root file system in preparation for building

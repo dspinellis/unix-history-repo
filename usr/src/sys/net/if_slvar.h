@@ -1,10 +1,10 @@
 /*-
- * Copyright (c) 1991 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_slvar.h	7.10 (Berkeley) %G%
+ *	@(#)if_slvar.h	8.1 (Berkeley) %G%
  *
  * $Header: if_slvar.h,v 1.3 89/05/31 02:25:18 van Exp $
  */

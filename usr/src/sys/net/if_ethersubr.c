@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.26 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

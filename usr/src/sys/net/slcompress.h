@@ -1,11 +1,11 @@
-/*	slcompress.h	7.5	93/06/04	*/
+/*	slcompress.h	8.1	93/06/10	*/
 /*
  * Definitions for tcp compression routines.
  *
  * $Header: slcompress.h,v 1.10 89/12/31 08:53:02 van Exp $
  *
- * Copyright (c) 1989 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
