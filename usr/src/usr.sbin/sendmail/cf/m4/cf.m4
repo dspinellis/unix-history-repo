@@ -39,8 +39,24 @@ define(`FEATURE', `include(../feature/$1.m4)')
 define(`HACK', `include(../hack/$1.m4)')
 define(`OLDSENDMAIL', `define(`_OLD_SENDMAIL_', `')')
 define(`VERSIONID', ``#####  $1  #####'')
-define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_RULE_0', `divert(3)')
+define(`LOCAL_RULE_1',
+`divert(9)dnl
+#######################################
+###  Ruleset 1 -- Sender Rewriting  ###
+#######################################
+
+S1
+')
+define(`LOCAL_RULE_2',
+`divert(9)dnl
+##########################################
+###  Ruleset 2 -- Recipient Rewriting  ###
+##########################################
+
+S2
+')
+define(`LOCAL_RULE_3', `divert(2)')
 define(`LOCAL_CONFIG', `divert(6)')
 define(`LOCAL_NET_CONFIG', `define(`_LOCAL_RULES_', 1)divert(1)')
 define(`UUCPSMTP', `R DOL(*) < @ $1 .UUCP > DOL(*)	DOL(1) < @ $2 > DOL(2)')
@@ -99,4 +115,4 @@ define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.8 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.9 (Berkeley) %G%')
