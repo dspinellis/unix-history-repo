@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_imphost.c	6.4 (Berkeley) %G%
+ *	@(#)if_imphost.c	6.5 (Berkeley) %G%
  */
 
 #include "imp.h"
@@ -18,6 +18,7 @@
  */
 #include "param.h"
 #include "mbuf.h"
+#include "syslog.h"
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -120,13 +121,15 @@ hostfree(hp)
  * Reset a given network's host entries.
  */
 hostreset(net)	    
-	long net;
+	u_long net;
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
+	struct mbuf *mnext;
 
-	for (m = hosts; m; m = m->m_next) {
+	for (m = hosts; m; m = mnext) {
+		mnext = m->m_next;
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
@@ -203,17 +206,22 @@ hostslowtimo()
 	register struct mbuf *m;
 	register struct host *hp, *lp;
 	struct hmbuf *hm;
+	struct mbuf *mnext;
 	int s = splimp();
 
-	for (m = hosts; m; m = m->m_next) {
+	for (m = hosts; m; m = mnext) {
+		mnext = m->m_next;
 		hm = mtod(m, struct hmbuf *);
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		for (; hm->hm_count > 0 && hp < lp; hp++) {
-			if (hp->h_flags & HF_INUSE)
-				continue;
-			if (hp->h_timer && --hp->h_timer == 0)
+			if (hp->h_timer && --hp->h_timer == 0) {
+				if (hp->h_rfnm)
+				    log(KERN_RECOV,
+					"imp?: host %x, lost %d rfnms\n",
+					ntohs(hp->h_addr.s_addr), hp->h_rfnm);
 				hostrelease(hp);
+			}
 		}
 	}
 	splx(s);
