@@ -12,8 +12,10 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
+
+#define ADDRHACK
 
 /*
  * w - print system status (who and what)
@@ -22,26 +24,26 @@ static char sccsid[] = "@(#)w.c	5.31 (Berkeley) %G%";
  *
  */
 #include <sys/param.h>
-#include <utmp.h>
+#include <sys/file.h>
 #include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/kinfo.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
-#include <nlist.h>
-#include <kvm.h>
 #include <ctype.h>
-#include <paths.h>
-#include <string.h>
+#include <kvm.h>
+#include <nlist.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <utmp.h>
+#include <paths.h>
 
-#ifdef SPPWAIT
-#define NEWVM
-#endif
-#ifndef NEWVM
-#include <machine/pte.h>
-#include <sys/vm.h>
+#ifdef ADDRHACK
+#include <sys/socket.h>
+#include <netdb.h>
 #endif
 
 char	*program;
@@ -49,6 +51,9 @@ int	ttywidth;		/* width of tty */
 int	argwidth;		/* width of tty */
 int	header = 1;		/* true if -h flag: don't print heading */
 int	wcmd = 1;		/* true if this is w(1), and not uptime(1) */
+#ifdef ADDRHACK
+int	nflag = 0;		/* true if -n flag: don't convert addrs */
+#endif
 int	nusers;			/* number of users logged in now */
 char *	sel_user;		/* login of particular user selected */
 time_t	now;			/* the current time of day */
@@ -57,17 +62,28 @@ time_t	uptime;			/* time of last reboot & elapsed time since */
 struct	utmp utmp;
 struct	winsize ws;
 int	sortidle;		/* sort bu idle time */
+#ifdef ADDRHACK
+char	domain[64];
+#endif
+kvm_t *kd;
 
+#if __STDC__
+void error(const char *fmt, ...);
+#else
+void error();
+#endif
+
+void prttime();
 
 /*
- * One of these per active utmp entry.  
+ * One of these per active utmp entry.
  */
 struct	entry {
 	struct	entry *next;
 	struct	utmp utmp;
 	dev_t	tdev;		/* dev_t of terminal */
 	int	idle;		/* idle time of terminal in minutes */
-	struct	proc *proc;	/* list of procs in foreground */
+	struct	kinfo_proc *kp;	/* `most interesting' proc */
 	char	*args;		/* arg list of interesting process */
 } *ep, *ehead = NULL, **nextp = &ehead;
 
@@ -89,16 +105,16 @@ main(argc, argv)
 	char **argv;
 {
 	register int i;
-	struct winsize win;
-	register struct proc *p;
-	struct eproc *e;
+	register struct kinfo_proc *kp;
 	struct stat *stp, *ttystat();
 	FILE *ut;
 	char *cp;
+	int nentries;
 	int ch;
 	extern char *optarg;
 	extern int optind;
 	char *attime();
+	char errbuf[80];
 
 	program = argv[0];
 	/*
@@ -109,13 +125,18 @@ main(argc, argv)
 	if (*cp == 'u')
 		wcmd = 0;
 
-	while ((ch = getopt(argc, argv, "hiflsuw")) != EOF)
+	while ((ch = getopt(argc, argv, "hiflnsuw")) != EOF)
 		switch((char)ch) {
 		case 'h':
 			header = 0;
 			break;
 		case 'i':
 			sortidle++;
+			break;
+		case 'n':
+#ifdef ADDRHACK
+			++nflag;
+#endif
 			break;
 		case 'f': case 'l': case 's': case 'u': case 'w':
 			error("[-flsuw] no longer supported");
@@ -132,17 +153,33 @@ main(argc, argv)
 	if (*argv)
 		sel_user = *argv;
 
-	if (header && kvm_nlist(nl) != 0) {
-		error("can't get namelist");
-		exit (1);
+	kd = kvm_openfiles((char *)0, (char *)0, (char *)0, O_RDONLY, errbuf);
+	if (kd == NULL) {
+		error("%s", errbuf);
+		exit(1);
 	}
+	if (header && kvm_nlist(kd, nl) != 0) {
+		error("can't get namelist");
+		exit(1);
+	}
+#ifdef ADDRHACK
+	if (!nflag) {
+		if (gethostname(domain, sizeof(domain) - 1) < 0 ||
+		    (cp = index(domain, '.')) == 0)
+			domain[0] = '\0';
+		else {
+			domain[sizeof(domain) - 1] = '\0';
+			bcopy(cp, domain, strlen(cp) + 1);
+		}
+	}
+#endif
 	time(&now);
 	ut = fopen(_PATH_UTMP, "r");
 	while (fread(&utmp, sizeof(utmp), 1, ut)) {
 		if (utmp.ut_name[0] == '\0')
 			continue;
 		nusers++;
-		if (wcmd == 0 || (sel_user && 
+		if (wcmd == 0 || (sel_user &&
 		    strncmp(utmp.ut_name, sel_user, UT_NAMESIZE) != 0))
 			continue;
 		if ((ep = (struct entry *)
@@ -166,10 +203,10 @@ main(argc, argv)
 			if (nl[X_CNTTY].n_value) {
 				struct tty cn_tty, *cn_ttyp;
 				
-				if (kvm_read((void *)nl[X_CNTTY].n_value,
-				    &cn_ttyp, sizeof(cn_ttyp)) > 0) {
-					(void)kvm_read(cn_ttyp, &cn_tty,
-					    sizeof (cn_tty));
+				if (kvm_read(kd, (u_long)nl[X_CNTTY].n_value,
+				    (char *)&cn_ttyp, sizeof(cn_ttyp)) > 0) {
+					(void)kvm_read(kd, (u_long)cn_ttyp,
+					    (char *)&cn_tty, sizeof (cn_tty));
 					cn_dev = cn_tty.t_dev;
 				}
 				nl[X_CNTTY].n_value = 0;
@@ -188,15 +225,15 @@ main(argc, argv)
 		int days, hrs, mins;
 
 		/*
-		 * Print time of day 
+		 * Print time of day
 		 */
 		fputs(attime(&now), stdout);
 		/*
 		 * Print how long system has been up.
 		 * (Found by looking for "boottime" in kernel)
 		 */
-		(void)kvm_read((void *)nl[X_BOOTTIME].n_value, &boottime, 
-		    sizeof (boottime));
+		(void)kvm_read(kd, (u_long)nl[X_BOOTTIME].n_value,
+		    (char *)&boottime, sizeof (boottime));
 		uptime = now - boottime.tv_sec;
 		uptime += 30;
 		days = uptime / (60*60*24);
@@ -238,17 +275,22 @@ main(argc, argv)
 		printf(HEADER);
 	}
 
-	while ((p = kvm_nextproc()) != NULL) {
-		if (p->p_stat == SZOMB || (p->p_flag & SCTTY) == 0)
+	if ((kp = kvm_getprocs(kd, KINFO_PROC_ALL, 0, &nentries)) == NULL)
+		error("%s", kvm_geterr(kd));
+	for (i = 0; i < nentries; i++, kp++) {
+		register struct proc *p = &kp->kp_proc;
+		register struct eproc *e;
+
+		if (p->p_stat == SIDL || p->p_stat == SZOMB)
 			continue;
-		e = kvm_geteproc(p);
+		e = &kp->kp_eproc;
 		for (ep = ehead; ep != NULL; ep = ep->next) {
 			if (ep->tdev == e->e_tdev && e->e_pgid == e->e_tpgid) {
 				/*
 				 * Proc is in foreground of this terminal
 				 */
-				if (proc_compare(ep->proc, p))
-					ep->proc = p;
+				if (proc_compare(&ep->kp->kp_proc, p))
+					ep->kp = kp;
 				break;
 			}
 		}
@@ -263,11 +305,14 @@ main(argc, argv)
 	if (argwidth < 4)
 		argwidth = 8;
 	for (ep = ehead; ep != NULL; ep = ep->next) {
-		if (ep->proc == 0) {
+		char *fmt_argv();
+
+		if (ep->kp == NULL) {
 			ep->args = "-";
 			continue;
 		}
-		ep->args = strdup(kvm_getargs(ep->proc, kvm_getu(ep->proc)));
+		ep->args = fmt_argv(kvm_getargv(kd, ep->kp, argwidth),
+		    ep->kp->kp_proc.p_comm, MAXCOMLEN);
 		if (ep->args == NULL) {
 			error("out of memory");
 			exit(1);
@@ -279,10 +324,10 @@ main(argc, argv)
 		
 		ehead = NULL;
 		while (from != NULL) {
-			for (nextp = &ehead; 
+			for (nextp = &ehead;
 			    (*nextp) && from->idle >= (*nextp)->idle;
 			    nextp = &(*nextp)->next)
-				;
+				continue;
 			save = from;
 			from = from->next;
 			save->next = *nextp;
@@ -291,12 +336,41 @@ main(argc, argv)
 	}
 			
 	for (ep = ehead; ep != NULL; ep = ep->next) {
+#ifdef ADDRHACK
+		register char *x;
+		register struct hostent *hp;
+		unsigned long l;
+		char buf[64];
+#endif
+
+		cp = *ep->utmp.ut_host ? ep->utmp.ut_host : "-";
+#ifdef ADDRHACK
+		if (x = index(cp, ':'))
+			*x++ = '\0';
+		if (!nflag && isdigit(*cp) &&
+		    (long)(l = inet_addr(cp)) != -1 &&
+		    (hp = gethostbyaddr((char *)&l, sizeof(l),
+		    AF_INET))) {
+			    if (domain[0] != '\0') {
+				    cp = hp->h_name;
+				    cp += strlen(hp->h_name);
+				    cp -= strlen(domain);
+				    if (cp > hp->h_name &&
+					strcmp(cp, domain) == 0)
+					*cp = '\0';
+			    }
+			    cp = hp->h_name;
+		}
+		if (x) {
+			sprintf(buf, "%s:%s", cp, x);
+			cp = buf;
+		}
+#endif
 		printf("%-*.*s %-2.2s %-*.*s %s",
 			UT_NAMESIZE, UT_NAMESIZE, ep->utmp.ut_name,
-			strncmp(ep->utmp.ut_line, "tty", 3) == 0 ? 
+			strncmp(ep->utmp.ut_line, "tty", 3) == 0 ?
 				ep->utmp.ut_line+3 : ep->utmp.ut_line,
-			UT_HOSTSIZE, UT_HOSTSIZE, *ep->utmp.ut_host ?
-				ep->utmp.ut_host : "-",
+			UT_HOSTSIZE, UT_HOSTSIZE, *cp ? cp : "-",
 			attime(&ep->utmp.ut_time));
 		if (ep->idle >= 36 * 60)
 			printf(" %ddays ", (ep->idle + 12 * 60) / (24 * 60));
@@ -309,6 +383,7 @@ main(argc, argv)
 
 struct stat *
 ttystat(line)
+	char *line;
 {
 	static struct stat statbuf;
 	char ttybuf[sizeof (_PATH_DEV) + UT_LINESIZE + 1];
@@ -324,6 +399,7 @@ ttystat(line)
  * The character string tail is printed at the end, obvious
  * strings to pass are "", " ", or "am".
  */
+void
 prttime(tim, tail)
 	time_t tim;
 	char *tail;
@@ -338,17 +414,32 @@ prttime(tim, tail)
 	printf("%s", tail);
 }
 
+#if __STDC__
+#include <stdarg.h>
+#else
 #include <varargs.h>
+#endif
 
+void
+#if __STDC__
+error(const char *fmt, ...)
+#else
 error(va_alist)
 	va_dcl
+#endif
 {
+#if !__STDC__
 	char *fmt;
+#endif
 	va_list ap;
 
 	fprintf(stderr, "%s: ", program);
+#if __STDC__
+	va_start(ap, fmt);
+#else
 	va_start(ap);
 	fmt = va_arg(ap, char *);
+#endif
 	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "\n");
