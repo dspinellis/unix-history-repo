@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_socket.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_socket.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -307,7 +307,7 @@ nfs_send(so, nam, top, flags, siz)
 			continue;
 		}
 		error = (*so->so_proto->pr_usrreq)(so, PRU_SEND, top,
-			(struct mbuf *)nam, (struct mbuf *)0, (struct mbuf *)0);
+			(struct mbuf *)nam, (struct mbuf *)0);
 		splx(s);
 		break;
 	}
@@ -947,7 +947,7 @@ nfs_timer()
 		m->m_pkthdr.len = rep->r_msiz;
 #endif
 		(void)(*so->so_proto->pr_usrreq)(so, PRU_SEND, m,
-			(struct mbuf *)0, (struct mbuf *)0, (struct mbuf *)0);
+			(struct mbuf *)0, (struct mbuf *)0);
 
 		/* We need to time the request even though we're
 		 * retransmitting, in order to maintain backoff. */
