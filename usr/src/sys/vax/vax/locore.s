@@ -1,4 +1,4 @@
-/*	locore.s	4.48	81/05/13	*/
+/*	locore.s	4.49	81/05/15	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -53,8 +53,8 @@ _doadump:
 #define	_rpbmap	_Sysmap+8			# scb, UNIvec, rpb, istack*4
 	bicl2	$PG_PROT,_rpbmap
 	bisl2	$PG_KW,_rpbmap
-	tstl	_rpb_RP_FLAG			# dump only once!
-	bne	1f
+	tstl	_rpb+RP_FLAG			# dump only once!
+	bneq	1f
 	incl	_rpb+RP_FLAG
 	mtpr	$0,$TBIA
 	movl	sp,erpb
@@ -338,6 +338,7 @@ _/**/mname:	.globl	_/**/mname;		\
 #endif
 
 eSysmap:
+	.globl	_Syssize
 	.set	_Syssize,(eSysmap-_Sysmap)/4
 	.text
 
@@ -680,6 +681,17 @@ rem2:
 
 rem3:	.asciz	"remrq"
 
+/*
+ * Materpaddr is the p->p_addr of the running process on the master
+ * processor.  When a multiprocessor system, the slave processors will have
+ * an array of spavepaddr's.
+ */
+	.globl	_masterpaddr
+	.data
+_masterpaddr:
+	.long	0
+
+	.text
 sw0:	.asciz	"swtch"
 /*
  * Swtch(), using fancy VAX instructions
@@ -726,6 +738,7 @@ _Resume:
 	svpctx
 	mtpr	r0,$PCBB
 	ldpctx
+	mfpr	$PCBB,_masterpcbb
 	movl	_u+PCB_CMAP2,_CMAP2	# yech
 res0:
 	tstl	_u+PCB_SSWAP
