@@ -2,7 +2,7 @@
 # include	"dir.h"
 
 #define IROOT 2
-SCCSID(@(#)curdir.c	4.2);
+SCCSID(@(#)curdir.c	4.3);
 /*
 	current directory.
 	Places the full pathname of the current directory in `str'.
@@ -78,6 +78,7 @@ findir(flag)
 			close(fd);
 			return(0);
 		}
+		close(fd);
 		if ((fd = open("/etc/mtab", 0))<0) return(-1);
 		while (read(fd,&mtab,64) == 64) {
 			char devstr[40];
@@ -89,6 +90,7 @@ findir(flag)
 			for (tp = mtab.m_dir; *curdirp = *tp++; curdirp++);
 			ADDSLASH;
 			*curdirp = 0;
+			close(fd);
 			return(0);
 		}
 		QUIT;
