@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.26 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -562,7 +562,7 @@ fragextend(ip, cg, bprev, osize, nsize)
 		fs->fs_cstotal.cs_nffree--;
 		fs->fs_cs(fs, cg).cs_nffree--;
 	}
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	bdwrite(bp);
 	return (bprev);
 }
@@ -638,7 +638,7 @@ alloccg(ip, cg, bpref, size)
 		cgp->cg_cs.cs_nffree += i;
 		fs->fs_cstotal.cs_nffree += i;
 		fs->fs_cs(fs, cg).cs_nffree += i;
-		fs->fs_fmod++;
+		fs->fs_fmod = 1;
 		cgp->cg_frsum[i]++;
 		bdwrite(bp);
 		return (bno);
@@ -653,7 +653,7 @@ alloccg(ip, cg, bpref, size)
 	cgp->cg_cs.cs_nffree -= frags;
 	fs->fs_cstotal.cs_nffree -= frags;
 	fs->fs_cs(fs, cg).cs_nffree -= frags;
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	cgp->cg_frsum[allocsiz]--;
 	if (frags != allocsiz)
 		cgp->cg_frsum[allocsiz - frags]++;
@@ -767,7 +767,7 @@ gotit:
 	cylno = cbtocylno(fs, bno);
 	cg_blks(fs, cgp, cylno)[cbtorpos(fs, bno)]--;
 	cg_blktot(cgp)[cylno]--;
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	return (cgp->cg_cgx * fs->fs_fpg + bno);
 }
 
@@ -848,7 +848,7 @@ gotit:
 	cgp->cg_cs.cs_nifree--;
 	fs->fs_cstotal.cs_nifree--;
 	fs->fs_cs(fs, cg).cs_nifree--;
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	if ((mode & IFMT) == IFDIR) {
 		cgp->cg_cs.cs_ndir++;
 		fs->fs_cstotal.cs_ndir++;
@@ -963,7 +963,7 @@ blkfree(ip, bno, size)
 			cg_blktot(cgp)[i]++;
 		}
 	}
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	bdwrite(bp);
 }
 
@@ -1024,7 +1024,7 @@ ifree(ip, ino, mode)
 		fs->fs_cstotal.cs_ndir--;
 		fs->fs_cs(fs, cg).cs_ndir--;
 	}
-	fs->fs_fmod++;
+	fs->fs_fmod = 1;
 	bdwrite(bp);
 }
 
