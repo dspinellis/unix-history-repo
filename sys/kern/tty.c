@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.26 1994/03/23 01:58:08 ache Exp $
+ *	$Id: tty.c,v 1.27 1994/03/23 17:35:48 ache Exp $
  */
 
 /*-
@@ -2122,7 +2122,7 @@ ttyinfo(tp)
 {
 	register struct proc *p, *pick;
 	struct timeval utime, stime;
-	int loadtmp;
+	int loadtmp, tmp;
 
 	if (ttycheckoutq(tp,0) == 0) 
 		return;
@@ -2175,8 +2175,12 @@ ttyinfo(tp)
 		 * Lock out clock if process is running; get user/system
 		 * cpu time.
 		 */
+		if (curproc == pick)
+			tmp = splclock();
 		utime = pick->p_utime;
 		stime = pick->p_stime;
+		if (curproc == pick)
+			splx(tmp);
 
 		ttyprintf(tp, " cmd: %s %d [%s] ", comm, pid, wmesg);
 
