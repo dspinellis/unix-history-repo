@@ -14,7 +14,7 @@ FILES=	a.out.h ar.h assert.h bitstring.h ctype.h db.h dirent.h disktab.h \
 	link.h locale.h math.h memory.h mpool.h ndbm.h netdb.h nlist.h \
 	paths.h pwd.h queue.h ranlib.h regex.h resolv.h setjmp.h \
 	sgtty.h stab.h stdarg.h stddef.h stdio.h stdlib.h string.h strings.h \
-	struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h utime.h utmp.h 
+	struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h utime.h utmp.h \
 	varargs.h vis.h
 
 MFILES=	float.h floatingpoint.h frame.h
