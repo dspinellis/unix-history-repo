@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.2 (Berkeley) %G%
+ *	@(#)tty.h	7.3 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -118,7 +118,6 @@ extern	struct ttychars ttydefaults;
 #define	TS_TBLOCK	0x000400	/* tandem queue blocked */
 #define	TS_RCOLL	0x000800	/* collision in read select */
 #define	TS_WCOLL	0x001000	/* collision in write select */
-#define	TS_NBIO		0x002000	/* tty in non-blocking mode */
 #define	TS_ASYNC	0x004000	/* tty in async i/o mode */
 /* state for intra-line fancy editing work */
 #define	TS_BKSL		0x010000	/* state for lowercase \ work */
