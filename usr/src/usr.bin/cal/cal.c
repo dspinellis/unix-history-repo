@@ -1,6 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)cal.c	4.3 (Berkeley) 83/08/11";
+static char sccsid[] = "@(#)cal.c	4.4 (Berkeley) 87/05/28";
 #endif
+
+#include <sys/types.h>
+#include <time.h>
+#include <stdio.h>
 
 char	dayw[] = {
 	" S  M Tu  W Th  F  S"
@@ -17,23 +21,31 @@ char *argv[];
 	register y, i, j;
 	int m;
 
-	if(argc < 2) {
-		printf("usage: cal [month] year\n");
-		exit(0);
-	}
 	if(argc == 2)
 		goto xlong;
+	/*
+	 * print out just month
+	 */
+	if(argc < 2) {			/* current month */
+		time_t t;
+		struct tm *tm;
 
-/*
- *	print out just month
- */
-
-	m = number(argv[1]);
-	if(m<1 || m>12)
-		goto badarg;
-	y = number(argv[2]);
-	if(y<1 || y>9999)
-		goto badarg;
+		t = time(0);
+		tm = localtime(&t);
+		m = tm->tm_mon + 1;
+		y = tm->tm_year + 1900;
+	} else {
+		m = atoi(argv[1]);
+		if(m<1 || m>12) {
+			fprintf(stderr, "cal: %s: Bad month.\n", argv[1]);
+			exit(1);
+		}
+		y = atoi(argv[2]);
+		if(y<1 || y>9999) {
+			fprintf(stderr, "cal: %s: Bad year.\n", argv[2]);
+			exit(2);
+		}
+	}
 	printf("   %s %u\n", smon[m-1], y);
 	printf("%s\n", dayw);
 	cal(m, y, string, 24);
@@ -41,14 +53,15 @@ char *argv[];
 		pstr(string+i, 24);
 	exit(0);
 
-/*
- *	print out complete year
- */
-
 xlong:
-	y = number(argv[1]);
-	if(y<1 || y>9999)
-		goto badarg;
+	/*
+	 * print out complete year
+	 */
+	y = atoi(argv[1]);
+	if(y<1 || y>9999) {
+		fprintf(stderr, "cal: %s: Bad year.\n", argv[1]);
+		exit(2);
+	}
 	printf("\n\n\n");
 	printf("				%u\n", y);
 	printf("\n");
@@ -67,25 +80,6 @@ xlong:
 	}
 	printf("\n\n\n");
 	exit(0);
-
-badarg:
-	printf("Bad argument\n");
-}
-
-number(str)
-char *str;
-{
-	register n, c;
-	register char *s;
-
-	n = 0;
-	s = str;
-	while(c = *s++) {
-		if(c<'0' || c>'9')
-			return(0);
-		n = n*10 + c-'0';
-	}
-	return(n);
 }
 
 pstr(str, n)
