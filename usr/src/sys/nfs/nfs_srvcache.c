@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_srvcache.c	7.13 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -169,7 +169,7 @@ nfsrv_getcache(nam, nd, repp)
 loop:
 	for (rp = rh->rh_chain[0]; rp != (struct nfsrvcache *)rh; rp = rp->rc_forw) {
 	    if (nd->nd_retxid == rp->rc_xid && nd->nd_procnum == rp->rc_proc &&
-		nfs_netaddr_match(NETFAMILY(rp), &rp->rc_haddr, (union nethostaddr *)0, nam)) {
+		netaddr_match(NETFAMILY(rp), &rp->rc_haddr, (union nethostaddr *)0, nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
 				(void) tsleep((caddr_t)rp, PZERO-1, "nfsrc", 0);
@@ -280,7 +280,7 @@ nfsrv_updatecache(nam, nd, repvalid, repmbuf)
 loop:
 	for (rp = rh->rh_chain[0]; rp != (struct nfsrvcache *)rh; rp = rp->rc_forw) {
 	    if (nd->nd_retxid == rp->rc_xid && nd->nd_procnum == rp->rc_proc &&
-		nfs_netaddr_match(NETFAMILY(rp), &rp->rc_haddr, (union nethostaddr *)0, nam)) {
+		netaddr_match(NETFAMILY(rp), &rp->rc_haddr, (union nethostaddr *)0, nam)) {
 			if ((rp->rc_flag & RC_LOCKED) != 0) {
 				rp->rc_flag |= RC_WANTED;
 				(void) tsleep((caddr_t)rp, PZERO-1, "nfsrc", 0);
