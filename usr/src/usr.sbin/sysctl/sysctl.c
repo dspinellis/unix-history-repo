@@ -12,10 +12,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/gmon.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/socket.h>
@@ -141,7 +142,7 @@ parse(string, flags)
 	char *string;
 	int flags;
 {
-	int indx, type, size, len;
+	int indx, type, state, size, len;
 	int isclockrate = 0;
 	void *newval = 0;
 	int intval, newsize = 0;
@@ -188,6 +189,22 @@ parse(string, flags)
 
 	case CTL_KERN:
 		switch (mib[1]) {
+		case KERN_PROF:
+			mib[2] = GPROF_STATE;
+			size = sizeof state;
+			if (sysctl(mib, 3, &state, &size, NULL, 0) < 0) {
+				if (flags == 0)
+					return;
+				if (!nflag)
+					fprintf(stdout, "%s: ", string);
+				fprintf(stderr,
+				    "kernel is not compiled for profiling\n");
+				return;
+			}
+			if (!nflag)
+				fprintf(stdout, "%s: %s\n", string,
+				    state == GMON_PROF_OFF ? "off" : "running");
+			return;
 		case KERN_VNODE:
 		case KERN_FILE:
 			if (flags == 0)
