@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trek.h	5.1 (Berkeley) %G%
+ *	@(#)trek.h	5.2 (Berkeley) %G%
  */
 
 #
@@ -223,7 +223,7 @@ struct
 	char	sinsbad;	/* Space Inertial Navigation System condition */
 	char	*shipname;	/* name of current starship */
 	char	ship;		/* current starship */
-	int	distressed	/* number of distress calls */
+	int	distressed;	/* number of distress calls */
 }	Ship;
 
 /* sinsbad is set if SINS is working but not calibrated */

@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) %G%";
 #define	NULL	0
 
 static	char shell[] =	"/bin/sh";
-char	*execat(), *getenv();
+char	*getenv();
 extern	errno;
 
 execlp(name, argv)
@@ -25,7 +25,7 @@ char *name, **argv;
 	char *pathstr;
 	register char *cp;
 	char fname[128];
-	char *newargs[256];
+	char *newargs[256], *execat();
 	int i;
 	register unsigned etxtbsy = 1;
 	register eacces = 0;
