@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	8.1 (Berkeley) %G%
+ *	@(#)uipc_socket.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -879,10 +879,11 @@ sosetopt(so, level, optname, m0)
 			error = ENOPROTOOPT;
 			break;
 		}
-		m = 0;
-		if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput)
+		if (error == 0 && so->so_proto && so->so_proto->pr_ctloutput) {
 			(void) ((*so->so_proto->pr_ctloutput)
 				  (PRCO_SETOPT, so, level, optname, &m0));
+			m = NULL;	/* freed by protocol */
+		}
 	}
 bad:
 	if (m)
