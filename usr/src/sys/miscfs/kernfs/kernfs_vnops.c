@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)kernfs_vnops.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -63,7 +63,9 @@ struct kern_target {
 	{ "loadavg",	0,		KTT_AVENRUN,	VREAD,		VREG },
 	{ "pagesize",	&cnt.v_page_size, KTT_INT,	VREAD,		VREG },
 	{ "physmem",	&physmem,	KTT_INT,	VREAD,		VREG },
+#if 0
 	{ "root",	0,		KTT_NULL,	VREAD,		VDIR },
+#endif
 	{ "rootdev",	0,		KTT_NULL,	VREAD,		VBLK },
 	{ "rrootdev",	0,		KTT_NULL,	VREAD,		VCHR },
 	{ "time",	0,		KTT_TIME,	VREAD,		VREG },
@@ -110,10 +112,12 @@ kernfs_xread(kt, buf, len, lenp)
 		char *cp = hostname;
 		int xlen = hostnamelen;
 
-		if (xlen >= len)
+		if (xlen >= (len-2))
 			return (EINVAL);
 
-		sprintf(buf, "%s\n", cp);
+		bcopy(cp, buf, xlen);
+		buf[xlen] = '\n';
+		buf[xlen+1] = '\0';
 		break;
 	}
 
@@ -144,7 +148,8 @@ kernfs_xwrite(kt, buf, len)
 		if (buf[len-1] == '\n')
 			--len;
 		bcopy(buf, hostname, len);
-		hostnamelen = len - 1;
+		hostname[len] = '\0';
+		hostnamelen = len;
 		return (0);
 	}
 
@@ -189,12 +194,14 @@ kernfs_lookup(ap)
 		return (0);
 	}
 
+#if 0
 	if (cnp->cn_namelen == 4 && bcmp(pname, "root", 4) == 0) {
 		*vpp = rootdir;
 		VREF(rootdir);
 		VOP_LOCK(rootdir);
 		return (0);
 	}
+#endif
 
 	/*
 	 * /kern/rootdev is the root device
@@ -283,7 +290,7 @@ kernfs_open(ap)
 #endif
 
 	if ((ap->a_mode & FWRITE) && !(VTOKERN(vp)->kf_kt->kt_rw & VWRITE))
-		return (EBADF);
+		return (EOPNOTSUPP);
 
 	return (0);
 }
@@ -471,6 +478,7 @@ kernfs_write(ap)
 		return (EIO);
 
 	strbuf[xlen] = '\0';
+	xlen = strlen(strbuf);
 	return (kernfs_xwrite(kt, strbuf, xlen));
 }
 
