@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	6.13 (Berkeley) %G%
+ *	@(#)ip_input.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -101,6 +101,7 @@ next:
 	splx(s);
 	if (m == 0)
 		return;
+	ipstat.ips_total++;
 	if ((m->m_off > MMAXOFF || m->m_len < sizeof (struct ip)) &&
 	    (m = m_pullup(m, sizeof (struct ip))) == 0) {
 		ipstat.ips_toosmall++;
