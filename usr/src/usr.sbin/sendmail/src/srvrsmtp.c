@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.28 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.29 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.28 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.29 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -167,6 +167,7 @@ smtp(e)
 		if (p == NULL)
 		{
 			/* end of file, just die */
+			disconnect(1, e);
 			message("421 %s Lost input channel from %s",
 				MyHostName, CurSmtpClient);
 #ifdef LOG
@@ -627,7 +628,7 @@ smtp(e)
 			message("221 %s closing connection", MyHostName);
 
 			/* avoid future 050 messages */
-			Verbose = FALSE;
+			disconnect(1, e);
 
 			if (InChild)
 				ExitStat = EX_QUIT;
@@ -883,8 +884,11 @@ runinchild(label, e)
 					label, st & 0177);
 
 			/* if we exited on a QUIT command, complete the process */
-			if (st == (EX_QUIT << 8))
+			if (WEXITSTATUS(st) == EX_QUIT)
+			{
+				disconnect(1, e);
 				finis();
+			}
 
 			return (1);
 		}

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.23 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -274,7 +274,10 @@ putoutmsg(msg, holdmsg)
 		msg[0] = '5';
 
 	(void) fflush(stdout);
-	if (OpMode == MD_SMTP || OpMode == MD_DAEMON || OpMode == MD_ARPAFTP)
+
+	/* if DisConnected, OutChannel now points to the transcript */
+	if (!DisConnected &&
+	    (OpMode == MD_SMTP || OpMode == MD_DAEMON || OpMode == MD_ARPAFTP))
 		fprintf(OutChannel, "%s\r\n", msg);
 	else
 		fprintf(OutChannel, "%s\n", &msg[4]);
@@ -283,7 +286,7 @@ putoutmsg(msg, holdmsg)
 			(OpMode == MD_SMTP || OpMode == MD_DAEMON) ? msg : &msg[4]);
 	if (msg[3] == ' ')
 		(void) fflush(OutChannel);
-	if (!ferror(OutChannel))
+	if (!ferror(OutChannel) || DisConnected)
 		return;
 
 	/*
