@@ -1,5 +1,5 @@
 #
-#	Makefile	1.21	89/08/15
+#	Makefile	1.22	90/02/20
 #
 # Makefile for PCC
 #
@@ -65,7 +65,8 @@ rodata.c cgram.c: $M/cgram.y pcctokens
 	cat pcctokens $M/cgram.y > gram.in
 	$(YACC) gram.in
 	$(RM) rodata.c
-	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	sh ./:yyfix yylhs yylen yydefred yydgoto yysindex yyrindex \
+		yygindex yytable yycheck
 	mv y.tab.c cgram.c
 comm1.o: $(P1ONEP) $M/common.c
 	$(LN) $M/common.c comm1.c
