@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -92,17 +92,15 @@ printcol(stats, num)
 	int chcnt;		/* character count printed */
 
 	maxlen = stats[0].lstat.st_flags;
-
-	/* add fudge factors to max name length */
 	if (f_inode)
 		maxlen += 6;
 	if (f_size)
 		maxlen += 5;
 	if (f_type)
 		maxlen += 1;
-	/* one tab after maxlen */
-	colwidth = (maxlen + 9) & ~0x7;
-	numcols = (80 + colwidth - maxlen) / colwidth;
+#define	TAB	8
+	colwidth = maxlen + TAB + 1 & ~(TAB - 1);
+	numcols = (termwidth + colwidth - maxlen) / colwidth;
 	collength = (int)((float)num / (float)numcols + 0.999);
 
 	for (base = 0; base < collength; base++) {
