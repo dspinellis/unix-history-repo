@@ -1,4 +1,4 @@
-/*	cpudata.c	4.4	81/04/09	*/
+/*	cpudata.c	4.5	81/04/13	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
@@ -43,6 +43,7 @@ short	nexty750[NNEX750] = {
 	NEX_UBA0,	NEX_UBA1,	NEX_ANY,	NEX_ANY,
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY
 };
+#endif
 #if VAX7ZZ
 short	nexty7ZZ[NNEX7ZZ] = {
 	NEX_MEM16,	NEX_ANY,	NEX_ANY,	NEX_ANY,
