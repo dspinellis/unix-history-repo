@@ -1,18 +1,18 @@
-#
-#	@(#)tmscpboot.c	7.1 (Berkeley) %G%
-#
-# TK50 tape boot block for distribution tapes
-# works on Q-bus tk50 drive on uVaxen
-#
-# Rick Lindsley
-# richl@tektronix.tek.com
-#
-# reads a program from a tp directory on a tape and executes it
-# program must be stripped of the header and is loaded ``bits as is''
-# you can return to this loader via ``ret'' as you are called ``calls $0,ent''
-#
+/*
+ *	@(#)tmscpboot.c	7.2 (Berkeley) %G%
+ *
+ * TK50 tape boot block for distribution tapes
+ * works on Q-bus tk50 drive on uVaxen
+ *
+ * Rick Lindsley
+ * richl@tektronix.tek.com
+ *
+ * reads a program from a tp directory on a tape and executes it
+ * program must be stripped of the header and is loaded ``bits as is''
+ * you can return to this loader via ``ret'' as you are called ``calls $0,ent''
+ */
 	.set	RELOC,0x70000
-/*  tp directory definitions */
+/* tp directory definitions */
 	.set	FILSIZ,38	# tp direc offset for file size
 	.set	BNUM,44		# tp dir offset for start block no.
 	.set	ENTSIZ,64	# size of 1 TP dir entry, bytes
@@ -140,12 +140,14 @@ reginit:
 	bsbw	rew			# rewind tape
 
 start:
-#	movzbl	$11,r0			# newline
-#	bsbw	putc
-#	movzbl	$13,r0			# return
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$11,r0			# newline
+	bsbw	putc
+	movzbl	$13,r0			# return
+	bsbw	putc
+#endif
 	movzbl	$'=,r0			# prompt
-	bsbw	putc			
+	bsbw	putc
 	bsbw	getname
 
 	# desired TP filename is in name(fp).  Now read in entire tp directory
@@ -265,26 +267,34 @@ inittmscp:
 	movw	$0,TMSCPip(%rCSR)		# start step 1
 1:	bitw	$TMSCP_STEP1,TMSCPsa(%rCSR)
 	beql	1b
-#	movzbl	$'1,r0
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'1,r0
+	bsbw	putc
+#endif
 init2:	movw	$TMSCP_ERR,TMSCPsa(%rCSR)	# start step 2
 2:	bitw	$TMSCP_STEP2,TMSCPsa(%rCSR)
 	beql	2b
-#	movzbl	$'2,r0
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'2,r0
+	bsbw	putc
+#endif
 init3:	addl3	$8,%rUBADDR,r0			# start step 3
 	cvtlw	r0,TMSCPsa(%rCSR)
 3:	bitw	$TMSCP_STEP3,TMSCPsa(%rCSR)
 	beql	3b
-#	movzbl	$'3,r0
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'3,r0
+	bsbw	putc
+#endif
 init4:	addl3	$8,%rUBADDR,r0			# start step 4
 	ashl	$-16,r0,r0
 	cvtlw	r0,TMSCPsa(%rCSR)
 4:	bitw	$TMSCP_STEP4,TMSCPsa(%rCSR)
 	beql	4b
-#	movzbl	$'4,r0
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'4,r0
+	bsbw	putc
+#endif
 setchar:
 	movw	$TMSCP_GO,TMSCPsa(%rCSR)
 	moval	140(%rUBADDR),tmscpca+cmddsc(fp)
@@ -298,10 +308,11 @@ setchar:
 	clrw	modifier(%rCMD)
 	clrl	buffer(%rCMD)
 	clrl	bytecnt(%rCMD)
-	bsbw	tmscpcmd	
-#	movzbl	$'S,r0
-#	bsbw	putc
-
+	bsbw	tmscpcmd
+#ifdef DEBUG
+	movzbl	$'S,r0
+	bsbw	putc
+#endif
 	rsb
 
 tmscpcmd:
@@ -337,20 +348,24 @@ rew:	movb	$M_OP_REPOS,op(%rCMD)
 	clrl	buffer(%rCMD)
 	clrl	bytecnt(%rCMD)
 	bsbw	tmscpcmd
-#	movzbl	$'r,r0			# to indicate r)ewind
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'r,r0			# to indicate r)ewind
+	bsbw	putc
+#endif
 	movl	$-1,mtapa(fp)		# no blocks read yet
 	rsb
-	
+
 onlin:	movb	$M_OP_ONLIN,op(%rCMD)
 	clrw	modifier(%rCMD)
 	clrl	buffer(%rCMD)
 	clrl	bytecnt(%rCMD)
 	bsbw	tmscpcmd
-#	movzbl	$'O,r0			# to indicate O)nline
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'O,r0			# to indicate O)nline
+	bsbw	putc
+#endif
 	rsb
-	
+
 	# Read the tp directory. Number of blocks to read is in tapa(fp),
 	# and will be read into memory starting at location 0.
 readdir:bsbw	rew			# beginning of tape
@@ -377,8 +392,10 @@ rrec:	bisl3	$MRV,r3,4(%rMAPREGS)	# using map register #1
 	movb	$M_OP_READ,op(%rCMD)
 	clrw	modifier(%rCMD)
 	bsbw	tmscpcmd
-#	movzbl	$'R,r0			# to indicate R)ead a record
-#	bsbw	putc
+#ifdef DEBUG
+	movzbl	$'R,r0			# to indicate R)ead a record
+	bsbw	putc
+#endif
 	incl	mtapa(fp)
 	incl	r3
 	rsb
