@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_cksum.c	6.4 (Berkeley) %G%
+ *	@(#)ns_cksum.c	6.5 (Berkeley) %G%
  */
 #include "types.h"
 #include "mbuf.h"
@@ -24,7 +24,7 @@ ns_cksum(m, len)
 	register u_short *w;		/* on vax, known to be r9 */
 	register int sum = 0;		/* on vax, known to be r8 */
 	register int low = 0;		/* on vax, known to be r7 */
-	register int mlen = 0;
+	register int mlen = low;	/* want 0, shuts lint up about low */
 
 	for (;;) {
 		/*
