@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/param.h>
@@ -381,7 +381,9 @@ eatheader(e)
 # ifdef LOG
 	if (!QueueRun && LogLevel > 1)
 	{
-		char hbuf[100], *name = hbuf;
+		char hbuf[100];
+		char *name = hbuf;
+		extern char *inet_ntoa();
 
 		if (RealHostName == NULL)
 			name = "local";

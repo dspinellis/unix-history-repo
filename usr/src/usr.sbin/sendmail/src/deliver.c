@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -734,8 +734,6 @@ openmailer(m, pvp, ctladdr, clever, e)
 		 strcmp(m->m_mailer, "[TCP]") == 0)
 	{
 #ifdef DAEMON
-		register STAB *st;
-		extern STAB *stab();
 		register int i, j;
 		register u_short port;
 		int nmx;
