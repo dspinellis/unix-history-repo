@@ -1,0 +1,143 @@
+.th SPEAK VI 4/26/75
+.if t .ds A \o"a\(ga"
+.if n .ds A a`
+.if t .ds v \|\(bv
+.sh NAME
+speak \*- word to voice translator
+.sh SYNOPSIS
+.bd speak
+[
+.bd \*-efpsv
+] [ vocabulary 
+[
+output ]
+]
+.sh DESCRIPTION
+.it Speak
+turns a stream of words
+into utterances and outputs them to a voice synthesizer,
+or to the specified
+.it output.
+It has facilities for maintaining a vocabulary.
+It receives, from the standard input 
+.s3
+.lp +5 3
+\*-	working lines: text of words separated by blanks
+.lp +5 3
+\*-	phonetic lines: strings of phonemes for one word preceded
+and separated by commas.
+The phonemes may be followed by comma-percent then a `replacement
+part' \*- an ASCII string with no spaces.
+The phonetic code is given in 
+.it vs
+(V).
+.lp +5 3
+\*-	empty lines
+.lp +5 3
+\*-	command lines: beginning with
+.bd !.
+The following command lines
+are recognized:
+.s3
+.lp +15 10
+\fB!r\fR file	replace coded vocabulary from file
+.lp +15 10
+\fB!w\fR file	write coded vocabulary on file
+.lp +15 10
+\fB!p\fR	print phonetics for working word
+.lp +15 10
+\fB!l\fR	list vocabulary on standard output with phonetics
+.lp +15 10
+\fB!c\fR word	copy phonetics from working word to
+specified word
+.lp +15 10
+\fB!d\fR	print decomposition of working word into substrings
+.lp +15 10
+\fB!f\fI n\fR	turn off (or on) English preprocessing rule number
+.it n
+(see listing for meaning of
+.it n)
+.s3
+.i0
+Each working line replaces its predecessor.
+Its first word is the `working word'.
+Each phonetic line replaces the phonetics stored for the
+working word.
+In particular, a phonetic line of comma only deletes the
+entry for the working word.
+Each working line, phonetic line or empty line
+causes the working line to be uttered.
+The process terminates at the end of input.
+.s3
+Unknown words are pronounced by rules, and failing that,
+are spelled.
+For the builtin part of
+the rules, see the reference.
+Spelling is done by taking each character of
+the word, prefixing it with `*', and looking it up.
+Unspellable words burp.
+.s3
+Words not found verbatim in the vocabulary
+are pronounced piecewise.
+First the word is bracketed by sharps:
+`#...#'.
+The vocabulary is then searched for
+the longest fragment that matches the
+beginning of the word.
+The phonetic part of the phonetic string is uttered,
+and the matched fragment is replaced by the replacement
+part of the phonetic string, if any.
+The process is repeated until the word is exhausted.
+A fragment is entered into the vocabulary as a working
+word prefixed by `%'.
+.s3
+.it Speak
+is initialized with a coded vocabulary stored in file
+.it /usr/lib/speak.m.
+The vocabulary option substitutes a different file for
+.it /usr/lib/speak.m.
+Other vocabularies, to be used with
+option
+\fB\*-e\fR,
+exist in /usr/vs/latin.m and /usr/vs/polish.m.
+.s3
+A set of single letter options may
+appear in any order preceded by
+.bd \*-.
+Their meanings are:
+.s3
+.lp +8 4
+\fBe\fR	suppress English preprocessing
+.lp +8 4
+\fBf\fR	equivalent to `f1, f2,...'
+.lp +8 4
+\fBp\fR	suppress pronunciation by rule
+.lp +8 4
+\fBs\fR	suppress spelling
+.lp +8 4
+\fBv\fR	suppress voice output
+.s3
+.i0
+The following input will reconstitute a
+coded vocabulary, `speak.m', from an ascii listing, `speak.v', that
+was created using \fB!l\fR.
+.s3
+.lp +8 0
+(cat speak.v; echo !w speak.m) \*v speak \*-v /dev/null
+.s3
+.i0
+.sh FILES
+/usr/lib/speak.m
+.sh "SEE ALSO"
+M. D. McIlroy, ``Synthetic English Speech by Rule,''
+Computing Science Technical Report #14,
+Bell Laboratories, 1973
+.br
+vs (V), vs (IV)
+.sh BUGS
+Excessively long words cause dumps.
+.br
+Space is not reclaimed from changed entries;
+use \fB!w\fR and \fB!r\fR to effect reclamation.
+.br
+\fB!p\fR doesn't always work as advertised.

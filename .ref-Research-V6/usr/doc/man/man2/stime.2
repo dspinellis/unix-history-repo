@@ -1,0 +1,25 @@
+.th STIME II 8/5/73
+.sh NAME
+stime \*- set time
+.sh SYNOPSIS
+(stime = 25.)
+.br
+(time in r0-r1)
+.br
+.ft B
+sys stime
+.s3
+stime(tbuf)
+.br
+int tbuf[2];
+.ft R
+.sh DESCRIPTION
+.it Stime
+sets the system's idea of the time and date.
+Time is measured in seconds from 0000 GMT Jan 1 1970.
+Only the super-user may use this call.
+.sh "SEE ALSO"
+date (I), time (II), ctime (III)
+.sh DIAGNOSTICS
+Error bit (c-bit)
+set if user is not the super-user.

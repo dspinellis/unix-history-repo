@@ -1,0 +1,171 @@
+.sp 2
+.H1
+Summary of Commands and Line Numbers
+.H2
+.PG
+The general form of
+.ul
+ed
+commands is the command name,
+perhaps preceded by one or two line numbers, and,
+in the case of
+.ul
+e, r
+and
+.ul
+w,
+followed by a file name.
+Only one command is allowed per line,
+but a
+.ul
+p
+command may follow any other command
+(except for
+.ul
+e, r, w
+and
+.ul
+q).
+.sp
+.ul
+a (append)
+Add lines to the buffer (at line dot, unless
+a different line is specified). Appending continues until ``\*.''
+is typed on a new line.
+Dot is set to the last line appended.
+.sp 4p
+.ul
+c (change)
+Change the specified lines to the new text which follows.
+.li
+The new lines are terminated by a ``\*.''.
+If no lines are specified,
+replace line dot.
+Dot is set to last line changed.
+.sp 4p
+.ul
+d (delete)
+Delete the lines specified.
+If none are specified, delete line dot.
+Dot is set to the first undeleted line,
+unless ``$'' is deleted,
+in which case dot is set to ``$''.
+.sp 4p
+.ul
+e (edit)
+Edit new file.
+Any previous
+contents of the buffer are thrown away,
+so issue a
+.ul
+w
+beforehand
+if you want to save them.
+.sp 4p
+.ul
+f (file)
+Print remembered filename.
+If a name follows
+.ul
+f
+the remembered name will be set to it.
+.sp 4p
+.ul
+g (global)
+.ul
+g/---/commands
+will execute the commands on those lines that contain
+``---'', which can be any context search expression.
+.sp 4p
+.ul
+i (insert)
+Insert lines before specified line (or dot)
+.li
+until a ``\*.'' is typed on a new line.
+Dot is set to last line inserted.
+.sp 4p
+.ul
+m (move)
+Move lines specified to after the line
+named after
+.ul
+m.
+Dot is set to the last line moved.
+.sp 4p
+.ul
+p (print)
+Print specified lines.
+If none specified, print
+line dot.
+A single line number is equivalent to
+``line-number p''.
+A single newline prints ``\*.+1'',
+the next line.
+.sp 4p
+.ul
+q (quit)
+Exit from ed.
+Wipes out all text in buffer!!
+.sp 4p
+.ul
+r (read)
+Read a file into buffer (at end unless specified
+elsewhere.) Dot set to last line read.
+.sp 4p
+.ul
+s (substitute)
+.ul
+s/string1/string2/
+will
+substitute the characters of
+`string2' for `string1' in specified lines.
+If no line is specified, make substitution in line dot.
+Dot is set to last line in which a
+substitution took place, which means that if no substitution took place, dot is not changed.
+.ul
+s
+changes only the first occurrence of string1 on a line;
+to change all of them, type a ``g'' after the final slash.
+.sp 4p
+.ul
+v (exclude)
+.ul
+v/---/commands
+executes ``commands'' on those lines that
+.ul
+do not
+contain ``---''.
+.sp 4p
+.ul
+w (write)
+Write out buffer onto a file.
+Dot is not changed.
+.sp 4p
+.ul
+.li
+.= (dot value)
+Print value of dot.
+(``='' by itself prints the value of ``$''.)
+.sp 4p
+.ul
+! (temporary escape)
+   Execute this line as a UNIX
+command.
+.sp 4p
+.ul
+/-----/
+Context search.
+Search for next line which contains
+this string of characters.
+Print it.
+Dot is set to line where string
+found.
+Search starts at ``\*.+1'', wraps around from ``$'' to 1,
+and continues to dot, if necessary.
+.sp 4p
+.ul
+?-----?
+Context search in reverse direction.
+Start search
+at ``\*.\(mi1'', scan to 1, wrap around to ``$''.
+.in 0

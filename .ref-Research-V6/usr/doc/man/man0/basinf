@@ -1,0 +1,382 @@
+.tr |
+.bp
+.ce
+HOW TO GET STARTED
+.sp 1.5
+This section provides the basic information
+you need to get started on \s8UNIX\s10:
+how to log in and log out,
+how to communicate through your terminal,
+and how to run a program.
+See ``U\s8NIX\s10 for Beginners''
+by Brian W. Kernighan for a more complete introduction
+to the system.
+.pg
+.ft I
+Logging in.||
+.ft R
+You must call \s8UNIX\s10 from an appropriate terminal.
+\s8UNIX\s10 supports \s8ASCII\s10 terminals typified by the \s8TTY\s10 37,
+the GE Terminet 300, the Dasi 300, and various
+graphical terminals.
+You must also have a valid user name,
+which may be obtained, together with the telephone number, from the system administrators.
+The same telephone number
+serves terminals operating at all the standard speeds.
+After a data connection is established,
+the login procedure depends on what kind of terminal
+you are using.
+.pg
+.in .5i
+.ul
+300-baud terminals:||
+Such terminals include the GE Terminet 300, most display terminals,
+Execuport, TI, GSI, and certain
+Anderson-Jacobson terminals.
+These terminals generally have a speed
+switch which should be set at ``300'' (or ``30'' for
+30 characters per second)
+and a half/full duplex switch which should be set at
+full-duplex.
+(This switch will often have to be changed
+since many other systems require half-duplex).
+When a connection is established, the system
+types ``login:''; you type your
+user name, followed by the ``return'' key.
+If you have a password, the system asks for it
+and turns off the printer on the terminal
+so the password will not appear.
+After you have logged in,
+the ``return'', ``new line'', or ``linefeed'' keys
+will give exactly the same results.
+.pg
+.ul
+\s8TTY\s10 37 terminal:||
+When you have established a data connection,
+the system types out a few garbage characters
+(the ``login:'' message at the wrong speed).
+Depress the ``break'' (or ``interrupt'')
+key; this is a speed-independent signal
+to \s8UNIX\s10 that a 150-baud terminal
+is in use.
+The system then will type ``login:,'' this time at the correct
+speed;
+you respond with your user name.
+From the \s8TTY\s10 37 terminal, and any other which has the ``new-line''
+function (combined carriage return and linefeed), terminate each line you type with the
+``new-line'' key
+(\fInot\fR the ``return'' key).
+.pg
+.in 0
+For all these terminals, it is important
+that you type your name in lower-case if possible; if you type
+upper-case letters, \s8UNIX\s10
+will assume that your terminal cannot generate lower-case
+letters and will translate all subsequent upper-case
+letters to lower case.
+.pg
+The evidence that you have successfully
+logged in is that the Shell program
+will type a ``%'' to you.
+(The Shell is described below under
+``How to run a program.'')
+.pg
+For more information, consult
+\fIgetty\fR (VIII), which discusses the login sequence in more
+detail, and \fItty\fR (IV), which discusses typewriter I/O.
+.pg
+.ul
+Logging out.||
+There are three ways to log out:
+.pg
+.in .5i
+You can simply hang up the phone.
+.pg
+You can log out by typing an end-of-file indication
+(EOT character, control ``d'') to the Shell.
+The Shell will terminate and the ``login: '' message
+will appear again.
+.pg
+You can also log in directly as another user
+by giving a \fIlogin\fR command (I).
+.pg
+.in 0
+.ul
+How to communicate through your terminal.||
+When you type to \s8UNIX\s10, a gnome deep in the system
+is gathering your characters and saving them in a secret
+place.
+The
+characters will not be given to a program
+until you type a return (or new-line), as described above
+in
+.ul
+Logging in.
+.pg
+\s8UNIX\s10 typewriter I/O is full-duplex.
+It has full read-ahead, which means that you can
+type at any time,
+even while a program is
+typing at you.
+Of course, if you type during output, the output will
+have the input characters interspersed.
+However, whatever you type will be saved
+up and interpreted in correct sequence.
+There is a limit to the amount of read-ahead,
+but it is generous and not likely to be exceeded unless
+the system is in trouble.
+When the read-ahead limit is exceeded, the system
+throws away all the saved characters.
+.pg
+On a typewriter input line, the character ``@''
+kills all the characters typed before it, so typing mistakes
+can be repaired on a single line.
+Also, the character ``#'' erases the last character typed.
+Successive uses of ``#'' erase characters back to, but
+not beyond, the beginning of the line.
+``@'' and ``#'' can be transmitted to a program
+by preceding them with ``\\''.
+(So, to erase ``\\'', you need two ``#''s).
+.pg
+The \s8ASCII\s10 ``delete'' (a.k.a. ``rubout'') character is not passed to programs
+but instead generates
+an
+.ul
+interrupt signal.
+This signal
+generally causes whatever program
+you are running to terminate.
+It is typically used to stop a long printout that
+you don't want.
+However, programs can arrange either to ignore
+this signal altogether,
+or to be notified when it happens (instead
+of being terminated).
+The editor, for example, catches interrupts and
+stops what it is doing,
+instead of terminating, so that an interrupt can
+be used to halt an editor printout without
+losing the file being edited.
+.pg
+The \fIquit\fR signal is generated
+by typing the \s8ASCII\s10 FS character.
+It not only causes a running program to terminate
+but also generates a file with the core image
+of the terminated process.
+Quit is useful
+for debugging.
+.pg
+Besides adapting to the speed of the terminal,
+\s8UNIX\s10 tries to be intelligent about whether
+you have a terminal with the new-line function
+or whether it must be simulated with carriage-return
+and line-feed.
+In the latter case, all input carriage returns
+are turned to new-line characters (the standard
+line delimiter)
+and both a carriage return and a line feed
+are echoed to the terminal.
+If you get into the wrong mode, the \fIstty\fR command
+(I) will rescue you.
+.pg
+Tab characters are used freely in \s8UNIX\s10 source programs.
+If your terminal does not have the tab function,
+you can arrange to have them turned into spaces
+during output, and echoed as spaces
+during input.
+The system assumes
+that tabs are set every eight columns.
+Again, the \fIstty\fR command (I)
+will set or reset this mode.
+Also, there is a file which, if printed on \s8TTY\s10 37
+or TermiNet 300 terminals, will set the tab stops
+correctly (\fItabs\fR (V)).
+.pg
+Section \fItty\fR (IV) discusses typewriter I/O more fully.
+.pg
+.ul
+How to run a program; the Shell.||
+When you have successfully logged into \s8UNIX\s10, a program
+called the Shell is listening to your terminal.
+The Shell reads typed-in lines, splits them up
+into a command name and arguments, and executes the command.
+A command is simply an executable program.
+The Shell looks first in your current directory
+(see next section)
+for a program with the given name,
+and if none is there, then in a system directory.
+There is nothing special about system-provided
+commands except that they are kept in a directory
+where the Shell can find them.
+.pg
+The command name is always the first word on an input line;
+it and its arguments are separated from one another by
+spaces.
+.pg
+When a program terminates, the Shell will ordinarily regain control and type 
+a ``%'' at you to indicate that it is ready for another command.
+.pg
+The Shell has many other capabilities, which are described in detail in section
+\fIsh\fR\|(I).
+.pg
+.ul
+The current directory.||
+\s8UNIX\s10 has a file system arranged in a hierarchy of directories.
+When the system administrator gave you a user name,
+he also created a directory for you (ordinarily
+with the same name as your user name).
+When you log in, any file
+name you type is by default
+in this directory.
+Since you are the owner of this directory, you have
+full permissions to read, write, alter, or destroy
+its contents.
+Permissions to have your will with other directories
+and files will have been granted or denied to you
+by their owners.
+As a matter of observed fact, few \s8UNIX\s10 users
+protect their files from destruction,
+let alone perusal, by other users.
+.pg
+To change the
+current directory (but not the set of permissions you
+were endowed with at login) use \fIchdir\fR (I).
+.pg
+.ul
+Path names.||
+To refer to files not in the current directory, you must
+use a path name.
+Full path names begin with ``/'', the name of the root directory of the
+whole file system.
+After the slash comes the name of each directory containing the next
+sub-directory (followed by a ``/'') until finally the
+file name is reached.
+E.g.:
+.ul
+/\|usr/\|lem/\|filex
+refers to the file
+.ul
+filex
+in the directory
+.ul
+lem; lem
+is itself a subdirectory of
+.ul
+usr; usr
+springs directly from the root directory.
+.pg
+If your current directory has subdirectories,
+the path names of files therein begin with
+the name of the subdirectory (no prefixed ``/'').
+.pg
+Without important exception,
+a path name may be used anywhere a file name is
+required.
+.pg
+Important commands which modify the contents of files
+are \fIcp\fR (I), \fImv\fR (I), and \fIrm\fR (I),
+which respectively copy, move (i.e. rename) and remove files.
+To find out the status of files or directories, use \fIls\fR (I).
+See \fImkdir\fR (I) for making directories; \fIrmdir\fR (I) for destroying them.
+.pg
+For a fuller discussion of the file system, see
+``The \s8UNIX\s10 Time-Sharing System,''
+by the present authors.
+It may also be useful to glance through
+section II of this manual, which discusses
+system calls, even if you don't intend
+to deal with the system at that level.
+.pg
+.ul
+Writing a program.||
+To enter the text of a source program into a \s8UNIX\s10 file, use \fIed\fR (I).
+The three principal languages in \s8UNIX\s10 are
+assembly language (see \fIas\fR (I)), Fortran (see \fIfc\fR (I)),
+and C (see \fIcc\fR (I)).
+After the program text has been entered through 
+the editor
+and written on a file, you can give the file
+to the appropriate language processor as an argument.
+The output of the language processor
+will be left on a file in the current directory named ``a.out''.
+(If the output is precious, use \fImv\fR to move it to a less
+exposed name soon.)|
+If you wrote in assembly language, you will probably
+need to load the program with library subroutines; see
+\fIld \fR(I).  The other two language processors call
+the loader automatically.
+.pg
+When you have finally gone through this entire process
+without provoking any diagnostics, the resulting program
+can be run by giving its name to the Shell
+in response to the ``%'' prompt.
+.pg
+Next, you will need \fIcdb\fR (I) or \fIdb\fR (I) to
+examine the remains of your program.
+The former is useful for C programs, the latter
+for assembly-language.
+No debugger is much help for Fortran.
+.pg
+Your programs can receive arguments from the command line
+just as system programs do.
+See \fIexec\fR (II).
+.pg
+.ul
+Text processing.||
+Almost all text is entered through the editor.
+The commands most often used to write text on a terminal are:
+.ul
+cat, pr, roff, nroff,
+and
+.ul
+troff,
+all in section I.
+.pg
+The \fIcat\fR command simply dumps \s8ASCII\s10 text
+on the terminal, with no processing at all.
+The \fIpr\fR command paginates the text, supplies headings,
+and has a facility for multi-column output.
+.ul
+Troff
+and
+.ul
+nroff
+are elaborate text formatting programs,
+and require careful forethought
+in entering both the text and the formatting commands
+into the input file.
+.ul
+Troff
+drives a Graphic Systems phototypesetter;
+it was used to produce this manual.
+.ul
+Nroff
+produces output on a typewriter terminal.
+.ul
+Roff
+(I)
+is a somewhat less elaborate text formatting
+program, and requires somewhat less forethought.
+.pg
+.ul
+Surprises.||
+Certain commands provide inter-user communication.
+Even if you do not plan to use them, it would be
+well to learn something about them, because someone else may
+aim them at you.
+.pg
+To communicate with another user currently logged in,
+.ul
+write
+(I)
+is used;
+.ul
+mail
+(I)
+will leave a message whose presence will be announced
+to another user when he next logs in.
+The write-ups in the manual also suggest how to respond to
+the two commands if you are a target.
+.pg
+When you log in, a message-of-the-day may greet you
+before the first ``%''.

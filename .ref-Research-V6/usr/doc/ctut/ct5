@@ -1,0 +1,391 @@
+.NH
+Structures
+.PP
+The main use of structures is to lump together
+collections of disparate variable types,
+so they can conveniently be treated as a unit.
+For example,
+if we were writing a compiler or assembler,
+we might need for each identifier information like
+its name (a character array),
+its source line number (an integer),
+some type information (a character, perhaps),
+and probably a usage count (another integer).
+.E1
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+.E2
+.PP
+We can make a structure out of this quite easily.
+We first tell C what the structure will look
+like,
+that is, what kinds of things it contains;
+after that we can actually reserve storage for it,
+either in the same statement or separately.
+The simplest thing is to define it and allocate
+storage all at once:
+.E1
+struct {
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+} sym;
+.E2
+.PP
+This defines
+.UL sym
+to be a structure with the specified shape;
+.UL id,
+.UL line,
+.UL type
+and
+.UL usage
+are
+.ul
+members
+of the structure.
+The way we refer to any particular member of the structure
+is
+.E1
+structure\(hyname \*. member
+.E2
+as in
+.E1
+	sym\*.type = 077;
+	if( sym\*.usage \*= 0 ) \*.\*.\*.
+	while( sym\*.id[j\*+] ) \*.\*.\*.
+.ft R
+	   etc\*.
+.E2
+Although the names of structure members never stand alone,
+they still have to be unique _
+there can't be another
+.UL id
+or
+.UL usage
+in some other structure.
+.PP
+So far we haven't gained much.
+The advantages of structures start to come
+when we have arrays of structures,
+or when we want to pass complicated data layouts
+between functions.
+Suppose we wanted to make a symbol table for up
+to 100 identifiers.
+We could extend our definitions like
+.E1
+	char	id[100][10];
+	int	line[100];
+	char	type[100];
+	int	usage[100];
+.E2
+but a structure lets us
+rearrange this spread-out information
+so all the data about a single identifer is collected
+into one lump:
+.E1
+struct {
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+} sym[100];
+.E2
+This makes
+.UL sym
+an array of structures;
+each array element has the specified shape.
+Now we can refer to members as
+.E1
+	sym[i]\*.usage\*+;	/\** increment usage of i\(hyth identifier \**/
+	for( j=0; sym[i]\*.id[j\*+] != '\\0'; ) \*.\*.\*.
+.ft R
+	   etc\*.
+.E2
+Thus to print a list of all identifiers that haven't been used,
+together with their line number,
+.E1
+	for( i=0; i<nsym; i\*+ )
+		if( sym[i]\*.usage \*= 0 )
+			printf("%d\\t%s\\n", sym[i]\*.line, sym[i]\*.id);
+.E2
+.PP
+Suppose we now want to write a function
+.UL lookup(name)
+which will tell us if 
+.UL name
+already exists in 
+.UL sym,
+by giving its index, or that it doesn't,
+by returning a \(mi1.
+We can't pass a structure to a function
+directly _
+we have to either define it externally, or
+pass a pointer to it.
+Let's try the first way first.
+.E1
+int	nsym	0;	/\** current length of symbol table \**/
+.SP
+struct {
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+} sym[100];		/\** symbol table \**/
+.SP
+main( ) {
+	\*.\*.\*.
+	if( (index = lookup(newname)) >= 0 )
+		sym[index]\*.usage\*+;		/\** already there \*.\*.\*. \**/
+	else
+		install(newname, newline, newtype);
+	\*.\*.\*.
+}
+.SP
+lookup(s)
+   char \**s; {
+	int i;
+	extern struct {
+		char	id[10];
+		int	line;
+		char	type;
+		int	usage;
+	} sym[ ];
+.SP
+	for( i=0; i<nsym; i\*+ )
+		if( compar(s, sym[i]\*.id) > 0 )
+			return(i);
+	return(-1);
+}
+
+compar(s1,s2)		/\**  return 1 if s1\*=s2, 0 otherwise \**/
+   char \**s1, \**s2; {
+	while( \**s1\*+ \*= \**s2 )
+		if( \**s2\*+ \*= '\\0' )
+			return(1);
+	return(0);
+}
+.E2
+The declaration of the structure in 
+.UL lookup
+isn't needed if the external definition precedes its use in the same source file,
+as we shall see in a moment.
+.PP
+Now what if we want to use pointers?
+.E1
+struct  symtag {
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+} sym[100], \**psym;
+
+	psym = &sym[0];	/\** or p = sym; \**/
+.E2
+This makes
+.UL psym
+a pointer to our kind of structure
+(the symbol table),
+then initializes it to point to the first element of
+.UL sym\*.
+.PP
+Notice that we added something after the word
+.UL struct:
+a ``tag'' called 
+.UL symtag\*.
+This puts a name on our structure definition so we can
+refer to it later without repeating the definition.
+It's not necessary but useful.
+In fact we could have said
+.E1
+struct	symtag {
+	\*.\*.\*. structure definition
+};
+.E2
+which wouldn't have assigned any storage at all,
+and then said
+.E1
+struct	symtag	sym[100];
+struct	symtag	\**psym;
+.E2
+which would define the array and the pointer.
+This could be condensed further, to
+.E1
+struct	symtag	sym[100], \**psym;
+.E2
+.PP
+The way we actually refer to an member of a structure by a pointer
+is like this:
+.E1
+	ptr -> structure\(hymember
+.E2
+The symbol `\(mi>'
+means we're pointing at a member of a structure;
+`\(mi>' is only used in that context.
+.UL ptr
+is a pointer to the (base of) a structure
+that contains the structure member.
+The expression
+.UL "ptr\(mi>structure\(hymember"
+refers to the indicated member of the pointed-to structure.
+Thus we have constructions like:
+.E1
+psym->type = 1;
+psym->id[0] = 'a';
+.E2
+and so on.
+.PP
+For more complicated pointer expressions,
+it's wise to use parentheses to make it clear
+who goes with what.
+For example,
+.E1
+struct { int x, \**y; } \**p;
+p->x\*+	increments x
+\*+p->x	so does this!
+(\*+p)->x	increments p before getting x
+\**p->y\*+	uses y as a pointer, then increments it
+\**(p->y)\*+	so does this
+\**(p\*+)->y	uses y as a pointer, then increments p
+.E2
+.tr |.
+The way to remember these is that
+.UL \(mi>,
+.UL |
+(dot),
+.UL "( )"
+and
+.UL "[ ]"
+bind very tightly.
+An expression involving one of these is treated as a unit.
+.tr ||
+.UL p\(mi>x,
+.UL a[i],
+.UL y\*.x
+and
+.UL f(b)
+are names
+exactly as
+.UL abc
+is.
+.PP
+If 
+.UL p
+is a pointer to a structure,
+any arithmetic on
+.UL p
+takes into account the acutal size of the structure.
+For instance,
+.UL p\*+
+increments
+.UL p
+by the correct amount to get the next element of the array of structures.
+But don't assume that the size of a structure is the sum
+of the sizes of its members _
+because of alignments of different sized objects,
+there may be ``holes'' in a structure.
+.PP
+Enough theory. Here is the lookup example, this time with pointers.
+.E1
+struct symtag {
+	char	id[10];
+	int	line;
+	char	type;
+	int	usage;
+} sym[100];
+.SP
+main( ) {
+	struct symtag \**lookup( );
+	struct symtag \**psym;
+	\*.\*.\*.
+	if( (psym = lookup(newname)) )	/\** non-zero pointer \**/
+		psym -> usage\*+;		/\** means already there \**/
+	else
+		install(newname, newline, newtype);
+	\*.\*.\*.
+}
+.SP
+struct symtag \**lookup(s)
+   char \**s; {
+	struct symtag \**p;
+	for( p=sym; p < &sym[nsym]; p\*+ )
+		if( compar(s, p->id) > 0)
+			return(p);
+	return(0);
+}
+.E2
+The function
+.UL compar
+doesn't change:
+.UL `p\(mi>id'
+refers to
+a string.
+.PP
+In
+.UL main
+we test the pointer returned by
+.UL lookup
+against zero,
+relying on the fact that a pointer is by definition never zero
+when it really points at something.
+The other pointer manipulations are trivial.
+.PP
+The only complexity is the set of lines like
+.E1
+struct symtag \**lookup( );
+.E2
+This brings us to
+an area that we will
+treat only hurriedly _ the question of function types.
+So far, all of our functions have returned integers
+(or characters, which are much the same).
+What do we do when the function returns something else,
+like a pointer to a structure?
+The rule is that
+any function that doesn't return an
+.UL int
+has to say explicitly what it does return.
+The type information goes before the function name
+(which can make the name hard to see).
+Examples:
+.E1
+char f(a)
+   int a; {
+	\*.\*.\*.
+}
+
+int \**g( ) { \*.\*.\*. }
+
+struct symtag \**lookup(s) char \**s; { \*.\*.\*. }
+.E2
+The function
+.UL f
+returns a character,
+.UL g
+returns a pointer to an integer,
+and
+.UL lookup
+returns a pointer to a structure that looks like
+.UL symtag\*.
+And if we're going to use one of these functions,
+we have to make a declaration
+where we use it,
+as we did in
+.UL main
+above.
+.PP
+Notice th parallelism between the declarations
+.E1
+	struct symtag \**lookup( );
+	struct symtag \**psym;
+.E2
+In effect, this says that
+.UL lookup(~)
+and
+.UL psym
+are both used the same way _
+as a pointer to a strcture _
+even though one is a variable and the other is a function.

@@ -1,0 +1,26 @@
+.th STRIP I 3/15/72
+.sh NAME
+strip  \*-  remove symbols and relocation bits
+.sh SYNOPSIS
+.bd strip
+name ...
+.sh DESCRIPTION
+.it Strip
+removes the symbol
+table and relocation bits ordinarily attached to the output
+of the assembler and loader.
+This is useful to save space after a program has been
+debugged.
+.s3
+The effect of
+.it strip
+is the the same as use of the
+.bd \*-s
+option
+of
+.it ld.
+.sh FILES
+/tmp/stm?	temporary file
+.sh "SEE ALSO"
+ld (I), as (I)
+.sh BUGS

@@ -1,0 +1,45 @@
+.th WRITE II 8/5/73
+.sh NAME
+write \*- write on a file
+.sh SYNOPSIS
+(write = 4.)
+.br
+(file descriptor in r0)
+.br
+.ft B
+sys  write; buffer; nbytes
+.s3
+write(fildes, buffer, nbytes)
+.br
+char *buffer;
+.ft R
+.sh DESCRIPTION
+A file descriptor is a word returned from a
+successful
+.it open,
+.it creat,
+.it dup,
+or
+.it pipe
+call.
+.s3
+.it Buffer
+is the address of
+.it nbytes
+contiguous
+bytes which are written on the output file.
+The number of characters actually written is returned (in r0).
+It should be regarded as an error
+if this is not the same as requested.
+.s3
+Writes which are multiples
+of 512 characters long and begin on a 512-byte boundary
+in the file
+are more efficient than any others.
+.sh "SEE ALSO"
+creat (II), open (II), pipe (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set on an error: bad descriptor, buffer address, or
+count; physical I/O errors.
+From C, a returned value of \*-1 indicates an error.

@@ -1,0 +1,100 @@
+.th SA VIII 6/1/74
+.sh NAME
+sa \*- Shell accounting
+.sh SYNOPSIS
+sa [
+.bd \*-abcjlnrstuv
+] [ file ]
+.sh DESCRIPTION
+When a user logs in,
+if the Shell is able to open the file
+.it /usr/adm/sha,
+then as each command completes the Shell writes at the end of this file
+the name of the command, the user, system, and real
+time consumed,
+and the user ID.
+.it Sa
+reports on, cleans up, and generally maintains this and other
+accounting files.
+To turn accounting on and off,
+the accounting file must be created or destroyed
+externally.
+.s3
+.it Sa
+is able to condense
+the information in
+.it /usr/adm/sha
+into a summary file
+.it /usr/adm/sht
+which contains a count of the
+number of times each command was called and the time resources
+consumed.
+This condensation is desirable because on a large system
+.it sha
+can grow by 100 blocks per day.
+The summary file is read before the accounting file,
+so the reports include all available information.
+.s3
+If a file name is given as the last argument,
+that file will be treated
+as the accounting file;
+.it sha
+is the default.
+There are zillions of options:
+.s3
+.de qq
+.s3
+.lp +3 3
+\fB\\$1\fR	\\
+..
+.qq a
+Place all command names containing unprintable characters
+and those used only once under the name ``***other.''
+.qq b
+Sort output by sum of user and system time divided by number of
+calls.
+Default sort is by sum of user and system times.
+.qq c
+Besides total user, system, and real time for each command print percentage
+of total time over all commands.
+.qq j
+Instead of total minutes time for each category,
+give seconds per call.
+.qq l
+Separate system and user time; normally they are combined.
+.qq n
+Sort by number of calls.
+.qq r
+Reverse order of sort.
+.qq s
+Merge accounting file into summary file
+.it /usr/adm/sht
+when done.
+.qq t
+For each command report ratio of real time to the sum of user and
+system times.
+.qq u
+Superseding all other flags,
+print for each command in the accounting file the
+day of the year, time, day of the week,
+user ID and command name.
+.qq v
+If the next character is a digit
+.it n,
+then type the name of
+each command used
+.it n
+times or fewer.
+Await a reply from the typewriter;
+if it begins with ``y'', add the command to
+the category ``**junk**.''
+This is used to strip out garbage.
+.i0
+.dt
+.sh FILES
+/usr/adm/sha	accounting
+.br
+/usr/adm/sht	summary
+.sh "SEE ALSO"
+ac (VIII)
+.sh BUGS

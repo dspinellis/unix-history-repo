@@ -1,0 +1,48 @@
+.nf
+.sp 2i
+.ps 12
+.ft B
+.vs 14p
+.ce 100
+DOCUMENTS FOR USE WITH THE
+UNIX TIME-SHARING SYSTEM
+.sp
+.ps 11
+.ft I
+Sixth Edition
+.sp 2i
+.ps 10
+.vs 12p
+.ft R
+The enclosed UNIX documentation is supplied
+in accordance with the Software Agreement
+you have with the Western Electric Company.
+.ce 0
+.ce
+.bp
+.sp 2i
+.ft B
+CONTENTS
+.sp
+.ft R
+.in 1i
+.vs 20p
+\01. Setting Up UNIX \- Sixth Edition
+\02. The UNIX Time-Sharing System
+\03. C Reference Manual
+\04. Programming in C \- A Tutorial
+\05. UNIX Assembler Reference Manual
+\06. A Tutorial Introduction to the ED Text Editor
+\07. UNIX for Beginners
+\08. RATFOR \- A Preprocessor for a Rational Fortran
+\09. YACC \- Yet Another Compiler-Compiler
+10. NROFF Users' Manual
+11. The UNIX I/O System
+12. A Manual for the Tmg Compiler-writing Language
+13. On the Security of UNIX
+14. The M6 Macro Processor
+15. A System for Typesetting Mathematics
+16. DC \- An Interactive Desk Calculator
+17. BC \- An Arbitrary Precision Desk-Calculator Language
+18. The Portable C  Library (on UNIX)
+19. UNIX Summary

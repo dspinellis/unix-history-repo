@@ -1,0 +1,53 @@
+.th NICE II 8/5/73
+.sh NAME
+nice \*- set program priority
+.sh SYNOPSIS
+(nice = 34.)
+.br
+(priority in r0)
+.br
+.ft B
+sys nice
+.s3
+nice(priority)
+.ft R
+.sh DESCRIPTION
+The scheduling
+.it priority
+of the process is changed to the argument.
+Positive priorities get less
+service than normal; 0 is default.
+Only the super-user may specify a negative priority.
+The valid range of
+.it priority
+is 20 to \*-220.
+The value of 4 is recommended to users
+who wish to execute long-running programs
+without flak from the administration.
+.s3
+The effect of this call is
+passed to a child process by the
+.it fork
+system call.
+The effect can be cancelled by
+another call to
+.it nice
+with a
+.it priority
+of 0.
+.s3
+The actual running priority of a
+process is the
+.it priority
+argument plus a number that
+ranges from 100 to 119 depending on the
+cpu usage of the process.
+.sh "SEE ALSO"
+nice (I)
+.sh DIAGNOSTICS
+The error bit
+(c-bit)
+is set if the user requests a
+.it priority
+outside the range of 0 to 20
+and is not the super-user.

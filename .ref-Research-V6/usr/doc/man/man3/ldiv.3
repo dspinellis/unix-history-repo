@@ -1,0 +1,43 @@
+.th LDIV III 5/7/73
+.sh NAME
+ldiv, lrem \*- long division
+.sh SYNOPSIS
+.ft B
+ldiv(hidividend, lodividend, divisor)
+.s3
+lrem(hidividend, lodividend, divisor)
+.ft R
+.sh DESCRIPTION
+The
+concatenation of the signed
+16-bit
+.it hidividend
+and the unsigned 16-bit
+.it lodividend
+is divided by
+\fIdivisor\fR.
+The 16-bit signed quotient is returned by
+.it ldiv
+and the 16-bit signed remainder is returned by
+.it lrem.
+Divide check and erroneous results
+will occur
+unless the magnitude of the
+divisor is greater than that of the high-order
+dividend.
+.s3
+An integer division of an unsigned
+dividend by a signed divisor may
+be accomplished by
+.s3
+	quo = ldiv(0, dividend, divisor);
+.s3
+and similarly for the remainder operation.
+.s3
+Often both the quotient and the remainder are wanted.
+Therefore
+.it ldiv
+leaves a remainder in the external cell
+.it ldivr.
+.sh BUGS
+No divide check check.

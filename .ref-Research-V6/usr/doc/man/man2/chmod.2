@@ -1,0 +1,45 @@
+.th CHMOD II 12/15/74
+.sh NAME
+chmod \*- change mode of file
+.sh SYNOPSIS
+(chmod = 15.)
+.br
+.ft B
+sys chmod; name; mode
+.s3
+chmod(name, mode)
+.br
+char *name;
+.ft R
+.sh DESCRIPTION
+The file whose name
+is given as the null-terminated string pointed to by
+.it name
+has its mode changed to
+.it mode.
+Modes are constructed by ORing together some
+combination of the following:
+.s3
+.in +3
+ 4000 set user ID on execution
+ 2000 set group ID on execution
+ 1000 save text image after execution
+ 0400 read by owner
+ 0200 write by owner
+ 0100 execute (search on directory) by owner
+ 0070 read, write, execute (search) by group
+ 0007 read, write, execute (search) by others
+.in -3
+.s3
+Only the owner of a file (or the super-user) may change the mode.
+Only the super-user can set the 1000 mode.
+.sh "SEE ALSO"
+chmod (I)
+.sh DIAGNOSTIC
+Error bit
+(c-bit) set if
+.it name
+cannot be found or if current user
+is neither the owner of the file nor the super-user.
+From C, a \*-1 returned value indicates an
+error, 0 indicates success.

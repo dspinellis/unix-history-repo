@@ -1,0 +1,29 @@
+.th KILL I 2/8/75
+.sh NAME
+kill \*- terminate a process
+.sh SYNOPSIS
+.bd kill
+[ \fB\*-\fRsigno ]
+processid ...
+.sh DESCRIPTION
+Kills the specified processes.
+The process number of each asynchronous process
+started with `&' is reported by the Shell.
+Process numbers can also be found by using \fIps\fR (I).
+.s3
+If process number 0 is used, then all processes
+belonging to the current user and associated with the same control typewriter
+are killed.
+.s3
+The killed process must belong
+to the current user unless
+he is the super-user.
+.s3
+If a signal number preceded by ``\*-'' is given
+as first argument, that signal is sent instead of
+.it kill
+(see
+.it "signal (II))."
+.sh "SEE ALSO"
+ps (I), sh (I), signal (II)
+.sh BUGS

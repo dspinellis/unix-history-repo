@@ -1,0 +1,25 @@
+.th CP I 2/8/75
+.sh  NAME
+cp \*- copy
+.sh SYNOPSIS
+.bd cp
+file1 file2
+.sh DESCRIPTION
+The
+first file is copied onto the second.
+The mode and owner of the target file
+are preserved if it already
+existed; the mode of the source file
+is used otherwise.
+.s3
+If
+.it file2
+is a directory, then the target 
+file is a file in that directory with the file-name
+of
+.it file1.
+.s3
+It is forbidden to copy a file onto itself.
+.sh "SEE ALSO"
+cat (I), pr (I), mv (I)
+.sh BUGS

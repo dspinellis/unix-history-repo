@@ -1,0 +1,19 @@
+.th ABORT III 4/10/75
+.sh NAME
+abort  \*-  generate an IOT fault
+.sh SYNOPSIS
+.bd abort()
+.sh DESCRIPTION
+.it Abort
+executes the IOT instruction.
+This is usually considered a program
+fault by the system and results in
+termination with a core dump.
+It is used to generate a core image
+for debugging.
+.sh "SEE ALSO"
+db (I), cdb (I),
+signal (II)
+.sh DIAGNOSTICS
+usually ``IOT trap -- core dumped'' from the Shell.
+.sh BUGS

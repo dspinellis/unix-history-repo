@@ -1,0 +1,162 @@
+.s1
+5. Processes and images
+.es
+An
+.ft I
+image
+.ft
+is a computer execution environment.
+It includes a core image,
+general register values,
+status of open files,
+current directory and the like.
+An image is the current state of a pseudo-computer.
+.pg
+A
+.ft I
+process
+.ft
+is the execution of an image.
+While the processor is executing on behalf of a process,
+the image must reside in core;
+during the execution of other processes it remains in core
+unless the appearance of an active, higher-priority
+process
+forces it to be swapped out to the fixed-head disk.
+.pg
+The user-core part of an image is divided into three logical segments.
+The program text segment begins at location 0 in the virtual address space.
+During execution, this segment is write-protected
+and a single copy of it is shared among
+all processes executing the same program.
+At the first 8K byte boundary above the program text segment in the
+virtual address space begins a non-shared, writable data segment,
+the size of which may be extended by a system call.
+Starting at the highest
+address in the virtual address space is a stack segment,
+which automatically grows downward
+as the hardware's stack pointer fluctuates.
+.s2
+5.1 Processes
+.es
+Except while \*sUNIX\*n is bootstrapping itself into operation, a new
+process can come into existence only
+by use of the \fIfork\fR system call:
+.dc
+processid = fork\|(\|label\|)\|
+.ec
+When \fIfork\fR is executed by a process, it
+splits into two independently executing processes.
+The two processes have independent
+copies of the original core image,
+and share any open files.
+The new processes differ only in that one is considered
+the parent process:
+in the parent,
+control returns directly from the \fIfork\fR,
+while in the child, control is passed
+to location
+.ft I
+label.
+.ft R
+The \fIprocessid\fR returned by the \fIfork\fR call is the identification
+of the other process.
+.pg
+Because the return points in the parent and child process
+are not the same, each image existing after a
+\fIfork\fR may determine whether it is the parent or child process.
+.s2
+5.2 Pipes
+.es
+Processes may communicate
+with related processes using the same system
+.ft I
+read
+.ft
+and
+.ft I
+write
+.ft
+calls that are used for file system I/O.
+The call
+.dc
+filep = pipe\|(\|\|)\|
+.ec
+returns a file descriptor \fIfilep\fR and
+creates an inter-process channel called a \fIpipe\fR.
+This channel, like other open files, is passed from parent to child process in
+the image by the \fIfork\fR call.
+A \fIread\fR using a pipe file descriptor
+waits until another process writes using the
+file descriptor for the same pipe.
+At this point, data are passed between the images of the
+two processes.
+Neither process need know that a pipe,
+rather than an ordinary file,
+is involved.
+.pg
+Although
+inter-process communication
+via pipes is a quite valuable tool
+(see \(sc6.2),
+it is not a completely general
+mechanism,
+since the pipe must be set up by a common ancestor
+of the processes involved.
+.s2
+5.3 Execution of programs
+.es
+Another major system primitive
+is invoked by
+.dc
+execute\|(\|file, arg\*t\d1\u\*n, arg\*t\d2\u\*n, .\|.\|. , arg\*t\dn\u\*n\|)\|
+.ec
+which requests the system to read in and execute the program
+named by \fIfile\fR, passing it string arguments
+.ft I
+arg\v'.3'\*t1\*n\v'-.3'\|, arg\v'.3'\*t2\*n\v'-.3'\|, .\|.\|.\|\|, arg\v'.3'\*tn\*n\v'-.3'.
+.ft R
+All the code and data in the process using \fIexecute\fR
+is replaced from the \fIfile\fR,
+but
+open files, current directory, and
+inter-process relationships are unaltered.
+Only if the call fails, for example
+because \fIfile\fR could not be found or because
+its execute-permission bit was not set, does a return
+take place from the \fIexecute\fR
+primitive;
+it resembles a ``jump'' machine instruction
+rather than a subroutine call.
+.s2
+5.4 Process synchronization
+.es
+Another process control system call
+.dc
+processid = wait\|(\|\|)\|
+.ec
+causes its caller to suspend
+execution until one of its children has completed execution.
+Then \fIwait\fR returns the \fIprocessid\fR of the terminated process.
+An error return is taken if the calling process has no
+descendants.
+Certain status from the child process
+is also available.
+.s2
+5.5 Termination
+.es
+Lastly,
+.dc
+exit\|(\|status\|)\|
+.ec
+terminates a process,
+destroys its image,
+closes its open files,
+and generally obliterates it.
+When the parent is notified through
+the \fIwait\fR primitive,
+the indicated \fIstatus\fR is available
+to the parent.
+Processes may also terminate as a result of
+various illegal actions or user-generated signals
+(\(sc7 below).

@@ -1,0 +1,73 @@
+.th MONITOR III 2/11/74
+.sh NAME
+monitor \*- prepare execution profile
+.sh SYNOPSIS
+.ft B
+monitor(lowpc, highpc, buffer, bufsize)
+.br
+int lowpc( ), highpc( ), buffer[ ], bufsize;
+.ft R
+.sh DESCRIPTION
+.it Monitor
+is an interface to the system's profile entry (II).
+.it Lowpc
+and
+.it highpc
+are the names of two functions;
+.it buffer
+is the address of a (user supplied)
+array of
+.it bufsize
+integers.
+.it Monitor
+arranges for the system to sample the user's
+program counter periodically
+and record the execution histogram in
+the buffer.
+The lowest address sampled
+is that of
+.it lowpc
+and the highest is
+just below
+.it highpc.
+For the results to be significant,
+especially where there are small, heavily
+used routines,
+it is suggested that the buffer be no more
+than a few times smaller than the range
+of locations sampled.
+.s3
+To profile the entire program,
+it is sufficient to use
+.s3
+	extern etext;
+.br
+	...
+.br
+	monitor(2, &etext, buf, bufsize);
+.s3
+.it Etext
+is a loader-defined symbol which lies just above all the
+program text.
+.s3
+To stop execution monitoring and write the results
+on the file
+.it mon.out,
+use
+.s3
+	monitor(0);
+.s3
+Then, when the program exits, prof (I) can be used
+to examine the results.
+.s3
+It is seldom necessary to call this routine
+directly; the
+.bd \*-p
+option of
+.it cc
+is simpler if one is satisfied with
+its default profile range and resolution.
+.sh FILES
+mon.out
+.sh "SEE ALSO"
+prof (I), profil (II), cc (I)

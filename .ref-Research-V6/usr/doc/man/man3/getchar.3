@@ -1,0 +1,31 @@
+.th GETCHAR III 4/7/73
+.sh NAME
+getchar \*- read character
+.sh SYNOPSIS
+.ft B
+getchar( )
+.br
+.ft R
+.sh DESCRIPTION
+.it Getchar
+provides the simplest means of reading characters from
+the standard input for C programs.
+It returns successive characters until end-of-file,
+when it returns ``\\0''.
+.s3
+Associated with this routine is an external variable
+called \fIfin\fR, which is a structure containing
+a buffer such as described under \fIgetc\fR (III).
+.s3
+Generally speaking,
+.it getchar
+should be used only for the simplest applications;
+.it getc
+is better when there are multiple input files.
+.sh "SEE ALSO"
+getc (III)
+.sh DIAGNOSTICS
+Null character returned on EOF or error.
+.sh BUGS
+\*-1 should be
+returned on EOF; null is a legitimate character.

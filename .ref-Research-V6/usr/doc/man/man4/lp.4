@@ -1,0 +1,62 @@
+.th LP IV 5/27/74
+.sh NAME
+lp \*- line printer
+.sh DESCRIPTION
+.it Lp
+provides the interface to any of the standard
+DEC line printers.
+When it is opened or closed, a suitable number
+of page ejects is generated.
+Bytes written are printed.
+.s3
+An internal parameter within the driver determines
+whether or not the device is treated as having
+a 96- or 64-character set.
+In half-ASCII mode, lower case letters are turned
+into
+upper case
+and certain characters are escaped according to
+the following table:
+.s3
+.if t .ig
+.lp +10 5
+{	(-
+.lp +10 5
+}	)-
+.lp +10 5
+\*g	\*a-
+.lp +10 5
+|	!-
+.lp +10 5
+~	^-
+..
+.if n .ig
+.lp +10 5
+{	\o"(\*-"
+.lp +10 5
+}	\o")\*-"
+.lp +10 5
+\*g	\o"\*a\*-"
+.lp +10 5
+|	\o"!\*-"
+.lp +10 5
+~	\o"^\*-"
+..
+.i0
+.s3
+The driver correctly interprets
+carriage returns, backspaces, tabs, and form feeds.
+A sequence of newlines which extends over the end of
+a page is turned into a form feed.
+All lines are indented 8 characters.
+Lines longer than 80 characters are truncated.
+These numbers are parameters in the driver;
+another parameter allows indenting all printout
+if it is unpleasantly near the left margin.
+.sh FILES
+/dev/lp
+.sh "SEE ALSO"
+lpr (I)
+.sh BUGS
+Half-ASCII mode, the indent and the maximum line length should
+be settable by a call analogous to stty (II).

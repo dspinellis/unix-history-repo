@@ -1,0 +1,181 @@
+.th DC I 2/8/75
+.sh NAME
+dc \*- desk calculator
+.sh SYNOPSIS
+.bd dc
+[ file ]
+.sh DESCRIPTION
+.it Dc
+is an arbitrary precision arithmetic package.
+Ordinarily it operates on decimal integers,
+but one may specify an input base, output base,
+and a number of fractional digits to be maintained.
+The overall structure of
+.it dc
+is
+a stacking (reverse Polish) calculator.
+If an argument is given,
+input is taken from that file until its end,
+then from the standard input.
+The following constructions are recognized:
+.s3
+.lp +6 6
+number
+.br
+The value of the number is pushed on the stack.
+A number is an unbroken string of the digits 0-9.
+It may be preceded by an underscore \*_ to input a
+negative number.
+Numbers may contain decimal points.
+.s3
+.lp +6 6
++  \-  *  %  ^
+.br
+The
+top two values on the stack are added
+(+),
+subtracted
+(\*-),
+multiplied (*),
+divided (/),
+remaindered (%),
+or exponentiated (^).
+The two entries are popped off the stack;
+the result is pushed on the stack in their place.
+Any fractional part of an exponent is ignored.
+.s3
+.lp +6 6
+\fBs\fIx\fR	The
+top of the stack is popped and stored into
+a register named
+.it x,
+where
+.it x
+may be any character.
+If
+the
+.bd s
+is capitalized,
+.it x
+is treated as a stack and the value is pushed on it.
+.s3
+.lp +6 6
+\fBl\fIx\fR	The
+value in register
+.it x
+is pushed on the stack.
+The register
+.it x
+is not altered.
+All registers start with zero value.
+If the
+.bd l
+is capitalized,
+register
+.it x
+is treated as a stack and its top value is popped onto the main stack.
+.s3
+.lp +6 6
+\fBd\fR	The
+top value on the stack is duplicated.
+.s3
+.lp +6 6
+\fBp\fR	The top value on the stack is printed.
+The top value remains unchanged.
+.s3
+.lp +6 6
+\fBf\fR	All values on the stack and in registers are printed.
+.s3
+.lp +6 6
+\fBq\fR	exits the program.
+If executing a string, the recursion level is
+popped by two.
+If
+.bd q
+is capitalized,
+the top value on the stack is popped and the string execution level is popped
+by that value.
+.s3
+.lp +6 6
+\fBx\fR	treats the top element of the stack as a character string
+and executes it as a string of dc commands.
+.s3
+.lp +6 6
+\fB[ ... ]\fR	puts the bracketed ascii string onto the top of the stack.
+.s3
+.lp +6 6
+\fI<x  >x  =x\fR
+.br
+The
+top two elements of the stack are popped and compared.
+Register
+.it x
+is executed if they obey the stated
+relation.
+.s3
+.lp +6 6
+\fBv\fR	replaces the top element on the stack by its square root.
+Any existing fractional part of the argument is taken
+into account, but otherwise the scale factor is ignored.
+.s3
+.lp +6 6
+\fB!\fR	interprets the rest of the line as a UNIX command.
+.s3
+.lp +6 6
+\fBc\fR	All values on the stack are popped.
+.s3
+.lp +6 6
+\fBi\fR	The top value on the stack is popped and used as the
+number radix for further input.
+.s3
+.lp +6 6
+\fBo\fR	The top value on the stack is popped and used as the
+number radix for further output.
+.s3
+.lp +6 6
+\fBk\fR	the top of the stack is popped, and that value is used as
+a non-negative scale factor:
+the appropriate number of places
+are printed on output,
+and maintained during multiplication, division, and exponentiation.
+The interaction of scale factor,
+input base, and output base will be reasonable if all are changed
+together.
+.s3
+.lp +6 6
+\fBz\fR	The stack level is pushed onto the stack.
+.s3
+.lp +6 6
+\fB?\fR	A line of input is taken from the input source (usually the console)
+and executed.
+.s3
+.i0
+An example which prints the first ten values of n! is
+.nf
+.s3
+.in +3
+.bd "[la1+dsa*pla10>y]sy"
+.bd "0sa1"
+.bd lyx
+.i0
+.fi
+.sh "SEE ALSO"
+bc (I),
+which is a preprocessor for
+.it dc
+providing infix notation and a C-like syntax
+which implements functions and  reasonable control
+structures for programs.
+.sh DIAGNOSTICS
+(x) ? for unrecognized character x.
+.br
+(x) ? for not enough elements on the stack to do what was asked by command x.
+.br
+`Out of space' when the free list is exhausted (too many digits).
+.br
+`Out of headers' for too many numbers being kept around.
+.br
+`Out of pushdown' for too many items on the stack.
+.br
+`Nesting Depth' for too many levels of nested execution.
+.sh BUGS

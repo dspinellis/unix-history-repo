@@ -1,0 +1,60 @@
+as tmga.s
+cmp a.out /usr/lib/tmga
+cp a.out /usr/lib/tmga
+
+as tmgc.s
+cmp a.out /usr/lib/tmgc
+cp a.out /usr/lib/tmgc
+
+chdir tmgb
+as any.s; mv a.out any.o
+as append.s; mv a.out append.o
+as arith.s; mv a.out arith.o
+as bundle.s; mv a.out bundle.o
+as char.s; mv a.out char.o
+as copy.s; mv a.out copy.o
+as cstr.s; mv a.out cstr.o
+as ctest.s; mv a.out ctest.o
+as decmal.s; mv a.out decmal.o
+as discd.s; mv a.out discd.o
+as emit.s; mv a.out emit.o
+as end.s; mv a.out end.o
+as f.s; mv a.out f.o
+as find.s; mv a.out find.o
+as getnam.s; mv a.out getnam.o
+as ignore.s; mv a.out ignore.o
+as inc.s; mv a.out inc.o
+as infix.s; mv a.out infix.o
+as jget.s; mv a.out jget.o
+as lvrv.s; mv a.out lvrv.o
+as mult.s; mv a.out mult.o
+as octal.s; mv a.out octal.o
+as params.s; mv a.out params.o
+as push.s; mv a.out push.o
+as putcal.s; mv a.out putcal.o
+as putdec.s; mv a.out putdec.o
+as putoct.s; mv a.out putoct.o
+as px.s; mv a.out px.o
+as reln.s; mv a.out reln.o
+as shift.s; mv a.out shift.o
+as stack.s; mv a.out stack.o
+as string.s; mv a.out string.o
+as table.s; mv a.out table.o
+as tq.s; mv a.out tq.o
+as trace.s; mv a.out trace.o
+as trans.s; mv a.out trans.o
+as tx.s; mv a.out tx.o
+as unary.s; mv a.out unary.o
+ar r /lib/tmgb *.o
+rm *.o
+
+chdir ..
+as - tmgl.s
+ld -s /usr/lib/tmga a.out /usr/lib/tmgb /usr/lib/tmgc -ls
+cmp a.out /usr/lib/tmg
+cp a.out /usr/lib/tmg
+/usr/lib/tmg tmgl.t x
+cmp x tmgl.s
+cp x tmgl.s
+
+rm a.out x

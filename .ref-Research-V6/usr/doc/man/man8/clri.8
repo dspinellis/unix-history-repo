@@ -1,0 +1,53 @@
+.th CLRI VIII 10/31/73
+.sh NAME
+clri \*- clear i-node
+.sh SYNOPSIS
+.bd clri
+i-number [ filesystem ]
+.sh DESCRIPTION
+.it Clri
+writes zeros on the 32 bytes occupied by the i-node
+numbered
+.it i-number.
+If the
+.it "file system"
+argument is given, the i-node resides on
+the given device, otherwise on a
+default file system.
+The file system argument
+must be a special file
+name referring to a device
+containing a file system.
+After
+.it clri,
+any blocks
+in the affected file
+will show up as ``missing'' in an
+.it icheck
+of
+of the file system.
+.s3
+Read and write permission is required on the specified
+file system device.
+The i-node becomes allocatable.
+.s3
+The primary purpose of this routine
+is to remove a file which
+for some reason appears in no
+directory.
+If it is used to zap an i-node
+which does appear in a directory, care should be taken to track down
+the entry and remove it.
+Otherwise, when the i-node is reallocated to some new file,
+the old entry will still point to that file.
+At that point removing the old entry will destroy the new file.
+The new entry will again point to an unallocated i-node,
+so the whole cycle is likely to be repeated again and again.
+.sh BUGS
+Whatever the default file system is,
+it is likely to be wrong.
+Specify the file system explicitly.
+.s3
+If the file is open,
+.it clri
+is likely to be ineffective.

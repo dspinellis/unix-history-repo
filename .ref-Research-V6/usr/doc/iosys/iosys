@@ -1,0 +1,1406 @@
+.lg
+.tr _\(ul
+.pl 11i
+.ll 6.5i
+.ps 10
+.vs 11p
+.br
+.tl '-'''
+.de pg
+.sp .5
+..
+.de it
+.ft I
+\\$1
+.ft R
+..
+.de bd
+.ft B
+\\$1
+.ft R
+..
+.de he
+.tl '-'''
+'sp .5i
+.ft I
+.if e  'tl '% - Unix I/O System'''
+.if o 'tl '''Unix I/O System - %'
+.ft P
+'sp .5i
+'ns
+..
+.de fo
+'bp
+..
+.de MS
+.ne 4
+.sp
+.ft B
+\\$1
+.pg
+.ft R
+..
+.de ms
+.ne 4
+.sp
+.ft I
+\\$1
+.pg
+.ft R
+..
+.sp 1.5i
+.wh 0 he
+.wh -1i fo
+.ps 16
+.ce
+The Unix I/O System
+.sp .25i
+.ps 10
+.ft I
+.ce 2
+Dennis M. Ritchie
+Bell Telephone Laboratories
+.ft R
+.ps 10
+.sp .7i
+This paper gives an overview of the workings of the Unix
+I/O system.
+It was written with an eye toward providing
+guidance to writers of device driver routines,
+and is oriented more toward describing the environment
+and nature of device drivers than the implementation
+of that part of the file system which deals with
+ordinary files.
+.pg
+It is assumed that the reader has a good knowledge
+of the overall structure of the file system as discussed
+in the paper ``The Unix Time-sharing System.''
+Moreover the present document is intended to be used in
+conjunction with a copy of the system code,
+since it is basically an exegesis of that code.
+.MS "Device Classes"
+There are two classes of device:
+.it block
+and
+.it character.
+The block interface is suitable for devices
+like disks, tapes, and DECtape
+which work, or can work, with addressible 512-byte blocks.
+Ordinary magnetic tape just barely fits in this category,
+since by use of forward
+backward spacing any block can be read, even though
+blocks can be written only at the end of the tape.
+Block devices can at least potentially contain a mounted
+file system.
+The interface to block devices is very highly structured;
+the drivers for these devices share a great many routines
+as well as a pool of buffers.
+.pg
+Character-type devices have a much
+more straightforward interface, although
+more work must be done by the driver itself.
+.pg
+Devices of both types are named by a
+.it major
+and a
+.it minor
+device number.
+These numbers are generally stored as a word
+with the minor device number
+as the low byte and the major device number
+as the high byte.
+The major device number selects which driver will deal with
+the device; the minor device number is not used
+by the rest of the system but is passed to the
+driver at appropriate times.
+Typically the minor number
+selects a subdevice attached to
+a given controller, or one of
+several similar hardware interfaces.
+.pg
+The major device numbers for block and character devices
+are used as indices in separate tables;
+they both start at 0 and therefore overlap.
+.MS "Overview of I/O"
+The purpose of
+the
+.it open
+and
+.it creat
+system calls is to set up entries in three separate
+system tables.
+The first of these is the
+.it u_ofile
+table,
+which is stored in the system's per-process
+data area
+.it u.
+This table is indexed by
+the file descriptor returned by the
+.it open
+or
+.it creat,
+and is accessed during
+a
+.it read,
+.it write,
+or other operation on the open file.
+An entry contains only
+a pointer to the corresponding
+entry of the
+.it file
+table,
+which is a per-system data base.
+There is one entry in the
+.it file
+table for each
+instance of
+.it open
+or
+.it creat.
+This table is per-system because the same instance
+of an open file must be shared among the several processes
+which can result from
+.it forks
+after the file is opened.
+A
+.it file
+table entry contains
+flags which indicate whether the file
+was open for reading or writing or is a pipe, and
+a count which is used to decide when all processes
+using the entry have terminated or closed the file
+(so the entry can be abandoned).
+There is also a 32-bit file offset
+which is used to indicate where in the file the next read
+or write will take place.
+Finally, there is a pointer to the
+entry for the file in the
+.it inode
+table,
+which contains a copy of the file's i-node.
+Notice that an entry in the
+.it file
+table corresponds precisely to an instance of
+.it open
+or
+.it creat;
+if the same file is opened several times,
+it will have several
+entries in this table.
+However,
+there is at most one entry
+in the
+.it inode
+table for a given file.
+Also, a file may enter the
+.it inode
+table not only because it is open,
+but also because it is the current directory
+of some process or because it
+is a special file containing a currently-mounted
+file system.
+.pg
+An entry in the
+.it inode
+table differs somewhat from the
+corresponding i-node as stored on the disk;
+the modified and accessed times are not stored,
+and the entry is augmented
+by a flag word containing information about the entry,
+a count used to determine when it may be
+allowed to disappear,
+and the device and i-number
+whence the entry came.
+.pg
+During the processing of an
+.it open
+or
+.it creat
+call for a special file,
+the system always calls the device's
+.it open
+routine to allow for any special processing
+required (rewinding a tape, turning on
+the data-terminal-ready lead of a modem, etc.).
+However,
+the
+.it close
+routine is called only when the last
+process closes a file,
+that is, when the i-node table entry
+is being deallocated.
+Thus it is not feasible
+for a device to maintain, or depend on,
+a count of its users, although it is quite
+possible to
+implement an exclusive-use device which cannot
+be reopened until it has been closed.
+.pg
+When a
+.it read
+or
+.it write
+takes place,
+the user's arguments
+and the
+.it file
+table entry are used to set up the
+variables
+.it u.u_base,
+.it u.u_count,
+and
+.it u.u_offset
+which respectively contain the (user) address
+of the I/O target area, the byte-count for the transfer,
+and the current location in the file.
+If the file referred to is
+a character-type special file, the appropriate read
+or write routine is called; it is responsible
+for transferring data and updating the
+count and current location appropriately
+as discussed below.
+Otherwise, the current location is used to calculate
+a logical block number in the file.
+If the file is an ordinary file the logical block
+number must be mapped (possibly using an indirect block)
+to a physical block number; a block-type
+special file need not be mapped.
+In any event, the resulting physical block number
+is used, as discussed below, to
+read or write the appropriate device.
+.MS "Character device drivers"
+The
+.it cdevsw
+table specifies the interface routines present for
+character devices.
+Each device provides five routines:
+open, close, read, write, and special-function.
+Any of these may be missing.
+If a call on the routine
+should be ignored,
+(e.g.
+.it open
+on non-exclusive devices which require no setup)
+the
+.it cdevsw
+entry can be given as
+.it nulldev;
+if it should be considered an error,
+(e.g.
+.it write
+on read-only devices)
+.it nodev
+is used.
+.pg
+The
+.it open
+routine is called each time the file
+is opened with the full device number as argument.
+The second argument is a flag which is
+non-zero only if the device is to be written upon.
+.pg
+The
+.it close
+routine is called only when the file
+is closed for the last time,
+that is when the very last process in
+which the file is open closes it.
+This means it is not possible for the driver to
+maintain its own count of its users.
+The first argument is the device number;
+the second is a flag which is non-zero
+if the file was open for writing in the process which
+performs the final
+.it close.
+.pg
+When
+.it write
+is called, it is supplied the device
+as argument.
+The per-user variable
+.it u.u_count
+has been set to
+the number of characters indicated by the user;
+for character devices, this number may be 0
+initially.
+.it u.u_base
+is the address supplied by the user from which to start
+taking characters.
+The system may call the
+routine internally, so the
+flag
+.it u.u_segflg
+is supplied which indicates,
+if
+.it on,
+that
+.it u.u_base
+refers to the system address space instead of
+the user's.
+.pg
+The
+.it write
+routine
+should copy up to
+.it u.u_count
+characters from the user's buffer to the device,
+decrementing
+.it u.u_count
+for each character passed.
+For most drivers, which work one character at a time,
+the routine
+.pg
+.ti 5
+.it "cpass( )"
+.pg
+is used to pick up characters
+from the user's buffer.
+Successive calls on it return
+the characters to be written until
+.it u.u_count
+goes to 0 or an error occurs,
+when it returns \(mi1.
+.it Cpass
+takes care of interrogating
+.it u.u_segflg
+and updating
+.it u.u_count.
+.pg
+Write routines which want to transfer
+a probably large number of characters into an internal
+buffer may also use the routine
+.pg
+.ti 5
+.it "iomove(buffer, offset, count, flag)"
+.pg
+which is faster when many characters must be moved.
+.it Iomove
+transfers up to
+.it count
+characters into the
+.it buffer
+starting
+.it offset
+bytes from the start of the buffer;
+.it flag
+should be
+.it B_WRITE
+(which is 0) in the write case.
+Caution:
+the caller is responsible for making sure
+the count is not too large and is non-zero.
+As an efficiency note,
+.it iomove
+is much slower if any of
+.it "buffer+offset, count"
+or
+.it u.u_base
+is odd.
+.pg
+The device's
+.it read
+routine is called under conditions similar to
+.it write,
+except that
+.it u.u_count
+is guaranteed to be non-zero.
+To return characters to the user, the routine
+.pg
+.ti 5
+.it "passc(c)"
+.pg
+is available; it takes care of housekeeping
+like
+.it cpass
+and returns \(mi1 as the last character
+specified by
+.it u.u_count
+is returned to the user;
+before that time, 0 is returned.
+.it Iomove
+is also usable as with
+.it write;
+the flag should be
+.it B_READ
+but the same cautions apply.
+.pg
+The ``special-functions'' routine
+is invoked by the
+.it stty
+and
+.it gtty
+system calls as follows:
+.pg
+.ti 5
+.it "(*p) (dev, v)"
+.pg
+where
+.it p
+is a pointer to the device's routine,
+.it dev
+is the device number,
+and
+.it v
+is a vector.
+In the
+.it gtty
+case,
+the device is supposed to place up to 3 words of status information
+into the vector; this will be returned to the caller.
+In the
+.it stty
+case,
+.it v
+is 0;
+the device should take up to 3 words of
+control information from
+the array
+.it "u.u_arg[0...2]."
+.pg
+Finally, each device should have appropriate interrupt-time
+routines.
+When an interrupt occurs, it is turned into a C-compatible call
+on the devices's interrupt routine.
+The interrupt-catching mechanism makes
+the low-order four bits of the ``new PS'' word in the
+trap vector for the interrupt available
+to the interrupt handler.
+This is conventionally used by drivers
+which deal with multiple similar devices
+to encode the minor device number.
+After the interrupt has been processed,
+a return from the interrupt handler will
+return from the interrupt itself.
+.pg
+A number of subroutines are available which are useful
+to character device drivers.
+Most of these handlers, for example, need a place
+to buffer characters in the internal interface
+between their ``top half'' (read/write)
+and ``bottom half'' (interrupt) routines.
+For relatively low data-rate devices, the best mechanism
+is the character queue maintained by the
+routines
+.it getc
+and
+.it putc.
+A queue header has the structure
+.pg
+.in 5
+.ft I
+.nf
+struct {
+	int	c_cc;	/* character count */
+	char	*c_cf;	/* first character */
+	char	*c_cl;	/* last character */
+} queue;
+.pg
+.ft R
+.in 0
+.fi
+A character is placed on the end of a queue by
+.pg
+.ti 5
+.it "putc(c, &queue)"
+.pg
+where
+.it c
+is the character and
+.it queue
+is the queue header.
+The routine returns \(mi1 if there is no space
+to put the character, 0 otherwise.
+The first character on the queue may be retrieved
+by
+.pg
+.ti 5
+.it "getc(&queue)"
+.pg
+which returns either the (non-negative) character
+or \(mi1 if the queue is empty.
+.pg
+Notice that the space for characters in queues is
+shared among all devices in the system
+and in the standard system there are only some 600
+character slots available.
+Thus device handlers,
+especially write routines, must take
+care to avoid gobbling up excessive numbers of characters.
+.pg
+The other major help available
+to device handlers is the sleep-wakeup mechanism.
+The call
+.pg
+.ti 5
+.it "sleep(event, priority)"
+.pg
+causes the process to wait (allowing other processes to run)
+until the
+.it event
+occurs;
+at that time, the process is marked ready-to-run
+and the call will return when there is no
+process with higher
+.it priority.
+.pg
+The call
+.pg
+.ti 5
+.it "wakeup(event)"
+.pg
+indicates that the
+.it event
+has happened, that is, causes processes sleeping
+on the event to be awakened.
+The
+.it event
+is an arbitrary quantity agreed upon
+by the sleeper and the waker-up.
+By convention, it is the address of some data area used
+by the driver, which guarantees that events
+are unique.
+.pg
+Processes sleeping on an event should not assume
+that the event has really happened;
+they should check that the conditions which
+caused them to sleep no longer hold.
+.pg
+Priorities can range from 127 to \(mi127;
+a higher numerical value indicates a less-favored
+scheduling situation.
+A process sleeping at negative priority cannot
+be terminated for any reason, although it
+is conceivable that it may be swapped out.
+Thus it is a bad idea to sleep with negative
+priority on an event which might never occur.
+On the other hand, calls to
+.it sleep
+with non-negative priority
+may never return if the process is terminated by
+some signal in the meantime.
+Incidentally, it is a gross error to call
+.it sleep
+in a routine called at interrupt time, since the process
+which is running is almost certainly not the
+process which should go to sleep.
+Likewise, none of the variables in the user area
+``\fIu\fB.\fR''
+should be touched, let alone changed, by an interrupt routine.
+.pg
+If a device driver
+wishes to wait for some event for which it is inconvenient
+or impossible to supply a
+.it wakeup,
+(for example, a device going on-line, which does not
+generally cause an interrupt),
+the call
+.pg
+.ti 5
+.it "sleep(&lbolt, priority)
+.pg
+may be given.
+.it Lbolt
+is an external cell whose address is awakened once every 4 seconds
+by the clock interrupt routine.
+.pg
+The routines
+.pg
+.ti 5
+.it "spl4( ), spl5( ), spl6( ), spl7( )"
+.pg
+are available to
+set the processor priority level as indicated to avoid
+inconvenient interrupts from the device.
+.pg
+If a device needs to know about real-time intervals,
+then
+.pg
+.ti 5
+.it "timeout(func, arg, interval)
+.pg
+will be useful.
+This routine arranges that after
+.it interval
+sixtieths of a second, the
+.it func
+will be called with
+.it arg
+as argument, in the style
+.pg
+.ti 5
+.it "(*func)(arg)
+.pg
+Timeouts are used, for example,
+to provide real-time delays after function characters
+like new-line and tab in typewriter output,
+and to terminate an attempt to
+read the 201 Dataphone
+.it dp
+if there is no response within a specified number
+of seconds.
+Notice that the number of sixtieths of a second is limited to 32767,
+since it must appear to be positive,
+and that only a bounded number of timeouts
+can be going on at once.
+Also, the specified
+.it func
+is called at clock-interrupt time, so it should
+conform to the requirements of interrupt routines
+in general.
+.ms "An example"
+The driver for the paper-tape
+reader/punch is worth examining
+as a fairly simple example of
+many of the techniques used in writing
+character device handlers.
+The
+.it pc11
+structure contains a state (used for the reader),
+an input queue, and an output queue.
+A structure, rather than three
+individual variables,
+was used to cut down on the number of
+external symbols which might be confused
+with symbols in other routines.
+.pg
+When the file is opened for reading,
+the
+.it open
+routine checks to see if its state is not
+.it CLOSED;
+if so an error is returned since it is considered
+a bad idea to let several people read one tape
+simultaneously.
+The state is set to
+.it WAITING,
+the interrupt is enabled, and a character is requested.
+The reason for this gambit is that there is no direct way to
+determine if there is any tape in the reader
+or if the reader is on-line.
+In these situations an interrupt will occur
+immediately and an error indicated.
+As will be seen, the interrupt routine
+ignores errors if the state is
+.it WAITING,
+but if a good character comes in while
+in the
+.it WAITING
+state the interrupt routine sets the state to
+.it READING.
+Thus
+.it open
+loops until the state changes, meanwhile
+sleeping on the
+``lightning bolt''
+.it lbolt.
+If it did not sleep at all, it would prevent
+any other process from running until the reader came on-line;
+if it depended on the interrupt routine to wake it up,
+the effect would be the same, since the error
+interrupt is almost instantaneous.
+.pg
+The open-write case is much simpler; the
+punch is enabled and a 100-character leader is punched
+using
+.it pcleader.
+.pg
+The
+.it close
+routine is also simple; if the reader was open,
+any uncollected characters are flushed,
+the interrupt is turned off, and
+the state is set to
+.it CLOSED.
+In the write case a 100-character trailer
+is punched.
+The routine has a bug in that
+if both the reader and punch are open
+.it close
+will be called only once, so that either the
+leftover characters are flushed
+or the trailer is punched,
+but not both.
+It is hard to see how to fix this problem
+except by making the reader and punch separate devices.
+.pg
+The
+.it pcread
+routine
+tries to pick up characters from the input queue
+and passes them back until the user's read call
+is satisfied.
+If there
+are no characters it checks
+whether the state has gone to
+.it EOF,
+which means that the interrupt routine
+detected an error in the
+.it READ
+state (assumed to indicate the end of the tape).
+If so,
+.it pcread
+returns;
+either during this call or the next one no characters will
+be passed back, indicating an end-of-file.
+If the state is still
+.it READING
+the routine enables another character by fiddling the
+device's reader control register,
+provided it is not active,
+and goes to sleep.
+.pg
+When a reader interrupt occurs
+and the state is
+.it WAITING,
+and the device's error bit is set,
+the interrupt is ignored;
+if there is no error the state is set to
+.it READING,
+as indicated in the discussion
+of
+.it pcread.
+If the state is
+.it READING
+and there is an error, the state is set to
+.it EOF;
+it is assumed that the error represents
+the end of the tape.
+If there is no error, the character is picked up and
+stored in the input queue.
+Then, provided the number of characters
+already in the queue is less than the
+high-water mark
+.it PCIHWAT,
+the reader is enabled again to 
+read another character.
+This strategy keeps the tape moving
+without flooding the input queue with unread characters.
+Finally, the top half is awakened.
+.pg
+Looking again at
+.it pcread,
+notice that
+the priority  level is raised
+by
+.it "spl4( )"
+to prevent interrupts during the loop.
+This is done because of the
+possibility that the input queue is empty,
+and just after the EOF test is made
+an error interrupt occurs because the
+tape runs out.
+Then
+.it sleep
+will be called with no possibility of
+a
+.it wakeup.
+In general the processor priority
+should be raised
+when a routine is about
+to sleep awaiting some condition where the
+presence of the condition, and the consequent
+.it wakeup,
+is indicated by an interrupt.
+The danger is that
+the interrupt might occur between
+the test for the condition and the call to
+.it sleep,
+so that the
+.it wakeup
+apparently never happens.
+.pg
+At the same time it is a bad idea to
+raise the processor priority level
+for an extended period of time,
+since devices with real-time
+requirements may be shut out so long as to cause an
+error.
+The
+.it pcread
+routine is perhaps overzealous
+in this respect, although since most
+devices have a priority level higher than 4
+this difficulty is not very important.
+.pg
+The
+.it pcwrite
+routine simply gets characters from the user
+and passes them to
+.it pcoutput,
+which is separated out so that
+.it pcleader
+can call it also.
+.it Pcoutput
+checks for errors (like out-of-tape)
+and if none are present
+makes sure that
+the number of characters in the output queue
+does not exceed
+.it PCOHWAT;
+if it does,
+.it sleep
+is called.
+Then the character is placed on the output queue.
+There is a small bug here in that
+.it pcoutput
+does not check that
+the character was successfully put on the queue
+(all character-queue space might be empty);
+perhaps in this case it might be a good idea to
+sleep on the lightning-bolt
+until things quiet down.
+Finally
+.it pcstart
+is called,
+which checks to see if the punch is currently busy,
+and if not starts the punching of the
+first character on the output queue.
+.pg
+When punch interrupts occur,
+.it pcpint
+is called;
+it starts the punching of the next character on the output
+queue,
+and if the number of characters remaining on the queue is
+less than the low-water mark
+.it PCOLWAT
+it
+wakes up the write routine,
+which is presumably waiting for the queue to
+empty.
+.MS "The Block-device Interface"
+Handling of block devices is mediated by a collection
+of routines which manage a set of buffers containing
+the images of blocks of data on the various devices.
+The most important purpose of these routines is to assure
+that several processes which access the same block of the same
+device in multiprogrammed fashion maintain a consistent
+view of the data in the block.
+A secondary but still important purpose is to increase
+the efficiency of the system by
+keeping in-core copies of blocks which are being
+accessed frequently.
+The main data base for this mechanism is the
+table of buffers
+.it buf.
+Each buffer header contains a pair of pointers
+.it "(b_forw, b_back)"
+which maintain a doubly-linked list
+of the buffers associated with a particular
+block device, and a
+pair of pointers
+.it "(av_forw, av_back)"
+which generally maintain a doubly-linked list of blocks
+which are ``free,'' that is,
+eligible to be reallocated for another transaction.
+Buffers which have I/O in progress
+or are busy for other purposes do not appear in this list.
+The buffer header
+also contains the device and block number to which the
+buffer refers, and a pointer to the actual storage associated with
+the buffer.
+There is a word count
+which is the negative of the number of words
+to be transferred to or from the buffer;
+there is also an error byte and a residual word
+count used to communicate information
+from an I/O routine to its caller.
+Finally, there is a flag word
+with bits indicating the status of the buffer.
+These flags will be discussed below.
+.pg
+Six routines constitute
+the most important part of the interface with the
+rest of the system.
+Given a device and block number,
+both
+.it bread
+and
+.it getblk
+return a pointer to a buffer header for the block;
+the difference is that
+.it bread
+is guaranteed to return a buffer actually containing the
+current data for the block,
+while
+.it getblk
+returns a buffer which contains the data in the
+block only if it is already in core (whether it is
+or not is indicated by the
+.it B_DONE
+bit; see below).
+In either case the buffer, and the corresponding
+device block, is made ``busy,''
+so that other processes referring to it
+are obliged to wait until it becomes free.
+.it Getblk
+is used, for example,
+when a block is about to be totally rewritten,
+so that its previous contents are
+not useful;
+still, no other process can be allowed to refer to the block
+until the new data is placed into it.
+.pg
+Given a pointer to a buffer,
+the
+.it brelse
+routine
+makes the buffer again available to other processes.
+It is called, for example, after
+data has been extracted following a
+.it bread.
+There are three subtly-different write routines,
+all of which take a buffer pointer as argument,
+and all of which logically release the buffer for
+use by others and place it on the free list.
+.it Bwrite
+puts the
+buffer on the appropriate device queue,
+waits for the write to be done,
+and sets the user's error flag if required.
+.it
+.it Bawrite
+places the buffer on the device's queue, but does not wait
+for completion, so that errors cannot be reflected directly to
+the user.
+.it Bdwrite
+does not start any I/O operation at all,
+but merely marks
+the buffer so that if it happens
+to be grabbed from the free list to contain
+data from some other block, the data in it will
+first be written
+out.
+.pg
+.it Bwrite
+is used when one wants to be sure that
+I/O takes place correctly, and that
+errors are reflected to the proper user;
+it is used, for example, when updating i-nodes.
+.it Bawrite
+is useful when more efficiency is desired
+(because no wait is required for I/O to finish)
+but when it is reasonably certain that the
+write is really required.
+.it Bdwrite
+is used when there is doubt that the write is
+needed at the moment.
+For example,
+.it bdwrite
+is called when the last byte of a
+.it write
+system call falls short of the end of a
+block, on the assumption that
+another
+.it write
+will be given soon which will re-use the same block.
+On the other hand,
+as the end of a block is passed,
+.it bawrite
+is called, since probably the block will
+not be accessed again soon and one might as
+well start the writing process as soon as possible.
+.pg
+In any event, notice that the routines
+.it "getblk"
+and
+.it bread
+dedicate the given block exclusively to the
+use of the caller, and make others wait,
+while one of
+.it "brelse, bwrite, bawrite,"
+or
+.it bdwrite
+must eventually be called to free the block for use by others.
+.pg
+As mentioned, each buffer header contains a flag
+word which indicates the status of the buffer.
+Since they provide
+one important channel for information between the drivers and the
+block I/O system, it is important to understand these flags.
+The following names are manifest constants which
+select the associated flag bits.
+.ms B_READ
+This bit is set when the buffer is handed to the device strategy routine
+(see below) to indicate a read operation.
+The symbol
+.it B_WRITE
+is defined as 0 and does not define a flag; it is provided
+as a mnemonic convenience to callers of routines like
+.it swap
+which have a separate argument
+which indicates read or write.
+.ms B_DONE
+This bit is set
+to 0 when a block is handed to the the device strategy
+routine and is turned on when the operation completes,
+whether normally as the result of an error.
+It is also used as part of the return argument of
+.it getblk
+to indicate if 1 that the returned
+buffer actually contains the data in the requested block.
+.ms B_ERROR
+This bit may be set to 1 when
+.it B_DONE
+is set to indicate that an I/O or other error occurred.
+If it is set the
+.it b_error
+byte of the buffer header may contain an error code
+if it is non-zero.
+If
+.it b_error
+is 0 the nature of the error is not specified.
+Actually no driver at present sets
+.it b_error;
+the latter is provided for a future improvement
+whereby a more detailed error-reporting
+scheme may be implemented.
+.ms B_BUSY
+This bit indicates that the buffer header is not on
+the free list, i.e. is
+dedicated to someone's exclusive use.
+The buffer still remains attached to the list of
+blocks associated with its device, however.
+When
+.it getblk
+(or
+.it bread,
+which calls it) searches the buffer list
+for a given device and finds the requested
+block with this bit on, it sleeps until the bit
+clears.
+.ms B_WANTED
+This flag is used in conjunction with the
+.it B_BUSY
+bit.
+Before sleeping as described
+just above,
+.it getblk
+sets this flag.
+Conversely, when the block is freed and the busy bit
+goes down (in
+.it brelse)
+a
+.it wakeup
+is given for the block header whenever
+.it B_WANTED
+is on.
+This strategem avoids the overhead
+of having to call
+.it wakeup
+every time a buffer is freed on the chance that someone
+might want it.
+.ms B_ASYNC
+This bit is set by
+.it bawrite
+to indicate to the appropriate device driver
+that the buffer should be released when the
+write has been finished, usually at interrupt time.
+The difference between
+.it bwrite
+and
+.it bawrite
+is that the former starts I/O, waits until it is done, and
+frees the buffer.
+The latter merely sets this bit and starts I/O.
+The bit indicates that
+.it relse
+should be called for the buffer on completion.
+.ms B_DELWRI
+This bit is set by
+.it bdwrite
+before releasing the buffer.
+When
+.it getblk,
+while searching for a free block,
+discovers the bit is 1 in a buffer it would otherwise grab,
+it causes the block to be written out before reusing it.
+.ms B_XMEM
+This is actually a mask for the pair
+of bits which contain the high-order two bits
+of the physical address of the origin
+of the buffer; these bits are an extension of the 16 address
+bits elsewhere in the buffer header.
+.ms B_RELOC
+This bit is currently unused; it previously indicated
+that a system-wide relocation constant was to be added
+to the buffer address.
+It was needed during a period when addresses
+of data in the system (including the buffers)
+were mapped by the relocation hardware to
+a physical address differing from its
+virtual address.
+.MS "Block Device Drivers"
+The
+.it bdevsw
+table contains the names of the interface routines
+and that of a table for each block device.
+.pg
+Just as for character devices, block device drivers may supply
+an
+.it open
+and a
+.it close
+routine
+called respectively on each open and on the final close
+of the device.
+Instead of separate read and write routines,
+each block device driver has a
+.it strategy
+routine which is called with a pointer to a buffer
+header as argument.
+As discussed, the buffer header contains
+a read/write flag, the core address (including extended-memory
+bits),
+the block number, a (negative) word count,
+and the major and minor device number.
+The r\o'o^'le of the strategy routine
+is to carry out the operation as requested by the
+information in the buffer header.
+When the transaction is complete the
+.it B_DONE
+(and possibly the
+.it B_ERROR)
+bits should be set.
+Then if the
+.it B_ASYNC
+bit is set,
+.it brelse
+should be called;
+otherwise,
+.it wakeup.
+In cases where the device
+is capable, under error-free operation,
+of transferring fewer words than requested,
+the device's word-count register should be placed
+in the residual count slot of
+the buffer header;
+otherwise, the residual count should be set to 0.
+This particular mechanism is really for the benefit
+of the magtape driver;
+when reading this device
+records shorter than requested are quite normal,
+and the user should be told the actual length of the record.
+[However the mechanism has not been integrated
+into normal I/O even on magtape and is used only
+in ``raw'' I/O as discussed below.]
+.pg
+Notice that although the most usual argument
+to the strategy routines
+is a genuine buffer header allocated as discussed above,
+all that is actually required
+is that the argument be a pointer to a place containing the
+appropriate information.
+For example the
+.it swap
+routine, which manages movement
+of core images to and from the swapping device,
+uses the strategy routine
+for this device.
+Care has to be taken that
+no extraneous bits get turned on in the
+flag word.
+.pg
+The device's table specified by
+.it bdevsw
+has a
+byte to contain an active flag and an error count,
+a pair of links which constitute the
+head of the chain of buffers for the device
+.it "(b_forw, b_back),"
+and a first and last pointer for a device queue.
+Of these things, all are used solely by the device driver
+itself
+except for the buffer-chain pointers.
+Typically the flag encodes the state of the
+device, and is used at a minimum to
+indicate that the device is currently engaged in
+transferring information and no new command should be issued.
+The error count is useful for counting retries
+when errors occur.
+The device queue is used to remember stacked requests;
+in the simplest case it may be maintained as a first-in
+first-out list.
+Since buffers which have been handed over to
+the strategy routines are never
+on the list of free buffers,
+the pointers in the buffer which maintain the free list
+.it "(av_forw, av_back)"
+are also used to contain the pointers
+which maintain the device queues.
+.pg
+A couple of routines
+are provided which are useful to block device drivers.
+.pg
+.ti 5
+.it "iodone(bp)  ,"
+.pg
+arranges that the buffer to which
+.it bp
+points be released or awakened,
+as appropriate,
+when the
+strategy module has finished with the buffer,
+either normally or after an error.
+(In the latter case the
+.it B_ERROR
+bit has presumably been set.)
+.pg
+When the device conforms to some rather loose
+standards adhered to by certain DEC hardware,
+the routine
+.pg
+.ti 5
+.it "devstart(bp, devloc, devblk, hbcom)"
+.pg
+is useful.
+Here
+.it bp
+is the address of the buffer header,
+.it devloc
+is the address of the slot in the device registers which
+accepts a perhaps-encoded device block number,
+.it devblk
+is the block number,
+and
+.it hbcom
+is a quantity to be stored in the high byte of
+the device's command register.
+It is understood, when using this routine, that
+the device registers are laid out in the order
+.pg
+.in 5
+.nf
+command register
+word count
+core address
+block (or track or sector)
+.fi
+.pg
+.in 0
+where the address of the last corresponds to
+.it devloc.
+Moreover, the device should correspond to
+the RP, RK, and RF devices
+with respect to its layout of extended-memory bits
+and structure of read and write commands.
+.pg
+The routine
+.pg
+.ti 5
+.it "geterror(bp)"
+.pg
+can be used to examine the error bit in a buffer header
+and arrange that any error indication found therein is
+reflected to the user.
+It may be called only in the non-interrupt
+part of a driver when I/O has completed
+.it (B_DONE
+has been set).
+.ms "An example"
+The RF disk driver is worth studying
+as the simplest example of a block I/O device.
+Its
+.it strategy
+routine checks to see if the requested block
+lies beyond the end of the device;
+the size of the disk, in this instance, is indicated
+by the minor device number.
+If the request is plausible,
+the buffer is placed at the end of the device queue,
+and if the disk is not running,
+.it rfstart
+is called.
+.pg
+.it Rfstart
+merely returns if there is nothing to do, but
+otherwise sets the device-active flag,
+loads the address extension register,
+and calls
+.it devstart
+to perform the remaining tasks attendant on
+beginning a data transfer.
+.pg
+When a completion or error interrupt occurs,
+.it rfintr
+is called.
+If an error is indicated, and if the error count has not
+exceeded 10,
+the same transaction is reattempted;
+otherwise the error bit is set.
+If there was no error or if
+10 failing transfers have been issued
+the queue is advanced and
+.it rfstart
+is called to begin another transaction.
+.MS "Raw Block-device I/O"
+A scheme has been set up whereby block device drivers may
+provide the ability to transfer information
+directly between the user's core image and the device
+without the use of buffers and in blocks as large as
+the caller requests.
+The method involves setting up a character-type special file
+corresponding to the raw device
+and providing
+.it read
+and
+.it write
+routines which set up what is usually a private,
+non-shared buffer header with the appropriate information
+and call the device's strategy routine.
+If desired, separate
+.it open
+and
+.it close
+routines may be provided but this is usually unnecessary.
+A special-function routine might come in handy, especially for
+magtape.
+.pg
+A great deal of work has to be done to generate the
+``appropriate information''
+to put in the argument buffer for
+the strategy module;
+the worst part is to map relocated user addresses to physical addresses.
+Most of this work is done by
+.pg
+.ti 5
+.it "physio(strat, bp, dev, rw)
+.pg
+whose arguments are the name of the
+strategy routine
+.it strat,
+the buffer pointer
+.it bp,
+the device number
+.it dev,
+and a read-write flag
+.it rw
+whose value is either
+.it B_READ
+or
+.it B_WRITE.
+.it Physio
+makes sure that the user's base address and count are
+even (because most devices work in words)
+and that the core area affected is contiguous
+in physical space;
+it delays until the buffer is not busy, and makes it
+busy while the operation is in progress;
+and it sets up user error return information.
+.pg
+The magtape driver is the only one which as of this
+writing provides a raw I/O capability;
+given
+.it physio,
+the work involved is trivial, and amounts to
+passing back to the user information on the
+length of the record read or written.
+(There is some funniness because the magtape,
+uniquely among DEC devices, works in bytes,
+not words.)
+Putting in raw I/O for disks should be equally trivial
+except that the disk address
+has to be carefully checked to make sure it does not overflow
+from one logical device to another on which the caller may not have
+write permission.

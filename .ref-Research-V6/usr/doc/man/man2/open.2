@@ -1,0 +1,50 @@
+.th OPEN II 8/5/73
+.sh NAME
+open \*- open for reading or writing
+.sh SYNOPSIS
+(open = 5.)
+.br
+.ft B
+sys open; name; mode
+.br
+.ft R
+(file descriptor in r0)
+.s3
+.ft B
+open(name, mode)
+.br
+char *name;
+.ft R
+.sh DESCRIPTION
+.it Open
+opens the file
+.it name
+for reading
+(if
+.it mode
+is 0),
+writing (if
+.it mode
+is 1) or for both reading and writing
+(if
+.it mode
+is 2).
+.it Name
+is the address of a string of ASCII characters representing
+a path name, terminated by a null character.
+.s3
+The returned file descriptor should be saved for subsequent calls
+to
+.it read,
+.it write,
+and
+.it close.
+.sh "SEE ALSO"
+creat (II), read (II), write (II), close (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set if the file does not exist,
+if one of the necessary directories
+does not exist or is unreadable, if the file is not
+readable (resp. writable), or if too many files are open.
+From C, a \*-1 value is returned on an error.

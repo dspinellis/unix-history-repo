@@ -1,0 +1,94 @@
+.th GETC III 4/30/72
+.sh NAME
+getc, getw, fopen  \*-  buffered input
+.sh SYNOPSIS
+.ft B
+mov	$filename,r0
+.br
+jsr	r5,fopen; iobuf
+.s3
+fopen(filename, iobuf)
+.br
+char *filename;
+.br
+struct buf *iobuf;
+.s3
+jsr	r5,getc; iobuf
+.br
+.ft R
+(character in r0)
+.s3
+.ft B
+getc(iobuf)
+.br
+struct buf *iobuf;
+.s3
+jsr	r5,getw; iobuf
+.br
+.ft R
+(word in r0)
+.s3
+.ft B
+getw(iobuf)
+.br
+struct buf *iobuf;
+.ft R
+.sh DESCRIPTION
+These routines provide a buffered input
+facility.
+.it Iobuf
+is the address of a 518(10) byte buffer area whose
+contents are maintained by these routines.
+Its structure is
+.s3
+.nf
+.ft B
+	struct buf {
+		int fildes;	/* File descriptor */
+		int nleft;	/* Chars left in buffer */
+		char *nextp;	/* Ptr to next character */
+		char buff[512];	/* The buffer */
+	};
+.ft R
+.s3
+.fi
+.it Fopen
+may be called initially to open the file.  On return,
+the error bit (c-bit) is set if the open failed.
+If \fIfopen\fR is never called, \fIget\fR will
+read from the standard
+input file.
+From C, the value is negative if the open failed.
+.s3
+.it Getc
+returns the next byte from the file in r0.
+The error bit is set on end of file or a read error.
+From C, the character is returned as an integer, without sign extension;
+it is \*-1 on end-of-file or error.
+.s3
+\fIGetw\fR returns the next word in r0.
+.it Getc
+and
+\fIgetw\fR
+may be used alternately; there are no odd/even
+problems.
+\fIGetw\fR is may be called from C;
+\*-1 is returned on end-of-file or error,
+but of course
+is also a legitimate value.
+.s3
+.it Iobuf
+must be provided by the user; it must be on a word boundary.
+.s3
+To reuse the same buffer for another file, it is sufficient
+to close the original file and call \fIfopen\fR again.
+.sh "SEE ALSO"
+open (II), read (II), getchar (III), putc (III)
+.sh DIAGNOSTICS
+c-bit set on EOF or error;
+from C, negative return indicates error or EOF.
+Moreover,
+.it errno
+is set by this routine just as it is for a system call
+(see introduction (II)).
+.sh BUGS

@@ -1,0 +1,18 @@
+.th EXIT I 3/15/72
+.sh NAME
+exit  \*-  terminate command file
+.sh SYNOPSIS
+.bd exit
+.sh DESCRIPTION
+.it Exit
+performs a
+.bd seek
+to the end of its standard input file.
+Thus, if it is invoked inside
+a file of commands, upon return from
+.it exit
+the shell will
+discover an end-of-file and terminate.
+.sh "SEE ALSO"
+if (I), goto (I), sh (I)
+.sh BUGS

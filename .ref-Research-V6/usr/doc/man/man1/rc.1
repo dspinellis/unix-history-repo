@@ -1,0 +1,100 @@
+.th RC I 5/15/74
+.sh NAME
+rc \*- Ratfor compiler
+.sh SYNOPSIS
+.bd rc
+[
+.bd \*-c
+] [
+.bd \*-r
+] [
+.bd \*-f
+] [
+.bd \*-v
+] file ...
+.sh DESCRIPTION
+.it Rc
+invokes the Ratfor preprocessor on a set of Ratfor source files.
+It accepts three types of arguments:
+.s3
+Arguments whose names end with `.r' are taken to be
+Ratfor source programs; they are 
+preprocessed into Fortran and compiled.
+Each subroutine or function `name' is placed on a separate file
+.it name.f,
+and its object code is left on
+.it name.o.
+The main routine is on
+.it MAIN.f
+and
+.it MAIN.o;
+block data subprograms go on
+.it blockdata?.f
+and
+.it blockdata?.o.
+The files resulting from a `.r' file are
+loaded into a single object file
+.it file.o,
+and the intermediate object and Fortran files are removed.
+.s3
+The following flags are interpreted by
+.it rc.
+See
+.it "ld (I)"
+for load-time flags.
+.s3
+.lp +6 5
+\fB\*-c\fR	Suppresses the loading phase of the compilation,
+as does any error in anything.
+.s3
+.lp +6 5
+\fB\*-f\fR	Save Fortran intermediate files.
+This is primarily for debugging.
+.s3
+.lp +6 5
+\fB\*-r\fR	Ratfor only; don't try to compile the Fortran.
+This implies
+.bd \*-f
+and
+.bd \*-c.
+.s3
+.lp +6 5
+\fB\*-v\fR	Don't list intermediate file names while compiling.
+.i0
+.dt
+.s3
+Arguments whose names end with `.f' are taken to be
+Fortran source programs;
+they are compiled in the normal manner.
+(Only one Fortran routine is allowed in a `.f' file.)
+Other arguments
+are taken
+to be either loader flag arguments, or Fortran-compatible
+object programs, typically produced by an earlier
+.it rc
+run,
+or perhaps libraries of Fortran-compatible routines.
+These programs, together with the results of any
+compilations specified, are loaded
+to produce an executable program with name
+.bd a.out.
+.i0
+.sh FILES
+ratjunk		temporary
+.br
+/usr/bin/ratfor	preprocessor
+.br
+/usr/fort/fc1	Fortran compiler
+.sh "SEE ALSO"
+``RATFOR \*- A Rational Fortran''.
+.br
+fc(I) for Fortran error messages.
+.sh DIAGNOSTICS
+Yes, both from
+.it rc
+itself and from Fortran.
+.sh BUGS
+Limit of about 50 arguments, 10 block data files.
+.s3
+#define and #include lines in
+``.f'' files are not processed.

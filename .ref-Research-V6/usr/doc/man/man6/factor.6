@@ -1,0 +1,36 @@
+.th FACTOR VI 1/15/73
+.sh NAME
+factor \*- discover prime factors of a number
+.sh SYNOPSIS
+.bd factor [ number ]
+.sh DESCRIPTION
+When
+.it factor
+is invoked without an argument, it waits for a number to be typed in.
+If you type in a positive
+number less than 2\u\s756\s0\d (about
+.if n 7.2e16)
+.if t 7.2\(mu10\u\s716\s0\d\|)
+it will factor the number and print its prime factors; each one is printed
+the proper number of times.
+Then it waits for another number.
+It exits if it encounters a zero or any non-numeric character.
+.s3
+If
+.it factor
+is invoked with an argument, it factors the number
+as above and then exits.
+.s3
+Maximum time to factor is proportional to
+.if n sqrt(n)
+.if t \(sr\o'\fIn\fR\(rn'
+and occurs when
+.it n
+is prime
+or the square of a prime.
+It takes 1 minute to factor a prime
+near
+10\u\s713\s0\d.
+.sh DIAGNOSTICS
+`Ouch.' for input out of range or for garbage input.
+.sh BUGS

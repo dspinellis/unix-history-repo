@@ -1,0 +1,43 @@
+.th GAMMA III 5/15/74
+.sh NAME
+gamma \*- log gamma function
+.sh SYNOPSIS
+.br
+.ft B
+jsr	pc,gamma
+.s3
+double gamma(x)
+.br
+double x;
+.ft R
+.sh DESCRIPTION
+If \fIx\fR is passed (in fr0)
+.it gamma
+returns
+ln |\*|\*G(\*|\fIx\fR\*|)\*|| (in fr0).
+The sign of
+\*G(\*|\fIx\fR\*|)
+is returned in the external integer
+.it signgam.
+The following C program might be
+used to calculate
+\*G:
+.s3
+	y = gamma(x);
+.br
+	if (y > 88.)
+.br
+		error( );
+.br
+	y = exp(y);
+.br
+	if(signgam)
+.br
+		y = \*-y;
+.sh DIAGNOSTICS
+The c-bit is
+set on negative integral arguments and the
+maximum value is returned.
+There is no error return for C programs.
+.sh BUGS
+No error return from C.

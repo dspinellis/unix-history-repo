@@ -1,0 +1,39 @@
+cc -c -O c0[012345].c
+cc -c -O c1[0123].c
+as c1t.s; mv a.out c1t.o
+cc cvopt.c
+a.out table.s table.i
+as table.i; mv a.out table.o
+cc -c -O c2[01].c
+
+ed c0t.s
+g/fpp =/s/1/0/
+w
+q
+as c0t.s; mv a.out c0t.o
+cc -s -n c0?.o
+cmp a.out /lib/c0
+cp a.out /lib/c0
+
+ed c0t.s
+g/fpp =/s/0/1/
+w
+q
+as c0t.s; mv a.out c0t.o
+cc -f -s -n c0?.o
+cmp a.out /lib/fc0
+cp a.out /lib/fc0
+
+cc -s -n c1?.o table.o
+cmp a.out /lib/c1
+cp a.out /lib/c1
+
+cc -f -s -n c1?.o table.o
+cmp a.out /lib/fc1
+cp a.out /lib/fc1
+
+cc -s -n c2?.o
+cmp a.out /lib/c2
+cp a.out /lib/c2
+
+rm *.o table.i a.out

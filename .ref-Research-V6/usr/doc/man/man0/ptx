@@ -1,0 +1,10 @@
+.nf
+.bp
+.ce
+PERMUTED INDEX
+.sp 1.5
+.nf
+.de xx
+\\h"3i-\\w'\\$1'u"\\$1   \\$2
+..
+.so ptxx

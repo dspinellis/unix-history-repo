@@ -1,0 +1,515 @@
+.wh -1i fo
+.sp 1.25i
+.wh 0 hd
+.ps 16
+.ft B
+.ce
+The U\s14NIX\s16 Time-Sharing System
+.ft I
+.sp  .3i
+.ce 2
+\*nDennis M. Ritchie
+Ken Thompson
+
+.ce 2
+Bell Laboratories
+Murray Hill, N. J. 07974
+.fi
+.ft B
+.sp .5i
+.ce
+ABSTRACT
+.sp
+.ft R
+U\*sNIX\*n is a general-purpose, multi-user, interactive
+operating system for the Digital Equipment Corporation
+\*sPDP\*n-11/40, 11/45 and 11/70 computers.
+It offers a number of features
+seldom found even in larger operating
+systems, including
+.br
+.tr |
+.de dl
+.sp .3
+.ti -\w'1.|'u
+..
+.in .5i
+.dl
+1.|A hierarchical file system incorporating
+demountable volumes,
+.dl
+2.|Compatible file, device, and inter-process I/O,
+.dl
+3.|The ability to initiate asynchronous processes,
+.dl
+4.|System command language selectable on a per-user basis,
+.dl
+5.|Over 100 subsystems including a dozen languages.
+.sp .3
+.in 0
+.tr ||
+This paper discusses the nature
+and implementation of the file system
+and of the user command interface.
+.sp 2.0
+.ft B
+1. Introduction
+.es
+There have been three versions of \*sUNIX\*n.
+The earliest version (circa 1969-70) ran on
+the Digital Equipment Corporation \*sPDP\*n-7 and -9 computers.
+The second version ran on the unprotected
+\*sPDP\*n-11/20 computer.
+This paper describes only the \*sPDP\*n-11/40, /45 and /70\*r system,
+since it is more modern and
+many of the differences between it and older \*sUNIX\*n systems result from
+redesign of features found to be deficient or lacking.
+.pg
+Since \*sPDP\*n-11 \*sUNIX\*n became operational
+in February, 1971,
+about 100 installations have been put into service;
+they are generally smaller
+than the system described here.
+Most of them are engaged in applications such as
+the preparation and formatting of patent applications
+and other textual material,
+the collection and processing of trouble data
+from various switching machines within the Bell System,
+and recording and checking telephone service
+orders.
+Our own installation is used mainly for research
+in operating systems, languages,
+computer networks,
+and other topics in computer science, and also for
+document preparation.
+.br
+.sp
+\l'2i'
+.ps 8
+.vs 9p
+.pg
+Copyright \(co 1974,
+Association for Computing Machinery, Inc.
+General permission to republish,
+but not for profit,
+all or part of this material
+is granted provided that \s7ACM\s8's copyright
+notice is given and that reference is made to the publication,
+to its date of issue,
+and to the fact that reprinting privileges were granted by
+permission of the Association for Computing Machinery.
+.pg
+This is a revised version of an article
+appearing in the Communications of the \s7ACM\s8,
+Volume 17, Number 7 (July 1974) pp. 365-375.
+That article is a
+revised version of a paper presented
+at the Fourth \s7ACM\s8 Symposium on Operating
+Systems Principles,
+\s7IBM\s8 Thomas J. Watson Research Center,
+Yorktown Heights,
+New York,
+October 15-17, 1973.
+.br
+.ps 10
+.vs 12p
+.bp
+.pg
+Perhaps the most important achievement of \*sUNIX\*n is to demonstrate
+that
+a powerful operating system for interactive use
+need not be expensive either in equipment or in human
+effort:
+\*sUNIX\*n can run on hardware costing as little as $40,000, and
+less than two man-years were spent on the main system
+software.
+Yet \*sUNIX\*n contains a number of features
+seldom offered even in much larger systems.
+Hopefully, however, the users of \*sUNIX\*n will find that the
+most important characteristics of the system
+are its simplicity, elegance, and ease of use.
+.pg
+Besides the system proper, the major programs
+available under \*sUNIX\*n are
+.sp 1.0
+.ne 3
+.in .75i
+.ne 3
+.ti .5i
+assembler,
+.ti .5i
+text editor based on \*sQED\*n\*r,
+.ti .5i
+linking loader,
+.ti .5i
+symbolic debugger,
+.ti .5i
+compiler for a language resembling \*sBCPL\*n\*r with types and structures (C),
+.ti .5i
+interpreter for a dialect of \*sBASIC\*n,
+.ti .5i
+phototypesetting and equation setting programs
+.ti .5i
+Fortran compiler,
+.ti .5i
+Snobol interpreter,
+.ti .5i
+top-down compiler-compiler (\*sTMG\*n\*r),
+.ti .5i
+bottom-up compiler-compiler (\*sYACC\*n),
+.ti .5i
+form letter generator,
+.ti .5i
+macro processor (M6\*r),
+.ti .5i
+permuted index program.
+.sp .5
+.in 0
+.fi
+There is also a host of maintenance, utility, recreation and novelty programs.
+All of these programs were written locally.
+It is worth noting that the system is totally self-supporting.
+All \*sUNIX\*n software is maintained under \*sUNIX\*n;
+likewise, this paper and all other \*sUNIX\*n
+documents
+were generated and formatted by the \*sUNIX\*n editor and text formatting
+program.
+.s1
+2. Hardware and software environment
+.es
+The \*sPDP\*n-11/45 on which our \*sUNIX\*n installation is implemented is a 16-bit
+word (8-bit byte) computer with 112K bytes of core memory;
+\*sUNIX\*n occupies 53K bytes.
+This system, however, includes a very large number of
+device drivers
+and enjoys a generous allotment
+of space for I/O buffers and system tables;
+a minimal system capable of running the software
+mentioned above can
+require as little as 64K bytes
+of core altogether.
+.pg
+Our \*sPDP\*n-11 has a 1M byte fixed-head disk, used
+for file system storage and swapping,
+four moving-head disk drives which each provide 2.5M bytes
+on removable disk cartridges,
+and a single moving-head disk drive which
+uses removable 40M byte disk packs.
+There are also a high-speed paper tape reader-punch,
+nine-track magnetic tape,
+and \*sDEC\*ntape (a variety
+of magnetic tape facility in which individual records
+may be addressed and rewritten).
+Besides the console typewriter, there are 30 variable-speed
+communications interfaces
+attached to 100-series datasets
+and a 201 dataset interface used
+primarily for spooling printout to
+a communal line printer.
+There are also several one-of-a-kind
+devices including a Picturephone\(rg interface,
+a voice response unit,
+a voice synthesizer,
+a phototypesetter,
+a digital switching network,
+and a satellite \*sPDP\*n-11/20
+which generates vectors, curves, and characters on a Tektronix
+611 storage-tube display.
+.pg
+The greater part of \*sUNIX\*n software is written in the
+above-mentioned C language\*r.
+Early versions of the operating system were written in assembly language,
+but during the summer of 1973, it was rewritten in C.
+The size of the new system is about one third greater
+than the old.
+Since the new system is not only much easier to
+understand and to modify but also
+includes
+many functional improvements,
+including multiprogramming and the ability to
+share reentrant code among several user programs,
+we considered this increase in size quite acceptable.
+.s1
+3. The File system
+.es
+The most important role of \*sUNIX\*n is to provide
+a file system.
+From the point of view of the user, there
+are three kinds of files: ordinary disk files,
+directories, and special files.
+.s2
+3.1 Ordinary files
+.es
+A file
+contains whatever information the user places on it,
+for example symbolic or binary
+(object) programs.
+No particular structuring is expected by the system.
+Files of text consist simply of a string
+of characters, with lines demarcated by the new-line character.
+Binary programs are sequences of words as
+they will appear in core memory when the program
+starts executing.
+A few user programs manipulate files with more
+structure;
+for example, the assembler generates, and the loader
+expects, an object file in a particular format.
+However,
+the structure of files is controlled by
+the programs which use them, not by the system.
+.s2
+3.2 Directories
+.es
+Directories provide
+the mapping between the names of files
+and the files themselves, and thus
+induce a structure on the file system as a whole.
+Each user has a directory of his own files;
+he may also create subdirectories to contain
+groups of files conveniently treated together.
+A directory behaves exactly like an ordinary file except that it
+cannot be written on by unprivileged programs, so that the system
+controls the contents of directories.
+However, anyone with
+appropriate permission may read a directory just like any other file.
+.pg
+The system maintains several directories
+for its own use.
+One of these is the \fIroot\fR directory.
+All files in the system can be found by tracing
+a path through a chain of directories
+until the desired file is reached.
+The starting point for such searches is often the
+root.
+Another system directory contains all the programs provided
+for general use; that is, all the \fIcommands\fR.
+As will be seen, however, it is by no means necessary
+that a program reside in this directory for it
+to be executed.
+.pg
+Files are named by sequences of 14 or
+fewer characters.
+When the name of a file is specified to the
+system, it may be in the form of a
+.ft I
+path name,
+.ft R
+which
+is a sequence of directory names separated by slashes ``\|/\|''
+and ending in a file name.
+If the sequence begins with a slash, the search begins in the
+root directory.
+The name \fI/\|alpha\|/\|beta\|/\|gamma\fR causes the system to search
+the root for directory \fIalpha,\fR
+then to search \fIalpha\fR for \fIbeta,\fR
+finally to find \fIgamma\fR in \fIbeta\fR.
+\fIGamma\fR may be an ordinary file, a directory, or a special
+file.
+As a limiting case, the name ``/\|'' refers to the root itself.
+.pg
+A path name not starting with ``/\|'' causes the system to begin the
+search in the user's current directory.
+Thus, the name \fIalpha\|/\|beta\fR specifies the file named \fIbeta\fR in
+subdirectory \fIalpha\fR of the current
+directory.
+The simplest kind of name, for example \fIalpha\fR,
+refers to a file which itself is found in the current
+directory.
+As another limiting case, the null file name refers
+to the current directory.
+.pg
+The same non-directory file may appear in several directories under
+possibly different names.
+This feature is called \fIlinking;\fR
+a directory entry for a file is sometimes called a link.
+\*sUNIX\*n differs from other systems in which linking is permitted
+in that all links to a file have equal status.
+That is, a file does not exist within a particular directory;
+the directory entry for a file consists merely
+of its name and a pointer to the information actually
+describing the file.
+Thus a file exists independently of any
+directory entry, although in practice a file is made to
+disappear along with the last link to it.
+.pg
+Each directory always has at least two entries.
+The name
+``\|\fB.\|\fR'' in each directory refers to the directory itself.
+Thus a program
+may read the current directory under the name ``\fB\|.\|\fR'' without knowing
+its complete path name.
+The name ``\fB\|.\|.\|\fR'' by convention refers to the parent of the
+directory in which it appears, that is, to the directory in which
+it was created.
+.pl +1
+.pg
+The directory structure is constrained to have the form
+of a rooted tree.
+Except for the special entries ``\|\fB\|.\|\fR'' and ``\fB\|.\|.\|\fR'', each directory
+must appear as an entry in exactly one other, which is its
+parent.
+The reason for this is to simplify the writing of programs
+which visit subtrees of the directory structure, and more
+important, to avoid the separation of portions of the hierarchy.
+If arbitrary links to directories were permitted, it would
+be quite difficult to detect when the last connection from
+the root to a directory was severed.
+.s2
+.pl -1
+3.3 Special files
+.es
+Special files constitute the most unusual feature of the \*sUNIX\*n
+file system.
+Each I/O device supported by \*sUNIX\*n
+is associated with at least one such file.
+Special files are read and written just like ordinary
+disk files, but requests to read or write result in activation of the associated
+device.
+An entry for each special file resides in directory \fI/\|dev,\fR
+although a link may be made to one of these files
+just like an ordinary file.
+Thus, for example,
+to punch paper tape,
+one may write on the file \fI\|/\|dev\|/\|ppt\fR.
+Special files exist for each communication line, each disk,
+each tape drive,
+and for physical core memory.
+Of course,
+the active disks
+and the core special file are protected from
+indiscriminate access.
+.pg
+There is a threefold advantage in treating
+I/O devices this way:
+file and device I/O
+are as similar as possible;
+file and device names have the same
+syntax and meaning, so that
+a program expecting a file name
+as a parameter can be passed a device
+name; finally,
+special files are subject to the same
+protection mechanism as regular files.
+.s2
+3.4 Removable file systems
+.es
+Although the root of the file system is always stored on the same
+device,
+it is not necessary that the entire file system hierarchy
+reside on this device.
+There is a \fImount\fR system request which has two arguments:
+the name of an existing ordinary file, and the name of a special
+file whose associated
+storage volume (e. g. disk pack) should have the structure
+of an independent file system
+containing its own directory hierarchy.
+The effect of \fImount\fR is to cause
+references to the heretofore ordinary file
+to refer instead to the root directory
+of the file system on the removable volume.
+In effect, \fImount\fR
+replaces a leaf of the hierarchy tree (the ordinary file)
+by a whole new subtree (the hierarchy stored on the
+removable volume).
+After the \fImount\fR,
+there is virtually no distinction
+between files on the removable volume and those in the
+permanent file system.
+In our installation, for example,
+the root directory resides
+on the fixed-head disk,
+and the large disk drive, which contains user's files,
+is mounted by the system initialization
+program;
+the four smaller disk drives are available
+to users for mounting their
+own disk packs.
+A mountable file system is generated by
+writing on its corresponding special file.
+A utility program is available to create
+an empty file system,
+or one may simply copy an existing file system.
+.pg
+There is only one exception to the rule of identical
+treatment of files on different devices:
+no link may exist between one file system hierarchy and
+another.
+This restriction is enforced so as to avoid
+the elaborate bookkeeping
+which would otherwise be required to assure removal of the links
+when the removable volume is finally dismounted.
+In particular, in the root directories of
+all file systems, removable or not, the
+name
+``\fB\|.\|.\|\fR''
+refers to the directory itself instead of to its parent.
+.s2
+3.5 Protection
+.es
+Although the access control scheme in \*sUNIX\*n
+is quite simple, it has some unusual features.
+Each user of the system is assigned a unique
+user identification number.
+When a file is created, it is marked with
+the user \*sID\*n of its owner.
+Also given for new files
+is a set of seven protection bits.
+Six of these specify
+independently read, write, and execute permission
+for the
+owner of the file and for all other users.
+.pg
+If the seventh bit is on, the system
+will temporarily change the user identification
+of the current user to that of the creator of the file whenever
+the file is executed as a program.
+This change in user \*sID\*n is effective only
+during the execution of the program which calls for it.
+The set-user-\*sID\*n feature provides
+for privileged programs which may use files
+inaccessible to other users.
+For example, a program may keep an accounting file
+which should neither be read nor changed
+except by the program itself.
+If the set-user-identification bit is on for the
+program, it may access the file although
+this access might be forbidden to other programs
+invoked by the given program's user.
+Since the actual user \*sID\*n
+of the invoker of any program
+is always available,
+set-user-\*sID\*n programs
+may take any measures desired to satisfy themselves
+as to their invoker's credentials.
+This mechanism is used to allow users to execute
+the carefully-written
+commands
+which call privileged system entries.
+For example, there is a system entry
+invokable only by the ``super-user'' (below)
+which creates
+an empty directory.
+As indicated above, directories are expected to
+have entries for ``\fB\|.\|\fR'' and ``\fB\|.\|.\|\fR''.
+The command which creates a directory
+is owned by the super-user
+and has the set-user-\*sID\*n bit set.
+After it checks its invoker's authorization to
+create the specified directory,
+it creates it and makes the entries
+for ``\fB\|.\|\fR'' and ``\fB\|.\|.\|\fR''.
+.pg
+Since anyone may set the set-user-\*sID\*n
+bit on one of his own files,
+this mechanism is generally
+available without administrative intervention.
+For example,
+this protection scheme easily solves the \*sMOO\*n
+accounting problem posed in [\n+r].
+.pg
+The system recognizes one particular user \*sID\*n (that of the ``super-user'') as
+exempt from the usual constraints on file access; thus (for example)
+programs may be written to dump and reload the file
+system without
+unwanted interference from the protection
+system.

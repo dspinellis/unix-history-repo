@@ -1,0 +1,46 @@
+.th PUTCHAR III 5/10/73
+.sh NAME
+putchar, flush \*- write character
+.sh SYNOPSIS
+.ft B
+putchar(ch)
+.s3
+flush( )
+.ft R
+.sh DESCRIPTION
+.it Putchar
+writes out its argument and returns it unchanged.
+Only the low-order byte is written, and only if it is non-null.
+Unless other arrangements have been made,
+.it putchar
+writes in
+unbuffered fashion on the standard output file.
+.s3
+Associated with this routine is an external variable
+.it fout
+which has the
+structure of a buffer discussed under putc (III).
+If the file descriptor part of this structure (first word)
+is greater than 2, output via
+.it putchar
+is buffered.
+To achieve buffered output one may say, for example,
+.s3
+.nf
+	fout = dup(1);		or
+	fout = creat(...);
+.s3
+.fi
+In such a case
+.it flush
+must be called
+before the program terminates in order to flush out
+the buffered output.
+.it Flush
+may be called at any time.
+.sh "SEE ALSO"
+putc (III)
+.sh BUGS
+The
+.it fout
+notion is kludgy.

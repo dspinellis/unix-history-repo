@@ -1,0 +1,28 @@
+.th FPTRAP III 11/18/73
+.sh NAME
+fptrap \*- floating point interpreter
+.sh SYNOPSIS
+.ft B
+sys	signal; 4; fptrap
+.ft R
+.sh DESCRIPTION
+.it Fptrap
+is a simulator of the
+11/45 FP11-B floating point unit.
+It works by intercepting illegal instruction
+traps
+and decoding and executing the floating point operation codes.
+.sh FILES
+In systems with real floating point,
+there is a fake routine in /lib/liba.a with this name;
+when simulation is desired,
+the real version should be put in liba.a
+.sh DIAGNOSTICS
+A break point trap is given when a real
+illegal instruction trap occurs.
+.sh "SEE ALSO"
+signal (II),
+cc (I) (`\-f' option)
+.sh BUGS
+Rounding mode is not interpreted.
+It's slow.

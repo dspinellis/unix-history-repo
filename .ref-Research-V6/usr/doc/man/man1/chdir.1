@@ -1,0 +1,21 @@
+.th CHDIR I 5/15/74
+.sh NAME
+chdir \*- change working directory
+.sh SYNOPSIS
+.bd chdir
+directory
+.sh DESCRIPTION
+.it Directory
+becomes the new working directory.
+The process must have execute (search)
+permission in
+.it directory.
+.s3
+Because a new process is created to execute each command,
+.it chdir
+would be ineffective if it were written as a
+normal command.  It is therefore recognized and executed
+by the Shell.
+.sh "SEE ALSO"
+sh (I), pwd (I)
+.sh BUGS

@@ -1,0 +1,50 @@
+.th FORK II 8/5/73
+.sh NAME
+fork  \*-  spawn new process
+.sh SYNOPSIS
+(fork = 2.)
+.br
+.ft B
+sys fork
+.br
+.ft R
+(new process return)
+.br
+(old process return)
+.s3
+.ft B
+fork( )
+.ft R
+.sh DESCRIPTION
+.it Fork
+is the only way new processes are created.
+The new process's core image is a copy of
+that of the caller of
+.it fork.
+The only distinction
+is the return location and the fact
+that r0 in the old (parent) process contains the process ID
+of the new (child) process.
+This process ID is used by
+.it wait.
+.s3
+The two returning processes share all open
+files that existed before the call.
+In particular,
+this is the way that standard input and output
+files are passed and also how
+pipes are set up.
+.s3
+From C, the child process receives a 0 return,
+and the parent receives a non-zero number which is the process ID
+of the child;
+a return of \*-1 indicates inability
+to create a new process.
+.sh "SEE ALSO"
+wait (II), exec (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set in the old process if a new process
+could not be created because of lack of process space.
+From C, a return of \*-1 (not just negative)
+indicates an error.

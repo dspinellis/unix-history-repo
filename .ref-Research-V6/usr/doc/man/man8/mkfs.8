@@ -1,0 +1,136 @@
+.th MKFS VIII 11/1/73
+.sh NAME
+mkfs \*- construct a file system
+.sh SYNOPSIS
+.bd /etc/mkfs
+special
+proto
+.sh DESCRIPTION
+.it Mkfs
+constructs a file system
+by writing on the special file
+.it special
+according to the directions
+found in
+the prototype file
+.it proto.
+The prototype file
+contains tokens separated by spaces or
+new lines.
+The first token is the name of a file
+to be copied onto block zero as
+the bootstrap program
+(see boot procedures (VIII)).
+The second token is a number specifying the
+size of the created file system.
+Typically it will be the number of blocks on the device,
+perhaps diminished
+by space for swapping.
+The next token is the i-list size in blocks
+(remember there are 16 i-nodes per block).
+The next set of tokens comprise the specification
+for the root file.
+File specifications consist of tokens
+giving the mode,
+the user-id,
+the group id,
+and the initial contents of the file.
+The syntax of the contents field
+depends on the mode.
+.s3
+The mode token for a file is a 6 character string.
+The first character
+specifies the type of the file.
+(The characters
+.bd \*-bcd
+specify regular, block special,
+character special and directory files
+respectively.)
+The second character of the type
+is either
+.bd u
+or
+.bd \*-
+to specify set-user-id mode or not.
+The third is
+.bd g
+or
+.bd \*-
+for the set-group-id mode.
+The rest of the mode
+is a three digit octal number giving the
+owner, group, and other read, write, execute
+permissions (see
+.it chmod
+(I)).
+.s3
+Two decimal number
+tokens come after the mode; they specify the
+user and group ID's of the owner of the file.
+.s3
+If the file is a regular file,
+the next token is a pathname
+whence the contents and size are copied.
+.s3
+If the file is a block or character special file,
+two decimal number tokens
+follow which give the major and minor device numbers.
+.s3
+If the file is a directory,
+.it mkfs
+makes the entries \fB.\fR and \fB..\fR
+and then
+reads a list of names and
+(recursively)
+file specifications for the entries
+in the directory.
+The scan is terminated with the
+token \fB$\fR.
+.s3
+If the prototype file cannot be opened and
+its name consists of a string of digits,
+.it mkfs
+builds a file system with a single
+empty directory on it.
+The size of the file system is the value
+of
+.it proto
+interpreted as a decimal number.
+The i-list size is the file system size
+divided by
+43 plus the size divided by 1000.
+(This corresponds to an average size of
+three blocks per file
+for a 4000 block file system and
+six blocks per file at 40,000.)
+The boot program is left uninitialized.
+.s3
+A sample prototype specification follows:
+.s3
+.nf
+.in +5
+/usr/mdec/uboot
+4872 55
+d\*-\*-777 3 1
+usr	d\*-\*-777 3 1
+	sh	\*-\*-\*-755 3 1 /bin/sh
+	ken	d\*-\*-755 6 1
+		$
+	b0	b\*-\*-644 3 1 0 0
+	c0	c\*-\*-644 3 1 0 0
+	$
+$
+.in -5
+.fi
+.sh "SEE ALSO"
+file system (V),
+directory (V),
+boot procedures (VIII)
+.sh BUGS
+It is not possible to initialize a file larger than
+64K bytes.
+.br
+The size of the file system is restricted to
+64K blocks.
+.br
+There should be some way to specify links.

@@ -1,0 +1,55 @@
+.bp
+.nf
+.in +1i
+.ce
+TABLE OF CONTENTS
+.sp 1.5
+.ne .5i
+.nr x 36u
+.cs B \nx
+.nr x \nxm/36u
+.tc .
+.de xx
+.nr y \\w'\\$2'u/\\nxu*\\nxu+\\nxu
+.ta 4.7i-\\nyu
+\\$1\fB \t \fR\\h"\\nyu-\\w'\\$2'u"\\$2
+..
+I. COMMANDS
+.sp .5
+.so toc1
+.sp 1.5
+.ne .5i
+II. SYSTEM CALLS
+.sp .5
+.so toc2
+.sp 1.5
+.ne .5i
+III. SUBROUTINES
+.sp .5
+.so toc3
+.sp 1.5
+.ne .5i
+IV. SPECIAL FILES
+.sp .5
+.so toc4
+.sp 1.5
+.ne .5i
+V. FILE FORMATS AND CONVENTIONS
+.sp .5
+.so toc5
+.sp 1.5
+.ne .5i
+VI. USER MAINTAINED PROGRAMS
+.sp .5
+.so toc6
+.sp 1.5
+.ne .5i
+VII. USER MAINTAINED SUBROUTINES
+.sp .5
+.so toc7
+.sp 1.5
+.ne .5i
+VIII. SYSTEM MAINTENANCE
+.sp .5
+.so toc8
+.in -1i

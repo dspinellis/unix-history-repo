@@ -1,0 +1,26 @@
+.th TIME II 8/5/73
+.sh NAME
+time \*- get date and time
+.sh SYNOPSIS
+(time = 13.)
+.br
+.ft B
+sys  time
+.s3
+time(tvec)
+.br
+int tvec[2];
+.ft R
+.sh DESCRIPTION
+.it Time
+returns the time since 00:00:00 GMT, Jan. 1, 1970, measured
+in seconds.
+From
+.it as,
+the high order word is in the r0 register and the low order
+is in r1.
+From C, the user-supplied vector is filled in.
+.sh "SEE ALSO"
+date (I), stime (II), ctime (III)
+.sh DIAGNOSTICS
+\*-

@@ -1,0 +1,39 @@
+.th LINK II 8/5/73
+.sh NAME
+link \*- link to a file
+.sh SYNOPSIS
+(link = 9.)
+.br
+.ft B
+sys link; name1; name2
+.s3
+link(name1, name2)
+.br
+char *name1, *name2;
+.ft R
+.sh DESCRIPTION
+A link
+to
+.it name1
+is created;
+the link has the name
+.it name2.
+Either name may be an arbitrary path name.
+.sh "SEE ALSO"
+link (I), unlink (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set when
+.it name1
+cannot be found; when
+.it name2
+already exists; when the directory of
+.it name2
+cannot be written; when
+an attempt is made to link to a directory by a user
+other than the super-user;
+when an attempt is made to link
+to a file on another file system;
+when more than 127 links are made.
+From C, a \*-1 return indicates an error,
+a 0 return indicates success.
