@@ -1,12 +1,13 @@
-/* Copyright (c) 1979 Regents of the University of California */
+#ifndef lint
+static char sccsid[] = "@(#)vgrindefs.c	4.2 (Berkeley) %G%";
+#endif
 
-static char sccsid[] = "@(#)vgrindefs.c	4.1	(Berkeley)	%G%";
+/* Copyright (c) 1979 Regents of the University of California */
 
 #define	BUFSIZ	1024
 #define MAXHOP	32	/* max number of tc= indirections */
 
 #include <ctype.h>
-#include "local/uparm.h"
 /*
  * grindcap - routines for dealing with the language definitions data base
  *	(code stolen almost totally from termcap)
