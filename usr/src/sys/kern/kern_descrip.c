@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_descrip.c	7.2 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -409,4 +409,67 @@ flock()
 	    (fp->f_flag & FSHLOCK) && (uap->how & LOCK_SH))
 		return;
 	u.u_error = ino_lock(fp, uap->how);
+}
+
+/*
+ * File Descriptor pseudo-device driver (/dev/fd/).
+ *
+ * Fred Blonder - U of Maryland	11-Sep-1984
+ *
+ * Opening minor device N dup()s the file (if any) connected to file
+ * descriptor N belonging to the calling process.  Note that this driver
+ * consists of only the ``open()'' routine, because all subsequent
+ * references to this file will be direct to the other driver.
+ */
+fdopen(dev, mode)
+	dev_t dev;
+	int mode;
+{
+	struct file *fp, *wfp;
+	struct inode *ip, *wip;
+	int rwmode;
+
+	/*
+	 * Note the horrid kludge here: u.u_r.r_val1 contains the value
+	 * of the new file descriptor, which has not been disturbed since
+	 * it was allocated.
+	 */
+	if ((fp = getf(u.u_r.r_val1)) == NULL)
+		return (u.u_error);
+	if ((wfp = getf(minor(dev))) == NULL)
+		return (u.u_error);
+	/*
+	 * We must explicitly test for this case because ufalloc() may
+	 * have allocated us the same file desriptor we are referring
+	 * to, if the proccess referred to an invalid (closed) descriptor.
+	 * Ordinarily this would be caught by getf(), but by the time we
+	 * reach this routine u_pofile[minor(dev)] could already be set
+	 * to point to our file struct.
+	 */
+	if (fp == wfp)
+		return (EBADF);
+	/*
+	 * Fake a ``dup()'' sys call.
+	 * Check that the mode the file is being opened
+	 * for is consistent with the mode of the existing
+	 * descriptor. This isn't as clean as it should be,
+	 * but this entire driver is a real kludge anyway.
+	 */
+	rwmode = mode & (FREAD|FWRITE);
+	if ((fp->f_flag & rwmode) != rwmode)
+		return (EACCES);
+	/*
+	 * Delete references to this pseudo-device.
+	 * Note that fp->f_count is guaranteed == 1, and
+	 * that fp references the inode for this driver.
+	 */
+	if (fp->f_count != 1 || fp->f_type != DTYPE_INODE) 
+		panic("fdopen");
+	irele((struct inode *)fp->f_data);
+	fp->f_count = 0;
+	/* 
+	 * Dup the file descriptor. 
+	 */
+	dupit(u.u_r.r_val1, wfp, u.u_pofile[minor(dev)]);
+	return (0);
 }
