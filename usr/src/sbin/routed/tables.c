@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -204,11 +204,11 @@ rtdefault()
 	rt = (struct rt_entry *)malloc(sizeof (*rt));
 	if (rt == 0)
 		return;
-	rt->rt_hash = h.afh_nethash;
 	rt->rt_dst = inet_default;
 	rt->rt_router = rt->rt_dst;
 	(*afswitch[AF_INET].af_hash)(&rt->rt_dst, &h);
 	rh = &nethash[h.afh_nethash & ROUTEHASHMASK];
+	rt->rt_hash = h.afh_nethash;
 	rt->rt_metric = 0;
 	rt->rt_timer = 0;
 	rt->rt_flags = RTF_UP | RTF_GATEWAY;
