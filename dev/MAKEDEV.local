@@ -1,0 +1,4 @@
+mv tty04 ttyd0
+mv tty05 cul0
+mv tty06 ttyd1
+mv tty07 ttyd2
