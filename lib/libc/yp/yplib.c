@@ -28,13 +28,14 @@
  */
 
 #ifndef LINT
-static char *rcsid = "$Id: yplib.c,v 1.6 1993/08/26 00:48:21 jtc Exp $";
+static char *rcsid = "$Id: yplib.c,v 1.7 1993/12/03 10:10:21 deraadt Exp $";
 #endif
 
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/file.h>
+#include <sys/uio.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -221,12 +222,30 @@ again:
 			return YPERR_YPBIND;
 		}
 		if( flock(fd, LOCK_EX|LOCK_NB) == -1 && errno==EWOULDBLOCK) {
-			r = read(fd, &ysd->dom_server_addr, sizeof ysd->dom_server_addr);
-			if(r != sizeof ysd->dom_server_addr) {
+			struct iovec iov[2];
+			struct ypbind_resp ybr;
+			u_short	ypb_port;
+
+			iov[0].iov_base = (caddr_t)&ypb_port;
+			iov[0].iov_len = sizeof ypb_port;
+			iov[1].iov_base = (caddr_t)&ybr;
+			iov[1].iov_len = sizeof ybr;
+
+			r = readv(fd, iov, 2);
+			if(r != iov[0].iov_len + iov[1].iov_len) {
 				close(fd);
 				ysd->dom_vers = -1;
 				goto again;
 			}
+
+			bzero(&ysd->dom_server_addr, sizeof ysd->dom_server_addr);
+			ysd->dom_server_addr.sin_family = AF_INET;
+			ysd->dom_server_addr.sin_len = sizeof(struct sockaddr_in);
+			ysd->dom_server_addr.sin_addr =
+			    ybr.ypbind_respbody.ypbind_bindinfo.ypbind_binding_addr;
+			ysd->dom_server_addr.sin_port =
+			    ybr.ypbind_respbody.ypbind_bindinfo.ypbind_binding_port;
+
 			ysd->dom_server_port = ysd->dom_server_addr.sin_port;
 			close(fd);
 			goto gotit;
@@ -381,7 +400,7 @@ again:
 
 	yprk.domain = indomain;
 	yprk.map = inmap;
-	yprk.keydat.dptr = inkey;
+	yprk.keydat.dptr = (char *)inkey;
 	yprk.keydat.dsize = inkeylen;
 
 	bzero((char *)&yprv, sizeof yprv);

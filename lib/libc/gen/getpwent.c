@@ -33,7 +33,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /*static char *sccsid = "from: @(#)getpwent.c	5.21 (Berkeley) 3/14/91";*/
-static char *rcsid = "$Id: getpwent.c,v 1.9 1993/10/25 23:36:55 jtc Exp $";
+static char *rcsid = "$Id: getpwent.c,v 1.10 1993/12/10 12:46:29 deraadt Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -203,67 +203,75 @@ getpwnam(name)
 	const char *name;
 {
 	DBT key;
-
-#ifdef YP
-	char bf[sizeof(_pw_keynum) + 1];
-	int r;
-
-	if (!_pw_db && !__initdb())
-		return((struct passwd *)NULL);
-
-	for(_pw_keynum=1; _pw_keynum; _pw_keynum++) {
-		bf[0] = _PW_KEYBYNUM;
-		bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-		key.data = (u_char *)bf;
-		key.size = sizeof(_pw_keynum) + 1;
-		if(__hashpw(&key) == 0)
-			break;
-		if(strcmp(_pw_passwd.pw_name, "+") == 0) {
-			if(!__ypdomain) {
-				if(_yp_check(&__ypdomain) == 0) {
-					continue;
-				}
-			}
-			if(__ypcurrent) {
-				free(__ypcurrent);
-				__ypcurrent = NULL;
-			}
-			r = yp_match(__ypdomain, "passwd.byname",
-				name, strlen(name),
-				&__ypcurrent, &__ypcurrentlen);
-			switch(r) {
-			case 0:
-				break;
-			default:
-				free(__ypcurrent);
-				__ypcurrent = NULL;
-				continue;
-			}
-			bcopy(__ypcurrent, line, __ypcurrentlen);
-			line[__ypcurrentlen] = '\0';
-			if(__ypparse(&_pw_passwd, line))
-				continue;
-		}
-		if( strcmp(_pw_passwd.pw_name, name) == 0) {
-			if (!_pw_stayopen) {
-				(void)(_pw_db->close)(_pw_db);
-				_pw_db = (DB *)NULL;
-			}
-			return &_pw_passwd;
-		}
-		continue;
-	}
-	if (!_pw_stayopen) {
-		(void)(_pw_db->close)(_pw_db);
-		_pw_db = (DB *)NULL;
-	}
-	return (struct passwd *)NULL;
-#else
 	int len, rval;
 	char bf[UT_NAMESIZE + 1];
 
 	if (!_pw_db && !__initdb())
 		return((struct passwd *)NULL);
+
+#ifdef YP
+	bf[0] = _PW_KEYBYNAME;
+	len = strlen("+");
+	bcopy("+", bf + 1, MIN(len, UT_NAMESIZE));
+	key.data = (u_char *)bf;
+	key.size = len + 1;
+
+	/*
+	 * If there is a user called "+", then YP is active. In that
+	 * case we must sequence through the passwd file in sequence.
+	 */
+	if ( __hashpw(&key)) {
+		int r;
+
+		for(_pw_keynum=1; _pw_keynum; _pw_keynum++) {
+			bf[0] = _PW_KEYBYNUM;
+			bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
+			key.data = (u_char *)bf;
+			key.size = sizeof(_pw_keynum) + 1;
+			if(__hashpw(&key) == 0)
+				break;
+			if(strcmp(_pw_passwd.pw_name, "+") == 0) {
+				if(!__ypdomain) {
+					if(_yp_check(&__ypdomain) == 0) {
+						continue;
+					}
+				}
+				if(__ypcurrent) {
+					free(__ypcurrent);
+					__ypcurrent = NULL;
+				}
+				r = yp_match(__ypdomain, "passwd.byname",
+					name, strlen(name),
+					&__ypcurrent, &__ypcurrentlen);
+				switch(r) {
+				case 0:
+					break;
+				default:
+					free(__ypcurrent);
+					__ypcurrent = NULL;
+					continue;
+				}
+				bcopy(__ypcurrent, line, __ypcurrentlen);
+				line[__ypcurrentlen] = '\0';
+				if(__ypparse(&_pw_passwd, line))
+					continue;
+			}
+			if( strcmp(_pw_passwd.pw_name, name) == 0) {
+				if (!_pw_stayopen) {
+					(void)(_pw_db->close)(_pw_db);
+					_pw_db = (DB *)NULL;
+				}
+				return &_pw_passwd;
+			}
+			continue;
+		}
+		if (!_pw_stayopen) {
+			(void)(_pw_db->close)(_pw_db);
+			_pw_db = (DB *)NULL;
+		}
+		return (struct passwd *)NULL;
+	}
+#endif /* YP */
 
 	bf[0] = _PW_KEYBYNAME;
 	len = strlen(name);
@@ -277,7 +285,6 @@ getpwnam(name)
 		_pw_db = (DB *)NULL;
 	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-#endif
 }
 
 struct passwd *
@@ -289,68 +296,77 @@ getpwuid(uid)
 #endif
 {
 	DBT key;
+	char bf[sizeof(_pw_keynum) + 1];
+	int keyuid, rval, len;
+
+	if (!_pw_db && !__initdb())
+		return((struct passwd *)NULL);
 
 #ifdef YP
-	char bf[sizeof(_pw_keynum) + 1], uidbuf[20];
-	int r;
+	bf[0] = _PW_KEYBYNAME;
+	len = strlen("+");
+	bcopy("+", bf + 1, MIN(len, UT_NAMESIZE));
+	key.data = (u_char *)bf;
+	key.size = len + 1;
 
-	if (!_pw_db && !__initdb())
-		return((struct passwd *)NULL);
+	/*
+	 * If there is a user called "+", then YP is active. In that
+	 * case we must sequence through the passwd file in sequence.
+	 */
+	if ( __hashpw(&key)) {
+		char uidbuf[20];
+		int r;
 
-	for(_pw_keynum=1; _pw_keynum; _pw_keynum++) {
-		bf[0] = _PW_KEYBYNUM;
-		bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-		key.data = (u_char *)bf;
-		key.size = sizeof(_pw_keynum) + 1;
-		if(__hashpw(&key) == 0)
-			break;
-		if(strcmp(_pw_passwd.pw_name, "+") == 0) {
-			if(!__ypdomain) {
-				if(_yp_check(&__ypdomain) == 0) {
+		for(_pw_keynum=1; _pw_keynum; _pw_keynum++) {
+			bf[0] = _PW_KEYBYNUM;
+			bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
+			key.data = (u_char *)bf;
+			key.size = sizeof(_pw_keynum) + 1;
+			if(__hashpw(&key) == 0)
+				break;
+			if(strcmp(_pw_passwd.pw_name, "+") == 0) {
+				if(!__ypdomain) {
+					if(_yp_check(&__ypdomain) == 0) {
+						continue;
+					}
+				}
+				if(__ypcurrent) {
+					free(__ypcurrent);
+					__ypcurrent = NULL;
+				}
+				sprintf(uidbuf, "%d", uid);
+				r = yp_match(__ypdomain, "passwd.byuid",
+					uidbuf, strlen(uidbuf),
+					&__ypcurrent, &__ypcurrentlen);
+				switch(r) {
+				case 0:
+					break;
+				default:
+					free(__ypcurrent);
+					__ypcurrent = NULL;
 					continue;
 				}
+				bcopy(__ypcurrent, line, __ypcurrentlen);
+				line[__ypcurrentlen] = '\0';
+				if(__ypparse(&_pw_passwd, line))
+					continue;
 			}
-			if(__ypcurrent) {
-				free(__ypcurrent);
-				__ypcurrent = NULL;
+			if( _pw_passwd.pw_uid == uid) {
+				if (!_pw_stayopen) {
+					(void)(_pw_db->close)(_pw_db);
+					_pw_db = (DB *)NULL;
+				}
+				return &_pw_passwd;
 			}
-			sprintf(uidbuf, "%d", uid);
-			r = yp_match(__ypdomain, "passwd.byuid",
-				uidbuf, strlen(uidbuf),
-				&__ypcurrent, &__ypcurrentlen);
-			switch(r) {
-			case 0:
-				break;
-			default:
-				free(__ypcurrent);
-				__ypcurrent = NULL;
-				continue;
-			}
-			bcopy(__ypcurrent, line, __ypcurrentlen);
-			line[__ypcurrentlen] = '\0';
-			if(__ypparse(&_pw_passwd, line))
-				continue;
+			continue;
 		}
-		if( _pw_passwd.pw_uid == uid) {
-			if (!_pw_stayopen) {
-				(void)(_pw_db->close)(_pw_db);
-				_pw_db = (DB *)NULL;
-			}
-			return &_pw_passwd;
+		if (!_pw_stayopen) {
+			(void)(_pw_db->close)(_pw_db);
+			_pw_db = (DB *)NULL;
 		}
-		continue;
+		return (struct passwd *)NULL;
 	}
-	if (!_pw_stayopen) {
-		(void)(_pw_db->close)(_pw_db);
-		_pw_db = (DB *)NULL;
-	}
-	return (struct passwd *)NULL;
-#else
-	int keyuid, rval;
-	char bf[sizeof(keyuid) + 1];
-
-	if (!_pw_db && !__initdb())
-		return((struct passwd *)NULL);
+#endif /* YP */
 
 	bf[0] = _PW_KEYBYUID;
 	keyuid = uid;
@@ -364,7 +380,6 @@ getpwuid(uid)
 		_pw_db = (DB *)NULL;
 	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
-#endif
 }
 
 int

@@ -32,7 +32,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrent.c	5.9 (Berkeley) 4/1/91";
+/* static char *sccsid = "from: @(#)getgrent.c	5.9 (Berkeley) 4/1/91"; */
+static char *rcsid = "$Id: getgrent.c,v 1.6 1993/11/24 19:43:54 jtc Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -143,7 +144,6 @@ grscan(search, gid, name)
 {
 	register char *cp, **m;
 	char *bp;
-	char *fgets(), *strsep(), *index();
 
 	for (;;) {
 #ifdef YP
@@ -203,7 +203,7 @@ grscan(search, gid, name)
 			return(0);
 		bp = line;
 		/* skip lines that are too big */
-		if (!index(line, '\n')) {
+		if (!strchr(line, '\n')) {
 			int ch;
 
 			while ((ch = getc(_gr_fp)) != '\n' && ch != EOF)
