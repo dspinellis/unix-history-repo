@@ -3,32 +3,45 @@
 /*
  * make it look like the whole window has been changed.
  *
- * %G% (Berkeley) @(#)touchwin.c	1.2
+ * @(#)touchwin.c	1.3 (Berkeley) %G%
  */
 touchwin(win)
-reg WINDOW	*win;
+register WINDOW	*win;
 {
-	reg WINDOW	*wp;
+	register int	y, maxy;
 
-	do_touch(win);
-	for (wp = win->_nextp; wp != win; wp = wp->_nextp)
-		do_touch(wp);
+# ifdef	DEBUG
+	fprintf(outf, "TOUCHWIN(%0.2o)\n", win);
+# endif
+	maxy = win->_maxy;
+	for (y = 0; y < maxy; y++)
+		touchline(win, y, 0, win->_maxx - 1);
 }
 
 /*
- * do_touch:
- *	Touch the window
+ * touch a given line
  */
-static
-do_touch(win)
-reg WINDOW	*win; {
-
-	reg int		y, maxy, maxx;
-
-	maxy = win->_maxy;
-	maxx = win->_maxx - 1;
-	for (y = 0; y < maxy; y++) {
-		win->_firstch[y] = 0;
-		win->_lastch[y] = maxx;
+touchline(win, y, sx, ex)
+register WINDOW	*win;
+register int	y, sx, ex;
+{
+# ifdef DEBUG
+	fprintf(outf, "TOUCHLINE(%0.2o, %d, %d, %d)\n", win, y, sx, ex);
+	fprintf(outf, "TOUCHLINE:first = %d, last = %d\n", win->_firstch[y], win->_lastch[y]);
+# endif
+	sx += win->_ch_off;
+	ex += win->_ch_off;
+	if (win->_firstch[y] == _NOCHANGE) {
+		win->_firstch[y] = sx;
+		win->_lastch[y] = ex;
 	}
+	else {
+		if (win->_firstch[y] > sx)
+			win->_firstch[y] = sx;
+		if (win->_lastch[y] < ex)
+			win->_lastch[y] = ex;
+	}
+# ifdef	DEBUG
+	fprintf(outf, "TOUCHLINE:first = %d, last = %d\n", win->_firstch[y], win->_lastch[y]);
+# endif
 }
