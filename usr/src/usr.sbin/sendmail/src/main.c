@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.132		%G%);
+SCCSID(@(#)main.c	3.133		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -404,6 +404,7 @@ main(argc, argv)
 	*/
 
 	CurEnv = newenvelope(&MainEnvelope);
+	MainEnvelope.e_oldstyle = BlankEnvelope.e_oldstyle;
 
 	/*
 	**  If test mode, read addresses from stdin and process.
