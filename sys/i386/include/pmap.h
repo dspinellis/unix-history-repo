@@ -42,7 +42,7 @@
  *
  *	from: hp300: @(#)pmap.h	7.2 (Berkeley) 12/16/90
  *	from: @(#)pmap.h	7.4 (Berkeley) 5/12/91
- * 	$Id: pmap.h,v 1.12 1994/03/24 23:12:48 davidg Exp $
+ * 	$Id: pmap.h,v 1.13 1994/03/25 22:08:59 davidg Exp $
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -58,7 +58,8 @@ struct pde
 unsigned int	
 		pd_v:1,			/* valid bit */
 		pd_prot:2,		/* access control */
-		pd_mbz1:2,		/* reserved, must be zero */
+		pd_ncpwt:1,		/* page cache write through */
+		pd_ncpcd:1,		/* page cache disable */
 		pd_u:1,			/* hardware maintained 'used' bit */
 		:1,			/* not used */
 		pd_mbz2:2,		/* reserved, must be zero */
@@ -76,7 +77,8 @@ struct pte
 unsigned int	
 		pg_v:1,			/* valid bit */
 		pg_prot:2,		/* access control */
-		pg_mbz1:2,		/* reserved, must be zero */
+		pg_ncpwt:1,		/* page cache write through */
+		pg_ncpcd:1,		/* page cache disable */
 		pg_u:1,			/* hardware maintained 'used' bit */
 		pg_m:1,			/* hardware maintained modified bit */
 		pg_mbz2:2,		/* reserved, must be zero */
@@ -91,10 +93,12 @@ unsigned int
 #define	PG_RW		0x00000002
 #define	PG_u		0x00000004
 #define	PG_PROT		0x00000006 /* all protection bits . */
-#define	PG_W		0x00000200
-#define	PG_N		0x00000800 /* Non-cacheable */
-#define	PG_M		0x00000040
+#define	PG_NC_PWT	0x00000008 /* page cache write through */
+#define	PG_NC_PCD	0x00000010 /* page cache disable */
+#define	PG_N		0x00000018 /* Non-cacheable */
 #define	PG_U		0x00000020
+#define	PG_M		0x00000040
+#define	PG_W		0x00000200
 #define	PG_FRAME	0xfffff000UL
 
 #define	PG_NOACC	0
