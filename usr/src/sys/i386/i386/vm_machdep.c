@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * the University of Utah, and William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)vm_machdep.c	5.7 (Berkeley) %G%
+ *	@(#)vm_machdep.c	5.8 (Berkeley) %G%
  */
 
 /*
@@ -29,19 +29,109 @@
  *	@(#)vm_machdep.c	7.1 (Berkeley) 6/5/86
  */
 
-#include "sys/param.h"
-#include "sys/systm.h"
-#include "sys/user.h"
-#include "sys/proc.h"
-#include "sys/cmap.h"
-#include "sys/malloc.h"
-#include "sys/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "proc.h"
+#include "malloc.h"
+#include "buf.h"
+#include "user.h"
 
-#include "machine/cpu.h"
+#include "../include/cpu.h"
 
-#include "vm/vm_param.h"
-#include "vm/pmap.h"
-#include "vm/vm_map.h"
+#include "vm/vm.h"
+#include "vm/vm_kern.h"
+
+/*
+ * Finish a fork operation, with process p2 nearly set up.
+ * Copy and update the kernel stack and pcb, making the child
+ * ready to run, and marking it so that it can return differently
+ * than the parent.  Returns 1 in the child process, 0 in the parent.
+ * We currently double-map the user area so that the stack is at the same
+ * address in each process; in the future we will probably relocate
+ * the frame pointers on the stack after copying.
+ */
+cpu_fork(p1, p2)
+	register struct proc *p1, *p2;
+{
+	register struct user *up = p2->p_addr;
+	int foo, offset, addr, i;
+	extern char kstack[];
+
+	/*
+	 * Copy pcb and stack from proc p1 to p2. 
+	 * We do this as cheaply as possible, copying only the active
+	 * part of the stack.  The stack and pcb need to agree;
+	 * this is tricky, as the final pcb is constructed by savectx,
+	 * but its frame isn't yet on the stack when the stack is copied.
+	 * swtch compensates for this when the child eventually runs.
+	 * This should be done differently, with a single call
+	 * that copies and updates the pcb+stack,
+	 * replacing the bcopy and savectx.
+	 */
+	p2->p_addr->u_pcb = p1->p_addr->u_pcb;
+	offset = (caddr_t)&foo - kstack;
+	bcopy((caddr_t)kstack + offset, (caddr_t)p2->p_addr + offset,
+	    (unsigned) ctob(UPAGES) - offset);
+	p2->p_regs = p1->p_regs;
+
+	/*
+	 * Wire top of address space of child to it's u.
+	 * First, fault in a page of pte's to map it.
+	 */
+        addr = trunc_page((u_int)vtopte(kstack));
+	(void)vm_fault(p2->p_vmspace->vm_map,
+		trunc_page((u_int)vtopte(kstack)), VM_PROT_READ, FALSE);
+	for (i=0; i < UPAGES; i++)
+		pmap_enter(p2->p_vmspace->vm_pmap, kstack+i*NBPG,
+			pmap_extract(kernel_pmap, p2->p_addr), VM_PROT_READ, 1);
+
+	pmap_activate(&p2->p_vmspace->vm_pmap, &up->u_pcb);
+
+	/*
+	 * 
+	 * Arrange for a non-local goto when the new process
+	 * is started, to resume here, returning nonzero from setjmp.
+	 */
+	if (savectx(up, 1)) {
+		/*
+		 * Return 1 in child.
+		 */
+		return (1);
+	}
+	return (0);
+}
+
+/*
+ * cpu_exit is called as the last action during exit.
+ *
+ * We change to an inactive address space and a "safe" stack,
+ * passing thru an argument to the new stack. Now, safely isolated
+ * from the resources we're shedding, we release the address space
+ * and any remaining machine-dependent resources, including the
+ * memory for the user structure and kernel stack.
+ *
+ * Next, we assign a dummy context to be written over by swtch,
+ * calling it to send this process off to oblivion.
+ * [The nullpcb allows us to minimize cost in swtch() by not having
+ * a special case].
+ */
+struct proc *swtch_to_inactive();
+cpu_exit(p)
+	struct proc *p;
+{
+	static struct pcb nullpcb;	/* pcb to overwrite on last swtch */
+
+	/* move to inactive space and stack, passing arg accross */
+	p = swtch_to_inactive(p);
+
+	/* drop per-process resources */
+	vmspace_free(p->p_vmspace);
+	kmem_free(kernel_map, (vm_offset_t)p->p_addr, ctob(UPAGES));
+
+	p->p_addr = (struct user *) &nullpcb;
+	swtch();
+	/* NOTREACHED */
+}
 
 /*
  * Set a red zone in the kernel stack after the u. area.
@@ -82,7 +172,7 @@ pagemove(from, to, size)
 		to += NBPG;
 		size -= NBPG;
 	}
-	load_cr3(u.u_pcb.pcb_cr3);
+	tlbflush();
 }
 
 /*
@@ -229,7 +319,7 @@ vmapbuf(bp)
 	kva = kmem_alloc_wait(phys_map, ctob(npf));
 	bp->b_un.b_addr = (caddr_t) (kva + off);
 	while (npf--) {
-		pa = pmap_extract(vm_map_pmap(p->p_map), (vm_offset_t)addr);
+		pa = pmap_extract(&p->p_vmspace->vm_pmap, (vm_offset_t)addr);
 		if (pa == 0)
 			panic("vmapbuf: null page frame");
 		pmap_enter(vm_map_pmap(phys_map), kva, trunc_page(pa),
