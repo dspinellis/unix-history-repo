@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)nullrelay.m4	8.4 (Berkeley) %G%')
+VERSIONID(`@(#)nullrelay.m4	8.5 (Berkeley) %G%')
 
 #
 #  This configuration applies only to relay-only hosts.  They send
@@ -240,7 +240,7 @@ R$*<$+>$*		$2				basic RFC821/822 parsing
 ifdef(`_NO_CANONIFY_', `dnl',
 `# eliminate local host if present
 R@ $=w $=: $+		$@ @ $M $2 $3			@thishost ...
-R@ $+			$@ $1				@somewhere ...
+R@ $+			$@ @ $1				@somewhere ...
 
 R$+ @ $=w		$@ $1 @ $M			...@thishost
 R$+ @ $+		$@ $1 @ $2			...@somewhere
