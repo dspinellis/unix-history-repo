@@ -1,9 +1,9 @@
 #!/bin/sh -
 #
-#	@(#)monthly	5.1 (Berkeley) %G%
+#	@(#)monthly	5.2 (Berkeley) %G%
 #
 
-host=`hostname | sed -e 's/\..*//'`
+host=`hostname -s`
 echo "Subject: $host monthly run output"
 
 # echo ""
