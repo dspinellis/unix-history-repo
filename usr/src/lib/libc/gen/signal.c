@@ -1,4 +1,4 @@
-/*	signal.c	4.1	84/05/16	*/
+/*	signal.c	4.2	85/01/15	*/
 /*
  * Almost backwards compatible signal.
  *	int (*signal(s, a))() int s, (*a)();
@@ -6,7 +6,7 @@
 #include <syscall.h>
 #include "DEFS.h"
 
-ENTRY(signal)
+ENTRY(signal, 0)
 	subl2	$24,sp			# struct sigvec osv, sv;
 	movl	8(ap),-24(fp)		# sv.sv_handler = a;
 	clrq	-20(fp)			# sv.sv_mask = sv.sv_onstack = 0;
