@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)up.4	6.1 (Berkeley) %G%
+.\"	@(#)up.4	6.2 (Berkeley) %G%
 .\"
 .TH UP 4 ""
 .UC 4
@@ -14,7 +14,8 @@ up \- unibus storage module controller/drives
 .B "disk up0 at sc0 drive 0"
 .SH DESCRIPTION
 This is a generic UNIBUS storage module disk driver.
-It is specifically designed to work with the Emulex SC-21 controller.
+It is specifically designed to work with the
+Emulex SC-21 and SC-31 controllers.
 It can be easily
 adapted to other controllers (although bootstrapping will
 not necessarily be directly possible.)
@@ -43,13 +44,26 @@ calls should specify a multiple of 512 bytes.
 .SH "DISK SUPPORT"
 The driver interrogates the controller's holding register
 to determine the type of drive attached.  The driver recognizes
-four different drives: AMPEX 9300, CDC 9766, AMPEX Capricorn,
-and FUJITSU 160.
+seven different drives:
+CDC 9762, CDC 9766,
+AMPEX DM980, AMPEX 9300, AMPEX Capricorn,
+FUJITSU 160, and FUJITSU Eagle
+(the Eagle is not supported by the SC-21).
 The origin and size of the pseudo-disks on each drive are
 as follows:
 .PP
 .nf
 .ta .5i +\w'000000    'u +\w'000000    'u +\w'000000    'u
+CDC 9762 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
+.PP
 CDC 9766 300M drive partitions:
 	disk	start	length	cyl
 	up?a	0	15884	0-26
@@ -60,6 +74,16 @@ CDC 9766 300M drive partitions:
 	up?f	414048	861760	681-822
 	up?g	341696	158528	562-822
 	up?h	49856	291346	82-561
+.PP
+AMPEX DM980 partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-99
+	hp?b	16000	33440	100-309
+	hp?c	0	131680	0-822
+	hp?d	49600	15884	309-408
+	hp?e	65440	55936	409-758
+	hp?f	121440	10080	759-822
+	hp?g	49600	82080	309-822
 .PP
 AMPEX 9300 300M drive partitions:
 	disk	start	length	cyl
@@ -92,6 +116,17 @@ FUJITSU 160M drive partitions:
 	up?e	65600	55936	205-379
 	up?f	121600	141600	380-822
 	up?g	49600	213600	155-822
+.PP
+FUJITSU Eagle partitions
+	disk	start	length	cyls
+	hp?a	0	15884	0-16
+	hp?b	16320	66880	17-86
+	hp?c	0	808320	0-841
+	hp?d	375360	15884	391-407
+	hp?e	391680	55936	408-727
+	hp?f	698880	109248	728-841
+	hp?g	375360	432768	391-841
+	hp?h	83520	291346	87-390
 .DT
 .fi
 .PP
@@ -162,8 +197,6 @@ in programs that are likely to access raw devices,
 and
 .IR lseek (2)
 should always deal in 512-byte multiples.
-.PP
-DEC-standard error logging should be supported.
 .PP
 A program to analyze the logged error information (even in its
 present reduced form) is needed.
