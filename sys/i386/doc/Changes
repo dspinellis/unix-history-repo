@@ -1,12 +1,22 @@
-$Id: Changes,v 1.5 1994/01/16 11:45:11 ats Exp $
+$Id: Changes,v 1.6 1994/02/01 03:43:59 ache Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.
 
 Since 1.0.2:
 
+- Upgrade to new version of sycons which handles the 'hanging console'
+  problem and adds some new features and code cleanup.
+
+- Removed older regexp code and replaced it with POSIX regex handling
+  code donated to BSD 4.4 by Henry Spencer.
+
+- Added 3C509 driver written by Herb Peyerl.
+
 - Added a new 'wd' driver which does a much better job of probing, handles
-  stray interrupts better, and supports multiple controllers
+  stray interrupts better, and supports multiple controllers.  In addition
+  this driver supports DOS partitions much better and conforms to ATA specs
+  much better.
 
 - Fixed various swap 'leaks' and significantly improved paging
   performance.  (davidg/dyson)
