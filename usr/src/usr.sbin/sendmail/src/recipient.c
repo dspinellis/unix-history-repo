@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.35 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -666,6 +666,11 @@ writable(filename, ctladdr, flags)
 		return errno == 0;
 	}
 
+#ifdef SUID_ROOT_FILES_OK
+	/* really ought to be passed down -- and not a good idea */
+	flags |= SFF_ROOTOK;
+#endif
+
 	/*
 	**  File does exist -- check that it is writable.
 	*/
@@ -699,17 +704,14 @@ writable(filename, ctladdr, flags)
 		egid = DefGid;
 	if (geteuid() == 0)
 	{
-#ifdef SUID_ROOT_FILES_OK
-		if (bitset(S_ISUID, stb.st_mode))
-#else
-		if (bitset(S_ISUID, stb.st_mode) && stb.st_uid != 0)
-#endif
+		if (bitset(S_ISUID, stb.st_mode) &&
+		    (stb.st_uid != 0 || bitset(SFF_ROOTOK, flags)))
 		{
-			flags |= SFF_ROOTOK;
 			euid = stb.st_uid;
 			uname = NULL;
 		}
-		if (bitset(S_ISGID, stb.st_mode) && stb.st_gid != 0)
+		if (bitset(S_ISGID, stb.st_mode) &&
+		    (stb.st_gid != 0 || bitset(SFF_ROOTOK, flags)))
 			egid = stb.st_gid;
 	}
 
