@@ -9,15 +9,19 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	8.5 (Berkeley) %G%
+ *	@(#)sys_process.c	8.6 (Berkeley) %G%
  */
 
 #define IPCREG
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/buf.h>
 #include <sys/ptrace.h>
+
+#include <sys/mount.h>
+#include <sys/syscallargs.h>
 
 #include <machine/reg.h>
 #include <machine/psl.h>
@@ -49,28 +53,27 @@ struct {
 /*
  * Process debugging system call.
  */
-struct ptrace_args {
-	int	req;
-	pid_t	pid;
-	caddr_t	addr;
-	int	data;
-};
 ptrace(curp, uap, retval)
 	struct proc *curp;
-	register struct ptrace_args *uap;
-	int *retval;
+	struct ptrace_args /* {
+		syscallarg(int) req;
+		syscallarg(pid_t) pid;
+		syscallarg(caddr_t) addr;
+		syscallarg(int) data;
+	} */ *uap;
+	register_t *retval;
 {
 	register struct proc *p;
 	int error;
 
-	if (uap->req <= 0) {
+	if (SCARG(uap, req) <= 0) {
 		curp->p_flag |= P_TRACED;
 		return (0);
 	}
-	p = pfind(uap->pid);
+	p = pfind(SCARG(uap, pid));
 	if (p == 0)
 		return (ESRCH);
-	if (uap->req == PT_ATTACH) {
+	if (SCARG(uap, req) == PT_ATTACH) {
 		/*
 		 * Must be root if the process has used set user or group
 		 * privileges or does not belong to the real user.  Must
@@ -104,9 +107,9 @@ ptrace(curp, uap, retval)
 	while (ipc.ip_lock)
 		sleep((caddr_t)&ipc, IPCPRI);
 	ipc.ip_lock = p->p_pid;
-	ipc.ip_data = uap->data;
-	ipc.ip_addr = uap->addr;
-	ipc.ip_req = uap->req;
+	ipc.ip_data = SCARG(uap, data);
+	ipc.ip_addr = SCARG(uap, addr);
+	ipc.ip_req = SCARG(uap, req);
 	p->p_flag &= ~P_WAITED;
 	while (ipc.ip_req > 0) {
 		if (p->p_stat==SSTOP)
