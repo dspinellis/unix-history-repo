@@ -1,4 +1,4 @@
-/*	if.c	6.1	83/07/29	*/
+/*	if.c	6.2	83/09/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -47,7 +47,7 @@ ifubareset(uban)
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 		if (ifp->if_reset)
-			(*ifp->if_reset)(uban);
+			(*ifp->if_reset)(ifp->if_unit, uban);
 }
 #endif
 
