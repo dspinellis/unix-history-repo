@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4	(Berkeley)	%G%
+#	@(#)Makefile	5.5	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -26,7 +26,7 @@ table: ${TOBJS} ${LIBC}
 	${CC} ${CFLAGS} -o $@ ${TOBJS}
 
 clean: FRC
-	rm -f ${OBJS} ${TOBJS} core mille table
+	rm -f ${OBJS} ${TOBJS} ${MOBJS} core mille table
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
@@ -36,11 +36,11 @@ install: FRC
 	(cd ${DESTDIR}/usr/games; rm -f mille; ln -s dm mille; chown games.bin mille)
 
 lint: FRC
-	lint ${CFLAGS} ${SRCS}
+	lint ${CFLAGS} ${MSRCS}
 	lint ${CFLAGS} ${TSRCS}
 
 tags: FRC
-	ctags ${SRCS}
+	ctags ${MSRCS}
 	ctags -a ${TSRCS}
 	sort -o tags tags
 
@@ -64,7 +64,7 @@ init.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 mille.o: mille.c mille.h /usr/include/ctype.h /usr/include/curses.h
 mille.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 mille.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
-mille.o: /usr/include/signal.h
+mille.o: /usr/include/signal.h /usr/include/machine/trap.h
 misc.o: misc.c mille.h /usr/include/ctype.h /usr/include/curses.h
 misc.o: /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 misc.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
