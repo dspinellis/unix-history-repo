@@ -1,4 +1,4 @@
-#	Makefile	4.6	83/07/02
+#	Makefile	4.7	84/11/13
 #
 # The system has two monitoring schemes, utilizing either ``prof''
 # or ``gprof''. DFLMON determines the default profiler; mon.o
@@ -27,11 +27,13 @@ libc.a libc_p.a: ${MACHINE}/csu ${ALL}
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma flsbuf.o libc.a exit.o
+	ar ma exit.o libc.a fakcu.o
 	rm -f t1 tmp/*
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib_p); done
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc_p.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma flsbuf.o libc_p.a exit.o
+	ar ma exit.o libc.a fakcu.o
 	rm -rf t1 tmp
 
 ${MACHINE}/csu ${ALL}: FRC
