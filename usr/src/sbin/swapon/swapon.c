@@ -11,14 +11,12 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)swapon.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)swapon.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
 #include <fstab.h>
 #include <errno.h>
-
-#define	VSWAPON	85
 
 extern int errno;
 
@@ -40,7 +38,7 @@ main(argc, argv)
 		while ( (fsp = getfsent()) != 0){
 			if (strcmp(fsp->fs_type, FSTAB_SW) != 0)
 				continue;
-			if (syscall(VSWAPON, fsp->fs_spec) == -1) {
+			if (swapon(fsp->fs_spec) == -1) {
 				switch(errno) {
 				case EINVAL:
 					fprintf(stderr,
@@ -65,7 +63,7 @@ main(argc, argv)
 		exit(stat);
 	}
 	do {
-		if (syscall(VSWAPON, *argv++) == -1) {
+		if (swapon(*argv++) == -1) {
 			stat = 1;
 			switch (errno) {
 			case EINVAL:
