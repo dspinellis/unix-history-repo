@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.10 (Berkeley) %G%
+#	@(#)Makefile	4.11 (Berkeley) %G%
 #
 #
 CFLAGS=	-O -w
@@ -30,7 +30,7 @@ MAN=	cd.0 intro.0 sh.0 wait.0
 all: sh
 
 sh: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcompat
 
 clean:
 	rm -f ${OBJS} core sh
