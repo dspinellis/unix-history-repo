@@ -1,5 +1,5 @@
 #
-#	Makefile	1.12	85/08/23
+#	Makefile	1.13	86/03/11
 #
 # Makefile for PCC
 #
@@ -24,6 +24,7 @@ FOPTS = -DFORT $(CFLAGS)
 LDFLAGS =
 
 RM=	/bin/rm -f
+LN=	/bin/ln -s
 
 SFILES=	strees.c slocal.c slocal2.c sallo.c sorder.c stable.c
 SOBJS=	strees.o slocal.o slocal2.o sallo.o sorder.o stable.o
@@ -75,7 +76,7 @@ rodata.c cgram.c: $M/cgram.y pcctokens
 	sh ./:yyfix yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
 	mv y.tab.c cgram.c
 comm1.o: $(P1ONEP) $M/common.c
-	ln $M/common.c comm1.c
+	$(LN) $M/common.c comm1.c
 	$(CC) -c $(COPTS) -DPASS1COMMON comm1.c
 	$(RM) comm1.c
 stab.o: $(P1ONEP) stab.c \
@@ -104,27 +105,27 @@ sccom: rodata.o cgram.o xdefs.o scan.o pftn.o strees.o optim.o code.o slocal.o \
 		optim.o code.o slocal.o reader.o slocal2.o sorder.o match.o \
 		sallo.o comm1.o stable.o stab.o -o $(TESTDIR)/sccom
 strees.o: $(P1ONEP) $M/trees.c
-	ln $M/trees.c strees.c
+	$(LN) $M/trees.c strees.c
 	$(CC) -c $(SCOPTS) strees.c
 	$(RM) strees.c
 slocal.o: $(P1ONEP) local.c
-	ln local.c slocal.c
+	$(LN) local.c slocal.c
 	$(CC) -c $(SCOPTS) slocal.c
 	$(RM) slocal.c
 slocal2.o: $(P2ONEP) local2.c
-	ln local2.c slocal2.c
+	$(LN) local2.c slocal2.c
 	$(CC) -c $(SCOPTS) slocal2.c
 	$(RM) slocal2.c
 sallo.o: $(P2ONEP) $M/allo.c
-	ln $M/allo.c sallo.c
+	$(LN) $M/allo.c sallo.c
 	$(CC) -c $(SCOPTS) sallo.c
 	$(RM) sallo.c
 sorder.o: $(P2ONEP) order.c
-	ln order.c sorder.c
+	$(LN) order.c sorder.c
 	$(CC) -c $(SCOPTS) sorder.c
 	$(RM) sorder.c
 stable.o: $(P2ONEP) table.c
-	ln table.c stable.c
+	$(LN) table.c stable.c
 	$(CC) -c $(SCOPTS) -R stable.c
 	$(RM) stable.c
 
@@ -138,31 +139,31 @@ f1: fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 fort.o: $(P2INCS) fort.h $M/fort.c
 	$(CC) -c $(FOPTS) $M/fort.c
 freader.o: $(P2INCS) $M/reader.c
-	ln $M/reader.c freader.c
+	$(LN) $M/reader.c freader.c
 	$(CC) -c $(FOPTS) freader.c
 	$(RM) freader.c
 fallo.o: $(P2INCS) $M/allo.c
-	ln $M/allo.c fallo.c
+	$(LN) $M/allo.c fallo.c
 	$(CC) -c $(FOPTS) fallo.c
 	$(RM) fallo.c
 fmatch.o: $(P2INCS) $M/match.c
-	ln $M/match.c fmatch.c
+	$(LN) $M/match.c fmatch.c
 	$(CC) -c $(FOPTS) fmatch.c
 	$(RM) fmatch.c
 ftable.o: $(P2INCS) table.c
-	ln table.c ftable.c
+	$(LN) table.c ftable.c
 	$(CC) -c -R $(FOPTS) ftable.c
 	$(RM) ftable.c
 forder.o: $(P2INCS) order.c
-	ln order.c forder.c
+	$(LN) order.c forder.c
 	$(CC) -c $(FOPTS) forder.c
 	$(RM) forder.c
 flocal2.o: $(P2INCS) local2.c
-	ln local2.c flocal2.c
+	$(LN) local2.c flocal2.c
 	$(CC) -c $(FOPTS) flocal2.c
 	$(RM) flocal2.c
 fcomm2.o: $(P2INCS) $M/common.c
-	ln $M/common.c fcomm2.c
+	$(LN) $M/common.c fcomm2.c
 	$(CC) -c $(FOPTS) -DPASS2COMMON fcomm2.c
 	$(RM) fcomm2.c
 
